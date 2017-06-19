@@ -33,7 +33,7 @@ class VMCPropagator: public PropagatorBase
 
   bool parse(xmlNodePtr);
 
-  bool setup(std::vector<int>& TGdata, SPComplexSMVector *v,HamiltonianBase*,WavefunctionHandler*, RealType dt, hdf_archive&, const std::string&,MPI_Comm tg_comm, MPI_Comm node_comm);
+  bool setup(std::vector<int>& TGdata, SPComplexSMVector *v,HamiltonianBase*,WavefunctionHandler*, RealType dt, hdf_archive&, const std::string&,MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm);
 
   bool hdf_write(hdf_archive&, const std::string&);
 

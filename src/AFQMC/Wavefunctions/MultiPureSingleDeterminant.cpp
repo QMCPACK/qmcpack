@@ -682,16 +682,13 @@ bool MultiPureSingleDeterminant::getHamiltonian(HamPtr h)
 
   ComplexType epot,ekin,o1,o2;
   HF.resize(2*NMO,NAEA);
-  for(int i=0; i<2*NMO; i++)
-  for(int j=0; j<NAEA; j++) HF(i,j)=ComplexType(0.0,0.0);
+  HF = ComplexType(0.0,0.0);  
   if(rotated_hamiltonian) {
     std::copy(OrbMat.data(),OrbMat.data()+NAEA*NMO,HF.data());
     if(wfn_type==0)
       std::copy(OrbMat.data(),OrbMat.data()+NAEA*NMO,HF.data()+NAEA*NMO);
     else
       std::copy(OrbMat.data()+NAEA*NMO,OrbMat.data()+2*NAEA*NMO,HF.data()+NAEA*NMO);
-//    for(int i=0; i<NAEA; i++) HF(i,i)=ComplexType(1.0,0.0);
-//    for(int i=0; i<NAEB; i++) HF(i+NMO,i)=ComplexType(1.0,0.0);
   } else {
     for(int i=0; i<NAEA; i++) HF(occ_orbs[i],i)=ComplexType(1.0,0.0);
     for(int i=0; i<NAEB; i++) HF(occ_orbs[i+NAEA],i)=ComplexType(1.0,0.0);
@@ -996,6 +993,10 @@ void MultiPureSingleDeterminant::evaluateOneBodyMixedDensityMatrix(WalkerHandler
   int nw = wset->numWalkers(true), cnt=0;
   int nw0 = wset->numWalkers(false);
 
+  // right now there is a problem here, 
+  // is called from Propagator, full refers to whether save_memory is true or not.
+  // but this routine can be called for both energy or vbias, I still want the option to do either
+  // true/false in full
   assert(full);
 
   int sz = 1 + NMO*NMO;

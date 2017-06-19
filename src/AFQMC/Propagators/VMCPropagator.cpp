@@ -138,8 +138,12 @@ bool VMCPropagator::hdf_read(hdf_archive& dump,const std::string& tag)
 
 
 
-bool VMCPropagator::setup(std::vector<int>& TGdata, SPComplexSMVector *v, HamiltonianBase* ham,WavefunctionHandler* w, RealType dt_, hdf_archive& dump_read, const std::string& hdf_restart_tag,MPI_Comm tg_comm, MPI_Comm node_comm)
+bool VMCPropagator::setup(std::vector<int>& TGdata, SPComplexSMVector *v, HamiltonianBase* ham,WavefunctionHandler* w, RealType dt_, hdf_archive& dump_read, const std::string& hdf_restart_tag,MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm node_heads_comm)
 {
+
+  MPI_COMM_HEAD_OF_NODES = node_heads_comm;
+  head_of_nodes = (TGdata[1]==0);
+
   dt = dt_;
 
   proj0->copyInfo(*this);

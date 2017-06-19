@@ -30,12 +30,7 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
 
     ~WavefunctionBase() {}
 
-    void setHeadComm(bool hd, MPI_Comm comm) {
-      head_of_nodes=hd;
-      MPI_COMM_HEAD_OF_NODES = comm;
-    }
-
-    virtual bool init(std::vector<int>& TGdata, SPComplexSMVector *v, hdf_archive& read, const std::string& tag, MPI_Comm tg_comm, MPI_Comm node_comm)
+    virtual bool init(std::vector<int>& TGdata, SPComplexSMVector *v, hdf_archive& read, const std::string& tag, MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm node_heads_comm)
     {
 
       // setup TG
@@ -48,6 +43,9 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
       core_rank = TG.getCoreRank(); 
       TG.setNodeCommLocal(node_comm);
       TG.setTGCommLocal(tg_comm);   
+      MPI_COMM_HEAD_OF_NODES = node_heads_comm;
+      TG.setHeadOfNodesComm(MPI_COMM_HEAD_OF_NODES);
+      head_of_nodes = (TG.getCoreID()==0);
 
       // setup WFN
       if(filetype == "none" && init_type=="ground")   
@@ -93,7 +91,7 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
 
     ComplexMatrix& getHF() { return HF; }
 
-    void setupFactorizedHamiltonian(bool sp, SPValueSMSpMat* spvn_, SPValueSMVector* dvn_, RealType dt_, TaskGroup* tg_)
+    void setupFactorizedHamiltonian(bool sp, SPValueSMSpMat* spvn_, SPValueSMVector* dvn_, RealType dt_, afqmc::TaskGroup* tg_)
     {
       sparse_vn=sp;
       Spvn=spvn_;
@@ -323,7 +321,7 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
       return false;
     }
 
-    TaskGroup TG; 
+    afqmc::TaskGroup TG; 
     bool distribute_Ham;  
     bool parallel;
     int min_ik, max_ik;    
@@ -346,7 +344,7 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
     int nCholVecs;
     SPValueSMSpMat *Spvn;
     SPValueSMVector *Dvn;
-    TaskGroup* TG_vn;     // task group of the factorized hamiltonian
+    afqmc::TaskGroup* TG_vn;     // task group of the factorized hamiltonian
 
     bool closed_shell;
     // in both cases below: closed_shell=0, UHF/ROHF=1, GHF=2

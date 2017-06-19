@@ -75,11 +75,14 @@ class SMDenseVector
     comm=comm_;
   }
 
-  inline void reserve(int nnz, bool allow_reduce = false)
+  inline void reserve(unsigned long nnz, bool allow_reduce = false)
   {
     if(vals==NULL || (vals!=NULL && vals->capacity() < nnz) || (vals!=NULL && vals->capacity() > nnz && allow_reduce)) 
       allocate(nnz,allow_reduce);
-    if(head) vals->reserve(nnz);
+    if(head) {
+      assert(nnz < vals->max_size());
+      vals->reserve(nnz);
+    } 
     barrier();
   }
 
@@ -128,6 +131,7 @@ class SMDenseVector
         segment=NULL;
       } catch(std::bad_alloc&) {
         std::cerr<<"Problems deleting segment in SMDenseVector::deallocate()." <<std::endl;
+        APP_ABORT("Problems deleting segment in SMDenseVector::deallocate().\n");
         return false;
       }
     }
@@ -139,6 +143,7 @@ class SMDenseVector
         boost::interprocess::shared_memory_object::remove(ID.c_str());
       } catch(std::bad_alloc&) {
         std::cerr<<"Problems de-allocating shared memory in SMDenseVector." <<std::endl;
+        APP_ABORT("Problems de-allocating shared memory in SMDenseVector.\n");
         return false;
       }
     }
@@ -146,7 +151,7 @@ class SMDenseVector
   } 
 
   // this routine does not allow grow/shrink, meant in cases where only head can call it
-  inline bool allocate_serial(int n)
+  inline bool allocate_serial(unsigned long n)
   {
     if(!head) return false; /* XA: This was returning nothing, I assume false is the right thing to return here */
     if(vals!=NULL && vals->capacity() >= n) return true;
@@ -166,6 +171,7 @@ class SMDenseVector
         segment = new boost::interprocess::managed_shared_memory(boost::interprocess::create_only, ID.c_str(), memory);
       } catch(boost::interprocess::interprocess_exception &ex) {
         std::cerr<<"Problems setting up managed_shared_memory in SMDenseVector." <<std::endl;
+        APP_ABORT("Problems setting up managed_shared_memory in SMDenseVector.\n");
         return false;
       }
     }
@@ -180,10 +186,12 @@ class SMDenseVector
       mutex = segment->construct<boost::interprocess::interprocess_mutex>("mutex")();
 
       vals = segment->construct<boost_SMVector<T>>("vals")(*alloc_T);
+      assert(n < vals->max_size());
       vals->reserve(n);
 
     } catch(std::bad_alloc&) {
       std::cerr<<"Problems allocating shared memory in SMDenseVector." <<std::endl;
+      APP_ABORT("Problems allocating shared memory in SMDenseVector.\n");
       return false;
     }
     SMallocated=true;
@@ -191,7 +199,7 @@ class SMDenseVector
 
   }
 
-  inline bool allocate(int n, bool allow_reduce=false)
+  inline bool allocate(unsigned long n, bool allow_reduce=false)
   {
     bool grow = false;
     uint64_t old_sz = (segment==NULL)?0:(segment->get_size()); 
@@ -214,16 +222,19 @@ class SMDenseVector
           segment=NULL;
           if(!boost::interprocess::managed_shared_memory::grow(ID.c_str(), extra)) {
             std::cerr<<" Error growing shared memory in  SMDenseVector::allocate(). \n";
+            APP_ABORT(" Error growing shared memory in  SMDenseVector::allocate(). \n");
             return false;   
           } 
         } else {
           segment->destroy<boost_SMVector<T>>("vals");
           vals = segment->construct<boost_SMVector<T>>("vals")(*alloc_T);
+          assert(n < vals->max_size());
           vals->reserve(n);          
           delete segment;
           segment=NULL;
           if(!boost::interprocess::managed_shared_memory::shrink_to_fit(ID.c_str())) {
             std::cerr<<" Error in shrink_to_fit shared memory in  SMDenseVector::allocate(). \n";
+            APP_ABORT(" Error in shrink_to_fit shared memory in  SMDenseVector::allocate(). \n");
             return false;   
           } 
         }
@@ -236,9 +247,11 @@ class SMDenseVector
           assert(vals != 0);
           assert(share_buff != 0);
           assert(mutex != 0);
+          assert(n < vals->max_size());
           vals->reserve(n);
         } catch(std::bad_alloc&) {
           std::cerr<<"Problems opening shared memory in SMDenseVector::allocate() ." <<std::endl;
+          APP_ABORT("Problems opening shared memory in SMDenseVector::allocate() .\n");
           return false;
         }
 
@@ -258,6 +271,7 @@ class SMDenseVector
             segment = new boost::interprocess::managed_shared_memory(boost::interprocess::create_only, ID.c_str(), memory);
           } catch(boost::interprocess::interprocess_exception &ex) {
             std::cerr<<"Problems setting up managed_shared_memory in SMDenseVector." <<std::endl;
+            APP_ABORT("Problems setting up managed_shared_memory in SMDenseVector.\n");
             return false;
           }
         }
@@ -272,10 +286,12 @@ class SMDenseVector
           mutex = segment->construct<boost::interprocess::interprocess_mutex>("mutex")();
 
           vals = segment->construct<boost_SMVector<T>>("vals")(*alloc_T);
+          assert(n < vals->max_size());
           vals->reserve(n);
  
         } catch(std::bad_alloc&) {
           std::cerr<<"Problems allocating shared memory in SMDenseVector." <<std::endl;
+          APP_ABORT("Problems allocating shared memory in SMDenseVector.\n");
           return false;
         }
       }
@@ -306,13 +322,14 @@ class SMDenseVector
       assert(mutex != 0);
     } catch(std::bad_alloc&) {
       std::cerr<<"Problems allocating shared memory in SMDenseVector: initializeChildren() ." <<std::endl;
+      APP_ABORT("Problems allocating shared memory in SMDenseVector: initializeChildren() .\n");
       return false;
     }
     return true;
   }
 
   // resize is probably the best way to setup the vector 
-  inline void resize(int nnz, bool allow_reduce=false) 
+  inline void resize(unsigned long nnz, bool allow_reduce=false) 
   {
     if(vals==NULL) {
       allocate(nnz,allow_reduce);
@@ -325,6 +342,7 @@ class SMDenseVector
       }
       allocate(nnz,allow_reduce);
       if(head) {
+        assert(nnz < vals->max_size());
         vals->resize(nnz);
         std::copy(tmp.begin(),tmp.begin()+sz,vals->begin());
       }
@@ -336,20 +354,25 @@ class SMDenseVector
       } 
       allocate(nnz,allow_reduce);
       if(head) {
+        assert(nnz < vals->max_size());
         vals->resize(nnz);
         std::copy(tmp.begin(),tmp.begin()+nnz,vals->begin());
       }
     }
-    if(head) vals->resize(nnz);
+    if(head) {
+      assert(nnz < vals->max_size());
+      vals->resize(nnz);
+    }
     barrier();
   }
 
   // does not allow grow/shrink
-  inline void resize_serial(int nnz)
+  inline void resize_serial(unsigned long nnz)
   {
     if(!head) return;
     if(vals==NULL || (vals!=NULL && vals->capacity() < nnz) ) 
       APP_ABORT("Error: Calling SMDenseVector::resize_serial(n) without enough capacity. \n");
+    assert(nnz < vals->max_size());
     vals->resize(nnz);
   }
 
@@ -424,12 +447,28 @@ class SMDenseVector
   inline void push_back(const T& v, bool needs_locks=false)             
   {
     assert(vals != NULL);
-    assert(vals->capacity() >= vals->size()+1 );
     if(needs_locks) {
       boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*mutex);
+      assert(vals->capacity() >= vals->size()+1 );
       vals->push_back(v);
     } else {
+      assert(vals->capacity() >= vals->size()+1 );
       vals->push_back(v);
+    }
+  }
+
+  inline void push_back(const std::vector<T>& v, bool needs_locks=false)
+  {
+    assert(vals != NULL);
+    if(needs_locks) {
+      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*mutex);
+      assert(vals->capacity() >= vals->size()+v.size() );
+      for(auto&& i: v) 
+        vals->push_back(i);
+    } else {
+      assert(vals->capacity() >= vals->size()+v.size() );
+      for(auto&& i: v) 
+        vals->push_back(i);
     }
   }
 

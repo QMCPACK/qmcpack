@@ -457,6 +457,26 @@ Communicate::reduce(std::vector<double>& g)
 
 template<>
 inline void
+Communicate::reduce(std::vector<int>& g)
+{
+  std::vector<int> gt(g.size(), 0.0);
+  MPI_Reduce(&(g[0]),&(gt[0]),g.size(),MPI_INT,MPI_SUM,0,myMPI);
+  if(!d_mycontext)
+    g = gt;
+}
+
+template<>
+inline void
+Communicate::reduce(std::vector<long>& g)
+{
+  std::vector<long> gt(g.size(), 0.0);
+  MPI_Reduce(&(g[0]),&(gt[0]),g.size(),MPI_LONG,MPI_SUM,0,myMPI);
+  if(!d_mycontext)
+    g = gt;
+}
+
+template<>
+inline void
 Communicate::reduce(int* restrict g, int* restrict res, int n)
 {
   MPI_Reduce(g, res, n, MPI_INT, MPI_SUM, 0, myMPI);
@@ -1073,8 +1093,17 @@ template<>
 inline void
 Communicate::gsum(std::vector<int>& g, mpi_comm_type comm)
 {
-  std::vector<int> gt(g.size(), 0.0);
+  std::vector<int> gt(g.size(), 0);
   MPI_Allreduce(&(g[0]),&(gt[0]),g.size(),MPI_INT,MPI_SUM,comm);
+  g = gt;
+}
+
+template<>
+inline void
+Communicate::gsum(std::vector<long>& g, mpi_comm_type comm)
+{
+  std::vector<long> gt(g.size(), long(0));
+  MPI_Allreduce(&(g[0]),&(gt[0]),g.size(),MPI_LONG,MPI_SUM,comm);
   g = gt;
 }
 
@@ -1082,7 +1111,7 @@ template<>
 inline void
 Communicate::gmax(std::vector<int>& g, mpi_comm_type comm)
 {
-  std::vector<int> gt(g.size(), 0.0);
+  std::vector<int> gt(g.size(), 0);
   MPI_Allreduce(&(g[0]),&(gt[0]),g.size(),MPI_INT,MPI_MAX,comm);
   g = gt;
 }

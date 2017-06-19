@@ -44,11 +44,11 @@ class SparseGeneralHamiltonian: public HamiltonianBase
 
   // if ValueType=RealType and sparse=false, Dvn becomes the complex component of the propagator 
   // eventually this will also be true for the sparse format
-  void calculateHSPotentials(const RealType cut, const RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool paral); 
+  void calculateHSPotentials(const RealType cut, const RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, afqmc::TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool paral); 
 
-  void calculateHSPotentials_Diagonalization(const RealType cut, const RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool paral);
+  void calculateHSPotentials_Diagonalization(const RealType cut, const RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, afqmc::TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool paral);
 
-  void calculateHSPotentials_FactorizedHam(const RealType cut, const RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool paral);
+  void calculateHSPotentials_FactorizedHam(const RealType cut, const RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, afqmc::TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool paral);
 
   void calculateOneBodyPropagator(const RealType cut, const RealType dt, ComplexMatrix& Hadd, std::vector<s2D<ComplexType> >& Pkin); 
   

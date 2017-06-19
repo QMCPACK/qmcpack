@@ -1,6 +1,7 @@
 #ifndef QMCPLUSPLUS_AFQMC_ESTIMATORHANDLER_H
 #define QMCPLUSPLUS_AFQMC_ESTIMATORHANDLER_H
 
+#include <Platforms/sysutil.h>
 #include<Message/MPIObjectBase.h>
 #include"AFQMC/config.h"
 #include"AFQMC/Estimators/EstimatorBase.h"
@@ -42,7 +43,7 @@ class EstimatorHandler: public MPIObjectBase, public AFQMCInfo
     out<<block <<" " <<time <<" ";
     for(std::vector<EstimatorBase*>::iterator it=estimators.begin(); it!=estimators.end(); it++)
       (*it)->print(out,wlks);
-    out<<std::setprecision(12) <<Es;
+    out<<std::setprecision(12) <<Es <<"  " <<freemem();
     out<<std::endl;
     if( (block+1)%10==0 ) out.flush();
   }
@@ -116,7 +117,7 @@ class EstimatorHandler: public MPIObjectBase, public AFQMCInfo
       out<<"# block  time  ";
       for(std::vector<EstimatorBase*>::iterator it=estimators.begin(); it!=estimators.end(); it++)
         (*it)->tags(out);
-      out<<"Eshift ";
+      out<<"Eshift freeMemory ";
       out<<std::endl;
     }
 

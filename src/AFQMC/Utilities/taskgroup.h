@@ -21,6 +21,9 @@
 namespace qmcplusplus
 {
 
+namespace afqmc
+{
+
 // sets up communicators and task groups
 // Various divisions are setup:
 //   1. head_of_nodes: used for all shared memory setups
@@ -188,7 +191,12 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
   }
 
   // sets up new TG with global information from previously defined TG 
-  bool quick_setup(int ncore, int nnode, int node_number, int core_number, int tot_nodes, int tot_cores , bool print=true ) {
+  bool quick_setup(int ncore, int nnode, int node_number_, int core_number_, int tot_nodes_, int tot_cores_ , bool print=true ) {
+
+  tot_nodes = tot_nodes_;
+  tot_cores = tot_cores_;
+  node_number = node_number_;
+  core_number = core_number_;
 
 //    if(!initialized) {
 //      app_error()<<" Error: Call to TaskGroup::quick_setup in uninitialized state. \n";
@@ -279,7 +287,7 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
     max_index=max;
   }
 
-  void get_min_max(int& min, int& max) {
+  void get_min_max(int& min, int& max) const {
     min=min_index;
     max=max_index;
   }
@@ -295,15 +303,19 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
     MPI_Barrier(MPI_COMM_TG_LOCAL);
   }
 
-  MPI_Comm getTGCOMM() { return MPI_COMM_TG; }
+  MPI_Comm getTGCOMM() const { return MPI_COMM_TG; }
 
-  MPI_Comm getTGCommLocal() { return MPI_COMM_TG_LOCAL; }
+  MPI_Comm getTGCommLocal() const { return MPI_COMM_TG_LOCAL; }
 
   void setTGCommLocal(MPI_Comm cm) { MPI_COMM_TG_LOCAL = cm; }
 
-  MPI_Comm getNodeCommLocal() { return MPI_COMM_NODE_LOCAL; }
+  MPI_Comm getNodeCommLocal() const { return MPI_COMM_NODE_LOCAL; }
 
   void setNodeCommLocal(MPI_Comm cm) { MPI_COMM_NODE_LOCAL = cm; }
+
+  MPI_Comm getHeadOfNodesComm() const { return MPI_COMM_HEAD_OF_NODES;}
+
+  void setHeadOfNodesComm(MPI_Comm cm) {MPI_COMM_HEAD_OF_NODES = cm;}
 
   void allgather_TG(std::vector<int>& l, std::vector<int>& g) {
     myComm->allgather(l,g,l.size(),MPI_COMM_TG);
@@ -357,26 +369,34 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
     commBuff->share(&nblock,1,core_root);
   } 
 
-  int getCoreRank() { return core_rank; }
+  int getTotalNodes() const { return tot_nodes; }
 
-  int getLocalNodeNumber() { return node_in_TG; }
+  int getTotalCores() const { return tot_cores; }
 
-  int getTGNumber() { return TG_number; }
+  int getNodeID() const { return node_number; }
 
-  int getTGRank() { return TG_rank; }
+  int getCoreID() const { return core_number; }
 
-  int getTGSize() { return TG_nproc; }
+  int getCoreRank() const { return core_rank; }
 
-  int getNCoresPerTG() { return ncores_per_TG; }
+  int getLocalNodeNumber() const { return node_in_TG; }
 
-  int getNNodesPerTG() { return nnodes_per_TG; }
+  int getTGNumber() const { return TG_number; }
+
+  int getTGRank() const { return TG_rank; }
+
+  int getTGSize() const { return TG_nproc; }
+
+  int getNCoresPerTG() const { return ncores_per_TG; }
+
+  int getNNodesPerTG() const { return nnodes_per_TG; }
  
-  void getRanksOfRoots(std::vector<int>& ranks, int& pos ) { 
+  void getRanksOfRoots(std::vector<int>& ranks, int& pos ) const { 
     ranks=ranks_of_core_roots; 
     pos=position_in_ranks_of_core_roots; 
   }
 
-  void getSetupInfo(std::vector<int>& data)
+  void getSetupInfo(std::vector<int>& data) const
   {  
     data.resize(5);
     data[0]=node_number;
@@ -410,6 +430,7 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
   MPI_Comm MPI_COMM_TG;   // Communicator over all cores in a given TG 
   MPI_Comm MPI_COMM_TG_LOCAL;   // Communicator over all cores in a given TG that reside in the given node 
   MPI_Comm MPI_COMM_NODE_LOCAL; // Communicator over all cores of a node. Must be created externally. Same above
+  MPI_Comm MPI_COMM_HEAD_OF_NODES;  // deceiving name for historical reasons, this is a split of COMM_WORLD over core_number. 
   std::vector<SPComplexType> local_buffer;
 
   int ncores_per_TG;  // total number of cores in all nodes must be a multiple 
@@ -433,6 +454,8 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
   }
 
 };
+
+}
  
 }
 

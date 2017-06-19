@@ -30,7 +30,7 @@ class phaseless_ImpSamp_ForceBias: public PropagatorBase
 
   public:
        
-  phaseless_ImpSamp_ForceBias(Communicate *c,  RandomGenerator_t* r) : PropagatorBase(c,r), substractMF(true),use_eig(false),first(true),max_weight(100),apply_constrain(true),save_memory(false),vbias_bound(3.0),imp_sampl(true),hybrid_method(false),test_library(false),eloc_from_Spvn(false),sizeOfG(0),walkerBlock(0),test_cnter(0),cutoff(1e-6),fix_bias(0)
+  phaseless_ImpSamp_ForceBias(Communicate *c,  RandomGenerator_t* r) : PropagatorBase(c,r), substractMF(true),use_eig(false),first(true),max_weight(100),apply_constrain(true),save_memory(false),vbias_bound(3.0),imp_sampl(true),hybrid_method(false),test_library(false),eloc_from_Spvn(false),sizeOfG(0),walkerBlock(0),test_cnter(0),cutoff(1e-6),fix_bias(0),n_reading_cores(-1),intgs_per_block(2000000)
   {
   } 
 
@@ -38,13 +38,17 @@ class phaseless_ImpSamp_ForceBias: public PropagatorBase
 
   void Propagate(int steps, int& steps_total, WalkerHandlerBase*, RealType& E1);
 
-  bool setup(std::vector<int>&,SPComplexSMVector*,HamiltonianBase*,WavefunctionHandler*,RealType, hdf_archive&, const std::string&,MPI_Comm,MPI_Comm);
+  bool setup(std::vector<int>&,SPComplexSMVector*,HamiltonianBase*,WavefunctionHandler*,RealType, hdf_archive&, const std::string&,MPI_Comm,MPI_Comm,MPI_Comm);
 
   bool parse(xmlNodePtr);   
 
   bool hdf_write(hdf_archive&, const std::string&);
 
   bool hdf_read(hdf_archive&, const std::string&);
+
+  bool hdf_write_transposed(hdf_archive&, const std::string&);
+
+  bool hdf_read_transposed(hdf_archive&, const std::string&);
 
   void benchmark(std::string&,int,int,int,WalkerHandlerBase*);
 
@@ -78,6 +82,10 @@ class phaseless_ImpSamp_ForceBias: public PropagatorBase
 
   RealType cutoff;
 
+  int n_reading_cores;
+
+  int intgs_per_block;
+
   // one-body operator that defines H1
   // stored in sparse form
   std::vector<s2D<ValueType> > H1;  
@@ -104,7 +112,7 @@ class phaseless_ImpSamp_ForceBias: public PropagatorBase
   //Vector< Vector<s2D<ValueType> >::iterator > vn_bounds;
 
   int GlobalSpvnSize; 
-  std:: vector<int> nCholVec_per_node;
+  std::vector<int> nCholVec_per_node;
 
   ComplexMatrix vn0;
   SPValueSMSpMat Spvn; 

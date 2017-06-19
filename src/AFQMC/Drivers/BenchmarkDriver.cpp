@@ -89,6 +89,10 @@ bool BenchmarkDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   key = TG.getCoreRank();  
   myComm->split_comm(key,MPI_COMM_TG_LOCAL_HEADS);
 
+  key = TG.getCoreID();
+  myComm->split_comm(key,MPI_COMM_HEAD_OF_NODES);
+  TG.setHeadOfNodesComm(MPI_COMM_HEAD_OF_NODES);
+
   CommBuffer.setup(TG.getCoreRank()==0,std::string("COMMBuffer_")+std::to_string(TG.getTGNumber()),MPI_COMM_TG_LOCAL);
   TG.setBuffer(&CommBuffer);
 
@@ -98,7 +102,7 @@ bool BenchmarkDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
            <<std::endl;
 
   // hamiltonian
-  if(!ham0->init(TGdata,&CommBuffer,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL)) {
+  if(!ham0->init(TGdata,&CommBuffer,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,MPI_COMM_HEAD_OF_NODES)) {
     app_error()<<"Error initializing Hamiltonian in BenchmarkDriver::setup" <<std::endl; 
     return false; 
   }   
@@ -109,7 +113,7 @@ bool BenchmarkDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
            <<std::endl;
 
   hdf_archive read(myComm);
-  if(!wfn0->init(TGdata,&CommBuffer,read,std::string(""),MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL)) {
+  if(!wfn0->init(TGdata,&CommBuffer,read,std::string(""),MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,MPI_COMM_HEAD_OF_NODES)) {
     app_error()<<"Error initializing Wavefunction in BenchmarkDriver::setup" <<std::endl; 
     return false; 
   }   
@@ -124,7 +128,7 @@ bool BenchmarkDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
            <<std::endl;
 
   // propagator
-  if(!prop0->setup(TGdata,&CommBuffer,ham0,wfn0,dt,read,std::string(""),MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL)) { 
+  if(!prop0->setup(TGdata,&CommBuffer,ham0,wfn0,dt,read,std::string(""),MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,MPI_COMM_HEAD_OF_NODES)) { 
     app_error()<<"Error in PropagatorBase::setup in BenchmarkDriver::setup" <<std::endl; 
     return false; 
   }   

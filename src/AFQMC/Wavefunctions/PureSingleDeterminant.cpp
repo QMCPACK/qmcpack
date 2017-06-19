@@ -571,12 +571,21 @@ bool PureSingleDeterminant::getHamiltonian(HamPtr h)
   app_log()<<std::endl <<"*********************************************************************: \n"
            <<"  PureSingleDeterminant: \n"
            <<"     Number of terms and memory usage of hij:    " <<(rotated_hamiltonian?haj.size():hij.size()) <<"  " <<(rotated_hamiltonian?haj.size():hij.size())*sizeof(s1D<ValueType>)/1.0e6 <<"  MB. " <<std::endl
-           <<"     Number of terms and memory usage of Vijkl:  " <<(rotated_hamiltonian?SMSpHabkl.size():SMSpHijkl.size()) <<"  " <<(rotated_hamiltonian?SMSpHabkl.size()*sizeof(s2D<SPComplexType>):SMSpHijkl.size()*sizeof(s2D<SPValueType>))/1.0e6 <<"  MB. " <<std::endl; 
+           <<"     Number of terms and memory usage of Vijkl:  " <<(rotated_hamiltonian?SMSpHabkl.size():SMSpHijkl.size()) <<"  " <<(rotated_hamiltonian?SMSpHabkl.size()*sizeof(s2D<SPComplexType>):SMSpHijkl.size()*sizeof(s2D<SPValueType>))/1.0e6 <<"  MB. " <<std::endl;
 
     ComplexType e1,e2,o1,o2;
     HF.resize(2*NMO,NAEA);
-    for(int i=0; i<NAEA; i++) HF(occup_alpha[i],i)=ComplexType(1.0,0.0);
-    for(int i=0; i<NAEB; i++) HF(occup_beta[i],i)=ComplexType(1.0,0.0);
+    HF = ComplexType(0.0,0.0);
+    if(rotated_hamiltonian) {
+        std::copy(OrbMat.data(),OrbMat.data()+NAEA*NMO,HF.data());
+        if(wfn_type==0)
+            std::copy(OrbMat.data(),OrbMat.data()+NAEA*NMO,HF.data()+NAEA*NMO);
+        else
+            std::copy(OrbMat.data()+NAEA*NMO,OrbMat.data()+2*NAEA*NMO,HF.data()+NAEA*NMO);
+    } else {
+        for(int i=0; i<NAEA; i++) HF(occup_alpha[i],i)=ComplexType(1.0,0.0);
+        for(int i=0; i<NAEB; i++) HF(occup_beta[i],i)=ComplexType(1.0,0.0);
+    }
     evaluateLocalEnergy(HF.data(),e1,e2,o1,o2);
 
   app_log()<<"  Ehf:      " <<std::setprecision(12) <<e1+e2  <<"  \n" //<<ea+eb <<std::endl
@@ -1552,95 +1561,182 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
     SpvnT.setup(head_of_nodes,"SpvnT",TG.getNodeCommLocal());
     SpvnT.setDims(Spvn.cols(),ncol*NMO);
 
-    app_log()<<" Temporarily transposing Cholesky matrix. \n";
-    Spvn.transpose(TG.getNodeCommLocal());
-
     int npr,rnk;
     MPI_Comm_rank(TG.getNodeCommLocal(),&rnk);
     MPI_Comm_size(TG.getNodeCommLocal(),&npr);
 
+    ComplexMatrix CVn, CVnrot;
 
-    ComplexMatrix CVn(NMO,NMO);
-    if(!rotated_hamiltonian) {
-      OrbMat.resize(2*NMO,NAEA);
-      std::fill(OrbMat.begin(), OrbMat.end(), zero); 
-      for(int i=0; i<NAEA; i++)
-        OrbMat(occup_alpha[i],i) = one;
-      if(!closed_shell)
-        for(int i=0; i<NAEB; i++)
-          OrbMat(occup_beta[i],i) = one; 
-    }
-
-    ComplexMatrix CVnrot(ncol,NMO);
     int sz=0;
+    SPValueSMSpMat::indxPtr row = Spvn.row_data();   
     SPValueSMSpMat::indxPtr row_index = Spvn.row_index();   
     SPValueSMSpMat::indxPtr col = Spvn.column_data();   
     SPValueSMSpMat::pointer val = Spvn.values();   
-    for(int i=0, iend=Spvn.rows(); i<iend; i++, row_index++) {
 
-      int nterms = *(row_index+1) - (*row_index);
-      if(nterms==0) continue;
+    if(rotated_hamiltonian) {
 
-      if(i%npr != rnk) {
-        col+=nterms;
-        val+=nterms;
-        continue;
-      }
+      CVn.resize(NMO,NMO);
+      CVnrot.resize(ncol,NMO);
 
-      std::fill(CVn.begin(), CVn.end(), zero);
-      // extract Cholesky vector i
-      for(int nt=0; nt<nterms; nt++, col++, val++) 
-        CVn(*col) = static_cast<ComplexType>(*val);
+      app_log()<<" Temporarily transposing Cholesky matrix. \n";
+      Spvn.transpose(TG.getNodeCommLocal());
 
-      // rotate the matrix: CVnrot = OrbMat^H * CVn
-      DenseMatrixOperators::product_AhB(NAEA,CVn.cols(),CVn.rows(), one, OrbMat.data(), OrbMat.cols(), CVn.data(), CVn.cols(), zero, CVnrot.data(), CVnrot.cols() );
-      if(!closed_shell) 
-        DenseMatrixOperators::product_AhB(NAEB,CVn.cols(),CVn.rows(), one, OrbMat.data()+NAEA*NMO, OrbMat.cols(), CVn.data(), CVn.cols(), zero, CVnrot.data()+NAEA+NMO, CVnrot.cols() );
+      col = Spvn.column_data();
+      val = Spvn.values();
+      row_index = Spvn.row_index();
+      for(int i=0, iend=Spvn.rows(); i<iend; i++, row_index++) {
+
+        int nterms = *(row_index+1) - (*row_index);
+        if(nterms==0) continue;
+
+        if(i%npr != rnk) {
+          col+=nterms;
+          val+=nterms;
+          continue;
+        }
+ 
+        std::fill(CVn.begin(), CVn.end(), zero);
+        // extract Cholesky vector i
+        for(int nt=0; nt<nterms; nt++, col++, val++) 
+          CVn(*col) = static_cast<ComplexType>(*val);
+
+        // rotate the matrix: CVnrot = OrbMat^H * CVn
+        DenseMatrixOperators::product_AhB(NAEA,CVn.cols(),CVn.rows(), one, OrbMat.data(), OrbMat.cols(), CVn.data(), CVn.cols(), zero, CVnrot.data(), CVnrot.cols() );
+        if(!closed_shell) 
+          DenseMatrixOperators::product_AhB(NAEB,CVn.cols(),CVn.rows(), one, OrbMat.data()+NAEA*NMO, OrbMat.cols(), CVn.data(), CVn.cols(), zero, CVnrot.data()+NAEA*NMO, CVnrot.cols() );
  
       // insert it in DvnT
        for(int ik=0, ikend=ncol*NMO; ik<ikend; ik++)
         if(std::abs(CVnrot(ik)) > 1e-6)  // fixed cutoff for now
           sz++;
+      }
+    
+    } else {
+
+      int nterms = Spvn.size();
+      int ntpc = nterms/npr, nex = nterms%npr;
+      int p0 = rnk*ntpc + std::min(rnk,nex);
+      int p1 = p0 + ntpc + ((rnk<nex)?1:0);
+       
+      col = Spvn.column_data()+p0;
+      val = Spvn.values()+p0;
+      row = Spvn.row_data()+p0;
+      SPValueSMSpMat::pointer vend = Spvn.values()+p1;
+      for(; val!= vend; val++, col++, row++) {
+        IndexType i = (*row)/NMO;
+        IndexType k = (*row)%NMO;
+        if(isOcc_alpha[i])
+          sz++;
+        if(!closed_shell && isOcc_beta[i+NMO])
+          sz++;
+      }
+
     }
 
     int sz_=sz;
     MPI_Allreduce(&sz_,&sz,1,MPI_INT,MPI_SUM,TG.getNodeCommLocal());
     SpvnT.allocate(sz);    
 
-    col = Spvn.column_data();   
-    val = Spvn.values();   
-    row_index = Spvn.row_index();   
-    for(int i=0, iend=Spvn.rows(); i<iend; i++, row_index++) {
+    using itype = SPComplexSMSpMat::indxType;
+    using vtype = SPComplexSMSpMat::value_type;
 
-      int nterms = *(row_index+1) - (*row_index);
-      if(nterms==0) continue;
+    int nmax = 10000;
+    std::vector< std::tuple<itype,itype,vtype> > ints;
+    ints.reserve(nmax); 
 
-      if(i%npr != rnk) {
-        col+=nterms;
-        val+=nterms;
-        continue;
+    if(rotated_hamiltonian) {
+
+      col = Spvn.column_data();   
+      val = Spvn.values();   
+      row_index = Spvn.row_index();   
+      for(int i=0, iend=Spvn.rows(); i<iend; i++, row_index++) {
+
+        int nterms = *(row_index+1) - (*row_index);
+        if(nterms==0) continue;
+
+        if(i%npr != rnk) {
+          col+=nterms;
+          val+=nterms;
+          continue;
+        }
+
+        std::fill(CVn.begin(), CVn.end(), zero);
+        // extract Cholesky vector i
+        for(int nt=0; nt<nterms; nt++, col++, val++) 
+          CVn(*col) = static_cast<ComplexType>(*val);
+
+        // rotate the matrix: CVnrot = OrbMat^H * CVn
+        DenseMatrixOperators::product_AhB(NAEA,CVn.cols(),CVn.rows(), one, OrbMat.data(), OrbMat.cols(), CVn.data(), CVn.cols(), zero, CVnrot.data(), CVnrot.cols() );
+        if(!closed_shell) 
+          DenseMatrixOperators::product_AhB(NAEB,CVn.cols(),CVn.rows(), one, OrbMat.data()+NAEA*NMO, OrbMat.cols(), CVn.data(), CVn.cols(), zero, CVnrot.data()+NAEA*NMO, CVnrot.cols() );
+   
+        // insert it in DvnT
+        for(int ik=0, ikend=ncol*NMO; ik<ikend; ik++)
+          if(std::abs(CVnrot(ik)) > 1e-6)  {// fixed cutoff for now
+            ints.push_back(std::make_tuple(i,ik,static_cast<SPComplexType>(CVnrot(ik))));
+            if(ints.size() == nmax) {
+              SpvnT.add(ints,true);
+              ints.clear();
+            }
+          }
+      }
+      if(ints.size() > 0) {
+        SpvnT.add(ints,true);
+        ints.clear();
       }
 
-      std::fill(CVn.begin(), CVn.end(), zero);
-      // extract Cholesky vector i
-      for(int nt=0; nt<nterms; nt++, col++, val++) 
-        CVn(*col) = static_cast<ComplexType>(*val);
+    } else {
 
-      // rotate the matrix: CVnrot = OrbMat^H * CVn
-      DenseMatrixOperators::product_AhB(NAEA,CVn.cols(),CVn.rows(), one, OrbMat.data(), OrbMat.cols(), CVn.data(), CVn.cols(), zero, CVnrot.data(), CVnrot.cols() );
-      if(!closed_shell) 
-        DenseMatrixOperators::product_AhB(NAEB,CVn.cols(),CVn.rows(), one, OrbMat.data()+NAEA*NMO, OrbMat.cols(), CVn.data(), CVn.cols(), zero, CVnrot.data()+NAEA+NMO, CVnrot.cols() );
-   
-      // insert it in DvnT
-      for(int ik=0, ikend=ncol*NMO; ik<ikend; ik++)
-        if(std::abs(CVnrot(ik)) > 1e-6)  // fixed cutoff for now
-          SpvnT.add(i,ik,static_cast<SPComplexType>(CVnrot(ik)),true);  
+      int nterms = Spvn.size();
+      int ntpc = nterms/npr, nex = nterms%npr;
+      int p0 = rnk*ntpc + std::min(rnk,nex);
+      int p1 = p0 + ntpc + ((rnk<nex)?1:0);
+
+      std::vector<SPComplexSMSpMat::indxType> mymap(2*NMO,-1);
+      for(int i=0; i<NAEA; i++)
+        mymap[occup_alpha[i]] = i;  
+      for(int i=0; i<NAEB; i++)
+        mymap[occup_beta[i]] = NAEA+i;  
+
+      col = Spvn.column_data()+p0;
+      val = Spvn.values()+p0;
+      row = Spvn.row_data()+p0;
+      SPValueSMSpMat::pointer vend = Spvn.values()+p1;
+      for(; val!= vend; val++, col++, row++) {
+        itype i = (*row)/NMO;
+        itype k = (*row)%NMO;
+        if(isOcc_alpha[i]) {
+          assert(mymap[i] >= 0);
+          itype ik = mymap[i]*NMO+k;
+          ints.push_back(std::make_tuple(*col,ik,static_cast<SPComplexType>(*val)));
+          if(ints.size() == nmax) {
+            SpvnT.add(ints,true);
+            ints.clear();
+          }
+        }
+        if(!closed_shell && isOcc_beta[i+NMO]) {
+          assert(mymap[i+NMO] >= 0);
+          itype ik = mymap[i+NMO]*NMO+k;
+          ints.push_back(std::make_tuple(*col,ik,static_cast<SPComplexType>(*val)));
+          if(ints.size() == nmax) {
+            SpvnT.add(ints,true);
+            ints.clear();
+          }
+        }
+      }
+      if(ints.size() > 0) {
+        SpvnT.add(ints,true);
+        ints.clear();
+      }
+
     }
 
     app_log()<<" Compressing transposed Cholesky matrix. \n";
     SpvnT.compress(TG.getNodeCommLocal());
-    app_log()<<" Transposing Cholesky matrix back to original form. \n";
-    Spvn.transpose(TG.getNodeCommLocal());
+    if(rotated_hamiltonian) {
+      app_log()<<" Transposing Cholesky matrix back to original form. \n";
+      Spvn.transpose(TG.getNodeCommLocal());
+    }
   }
 
   void PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMSpMat& vn, SPComplexSMSpMat& vnT, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n)

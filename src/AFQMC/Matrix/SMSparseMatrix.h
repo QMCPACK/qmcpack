@@ -98,27 +98,30 @@ class SMSparseMatrix
     MPI_Barrier(comm);
   }
 
-  inline void reserve(int n, bool allow_reduce = false)
+  inline void reserve(unsigned long n, bool allow_reduce = false)
   {
     if(vals==NULL || (vals!=NULL && vals->capacity() < n) || (vals!=NULL && vals->capacity() > n && allow_reduce)) 
       allocate(n,allow_reduce);
     if(head) {
+      assert(n < vals->max_size());
+      assert(n < colms->max_size());
+      assert((nr+1) < rowIndex->max_size());
       vals->reserve(n);
       myrows->reserve(n);
       colms->reserve(n); 
-      rowIndex->reserve(std::max(nr,nc)+1);
+      rowIndex->resize(std::max(nr,nc)+1);
       share_buff->resize(1000*sizeof(std::complex<double>));
     }
     barrier();
   }
 
   // does not allow grow/shrink
-  inline bool allocate_serial(long n)
+  inline bool allocate_serial(unsigned long n)
   {
     if(!head) { SMallocated=true; return true; }
     if(vals!=NULL && vals->capacity() >= n) { SMallocated=true; return true; }
 
-    memory = sizeof(boost::interprocess::interprocess_mutex)+n*sizeof(T)+(2*n+std::max(nr,nc)+1)*sizeof(int)+1000*sizeof(std::complex<double>)+8000;
+    memory = sizeof(boost::interprocess::interprocess_mutex)+n*sizeof(T)+(2*n+std::max(nr,nc)+1)*sizeof(int)+1000*sizeof(std::complex<double>)+100000;
 
     try {
       segment = new boost::interprocess::managed_shared_memory(boost::interprocess::create_only, ID.c_str(), memory); 
@@ -133,6 +136,7 @@ class SMSparseMatrix
         segment = new boost::interprocess::managed_shared_memory(boost::interprocess::create_only, ID.c_str(), memory); 
       } catch(boost::interprocess::interprocess_exception &ex) {
         std::cerr<<"Problems setting up managed_shared_memory in SMSparseMatrix." <<std::endl;
+        APP_ABORT(" Error: Problems setting up managed_shared_memory in SMSparseMatrix. \n");
         return false;
       }
     }
@@ -147,21 +151,27 @@ class SMSparseMatrix
           
       share_buff = segment->construct<SMVector<unsigned char>>("share_buff")(*alloc_uchar);
       share_buff->resize(1000*sizeof(std::complex<double>));
+
           
       rowIndex = segment->construct<SMVector<int>>("rowIndex")(*alloc_int);
-      rowIndex->reserve(std::max(nr,nc)+1);
+      assert((nr+1) < rowIndex->max_size());
+      rowIndex->resize(std::max(nr,nc)+1);
           
       myrows = segment->construct<SMVector<int>>("myrows")(*alloc_int);
+      assert(n < myrows->max_size());
       myrows->reserve(n);
           
       colms = segment->construct<SMVector<int>>("colms")(*alloc_int);
+      assert(n < colms->max_size());
       colms->reserve(n);
           
       vals = segment->construct<SMVector<T>>("vals")(*alloc_T);
+      assert(n < vals->max_size());
       vals->reserve(n);
-        
+
     } catch(std::bad_alloc&) {
       std::cerr<<"Problems allocating shared memory in SMSparseMatrix." <<std::endl;
+      APP_ABORT(" Error: Problems setting up managed_shared_memory in SMSparseMatrix. \n");
       return false;
     }
     SMallocated=true;
@@ -169,7 +179,7 @@ class SMSparseMatrix
   }
 
   // all processes must call this routine
-  inline bool allocate(long n, bool allow_reduce=false)
+  inline bool allocate(unsigned long n, bool allow_reduce=false)
   {
     bool grow = false;
     uint64_t old_sz = (segment==NULL)?0:(segment->get_size());
@@ -183,7 +193,7 @@ class SMSparseMatrix
     }
     barrier();    
     if(head) { 
-      memory = sizeof(boost::interprocess::interprocess_mutex)+n*sizeof(T)+(2*n+std::max(nr,nc)+1)*sizeof(int)+1000*sizeof(std::complex<double>)+8000;
+      memory = sizeof(boost::interprocess::interprocess_mutex)+n*sizeof(T)+(2*n+std::max(nr,nc)+1)*sizeof(int)+1000*sizeof(std::complex<double>)+100000;
 
       if(grow) {
         if(memory > old_sz) {
@@ -192,6 +202,7 @@ class SMSparseMatrix
           segment=NULL;
           if(!boost::interprocess::managed_shared_memory::grow(ID.c_str(), extra)) {
             std::cerr<<" Error growing shared memory in  SMSparseMatrix::allocate(). \n";
+            APP_ABORT(" Error: growing shared memory in  SMSparseMatrix::allocate(). \n"); 
             return false;
           }
         } else {
@@ -199,15 +210,19 @@ class SMSparseMatrix
           segment->destroy<SMVector<int>>("myrows");
           segment->destroy<SMVector<int>>("colms");
           myrows = segment->construct<SMVector<int>>("myrows")(*alloc_T);
+          assert(n < myrows->max_size());
           myrows->reserve(n);
           colms = segment->construct<SMVector<int>>("colms")(*alloc_T);
+          assert(n < colms->max_size());
           colms->reserve(n);
           vals = segment->construct<SMVector<T>>("vals")(*alloc_T);
+          assert(n < vals->max_size());
           vals->reserve(n);
           delete segment;
           segment=NULL;
           if(!boost::interprocess::managed_shared_memory::shrink_to_fit(ID.c_str())) {
             std::cerr<<" Error in shrink_to_fit shared memory in SMSparseMatrix::allocate(). \n";
+            APP_ABORT(" Error: in shrink_to_fit shared memory in SMSparseMatrix::allocate(). \n"); 
             return false;
           }
         }
@@ -227,12 +242,17 @@ class SMSparseMatrix
           assert(colms != 0);
           assert(rowIndex != 0);
           share_buff->resize(1000*sizeof(std::complex<double>)); 
-          rowIndex->reserve(std::max(nr,nc)+1);
+          assert((std::max(nr,nc)+1) < rowIndex->max_size());
+          rowIndex->resize(std::max(nr,nc)+1);
+          assert(n < myrows->max_size());
           myrows->reserve(n);
+          assert(n < colms->max_size());
           colms->reserve(n);
+          assert(n < vals->max_size());
           vals->reserve(n);  
         } catch(std::bad_alloc&) {
           std::cerr<<"Problems opening shared memory in SMDenseVector::allocate() ." <<std::endl;
+          APP_ABORT(" Error: opening shared memory in SMDenseVector::allocate() ."); 
           return false;
         }
 
@@ -251,6 +271,7 @@ class SMSparseMatrix
             segment = new boost::interprocess::managed_shared_memory(boost::interprocess::create_only, ID.c_str(), memory);
           } catch(boost::interprocess::interprocess_exception &ex) {
             std::cerr<<"Problems setting up managed_shared_memory in SMSparseMatrix." <<std::endl;
+            APP_ABORT(" Error: Problems setting up managed_shared_memory in SMSparseMatrix.");
             return false;
           }
         }
@@ -267,19 +288,24 @@ class SMSparseMatrix
           share_buff->resize(1000*sizeof(std::complex<double>));
 
           rowIndex = segment->construct<SMVector<int>>("rowIndex")(*alloc_int);
-          rowIndex->reserve(std::max(nr,nc)+1);
+          assert((std::max(nr,nc)+1) < rowIndex->max_size());
+          rowIndex->resize(std::max(nr,nc)+1);
 
           myrows = segment->construct<SMVector<int>>("myrows")(*alloc_int);
+          assert(n < myrows->max_size());
           myrows->reserve(n);
 
           colms = segment->construct<SMVector<int>>("colms")(*alloc_int);
+          assert(n < colms->max_size());
           colms->reserve(n);
 
           vals = segment->construct<SMVector<T>>("vals")(*alloc_T);
+          assert(n < vals->max_size());
           vals->reserve(n);
 
-        } catch(std::bad_alloc&) {
+        } catch(std::bad_alloc& ex) {
           std::cerr<<"Problems allocating shared memory in SMSparseMatrix." <<std::endl;
+          APP_ABORT(" Error: Problems allocating shared memory in SMSparseMatrix."); 
           return false;
         }
       }
@@ -316,27 +342,32 @@ class SMSparseMatrix
       assert(rowIndex != 0);
     } catch(std::bad_alloc&) {
       std::cerr<<"Problems allocating shared memory in SMSparseMatrix: initializeChildren() ." <<std::endl;
+      APP_ABORT("Problems allocating shared memory in SMSparseMatrix: initializeChildren() .");
       return false;
     }
     return true;
   }
 
   // does not allow grow/shrink, aborts if resizing beyond capacity
-  inline void resize_serial(int nnz)
+  inline void resize_serial(unsigned long nnz)
   {
     if(!head) return;
     if(vals==NULL || (vals!=NULL && vals->capacity() < nnz))
       APP_ABORT(" Error: Call to SMSparseMatrix::resize_serial without enough capacity. \n");
     if(head) {
+      assert(nnz < vals->max_size());
       vals->resize(nnz);
+      assert(nnz < myrows->max_size());
       myrows->resize(nnz);
+      assert(nnz < colms->max_size());
       colms->resize(nnz);
+      assert((nr+1) < rowIndex->max_size());
       rowIndex->resize(nr+1);
     }
   } 
 
   // this routine does not preserve information when allow_reduce=true  
-  inline void resize(int nnz, bool allow_reduce=false)
+  inline void resize(unsigned long nnz, bool allow_reduce=false)
   {
     if(vals==NULL || (vals!=NULL && vals->capacity() < nnz) ) {
       allocate(nnz,allow_reduce);
@@ -345,6 +376,10 @@ class SMSparseMatrix
       allocate(nnz,allow_reduce);
     }
     if(head) {
+      assert(nnz < vals->max_size());
+      assert(nnz < colms->max_size());
+      assert(nnz < myrows->max_size());
+      assert((nr+1) < rowIndex->max_size());
       vals->resize(nnz);
       myrows->resize(nnz);
       colms->resize(nnz);
@@ -554,19 +589,43 @@ class SMSparseMatrix
     assert(i>=0 && i<nr && j>=0 && j<nc);
 #endif
     compressed=false;
-//    if(needs_locks) {
-      {
-        boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*mutex);
-        myrows->push_back(i);
-        colms->push_back(j);
-        vals->push_back(v);
+    if(needs_locks) {
+      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*mutex);
+      myrows->push_back(i);
+      colms->push_back(j);
+      vals->push_back(v);
+    } else {
+      if(!head) return;
+      myrows->push_back(i);
+      colms->push_back(j);
+      vals->push_back(v);
+    }
+  }
+
+  inline void add(const std::vector<std::tuple<int,int,T>>& v, bool needs_locks=false)
+  {
+    compressed=false;
+    if(needs_locks) {
+      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*mutex);
+      for(auto&& a: v) {
+#ifdef ASSERT_SPARSEMATRIX
+        assert(std::get<0>(a)>=0 && std::get<0>(a)<nr && std::get<1>(a)>=0 && std::get<1>(a)<nc);
+#endif
+        myrows->push_back(std::get<0>(a));
+        colms->push_back(std::get<1>(a));
+        vals->push_back(std::get<2>(a));
       }
-//    } else {
-//      if(!head) return;
-//      myrows->push_back(i);
-//      colms->push_back(j);
-//      vals->push_back(v);
-//    }
+    } else {
+      if(!head) return;
+      for(auto&& a: v) {
+#ifdef ASSERT_SPARSEMATRIX
+        assert(std::get<0>(a)>=0 && std::get<0>(a)<nr && std::get<1>(a)>=0 && std::get<1>(a)<nc);
+#endif
+        myrows->push_back(std::get<0>(a));
+        colms->push_back(std::get<1>(a));
+        vals->push_back(std::get<2>(a));
+      }
+    }
   }
 
   inline bool remove_repeated_and_compress(MPI_Comm local_comm=MPI_COMM_SELF) 

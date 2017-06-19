@@ -241,6 +241,7 @@ void LocalWalkerHandler::setHF(const ComplexMatrix& HF)
 
 bool LocalWalkerHandler::setup(int cr, int nc, int tgn, MPI_Comm heads_comm, MPI_Comm tg_comm, MPI_Comm node_comm, myTimer* timer)
 {
+
   LocalTimer=timer;
   if(cr != 0) {
     app_error()<<" Error: Found core_rank != 0 in LocalWalkerHandler::setup. \n";  

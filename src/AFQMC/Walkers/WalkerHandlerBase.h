@@ -49,7 +49,7 @@ class WalkerHandlerBase: public MPIObjectBase, public AFQMCInfo
   virtual bool parse(xmlNodePtr cur)=0; 
 
   // performs setup
-  virtual bool setup(int a,int b,int c,MPI_Comm, MPI_Comm comm, MPI_Comm,myTimer*)=0;
+  virtual bool setup(int a,int b,int c, MPI_Comm, MPI_Comm, MPI_Comm,myTimer*)=0;
 
   // cleans state of object. 
   //   -erases allocated memory 

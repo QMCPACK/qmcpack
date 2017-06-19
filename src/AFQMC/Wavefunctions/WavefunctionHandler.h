@@ -38,12 +38,7 @@ class WavefunctionHandler: public MPIObjectBase, public AFQMCInfo
       return ImpSampWfn->getHF();
     }
 
-    void setHeadComm(bool hd, MPI_Comm comm) {
-      head_of_nodes=hd;
-      MPI_COMM_HEAD_OF_NODES = comm;
-    }
-
-    bool init(std::vector<int>& TGdata, SPComplexSMVector *v,hdf_archive&,const std::string&, MPI_Comm, MPI_Comm); 
+    bool init(std::vector<int>& TGdata, SPComplexSMVector *v,hdf_archive&,const std::string&, MPI_Comm, MPI_Comm, MPI_Comm); 
 
     bool setup(HamPtr); 
 
@@ -51,7 +46,7 @@ class WavefunctionHandler: public MPIObjectBase, public AFQMCInfo
 
     void evaluateMeanFields() {}
 
-    void setupFactorizedHamiltonian(bool sp, SPValueSMSpMat* spvn_, SPValueSMVector* dvn_, RealType dt_, TaskGroup* tg_)
+    void setupFactorizedHamiltonian(bool sp, SPValueSMSpMat* spvn_, SPValueSMVector* dvn_, RealType dt_, afqmc::TaskGroup* tg_)
     {
       for(int i=0; i<wfns.size(); i++) 
         wfns[i]->setupFactorizedHamiltonian(sp,spvn_,dvn_,dt_,tg_);

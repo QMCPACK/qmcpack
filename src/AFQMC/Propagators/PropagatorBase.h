@@ -38,7 +38,7 @@ class PropagatorBase: public MPIObjectBase, public AFQMCInfo
 
   virtual bool parse(xmlNodePtr)=0;
 
-  virtual bool setup(std::vector<int>&,SPComplexSMVector*,HamiltonianBase*,WavefunctionHandler*, RealType dt, hdf_archive&, const std::string&, MPI_Comm, MPI_Comm)=0;
+  virtual bool setup(std::vector<int>&,SPComplexSMVector*,HamiltonianBase*,WavefunctionHandler*, RealType dt, hdf_archive&, const std::string&, MPI_Comm, MPI_Comm, MPI_Comm)=0;
 
   virtual bool hdf_write(hdf_archive&, const std::string&)=0;
 
@@ -46,7 +46,7 @@ class PropagatorBase: public MPIObjectBase, public AFQMCInfo
 
   bool is_vn_sparse() { return sparsePropagator; }
 
-  TaskGroup* getTG() { return &TG; } 
+  afqmc::TaskGroup* getTG() { return &TG; } 
 
   virtual SPValueSMVector* getDvn()=0;
 
@@ -54,17 +54,12 @@ class PropagatorBase: public MPIObjectBase, public AFQMCInfo
 
   virtual void benchmark(std::string&,int,int,int,WalkerHandlerBase*)=0;
 
-  void setHeadComm(bool hd, MPI_Comm comm) {
-    head_of_nodes=hd;
-    MPI_COMM_HEAD_OF_NODES = comm;
-  } 
-
   SlaterDetOperations* SDetOps;
 
   // timestep
   RealType dt; 
 
-  TaskGroup TG;
+  afqmc::TaskGroup TG;
   int ncores_per_TG,nnodes_per_TG;
   int core_rank;
 

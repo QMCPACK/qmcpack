@@ -17,7 +17,8 @@ namespace qmcplusplus {
 // In other words, the routine will minimize the variance of the difference between the sums in each set
 // The number of elements in bucket i are given by indx[i+1]-indx[i]. In other words, tasks from indx[i] through indx[i+1]
 // are assigned to bucket i. 
-void balance_partition_ordered_set(int N, int* indx, std::vector<int>& subsets); 
+template<typename IType>
+void balance_partition_ordered_set(int N, IType* indx, std::vector<IType>& subsets); 
 
 // careful 
 // FIX FIX FIX

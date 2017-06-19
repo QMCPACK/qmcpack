@@ -254,9 +254,15 @@ bool AFQMCDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   // TGdata[0]: node_number
   myComm->split_comm(TGdata[0],MPI_COMM_NODE_LOCAL);
   TG.setNodeCommLocal(MPI_COMM_NODE_LOCAL);
+
   int key = TG.getTGNumber(); // This works because the TG used has nnodes_per_TG=1 
   myComm->split_comm(key,MPI_COMM_TG_LOCAL);
   TG.setTGCommLocal(MPI_COMM_TG_LOCAL);
+
+  key = TG.getCoreID();
+  myComm->split_comm(key,MPI_COMM_HEAD_OF_NODES);  
+  TG.setHeadOfNodesComm(MPI_COMM_HEAD_OF_NODES);
+
   key = TG.getCoreRank();  
   myComm->split_comm(key,MPI_COMM_TG_LOCAL_HEADS);
 
@@ -293,7 +299,7 @@ bool AFQMCDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
            <<std::endl;
 
   // hamiltonian
-  if(!ham0->init(TGdata,&CommBuffer,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL)) {
+  if(!ham0->init(TGdata,&CommBuffer,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,MPI_COMM_HEAD_OF_NODES)) {
     app_error()<<"Error initializing Hamiltonian in AFQMCDriver::setup" <<std::endl; 
     return false; 
   }   
@@ -303,7 +309,7 @@ bool AFQMCDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
            <<"****************************************************\n"
            <<std::endl;
 
-  if(!wfn0->init(TGdata,&CommBuffer,read,hdf_read_tag,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL)) {
+  if(!wfn0->init(TGdata,&CommBuffer,read,hdf_read_tag,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,MPI_COMM_HEAD_OF_NODES)) {
     app_error()<<"Error initializing Wavefunction in AFQMCDriver::setup" <<std::endl; 
     return false; 
   }   
@@ -318,7 +324,7 @@ bool AFQMCDriver::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
            <<std::endl;
 
   // propagator
-  if(!prop0->setup(TGdata,&CommBuffer,ham0,wfn0,dt,read,hdf_read_tag,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL)) { 
+  if(!prop0->setup(TGdata,&CommBuffer,ham0,wfn0,dt,read,hdf_read_tag,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,MPI_COMM_HEAD_OF_NODES)) { 
     app_error()<<"Error in PropagatorBase::setup in AFQMCDriver::setup" <<std::endl; 
     return false; 
   }   
@@ -486,24 +492,22 @@ void AFQMCDriver::output_timers(std::ofstream& out_timers, int n)
 
   if(timer_first_call) {
     timer_first_call=false;
-    tags.resize(17);
-    tags[0]="Benchmark_tot";
-    tags[1]="Benchmark_wait";
-    tags[2]="Propagate::setup";
-    tags[3]="Propagate::evalG";
-    tags[4]="Propagate::sampleGaussianFields";
-    tags[5]="Propagate::addvHS";
-    tags[6]="Propagate::propg";
-    tags[7]="Propagate::overlaps_and_or_eloc";
-    tags[8]="Propagate::finish_step";
-    tags[9]="Propagate::idle";
-    tags[10]="Propagate::addvHS::setup";
-    tags[11]="Propagate::addvHS::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer";
-    tags[12]="Propagate::addvHS::build_CV0";
-    tags[13]="Propagate::addvHS::shm_copy";
-    tags[14]="Propagate::addvHS::build_vHS";
-    tags[15]="Propagate::addvHS::idle";
-    tags[16]="PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer::setup";
+    tags.resize(15);
+    tags[0]="Propagate::setup";
+    tags[1]="Propagate::evalG";
+    tags[2]="Propagate::sampleGaussianFields";
+    tags[3]="Propagate::addvHS";
+    tags[4]="Propagate::propg";
+    tags[5]="Propagate::overlaps_and_or_eloc";
+    tags[6]="Propagate::finish_step";
+    tags[7]="Propagate::idle";
+    tags[8]="Propagate::addvHS::setup";
+    tags[9]="Propagate::addvHS::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer";
+    tags[10]="Propagate::addvHS::build_CV0";
+    tags[11]="Propagate::addvHS::shm_copy";
+    tags[12]="Propagate::addvHS::build_vHS";
+    tags[13]="Propagate::addvHS::idle";
+    tags[14]="PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer::setup";
     for( std::string& str: tags) out_timers<<str <<" ";
     out_timers<<std::endl;    
   } 

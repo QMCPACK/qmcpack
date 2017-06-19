@@ -363,6 +363,7 @@ bool DistWalkerHandler::setup(int cr, int nc, int tgn, MPI_Comm heads_comm, MPI_
 
   MPI_COMM_TG_LOCAL = tg_comm;
   MPI_COMM_TG_LOCAL_HEADS = heads_comm;
+  int dummy=0;
 #if defined(HAVE_MPI)
   MPI_Comm_size(MPI_COMM_TG_LOCAL_HEADS,&nproc_heads);
   MPI_Comm_rank(MPI_COMM_TG_LOCAL_HEADS,&rank_heads);

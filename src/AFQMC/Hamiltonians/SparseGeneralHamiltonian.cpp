@@ -1414,8 +1414,18 @@ namespace qmcplusplus
   bool SparseGeneralHamiltonian::initFromHDF5(const std::string& fileName)
   {
 
-   Timer.reset("Generic");
-   Timer.start("Generic");
+    Timer.reset("Generic");
+    Timer.start("Generic");
+
+    if(factorizedHamiltonian) 
+      n_reading_cores=1; // no parallelization yet
+
+    // processor info
+    int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
+    int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
+    int nread = (n_reading_cores<=0)?(ncores):(n_reading_cores);
+    int node_rank;
+    MPI_Comm_rank(TG.getHeadOfNodesComm(),&node_rank);
 
     // no hamiltonian distribution yet
     min_i = 0;
@@ -1444,9 +1454,10 @@ namespace qmcplusplus
       in.close();
     } 
 
-    if(myComm->rank() == 0) {
+    hdf_archive dump(myComm);
+    // these cores will read from hdf file
+    if( coreid < nread ) {
 
-      hdf_archive dump(myComm);
       if(!dump.open(fileName,H5F_ACC_RDONLY)) {
         app_error()<<" Error opening integral file in SparseGeneralHamiltonian. \n";
         return false;
@@ -1467,42 +1478,49 @@ namespace qmcplusplus
         return false;
       }
 
-      std::vector<int> Idata(8);
+    }
+
+    int int_blocks,nvecs;
+    std::vector<int> Idata(8);
+    std::vector<OrbitalType> ivec;    
+    std::vector<ValueType> vvec;    
+
+    if(myComm->rank() == 0) 
       if(!dump.read(Idata,"dims")) {
         app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading dims. \n"; 
         return false;
       } 
+   
+    myComm->bcast(Idata);
 
-      int int_blocks = Idata[2];
-      if(NMO < 0) NMO = Idata[3];
-      if(NAEA < 0) NAEA = Idata[4];
-      if(NAEB < 0) NAEB = Idata[5];
-      if(Idata[3] != NMO) {
-        app_error()<<" ERROR: NMO differs from value in integral file. \n"; 
-        return false;
-      }
+    int_blocks = Idata[2];
+    if(NMO < 0) NMO = Idata[3];
+    if(NAEA < 0) NAEA = Idata[4];
+    if(NAEB < 0) NAEB = Idata[5];
+    if(Idata[3] != NMO) {
+      app_error()<<" ERROR: NMO differs from value in integral file. \n"; 
+      return false;
+    }
+    if(Idata[4] != NAEA) {
+      app_error()<<" ERROR: NAEA differs from value in integral file. \n"; 
+      return false;
+    }
+    if(Idata[5] != NAEB) {
+      app_error()<<" ERROR: NAEA differs from value in integral file. \n"; 
+      return false;
+    }
+    spinRestricted = (Idata[6]==0)?(true):(false);
+    factorizedHamiltonian = (Idata[7]>0); 
+    nvecs = Idata[7];
 
-      if(Idata[4] != NAEA) {
-        app_error()<<" ERROR: NAEA differs from value in integral file. \n"; 
-        return false;
-      }
-      if(Idata[5] != NAEB) {
-        app_error()<<" ERROR: NAEA differs from value in integral file. \n"; 
-        return false;
-      }
+    H1.resize(Idata[0]);
+    if(myComm->rank() == 0 && distribute_Ham && number_of_TGs > NMO) 
+      APP_ABORT("Error: number_of_TGs > NMO. \n\n\n");
 
-      myComm->bcast(Idata);
-      spinRestricted = (Idata[6]==0)?(true):(false);
-      factorizedHamiltonian = (Idata[7]>0); 
-      int nvecs = Idata[7];
+    occup_alpha.resize(NAEA);
+    occup_beta.resize(NAEB);
 
-      H1.resize(Idata[0]);
-
-      if(distribute_Ham && number_of_TGs > NMO) 
-        APP_ABORT("Error: number_of_TGs > NMO. \n\n\n");
-
-      occup_alpha.resize(NAEA);
-      occup_beta.resize(NAEB);
+    if(myComm->rank() == 0) { 
       Idata.resize(NAEA+NAEB);
       if(!dump.read(Idata,"occups")) { 
         app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading occups dataset. \n"; 
@@ -1518,13 +1536,15 @@ namespace qmcplusplus
       }
       NuclearCoulombEnergy = Rdata[0];
       FrozenCoreEnergy = Rdata[0];
+    }
+    
+    myComm->bcast(occup_alpha);
+    myComm->bcast(occup_beta);
+    myComm->bcast(NuclearCoulombEnergy);
+    myComm->bcast(FrozenCoreEnergy);
 
-      myComm->bcast(occup_alpha);
-      myComm->bcast(occup_beta);
-      myComm->bcast(NuclearCoulombEnergy);
-      myComm->bcast(FrozenCoreEnergy);
+    if(myComm->rank() == 0) { 
 
-      std::vector<OrbitalType> ivec;    
       ivec.resize(2*H1.size());
       if(!dump.read(ivec,"H1_indx")) {
         app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading H1_indx. \n";
@@ -1533,12 +1553,12 @@ namespace qmcplusplus
       for(int i=0, j=0; i<H1.size(); i++, j+=2)        
         H1[i] = std::make_tuple(ivec[j],ivec[j+1],0);  
 
-      std::vector<ValueType> vvec;
       vvec.resize(H1.size());
       if(!dump.read(vvec,"H1")) {
         app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading H1.  \n";
         return false;
       }
+
       for(int i=0; i<H1.size(); i++) {
         // keep i<=j by default
         if(std::get<0>(H1[i]) <= std::get<1>(H1[i]))
@@ -1550,18 +1570,23 @@ namespace qmcplusplus
       }
 
       std::sort (H1.begin(), H1.end(),mySort);
-      myComm->bcast<char>(reinterpret_cast<char*>(H1.data()),H1.size()*sizeof(s2D<ValueType>));
+    } 
+    myComm->bcast<char>(reinterpret_cast<char*>(H1.data()),H1.size()*sizeof(s2D<ValueType>));
+     
+    // now read the integrals
+    if(skip_V2) {
+      // must anything be done???
+    } else if(factorizedHamiltonian) {
 
-      if(skip_V2) {
-        // must anything be done???
-      } else if(factorizedHamiltonian) {
+      if(distribute_Ham) 
+        APP_ABORT("ERROR: distribute_Ham not implemented with factorized hamiltonian yet. \n\n\n");
 
-        if(distribute_Ham) 
-            APP_ABORT("ERROR: distribute_Ham not implemented with factorized hamiltonian yet. \n\n\n");
+      // no parallel reading yet
+      if(myComm->rank() == 0) {
 
         std::vector<double> residual(nvecs);
         if(!dump.read(residual,"V2fact_vec_residual")) {
-          app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2fact_vec_residual dataset. \n";      
+          app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2fact_vec_residual dataset. \n"; 
           return false;
         }
 
@@ -1661,18 +1686,64 @@ namespace qmcplusplus
 
         }
 
-        Timer.reset("Generic2");
-        Timer.start("Generic2");
-        V2_fact.compress(TG.getNodeCommLocal());
-        Timer.stop("Generic2");
+      } else {  // if(myComm->rank() == 0)
 
-        app_log()<<" -- Average time to read std::vector from h5 file: " <<Timer.average("Generic3") <<"\n";
-        app_log()<<" -- Average time to bcast std::vector: " <<Timer.average("Generic4") <<"\n";
-        app_log()<<" -- Time to compress factorized Hamiltonian from h5 file: " <<Timer.average("Generic2") <<"\n";
-        app_log()<<" Memory used by factorized 2-el integral table: " <<V2_fact.memoryUsage()/1024.0/1024.0 <<" MB. " <<std::endl;
-      } else {
-        // now V2
-        std::vector<int> ntpo(NMO);
+        int nvecs_after_cutoff;
+        myComm->bcast(nvecs_after_cutoff);
+
+        std::vector<int> sz(nvecs_after_cutoff);
+        myComm->bcast(sz);
+
+        int NMO2 = NMO*NMO;
+        if(!spinRestricted) NMO2 *= 2;
+        V2_fact.setDims(NMO2,nvecs_after_cutoff);
+
+        // right now this is an upper bound, since terms below the 2bar cutoff can be ignored 
+        int mysz = std::accumulate(sz.begin(),sz.end(),0);
+        V2_fact.reserve(mysz);
+
+        if(head_of_nodes) {
+          int nmax = *std::max_element(sz.begin(),sz.end());
+          std::vector<IndexType> ivec;
+          std::vector<ValueType> vvec;
+          ivec.reserve(nmax);
+          vvec.reserve(nmax);
+          for(int i=0; i<nvecs_after_cutoff; i++) {
+
+            ivec.resize(sz[i]);
+            vvec.resize(sz[i]);
+
+            myComm->bcast(ivec.data(),ivec.size(),MPI_COMM_HEAD_OF_NODES);
+            myComm->bcast(vvec.data(),vvec.size(),0,MPI_COMM_HEAD_OF_NODES);
+
+              for(int k=0; k<ivec.size(); k++) {
+                if(std::abs(vvec[k]) > cutoff1bar )
+                  V2_fact.add(ivec[k],i,vvec[k],false);
+              }
+
+          }
+
+        }
+
+      }
+      Timer.reset("Generic2");
+      Timer.start("Generic2");
+      V2_fact.compress(TG.getNodeCommLocal());
+      Timer.stop("Generic2");
+
+      app_log()<<" -- Average time to read std::vector from h5 file: " <<Timer.average("Generic3") <<"\n";
+      app_log()<<" -- Average time to bcast std::vector: " <<Timer.average("Generic4") <<"\n";
+      app_log()<<" -- Time to compress factorized Hamiltonian from h5 file: " <<Timer.average("Generic2") <<"\n";
+      app_log()<<" Memory used by factorized 2-el integral table: " <<V2_fact.memoryUsage()/1024.0/1024.0 <<" MB. " <<std::endl;
+ 
+    } else {  // factorizedHamiltonian
+
+      std::vector<long> ntpo(NMO,0);
+      std::vector<IndexType> indxvec;
+      int ntmax;
+      std::vector<int> pool_dist;
+      if(coreid < nread) {
+
         Idata.resize(int_blocks);
         // Idata[i]: number of terms per block
         if(!dump.read(Idata,"V2_block_sizes")) {
@@ -1680,25 +1751,27 @@ namespace qmcplusplus
           return false;
         }
 
-        int ntmax = *std::max_element(Idata.begin(), Idata.end());
-        std::vector<IndexType> indxvec;
+        ntmax = *std::max_element(Idata.begin(), Idata.end());
         indxvec.reserve(2*ntmax);
         vvec.reserve(ntmax);
 
-        // calculate number of terms witha given first index for partitioning
-        // just read indexes and count
-        for(int k=0; k<int_blocks; k++) {
-          if(Idata[k]==0) continue;
-          indxvec.clear();
-          indxvec.resize(2*Idata[k]);
-          vvec.clear();
-          vvec.resize(Idata[k]);
-          if(!dump.read(indxvec,std::string("V2_index_")+std::to_string(k))) {
-            app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_index_" <<k <<" dataset. \n";
+        // divide blocks 
+        FairDivide(int_blocks,nread,pool_dist);
+
+        int first_local_block = pool_dist[coreid];
+        int last_local_block = pool_dist[coreid+1];
+
+        for(int ib=first_local_block; ib<last_local_block; ib++) {
+          if( ib%nnodes != nodeid ) continue;
+          if(Idata[ib]==0) continue;
+          indxvec.resize(2*Idata[ib]);
+          vvec.resize(Idata[ib]);
+          if(!dump.read(indxvec,std::string("V2_index_")+std::to_string(ib))) {
+            app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_index_" <<ib <<" dataset. \n";
             return false;
           }
-          if(!dump.read(vvec,std::string("V2_vals_")+std::to_string(k))) {
-            app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_vals_" <<k <<" dataset. \n";
+          if(!dump.read(vvec,std::string("V2_vals_")+std::to_string(ib))) {
+            app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_vals_" <<ib <<" dataset. \n";
             return false;
           }
             
@@ -1714,226 +1787,116 @@ namespace qmcplusplus
             ntpo[std::get<0>(ijkl)]++;
           }   
         }
-        myComm->bcast(ntpo);
+      }
+      myComm->allreduce(ntpo);
 
-        if(distribute_Ham) {
-          std::vector<int> nv(NMO+1);
+      if(distribute_Ham) {
+        std::vector<long> sets(number_of_TGs+1);
+        if(myComm->rank() == 0) {
+          std::vector<long> nv(NMO+1);
           nv[0]=0;
-          for(int i=0,cnt=0; i<NMO; i++) {
-            cnt+=ntpo[i];
-            nv[i+1]=cnt;
-          }
-          std::vector<int> sets(number_of_TGs+1);
+          for(int i=0; i<NMO; i++) 
+            nv[i+1]=nv[i]+ntpo[i];
           balance_partition_ordered_set(NMO,nv.data(),sets);
-          myComm->bcast(sets);
-          min_i = sets[TG.getTGNumber()];
-          max_i = sets[TG.getTGNumber()+1];
           app_log()<<" Hamiltonian partitioning: \n   Orbitals:        ";
           for(int i=0; i<=number_of_TGs; i++) app_log()<<sets[i] <<" "; 
           app_log()<<std::endl <<"   Terms per block: ";  
           for(int i=0; i<number_of_TGs; i++) app_log()<<nv[sets[i+1]]-nv[sets[i]] <<" ";
           app_log()<<std::endl;  
         }
-        int nttot = std::accumulate(ntpo.begin()+min_i,ntpo.begin()+max_i,0);
-        V2.resize(nttot);
-        SMDenseVector<s4D<ValueType> >::iterator V2_it = V2.begin();
+        MPI_Bcast(sets.data(),sets.size(),MPI_LONG,0,myComm->getMPI());
+        min_i = static_cast<int>(sets[TG.getTGNumber()]);
+        max_i = static_cast<int>(sets[TG.getTGNumber()+1]);
+      }
 
-        myComm->bcast(Idata);
+      long nttot = std::accumulate(ntpo.begin()+min_i,ntpo.begin()+max_i,long(0));
+      V2.reserve(nttot);
 
-        for(int k=0, cnt=0; k<int_blocks; k++) {
-          if(Idata[k]==0) continue;
-          indxvec.clear();
-          indxvec.resize(2*Idata[k]);
-          if(!dump.read(indxvec,std::string("V2_index_")+std::to_string(k))) {
-            app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_index_" <<k <<" dataset. \n";
-            return false;
+      if( coreid < nread ) {
+
+        std::vector<IndexType> ivec2;
+        std::vector<ValueType> vvec2;
+        ivec2.reserve(2*ntmax);
+        vvec2.reserve(ntmax);
+        int maxv = 10000;
+        std::vector<s4D<ValueType>> vals;
+        vals.reserve(maxv);
+
+        int first_local_block = pool_dist[coreid];
+        int last_local_block = pool_dist[coreid+1];
+        int nbtot = last_local_block-first_local_block;
+        int niter = nbtot/nnodes + std::min(nbtot%nnodes,1);
+
+        for(int iter=0; iter<niter; iter++) {
+          int first_block = first_local_block + nnodes*iter;
+          int last_block = std::min(first_block+nnodes,last_local_block);
+          int myblock_number = first_block + nodeid;
+          if(myblock_number < last_local_block && Idata[myblock_number] > 0) {
+            indxvec.resize(2*Idata[myblock_number]);
+            vvec.resize(Idata[myblock_number]);
+            if(!dump.read(indxvec,std::string("V2_index_")+std::to_string(myblock_number))) {
+              app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_index_" <<myblock_number <<" dataset. \n";
+              return false;
+            }
+            if(!dump.read(vvec,std::string("V2_vals_")+std::to_string(myblock_number))) {
+              app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_vals_" <<myblock_number <<" dataset. \n";
+              return false;
+            }
           }
-          myComm->bcast(indxvec.data(),indxvec.size(),MPI_COMM_HEAD_OF_NODES);
+         
+          for(int k=first_block,ipr=0; k<last_block; k++,ipr++) {
+            if(Idata[k] == 0) continue;
+            ivec2.resize(2*Idata[k]);
+            vvec2.resize(Idata[k]);
+            if(ipr==node_rank) {
+              assert(myblock_number==k);
+              std::copy(indxvec.begin(),indxvec.end(),ivec2.begin());
+              std::copy(vvec.begin(),vvec.end(),vvec2.begin());
+            }
 
-          vvec.clear();
-          vvec.resize(Idata[k]);
-          if(!dump.read(vvec,std::string("V2_vals_")+std::to_string(k))) {
-            app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_vals_" <<k <<" dataset. \n";
-            return false;
-          }
-          myComm->bcast(vvec.data(),vvec.size(),0,MPI_COMM_HEAD_OF_NODES);
+            MPI_Bcast(ivec2.data(), ivec2.size(), MPI_INT, ipr, TG.getHeadOfNodesComm() );
+#if defined(QMC_COMPLEX)
+            MPI_Bcast(vvec2.data(),2*vvec2.size(), MPI_DOUBLE, ipr, TG.getHeadOfNodesComm() );
+#else
+            MPI_Bcast(vvec2.data(),vvec2.size(), MPI_DOUBLE, ipr, TG.getHeadOfNodesComm() );
+#endif
 
-          std::vector<IndexType>::iterator iti = indxvec.begin(); 
-          for(std::vector<ValueType>::iterator itv = vvec.begin(); itv < vvec.end(); itv++, iti+=2) { 
-            if(std::abs(*itv) < cutoff1bar )
-                continue;
-            s4D<ValueType> ijkl = std::make_tuple(  static_cast<OrbitalType>((*iti)/NMO),
-                                                    static_cast<OrbitalType>((*(iti+1))/NMO),  
-                                                    static_cast<OrbitalType>((*iti)%NMO),
-                                                    static_cast<OrbitalType>((*(iti+1))%NMO), *itv);     
-            find_smallest_permutation(ijkl); 
-            if( std::get<0>(ijkl) >= min_i && std::get<0>(ijkl) < max_i) { 
-              if( cnt == nttot ) {
-                app_error()<<" Error, cnt, nttot: " <<cnt <<" " <<nttot <<std::endl;
-                APP_ABORT(" Error: Too many integrals. V2_nterms_per_first_orbital must be wrong. \n\n\n");
-              }  
-              *(V2_it++) = ijkl; 
-              cnt++;
+            std::vector<IndexType>::iterator iti = ivec2.begin(); 
+            for(std::vector<ValueType>::iterator itv = vvec2.begin(); itv < vvec2.end(); itv++, iti+=2) { 
+              if(std::abs(*itv) < cutoff1bar )
+                  continue;
+              s4D<ValueType> ijkl = std::make_tuple(  static_cast<OrbitalType>((*iti)/NMO),
+                                                      static_cast<OrbitalType>((*(iti+1))/NMO),  
+                                                      static_cast<OrbitalType>((*iti)%NMO),
+                                                      static_cast<OrbitalType>((*(iti+1))%NMO), *itv);     
+              find_smallest_permutation(ijkl); 
+              if( std::get<0>(ijkl) >= min_i && std::get<0>(ijkl) < max_i) { 
+                vals.push_back(ijkl);
+                if(vals.size()==maxv) {
+                  V2.push_back(vals,nread>1);
+                  vals.clear();
+                }
+              }
             }
           }   
         }
-        //std::sort (V2.begin(), V2.end(),mySort);
-        Timer.reset("Generic2");
-        Timer.start("Generic2");
-        V2.sort (mySort, TG.getNodeCommLocal(),inplace);
-        Timer.stop("Generic2");
-        app_log()<<" -- Time to compress Hamiltonian from h5 file: " <<Timer.average("Generic2") <<"\n";
-        app_log()<<" Memory used by 2-el integral table: " <<V2.memoryUsage()/1024.0/1024.0 <<" MB. " <<std::endl;
-
+        if(vals.size() > 0) 
+          V2.push_back(vals,nread>1);
       }
 
-      dump.pop();
-      dump.pop();
+      Timer.reset("Generic2");
+      Timer.start("Generic2");
+      V2.sort (mySort, TG.getNodeCommLocal(),inplace);
+      Timer.stop("Generic2");
+      app_log()<<" -- Time to compress Hamiltonian from h5 file: " <<Timer.average("Generic2") <<"\n";
+      app_log()<<" Memory used by 2-el integral table: " <<V2.memoryUsage()/1024.0/1024.0 <<" MB. " <<std::endl;
 
+    }
+
+    if( coreid < nread ) {
+      dump.pop();
+      dump.pop();
       dump.close();
-
-
-    } else {
-
-      std::vector<int> Idata(8);
-      myComm->bcast(Idata);
-      int int_blocks = Idata[2];
-      spinRestricted = (Idata[6]==0)?(true):(false);
-      if(NMO < 0) NMO = Idata[3];
-      if(NAEA < 0) NAEA = Idata[4];
-      if(NAEB < 0) NAEB = Idata[5];
-      if(Idata[3] != NMO) {
-        app_error()<<" ERROR: NMO differs from value in integral file. \n";
-        APP_ABORT("ERROR: NMO differs from value in integral file. \n"); 
-        return false;
-      }
-      if(Idata[4] != NAEA) {
-        app_error()<<" ERROR: NAEA differs from value in integral file. \n";
-        APP_ABORT(" ERROR: NAEA differs from value in integral file. \n");
-        return false;
-      }
-      if(Idata[5] != NAEB) {
-        app_error()<<" ERROR: NAEB differs from value in integral file. \n";
-        APP_ABORT(" ERROR: NAEB differs from value in integral file. \n");
-        return false;
-      }
-      factorizedHamiltonian = (Idata[7]>0); 
-      int nvecs = Idata[7];
-
-      occup_alpha.resize(NAEA);
-      occup_beta.resize(NAEB);
-
-      H1.resize(Idata[0]);
-
-      myComm->bcast(occup_alpha);
-      myComm->bcast(occup_beta);
-      myComm->bcast(NuclearCoulombEnergy);
-      myComm->bcast(FrozenCoreEnergy);
-
-      myComm->bcast<char>(reinterpret_cast<char*>(H1.data()),H1.size()*sizeof(s2D<ValueType>));
-
-      if(skip_V2) {
-        // must anything be done???
-      } else if(factorizedHamiltonian) {
-
-        int nvecs_after_cutoff;
-        myComm->bcast(nvecs_after_cutoff);
-
-        std::vector<int> sz(nvecs_after_cutoff);
-        myComm->bcast(sz);
-
-        int NMO2 = NMO*NMO;
-        if(!spinRestricted) NMO2 *= 2;
-        V2_fact.setDims(NMO2,nvecs_after_cutoff);
-
-        // right now this is an upper bound, since terms below the 2bar cutoff can be ignored 
-        int mysz = std::accumulate(sz.begin(),sz.end(),0); 
-        V2_fact.reserve(mysz);
-
-        if(head_of_nodes) {
-          int nmax = *std::max_element(sz.begin(),sz.end());
-          std::vector<IndexType> ivec;
-          std::vector<ValueType> vvec;
-          ivec.reserve(nmax);
-          vvec.reserve(nmax);
-          for(int i=0; i<nvecs_after_cutoff; i++) {
-    
-            ivec.resize(sz[i]);
-            vvec.resize(sz[i]);
-          
-            myComm->bcast(ivec.data(),ivec.size(),MPI_COMM_HEAD_OF_NODES);
-            myComm->bcast(vvec.data(),vvec.size(),0,MPI_COMM_HEAD_OF_NODES);
- 
-              for(int k=0; k<ivec.size(); k++) {
-                if(std::abs(vvec[k]) > cutoff1bar ) 
-                  V2_fact.add(ivec[k],i,vvec[k],false); 
-              }
-
-          }
-
-        }
-        V2_fact.compress(TG.getNodeCommLocal());
-
-      } else {
-
-        // now V2
-        Idata.resize(NMO); 
-        myComm->bcast(Idata);
-
-        if(distribute_Ham) {
-          std::vector<int> sets(number_of_TGs+1);
-          myComm->bcast(sets);
-          min_i = sets[TG.getTGNumber()];
-          max_i = sets[TG.getTGNumber()+1];
-        }
-
-        int nttot = std::accumulate(Idata.begin()+min_i,Idata.begin()+max_i,0);
-        V2.resize(nttot);
-
-        Idata.resize(int_blocks);
-        myComm->bcast(Idata);
-        int ntmax = *std::max_element(Idata.begin(), Idata.end());
-
-        if(head_of_nodes) { 
-          SMDenseVector<s4D<ValueType> >::iterator V2_it = V2.begin();
-          std::vector<IndexType> ivec;    
-          std::vector<ValueType> vvec; 
-          ivec.reserve(2*ntmax);
-          vvec.reserve(ntmax);
-
-          for(int k=0, cnt=0; k<int_blocks; k++) {
-            if(Idata[k]==0) continue;
-            ivec.clear();
-            ivec.resize(2*Idata[k]);
-            myComm->bcast(ivec.data(),ivec.size(),MPI_COMM_HEAD_OF_NODES);
-        
-            vvec.clear();
-            vvec.resize(Idata[k]);
-            myComm->bcast(vvec.data(),vvec.size(),0,MPI_COMM_HEAD_OF_NODES);
-        
-            std::vector<IndexType>::iterator iti = ivec.begin();
-            for(std::vector<ValueType>::iterator itv = vvec.begin(); itv < vvec.end(); itv++, iti+=2) {
-              if(std::abs(*itv) < cutoff1bar )
-                continue;
-              s4D<ValueType> ijkl = std::make_tuple(  static_cast<OrbitalType>((*iti)/NMO),
-                                                      static_cast<OrbitalType>((*(iti+1))/NMO),
-                                                      static_cast<OrbitalType>((*iti)%NMO),
-                                                      static_cast<OrbitalType>((*(iti+1))%NMO), *itv);
-              find_smallest_permutation(ijkl);  
-              if( std::get<0>(ijkl) >= min_i && std::get<0>(ijkl) < max_i) {
-                if( cnt == nttot ) {
-                  app_error()<<" Error, cnt, nttot: " <<cnt <<" " <<nttot <<std::endl;
-                  APP_ABORT(" Error: Too many integrals. V2_nterms_per_first_orbital must be wrong. \n\n\n");
-                }  
-                *(V2_it++) = ijkl;
-                cnt++;
-              }
-            }
-          }
-        }
-        //std::sort (V2.begin(), V2.end(),mySort);
-        V2.sort (mySort, TG.getNodeCommLocal(),inplace);
-      }
     }
     myComm->barrier();
 
@@ -2064,6 +2027,9 @@ namespace qmcplusplus
   // to avoid having to allocate the full array twice
   // Also, you could add support in hdf_archive for tuples 
   void SparseGeneralHamiltonian::hdf_write() {
+
+    if(skip_V2) 
+      return; 
 
     if(hdf_write_file == std::string("")) return;
 
@@ -2423,8 +2389,11 @@ namespace qmcplusplus
 
   }
 
-  void SparseGeneralHamiltonian::calculateHSPotentials_Diagonalization(RealType cut, RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, TaskGroup& TGprop, std::vector<int>& nvec_per_node,  bool sparse, bool parallel)
+  void SparseGeneralHamiltonian::calculateHSPotentials_Diagonalization(RealType cut, RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, afqmc::TaskGroup& TGprop, std::vector<int>& nvec_per_node,  bool sparse, bool parallel)
   {
+
+    if(skip_V2)
+      APP_ABORT("Error: Calling SparseGeneralHamiltonian routines with skip_V2=yes. \n\n\n");
 
     if(factorizedHamiltonian) {
       calculateHSPotentials_FactorizedHam(cut,dt,vn0,Spvn,Dvn,TGprop,nvec_per_node,sparse,parallel);
@@ -2711,8 +2680,11 @@ namespace qmcplusplus
 
   }
 
-  void SparseGeneralHamiltonian::calculateHSPotentials_FactorizedHam(RealType cut, RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool parallel)
+  void SparseGeneralHamiltonian::calculateHSPotentials_FactorizedHam(RealType cut, RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, afqmc::TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool parallel)
   {
+
+    if(skip_V2)
+      APP_ABORT("Error: Calling SparseGeneralHamiltonian routines with skip_V2=yes. \n\n\n");
 
     if(distribute_Ham) {
       APP_ABORT("Error: calculateHSPotentials_FactorizedHam not implemented with distributed Hamiltonian. \n");
@@ -3014,8 +2986,11 @@ namespace qmcplusplus
 
   }
 
-  void SparseGeneralHamiltonian::calculateHSPotentials(RealType cut, RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool parallel)
+  void SparseGeneralHamiltonian::calculateHSPotentials(RealType cut, RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, afqmc::TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool parallel)
   {
+
+    if(skip_V2)
+      APP_ABORT("Error: Calling SparseGeneralHamiltonian routines with skip_V2=yes. \n\n\n");
 
     if(factorizedHamiltonian) {
       calculateHSPotentials_FactorizedHam(cut,dt,vn0,Spvn,Dvn,TGprop,nvec_per_node,sparse,parallel);
@@ -3086,32 +3061,32 @@ namespace qmcplusplus
 
      // used to split (i,k) space over all processors for the construction and storage of cholesky vectors
      int npr = myComm->size(), rk = myComm->rank(); 
-     int ik0=0,ik1=NMO*NMO-1;
+     int ik0=0,ik1=NMO*NMO;
+     std::vector<int> ik_partition;
      // used for split of (i,k) space over the processors in a TG during the evaluation of H(i,kmax,k,imax) piece
      // in case the Hamiltonian is distributed
      int tg_npr = TG.getTGSize(), tg_rk = TG.getTGRank(); 
-     int tg_ik0=0,tg_ik1=NMO*NMO-1;
+     int tg_ik0=0,tg_ik1=NMO*NMO;
+     std::vector<int> tgik_partition;
+     std::vector<int> cnts;
      if(parallel) {
-       int nt = (NMO*NMO)/npr, next = (NMO*NMO)%npr;
-       if(rk < next) {
-         ik0 = rk*(nt+1); 
-         ik1 = ik0 + nt; 
-       } else {
-         ik0 = next*(nt+1) + (rk-next)*nt;
-         ik1 = ik0 + nt - 1;
-       } 
+       FairDivide(NMO*NMO,npr,ik_partition); 
+       ik0 = ik_partition[rk];
+       ik1 = ik_partition[rk+1];
+       cnts.resize(npr);
+       for(int i=0; i<npr; i++)
+         cnts[i] = ik_partition[i+1]-ik_partition[i];
+     } else {
+       cnts.resize(1);
+       cnts[0] = ik1-ik0; 
      }
      if(distribute_Ham) {
-       int nt = (NMO*NMO)/tg_npr, next = (NMO*NMO)%tg_npr;
-       if(tg_rk < next) {
-         tg_ik0 = tg_rk*(nt+1);
-         tg_ik1 = tg_ik0 + nt;
-       } else {
-         tg_ik0 = next*(nt+1) + (tg_rk-next)*nt;
-         tg_ik1 = tg_ik0 + nt - 1;
-       }       
+       FairDivide(NMO*NMO,tg_npr,tgik_partition);
+       tg_ik0 = tgik_partition[tg_rk];
+       tg_ik1 = tgik_partition[tg_rk+1];       
      }
-     int nterms = ik1-ik0+1; 
+     int nterms = ik1-ik0; 
+     int maxnterms = *std::max_element(cnts.begin(),cnts.end()); 
      if(nterms < 1) {
        APP_ABORT("Error: Too many processors in parallel calculation of HS potential. Try reducing the number of cores, calculating in serial or reading from a file. \n\n\n ");
      }
@@ -3135,7 +3110,7 @@ namespace qmcplusplus
        std::fill(Lcomm.begin(),Lcomm.end(),ValueType(0));
        for(IndexType i=0, nt=0; i<NMO; i++) {
          for(IndexType k=0; k<NMO; k++,nt++) {
-           if(nt<tg_ik0 || nt>tg_ik1) continue;
+           if(nt<tg_ik0 || nt>=tg_ik1) continue;
            // <i,k|k,i> 
            if( k<i ) {
 #if defined(QMC_COMPLEX)
@@ -3168,14 +3143,14 @@ namespace qmcplusplus
            }
 #endif
          }
-         if(nt>tg_ik1) break;
+         if(nt>=tg_ik1) break;
        }
        myComm->allreduce(Lcomm); 
-       std::copy( Lcomm.begin()+ik0, Lcomm.begin()+ik1+1, Duv.begin() );
+       std::copy( Lcomm.begin()+ik0, Lcomm.begin()+ik1, Duv.begin() );
      } else {
        for(IndexType i=0, nt=0, ik=0; i<NMO; i++) {
          for(IndexType k=0; k<NMO; k++,nt++) {
-           if(nt<ik0 || nt>ik1) continue;
+           if(nt<ik0 || nt>=ik1) continue;
            Duv[ik] = H(i,k,k,i);  
 #ifndef QMC_COMPLEX
            if(Duv[ik] < ValueType(0)) {
@@ -3192,7 +3167,7 @@ namespace qmcplusplus
 #endif
            ik++;
          }
-         if(nt>ik1) break;
+         if(nt>=ik1) break;
        }
      }
 
@@ -3203,7 +3178,7 @@ namespace qmcplusplus
      mymax = std::make_tuple(-1,-1,0);
      for(IndexType i=0, nt=0, ik=0; i<NMO; i++) {
       for(IndexType k=0; k<NMO; k++,nt++) {
-        if(nt<ik0 || nt>ik1) continue;
+        if(nt<ik0 || nt>=ik1) continue;
         if( std::abs(Duv[ik]) > max) {
           max = std::get<2>(mymax) =std::abs(Duv[ik]);  
           ii=std::get<0>(mymax)=i;
@@ -3211,7 +3186,7 @@ namespace qmcplusplus
         } 
         ik++;
       }
-      if(nt>ik1) break;
+      if(nt>=ik1) break;
      }
      if(ii<0 || kk<0) {
       app_error()<<"Problems with Cholesky decomposition. \n";
@@ -3242,17 +3217,23 @@ namespace qmcplusplus
 
      if(test_2eint && !parallel && !distribute_Ham) {
 
+       /* <ij|kl> <--> M_(ik)_(lj) where M must be positive definite.
+        * --> |M_(ik)_(lj)| <= sqrt( |M_(ik)_(ik)| |M_(lj)_(lj)| )
+        * --> |<ij|kl>| <= sqrt( |<ik|ki>| |<lj|jl| )   
+        *  
+        */
        for(s4Dit it = V2.begin(); it != V2.end(); it++) {
          IndexType i,j,k,l;
          ValueType w1,w2,w3;
          std::tie (i,j,k,l,w1) = *it;  
  
-         w2 = H(i,i,k,k);
-         w3 = H(j,j,l,l);
+         w2 = H(i,k,k,i);
+         w3 = H(l,j,j,l);
+         ValueType w4 = H(j,l,l,j);
          if( std::abs(w1) > std::sqrt(std::abs(w2*w3)) ) {
            app_log()<<" Problems with positive-definiteness: " 
                     <<i <<" " <<j <<" " <<k <<" " <<l <<" " 
-                    <<w1 <<" " <<w2 <<" " <<w3 <<std::endl; 
+                    <<w1 <<" " <<w2 <<" " <<w3 <<" " <<w4 <<std::endl; 
          }
 
        } 
@@ -3269,7 +3250,7 @@ namespace qmcplusplus
        cholesky_residuals.push_back(std::abs(max));
 
        // calculate new cholesky std::vector based on (ii,kk)
-       L.push_back(std::vector<ValueType>(nterms));  
+       L.push_back(std::vector<ValueType>(maxnterms));  
        std::vector<ValueType>& Ln = L.back();
        std::vector<ValueType>::iterator it = Ln.begin();
 
@@ -3286,7 +3267,7 @@ namespace qmcplusplus
          s4D<ValueType> s;
          for(IndexType i=0, nt=0; i<NMO; i++) {
            for(IndexType k=0; k<NMO; k++, nt++) {
-             if(nt<tg_ik0 || nt>tg_ik1) continue;
+             if(nt<tg_ik0 || nt>=tg_ik1) continue;
              s = std::make_tuple(i,kk,k,ii,ValueType(0));
              bool cjgt = find_smallest_permutation(s);
              if( std::get<0>(s) >= min_i && std::get<0>(s) < max_i ) {
@@ -3301,17 +3282,17 @@ namespace qmcplusplus
                }
              } 
            }
-           if(nt>tg_ik1) break;
+           if(nt>=tg_ik1) break;
          }
          myComm->allreduce(Lcomm);
-         std::copy( Lcomm.begin()+ik0, Lcomm.begin()+ik1+1, it );         
+         std::copy( Lcomm.begin()+ik0, Lcomm.begin()+ik1, it );         
        } else { 
          for(IndexType i=0, nt=0; i<NMO; i++) {
            for(IndexType k=0; k<NMO; k++, nt++) {
-             if(nt<ik0 || nt>ik1) continue;
+             if(nt<ik0 || nt>=ik1) continue;
              *(it++) = H(i,kk,k,ii);
            }
-           if(nt>ik1) break;
+           if(nt>=ik1) break;
          }
        }
 
@@ -3337,7 +3318,7 @@ namespace qmcplusplus
        mymax = std::make_tuple(-1,-1,0);
        for(IndexType i=0,ik=0,nt=0; i<NMO; i++) {
         for(IndexType k=0; k<NMO; k++,nt++) {
-         if(nt<ik0 || nt>ik1) continue;
+         if(nt<ik0 || nt>=ik1) continue;
          Duv[ik] -= Ln[ik]*myconj(Ln[ik]);  
          if(zero_bad_diag_2eints) {
            if( std::abs(Duv[ik]) > max && toComplex(Duv[ik]).real() > 0) {
@@ -3354,7 +3335,7 @@ namespace qmcplusplus
          }
          ik++;
         }
-        if(nt>ik1) break;
+        if(nt>=ik1) break;
        }
        if(parallel) {
          myComm->allgather(reinterpret_cast<char*>(&mymax),reinterpret_cast<char*>(IKLmax.data()),sizeof(s2D<RealType>)); 
@@ -3403,7 +3384,7 @@ namespace qmcplusplus
        for(IndexType j=0; j<NMO; j++) 
         for(IndexType k=0; k<NMO; k++)
          for(IndexType l=0; l<NMO; l++,nt++) {     
-           if(nt<ik0||nt>ik1) continue;
+           if(nt<ik0||nt>=ik1) continue;
            ValueType v2 = H(i,j,k,l);
            ValueType v2c = 0.0;
            // is it L*L or LL*???
@@ -3439,27 +3420,24 @@ namespace qmcplusplus
 
       ValueType sqrtdt = std::sqrt(dt)*0.5;
 
-      std::vector<int> cnts,displ;
       std::vector<int> cnt_per_vec(2*L.size());
-      if(parallel) {
-        Lcomm.resize(NMO*NMO); 
-        if(rank()==0) {
-          cnts.resize(npr);
-          displ.resize(npr);
-          int nt = (NMO*NMO)/npr, next = (NMO*NMO)%npr;
-          for(int i=0; i<npr; i++) { 
-            if(i < next) {
-              ik0 = i*(nt+1);
-              ik1 = ik0 + nt;
-            } else {
-              ik0 = next*(nt+1) + (i-next)*nt;
-              ik1 = ik0 + nt - 1;
-            }
-            cnts[i]  = ik1-ik0+1;
-            displ[i] = ik0;
-          }
-        } 
-      }
+      std::vector<int> ik2padded;
+      if(parallel) { 
+        Lcomm.resize(npr*maxnterms); 
+        ik2padded.resize(npr*maxnterms);
+        for(int i=0; i<ik2padded.size(); i++) ik2padded[i]=i;
+        // to make it independent of behavior of FairDivide
+        const int tag = npr*maxnterms+10000;
+        std::vector<int>::iterator it = ik2padded.begin(), itc = cnts.begin();
+        for(; itc!=cnts.end(); itc++, it+=maxnterms) 
+          std::fill(it+(*itc), it+maxnterms,tag); 
+        std::stable_partition( ik2padded.begin(), ik2padded.end(), 
+            [tag] (const int& i) { return i<tag; }
+              ); 
+      } else {
+        ik2padded.resize(NMO*NMO);
+        for(int i=0; i<NMO*NMO; i++) ik2padded[i]=i;
+      }  
 
       Timer.reset("Generic2");
       Timer.start("Generic2");
@@ -3467,34 +3445,37 @@ namespace qmcplusplus
       else if(cut < 1e-12) cut=1e-12;
       int cnt=0, cntn=0;
       // generate sparse version
+      int nvecs=L.size();
       for(int n=0; n<L.size(); n++) { 
-       ValueType* Ls; 
-       if(parallel) {
-         myComm->gatherv(L[n].data(),Lcomm.data(),L[n].size(),cnts,displ,0,myComm->getMPI());
-         if(rank()==0) Ls = Lcomm.data();
-       } else {
-         Ls = L[n].data();
-       } 
-       if(rank()==0) {
-         int np=0, nm=0;
-         for(IndexType i=0; i<NMO; i++) 
-          for(IndexType k=0; k<NMO; k++) { 
-            // v+
-            //if(std::abs( (L[n][i*NMO+k] + myconj(L[n][k*NMO+i])) ) > cut) {
-            if(std::abs( (Ls[i*NMO+k] + myconj(Ls[k*NMO+i])) ) > cut) 
-              np++;
-            // v-
-            //if(std::abs( (L[n][i*NMO+k] - myconj(L[n][k*NMO+i])) ) > cut) { 
-            if(std::abs( (Ls[i*NMO+k] - myconj(Ls[k*NMO+i])) ) > cut)  
-              nm++;
-          }
-         cnt_per_vec[2*n] = np;
-         cnt_per_vec[2*n+1] = nm;
-         if(nm>0) cntn++;
-       } 
-       // needed to avoid avalanche of messages on head node
-       myComm->barrier(); 
-      }
+        ValueType* Ls; 
+        if(parallel) {
+#if defined(QMC_COMPLEX)
+          MPI_Gather(L[n].data(),2*maxnterms,MPI_DOUBLE,Lcomm.data(),2*maxnterms,MPI_DOUBLE,0,myComm->getMPI());
+#else
+          MPI_Gather(L[n].data(),maxnterms,MPI_DOUBLE,Lcomm.data(),maxnterms,MPI_DOUBLE,0,myComm->getMPI());
+#endif
+          if(rank()==0) Ls = Lcomm.data();
+        } else {
+          Ls = L[n].data();
+        } 
+        if(rank()==0) {
+          int np=0, nm=0;
+          for(IndexType i=0; i<NMO; i++) 
+           for(IndexType k=0; k<NMO; k++) { 
+             // v+
+             if(std::abs( (Ls[ik2padded[i*NMO+k]] + myconj(Ls[ik2padded[k*NMO+i]])) ) > cut) 
+               np++;
+             // v-
+             if(std::abs( (Ls[ik2padded[i*NMO+k]] - myconj(Ls[ik2padded[k*NMO+i]])) ) > cut)  
+               nm++;
+           }
+          cnt_per_vec[2*n] = np;
+          cnt_per_vec[2*n+1] = nm;
+          if(nm>0) cntn++;
+        }
+        if(n>0 && (n%100==0))
+          myComm->barrier();
+      } 
 
       int nnodes = TGprop.getNNodesPerTG();
       int cv0=0,cvN=2*L.size();
@@ -3594,11 +3575,15 @@ namespace qmcplusplus
        ValueType* Ls;
        Timer.start("Generic2");
        if(parallel) {
-         myComm->gatherv(L[n].data(),Lcomm.data(),L[n].size(),cnts,displ,0,myComm->getMPI());
-         if(head_of_nodes) {
-           myComm->bcast(Lcomm.data(),Lcomm.size(),0,MPI_COMM_HEAD_OF_NODES);
-           Ls = Lcomm.data();
-         }
+#if defined(QMC_COMPLEX)
+         //MPI_Allgather(L[n].data(),2*maxnterms,MPI_DOUBLE,Lcomm.data(),2*maxnterms,MPI_DOUBLE,myComm->getMPI());
+         MPI_Gather(L[n].data(),2*maxnterms,MPI_DOUBLE,Lcomm.data(),2*maxnterms,MPI_DOUBLE,0,myComm->getMPI());
+         if(head_of_nodes)
+           MPI_Bcast(Lcomm.data(),2*Lcomm.size(),MPI_DOUBLE,0,MPI_COMM_HEAD_OF_NODES);   
+#else
+         MPI_Allgather(L[n].data(),maxnterms,MPI_DOUBLE,Lcomm.data(),maxnterms,MPI_DOUBLE,myComm->getMPI());
+#endif
+         Ls = Lcomm.data();
        } else {
          Ls = L[n].data();
        }
@@ -3609,7 +3594,7 @@ namespace qmcplusplus
          // v+
          for(IndexType i=0; i<NMO; i++)
           for(IndexType k=0; k<NMO; k++) { 
-           ValueType V = (Ls[i*NMO+k] + myconj(Ls[k*NMO+i])); 
+           ValueType V = (Ls[ik2padded[i*NMO+k]] + myconj(Ls[ik2padded[k*NMO+i]])); 
            if(std::abs(V) > cut) { 
              V*=sqrtdt;
              if(sparse) Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(V));
@@ -3627,7 +3612,7 @@ namespace qmcplusplus
          // v-
          for(IndexType i=0; i<NMO; i++)
           for(IndexType k=0; k<NMO; k++) { 
-           ValueType V = (Ls[i*NMO+k] - myconj(Ls[k*NMO+i]));
+           ValueType V = (Ls[ik2padded[i*NMO+k]] - myconj(Ls[ik2padded[k*NMO+i]]));
            if(std::abs(V) > cut) {
              V*=ComplexType(0.0,1.0)*sqrtdt;
              if(sparse) Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(V));
@@ -3643,7 +3628,8 @@ namespace qmcplusplus
 #endif
        }
        // necessary to avoid the avalanche of messages to the root from cores that are not head_of_nodes
-       myComm->barrier(); 
+       if(n>0 && (n%100==0))
+         myComm->barrier(); 
        Timer.stop("Generic3");
       }
       app_log()<<"     -- av comm time: " <<Timer.average("Generic2") <<"\n";
@@ -4033,6 +4019,7 @@ namespace qmcplusplus
     m_param.add(str4,"test_algo","std::string");
     m_param.add(str5,"inplace","std::string");
     m_param.add(str6,"skip_V2","std::string");
+    m_param.add(n_reading_cores,"num_io_cores","int");
     m_param.put(cur);
 
     orderStates=false;
@@ -4955,6 +4942,9 @@ namespace qmcplusplus
     //  Notice that in this case:   <ij|kl> != <kj|il> and other permutations            
     // 
 
+    if(skip_V2) 
+      APP_ABORT("Error: Calling SparseGeneralHamiltonian routines with skip_V2=yes. \n\n\n");
+
 #ifdef AFQMC_DEBUG
     app_log()<<" In SparseGeneralHamiltonian :: createHamiltonianForPureDeterminant." <<std::endl; 
 #endif
@@ -5600,6 +5590,7 @@ namespace qmcplusplus
       }
 
       myComm->allreduce(cnt2);
+long tmp_ = cnt2;
       Vijkl.allocate(cnt2+1000);
       cnt2=0; 
 
@@ -5779,7 +5770,6 @@ namespace qmcplusplus
       myComm->barrier();
       Timer.stop("Generic");
       app_log()<<"Time to generate 2-body Hamiltonian: " <<Timer.total("Generic") <<std::endl;
-
   
     } // factrorizedHamiltonnian
 
@@ -5810,21 +5800,29 @@ namespace qmcplusplus
 
     if(head_of_nodes) {
 
-      int rk,npr,ptr,n0;
+      int rk,npr;
+      long ptr,n0;
       MPI_Comm_rank(MPI_COMM_HEAD_OF_NODES,&rk);
       MPI_Comm_size(MPI_COMM_HEAD_OF_NODES,&npr);
       n0 = Vijkl.size(); // my number of terms, always from zero to n0
       ptr = n0; // position to copy elements to 
-      std::vector<int> size(npr);
+      std::vector<long> size(npr);
       size[rk] = n0;
       myComm->gsum(size,MPI_COMM_HEAD_OF_NODES);
-      int ntot = 0;
+      long ntot = 0;
       for(int i=0; i<npr; i++) ntot+=size[i];
+
+app_log()<<"size: " <<ntot <<" " <<n0 <<std::endl;
+
       if(ntot > Vijkl.capacity()) {
         app_error()<<" Problems gathering hamiltonian. Capacity of std::vector is not sufficient: " <<ntot <<" " <<Vijkl.capacity() <<" \n";
         return false;
       }
+
+app_log()<<" before resize: " <<std::endl;
       Vijkl.resize_serial(ntot);
+app_log()<<" after resize: " <<std::endl;
+
       for(int i=0; i<npr; i++) {
         if(i==rk) { // I send
           myComm->bcast<int>(Vijkl.row_data(),n0,i,MPI_COMM_HEAD_OF_NODES);
@@ -5837,6 +5835,7 @@ namespace qmcplusplus
           ptr+=size[i];
         }
       }
+app_log()<<" after bcasts: " <<std::endl;
     }
     myComm->barrier();
     return true; 
@@ -5850,15 +5849,16 @@ namespace qmcplusplus
 
     if(head_of_nodes) {
 
-      int rk,npr,ptr,n0;
+      int rk,npr;
+      long ptr,n0;
       MPI_Comm_rank(MPI_COMM_HEAD_OF_NODES,&rk);
       MPI_Comm_size(MPI_COMM_HEAD_OF_NODES,&npr);
       n0 = Vijkl.size(); // my number of terms, always from zero to n0
       ptr = n0; // position to copy elements to 
-      std::vector<int> size(npr);
+      std::vector<long> size(npr);
       size[rk] = n0;
       myComm->gsum(size,MPI_COMM_HEAD_OF_NODES);
-      int ntot = 0;
+      long ntot = 0;
       for(int i=0; i<npr; i++) ntot+=size[i];
       if(ntot > Vijkl.capacity()) {
         app_error()<<" Problems gathering hamiltonian. Capacity of std::vector is not sufficient: " <<ntot <<" " <<Vijkl.capacity() <<" \n";
@@ -6227,11 +6227,6 @@ namespace qmcplusplus
       app_log()<<"Time to generate 2-body Hamiltonian: " <<Timer.total("Generic") <<std::endl;
 
     } else {
-
-#if defined(QMC_COMPLEX)
-        app_log()<<"  WARNING WARNING WARNING!!!: createHamiltonianForGeneralDeterminant is not implemented for complex build yet. \n";
-        APP_ABORT("  WARNING WARNING WARNING!!!: createHamiltonianForGeneralDeterminant is not implemented for complex build yet. \n");
-#endif
 
         // Alg:
         // 0. Erase V2. Create full sparse hamiltonian (with symmetric terms)  
