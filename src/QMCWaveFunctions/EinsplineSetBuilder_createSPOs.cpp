@@ -347,6 +347,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     else
       temp_OrbitalSet = new EinsplineSetExtended<double>;
     MixedSplineReader->export_MultiSpline(&(temp_OrbitalSet->MultiSpline));
+    //set the flags for anti periodic boundary conditions
     temp_OrbitalSet->HalfG = dynamic_cast<SplineAdoptorBase<double,3> *>(OrbitalSet)->HalfG;
     new_OrbitalSet = temp_OrbitalSet;
   }
