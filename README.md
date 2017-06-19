@@ -14,7 +14,7 @@
  
  Note that the einspline library is no longer required.
 
-# Building with cmake
+# Building with CMake
 
  The build system for QMCPACK is based on CMake.  It will autoconfigure
  based on the detected compilers and libraries. Previously QMCPACK made
@@ -69,13 +69,15 @@ make -j 8
  they can control the default paths for libraries, the default
  compilers, etc.  The list of enviornmental variables is given below:
 
-   CXX              C++ compiler
-   CC               C Compiler
-   MKL_HOME         Path for MKL
-   LIBXML2_HOME     Path for libxml2
-   HDF5_ROOT        Path for HDF5
-   BOOST_ROOT       Path for Boost
-   FFTW_HOME        Path for FFTW
+| Environment variable | Description |
+|----------------------|-------------|
+|   CXX          |    C++ compiler |
+|   CC           |    C Compiler |
+|   MKL_HOME     |    Path for MKL | 
+|   LIBXML2_HOME |    Path for libxml2 | 
+|   HDF5_ROOT    |    Path for HDF5 |
+|   BOOST_ROOT   |    Path for Boost |
+|   FFTW_HOME    |    Path for FFTW |
 
 ## CMake options
 
