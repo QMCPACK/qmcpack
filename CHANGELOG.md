@@ -11,6 +11,7 @@ This section describes improvements made to the development branch since the las
 ### QMCPACK updates
 
 * Improved population control during DMC equilibration. Reduces variance on larger runs.
+* Bugfix: Real valued wavefunction GPU code gave incorrect result for some non-gamma twists that could be made real, e.g. X point. Complex code (QMC_COMPLEX=1) was always correct.
 * All particle move VMC and DMC algorithms enabled, tests added.
 * Reptation Monte Carlo (RMC) enabled, tests added.
 * Significantly improved AFQMC implementation.
@@ -19,7 +20,7 @@ This section describes improvements made to the development branch since the las
 * Added AFQMC tests.
 * Added test of real space QMC restart capabilities.
 * Added tests for several estimators.
-* Added unit test for DMC walker propagation, effective core potentials, OhmmsPETE.
+* Added unit test for DMC walker propagation, effective core potentials, and OhmmsPETE.
 * To avoid filesystem limitations, QMC_SYMLINK_TEST_FILES can be set to symlink (1) or copy test files (0).
 * Fixed mixed precision Ceperley force evaluation.
 * Many updated tests to improve statistical reliability. Removed flux estimator from short tests because they were not reliable enough.
@@ -38,7 +39,6 @@ This section describes improvements made to the development branch since the las
 
 ### Known problems
 
-* Real valued wavefunction GPU code gives incorrect results in DMC for some non-gamma twists, e.g. X point. VMC runs are correct. Complex code (QMC_COMPLEX=1) gives correct results and should be used instead until this bug is fixed.
 * AFQMC without MKL will fail, e.g. short-afqmc-N2_vdz-4-1 test fails.
 
 ### NEXUS updates
