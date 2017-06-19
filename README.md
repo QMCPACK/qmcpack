@@ -88,30 +88,36 @@ make -j 8
  add -D FLAG=VALUE to the configure line between the cmake command and
  the path to the source directory.
  
-   * General build options
-     CMAKE_BUILD_TYPE    A variable which controls the type of build (defaults to Release).  
-                         Possible values are:
-                         None (Do not set debug/optmize flags, use CMAKE_C_FLAGS or CMAKE_CXX_FLAGS)
-                         Debug (create a debug build)
-                         Release (create a release/optimized build)
-                         RelWithDebInfo (create a release/optimized build with debug info)
-                         MinSizeRel (create an executable optimized for size)
-     CMAKE_C_COMPILER    Set the C compiler
-     CMAKE_CXX_COMPILER  Set the C++ compiler
-     CMAKE_C_FLAGS       Set the C flags.  Note: to prevent default debug/release flags 
-                         from being used, set the CMAKE_BUILD_TYPE=None
-                         Also supported: CMAKE_C_FLAGS_DEBUG, CMAKE_C_FLAGS_RELEASE, 
-                                         CMAKE_C_FLAGS_RELWITHDEBINFO
-     CMAKE_CXX_FLAGS     Set the C++ flags.  Note: to prevent default debug/release flags 
-                         from being used, set the CMAKE_BUILD_TYPE=None
-                         Also supported: CMAKE_CXX_FLAGS_DEBUG, CMAKE_CXX_FLAGS_RELEASE, 
-                                         CMAKE_CXX_FLAGS_RELWITHDEBINFO
+ * General build options
+
+ | CMake Option | Description |
+ |--------------|-------------|
+ |     CMAKE_BUILD_TYPE   |  A variable which controls the type of build (defaults to Release).  | 
+ |                        |  Possible values are: |
+ |                        |  None (Do not set debug/optmize flags, use CMAKE_C_FLAGS or CMAKE_CXX_FLAGS)| 
+ |                        |  Debug (create a debug build)|
+ |                        |  Release (create a release/optimized build)|
+ |                        |  RelWithDebInfo (create a release/optimized build with debug info)|
+ |                        |  MinSizeRel (create an executable optimized for size)|
+ |     CMAKE_C_COMPILER   |  Set the C compiler |
+ |     CMAKE_CXX_COMPILER |  Set the C++ compiler|
+ |     CMAKE_C_FLAGS      |  Set the C flags.  Note: to prevent default debug/release flags |
+ |                        |  from being used, set the CMAKE_BUILD_TYPE=None | 
+ |                        |  Also supported: CMAKE_C_FLAGS_DEBUG, CMAKE_C_FLAGS_RELEASE, |
+ |                        |                  CMAKE_C_FLAGS_RELWITHDEBINFO |
+ |     CMAKE_CXX_FLAGS    |  Set the C++ flags.  Note: to prevent default debug/release flags |
+ |                        |  from being used, set the CMAKE_BUILD_TYPE=None |
+ |                        |  Also supported: CMAKE_CXX_FLAGS_DEBUG, CMAKE_CXX_FLAGS_RELEASE, |
+ |                        |                  CMAKE_CXX_FLAGS_RELWITHDEBINFO |
+
  
    * Key QMC build options
+
      QMC_CUDA            Enable CUDA and GPU acceleration (1:yes, 0:no)
      QMC_COMPLEX         Build the complex (general twist/k-point) version (1:yes, 0:no)
      
-   * Additional QMC options
+	 * Additional QMC options
+	 
      QMC_DATA            Specify data directory for QMCPACK (currently unused, but 
                          likely to be used for performance tests)
      QMC_INCLUDE         Add extra include paths
