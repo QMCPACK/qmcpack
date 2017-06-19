@@ -226,25 +226,26 @@ bool phaseless_ImpSamp_ForceBias::hdf_write_transposed(hdf_archive& dump,const s
     }
     npr=ranks.size();
 
-    std::vector<int> Idata(4);
-    int ntot=Spvn.size(), ntot_=Spvn.size();
+    std::vector<long> Ldata(4);
+    long ntot=Spvn.size(), ntot_=Spvn.size();
     if(nnodes_per_TG>1) 
-      MPI_Reduce(&ntot_, &ntot, 1, MPI_INT, MPI_SUM, 0, TG.getTGCOMM()); 
-    Idata[0]=ntot;  // this needs to be summed over relevant nodes
-    Idata[1]=Spvn.rows();  // same here
-    Idata[2]=nCholVecs;
-    Idata[3]=NMO;
+      MPI_Reduce(&ntot_, &ntot, 1, MPI_LONG, MPI_SUM, 0, TG.getTGCOMM()); 
+    Ldata[0]=ntot;  // this needs to be summed over relevant nodes
+    Ldata[1]=Spvn.rows();  // same here
+    Ldata[2]=nCholVecs;
+    Ldata[3]=NMO;
 
     dump.push("Propagators");
     dump.push("phaseless_ImpSamp_ForceBias");
     if(tag != std::string("")) dump.push(tag);
-    dump.write(Idata,"Spvn_dims");
+    dump.write(Ldata,"Spvn_dims");
 
     dump.write(vn0,"Spvn_vn0");
 
     // transpose matrix for easier access to Cholesky vectors 
     Spvn.transpose();   
 
+    std::vector<int> Idata(4);
     Idata.resize(nCholVecs);
     for(int i=0; i<nCholVecs; i++)
       Idata[i] = *(Spvn.rowIndex_begin()+i+1) - *(Spvn.rowIndex_begin()+i);
@@ -321,8 +322,8 @@ bool phaseless_ImpSamp_ForceBias::hdf_write_transposed(hdf_archive& dump,const s
     TG.getRanksOfRoots(ranks,pos);
     npr=ranks.size();
 
-    int ntot=Spvn.size(), ntot_=Spvn.size();
-    MPI_Reduce(&ntot_, &ntot, 1, MPI_INT, MPI_SUM, 0, TG.getTGCOMM()); 
+    long ntot=Spvn.size(), ntot_=Spvn.size();
+    MPI_Reduce(&ntot_, &ntot, 1, MPI_LONG, MPI_SUM, 0, TG.getTGCOMM()); 
 
     Spvn.transpose();
 
@@ -356,9 +357,9 @@ bool phaseless_ImpSamp_ForceBias::hdf_write_transposed(hdf_archive& dump,const s
 
   } else if(nnodes_per_TG>1 && TG.getTGNumber()==0) {
 
-    int ntot=0, ntot_=0;
+    long ntot=0, ntot_=0;
     if(nnodes_per_TG>1)
-      MPI_Reduce(&ntot_, &ntot, 1, MPI_INT, MPI_SUM, 0, TG.getTGCOMM()); 
+      MPI_Reduce(&ntot_, &ntot, 1, MPI_LONG, MPI_SUM, 0, TG.getTGCOMM()); 
 
     std::vector<int> Idata;
     Idata.resize(nCholVecs);
