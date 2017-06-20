@@ -26,7 +26,7 @@ struct mySPBLAS
     } else if(transa=='t' || transa=='T') {
       for(int k=0; k<K; k++) 
         (*(y+k)) *= beta;
-      for(int nr=0; nr<M; nr++,y++,pntrb++,pntre++,x++) {
+      for(int nr=0; nr<M; nr++,pntrb++,pntre++,x++) {
         for(int i=*pntrb; i<*pntre; i++) {
           if(*(indx+i)+disp >= K) continue;
           *(y+(*(indx+i))+disp) += alpha * (*(A+i)) * (*x);
@@ -35,7 +35,7 @@ struct mySPBLAS
     } else if(transa=='h' || transa=='H') {
       for(int k=0; k<K; k++)
         (*(y+k)) *= beta;
-      for(int nr=0; nr<M; nr++,y++,pntrb++,pntre++,x++) {
+      for(int nr=0; nr<M; nr++,pntrb++,pntre++,x++) {
         for(int i=*pntrb; i<*pntre; i++) {
           if(*indx+disp >= K) continue;
           *(y+(*(indx+i))+disp) += alpha * (*(A+i)) * (*x);
@@ -61,7 +61,7 @@ struct mySPBLAS
     } else if(transa=='t' || transa=='T') {
       for(int k=0; k<K; k++)
         (*(y+k)) *= beta;
-      for(int nr=0; nr<M; nr++,y++,pntrb++,pntre++,x++) {
+      for(int nr=0; nr<M; nr++,pntrb++,pntre++,x++) {
         for(int i=*pntrb; i<*pntre; i++) {
           if(*(indx+i)+disp >= K) continue;
           *(y+(*(indx+i))+disp) += alpha * (*(A+i)) * (*x);
@@ -70,7 +70,7 @@ struct mySPBLAS
     } else if(transa=='h' || transa=='H') {
       for(int k=0; k<K; k++)
         (*(y+k)) *= beta;
-      for(int nr=0; nr<M; nr++,y++,pntrb++,pntre++,x++) {
+      for(int nr=0; nr<M; nr++,pntrb++,pntre++,x++) {
         for(int i=*pntrb; i<*pntre; i++) {
           if(*indx+disp >= K) continue;
           *(y+(*(indx+i))+disp) += alpha * std::conj(*(A+i)) * (*x);
