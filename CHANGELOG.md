@@ -2,11 +2,13 @@
 
 Notable changes to QMCPACK will be documented in this file. 
 
-## [Unreleased]
+## [3.1.0] - 2017-06-21
 
 ### Notes
 
-This section describes improvements made to the development branch since the last release.
+This release incorporates an improved DMC equilibration scheme,
+numerous bugfixes, small improvements, and significantly improved
+testing. It is a recommended update.
 
 ### QMCPACK updates
 
