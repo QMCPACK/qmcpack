@@ -52,8 +52,3 @@ GTOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

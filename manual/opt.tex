@@ -1,7 +1,7 @@
 \section{Wavefunction Optimization}
 Optimizing wavefunction is critical in all kinds of real-space quantum Monte Carlo calculations
 because it significantly improves both the accuracy and efficiency of computation.
-However, it is very difficult to incorporate directly deterministic minimization approaches due to the stochastic nature of evaluating quantities with Monte Carlo.
+However, it is very difficult to directly adopt deterministic minimization approaches due to the stochastic nature of evaluating quantities with Monte Carlo.
 Thanks to the algorithmic breakthrough during the first decade of this century and the tremendous computer power available, 
 it becomes feasible to optimize tens of thousands of parameters in a wavefunction for a solid or molecule.
 QMCPACK has multiple optimizers implemented based on the state-of-the-art linear method.
@@ -50,7 +50,7 @@ A typical optimization block looks like the following. It starts with method=``l
 
 \subsection{VMC run for the optimization}
 The VMC calculation for the wavefunction optimization has a strict requirement 
-that samples or samplesperthread must be specified because of the optimizer needs for the stored samples.
+that \texttt{samples} or \texttt{samplesperthread} must be specified because of the optimizer needs for the stored samples.
 The input parameters of this part are identical to the VMC method.
 
 Recommendations:
@@ -91,8 +91,8 @@ Additional information:
 \item \texttt{maxWeight}. The default should be good.
 \item \texttt{usebuffer}. It saves a lot of computation especially with the `quartic' optimizer.
 \item \texttt{nonlocalpp}. It is recommended to enable it when 3 body Jastrow is on. GPU code has a implementation issue that large amount of memory is consumed with this option.
-\item \texttt{minwalkers}. A CRITICAL parameter. When the ratio of effective samples to actual number of walkers in a reweighting step, 
-the proposed set of parameters is unjustified. The last set of acceptable parameters are kept.
+\item \texttt{minwalkers}. A CRITICAL parameter. When the ratio of effective samples to actual number of samples in a reweighting step goes lower than \texttt{minwalkers},
+the proposed set of parameters is invalid. % The last set of acceptable parameters is kept.
 \end{itemize}
 
 The cost function consists of three components: energy, unreweighted variance and reweighted variance.
@@ -110,7 +110,7 @@ They can be switched among `rescale', `quartic' (default), `adaptive' and `OneSh
 \end{lstlisting}
 
 \subsubsection{quartic}
-The quartic optimizer fits a quartic polynomial to 4 values of the cost function obtained using reweighting along chosen direction and determines the optimal move.
+The quartic optimizer fits a quartic polynomial to 7 values of the cost function obtained using reweighting along chosen direction and determines the optimal move.
 This optimizer is very robust but a bit conservative to accept new steps especially when large parameters changes are proposed.
 \begin{table}[h]
 \begin{center}
@@ -153,14 +153,133 @@ to 0 and do a single inner iteration (max its=1) per sample of configurations.}
 \end{lstlisting}
 
 \subsubsection{adaptive}
+
+The default setting of the adaptive optimizer is to construct the linear method Hamiltonian and overlap matrices explicitly and add different shifts to the Hamiltonian matrix 
+as ``stabilizers''.
+The generalized eigenvalue problem is solved for each shift to obtain updates to the wave function parameters.
+Then a correlated sampling is performed for each shift's updated wave function and the initial trial wave function
+using the middle shift's updated wave function as the guiding function.
+The cost function for these wave functions is compared, and the update corresponding to the best cost function is selected.
+In the next iteration, the median magnitude of the stabilizers is set to that that generated the best update in the current iteration, thus adapting the magnitude of
+the stabilizers automatically.
+
+When the trial wave function contains more than ten thousand parameters, constructing and storing the linear method matrices may become a memory bottleneck. 
+To avoid explicit construction of these matrices, the adaptive optimizer implements the block linear method (BLM) approach. \cite{Zhao:2017:blocked_lm}
+The BLM tries to find an approximate 
+solution $\vec{c}_{opt}$ to the standard LM generalized eigenvalue problem by dividing the variable space into a number of blocks
+and making intelligent estimates for which directions within those blocks will be most important for constructing $\vec{c}_{opt}$.
+which is then obtained by solving a smaller, more memory-efficient 
+eigenproblem in the basis of these supposedly important block-wise directions. 
+
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{linear} method} \\
+\hline
+\multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   %&   \texttt{stepsize} &  real     & 0--1 & 0.25  & Step size for moving parameters\\
+   &   \texttt{max\_relative\_change} &  real     & $>0$ & 10.0 & Allowed change in cost function\\
+   &   \texttt{max\_param\_change} &  real     & $>0$ & 0.3 & Allowed change in wave function parameter\\
+   &   \texttt{shift\_i} &  real     & $>0$ & 0.01 & Initial diagonal      stabilizer added to the Hamiltonian matrix\\
+   &   \texttt{shift\_s} &  real     & $>0$ & 1.00 & Initial overlap-based stabilizer added to the Hamiltonian matrix\\
+   &   \texttt{chase\_lowest} &  text   & yes, no & yes & Chase the lowest eigenvector in iterative solver\\
+   &   \texttt{chase\_closest} &  text   & yes, no & no & Chase the eigenvector closest to initial guess\\
+   &   \texttt{block\_lm} &  text   & yes, no & no & Use block linear method\\
+   &   \texttt{nblocks} &  integer   & $>0$ &  & \# of blocks in BLM\\
+   &   \texttt{nolds} &  integer   & $>0$ &  & \# of old update vectors used in BLM\\
+   &   \texttt{nkept} &  integer   & $>0$ &  & \# of eigenvectors to keep per block in BLM\\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+
+Additional information:
+\begin{itemize}
+  \item \texttt{shift\_i}.  This is the initial coefficient used to scale the diagonal stabilizer.
+                            More stable but slower optimization is expected with a large value.
+                            The adaptive method will automatically adjust this value after each linear method iteration.
+  \item \texttt{shift\_s}.  This is the initial coefficient used to scale the overlap-based stabilizer.
+                            More stable but slower optimization is expected with a large value.
+                            The adaptive method will automatically adjust this value after each linear method iteration.
+  \item \texttt{nblocks}.   This is the number of blocks used in block LM. The amount of memory required to store LM matrices decreases
+                            with increased number of blocks. But the error introduced by BLM would increase with number of blocks.  
+  \item \texttt{nolds}.     In BLM, the inter-block correlation is accounted for by including a small number of wave function update vectors
+                            outside the block. Larger \texttt{nolds} would include more inter-block correlation and more accurate results, but 
+                            also higher memory requirements. 
+  \item \texttt{nkept}.     This is the number of update directions retained from each block in the BLM. If all directions are retained in each block, 
+                            then the BLM becomes equivalent to the standard LM.  Retaining 5 or fewer directions per block is often sufficient.
+\end{itemize}
+
+Recommendations:
+\begin{itemize}
+  \item Default shift\_i, shift\_s should be fine. 
+  \item When there are fewer than about 5,000 variables being optimized, the traditional LM is preferred as it has a lower overhead than the BLM when the number of variables is small.
+  \item Initial experience with the BLM suggests that a few hundred blocks and a handful of \texttt{nolds} and \texttt{nkept}
+        often provide a good balance between memory use and accuracy.  In general, using fewer blocks should be more accurate but will require more memory.
+\end{itemize}
+
+\begin{lstlisting}
+    <!-- Specify the optimizer options -->
+    <parameter name="MinMethod">adaptive</parameter>
+    <parameter name="max_relative_cost_change">10.0</parameter>
+    <parameter name="shift_i"> 1.00 </parameter>
+    <parameter name="shift_s"> 1.00 </parameter>
+    <parameter name="max_param_change"> 0.3 </parameter>
+    <parameter name="chase_lowest"> yes </parameter>
+    <parameter name="chase_closest"> yes </parameter>
+    <parameter name="block_lm"> yes </parameter>
+    <parameter name="nblocks"> 100 </parameter>
+    <parameter name="nolds"> 5 </parameter>
+    <parameter name="nkept"> 3 </parameter>
+\end{lstlisting}
 %To activate this optimizer, add ``-D BUILD\_LMYENGINE\_INTERFACE=1'' in the CMake command line.
 
-Manual is needed here.
+The adaptive optimizer is also able to optimize individual excited states directly. \cite{Zhao:2016:dir_tar}
+In this case, it tries to minimize the following function: 
+\begin{equation*}
+\Omega[\Psi]=\frac{\left<\Psi|\omega-H|\Psi\right>}{\left<\Psi|{\left(\omega-H\right)}^2|\Psi\right>}
+\end{equation*}
+The global minimum of this function corresponds to the state whose energy lies immediately above the shift parameter $\omega$ in the energy spectrum.
+For example, if $\omega$ were placed in between the ground state energy and the first excited state energy and the wave function ansatz was capable of a good
+description for the first excited state, then the wave function would be optimized for the first excited state.
+It is important to note that, if the ansatz is not capable of a good description of the excited state in question, the optimization may converge to a different
+state, as is known to occur in some circumstances for traditional ground state optimizations.
+Note also that the ground state can be targeted by this method by choosing $\omega$ to be below the ground state energy, although we should stress that this
+is not the same thing as a traditional ground state optimization and will in general give a slightly different wave function.
+Excited state targeting requires two additional parameters, as shown in this table.
+
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{Excited State Targeting} \\
+\hline
+\multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+   %&   \texttt{stepsize} &  real     & 0--1 & 0.25  & Step size for moving parameters\\
+   &   \texttt{targetExcited} &  text   & yes, no      & no   & Whether to use the excited state targeting optimization\\
+   &   \texttt{omega}         &  real   & real numbers & none & Energy shift used to target different excited states\\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+
+Excited state recommendations:
+\begin{itemize}
+  \item Due to the finite variance in any approximate wave function, it is recommended to set $\omega=\omega_0-\sigma$, where $\omega_0$ is placed just
+        below the energy of the targeted state and $\sigma^2$ is the energy variance.
+  \item In order to obtain an unbiased excitation energy, one should optimize the ground state with the excited state variational principle as well by setting
+        \texttt{omega} below the ground state energy.  Note that using the ground state variational principle for the ground state and the excited state variational
+        principle for the excited state creates a bias in favor of the ground state. 
+\end{itemize}
 
 \subsubsection{OneShiftOnly}
-The OneShiftOnly optimizer targets a fast optimization by moving parameters more aggressively. It works with threading and can be considered for large solids.
-This method relies on ``minwalkers'' to justify a new set of parameters. If it is valid, the new set is taken no matter if the cost function value decreases or not.
-If a proposed set is rejected, the standard output prints the measured ratio of effective samples to actual number of walkers and adjustment on ``minwalkers''can be made if needed.
+The OneShiftOnly optimizer targets a fast optimization by moving parameters more aggressively. It works with OpenMP and GPU and can be considered for large systems.
+This method relies on \texttt{minwalkers} to justify a new set of parameters. If it is valid, the new set is taken no matter if the cost function value decreases or not.
+If a proposed set is rejected, the standard output prints the measured ratio of effective samples to the total number of samples
+and adjustment on \texttt{minwalkers} can be made if needed.
 
 \begin{table}[h]
 \begin{center}
@@ -188,14 +307,17 @@ Additional information:
 
 Recommendations:
 \begin{itemize}
-  \item Default shift\_i, shift\_s should be fine.
-  \item For hard cases, increasing shift\_i (factor of 5 or 10) can significantly stabilize the optimization by reducing the pace towards the optimal parameter set.
-  \item If the VMC energy of the last optimization iterations grows significantly, increase minwalkers closer to 1 and make the optimization stable.
+  \item Default \texttt{shift\_i}, \texttt{shift\_s} should be fine.
+  \item For hard cases, increasing \texttt{shift\_i} (factor of 5 or 10) can significantly stabilize the optimization by reducing the pace towards the optimal parameter set.
+  \item If the VMC energy of the last optimization iterations grows significantly, increase \texttt{minwalkers} closer to 1 and make the optimization stable.
   \item If the first iterations of optimization are rejected on a reasonable initial wavefunction, 
-        lower the minwalkers value based on the measured value printed in the standard output to accept the move.
+        lower the \texttt{minwalkers} value based on the measured value printed in the standard output to accept the move.
 \end{itemize}
 
-It is recommended to use this optimizer in two sections with a very small minwalkers in the first and very large value in the second like the following.
+It is recommended to use this optimizer in two sections with a very small \texttt{minwalkers} in the first and a large value in the second like the following.
+In the very beginning, parameters are far away form optimal values and large changes are proposed by the optimizer.
+Having a small \texttt{minwalkers} allows accepting these changes much easier.
+When the energy gradually converges, we can have a large \texttt{minwalkers} to guarantee a stable optimization.
 \begin{lstlisting}
  <loop max="6">
   <qmc method="linear" move="pbyp" gpu="yes">
@@ -221,13 +343,24 @@ It is recommended to use this optimizer in two sections with a very small minwal
  </loop>
 \end{lstlisting}
 
+For each optimization step, you will see
+\begin{lstlisting}
+The new set of parameters is valid. Updating the trial wave function!
+\end{lstlisting}
+or
+\begin{lstlisting}
+The new set of parameters is not valid. Revert to the old set!
+\end{lstlisting}
+Occasional rejection is fine. Frequent rejection indicates potential problems and users should inspect the VMC calculation or change optimization strategy.
+To track the progress of optimization, using command ``qmca -q ev *.scalar.dat'' to look at the VMC energy and variance for each optimization step.
+
 \subsection{General recommendations}
 Here are a few reminders to make wavefunction easier.
 \begin{itemize}
 \item All electron wavefunctions are more difficult to optimize than pseudopotential ones especially when the cusp is not removed.
 \item Two body Jastrow contributes the largest portion of correlation energy from bare Slater determinants. It's also the easiest part for optimizer and gains most. For this reason, the recommend order optimizing wavefunction components is two-body, one-body, three-body Jastrow factors and MSD coefficients.
 \item Never use all-zero two-body spline Jastrow and always start from a reasonable one. 
-      You might want to bang your head agaist a brick wall for a bad two-body Jastrow.
+      You might want to bang your head against a brick wall for a bad two-body Jastrow.
 \item One-body spline Jastrow from old calculations can be good starting point.
 \item Three-body polynomial Jastrow should start from zero.
 \end{itemize}

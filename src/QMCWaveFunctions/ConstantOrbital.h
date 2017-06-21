@@ -28,32 +28,36 @@ public:
   virtual void reportStatus(std::ostream& os) {}
   virtual void resetTargetParticleSet(ParticleSet& P) {}
 
+  ValueType FakeGradRatio;
+
+  ConstantOrbital() : FakeGradRatio(1.0) {}
+
   virtual ValueType
   evaluate(ParticleSet& P,
            ParticleSet::ParticleGradient_t& G,
-           ParticleSet::ParticleLaplacian_t& L) 
+           ParticleSet::ParticleLaplacian_t& L)
   {
-    return 1.0;
     G = 0.0;
     L = 0.0;
+    return 1.0;
   }
 
   virtual RealType
   evaluateLog(ParticleSet& P,
               ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
-    return 0.0;
     G = 0.0;
     L = 0.0;
+    return 0.0;
   }
 
   virtual ValueType ratio(ParticleSet& P, int iat,
                           ParticleSet::ParticleGradient_t& dG,
                           ParticleSet::ParticleLaplacian_t& dL)
   {
-    return 1.0;
     dG = 0.0;
     dL = 0.0;
+    return 1.0;
   }
 
   virtual void acceptMove(ParticleSet& P, int iat) {}
@@ -77,6 +81,16 @@ public:
   virtual RealType evaluateLog(ParticleSet& P,BufferType& buf)
   {
     return 0.0;
+  }
+
+  virtual GradType evalGrad(ParticleSet &P, int iat)
+  {
+    return GradType(0.0);
+  }
+
+  virtual ValueType ratioGrad(ParticleSet &P, int iat, GradType& grad_iat)
+  {
+    return FakeGradRatio;
   }
 
   virtual RealType registerData(ParticleSet& P, BufferType& buf) {return 0.0;}

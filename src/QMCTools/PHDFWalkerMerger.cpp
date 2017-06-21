@@ -210,8 +210,3 @@ void HDFWalkerMerger::merge()
   //// H5Gclose(mastercf);
   //H5Fclose(masterfile);
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2137 $   $Date: 2007-08-02 17:34:43 -0500 (Thu, 02 Aug 2007) $
- * $Id: HDFWalkerMerger.cpp 2137 2007-08-02 22:34:43Z jnkim $
- ***************************************************************************/

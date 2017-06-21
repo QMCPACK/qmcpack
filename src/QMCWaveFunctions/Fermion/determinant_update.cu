@@ -2302,8 +2302,8 @@ test_all_ratios_kernel()
     calc_all_ratios (Ainv_list_d, A_list_d, ratio_list_d, N, N, numMats);
   clock_t end = clock();
   double time = (double)(end-start)/(double)CLOCKS_PER_SEC;
-  fprintf (stderr, "start = %d\n", start);
-  fprintf (stderr, "end = %d\n", end);
+  fprintf (stderr, "start = %ld\n", start);
+  fprintf (stderr, "end = %ld\n", end);
   double rate = 1000.0/time;
   fprintf (stderr, "Rate = %1.2f generations per second.\n", rate);
   cudaMemcpy (ratio, ratio_d, N*sizeof(float), cudaMemcpyDeviceToHost);

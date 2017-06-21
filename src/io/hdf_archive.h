@@ -21,6 +21,11 @@
 #include <io/hdf_pete.h>
 #include <io/hdf_stl.h>
 #include <io/hdf_hyperslab.h>
+#if defined(HAVE_LIBBOOST)
+#if !defined(__bgq__)
+#include <io/hdf_boost_smvector.h>
+#endif
+#endif
 #endif
 #include <stack>
 #include <bitset>
@@ -149,8 +154,3 @@ struct hdf_archive
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 894 $   $Date: 2006-02-03 10:52:38 -0600 (Fri, 03 Feb 2006) $
- * $Id: hdf.h 894 2006-02-03 16:52:38Z jnkim $
- ***************************************************************************/

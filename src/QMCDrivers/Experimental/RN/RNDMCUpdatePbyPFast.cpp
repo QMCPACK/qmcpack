@@ -281,8 +281,3 @@ void RNDMCUpdatePbyPFast::estimateNormWalkers(std::vector<TrialWaveFunction*>& p
 
 }
 
-/***************************************************************************
- * $RCSfile: DMCUpdatePbyP.cpp,v $   $Author: mcminis2 $
- * $Revision: 3697 $   $Date: 2009-03-24 19:30:46 -0400 (Tue, 24 Mar 2009) $
- * $Id: DMCUpdatePbyP.cpp 3697 2009-03-24 23:30:46Z mcminis2 $
- ***************************************************************************/

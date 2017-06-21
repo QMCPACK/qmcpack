@@ -24,6 +24,7 @@ set(HAVE_SSE41 1)
 set(USE_PREFETCH 1)
 set(PREFETCH_AHEAD 10)
 set(HAVE_MKL 1)
+set(MKL_FOUND 1)
 set(HAVE_MKL_VML 1)
 
 set( CMAKE_FIND_ROOT_PATH
@@ -33,8 +34,8 @@ set( CMAKE_FIND_ROOT_PATH
  )
 
 # mkl 10.3.x
-include_directories(/usr/tce/packages/mkl/mkl-11.3.3/include)
-set(LAPACK_LIBRARY -L/usr/tce/packages/mkl/mkl-11.3.3/mkl/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl -lrt -Wl,-rpath=/usr/tce/packages/mkl/mkl-11.3.3/mkl/lib/intel64)
+include_directories(/usr/tce/packages/mkl/mkl-2017.1/include)
+set(LAPACK_LIBRARY -L/usr/tce/packages/mkl/mkl-2017.1/mkl/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl -lrt -Wl,-rpath=/usr/tce/packages/mkl/mkl-2017.1/mkl/lib/intel64)
 
 SET(CMAKE_CXX_LINK_SHARED_LIBRARY)
 SET(CMAKE_CXX_LINK_MODULE_LIBRARY)

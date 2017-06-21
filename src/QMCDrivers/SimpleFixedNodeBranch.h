@@ -108,7 +108,7 @@ struct SimpleFixedNodeBranch: public QMCTraits
   {
     B_TAU=0, B_TAUEFF , B_ETRIAL , B_EREF
     , B_ENOW, B_BRANCHMAX, B_BRANCHCUTOFF, B_BRANCHFILTER
-    , B_SIGMA, B_ACC_ENERGY, B_ACC_SAMPLES, B_FEEDBACK
+    , B_SIGMA2, B_ACC_ENERGY, B_ACC_SAMPLES, B_FEEDBACK
     , B_FILTERSCALE, B_VPARAM_MAX=17
   };
 
@@ -150,6 +150,8 @@ struct SimpleFixedNodeBranch: public QMCTraits
   //BlockHistogram<RealType> DMCEnergyHist;
   ///root name
   std::string RootName;
+  ///scheme of branching cutoff
+  std::string branching_cutoff_scheme;
   ///set of parameters
   ParameterSet m_param;
   ///string parameters
@@ -420,7 +422,7 @@ struct SimpleFixedNodeBranch: public QMCTraits
   ///finalize the simulation
   void finalize(MCWalkerConfiguration& w);
 
-  void setRN (bool rn);
+  void setRN(bool rn);
 
 
 //     void storeConfigsForForwardWalking(MCWalkerConfiguration& w);
@@ -439,13 +441,10 @@ private:
   //void write(hid_t grp, bool append=false);
   //void read(hid_t grp);
 
+  ///set branch cutoff, max, filter
+  void setBranchCutoff(EstimatorRealType variance, EstimatorRealType targetSigma, EstimatorRealType maxSigma, int Nelec=0);
 };
 
 }
 #endif
-/***************************************************************************
- * $RCSfile: SimpleFixedNodeBranch.h,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

@@ -142,8 +142,3 @@ void OhmmsInfo::flush()
 //std::ostream& app_error(){ return OhmmsInfo::Error->getStream();}
 //std::ostream& app_warning(){ return OhmmsInfo::Warn->getStream();}
 //std::ostream& app_debug(){ return OhmmsInfo::Debug->getStream();}
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -5,6 +5,8 @@ test_path=/scratch/${USER}   # RAID FLASH on oxygen
 
 test_dir=${test_path}/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
 
+export QMC_DATA=/data/pk7/QMC_DATA # Route to directory containing performance test files
+
 if [ -e ${test_path} ]; then
 
 if [ ! -e ${test_dir} ]; then
@@ -30,8 +32,8 @@ if [ -e qmcpack/CMakeLists.txt ]; then
 
 echo --- Starting test builds and tests
 
-#Caution: intel2015 also builds QE and sets QE_BIN directory. Should be run ahead of intel2015_complex, intel2015_cuda
-for sys in build_intel2017 build_intel2017_complex build_gcc_mkl build_gcc_cuda build_intel2017_mixed build_intel2017_complex_mixed build_gcc_mkl_complex build_intel2015 build_intel2015_complex build_intel2015_cuda build_gcc build_gcc_complex   
+#Caution: intel2015 also builds QE and sets QE_BIN directory. Should be run ahead of intel2015_complex, intel2015_cuda, intel2015_cuda_complex
+for sys in build_intel2017 build_intel2017_complex build_gcc_mkl build_gcc_cuda build_intel2017_mixed build_intel2017_complex_mixed build_gcc_mkl_complex build_intel2015 build_intel2015_complex build_intel2015_cuda build_intel2015_cuda_complex build_gcc build_gcc_complex build_gcc_cuda_complex
 do
 
 echo --- Building for $sys `date`
@@ -45,16 +47,22 @@ mkdir $sys
 cd $sys
 
 
-export PATH=/opt/local/bin:/opt/local/sbin:/usr/local/cuda-8.0/bin/:/usr/lib64/openmpi/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:/usr/local/cuda-8.0/lib64
+export PATH=/opt/local/bin:/opt/local/sbin:/usr/local/cuda-8.0/bin/:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64
 
 case $sys in
     "build_gcc")
-	module() { eval `/usr/bin/modulecmd sh $*`; }
-	module load mpi
+#	module() { eval `/usr/bin/modulecmd sh $*`; }
+#	module load mpi
+	export OLD_PATH=$PATH
+	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+	export PATH=$HOME/apps/openmpi-2.0.2/bin/:$PATH
+	export LD_LIBRARY_PATH=$HOME/apps/openmpi-2.0.2/lib/:$LD_LIBRARY_PATH
 	export QMCPACK_TEST_SUBMIT_NAME=GCC-Release
-	ctest -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
-	module unload mpi
+	ctest -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBUILD_AFQMC=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
+#	module unload mpi
+	export PATH=$OLD_PATH
+	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	;;
     "build_gcc_mkl")
 	export OLD_PATH=$PATH
@@ -64,12 +72,14 @@ case $sys in
 	export OLD_CPATH=$CPATH
 	export OLD_LIBRARY_PATH=$LIBRARY_PATH
 	export OLD_MKLROOT=$MKLROOT
-	module() { eval `/usr/bin/modulecmd sh $*`; }
-	module load mpi
+#	module() { eval `/usr/bin/modulecmd sh $*`; }
+#	module load mpi
+	export PATH=$HOME/apps/openmpi-2.0.2/bin/:$PATH
+	export LD_LIBRARY_PATH=$HOME/apps/openmpi-2.0.2/lib/:$LD_LIBRARY_PATH
 	source /opt/intel2017/mkl/bin/mklvars.sh intel64
 	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Release
-	ctest -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
-	module unload mpi
+	ctest -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
+#	module unload mpi
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -88,7 +98,7 @@ case $sys in
 	export OLD_MKLROOT=$MKLROOT
 	source /opt/intel2017/bin/compilervars.sh intel64
 	export QMCPACK_TEST_SUBMIT_NAME=Intel2017-Release
-	ctest -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
+	ctest -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DBUILD_AFQMC=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -145,11 +155,17 @@ case $sys in
 	export MKLROOT=$OLD_MKLROOT
 	;;
     "build_gcc_complex")
-	module() { eval `/usr/bin/modulecmd sh $*`; }
-	module load mpi
+#	module() { eval `/usr/bin/modulecmd sh $*`; }
+#	module load mpi
+	export OLD_PATH=$PATH
+	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+	export PATH=$HOME/apps/openmpi-2.0.2/bin/:$PATH
+	export LD_LIBRARY_PATH=$HOME/apps/openmpi-2.0.2/lib/:$LD_LIBRARY_PATH
 	export QMCPACK_TEST_SUBMIT_NAME=GCC-Complex-Release
 	ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
-	module unload mpi
+#	module unload mpi
+	export PATH=$OLD_PATH
+	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	;;
     "build_gcc_mkl_complex")
 	export OLD_PATH=$PATH
@@ -159,12 +175,14 @@ case $sys in
 	export OLD_CPATH=$CPATH
 	export OLD_LIBRARY_PATH=$LIBRARY_PATH
 	export OLD_MKLROOT=$MKLROOT
-	module() { eval `/usr/bin/modulecmd sh $*`; }
-	module load mpi
+#	module() { eval `/usr/bin/modulecmd sh $*`; }
+#	module load mpi
+	export PATH=$HOME/apps/openmpi-2.0.2/bin/:$PATH
+	export LD_LIBRARY_PATH=$HOME/apps/openmpi-2.0.2/lib/:$LD_LIBRARY_PATH
 	source /opt/intel2017/mkl/bin/mklvars.sh intel64
 	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Complex-Release
-	ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
-	module unload mpi
+	ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DBLA_VENDOR=Intel10_64lp_seq -DCMAKE_PREFIX_PATH=$MKLROOT/lib -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
+#	module unload mpi
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -183,7 +201,7 @@ case $sys in
 	export OLD_MKLROOT=$MKLROOT
 	source /opt/intel2017/bin/compilervars.sh intel64
 	export QMCPACK_TEST_SUBMIT_NAME=Intel2017-Complex-Release
-	ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
+	ctest -DQMC_COMPLEX=1 -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH
@@ -252,11 +270,30 @@ case $sys in
 	export MKLROOT=$OLD_MKLROOT
 	;;
     "build_gcc_cuda")
-	module() { eval `/usr/bin/modulecmd sh $*`; }
-	module load mpi
+#	module() { eval `/usr/bin/modulecmd sh $*`; }
+#	module load mpi
+	export OLD_PATH=$PATH
+	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+	export PATH=$HOME/apps/openmpi-2.0.2/bin/:$PATH
+	export LD_LIBRARY_PATH=$HOME/apps/openmpi-2.0.2/lib/:$LD_LIBRARY_PATH
 	export QMCPACK_TEST_SUBMIT_NAME=GCC-CUDA-Release
-	ctest -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_CUDA=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
-	module unload mpi
+	ctest -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_CUDA=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
+#	module unload mpi
+	export PATH=$OLD_PATH
+	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
+	;;
+    "build_gcc_cuda_complex")
+#	module() { eval `/usr/bin/modulecmd sh $*`; }
+#	module load mpi
+	export OLD_PATH=$PATH
+	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+	export PATH=$HOME/apps/openmpi-2.0.2/bin/:$PATH
+	export LD_LIBRARY_PATH=$HOME/apps/openmpi-2.0.2/lib/:$LD_LIBRARY_PATH
+	export QMCPACK_TEST_SUBMIT_NAME=GCC-CUDA-Complex-Release
+	ctest -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_CUDA=1 -DQMC_COMPLEX=1 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
+#	module unload mpi
+	export PATH=$OLD_PATH
+	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	;;
     "build_intel2015_cuda")
 	export OLD_PATH=$PATH
@@ -270,6 +307,26 @@ case $sys in
 	source /opt/intel/impi_latest/bin64/mpivars.sh
 	export QMCPACK_TEST_SUBMIT_NAME=Intel2015-CUDA-Release
 	ctest -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQMC_CUDA=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
+	export PATH=$OLD_PATH
+	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
+	export MANPATH=$OLD_MANPATH
+	export NLSPATH=$OLD_NLSPATH
+	export CPATH=$OLD_CPATH
+	export LIBRARY_PATH=$OLD_LIBRARY_PATH
+	export MKLROOT=$OLD_MKLROOT
+	;;
+    "build_intel2015_cuda_complex")
+	export OLD_PATH=$PATH
+	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+	export OLD_MANPATH=$MANPATH
+	export OLD_NLSPATH=$NLSPATH
+	export OLD_CPATH=$CPATH
+	export OLD_LIBRARY_PATH=$LIBRARY_PATH
+	export OLD_MKLROOT=$MKLROOT
+	source /opt/intel/bin/compilervars.sh intel64
+	source /opt/intel/impi_latest/bin64/mpivars.sh
+	export QMCPACK_TEST_SUBMIT_NAME=Intel2015-CUDA-Complex-Release
+	ctest -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc -DQMC_CUDA=1 -DQMC_COMPLEX=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV -E 'long' --timeout 1800
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	export MANPATH=$OLD_MANPATH

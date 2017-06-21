@@ -63,6 +63,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #else
   std::string useGPU="no";
 #endif
+  NewTimer* spo_timer = new NewTimer("einspline::CreateSPOSetFromXML", timer_level_medium);
+  TimerManager.addTimer(spo_timer);
+  spo_timer->start();
 
   {
     OhmmsAttributeSet a;
@@ -154,12 +157,12 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   else
     NewOcc=false;
 #if defined(QMC_CUDA)
-  app_log() << "\t  QMC_CUDA=1 Overwriting the precision of the einspline storage on the host.\n";
+  app_log() << "\t  QMC_CUDA=1 Overwriting the einspline storage on the host to double precision.\n";
   spo_prec="double"; //overwrite
   truncate="no"; //overwrite
 #endif
 #if defined(MIXED_PRECISION)
-  app_log() << "\t  MIXED_PRECISION=1 Overwriting the precision of the einspline storage.\n";
+  app_log() << "\t  MIXED_PRECISION=1 Overwriting the einspline storage to single precision.\n";
   spo_prec="single"; //overwrite
 #endif
   H5OrbSet aset(H5FileName, spinSet, numOrbs);
@@ -174,6 +177,14 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 
   if(FullBands[spinSet]==0) FullBands[spinSet]=new std::vector<BandInfo>;
+
+  // Ensure the first SPO set must be spinSet==0
+  // to correctly initialize key data of EinsplineSetBuilder
+  if ( SPOSetMap.size()==0 && spinSet!=0 )
+  {
+    app_error() << "The first SPO set must have spindataset=\"0\"" << std::endl;
+    abort();
+  }
 
   Timer mytimer;
   if(spinSet==0)
@@ -336,6 +347,8 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     else
       temp_OrbitalSet = new EinsplineSetExtended<double>;
     MixedSplineReader->export_MultiSpline(&(temp_OrbitalSet->MultiSpline));
+    //set the flags for anti periodic boundary conditions
+    temp_OrbitalSet->HalfG = dynamic_cast<SplineAdoptorBase<double,3> *>(OrbitalSet)->HalfG;
     new_OrbitalSet = temp_OrbitalSet;
   }
   else
@@ -427,6 +440,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     OrbitalSet->initGPU();
   }
 #endif
+  spo_timer->stop();
   return OrbitalSet;
 }
 

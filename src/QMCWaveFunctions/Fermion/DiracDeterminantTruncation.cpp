@@ -415,8 +415,3 @@ DiracDeterminantTruncation::evaluateLog(ParticleSet& P,
 
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3265 $   $Date: 2008-10-15 09:20:33 -0500 (Wed, 15 Oct 2008) $
- * $Id: DiracDeterminantTruncation.cpp 3265 2008-10-15 14:20:33Z jnkim $
- ***************************************************************************/

@@ -299,7 +299,7 @@ bool DMCOMP::run()
         if(QMCDriverMode[QMC_UPDATE_MODE] && now%updatePeriod == 0)
           Movers[ip]->updateWalkers(wit, wit_end);
         // recompute the accuracy critical part of Psi at the end of the last step.
-        if ( step+1 == nSteps && nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 )
+        if ( step+1 == nSteps && nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 && QMCDriverMode[QMC_UPDATE_MODE] )
           Movers[ip]->recomputePsi(wit,wit_end);
       }
 
@@ -403,8 +403,3 @@ DMCOMP::put(xmlNodePtr q)
 }
 }
 
-/***************************************************************************
- * $RCSfile: DMCOMP.cpp,v $   $Author: jnkim $
- * $Revision: 1620 $   $Date: 2007-01-14 18:12:23 -0600 (Sun, 14 Jan 2007) $
- * $Id: DMCOMP.cpp 1620 2007-01-15 00:12:23Z jnkim $
- ***************************************************************************/

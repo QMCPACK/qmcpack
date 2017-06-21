@@ -235,7 +235,11 @@ ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
     app_log() << "  Maxium cutoff for non-local pseudopotentials " << rc_check << std::endl;
   }
   doBreakUp(angList,vnn,rmax,Vprefactor);
-  SetQuadratureRule(Nrule);
+  bool quad_okay = SetQuadratureRule(Nrule);
+  if (!quad_okay)
+  {
+    APP_ABORT("Setting up spherical quadrature for Casino pseudopotential failed");
+  }
   app_log() << "    Non-local pseudopotential parameters" << std::endl;
   pp_nonloc->print(app_log());
   return true;
@@ -377,8 +381,3 @@ ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
 }
 
 } // namespace qmcPlusPlus
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1551 $   $Date: 2006-12-02 09:32:17 -0600 (Sat, 02 Dec 2006) $
- * $Id: ECPComponentBuilder.cpp 1551 2006-12-02 15:32:17Z jnkim $
- ***************************************************************************/

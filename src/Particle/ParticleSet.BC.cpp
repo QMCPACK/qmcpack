@@ -241,9 +241,4 @@ void ParticleSet::convert2CartInBox(const ParticlePos_t& pin, ParticlePos_t& pou
   convert2Cart(pout);
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

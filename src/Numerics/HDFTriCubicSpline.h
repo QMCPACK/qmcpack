@@ -62,8 +62,3 @@ struct HDFAttribIO<TriCubicSplineT<double> >: public HDFAttribIOBase
 
 };
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

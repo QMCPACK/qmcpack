@@ -154,13 +154,11 @@ def morse_reduced_mass(m1,m2=None):
         m1 = ptable[m1].atomic_weight.me
     #end if
     if m2 is None:
-        m = m1
-    else:
-        if isinstance(m2,str):
-            m2 = ptable[m2].atomic_weight.me
-        #end if
-        m = 1./(1./m1+1./m2) # reduced mass
+        m2 = m1
+    elif isinstance(m2,str):
+        m2 = ptable[m2].atomic_weight.me
     #end if
+    m = 1./(1./m1+1./m2) # reduced mass
     return m
 #end def morse_reduced_mass    
 

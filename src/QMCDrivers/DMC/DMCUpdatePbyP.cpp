@@ -240,8 +240,3 @@ void DMCUpdatePbyPWithKill::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end,
 
 }
 
-/***************************************************************************
- * $RCSfile: DMCUpdatePbyP.cpp,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

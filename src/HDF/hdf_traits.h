@@ -261,8 +261,3 @@ struct HDFSource: public h5_data_type_traits<T>//, public HDFAttribIOBase
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2764 $   $Date: 2008-06-26 10:21:31 -0500 (Thu, 26 Jun 2008) $
- * $Id: HDFNumericAttrib.h 2764 2008-06-26 15:21:31Z jnkim $
- ***************************************************************************/

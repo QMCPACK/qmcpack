@@ -325,8 +325,3 @@ void HFPolymerEstimator::registerObservables(std::vector<observable_helper*>& h5
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1926 $   $Date: 2007-04-20 12:30:26 -0500 (Fri, 20 Apr 2007) $
- * $Id: HFPolymerEstimator.cpp 1926 2007-04-20 17:30:26Z jnkim $
- ***************************************************************************/

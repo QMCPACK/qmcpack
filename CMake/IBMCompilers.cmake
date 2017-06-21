@@ -1,6 +1,7 @@
 #IBM Visual Age C/C++ compilers
 #
 #check guidec++ and overwrites the BITS
+IF(CMAKE_SYSTEM_NAME MATCHES "AIX")
 MESSAGE(STATUS "AIX system using xlC/xlc/xlf")
 
 ######################################################################
@@ -54,3 +55,43 @@ IF(QMC_BITS MATCHES 64)
         "<CMAKE_AR> -X64 cr <TARGET> <LINK_FLAGS> <OBJECTS> " 
         "<CMAKE_RANLIB> <TARGET> ")
 ENDIF(QMC_BITS MATCHES 64)
+ENDIF(CMAKE_SYSTEM_NAME MATCHES "AIX")
+
+IF(CMAKE_SYSTEM_PROCESSOR MATCHES "ppc64le")
+MESSAGE(STATUS "Power8+ system using xlC/xlc/xlf")
+
+ADD_DEFINITIONS( -Drestrict=__restrict__ )
+ADD_DEFINITIONS( -DADD_ )
+ADD_DEFINITIONS( -DINLINE_ALL=inline )
+
+# Clean up flags
+
+IF(CMAKE_C_FLAGS MATCHES "-qhalt=e")
+  SET(CMAKE_C_FLAGS "")
+ENDIF()
+IF(CMAKE_CXX_FLAGS MATCHES "-qhalt=e")
+  SET(CMAKE_CXX_FLAGS "")
+ENDIF()
+
+# Suppress compile warnings
+SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -Wno-deprecated -Wno-unused-value")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wno-unused-value")
+
+# Set standard and other optimization settings
+SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -std=gnu11 -O3")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11 -qnoxlcompatmacros -O3")
+
+IF(QMC_OMP)
+  SET(ENABLE_OPENMP 1)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -qsmp=omp")
+  SET(ENABLE_OMP 1 CACHE BOOL "OpenMP is enabled")
+ELSE(QMC_OMP)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -qnothreaded")
+ENDIF(QMC_OMP)
+
+# Add static flags if necessary
+IF(QMC_BUILD_STATIC)
+    SET(CMAKE_CXX_LINK_FLAGS " -static")
+ENDIF(QMC_BUILD_STATIC)
+
+ENDIF(CMAKE_SYSTEM_PROCESSOR MATCHES "ppc64le")

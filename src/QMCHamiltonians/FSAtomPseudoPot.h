@@ -61,8 +61,3 @@ struct FSAtomPseudoPot: public QMCTraits
 };
 } // namespace qmcPlusPlus
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

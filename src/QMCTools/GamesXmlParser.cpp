@@ -396,8 +396,3 @@ void GamesXmlParser::getEigVectors(std::vector<xmlNodePtr>& ePtrList)
     EigVal_beta=EigVal_alpha;
 }
 //}
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

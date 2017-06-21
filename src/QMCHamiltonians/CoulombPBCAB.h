@@ -192,9 +192,4 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

@@ -138,8 +138,3 @@ inline request irecv(const communicator& comm, T* x,  int n,  int source, int ta
 }
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2458 $   $Date: 2008-02-20 10:45:51 -0500 (Wed, 20 Feb 2008) $
- * $Id: CommOperators.h 2458 2008-02-20 15:45:51Z jnkim $
- ***************************************************************************/

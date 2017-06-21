@@ -484,8 +484,3 @@ void RQMCEstimator::registerObservables(std::vector<observable_helper*>& h5dec, 
 //    report(record,wgtinv);
 //  }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

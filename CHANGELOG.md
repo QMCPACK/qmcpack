@@ -2,6 +2,57 @@
 
 Notable changes to QMCPACK will be documented in this file. 
 
+## [3.1.0] - 2017-06-21
+
+### Notes
+
+This release incorporates an improved DMC equilibration scheme,
+numerous bugfixes, small improvements, and significantly improved
+testing. It is a recommended update.
+
+### QMCPACK updates
+
+* Improved population control during DMC equilibration. Reduces variance on larger runs.
+* Bugfix: Real valued wavefunction GPU code gave incorrect result for some non-gamma twists that could be made real, e.g. X point. Complex code (QMC_COMPLEX=1) was always correct.
+* All particle move VMC and DMC algorithms enabled, tests added.
+* Reptation Monte Carlo (RMC) enabled, tests added.
+* Significantly improved AFQMC implementation.
+* Added NiO based VMC and DMC performance tests and description in manual. Wavefunction files accessed via QMC_DATA.
+* Added DMC tests with locality and t-moves approximations.
+* Added AFQMC tests.
+* Added test of real space QMC restart capabilities.
+* Added tests for several estimators.
+* Added unit test for DMC walker propagation, effective core potentials, and OhmmsPETE.
+* To avoid filesystem limitations, QMC_SYMLINK_TEST_FILES can be set to symlink (1) or copy test files (0).
+* Fixed mixed precision Ceperley force evaluation.
+* Many updated tests to improve statistical reliability. Removed flux estimator from short tests because they were not reliable enough.
+* Tests that rely on non-standard python modules that are not available are skipped.
+* Error trap jastrow factors with cutoff radii larger than Wigner Seitz radius.
+* Bugfix: Prevent users from adding correlation terms on non-existing electron pairs, e.g. up-down correlation terms when only up-spin particles are present.
+* Support for measuring test coverage and performing coverage runs with cmake and ctest.
+* Support for GCC7 and IBM XL (non Blue Gene) compiler.
+* Support selecting GPU microarchitecture via -DCUDA_ARCH=sm_35(default).
+* SummitDev IBM Minsky build recipe (Power8 + NVIDIA Pascal P100 GPUs).
+* Significantly updated optimizer description in manual, including excited state optimization.
+* Added description of using Intel MKL with non-Intel compilers in manual.
+* Added description of MPIEXEC and MPIEXEC_NUMPROCS_FLAG to manual for systems where MPI runner is non-standard.
+* Updated labs with correct pseudopotentials, basis set files. 
+* Many updated error messages and warnings.
+
+### Known problems
+
+* AFQMC without MKL will fail, e.g. short-afqmc-N2_vdz-4-1 test fails.
+
+### NEXUS updates
+
+* Improved selection algorithm to obtain optimally tiled supercells.
+* Support for parallel pw2qmcpack workflows.
+* Support for HPC resources at the Leibniz Supercomputing Center.
+* Better consistency checks for the Structure class.
+* Bugfix: forbid job bundling for simulations that depend on each other.
+* Bugfix: correctly select low spin polarization in primitive and tiled (net_spin="low" option).
+
+
 ## [3.0.0] - 2017-01-30
 
 ### Notes

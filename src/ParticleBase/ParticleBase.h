@@ -284,8 +284,3 @@ inline T* get_last_address(ParticleAttrib<TinyVector<T,D> >& a)
 #include "ParticleBase/ParticleBase.cpp"
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -102,8 +102,3 @@ public:
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: miguel.mmorales $
- * $Revision: 4791 $   $Date: 2010-05-12 12:08:35 -0500 (Wed, 12 May 2010) $
- * $Id: MultiSlaterDeterminantWithBackflow.h 4791 2010-05-12 17:08:35Z miguel.mmorales $
- ay**************************************************************************/

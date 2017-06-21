@@ -370,9 +370,4 @@ void SPOSetBase::evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaCom
 #endif
 }
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

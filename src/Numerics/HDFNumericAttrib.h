@@ -940,8 +940,3 @@ struct HDFAttribIO<Array<std::complex<double>,D> >: public HDFAttribIOBase
 #endif
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -126,8 +126,3 @@ void JastrowBasisBuilder::printRadialFunctors(const std::string& elementType, CO
 #endif
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1623 $   $Date: 2007-01-18 18:01:15 -0600 (Thu, 18 Jan 2007) $
- * $Id: JastrowBasisBuilder.h 1623 2007-01-19 00:01:15Z jnkim $
- ***************************************************************************/

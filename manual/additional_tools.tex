@@ -1,0 +1,44 @@
+\chapter{Additional Tools}
+\label{chap:additional_tools}
+QMCPACK provides a set of lightweight executables that address certain
+common problems in QMC workflow and analysis.  These range from conversion utilities between 
+different file formats and QMCPACK (e.g. ppconvert and convert4qmc),  
+(extract-eshdf-kvectors), to post-processing utilities (trace-density and qmcfinitesize), and to many others.  In this chapter, we cover the use cases, syntax, and features of all additional tools provided with QMCPACK.  
+
+\section{Initialization Tools}
+  \subsection{getSupercell}
+
+\section{Post-Processing}
+  \subsection{qmca}
+    qmca is a versatile tool to analyze and plot the raw data from QMCPACK *.scalar.dat files.
+    It is a python executable and part of the Nexus suite of tools.  It can be found in 
+    \texttt{trunk/nexus/executables}. 
+  \subsection{qmcfit}
+  \subsection{qmcfinitesize}
+    qmcfinitesize is a utility to compute many-body finite-size corrections to the energy.  It
+    is a C++ executable that is built alongside the qmcpack executable.  It can be found in 
+    \texttt{trunk/build/bin}
+  \subsection{trace-density}
+
+\section{Converters} 
+  \subsection{convert4qmc}
+    convert4qmc allows conversion of orbitals and wavefunctions from quantum chemistry
+    output files to QMCPACK xml input files.  It is a small C++ executable that is built 
+    alongside the qmcpack executable, and can be found in \texttt{trunk/build/bin}.  
+  \subsection{wfconvert}
+    wfconvert allow conversion between 
+  \subsection{pw2qmcpack.x}
+    pw2qmcpack.x is an executable that converts PWSCF wavefunctions to QMCPACK readable 
+    HDF5 format.  This utility is built alongside the Quantum Espresso post-processing utilities.
+    This utility is written in Fortran90, and is distributed as a patch of the Quantum Espresso 
+    source code.  The patch, as well as automated QE download and patch scripts, can be found in 
+    \texttt{trunk/external\_codes/quantum\_espresso}.
+  \subsection{ppconvert}
+    ppconvert is a utility to convert pseudopotentials between different commonly used formats.
+    It is a stand alone C++ executable that is not automatically built, but the source is 
+    included in \texttt{trunk/src/QMCTools/ppconvert}.  BLAS/LAPACK libraries are required.  
+
+\section{Miscellaneous}
+  \subsection{extract-eshdf-kvectors}
+    
+

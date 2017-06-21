@@ -158,8 +158,3 @@ SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromIndices(indices_t& indices)
 
 
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

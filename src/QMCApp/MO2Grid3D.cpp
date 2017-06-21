@@ -757,8 +757,3 @@ xmlNodePtr MO2Grid3D::generateNumericalOrbitals(xmlNodePtr cur)
   return curRoot;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

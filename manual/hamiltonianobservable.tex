@@ -580,6 +580,67 @@ Additional information:
    <estimator name="Density" type="density" delta="0.05 0.05 0.05"/>
 \end{lstlisting}
 
+\subsection{Lattice deviation estimator}
+Record deviation of a group of particles in one particle set (target) from a group of particles in another particle set (source).
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{estimator type=sk} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   & \bfseries name       & \bfseries datatype & \bfseries values  & \bfseries default   & \bfseries description \\
+   & \texttt{type}$^r$    &  text              & latticedeviation      &                     & Must be latticedeviation       \\
+   & \texttt{name}$^r$    &  text              & \textit{anything} & any                 & Unique name for estimator \\
+   & \texttt{hdf5}$^o$    &  boolean           & yes/no            & no                  & Output to \texttt{stat.h5} (yes) \\
+   & \texttt{per\_xyz}$^o$    &  boolean           & yes/no            & no                  & Directional-resolved (yes) \\
+   & \texttt{source}$^r$    &  text           & e/ion0/\dots         & no                  & source particle set \\
+   & \texttt{sgroup}$^r$    &  text           & u/d/\dots         & no                  & source particle group \\
+   & \texttt{target}$^r$    &  text           & e/ion0/\dots         & no                  & target particle set \\
+   & \texttt{tgroup}$^r$    &  text           & u/d/\dots         & no                  & target particle group \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+Additional information:
+\begin{itemize}
+  \item{\texttt{source}: The ``reference'' particle set to measure distances from, actual reference points are determined together with \verb|sgroup|.}
+  \item{\texttt{sgroup}: The ``reference'' particle group to measure distances from.} 
+  \item{\texttt{source}: The ``target'' particle set to measure distances to.}
+  \item{\texttt{sgroup}: The ``target'' particle group to measure distances to. For example, in Listing~\ref{lst:latdev}, the distance from the up electron (``u'') to the origin of the coordinate system is recorded.}
+  \item{\texttt{per\_xyz}: Record direction-resolved distance. In Listing~\ref{lst:latdev}, the x,y,z coordinates of the up electron will be recorded separately if \texttt{per\_xyz=yes}.}
+  \item{\texttt{hdf5}: Record particle-resolved distances in the h5 file if \texttt{gdf5=yes}.}.
+\end{itemize}
+
+\begin{lstlisting}[caption={Lattice deviation estimator element.},label={lst:latdev}]
+  <particleset name="e" random="yes">
+    <group name="u" size="1" mass="1.0">
+       <parameter name="charge"              >    -1                    </parameter>
+       <parameter name="mass"                >    1.0                   </parameter>
+    </group>
+    <group name="d" size="1" mass="1.0">
+       <parameter name="charge"              >    -1                    </parameter>
+       <parameter name="mass"                >    1.0                   </parameter>
+    </group>
+  </particleset>
+  
+  <particleset name="wf_center">
+    <group name="origin" size="1">
+      <attrib name="position" datatype="posArray" condition="0">
+               0.00000000        0.00000000        0.00000000
+      </attrib>
+    </group>
+  </particleset>
+  
+  <estimator type="latticedeviation" name="latdev" hdf5="yes" per_xyz="yes"
+    source="wf_center" sgroup="origin" target="e" tgroup="u"/>
+\end{lstlisting}
 
 \subsection{Spin density estimator}
 
@@ -704,6 +765,33 @@ Additional information:
   <estimator type="gofr" name="gofr" num_bin="200" rmax="3.0" source="ion0" />
 \end{lstlisting}
 
+\subsection{Species kinetic energy}
+Record species-resolved kinetic energy instead of the total kinetic energy in the \verb|Kinetic| column of scalar.dat. \verb|SpeciesKineticEnergy| is arguable the simplest estimator in QMCPACK. The implementation of this estimator is detailed in \verb|manual/estimator/estimator_implementation.pdf|.
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{estimator type=sk} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   & \bfseries name       & \bfseries datatype & \bfseries values  & \bfseries default   & \bfseries description \\
+   & \texttt{type}$^r$    &  text              & specieskinetic      &                     & Must be specieskinetic       \\
+   & \texttt{name}$^r$    &  text              & \textit{anything} & any                 & Unique name for estimator \\
+   & \texttt{hdf5}$^o$    &  boolean           & yes/no            & no                  & Output to \texttt{stat.h5} (yes) \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+
+\begin{lstlisting}[caption=Species kinetic energy estimator element.]
+  <estimator type="specieskinetic" name="skinetic" hdf5="no"/>
+\end{lstlisting}
 
 \subsection{Static structure factor, $S(k)$}
 

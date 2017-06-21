@@ -365,8 +365,3 @@ NonLocalECPotential::setParticlePropertyList(QMCTraits::PropertySetType& plist,
 
 
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -292,6 +292,16 @@ class Simulation(NexusCore):
         inp_args = obj()
         sim_args.transfer_from(kwargs,sim_kw)
         inp_args.transfer_from(kwargs,inp_kw)
+        if 'system' in inp_args:
+            system = inp_args.system
+            if not isinstance(system,PhysicalSystem):
+                extra=''
+                if not isinstance(extra,obj):
+                    extra = '\nwith value: {0}'.format(system)
+                #end if
+                cls.class_error('invalid input for variable "system"\nsystem object must be of type PhysicalSystem\nyou provided type: {0}'.format(system.__class__.__name__)+extra)
+            #end if
+        #end if
         if 'pseudos' in inp_args and inp_args.pseudos!=None:
             pseudos = inp_args.pseudos
             # support ppset labels
@@ -320,9 +330,6 @@ class Simulation(NexusCore):
             #end if
             if 'system' in inp_args:
                 system = inp_args.system
-                if not isinstance(system,PhysicalSystem):
-                    cls.class_error('system object must be of type PhysicalSystem')
-                #end if
                 species_labels,species = system.structure.species(symbol=True)
                 pseudopotentials = nexus_core.pseudopotentials
                 for ppfile in pseudos:
@@ -417,6 +424,8 @@ class Simulation(NexusCore):
     def init_job(self):
         if self.job==None:
             self.error('job not provided.  Input field job must be set to a Job object.')
+        elif not isinstance(self.job,Job):
+            self.error('Input field job must be set to a Job object\nyou provided an object of type: {0}\nwith value: {1}'.format(self.job.__class__.__name__,self.job))
         #end if
         self.job = self.job.copy()
         self.job.initialize(self)
@@ -465,6 +474,11 @@ class Simulation(NexusCore):
         #end if
         if isinstance(self.system,PhysicalSystem):
             self.system = self.system.copy()
+            consistent,msg = self.system.check_consistent(exit=False,message=True)
+            if not consistent:
+                locdir = os.path.join(nexus_core.local_directory,nexus_core.runs,self.path)
+                self.error('user provided physical system is not internally consistent\nsimulation identifier: {0}\nlocal directory: {1}\nmore details on the user error are given below\n\n{2}'.format(self.identifier,locdir,msg))
+            #end if
         elif self.system!=None:
             self.error('system must be a PhysicalSystem object\nyou provided an object of type: {0}'.format(self.system.__class__.__name__))
         #end if
@@ -818,6 +832,18 @@ class Simulation(NexusCore):
         self.got_dependencies = True
     #end def get_dependencies
         
+
+    def downstream_simids(self,simids=None):
+        if simids is None:
+            simids = set()
+        #end if
+        for sim in self.dependents:
+            simids.add(sim.simid)
+            sim.downstream_simids(simids)
+        #end for
+        return simids
+    #end def downstream_simids
+
 
     def copy_file(self,sourcefile,dest):
         src = os.path.dirname(os.path.abspath(sourcefile))
