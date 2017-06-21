@@ -885,8 +885,10 @@ ENDIF(QMC_ADIOS)
 
 SUBDIRS(src)
 
-SUBDIRS(tests)
-SUBDIRS(examples)
+IF(NOT(QMC_BUILD_LEVEL GREATER 4))
+  SUBDIRS(tests)
+  SUBDIRS(examples)
+ENDIF()
 
 #ADD_CUSTOM_TARGET(print_settings ALL
 #      ${CMAKE_COMMAND} -E echo "Print build settings"
