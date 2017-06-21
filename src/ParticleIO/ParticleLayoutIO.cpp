@@ -189,7 +189,7 @@ bool LatticeParser::put(xmlNodePtr cur)
 
   //initialize the global cell
   //qmc_common.theSuperCell=lattice_in;
-  return true;
+  return lattice_defined;
 }
 
 
