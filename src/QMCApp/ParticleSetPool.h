@@ -103,6 +103,10 @@ public:
    *    */
   void make_clones(int n);
 
+  /**  Access to TileMatrix for testing
+   */
+  Tensor<int, OHMMS_DIM> &getTileMatrix() { return TileMatrix; }
+
 private:
   /** global SimulationCell
    *
