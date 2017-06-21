@@ -71,11 +71,11 @@ void ParticleSet::createSK()
   //int membersize= mySpecies.addAttribute("membersize");
   //for(int ig=0; ig<mySpecies.size(); ++ig)
   //  SubPtcl[ig+1]=SubPtcl[ig]+mySpecies(membersize,ig);
-  
+
+  if(UseBoundBox) convert2Cart(R); //make sure that R is in Cartesian coordinates
 
   if(Lattice.SuperCellEnum != SUPERCELL_OPEN)
   {
-    convert2Cart(R); //make sure that R is in Cartesian coordinates
     Lattice.SetLRCutoffs();
     LRBox=Lattice;
     if(Lattice.SuperCellEnum == SUPERCELL_SLAB)

@@ -46,7 +46,9 @@ bool LatticeParser::put(xmlNodePtr cur)
   std::size_t mpigrid = ParticleLayout_t::MPI_GRID;
 
   Tensor<OHMMS_PRECISION_FULL,DIM> lattice_in;
-  bool lattice_in_not_defined=true;
+  bool lattice_defined=false;
+  bool bconds_defined=false;
+  int boxsum=0;
 
   cur = cur->xmlChildrenNode;
   while (cur != NULL)
@@ -62,7 +64,7 @@ bool LatticeParser::put(xmlNodePtr cur)
       else if(aname == "lattice")
       {
         putContent(lattice_in,cur);
-        lattice_in_not_defined=false;
+        lattice_defined=true;
         //putContent(ref_.R,cur);
       }
       else if(aname == "grid")
@@ -80,7 +82,7 @@ bool LatticeParser::put(xmlNodePtr cur)
       else if(aname == "bconds")
       {
         putContent(bconds,cur);
-        int boxsum=0;
+        bconds_defined=true;
         for(int idir=0; idir<DIM; idir++)
         {
           char b = bconds[idir][0];
@@ -94,17 +96,6 @@ bool LatticeParser::put(xmlNodePtr cur)
             boxsum++;
           }
         }
-        if(boxsum==0&&lattice_in_not_defined)
-        {
-          app_log() << "  Lattice is not specified for the Open BC. Add a huge box." << std::endl;
-          lattice_in=0;
-          for(int idir=0; idir<DIM; idir++)
-            lattice_in(idir,idir)=1e5;
-        }
-        //if(boxsum>0 && boxsum<DIM)
-        //{
-        //  APP_ABORT(" LatticeParser::put \n   Mixed boundary is not supported. Set \n   <parameter name=\"bconds\">p p p </parameter>\n");
-        //}
       }
       else if(aname == "LR_dim_cutoff")
       {
@@ -125,6 +116,29 @@ bool LatticeParser::put(xmlNodePtr cur)
       }
     }
     cur = cur->next;
+  }
+  // checking boundary conditions
+  if(lattice_defined)
+  {
+    if(!bconds_defined)
+    {
+      app_log() << "  Lattice is specified but boundary conditions are not. Assuming PBC." << std::endl;
+      ref_.BoxBConds = true;
+    }
+  }
+  else
+  {
+    if(boxsum==0)
+    {
+      app_log() << "  Lattice is not specified for the Open BC. Add a huge box." << std::endl;
+      lattice_in=0;
+      for(int idir=0; idir<DIM; idir++)
+        lattice_in(idir,idir)=1e5;
+    }
+    else
+    {
+      APP_ABORT(" LatticeParser::put \n   Mixed boundary is supported only when a lattice is specified!");
+    }
   }
   //special heg processing
   if(rs>0.0)
@@ -175,7 +189,7 @@ bool LatticeParser::put(xmlNodePtr cur)
 
   //initialize the global cell
   //qmc_common.theSuperCell=lattice_in;
-  return true;
+  return lattice_defined;
 }
 
 
