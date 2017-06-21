@@ -211,6 +211,15 @@ ENDIF()
                     0 # VMC
                     TRUE)
 
+  QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_pp-x-drift-vmc_hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    hf_vmc_LiH-x-drift
+                    hf_vmc_LiH-x-drift.xml
+                    1 16
+                    LIH_X_SCALARS
+                    0 # VMC
+                    TRUE)
+
 IF(ENABLE_AA_SOA)
   QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
@@ -221,7 +230,6 @@ IF(ENABLE_AA_SOA)
                     0 # VMC
                     TRUE)
 ENDIF(ENABLE_AA_SOA)
-
 
 # Arbitrary k-point requires complex build to run. Ensure fails with real/non-complex build
   LIST(APPEND LIH_ARB_SCALARS "kinetic" "7.4201207734399359 0.024")

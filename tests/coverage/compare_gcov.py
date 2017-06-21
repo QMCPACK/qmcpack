@@ -124,13 +124,16 @@ def mark_as_uncovered(gcov_base):
   for line in gcov_base.line_info.iterkeys():
     base_line = gcov_base.line_info[line]
     Uncov_norm= '#####'
+    Nocode = '-'
 
     diff_count = base_line.count
     try:
       base_count = int(base_line.count)
       diff_count = Uncov_norm
     except ValueError:
-      pass
+      if base_line.count == Uncov_norm:
+        diff_count = Nocode
+
 
     diff_line_info[line] = read_gcov.LineInfo(diff_count, line, base_line.src)
 

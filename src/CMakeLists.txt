@@ -338,6 +338,7 @@ ENDIF(HAVE_OOMPI)
     IF (HAS_TARGET_COMPILE_DEFINITIONS)
       SUBDIRS(ParticleBase/tests)
       SUBDIRS(QMCDrivers/tests)
+      SUBDIRS(QMCApp/tests)
     ENDIF()
   endif() #}
 
