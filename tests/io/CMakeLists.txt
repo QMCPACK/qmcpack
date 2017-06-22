@@ -4,7 +4,7 @@
 
 message("Adding I/O tests for QMCPACK")
 
-function(RUN_RESTART_AND_CHECK base_name base_dir input_file procs threads check_script)
+function(RUN_RESTART_AND_CHECK base_name base_dir input_file procs threads check_script use_for_coverage)
 
   # "run restart and check" function does 3 things:
   #  1. run qmcpack executable on $input_file.in.xml
@@ -28,6 +28,11 @@ function(RUN_RESTART_AND_CHECK base_name base_dir input_file procs threads check
     # make restart depend on the initial run
     set_property(TEST ${restart_name} APPEND PROPERTY DEPENDS ${full_name})
 
+    if ( use_for_coverage )
+      set_property(TEST ${full_name} APPEND PROPERTY LABELS "coverage")
+      set_property(TEST ${restart_name} APPEND PROPERTY LABELS "coverage")
+    endif()
+
     # set up command to run check, assume check_script is in the same folder as input
     set(check_cmd ${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script})
     #message(${check_cmd})
@@ -48,5 +53,5 @@ function(RUN_RESTART_AND_CHECK base_name base_dir input_file procs threads check
 
 endfunction()
 
-RUN_RESTART_AND_CHECK( restart "${CMAKE_SOURCE_DIR}/tests/io/restart" qmc_short 8 2 check.sh)
-RUN_RESTART_AND_CHECK( restart "${CMAKE_SOURCE_DIR}/tests/io/restart" qmc_short 1 16 check.sh)
+RUN_RESTART_AND_CHECK( restart "${CMAKE_SOURCE_DIR}/tests/io/restart" qmc_short 8 2 check.sh false)
+RUN_RESTART_AND_CHECK( restart "${CMAKE_SOURCE_DIR}/tests/io/restart" qmc_short 1 16 check.sh true)
