@@ -561,11 +561,14 @@ bool phaseless_ImpSamp_ForceBias::hdf_read(hdf_archive& dump,const std::string& 
       if(tag != std::string("")) dump.pop();
       dump.pop();
       dump.pop();
+    } else {
+      // read Spvn
+      afqmc::read_hdf5_SpMat(Spvn,split,dump,std::string("Spvn"),nblk,TG,true,nread);
     }
-
   } 
 
-  Spvn.compress(TG.getNodeCommLocal());
+  // compression is done in read_hdf5_SpMat
+  //Spvn.compress(TG.getNodeCommLocal());
 
   if(coreid == 0) {
     // scale back by std::sqrt(dt) 

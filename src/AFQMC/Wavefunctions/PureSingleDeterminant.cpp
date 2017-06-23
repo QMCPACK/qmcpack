@@ -544,7 +544,7 @@ bool PureSingleDeterminant::getHamiltonian(HamPtr h)
         return false;
       }
     } else {
-      app_log()<<" PureSingleDeterminant - Creating Hamildm_tonian for Pure Determinant. \n"; 
+      app_log()<<" PureSingleDeterminant - Creating Hamiltonian for Pure Determinant. \n"; 
       if(!sHam->createHamiltonianForPureDeterminant(dm_type,useFacHam,isOcc_alpha,isOcc_beta,hij,SMSpHijkl,cutoff)) {
         app_error()<<"Error in createHamiltonianForPureDeterminant. \n";
         return false;

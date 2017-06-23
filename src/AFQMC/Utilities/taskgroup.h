@@ -141,6 +141,7 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
     node_in_TG = node_number%nnodes_per_TG; 
     myrow = core_number/ncores_per_TG; 
     TG_number = mycol + ncols*myrow; 
+    number_of_TGs = nrows*ncols;
     myComm->split_comm(TG_number,MPI_COMM_TG);
     MPI_Comm_rank(MPI_COMM_TG,&TG_rank);
     MPI_Comm_size(MPI_COMM_TG,&TG_nproc);
@@ -227,6 +228,7 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
     node_in_TG = node_number%nnodes_per_TG; 
     myrow = core_number/ncores_per_TG; 
     TG_number = mycol + ncols*myrow; 
+    number_of_TGs = nrows*ncols;
     myComm->split_comm(TG_number,MPI_COMM_TG);
     MPI_Comm_rank(MPI_COMM_TG,&TG_rank);
     MPI_Comm_size(MPI_COMM_TG,&TG_nproc);
@@ -383,6 +385,8 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
 
   int getTGNumber() const { return TG_number; }
 
+  int getNumberOfTGs() const { return number_of_TGs; }
+
   int getTGRank() const { return TG_rank; }
 
   int getTGSize() const { return TG_nproc; }
@@ -415,7 +419,8 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
   bool initialized;
   
   int node_number, core_number, tot_nodes, tot_cores;
-  int TG_number;
+  int TG_number; 
+  int number_of_TGs; 
   // TGs are defined in a 2-D framwork. Rows correspond to different groups in a node 
   // Cols correspond to division of nodes into groups. Every MPI task belongs to a specific
   // TG given by the myrow and mycol integer.      

@@ -35,6 +35,8 @@
 #include "AFQMC/Numerics/DenseMatrixOperations.h"
 #include "AFQMC/Numerics/SparseMatrixOperations.h"
 #include "AFQMC/Utilities/Utils.h"
+#include "AFQMC/Matrix/hdf5_readers.hpp"
+#include "AFQMC/Matrix/array_partition.hpp"
 
 // use lambdas FIX FIX FIX
  struct my_pair_sorter {
@@ -1417,8 +1419,8 @@ namespace qmcplusplus
     Timer.reset("Generic");
     Timer.start("Generic");
 
-    if(factorizedHamiltonian) 
-      n_reading_cores=1; // no parallelization yet
+    //if(factorizedHamiltonian) 
+    //  n_reading_cores=1; // no parallelization yet
 
     // processor info
     int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
@@ -1578,9 +1580,84 @@ namespace qmcplusplus
       // must anything be done???
     } else if(factorizedHamiltonian) {
 
-      if(distribute_Ham) 
-        APP_ABORT("ERROR: distribute_Ham not implemented with factorized hamiltonian yet. \n\n\n");
+      app_log()<<" Reading factorized hamiltonian. \n";  
 
+      min_i = 0;
+      max_i = nvecs;
+
+      int nrows = NMO*NMO;
+      if(!spinRestricted) nrows *= 2;
+
+      if(rank()==0) {
+
+        afqmc::simple_matrix_partition<afqmc::TaskGroup,IndexType,RealType> split(nrows,nvecs,cutoff1bar);
+        std::vector<IndexType> counts;
+        // count dimensions of sparse matrix
+        afqmc::count_entries_hdf5_SpMat(dump,split,std::string("V2fact"),int_blocks,false,counts,TG,true,nread);
+
+        std::vector<IndexType> sets;
+        split.partition_over_TGs(TG,false,counts,sets);
+
+        if(distribute_Ham) {
+          app_log()<<" Partitioning of (factorized) Hamiltonian Vectors: ";
+          for(int i=0; i<=TG.getNumberOfTGs(); i++)
+            app_log()<<sets[i] <<" ";
+          app_log()<<std::endl;
+          app_log()<<" Number of terms in each partitioning: ";
+          for(int i=0; i<TG.getNumberOfTGs(); i++)
+            app_log()<<accumulate(counts.begin()+sets[i],counts.begin()+sets[i+1],0) <<" ";
+          app_log()<<std::endl;
+
+          MPI_Bcast(sets.data(), sets.size(), MPI_INT, 0, myComm->getMPI());
+          min_i = sets[TG.getTGNumber()];
+          max_i = sets[TG.getTGNumber()+1];
+          //for(int i=0; i<nnodes_per_TG; i++)
+          //  nCholVec_per_node[i] = sets[i+1]-sets[i];
+          //GlobalSpvnSize = std::accumulate(counts.begin(),counts.end(),0);
+        }
+
+        // resize Spvn
+        int sz = std::accumulate(counts.begin()+min_i,counts.begin()+max_i,0);
+        MPI_Bcast(&sz, 1, MPI_INT, 0, TG.getNodeCommLocal());
+
+        V2_fact.setDims(nrows,nvecs);
+        V2_fact.allocate(sz);
+
+        // read Spvn    
+        afqmc::read_hdf5_SpMat(V2_fact,split,dump,std::string("V2fact"),int_blocks,TG,true,nread);
+
+      } else {
+
+        afqmc::simple_matrix_partition<afqmc::TaskGroup,IndexType,RealType> split(nrows,nvecs,cutoff1bar);
+        std::vector<IndexType> counts;
+        // count dimensions of sparse matrix
+        afqmc::count_entries_hdf5_SpMat(dump,split,std::string("V2fact"),int_blocks,false,counts,TG,true,nread);
+
+        std::vector<IndexType> sets(TG.getNumberOfTGs()+1);
+        if(distribute_Ham) {
+          MPI_Bcast(sets.data(), sets.size(), MPI_INT, 0, myComm->getMPI());
+          min_i = sets[TG.getTGNumber()];
+          max_i = sets[TG.getTGNumber()+1];
+        }
+
+        int sz;
+        if( coreid==0 )
+          sz = std::accumulate(counts.begin()+min_i,counts.begin()+max_i,0);
+        MPI_Bcast(&sz, 1, MPI_INT, 0, TG.getNodeCommLocal());
+
+        V2_fact.setDims(nrows,nvecs);
+        V2_fact.allocate(sz);
+
+        if(n_reading_cores <=0 || coreid < n_reading_cores) 
+          split.partition_over_TGs(TG,false,counts,sets);
+
+        // read Spvn    
+        afqmc::read_hdf5_SpMat(V2_fact,split,dump,std::string("V2fact"),int_blocks,TG,true,nread);
+
+      } 
+      
+
+/*
       // no parallel reading yet
       if(myComm->rank() == 0) {
 
@@ -1596,7 +1673,7 @@ namespace qmcplusplus
         myComm->bcast(nvecs_after_cutoff);
 
         std::vector<int> sz(nvecs);
-        if(!dump.read(sz,"V2fact_vec_sizes")) {
+        if(!dump.read(sz,"V2fact_block_sizes")) {
           app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2fact_vec_sizes dataset. \n";      
           return false;
         }
@@ -1734,6 +1811,7 @@ namespace qmcplusplus
       app_log()<<" -- Average time to read std::vector from h5 file: " <<Timer.average("Generic3") <<"\n";
       app_log()<<" -- Average time to bcast std::vector: " <<Timer.average("Generic4") <<"\n";
       app_log()<<" -- Time to compress factorized Hamiltonian from h5 file: " <<Timer.average("Generic2") <<"\n";
+*/
       app_log()<<" Memory used by factorized 2-el integral table: " <<V2_fact.memoryUsage()/1024.0/1024.0 <<" MB. " <<std::endl;
  
     } else {  // factorizedHamiltonian
@@ -1791,7 +1869,7 @@ namespace qmcplusplus
       myComm->allreduce(ntpo);
 
       if(distribute_Ham) {
-        std::vector<long> sets(number_of_TGs+1);
+        std::vector<long> sets(TG.getNumberOfTGs()+1);
         if(myComm->rank() == 0) {
           std::vector<long> nv(NMO+1);
           nv[0]=0;
@@ -1799,9 +1877,9 @@ namespace qmcplusplus
             nv[i+1]=nv[i]+ntpo[i];
           balance_partition_ordered_set(NMO,nv.data(),sets);
           app_log()<<" Hamiltonian partitioning: \n   Orbitals:        ";
-          for(int i=0; i<=number_of_TGs; i++) app_log()<<sets[i] <<" "; 
+          for(int i=0; i<=TG.getNumberOfTGs(); i++) app_log()<<sets[i] <<" "; 
           app_log()<<std::endl <<"   Terms per block: ";  
-          for(int i=0; i<number_of_TGs; i++) app_log()<<nv[sets[i+1]]-nv[sets[i]] <<" ";
+          for(int i=0; i<TG.getNumberOfTGs(); i++) app_log()<<nv[sets[i+1]]-nv[sets[i]] <<" ";
           app_log()<<std::endl;  
         }
         MPI_Bcast(sets.data(),sets.size(),MPI_LONG,0,myComm->getMPI());

@@ -134,6 +134,49 @@ struct simple_matrix_partition
     }    
   }
 
+  // this breaks a matrix dimension over TG.
+  inline void partition_over_TGs(const task_group& TG, bool byRow, const std::vector<IType>& counts, std::vector<IType>& sets)
+  {
+    int ngrps = TG.getNumberOfTGs();
+    int nblk = counts.size();
+    IType cnt=0;
+    assert(nblk >= ngrps);
+    if(byRow)
+      assert(nblk == nrows);
+    else
+      assert(nblk == ncols);
+    sets.resize(ngrps+1);
+    sets[0] = 0;
+    if(ngrps > 1) {
+      std::vector<IType> nv(counts.size()+1);
+      nv[0]=0;
+      typename std::vector<IType>::iterator itn=nv.begin()+1;
+      for(typename std::vector<IType>::const_iterator itc=counts.begin(), ite=counts.end(); itc!=ite; itc++,itn++) {
+        cnt+=*(itc);
+        (*itn)=cnt;
+      }
+      balance_partition_ordered_set(counts.size(),nv.data(),sets);
+      int node_number = TG.getTGNumber();
+      if(byRow) {
+        r0=sets[node_number];
+        r1=sets[node_number+1];
+      } else {
+        c0=sets[node_number];
+        c1=sets[node_number+1];
+      }
+    } else {
+      if(byRow) {
+        r0=0;
+        r1=nrows;
+        sets[1]=nrows;
+      } else {
+        c0=0;
+        c1=ncols;
+        sets[1]=ncols;
+      }
+    }
+  }
+
   // this breaks a local segment over TG.ncores_per_TG, assumes homogeneous blocks 
   inline void sub_partition(const task_group& TG, bool byRow, std::vector<IType>& sets) 
   {
