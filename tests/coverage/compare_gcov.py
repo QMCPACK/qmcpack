@@ -271,6 +271,10 @@ def compute_gcov_diff(gcov_base, gcov_unit, print_diff=False, print_diff_summary
 
     line_has_diff = False
 
+    #  base_line.count is the string value for the count
+    #  base_count is the converted integer value
+    #     will be 0 for No code or uncovered
+
     if base_line.count == Nocode and unit_line.count == Nocode:
       diff_count = Nocode
 
@@ -296,7 +300,7 @@ def compute_gcov_diff(gcov_base, gcov_unit, print_diff=False, print_diff_summary
       unit_totals_rel_uncovered += 1
       line_has_diff = True
     elif base_count == 0 and unit_count != 0:
-      diff_count = unit_count
+      diff_count = Nocode
       line_has_diff = True
     elif base_count != 0 and unit_count != 0:
       diff_count = unit_count
