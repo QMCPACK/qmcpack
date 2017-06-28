@@ -6,6 +6,7 @@ import os
 import sys
 import demangle
 import read_gcov
+import merge_gcov
 
 def get_gcov_files(dir_name):
   """
@@ -73,6 +74,20 @@ def read_and_filter_gcov_files(fnames, directory):
       gcov_map[fname] = gcov
 
   return new_fnames, gcov_map
+
+def merge_gcov_files_in_dir(fnames, directory):
+  to_merge = defaultdict(list)
+  for fname in fnames:
+    # Files from 'gcov -l' have '##' to separate the two parts of the path
+    if '##' in fname:
+      original_name, src_name = fname.split('##')
+      to_merge[src_name].append(fname)
+    else:
+      to_merge[fname].append(fname)
+
+  for output_fname, input_fnames in to_merge.iteritems():
+      inputs = [os.path.join(directory, fname) for fname in input_fnames]
+      merge_gcov.merge_gcov_files(inputs, output_fname)
 
 
 def compare_gcov_dirs(dir_base, dir_unit):
@@ -471,7 +486,10 @@ if __name__ ==  '__main__':
   # Compare gcov files in base and unit directories and print results
   diff_action = ['diff','d']
 
-  actions = compare_action + process_action + diff_action
+  # Merge files with same source (from gcov -l)
+  merge_action = ['merge','m']
+
+  actions = compare_action + process_action + diff_action + merge_action
 
   parser.add_argument('-a','--action',default='compare',choices=actions)
   parser.add_argument('--base-dir',
@@ -500,6 +518,10 @@ if __name__ ==  '__main__':
   if args.action in process_action:
     base = set(get_gcov_files(args.base_dir))
     read_and_filter_gcov_files(base, args.base_dir)
+
+  if args.action in merge_action:
+    base = set(get_gcov_files(args.base_dir))
+    merge_gcov_files_in_dir(base, args.base_dir)
 
   if args.action in diff_action:
     if not args.unit_dir:
