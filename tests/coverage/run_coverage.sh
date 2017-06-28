@@ -22,16 +22,25 @@ echo "Running base coverage"
 
 ctest -L coverage
 
+raw_base_dir="cov_base_raw"
+if [ ! -d $raw_base_dir ]; then
+  mkdir $raw_base_dir
+fi
+
 base_dir="cov_base"
 if [ ! -d $base_dir ]; then
   mkdir $base_dir
 fi
 
-cd $base_dir
-find `pwd`/.. -name \*.gcda | xargs -i gcov -b -p {}
+cd $raw_base_dir
+find `pwd`/.. -name \*.gcda | xargs -i gcov -b -p -l {}
 
 # Filter out unwanted files
 python ${SRC_ROOT}/tests/coverage/compare_gcov.py -a process --base-dir .
+
+cd ../$base_dir
+# Combine different gcov files corresponding to the same source
+python ${SRC_ROOT}/tests/coverage/compare_gcov.py -a merge --base-dir ../$raw_base_dir
 
 
 # If gcovr is present, create an html report
@@ -56,14 +65,24 @@ ${SRC_ROOT}/tests/coverage/clean_gcda.sh
 echo "Running unit test coverage"
 ctest -L unit
 
-unit_dir="cov_unit"
+raw_unit_dir="cov_unit_raw"
+if [ ! -d $raw_unit_dir ]; then
+  mkdir $raw_unit_dir
+fi
 
+unit_dir="cov_unit"
 if [ ! -d $unit_dir ]; then
   mkdir $unit_dir
 fi
 
-cd $unit_dir
-find `pwd`/.. -name \*.gcda | xargs -i gcov -b -p {}
+cd $raw_unit_dir
+find `pwd`/.. -name \*.gcda | xargs -i gcov -b -p -l {}
+
+cd ../$unit_dir
+
+# Combine different gcov files corresponding to the same source
+python ${SRC_ROOT}/tests/coverage/compare_gcov.py -a merge --base-dir ../$raw_unit_dir
+
 
 # Filter out unwanted files
 python ${SRC_ROOT}/tests/coverage/compare_gcov.py -a process --base-dir .
