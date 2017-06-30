@@ -206,6 +206,8 @@ int main(int argc, char** argv)
   wOut.dump(elecs[0],1);
   myComm->barrier();
 
+  if(!myComm->rank())
+    std::cout << "Walkers are dumped!\n";
   const char *restart_input = \
 "<tmp> \
   <mcwalkerset fileroot=\"restart\" node=\"-1\" version=\"3 0\" collected=\"yes\"/> \

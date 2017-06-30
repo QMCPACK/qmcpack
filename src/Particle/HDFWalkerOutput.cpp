@@ -207,7 +207,7 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
   //gcounts[1]=number_of_particles;
   //gcounts[2]=OHMMS_DIM;
 
-  if(hout.is_collective())
+  if(hout.is_parallel())
   { 
     TinyVector<int,3> counts(W.getActiveWalkers(),            number_of_particles,OHMMS_DIM);
     TinyVector<int,3> offsets(W.WalkerOffsets[myComm->rank()],number_of_particles,OHMMS_DIM);
