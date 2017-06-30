@@ -62,7 +62,7 @@ void hdf_archive::set_access_plist(bool request_pio, Communicate* comm)
       access_id = H5Pcreate(H5P_FILE_ACCESS);
       hid_t ret=H5Pset_fapl_mpio(access_id,comm->getMPI(),info);
       xfer_plist = H5Pcreate(H5P_DATASET_XFER);
-#ifdef defined(ENABLE_PHDF5)
+#if defined(ENABLE_PHDF5)
       // enable parallel collective I/O
       H5Pset_dxpl_mpio(xfer_plist,H5FD_MPIO_COLLECTIVE);
 #else
@@ -84,7 +84,7 @@ void hdf_archive::set_access_plist(bool request_pio, Communicate* comm)
   else
   {
     Mode.set(IS_PARALLEL,false);
-    Mode.set(IS_MASTER,TRUE);
+    Mode.set(IS_MASTER,true);
       Mode.set(NOIO,false);
   }
 }
