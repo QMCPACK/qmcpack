@@ -200,6 +200,9 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
 #if !defined(QMC_COMPLEX)
   else if(type == "molecularorbital" || type == "mo")
   {
+#if defined(ENABLE_AA_SOA)
+    PRE.error("Molecular orbital support is not ready on SoA builds. Stay tuned!",true);
+#endif
     ParticleSet* ions=0;
     //do not use box to check the boundary conditions
     if(targetPtcl.Lattice.SuperCellEnum==SUPERCELL_OPEN)
