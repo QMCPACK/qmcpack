@@ -497,6 +497,9 @@ QMCCostFunctionBase::put(xmlNodePtr q)
   tolower(targetExcitedStr);
   targetExcited = ( targetExcitedStr == "yes" );
 
+  if(usebuffer=="yes")
+    APP_ABORT("QMCCostFunctionBase::put usebuffer==\"yes\" is disabled currently.");
+
   if (includeNonlocalH=="yes")
     includeNonlocalH="NonLocalECP";
 
