@@ -122,18 +122,18 @@ struct h5data_proxy<hyperslab_proxy<CT,MAXDIM> >
   }
   inline bool write(hid_t grp, const std::string& aname, hid_t xfer_plist=H5P_DEFAULT)
   {
-    //if(ref_.use_slab)
-    //{
-    //  std::cout << "Everyone writes a part " << ref_.slab_dims_local[0] << std::endl;
-    //  return h5d_write(grp,aname.c_str(),
-    //      ref_.slab_rank,
-    //      ref_.slab_dims.data(), 
-    //      ref_.slab_dims_local.data(),
-    //      ref_.slab_offset.data(),
-    //      ref_.data(),xfer_plist);
-    //}
-    //else
+    if(ref_.use_slab)
+    {
+      return h5d_write(grp,aname.c_str(),
+          ref_.slab_rank,
+          ref_.slab_dims.data(), 
+          ref_.slab_dims_local.data(),
+          ref_.slab_offset.data(),
+          ref_.data(),xfer_plist);
+    }
+    else{
     return h5d_write(grp,aname.c_str(),ref_.slab_rank,ref_.slab_dims.data(),ref_.data(),xfer_plist);
+    }
   }
 };
 }

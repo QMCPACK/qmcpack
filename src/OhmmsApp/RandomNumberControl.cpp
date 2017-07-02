@@ -375,4 +375,68 @@ void RandomNumberControl::write(const std::string& fname, Communicate* comm)
 #endif
   }
 }
+
+//Parallel write (broken)
+void RandomNumberControl::read(const std::string& fname, Communicate* comm)
+{
+  int nthreads=omp_get_max_threads();
+  std::vector<uint_type> vt;
+  std::vector<int> shape(2,0),shape_now(2,0);
+  vt.reserve(nthreads*comm->size()*Random.state_size());
+  std::string h5name=fname+".random.h5";
+
+  //cheating just to see if it will read correctly on same configuration
+  TinyVector<int,2> shape_t(comm->size()*nthreads,Random.state_size());
+  TinyVector<int,2> counts(shape[0]/comm->size(), shape[1]);
+  TinyVector<int,2> offsets(comm->rank() * counts[0], 0);
+
+  hyperslab_proxy<std::vector<uint_type>,2> slab(vt, shape_t, counts, offsets);
+
+  hdf_archive hin(comm, true);
+  hin.open(h5name,H5F_ACC_RDONLY);
+  hin.push(hdf::main_state);
+  hin.push("random");
+
+  hin.read(slab,Random.EngineName);
+  shape[0]=static_cast<int>(slab.size(0));
+  shape[1]=static_cast<int>(slab.size(1));
+
+  std::vector<uint_type>::iterator vt_it(vt.begin());
+  for(int ip=0; ip<nthreads; ip++, vt_it += shape[1])
+  {
+    std::vector<uint_type> c(vt_it,vt_it+shape[1]);
+    Children[ip]->load(c);
+  }
+}
+
+//Parallel write
+void RandomNumberControl::write(const std::string& fname, Communicate* comm)
+{
+  int nthreads=omp_get_max_threads();
+  std::vector<uint_type> vt;
+  std::string h5name=fname+".random.h5";
+  vt.reserve(nthreads*comm->size()*Random.state_size());
+  for(int ip=0; ip<nthreads; ++ip)
+  {   
+      std::vector<uint_type> c;
+      Children[ip]->save(c);
+      vt.insert(vt.end(),c.begin(),c.end());
+  }
+
+  hdf_archive hout(comm, true);
+  hout.create(h5name);
+
+  hout.push(hdf::main_state);
+  hout.push("random");
+
+  TinyVector<int,2> shape(comm->size()*nthreads,Random.state_size());
+  TinyVector<int,2> counts(shape[0]/comm->size(), shape[1]);
+  TinyVector<int,2> offsets(comm->rank() * counts[0], 0);
+
+  hyperslab_proxy<std::vector<uint_type>,2> slab(vt, shape, counts, offsets);
+  hout.write(slab,Random.EngineName);
+
+  hout.close();
+}
+}
 }
