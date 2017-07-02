@@ -41,6 +41,9 @@ class JeeIOrbitalSoA: public OrbitalBase
   using posT=TinyVector<valT,OHMMS_DIM>;
   ///use the same container
   using RowContainer=DistanceTableData::RowContainer;
+  ///define container types
+  using vContainer_type=aligned_vector<valT>;
+  using gContainer_type=VectorSoaContainer<valT,3>;
   ///table index for i-el, el-el is always zero
   int myTableID;
   //nuber of particles
@@ -53,12 +56,16 @@ class JeeIOrbitalSoA: public OrbitalBase
   RealType DiffVal;
 
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
-  ParticleAttrib<valT> Uat,oldUk,newUk;
+  ParticleAttrib<valT> Uat;
+  vContainer_type oldUk,newUk;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
-  ParticleAttrib<posT> dUat,olddUk,newdUk;
+  ParticleAttrib<posT> dUat;
   valT *FirstAddressOfdU, *LastAddressOfdU;
+  gContainer_type olddUk,newdUk;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
-  ParticleAttrib<valT> d2Uat,oldd2Uk,newd2Uk;
+  ParticleAttrib<valT> d2Uat;
+  vContainer_type oldd2Uk,newd2Uk;
+  /// current values during PbyP
   valT cur_Uat,cur_d2Uat;
   posT cur_dUat;
   ///container for the Jastrow functions
@@ -72,13 +79,13 @@ class JeeIOrbitalSoA: public OrbitalBase
   std::vector<valT> Ion_cutoff;
   /// the electrons around ions within the cutoff radius, grouped by species
   Array<std::vector<int>,2> elecs_inside;
+  Array<std::vector<valT>,2> elecs_inside_dist;
 
   /// compressed distances
   aligned_vector<valT> Distjk_Compressed, DistkI_Compressed;
   std::vector<int> DistIndice;
 
-  using VGL_type=VectorSoaContainer<valT,9>;
-  VGL_type mVGL;
+  VectorSoaContainer<valT,9> mVGL;
 
   // Used for evaluating derivatives with respect to the parameters
   int NumVars;
@@ -163,6 +170,7 @@ public:
     F.resize(iGroups,eGroups,eGroups);
     F=nullptr;
     elecs_inside.resize(Nion,eGroups);
+    elecs_inside_dist.resize(Nion,eGroups);
     Ion_cutoff.resize(Nion);
 
     mVGL.resize(Nelec);
@@ -366,12 +374,19 @@ public:
 
     for(int iat=0; iat<Nion; ++iat)
       for(int jg=0; jg<eGroups; ++jg)
+      {
         elecs_inside(iat,jg).clear();
+        elecs_inside_dist(iat,jg).clear();
+      }
 
     for(int jg=0; jg<eGroups; ++jg)
       for(int jel=P.first(jg); jel<P.last(jg); jel++)
         for(int iat=0; iat<Nion; ++iat)
-          if(eI_table.Distances[jel][iat]<Ion_cutoff[iat]) elecs_inside(iat,jg).push_back(jel);
+          if(eI_table.Distances[jel][iat]<Ion_cutoff[iat])
+          {
+            elecs_inside(iat,jg).push_back(jel);
+            elecs_inside_dist(iat,jg).push_back(eI_table.Distances[jel][iat]);
+          }
   }
 
   RealType evaluateLog(ParticleSet& P,
@@ -460,15 +475,27 @@ public:
     for (int jat=0; jat < Nion; jat++)
     {
       bool inside = eI_table.Temp_r[jat] < Ion_cutoff[jat];
-      std::vector<int>::iterator iter;
-      iter = find(elecs_inside(jat,ig).begin(), elecs_inside(jat,ig).end(), iat);
+      std::vector<int>::iterator iter = find(elecs_inside(jat,ig).begin(), elecs_inside(jat,ig).end(), iat);
+      std::vector<RealType>::iterator iter_dist = elecs_inside_dist(jat,ig).begin()+std::distance(elecs_inside(jat,ig).begin(),iter);
       if(inside)
       {
-        if(iter==elecs_inside(jat,ig).end()) elecs_inside(jat,ig).push_back(iat);
+        if(iter==elecs_inside(jat,ig).end())
+        {
+          elecs_inside(jat,ig).push_back(iat);
+          elecs_inside_dist(jat,ig).push_back(eI_table.Temp_r[jat]);
+        }
+        else
+        {
+          *iter_dist = eI_table.Temp_r[jat];
+        }
       }
       else
       {
-        if(iter!=elecs_inside(jat,ig).end()) elecs_inside(jat,ig).erase(iter);
+        if(iter!=elecs_inside(jat,ig).end())
+        {
+          elecs_inside(jat,ig).erase(iter);
+          elecs_inside_dist(jat,ig).erase(iter_dist);
+        }
       }
     }
   }
@@ -517,7 +544,7 @@ public:
             const int kel=elecs_inside(iat,kg)[kind];
             if(kel!=jel)
             {
-              DistkI_Compressed[kel_counter]=eI_table.Distances[kel][iat];
+              DistkI_Compressed[kel_counter]=elecs_inside_dist(iat,kg)[kind];
               Distjk_Compressed[kel_counter]=distjk[kel];
               kel_counter++;
             }
@@ -532,7 +559,7 @@ public:
                         const RealType* distjI, const RowContainer& displjI,
                         const RealType* distjk, const RowContainer& displjk,
                         valT& Uj, posT& dUj, valT& d2Uj,
-                        ParticleAttrib<valT>& Uk, ParticleAttrib<posT>& dUk, ParticleAttrib<valT>& d2Uk, bool triangle=false)
+                        vContainer_type& Uk, gContainer_type& dUk, vContainer_type& d2Uk, bool triangle=false)
   {
     constexpr valT czero(0);
     constexpr valT cone(1);
@@ -547,12 +574,10 @@ public:
     const int jg=P.GroupID[jel];
 
     const int kelmax=triangle?jel:Nelec;
-    for(int kel=0; kel<kelmax; kel++)
-    {
-      Uk[kel] = czero;
-      dUk[kel] = posT();
-      d2Uk[kel] = czero;
-    }
+    std::fill_n(Uk.data(),kelmax,czero);
+    std::fill_n(d2Uk.data(),kelmax,czero);
+    for(int idim=0; idim<OHMMS_DIM; ++idim)
+      std::fill_n(dUk.data(idim),kelmax,czero);
 
     valT* restrict val=mVGL.data(0);
     valT* restrict gradF0=mVGL.data(1);
@@ -580,7 +605,7 @@ public:
             const int kel=elecs_inside(iat,kg)[kind];
             if(kel<kelmax && kel!=jel)
             {
-              DistkI_Compressed[kel_counter]=eI_table.Distances[kel][iat];
+              DistkI_Compressed[kel_counter]=elecs_inside_dist(iat,kg)[kind];
               Distjk_Compressed[kel_counter]=distjk[kel];
               DistIndice[kel_counter]=kel;
               kel_counter++;
@@ -605,7 +630,7 @@ public:
 
             // compute the contribution to kel
             Uk[kel] += val[kel_index];
-            dUk[kel] += - gradF0[kel_index] * disp_jk - gradF2[kel_index] * disp_Ik;
+            dUk(kel) = dUk[kel] - gradF0[kel_index] * disp_jk - gradF2[kel_index] * disp_Ik;
             d2Uk[kel] -= hessF00[kel_index] + hessF22[kel_index]
                          + lapfac*(gradF0[kel_index] + gradF2[kel_index])
                          + ctwo*hessF02[kel_index]*dot(disp_jk,disp_Ik);
@@ -708,7 +733,7 @@ public:
           for(int jind=0; jind<elecs_inside(iat,jg).size(); jind++)
           {
             const int jel=elecs_inside(iat,jg)[jind];
-            const valT r_Ij     = eI_table.Distances[jel][iat];
+            const valT r_Ij     = elecs_inside_dist(iat,jg)[jind];
             const posT disp_Ij  = cminus*eI_table.Displacements[jel][iat];
             const valT r_Ij_inv = cone/r_Ij;
 
@@ -720,7 +745,7 @@ public:
                 {
                   const FT& feeI(*F(ig,jg,kg));
 
-                  const valT r_Ik     = eI_table.Distances[kel][iat];
+                  const valT r_Ik     = elecs_inside_dist(iat,kg)[kind];
                   const posT disp_Ik  = cminus*eI_table.Displacements[kel][iat];
                   const valT r_Ik_inv = cone/r_Ik;
 
