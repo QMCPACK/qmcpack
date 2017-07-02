@@ -621,6 +621,13 @@ void DiracDeterminantBase::update(ParticleSet& P,
 
 void DiracDeterminantBase::registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf, int storageType)
 {
+  if(!myL.size())
+  {
+    myG.resize(NP);
+    myL.resize(NP);
+    FirstAddressOfG = &myG[0][0];
+    LastAddressOfG = FirstAddressOfG + NP*DIM;
+  }
   DerivStorageType=storageType;
   if(storageType == 0)
     // store everything
