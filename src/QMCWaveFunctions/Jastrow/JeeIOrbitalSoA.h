@@ -43,7 +43,7 @@ class JeeIOrbitalSoA: public OrbitalBase
   using RowContainer=DistanceTableData::RowContainer;
   ///define container types
   using vContainer_type=aligned_vector<valT>;
-  using gContainer_type=VectorSoaContainer<valT,3>;
+  using gContainer_type=VectorSoaContainer<valT,OHMMS_DIM>;
   ///table index for i-el, el-el is always zero
   int myTableID;
   //nuber of particles

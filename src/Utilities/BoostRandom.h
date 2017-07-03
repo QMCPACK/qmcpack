@@ -141,7 +141,8 @@ public:
   }
 
   /** generate a series of random numbers */
-  inline void generate_uniform(T* restrict d, int n)
+  template<typename T1>
+  inline void generate_uniform(T1* restrict d, int n)
   {
     for(int i=0; i<n; ++i) d[i]=uni();
   }
