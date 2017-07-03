@@ -223,7 +223,7 @@
       #define QMC_ALIGNAS alignas(32)
       #define ASSUME_ALIGNED(x) __assume_aligned(x,32)
     #endif
-  #elif __GNUC__
+  #elif defined(__GNUC__) && !defined(__ibmxl__)
     #if defined(__AVX512F__)
       #define QMC_CLINE 64
       #define QMC_ALIGNAS alignas(64)
