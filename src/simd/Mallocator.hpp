@@ -28,7 +28,15 @@ namespace qmcplusplus
 
     template <class U> struct rebind { typedef Mallocator<U, Align> other; };
 
-    T* allocate(std::size_t n) { return static_cast<T*>(aligned_alloc(Align,n*sizeof(T))); }
+    T* allocate(std::size_t n) {
+#if __GLIBC__ == 2 && __GLIBC_MINOR__ >= 16
+      return static_cast<T*>(aligned_alloc(Align,n*sizeof(T)));
+#else
+      void* pt;
+      posix_memalign(&pt, Align, n*sizeof(T));
+      return static_cast<T*>(pt);
+#endif
+    }
     void deallocate(T* p, std::size_t) { free(p); }
   };
 }
