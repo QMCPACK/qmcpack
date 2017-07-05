@@ -55,7 +55,7 @@ void add_p_timer(std::vector<NewTimer*>& timers)
 ParticleSet::ParticleSet()
   : UseBoundBox(true), UseSphereUpdate(true), IsGrouped(true)
   , ThreadID(0), SK(0), ParentTag(-1), ParentName("0")
-  , quantum_domain(classical)
+  , quantum_domain(classical), TotalNum(0)
 {
   initParticleSet();
   initPropertyList();
@@ -67,7 +67,6 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   , ThreadID(0), mySpecies(p.getSpeciesSet()),SK(0), ParentTag(p.tag()), ParentName(p.parentName())
 {
   set_quantum_domain(p.quantum_domain);
-  initBase();
   initParticleSet();
   assign(p); //only the base is copied, assumes that other properties are not assignable
   //need explicit copy:
@@ -107,7 +106,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   add_p_timer(myTimers);
   myTwist=p.myTwist;
 
-  RSoA.resize(getLocalNum());
+  RSoA.resize(TotalNum);
 }
 
 ParticleSet::~ParticleSet()
@@ -119,16 +118,40 @@ ParticleSet::~ParticleSet()
   delete_iter(Sphere.begin(), Sphere.end());
 }
 
-void ParticleSet::create(unsigned n)
+void ParticleSet::create(int numPtcl)
 {
-  createBase(n);
-  RSoA.resize(n);
+  TotalNum = numPtcl;
+
+  R.create(numPtcl);
+  ID.create(numPtcl);
+  PCID.create(numPtcl);
+  GroupID.create(numPtcl);
+  G.create(numPtcl);
+  dG.create(numPtcl);
+  L.create(numPtcl);
+  dL.create(numPtcl);
+  Mass.create(numPtcl);
+  Z.create(numPtcl);
+  IndirectID.create(numPtcl);
+
+  RSoA.resize(numPtcl);
 }
 
 void ParticleSet::create(const std::vector<int>& agroup)
 {
-  createBase(agroup);
-  RSoA.resize(getTotalNum());
+  SubPtcl.resize(agroup.size()+1);
+  SubPtcl[0] = 0;
+  for(int is=0; is<agroup.size(); is++)
+    SubPtcl[is+1] = SubPtcl[is]+agroup[is];
+  size_t nsum = SubPtcl[agroup.size()];
+  resize(nsum);
+  TotalNum = nsum;
+  int loc=0;
+  for(int i=0; i<agroup.size(); i++)
+  {
+    for(int j=0; j<agroup[i]; j++,loc++)
+      GroupID[loc] = i;
+  }
 }
 
 void ParticleSet::set_quantum_domain(quantum_domains qdomain)
@@ -147,41 +170,8 @@ void ParticleSet::initParticleSet()
     PtclObjectCounter++;
   }
 
-  G.setTypeName(ParticleTags::gradtype_tag);
-  L.setTypeName(ParticleTags::laptype_tag);
-  dG.setTypeName(ParticleTags::gradtype_tag);
-  dL.setTypeName(ParticleTags::laptype_tag);
-
-  G.setObjName("grad");
-  L.setObjName("lap");
-  dG.setObjName("dgrad");
-  dL.setObjName("dlap");
-
-  addAttribute(G);
-  addAttribute(L);
-  addAttribute(dG);
-  addAttribute(dL);
-
-  //more particle attributes
-  Mass.setTypeName(ParticleTags::scalartype_tag);
-  Mass.setObjName("mass");
   SameMass=true; //default is SameMass
-  addAttribute(Mass);
-
-  Z.setTypeName(ParticleTags::scalartype_tag);
-  Z.setObjName("charge");
-  addAttribute(Z);
-
-  PCID.setTypeName(ParticleTags::indextype_tag); //add PCID tags
-  PCID.setObjName("pcid");
-  addAttribute(PCID);
-
-  IndirectID.setTypeName(ParticleTags::indextype_tag); //add IndirectID tags
-  IndirectID.setObjName("id1");
-  addAttribute(IndirectID);
-
   myTwist=0.0;
-
   activeWalker=nullptr;
 }
 
@@ -337,18 +327,18 @@ bool ParticleSet::get(std::ostream& os) const
   os << "  ParticleSet " << getName() << " : ";
   for (int i=0; i<SubPtcl.size(); i++)
     os << SubPtcl[i] << " ";
-  os <<"\n\n    " << LocalNum << "\n\n";
+  os <<"\n\n    " << TotalNum << "\n\n";
   const int maxParticlesToPrint = 10;
-  int numToPrint = std::min(LocalNum, maxParticlesToPrint);
+  int numToPrint = std::min(TotalNum, maxParticlesToPrint);
 
   for (int i=0; i<numToPrint; i++)
   {
     os << "    " << mySpecies.speciesName[GroupID[i]]  << R[i] << std::endl;
   }
 
-  if (numToPrint < LocalNum)
+  if (numToPrint < TotalNum)
   {
-    os << "    (... and " << (LocalNum-numToPrint) << " more particle positions ...)" << std::endl;
+    os << "    (... and " << (TotalNum-numToPrint) << " more particle positions ...)" << std::endl;
   }
 
   return true;
@@ -777,7 +767,7 @@ void ParticleSet::acceptMove(Index_t iat)
     for (int i=0,n=DistTables.size(); i< n; i++)
       DistTables[i]->update(iat);
 
-    if(RSoA.size() != getLocalNum())
+    if(RSoA.size() != TotalNum)
       std::cout << "Die here " << RSoA.size() << std::endl;
 
     RSoA(iat)=R[iat];
@@ -821,7 +811,7 @@ void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
 }
 
 
-/** resize Sphere by the LocalNum
+/** resize Sphere by the TotalNum
  * @param nc number of centers to which Spherical grid will be assigned.
  */
 void ParticleSet::resizeSphere(int nc)
