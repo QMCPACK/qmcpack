@@ -376,41 +376,62 @@ void RandomNumberControl::write(const std::string& fname, Communicate* comm)
   }
 }
 
-//Parallel write (broken)
+/*New functions past this point*/
+//switch between read functions
 void RandomNumberControl::read(const std::string& fname, Communicate* comm)
 {
+  RandomNumberControl::read_parallel(fname, comm);
+}
+
+//switch between write functions
+void RandomNumberControl::write(const std::string& fname, Communicate* comm)
+{
+  RandomNumberControl::write_parallel(fname, comm);
+}
+
+//Parallel read
+void RandomNumberControl::read_parallel(const std::string& fname, Communicate* comm)
+{
   int nthreads=omp_get_max_threads();
-  std::vector<uint_type> vt;
-  std::vector<int> shape(2,0),shape_now(2,0);
-  vt.reserve(nthreads*comm->size()*Random.state_size());
+  std::vector<uint_type> vt; 
+  TinyVector<int, 2> h5shape(2,0),shape_now(2,0);
+  shape_now[0]=comm->size()*nthreads;
+  shape_now[1]=Random.state_size();
   std::string h5name=fname+".random.h5";
-
-  //cheating just to see if it will read correctly on same configuration
-  TinyVector<int,2> shape_t(comm->size()*nthreads,Random.state_size());
-  TinyVector<int,2> counts(shape[0]/comm->size(), shape[1]);
-  TinyVector<int,2> offsets(comm->rank() * counts[0], 0);
-
-  hyperslab_proxy<std::vector<uint_type>,2> slab(vt, shape_t, counts, offsets);
 
   hdf_archive hin(comm, true);
   hin.open(h5name,H5F_ACC_RDONLY);
   hin.push(hdf::main_state);
   hin.push("random");
+  hin.read(h5shape, "data shape");
+  
+  TinyVector<int,2> counts(h5shape[0]/comm->size(), h5shape[1]);  
+  TinyVector<int,2> offsets(comm->rank() * counts[0], 0);
+  vt.reserve(h5shape[0]*h5shape[1]); 
 
+  hyperslab_proxy<std::vector<uint_type>,2> slab(vt, h5shape, counts, offsets);
   hin.read(slab,Random.EngineName);
-  shape[0]=static_cast<int>(slab.size(0));
-  shape[1]=static_cast<int>(slab.size(1));
+
+  if(h5shape[0]!=shape_now[0] || h5shape[1] != shape_now[1])
+  {
+    app_log() << "Mismatched random number generators."
+      << "\n  Number of streams     : old=" << h5shape[0] << " new= " << comm->size()*nthreads
+      << "\n  State size per stream : old=" << h5shape[1] << " new= " << Random.state_size()
+      << "\n  Using the random streams generated at the initialization.\n";
+    return;
+  }
+  app_log() << "  Restart from the random number streams from the previous configuration.\n";
 
   std::vector<uint_type>::iterator vt_it(vt.begin());
-  for(int ip=0; ip<nthreads; ip++, vt_it += shape[1])
+  for(int ip=0; ip<nthreads; ip++, vt_it += h5shape[1])
   {
-    std::vector<uint_type> c(vt_it,vt_it+shape[1]);
+    std::vector<uint_type> c(vt_it,vt_it+h5shape[1]);
     Children[ip]->load(c);
   }
 }
 
 //Parallel write
-void RandomNumberControl::write(const std::string& fname, Communicate* comm)
+void RandomNumberControl::write_parallel(const std::string& fname, Communicate* comm)
 {
   int nthreads=omp_get_max_threads();
   std::vector<uint_type> vt;
@@ -418,25 +439,110 @@ void RandomNumberControl::write(const std::string& fname, Communicate* comm)
   vt.reserve(nthreads*comm->size()*Random.state_size());
   for(int ip=0; ip<nthreads; ++ip)
   {   
-      std::vector<uint_type> c;
-      Children[ip]->save(c);
-      vt.insert(vt.end(),c.begin(),c.end());
+    std::vector<uint_type> c;
+    Children[ip]->save(c);
+    vt.insert(vt.end(),c.begin(),c.end());
   }
 
   hdf_archive hout(comm, true);
   hout.create(h5name);
-
   hout.push(hdf::main_state);
   hout.push("random");
 
   TinyVector<int,2> shape(comm->size()*nthreads,Random.state_size());
   TinyVector<int,2> counts(shape[0]/comm->size(), shape[1]);
   TinyVector<int,2> offsets(comm->rank() * counts[0], 0);
+  hout.write(shape, "data shape");
 
   hyperslab_proxy<std::vector<uint_type>,2> slab(vt, shape, counts, offsets);
   hout.write(slab,Random.EngineName);
-
   hout.close();
 }
+
+//Scatter read
+void RandomNumberControl::read_scatter(const std::string& fname, Communicate* comm)
+{
+  int nthreads=omp_get_max_threads();
+  std::vector<uint_type> vt, vt_tot;
+  TinyVector<int, 2> h5shape(2,0),shape_now(2,0);
+  shape_now[0]=comm->size()*nthreads;
+  shape_now[1]=Random.state_size();
+  std::string h5name=fname+".random.h5";
+
+  if(comm->rank() == 0)
+  {  
+    hdf_archive hin(comm, false);
+    hin.open(h5name,H5F_ACC_RDONLY);
+    hin.push(hdf::main_state);
+    hin.push("random");
+    hin.read(h5shape, "data shape");  
+    vt_tot.resize(h5shape[0]*h5shape[1]);  
+    hyperslab_proxy<std::vector<uint_type>,2> slab(vt_tot, h5shape);
+    hin.read(slab,Random.EngineName);
+  }
+ 
+  mpi::bcast(*comm,h5shape);
+
+  if(h5shape[0]!=shape_now[0] || h5shape[1] != shape_now[1])
+  {
+    app_log() << "Mismatched random number generators."
+      << "\n  Number of streams     : old=" << h5shape[0] << " new= " << comm->size()*nthreads
+      << "\n  State size per stream : old=" << h5shape[1] << " new= " << Random.state_size()
+      << "\n  Using the random streams generated at the initialization.\n";
+    return;
+  }
+
+  app_log() << "  Restart from the random number streams from the previous configuration.\n";
+  vt.resize(nthreads*Random.state_size());
+
+  if(comm->size()>1)
+    mpi::scatter(*comm,vt_tot,vt);
+  else
+    copy(vt_tot.begin(),vt_tot.end(),vt.begin());
+
+  std::vector<uint_type>::iterator vt_it(vt.begin());
+  for(int i=0; i<nthreads; i++, vt_it += h5shape[1])
+  {
+    std::vector<uint_type> c(vt_it,vt_it+h5shape[1]);
+    Children[i]->load(c);
+  }
+}
+
+//scatter write
+void RandomNumberControl::write_scatter(const std::string& fname, Communicate* comm)
+{
+  int nthreads=omp_get_max_threads();
+  std::vector<uint_type> vt, vt_tot;
+  vt.reserve(nthreads*Random.state_size()); 
+  
+  for(int i=0; i<nthreads; ++i)
+  {
+    std::vector<uint_type> c;
+    Children[i]->save(c);
+    vt.insert(vt.end(),c.begin(),c.end());
+  }
+
+  if(comm->size()>1)
+  {
+    vt_tot.resize(vt.size()*comm->size());
+    mpi::gather(*comm,vt,vt_tot);
+  }
+  else
+    vt_tot=vt;
+
+  if(comm->rank()==0)
+  {
+    std::string h5name = fname + ".random.h5";
+    hdf_archive hout(comm, false); 
+    hout.create(h5name);
+    hout.push(hdf::main_state); 
+    hout.push("random"); 
+
+    TinyVector<int, 2> shape(comm->size()*nthreads, Random.state_size());
+    hout.write(shape, "data shape");
+
+    hyperslab_proxy<std::vector<uint_type>, 2> slab(vt_tot, shape);
+    hout.write(slab, Random.EngineName);
+  }
 }
 }
