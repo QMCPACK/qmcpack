@@ -2,9 +2,10 @@
 import read_gcov
 import argparse
 from collections import OrderedDict
+import os.path
 import sys
 
-def merge_gcov_files(fnames, output_fname):
+def merge_gcov_files(fnames, output_fname, src_prefix_to_add=None):
   gcovs = [read_gcov.read_gcov(f) for f in fnames]
   source_names = [g.tags['Source'] for g in gcovs]
   for source in source_names[1:]:
@@ -13,6 +14,12 @@ def merge_gcov_files(fnames, output_fname):
       return
 
   gcov_out = merge_gcovs(gcovs)
+
+  # The gcov '--source-prefix' options strips a directory from the file name and the
+  #  'Source' tag.   Restore it to the tag so gcovr can find the source file.
+  if src_prefix_to_add is not None:
+    src_filename = gcov_out.tags['Source']
+    gcov_out.tags['Source'] = os.path.join(src_prefix_to_add, src_filename)
 
   out_f = sys.stdout
   if output_fname:
@@ -67,6 +74,7 @@ def merge_gcovs(gcovs):
           print '  line %d: '%idx,line
 
       output_line_info[line] = read_gcov.LineInfo(str(output_count), line, lines[0].src)
+
 
   return read_gcov.GcovFile(gcovs[0].fname, gcovs[0].tags, output_line_info, None, None, None, gcovs[0].func_ranges)
 
