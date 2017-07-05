@@ -207,6 +207,40 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     return h5f.write(bigtable,o.str().c_str());//"spline_0");
   }
 
+  TT evaluate_dot(const ParticleSet& P, int iat, const TT* restrict arow)
+  {
+    const PointType& r=P.R[iat];
+    PointType ru(PrimLattice.toUnit_floor(r));
+    SplineInst->evaluate(ru,myV);
+
+    TT res=TT();
+    const size_t N=kPoints.size();
+    const ST x=r[0], y=r[1], z=r[2];
+    const ST* restrict kx=myKcart.data(0);
+    const ST* restrict ky=myKcart.data(1);
+    const ST* restrict kz=myKcart.data(2);
+    ST s, c;
+#pragma simd private(s,c) reduction(+:res)
+    for (size_t j=0,psiIndex=first_spo; j<nComplexBands; j++, psiIndex+=2)
+    {
+      const ST val_r=myV[2*j  ];
+      const ST val_i=myV[2*j+1];
+      sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
+      res+=arow[psiIndex  ] * (val_r*c-val_i*s);
+      res+=arow[psiIndex+1] * (val_i*c+val_r*s);
+    }
+
+#pragma simd private(s,c) reduction(+:res)
+    for (size_t j=nComplexBands,psiIndex=first_spo+2*nComplexBands; j<N; j++,psiIndex++)
+    {
+      const ST val_r=myV[2*j  ];
+      const ST val_i=myV[2*j+1];
+      sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
+      res+=arow[psiIndex]*(val_r*c-val_i*s);
+    }
+    return res;
+  }
+
   template<typename VV>
   inline void assign_v(const PointType& r, VV& psi)
   {

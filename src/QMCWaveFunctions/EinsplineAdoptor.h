@@ -248,6 +248,11 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
     SplineAdoptor::set_spline(spline_r,spline_i,twist,ispline,level);
   }
 
+  inline RealType RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
+  {
+    return SplineAdoptor::evaluate_dot(P,iat,arow);
+  }
+
   inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
     SplineAdoptor::evaluate_v(P,iat,psi);
