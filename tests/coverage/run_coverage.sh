@@ -12,7 +12,10 @@
 # If the 'gcovr' tool is present ( http://gcovr.com/ ), an HTML report is also
 #  produced in cov_detail.html
 
-SRC_ROOT=`pwd`/..
+CURRENT_DIR=`pwd`
+#SRC_ROOT=`pwd`/..
+# Need parent directory without putting a '..' in the path
+SRC_ROOT=`dirname $CURRENT_DIR`
 
 #
 #  Run coverage on the base
@@ -33,14 +36,14 @@ if [ ! -d $base_dir ]; then
 fi
 
 cd $raw_base_dir
-find `pwd`/.. -name \*.gcda | xargs -i gcov -b -p -l {}
+find `pwd`/.. -name \*.gcda | xargs -i gcov -b -p -l -s ${SRC_ROOT} {}
 
 # Filter out unwanted files
 python ${SRC_ROOT}/tests/coverage/compare_gcov.py -a process --base-dir .
 
 cd ../$base_dir
 # Combine different gcov files corresponding to the same source
-python ${SRC_ROOT}/tests/coverage/compare_gcov.py -a merge --base-dir ../$raw_base_dir
+python ${SRC_ROOT}/tests/coverage/compare_gcov.py -a merge --base-dir ../$raw_base_dir --prefix $SRC_ROOT
 
 
 # If gcovr is present, create an html report
@@ -76,12 +79,12 @@ if [ ! -d $unit_dir ]; then
 fi
 
 cd $raw_unit_dir
-find `pwd`/.. -name \*.gcda | xargs -i gcov -b -p -l {}
+find `pwd`/.. -name \*.gcda | xargs -i gcov -b -p -l -s ${SRC_ROOT} {}
 
 cd ../$unit_dir
 
 # Combine different gcov files corresponding to the same source
-python ${SRC_ROOT}/tests/coverage/compare_gcov.py -a merge --base-dir ../$raw_unit_dir
+python ${SRC_ROOT}/tests/coverage/compare_gcov.py -a merge --base-dir ../$raw_unit_dir --prefix $SRC_ROOT
 
 
 # Filter out unwanted files

@@ -47,7 +47,9 @@ def keep_file(gcov):
 
 def remove_unwanted_file(gcov, fname, dir_base):
   if keep_file(gcov):
-    return True
+    if get_total_covered_lines(gcov).covered > 0:
+      return True
+
 
   if fname.endswith('.gcov'):
     os.unlink(os.path.join(dir_base,fname))
@@ -75,7 +77,7 @@ def read_and_filter_gcov_files(fnames, directory):
 
   return new_fnames, gcov_map
 
-def merge_gcov_files_in_dir(fnames, directory):
+def merge_gcov_files_in_dir(fnames, directory, output_dir=None, src_prefix=None):
   to_merge = defaultdict(list)
   for fname in fnames:
     # Files from 'gcov -l' have '##' to separate the two parts of the path
@@ -85,9 +87,13 @@ def merge_gcov_files_in_dir(fnames, directory):
     else:
       to_merge[fname].append(fname)
 
+  if output_dir is None:
+    output_dir = ''
+
   for output_fname, input_fnames in to_merge.iteritems():
       inputs = [os.path.join(directory, fname) for fname in input_fnames]
-      merge_gcov.merge_gcov_files(inputs, output_fname)
+      merge_gcov.merge_gcov_files(inputs, os.path.join(output_dir,output_fname),
+                                  src_prefix_to_add=src_prefix)
 
 
 def compare_gcov_dirs(dir_base, dir_unit):
@@ -177,7 +183,7 @@ class CompareCoverage:
 
 def get_total_covered_lines(gcov):
   if not keep_file(gcov):
-    return 0
+    return FileCoverage(0, 0, 0)
 
   total_covered_lines = 0
   total_uncovered_lines = 0
@@ -188,8 +194,6 @@ def get_total_covered_lines(gcov):
   for line in gcov.line_info.iterkeys():
     base_line = gcov.line_info[line]
 
-    if base_line != Nocode:
-      total_lines += 1
 
     base_count = 0
     try:
@@ -197,19 +201,26 @@ def get_total_covered_lines(gcov):
     except ValueError:
       pass
 
+    use_line = True
     if gcov.func_ranges:
       funcs = gcov.func_ranges.find_func(line)
       for func_name in funcs:
         if func_name:
           if func_name.startswith("_GLOBAL__"):
+            use_line = False
             base_count = 0
           if 'static_initialization_and_destruction' in func_name:
+            use_line = False
             base_count = 0
 
-    if base_count == 0:
-      total_uncovered_lines += 1
-    else:
-      total_covered_lines += 1
+    if use_line:
+      if base_line != Nocode:
+        total_lines += 1
+
+      if base_count == 0:
+        total_uncovered_lines += 1
+      else:
+        total_covered_lines += 1
 
   return FileCoverage(total_covered_lines, total_uncovered_lines, total_lines)
 
@@ -501,6 +512,8 @@ if __name__ ==  '__main__':
                       help="Directory to write the difference gcov files")
   parser.add_argument('-f','--file',
                       help="Limit analysis to single file")
+  parser.add_argument('-p','--prefix',
+                      help="Source prefix to add when merging files")
   args = parser.parse_args()
 
   if args.action in compare_action:
@@ -521,7 +534,7 @@ if __name__ ==  '__main__':
 
   if args.action in merge_action:
     base = set(get_gcov_files(args.base_dir))
-    merge_gcov_files_in_dir(base, args.base_dir)
+    merge_gcov_files_in_dir(base, args.base_dir, args.output_dir, args.prefix)
 
   if args.action in diff_action:
     if not args.unit_dir:
