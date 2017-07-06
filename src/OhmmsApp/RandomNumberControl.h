@@ -19,6 +19,7 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/PrimeNumberSet.h"
+#include <io/hdf_archive.h>
 
 class Communicate;
 
@@ -56,17 +57,46 @@ public:
 
   xmlNodePtr initialize(xmlXPathContextPtr);
 
-  /** read random state from a hdf file
+  /** read in parallel or serial
    * @param fname file name
    * @param comm communicator so that everyone reads its own data
    */
   static void read(const std::string& fname, Communicate* comm);
-  /** write random state to a hdf file
+  /** write in parallel or serial
    * @param fname file name
    * @param comm communicator so that everyone writes its own data
    */
   static void write(const std::string& fname, Communicate* comm);
-
+  /** read random state from a hdf file in parallel
+   * @param hdf_archive set to parallel
+   * @param comm communicator so that everyone reads its own data
+   */
+  static void read_parallel(hdf_archive& hin, Communicate* comm);
+  /** write random state to a hdf file in parallel
+   * @param hdf_archive set to parallel
+   * @param comm communicator so that everyone writes its own data
+   */
+  static void write_parallel(hdf_archive& hout, Communicate* comm);
+  /** read random state from a hdf file serially
+   * @param hdf_archive set to serial
+   * @param comm communicator so that everyone reads its own data
+   */
+  static void read_scatter(hdf_archive& hin, Communicate* comm);
+  /** write random state to a hdf file serially
+   * @param hin hdf_archive object set to serial
+   * @param comm communicator so that everyone writes its own data
+   */
+  static void write_scatter(hdf_archive& hout, Communicate* comm);
+   /** read random state from a xml file
+   * @param fname file name
+   * @param comm communicator so that everyone reads its own data
+   */
+  static void read_old(const std::string& fname, Communicate* comm);
+   /** write random state to a xml file
+   * @param fname file name
+   * @param comm communicator so that everyone writes its own data
+   */
+  static void write_old(const std::string& fname, Communicate* comm);
 private:
 
   bool NeverBeenInitialized;
