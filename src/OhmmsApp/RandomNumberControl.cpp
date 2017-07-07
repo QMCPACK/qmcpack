@@ -382,7 +382,7 @@ void RandomNumberControl::write_old(const std::string& fname, Communicate* comm)
 void RandomNumberControl::read(const std::string& fname, Communicate* comm)
 {
   std::string h5name=fname+".random.h5";
-  hdf_archive hin(comm, true);
+  hdf_archive hin(comm, false);
   hin.open(h5name,H5F_ACC_RDONLY);
   if(hin.is_parallel())
     read_parallel(hin, comm);
@@ -394,7 +394,7 @@ void RandomNumberControl::read(const std::string& fname, Communicate* comm)
 void RandomNumberControl::write(const std::string& fname, Communicate* comm)
 {
   std::string h5name=fname+".random.h5";
-  hdf_archive hout(comm, true);
+  hdf_archive hout(comm, false);
   hout.create(h5name);
   if(hout.is_parallel())
     write_parallel(hout, comm);
@@ -509,7 +509,6 @@ void RandomNumberControl::read_scatter(hdf_archive& hin, Communicate* comm)
   }
  
   mpi::bcast(*comm, shape_hdf5);
-  mpi::bcast(*comm, shape);
 
   //if hdf5 file's shape and current shape don't match, abort read
   if(shape_hdf5[0] != shape_now[0] || shape_hdf5[1] != shape_now[1] || shape_hdf5[2] != shape_now[2])
@@ -544,7 +543,6 @@ void RandomNumberControl::read_scatter(hdf_archive& hin, Communicate* comm)
   if(comm->size()>1)
   {
     mpi::scatter(*comm,vt_tot,vt);
-    comm->barrier();
     mpi::scatter(*comm,mt_tot,mt);
   }
   else
