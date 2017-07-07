@@ -382,7 +382,7 @@ void RandomNumberControl::write_old(const std::string& fname, Communicate* comm)
 void RandomNumberControl::read(const std::string& fname, Communicate* comm)
 {
   std::string h5name=fname+".random.h5";
-  hdf_archive hin(comm, false);
+  hdf_archive hin(comm, true);
   hin.open(h5name,H5F_ACC_RDONLY);
   if(hin.is_parallel())
     read_parallel(hin, comm);
@@ -394,7 +394,7 @@ void RandomNumberControl::read(const std::string& fname, Communicate* comm)
 void RandomNumberControl::write(const std::string& fname, Communicate* comm)
 {
   std::string h5name=fname+".random.h5";
-  hdf_archive hout(comm, false);
+  hdf_archive hout(comm, true);
   hout.create(h5name);
   if(hout.is_parallel())
     write_parallel(hout, comm);
