@@ -394,8 +394,8 @@ RNDiracDeterminantBase::ValueType RNDiracDeterminantBase::ratio(ParticleSet& P, 
   //update psiM_temp with the row substituted
   InverseUpdateByRow(psiM_temp,psiV,workV1,workV2,WorkingIndex,alternateCurRatio);
   //update dpsiM_temp and d2psiM_temp
-  copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp[WorkingIndex]);
-  copy(d2psiV.begin(),d2psiV.end(),d2psiM_temp[WorkingIndex]);
+  std::copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp[WorkingIndex]);
+  std::copy(d2psiV.begin(),d2psiV.end(),d2psiM_temp[WorkingIndex]);
   UpdateTimer.stop();
   RatioTimer.start();
   for (int i=0,kat=FirstIndex; i<NumPtcls; i++,kat++)
@@ -429,8 +429,8 @@ void RNDiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
   case ORB_PBYP_PARTIAL:
     //psiM = psiM_temp;
     InverseUpdateByRow(psiM,psiV,workV1,workV2,WorkingIndex,alternateCurRatio);
-    copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
-    copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
+    std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
+    std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
     //////////////////////////////////////
     ////THIS WILL BE REMOVED. ONLY FOR DEBUG DUE TO WAVEFUNCTIONTEST
     //myG = myG_temp;
@@ -441,8 +441,8 @@ void RNDiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
     myG = myG_temp;
     myL = myL_temp;
     psiM = psiM_temp;
-    copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
-    copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
+    std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
+    std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
     break;
   }
   UpdateTimer.stop();

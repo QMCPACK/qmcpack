@@ -768,7 +768,7 @@ namespace qmcplusplus
 
       for(int ns=0;ns<species_size[s];++ns,++n)
       {
-        fill(integrated_values.begin(),integrated_values.end(),0.0);
+        std::fill(integrated_values.begin(),integrated_values.end(),0.0);
         for(int m=0;m<samples;++m)
         {
           PosType& rsamp = rsamples[m];
@@ -899,7 +899,7 @@ namespace qmcplusplus
       }
       else
       {
-        fill(sample_weights.begin(),sample_weights.end(),weight);
+        std::fill(sample_weights.begin(),sample_weights.end(),weight);
       }
     }
 
@@ -1106,7 +1106,7 @@ namespace qmcplusplus
     Vc += accum_constant(Vc_trace);
     Vc += accum_constant(Vcc_trace);
     Vc /= nparticles;
-    fill(E_samp.begin(),E_samp.end(),Vc);
+    std::fill(E_samp.begin(),E_samp.end(),Vc);
     accum_sample(E_samp,T_trace);
     accum_sample(E_samp,Vq_trace);
     accum_sample(E_samp,Vqq_trace);
@@ -1181,7 +1181,7 @@ namespace qmcplusplus
 
   inline void DensityMatrices1B::integrate(ParticleSet& P,int n)
   {
-    fill(integrated_values.begin(),integrated_values.end(),0.0);
+    std::fill(integrated_values.begin(),integrated_values.end(),0.0);
     for(int s=0;s<samples;++s)
     {
       PosType& rsamp = rsamples[s];
@@ -1234,7 +1234,7 @@ namespace qmcplusplus
     bnorms.resize(basis_size);
     for(int i=0;i<basis_size;++i)
       bnorms[i] = 0.0;
-    fill(basis_norms.begin(),basis_norms.end(),1.0);
+    std::fill(basis_norms.begin(),basis_norms.end(),1.0);
     for(int p=0;p<ngtot;++p)
     {
       int nrem = p;
