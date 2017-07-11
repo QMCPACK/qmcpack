@@ -616,8 +616,7 @@ public:
 
   inline void assign(const ParticleSet& ptclin)
   {
-    TotalNum = ptclin.getTotalNum();
-    resize(TotalNum);
+    resize(ptclin.getTotalNum());
     Lattice = ptclin.Lattice;
     PrimitiveLattice = ptclin.PrimitiveLattice;
     R.InUnit = ptclin.R.InUnit;

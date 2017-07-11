@@ -120,21 +120,9 @@ ParticleSet::~ParticleSet()
 
 void ParticleSet::create(int numPtcl)
 {
-  TotalNum = numPtcl;
-
-  R.create(numPtcl);
-  ID.create(numPtcl);
-  PCID.create(numPtcl);
-  GroupID.create(numPtcl);
-  G.create(numPtcl);
-  dG.create(numPtcl);
-  L.create(numPtcl);
-  dL.create(numPtcl);
-  Mass.create(numPtcl);
-  Z.create(numPtcl);
-  IndirectID.create(numPtcl);
-
-  RSoA.resize(numPtcl);
+  resize(numPtcl);
+  GroupID=0;
+  R=RealType(0);
 }
 
 void ParticleSet::create(const std::vector<int>& agroup)

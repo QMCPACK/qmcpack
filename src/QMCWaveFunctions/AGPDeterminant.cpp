@@ -20,6 +20,8 @@
 namespace qmcplusplus
 {
 
+using std::copy;
+
 AGPDeterminant::AGPDeterminant(BasisSetType* bs):
   GeminalBasis(bs), NumPtcls(0)
 {
