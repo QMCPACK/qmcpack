@@ -26,6 +26,7 @@
 #include <Utilities/Timer.h>
 #include <miniapps/common.hpp>
 #include <getopt.h>
+#include <mpi/collectives.h>
 
 using namespace std;
 using namespace qmcplusplus;
@@ -161,9 +162,16 @@ int main(int argc, char** argv)
   elecs[0].createWalkers(nwtot);
   setWalkerOffsets(elecs[0], myComm);
 
+  //storage variables for timers
+  double h5write = 0.0, h5read = 0.0; //random seed R/W speeds
+  double walkerWrite = 0.0, walkerRead =0.0; //walker R/W speeds
+  Timer h5clock; //timer for the program
+
   // dump random seeds
+  h5clock.restart(); //start timer
   RandomNumberControl::write("restart",myComm);
   myComm->barrier();
+  h5write += h5clock.elapsed(); //store timer
   // flush random seeds to zero
   #pragma omp parallel
   {
@@ -174,7 +182,9 @@ int main(int argc, char** argv)
   }
 
   // load random seeds
+  h5clock.restart(); //start timer
   RandomNumberControl::read("restart",myComm);
+  h5read += h5clock.elapsed(); //store timer
 
   // validate random seeds
   int mismatch_count=0;
@@ -202,9 +212,11 @@ int main(int argc, char** argv)
   }
 
   // dump electron coordinates.
+  h5clock.restart(); //start timer
   HDFWalkerOutput wOut(elecs[0],"restart",myComm);
   wOut.dump(elecs[0],1);
   myComm->barrier();
+  walkerWrite += h5clock.elapsed(); //store timer
 
   if(!myComm->rank())
     std::cout << "Walkers are dumped!\n";
@@ -219,9 +231,27 @@ int main(int argc, char** argv)
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr restart_leaf = xmlFirstElementChild(root);
 
+  h5clock.restart(); //start timer
   HDFVersion in_version(0,4);
   HDFWalkerInput_0_4 wIn(elecs[0],myComm,in_version);
   wIn.put(restart_leaf);
+  walkerRead += h5clock.elapsed(); //store time spent
+
+  //print out hdf5 R/W times
+  TinyVector<double,4> timers(h5read, h5write, walkerRead, walkerWrite);
+  mpi::reduce(*myComm, timers);
+  h5read = global_t[0]/myComm->size();
+  h5write = global_t[1]/myComm->size();
+  walkerRead = global_t[2]/myComm->size();
+  walkerWrite = global_t[3]/myComm->size();
+  if(myComm->rank() == 0)
+  { 
+    cout << "\nTotal time of writing random seeds to HDF5 file: " << setprecision(2) << h5write << "\n";
+    cout << "\nTotal time of reading random seeds in HDF5 file: " << setprecision(2) << h5read << "\n";
+    cout << "\nTotal time of writing walkers to HDF5 file: " << setprecision(2) << walkerWrite << "\n";
+    cout << "\nTotal time of reading walkers in HDF5 file: " << setprecision(2) << walkerRead << "\n";
+  }
+
   
   OHMMS::Controller->finalize();
 
