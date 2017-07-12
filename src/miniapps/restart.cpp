@@ -120,6 +120,7 @@ int main(int argc, char** argv)
 
   RandomNumberControl::make_seeds();
   std::vector<RandomGenerator_t> myRNG(NumThreads);
+  std::vector<uint_type> mt(Random.state_size(),0);
   std::vector<MCWalkerConfiguration> elecs(NumThreads);
 
   #pragma omp parallel reduction(+:t0)
@@ -158,6 +159,7 @@ int main(int argc, char** argv)
     //MCWalkerConfiguration els_save(els);
 
   } //end of omp parallel
+  Random.save(mt);
 
   elecs[0].createWalkers(nwtot);
   setWalkerOffsets(elecs[0], myComm);
@@ -172,6 +174,7 @@ int main(int argc, char** argv)
   RandomNumberControl::write("restart",myComm);
   myComm->barrier();
   h5write += h5clock.elapsed(); //store timer
+
   // flush random seeds to zero
   #pragma omp parallel
   {
@@ -180,6 +183,8 @@ int main(int argc, char** argv)
     std::vector<uint_type> vt(random_th.state_size(),0);
     random_th.load(vt);
   }
+  std::vector<uint_type> mt_temp(Random.state_size(),0);
+  Random.load(mt_temp);
 
   // load random seeds
   h5clock.restart(); //start timer
@@ -199,6 +204,9 @@ int main(int argc, char** argv)
     for(int i=0; i<random_th.state_size(); i++)
       if(vt_orig[i]!=vt_load[i]) mismatch_count++;
   }
+  Random.save(mt_temp);
+  for(int i=0; i<Random.state_size(); i++)
+    if(mt_temp[i]!=mt[i]) mismatch_count++;
 
   myComm->allreduce(mismatch_count);
 
