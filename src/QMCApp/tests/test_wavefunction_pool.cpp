@@ -47,12 +47,13 @@ const char *particles = \
       </parameter> \
         <parameter name='LR_dim_cutoff'>15 </parameter> \
 </simulationcell> \
-<particleset name=\"ion\" size=\"1\"> \
-  <group name=\"He\"> \
-    <parameter name=\"charge\">2</parameter> \
+<particleset name=\"ion\" size=\"2\"> \
+  <group name=\"C\"> \
+    <parameter name=\"charge\">4</parameter> \
   </group> \
   <attrib name=\"position\" datatype=\"posArray\"> \
-    0.1 0.2 0.3 \
+    0.00000000  0.00000000  0.00000000 \
+    1.68658058  1.68658058  1.68658058 \
   </attrib> \
 </particleset> \
  <particleset name=\"e\" random=\"yes\" > \
@@ -102,7 +103,7 @@ TEST_CASE("WaveFunctionPool", "[qmcapp]")
 
   const char *wf_input = \
   "<wavefunction target='e'>\
-     <determinantset type='einspline' href='pwscf.pwscf.h5' tilematrix='1 0 0 0 1 0 0 0 1' twistnum='0' source='ion' meshfactor='1.0' precision='float' size='4'> \
+     <determinantset type='einspline' href='pwscf.pwscf.h5' tilematrix='1 0 0 0 1 0 0 0 1' twistnum='0' source='ion' meshfactor='1.0' precision='float'> \
          <slaterdeterminant> \
             <determinant id='updet' size='4'> \
               <occupation mode='ground' spindataset='0'/>\
