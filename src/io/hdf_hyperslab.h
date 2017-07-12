@@ -4,9 +4,9 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign   
+// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign 
+// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -40,7 +40,7 @@ struct hyperslab_proxy: public container_proxy<CT>
   ///1D
   hyperslab_proxy(CT& a): container_proxy<CT>(a), slab_rank(a.slab_rank),
     slab_dims(a.slab_dims), slab_offset(a.slab_offset)
-  { 
+  {
     slab_dims_local=slab_dims;
     use_slab=false;
   }
@@ -105,7 +105,7 @@ struct h5data_proxy<hyperslab_proxy<CT,MAXDIM> >
     {
       return h5d_read(grp,aname.c_str(),
           ref_.slab_rank,
-          ref_.slab_dims.data(), 
+          ref_.slab_dims.data(),
           ref_.slab_dims_local.data(),
           ref_.slab_offset.data(),
           ref_.data(),xfer_plist);
@@ -126,7 +126,7 @@ struct h5data_proxy<hyperslab_proxy<CT,MAXDIM> >
     {
       return h5d_write(grp,aname.c_str(),
           ref_.slab_rank,
-          ref_.slab_dims.data(), 
+          ref_.slab_dims.data(),
           ref_.slab_dims_local.data(),
           ref_.slab_offset.data(),
           ref_.data(),xfer_plist);

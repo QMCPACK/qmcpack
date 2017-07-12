@@ -12,8 +12,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #include <Configuration.h>
@@ -35,7 +33,6 @@
 #include <iostream>
 #endif
 #include <Utilities/SimpleParser.h>
-#include <sys/time.h> //for perf tests
 
 namespace qmcplusplus
 {
@@ -394,9 +391,9 @@ void RandomNumberControl::read(const std::string& fname, Communicate* comm)
 void RandomNumberControl::write(const std::string& fname, Communicate* comm)
 {
   std::string h5name=fname+".random.h5";
-  hdf_archive hout(comm, true); //attempt to write in parallel 
+  hdf_archive hout(comm, true); //attempt to write in parallel
   hout.create(h5name);
-  if(hout.is_parallel())  
+  if(hout.is_parallel())
     write_parallel(hout, comm);
   else
     write_scatter(hout, comm);
@@ -406,7 +403,7 @@ void RandomNumberControl::write(const std::string& fname, Communicate* comm)
 void RandomNumberControl::read_parallel(hdf_archive& hin, Communicate* comm)
 {
   int nthreads = omp_get_max_threads();
-  std::vector<uint_type> vt, mt; 
+  std::vector<uint_type> vt, mt;
   TinyVector<int,3> shape_now(comm->size(), nthreads, Random.state_size()); //cur configuration
   TinyVector<int,3> shape_hdf5(3,0); //configuration when file was written
 
@@ -462,9 +459,9 @@ void RandomNumberControl::write_parallel(hdf_archive& hout, Communicate* comm)
   TinyVector<int,3> shape_hdf5(comm->size(), nthreads, Random.state_size()); //configuration at write time
   vt.reserve(nthreads*Random.state_size()); //buffer for random numbers from children[ip] of each thread
   mt.reserve(Random.state_size()); //buffer for random numbers from single Random object
-  
+
   for(int ip=0; ip<nthreads; ++ip)
-  {   
+  {
     std::vector<uint_type> c;
     Children[ip]->save(c);
     vt.insert(vt.end(),c.begin(),c.end()); //get nums from each thread into buffer
@@ -507,7 +504,7 @@ void RandomNumberControl::read_scatter(hdf_archive& hin, Communicate* comm)
     hin.push(hdf::main_state);
     hin.read(shape_hdf5, "nprocs_nthreads_statesize");
   }
- 
+
   mpi::bcast(*comm, shape_hdf5);
 
   //if hdf5 file's configuration and current configuration don't match, abort read
@@ -569,7 +566,7 @@ void RandomNumberControl::write_scatter(hdf_archive& hout, Communicate* comm)
   TinyVector<int,3> shape_hdf5(comm->size(), nthreads, Random.state_size()); //configuration at write time
   vt.reserve(nthreads*Random.state_size()); //buffer for children[ip] (Random object of seeds for each thread)
   mt.reserve(Random.state_size());  //buffer for single Random object of seeds, one per proc regardless of thread num
-  
+
   for(int i=0; i<nthreads; ++i)
   {
     std::vector<uint_type> c;

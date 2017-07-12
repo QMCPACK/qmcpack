@@ -245,14 +245,14 @@ int main(int argc, char** argv)
   walkerRead = timers[2]/myComm->size();
   walkerWrite = timers[3]/myComm->size();
   if(myComm->rank() == 0)
-  { 
+  {
     cout << "\nTotal time of writing random seeds to HDF5 file: " << setprecision(2) << h5write << "\n";
     cout << "\nTotal time of reading random seeds in HDF5 file: " << setprecision(2) << h5read << "\n";
     cout << "\nTotal time of writing walkers to HDF5 file: " << setprecision(2) << walkerWrite << "\n";
     cout << "\nTotal time of reading walkers in HDF5 file: " << setprecision(2) << walkerRead << "\n";
   }
 
-  
+
   OHMMS::Controller->finalize();
 
   return 0;
