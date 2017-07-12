@@ -240,10 +240,10 @@ int main(int argc, char** argv)
   //print out hdf5 R/W times
   TinyVector<double,4> timers(h5read, h5write, walkerRead, walkerWrite);
   mpi::reduce(*myComm, timers);
-  h5read = global_t[0]/myComm->size();
-  h5write = global_t[1]/myComm->size();
-  walkerRead = global_t[2]/myComm->size();
-  walkerWrite = global_t[3]/myComm->size();
+  h5read = timers[0]/myComm->size();
+  h5write = timers[1]/myComm->size();
+  walkerRead = timers[2]/myComm->size();
+  walkerWrite = timers[3]/myComm->size();
   if(myComm->rank() == 0)
   { 
     cout << "\nTotal time of writing random seeds to HDF5 file: " << setprecision(2) << h5write << "\n";
