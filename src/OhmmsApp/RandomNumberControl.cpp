@@ -441,6 +441,7 @@ void RandomNumberControl::read_parallel(hdf_archive& hin, Communicate* comm)
   offsets[0] = comm->rank();
   hyperslab_proxy<std::vector<uint_type>,2> slab2(mt, shape, counts, offsets);
   hin.read(slab2,Random.EngineName);
+  hin.close();
 
   std::vector<uint_type>::iterator vt_it(vt.begin());
   for(int ip=0; ip<nthreads; ip++, vt_it += shape[1])
@@ -535,6 +536,7 @@ void RandomNumberControl::read_scatter(hdf_archive& hin, Communicate* comm)
     hin.push("random_master"); //group for single Random object
     hyperslab_proxy<std::vector<uint_type>,2> slab2(mt_tot, shape);
     hin.read(slab2,Random.EngineName);
+    hin.close();
   }
 
   if(comm->size()>1)
