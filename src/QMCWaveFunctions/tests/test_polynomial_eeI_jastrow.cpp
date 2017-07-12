@@ -96,7 +96,7 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   target_species(chargeIdx, downIdx) = -1;
   //elec_.resetGroups();
 
-#ifdef ENABLE_AA_SOA
+#ifdef ENABLE_SOA
   elec_.addTable(ions_,DT_SOA);
 #else
   elec_.addTable(ions_,DT_AOS);
@@ -131,7 +131,7 @@ const char *particles = \
 
   OrbitalBase *orb = psi.getOrbitals()[0];
 
-#ifdef ENABLE_AA_SOA
+#ifdef ENABLE_SOA
   typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
 #else
   typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;

@@ -201,7 +201,7 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
     if(j1spin=="yes")
       return createOneBodyJastrow<OneBodySpinJastrowOrbital<RadFuncType>,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
     else
-#if defined(ENABLE_AA_SOA)
+#if defined(ENABLE_SOA)
       return createOneBodyJastrow<J1OrbitalSoA<RadFuncType>,DiffOneBodyJastrowOrbital<RadFuncType> >(cur);
 #else
       return createOneBodyJastrow<OneBodyJastrowOrbital<RadFuncType>,DiffOneBodyJastrowOrbital<RadFuncType> >(cur);
@@ -223,7 +223,7 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
     typedef TwoBodyJastrowOrbitalBspline J2Type;
 #else
 
-#if defined(ENABLE_AA_SOA)
+#if defined(ENABLE_SOA)
     typedef J2OrbitalSoA<BsplineFunctor<RealType> > J2Type;
 #else
     typedef TwoBodyJastrowOrbital<BsplineFunctor<RealType> > J2Type;

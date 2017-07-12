@@ -418,7 +418,7 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
   if (DistTables.empty())
   {
     DistTables.reserve(4);
-#if defined(ENABLE_AA_SOA)
+#if defined(ENABLE_SOA)
     DistTables.push_back(createDistanceTable(*this,DT_SOA));
 #else
     //if(dt_type==DT_SOA_PREFERRED) dt_type=DT_AOS; //safety
@@ -492,7 +492,7 @@ int ParticleSet::getTable(const ParticleSet& psrc)
 
 void ParticleSet::update(bool skipSK)
 {
-#if defined(ENABLE_AA_SOA)
+#if defined(ENABLE_SOA)
   RSoA.copyIn(R); 
 #endif
   for (int i=0; i< DistTables.size(); i++)
@@ -506,7 +506,7 @@ void ParticleSet::update(bool skipSK)
 void ParticleSet::update(const ParticlePos_t& pos)
 {
   R = pos;
-#if defined(ENABLE_AA_SOA)
+#if defined(ENABLE_SOA)
   RSoA.copyIn(R); 
 #endif
   for (int i=0; i< DistTables.size(); i++)
@@ -620,7 +620,7 @@ bool ParticleSet::makeMove(const Walker_t& awalker
     for (int iat=0; iat<deltaR.size(); ++iat)
       R[iat]=awalker.R[iat]+dt*deltaR[iat];
   }
-#if defined(ENABLE_AA_SOA)
+#if defined(ENABLE_SOA)
   RSoA.copyIn(R); 
 #endif
   for (int i=0; i< DistTables.size(); i++)
@@ -654,7 +654,7 @@ bool ParticleSet::makeMove(const Walker_t& awalker
     for (int iat=0; iat<deltaR.size(); ++iat)
       R[iat]=awalker.R[iat]+dt[iat]*deltaR[iat];
   }
-#if defined(ENABLE_AA_SOA)
+#if defined(ENABLE_SOA)
   RSoA.copyIn(R); 
 #endif
   for (int i=0; i< DistTables.size(); i++)
@@ -696,7 +696,7 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
     for (int iat=0; iat<deltaR.size(); ++iat)
       R[iat]=awalker.R[iat]+dt*deltaR[iat]+drift[iat];
   }
-#if defined(ENABLE_AA_SOA)
+#if defined(ENABLE_SOA)
   RSoA.copyIn(R); 
 #endif
   for (int i=0; i< DistTables.size(); i++)
@@ -732,7 +732,7 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
       R[iat]=awalker.R[iat]+dt[iat]*deltaR[iat]+drift[iat];
   }
 
-#if defined(ENABLE_AA_SOA)
+#if defined(ENABLE_SOA)
   RSoA.copyIn(R); 
 #endif
 
@@ -837,7 +837,7 @@ void ParticleSet::resizeSphere(int nc)
 void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 {
   R = awalker.R;
-#if defined(ENABLE_AA_SOA)
+#if defined(ENABLE_SOA)
   RSoA.copyIn(R); 
 #endif
 #if !defined(SOA_MEMORY_OPTIMIZED)
