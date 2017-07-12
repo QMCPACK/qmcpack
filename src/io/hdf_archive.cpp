@@ -85,7 +85,7 @@ void hdf_archive::set_access_plist(bool request_pio, Communicate* comm)
   {
     Mode.set(IS_PARALLEL,false);
     Mode.set(IS_MASTER,true);
-      Mode.set(NOIO,false);
+    Mode.set(NOIO,false);
   }
 }
 

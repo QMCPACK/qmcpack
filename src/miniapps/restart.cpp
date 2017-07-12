@@ -170,6 +170,7 @@ int main(int argc, char** argv)
   Timer h5clock; //timer for the program
 
   // dump random seeds
+  myComm->barrier();
   h5clock.restart(); //start timer
   RandomNumberControl::write("restart",myComm);
   myComm->barrier();
@@ -187,6 +188,7 @@ int main(int argc, char** argv)
   Random.load(mt_temp);
 
   // load random seeds
+  myComm->barrier();
   h5clock.restart(); //start timer
   RandomNumberControl::read("restart",myComm);
   h5read += h5clock.elapsed(); //store timer
@@ -220,8 +222,9 @@ int main(int argc, char** argv)
   }
 
   // dump electron coordinates.
-  h5clock.restart(); //start timer
   HDFWalkerOutput wOut(elecs[0],"restart",myComm);
+  myComm->barrier();
+  h5clock.restart(); //start timer
   wOut.dump(elecs[0],1);
   myComm->barrier();
   walkerWrite += h5clock.elapsed(); //store timer
@@ -239,10 +242,12 @@ int main(int argc, char** argv)
   xmlNodePtr root = doc.getRoot();
   xmlNodePtr restart_leaf = xmlFirstElementChild(root);
 
-  h5clock.restart(); //start timer
   HDFVersion in_version(0,4);
   HDFWalkerInput_0_4 wIn(elecs[0],myComm,in_version);
+  myComm->barrier();
+  h5clock.restart(); //start timer
   wIn.put(restart_leaf);
+  myComm->barrier();
   walkerRead += h5clock.elapsed(); //store time spent
 
   //print out hdf5 R/W times
