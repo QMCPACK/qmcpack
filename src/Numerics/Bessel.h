@@ -11,7 +11,7 @@ namespace qmcplusplus
  * Using Steed/Barnett algorithm from Comp. Phys. Comm. 21, 297 (1981)
  */
 template<typename T>
-void bessel_steed_array_cpu(const int lmax, const T x, T* restrict jl)
+void bessel_steed_array_cpu(const int lmax, const T x, T* jl)
 {
   if (lmax<0)
     throw std::runtime_error("Negative lmax not allowed!");
