@@ -467,8 +467,3 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author: jeongnim.kim $
- * $Revision: 5260 $   $Date: 2011-06-18 07:45:58 -0400 (Sat, 18 Jun 2011) $
- * $Id: SplineR2RAdoptor.h 5260 2011-06-18 11:45:58Z jeongnim.kim $
- ***************************************************************************/

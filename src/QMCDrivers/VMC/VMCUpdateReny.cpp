@@ -567,8 +567,3 @@ void VMCUpdateRenyiWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t i
 
 }
 
-/***************************************************************************
- * $RCSfile: VMCUpdatePbyP.cpp,v $   $Author: jnkim $
- * $Revision: 1.25 $   $Date: 2006/10/18 17:03:05 $
- * $Id: VMCUpdatePbyP.cpp,v 1.25 2006/10/18 17:03:05 jnkim Exp $
- ***************************************************************************/

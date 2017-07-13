@@ -181,8 +181,4 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type)
 }
 
 } //namespace qmcplusplus
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
+
