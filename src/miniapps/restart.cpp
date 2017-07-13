@@ -50,12 +50,13 @@ int main(int argc, char** argv)
   Communicate* myComm=OHMMS::Controller;
   myComm->setName("restart");
 
-  typedef QMCTraits::RealType           RealType;
-  typedef ParticleSet::ParticlePos_t    ParticlePos_t;
-  typedef ParticleSet::ParticleLayout_t LatticeType;
-  typedef ParticleSet::TensorType       TensorType;
-  typedef ParticleSet::PosType          PosType;
-  typedef RandomGenerator_t::uint_type  uint_type;
+  typedef QMCTraits::RealType              RealType;
+  typedef ParticleSet::ParticlePos_t       ParticlePos_t;
+  typedef ParticleSet::ParticleLayout_t    LatticeType;
+  typedef ParticleSet::TensorType          TensorType;
+  typedef ParticleSet::PosType             PosType;
+  typedef RandomGenerator_t::uint_type     uint_type;
+  typedef MCWalkerConfiguration::Walker_t  Walker_t;
 
   //use the global generator
 
@@ -101,9 +102,8 @@ int main(int argc, char** argv)
   // set the number of walkers equal to the threads.
   if(!AverageWalkersPerNode) AverageWalkersPerNode=NumThreads;
   //set nwtot, to be random
-  nwtot=AverageWalkersPerNode;
+  nwtot=AverageWalkersPerNode+myComm->rank()%5-2;
   FairDivideLow(nwtot,NumThreads,wPerNode);
-  wPerNode.resize(NumThreads+1,0);
 
   //Random.init(0,1,iseed);
   Tensor<int,3> tmat(na,0,0,0,nb,0,0,0,nc);
@@ -123,19 +123,19 @@ int main(int argc, char** argv)
   std::vector<uint_type> mt(Random.state_size(),0);
   std::vector<MCWalkerConfiguration> elecs(NumThreads);
 
+  ParticleSet ions;
+  OHMMS_PRECISION scale=1.0;
+  tile_graphite(ions,tmat,scale);
+
   #pragma omp parallel reduction(+:t0)
   {
     int ip=omp_get_thread_num();
 
-    ParticleSet ions;
     MCWalkerConfiguration& els=elecs[ip];
-    OHMMS_PRECISION scale=1.0;
 
     //create generator within the thread
     myRNG[ip]=*RandomNumberControl::Children[ip];
     RandomGenerator_t& random_th=myRNG[ip];
-
-    tile_graphite(ions,tmat,scale);
 
     const int nions=ions.getTotalNum();
     const int nels=4*nions;
@@ -154,6 +154,12 @@ int main(int argc, char** argv)
       els.RSoA=els.R;
     }
 
+    if(!ip) elecs[0].createWalkers(nwtot);
+    #pragma omp barrier
+
+    for(MCWalkerConfiguration::iterator wi=elecs[0].begin()+wPerNode[ip]; wi!=elecs[0].begin()+wPerNode[ip+1]; wi++)
+      els.saveWalker(**wi);
+
     // save random seeds and electron configurations.
     *RandomNumberControl::Children[ip]=myRNG[ip];
     //MCWalkerConfiguration els_save(els);
@@ -161,7 +167,6 @@ int main(int argc, char** argv)
   } //end of omp parallel
   Random.save(mt);
 
-  elecs[0].createWalkers(nwtot);
   setWalkerOffsets(elecs[0], myComm);
 
   //storage variables for timers
@@ -216,7 +221,7 @@ int main(int argc, char** argv)
   {
     if(mismatch_count!=0)
       std::cout << "Fail: random seeds mismatch between write and read!\n"
-                << "state_size= " << myRNG[0].state_size() << " mismatch_cout=" << mismatch_count << std::endl;
+                << "  state_size= " << myRNG[0].state_size() << " mismatch_cout=" << mismatch_count << std::endl;
     else
       std::cout << "Pass: random seeds match exactly between write and read!\n";
   }
@@ -228,9 +233,15 @@ int main(int argc, char** argv)
   wOut.dump(elecs[0],1);
   myComm->barrier();
   walkerWrite += h5clock.elapsed(); //store timer
+  if(!myComm->rank()) std::cout << "Walkers are dumped!\n";
 
-  if(!myComm->rank())
-    std::cout << "Walkers are dumped!\n";
+  // save walkers before destroying them
+  std::vector<Walker_t> saved_walkers;
+  for(int wi=0; wi<elecs[0].getActiveWalkers(); wi++)
+    saved_walkers.push_back(*elecs[0][wi]);
+  elecs[0].destroyWalkers(elecs[0].begin(),elecs[0].end());
+
+  // load walkers
   const char *restart_input = \
 "<tmp> \
   <mcwalkerset fileroot=\"restart\" node=\"-1\" version=\"3 0\" collected=\"yes\"/> \
@@ -249,6 +260,27 @@ int main(int argc, char** argv)
   wIn.put(restart_leaf);
   myComm->barrier();
   walkerRead += h5clock.elapsed(); //store time spent
+
+  if(saved_walkers.size()!=elecs[0].getActiveWalkers())
+    std::cout << "Fail: Rank " << myComm->rank() << " had " << saved_walkers.size()
+              << "  walkers but loaded only " << elecs[0].getActiveWalkers() << " walkers from file!" << std::endl;
+
+  mismatch_count=0;
+  for(int wi=0; wi<saved_walkers.size(); wi++)
+  {
+    saved_walkers[wi].R=saved_walkers[wi].R-elecs[0][wi]->R;
+    if(Dot(saved_walkers[wi].R,saved_walkers[wi].R)>std::numeric_limits<RealType>::epsilon()) mismatch_count++;
+  }
+  myComm->allreduce(mismatch_count);
+
+  if(!myComm->rank())
+  {
+    if(mismatch_count!=0)
+      std::cout << "Fail: electron coordinates mismatch between write and read!\n"
+                << "  mismatch_cout=" << mismatch_count << std::endl;
+    else
+      std::cout << "Pass: electron coordinates match exactly between write and read!\n";
+  }
 
   //print out hdf5 R/W times
   TinyVector<double,4> timers(h5read, h5write, walkerRead, walkerWrite);
