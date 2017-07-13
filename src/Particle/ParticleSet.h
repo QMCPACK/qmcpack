@@ -23,6 +23,7 @@
 #define QMCPLUSPLUS_PARTICLESET_H
 
 #include <Configuration.h>
+#include <ParticleTags.h>
 #include <Particle/Walker.h>
 #include <Utilities/SpeciesSet.h>
 #include <Utilities/PooledData.h>

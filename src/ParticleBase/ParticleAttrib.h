@@ -25,6 +25,7 @@
 
 namespace qmcplusplus
 {
+
 template<class T, typename Alloc=std::allocator<T> >
 class ParticleAttrib: public Vector<T,Alloc>, public OhmmsObject
 {
@@ -97,6 +98,18 @@ public:
   void reset() { }
 
 };
+
+template<class T, unsigned D>
+inline T* get_first_address(ParticleAttrib<TinyVector<T,D> >& a)
+{
+  return &(a[0][0]);
+}
+
+template<class T, unsigned D>
+inline T* get_last_address(ParticleAttrib<TinyVector<T,D> >& a)
+{
+  return &(a[0][0])+D*a.size();
+}
 
 }
 

@@ -56,14 +56,14 @@ class JeeIOrbitalSoA: public OrbitalBase
   RealType DiffVal;
 
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
-  ParticleAttrib<valT> Uat;
+  Vector<valT> Uat;
   vContainer_type oldUk,newUk;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
-  ParticleAttrib<posT> dUat;
+  Vector<posT> dUat;
   valT *FirstAddressOfdU, *LastAddressOfdU;
   gContainer_type olddUk,newdUk;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
-  ParticleAttrib<valT> d2Uat;
+  Vector<valT> d2Uat;
   vContainer_type oldd2Uk,newd2Uk;
   /// current values during PbyP
   valT cur_Uat,cur_d2Uat;
