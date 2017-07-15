@@ -34,7 +34,6 @@
 #error "Only 2D and 3D are implemented.\n"
 #endif
 #include <ParticleBase/ParticleAttrib.h>
-#include <ParticleBase/ParticleBase.h>
 #include <Utilities/OhmmsInfo.h>
 #include <Message/Communicate.h>
 

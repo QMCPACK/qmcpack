@@ -58,8 +58,8 @@ struct  J1OrbitalSoA : public OrbitalBase
   aligned_vector<valT> U, dU, d2U;
   aligned_vector<valT> DistCompressed;
   aligned_vector<int> DistIndice;
-  ParticleAttrib<posT> Grad;
-  ParticleAttrib<valT> Lap;
+  Vector<posT> Grad;
+  Vector<valT> Lap;
   ///Container for \f$F[ig*NumGroups+jg]\f$
   std::vector<FT*> F;
 

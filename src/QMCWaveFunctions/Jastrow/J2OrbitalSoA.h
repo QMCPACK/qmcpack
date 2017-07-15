@@ -68,12 +68,12 @@ struct  J2OrbitalSoA : public OrbitalBase
   ///Correction
   RealType KEcorr;
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
-  ParticleAttrib<valT> Uat;
+  Vector<valT> Uat;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
-  ParticleAttrib<posT> dUat;
+  Vector<posT> dUat;
   valT *FirstAddressOfdU, *LastAddressOfdU;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
-  ParticleAttrib<valT> d2Uat;
+  Vector<valT> d2Uat;
   valT cur_Uat;
   aligned_vector<valT> cur_u, cur_du, cur_d2u;
   aligned_vector<valT> old_u, old_du, old_d2u;

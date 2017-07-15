@@ -264,7 +264,7 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
     for(int iat=0; iat<P.getTotalNum(); ++iat)
     {
       SplineAdoptor::evaluate_v(P,iat,psi);
-      copy(psi.begin(),psi.end(),psiM[iat]);
+      std::copy(psi.begin(),psi.end(),psiM[iat]);
     }
   }
 

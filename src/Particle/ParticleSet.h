@@ -23,6 +23,7 @@
 #define QMCPLUSPLUS_PARTICLESET_H
 
 #include <Configuration.h>
+#include <ParticleTags.h>
 #include <Particle/Walker.h>
 #include <Utilities/SpeciesSet.h>
 #include <Utilities/PooledData.h>
@@ -616,8 +617,7 @@ public:
 
   inline void assign(const ParticleSet& ptclin)
   {
-    TotalNum = ptclin.getTotalNum();
-    resize(TotalNum);
+    resize(ptclin.getTotalNum());
     Lattice = ptclin.Lattice;
     PrimitiveLattice = ptclin.PrimitiveLattice;
     R.InUnit = ptclin.R.InUnit;
