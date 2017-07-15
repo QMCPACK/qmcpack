@@ -323,7 +323,7 @@ bool HDFWalkerInput_0_4::read_phdf5( std::string h5name)
 
   TinyVector<int,3> counts(nw_loc, targetW.getTotalNum(), OHMMS_DIM);
   TinyVector<int,3> offsets(woffsets[myComm->rank()], 0, 0);
-  posin.resize(dims[0]*dims[1]*dims[2]);
+  posin.resize(nw_loc*dims[1]*dims[2]);
 
   hyperslab_proxy<Buffer_t,3> slab(posin, dims, counts, offsets);
   hin.read(slab,hdf::walkers);
@@ -342,7 +342,7 @@ bool HDFWalkerInput_0_4::read_phdf5( std::string h5name)
     int nitems=targetW.getTotalNum()*OHMMS_DIM;
     int curWalker = targetW.getActiveWalkers();
     targetW.createWalkers(nw_in);
-    Buffer_t::iterator it(posin.begin()+woffsets[myComm->rank()]*nitems);
+    Buffer_t::iterator it(posin.begin());
     for(int i=0,iw=curWalker; i<nw_in; ++i,++iw)
     {
       copy(it,it+nitems,get_first_address(targetW[iw]->R));
