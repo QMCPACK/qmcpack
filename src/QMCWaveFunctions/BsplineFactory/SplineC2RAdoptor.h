@@ -46,7 +46,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   using PointType=typename BaseType::PointType;
   using SingleSplineType=typename BaseType::SingleSplineType;
 
-  using vContainer_type=aligned_vector<ST>;
+  using vContainer_type=Vector<ST,aligned_allocator<ST> >;
   using gContainer_type=VectorSoaContainer<ST,3>;
   using hContainer_type=VectorSoaContainer<ST,6>;
 
@@ -207,11 +207,15 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     return h5f.write(bigtable,o.str().c_str());//"spline_0");
   }
 
-  TT evaluate_dot(const ParticleSet& P, int iat, const TT* restrict arow)
+  TT evaluate_dot(const ParticleSet& P, int iat, const TT* restrict arow, ST* scratch, bool compute_spline=true)
   {
+    Vector<ST> vtmp(scratch,myV.size());
     const PointType& r=P.R[iat];
-    PointType ru(PrimLattice.toUnit_floor(r));
-    SplineInst->evaluate(ru,myV);
+    if(compute_spline)
+    {
+      PointType ru(PrimLattice.toUnit_floor(r));
+      SplineInst->evaluate(ru,vtmp);
+    }
 
     TT res=TT();
     const size_t N=kPoints.size();
@@ -223,8 +227,8 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 #pragma simd private(s,c) reduction(+:res)
     for (size_t j=0,psiIndex=first_spo; j<nComplexBands; j++, psiIndex+=2)
     {
-      const ST val_r=myV[2*j  ];
-      const ST val_i=myV[2*j+1];
+      const ST val_r=vtmp[2*j  ];
+      const ST val_i=vtmp[2*j+1];
       sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
       res+=arow[psiIndex  ] * (val_r*c-val_i*s);
       res+=arow[psiIndex+1] * (val_i*c+val_r*s);
@@ -233,8 +237,8 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 #pragma simd private(s,c) reduction(+:res)
     for (size_t j=nComplexBands,psiIndex=first_spo+2*nComplexBands; j<N; j++,psiIndex++)
     {
-      const ST val_r=myV[2*j  ];
-      const ST val_i=myV[2*j+1];
+      const ST val_r=vtmp[2*j  ];
+      const ST val_i=vtmp[2*j+1];
       sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
       res+=arow[psiIndex]*(val_r*c-val_i*s);
     }

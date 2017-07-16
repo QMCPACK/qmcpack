@@ -200,6 +200,10 @@ public:
   virtual void
   evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)=0;
 
+  /** compute dot_product of new row and old row */
+  virtual ValueType RATIO(const ParticleSet& P, int iat, const ValueType*
+      restrict arow);
+
   /** evaluate VGL using SoA container for gl
    *
    * If newp is true, use particle set data for the proposed move

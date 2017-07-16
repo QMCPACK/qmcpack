@@ -46,6 +46,17 @@ SPOSetBase::SPOSetBase()
   NeedDistanceTables=false;
 }
 
+/** default implementation */
+SPOSetBase::ValueType
+SPOSetBase::RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
+{
+  int ip=omp_get_thread_num(); 
+  ValueVector_t psi(t_logpsi[ip],OrbitalSetSize);
+  evaluate(P,iat,psi);
+  return simd::dot(psi.data(),arow,OrbitalSetSize,ValueType());
+}
+
+
 void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
                           ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
 {

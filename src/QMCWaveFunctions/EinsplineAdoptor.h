@@ -224,6 +224,7 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
 {
   typedef typename SplineAdoptor::SplineType SplineType;
   typedef typename SplineAdoptor::PointType  PointType;
+  typedef typename SplineAdoptor::DataType  DataType;
 
   ///** default constructor */
   //BsplineSet() { }
@@ -248,9 +249,11 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
     SplineAdoptor::set_spline(spline_r,spline_i,twist,ispline,level);
   }
 
-  inline RealType RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
+  inline ValueType RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
   {
-    return SplineAdoptor::evaluate_dot(P,iat,arow);
+    //this is just an example how to resuse t_logpsi
+    int ip=omp_get_thread_num()*2;
+    return SplineAdoptor::evaluate_dot(P,iat,arow,reinterpret_cast<DataType*>(t_logpsi[ip]));
   }
 
   inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
@@ -260,11 +263,11 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
 
   inline void evaluateValues(const ParticleSet& P, ValueMatrix_t& psiM)
   {
-    ValueVector_t psi(psiM.cols());
+    const size_t m=psiM.cols();
     for(int iat=0; iat<P.getTotalNum(); ++iat)
     {
+      ValueVector_t psi(psiM[iat],m);
       SplineAdoptor::evaluate_v(P,iat,psi);
-      std::copy(psi.begin(),psi.end(),psiM[iat]);
     }
   }
 

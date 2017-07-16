@@ -91,6 +91,16 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
       BaseAdoptor::evaluate_v(P,iat,psi);
   }
 
+  template<typename T1>
+  inline T1 evaluate_dot(const ParticleSet& P, int iat, const T1* restrict arow, ST* scratch)
+  {
+    Vector<ST> vtmp(scratch,myV.size());
+    if(HybridBase::evaluate_v(P,iat,vtmp))
+      return BaseAdoptor::evaluate_dot(P,iat,arow,scratch,false);
+    else
+      return BaseAdoptor::evaluate_dot(P,iat,arow,scratch,true);
+  }
+
   template<typename VV, typename GV>
   inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {

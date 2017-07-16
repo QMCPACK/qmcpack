@@ -43,7 +43,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   using PointType=typename BaseType::PointType;
   using SingleSplineType=typename BaseType::SingleSplineType;
 
-  using vContainer_type=aligned_vector<ST>;
+  using vContainer_type=Vector<ST,aligned_allocator<ST> >;
   using gContainer_type=VectorSoaContainer<ST,3>;
   using hContainer_type=VectorSoaContainer<ST,6>;
 
@@ -199,6 +199,45 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(SplineInst->spline_m);
     return h5f.write(bigtable,o.str().c_str());//"spline_0");
+  }
+
+  inline std::complex<TT> 
+    evaluate_dot(const ParticleSet& P, const int iat, const std::complex<TT>* restrict arow, ST* scratch,
+        bool compute_spline=true)
+  {
+    Vector<ST> vtmp(scratch,myV.size());
+    const PointType& r=P.R[iat];
+
+    if(compute_spline)
+    {
+      PointType ru(PrimLattice.toUnit_floor(r));
+      SplineInst->evaluate(ru,vtmp);
+    }
+
+    const size_t N=kPoints.size();
+    const ST x=r[0], y=r[1], z=r[2];
+    const ST* restrict kx=myKcart.data(0);
+    const ST* restrict ky=myKcart.data(1);
+    const ST* restrict kz=myKcart.data(2);
+    const TT* restrict psi0=reinterpret_cast<const TT*>(arow+first_spo);
+    const ST* restrict psi1=vtmp.data();
+    ST s, c;
+    TT sum_r=TT();
+    TT sum_i=TT();
+#pragma omp simd private(s,c) reduction(+:sum_r,sum_i)
+    for (size_t j=0; j<N; ++j)
+    {
+      sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
+      const size_t jr=j<<1;
+      const size_t ji=jr+1;
+      const ST val_r=psi1[jr];
+      const ST val_i=psi1[ji];
+      const ST psi_r=val_r*c-val_i*s;
+      const ST psi_i=val_i*c+val_r*s;
+      sum_r+=psi0[jr]*psi_r-psi0[ji]*psi_i;
+      sum_i+=psi0[ji]*psi_r+psi0[jr]*psi_i;
+    }
+    return std::complex<TT>(sum_r,sum_i);
   }
 
   template<typename VV>

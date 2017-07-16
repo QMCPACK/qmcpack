@@ -40,7 +40,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   using PointType=typename BaseType::PointType;
   using SingleSplineType=typename BaseType::SingleSplineType;
 
-  using vContainer_type=aligned_vector<ST>;
+  using vContainer_type=Vector<ST,aligned_allocator<ST> >;
   using gContainer_type=VectorSoaContainer<ST,3>;
   using hContainer_type=VectorSoaContainer<ST,6>;
 
@@ -212,6 +212,25 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     else
       for(size_t psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
         psi[psiIndex]=myV[j];
+  }
+
+  inline TT evaluate_dot(const ParticleSet& P, const int iat, const TT* restrict arow, ST* scratch, bool compute_spline=true)
+  {
+    Vector<ST> vtmp(scratch,myV.size());
+    PointType ru;
+    int bc_sign=convertPos(P.R[iat],ru);
+    if(compute_spline) SplineInst->evaluate(ru,vtmp);
+
+    TT res=TT();
+    if (bc_sign & 1)
+#pragma omp simd reduction(+:res)
+      for(size_t psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
+        res -= vtmp[j]*arow[psiIndex];
+    else
+#pragma omp simd reduction(+:res)
+      for(size_t psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
+        res += vtmp[j]*arow[psiIndex];
+    return res;
   }
 
   template<typename VV>
