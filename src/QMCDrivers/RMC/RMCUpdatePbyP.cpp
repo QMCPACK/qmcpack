@@ -195,7 +195,6 @@ namespace qmcplusplus
 	RealType sqrttau = std::sqrt (tauovermass);
 	for (int iat = W.first (ig); iat < W.last (ig); ++iat)
 	  {
-            W.setActive(iat);
 	    //get the displacement
 	    GradType grad_iat = Psi.evalGrad (W, iat);
 	    PosType dr;
@@ -257,8 +256,6 @@ namespace qmcplusplus
     //  if(UseTMove)
     //    nonLocalOps.reset();
     bool advanced = true;
-
-    W.donePbyP();
 
     if (nAcceptTemp > 0)
       {
@@ -350,7 +347,6 @@ namespace qmcplusplus
 	RealType sqrttau = std::sqrt (tauovermass);
 	for (int iat = W.first (ig); iat < W.last (ig); ++iat)
 	  {
-            W.setActive(iat);
 	    //get the displacement
 	    GradType grad_iat = Psi.evalGrad (W, iat);
 	    PosType dr;
@@ -409,8 +405,6 @@ namespace qmcplusplus
 	  }
       }
     myTimers[1]->stop ();
-
-    W.donePbyP();
     //  if(UseTMove)
 /*
   RealType logpsiold = prophead.Properties(LOGPSI);
