@@ -224,12 +224,12 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     TT res=TT();
     if (bc_sign & 1)
 #pragma omp simd reduction(+:res)
-      for(size_t psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
-        res -= vtmp[j]*arow[psiIndex];
+      for(size_t psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
+        res -= vtmp[psiIndex-first_spo]*arow[psiIndex];
     else
 #pragma omp simd reduction(+:res)
-      for(size_t psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
-        res += vtmp[j]*arow[psiIndex];
+      for(size_t psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
+        res += vtmp[psiIndex-first_spo]*arow[psiIndex];
     return res;
   }
 
