@@ -145,6 +145,8 @@ int main(int argc, char** argv)
     RandomGenerator<RealType> random_th(MakeSeed(teamID,np));
 
     ParticleSet ions, els;
+    ions.setName("ion");
+    els.setName("e");
     const OHMMS_PRECISION scale=1.0;
     ions.Lattice.BoxBConds=1;  
     tile_graphite(ions,tmat,scale);

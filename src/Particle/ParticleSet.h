@@ -329,18 +329,6 @@ public:
     return mySpecies;
   }
 
-  ///return this id
-  inline int tag() const
-  {
-    return ObjectTag;
-  }
-
-  ///return parent's id
-  inline int parent() const
-  {
-    return ParentTag;
-  }
-
   ///return parent's name
   inline const std::string& parentName() const
   {
@@ -698,22 +686,12 @@ public:
   }
 
 protected:
-  ///the number of particle objects
-  static Index_t PtclObjectCounter;
-
-  ///id of this object
-  Index_t ObjectTag;
-
-  ///id of the parent
-  Index_t ParentTag;
-
   /** map to handle distance tables
    *
    * myDistTableMap[source-particle-tag]= locator in the distance table
    * myDistTableMap[ObjectTag] === 0
    */
-  std::map<int,int> myDistTableMap;
-  void initParticleSet();
+  std::map<std::string,int> myDistTableMap;
 
   std::vector<NewTimer*> myTimers;
   SingleParticlePos_t myTwist;

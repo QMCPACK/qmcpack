@@ -41,6 +41,8 @@ TEST_CASE("symmetric_distance_table", "[particle]")
   typedef SymmetricDTD<ParticleSet::RealType, 3, SUPERCELL_OPEN> sym_dtd_t;
   ParticleSet source;
 
+  source.setName("electrons");
+
   source.create(2);
   source.R[0][0] = 0.0;
   source.R[0][1] = 1.0;

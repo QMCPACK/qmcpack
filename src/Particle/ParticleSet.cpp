@@ -41,9 +41,6 @@ namespace qmcplusplus
 template<> int ParticleSet::Walker_t::cuda_DataSize = 0;
 #endif
 
-///object counter
-int  ParticleSet::PtclObjectCounter = 0;
-
 void add_p_timer(std::vector<NewTimer*>& timers)
 {
   timers.push_back(new NewTimer("ParticleSet::makeMove",timer_level_fine)); //timer for MC, ratio etc
@@ -54,28 +51,29 @@ void add_p_timer(std::vector<NewTimer*>& timers)
 
 ParticleSet::ParticleSet()
   : UseBoundBox(true), UseSphereUpdate(true), IsGrouped(true)
-  , ThreadID(0), SK(0), ParentTag(-1), ParentName("0")
+  , ThreadID(0), SK(0), ParentName("0")
   , quantum_domain(classical), TotalNum(0)
+  , SameMass(true), myTwist(0.0), activeWalker(nullptr)
 {
-  initParticleSet();
   initPropertyList();
   add_p_timer(myTimers);
 }
 
 ParticleSet::ParticleSet(const ParticleSet& p)
   : UseBoundBox(p.UseBoundBox), UseSphereUpdate(p.UseSphereUpdate),IsGrouped(p.IsGrouped)
-  , ThreadID(0), mySpecies(p.getSpeciesSet()),SK(0), ParentTag(p.tag()), ParentName(p.parentName())
+  , ThreadID(0), mySpecies(p.getSpeciesSet()),SK(0), ParentName(p.parentName())
+  , SameMass(true), myTwist(0.0), activeWalker(nullptr)
 {
   set_quantum_domain(p.quantum_domain);
-  initParticleSet();
   assign(p); //only the base is copied, assumes that other properties are not assignable
   //need explicit copy:
   Mass=p.Mass;
   Z=p.Z;
-  std::ostringstream o;
-  o<<p.getName()<<ObjectTag;
-  this->setName(o.str());
-  app_log() << "  Copying a particle set " << p.getName() << " to " << this->getName() << " groups=" << groups() << std::endl;
+  //std::ostringstream o;
+  //o<<p.getName()<<ObjectTag;
+  //this->setName(o.str());
+  //app_log() << "  Copying a particle set " << p.getName() << " to " << this->getName() << " groups=" << groups() << std::endl;
+  myName=p.getName();
   PropertyList.Names=p.PropertyList.Names;
   PropertyList.Values=p.PropertyList.Values;
   PropertyHistory=p.PropertyHistory;
@@ -148,19 +146,6 @@ void ParticleSet::set_quantum_domain(quantum_domains qdomain)
     quantum_domain = qdomain;
   else
     APP_ABORT("ParticleSet::set_quantum_domain\n  input quantum domain is not valid for particles");
-}
-
-void ParticleSet::initParticleSet()
-{
-  #pragma omp critical (PtclObjectCounter)
-  {
-    ObjectTag = PtclObjectCounter;
-    PtclObjectCounter++;
-  }
-
-  SameMass=true; //default is SameMass
-  myTwist=0.0;
-  activeWalker=nullptr;
 }
 
 void ParticleSet::resetGroups()
@@ -393,6 +378,7 @@ void ParticleSet::checkBoundBox(RealType rb)
 //}
 int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
 {
+  if(myName=="none") APP_ABORT("ParticleSet::addTable needs a proper name for this particle set.");
   if (DistTables.empty())
   {
     DistTables.reserve(4);
@@ -404,13 +390,13 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
 #endif
     //add  this-this pair
     myDistTableMap.clear();
-    myDistTableMap[ObjectTag]=0;
+    myDistTableMap[myName]=0;
     app_log() << "  ... ParticleSet::addTable Create Table #0 " << DistTables[0]->Name << std::endl;
     DistTables[0]->ID=0;
-    if (psrc.tag() == ObjectTag)
+    if (psrc.getName() == myName)
       return 0;
   }
-  if (psrc.tag() == ObjectTag)
+  if (psrc.getName() == myName)
   {
     app_log() << "  ... ParticleSet::addTable Reuse Table #" << 0 << " " << DistTables[0]->Name << std::endl;
     //if(!DistTables[0]->is_same_type(dt_type))
@@ -419,13 +405,13 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
     //}
     return 0;
   }
-  int tsize=DistTables.size(),tid;
-  std::map<int,int>::iterator tit(myDistTableMap.find(psrc.tag()));
+  int tid;
+  std::map<std::string,int>::iterator tit(myDistTableMap.find(psrc.getName()));
   if (tit == myDistTableMap.end())
   {
     tid=DistTables.size();
     DistTables.push_back(createDistanceTable(psrc,*this,dt_type));
-    myDistTableMap[psrc.tag()]=tid;
+    myDistTableMap[psrc.getName()]=tid;
     DistTables[tid]->ID=tid;
     app_log() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->Name << std::endl;
   }
@@ -455,11 +441,11 @@ int ParticleSet::getTable(const ParticleSet& psrc)
   if (DistTables.empty())
     tid = -1;
   else
-    if (psrc.tag() == ObjectTag)
+    if (psrc.getName() == myName)
       tid = 0;
     else
     {
-      std::map<int,int>::iterator tit(myDistTableMap.find(psrc.tag()));
+      std::map<std::string,int>::iterator tit(myDistTableMap.find(psrc.getName()));
       if (tit == myDistTableMap.end())
         tid = -1;
       else
