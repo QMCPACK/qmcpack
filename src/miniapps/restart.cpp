@@ -297,6 +297,25 @@ int main(int argc, char** argv)
     cout << "\nTotal time of reading walkers in HDF5 file: " << setprecision(2) << walkerRead << "\n";
   }
 
+  if(myComm->size()>1)
+  {
+    Communicate* subComm = new Communicate(*myComm, 2);
+    subComm->setName("restart2");
+
+    if(subComm->getGroupID() == 0)
+    {
+      elecs[0].destroyWalkers(elecs[0].begin(),elecs[0].end());
+      HDFWalkerInput_0_4 subwIn(elecs[0],subComm,in_version);
+      subwIn.put(restart_leaf);
+      subComm->barrier();
+      if(!subComm->rank()) std::cout << "Walkers are loaded again by the subgroup!\n";
+      setWalkerOffsets(elecs[0], subComm);
+      HDFWalkerOutput subwOut(elecs[0],"XXXX",subComm);
+      subwOut.dump(elecs[0],1);
+      if(!subComm->rank()) std::cout << "Walkers are dumped again by the subgroup!\n";
+    }
+    delete subComm;
+  }
 
   OHMMS::Controller->finalize();
 
