@@ -145,22 +145,6 @@ struct hdf_archive
     return e.read(p,aname,xfer_plist);
   }
 
-  template<typename T> bool write_master(T& data, const std::string& aname)
-  {
-    if(!Mode[IS_MASTER]) return true;
-    hid_t p=group_id.empty()? file_id:group_id.top();
-    h5data_proxy<T> e(data);
-    return e.write(p,aname);
-  }
-
-  template<typename T> bool read_master(T& data, const std::string& aname)
-  {
-    if(!Mode[IS_MASTER]) return true;
-    hid_t p=group_id.empty()? file_id:group_id.top();
-    h5data_proxy<T> e(data);
-    return e.read(p,aname);
-  }
-
   inline void unlink(const std::string& aname)
   {
     if(Mode[NOIO]) return;
