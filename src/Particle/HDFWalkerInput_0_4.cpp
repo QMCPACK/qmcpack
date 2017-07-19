@@ -126,8 +126,11 @@ bool HDFWalkerInput_0_4::put(xmlNodePtr cur)
     FileStack.pop();
     std::string h5name(FileName);
     //success |= read_hdf5_scatter(h5name);
-    //success |= read_hdf5(h5name);
+#ifdef HDF5_IS_PARALLEL
     success |= read_phdf5(h5name);
+#else
+    success |= read_hdf5(h5name);
+#endif
   }
   return success;
 #endif
