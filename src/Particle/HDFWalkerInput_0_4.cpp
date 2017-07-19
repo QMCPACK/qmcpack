@@ -321,20 +321,20 @@ bool HDFWalkerInput_0_4::read_phdf5( std::string h5name)
   hin.read(woffsets,"walker_partition");
   int nw_loc=woffsets[myComm->rank()+1]-woffsets[myComm->rank()];
 
+  int np1=myComm->size()+1;
+  if(woffsets.size()!= np1)
+  {
+    woffsets.resize(myComm->size()+1,0);
+    FairDivideLow(nw_in,myComm->size(),woffsets);
+    nw_loc=woffsets[myComm->rank()+1]-woffsets[myComm->rank()];
+  }
+
   TinyVector<int,3> counts(nw_loc, targetW.getTotalNum(), OHMMS_DIM);
   TinyVector<int,3> offsets(woffsets[myComm->rank()], 0, 0);
   posin.resize(nw_loc*dims[1]*dims[2]);
 
   hyperslab_proxy<Buffer_t,3> slab(posin, dims, counts, offsets);
   hin.read(slab,hdf::walkers);
-
-  int np1=myComm->size()+1;
-  std::vector<int> count(np1);
-  if(woffsets.size()!= np1)
-  {
-    woffsets.resize(myComm->size()+1,0);
-    FairDivideLow(nw_in,myComm->size(),woffsets);
-  }
 
   app_log() << " HDFWalkerInput_0_4::put getting " << dims[0] << " walkers " << posin.size() << std::endl;
   nw_in=woffsets[myComm->rank()+1]-woffsets[myComm->rank()];
