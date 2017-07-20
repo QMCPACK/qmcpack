@@ -35,6 +35,7 @@ public:
   typedef T  Type_t;
   typedef T* iterator;
   typedef const T* const_iterator;
+  typedef typename Alloc::size_type size_type;
   typedef typename Alloc::pointer pointer;
   typedef typename Alloc::const_pointer const_pointer;
   typedef Vector<T,Alloc> This_t;
@@ -126,20 +127,20 @@ public:
     return X[i];
   }
 
-  inline Type_t operator[](size_t i) const
+  inline const Type_t& operator[](size_t i) const
   {
     return X[i];
   }
 
-  inline Type_t& operator()(size_t i)
-  {
-    return X[i];
-  }
+  //inline Type_t& operator()(size_t i)
+  //{
+  //  return X[i];
+  //}
 
-  inline Type_t operator()( size_t i) const
-  {
-    return X[i];
-  }
+  //inline Type_t operator()( size_t i) const
+  //{
+  //  return X[i];
+  //}
 
   inline iterator begin() { return X;}
   inline const_iterator begin() const { return X;}

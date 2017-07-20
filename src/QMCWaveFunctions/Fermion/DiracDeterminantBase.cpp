@@ -409,7 +409,7 @@ DiracDeterminantBase::evalGradSourcep
     {
       for (int orbital=0; orbital<NumOrbitals; orbital++)
       {
-        Grad_psi_over_psi(el_dim)+=Grad_phi(ptcl,orbital)(el_dim)*psiM(ptcl,orbital);
+        Grad_psi_over_psi[el_dim]+=Grad_phi(ptcl,orbital)[el_dim]*psiM(ptcl,orbital);
         if (el_dim==0)
           Grad2_psi_over_psi+=Grad2_phi(ptcl,orbital)*psiM(ptcl,orbital);
       }
@@ -420,7 +420,7 @@ DiracDeterminantBase::evalGradSourcep
         {
           one_row_change(dim,el_dim)+=Grad_phi_alpha(ptcl,orbital)(dim,el_dim)*psiM(ptcl,orbital);
           if (el_dim==0)
-            one_row_change_l(dim)+=Grad2_phi_alpha(ptcl,orbital)(dim)*psiM(ptcl,orbital);
+            one_row_change_l[dim]+=Grad2_phi_alpha(ptcl,orbital)[dim]*psiM(ptcl,orbital);
         }
         for (int ptcl2=0; ptcl2<NumPtcls; ptcl2++)
         {
@@ -430,34 +430,34 @@ DiracDeterminantBase::evalGradSourcep
             toDet_l=0.0;
             for (int orbital=0; orbital<NumOrbitals; orbital++)
             {
-              toDet(0,0)+=Grad_phi(ptcl,orbital)(el_dim)*psiM(ptcl,orbital);
+              toDet(0,0)+=Grad_phi(ptcl,orbital)[el_dim]*psiM(ptcl,orbital);
               toDet_l(0,0)+=Grad2_phi(ptcl,orbital)*psiM(ptcl,orbital);
-              toDet(0,1)+=Grad_phi(ptcl,orbital)(el_dim)*psiM(ptcl2,orbital);
+              toDet(0,1)+=Grad_phi(ptcl,orbital)[el_dim]*psiM(ptcl2,orbital);
               toDet_l(0,1)+=Grad2_phi(ptcl,orbital)*psiM(ptcl2,orbital);
-              toDet(1,0)+=Phi_alpha(ptcl2,orbital)(dim)*psiM(ptcl,orbital);
-              toDet_l(1,0)+=Phi_alpha(ptcl2,orbital)(dim)*psiM(ptcl,orbital);
-              toDet(1,1)+=Phi_alpha(ptcl2,orbital)(dim)*psiM(ptcl2,orbital);
-              toDet_l(1,1)+=Phi_alpha(ptcl2,orbital)(dim)*psiM(ptcl2,orbital);
+              toDet(1,0)+=Phi_alpha(ptcl2,orbital)[dim]*psiM(ptcl,orbital);
+              toDet_l(1,0)+=Phi_alpha(ptcl2,orbital)[dim]*psiM(ptcl,orbital);
+              toDet(1,1)+=Phi_alpha(ptcl2,orbital)[dim]*psiM(ptcl2,orbital);
+              toDet_l(1,1)+=Phi_alpha(ptcl2,orbital)[dim]*psiM(ptcl2,orbital);
             }
             two_row_change(dim,el_dim)+=toDet(0,0)*toDet(1,1)-toDet(1,0)*toDet(0,1);
             if (el_dim==0)
-              two_row_change_l(dim)+=toDet_l(0,0)*toDet_l(1,1)-toDet_l(1,0)*toDet_l(0,1);
+              two_row_change_l[dim]+=toDet_l(0,0)*toDet_l(1,1)-toDet_l(1,0)*toDet_l(0,1);
           }
         }
         Grad_psi_alpha_over_psi(dim,el_dim)=one_row_change(dim,el_dim)+two_row_change(dim,el_dim);
         outfile<<Grad_psi_alpha_over_psi(dim,el_dim)<< std::endl;
-        grad_grad(dim)(ptcl)(el_dim)=one_row_change(dim,el_dim)+two_row_change(dim,el_dim)-
-                                     Grad_psi_over_psi(el_dim)*Psi_alpha_over_psi(dim);
+        grad_grad[dim][ptcl][el_dim]=one_row_change(dim,el_dim)+two_row_change(dim,el_dim)-
+                                     Grad_psi_over_psi[el_dim]*Psi_alpha_over_psi[dim];
       }
     }
     for (int dim=0; dim<OHMMS_DIM; dim++)
     {
-      lapl_grad(dim)(ptcl)=0.0;
-      lapl_grad(dim)(ptcl)+=one_row_change_l(dim)+two_row_change_l(dim)- Psi_alpha_over_psi(dim)*Grad2_psi_over_psi;
+      lapl_grad[dim][ptcl]=0.0;
+      lapl_grad[dim][ptcl]+=one_row_change_l[dim]+two_row_change_l[dim]- Psi_alpha_over_psi[dim]*Grad2_psi_over_psi;
       for (int el_dim=0; el_dim<OHMMS_DIM; el_dim++)
       {
-        lapl_grad(dim)(ptcl)-= (RealType)2.0*Grad_psi_alpha_over_psi(dim,el_dim)*Grad_psi_over_psi(el_dim);
-        lapl_grad(dim)(ptcl)+= (RealType)2.0*Psi_alpha_over_psi(dim)*(Grad_psi_over_psi(el_dim)*Grad_psi_over_psi(el_dim));
+        lapl_grad[dim][ptcl]-= (RealType)2.0*Grad_psi_alpha_over_psi(dim,el_dim)*Grad_psi_over_psi[el_dim];
+        lapl_grad[dim][ptcl]+= (RealType)2.0*Psi_alpha_over_psi[dim]*(Grad_psi_over_psi[el_dim]*Grad_psi_over_psi[el_dim]);
       }
     }
   }
@@ -735,8 +735,8 @@ DiracDeterminantBase::evaluateLog(ParticleSet& P,
   {
     ValueType y=psiM(0,0);
     GradType rv = y*dpsiM(0,0);
-    G(FirstIndex) += rv;
-    L(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
+    G[FirstIndex] += rv;
+    L[FirstIndex] += y*d2psiM(0,0) - dot(rv,rv);
   }
   else
   {
@@ -745,8 +745,8 @@ DiracDeterminantBase::evaluateLog(ParticleSet& P,
     {
       mGradType rv=simd::dot(psiM[i],dpsiM[i],NumOrbitals);
       mValueType lap=simd::dot(psiM[i],d2psiM[i],NumOrbitals);
-      G(iat) += rv;
-      L(iat) += lap - dot(rv,rv);
+      G[iat] += rv;
+      L[iat] += lap - dot(rv,rv);
     }
     RatioTimer.stop();
   }

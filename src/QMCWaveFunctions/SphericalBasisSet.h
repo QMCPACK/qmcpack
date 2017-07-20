@@ -240,14 +240,14 @@ struct SphericalBasisSet
       RealType temp2=drnloverr*ang*rinv*rinv;
       for(int i=0; i<3; i++)
       {
-        grad_grad_Phi[offset](i,i) = (temp1-temp2)*dr(i)*dr(i)
+        grad_grad_Phi[offset](i,i) = (temp1-temp2)*dr[i]*dr[i]
                                      + drnloverr*ang + rnl.Y*hess(i,i)
-                                     + 2*drnloverr*dr(i)*gr_ang(i);
+                                     + 2*drnloverr*dr[i]*gr_ang[i];
         for(int j=i+1; j<3; j++)
         {
-          grad_grad_Phi[offset](i,j) = (temp1-temp2)*dr(i)*dr(j)
+          grad_grad_Phi[offset](i,j) = (temp1-temp2)*dr[i]*dr[j]
                                        + rnl.Y*hess(i,j)
-                                       + drnloverr*(dr(i)*gr_ang(j) + dr(j)*gr_ang(i));
+                                       + drnloverr*(dr[i]*gr_ang[j] + dr[j]*gr_ang[i]);
           grad_grad_Phi[offset](j,i) = grad_grad_Phi[offset](i,j);
         }
       }
@@ -383,10 +383,10 @@ struct SphericalBasisSet
       // hessian of radial piece
       for(int i=0; i<3; i++)
       {
-        Rhs(i,i) = temp1*drr(i)*drr(i) + rnl.dY*rinv;
+        Rhs(i,i) = temp1*drr[i]*drr[i] + rnl.dY*rinv;
         for(int j=i+1; j<3; j++)
         {
-          Rhs(i,j) = temp1*drr(i)*drr(j);
+          Rhs(i,j) = temp1*drr[i]*drr[j];
           Rhs(j,i) = Rhs(i,j);
         }
       }
@@ -479,10 +479,10 @@ struct SphericalBasisSet
       // hessian of radial piece
       for(int i=0; i<3; i++)
       {
-        Rhs(i,i) = temp1*drr(i)*drr(i) + rnl.dY*rinv;
+        Rhs(i,i) = temp1*drr[i]*drr[i] + rnl.dY*rinv;
         for(int j=i+1; j<3; j++)
         {
-          Rhs(i,j) = temp1*drr(i)*drr(j);
+          Rhs(i,j) = temp1*drr[i]*drr[j];
           Rhs(j,i) = Rhs(i,j);
         }
       }
@@ -592,10 +592,10 @@ struct SphericalBasisSet
       // hessian of radial piece
       for(int i=0; i<3; i++)
       {
-        Rhs(i,i) = temp1*drr(i)*drr(i) + rnl.dY*rinv;
+        Rhs(i,i) = temp1*drr[i]*drr[i] + rnl.dY*rinv;
         for(int j=i+1; j<3; j++)
         {
-          Rhs(i,j) = temp1*drr(i)*drr(j);
+          Rhs(i,j) = temp1*drr[i]*drr[j];
           Rhs(j,i) = Rhs(i,j);
         }
       }
@@ -913,14 +913,14 @@ struct SphericalBasisSet
       RealType temp2=drnloverr*ang*rinv*rinv;
       for(int i=0; i<3; i++)
       {
-        grad_grad_Phi[offset](i,i) = (temp1-temp2)*dr(i)*dr(i)
+        grad_grad_Phi[offset](i,i) = (temp1-temp2)*dr[i]*dr[i]
                                      + drnloverr*ang + rnl.Y*hess(i,i)
-                                     + 2*drnloverr*dr(i)*gr_ang(i);
+                                     + 2*drnloverr*dr[i]*gr_ang[i];
         for(int j=i+1; j<3; j++)
         {
-          grad_grad_Phi[offset](i,j) = (temp1-temp2)*dr(i)*dr(j)
+          grad_grad_Phi[offset](i,j) = (temp1-temp2)*dr[i]*dr[j]
                                        + rnl.Y*hess(i,j)
-                                       + drnloverr*(dr(i)*gr_ang(j) + dr(j)*gr_ang(i));
+                                       + drnloverr*(dr[i]*gr_ang[j] + dr[j]*gr_ang[i]);
           grad_grad_Phi[offset](j,i) = grad_grad_Phi[offset](i,j);
         }
       }

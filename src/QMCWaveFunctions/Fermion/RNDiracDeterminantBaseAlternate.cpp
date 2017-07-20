@@ -159,10 +159,10 @@ RNDiracDeterminantBaseAlternate::RealType RNDiracDeterminantBaseAlternate::updat
       ValueType y=psiM(0,0);
       GradType rv = y*dpsiM(0,0);
       ValueType rv2=dot(rv,rv);
-      myG(FirstIndex) += rv;
-      myL(FirstIndex) += y*d2psiM(0,0) - rv2;
-      myG_alternate(FirstIndex) += bp*rv;
-      myL_alternate(FirstIndex) += bp*(y*d2psiM(0,0) + (1-2*bp)*rv2);
+      myG[FirstIndex] += rv;
+      myL[FirstIndex] += y*d2psiM(0,0) - rv2;
+      myG_alternate[FirstIndex] += bp*rv;
+      myL_alternate[FirstIndex] += bp*(y*d2psiM(0,0) + (1-2*bp)*rv2);
     }
     else
     {
@@ -179,10 +179,10 @@ RNDiracDeterminantBaseAlternate::RealType RNDiracDeterminantBaseAlternate::updat
           lap += *yptr * *d2yptr++;
         }
         ValueType rv2=dot(rv,rv);
-        myG(iat) += rv;
-        myL(iat) += lap - rv2;
-        myG_alternate(iat) += bp*rv;
-        myL_alternate(iat) += bp*(lap + (1-2*bp)*rv2);
+        myG[iat] += rv;
+        myL[iat] += lap - rv2;
+        myG_alternate[iat] += bp*rv;
+        myL_alternate[iat] += bp*(lap + (1-2*bp)*rv2);
       }
     }
   }
@@ -252,8 +252,8 @@ RNDiracDeterminantBaseAlternate::ValueType RNDiracDeterminantBaseAlternate::alte
   //returns psi_T/psi_G
   for (int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++)
   {
-    P.G(iat) += myG_alternate(iat) - myG(iat);
-    P.L(iat) += myL_alternate(iat) - myL(iat);
+    P.G[iat] += myG_alternate[iat] - myG[iat];
+    P.L[iat] += myL_alternate[iat] - myL[iat];
   }
   RealType sgn = std::cos(PhaseValue);
   return sgn*std::exp(alternateLogValue-LogValue);
@@ -531,12 +531,12 @@ RNDiracDeterminantBaseAlternate::evaluateLog(ParticleSet& P,
     psiM(0,0)=y;
     GradType rv = y*dpsiM(0,0);
     ValueType rv2=dot(rv,rv);
-    myG_alternate(FirstIndex) += bp*rv;
-    myL_alternate(FirstIndex) += bp*(y*d2psiM(0,0) + (1-2*bp)*rv2);
-    G(FirstIndex) += rv;
-    L(FirstIndex) += y*d2psiM(0,0) - rv2;
-//         myG(FirstIndex) += bp*rv;
-//         myL(FirstIndex) += bp*(y*d2psiM(0,0) + (1-2*bp)*dot(rv,rv));
+    myG_alternate[FirstIndex] += bp*rv;
+    myL_alternate[FirstIndex] += bp*(y*d2psiM(0,0) + (1-2*bp)*rv2);
+    G[FirstIndex] += rv;
+    L[FirstIndex] += y*d2psiM(0,0) - rv2;
+//         myG[FirstIndex] += bp*rv;
+//         myL[FirstIndex] += bp*(y*d2psiM(0,0) + (1-2*bp)*dot(rv,rv));
   }
   else
   {
@@ -552,11 +552,11 @@ RNDiracDeterminantBaseAlternate::evaluateLog(ParticleSet& P,
     {
       GradType rv=simd::dot(psiM[i],dpsiM[i],NumOrbitals);
       ValueType lap=simd::dot(psiM[i],d2psiM[i],NumOrbitals);
-      G(iat) += rv;
-      myG_alternate(iat) += bp*rv;
+      G[iat] += rv;
+      myG_alternate[iat] += bp*rv;
       ValueType rv2=dot(rv,rv);
-      myL_alternate(iat) += bp*(lap + (1-2*bp)*rv2);
-      L(iat) += lap - rv2;
+      myL_alternate[iat] += bp*(lap + (1-2*bp)*rv2);
+      L[iat] += lap - rv2;
     }
     RatioTimer.stop();
   }

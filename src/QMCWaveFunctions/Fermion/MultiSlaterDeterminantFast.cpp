@@ -121,9 +121,9 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
 
        for(int i=0; i<n; i++) {
          std::cout <<i  <<"\n"
-             <<"  x: " <<G(i)[0]-G0(i)[0] <<"\n"
-             <<"  y: " <<G(i)[1]-G0(i)[1] <<"\n"
-             <<"  z: " <<G(i)[2]-G0(i)[2] <<"\n"
+             <<"  x: " <<G[i][0]-G0[i][0] <<"\n"
+             <<"  y: " <<G[i][1]-G0[i][1] <<"\n"
+             <<"  z: " <<G[i][2]-G0[i][2] <<"\n"
              <<"  d2: " <<L(i)-L0(i) <<"\n"
              << std::endl;
        }
@@ -151,10 +151,10 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
   for(int i=0; i<n; i++)
   {
     std::cout <<i  <<"\n"
-        <<"  x: " <<G(i)[0]-G0(i)[0] <<"  " <<G(i)[0]   <<"\n"
-        <<"  y: " <<G(i)[1]-G0(i)[1] <<"  " <<G(i)[1] <<"\n"
-        <<"  z: " <<G(i)[2]-G0(i)[2] <<"  " <<G(i)[2] <<"\n"
-        <<"  d2: " <<L(i)-L0(i) <<"  " <<L(i) <<"\n"
+        <<"  x: " <<G[i][0]-G0[i][0] <<"  " <<G[i][0]   <<"\n"
+        <<"  y: " <<G[i][1]-G0[i][1] <<"  " <<G[i][1] <<"\n"
+        <<"  z: " <<G[i][2]-G0[i][2] <<"  " <<G[i][2] <<"\n"
+        <<"  d2: " <<L[i]-L0[i] <<"  " <<L[i] <<"\n"
         << std::endl;
   }
   std::cout << std::endl << std::endl;
@@ -190,13 +190,13 @@ OrbitalBase::ValueType MultiSlaterDeterminantFast::evaluate(ParticleSet& P
     psiCurrent += (*it)*detValues_up[*upC]*detValues_dn[*dnC];
     for(int k=0,n=N1; k<NP1; k++,n++)
     {
-      myG(n) += (*it)*grads_up(*upC,k)*detValues_dn[*dnC];
-      myL(n) += (*it)*lapls_up(*upC,k)*detValues_dn[*dnC];
+      myG[n] += (*it)*grads_up(*upC,k)*detValues_dn[*dnC];
+      myL[n] += (*it)*lapls_up(*upC,k)*detValues_dn[*dnC];
     }
     for(int k=0,n=N2; k<NP2; k++,n++)
     {
-      myG(n) += (*it)*grads_dn(*dnC,k)*detValues_up[*upC];
-      myL(n) += (*it)*lapls_dn(*dnC,k)*detValues_up[*upC];
+      myG[n] += (*it)*grads_dn(*dnC,k)*detValues_up[*upC];
+      myL[n] += (*it)*lapls_dn(*dnC,k)*detValues_up[*upC];
     }
     it++;
     upC++;
@@ -207,7 +207,7 @@ OrbitalBase::ValueType MultiSlaterDeterminantFast::evaluate(ParticleSet& P
   myL *= psiinv;
   G += myG;
   for(int i=0; i<L.size(); i++)
-    L(i) += myL[i] - dot(myG[i],myG[i]);
+    L[i] += myL[i] - dot(myG[i],myG[i]);
   EvaluateTimer.stop();
   return psiCurrent;
 }
@@ -258,13 +258,13 @@ OrbitalBase::RealType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P,
     psiCurrent += (*it)*detValues_up[*upC]*detValues_dn[*dnC];
     for(int k=0,n=N1; k<NP1; k++,n++)
     {
-      myG(n) += (*it)*grads_up(*upC,k)*detValues_dn[*dnC];
-      myL(n) += (*it)*lapls_up(*upC,k)*detValues_dn[*dnC];
+      myG[n] += (*it)*grads_up(*upC,k)*detValues_dn[*dnC];
+      myL[n] += (*it)*lapls_up(*upC,k)*detValues_dn[*dnC];
     }
     for(int k=0,n=N2; k<NP2; k++,n++)
     {
-      myG(n) += (*it)*grads_dn(*dnC,k)*detValues_up[*upC];
-      myL(n) += (*it)*lapls_dn(*dnC,k)*detValues_up[*upC];
+      myG[n] += (*it)*grads_dn(*dnC,k)*detValues_up[*upC];
+      myL[n] += (*it)*lapls_dn(*dnC,k)*detValues_up[*upC];
     }
     it++;
     upC++;
@@ -275,7 +275,7 @@ OrbitalBase::RealType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P,
   myL *= psiinv;
   G += myG;
   for(int i=0; i<L.size(); i++)
-    L(i) += myL[i] - dot(myG[i],myG[i]);
+    L[i] += myL[i] - dot(myG[i],myG[i]);
   return evaluateLogAndPhase(psiCurrent,PhaseValue);
 }
 
@@ -446,13 +446,13 @@ OrbitalBase::ValueType  MultiSlaterDeterminantFast::ratio(ParticleSet& P, int ia
       psiNew += (*it)*detValues_up[*upC]*detValues_dn[*dnC];
       for(int k=0,n=N1; k<NP1; k++,n++)
       {
-        myG_temp(n) += (*it)*grads_up(*upC,k)*detValues_dn[*dnC];
-        myL_temp(n) += (*it)*lapls_up(*upC,k)*detValues_dn[*dnC];
+        myG_temp[n] += (*it)*grads_up(*upC,k)*detValues_dn[*dnC];
+        myL_temp[n] += (*it)*lapls_up(*upC,k)*detValues_dn[*dnC];
       }
       for(int k=0,n=N2; k<NP2; k++,n++)
       {
-        myG_temp(n) += (*it)*grads_dn(*dnC,k)*detValues_up[*upC];
-        myL_temp(n) += (*it)*lapls_dn(*dnC,k)*detValues_up[*upC];
+        myG_temp[n] += (*it)*grads_dn(*dnC,k)*detValues_up[*upC];
+        myL_temp[n] += (*it)*lapls_dn(*dnC,k)*detValues_up[*upC];
       }
       it++;
       upC++;
@@ -463,7 +463,7 @@ OrbitalBase::ValueType  MultiSlaterDeterminantFast::ratio(ParticleSet& P, int ia
     myL_temp *= psiNinv;
     dG += myG_temp-myG;
     for(int i=0; i<dL.size(); i++)
-      dL(i) += myL_temp[i] - myL[i] - dot(myG_temp[i],myG_temp[i]) + dot(myG[i],myG[i]);
+      dL[i] += myL_temp[i] - myL[i] - dot(myG_temp[i],myG_temp[i]) + dot(myG[i],myG[i]);
     curRatio = psiNew/psiCurrent;
     RatioAllTimer.stop();
     return curRatio;
@@ -495,13 +495,13 @@ OrbitalBase::ValueType  MultiSlaterDeterminantFast::ratio(ParticleSet& P, int ia
       psiNew += (*it)*detValues_up[*upC]*detValues_dn[*dnC];
       for(int k=0,n=N1; k<NP1; k++,n++)
       {
-        myG_temp(n) += (*it)*grads_up(*upC,k)*detValues_dn[*dnC];
-        myL_temp(n) += (*it)*lapls_up(*upC,k)*detValues_dn[*dnC];
+        myG_temp[n] += (*it)*grads_up(*upC,k)*detValues_dn[*dnC];
+        myL_temp[n] += (*it)*lapls_up(*upC,k)*detValues_dn[*dnC];
       }
       for(int k=0,n=N2; k<NP2; k++,n++)
       {
-        myG_temp(n) += (*it)*grads_dn(*dnC,k)*detValues_up[*upC];
-        myL_temp(n) += (*it)*lapls_dn(*dnC,k)*detValues_up[*upC];
+        myG_temp[n] += (*it)*grads_dn(*dnC,k)*detValues_up[*upC];
+        myL_temp[n] += (*it)*lapls_dn(*dnC,k)*detValues_up[*upC];
       }
       it++;
       upC++;
@@ -512,7 +512,7 @@ OrbitalBase::ValueType  MultiSlaterDeterminantFast::ratio(ParticleSet& P, int ia
     myL_temp *= psiNinv;
     dG += myG_temp-myG;
     for(int i=0; i<dL.size(); i++)
-      dL(i) += myL_temp[i] - myL[i] - dot(myG_temp[i],myG_temp[i]) + dot(myG[i],myG[i]);
+      dL[i] += myL_temp[i] - myL[i] - dot(myG_temp[i],myG_temp[i]) + dot(myG[i],myG[i]);
     curRatio = psiNew/psiCurrent;
     RatioAllTimer.stop();
     return curRatio;
@@ -612,12 +612,12 @@ void MultiSlaterDeterminantFast::acceptMove(ParticleSet& P, int iat)
       while(it != last) {
         psi += (*it)*detValues_up[*upC]*detValues_dn[*dnC];
         for(int k=0,n=N1; k<NP1; k++,n++) {
-          myG_temp(n) += (*it)*grads_up(*upC,k)*detValues_dn[*dnC];
-          myL_temp(n) += (*it)*lapls_up(*upC,k)*detValues_dn[*dnC];
+          myG_temp[n] += (*it)*grads_up(*upC,k)*detValues_dn[*dnC];
+          myL_temp[n] += (*it)*lapls_up(*upC,k)*detValues_dn[*dnC];
         }
         for(int k=0,n=N2; k<NP2; k++,n++) {
-          myG_temp(n) += (*it)*grads_dn(*dnC,k)*detValues_up[*upC];
-          myL_temp(n) += (*it)*lapls_dn(*dnC,k)*detValues_up[*upC];
+          myG_temp[n] += (*it)*grads_dn(*dnC,k)*detValues_up[*upC];
+          myL_temp[n] += (*it)*lapls_dn(*dnC,k)*detValues_up[*upC];
         }
         it++;upC++;dnC++;
       }
@@ -715,13 +715,13 @@ OrbitalBase::RealType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P, B
     psiCurrent += (*it)*detValues_up[*upC]*detValues_dn[*dnC];
     for(int k=0,n=N1; k<NP1; k++,n++)
     {
-      myG(n) += (*it)*grads_up(*upC,k)*detValues_dn[*dnC];
-      myL(n) += (*it)*lapls_up(*upC,k)*detValues_dn[*dnC];
+      myG[n] += (*it)*grads_up(*upC,k)*detValues_dn[*dnC];
+      myL[n] += (*it)*lapls_up(*upC,k)*detValues_dn[*dnC];
     }
     for(int k=0,n=N2; k<NP2; k++,n++)
     {
-      myG(n) += (*it)*grads_dn(*dnC,k)*detValues_up[*upC];
-      myL(n) += (*it)*lapls_dn(*dnC,k)*detValues_up[*upC];
+      myG[n] += (*it)*grads_dn(*dnC,k)*detValues_up[*upC];
+      myL[n] += (*it)*lapls_dn(*dnC,k)*detValues_up[*upC];
     }
     it++;
     upC++;
@@ -732,7 +732,7 @@ OrbitalBase::RealType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P, B
   myL *= psiinv;
   P.G += myG;
   for(int i=0; i<P.L.size(); i++)
-    P.L(i) += myL[i] - dot(myG[i],myG[i]);
+    P.L[i] += myL[i] - dot(myG[i],myG[i]);
   buf.put(psiCurrent);
   buf.put(myL.first_address(), myL.last_address());
   buf.put(FirstAddressOfG,LastAddressOfG);

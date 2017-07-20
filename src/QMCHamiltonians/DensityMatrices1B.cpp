@@ -1480,8 +1480,8 @@ namespace qmcplusplus
     app_log()<<name<<" "<<result<< std::endl;
     if(write && !sm)
       for(int i=0;i<v1.size();++i)
-        app_log()<<"      "<<i<<" "<<real(v1(i))<<" "<<real(v2(i))
-                 <<" "<<real(v1(i)/v2(i))<<" "<<real(v2(i)/v1(i))<< std::endl;
+        app_log()<<"      "<<i<<" "<<real(v1[i])<<" "<<real(v2[i])
+                 <<" "<<real(v1[i]/v2[i])<<" "<<real(v2[i]/v1[i])<< std::endl;
   }
 
   void DensityMatrices1B::compare(const std::string& name, Matrix_t& m1, Matrix_t& m2,bool write,bool diff_only)

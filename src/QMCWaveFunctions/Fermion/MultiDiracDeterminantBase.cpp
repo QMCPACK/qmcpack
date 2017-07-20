@@ -245,14 +245,14 @@ void MultiDiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
   case ORB_PBYP_RATIO:
     psiMinv = psiMinv_temp;
     for(int i=0; i<NumOrbitals; i++)
-      TpsiM(i,WorkingIndex) = psiV(i);
+      TpsiM(i,WorkingIndex) = psiV[i];
     std::copy(psiV.begin(),psiV.end(),psiM[iat-FirstIndex]);
     std::copy(new_detValues.begin(),new_detValues.end(),detValues.begin());
     break;
   case ORB_PBYP_PARTIAL:
     psiMinv = psiMinv_temp;
     for(int i=0; i<NumOrbitals; i++)
-      TpsiM(i,WorkingIndex) = psiV(i);
+      TpsiM(i,WorkingIndex) = psiV[i];
     std::copy(new_detValues.begin(),new_detValues.end(),detValues.begin());
 // no use saving these
 //        for(int i=0; i<NumDets; i++)
@@ -264,7 +264,7 @@ void MultiDiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
   default:
     psiMinv = psiMinv_temp;
     for(int i=0; i<NumOrbitals; i++)
-      TpsiM(i,WorkingIndex) = psiV(i);
+      TpsiM(i,WorkingIndex) = psiV[i];
     std::copy(new_detValues.begin(),new_detValues.end(),detValues.begin());
     std::copy(new_grads.begin(),new_grads.end(),grads.begin());
     std::copy(new_lapls.begin(),new_lapls.end(),lapls.begin());

@@ -202,7 +202,7 @@ OrbitalBase::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P
   myL *= psiinv;
   G += myG;
   for(int i=0; i<L.size(); i++)
-    L(i) += myL[i] - dot(myG[i],myG[i]);
+    L[i] += myL[i] - dot(myG[i],myG[i]);
   EvaluateTimer.stop();
   return psi;
 }
@@ -222,7 +222,7 @@ OrbitalBase::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P, int iat)
     for(int i=0; i<dets_up.size(); i++)
     {
       spo_up->prepareFor(i);
-      grads_up[i](iat) = dets_up[i]->evalGrad(P,iat);
+      grads_up[i][iat] = dets_up[i]->evalGrad(P,iat);
     }
     ValueType psi=0.0;
     for(int i=0; i<C.size(); i++)
@@ -231,7 +231,7 @@ OrbitalBase::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P, int iat)
       int dnC = C2node_dn[i];
       ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
       psi += tmp;
-      GradType grad_temp = grads_up[upC](iat);
+      GradType grad_temp = grads_up[upC][iat];
       grad_iat += grad_temp*tmp;
     }
     grad_iat *= (RealType)1.0/psi;
@@ -243,7 +243,7 @@ OrbitalBase::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P, int iat)
     for(int i=0; i<dets_dn.size(); i++)
     {
       spo_dn->prepareFor(i);
-      grads_dn[i](iat) = dets_dn[i]->evalGrad(P,iat);
+      grads_dn[i][iat] = dets_dn[i]->evalGrad(P,iat);
     }
     for(int i=0; i<C.size(); i++)
     {
@@ -251,7 +251,7 @@ OrbitalBase::GradType MultiSlaterDeterminant::evalGrad(ParticleSet& P, int iat)
       int dnC = C2node_dn[i];
       ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
       psi += tmp;
-      GradType grad_temp = grads_dn[dnC](iat);
+      GradType grad_temp = grads_dn[dnC][iat];
       grad_iat += grad_temp*tmp;
     }
     grad_iat *= (RealType)1.0/psi;
@@ -387,7 +387,7 @@ OrbitalBase::ValueType  MultiSlaterDeterminant::ratio(ParticleSet& P, int iat
     lold *= psiOinv;
     dG += myG-gold;
     for(int i=0; i<dL.size(); i++)
-      dL(i) += myL[i] - lold[i] - dot(myG[i],myG[i]) + dot(gold[i],gold[i]);
+      dL[i] += myL[i] - lold[i] - dot(myG[i],myG[i]) + dot(gold[i],gold[i]);
     curRatio = psiNew/psiOld;
     RatioAllTimer.stop();
     return curRatio;
@@ -446,7 +446,7 @@ OrbitalBase::ValueType  MultiSlaterDeterminant::ratio(ParticleSet& P, int iat
     lold *= psiOinv;
     dG += myG-gold;
     for(int i=0; i<dL.size(); i++)
-      dL(i) += myL[i] - lold[i] - dot(myG[i],myG[i]) + dot(gold[i],gold[i]);
+      dL[i] += myL[i] - lold[i] - dot(myG[i],myG[i]) + dot(gold[i],gold[i]);
     curRatio = psiNew/psiOld;
     RatioAllTimer.stop();
     return curRatio;
@@ -790,7 +790,7 @@ OrbitalBase::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet& P, Buffe
   myL *= psiinv;
   P.G += myG;
   for(int i=0; i<P.L.size(); i++)
-    P.L(i) += myL[i] - dot(myG[i],myG[i]);
+    P.L[i] += myL[i] - dot(myG[i],myG[i]);
   UpdateTimer.stop();
   return LogValue = evaluateLogAndPhase(psi,PhaseValue);;
 }

@@ -605,7 +605,7 @@ public:
       while(it != last)
       {
         int orb = (it++)->occup[0];
-        *(det++) = psiV(orb);
+        *(det++) = psiV[orb];
       }
     }
     else
@@ -620,12 +620,12 @@ public:
       ExtraStuffTimer.start();
       psiMinv_temp = psiMinv;
       for(int i=0; i<NumPtcls; i++)
-        psiV_temp[i] = psiV(*(it++));
+        psiV_temp[i] = psiV[*(it++)];
       ValueType ratioRef = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
       new_detValues[ReferenceDeterminant] = ratioRef * detValues[ReferenceDeterminant];
       InverseUpdateByColumn(psiMinv_temp,psiV_temp,workV1,workV2,WorkingIndex,ratioRef);
       for(int i=0; i<NumOrbitals; i++)
-        TpsiM(i,WorkingIndex) = psiV(i);
+        TpsiM(i,WorkingIndex) = psiV[i];
       ExtraStuffTimer.stop();
       BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,new_detValues,psiMinv_temp,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
 // check comment above
@@ -665,8 +665,8 @@ public:
       GradType ratioGradRef;
       for(int i=0; i<NumPtcls; i++)
       {
-        psiV_temp[i] = psiV(*it);
-        ratioGradRef += psiMinv_temp(i,WorkingIndex)*dpsiV(*it);
+        psiV_temp[i] = psiV[*it];
+        ratioGradRef += psiMinv_temp(i,WorkingIndex)*dpsiV[*it];
         it++;
       }
       ValueType ratioRef = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
@@ -684,7 +684,7 @@ public:
         dpsiMinv = psiMinv;
         it = confgList[ReferenceDeterminant].occup.begin();
         for(int i=0; i<NumPtcls; i++)
-          psiV_temp[i] = dpsiV(*(it++))[idim];
+          psiV_temp[i] = dpsiV[*(it++)][idim];
         InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,WorkingIndex,ratioGradRef[idim]);
         for(int i=0; i<NumOrbitals; i++)
           TpsiM(i,WorkingIndex) = dpsiV[i][idim];
@@ -755,9 +755,9 @@ public:
       while(it != last)
       {
         int orb = (it++)->occup[0];
-        *(det++) = psiV(orb);
-        *(lap++) = d2psiV(orb);
-        *(grad++) = dpsiV(orb);
+        *(det++) = psiV[orb];
+        *(lap++) = d2psiV[orb];
+        *(grad++) = dpsiV[orb];
       }
     }
     else
@@ -769,7 +769,7 @@ public:
       //ValueType ratioLapl = 0.0;
       for(int i=0; i<NumPtcls; i++)
       {
-        psiV_temp[i] = psiV(*it);
+        psiV_temp[i] = psiV[*it];
         //ratioGradRef += psiMinv_temp(i,WorkingIndex)*dpsiV(*it);
         //ratioLapl += psiMinv_temp(i,WorkingIndex)*d2psiV(*it);
         it++;
@@ -792,8 +792,8 @@ public:
         {
           for(int i=0; i<NumPtcls; i++)
           {
-            gradRatio += psiMinv_temp(i,jat)*dpsiV(*it);
-            ratioLapl += psiMinv_temp(i,jat)*d2psiV(*it);
+            gradRatio += psiMinv_temp(i,jat)*dpsiV[*it];
+            ratioLapl += psiMinv_temp(i,jat)*d2psiV[*it];
             it++;
           }
           new_grads(ReferenceDeterminant,jat) = det0*gradRatio;
@@ -803,7 +803,7 @@ public:
             dpsiMinv = psiMinv_temp;
             it = confgList[ReferenceDeterminant].occup.begin();
             for(int i=0; i<NumPtcls; i++)
-              psiV_temp[i] = dpsiV(*(it++))[idim];
+              psiV_temp[i] = dpsiV[*(it++)][idim];
             InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,jat,gradRatio[idim]);
             for(int i=0; i<NumOrbitals; i++)
               TpsiM(i,jat) = dpsiV[i][idim];
@@ -812,7 +812,7 @@ public:
           dpsiMinv = psiMinv_temp;
           it = confgList[ReferenceDeterminant].occup.begin();
           for(int i=0; i<NumPtcls; i++)
-            psiV_temp[i] = d2psiV(*(it++));
+            psiV_temp[i] = d2psiV[*(it++)];
           InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,jat,ratioLapl);
           for(int i=0; i<NumOrbitals; i++)
             TpsiM(i,jat) = d2psiV[i];

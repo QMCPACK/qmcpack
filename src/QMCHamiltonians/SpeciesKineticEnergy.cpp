@@ -104,7 +104,7 @@ SpeciesKineticEnergy::Return_t SpeciesKineticEnergy::evaluate(ParticleSet& P)
 
   for (int iat=0; iat<P.getTotalNum(); iat++)
   {
-    int ispec  = P.GroupID(iat);
+    int ispec  = P.GroupID[iat];
     RealType my_kinetic = vec_minus_over_2m[ispec]*laplacian(P.G[iat],P.L[iat]);
     if (hdf5_out)
     {

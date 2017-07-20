@@ -96,11 +96,11 @@ LatticeDeviationEstimator::Return_t LatticeDeviationEstimator::evaluate(Particle
   int cur_jat(-1); // target particle index
   for (int iat=0;iat<spset.getTotalNum();iat++)
   { // for each desired source particle
-    if (sspecies.speciesName[spset.GroupID(iat)] == sgroup)
+    if (sspecies.speciesName[spset.GroupID[iat]] == sgroup)
     { // find desired species
       for (int jat=cur_jat+1;jat<tpset.getTotalNum();jat++)
       { // find corresponding (!!!! assume next) target particle
-        if (tspecies.speciesName[tpset.GroupID(jat)] == tgroup)
+        if (tspecies.speciesName[tpset.GroupID[jat]] == tgroup)
         {
           // distance between particle iat in source pset, and jat in target pset
           int nn = d_table->loc(iat,jat); // location where distance is stored 

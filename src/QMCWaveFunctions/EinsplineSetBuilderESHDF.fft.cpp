@@ -129,7 +129,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   HDFAttribIO<Vector<TinyVector<double,3> > > h_IonPos(IonPos);
   h_IonPos.read   (H5FileID, "/atoms/positions");
   for (int i=0; i<IonTypes.size(); i++)
-    app_log() << "Atom type(" << i << ") = " << IonTypes(i) << std::endl;
+    app_log() << "Atom type(" << i << ") = " << IonTypes[i] << std::endl;
   /////////////////////////////////////
   // Read atom orbital info from xml //
   /////////////////////////////////////
@@ -193,12 +193,12 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
       for (int j=0; j<Super2Prim.size(); j++)
         if (Super2Prim[j]==i)
         {
-          if ( (Zind<0) || (SourcePtcl->mySpecies(Zind,SourcePtcl->GroupID[j])==IonTypes(i)) )
+          if ( (Zind<0) || (SourcePtcl->mySpecies(Zind,SourcePtcl->GroupID[j])==IonTypes[i]) )
             AtomicCentersInfo.GroupID[i] = SourcePtcl->GroupID[j];
           else
           {
             app_error() << "Primitive cell ion " << i << " vs supercell ion " << j << " atomic number not matching: "
-                        << IonTypes(i) << " vs " << SourcePtcl->mySpecies(Zind,SourcePtcl->GroupID[j]) << std::endl;
+                        << IonTypes[i] << " vs " << SourcePtcl->mySpecies(Zind,SourcePtcl->GroupID[j]) << std::endl;
             abort();
           }
           continue;

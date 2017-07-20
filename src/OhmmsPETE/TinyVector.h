@@ -170,18 +170,18 @@ struct TinyVector
   {
     return X[i];
   }
-  inline Type_t operator[](unsigned int i) const
+  inline const Type_t& operator[](unsigned int i) const
   {
     return X[i];
   }
-  inline Type_t& operator()(unsigned int i)
-  {
-    return X[i];
-  }
-  inline Type_t operator()( unsigned int i) const
-  {
-    return X[i];
-  }
+  //inline Type_t& operator()(unsigned int i)
+  //{
+  //  return X[i];
+  //}
+  //inline Type_t operator()( unsigned int i) const
+  //{
+  //  return X[i];
+  //}
 
   inline Type_t* data()
   {
