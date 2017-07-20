@@ -112,7 +112,7 @@ bool eeI_JastrowBuilder::put(xmlNodePtr cur)
     int numiSpecies = iSet.getTotalNum();
     if (ftype == "Bspline")
     {
-#ifdef ENABLE_AA_SOA
+#ifdef ENABLE_SOA
       typedef JeeIOrbitalSoA<BsplineFunctor3D> J3Type;
 #else
       typedef eeI_JastrowOrbital<BsplineFunctor3D> J3Type;
@@ -122,7 +122,7 @@ bool eeI_JastrowBuilder::put(xmlNodePtr cur)
     }
     else if (ftype == "polynomial")
     {
-#ifdef ENABLE_AA_SOA
+#ifdef ENABLE_SOA
       typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
 #else
       typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;

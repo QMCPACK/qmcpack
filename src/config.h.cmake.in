@@ -210,7 +210,7 @@
 #cmakedefine REMOVE_TRACEMANAGER @REMOVE_TRACEMANAGER@
 
 /* Use SOA version of AA distance table */
-#cmakedefine ENABLE_AA_SOA  @ENABLE_AA_SOA@
+#cmakedefine ENABLE_SOA  @ENABLE_SOA@
 
 #if (__cplusplus >= 201103L)
   #if defined(__INTEL_COMPILER)

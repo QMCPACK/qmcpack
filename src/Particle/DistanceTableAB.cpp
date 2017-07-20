@@ -183,8 +183,4 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
 
 
 } //namespace qmcplusplus
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
+

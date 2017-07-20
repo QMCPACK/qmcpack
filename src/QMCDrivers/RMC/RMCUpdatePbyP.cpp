@@ -85,8 +85,8 @@ namespace qmcplusplus
       {
 	Walker_t & awalker = **it;	//W.reptile->getHead();
 	W.R = awalker.R;
-	W.update ();
-	//W.loadWalker(awalker,UpdatePbyP);
+        W.update(true);
+        W.donePbyP();
 	if (awalker.DataSet.size ())
 	  awalker.DataSet.clear ();
 	awalker.DataSet.rewind ();
@@ -160,7 +160,6 @@ namespace qmcplusplus
     Walker_t prophead (curhead);
     Walker_t::Buffer_t & w_buffer (prophead.DataSet);
     W.loadWalker (prophead, true);
-    W.R = prophead.R;
     //app_log () << "advanceWalkersVMC()::initialized variables... " <<
     //   cpu_clock () - starttime << std::endl;
     //  starttime = cpu_clock ();
@@ -195,6 +194,7 @@ namespace qmcplusplus
 	RealType sqrttau = std::sqrt (tauovermass);
 	for (int iat = W.first (ig); iat < W.last (ig); ++iat)
 	  {
+            W.setActive(iat);
 	    //get the displacement
 	    GradType grad_iat = Psi.evalGrad (W, iat);
 	    PosType dr;
@@ -238,8 +238,8 @@ namespace qmcplusplus
 		  {
 		    valid_move = true;
 		    ++nAcceptTemp;
-		    W.acceptMove (iat);
 		    Psi.acceptMove (W, iat);
+		    W.acceptMove (iat);
 		    rr_accepted += rr;
 		    gf_acc *= prob;	//accumulate the ratio
 		  }
@@ -253,6 +253,7 @@ namespace qmcplusplus
 	  }
       }
     myTimers[1]->stop ();
+    W.donePbyP();
     //  if(UseTMove)
     //    nonLocalOps.reset();
     bool advanced = true;
@@ -325,8 +326,6 @@ namespace qmcplusplus
     Walker_t prophead (curhead);
     Walker_t::Buffer_t & w_buffer (prophead.DataSet);
     W.loadWalker (prophead, true);
-
-
     Psi.copyFromBuffer (W, w_buffer);
 
     makeGaussRandomWithEngine (deltaR, RandomGen);
@@ -347,6 +346,7 @@ namespace qmcplusplus
 	RealType sqrttau = std::sqrt (tauovermass);
 	for (int iat = W.first (ig); iat < W.last (ig); ++iat)
 	  {
+            W.setActive(iat);
 	    //get the displacement
 	    GradType grad_iat = Psi.evalGrad (W, iat);
 	    PosType dr;
@@ -390,8 +390,8 @@ namespace qmcplusplus
 		  {
 		    valid_move = true;
 		    ++nAcceptTemp;
-		    W.acceptMove (iat);
 		    Psi.acceptMove (W, iat);
+		    W.acceptMove (iat);
 		    rr_accepted += rr;
 		    gf_acc *= prob;	//accumulate the ratio
 		  }
@@ -405,6 +405,7 @@ namespace qmcplusplus
 	  }
       }
     myTimers[1]->stop ();
+    W.donePbyP();
     //  if(UseTMove)
 /*
   RealType logpsiold = prophead.Properties(LOGPSI);

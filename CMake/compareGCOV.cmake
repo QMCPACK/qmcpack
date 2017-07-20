@@ -7,13 +7,19 @@
 
 # Generate gcov files from gcda and gcno files
 # Create the data.json file cdash expects
-FUNCTION(GENERATE_GCOV BINARY_DIR OUTPUT_DIR OUTPUT_BASE)
+FUNCTION(GENERATE_GCOV BINARY_DIR OUTPUT_DIR GCOV_OPTIONS SOURCE_DIR)
   FILE(MAKE_DIRECTORY ${OUTPUT_DIR})
 
   FILE(GLOB_RECURSE GCDA_FILES "${BINARY_DIR}/*.gcda")
 
+  SET(GCOV_CMD_OPTIONS "-b;-p")
+  IF (GCOV_OPTIONS STREQUAL "USE_LONG_FILE_NAMES")
+    SET(GCOV_CMD_OPTIONS "${GCOV_CMD_OPTIONS};-l;-s;${SOURCE_DIR}")
+  ENDIF()
+  MESSAGE("GCOV_CMD_OPTIONS = ${GCOV_CMD_OPTIONS}")
+
   FOREACH(GCDA_FILE ${GCDA_FILES})
-    EXECUTE_PROCESS(COMMAND gcov -b -p ${GCDA_FILE} WORKING_DIRECTORY ${OUTPUT_DIR} OUTPUT_VARIABLE out)
+    EXECUTE_PROCESS(COMMAND gcov ${GCOV_CMD_OPTIONS} ${GCDA_FILE} WORKING_DIRECTORY ${OUTPUT_DIR} OUTPUT_VARIABLE out)
   ENDFOREACH()
 
   FILE(WRITE ${OUTPUT_DIR}/data.json
@@ -21,6 +27,24 @@ FUNCTION(GENERATE_GCOV BINARY_DIR OUTPUT_DIR OUTPUT_BASE)
         \"Source\":\"${CTEST_SOURCE_DIRECTORY}\",
         \"Binary\":\"${CTEST_BINARY_DIRECTORY}\"
 }")
+
+ENDFUNCTION()
+
+# Remove unwanted gcov files (files in /usr, unit tests, files with coverage only in static initializers, etc.)
+FUNCTION(FILTER_GCOV GCOV_DIR)
+  EXECUTE_PROCESS(COMMAND python ${CTEST_SOURCE_DIRECTORY}/tests/coverage/compare_gcov.py --action process --base-dir ${GCOV_DIR})
+
+ENDFUNCTION()
+
+# Use after running gcov with the -l (--long-file-names) option to merge all the
+#  gcov files from the input directory into one gcov file for each source file in
+#  the output directory.
+FUNCTION(MERGE_GCOV INPUT_DIR OUTPUT_DIR SOURCE_DIR)
+  FILE(MAKE_DIRECTORY ${OUTPUT_DIR})
+
+  EXECUTE_PROCESS(COMMAND python ${CTEST_SOURCE_DIRECTORY}/tests/coverage/compare_gcov.py --action merge --base-dir ${INPUT_DIR} --output-dir ${OUTPUT_DIR} --prefix ${SOURCE_DIR})
+
+  FILE(COPY ${INPUT_DIR}/data.json DESTINATION ${OUTPUT_DIR})
 
 ENDFUNCTION()
 

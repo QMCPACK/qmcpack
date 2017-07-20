@@ -96,7 +96,7 @@ TEST_CASE("Einspline SPO from HDF", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-#ifdef ENABLE_AA_SOA
+#ifdef ENABLE_SOA
   elec_.addTable(ions_,DT_SOA);
 #else
   elec_.addTable(ions_,DT_AOS);

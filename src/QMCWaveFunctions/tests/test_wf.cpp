@@ -47,7 +47,7 @@ TEST_CASE("Pade functor", "[wavefunction]")
   REQUIRE(u == Approx(2.232142857142857));
 }
 
-#ifndef ENABLE_AA_SOA
+#ifndef ENABLE_SOA
 TEST_CASE("Pade Jastrow", "[wavefunction]")
 {
 

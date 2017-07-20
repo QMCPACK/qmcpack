@@ -119,7 +119,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
   else
   { //keep the one-body distance table index 
-#if defined(ENABLE_AA_SOA)
+#if defined(ENABLE_SOA)
     myTableIndex=TargetPtcl.addTable(*SourcePtcl,DT_SOA_PREFERRED);
 #else
     myTableIndex=TargetPtcl.addTable(*SourcePtcl,DT_AOS);

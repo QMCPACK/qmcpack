@@ -1,80 +1,84 @@
-#ifndef QMCPLUSPLUS_BESSEL_H
-#define QMCPLUSPLUS_BESSEL_H
+#ifndef QMCPLUSPLUS_NEW_BESSEL_H
+#define QMCPLUSPLUS_NEW_BESSEL_H
 
+#include <cmath>
 namespace qmcplusplus
 {
 
+/** @ingroup Numerics
+ * @brief Compute spherical bessel funciton from 0 to lmax
+ *
+ * Using Steed/Barnett algorithm from Comp. Phys. Comm. 21, 297 (1981)
+ */
 template<typename T>
-void bessel_steed_array_cpu(const int lmax, const T x, T* jl_x) {
-// use steed/barnett method to calculate regular array of spherical bessel
-// function from 0 to l.  This follows the gsl implementation
-   if (lmax < 0 || x < 0.0) {
-      int j;
-      for (j = 0; j<=lmax; j++) jl_x[j] = 0.0;
-   } else if (x == 0.0) {
-      int j;
-      for (j = 1; j<=lmax; j++) jl_x[j] = 0.0;
-      jl_x[0] = 1.0;
-   } else if (x < 0.00024) {
-      double inv_fact = 1.0;
-      double x_l = 1.0;
-      int l;
-      for(l=0; l<=lmax; l++) {
-	 jl_x[l]  = x_l * inv_fact;
-	 jl_x[l] *= 1.0 - 0.5*x*x/(2.0*l+3.0);
-	 inv_fact /= 2.0*l+3.0;
-	 x_l *= x;
+void bessel_steed_array_cpu(const int lmax, const T x, T* jl)
+{
+  if (lmax<0)
+    throw std::runtime_error("Negative lmax not allowed!");
+  else if (x<0)
+    throw std::runtime_error("Negative x not allowed!");
+  else if (x==0.0)
+  {
+    std::fill(jl,jl+lmax+1,T(0.0));
+    jl[0] = T(1.0);
+  }
+  else if (x<0.00024)
+  {
+    const double cone(1);
+    double inv_accumuated = cone;
+    double x_l = cone;
+    for(int l=0; l<=lmax; l++)
+    {
+      jl[l] = x_l*inv_accumuated;
+      const double inv=cone/(2*l+3);
+      jl[l] *= cone-0.5*x*x*inv;
+      inv_accumuated *= inv;
+      x_l *= x;
+    }
+  }
+  else
+  {
+    const double cone(1);
+    const double ctwo(2);
+    double XI(cone/x);
+    double W(XI*ctwo);
+    double F(cone);
+    double FP((lmax+1)*XI);
+    double B(FP*ctwo+XI);
+    double D(cone/B);
+    double DEL(-D);
+    FP += DEL;
+
+    do
+    {
+      B += W;
+      D = cone/(B-D);
+      DEL *= (B*D-cone);
+      FP += DEL;
+      if (D<0.0) F = -F;
+    } while (std::fabs(DEL)>=std::fabs(FP)*1.19209e-07);
+
+    FP *= F;
+    jl[0] = F;
+
+    if (lmax>0)
+    {
+      double PL = lmax*XI;
+      jl[lmax] = F;
+      for(int L=lmax; L>=1; L--)
+      {
+        jl[L-1] = PL*jl[L]+FP;
+        FP = PL*jl[L-1]-jl[L];
+        PL -= XI;
       }
-   } else {
-      // Steed/Barnett algorithm [Comp. Phys. Comm. 21, 297 (1981)]
-      double x_inv = 1.0/x;
-      double W = 2.0*x_inv;
-      double F = 1.0;
-      double FP = (lmax+1.0) * x_inv;
-      double B = 2.0*FP + x_inv;
-      double D = 1.0/B;
-      double del = -D;
+      F = jl[0];
+    }
 
-      FP += del;
-
-      /* continued fraction */
-      do {
-	 B += W;
-	 D = 1.0/(B-D);
-	 del *= (B*D - 1.);
-	 FP += del;
-	 if(D < 0.0) F = -F;
-      } while(fabs(del) >= fabs(FP) * 1.19209e-07);
-
-      FP *= F;
-
-      if(lmax > 0) {
-	 /* downward recursion */
-	 double XP2 = FP;
-	 double PL = lmax * x_inv;
-	 int L  = lmax;
-	 int LP;
-	 jl_x[lmax] = F;
-	 for(LP = 1; LP<=lmax; LP++) {
-	    jl_x[L-1] = PL * jl_x[L] + XP2;
-	    FP = PL*jl_x[L-1] - jl_x[L];
-	    XP2 = FP;
-	    PL -= x_inv;
-	    --L;
-	 }
-	 F = jl_x[0];
-      }
-
-      /* normalization */
-      W = x_inv / hypot(FP, F);
-      jl_x[0] = W*F;
-      if(lmax > 0) {
-	int L;
-	for(L=1; L<=lmax; L++) {
-          jl_x[L] *= W;
-	}
-      }
-   }
+    // using hypot instead of sqrt to avoid overflow/underflow
+    W = XI/std::hypot(FP,F);
+    for(int L=0; L<=lmax; L++)
+      jl[L] *= W;
+  }
 }
 
 }

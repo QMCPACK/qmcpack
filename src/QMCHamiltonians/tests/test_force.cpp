@@ -210,7 +210,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // settings to the ParticleSet
   elec.resetGroups();
 
-#ifdef ENABLE_AA_SOA
+#ifdef ENABLE_SOA
   elec.addTable(ions,DT_SOA);
   ions.addTable(ions,DT_SOA);
 #else
@@ -312,7 +312,7 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   // settings to the ParticleSet
   elec.resetGroups();
 
-#ifdef ENABLE_AA_SOA
+#ifdef ENABLE_SOA
   elec.addTable(ions,DT_SOA);
   ions.addTable(ions,DT_SOA);
 #else
