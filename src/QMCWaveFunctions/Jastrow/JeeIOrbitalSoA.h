@@ -41,9 +41,6 @@ class JeeIOrbitalSoA: public OrbitalBase
   using posT=TinyVector<valT,OHMMS_DIM>;
   ///use the same container
   using RowContainer=DistanceTableData::RowContainer;
-  ///define container types
-  using vContainer_type=aligned_vector<valT>;
-  using gContainer_type=VectorSoaContainer<valT,OHMMS_DIM>;
   ///table index for i-el, el-el is always zero
   int myTableID;
   //nuber of particles
@@ -56,15 +53,12 @@ class JeeIOrbitalSoA: public OrbitalBase
   RealType DiffVal;
 
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
-  Vector<valT> Uat;
-  vContainer_type oldUk,newUk;
+  Vector<valT> Uat,oldUk,newUk;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
-  Vector<posT> dUat;
+  Vector<posT> dUat,olddUk,newdUk;
   valT *FirstAddressOfdU, *LastAddressOfdU;
-  gContainer_type olddUk,newdUk;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
-  Vector<valT> d2Uat;
-  vContainer_type oldd2Uk,newd2Uk;
+  Vector<valT> d2Uat,oldd2Uk,newd2Uk;
   /// current values during PbyP
   valT cur_Uat,cur_d2Uat;
   posT cur_dUat;
@@ -559,7 +553,7 @@ public:
                         const RealType* distjI, const RowContainer& displjI,
                         const RealType* distjk, const RowContainer& displjk,
                         valT& Uj, posT& dUj, valT& d2Uj,
-                        vContainer_type& Uk, gContainer_type& dUk, vContainer_type& d2Uk, bool triangle=false)
+                        Vector<valT>& Uk, Vector<posT>& dUk, Vector<valT>& d2Uk, bool triangle=false)
   {
     constexpr valT czero(0);
     constexpr valT cone(1);
@@ -575,9 +569,8 @@ public:
 
     const int kelmax=triangle?jel:Nelec;
     std::fill_n(Uk.data(),kelmax,czero);
+    std::fill_n(dUk.data(),kelmax,posT());
     std::fill_n(d2Uk.data(),kelmax,czero);
-    for(int idim=0; idim<OHMMS_DIM; ++idim)
-      std::fill_n(dUk.data(idim),kelmax,czero);
 
     valT* restrict val=mVGL.data(0);
     valT* restrict gradF0=mVGL.data(1);
@@ -630,7 +623,7 @@ public:
 
             // compute the contribution to kel
             Uk[kel] += val[kel_index];
-            dUk(kel) = dUk[kel] - gradF0[kel_index] * disp_jk - gradF2[kel_index] * disp_Ik;
+            dUk[kel] -= gradF0[kel_index] * disp_jk + gradF2[kel_index] * disp_Ik;
             d2Uk[kel] -= hessF00[kel_index] + hessF22[kel_index]
                          + lapfac*(gradF0[kel_index] + gradF2[kel_index])
                          + ctwo*hessF02[kel_index]*dot(disp_jk,disp_Ik);

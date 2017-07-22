@@ -185,7 +185,7 @@ namespace qmcplusplus
 
       /** return TinyVector<T,D>
        */
-      __forceinline Type_t operator[](size_t i) const
+      __forceinline const Type_t operator[](size_t i) const
       {
         return Type_t(myData+i,nGhosts); 
       }
