@@ -1853,7 +1853,7 @@ class Clustername(Supercomputer):
 Clustername(      4,   1,    16,   24,    4, 'mpirun',     'qsub',   'qstat',    'qdel')
 '''
 try:
-    load_source('*',os.path.expanduser('~/.nexus/local.py'))
+    load_source('*',os.path.expanduser('~/.nexus/local_machines.py'))
 except IOError:
     pass
 except:
