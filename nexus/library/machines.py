@@ -54,6 +54,7 @@ from generic import obj
 from developer import DevBase
 from nexus_base import NexusCore,nexus_core
 from debug import *
+from imp import load_source
 
 
 import re,subprocess
@@ -1824,8 +1825,39 @@ class Supercomputer(Machine):
 
 #end class Supercomputer
 
+# Load local class for local cluster's setting from ~/.nexus/local.py
+# The following is an example of this file (see machines.py for more examples):
+'''
+from machines import Supercomputer
+class Clustername(Supercomputer):
+    name = 'clustername'
+    requires_account = False
+    batch_capable    = True
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='batch'
+        c= '#!/bin/bash\n'
+        c+='#PBS -l nodes={0}:ppn={1}\n'.format(job.nodes,job.ppn)
+        c+='#PBS -l walltime='+job.pbs_walltime()+'\n'
+        c+='#PBS -N '+job.name +'\n'
+        c+='#PBS -o '+job.outfile+'\n'
+        c+='#PBS -e '+job.errfile+'\n'
+        c+='#PBS -V\n'
+        c+='#PBS -q '+job.queue+'\n'
 
-
+        #end if
+        c+=''' \n '''
+        return c
+#end class Clustername
+#            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus   qdelete
+Clustername(      4,   1,    16,   24,    4, 'mpirun',     'qsub',   'qstat',    'qdel')
+'''
+try:
+    load_source('*',os.path.expanduser('~/.nexus/local.py'))
+except IOError:
+    pass
+except:
+    raise
 
 class Kraken(Supercomputer):
 
