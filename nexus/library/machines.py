@@ -1846,7 +1846,7 @@ class Clustername(Supercomputer):
         c+='#PBS -q '+job.queue+'\n'
 
         #end if
-        c+=''' \n '''
+        c+=' \n '
         return c
 #end class Clustername
 #            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus   qdelete
