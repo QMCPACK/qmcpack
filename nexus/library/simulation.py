@@ -66,6 +66,7 @@
 
 
 import os
+import sys
 import shutil
 import string
 from subprocess import Popen,PIPE
@@ -1693,7 +1694,7 @@ except:
     Image = unavailable('Image')
 #end try
 import tempfile
-exit_call = exit
+exit_call = sys.exit
 def graph_sims(sims,useid=False,exit=True,quants=True):
     graph = Dot(graph_type='digraph')
     graph.set_label('simulation workflows')
