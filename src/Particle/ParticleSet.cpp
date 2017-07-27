@@ -777,9 +777,6 @@ void ParticleSet::acceptMove(Index_t iat)
     for (int i=0,n=DistTables.size(); i< n; i++)
       DistTables[i]->update(iat);
 
-    if(RSoA.size() != getLocalNum())
-      std::cout << "Die here " << RSoA.size() << std::endl;
-
     RSoA(iat)=R[iat];
 
     //Do not change SK: 2007-05-18
