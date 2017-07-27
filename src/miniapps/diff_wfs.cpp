@@ -208,8 +208,8 @@ int main(int argc, char** argv)
 
         if(Random() < r_aos)
         {
-          els.acceptMove(iel);
           J.acceptMove(els,iel);
+          els.acceptMove(iel);
 
           els_aos.acceptMove(iel);
           J_aos.acceptMove(els_aos,iel);

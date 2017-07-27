@@ -262,13 +262,13 @@ int main(int argc, char** argv)
 
           if(ur[iel]>accept) //MC
           { 
-            els.acceptMove(iel);           
             Jastrow->acceptMove(els,iel);
-            my_accepted++; 
+            els.acceptMove(iel);
+            my_accepted++;
           }
           else 
           { 
-            els.rejectMove(iel); 
+            els.rejectMove(iel);
             Jastrow->restore(iel);
           }
         } // iel
