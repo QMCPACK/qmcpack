@@ -211,11 +211,6 @@ public:
     return R.size();
   }
 
-  inline Walker_t* getWalker(size_t iw)
-  {
-    return WalkerList[iw];
-  }
-
   /// return the first iterator
   inline iterator begin()
   {
@@ -289,6 +284,7 @@ public:
   {
     return WalkerList[i];
   }
+
   inline const Walker_t* operator[](int i) const
   {
     return WalkerList[i];
