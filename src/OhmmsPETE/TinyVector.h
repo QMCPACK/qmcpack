@@ -145,11 +145,7 @@ struct TinyVector
     return D*sizeof(T);
   }
 
-  inline TinyVector& operator=(const TinyVector& rhs)
-  {
-    OTAssign<TinyVector<T,D>,TinyVector<T,D>,OpAssign>::apply(*this,rhs,OpAssign());
-    return *this;
-  }
+  inline TinyVector& operator=(const TinyVector& rhs) = default;
 
   template<class T1>
   inline TinyVector<T,D>& operator=(const TinyVector<T1,D> &rhs)
