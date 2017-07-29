@@ -44,8 +44,6 @@ public:
   explicit inline
     Vector(size_t n=0): nLocal(n), nAllocated(0), X(nullptr)
   {
-    if(n<0)
-      throw std::runtime_error("Vector new size must be non-negative!");
     if(n) resize_impl(n);
   }
 
@@ -107,8 +105,6 @@ public:
   ///resize
   inline void resize(size_t n)
   {
-    if(n<0)
-      throw std::runtime_error("Vector new size must be non-negative!");
     if(nLocal>nAllocated)
       throw std::runtime_error("Resize not allowed on Vector constructed by initialized memory.");
     if(n>nAllocated)
