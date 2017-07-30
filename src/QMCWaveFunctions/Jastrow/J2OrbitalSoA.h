@@ -70,7 +70,8 @@ struct  J2OrbitalSoA : public OrbitalBase
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
   Vector<valT> Uat;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
-  Vector<posT> dUat;
+  using gContainer_type=VectorSoaContainer<valT,OHMMS_DIM>;
+  gContainer_type dUat;
   valT *FirstAddressOfdU, *LastAddressOfdU;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
   Vector<valT> d2Uat;
@@ -310,8 +311,8 @@ void J2OrbitalSoA<FT>::init(ParticleSet& p)
 
   Uat.resize(N); 
   dUat.resize(N);
-  FirstAddressOfdU = &(dUat[0][0]);
-  LastAddressOfdU = FirstAddressOfdU + dUat.size()*OHMMS_DIM;
+  FirstAddressOfdU = dUat.data();
+  LastAddressOfdU = dUat.end();
   d2Uat.resize(N);
   cur_u.resize(N);
   cur_du.resize(N);
@@ -476,25 +477,39 @@ J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
   }
 
   valT cur_d2Uat(0);
-  posT cur_dUat;
   const auto& new_dr=d_table->Temp_dr;
   const auto& old_dr=d_table->Displacements[iat];
+  constexpr valT lapfac=OHMMS_DIM-RealType(1);
+  #pragma omp simd reduction(+:cur_d2Uat)
   for(int jat=0; jat<N; jat++)
   {
-    constexpr valT lapfac=OHMMS_DIM-RealType(1);
-    valT du   = cur_u[jat] - old_u[jat];
-    posT newg = cur_du[jat] * new_dr[jat];
-    posT dg   = newg - old_du[jat]*old_dr[jat];
-    valT newl = cur_d2u[jat] + lapfac*cur_du[jat];
-    valT dl   = old_d2u[jat] + lapfac*old_du[jat] - newl;
+    const valT du   = cur_u[jat] - old_u[jat];
+    const valT newl = cur_d2u[jat] + lapfac*cur_du[jat];
+    const valT dl   = old_d2u[jat] + lapfac*old_du[jat] - newl;
     Uat[jat]   += du;
-    dUat[jat]  -= dg;
     d2Uat[jat] += dl;
-    cur_dUat   += newg;
     cur_d2Uat  -= newl;
   }
+  posT cur_dUat;
+  for(int idim=0; idim<OHMMS_DIM; ++idim)
+  {
+    const valT* restrict new_dX=new_dr.data(idim);
+    const valT* restrict old_dX=old_dr.data(idim);
+    const valT* restrict cur_du_pt=cur_du.data();
+    const valT* restrict old_du_pt=old_du.data();
+    valT* restrict save_g=dUat.data(idim);
+    valT& cur_g=cur_dUat[idim];
+    #pragma omp simd reduction(+:cur_g) aligned(old_dX,new_dX,save_g,cur_du_pt,old_du_pt)
+    for(int jat=0; jat<N; jat++)
+    {
+      const valT newg = cur_du_pt[jat] * new_dX[jat];
+      const valT dg   = newg - old_du_pt[jat]*old_dX[jat];
+      save_g[jat]  -= dg;
+      cur_g += newg;
+    }
+  }
   Uat[iat]   = cur_Uat;
-  dUat[iat]  = cur_dUat;
+  dUat(iat)  = cur_dUat;
   d2Uat[iat] = cur_d2Uat;
 }
 
@@ -513,7 +528,7 @@ J2OrbitalSoA<FT>::recompute(ParticleSet& P)
       posT grad;
       valT lap;
       accumulateGL(cur_du.data(),cur_d2u.data(),d_table->Displacements[iat],grad,lap);
-      dUat[iat]=grad;
+      dUat(iat)=grad;
       d2Uat[iat]=-lap;
     }
   }

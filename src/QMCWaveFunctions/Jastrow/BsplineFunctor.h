@@ -37,7 +37,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
   typedef real_type value_type;
   int NumParams;
   int Dummy;
-  const TinyVector<real_type,16> A, dA, d2A, d3A;
+  const real_type A[16], dA[16], d2A[16], d3A[16];
   aligned_vector<real_type> SplineCoefs;
 
   //static const real_type A[16], dA[16], d2A[16];
@@ -60,22 +60,22 @@ struct BsplineFunctor: public OptimizableFunctorBase
   ///constructor
   BsplineFunctor(real_type cusp=0.0) :
     NumParams(0),
-    A(-1.0/6.0,  3.0/6.0, -3.0/6.0, 1.0/6.0,
-      3.0/6.0, -6.0/6.0,  0.0/6.0, 4.0/6.0,
+    A{-1.0/6.0,  3.0/6.0, -3.0/6.0, 1.0/6.0,
+       3.0/6.0, -6.0/6.0,  0.0/6.0, 4.0/6.0,
       -3.0/6.0,  3.0/6.0,  3.0/6.0, 1.0/6.0,
-      1.0/6.0,  0.0/6.0,  0.0/6.0, 0.0/6.0),
-    dA(0.0, -0.5,  1.0, -0.5,
+       1.0/6.0,  0.0/6.0,  0.0/6.0, 0.0/6.0},
+    dA{0.0, -0.5,  1.0, -0.5,
        0.0,  1.5, -2.0,  0.0,
        0.0, -1.5,  1.0,  0.5,
-       0.0,  0.5,  0.0,  0.0),
-    d2A(0.0, 0.0, -1.0,  1.0,
+       0.0,  0.5,  0.0,  0.0},
+    d2A{0.0, 0.0, -1.0,  1.0,
         0.0, 0.0,  3.0, -2.0,
         0.0, 0.0, -3.0,  1.0,
-        0.0, 0.0,  1.0,  0.0),
-    d3A(0.0, 0.0,  0.0, -1.0,
+        0.0, 0.0,  1.0,  0.0},
+    d3A{0.0, 0.0,  0.0, -1.0,
         0.0, 0.0,  0.0,  3.0,
         0.0, 0.0,  0.0, -3.0,
-        0.0, 0.0,  0.0,  1.0),
+        0.0, 0.0,  0.0,  1.0},
     CuspValue(cusp), ResetCount(0), ReportLevel(0), notOpt(false), periodic(true)
   {
     cutoff_radius = 0.0;
