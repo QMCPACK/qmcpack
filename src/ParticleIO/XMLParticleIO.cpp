@@ -435,7 +435,6 @@ void XMLParticleParser::getPtclAttrib(xmlNodePtr cur, int nat, int nloc)
   }
   else
   {
-    std::cout << "mydebug " << oname << std::endl;
     //very permissive in that a unregistered attribute will be created and stored by ParticleSet
     //cloning is not going to work
     if(t_id == PA_IndexType)
