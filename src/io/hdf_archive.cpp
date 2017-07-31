@@ -60,7 +60,11 @@ void hdf_archive::set_access_plist(bool request_pio, Communicate* comm)
       // enable parallel I/O
       MPI_Info info=MPI_INFO_NULL;
       access_id = H5Pcreate(H5P_FILE_ACCESS);
-      hid_t ret=H5Pset_fapl_mpio(access_id,comm->getMPI(),info);
+#if H5_VERSION_GE(1,10,0)
+      H5Pset_all_coll_metadata_ops(access_id,true);
+      H5Pset_coll_metadata_write(access_id,true);
+#endif
+      H5Pset_fapl_mpio(access_id,comm->getMPI(),info);
       xfer_plist = H5Pcreate(H5P_DATASET_XFER);
 #if defined(ENABLE_PHDF5)
       // enable parallel collective I/O
