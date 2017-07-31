@@ -196,6 +196,7 @@ int main(int argc, char** argv)
   myComm->barrier();
   h5clock.restart(); //start timer
   RandomNumberControl::read("restart",myComm);
+  myComm->barrier();
   h5read += h5clock.elapsed(); //store timer
 
   // validate random seeds
