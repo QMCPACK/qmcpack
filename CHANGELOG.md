@@ -12,7 +12,7 @@ This is a bugfix release and recommended update.
 
 * Added numerical tolerance to check of jastrow cutoff and Wigner Seitz
   radius.
-* Cmake correctly configures when MPI is not present.
+* CMake correctly configures when MPI is not present.
 * Improved support for test coverage measurements.
 * Added unit tests for some estimators.
 
