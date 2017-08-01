@@ -10,7 +10,7 @@ This is a bugfix release and recommended update.
 
 ### QMCPACK updates
 
-* Added numerical tolerance to check of jastrow cutoff and Wiger Seitz
+* Added numerical tolerance to check of jastrow cutoff and Wigner Seitz
   radius.
 * Cmake correctly configures when MPI is not present.
 * Improved support for test coverage measurements.
