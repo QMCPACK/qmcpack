@@ -18,7 +18,7 @@ This is a bugfix release and recommended update.
 
 ### NEXUS
 
-* ipython compatibile exit handling (from Duy Le)
+* IPython compatible exit handling (from Duy Le)
 
 
 ## [3.1.0] - 2017-06-21
