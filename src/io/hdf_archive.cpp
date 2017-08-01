@@ -26,7 +26,7 @@ hdf_archive::hdf_archive(Communicate* c, bool request_pio)
 
 hdf_archive::~hdf_archive()
 {
-#if defined(HDF5_IS_PARALLEL)
+#if defined(ENABLE_PHDF5)
   if(xfer_plist != H5P_DEFAULT) H5Pclose(xfer_plist);
   if(access_id != H5P_DEFAULT) H5Pclose(access_id);
 #endif
@@ -56,7 +56,7 @@ void hdf_archive::set_access_plist(bool request_pio, Communicate* comm)
     bool use_phdf5=false;
     if(request_pio)
     {
-#if defined(HDF5_IS_PARALLEL)
+#if defined(ENABLE_PHDF5)
       // enable parallel I/O
       MPI_Info info=MPI_INFO_NULL;
       access_id = H5Pcreate(H5P_FILE_ACCESS);
@@ -66,13 +66,8 @@ void hdf_archive::set_access_plist(bool request_pio, Communicate* comm)
 #endif
       H5Pset_fapl_mpio(access_id,comm->getMPI(),info);
       xfer_plist = H5Pcreate(H5P_DATASET_XFER);
-#if defined(ENABLE_PHDF5)
       // enable parallel collective I/O
       H5Pset_dxpl_mpio(xfer_plist,H5FD_MPIO_COLLECTIVE);
-#else
-      // enable parallel independent I/O
-      H5Pset_dxpl_mpio(xfer_plist,H5FD_MPIO_INDEPENDENT);
-#endif
       use_phdf5=true;
 #else
       use_phdf5=false;
