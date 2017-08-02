@@ -63,16 +63,27 @@ bool eeI_JastrowBuilder::putkids (xmlNodePtr kids, J3type &J3)
       functor->put (kids);
       if (sourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN)
       {
-        if (functor->cutoff_radius > sourcePtcl->Lattice.WignerSeitzRadius)
+        const RealType WSRadius = sourcePtcl->Lattice.WignerSeitzRadius;
+        if (functor->cutoff_radius > WSRadius)
         {
-          APP_ABORT("  The eeI Jastrow cutoff specified should not be larger than Wigner-Seitz radius.");
+          if ( functor->cutoff_radius - WSRadius > 1e-4 )
+          {
+            APP_ABORT("  The eeI Jastrow cutoff specified should not be larger than Wigner-Seitz radius.");
+          }
+          else
+          {
+            app_log() << "  The eeI Jastrow cutoff specified is slightly larger than the Wigner-Seitz radius.";
+            app_log() << "  Setting to Wigner-Seitz radius = " << WSRadius << ".\n";
+            functor->cutoff_radius = WSRadius;
+            functor->reset();
+          }
         }
         if (functor->cutoff_radius < 1.0e-6)
         {
           app_log()  << "  eeI functor rcut is currently zero.\n"
                      << "  Setting to Wigner-Seitz radius = "
-                     << sourcePtcl->Lattice.WignerSeitzRadius << std::endl;
-          functor->cutoff_radius = sourcePtcl->Lattice.WignerSeitzRadius;
+                     << WSRadius << std::endl;
+          functor->cutoff_radius = WSRadius;
           functor->reset();
         }
       }
