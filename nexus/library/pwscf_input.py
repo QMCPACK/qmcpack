@@ -514,7 +514,9 @@ class system(Section):
     atomic_variables = obj(
         hubbard_u = 'Hubbard_U',
         start_mag = 'starting_magnetization',
-        hubbard_j = 'Hubbard_J'
+        hubbard_j = 'Hubbard_J',
+        angle1    = 'angle1',
+        angle2    = 'angle2',
         )
 
     # specialized read for partial array variables (hubbard U, starting mag, etc)
@@ -597,6 +599,8 @@ class system(Section):
                     vtype = bool
                 elif isinstance(val,int):
                     vtype = int
+                else:
+                    self.error('Type "{0}" is not known as a value of variable "{1}".\nThis may reflect a need for added developer attention to support this type.  Please contact a developer.'.format(vtype.__class__.__name__,var))
                 #end if
                 sval = writeval[vtype](val)
 
