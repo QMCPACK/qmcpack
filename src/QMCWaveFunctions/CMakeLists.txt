@@ -32,6 +32,7 @@ SET(WFBASE_SRCS
   FermionBase.cpp
   OptimizableSPOSet.cpp
   AFMSPOSet.cpp
+  FDLRWfn.cpp
   CompositeSPOSet.cpp
   HarmonicOscillator/SHOSet.cpp
   HarmonicOscillator/SHOSetBuilder.cpp
