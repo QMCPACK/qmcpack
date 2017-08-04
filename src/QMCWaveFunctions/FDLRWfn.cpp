@@ -129,7 +129,7 @@ namespace qmcplusplus {
         dhpsioverpsi_fdlr_d.resize(d_vars_driver.size(), 0.0);
         dgradlogpsi_fdlr_d.resize(d_vars_driver.size(), 0.0);
       }
-    };
+    }
 
     void FDLRWfn::init_driver_vars_singlet_or_triplet() {
       // The singlet/triplet symmetry option is only sensible (and more
@@ -208,6 +208,8 @@ namespace qmcplusplus {
       }
 
     }
+
+    FDLRWfn::~FDLRWfn() { }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     /// \brief  return a clone of this object
