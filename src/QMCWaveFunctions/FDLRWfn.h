@@ -121,8 +121,9 @@ namespace qmcplusplus {
 
   public:
 
-    FDLRWfn(TrialWaveFunction * wfn_1, TrialWaveFunction * wfn_2, ParticleSet& P,
-            bool opt_x = true, bool opt_d = true, bool singlet_loc = false, bool triplet_loc = false);
+    FDLRWfn(TrialWaveFunction * const wfn_1, TrialWaveFunction * const wfn_2, ParticleSet& P,
+            const bool opt_x = true, const bool opt_d = true,
+            const bool singlet_loc = false, const bool triplet_loc = false);
 
     ~FDLRWfn();
 
@@ -151,10 +152,10 @@ namespace qmcplusplus {
     RealType evaluateLog(ParticleSet& P,BufferType& buf);
 
     RealType evaluateLogFDLR(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L,
-                             RealType& logpsi_plus,                    RealType logpsi_minus,
-                             RealType& phasevalue_plus,                RealType phasevalue_minus,
-                             ParticleSet::ParticleGradient_t& G_plus,  ParticleSet::ParticleGradient_t& G_minus,
-                             ParticleSet::ParticleLaplacian_t& L_plus, ParticleSet::ParticleLaplacian_t& L_minus);
+                             const RealType& logpsi_plus,                    const RealType logpsi_minus,
+                             const RealType& phasevalue_plus,                const RealType phasevalue_minus,
+                             const ParticleSet::ParticleGradient_t& G_plus,  const ParticleSet::ParticleGradient_t& G_minus,
+                             const ParticleSet::ParticleLaplacian_t& L_plus, const ParticleSet::ParticleLaplacian_t& L_minus);
 
     GradType evalGrad(ParticleSet& P, int iat);
 
