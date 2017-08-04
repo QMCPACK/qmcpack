@@ -142,7 +142,12 @@ namespace qmcplusplus {
       // Each of the "up" and "down" determinants have two OrbitalBase objects
       // (LCOrbitalSetOptTrialFunc and SlaterDetOpt), so there should be 4 in total.
       if (m_wfn_xpd->size() != 4)
-        throw std::runtime_error("FDLRWfn::resetTargetParticleSet not yet implemented");
+      {
+        throw std::runtime_error("Only optimizable determinant objects may be used in the FDLR wave function " \
+                                    "when enforcing singlet or triplet symmetry. There should be exactly 4 " \
+                                    "OrbitalBase objects in each TrialWaveFunction object in the FDLR wave " \
+                                    "function, when using optimizable determinants, which is not the case.");
+      }
 
       // Loop over OrbitalBase objects in the TrialWavefunction object, and
       // check that they are allowed.
@@ -154,7 +159,7 @@ namespace qmcplusplus {
       {
         if ( !( (*it_plus)->OrbitalName == "SlaterDetOpt" || (*it_plus)->OrbitalName == "LCOrbitalSetOptTrialFunc" ) )
         {
-          throw std::runtime_error("Only optimizable determinant objects may be used in the FDLR wave function, " \
+          throw std::runtime_error("Only optimizable determinant objects may be used in the FDLR wave function " \
                                     "when enforcing singlet or triplet symmetry.");
         }
       }
