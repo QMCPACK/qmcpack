@@ -71,8 +71,8 @@ void ParticleSet::createSK()
   //int membersize= mySpecies.addAttribute("membersize");
   //for(int ig=0; ig<mySpecies.size(); ++ig)
   //  SubPtcl[ig+1]=SubPtcl[ig]+mySpecies(membersize,ig);
-  
-  convert2Cart(R); //make sure that R is in Cartesian coordinates
+
+  if(UseBoundBox) convert2Cart(R); //make sure that R is in Cartesian coordinates
 
   if(Lattice.SuperCellEnum != SUPERCELL_OPEN)
   {
@@ -120,6 +120,15 @@ void ParticleSet::createSK()
   for(int iat=0; iat<GroupID.size(); iat++)
     Mass[iat]=mySpecies(massind,GroupID[iat]);
 
+  RSoA=R;
+}
+
+void ParticleSet::turnOnPerParticleSK()
+{
+  if(SK)
+    SK->turnOnStorePerParticle(*this);
+  else
+    APP_ABORT("ParticleSet::turnOnPerParticleSK trying to turn on per particle storage in SK but SK has not been created.");
 }
 
 void ParticleSet::convert(const ParticlePos_t& pin, ParticlePos_t& pout)

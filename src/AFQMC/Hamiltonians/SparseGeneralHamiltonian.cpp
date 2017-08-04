@@ -60,13 +60,6 @@ namespace qmcplusplus
     ValueSMSpMat V2_fact_c, V2_fact_m;
     
      std::ifstream in;
-#ifdef _BGQ_     
-     // trying to speed up I/O in BGQ
-     // this might cause a small memory leak, fix later
-     //int bsize = 100000;   
-     //char *mybuffer = new char[bsize]; 
-     //in.rdbuf()->pubsetbuf(mybuffer,bsize);
-#endif
      in.open(fileName.c_str());
      if(in.fail()) {
         app_error()<<"Problems opening ASCII integral file:  " <<fileName <<std::endl;

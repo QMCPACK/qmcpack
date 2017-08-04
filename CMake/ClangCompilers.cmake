@@ -5,7 +5,7 @@ IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.0 )
 ENDIF()
 
 # Enable OpenMP
-SET(ENABLE_OPENMP 0)
+SET(ENABLE_OPENMP 1)
 IF ( ENABLE_OPENMP )
     SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fopenmp")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
@@ -20,12 +20,12 @@ ADD_DEFINITIONS( -Drestrict=__restrict__ )
 ADD_DEFINITIONS( -DADD_ )
 ADD_DEFINITIONS( -DINLINE_ALL=inline )
 SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fomit-frame-pointer -fstrict-aliasing")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fomit-frame-pointer -fstrict-aliasing")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fomit-frame-pointer -fstrict-aliasing -D__forceinline=inline")
 SET( HAVE_POSIX_MEMALIGN 0 )    # Clang doesn't support -malign-double
 
 # Suppress compile warnings
 SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-deprecated -Wno-unused-value")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wno-unused-value")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wno-unused-value -Wno-undefined-var-template")
 
 # Set extra optimization specific flags
 SET( CMAKE_C_FLAGS_RELEASE   "${CMAKE_C_FLAGS_RELEASE}   -ffast-math" )

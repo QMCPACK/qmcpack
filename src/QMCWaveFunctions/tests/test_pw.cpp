@@ -90,7 +90,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-  elec.addTable(ions);
+  elec.addTable(ions,DT_AOS);
   elec.resetGroups();
   elec.update();
 
@@ -249,7 +249,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-  elec.addTable(ions);
+  elec.addTable(ions,DT_AOS);
   elec.resetGroups();
   elec.update();
 

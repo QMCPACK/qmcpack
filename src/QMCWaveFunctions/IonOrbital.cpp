@@ -28,7 +28,7 @@ IonOrbital::IonOrbital (ParticleSet &centers, ParticleSet &ptcls) :
   OrbitalName="IonOrbital";
   NumTargetPtcls = ptcls.getTotalNum();
   NumCenters     = centers.getTotalNum();
-  d_table = DistanceTable::add(CenterRef, PtclRef);
+  d_table = DistanceTable::add(CenterRef, PtclRef, DT_AOS);
   U.resize(NumTargetPtcls);
   dU.resize(NumTargetPtcls);
   d2U.resize(NumTargetPtcls);
@@ -42,7 +42,7 @@ IonOrbital::~IonOrbital() {  }
 void
 IonOrbital::resetTargetParticleSet(ParticleSet& P)
 {
-  d_table = DistanceTable::add(CenterRef,P);
+  d_table = DistanceTable::add(CenterRef,P, DT_AOS);
   //if (dPsi) dPsi->resetTargetParticleSet(P);
 }
 

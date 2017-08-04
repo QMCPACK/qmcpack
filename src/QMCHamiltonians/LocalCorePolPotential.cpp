@@ -26,8 +26,8 @@ LocalCorePolPotential::LocalCorePolPotential(ParticleSet& ions,
   FirstTime(true), eCoreCore(0.0), IonConfig(ions), d_ie(0), d_ii(0)
 {
   //set the distance tables
-  d_ie = DistanceTable::add(ions,els);
-  d_ii = DistanceTable::add(ions);
+  d_ie = DistanceTable::add(ions,els,DT_AOS);
+  d_ii = DistanceTable::add(ions,DT_AOS);
   nCenters = ions.getTotalNum();
   nParticles = els.getTotalNum();
   InpCPP.resize(IonConfig.getSpeciesSet().getTotalNum(),0);
@@ -51,7 +51,7 @@ LocalCorePolPotential::~LocalCorePolPotential()
 
 void LocalCorePolPotential::resetTargetParticleSet(ParticleSet& P)
 {
-  d_ie = DistanceTable::add(IonConfig,P);
+  d_ie = DistanceTable::add(IonConfig,P,DT_AOS);
 }
 
 /** process xml node for each element

@@ -128,7 +128,6 @@ public:
 	    F[ij]=j;
       first_addFunc = false;
     }
-
     // add the pair function
     F[ia*NumGroups+ib]=j;
     // enforce exchange symmetry
@@ -608,36 +607,6 @@ public:
   {
     // std::cerr <<"REGISTERING 2 BODY JASTROW"<< std::endl;
     evaluateLogAndStore(P,P.G,P.L);
-    //LogValue=0.0;
-    //RealType dudr, d2udr2,u;
-    //GradType gr;
-    //PairID.resize(d_table->size(SourceIndex),d_table->size(SourceIndex));
-    //int nsp=P.groups();
-    //for(int i=0; i<d_table->size(SourceIndex); i++)
-    //  for(int j=0; j<d_table->size(SourceIndex); j++)
-    //    PairID(i,j) = P.GroupID[i]*nsp+P.GroupID[j];
-    //for(int i=0; i<d_table->size(SourceIndex); i++) {
-    //  for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
-    //    int j = d_table->J[nn];
-    //    //ValueType sumu = F.evaluate(d_table->r(nn));
-    //    u = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
-    //    LogValue -= u;
-    //    dudr *= d_table->rinv(nn);
-    //    gr = dudr*d_table->dr(nn);
-    //    //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)\f$
-    //    RealType lap = d2udr2+2.0*dudr;
-    //    int ij = i*N+j, ji=j*N+i;
-    //    U[ij]=u; U[ji]=u;
-    //    //dU[ij] = gr; dU[ji] = -1.0*gr;
-    //    dU[ij] = gr; dU[ji] = gr*-1.0;
-    //    d2U[ij] = -lap; d2U[ji] = -lap;
-    //    //add gradient and laplacian contribution
-    //    P.G[i] += gr;
-    //    P.G[j] -= gr;
-    //    P.L[i] -= lap;
-    //    P.L[j] -= lap;
-    //  }
-    //}
     DEBUG_PSIBUFFER(" TwoBodyJastrow::registerData ",buf.current());
     U[NN]=LogValue;
     buf.add(U.begin(), U.end());
@@ -647,40 +616,15 @@ public:
     return LogValue;
   }
 
+  inline void evaluateGL(ParticleSet& P)
+  {
+    RealType t=evaluateLog(P,P.G,P.L);
+  }
+
   inline RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
                                bool fromscratch=false)
   {
     evaluateLogAndStore(P,P.G,P.L);
-    //RealType dudr, d2udr2,u;
-    //LogValue=0.0;
-    //GradType gr;
-    //PairID.resize(d_table->size(SourceIndex),d_table->size(SourceIndex));
-    //int nsp=P.groups();
-    //for(int i=0; i<d_table->size(SourceIndex); i++)
-    //  for(int j=0; j<d_table->size(SourceIndex); j++)
-    //    PairID(i,j) = P.GroupID[i]*nsp+P.GroupID[j];
-    //for(int i=0; i<d_table->size(SourceIndex); i++) {
-    //  for(int nn=d_table->M[i]; nn<d_table->M[i+1]; nn++) {
-    //    int j = d_table->J[nn];
-    //    //ValueType sumu = F.evaluate(d_table->r(nn));
-    //    u = F[d_table->PairID[nn]]->evaluate(d_table->r(nn), dudr, d2udr2);
-    //    LogValue -= u;
-    //    dudr *= d_table->rinv(nn);
-    //    gr = dudr*d_table->dr(nn);
-    //    //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)\f$
-    //    RealType lap = d2udr2+2.0*dudr;
-    //    int ij = i*N+j, ji=j*N+i;
-    //    U[ij]=u; U[ji]=u;
-    //    //dU[ij] = gr; dU[ji] = -1.0*gr;
-    //    dU[ij] = gr; dU[ji] = gr*-1.0;
-    //    d2U[ij] = -lap; d2U[ji] = -lap;
-    //    //add gradient and laplacian contribution
-    //    P.G[i] += gr;
-    //    P.G[j] -= gr;
-    //    P.L[i] -= lap;
-    //    P.L[j] -= lap;
-    //  }
-    //}
     U[NN]= LogValue;
     DEBUG_PSIBUFFER(" TwoBodyJastrow::updateBuffer ",buf.current());
     buf.put(U.begin(), U.end());
@@ -744,6 +688,7 @@ public:
 
   RealType ChiesaKEcorrection()
   {
+#if QMC_BUILD_LEVEL<5
     if ((!PtclRef->Lattice.SuperCellEnum))
       return 0.0;
     const int numPoints = 1000;
@@ -809,6 +754,7 @@ public:
     }
     if(fout)
       fclose(fout);
+#endif
     return KEcorr;
   }
 

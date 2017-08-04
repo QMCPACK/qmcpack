@@ -55,7 +55,7 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
   ///number of particles of B
   int NptclB;
   ///const energy after breakup
-  RealType myConst;
+  Return_t myConst;
   ///cutoff radius of the short-range part
   RealType myRcut;
   ///radial grid

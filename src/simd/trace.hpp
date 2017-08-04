@@ -17,6 +17,7 @@
 #define QMCPLUSPLUS_VECTOROPERATORS_3D_HPP
 
 #include <OhmmsPETE/TinyVector.h>
+#include <OhmmsPETE/OhmmsMatrix.h>
 
 namespace qmcplusplus {
   namespace simd {

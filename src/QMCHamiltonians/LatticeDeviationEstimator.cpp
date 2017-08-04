@@ -21,7 +21,7 @@ LatticeDeviationEstimator::LatticeDeviationEstimator(ParticleSet& P,ParticleSet&
 { 
   // get the distance table from quantum particle set
   // !!!! YY: use addTable instead of getTable b/c cloned ParticleSet may not have initialized distance table with source particle set ( this is true even for the master thread, why? )
-  int tid   = P.addTable(sP); // getTable(sP) does not work with threads
+  int tid   = P.addTable(sP,DT_SOA_PREFERRED); // getTable(sP) does not work with threads
   d_table   = P.DistTables[tid];
   
   // calculate number of source particles to use as lattice sites

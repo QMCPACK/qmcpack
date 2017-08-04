@@ -30,7 +30,7 @@ namespace qmcplusplus
 ThreeBodyBlockSparse::ThreeBodyBlockSparse(const ParticleSet& ions, ParticleSet& els):
   CenterRef(ions), GeminalBasis(0), IndexOffSet(1), ID_Lambda("j3"), SameBlocksForGroup(true)
 {
-  myTableIndex=els.addTable(ions);
+  myTableIndex=els.addTable(ions,DT_AOS);
   //d_table = DistanceTable::add(ions,els);
   NumPtcls=els.getTotalNum();
   Optimizable=true;

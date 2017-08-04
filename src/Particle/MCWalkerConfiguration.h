@@ -284,6 +284,7 @@ public:
   {
     return WalkerList[i];
   }
+
   inline const Walker_t* operator[](int i) const
   {
     return WalkerList[i];

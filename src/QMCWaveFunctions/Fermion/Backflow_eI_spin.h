@@ -50,7 +50,7 @@ public:
   Backflow_eI_spin(ParticleSet& ions, ParticleSet& els)
     : BackflowFunctionBase(ions,els), Spin(false)
   {
-    myTable = DistanceTable::add(ions,els);
+    myTable = DistanceTable::add(ions,els,DT_AOS);
     RadFunc.resize(ions.groups(),els.groups());
     for(int i=0; i<RadFunc.size(); ++i)
       RadFunc(i)=0;
@@ -101,7 +101,7 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P)
   {
-    myTable = DistanceTable::add(CenterSys,P);
+    myTable = DistanceTable::add(CenterSys,P,DT_AOS);
   }
 
   BackflowFunctionBase* makeClone(ParticleSet& tqp)

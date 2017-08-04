@@ -49,7 +49,7 @@ else()
 #   COPY_DIRECTORY("${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae" "${CMAKE_CURRENT_BINARY_DIR}/short-LiH_dimer_ae") 
 #    SET (USE_EXT_MPI_FOR_SERIAL_TESTS)
 
-IF(NOT QMC_CUDA)
+IF(NOT QMC_CUDA AND NOT ENABLE_SOA)
 
 IF (NOT QMC_COMPLEX)
 #
@@ -220,6 +220,16 @@ ENDIF()
                     0 # VMC
                     TRUE)
 
+IF(ENABLE_SOA)
+  QMC_RUN_AND_CHECK(short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
+                    hf_vmc_LiH-x
+                    hf_vmc_LiH-x_hybridrep.xml
+                    1 16
+                    LIH_X_SCALARS
+                    0 # VMC
+                    TRUE)
+ENDIF(ENABLE_SOA)
 
 # Arbitrary k-point requires complex build to run. Ensure fails with real/non-complex build
   LIST(APPEND LIH_ARB_SCALARS "kinetic" "7.4201207734399359 0.024")
@@ -441,6 +451,17 @@ ENDIF()
                     0 # VMC
                     TRUE)
 
+IF(ENABLE_SOA)
+  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_hybridrep_pp-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_short
+                    qmc_short_hybridrep.in.xml
+                    1 16
+                    DIAMOND_SCALARS
+                    0 # VMC
+                    TRUE)
+ENDIF(ENABLE_SOA)
+
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj-meshf
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
                     qmc_short-meshf
@@ -509,6 +530,17 @@ ENDIF()
                     DIAMOND2_SCALARS
                     0 # VMC
                     TRUE)
+
+IF(ENABLE_SOA)
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_hybridrep_pp-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_short
+                    qmc_short_hybridrep.in.xml
+                    1 16
+                    DIAMOND2_SCALARS
+                    0 # VMC
+                    TRUE)
+ENDIF(ENABLE_SOA)
 
 # Reference DMC run in qmc-ref "-21.844975 0.001113"
   LIST(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.00779")

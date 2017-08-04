@@ -6,7 +6,7 @@ set(CMAKE_CXX_COMPILER mpixlcxx_r)
 #set(CMAKE_CXX_LINKER "hpclink mpixlcxx_r")
 
 set(AIX_ARCH "qp")
-SET(AIX_ARCH_FLAGS "-qarch=${AIX_ARCH} -qsmp=omp -qthreaded -qstrict -qhot=level=1 -qtune=qp -qsimd=auto -DHAVE_MASS -DHAVE_MASSV -DBGQPX -DSPLINEFLOAT")
+SET(AIX_ARCH_FLAGS "-qarch=${AIX_ARCH} -qsmp=omp -qthreaded -qstrict -qhot=level=1 -qtune=qp -qsimd=auto -DHAVE_MASS -DHAVE_MASSV -DBGQPX -DSPLINEFLOAT -D__forceinline=inline")
 
 SET(AIX_SUPPRESSED_WARN "-qsuppress=1540-0724:1540-0198:1540-1401:1540-0822:1540-0095:1540-1101:1500-010:1500-029")
 SET(AIX_CXX_COMMON_FLAGS "-g -O3 -qinline=auto:level=10 ${AIX_SUPPRESSED_WARN}")

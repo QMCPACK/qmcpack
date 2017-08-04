@@ -34,10 +34,6 @@
 #define ssymv ssymv_
 #define csymv csymv_
 #define zsymv zsymv_
-#define ddot  ddot_
-#define sdot  sdot_
-#define zdot  zdot_
-#define zdotu  zdotu_
 #define dscal  dscal_
 #define dcopy dcopy_
 #define zcopy zcopy_
@@ -93,24 +89,8 @@
 
 #endif
 
-// Clang issues a warning if the C return type is std::complex<double>
-// Use the C return type instead
-#define complex_ret double _Complex
-
 // declaring Fortran interfaces
 extern "C" {
-
-  double ddot(const int& n, const double *dx, const int& incx, const double *dy, const int &incy);
-
-  float sdot(const int& n, const float *dx, const int& incx,  const float *dy, const int &incy);
-
-  complex_ret
-  zdot(const int& n, const std::complex<double> *dx, const int& incx,
-       const std::complex<double> *dy, const int &incy);
-
-  complex_ret
-  zdotu(const int& n, const std::complex<double> *dx, const int& incx,
-        const std::complex<double> *dy, const int &incy);
 
   void caxpy(const int& n, const std::complex<float>&  da,  const std::complex<float> *dx,
              const int& incx, std::complex<float> *dy, const int& incy);

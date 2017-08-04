@@ -43,6 +43,13 @@ Communicate::reduce(T* restrict , T* restrict, int n)
   APP_ABORT("Need specialization for reduce(T* restrict , T* restrict, int n)");
 }
 
+template<typename T>
+inline void
+Communicate::reduce_in_place(T* restrict, int n)
+{
+  APP_ABORT("Need specialization for reduce_in_place(T* restrict, int n)");
+}
+
 template<typename T> inline void
 Communicate::bcast(T& )
 {
@@ -467,6 +474,26 @@ inline void
 Communicate::reduce(double* restrict g, double* restrict res, int n)
 {
   MPI_Reduce(g, res, n, MPI_DOUBLE, MPI_SUM, 0, myMPI);
+}
+
+template<>
+inline void
+Communicate::reduce_in_place(double* restrict res, int n)
+{
+  if(!d_mycontext)
+    MPI_Reduce(MPI_IN_PLACE, res, n, MPI_DOUBLE, MPI_SUM, 0, myMPI);
+  else
+    MPI_Reduce(res, NULL, n, MPI_DOUBLE, MPI_SUM, 0, myMPI);
+}
+
+template<>
+inline void
+Communicate::reduce_in_place(float* restrict res, int n)
+{
+  if(!d_mycontext)
+    MPI_Reduce(MPI_IN_PLACE, res, n, MPI_FLOAT, MPI_SUM, 0, myMPI);
+  else
+    MPI_Reduce(res, NULL, n, MPI_FLOAT, MPI_SUM, 0, myMPI);
 }
 
 template<>

@@ -182,10 +182,12 @@ CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 # QMC_BUILD_STATIC build static/dynamic  libraries
 # BUILD_QMCTOOLS   build utility programs
 # BUILD_SANDBOX    build test programs
+# BUILD_MINIAPPS   build miniapps (Incomplete)
 # MPIP_PROFILE     profile mpi performance
 ######################################################################
 SET(QMC_ADIOS 0 CACHE BOOL "Build with ADIOS")
 SET(BUILD_UNIT_TESTS 1 CACHE BOOL "Build unit tests")
+SET(BUILD_MINIAPPS 1 CACHE BOOL "Build miniapps")
 SET(BUILD_LMYENGINE_INTERFACE 1 CACHE BOOL "Build LMY engine")
 IF (QMC_CUDA AND BUILD_LMYENGINE_INTERFACE)
   MESSAGE(STATUS "LMY engine is not compatiable with CUDA build! Disabling LMY engine")
@@ -510,7 +512,7 @@ ENDIF(ENABLE_GCOV)
 
 # check if C++11 is needed by QMCPACK features
 SET(CXX11_NEEDED FALSE)
-IF(BUILD_LMYENGINE_INTERFACE OR BUILD_AFQMC)
+IF(BUILD_LMYENGINE_INTERFACE OR BUILD_MINIAPPS OR BUILD_AFQMC OR ENABLE_SOA)
   SET(CXX11_NEEDED TRUE)
 ENDIF()
 # once C++11 is needed
@@ -540,7 +542,11 @@ IF(CXX11_NEEDED)
   ELSE()
     MESSAGE(STATUS "Disabling features requring C++11 due to the lack of compiler support")
     SET(BUILD_LMYENGINE_INTERFACE 0)
+    SET(BUILD_MINIAPPS 0)
     SET(BUILD_AFQMC 0)
+    IF(ENABLE_SOA)
+      MESSAGE(FATAL_ERROR "ENABLE_SOA requires C++11 compiler support!")
+    ENDIF()
   ENDIF()
 ENDIF(CXX11_NEEDED)
 
@@ -663,7 +669,7 @@ IF(Boost_FOUND)
   MESSAGE(STATUS "Setting Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
 ELSE()
   MESSAGE(STATUS "Using MT engine in Utilities/MersenneTwister.h")
-  #MESSAGE(FATAL_ERROR "Require boost 1.33.x or higher. Set BOOST_HOME")
+  #MESSAGE(FATAL_ERROR "Require boost 1.33.x or higher. Set BOOST_ROOT")
 ENDIF()
 
 SET(HAVE_CUDA 0)
@@ -768,7 +774,7 @@ set(build_einspline 1)
 if(build_einspline)
   SUBDIRS(src/einspline)
   INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/include)
-  SET(QMC_UTIL_LIBS einspline ${QMC_UTIL_LIBS})
+  SET(QMC_UTIL_LIBS ${QMC_UTIL_LIBS} einspline)
 endif()
 
 IF(BUILD_LMYENGINE_INTERFACE)
@@ -883,8 +889,10 @@ ENDIF(QMC_ADIOS)
 
 SUBDIRS(src)
 
-SUBDIRS(tests)
-SUBDIRS(examples)
+IF(NOT(QMC_BUILD_LEVEL GREATER 4))
+  SUBDIRS(tests)
+  SUBDIRS(examples)
+ENDIF()
 
 #ADD_CUSTOM_TARGET(print_settings ALL
 #      ${CMAKE_COMMAND} -E echo "Print build settings"

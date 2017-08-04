@@ -78,8 +78,12 @@ void NonLocalECPComponent::resize_warrays(int n,int m,int l)
   //for(int nl=1; nl<nlpp_m.size(); nl++) nlpp_m[nl]->setGridManager(false);
   if(lmax)
   {
-    Lfactor1.resize(lmax);
-    Lfactor2.resize(lmax);
+    if(lmax>7) 
+    {
+      APP_ABORT("Increase the maximum angular momentum implemented.");
+    }
+    //Lfactor1.resize(lmax);
+    //Lfactor2.resize(lmax);
     for(int nl=0; nl<lmax; nl++)
     {
       Lfactor1[nl]=static_cast<RealType>(2*nl+1);
@@ -99,103 +103,74 @@ void NonLocalECPComponent::print(std::ostream& os)
   for(int ik=0; ik<nknot; ik++)
     os << "       " << sgridxyz_m[ik] << std::setw(20) << sgridweight_m[ik] << std::endl;
 }
-/** evaluate the non-local potential of the iat-th ionic center
- * @param W electron configuration
- * @param iat ionic index
- * @param psi trial wavefunction
- * @param return the non-local component
- *
- * Currently, we assume that the ratio-only evaluation does not change the state
- * of the trial wavefunction and do not call psi.rejectMove(ieL).
- */
+
 NonLocalECPComponent::RealType
-NonLocalECPComponent::evaluate(ParticleSet& W, int iat, TrialWaveFunction& psi)
+NonLocalECPComponent::evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& psi, 
+    int iel, RealType r, const PosType& dr, 
+    bool Tmove, std::vector<NonLocalData>& Txy) const
 {
-  RealType esum=0.0;
-  RealType pairpot;
-  std::vector<PosType> deltarV(nknot);
-  DistanceTableData* myTable = W.DistTables[myTableIndex];
+  CONSTEXPR RealType czero(0);
+  CONSTEXPR RealType cone(1);
 
-  for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
+  RealType lpol_[lmax+1];
+  RealType vrad_[nchannel];
+  RealType psiratio_[nknot];
+  PosType deltaV[16];
+
+  // Compute ratio of wave functions
+  for (int j=0; j < nknot ; j++)
   {
-    register RealType r(myTable->r(nn));
-    if(r>Rmax)
-      continue;
-    register RealType rinv(myTable->rinv(nn));
-    register PosType  dr(myTable->dr(nn));
-    // Compute ratio of wave functions
-    for (int j=0; j < nknot ; j++)
-    {
-      PosType deltar(r*rrotsgrid_m[j]-dr);
-      W.makeMoveOnSphere(iel,deltar);
+    deltaV[j]=r*rrotsgrid_m[j]-dr;
+    W.makeMoveOnSphere(iel,deltaV[j]);
 #if defined(QMC_COMPLEX)
-      psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getPhaseDiff());
+    psiratio_[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getPhaseDiff());
 #else
-      psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j];
+    psiratio_[j]=psi.ratio(W,iel)*sgridweight_m[j];
 #endif
-      W.rejectMove(iel);
-      psi.resetPhaseDiff();
-      //psi.rejectMove(iel);
-    }
-    // Compute radial potential
-    //int k;
-    //RealType rfrac;
-    //nlpp_m[0]->locate(r,k,rfrac);
-    //for(int ip=0;ip< nchannel; ip++){
-    //  vrad[ip]=nlpp_m[ip]->f(k,rfrac)*wgt_angpp_m[ip];
-    //}
-    for(int ip=0; ip< nchannel; ip++)
-      vrad[ip]=nlpp_m[ip]->splint(r)*wgt_angpp_m[ip];
-    // Compute spherical harmonics on grid
-    for (int j=0, jl=0; j<nknot ; j++)
-    {
-      RealType zz=dot(dr,rrotsgrid_m[j])*rinv;
-      // Forming the Legendre polynomials
-      lpol[0]=1.0;
-      RealType lpolprev=0.0;
-      for (int l=0 ; l< lmax ; l++)
-      {
-        //Not a big difference
-        //lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
-        //lpol[l+1]/=(l+1);
-        lpol[l+1]=Lfactor1[l]*zz*lpol[l]-l*lpolprev;
-        lpol[l+1]*=Lfactor2[l];
-        lpolprev=lpol[l];
-      }
-      for(int l=0; l <nchannel; l++,jl++)
-        Amat[jl]=lpol[ angpp_m[l] ];
-    }
-    if(nchannel==1)
-    {
-      pairpot = vrad[0]*BLAS::dot(nknot, &Amat[0],&psiratio[0]);
-    }
-    else
-    {
-      BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
-      pairpot = BLAS::dot(nchannel, &vrad[0], &wvec[0]);
-    }
-#if !defined(REMOVE_TRACEMANAGER)
-    if( streaming_particles)
-    {
-      (*Vi_sample)(iat) += .5*pairpot;
-      (*Ve_sample)(iel) += .5*pairpot;
-    }
-#endif
-    esum += pairpot;
-    ////////////////////////////////////
-    //Original implmentation by S. C.
-    //const char TRANS('T');
-    //const int ione=1;
-    //const RealType one=1.0;
-    //const RealType zero=0.0;
-    //dgemv(TRANS,nknot,nchannel,one,&Amat[0],nknot,&psiratio[0],ione,zero,&wvec[0],ione);
-    //esum += ddot(nchannel,&vrad[0],ione,&wvec[0],ione);
-    ////////////////////////////////////
-    //iel++;
-  }   /* end loop over electron */
-  return esum;
-}
+    W.rejectMove(iel);
+    psi.resetPhaseDiff();
+    //psi.rejectMove(iel);
+  }
+  // Compute radial potential
+  for(int ip=0; ip< nchannel; ip++)
+    vrad_[ip]=nlpp_m[ip]->splint(r)*wgt_angpp_m[ip];
 
+  const RealType rinv=cone/r;
+  RealType pairpot=0; 
+  // Compute spherical harmonics on grid
+  for (int j=0, jl=0; j<nknot ; j++)
+  {
+    RealType zz=dot(dr,rrotsgrid_m[j])*rinv;
+    // Forming the Legendre polynomials
+    lpol_[0]=cone;
+    RealType lpolprev=czero;
+    for (int l=0 ; l< lmax ; l++)
+    {
+      //Not a big difference
+      //lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
+      //lpol[l+1]/=(l+1);
+      lpol_[l+1]=Lfactor1[l]*zz*lpol_[l]-l*lpolprev;
+      lpol_[l+1]*=Lfactor2[l];
+      lpolprev=lpol_[l];
+    }
+
+    RealType lsum=czero;
+    for(int l=0; l <nchannel; l++)
+      lsum += vrad_[l]*lpol_[ angpp_m[l] ];
+    lsum *= psiratio_[j];
+    if(Tmove) Txy.push_back(NonLocalData(iel,lsum,deltaV[j]));
+    pairpot+=lsum;
+  }
+
+#if !defined(REMOVE_TRACEMANAGER)
+  if( streaming_particles)
+  {
+    (*Vi_sample)(iat) += .5*pairpot;
+    (*Ve_sample)(iel) += .5*pairpot;
+  }
+#endif
+  return pairpot;
+}
 
 NonLocalECPComponent::RealType
 NonLocalECPComponent::evaluate(ParticleSet& W, int iat,
@@ -588,79 +563,6 @@ NonLocalECPComponent::evaluate(ParticleSet& W, ParticleSet &ions, int iat,
 //     return esum;
 //   }
 
-
-
-
-NonLocalECPComponent::RealType
-NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat, std::vector<NonLocalData>& Txy)
-{
-  DistanceTableData* myTable = W.DistTables[myTableIndex];
-  RealType esum=0.0;
-  std::vector<PosType> deltaV(nknot);
-  for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
-  {
-    register RealType r(myTable->r(nn));
-    if(r>Rmax)
-      continue;
-    register RealType rinv(myTable->rinv(nn));
-    register PosType  dr(myTable->dr(nn));
-    // Compute ratio of wave functions
-    for (int j=0; j < nknot ; j++)
-    {
-      deltaV[j]=r*rrotsgrid_m[j]-dr;
-      W.makeMoveOnSphere(iel,deltaV[j]);
-#if defined(QMC_COMPLEX)
-      psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getPhaseDiff());
-#else
-      psiratio[j]=psi.ratio(W,iel)*sgridweight_m[j];
-#endif
-      W.rejectMove(iel);
-      psi.resetPhaseDiff();
-      //psi.rejectMove(iel);
-    }
-    // Compute radial potential
-    for(int ip=0; ip< nchannel; ip++)
-      vrad[ip]=nlpp_m[ip]->splint(r)*wgt_angpp_m[ip];
-
-    RealType pairpot=0; 
-    // Compute spherical harmonics on grid
-    for (int j=0, jl=0; j<nknot ; j++)
-    {
-      RealType zz=dot(dr,rrotsgrid_m[j])*rinv;
-      // Forming the Legendre polynomials
-      lpol[0]=1.0;
-      RealType lpolprev=0.0;
-      for (int l=0 ; l< lmax ; l++)
-      {
-        //Not a big difference
-        //lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
-        //lpol[l+1]/=(l+1);
-        lpol[l+1]=Lfactor1[l]*zz*lpol[l]-l*lpolprev;
-        lpol[l+1]*=Lfactor2[l];
-        lpolprev=lpol[l];
-      }
-
-      RealType lsum=0;
-      for(int l=0; l <nchannel; l++)
-        lsum += vrad[l]*lpol[ angpp_m[l] ];
-      lsum *= psiratio[j];
-      Txy.push_back(NonLocalData(iel,lsum,deltaV[j]));
-      pairpot+=lsum;
-    }
-
-#if !defined(REMOVE_TRACEMANAGER)
-    if( streaming_particles)
-    {
-      (*Vi_sample)(iat) += .5*pairpot;
-      (*Ve_sample)(iel) += .5*pairpot;
-    }
-#endif
-    esum += pairpot;
-    //BLAS::gemv(nknot, nchannel, &Amat[0], &psiratio[0], &wvec[0]);
-    //esum += BLAS::dot(nchannel, &vrad[0], &wvec[0]);
-  }   /* end loop over electron */
-  return esum;
-}
 
 NonLocalECPComponent::RealType
 NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat,

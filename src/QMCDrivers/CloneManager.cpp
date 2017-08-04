@@ -16,7 +16,7 @@
     
     
 
-
+#include "Platforms/sysutil.h"
 #include "QMCDrivers/CloneManager.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "Message/Communicate.h"
@@ -88,6 +88,7 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
     return;
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H." << std::endl;
   app_log() << "  Cloning methods for both Psi and H are used" << std::endl;
+  print_mem("Memory Usage before cloning", app_log());
   OhmmsInfo::Log->turnoff();
   OhmmsInfo::Warn->turnoff();
 
@@ -104,6 +105,7 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
   }
   OhmmsInfo::Log->reset();
   OhmmsInfo::Warn->reset();
+  print_mem("Memory Usage after cloning", app_log());
 }
 
 void CloneManager::makeClones(std::vector<MCWalkerConfiguration*>& wpool,
