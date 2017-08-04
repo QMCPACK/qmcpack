@@ -310,10 +310,11 @@ namespace qmcplusplus {
       // If singlet/triplet symmetry, then the variables are only stored once
       // (for both up- and down-electron determinants, which both have the
       // same paramaters with singlet symmetry) in the driver objects, whereas
-      // for the x_vars and d_vars objects, they are stored twice, repeated,
+      // for the x_vars and d_vars objects they are stored twice, repeated,
       // because of the need for both the up and down determinants to have
-      // access to the variables, without modifying those classes to deal with
-      // the singlet special case. So we need to copy them across again.
+      // access to the variables (I didn't want to modifying those classes
+      // to deal with the singlet special case, I thought it more natural to
+      // address this in the FDLR class). So we need to copy them across again.
       if (singlet)
       {
         for (int i=0; i < x_vars_driver.size(); i++)
