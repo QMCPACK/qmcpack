@@ -682,7 +682,7 @@ namespace qmcplusplus {
       buf.add(&(P.G[0][0]), &(P.G[0][0])+m_wfn_xpd->TotalDim);
       buf.add(&(P.L[0]), &(P.L[P.getTotalNum()]));
 
-      // Store the value of G and L for the xpd wave function.
+      // Set G and L for the xpd wave function to their original values.
       m_wfn_xpd->G = P.G;
       m_wfn_xpd->L = P.L;
 
@@ -695,7 +695,7 @@ namespace qmcplusplus {
       buf.add(&(P.G[0][0]), &(P.G[0][0])+m_wfn_xmd->TotalDim);
       buf.add(&(P.L[0]), &(P.L[P.getTotalNum()]));
 
-      // Store the value of G and L for the xmd wave function.
+      // Set G and L for the xmd wave function to their original values.
       m_wfn_xpd->G = P.G;
       m_wfn_xpd->L = P.L;
 
@@ -868,10 +868,6 @@ namespace qmcplusplus {
       m_wfn_xpd->acceptMove(P, iat);
       m_wfn_xmd->acceptMove(P, iat);
 
-      //FDLRWfn::RealType LogValue_plus = m_wfn_xpd->getLogPsi();
-      //FDLRWfn::RealType LogValue_minus = m_wfn_xmd->getLogPsi();
-      //LogValue = std::log(std::exp(LogValue_plus) - std::exp(LogValue_minus));
-
       LogValue = evaluateLog(P,P.G,P.L);
     }
 
@@ -911,8 +907,9 @@ namespace qmcplusplus {
       //if (!Optimizable)
       //  return;
 
-      // The number of "x" parameters, which is also the number of "d"
-      // parameters, hence the name!
+      // The number of "x" parameters (which is also the number of "d"
+      // parameters, hence the name - it is *not* the total number of both
+      // sets of parameters).
       int nvars_x_or_d;
 
       // Set xpd_vars and xmd_vars using the input optvars variables.
@@ -936,15 +933,15 @@ namespace qmcplusplus {
       // Gradient of the FDLR wave function.
       ParticleSet::ParticleGradient_t G_FDLR;
       G_FDLR.create(P.G.size());
-      // DIfference between the total FDLR wave function gradients.
+      // Difference between the total FDLR wave function gradients.
       ParticleSet::ParticleGradient_t G_diff;
       G_diff.create(P.G.size());
 
       // Store the total FDLR wave function's G and L values in a temporary
       // particle set, because we will need to set P's G and L to equal those
-      // of the "xpd" and "xmd" wave functions, for the following
-      // evaluateDerivatives call, which can use these values for certain
-      // OrbitalBase children.
+      // of the "xpd" and "xmd" wave functions individually for the following
+      // evaluateDerivatives call. evaluateDerivatives uses P.G for certain
+      // wave function components.
       tempP->G = P.G;
       tempP->L = P.L;
 
@@ -963,7 +960,7 @@ namespace qmcplusplus {
 
       // Calculate the log of the \psi_+ and \psi_- wave functions, and use
       // these values to calculate the required scaling factors for the
-      // various FDLR wave function derivatives we;re about to calculate.
+      // various FDLR wave function derivatives we're about to calculate.
       FDLRWfn::ValueType logpsi_plus = m_wfn_xpd->getLogPsi();
       FDLRWfn::ValueType logpsi_minus = m_wfn_xmd->getLogPsi();
       FDLRWfn::RealType phasevalue_plus = m_wfn_xpd->getPhase();
@@ -1049,12 +1046,12 @@ namespace qmcplusplus {
       L_temp_2.create(m_wfn_xmd->L.size());
 
       // m_wfn_xpd->L stores the laplacian divided by the wave function, minus
-      // the magnitude of gradient for the "x+d" wave function divded by that
-      // wave function value:
+      // the magnitude squared of the (gradient for the "x+d" wave function
+      // divded by the wave function value), i.e.:
       //
       // m_wfn_xpd->L[i] = \frac{\nabla_i^2 \psi_+}{\psi_+} - \frac{nabla_i \psi_+}{\psi_+} \cdot \frac{nabla_i \psi_+}{\psi_+}
       //
-      //so add the gradient squared to get the laplacian:
+      // so add the gradient squared to get the laplacian:
       L_temp_1 = m_wfn_xpd->L + G_plus_mag;
       // Similarly as for above, but now for the "x-d" wave function.
       L_temp_2 = m_wfn_xmd->L + G_minus_mag;
@@ -1065,8 +1062,8 @@ namespace qmcplusplus {
 
       // L_temp_1 is currently a vector of laplacians (divded by the "plus" wave
       // function value) for each of the particles co-ordinates. The kinetic
-      // energy involves a sum over all laplacians, so perform that sum, for
-      // both wave functions.
+      // energy involves a sum over all laplacians (i.e. all particles), so
+      // perform that sum, for both wave functions.
       for (int i=0; i < m_wfn_xpd->L.size(); i++)
         kinetic_plus += L_temp_1[i];
       for (int i=0; i < m_wfn_xmd->L.size(); i++)
