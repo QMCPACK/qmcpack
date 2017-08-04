@@ -209,7 +209,11 @@ namespace qmcplusplus {
 
     }
 
-    FDLRWfn::~FDLRWfn() { }
+    FDLRWfn::~FDLRWfn()
+    {
+      // Just the temporary particle set not cleaned up by default destructors.
+      delete tempP;
+    }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     /// \brief  return a clone of this object
