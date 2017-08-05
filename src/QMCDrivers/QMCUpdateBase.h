@@ -258,7 +258,7 @@ protected:
   ///update particle-by-particle
   bool UpdatePbyP;
   ///use T-moves
-  bool UseTMove;
+  int UseTMove;
   ///number of particles
   IndexType NumPtcl;
   ///Time-step factor \f$ 1/(2\tau)\f$
