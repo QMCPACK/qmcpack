@@ -31,11 +31,11 @@ namespace qmcplusplus {
             const bool opt_x, const bool opt_d, const bool singlet_loc, const bool triplet_loc) :
       m_wfn_xpd(wfn_1), m_wfn_xmd(wfn_2), opt_x_vars(opt_x), opt_d_vars(opt_d)
     {
-      // Temporary hack: I get very odd results when turning off Optimizable
-      // and when using the new optimizer (although OK with the old one),
-      // which is prsumably related to CopyFromDerivativeBuffer being called
-      // when Optimizable = false. For now, just set it to true, and don't
-      // update anything in evaluateDerivatives.
+      // I get very odd results when turning off Optimizable and when using
+      // the new optimizer (although OK with the old one), which is presumably
+      // related to CopyFromDerivativeBuffer being called when
+      // Optimizable = false. For now, just set it to true, and don't update
+      // anything in evaluateDerivatives.
       //if (opt_x || opt_d)
       //  Optimizable = true;
       //else
@@ -232,7 +232,6 @@ namespace qmcplusplus {
     ///
     ///////////////////////////////////////////////////////////////////////////////////////////////
     OrbitalBasePtr FDLRWfn::makeClone(ParticleSet& P) const {
-      // TODO: Check this more thoroughly.
       TrialWaveFunction* wfn_xpd_clone = m_wfn_xpd->makeClone(P);
       TrialWaveFunction* wfn_xmd_clone = m_wfn_xmd->makeClone(P);
       FDLRWfn* fdlr_clone = new FDLRWfn( wfn_xpd_clone, wfn_xmd_clone, P );
@@ -538,8 +537,7 @@ namespace qmcplusplus {
       // ----Calculating the laplacian of the log of the FDLR wave function---
 
       // Calculate \frac{ \del psi \cdot \del \psi}{ psi^2 }, for
-      // \psi=\psi_+ and then for \psi=\psi_-.
-      // TODO: Update comments.
+      // \psi=\psi_{FDLR}, for \psi=\psi_+, and for \psi=\psi_-.
       for (int i=0; i < G.size(); i++)
         G_FDLR_mag[i] = dot(G_FDLR[i], G_FDLR[i]);
       for (int i=0; i < G.size(); i++)
@@ -885,9 +883,6 @@ namespace qmcplusplus {
       m_wfn_xmd->rejectMove(iat);
     }
 
-
-    // TODO: Check what to do with the project variable, present in the
-    // TODO: TrialWavefunction version of evaluateDeriviatives.
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     /// \brief  Evaluate the FDLR wave function's contribution to the derivatives of log of the
@@ -1250,8 +1245,6 @@ namespace qmcplusplus {
     }
 
     void FDLRWfn::memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only ,long& orbs, long& invs, long& dets) {
-      // TODO: Check more thoroughly the introduction of the zero_vars boolean,
-      //       if causing problems.
       m_wfn_xpd->memoryUsage_DataForDerivatives(P, orbs_only, orbs, invs, dets, false);
       m_wfn_xmd->memoryUsage_DataForDerivatives(P, orbs_only, orbs, invs, dets, false);
     }
