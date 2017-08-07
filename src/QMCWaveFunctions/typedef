@@ -1,0 +1,157 @@
+AFMSPOSet.cpp:AFMSPOSet::checkInVariables([1;35;40m[Kopt_variables_type[m[K& active)
+AFMSPOSet.cpp:AFMSPOSet::checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& active)
+AFMSPOSet.cpp:AFMSPOSet::resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active)
+AFMSPOSet.cpp:(ParticleSet& P, int iat, const [1;35;40m[Kopt_variables_type[m[K& active,
+AFMSPOSet.h:  void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& optvars);
+AFMSPOSet.h:                           const [1;35;40m[Kopt_variables_type[m[K& active,
+AFMSPOSet.h:  void checkInVariables([1;35;40m[Kopt_variables_type[m[K& active);
+AFMSPOSet.h:  void checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& active);
+AGPDeterminant.cpp:void AGPDeterminant::checkInVariables([1;35;40m[Kopt_variables_type[m[K& active)
+AGPDeterminant.cpp:void AGPDeterminant::checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& active)
+AGPDeterminant.cpp:void AGPDeterminant::resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active)
+AGPDeterminant.h:  void checkInVariables([1;35;40m[Kopt_variables_type[m[K& active);
+AGPDeterminant.h:  void checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& active);
+AGPDeterminant.h:  void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active);
+BasisSetBase.h:  virtual void checkInVariables([1;35;40m[Kopt_variables_type[m[K& active)
+BasisSetBase.h:  virtual void checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& active)
+BasisSetBase.h:  virtual void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active)
+CompositeSPOSet.cpp:  void CompositeSPOSet::resetParameters(const [1;35;40m[Kopt_variables_type[m[K& optVariables)
+CompositeSPOSet.h:    void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& optVariables);
+ConstantOrbital.h:  virtual void checkInVariables([1;35;40m[Kopt_variables_type[m[K &active) {}
+ConstantOrbital.h:  virtual void checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K &active) {}
+ConstantOrbital.h:  virtual void resetParameters(const [1;35;40m[Kopt_variables_type[m[K &active) {}
+DiffOrbitalBase.cpp:void DiffOrbitalBase::evaluateDerivRatios(ParticleSet& VP, const [1;35;40m[Kopt_variables_type[m[K& optvars,
+DiffOrbitalBase.cpp:void NumericalDiffOrbital::checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& optvars)
+DiffOrbitalBase.cpp:void NumericalDiffOrbital::resetParameters(const [1;35;40m[Kopt_variables_type[m[K& optvars)
+DiffOrbitalBase.cpp:    const [1;35;40m[Kopt_variables_type[m[K& optvars,
+DiffOrbitalBase.cpp:  [1;35;40m[Kopt_variables_type[m[K v(optvars);
+DiffOrbitalBase.cpp:void AnalyticDiffOrbital::resetParameters(const [1;35;40m[Kopt_variables_type[m[K& optvars)
+DiffOrbitalBase.cpp:void AnalyticDiffOrbital::checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& optvars)
+DiffOrbitalBase.cpp:    const [1;35;40m[Kopt_variables_type[m[K& optvars,
+DiffOrbitalBase.h:                                   const [1;35;40m[Kopt_variables_type[m[K& optvars,
+DiffOrbitalBase.h:  virtual void evaluateDerivRatios(ParticleSet& VP, const [1;35;40m[Kopt_variables_type[m[K& optvars, Matrix<ValueType>& dratios);
+DiffOrbitalBase.h:  virtual void checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& optvars)=0;
+DiffOrbitalBase.h:  virtual void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& optvars)=0;
+DiffOrbitalBase.h:                           const [1;35;40m[Kopt_variables_type[m[K& optvars,
+DiffOrbitalBase.h:  void checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& optvars);
+DiffOrbitalBase.h:  void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& optvars);
+DiffOrbitalBase.h:                           const [1;35;40m[Kopt_variables_type[m[K& optvars,
+DiffOrbitalBase.h:  void checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& optvars);
+DiffOrbitalBase.h:  void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& optvars);
+EinsplineAdoptor.h:  void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active)
+EinsplineSet.cpp:EinsplineSetExtended<StorageType>::resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active)
+EinsplineSet.h:  virtual void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active)
+EinsplineSet.h:  void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active);
+FDLRWfn.cpp:      [1;35;40m[Kopt_variables_type[m[K xpd_vars;
+FDLRWfn.cpp:      [1;35;40m[Kopt_variables_type[m[K xmd_vars;
+FDLRWfn.cpp:    void FDLRWfn::checkInVariables([1;35;40m[Kopt_variables_type[m[K& active) {
+FDLRWfn.cpp:    void FDLRWfn::checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& active) {
+FDLRWfn.cpp:    void FDLRWfn::extract_x_and_d_vars(const [1;35;40m[Kopt_variables_type[m[K& active)
+FDLRWfn.cpp:    void FDLRWfn::extract_xpd_and_xmd_vars(const [1;35;40m[Kopt_variables_type[m[K& active, [1;35;40m[Kopt_variables_type[m[K& xpd_vars, [1;35;40m[Kopt_variables_type[m[K& xmd_vars)
+FDLRWfn.cpp:    void FDLRWfn::resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active)
+FDLRWfn.cpp:      [1;35;40m[Kopt_variables_type[m[K xpd_vars, xmd_vars;
+FDLRWfn.cpp:    void FDLRWfn::putParametersInStandardForm([1;35;40m[Kopt_variables_type[m[K & active, const bool copy_back)
+FDLRWfn.cpp:      [1;35;40m[Kopt_variables_type[m[K xpd_vars, xmd_vars;
+FDLRWfn.cpp:    void FDLRWfn::evaluateDerivatives(ParticleSet& P, const [1;35;40m[Kopt_variables_type[m[K& optvars,
+FDLRWfn.cpp:      [1;35;40m[Kopt_variables_type[m[K xpd_vars, xmd_vars;
+FDLRWfn.cpp:    void FDLRWfn::copy_recompute_vector(const [1;35;40m[Kopt_variables_type[m[K& vars_full, [1;35;40m[Kopt_variables_type[m[K& vars_part)
+FDLRWfn.cpp:    void FDLRWfn::evaluateDerivRatios(VirtualParticleSet& VP, const [1;35;40m[Kopt_variables_type[m[K& optvars,
+FDLRWfn.h:    [1;35;40m[Kopt_variables_type[m[K x_vars;
+FDLRWfn.h:    [1;35;40m[Kopt_variables_type[m[K d_vars;
+FDLRWfn.h:    [1;35;40m[Kopt_variables_type[m[K x_vars_driver;
+FDLRWfn.h:    [1;35;40m[Kopt_variables_type[m[K d_vars_driver;
+FDLRWfn.h:    void checkInVariables([1;35;40m[Kopt_variables_type[m[K& active);
+FDLRWfn.h:    void checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& active);
+FDLRWfn.h:    void extract_x_and_d_vars(const [1;35;40m[Kopt_variables_type[m[K& active);
+FDLRWfn.h:    void extract_xpd_and_xmd_vars(const [1;35;40m[Kopt_variables_type[m[K& active, [1;35;40m[Kopt_variables_type[m[K& xpd_vars, [1;35;40m[Kopt_variables_type[m[K& xmd_vars);
+FDLRWfn.h:    void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active);
+FDLRWfn.h:    void putParametersInStandardForm([1;35;40m[Kopt_variables_type[m[K & active, const bool copy_back);
+FDLRWfn.h:                             const [1;35;40m[Kopt_variables_type[m[K& optvars,
+FDLRWfn.h:    void copy_recompute_vector(const [1;35;40m[Kopt_variables_type[m[K& vars_full, [1;35;40m[Kopt_variables_type[m[K& vars_part);
+FDLRWfn.h:    void evaluateDerivRatios(VirtualParticleSet& VP, const [1;35;40m[Kopt_variables_type[m[K& optvars,
+IonOrbital.cpp:void IonOrbital::checkInVariables([1;35;40m[Kopt_variables_type[m[K& active)        { }
+IonOrbital.cpp:void IonOrbital::checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& active) { }
+IonOrbital.cpp:void IonOrbital::resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active)   { }
+IonOrbital.h:  void checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& o);
+IonOrbital.h:  void checkInVariables([1;35;40m[Kopt_variables_type[m[K& o);
+IonOrbital.h:  void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active);
+LCOrbitalSet.h:  void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active)
+LCOrbitalSet.h:  void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active)
+LCOrbitalSetOpt.h://    void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& optvars) {
+LCOrbitalSetOpt.h:    void resetParameters(const [1;35;40m[Kopt_variables_type[m[K & active) {
+LCOrbitalSetOpt.h:    void putParametersInStandardForm([1;35;40m[Kopt_variables_type[m[K & active, const bool copy_back) {
+LCOrbitalSetOpt.h:                             const [1;35;40m[Kopt_variables_type[m[K& active,
+LCOrbitalSetOpt.h:    void checkInVariables([1;35;40m[Kopt_variables_type[m[K& active) {
+LCOrbitalSetOpt.h:    void checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& active) {
+LCOrbitalSetOpt.h:    void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& optvars) {
+LocalizedBasisSet.h:  void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active)
+MultiGridBsplineSet.h:    void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active) { }
+OptimizableSPOSet.cpp:OptimizableSPOSet::checkInVariables([1;35;40m[Kopt_variables_type[m[K& active)
+OptimizableSPOSet.cpp:OptimizableSPOSet::checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& active)
+OptimizableSPOSet.cpp:OptimizableSPOSet::resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active)
+OptimizableSPOSet.cpp:(ParticleSet& P, int iat, const [1;35;40m[Kopt_variables_type[m[K& active,
+OptimizableSPOSet.cpp:OptimizableSPOSet::copyParamsFromMatrix (const [1;35;40m[Kopt_variables_type[m[K& active,
+OptimizableSPOSet.cpp:OptimizableSPOSet::copyParamsFromMatrix (const [1;35;40m[Kopt_variables_type[m[K& active,
+OptimizableSPOSet.h:  typedef optimize::VariableSet [1;35;40m[Kopt_variables_type[m[K;
+OptimizableSPOSet.h:  // [1;35;40m[Kopt_variables_type[m[K myVars;
+OptimizableSPOSet.h:  void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& optvars);
+OptimizableSPOSet.h:                           const [1;35;40m[Kopt_variables_type[m[K& active,
+OptimizableSPOSet.h:  void checkInVariables([1;35;40m[Kopt_variables_type[m[K& active);
+OptimizableSPOSet.h:  void checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& active);
+OptimizableSPOSet.h:  void copyParamsFromMatrix (const [1;35;40m[Kopt_variables_type[m[K& active,
+OptimizableSPOSet.h:  void copyParamsFromMatrix (const [1;35;40m[Kopt_variables_type[m[K& active,
+OrbitalBase.cpp:                                      const [1;35;40m[Kopt_variables_type[m[K& active,
+OrbitalBase.cpp:void OrbitalBase::evaluateDerivRatios(VirtualParticleSet& VP, const [1;35;40m[Kopt_variables_type[m[K& optvars,
+OrbitalBase.cpp:void OrbitalBase::putParametersInStandardForm([1;35;40m[Kopt_variables_type[m[K & active, const bool copy_back) {
+OrbitalBase.h:  [1;35;40m[Kopt_variables_type[m[K myVars;
+OrbitalBase.h:  virtual void checkInVariables([1;35;40m[Kopt_variables_type[m[K& active)=0;
+OrbitalBase.h:  virtual void checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& active)=0;
+OrbitalBase.h:  virtual void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active)=0;
+OrbitalBase.h:  virtual void putParametersInStandardForm([1;35;40m[Kopt_variables_type[m[K & active, const bool copy_back);
+OrbitalBase.h:                                   const [1;35;40m[Kopt_variables_type[m[K& optvars,
+OrbitalBase.h://                                       const [1;35;40m[Kopt_variables_type[m[K& optvars,
+OrbitalBase.h:  virtual void evaluateDerivRatios(VirtualParticleSet& VP, const [1;35;40m[Kopt_variables_type[m[K& optvars,
+OrbitalBase.h:                       const [1;35;40m[Kopt_variables_type[m[K& optvars,
+OrbitalConstraintsBase.h:  virtual void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& optVaraibles)=0;
+OrbitalSetTraits.h:typedef optimize::VariableSet  [1;35;40m[Kopt_variables_type[m[K;
+ProductOrbital.cpp:void ProductOrbital::resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active)
+ProductOrbital.cpp:void ProductOrbital::checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& o)
+ProductOrbital.cpp:void ProductOrbital::checkInVariables([1;35;40m[Kopt_variables_type[m[K& o)
+ProductOrbital.h:  void checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& o);
+ProductOrbital.h:  void checkInVariables([1;35;40m[Kopt_variables_type[m[K& o);
+ProductOrbital.h:  void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active);
+SPOSetBase.cpp:void SPOSetBase::copyParamsFromMatrix (const [1;35;40m[Kopt_variables_type[m[K& active,
+SPOSetBase.h:  [1;35;40m[Kopt_variables_type[m[K myVars;
+SPOSetBase.h:  virtual void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& optVariables)=0;
+SPOSetBase.h:  virtual void checkInVariables([1;35;40m[Kopt_variables_type[m[K& active) {}
+SPOSetBase.h:  virtual void checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& active) {}
+SPOSetBase.h:  (ParticleSet& P, int iat, const [1;35;40m[Kopt_variables_type[m[K& active,
+SPOSetBase.h:  virtual void copyParamsFromMatrix (const [1;35;40m[Kopt_variables_type[m[K& active
+SPOSetComboNoCopy.h:    inline void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active)
+SparseLocalizedBasisSet.h:  void checkInVariables([1;35;40m[Kopt_variables_type[m[K& active)
+SparseLocalizedBasisSet.h:  void checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& active)
+SparseLocalizedBasisSet.h:  void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active)
+SphericalBasisSet.h:  void checkInVariables([1;35;40m[Kopt_variables_type[m[K& active)
+SphericalBasisSet.h:  void checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& active)
+SphericalBasisSet.h:  void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active)
+TrialWaveFunction.cpp:void TrialWaveFunction::checkInVariables([1;35;40m[Kopt_variables_type[m[K& active)
+TrialWaveFunction.cpp:void TrialWaveFunction::checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& active)
+TrialWaveFunction.cpp:void TrialWaveFunction::resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active)
+TrialWaveFunction.cpp:void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP, const [1;35;40m[Kopt_variables_type[m[K& optvars,
+TrialWaveFunction.cpp:    const [1;35;40m[Kopt_variables_type[m[K& optvars,
+TrialWaveFunction.cpp:void TrialWaveFunction::putParametersInStandardForm([1;35;40m[Kopt_variables_type[m[K & active, const bool copy_back) {
+TrialWaveFunction.h:  std::vector<[1;35;40m[Kopt_variables_type[m[K> oldVars;
+TrialWaveFunction.h:  void addParams([1;35;40m[Kopt_variables_type[m[K& var, RealType e, RealType v)
+TrialWaveFunction.h:  [1;35;40m[Kopt_variables_type[m[K getBestCoefficients(RealType we, RealType wv, bool print=0)
+TrialWaveFunction.h:  [1;35;40m[Kopt_variables_type[m[K getAvgCoefficients(int lastN)
+TrialWaveFunction.h:    [1;35;40m[Kopt_variables_type[m[K return_params(oldVars[0]);
+TrialWaveFunction.h:  void checkInVariables([1;35;40m[Kopt_variables_type[m[K& o);
+TrialWaveFunction.h:  void checkOutVariables(const [1;35;40m[Kopt_variables_type[m[K& o);
+TrialWaveFunction.h:  void resetParameters(const [1;35;40m[Kopt_variables_type[m[K& active);
+TrialWaveFunction.h:  void putParametersInStandardForm([1;35;40m[Kopt_variables_type[m[K & active, const bool copy_back);
+TrialWaveFunction.h:  void evaluateDerivRatios(VirtualParticleSet& P, const [1;35;40m[Kopt_variables_type[m[K& optvars,
+TrialWaveFunction.h:                           const [1;35;40m[Kopt_variables_type[m[K& optvars,
+TrialWaveFunction.h:                           const [1;35;40m[Kopt_variables_type[m[K& optvars,
+TrialWaveFunction.h:                            const [1;35;40m[Kopt_variables_type[m[K& optvars,
+TrialWaveFunction_CUDA.cpp:                                        const [1;35;40m[Kopt_variables_type[m[K& optvars,
+WaveFunctionFactory.cpp:  [1;35;40m[Kopt_variables_type[m[K dummy;
