@@ -25,6 +25,11 @@ SET(GITREV_BARE_TMP git-rev-tmp.h)
 SET(GITREV_FILE ${CMAKE_BINARY_DIR}/src/${GITREV_BARE_FILE})
 SET(GITREV_TMP ${CMAKE_BINARY_DIR}/src/${GITREV_BARE_TMP})
 
+# Always clean up git-rev-tmp.h file when cmake is run
+EXECUTE_PROCESS(
+  COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP}
+)
+
 IF (GIT_FOUND AND IS_GIT_PROJECT)
   # The following custom command picks up changes to the git revision information
   # every time the project is rebuilt. Even if the repositiory is updated (git pull)
