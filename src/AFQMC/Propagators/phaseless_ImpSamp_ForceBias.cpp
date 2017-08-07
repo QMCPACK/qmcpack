@@ -274,7 +274,7 @@ bool phaseless_ImpSamp_ForceBias::hdf_write_transposed(hdf_archive& dump,const s
     }
 
     int orig=0; 
-    for(ValueSMSpMat::indxType i=0; i<nCholVecs; i++) {
+    for(ValueSMSpMat::intType i=0; i<nCholVecs; i++) {
 
       if(nnodes_per_TG>1 && i == nvpp[orig]) orig++;
       if(orig==0) { 
@@ -340,7 +340,7 @@ bool phaseless_ImpSamp_ForceBias::hdf_write_transposed(hdf_archive& dump,const s
     ivec.reserve(nmax);
     vvec.reserve(nmax);
 
-    for(ValueSMSpMat::indxType i=cvec0; i<cvecN; i++) {
+    for(ValueSMSpMat::intType i=cvec0; i<cvecN; i++) {
 
       ivec.resize(Idata[i]);
       vvec.resize(Idata[i]);
@@ -708,7 +708,7 @@ bool phaseless_ImpSamp_ForceBias::hdf_read_transposed(hdf_archive& dump,const st
 #else
     MPI_Ibcast( std::get<3>(*it)->data() , std::get<3>(*it)->size(),MPI_DOUBLE,0,MPI_COMM_HEAD_OF_NODES,std::get<2>(*it));
 #endif
-    for(ValueSMSpMat::indxType i=0; i<nCholVecs; i++) {
+    for(ValueSMSpMat::intType i=0; i<nCholVecs; i++) {
 
       std::vector<commData>::iterator it2 = nextit(it,itbeg,itend);
       // initiate communication
@@ -743,7 +743,7 @@ bool phaseless_ImpSamp_ForceBias::hdf_read_transposed(hdf_archive& dump,const st
     }
 #else
 */
-    for(ValueSMSpMat::indxType i=0; i<nCholVecs; i++) {  
+    for(ValueSMSpMat::intType i=0; i<nCholVecs; i++) {  
 
       ivec.resize(Idata[i]); 
       vvec.resize(Idata[i]); 
@@ -855,7 +855,7 @@ bool phaseless_ImpSamp_ForceBias::hdf_read_transposed(hdf_archive& dump,const st
 #else
     MPI_Ibcast( std::get<3>(*it)->data() , std::get<3>(*it)->size(),MPI_DOUBLE,0,MPI_COMM_HEAD_OF_NODES,std::get<2>(*it));
 #endif
-    for(ValueSMSpMat::indxType i=0; i<nCholVecs; i++) {
+    for(ValueSMSpMat::intType i=0; i<nCholVecs; i++) {
 
       std::vector<commData>::iterator it2 = nextit(it,itbeg,itend);
       // initiate communication
@@ -888,7 +888,7 @@ bool phaseless_ImpSamp_ForceBias::hdf_read_transposed(hdf_archive& dump,const st
     }
 #else
 */
-    for(ValueSMSpMat::indxType i=0; i<nCholVecs; i++) {
+    for(ValueSMSpMat::intType i=0; i<nCholVecs; i++) {
 
       ivec.resize(Idata[i]);
       vvec.resize(Idata[i]);

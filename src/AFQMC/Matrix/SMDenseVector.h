@@ -32,16 +32,13 @@ class SMDenseVector
   template<typename spT> using boost_SMVector = boost::interprocess::vector<spT, ShmemAllocator<spT>>;
 
 
-  typedef T            Type_t;
-  typedef T            value_type;
-  typedef T*           pointer;
-  typedef const T*     const_pointer;
-  typedef const int*   const_indxPtr;
-  typedef int*           indxPtr;
+  typedef T              Type_t;
+  typedef T              value_type;
+  typedef T*             pointer;
+  typedef const T*       const_pointer;
+  typedef unsigned long  indxType;
   typedef typename boost_SMVector<T>::iterator iterator;
   typedef typename boost_SMVector<T>::const_iterator const_iterator;
-  typedef typename boost_SMVector<int>::iterator int_iterator;
-  typedef typename boost_SMVector<int>::const_iterator const_int_iterator;
   typedef boost_SMVector<T>  This_t;
 
   SMDenseVector<T>():head(false),ID(""),SMallocated(false),vals(NULL),share_buff(NULL),mutex(NULL),
@@ -335,7 +332,7 @@ class SMDenseVector
       allocate(nnz,allow_reduce);
     } else if(vals->capacity() < nnz) {
       std::vector<T> tmp;
-      int sz = vals->size();
+      indxType sz = vals->size();
       if(head) {
         tmp.resize(sz);
         std::copy(vals->begin(),vals->begin()+sz,tmp.begin());
@@ -410,7 +407,7 @@ class SMDenseVector
     //return *this;
   }  
 
-  inline Type_t& operator()(unsigned int i)
+  inline Type_t& operator()(unsigned long i)
   {
 #ifdef ASSERT_SPARSEMATRIX
     assert(i>=0 && i<vals->size());
@@ -418,7 +415,7 @@ class SMDenseVector
     return (*vals)[i]; 
   }
 
-  inline Type_t& operator[](unsigned int i)
+  inline Type_t& operator[](unsigned long i)
   {
 #ifdef ASSERT_SPARSEMATRIX
     assert(i>=0 && i<vals->size());
@@ -426,7 +423,8 @@ class SMDenseVector
     return (*vals)[i]; 
   }
 
-  inline void add(const int i, const T& v, bool needs_locks=false) 
+  template<typename IType>
+  inline void add(const IType i, const T& v, bool needs_locks=false) 
   {
 #ifdef ASSERT_SPARSEMATRIX
     assert(i>=0 && i<vals->size());
@@ -440,9 +438,9 @@ class SMDenseVector
     }
   }
 
-  inline uint64_t memoryUsage() { return memory; }
+  inline unsigned long memoryUsage() { return memory; }
 
-  inline int capacity() { return (vals==NULL)?0:vals->capacity(); }
+  inline unsigned long capacity() { return (vals==NULL)?0:vals->capacity(); }
 
   inline void push_back(const T& v, bool needs_locks=false)             
   {
@@ -562,7 +560,7 @@ class SMDenseVector
         if(inplace) {
           std::inplace_merge( vals->begin()+pos[rank], vals->begin()+pos[rank+sz], vals->begin()+pos[rank+sz*2], comp);  
         } else { 
-          int nt = pos[rank+sz*2] - pos[rank];
+          unsigned long nt = pos[rank+sz*2] - pos[rank];
            assert( temp.size() >= nt );  
           std::merge( vals->begin()+pos[rank], vals->begin()+pos[rank+sz], vals->begin()+pos[rank+sz], vals->begin()+pos[rank+sz*2], temp.begin(), comp);  
           std::copy(temp.begin(),temp.begin()+nt,vals->begin()+pos[rank]);
@@ -621,7 +619,7 @@ class SMDenseVector
 
   friend std::ostream& operator<<(std::ostream& out, const SMDenseVector<T>& rhs)
   {
-    for(int i=0; i<rhs.vals->size(); i++)
+    for(unsigned long i=0; i<rhs.vals->size(); i++)
       out<<"(" <<(*(rhs.myrows))[i] <<"," <<(*(rhs.colms))[i] <<":" <<(*(rhs.vals))[i] <<")\n"; 
     return out;
   }

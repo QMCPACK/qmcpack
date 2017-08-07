@@ -24,7 +24,7 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
        hdf_write_file(""),hdf_read_tag(""),hdf_write_tag(""),wfn_role(""),closed_shell(false),
        filetype(""),TG(c,"WavefunctionTG"),distribute_Ham(false),min_ik(-1),max_ik(-1),ncores_per_TG(1),
        core_rank(0),nnodes_per_TG(1),parallel(false),dm_type(0),walker_type(1),wfn_type(0),
-       useFacHam(false),sparse_vn(false),dt(1.0)
+       useFacHam(false),sparse_vn(false),dt(1.0),initialDet(1)
     {
     }
 
@@ -327,6 +327,8 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
     int min_ik, max_ik;    
     int core_rank,ncores_per_TG;
     int nnodes_per_TG;
+
+    int initialDet; // 0: RHF, 1: UHF
 
     std::string filename;
     std::string filetype;

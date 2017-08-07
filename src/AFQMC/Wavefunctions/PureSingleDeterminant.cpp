@@ -71,6 +71,7 @@ bool PureSingleDeterminant::parse(xmlNodePtr cur)
     m_param.add(nnodes_per_TG,"nnodes","int");
     m_param.add(hdf_write_file,"hdf_write_file","std::string");
     m_param.add(cutoff,"cutoff","double");
+    m_param.add(initialDet,"initialDetType","int");
     m_param.put(cur);
 
     cur = curRoot->children;
@@ -578,7 +579,7 @@ bool PureSingleDeterminant::getHamiltonian(HamPtr h)
     HF = ComplexType(0.0,0.0);
     if(rotated_hamiltonian) {
         std::copy(OrbMat.data(),OrbMat.data()+NAEA*NMO,HF.data());
-        if(wfn_type==0)
+        if(wfn_type==0 || initialDet==0)
             std::copy(OrbMat.data(),OrbMat.data()+NAEA*NMO,HF.data()+NAEA*NMO);
         else
             std::copy(OrbMat.data()+NAEA*NMO,OrbMat.data()+2*NAEA*NMO,HF.data()+NAEA*NMO);
@@ -874,7 +875,7 @@ void PureSingleDeterminant::split_Ham_rows(IndexType N, SPValueSMSpMat::int_iter
     return;
   } 
 
-  std::vector<SPValueSMSpMat::indxType> subsets(ncores_per_TG+1); 
+  std::vector<SPValueSMSpMat::intType> subsets(ncores_per_TG+1); 
   if(core_rank==0) {
 
     balance_partition_ordered_set(N,&(*indx),subsets); 
@@ -1101,7 +1102,7 @@ void PureSingleDeterminant::local_evaluateOneBodyMixedDensityMatrix(const Comple
     // copy to mixed_density_matrix 
     for(int i=0; i<NAEB; i++)
      for(int j=0; j<NMO; j++)
-      *(dm++) = SS0(j,i); 
+      *(dm++) = SS0(j+NMO,i); 
 
   }
 }
@@ -1314,6 +1315,8 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
     TG.resize_buffer(nwglobal);
     nwglobal /= sz;
 
+// FIX FIX FIX: For rotated hamiltonian, inconsistent convention for location and index of beta blocks between
+// hamiltonian and green function!!!
     // calculate [oa,ob,G] for all walkers
     evaluateOneBodyMixedDensityMatrix(wset,buffer,sz,1,false,false);
 
@@ -1567,10 +1570,10 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
 
     ComplexMatrix CVn, CVnrot;
 
-    int sz=0;
-    SPValueSMSpMat::indxPtr row = Spvn.row_data();   
-    SPValueSMSpMat::indxPtr row_index = Spvn.row_index();   
-    SPValueSMSpMat::indxPtr col = Spvn.column_data();   
+    unsigned long sz=0;
+    SPValueSMSpMat::intPtr row = Spvn.row_data();   
+    SPValueSMSpMat::intPtr row_index = Spvn.row_index();   
+    SPValueSMSpMat::intPtr col = Spvn.column_data();   
     SPValueSMSpMat::pointer val = Spvn.values();   
 
     if(rotated_hamiltonian) {
@@ -1633,11 +1636,11 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
 
     }
 
-    int sz_=sz;
-    MPI_Allreduce(&sz_,&sz,1,MPI_INT,MPI_SUM,TG.getNodeCommLocal());
+    unsigned long sz_=sz;
+    MPI_Allreduce(&sz_,&sz,1,MPI_UNSIGNED_LONG,MPI_SUM,TG.getNodeCommLocal());
     SpvnT.allocate(sz);    
 
-    using itype = SPComplexSMSpMat::indxType;
+    using itype = SPComplexSMSpMat::intType;
     using vtype = SPComplexSMSpMat::value_type;
 
     int nmax = 10000;
@@ -1692,7 +1695,7 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
       int p0 = rnk*ntpc + std::min(rnk,nex);
       int p1 = p0 + ntpc + ((rnk<nex)?1:0);
 
-      std::vector<SPComplexSMSpMat::indxType> mymap(2*NMO,-1);
+      std::vector<SPComplexSMSpMat::intType> mymap(2*NMO,-1);
       for(int i=0; i<NAEA; i++)
         mymap[occup_alpha[i]] = i;  
       for(int i=0; i<NAEB; i++)
@@ -1731,12 +1734,14 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
 
     }
 
+
     app_log()<<" Compressing transposed Cholesky matrix. \n";
     SpvnT.compress(TG.getNodeCommLocal());
     if(rotated_hamiltonian) {
       app_log()<<" Transposing Cholesky matrix back to original form. \n";
       Spvn.transpose(TG.getNodeCommLocal());
     }
+
   }
 
   void PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMSpMat& vn, SPComplexSMSpMat& vnT, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n)

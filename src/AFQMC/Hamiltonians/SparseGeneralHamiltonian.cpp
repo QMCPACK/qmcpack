@@ -2051,7 +2051,7 @@ namespace qmcplusplus
    if(rank()!=0) return;
    int nvecs=V2_fact.rows();
    out<<"# nrows: " <<nvecs <<" ncols: " <<V2_fact.cols() <<"\n";
-   for(ComplexSMSpMat::indxType i=0; i<nvecs; i++) {
+   for(ComplexSMSpMat::intType i=0; i<nvecs; i++) {
      int k1 = *(V2_fact.rowIndex_begin()+i+1); 
      for(int k=*(V2_fact.rowIndex_begin()+i); k<k1; k++) 
        out<<i <<" " <<*(V2_fact.cols_begin()+k) <<" "
@@ -2217,7 +2217,7 @@ namespace qmcplusplus
       std::vector<ValueType> vvec;
       ivec.reserve(nmax);
       vvec.reserve(nmax);
-      for(ComplexSMSpMat::indxType i=0; i<nvecs; i++) {
+      for(ComplexSMSpMat::intType i=0; i<nvecs; i++) {
 
         ivec.resize(sz[i]);
         vvec.resize(sz[i]);
@@ -2250,7 +2250,7 @@ namespace qmcplusplus
           dump.write(vvec,std::string("V2_")+std::to_string(k));
         }
 
-        dump.write(Idata,"V2_location_of_indexes");
+        dump.write(Idata,"V2_block_sizes");
 
       } else {
         for(int i=0; i<V2.size(); i++) {
@@ -2267,7 +2267,7 @@ namespace qmcplusplus
             ntmax = Idata[i]-Idata[i-1];
         }
 
-        dump.write(Idata,"V2_location_of_indexes");
+        dump.write(Idata,"V2_block_sizes");
 
         ivec.reserve(3*ntmax);
         vvec.reserve(ntmax);
@@ -2800,6 +2800,12 @@ namespace qmcplusplus
     int n3Vect = V2_fact.cols();
     if(parallel) MPI_Barrier(TGprop.getNodeCommLocal()); 
 
+    int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
+    if(!parallel) {
+      ncores=1;
+      coreid=0;
+    }
+
     // transpose V2_fact here and again at the end
     Timer.reset("Generic");
     Timer.start("Generic");
@@ -2816,7 +2822,7 @@ namespace qmcplusplus
     ValueType* vals = V2_fact.values();
     ValueMatrix Ln;
 
-    if(head_of_nodes) Ln.resize((spinRestricted?(NMO):(2*NMO)) ,NMO);  
+    Ln.resize((spinRestricted?(NMO):(2*NMO)) ,NMO);  
 
     std::vector<int> cnt_per_vec(2*n3Vect);
     int nnodes = TGprop.getNNodesPerTG();
@@ -2824,46 +2830,50 @@ namespace qmcplusplus
     std::vector<int> sets;
     std::vector<int> sz_per_node(nnodes);
     int node_number = TGprop.getLocalNodeNumber();
+    int rk=0,npr=1;
+    if(parallel) {
+      npr = myComm->size();
+      rk = myComm->rank();
+    }
 
     if(!sparse) cut=1e-8;
     else if(cut < 1e-12) cut=1e-12;
     int cnt=0;
     int cntn=0;
     // count terms and distribute std::vectors 
-    if(rank()==0) {
-      // generate sparse version
-      for(int n=0; n<n3Vect; n++) { 
-       int np=0, nm=0;
-       Ln = ValueType(0);
-       for(int p=indx[n]; p<indx[n+1]; p++) {
-         int i = cols[p]/NMO;
-         int k = cols[p]%NMO;
-         Ln(i,k) = vals[p];
-       }
-       // if hamiltonian is distributed, there needs to be communication here
-       for(IndexType i=0; i<NMO; i++) 
-        for(IndexType k=0; k<NMO; k++) { 
-          // v+
-          if(std::abs( (Ln(i,k) + myconj(Ln(k,i))) ) > cut) 
-            np++;
-          // v-
-          if(std::abs( (Ln(i,k) - myconj(Ln(k,i))) ) > cut)  
-            nm++;
-          if(!spinRestricted) {
-            if(std::abs( (Ln(i+NMO,k) + myconj(Ln(k+NMO,i))) ) > cut) 
-              np++;
-            if(std::abs( (Ln(i+NMO,k) - myconj(Ln(k+NMO,i))) ) > cut) 
-              nm++;
-          }
-        }
-       cnt_per_vec[2*n] = np;
-       cnt_per_vec[2*n+1] = nm;
-       if(nm>0) cntn++;
+    // generate sparse version
+    for(int n=0; n<n3Vect; n++) { 
+      if(n%npr != rk) continue;
+      int np=0, nm=0;
+      Ln = ValueType(0);
+      for(int p=indx[n]; p<indx[n+1]; p++) {
+        int i = cols[p]/NMO;
+        int k = cols[p]%NMO;
+        Ln(i,k) = vals[p];
       }
+      // if hamiltonian is distributed, there needs to be communication here
+      for(IndexType i=0; i<NMO; i++) 
+       for(IndexType k=0; k<NMO; k++) { 
+         // v+
+         if(std::abs( (Ln(i,k) + myconj(Ln(k,i))) ) > cut) 
+           np++;
+         // v-
+         if(std::abs( (Ln(i,k) - myconj(Ln(k,i))) ) > cut)  
+           nm++;
+         if(!spinRestricted) {
+           if(std::abs( (Ln(i+NMO,k) + myconj(Ln(k+NMO,i))) ) > cut) 
+             np++;
+           if(std::abs( (Ln(i+NMO,k) - myconj(Ln(k+NMO,i))) ) > cut) 
+             nm++;
+         }
+       }
+      cnt_per_vec[2*n] = np;
+      cnt_per_vec[2*n+1] = nm;
+      if(nm>0) cntn++;
     }
 
     if(parallel) {
-      myComm->bcast(cnt_per_vec);
+      myComm->allreduce(cnt_per_vec);
       int nvec = std::count_if(cnt_per_vec.begin(),cnt_per_vec.end(),
                [] (int i) { return i>0; } );
       if(sparse) Spvn.setDims(NMO2,nvec); 
@@ -2893,7 +2903,7 @@ namespace qmcplusplus
             blocks[i+1] = cnt;
           }
           balance_partition_ordered_set(2*n3Vect,blocks.data(),sets);
-          myComm->bcast(sets.data(),sets.size(),MPI_COMM_HEAD_OF_NODES);
+          myComm->bcast(sets);
           cv0 = sets[node_number];
           cvN = sets[node_number+1];
           app_log()<<" Partitioning of Cholesky Vectors: ";
@@ -2912,10 +2922,10 @@ namespace qmcplusplus
           for(int i=0; i<nnodes; i++)
             sz_per_node[i] = std::accumulate(cnt_per_vec.begin()+sets[i],cnt_per_vec.begin()+sets[i+1],0);
         } else if(head_of_nodes) {
-          myComm->bcast(sets.data(),sets.size(),MPI_COMM_HEAD_OF_NODES);
+          myComm->bcast(sets);
           cv0 = sets[node_number];
           cvN = sets[node_number+1];
-        }
+        } 
         myComm->bcast(nvec_per_node);
         myComm->bcast(sz_per_node);
         if(sparse) Spvn.reserve(sz_per_node[node_number]);
@@ -2950,12 +2960,21 @@ namespace qmcplusplus
       APP_ABORT("Found real Cholesky vectors with real integrals. This is not allowed with dense cholesky vectors. Run with sparse vectors or compile with complex integrals. \n\n\n");
 #endif
 
+    int nmax=1000000;
+    std::vector<std::tuple<SPValueSMSpMat::intType,SPValueSMSpMat::intType,SPValueType>> vikn;
+    if(sparse)
+      vikn.reserve(nmax);
 
-    if(head_of_nodes) {
-      cnt=std::accumulate(nvec_per_node.begin(),nvec_per_node.begin()+node_number,0);
-      for(int n=0; n<n3Vect; n++) { 
+// also no need to do this serially, FIX FIX FIX
+    cnt=std::accumulate(nvec_per_node.begin(),nvec_per_node.begin()+node_number,0);
+    for(int n=0; n<n3Vect; n++) { 
        if( cnt_per_vec[2*n]==0 && cnt_per_vec[2*n+1]==0 ) continue;
        if( !(2*n>=cv0 && 2*n<cvN) && !((2*n+1)>=cv0 && (2*n+1)<cvN)  ) continue;
+       if( n%ncores != coreid ) { 
+         if(2*n>=cv0 && 2*n<cvN && cnt_per_vec[2*n]>0) cnt++;
+         if((2*n+1)>=cv0 && (2*n+1)<cvN && cnt_per_vec[2*n+1]>0) cnt++;
+         continue;  
+       }
        int np=0;
        Ln = ValueType(0);
        for(int p=indx[n]; p<indx[n+1]; p++) {
@@ -2971,16 +2990,26 @@ namespace qmcplusplus
            ValueType V = (Ln(i,k) + myconj(Ln(k,i))); 
            if(std::abs(V) > cut) { 
              V*=sqrtdt;
-             if(sparse) Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(V));
-             else Dvn[(i*NMO+k)*ncols+cnt]=static_cast<SPValueType>(V);
+             if(sparse) { //Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(V));
+               vikn.push_back(std::make_tuple(i*NMO+k,cnt,static_cast<SPValueType>(V)));
+               if(vikn.size()==nmax) {  
+                 Spvn.add(vikn,true);
+                 vikn.clear(); 
+               }  
+             } else Dvn[(i*NMO+k)*ncols+cnt]=static_cast<SPValueType>(V);
              ++np;
            } 
            if(!spinRestricted) {
              V = (Ln(i+NMO,k) + myconj(Ln(k+NMO,i)));
              if(std::abs(V) > cut) {
                V*=sqrtdt;
-               if(sparse) Spvn.add(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(V));
-               else Dvn[(i*NMO+k+NMO*NMO)*ncols+cnt]=static_cast<SPValueType>(V);
+               if(sparse) { // Spvn.add(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(V));
+                 vikn.push_back(std::make_tuple(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(V)));
+                 if(vikn.size()==nmax) {  
+                   Spvn.add(vikn,true);
+                   vikn.clear(); 
+                 }  
+               } else Dvn[(i*NMO+k+NMO*NMO)*ncols+cnt]=static_cast<SPValueType>(V);
                ++np;
              }
            }
@@ -2998,16 +3027,26 @@ namespace qmcplusplus
            ComplexType V = (Ln(i,k) - myconj(Ln(k,i))); 
            if(std::abs(V) > cut) {
              V*=ComplexType(0.0,1.0)*sqrtdt;
-             if(sparse) Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(V));
-             else Dvn[(i*NMO+k)*ncols+cnt]=static_cast<SPValueType>(V);
+             if(sparse) { // Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(V));
+               vikn.push_back(std::make_tuple(i*NMO+k,cnt,static_cast<SPValueType>(V)));
+               if(vikn.size()==nmax) {  
+                 Spvn.add(vikn,true);
+                 vikn.clear(); 
+               }  
+             } else Dvn[(i*NMO+k)*ncols+cnt]=static_cast<SPValueType>(V);
              ++np;
            }
            if(!spinRestricted) {
              V = (Ln(i+NMO,k) - myconj(Ln(k+NMO,i)));
              if(std::abs(V) > cut) {
                V*=ComplexType(0.0,1.0)*sqrtdt;
-               if(sparse) Spvn.add(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(V));
-               else Dvn[(i*NMO+k+NMO*NMO)*ncols+cnt]=static_cast<SPValueType>(V);
+               if(sparse) { //Spvn.add(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(V));
+                 vikn.push_back(std::make_tuple(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(V)));
+                 if(vikn.size()==nmax) {
+                   Spvn.add(vikn,true);
+                   vikn.clear();
+                 }
+               } else Dvn[(i*NMO+k+NMO*NMO)*ncols+cnt]=static_cast<SPValueType>(V);
                ++np;
              }
            }
@@ -3019,8 +3058,11 @@ namespace qmcplusplus
          APP_ABORT("Error: THIS SHOULD NOT HAPPEN. Found complex cholesky vector in real build. \n\n\n");
 #endif
        }
-      }
     }
+    if(vikn.size()>0) {  
+      Spvn.add(vikn,true);
+      vikn.clear(); 
+    }  
 
     if(rank()==0 && nnodes>1 && parallel) {
       app_log()<<" Partition of Cholesky Vectors: 0 ";
@@ -6119,184 +6161,903 @@ app_log()<<" after bcasts: " <<std::endl;
 
 
     if(factorizedHamiltonian) {
-  
-      int ncvec = V2_fact.cols();
-      ComplexMatrix Qa, Qk, Rl;  
-      long cnter=0;
 
+      int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
+      int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
+  
       // <ab||kl> = sum_n Qk(a,n) * Rl(b,n) - Rl(a,n)*Qk(b,n),
       // where:
       //   Qk(a,n) = sum_i conj(Amat(i,a)) * V2_fact(ik,n)
       //   Rl(a,n) = sum_i conj(Amat(i,a)) * conj(V2_fact(li,n))
       // For real build, Qk=Rk
+      //
+      // For parallelization, distribute (k,l) pairs over nodes.
+      // Build ahead of time Qk/Rl matrices in shared memory to reduce memory/setup time.
+      // Assemble integrals in parallel and fully distributed.
+      // Collect on all nodes.
+      //    - For distributed hamiltonians, you do not need to worry about keeping contiguous
+      //    segments of the hamiltonian. Only that the distribution over nodes is roughly equal.
+      //    Write a simple algorithm that balances the number of terms in a TG. 
+      //  
+
+      Timer.reset("Generic");
+      Timer.start("Generic");
+      SPComplexSMVector::pointer Qkptr;
+      SPComplexSMVector::pointer Rlptr;
+      SPComplexSMVector tQk;    
+      tQk.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_tQk"),TG.getNodeCommLocal());  
+      SPComplexSMVector Qk;    
+      Qk.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_Qk"),TG.getNodeCommLocal());  
+      SPComplexSMVector Rl;    
+      Rl.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_Rl"),TG.getNodeCommLocal());  
+
+      SPComplexSMSpMat SptQk;
+      SptQk.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_SptQk"),TG.getNodeCommLocal());
+      SPComplexSMSpMat SpQk;
+      SpQk.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_SpQk"),TG.getNodeCommLocal());
+      SPComplexSMSpMat SpRl;
+      SpRl.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_SpRl"),TG.getNodeCommLocal());
+
+      if(useSpMSpM) {
+      } else {
+      }  
+
+      int NMO2 = (walker_type == 0)?NMO:2*NMO;
+      int NAEA2 = (walker_type == 0)?NAEA:2*NAEA;
+      int ngrp = std::min(NMO2,nnodes);
+      std::vector<int> M_split(ngrp+1);
+
+      // split the orbitals among processors 
+      FairDivide(NMO2,ngrp,M_split);
+
+      // Construct your set of Q(k,a,m), R(l,b,m)
+      int l0 = (nodeid<ngrp)?(M_split[nodeid]):(-1);
+      int lN = (nodeid<ngrp)?(M_split[nodeid+1]):(-1);
+      bool amIAlpha = true; // for simplicity, subset of bands must be either elpha or beta, not mixed
+      if( l0 < NMO && (lN-1) < NMO )
+        amIAlpha = true;
+      else if( l0 >= NMO && lN >= NMO )
+        amIAlpha = false;
+      else {
+        std::cerr<<" Error: Current algorithm requires an even number of processors. \n\n\n";  
+        APP_ABORT(" Error: Current algorithm requires an even number of processors. \n\n\n");  
+      }
+      int norb = lN-l0;
+      int maxnorb = 0;
+      for(int i=0; i<ngrp; i++) maxnorb = std::max(maxnorb,M_split[i+1]-M_split[i]);  
+      int nvec = V2_fact.cols();
+      // Rl(k, a, m), k:[0:NMO2], a:[0:NAEA], m:[0:nvec] 
+      int mat_size = norb * NAEA * nvec; 
+      if(nodeid < ngrp) {
+        Qk.resize(mat_size);  
+        Rl.resize(mat_size);  
+      }
+      if(coreid==0) std::fill(Rl.begin(),Rl.end(),SPComplexType(0.0));
+      if(coreid==0) std::fill(Qk.begin(),Qk.end(),SPComplexType(0.0));
+
+      // let the maximum message be 1 GB
+      int blksz = NAEA*nvec*sizeof(SPComplexType);
+      int maxnk = std::max(1,static_cast<int>(std::floor(1024.0*1024.0*1024.0/blksz)));
+      maxnk = std::min(maxnk,maxnorb); 
+      app_log()<<" Size/num of comm. block on createHamiltonianForGeneralDeterminant: " 
+               <<blksz/1024.0/1024.0  <<" (MB)  " <<maxnk <<std::endl;
+      int mat_max_size = maxnk * NAEA * nvec; 
+       
+      // resize temporary array 
+      tQk.resize(mat_max_size);  
+
+      int bl0=-1, blN=-1;
+      int nwork = std::min(norb*NAEA,ncores);  
+      if(coreid <nwork)
+        if(amIAlpha)
+          std::tie(bl0, blN) = FairDivideBoundary(coreid,norb*NAEA,nwork);
+        else
+          std::tie(bl0, blN) = FairDivideBoundary(coreid,norb*NAEB,nwork);
+      // right now this is an upper bound
+      int nak = blN-bl0;
+
+      SpQk.setDims(norb*NAEA,nvec);
+      SpRl.setDims(nvec,norb*NAEA);
+
+      // store local dense integral block   
+      SPComplexSMVector Qa;
+      Qa.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_Qa"),TG.getNodeCommLocal());
+      Qa.resize(norb*NAEA*maxnk*NAEA);
+      Qa.barrier();
+
+///*   Debug Debug Debug
+      SPComplexSMVector Ta;
+      Ta.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_Ta"),TG.getNodeCommLocal());
+      Ta.resize(norb*NAEA*maxnk*NAEA);
+      Ta.barrier();
+//*/
+
+      std::vector<SPComplexType> vec(nvec);
+      std::vector<std::tuple<SPValueSMSpMat::intType,SPValueSMSpMat::intType,SPComplexType>> abkl;
+      int nmax = 1000000;
+      abkl.reserve(nmax);  
+
+      if(distribute_Ham) {
+        APP_ABORT(" Finish THIS (43)!!! \n\n\n");
+      } else {
+
+        //   Q(k,a,n) = sum_i conj(Amat(i,a)) * V2_fact(ik,n)
+        //   R(l,a,n) = sum_i conj(Amat(i,a)) * conj(V2_fact(li,n))
+        if(walker_type == 0) {
+          for(int l=l0, nt=0, cnt=0; l<lN; l++, nt++) {
+            // doing loops in this order to maximize parallelization over non-overlapping segments of Qk/Rl
+            for(int a=0; a<NAEA; a++, cnt++) {
+              if( cnt%ncores != coreid ) continue;
+              for(int i=0; i<NMO; i++) {
+                int il = i*NMO+l;
+                SPValueSMSpMat::intType n0 = *(V2_fact.row_index(il));
+                SPValueSMSpMat::intType n1 = *(V2_fact.row_index(il+1));
+                if(n1==n0) continue;
+                SPValueSMSpMat::intType nv = n1-n0;  
+                const SPValueSMSpMat::pointer itLval = V2_fact.values(n0);
+                const SPValueSMSpMat::intPtr itLcol = V2_fact.column_data(n0);
+                const ComplexType Aiac = std::conj(A(i,a));
+                Qkptr = Qk.values() + nt*NAEA*nvec + a*nvec; 
+                for(int n=0; n<nv; n++)   
+                  Qkptr[itLcol[n]] += Aiac * itLval[n]; 
+              }
+            }    
+          }
+#if defined(QMC_COMPLEX)
+// Think about how to calculate Rl quickly since now it is (nvec,norb*NAEA)
+// If it is not possible to evaluate quickly, then calculate it in Qk with (norb*NAEA,nvec)
+// form and then transpose it into Rl
+          for(int l=l0, nt=0, cnt=0; l<lN; l++, nt++) {
+            for(int a=0; a<NAEA; a++, cnt++) {
+              if( cnt%ncores != coreid ) continue;
+              std::fill(vec.begin(),vec.end(),SPComplexType(0,0));
+              for(int i=0; i<NMO; i++) {
+                int li = l*NMO+i;
+                SPValueSMSpMat::intType n0 = *(V2_fact.row_index(li));  
+                SPValueSMSpMat::intType n1 = *(V2_fact.row_index(li+1));
+                if(n1==n0) continue;
+                SPValueSMSpMat::intType nv = n1-n0;  
+                const SPValueSMSpMat::pointer itLval = V2_fact.values(n0);
+                const SPValueSMSpMat::intPtr itLcol =  V2_fact.column_data(n0);
+                const ComplexType Aiac = std::conj(A(i,a));
+                for(int n=0; n<nv; n++)   
+                  vec[itLcol[n]] += Aiac * std::conj(itLval[n]); 
+                //Rlptr = Rl.values() + nt*NAEA*nvec + a*nvec; 
+                //for(int n=0; n<nv; n++)   
+                //  Rlptr[itLcol[n]] += Aiac * std::conj(itLval[n]); 
+              }
+              BLAS::axpy(nvec,SPComplexType(1.0),vec.data(),1,Rl.values()+cnt,norb*NAEA);
+            }    
+          }
+#else
+          Rlptr = Rl.values();
+          for(int n=0; n<nvec; n++) {
+            if(cnt%ncores != coreid ) {
+              Rlptr+=norb*NAEA;
+              continue;
+            }
+            for(int i=0; i<norb*NAEA; i++)
+              *(Rlptr++) = Qk.values()[i*nvec+n];
+          }
+#endif
+          Qa.barrier();
+        } else if(walker_type == 1) {  
+
+          assert(spinRestricted);
+
+          // Construct Qk[k,n,nvec]
+          for(int l=l0, nt=0, cnt=0; l<lN; l++, nt++) {
+            int n_ = (l<NMO)?0:NMO;
+            int NEL = (l<NMO)?NAEA:NAEB;
+            for(int a=0; a<NEL; a++, cnt++) {
+              if( cnt%ncores != coreid ) continue;
+              for(int i=0; i<NMO; i++) {
+                int il = i*NMO+l-n_;
+                SPValueSMSpMat::intType n0 = *(V2_fact.row_index(il));  
+                SPValueSMSpMat::intType n1 = *(V2_fact.row_index(il+1));
+                if(n1==n0) continue;
+                SPValueSMSpMat::intType nv = n1-n0;  
+                const SPValueSMSpMat::pointer itLval = V2_fact.values(n0);
+                const SPValueSMSpMat::intPtr itLcol = V2_fact.column_data(n0);
+                const ComplexType Aiac = std::conj(A(i+n_,a));  // alpha/beta
+                Qkptr = Qk.values() + nt*NEL*nvec + a*nvec; 
+                for(int n=0; n<nv; n++)   
+                  Qkptr[itLcol[n]] += Aiac * itLval[n]; 
+              }
+            }    
+          }
+ 
+/*       
+          Qa.barrier();
+          long cnt=0;
+          if( coreid==0 ) {
+            assert(NAEA==NAEB); //just for debugging
+            Qkptr = Qk.values(); 
+            for(int k=l0; k<lN; k++) {
+              for(int a=0; a<NAEA; a++) {
+                for(int n=0; n<nvec; n++, Qkptr++)
+                  if( std::abs(*Qkptr) > cut ) cnt++;
+              }  
+            }    
+          }  
+          MPI_Bcast(&cnt,1,MPI_LONG,0,TG.getNodeCommLocal());  
+          SpQk.allocate(cnt);
+          if( coreid==0 ) {
+            assert(NAEA==NAEB); //just for debugging
+            Qkptr = Qk.values();
+            for(int l=l0, nt=0; l<lN; l++, nt++) {
+              for(int a=0; a<NAEA; a++) {
+                for(int n=0; n<nvec; n++, Qkptr++)
+                  if( std::abs(*Qkptr) > cut ) 
+                    SpQk.add(nt*NAEA+a,n,*Qkptr,false);  // one-base indexing
+              }
+            }
+          }
+          SpQk.compress(TG.getNodeCommLocal());
+*/
+
+          // Construct SpQk[k,n,nvec]
+          long sz=0;
+          for(int l=l0, nt=0, cnt=0; l<lN; l++, nt++) {
+            int n_ = (l<NMO)?0:NMO;
+            int NEL = (l<NMO)?NAEA:NAEB;
+            for(int a=0; a<NEL; a++, cnt++) {
+              if( cnt%ncores != coreid ) continue;
+              std::fill(vec.begin(),vec.end(),SPComplexType(0,0));
+              for(int i=0; i<NMO; i++) {
+                int il = i*NMO+l-n_;
+                SPValueSMSpMat::intType n0 = *(V2_fact.row_index(il));
+                SPValueSMSpMat::intType n1 = *(V2_fact.row_index(il+1));
+                if(n1==n0) continue;
+                SPValueSMSpMat::intType nv = n1-n0;
+                const SPValueSMSpMat::pointer itLval = V2_fact.values(n0);
+                const SPValueSMSpMat::intPtr itLcol = V2_fact.column_data(n0);
+                const ComplexType Aiac = std::conj(A(i+n_,a));  // alpha/beta
+                for(int n=0; n<nv; n++)
+                  vec[itLcol[n]] += Aiac * itLval[n];
+              }
+              for(int n=0; n<nvec; n++)
+                if(std::abs(vec[n])>cut) sz++;     
+            }
+          }
+          {
+            long c_ = sz; 
+            MPI_Allreduce(&c_,&sz,1,MPI_LONG,MPI_SUM,TG.getNodeCommLocal());  
+          }
+          SpQk.allocate(sz);
+          SpQk.barrier();
+          abkl.clear();
+          for(int l=l0, nt=0, cnt=0; l<lN; l++, nt++) {
+            int n_ = (l<NMO)?0:NMO;
+            int NEL = (l<NMO)?NAEA:NAEB;
+            for(int a=0; a<NEL; a++, cnt++) {
+              if( cnt%ncores != coreid ) continue;
+              std::fill(vec.begin(),vec.end(),SPComplexType(0,0));
+              for(int i=0; i<NMO; i++) {
+                int il = i*NMO+l-n_;
+                SPValueSMSpMat::intType n0 = *(V2_fact.row_index(il));
+                SPValueSMSpMat::intType n1 = *(V2_fact.row_index(il+1));
+                if(n1==n0) continue;
+                SPValueSMSpMat::intType nv = n1-n0;
+                const SPValueSMSpMat::pointer itLval = V2_fact.values(n0);
+                const SPValueSMSpMat::intPtr itLcol = V2_fact.column_data(n0);
+                const ComplexType Aiac = std::conj(A(i+n_,a));  // alpha/beta
+                for(int n=0; n<nv; n++)
+                  vec[itLcol[n]] += Aiac * itLval[n];
+              }
+              for(int n=0; n<nvec; n++)
+                if(std::abs(vec[n])>cut) { 
+                  abkl.push_back( std::make_tuple(cnt, n, vec[n]) );
+                  if(abkl.size()==nmax) {
+                    SpQk.add(abkl,true);
+                    abkl.clear();
+                  }
+                }
+            }
+          }
+          if(abkl.size()>0) {
+            SpQk.add(abkl,true);
+            abkl.clear();
+          }
+          SpQk.compress(TG.getNodeCommLocal());
+
+#if defined(QMC_COMPLEX)
+          for(int k=l0, nt=0, cnt=0; k<lN; k++, nt++) {
+            int n_ = (k<NMO)?0:NMO;
+            int NEL = (k<NMO)?NAEA:NAEB;
+            for(int a=0; a<NEL; a++, cnt++) {
+              if( cnt%ncores != coreid ) continue;
+              std::fill(vec.begin(),vec.end(),SPComplexType(0,0));
+              for(int i=0; i<NMO; i++) {
+                int ki = (k-n_)*NMO+i;
+                SPValueSMSpMat::intType n0 = *(V2_fact.row_index(ki));  
+                SPValueSMSpMat::intType n1 = *(V2_fact.row_index(ki+1));
+                if(n1==n0) continue;
+                int nv = n1-n0;  
+                const SPValueSMSpMat::pointer itLval = V2_fact.values(n0);
+                const SPValueSMSpMat::intPtr itLcol = V2_fact.column_data(n0);
+                const ComplexType Aiac = std::conj(A(i+n_,a));  // alpha/beta
+                //Rlptr = Rl.values() + nt*NEL*nvec + a*nvec; 
+                for(int n=0; n<nv; n++)   
+                  vec[itLcol[n]] += Aiac * std::conj(itLval[n]); 
+                //  Rlptr[itLcol[n]] += Aiac * std::conj(itLval[n]); 
+              }
+              BLAS::axpy(nvec,SPComplexType(1.0),vec.data(),1,Rl.values()+cnt,norb*NEL);
+            }    
+          }
+          Rl.barrier();
+
+/*
+          sz=0;
+          if( coreid==0 ) {
+            assert(NAEA==NAEB); //just for debugging
+            Rlptr = Rl.values();
+            for(int k=l0; k<lN; k++) {
+              for(int a=0; a<NAEA; a++) {
+                for(int n=0; n<nvec; n++, Rlptr++)
+                  if( std::abs(*Rlptr) > cut ) sz++;
+              }
+            }
+          }
+          MPI_Bcast(&sz,1,MPI_LONG,0,TG.getNodeCommLocal());
+          SpRl.allocate(sz);
+          if( coreid==0 ) {
+            assert(NAEA==NAEB); //just for debugging
+            Rlptr = Rl.values();
+            for(int n=0; n<nvec; n++) {
+              for(int k=l0, nt=0; k<lN; k++) {
+                for(int a=0; a<NAEA; a++, nt++, Rlptr++) 
+                  if( std::abs(*Rlptr) > cut ) 
+                    SpRl.add(n,nt,*Rlptr,false);
+              }
+            }
+          }
+          SpRl.compress(TG.getNodeCommLocal());
+          Qa.barrier();
+*/
+          // Construct SpRl[nvec,k,n]
+          sz=0;
+          for(int l=l0, nt=0, cnt=0; l<lN; l++, nt++) {
+            int n_ = (l<NMO)?0:NMO;
+            int NEL = (l<NMO)?NAEA:NAEB;
+            for(int a=0; a<NEL; a++, cnt++) {
+              if( cnt%ncores != coreid ) continue;
+              std::fill(vec.begin(),vec.end(),SPComplexType(0,0));
+              for(int i=0; i<NMO; i++) {
+                int li = (l-n_)*NMO+i;
+                SPValueSMSpMat::intType n0 = *(V2_fact.row_index(li));
+                SPValueSMSpMat::intType n1 = *(V2_fact.row_index(li+1));
+                if(n1==n0) continue;
+                SPValueSMSpMat::intType nv = n1-n0;
+                const SPValueSMSpMat::pointer itLval = V2_fact.values(n0);
+                const SPValueSMSpMat::intPtr itLcol = V2_fact.column_data(n0);
+                const ComplexType Aiac = std::conj(A(i+n_,a));  // alpha/beta
+                for(int n=0; n<nv; n++)
+                  vec[itLcol[n]] += Aiac * std::conj(itLval[n]);
+              }
+              for(int n=0; n<nvec; n++)
+                if(std::abs(vec[n])>cut) sz++;
+            }
+          }
+          {
+            long c_ = sz;
+            MPI_Allreduce(&c_,&sz,1,MPI_LONG,MPI_SUM,TG.getNodeCommLocal());
+          }
+          SpRl.allocate(sz);
+          SpRl.barrier();
+          abkl.clear();
+          for(int l=l0, nt=0, cnt=0; l<lN; l++, nt++) {
+            int n_ = (l<NMO)?0:NMO;
+            int NEL = (l<NMO)?NAEA:NAEB;
+            for(int a=0; a<NEL; a++, cnt++) {
+              if( cnt%ncores != coreid ) continue;
+              std::fill(vec.begin(),vec.end(),SPComplexType(0,0));
+              for(int i=0; i<NMO; i++) {
+                int li = (l-n_)*NMO+i;
+                SPValueSMSpMat::intType n0 = *(V2_fact.row_index(li));
+                SPValueSMSpMat::intType n1 = *(V2_fact.row_index(li+1));
+                if(n1==n0) continue;
+                SPValueSMSpMat::intType nv = n1-n0;
+                const SPValueSMSpMat::pointer itLval = V2_fact.values(n0);
+                const SPValueSMSpMat::intPtr itLcol = V2_fact.column_data(n0);
+                const ComplexType Aiac = std::conj(A(i+n_,a));  // alpha/beta
+                for(int n=0; n<nv; n++)
+                  vec[itLcol[n]] += Aiac * std::conj(itLval[n]);
+              }
+              for(int n=0; n<nvec; n++)
+                if(std::abs(vec[n])>cut) {
+                  abkl.push_back( std::make_tuple(n, cnt, vec[n]) );
+                  if(abkl.size()==nmax) {
+                    SpRl.add(abkl,true);
+                    abkl.clear();
+                  }
+                }
+            }
+          }
+          if(abkl.size()>0) {
+            SpRl.add(abkl,true);
+            abkl.clear();
+          }
+          SpRl.compress(TG.getNodeCommLocal());
+
+#else
+          if(coreid==0) {
+            SPComplexSMSpMat::iterator val = SpQk.vals_begin();
+            SPComplexSMSpMat::iterator vend = SpQk.vals_end();
+            SPComplexSMSpMat::int_iterator col = SpQk.cols_begin(); 
+            SPComplexSMSpMat::int_iterator row = SpQk.rows_begin(); 
+            int ncol = SpQk.rows();
+            std::fill(Rl.begin(),Rl.end(),SPComplexType(0));
+            while(val != vend) 
+              Rl[ (*(col++))*ncol + (*(row++)) ] = *(val++);
+          }
+          Rl.barrier();   
+
+          SpRl.allocate(SpQk.size());
+          if(coreid==0) {
+            std::copy(SpQk.values(),SpQk.values()+SpQk.size(),SpRl.values());
+            std::copy(SpQk.column_data(),SpQk.column_data()+SpQk.size(),SpRl.row_data());
+            std::copy(SpQk.row_data(),SpQk.row_data()+SpQk.size(),SpRl.column_data());
+          }
+          SpRl.compress(TG.getNodeCommLocal());
+          Qa.barrier(); 
+//*/
+#endif
+        } else if(walker_type == 2) {  
+          APP_ABORT(" Error in createHamiltonianForGeneralDeterminant: GHF not implemented. \n\n\n");
+        } else {
+          APP_ABORT(" Error in createHamiltonianForGeneralDeterminant: Unknown walker_type. \n\n\n");
+        }
+
+      }  
+      Qk.barrier();
+
+      long maxqksize = SpQk.size();    
+      std::vector<long> Qksizes(nnodes);  
+      if(head_of_nodes) 
+        MPI_Allgather(&maxqksize,1,MPI_LONG,Qksizes.data(),1,MPI_LONG,MPI_COMM_HEAD_OF_NODES);
+      MPI_Bcast(Qksizes.data(),nnodes,MPI_LONG,0,TG.getNodeCommLocal());
+      maxqksize = *std::max_element(Qksizes.begin(),Qksizes.end()); 
+      SptQk.setDims(maxnk * NAEA, nvec);
+      SptQk.allocate(maxqksize+1000);
+
+      abkl.clear();  
+
+      Timer.stop("Generic");
+      app_log()<<"Time to construct distributed rotated Cholesky vectors: " <<Timer.total("Generic") <<std::endl;
 
 
       Timer.reset("Generic");
       Timer.start("Generic");
 
-      if(walker_type == 0) {
+      unsigned long sz=0;  
 
-        Qk.resize(NAEA,ncvec);
-        Rl.resize(NAEA,ncvec);
-        Qa.resize(NAEA,NAEA);
+      // now calculate fully distributed matrix elements
+      for(int nn=0; nn<ngrp; nn++) {
 
-        for(int k=0, nt=0; k<NMO; k++) {
-        for(int l=k; l<NMO; l++, nt++) {
-        
-          // instead of round robin, use FairShare on NMO*(NMO+1)/2, since that allows reuse of Qk
-          if( nt%npr != rk ) continue;
+        int nktot = M_split[nn+1]-M_split[nn];
+        if(nktot==0) continue;
+        int nblk = ( ( nktot - 1 ) / maxnk ) + 1;
+        for( int bi = 0; bi < nblk; bi++) {
 
-          // 1. check if Qk/Rl has been previously built. If not build and store it
-#if defined(QMC_COMPLEX)
-          ComplexType *Qkptr = Qk.data();
-          ComplexType *Rlptr = Rl.data();
-            
+Timer.reset("Generic2");
+Timer.start("Generic2");
+
+          int nk = std::min( (bi+1)*maxnk, nktot  ) - bi*maxnk;
+          int k0 = M_split[nn]+bi*maxnk;
+          int kN = k0+nk;
+          int NEL0 = (k0<NMO)?NAEA:NAEB;
+          assert(nk > 0 && nk <= maxnk );
+          if(head_of_nodes) {
+            if(nn == nodeid) {
+              std::copy(Qk.values()+bi*maxnk*NEL0*nvec,Qk.values()+(bi*maxnk+nk)*NEL0*nvec,tQk.values());
+            }  
+#if defined(AFQMC_SP)
+            MPI_Bcast(tQk.values(),nk*NEL0*nvec*2,MPI_FLOAT,nn,MPI_COMM_HEAD_OF_NODES);
 #else
-          ComplexType *Qkptr = Qk.data();
-          ComplexType *Rlptr = Rl.data();
+            MPI_Bcast(tQk.values(),nk*NEL0*nvec*2,MPI_DOUBLE,nn,MPI_COMM_HEAD_OF_NODES);
+#endif
+          } 
+          Qk.barrier();
 
-          Qk=0;
-          for(int i=0; i<NMO; i++) {
-            int ik = i*NMO+k;
-            int n0 = *(V2_fact.row_index() + ik);  
-            int n1 = *(V2_fact.row_index() + ik+1);
-            if(n1==n0) continue;
-            int nv = n1-n0;  
-            ValueSMSpMat::pointer itLval = V2_fact.values() + n0;
-            ValueSMSpMat::indxPtr itLcol = V2_fact.column_data() + n0;
-            const ComplexType* itAia = A[i];
-            for(int a=0; a<NAEA; a++, itAia++) {
-              Qkptr = Qk[a];
-              for(int n=0; n<nv; n++)   
-                //*(Qkptr+(*(itLcol+n))) += std::conj(*itAia) * (*(itLval+n));
-                Qk(a,itLcol[n]) += std::conj(A(i,a)) * itLval[n]; 
+Timer.stop("Generic2");
+app_log()<<"Time to Bcast tQk: " <<nn <<"  " <<Timer.total("Generic2") <<std::endl;
+/*
+Timer.reset("Generic2");
+Timer.start("Generic2");
+
+          assert(nblk==1);
+          if(head_of_nodes) {
+            long nterms=0;
+            if(nn == nodeid) {
+              long n0 = *SpRl.row_index( (bi*maxnk)*NAEA );
+              long n1 = *SpRl.row_index( (bi*maxnk+nk)*NAEA );
+              nterms = n1-n0; 
+std::cout<<rank() <<" nterms: " <<nterms <<std::endl;
+              SptRl.resize_serial(nterms);
+#if defined(QMC_COMPLEX)
+              std::copy(SpRl.values()+n0,SpRl.values()+n1,SptRl.values());
+              std::copy(SpRl.column_data()+n0,SpRl.column_data()+n1,SptRl.column_data());
+              for(int i=0, j=(bi*maxnk)*NAEA; i<nk*NAEA; i++, j++)
+                SptRl.row_index()[i] = SpRl.row_index()[j]-n0;
+#else
+              std::copy(SpQk.values()+n0,SpQk.values()+n1,SptRl.values());
+              std::copy(SpQk.column_data()+n0,SpQk.column_data()+n1,SptRl.column_data());
+              for(int i=0, j=(bi*maxnk)*NAEA; i<nk*NAEA; i++, j++)
+                SptRl.row_index()[i] = SpQk.row_index()[j]-n0;
+#endif
+              for(int i=0, j=(bi*maxnk)*NAEA; i<nk*NAEA; i++, j++)
+                SptRl.row_index()[i] = SpRl.row_index()[j]-n0;
             }
+            MPI_Bcast(&nterms,1,MPI_LONG,nodeid,MPI_COMM_HEAD_OF_NODES);
+std::cout<<rank() <<" nterms: " <<nterms <<std::endl;
+            SptRl.resize_serial(nterms);
+#if defined(AFQMC_SP)
+            MPI_Bcast(SptRl.values(),nterms*2,MPI_FLOAT,nn,MPI_COMM_HEAD_OF_NODES);
+            MPI_Bcast(SptRl.column_data(),nterms*2,MPI_FLOAT,nn,MPI_COMM_HEAD_OF_NODES);
+#else
+            MPI_Bcast(SptRl.values(),nterms*2,MPI_DOUBLE,nn,MPI_COMM_HEAD_OF_NODES);
+            MPI_Bcast(SptRl.column_data(),nterms*2,MPI_DOUBLE,nn,MPI_COMM_HEAD_OF_NODES);
+#endif
+            MPI_Bcast(SptRl.row_index(),nk*NAEA,MPI_INT,nn,MPI_COMM_HEAD_OF_NODES);
           }
-          Qkptr = Qk.data();
+          Qk.barrier();
+          SptRl.setCompressed();
 
-          if(k==l) { 
-            Rlptr = Qk.data();
-          } else {
-            Rl=0;
-            for(int i=0; i<NMO; i++) {
-              int li = l*NMO+i;
-              int n0 = *(V2_fact.row_index() + li);
-              int n1 = *(V2_fact.row_index() + li+1);
-              if(n1==n0) continue;
-              int nv = n1-n0;
-              ValueSMSpMat::pointer itLval = V2_fact.values() + n0;
-              ValueSMSpMat::indxPtr itLcol = V2_fact.column_data() + n0;
-              const ComplexType* itAia = A[i];
-              for(int a=0; a<NAEA; a++, itAia++) {
-                Rlptr = Rl[a];
-                for(int n=0; n<nv; n++) 
-                  //*(Rlptr+(*(itLcol+n))) += std::conj(*itAia) * (*(itLval+n)); // conj(L) in complex
-                  Rl(a,itLcol[n]) += std::conj(A(i,a)) * itLval[n]; 
+Timer.stop("Generic2");
+app_log()<<"Time to Bcast SptRl: " <<nn <<"  " <<Timer.total("Generic2") <<std::endl;
+*/
+
+Timer.reset("Generic2");
+Timer.start("Generic2");
+
+          if(walker_type == 0) {
+
+            // <a,b | k,l> = Qa(ka,lb) - Qb(la,kb)
+            // Qa(ka,lb) = Q(k,a,:)*R(l,b,:)
+            DenseMatrixOperators::product(nk*NAEA,int(blN-bl0),nvec,SPComplexType(1.0),tQk.values(),nvec,Rl.values()+bl0,norb*NAEA,SPComplexType(0),Qa.values()+bl0,norb*NAEA);
+            Qa.barrier();
+            SPComplexType four = SPComplexType(4.0);
+            SPComplexType two = SPComplexType(2.0);
+            for(int k=k0, ka=0; k<kN; k++) {
+              for(int a=0; a<NAEA; a++, ka++) {
+                for(int lb=bl0; lb<blN; lb++) { // lb = (l-l0)*NAEA+b  
+                  int b = lb%NAEA;
+                  if(b<a) continue;
+                  int l = lb/NAEA+l0;
+                  int la = (l-l0)*NAEA+a;  
+                  int kb = (k-k0)*NAEA+b;  
+                  SPComplexType qkalb = *(Qa.values() + ka*norb*NAEA + lb);  // Qa(ka,lb)   
+                  SPComplexType qlakb = *(Qa.values() + kb*norb*NAEA + la);  // Qa(kb,la)   
+                  if(std::abs( four*qkalb - two*qlakb ) > cut) sz++;
+                }
               }
             }
-            Rlptr = Rl.data();
-          }  
-#endif 
 
-          // 2. Qa(a,b) = <ab|||kl> = 4*Qk*Rl.T - 2*Rl*Qk.T
-          RealType fct = (k==l)?1.0:2.0;
-          DenseMatrixOperators::product_ABt(NAEA,NAEA,ncvec,ComplexType(4.0*fct,0.0),Qkptr,ncvec,Rlptr,ncvec,ComplexType(0),Qa.data(),NAEA);
-          DenseMatrixOperators::product_ABt(NAEA,NAEA,ncvec,ComplexType(-2.0*fct,0.0),Rlptr,ncvec,Qkptr,ncvec,ComplexType(1),Qa.data(),NAEA);
+          } else if(walker_type == 1) {
 
-          // Now I have Q(a,b,k0,l0);
-          for(int a=0; a<NAEA; a++)
-           for(int b=0; b<NAEA; b++) 
-             if(std::abs(Qa(a,b)) > cut) cnter++; 
+            if( M_split[nn] < NMO && (M_split[nn+1]-1) < NMO ) {
+              // k is alpha
+            
+              if(amIAlpha) {  
+                // <a,b | k,l> = Qa(ka,lb) - Qb(la,kb)
+                // Qa(ka,lb) = Q(k,a,:)*R(l,b,:)
+                DenseMatrixOperators::product(nk*NAEA,int(blN-bl0),nvec,SPComplexType(1.0),tQk.values(),nvec,Rl.values()+bl0,norb*NAEA,SPComplexType(0),Qa.values()+bl0,norb*NAEA);
+                Qa.barrier();
+                for(int k=k0, ka=0; k<kN; k++) {
+                  for(int a=0; a<NAEA; a++, ka++) {
+                    for(int lb=bl0; lb<blN; lb++) { // lb = (l-l0)*NAEA+b  
+                      int b = lb%NAEA;
+                      if(b<=a) continue;
+                      int l = lb/NAEA+l0;
+                      int la = (l-l0)*NAEA+a;
+                      int kb = (k-k0)*NAEA+b;
+                      SPComplexType qkalb = *(Qa.values() + ka*norb*NAEA + lb);  // Qa(ka,lb)   
+                      SPComplexType qlakb = *(Qa.values() + kb*norb*NAEA + la);  // Qa(kb,la)   
+                      if(std::abs( qkalb - qlakb ) > cut) sz++;
+                    }
+                  }
+                }
+              } else {
+                // <a,b | k,l> = Qa(ka,lb) = Q(k,a,:)*R(l,b,:) 
+                DenseMatrixOperators::product(nk*NAEA,int(blN-bl0),nvec,SPComplexType(1.0),tQk.values(),nvec,Rl.values()+bl0,norb*NAEB,SPComplexType(0),Qa.values()+bl0,norb*NAEB);
+                for(int k=k0, ka=0; k<kN; k++) {
+                  for(int a=0; a<NAEA; a++, ka++) {
+                    for(int lb=bl0; lb<blN; lb++) { // lb = (l-l0)*NAEB+b  
+                      SPComplexType qkalb = *(Qa.values() + ka*norb*NAEB + lb);  // Qa(ka,lb)   
+                      if(std::abs( qkalb ) > cut) sz++;
+                    }
+                  }
+                }
+              }  
+
+            } else if(M_split[nn] >= NMO && M_split[nn+1] >= NMO) {
+              // k is beta           
+              if(!amIAlpha) {
+                // <a,b | k,l> = Qa(ka,lb) - Qb(la,kb)
+                // Qa(ka,lb) = Q(k,a,:)*R(l,b,:)                
+                DenseMatrixOperators::product(nk*NAEB,int(blN-bl0),nvec,SPComplexType(1.0),tQk.values(),nvec,Rl.values()+bl0,norb*NAEB,SPComplexType(0),Qa.values()+bl0,norb*NAEB);
+                Qa.barrier();
+                for(int k=k0, ka=0; k<kN; k++) {
+                  for(int a=0; a<NAEB; a++, ka++) {
+                    for(int lb=bl0; lb<blN; lb++) { // lb = (l-l0)*NAEA+b  
+                      int b = lb%NAEB;
+                      if(b<=a) continue;
+                      int l = lb/NAEB+l0;
+                      int la = (l-l0)*NAEB+a;
+                      int kb = (k-k0)*NAEB+b;
+                      SPComplexType qkalb = *(Qa.values() + ka*norb*NAEB + lb);  // Qa(ka,lb)   
+                      SPComplexType qlakb = *(Qa.values() + kb*norb*NAEB + la);  // Qa(kb,la)   
+                      if(std::abs( qkalb - qlakb ) > cut) sz++;
+                    }
+                  }
+                }
+              }  
+            } else {
+              APP_ABORT(" Error: This should not happen. \n\n\n");
+            } 
+
+          } else if(walker_type == 2) {
+            APP_ABORT(" Error in createHamiltonianForGeneralDeterminant: GHF not implemented. \n\n\n");
+          }
+MPI_Barrier(myComm->getMPI()); // to measure actual time
+Timer.stop("Generic2");
+app_log()<<"Time to calculate Qab: " <<nn <<"  " <<Timer.total("Generic2") <<std::endl;
+
         }
-        }
 
-      } else if(walker_type == 1) {
-        APP_ABORT("Error: TODO: createHamiltonianForGeneralDeterminant not implemented for UHF walker type yet. \n\n\n");
-      } else if(walker_type == 2) {
-        APP_ABORT("Error: TODO: createHamiltonianForGeneralDeterminant not implemented for GHF walker type yet. \n\n\n");
       }
 
-      myComm->allreduce(cnter);
-      Vijkl.allocate(cnter+1000);
+      unsigned long sz_local=sz;
+      MPI_Allreduce(&sz_local,&sz,1,MPI_UNSIGNED_LONG,MPI_SUM,myComm->getMPI()); 
+      // not yet distributed, later on decide distribution here based on FairDivide
+      // and allocate appropriately          
+      app_log()<<"Number of terms in Vijkl: " <<sz <<" " <<sz*(sizeof(ValueType)+sizeof(int)*2)/1024.0/1024.0 <<" MB" <<std::endl;
+      Vijkl.allocate(sz);
 
-      if(walker_type == 0) {
+      // now calculate fully distributed matrix elements
+      for(int nn=0; nn<ngrp; nn++) {
 
-        for(int k=0, nt=0; k<NMO; k++) {
-        for(int l=k; l<NMO; l++, nt++) {
-        
-          // instead of round robin, use FairShare on NMO*(NMO+1)/2, since that allows reuse of Qk
-          if( nt%npr != rk ) continue;
-
-          // 1. check if Qk/Rl has been previously built. If not build and store it
-#if defined(QMC_COMPLEX)
-          ComplexType *Qkptr = Qk.data();
-          ComplexType *Rlptr = Rl.data();
-            
+        int nktot = M_split[nn+1]-M_split[nn];
+        if(nktot==0) continue;
+        int nblk = ( ( nktot - 1 ) / maxnk ) + 1;  
+        for( int bi = 0; bi < nblk; bi++) {
+          int nk = std::min( (bi+1)*maxnk, nktot  ) - bi*maxnk;
+          int k0 = M_split[nn]+bi*maxnk;
+          int kN = k0+nk; 
+          int NEL0 = (k0<NMO)?NAEA:NAEB;
+          assert(nk > 0 && nk <= maxnk );
+          if(head_of_nodes) {
+            if(nn == nodeid) {
+              std::copy(Qk.values()+bi*maxnk*NEL0*nvec,Qk.values()+(bi*maxnk+nk)*NEL0*nvec,tQk.values());
+            }  
+#if defined(AFQMC_SP)
+            MPI_Bcast(tQk.values(),nk*NEL0*nvec*2,MPI_FLOAT,nn,MPI_COMM_HEAD_OF_NODES);
 #else
-          ComplexType *Qkptr = Qk.data();
-          ComplexType *Rlptr = Rl.data();
+            MPI_Bcast(tQk.values(),nk*NEL0*nvec*2,MPI_DOUBLE,nn,MPI_COMM_HEAD_OF_NODES);
+#endif
+          } 
+          tQk.barrier();
 
-          Qk=0;
-          for(int i=0; i<NMO; i++) {
-            int ik = i*NMO+k;
-            int n0 = *(V2_fact.row_index() + ik);  
-            int n1 = *(V2_fact.row_index() + ik+1);
-            if(n1==n0) continue;
-            int nv = n1-n0;  
-            ValueSMSpMat::pointer itLval = V2_fact.values() + n0;
-            ValueSMSpMat::indxPtr itLcol = V2_fact.column_data() + n0;
-            const ComplexType* itAia = A[i];
-            for(int a=0; a<NAEA; a++, itAia++) {
-              Qkptr = Qk[a];
-              for(int n=0; n<nv; n++)   
-                //*(Qkptr+(*(itLcol+n))) += std::conj(*itAia) * (*(itLval+n));
-                Qk(a,itLcol[n]) += std::conj(A(i,a)) * itLval[n];
+///*
+Timer.reset("Generic2");
+Timer.start("Generic2");
+
+          assert(nblk==1);
+          if(head_of_nodes) {
+            long nterms=0;
+            if(nn == nodeid) {
+              long n0 = *SpQk.row_index( (bi*maxnk)*NEL0 ); 
+              long n1 = *SpQk.row_index( (bi*maxnk+nk)*NEL0 );
+              nterms = n1-n0; 
+              SptQk.resize_serial(nterms);
+              std::copy(SpQk.values()+n0,SpQk.values()+n1,SptQk.values());
+              std::copy(SpQk.column_data()+n0,SpQk.column_data()+n1,SptQk.column_data());
+              for(int i=0, j=(bi*maxnk)*NEL0; i<=nk*NEL0; i++, j++)
+                SptQk.row_index()[i] = SpQk.row_index()[j]-n0;
             }
+            MPI_Bcast(&nterms,1,MPI_LONG,nn,MPI_COMM_HEAD_OF_NODES);
+            SptQk.resize_serial(nterms);
+#if defined(AFQMC_SP)
+            MPI_Bcast(SptQk.values(),nterms*2,MPI_FLOAT,nn,MPI_COMM_HEAD_OF_NODES);
+#else
+            MPI_Bcast(SptQk.values(),nterms*2,MPI_DOUBLE,nn,MPI_COMM_HEAD_OF_NODES);
+#endif
+            MPI_Bcast(SptQk.column_data(),nterms,MPI_INT,nn,MPI_COMM_HEAD_OF_NODES);
+            MPI_Bcast(SptQk.row_index(),nk*NEL0+1,MPI_INT,nn,MPI_COMM_HEAD_OF_NODES);
           }
-          Qkptr = Qk.data();
+          SptQk.setCompressed();
+          SptQk.barrier();
 
-          if(k==l) { 
-            Rlptr = Qk.data();
-          } else {
-            Rl=0;
-            for(int i=0; i<NMO; i++) {
-              int li = l*NMO+i;
-              int n0 = *(V2_fact.row_index() + li);
-              int n1 = *(V2_fact.row_index() + li+1);
-              if(n1==n0) continue;
-              int nv = n1-n0;
-              ValueSMSpMat::pointer itLval = V2_fact.values() + n0;
-              ValueSMSpMat::indxPtr itLcol = V2_fact.column_data() + n0;
-              const ComplexType* itAia = A[i];
-              for(int a=0; a<NAEA; a++, itAia++) {
-                Rlptr = Rl[a];
-                for(int n=0; n<nv; n++) 
-                  //*(Rlptr+(*(itLcol+n))) += std::conj(*itAia) * (*(itLval+n)); // conj(L) in complex
-                  Rl(a,itLcol[n]) += std::conj(A(i,a)) * itLval[n]; 
+Timer.stop("Generic2");
+app_log()<<"Time to Bcast SptQk: " <<nn <<"  " <<Timer.total("Generic2") <<std::endl;
+//*/
+          if(walker_type == 0) {
+
+            // <a,b | k,l> = Qa(ka,lb) - Qb(la,kb)
+            // Qa(ka,lb) = 4*Q(k,a,:)*R(l,b,:)
+            DenseMatrixOperators::product(nk*NAEA,int(blN-bl0),nvec,SPComplexType(1.0),tQk.values(),nvec,Rl.values()+bl0,norb*NAEA,SPComplexType(0),Qa.values()+bl0,norb*NAEA);
+            Qa.barrier();
+            SPComplexType four = SPComplexType(4.0);
+            SPComplexType two = SPComplexType(2.0);
+            for(int k=k0, ka=0; k<kN; k++) {
+              for(int a=0; a<NAEA; a++, ka++) {
+                for(int lb=bl0; lb<blN; lb++) { // lb = (l-l0)*NAEA+b  
+                  int b = lb%NAEA;
+                  if(b<a) continue;
+                  int l = lb/NAEA+l0;
+                  int la = (l-l0)*NAEA+a;
+                  int kb = (k-k0)*NAEA+b;
+                  SPComplexType qkalb = *(Qa.values() + ka*norb*NAEA + lb);  // Qa(ka,lb)   
+                  SPComplexType qlakb = *(Qa.values() + kb*norb*NAEA + la);  // Qa(kb,la)   
+                  if(std::abs( four*qkalb - two*qlakb ) > cut) {
+                    abkl.push_back( std::make_tuple(a*NMO+k, b*NMO+l, 2.0*(four*qkalb - two*qlakb)) );
+                    if(abkl.size()==nmax) {
+                      Vijkl.add(abkl,true);
+                      abkl.clear();
+                    } 
+                  }
+                }
               }
             }
-            Rlptr = Rl.data();
-          }  
-#endif 
 
-          // 2. Qa(a,b) = <ab|||kl> = 4*Qk*Rl.T - 2*Rl*Qk.T
-          RealType fct = (k==l)?1.0:2.0;
-          DenseMatrixOperators::product_ABt(NAEA,NAEA,ncvec,ComplexType(4.0*fct,0.0),Qkptr,ncvec,Rlptr,ncvec,ComplexType(0),Qa.data(),NAEA);
-          DenseMatrixOperators::product_ABt(NAEA,NAEA,ncvec,ComplexType(-2.0*fct,0.0),Rlptr,ncvec,Qkptr,ncvec,ComplexType(1),Qa.data(),NAEA);
+          } else if(walker_type == 1) {
 
-          // Now I have Q(a,b,k0,l0);
-          for(int a=0; a<NAEA; a++)
-           for(int b=0; b<NAEA; b++) 
-             if(std::abs(Qa(a,b)) > cut)
-               Vijkl.add( a*NMO+k, b*NMO+l, static_cast<SPComplexType>(Qa(a,b)), true);
-        }
-        }
+            if( M_split[nn] < NMO && (M_split[nn+1]-1) < NMO ) {
+              // k is alpha
 
-      } else if(walker_type == 1) {
-        APP_ABORT("Error: TODO: createHamiltonianForGeneralDeterminant not implemented for UHF walker type yet. \n\n\n");
-      } else if(walker_type == 2) {
-        APP_ABORT("Error: TODO: createHamiltonianForGeneralDeterminant not implemented for GHF walker type yet. \n\n\n");
+              if(amIAlpha) {
+                // <a,b | k,l> = Qa(ka,lb) - Qb(la,kb)
+                // Qa(ka,lb) = Q(k,a,:)*R(l,b,:)
+              
+                Qa.barrier();
+Timer.reset("Generic2");
+Timer.start("Generic2");
+
+                DenseMatrixOperators::product(nk*NAEA,int(blN-bl0),nvec,SPComplexType(1.0),tQk.values(),nvec,Rl.values()+bl0,norb*NAEA,SPComplexType(0),Qa.values()+bl0,norb*NAEA);
+                Qa.barrier();
+
+
+Timer.stop("Generic2");
+app_log()<<"Time for dense DGEMM : " <<nn <<"  " <<Timer.total("Generic2") <<std::endl;
+
+/*
+              SpQk.toOneBase();
+              SpRl.toOneBase();
+Timer.reset("Generic2");
+Timer.start("Generic2");
+
+#if defined(HAVE_MKL)
+              char TRANS = 'N';
+              int M_ = akN-ak0, N_ = nk*NAEA;
+              int p0_ = *SpQk.row_index(ak0);  
+              int ldc_ = nk*NAEA;
+              mkl_zcsrmultd (&TRANS, &M_ , &N_ , &nvec , SpQk.values() , SpQk.column_data() , SpQk.row_index()+ak0 , SptRl.values() , SptRl.column_data() , SptRl.row_index() , Ta.values()+ak0*nk*NAEA , &ldc_ );     
+              SpQk.barrier();  
+#else 
+              APP_ABORT(" Error: Requires MKL. Code alternative (Talk to Miguel) \n\n\n");
+#endif
+
+Timer.stop("Generic2");
+app_log()<<"Time for sparse DGEMM : " <<nn <<"  " <<Timer.total("Generic2") <<std::endl;
+
+              if(coreid==0) {
+                for(int a=0; a<norb*NAEA; a++)
+                  for(int b=0; b<nk*NAEA; b++)
+                    if( std::abs(*(Qa.values()+a*nk*NAEA+b) - *(Ta.values()+a*nk*NAEA+b) ) > 1e-6)
+                      app_log()<<" Diff: " <<a <<" " <<b <<" " <<*(Qa.values()+a*nk*NAEA+b) <<" " <<*(Ta.values()+a*nk*NAEA+b) <<std::endl;
+              }  
+
+              SpQk.toZeroBase();
+              SpRl.toZeroBase();
+              SpQk.barrier();  
+*/
+///*
+              //int p0_ = *SpQk.row_index(bl0);
+Timer.reset("Generic2");
+Timer.start("Generic2");
+              SparseMatrixOperators::product_SpMatM(nk*NAEA,int(blN-bl0),nvec,SPComplexType(1.0),SptQk.values(),SptQk.column_data(), SptQk.row_index(), Rl.values()+bl0,norb*NAEA,SPComplexType(0),Ta.values()+bl0,norb*NAEA);
+              SpQk.barrier();  
+Timer.stop("Generic2");
+app_log()<<"Time for sparse DGEMM : " <<nn <<"  " <<Timer.total("Generic2") <<std::endl;
+              SpQk.barrier();  
+
+              if(coreid==0) {
+                for(int a=0; a<nk*NAEA; a++)
+                  for(int b=0; b<norb*NAEA; b++)
+                    if( std::abs(*(Qa.values()+a*norb*NAEA+b) - *(Ta.values()+a*norb*NAEA+b) ) > 1e-6)
+                      app_log()<<" Diff: " <<a <<" " <<b <<" " <<*(Qa.values()+a*norb*NAEA+b) <<" " <<*(Ta.values()+a*norb*NAEA+b) <<std::endl;
+              }
+
+//*/
+                for(int k=k0, ka=0; k<kN; k++) {
+                  for(int a=0; a<NAEA; a++, ka++) {
+                    for(int lb=bl0; lb<blN; lb++) { // lb = (l-l0)*NAEA+b  
+                      int b = lb%NAEA;
+                      if(b<=a) continue;
+                      int l = lb/NAEA+l0;
+                      int la = (l-l0)*NAEA+a;
+                      int kb = (k-k0)*NAEA+b;
+                      SPComplexType qkalb = *(Ta.values() + ka*norb*NAEA + lb);  // Qa(ka,lb)   
+                      SPComplexType qlakb = *(Ta.values() + kb*norb*NAEA + la);  // Qa(kb,la)
+                      if(std::abs( qkalb - qlakb ) > cut) {
+                        abkl.push_back( std::make_tuple(a*NMO+k, b*NMO+l, 2.0*(qkalb - qlakb)) );
+                        if(abkl.size()==nmax) {
+                          Vijkl.add(abkl,true);
+                          abkl.clear();
+                        }
+                      }
+                    }
+                  }
+                }
+
+              } else {
+                DenseMatrixOperators::product(nk*NAEA,int(blN-bl0),nvec,SPComplexType(1.0),tQk.values(),nvec,Rl.values()+bl0,norb*NAEB,SPComplexType(0),Qa.values()+bl0,norb*NAEB);
+                for(int k=k0, ka=0; k<kN; k++) {
+                  for(int a=0; a<NAEA; a++, ka++) {
+                    for(int lb=bl0; lb<blN; lb++) { // lb = (l-l0)*NAEB+b  
+                      int b = lb%NAEB;
+                      int l = lb/NAEB+l0;
+                      SPComplexType qkalb = *(Qa.values() + ka*norb*NAEB + lb);  // Qa(ka,lb)   
+                      if(std::abs( qkalb ) > cut) { 
+                        abkl.push_back( std::make_tuple(a*NMO+k, NMO*NMO+b*NMO+l-NMO, 2.0*(qkalb)));
+                        if(abkl.size()==nmax) {
+                          Vijkl.add(abkl,true);
+                          abkl.clear();
+                        }
+                      }
+                    }
+                  }
+                }
+              }  
+
+            } else if(M_split[nn] >= NMO && M_split[nn+1] >= NMO) {
+              // k is beta
+              if(!amIAlpha) {
+                // <a,b | k,l> = Qa(ka,lb) - Qb(la,kb)
+                // Qa(ka,lb) = Q(k,a,:)*R(l,b,:)
+                DenseMatrixOperators::product(nk*NAEB,int(blN-bl0),nvec,SPComplexType(1.0),tQk.values(),nvec,Rl.values()+bl0,norb*NAEB,SPComplexType(0),Qa.values()+bl0,norb*NAEB);
+                Qa.barrier(); 
+                for(int k=k0, ka=0; k<kN; k++) {
+                  for(int a=0; a<NAEB; a++, ka++) {
+                    for(int lb=bl0; lb<blN; lb++) { // lb = (l-l0)*NAEA+b  
+                      int b = lb%NAEB;
+                      if(b<=a) continue;
+                      int l = lb/NAEB+l0;
+                      int la = (l-l0)*NAEB+a;
+                      int kb = (k-k0)*NAEB+b;
+                      SPComplexType qkalb = *(Qa.values() + ka*norb*NAEB + lb);  // Qa(ka,lb)   
+                      SPComplexType qlakb = *(Qa.values() + kb*norb*NAEB + la);  // Qa(kb,la)   
+                      if(std::abs( qkalb - qlakb ) > cut) {
+                        abkl.push_back( std::make_tuple(NMO*NMO+a*NMO+k-NMO, NMO*NMO+b*NMO+l-NMO, 2.0*(qkalb - qlakb)) );
+                        if(abkl.size()==nmax) {
+                          Vijkl.add(abkl,true);
+                          abkl.clear();
+                        }
+                      } 
+                    }
+                  }
+                }
+              }
+            } else {
+              APP_ABORT(" Error: This should not happen. \n\n\n");
+            }
+
+          } else if(walker_type == 2) {
+            APP_ABORT(" Error in createHamiltonianForGeneralDeterminant: GHF not implemented. \n\n\n");
+          }
+        } // bi < nblk
       }
+
+      if(abkl.size()>0) {
+        Vijkl.add(abkl,true);
+        abkl.clear();
+      }
+      Qk.barrier();
+      myComm->barrier();
+
+      Timer.stop("Generic");
+      app_log()<<"Time to calculate distributed Hamiltonian: " <<Timer.total("Generic") <<std::endl;
 
       if(!communicate_Vijkl(Vijkl)) return false;
       myComm->barrier();
