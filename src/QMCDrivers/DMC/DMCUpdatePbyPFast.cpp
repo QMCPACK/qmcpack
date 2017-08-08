@@ -146,9 +146,6 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
     //need to overwrite the walker properties
     myTimers[2]->start();
     thisWalker.Age=0;
-    thisWalker.R = W.R;
-    //w_buffer.rewind();
-    //W.updateBuffer(w_buffer);
     RealType logpsi = Psi.updateBuffer(W,w_buffer,recompute);
     W.saveWalker(thisWalker);
     myTimers[2]->stop();
@@ -192,22 +189,27 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
     if(ibar)
     {
       int iat=nonLocalOps.id(ibar);
-      if(!W.makeMoveAndCheck(iat,nonLocalOps.delta(ibar))) return;
-      myTimers[2]->start();
-      Psi.acceptTMove(W,iat,w_buffer);
-#if 0
-      RealType ratio=Psi.ratio(W,iat,dG,dL);
-      W.G += dG;
-      W.L += dL;
-      //thisWalker.R[iat]=W.R[iat];
-      //w_buffer.rewind();
-      //W.copyToBuffer(w_buffer);
-      RealType logpsi = Psi.evaluateLog(W,w_buffer);
+#ifdef ENABLE_SOA
+      W.setActive(iat);
 #endif
-      W.saveWalker(thisWalker);
-      //PAOps<RealType,OHMMS_DIM>::copy(W.G,thisWalker.Drift);
-      ++NonLocalMoveAccepted;
-      myTimers[2]->stop();
+      if(W.makeMoveAndCheck(iat,nonLocalOps.delta(ibar)))
+      {
+        myTimers[2]->start();
+        GradType grad_iat;
+        Psi.ratioGrad(W,iat,grad_iat);
+        Psi.acceptMove(W,iat);
+#ifndef ENABLE_SOA
+        W.acceptMove(iat);
+#endif
+        RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
+        // debugging lines
+        //W.update(true);
+        //RealType logpsi2 = Psi.evaluateLog(W);
+        //if(logpsi!=logpsi2) std::cout << " logpsi " << logpsi << " logps2i " << logpsi2 << " diff " << logpsi2-logpsi << std::endl;
+        myTimers[2]->stop();
+        W.saveWalker(thisWalker);
+        ++NonLocalMoveAccepted;
+      }
     }
   }
   //2008-06-26: select any
