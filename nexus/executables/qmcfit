@@ -12,6 +12,17 @@ except ImportError:
     print 'tsfit error: scipy is not present on your machine\n  please install scipy and retry'
 #end try
 try:
+    import matplotlib
+    gui_envs = ['GTKAgg','TKAgg','Qt4Agg','WXAgg']
+    for gui in gui_envs:
+        try:
+            matplotlib.use(gui,warn=False, force=True)
+            from matplotlib import pyplot
+            break
+        except:
+            continue
+        #end try
+    #end for
     from matplotlib.pyplot import figure,plot,xlabel,ylabel,title,show,ylim,legend,xlim,rcParams,savefig,bar,xticks,subplot,grid,setp,errorbar,loglog,semilogx,semilogy,text
 
     params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
@@ -1432,7 +1443,7 @@ def timestep_fit():
                       )
 
     options,args = parser.parse_args()
-    scalar_files = args[1:]
+    scalar_files = list(sorted(args[1:]))
     opt = obj(**options.__dict__)
 
     if len(scalar_files)==0:
