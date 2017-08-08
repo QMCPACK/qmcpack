@@ -289,7 +289,7 @@ bool DMCOMP::run()
 #pragma omp for nowait
         for(size_t iw=0;iw<nw; ++iw)
         {
-          Walker_t& thisWalker(*W.getWalker(iw));
+          Walker_t& thisWalker(*W[iw]);
           Movers[ip]->advanceWalker(thisWalker,recompute);
           //Movers[ip]->setMultiplicity(thisWalker);
         }

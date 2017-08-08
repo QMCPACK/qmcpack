@@ -112,10 +112,10 @@ void test_real_accumulator()
   REQUIRE(a.variance() == Approx(4.625));
 
   std::pair<T, T> mv = a.mean_and_variance();
-  REQUIRE(mv.first == a.mean());
-  REQUIRE(mv.second == a.variance());
+  REQUIRE(mv.first == Approx(a.mean()));
+  REQUIRE(mv.second == Approx(a.variance()));
 
-  REQUIRE(mean(a) == a.mean());
+  REQUIRE(mean(a) == Approx(a.mean()));
 
   // check that this doesn't crash
   std::stringstream o;
@@ -149,8 +149,8 @@ void test_real_accumulator_weights()
   REQUIRE(a.variance() == Approx(5.1909181302));
 
   std::pair<T, T> mv = a.mean_and_variance();
-  REQUIRE(mv.first == a.mean());
-  REQUIRE(mv.second == a.variance());
+  REQUIRE(mv.first == Approx(a.mean()));
+  REQUIRE(mv.second == Approx(a.variance()));
 }
 
 TEST_CASE("accumulator with weights float", "[estimators]")

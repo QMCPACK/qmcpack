@@ -80,7 +80,7 @@ void NonLocalECPComponent::resize_warrays(int n,int m,int l)
   {
     if(lmax>7) 
     {
-      APP_ABORT("Increase the maximum angular momentum in NonLocalECPComponet.h");
+      APP_ABORT("Increase the maximum angular momentum implemented.");
     }
     //Lfactor1.resize(lmax);
     //Lfactor2.resize(lmax);

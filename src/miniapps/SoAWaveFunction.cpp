@@ -74,6 +74,6 @@ namespace qmcplusplus
     constexpr valT czero(0);
     P.G=czero;
     P.L=czero;
-    J2->evaluateGL(P);
+    J2->evaluateGL(P,P.G,P.L);
   }
 }

@@ -2,6 +2,25 @@
 
 Notable changes to QMCPACK will be documented in this file. 
 
+## [3.1.1] - 2017-08-01
+
+### Notes
+
+This is a bugfix release and recommended update.
+
+### QMCPACK updates
+
+* Added numerical tolerance to check of jastrow cutoff and Wigner Seitz
+  radius.
+* CMake correctly configures when MPI is not present.
+* Improved support for test coverage measurements.
+* Added unit tests for some estimators.
+
+### NEXUS
+
+* IPython compatible exit handling (from Duy Le)
+
+
 ## [3.1.0] - 2017-06-21
 
 ### Notes

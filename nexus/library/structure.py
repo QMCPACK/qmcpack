@@ -3821,14 +3821,19 @@ class Structure(Sobj):
     #end def interpolate
 
 
+    # returns madelung potential constant v_M
+    #   see equation 7 in PRB 78 125106 (2008) 
     def madelung(self,axes=None,tol=1e-10):
         if self.dim!=3:
             self.error('madelung is currently only implemented for 3 dimensions')
         #end if
-        if axes==None:
-            a = self.axes.T
+        if axes is None:
+            a = self.axes.T.copy()
         else:
-            a = axes.T
+            a = axes.T.copy()
+        #end if
+        if self.units!='B':
+            a = convert(a,self.units,'B')
         #end if
         volume = abs(det(a))
         b = 2*pi*inv(a).T
@@ -3852,7 +3857,7 @@ class Structure(Sobj):
             p.R  = R[0:izero]
             p.G2 = G2[0:izero]
             m.R  = R[izero+1:]
-            m.G2  = G2[izero+1:]
+            m.G2 = G2[izero+1:]
             domains = [p,m]
             vshell.append(0.)
             for d in domains:
@@ -3864,11 +3869,28 @@ class Structure(Sobj):
         #end for
         vm = vmc + vshell[-1]
 
-        if axes==None:
+        if axes is None:
             self.Vmadelung = vm
         #end if
         return vm
     #end def madelung
+
+
+    def makov_payne(self,q=1,eps=1.0,units='Ha',order=1):
+        if order!=1:
+            self.error('Only first order Makov-Payne correction is currently supported.')
+        #end if
+        if 'Vmadelung' not in self:
+            vm = self.madelung()
+        else:
+            vm = self.Vmadelung
+        #end if
+        mp = -0.5*q**2*vm/eps
+        if units!='Ha':
+            mp = convert(mp,'Ha',units)
+        #end if
+        return mp
+    #end def makov_payne
 
 
     def read(self,filepath,format=None,elem=None,block=None,grammar='1.1',cell='prim',contents=False):

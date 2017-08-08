@@ -409,7 +409,15 @@ struct BsplineFunctor: public OptimizableFunctorBase
     else
       if (periodic && radius > cutoff_radius)
       {
-        APP_ABORT("  The Jastrow cutoff specified should not be larger than Wigner-Seitz radius.");
+        if (radius - cutoff_radius > 1e-4)
+        {
+          APP_ABORT( "  The Jastrow cutoff specified should not be larger than Wigner-Seitz radius.");
+        }
+        else
+        {
+          app_log() << "  The Jastrow cutoff specified is slightly larger than the Wigner-Seitz radius.";
+          app_log() << "  Setting to Wigner-Seitz radius = " << cutoff_radius << ".\n";
+        }
       }
       else
         cutoff_radius = radius;
