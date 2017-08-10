@@ -314,7 +314,9 @@ inline bool found_shorter_base(TinyVector<TinyVector<T,3>,3>& rb)
 template<typename T>
 inline void find_reduced_basis(TinyVector<TinyVector<T,3>,3>& rb)
 {
-  do
+  int maxIter=10000;
+ 
+  for(int count=0; count<maxIter; count++)
   {
     TinyVector<TinyVector<T,3>,3> saved(rb);
     bool changed=false;
@@ -329,7 +331,7 @@ inline void find_reduced_basis(TinyVector<TinyVector<T,3>,3>& rb)
     if(!changed && !found_shorter_base(rb))
       return;
   }
-  while(1);
+  
 }
 
 }
