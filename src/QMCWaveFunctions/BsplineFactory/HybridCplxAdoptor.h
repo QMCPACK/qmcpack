@@ -33,8 +33,8 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   using PointType        = typename BaseAdoptor::PointType;
   using SingleSplineType = typename BaseAdoptor::SingleSplineType;
 
-  typename OrbitalSetTraits<ST>::ValueVector_t psi_AO, d2psi_AO;
-  typename OrbitalSetTraits<ST>::GradVector_t dpsi_AO;
+  typename OrbitalSetTraits<SPOSetBase::ValueType>::ValueVector_t psi_AO, d2psi_AO;
+  typename OrbitalSetTraits<SPOSetBase::ValueType>::GradVector_t dpsi_AO;
 
   using BaseAdoptor::myV;
   using BaseAdoptor::myG;

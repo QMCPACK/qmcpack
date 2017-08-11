@@ -89,13 +89,13 @@ struct AtomicOrbitalSoA
   }
 
   template<typename PT, typename VT>
-  inline void set_info(const PT& R, const VT& cutoff_in, const VT& spline_radius_in, const int& spline_npoints_in)
+  inline void set_info(const PT& R, const VT& cutoff_in, const VT& cutoff_buffer_in, const VT& spline_radius_in, const int& spline_npoints_in)
   {
     pos[0]=R[0];
     pos[1]=R[1];
     pos[2]=R[2];
     cutoff=cutoff_in;
-    cutoff_buffer=cutoff_in*0.7;
+    cutoff_buffer=cutoff_buffer_in;
     spline_radius=spline_radius_in;
     spline_npoints=spline_npoints_in;
     BaseN=spline_npoints+2;

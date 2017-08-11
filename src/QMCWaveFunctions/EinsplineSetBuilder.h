@@ -292,7 +292,7 @@ public:
   struct CenterInfo
   {
     std::vector<int> lmax, spline_npoints, GroupID;
-    std::vector<double> spline_radius, cutoff;
+    std::vector<double> spline_radius, cutoff, inner_cutoff;
     std::vector<TinyVector<double,OHMMS_DIM> > ion_pos;
     int Ncenters;
 
@@ -305,6 +305,7 @@ public:
       spline_npoints.resize(ncenters, -1);
       GroupID.resize(ncenters);
       spline_radius.resize(ncenters, -1.0);
+      inner_cutoff.resize(ncenters, -1.0);
       cutoff.resize(ncenters, -1.0);
       ion_pos.resize(ncenters);
     }
