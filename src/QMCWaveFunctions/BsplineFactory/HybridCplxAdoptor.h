@@ -29,12 +29,13 @@ template<typename BaseAdoptor>
 struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename BaseAdoptor::DataType>
 {
   using HybridBase       = HybridAdoptorBase<typename BaseAdoptor::DataType>;
-  using ST               = typename BaseAdoptor::DataType;
   using PointType        = typename BaseAdoptor::PointType;
   using SingleSplineType = typename BaseAdoptor::SingleSplineType;
+  using RealType         = typename SPOSetBase::RealType;
+  using ValueType        = typename SPOSetBase::ValueType;
 
-  typename OrbitalSetTraits<SPOSetBase::ValueType>::ValueVector_t psi_AO, d2psi_AO;
-  typename OrbitalSetTraits<SPOSetBase::ValueType>::GradVector_t dpsi_AO;
+  typename OrbitalSetTraits<ValueType>::ValueVector_t psi_AO, d2psi_AO;
+  typename OrbitalSetTraits<ValueType>::GradVector_t dpsi_AO;
 
   using BaseAdoptor::myV;
   using BaseAdoptor::myG;
@@ -88,12 +89,13 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   template<typename VV>
   inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
   {
-    const ST smooth_factor=HybridBase::evaluate_v(P,iat,myV);
+    const RealType smooth_factor=HybridBase::evaluate_v(P,iat,myV);
+    const RealType cone(1);
     if(smooth_factor<0)
     {
       BaseAdoptor::evaluate_v(P,iat,psi);
     }
-    else if (smooth_factor==ST(1))
+    else if (smooth_factor==cone)
     {
       const PointType& r=P.R[iat];
       BaseAdoptor::assign_v(r,psi);
@@ -101,7 +103,6 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     else
     {
       const PointType& r=P.R[iat];
-      const ST cone(1);
       psi_AO.resize(psi.size());
       BaseAdoptor::assign_v(r,psi_AO);
       BaseAdoptor::evaluate_v(P,iat,psi);
@@ -113,12 +114,13 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   template<typename VV, typename GV>
   inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {
-    const ST smooth_factor=HybridBase::evaluate_vgl(P,iat,myV,myG,myL);
+    const RealType smooth_factor=HybridBase::evaluate_vgl(P,iat,myV,myG,myL);
+    const RealType cone(1);
     if(smooth_factor<0)
     {
       BaseAdoptor::evaluate_vgl(P,iat,psi,dpsi,d2psi);
     }
-    else if(smooth_factor==ST(1))
+    else if(smooth_factor==cone)
     {
       const PointType& r=P.R[iat];
       BaseAdoptor::assign_vgl_from_l(r,psi,dpsi,d2psi);
@@ -126,8 +128,8 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     else
     {
       const PointType& r=P.R[iat];
-      const ST cone(1), ctwo(2);
-      const ST rinv(1.0/dist_r);
+      const RealType ctwo(2);
+      const RealType rinv(1.0/dist_r);
       psi_AO.resize(psi.size());
       dpsi_AO.resize(psi.size());
       d2psi_AO.resize(psi.size());
@@ -136,10 +138,10 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
       for(size_t i=0; i<psi.size(); i++)
       {
         d2psi[i] = d2psi_AO[i]*smooth_factor + d2psi[i]*(cone-smooth_factor)
-                 + dot(dpsi[i]-dpsi_AO[i], dist_dr) * df_dr * rinv * ctwo
+                 + df_dr * rinv * ctwo * dot(dpsi[i]-dpsi_AO[i], dist_dr)
                  + (psi_AO[i]-psi[i]) * (d2f_dr2 + ctwo * rinv *df_dr);
          dpsi[i] =  dpsi_AO[i]*smooth_factor +  dpsi[i]*(cone-smooth_factor)
-                 + (psi[i]-psi_AO[i]) * df_dr * rinv * dist_dr;
+                 + df_dr * rinv * dist_dr * (psi[i]-psi_AO[i]);
           psi[i] =   psi_AO[i]*smooth_factor +   psi[i]*(cone-smooth_factor);
       }
     }
