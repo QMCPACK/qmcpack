@@ -61,7 +61,10 @@ struct hdf_archive
   std::stack<hid_t> group_id;
   /** constructor
    * @param c communicator
-   * @param use_collective turn on/off collective
+   * @param request_pio turns on parallel I/O,
+   *        if ture and PHDF5 is available, hdf_archive is in parallel collective IO mode
+   *        if ture and PHDF5 is not available, hdf_archive is in master-only IO mode
+   *        if false, hdf_archive is in independent IO mode
    */
   hdf_archive(Communicate* c=0, bool request_pio=false);
   ///destructor

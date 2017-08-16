@@ -384,7 +384,7 @@ void RandomNumberControl::read(const std::string& fname, Communicate* comm)
   if(hin.is_parallel())
     read_parallel(hin, comm);
   else
-    read_scatter(hin, comm);
+    read_rank_0(hin, comm);
 }
 
 //switch between write functions
@@ -396,7 +396,7 @@ void RandomNumberControl::write(const std::string& fname, Communicate* comm)
   if(hout.is_parallel())
     write_parallel(hout, comm);
   else
-    write_scatter(hout, comm);
+    write_rank_0(hout, comm);
 }
 
 //Parallel read
@@ -491,7 +491,7 @@ void RandomNumberControl::write_parallel(hdf_archive& hout, Communicate* comm)
 }
 
 //Scatter read
-void RandomNumberControl::read_scatter(hdf_archive& hin, Communicate* comm)
+void RandomNumberControl::read_rank_0(hdf_archive& hin, Communicate* comm)
 {
   int nthreads = omp_get_max_threads();
   std::vector<uint_type> vt, vt_tot, mt, mt_tot;
@@ -560,7 +560,7 @@ void RandomNumberControl::read_scatter(hdf_archive& hin, Communicate* comm)
 }
 
 //scatter write
-void RandomNumberControl::write_scatter(hdf_archive& hout, Communicate* comm)
+void RandomNumberControl::write_rank_0(hdf_archive& hout, Communicate* comm)
 {
   int nthreads = omp_get_max_threads();
   std::vector<uint_type> vt, vt_tot, mt, mt_tot;

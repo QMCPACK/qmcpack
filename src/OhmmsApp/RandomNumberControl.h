@@ -75,16 +75,18 @@ public:
    * @param comm communicator so that everyone writes its own data
    */
   static void write_parallel(hdf_archive& hout, Communicate* comm);
-  /** read random state from a hdf file serially
+  /** rank 0 reads random states from a hdf file
+   * and distributes them to all the other ranks
    * @param hdf_archive set to serial
    * @param comm communicator so that everyone reads its own data
    */
-  static void read_scatter(hdf_archive& hin, Communicate* comm);
-  /** write random state to a hdf file serially
+  static void read_rank_0(hdf_archive& hin, Communicate* comm);
+  /** rank 0 gathers the random states from all the other ranks
+   * and write them to a hdf file
    * @param hin hdf_archive object set to serial
    * @param comm communicator so that everyone writes its own data
    */
-  static void write_scatter(hdf_archive& hout, Communicate* comm);
+  static void write_rank_0(hdf_archive& hout, Communicate* comm);
    /** read random state from a xml file
    * @param fname file name
    * @param comm communicator so that everyone reads its own data
