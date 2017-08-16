@@ -450,12 +450,14 @@ struct HybridAdoptorBase
     return success;
   }
 
-  inline int get_bc_sign(const PointType& r, TinyVector<int,D>& HalfG)
+  template<typename Cell>
+  inline int get_bc_sign(const PointType& r, const Cell& PrimLattice, TinyVector<int,D>& HalfG)
   {
     int bc_sign=0;
+    PointType shift_unit = PrimLattice.toUnit(r-r_image);
     for(int i=0; i<D; i++)
     {
-      ST img = round(r[i]-r_image[i]);
+      ST img = round(shift_unit[i]);
       bc_sign += HalfG[i] * (int)img;
     }
     return bc_sign;

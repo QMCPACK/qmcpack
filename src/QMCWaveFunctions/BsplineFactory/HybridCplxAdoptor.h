@@ -155,6 +155,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   template<typename VGL>
   inline void evaluate_vgl_combo(const ParticleSet& P, const int iat, VGL& vgl)
   {
+    APP_ABORT("HybridCplxSoA::evaluate_vgl_combo not implemented!");
     if(HybridBase::evaluate_vgh(P,iat,myV,myG,myH))
     {
       const PointType& r=P.R[iat];
@@ -167,6 +168,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   template<typename VV, typename GV, typename GGV>
   inline void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
+    APP_ABORT("HybridCplxSoA::evaluate_vgh not implemented!");
     if(HybridBase::evaluate_vgh(P,iat,myV,myG,myH))
     {
       const PointType& r=P.R[iat];
