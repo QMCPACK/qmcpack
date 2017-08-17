@@ -54,6 +54,11 @@ SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -ftz" )
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftz" )
 ENDIF( INTEL_FTZ)
 
+#------------------------
+# Not on Cray's machine
+#------------------------
+IF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
+
 #check if the user has already specified -x option for cross-compiling.
 if(CMAKE_CXX_FLAGS MATCHES "-x" OR CMAKE_C_FLAGS MATCHES "-x" OR
     CMAKE_CXX_FLAGS MATCHES "-ax" OR CMAKE_C_FLAGS MATCHES "-ax")
@@ -73,3 +78,5 @@ else() #(CMAKE_CXX_FLAGS MATCHES "-x" OR CMAKE_C_FLAGS MATCHES "-x")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xHost")
   ENDIF(INTEL_CC_FLAGS)
 endif() #(CMAKE_CXX_FLAGS MATCHES "-x" OR CMAKE_C_FLAGS MATCHES "-x")
+
+ENDIF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
