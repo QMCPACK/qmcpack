@@ -2,8 +2,6 @@ IF(CMAKE_SYSTEM_PROCESSOR MATCHES "ppc64le")
 MESSAGE(STATUS "Power8+ system using xlC/xlc/xlf")
 
 ADD_DEFINITIONS( -Drestrict=__restrict__ )
-ADD_DEFINITIONS( -DADD_ )
-ADD_DEFINITIONS( -DINLINE_ALL=inline )
 
 # Clean up flags
 

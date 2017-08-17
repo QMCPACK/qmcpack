@@ -4,33 +4,31 @@ IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.0 )
   MESSAGE(FATAL_ERROR "Require clang 3.0 or higher ")
 ENDIF()
 
+# Set the std
+SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -std=c99")
+
 # Enable OpenMP
 SET(ENABLE_OPENMP 1)
 IF ( ENABLE_OPENMP )
-    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fopenmp")
+    SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fopenmp")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 ENDIF()
 
-# Set the std
-SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -std=c99")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-
 # Set clang specfic flags (which we always want)
 ADD_DEFINITIONS( -Drestrict=__restrict__ )
-ADD_DEFINITIONS( -DADD_ )
-ADD_DEFINITIONS( -DINLINE_ALL=inline )
-SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fomit-frame-pointer -fstrict-aliasing")
+
+SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fomit-frame-pointer -fstrict-aliasing")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fomit-frame-pointer -fstrict-aliasing -D__forceinline=inline")
 SET( HAVE_POSIX_MEMALIGN 0 )    # Clang doesn't support -malign-double
 
 # Suppress compile warnings
-SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-deprecated -Wno-unused-value")
+SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -Wno-deprecated -Wno-unused-value")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wno-unused-value -Wno-undefined-var-template")
 
 # Set extra optimization specific flags
-SET( CMAKE_C_FLAGS_RELEASE   "${CMAKE_C_FLAGS_RELEASE}   -ffast-math" )
+SET( CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE} -ffast-math" )
 SET( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ffast-math" )
-SET( CMAKE_C_FLAGS_RELWITHDEBINFO   "${CMAKE_C_FLAGS_RELWITHDEBINFO}   -ffast-math" )
+SET( CMAKE_C_FLAGS_RELWITHDEBINFO     "${CMAKE_C_FLAGS_RELWITHDEBINFO} -ffast-math" )
 SET( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -ffast-math" )
 
 #------------------------
@@ -47,7 +45,7 @@ if(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
   endif() #(CMAKE_CXX_FLAGS MATCHES "-march=" AND CMAKE_C_FLAGS MATCHES "-march=")
 else() #(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
   # use -march=native
-  SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -march=native")
+  SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -march=native")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 endif() #(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
 

@@ -3,30 +3,28 @@ IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.4 )
 MESSAGE(FATAL_ERROR "Require gcc 4.4 or higher ")
 ENDIF()
 
-# Enable OpenMP
-SET(ENABLE_OPENMP 1)
-SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fopenmp")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-
 # Set the std
 SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -std=c99")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
+# Enable OpenMP
+SET(ENABLE_OPENMP 1)
+SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fopenmp")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
 # Set gnu specfic flags (which we always want)
 ADD_DEFINITIONS( -Drestrict=__restrict__ )
-ADD_DEFINITIONS( -DADD_ )
-ADD_DEFINITIONS( -DINLINE_ALL=inline )
-SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fomit-frame-pointer -finline-limit=1000 -fstrict-aliasing -funroll-all-loops")
+
+SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fomit-frame-pointer -finline-limit=1000 -fstrict-aliasing -funroll-all-loops")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fomit-frame-pointer -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -D__forceinline=inline")
 
 # Suppress compile warnings
-SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-deprecated")
+SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -Wno-deprecated")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated")
 
 # Set extra optimization specific flags
-SET( CMAKE_C_FLAGS_RELEASE   "${CMAKE_C_FLAGS_RELEASE}   -ffast-math" )
+SET( CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE} -ffast-math" )
 SET( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ffast-math" )
-SET( CMAKE_C_FLAGS_RELWITHDEBINFO   "${CMAKE_C_FLAGS_RELWITHDEBINFO}   -ffast-math" )
+SET( CMAKE_C_FLAGS_RELWITHDEBINFO     "${CMAKE_C_FLAGS_RELWITHDEBINFO} -ffast-math" )
 SET( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -ffast-math" )
 
 #------------------------
@@ -43,7 +41,7 @@ if(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
   endif() #(CMAKE_CXX_FLAGS MATCHES "-march=" AND CMAKE_C_FLAGS MATCHES "-march=")
 else() #(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
   # use -march=native
-  SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -march=native")
+  SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -march=native")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 endif() #(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
 
