@@ -296,6 +296,32 @@ case $sys in
 	export PATH=$OLD_PATH
 	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
 	;;
+    "build_gcc_cuda_full")
+#	module() { eval `/usr/bin/modulecmd sh $*`; }
+#	module load mpi
+	export OLD_PATH=$PATH
+	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+	export PATH=$HOME/apps/openmpi-2.0.2/bin/:$PATH
+	export LD_LIBRARY_PATH=$HOME/apps/openmpi-2.0.2/lib/:$LD_LIBRARY_PATH
+	export QMCPACK_TEST_SUBMIT_NAME=GCC-CUDA-Full-Release
+	ctest -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_CUDA=1 -DQMC_MIXED_PRECISION=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV --timeout 7200
+#	module unload mpi
+	export PATH=$OLD_PATH
+	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
+	;;
+    "build_gcc_cuda_complex_full")
+#	module() { eval `/usr/bin/modulecmd sh $*`; }
+#	module load mpi
+	export OLD_PATH=$PATH
+	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+	export PATH=$HOME/apps/openmpi-2.0.2/bin/:$PATH
+	export LD_LIBRARY_PATH=$HOME/apps/openmpi-2.0.2/lib/:$LD_LIBRARY_PATH
+	export QMCPACK_TEST_SUBMIT_NAME=GCC-CUDA-Complex-Full-Release
+	ctest -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_CUDA=1 -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -VV --timeout 7200
+#	module unload mpi
+	export PATH=$OLD_PATH
+	export LD_LIBRARY_PATH=$OLD_LD_LIBRARY_PATH
+	;;
     "build_intel2015_cuda")
 	export OLD_PATH=$PATH
 	export OLD_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
