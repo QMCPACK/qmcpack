@@ -537,8 +537,8 @@ Mira/Cetus is a Blue Gene/Q supercomputer at Argonne National Laboratory's Argon
 
 \begin{verbatim}
 cd build
-cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_XL_ToolChain.cmake ..
-cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_XL_ToolChain.cmake ..
+cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_Clang++11_ToolChain.cmake ..
+cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_Clang++11_ToolChain.cmake ..
 make -j 16
 ls -l bin/qmcpack
 \end{verbatim}
@@ -994,9 +994,9 @@ the following combinations nightly (workstations) and weekly (supercomputers):
   \item The GCC programming environment and compiler with Cray MPI and CUDA
   \item The GCC programming environment and compiler with Cray MPI
   \end{itemize}
-\item On Cetus, an IBM Blue Gene Q:
+\item On Cetus, an IBM Blue Gene Q machine:
 \begin{itemize}
-\item Default programming environment configured using the  toolchain config/BGQToolChain.cmake
+\item Blue Gene Clang 4.0
 \end{itemize}
 \end{itemize}
 
