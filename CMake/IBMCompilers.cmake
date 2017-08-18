@@ -24,7 +24,7 @@ SET( CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG" )
 SET( CMAKE_C_FLAGS_RELWITHDEBINFO   "-g -O3" )
 SET( CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -O3" )
 
-# Set languate standardards
+# Set language standardards
 SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -std=gnu11")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11 -qnoxlcompatmacros")
 
