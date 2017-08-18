@@ -28,7 +28,7 @@ SET(BOOST_ROOT /soft/libraries/boost/1.62.0/cnk-bgclang++11/current/)
 
 SET(CMAKE_FIND_ROOT_PATH
      /home/projects/qmcpack/libXML2-2.9.1
-     /soft/libraries/hdf5/1.8.14/cnk-gcc/current
+     /soft/libraries/hdf5/current/cnk-gcc/current
      /soft/libraries/alcf/current/gcc/FFTW3
      /soft/libraries/alcf/current/gcc/ZLIB
 )
