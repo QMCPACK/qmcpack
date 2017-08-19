@@ -125,6 +125,42 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     chunked_reduce(comm, MultiSpline);
   }
 
+  void gather_tables(Communicate* comm)
+  {
+    if(comm->size()==1) return;
+    const int Nbands = kPoints.size();
+    const int Nbandgroups = comm->size();
+    std::vector<int> offset(Nbandgroups+1,0);
+    FairDivideLow(Nbands,Nbandgroups,offset);
+
+    // complex bands
+    int gid=1;
+    std::vector<int> offset_cplx(Nbandgroups+1,0);
+    for(int ib=0; ib<Nbands; ++ib)
+    {
+      if(ib==offset[gid]) gid++;
+      if(MakeTwoCopies[ib])
+        offset_cplx[gid]++;
+    }
+    for(int bg=0; bg<Nbandgroups; ++bg)
+      offset_cplx[bg+1] = offset_cplx[bg+1]*2+offset_cplx[bg];
+    gatherv(comm, MultiSpline, offset_cplx);
+
+    // real bands
+    gid=1;
+    std::vector<int> offset_real(Nbandgroups+1,0);
+    for(int ib=0; ib<Nbands; ++ib)
+    {
+      if(ib==offset[gid]) gid++;
+      if(!MakeTwoCopies[ib])
+        offset_real[gid]++;
+    }
+    offset_real[0]=nComplexBands*2;
+    for(int bg=0; bg<Nbandgroups; ++bg)
+      offset_real[bg+1] = offset_real[bg+1]*2+offset_real[bg];
+    gatherv(comm, MultiSpline, offset_real);
+  }
+
   template<typename GT, typename BCT>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {

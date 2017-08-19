@@ -133,6 +133,18 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     chunked_reduce(comm, MultiSpline);
   }
 
+  void gather_tables(Communicate* comm)
+  {
+    if(comm->size()==1) return;
+    const int Nbands = kPoints.size();
+    const int Nbandgroups = comm->size();
+    std::vector<int> offset(Nbandgroups+1,0);
+    FairDivideLow(Nbands,Nbandgroups,offset);
+    for(size_t ib=0; ib<offset.size(); ib++)
+      offset[ib]*=2;
+    gatherv(comm, MultiSpline, offset);
+  }
+
   template<typename GT, typename BCT>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {

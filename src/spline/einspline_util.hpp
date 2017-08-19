@@ -20,6 +20,7 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_UTILITIES_H
 #define QMCPLUSPLUS_EINSPLINE_UTILITIES_H
 
+#include <mpi/mpi_datatype.h>
 #include <Message/CommOperators.h>
 #include <OhmmsData/FileUtility.h>
 #include <io/hdf_archive.h>
@@ -79,6 +80,22 @@ namespace qmcplusplus
   inline void chunked_reduce(Communicate* comm, ENGT* buffer)
   {
     chunked_reduce(comm,buffer->coefs, buffer->coefs_size);
+  }
+
+  template<typename ENGT>
+  inline void gatherv(Communicate* comm, ENGT* buffer, std::vector<int> &offset)
+  {
+    std::vector<int> counts(offset.size()-1,0);
+    for(size_t ib=0; ib<counts.size(); ib++)
+      counts[ib] = offset[ib+1] - offset[ib];
+    const int ncol = buffer->z_stride;
+    const int nrow = buffer->coefs_size / ncol;
+    //std::cout << "nrow=" << nrow << "  ncol=" << ncol << std::endl;
+    //for(size_t ib=0; ib<offset.size(); ib++)
+    //  std::cout << "node=" << ib << "  offset=" << offset[ib] << std::endl;
+    MPI_Datatype columntype = mpi::construct_column_type(buffer->coefs, nrow, ncol);
+    comm->gatherv_in_place(buffer->coefs, columntype, counts, offset);
+    mpi::free_column_type(columntype);
   }
 
   template<unsigned DIM>
