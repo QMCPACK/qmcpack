@@ -362,6 +362,7 @@ struct HybridAdoptorBase
 {
   static const int D=3;
   using PointType=typename AtomicOrbitalSoA<ST>::PointType;
+  using RealType=typename DistanceTableData::RealType;
 
   // atomic centers
   std::vector<AtomicOrbitalSoA<ST> > AtomicCenters;
@@ -370,12 +371,12 @@ struct HybridAdoptorBase
   //mapping supercell to primitive cell
   std::vector<int> Super2Prim;
   // r, dr for distance table
-  DistanceTableData::RealType dist_r;
+  RealType dist_r;
   DistanceTableData::PosType dist_dr;
   // for APBC
   PointType r_image;
   // smooth function derivatives
-  ST df_dr, d2f_dr2;
+  RealType df_dr, d2f_dr2;
 
   HybridAdoptorBase() { }
 
@@ -465,7 +466,7 @@ struct HybridAdoptorBase
 
   //evaluate only V
   template<typename VV>
-  inline ST evaluate_v(const ParticleSet& P, const int iat, VV& myV)
+  inline RealType evaluate_v(const ParticleSet& P, const int iat, VV& myV)
   {
     const auto* ei_dist=P.DistTables[myTableID];
     const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr);
@@ -478,12 +479,12 @@ struct HybridAdoptorBase
       myCenter.evaluate_v(dist_r, dr, myV);
       return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
     }
-    return ST(-1);
+    return RealType(-1);
   }
 
   //evaluate only VGL
   template<typename VV, typename GV>
-  inline ST evaluate_vgl(const ParticleSet& P, const int iat, VV& myV, GV& myG, VV& myL)
+  inline RealType evaluate_vgl(const ParticleSet& P, const int iat, VV& myV, GV& myG, VV& myL)
   {
     const auto* ei_dist=P.DistTables[myTableID];
     const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr);
@@ -496,12 +497,12 @@ struct HybridAdoptorBase
       myCenter.evaluate_vgl(dist_r, dr, myV, myG, myL);
       return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
     }
-    return ST(-1);
+    return RealType(-1);
   }
 
   //evaluate only VGH
   template<typename VV, typename GV, typename HT>
-  inline ST evaluate_vgh(const ParticleSet& P, const int iat, VV& myV, GV& myG, HT& myH)
+  inline RealType evaluate_vgh(const ParticleSet& P, const int iat, VV& myV, GV& myG, HT& myH)
   {
     const auto* ei_dist=P.DistTables[myTableID];
     const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr);
@@ -514,17 +515,17 @@ struct HybridAdoptorBase
       myCenter.evaluate_vgh(dist_r, dr, myV, myG, myH);
       return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
     }
-    return ST(-1);
+    return RealType(-1);
   }
 
-  inline ST smooth_function(const ST &cutoff_buffer, const ST &cutoff, ST r)
+  inline RealType smooth_function(const ST &cutoff_buffer, const ST &cutoff, RealType r)
   {
-    const ST cone(1), ctwo(2), chalf(0.5);
+    const RealType cone(1), ctwo(2), chalf(0.5);
     if (r<cutoff_buffer) return cone;
-    const ST scale=ctwo/(cutoff-cutoff_buffer);
-    const ST x=(r-cutoff_buffer)*scale-cone;
-    const ST cosh_x=std::cosh(x);
-    const ST tanh_x=std::tanh(x);
+    const RealType scale=ctwo/(cutoff-cutoff_buffer);
+    const RealType x=(r-cutoff_buffer)*scale-cone;
+    const RealType cosh_x=std::cosh(x);
+    const RealType tanh_x=std::tanh(x);
     df_dr=-chalf/(cosh_x*cosh_x)*scale;
     d2f_dr2=-ctwo*tanh_x*df_dr*scale;
     return chalf*(cone-tanh_x);
