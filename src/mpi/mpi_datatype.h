@@ -17,6 +17,8 @@
 #include <type_traits/scalar_traits.h>
 #if defined(HAVE_MPI)
 #include <mpi.h>
+#else
+typedef int MPI_Datatype;
 #endif
 
 namespace qmcplusplus
@@ -104,7 +106,7 @@ template <typename T>
 void free_column_type(T& datatype) { }
 
 template <typename T>
-MPI_Datatype construct_column_type(const *element, int nrow, int ncol)
+MPI_Datatype construct_column_type(const T *element, int nrow, int ncol)
 {
   return 0;
 }
