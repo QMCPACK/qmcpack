@@ -51,8 +51,8 @@ Communicate::Communicate():
 {
 }
 
-
-Communicate::Communicate(int argc, char **argv)
+Communicate::Communicate(int argc, char **argv):
+  GroupLeaderComm(nullptr)
 {
   initialize(argc,argv);
 }
@@ -114,11 +114,16 @@ Communicate::Communicate(const Communicate& comm, int nparts)
   d_ngroups=nparts;
   // create a communicator among group leaders.
   MPI_Group parent_group, leader_group;
-  MPI_Comm leader_comm;
   MPI_Comm_group(comm.getMPI(), &parent_group);
   MPI_Group_incl(parent_group, nparts, nplist.data(), &leader_group);
-  MPI_Comm_create(comm.getMPI(), leader_group, &leader_comm);
-  if(isGroupLeader()) GroupLeaderComm = new Communicate(leader_comm);
+  if(isGroupLeader())
+  {
+    MPI_Comm leader_comm;
+    MPI_Comm_create(comm.getMPI(), leader_group, &leader_comm);
+    GroupLeaderComm = new Communicate(leader_comm);
+  }
+  else
+    GroupLeaderComm = nullptr;
   MPI_Group_free(&parent_group);
   MPI_Group_free(&leader_group);
 }
@@ -164,6 +169,7 @@ Communicate::Communicate(const Communicate& comm, const std::vector<int>& jobs)
 //================================================================
 // Implements Communicate with OOMPI library
 //================================================================
+
 void Communicate::initialize(int argc, char **argv)
 {
   qmcplusplus::qmc_common.initialize(argc,argv);
@@ -262,7 +268,7 @@ void Communicate::cleanupMessage(void*)
 }
 
 Communicate::Communicate(const Communicate& comm, int nparts)
-  : myMPI(0), d_mycontext(0), d_ncontexts(1), d_groupid(0), GroupLeaderComm(nullptr)
+  : myMPI(0), d_mycontext(0), d_ncontexts(1), d_groupid(0)
 {
   GroupLeaderComm = new Communicate();
 }
