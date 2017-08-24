@@ -53,9 +53,6 @@ class LCOrbitalSetOptTrialFunc : public OrbitalBase {
     ///         Thus B = old_B * C, where C is a unitary orbital rotation matrix.
     std::vector<RealType> m_B;
 
-    /// \brief  the column-major-order m_nb by m_nlc matrix of old orbital coefficients
-    std::vector<RealType> m_old_B;
-
     /// \brief  the column-major-order m_nb by m_nlc initial orbital coefficients, from the start of the simulation
     std::vector<RealType> m_init_B;
 
@@ -152,7 +149,6 @@ class LCOrbitalSetOptTrialFunc : public OrbitalBase {
         m_first_var_pos(-1),
         m_act_rot_inds(),
         m_B(initial_B, initial_B + nlc*nb),
-        m_old_B(initial_B, initial_B + nlc*nb),
         m_init_B(initial_B, initial_B + nlc*nb),
         m_name(name)
     {
@@ -187,9 +183,6 @@ class LCOrbitalSetOptTrialFunc : public OrbitalBase {
             //if ( mix_factor > 0.5 )
             //  throw std::runtime_error("mix_factor grew too large.  Please choose a smaller value of orbital_mix_magnitude");
             m_B.at(i+j*m_nb) += mix_factor * 2.0 * ( Random() - 0.5 );
-            //mix_factor *= 1.002;
-            //m_B.at(i+k*m_nb) =  std::sqrt(1.0 - mix_factor) * m_old_B.at(i+k*m_nb) + std::sqrt(      mix_factor) * m_old_B.at(i+j*m_nb);
-            //m_B.at(i+j*m_nb) = -std::sqrt(      mix_factor) * m_old_B.at(i+k*m_nb) + std::sqrt(1.0 - mix_factor) * m_old_B.at(i+j*m_nb);
           }
         }
 
@@ -204,9 +197,7 @@ class LCOrbitalSetOptTrialFunc : public OrbitalBase {
         }
 
         // save the mixed orbitals
-        m_old_B = m_B;
         m_init_B = m_B;
-
       }
 
       // print the orbitals
@@ -393,39 +384,14 @@ class LCOrbitalSetOptTrialFunc : public OrbitalBase {
       this->exponentiate_matrix(m_nlc, &rot_mat.at(0));
 
       // get the linear combination coefficients by applying the rotation to the old coefficients
-      //BLAS::gemm('N', 'T', m_nb, m_nlc, m_nlc, RealType(1.0), &m_old_B.at(0), m_nb, &rot_mat.at(0), m_nlc, RealType(0.0), &m_B.at(0), m_nb);
       BLAS::gemm('N', 'T', m_nb, m_nlc, m_nlc, RealType(1.0), &m_init_B.at(0), m_nb, &rot_mat.at(0), m_nlc, RealType(0.0), &m_B.at(0), m_nb);
 
-    }
+      // Store the orbital rotations parameters internally in myVars
+      for (int i = 0; i < m_act_rot_inds.size(); i++)
+        myVars[i] = active[i + m_first_var_pos];
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-    /// \brief  Copy this object's parameters from the supplied variable set, convert this object's
-    ///         parameters to a standard form, and optionally copy the standard form parameters back
-    ///         into the supplied variable set.
-    ///
-    /// \param[in,out]  active         the supplied variable set
-    /// \param[in]      copy_back      whether to copy parameters back to the variable set at the end
-    ///
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-    void putParametersInStandardForm(opt_variables_type & active, const bool copy_back) {
-
-      // compute the updated orbital coefficients
-      this->resetParameters(active);
-
-      // record the updated orbital coefficients as the base coefficients from which we will make new rotations
-      m_old_B = m_B;
-
-      // Update the internally stored optimizable variables list to equal the values passed in. Then,
-      // the next time this function is called, we'll be able to calculate by how much the parameters
-      // changed, and therefore what orbital rotation to apply to update the orbitals appropriately.
-      if ( copy_back )
-        for (int i = 0; i < m_act_rot_inds.size(); i++)
-          myVars[i] = active[i + m_first_var_pos];
-
-      // print the new orbitals
-      if ( copy_back )
+      if (false)
         this->print_B();
-
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -755,11 +721,7 @@ class LCOrbitalSetOptTrialFunc : public OrbitalBase {
       this->exponentiate_matrix(m_nlc, &rot_mat.at(0));
       // Get the linear combination coefficients by applying the rotation to
       // the old coefficients
-      //BLAS::gemm('N', 'T', m_nb, m_nlc, m_nlc, RealType(1.0), &m_old_B.at(0), m_nb, &rot_mat.at(0), m_nlc, RealType(0.0), &m_B.at(0), m_nb);
       BLAS::gemm('N', 'T', m_nb, m_nlc, m_nlc, RealType(1.0), &m_init_B.at(0), m_nb, &rot_mat.at(0), m_nlc, RealType(0.0), &m_B.at(0), m_nb);
-      // Record the updated orbital coefficients as the base coefficients from
-      // which we will make new rotations
-      m_old_B = m_B;
 
     }
 

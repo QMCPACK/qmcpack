@@ -47,7 +47,6 @@ public:
   void engine_checkConfigurations(cqmc::engine::LMYEngine * EngineObj);
 #endif
   void resetPsi(bool final_reset=false);
-  void putParametersInStandardForm();
   void resetWalkers();   
   void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff=0);
   Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right);

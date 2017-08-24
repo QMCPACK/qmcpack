@@ -203,8 +203,6 @@ public:
    */
   void reportStatus(std::ostream& os);
 
-  void putParametersInStandardForm(opt_variables_type & active, const bool copy_back);
-
   /** recursively change the ParticleSet whose G and L are evaluated */
   void resetTargetParticleSet(ParticleSet& P);
 
