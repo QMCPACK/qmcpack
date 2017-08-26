@@ -116,12 +116,10 @@ Communicate::Communicate(const Communicate& comm, int nparts)
   MPI_Group parent_group, leader_group;
   MPI_Comm_group(comm.getMPI(), &parent_group);
   MPI_Group_incl(parent_group, nparts, nplist.data(), &leader_group);
+  MPI_Comm leader_comm;
+  MPI_Comm_create(comm.getMPI(), leader_group, &leader_comm);
   if(isGroupLeader())
-  {
-    MPI_Comm leader_comm;
-    MPI_Comm_create(comm.getMPI(), leader_group, &leader_comm);
     GroupLeaderComm = new Communicate(leader_comm);
-  }
   else
     GroupLeaderComm = nullptr;
   MPI_Group_free(&parent_group);
