@@ -749,7 +749,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     now.restart();
     if(band_group_comm.isGroupLeader())
     {
-      bspline->reduce_tables(band_group_comm.GroupLeaderComm);
+      bspline->gather_tables(band_group_comm.GroupLeaderComm);
 #ifdef REPORT_MISMATCH
       // collect mismatch_energy
       for(int center_idx=0; center_idx<bspline->AtomicCenters.size(); center_idx++)

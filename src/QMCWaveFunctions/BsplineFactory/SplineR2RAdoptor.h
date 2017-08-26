@@ -50,6 +50,8 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   using BaseType::GGt;
   using BaseType::PrimLattice;
   using BaseType::kPoints;
+  using BaseType::offset_cplx;
+  using BaseType::offset_real;
 
   ///number of points of the original grid
   int BaseN[3];
@@ -120,9 +122,9 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     if(comm->size()==1) return;
     const int Nbands = kPoints.size();
     const int Nbandgroups = comm->size();
-    std::vector<int> offset(Nbandgroups+1,0);
-    FairDivideLow(Nbands,Nbandgroups,offset);
-    gatherv(comm, MultiSpline, offset);
+    offset_real.resize(Nbandgroups+1,0);
+    FairDivideLow(Nbands,Nbandgroups,offset_real);
+    gatherv(comm, MultiSpline, MultiSpline->z_stride, offset_real);
   }
 
   template<typename GT, typename BCT>

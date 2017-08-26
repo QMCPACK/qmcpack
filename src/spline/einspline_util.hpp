@@ -83,12 +83,11 @@ namespace qmcplusplus
   }
 
   template<typename ENGT>
-  inline void gatherv(Communicate* comm, ENGT* buffer, std::vector<int> &offset)
+  inline void gatherv(Communicate* comm, ENGT* buffer, const int ncol, std::vector<int> &offset)
   {
     std::vector<int> counts(offset.size()-1,0);
     for(size_t ib=0; ib<counts.size(); ib++)
       counts[ib] = offset[ib+1] - offset[ib];
-    const int ncol = buffer->z_stride;
     const int nrow = buffer->coefs_size / ncol;
     //std::cout << "nrow=" << nrow << "  ncol=" << ncol << std::endl;
     //for(size_t ib=0; ib<offset.size(); ib++)

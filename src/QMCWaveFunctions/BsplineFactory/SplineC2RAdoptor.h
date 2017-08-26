@@ -56,6 +56,8 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   using BaseType::PrimLattice;
   using BaseType::kPoints;
   using BaseType::MakeTwoCopies;
+  using BaseType::offset_cplx;
+  using BaseType::offset_real;
 
   ///number of complex bands
   int nComplexBands;
@@ -135,7 +137,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 
     // complex bands
     int gid=1;
-    std::vector<int> offset_cplx(Nbandgroups+1,0);
+    offset_cplx.resize(Nbandgroups+1,0);
     for(int ib=0; ib<Nbands; ++ib)
     {
       if(ib==offset[gid]) gid++;
@@ -144,11 +146,11 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     }
     for(int bg=0; bg<Nbandgroups; ++bg)
       offset_cplx[bg+1] = offset_cplx[bg+1]*2+offset_cplx[bg];
-    gatherv(comm, MultiSpline, offset_cplx);
+    gatherv(comm, MultiSpline, MultiSpline->z_stride, offset_cplx);
 
     // real bands
     gid=1;
-    std::vector<int> offset_real(Nbandgroups+1,0);
+    offset_real.resize(Nbandgroups+1,0);
     for(int ib=0; ib<Nbands; ++ib)
     {
       if(ib==offset[gid]) gid++;
@@ -158,7 +160,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     offset_real[0]=nComplexBands*2;
     for(int bg=0; bg<Nbandgroups; ++bg)
       offset_real[bg+1] = offset_real[bg+1]*2+offset_real[bg];
-    gatherv(comm, MultiSpline, offset_real);
+    gatherv(comm, MultiSpline, MultiSpline->z_stride, offset_real);
   }
 
   template<typename GT, typename BCT>

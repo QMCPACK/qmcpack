@@ -66,9 +66,14 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
 
   void reduce_tables(Communicate* comm)
   {
-    //BaseAdoptor::reduce_tables(comm);
-    BaseAdoptor::gather_tables(comm);
+    BaseAdoptor::reduce_tables(comm);
     HybridBase::reduce_atomic_tables(comm);
+  }
+
+  void gather_tables(Communicate* comm)
+  {
+    BaseAdoptor::gather_tables(comm);
+    HybridBase::gather_atomic_tables(comm, this->offset_cplx, this->offset_real);
   }
 
   bool read_splines(hdf_archive& h5f)
