@@ -701,6 +701,8 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
 #endif
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
+  for (size_t i=0; i<DistTables.size(); i++)
+    DistTables[i]->donePbyP();
   if (SK)
     SK->UpdateAllPart(*this);
   //every move is valid
@@ -738,6 +740,8 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
 
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
+  for (size_t i=0; i<DistTables.size(); i++)
+    DistTables[i]->donePbyP();
   if (SK)
     SK->UpdateAllPart(*this);
   //every move is valid
@@ -801,7 +805,7 @@ void ParticleSet::rejectMove(Index_t iat)
 
 void ParticleSet::donePbyP(bool skipSK)
 {
-  for (size_t i=0,nt=DistTables.size(); i< nt; i++)
+  for (size_t i=0; i<DistTables.size(); i++)
     DistTables[i]->donePbyP();
   if (!skipSK && SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);

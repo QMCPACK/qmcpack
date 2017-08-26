@@ -4,84 +4,52 @@ IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.0 )
   MESSAGE(FATAL_ERROR "Require clang 3.0 or higher ")
 ENDIF()
 
+# Set the std
+SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -std=c99")
+
 # Enable OpenMP
 SET(ENABLE_OPENMP 1)
 IF ( ENABLE_OPENMP )
-    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -fopenmp")
+    SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fopenmp")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 ENDIF()
 
-# Set the std
-SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -std=c99")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-
 # Set clang specfic flags (which we always want)
 ADD_DEFINITIONS( -Drestrict=__restrict__ )
-ADD_DEFINITIONS( -DADD_ )
-ADD_DEFINITIONS( -DINLINE_ALL=inline )
-SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fomit-frame-pointer -fstrict-aliasing")
+
+SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fomit-frame-pointer -fstrict-aliasing")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fomit-frame-pointer -fstrict-aliasing -D__forceinline=inline")
 SET( HAVE_POSIX_MEMALIGN 0 )    # Clang doesn't support -malign-double
 
 # Suppress compile warnings
-SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-deprecated -Wno-unused-value")
+SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -Wno-deprecated -Wno-unused-value")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wno-unused-value -Wno-undefined-var-template")
 
 # Set extra optimization specific flags
-SET( CMAKE_C_FLAGS_RELEASE   "${CMAKE_C_FLAGS_RELEASE}   -ffast-math" )
+SET( CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE} -ffast-math" )
 SET( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ffast-math" )
-SET( CMAKE_C_FLAGS_RELWITHDEBINFO   "${CMAKE_C_FLAGS_RELWITHDEBINFO}   -ffast-math" )
+SET( CMAKE_C_FLAGS_RELWITHDEBINFO     "${CMAKE_C_FLAGS_RELWITHDEBINFO} -ffast-math" )
 SET( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -ffast-math" )
 
-# Enable mmx/sse instructions if posix_memalign exists
-IF(HAVE_POSIX_MEMALIGN)
+#------------------------
+# Not on Cray's machine
+#------------------------
+IF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
 
-    # Check for mmx flags
-    SET(CMAKE_TRY_CC_FLAGS "-mmmx")
-    CHECK_C_COMPILER_FLAG(${CMAKE_TRY_CC_FLAGS} CC_FLAGS)
-    IF(CC_FLAGS)
-        SET(HAVE_MMX 1)
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mmmx")
-        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmmx")
-    ENDIF(CC_FLAGS)
+#check if the user has already specified -march=XXXX option for cross-compiling.
+if(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
+  # make sure that the user specifies -march= for both CMAKE_CXX_FLAGS and CMAKE_C_FLAGS.
+  if(CMAKE_CXX_FLAGS MATCHES "-march=" AND CMAKE_C_FLAGS MATCHES "-march=")
+  else() #(CMAKE_CXX_FLAGS MATCHES "-march=" AND CMAKE_C_FLAGS MATCHES "-march=")
+    MESSAGE(FATAL_ERROR "if -march=ARCH is specified by the user, it should be added in both CMAKE_CXX_FLAGS and CMAKE_C_FLAGS!")
+  endif() #(CMAKE_CXX_FLAGS MATCHES "-march=" AND CMAKE_C_FLAGS MATCHES "-march=")
+else() #(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
+  # use -march=native
+  SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -march=native")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+endif() #(CMAKE_CXX_FLAGS MATCHES "-march=" OR CMAKE_C_FLAGS MATCHES "-march=")
 
-    # Check for msse flags
-    SET(CMAKE_TRY_CC_FLAGS "-msse")
-    CHECK_C_COMPILER_FLAG(${CMAKE_TRY_CC_FLAGS} CC_FLAGS)
-    IF(CC_FLAGS)
-        SET(HAVE_SSE 1)
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse")
-        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse")
-    ENDIF(CC_FLAGS)
-
-    # Check for msse2 flags
-    SET(CMAKE_TRY_GNU_CXX_FLAGS "-msse2")
-    CHECK_C_COMPILER_FLAG(${CMAKE_TRY_CC_FLAGS} CC_FLAGS)
-    IF(CC_FLAGS)
-        SET(HAVE_SSE2 1)
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2")
-        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2")
-    ENDIF(CC_FLAGS)
-
-    # Check for msse3 flags
-    SET(CMAKE_TRY_CC_FLAGS "-msse3")
-    CHECK_C_COMPILER_FLAG(${CMAKE_TRY_CC_FLAGS} CC_FLAGS)
-    IF(CC_FLAGS)
-        SET(HAVE_SSE3 1)
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse3")
-        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse3")
-    ENDIF(CC_FLAGS)
-
-    # Check for msse4.1 flags
-    SET(CMAKE_TRY_CC_FLAGS "-msse4.1")
-    CHECK_C_COMPILER_FLAG(${CMAKE_TRY_CC_FLAGS} CC_FLAGS)
-    IF(CC_FLAGS)
-        SET(HAVE_SSE41 1)
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
-        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.1")
-    ENDIF(CC_FLAGS)
-
-ENDIF(HAVE_POSIX_MEMALIGN)
+ENDIF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
 
 # Add static flags if necessary
 IF(QMC_BUILD_STATIC)
