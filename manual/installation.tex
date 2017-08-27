@@ -260,7 +260,7 @@ MPIEXEC_NUMPROC_FLAG   Specify the number of mpi processes flag, e.g. "-n", "-np
 \end{itemize}
 
 \subsection{Configure and build using cmake and make}
-To configure and build QMPACK, move to build directory, run cmake and make
+To configure and build QMCPACK, move to build directory, run cmake and make
 \begin{verbatim}
 cd build
 cmake ..
@@ -371,7 +371,7 @@ QMCPACK tried to do its best with CMake to facilitate cross-compiling.
 
 \begin{itemize}
   \item On a machine using Cray programming environment, we reply on
-      compiler wrappers provied by Cray to set architecture specific flags
+      compiler wrappers provided by Cray to set architecture specific flags
   \item If not on a Cray machine, we assume default building for the host.
     With Intel compiler, -xHost is added for Intel compiler
     and -march=native is added for GNU/Clang compilers.
@@ -545,7 +545,7 @@ cmake -DCMAKE_C_COMPILER=/usr/local/bin/mpicc \
       -DCMAKE_CXX_COMPILER=/usr/local/bin/mpicxx ..
 make -j 12
 \end{verbatim}
-\item Run the short tests. When mpich is used for the first time, OS
+\item Run the short tests. When MPICH is used for the first time, OS
   X will request approval of the network connection.
 \begin{verbatim}
 ctest -R short
@@ -560,7 +560,7 @@ Due to the fact that the login nodes and the compute nodes have different proces
 cross-compiling is required on this platform. See details about using Blue Gene/Q at \url{http://www.alcf.anl.gov/user-guides/compiling-linking}.
 On Mira, compilers are loaded via softenv and users need to add +mpiwrapper-bgclang and +cmake in \$HOME/.soft.
 In order to build QMCPACK, a toolchain file is provided for setting up CMake and the cmake command should be executed twice.
-\textbf{XL C/C++ compiler no more builds QMCPACK due to the lack of C++11 support but BGClang can produce correct binary with good peroformance.}
+\textbf{XL C/C++ compiler no more builds QMCPACK due to the lack of C++11 support but BGClang can produce correct binary with good performance.}
 
 \begin{verbatim}
 cd build
@@ -569,8 +569,6 @@ cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_Clang++11_ToolChain.cmake ..
 make -j 16
 ls -l bin/qmcpack
 \end{verbatim}
-
-During the make, you can use make VERBOSE=1 to print all the build commands.
 
 \subsection{Installing on ALCF Theta, Cray XC40}
 Theta is a 9.65 petaflops system manufactured by Cray with 3624 compute nodes.
@@ -934,7 +932,7 @@ You can test the whole pw$\to$pw2qmcpack$\to$qmcpack workflow by
 ctest -R qe
 \end{verbatim}
 This provides a very solid test of the entire QMC
-toolchain for planewave generated wavefunctions.
+toolchain for plane wave generated wavefunctions.
 
 \subsection{Performance tests}
 \label{sec:perftests}
@@ -943,7 +941,7 @@ tests/performance directory. They can be used for benchmarking, comparing machin
 performance, or assessing optimizations. This is in
 contrast to the majority of the conventional integration tests where the particle
 counts are too small to be representative. Care is still needed to
-remove initiallization, I/O, and compute a representative performance
+remove initialization, I/O, and compute a representative performance
 measure.
 
 The ctest integration is sufficient to run the benchmarks and measure
@@ -968,7 +966,7 @@ will need to set ``-DQMC\_DATA=YOUR\_DATA\_FOLDER -DENABLE\_TIMERS=1''
 when running cmake as
 described in the README.
 
-Two sets of wavefunction are tested: splined orbitals with a one and
+Two sets of wavefunction are tested: spline orbitals with a one and
 two body Jastrow functions, and a more complex form with an additional
 three body Jastrow function. The Jastrows are the same for each run
 and are not reoptimized, as might be done for research purposes.  Runs
@@ -1003,7 +1001,7 @@ You can locate the failing tests by searching for the key word `Fail'.
 
 \subsection{Slow testing with OpenMPI}
 OpenMPI has a default binding policy making all the threads running on a single core during testing when there are two or fewer MPI ranks.
-This significantly increases the testing time. If you are authorized to change the default setting, you can just add `hwloc\_base\_binding\_policy none' in /etc/openmpi/openmpi-mca-params.conf.
+This significantly increases the testing time. If you are authorized to change the default setting, you can just add `hwloc\_base\_binding\_policy=none' in /etc/openmpi/openmpi-mca-params.conf.
 
 \section{Automated testing of QMCPACK}
 
@@ -1057,7 +1055,7 @@ the following combinations nightly (workstations) and weekly (supercomputers):
 \label{sec:buildppconvert}
 QMCPACK includes a utility, ppconvert, to convert between different
 pseudopotential formats. Examples include effective core potential
-formats (in gaussians), the UPF format used by Quantum ESPRESSO, and
+formats (in Gaussians), the UPF format used by Quantum ESPRESSO, and
 the XML format used by QMCPACK itself. The utility also enables the
 atomic orbitals to recomputed via a numerical density functional
 calculation if they need to be reconstructed for use in an
