@@ -689,13 +689,10 @@ Cori is a Cray XC40 with 16-core Intel "Haswell" nodes
 installed at NERSC.
 
 \begin{verbatim}
-module swap craype-haswell craype-mic-knl
 module unload cray-libsci  
 module load boost  
-module load cray-hdf5
+module load cray-hdf5-parallel
 module load cmake
-module load fftw
-export FFTW_HOME=$FFTW_DIR/..
 mkdir build_cori_hsw
 cd build_cori_hsw
 cmake ..
@@ -707,7 +704,7 @@ When the above was tested on 29 August 2017, the following module and
 software versions were present:
 
 \begin{verbatim}
-qmcpack@cori05:trunk> module list
+build_cori_hsw> module list
 Currently Loaded Modulefiles:
   1) modules/3.2.10.6                              14) alps/6.4.1-6.0.4.0_7.2__g86d0f3d.ari
   2) nsg/1.2.0                                     15) rca/2.2.11-6.0.4.0_13.2__g84de67a.ari
@@ -718,10 +715,10 @@ Currently Loaded Modulefiles:
   7) ugni/6.0.14-6.0.4.0_14.1__ge7db4a2.ari        20) cray-mpich/7.6.0
   8) pmi/5.0.12                                    21) altd/2.0
   9) dmapp/7.1.1-6.0.4.0_46.2__gb8abda2.ari        22) darshan/3.1.4
- 10) gni-headers/5.0.11-6.0.4.0_7.2__g7136988.ari  23) cray-hdf5/1.10.0.3
+ 10) gni-headers/5.0.11-6.0.4.0_7.2__g7136988.ari  23) boost/1.61
  11) xpmem/2.2.2-6.0.4.0_3.1__g43b0535.ari         24) cmake/3.3.2
- 12) job/2.2.2-6.0.4.0_8.2__g3c644b5.ari           25) fftw/2.1.5.9
- 13) dvs/2.7_2.2.31-6.0.4.1_6.1__gb3b87e6          26) boost/1.61
+ 12) job/2.2.2-6.0.4.0_8.2__g3c644b5.ari           25) cray-hdf5-parallel/1.10.0.3
+ 13) dvs/2.7_2.2.31-6.0.4.1_6.1__gb3b87e6
 \end{verbatim}
 
 \subsection{Installing on NERSC Cori, Xeon Phi KNL Knight's Landing partition, Cray XC40}
@@ -730,12 +727,11 @@ Xeon Phi Knight's Landing (KNL) nodes. The following build recipe ensures that t
 generation is appropriate for the KNL nodes:
 
 \begin{verbatim}
+module swap craype-haswell craype-mic-knl  
 module unload cray-libsci  
 module load boost  
-module load cray-hdf5
+module load cray-hdf5-parallel
 module load cmake
-module load fftw
-export FFTW_HOME=$FFTW_DIR/..
 mkdir build_cori_knl
 cd build_cori_knl
 cmake ..
@@ -749,19 +745,15 @@ software versions were present:
 \begin{verbatim}
 build_cori_knl> module list
 Currently Loaded Modulefiles:
-  1) modules/3.2.10.6                              14) alps/6.4.1-6.0.4.0_7.2__g86d0f3d.ari
-  2) nsg/1.2.0                                     15) rca/2.2.11-6.0.4.0_13.2__g84de67a.ari
-  3) intel/17.0.2.174                              16) atp/2.1.1
-  4) craype-network-aries                          17) PrgEnv-intel/6.0.4
-  5) craype/2.5.12                                 18) craype-mic-knl
-  6) udreg/2.3.2-6.0.4.0_12.2__g2f9c3ee.ari        19) cray-shmem/7.6.0
-  7) ugni/6.0.14-6.0.4.0_14.1__ge7db4a2.ari        20) cray-mpich/7.6.0
-  8) pmi/5.0.12                                    21) altd/2.0
-  9) dmapp/7.1.1-6.0.4.0_46.2__gb8abda2.ari        22) darshan/3.1.4
- 10) gni-headers/5.0.11-6.0.4.0_7.2__g7136988.ari  23) boost/1.61
- 11) xpmem/2.2.2-6.0.4.0_3.1__g43b0535.ari         24) cray-hdf5/1.10.0.3
- 12) job/2.2.2-6.0.4.0_8.2__g3c644b5.ari           25) cmake/3.3.2
- 13) dvs/2.7_2.2.31-6.0.4.1_6.1__gb3b87e6          26) fftw/2.1.5.9
+  1) modules/3.2.10.6                              10) gni-headers/5.0.11-6.0.4.0_7.2__g7136988.ari  19) cray-shmem/7.6.0
+  2) nsg/1.2.0                                     11) xpmem/2.2.2-6.0.4.0_3.1__g43b0535.ari         20) cray-mpich/7.6.0
+  3) intel/17.0.2.174                              12) job/2.2.2-6.0.4.0_8.2__g3c644b5.ari           21) altd/2.0
+  4) craype-network-aries                          13) dvs/2.7_2.2.31-6.0.4.1_6.1__gb3b87e6          22) darshan/3.1.4
+  5) craype/2.5.12                                 14) alps/6.4.1-6.0.4.0_7.2__g86d0f3d.ari          23) boost/1.61
+  6) udreg/2.3.2-6.0.4.0_12.2__g2f9c3ee.ari        15) rca/2.2.11-6.0.4.0_13.2__g84de67a.ari         24) cray-hdf5-parallel/1.10.0.3
+  7) ugni/6.0.14-6.0.4.0_14.1__ge7db4a2.ari        16) atp/2.1.1                                     25) cmake/3.3.2
+  8) pmi/5.0.12                                    17) PrgEnv-intel/6.0.4
+  9) dmapp/7.1.1-6.0.4.0_46.2__gb8abda2.ari        18) craype-mic-knl
 \end{verbatim}
 
 \subsection{Installing on Windows}
