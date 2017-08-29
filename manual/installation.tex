@@ -204,8 +204,8 @@ QMC_MIXED_PRECISION Build the mixed precision (mixing double/float) version
                     The GPU support is quite mature.
                     Use always double for host side base and full precision
                     and use float and double for CUDA base and full precision.
-ENABLE_SOA          Enable CPU optimization based on Structure-of-Array (SoA)
-                    datatypes (1:yes, 0:no (default)).\cite{IPCC_SC17}
+ENABLE_SOA          (Experimental) Enable CPU optimization based on Structure-
+                    of-Array (SoA) datatypes (1:yes, 0:no (default)).\cite{IPCC_SC17}
 
 \end{verbatim}
   \item General build options
@@ -1006,7 +1006,9 @@ This significantly increases the testing time. If you are authorized to change t
 \section{Automated testing of QMCPACK}
 
 The QMCPACK developers run automatic tests of QMCPACK on several
-different computer systems,  many on a continuous basis. We currently test
+different computer systems,  many on a continuous basis. See reports at
+\url{https://cdash.qmcpack.org/CDash/index.php?project=QMCPACK}.
+We currently test
 the following combinations nightly (workstations) and weekly (supercomputers):
 
 \begin{itemize}
