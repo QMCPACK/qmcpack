@@ -47,6 +47,9 @@ class SlaterDetOpt: public OrbitalBase, public FermionBase {
     /// \brief   total number of molecular orbitals (i.e. linear combinations) in the optimizable set, including those not occupied in this determinant
     int m_nmo;
 
+    // Ratio of new to old values of the wave function, after a particle move.
+    ValueType curRatio;
+
     /// \brief   matrix of orbital values for orbitals in this determinant
     SPOSetBase::ValueMatrix_t m_orb_val_mat;
 

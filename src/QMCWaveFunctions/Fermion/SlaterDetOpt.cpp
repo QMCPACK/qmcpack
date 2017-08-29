@@ -306,13 +306,13 @@ OrbitalBase::ValueType SlaterDetOpt::ratioGrad(ParticleSet& P, int iat, GradType
   m_spo->evaluate(P, iat, m_orb_val_vec, m_orb_der_vec, m_orb_lap_vec);
 
   // compute the ratio of new to old determinant values
-  const OrbitalBase::ValueType rat = simd::dot(m_orb_inv_mat[iat-m_first], m_orb_val_vec.data(), m_nel);
+  curRatio = simd::dot(m_orb_inv_mat[iat-m_first], m_orb_val_vec.data(), m_nel);
 
   // compute the determinant's contribution to the gradient of the log of the trial function
-  grad_iat += simd::dot(m_orb_inv_mat[iat-m_first], m_orb_der_vec.data(), m_nel) / rat;
+  grad_iat += simd::dot(m_orb_inv_mat[iat-m_first], m_orb_der_vec.data(), m_nel) / curRatio;
 
   // return the ratio
-  return rat;
+  return curRatio;
 
 }
 
@@ -335,9 +335,9 @@ OrbitalBase::ValueType SlaterDetOpt::ratio(ParticleSet& P,
   m_spo->evaluate(P, iat, m_orb_val_vec, m_orb_der_vec, m_orb_lap_vec);
 
   // compute the ratio of new to old determinant values
-  const OrbitalBase::ValueType rat = simd::dot(m_orb_inv_mat[iat-m_first], m_orb_val_vec.data(), m_nel);
+  curRatio = simd::dot(m_orb_inv_mat[iat-m_first], m_orb_val_vec.data(), m_nel);
   
-  return rat;
+  return curRatio;
 
 //  throw std::runtime_error("SlaterDetOpt::ratio(P, iat, dG, dL) not implemented");
 //  return 0.0;
@@ -361,8 +361,8 @@ OrbitalBase::ValueType SlaterDetOpt::ratio(ParticleSet& P, int iat) {
   m_spo->evaluate(P, iat, m_orb_val_vec, m_orb_der_vec, m_orb_lap_vec);
 
   // compute the ratio of new to old determinant values
-  const OrbitalBase::ValueType rat = simd::dot(m_orb_inv_mat[iat-m_first], m_orb_val_vec.data(), m_nel);
-  return rat;
+  curRatio = simd::dot(m_orb_inv_mat[iat-m_first], m_orb_val_vec.data(), m_nel);
+  return curRatio;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -377,6 +377,11 @@ void SlaterDetOpt::acceptMove(ParticleSet& P, int iat) {
   // nothing to do if particle does not belong to this determinant
   if ( iat < m_first || iat >= m_last )
     return;
+
+  // Update Log and Phase values, then reset the ratio to 1.
+  PhaseValue += evaluatePhase(curRatio);
+  LogValue += std::log(std::abs(curRatio));
+  curRatio = 1.0;
 
   // get row difference
   std::copy(m_orb_val_vec.begin(), m_orb_val_vec.end(), &m_work.at(0));
@@ -400,12 +405,15 @@ void SlaterDetOpt::acceptMove(ParticleSet& P, int iat) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  Nothing to do for a rejected single particle move
+/// \brief  Particle move rejected - simply reset the ratio of new to old wave functions
 ///
 /// \param[in]      iat            the id number of the moved particle
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void SlaterDetOpt::restore(int iat) {}
+void SlaterDetOpt::restore(int iat)
+{
+  curRatio=1.0;
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Not yet implemented.
