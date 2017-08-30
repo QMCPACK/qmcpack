@@ -393,6 +393,38 @@ ENDIF(ENABLE_SOA)
                     1 # DMC
                     TRUE)
 
+#Now for the correlated sampling tests
+  LIST(APPEND BCC_H_CSVMC_SCALARS "totenergy_A" "-1.83428 0.00013")
+  LIST(APPEND BCC_H_CSVMC_SCALARS "totenergy_B" "-1.83390 0.00012")
+  LIST(APPEND BCC_H_CSVMC_SCALARS "dtotenergy_AB" "-0.000384 0.000068")
+  LIST(APPEND BCC_H_CSVMC_SCALARS "ionion_A" "-0.96289962 0.0000001")
+  LIST(APPEND BCC_H_CSVMC_SCALARS "ionion_B" "-0.95816559 0.0000001")
+  LIST(APPEND BCC_H_CSVMC_SCALARS "dionion_AB" "-0.004734021 0.0000001")
+  LIST(APPEND BCC_H_CSVMC_SCALARS "eeenergy_A" "-0.77607 0.00013")
+  LIST(APPEND BCC_H_CSVMC_SCALARS "eeenergy_B" "-0.77546 0.00013")
+  LIST(APPEND BCC_H_CSVMC_SCALARS "deeenergy_AB" "-0.000603 0.000035")
+
+# Check CSVMCUpdateAll driver using all-particle updates
+  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    qmc_short_csvmc_all_nodrift
+                    qmc_short_csvmc_all_nodrift.in.xml
+                    16 1
+                    BCC_H_CSVMC_SCALARS
+                    0 # VMC
+                    TRUE)
+
+# Check CSVMCUpdateAllWithDrift driver using all-particle updates
+  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-csvmc-all_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    qmc_short_csvmc_all
+                    qmc_short_csvmc_all.in.xml
+                    16 1
+                    BCC_H_CSVMC_SCALARS
+                    0 # VMC
+                    TRUE)
+
+
   LIST(APPEND BCC_H_RMC_SCALARS "totenergy" "-1.8420 0.0011")
   #check RMC on 16 cores.  1 MPI
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-rmc_sdj
