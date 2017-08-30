@@ -43,9 +43,6 @@ void CSVMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
     makeGaussRandomWithEngine(deltaR,RandomGen);
    
     RealType tau_over_mass = std::sqrt(Tau*MassInvS[0]);
-   // app_log()<<"tau_over_mass= "<<tau_over_mass<< std::endl;
-    //app_log()<<"deltaR = "<<deltaR<< std::endl;
-    //if (!W.makeMove(thisWalker,deltaR, m_sqrttau))
     
     if (!W.makeMove(thisWalker,deltaR,tau_over_mass))
     {
@@ -82,7 +79,6 @@ void CSVMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
       cumNorm[ipsi]+=invsumratio[ipsi];
     }
     
-    //if (measure==true)
        for(int ipsi=0; ipsi<nPsi; ipsi++) cumNorm[ipsi]+=invsumratio[ipsi];
        
     RealType g = sumratio[0]/thisWalker.Multiplicity*
@@ -99,7 +95,6 @@ void CSVMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
       thisWalker.Age=0;
       thisWalker.Multiplicity=sumratio[0];
       thisWalker.R = W.R;
-     // thisWalker.Drift = drift;
       for(int ipsi=0; ipsi<nPsi; ipsi++)
       {
         W.L=*L1[ipsi];
@@ -141,7 +136,6 @@ void CSVMCUpdateAllWithDrift::advanceWalker(Walker_t& thisWalker, bool recompute
   if (!W.makeMoveWithDrift(thisWalker,drift ,deltaR,SqrtTauOverMass))
   {
     for (int ipsi=1; ipsi<nPsi; ipsi++) H1[ipsi]->rejectedMove(W,thisWalker);
-    // H.rejectedMove(W,thisWalker);
     return;
   }
 
