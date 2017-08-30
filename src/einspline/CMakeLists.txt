@@ -11,33 +11,6 @@
 #// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign 
 #////////////////////////////////////////////////////////////////////////////////////// 
 
-SET(HFILES
- aligned_alloc.h
- bspline_base.h bspline_create.h
- bspline.h bspline_structs.h
- bspline_eval_d.h
- multi_bspline.h
- multi_bspline_create.h    multi_bspline_structs.h
- multi_bspline_eval_d.h
- multi_bspline_eval_s.h    multi_bspline_eval_z.h
- multi_bspline_copy.h
- nubspline_structs.h nubasis.h nubspline.h nugrid.h
- nubspline_base.h nubspline_create.h
- nubspline_eval_d.h
- multi_nubspline.h
- multi_nubspline_create.h    multi_nubspline_structs.h
- multi_nubspline_eval_z.h
- multi_bspline_structs_cuda.h multi_bspline_create_cuda.h
- multi_bspline_eval_cuda.h bspline_eval_cuda.h
- bspline_structs_cuda.h bspline_create_cuda.h
- bspline_base_cuda.h
- )
-
-#FOREACH(a ${HFILES})
-#  #INSTALL(FILES ${EINSPLINE_HOME}/src/${a} DESTINATION ${PROJECT_BINARY_DIR}/include/einspline)
-#  configure_file(${EINSPLINE_HOME}/src/${a} ${PROJECT_BINARY_DIR}/include/einspline/${a} COPYONLY)
-#ENDFOREACH()
-
 set(SRCS )
 
 SET(SRCS ${SRCS}
@@ -51,34 +24,14 @@ SET(SRCS ${SRCS}
   multi_bspline_copy.c
 )
 
-#do not compiler c functions
-IF(HAVE_SSE41)
-  SET(SRCS ${SRCS}
-    multi_bspline_eval_s_sse.cpp
-    )
-else()
-  SET(SRCS ${SRCS}
-    multi_bspline_eval_s_std3.cpp
-    )
-endif()
-
-IF(HAVE_SSE2)
-  set(SRCS ${SRCS}
-    bspline_eval_d_sse.cpp
-    nubspline_eval_d_sse.cpp
-    multi_bspline_eval_d_sse.cpp
-    multi_bspline_eval_z_sse.cpp
-    multi_nubspline_eval_z_sse.cpp
-    )
-else()
-  SET(SRCS ${SRCS}
-    bspline_eval_d_std.cpp
-    nubspline_eval_d_std.cpp
-    multi_bspline_eval_d_std3.cpp
-    multi_bspline_eval_z_std3.cpp
-    multi_nubspline_eval_z_std.cpp
-    )
-endif()
+SET(SRCS ${SRCS}
+  bspline_eval_d_std.cpp
+  nubspline_eval_d_std.cpp
+  multi_bspline_eval_s_std3.cpp
+  multi_bspline_eval_d_std3.cpp
+  multi_bspline_eval_z_std3.cpp
+  multi_nubspline_eval_z_std.cpp
+)
 
 
 if(HAVE_CUDA)

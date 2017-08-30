@@ -202,6 +202,7 @@ void DiracDeterminantBase::updateAfterSweep(ParticleSet& P,
       L[iat]+=dot_temp-dot(rv,rv);
     }
   }
+  UpdateTimer.stop();
 }
 
 DiracDeterminantBase::RealType
@@ -255,7 +256,6 @@ DiracDeterminantBase::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P
   {
     updateAfterSweep(P,P.G,P.L);
   }
-  UpdateTimer.stop();
   BufferTimer.start();
   buf.put(psiM.first_address(),psiM.last_address());
   if(BufferMode)
@@ -768,9 +768,7 @@ DiracDeterminantBase::recompute(ParticleSet& P)
   }
   else
   {
-    InverseTimer.start();
     invertPsiM(psiM);
-    InverseTimer.stop();
   }
 }
 
