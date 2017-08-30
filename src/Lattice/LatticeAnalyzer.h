@@ -292,7 +292,7 @@ inline bool found_shorter_base(TinyVector<TinyVector<T,3>,3>& rb)
     }
   }
 
-  T rmax = sqrt(r2max);
+  T rmax = std::sqrt(r2max);
   T tol = 2.0*rmax*eps; //Error propagation for x^2
 
   TinyVector<TinyVector<T,3>,4> rb_new;

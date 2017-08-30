@@ -205,6 +205,7 @@ ENDIF(HAVE_OOMPI)
   ####################################
   SET(PARTICLE ${PARTICLE}
     Particle/ParticleSet.cpp 
+    Particle/VirtualParticleSet.cpp
     Particle/ParticleSet.BC.cpp 
     Particle/MCWalkerConfiguration.cpp 
     Particle/DistanceTableAA.cpp

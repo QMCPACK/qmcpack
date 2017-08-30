@@ -716,9 +716,9 @@ public:
     int nat=iat*Nelec;
     RealType x=std::accumulate(&(U[nat]),&(U[nat+Nelec]),0.0);
     std::vector<RealType> newval(nk,x);
-    const DistanceTableData* ee_table=VP.getVirtualTable(0);
-    const DistanceTableData* eI_table=VP.getVirtualTable(myTableIndex);
-    const DistanceTableData* eI_0=VP.getRealTable(myTableIndex);
+    const DistanceTableData* ee_table=VP.DistTables[0];
+    const DistanceTableData* eI_table=VP.DistTables[myTableIndex];
+    const DistanceTableData* eI_0=VP.refPtcl.DistTables[myTableIndex];
 
     for (int i=0,nn=0; i<Nion; i++)
     {
