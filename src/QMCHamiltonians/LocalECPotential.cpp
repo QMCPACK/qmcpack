@@ -109,17 +109,14 @@ LocalECPotential::evaluate(ParticleSet& P)
     Value=0.0;
     if(d_table.DTType==DT_SOA)
     {
-      for(int iat=0; iat<NumIons; ++iat)
+      const size_t Nelec = P.getTotalNum();
+      for(size_t iel=0; iel<Nelec; ++iel)
       {
-        RadialPotentialType* ppot(PP[iat]);
-        if(ppot==nullptr) continue;
-        RealType esum(0);
-        const RealType* restrict dist=d_table.r_m2[iat];
-        for(int nj=0; nj<d_table.M[iat]; ++nj)
-        {
-          esum += ppot->splint(dist[nj])/dist[nj];
-        }
-        Value -= esum*Zeff[iat];
+        const RealType* restrict dist=d_table.Distances[iel];
+        Return_t esum(0);
+        for(size_t iat=0; iat<NumIons; ++iat)
+          if(PP[iat]!=nullptr) esum+=PP[iat]->splint(dist[iat])*Zeff[iat]/dist[iat];
+        Value -= esum;
       }
     }
     else
@@ -129,7 +126,7 @@ LocalECPotential::evaluate(ParticleSet& P)
       {
         RadialPotentialType* ppot(PP[iat]);
         if(ppot==nullptr) continue;
-        RealType esum(0);
+        Return_t esum(0);
         for(int nn=d_table.M[iat]; nn<d_table.M[iat+1]; ++nn)
           esum += ppot->splint(d_table.r(nn))*d_table.rinv(nn);
         //count the sign and effective charge
