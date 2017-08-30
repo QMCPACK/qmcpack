@@ -44,7 +44,7 @@
 This section describes developmental features in QMCPACK that might be ready for production, but require additional testing, features or documentation to be ready for general use. We describe them here because they offer significant benefits and are well tested in specific cases.
 
 \subsection{CPU SoA optimization}
-SoA stands for Structure-of-Arrays which is a data layout facilitating vectorization on modern CPUs with wide SIMD units. The SoA optimization for CPUs significantly boost the performance of QMCPACK. Meanwhile, the memory footprint is dramatically reduced by introducing compute-on-the-fly algorithms. To get all the benefit, compilers support OpenMP 4.0 SIMD are recommended. \textbf{Users should check what we specifically test on cdash/ctest and to make specific requests to expand the functionality that they need.}
+SoA stands for Structure-of-Arrays which is a data layout facilitating vectorization on modern CPUs with wide SIMD units. The SoA optimization \cite{IPCC_SC17} for CPUs significantly boost the performance of QMCPACK. Meanwhile, the memory footprint is dramatically reduced by introducing compute-on-the-fly algorithms. To get all the benefit, compilers support OpenMP 4.0 SIMD are recommended. \textbf{Users should check what we specifically test on cdash/ctest and to make specific requests to expand the functionality that they need.}
 
 SoA code path currently supports:
 \begin{itemize}
