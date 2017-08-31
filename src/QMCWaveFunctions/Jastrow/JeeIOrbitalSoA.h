@@ -171,7 +171,7 @@ public:
     F=nullptr;
     elecs_inside.resize(Nion,eGroups);
     elecs_inside_dist.resize(Nion,eGroups);
-    Ion_cutoff.resize(Nion);
+    Ion_cutoff.resize(Nion, 0.0);
 
     mVGL.resize(Nelec);
     DistkI_Compressed.resize(Nelec);
@@ -332,9 +332,10 @@ public:
         for (int jg=0; jg<eGroups; jg++)
           for (int kg=0; kg<eGroups; kg++)
           {
-            FT &func_ijk = *F(ig, jg, kg);
-            VarOffset(ig,jg,kg).first  = func_ijk.myVars.Index.front()-varoffset;
-            VarOffset(ig,jg,kg).second = func_ijk.myVars.Index.size()+VarOffset(ig,jg,kg).first;
+            FT *func_ijk = F(ig, jg, kg);
+            if(func_ijk==nullptr) continue;
+            VarOffset(ig,jg,kg).first  = func_ijk->myVars.Index.front()-varoffset;
+            VarOffset(ig,jg,kg).second = func_ijk->myVars.Index.size()+VarOffset(ig,jg,kg).first;
           }
     }
   }
