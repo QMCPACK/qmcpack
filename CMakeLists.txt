@@ -504,12 +504,8 @@ IF (ENABLE_GCOV)
   ENDIF()
 ENDIF(ENABLE_GCOV)
 
-# check if C++11 is needed by QMCPACK features
-SET(CXX11_NEEDED FALSE)
-IF(BUILD_LMYENGINE_INTERFACE OR BUILD_MINIAPPS OR BUILD_AFQMC OR ENABLE_SOA)
-  SET(CXX11_NEEDED TRUE)
-ENDIF()
-# once C++11 is needed
+# Require C++11 while leaving possibility to fall back by modifying this file
+SET(CXX11_NEEDED TRUE)
 IF(CXX11_NEEDED)
   SET(CXX11_FLAG "-std=c++11")
   #check if the CXX compiler supports -std=c++11 option
@@ -534,13 +530,7 @@ IF(CXX11_NEEDED)
       SET (CMAKE_CXX_FLAGS "${CXX11_FLAG} ${CMAKE_CXX_FLAGS}")
     ENDIF()
   ELSE()
-    MESSAGE(STATUS "Disabling features requring C++11 due to the lack of compiler support")
-    SET(BUILD_LMYENGINE_INTERFACE 0)
-    SET(BUILD_MINIAPPS 0)
-    SET(BUILD_AFQMC 0)
-    IF(ENABLE_SOA)
-      MESSAGE(FATAL_ERROR "ENABLE_SOA requires C++11 compiler support!")
-    ENDIF()
+    MESSAGE(FATAL_ERROR "A compiler supporting C++11 is required. Use a newer C++ compiler.")
   ENDIF()
 ENDIF(CXX11_NEEDED)
 
