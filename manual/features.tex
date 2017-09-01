@@ -68,8 +68,7 @@ The Structure-of-Arrays (SoA) optimizations \cite{IPCC_SC17} are a set
 of improved data layouts facilitating vectorization on modern CPUs
 with wide SIMD units. \textbf{For many calculations and architectures, the SoA
   implementation at least doubles the speed of the code.}  Meanwhile,
-the memory footprint is dramatically reduced by better algorithms,
-similar to the existing GPU implementation. For full benefit, modern
+the memory footprint is dramatically reduced by better algorithms. For full benefit, modern
 compilers supporting OpenMP 4.0 SIMD are recommended, e.g. GCC version
 $\ge$4.9 and Intel compiler versions $\ge 15.0$. \textbf{Users should
   check what is currently tested on cdash/ctest and make specific
