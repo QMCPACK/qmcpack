@@ -1,6 +1,6 @@
 # Check compiler version
-IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.4 )
-MESSAGE(FATAL_ERROR "Require gcc 4.4 or higher ")
+IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8 )
+MESSAGE(FATAL_ERROR "Requires gcc 4.8 or higher ")
 ENDIF()
 
 # Set the std

@@ -1,7 +1,7 @@
 # Check compiler version
 SET(INTEL_COMPILER 1)
-IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0 )
-MESSAGE(FATAL_ERROR "Require intel 8.0 or higher ")
+IF ( CMAKE_CXX_COMPILER_VERSION VERSION_LESS 15.0 )
+MESSAGE(FATAL_ERROR "Requires Intel 15.0 or higher ")
 ENDIF()
 
 # Set the std
