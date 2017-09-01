@@ -76,21 +76,17 @@ struct Gvectors
     mylmax=lmax;
     SoaSphericalTensor<ST> Ylm(lmax);
     const int lm_tot=(lmax+1)*(lmax+1);
-    YlmG.resize(lm_tot);
-    for(size_t lm=0; lm<lm_tot; lm++)
-      YlmG[lm].resize(NumGvecs);
+    YlmG.resize(NumGvecs);
     #pragma omp parallel for
     for(size_t ig=0; ig<NumGvecs; ig++)
     {
       PosType Ghat;
-      aligned_vector<ST> Ylm_vals(lm_tot);
+      YlmG[ig].resize(lm_tot);
       if (gmag[ig]==0)
         Ghat=PosType(0.0,0.0,1.0);
       else
         Ghat=gvecs_cart[ig]/gmag[ig];
-      Ylm.evaluateV(Ghat[0], Ghat[1], Ghat[2], Ylm_vals.data());
-      for(size_t lm=0; lm<lm_tot; lm++)
-        YlmG[lm][ig]=Ylm_vals[lm];
+      Ylm.evaluateV(Ghat[0], Ghat[1], Ghat[2], YlmG[ig].data());
     }
     //std::cout << "Calculated " << NumGvecs << " YlmG!" << std::endl;
   }
@@ -558,12 +554,12 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         {
           Gvecs.calc_jlm_G(lmax, r, ig, j_lm_G);
           for(size_t lm=0; lm<lm_tot; lm++)
-            vals[lm]+=cG[ig]*phase_shift[ig]*j_lm_G[lm]*Gvecs.YlmG[lm][ig];
+            vals[lm]+=cG[ig]*phase_shift[ig]*j_lm_G[lm]*Gvecs.YlmG[ig][lm];
         }
 
-        all_vals[ip]=vals;
+        all_vals[ip].resize(lm_tot);
         for(int lm=0; lm<lm_tot; lm++)
-          all_vals[ip][lm]*=4.0*M_PI*i_power[lm];
+          all_vals[ip][lm] = vals[lm]*4.0*M_PI*i_power[lm];
       }
       //app_log() << "Building band " << iorb << " at center " << center_idx << std::endl;
 
