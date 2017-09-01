@@ -497,7 +497,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     // prepare Gvecs Ylm(G)
     Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell, bspline->HalfG);
     // if(band_group_comm.isGroupLeader()) std::cout << "print band=" << iorb << " KE=" << Gvecs.evaluate_KE(cG) << std::endl;
-    const int lmax_limit=7;
+    const int lmax_limit=6;
     Gvecs.calc_YlmG(lmax_limit);
     std::vector<std::complex<double> > i_power;
     // rotate phase is introduced here.
