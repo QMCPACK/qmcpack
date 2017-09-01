@@ -373,8 +373,8 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         optslaterdet_up = this->create_optimizable_sd(targetPtcl, spomap, spo_a_name, 0);
         optslaterdet_dn = this->create_optimizable_sd(targetPtcl, spomap, spo_b_name, 1);
 
-        optslaterdet_up->tfc_ptr("SlaterDetBuilder::put")->buildOptVariables(params_a, spo_a_name, params_supplied_a, true);
-        optslaterdet_dn->tfc_ptr("SlaterDetBuilder::put")->buildOptVariables(params_b, spo_b_name, params_supplied_b, true);
+        optslaterdet_up->buildOptVariables(params_a, spo_a_name, params_supplied_a, true);
+        optslaterdet_dn->buildOptVariables(params_b, spo_b_name, params_supplied_b, true);
 
         // print what we built
         app_log() << std::endl;
@@ -576,8 +576,6 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   } else if ( optslaterdet_up || optslaterdet_dn ) {
     if ( optslaterdet_up ) targetPsi.addOrbital(optslaterdet_up, "SlaterDetOpt_up", true);     // first add the determinants
     if ( optslaterdet_dn ) targetPsi.addOrbital(optslaterdet_dn, "SlaterDetOpt_dn", true);     //
-    if ( optslaterdet_up ) optslaterdet_up->add_orbs_to_tf(targetPsi, "SlaterDetOpt_up_orbs"); // then add their orbitals
-    if ( optslaterdet_dn ) optslaterdet_dn->add_orbs_to_tf(targetPsi, "SlaterDetOpt_dn_orbs"); // (these must come after!)
   } else {
     targetPsi.addOrbital(slaterdet_0,"SlaterDet",true);
   }

@@ -82,6 +82,12 @@ public:
   ValueMatrix_t t_logpsi;
   ///matrix containing the coefficients
   ValueMatrix_t C;
+  /// the column-major-order m_nb by m_nlc matrix of orbital coefficients resulting from a rotation of the old coefficients
+  /// thus B = old_B * C, where C is a unitary orbital rotation matrix.
+  std::vector<RealType> m_B;
+  /// the column-major-order m_nb by m_nlc initial orbital coefficients, from the start of the simulation
+  std::vector<RealType> m_init_B;
+
   ///occupation number
   Vector<RealType> Occ;
   /// Optimizable variables
@@ -378,7 +384,6 @@ public:
     if ( v.size() < n )
       v.resize(n);
   }
-
 
 #ifdef QMC_CUDA
 

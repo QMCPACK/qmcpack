@@ -28,10 +28,33 @@ SlaterDetOpt::SlaterDetOpt(ParticleSet & targetPtcl, SPOSetBase * spo_ptr, const
   : m_spo(spo_ptr)
   , m_up_or_down(up_or_down)
   , m_nmo(spo_ptr->size())
+  , m_first_var_pos(-1)
+  , m_act_rot_inds()
 {
   Optimizable=true;
   OrbitalName="SlaterDetOpt";
   this->resetTargetParticleSet(targetPtcl);
+
+  m_nlc = m_spo->OrbitalSetSize;
+  m_nb = m_spo->BasisSetSize;
+
+  // make sure we didn't start with a bad m_nlc
+  check_index_sanity();
+
+  // by default set all rotations to be active
+  m_act_rot_inds.resize( m_nlc * ( m_nlc - 1 ) / 2 );
+  int rots_recorded = 0;
+  for (int j = 1; j < m_nlc; j++)
+  for (int i = 0; i < j; i++)
+    m_act_rot_inds.at(rots_recorded++) = std::pair<int,int>(i,j);
+  if ( m_act_rot_inds.size() != rots_recorded )
+    throw std::runtime_error("wrong number of active rotations recorded in SlaterDetOpt constructor.");
+
+  // make sure we didn't do something stupid
+  check_index_sanity();
+
+  // prepare matrices that will hold derivatives wrt orbital rotations
+  this->initialize_matrices();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -42,9 +65,42 @@ SlaterDetOpt::SlaterDetOpt(ParticleSet & targetPtcl, SPOSetBase * spo_ptr, const
 /// \param[in]      name           a name for the component
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void SlaterDetOpt::add_orbs_to_tf(TrialWaveFunction & twf, const std::string & name) {
-  if ( std::find(twf.getOrbitals().begin(), twf.getOrbitals().end(), m_spo->tf_component()) == twf.getOrbitals().end() )
-    twf.addOrbital(m_spo->tf_component(), name, false);
+//void SlaterDetOpt::add_orbs_to_tf(TrialWaveFunction & twf, const std::string & name) {
+//  if ( std::find(twf.getOrbitals().begin(), twf.getOrbitals().end(), m_spo->tf_component()) == twf.getOrbitals().end() )
+//    twf.addOrbital(m_spo->tf_component(), name, false);
+//}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  verifies that the number of linear combinations and the list of active rotation
+///         indices is sane
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void SlaterDetOpt::check_index_sanity() const {
+
+  // ensure the number of linear combinations is not negative
+  if ( m_nlc < 0 )
+    throw std::runtime_error("check_index_sanity found a negative number of linear combinations");
+
+  // throw an error if any active rotation index is unreasonable
+  for (std::vector<std::pair<int,int> >::const_iterator it = m_act_rot_inds.begin(); it != m_act_rot_inds.end(); it++) {
+    if ( it->first >= it->second ) {
+      std::stringstream error_msg;
+      error_msg << "check_index_sanity found an active rotation index pair ("
+                << it->first << "," << it->second << ") in which the first index was not smaller than the second";
+      throw std::runtime_error(error_msg.str());
+    }
+    if ( it->first < 0 || it->first >= m_nlc ) {
+      std::stringstream error_msg;
+      error_msg << it->first << " is an out of bounds first active rotation index in check_index_sanity";
+      throw std::runtime_error(error_msg.str());
+    }
+    if ( it->second < 0 || it->second >= m_nlc ) {
+      std::stringstream error_msg;
+      error_msg << it->second << " is an out of bounds second active rotation index in check_index_sanity";
+      throw std::runtime_error(error_msg.str());
+    }
+  }
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -62,6 +118,61 @@ OrbitalBasePtr SlaterDetOpt::makeClone(ParticleSet& tqp) const {
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 SlaterDetOpt::~SlaterDetOpt() { }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  prepares the matrices that will hold derivatives w.r.t. orbital rotations by
+///         ensuring they are the right size and that their elements are all zero
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void SlaterDetOpt::initialize_matrices() {
+
+  // initialize matrix for Log(Psi) derivatives
+  m_pder_mat.resize(m_nlc * m_nlc);
+  std::fill(m_pder_mat.begin(), m_pder_mat.end(), 0.0);
+
+  // initialize matrix for ( H Psi ) / Psi derivatives
+  m_hder_mat.resize(m_nlc * m_nlc);
+  std::fill(m_hder_mat.begin(), m_hder_mat.end(), 0.0);
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  Exponentiates a matrix
+///
+/// \param[in]      n              matrix dimensions
+/// \param[in,out]  mat            On entry, the n by n matrix.
+///                                On exit, the exponential of the matrix.
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void SlaterDetOpt::exponentiate_matrix(const int n, RealType * const mat) {
+
+  // save initial matrix and get some workspace
+  std::vector<RealType> mat_a(mat, mat + n*n);
+  std::vector<RealType> mat_b(mat, mat + n*n);
+  std::vector<RealType> mat_c(mat, mat + n*n);
+  RealType * ptr_a = &mat_a.at(0);
+  RealType * ptr_b = &mat_b.at(0);
+  RealType * ptr_c = &mat_c.at(0);
+
+  // initialize output to identity matrix
+  for (int j = 0; j < n; j++)
+  for (int i = 0; i < n; i++)
+    mat[i+n*j] = ( i == j ? 1.0 : 0.0 );
+
+  // compute exponential of matrix
+  for (int q = 1; q < 20; q++) {
+    BLAS::axpy(n*n, RealType(1.0), ptr_b, mat);
+    BLAS::gemm('N', 'N', n, n, n, RealType(1.0) / (q+1), ptr_a, n, ptr_b, n, RealType(0.0), ptr_c, n);
+    std::swap(ptr_b, ptr_c);
+    RealType max_elem = 0.0;
+    for (int i = 0; i < n*n; i++)
+      if ( std::abs(ptr_b[i]) > max_elem )
+        max_elem = std::abs(ptr_b[i]);
+    if ( max_elem < 1.0e-15 )
+      break;
+  }
+
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  reset which particle set we are using and initialize arrays accordingly
@@ -569,22 +680,48 @@ void SlaterDetOpt::copyFromBuffer(ParticleSet& P, BufferType& buf) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  Nothing to check in, as the optimizable orbital variables are handled by the
-///         orbital set's trial function component.
+/// \brief  Check this object's optimizable variables into the supplied overall list of
+///         optimizable variables.
 ///
-/// \param[in]      active         ???
+/// \param[in,out]  active        the overall list of optimizable variables
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void SlaterDetOpt::checkInVariables(opt_variables_type& active) {}
+void SlaterDetOpt::checkInVariables(opt_variables_type& active) {
+
+  // add these variables to the overall list of optimizable variables
+  active.insertFrom(this->myVars);
+
+  // reset my first variable's position to say that we don't know where it is yet
+  m_first_var_pos = -1;
+
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  Nothing to check out, as the optimizable orbital variables are handled by the
-///         orbital set's trial function component.
+/// \brief  Records the positions of this object's optimizable variables in the supplied overall
+///         list of optimizable variables, checks that the variables are stored contiguously,
+///         and records the position of the first of this objects variables.
 ///
-/// \param[in]      active         ???
+/// \param[in]      active        the overall list of optimizable variables
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void SlaterDetOpt::checkOutVariables(const opt_variables_type& active) {}
+void SlaterDetOpt::checkOutVariables(const opt_variables_type& active) {
+
+  // record the positions of this object's optimizable variables within the overall list of optimizable variables
+  myVars.getIndex(active);
+
+  // ensure that this object's variables are stored contiguously
+  for (int i = 0; i < myVars.size(); i++) {
+    if ( myVars.where(i) - myVars.where(0) != i ) {
+      std::stringstream error_msg;
+      error_msg << "variable " << (i-1) << " was not contiguous with variable " << i << " in SlaterDetOpt::checkOutVariables";
+      throw std::runtime_error(error_msg.str());
+    }
+  }
+
+  // record the position of my first variable
+  if ( myVars.size() > 0 )
+    m_first_var_pos = myVars.where(0);
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Nothing to reset, as the optimizable orbital variables are handled by the
@@ -593,7 +730,33 @@ void SlaterDetOpt::checkOutVariables(const opt_variables_type& active) {}
 /// \param[in]      active         ???
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void SlaterDetOpt::resetParameters(const opt_variables_type& active) {}
+void SlaterDetOpt::resetParameters(const opt_variables_type& active)
+{
+  // read out the parameters that define the rotation into an antisymmetric matrix
+  std::vector<RealType> rot_mat(m_nlc*m_nlc, 0.0);
+  for (int i = 0; i < m_act_rot_inds.size(); i++) {
+    const int p = m_act_rot_inds.at(i).first;
+    const int q = m_act_rot_inds.at(i).second;
+    //const RealType x = active[i + m_first_var_pos] - myVars[i];
+    const RealType x = active[i + m_first_var_pos];
+    rot_mat[p+q*m_nlc] =  x;
+    rot_mat[q+p*m_nlc] = -x;
+  }
+
+  // exponentiate antisymmetric matrix to get the unitary rotation
+  this->exponentiate_matrix(m_nlc, &rot_mat.at(0));
+
+  // get the linear combination coefficients by applying the rotation to the old coefficients
+  BLAS::gemm('N', 'T', m_nb, m_nlc, m_nlc, RealType(1.0), &(m_spo->m_init_B.at(0)),
+             m_nb, &rot_mat.at(0), m_nlc, RealType(0.0), &(m_spo->m_B.at(0)), m_nb);
+
+  // Store the orbital rotations parameters internally in myVars
+  for (int i = 0; i < m_act_rot_inds.size(); i++)
+    myVars[i] = active[i + m_first_var_pos];
+
+  //if (false)
+  //  this->print_B();
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Not yet implemented.
@@ -601,6 +764,83 @@ void SlaterDetOpt::resetParameters(const opt_variables_type& active) {}
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void SlaterDetOpt::reportStatus(std::ostream& os) {
   throw std::runtime_error("SlaterDetOpt::reportStatus(os) not implemented");
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  add to the Log(Psi) and ( H Psi ) / Psi derivatives
+///
+/// \param[in]      nl         The number of molecular orbitals.
+/// \param[in]      np         The number of particles over which to sum derivative contributions.
+/// \param[in]      dp0        An nl by np column-major-ordered matrix of the derivatives
+///                            of Log(Psi) with respect to the values of the
+///                            molecular orbitals at each particle's position.
+/// \param[in]      dh0        An nl by np column-major-ordered matrix of the derivatives
+///                            of ( H Psi ) / Psi with respect to the values of the
+///                            molecular orbitals at each particle's position.
+/// \param[in]      dh1        Three nl by np column-major-ordered matrices (stored contiguously
+///                            one after the other) of the derivatives of
+///                            of ( H Psi ) / Psi with respect to the values of the
+///                            molecular orbitals' first position derivatives (w.r.t. x,y,z)
+///                            at each particle's position.
+/// \param[in]      dh2        An nl by np column-major-ordered matrix of the derivatives
+///                            of ( H Psi ) / Psi with respect to the values of the
+///                            molecular orbitals' second position derivatives at each
+///                            particle's position.  Note that we assume the derivatives of
+///                            ( H Psi ) / Psi are the same for each of the three directions'
+///                            (x,y,z) second derivatives and so dh2 is defined as the
+///                            derivaties corresponding to the x coordinate's second derivative,
+///                            NOT the sum of the derivatives for all three x, y, and z.
+/// \param[in]      Bchi       An nl by np column-major-ordered matrix of the values of the
+///                            molecular orbitals at each particle's position.
+/// \param[in]      dBchi      Three nl by np column-major-ordered matrices (stored contiguously
+///                            one after the other) of the first position derivatives of the
+///                            molecular orbitals at each particle's position.
+/// \param[in]      d2Bchi     An nl by np column-major-ordered matrix of the molecular orbitals'
+///                            x-y-z summed second derivatives at each particle's position.
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void SlaterDetOpt::add_derivatives(const int nl,
+                                   const int np,
+                                   const RealType * const dp0,
+                                   const RealType * const dh0,
+                                   const RealType * const dh1,
+                                   const RealType * const dh2,
+                                   const RealType * const Bchi,
+                                   const RealType * const dBchi,
+                                   const RealType * const d2Bchi) {
+
+  // ensure the number of linear combinations is correct
+  if ( nl != m_nlc ) {
+    std::stringstream error_msg;
+    error_msg << "supplied number of linear combinations (" << nl << ") does not match that held internally (" << m_nlc << ") in add_derivatives";
+    throw std::runtime_error(error_msg.str());
+  }
+
+  // ensure orbital derivative matrices are the correct size
+  if ( m_pder_mat.size() != nl * nl ) {
+    std::stringstream error_msg;
+    error_msg << "nl (" << nl << ") does not match size of m_pder_mat (" << m_pder_mat.size() << ") in add_derivatives";
+    throw std::runtime_error(error_msg.str());
+  }
+  if ( m_hder_mat.size() != nl * nl ) {
+    std::stringstream error_msg;
+    error_msg << "nl (" << nl << ") does not match size of m_hder_mat (" << m_hder_mat.size() << ") in add_derivatives";
+    throw std::runtime_error(error_msg.str());
+  }
+
+  // contract Log(Psi) derivatives with the current linear combination values and add result to the Log(Psi) derivatives w.r.t. the matrix C
+  //for (int j = 0; j < nl; j++)
+  //for (int i = 0; i < nl; i++)
+  //  for (int k = 0; k < np; k++)
+  //    m_pder_mat.at(i+j*nl) += dp0[i+k*nl] * Bchi[j+k*nl];
+  BLAS::gemm('N', 'T', nl, nl, np, RealType(1.0), dp0, nl, Bchi, nl, RealType(1.0), &m_pder_mat.at(0), nl);
+
+  // compute products of ( H Psi ) / Psi derivatives with linear combination values and their derivatives and add results to energy derivatives w.r.t. the matrix C
+  BLAS::gemm('N', 'T', nl, nl, np, RealType(1.0), dh0, nl, Bchi, nl, RealType(1.0), &m_hder_mat.at(0), nl);
+  for (int i = 0; i < 3; i++)
+    BLAS::gemm('N', 'T', nl, nl, np, RealType(1.0), dh1+i*nl*np, nl, dBchi+i*nl*np, nl, RealType(1.0), &m_hder_mat.at(0), nl);
+  BLAS::gemm('N', 'T', nl, nl, np, RealType(1.0), dh2, nl, d2Bchi, nl, RealType(1.0), &m_hder_mat.at(0), nl);
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -758,8 +998,38 @@ void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
     m_work[ p + a*m_nmo + k*m_nmo*m_nel ] = m_orb_der_mat_all(a,p)[k];
 
   // add this determinant's contribution to the orbital linear combinations' derivatives
-  this->tfc_ptr("SlaterDetOpt::evaluateDerivatives")->add_derivatives(m_nmo, m_nel, m_dp0.data(), m_dh0.data(), m_dh1.data(), m_dh2.data(),
-                                                                      m_orb_val_mat_all.data(), &m_work.at(0), m_orb_lap_mat_all.data());
+  add_derivatives(m_nmo, m_nel, m_dp0.data(), m_dh0.data(), m_dh1.data(), m_dh2.data(),
+                  m_orb_val_mat_all.data(), &m_work.at(0), m_orb_lap_mat_all.data());
+
+
+
+  // check that we have the position of the first of our variables in the overall list
+  if ( myVars.size() > 0 && m_first_var_pos < 0 )
+    throw std::runtime_error("position of first variable was not set on entry to SlaterDetOpt::evaluateDerivatives");
+
+  // check that my number of variables is consistent with the number of active rotations
+  if ( myVars.size() != m_act_rot_inds.size() ) {
+    std::stringstream error_msg;
+    error_msg << "mismatch between myVars.size() (" << myVars.size() << ") and m_act_rot_inds.size() (" << m_act_rot_inds.size() << ") in SlaterDetOpt::evaluateDerivatives";
+    throw std::runtime_error(error_msg.str());
+  }
+
+  for (int i = 0; i < m_act_rot_inds.size(); i++) {
+    const int p = m_act_rot_inds.at(i).first;
+    const int q = m_act_rot_inds.at(i).second;
+    dlogpsi.at(m_first_var_pos+i) += m_pder_mat.at(p+q*m_nlc) - m_pder_mat.at(q+p*m_nlc);
+    dhpsioverpsi.at(m_first_var_pos+i) += m_hder_mat.at(p+q*m_nlc) - m_hder_mat.at(q+p*m_nlc);
+    if ( false ) {
+      std::vector<char> buff(1000, ' ');
+      const int len = std::sprintf(&buff[0], " p = %4i   q = %4i     dlogpsi = %20.12f     dhpsioverpsi = %20.12f", p, q, dlogpsi.at(m_first_var_pos+i), dhpsioverpsi.at(m_first_var_pos+i));
+      for (int k = 0; k < len; k++)
+        app_log() << buff[k];
+      app_log() << std::endl;
+    }
+  }
+
+  // reset the internally stored derivatives to zero in preperation for the next sample
+  this->initialize_matrices();
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -770,20 +1040,50 @@ void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
 /// \return  a pointer to the single particle orbital set's trial function component.
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-LCOrbitalSetOptTrialFunc * SlaterDetOpt::tfc_ptr(const std::string & calling_func) {
+//LCOrbitalSetOptTrialFunc * SlaterDetOpt::tfc_ptr(const std::string & calling_func) {
+//
+//  // get pointer to the optimizable single particle orbital set's trial function component
+//  LCOrbitalSetOptTrialFunc * const ptr = dynamic_cast<LCOrbitalSetOptTrialFunc*>(m_spo->tf_component());
+//
+//  // check that the pointer conversion was successful
+//  if ( !ptr ) {
+//    std::stringstream message;
+//    message << "dynamic_cast failure for trial function component pointer in " << calling_func;
+//    throw std::runtime_error(message.str());
+//  }
+//
+//  // return the pointer
+//  return ptr;
+//
+//}
 
-  // get pointer to the optimizable single particle orbital set's trial function component
-  LCOrbitalSetOptTrialFunc * const ptr = dynamic_cast<LCOrbitalSetOptTrialFunc*>(m_spo->tf_component());
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  Set the optimizable rotations to be those between the two specified orbital sets.
+///
+/// \param[in]      istart         1st index in the 1st orbital set
+/// \param[in]      iend           one past the last index in the 1st orbital set
+/// \param[in]      jstart         1st index in the 2nd orbital set
+/// \param[in]      jend           one past the last index in the 2nd orbital set
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void SlaterDetOpt::set_optimizable_rotation_ranges(const int istart, const int iend, const int jstart, const int jend) {
 
-  // check that the pointer conversion was successful
-  if ( !ptr ) {
-    std::stringstream message;
-    message << "dynamic_cast failure for trial function component pointer in " << calling_func;
-    throw std::runtime_error(message.str());
-  }
+  // check sanity
+  assert( istart >= 0 );
+  assert( iend   >= 0 );
+  assert( jstart >= 0 );
+  assert( jend   >= 0 );
+  assert( istart <= iend );
+  assert( jstart <= jend );
 
-  // return the pointer
-  return ptr;
+  // remove any existing rotations
+  m_act_rot_inds.clear();
+
+  // add all rotations between the orbital sets [istart, iend) and [jstart, jend)
+  for (int i = istart; i < iend; i++)
+    for (int j = jstart; j < jend; j++)
+      if ( i != j )
+        m_act_rot_inds.push_back(std::pair<int,int>(std::min(i,j), std::max(i,j)));
 
 }
 
@@ -795,7 +1095,88 @@ LCOrbitalSetOptTrialFunc * SlaterDetOpt::tfc_ptr(const std::string & calling_fun
 void SlaterDetOpt::set_spo_optimizable_rotations() {
 
   // add this determinant's contribution to the orbital linear combinations' derivatives
-  this->tfc_ptr("SlaterDetOpt::set_spo_optimizable_rotations")->set_optimizable_rotation_ranges(0, m_nel, m_nel, m_nmo);
+  set_optimizable_rotation_ranges(0, m_nel, m_nel, m_nmo);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  Build this object's list of its own optimizable variables, and optionally set them
+///         to input values which may be provided in input_params. If input_params is empty on
+///         input, then params_supplied should be false, and each parameter will be set to 0.
+///         Then, also apply the initial rotation using the provided input parameters.
+///
+/// \param[in]    input_params     the input list of parameters - can be empty, if no parameters
+///                                were supplied by the user
+/// \param[in]    spo_name         name of the single particle basis set object
+/// \param[in]    params_supplied  true if parameters are provided in input_params, false if
+///                                input_params is empty
+/// \param[in]    print_vars       if true, then print out the initialized values of the variables
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void SlaterDetOpt::buildOptVariables(std::vector<RealType>& input_params, const std::string & spo_name,
+                       bool params_supplied, bool print_vars) {
+
+  int p, q;
+  int nparams_active = m_act_rot_inds.size();
+
+  if (params_supplied) {
+    int nparams_input = input_params.size();
+    if (nparams_input != nparams_active)
+      throw std::runtime_error("Number of parameters provided for orbital rotations "
+                               "is not consistent with the expected number.");
+  }
+
+  for (int i=0; i< nparams_active; i++)
+  {
+    p = m_act_rot_inds.at(i).first;
+    q = m_act_rot_inds.at(i).second;
+    std::stringstream sstr;
+    sstr << spo_name
+         << "_orb_rot_"
+         << ( p <   10 ? "0" : "" )
+         << ( p <  100 ? "0" : "" )
+         << ( p < 1000 ? "0" : "" )
+         << p
+         << "_"
+         << ( q <   10 ? "0" : "" )
+         << ( q <  100 ? "0" : "" )
+         << ( q < 1000 ? "0" : "" )
+         << q;
+
+    // If the user input parameteres, use those. Otherwise, initialize the
+    // parameter to zero.
+    if (params_supplied) {
+      myVars.insert(sstr.str(), input_params[i]);
+    } else {
+      myVars.insert(sstr.str(), 0.0);
+    }
+  }
+
+  if (print_vars) {
+    // Print the current values of all the optimisable parameters,
+    // hopefully with correct formatting.
+    app_log() << std::string(16,' ') << "Parameter name" << std::string(15,' ') << "Value\n";
+    myVars.print(app_log());
+  }
+
+  // The code below applies the initial rotation requested by the user.
+  // This is basically doing the same as resetParameters, but that routine
+  // is a bit too specialized for what we want to do here. So we just
+  // rewrite the specific code we want, rather than calling that routine.
+
+  // Read out the parameters that define the rotation into an antisymmetric matrix
+  std::vector<RealType> rot_mat(m_nlc*m_nlc, 0.0);
+  for (int i = 0; i < m_act_rot_inds.size(); i++) {
+    const int p = m_act_rot_inds.at(i).first;
+    const int q = m_act_rot_inds.at(i).second;
+    rot_mat[p+q*m_nlc] =  myVars[i];
+    rot_mat[q+p*m_nlc] = -myVars[i];
+  }
+  // Exponentiate antisymmetric matrix to get the unitary rotation.
+  this->exponentiate_matrix(m_nlc, &rot_mat.at(0));
+  // Get the linear combination coefficients by applying the rotation to
+  // the old coefficients
+  BLAS::gemm('N', 'T', m_nb, m_nlc, m_nlc, RealType(1.0), &(m_spo->m_init_B.at(0)), m_nb,
+             &rot_mat.at(0), m_nlc, RealType(0.0), &(m_spo->m_B.at(0)), m_nb);
 
 }
 

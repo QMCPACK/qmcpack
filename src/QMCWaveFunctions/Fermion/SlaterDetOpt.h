@@ -18,8 +18,6 @@ namespace qmcplusplus {
 
 class TrialWaveFunction;
 
-class LCOrbitalSetOptTrialFunc;
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  A class for a Slater determinant with optimizable orbitals.
 ///
@@ -46,6 +44,12 @@ class SlaterDetOpt: public OrbitalBase, public FermionBase {
 
     /// \brief   total number of molecular orbitals (i.e. linear combinations) in the optimizable set, including those not occupied in this determinant
     int m_nmo;
+
+    /// \brief  number of linear combinations of basis functions (i.e. molecular orbitals)
+    int m_nlc;
+
+    /// \brief  number of basis functions
+    int m_nb;
 
     // Ratio of new to old values of the wave function, after a particle move.
     ValueType curRatio;
@@ -98,6 +102,21 @@ class SlaterDetOpt: public OrbitalBase, public FermionBase {
     /// \brief   pivot workspace
     std::vector<int> m_pivot;
 
+  // protected data members
+  protected:
+
+    /// \brief  position of the first of this object's optimizable variables in the overall list of optimizable variables
+    int m_first_var_pos;
+
+    /// \brief  vector of active rotation indices, stored in pairs with the first element of the pair less than the second
+    std::vector<std::pair<int,int> > m_act_rot_inds;
+
+    /// \brief  matrix of derivatives of Log(Psi) w.r.t. the m_nlc by m_nlc orbital rotation matrix C
+    std::vector<RealType> m_pder_mat;
+
+    /// \brief  matrix of derivatives of (H Psi) / Psi w.r.t. the m_nlc by m_nlc orbital rotation matrix C
+    std::vector<RealType> m_hder_mat;
+
   // private member functions
   private:
 
@@ -124,11 +143,20 @@ class SlaterDetOpt: public OrbitalBase, public FermionBase {
 
     ~SlaterDetOpt();
 
-    void add_orbs_to_tf(TrialWaveFunction & twf, const std::string & name);
+    //void add_orbs_to_tf(TrialWaveFunction & twf, const std::string & name);
+
+    void check_index_sanity() const;
+
+    void initialize_matrices();
+
+    void exponentiate_matrix(const int n, RealType * const mat);
+
+    void set_optimizable_rotation_ranges(const int istart, const int iend, const int jstart, const int jend);
 
     void set_spo_optimizable_rotations();
 
-    LCOrbitalSetOptTrialFunc * tfc_ptr(const std::string & calling_func);
+    void buildOptVariables(std::vector<RealType>& input_params, const std::string & spo_name,
+                           bool params_supplied, bool print_vars);
 
     void checkInVariables(opt_variables_type& active);
 
@@ -175,6 +203,16 @@ class SlaterDetOpt: public OrbitalBase, public FermionBase {
     void copyFromBuffer(ParticleSet& P, BufferType& buf);
 
     OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+
+    void add_derivatives(const int nl,
+                         const int np,
+                         const RealType * const dp0,
+                         const RealType * const dh0,
+                         const RealType * const dh1,
+                         const RealType * const dh2,
+                         const RealType * const Bchi,
+                         const RealType * const dBchi,
+                         const RealType * const d2Bchi);
 
     void evaluateDerivatives(ParticleSet& P,
                              const opt_variables_type& optvars,
