@@ -69,6 +69,8 @@ struct Gvectors
     }
   }
 
+  int get_lmax() { return mylmax; }
+
   void calc_YlmG(const int lmax)
   {
     mylmax=lmax;
@@ -93,28 +95,13 @@ struct Gvectors
     //std::cout << "Calculated " << NumGvecs << " YlmG!" << std::endl;
   }
 
-  void calc_jlm_G(const int lmax, ST& r, std::vector<aligned_vector<ST> >& j_lm_G)
+  void calc_jlm_G(const int lmax, ST& r, const size_t ig, std::vector<ST>& j_lm_G)
   {
-    if(lmax>mylmax)
-    {
-      app_error() << "Current Gvectors only has Ylm_G up to lmax = " << mylmax << " but asking for " << lmax << std::endl;
-      abort();
-    }
-
-    // allocate space for j_lm_G[lm][ig]
-    const int lm_tot=(lmax+1)*(lmax+1);
-    j_lm_G.resize(lm_tot);
-    for(size_t lm=0; lm<lm_tot; lm++)
-      j_lm_G[lm].resize(NumGvecs);
-
-    for(size_t ig=0; ig<NumGvecs; ig++)
-    {
-      std::vector<double> jl_vals(lmax+1,0.0);
-      bessel_steed_array_cpu(lmax, gmag[ig]*r, jl_vals.data());
-      for(size_t l=0; l<=lmax; l++)
-        for(size_t lm=l*l; lm<(l+1)*(l+1); lm++)
-          j_lm_G[lm][ig]=jl_vals[l];
-    }
+    std::vector<double> jl_vals(lmax+1,0.0);
+    bessel_steed_array_cpu(lmax, gmag[ig]*r, jl_vals.data());
+    for(size_t l=0; l<=lmax; l++)
+      for(size_t lm=l*l; lm<(l+1)*(l+1); lm++)
+        j_lm_G[lm]=jl_vals[l];
   }
 
   template<typename PT>
@@ -533,6 +520,12 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       const double delta = spline_radius/static_cast<double>(spline_npoints-1);
       const int lm_tot=(lmax+1)*(lmax+1);
 
+      if(lmax>Gvecs.get_lmax())
+      {
+        app_error() << "Current Gvectors only has Ylm_G up to lmax = " << Gvecs.get_lmax() << " but asking for " << lmax << std::endl;
+        abort();
+      }
+
 #ifdef PRINT_RADIAL
       char fname[64];
       sprintf(fname, "band_%d_center_%d_pw.dat", iorb, center_idx);
@@ -559,14 +552,14 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       {
         double r=delta*static_cast<double>(ip);
         std::vector<std::complex<double> > vals(lm_tot, std::complex<double>(0.0,0.0));
-        std::vector<aligned_vector<double> > j_lm_G;
-        Gvecs.calc_jlm_G(lmax, r, j_lm_G);
+        std::vector<double> j_lm_G(lm_tot,0.0);
 
-        for(int lm=0; lm<lm_tot; lm++)
-          for(size_t ig=0; ig<Gvecs.NumGvecs; ig++)
-          {
-            vals[lm]+=cG[ig]*phase_shift[ig]*j_lm_G[lm][ig]*Gvecs.YlmG[lm][ig];
-          }
+        for(size_t ig=0; ig<Gvecs.NumGvecs; ig++)
+        {
+          Gvecs.calc_jlm_G(lmax, r, ig, j_lm_G);
+          for(size_t lm=0; lm<lm_tot; lm++)
+            vals[lm]+=cG[ig]*phase_shift[ig]*j_lm_G[lm]*Gvecs.YlmG[lm][ig];
+        }
 
         all_vals[ip]=vals;
         for(int lm=0; lm<lm_tot; lm++)
