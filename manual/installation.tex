@@ -87,8 +87,11 @@ strongly encouraged}, but not absolutely essential. Generally newer versions are
 Section \ref{sec:buildperformance} for performance suggestions.
 
 \begin{itemize}
-\item C/C++ compilers such as GNU, Clang, Intel, IBM XL. C++ compilers are required to support C++11 standard.
-\item MPI library such at OpenMPI \url{http://open-mpi.org}
+\item C/C++ compilers such as GNU, Clang, Intel, IBM XL. C++ compilers
+  are required to support C++11 standard. Use of recent (``current
+  year version'') compilers is strongly encouraged.
+\item MPI library such as OpenMPI \url{http://open-mpi.org} or vendor
+  optimized MPI.
 \item BLAS/LAPACK, numerical and linear algebra libraries. Use
   platform-optimized libraries where available, such as Intel MKL.
   ATLAS or other optimized open-source libraries may also be used
@@ -364,19 +367,27 @@ MKLROOT is the directory containing the MKL binary, examples, and lib
 directories (etc.) and is often /opt/intel/mkl 
 
 \subsection{Cross compiling}
-Cross-compiling is always difficult but often needed on supercomputers
-with distinct host and compute processors from different generations and even architectures.
+Cross-compiling is often difficult but is required on supercomputers
+with distinct host and compute processor generations or architectures.
 QMCPACK tried to do its best with CMake to facilitate cross-compiling.
 
 \begin{itemize}
-  \item On a machine using Cray programming environment, we reply on
-      compiler wrappers provided by Cray to set architecture specific flags
-  \item If not on a Cray machine, we assume default building for the host.
-    With Intel compiler, -xHost is added for Intel compiler
+  \item On a machine using Cray programming environment, we rely on
+      compiler wrappers provided by Cray to set architecture specific
+      flags correctly. The CMake configure log should indicate that a
+      Cray machine was detected.
+  \item If not on a Cray machine, by default we assume building for
+    the host architecture. e.g. -xHost is added for the Intel compiler
     and -march=native is added for GNU/Clang compilers.
   \item If -x/-ax or -march is specified by the user in CMAKE\_C\_FLAGS and CMAKE\_CXX\_FLAGS,
     we respect user's intention and do not add any architecture specific flags.
 \end{itemize}
+
+The general strategy for cross-compiling should therefore be to
+manually set CMAKE\_C\_FLAGS and CMAKE\_CXX\_FLAGS for the target
+archicture. Using \texttt{make VERBOSE=1} is a useful way to check the
+final compilation options.  If on a Cray machine, selection of the
+appropriate programming environment should be sufficient.
 
 \section{Installation instructions for common workstations and
   supercomputers}
