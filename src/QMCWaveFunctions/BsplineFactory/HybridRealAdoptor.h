@@ -86,12 +86,12 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
 
   bool read_splines(hdf_archive& h5f)
   {
-    return BaseAdoptor::read_splines(h5f) && HybridBase::read_splines(h5f);
+    return HybridBase::read_splines(h5f) && BaseAdoptor::read_splines(h5f);
   }
 
   bool write_splines(hdf_archive& h5f)
   {
-    return BaseAdoptor::write_splines(h5f) && HybridBase::write_splines(h5f);
+    return HybridBase::write_splines(h5f) && BaseAdoptor::write_splines(h5f);
   }
 
   template<typename VV>
