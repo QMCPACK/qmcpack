@@ -87,16 +87,18 @@ strongly encouraged}, but not absolutely essential. Generally newer versions are
 Section \ref{sec:buildperformance} for performance suggestions.
 
 \begin{itemize}
-\item C/C++ compilers such as GCC, Intel, IBM XLC. LLVM-based compilers
-  are supported only on a preliminary basis.
-\item MPI library such at OpenMPI \url{http://open-mpi.org}
+\item C/C++ compilers such as GNU, Clang, Intel, IBM XL. C++ compilers
+  are required to support C++11 standard. Use of recent (``current
+  year version'') compilers is strongly encouraged.
+\item MPI library such as OpenMPI \url{http://open-mpi.org} or vendor
+  optimized MPI.
 \item BLAS/LAPACK, numerical and linear algebra libraries. Use
   platform-optimized libraries where available, such as Intel MKL.
   ATLAS or other optimized open-source libraries may also be used
   \url{http://math-atlas.sourceforge.net}
 \item CMake, build utility, \url{http://www.cmake.org}
 \item Libxml2, XML parser, \url{http://xmlsoft.org}
-\item HDF5, portable I/O library, \url{http://www.hdfgroup.org/HDF5/}
+\item HDF5, portable I/O library, \url{http://www.hdfgroup.org/HDF5/}. Good performance at large scale requires parallel version $>=$ 1.10.
 \item BOOST, peer-reviewed portable C++ source libraries, \url{http://www.boost.org}
 \item FFTW, FFT library, \url{http://www.fftw.org/}
 \end{itemize}
@@ -204,6 +206,9 @@ QMC_MIXED_PRECISION Build the mixed precision (mixing double/float) version
                     The GPU support is quite mature.
                     Use always double for host side base and full precision
                     and use float and double for CUDA base and full precision.
+ENABLE_SOA          (Experimental) Enable CPU optimization based on Structure-
+                    of-Array (SoA) datatypes (1:yes, 0:no (default)).
+
 \end{verbatim}
   \item General build options
 \begin{verbatim}
@@ -234,10 +239,14 @@ QMC_BUILD_STATIC    Add -static flags to build
 QMC_DATA            Specify data directory for QMCPACK (currently
                     unused, but likely to be used for future performance tests)
 \end{verbatim}
-\item libxml related
+\item libxml2 related
 \begin{verbatim}
 Libxml2_INCLUDE_DIRS  Specify include directories for libxml2
 Libxml2_LIBRARY_DIRS  Specify library directories for libxml2
+\end{verbatim}
+ \item HDF5 related
+\begin{verbatim}
+ENABLE_PHDF5    1(default)/0, enables/disable parallel collective IO.
 \end{verbatim}
  \item FFTW related
 \begin{verbatim}
@@ -253,7 +262,7 @@ MPIEXEC_NUMPROC_FLAG   Specify the number of mpi processes flag, e.g. "-n", "-np
 \end{itemize}
 
 \subsection{Configure and build using cmake and make}
-To configure and build QMPACK, move to build directory, run cmake and make
+To configure and build QMCPACK, move to build directory, run cmake and make
 \begin{verbatim}
 cd build
 cmake ..
@@ -357,6 +366,28 @@ cmake \
 MKLROOT is the directory containing the MKL binary, examples, and lib
 directories (etc.) and is often /opt/intel/mkl 
 
+\subsection{Cross compiling}
+Cross-compiling is often difficult but is required on supercomputers
+with distinct host and compute processor generations or architectures.
+QMCPACK tried to do its best with CMake to facilitate cross-compiling.
+
+\begin{itemize}
+  \item On a machine using Cray programming environment, we rely on
+      compiler wrappers provided by Cray to set architecture specific
+      flags correctly. The CMake configure log should indicate that a
+      Cray machine was detected.
+  \item If not on a Cray machine, by default we assume building for
+    the host architecture. e.g. -xHost is added for the Intel compiler
+    and -march=native is added for GNU/Clang compilers.
+  \item If -x/-ax or -march is specified by the user in CMAKE\_C\_FLAGS and CMAKE\_CXX\_FLAGS,
+    we respect user's intention and do not add any architecture specific flags.
+\end{itemize}
+
+The general strategy for cross-compiling should therefore be to
+manually set CMAKE\_C\_FLAGS and CMAKE\_CXX\_FLAGS for the target
+archicture. Using \texttt{make VERBOSE=1} is a useful way to check the
+final compilation options.  If on a Cray machine, selection of the
+appropriate programming environment should be sufficient.
 
 \section{Installation instructions for common workstations and
   supercomputers}
@@ -524,7 +555,7 @@ cmake -DCMAKE_C_COMPILER=/usr/local/bin/mpicc \
       -DCMAKE_CXX_COMPILER=/usr/local/bin/mpicxx ..
 make -j 12
 \end{verbatim}
-\item Run the short tests. When mpich is used for the first time, OS
+\item Run the short tests. When MPICH is used for the first time, OS
   X will request approval of the network connection.
 \begin{verbatim}
 ctest -R short
@@ -533,7 +564,13 @@ ctest -R short
 
 \subsection{Installing on ANL ALCF Mira/Cetus IBM Blue Gene/Q}
 \label{sec:buildbgq}
-Mira/Cetus is a Blue Gene/Q supercomputer at Argonne National Laboratory's Argonne Leadership Computing Facility (ANL ALCF). Mira has 49152 compute nodes and each node has a 16-core PowerPC A2 processor with 16 GB DDR3 memory. Due to the fact that the login nodes and the compute nodes have different processors with distinct instruction sets, cross-compiling is required on this platform. See details about using Blue Gene/Q at \url{http://www.alcf.anl.gov/user-guides/compiling-linking}. On Mira, compilers are loaded via softenv and users need to add +mpiwrapper-xl and +cmake in \$HOME/.soft. In order to build QMCPACK, a toolchain file is provided for setting up CMake and the cmake command should be executed twice.
+Mira/Cetus is a Blue Gene/Q supercomputer at Argonne National Laboratory's Argonne Leadership Computing Facility (ANL ALCF).
+Mira has 49152 compute nodes and each node has a 16-core PowerPC A2 processor with 16 GB DDR3 memory.
+Due to the fact that the login nodes and the compute nodes have different processors with distinct instruction sets,
+cross-compiling is required on this platform. See details about using Blue Gene/Q at \url{http://www.alcf.anl.gov/user-guides/compiling-linking}.
+On Mira, compilers are loaded via softenv and users need to add +mpiwrapper-bgclang and +cmake in \$HOME/.soft.
+In order to build QMCPACK, a toolchain file is provided for setting up CMake and the cmake command should be executed twice.
+\textbf{XL C/C++ compiler no more builds QMCPACK due to the lack of C++11 support but BGClang can produce correct binary with good performance.}
 
 \begin{verbatim}
 cd build
@@ -543,9 +580,18 @@ make -j 16
 ls -l bin/qmcpack
 \end{verbatim}
 
-In addition, adding a very useful cmake option
--DCMAKE\_VERBOSE\_MAKEFILE=TRUE allows printing all the build commands
-during the make step. Alternatively you can use make VERBOSE=1.
+\subsection{Installing on ALCF Theta, Cray XC40}
+Theta is a 9.65 petaflops system manufactured by Cray with 3624 compute nodes.
+Each node features a second-generation Intel Xeon Phi 7230 processor and 192 GB DDR4 RAM.
+
+\begin{verbatim}
+module unload cray-libsci
+module load cray-hdf5-parallel
+export BOOST_ROOT=/soft/libraries/boost/1.64.0/intel
+cmake ..
+make -j 24
+ls -l bin/qmcpack
+\end{verbatim}
 
 \subsection{Installing on ORNL OLCF Titan Cray XK7 (NVIDIA GPU
   accelerated)}
@@ -721,7 +767,7 @@ Currently Loaded Modulefiles:
  13) dvs/2.7_2.2.31-6.0.4.1_6.1__gb3b87e6
 \end{verbatim}
 
-\subsection{Installing on NERSC Cori, Xeon Phi KNL Knight's Landing partition, Cray XC40}
+\subsection{Installing on NERSC Cori, Xeon Phi KNL partition, Cray XC40}
 The second phase of NERSC's Cori uses Intel
 Xeon Phi Knight's Landing (KNL) nodes. The following build recipe ensures that the code
 generation is appropriate for the KNL nodes:
@@ -889,7 +935,7 @@ You can test the whole pw$\to$pw2qmcpack$\to$qmcpack workflow by
 ctest -R qe
 \end{verbatim}
 This provides a very solid test of the entire QMC
-toolchain for planewave generated wavefunctions.
+toolchain for plane wave generated wavefunctions.
 
 \subsection{Performance tests}
 \label{sec:perftests}
@@ -898,7 +944,7 @@ tests/performance directory. They can be used for benchmarking, comparing machin
 performance, or assessing optimizations. This is in
 contrast to the majority of the conventional integration tests where the particle
 counts are too small to be representative. Care is still needed to
-remove initiallization, I/O, and compute a representative performance
+remove initialization, I/O, and compute a representative performance
 measure.
 
 The ctest integration is sufficient to run the benchmarks and measure
@@ -923,7 +969,7 @@ will need to set ``-DQMC\_DATA=YOUR\_DATA\_FOLDER -DENABLE\_TIMERS=1''
 when running cmake as
 described in the README.
 
-Two sets of wavefunction are tested: splined orbitals with a one and
+Two sets of wavefunction are tested: spline orbitals with a one and
 two body Jastrow functions, and a more complex form with an additional
 three body Jastrow function. The Jastrows are the same for each run
 and are not reoptimized, as might be done for research purposes.  Runs
@@ -956,10 +1002,16 @@ If the ctest execution is completed, look at \texttt{Testing/Temporary/LastTest.
 If you manually stop the testing (ctrl+c), look at \texttt{Testing/Temporary/LastTest.log.tmp}.
 You can locate the failing tests by searching for the key word `Fail'.
 
+\subsection{Slow testing with OpenMPI}
+OpenMPI has a default binding policy making all the threads running on a single core during testing when there are two or fewer MPI ranks.
+This significantly increases the testing time. If you are authorized to change the default setting, you can just add `hwloc\_base\_binding\_policy=none' in /etc/openmpi/openmpi-mca-params.conf.
+
 \section{Automated testing of QMCPACK}
 
 The QMCPACK developers run automatic tests of QMCPACK on several
-different computer systems,  many on a continuous basis. We currently test
+different computer systems,  many on a continuous basis. See reports at
+\url{https://cdash.qmcpack.org/CDash/index.php?project=QMCPACK}.
+We currently test
 the following combinations nightly (workstations) and weekly (supercomputers):
 
 \begin{itemize}
@@ -1008,7 +1060,7 @@ the following combinations nightly (workstations) and weekly (supercomputers):
 \label{sec:buildppconvert}
 QMCPACK includes a utility, ppconvert, to convert between different
 pseudopotential formats. Examples include effective core potential
-formats (in gaussians), the UPF format used by Quantum ESPRESSO, and
+formats (in Gaussians), the UPF format used by Quantum ESPRESSO, and
 the XML format used by QMCPACK itself. The utility also enables the
 atomic orbitals to recomputed via a numerical density functional
 calculation if they need to be reconstructed for use in an
