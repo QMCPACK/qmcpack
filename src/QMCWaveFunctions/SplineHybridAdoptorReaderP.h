@@ -540,26 +540,35 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
 
       std::vector<std::vector<std::complex<double> > > all_vals;
       all_vals.resize(spline_npoints);
+      std::vector<std::vector<std::complex<double> > > vals_local(omp_get_max_threads());
       aligned_vector<std::complex<double> > phase_shift;
       Gvecs.calc_phase_shift(mycenter.pos, phase_shift);
 
-      #pragma omp parallel for
       for(int ip=0; ip<spline_npoints; ip++)
       {
         double r=delta*static_cast<double>(ip);
-        std::vector<std::complex<double> > vals(lm_tot, std::complex<double>(0.0,0.0));
-        std::vector<double> j_lm_G(lm_tot,0.0);
 
-        for(size_t ig=0; ig<Gvecs.NumGvecs; ig++)
+        #pragma omp parallel
         {
-          Gvecs.calc_jlm_G(lmax, r, ig, j_lm_G);
-          for(size_t lm=0; lm<lm_tot; lm++)
-            vals[lm]+=cG[ig]*phase_shift[ig]*j_lm_G[lm]*Gvecs.YlmG[ig][lm];
+          const size_t tid = omp_get_thread_num();
+          std::vector<std::complex<double> > &vals = vals_local[tid];
+          vals.resize(lm_tot);
+          std::fill(vals.begin(),vals.end(),std::complex<double>(0.0,0.0));
+          std::vector<double> j_lm_G(lm_tot,0.0);
+
+          #pragma omp for
+          for(size_t ig=0; ig<Gvecs.NumGvecs; ig++)
+          {
+            Gvecs.calc_jlm_G(lmax, r, ig, j_lm_G);
+            for(size_t lm=0; lm<lm_tot; lm++)
+              vals[lm]+=cG[ig]*phase_shift[ig]*j_lm_G[lm]*Gvecs.YlmG[ig][lm];
+          }
         }
 
-        all_vals[ip].resize(lm_tot);
-        for(int lm=0; lm<lm_tot; lm++)
-          all_vals[ip][lm] = vals[lm]*4.0*M_PI*i_power[lm];
+        all_vals[ip].resize(lm_tot, std::complex<double>(0.0,0.0));
+        for(size_t tid=0; tid<vals_local.size(); tid++)
+          for(size_t lm=0; lm<lm_tot; lm++)
+            all_vals[ip][lm] += vals_local[tid][lm]*4.0*M_PI*i_power[lm];
       }
       //app_log() << "Building band " << iorb << " at center " << center_idx << std::endl;
 
