@@ -373,6 +373,11 @@ public:
     return true;
   }
 
+  // Routine to set up data for the LCOrbitalSetOpt child class specifically
+  // Should be empty for other derived classes
+  virtual void init_LCOrbitalSetOpt() { };
+
+
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Enlarges the supplied vector if it is not big enough
   ///

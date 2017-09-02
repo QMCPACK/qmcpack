@@ -1177,7 +1177,6 @@ void SlaterDetOpt::buildOptVariables(std::vector<RealType>& input_params, const 
   // the old coefficients
   BLAS::gemm('N', 'T', m_nb, m_nlc, m_nlc, RealType(1.0), &(m_spo->m_init_B.at(0)), m_nb,
              &rot_mat.at(0), m_nlc, RealType(0.0), &(m_spo->m_B.at(0)), m_nb);
-
 }
 
 }

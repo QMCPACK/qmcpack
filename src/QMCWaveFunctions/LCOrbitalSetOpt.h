@@ -81,13 +81,6 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
     /// \brief  number of basis functions
     int m_nb;
 
-    /// \brief  The column-major-order m_nb by m_nlc matrix of orbital coefficients resulting from a rotation of the old coefficients.
-    ///         Thus B = old_B * C, where C is a unitary orbital rotation matrix.
-    std::vector<RealType> m_B;
-
-    /// \brief  the column-major-order m_nb by m_nlc initial orbital coefficients, from the start of the simulation
-    std::vector<RealType> m_init_B;
-
     /// \brief  the level of printing
     int m_report_level;
 
@@ -150,6 +143,20 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
   // public member functions
   public:
 
+    void init_LCOrbitalSetOpt() {
+      m_nlc = OrbitalSetSize;
+      m_nb = BasisSetSize;
+
+      m_B.resize(m_nlc*m_nb, 0.0);
+      m_init_B.resize(m_nlc*m_nb, 0.0);
+
+      std::copy( C.data(), C.data() + m_B.size(),      m_B.begin()      );
+      std::copy( C.data(), C.data() + m_init_B.size(), m_init_B.begin() );
+
+      // print the orbitals
+      this->print_B();
+    }
+
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     /// \brief  constructor from basis set and reporting level
     ///
@@ -157,10 +164,7 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
     /// \param[in]      rl             reporting level to use
     ///
     ///////////////////////////////////////////////////////////////////////////////////////////////////
-    LCOrbitalSetOpt(BS * const bs = 0, const int rl = 0)
-  : m_spo_set(0), m_basis_set(0), m_report_level(rl), m_omixfac(0),
-    m_nlc(OrbitalSetSize), m_nb(BasisSetSize), 
-    m_B(C.data(), C.data() + m_nlc*m_nb), m_init_B(C.data(), C.data() + m_nlc*m_nb) {
+    LCOrbitalSetOpt(BS * const bs = 0, const int rl = 0) : m_spo_set(0), m_basis_set(0), m_report_level(rl), m_omixfac(0) {
 
       // set the basis set
       if ( bs ) this->setBasisSet(bs);
@@ -194,9 +198,6 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
       //  m_init_B = m_B;
       //}
 
-      // print the orbitals
-      this->print_B();
-
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -206,10 +207,7 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
     /// \param[in]      rl             reporting level to use
     ///
     ///////////////////////////////////////////////////////////////////////////////////////////////////
-    LCOrbitalSetOpt(SPOSetBase * const spo, const int rl = 0)
-  : m_spo_set(0), m_basis_set(0), m_report_level(rl), m_omixfac(0), 
-    m_nlc(OrbitalSetSize), m_nb(BasisSetSize), 
-    m_B(C.data(), C.data() + m_nlc*m_nb), m_init_B(C.data(), C.data() + m_nlc*m_nb) {
+    LCOrbitalSetOpt(SPOSetBase * const spo, const int rl = 0) : m_spo_set(0), m_basis_set(0), m_report_level(rl), m_omixfac(0) {
 
       // set the internal SPO set
       if ( spo ) this->setSPOSet(spo);
@@ -242,9 +240,6 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
       //  // save the mixed orbitals
       //  m_init_B = m_B;
       //}
-
-      // print the orbitals
-      this->print_B();
 
     }
 
@@ -363,6 +358,8 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
 
       // set the number of molecular orbitals
       retval->setOrbitalSetSize(this->OrbitalSetSize);
+
+      retval->init_LCOrbitalSetOpt();
 
       // return the clone
       return retval;

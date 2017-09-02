@@ -176,6 +176,8 @@ bool SPOSetBase::put(xmlNodePtr cur)
   if ( orbital_mix_magnitude != 0.0 )
     this->set_orbital_mixing_factor(orbital_mix_magnitude);
 
+  init_LCOrbitalSetOpt();
+
   return success && success2;
 }
 
