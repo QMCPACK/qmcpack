@@ -172,17 +172,9 @@ bool SPOSetBase::put(xmlNodePtr cur)
     app_log() << C << std::endl;
   }
 
-  // if requested, set the factor by which to mix the orbitals
-  if ( orbital_mix_magnitude != 0.0 )
-    this->set_orbital_mixing_factor(orbital_mix_magnitude);
-
-  init_LCOrbitalSetOpt();
+  init_LCOrbitalSetOpt(orbital_mix_magnitude);
 
   return success && success2;
-}
-
-void SPOSetBase::set_orbital_mixing_factor(const double factor) {
-  APP_ABORT("This single particle orbital set does not support a nonzero orbital_mix_magnitude");
 }
 
 void SPOSetBase::checkObject()

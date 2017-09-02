@@ -132,18 +132,12 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
 
     }
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-    /// \brief  sets the factor by which we will mix the initial orbitals
-    ///
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-    void set_orbital_mixing_factor(const double factor) {
-      m_omixfac = factor;
-    }
-
   // public member functions
   public:
 
-    void init_LCOrbitalSetOpt() {
+    void init_LCOrbitalSetOpt(const double mix_factor) {
+      m_omixfac = mix_factor;
+
       m_nlc = OrbitalSetSize;
       m_nb = BasisSetSize;
 
@@ -152,6 +146,30 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
 
       std::copy( C.data(), C.data() + m_B.size(),      m_B.begin()      );
       std::copy( C.data(), C.data() + m_init_B.size(), m_init_B.begin() );
+
+      // if requested, mix the initial basis orbitals together
+      if ( mix_factor != 0.0 ) {
+
+        // mix
+        for (int i = m_nb - 1; i >= 0; i--) {
+          for (int j = 0; j < m_nlc; j++) {
+            m_B.at(i+j*m_nb) += mix_factor * 2.0 * ( Random() - 0.5 );
+          }
+        }
+
+        // re-orthonormalize
+        for (int j = 0; j < m_nlc; j++) {
+          const RealType norm = std::abs(std::sqrt(BLAS::dot(m_nb, &m_B.at(0+j*m_nb), &m_B.at(0+j*m_nb))));
+          BLAS::scal(m_nb, 1.0 / norm, &m_B.at(0+j*m_nb));
+          for (int k = j+1; k < m_nlc; k++) {
+            const RealType x = BLAS::dot(m_nb, &m_B.at(0+j*m_nb), &m_B.at(0+k*m_nb));
+            BLAS::axpy(m_nb, -x, &m_B.at(0+j*m_nb), 1, &m_B.at(0+k*m_nb), 1);
+          }
+        }
+
+        // save the mixed orbitals
+        m_init_B = m_B;
+      }
 
       // print the orbitals
       this->print_B();
@@ -172,32 +190,6 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
       // initialize number of molecular orbitals as zero
       this->OrbitalSetSize = 0;
 
-      // if requested, mix the initial basis orbitals together
-      //if ( mix_factor != 0.0 ) {
-
-      //  // mix
-      //  for (int i = m_nb - 1; i >= 0; i--) {
-      //    for (int j = 0; j < m_nlc; j++) {
-      //      //if ( mix_factor > 0.5 )
-      //      //  throw std::runtime_error("mix_factor grew too large.  Please choose a smaller value of orbital_mix_magnitude");
-      //      m_B.at(i+j*m_nb) += mix_factor * 2.0 * ( Random() - 0.5 );
-      //    }
-      //  }
-
-      //  // re-orthonormalize
-      //  for (int j = 0; j < m_nlc; j++) {
-      //    const RealType norm = std::abs(std::sqrt(BLAS::dot(m_nb, &m_B.at(0+j*m_nb), &m_B.at(0+j*m_nb))));
-      //    BLAS::scal(m_nb, 1.0 / norm, &m_B.at(0+j*m_nb));
-      //    for (int k = j+1; k < m_nlc; k++) {
-      //      const RealType x = BLAS::dot(m_nb, &m_B.at(0+j*m_nb), &m_B.at(0+k*m_nb));
-      //      BLAS::axpy(m_nb, -x, &m_B.at(0+j*m_nb), 1, &m_B.at(0+k*m_nb), 1);
-      //    }
-      //  }
-
-      //  // save the mixed orbitals
-      //  m_init_B = m_B;
-      //}
-
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -214,32 +206,6 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
 
       // initialize number of molecular orbitals as zero
       this->OrbitalSetSize = 0;
-
-      // if requested, mix the initial basis orbitals together
-      //if ( mix_factor != 0.0 ) {
-
-      //  // mix
-      //  for (int i = m_nb - 1; i >= 0; i--) {
-      //    for (int j = 0; j < m_nlc; j++) {
-      //      //if ( mix_factor > 0.5 )
-      //      //  throw std::runtime_error("mix_factor grew too large.  Please choose a smaller value of orbital_mix_magnitude");
-      //      m_B.at(i+j*m_nb) += mix_factor * 2.0 * ( Random() - 0.5 );
-      //    }
-      //  }
-
-      //  // re-orthonormalize
-      //  for (int j = 0; j < m_nlc; j++) {
-      //    const RealType norm = std::abs(std::sqrt(BLAS::dot(m_nb, &m_B.at(0+j*m_nb), &m_B.at(0+j*m_nb))));
-      //    BLAS::scal(m_nb, 1.0 / norm, &m_B.at(0+j*m_nb));
-      //    for (int k = j+1; k < m_nlc; k++) {
-      //      const RealType x = BLAS::dot(m_nb, &m_B.at(0+j*m_nb), &m_B.at(0+k*m_nb));
-      //      BLAS::axpy(m_nb, -x, &m_B.at(0+j*m_nb), 1, &m_B.at(0+k*m_nb), 1);
-      //    }
-      //  }
-
-      //  // save the mixed orbitals
-      //  m_init_B = m_B;
-      //}
 
     }
 

@@ -375,7 +375,7 @@ public:
 
   // Routine to set up data for the LCOrbitalSetOpt child class specifically
   // Should be empty for other derived classes
-  virtual void init_LCOrbitalSetOpt() { };
+  virtual void init_LCOrbitalSetOpt(const double mix_factor=0.0) { };
 
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -431,8 +431,6 @@ protected:
   bool putOccupation(xmlNodePtr occ_ptr);
   bool putFromXML(xmlNodePtr coeff_ptr);
   bool putFromH5(const char* fname, xmlNodePtr coeff_ptr);
-
-  virtual void set_orbital_mixing_factor(const double factor);
 
   /// \brief  vector to hold orbital indices
   std::vector<int> m_oidx;
