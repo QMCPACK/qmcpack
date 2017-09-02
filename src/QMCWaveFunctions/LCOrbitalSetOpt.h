@@ -26,42 +26,11 @@
 
 namespace qmcplusplus {
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-///// \brief  A class for packaging the data for a set of optimizable linear combinations of the
-/////         single particle orbitals in a way that can be optimized as part of the trial wave
-/////         function.
-/////
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-//class LCOrbitalSetOptTrialFunc : public OrbitalBase {
-//
-//  // public member functions
-//  public:
-//
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-///// \brief  constructor
-/////
-///// \param[in]      nlc            the number of linear combinations (i.e. molecular orbitals)
-///// \param[in]      nb             the number of basis functions
-///// \param[in]      initial_B      nb by nlc column-major-ordered matrix of initial orbital coefficients
-///// \param[in]      name           name of the LCOrbitalSetOpt object that owns this trial function component
-///// \param[in]      mix_factor     factor controlling mixing of the initial orbitals
-/////
-/////////////////////////////////////////////////////////////////////////////////////////////////////
-//LCOrbitalSetOptTrialFunc(const RealType * const initial_B)
-//  : m_B(initial_B, initial_B + nlc*nb),
-//    m_init_B(initial_B, initial_B + nlc*nb) { }
-//
-//};
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  A class for a set of optimizable linear combinations of the single particle orbitals
 ///         provided by either another SPO set or by a basis set of the templated type BS.
 ///         We refer to the linear combinations of basis orbitals as molecular orbitals.
 ///         The set of molecular orbitals is optimized by rotating them amongst each other.
-///
-///         The molecular orbital coefficients themselves are stored in a subobject that is
-///         used as part of the trial funciton, so that the necessary derivatives w.r.t.
-///         rotations between the molecular orbitals can be collected during sampling.
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
@@ -135,6 +104,14 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
   // public member functions
   public:
 
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    /// \brief  initializes this object and its data. In particular, the number of atomic and
+    ///         molecular orbitals, and the arrays to hold the rotated and unrotated orbitals
+    ///         themselves. Also performs mixing of orbitals, if requested, and prints them.
+    ///
+    /// \param[in]     mix_factor     factor controlling mixing of the initial orbitals
+    ///
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
     void init_LCOrbitalSetOpt(const double mix_factor) {
       m_omixfac = mix_factor;
 
@@ -167,11 +144,9 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
           }
         }
 
-        // save the mixed orbitals
         m_init_B = m_B;
       }
 
-      // print the orbitals
       this->print_B();
     }
 
@@ -219,26 +194,7 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
     /// \brief  returns that this is indeed an LCOrbitalSetOpt object
     ///
     ///////////////////////////////////////////////////////////////////////////////////////////////////
-
     bool is_of_type_LCOrbitalSetOpt() const { return true; }
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-    /// \brief  return a pointer to the orbital coefficient matrix data
-    ///
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-    //const RealType * ptr_to_B() const { return &(*m_B.begin()); }
-    //const RealType * ptr_to_init_B() const { return &(*m_init_B.begin()); }
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-    /// \brief  creates this object's trial function component
-    ///
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-    //void prepare_tf_component() {
-    //  if ( m_tf )
-    //    throw std::runtime_error("an LCOrbitalSetOpt object tried to create its trial function component twice");
-    //  app_log() << "creating LCOrbitalSetOpt trial function component with C.rows() = " << C.rows() << " and C.cols() = " << C.cols() << std::endl;
-    //  m_tf = new LCOrbitalSetOptTrialFunc(this->OrbitalSetSize, this->BasisSetSize, C.data(), this->objectName, m_omixfac);
-    //}
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     /// \brief  print the molecular orbital coefficients, one MO per column
@@ -254,16 +210,6 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
       }
       app_log() << std::endl;
     }
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-    /// \brief  returns this object's trial function component, creating it if necessary
-    ///
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
-    //OrbitalBase * tf_component() {
-    //  if ( !m_tf )
-    //    this->prepare_tf_component();
-    //  return m_tf;
-    //}
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     /// \brief  set the basis set the object should use

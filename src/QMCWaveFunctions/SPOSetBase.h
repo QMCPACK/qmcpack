@@ -82,10 +82,13 @@ public:
   ValueMatrix_t t_logpsi;
   ///matrix containing the coefficients
   ValueMatrix_t C;
-  /// the column-major-order m_nb by m_nlc matrix of orbital coefficients resulting from a rotation of the old coefficients
-  /// thus B = old_B * C, where C is a unitary orbital rotation matrix.
+
+  /// For use by the LCOrbitalSetOpt class, derived from this:
+  /// the column-major-order m_nb by m_nlc matrix of orbital coefficients
+  /// resulting from a rotation of the old coefficients
   std::vector<RealType> m_B;
-  /// the column-major-order m_nb by m_nlc initial orbital coefficients, from the start of the simulation
+  /// the column-major-order m_nb by m_nlc initial orbital coefficients
+  /// at the start of the simulation, from which rotations are performed
   std::vector<RealType> m_init_B;
 
   ///occupation number
