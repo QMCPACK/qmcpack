@@ -174,9 +174,11 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
 #ifdef REPORT_MISMATCH
   std::vector<std::vector<double> > mismatch_energy_AO_to_PW;
 #endif
+  int lmax_limit;
 
   SplineHybridAdoptorReader(EinsplineSetBuilder* e)
-    : BsplineReaderBase(e), spline_r(NULL), spline_i(NULL), bspline(0), FFTplan(NULL)
+    : BsplineReaderBase(e), spline_r(NULL), spline_i(NULL),
+      bspline(0), FFTplan(NULL), lmax_limit(-1)
   {}
 
   ~SplineHybridAdoptorReader()
@@ -411,6 +413,10 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
           app_error() << "Hybrid representation needs parameter 'lmax' for atom " << center_idx << std::endl;
           success=false;
         }
+        else
+        {
+          if(ACInfo.lmax[center_idx]>lmax_limit) lmax_limit=ACInfo.lmax[center_idx];
+        }
 
         if(ACInfo.cutoff[center_idx]<0)
         {
@@ -452,6 +458,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         }
       }
       if(!success) abort();
+      app_log() << "The maximum value of lmax among all the atoms is " << lmax_limit << std::endl;
 
 #ifdef REPORT_MISMATCH
       mismatch_energy_AO_to_PW.resize(ACInfo.Ncenters);
@@ -493,7 +500,6 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     // prepare Gvecs Ylm(G)
     Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell, bspline->HalfG);
     // if(band_group_comm.isGroupLeader()) std::cout << "print band=" << iorb << " KE=" << Gvecs.evaluate_KE(cG) << std::endl;
-    const int lmax_limit=6;
     Gvecs.calc_YlmG(lmax_limit);
     std::vector<std::complex<double> > i_power;
     // rotate phase is introduced here.
