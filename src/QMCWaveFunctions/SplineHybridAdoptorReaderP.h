@@ -93,11 +93,10 @@ struct Gvectors
 
   void calc_jlm_G(const int lmax, ST& r, const size_t ig, std::vector<ST>& j_lm_G)
   {
-    std::vector<double> jl_vals(lmax+1,0.0);
-    bessel_steed_array_cpu(lmax, gmag[ig]*r, jl_vals.data());
-    for(size_t l=0; l<=lmax; l++)
+    bessel_steed_array_cpu(lmax, gmag[ig]*r, j_lm_G.data());
+    for(size_t l=lmax; l>0; l--)
       for(size_t lm=l*l; lm<(l+1)*(l+1); lm++)
-        j_lm_G[lm]=jl_vals[l];
+        j_lm_G[lm]=j_lm_G[l];
   }
 
   template<typename PT>
