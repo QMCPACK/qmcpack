@@ -428,7 +428,11 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
           ACInfo.inner_cutoff[center_idx]=ACInfo.cutoff[center_idx]-0.3;
           if(ACInfo.inner_cutoff[center_idx]<0) ACInfo.inner_cutoff[center_idx] = 0.0;
           app_log() << "Hybrid representation setting inner_cutoff = "
-                    << ACInfo.inner_cutoff[center_idx] << " for atom " << center_idx << std::endl;
+                    << ACInfo.inner_cutoff[center_idx] << " for group " << my_GroupID << " as atom " << center_idx << std::endl;
+          // overwrite the inner_cutoff of all the atoms of the same species
+          for(int id=0; id<ACInfo.Ncenters; id++)
+            if(my_GroupID==ACInfo.GroupID[id])
+              ACInfo.inner_cutoff[id] = ACInfo.inner_cutoff[center_idx];
         }
         else if(ACInfo.inner_cutoff[center_idx]>ACInfo.cutoff[center_idx])
         {
