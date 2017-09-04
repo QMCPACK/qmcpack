@@ -327,21 +327,30 @@ void CSVMC::resetRun()
 	 //  hClones[ip]->setRandomGenerator(Rng[ip]);
       if(QMCDriverMode[QMC_UPDATE_MODE])
       {
-        os << "  Using particle-by-particle update with fast drift" << std::endl;
-        APP_ABORT("CSVMC update particle-by-particle with fast drift is still being debugged\n");
-        CSMovers[ip]=new CSVMCUpdatePbyPWithDriftFast(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
-      }
-      
-      if (UseDrift == "yes")
-      {
-        os << "  Using walker-by-walker update with Drift " << std::endl;
-        CSMovers[ip]=new CSVMCUpdateAllWithDrift(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
+        if (UseDrift == "yes")
+        {
+          os <<"  Using particle-by-particle update with drift "<< std::endl;
+          APP_ABORT("Particle-by-particle moves with drift not supported yet\n");
+        }
+        else
+        {
+          os << "  Using particle-by-particle update with no drift" << std::endl;
+          CSMovers[ip]=new CSVMCUpdatePbyPWithDriftFast(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
+        }
       }
       else
       {
-        os << "  Using walker-by-walker update " << std::endl;
-        CSMovers[ip]=new CSVMCUpdateAll(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
-
+      
+        if (UseDrift == "yes")
+        {
+          os << "  Using walker-by-walker update with Drift " << std::endl;
+          CSMovers[ip]=new CSVMCUpdateAllWithDrift(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
+        }
+        else
+        {
+          os << "  Using walker-by-walker update " << std::endl;
+          CSMovers[ip]=new CSVMCUpdateAll(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
+        }
       }
       if(ip==0)
         app_log() << os.str() << std::endl;
@@ -385,10 +394,8 @@ void CSVMC::resetRun()
     CSMovers[ip]->put(qmcNode);
     CSMovers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
     if (QMCDriverMode[QMC_UPDATE_MODE])
-   //    app_log()<<"QMCDriverMode[QMC_UPDATE_MODE]==True\n";
-     APP_ABORT("Uggh.  PbyP not working");  
-//   CSMovers[ip]->initCSWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1], nWarmupSteps>0);
-   // else
+     CSMovers[ip]->initCSWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1], nWarmupSteps>0);
+    else
       CSMovers[ip]->initCSWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1], nWarmupSteps>0);
 //       if (UseDrift != "rn")
 //       {
