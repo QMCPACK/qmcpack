@@ -91,7 +91,7 @@ struct Gvectors
     //std::cout << "Calculated " << NumGvecs << " YlmG!" << std::endl;
   }
 
-  void calc_jlm_G(const int lmax, ST& r, const size_t ig, std::vector<ST>& j_lm_G)
+  inline void calc_jlm_G(const int lmax, ST& r, const size_t ig, std::vector<ST>& j_lm_G)
   {
     bessel_steed_array_cpu(lmax, gmag[ig]*r, j_lm_G.data());
     for(size_t l=lmax; l>0; l--)
@@ -100,16 +100,11 @@ struct Gvectors
   }
 
   template<typename PT>
-  void calc_phase_shift(const PT& pos, aligned_vector<ValueType>& phase_shift)
+  inline void calc_phase_shift(const PT& pos, const size_t ig, ValueType& phase_shift)
   {
-    phase_shift.resize(NumGvecs);
-    #pragma omp parallel for
-    for(size_t ig=0; ig<NumGvecs; ig++)
-    {
-      ST s,c;
-      sincos(dot(gvecs_cart[ig],pos),&s,&c);
-      phase_shift[ig]=ValueType(c,s);
-    }
+    ST s,c;
+    sincos(dot(gvecs_cart[ig],pos),&s,&c);
+    phase_shift=ValueType(c,s);
   }
 
   template<typename PT>
@@ -550,8 +545,6 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       std::vector<std::vector<std::complex<double> > > all_vals;
       all_vals.resize(spline_npoints);
       std::vector<std::vector<std::complex<double> > > vals_local(omp_get_max_threads());
-      aligned_vector<std::complex<double> > phase_shift;
-      Gvecs.calc_phase_shift(mycenter.pos, phase_shift);
 
       for(int ip=0; ip<spline_npoints; ip++)
       {
@@ -569,8 +562,10 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
           for(size_t ig=0; ig<Gvecs.NumGvecs; ig++)
           {
             Gvecs.calc_jlm_G(lmax, r, ig, j_lm_G);
+            std::complex<double> phase_shift;
+            Gvecs.calc_phase_shift(mycenter.pos, ig, phase_shift);
             for(size_t lm=0; lm<lm_tot; lm++)
-              vals[lm]+=cG[ig]*phase_shift[ig]*j_lm_G[lm]*Gvecs.YlmG[ig][lm];
+              vals[lm]+=cG[ig]*phase_shift*j_lm_G[lm]*Gvecs.YlmG[ig][lm];
           }
         }
 
