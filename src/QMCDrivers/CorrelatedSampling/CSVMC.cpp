@@ -335,7 +335,7 @@ void CSVMC::resetRun()
         else
         {
           os << "  Using particle-by-particle update with no drift" << std::endl;
-          CSMovers[ip]=new CSVMCUpdatePbyPWithDriftFast(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
+          CSMovers[ip]=new CSVMCUpdatePbyP(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
         }
       }
       else
