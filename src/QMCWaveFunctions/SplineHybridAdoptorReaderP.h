@@ -100,11 +100,9 @@ struct Gvectors
   }
 
   template<typename PT>
-  inline void calc_phase_shift(const PT& pos, const size_t ig, ValueType& phase_shift) const
+  inline void calc_phase_shift(const PT& pos, const size_t ig, ST &phase_shift_real, ST &phase_shift_imag) const
   {
-    ST s,c;
-    sincos(dot(gvecs_cart[ig],pos),&s,&c);
-    phase_shift=ValueType(c,s);
+    sincos(dot(gvecs_cart[ig],pos),&phase_shift_imag,&phase_shift_real);
   }
 
   template<typename PT>
@@ -577,17 +575,18 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
             Gvecs.calc_jlm_G(lmax, r, ig, j_lm_G);
             for(size_t lm=0; lm<lm_tot; lm++)
               j_lm_G[lm]*=Gvecs.YlmG[ig][lm];
-            std::complex<double> phase_shift;
             for(size_t idx=0; idx<mygroup.size(); idx++)
             {
               const auto &mycenter = centers[mygroup[idx]];
               auto &vals = vals_local[idx][tid];
-              Gvecs.calc_phase_shift(mycenter.pos, ig, phase_shift);
-              phase_shift*=cG[ig];
+              double phase_shift_real, phase_shift_imag, phase_shift_temp;
+              Gvecs.calc_phase_shift(mycenter.pos, ig, phase_shift_temp, phase_shift_imag);
+              phase_shift_real = cG[ig].real()*phase_shift_temp-cG[ig].imag()*phase_shift_imag;
+              phase_shift_imag = cG[ig].imag()*phase_shift_temp+cG[ig].real()*phase_shift_imag;
               for(size_t lm=0; lm<lm_tot; lm++)
               {
-                vals[lm]       +=phase_shift.real()*j_lm_G[lm];
-                vals[lm+lm_tot]+=phase_shift.imag()*j_lm_G[lm];
+                vals[lm]       +=phase_shift_real*j_lm_G[lm];
+                vals[lm+lm_tot]+=phase_shift_imag*j_lm_G[lm];
               }
             }
           }
