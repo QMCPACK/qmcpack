@@ -91,7 +91,7 @@ struct Gvectors
     //std::cout << "Calculated " << NumGvecs << " YlmG!" << std::endl;
   }
 
-  inline void calc_jlm_G(const int lmax, ST& r, const size_t ig, std::vector<ST>& j_lm_G)
+  inline void calc_jlm_G(const int lmax, ST& r, const size_t ig, std::vector<ST>& j_lm_G) const
   {
     bessel_steed_array_cpu(lmax, gmag[ig]*r, j_lm_G.data());
     for(size_t l=lmax; l>0; l--)
@@ -100,7 +100,7 @@ struct Gvectors
   }
 
   template<typename PT>
-  inline void calc_phase_shift(const PT& pos, const size_t ig, ValueType& phase_shift)
+  inline void calc_phase_shift(const PT& pos, const size_t ig, ValueType& phase_shift) const
   {
     ST s,c;
     sincos(dot(gvecs_cart[ig],pos),&s,&c);
