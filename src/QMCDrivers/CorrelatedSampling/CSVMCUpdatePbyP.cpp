@@ -169,8 +169,9 @@ void CSVMCUpdatePbyPWithDriftFast::advanceWalker(Walker_t& thisWalker, bool reco
 {
 }
 
-void CSVMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
+/*void CSVMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)
 {
+
   int iwalker=0;
   //only used locally
   std::vector<RealType> ratio(nPsi), uw(nPsi);
@@ -236,7 +237,7 @@ void CSVMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t 
 		ratio_check *= ratio[ipsi] = Psi1[ipsi]->ratioGrad(W,iat,g1_new[ipsi]);
 		logpsi[ipsi]=std::log(ratio[ipsi]*ratio[ipsi]);
 		// Compute Gradient in new position
-		//*G1[ipsi]=Psi1[ipsi]->G + dG;
+		// *G1[ipsi]=Psi1[ipsi]->G + dG;
 		// Initialize: sumratio[i]=(Psi[i]/Psi[i])^2=1.0
 		sumratio[ipsi]=1.0;
 	      }
@@ -323,7 +324,7 @@ void CSVMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t 
     //     -Gradient and laplacian for each Psi1[i]
     //     -Drift
    //      -buffered info for each Psi1[i]
-    //     Physical properties are updated */
+    //     Physical properties are updated 
       (*it)->Age=0;
       (*it)->R = W.R;
    //   w_buffer.rewind();
@@ -352,7 +353,7 @@ void CSVMCUpdatePbyPWithDriftFast::advanceWalkers(WalkerIter_t it, WalkerIter_t 
     ++it;
     ++iwalker;
   }
-}
+}*/
 
 }
 

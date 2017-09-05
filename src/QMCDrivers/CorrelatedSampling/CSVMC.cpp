@@ -330,7 +330,7 @@ void CSVMC::resetRun()
         if (UseDrift == "yes")
         {
           os <<"  Using particle-by-particle update with drift "<< std::endl;
-          APP_ABORT("Particle-by-particle moves with drift not supported yet\n");
+          CSMovers[ip]=new CSVMCUpdatePbyPWithDriftFast(*wClones[ip],PsiPoolClones[ip],HPoolClones[ip],*Rng[ip]);
         }
         else
         {
