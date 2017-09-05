@@ -91,7 +91,7 @@ struct Gvectors
     //std::cout << "Calculated " << NumGvecs << " YlmG!" << std::endl;
   }
 
-  inline void calc_jlm_G(const int lmax, ST& r, const size_t ig, std::vector<ST>& j_lm_G) const
+  inline void calc_jlm_G(const int lmax, ST& r, const size_t ig, aligned_vector<ST>& j_lm_G) const
   {
     bessel_steed_array_cpu(lmax, gmag[ig]*r, j_lm_G.data());
     for(size_t l=lmax; l>0; l--)
@@ -548,8 +548,8 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       const double delta = spline_radius/static_cast<double>(spline_npoints-1);
       const int lm_tot=(lmax+1)*(lmax+1);
 
-      std::vector<std::vector<std::vector<std::complex<double> > > > all_vals(mygroup.size());
-      std::vector<std::vector<std::vector<std::complex<double> > > > vals_local(mygroup.size());
+      std::vector<std::vector<aligned_vector<double> > > all_vals(mygroup.size());
+      std::vector<std::vector<aligned_vector<double> > > vals_local(mygroup.size());
       for(size_t idx=0; idx<mygroup.size(); idx++)
       {
         all_vals[idx].resize(spline_npoints);
@@ -566,35 +566,49 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
           for(size_t idx=0; idx<mygroup.size(); idx++)
           {
             auto &vals = vals_local[idx][tid];
-            vals.resize(lm_tot);
-            std::fill(vals.begin(),vals.end(),std::complex<double>(0.0,0.0));
+            vals.resize(lm_tot*2);
+            std::fill(vals.begin(),vals.end(),0.0);
           }
-          std::vector<double> j_lm_G(lm_tot,0.0);
+          aligned_vector<double> j_lm_G(lm_tot,0.0);
 
           #pragma omp for
           for(size_t ig=0; ig<Gvecs.NumGvecs; ig++)
           {
             Gvecs.calc_jlm_G(lmax, r, ig, j_lm_G);
+            for(size_t lm=0; lm<lm_tot; lm++)
+              j_lm_G[lm]*=Gvecs.YlmG[ig][lm];
             std::complex<double> phase_shift;
             for(size_t idx=0; idx<mygroup.size(); idx++)
             {
               const auto &mycenter = centers[mygroup[idx]];
               auto &vals = vals_local[idx][tid];
               Gvecs.calc_phase_shift(mycenter.pos, ig, phase_shift);
+              phase_shift*=cG[ig];
               for(size_t lm=0; lm<lm_tot; lm++)
-                vals[lm]+=cG[ig]*phase_shift*j_lm_G[lm]*Gvecs.YlmG[ig][lm];
+              {
+                vals[lm]       +=phase_shift.real()*j_lm_G[lm];
+                vals[lm+lm_tot]+=phase_shift.imag()*j_lm_G[lm];
+              }
             }
           }
         }
 
+        #pragma omp parallel for
         for(size_t idx=0; idx<mygroup.size(); idx++)
         {
           auto &vals = all_vals[idx][ip];
           auto &vals_th = vals_local[idx];
-          vals.resize(lm_tot, std::complex<double>(0.0,0.0));
+          vals.resize(lm_tot*2, 0.0);
           for(size_t tid=0; tid<vals_th.size(); tid++)
             for(size_t lm=0; lm<lm_tot; lm++)
-              vals[lm] += vals_th[tid][lm]*4.0*M_PI*i_power[lm];
+            {
+              const double real_tmp = 4.0*M_PI*i_power[lm].real();
+              const double imag_tmp = 4.0*M_PI*i_power[lm].imag();
+              vals[lm]        += vals_th[tid][lm]*real_tmp
+                               - vals_th[tid][lm+lm_tot]*imag_tmp;
+              vals[lm+lm_tot] += vals_th[tid][lm+lm_tot]*real_tmp;
+                               + vals_th[tid][lm]*imag_tmp;
+            }
         }
       }
       //app_log() << "Building band " << iorb << " at center " << center_idx << std::endl;
@@ -607,7 +621,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
           aligned_vector<double> splineData_r(spline_npoints);
           UBspline_1d_d* atomic_spline_r;
           for(size_t ip=0; ip<spline_npoints; ip++)
-            splineData_r[ip]=real(all_vals[idx][ip][lm]);
+            splineData_r[ip]=all_vals[idx][ip][lm];
           atomic_spline_r=einspline::create(atomic_spline_r, 0.0, spline_radius, spline_npoints, splineData_r.data(), ((lm==0)||(lm>3)));
           if(!bspline->is_complex)
           {
@@ -619,7 +633,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
             aligned_vector<double> splineData_i(spline_npoints);
             UBspline_1d_d* atomic_spline_i;
             for(size_t ip=0; ip<spline_npoints; ip++)
-              splineData_i[ip]=imag(all_vals[idx][ip][lm]);
+              splineData_i[ip]=all_vals[idx][ip][lm+lm_tot];
             atomic_spline_i=einspline::create(atomic_spline_i, 0.0, spline_radius, spline_npoints, splineData_i.data(), ((lm==0)||(lm>3)));
             int iband=bspline->BandIndexMap.size()>0?bspline->BandIndexMap[iorb]:iorb;
             mycenter.set_spline(atomic_spline_r,lm,iband*2);
