@@ -597,7 +597,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         for(size_t idx=0; idx<mygroup.size(); idx++)
         {
           auto &vals = all_vals[idx][ip];
-          auto &vals_th = vals_local[idx];
+          const auto &vals_th = vals_local[idx];
           vals.resize(lm_tot*2, 0.0);
           for(size_t tid=0; tid<vals_th.size(); tid++)
             for(size_t lm=0; lm<lm_tot; lm++)
@@ -606,7 +606,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
               const double imag_tmp = 4.0*M_PI*i_power[lm].imag();
               vals[lm]        += vals_th[tid][lm]*real_tmp
                                - vals_th[tid][lm+lm_tot]*imag_tmp;
-              vals[lm+lm_tot] += vals_th[tid][lm+lm_tot]*real_tmp;
+              vals[lm+lm_tot] += vals_th[tid][lm+lm_tot]*real_tmp
                                + vals_th[tid][lm]*imag_tmp;
             }
         }
