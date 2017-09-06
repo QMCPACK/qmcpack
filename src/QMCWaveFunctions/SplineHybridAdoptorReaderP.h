@@ -558,12 +558,11 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       const int lm_tot=(lmax+1)*(lmax+1);
 
       std::vector<std::vector<aligned_vector<double> > > all_vals(mygroup.size());
-      std::vector<std::vector<aligned_vector<double> > > vals_local(mygroup.size());
+      std::vector<std::vector<aligned_vector<double> > > vals_local(omp_get_max_threads());
       VectorSoaContainer<double,3> myRSoA(mygroup.size());
       for(size_t idx=0; idx<mygroup.size(); idx++)
       {
         all_vals[idx].resize(spline_npoints);
-        vals_local[idx].resize(omp_get_max_threads());
         myRSoA(idx)=centers[mygroup[idx]].pos;
       }
 
@@ -574,10 +573,11 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         #pragma omp parallel
         {
           const size_t tid = omp_get_thread_num();
-          for(size_t idx=0; idx<mygroup.size(); idx++)
+          vals_local[tid].resize(lm_tot*2);
+          for(size_t lm=0; lm<lm_tot*2; lm++)
           {
-            auto &vals = vals_local[idx][tid];
-            vals.resize(lm_tot*2);
+            auto &vals = vals_local[tid][lm];
+            vals.resize((mygroup.size()));
             std::fill(vals.begin(),vals.end(),0.0);
           }
           aligned_vector<double> j_lm_G(lm_tot,0.0);
@@ -595,16 +595,19 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
             // calculate phase shift for all the centers of this group
             Gvecs.calc_phase_shift(myRSoA, ig, phase_shift_r, phase_shift_i);
 
-            for(size_t idx=0; idx<mygroup.size(); idx++)
+            for(size_t lm=0; lm<lm_tot; lm++)
             {
-              auto &vals = vals_local[idx][tid];
-              double phase_shift_real, phase_shift_imag;
-              phase_shift_real = cG[ig].real()*phase_shift_r[idx]-cG[ig].imag()*phase_shift_i[idx];
-              phase_shift_imag = cG[ig].imag()*phase_shift_r[idx]+cG[ig].real()*phase_shift_i[idx];
-              for(size_t lm=0; lm<lm_tot; lm++)
+              double* restrict vals_r = vals_local[tid][lm*2].data();
+              double* restrict vals_i = vals_local[tid][lm*2+1].data();
+              const double* restrict ps_r = phase_shift_r.data();
+              const double* restrict ps_i = phase_shift_i.data();
+              double cG_r=cG[ig].real()*j_lm_G[lm];
+              double cG_i=cG[ig].imag()*j_lm_G[lm];
+              #pragma omp simd aligned(vals_r,vals_i,ps_r,ps_i)
+              for(size_t idx=0; idx<mygroup.size(); idx++)
               {
-                vals[lm]       +=phase_shift_real*j_lm_G[lm];
-                vals[lm+lm_tot]+=phase_shift_imag*j_lm_G[lm];
+                vals_r[idx]+=cG_r*ps_r[idx]-cG_i*ps_i[idx];
+                vals_i[idx]+=cG_i*ps_r[idx]+cG_r*ps_i[idx];
               }
             }
           }
@@ -614,17 +617,16 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         for(size_t idx=0; idx<mygroup.size(); idx++)
         {
           auto &vals = all_vals[idx][ip];
-          const auto &vals_th = vals_local[idx];
           vals.resize(lm_tot*2, 0.0);
-          for(size_t tid=0; tid<vals_th.size(); tid++)
+          for(size_t tid=0; tid<vals_local.size(); tid++)
             for(size_t lm=0; lm<lm_tot; lm++)
             {
+              const auto &vals_th_r = vals_local[tid][lm*2][idx];
+              const auto &vals_th_i = vals_local[tid][lm*2+1][idx];
               const double real_tmp = 4.0*M_PI*i_power[lm].real();
               const double imag_tmp = 4.0*M_PI*i_power[lm].imag();
-              vals[lm]        += vals_th[tid][lm]*real_tmp
-                               - vals_th[tid][lm+lm_tot]*imag_tmp;
-              vals[lm+lm_tot] += vals_th[tid][lm+lm_tot]*real_tmp
-                               + vals_th[tid][lm]*imag_tmp;
+              vals[lm]        += vals_th_r*real_tmp - vals_th_i*imag_tmp;
+              vals[lm+lm_tot] += vals_th_i*real_tmp + vals_th_r*imag_tmp;
             }
         }
       }
