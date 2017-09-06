@@ -404,6 +404,26 @@ ENDIF(ENABLE_SOA)
   LIST(APPEND BCC_H_CSVMC_SCALARS "eeenergy_B" "-0.77546 0.00013")
   LIST(APPEND BCC_H_CSVMC_SCALARS "deeenergy_AB" "-0.000603 0.000035")
 
+# Check CSVMCUpdatePbyP driver using particle-by-particle updates
+  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+                    qmc_short_csvmc_pbyp_nodrift
+                    qmc_short_csvmc_pbyp_nodrift.in.xml
+                    16 1
+                    BCC_H_CSVMC_SCALARS
+                    0 # VMC
+                    TRUE)
+
+# Check CSVMCUpdatePbyPWithDrift driver using all-particle updates
+#  QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-csvmc-pbyp_sdj
+#                    "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+#                    qmc_short_csvmc_pbyp
+#                    qmc_short_csvmc_pbyp.in.xml
+#                    16 1
+#                    BCC_H_CSVMC_SCALARS
+#                    0 # VMC
+#                    TRUE)
+
 # Check CSVMCUpdateAll driver using all-particle updates
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
