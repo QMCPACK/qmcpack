@@ -196,9 +196,10 @@ namespace qmcplusplus
         size_t M;
         T* _base;
         __forceinline Accessor(T* a, size_t ng) : _base(a), M(ng){}
-        __forceinline Accessor& operator=(const TinyVector<T,D>& rhs)
+        template<typename T1>
+        __forceinline Accessor& operator=(const TinyVector<T1,D>& rhs)
         {
-#pragma unroll(D)
+          #pragma unroll(D)
           for(size_t i=0; i<D; ++i) *(_base+M*i)=rhs[i];
           return *this;
         }
@@ -207,7 +208,7 @@ namespace qmcplusplus
         template<typename T1>
         __forceinline Accessor& operator=(T1 rhs)
         {
-#pragma unroll(D)
+          #pragma unroll(D)
           for(size_t i=0; i<D; ++i) *(_base+M*i)=rhs;
           return *this;
         }

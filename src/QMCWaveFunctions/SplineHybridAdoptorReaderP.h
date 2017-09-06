@@ -99,10 +99,21 @@ struct Gvectors
         j_lm_G[lm]=j_lm_G[l];
   }
 
-  template<typename PT>
-  inline void calc_phase_shift(const PT& pos, const size_t ig, ST &phase_shift_real, ST &phase_shift_imag) const
+  template<typename PT, typename VT>
+  inline void calc_phase_shift(const PT& RSoA, const size_t ig, VT &phase_shift_real, VT &phase_shift_imag) const
   {
-    sincos(dot(gvecs_cart[ig],pos),&phase_shift_imag,&phase_shift_real);
+    const ST* restrict px=RSoA.data(0);
+    const ST* restrict py=RSoA.data(1);
+    const ST* restrict pz=RSoA.data(2);
+    ST* restrict v_r=phase_shift_real.data();
+    ST* restrict v_i=phase_shift_imag.data();
+    const ST &gv_x=gvecs_cart[ig][0];
+    const ST &gv_y=gvecs_cart[ig][1];
+    const ST &gv_z=gvecs_cart[ig][2];
+
+    //#pragma omp simd aligned(px,py,pz,v_r,v_i)
+    for(size_t iat=0; iat<RSoA.size(); iat++)
+      sincos(px[iat]*gv_x+py[iat]*gv_y+pz[iat]*gv_z,v_i+iat,v_r+iat);
   }
 
   template<typename PT>
@@ -548,10 +559,12 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
 
       std::vector<std::vector<aligned_vector<double> > > all_vals(mygroup.size());
       std::vector<std::vector<aligned_vector<double> > > vals_local(mygroup.size());
+      VectorSoaContainer<double,3> myRSoA(mygroup.size());
       for(size_t idx=0; idx<mygroup.size(); idx++)
       {
         all_vals[idx].resize(spline_npoints);
         vals_local[idx].resize(omp_get_max_threads());
+        myRSoA(idx)=centers[mygroup[idx]].pos;
       }
 
       for(int ip=0; ip<spline_npoints; ip++)
@@ -568,21 +581,26 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
             std::fill(vals.begin(),vals.end(),0.0);
           }
           aligned_vector<double> j_lm_G(lm_tot,0.0);
+          aligned_vector<double> phase_shift_r(mygroup.size());
+          aligned_vector<double> phase_shift_i(mygroup.size());
 
           #pragma omp for
           for(size_t ig=0; ig<Gvecs.NumGvecs; ig++)
           {
+            // calculate spherical bessel function
             Gvecs.calc_jlm_G(lmax, r, ig, j_lm_G);
             for(size_t lm=0; lm<lm_tot; lm++)
               j_lm_G[lm]*=Gvecs.YlmG[ig][lm];
+
+            // calculate phase shift for all the centers of this group
+            Gvecs.calc_phase_shift(myRSoA, ig, phase_shift_r, phase_shift_i);
+
             for(size_t idx=0; idx<mygroup.size(); idx++)
             {
-              const auto &mycenter = centers[mygroup[idx]];
               auto &vals = vals_local[idx][tid];
-              double phase_shift_real, phase_shift_imag, phase_shift_temp;
-              Gvecs.calc_phase_shift(mycenter.pos, ig, phase_shift_temp, phase_shift_imag);
-              phase_shift_real = cG[ig].real()*phase_shift_temp-cG[ig].imag()*phase_shift_imag;
-              phase_shift_imag = cG[ig].imag()*phase_shift_temp+cG[ig].real()*phase_shift_imag;
+              double phase_shift_real, phase_shift_imag;
+              phase_shift_real = cG[ig].real()*phase_shift_r[idx]-cG[ig].imag()*phase_shift_i[idx];
+              phase_shift_imag = cG[ig].imag()*phase_shift_r[idx]+cG[ig].real()*phase_shift_i[idx];
               for(size_t lm=0; lm<lm_tot; lm++)
               {
                 vals[lm]       +=phase_shift_real*j_lm_G[lm];
