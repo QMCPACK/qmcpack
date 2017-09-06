@@ -408,8 +408,8 @@ void CSVMC::resetRun()
     }
     
  //   app_log()<<"Norms updated\n";
-    if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
-      CSMovers[ip]->updateCSWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+//    if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
+//      CSMovers[ip]->updateCSWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 //       }
     
     
