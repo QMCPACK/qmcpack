@@ -599,15 +599,17 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
             {
               double* restrict vals_r = vals_local[tid][lm*2].data();
               double* restrict vals_i = vals_local[tid][lm*2+1].data();
-              const double* restrict ps_r = phase_shift_r.data();
-              const double* restrict ps_i = phase_shift_i.data();
+              const double* restrict ps_r_ptr = phase_shift_r.data();
+              const double* restrict ps_i_ptr = phase_shift_i.data();
               double cG_r=cG[ig].real()*j_lm_G[lm];
               double cG_i=cG[ig].imag()*j_lm_G[lm];
-              #pragma omp simd aligned(vals_r,vals_i,ps_r,ps_i)
+              #pragma omp simd aligned(vals_r,vals_i,ps_r_ptr,ps_i_ptr)
               for(size_t idx=0; idx<mygroup.size(); idx++)
               {
-                vals_r[idx]+=cG_r*ps_r[idx]-cG_i*ps_i[idx];
-                vals_i[idx]+=cG_i*ps_r[idx]+cG_r*ps_i[idx];
+                const double ps_r=ps_r_ptr[idx];
+                const double ps_i=ps_i_ptr[idx];
+                vals_r[idx]+=cG_r*ps_r-cG_i*ps_i;
+                vals_i[idx]+=cG_i*ps_r+cG_r*ps_i;
               }
             }
           }
