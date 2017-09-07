@@ -9,7 +9,7 @@ cat > $BUILD_TAG.pbs << EOF
 #PBS -j oe
 #PBS -l walltime=1:00:00,nodes=1
 #PBS -d $BUILD_DIR
-#PBS -l partition=gpu
+#PBS -l partition=rhea
 
 cd $BUILD_DIR
 
@@ -21,7 +21,6 @@ module load fftw
 export FFTW_HOME=\$FFTW3_DIR
 module load hdf5
 module load git
-module load cudatoolkit/8.0.44
 
 env
 
@@ -31,7 +30,7 @@ mkdir -p build
 
 cd build 
 
-cmake -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_intel14.0.4/include" -DQMC_CUDA=1 .. 2>&1 | tee cmake.out
+cmake -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_gnu4.8.2/include" .. 2>&1 | tee cmake.out
 
 # hacky way to check on cmake. works for now
 if ! ( grep -- '-- The C compiler identification is GNU 5.3.0' cmake.out && \
@@ -41,8 +40,12 @@ then
   exit 1
 fi
 
-# because Andreas tells me (and I observe) that GPU builds are unstable with Cmake
-make -j 1
+if ! ( grep 'Base precision = float' cmake.out ) ;
+then
+  echo "mixed precision not enabled. exiting."
+  exit 1
+fi
+
 make -j 24
 
 ctest -L unit
