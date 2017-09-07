@@ -314,6 +314,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         foundspline=bspline->read_splines(h5f);
         if(foundspline) app_log() << "  Time to read the table in " << splinefile << " = " << now.elapsed() << std::endl;
       }
+      h5f.close();
     }
     myComm->bcast(foundspline);
     if(foundspline)
@@ -367,6 +368,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         int sizeD=sizeof(typename adoptor_type::DataType);
         h5f.write(sizeD,"sizeof");
         bspline->write_splines(h5f);
+        h5f.close();
         app_log() << "  SplineHybridAdoptorReader dump " << now.elapsed() << " sec" << std::endl;
       }
     }
