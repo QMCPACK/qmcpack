@@ -824,6 +824,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     if(band_group_comm.isGroupLeader())
     {
       bspline->gather_tables(band_group_comm.GroupLeaderComm);
+      app_log() << "  Time to gather the table = " << now.elapsed() << std::endl;
 #ifdef REPORT_MISMATCH
       // collect mismatch_energy
       for(int center_idx=0; center_idx<bspline->AtomicCenters.size(); center_idx++)
@@ -831,7 +832,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
 #endif
     }
     bspline->bcast_tables(myComm);
-    app_log() << "  Time to reduce and bcast the table = " << now.elapsed() << std::endl;
+    app_log() << "  Time to bcast the table = " << now.elapsed() << std::endl;
 
 #ifdef REPORT_MISMATCH
     if(!myComm->rank()) print_mismatch_scan(spin);
