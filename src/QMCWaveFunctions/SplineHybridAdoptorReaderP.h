@@ -820,9 +820,9 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
 
     myComm->barrier();
     Timer now;
-    now.restart();
     if(band_group_comm.isGroupLeader())
     {
+      now.restart();
       bspline->gather_tables(band_group_comm.GroupLeaderComm);
       app_log() << "  Time to gather the table = " << now.elapsed() << std::endl;
 #ifdef REPORT_MISMATCH
@@ -831,6 +831,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         mpi::reduce(*band_group_comm.GroupLeaderComm,mismatch_energy_AO_to_PW[center_idx]);
 #endif
     }
+    now.restart();
     bspline->bcast_tables(myComm);
     app_log() << "  Time to bcast the table = " << now.elapsed() << std::endl;
 
