@@ -26,15 +26,19 @@ env
 
 module list
 
-if ! gcc --version | grep 'gcc (GCC) 5.3.0' ; then
-  exit 1
-fi
-
 mkdir -p build
 
 cd build 
 
-cmake -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_gnu4.8.2/include" ..
+cmake -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_gnu4.8.2/include" .. | tee cmake.out
+
+# hacky way to check on cmake. works for now
+if ! ( grep -- '-- The C compiler identification is GNU 5.3.0' cmake.out && \
+       grep -- '-- The CXX compiler identification is GNU 5.3.0' cmake.out ) ;
+then
+  echo "compiler version mismatch. exiting."
+  exit 1
+fi
 
 make -j 24
 
