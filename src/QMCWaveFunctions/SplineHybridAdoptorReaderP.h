@@ -577,67 +577,84 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
           }
         }
 
+        const size_t size_pw_tile = 32;
+        const size_t num_pw_tiles = (Gvecs.NumGvecs+size_pw_tile-1)/size_pw_tile;
         aligned_vector<double> j_lm_G(lm_tot,0.0);
-        aligned_vector<double> phase_shift_r(natoms);
-        aligned_vector<double> phase_shift_i(natoms);
-        aligned_vector<double> YlmG(lm_tot);
+        std::vector<aligned_vector<double> > phase_shift_r(size_pw_tile);
+        std::vector<aligned_vector<double> > phase_shift_i(size_pw_tile);
+        std::vector<aligned_vector<double> > YlmG(size_pw_tile);
+        for(size_t ig=0; ig<size_pw_tile; ig++)
+        {
+          phase_shift_r[ig].resize(natoms);
+          phase_shift_i[ig].resize(natoms);
+          YlmG[ig].resize(lm_tot);
+        }
         SoaSphericalTensor<double> Ylm(lmax);
 
         #pragma omp for
-        for(size_t ig=0; ig<Gvecs.NumGvecs; ig++)
+        for(size_t tile_id=0; tile_id<num_pw_tiles; tile_id++)
         {
-          // calculate phase shift for all the centers of this group
-          Gvecs.calc_phase_shift(myRSoA, ig, phase_shift_r, phase_shift_i);
-          Gvecs.calc_Ylm_G(ig, Ylm, YlmG);
+          const size_t ig_first = tile_id*size_pw_tile;
+          const size_t ig_last  = std::min((tile_id+1)*size_pw_tile,Gvecs.NumGvecs);
+          for(size_t ig=ig_first; ig<ig_last; ig++)
+          {
+            const size_t ig_local=ig-ig_first;
+            // calculate phase shift for all the centers of this group
+            Gvecs.calc_phase_shift(myRSoA, ig, phase_shift_r[ig_local], phase_shift_i[ig_local]);
+            Gvecs.calc_Ylm_G(ig, Ylm, YlmG[ig_local]);
+          }
 
           for(int ip=0; ip<spline_npoints; ip++)
           {
             double r=delta*static_cast<double>(ip);
             const size_t ip_idx=tid*spline_npoints+ip;
 
-            // calculate spherical bessel function
-            Gvecs.calc_jlm_G(lmax, r, ig, j_lm_G);
-            for(size_t lm=0; lm<lm_tot; lm++)
-              j_lm_G[lm]*=YlmG[lm];
-
-
-            if(policy==1)
+            for(size_t ig=ig_first; ig<ig_last; ig++)
             {
+              const size_t ig_local=ig-ig_first;
+              // calculate spherical bessel function
+              Gvecs.calc_jlm_G(lmax, r, ig, j_lm_G);
               for(size_t lm=0; lm<lm_tot; lm++)
+                j_lm_G[lm]*=YlmG[ig_local][lm];
+
+              if(policy==1)
               {
-                double* restrict vals_r = vals_local[ip_idx][lm*2].data();
-                double* restrict vals_i = vals_local[ip_idx][lm*2+1].data();
-                const double* restrict ps_r_ptr = phase_shift_r.data();
-                const double* restrict ps_i_ptr = phase_shift_i.data();
-                double cG_r=cG[ig].real()*j_lm_G[lm];
-                double cG_i=cG[ig].imag()*j_lm_G[lm];
-                #pragma omp simd aligned(vals_r,vals_i,ps_r_ptr,ps_i_ptr)
-                for(size_t idx=0; idx<natoms; idx++)
-                {
-                  const double ps_r=ps_r_ptr[idx];
-                  const double ps_i=ps_i_ptr[idx];
-                  vals_r[idx]+=cG_r*ps_r-cG_i*ps_i;
-                  vals_i[idx]+=cG_i*ps_r+cG_r*ps_i;
-                }
-              }
-            }
-            else
-            {
-              for(size_t idx=0; idx<natoms; idx++)
-              {
-                double* restrict vals_r = vals_local[ip_idx][idx*2].data();
-                double* restrict vals_i = vals_local[ip_idx][idx*2+1].data();
-                const double* restrict j_lm_G_ptr = j_lm_G.data();
-                const double cG_r=cG[ig].real();
-                const double cG_i=cG[ig].imag();
-                double cG_ps_r=cG_r*phase_shift_r[idx]-cG_i*phase_shift_i[idx];
-                double cG_ps_i=cG_i*phase_shift_r[idx]+cG_r*phase_shift_i[idx];
-                #pragma omp simd aligned(vals_r,vals_i,j_lm_G_ptr)
                 for(size_t lm=0; lm<lm_tot; lm++)
                 {
-                  const double jlm=j_lm_G_ptr[lm];
-                  vals_r[lm]+=cG_ps_r*jlm;
-                  vals_i[lm]+=cG_ps_i*jlm;
+                  double* restrict vals_r = vals_local[ip_idx][lm*2].data();
+                  double* restrict vals_i = vals_local[ip_idx][lm*2+1].data();
+                  const double* restrict ps_r_ptr = phase_shift_r[ig_local].data();
+                  const double* restrict ps_i_ptr = phase_shift_i[ig_local].data();
+                  double cG_r=cG[ig].real()*j_lm_G[lm];
+                  double cG_i=cG[ig].imag()*j_lm_G[lm];
+                  #pragma omp simd aligned(vals_r,vals_i,ps_r_ptr,ps_i_ptr)
+                  for(size_t idx=0; idx<natoms; idx++)
+                  {
+                    const double ps_r=ps_r_ptr[idx];
+                    const double ps_i=ps_i_ptr[idx];
+                    vals_r[idx]+=cG_r*ps_r-cG_i*ps_i;
+                    vals_i[idx]+=cG_i*ps_r+cG_r*ps_i;
+                  }
+                }
+              }
+              else
+              {
+                for(size_t idx=0; idx<natoms; idx++)
+                {
+                  double* restrict vals_r = vals_local[ip_idx][idx*2].data();
+                  double* restrict vals_i = vals_local[ip_idx][idx*2+1].data();
+                  const double* restrict j_lm_G_ptr = j_lm_G.data();
+                  const double cG_r=cG[ig].real();
+                  const double cG_i=cG[ig].imag();
+                  double cG_ps_r=cG_r*phase_shift_r[ig_local][idx]-cG_i*phase_shift_i[ig_local][idx];
+                  double cG_ps_i=cG_i*phase_shift_r[ig_local][idx]+cG_r*phase_shift_i[ig_local][idx];
+                  #pragma omp simd aligned(vals_r,vals_i,j_lm_G_ptr)
+                  for(size_t lm=0; lm<lm_tot; lm++)
+                  {
+                    const double jlm=j_lm_G_ptr[lm];
+                    vals_r[lm]+=cG_ps_r*jlm;
+                    vals_i[lm]+=cG_ps_i*jlm;
+                  }
                 }
               }
             }
