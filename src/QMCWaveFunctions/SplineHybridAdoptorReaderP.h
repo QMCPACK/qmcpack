@@ -46,15 +46,12 @@ struct Gvectors
 
   const LT& Lattice;
   const std::vector<TinyVector<int,3> >& gvecs;
-  ST                                     gmag_max;
   std::vector<PosType>                   gvecs_cart; //Cartesian.
   std::vector<ST>                        gmag;
-  std::vector<aligned_vector<ST> >       YlmG;
   const size_t NumGvecs;
-  int mylmax;
 
   Gvectors(const std::vector<TinyVector<int,3> >& gvecs_in, const LT& Lattice_in, const TinyVector<int,3>& HalfG):
-  gvecs(gvecs_in), Lattice(Lattice_in), NumGvecs(gvecs.size()), gmag(0.0), mylmax(-1)
+  gvecs(gvecs_in), Lattice(Lattice_in), NumGvecs(gvecs.size())
   {
     gvecs_cart.resize(NumGvecs);
     gmag.resize(NumGvecs);
@@ -65,33 +62,20 @@ struct Gvectors
       gvec_shift=gvecs[ig]+HalfG*0.5;
       gvecs_cart[ig]=Lattice.k_cart(gvec_shift);
       gmag[ig]=std::sqrt(dot(gvecs_cart[ig],gvecs_cart[ig]));
-      if (gmag[ig]>gmag_max) gmag_max=gmag[ig];
     }
   }
 
-  int get_lmax() { return mylmax; }
-
-  void calc_YlmG(const int lmax)
+  template<typename YLM_ENGINE, typename VVT>
+  void calc_Ylm_G(const size_t ig, YLM_ENGINE &Ylm, VVT &YlmG) const
   {
-    mylmax=lmax;
-    SoaSphericalTensor<ST> Ylm(lmax);
-    const int lm_tot=(lmax+1)*(lmax+1);
-    YlmG.resize(NumGvecs);
-    #pragma omp parallel for
-    for(size_t ig=0; ig<NumGvecs; ig++)
-    {
-      PosType Ghat;
-      YlmG[ig].resize(lm_tot);
-      if (gmag[ig]==0)
-        Ghat=PosType(0.0,0.0,1.0);
-      else
-        Ghat=gvecs_cart[ig]/gmag[ig];
-      Ylm.evaluateV(Ghat[0], Ghat[1], Ghat[2], YlmG[ig].data());
-    }
-    //std::cout << "Calculated " << NumGvecs << " YlmG!" << std::endl;
+    PosType Ghat(0.0,0.0,1.0);
+    if(gmag[ig]>0)
+      Ghat=gvecs_cart[ig]/gmag[ig];
+    Ylm.evaluateV(Ghat[0], Ghat[1], Ghat[2], YlmG.data());
   }
 
-  inline void calc_jlm_G(const int lmax, ST& r, const size_t ig, aligned_vector<ST>& j_lm_G) const
+  template<typename VVT>
+  inline void calc_jlm_G(const int lmax, ST &r, const size_t ig, VVT &j_lm_G) const
   {
     bessel_steed_array_cpu(lmax, gmag[ig]*r, j_lm_G.data());
     for(size_t l=lmax; l>0; l--)
@@ -177,11 +161,10 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
 #ifdef REPORT_MISMATCH
   std::vector<std::vector<double> > mismatch_energy_AO_to_PW;
 #endif
-  int lmax_limit;
 
   SplineHybridAdoptorReader(EinsplineSetBuilder* e)
     : BsplineReaderBase(e), spline_r(NULL), spline_i(NULL),
-      bspline(0), FFTplan(NULL), lmax_limit(-1)
+      bspline(0), FFTplan(NULL)
   {}
 
   ~SplineHybridAdoptorReader()
@@ -418,10 +401,6 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
           app_error() << "Hybrid representation needs parameter 'lmax' for atom " << center_idx << std::endl;
           success=false;
         }
-        else
-        {
-          if(ACInfo.lmax[center_idx]>lmax_limit) lmax_limit=ACInfo.lmax[center_idx];
-        }
 
         if(ACInfo.cutoff[center_idx]<0)
         {
@@ -467,7 +446,6 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         }
       }
       if(!success) abort();
-      app_log() << "The maximum value of lmax among all the atoms is " << lmax_limit << std::endl;
 
 #ifdef REPORT_MISMATCH
       mismatch_energy_AO_to_PW.resize(ACInfo.Ncenters);
@@ -509,17 +487,6 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     // prepare Gvecs Ylm(G)
     Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell, bspline->HalfG);
     // if(band_group_comm.isGroupLeader()) std::cout << "print band=" << iorb << " KE=" << Gvecs.evaluate_KE(cG) << std::endl;
-    Gvecs.calc_YlmG(lmax_limit);
-    std::vector<std::complex<double> > i_power;
-    // rotate phase is introduced here.
-    std::complex<double> i_temp(rotate_phase_r, rotate_phase_i);
-    for(size_t l=0; l<=lmax_limit; l++)
-    {
-      for(size_t lm=l*l; lm<(l+1)*(l+1); lm++)
-        i_power.push_back(i_temp);
-      i_temp*=std::complex<double>(0.0,1.0);
-    }
-
     app_log() << "Transforming band " << iorb << " centers from " << center_first << " to " << center_last-1 << " on Rank 0" << std::endl;
 
     // collect atomic centers by group
@@ -559,6 +526,16 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       const double delta = spline_radius/static_cast<double>(spline_npoints-1);
       const int lm_tot=(lmax+1)*(lmax+1);
 
+      std::vector<std::complex<double> > i_power(lm_tot);
+      // rotate phase is introduced here.
+      std::complex<double> i_temp(rotate_phase_r, rotate_phase_i);
+      for(size_t l=0; l<=lmax; l++)
+      {
+        for(size_t lm=l*l; lm<(l+1)*(l+1); lm++)
+          i_power[lm]=i_temp;
+        i_temp*=std::complex<double>(0.0,1.0);
+      }
+
       std::vector<std::vector<aligned_vector<double> > > all_vals(mygroup.size());
       std::vector<std::vector<aligned_vector<double> > > vals_local(omp_get_max_threads());
       VectorSoaContainer<double,3> myRSoA(mygroup.size());
@@ -585,14 +562,17 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
           aligned_vector<double> j_lm_G(lm_tot,0.0);
           aligned_vector<double> phase_shift_r(mygroup.size());
           aligned_vector<double> phase_shift_i(mygroup.size());
+          aligned_vector<double> YlmG(lm_tot);
+          SoaSphericalTensor<double> Ylm(lmax);
 
           #pragma omp for
           for(size_t ig=0; ig<Gvecs.NumGvecs; ig++)
           {
             // calculate spherical bessel function
             Gvecs.calc_jlm_G(lmax, r, ig, j_lm_G);
+            Gvecs.calc_Ylm_G(ig, Ylm, YlmG);
             for(size_t lm=0; lm<lm_tot; lm++)
-              j_lm_G[lm]*=Gvecs.YlmG[ig][lm];
+              j_lm_G[lm]*=YlmG[lm];
 
             // calculate phase shift for all the centers of this group
             Gvecs.calc_phase_shift(myRSoA, ig, phase_shift_r, phase_shift_i);
