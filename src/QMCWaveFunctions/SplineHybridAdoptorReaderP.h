@@ -539,7 +539,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       }
 
       std::vector<std::vector<aligned_vector<double> > > all_vals(natoms);
-      std::vector<std::vector<aligned_vector<double> > > vals_local(omp_get_max_threads());
+      std::vector<std::vector<aligned_vector<double> > > vals_local(spline_npoints*omp_get_max_threads());
       VectorSoaContainer<double,3> myRSoA(natoms);
       for(size_t idx=0; idx<natoms; idx++)
       {
@@ -547,59 +547,66 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         myRSoA(idx)=centers[mygroup[idx]].pos;
       }
 
-      for(int ip=0; ip<spline_npoints; ip++)
+      #pragma omp parallel
       {
-        double r=delta*static_cast<double>(ip);
+        const size_t tid = omp_get_thread_num();
+        const size_t nt = omp_get_num_threads();
 
-        #pragma omp parallel
+        for(int ip=0; ip<spline_npoints; ip++)
         {
-          const size_t tid = omp_get_thread_num();
-
+          const size_t ip_idx=tid*spline_npoints+ip;
           if(policy==1)
           {
-            vals_local[tid].resize(lm_tot*2);
+            vals_local[ip_idx].resize(lm_tot*2);
             for(size_t lm=0; lm<lm_tot*2; lm++)
             {
-              auto &vals = vals_local[tid][lm];
+              auto &vals = vals_local[ip_idx][lm];
               vals.resize(natoms);
               std::fill(vals.begin(),vals.end(),0.0);
             }
           }
           else
           {
-            vals_local[tid].resize(natoms*2);
+            vals_local[ip_idx].resize(natoms*2);
             for(size_t iat=0; iat<natoms*2; iat++)
             {
-              auto &vals = vals_local[tid][iat];
+              auto &vals = vals_local[ip_idx][iat];
               vals.resize(lm_tot);
               std::fill(vals.begin(),vals.end(),0.0);
             }
           }
+        }
 
-          aligned_vector<double> j_lm_G(lm_tot,0.0);
-          aligned_vector<double> phase_shift_r(natoms);
-          aligned_vector<double> phase_shift_i(natoms);
-          aligned_vector<double> YlmG(lm_tot);
-          SoaSphericalTensor<double> Ylm(lmax);
+        aligned_vector<double> j_lm_G(lm_tot,0.0);
+        aligned_vector<double> phase_shift_r(natoms);
+        aligned_vector<double> phase_shift_i(natoms);
+        aligned_vector<double> YlmG(lm_tot);
+        SoaSphericalTensor<double> Ylm(lmax);
 
-          #pragma omp for
-          for(size_t ig=0; ig<Gvecs.NumGvecs; ig++)
+        #pragma omp for
+        for(size_t ig=0; ig<Gvecs.NumGvecs; ig++)
+        {
+          // calculate phase shift for all the centers of this group
+          Gvecs.calc_phase_shift(myRSoA, ig, phase_shift_r, phase_shift_i);
+          Gvecs.calc_Ylm_G(ig, Ylm, YlmG);
+
+          for(int ip=0; ip<spline_npoints; ip++)
           {
+            double r=delta*static_cast<double>(ip);
+            const size_t ip_idx=tid*spline_npoints+ip;
+
             // calculate spherical bessel function
             Gvecs.calc_jlm_G(lmax, r, ig, j_lm_G);
-            Gvecs.calc_Ylm_G(ig, Ylm, YlmG);
             for(size_t lm=0; lm<lm_tot; lm++)
               j_lm_G[lm]*=YlmG[lm];
 
-            // calculate phase shift for all the centers of this group
-            Gvecs.calc_phase_shift(myRSoA, ig, phase_shift_r, phase_shift_i);
 
             if(policy==1)
             {
               for(size_t lm=0; lm<lm_tot; lm++)
               {
-                double* restrict vals_r = vals_local[tid][lm*2].data();
-                double* restrict vals_i = vals_local[tid][lm*2+1].data();
+                double* restrict vals_r = vals_local[ip_idx][lm*2].data();
+                double* restrict vals_i = vals_local[ip_idx][lm*2+1].data();
                 const double* restrict ps_r_ptr = phase_shift_r.data();
                 const double* restrict ps_i_ptr = phase_shift_i.data();
                 double cG_r=cG[ig].real()*j_lm_G[lm];
@@ -618,8 +625,8 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
             {
               for(size_t idx=0; idx<natoms; idx++)
               {
-                double* restrict vals_r = vals_local[tid][idx*2].data();
-                double* restrict vals_i = vals_local[tid][idx*2+1].data();
+                double* restrict vals_r = vals_local[ip_idx][idx*2].data();
+                double* restrict vals_i = vals_local[ip_idx][idx*2+1].data();
                 const double* restrict j_lm_G_ptr = j_lm_G.data();
                 const double cG_r=cG[ig].real();
                 const double cG_i=cG[ig].imag();
@@ -637,31 +644,33 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
           }
         }
 
-        #pragma omp parallel for
-        for(size_t idx=0; idx<natoms; idx++)
-        {
-          auto &vals = all_vals[idx][ip];
-          vals.resize(lm_tot*2, 0.0);
-          for(size_t tid=0; tid<vals_local.size(); tid++)
-            for(size_t lm=0; lm<lm_tot; lm++)
-            {
-              double vals_th_r, vals_th_i;
-              if(policy==1)
+        #pragma omp for collapse(2)
+        for(int ip=0; ip<spline_npoints; ip++)
+          for(size_t idx=0; idx<natoms; idx++)
+          {
+            auto &vals = all_vals[idx][ip];
+            vals.resize(lm_tot*2, 0.0);
+            for(size_t tid=0; tid<nt; tid++)
+              for(size_t lm=0; lm<lm_tot; lm++)
               {
-                vals_th_r = vals_local[tid][lm*2][idx];
-                vals_th_i = vals_local[tid][lm*2+1][idx];
+                double vals_th_r, vals_th_i;
+                const size_t ip_idx=tid*spline_npoints+ip;
+                if(policy==1)
+                {
+                  vals_th_r = vals_local[ip_idx][lm*2][idx];
+                  vals_th_i = vals_local[ip_idx][lm*2+1][idx];
+                }
+                else
+                {
+                  vals_th_r = vals_local[ip_idx][idx*2][lm];
+                  vals_th_i = vals_local[ip_idx][idx*2+1][lm];
+                }
+                const double real_tmp = 4.0*M_PI*i_power[lm].real();
+                const double imag_tmp = 4.0*M_PI*i_power[lm].imag();
+                vals[lm]        += vals_th_r*real_tmp - vals_th_i*imag_tmp;
+                vals[lm+lm_tot] += vals_th_i*real_tmp + vals_th_r*imag_tmp;
               }
-              else
-              {
-                vals_th_r = vals_local[tid][idx*2][lm];
-                vals_th_i = vals_local[tid][idx*2+1][lm];
-              }
-              const double real_tmp = 4.0*M_PI*i_power[lm].real();
-              const double imag_tmp = 4.0*M_PI*i_power[lm].imag();
-              vals[lm]        += vals_th_r*real_tmp - vals_th_i*imag_tmp;
-              vals[lm+lm_tot] += vals_th_i*real_tmp + vals_th_r*imag_tmp;
-            }
-        }
+          }
       }
       //app_log() << "Building band " << iorb << " at center " << center_idx << std::endl;
 
