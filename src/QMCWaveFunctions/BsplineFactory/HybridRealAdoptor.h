@@ -80,7 +80,7 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
 
   inline void flush_zero()
   {
-    BaseAdoptor::flush_zero();
+    //BaseAdoptor::flush_zero();
     HybridBase::flush_zero();
   }
 
