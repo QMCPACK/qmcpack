@@ -88,13 +88,23 @@ namespace qmcplusplus
     std::vector<int> counts(offset.size()-1,0);
     for(size_t ib=0; ib<counts.size(); ib++)
       counts[ib] = offset[ib+1] - offset[ib];
-    const int nrow = buffer->coefs_size / ncol;
-    //std::cout << "nrow=" << nrow << "  ncol=" << ncol << std::endl;
-    //for(size_t ib=0; ib<offset.size(); ib++)
-    //  std::cout << "node=" << ib << "  offset=" << offset[ib] << std::endl;
-    MPI_Datatype columntype = mpi::construct_column_type(buffer->coefs, nrow, ncol);
-    comm->gatherv_in_place(buffer->coefs, columntype, counts, offset);
-    mpi::free_column_type(columntype);
+    if( buffer->coefs_size / ncol > (1<<20) )
+    {
+      const size_t xs = buffer->x_stride;
+      const size_t nx = buffer->coefs_size / xs;
+      const int nrow = buffer->coefs_size / (ncol*nx);
+      MPI_Datatype columntype = mpi::construct_column_type(buffer->coefs, nrow, ncol);
+      for(size_t iz=0; iz<nx; iz++)
+        comm->gatherv_in_place(buffer->coefs+xs*iz, columntype, counts, offset);
+      mpi::free_column_type(columntype);
+    }
+    else
+    {
+      const int nrow = buffer->coefs_size / ncol;
+      MPI_Datatype columntype = mpi::construct_column_type(buffer->coefs, nrow, ncol);
+      comm->gatherv_in_place(buffer->coefs, columntype, counts, offset);
+      mpi::free_column_type(columntype);
+    }
   }
 
   template<unsigned DIM>
