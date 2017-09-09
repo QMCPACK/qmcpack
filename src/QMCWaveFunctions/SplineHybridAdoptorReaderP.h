@@ -617,6 +617,8 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
               for(size_t lm=0; lm<lm_tot; lm++)
                 j_lm_G[lm]*=YlmG[ig_local][lm];
 
+              const double cG_r=cG[ig].real();
+              const double cG_i=cG[ig].imag();
               if(policy==1)
               {
                 for(size_t lm=0; lm<lm_tot; lm++)
@@ -625,15 +627,15 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
                   double* restrict vals_i = vals_local[ip_idx][lm*2+1].data();
                   const double* restrict ps_r_ptr = phase_shift_r[ig_local].data();
                   const double* restrict ps_i_ptr = phase_shift_i[ig_local].data();
-                  double cG_r=cG[ig].real()*j_lm_G[lm];
-                  double cG_i=cG[ig].imag()*j_lm_G[lm];
+                  double cG_j_r=cG_r*j_lm_G[lm];
+                  double cG_j_i=cG_i*j_lm_G[lm];
                   #pragma omp simd aligned(vals_r,vals_i,ps_r_ptr,ps_i_ptr)
                   for(size_t idx=0; idx<natoms; idx++)
                   {
                     const double ps_r=ps_r_ptr[idx];
                     const double ps_i=ps_i_ptr[idx];
-                    vals_r[idx]+=cG_r*ps_r-cG_i*ps_i;
-                    vals_i[idx]+=cG_i*ps_r+cG_r*ps_i;
+                    vals_r[idx]+=cG_j_r*ps_r-cG_j_i*ps_i;
+                    vals_i[idx]+=cG_j_i*ps_r+cG_j_r*ps_i;
                   }
                 }
               }
@@ -644,8 +646,6 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
                   double* restrict vals_r = vals_local[ip_idx][idx*2].data();
                   double* restrict vals_i = vals_local[ip_idx][idx*2+1].data();
                   const double* restrict j_lm_G_ptr = j_lm_G.data();
-                  const double cG_r=cG[ig].real();
-                  const double cG_i=cG[ig].imag();
                   double cG_ps_r=cG_r*phase_shift_r[ig_local][idx]-cG_i*phase_shift_i[ig_local][idx];
                   double cG_ps_i=cG_i*phase_shift_r[ig_local][idx]+cG_r*phase_shift_i[ig_local][idx];
                   #pragma omp simd aligned(vals_r,vals_i,j_lm_G_ptr)
