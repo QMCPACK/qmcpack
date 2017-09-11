@@ -80,6 +80,9 @@
 /* Define to 1 if precision is mixed, only for the CPU code */
 #cmakedefine MIXED_PRECISION @MIXED_PRECISION@
 
+/* Use prefetching in Einspline routines */
+#cmakedefine QMC_ES_PREFETCH  @QMC_ES_PREFETCH@
+
 /* Define to 1 if complex wavefunctions are used */
 #cmakedefine QMC_COMPLEX @QMC_COMPLEX@
 
@@ -136,24 +139,6 @@
 /* Define if unistd.h exists */
 #cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
 
-/* Define if mmx support exists */
-#cmakedefine HAVE_MMX @HAVE_MMX@
-
-/* Define if sse support exists */
-#cmakedefine HAVE_SSE @HAVE_SSE@
-
-/* Define if sse2 support exists */
-#cmakedefine HAVE_SSE2 @HAVE_SSE2@
-
-/* Define if sse3 support exists */
-#cmakedefine HAVE_SSE3 @HAVE_SSE3@
-
-/* Define if sse41 support exists */
-#cmakedefine HAVE_SSE41 @HAVE_SSE41@
-
-/* Define if ssse3 support exists */
-#cmakedefine HAVE_SSSE3 @HAVE_SSSE3@
-
 /* Define if c variable array support exists */
 #cmakedefine HAVE_C_VARARRAYS @HAVE_C_VARARRAYS@
 
@@ -165,9 +150,6 @@
 
 /* Define the alignment of SIMD in byte*/
 #cmakedefine SIMD_ALIGNMENT @SIMD_ALIGNMENT@
-
-/* Define if FMA4 on x86 is supported */
-#cmakedefine HAVE_FMA4 @HAVE_FMA4@
 
 #endif /* HAVE_EINSPLINE_EXT */
 
@@ -205,6 +187,51 @@
 
 /* Fully remove trace manager and associated features */
 #cmakedefine REMOVE_TRACEMANAGER @REMOVE_TRACEMANAGER@
+
+/* Use SOA version of AA distance table */
+#cmakedefine ENABLE_SOA  @ENABLE_SOA@
+
+#if (__cplusplus >= 201103L)
+  #if defined(__INTEL_COMPILER)
+    #if defined(__KNC__) || defined(__AVX512F__)
+      #define QMC_CLINE 64
+      #define QMC_ALIGNAS alignas(64)
+      #define ASSUME_ALIGNED(x) __assume_aligned(x,64)
+    #else
+      #define QMC_CLINE 32
+      #define QMC_ALIGNAS alignas(32)
+      #define ASSUME_ALIGNED(x) __assume_aligned(x,32)
+    #endif
+  #elif defined(__GNUC__) && !defined(__ibmxl__)
+    #if defined(__AVX512F__)
+      #define QMC_CLINE 64
+      #define QMC_ALIGNAS alignas(64)
+      #define ASSUME_ALIGNED(x) __builtin_assume_aligned(x,64)
+    #else
+      #define QMC_CLINE 32
+      #define QMC_ALIGNAS alignas(32)
+      #define ASSUME_ALIGNED(x) __builtin_assume_aligned(x,32)
+    #endif
+  #else
+   #define QMC_CLINE 32
+   #define QMC_ALIGNAS
+   #define ASSUME_ALIGNED(x)
+  #endif
+
+  #define CONSTEXPR constexpr
+#else //capture both C or non-c++11
+  #if defined(__KNC__) || defined(__AVX512F__)
+    #define QMC_CLINE 64
+  #else
+    #define QMC_CLINE 32
+  #endif
+  #define QMC_ALIGNAS
+  #define ASSUME_ALIGNED(x)
+  #define CONSTEXPR const
+  #ifndef nullptr
+  #define nullptr NULL
+  #endif
+#endif
 
 /* Internal timers */
 #cmakedefine ENABLE_TIMERS @ENABLE_TIMERS@

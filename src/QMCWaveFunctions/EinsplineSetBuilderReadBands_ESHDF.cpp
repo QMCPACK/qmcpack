@@ -23,7 +23,7 @@
 namespace qmcplusplus
 {
 
-#ifdef QMC_CUDA
+#if 0
 void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<std::complex<double > >* orbitalSet)
 {
   update_token(__FILE__,__LINE__,"ReadBands_ESHDF:complex");

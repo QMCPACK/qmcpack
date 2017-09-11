@@ -176,7 +176,17 @@ def read_command_line():
             ke_p = "Kinetic_p",
             ee_m = "ElecElec_m",
             ee_p = "ElecElec_p",
-            lp_p = "LocalPotential_pure"
+            lp_p = "LocalPotential_pure",
+#and some CSVMC estimators
+            le_A = "LocEne_0",
+            le_B = "LocEne_1",
+            dle_AB = "dLocEne_0_1",
+            ii_A = "IonIon_0",
+            ii_B = "IonIon_1",
+            dii_AB = "dIonIon_0_1",
+            ee_A = "ElecElec_0",
+            ee_B = "ElecElec_1",
+            dee_AB = "dElecElec_0_1"
             )
 
         for qshort in sorted(quantities.keys()):

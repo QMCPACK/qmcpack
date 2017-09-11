@@ -84,7 +84,7 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   tspecies(massIdx, upIdx) = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  elec.addTable(ions);
+  elec.addTable(ions,DT_AOS);
   elec.update();
 
 

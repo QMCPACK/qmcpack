@@ -120,10 +120,10 @@ bool ParticleSetPool::putLattice(xmlNodePtr cur)
     app_log() << "  Overwrite Global SuperCell " << std::endl;
   }
   LatticeParser a(*SimulationCell);
-  bool success=a.put(cur);
-  if(printcell)
+  bool lattice_defined=a.put(cur);
+  if(printcell && lattice_defined)
     SimulationCell->print(app_log());
-  return success;
+  return lattice_defined;
 }
 
 /** process an xml element

@@ -34,14 +34,14 @@ public:
 
   Backflow_eI(ParticleSet& ions, ParticleSet& els): BackflowFunctionBase(ions,els)
   {
-    myTable = DistanceTable::add(ions,els);
+    myTable = DistanceTable::add(ions,els,DT_AOS);
     resize(NumTargets,NumCenters);
   }
 
   //  build RadFun manually from builder class
   Backflow_eI(ParticleSet& ions, ParticleSet& els, FT* RF): BackflowFunctionBase(ions,els)
   {
-    myTable = DistanceTable::add(ions,els);
+    myTable = DistanceTable::add(ions,els,DT_AOS);
     // same radial function for all centers by default
     uniqueRadFun.push_back(RF);
     for(int i=0; i<NumCenters; i++)
@@ -52,7 +52,7 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P)
   {
-    myTable = DistanceTable::add(CenterSys,P);
+    myTable = DistanceTable::add(CenterSys,P,DT_AOS);
   }
 
   BackflowFunctionBase* makeClone(ParticleSet& tqp)

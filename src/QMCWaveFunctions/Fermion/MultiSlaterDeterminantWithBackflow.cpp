@@ -61,7 +61,6 @@ OrbitalBasePtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) c
     clone->dets_dn.push_back(dclne);
   }
   clone->Optimizable=Optimizable;
-  clone->RecomputeNeedsDistanceTable=RecomputeNeedsDistanceTable;
   clone->C=C;
   clone->myVars=myVars;
   clone->resetTargetParticleSet(tr->QP);

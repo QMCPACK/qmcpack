@@ -88,7 +88,7 @@ TEST_CASE("Coulomb PBC A-B CUDA", "[hamiltonian][CUDA]")
 
   elec.createSK();
 
-  elec.addTable(ions);
+  elec.addTable(ions, DT_AOS);
   elec.update();
 
 
@@ -168,7 +168,7 @@ TEST_CASE("Coulomb PBC AB CUDA BCC H", "[hamiltonian][CUDA]")
 
   elec.createSK();
 
-  elec.addTable(ions);
+  elec.addTable(ions, DT_AOS);
   elec.update();
 
 

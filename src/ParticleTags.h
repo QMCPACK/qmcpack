@@ -41,7 +41,8 @@ struct ParticleTags
         PA_ScalarType,  /*!< scalar (float|double) type */
         PA_StringType,  /*!< std::string type */
         PA_PositionType,/*!< position (D-dim vector) type */
-        PA_TensorType /*!< tensor type */
+        PA_TensorType, /*!< tensor type */
+        PA_UnkownType /*!< not known type */
        };
 
   /** @ingroup XMLTags

@@ -47,6 +47,7 @@ TEST_CASE("Pade functor", "[wavefunction]")
   REQUIRE(u == Approx(2.232142857142857));
 }
 
+#ifndef ENABLE_SOA
 TEST_CASE("Pade Jastrow", "[wavefunction]")
 {
 
@@ -80,7 +81,7 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
     tspecies(chargeIdx, upIdx) = -1;
     tspecies(chargeIdx, downIdx) = -1;
 
-    elec_.addTable(ions_);
+    elec_.addTable(ions_,DT_AOS);
     elec_.update();
 
 
@@ -116,5 +117,6 @@ const char *particles = \
   REQUIRE(logpsi == Approx(-1.862821769493147));
 
 }
+#endif
 }
 

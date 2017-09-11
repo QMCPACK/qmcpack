@@ -99,7 +99,6 @@ OrbitalBasePtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
     clone->dets_dn.push_back(adet);
   }
   clone->Optimizable=Optimizable;
-  clone->RecomputeNeedsDistanceTable=RecomputeNeedsDistanceTable;
   clone->C=C;
   clone->myVars=myVars;
   return clone;

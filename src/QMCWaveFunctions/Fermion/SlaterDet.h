@@ -127,6 +127,10 @@ public:
   virtual
   RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
 
+  virtual void updateAfterSweep(ParticleSet& P,
+      ParticleSet::ParticleGradient_t& G,
+      ParticleSet::ParticleLaplacian_t& L);
+
   virtual
   RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
 

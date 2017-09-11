@@ -87,7 +87,7 @@ TEST_CASE("Bare Force", "[hamiltonian]")
 
   ions.resetGroups();
 
-  elec.addTable(ions);
+  elec.addTable(ions,DT_AOS);
   elec.update();
 
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -210,9 +210,15 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // settings to the ParticleSet
   elec.resetGroups();
 
-  elec.addTable(ions);
+#ifdef ENABLE_SOA
+  elec.addTable(ions,DT_SOA);
+  ions.addTable(ions,DT_SOA);
+#else
+  elec.addTable(ions,DT_AOS);
+  ions.addTable(ions,DT_AOS);
+#endif
+
   elec.update();
-  ions.addTable(ions);
   ions.update();
 
   ForceChiesaPBCAA force(ions, elec);
@@ -306,10 +312,16 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   // settings to the ParticleSet
   elec.resetGroups();
 
-  elec.addTable(ions);
-  elec.update();
-  ions.addTable(ions);
+#ifdef ENABLE_SOA
+  elec.addTable(ions,DT_SOA);
+  ions.addTable(ions,DT_SOA);
+#else
+  elec.addTable(ions,DT_AOS);
+  ions.addTable(ions,DT_AOS);
+#endif
+
   ions.update();
+  elec.update();
 
   ForceCeperley force(ions, elec);
   force.InitMatrix();

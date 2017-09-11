@@ -84,7 +84,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   tspecies(massIdx, upIdx) = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  elec.addTable(ions);
+  elec.addTable(ions,DT_AOS);
   elec.update();
 
 
@@ -186,7 +186,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   tspecies(massIdx, upIdx) = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  elec.addTable(ions);
+  elec.addTable(ions,DT_AOS);
   elec.update();
 
 

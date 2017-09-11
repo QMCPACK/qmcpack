@@ -112,6 +112,7 @@ QMCMain::~QMCMain()
 
 bool QMCMain::execute()
 {
+  Timer t0;
   if(XmlDocStack.empty())
   {
     ERRORMSG("No valid input file exists! Aborting QMCMain::execute")
@@ -200,6 +201,7 @@ bool QMCMain::execute()
   //initialize all the instances of distance tables and evaluate them
   ptclPool->reset();
   OhmmsInfo::flush();
+  app_log() << "  Initialization Execution time = " << std::setprecision(4) << t0.elapsed() << " secs" << std::endl;
   //write stuff
   app_log() << "=========================================================\n";
   app_log() << " Summary of QMC systems \n";

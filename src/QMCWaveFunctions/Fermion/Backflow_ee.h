@@ -39,7 +39,7 @@ public:
 
   Backflow_ee(ParticleSet& ions, ParticleSet& els): BackflowFunctionBase(ions,els),first(true) //,RadFun(0)
   {
-    myTable = DistanceTable::add(els);
+    myTable = DistanceTable::add(els,DT_AOS);
     resize(NumTargets,NumTargets);
     NumGroups=els.groups();
     PairID.resize(NumTargets,NumTargets);
@@ -61,7 +61,7 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P)
   {
-    myTable = DistanceTable::add(P);
+    myTable = DistanceTable::add(P,DT_AOS);
   }
 
   BackflowFunctionBase* makeClone(ParticleSet& tqp)

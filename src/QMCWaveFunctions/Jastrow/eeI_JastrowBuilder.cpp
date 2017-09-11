@@ -19,6 +19,7 @@
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
@@ -122,23 +123,30 @@ bool eeI_JastrowBuilder::put(xmlNodePtr cur)
     int numiSpecies = iSet.getTotalNum();
     if (ftype == "Bspline")
     {
+#ifdef ENABLE_SOA
+      typedef JeeIOrbitalSoA<BsplineFunctor3D> J3Type;
+#else
       typedef eeI_JastrowOrbital<BsplineFunctor3D> J3Type;
+#endif
+      J3Type &J3 = *(new J3Type(*sourcePtcl, targetPtcl, true));
+      putkids (kids, J3);
+    }
+    else if (ftype == "polynomial")
+    {
+#ifdef ENABLE_SOA
+      typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
+#else
+      typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;
+#endif
       J3Type &J3 = *(new J3Type(*sourcePtcl, targetPtcl, true));
       putkids (kids, J3);
     }
     else
-      if (ftype == "polynomial")
-      {
-        typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;
-        J3Type &J3 = *(new J3Type(*sourcePtcl, targetPtcl, true));
-        putkids (kids, J3);
-      }
-      else
-      {
-        app_error() << "Unknown function \"" << ftype << "\" in"
-                    << " eeI_JastrowBuilder.  Aborting.\n";
-        abort();
-      }
+    {
+      app_error() << "Unknown function \"" << ftype << "\" in"
+                  << " eeI_JastrowBuilder.  Aborting.\n";
+      abort();
+    }
     // 	// Find the number of the source species
     // 	bool success=false;
     // 	while (kids != NULL) {

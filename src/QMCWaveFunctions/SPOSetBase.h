@@ -50,6 +50,8 @@ public:
   typedef OrbitalSetTraits<ValueType>::GradHessType  GGGType;
   typedef OrbitalSetTraits<ValueType>::GradHessVector_t GGGVector_t;
   typedef OrbitalSetTraits<ValueType>::GradHessMatrix_t GGGMatrix_t;
+  typedef OrbitalSetTraits<ValueType>::RefVector_t      RefVector_t;
+  typedef OrbitalSetTraits<ValueType>::VGLVector_t      VGLVector_t;
   typedef ParticleSet::Walker_t                      Walker_t;
   typedef std::map<std::string,SPOSetBase*> SPOPool_t;
 
@@ -59,10 +61,12 @@ public:
   bool Identity;
   ///true if SPO is optimizable
   bool Optimizable;
-  ///true if precomputed distance tables are needed
-  bool NeedsDistanceTable;
   ///flag to calculate ionic derivatives
   bool ionDerivs;
+  ///if true, can use GL type, default=false
+  bool CanUseGLCombo;
+  ///if true, need distance tables
+  bool NeedDistanceTables;
   ///total number of orbitals
   IndexType TotalOrbitalSize;
   ///number of Single-particle orbitals
@@ -87,18 +91,10 @@ public:
    */
   std::string objectName;
 
-  /** constructor
-   */
-  SPOSetBase()
-    :Identity(false),TotalOrbitalSize(0),OrbitalSetSize(0),BasisSetSize(0),
-    NeedsDistanceTable(false),
-    ActivePtcl(-1),Optimizable(false),ionDerivs(false),builder_index(-1)
-  {
-    className="invalid";
-  }
+  /** constructor */
+  SPOSetBase();
 
-  /** destructor
-   */
+  /** destructor */
   virtual ~SPOSetBase() {}
 
   /** return the size of the orbital set
@@ -203,6 +199,13 @@ public:
    */
   virtual void
   evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)=0;
+
+  /** evaluate VGL using SoA container for gl
+   *
+   * If newp is true, use particle set data for the proposed move
+   */
+  virtual void
+    evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bool newp);
 
   /** evaluate values for the virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set

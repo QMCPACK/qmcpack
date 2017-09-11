@@ -36,7 +36,7 @@ public:
 
   ~CSVMCUpdatePbyP();
 
-  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalker(Walker_t& thisWalker, bool recompute);
 
 private:
 };
@@ -56,7 +56,7 @@ public:
 
   ~CSVMCUpdatePbyPWithDriftFast();
 
-  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalker(Walker_t& thisWalker, bool recompute);
 
 private:
 };

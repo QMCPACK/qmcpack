@@ -25,6 +25,11 @@ SET(GITREV_BARE_TMP git-rev-tmp.h)
 SET(GITREV_FILE ${CMAKE_BINARY_DIR}/src/${GITREV_BARE_FILE})
 SET(GITREV_TMP ${CMAKE_BINARY_DIR}/src/${GITREV_BARE_TMP})
 
+# Always clean up git-rev-tmp.h file when cmake is run
+EXECUTE_PROCESS(
+  COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP}
+)
+
 IF (GIT_FOUND AND IS_GIT_PROJECT)
   # The following custom command picks up changes to the git revision information
   # every time the project is rebuilt. Even if the repositiory is updated (git pull)
@@ -99,9 +104,21 @@ ELSE()
 ENDIF()
 
 
-if(QMC_PHI)
-  MESSAGE(STATUS "Minimal build to test codelets on phi")
-else()
+####################################
+# create liboompi
+####################################
+IF(HAVE_OOMPI)
+  CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/oompi-config.h.cmake.in 
+    ${qmcpack_BINARY_DIR}/src/oompi-config.h)
+  INCLUDE_DIRECTORIES(${qmcpack_SOURCE_DIR}/src/OOMPI)
+  SUBDIRS(OOMPI)
+  IF ( MPI_LIBRARY )
+     SET(MPI_LIBRARY oompi ${MPI_LIBRARY})
+  ELSE()
+     SET(MPI_LIBRARY oompi )
+  ENDIF()
+ENDIF(HAVE_OOMPI)
+
   ####################################
   # create libqmcutil
   ####################################
@@ -127,6 +144,9 @@ else()
     Message/MPIObjectBase.cpp 
     Optimize/VariableSet.cpp
     io/hdf_archive.cpp
+    spline2/einspline_allocator.c
+    spline2/bspline_allocator.cpp
+    spline2/MultiBspline.cpp
     ${GITREV_TMP}
     )
 
@@ -171,20 +191,6 @@ else()
   #  ADD_LIBRARY(qmcutil SHARED ${UTILITIES})
   #ENDIF(QMC_BUILD_STATIC)
 
-  ####################################
-  # create liboompi
-  ####################################
-  IF(HAVE_OOMPI)
-    CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/oompi-config.h.cmake.in 
-      ${qmcpack_BINARY_DIR}/src/oompi-config.h)
-    INCLUDE_DIRECTORIES(${qmcpack_SOURCE_DIR}/src/OOMPI)
-    SUBDIRS(OOMPI)
-    IF ( MPI_LIBRARY )
-       SET(MPI_LIBRARY oompi ${MPI_LIBRARY})
-    ELSE()
-       SET(MPI_LIBRARY oompi )
-    ENDIF()
-  ENDIF(HAVE_OOMPI)
 
   IF(OHMMS_DIM MATCHES 3)
     SET(PARTICLE Lattice/Uniform3DGridLayout.cpp)
@@ -200,8 +206,9 @@ else()
   SET(PARTICLE ${PARTICLE}
     Particle/ParticleSet.cpp 
     Particle/ParticleSet.BC.cpp 
-    Particle/VirtualParticleSet.cpp 
     Particle/MCWalkerConfiguration.cpp 
+    Particle/DistanceTableAA.cpp
+    Particle/DistanceTableAB.cpp
     Particle/DistanceTable.cpp
     Particle/HDFWalkerInputManager.cpp
     Particle/make_clones.cpp
@@ -249,6 +256,11 @@ else()
 
   ENDIF(HAVE_LIBHDF5 OR HAVE_ADIOS)
 
+  #Need to add this if nothing else but miniapps is compiled
+  if(QMC_BUILD_LEVEL GREATER 4)
+    set(PARTICLE  ${PARTICLE} QMCWaveFunctions/OrbitalBase.cpp)
+  endif()
+
   ADD_LIBRARY(qmcbase ${PARTICLE}  ${PARTICLEIO}) 
 
   #IF(QMC_BUILD_STATIC)
@@ -256,13 +268,18 @@ else()
   #ELSE(QMC_BUILD_STATIC)
   #  ADD_LIBRARY(qmcbase SHARED ${PARTICLE}  ${PARTICLEIO})
   #ENDIF(QMC_BUILD_STATIC)
-
   #SUBDIRS(einspline)
+
+  if(QMC_BUILD_LEVEL GREATER 4)
+
+    MESSAGE(STATUS "Minimal build: only miniapps")
+    SUBDIRS(miniapps)
+
+  else() #{{{
 
   #############################
   # Creating ADIOS
   #############################
-
 
   SET(ADIOS ADIOS/ADIOS_config.cpp)
   IF(HAVE_ADIOS)
@@ -275,6 +292,7 @@ else()
   ENDIF(HAVE_ADIOS)
 
   ADD_LIBRARY(adios_config ${ADIOS})
+
 
   SUBDIRS(QMCWaveFunctions)
   SUBDIRS(QMCHamiltonians)
@@ -302,7 +320,7 @@ else()
     SUBDIRS(SQD)
   ENDIF(BUILD_SQD)
 
-  if (BUILD_UNIT_TESTS)
+  if (BUILD_UNIT_TESTS) #{
     SET(HAS_TARGET_COMPILE_DEFINITIONS 1)
     IF (CMAKE_VERSION VERSION_LESS "2.8.11")
       MESSAGE("CMake version 2.8.10 - some unit tests will not be built")
@@ -328,5 +346,6 @@ else()
       SUBDIRS(QMCDrivers/tests)
       SUBDIRS(QMCApp/tests)
     ENDIF()
-  endif()
-endif()
+  endif() #}
+
+endif() #}}}

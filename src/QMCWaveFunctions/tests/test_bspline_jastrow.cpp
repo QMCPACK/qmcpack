@@ -27,6 +27,9 @@
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowBuilder.h"
 #include "ParticleBase/ParticleAttribOps.h"
+#ifdef ENABLE_SOA
+#include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
+#endif
 
 #include <stdio.h>
 #include <string>
@@ -92,7 +95,12 @@ TEST_CASE("BSpline builder Jastrow", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-  elec_.addTable(ions_);
+#ifdef ENABLE_SOA
+  elec_.addTable(ions_,DT_SOA);
+#else
+  elec_.addTable(ions_,DT_AOS);
+#endif
+  elec_.resetGroups();
   elec_.update();
 
 
@@ -121,7 +129,11 @@ const char *particles = \
 
   OrbitalBase *orb = psi.getOrbitals()[0];
 
+#ifdef ENABLE_SOA
+  typedef J2OrbitalSoA<BsplineFunctor<OrbitalBase::RealType> > J2Type;
+#else
   typedef TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > J2Type;
+#endif
   J2Type *j2 = dynamic_cast<J2Type *>(orb);
   REQUIRE(j2 != NULL);
 

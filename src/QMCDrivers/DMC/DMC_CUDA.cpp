@@ -595,7 +595,7 @@ void DMCcuda::resetUpdateEngine()
     //load walkers if they were saved
     W.loadEnsemble();
     branchEngine->initWalkerController(W,false,false);
-    Mover = new DMCUpdatePbyPWithRejection(W,Psi,H,Random);
+    Mover = new DMCUpdatePbyPWithRejectionFast(W,Psi,H,Random);
     Mover->resetRun(branchEngine,Estimators);
     //Mover->initWalkersForPbyP(W.begin(),W.end());
   }

@@ -247,25 +247,26 @@ RPAJastrow::ratio(ParticleSet& P, int iat)
   return r;
 }
 
-RPAJastrow::ValueType
-RPAJastrow::ratioGrad(ParticleSet &P, int iat, GradType& g)
+RPAJastrow::GradType
+RPAJastrow::evalGrad(ParticleSet& P, int iat)
 {
-  ValueType r(1.0);
+  GradType grad(0);
+  for(int i=0; i<Psi.size(); i++)
+    grad += Psi[i]->evalGrad(P,iat);
+  return grad;
+}
+
+RPAJastrow::ValueType
+RPAJastrow::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
+{
+  ValueType r(1);
   for(int i=0; i<Psi.size(); i++)
   {
-    r*=Psi[i]->ratioGrad(P,iat,g);
+    r *= Psi[i]->ratioGrad(P,iat,grad_iat);
   }
   return r;
 }
 
-RPAJastrow::GradType
-RPAJastrow::evalGrad(ParticleSet &P, int iat)
-{
-  GradType g(0.0);
-  for(int i=0; i<Psi.size(); i++)
-    g+=Psi[i]->evalGrad(P,iat);
-  return g;
-}
 
 void RPAJastrow::acceptMove(ParticleSet& P, int iat)
 {

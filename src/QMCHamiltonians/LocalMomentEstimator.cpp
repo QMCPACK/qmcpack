@@ -41,7 +41,7 @@ LocalMomentEstimator::LocalMomentEstimator(ParticleSet& elns, ParticleSet& srcs)
   //use the simulation cell radius if any direction is periodic
   if(elns.Lattice.SuperCellEnum)
     Dmax=elns.Lattice.SimulationCellRadius;
-  d_table = DistanceTable::add(ions,elns);
+  d_table = DistanceTable::add(ions,elns,DT_AOS);
   const SpeciesSet& species(srcs.getSpeciesSet());
   int ng=species.size();
   nag=srcs.getTotalNum();
@@ -63,7 +63,7 @@ LocalMomentEstimator::LocalMomentEstimator(ParticleSet& elns, ParticleSet& srcs)
 
 void LocalMomentEstimator::resetTargetParticleSet(ParticleSet& P)
 {
-  d_table = DistanceTable::add(ions,P);
+  d_table = DistanceTable::add(ions,P,DT_AOS);
 }
 
 LocalMomentEstimator::Return_t LocalMomentEstimator::evaluate(ParticleSet& P)
