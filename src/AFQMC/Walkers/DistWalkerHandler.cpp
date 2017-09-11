@@ -90,14 +90,23 @@ bool DistWalkerHandler::dumpSamplesHDF5(hdf_archive& dump, int nW_to_file)
     }
 
     // to extract a single walker from walker storage 
-    MPI_Datatype stype;
-    MPI_Type_vector(1, 2*wlk_nterms, 2*walker_size, MPI_DOUBLE, &stype);
-    MPI_Type_commit(&stype);
+    MPI_Datatype rtype, stype;
+    {
+      MPI_Datatype stype_;
+      MPI_Type_contiguous(2*wlk_nterms, MPI_DOUBLE, &stype_);
+      MPI_Type_commit(&stype_);
+      MPI_Aint loc0, loc1;
+      MPI_Get_address(walkers.values(), &loc0);
+      MPI_Get_address(walkers.values()+walker_size, &loc1);
+      MPI_Aint dis = loc1-loc0;
+      MPI_Type_create_resized(stype_,0,dis,&stype); 
+      MPI_Type_commit(&stype);
+      MPI_Type_free(&stype_);
 
-    // to deposit a single walker on contiguous memory
-    MPI_Datatype rtype;
-    MPI_Type_vector(1, 2*wlk_nterms, 2*wlk_nterms, MPI_DOUBLE, &rtype);
-    MPI_Type_commit(&rtype);
+      // to deposit a single walker on contiguous memory
+      MPI_Type_contiguous(2*wlk_nterms, MPI_DOUBLE, &rtype);
+      MPI_Type_commit(&rtype);
+    }
 
     int nsent=0;
     // ready to send walkers to head in blocks
