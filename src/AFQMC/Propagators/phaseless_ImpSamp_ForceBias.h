@@ -30,7 +30,7 @@ class phaseless_ImpSamp_ForceBias: public PropagatorBase
 
   public:
        
-  phaseless_ImpSamp_ForceBias(Communicate *c,  RandomGenerator_t* r) : PropagatorBase(c,r), substractMF(true),use_eig(false),first(true),max_weight(100),apply_constrain(true),save_memory(false),vbias_bound(3.0),imp_sampl(true),hybrid_method(false),test_library(false),eloc_from_Spvn(false),sizeOfG(0),walkerBlock(0),test_cnter(0),cutoff(1e-6),fix_bias(0),n_reading_cores(-1),intgs_per_block(2000000)
+  phaseless_ImpSamp_ForceBias(Communicate *c,  RandomGenerator_t* r) : PropagatorBase(c,r), substractMF(true),use_eig(false),first(true),max_weight(100),apply_constrain(true),save_memory(false),vbias_bound(3.0),imp_sampl(true),hybrid_method(false),eloc_from_Spvn(false),sizeOfG(0),walkerBlock(0),test_cnter(0),cutoff(1e-6),fix_bias(0),n_reading_cores(-1),intgs_per_block(2000000)
   {
   } 
 
@@ -73,8 +73,6 @@ class phaseless_ImpSamp_ForceBias: public PropagatorBase
   bool first;
 
   bool save_memory;
-
-  int test_library;
 
   int fix_bias;
 
@@ -249,7 +247,6 @@ const char* show_classification(double x) {
     }
 }
 
-  void test_linear_algebra();
 };
 
 

@@ -42,185 +42,479 @@ bool DistWalkerHandler::dumpToXML()
   return true;
 }
 
-// not thinking about efficiency since this is only used once during initialization 
-bool DistWalkerHandler::restartFromHDF5(int n, hdf_archive& read, const std::string& tag, bool set_to_target)
+bool DistWalkerHandler::dumpSamplesHDF5(hdf_archive& dump, int nW_to_file) 
 {
-/*
-//  return initWalkers(n);
-  int nproc = myComm->size();
-  Walker dummy;
-  dummy.initWalker(HFMat,true);
-  int sz = dummy.sizeForDump();
-  std::vector<int> from(nproc);
-  int cnt,nWtot = 0;   
-  std::vector<char> buffer;
-  std::vector<char> bufferall;
-  std::vector<int> counts(nproc), displ(nproc);
+  if(nW_to_file==0) return true;
+  if(head) { 
 
-  if(myComm->rank()==0) {
+    int nW = numWalkers();
 
-    std::vector<int> Idata(2);
+    push_walkers_to_front();
 
-    std::string path = "/Walkers/DistWalkerHandler_SlaterDetWalker";
+    std::vector<int> from(nproc_heads);
+    MPI_Allgather(&nW,1,MPI_INT,from.data(),1,MPI_INT,MPI_COMM_TG_LOCAL_HEADS);
+
+    int nWtot = std::accumulate(from.begin(),from.end(),int(0));
+    int w0 = std::accumulate(from.begin(),from.begin()+rank_heads,int(0));
+
+    if(nW_to_file<0) nW_to_file=nWtot;
+    nW_to_file = std::min(nW_to_file,nWtot);
+
+    // careful here, avoid sending extra information (e.g. B mats for back propg)
+    int wlk_nterms = (9 + nrow*ncol);
+    int wlk_sz = wlk_nterms*sizeof(ComplexType);
+    int nwlk_per_block = std::min(std::max(1,hdf_block_size/wlk_sz),nW_to_file);
+    int nblks = nW_to_file/nwlk_per_block + ((nW_to_file%nwlk_per_block>0)?1:0);
+    std::vector<int> wlk_per_blk;
+  
+    if(rank_heads==0) {
+
+      // check that restart data doesnot exist 
+      counts.resize(nproc_heads);
+      displ.resize(nproc_heads);
+      wlk_per_blk.reserve(nblks);
+
+      commBuff.reserve(wlk_nterms*nwlk_per_block);
+
+      std::vector<int> Idata(6);
+      Idata[0]=nW_to_file;
+      Idata[1]=nblks;
+      Idata[2]=wlk_nterms;
+      Idata[3]=wlk_sz;
+      Idata[4]=nrow;
+      Idata[5]=ncol;
+
+      dump.push("Walkers");
+      dump.write(Idata,"dims");
+      
+    }
+
+    // to extract a single walker from walker storage 
+    MPI_Datatype stype;
+    MPI_Type_vector(1, 2*wlk_nterms, 2*walker_size, MPI_DOUBLE, &stype);
+    MPI_Type_commit(&stype);
+
+    // to deposit a single walker on contiguous memory
+    MPI_Datatype rtype;
+    MPI_Type_vector(1, 2*wlk_nterms, 2*wlk_nterms, MPI_DOUBLE, &rtype);
+    MPI_Type_commit(&rtype);
+
+    int nsent=0;
+    // ready to send walkers to head in blocks
+    for(int i=0, ndone=0; i<nblks; i++, ndone+=nwlk_per_block) {
+
+      int nwlk_tot = std::min(nwlk_per_block,nW_to_file-ndone);  
+      int nw_to_send=0; 
+      if( w0+nsent >= ndone && w0+nsent < ndone + nwlk_tot) 
+        nw_to_send = std::min(nW-nsent,(ndone+nwlk_tot)-(w0+nsent)); 
+ 
+      if(rank_heads==0) {
+
+        for(int p=0, nt=0; p<nproc_heads; p++) {
+   
+          int n_ = 0;
+          int nn = nt + nW;   
+          if( ndone+nwlk_tot > nt && ndone < nt+nW ) {
+            if(ndone <= nt)
+              n_ = std::min(nW,(ndone+nwlk_tot)-nt);    
+            else    
+              n_ = std::min(nt+nW-ndone,nwlk_tot);    
+          }    
+
+          counts[p]=n_;
+          nt+=from[p];
+
+        }    
+        displ[0]=0;
+        for(int p=1, nt=0; p<nproc_heads; p++) {
+          nt += counts[p-1];
+          displ[p]=nt;
+        }
+
+        commBuff.resize(wlk_nterms*nwlk_tot);
+      }  
+
+      // assumes current storage structure
+      MPI_Gatherv( getSM(nsent), nw_to_send, stype,
+                    commBuff.data(), counts.data(), displ.data(), rtype, 
+                    0, MPI_COMM_TG_LOCAL_HEADS);  
+      nsent += nw_to_send;
+      
+      if(rank_heads==0) {  
+        dump.write(commBuff,std::string("walkers_")+std::to_string(i));
+        wlk_per_blk.push_back(nwlk_tot);
+      }  
+  
+    }
+
+    if(rank_heads==0) {
+      dump.write(wlk_per_blk,"wlk_per_blk");
+      dump.pop();
+    }
+
+    MPI_Type_free(&rtype);
+    MPI_Type_free(&stype);
+
+  }
+
+  myComm->barrier();
+
+  return true;
+}
+
+// not thinking about efficiency since this is only used once during initialization 
+bool DistWalkerHandler::restartFromHDF5(int nW_per_tg, hdf_archive& read, const std::string& tag, bool set_to_target)
+{
+  targetN_per_TG = nW_per_tg;
+  // if working with a fixed number of walkers, set extra_empty_spaces to 2*targetN_per_TG 
+  if(pop_control_type.find("simple")==std::string::npos)
+    extra_empty_spaces = nW_per_tg;
+
+  std::vector<int> Idata(6);
+  if(head && rank_heads==0) {
+    std::string path = "/Walkers/DistWalkerHandler";
     if(tag != std::string("")) path += std::string("/")+tag;
     if(!read.is_group( path )) {
-      app_error()<<" ERROR: H5Group  could not find /Walkers/DistWalkerHandler_SlaterDetWalker/{tag} group in file. No restart data for walkers. \n"; 
+      app_error()<<" ERROR: H5Group  could not find /Walkers/DistWalkerHandler/{tag} group in file. No restart data for walkers. \n";
       return false;
     }
 
     if(!read.push("Walkers")) return false;
-    if(!read.push("DistWalkerHandler_SlaterDetWalker")) return false;
+    if(!read.push("DistWalkerHandler")) return false;
     if(tag != std::string("")) if(!read.push(tag)) return false;
-    if(!read.read(Idata,"DistWalkerHandler_dims")) return false;
-    nWtot=Idata[0];
-    app_log()<<"Found " <<nWtot <<" walkers on restart file." <<std::endl; 
-    if(Idata[1] != sz) {
-      app_error()<<" ERROR: Size of walker is not consistent in hdf5 file. \n";
-      app_error()<<" sz_sim, sz_file: " <<sz <<" " <<Idata[1] <<std::endl; 
+
+    if(!read.read(Idata,"dims")) return false;
+  }
+
+  MPI_Bcast(Idata.data(),6,MPI_INT,0,myComm->getMPI());
+
+  int nWtot = Idata[0];
+  int wlk_nterms = (9 + nrow*ncol);
+  int wlk_sz = wlk_nterms*sizeof(ComplexType);
+  std::vector<int> wlk_per_blk;
+
+  int nW_needed = set_to_target?nW_per_tg*nproc_heads:nWtot;
+
+  int n0, nn;
+  std::tie(n0,nn) = FairDivideBoundary(rank_heads,std::min(nW_needed,nWtot),nproc_heads);  
+  
+  int nw_local = set_to_target?nW_per_tg:(nn-n0); 
+
+  if(nw_local+extra_empty_spaces > walkers.size()/walker_size)
+    walkers.resize((nw_local+extra_empty_spaces)*walker_size);
+  maximum_num_walkers=walkers.size()/walker_size;
+  tot_num_walkers=0;
+
+  // single reader for now
+  if(head && rank_heads==0) {
+
+    std::vector<int> from(nproc_heads);
+
+    int nblks = Idata[1];
+    if(Idata[4] != nrow || Idata[5] != ncol) {
+      app_error()<<" Error reading walker restart file: Walker dimensions do not agree: " 
+                 <<Idata[4] <<" "
+                 <<Idata[5] <<" "
+                 <<nrow <<" "
+                 <<ncol <<std::endl;
+    }    
+    if(Idata[2] != wlk_nterms) {
+      app_error()<<" ERROR: Size of walker data is not consistent in hdf5 file. \n";
+      app_error()<<" sz_sim, sz_file: " <<wlk_nterms <<" " <<Idata[2] <<std::endl; 
       return false;
     } 
-    bufferall.resize(nWtot*sz); 
-    if(!read.read(bufferall,"DistWalkerHandler_walkers")) return false;
+    if(Idata[3] != wlk_sz) {
+      app_error()<<" ERROR: Memory usage of walker data is not consistent in hdf5 file. \n";
+      app_error()<<" sz_sim, sz_file: " <<wlk_sz <<" " <<Idata[3] <<std::endl;
+      return false;
+    }
+
+    app_log()<<"Found " <<nWtot <<" walkers on restart file." <<std::endl; 
+
+    wlk_per_blk.resize(nblks);
+    if(!read.read(wlk_per_blk,"wlk_per_blk")) return false;
+    MPI_Bcast(wlk_per_blk.data(),wlk_per_blk.size(),MPI_INT,0,MPI_COMM_TG_LOCAL_HEADS);
+
+    int maxnW = *std::max_element(wlk_per_blk.begin(),wlk_per_blk.end());
+    commBuff.reserve(maxnW*wlk_nterms);
+
+    // 1. read/bcast blocks of walkers
+    // 2. fair share of walkers among procs
+    // 3. if too many on file, stop reading
+    // 4. if too few, replicate walkers at the end
+    int nread=0;
+    for(int i=0, nt=0; i<nblks; i++) {
+
+      commBuff.resize(wlk_per_blk[i]*wlk_nterms); 
+      if(!read.read(commBuff,std::string("walkers_")+std::to_string(i))) return false;
+
+      MPI_Bcast(commBuff.data(),commBuff.size()*2,MPI_DOUBLE,0,MPI_COMM_TG_LOCAL_HEADS);
+
+      if( nt+wlk_per_blk[i] > n0 && nn >= nt) {
+
+        int from_i=0, ntake=0;
+        if(nt <= n0) {
+          if(nread != 0) {
+            app_error()<<" Error in walker restart algorithm. nread!=0. " <<std::endl;
+            return false;
+          }    
+          from_i = n0-nt;
+          ntake = std::min(nn-n0,nt+wlk_per_blk[i]-n0);  
+        } else {
+          if(nread == 0) {
+            app_error()<<" Error in walker restart algorithm. nread==0. " <<std::endl;
+            return false;
+          }    
+          from_i = 0;
+          ntake = std::min(nn-nt,wlk_per_blk[i]);  
+        }
+        nread += ntake;
+
+        for(int k=0; k<ntake; k++) {
+          std::copy(commBuff.data()+(from_i+k)*wlk_nterms,
+                    commBuff.data()+(from_i+k+1)*wlk_nterms,
+                    getSM(tot_num_walkers));
+          walkers[walker_size*tot_num_walkers+data_displ[INFO]] = ComplexType(1.0);   
+          tot_num_walkers++;  
+        }
+
+      } 
+
+      nt += wlk_per_blk[i];
+      if( nt >= nW_needed )
+        break;
+    }
+
+    if(tot_num_walkers < nw_local) {
+      int n0 = tot_num_walkers; 
+      for(int to=n0+1, from=0; to<nw_local; to++,from++) {
+          std::copy(getSM(from),
+                    getSM(from)+walker_size, 
+                    getSM(to));
+          walkers[walker_size*to+data_displ[INFO]] = ComplexType(1.0);
+          tot_num_walkers++;        
+      }    
+    }
+
     if(tag != std::string("")) read.pop();
     read.pop();
     read.pop();
 
+  } else if(head) {
 
-    int nWperProc = nWtot/nproc; 
-    int nWextra = nWtot%nproc; 
-    if( set_to_target && nWperProc >= n ) {
-      nWperProc = n;
-      nWextra = 0; 
+    std::vector<int> from(nproc_heads);
+
+    int nblks = Idata[1];
+
+    wlk_per_blk.resize(nblks);
+    MPI_Bcast(wlk_per_blk.data(),wlk_per_blk.size(),MPI_INT,0,MPI_COMM_TG_LOCAL_HEADS);
+
+    int maxnW = *std::max_element(wlk_per_blk.begin(),wlk_per_blk.end());
+    commBuff.reserve(maxnW*wlk_nterms);
+
+    // 1. read/bcast blocks of walkers
+    // 2. fair share of walkers among procs
+    // 3. if too many on file, stop reading
+    // 4. if too few, replicate walkers at the end
+    int nread=0;
+    int n0, nn;
+    std::tie(n0,nn) = FairDivideBoundary(rank_heads,std::min(nW_needed,nWtot),nproc_heads);  
+    for(int i=0, nt=0; i<nblks; i++) {
+
+      commBuff.resize(wlk_per_blk[i]*wlk_nterms); 
+      MPI_Bcast(commBuff.data(),commBuff.size()*2,MPI_DOUBLE,0,MPI_COMM_TG_LOCAL_HEADS);
+
+      if( nt+wlk_per_blk[i] > n0 && nn >= nt) {
+
+        int from_i=0, ntake=0;
+        if(nt <= n0) {
+          if(nread != 0) {
+            app_error()<<" Error in walker restart algorithm. nread!=0. " <<std::endl;
+            return false;
+          }    
+          from_i = n0-nt;
+          ntake = std::min(nn-n0,nt+wlk_per_blk[i]-n0);  
+        } else {
+          if(nread == 0) {
+            app_error()<<" Error in walker restart algorithm. nread==0. " <<std::endl;
+            return false;
+          }    
+          from_i = 0;
+          ntake = std::min(nn-nt,wlk_per_blk[i]);  
+        }
+        nread += ntake;
+
+        for(int k=0; k<ntake; k++) {
+          std::copy(commBuff.data()+(from_i+k)*wlk_nterms,
+                    commBuff.data()+(from_i+k+1)*wlk_nterms,
+                    getSM(tot_num_walkers));
+          walkers[walker_size*tot_num_walkers+data_displ[INFO]] = ComplexType(1.0);   
+          tot_num_walkers++;  
+        }
+
+      } 
+
+      nt += wlk_per_blk[i];
+      if( nt >= nW_needed )
+        break;
     }
 
-    for(int i=0; i<nWextra; i++) from[i] = nWperProc+1;
-    for(int i=nWextra; i<nproc; i++) from[i] = nWperProc;
-    myComm->bcast(from); 
-    int nW = from[myComm->rank()];
-
-    walkers.clear();
-    if(set_to_target) walkers.resize(n);
-    else walkers.resize(nW);
-    cnt=0;
-    for(WalkerIterator it=walkers.begin(); it!=walkers.begin()+nW; it++) {
-      it->initWalker(HFMat);
-      it->restartFromChar( bufferall.data()+cnt );
-      cnt+=sz;
+    if(tot_num_walkers < nw_local) {
+      int n0 = tot_num_walkers; 
+      for(int to=n0+1, from=0; to<nw_local; to++,from++) {
+          std::copy(getSM(from),
+                    getSM(from)+walker_size, 
+                    getSM(to));
+          walkers[walker_size*to+data_displ[INFO]] = ComplexType(1.0);
+          tot_num_walkers++;        
+      }    
     }
-    cnt=0;
-    for(WalkerIterator it=walkers.begin()+nW; it!=walkers.end(); it++) {
-      it->initWalker(HFMat);
-      *it = walkers[cnt];
-      cnt++;
-      if(cnt == nW) cnt=0;
-    }
-
-
-    displ[0]=0;
-    displ[1]=0;
-    counts[0]=0;
-    for(int i=1; i<nproc-1; i++) {
-      counts[i] = from[i]*sz; 
-      displ[i+1] = displ[i]+counts[i];
-    }
-    counts[nproc-1] = from[nproc-1]*sz; 
-    myComm->scatterv( bufferall, buffer, counts, displ, 0);
-
-  } else {
-
-    myComm->bcast(from); 
-    int nW = from[myComm->rank()];
-
-    buffer.resize(nW*sz);
-    myComm->scatterv( bufferall, buffer, counts, displ, 0);
-
-    walkers.clear();
-    if(set_to_target) walkers.resize(n);
-    else walkers.resize(nW);
-    cnt=0;
-    for(WalkerIterator it=walkers.begin(); it!=walkers.begin()+nW; it++) {
-      it->initWalker(HFMat);
-      it->restartFromChar( buffer.data()+cnt );
-      cnt+=sz;
-    }
-    cnt=0;
-    for(WalkerIterator it=walkers.begin()+nW; it!=walkers.end(); it++) {
-      it->initWalker(HFMat);
-      *it = walkers[cnt];
-      cnt++;
-      if(cnt == nW) cnt=0;
-    }    
-
   }
 
+  myComm->barrier();
+  reset_walker_count();  
   targetN = GlobalPopulation();
 
-*/
   return true;
-
 }
 
 bool DistWalkerHandler::dumpToHDF5(hdf_archive& dump, const std::string& tag)
 {
-/*
-  // check that restart data doesnot exist 
-  std::string path = "/Walkers/DistWalkerHandler_SlaterDetWalker";
-  if(tag != std::string("")) path += std::string("/")+tag;
-  if(dump.is_group( path )) {
-    app_error()<<" ERROR: H5Group /Walkers/DistWalkerHandler_SlaterDetWalker/{tag} already exists in restart file. This is a bug and should not happen. Contact a developer.\n";
-    return false;
-  }
 
-  // doing one big gatherV, not sure if this is the best way right now 
-  int nW = numWalkers();
-  int sz = walkers[0].sizeForDump(); 
-  std::vector<int> to(1,nW); 
-  std::vector<int> from(myComm->size());
-  int nWtot = 0;
+  if(head) { 
 
-  myComm->allgather(to,from,1);
-  for(int i=0; i<myComm->size(); i++) nWtot += from[i];
+    int nW = numWalkers();
+
+    push_walkers_to_front();
+
+    std::vector<int> from(nproc_heads);
+    MPI_Allgather(&nW,1,MPI_INT,from.data(),1,MPI_INT,MPI_COMM_TG_LOCAL_HEADS);
+
+    int nWtot = std::accumulate(from.begin(),from.end(),int(0));
+    int w0 = std::accumulate(from.begin(),from.begin()+rank_heads,int(0));
+
+    // careful here, avoid sending extra information (e.g. B mats for back propg)
+    int wlk_nterms = (9 + nrow*ncol);
+    int wlk_sz = wlk_nterms*sizeof(ComplexType);
+    int nwlk_per_block = std::min(std::max(1,hdf_block_size/wlk_sz),nWtot);
+    int nblks = nWtot/nwlk_per_block + ((nWtot%nwlk_per_block>0)?1:0);
+    std::vector<int> wlk_per_blk;
   
-  std::vector<char> buffer(nW*sz);
-  std::vector<char> bufferall;
-  if(myComm->rank() == 0) 
-    bufferall.resize(nWtot*sz); 
+    if(rank_heads==0) {
 
-  int cnt=0;
-  for(WalkerIterator it=walkers.begin(); it!=walkers.end(); it++) 
-    if(it->alive) {
-      it->dumpToChar( buffer.data()+cnt );
-      cnt+=sz;
+      // check that restart data doesnot exist 
+      std::string path = "/Walkers/DistWalkerHandler";
+      if(tag != std::string("")) path += std::string("/")+tag;
+      if(dump.is_group( path )) {
+        app_error()<<" ERROR: H5Group /Walkers/DistWalkerHandler/{tag} already exists in restart file. This is a bug and should not happen. Contact a developer.\n";
+        return false;
+      }
+
+      counts.resize(nproc_heads);
+      displ.resize(nproc_heads);
+      wlk_per_blk.reserve(nblks);
+
+      commBuff.reserve(wlk_nterms*nwlk_per_block);
+
+      std::vector<int> Idata(6);
+      Idata[0]=nWtot;
+      Idata[1]=nblks;
+      Idata[2]=wlk_nterms;
+      Idata[3]=wlk_sz;
+      Idata[4]=nrow;
+      Idata[5]=ncol;
+
+      dump.push("Walkers");
+      dump.push("DistWalkerHandler");
+      if(tag != std::string("")) dump.push(tag);       
+      dump.write(Idata,"dims");
+      
     }
 
-  std::vector<int> displ(myComm->size());
-  for(int i=0; i<myComm->size(); i++) from[i]*=sz;
-  cnt=0;
-  for(int i=0; i<myComm->size(); i++) {
-    displ[i] = cnt; 
-    cnt+=from[i];
+    // to extract a single walker from walker storage 
+    MPI_Datatype rtype, stype;
+    {
+      MPI_Datatype stype_;
+      MPI_Type_contiguous(2*wlk_nterms, MPI_DOUBLE, &stype_);
+      MPI_Type_commit(&stype_);
+      MPI_Aint loc0, loc1;
+      MPI_Get_address(walkers.values(), &loc0);
+      MPI_Get_address(walkers.values()+walker_size, &loc1);
+      MPI_Aint dis = loc1-loc0;
+      MPI_Type_create_resized(stype_,0,dis,&stype); 
+      MPI_Type_commit(&stype);
+      MPI_Type_free(&stype_);
+
+      // to deposit a single walker on contiguous memory
+      MPI_Type_contiguous(2*wlk_nterms, MPI_DOUBLE, &rtype);
+      MPI_Type_commit(&rtype);
+    }
+
+    int nsent=0;
+    // ready to send walkers to head in blocks
+    for(int i=0, ndone=0; i<nblks; i++, ndone+=nwlk_per_block) {
+
+      int nwlk_tot = std::min(nwlk_per_block,nWtot-ndone);  
+      int nw_to_send=0; 
+      if( w0+nsent >= ndone && w0+nsent < ndone + nwlk_tot) 
+        nw_to_send = std::min(nW-nsent,(ndone+nwlk_tot)-(w0+nsent)); 
+ 
+      if(rank_heads==0) {
+
+        for(int p=0, nt=0; p<nproc_heads; p++) {
+   
+          int n_ = 0;
+          int nn = nt + nW;   
+          if( ndone+nwlk_tot > nt && ndone < nt+nW ) {
+            if(ndone <= nt)
+              n_ = std::min(nW,(ndone+nwlk_tot)-nt);    
+            else    
+              n_ = std::min(nt+nW-ndone,nwlk_tot);    
+          }    
+
+          counts[p]=n_;
+          nt+=from[p];
+
+        }    
+        displ[0]=0;
+        for(int p=1, nt=0; p<nproc_heads; p++) {
+          nt += counts[p-1];
+          displ[p]=nt;
+        }
+
+        commBuff.resize(wlk_nterms*nwlk_tot);
+      }  
+
+      // assumes current storage structure
+      MPI_Gatherv( getSM(nsent), nw_to_send, stype,
+                    commBuff.data(), counts.data(), displ.data(), rtype, 
+                    0, MPI_COMM_TG_LOCAL_HEADS);  
+      nsent += nw_to_send;
+
+      if(rank_heads==0) {  
+        dump.write(commBuff,std::string("walkers_")+std::to_string(i));
+        wlk_per_blk.push_back(nwlk_tot);
+      }  
+
+      // not sure if necessary, but avoids avalanche of messages on head node
+      MPI_Barrier(MPI_COMM_TG_LOCAL_HEADS);  
+  
+    }
+
+    if(rank_heads==0) {
+      dump.write(wlk_per_blk,"wlk_per_blk");
+      if(tag != std::string("")) dump.pop();
+      dump.pop();
+      dump.pop();
+    }
+
+    MPI_Type_free(&rtype);
+    MPI_Type_free(&stype);
+
   }
-  myComm->gatherv(buffer,bufferall,from,displ,0);
 
-  if(myComm->rank()==0) {
-    // now write to HDF5 file
-    std::vector<int> Idata(2);
-    Idata[0]=nWtot;
-    Idata[1]=sz;
-
-    dump.push("Walkers");
-    dump.push("DistWalkerHandler_SlaterDetWalker");
-    if(tag != std::string("")) dump.push(tag);
-    dump.write(Idata,"DistWalkerHandler_dims");
-    dump.write(bufferall,"DistWalkerHandler_walkers");
-    if(tag != std::string("")) dump.pop();
-    dump.pop();
-    dump.pop();
-
-    dump.flush();  
-
-  }
-*/
+  myComm->barrier();
+  
   return true;
 }
 
@@ -239,7 +533,7 @@ bool DistWalkerHandler::parse(xmlNodePtr cur)
     walkerType = "collinear";
 
     load_balance_alg = "async";
-    pop_control_type = "simple";
+    pop_control_type = "pair";
 
     ParameterSet m_param;
     m_param.add(reset_weight,"reset_weight","double");

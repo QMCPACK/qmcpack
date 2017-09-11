@@ -75,6 +75,7 @@ bool MultiPureSingleDeterminant::parse(xmlNodePtr cur)
     m_param.add(IterCI_maxit,"iterCI_maxit","int");
     m_param.add(IterCI_cut,"iterCI_cut","double");
     m_param.add(diag_in_steps,"diag_steps","int");
+    m_param.add(write_trial_density_matrix,"trial_density_matrix","std::string");
     m_param.put(cur);
   
     std::transform(str1.begin(),str1.end(),str1.begin(),(int (*)(int)) tolower);
@@ -709,6 +710,18 @@ bool MultiPureSingleDeterminant::getHamiltonian(HamPtr h)
            <<" Ekin:          " <<ekin <<std::endl
            <<" Epot:          " <<epot <<std::endl;
     app_log()<<"*********************************************************************: \n" <<std::endl <<std::endl;
+  }
+  if(write_trial_density_matrix != "" && rank() == 0) {
+    local_evaluateOneBodyTrialDensityMatrix();
+    std::ofstream out(write_trial_density_matrix.c_str());
+    out<<"# trial density matrix: NMO, NAEA, NAEB:" <<NMO <<" " <<NAEA <<" " <<NAEB <<"\n";
+    for(int i=0; i<2*NMO; i++) {
+      for(int j=0; j<NMO; j++)
+        out<<SPtrial_density_matrix(i,j) <<" ";
+      out<<"\n";
+    }
+    out.flush();
+    out.close();
   }
 
   return true;
@@ -1563,8 +1576,101 @@ void MultiPureSingleDeterminant::local_rankUpdateOneBodyMixedDensityMatrix(int n
   // implement fast update routine
 } 
 
-void MultiPureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
+// MAM: Changed the meaning of this function to be the computation of the full trial density matrix
+void MultiPureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
 {
+
+  ComplexType one = ComplexType(1.0,0.0);
+  ComplexType zero = ComplexType(0.0,0.0);
+  int n[4];
+  RealType sg;
+  ComplexType deno=zero;
+ 
+  trial_density_matrix = zero;  
+
+  if(rotated_hamiltonian) {
+
+    ComplexType o1,oa,ob;
+    ComplexType ovl = ComplexType(0.0);
+    SPtrial_density_matrix = ComplexType(0.0);
+    ComplexMatrix Am(2*NMO,NAEA);
+    int del = (wfn_type==0)?0:NAEA*NMO;
+
+    for(int i=0; i<ci.size(); i++) {
+     // i==j
+     for(int ii=0; ii<NMO; ii++)
+      for(int j=0; j<NAEA; j++)
+       Am(ii,j) = OrbMat[i*orbsize+ii*NAEA+j];
+     for(int ii=0; ii<NMO; ii++)
+      for(int j=0; j<NAEB; j++)
+       Am(ii+NMO,j) = OrbMat[i*orbsize+ii*NAEA+j+del];
+
+     local_evaluateOneBodyMixedDensityMatrix(i, Am.data(), oa, ob, SPrank_updated_trial_density_matrix,true);
+     o1 = myconj(ci[i])*ci[i]*oa*ob;
+     SPtrial_density_matrix += static_cast<SPComplexType>(o1)*SPrank_updated_trial_density_matrix; 
+     ovl += o1 ;
+     for(int j=i+1; j<ci.size(); j++)
+     {
+       for(int ii=0; ii<NMO; ii++)
+        for(int jj=0; jj<NAEA; jj++)
+         Am(ii,jj) = OrbMat[j*orbsize+ii*NAEA+jj];
+       for(int ii=0; ii<NMO; ii++)
+        for(int jj=0; jj<NAEB; jj++)
+         Am(ii+NMO,jj) = OrbMat[j*orbsize+ii*NAEA+jj+del];
+       local_evaluateOneBodyMixedDensityMatrix(i, Am.data(), oa, ob, SPrank_updated_trial_density_matrix,true);
+       o1 = myconj(ci[i])*ci[j]*oa*ob; 
+       SPtrial_density_matrix += static_cast<SPComplexType>(o1)*SPrank_updated_trial_density_matrix; 
+       ovl += o1 ;
+       o1 = ci[i]*myconj(ci[j])*myconj(oa*ob);
+       // is there an operation for std::complex conjugation???
+       for(int ii=0; ii<NMO; ii++)  
+        for(int jj=0; jj<NMO; jj++) { 
+         SPtrial_density_matrix(ii,jj) += static_cast<SPComplexType>(o1)*myconj(SPrank_updated_trial_density_matrix(jj,ii));
+         SPtrial_density_matrix(ii+NMO,jj) += static_cast<SPComplexType>(o1)*myconj(SPrank_updated_trial_density_matrix(jj+NMO,ii));
+        }
+       ovl += o1 ;
+     }
+    }
+    SPtrial_density_matrix *= (SPComplexType(1.0,0.0)/static_cast<SPComplexType>(ovl));
+
+  } else {
+    for(int i=0; i<ci.size(); i++) {
+     // add diagonal term 
+     local_rankUpdateOneBodyTrialDensityMatrix(i); 
+     deno += std::norm(ci[i]);
+     trial_density_matrix += std::norm(ci[i])*rank_updated_trial_density_matrix;
+     for(int j=i+1; j<ci.size(); j++)
+     {
+       int nex = cmpDets(NAEA,NAEB,n,sg, occ_orbs.begin()+(NAEA+NAEB)*i , occ_orbs.begin()+(NAEA+NAEB)*j, Iwork);
+       switch(nex) {
+         case 0:  //
+         {
+           deno += std::conj(ci[i])*ci[j] + std::conj(ci[j])*ci[i];
+           trial_density_matrix += (std::conj(ci[i])*ci[j] + std::conj(ci[j])*ci[i])*rank_updated_trial_density_matrix;
+           // should I allow this? Shouldn't happen for a well constructed det list 
+           break;
+         }
+         case 2:  // single excitation
+         {
+           // only non-zero term is G(i,a)
+           trial_density_matrix(n[0],n[1]) += std::conj(ci[i])*ci[j];
+           trial_density_matrix(n[1],n[0]) += std::conj(ci[j])*ci[i];
+           break;
+         }
+         case 4:   // double excitation
+         {
+           // do nothing, doesn't contribute to 1-Body operator
+           break;
+         }
+ 
+       }
+     }
+    }
+    trial_density_matrix *= (one/deno);
+    SPtrial_density_matrix = trial_density_matrix;
+  }
+
+/*
   const ComplexType one = ComplexType(1.0);
   const ComplexType zero = ComplexType(0.0); 
 
@@ -1578,6 +1684,7 @@ void MultiPureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool fu
 
   for(int i=0; i<NAEB; i++,it++)
     trial_density_matrix(*it,*it-NMO) = one;
+*/
 } 
 
 // no need for low rank updates, this is trivial

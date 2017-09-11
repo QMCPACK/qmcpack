@@ -165,7 +165,7 @@ bool AFQMCDriver::parse(xmlNodePtr cur)
 {
   if(cur==NULL) return false;
 
-  std::string str,str1;
+  std::string str,str1("no");
 
   int cmp_lib=0;
   int deb_prop=0;
@@ -205,7 +205,7 @@ bool AFQMCDriver::parse(xmlNodePtr cur)
   if(deb_prop != 0) debug=true;
 
   std::transform(str1.begin(),str1.end(),str1.begin(),(int (*)(int)) tolower);
-  if(str1 == "yes" || str1 == "true")
+  if(str1 == "true" || str1 == "yes")
     set_nWalker_target = true;
 
   estim0 = new EstimatorHandler(myComm); 

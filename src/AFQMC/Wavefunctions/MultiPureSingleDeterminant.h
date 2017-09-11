@@ -146,7 +146,7 @@ class MultiPureSingleDeterminant: public WavefunctionBase
 
     void local_rankUpdateOneBodyMixedDensityMatrix(const int ndet, const ComplexType* SlaterMat, ComplexType& ovl_alpha, ComplexType& ovl_beta, bool full=false);
 
-    void local_evaluateOneBodyTrialDensityMatrix(bool full=false);
+    void local_evaluateOneBodyTrialDensityMatrix();
 
     void local_rankUpdateOneBodyTrialDensityMatrix(int n, bool full=false);
 

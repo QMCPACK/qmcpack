@@ -56,10 +56,7 @@ class DistWalkerHandler: public WalkerHandlerBase
   bool restartFromHDF5(int n, hdf_archive&, const std::string&, bool set_to_target); 
   bool dumpToHDF5(hdf_archive&, const std::string&); 
 
-  bool dumpSamplesHDF5(hdf_archive& dump, int nW) {
-    std::cerr<<" DistlWalkerHandler:dumpSamplesHDF5() not implemented. Not writing anything. \n";
-    return true;
-  }
+  bool dumpSamplesHDF5(hdf_archive& dump, int nW); 
 
   // reads xml and performs setup
   bool parse(xmlNodePtr cur); 

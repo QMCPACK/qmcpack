@@ -295,7 +295,6 @@ if(cjgt)
 
   void get_selCI_excitations(OrbitalType I, OrbitalType J, int spinSector, RealType cutoff, OrbitalType* occs, std::vector<OrbitalType>& KLs); 
 
-
   protected:
 
   // name of restart file

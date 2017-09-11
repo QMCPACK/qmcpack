@@ -213,8 +213,8 @@ bool AFQMCFactory::parse(xmlNodePtr cur)
       PropagatorBase* obj;
       if(type == "afqmc") 
         obj = (PropagatorBase*) new phaseless_ImpSamp_ForceBias(myComm,RandomNumberControl::Children[0]);
-      else if(type == "vmc") 
-        obj = (PropagatorBase*) new VMCPropagator(myComm,RandomNumberControl::Children[0]);
+//      else if(type == "vmc") 
+//        obj = (PropagatorBase*) new VMCPropagator(myComm,RandomNumberControl::Children[0]);
       else {
         app_error()<<"Unknown propagator type: " <<type <<std::endl;
         return false;

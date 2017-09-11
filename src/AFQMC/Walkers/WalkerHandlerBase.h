@@ -30,8 +30,8 @@ class WalkerHandlerBase: public MPIObjectBase, public AFQMCInfo
 
   /// constructor
   WalkerHandlerBase(Communicate* c, RandomGenerator_t* r, std::string type=""): MPIObjectBase(c),rng(r),name("")
-           ,load_balance_alg("all"),core_rank(0),ncores_per_TG(1),walkerType(type)
-           ,pop_control_type("simple")
+           ,load_balance_alg("async"),core_rank(0),ncores_per_TG(1),walkerType(type)
+           ,pop_control_type("pair"),hdf_block_size(1000000000)
   { }
 
   /// destructor
@@ -132,6 +132,8 @@ class WalkerHandlerBase: public MPIObjectBase, public AFQMCInfo
   std::string load_balance_alg;
 
   std::string pop_control_type;
+
+  int hdf_block_size;
 
   int core_rank;
   int ncores_per_TG; 

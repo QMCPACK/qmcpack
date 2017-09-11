@@ -24,7 +24,7 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
        hdf_write_file(""),hdf_read_tag(""),hdf_write_tag(""),wfn_role(""),closed_shell(false),
        filetype(""),TG(c,"WavefunctionTG"),distribute_Ham(false),min_ik(-1),max_ik(-1),ncores_per_TG(1),
        core_rank(0),nnodes_per_TG(1),parallel(false),dm_type(0),walker_type(1),wfn_type(0),
-       useFacHam(false),sparse_vn(false),dt(1.0),initialDet(1)
+       useFacHam(false),sparse_vn(false),dt(1.0),initialDet(1),write_trial_density_matrix("")
     {
     }
 
@@ -337,6 +337,8 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
     std::string hdf_write_file;
     std::string hdf_read_tag;
     std::string hdf_write_tag;
+
+    std::string write_trial_density_matrix;
 
     // in case the coulomb energy is evaluated using the factorized hamiltonian
     bool useFacHam;

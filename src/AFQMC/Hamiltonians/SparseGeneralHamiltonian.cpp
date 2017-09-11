@@ -6580,9 +6580,9 @@ app_log()<<" after bcasts: " <<std::endl;
             if(coreid==0)
               std::fill(Rl.begin(),Rl.end(),SPComplexType(0));
             Rl.barrier();
-            int n0_,n1_;
+            int n0_,n1_,sz_=SpQk.size();
             assert(SpQk.size() >= ncores); 
-            std::tie(n0_, n1_) = FairDivideBoundary(coreid,SpQk.size(),ncores);   
+            std::tie(n0_, n1_) = FairDivideBoundary(coreid,sz_,ncores);   
             SPComplexSMSpMat::iterator val = SpQk.vals_begin()+n0_;
             SPComplexSMSpMat::iterator vend = SpQk.vals_begin()+n1_;
             SPComplexSMSpMat::int_iterator col = SpQk.cols_begin()+n0_; 

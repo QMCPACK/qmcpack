@@ -2,7 +2,8 @@
 #include <fstream>
 #include <cmath>
 #include <cfloat>
-#include<algorithm>
+#include <algorithm>
+#include <random>
 
 #include "Configuration.h"
 #include "AFQMC/config.h"
@@ -61,7 +62,6 @@ bool phaseless_ImpSamp_ForceBias::parse(xmlNodePtr cur)
     std::string hyb("no");
     std::string impsam("yes");
     ParameterSet m_param;
-    m_param.add(test_library,"test","int");
     m_param.add(sub,"substractMF","std::string");
     m_param.add(use,"useCholesky","std::string");
     m_param.add(cutoff,"cutoff_propg","double");
@@ -242,6 +242,7 @@ bool phaseless_ImpSamp_ForceBias::hdf_write_transposed(hdf_archive& dump,const s
 
     dump.write(vn0,"Spvn_vn0");
 
+
     // transpose matrix for easier access to Cholesky vectors 
     Spvn.transpose();   
 
@@ -397,6 +398,22 @@ bool phaseless_ImpSamp_ForceBias::hdf_write(hdf_archive& dump,const std::string&
     dump.push("phaseless_ImpSamp_ForceBias");
     if(tag != std::string("")) dump.push(tag);
     dump.write(vn0,"Spvn_vn0");
+
+    std::vector<SPComplexType> vvec;
+
+    // write propg (not to be used in restart, only for miniapp)
+    if(spinRestricted) 
+      vvec.resize(NMO*NMO);
+    else
+      vvec.resize(2*NMO*NMO);
+
+    for(int n=0; n<Propg_H1.size(); n++) { 
+      int i, j;
+      SPComplexType v;
+      std::tie(i,j,v) = Propg_H1[n];
+      vvec[i*NMO+j] = v;
+    }
+    dump.write(vvec,"Spvn_propg1");
 
     // scale Spvn by 1/std::sqrt(dt) and write 
     RealType scale = 1.0/std::sqrt(dt); 
@@ -1409,8 +1426,6 @@ bool phaseless_ImpSamp_ForceBias::setup(std::vector<int>& TGdata, SPComplexSMVec
       } 
   }
 
-  if(test_library) test_linear_algebra();
-
   // these become meaningful only if Cholesky matrix is transposed
   cvec0_loc=0;
   cvecN_loc=cvecN-cvec0;
@@ -1532,7 +1547,6 @@ void phaseless_ImpSamp_ForceBias::serial_propagation_single_step(WalkerHandlerBa
     applyHSPropagator(S1,S2,MFfactor[i],6);  
     Timer.stop("Propagate::applyHSPropagator");
 
-       
     if(hybrid_method && imp_sampl) {
       SPComplexType tmp = SPComplexType(0.0,0.0);
       for(int ii=0; ii<sigma.size(); ii++) 
@@ -2532,7 +2546,6 @@ void phaseless_ImpSamp_ForceBias::applyHSPropagator(ComplexMatrix& M1, ComplexMa
   const SPComplexType im = SPComplexType(0.0,1.0);
   ComplexType zero = ComplexType(0.0,0.0); 
 
-
   if(calculatevHS) {
     factor = zero;
 
@@ -2594,6 +2607,7 @@ void phaseless_ImpSamp_ForceBias::applyHSPropagator(ComplexMatrix& M1, ComplexMa
 
 void phaseless_ImpSamp_ForceBias::sampleGaussianFields()
 {
+
   int n = sigma.size();
   for (int i=0; i+1<n; i+=2)
   {
@@ -2771,199 +2785,6 @@ void phaseless_ImpSamp_ForceBias::benchmark(std::string& blist, int maxnW, int d
   // 5. eloc
   // 6. distMM
 
-}
-
-
-// this must be called after the setup has been made 
-void phaseless_ImpSamp_ForceBias::test_linear_algebra()
-{
-// this needs to be rewritten with all the changes
-/*
-  if(myComm->rank() != 0) return;
-  if(!spinRestricted) return;
-
-  // sparse versus dense Spvn matrices
-
-  ComplexType one = ComplexType(1.0,0.0);
-  ComplexType minusone = ComplexType(-1.0,0.0);
-  ComplexType zero = ComplexType(0.0,0.0);
-
-  RealSMSpMat SpvnReal;
-  SpvnReal.setup(true,"Test_Test_Test",MPI_COMM_WORLD);
-  SpvnReal.setDims(Spvn.rows(),Spvn.cols());
-  SpvnReal.allocate_serial(Spvn.size());
-  SpvnReal.resize_serial(Spvn.size());
-  
-  std::copy( Spvn.cols_begin(), Spvn.cols_end(), SpvnReal.cols_begin());
-  std::copy( Spvn.rows_begin(), Spvn.rows_end(), SpvnReal.rows_begin());
-  ValueSMSpMat::iterator itv=Spvn.vals_begin();
-  RealSMSpMat::iterator ritv=SpvnReal.vals_begin();
-  for(int i=0; i<Spvn.size(); i++)
-  {
-#if defined(QMC_COMPLEX)
-    *(ritv++) = (itv++)->real(); 
-#else
-    *(ritv++) = *(itv++); 
-#endif
-  } 
-  SpvnReal.compress();
-
-  SMSparseMatrix<float> SpvnSP;
-  SpvnSP.setup(true,"Test_Test_Test_2",MPI_COMM_WORLD);
-  SpvnSP.setDims(Spvn.rows(),Spvn.cols());
-  SpvnSP.allocate_serial(Spvn.size());
-  SpvnSP.resize_serial(Spvn.size());
-
-  std::copy( Spvn.cols_begin(), Spvn.cols_end(), SpvnSP.cols_begin());
-  std::copy( Spvn.rows_begin(), Spvn.rows_end(), SpvnSP.rows_begin());
-  itv=Spvn.vals_begin();
-  SMSparseMatrix<float>::iterator spitv=SpvnSP.vals_begin();
-  for(int i=0; i<Spvn.size(); i++)
-  {
-#if defined(QMC_COMPLEX)
-    *(spitv++) = static_cast<float>((itv++)->real());
-#else
-    *(spitv++) = static_cast<float>(*itv++);
-#endif
-  }
-  SpvnSP.compress();
-
-  for(ComplexMatrix::iterator it=vHS.begin(); it!=vHS.end(); it++) *it=zero;
-  sampleGaussianFields();
-  for(int i=0; i<sigma.size(); i++) 
-    CV0[i] = sigma[i];
-
-  // for possible setup/delays 
-  for(int i=0; i<10; i++)
-    SparseMatrixOperators::product_SpMatV(Spvn.rows(),Spvn.cols(),ValueType(1),Spvn.values(),Spvn.column_data(),Spvn.row_index(),CV0.data(),ValueType(0),vHS.data());
-  int ntimes = 20;
-  Timer.reset("Propagate::Sparse::build_vHS");
-  Timer.start("Propagate::Sparse::build_vHS");
-  for(int i=0; i<ntimes; i++)
-    SparseMatrixOperators::product_SpMatV(Spvn.rows(),Spvn.cols(),ValueType(1),Spvn.values(),Spvn.column_data(),Spvn.row_index(),CV0.data(),ValueType(0),vHS.data());
-  Timer.stop("Propagate::Sparse::build_vHS"); 
-
-  app_log()<<"Sparsity value: " <<static_cast<double>(Spvn.size())/NMO/NMO/Spvn.cols() <<std::endl;
-  app_log()<<"Time for std::complex SpMV product:" <<Timer.total("Propagate::Sparse::build_vHS")/ntimes <<std::endl;
-
-  char trans1 = 'N';
-  char matdes[6];
-  matdes[0] = 'G';
-  matdes[3] = 'C';
-  double oned = 1, zerod=0;
-
-  ComplexMatrix vHS2(NMO,NMO);
-//  for(int i=0; i<10; i++)
-//    SparseMatrixOperators::product_SpMatM(SpvnReal.rows(),2,SpvnReal.cols(),1,SpvnReal,reinterpret_cast<double*>(CV0.data()),2,0,reinterpret_cast<double*>(vHS2.data()),2);
-  Timer.reset("Propagate::Sparse::build_vHS");
-  Timer.start("Propagate::Sparse::build_vHS");
-//  for(int i=0; i<ntimes; i++)
-//    SparseMatrixOperators::product_SpMatM(SpvnReal.rows(),2,SpvnReal.cols(),1,SpvnReal,reinterpret_cast<double*>(CV0.data()),2,0,reinterpret_cast<double*>(vHS2.data()),2);
-  Timer.stop("Propagate::Sparse::build_vHS");
-
-  app_log()<<"Time for real SpMM product:" <<Timer.total("Propagate::Sparse::build_vHS")/ntimes <<std::endl;
-
-  std::cout<<" Looking for difference in vHS: \n";   
-//  for(int i=0; i<NMO; i++)
-//   for(int j=0; j<NMO; j++)
-//    if(std::abs(vHS(i,j).imag()-vHS2(i,j)) > 1e-8)
-//     std::cout<<i <<" " <<j <<" " <<vHS(i,j).imag() <<" " <<vHS2(i,j) <<std::endl;
-  std::cout<<" No differences found. \n";
-  std::cout<<std::endl;
-
-  Matrix<float> vHS3(NMO,NMO);
-  std::vector<std::complex<float> > CV1(CV0.size());
-  for(int i=0; i<CV0.size(); i++) CV1[i] = static_cast<std::complex<float> >(CV0[i]);
-//  for(int i=0; i<10; i++)
-//    SparseMatrixOperators::product_SpMatM(SpvnSP.rows(),2,SpvnSP.cols(),1,SpvnSP,reinterpret_cast<float*>(CV1.data()),2,0,reinterpret_cast<float*>(vHS3.data()),2);
-  Timer.reset("Propagate::Sparse::build_vHS");
-  Timer.start("Propagate::Sparse::build_vHS");
-//  for(int i=0; i<ntimes; i++)
-//    SparseMatrixOperators::product_SpMatM(SpvnSP.rows(),2,SpvnSP.cols(),1,SpvnSP,reinterpret_cast<float*>(CV1.data()),2,0,reinterpret_cast<float*>(vHS3.data()),2);
-  Timer.stop("Propagate::Sparse::build_vHS");
-
-  app_log()<<"Time for SP real SpMM product:" <<Timer.total("Propagate::Sparse::build_vHS")/ntimes <<std::endl;
-
-  const char trans = 'T';
-  int nrows = NMO*NMO, ncols=Spvn.cols();
-  int inc=1;
-std::cout<<" here 0: " <<nrows <<" " <<ncols <<std::endl;
-  ComplexMatrix Dvn;
-  Dvn.resize(nrows,ncols);
-std::cout<<" here 1. " <<std::endl;
-  // stupid but easy
-  for(int i=0; i<Spvn.size(); i++)
-    Dvn(*(Spvn.row_data()+i),*(Spvn.column_data()+i)) = *(Spvn.values()+i); 
-std::cout<<" here 2. " <<std::endl;
-
-  // setup time
-  for(int i=0; i<10; i++)
-    zgemv(trans,Dvn.cols(),Dvn.rows(),one,Dvn.data(),Dvn.cols(),CV0.data(),inc,zero,vHS2.data(),inc);
-std::cout<<" here 3. " <<std::endl;
-
-  Timer.reset("Propagate::Dense::build_vHS");
-  Timer.start("Propagate::Dense::build_vHS");
-  for(int i=0; i<ntimes; i++)
-    zgemv(trans,Dvn.cols(),Dvn.rows(),one,Dvn.data(),Dvn.cols(),CV0.data(),inc,zero,vHS2.data(),inc);
-  Timer.stop("Propagate::Dense::build_vHS");
-
-  app_log()<<"Time for dense zgemv product:" <<Timer.total("Propagate::Dense::build_vHS")/ntimes <<std::endl;
-
-  //int nn = 10;
-  for(int nn=1; nn<65; nn*=2) { 
-    ComplexMatrix Tx(ncols,nn);
-    ComplexMatrix Ty(nn,nrows);
-    for(int i=0; i<ncols; i++)
-     for(int j=0; j<nn; j++)
-        Tx(i,j) = CV0[i];
-    Timer.reset("Propagate::Dense::build_vHS");
-    Timer.start("Propagate::Dense::build_vHS");
-    for(int i=0; i<ntimes; i++)
-      zgemm('T','T',Dvn.rows(),nn,Dvn.cols(),one,Dvn.data(),Dvn.cols(),Tx.data(),nn,zero,Ty.data(),nrows);
-    Timer.stop("Propagate::Dense::build_vHS");
-
-    app_log()<<"Time for dense zgemm product:" <<nn <<" " <<Timer.total("Propagate::Dense::build_vHS")/ntimes <<" " <<Timer.total("Propagate::Dense::build_vHS")/ntimes/nn <<std::endl;
-  }
-
-  RealMatrix Rvn(nrows,ncols);
-  Matrix<float> Fvn(nrows,ncols);
-  for(int i=0; i<Spvn.size(); i++)
-#if defined(QMC_COMPLEX)
-    Rvn(*(Spvn.row_data()+i),*(Spvn.column_data()+i)) = (Spvn.values()+i)->real();
-#else
-    Rvn(*(Spvn.row_data()+i),*(Spvn.column_data()+i)) = *(Spvn.values()+i);
-#endif
-  for(int i=0; i<Spvn.size(); i++)
-#if defined(QMC_COMPLEX)
-    Fvn(*(Spvn.row_data()+i),*(Spvn.column_data()+i)) = static_cast<float>((Spvn.values()+i)->real());
-#else
-    Fvn(*(Spvn.row_data()+i),*(Spvn.column_data()+i)) = static_cast<float>(*(Spvn.values()+i));
-#endif
-
-  // setup time: Rvn*CV0 = vHS
-  for(int i=0; i<10; i++)
-    dgemm('N','N', 2, Rvn.rows(), Rvn.cols(), 1, reinterpret_cast<double*>(CV0.data()), 2, Rvn.data(), Rvn.cols(), 0, reinterpret_cast<double*>(vHS.data()), 2); 
-  Timer.reset("Propagate::Dense::build_vHS");
-  Timer.start("Propagate::Dense::build_vHS");
-  for(int i=0; i<ntimes; i++)
-    dgemm('N','N', 2, Rvn.rows(), Rvn.cols(), 1, reinterpret_cast<double*>(CV0.data()), 2, Rvn.data(), Rvn.cols(), 0, reinterpret_cast<double*>(vHS.data()), 2); 
-  Timer.stop("Propagate::Dense::build_vHS");
-
-  app_log()<<"Time for dense dgemm product:" <<Timer.total("Propagate::Dense::build_vHS")/ntimes <<std::endl;
-
-  for(int i=0; i<10; i++)
-    sgemm('N','N', 2, Fvn.rows(), Fvn.cols(), 1, reinterpret_cast<float*>(CV1.data()), 2, Fvn.data(), Fvn.cols(), 0, reinterpret_cast<float*>(vHS3.data()), 2);
-  Timer.reset("Propagate::Dense::build_vHS");
-  Timer.start("Propagate::Dense::build_vHS");
-  for(int i=0; i<ntimes; i++)
-    sgemm('N','N', 2, Fvn.rows(), Fvn.cols(), 1, reinterpret_cast<float*>(CV1.data()), 2, Fvn.data(), Fvn.cols(), 0, reinterpret_cast<float*>(vHS3.data()), 2);
-  Timer.stop("Propagate::Dense::build_vHS");
-
-  app_log()<<"Time for SP dense dgemm product:" <<Timer.total("Propagate::Dense::build_vHS")/ntimes <<std::endl;
-
-
-  APP_ABORT("TESTING TESTING TESTING. \n\n\n");
-*/
 }
 
 }

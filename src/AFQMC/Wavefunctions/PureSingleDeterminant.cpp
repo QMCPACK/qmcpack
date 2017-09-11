@@ -70,6 +70,7 @@ bool PureSingleDeterminant::parse(xmlNodePtr cur)
     m_param.add(nnodes_per_TG,"nodes","int");
     m_param.add(nnodes_per_TG,"nnodes","int");
     m_param.add(hdf_write_file,"hdf_write_file","std::string");
+    m_param.add(write_trial_density_matrix,"trial_density_matrix","std::string");
     m_param.add(cutoff,"cutoff","double");
     m_param.add(initialDet,"initialDetType","int");
     m_param.put(cur);
@@ -267,7 +268,8 @@ bool PureSingleDeterminant::initFromAscii(std::string fileName)
             if(j<NAEA) OrbMat(i,j) = dummy;
             if(j<NAEB) OrbMat(i+NMO,j) = dummy;
             if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in MultiPureSingleDeterminant. \n";
+              app_error()<<"Problems reading ASCII file in PureSingleDeterminant.  \n";
+              app_error()<<i <<" " <<j <<std::endl;
               in.close();
               return false;
             }
@@ -280,7 +282,8 @@ bool PureSingleDeterminant::initFromAscii(std::string fileName)
             if(j<NAEA) OrbMat(i,j) = dummy;
             if(j<NAEB) OrbMat(i+NMO,j) = dummy;
             if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in MultiPureSingleDeterminant. \n";
+              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
+              app_error()<<i <<" " <<j <<std::endl;
               in.close();
               return false;
             }
@@ -297,7 +300,8 @@ bool PureSingleDeterminant::initFromAscii(std::string fileName)
             in>>dummy;
             if(j<NAEA) OrbMat(i,j) = dummy;
             if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
+              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. (alpha) \n";
+              app_error()<<i <<" " <<j <<std::endl;
               in.close();
               return false;
             }
@@ -308,7 +312,8 @@ bool PureSingleDeterminant::initFromAscii(std::string fileName)
             in>>dummy;
             if(j<NAEB) OrbMat(i+NMO,j) = dummy;
             if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
+              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. (beta) \n";
+              app_error()<<i <<" " <<j <<std::endl;
               in.close();
               return false;
             }
@@ -320,7 +325,8 @@ bool PureSingleDeterminant::initFromAscii(std::string fileName)
             in>>dummy;
             if(j<NAEA) OrbMat(i,j) = dummy;
             if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
+              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. (alpha) \n";
+              app_error()<<i <<" " <<j <<std::endl;
               in.close();
               return false;
             }
@@ -331,7 +337,8 @@ bool PureSingleDeterminant::initFromAscii(std::string fileName)
             in>>dummy;
             if(j<NAEB) OrbMat(i+NMO,j) = dummy;
             if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
+              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. (beta) \n";
+              app_error()<<i <<" " <<j <<std::endl;
               in.close();
               return false;
             }
@@ -594,6 +601,18 @@ bool PureSingleDeterminant::getHamiltonian(HamPtr h)
            <<"  Epot:     " <<std::setprecision(12) <<e2    <<"  \n" // <<eb <<std::endl
            <<"*********************************************************************: \n" <<std::endl <<std::endl;
 
+  if(write_trial_density_matrix != "" && rank() == 0) {
+    local_evaluateOneBodyTrialDensityMatrix(true);
+    std::ofstream out(write_trial_density_matrix.c_str());
+    out<<"# trial density matrix: NMO, NAEA, NAEB:" <<NMO <<" " <<NAEA <<" " <<NAEB <<"\n";
+    for(int i=0; i<2*NMO; i++) {
+      for(int j=0; j<NMO; j++)
+        out<<trial_density_matrix(i,j) <<" ";
+      out<<"\n";
+    }
+    out.flush();
+    out.close();
+  }
 #ifdef AFQMC_TIMER
     Timer.reset("PureSingleDeterminant:local_evaluateOneBodyMixedDensityMatrix");
     Timer.reset("PureSingleDeterminant:evaluateLocalEnergy");
@@ -627,12 +646,13 @@ bool PureSingleDeterminant::hdf_write()
   dump.push("PureSingleDeterminant");
 
   std::vector<int> Idata(8);
-  Idata[0]=hij.size();
   if(rotated_hamiltonian) { 
+   Idata[0]=haj.size();
    Idata[1]=SMSpHabkl.size();
    Idata[2]=SMSpHabkl.rows();
    Idata[3]=SMSpHabkl.cols();
   } else {
+   Idata[0]=hij.size();
    Idata[1]=SMSpHijkl.size();
    Idata[2]=SMSpHijkl.rows();
    Idata[3]=SMSpHijkl.cols();
@@ -647,6 +667,13 @@ bool PureSingleDeterminant::hdf_write()
   for(int i=0; i<NAEA; i++) Idata[i] = occup_alpha[i];
   for(int i=NAEA, j=0; i<NAEA+NAEB; i++, j++) Idata[i] = occup_beta[j];
   dump.write(Idata,"occups");
+
+  // write wavefunction (mainly for miniapp) 
+  if(rotated_hamiltonian) {
+    std::vector<ComplexType> vvec(OrbMat.size());
+    std::copy(OrbMat.begin(),OrbMat.end(),vvec.begin());
+    dump.write(vvec,"Wavefun");
+  }
 
   std::vector<IndexType> ivec;
   if(rotated_hamiltonian) {
@@ -709,9 +736,10 @@ bool PureSingleDeterminant::initFromHDF5(hdf_archive& read,const std::string& ta
     if(!read.push("Wavefunctions")) return false;
     if(!read.push("PureSingleDeterminant")) return false;
 
-    std::vector<int> Idata(8);
+    std::vector<int> Idata;
+    Idata.reserve(9);
+    Idata.resize(8);
     if(!read.read(Idata,"dims")) return false;
-    hij.resize(Idata[0]);
 
     NCA = NCB = 0;
     if(NMO < 0) NMO = Idata[4];
@@ -731,6 +759,28 @@ bool PureSingleDeterminant::initFromHDF5(hdf_archive& read,const std::string& ta
     }
     spinRestricted = (Idata[7]==0)?(true):(false);
 
+    std::vector<ComplexType> vvec0;
+    if(read.read(vvec0,"Wavefun")) {
+      int nc_ = NAEA;
+      if(wfn_type==2) nc_ = NAEA+NAEB;
+      if(vvec0.size() != 2*NMO*nc_) return false;
+      OrbMat.resize(2*NMO,nc_);
+      std::copy(vvec0.begin(),vvec0.end(),OrbMat.begin());
+      Idata.push_back(1);
+    } else {
+      Idata.push_back(0);
+      rotated_hamiltonian = false;
+    }
+
+    myComm->bcast(Idata);   
+    if(rotated_hamiltonian) 
+      myComm->bcast(vvec0);  
+
+    if(rotated_hamiltonian) 
+      haj.resize(Idata[0]);
+    else
+      hij.resize(Idata[0]);
+
     if(rotated_hamiltonian) {
       SMSpHabkl.setDims(Idata[2],Idata[3]);
       if(!SMSpHabkl.allocate_serial(Idata[1])) return false;
@@ -741,7 +791,6 @@ bool PureSingleDeterminant::initFromHDF5(hdf_archive& read,const std::string& ta
       SMSpHijkl.resize_serial(Idata[1]);
     }
 
-    myComm->bcast(Idata);   
 
     occup_alpha.resize(NAEA);
     occup_beta.resize(NAEB);
@@ -749,8 +798,8 @@ bool PureSingleDeterminant::initFromHDF5(hdf_archive& read,const std::string& ta
     if(!read.read(Idata,"occups")) return false;
     for(int i=0; i<NAEA; i++) occup_alpha[i] = Idata[i];
     for(int i=NAEA, j=0; i<NAEA+NAEB; i++, j++) occup_beta[j] = Idata[i];
-
     myComm->bcast(Idata);   
+
 
     std::vector<int> ivec;
     if(rotated_hamiltonian) {
@@ -768,19 +817,20 @@ bool PureSingleDeterminant::initFromHDF5(hdf_archive& read,const std::string& ta
     }
 
     if(rotated_hamiltonian) {
-     std::vector<ComplexType> vvec;
-     vvec.resize(haj.size());
-     if(!read.read(vvec,"hij")) return false;
-     for(int i=0; i<haj.size(); i++)
-       std::get<1>(haj[i]) = vvec[i]; 
-     myComm->bcast(vvec);
+      std::vector<ComplexType> vvec;
+      vvec.resize(haj.size());
+      if(!read.read(vvec,"hij")) return false;
+      for(int i=0; i<haj.size(); i++)
+        std::get<1>(haj[i]) = vvec[i]; 
+      myComm->bcast(vvec);
+
     } else {
-     std::vector<ValueType> vvec;
-     vvec.resize(hij.size());
-     if(!read.read(vvec,"hij")) return false;
-     for(int i=0; i<hij.size(); i++)
-       std::get<1>(hij[i]) = vvec[i]; 
-     myComm->bcast(vvec);
+      std::vector<ValueType> vvec;
+      vvec.resize(hij.size());
+      if(!read.read(vvec,"hij")) return false;
+      for(int i=0; i<hij.size(); i++)
+        std::get<1>(hij[i]) = vvec[i]; 
+      myComm->bcast(vvec);
     }
 
     if(rotated_hamiltonian) {
@@ -803,8 +853,17 @@ bool PureSingleDeterminant::initFromHDF5(hdf_archive& read,const std::string& ta
 
   } else {
 
-    std::vector<int> Idata(8);
+    std::vector<int> Idata(9);
     myComm->bcast(Idata);
+
+    rotated_hamiltonian = (Idata[8]!=0);
+    if(rotated_hamiltonian) 
+    {
+      std::vector<ComplexType> vvec(2*NMO*((wfn_type==2)?(NAEA+NAEB):NAEA));
+      myComm->bcast(vvec);
+      OrbMat.resize(2*NMO,(wfn_type==2)?(NAEA+NAEB):NAEA);
+      std::copy(vvec.begin(),vvec.end(),OrbMat.begin());
+    }
 
     if(rotated_hamiltonian) {
      haj.resize(Idata[0]);
@@ -852,7 +911,14 @@ bool PureSingleDeterminant::initFromHDF5(hdf_archive& read,const std::string& ta
      for(int i=0; i<hij.size(); i++)
        std::get<1>(hij[i]) = vvec[i];
     }
- 
+
+    {
+      std::vector<ComplexType> vvec(2*NMO*((wfn_type==2)?(NAEA+NAEB):NAEA));
+      myComm->bcast(vvec);
+      OrbMat.resize(2*NMO,(wfn_type==2)?(NAEA+NAEB):NAEA);
+      std::copy(vvec.begin(),vvec.end(),OrbMat.begin());
+    } 
+
     myComm->barrier();
     if(rotated_hamiltonian) {
      if(!SMSpHabkl.initializeChildren()) return false;
@@ -1454,7 +1520,6 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
     Timer.start("PureSingleDeterminant:evaluateLocalEnergy"); 
 #endif
 
-
     ekin = 0;
     SPComplexMatrix::iterator itG = mixed_density_matrix.begin();
     if(rotated_hamiltonian) {
@@ -1480,7 +1545,7 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
     SPComplexVector::iterator itV = V0.begin();
     for(int i=0; i<nc1; i++,++itG,++itV) epot += static_cast<ComplexType>(*itV) * static_cast<ComplexType>(*itG); 
     epot = 0.5*epot+NuclearCoulombEnergy;   
-  
+
 #ifdef AFQMC_TIMER
     Timer.stop("PureSingleDeterminant:evaluateLocalEnergy"); 
 #endif
