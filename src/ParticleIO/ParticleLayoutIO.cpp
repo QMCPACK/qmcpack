@@ -103,6 +103,7 @@ bool LatticeParser::put(xmlNodePtr cur)
       }
       else if(aname == "rs")
       {
+        lattice_defined=true;
         OhmmsAttributeSet rAttrib;
         rAttrib.add(nptcl,"condition");
         rAttrib.add(pol,"polarized");

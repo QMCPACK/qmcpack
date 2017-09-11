@@ -336,6 +336,8 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
         for(int jg=0; jg<NumGroups; ++jg, ++ij)
           if(F[ij]==nullptr) F[ij]=j;
     }
+    else
+      F[ia*NumGroups+ib]=j;
   }
   else
   {
@@ -351,8 +353,7 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
     {
       // generic case
       F[ia*NumGroups+ib]=j;
-      if(ia<ib)
-        F[ib*NumGroups+ia]=j;
+      F[ib*NumGroups+ia]=j;
     }
   }
   std::stringstream aname;
