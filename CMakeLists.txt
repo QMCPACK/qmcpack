@@ -80,7 +80,6 @@ SET (EXECUTABLE_OUTPUT_PATH ${qmcpack_BINARY_DIR}/bin CACHE PATH "Single output 
 # QMC_COMPLEX = true if using complex wavefunctions
 # QMC_MPI =  enable MPI 
 # QMC_OMP = enable OMP 
-# QMC_BITS = 32/64 bit
 ######################################################################
 SET(OHMMS_DIM 3 CACHE INTEGER "Select physical dimension")
 SET(OHMMS_INDEXTYPE int)
@@ -120,7 +119,6 @@ SET(ENABLE_GCOV FALSE CACHE BOOL "Enable code coverage")
 ######################################################################
 SET(QMC_MPI 1 CACHE BOOL "Enable/disable MPI")
 SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
-SET(QMC_BITS 64 CACHE INTEGER "Select OS bit")
 SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
@@ -130,26 +128,6 @@ SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
 # DEBUG_PSIBUFFER_ON keep track buffer's locator
 ######################################################################
 SET(DEBUG_PSIBUFFER_ON 0 CACHE BOOL "Build with GPU support through CUDA")
-######################################################################
-# check environment variables 
-# todo: disallow environment
-######################################################################
-IF($ENV{QMC_MPI})
-  SET(QMC_MPI $ENV{QMC_MPI}) 
-  MESSAGE(STATUS "Found environment QMC_MPI=${QMC_MPI}")
-ENDIF($ENV{QMC_MPI})
-IF($ENV{QMC_OMP})
-  SET(QMC_OMP $ENV{QMC_OMP}) 
-  MESSAGE(STATUS "Found environment QMC_OMP=${QMC_OMP}")
-ENDIF($ENV{QMC_OMP})
-IF($ENV{QMC_BITS})
-  SET(QMC_BITS $ENV{QMC_BITS})
-  MESSAGE(STATUS "Found environment QMC_BITS=${QMC_BITS}")
-ENDIF($ENV{QMC_BITS})
-IF($ENV{QMC_COMPLEX})
-  SET(QMC_COMPLEX $ENV{QMC_COMPLEX})
-  MESSAGE(STATUS "Found environment QMC_COMPLEX=${QMC_COMPLEX}")
-ENDIF($ENV{QMC_COMPLEX})
 
 ######################################################################
 # Standard test
@@ -210,11 +188,10 @@ SET(ENABLE_TIMERS 0 CACHE BOOL "Enable internal timers")
 # Performance-related macros
 # QMC_SK_USE_RECURSIVE enable/disable recursive evalaution of SK
 ######################################################################
-SET(QMC_SK_USE_RECURSIVE 0)
-IF($ENV{QMC_SK_RECURSIVE})
+SET(QMC_SK_USE_RECURSIVE 0 CACHE BOOL "Use recursive evalaution of SK")
+IF(QMC_SK_USE_RECURSIVE)
   MESSAGE(STATUS "SK structure factor uses a recursive algorithm.")
-  SET(QMC_SK_USE_RECURSIVE $ENV{QMC_SK_RECURSIVE}) 
-ENDIF($ENV{QMC_SK_RECURSIVE})
+ENDIF(QMC_SK_USE_RECURSIVE)
 
 ######################################################################
 # FIXED PARAMETERS for test and legacy reasons
@@ -361,24 +338,18 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   #------------------------------------
   # Identify the compiler
   #------------------------------------
-  IF( $ENV{CXX} MATCHES "icpc" )
-    SET( COMPILER Intel )
-  ELSEIF($ENV{CXX} MATCHES "xlC" OR CMAKE_C_COMPILER_ID MATCHES "XL")
-    SET( COMPILER IBM )
-  ELSEIF ( CMAKE_C_COMPILER_WORKS OR CMAKE_C_COMPILER_WORKS )
-    IF( CMAKE_COMPILE_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX )
+  IF ( CMAKE_C_COMPILER_WORKS OR CMAKE_C_COMPILER_WORKS )
+    IF( (CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR ( CMAKE_C_COMPILER_ID MATCHES "GNU") )
       SET( COMPILER GNU )
-    ELSEIF( MSVC OR MSVC_IDE OR MSVC60 OR MSVC70 OR MSVC71 OR MSVC80 OR CMAKE_COMPILER_2005 OR MSVC90 OR MSVC10 )
-      SET( COMPILER Microsoft )
-    ELSEIF( (${CMAKE_C_COMPILER_ID} MATCHES "Intel") OR (${CMAKE_CXX_COMPILER_ID} MATCHES "Intel") ) 
+    ELSEIF( (CMAKE_CXX_COMPILER_ID MATCHES "XL") OR ( CMAKE_C_COMPILER_ID MATCHES "XL") )
+      SET( COMPILER IBM )
+    ELSEIF( (CMAKE_CXX_COMPILER_ID MATCHES "Intel") OR (CMAKE_C_COMPILER_ID MATCHES "Intel") )
       SET( COMPILER Intel )
-    ELSEIF( (${CMAKE_C_COMPILER_ID} MATCHES "PGI") OR (${CMAKE_CXX_COMPILER_ID} MATCHES "PGI") )
+    ELSEIF( (CMAKE_CXX_COMPILER_ID MATCHES "PGI") OR (CMAKE_C_COMPILER_ID MATCHES "PGI") )
       SET( COMPILER PGI )
-    ELSEIF( (${CMAKE_C_COMPILER_ID} MATCHES "CRAY") OR (${CMAKE_CXX_COMPILER_ID} MATCHES "CRAY") OR
-            (${CMAKE_C_COMPILER_ID} MATCHES "Cray") OR (${CMAKE_CXX_COMPILER_ID} MATCHES "Cray") )
+    ELSEIF( (CMAKE_CXX_COMPILER_ID MATCHES "Cray") OR (CMAKE_C_COMPILER_ID MATCHES "Cray") )
       SET( COMPILER Cray )
-    ELSEIF( (${CMAKE_C_COMPILER_ID} MATCHES "CLANG") OR (${CMAKE_CXX_COMPILER_ID} MATCHES "CLANG") OR
-            (${CMAKE_C_COMPILER_ID} MATCHES "Clang") OR (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang") )
+    ELSEIF( (CMAKE_CXX_COMPILER_ID MATCHES "Clang") OR (CMAKE_C_COMPILER_ID MATCHES "Clang") )
       SET( COMPILER Clang )
     ELSE()
         SET(USING_DEFAULT TRUE)

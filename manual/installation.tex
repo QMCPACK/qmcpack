@@ -570,7 +570,7 @@ Due to the fact that the login nodes and the compute nodes have different proces
 cross-compiling is required on this platform. See details about using Blue Gene/Q at \url{http://www.alcf.anl.gov/user-guides/compiling-linking}.
 On Mira, compilers are loaded via softenv and users need to add +mpiwrapper-bgclang and +cmake in \$HOME/.soft.
 In order to build QMCPACK, a toolchain file is provided for setting up CMake and the cmake command should be executed twice.
-\textbf{XL C/C++ compiler no more builds QMCPACK due to the lack of C++11 support but BGClang can produce correct binary with good performance.}
+\textbf{BGClang is required for C++11 support. IBM XL C/C++ compiler should not be used.}
 
 \begin{verbatim}
 cd build
