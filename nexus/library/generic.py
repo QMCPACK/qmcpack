@@ -609,6 +609,16 @@ class obj(object_interface):
 
 
     # dict extensions
+    def random_key(self):
+        key = None
+        nkeys = len(self)
+        if nkeys>0:
+            key = self._keys()[randint(0,nkeys-1)]
+        #end if
+        return key
+    #end def random_key
+
+
     def set(self,*objs,**kwargs):
         for key,value in kwargs.iteritems():
             self[key]=value
@@ -858,6 +868,25 @@ class obj(object_interface):
         return new
     #end def inverse
 
+    def serial(self,s=None,path=None):
+        first = s is None
+        if first:
+            s = obj()
+            path = ''
+        #end if
+        for k,v in self._iteritems():
+            p = path+str(k)
+            if isinstance(v,obj):
+                v._serial(s,p+'/')
+            else:
+                s[p]=v
+            #end if
+        #end for
+        if first:
+            return s
+        #end if
+    #end def serial
+
 
 
     # access preserving functions
@@ -885,6 +914,8 @@ class obj(object_interface):
     def _select_random(self,*args,**kwargs):
         return obj.select_random(self,*args,**kwargs)
     #  dict extensions
+    def _random_key(self,*args,**kwargs):
+        obj.random_key(self,*args,**kwargs)
     def _set(self,*args,**kwargs):
         obj.set(self,*args,**kwargs)
     def _set_optional(self,*args,**kwargs):
@@ -923,6 +954,8 @@ class obj(object_interface):
         obj.shallow_copy(self,*args,**kwargs)
     def _inverse(self,*args,**kwargs):
         return obj.inverse(self,*args,**kwargs)
+    def _serial(self,*args,**kwargs):
+        return obj.serial(self,*args,**kwargs)
 
 #end class obj
 

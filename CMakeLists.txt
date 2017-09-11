@@ -12,8 +12,8 @@ ENDIF(COMMAND cmake_policy)
 # Version 
 ######################################################################
 SET(QMCPACK_VERSION_MAJOR 3)
-SET(QMCPACK_VERSION_MINOR 0)
-SET(QMCPACK_VERSION_PATCH 0)
+SET(QMCPACK_VERSION_MINOR 1)
+SET(QMCPACK_VERSION_PATCH 1)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
 ######################################################################
@@ -111,6 +111,10 @@ ELSE(QMC_CUDA)
   MESSAGE("   Full precision = ${OHMMS_PRECISION_FULL}")
 ENDIF(QMC_CUDA)
 
+# Code coverage
+SET(GCOV_SUPPORTED FALSE)
+SET(ENABLE_GCOV FALSE CACHE BOOL "Enable code coverage")
+
 ######################################################################
 # enable MPI and OPNEMP  if possible
 ######################################################################
@@ -199,7 +203,7 @@ SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 #SET(BUILD_QMCTOOLS 1)
 #SET(BUILD_SANDBOX 0)
 #SET(MPIP_PROFILE 0)
-#option(QMC_BUILD_STATIC "Link to static libraries" OFF)
+SET(QMC_BUILD_STATIC 0 CACHE BOOL "Link to static libraries")
 SET(ENABLE_TIMERS 0 CACHE BOOL "Enable internal timers")
 
 ######################################################################
@@ -299,7 +303,6 @@ IF(CMAKE_TOOLCHAIN_FILE)
   MESSAGE(STATUS "Using ${CMAKE_TOOLCHAIN_FILE} toolchain ")
 ELSE(CMAKE_TOOLCHAIN_FILE)
   MESSAGE(STATUS "Trying to figure out .....")
-  SET(QMC_BUILD_STATIC 0)
   SET(ENABLE_OPENMP 0)
   SET(HAVE_MPI 0)
   SET(INTEL_COMPILER 0)
@@ -337,18 +340,25 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     SET(MPIEXEC_NUMPROC_FLAG "-n")
 
     IF(QMC_CUDA)
+      IF(QMC_BUILD_STATIC)
+        MESSAGE(FATAL_ERROR "Static linking is not supported with CUDA build. Set QMC_BUILD_STATIC=0 (default)!")
+      ENDIF(QMC_BUILD_STATIC)
       MESSAGE(STATUS "Building GPU code. Linking dynamically.")
     ELSE(QMC_CUDA)
-      SET(QMC_BUILD_STATIC 1)
-      MESSAGE(STATUS "Building CPU code. Linking statically.")
-      SET(BUILD_SHARED_LIBS off)
-      SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)
-      FOREACH(type SHARED_LIBRARY SHARED_MODULE EXE)
-        SET(CMAKE_${type}_LINK_STATIC_C_FLAGS "-Wl,-Bstatic")
-        SET(CMAKE_${type}_LINK_DYNAMIC_C_FLAGS "-static")
-        SET(CMAKE_${type}_LINK_STATIC_CXX_FLAGS "-Wl,-Bstatic")
-        SET(CMAKE_${type}_LINK_DYNAMIC_CXX_FLAGS "-static")
-      ENDFOREACH(type)
+      IF(QMC_BUILD_STATIC)
+        MESSAGE(STATUS "Building CPU code. Linking statically.")
+        SET(BUILD_SHARED_LIBS off)
+        SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)
+        FOREACH(type SHARED_LIBRARY SHARED_MODULE EXE)
+          SET(CMAKE_${type}_LINK_STATIC_C_FLAGS "-Wl,-Bstatic")
+          SET(CMAKE_${type}_LINK_DYNAMIC_C_FLAGS "-static")
+          SET(CMAKE_${type}_LINK_STATIC_CXX_FLAGS "-Wl,-Bstatic")
+          SET(CMAKE_${type}_LINK_DYNAMIC_CXX_FLAGS "-static")
+        ENDFOREACH(type)
+      ELSE(QMC_BUILD_STATIC)
+        MESSAGE(STATUS "Building CPU code. Linking dynamically.")
+        SET(CMAKE_EXE_LINKER_FLAGS "-dynamic")
+      ENDIF(QMC_BUILD_STATIC)
     ENDIF(QMC_CUDA)
   ENDIF($ENV{CRAYPE_VERSION} MATCHES ".")
 
@@ -357,7 +367,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   #------------------------------------
   IF( $ENV{CXX} MATCHES "icpc" )
     SET( COMPILER Intel )
-  ELSEIF($ENV{CXX} MATCHES "xlC")
+  ELSEIF($ENV{CXX} MATCHES "xlC" OR CMAKE_C_COMPILER_ID MATCHES "XL")
     SET( COMPILER IBM )
   ELSEIF ( CMAKE_C_COMPILER_WORKS OR CMAKE_C_COMPILER_WORKS )
     IF( CMAKE_COMPILE_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX )
@@ -383,7 +393,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     MESSAGE(WARNING "No compiler identified")
   ENDIF()
   MESSAGE(STATUS "Compiler: ${COMPILER}")
-  MESSAGE(STATUS "Compiler Version: ${CMAKE_CXX_COMPILER_VERSION}")
 
   #------------------------------------
   # Include compiler-specific cmake file
@@ -442,7 +451,11 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
           MESSAGE(STATUS "MPI is disabled")
           SET(HAVE_MPI 0)
           SET(HAVE_OOMPI 0)
+          SET(MPI_LIBRARY "")
         ENDIF(MPI_WORKS)
+      ELSE(MPI_FOUND)
+        MESSAGE(STATUS "MPI not found")
+        SET(MPI_LIBRARY "")
       ENDIF(MPI_FOUND)
     ENDIF()
   ENDIF(QMC_MPI)
@@ -489,6 +502,12 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
 
 ENDIF(CMAKE_TOOLCHAIN_FILE)
 
+IF (ENABLE_GCOV)
+  IF (NOT GCOV_SUPPORTED)
+    MESSAGE(FATAL_ERROR "ENABLE_GCOV was specified but compiler does not support GCC coverage flag")
+  ENDIF()
+ENDIF(ENABLE_GCOV)
+
 # check if C++11 is needed by QMCPACK features
 SET(CXX11_NEEDED FALSE)
 IF(BUILD_LMYENGINE_INTERFACE OR BUILD_AFQMC)
@@ -532,7 +551,7 @@ ENDIF()
 
 # AFQMC requires MPI
 If (BUILD_AFQMC AND NOT QMC_MPI)
-  MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1)")
+  MESSAGE(FATAL_ERROR "AFQMC requires building with MPI (QMC_MPI=1). Set BUILD_AFQMC=0 or configure MPI.")
 ENDIF()
 
 IF (BUILD_AFQMC AND NOT APPLE)
@@ -669,11 +688,8 @@ IF(QMC_CUDA)
       # SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-O3;-use_fast_math")
       SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-O3")
     ENDIF()
-    if(CUDA_VERSION VERSION_GREATER 6.5 OR CUDA_VERSION VERSION_EQUAL 6.5)
-      SET(CUDA_NVCC_FLAGS "-arch=sm_35;${CUDA_NVCC_FLAGS}")
-    else()
-      SET(CUDA_NVCC_FLAGS "-arch=sm_20;${CUDA_NVCC_FLAGS}")
-    endif()
+    SET( CUDA_ARCH sm_35 CACHE STRING "CUDA architecture sm_XX")
+    SET(CUDA_NVCC_FLAGS "-arch=${CUDA_ARCH};${CUDA_NVCC_FLAGS}")
   endif(CUDA_NVCC_FLAGS MATCHES "arch")
   set(HAVE_CUDA 1)
   MESSAGE("   CUDA_NVCC_FLAGS=${CUDA_NVCC_FLAGS}")
@@ -867,16 +883,9 @@ ENDIF(QMC_ADIOS)
 
 SUBDIRS(src)
 
-SUBDIRS(tests/converter)
-SUBDIRS(tests/system)
+SUBDIRS(tests)
 SUBDIRS(examples)
 
-SUBDIRS(tests/performance)
-
-IF(QE_BIN)
-  MESSAGE(STATUS "QE binary path ${QE_BIN}")
-  SUBDIRS(tests/pw2qmcpack)
-ENDIF()
 #ADD_CUSTOM_TARGET(print_settings ALL
 #      ${CMAKE_COMMAND} -E echo "Print build settings"
 #          VERBATIM)

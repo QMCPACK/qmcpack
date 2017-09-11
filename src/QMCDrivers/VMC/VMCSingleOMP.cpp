@@ -94,7 +94,7 @@ bool VMCSingleOMP::run()
 //           if(storeConfigs && (now_loc%storeConfigs == 0))
 //             ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[ip]);
       }
-      if ( nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 )
+      if ( nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 && QMCDriverMode[QMC_UPDATE_MODE] )
         Movers[ip]->recomputePsi(wit,wit_end);
       Movers[ip]->stopBlock(false);
     }//end-of-parallel for

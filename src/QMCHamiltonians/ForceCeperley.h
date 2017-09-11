@@ -31,9 +31,9 @@ struct ForceCeperley: public QMCHamiltonianBase, public ForceBase
   double Rcut; // parameter: radial distance within which estimator is used
   int m_exp; // parameter: exponent in polynomial fit
   int N_basis; // parameter: size of polynomial basis set
-  Matrix<RealType> Sinv; // terms in fitting polynomial
-  Vector<RealType> h; // terms in fitting polynomial
-  Vector<RealType> c; // polynomial coefficients
+  Matrix<EstimatorRealType> Sinv; // terms in fitting polynomial
+  Vector<EstimatorRealType> h; // terms in fitting polynomial
+  Vector<EstimatorRealType> c; // polynomial coefficients
   // container for short-range force estimator
 
   ParticleSet::ParticlePos_t forces_ShortRange;

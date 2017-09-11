@@ -23,17 +23,27 @@
 
 \lstloadlanguages{C++,XML,Python}
 
-\lstset{
+
+\lstset{language=xml, 
   basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
-  keywordstyle=\color{black}\bfseries,
+  keywordstyle=\color{black}\bfseries, 
   frame=single,
   breaklines=true,
-  language=xml,
   escapeinside={<:}{:>},
   columns=fullflexible,   % copy/paste from pdf w/o added spaces
   keepspaces=true,        % but do keep the spaces that are already there
   showstringspaces=false, % avoid showing underbrackets in quoted text
 }
+
+\lstset{language=C++,
+  basicstyle=\ttfamily \scriptsize,
+  keywordstyle=\color{blue}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  commentstyle=\color{gray}\ttfamily,
+  morecomment=[l][\color{magenta}]{\#},
+  frame=single
+}
+
 
 
 \ifpdf
@@ -170,8 +180,9 @@
 
 
 \input{additional_tools}
-\input{unit_testing}
 \input{contributing}
+\input{unit_testing}
+\input{developing}
 
 \newpage
 \chapter{References}

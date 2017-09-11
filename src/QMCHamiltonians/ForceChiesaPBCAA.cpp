@@ -340,6 +340,7 @@ QMCHamiltonianBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFuncti
   tmp->h=h; // terms in fitting polynomial
   tmp->c.resize(N_basis);
   tmp->c=c; // polynomial coefficients
+  tmp->addionion=addionion;
   tmp->initBreakup(qp);
 
   return tmp;

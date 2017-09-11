@@ -240,9 +240,7 @@ ENDMACRO()
 
 # Runs qmcpack
 #  Note that TEST_ADDED is an output variable
-FUNCTION( RUN_QMC_APP TESTNAME SRC_DIR PROCS THREADS TEST_ADDED ${ARGN} )
-    COPY_DIRECTORY_MAYBE_USING_SYMLINK( "${SRC_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" )
-    #MESSAGE("RUN_QMC_APP2: TESTNAME = ${TESTNAME} SRC_DIR=${SRC_DIR} PROCS = ${PROCS} THREADS = ${THREADS}")
+FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED ${ARGN} )
     MATH( EXPR TOT_PROCS "${PROCS} * ${THREADS}" )
     SET( QMC_APP "${qmcpack_BINARY_DIR}/bin/qmcpack" )
     SET( ${TEST_ADDED} FALSE PARENT_SCOPE )
@@ -252,7 +250,7 @@ FUNCTION( RUN_QMC_APP TESTNAME SRC_DIR PROCS THREADS TEST_ADDED ${ARGN} )
         ELSEIF ( USE_MPI )
             ADD_TEST( ${TESTNAME} ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${PROCS} ${QMC_APP} ${ARGN} )
             SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}" 
-                PROCESSORS ${TOT_PROCS} WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" 
+                PROCESSORS ${TOT_PROCS} WORKING_DIRECTORY ${WORKDIR}
                 ENVIRONMENT OMP_NUM_THREADS=${THREADS} )
             SET( ${TEST_ADDED} TRUE PARENT_SCOPE )
         ENDIF()
@@ -260,12 +258,20 @@ FUNCTION( RUN_QMC_APP TESTNAME SRC_DIR PROCS THREADS TEST_ADDED ${ARGN} )
         IF ( ( ${PROCS} STREQUAL "1" ) )
             ADD_TEST( ${TESTNAME} ${QMC_APP} ${ARGN} )
             SET_TESTS_PROPERTIES( ${TESTNAME} PROPERTIES FAIL_REGULAR_EXPRESSION "${TEST_FAIL_REGULAR_EXPRESSION}" 
-                PROCESSORS ${TOT_PROCS} WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" 
+                PROCESSORS ${TOT_PROCS} WORKING_DIRECTORY ${WORKDIR}
                 ENVIRONMENT OMP_NUM_THREADS=${THREADS} )
             SET( ${TEST_ADDED} TRUE PARENT_SCOPE )
         ENDIF()
     ENDIF()
+ENDFUNCTION()
 
+# Runs qmcpack
+#  Note that TEST_ADDED is an output variable
+FUNCTION( RUN_QMC_APP TESTNAME SRC_DIR PROCS THREADS TEST_ADDED ${ARGN} )
+    COPY_DIRECTORY_MAYBE_USING_SYMLINK( "${SRC_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" )
+    SET( TEST_ADDED_TEMP FALSE )
+    RUN_QMC_APP_NO_COPY( ${TESTNAME} ${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME} ${PROCS} ${THREADS} TEST_ADDED_TEMP ${ARGN} )
+    SET( ${TEST_ADDED} ${TEST_ADDED_TEMP} PARENT_SCOPE )
 ENDFUNCTION()
 
 
@@ -327,3 +333,39 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SC
         ENDFOREACH(SCALAR_CHECK)
     ENDIF()
 ENDFUNCTION()
+
+function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_script)
+  
+  # "simple run and check" function does 2 things:
+  #  1. run qmcpack executable on $input_file located in $base_dir
+  #  2. run $check_script located in the same folder ($base_dir)
+  # note: NAME, COMMAND, and WORKING_DIRECTORY must be upper case in add_test!
+
+  # build test name
+  set(full_name "${base_name}-${procs}-${threads}")
+  message("Adding test ${full_name}")
+
+  # add run (task 1)
+  set (test_added false)
+  RUN_QMC_APP(${full_name} ${base_dir} ${procs} ${threads} test_added ${input_file})
+  if ( NOT test_added)
+    message(FATAL_ERROR "test ${full_name} cannot be added")
+  endif()
+
+  # set up command to run check, assume check_script is in the same folder as input
+  set(check_cmd ${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script})
+  #message(${check_cmd})
+
+  # add test (task 2)
+  set(test_name "${full_name}-check") # hard-code for single test
+  set(work_dir "${CMAKE_CURRENT_BINARY_DIR}/${full_name}")
+  #message(${work_dir})
+  add_test(NAME "${test_name}"
+    COMMAND "${check_cmd}"
+    WORKING_DIRECTORY "${work_dir}"
+  )
+
+  # make test depend on the run
+  set_property(TEST ${test_name} APPEND PROPERTY DEPENDS ${full_name})
+
+endfunction()

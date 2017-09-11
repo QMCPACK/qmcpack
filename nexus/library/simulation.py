@@ -66,6 +66,7 @@
 
 
 import os
+import sys
 import shutil
 import string
 from subprocess import Popen,PIPE
@@ -474,6 +475,11 @@ class Simulation(NexusCore):
         #end if
         if isinstance(self.system,PhysicalSystem):
             self.system = self.system.copy()
+            consistent,msg = self.system.check_consistent(exit=False,message=True)
+            if not consistent:
+                locdir = os.path.join(nexus_core.local_directory,nexus_core.runs,self.path)
+                self.error('user provided physical system is not internally consistent\nsimulation identifier: {0}\nlocal directory: {1}\nmore details on the user error are given below\n\n{2}'.format(self.identifier,locdir,msg))
+            #end if
         elif self.system!=None:
             self.error('system must be a PhysicalSystem object\nyou provided an object of type: {0}'.format(self.system.__class__.__name__))
         #end if
@@ -827,6 +833,18 @@ class Simulation(NexusCore):
         self.got_dependencies = True
     #end def get_dependencies
         
+
+    def downstream_simids(self,simids=None):
+        if simids is None:
+            simids = set()
+        #end if
+        for sim in self.dependents:
+            simids.add(sim.simid)
+            sim.downstream_simids(simids)
+        #end for
+        return simids
+    #end def downstream_simids
+
 
     def copy_file(self,sourcefile,dest):
         src = os.path.dirname(os.path.abspath(sourcefile))
@@ -1676,7 +1694,7 @@ except:
     Image = unavailable('Image')
 #end try
 import tempfile
-exit_call = exit
+exit_call = sys.exit
 def graph_sims(sims,useid=False,exit=True,quants=True):
     graph = Dot(graph_type='digraph')
     graph.set_label('simulation workflows')

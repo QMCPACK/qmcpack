@@ -299,7 +299,7 @@ bool DMCOMP::run()
         if(QMCDriverMode[QMC_UPDATE_MODE] && now%updatePeriod == 0)
           Movers[ip]->updateWalkers(wit, wit_end);
         // recompute the accuracy critical part of Psi at the end of the last step.
-        if ( step+1 == nSteps && nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 )
+        if ( step+1 == nSteps && nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 && QMCDriverMode[QMC_UPDATE_MODE] )
           Movers[ip]->recomputePsi(wit,wit_end);
       }
 

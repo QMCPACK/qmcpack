@@ -16,7 +16,7 @@
 #include "QMCHamiltonians/ECPComponentBuilder.h"
 #include "Numerics/GaussianTimesRN.h"
 #include "Numerics/Transform2GridFunctor.h"
-#include "QMCHamiltonians/Ylm.h"
+#include "Numerics/Ylm.h"
 #include "QMCHamiltonians/FSAtomPseudoPot.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/SimpleParser.h"
@@ -50,46 +50,97 @@ bool ECPComponentBuilder::parse(const std::string& fname, xmlNodePtr cur)
   const xmlChar* rptr=xmlGetProp(cur,(const xmlChar*)"cutoff");
   if(rptr != NULL)
     RcutMax = atof((const char*)rptr);
-  int length=0;
-  char* cbuffer=0;
-  std::ifstream *fin=0;
-  int missing_xml=0;
-  if(myComm->rank()==0)
+
+  return read_pp_file(fname);
+}
+
+int ReadFileBuffer::get_file_length(std::ifstream *f) const
+{
+    f->seekg (0, std::ios::end);
+    int len = f->tellg();
+    f->seekg (0, std::ios::beg);
+    return len;
+}
+
+void ReadFileBuffer::reset()
+{
+  if (is_open)
+  {
+    if(myComm == NULL || myComm->rank() == 0)
+    {
+      delete fin;
+      fin = NULL;
+    }
+    delete[] cbuffer;
+    cbuffer = NULL;
+    is_open = false;
+    length = 0;
+  }
+}
+
+bool ReadFileBuffer::open_file(const std::string &fname)
+{
+
+  reset();
+
+  if (myComm == NULL || myComm->rank() == 0)
   {
     fin = new std::ifstream(fname.c_str());
-    if (!fin->is_open())
-      missing_xml=1;
+    if (fin->is_open())
+      is_open=true;
   }
-  myComm->bcast(missing_xml);
-  if(missing_xml)
+  if (myComm) myComm->bcast(is_open);
+  return is_open;
+}
+
+bool ReadFileBuffer::read_contents()
+{
+  if (!is_open)
+    return false;
+
+  if(myComm == NULL || myComm->rank() == 0)
   {
-    APP_ABORT("ECPComponentBuilder::parse  Missing PP file " + fname +"\n");
+    length = get_file_length(fin);
   }
-  if(myComm->rank()==0)
-  {
-    fin->seekg (0, std::ios::end);
-    length = fin->tellg();
-    fin->seekg (0, std::ios::beg);
-  }
-  myComm->bcast(length);
-  cbuffer = new char[length];
-  if(myComm->rank()==0)
+  if (myComm) myComm->bcast(length);
+
+  cbuffer = new char[length+1];
+  cbuffer[length] = '\0';
+
+  if (myComm == NULL || myComm->rank() == 0)
     fin->read (cbuffer,length);
-  myComm->bcast(cbuffer,length);
-  xmlDocPtr m_doc = xmlReadMemory(cbuffer,length,NULL,NULL,0);
-  if(fin)
-    delete fin;
-  if(cbuffer)
-    delete [] cbuffer;
-  // build an XML tree from a the file;
-  //xmlDocPtr m_doc = xmlParseFile(fname.c_str());
+
+  if (myComm != NULL)
+    myComm->bcast(cbuffer,length);
+
+  return true;
+}
+
+
+bool ECPComponentBuilder::read_pp_file(const std::string &fname)
+{
+  ReadFileBuffer buf(myComm);
+  bool okay = buf.open_file(fname);
+  if(!okay)
+  {
+    APP_ABORT("ECPComponentBuilder::read_pp_file  Missing PP file " + fname +"\n");
+  }
+
+  okay = buf.read_contents();
+  if(!okay)
+  {
+    APP_ABORT("ECPComponentBuilder::read_pp_file Unable to read PP file " + fname +"\n");
+  }
+
+  xmlDocPtr m_doc = xmlReadMemory(buf.contents(),buf.length,NULL,NULL,0);
+
   if (m_doc == NULL)
   {
     xmlFreeDoc(m_doc);
-    APP_ABORT("ECPComponentBuilder::parse xml file "+fname+" is invalid");
+    APP_ABORT("ECPComponentBuilder::read_pp_file xml file "+fname+" is invalid");
   }
   // Check the document is of the right kind
-  cur = xmlDocGetRootElement(m_doc);
+  xmlNodePtr cur = xmlDocGetRootElement(m_doc);
   if (cur == NULL)
   {
     xmlFreeDoc(m_doc);
@@ -148,7 +199,11 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
   }
   if(pp_nonloc)
   {
-    SetQuadratureRule(Nrule);
+    bool quad_okay = SetQuadratureRule(Nrule);
+    if (!quad_okay)
+    {
+      APP_ABORT("Setting up spherical quadrature for non-local pseudopotential failed");
+    }
     app_log() << "    Non-local pseudopotential parameters" << std::endl;
     pp_nonloc->print(app_log());
     app_log() << "    Maximum cutoff radius " << pp_nonloc->Rmax << std::endl;
@@ -194,7 +249,7 @@ void ECPComponentBuilder::printECPTable()
   }
 }
 
-void ECPComponentBuilder::SetQuadratureRule(int rule)
+bool ECPComponentBuilder::SetQuadratureRule(int rule)
 {
     int nk;
   RealType w;
@@ -256,7 +311,7 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
     break;
   default:
     ERRORMSG("Unrecognized spherical quadrature rule " << rule << ".");
-    abort();
+    return false;
   }
   // First, build a_i, b_i, and c_i points
   std::vector<PosType> a, b, c, d;
@@ -405,7 +460,7 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
   }
   assert (std::abs(wSum - 1.0) < delta);
   // Check the quadrature rule
-  CheckQuadratureRule(lexact);
+  return CheckQuadratureRule(lexact);
 }
 
 //   double ECPComponentBuilder::AssociatedLegendre(int l, int m, double x)
@@ -490,7 +545,7 @@ void ECPComponentBuilder::SetQuadratureRule(int rule)
 //     return prefactor * Pl * e2imphi;
 //   }
 
-void ECPComponentBuilder::CheckQuadratureRule(int lexact)
+bool ECPComponentBuilder::CheckQuadratureRule(int lexact)
 {
   std::vector<PosType> &grid = pp_nonloc->sgridxyz_m;
   std::vector<RealType> &w = pp_nonloc->sgridweight_m;
@@ -510,14 +565,16 @@ void ECPComponentBuilder::CheckQuadratureRule(int lexact)
           double im = imag (sum);
           if ((l1==l2) && (m1==m2))
             re -= 1.0;
-          if ((std::abs(im) > 5*std::numeric_limits<RealType>::epsilon()) || (std::abs(re) > 5*std::numeric_limits<RealType>::epsilon()))
+          if ((std::abs(im) > 7*std::numeric_limits<RealType>::epsilon()) || (std::abs(re) > 7*std::numeric_limits<RealType>::epsilon()))
           {
             app_error() << "Broken spherical quadrature for " << grid.size() << "-point rule.\n" << std::endl;
-            APP_ABORT("Give up");
+            app_error() << "  Should be zero:  Real part = " << re << " Imaginary part = " << im << std::endl;
+            return false;
           }
 // 	    fprintf (stderr, "(l1,m1,l2m,m2) = (%2d,%2d,%2d,%2d)  sum = (%20.16f %20.16f)\n",
 // 	     l1, m1, l2, m2, real(sum), imag(sum));
         }
+  return true;
 }
 
 } // namespace qmcPlusPlus
