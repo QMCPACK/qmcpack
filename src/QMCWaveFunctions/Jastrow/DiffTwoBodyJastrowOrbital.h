@@ -67,22 +67,36 @@ public:
 
   void addFunc(int ia, int ib, FT* j)
   {
-    if (ia==ib)
+    // make all pair terms equal to uu initially
+    //   in case some terms are not provided explicitly
+    if(ia==ib)
     {
-      if (ia==0)//first time, assign everything
+      if(ia==0)//first time, assign everything
       {
         int ij=0;
-        for (int ig=0; ig<NumGroups; ++ig)
-          for (int jg=0; jg<NumGroups; ++jg, ++ij)
-            if (F[ij]==0)
-              F[ij]=j;
+        for(int ig=0; ig<NumGroups; ++ig)
+          for(int jg=0; jg<NumGroups; ++jg, ++ij)
+            if(F[ij]==nullptr) F[ij]=j;
       }
+      else
+        F[ia*NumGroups+ib]=j;
     }
     else
     {
-      F[ia*NumGroups+ib]=j;
-      if (ia<ib)
+      if(NumPtcls==2)
+      {
+        // a very special case, 1 up + 1 down
+        // uu/dd was prevented by the builder
+        for(int ig=0; ig<NumGroups; ++ig)
+          for(int jg=0; jg<NumGroups; ++jg)
+            F[ig*NumGroups+jg]=j;
+      }
+      else
+      {
+        // generic case
+        F[ia*NumGroups+ib]=j;
         F[ib*NumGroups+ia]=j;
+      }
     }
     std::stringstream aname;
     aname<<ia<<ib;
