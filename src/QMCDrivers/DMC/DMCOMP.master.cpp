@@ -63,7 +63,7 @@ void DMCOMP::resetUpdateEngines()
       int ip = omp_get_thread_num();
       if(ip)
         hClones[ip]->add2WalkerProperty(*wClones[ip]);
-      estimatorClones[ip]= new ScalarEstimatorManager(*Estimators,*hClones[ip]);
+      estimatorClones[ip]= new EstimatorManagerBase(*Estimators,*hClones[ip]);
       Rng[ip]=new RandomGenerator_t();
       Rng[ip]->init(ip,NumThreads,-1);
       hClones[ip]->setRandomGenerator(Rng[ip]);

@@ -64,7 +64,7 @@ bool VMCMultiple::put(xmlNodePtr q)
   Estimators = branchEngine->getEstimatorManager();
   if(Estimators == 0)
   {
-    Estimators = new EstimatorManager(H);
+    Estimators = new EstimatorManagerBase(H);
     multiEstimator = new MultipleEnergyEstimator(H,nPsi);
     Estimators->add(multiEstimator,Estimators->MainEstimatorName);
     branchEngine->setEstimatorManager(Estimators);

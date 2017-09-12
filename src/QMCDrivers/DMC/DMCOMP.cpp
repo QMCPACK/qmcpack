@@ -85,7 +85,7 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
     delete Movers[ip];
     delete estimatorClones[ip];
     delete branchClones[ip];
-    estimatorClones[ip]= new EstimatorManager(*Estimators);
+    estimatorClones[ip]= new EstimatorManagerBase(*Estimators);
     estimatorClones[ip]->setCollectionMode(false);
     branchClones[ip] = new BranchEngineType(*branchEngine);
 #if !defined(REMOVE_TRACEMANAGER)
@@ -159,7 +159,7 @@ void DMCOMP::resetUpdateEngines()
     #pragma omp parallel for
     for(int ip=0; ip<NumThreads; ++ip)
     {
-      estimatorClones[ip]= new EstimatorManager(*Estimators);
+      estimatorClones[ip]= new EstimatorManagerBase(*Estimators);
       estimatorClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
