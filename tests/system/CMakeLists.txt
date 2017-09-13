@@ -656,8 +656,8 @@ ENDIF(ENABLE_SOA)
   LIST(APPEND LONG_DIAMOND_DMC_SCALARS "totenergy" "-10.531583 0.000815")
   QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-dmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-                    qmc_short_vmc_dmc
-                    qmc_short_vmc_dmc.in.xml
+                    qmc_long_vmc_dmc
+                    qmc_long_vmc_dmc.in.xml
                     1 16
                     LONG_DIAMOND_DMC_SCALARS
                     1 # DMC
