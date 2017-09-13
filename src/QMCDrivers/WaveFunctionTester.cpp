@@ -46,7 +46,7 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
                                        ParticleSetPool &ptclPool, WaveFunctionPool& ppool):
   QMCDriver(w,psi,h,ppool),checkRatio("no"),checkClone("no"), checkHamPbyP("no"),
   PtclPool(ptclPool), wftricks("no"),checkEloc("no"), checkBasic("yes"), checkRatioV("no"),
-  deltaParam(0.0), toleranceParam(0.0)
+  deltaParam(0.0), toleranceParam(0.0), outputDeltaVsError(false), wbyw(false)
 {
   m_param.add(checkRatio,"ratio","string");
   m_param.add(checkClone,"clone","string");
@@ -125,6 +125,11 @@ WaveFunctionTester::run()
     runNodePlot();
   else if (checkBasic == "yes")
     runBasicTest();
+  else if (checkBasic == "wbyw")
+  {
+    wbyw = true; // skip pbyp test
+    runBasicTest();
+  }
   else if (checkRatioV == "yes")
     runRatioV();
   else
@@ -749,6 +754,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
   {
     tol = toleranceParam;
   } 
+  if (wbyw) return all_okay; // !!!! hack to skip pybp test
 
   for (int iorb = 0; iorb < Psi.getOrbitals().size(); iorb++)
   {

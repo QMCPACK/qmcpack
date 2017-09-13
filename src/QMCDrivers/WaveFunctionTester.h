@@ -67,6 +67,7 @@ private:
   double deltaParam;
   double toleranceParam;
   bool outputDeltaVsError;
+  bool wbyw; // flag to only test walker-by-walker moves, i.e. skip particle-by-particle test
   FiniteDiffErrData DeltaVsError;
  
   /// Copy Constructor (disabled)
