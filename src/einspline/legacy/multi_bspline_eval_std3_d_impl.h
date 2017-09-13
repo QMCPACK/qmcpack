@@ -23,8 +23,8 @@
 
 #include <math.h>
 #include <stdio.h>
-#include "bspline_base.h"
-#include "multi_bspline_structs.h"
+#include <einspline/bspline_base.h>
+#include <einspline/multi_bspline_structs.h>
 
 extern const double* restrict   Ad;
 extern const double* restrict  dAd;
@@ -35,7 +35,7 @@ extern const double* restrict d3Ad;
 /* 1D double-precision, real evaulation functions        */
 /************************************************************/
 void
-eval_multi_UBspline_1d_d (const multi_UBspline_1d_d *spline,
+legacy_eval_multi_UBspline_1d_d (const multi_UBspline_1d_d *spline,
                           double x,
                           double* restrict vals)
 {
@@ -68,7 +68,7 @@ eval_multi_UBspline_1d_d (const multi_UBspline_1d_d *spline,
 
 
 void
-eval_multi_UBspline_1d_d_vg (const multi_UBspline_1d_d *spline,
+legacy_eval_multi_UBspline_1d_d_vg (const multi_UBspline_1d_d *spline,
                              double x,
                              double* restrict vals,
                              double* restrict grads)
@@ -114,7 +114,7 @@ eval_multi_UBspline_1d_d_vg (const multi_UBspline_1d_d *spline,
 
 
 void
-eval_multi_UBspline_1d_d_vgl (const multi_UBspline_1d_d *spline,
+legacy_eval_multi_UBspline_1d_d_vgl (const multi_UBspline_1d_d *spline,
                               double x,
                               double* restrict vals,
                               double* restrict grads,
@@ -170,13 +170,13 @@ eval_multi_UBspline_1d_d_vgl (const multi_UBspline_1d_d *spline,
 
 
 void
-eval_multi_UBspline_1d_d_vgh (const multi_UBspline_1d_d *spline,
+legacy_eval_multi_UBspline_1d_d_vgh (const multi_UBspline_1d_d *spline,
                               double x,
                               double* restrict vals,
                               double* restrict grads,
                               double* restrict hess)
 {
-  eval_multi_UBspline_1d_d_vgl (spline, x, vals, grads, hess);
+  legacy_eval_multi_UBspline_1d_d_vgl (spline, x, vals, grads, hess);
 }
 
 
@@ -185,7 +185,7 @@ eval_multi_UBspline_1d_d_vgh (const multi_UBspline_1d_d *spline,
 /* 2D double-precision, real evaulation functions        */
 /************************************************************/
 void
-eval_multi_UBspline_2d_d (const multi_UBspline_2d_d *spline,
+legacy_eval_multi_UBspline_2d_d (const multi_UBspline_2d_d *spline,
                           double x, double y,
                           double* restrict vals)
 {
@@ -232,7 +232,7 @@ eval_multi_UBspline_2d_d (const multi_UBspline_2d_d *spline,
 
 
 void
-eval_multi_UBspline_2d_d_vg (const multi_UBspline_2d_d *spline,
+legacy_eval_multi_UBspline_2d_d_vg (const multi_UBspline_2d_d *spline,
                              double x, double y,
                              double* restrict vals,
                              double* restrict grads)
@@ -304,7 +304,7 @@ eval_multi_UBspline_2d_d_vg (const multi_UBspline_2d_d *spline,
 }
 
 void
-eval_multi_UBspline_2d_d_vgl (const multi_UBspline_2d_d *spline,
+legacy_eval_multi_UBspline_2d_d_vgl (const multi_UBspline_2d_d *spline,
                               double x, double y,
                               double* restrict vals,
                               double* restrict grads,
@@ -397,7 +397,7 @@ eval_multi_UBspline_2d_d_vgl (const multi_UBspline_2d_d *spline,
 
 
 void
-eval_multi_UBspline_2d_d_vgh (const multi_UBspline_2d_d *spline,
+legacy_eval_multi_UBspline_2d_d_vgh (const multi_UBspline_2d_d *spline,
                               double x, double y,
                               double* restrict vals,
                               double* restrict grads,
@@ -497,7 +497,7 @@ eval_multi_UBspline_2d_d_vgh (const multi_UBspline_2d_d *spline,
 /* 3D double-precision, real evaulation functions           */
 /************************************************************/
 void
-eval_multi_UBspline_3d_d (const multi_UBspline_3d_d *spline,
+legacy_eval_multi_UBspline_3d_d (const multi_UBspline_3d_d *spline,
                           double x, double y, double z,
                           double* restrict vals)
 {
@@ -558,7 +558,7 @@ eval_multi_UBspline_3d_d (const multi_UBspline_3d_d *spline,
 
 
 void
-eval_multi_UBspline_3d_d_vgh (const multi_UBspline_3d_d *spline,
+legacy_eval_multi_UBspline_3d_d_vgh (const multi_UBspline_3d_d *spline,
                               double x, double y, double z,
                               double* restrict vals,
                               double* restrict grads,
@@ -729,7 +729,7 @@ eval_multi_UBspline_3d_d_vgh (const multi_UBspline_3d_d *spline,
 }
 
 void
-eval_multi_UBspline_3d_d_vg (const multi_UBspline_3d_d *spline,
+legacy_eval_multi_UBspline_3d_d_vg (const multi_UBspline_3d_d *spline,
                              double x, double y, double z,
                              double* restrict vals,
                              double* restrict grads)
@@ -826,7 +826,7 @@ eval_multi_UBspline_3d_d_vg (const multi_UBspline_3d_d *spline,
 
 
 void
-eval_multi_UBspline_3d_d_vgl (const multi_UBspline_3d_d *spline,
+legacy_eval_multi_UBspline_3d_d_vgl (const multi_UBspline_3d_d *spline,
                               double x, double y, double z,
                               double* restrict vals,
                               double* restrict grads,
@@ -947,7 +947,7 @@ eval_multi_UBspline_3d_d_vgl (const multi_UBspline_3d_d *spline,
 
 
 void
-eval_multi_UBspline_3d_d_vghgh (const multi_UBspline_3d_d *spline,
+legacy_eval_multi_UBspline_3d_d_vghgh (const multi_UBspline_3d_d *spline,
                                 double x, double y, double z,
                                 double* restrict vals,
                                 double* restrict grads,

@@ -55,6 +55,112 @@ namespace qmcplusplus
     return nullptr;
   }
 
+void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
+{
+  // 1. set a lot of internal parameters in the EinsplineSetBuilder class
+  //  e.g. TileMatrix, UseRealOrbitals, DistinctTwists, MakeTwoCopies.
+  // 2. this is also where metadata for the orbitals are read from the wavefunction hdf5 file
+  //  and broacasted to MPI groups. Variables broadcasted are listed in 
+  //  EinsplineSetBuilderCommon.cpp EinsplineSetBuilder::BroadcastOrbitalInfo()
+  //   
+
+  Timer orb_info_timer;
+  // The tiling can be set by a simple vector, (e.g. 2x2x2), or by a
+  // full 3x3 matrix of integers.  If the tilematrix was not set in
+  // the input file...
+  bool matrixNotSet = true;
+  for (int i=0; i<3; i++)
+    for (int j=0; j<3; j++)
+      matrixNotSet = matrixNotSet && (TileMatrix(i,j) == 0);
+  // then set the matrix to what may have been specified in the
+  // tiling vector
+  if (matrixNotSet)
+    for (int i=0; i<3; i++)
+      for (int j=0; j<3; j++)
+        TileMatrix(i,j) = (i==j) ? TileFactor(i) : 0;
+  char buff[1000];
+  if (myComm->rank() == 0)
+  {
+    snprintf (buff, 1000, "  TileMatrix = \n [ %2d %2d %2d\n   %2d %2d %2d\n   %2d %2d %2d ]\n",
+             TileMatrix(0,0), TileMatrix(0,1), TileMatrix(0,2),
+             TileMatrix(1,0), TileMatrix(1,1), TileMatrix(1,2),
+             TileMatrix(2,0), TileMatrix(2,1), TileMatrix(2,2));
+    app_log() << buff;
+  }  
+  if (numOrbs == 0)
+  {
+    app_error() << "You must specify the number of orbitals in the input file.\n";
+    APP_ABORT("EinsplineSetBuilder::createSPOSet");
+  }
+  else
+    app_log() << "  Reading " << numOrbs << " orbitals from HDF5 file.\n";
+  orb_info_timer.restart();
+  /////////////////////////////////////////////////////////////////
+  // Read the basic orbital information, without reading all the //
+  // orbitals themselves.                                        //
+  /////////////////////////////////////////////////////////////////
+  if (myComm->rank() == 0)
+    if (!ReadOrbitalInfo())
+    {
+      app_error() << "Error reading orbital info from HDF5 file.  Aborting.\n";
+      APP_ABORT("EinsplineSetBuilder::createSPOSet");
+    }
+  app_log() <<  "TIMER  EinsplineSetBuilder::ReadOrbitalInfo " << orb_info_timer.elapsed() << std::endl;
+  myComm->barrier();
+  orb_info_timer.restart();
+  BroadcastOrbitalInfo();
+
+  app_log() <<  "TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo " << orb_info_timer.elapsed() << std::endl;
+  app_log().flush();
+
+  // setup primitive cell and supercell
+  PrimCell.set(Lattice);
+  SuperCell.set(SuperLattice);
+  GGt=dot(transpose(PrimCell.G), PrimCell.G);
+  for (int iat=0; iat<AtomicOrbitals.size(); iat++)
+    AtomicOrbitals[iat].Lattice = Lattice;
+
+  // Now, analyze the k-point mesh to figure out the what k-points  are needed
+  TwistNum = TwistNum_inp;
+  AnalyzeTwists2();
+}
+
+EinsplineSet* EinsplineSetBuilder::create_einspline_extended(xmlNodePtr cur, int spinSet, int sortBands, int numOrbs)
+{ // reroute createSPOSetFromXML to this function if use_old_spline == "yes",
+  // to reduce clutter:
+  //  * only support periodic boundary in all 3 directions (truncate="no")
+  //  * only support double precision (precision="double")
+  //  * only support ESHDF format
+  //
+  //  Args:
+  //    cur (xmlNodePtr): xml node pointing to <sposet> or <determinant>
+  //     cur.parent should be either <sposet_builder> or <determinantset>
+  //     cur.parent must contain "href" to the wavefunction hdf5 file.
+  //  Returns:
+  //    EinsplineSet*: pointer to EinsplineSetExtended class built with "href".
+  
+  EinsplineSet *OrbitalSet;
+
+  // cut these code paths to reduce clutter
+  if (UseRealOrbitals) 
+    APP_ABORT("use_einspline_set_extended only support complex orbitals");
+  if (Format != ESHDF)
+    APP_ABORT("use_einspline_set_extended only support ESHDF format");
+  // if (spo_prec!="double") // TODO: pass spo_prec in here to abort
+
+  // create EinsplineSetExtended
+  OrbitalSet = new EinsplineSetExtended<complex<double>>;
+  setTiling(OrbitalSet,numOrbs);
+
+  // fill OrbitalSet using data read from the hdf5 file
+  OccupyBands(spinSet,sortBands,numOrbs);
+  EinsplineSetExtended<complex<double> > *restrict orbitalSet =
+    dynamic_cast<EinsplineSetExtended<complex<double> >*>(OrbitalSet);
+  ReadBands_ESHDF(spinSet,orbitalSet);
+
+  return OrbitalSet;
+}
+
 SPOSetBase*
 EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
@@ -72,6 +178,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string spo_prec("double");
   std::string truncate("no");
   std::string hybrid_rep("no");
+  std::string use_einspline_set_extended("no"); // use old spline library for high-order derivatives, e.g. needed for backflow optimization
 #if defined(QMC_CUDA)
   std::string useGPU="yes";
 #else
@@ -97,6 +204,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add (spo_prec,   "precision");
     a.add (truncate,   "truncate");
     a.add (BufferLayer, "buffer");
+    a.add (use_einspline_set_extended,"use_old_spline");
     a.add (myName, "tag");
 #if defined(QMC_CUDA)
     a.add (gpu::MaxGPUSpineSizeMB, "Spline_Size_Limit_MB");
@@ -205,81 +313,22 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     abort();
   }
 
-  Timer mytimer;
-  if(spinSet==0)
-  {
-    // The tiling can be set by a simple vector, (e.g. 2x2x2), or by a
-    // full 3x3 matrix of integers.  If the tilematrix was not set in
-    // the input file...
-    bool matrixNotSet = true;
-    for (int i=0; i<3; i++)
-      for (int j=0; j<3; j++)
-        matrixNotSet = matrixNotSet && (TileMatrix(i,j) == 0);
-    // then set the matrix to what may have been specified in the
-    // tiling vector
-    if (matrixNotSet)
-      for (int i=0; i<3; i++)
-        for (int j=0; j<3; j++)
-          TileMatrix(i,j) = (i==j) ? TileFactor(i) : 0;
-    char buff[1000];
-    if (myComm->rank() == 0)
-    {
-      snprintf (buff, 1000, "  TileMatrix = \n [ %2d %2d %2d\n   %2d %2d %2d\n   %2d %2d %2d ]\n",
-               TileMatrix(0,0), TileMatrix(0,1), TileMatrix(0,2),
-               TileMatrix(1,0), TileMatrix(1,1), TileMatrix(1,2),
-               TileMatrix(2,0), TileMatrix(2,1), TileMatrix(2,2));
-      app_log() << buff;
-    }  
-    if (numOrbs == 0)
-    {
-      app_error() << "You must specify the number of orbitals in the input file.\n";
-      APP_ABORT("EinsplineSetBuilder::createSPOSet");
-    }
-    else
-      app_log() << "  Reading " << numOrbs << " orbitals from HDF5 file.\n";
-    mytimer.restart();
-    /////////////////////////////////////////////////////////////////
-    // Read the basic orbital information, without reading all the //
-    // orbitals themselves.                                        //
-    /////////////////////////////////////////////////////////////////
-    if (myComm->rank() == 0)
-      if (!ReadOrbitalInfo())
-      {
-        app_error() << "Error reading orbital info from HDF5 file.  Aborting.\n";
-        APP_ABORT("EinsplineSetBuilder::createSPOSet");
-      }
-    app_log() <<  "TIMER  EinsplineSetBuilder::ReadOrbitalInfo " << mytimer.elapsed() << std::endl;
-    myComm->barrier();
-    mytimer.restart();
-    BroadcastOrbitalInfo();
-
-    app_log() <<  "TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo " << mytimer.elapsed() << std::endl;
-    app_log().flush();
-
-    // setup primitive cell and supercell
-    PrimCell.set(Lattice);
-    SuperCell.set(SuperLattice);
-    GGt=dot(transpose(PrimCell.G), PrimCell.G);
-    for (int iat=0; iat<AtomicOrbitals.size(); iat++)
-      AtomicOrbitals[iat].Lattice = Lattice;
-
-    // Copy supercell into the ParticleSets
-    // app_log() << "Overwriting XML lattice with that from the ESHDF file.\n";
-    // PtclPoolType::iterator piter;
-    // for(piter = ParticleSets.begin(); piter != ParticleSets.end(); piter++)
-    //   piter->second->Lattice.copy(SuperCell);
-
-    // Now, analyze the k-point mesh to figure out the what k-points  are needed                                                    //
-    TwistNum = TwistNum_inp;
-    AnalyzeTwists2();
-
-  } //use spinSet==0 to initialize shared properties of orbitals
+  // set the internal parameters
+  if (spinSet == 0) set_metadata(numOrbs,TwistNum_inp);
 
   //////////////////////////////////
   // Create the OrbitalSet object
   //////////////////////////////////
-  mytimer.restart();
+  Timer mytimer;
+  if (use_einspline_set_extended=="yes")
+  { // create EinsplineSet and finish this function (EinsplineSetBuilder::createSPOSetFromXML) right here
+    OrbitalSet = create_einspline_extended(cur,spinSet,sortBands,numOrbs);
+    SPOSetMap[aset] = OrbitalSet;
+    spo_timer->stop();
+    return OrbitalSet;
+  }
 
+  mytimer.restart();
   OccupyBands(spinSet, sortBands, numOrbs);
   if(spinSet==0) TileIons();
 

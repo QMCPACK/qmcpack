@@ -26,9 +26,7 @@
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "QMCWaveFunctions/BandInfo.h"
 #include "QMCWaveFunctions/AtomicOrbital.h"
-#ifdef QMC_CUDA
 #include "QMCWaveFunctions/EinsplineSet.h"
-#endif
 #include "Numerics/HDFNumericAttrib.h"
 #include <map>
 
@@ -170,6 +168,12 @@ public:
    */
   SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
 
+  /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
+   * @param cur the current xml node
+   */
+  void set_metadata(int numOrbs, int TwistNum_inp);
+  EinsplineSet* create_einspline_extended(xmlNodePtr cur,int spinSet, int sortBands, int numOrbs);
+
   /** initialize with the existing SPOSet */
   SPOSetBase* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info);
 
@@ -265,12 +269,10 @@ public:
   void OccupyBands(int spin, int sortBands, int numOrbs);
   void OccupyBands_ESHDF(int spin, int sortBands, int numOrbs);
 
-#ifdef QMC_CUDA
   void ReadBands      (int spin, EinsplineSetExtended<std::complex<double> >* orbitalSet);
   void ReadBands_ESHDF(int spin, EinsplineSetExtended<std::complex<double> >* orbitalSet);
   void ReadBands      (int spin, EinsplineSetExtended<        double  >* orbitalSet);
   void ReadBands_ESHDF(int spin, EinsplineSetExtended<        double  >* orbitalSet);
-#endif
 
   void CopyBands(int numOrbs);
 
@@ -328,10 +330,8 @@ public:
   bool makeRotations;
   std::vector<RealType> rotationMatrix;
   std::vector<int> rotatedOrbitals;
-#ifdef QMC_CUDA
   void RotateBands_ESHDF(int spin, EinsplineSetExtended<std::complex<double > >* orbitalSet);
   void RotateBands_ESHDF(int spin, EinsplineSetExtended<double>* orbitalSet);
-#endif
 
   /** broadcast SortBands
    * @param N number of state

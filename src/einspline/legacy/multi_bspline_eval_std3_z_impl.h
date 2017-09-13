@@ -18,13 +18,13 @@
 //  Boston, MA  02110-1301  USA                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-#ifndef MULTI_BSPLINE_EVAL_STD2_Z_IMPL_H
-#define MULTI_BSPLINE_EVAL_STD2_Z_IMPL_H
+#ifndef MULTI_BSPLINE_EVAL_STD3_Z_IMPL_H
+#define MULTI_BSPLINE_EVAL_STD3_Z_IMPL_H
 
 #include <math.h>
 #include <stdio.h>
-#include "bspline_base.h"
-#include "multi_bspline_structs.h"
+#include <einspline/bspline_base.h>
+#include <einspline/multi_bspline_structs.h>
 
 extern const double* restrict   Ad;
 extern const double* restrict  dAd;
@@ -35,7 +35,7 @@ extern const double* restrict d3Ad;
 /* 1D double-precision, complex evaulation functions        */
 /************************************************************/
 void
-eval_multi_UBspline_1d_z (const multi_UBspline_1d_z *spline,
+legacy_eval_multi_UBspline_1d_z (const multi_UBspline_1d_z *spline,
                           double x,
                           complex_double* restrict vals)
 {
@@ -68,7 +68,7 @@ eval_multi_UBspline_1d_z (const multi_UBspline_1d_z *spline,
 
 
 void
-eval_multi_UBspline_1d_z_vg (const multi_UBspline_1d_z *spline,
+legacy_eval_multi_UBspline_1d_z_vg (const multi_UBspline_1d_z *spline,
                              double x,
                              complex_double* restrict vals,
                              complex_double* restrict grads)
@@ -114,7 +114,7 @@ eval_multi_UBspline_1d_z_vg (const multi_UBspline_1d_z *spline,
 
 
 void
-eval_multi_UBspline_1d_z_vgl (const multi_UBspline_1d_z *spline,
+legacy_eval_multi_UBspline_1d_z_vgl (const multi_UBspline_1d_z *spline,
                               double x,
                               complex_double* restrict vals,
                               complex_double* restrict grads,
@@ -170,13 +170,13 @@ eval_multi_UBspline_1d_z_vgl (const multi_UBspline_1d_z *spline,
 
 
 void
-eval_multi_UBspline_1d_z_vgh (const multi_UBspline_1d_z *spline,
+legacy_eval_multi_UBspline_1d_z_vgh (const multi_UBspline_1d_z *spline,
                               double x,
                               complex_double* restrict vals,
                               complex_double* restrict grads,
                               complex_double* restrict hess)
 {
-  eval_multi_UBspline_1d_z_vgl (spline, x, vals, grads, hess);
+  legacy_eval_multi_UBspline_1d_z_vgl (spline, x, vals, grads, hess);
 }
 
 
@@ -184,7 +184,7 @@ eval_multi_UBspline_1d_z_vgh (const multi_UBspline_1d_z *spline,
 /* 2D double-precision, complex evaulation functions        */
 /************************************************************/
 void
-eval_multi_UBspline_2d_z (const multi_UBspline_2d_z *spline,
+legacy_eval_multi_UBspline_2d_z (const multi_UBspline_2d_z *spline,
                           double x, double y,
                           complex_double* restrict vals)
 {
@@ -231,7 +231,7 @@ eval_multi_UBspline_2d_z (const multi_UBspline_2d_z *spline,
 
 
 void
-eval_multi_UBspline_2d_z_vg (const multi_UBspline_2d_z *spline,
+legacy_eval_multi_UBspline_2d_z_vg (const multi_UBspline_2d_z *spline,
                              double x, double y,
                              complex_double* restrict vals,
                              complex_double* restrict grads)
@@ -303,7 +303,7 @@ eval_multi_UBspline_2d_z_vg (const multi_UBspline_2d_z *spline,
 }
 
 void
-eval_multi_UBspline_2d_z_vgl (const multi_UBspline_2d_z *spline,
+legacy_eval_multi_UBspline_2d_z_vgl (const multi_UBspline_2d_z *spline,
                               double x, double y,
                               complex_double* restrict vals,
                               complex_double* restrict grads,
@@ -397,7 +397,7 @@ eval_multi_UBspline_2d_z_vgl (const multi_UBspline_2d_z *spline,
 
 
 void
-eval_multi_UBspline_2d_z_vgh (const multi_UBspline_2d_z *spline,
+legacy_eval_multi_UBspline_2d_z_vgh (const multi_UBspline_2d_z *spline,
                               double x, double y,
                               complex_double* restrict vals,
                               complex_double* restrict grads,
@@ -496,7 +496,7 @@ eval_multi_UBspline_2d_z_vgh (const multi_UBspline_2d_z *spline,
 /* 3D double-precision, complex evaulation functions        */
 /************************************************************/
 void
-eval_multi_UBspline_3d_z (const multi_UBspline_3d_z *spline,
+legacy_eval_multi_UBspline_3d_z (const multi_UBspline_3d_z *spline,
                           double x, double y, double z,
                           complex_double* restrict vals)
 {
@@ -559,7 +559,7 @@ eval_multi_UBspline_3d_z (const multi_UBspline_3d_z *spline,
 
 #if 1
 void
-eval_multi_UBspline_3d_z_vgh (const multi_UBspline_3d_z *spline,
+legacy_eval_multi_UBspline_3d_z_vgh (const multi_UBspline_3d_z *spline,
                               double x, double y, double z,
                               complex_double* restrict vals,
                               complex_double* restrict grads,
@@ -792,7 +792,7 @@ eval_multi_UBspline_3d_z_vgh (const multi_UBspline_3d_z *spline,
 }
 #else
 void
-eval_multi_UBspline_3d_z_vgh (const multi_UBspline_3d_z *spline,
+legacy_eval_multi_UBspline_3d_z_vgh (const multi_UBspline_3d_z *spline,
                               double x, double y, double z,
                               complex_double* restrict vals,
                               complex_double* restrict grads,
@@ -926,7 +926,7 @@ eval_multi_UBspline_3d_z_vgh (const multi_UBspline_3d_z *spline,
 #endif
 
 void
-eval_multi_UBspline_3d_z_vg (const multi_UBspline_3d_z *spline,
+legacy_eval_multi_UBspline_3d_z_vg (const multi_UBspline_3d_z *spline,
                              double x, double y, double z,
                              complex_double* restrict vals,
                              complex_double* restrict grads)
@@ -1023,7 +1023,7 @@ eval_multi_UBspline_3d_z_vg (const multi_UBspline_3d_z *spline,
 
 
 void
-eval_multi_UBspline_3d_z_vgl (const multi_UBspline_3d_z *spline,
+legacy_eval_multi_UBspline_3d_z_vgl (const multi_UBspline_3d_z *spline,
                               double x, double y, double z,
                               complex_double* restrict vals,
                               complex_double* restrict grads,
@@ -1145,7 +1145,7 @@ eval_multi_UBspline_3d_z_vgl (const multi_UBspline_3d_z *spline,
 
 
 void
-eval_multi_UBspline_3d_z_vghgh (const multi_UBspline_3d_z *spline,
+legacy_eval_multi_UBspline_3d_z_vghgh (const multi_UBspline_3d_z *spline,
                                 double x, double y, double z,
                                 complex_double* restrict vals,
                                 complex_double* restrict grads,
