@@ -8,9 +8,9 @@ One can perturb the nodal surface of a single-slater/multi-slater wavefunction t
 \mathbf{x}'_{i_\alpha}=\mathbf{x}_{i_\alpha}+\sum_{\alpha \leq \beta} \sum_{i_\alpha \neq j_\beta} \eta^{\alpha\beta}(|\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta}|)(\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta})
 \end{equation}
 
-Here, $\eta^{\alpha\beta}(|\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta}|)$ is a radially symmetric back flow transformation between species $\alpha$ and $\beta$.  In QMCPACK, particle $i_\alpha$ is known as the ``target" particle and $j_\beta$ is known as the ``source".  The main types of transformations we'll talk about are so called one-body terms, which are between an electron and an ion $\eta^{eI}(|\mathbf{x}_{i_e}-\mathbf{x}_{j_I}|)$, and two-body terms.  Two body terms are distinguished as those between like and opposite spin electrons:  $\eta^{e(\uparrow)e(\uparrow)}(|\mathbf{x}_{i_e(\uparrow)}-\mathbf{x}_{j_e(\uparrow)}|)$ and  $\eta^{e(\uparrow)e(\downarrow)}(|\mathbf{x}_{i_e(\uparrow)}-\mathbf{x}_{j_e(\downarrow)}|)$.  Henceforth, we will assume that $\eta^{e(\uparrow)e(\uparrow)}=\eta^{e(\downarrow)e(\downarrow)}$.
+Here, $\eta^{\alpha\beta}(|\mathbf{x}_{i_\alpha}-\mathbf{x}_{j_\beta}|)$ is a radially symmetric back flow transformation between species $\alpha$ and $\beta$.  In QMCPACK, particle $i_\alpha$ is known as the ``target" particle and $j_\beta$ is known as the ``source".  The main types of transformations are so called one-body terms, which are between an electron and an ion $\eta^{eI}(|\mathbf{x}_{i_e}-\mathbf{x}_{j_I}|)$, and two-body terms.  Two body terms are distinguished as those between like and opposite spin electrons:  $\eta^{e(\uparrow)e(\uparrow)}(|\mathbf{x}_{i_e(\uparrow)}-\mathbf{x}_{j_e(\uparrow)}|)$ and  $\eta^{e(\uparrow)e(\downarrow)}(|\mathbf{x}_{i_e(\uparrow)}-\mathbf{x}_{j_e(\downarrow)}|)$.  Henceforth, we will assume that $\eta^{e(\uparrow)e(\uparrow)}=\eta^{e(\downarrow)e(\downarrow)}$.
 
-In the following, I will explain how to describe general terms like Eq. \ref{backflowdef} in a QMCPACK XML file.  For specificity, I will consider a particle set consisting of H and He (in that order).  This ordering will be important when we build the XML file, so you can find this out either through your specific declaration of <particleset>, by looking at the hdf5 file in the case of plane waves, or by looking at the qmcpack output file in the section labelled ``Summary of QMC systems".  
+In the following, we explain how to describe general terms like Eq. \ref{backflowdef} in a QMCPACK XML file.  For specificity, we will consider a particle set consisting of H and He (in that order).  This ordering will be important when we build the XML file, so you can find this out either through your specific declaration of <particleset>, by looking at the hdf5 file in the case of plane waves, or by looking at the qmcpack output file in the section labelled ``Summary of QMC systems".  
 \subsection{Input Specifications}
 All backflow declarations occur within a single \texttt{<backflow> ... </backflow>} block.  Backflow transformations occur in \texttt{<transformation>} blocks, and have the following input parameters
 
@@ -118,11 +118,13 @@ It is wholly possible that the above prescription might grind to a halt in steps
 
 \subsubsection{Tweaking the Optimization Run}
 
-The following modifications are worth a try in the optimization block.
+The following modifications are worth a try in the optimization block:
 
 \begin{itemize}
 \item Try setting ``useDrift" to ``no".  This eliminates the use of wavefunction gradients and force biasing in the VMC algorithm.  This could be an issue for poorly optimized wavefunctions with pathological gradients.  
 \item Try increasing ``exp0" in the optimization block.  Larger values of "exp0" cause the search directions to more closely follow those predicted by steepest-descent than those by the linear method.
 \end{itemize}
+
+Note that the new adaptive shift optimizer has not yet been tried with backflow wavefunctions. It should perform better than the older optimizers, but a considered optimization process is still recommended.
 
 
