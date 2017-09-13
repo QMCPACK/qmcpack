@@ -39,7 +39,7 @@ namespace qmcplusplus
 {
 
 class WalkerControlBase;
-class EstimatorManager;
+class EstimatorManagerBase;
 
 /** Manages the state of QMC sections and handles population control for DMCs
  *
@@ -133,7 +133,7 @@ struct SimpleFixedNodeBranch: public QMCTraits
   ///Backup WalkerController for mixed DMC
   WalkerControlBase* BackupWalkerController;
   ///EstimatorManager
-  EstimatorManager*  MyEstimator;
+  EstimatorManagerBase*  MyEstimator;
   ///a simple accumulator for energy
   accumulator_set<EstimatorRealType> EnergyHist;
   ///a simple accumulator for variance
@@ -200,7 +200,7 @@ struct SimpleFixedNodeBranch: public QMCTraits
   }
 
   /** get the EstimatorManager */
-  EstimatorManager* getEstimatorManager()
+  EstimatorManagerBase* getEstimatorManager()
   {
     return MyEstimator;
   }
@@ -208,7 +208,7 @@ struct SimpleFixedNodeBranch: public QMCTraits
   /** set the EstimatorManager
    * @param est estimator created by the first QMCDriver
    * */
-  void setEstimatorManager(EstimatorManager* est)
+  void setEstimatorManager(EstimatorManagerBase* est)
   {
     MyEstimator=est;
   }

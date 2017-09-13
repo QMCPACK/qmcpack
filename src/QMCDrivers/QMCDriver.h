@@ -29,7 +29,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Estimators/EstimatorManager.h"
+#include "Estimators/EstimatorManagerBase.h"
 #include "Utilities/OhmmsInfo.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
@@ -202,7 +202,7 @@ public:
   //virtual std::vector<RandomGenerator_t*>& getRng() {}
 
   ///Observables manager
-  EstimatorManager* Estimators;
+  EstimatorManagerBase* Estimators;
 
   ///Traces manager
   TraceManager* Traces;

@@ -90,7 +90,7 @@ bool QMCUpdateBase::put(xmlNodePtr cur)
   return s;
 }
 
-void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManager* est)
+void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManagerBase* est)
 {
   Estimators=est;
   branchEngine=brancher;
@@ -121,7 +121,7 @@ void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManager* est)
 }
 
 
-void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManager* est, TraceManager* traces)
+void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManagerBase* est, TraceManager* traces)
 {
   resetRun(brancher,est);
   Traces = traces;
