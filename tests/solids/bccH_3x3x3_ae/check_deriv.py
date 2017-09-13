@@ -38,7 +38,7 @@ def parse_deriv_block(mm,header,nmax_deriv=1024):
   return data
 # end def parse_deriv_block
 
-def check_relative_error(data,rel_tol=1e-3):
+def check_relative_error(data,rel_tol=1e-3,eps=1e-16):
   # data should have 4 arrays saved in keys: ('iparam','numeric','analytic','diff')
   success = True
   par_list = data['iparam']
@@ -47,6 +47,8 @@ def check_relative_error(data,rel_tol=1e-3):
   diff_list= data['diff']
   for iparam in range(len(par_list)):
     num  = num_list[iparam]
+    if abs(num) < eps:
+      continue # skip 0 denominator
     ana  = ana_list[iparam]
     diff = diff_list[iparam]
     rel_err = diff/abs(num)
