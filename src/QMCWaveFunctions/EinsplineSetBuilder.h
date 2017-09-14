@@ -172,7 +172,6 @@ public:
    * @param cur the current xml node
    */
   void set_metadata(int numOrbs, int TwistNum_inp);
-  EinsplineSet* create_einspline_extended(xmlNodePtr cur,int spinSet, int sortBands, int numOrbs);
 
   /** initialize with the existing SPOSet */
   SPOSetBase* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info);

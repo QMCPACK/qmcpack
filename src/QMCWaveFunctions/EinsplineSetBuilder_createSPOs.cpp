@@ -125,42 +125,6 @@ void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
   AnalyzeTwists2();
 }
 
-EinsplineSet* EinsplineSetBuilder::create_einspline_extended(xmlNodePtr cur, int spinSet, int sortBands, int numOrbs)
-{ // reroute createSPOSetFromXML to this function if use_old_spline == "yes",
-  // to reduce clutter:
-  //  * only support periodic boundary in all 3 directions (truncate="no")
-  //  * only support double precision (precision="double")
-  //  * only support ESHDF format
-  //
-  //  Args:
-  //    cur (xmlNodePtr): xml node pointing to <sposet> or <determinant>
-  //     cur.parent should be either <sposet_builder> or <determinantset>
-  //     cur.parent must contain "href" to the wavefunction hdf5 file.
-  //  Returns:
-  //    EinsplineSet*: pointer to EinsplineSetExtended class built with "href".
-  
-  EinsplineSet *OrbitalSet;
-
-  // cut these code paths to reduce clutter
-  if (UseRealOrbitals) 
-    APP_ABORT("use_einspline_set_extended only support complex orbitals");
-  if (Format != ESHDF)
-    APP_ABORT("use_einspline_set_extended only support ESHDF format");
-  // if (spo_prec!="double") // TODO: pass spo_prec in here to abort
-
-  // create EinsplineSetExtended
-  OrbitalSet = new EinsplineSetExtended<complex<double>>;
-  setTiling(OrbitalSet,numOrbs);
-
-  // fill OrbitalSet using data read from the hdf5 file
-  OccupyBands(spinSet,sortBands,numOrbs);
-  EinsplineSetExtended<complex<double> > *restrict orbitalSet =
-    dynamic_cast<EinsplineSetExtended<complex<double> >*>(OrbitalSet);
-  ReadBands_ESHDF(spinSet,orbitalSet);
-
-  return OrbitalSet;
-}
-
 SPOSetBase*
 EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
@@ -320,14 +284,6 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   // Create the OrbitalSet object
   //////////////////////////////////
   Timer mytimer;
-  if (use_einspline_set_extended=="yes")
-  { // create EinsplineSet and finish this function (EinsplineSetBuilder::createSPOSetFromXML) right here
-    OrbitalSet = create_einspline_extended(cur,spinSet,sortBands,numOrbs);
-    SPOSetMap[aset] = OrbitalSet;
-    spo_timer->stop();
-    return OrbitalSet;
-  }
-
   mytimer.restart();
   OccupyBands(spinSet, sortBands, numOrbs);
   if(spinSet==0) TileIons();
@@ -383,43 +339,58 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   delta_mem=qmc_common.memory_allocated-delta_mem;
   app_log() <<"  MEMORY allocated SplineAdoptorReader " << (delta_mem>>20) << " MB" << std::endl;
   OrbitalSet = bspline_zd;
-#ifdef QMC_CUDA
-  EinsplineSet *new_OrbitalSet;
-  if (UseRealOrbitals)
+  if(useGPU=="yes"||use_einspline_set_extended=="yes")
   {
-    EinsplineSetExtended<double> *temp_OrbitalSet;
-    if (AtomicOrbitals.size() > 0)
-      temp_OrbitalSet = new EinsplineSetHybrid<double>;
-    else
-      temp_OrbitalSet = new EinsplineSetExtended<double>;
-    MixedSplineReader->export_MultiSpline(&(temp_OrbitalSet->MultiSpline));
-    //set the flags for anti periodic boundary conditions
-    temp_OrbitalSet->HalfG = dynamic_cast<SplineAdoptorBase<double,3> *>(OrbitalSet)->HalfG;
-    new_OrbitalSet = temp_OrbitalSet;
-  }
-  else
-  {
-    EinsplineSetExtended<std::complex<double> > *temp_OrbitalSet;
-    if (AtomicOrbitals.size() > 0)
-      temp_OrbitalSet = new EinsplineSetHybrid<std::complex<double> >;
-    else
-      temp_OrbitalSet = new EinsplineSetExtended<std::complex<double> >;
-    MixedSplineReader->export_MultiSpline(&(temp_OrbitalSet->MultiSpline));
-    temp_OrbitalSet->kPoints.resize(NumDistinctOrbitals);
-    temp_OrbitalSet->MakeTwoCopies.resize(NumDistinctOrbitals);
-    for (int iorb=0, num=0; iorb<NumDistinctOrbitals; iorb++)
+    EinsplineSet *new_OrbitalSet;
+    if (UseRealOrbitals)
     {
-      int ti = (*FullBands[spinSet])[iorb].TwistIndex;
-      temp_OrbitalSet->kPoints[iorb] = PrimCell.k_cart(TwistAngles[ti]);
-      temp_OrbitalSet->MakeTwoCopies[iorb] = (num < (numOrbs-1)) && (*FullBands[spinSet])[iorb].MakeTwoCopies;
-      num += temp_OrbitalSet->MakeTwoCopies[iorb] ? 2 : 1;
-    }
-    new_OrbitalSet = temp_OrbitalSet;
-  }
-  //set the internal parameters
-  setTiling(new_OrbitalSet,numOrbs);
-  OrbitalSet = new_OrbitalSet;
+      EinsplineSetExtended<double> *temp_OrbitalSet;
+#if defined(QMC_CUDA)
+      if (AtomicOrbitals.size() > 0)
+        temp_OrbitalSet = new EinsplineSetHybrid<double>;
+      else
 #endif
+        temp_OrbitalSet = new EinsplineSetExtended<double>;
+      MixedSplineReader->export_MultiSpline(&(temp_OrbitalSet->MultiSpline));
+      //set the flags for anti periodic boundary conditions
+      temp_OrbitalSet->HalfG = dynamic_cast<SplineAdoptorBase<double,3> *>(OrbitalSet)->HalfG;
+      new_OrbitalSet = temp_OrbitalSet;
+    }
+    else
+    {
+      EinsplineSetExtended<std::complex<double> > *temp_OrbitalSet;
+#if defined(QMC_CUDA)
+      if (AtomicOrbitals.size() > 0)
+        temp_OrbitalSet = new EinsplineSetHybrid<std::complex<double> >;
+      else
+#endif
+        temp_OrbitalSet = new EinsplineSetExtended<std::complex<double> >;
+      MixedSplineReader->export_MultiSpline(&(temp_OrbitalSet->MultiSpline));
+      temp_OrbitalSet->kPoints.resize(NumDistinctOrbitals);
+      temp_OrbitalSet->MakeTwoCopies.resize(NumDistinctOrbitals);
+      temp_OrbitalSet->StorageValueVector.resize(NumDistinctOrbitals);
+      //temp_OrbitalSet->BlendValueVector.resize(NumDistinctOrbitals);
+      temp_OrbitalSet->StorageLaplVector.resize(NumDistinctOrbitals);
+      //temp_OrbitalSet->BlendLaplVector.resize(NumDistinctOrbitals);
+      temp_OrbitalSet->StorageGradVector.resize(NumDistinctOrbitals);
+      //temp_OrbitalSet->BlendGradVector.resize(NumDistinctOrbitals);
+      temp_OrbitalSet->StorageHessVector.resize(NumDistinctOrbitals);
+      temp_OrbitalSet->StorageGradHessVector.resize(NumDistinctOrbitals);
+      temp_OrbitalSet->phase.resize(NumDistinctOrbitals);
+      temp_OrbitalSet->eikr.resize(NumDistinctOrbitals);
+      for (int iorb=0, num=0; iorb<NumDistinctOrbitals; iorb++)
+      {
+        int ti = (*FullBands[spinSet])[iorb].TwistIndex;
+        temp_OrbitalSet->kPoints[iorb] = PrimCell.k_cart(TwistAngles[ti]);
+        temp_OrbitalSet->MakeTwoCopies[iorb] = (num < (numOrbs-1)) && (*FullBands[spinSet])[iorb].MakeTwoCopies;
+        num += temp_OrbitalSet->MakeTwoCopies[iorb] ? 2 : 1;
+      }
+      new_OrbitalSet = temp_OrbitalSet;
+    }
+    //set the internal parameters
+    setTiling(new_OrbitalSet,numOrbs);
+    OrbitalSet = new_OrbitalSet;
+  }
 #ifdef Ye_debug
 #ifndef QMC_COMPLEX
   if (myComm->rank()==0 && OrbitalSet->MuffinTins.size() > 0)
