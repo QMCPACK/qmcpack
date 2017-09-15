@@ -570,7 +570,7 @@ Due to the fact that the login nodes and the compute nodes have different proces
 cross-compiling is required on this platform. See details about using Blue Gene/Q at \url{http://www.alcf.anl.gov/user-guides/compiling-linking}.
 On Mira, compilers are loaded via softenv and users need to add +mpiwrapper-bgclang and +cmake in \$HOME/.soft.
 In order to build QMCPACK, a toolchain file is provided for setting up CMake and the cmake command should be executed twice.
-\textbf{XL C/C++ compiler no more builds QMCPACK due to the lack of C++11 support but BGClang can produce correct binary with good performance.}
+\textbf{BGClang is required for C++11 support. IBM XL C/C++ compiler should not be used.}
 
 \begin{verbatim}
 cd build
@@ -697,37 +697,34 @@ Edison is a Cray XC30 with dual 12-core Intel "Ivy Bridge" nodes
 installed at NERSC. The build settings are identical to eos.
 
 \begin{verbatim}
-module load cray-hdf5
-module load cmake
-module load fftw
-export FFTW_HOME=$FFTW_DIR/..
 module load boost
-mkdir build_edison
-cd build_edison
+module load cmake3
+module load cmake
+module load libxml2
+module load cray-hdf5-parallel
+module unload cray-libsci
 cmake ..
 make -j 8
 ls -l bin/qmcpack
 \end{verbatim}
-When the above was tested on 1 February 2016, the following module and
+When the above was tested on 15 September 2017, the following module and
 software versions were present:
 \begin{verbatim}
 qmcpack@edison04:trunk> module list
-Currently Loaded Modulefiles:
-  1) modules/3.2.10.3                        16) alps/5.2.3-2.0502.9295.14.14.ari
-  2) nsg/1.2.0                               17) rca/1.0.0-2.0502.57212.2.56.ari
-  3) eswrap/1.1.0-1.020200.1130.0            18) atp/1.8.3
-  4) switch/1.0-1.0502.57058.1.58.ari        19) PrgEnv-intel/5.2.56
-  5) craype-network-aries                    20) craype-ivybridge
-  6) craype/2.5.0                            21) cray-shmem/7.3.0
-  7) intel/15.0.1.133                        22) cray-mpich/7.3.0
-  8) cray-libsci/13.3.0                      23) slurm/edison
-  9) udreg/2.3.2-1.0502.9889.2.20.ari        24) altd/2.0
- 10) ugni/6.0-1.0502.10245.9.9.ari           25) darshan/2.3.0
- 11) pmi/5.0.10-1.0000.11050.0.0.ari         26) subversion/1.7.9
- 12) dmapp/7.0.1-1.0502.10246.8.47.ari       27) cray-hdf5/1.8.14
- 13) gni-headers/4.0-1.0502.10317.9.2.ari    28) cmake/2.8.11.2
- 14) xpmem/0.1-2.0502.57015.1.15.ari         29) fftw/3.3.4.6
- 15) dvs/2.5_0.9.0-1.0502.1958.2.55.ari      30) boost/1.54
+urrently Loaded Modulefiles:
+  1) modules/3.2.10.6                              14) rca/2.2.11-6.0.4.0_13.2__g84de67a.ari
+  2) intel/17.0.2.174                              15) atp/2.1.1
+  3) craype-network-aries                          16) PrgEnv-intel/6.0.4
+  4) craype/2.5.12.3                               17) craype-ivybridge
+  5) udreg/2.3.2-6.0.4.0_12.2__g2f9c3ee.ari        18) cray-shmem/7.6.0
+  6) ugni/6.0.14-6.0.4.0_14.1__ge7db4a2.ari        19) cray-mpich/7.6.0
+  7) pmi/5.0.12                                    20) altd/2.0
+  8) dmapp/7.1.1-6.0.4.0_46.2__gb8abda2.ari        21) darshan/3.1.4
+  9) gni-headers/5.0.11-6.0.4.0_7.2__g7136988.ari  22) boost/1.63
+ 10) xpmem/2.2.2-6.0.4.0_3.1__g43b0535.ari         23) cmake/3.8.1
+ 11) job/2.2.2-6.0.4.0_8.2__g3c644b5.ari           24) cray-hdf5-parallel/1.10.0.3
+ 12) dvs/2.7_2.2.30-6.0.4.1_5.4__gd731684          25) libxml2/2.9.4
+ 13) alps/6.4.1-6.0.4.0_7.2__g86d0f3d.ari
 \end{verbatim}
 
 \subsection{Installing on NERSC Cori, Haswell Partition, Cray XC40}
@@ -1017,11 +1014,11 @@ the following combinations nightly (workstations) and weekly (supercomputers):
 \begin{itemize}
 \item On a Linux Intel Xeon workstation:
   \begin{itemize}
-  \item GCC 4.8.2 with OpenMPI and CUDA 7.0 (GPU build, run on NVIDIA K40s)
-  \item GCC 4.8.2 with OpenMPI with netlib BLAS
-  \item GCC 4.8.2 with OpenMPI with Intel MKL
+  \item GCC 4.8.5 with OpenMPI and CUDA 8.0 (GPU build, run on NVIDIA K40s)
+  \item GCC 4.8.5 with OpenMPI with Netlib BLAS
+  \item GCC 4.8.5 with OpenMPI with Intel MKL
   \item Intel 2017 with Intel MPI and MKL
-  \item Intel 2015 with Intel MPI and MKL and CUDA 7.0 (GPU build, run on NVIDIA K40s)
+  \item Intel 2015 with Intel MPI and MKL and CUDA 8.0 (GPU build, run on NVIDIA K40s)
   \item Intel 2015 with Intel MPI  and MKL
   \end{itemize}
 \item On a Linux Intel Knight's Landing workstation:
@@ -1051,8 +1048,7 @@ the following combinations nightly (workstations) and weekly (supercomputers):
   \caption{Example test results for QMCPACK, showing data for a
     workstation (Intel, GCC, both CPU and GPU builds) and for two ORNL
     supercomputers. In this example, 4 errors were found. This
-    dashboard is not yet openly accessible, but the developers hope
-    to make it available at a later date.}
+    dashboard is accessible at \url{https://cdash.qmcpack.org/}.}
   \label{fig:cdash}
 \end{figure}
 
