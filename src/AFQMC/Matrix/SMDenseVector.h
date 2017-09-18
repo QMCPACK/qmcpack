@@ -36,7 +36,7 @@ class SMDenseVector
   typedef T              value_type;
   typedef T*             pointer;
   typedef const T*       const_pointer;
-  typedef unsigned long  indxType;
+  typedef std::size_t    indxType;
   typedef typename boost_SMVector<T>::iterator iterator;
   typedef typename boost_SMVector<T>::const_iterator const_iterator;
   typedef boost_SMVector<T>  This_t;
@@ -72,7 +72,7 @@ class SMDenseVector
     comm=comm_;
   }
 
-  inline void reserve(unsigned long nnz, bool allow_reduce = false)
+  inline void reserve(std::size_t nnz, bool allow_reduce = false)
   {
     if(vals==NULL || (vals!=NULL && vals->capacity() < nnz) || (vals!=NULL && vals->capacity() > nnz && allow_reduce)) 
       allocate(nnz,allow_reduce);
@@ -148,7 +148,7 @@ class SMDenseVector
   } 
 
   // this routine does not allow grow/shrink, meant in cases where only head can call it
-  inline bool allocate_serial(unsigned long n)
+  inline bool allocate_serial(std::size_t n)
   {
     if(!head) return false; /* XA: This was returning nothing, I assume false is the right thing to return here */
     if(vals!=NULL && vals->capacity() >= n) return true;
@@ -196,7 +196,7 @@ class SMDenseVector
 
   }
 
-  inline bool allocate(unsigned long n, bool allow_reduce=false)
+  inline bool allocate(std::size_t n, bool allow_reduce=false)
   {
     bool grow = false;
     uint64_t old_sz = (segment==NULL)?0:(segment->get_size()); 
@@ -326,7 +326,7 @@ class SMDenseVector
   }
 
   // resize is probably the best way to setup the vector 
-  inline void resize(unsigned long nnz, bool allow_reduce=false) 
+  inline void resize(std::size_t nnz, bool allow_reduce=false) 
   {
     if(vals==NULL) {
       allocate(nnz,allow_reduce);
@@ -364,7 +364,7 @@ class SMDenseVector
   }
 
   // does not allow grow/shrink
-  inline void resize_serial(unsigned long nnz)
+  inline void resize_serial(std::size_t nnz)
   {
     if(!head) return;
     if(vals==NULL || (vals!=NULL && vals->capacity() < nnz) ) 
@@ -379,7 +379,7 @@ class SMDenseVector
     vals->clear();
   }
 
-  inline unsigned long size() const
+  inline std::size_t size() const
   {
     return (vals!=NULL)?(vals->size()):0;
   }
@@ -407,7 +407,7 @@ class SMDenseVector
     //return *this;
   }  
 
-  inline Type_t& operator()(unsigned long i)
+  inline Type_t& operator()(std::size_t i)
   {
 #ifdef ASSERT_SPARSEMATRIX
     assert(i>=0 && i<vals->size());
@@ -415,7 +415,7 @@ class SMDenseVector
     return (*vals)[i]; 
   }
 
-  inline Type_t& operator[](unsigned long i)
+  inline Type_t& operator[](std::size_t i)
   {
 #ifdef ASSERT_SPARSEMATRIX
     assert(i>=0 && i<vals->size());
@@ -438,9 +438,9 @@ class SMDenseVector
     }
   }
 
-  inline unsigned long memoryUsage() { return memory; }
+  inline std::size_t memoryUsage() { return memory; }
 
-  inline unsigned long capacity() { return (vals==NULL)?0:vals->capacity(); }
+  inline std::size_t capacity() { return (vals==NULL)?0:vals->capacity(); }
 
   inline void push_back(const T& v, bool needs_locks=false)             
   {
@@ -560,7 +560,7 @@ class SMDenseVector
         if(inplace) {
           std::inplace_merge( vals->begin()+pos[rank], vals->begin()+pos[rank+sz], vals->begin()+pos[rank+sz*2], comp);  
         } else { 
-          unsigned long nt = pos[rank+sz*2] - pos[rank];
+          std::size_t nt = pos[rank+sz*2] - pos[rank];
            assert( temp.size() >= nt );  
           std::merge( vals->begin()+pos[rank], vals->begin()+pos[rank+sz], vals->begin()+pos[rank+sz], vals->begin()+pos[rank+sz*2], temp.begin(), comp);  
           std::copy(temp.begin(),temp.begin()+nt,vals->begin()+pos[rank]);
@@ -619,7 +619,7 @@ class SMDenseVector
 
   friend std::ostream& operator<<(std::ostream& out, const SMDenseVector<T>& rhs)
   {
-    for(unsigned long i=0; i<rhs.vals->size(); i++)
+    for(std::size_t i=0; i<rhs.vals->size(); i++)
       out<<"(" <<(*(rhs.myrows))[i] <<"," <<(*(rhs.colms))[i] <<":" <<(*(rhs.vals))[i] <<")\n"; 
     return out;
   }

@@ -42,11 +42,11 @@ class BenchmarkDriver: public Driver
 
     bool setup(HamPtr,WSetPtr,PropPtr,WfnPtr);
 
-    bool checkpoint(int a,int b) {}
+    bool checkpoint(int a,int b) { return true; }
 
-    bool restart(hdf_archive& d) {}
+    bool restart(hdf_archive& d) { return true; }
 
-    bool clear() {}
+    bool clear() { return true; }
 
   protected:  
 

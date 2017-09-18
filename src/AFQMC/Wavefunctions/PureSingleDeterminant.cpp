@@ -1635,7 +1635,7 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
 
     ComplexMatrix CVn, CVnrot;
 
-    unsigned long sz=0;
+    std::size_t sz=0;
     SPValueSMSpMat::intPtr row = Spvn.row_data();   
     SPValueSMSpMat::intPtr row_index = Spvn.row_index();   
     SPValueSMSpMat::intPtr col = Spvn.column_data();   
@@ -1701,7 +1701,7 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
 
     }
 
-    unsigned long sz_=sz;
+    std::size_t sz_=sz;
     MPI_Allreduce(&sz_,&sz,1,MPI_UNSIGNED_LONG,MPI_SUM,TG.getNodeCommLocal());
     SpvnT.allocate(sz);    
 
@@ -1970,11 +1970,11 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
     }
     Timer.stop("PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer::setup");
 
-    long p_;
+    std::size_t p_;
     if(transposed)
-      p_ = static_cast<long>(*(vnT.row_index()+i0));
+      p_ = static_cast<std::size_t>(*(vnT.row_index()+i0));
     else 
-      p_ = static_cast<long>(*(vn.row_index()+i0));
+      p_ = static_cast<std::size_t>(*(vn.row_index()+i0));
     // walkerBlock implies MatV
     if(walkerBlock==1) {
 

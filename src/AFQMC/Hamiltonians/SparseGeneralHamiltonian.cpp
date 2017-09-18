@@ -6212,6 +6212,7 @@ app_log()<<" after bcasts: " <<std::endl;
       else if( l0 >= NMO && lN >= NMO )
         amIAlpha = false;
       else {
+        std::cerr<<"l0, lN, nodeid, ngrp, NMO: " <<l0 <<" " <<lN <<" " <<nodeid <<" " <<ngrp <<" " <<NMO <<std::endl;  
         std::cerr<<" Error: Current algorithm requires an even number of processors. \n\n\n";  
         APP_ABORT(" Error: Current algorithm requires an even number of processors. \n\n\n");  
       }
@@ -6676,8 +6677,8 @@ app_log()<<" after bcasts: " <<std::endl;
       Timer.reset("Generic");
       Timer.start("Generic");
 
-      unsigned long sz=0;  
-      unsigned long sz1=0, sz2=0, sz3=0;  
+      std::size_t sz=0;  
+      std::size_t sz1=0, sz2=0, sz3=0;  
 
       // now calculate fully distributed matrix elements
       for(int nn=0, nb=0, nkcum=0; nn<ngrp; nn++) {
@@ -6861,14 +6862,14 @@ app_log()<<"Time to calculate Qab: " <<nn <<"  " <<Timer.total("Generic2") <<std
 
       }
 
-      unsigned long sz_local=sz;
+      std::size_t sz_local=sz;
       MPI_Allreduce(&sz_local,&sz,1,MPI_UNSIGNED_LONG,MPI_SUM,myComm->getMPI()); 
       // not yet distributed, later on decide distribution here based on FairDivide
       // and allocate appropriately          
       app_log()<<"Number of terms in Vijkl: " <<sz <<" " <<sz*(sizeof(ValueType)+sizeof(int)*2)/1024.0/1024.0 <<" MB" <<std::endl;
       Vijkl.allocate(sz);
 
-      unsigned long sz_1=0, sz_2=0, sz_3=0;
+      std::size_t sz_1=0, sz_2=0, sz_3=0;
 
       // now calculate fully distributed matrix elements
       for(int nn=0, nb=0, nkcum=0; nn<ngrp; nn++) {

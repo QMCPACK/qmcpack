@@ -310,6 +310,7 @@ inline bool single_reader_count_entries(hdf_archive& dump, SpMatrix_Partition& s
     }
   }
  
+  return true;
 }
 
 template<class SpMatrix,
@@ -343,7 +344,7 @@ template<class SpMatrix,
          >
 inline std::tuple<int,int> write_hdf5_SpMat(SpMatrix& SpM, hdf_archive& dump, std::string name, int nterms_per_blk, task_group& TG)
 {
-  long nblocks=0,ntot=0;
+  std::size_t nblocks=0,ntot=0;
   if(TG.getTGNumber() > 0)
     return std::make_tuple(nblocks,ntot);
   int nnodes_per_TG = TG.getNNodesPerTG();
@@ -359,12 +360,12 @@ inline std::tuple<int,int> write_hdf5_SpMat(SpMatrix& SpM, hdf_archive& dump, st
       ranks.push_back(0);
     }
 
-    long sz = SpM.size();
-    int nb_loc = int( sz/long(nterms_per_blk) + std::min(sz%long(nterms_per_blk),long(1)));
+    std::size_t sz = SpM.size();
+    int nb_loc = int( sz/std::size_t(nterms_per_blk) + std::min(sz%std::size_t(nterms_per_blk),std::size_t(1)));
     if(nnodes_per_TG>1) {
       int nt;
       MPI_Reduce(&nb_loc,&nt,1,MPI_INT,MPI_SUM,0,TG.getTGCOMM());
-      nblocks = long(nt);
+      nblocks = std::size_t(nt);
     } else {
       nblocks = nb_loc; 
     }
@@ -385,8 +386,8 @@ inline std::tuple<int,int> write_hdf5_SpMat(SpMatrix& SpM, hdf_archive& dump, st
     int cnt=0, nterms; 
     IndexType nblk=0; 
     for(int i=0; i<nb_loc; i++) {
-      if( (sz-long(cnt)) < long(nterms_per_blk) )
-        nterms = int(sz-long(cnt));
+      if( (sz-std::size_t(cnt)) < std::size_t(nterms_per_blk) )
+        nterms = int(sz-std::size_t(cnt));
       else
         nterms = nterms_per_blk;
       ivec.clear();
@@ -420,7 +421,7 @@ inline std::tuple<int,int> write_hdf5_SpMat(SpMatrix& SpM, hdf_archive& dump, st
 
         int nt_;
         MPI_Get_count(&st,MPI_INT,&nt_);
-        nterms = long(nt_/2);
+        nterms = std::size_t(nt_/2);
         if(st.MPI_TAG == MORE) {
           assert(nterms == nterms_per_blk);
         } else if(st.MPI_TAG == LAST) {
@@ -430,7 +431,7 @@ inline std::tuple<int,int> write_hdf5_SpMat(SpMatrix& SpM, hdf_archive& dump, st
           APP_ABORT(" Error: This should not happen. \n\n\n");
         }
 
-        ntot += long(nterms); 
+        ntot += std::size_t(nterms); 
         bsize.push_back(nterms);
         // resize to write
         ivec.resize(2*nterms);
@@ -446,8 +447,8 @@ inline std::tuple<int,int> write_hdf5_SpMat(SpMatrix& SpM, hdf_archive& dump, st
   
   } else if(nnodes_per_TG>1 && core_rank == 0) {
 
-    long sz = SpM.size();
-    int nt,nb_loc = int(sz/nterms_per_blk + std::min(sz%nterms_per_blk,long(1))); 
+    std::size_t sz = SpM.size();
+    int nt,nb_loc = int(sz/nterms_per_blk + std::min(sz%nterms_per_blk,std::size_t(1))); 
     MPI_Reduce(&nb_loc,&nt,1,MPI_INT,MPI_SUM,0,TG.getTGCOMM());
 
     std::vector<IndexType> ivec;
@@ -462,8 +463,8 @@ inline std::tuple<int,int> write_hdf5_SpMat(SpMatrix& SpM, hdf_archive& dump, st
     int cnt=0, nterms;
     IndexType nblk=0;
     for(int i=0; i<nb_loc; i++) {
-      if( (sz-long(cnt)) < long(nterms_per_blk) )
-        nterms = int(sz-long(cnt));
+      if( (sz-std::size_t(cnt)) < std::size_t(nterms_per_blk) )
+        nterms = int(sz-std::size_t(cnt));
       else
         nterms = nterms_per_blk;
       ivec.clear();

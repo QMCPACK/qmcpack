@@ -527,7 +527,7 @@ bool MultiPureSingleDeterminant::getHamiltonian(HamPtr h)
     VB0.resize(maxEx*NAEA); 
   }
 
-  long m1=0, m2=0, m2c=0, m1c=0;
+  std::size_t m1=0, m2=0, m2c=0, m1c=0;
 
   if(runtype==-1) { // no local energy evaluation 
 
@@ -2345,11 +2345,11 @@ app_log()<<"info: " <<ne <<" " <<nd <<std::endl;
     const SPComplexType czero = SPComplexType(0.0,0.0);
     SPComplexType cone = SPComplexType(1.0);
     if(closed_shell) cone = SPComplexType(2.0);
-    long p_;
+    std::size_t p_;
     if(transposed)
-      p_ = static_cast<long>(*(vnT.row_index()+i0));
+      p_ = static_cast<std::size_t>(*(vnT.row_index()+i0));
     else
-      p_ = static_cast<long>(*(vn.row_index()+i0));
+      p_ = static_cast<std::size_t>(*(vn.row_index()+i0));
     // walkerBlock implies MatV
     if(walkerBlock==1) {
 

@@ -205,6 +205,8 @@ template
 void balance_partition_ordered_set(int N, int* indx, std::vector<int>& subsets); 
 template
 void balance_partition_ordered_set(int N, long* indx, std::vector<long>& subsets); 
+template
+void balance_partition_ordered_set(int N, std::size_t* indx, std::vector<std::size_t>& subsets); 
 
 }
 

@@ -108,9 +108,9 @@ class SMSparseMatrix
     MPI_Barrier(comm);
   }
 
-  inline void reserve(unsigned long n, bool allow_reduce = false)
+  inline void reserve(std::size_t n, bool allow_reduce = false)
   {
-    assert(n<static_cast<unsigned long>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
+    assert(n<static_cast<std::size_t>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
     if(vals==NULL || (vals!=NULL && vals->capacity() < n) || (vals!=NULL && vals->capacity() > n && allow_reduce)) 
       allocate(n,allow_reduce);
     if(head) {
@@ -127,9 +127,9 @@ class SMSparseMatrix
   }
 
   // does not allow grow/shrink
-  inline bool allocate_serial(unsigned long n)
+  inline bool allocate_serial(std::size_t n)
   {
-    assert(n<static_cast<unsigned long>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
+    assert(n<static_cast<std::size_t>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
     if(!head) { SMallocated=true; return true; }
     if(vals!=NULL && vals->capacity() >= n) { SMallocated=true; return true; }
 
@@ -156,7 +156,7 @@ class SMSparseMatrix
     try {
           
       alloc_ulong = new ShmemAllocator<intType>(segment->get_segment_manager());
-      alloc_int = new ShmemAllocator<int>(segment->get_segment_manager());
+      alloc_int = new ShmemAllocator<intType>(segment->get_segment_manager());
       alloc_uchar = new ShmemAllocator<unsigned char>(segment->get_segment_manager());
       alloc_T = new ShmemAllocator<T>(segment->get_segment_manager());
           
@@ -192,11 +192,11 @@ class SMSparseMatrix
   }
 
   // all processes must call this routine
-  inline bool allocate(unsigned long n, bool allow_reduce=false)
+  inline bool allocate(std::size_t n, bool allow_reduce=false)
   {
-    assert(n<static_cast<unsigned long>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
+    assert(n<static_cast<std::size_t>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
     bool grow = false;
-    unsigned long old_sz = (segment==NULL)?0:(segment->get_size());
+    std::size_t old_sz = (segment==NULL)?0:(segment->get_size());
     if(SMallocated) {
       if(vals!=NULL && vals->capacity() >= n && !allow_reduce) return true;
       grow = true; 
@@ -211,7 +211,7 @@ class SMSparseMatrix
 
       if(grow) {
         if(memory > old_sz) {
-          unsigned long extra = memory - old_sz;
+          std::size_t extra = memory - old_sz;
           delete segment;
           segment=NULL;
           if(!boost::interprocess::managed_shared_memory::grow(ID.c_str(), extra)) {
@@ -293,7 +293,7 @@ class SMSparseMatrix
         try {
 
           alloc_ulong = new ShmemAllocator<intType>(segment->get_segment_manager());
-          alloc_int = new ShmemAllocator<int>(segment->get_segment_manager());
+          alloc_int = new ShmemAllocator<intType>(segment->get_segment_manager());
           alloc_uchar = new ShmemAllocator<unsigned char>(segment->get_segment_manager());
           alloc_T = new ShmemAllocator<T>(segment->get_segment_manager());
 
@@ -364,9 +364,9 @@ class SMSparseMatrix
   }
 
   // does not allow grow/shrink, aborts if resizing beyond capacity
-  inline void resize_serial(unsigned long nnz)
+  inline void resize_serial(std::size_t nnz)
   {
-    assert(nnz<static_cast<unsigned long>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
+    assert(nnz<static_cast<std::size_t>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
     if(!head) return;
     if(vals==NULL || (vals!=NULL && vals->capacity() < nnz))
       APP_ABORT(" Error: Call to SMSparseMatrix::resize_serial without enough capacity. \n");
@@ -383,9 +383,9 @@ class SMSparseMatrix
   } 
 
   // this routine does not preserve information when allow_reduce=true  
-  inline void resize(unsigned long nnz, bool allow_reduce=false)
+  inline void resize(std::size_t nnz, bool allow_reduce=false)
   {
-    assert(nnz<static_cast<unsigned long>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
+    assert(nnz<static_cast<std::size_t>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
     if(vals==NULL || (vals!=NULL && vals->capacity() < nnz) ) {
       allocate(nnz,allow_reduce);
     } else if(vals!=NULL && vals->capacity() > nnz && allow_reduce) {
@@ -499,13 +499,13 @@ class SMSparseMatrix
     return compressed;
   }
 
-  inline unsigned long memoryUsage() { return memory; }
+  inline std::size_t memoryUsage() { return memory; }
 
-  inline unsigned long capacity() const
+  inline std::size_t capacity() const
   {
     return (vals!=NULL)?(vals->capacity()):0;
   }
-  inline unsigned long size() const
+  inline std::size_t size() const
   {
     return (vals!=NULL)?(vals->size()):0;
   }
@@ -605,7 +605,7 @@ class SMSparseMatrix
       colms->push_back(j);
       vals->push_back(v);
     }
-    assert(vals->size()<static_cast<unsigned long>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
+    assert(vals->size()<static_cast<std::size_t>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
   }
 
   inline void add(const std::vector<std::tuple<int,int,T>>& v, bool needs_locks=false)
@@ -632,7 +632,7 @@ class SMSparseMatrix
         vals->push_back(std::get<2>(a));
       }
     }
-    assert(vals->size()<static_cast<unsigned long>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
+    assert(vals->size()<static_cast<std::size_t>(INT_MAX)); // right now limited to INT_MAX due to indexing problem.
   }
 
   inline bool remove_repeated_and_compress(MPI_Comm local_comm=MPI_COMM_SELF) 
@@ -680,9 +680,9 @@ class SMSparseMatrix
       ++result_c;
       ++result_v;
 
-      long sz1 = std::distance(myrows->begin(),result_r); 
-      long sz2 = std::distance(colms->begin(),result_c); 
-      long sz3 = std::distance(vals->begin(),result_v); 
+      std::size_t sz1 = std::distance(myrows->begin(),result_r); 
+      std::size_t sz2 = std::distance(colms->begin(),result_c); 
+      std::size_t sz3 = std::distance(vals->begin(),result_v); 
       if(sz1 != sz2 || sz1 != sz2) {
         std::cerr<<"Error: Different number of erased elements in SMSparseMatrix::remove_repeate_and_compressed. \n" <<std::endl;  
         return false;
@@ -1071,7 +1071,7 @@ class SMSparseMatrix
   bool zero_based;
   int storage_format; // 0: CSR, 1: Compressed Matrix (ESSL) 
   int max_in_row; 
-  unsigned long memory=0;
+  std::size_t memory=0;
 
   //_mySort_snD_ my_sort;
 
