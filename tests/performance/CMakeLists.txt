@@ -4,4 +4,5 @@
 
 message("Adding performance tests for QMCPACK")
 # includes 
-SUBDIRS(NiO)
+SUBDIRS(NiO C)
+
