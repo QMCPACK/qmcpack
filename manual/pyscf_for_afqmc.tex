@@ -1,4 +1,4 @@
-\section{Using PYSCF to generate integrals for AFQMC}
+\section{Using PySCF to generate integrals for AFQMC}
 \label{sec:pyscf}
 These notes describe useful knowledge and tips in the use of pyscf. 
 The main purpose of pyscf in the group is in the generation of 2-electron integrals for correlated calculations in solids.
@@ -8,7 +8,7 @@ For a detailed description of pyscf, please see the documentation by the authors
 Examples of how to generate integrals are:
 \begin{itemize}
 \item Run a standard pyscf calculation, e.g. a HF or DFT calculation. Make sure you preserve the chkfile and make sure you store the core hamiltonian on the chkfile. An example of how to do this for a single k-point calculation is found below.
-\begin{lstlisting}[caption=The following is an example PYSCF input file for single k-point calculations.]
+\begin{lstlisting}[caption=The following is an example PySCF input file for single k-point calculations.]
 import numpy
 import h5py
 from mpi4py import MPI
@@ -48,7 +48,7 @@ with h5py.File(mf.chkfile) as fh5:
 \item {For a calculation with k-points:
 Run a standard pyscf calculation, e.g. a HF or DFT calculation. Make sure you preserve the chkfile and make sure you store the core hamiltonian on the chkfile. An example of how to do this for a single k-point calculation is found below.}
 
-\begin{lstlisting}[caption=The following is an example PYSCF input file for calculations with k-points.]
+\begin{lstlisting}[caption=The following is an example PySCF input file for calculations with k-points.]
 import numpy
 import h5py
 from mpi4py import MPI
