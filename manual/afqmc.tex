@@ -1,6 +1,6 @@
 \chapter{Auxiliary-Field Quantum Monte Carlo}
 \label{chap:afqmc}
-The Auxiliary-Field Quantum Monte Carlo (AFQMC) method is an orbital-space formulation of the imaginary-time propagation algorithm. We refer the reader to one of the review articles on the method \cite{AFQMC_review,PhysRevLett.90.136401,PhysRevE.70.056702}, for a detailed description of the algorithm. It uses the Hubbard-Stratonovich transformation to express the imaginary-time propagator, which is inherently a 2-body operator, as an integral over 1-body propagators which can be efficiently applied to an arbitrary Slater determinant. This transformation allows us to represent the interacting many-body system as an average over a non-interacting system (e.g. Slater determinants) in a time-dependent fluctuating external field (the Auxiliary fields). The walkers in this case represent non-orthogonal Slater determinants, whose time average represent the desired quantum state. QMCPACK currently implements the phaseless AFQMC algorithm of Zhang and Krakauer \cite{PhysRevLett.90.136401}, where a trial wave-function is used to project the simulation to the real axis, controlling the fermioninc sign problem at the expense of a bias. This approximation is similar in spirit to the fixed-node approximation in real-space DMC, but applied in the Hilbert space where the AFQMC random walk occurs.     
+The Auxiliary-Field Quantum Monte Carlo (AFQMC) method is an orbital-space formulation of the imaginary-time propagation algorithm. We refer the reader to one of the review articles on the method \cite{AFQMC_review,PhysRevLett.90.136401,PhysRevE.70.056702}, for a detailed description of the algorithm. It uses the Hubbard-Stratonovich transformation to express the imaginary-time propagator, which is inherently a 2-body operator, as an integral over 1-body propagators which can be efficiently applied to an arbitrary Slater determinant. This transformation allows us to represent the interacting many-body system as an average over a non-interacting system (e.g. Slater determinants) in a time-dependent fluctuating external field (the Auxiliary fields). The walkers in this case represent non-orthogonal Slater determinants, whose time average represent the desired quantum state. QMCPACK currently implements the phaseless AFQMC algorithm of Zhang and Krakauer \cite{PhysRevLett.90.136401}, where a trial wave-function is used to project the simulation to the real axis, controlling the fermionic sign problem at the expense of a bias. This approximation is similar in spirit to the fixed-node approximation in real-space DMC, but applied in the Hilbert space where the AFQMC random walk occurs.     
 
 \section{Theoretical Background}
 ... Coming Soon ...
@@ -69,8 +69,8 @@ Non-execution blocks are parsed first, followed by a second pass where execution
    &   \texttt{type            } &  argument   & SparseGeneral & no   & type of \texttt{Hamiltonian} \\
    &   \texttt{info            } &  argument   &               &      & name of \texttt{AFQMCInfo} block \\\\
    &   \texttt{filename        } &  string     &               & no   & name of file with the hamiltonian \\
-   &   \texttt{filetype        } &  string     & fcidump       & no   & ascii based format of molpro, VASP, pyscf, etc. \\
-   &   \texttt{                } &             & hdf5          &      & native hdf5-based format of QMCPACK  \\
+   &   \texttt{filetype        } &  string     & fcidump       & no   & ASCII based format of Molpro, VASP, PySCF, etc. \\
+   &   \texttt{                } &             & hdf5          &      & native HDF5-based format of QMCPACK  \\
 %   &   \texttt{cutoff\_1bar            } &  real     &  & 1e-8 & cutoff applied to integrals during reading \\
 %   &   \texttt{cutoff\_decomposition   } &  real     &  & 1e-6 & cutoff used to stop the iterative cycle in the generation of the Cholesky decomposition of the 2-electron integrals \\
 \multicolumn{6}{l}{parameters in \texttt{Wavefunction}}\\
@@ -82,8 +82,8 @@ Non-execution blocks are parsed first, followed by a second pass where execution
    &   \texttt{type            } &  argument   & PureSD      & no   & single slater determinant trial wave-function \\
    &   \texttt{                } &             & MultiPureSD &      & linear combination of Slater Determinants \\
    &   \texttt{                } &             & GenSD       &      & single determinant w/o rotated 2-e integrals \\
-   &   \texttt{filetype        } &  string     & ascii       & no   & ascii data file type \\
-   &   \texttt{                } &             & hdf5        &      & hdf5 data file type \\
+   &   \texttt{filetype        } &  string     & ascii       & no   & ASCII data file type \\
+   &   \texttt{                } &             & hdf5        &      & HDF5 data file type \\
    &   \texttt{                } &             & none        &      & no input file needed, requires init=``ground'' \\
 \multicolumn{6}{l}{parameters in \texttt{WalkerSet}} \\
  %  &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
@@ -123,21 +123,21 @@ Below is a list of all input sections for AFQMC calculations, along with a detai
 \item \textbf{NMO}. Number of molecular orbitals, i.e., number of states in the single particle basis. 
 \item \textbf{NAEA}. Number of Active Electrons-Alpha, i.e., number of spin-up electrons.
 \item \textbf{NAEB}. Number of Active Electrons-Beta, i.e., number of spin-down electrons.
-\item \textbf{NCA}. number of core electrons of spin up (only meaningful if reading ascii FCIDUMPs). Default: 0.
-\item \textbf{NCB}. Number of core electrons of spin down (only meaningful if reading ascii FCIDUMPs). Default: 0.\\
+\item \textbf{NCA}. number of core electrons of spin up (only meaningful if reading ASCII FCIDUMPs). Default: 0.
+\item \textbf{NCB}. Number of core electrons of spin down (only meaningful if reading ASCII FCIDUMPs). Default: 0.\\
 \end{itemize}
 
 \texttt{Hamiltonian}: controls the object that reads, stores and manages the hamiltonian. 
   \texttt{<Hamiltonian name="ham0" type="SparseGeneral" info="info0">}
 \begin{itemize}
 \item \textbf{filename}. Name of file with the \texttt{Hamiltonian}. This is a required parameter.
-\item \textbf{filetype}. The type of file found in filename. Options are: fcidump, hdf5. fcidump is the ascii based format of molpro, VASP, pyscf, etc.; hdf5 is the native hdf5-based format  of QMCPACK and can also be generated by modified versions of pyscf and VASP. This is a required parameter.
+\item \textbf{filetype}. The type of file found in filename. Options are: fcidump, hdf5. fcidump is the ASCII-based format of Molpro, VASP, PySCF, etc.; hdf5 is the native HDF5-based format  of QMCPACK and can also be generated by modified versions of PySCF and VASP. This is a required parameter.
 \item \textbf{cutoff\_1bar}. Cutoff applied to integrals during reading. Any term in the hamiltonian smaller than this value is set to zero. (For filetype=``hdf5'', the cutoff is only applied to the 2-electron integrals). Default: 1e-8
 \item \textbf{cutoff\_decomposition}. Cutoff used to stop the iterative cycle in the generation of the Cholesky decomposition of the 2-electron integrals. The generation of Cholesky vectors is stopped when the maximum error in the diagonal reaches this value. In case of an eigenvalue factorization, this becomes the cutoff applied to the eigenvalues. Only eigenvalues above this value are kept. Default: 1e-6
 \item \textbf{hdf\_write\_file}. If a value is given, an hdf5 restart file for the \texttt{Hamiltonian} is generated. Default: ``'' (no file is generated)
 \item \textbf{hdf\_write\_type}. What to store in the restart file. Options: ``integrals'': write directly the 1- and 2-electron integrals; ``factorized'': write the cholesky decomposition of the integrals; ``default'': Default value, write the type found in filetype.
-\item \textbf{ascii\_write\_file} If a value is given, an ascii restart file for the \texttt{Hamiltonian} is generated. Default: ``'' (no file is generated)
-\item \textbf{nblocks}. This parameter controls the distribution of the 2-electron integrals among processors. In the default behavior (nblocks=1), all nodes contain the entire list of integrals. If nblocks $>$ 1, the of nodes in the calculation will be split in nblocks groups. Each node in a given group contains the same subset of integrals and subsequently operates on this subset during  any further operation that requires the hamiltonian. The maximum number of groups is NMO. Currently only works for filetype=``hdf5'' and the file must contain integrals.  Not yet implemented for input hamiltonians in the form of Cholesky vectors or for ascii input. Coming soon!
+\item \textbf{ascii\_write\_file} If a value is given, an ASCII restart file for the \texttt{Hamiltonian} is generated. Default: ``'' (no file is generated)
+\item \textbf{nblocks}. This parameter controls the distribution of the 2-electron integrals among processors. In the default behavior (nblocks=1), all nodes contain the entire list of integrals. If nblocks $>$ 1, the of nodes in the calculation will be split in nblocks groups. Each node in a given group contains the same subset of integrals and subsequently operates on this subset during  any further operation that requires the hamiltonian. The maximum number of groups is NMO. Currently only works for filetype=``hdf5'' and the file must contain integrals.  Not yet implemented for input hamiltonians in the form of Cholesky vectors or for ASCII input. Coming soon!
     Default: No distribution
 \item \textbf{printEig}. If ``yes'', prints additional information during the Cholesky decomposition.
     Default: no
