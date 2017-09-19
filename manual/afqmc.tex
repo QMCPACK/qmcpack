@@ -150,8 +150,7 @@ Below is a list of all input sections for AFQMC calculations, along with a detai
   \texttt{<ImpSamp name="impsamp0" type="PureSD">}
 \begin{itemize}
 \item \textbf{init}. Argument in ImpSamp. Selects pre-defined trial wave-functions if desired. 
-Value: ground. Only for PureSD. Sets the trial wave-function to a block diagonal form. Diagonal in the occupied-occupied block and zero outside. This option corresponds to b
-tate determinant (assuming orbitals ordered by increasing eigenvalue) in the orbital space that defines the hamiltonian. For a \texttt{Hamiltonian} generates based on HF orbitals, this generates a HF trial wave-function. (Only useful situation.)
+Value: ground. Only for PureSD. Sets the trial wave-function to a block diagonal form. Diagonal in the occupied-occupied block and zero outside. This option corresponds to a ground state determinant (assuming orbitals ordered by increasing eigenvalue) in the orbital space that defines the hamiltonian. For a \texttt{Hamiltonian} generates based on HF orbitals, this generates a HF trial wave-function. (Only useful situation.)
 \item \textbf{filename}. Name of file with wave-function information.
 \item \textbf{cutoff}. cutoff applied to the terms in the calculation of the local energy. Only terms in the hamiltonian above this cutoff are included in the evaluation of the energy.
       Default: 1e-6

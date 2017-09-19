@@ -75,11 +75,19 @@ void balance_partition_ordered_set(int N, IType* indx, std::vector<IType>& subse
     auto step = [&] (int i) {
       IType i0 = subsets[i];
       subsets[i] = subsets[i-1]+1;
-      int64_t vmin = std::abs(*(indx+subsets[i])-*(indx+subsets[i-1])-avg)
-                   + std::abs(*(indx+subsets[i+1])-*(indx+subsets[i])-avg);
+      int64_t vmin = std::abs(static_cast<int64_t>(*(indx+subsets[i]))
+                            - static_cast<int64_t>(*(indx+subsets[i-1]))
+                            - avg)
+                   + std::abs(static_cast<int64_t>(*(indx+subsets[i+1]))
+                            - static_cast<int64_t>(*(indx+subsets[i]))
+                            - avg);
       for(int k=subsets[i-1]+2 ; k<subsets[i+1]; k++) {
-        int64_t v = std::abs(*(indx+k)-*(indx+subsets[i-1])-avg)
-                  + std::abs(*(indx+subsets[i+1])-*(indx+k)-avg);
+        int64_t v = std::abs(static_cast<int64_t>(*(indx+k))
+                           - static_cast<int64_t>(*(indx+subsets[i-1]))
+                           - avg)
+                  + std::abs(static_cast<int64_t>(*(indx+subsets[i+1]))
+                           - static_cast<int64_t>(*(indx+k))
+                           - avg);
         if( v < vmin ) {
           vmin=v;
           subsets[i] = k;
@@ -103,7 +111,7 @@ void balance_partition_ordered_set(int N, IType* indx, std::vector<IType>& subse
     subsets[nsets]=iN;
 
     for(IType i=0; i<nsets; i++)
-      avg += *(indx+subsets[i+1]) - *(indx+subsets[i]);
+      avg += static_cast<int64_t>(*(indx+subsets[i+1])) - static_cast<int64_t>(*(indx+subsets[i]));
     avg /= nsets;
     bool changed;
     do {
