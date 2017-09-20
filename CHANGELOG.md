@@ -18,9 +18,9 @@ Notable changes to QMCPACK will be documented in this file.
 * DMC respects MaxCPUSecs parameter and will gracefully shut down and
   not start a new block if there is not sufficient estimated time to
   complete it.
-* Parallel as well as serial HDF5 supported and
-  autodetected. Checkpointing code rewritten for robustness and
-  performance at scale.
+* Checkpointing code rewritten for robustness and performance at scale.
+  Parallel as well as serial HDF5 supported and autodetected.
+* Improved beta-release of AFQMC code and documentation.  
 * Backflow documentation and optimization tips added.
 * Correlated sampling VMC drivers reactivated.
 * Improvements to CMake and CTest usage.
