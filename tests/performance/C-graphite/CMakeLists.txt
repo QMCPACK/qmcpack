@@ -1,20 +1,20 @@
 
-# C benchmark tests
+# C-graphite benchmark tests
 
 # Input variables
-# QMC_DATA - C subdirectory should contain the *.h5 files
+# QMC_DATA - C-graphite subdirectory should contain the *.h5 files
 
-FUNCTION(ADD_C_TEST TEST_NAME TEST_DIR INPUT_FILE H5_FILE)
+FUNCTION(ADD_C_GRAPHITE_TEST TEST_NAME TEST_DIR INPUT_FILE H5_FILE)
   MESSAGE("Adding test ${TEST_NAME}")
-  SET (WDIR "${qmcpack_BINARY_DIR}/tests/performance/C/${TEST_DIR}")
-  SET (SDIR "${CMAKE_SOURCE_DIR}/tests/performance/C/sample/${TEST_DIR}")
+  SET (WDIR "${qmcpack_BINARY_DIR}/tests/performance/C-graphite/${TEST_DIR}")
+  SET (SDIR "${CMAKE_SOURCE_DIR}/tests/performance/C-graphite/sample/${TEST_DIR}")
 
   SET(QMC_APP "${qmcpack_BINARY_DIR}/bin/qmcpack")
   IF (ENABLE_TIMERS)
     SET(PERF_ARGS "--enable-timers=fine")
   ENDIF()
 
-  SET (PPDIR "${CMAKE_SOURCE_DIR}/tests/performance/C")
+  SET (PPDIR "${CMAKE_SOURCE_DIR}/tests/performance/C-graphite")
 
   EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy_directory ${SDIR} ${WDIR})
 
@@ -24,7 +24,7 @@ FUNCTION(ADD_C_TEST TEST_NAME TEST_DIR INPUT_FILE H5_FILE)
     MAYBE_SYMLINK(${F} ${WDIR}/../${R})
   ENDFOREACH()
 
-  MAYBE_SYMLINK("${QMC_DATA}/C/${H5_FILE}" "${WDIR}/../${H5_FILE}")
+  MAYBE_SYMLINK("${QMC_DATA}/C-graphite/${H5_FILE}" "${WDIR}/../${H5_FILE}")
 
   SET(PROCS 1)
   SET(THREADS 16)
@@ -50,8 +50,8 @@ ENDFUNCTION()
 
 IF (NOT QMC_DATA)
   MESSAGE("QMC_DATA not set. Performance tests not added.")
-ELSEIF(NOT EXISTS ${QMC_DATA}/C)
-  MESSAGE("C directory under QMC_DATA does not exist. C performance tests not added.")
+ELSEIF(NOT EXISTS ${QMC_DATA}/C-graphite)
+  MESSAGE("C-graphite directory under QMC_DATA does not exist. C-graphite performance tests not added.")
 ELSE()
 
   # *.h5 files and md5 sums
@@ -66,7 +66,7 @@ ELSE()
         LIST(REMOVE_ITEM C_SIZES ${SIZE})
       ENDIF()
     ENDFOREACH()
-    MESSAGE("C sizes to benchmark: ${C_SIZES}")
+    MESSAGE("C-graphite sizes to benchmark: ${C_SIZES}")
   ENDIF()
 
   IF (QMC_CUDA)
@@ -78,15 +78,15 @@ ELSE()
   FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../NiO/process_perf.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
   FOREACH(SIZE IN LISTS C_SIZES)
-    SET(PERF_TEST performance-C-${COMPUTE_TYPE}-S${SIZE}-1-16)
+    SET(PERF_TEST performance-C-graphite-${COMPUTE_TYPE}-S${SIZE}-1-16)
     SET(TEST_DIR dmc-S${SIZE}-${COMPUTE_TYPE})
     SET(INPUT_FILE C-graphite-S${SIZE}-dmc.xml)
 # H5 filename is fixed consistent with CORAL name, but should be templated if a range of carbon sizes is added
     SET(H5_FILE lda.pwscf.h5)
 #    SET(H5_FILE C-graphite-supertwist111-supershift000-S${SIZE}.h5)
-    SET(H5_FULL_PATH "${QMC_DATA}/C/${H5_FILE}")
+    SET(H5_FULL_PATH "${QMC_DATA}/C-graphite/${H5_FILE}")
     IF (EXISTS ${H5_FULL_PATH})
-      ADD_C_TEST(${PERF_TEST} ${TEST_DIR} ${INPUT_FILE} ${H5_FILE})
+      ADD_C_GRAPHITE_TEST(${PERF_TEST} ${TEST_DIR} ${INPUT_FILE} ${H5_FILE})
     ELSE()
       MESSAGE("${PERF_TEST} not added because the corresponding h5 file not found: ${H5_FULL_PATH}")
     ENDIF()
