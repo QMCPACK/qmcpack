@@ -23,7 +23,7 @@ Notable changes to QMCPACK will be documented in this file.
   performance at scale.
 * Backflow documentation and optimization tips added.
 * Correlated sampling VMC drivers reactivated.
-* Improvements to cmake and ctest usage.
+* Improvements to CMake and CTest usage.
 * Build instructions for NERSC, ALCF, and OLCF machines updated.
 * Latest manual PDF now available at http://docs.qmcpack.org
 
