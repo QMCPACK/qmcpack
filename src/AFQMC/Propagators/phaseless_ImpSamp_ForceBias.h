@@ -30,17 +30,15 @@ class phaseless_ImpSamp_ForceBias: public PropagatorBase
 
   public:
        
-  phaseless_ImpSamp_ForceBias(Communicate *c,  RandomGenerator_t* r) : PropagatorBase(c,r), substractMF(true),use_eig(false),first(true),max_weight(100),apply_constrain(true),save_memory(false),vbias_bound(3.0),imp_sampl(true),hybrid_method(false),test_library(false),eloc_from_Spvn(false),sizeOfG(0),walkerBlock(1),test_cnter(0),cutoff(1e-6)
+  phaseless_ImpSamp_ForceBias(Communicate *c,  RandomGenerator_t* r) : PropagatorBase(c,r), substractMF(true),use_eig(false),first(true),max_weight(100),apply_constrain(true),save_memory(false),vbias_bound(3.0),imp_sampl(true),hybrid_method(false),eloc_from_Spvn(false),sizeOfG(0),walkerBlock(0),test_cnter(0),cutoff(1e-6),fix_bias(0),n_reading_cores(-1),intgs_per_block(2000000)
   {
   } 
 
   ~phaseless_ImpSamp_ForceBias() {}
 
-//  void Propagate(int n, SlaterDetWalker&, RealType& E1, const RealType E2=0);
+  void Propagate(int steps, int& steps_total, WalkerHandlerBase*, RealType& E1);
 
-  void Propagate(int n, WalkerHandlerBase*, RealType& E1, const RealType E2=0);
-
-  bool setup(std::vector<int>&,SPComplexSMVector*,HamiltonianBase*,WavefunctionHandler*,RealType, hdf_archive&, const std::string&,MPI_Comm,MPI_Comm);
+  bool setup(std::vector<int>&,SPComplexSMVector*,HamiltonianBase*,WavefunctionHandler*,RealType, hdf_archive&, const std::string&,MPI_Comm,MPI_Comm,MPI_Comm);
 
   bool parse(xmlNodePtr);   
 
@@ -48,10 +46,11 @@ class phaseless_ImpSamp_ForceBias: public PropagatorBase
 
   bool hdf_read(hdf_archive&, const std::string&);
 
-  void benchmark(){
-    //PureSingleDeterminant* sd = dynamic_cast<PureSingleDeterminant*>(wfn->ImpSampWfn);
-    //compare_libraries(NMO,NAEA,NAEB,Propg_H1,Propg_H1_indx,sd->Vijkl,vn,vn_indx);
-  }
+  bool hdf_write_transposed(hdf_archive&, const std::string&);
+
+  bool hdf_read_transposed(hdf_archive&, const std::string&);
+
+  void benchmark(std::string&,int,int,int,WalkerHandlerBase*);
 
   SPValueSMVector* getDvn() { return &Dvn; }
 
@@ -75,11 +74,15 @@ class phaseless_ImpSamp_ForceBias: public PropagatorBase
 
   bool save_memory;
 
-  int test_library;
+  int fix_bias;
 
   std::ifstream in_rand;
 
   RealType cutoff;
+
+  int n_reading_cores;
+
+  int intgs_per_block;
 
   // one-body operator that defines H1
   // stored in sparse form
@@ -107,21 +110,21 @@ class phaseless_ImpSamp_ForceBias: public PropagatorBase
   //Vector< Vector<s2D<ValueType> >::iterator > vn_bounds;
 
   int GlobalSpvnSize; 
-  std:: vector<int> nCholVec_per_node;
+  std::vector<int> nCholVec_per_node;
 
   ComplexMatrix vn0;
   SPValueSMSpMat Spvn; 
-  SPValueSMSpMat SpvnT; 
+  SPComplexSMSpMat SpvnT; 
   // this is a pointer to either Spvn or SpvnT, to avoid extra logic in code  
-  SPValueSMSpMat *Spvn_for_onebody; 
+  SPComplexSMSpMat *Spvn_for_onebody; 
 
   // storing cholesky vectors in dense format as a vector,
   // to avoid having to write a shared memory matrix class.
   // I only use this through library routines that take the vector,
   // so it is ok
   SPValueSMVector Dvn;
-  SPValueSMVector DvnT;
-  SPValueSMVector *Dvn_for_onebody;
+  SPComplexSMVector DvnT;
+  SPComplexSMVector *Dvn_for_onebody;
 
   // storage for fields
   std::vector<SPRealType> sigma;
@@ -164,7 +167,8 @@ class phaseless_ImpSamp_ForceBias: public PropagatorBase
 
   int sizeOfG;
   int nCholVecs;  // total number of Cholesky Vectors in the calculation  
-  int cvec0,cvecN; // index of first and last+1 Cholesky Vector of this core 
+  int cvec0,cvecN; // index of first and last+1 Cholesky Vector of this TG 
+  int cvec0_loc,cvecN_loc; // if save_memory=false index of first and last+1 Cholesky Vector (relative to cvec0) of this core 
   int vHS_size;
   std::vector<int> walker_per_node;
 
@@ -172,13 +176,22 @@ class phaseless_ImpSamp_ForceBias: public PropagatorBase
   IndexType ik0, ikN;   //  minimum and maximum values of ik index in Spvn
   IndexType pik0, pikN;  // locations of bounds of [ik0,ikN] sector in Spvn  
 
-  void dist_Propagate(WalkerHandlerBase*);
+  void serial_propagation_single_step(WalkerHandlerBase*, RealType& E1);
+
+  void dist_propagation_single_step(WalkerHandlerBase*, RealType& E1);
+
+  // in this case, vbias is calculated for step 0 and fixed for all subsequent sub steps
+  void serial_propagation_multiple_steps(int steps, WalkerHandlerBase*, RealType& E1);
+
+  void dist_propagation_multiple_steps(int steps, WalkerHandlerBase*, RealType& E1);
 
   bool apply_constrain;
 
   void applyHSPropagator(ComplexMatrix&, ComplexMatrix&, ComplexType& factor, int order=-1, bool calculatevHS=true); 
 
   void addvHS(SPComplexSMVector *buff, int nw, int sz, WalkerHandlerBase* wset); 
+
+  void addvHS_multiple(int n, SPComplexSMVector *buff, int nw, int sz, WalkerHandlerBase* wset); 
 
   void sampleGaussianFields();
 
@@ -234,7 +247,6 @@ const char* show_classification(double x) {
     }
 }
 
-  void test_linear_algebra();
 };
 
 

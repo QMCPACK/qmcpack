@@ -1,0 +1,284 @@
+\chapter{Auxiliary-Field Quantum Monte Carlo}
+\label{chap:afqmc}
+The Auxiliary-Field Quantum Monte Carlo (AFQMC) method is an orbital-space formulation of the imaginary-time propagation algorithm. We refer the reader to one of the review articles on the method \cite{AFQMC_review,PhysRevLett.90.136401,PhysRevE.70.056702}, for a detailed description of the algorithm. It uses the Hubbard-Stratonovich transformation to express the imaginary-time propagator, which is inherently a 2-body operator, as an integral over 1-body propagators which can be efficiently applied to an arbitrary Slater determinant. This transformation allows us to represent the interacting many-body system as an average over a non-interacting system (e.g. Slater determinants) in a time-dependent fluctuating external field (the Auxiliary fields). The walkers in this case represent non-orthogonal Slater determinants, whose time average represent the desired quantum state. QMCPACK currently implements the phaseless AFQMC algorithm of Zhang and Krakauer \cite{PhysRevLett.90.136401}, where a trial wave-function is used to project the simulation to the real axis, controlling the fermionic sign problem at the expense of a bias. This approximation is similar in spirit to the fixed-node approximation in real-space DMC, but applied in the Hilbert space where the AFQMC random walk occurs.     
+
+\section{Theoretical Background}
+... Coming Soon ...
+
+\section{Input}
+
+The input for an AFQMC calculation is fundamentally different to the input for other real-space algorithms in QMCPACK. The main source of input comes from the Hamiltonian matrix elements in an appropriate single particle basis. This must be evaluated by an external code and saved in a format that QMCPACK can read. More details about file formats are found below. The input file has six basic xml-blocks: \texttt{AFQMCInfo}, \texttt{Hamiltonian}, \texttt{Wavefunction}, \texttt{WalkerSet}, \texttt{Propagator}, and \texttt{execute}. The first five define input structures required for various types of calculations. The \texttt{execute} block represents actual calculations and takes as input the other blocks. 
+Non-execution blocks are parsed first, followed by a second pass where execution blocks are parsed (and executed) in order. Listing 13.1 shows an example of a minimal input file for an AFQMC calculation. Table \ref{table:afqmc_basic} shows a brief description of the most important parameters in the calculation. All xml sections contain a ``name'' argument used to identify the resulting object within QMCPACK. For example, in the example, multiple Hamiltonian objects with different names can be defined. The one actually used in the calculation is the one passed to ``execute'' as ham.
+
+\begin{lstlisting}[caption=Sample input file for AFQMC.]
+<?xml version="1.0"?>
+<simulation method="afqmc">
+  <project id="Carbon" series="0"/>
+
+  <AFQMCInfo name="info0">
+    <parameter name="NMO">32</parameter>
+    <parameter name="NAEA">16</parameter>
+    <parameter name="NAEB">16</parameter>
+  </AFQMCInfo>
+
+  <Hamiltonian name="ham0" type="SparseGeneral" info="info0">
+    <parameter name="filetype">hdf5</parameter>
+    <parameter name="filename">../fcidump.h5</parameter>
+  </Hamiltonian>
+
+  <Wavefunction name="wfn0" info="info0">
+    <ImpSamp name="impsamp0" type="PureSD" init="ground" >
+      <parameter name="filetype">none</parameter>
+    </ImpSamp>
+  </Wavefunction>
+
+  <WalkerSet name="wset0" type="distributed">
+  </WalkerSet>
+
+  <Propagator name="prop0" info="info0">
+  </Propagator>
+
+  <execute wset="wset0" ham="ham0" wfn="wfn0" prop="prop0" info="info0">
+    <parameter name="timestep">0.005</parameter>
+    <parameter name="blocks">10000</parameter>
+    <parameter name="nWalkers">20</parameter>
+  </execute>
+
+</simulation>
+\end{lstlisting}
+
+%The following table lists some of the most practical parameters in the \texttt{execute} block
+%The following table lists some of the practical parameters
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{afqmc} method} \\
+\hline
+\multicolumn{6}{l}{parameters in \texttt{AFQMCInfo}} \\
+   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+%   &   \texttt{name            } &  argument    &         & no & unique name that identifies the xml-block \\
+   &   \texttt{NMO             } &  integer     & $\ge 0$ & no & number of molecular orbitals \\
+   &   \texttt{NAEA            } &  integer     & $\ge 0$ & no & number of active electrons of spin up \\
+   &   \texttt{NAEB            } &  integer     & $\ge 0$ & no & number of active electrons of spin down \\
+%   &   \texttt{NCA            } &  integer     & $\ge 0$ & 0 & number of core electrons of spin up \\
+%   &   \texttt{NCB            } &  integer     & $\ge 0$ & 0 & number of core electrons of spin down \\
+\multicolumn{6}{l}{parameters in \texttt{Hamiltonian}}  \\
+%   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+%   &   \texttt{name            } &  argument   &               & no   & unique name that identifies the xml-block \\
+   &   \texttt{type            } &  argument   & SparseGeneral & no   & type of \texttt{Hamiltonian} \\
+   &   \texttt{info            } &  argument   &               &      & name of \texttt{AFQMCInfo} block \\\\
+   &   \texttt{filename        } &  string     &               & no   & name of file with the hamiltonian \\
+   &   \texttt{filetype        } &  string     & fcidump       & no   & ASCII based format of Molpro, VASP, PySCF, etc. \\
+   &   \texttt{                } &             & hdf5          &      & native HDF5-based format of QMCPACK  \\
+%   &   \texttt{cutoff\_1bar            } &  real     &  & 1e-8 & cutoff applied to integrals during reading \\
+%   &   \texttt{cutoff\_decomposition   } &  real     &  & 1e-6 & cutoff used to stop the iterative cycle in the generation of the Cholesky decomposition of the 2-electron integrals \\
+\multicolumn{6}{l}{parameters in \texttt{Wavefunction}}\\
+%   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+%   &   \texttt{name            } &  argument   &             & no   & unique name that identifies the xml-block \\
+   &   \texttt{info            } &  argument   &             &      & name of \texttt{AFQMCInfo} block \\
+   &   \texttt{ImpSamp         } &  xml-block  &             & no   & defines the trial wave-function \\
+%   &   \texttt{name            } &  argument   &             & no   & unique name that identifies the xml-block \\
+   &   \texttt{type            } &  argument   & PureSD      & no   & single slater determinant trial wave-function \\
+   &   \texttt{                } &             & MultiPureSD &      & linear combination of Slater Determinants \\
+   &   \texttt{                } &             & GenSD       &      & single determinant w/o rotated 2-e integrals \\
+   &   \texttt{filetype        } &  string     & ascii       & no   & ASCII data file type \\
+   &   \texttt{                } &             & hdf5        &      & HDF5 data file type \\
+   &   \texttt{                } &             & none        &      & no input file needed, requires init=``ground'' \\
+\multicolumn{6}{l}{parameters in \texttt{WalkerSet}} \\
+ %  &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+%   &   \texttt{name            } &  argument   &             & no   & unique name that identifies the xml-block \\
+   &   \texttt{type            } &  argument   & distributed & no   & type of walker container: standard \\
+\multicolumn{6}{l}{parameters in \texttt{Propagator}} \\
+%   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+%   &   \texttt{name            } &  argument   &       & no    & unique name that identifies the xml-block \\
+   &   \texttt{type            } &  argument   & afqmc & afqmc & type of propgator \\
+   &   \texttt{                } &             &  vmc  &       & not yet functioning \\
+   &   \texttt{info            } &  argument   &       &       & name of \texttt{AFQMCInfo} block \\
+\multicolumn{6}{l}{parameters in \texttt{execute}} \\
+%   &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
+%   &   \texttt{name            } &  argument    &         & no   & unique name that identifies the xml-block \\
+   &   \texttt{wset            } &  argument    &         &      &  \\
+   &   \texttt{ham             } & argument     &         &      &  \\
+   &   \texttt{wfn             } & argument     &         &      &  \\
+   &   \texttt{prop            } & argument     &         &      &  \\
+   &   \texttt{info            } &  argument    &         &      & name of \texttt{AFQMCInfo} block \\
+   &   \texttt{nWalkers        } &  integer     & $\ge 0$ & 5    & initial number of walkers per task group   \\
+   &   \texttt{timestep        } &  real        & $> 0$   & 0.01 & time step in 1/a.u. \\
+   &   \texttt{blocks          } &  integer     & $\ge 0$ & 100  & number of blocks            \\
+   &   \texttt{step            } &  integer     & $> 0$   & 1    & number of steps within a block \\
+   &   \texttt{substep         } &  integer     & $> 0$   & 1    & number of substeps within a step \\
+  \hline
+\end{tabularx}
+\end{center}
+\label{table:afqmc_basic}
+\end{table}
+
+
+Below is a list of all input sections for AFQMC calculations, along with a detailed explanation of accepted parameters. Since the code is under active development, the list of parameters and their interpretation can change in the future.\\
+
+\texttt{AFQMCInfo}: input block that defines basic information about the calculation. It is passed to all other input blocks to propagate the basic information:
+\texttt{<AFQMCInfo name="info0">}
+\begin{itemize}
+\item \textbf{NMO}. Number of molecular orbitals, i.e., number of states in the single particle basis. 
+\item \textbf{NAEA}. Number of Active Electrons-Alpha, i.e., number of spin-up electrons.
+\item \textbf{NAEB}. Number of Active Electrons-Beta, i.e., number of spin-down electrons.
+\item \textbf{NCA}. number of core electrons of spin up (only meaningful if reading ASCII FCIDUMPs). Default: 0.
+\item \textbf{NCB}. Number of core electrons of spin down (only meaningful if reading ASCII FCIDUMPs). Default: 0.\\
+\end{itemize}
+
+\texttt{Hamiltonian}: controls the object that reads, stores and manages the hamiltonian. 
+  \texttt{<Hamiltonian name="ham0" type="SparseGeneral" info="info0">}
+\begin{itemize}
+\item \textbf{filename}. Name of file with the \texttt{Hamiltonian}. This is a required parameter.
+\item \textbf{filetype}. The type of file found in filename. Options are: fcidump, hdf5. fcidump is the ASCII-based format of Molpro, VASP, PySCF, etc.; hdf5 is the native HDF5-based format  of QMCPACK and can also be generated by modified versions of PySCF and VASP. This is a required parameter.
+\item \textbf{cutoff\_1bar}. Cutoff applied to integrals during reading. Any term in the hamiltonian smaller than this value is set to zero. (For filetype=``hdf5'', the cutoff is only applied to the 2-electron integrals). Default: 1e-8
+\item \textbf{cutoff\_decomposition}. Cutoff used to stop the iterative cycle in the generation of the Cholesky decomposition of the 2-electron integrals. The generation of Cholesky vectors is stopped when the maximum error in the diagonal reaches this value. In case of an eigenvalue factorization, this becomes the cutoff applied to the eigenvalues. Only eigenvalues above this value are kept. Default: 1e-6
+\item \textbf{hdf\_write\_file}. If a value is given, an hdf5 restart file for the \texttt{Hamiltonian} is generated. Default: ``'' (no file is generated)
+\item \textbf{hdf\_write\_type}. What to store in the restart file. Options: ``integrals'': write directly the 1- and 2-electron integrals; ``factorized'': write the cholesky decomposition of the integrals; ``default'': Default value, write the type found in filetype.
+\item \textbf{ascii\_write\_file} If a value is given, an ASCII restart file for the \texttt{Hamiltonian} is generated. Default: ``'' (no file is generated)
+\item \textbf{nblocks}. This parameter controls the distribution of the 2-electron integrals among processors. In the default behavior (nblocks=1), all nodes contain the entire list of integrals. If nblocks $>$ 1, the of nodes in the calculation will be split in nblocks groups. Each node in a given group contains the same subset of integrals and subsequently operates on this subset during  any further operation that requires the hamiltonian. The maximum number of groups is NMO. Currently only works for filetype=``hdf5'' and the file must contain integrals.  Not yet implemented for input hamiltonians in the form of Cholesky vectors or for ASCII input. Coming soon!
+    Default: No distribution
+\item \textbf{printEig}. If ``yes'', prints additional information during the Cholesky decomposition.
+    Default: no
+\item \textbf{fix\_2eint}.  If this is set to ``yes'', orbital pairs that are found not to be positive definite are ignored in the generation of the Cholesky factorization. This is necessary if the 2-electron integrals are not positive definite due to round-off errors in their generation.
+    Default: no \\
+\end{itemize}
+
+\texttt{Wavefunction}: controls the object that manages the trial wave-functions. This block expects a list of xml-blocks defining actual trial-wave functions for various roles. 
+\texttt{<Wavefunction name="wfn0" info="info0">}
+  \texttt{<ImpSamp name="impsamp0" type="PureSD">}
+\begin{itemize}
+\item \textbf{init}. Argument in ImpSamp. Selects pre-defined trial wave-functions if desired. 
+Value: ground. Only for PureSD. Sets the trial wave-function to a block diagonal form. Diagonal in the occupied-occupied block and zero outside. This option corresponds to a ground state determinant (assuming orbitals ordered by increasing eigenvalue) in the orbital space that defines the hamiltonian. For a \texttt{Hamiltonian} generates based on HF orbitals, this generates a HF trial wave-function. (Only useful situation.)
+\item \textbf{filename}. Name of file with wave-function information.
+\item \textbf{cutoff}. cutoff applied to the terms in the calculation of the local energy. Only terms in the hamiltonian above this cutoff are included in the evaluation of the energy.
+      Default: 1e-6
+\item \textbf{nnodes}. Defines the parallelization of the local energy evaluation and the distribution of the \texttt{Hamiltonian} matrix (not to be confused with the list of 2-electron integrals managed by \texttt{Hamiltonian}. These are not the same.) If nnodes $>$ 1, the nodes in the simulation are split into groups of nnodes, each group works collectively in the evaluation of the local energy of their walkers. This helps distribute the effort involved in the evaluation of the local energy among the nodes in the group, but also distributes the memory associated with the wave-function among the nodes in the group.
+      Default: No distribution
+\item \textbf{hdf\_write\_file}. If provided, a restart file for the wave-function will be generated.
+      Default: ``''
+\item \textbf{runtype}. Unique to MultiPureSD with orthogonal expansions.
+      Values: 0.  Use low memory algorithm. Much slower but has small memory requirements;
+      1. Use high-memory algorithm. Faster but with significant memory requirements.
+\item \textbf{fast}. Unique to MultiPureSD. If ``yes'', use fast-update algorithm with orthogonal expansions.
+      Default: No
+\item \textbf{Estimator}. Optional xml-block which defines a trial wave-function used for the calculation of energy averages.  It is used only during the collection of averages and doesn't influence the propagation. Note that this block must be set if an Estimator xml-block in the execute xml-block is specified. This must also be defined in order to calculate and print the energy in the case of hybrid propagation (see below). \\
+\end{itemize}
+
+\texttt{WalkerSet}: Controls the object that handles the set of walkers.
+\texttt{<WalkerSet name="wset0" type="distributed">}
+\begin{itemize}
+\item \textbf{pop\_control}. Population control algorithm. Options: ``simple'': Uses a simple branching scheme with a fluctuating population. Walkers with weight above max\_weight are split into multiple walkers of weight reset\_weight. Walkers with weight below min\_weight are killed with probability (weight/min\_weight); ``pair'': Fixed-population branching algorithm, based on QWalk's branching algorithm. Pairs of walkers with weight above/below max\_weight/min\_weight are combined into 2 walkers with weights equal to $(w_1+w_2)/2$. The probability of replicating walker w1 (larger weight) occurs with probability $w_1/(w_1+w_2)$, otherwise walker w2 (lower weight) is replicated; ``comb'': Fixed-population branching algorithm based on the Comb method. Will be available in the next release. Default: ``pair''
+\item \textbf{min\_weight}. Weight at which walkers are possibly killed (with probability weight/min\_weight). Default: 0.05
+\item \textbf{max\_weight}. Weight at which walkers are replicated. Default: 4.0
+\item \textbf{reset\_weight}. Weight to which replicated walkers are reset to. Default: 1.0
+\item \textbf{extra\_spaces}. Number of empty spaces kept in the list. Useful to avoid constant reallocation. Default: 10 \\
+\end{itemize}
+
+\texttt{Propagator}: Controls the object that manages the propagators.
+\texttt{<Propagator name="prop0" info="info0">}
+\begin{itemize}
+\item \textbf{cutoff}. Cutoff applied to Cholesky vectors. Elements of the Cholesky vectors below this value are set to zero.
+    Default: 1e-6
+\item \textbf{substractMF}. If ``yes'', apply mean-field substraction based on the ImpSamp trial wave-function. Must set to ``no'' to turn it off.
+    Default: yes
+\item \textbf{useCholesky}. If ``yes'', use iterative Cholesky decomposition to factorize 2-electron integral matrix. If ``no'', use eigenvalue decomposition (which is very slow and memory intensive).
+    Default: yes
+\item \textbf{vbias\_bound}. Upper bound applied to the vias potential. Components of the vias potential above this value are truncated there. The bound is currently applied to $\sqrt{\tau} v_{bias}$, so a larger value must be used as either the time-step or the fluctuations increase (e.g. from running a larger system or using a poor trial wave-function).
+    Default: 3.0
+\item \textbf{apply\_constrain}. If ``yes'', apply the phaseless constrain to the walker propagation. Currently, setting this to ``no'' produces unknown behavior, since free propagation algorithm has not been tested.
+    Default: yes
+\item \textbf{hybrid}. If ``yes'', use hybrid propagation algorithm. This propagation scheme doesn't use the local energy during propagation, leading to significant speed ups when its evaluation  cost is high. The local energy of the ImpSamp trial wave-function is never evaluated. To obtain energy estimates in this case, you must define an Estimator xml-block with the \texttt{Wavefunction} block. The local energy of this trial wave-function is evaluated and printed. It is possible to use a previously defined trial wave-function in the Estimator block, just set its ``name'' argument to the name of a previously defined wave-function. In this case, the same object is used for both roles.
+    Default: no
+\item \textbf{nnodes}. Controls the parallel propagation algorithm. If nnodes $>$ 1, the nodes in the simulation are split into groups of nnodes nodes, each group working collectively to propagate their walkers.
+    Default: 1 (Serial algorithm)
+\item \textbf{hdf\_read\_file}. If provided, initializes the object from the given file.
+    Default: ``''
+\item \textbf{hdf\_write\_file}. If provided, generates a restart file.
+    Default: ``''
+\item \textbf{parallel\_factorization}. If ``yes'', calculates Cholesky decomposition in parallel. Mostly for testing purposes.
+    Default: yes
+\item \textbf{parallel\_propagation}. If ``yes'', uses parallel propagation algorithm even with nnodes=1. This is set to ``yes'' if nnodes $>$ 1. If ``no'', uses a serial propagation algorithm. Only possible if nnodes=1 and ncores=1 (in \texttt{execute} block).
+    Default: yes
+\item \textbf{dense}. If ``yes'', use a dense representation of the factorized hamiltonian. The default behavior uses a sparse representation. Which option is better depends on the sparsity of the problem.
+    Default:  no \\
+\end{itemize}
+
+\texttt{execute}: Defines an execution region. 
+\texttt{<execute wset="wset0" ham="ham0" wfn="wfn0" prop="prop0" info="info0">}
+\begin{itemize}
+\item \textbf{nWalkers}. initial number of walkers per core group (see ncores). This sets the number of walkers for a given gorup of "ncores" on a node, the total number of walkers in the simulation depends on the total number of nodes and on the total number of cores on a node in the following way: $ \#_walkers_total = nWalkers * \#_nodes * \#_cores_total / ncores $. \\ 
+    Default: 5
+\item \textbf{timestep}. time step in 1/a.u. \\
+    Default: 0.01
+\item \textbf{blocks}. number of blocks. Slow operations occur once per block, e.g. write to file, slow observables, checkpoints, etc. \\
+    Default: 100
+\item \textbf{step}. number of steps within a block. Operations that occur at the step level include: load balance, orthogonalization, branching, etc. \\
+    Default: 1
+\item \textbf{substep}. number of substeps within a step. Only walker propagation occurs in a substep. \\
+    Default: 1
+\item \textbf{ortho}. number of steps between orthogonalization.
+    Default: 1
+\item \textbf{ncores}. Number of nodes in a task group. This number defines the number of cores on a node that share the parallel work associated with a distributed task. This number is used in the \texttt{Wavefunction} and \texttt{Propagator} task groups. The walker sets are shares by the ncores on a given node in the task group.
+\item \textbf{checkpoint}. Number of blocks between checkpoint files are generated. If a value smaller than 1 is given, no file is generated. If \textbf{hdf\_write\_file} is not set, a default name is used. \textbf{Default: 0} 
+\item \textbf{samplePeriod}. Number of blocks between sample collection. \textbf{Default: 0}
+\item \textbf{hdf\_write\_file}. If set (and checkpoint>0), a checkpoint file with this name will be written.
+\item \textbf{hdf\_read\_file}. If set, the simulation will be restarted from the given file.\\
+\end{itemize}
+
+Within the \texttt{Estimators} xml block has an argument \textbf{name}: the type of estimator we want to measure. Currently only ``basic'' or ``Basic'' or ``standard'' are allowed, , which are synonymous with one another. The basic estimator has the following optional parameters:
+\begin{itemize}
+\item \textbf{EstimEloc} or \textbf{estim\_eloc} or \textbf{estimeloc}. print the local energy of the ``Estimator'' wave-function. Default: false
+\item \textbf{timers}. print timing information. Default: true
+\item \textbf{nwalk}. print population control information ({\bf max \# branching events etc?}). Default: false \\
+\end{itemize}
+
+\section{File formats}
+... Coming Soon ...
+
+\section{Advice/Useful Information}
+
+AFQMC calculations are computationally expensive and require some care in order to obtain reasonable performance.
+Below is a growing list of useful advice for new users followed by a sample input for a large calculation.
+\begin{itemize}
+\item Generate Cholesky-decomposed integrals with external codes instead of the 2-electron integrals directly. The generation of the Cholesky factorization is faster and consumes less memory. 
+\item Use the hybrid algorithm for walker propagation. Set steps/substeps to adequate values to reduce the number of energy evaluations. This is essential when using large multi-determinant expansions.
+\item Adjust cutoffs in the wave-function and propagator bloxks until desired accuracy is reached. The cost of the calculation will depend on these cutoffs.
+\item Adjust ncores/nWalkers to obtain better efficiency. Larger nWalkers will lead to more efficient linear algebra operations, but will increase the time per step. Larger ncores will reduce the time per step, but will reduce efficiency due to inefficiencies in the parallel implementation. For large calculations, values between 6-12 for both quantities should be reasonable, depending on architecture. 
+\end{itemize}
+
+\begin{lstlisting}[caption=Example of sections of an AFQMC input file for a large calculation.]
+...
+
+  <Hamiltonian name="ham0" type="SparseGeneral" info="info0">
+    <parameter name="filetype">hdf5</parameter>
+    <parameter name="filename">fcidump.h5</parameter>
+    <parameter name="cutoff_1bar">1e-6</parameter>
+    <parameter name="cutoff_decomposition">1e-5</parameter>
+  </Hamiltonian>
+
+  <Wavefunction name="wfn0" info="info0">
+    <ImpSamp name="impsamp0" type="PureSD" init="ground" >
+      <parameter name="filetype">none</parameter>
+      <parameter name="cutoff">1e-6</parameter>
+    </ImpSamp>
+    <Estimator name="impsamp0" />
+  </Wavefunction>
+
+  <WalkerSet name="wset0" type="distributed">
+  </WalkerSet>
+
+  <Propagator name="prop0" info="info0">
+    <parameter name="hybrid">yes</parameter>
+  </Propagator>
+
+  <execute wset="wset0" ham="ham0" wfn="wfn0" prop="prop0" info="info0">
+    <parameter name="ncores">8</parameter>
+    <parameter name="timestep">0.01</parameter>
+    <parameter name="blocks">10000</parameter>
+    <parameter name="steps">10</parameter>
+    <parameter name="substeps">5</parameter>
+    <parameter name="nWalkers">8</parameter>
+  </execute>
+\end{lstlisting}

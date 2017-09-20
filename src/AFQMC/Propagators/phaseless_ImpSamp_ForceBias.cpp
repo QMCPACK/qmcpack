@@ -2,7 +2,8 @@
 #include <fstream>
 #include <cmath>
 #include <cfloat>
-#include<algorithm>
+#include <algorithm>
+#include <random>
 
 #include "Configuration.h"
 #include "AFQMC/config.h"
@@ -19,10 +20,13 @@
 //#include "AFQMC/Walkers/SlaterDetWalker.h"
 #include "AFQMC/Walkers/WalkerHandlerBase.h"
 #include "AFQMC/Propagators/phaseless_ImpSamp_ForceBias.h"
+#include "AFQMC/Matrix/hdf5_readers.hpp"
+#include "AFQMC/Matrix/array_partition.hpp"
 
 #include"AFQMC/Numerics/SparseMatrixOperations.h"
 #include"AFQMC/Numerics/DenseMatrixOperations.h"
 #include "Utilities/RandomGenerator.h"
+#include "Utilities/UtilityFunctions.h"
 #include "AFQMC/Utilities/Utils.h"
 
 namespace qmcplusplus
@@ -58,7 +62,6 @@ bool phaseless_ImpSamp_ForceBias::parse(xmlNodePtr cur)
     std::string hyb("no");
     std::string impsam("yes");
     ParameterSet m_param;
-    m_param.add(test_library,"test","int");
     m_param.add(sub,"substractMF","std::string");
     m_param.add(use,"useCholesky","std::string");
     m_param.add(cutoff,"cutoff_propg","double");
@@ -77,13 +80,15 @@ bool phaseless_ImpSamp_ForceBias::parse(xmlNodePtr cur)
     m_param.add(hdf_read_file,"hdf_read_file","std::string");
     m_param.add(hdf_write_tag,"hdf_write_tag","std::string");
     m_param.add(hdf_write_file,"hdf_write_file","std::string");
+    // fix bias propagation
+    m_param.add(fix_bias,"fix_bias","int");
 
     std::string par("yes");
     m_param.add(par,"paral_fac","std::string");
     m_param.add(par,"parallel_fac","std::string");
     m_param.add(par,"parallel_factorization","std::string");
 
-    std::string par2("no");
+    std::string par2("yes");
     m_param.add(par2,"parallel_propagation","std::string");
 
     std::string spr("no");
@@ -93,6 +98,8 @@ bool phaseless_ImpSamp_ForceBias::parse(xmlNodePtr cur)
     m_param.add(walkerBlock,"walkerBlock","int");
     m_param.add(walkerBlock,"block","int");
     m_param.add(walkerBlock,"Block","int");
+
+    m_param.add(n_reading_cores,"num_io_cores","int");
 
 /* to be completed later
 
@@ -124,40 +131,49 @@ bool phaseless_ImpSamp_ForceBias::parse(xmlNodePtr cur)
     std::transform(hyb.begin(),hyb.end(),hyb.begin(),(int (*)(int)) tolower);
     if(hyb == "yes" || hyb == "true") hybrid_method = true;  
     std::transform(par2.begin(),par2.end(),par2.begin(),(int (*)(int)) tolower);
-    if(par2 == "yes" || par2 == "true") parallelPropagation = true;  
+    if(par2 == "no" || par2 == "false") parallelPropagation = false;  
     std::transform(spr.begin(),spr.end(),spr.begin(),(int (*)(int)) tolower);
     if(spr == "yes" || spr == "true") sparsePropagator = false;  
 
+    app_log()<<"\n\n --------------- Parsing Propagator input ------------------ \n\n";
+
     if(substractMF) 
-      app_log()<<"Using mean-field substraction in propagator. \n";
+      app_log()<<" Using mean-field substraction in propagator. \n";
 
     if(parallel_factorization)
-      app_log()<<"Calculating factorization of 2-body hamiltonian in parallel. \n";
+      app_log()<<" Calculating factorization of 2-body hamiltonian in parallel. \n";
+    else
+      app_log()<<" Calculating factorization of 2-body hamiltonian in serial. \n";
 
     if(parallelPropagation)
-      app_log()<<"Using algorithm for parallel propagation (regardless of nnodes/ncores). \n";  
+      app_log()<<" Using algorithm for parallel propagation (regardless of nnodes/ncores). \n";  
+    else
+      app_log()<<" Using algorithm for serial propagation. \n";  
 
     if(nnodes_per_TG > 1 && !parallel_factorization) {
       parallel_factorization=true;
-      app_log()<<"Distributed propagator (nnodes_per_TG(propagator)>1) requires a parallel factorization. Setting parallel_factorization to true. \n"; 
-      app_log()<<"Calculating factorization of 2-body hamiltonian in parallel. \n";
+      app_log()<<" Distributed propagator (nnodes_per_TG(propagator)>1) requires a parallel factorization. Setting parallel_factorization to true. \n"; 
+      app_log()<<" Calculating factorization of 2-body hamiltonian in parallel. \n";
     }
 
     if(use_eig)
-      app_log()<<"Calculating factorization of 2 body interaction with direct diagonalization.\n";
+      app_log()<<" Calculating factorization of 2 body interaction with direct diagonalization.\n";
     else 
-      app_log()<<"Calculating factorization of 2 body interaction with Cholesky method.\n"; 
+      app_log()<<" Calculating factorization of 2 body interaction with Cholesky method.\n"; 
 
     if(!imp_sampl) {
-      app_log()<<"AFQMC propagation WITHOUT Importance Sampling! " <<std::endl; 
-      app_log()<<"CAREFUL Incomplete implementation of propagation WITHOUT Importance Sampling! " <<std::endl; 
-      app_log()<<"CAREFUL Weights are wrong and energies are incorrect !!! " <<std::endl; 
+      app_log()<<" AFQMC propagation WITHOUT Importance Sampling! " <<"\n"; 
+      app_log()<<" CAREFUL Incomplete implementation of propagation WITHOUT Importance Sampling! " <<"\n"; 
+      app_log()<<" CAREFUL Weights are wrong and energies are incorrect !!! " <<"\n"; 
     }
 
     if(hybrid_method)
-      app_log()<<"Using hybrid method to calculate the weights during the propagation." <<std::endl;
+      app_log()<<" Using hybrid method to calculate the weights during the propagation." <<"\n";
 
     app_log()<<" Running Propagator with " <<nnodes_per_TG <<" nodes per task group. \n"; 
+
+    if(fix_bias>0 && imp_sampl)
+      app_log()<<" Using propagation scheme where bias potential is updated every " <<fix_bias <<" sub steps. \n";
 
     cur = curRoot->children;
     while (cur != NULL) {
@@ -167,11 +183,14 @@ bool phaseless_ImpSamp_ForceBias::parse(xmlNodePtr cur)
       cur = cur->next;
     }
 
+
+    app_log()<<std::endl;
+
     return true;
 
 }
 
-bool phaseless_ImpSamp_ForceBias::hdf_write(hdf_archive& dump,const std::string& tag)
+bool phaseless_ImpSamp_ForceBias::hdf_write_transposed(hdf_archive& dump,const std::string& tag)
 {
 
   if(!sparsePropagator) {
@@ -207,23 +226,27 @@ bool phaseless_ImpSamp_ForceBias::hdf_write(hdf_archive& dump,const std::string&
     }
     npr=ranks.size();
 
-    std::vector<int> Idata(4);
-    int ntot=Spvn.size(), ntot_=Spvn.size();
+    std::vector<long> Ldata(4);
+    long ntot=Spvn.size(), ntot_=Spvn.size();
     if(nnodes_per_TG>1) 
-      MPI_Reduce(&ntot_, &ntot, 1, MPI_INT, MPI_SUM, 0, TG.getTGCOMM()); 
-    Idata[0]=ntot;  // this needs to be summed over relevant nodes
-    Idata[1]=Spvn.rows();  // same here
-    Idata[2]=nCholVecs;
-    Idata[3]=NMO;
+      MPI_Reduce(&ntot_, &ntot, 1, MPI_LONG, MPI_SUM, 0, TG.getTGCOMM()); 
+    Ldata[0]=ntot;  // this needs to be summed over relevant nodes
+    Ldata[1]=Spvn.rows();  // same here
+    Ldata[2]=nCholVecs;
+    Ldata[3]=NMO;
 
     dump.push("Propagators");
     dump.push("phaseless_ImpSamp_ForceBias");
     if(tag != std::string("")) dump.push(tag);
-    dump.write(Idata,"Spvn_dims");
+    dump.write(Ldata,"Spvn_dims");
+
+    dump.write(vn0,"Spvn_vn0");
+
 
     // transpose matrix for easier access to Cholesky vectors 
     Spvn.transpose();   
 
+    std::vector<int> Idata(4);
     Idata.resize(nCholVecs);
     for(int i=0; i<nCholVecs; i++)
       Idata[i] = *(Spvn.rowIndex_begin()+i+1) - *(Spvn.rowIndex_begin()+i);
@@ -252,7 +275,7 @@ bool phaseless_ImpSamp_ForceBias::hdf_write(hdf_archive& dump,const std::string&
     }
 
     int orig=0; 
-    for(ValueSMSpMat::indxType i=0; i<nCholVecs; i++) {
+    for(ValueSMSpMat::intType i=0; i<nCholVecs; i++) {
 
       if(nnodes_per_TG>1 && i == nvpp[orig]) orig++;
       if(orig==0) { 
@@ -300,8 +323,8 @@ bool phaseless_ImpSamp_ForceBias::hdf_write(hdf_archive& dump,const std::string&
     TG.getRanksOfRoots(ranks,pos);
     npr=ranks.size();
 
-    int ntot=Spvn.size(), ntot_=Spvn.size();
-    MPI_Reduce(&ntot_, &ntot, 1, MPI_INT, MPI_SUM, 0, TG.getTGCOMM()); 
+    long ntot=Spvn.size(), ntot_=Spvn.size();
+    MPI_Reduce(&ntot_, &ntot, 1, MPI_LONG, MPI_SUM, 0, TG.getTGCOMM()); 
 
     Spvn.transpose();
 
@@ -318,7 +341,7 @@ bool phaseless_ImpSamp_ForceBias::hdf_write(hdf_archive& dump,const std::string&
     ivec.reserve(nmax);
     vvec.reserve(nmax);
 
-    for(ValueSMSpMat::indxType i=cvec0; i<cvecN; i++) {
+    for(ValueSMSpMat::intType i=cvec0; i<cvecN; i++) {
 
       ivec.resize(Idata[i]);
       vvec.resize(Idata[i]);
@@ -335,9 +358,9 @@ bool phaseless_ImpSamp_ForceBias::hdf_write(hdf_archive& dump,const std::string&
 
   } else if(nnodes_per_TG>1 && TG.getTGNumber()==0) {
 
-    int ntot=0, ntot_=0;
+    long ntot=0, ntot_=0;
     if(nnodes_per_TG>1)
-      MPI_Reduce(&ntot_, &ntot, 1, MPI_INT, MPI_SUM, 0, TG.getTGCOMM()); 
+      MPI_Reduce(&ntot_, &ntot, 1, MPI_LONG, MPI_SUM, 0, TG.getTGCOMM()); 
 
     std::vector<int> Idata;
     Idata.resize(nCholVecs);
@@ -350,7 +373,233 @@ bool phaseless_ImpSamp_ForceBias::hdf_write(hdf_archive& dump,const std::string&
  
 }
 
+bool phaseless_ImpSamp_ForceBias::hdf_write(hdf_archive& dump,const std::string& tag)
+{
+
+  if(!sparsePropagator) {
+    app_error()<<" WARNING: Propagator restart file can not be written yet in dense form. \n FILE NOT WRITTEN. \n";
+    return true;    
+  }
+
+  // only heads of nodes in TG_number==0 communicate 
+  if(rank()==0) {
+
+    if(TG.getTGNumber()!=0 || TG.getCoreRank()!=0 || TG.getTGRank()!=0)
+      APP_ABORT("Error in phaseless_ImpSamp_ForceBias::hdf_write(): Global root is not head of TG=0.\n\n");
+
+    std::string path = "/Propagators/phaseless_ImpSamp_ForceBias"; 
+    if(tag != std::string("")) path += std::string("/")+tag; 
+    if(dump.is_group( path )) {
+      app_error()<<" ERROR: H5Group /Propagators/phaseless_ImpSamp_ForceBias/{tag} already exists in restart file. This is a bug and should not happen. Contact a developer.\n";
+      return false;
+    }
+
+    dump.push("Propagators");
+    dump.push("phaseless_ImpSamp_ForceBias");
+    if(tag != std::string("")) dump.push(tag);
+    dump.write(vn0,"Spvn_vn0");
+
+    std::vector<SPComplexType> vvec;
+
+    // write propg (not to be used in restart, only for miniapp)
+    if(spinRestricted) 
+      vvec.resize(NMO*NMO);
+    else
+      vvec.resize(2*NMO*NMO);
+
+    for(int n=0; n<Propg_H1.size(); n++) { 
+      int i, j;
+      SPComplexType v;
+      std::tie(i,j,v) = Propg_H1[n];
+      vvec[i*NMO+j] = v;
+    }
+    dump.write(vvec,"Spvn_propg1");
+
+    // scale Spvn by 1/std::sqrt(dt) and write 
+    RealType scale = 1.0/std::sqrt(dt); 
+    Spvn *= scale; 
+
+    // write matrix
+    long nblocks,ntot;
+    std::tie(nblocks,ntot) = afqmc::write_hdf5_SpMat(Spvn,dump,std::string("Spvn"),intgs_per_block,TG);
+
+    std::vector<long> Idata(5);
+    Idata[0]=ntot;  
+    Idata[1]=Spvn.rows(); 
+    Idata[2]=nCholVecs;
+    Idata[3]=NMO;
+    Idata[4]=nblocks;
+    dump.write(Idata,"Spvn_dims");
+
+    if(tag != std::string("")) dump.pop();
+    dump.pop();
+    dump.pop();
+
+    // scale back by std::sqrt(dt) 
+    scale = std::sqrt(dt); 
+    Spvn *= scale; 
+
+    dump.flush();  
+
+  } else if(nnodes_per_TG>1 && TG.getTGNumber()==0 && TG.getCoreRank()==0) {
+
+    RealType scale = 1.0/std::sqrt(dt);
+    Spvn *= scale;
+
+    int nblocks,ntot;
+    std::tie(nblocks,ntot) = afqmc::write_hdf5_SpMat(Spvn,dump,std::string("Spvn"),intgs_per_block,TG);
+
+    scale = std::sqrt(dt);
+    Spvn *= scale;
+
+  } else if(nnodes_per_TG>1 && TG.getTGNumber()==0) {
+
+    int nblocks,ntot;
+    std::tie(nblocks,ntot) = afqmc::write_hdf5_SpMat(Spvn,dump,std::string("Spvn"),intgs_per_block,TG);
+
+  } 
+  // just for safety
+  myComm->barrier();
+
+  return true;
+ 
+}
+
 bool phaseless_ImpSamp_ForceBias::hdf_read(hdf_archive& dump,const std::string& tag)
+{
+  int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID() , coreid = TG.getCoreID();
+  int nread = (n_reading_cores<=0)?(TG.getTotalCores()):(n_reading_cores);
+  std::vector<long> dims(5);
+  int rk,npr; 
+  if(n_reading_cores <=0 || coreid < n_reading_cores) {
+    // these cores access hdf file
+    if(!dump.push("Propagators",false)) return false;
+    if(!dump.push("phaseless_ImpSamp_ForceBias",false)) return false;
+    if(tag != std::string("")) 
+      if(!dump.push(tag,false)) return false;
+  }
+
+  // only 1 core reads small datasets
+  if( rank() == 0 ) {
+    if(!dump.read(dims,"Spvn_dims")) return false;
+
+    if(int(dims[3]) != NMO) {
+      app_error()<<" Error in phaseless_ImpSamp_ForceBias::hdf_read. NMO is not consistent between hdf5 file and current run. \n";
+      return false; 
+    }  
+
+    // read basic info
+    MPI_Bcast(dims.data(), dims.size(), MPI_LONG, 0, myComm->getMPI());
+    long ntot = dims[0];
+    int nrows = int(dims[1]);  
+    nCholVecs = int(dims[2]); 
+    int nblk = int(dims[4]);
+
+    // read vn0
+    if(!dump.read(vn0,"Spvn_vn0")) return false;
+    myComm->bcast<char>(reinterpret_cast<char*>(vn0.data()),sizeof(ValueType)*vn0.size(),0,myComm->getMPI());
+
+    afqmc::simple_matrix_partition<afqmc::TaskGroup,IndexType,RealType> split(nrows,nCholVecs,cutoff);
+    std::vector<IndexType> counts;
+    // count dimensions of sparse matrix
+    afqmc::count_entries_hdf5_SpMat(dump,split,std::string("Spvn"),nblk,false,counts,TG,true,nread);
+
+    std::vector<IndexType> sets;
+    split.partition(TG,false,counts,sets);
+
+    app_log()<<" Partitioning of Cholesky Vectors: ";
+    for(int i=0; i<=nnodes_per_TG; i++)
+      app_log()<<sets[i] <<" ";
+    app_log()<<std::endl;
+    app_log()<<" Number of terms in each partitioning: ";
+    for(int i=0; i<nnodes_per_TG; i++)
+      app_log()<<accumulate(counts.begin()+sets[i],counts.begin()+sets[i+1],0) <<" ";
+    app_log()<<std::endl;
+
+    MPI_Bcast(sets.data(), sets.size(), MPI_INT, 0, myComm->getMPI());
+    cvec0 = sets[TG.getLocalNodeNumber()];
+    cvecN = sets[TG.getLocalNodeNumber()+1];
+    for(int i=0; i<nnodes_per_TG; i++)
+      nCholVec_per_node[i] = sets[i+1]-sets[i];
+    GlobalSpvnSize = std::accumulate(counts.begin(),counts.end(),0);
+
+    // resize Spvn
+    int sz = std::accumulate(counts.begin()+cvec0,counts.begin()+cvecN,0);
+    MPI_Bcast(&sz, 1, MPI_INT, 0, TG.getNodeCommLocal());
+
+    Spvn.setDims(nrows,nCholVecs);
+    Spvn.allocate(sz);
+
+    // read Spvn
+    afqmc::read_hdf5_SpMat(Spvn,split,dump,std::string("Spvn"),nblk,TG,true,nread);
+
+    if(tag != std::string("")) dump.pop();
+    dump.pop();
+    dump.pop();
+
+
+  } else { 
+    // these cores only read sparse matrix 
+    
+    MPI_Bcast(dims.data(), dims.size(), MPI_LONG, 0, myComm->getMPI());
+    int nrows = int(dims[1]);
+    nCholVecs = int(dims[2]);
+    int nblk = int(dims[4]);
+
+    myComm->bcast<char>(reinterpret_cast<char*>(vn0.data()),sizeof(ValueType)*vn0.size(),0,myComm->getMPI());
+
+    std::vector<IndexType> counts;
+    afqmc::simple_matrix_partition<afqmc::TaskGroup,IndexType,RealType> split(nrows,nCholVecs,cutoff);
+    // count dimensions of sparse matrix
+    afqmc::count_entries_hdf5_SpMat(dump,split,std::string("Spvn"),nblk,false,counts,TG,true,nread);
+
+    std::vector<IndexType> sets(nnodes_per_TG+1);
+    MPI_Bcast(sets.data(), sets.size(), MPI_INT, 0, myComm->getMPI());
+    cvec0 = sets[TG.getLocalNodeNumber()];
+    cvecN = sets[TG.getLocalNodeNumber()+1];
+    for(int i=0; i<nnodes_per_TG; i++)
+      nCholVec_per_node[i] = sets[i+1]-sets[i];
+
+    // resize Spvn
+    int sz;
+    if( coreid==0 ) 
+      sz = std::accumulate(counts.begin()+cvec0,counts.begin()+cvecN,0);
+    MPI_Bcast(&sz, 1, MPI_INT, 0, TG.getNodeCommLocal());
+
+    Spvn.setDims(nrows,nCholVecs);
+    Spvn.allocate(sz);
+
+    if(n_reading_cores <=0 || coreid < n_reading_cores) {
+      split.partition(TG,false,counts,sets);
+
+      // read Spvn
+      afqmc::read_hdf5_SpMat(Spvn,split,dump,std::string("Spvn"),nblk,TG,true,nread);
+
+      if(tag != std::string("")) dump.pop();
+      dump.pop();
+      dump.pop();
+    } else {
+      // read Spvn
+      afqmc::read_hdf5_SpMat(Spvn,split,dump,std::string("Spvn"),nblk,TG,true,nread);
+    }
+  } 
+
+  // compression is done in read_hdf5_SpMat
+  //Spvn.compress(TG.getNodeCommLocal());
+
+  if(coreid == 0) {
+    // scale back by std::sqrt(dt) 
+    RealType scale = std::sqrt(dt); 
+    Spvn *= scale; 
+  }
+
+  myComm->barrier();
+
+  return true;
+}
+
+// do not remove, in case you find machines with bad I/O bottlenecks, e.g. BGQ
+bool phaseless_ImpSamp_ForceBias::hdf_read_transposed(hdf_archive& dump,const std::string& tag)
 {
 
   std::vector<int> Idata(4);
@@ -379,6 +628,9 @@ bool phaseless_ImpSamp_ForceBias::hdf_read(hdf_archive& dump,const std::string& 
     int ntot = Idata[0];
     int nrows = Idata[1];  
     nCholVecs = Idata[2]; 
+
+    if(!dump.read(vn0,"Spvn_vn0")) return false;
+    myComm->bcast<char>(reinterpret_cast<char*>(vn0.data()),sizeof(ValueType)*vn0.size(),0,myComm->getMPI());
 
     Idata.resize(nCholVecs);
     if(!dump.read(Idata,"Spvn_nterms_per_vector")) return false;
@@ -439,13 +691,81 @@ bool phaseless_ImpSamp_ForceBias::hdf_read(hdf_archive& dump,const std::string& 
     SPValueSMSpMat::iterator itv = Spvn.vals_begin();
     ValueSMSpMat::int_iterator itc = Spvn.cols_begin();
     ValueSMSpMat::int_iterator itr = Spvn.rows_begin();
-    for(ValueSMSpMat::indxType i=0; i<nCholVecs; i++) {  
+/*
+#if MPI_VERSION >= 3
+#define HAVE_MPI_IALLGATHER 
+#define HAVE_MPI_IGATHER 
+#define HAVE_MPI_IBCAST 
+#endif
+#ifdef HAVE_MPI_IBCAST
+    // should I start assuming c++14??? Much easier there! 
+    typedef std::tuple< MPI_Request*, std::vector<IndexType>*, MPI_Request*, std::vector<ValueType>* >  commData; 
+
+    auto nextit = [] (const std::vector<commData>::iterator& it, const std::vector<commData>::iterator& itbegin, const std::vector<commData>::iterator& itend) { return ((it+1)==itend)?itbegin:(it+1); };
+
+    std::vector<IndexType> ivec2;
+    std::vector<ValueType> vvec2;
+    ivec2.reserve(ivec.size());
+    vvec2.reserve(vvec.size());
+
+    MPI_Request req1, req2, req3, req4;
+    MPI_Status st1, st2;
+    std::vector<commData> data(2);
+    data[0] = std::make_tuple( &req1, &ivec, &req2, &vvec );    
+    data[1] = std::make_tuple( &req3, &ivec2, &req4, &vvec2 );    
+    std::vector<commData>::iterator it = data.begin(), itend = data.end(), itbeg = data.begin();
+
+    std::get<1>(*it)->resize(Idata[0]);
+    std::get<3>(*it)->resize(Idata[0]);
+    if(!dump.read(*(std::get<1>(*it)),std::string("Spvn_index_")+std::to_string(0))) return false;
+    if(!dump.read(*(std::get<3>(*it)),std::string("Spvn_vals_")+std::to_string(0))) return false;       
+    MPI_Ibcast( std::get<1>(*it)->data() , std::get<1>(*it)->size(),MPI_INT,0,MPI_COMM_HEAD_OF_NODES,std::get<0>(*it));
+#if defined(QMC_COMPLEX)
+    MPI_Ibcast( std::get<3>(*it)->data() , 2*std::get<3>(*it)->size(),MPI_DOUBLE,0,MPI_COMM_HEAD_OF_NODES,std::get<2>(*it));
+#else
+    MPI_Ibcast( std::get<3>(*it)->data() , std::get<3>(*it)->size(),MPI_DOUBLE,0,MPI_COMM_HEAD_OF_NODES,std::get<2>(*it));
+#endif
+    for(ValueSMSpMat::intType i=0; i<nCholVecs; i++) {
+
+      std::vector<commData>::iterator it2 = nextit(it,itbeg,itend);
+      // initiate communication
+      if(i+1 < nCholVecs) {
+        std::get<1>(*it2)->resize(Idata[i+1]);
+        std::get<1>(*it2)->resize(Idata[i+1]);
+        if(!dump.read(*(std::get<1>(*it2)),std::string("Spvn_index_")+std::to_string(i+1))) return false;
+        if(!dump.read(*(std::get<3>(*it2)),std::string("Spvn_vals_")+std::to_string(i+1))) return false;       
+        MPI_Ibcast( std::get<1>(*it2)->data() , std::get<1>(*it2)->size(),MPI_INT,0,MPI_COMM_HEAD_OF_NODES,std::get<0>(*it2));
+#if defined(QMC_COMPLEX)
+        MPI_Ibcast( std::get<3>(*it2)->data() , 2*std::get<3>(*it2)->size(),MPI_DOUBLE,0,MPI_COMM_HEAD_OF_NODES,std::get<2>(*it2));
+#else
+        MPI_Ibcast( std::get<3>(*it2)->data() , std::get<3>(*it2)->size(),MPI_DOUBLE,0,MPI_COMM_HEAD_OF_NODES,std::get<2>(*it2));
+#endif
+      }
+      
+      // wait for current message
+      MPI_Wait(std::get<0>(*it),&st1);
+      MPI_Wait(std::get<2>(*it),&st2);
+
+      if(nnodes_per_TG == 1 || (i>=cvec0 && i < cvecN)) {
+        for(int k=0; k<std::get<1>(*it)->size(); k++) {
+          *(itv++) = static_cast<SPValueType>((*std::get<3>(*it))[k]);
+          *(itr++) = (*std::get<1>(*it))[k];
+          *(itc++) = i;
+        }
+      }
+
+      // push iterator forward
+      it = it2;
+
+    }
+#else
+*/
+    for(ValueSMSpMat::intType i=0; i<nCholVecs; i++) {  
 
       ivec.resize(Idata[i]); 
       vvec.resize(Idata[i]); 
       if(!dump.read(ivec,std::string("Spvn_index_")+std::to_string(i))) return false;
       if(!dump.read(vvec,std::string("Spvn_vals_")+std::to_string(i))) return false;           
-
       myComm->bcast(ivec.data(),ivec.size(),MPI_COMM_HEAD_OF_NODES);
 #if defined(QMC_COMPLEX)
       myComm->bcast<RealType>(reinterpret_cast<RealType*>(vvec.data()),2*vvec.size(),MPI_COMM_HEAD_OF_NODES);
@@ -462,12 +782,13 @@ bool phaseless_ImpSamp_ForceBias::hdf_read(hdf_archive& dump,const std::string& 
       }
 
     }
+//#endif
 
     if(tag != std::string("")) dump.pop();
     dump.pop();
     dump.pop();
 
-    Spvn.compress();
+    Spvn.compress(TG.getNodeCommLocal());
 
     // scale back by std::sqrt(dt) 
     RealType scale = std::sqrt(dt); 
@@ -482,6 +803,8 @@ bool phaseless_ImpSamp_ForceBias::hdf_read(hdf_archive& dump,const std::string& 
     int ntot = Idata[0];
     int nrows = Idata[1];
     nCholVecs = Idata[2];
+
+    myComm->bcast<char>(reinterpret_cast<char*>(vn0.data()),sizeof(ValueType)*vn0.size(),0,myComm->getMPI());
 
     Idata.resize(nCholVecs);
     myComm->bcast(Idata,MPI_COMM_HEAD_OF_NODES);
@@ -515,7 +838,74 @@ bool phaseless_ImpSamp_ForceBias::hdf_read(hdf_archive& dump,const std::string& 
     SPValueSMSpMat::iterator itv = Spvn.vals_begin();
     ValueSMSpMat::int_iterator itc = Spvn.cols_begin();
     ValueSMSpMat::int_iterator itr = Spvn.rows_begin();
-    for(ValueSMSpMat::indxType i=0; i<nCholVecs; i++) {
+/*
+#if MPI_VERSION >= 3
+#define HAVE_MPI_IALLGATHER 
+#define HAVE_MPI_IGATHER 
+#define HAVE_MPI_IBCAST 
+#endif
+#ifdef HAVE_MPI_IBCAST
+    // should I start assuming c++14??? Much easier there! 
+    typedef std::tuple< MPI_Request*, std::vector<IndexType>*, MPI_Request*, std::vector<ValueType>* >  commData; 
+
+    auto nextit = [] (const std::vector<commData>::iterator& it, const std::vector<commData>::iterator& itbegin, const std::vector<commData>::iterator& itend) { return ((it+1)==itend)?itbegin:(it+1); };
+
+    std::vector<IndexType> ivec2;
+    std::vector<ValueType> vvec2;
+    ivec2.reserve(ivec.size());
+    vvec2.reserve(vvec.size());
+
+    MPI_Request req1, req2, req3, req4;
+    MPI_Status st1, st2;
+    std::vector<commData> data(2);
+    data[0] = std::make_tuple( &req1, &ivec, &req2, &vvec );    
+    data[1] = std::make_tuple( &req3, &ivec2, &req4, &vvec2 );    
+    std::vector<commData>::iterator it = data.begin(), itend = data.end(), itbeg = data.begin();
+
+    std::get<1>(*it)->resize(Idata[0]);
+    std::get<3>(*it)->resize(Idata[0]);
+    if(!dump.read(*(std::get<1>(*it)),std::string("Spvn_index_")+std::to_string(0))) return false;
+    if(!dump.read(*(std::get<3>(*it)),std::string("Spvn_vals_")+std::to_string(0))) return false;       
+    MPI_Ibcast( std::get<1>(*it)->data() , std::get<1>(*it)->size(),MPI_INT,0,MPI_COMM_HEAD_OF_NODES,std::get<0>(*it));
+#if defined(QMC_COMPLEX)
+    MPI_Ibcast( std::get<3>(*it)->data() , 2*std::get<3>(*it)->size(),MPI_DOUBLE,0,MPI_COMM_HEAD_OF_NODES,std::get<2>(*it));
+#else
+    MPI_Ibcast( std::get<3>(*it)->data() , std::get<3>(*it)->size(),MPI_DOUBLE,0,MPI_COMM_HEAD_OF_NODES,std::get<2>(*it));
+#endif
+    for(ValueSMSpMat::intType i=0; i<nCholVecs; i++) {
+
+      std::vector<commData>::iterator it2 = nextit(it,itbeg,itend);
+      // initiate communication
+      if(i+1 < nCholVecs) {
+        std::get<1>(*it2)->resize(Idata[i+1]);
+        std::get<1>(*it2)->resize(Idata[i+1]);
+        MPI_Ibcast( std::get<1>(*it2)->data() , std::get<1>(*it2)->size(),MPI_INT,0,MPI_COMM_HEAD_OF_NODES,std::get<0>(*it2));
+#if defined(QMC_COMPLEX)
+        MPI_Ibcast( std::get<3>(*it2)->data() , 2*std::get<3>(*it2)->size(),MPI_DOUBLE,0,MPI_COMM_HEAD_OF_NODES,std::get<2>(*it2));
+#else
+        MPI_Ibcast( std::get<3>(*it2)->data() , std::get<3>(*it2)->size(),MPI_DOUBLE,0,MPI_COMM_HEAD_OF_NODES,std::get<2>(*it2));
+#endif
+      }
+      
+      // wait for current message
+      MPI_Wait(std::get<0>(*it),&st1);
+      MPI_Wait(std::get<2>(*it),&st2);
+
+      if(nnodes_per_TG == 1 || (i>=cvec0 && i < cvecN)) {
+        for(int k=0; k<std::get<1>(*it)->size(); k++) {
+          *(itv++) = static_cast<SPValueType>((*std::get<3>(*it))[k]);
+          *(itr++) = (*std::get<1>(*it))[k];
+          *(itc++) = i;
+        }
+      }
+
+      // push iterator forward
+      it = it2;
+
+    }
+#else
+*/
+    for(ValueSMSpMat::intType i=0; i<nCholVecs; i++) {
 
       ivec.resize(Idata[i]);
       vvec.resize(Idata[i]);
@@ -536,8 +926,9 @@ bool phaseless_ImpSamp_ForceBias::hdf_read(hdf_archive& dump,const std::string& 
       }
 
     }
+//#endif
 
-    Spvn.compress();
+    Spvn.compress(TG.getNodeCommLocal());
 
     // scale back by std::sqrt(dt) 
     RealType scale = std::sqrt(dt); 
@@ -549,6 +940,8 @@ bool phaseless_ImpSamp_ForceBias::hdf_read(hdf_archive& dump,const std::string& 
     int ntot = Idata[0];
     int nrows = Idata[1];
     nCholVecs = Idata[2];
+
+    myComm->bcast<char>(reinterpret_cast<char*>(vn0.data()),sizeof(ValueType)*vn0.size(),0,myComm->getMPI());
 
     if(nnodes_per_TG > 1) 
       myComm->bcast(nCholVec_per_node);
@@ -564,7 +957,7 @@ bool phaseless_ImpSamp_ForceBias::hdf_read(hdf_archive& dump,const std::string& 
     Spvn.share(&cvec0,1,false);
     Spvn.share(&cvecN,1,false);
 
-    Spvn.setCompressed();
+    Spvn.compress(TG.getNodeCommLocal());
 
   } 
 
@@ -575,8 +968,9 @@ bool phaseless_ImpSamp_ForceBias::hdf_read(hdf_archive& dump,const std::string& 
 
 
 
-bool phaseless_ImpSamp_ForceBias::setup(std::vector<int>& TGdata, SPComplexSMVector* v, HamiltonianBase* ham,WavefunctionHandler* w, RealType dt_, hdf_archive& dump_read, const std::string& hdf_restart_tag, MPI_Comm tg_comm, MPI_Comm node_comm)
+bool phaseless_ImpSamp_ForceBias::setup(std::vector<int>& TGdata, SPComplexSMVector* v, HamiltonianBase* ham,WavefunctionHandler* w, RealType dt_, hdf_archive& dump_read, const std::string& hdf_restart_tag, MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm node_heads_comm)
 {
+
   dt = dt_;
 
   wfn=w;
@@ -591,14 +985,18 @@ bool phaseless_ImpSamp_ForceBias::setup(std::vector<int>& TGdata, SPComplexSMVec
   core_rank = TG.getCoreRank();
   TG.setNodeCommLocal(node_comm);
   TG.setTGCommLocal(tg_comm);
+  MPI_COMM_HEAD_OF_NODES = node_heads_comm;
+  TG.setHeadOfNodesComm(MPI_COMM_HEAD_OF_NODES);
+  head_of_nodes = (TG.getCoreID()==0);
 
   walker_per_node.resize(nnodes_per_TG);
 
   parallelPropagation = (parallelPropagation||(nnodes_per_TG>1 || ncores_per_TG>1));
   distributeSpvn = nnodes_per_TG>1;
 
-  // this is the number of ComplexType needed to store all the information necessary to calculate 
-  // the local contribution to vHS. This includes Green functions for all determinants, overlaps, etc.
+  // this is the number of ComplexType needed to store 
+  // all the information necessary to calculate 
+  // the local contribution to vHS. This includes Green functions, overlaps, etc.
   if(parallelPropagation)
     sizeOfG = wfn->sizeOfInfoForDistributedPropagation("ImportanceSampling");
 
@@ -621,21 +1019,16 @@ bool phaseless_ImpSamp_ForceBias::setup(std::vector<int>& TGdata, SPComplexSMVec
 //  std::string str_ = std::string("debug.") + std::to_string(rank());
 //  out_debug.open(str_.c_str());
 
-// FIX FIX FIXL must define
-// nCholVecs 
-// cvec0, cvecN
-
   nCholVec_per_node.resize(nnodes_per_TG);
- 
-  // Only master tries to read 
-  if(myComm->rank() == 0) {
 
-    if(hdf_read_file!=std::string("")) {
+  if(hdf_read_file!=std::string("")) {
 
-      if(!sparsePropagator)
-        APP_ABORT("Error: Propagator restart not implemented with dense propagator yet. \n");
+    if(!sparsePropagator)
+      APP_ABORT("Error: Propagator restart not implemented with dense propagator yet. \n");
 
-      hdf_archive dump(myComm);
+    hdf_archive dump(myComm);
+    int coreid = TG.getCoreID();
+    if( n_reading_cores <=0 || coreid < n_reading_cores ) {  // only those that will read
       if(dump.open(hdf_read_file,H5F_ACC_RDONLY)) { 
         read_Spvn_from_file = hdf_read(dump,hdf_read_tag);
         dump.close();
@@ -644,20 +1037,10 @@ bool phaseless_ImpSamp_ForceBias::setup(std::vector<int>& TGdata, SPComplexSMVec
       } else {
         APP_ABORT("Error in phaseless_ImpSamp_ForceBias::setup(): problems opening hdf5 file. \n");
       }
+    } else
+      read_Spvn_from_file = hdf_read(dump,hdf_read_tag);
 
-    } 
-
-  } else {
-
-    if(hdf_read_file!=std::string("")) { 
-      if(!sparsePropagator)
-        APP_ABORT("Error: Propagator restart not implemented with dense propagator yet. \n");
-
-      hdf_archive dump(myComm);
-      read_Spvn_from_file = hdf_read(dump,std::string(""));
-    }
-
-  }
+  } 
 
   if(!read_Spvn_from_file && !parallel_factorization) {
 
@@ -686,7 +1069,7 @@ bool phaseless_ImpSamp_ForceBias::setup(std::vector<int>& TGdata, SPComplexSMVec
       Timer.stop("Generic1");
       app_log()<<" -- Time to calculate HS potentials: " <<Timer.average("Generic1") <<"\n";
 
-      myComm->bcast<char>(reinterpret_cast<char*>(vn0.data()),sizeof(ValueType)*vn0.size(),MPI_COMM_HEAD_OF_NODES);
+      myComm->bcast<char>(reinterpret_cast<char*>(vn0.data()),sizeof(ValueType)*vn0.size(),0,MPI_COMM_HEAD_OF_NODES);
       if(sparsePropagator) {
         std::vector<int> ni(3);
         ni[0]=Spvn.size();
@@ -698,7 +1081,7 @@ bool phaseless_ImpSamp_ForceBias::setup(std::vector<int>& TGdata, SPComplexSMVec
         cvec0 = 0;
         cvecN = nCholVecs;
 
-        myComm->bcast<char>(reinterpret_cast<char*>(Spvn.values()),sizeof(SPValueType)*Spvn.size(),MPI_COMM_HEAD_OF_NODES);
+        myComm->bcast<char>(reinterpret_cast<char*>(Spvn.values()),sizeof(SPValueType)*Spvn.size(),0,MPI_COMM_HEAD_OF_NODES);
         myComm->bcast<int>(Spvn.row_data(),Spvn.size(),MPI_COMM_HEAD_OF_NODES);
         myComm->bcast<int>(Spvn.column_data(),Spvn.size(),MPI_COMM_HEAD_OF_NODES);
         myComm->bcast<int>(Spvn.row_index(),Spvn.rows()+1,MPI_COMM_HEAD_OF_NODES);
@@ -718,7 +1101,7 @@ bool phaseless_ImpSamp_ForceBias::setup(std::vector<int>& TGdata, SPComplexSMVec
         cvec0 = 0;
         cvecN = nCholVecs;
 
-        myComm->bcast<char>(reinterpret_cast<char*>(Dvn.values()),sizeof(SPValueType)*Dvn.size(),MPI_COMM_HEAD_OF_NODES);
+        myComm->bcast<char>(reinterpret_cast<char*>(Dvn.values()),sizeof(SPValueType)*Dvn.size(),0,MPI_COMM_HEAD_OF_NODES);
 
         myComm->barrier();
         myComm->barrier();
@@ -742,8 +1125,8 @@ bool phaseless_ImpSamp_ForceBias::setup(std::vector<int>& TGdata, SPComplexSMVec
           Spvn.allocate_serial(ni[0]);
           Spvn.resize_serial(ni[0]);
 
-          myComm->bcast<char>(reinterpret_cast<char*>(vn0.data()),sizeof(ValueType)*vn0.size(),MPI_COMM_HEAD_OF_NODES);
-          myComm->bcast<char>(reinterpret_cast<char*>(Spvn.values()),sizeof(SPValueType)*Spvn.size(),MPI_COMM_HEAD_OF_NODES);
+          myComm->bcast<char>(reinterpret_cast<char*>(vn0.data()),sizeof(ValueType)*vn0.size(),0,MPI_COMM_HEAD_OF_NODES);
+          myComm->bcast<char>(reinterpret_cast<char*>(Spvn.values()),sizeof(SPValueType)*Spvn.size(),0,MPI_COMM_HEAD_OF_NODES);
           myComm->bcast<int>(Spvn.row_data(),Spvn.size(),MPI_COMM_HEAD_OF_NODES);
           myComm->bcast<int>(Spvn.column_data(),Spvn.size(),MPI_COMM_HEAD_OF_NODES);
           myComm->bcast<int>(Spvn.row_index(),Spvn.rows()+1,MPI_COMM_HEAD_OF_NODES);
@@ -764,8 +1147,8 @@ bool phaseless_ImpSamp_ForceBias::setup(std::vector<int>& TGdata, SPComplexSMVec
           Dvn.allocate_serial(ni[0]);
           Dvn.resize_serial(ni[0]);
 
-          myComm->bcast<char>(reinterpret_cast<char*>(vn0.data()),sizeof(ValueType)*vn0.size(),MPI_COMM_HEAD_OF_NODES);
-          myComm->bcast<char>(reinterpret_cast<char*>(Dvn.values()),sizeof(SPValueType)*Dvn.size(),MPI_COMM_HEAD_OF_NODES);
+          myComm->bcast<char>(reinterpret_cast<char*>(vn0.data()),sizeof(ValueType)*vn0.size(),0,MPI_COMM_HEAD_OF_NODES);
+          myComm->bcast<char>(reinterpret_cast<char*>(Dvn.values()),sizeof(SPValueType)*Dvn.size(),0,MPI_COMM_HEAD_OF_NODES);
         }
 
         myComm->barrier();
@@ -800,15 +1183,21 @@ bool phaseless_ImpSamp_ForceBias::setup(std::vector<int>& TGdata, SPComplexSMVec
     cvec0 = 0;
     cvecN = nCholVecs;
     if(nnodes_per_TG>1) {
+      if(sparsePropagator)
+        GlobalSpvnSize=Spvn.size();
+      int sz_ = (core_rank==0)?GlobalSpvnSize:0;
+      MPI_Allreduce(&sz_,&GlobalSpvnSize,1,MPI_INT,MPI_SUM,TG.getTGCOMM());  
       int cnt=0,node_number = TG.getLocalNodeNumber();
       if(node_number==0)
         cvec0=0;
       else
         cvec0 = std::accumulate(nCholVec_per_node.begin(),nCholVec_per_node.begin()+node_number,0);
       cvecN = cvec0+nCholVec_per_node[node_number];
+    } else {
+      // collect this from head processors in TG=0
+      if(sparsePropagator)
+        GlobalSpvnSize=Spvn.size();
     }
-    // collect this from head processors in TG=0
-    GlobalSpvnSize=Dvn.size();
   } 
 
   if(!sparsePropagator)
@@ -846,7 +1235,7 @@ bool phaseless_ImpSamp_ForceBias::setup(std::vector<int>& TGdata, SPComplexSMVec
   SPvHS.resize(2*NMO,NMO);
   for(int i=0; i<vMF.size(); i++) vMF[i]=0;
 
-  // vMF is actually sqrt(dt)*<vn>, since Spvn is also scaled by i*sqrt(dt)
+  // vMF is actually sqrt(dt)*<vn>, since Spvn is also scaled by sqrt(dt)
   if(substractMF) { 
     if(sparsePropagator) 
       wfn->calculateMeanFieldMatrixElementOfOneBodyOperators(spinRestricted,"ImportanceSampling",-1,Spvn,vMF);
@@ -887,7 +1276,7 @@ bool phaseless_ImpSamp_ForceBias::setup(std::vector<int>& TGdata, SPComplexSMVec
       }
     } 
 
-    // to correct for the extra 2 factor of i*sqrt(dt) from each vn and <vn>_MF term
+    // to correct for the extra 2 factor of sqrt(dt) from each vn and <vn>_MF term
     if(substractMF) {
       SPValueType one = SPValueType(static_cast<SPValueType>(1.0/dt));
       SPValueType zero = SPValueType(0.0);
@@ -972,6 +1361,9 @@ bool phaseless_ImpSamp_ForceBias::setup(std::vector<int>& TGdata, SPComplexSMVec
 
   app_log()<<" -- Number of terms in one body propagator: " <<Propg_H1.size() <<"\n";
   app_log()<<" -- Total number of terms in Cholesky vectors: " <<GlobalSpvnSize <<std::endl;
+  if(sparsePropagator) 
+    app_log()<<" -- Sparsity of Cholesky Matrix, # of Cholesky vectors: " <<double(GlobalSpvnSize)/double(NMO*NMO*Spvn.cols()) <<" " <<Spvn.cols() <<std::endl;
+
 
   // setup matrices
   vHS.resize(2*NMO,NMO);
@@ -986,14 +1378,7 @@ bool phaseless_ImpSamp_ForceBias::setup(std::vector<int>& TGdata, SPComplexSMVec
   ik0=pik0=0;
   ikN = NMO*NMO;
   if(!spinRestricted) ikN *= 2;
-  if(parallelPropagation) {
-    app_log()<<"  WARNING: Disabling save_memory in parallel propagation. FIX FIX FIX later. \n";
-    save_memory = true; // until I fix distributed SpvnT
-  }
   if(ncores_per_TG > 1) {
-    app_log()<<"  WARNING: Disabling save_memory in propagator because ncores_per_TG. FIX FIX FIX later. \n";
-    app_log()<<"  WARNING: Simple uniform distribution of Spvn over cores. Might not be efficient. FIX FIX FIX \n"; 
-    save_memory = true; // until I fix SpvnT
     int nextra,nvpc = NMO*NMO;
     if(!spinRestricted) nvpc *= 2; 
     nextra = nvpc%ncores_per_TG;
@@ -1041,189 +1426,150 @@ bool phaseless_ImpSamp_ForceBias::setup(std::vector<int>& TGdata, SPComplexSMVec
       } 
   }
 
-  if(test_library) test_linear_algebra();
-
-  Spvn_for_onebody = &Spvn;
-  Dvn_for_onebody = &Dvn;
+  // these become meaningful only if Cholesky matrix is transposed
+  cvec0_loc=0;
+  cvecN_loc=cvecN-cvec0;
   if(!save_memory && imp_sampl) {
+    app_log()<<" Generating transposed matrix of Cholesky vectors." <<std::endl;
+    Timer.reset("Generic1");
+    Timer.start("Generic1");
+    // distribution is done over cholesky vectors if the propagator is transposed
+    if(ncores_per_TG>1) 
+      std::tie(cvec0_loc, cvecN_loc) = FairDivideBoundary(core_rank,int(cvecN-cvec0),ncores_per_TG);
 
     if( sparsePropagator ) { 
-// NEED TO REDEFINE SpvnT if ncores_per_TG > 1  
-
-      SpvnT.setup(head_of_nodes,"SpvnT",TG.getNodeCommLocal());
-      int NMO2 = NMO*NMO;
-      if(!spinRestricted) NMO2*=2;
-      SpvnT.setDims(Spvn.cols(),NMO2);
-      if(head_of_nodes) {
-        ValueSMSpMat::const_int_iterator itik = Spvn.rowIndex_begin();
-        int cnt1=0;
-        for(int i=0; i<NMO; i++)
-         for(int k=0; k<NMO; k++, ++itik) {
-           if( *itik == *(itik+1) ) continue;
-           if(wfn->isOccupAlpha("ImportanceSampling",i)) cnt1+=((*(itik+1))-(*(itik)));
-         }
-        if(!spinRestricted) {
-          for(int i=0; i<NMO; i++)
-           for(int k=0; k<NMO; k++, ++itik) {
-             if( *itik == *(itik+1) ) continue;
-             if(wfn->isOccupBeta("ImportanceSampling",i+NMO)) cnt1+=((*(itik+1))-(*(itik)));
-           }
-        }
-        SpvnT.allocate_serial(cnt1); 
-        itik = Spvn.rowIndex_begin();
-        const int* cols = Spvn.column_data();
-        const SPValueType* vals = Spvn.values(); 
-        for(int i=0; i<NMO; i++)
-         for(int k=0; k<NMO; k++, ++itik) {
-           if( *itik == *(itik+1) ) continue;
-           if(wfn->isOccupAlpha("ImportanceSampling",i)) {
-             for(int p=(*itik); p<(*(itik+1)); p++) 
-               SpvnT.add( *(cols+p) , i*NMO+k , *(vals+p) ); 
-           } 
-         }
-        if(!spinRestricted) { 
-          for(int i=0; i<NMO; i++)
-           for(int k=0; k<NMO; k++, ++itik) {
-             if( *itik == *(itik+1) ) continue;
-             if(wfn->isOccupBeta("ImportanceSampling",i+NMO)) { 
-               for(int p=(*itik); p<(*(itik+1)); p++) 
-                 SpvnT.add( *(cols+p) , NMO*NMO+i*NMO+k , *(vals+p) ); 
-             }
-           }
-        }
-        SpvnT.compress();
-      }   
-      myComm->barrier();
-      if(!head_of_nodes) SpvnT.initializeChildren();
-      myComm->barrier();
-      Spvn_for_onebody = &SpvnT;
+      wfn->generateTransposedOneBodyOperator(spinRestricted,"ImportanceSampling",Spvn,SpvnT);
     } else {
-
-/*
-      if(spinRestricted) {
-        int maxi = 0;
-        for(int i=0; i<NMO; i++)
-          if(wfn->isOccupAlpha("ImportanceSampling",i)) max=i; 
-        DvnT.resize_
-      } else {
-       
-      }
-*/
-      DvnT.setup(head_of_nodes,"DvnT",TG.getNodeCommLocal());
-      DvnT.setDims(Dvn.cols(), Dvn.rows());
-      DvnT.allocate(Dvn.cols()*Dvn.rows());
-      DvnT.resize(Dvn.cols()*Dvn.rows());
-
-      if(head_of_nodes) {
-        int nc = DvnT.cols();
-        int nr = DvnT.rows();
-        int nc2 = Dvn.cols();
-        int nr2 = Dvn.rows();
-        for(int i=0; i<nr; i++)
-          for(int j=0; j<nc; j++)
-            DvnT[i*nc+j] = Dvn[j*nc2+i]; // DvnT(i,j) = Dvn(j,i)
-      }
-      myComm->barrier();
-      if(!head_of_nodes) DvnT.initializeChildren();
-      myComm->barrier();
-      Dvn_for_onebody = &DvnT;     
+      wfn->generateTransposedOneBodyOperator(spinRestricted,"ImportanceSampling",Dvn,DvnT);
     }
+    myComm->barrier();
+    Timer.stop("Generic1");
+    app_log()<<" -- Time to calculate transposed Cholesky matrix: " <<Timer.average("Generic1") <<"\n";
   }
 
   return true;
 }
 
-// right now using local energy form of important sampling
-void phaseless_ImpSamp_ForceBias::Propagate(int n, WalkerHandlerBase* wset, RealType& Eshift, const RealType Eav)
+void phaseless_ImpSamp_ForceBias::Propagate(int steps, int& steps_total, WalkerHandlerBase* wlk, RealType& E1) 
 {
 
-// split over cholesky vectors Spvn. That way you only need 1 communiation ievent per propagation
-// during parallel execution, you'll still need to communicate both vbias and vhs for each walker
-// if you are using the hybrid algorithm since you need vbias for hybrid_weight.
-//
-  
+  if(fix_bias > 0) {
+
+    int nblk = steps/fix_bias;
+    int nextra = steps%fix_bias;
+    if(parallelPropagation) {
+
+      for(int i=0; i<nblk; i++, steps_total+=fix_bias) 
+        dist_propagation_multiple_steps(fix_bias,wlk,E1);
+      if(nextra>0) {
+        steps_total+=nextra;
+        dist_propagation_multiple_steps(nextra,wlk,E1);
+      }
+    } else {
+
+      APP_ABORT("Error: fix_bias > 0 only implemented with parallel_propagation = yes. \n\n\n");
+      for(int i=0; i<nblk; i++, steps_total+=fix_bias) 
+        serial_propagation_multiple_steps(fix_bias,wlk,E1);
+      if(nextra>0) {
+        steps_total+=nextra;
+        serial_propagation_multiple_steps(nextra,wlk,E1);
+      }
+    }
+
+  } else {
+
+    if(parallelPropagation) {
+
+      for(int i=0; i<steps; i++, steps_total++) 
+        dist_propagation_single_step(wlk,E1);
+
+    } else {
+
+      for(int i=0; i<steps; i++, steps_total++) 
+        serial_propagation_single_step(wlk,E1);
+
+    }
+
+  }
+
+}
+
+// right now using local energy form of important sampling
+void phaseless_ImpSamp_ForceBias::serial_propagation_single_step(WalkerHandlerBase* wset, RealType& Eshift)
+{
+
   const SPComplexType im = SPComplexType(0.0,1.0);
   const SPComplexType halfim = SPComplexType(0.0,0.5);
   int nw = wset->numWalkers(true); // true includes dead walkers in list
   MFfactor.resize(nw);
   hybrid_weight.resize(nw);
-  if(parallelPropagation) {
-  //if(true) {
-    // hybrid_weight, MFfactor, and Sdet for each walker is updated 
-    dist_Propagate(wset);
-    TG.local_barrier();
-  } else {
-    for(int i=0; i<nw; i++) {
-      if(!wset->isAlive(i) || std::abs(wset->getWeight(i)) <= 1e-6) continue; 
 
-      ComplexType* Sdet = wset->getSM(i);
-      wset->setCurrToOld(i);
+  for(int i=0; i<nw; i++) {
+    if(!wset->isAlive(i) || std::abs(wset->getWeight(i)) <= 1e-6) continue; 
 
-      S1=ComplexType(0.0); 
-      S2=ComplexType(0.0); 
+    ComplexType* Sdet = wset->getSM(i);
+    wset->setCurrToOld(i);
 
-      // propagate forward half a timestep with mean-field propagator
-      Timer.start("Propagate::product_SD");
-      SparseMatrixOperators::product_SD(NAEA,Propg_H1.data()+Propg_H1_indx[0],Propg_H1_indx[1],Sdet,NAEA,S1.data(),NAEA);
-      // this will be a problem with DistWalkerHandler in closed_shell case
-      SparseMatrixOperators::product_SD(NAEB,Propg_H1.data()+Propg_H1_indx[2],Propg_H1_indx[3],Sdet+NAEA*NMO,NAEA,S2.data(),NAEA);
-      Timer.stop("Propagate::product_SD");
+    S1=ComplexType(0.0); 
+    S2=ComplexType(0.0); 
 
-      // propagate forward full timestep with potential (HS) propagator 
+    // propagate forward half a timestep with mean-field propagator
+    Timer.start("Propagate::product_SD");
+    SparseMatrixOperators::product_SD(NAEA,Propg_H1.data()+Propg_H1_indx[0],Propg_H1_indx[1],Sdet,NAEA,S1.data(),NAEA);
+    // this will be a problem with DistWalkerHandler in closed_shell case
+    SparseMatrixOperators::product_SD(NAEB,Propg_H1.data()+Propg_H1_indx[2],Propg_H1_indx[3],Sdet+NAEA*NMO,NAEA,S2.data(),NAEA);
+    Timer.stop("Propagate::product_SD");
 
-      // 1. sample gaussian field
-      Timer.start("Propagate::sampleGaussianFields");  
-      sampleGaussianFields(); 
-      Timer.stop("Propagate::sampleGaussianFields");  
+    // propagate forward full timestep with potential (HS) propagator 
+
+    // 1. sample gaussian field
+    Timer.start("Propagate::sampleGaussianFields");  
+    sampleGaussianFields(); 
+    Timer.stop("Propagate::sampleGaussianFields");  
   
-      // 2. calculate force-bias potential. Careful, this gets both alpha and beta  
-      Timer.start("Propagate::calculateMixedMatrixElementOfOneBodyOperators");
-      if(imp_sampl) {
-        SPComplexType* dummy=NULL;
-        if(sparsePropagator)
-          wfn->calculateMixedMatrixElementOfOneBodyOperators(spinRestricted,"ImportanceSampling",-1,Sdet,dummy,*Spvn_for_onebody,vbias,!save_memory,true);
-        else 
-          wfn->calculateMixedMatrixElementOfOneBodyOperators(spinRestricted,"ImportanceSampling",-1,Sdet,dummy,Dvn,vbias,false,true);
-        apply_bound_vbias();
-      }
-      Timer.stop("Propagate::calculateMixedMatrixElementOfOneBodyOperators");
+    // 2. calculate force-bias potential. Careful, this gets both alpha and beta  
+    Timer.start("Propagate::calculateMixedMatrixElementOfOneBodyOperators");
+    if(imp_sampl) {
+      SPComplexType* dummy=NULL;
+      if(sparsePropagator)
+        wfn->calculateMixedMatrixElementOfOneBodyOperators(spinRestricted,"ImportanceSampling",-1,Sdet,dummy,Spvn,SpvnT,vbias,!save_memory,true);
+      else 
+        wfn->calculateMixedMatrixElementOfOneBodyOperators(spinRestricted,"ImportanceSampling",-1,Sdet,dummy,Dvn,DvnT,vbias,!save_memory,true);
+      apply_bound_vbias();
+    }
+    Timer.stop("Propagate::calculateMixedMatrixElementOfOneBodyOperators");
 
-      // 3. generate and apply HS propagator (or a good approx of it)
-      //  to the S1 and S2 Slater Determinants. The projected determinants are 
-      //  returned in S1 and S2. 
-      Timer.start("Propagate::applyHSPropagator");
-      MFfactor[i]=0.0;
-      applyHSPropagator(S1,S2,MFfactor[i],6);  
-      Timer.stop("Propagate::applyHSPropagator");
+    // 3. generate and apply HS propagator (or a good approx of it)
+    //  to the S1 and S2 Slater Determinants. The projected determinants are 
+    //  returned in S1 and S2. 
+    Timer.start("Propagate::applyHSPropagator");
+    MFfactor[i]=0.0;
+    applyHSPropagator(S1,S2,MFfactor[i],6);  
+    Timer.stop("Propagate::applyHSPropagator");
 
-       
-      if(hybrid_method && imp_sampl) {
-        SPComplexType tmp = SPComplexType(0.0,0.0);
-        for(int ii=0; ii<sigma.size(); ii++) 
-          tmp += im*(vMF[ii]-vbias[ii])* ( sigma[ii] - halfim*(vMF[ii]-vbias[ii])  ) ;
-        hybrid_weight[i] = tmp;  
-      }
+    if(hybrid_method && imp_sampl) {
+      SPComplexType tmp = SPComplexType(0.0,0.0);
+      for(int ii=0; ii<sigma.size(); ii++) 
+        tmp += im*(vMF[ii]-vbias[ii])* ( sigma[ii] - halfim*(vMF[ii]-vbias[ii])  ) ;
+      hybrid_weight[i] = tmp;  
+    }
 
-      std::fill(Sdet,Sdet+2*NMO*NAEA,ComplexType(0,0));
-      // propagate forward half a timestep with mean-field propagator
-      Timer.start("Propagate::product_SD");
-      SparseMatrixOperators::product_SD(NAEA,Propg_H1.data()+Propg_H1_indx[0],Propg_H1_indx[1],S1.data(),NAEA,Sdet,NAEA);
-      SparseMatrixOperators::product_SD(NAEB,Propg_H1.data()+Propg_H1_indx[2],Propg_H1_indx[3],S2.data(),NAEA,Sdet+NAEA*NMO,NAEA);
-      Timer.stop("Propagate::product_SD");
+    std::fill(Sdet,Sdet+2*NMO*NAEA,ComplexType(0,0));
+    // propagate forward half a timestep with mean-field propagator
+    Timer.start("Propagate::product_SD");
+    SparseMatrixOperators::product_SD(NAEA,Propg_H1.data()+Propg_H1_indx[0],Propg_H1_indx[1],S1.data(),NAEA,Sdet,NAEA);
+    SparseMatrixOperators::product_SD(NAEB,Propg_H1.data()+Propg_H1_indx[2],Propg_H1_indx[3],S2.data(),NAEA,Sdet+NAEA*NMO,NAEA);
+    Timer.stop("Propagate::product_SD");
 
-    }  // finished propagating walkers
-  }
-
-  // in case I implement load balance features in parallelPropagation
-  nw = wset->numWalkers(true);
+  }  // finished propagating walkers
 
   Timer.start("Propagate::overlaps_and_or_eloc");
   // calculate overlaps and local energy for all walkers
   if(hybrid_method) { 
     if(imp_sampl)
-      wfn->evaluateOverlap("ImportanceSampling",n,wset);
+      wfn->evaluateOverlap("ImportanceSampling",0,wset);
   } else {
-      wfn->evaluateLocalEnergyAndOverlap("ImportanceSampling",n,wset);
+      wfn->evaluateLocalEnergyAndOverlap("ImportanceSampling",0,wset);
   }
   Timer.stop("Propagate::overlaps_and_or_eloc");
 
@@ -1246,7 +1592,8 @@ void phaseless_ImpSamp_ForceBias::Propagate(int n, WalkerHandlerBase* wset, Real
       ComplexType ratioOverlaps = ComplexType(1.0,0.0);
       if(imp_sampl) 
         ratioOverlaps = oa*ob/(ooa*oob); 
-      if( (!std::isfinite(ratioOverlaps.real()) || std::abs(oa*ob) < 1e-8) && apply_constrain && imp_sampl ) { 
+      //if( (!std::isfinite(ratioOverlaps.real()) || std::abs(oa*ob) < 1e-8) && apply_constrain && imp_sampl ) { 
+      if( !std::isfinite(ratioOverlaps.real()) && apply_constrain && imp_sampl ) { 
         scale = 0.0;
         eloc = oldeloc; 
       } else {  
@@ -1259,42 +1606,23 @@ void phaseless_ImpSamp_ForceBias::Propagate(int n, WalkerHandlerBase* wset, Real
       }
     } else {
       ComplexType ratioOverlaps = oa*ob/(ooa*oob);
-      if( (!std::isfinite( (ratioOverlaps*MFfactor[i]).real()) || std::abs(oa*ob) < 1e-8) && apply_constrain ) { 
+      //if( (!std::isfinite( (ratioOverlaps*MFfactor[i]).real()) || std::abs(oa*ob) < 1e-8) && apply_constrain ) { 
+      if( !std::isfinite( (ratioOverlaps*MFfactor[i]).real()) && apply_constrain ) { 
         scale = 0.0;
         eloc = oldeloc; 
       } else  
         scale = (apply_constrain?(std::max(0.0,std::cos( std::arg(ratioOverlaps)-MFfactor[i].imag() ) )):1.0);
-        //scale = (apply_constrain?(std::max(0.0,std::cos(std::arg(ratioOverlaps)))):(1.0));
     }
-
-
-//    bool tmp0 = (std::abs(Eav)<std::numeric_limits<ValueType>::min()); 
-
-    //if( (!std::isfinite(Eav)) || (std::abs(Eav)<std::numeric_limits<ValueType>::min()) ) {
-//    if(tmp0) { 
-//      out_debug<<" Eav trouble: " <<std::endl; // <<Eav <<"  " <<eloc <<"  " <<(std::abs(Eav)<std::numeric_limits<ValueType>::min()) <<"  " <<(std::abs(eloc.real())<std::numeric_limits<ValueType>::min()) <<std::endl;
-      //APP_ABORT("Error Eav. \n\n\n");
-//    } else {
-//      out_debug<<" tmp0: " <<tmp0 <<" " <<test_cnter++ <<std::endl;
-//    }
-
 
     // temporary fix when FTZ is not set
     if( (!std::isfinite(eloc.real())) || (std::abs(eloc.real())<std::numeric_limits<RealType>::min()) ) {
       scale=0.0;
       eloc=oldeloc;
     } else { 
-      eloc = apply_bound_eloc(eloc,Eav);
+      eloc = apply_bound_eloc(eloc,Eshift);
     }
 
     w0 *= ComplexType(scale*std::exp( -dt*( 0.5*( eloc.real() + oldeloc.real() ) - Eshift )),0.0);
-
-//out_debug<<std::setprecision(20) <<eloc.real() <<"  " <<std::boolalpha <<"  nan:" <<std::isnan(eloc.real())  <<"  inf:" <<std::isinf(eloc.real()) <<"   finite:" <<std::isfinite(eloc.real()) <<"  normal:" <<std::isnormal(eloc.real())  <<"  fpclasify:" <<show_classification(eloc.real()) <<" Eav:" <<Eav <<" min:" <<std::numeric_limits<ValueType>::min() <<" el<min:" <<(std::abs(eloc.real())<std::numeric_limits<ValueType>::min()) <<" lowest:" <<std::numeric_limits<ValueType>::lowest() <<" el<lowest:" <<(std::abs(eloc.real())<std::numeric_limits<ValueType>::lowest()) <<" denorm_min(): " <<std::numeric_limits<ValueType>::denorm_min() <<" el<denorm: " <<(std::abs(eloc.real())<std::numeric_limits<ValueType>::denorm_min()) <<" eav<min:" <<(std::abs(Eav)<std::numeric_limits<ValueType>::min()) <<" tmp0:" <<tmp0  <<std::endl;
-
-//out_debug<<eloc.real() <<"  " <<std::boolalpha <<"  nan:" <<std::isnan(eloc.real())  <<"  inf:" <<std::isinf(eloc.real()) <<"   finite:" <<std::isfinite(eloc.real()) <<"  normal:" <<std::isnormal(eloc.real())  <<"  fpclasify:" <<show_classification(eloc.real()) <<" x!=x:" <<(eloc.real()!=eloc.real()) <<"  nan(x-x)" <<std::isnan((eloc-eloc).real())  <<"   "  <<" x-x:" <<(eloc-eloc).real()  <<std::endl;
-
-
-//out_debug<<myComm->rank() <<" " <<i <<" " <<eloc.real() <<"  " <<oldeloc.real() <<" " <<w0 <<" " <<oa <<" " <<ob <<" " <<ooa <<" " <<oob <<"  " <<scale <<" " <<MFfactor[i] <<" " <<hybrid_weight[i] <<std::endl;  
 
     wset->setWalker(i,w0,eloc);
 
@@ -1308,15 +1636,20 @@ void phaseless_ImpSamp_ForceBias::Propagate(int n, WalkerHandlerBase* wset, Real
 // These two are assembled independently, so it can be done.
 // The actual assembly of each of these matrices may not be optimal, 
 // but for now implement with the efficientcy of the MM in mind.
-void phaseless_ImpSamp_ForceBias::dist_Propagate(WalkerHandlerBase* wset)
+void phaseless_ImpSamp_ForceBias::dist_propagation_single_step(WalkerHandlerBase* wset, RealType& Eshift)
 {
   // structure in TG [hybrid_w, MFfactor, G(1:{2*}NMO*NMO), sigma(1:nCholVecs), vHS(1:{2*}NMO*NMO)] 
   //  1. You either need to send sigma or communicate back vbias, choosing the former 
   //     In principle, you can replace sigma by vbias on the return communication if you need to accumulate vbias
-  
+
+  Timer.start("Propagate::setup");
   const SPComplexType im = SPComplexType(0.0,1.0);
-  int nw = wset->numWalkers(true); 
+  const SPComplexType halfim = SPComplexType(0.0,0.5);
+  int nw = wset->numWalkers(true); // true includes dead walkers in list
   int nw0 = wset->numWalkers(false); 
+  MFfactor.resize(nw);
+  hybrid_weight.resize(nw);
+
   int sz = 2 + sizeOfG + nCholVecs + vHS_size; 
   int cnt=0;
   walker_per_node[0] = nw0;
@@ -1335,25 +1668,25 @@ void phaseless_ImpSamp_ForceBias::dist_Propagate(WalkerHandlerBase* wset)
   nwglobal /= sz;
   //local_buffer.resize(nCholVecs*nwglobal);
   local_buffer.resize((cvecN-cvec0)*nwglobal);
+  Timer.stop("Propagate::setup");
 
   Timer.start("Propagate::evalG");  
   // add G to buff 
-  wfn->evaluateOneBodyMixedDensityMatrix("ImportanceSampling",wset,(TG.commBuff),sz,2,transposed_walker_buffer,true);
+  wfn->evaluateOneBodyMixedDensityMatrix("ImportanceSampling",wset,(TG.commBuff),sz,2,transposed_walker_buffer,save_memory);
   Timer.stop("Propagate::evalG");  
 
   // add sigma to buff: This does not need to be communicated, unless you want to keep the option open to
   // store a copy later on 
+  Timer.start("Propagate::sampleGaussianFields");
   if(transposed_walker_buffer) {
     if(core_rank==0) {  // doesn't seem useful to split this up
       std::fill( (TG.commBuff)->begin(), (TG.commBuff)->begin()+2*nw0, ComplexType(0,0));
       std::fill( (TG.commBuff)->begin()+nw0*(2+sizeOfG+nCholVecs), (TG.commBuff)->begin()+nw0*sz, ComplexType(0,0));
     }
     cnt=0;
-    Timer.start("Propagate::sampleGaussianFields");
     int ne = (nw0*nCholVecs)%ncores_per_TG, ntpc = (nw0*nCholVecs)/ncores_per_TG;
     int nb = core_rank*ntpc + ((core_rank<ne)?core_rank:ne) ,nt = ((core_rank<ne)?ntpc+1:ntpc);
     sampleGaussianFields( (TG.commBuff)->values()+nw0*(2+sizeOfG)+nb, nt);
-    Timer.stop("Propagate::sampleGaussianFields");
   } else {
     cnt=0;
     for(int i=0; i<nw; i++) {
@@ -1362,9 +1695,7 @@ void phaseless_ImpSamp_ForceBias::dist_Propagate(WalkerHandlerBase* wset)
         cnt++;
         continue;
       }
-      Timer.start("Propagate::sampleGaussianFields");  
       sampleGaussianFields( (TG.commBuff)->values()+cnt*sz+2+sizeOfG, nCholVecs); 
-      Timer.stop("Propagate::sampleGaussianFields");  
       // zero out vHS, and hybrid_w, MFfactor 
       *((TG.commBuff)->values()+cnt*sz) = 0;  
       *((TG.commBuff)->values()+cnt*sz+1) = 0;  
@@ -1372,7 +1703,10 @@ void phaseless_ImpSamp_ForceBias::dist_Propagate(WalkerHandlerBase* wset)
       cnt++;
     }
   }
+  Timer.stop("Propagate::sampleGaussianFields");
+  Timer.start("Propagate::idle");
   TG.local_barrier();
+  Timer.add_time("Propagate::idle");
 
   Timer.start("Propagate::addvHS");  
   // calculate vHS 
@@ -1384,22 +1718,256 @@ void phaseless_ImpSamp_ForceBias::dist_Propagate(WalkerHandlerBase* wset)
     // rotate date
     if(distributeSpvn) TG.rotate_buffer(currnw,sz);   
   } 
-  Timer.stop("Propagate::addvHS");  
+  Timer.stop("Propagate::addvHS");
 
+  Timer.start("Propagate::idle");
   // synchronize
   TG.local_barrier();
-
+  Timer.add_time("Propagate::idle");
 
   // propagate walkers now
   if(transposed_walker_buffer) 
     wstride = currnw; 
   cnt=0; 
+
+  Timer.start("Propagate::propg");
     for(int i=0; i<nw; i++) {
       if(!wset->isAlive(i) || std::abs(wset->getWeight(i)) <= 1e-6) continue; 
       
       hybrid_weight[i] = *( (TG.commBuff)->begin() + cnt*ax ); 
       MFfactor[i] = *( (TG.commBuff)->begin() + cnt*ax + wstride ); 
       //MFfactor[i] = std::exp(-MFfactor[i]); 
+
+      if(cnt%ncores_per_TG != core_rank) {
+        cnt++;
+        continue;
+      }
+
+      ComplexType* Sdet = wset->getSM(i);
+      wset->setCurrToOld(i);
+
+      S1=ComplexType(0.0); 
+      S2=ComplexType(0.0); 
+
+      // propagate forward half a timestep with mean-field propagator
+      Timer.start("Propagate::product_SD");
+      SparseMatrixOperators::product_SD(NAEA,Propg_H1.data()+Propg_H1_indx[0],Propg_H1_indx[1],Sdet,NAEA,S1.data(),NAEA);
+      // this will be a problem with DistWalkerHandler in closed_shell case
+      SparseMatrixOperators::product_SD(NAEB,Propg_H1.data()+Propg_H1_indx[2],Propg_H1_indx[3],Sdet+NAEA*NMO,NAEA,S2.data(),NAEA);
+      Timer.stop("Propagate::product_SD");
+
+      Timer.start("Propagate::applyHSPropagator");
+      // propagate forward full timestep with potential (HS) propagator 
+      // copy vHS from TG.commBuff
+#if defined(AFQMC_SP)      
+      SPComplexType *spptr = (TG.commBuff)->values()+ ax*cnt + wstride*(2+sizeOfG+nCholVecs);
+      ComplexType *ptr = vHS.data(); 
+      for(int i=0; i<vHS_size; i++, spptr+=wstride, ptr++) 
+        *ptr = static_cast<ComplexType>(*spptr);
+#else
+      zcopy (vHS_size, (TG.commBuff)->values()+ ax*cnt + wstride*(2+sizeOfG+nCholVecs) , wstride, vHS.data(), 1); 
+#endif
+
+      // 3. generate and apply HS propagator (or a good approx of it)
+      //  to the S1 and S2 Slater Determinants. The projected determinants are 
+      //  returned in S1 and S2. 
+      applyHSPropagator(S1,S2,factor,6,false);  
+      Timer.stop("Propagate::applyHSPropagator");
+
+      std::fill(Sdet,Sdet+2*NMO*NAEA,ComplexType(0,0));
+      // propagate forward half a timestep with mean-field propagator
+      Timer.start("Propagate::product_SD");
+      SparseMatrixOperators::product_SD(NAEA,Propg_H1.data()+Propg_H1_indx[0],Propg_H1_indx[1],S1.data(),NAEA,Sdet,NAEA);
+      SparseMatrixOperators::product_SD(NAEB,Propg_H1.data()+Propg_H1_indx[2],Propg_H1_indx[3],S2.data(),NAEA,Sdet+NAEA*NMO,NAEA);
+      Timer.stop("Propagate::product_SD");
+
+      cnt++;
+    }  // finished propagating walkers
+  Timer.stop("Propagate::propg");
+ 
+  Timer.start("Propagate::idle");
+  TG.local_barrier();
+  Timer.add_time("Propagate::idle");
+
+  // in case I implement load balance features in parallelPropagation
+  nw = wset->numWalkers(true);
+
+  Timer.start("Propagate::overlaps_and_or_eloc");
+  // calculate overlaps and local energy for all walkers
+  if(hybrid_method) { 
+    if(imp_sampl)
+      wfn->evaluateOverlap("ImportanceSampling",0,wset);
+  } else {
+      wfn->evaluateLocalEnergyAndOverlap("ImportanceSampling",0,wset);
+  }
+  Timer.stop("Propagate::overlaps_and_or_eloc");
+
+  Timer.start("Propagate::idle");
+  if(parallelPropagation) 
+    TG.local_barrier();
+  Timer.stop("Propagate::idle");
+
+  // now only head core in TG works
+  if(TG.getCoreRank() != 0) return;
+
+  Timer.start("Propagate::finish_step");
+  // calculate new weight of walker
+  RealType scale = 1.0;
+  for(int i=0; i<nw; i++) {
+    ComplexType eloc, oldeloc, w0, oa, ob, ooa, oob;
+    ComplexType* dummy = wset->getWalker(i,w0,eloc,oa,ob);
+    if(!wset->isAlive(i) || std::abs(w0) <= 1e-6) continue;
+    wset->getOldWalker(i,oldeloc,ooa,oob);
+
+    scale = 1.0;
+    if(hybrid_method) {
+      ComplexType ratioOverlaps = ComplexType(1.0,0.0);
+      if(imp_sampl) 
+        ratioOverlaps = oa*ob/(ooa*oob); 
+      //if( (!std::isfinite(ratioOverlaps.real()) || std::abs(oa*ob) < 1e-8) && apply_constrain && imp_sampl ) { 
+      if( !std::isfinite(ratioOverlaps.real()) && apply_constrain && imp_sampl ) { 
+        scale = 0.0;
+        eloc = oldeloc; 
+      } else {  
+        //scale = (apply_constrain?(std::max(0.0,std::cos( std::arg(ratioOverlaps*MFfactor[i]) ))):(1.0));
+        scale = (apply_constrain?(std::max(0.0,std::cos( std::arg(ratioOverlaps)-MFfactor[i].imag() ) )):1.0);
+        if(imp_sampl) 
+          eloc = ( MFfactor[i] - hybrid_weight[i] - std::log(ratioOverlaps) )/dt;
+        else 
+          eloc = MFfactor[i]/dt;
+      }
+    } else {
+      ComplexType ratioOverlaps = oa*ob/(ooa*oob);
+      //if( (!std::isfinite( (ratioOverlaps*MFfactor[i]).real()) || std::abs(oa*ob) < 1e-8) && apply_constrain ) { 
+      if( !std::isfinite( (ratioOverlaps*MFfactor[i]).real()) && apply_constrain ) { 
+        scale = 0.0;
+        eloc = oldeloc; 
+      } else  
+        scale = (apply_constrain?(std::max(0.0,std::cos( std::arg(ratioOverlaps)-MFfactor[i].imag() ) )):1.0);
+    }
+
+    // temporary fix when FTZ is not set
+    if( (!std::isfinite(eloc.real())) || (std::abs(eloc.real())<std::numeric_limits<RealType>::min()) ) {
+      scale=0.0;
+      eloc=oldeloc;
+    } else { 
+      eloc = apply_bound_eloc(eloc,Eshift);
+    }
+
+    w0 *= ComplexType(scale*std::exp( -dt*( 0.5*( eloc.real() + oldeloc.real() ) - Eshift )),0.0);
+
+    wset->setWalker(i,w0,eloc);
+
+  }  // loop over walkers
+  Timer.stop("Propagate::finish_step");
+
+}
+
+void phaseless_ImpSamp_ForceBias::dist_propagation_multiple_steps(int n, WalkerHandlerBase* wset, RealType& Eshift)
+{
+
+  // structure in TG [hybrid_w(1:n), MFfactor(1:n), G(1:{2*}NMO*NMO), vHS(1:{2*}NMO*NMO, 1:n)] 
+  
+  Timer.start("Propagate::setup");
+  const SPComplexType im = SPComplexType(0.0,1.0);
+  const SPComplexType halfim = SPComplexType(0.0,0.5);
+  int nw = wset->numWalkers(true); // true includes dead walkers in list
+  int nw0 = wset->numWalkers(false); 
+  MFfactor.resize(nw);
+  hybrid_weight.resize(nw);
+
+  // notice that now I calculate n versions of vHS, hybrid_w, MFfactor
+  // random numbers are generated locally
+  int sz = 2*n + sizeOfG + vHS_size*n; 
+  int cnt=0;
+  walker_per_node[0] = nw0;
+  ComplexType factor;
+  int nwglobal = nw0*sz;
+
+  transposed_walker_buffer = (walkerBlock!=1);
+  int wstride=1, ax=sz;
+  if(transposed_walker_buffer) {
+    wstride = nw0;                    
+    ax = 1;
+  }
+
+  // this routine implies communication inside TG to resize buffers, it also implies a barrier within local TG  
+  TG.resize_buffer(nwglobal);
+  nwglobal /= sz;
+  // in this case, local_buffer holds:  [ vbias(1:(cvecN-cvec0)*nw), sigma(1,:) ]
+  if(transposed_walker_buffer) 
+    local_buffer.resize((cvecN-cvec0)*nwglobal*(1+n));
+  else 
+    local_buffer.resize((cvecN-cvec0)*(nwglobal+n));
+  Timer.add_time("Propagate::setup");
+
+  Timer.start("Propagate::evalG");  
+  // add G to buff 
+  wfn->evaluateOneBodyMixedDensityMatrix("ImportanceSampling",wset,(TG.commBuff),sz,2*n,transposed_walker_buffer,save_memory);
+  Timer.stop("Propagate::evalG");  
+
+  // add sigma to buff: This does not need to be communicated, unless you want to keep the option open to
+  // store a copy later on 
+  Timer.start("Propagate::setup");
+  if(transposed_walker_buffer) {
+    if(core_rank==0) {  // doesn't seem useful to split this up
+      std::fill( (TG.commBuff)->begin(), (TG.commBuff)->begin()+2*n*nw0, ComplexType(0,0));
+      std::fill( (TG.commBuff)->begin()+nw0*(2*n+sizeOfG), (TG.commBuff)->begin()+nw0*sz, ComplexType(0,0));
+    }
+  } else {
+    cnt=0;
+    for(int i=0; i<nw; i++) {
+      if(!wset->isAlive(i) || std::abs(wset->getWeight(i)) <= 1e-6) continue;
+      if(cnt%ncores_per_TG != core_rank) {
+        cnt++;
+        continue;
+      }
+      std::fill( (TG.commBuff)->begin()+cnt*sz, (TG.commBuff)->begin()+(cnt+1)*sz, ComplexType(0,0));
+      cnt++;
+    }
+  }
+  Timer.stop("Propagate::setup");
+
+  Timer.start("Propagate::idle");  
+  TG.local_barrier();
+  Timer.add_time("Propagate::idle");  
+
+  Timer.start("Propagate::addvHS");  
+  // calculate vHS 
+  int currnw=nw0; 
+  for(int tgi = 0; tgi<nnodes_per_TG; tgi++) {
+    // calculates vbias and accumulates vHS
+    addvHS_multiple(n, TG.commBuff ,currnw,sz, wset);   
+
+    // rotate date
+    if(distributeSpvn) TG.rotate_buffer(currnw,sz);   
+  } 
+  Timer.stop("Propagate::addvHS");  
+
+  Timer.start("Propagate::idle");  
+  // synchronize
+  TG.local_barrier();
+  Timer.add_time("Propagate::idle");  
+
+  // in case I implement load balance features in parallelPropagation
+  nw = wset->numWalkers(true);
+
+  // propagate walkers now
+  if(transposed_walker_buffer) 
+    wstride = currnw; 
+  for(int ni=0; ni<n; ni++) {
+    cnt=0; 
+    Timer.start("Propagate::propg");  
+    for(int i=0; i<nw; i++) {
+      if(!wset->isAlive(i) || std::abs(wset->getWeight(i)) <= 1e-6) continue; 
+      
+      if(transposed_walker_buffer) { 
+        hybrid_weight[i] = *( (TG.commBuff)->begin() + ni*wstride + cnt ); 
+        MFfactor[i] = *( (TG.commBuff)->begin() + (n+ni)*wstride + cnt ); 
+      } else {
+        hybrid_weight[i] = *( (TG.commBuff)->begin() + cnt*sz + ni ); 
+        MFfactor[i] = *( (TG.commBuff)->begin() + cnt*sz + n + ni ); 
+      }
 
       if(cnt%ncores_per_TG != core_rank) {
         cnt++;
@@ -1427,7 +1995,10 @@ void phaseless_ImpSamp_ForceBias::dist_Propagate(WalkerHandlerBase* wset)
       for(int i=0; i<vHS_size; i++, spptr+=wstride, ptr++) 
         *ptr = static_cast<ComplexType>(*spptr);
 #else
-      zcopy (vHS_size, (TG.commBuff)->values()+ ax*cnt + wstride*(2+sizeOfG+nCholVecs) , wstride, vHS.data(), 1); 
+      if(transposed_walker_buffer) 
+        zcopy (vHS_size, (TG.commBuff)->values()+ ni*wstride + cnt + wstride*(2*n+sizeOfG) , wstride*n, vHS.data(), 1); 
+      else
+        zcopy (vHS_size, (TG.commBuff)->values()+ sz*cnt + (2*n+sizeOfG+ni) , n, vHS.data(), 1); 
 #endif
 
       // 3. generate and apply HS propagator (or a good approx of it)
@@ -1446,13 +2017,93 @@ void phaseless_ImpSamp_ForceBias::dist_Propagate(WalkerHandlerBase* wset)
 
       cnt++;
     }  // finished propagating walkers
+    Timer.stop("Propagate::propg");  
+
+    Timer.start("Propagate::idle");
+    TG.local_barrier();
+    Timer.add_time("Propagate::idle");
+
+    Timer.start("Propagate::overlaps_and_or_eloc");
+    // calculate overlaps and local energy for all walkers
+    if(hybrid_method) { 
+      if(imp_sampl)
+        wfn->evaluateOverlap("ImportanceSampling",0,wset);
+    } else {
+        wfn->evaluateLocalEnergyAndOverlap("ImportanceSampling",0,wset);
+    }
+    Timer.stop("Propagate::overlaps_and_or_eloc");
+
+    Timer.start("Propagate::idle");
+    TG.local_barrier();
+    Timer.stop("Propagate::idle");
+
+    Timer.start("Propagate::finish_step");
+    if(TG.getCoreRank() == 0) {
+      // calculate new weight of walker
+      RealType scale = 1.0;
+      for(int i=0; i<nw; i++) {
+        ComplexType eloc, oldeloc, w0, oa, ob, ooa, oob;
+        ComplexType* dummy = wset->getWalker(i,w0,eloc,oa,ob);
+        if(!wset->isAlive(i) || std::abs(w0) <= 1e-6) continue;
+        wset->getOldWalker(i,oldeloc,ooa,oob);
+ 
+        scale = 1.0;
+        if(hybrid_method) {
+          ComplexType ratioOverlaps = ComplexType(1.0,0.0);
+          if(imp_sampl) 
+            ratioOverlaps = oa*ob/(ooa*oob); 
+          //if( (!std::isfinite(ratioOverlaps.real()) || std::abs(oa*ob) < 1e-8) && apply_constrain && imp_sampl ) { 
+          if( !std::isfinite(ratioOverlaps.real()) && apply_constrain && imp_sampl ) { 
+            scale = 0.0;
+            eloc = oldeloc; 
+          } else {  
+            //scale = (apply_constrain?(std::max(0.0,std::cos( std::arg(ratioOverlaps*MFfactor[i]) ))):(1.0));
+            scale = (apply_constrain?(std::max(0.0,std::cos( std::arg(ratioOverlaps)-MFfactor[i].imag() ) )):1.0);
+            if(imp_sampl) 
+              eloc = ( MFfactor[i] - hybrid_weight[i] - std::log(ratioOverlaps) )/dt;
+            else 
+              eloc = MFfactor[i]/dt;
+          }
+        } else {
+          ComplexType ratioOverlaps = oa*ob/(ooa*oob);
+          //if( (!std::isfinite( (ratioOverlaps*MFfactor[i]).real()) || std::abs(oa*ob) < 1e-8) && apply_constrain ) { 
+          if( !std::isfinite( (ratioOverlaps*MFfactor[i]).real()) && apply_constrain ) { 
+            scale = 0.0;
+            eloc = oldeloc; 
+          } else  
+            scale = (apply_constrain?(std::max(0.0,std::cos( std::arg(ratioOverlaps)-MFfactor[i].imag() ) )):1.0);
+        }
+
+        // temporary fix when FTZ is not set
+        if( (!std::isfinite(eloc.real())) || (std::abs(eloc.real())<std::numeric_limits<RealType>::min()) ) {
+          scale=0.0;
+          eloc=oldeloc;
+        } else { 
+          eloc = apply_bound_eloc(eloc,Eshift);
+        }
+
+        w0 *= ComplexType(scale*std::exp( -dt*( 0.5*( eloc.real() + oldeloc.real() ) - Eshift )),0.0);
+
+        wset->setWalker(i,w0,eloc);
+
+      }  // loop over walkers
+    }
+    TG.local_barrier();
+    Timer.stop("Propagate::finish_step");
+    
+  }  // loop over steps 
+
 }
 
-// structure in TG [hybrid_w, MFfactor, G(1:{2*}NMO*NMO), sigma(1:#CholVects), vHS(1:{2*}NMO*NMO)]
+
+void phaseless_ImpSamp_ForceBias::serial_propagation_multiple_steps(int n, WalkerHandlerBase* wset, RealType& Eshift) {
+}
+
+// structure in TG [hybrid_w(1:n), MFfactor(1:n), G(1:{2*}NMO*NMO), vHS(1:{2*}NMO*NMO,1:n)]
 // NOTE: If walkerBlock>1, buff has been transposed
 // local_buffer is used as temporary storage for vbias in the same format as the TG buffer (transposed or not)
 // if walkerBlock > 1, the MM algorithm is used and vbias and CV0 are resized. vbias is used as temporaty storage for both vbias and vHS for all walkers
-void phaseless_ImpSamp_ForceBias::addvHS(SPComplexSMVector *buff, int nw, int sz, WalkerHandlerBase* wset)
+void phaseless_ImpSamp_ForceBias::addvHS_multiple(int nstep, SPComplexSMVector *buff, int nw, int sz, WalkerHandlerBase* wset)
 {
 
   const SPComplexType im = SPComplexType(0.0,1.0);
@@ -1466,6 +2117,236 @@ void phaseless_ImpSamp_ForceBias::addvHS(SPComplexSMVector *buff, int nw, int sz
 
   Timer.start("Propagate::addvHS::setup");
   if(TG.getCoreRank()==0) 
+    std::fill(local_buffer.begin(),local_buffer.begin()+nw*(cvecN-cvec0),SPComplexType(0.0,0.0));
+
+  TG.local_barrier();
+
+  if(walkerBlock == 1) {
+    sigma.resize( static_cast<int>(std::ceil( nstep*(cvecN-cvec0)/ncores_per_TG )) );
+    MFs.resize(nstep);
+    HWs.resize(nstep);
+    if(sparsePropagator && !save_memory) {
+      vbias.resize(nstep*std::max(int(ikN-ik0),nCholVecs));
+    } else {
+      vbias.resize(nstep*std::max(int(ikN-ik0),cvecN-cvec0));
+    }
+  } else {
+    sigma.resize( static_cast<int>(std::ceil( nw*nstep*(cvecN-cvec0)/ncores_per_TG )) );
+    MFs.resize(nw*nstep);
+    HWs.resize(nw*nstep);
+    if(sparsePropagator && !save_memory) {
+      vbias.resize(nw*nstep*std::max(int(ikN-ik0),nCholVecs));
+    } else {
+      vbias.resize(nw*nstep*std::max(int(ikN-ik0),cvecN-cvec0));
+    }
+  }
+  Timer.stop("Propagate::addvHS::setup");
+
+  // Calculate vbias for all walkers.
+  //  Careful here:
+  //  Dense and Sparse modes operate slightly differently, because in sparse format the value of the cholesky 
+  //  vectors on Spvn go from [cvec-:cvecN] and in dense mode they go from [0:cvecN-cvec0]
+  SPComplexType *pos = buff->values();
+  int vni0=ik0, vniN=ikN;
+  if(!save_memory) {
+    // sparse uses CV index based on global value
+    // dense uses CV index based on local segment
+    vni0 = sparsePropagator?(cvec0+cvec0_loc):(cvec0_loc);
+    vniN = sparsePropagator?(cvec0+cvecN_loc):(cvecN_loc);
+  }
+  int shft = 0;
+  if(sparsePropagator) shft = cvec0;
+  if(imp_sampl) {
+    if(walkerBlock == 1) {
+      for(int wlk=0; wlk<nw; wlk++, pos+=sz) {
+
+        // calculate vbias for local sector in 'ik' space. This routine assumes a buffer created by wfn->evaluateOneBodyMixedDensityMatrix 
+        Timer.start("Propagate::addvHS::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer");
+
+        if(sparsePropagator)
+          wfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(spinRestricted,"ImportanceSampling",-1,pos+2*nstep,vni0,vniN,Spvn,SpvnT,vbias,1,1,!save_memory,false);    
+        else
+          wfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(spinRestricted,"ImportanceSampling",-1,pos+2*nstep,vni0,vniN,Dvn,DvnT,vbias,1,1,!save_memory,false);    
+
+        Timer.stop("Propagate::addvHS::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer");
+        Timer.start("Propagate::addvHS::shm_copy");
+        if(!save_memory) {
+          // if transposed vn (!save_memory), cores work on non-overlapping segments of [cvec0:cvecN]. No need for sync
+          zcopy(cvecN_loc-cvec0_loc,vbias.data(),1,local_buffer.values()+wlk*(cvecN-cvec0)+cvec0_loc,1);  
+        } else { 
+          boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*(buff->getMutex()));
+          BLAS::axpy(cvecN-cvec0,one,vbias.data()+shft,1,local_buffer.values()+wlk*(cvecN-cvec0),1);  
+        } 
+        Timer.stop("Propagate::addvHS::shm_copy");
+      }
+    } else {
+
+      Timer.start("Propagate::addvHS::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer");
+
+      if(sparsePropagator)
+        wfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(spinRestricted,"ImportanceSampling",-1,pos+2*nw*nstep,vni0,vni0,Spvn,SpvnT,vbias,((walkerBlock<=0)?nw:walkerBlock),nw,!save_memory,false);
+      else 
+        wfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(spinRestricted,"ImportanceSampling",-1,pos+2*nw*nstep,vni0,vniN,Dvn,DvnT,vbias,((walkerBlock<=0)?nw:walkerBlock),nw,!save_memory,false);
+
+      Timer.stop("Propagate::addvHS::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer");
+
+      Timer.start("Propagate::addvHS::shm_copy");
+      if(!save_memory) {
+        // if transposed vn (!save_memory), cores work on non-overlapping segments of [cvec0:cvecN]. No need for sync
+        zcopy(nw*(cvecN_loc-cvec0_loc),vbias.data(),1,local_buffer.values()+nw*cvec0_loc,1);  
+      } else {
+        boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*(buff->getMutex()));
+        BLAS::axpy(nw*(cvecN-cvec0),one,vbias.data()+shft*nw,1,local_buffer.values(),1);
+      }
+      Timer.stop("Propagate::addvHS::shm_copy");
+    }
+  }
+
+  Timer.start("Propagate::addvHS::idle");
+  TG.local_barrier();
+  Timer.stop("Propagate::addvHS::idle");
+
+  if(walkerBlock==1) { 
+
+    pos = buff->values();
+    for(int wlk=0; wlk<nw; wlk++, pos+=sz) {
+
+      Timer.start("Propagate::addvHS::build_CV0");
+      // calculate enough random numbers
+      sampleGaussianFields(); 
+     // this is where the sigma matrix begins
+      SPComplexType* Bmat = local_buffer.values() + nw*(cvecN-cvec0) + shft*nstep; 
+      SPRealType* sg = sigma.data(); 
+      SPComplexType* vb = local_buffer.values()+wlk*(cvecN-cvec0);
+      std::fill(MFs.begin(),MFs.end(),0);
+      std::fill(HWs.begin(),HWs.end(),0);
+      for(int i=cvec0,ip=0; i<cvecN; i++,vb++) { 
+        SPComplexType vbi = apply_bound_vbias(*vb);
+        for(int n=0; n<nstep; n++, ip++) {
+          if( ip%ncores_per_TG != core_rank ) {
+            Bmat++;
+            continue;
+          }
+          *Bmat = *(sg) + im*( vbi - vMF[i] );
+          HWs[n] += static_cast<ComplexType>(im*(vMF[i]-vbi)*( *(sg) - halfim*(vMF[i]-vbi) ));
+          MFs[n] += static_cast<ComplexType>(*Bmat)*static_cast<ComplexType>(im*vMF[i]); 
+          sg++;   Bmat++;
+        }
+      }
+      TG.local_barrier();
+      Timer.stop("Propagate::addvHS::build_CV0");
+      Timer.start("Propagate::addvHS::build_vHS");
+      // vHS
+      if(sparsePropagator)
+        SparseMatrixOperators::product_SpMatM(int(ikN-ik0), nstep, Spvn.cols(), vone, Spvn.values() + pik0, Spvn.column_data() + pik0, Spvn.row_index()+ik0, local_buffer.values() + nw*(cvecN-cvec0), nstep, vzero, vbias.data(), nstep);
+      else
+        DenseMatrixOperators::product(int(ikN-ik0), nstep, Dvn.cols(), vone, Dvn.values() + ik0*Dvn.cols(), Dvn.cols(), local_buffer.values() + nw*(cvecN-cvec0), nstep, vzero, vbias.data(), nstep);
+
+      Timer.stop("Propagate::addvHS::build_vHS");
+      Timer.start("Propagate::addvHS::shm_copy");
+
+      {
+        boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*(buff->getMutex()));
+        BLAS::axpy(nstep,one,HWs.data(),1,pos,1);
+        BLAS::axpy(nstep,one,MFs.data(),1,pos+nstep,1);
+      }
+      // Removed this from lock
+      BLAS::axpy(nstep*int(ikN-ik0),one,vbias.data(),1,pos+2*nstep+sizeOfG+ik0*nstep,1);  
+      Timer.stop("Propagate::addvHS::shm_copy");
+
+    } 
+
+  } else {
+
+    Timer.start("Propagate::addvHS::build_CV0");
+    // in this case, doing all walkers and all steps simultaneously
+
+    // build CV0
+    sampleGaussianFields();
+    SPRealType* sg =  sigma.data(); 
+    SPComplexType* Bmat = local_buffer.values() + nw*(cvecN-cvec0) + shft*nstep*nw;
+    SPComplexType* vb = local_buffer.values();
+    std::fill(MFs.begin(),MFs.end(),0);
+    std::fill(HWs.begin(),HWs.end(),0);
+    long ip=0;
+    for(int i=cvec0; i<cvecN; i++) {
+      SPComplexType vmf_ = im*vMF[i]; 
+      for(int n=0; n<nstep; n++, ip++) { 
+        for(int wlk=0; wlk<nw; wlk++) {
+          if( ip%ncores_per_TG != core_rank ) {
+            Bmat++;
+            continue;
+          }
+          SPComplexType vbi = im*apply_bound_vbias(*(vb + i*nw + wlk));
+          *Bmat = *(sg) + ( vbi - vmf_ );
+          MFs[n*nw + wlk] += static_cast<ComplexType>(*Bmat)*static_cast<ComplexType>(vmf_);
+          HWs[n*nw + wlk] += static_cast<ComplexType>((vmf_-vbi)*( *(sg) - static_cast<SPValueType>(0.5)*(vmf_-vbi) ));      
+          sg++; Bmat++;  
+        }
+      }
+    } 
+    Timer.stop("Propagate::addvHS::build_CV0");
+    Timer.start("Propagate::addvHS::build_vHS");
+    // vHS: using vbias as temporary storage
+    if(sparsePropagator)
+      SparseMatrixOperators::product_SpMatM(int(ikN-ik0), nw*nstep, Spvn.cols(), vone, Spvn.values() + pik0, Spvn.column_data() + pik0, Spvn.row_index()+ik0, local_buffer.values() + nw*(cvecN-cvec0), nw*nstep, vzero, vbias.data(), nw*nstep);
+    else
+      DenseMatrixOperators::product(int(ikN-ik0), nw*nstep, Dvn.cols(), vone, Dvn.values() + ik0*Dvn.cols(), Dvn.cols(), local_buffer.values() + nw*(cvecN-cvec0), nw*nstep, vzero, vbias.data(), nw*nstep);
+
+    Timer.stop("Propagate::addvHS::build_vHS");
+    Timer.start("Propagate::addvHS::shm_copy");
+
+    // These are rigurously non-overlapping memory regions, but they are adjacent.
+    // Do I still need to control concurrent access??? Probably NOT!!!
+    {
+      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*(buff->getMutex()));
+#if defined(AFQMC_SP) 
+      SPComplexType *spptr = buff->values();
+      // hybrid_weight
+      ComplexType *ptr = HWs.data();
+      for(int i=0; i<nw*nstep; i++, spptr++, ptr++)
+        *spptr += static_cast<SPComplexType>(*ptr);
+      // MFfactor
+      ptr = MFs.data();
+      for(int i=0; i<nw*nstep; i++, spptr++, ptr++)
+        *spptr += static_cast<SPComplexType>(*ptr);
+#else
+      // hybrid_weight
+      BLAS::axpy(nw*nstep,one,HWs.data(),1,buff->values(),1);
+      // MFfactor
+      BLAS::axpy(nw*nstep,one,MFs.data(),1,buff->values()+nw*nstep,1);
+#endif
+    }
+    // remmoved from lock
+    BLAS::axpy(nw*nstep*(ikN-ik0),one,vbias.data(),1,buff->values()+nw*(2*nstep+sizeOfG+nstep*ik0),1);  
+
+    Timer.stop("Propagate::addvHS::shm_copy");
+  }
+
+  Timer.start("Propagate::addvHS::idle");
+  TG.local_barrier();
+  Timer.stop("Propagate::addvHS::idle");
+
+}
+
+// structure in TG [hybrid_w, MFfactor, G(1:{2*}NMO*NMO), sigma(1:#CholVects), vHS(1:{2*}NMO*NMO)]
+// NOTE: If walkerBlock>1, buff has been transposed
+// local_buffer is used as temporary storage for vbias in the same format as the TG buffer (transposed or not)
+// if walkerBlock > 1, the MM algorithm is used and vbias and CV0 are resized. vbias is used as temporaty storage for both vbias and vHS for all walkers
+void phaseless_ImpSamp_ForceBias::addvHS(SPComplexSMVector *buff, int nw, int sz, WalkerHandlerBase* wset)
+{
+
+  Timer.start("Propagate::addvHS::setup");
+  const SPComplexType im = SPComplexType(0.0,1.0);
+  const SPComplexType halfim = SPComplexType(0.0,0.5);
+  SPComplexType one = SPComplexType(1.0,0.0);
+  SPComplexType zero = SPComplexType(0.0,0.0);
+  SPValueType vone = SPValueType(1.0);
+  SPValueType vzero = SPValueType(0.0);
+  int nt = NMO*NMO;
+  if(!spinRestricted) nt *= 2; 
+
+  if(TG.getCoreRank()==0) 
     std::fill(local_buffer.begin(),local_buffer.end(),SPComplexType(0.0,0.0));
 
   TG.local_barrier();
@@ -1473,13 +2354,17 @@ void phaseless_ImpSamp_ForceBias::addvHS(SPComplexSMVector *buff, int nw, int sz
   if(walkerBlock != 1) {
     MFs.resize(nw);
     HWs.resize(nw);
-    if(sparsePropagator) {
-      vbias.resize(nw*std::max(int(ikN-ik0),nCholVecs));
+    if(sparsePropagator) 
       CV0.resize(nw*nCholVecs);
-    } else {
-      vbias.resize(nw*std::max(int(ikN-ik0),cvecN-cvec0));
+    else 
       CV0.resize(nw*(cvecN-cvec0));
-    }
+    if (save_memory)
+      if(sparsePropagator)
+        vbias.resize(nw*std::max(int(ikN-ik0),nCholVecs));   
+      else
+        vbias.resize(nw*std::max(int(ikN-ik0),cvecN-cvec0));   
+    else 
+      vbias.resize(nw*std::max(int(ikN-ik0),cvecN_loc-cvec0_loc));   
   }
   for(int i=0; i<CV0.size(); i++) CV0[i]=zero; 
   Timer.stop("Propagate::addvHS::setup");
@@ -1489,111 +2374,116 @@ void phaseless_ImpSamp_ForceBias::addvHS(SPComplexSMVector *buff, int nw, int sz
   //  Dense and Sparse modes operate slightly differently, because in sparse format the value of the cholesky 
   //  vectors on Spvn go from [cvec-:cvecN] and in dense mode they go from [0:cvecN-cvec0]
   SPComplexType *pos = buff->values();
+  int vni0=ik0, vniN=ikN;
+  if(!save_memory) {
+    // sparse uses CV index based on global value
+    // dense uses CV index based on local segment
+    vni0 = sparsePropagator?(cvec0+cvec0_loc):(cvec0_loc);
+    vniN = sparsePropagator?(cvec0+cvecN_loc):(cvecN_loc);
+  }
   int shft = 0;
   if(sparsePropagator) shft = cvec0;
   if(imp_sampl) {
     if(walkerBlock == 1) {
       for(int wlk=0; wlk<nw; wlk++, pos+=sz) {
-
         // calculate vbias for local sector in 'ik' space. This routine assumes a buffer created by wfn->evaluateOneBodyMixedDensityMatrix 
-        Timer.start("Propagate::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer");
+        Timer.start("Propagate::addvHS::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer");
 
         if(sparsePropagator)
-          wfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(spinRestricted,"ImportanceSampling",-1,pos+2,ik0,ikN,pik0,*Spvn_for_onebody,vbias,1,1,!save_memory,false);    
+          wfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(spinRestricted,"ImportanceSampling",-1,pos+2,vni0,vniN,Spvn,SpvnT,vbias,1,1,!save_memory,false);    
         else
-          wfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(spinRestricted,"ImportanceSampling",-1,pos+2,ik0,ikN,pik0,Dvn,vbias,1,1,!save_memory,false);    
+          wfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(spinRestricted,"ImportanceSampling",-1,pos+2,vni0,vniN,Dvn,DvnT,vbias,1,1,!save_memory,false);    
 
-        Timer.stop("Propagate::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer");
-        Timer.start("Propagate::addvHS::shm_copy_vbias");
-        {
+        Timer.stop("Propagate::addvHS::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer");
+        Timer.start("Propagate::addvHS::shm_copy");
+        if(!save_memory) {
+          // if transposed vn (!save_memory), cores work on non-overlapping segments of [cvec0:cvecN]. No need for sync
+          zcopy(cvecN_loc-cvec0_loc,vbias.data(),1,local_buffer.values()+wlk*(cvecN-cvec0)+cvec0_loc,1);
+        } else {
           boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*(buff->getMutex()));
           BLAS::axpy(cvecN-cvec0,one,vbias.data()+shft,1,local_buffer.values()+wlk*(cvecN-cvec0),1);  
         } 
-        Timer.stop("Propagate::addvHS::shm_copy_vbias");
+        Timer.stop("Propagate::addvHS::shm_copy");
       }
     } else {
 
-      Timer.start("Propagate::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer");
+      Timer.start("Propagate::addvHS::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer");
 
       if(sparsePropagator)
-        wfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(spinRestricted,"ImportanceSampling",-1,pos+2*nw,ik0,ikN,pik0,*Spvn_for_onebody,vbias,((walkerBlock<=0)?nw:walkerBlock),nw,!save_memory,false);
+        wfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(spinRestricted,"ImportanceSampling",-1,pos+2*nw,vni0,vniN,Spvn,SpvnT,vbias,((walkerBlock<=0)?nw:walkerBlock),nw,!save_memory,false);
       else 
-        wfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(spinRestricted,"ImportanceSampling",-1,pos+2*nw,ik0,ikN,pik0,Dvn,vbias,((walkerBlock<=0)?nw:walkerBlock),nw,!save_memory,false);
+        wfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(spinRestricted,"ImportanceSampling",-1,pos+2*nw,vni0,vniN,Dvn,DvnT,vbias,((walkerBlock<=0)?nw:walkerBlock),nw,!save_memory,false);
 
-      Timer.stop("Propagate::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer");
+      Timer.stop("Propagate::addvHS::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer");
 
-      Timer.start("Propagate::addvHS::shm_copy_vbias");
-      if(sparsePropagator)
-      {
-        boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*(buff->getMutex()));
-        BLAS::axpy(nw*(cvecN-cvec0),one,vbias.data()+shft*nw,1,local_buffer.values(),1);
+      Timer.start("Propagate::addvHS::shm_copy");
+      if(!save_memory) {
+        // if transposed vn (!save_memory), cores work on non-overlapping segments of [cvec0:cvecN]. No need for sync
+        zcopy(nw*(cvecN_loc-cvec0_loc),vbias.data(),1,local_buffer.values()+nw*cvec0_loc,1);
       } else {
         boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*(buff->getMutex()));
         BLAS::axpy(nw*(cvecN-cvec0),one,vbias.data()+shft*nw,1,local_buffer.values(),1);
       }
-      Timer.stop("Propagate::addvHS::shm_copy_vbias");
+      Timer.stop("Propagate::addvHS::shm_copy");
 
     }
   }
 
-  Timer.start("Propagate::addvHS::barrier1");
+  Timer.start("Propagate::addvHS::idle");
   TG.local_barrier();
-  Timer.stop("Propagate::addvHS::barrier1");
+  Timer.stop("Propagate::addvHS::idle");
 
   if(walkerBlock==1) { 
 
     pos = buff->values();
     for(int wlk=0; wlk<nw; wlk++, pos+=sz) {
 
-      Timer.start("Propagate::build_CV0");
+      Timer.start("Propagate::addvHS::build_CV0");
       SPComplexType* sg = pos+2+sizeOfG+cvec0;
       SPComplexType* vb = local_buffer.values()+wlk*(cvecN-cvec0);
       ComplexType mf=zero, hw=zero; 
-      for(int i=cvec0; i<cvecN; i++, sg++,vb++) { 
+      for(int i=cvec0, j=shft; i<cvecN; i++, sg++,vb++, j++) { 
         SPComplexType vbi = apply_bound_vbias(*vb);
-        CV0[i] = *(sg) + im*( vbi - vMF[i] );
-        mf += static_cast<ComplexType>(CV0[i])*static_cast<ComplexType>(im*vMF[i]); 
+        CV0[j] = *(sg) + im*( vbi - vMF[i] );
+        mf += static_cast<ComplexType>(CV0[j])*static_cast<ComplexType>(im*vMF[i]); 
         hw += static_cast<ComplexType>(im*(vMF[i]-vbi)*( *(sg) - halfim*(vMF[i]-vbi) ));
       }
-      Timer.stop("Propagate::build_CV0");
-      Timer.start("Propagate::build_vHS");
+      Timer.stop("Propagate::addvHS::build_CV0");
+      Timer.start("Propagate::addvHS::build_vHS");
       // vHS
       if(sparsePropagator)
         SparseMatrixOperators::product_SpMatV(int(ikN-ik0), Spvn.cols(), vone, Spvn.values() + pik0, Spvn.column_data() + pik0, Spvn.row_index()+ik0, CV0.data(), vzero, SPvHS.data()+ik0);
       else
         DenseMatrixOperators::product_Ax(int(ikN-ik0), Dvn.cols(), vone, Dvn.values() + ik0*Dvn.cols(), Dvn.cols(), CV0.data(), vzero, SPvHS.data()+ik0); 
 
-      Timer.stop("Propagate::build_vHS");
-      Timer.start("Propagate::addvHS::shm_copy_vHS");
+      Timer.stop("Propagate::addvHS::build_vHS");
+      Timer.start("Propagate::addvHS::shm_copy");
 
       // These are rigurously non-overlapping memory regions, but they are adjacent.
       // Do I still need to control concurrent access??? Probably NOT!!!
       if(TG.getCoreRank()==0)
       {
-        boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*(buff->getMutex()));
+        //boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*(buff->getMutex()));
         // hybrid_weight
         *pos += hw;
         // MFfactor
         *(pos+1) += mf;
-        BLAS::axpy(int(ikN-ik0),one,SPvHS.data()+ik0,1,pos+2+sizeOfG+nCholVecs+ik0,1);  
-      } else {
-        boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*(buff->getMutex()));
-        BLAS::axpy(int(ikN-ik0),one,SPvHS.data()+ik0,1,pos+2+sizeOfG+nCholVecs+ik0,1);  
       } 
-      Timer.stop("Propagate::addvHS::shm_copy_vHS");
+      BLAS::axpy(int(ikN-ik0),one,SPvHS.data()+ik0,1,pos+2+sizeOfG+nCholVecs+ik0,1);  
+      Timer.stop("Propagate::addvHS::shm_copy");
 
     } 
 
   } else {
 
-    Timer.start("Propagate::build_CV0");
+    Timer.start("Propagate::addvHS::build_CV0");
 
     // build CV0
     SPComplexType* sg = buff->values()+nw*(2+sizeOfG+cvec0);
     SPComplexType* vb = local_buffer.values();
     std::fill(MFs.begin(),MFs.end(),0);
     std::fill(HWs.begin(),HWs.end(),0);
-    for(int i=cvec0, j=0; i<cvecN; i++) {
+    for(int i=cvec0, j=shft*nw; i<cvecN; i++) {
       SPComplexType vmf_ = im*vMF[i]; 
       for(int wlk=0; wlk<nw; wlk++,j++,sg++,vb++) {
         SPComplexType vbi = im*apply_bound_vbias(*vb);
@@ -1602,160 +2492,50 @@ void phaseless_ImpSamp_ForceBias::addvHS(SPComplexSMVector *buff, int nw, int sz
         HWs[wlk] += (vmf_-vbi)*( *(sg) - static_cast<SPValueType>(0.5)*(vmf_-vbi) );      
       }
     } 
-    Timer.stop("Propagate::build_CV0");
-    Timer.start("Propagate::build_vHS");
+    Timer.stop("Propagate::addvHS::build_CV0");
+
+    Timer.start("Propagate::addvHS::build_vHS");
     // vHS: using vbias as temporary storage
     if(sparsePropagator)
       SparseMatrixOperators::product_SpMatM(int(ikN-ik0), nw, Spvn.cols(), vone, Spvn.values() + pik0, Spvn.column_data() + pik0, Spvn.row_index()+ik0, CV0.data(), nw, vzero, vbias.data(), nw);
     else
       DenseMatrixOperators::product(int(ikN-ik0), nw, Dvn.cols(), vone, Dvn.values() + ik0*Dvn.cols(), Dvn.cols(), CV0.data(), nw, vzero, vbias.data(), nw);
 
-    Timer.stop("Propagate::build_vHS");
-    Timer.start("Propagate::addvHS::shm_copy_vHS");
+    Timer.stop("Propagate::addvHS::build_vHS");
+
+    Timer.start("Propagate::addvHS::shm_copy");
 
     // These are rigurously non-overlapping memory regions, but they are adjacent.
     // Do I still need to control concurrent access??? Probably NOT!!!
     if(TG.getCoreRank()==0)
     {
-      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*(buff->getMutex()));
+    //  boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*(buff->getMutex()));
 #if defined(AFQMC_SP) 
       SPComplexType *spptr = buff->values();
       // hybrid_weight
       ComplexType *ptr = HWs.data();
       for(int i=0; i<nw; i++, spptr++, ptr++)
-        *ptr = static_cast<ComplexType>(*spptr);
+        *spptr += static_cast<SPComplexType>(*ptr);
       // MFfactor
       ptr = MFs.data();
       for(int i=0; i<nw; i++, spptr++, ptr++)
-        *ptr = static_cast<ComplexType>(*spptr);
+        *spptr += static_cast<SPComplexType>(*ptr);
 #else
       // hybrid_weight
-      std::copy(HWs.begin(),HWs.end(),buff->values());    
+      BLAS::axpy(nw,one,HWs.data(),1,buff->values(),1);
       // MFfactor
-      std::copy(MFs.begin(),MFs.end(),buff->values()+nw);    
+      BLAS::axpy(nw,one,MFs.data(),1,buff->values()+nw,1);
 #endif
-      BLAS::axpy(nw*(ikN-ik0),one,vbias.data(),1,buff->values()+nw*(2+sizeOfG+nCholVecs+ik0),1);  
-    } else {
-      boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock(*(buff->getMutex()));
-      BLAS::axpy(nw*(ikN-ik0),one,vbias.data(),1,buff->values()+nw*(2+sizeOfG+nCholVecs+ik0),1);  
     }
+    BLAS::axpy(nw*(ikN-ik0),one,vbias.data(),1,buff->values()+nw*(2+sizeOfG+nCholVecs+ik0),1);  
 
-    Timer.stop("Propagate::addvHS::shm_copy_vHS");
+    Timer.stop("Propagate::addvHS::shm_copy");
   }
 
-  Timer.start("Propagate::addvHS::barrier2");
+  Timer.start("Propagate::addvHS::idle");
   TG.local_barrier();
-  Timer.stop("Propagate::addvHS::barrier2");
+  Timer.stop("Propagate::addvHS::idle");
 
-// debug routine: right now assuming nnodes=1 
-/*
-  if(walkerBlock==1) {
-
-    pos = buff->values();
-    ComplexType *vb = local_buffer.values();
-    int nw_ = wset->numWalkers(true);
-    int cnt=0; 
-    for(int wlk=0; wlk<nw_; wlk++) {
-
-      if(!wset->isAlive(wlk) || std::abs(wset->getWeight(wlk)) <= 1e-6) continue;
-
-      ComplexType* Sdet = wset->getSM(wlk);
-
-      // check vbias
-      if(sparsePropagator)
-        wfn->calculateMixedMatrixElementOfOneBodyOperators(spinRestricted,"ImportanceSampling",-1,Sdet,*Spvn_for_onebody,vbias,!save_memory,true);
-      else
-        wfn->calculateMixedMatrixElementOfOneBodyOperators(spinRestricted,"ImportanceSampling",-1,Sdet,Dvn,vbias,false,true);
-
-      app_log()<<" Checking vbias for walker: " <<cnt <<"\n";
-      for(int i=0; i<cvecN-cvec0; i++, vb++)
-        if( std::abs(vbias[i+shft]-*vb) > 1e-8)
-          app_log()<<"    " <<i <<" " <<vbias[i+shft] <<" " <<*vb <<"\n";      
-
-      app_log()<<"   Checking weight and MF factor: " <<"\n";
-      for(int ii=0; ii<sigma.size(); ii++)
-        sigma[ii] = (pos + 2+sizeOfG+ ii )->real();
-      ComplexType tmp = ComplexType(0.0,0.0);
-      for(int ii=0; ii<sigma.size(); ii++)
-        tmp += im*(vMF[ii]-vbias[ii])* ( sigma[ii] -0.5*im*(vMF[ii]-vbias[ii])  ) ;
-      ComplexType factor = ComplexType(0.0,0.0);
-      for(int i=0; i<sigma.size(); i++) {
-        CV0[i] = sigma[i] + im*(vbias[i]-vMF[i]);
-        factor += CV0[i]*im*vMF[i];
-      }
-      if( std::abs(tmp-*(pos)) > 1e-8 )
-        app_log()<<" hw: " <<tmp <<" " <<*pos <<"\n";
-      if( std::abs(factor-*(pos+1)) > 1e-8 )
-        app_log()<<" mf: " <<factor <<" " <<*(pos+1) <<"\n";
-app_log()<<" mf: " <<factor <<" " <<*(pos+1) <<std::exp(-factor) <<"\n";
-
-      app_log()<<"   Checking vHS: " <<"\n";  
-      if(sparsePropagator)
-        SparseMatrixOperators::product_SpMatV(Spvn.rows(),Spvn.cols(),ValueType(1),Spvn.values(),Spvn.column_data(),Spvn.row_index(),CV0.data(),ValueType(0),vHS.data());
-      else
-        DenseMatrixOperators::product_Ax(Dvn.rows(),Dvn.cols(),ValueType(1),Dvn.values(),Dvn.cols(),CV0.data(),ValueType(0),vHS.data());
-      for(int ii=0; ii<NMO; ii++) 
-       for(int kk=0; kk<NMO; kk++) 
-        if( std::abs( vHS(ii,kk) - *( pos+2+sizeOfG+nCholVecs+ii*NMO+kk ) ) > 1e-8 )
-         app_log()<<"    " <<ii <<" " <<kk <<" " <<vHS(ii,kk) <<" " <<*( pos+2+sizeOfG+nCholVecs+ii*NMO+kk ) <<"\n";  
-      ++cnt;
-      pos+=sz;
-    }
-
-  } else {
-
-    int nw_ = wset->numWalkers(true);
-    int cnt=0; 
-    for(int wlk=0; wlk<nw_; wlk++) {
-
-      if(!wset->isAlive(wlk) || std::abs(wset->getWeight(wlk)) <= 1e-6) continue;
-
-      ComplexType* Sdet = wset->getSM(wlk);
-      pos = buff->values()+cnt;
-
-      std::fill(vbias.begin(),vbias.end(),ComplexType(0,0));
-      // check vbias
-      if(sparsePropagator)
-        wfn->calculateMixedMatrixElementOfOneBodyOperators(spinRestricted,"ImportanceSampling",-1,Sdet,*Spvn_for_onebody,vbias,!save_memory,true);
-      else
-        wfn->calculateMixedMatrixElementOfOneBodyOperators(spinRestricted,"ImportanceSampling",-1,Sdet,Dvn,vbias,false,true);
-
-      app_log()<<" Checking vbias for walker: " <<cnt <<"\n";
-      ComplexType *vb = local_buffer.values()+cnt;
-      for(int i=0; i<cvecN-cvec0; i++, vb+=nw)
-        if( std::abs(vbias[i+shft]-*vb) > 1e-8)
-          app_log()<<"    " <<i <<" " <<vbias[i+shft] <<" " <<*vb <<"\n";      
-
-      app_log()<<"   Checking weight and MF factor: " <<"\n";
-      for(int ii=0; ii<sigma.size(); ii++)
-        sigma[ii] = (pos + (2+sizeOfG+ii)*nw )->real();
-      ComplexType tmp = ComplexType(0.0,0.0);
-      for(int ii=0; ii<sigma.size(); ii++)
-        tmp += im*(vMF[ii]-vbias[ii])* ( sigma[ii] -0.5*im*(vMF[ii]-vbias[ii])  ) ;
-      ComplexType factor = ComplexType(0.0,0.0);
-      for(int i=0; i<sigma.size(); i++) {
-        CV0[i] = sigma[i] + im*(vbias[i]-vMF[i]);
-        factor += CV0[i]*im*vMF[i];
-      }
-      if( std::abs(tmp-*(pos)) > 1e-8 )
-        app_log()<<" hw: " <<tmp <<" " <<*pos <<"\n";
-      if( std::abs(factor-*(pos+nw)) > 1e-8 )
-        app_log()<<" mf: " <<factor <<" " <<*(pos+nw) <<"\n";
-
-      app_log()<<"   Checking vHS: " <<"\n";  
-      if(sparsePropagator)
-        SparseMatrixOperators::product_SpMatV(Spvn.rows(),Spvn.cols(),ValueType(1),Spvn.values(),Spvn.column_data(),Spvn.row_index(),CV0.data(),ValueType(0),vHS.data());
-      else
-        DenseMatrixOperators::product_Ax(Dvn.rows(),Dvn.cols(),ValueType(1),Dvn.values(),Dvn.cols(),CV0.data(),ValueType(0),vHS.data());
-      for(int ii=0; ii<NMO; ii++) 
-       for(int kk=0; kk<NMO; kk++) 
-        if( std::abs( vHS(ii,kk) - *( pos+ nw*(2+sizeOfG+nCholVecs+ii*NMO+kk) ) ) > 1e-8 )
-         app_log()<<"    " <<ii <<" " <<kk <<" " <<vHS(ii,kk) <<" " <<*( pos+nw*(2+sizeOfG+nCholVecs+ii*NMO+kk) ) <<"\n";  
-      ++cnt;
-    }
-
-  }
-*/
 }
 
 void phaseless_ImpSamp_ForceBias::applyHSPropagator(ComplexMatrix& M1, ComplexMatrix& M2, ComplexType& factor,  int order, bool calculatevHS)
@@ -1766,11 +2546,10 @@ void phaseless_ImpSamp_ForceBias::applyHSPropagator(ComplexMatrix& M1, ComplexMa
   const SPComplexType im = SPComplexType(0.0,1.0);
   ComplexType zero = ComplexType(0.0,0.0); 
 
-
   if(calculatevHS) {
     factor = zero;
 
-    Timer.start("Propagate::build_vHS");
+    Timer.start("Propagate::addvHS::build_vHS");
     for(int i=0; i<sigma.size(); i++) {
       CV0[i] = sigma[i] + im*(vbias[i]-vMF[i]);
       factor += CV0[i]*im*vMF[i];
@@ -1794,7 +2573,7 @@ void phaseless_ImpSamp_ForceBias::applyHSPropagator(ComplexMatrix& M1, ComplexMa
       *ptr = static_cast<ComplexType>(*spptr);
 #endif
 
-    Timer.stop("Propagate::build_vHS");
+    Timer.stop("Propagate::addvHS::build_vHS");
     //factor = std::exp(-factor);  // not exponentiated anymore
   }
 
@@ -1828,6 +2607,7 @@ void phaseless_ImpSamp_ForceBias::applyHSPropagator(ComplexMatrix& M1, ComplexMa
 
 void phaseless_ImpSamp_ForceBias::sampleGaussianFields()
 {
+
   int n = sigma.size();
   for (int i=0; i+1<n; i+=2)
   {
@@ -1861,196 +2641,150 @@ void phaseless_ImpSamp_ForceBias::sampleGaussianFields(SPComplexType* v, int n)
 
 }
 
-// this must be called after the setup has been made 
-void phaseless_ImpSamp_ForceBias::test_linear_algebra()
+void phaseless_ImpSamp_ForceBias::benchmark(std::string& blist, int maxnW, int delnW, int nrepeat, WalkerHandlerBase* wlk)
 {
-// this needs to be rewritten with all the changes
-/*
-  if(myComm->rank() != 0) return;
-  if(!spinRestricted) return;
 
-  // sparse versus dense Spvn matrices
+  SPValueType vone = SPValueType(1.0);
+  SPValueType vzero = SPValueType(0.0);
+  SPComplexType cone = SPComplexType(1.0);
+  SPComplexType czero = SPComplexType(0.0);
 
-  ComplexType one = ComplexType(1.0,0.0);
-  ComplexType minusone = ComplexType(-1.0,0.0);
-  ComplexType zero = ComplexType(0.0,0.0);
+  // time different components of the calculation as a function of the number of walkers
+  // 1. Propagate
+  if(blist.find("propg")!=std::string::npos) {
+    std::ofstream out;
+    if(myComm->rank() == 0) 
+      out.open(myComm->getName()+".propagate.dat");
 
-  RealSMSpMat SpvnReal;
-  SpvnReal.setup(true,"Test_Test_Test",MPI_COMM_WORLD);
-  SpvnReal.setDims(Spvn.rows(),Spvn.cols());
-  SpvnReal.allocate_serial(Spvn.size());
-  SpvnReal.resize_serial(Spvn.size());
-  
-  std::copy( Spvn.cols_begin(), Spvn.cols_end(), SpvnReal.cols_begin());
-  std::copy( Spvn.rows_begin(), Spvn.rows_end(), SpvnReal.rows_begin());
-  ValueSMSpMat::iterator itv=Spvn.vals_begin();
-  RealSMSpMat::iterator ritv=SpvnReal.vals_begin();
-  for(int i=0; i<Spvn.size(); i++)
-  {
-#if defined(QMC_COMPLEX)
-    *(ritv++) = (itv++)->real(); 
-#else
-    *(ritv++) = *(itv++); 
-#endif
+    std::vector<std::string> tags(17); 
+    tags[0]="Benchmark_tot";
+    tags[1]="Benchmark_wait"; 
+    tags[2]="Propagate::setup";
+    tags[3]="Propagate::evalG"; 
+    tags[4]="Propagate::sampleGaussianFields"; 
+    tags[5]="Propagate::addvHS"; 
+    tags[6]="Propagate::propg"; 
+    tags[7]="Propagate::overlaps_and_or_eloc";
+    tags[8]="Propagate::finish_step";
+    tags[9]="Propagate::idle";
+    tags[10]="Propagate::addvHS::setup";
+    tags[11]="Propagate::addvHS::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer";
+    tags[12]="Propagate::addvHS::build_CV0"; 
+    tags[13]="Propagate::addvHS::shm_copy"; 
+    tags[14]="Propagate::addvHS::build_vHS"; 
+    tags[15]="Propagate::addvHS::idle";
+    tags[16]="PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer::setup";
+    out<<"# #wlk  #steps "; 
+    for( std::string& str: tags) out<<str <<" ";
+    out<<std::endl;
+ 
+    int dummy,nstp = (fix_bias>0)?fix_bias:1; 
+    double Es=wlk->getEloc(0).real();
+    // call it once to set timers
+    wlk->resetNumberWalkers(1);
+    Propagate(nstp,dummy,wlk,Es);
+    Timer.add("Benchmark_tot");
+    Timer.add("Benchmark_wait");
+    int nw=1;
+    while(nw <= maxnW) {
+
+      wlk->resetNumberWalkers(nw);
+      Timer.reset_all(); 
+      double t1, t2;
+      myComm->barrier();
+      for(int i=0; i<nrepeat; i++) {
+        Timer.start("Benchmark_tot");
+        Propagate(nstp,dummy,wlk,Es);
+        Timer.stop("Benchmark_tot");
+        Timer.start("Benchmark_wait");
+        myComm->barrier();
+        Timer.stop("Benchmark_wait");
+      }     
+      if(myComm->rank() == 0) { 
+        out<<nw <<" " <<nstp <<" ";
+        for( std::string& str: tags) out<<Timer.total(str)/double(nrepeat) <<" ";
+        out<<std::endl;
+      }
+
+      if(delnW <=0) nw *= 2;
+      else nw += delnW;
+    }
+
+    if(myComm->rank() == 0) out.close(); 
+
   } 
-  SpvnReal.compress();
 
-  SMSparseMatrix<float> SpvnSP;
-  SpvnSP.setup(true,"Test_Test_Test_2",MPI_COMM_WORLD);
-  SpvnSP.setDims(Spvn.rows(),Spvn.cols());
-  SpvnSP.allocate_serial(Spvn.size());
-  SpvnSP.resize_serial(Spvn.size());
+  // 2. MatM: if sparse, do both.
+  //          if dense, do dense only
+  if(blist.find("spmm")!=std::string::npos && sparsePropagator) {
+    std::ofstream out;
+    if(myComm->rank() == 0)
+      out.open(myComm->getName()+".spmm.dat");
 
-  std::copy( Spvn.cols_begin(), Spvn.cols_end(), SpvnSP.cols_begin());
-  std::copy( Spvn.rows_begin(), Spvn.rows_end(), SpvnSP.rows_begin());
-  itv=Spvn.vals_begin();
-  SMSparseMatrix<float>::iterator spitv=SpvnSP.vals_begin();
-  for(int i=0; i<Spvn.size(); i++)
-  {
-#if defined(QMC_COMPLEX)
-    *(spitv++) = static_cast<float>((itv++)->real());
-#else
-    *(spitv++) = static_cast<float>(*itv++);
-#endif
-  }
-  SpvnSP.compress();
+    std::vector<std::string> tags(3);
+    tags[0]="SpMatM_CMat*Vbias";
+    tags[1]="SpMatTM_Cmat*G";
+    tags[2]="SpMatM_TCmat*G_compact";
+    out<<"# #wlk "; 
+    for( std::string& str: tags) out<<str <<" ";
+    out<<std::endl;
 
-  for(ComplexMatrix::iterator it=vHS.begin(); it!=vHS.end(); it++) *it=zero;
-  sampleGaussianFields();
-  for(int i=0; i<sigma.size(); i++) 
-    CV0[i] = sigma[i];
+    for( std::string& str: tags) Timer.reset(str);
+    
+    int nw=1;
+    while(nw <= maxnW) {
 
-  // for possible setup/delays 
-  for(int i=0; i<10; i++)
-    SparseMatrixOperators::product_SpMatV(Spvn.rows(),Spvn.cols(),ValueType(1),Spvn.values(),Spvn.column_data(),Spvn.row_index(),CV0.data(),ValueType(0),vHS.data());
-  int ntimes = 20;
-  Timer.reset("Propagate::Sparse::build_vHS");
-  Timer.start("Propagate::Sparse::build_vHS");
-  for(int i=0; i<ntimes; i++)
-    SparseMatrixOperators::product_SpMatV(Spvn.rows(),Spvn.cols(),ValueType(1),Spvn.values(),Spvn.column_data(),Spvn.row_index(),CV0.data(),ValueType(0),vHS.data());
-  Timer.stop("Propagate::Sparse::build_vHS"); 
+      ComplexMatrix G(NMO*NMO,nw);
+      ComplexMatrix vb(nCholVecs,nw);
+      Timer.reset_all();
+      double t1, t2;
+      for(int i=0; i<nrepeat; i++) {
+        if(nw > 1) {
+          Timer.start("SpMatM_CMat*Vbias");
+          SparseMatrixOperators::product_SpMatM(Spvn.rows(), nw, Spvn.cols(), vone, Spvn.values(), Spvn.column_data(), Spvn.row_index(), vb.data(), nw, vzero, G.data(), nw);
+          Timer.stop("SpMatM_CMat*Vbias");
+          Timer.start("SpMatTM_Cmat*G");
+          SparseMatrixOperators::product_SpMatTM(Spvn.rows(), nw, Spvn.cols(), vone, Spvn.values(), Spvn.column_data(), Spvn.row_index(), G.data(), nw, vzero, vb.data(), nw);
+          Timer.stop("SpMatTM_Cmat*G");
+          if(!save_memory) {
+            Timer.start("SpMatM_TCmat*G_compact");
+            SparseMatrixOperators::product_SpMatM(SpvnT.rows(), nw, SpvnT.cols(), cone, SpvnT.values(), SpvnT.column_data(), SpvnT.row_index(), G.data(), nw, czero, vb.data(), nw);
+            Timer.stop("SpMatM_TCmat*G_compact"); 
+          }
+        } else {
+          Timer.start("SpMatM_CMat*Vbias");
+          SparseMatrixOperators::product_SpMatV(Spvn.rows(), Spvn.cols(), vone, Spvn.values(), Spvn.column_data(), Spvn.row_index(), vb.data(), vzero, G.data());
+          Timer.stop("SpMatM_CMat*Vbias");
+          Timer.start("SpMatTM_Cmat*G");
+          SparseMatrixOperators::product_SpMatTV(Spvn.rows(), Spvn.cols(), vone, Spvn.values(), Spvn.column_data(), Spvn.row_index(), G.data(), vzero, vb.data());
+          Timer.stop("SpMatTM_Cmat*G");
+          if(!save_memory) {
+            Timer.start("SpMatM_TCmat*G_compact");
+            SparseMatrixOperators::product_SpMatV(SpvnT.rows(), SpvnT.cols(), cone, SpvnT.values(), SpvnT.column_data(), SpvnT.row_index(), G.data(), czero, vb.data());
+            Timer.stop("SpMatM_TCmat*G_compact"); 
+          }
+        }
+      }
+      if(myComm->rank() == 0) {
+        out<<nw <<" " ;
+        for( std::string& str: tags) out<<Timer.total(str)/double(nrepeat) <<" ";
+        out<<std::endl;
+      }
 
-  app_log()<<"Sparsity value: " <<static_cast<double>(Spvn.size())/NMO/NMO/Spvn.cols() <<std::endl;
-  app_log()<<"Time for std::complex SpMV product:" <<Timer.total("Propagate::Sparse::build_vHS")/ntimes <<std::endl;
+      if(delnW <=0) nw *= 2;
+      else nw += delnW;
+    }
 
-  char trans1 = 'N';
-  char matdes[6];
-  matdes[0] = 'G';
-  matdes[3] = 'C';
-  double oned = 1, zerod=0;
+    if(myComm->rank() == 0) out.close(); 
+    myComm->barrier();
+ 
+  }  
+  
+  // 4. evalG
+  
+  // 5. eloc
+  // 6. distMM
 
-  ComplexMatrix vHS2(NMO,NMO);
-//  for(int i=0; i<10; i++)
-//    SparseMatrixOperators::product_SpMatM(SpvnReal.rows(),2,SpvnReal.cols(),1,SpvnReal,reinterpret_cast<double*>(CV0.data()),2,0,reinterpret_cast<double*>(vHS2.data()),2);
-  Timer.reset("Propagate::Sparse::build_vHS");
-  Timer.start("Propagate::Sparse::build_vHS");
-//  for(int i=0; i<ntimes; i++)
-//    SparseMatrixOperators::product_SpMatM(SpvnReal.rows(),2,SpvnReal.cols(),1,SpvnReal,reinterpret_cast<double*>(CV0.data()),2,0,reinterpret_cast<double*>(vHS2.data()),2);
-  Timer.stop("Propagate::Sparse::build_vHS");
-
-  app_log()<<"Time for real SpMM product:" <<Timer.total("Propagate::Sparse::build_vHS")/ntimes <<std::endl;
-
-  std::cout<<" Looking for difference in vHS: \n";   
-//  for(int i=0; i<NMO; i++)
-//   for(int j=0; j<NMO; j++)
-//    if(std::abs(vHS(i,j).imag()-vHS2(i,j)) > 1e-8)
-//     std::cout<<i <<" " <<j <<" " <<vHS(i,j).imag() <<" " <<vHS2(i,j) <<std::endl;
-  std::cout<<" No differences found. \n";
-  std::cout<<std::endl;
-
-  Matrix<float> vHS3(NMO,NMO);
-  std::vector<std::complex<float> > CV1(CV0.size());
-  for(int i=0; i<CV0.size(); i++) CV1[i] = static_cast<std::complex<float> >(CV0[i]);
-//  for(int i=0; i<10; i++)
-//    SparseMatrixOperators::product_SpMatM(SpvnSP.rows(),2,SpvnSP.cols(),1,SpvnSP,reinterpret_cast<float*>(CV1.data()),2,0,reinterpret_cast<float*>(vHS3.data()),2);
-  Timer.reset("Propagate::Sparse::build_vHS");
-  Timer.start("Propagate::Sparse::build_vHS");
-//  for(int i=0; i<ntimes; i++)
-//    SparseMatrixOperators::product_SpMatM(SpvnSP.rows(),2,SpvnSP.cols(),1,SpvnSP,reinterpret_cast<float*>(CV1.data()),2,0,reinterpret_cast<float*>(vHS3.data()),2);
-  Timer.stop("Propagate::Sparse::build_vHS");
-
-  app_log()<<"Time for SP real SpMM product:" <<Timer.total("Propagate::Sparse::build_vHS")/ntimes <<std::endl;
-
-  const char trans = 'T';
-  int nrows = NMO*NMO, ncols=Spvn.cols();
-  int inc=1;
-std::cout<<" here 0: " <<nrows <<" " <<ncols <<std::endl;
-  ComplexMatrix Dvn;
-  Dvn.resize(nrows,ncols);
-std::cout<<" here 1. " <<std::endl;
-  // stupid but easy
-  for(int i=0; i<Spvn.size(); i++)
-    Dvn(*(Spvn.row_data()+i),*(Spvn.column_data()+i)) = *(Spvn.values()+i); 
-std::cout<<" here 2. " <<std::endl;
-
-  // setup time
-  for(int i=0; i<10; i++)
-    zgemv(trans,Dvn.cols(),Dvn.rows(),one,Dvn.data(),Dvn.cols(),CV0.data(),inc,zero,vHS2.data(),inc);
-std::cout<<" here 3. " <<std::endl;
-
-  Timer.reset("Propagate::Dense::build_vHS");
-  Timer.start("Propagate::Dense::build_vHS");
-  for(int i=0; i<ntimes; i++)
-    zgemv(trans,Dvn.cols(),Dvn.rows(),one,Dvn.data(),Dvn.cols(),CV0.data(),inc,zero,vHS2.data(),inc);
-  Timer.stop("Propagate::Dense::build_vHS");
-
-  app_log()<<"Time for dense zgemv product:" <<Timer.total("Propagate::Dense::build_vHS")/ntimes <<std::endl;
-
-  //int nn = 10;
-  for(int nn=1; nn<65; nn*=2) { 
-    ComplexMatrix Tx(ncols,nn);
-    ComplexMatrix Ty(nn,nrows);
-    for(int i=0; i<ncols; i++)
-     for(int j=0; j<nn; j++)
-        Tx(i,j) = CV0[i];
-    Timer.reset("Propagate::Dense::build_vHS");
-    Timer.start("Propagate::Dense::build_vHS");
-    for(int i=0; i<ntimes; i++)
-      zgemm('T','T',Dvn.rows(),nn,Dvn.cols(),one,Dvn.data(),Dvn.cols(),Tx.data(),nn,zero,Ty.data(),nrows);
-    Timer.stop("Propagate::Dense::build_vHS");
-
-    app_log()<<"Time for dense zgemm product:" <<nn <<" " <<Timer.total("Propagate::Dense::build_vHS")/ntimes <<" " <<Timer.total("Propagate::Dense::build_vHS")/ntimes/nn <<std::endl;
-  }
-
-  RealMatrix Rvn(nrows,ncols);
-  Matrix<float> Fvn(nrows,ncols);
-  for(int i=0; i<Spvn.size(); i++)
-#if defined(QMC_COMPLEX)
-    Rvn(*(Spvn.row_data()+i),*(Spvn.column_data()+i)) = (Spvn.values()+i)->real();
-#else
-    Rvn(*(Spvn.row_data()+i),*(Spvn.column_data()+i)) = *(Spvn.values()+i);
-#endif
-  for(int i=0; i<Spvn.size(); i++)
-#if defined(QMC_COMPLEX)
-    Fvn(*(Spvn.row_data()+i),*(Spvn.column_data()+i)) = static_cast<float>((Spvn.values()+i)->real());
-#else
-    Fvn(*(Spvn.row_data()+i),*(Spvn.column_data()+i)) = static_cast<float>(*(Spvn.values()+i));
-#endif
-
-  // setup time: Rvn*CV0 = vHS
-  for(int i=0; i<10; i++)
-    dgemm('N','N', 2, Rvn.rows(), Rvn.cols(), 1, reinterpret_cast<double*>(CV0.data()), 2, Rvn.data(), Rvn.cols(), 0, reinterpret_cast<double*>(vHS.data()), 2); 
-  Timer.reset("Propagate::Dense::build_vHS");
-  Timer.start("Propagate::Dense::build_vHS");
-  for(int i=0; i<ntimes; i++)
-    dgemm('N','N', 2, Rvn.rows(), Rvn.cols(), 1, reinterpret_cast<double*>(CV0.data()), 2, Rvn.data(), Rvn.cols(), 0, reinterpret_cast<double*>(vHS.data()), 2); 
-  Timer.stop("Propagate::Dense::build_vHS");
-
-  app_log()<<"Time for dense dgemm product:" <<Timer.total("Propagate::Dense::build_vHS")/ntimes <<std::endl;
-
-  for(int i=0; i<10; i++)
-    sgemm('N','N', 2, Fvn.rows(), Fvn.cols(), 1, reinterpret_cast<float*>(CV1.data()), 2, Fvn.data(), Fvn.cols(), 0, reinterpret_cast<float*>(vHS3.data()), 2);
-  Timer.reset("Propagate::Dense::build_vHS");
-  Timer.start("Propagate::Dense::build_vHS");
-  for(int i=0; i<ntimes; i++)
-    sgemm('N','N', 2, Fvn.rows(), Fvn.cols(), 1, reinterpret_cast<float*>(CV1.data()), 2, Fvn.data(), Fvn.cols(), 0, reinterpret_cast<float*>(vHS3.data()), 2);
-  Timer.stop("Propagate::Dense::build_vHS");
-
-  app_log()<<"Time for SP dense dgemm product:" <<Timer.total("Propagate::Dense::build_vHS")/ntimes <<std::endl;
-
-
-  APP_ABORT("TESTING TESTING TESTING. \n\n\n");
-*/
 }
 
 }

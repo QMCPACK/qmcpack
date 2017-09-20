@@ -17,7 +17,8 @@ namespace qmcplusplus {
 // In other words, the routine will minimize the variance of the difference between the sums in each set
 // The number of elements in bucket i are given by indx[i+1]-indx[i]. In other words, tasks from indx[i] through indx[i+1]
 // are assigned to bucket i. 
-void balance_partition_ordered_set(int N, int* indx, std::vector<int>& subsets); 
+template<typename IType>
+void balance_partition_ordered_set(int N, IType* indx, std::vector<IType>& subsets); 
 
 // careful 
 // FIX FIX FIX
@@ -63,7 +64,8 @@ inline void parallel_inplace_merge(int np, int rk, Iter* beg, Iter* mid, Iter* e
 
 namespace std{
 
-void swap(std::tuple<int &, int &, qmcplusplus::ValueType &> const& a, std::tuple<int &, int &, qmcplusplus::ValueType &> const& b); 
+  void swap(std::tuple<int &, int &, qmcplusplus::RealType &> const& a, std::tuple<int &, int &, qmcplusplus::RealType &> const& b); 
+  void swap(std::tuple<int &, int &, std::complex<qmcplusplus::RealType> &> const& a, std::tuple<int &, int &, std::complex<qmcplusplus::RealType> &> const& b); 
 
 }
 #endif
