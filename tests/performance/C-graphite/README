@@ -51,6 +51,8 @@ $ ls -l *.h5
 3187556652 lda.pwscf.h5
 
 The h5 file should be placed in a directory labeled C-graphite.
+QMC_DATA should be set to the directory containing C-graphite
+when CMake is run.
 
 4. Throughput metric
 5. Benchmarking with ctest
