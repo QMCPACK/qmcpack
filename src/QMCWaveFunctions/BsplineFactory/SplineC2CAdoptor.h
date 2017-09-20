@@ -263,13 +263,13 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     }
 #else
     ST s, c;
-#pragma simd private(s,c)
-    for (size_t j=0, psiIndex=first_spo; psiIndex<last_spo; j++,psiIndex++)
+#pragma omp simd private(s,c)
+    for (size_t j=0; j<N; ++j)
     {
       const ST val_r=myV[2*j  ];
       const ST val_i=myV[2*j+1];
       sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
-      psi[psiIndex  ] = ComplexT(val_r*c-val_i*s,val_i*c+val_r*s);
+      psi[j+first_spo] = ComplexT(val_r*c-val_i*s,val_i*c+val_r*s);
     }
 #endif
   }
@@ -318,9 +318,8 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
       myL[j]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
     }
 #endif
-
-#pragma simd
-    for (size_t j=0, psiIndex=first_spo; psiIndex<last_spo; j++,psiIndex++)
+#pragma omp simd
+    for (size_t j=0; j<N; ++j)
     {
       const size_t jr=j<<1;
       const size_t ji=jr+1;
@@ -361,6 +360,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
       const ST lap_r=lcart_r+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
       const ST lap_i=lcart_i+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
 #endif
+      const size_t psiIndex=j+first_spo;
       psi[psiIndex ]   = ComplexT(c*val_r-s*val_i,c*val_i+s*val_r);
       dpsi[psiIndex][0]= ComplexT(c*gX_r -s*gX_i, c*gX_i +s*gX_r);
       dpsi[psiIndex][1]= ComplexT(c*gY_r -s*gY_i, c*gY_i +s*gY_r);
@@ -386,8 +386,9 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict g1=myG.data(1);
     const ST* restrict g2=myG.data(2);
 
-    #pragma simd
-    for (size_t j=0, psiIndex=first_spo; psiIndex<last_spo; j++,psiIndex++)
+    const size_t N=last_spo-first_spo;
+    #pragma omp simd
+    for (size_t j=0; j<N; ++j)
     {
       const size_t jr=j<<1;
       const size_t ji=jr+1;
@@ -422,6 +423,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
       const ST lap_r=myL[jr]+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
       const ST lap_i=myL[ji]+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
 
+      const size_t psiIndex=j+first_spo;
       psi[psiIndex ]   = ComplexT(c*val_r-s*val_i,c*val_i+s*val_r);
       dpsi[psiIndex][0]= ComplexT(c*gX_r -s*gX_i, c*gX_i +s*gX_r);
       dpsi[psiIndex][1]= ComplexT(c*gY_r -s*gY_i, c*gY_i +s*gY_r);
@@ -482,7 +484,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     ComplexT* restrict vg_z=vgl.data(3)+first_spo; ASSUME_ALIGNED(vg_z);
     ComplexT* restrict vl_l=vgl.data(4)+first_spo; ASSUME_ALIGNED(vl_l);
 
-#pragma simd
+#pragma omp simd
     for (size_t j=0; j<N; ++j)
     {
       const size_t jr=j<<1;

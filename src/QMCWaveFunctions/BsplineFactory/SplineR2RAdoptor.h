@@ -263,9 +263,10 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
 
     if (bc_sign & 1)
     {
-#pragma simd
-      for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
+#pragma omp simd
+      for(size_t psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
       {
+        const size_t j=psiIndex-first_spo;
         psi[psiIndex]=-myV[j];
         dpsi[psiIndex][0]=-(g00*g0[j]+g01*g1[j]+g02*g2[j]);
         dpsi[psiIndex][1]=-(g10*g0[j]+g11*g1[j]+g12*g2[j]);
@@ -275,9 +276,10 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     }
     else
     {
-#pragma simd
-      for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
+#pragma omp simd
+      for(size_t psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
       {
+        const size_t j=psiIndex-first_spo;
         psi[psiIndex]=myV[j];
         dpsi[psiIndex][0]=(g00*g0[j]+g01*g1[j]+g02*g2[j]);
         dpsi[psiIndex][1]=(g10*g0[j]+g11*g1[j]+g12*g2[j]);
@@ -298,9 +300,10 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
 
     if (bc_sign & 1)
     {
-      #pragma simd
-      for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
+      #pragma omp simd
+      for(int psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
       {
+        const size_t j=psiIndex-first_spo;
         psi[psiIndex]=-myV[j];
         dpsi[psiIndex][0]=-g0[j];
         dpsi[psiIndex][1]=-g1[j];
@@ -310,9 +313,10 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     }
     else
     {
-      #pragma simd
-      for(int psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
+      #pragma omp simd
+      for(int psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
       {
+        const size_t j=psiIndex-first_spo;
         psi[psiIndex]=myV[j];
         dpsi[psiIndex][0]=g0[j];
         dpsi[psiIndex][1]=g1[j];
