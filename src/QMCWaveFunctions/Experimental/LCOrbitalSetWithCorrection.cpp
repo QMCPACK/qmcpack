@@ -181,7 +181,6 @@ LCOrbitalSet<BS,false>* LCOrbitalSetWithCorrection<BS,false>::clone2LCOrbitalSet
   BS* newBS = (BS*) myBasisSet->makeClone();
   LCOrbitalSet<BS,false>* newSPO = new LCOrbitalSet<BS,false>(newBS,ReportLevel);
   newSPO->setOrbitalSetSize(OrbitalSetSize);
-  newSPO->TotalOrbitalSize=TotalOrbitalSize;
   newSPO->setIdentity(Identity);
   newSPO->C = C;
   newSPO->Occ.resize(Occ.size());
@@ -350,7 +349,6 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
   mygrid->set(0.000001,100.0,1001);
   dummyLO1 = new LCOrbitalSet<BS,false>(myBasisSet,ReportLevel);
   dummyLO1->setOrbitalSetSize(OrbitalSetSize);
-  dummyLO1->TotalOrbitalSize=TotalOrbitalSize;
   dummyLO1->BasisSetSize = BasisSetSize;
   dummyLO1->setIdentity(Identity);
   dummyLO1->C = C;

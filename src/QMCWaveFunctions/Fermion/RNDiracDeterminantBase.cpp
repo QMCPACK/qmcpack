@@ -138,7 +138,7 @@ RNDiracDeterminantBase::RealType RNDiracDeterminantBase::updateBuffer(ParticleSe
   else
   {
     if (UpdateMode == ORB_PBYP_RATIO)
-      Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp,dpsiM, d2psiM);
+      Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
     RealType cp = std::exp(logepsilon -2.0*alternateLogValue);
     RealType bp = 1.0/(1+cp);
     UpdateTimer.start();
@@ -511,7 +511,7 @@ RNDiracDeterminantBase::evaluateLog(ParticleSet& P,
                                     ParticleSet::ParticleLaplacian_t& L)
 {
   //      std::cerr <<"I'm calling evaluate log"<< std::endl;
-  Phi->evaluate(P, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
+  Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp, psiM, dpsiM, d2psiM);
   myG_alternate=0.0;
   myL_alternate=0.0;
 //     myG=0.0;

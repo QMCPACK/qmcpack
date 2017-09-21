@@ -67,16 +67,12 @@ public:
   bool CanUseGLCombo;
   ///if true, need distance tables
   bool NeedDistanceTables;
-  ///total number of orbitals
-  IndexType TotalOrbitalSize;
   ///number of Single-particle orbitals
   IndexType OrbitalSetSize;
   ///number of Single-particle orbitals
   IndexType BasisSetSize;
   ///index of the particle
   IndexType ActivePtcl;
-  ///matrix to store temporary value before transpose
-  ValueMatrix_t t_logpsi;
   ///matrix containing the coefficients
   ValueMatrix_t C;
   ///occupation number
@@ -247,15 +243,15 @@ public:
    * Call evaluate_notranspose to build logdet
    */
   virtual void
-  evaluate(const ParticleSet& P, int first, int last
+  evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi
            , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
 
   virtual void
-  evaluate(const ParticleSet& P, int first, int last
+  evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi
            , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet);
 
   virtual void
-  evaluate(const ParticleSet& P, int first, int last
+  evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi
            , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet);
 
   virtual void

@@ -37,7 +37,7 @@ inline void transpose(const T* restrict in, T* restrict out, int m)
 #endif
 
 SPOSetBase::SPOSetBase()
-:Identity(false),TotalOrbitalSize(0),OrbitalSetSize(0),BasisSetSize(0),
+:Identity(false),OrbitalSetSize(0),BasisSetSize(0),
   ActivePtcl(-1),Optimizable(false),ionDerivs(false),builder_index(-1)
 {
   CanUseGLCombo=false;
@@ -50,14 +50,18 @@ SPOSetBase::SPOSetBase()
 SPOSetBase::ValueType
 SPOSetBase::RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
 {
-  int ip=omp_get_thread_num(); 
+  int ip=omp_get_thread_num();
+  // YYYY to fix
+  /*
   ValueVector_t psi(t_logpsi[ip],OrbitalSetSize);
   evaluate(P,iat,psi);
   return simd::dot(psi.data(),arow,OrbitalSetSize,ValueType());
+  */
+  return ValueType();
 }
 
 
-void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
+void SPOSetBase::evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi,
                           ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
 {
   evaluate_notranspose(P,first,last,t_logpsi,dlogdet,d2logdet);
@@ -66,7 +70,7 @@ void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
   //transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
 }
 
-void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
+void SPOSetBase::evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi,
                           ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
 {
   evaluate_notranspose(P,first,last,t_logpsi,dlogdet,grad_grad_logdet);
@@ -75,7 +79,7 @@ void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
   //transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
 }
 
-void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
+void SPOSetBase::evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi,
                           ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
 {
   logdet=0;
@@ -135,9 +139,6 @@ bool SPOSetBase::put(xmlNodePtr cur)
   aAttrib.add(debugc,"debug");
   aAttrib.put(cur);
   setOrbitalSetSize(norb);
-  TotalOrbitalSize=norb;
-  //allocate temporary t_logpsi
-  t_logpsi.resize(TotalOrbitalSize,OrbitalSetSize);
   const xmlChar* h=xmlGetProp(cur, (const xmlChar*)"href");
   xmlNodePtr occ_ptr=NULL;
   xmlNodePtr coeff_ptr=NULL;

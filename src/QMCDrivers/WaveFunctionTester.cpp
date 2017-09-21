@@ -2061,8 +2061,9 @@ void WaveFunctionTester::runwftricks()
             //evaluate orbitals
 //                 Phi->evaluate(W,0,values);
             Psi.evaluateLog(W);
-            for(int n=0; n<NumOrbitals; n++)
-              values[n] = Phi->t_logpsi(0,n);
+            // YYYY: is the following two lines still maintained?
+            //for(int n=0; n<NumOrbitals; n++)
+            //  values[n] = Phi->t_logpsi(0,n);
             if (l==0)
             {
               identityValues=values;

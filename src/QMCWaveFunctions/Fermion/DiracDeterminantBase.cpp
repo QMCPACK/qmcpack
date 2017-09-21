@@ -97,6 +97,7 @@ void DiracDeterminantBase::resize(int nel, int morb)
   if(norb <= 0)
     norb = nel; // for morb == -1 (default)
   psiM.resize(nel,norb);
+  psiM_temp.resize(nel,norb);
   dpsiM.resize(nel,norb);
   d2psiM.resize(nel,norb);
   psiV.resize(norb);
@@ -180,7 +181,7 @@ void DiracDeterminantBase::updateAfterSweep(ParticleSet& P,
   if(UpdateMode == ORB_PBYP_RATIO)
   { //need to compute dpsiM and d2psim. Use Phi->t_logpsi. Do not touch psiM!
     SPOVGLTimer.start();
-    Phi->evaluate_notranspose(P,FirstIndex,LastIndex,Phi->t_logpsi,dpsiM,d2psiM);
+    Phi->evaluate_notranspose(P,FirstIndex,LastIndex,psiM_temp,dpsiM,d2psiM);
     SPOVGLTimer.stop();
   }
 
@@ -280,7 +281,7 @@ void DiracDeterminantBase::copyFromBuffer(ParticleSet& P, PooledData<RealType>& 
   }
   else
   {
-    Phi->evaluate_notranspose(P,FirstIndex,LastIndex,Phi->t_logpsi,dpsiM,d2psiM);
+    Phi->evaluate_notranspose(P,FirstIndex,LastIndex,psiM_temp,dpsiM,d2psiM);
   }
 
   buf.get(LogValue);
@@ -379,7 +380,7 @@ DiracDeterminantBase::evalGradSourcep
   Phi->evaluateGradSource (P, FirstIndex, LastIndex, source, iat,
                            grad_source_psiM, grad_grad_source_psiM,
                            grad_lapl_source_psiM);
-  Phi->evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
+  Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp, psiM, dpsiM, d2psiM);
 
   invertPsiM(psiM);
 
@@ -468,7 +469,7 @@ DiracDeterminantBase::evalGradSourcep
 void DiracDeterminantBase::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
 {
   //IM A HACK.  Assumes evaluateLog has already been executed.
-  Phi->evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, grad_grad_source_psiM);
+  Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp, psiM, dpsiM, grad_grad_source_psiM);
   phi_alpha_Minv = 0.0;
   grad_phi_Minv = 0.0;
   lapl_phi_Minv = 0.0;
@@ -757,7 +758,7 @@ void
 DiracDeterminantBase::recompute(ParticleSet& P)
 {
   SPOVGLTimer.start();
-  Phi->evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
+  Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp, psiM, dpsiM, d2psiM);
   SPOVGLTimer.stop();
   if(NumPtcls==1)
   {
