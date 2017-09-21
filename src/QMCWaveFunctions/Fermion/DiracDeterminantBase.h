@@ -143,7 +143,7 @@ public:
   }
 
   ///invert psiM or its copies
-  void invertPsiM(ValueMatrix_t& amat);
+  void invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat);
 
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& active,

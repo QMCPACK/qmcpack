@@ -61,6 +61,7 @@ SPOSetBase::RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
 }
 
 
+#if 0
 void SPOSetBase::evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi,
                           ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
 {
@@ -88,6 +89,7 @@ void SPOSetBase::evaluate(const ParticleSet& P, int first, int last, ValueMatrix
       logdet.data(), OrbitalSetSize, logdet.cols());
   //transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
 }
+#endif
 
 void SPOSetBase::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bool newp)
 {

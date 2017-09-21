@@ -511,7 +511,7 @@ RNDiracDeterminantBase::evaluateLog(ParticleSet& P,
                                     ParticleSet::ParticleLaplacian_t& L)
 {
   //      std::cerr <<"I'm calling evaluate log"<< std::endl;
-  Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp, psiM, dpsiM, d2psiM);
+  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
   myG_alternate=0.0;
   myL_alternate=0.0;
 //     myG=0.0;
@@ -519,7 +519,7 @@ RNDiracDeterminantBase::evaluateLog(ParticleSet& P,
   if (NumPtcls==1)
   {
     //CurrentDet=psiM(0,0);
-    ValueType det=psiM(0,0);
+    ValueType det=psiM_temp(0,0);
     alternateLogValue = evaluateLogAndPhase(det,alternatePhaseValue);
 //         alternatePhaseValue=0.0;
     LogValue = alternateLogValue + 0.5*std::log(1.0+std::exp(logepsilon-2.0*alternateLogValue));
@@ -539,8 +539,15 @@ RNDiracDeterminantBase::evaluateLog(ParticleSet& P,
   else
   {
     InverseTimer.start();
-    alternateLogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),alternatePhaseValue);
-//         alternatePhaseValue=0.0;
+    RealType phase_saved=PhaseValue;
+    RealType log_saved=LogValue;
+    invertPsiM(psiM_temp,psiM);
+    alternatePhaseValue=PhaseValue;
+    alternateLogValue=LogValue;
+    PhaseValue=phase_saved;
+
+    //alternateLogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),alternatePhaseValue);
+    ////         alternatePhaseValue=0.0;
     LogValue = alternateLogValue + 0.5*std::log(1.0+std::exp(logepsilon-2.0*alternateLogValue));
     RealType cp = std::exp(logepsilon -2.0*alternateLogValue);
     RealType bp = 1.0/(1+cp);

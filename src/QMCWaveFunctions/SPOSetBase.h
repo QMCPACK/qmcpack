@@ -242,6 +242,7 @@ public:
    *
    * Call evaluate_notranspose to build logdet
    */
+#if 0
   virtual void
   evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi
            , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
@@ -253,6 +254,7 @@ public:
   virtual void
   evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi
            , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet);
+#endif
 
   virtual void
   evaluateThirdDeriv(const ParticleSet& P, int first, int last

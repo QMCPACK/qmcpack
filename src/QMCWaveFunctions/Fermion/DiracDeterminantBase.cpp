@@ -70,18 +70,21 @@ void DiracDeterminantBase::set(int first, int nel)
   resize(nel,nel);
 }
 
-void DiracDeterminantBase::invertPsiM(ValueMatrix_t& amat)
+void DiracDeterminantBase::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
 {
   InverseTimer.start();
 #ifdef MIXED_PRECISION
-  psiM_hp = amat;
+  simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(), 
+      psiM_hp.data(), NumOrbitals, psiM_hp.cols());
   ParticleSet::Scalar_t PhaseValue_hp;
   detEng_hp.invert(psiM_hp,true);
   LogValue = static_cast<RealType>(detEng_hp.LogDet);
   PhaseValue = static_cast<RealType>(detEng_hp.Phase);
-  amat = psiM_hp;
+  invMat = psiM_hp;
 #else
-  detEng.invert(amat,true);
+  simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(), 
+      invMat.data(), NumOrbitals, invMat.cols());
+  detEng.invert(invMat,true);
   LogValue = detEng.LogDet;
   PhaseValue = detEng.Phase;
 #endif
@@ -97,7 +100,7 @@ void DiracDeterminantBase::resize(int nel, int morb)
   if(norb <= 0)
     norb = nel; // for morb == -1 (default)
   psiM.resize(nel,norb);
-  psiM_temp.resize(nel,norb);
+  psiM_temp.resize(norb,nel); 
   dpsiM.resize(nel,norb);
   d2psiM.resize(nel,norb);
   psiV.resize(norb);
@@ -380,9 +383,9 @@ DiracDeterminantBase::evalGradSourcep
   Phi->evaluateGradSource (P, FirstIndex, LastIndex, source, iat,
                            grad_source_psiM, grad_grad_source_psiM,
                            grad_lapl_source_psiM);
-  Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp, psiM, dpsiM, d2psiM);
+  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
 
-  invertPsiM(psiM);
+  invertPsiM(psiM_temp,psiM);
 
   GradMatrix_t &Phi_alpha(grad_source_psiM);
   GradMatrix_t &Grad_phi(dpsiM);
@@ -469,14 +472,14 @@ DiracDeterminantBase::evalGradSourcep
 void DiracDeterminantBase::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
 {
   //IM A HACK.  Assumes evaluateLog has already been executed.
-  Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp, psiM, dpsiM, grad_grad_source_psiM);
+  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, grad_grad_source_psiM);
+  invertPsiM(psiM_temp,psiM);
+
   phi_alpha_Minv = 0.0;
   grad_phi_Minv = 0.0;
   lapl_phi_Minv = 0.0;
   grad_phi_alpha_Minv = 0.0;
   //grad_grad_psi.resize(NumPtcls);
-
-  invertPsiM(psiM);
 
   for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++)
   {
@@ -758,18 +761,18 @@ void
 DiracDeterminantBase::recompute(ParticleSet& P)
 {
   SPOVGLTimer.start();
-  Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp, psiM, dpsiM, d2psiM);
+  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
   SPOVGLTimer.stop();
   if(NumPtcls==1)
   {
     //CurrentDet=psiM(0,0);
-    ValueType det=psiM(0,0);
+    ValueType det=psiM_temp(0,0);
     psiM(0,0)=RealType(1)/det;
     LogValue = evaluateLogAndPhase(det,PhaseValue);
   }
   else
   {
-    invertPsiM(psiM);
+    invertPsiM(psiM_temp,psiM);
   }
 }
 
