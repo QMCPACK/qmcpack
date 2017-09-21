@@ -2,9 +2,13 @@
 
 Notable changes to QMCPACK will be documented in this file. 
 
-## Unreleased
+## [3.2.0] - 2017-09-21
 
 ### Notes
+
+This release provides a significant speed increase for
+many calculations. A C++11 compiler is now required. It is a
+recommended update.
 
 ### QMCPACK updates
 
@@ -23,6 +27,7 @@ Notable changes to QMCPACK will be documented in this file.
 * Improved beta-release of AFQMC code and documentation.  
 * Backflow documentation and optimization tips added.
 * Correlated sampling VMC drivers reactivated.
+* Added carbon graphite performance test similar to CORAL benchmark.
 * Improvements to CMake and CTest usage.
 * Build instructions for NERSC, ALCF, and OLCF machines updated.
 * Latest manual PDF now available at http://docs.qmcpack.org
