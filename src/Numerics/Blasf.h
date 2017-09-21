@@ -80,6 +80,20 @@
 #define zgeqrf zgeqrf_
 #define zungqr zungqr_
 
+#define cgeqrf cgeqrf_
+#define sgeqrf sgeqrf_
+#define dorgqr dorgqr_
+#define sorgqr sorgqr_
+#define cungqr cungqr_
+#define zgelqf zgelqf_
+#define dgelqf dgelqf_
+#define cgelqf cgelqf_
+#define sgelqf sgelqf_
+#define dorglq dorglq_
+#define sorglq sorglq_
+#define zunglq zunglq_
+#define cunglq cunglq_
+
 #if defined(HAVE_MKL)
 #define dzgemv  dzgemv_
 #define scgemv  scgemv_
@@ -272,9 +286,40 @@ extern "C" {
              int &LDB, double &VL, double &VU, int &IL, int &IU, double &ABSTOL, int &M, double *W, std::complex<double>* Z, 
              int &LDZ, std::complex<double> *WORK, int &LWORK, double* RWORK, int* IWORK, int* IFAIL, int &INFO);
 
-  void zgeqrf( const int *M, const int *N, std::complex<double> *A, const int *LDA, std::complex<double> *TAU, std::complex<double> *WORK, const int *LWORK, int *INFO );
+  void zgeqrf( const int &M, const int &N, std::complex<double> *A, const int &LDA, std::complex<double> *TAU, std::complex<double> *WORK, const int &LWORK, int &INFO );
 
-  void zungqr( const int *M, const int *N, const int *K, std::complex<double> *A, const int *LDA, std::complex<double> *TAU, std::complex<double> *WORK, const int *LWORK, int *INFO );
+  void cgeqrf( const int &M, const int &N, std::complex<float> *A, const int &LDA, std::complex<float> *TAU, std::complex<float> *WORK, const int &LWORK, int &INFO );
+
+  void dgeqrf( const int &M, const int &N, double *A, const int &LDA, double *TAU, double *WORK, const int &LWORK, int &INFO );
+
+  void sgeqrf( const int &M, const int &N, float *A, const int &LDA, float *TAU, float *WORK, const int &LWORK, int &INFO );
+
+
+  void zungqr( const int &M, const int &N, const int &K, std::complex<double> *A, const int &LDA, std::complex<double> *TAU, std::complex<double> *WORK, const int &LWORK, int &INFO );
+
+  void cungqr( const int &M, const int &N, const int &K, std::complex<float> *A, const int &LDA, std::complex<float> *TAU, std::complex<float> *WORK, const int &LWORK, int &INFO );
+
+  void dorgqr( const int &M, const int &N, const int &K, double *A, const int &LDA, double *TAU, double *WORK, const int &LWORK, int &INFO );
+
+  void sorgqr( const int &M, const int &N, const int &K, float *A, const int &LDA, float *TAU, float *WORK, const int &LWORK, int &INFO );
+
+  void zgelqf( const int &M, const int &N, std::complex<double> *A, const int &LDA, std::complex<double> *TAU, std::complex<double> *WORK, const int &LWORK, int &INFO );
+
+  void cgelqf( const int &M, const int &N, std::complex<float> *A, const int &LDA, std::complex<float> *TAU, std::complex<float> *WORK, const int &LWORK, int &INFO );
+
+  void dgelqf( const int &M, const int &N, double *A, const int &LDA, double *TAU, double *WORK, const int &LWORK, int &INFO );
+
+  void sgelqf( const int &M, const int &N, float *A, const int &LDA, float *TAU, float *WORK, const int &LWORK, int &INFO );
+
+
+  void zunglq( const int &M, const int &N, const int &K, std::complex<double> *A, const int &LDA, std::complex<double> *TAU, std::complex<double> *WORK, const int &LWORK, int &INFO );
+
+  void cunglq( const int &M, const int &N, const int &K, std::complex<float> *A, const int &LDA, std::complex<float> *TAU, std::complex<float> *WORK, const int &LWORK, int &INFO );
+
+  void dorglq( const int &M, const int &N, const int &K, double *A, const int &LDA, double *TAU, double *WORK, const int &LWORK, int &INFO );
+
+  void sorglq( const int &M, const int &N, const int &K, float *A, const int &LDA, float *TAU, float *WORK, const int &LWORK, int &INFO );
+
 
   void dger(const int* m, const int* n, const double* alpha
             , const double* x, const int* incx, const double* y, const int* incy
@@ -291,8 +336,6 @@ extern "C" {
   void cgeru(const int* m, const int* n, const std::complex<float>* alpha
              , const std::complex<float>* x, const int* incx, const std::complex<float>* y, const int* incy
              , std::complex<float>* a, const int* lda);
-
-  void dgeqrf( const int *M, const int *N, double *A, const int *LDA, double *TAU, double *WORK, const int *LWORK, int *INFO );
 
   void dormqr( const char *SIDE, const char *TRANS, const int *M, const int *N, const int *K, const double *A, const int * LDA, const double *TAU, double *C, const int *LDC, double *WORK, int *LWORK, int *INFO );
 

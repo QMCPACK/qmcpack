@@ -107,7 +107,7 @@ bool VMCMultipleWarp::put(xmlNodePtr q)
   //  H1[ipsi]->add2WalkerProperty(W);
   if(Estimators == 0)
   {
-    Estimators = new EstimatorManager(myComm);
+    Estimators = new EstimatorManagerBase(myComm);
     multiEstimator = new MultipleEnergyEstimator(H,nPsi);
     Estimators->add(multiEstimator,"elocal");
   }

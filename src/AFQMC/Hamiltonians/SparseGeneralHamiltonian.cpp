@@ -35,6 +35,8 @@
 #include "AFQMC/Numerics/DenseMatrixOperations.h"
 #include "AFQMC/Numerics/SparseMatrixOperations.h"
 #include "AFQMC/Utilities/Utils.h"
+#include "AFQMC/Matrix/hdf5_readers.hpp"
+#include "AFQMC/Matrix/array_partition.hpp"
 
 // use lambdas FIX FIX FIX
  struct my_pair_sorter {
@@ -1407,8 +1409,18 @@ namespace qmcplusplus
   bool SparseGeneralHamiltonian::initFromHDF5(const std::string& fileName)
   {
 
-   Timer.reset("Generic");
-   Timer.start("Generic");
+    Timer.reset("Generic");
+    Timer.start("Generic");
+
+    //if(factorizedHamiltonian) 
+    //  n_reading_cores=1; // no parallelization yet
+
+    // processor info
+    int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
+    int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
+    int nread = (n_reading_cores<=0)?(ncores):(n_reading_cores);
+    int node_rank;
+    MPI_Comm_rank(TG.getHeadOfNodesComm(),&node_rank);
 
     // no hamiltonian distribution yet
     min_i = 0;
@@ -1437,9 +1449,10 @@ namespace qmcplusplus
       in.close();
     } 
 
-    if(myComm->rank() == 0) {
+    hdf_archive dump(myComm);
+    // these cores will read from hdf file
+    if( coreid < nread ) {
 
-      hdf_archive dump(myComm);
       if(!dump.open(fileName,H5F_ACC_RDONLY)) {
         app_error()<<" Error opening integral file in SparseGeneralHamiltonian. \n";
         return false;
@@ -1460,42 +1473,49 @@ namespace qmcplusplus
         return false;
       }
 
-      std::vector<int> Idata(8);
+    }
+
+    int int_blocks,nvecs;
+    std::vector<int> Idata(8);
+    std::vector<OrbitalType> ivec;    
+    std::vector<ValueType> vvec;    
+
+    if(myComm->rank() == 0) 
       if(!dump.read(Idata,"dims")) {
         app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading dims. \n"; 
         return false;
       } 
+   
+    myComm->bcast(Idata);
 
-      int int_blocks = Idata[2];
-      if(NMO < 0) NMO = Idata[3];
-      if(NAEA < 0) NAEA = Idata[4];
-      if(NAEB < 0) NAEB = Idata[5];
-      if(Idata[3] != NMO) {
-        app_error()<<" ERROR: NMO differs from value in integral file. \n"; 
-        return false;
-      }
-/*
-      if(Idata[4] != NAEA) {
-        app_error()<<" ERROR: NAEA differs from value in integral file. \n"; 
-        return false;
-      }
-      if(Idata[5] != NAEB) {
-        app_error()<<" ERROR: NAEA differs from value in integral file. \n"; 
-        return false;
-      }
-*/
-      myComm->bcast(Idata);
-      spinRestricted = (Idata[6]==0)?(true):(false);
-      factorizedHamiltonian = (Idata[7]>0); 
-      int nvecs = Idata[7];
+    int_blocks = Idata[2];
+    if(NMO < 0) NMO = Idata[3];
+    if(NAEA < 0) NAEA = Idata[4];
+    if(NAEB < 0) NAEB = Idata[5];
+    if(Idata[3] != NMO) {
+      app_error()<<" ERROR: NMO differs from value in integral file. \n"; 
+      return false;
+    }
+    if(Idata[4] != NAEA) {
+      app_error()<<" ERROR: NAEA differs from value in integral file. \n"; 
+      return false;
+    }
+    if(Idata[5] != NAEB) {
+      app_error()<<" ERROR: NAEA differs from value in integral file. \n"; 
+      return false;
+    }
+    spinRestricted = (Idata[6]==0)?(true):(false);
+    factorizedHamiltonian = (Idata[7]>0); 
+    nvecs = Idata[7];
 
-      H1.resize(Idata[0]);
+    H1.resize(Idata[0]);
+    if(myComm->rank() == 0 && distribute_Ham && number_of_TGs > NMO) 
+      APP_ABORT("Error: number_of_TGs > NMO. \n\n\n");
 
-      if(distribute_Ham && number_of_TGs > NMO) 
-        APP_ABORT("Error: number_of_TGs > NMO. \n\n\n");
+    occup_alpha.resize(NAEA);
+    occup_beta.resize(NAEB);
 
-      occup_alpha.resize(NAEA);
-      occup_beta.resize(NAEB);
+    if(myComm->rank() == 0) { 
       Idata.resize(NAEA+NAEB);
       if(!dump.read(Idata,"occups")) { 
         app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading occups dataset. \n"; 
@@ -1511,13 +1531,15 @@ namespace qmcplusplus
       }
       NuclearCoulombEnergy = Rdata[0];
       FrozenCoreEnergy = Rdata[0];
+    }
+    
+    myComm->bcast(occup_alpha);
+    myComm->bcast(occup_beta);
+    myComm->bcast(NuclearCoulombEnergy);
+    myComm->bcast(FrozenCoreEnergy);
 
-      myComm->bcast(occup_alpha);
-      myComm->bcast(occup_beta);
-      myComm->bcast(NuclearCoulombEnergy);
-      myComm->bcast(FrozenCoreEnergy);
+    if(myComm->rank() == 0) { 
 
-      std::vector<OrbitalType> ivec;    
       ivec.resize(2*H1.size());
       if(!dump.read(ivec,"H1_indx")) {
         app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading H1_indx. \n";
@@ -1526,31 +1548,115 @@ namespace qmcplusplus
       for(int i=0, j=0; i<H1.size(); i++, j+=2)        
         H1[i] = std::make_tuple(ivec[j],ivec[j+1],0);  
 
-      std::vector<ValueType> vvec;
       vvec.resize(H1.size());
       if(!dump.read(vvec,"H1")) {
         app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading H1.  \n";
         return false;
       }
+
       for(int i=0; i<H1.size(); i++) {
         // keep i<=j by default
         if(std::get<0>(H1[i]) <= std::get<1>(H1[i]))
             std::get<2>(H1[i]) = vvec[i];
-        else
+        else {
+            std::swap(std::get<0>(H1[i]),std::get<1>(H1[i]));
             std::get<2>(H1[i]) = myconj(vvec[i]);
+        }
       }
 
       std::sort (H1.begin(), H1.end(),mySort);
-      myComm->bcast<char>(reinterpret_cast<char*>(H1.data()),H1.size()*sizeof(s2D<ValueType>));
+    } 
+    myComm->bcast<char>(reinterpret_cast<char*>(H1.data()),H1.size()*sizeof(s2D<ValueType>));
+     
+    // now read the integrals
+    if(skip_V2) {
+      // must anything be done???
+    } else if(factorizedHamiltonian) {
 
-      if(factorizedHamiltonian) {
+      app_log()<<" Reading factorized hamiltonian. \n";  
 
-        if(distribute_Ham) 
-            APP_ABORT("ERROR: distribute_Ham not implemented with factorized hamiltonian yet. \n\n\n");
+      min_i = 0;
+      max_i = nvecs;
+
+      int nrows = NMO*NMO;
+      if(!spinRestricted) nrows *= 2;
+
+      if(rank()==0) {
+
+        afqmc::simple_matrix_partition<afqmc::TaskGroup,IndexType,RealType> split(nrows,nvecs,cutoff1bar);
+        std::vector<IndexType> counts;
+        // count dimensions of sparse matrix
+        afqmc::count_entries_hdf5_SpMat(dump,split,std::string("V2fact"),int_blocks,false,counts,TG,true,nread);
+
+        std::vector<IndexType> sets;
+        split.partition_over_TGs(TG,false,counts,sets);
+
+        if(distribute_Ham) {
+          app_log()<<" Partitioning of (factorized) Hamiltonian Vectors: ";
+          for(int i=0; i<=TG.getNumberOfTGs(); i++)
+            app_log()<<sets[i] <<" ";
+          app_log()<<std::endl;
+          app_log()<<" Number of terms in each partitioning: ";
+          for(int i=0; i<TG.getNumberOfTGs(); i++)
+            app_log()<<accumulate(counts.begin()+sets[i],counts.begin()+sets[i+1],0) <<" ";
+          app_log()<<std::endl;
+
+          MPI_Bcast(sets.data(), sets.size(), MPI_INT, 0, myComm->getMPI());
+          min_i = sets[TG.getTGNumber()];
+          max_i = sets[TG.getTGNumber()+1];
+          //for(int i=0; i<nnodes_per_TG; i++)
+          //  nCholVec_per_node[i] = sets[i+1]-sets[i];
+          //GlobalSpvnSize = std::accumulate(counts.begin(),counts.end(),0);
+        }
+
+        // resize Spvn
+        int sz = std::accumulate(counts.begin()+min_i,counts.begin()+max_i,0);
+        MPI_Bcast(&sz, 1, MPI_INT, 0, TG.getNodeCommLocal());
+
+        V2_fact.setDims(nrows,nvecs);
+        V2_fact.allocate(sz);
+
+        // read Spvn    
+        afqmc::read_hdf5_SpMat(V2_fact,split,dump,std::string("V2fact"),int_blocks,TG,true,nread);
+
+      } else {
+
+        afqmc::simple_matrix_partition<afqmc::TaskGroup,IndexType,RealType> split(nrows,nvecs,cutoff1bar);
+        std::vector<IndexType> counts;
+        // count dimensions of sparse matrix
+        afqmc::count_entries_hdf5_SpMat(dump,split,std::string("V2fact"),int_blocks,false,counts,TG,true,nread);
+
+        std::vector<IndexType> sets(TG.getNumberOfTGs()+1);
+        if(distribute_Ham) {
+          MPI_Bcast(sets.data(), sets.size(), MPI_INT, 0, myComm->getMPI());
+          min_i = sets[TG.getTGNumber()];
+          max_i = sets[TG.getTGNumber()+1];
+        }
+
+        int sz;
+        if( coreid==0 )
+          sz = std::accumulate(counts.begin()+min_i,counts.begin()+max_i,0);
+        MPI_Bcast(&sz, 1, MPI_INT, 0, TG.getNodeCommLocal());
+
+        V2_fact.setDims(nrows,nvecs);
+        V2_fact.allocate(sz);
+
+        if(n_reading_cores <=0 || coreid < n_reading_cores) 
+          split.partition_over_TGs(TG,false,counts,sets);
+
+        // read Spvn    
+        afqmc::read_hdf5_SpMat(V2_fact,split,dump,std::string("V2fact"),int_blocks,TG,true,nread);
+
+      } 
+      
+
+/*
+      // no parallel reading yet
+      if(myComm->rank() == 0) {
 
         std::vector<double> residual(nvecs);
         if(!dump.read(residual,"V2fact_vec_residual")) {
-          app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2fact_vec_residual dataset. \n";      
+          app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2fact_vec_residual dataset. \n"; 
           return false;
         }
 
@@ -1560,7 +1666,7 @@ namespace qmcplusplus
         myComm->bcast(nvecs_after_cutoff);
 
         std::vector<int> sz(nvecs);
-        if(!dump.read(sz,"V2fact_vec_sizes")) {
+        if(!dump.read(sz,"V2fact_block_sizes")) {
           app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2fact_vec_sizes dataset. \n";      
           return false;
         }
@@ -1650,21 +1756,65 @@ namespace qmcplusplus
 
         }
 
-        Timer.reset("Generic2");
-        Timer.start("Generic2");
-#ifndef QMC_COMPLEX        
-        V2_fact.compress_parallel(TG.getNodeCommLocal());
-#else
-        V2_fact.compress();   // need to get this fixed for complex
-#endif
-        Timer.stop("Generic2");
-        app_log()<<" -- Average time to read std::vector from h5 file: " <<Timer.average("Generic3") <<"\n";
-        app_log()<<" -- Average time to bcast std::vector: " <<Timer.average("Generic4") <<"\n";
-        app_log()<<" -- Time to compress factorized Hamiltonian from h5 file: " <<Timer.average("Generic2") <<"\n";
-        app_log()<<" Memory used by factorized 2-el integral table: " <<V2_fact.memoryUsage()/1024.0/1024.0 <<" MB. " <<std::endl;
-      } else {
-        // now V2
-        std::vector<int> ntpo(NMO);
+      } else {  // if(myComm->rank() == 0)
+
+        int nvecs_after_cutoff;
+        myComm->bcast(nvecs_after_cutoff);
+
+        std::vector<int> sz(nvecs_after_cutoff);
+        myComm->bcast(sz);
+
+        int NMO2 = NMO*NMO;
+        if(!spinRestricted) NMO2 *= 2;
+        V2_fact.setDims(NMO2,nvecs_after_cutoff);
+
+        // right now this is an upper bound, since terms below the 2bar cutoff can be ignored 
+        int mysz = std::accumulate(sz.begin(),sz.end(),0);
+        V2_fact.reserve(mysz);
+
+        if(head_of_nodes) {
+          int nmax = *std::max_element(sz.begin(),sz.end());
+          std::vector<IndexType> ivec;
+          std::vector<ValueType> vvec;
+          ivec.reserve(nmax);
+          vvec.reserve(nmax);
+          for(int i=0; i<nvecs_after_cutoff; i++) {
+
+            ivec.resize(sz[i]);
+            vvec.resize(sz[i]);
+
+            myComm->bcast(ivec.data(),ivec.size(),MPI_COMM_HEAD_OF_NODES);
+            myComm->bcast(vvec.data(),vvec.size(),0,MPI_COMM_HEAD_OF_NODES);
+
+              for(int k=0; k<ivec.size(); k++) {
+                if(std::abs(vvec[k]) > cutoff1bar )
+                  V2_fact.add(ivec[k],i,vvec[k],false);
+              }
+
+          }
+
+        }
+
+      }
+      Timer.reset("Generic2");
+      Timer.start("Generic2");
+      V2_fact.compress(TG.getNodeCommLocal());
+      Timer.stop("Generic2");
+
+      app_log()<<" -- Average time to read std::vector from h5 file: " <<Timer.average("Generic3") <<"\n";
+      app_log()<<" -- Average time to bcast std::vector: " <<Timer.average("Generic4") <<"\n";
+      app_log()<<" -- Time to compress factorized Hamiltonian from h5 file: " <<Timer.average("Generic2") <<"\n";
+*/
+      app_log()<<" Memory used by factorized 2-el integral table: " <<V2_fact.memoryUsage()/1024.0/1024.0 <<" MB. " <<std::endl;
+ 
+    } else {  // factorizedHamiltonian
+
+      std::vector<long> ntpo(NMO,0);
+      std::vector<IndexType> indxvec;
+      int ntmax;
+      std::vector<int> pool_dist;
+      if(coreid < nread) {
+
         Idata.resize(int_blocks);
         // Idata[i]: number of terms per block
         if(!dump.read(Idata,"V2_block_sizes")) {
@@ -1672,25 +1822,27 @@ namespace qmcplusplus
           return false;
         }
 
-        int ntmax = *std::max_element(Idata.begin(), Idata.end());
-        std::vector<IndexType> indxvec;
+        ntmax = *std::max_element(Idata.begin(), Idata.end());
         indxvec.reserve(2*ntmax);
         vvec.reserve(ntmax);
 
-        // calculate number of terms witha given first index for partitioning
-        // just read indexes and count
-        for(int k=0; k<int_blocks; k++) {
-          if(Idata[k]==0) continue;
-          indxvec.clear();
-          indxvec.resize(2*Idata[k]);
-          vvec.clear();
-          vvec.resize(Idata[k]);
-          if(!dump.read(indxvec,std::string("V2_index_")+std::to_string(k))) {
-            app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_index_" <<k <<" dataset. \n";
+        // divide blocks 
+        FairDivide(int_blocks,nread,pool_dist);
+
+        int first_local_block = pool_dist[coreid];
+        int last_local_block = pool_dist[coreid+1];
+
+        for(int ib=first_local_block; ib<last_local_block; ib++) {
+          if( ib%nnodes != nodeid ) continue;
+          if(Idata[ib]==0) continue;
+          indxvec.resize(2*Idata[ib]);
+          vvec.resize(Idata[ib]);
+          if(!dump.read(indxvec,std::string("V2_index_")+std::to_string(ib))) {
+            app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_index_" <<ib <<" dataset. \n";
             return false;
           }
-          if(!dump.read(vvec,std::string("V2_vals_")+std::to_string(k))) {
-            app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_vals_" <<k <<" dataset. \n";
+          if(!dump.read(vvec,std::string("V2_vals_")+std::to_string(ib))) {
+            app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_vals_" <<ib <<" dataset. \n";
             return false;
           }
             
@@ -1706,243 +1858,166 @@ namespace qmcplusplus
             ntpo[std::get<0>(ijkl)]++;
           }   
         }
-        myComm->bcast(ntpo);
+      }
+      myComm->allreduce(ntpo);
 
-        if(distribute_Ham) {
-          std::vector<int> nv(NMO+1);
+      if(distribute_Ham) {
+        std::vector<long> sets(TG.getNumberOfTGs()+1);
+        if(myComm->rank() == 0) {
+          std::vector<long> nv(NMO+1);
           nv[0]=0;
-          for(int i=0,cnt=0; i<NMO; i++) {
-            cnt+=ntpo[i];
-            nv[i+1]=cnt;
-          }
-          std::vector<int> sets(number_of_TGs+1);
+          for(int i=0; i<NMO; i++) 
+            nv[i+1]=nv[i]+ntpo[i];
           balance_partition_ordered_set(NMO,nv.data(),sets);
-          myComm->bcast(sets);
-          min_i = sets[TG.getTGNumber()];
-          max_i = sets[TG.getTGNumber()+1];
           app_log()<<" Hamiltonian partitioning: \n   Orbitals:        ";
-          for(int i=0; i<=number_of_TGs; i++) app_log()<<sets[i] <<" "; 
+          for(int i=0; i<=TG.getNumberOfTGs(); i++) app_log()<<sets[i] <<" "; 
           app_log()<<std::endl <<"   Terms per block: ";  
-          for(int i=0; i<number_of_TGs; i++) app_log()<<nv[sets[i+1]]-nv[sets[i]] <<" ";
+          for(int i=0; i<TG.getNumberOfTGs(); i++) app_log()<<nv[sets[i+1]]-nv[sets[i]] <<" ";
           app_log()<<std::endl;  
         }
-        int nttot = std::accumulate(ntpo.begin()+min_i,ntpo.begin()+max_i,0);
-        V2.resize(nttot);
-        SMDenseVector<s4D<ValueType> >::iterator V2_it = V2.begin();
+        MPI_Bcast(sets.data(),sets.size(),MPI_LONG,0,myComm->getMPI());
+        min_i = static_cast<int>(sets[TG.getTGNumber()]);
+        max_i = static_cast<int>(sets[TG.getTGNumber()+1]);
+      }
 
-        myComm->bcast(Idata);
+      long nttot = std::accumulate(ntpo.begin()+min_i,ntpo.begin()+max_i,long(0));
+      V2.reserve(nttot);
 
-        for(int k=0, cnt=0; k<int_blocks; k++) {
-          if(Idata[k]==0) continue;
-          indxvec.clear();
-          indxvec.resize(2*Idata[k]);
-          if(!dump.read(indxvec,std::string("V2_index_")+std::to_string(k))) {
-            app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_index_" <<k <<" dataset. \n";
-            return false;
+      if( coreid < nread ) {
+
+        std::vector<IndexType> ivec2;
+        std::vector<ValueType> vvec2;
+        ivec2.reserve(2*ntmax);
+        vvec2.reserve(ntmax);
+        int maxv = 10000;
+        std::vector<s4D<ValueType>> vals;
+        vals.reserve(maxv);
+
+        int first_local_block = pool_dist[coreid];
+        int last_local_block = pool_dist[coreid+1];
+        int nbtot = last_local_block-first_local_block;
+        int niter = nbtot/nnodes + std::min(nbtot%nnodes,1);
+
+        for(int iter=0; iter<niter; iter++) {
+          int first_block = first_local_block + nnodes*iter;
+          int last_block = std::min(first_block+nnodes,last_local_block);
+          int myblock_number = first_block + nodeid;
+          if(myblock_number < last_local_block && Idata[myblock_number] > 0) {
+            indxvec.resize(2*Idata[myblock_number]);
+            vvec.resize(Idata[myblock_number]);
+            if(!dump.read(indxvec,std::string("V2_index_")+std::to_string(myblock_number))) {
+              app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_index_" <<myblock_number <<" dataset. \n";
+              return false;
+            }
+            if(!dump.read(vvec,std::string("V2_vals_")+std::to_string(myblock_number))) {
+              app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_vals_" <<myblock_number <<" dataset. \n";
+              return false;
+            }
           }
-          myComm->bcast(indxvec.data(),indxvec.size(),MPI_COMM_HEAD_OF_NODES);
+         
+          for(int k=first_block,ipr=0; k<last_block; k++,ipr++) {
+            if(Idata[k] == 0) continue;
+            ivec2.resize(2*Idata[k]);
+            vvec2.resize(Idata[k]);
+            if(ipr==node_rank) {
+              assert(myblock_number==k);
+              std::copy(indxvec.begin(),indxvec.end(),ivec2.begin());
+              std::copy(vvec.begin(),vvec.end(),vvec2.begin());
+            }
 
-          vvec.clear();
-          vvec.resize(Idata[k]);
-          if(!dump.read(vvec,std::string("V2_vals_")+std::to_string(k))) {
-            app_error()<<" Error in SparseGeneralHamiltonian::initFromHDF5(): Problems reading V2_vals_" <<k <<" dataset. \n";
-            return false;
-          }
-          myComm->bcast(vvec.data(),vvec.size(),0,MPI_COMM_HEAD_OF_NODES);
+            MPI_Bcast(ivec2.data(), ivec2.size(), MPI_INT, ipr, TG.getHeadOfNodesComm() );
+#if defined(QMC_COMPLEX)
+            MPI_Bcast(vvec2.data(),2*vvec2.size(), MPI_DOUBLE, ipr, TG.getHeadOfNodesComm() );
+#else
+            MPI_Bcast(vvec2.data(),vvec2.size(), MPI_DOUBLE, ipr, TG.getHeadOfNodesComm() );
+#endif
 
-          std::vector<IndexType>::iterator iti = indxvec.begin(); 
-          for(std::vector<ValueType>::iterator itv = vvec.begin(); itv < vvec.end(); itv++, iti+=2) { 
-            if(std::abs(*itv) < cutoff1bar )
-                continue;
-            s4D<ValueType> ijkl = std::make_tuple(  static_cast<OrbitalType>((*iti)/NMO),
-                                                    static_cast<OrbitalType>((*(iti+1))/NMO),  
-                                                    static_cast<OrbitalType>((*iti)%NMO),
-                                                    static_cast<OrbitalType>((*(iti+1))%NMO), *itv);     
-            find_smallest_permutation(ijkl); 
-            if( std::get<0>(ijkl) >= min_i && std::get<0>(ijkl) < max_i) { 
-              if( cnt == nttot ) {
-                app_error()<<" Error, cnt, nttot: " <<cnt <<" " <<nttot <<std::endl;
-                APP_ABORT(" Error: Too many integrals. V2_nterms_per_first_orbital must be wrong. \n\n\n");
-              }  
-              *(V2_it++) = ijkl; 
-              cnt++;
+            std::vector<IndexType>::iterator iti = ivec2.begin(); 
+            for(std::vector<ValueType>::iterator itv = vvec2.begin(); itv < vvec2.end(); itv++, iti+=2) { 
+              if(std::abs(*itv) < cutoff1bar )
+                  continue;
+              s4D<ValueType> ijkl = std::make_tuple(  static_cast<OrbitalType>((*iti)/NMO),
+                                                      static_cast<OrbitalType>((*(iti+1))/NMO),  
+                                                      static_cast<OrbitalType>((*iti)%NMO),
+                                                      static_cast<OrbitalType>((*(iti+1))%NMO), *itv);     
+              find_smallest_permutation(ijkl); 
+              if( std::get<0>(ijkl) >= min_i && std::get<0>(ijkl) < max_i) { 
+                vals.push_back(ijkl);
+                if(vals.size()==maxv) {
+                  V2.push_back(vals,nread>1);
+                  vals.clear();
+                }
+              }
             }
           }   
         }
-        //std::sort (V2.begin(), V2.end(),mySort);
-        Timer.reset("Generic2");
-        Timer.start("Generic2");
-        V2.sort (mySort, TG.getNodeCommLocal(),inplace);
-        Timer.stop("Generic2");
-        app_log()<<" -- Time to compress Hamiltonian from h5 file: " <<Timer.average("Generic2") <<"\n";
-        app_log()<<" Memory used by 2-el integral table: " <<V2.memoryUsage()/1024.0/1024.0 <<" MB. " <<std::endl;
-
+        if(vals.size() > 0) 
+          V2.push_back(vals,nread>1);
       }
 
-      dump.pop();
-      dump.pop();
+      Timer.reset("Generic2");
+      Timer.start("Generic2");
+      V2.sort (mySort, TG.getNodeCommLocal(),inplace);
+      Timer.stop("Generic2");
+      app_log()<<" -- Time to compress Hamiltonian from h5 file: " <<Timer.average("Generic2") <<"\n";
+      app_log()<<" Memory used by 2-el integral table: " <<V2.memoryUsage()/1024.0/1024.0 <<" MB. " <<std::endl;
 
+    }
+
+    if( coreid < nread ) {
+      dump.pop();
+      dump.pop();
       dump.close();
-
-
-    } else {
-
-      std::vector<int> Idata(8);
-      myComm->bcast(Idata);
-      int int_blocks = Idata[2];
-      spinRestricted = (Idata[6]==0)?(true):(false);
-      if(NMO < 0) NMO = Idata[3];
-      if(NAEA < 0) NAEA = Idata[4];
-      if(NAEB < 0) NAEB = Idata[5];
-      if(Idata[3] != NMO) {
-        app_error()<<" ERROR: NMO differs from value in integral file. \n";
-        APP_ABORT("ERROR: NMO differs from value in integral file. \n"); 
-        return false;
-      }
-      if(Idata[4] != NAEA) {
-        app_error()<<" ERROR: NMO differs from value in integral file. \n";
-        APP_ABORT(" ERROR: NMO differs from value in integral file. \n");
-        return false;
-      }
-      if(Idata[5] != NAEB) {
-        app_error()<<" ERROR: NMO differs from value in integral file. \n";
-        APP_ABORT(" ERROR: NMO differs from value in integral file. \n");
-        return false;
-      }
-      factorizedHamiltonian = (Idata[7]>0); 
-      int nvecs = Idata[7];
-
-      occup_alpha.resize(NAEA);
-      occup_beta.resize(NAEB);
-
-      H1.resize(Idata[0]);
-
-      myComm->bcast(occup_alpha);
-      myComm->bcast(occup_beta);
-      myComm->bcast(NuclearCoulombEnergy);
-      myComm->bcast(FrozenCoreEnergy);
-
-      myComm->bcast<char>(reinterpret_cast<char*>(H1.data()),H1.size()*sizeof(s2D<ValueType>));
-
-      if(factorizedHamiltonian) {
-
-        int nvecs_after_cutoff;
-        myComm->bcast(nvecs_after_cutoff);
-
-        std::vector<int> sz(nvecs_after_cutoff);
-        myComm->bcast(sz);
-
-        int NMO2 = NMO*NMO;
-        if(!spinRestricted) NMO2 *= 2;
-        V2_fact.setDims(NMO2,nvecs_after_cutoff);
-
-        // right now this is an upper bound, since terms below the 2bar cutoff can be ignored 
-        int mysz = std::accumulate(sz.begin(),sz.end(),0); 
-        V2_fact.reserve(mysz);
-
-        if(head_of_nodes) {
-          int nmax = *std::max_element(sz.begin(),sz.end());
-          std::vector<IndexType> ivec;
-          std::vector<ValueType> vvec;
-          ivec.reserve(nmax);
-          vvec.reserve(nmax);
-          for(int i=0; i<nvecs_after_cutoff; i++) {
-    
-            ivec.resize(sz[i]);
-            vvec.resize(sz[i]);
-          
-            myComm->bcast(ivec.data(),ivec.size(),MPI_COMM_HEAD_OF_NODES);
-            myComm->bcast(vvec.data(),vvec.size(),0,MPI_COMM_HEAD_OF_NODES);
- 
-              for(int k=0; k<ivec.size(); k++) {
-                if(std::abs(vvec[k]) > cutoff1bar ) 
-                  V2_fact.add(ivec[k],i,vvec[k],false); 
-              }
-
-          }
-
-        }
-//#ifndef QMC_COMPLEX        
-        V2_fact.compress_parallel(TG.getNodeCommLocal());
-//#else
-//        V2_fact.compress();   // need to get this fixed for complex
-//#endif
-
-      } else {
-
-        // now V2
-        Idata.resize(NMO); 
-        myComm->bcast(Idata);
-
-        if(distribute_Ham) {
-          std::vector<int> sets(number_of_TGs+1);
-          myComm->bcast(sets);
-          min_i = sets[TG.getTGNumber()];
-          max_i = sets[TG.getTGNumber()+1];
-        }
-
-        int nttot = std::accumulate(Idata.begin()+min_i,Idata.begin()+max_i,0);
-        V2.resize(nttot);
-
-        Idata.resize(int_blocks);
-        myComm->bcast(Idata);
-        int ntmax = *std::max_element(Idata.begin(), Idata.end());
-
-        if(head_of_nodes) { 
-          SMDenseVector<s4D<ValueType> >::iterator V2_it = V2.begin();
-          std::vector<IndexType> ivec;    
-          std::vector<ValueType> vvec; 
-          ivec.reserve(2*ntmax);
-          vvec.reserve(ntmax);
-
-          for(int k=0, cnt=0; k<int_blocks; k++) {
-            if(Idata[k]==0) continue;
-            ivec.clear();
-            ivec.resize(2*Idata[k]);
-            myComm->bcast(ivec.data(),ivec.size(),MPI_COMM_HEAD_OF_NODES);
-        
-            vvec.clear();
-            vvec.resize(Idata[k]);
-            myComm->bcast(vvec.data(),vvec.size(),0,MPI_COMM_HEAD_OF_NODES);
-        
-            std::vector<IndexType>::iterator iti = ivec.begin();
-            for(std::vector<ValueType>::iterator itv = vvec.begin(); itv < vvec.end(); itv++, iti+=2) {
-              if(std::abs(*itv) < cutoff1bar )
-                continue;
-              s4D<ValueType> ijkl = std::make_tuple(  static_cast<OrbitalType>((*iti)/NMO),
-                                                      static_cast<OrbitalType>((*(iti+1))/NMO),
-                                                      static_cast<OrbitalType>((*iti)%NMO),
-                                                      static_cast<OrbitalType>((*(iti+1))%NMO), *itv);
-              find_smallest_permutation(ijkl);  
-              if( std::get<0>(ijkl) >= min_i && std::get<0>(ijkl) < max_i) {
-                if( cnt == nttot ) {
-                  app_error()<<" Error, cnt, nttot: " <<cnt <<" " <<nttot <<std::endl;
-                  APP_ABORT(" Error: Too many integrals. V2_nterms_per_first_orbital must be wrong. \n\n\n");
-                }  
-                *(V2_it++) = ijkl;
-                cnt++;
-              }
-            }
-          }
-        }
-        //std::sort (V2.begin(), V2.end(),mySort);
-        V2.sort (mySort, TG.getNodeCommLocal(),inplace);
-      }
     }
     myComm->barrier();
 
     // generate IJ matrix to speedup table seaches
-    if(V2.size()>0)
+    if(!skip_V2 && V2.size()>0)
       generateIJ();
 
     Timer.stop("Generic");
     app_log()<<" -- Time to initialize Hamiltonian from h5 file: " <<Timer.average("Generic") <<"\n";
 
-    hdf_write();
-    if(rank() == 0) {
+    if(!skip_V2) hdf_write();
+    if(rank() == 0 && !skip_V2) {
       ascii_write();
     }
 
+/*   Meant for debugging integral codes, remove for released code
+    if(rank() == 0 ) {
+      std::vector<ValueType> eig(NMO);
+      for(IndexType i=0; i<NMO; i++) {
+        eig[i] = H(i,i);
+        for(std::vector<IndexType>::iterator it = occup_alpha.begin(); it<occup_alpha.end(); it++)
+          eig[i] += H_2bar(i,*it,i,*it);
+        for(std::vector<IndexType>::iterator it = occup_beta.begin(); it<occup_beta.end(); it++)
+          eig[i] += H(i,*it,i,*it);
+        app_log()<<i <<"   " <<eig[i] <<std::endl;
+      }
+      isOcc_alpha.clear();
+      isOcc_beta.clear();
+      for(IndexType i=0; i<2*NMO; i++) isOcc_alpha[i]=false;
+      for(IndexType i=0; i<2*NMO; i++) isOcc_beta[i]=false;
+      for(int i=0; i<occup_alpha.size(); i++) isOcc_alpha[ occup_alpha[i] ]=true;
+      for(int i=0; i<occup_beta.size(); i++) isOcc_beta[ occup_beta[i] ]=true;
+      virtual_alpha.clear();
+      virtual_beta.clear();
+      virtual_alpha.reserve(NMO-NAEA);
+      virtual_beta.reserve(NMO-NAEB);
+      for(IndexType i=0; i<NMO; i++)
+        if(!isOcc_alpha[i]) virtual_alpha.push_back(i);
+      for(IndexType i=NMO; i<2*NMO; i++)
+        if(!isOcc_beta[i]) virtual_beta.push_back(i);
+      ValueType Emp2=0;  
+      std::vector<IndexType>::iterator iti,itj,ita,itb;
+      for(iti=occup_alpha.begin(); iti<occup_alpha.end(); iti++)
+      for(itj=occup_alpha.begin(); itj<occup_alpha.end(); itj++)
+      for(ita=virtual_alpha.begin(); ita<virtual_alpha.end(); ita++)
+      for(itb=virtual_alpha.begin(); itb<virtual_alpha.end(); itb++)
+        Emp2 += H(*iti,*itj,*ita,*itb)*(2.0*H(*ita,*itb,*iti,*itj) - H(*ita,*itb,*itj,*iti))/(eig[*iti]+eig[*itj]-eig[*ita]-eig[*itb]);
+      app_log()<<" Emp2: " <<Emp2 <<std::endl;
+    }
+*/
     return true;
 
   }
@@ -1969,7 +2044,7 @@ namespace qmcplusplus
    if(rank()!=0) return;
    int nvecs=V2_fact.rows();
    out<<"# nrows: " <<nvecs <<" ncols: " <<V2_fact.cols() <<"\n";
-   for(ComplexSMSpMat::indxType i=0; i<nvecs; i++) {
+   for(ComplexSMSpMat::intType i=0; i<nvecs; i++) {
      int k1 = *(V2_fact.rowIndex_begin()+i+1); 
      for(int k=*(V2_fact.rowIndex_begin()+i); k<k1; k++) 
        out<<i <<" " <<*(V2_fact.cols_begin()+k) <<" "
@@ -2023,6 +2098,9 @@ namespace qmcplusplus
   // to avoid having to allocate the full array twice
   // Also, you could add support in hdf_archive for tuples 
   void SparseGeneralHamiltonian::hdf_write() {
+
+    if(skip_V2) 
+      return; 
 
     if(hdf_write_file == std::string("")) return;
 
@@ -2132,7 +2210,7 @@ namespace qmcplusplus
       std::vector<ValueType> vvec;
       ivec.reserve(nmax);
       vvec.reserve(nmax);
-      for(ComplexSMSpMat::indxType i=0; i<nvecs; i++) {
+      for(ComplexSMSpMat::intType i=0; i<nvecs; i++) {
 
         ivec.resize(sz[i]);
         vvec.resize(sz[i]);
@@ -2165,7 +2243,7 @@ namespace qmcplusplus
           dump.write(vvec,std::string("V2_")+std::to_string(k));
         }
 
-        dump.write(Idata,"V2_location_of_indexes");
+        dump.write(Idata,"V2_block_sizes");
 
       } else {
         for(int i=0; i<V2.size(); i++) {
@@ -2182,7 +2260,7 @@ namespace qmcplusplus
             ntmax = Idata[i]-Idata[i-1];
         }
 
-        dump.write(Idata,"V2_location_of_indexes");
+        dump.write(Idata,"V2_block_sizes");
 
         ivec.reserve(3*ntmax);
         vvec.reserve(ntmax);
@@ -2382,8 +2460,11 @@ namespace qmcplusplus
 
   }
 
-  void SparseGeneralHamiltonian::calculateHSPotentials_Diagonalization(RealType cut, RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, TaskGroup& TGprop, std::vector<int>& nvec_per_node,  bool sparse, bool parallel)
+  void SparseGeneralHamiltonian::calculateHSPotentials_Diagonalization(RealType cut, RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, afqmc::TaskGroup& TGprop, std::vector<int>& nvec_per_node,  bool sparse, bool parallel)
   {
+
+    if(skip_V2)
+      APP_ABORT("Error: Calling SparseGeneralHamiltonian routines with skip_V2=yes. \n\n\n");
 
     if(factorizedHamiltonian) {
       calculateHSPotentials_FactorizedHam(cut,dt,vn0,Spvn,Dvn,TGprop,nvec_per_node,sparse,parallel);
@@ -2575,7 +2656,7 @@ namespace qmcplusplus
            cnt1++; 
          }
 #if defined(QMC_COMPLEX)
-         eig = ComplexType(0.0,-1.0)*std::sqrt( 0.25*dt*eigVal[i] );
+         eig = ComplexType(0.0,1.0)*std::sqrt( 0.25*dt*eigVal[i] );
          cnt3=0;
          for(int j=0; j<NMO; j++)
           for(int k=0; k<NMO; k++) {
@@ -2630,11 +2711,7 @@ namespace qmcplusplus
       SPComplexMatrix v2prod(NMO2);
       for(int i=0; i<NMO2; i++) 
        for(int j=0; j<NMO2; j++) 
-#if defined(QMC_COMPLEX)
-        v2prod(i,j) = SparseMatrixOperators::product_SpVSpVc<SPValueType>(indx[i+1]-indx[i],cols+indx[i],vals+indx[i],indx[j+1]-indx[j],cols+indx[j],vals+indx[j]);   
-#else
         v2prod(i,j) = SparseMatrixOperators::product_SpVSpV<SPValueType>(indx[i+1]-indx[i],cols+indx[i],vals+indx[i],indx[j+1]-indx[j],cols+indx[j],vals+indx[j]);   
-#endif
 
       RealType s=0.0;
       RealType max=0.0;
@@ -2650,7 +2727,7 @@ namespace qmcplusplus
              continue;
            }
            ComplexType v2 = dt*H(i,j,k,l);
-           ComplexType v2c = static_cast<ComplexType>(v2prod( i*NMO+Index2Col(k) , l*NMO+Index2Col(j)));
+           ComplexType v2c = static_cast<ComplexType>(v2prod( i*NMO+Index2Col(k) , j*NMO+Index2Col(l)));
            s+=std::abs(v2-v2c);
            if( max < std::abs(v2-v2c) ) max = std::abs(v2-v2c);
            if( std::abs(v2-v2c) > 10*cutoff_cholesky ) {
@@ -2674,8 +2751,11 @@ namespace qmcplusplus
 
   }
 
-  void SparseGeneralHamiltonian::calculateHSPotentials_FactorizedHam(RealType cut, RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool parallel)
+  void SparseGeneralHamiltonian::calculateHSPotentials_FactorizedHam(RealType cut, RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, afqmc::TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool parallel)
   {
+
+    if(skip_V2)
+      APP_ABORT("Error: Calling SparseGeneralHamiltonian routines with skip_V2=yes. \n\n\n");
 
     if(distribute_Ham) {
       APP_ABORT("Error: calculateHSPotentials_FactorizedHam not implemented with distributed Hamiltonian. \n");
@@ -2713,11 +2793,17 @@ namespace qmcplusplus
     int n3Vect = V2_fact.cols();
     if(parallel) MPI_Barrier(TGprop.getNodeCommLocal()); 
 
+    int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
+    if(!parallel) {
+      ncores=1;
+      coreid=0;
+    }
+
     // transpose V2_fact here and again at the end
     Timer.reset("Generic");
     Timer.start("Generic");
-    if(head_of_nodes) 
-      V2_fact.transpose(); 
+    if(parallel) V2_fact.transpose(TGprop.getNodeCommLocal());
+    else if(head_of_nodes) V2_fact.transpose(); 
     Timer.stop("Generic");
     app_log()<<" Time to transpose V2_fact inside calculateHSPotentials_FactorizedHam(): " <<Timer.average("Generic") <<std::endl;
 
@@ -2729,7 +2815,7 @@ namespace qmcplusplus
     ValueType* vals = V2_fact.values();
     ValueMatrix Ln;
 
-    if(head_of_nodes) Ln.resize((spinRestricted?(NMO):(2*NMO)) ,NMO);  
+    Ln.resize((spinRestricted?(NMO):(2*NMO)) ,NMO);  
 
     std::vector<int> cnt_per_vec(2*n3Vect);
     int nnodes = TGprop.getNNodesPerTG();
@@ -2737,46 +2823,50 @@ namespace qmcplusplus
     std::vector<int> sets;
     std::vector<int> sz_per_node(nnodes);
     int node_number = TGprop.getLocalNodeNumber();
+    int rk=0,npr=1;
+    if(parallel) {
+      npr = myComm->size();
+      rk = myComm->rank();
+    }
 
     if(!sparse) cut=1e-8;
     else if(cut < 1e-12) cut=1e-12;
     int cnt=0;
     int cntn=0;
     // count terms and distribute std::vectors 
-    if(rank()==0) {
-      // generate sparse version
-      for(int n=0; n<n3Vect; n++) { 
-       int np=0, nm=0;
-       Ln = ValueType(0);
-       for(int p=indx[n]; p<indx[n+1]; p++) {
-         int i = cols[p]/NMO;
-         int k = cols[p]%NMO;
-         Ln(i,k) = vals[p];
-       }
-       // if hamiltonian is distributed, there needs to be communication here
-       for(IndexType i=0; i<NMO; i++) 
-        for(IndexType k=0; k<NMO; k++) { 
-          // v+
-          if(std::abs( (Ln(i,k) + myconj(Ln(k,i))) ) > cut) 
-            np++;
-          // v-
-          if(std::abs( (Ln(i,k) - myconj(Ln(k,i))) ) > cut)  
-            nm++;
-          if(!spinRestricted) {
-            if(std::abs( (Ln(i+NMO,k) + myconj(Ln(k+NMO,i))) ) > cut) 
-              np++;
-            if(std::abs( (Ln(i+NMO,k) - myconj(Ln(k+NMO,i))) ) > cut) 
-              nm++;
-          }
-        }
-       cnt_per_vec[2*n] = np;
-       cnt_per_vec[2*n+1] = nm;
-       if(nm>0) cntn++;
+    // generate sparse version
+    for(int n=0; n<n3Vect; n++) { 
+      if(n%npr != rk) continue;
+      int np=0, nm=0;
+      Ln = ValueType(0);
+      for(int p=indx[n]; p<indx[n+1]; p++) {
+        int i = cols[p]/NMO;
+        int k = cols[p]%NMO;
+        Ln(i,k) = vals[p];
       }
+      // if hamiltonian is distributed, there needs to be communication here
+      for(IndexType i=0; i<NMO; i++) 
+       for(IndexType k=0; k<NMO; k++) { 
+         // v+
+         if(std::abs( (Ln(i,k) + myconj(Ln(k,i))) ) > cut) 
+           np++;
+         // v-
+         if(std::abs( (Ln(i,k) - myconj(Ln(k,i))) ) > cut)  
+           nm++;
+         if(!spinRestricted) {
+           if(std::abs( (Ln(i+NMO,k) + myconj(Ln(k+NMO,i))) ) > cut) 
+             np++;
+           if(std::abs( (Ln(i+NMO,k) - myconj(Ln(k+NMO,i))) ) > cut) 
+             nm++;
+         }
+       }
+      cnt_per_vec[2*n] = np;
+      cnt_per_vec[2*n+1] = nm;
+      if(nm>0) cntn++;
     }
 
     if(parallel) {
-      myComm->bcast(cnt_per_vec);
+      myComm->allreduce(cnt_per_vec);
       int nvec = std::count_if(cnt_per_vec.begin(),cnt_per_vec.end(),
                [] (int i) { return i>0; } );
       if(sparse) Spvn.setDims(NMO2,nvec); 
@@ -2806,7 +2896,7 @@ namespace qmcplusplus
             blocks[i+1] = cnt;
           }
           balance_partition_ordered_set(2*n3Vect,blocks.data(),sets);
-          myComm->bcast(sets.data(),sets.size(),MPI_COMM_HEAD_OF_NODES);
+          myComm->bcast(sets);
           cv0 = sets[node_number];
           cvN = sets[node_number+1];
           app_log()<<" Partitioning of Cholesky Vectors: ";
@@ -2825,10 +2915,10 @@ namespace qmcplusplus
           for(int i=0; i<nnodes; i++)
             sz_per_node[i] = std::accumulate(cnt_per_vec.begin()+sets[i],cnt_per_vec.begin()+sets[i+1],0);
         } else if(head_of_nodes) {
-          myComm->bcast(sets.data(),sets.size(),MPI_COMM_HEAD_OF_NODES);
+          myComm->bcast(sets);
           cv0 = sets[node_number];
           cvN = sets[node_number+1];
-        }
+        } 
         myComm->bcast(nvec_per_node);
         myComm->bcast(sz_per_node);
         if(sparse) Spvn.reserve(sz_per_node[node_number]);
@@ -2863,12 +2953,21 @@ namespace qmcplusplus
       APP_ABORT("Found real Cholesky vectors with real integrals. This is not allowed with dense cholesky vectors. Run with sparse vectors or compile with complex integrals. \n\n\n");
 #endif
 
+    int nmax=1000000;
+    std::vector<std::tuple<SPValueSMSpMat::intType,SPValueSMSpMat::intType,SPValueType>> vikn;
+    if(sparse)
+      vikn.reserve(nmax);
 
-    if(head_of_nodes) {
-      cnt=std::accumulate(nvec_per_node.begin(),nvec_per_node.begin()+node_number,0);
-      for(int n=0; n<n3Vect; n++) { 
+// also no need to do this serially, FIX FIX FIX
+    cnt=std::accumulate(nvec_per_node.begin(),nvec_per_node.begin()+node_number,0);
+    for(int n=0; n<n3Vect; n++) { 
        if( cnt_per_vec[2*n]==0 && cnt_per_vec[2*n+1]==0 ) continue;
        if( !(2*n>=cv0 && 2*n<cvN) && !((2*n+1)>=cv0 && (2*n+1)<cvN)  ) continue;
+       if( n%ncores != coreid ) { 
+         if(2*n>=cv0 && 2*n<cvN && cnt_per_vec[2*n]>0) cnt++;
+         if((2*n+1)>=cv0 && (2*n+1)<cvN && cnt_per_vec[2*n+1]>0) cnt++;
+         continue;  
+       }
        int np=0;
        Ln = ValueType(0);
        for(int p=indx[n]; p<indx[n+1]; p++) {
@@ -2884,16 +2983,26 @@ namespace qmcplusplus
            ValueType V = (Ln(i,k) + myconj(Ln(k,i))); 
            if(std::abs(V) > cut) { 
              V*=sqrtdt;
-             if(sparse) Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(V));
-             else Dvn[(i*NMO+k)*ncols+cnt]=static_cast<SPValueType>(V);
+             if(sparse) { //Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(V));
+               vikn.push_back(std::make_tuple(i*NMO+k,cnt,static_cast<SPValueType>(V)));
+               if(vikn.size()==nmax) {  
+                 Spvn.add(vikn,true);
+                 vikn.clear(); 
+               }  
+             } else Dvn[(i*NMO+k)*ncols+cnt]=static_cast<SPValueType>(V);
              ++np;
            } 
            if(!spinRestricted) {
              V = (Ln(i+NMO,k) + myconj(Ln(k+NMO,i)));
              if(std::abs(V) > cut) {
                V*=sqrtdt;
-               if(sparse) Spvn.add(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(V));
-               else Dvn[(i*NMO+k+NMO*NMO)*ncols+cnt]=static_cast<SPValueType>(V);
+               if(sparse) { // Spvn.add(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(V));
+                 vikn.push_back(std::make_tuple(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(V)));
+                 if(vikn.size()==nmax) {  
+                   Spvn.add(vikn,true);
+                   vikn.clear(); 
+                 }  
+               } else Dvn[(i*NMO+k+NMO*NMO)*ncols+cnt]=static_cast<SPValueType>(V);
                ++np;
              }
            }
@@ -2910,17 +3019,27 @@ namespace qmcplusplus
           for(IndexType k=0; k<NMO; k++) {
            ComplexType V = (Ln(i,k) - myconj(Ln(k,i))); 
            if(std::abs(V) > cut) {
-             V*=ComplexType(0.0,-1.0)*sqrtdt;
-             if(sparse) Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(V));
-             else Dvn[(i*NMO+k)*ncols+cnt]=static_cast<SPValueType>(V);
+             V*=ComplexType(0.0,1.0)*sqrtdt;
+             if(sparse) { // Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(V));
+               vikn.push_back(std::make_tuple(i*NMO+k,cnt,static_cast<SPValueType>(V)));
+               if(vikn.size()==nmax) {  
+                 Spvn.add(vikn,true);
+                 vikn.clear(); 
+               }  
+             } else Dvn[(i*NMO+k)*ncols+cnt]=static_cast<SPValueType>(V);
              ++np;
            }
            if(!spinRestricted) {
              V = (Ln(i+NMO,k) - myconj(Ln(k+NMO,i)));
              if(std::abs(V) > cut) {
-               V*=ComplexType(0.0,-1.0)*sqrtdt;
-               if(sparse) Spvn.add(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(V));
-               else Dvn[(i*NMO+k+NMO*NMO)*ncols+cnt]=static_cast<SPValueType>(V);
+               V*=ComplexType(0.0,1.0)*sqrtdt;
+               if(sparse) { //Spvn.add(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(V));
+                 vikn.push_back(std::make_tuple(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(V)));
+                 if(vikn.size()==nmax) {
+                   Spvn.add(vikn,true);
+                   vikn.clear();
+                 }
+               } else Dvn[(i*NMO+k+NMO*NMO)*ncols+cnt]=static_cast<SPValueType>(V);
                ++np;
              }
            }
@@ -2932,8 +3051,11 @@ namespace qmcplusplus
          APP_ABORT("Error: THIS SHOULD NOT HAPPEN. Found complex cholesky vector in real build. \n\n\n");
 #endif
        }
-      }
     }
+    if(vikn.size()>0) {  
+      Spvn.add(vikn,true);
+      vikn.clear(); 
+    }  
 
     if(rank()==0 && nnodes>1 && parallel) {
       app_log()<<" Partition of Cholesky Vectors: 0 ";
@@ -2960,14 +3082,16 @@ namespace qmcplusplus
 
       Timer.reset("Generic");
       Timer.start("Generic");
-      Spvn.compress();
+      if(parallel) Spvn.compress(TGprop.getNodeCommLocal());
+      else if(head_of_nodes) Spvn.compress();
       Timer.stop("Generic");
       app_log()<<" Time to compress Spvn in calculateHSPotentials_FactorizedHam(): " <<Timer.average("Generic") <<std::endl;
     }
 
     Timer.reset("Generic");
     Timer.start("Generic");
-    if(head_of_nodes) V2_fact.transpose(); 
+    if(parallel) V2_fact.transpose(TGprop.getNodeCommLocal());
+    else if(head_of_nodes) V2_fact.transpose(); 
     Timer.stop("Generic");
     app_log()<<" Time to transpose V2_fact inside calculateHSPotentials_FactorizedHam(): " <<Timer.average("Generic") <<std::endl;
 
@@ -2975,8 +3099,11 @@ namespace qmcplusplus
 
   }
 
-  void SparseGeneralHamiltonian::calculateHSPotentials(RealType cut, RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool parallel)
+  void SparseGeneralHamiltonian::calculateHSPotentials(RealType cut, RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, afqmc::TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool parallel)
   {
+
+    if(skip_V2)
+      APP_ABORT("Error: Calling SparseGeneralHamiltonian routines with skip_V2=yes. \n\n\n");
 
     if(factorizedHamiltonian) {
       calculateHSPotentials_FactorizedHam(cut,dt,vn0,Spvn,Dvn,TGprop,nvec_per_node,sparse,parallel);
@@ -3047,32 +3174,32 @@ namespace qmcplusplus
 
      // used to split (i,k) space over all processors for the construction and storage of cholesky vectors
      int npr = myComm->size(), rk = myComm->rank(); 
-     int ik0=0,ik1=NMO*NMO-1;
+     int ik0=0,ik1=NMO*NMO;
+     std::vector<int> ik_partition;
      // used for split of (i,k) space over the processors in a TG during the evaluation of H(i,kmax,k,imax) piece
      // in case the Hamiltonian is distributed
      int tg_npr = TG.getTGSize(), tg_rk = TG.getTGRank(); 
-     int tg_ik0=0,tg_ik1=NMO*NMO-1;
+     int tg_ik0=0,tg_ik1=NMO*NMO;
+     std::vector<int> tgik_partition;
+     std::vector<int> cnts;
      if(parallel) {
-       int nt = (NMO*NMO)/npr, next = (NMO*NMO)%npr;
-       if(rk < next) {
-         ik0 = rk*(nt+1); 
-         ik1 = ik0 + nt; 
-       } else {
-         ik0 = next*(nt+1) + (rk-next)*nt;
-         ik1 = ik0 + nt - 1;
-       } 
+       FairDivide(NMO*NMO,npr,ik_partition); 
+       ik0 = ik_partition[rk];
+       ik1 = ik_partition[rk+1];
+       cnts.resize(npr);
+       for(int i=0; i<npr; i++)
+         cnts[i] = ik_partition[i+1]-ik_partition[i];
+     } else {
+       cnts.resize(1);
+       cnts[0] = ik1-ik0; 
      }
      if(distribute_Ham) {
-       int nt = (NMO*NMO)/tg_npr, next = (NMO*NMO)%tg_npr;
-       if(tg_rk < next) {
-         tg_ik0 = tg_rk*(nt+1);
-         tg_ik1 = tg_ik0 + nt;
-       } else {
-         tg_ik0 = next*(nt+1) + (tg_rk-next)*nt;
-         tg_ik1 = tg_ik0 + nt - 1;
-       }       
+       FairDivide(NMO*NMO,tg_npr,tgik_partition);
+       tg_ik0 = tgik_partition[tg_rk];
+       tg_ik1 = tgik_partition[tg_rk+1];       
      }
-     int nterms = ik1-ik0+1; 
+     int nterms = ik1-ik0; 
+     int maxnterms = *std::max_element(cnts.begin(),cnts.end()); 
      if(nterms < 1) {
        APP_ABORT("Error: Too many processors in parallel calculation of HS potential. Try reducing the number of cores, calculating in serial or reading from a file. \n\n\n ");
      }
@@ -3096,7 +3223,7 @@ namespace qmcplusplus
        std::fill(Lcomm.begin(),Lcomm.end(),ValueType(0));
        for(IndexType i=0, nt=0; i<NMO; i++) {
          for(IndexType k=0; k<NMO; k++,nt++) {
-           if(nt<tg_ik0 || nt>tg_ik1) continue;
+           if(nt<tg_ik0 || nt>=tg_ik1) continue;
            // <i,k|k,i> 
            if( k<i ) {
 #if defined(QMC_COMPLEX)
@@ -3129,14 +3256,14 @@ namespace qmcplusplus
            }
 #endif
          }
-         if(nt>tg_ik1) break;
+         if(nt>=tg_ik1) break;
        }
        myComm->allreduce(Lcomm); 
-       std::copy( Lcomm.begin()+ik0, Lcomm.begin()+ik1+1, Duv.begin() );
+       std::copy( Lcomm.begin()+ik0, Lcomm.begin()+ik1, Duv.begin() );
      } else {
        for(IndexType i=0, nt=0, ik=0; i<NMO; i++) {
          for(IndexType k=0; k<NMO; k++,nt++) {
-           if(nt<ik0 || nt>ik1) continue;
+           if(nt<ik0 || nt>=ik1) continue;
            Duv[ik] = H(i,k,k,i);  
 #ifndef QMC_COMPLEX
            if(Duv[ik] < ValueType(0)) {
@@ -3153,7 +3280,7 @@ namespace qmcplusplus
 #endif
            ik++;
          }
-         if(nt>ik1) break;
+         if(nt>=ik1) break;
        }
      }
 
@@ -3164,7 +3291,7 @@ namespace qmcplusplus
      mymax = std::make_tuple(-1,-1,0);
      for(IndexType i=0, nt=0, ik=0; i<NMO; i++) {
       for(IndexType k=0; k<NMO; k++,nt++) {
-        if(nt<ik0 || nt>ik1) continue;
+        if(nt<ik0 || nt>=ik1) continue;
         if( std::abs(Duv[ik]) > max) {
           max = std::get<2>(mymax) =std::abs(Duv[ik]);  
           ii=std::get<0>(mymax)=i;
@@ -3172,7 +3299,7 @@ namespace qmcplusplus
         } 
         ik++;
       }
-      if(nt>ik1) break;
+      if(nt>=ik1) break;
      }
      if(ii<0 || kk<0) {
       app_error()<<"Problems with Cholesky decomposition. \n";
@@ -3203,17 +3330,23 @@ namespace qmcplusplus
 
      if(test_2eint && !parallel && !distribute_Ham) {
 
+       /* <ij|kl> <--> M_(ik)_(lj) where M must be positive definite.
+        * --> |M_(ik)_(lj)| <= sqrt( |M_(ik)_(ik)| |M_(lj)_(lj)| )
+        * --> |<ij|kl>| <= sqrt( |<ik|ki>| |<lj|jl| )   
+        *  
+        */
        for(s4Dit it = V2.begin(); it != V2.end(); it++) {
          IndexType i,j,k,l;
          ValueType w1,w2,w3;
          std::tie (i,j,k,l,w1) = *it;  
  
-         w2 = H(i,i,k,k);
-         w3 = H(j,j,l,l);
+         w2 = H(i,k,k,i);
+         w3 = H(l,j,j,l);
+         ValueType w4 = H(j,l,l,j);
          if( std::abs(w1) > std::sqrt(std::abs(w2*w3)) ) {
            app_log()<<" Problems with positive-definiteness: " 
                     <<i <<" " <<j <<" " <<k <<" " <<l <<" " 
-                    <<w1 <<" " <<w2 <<" " <<w3 <<std::endl; 
+                    <<w1 <<" " <<w2 <<" " <<w3 <<" " <<w4 <<std::endl; 
          }
 
        } 
@@ -3230,7 +3363,7 @@ namespace qmcplusplus
        cholesky_residuals.push_back(std::abs(max));
 
        // calculate new cholesky std::vector based on (ii,kk)
-       L.push_back(std::vector<ValueType>(nterms));  
+       L.push_back(std::vector<ValueType>(maxnterms));  
        std::vector<ValueType>& Ln = L.back();
        std::vector<ValueType>::iterator it = Ln.begin();
 
@@ -3247,7 +3380,7 @@ namespace qmcplusplus
          s4D<ValueType> s;
          for(IndexType i=0, nt=0; i<NMO; i++) {
            for(IndexType k=0; k<NMO; k++, nt++) {
-             if(nt<tg_ik0 || nt>tg_ik1) continue;
+             if(nt<tg_ik0 || nt>=tg_ik1) continue;
              s = std::make_tuple(i,kk,k,ii,ValueType(0));
              bool cjgt = find_smallest_permutation(s);
              if( std::get<0>(s) >= min_i && std::get<0>(s) < max_i ) {
@@ -3262,17 +3395,17 @@ namespace qmcplusplus
                }
              } 
            }
-           if(nt>tg_ik1) break;
+           if(nt>=tg_ik1) break;
          }
          myComm->allreduce(Lcomm);
-         std::copy( Lcomm.begin()+ik0, Lcomm.begin()+ik1+1, it );         
+         std::copy( Lcomm.begin()+ik0, Lcomm.begin()+ik1, it );         
        } else { 
          for(IndexType i=0, nt=0; i<NMO; i++) {
            for(IndexType k=0; k<NMO; k++, nt++) {
-             if(nt<ik0 || nt>ik1) continue;
+             if(nt<ik0 || nt>=ik1) continue;
              *(it++) = H(i,kk,k,ii);
            }
-           if(nt>ik1) break;
+           if(nt>=ik1) break;
          }
        }
 
@@ -3298,7 +3431,7 @@ namespace qmcplusplus
        mymax = std::make_tuple(-1,-1,0);
        for(IndexType i=0,ik=0,nt=0; i<NMO; i++) {
         for(IndexType k=0; k<NMO; k++,nt++) {
-         if(nt<ik0 || nt>ik1) continue;
+         if(nt<ik0 || nt>=ik1) continue;
          Duv[ik] -= Ln[ik]*myconj(Ln[ik]);  
          if(zero_bad_diag_2eints) {
            if( std::abs(Duv[ik]) > max && toComplex(Duv[ik]).real() > 0) {
@@ -3315,7 +3448,7 @@ namespace qmcplusplus
          }
          ik++;
         }
-        if(nt>ik1) break;
+        if(nt>=ik1) break;
        }
        if(parallel) {
          myComm->allgather(reinterpret_cast<char*>(&mymax),reinterpret_cast<char*>(IKLmax.data()),sizeof(s2D<RealType>)); 
@@ -3347,14 +3480,14 @@ namespace qmcplusplus
          }
        }
      }
-     app_log()<<" Found: " <<L.size() <<" Cholesky std::vectors with a cutoff of: " <<cutoff_cholesky <<std::endl;   
+     app_log()<<" Found: " <<L.size() <<" Cholesky std::vectors with a cutoff of: " <<cutoff_cholesky <<"\n";   
 
      Timer.stop("Generic");
-     if(rnk==0) app_log()<<" -- Time to generate Cholesky factorization: " <<Timer.average("Generic") <<"\n";
+     app_log()<<" -- Time to generate Cholesky factorization: " <<Timer.average("Generic") <<std::endl;
 
      if(test_breakup && !parallel && !distribute_Ham) {
 
-     if(rnk==0) app_log()<<" -- Testing Hamiltonian factorization. \n";
+      app_log()<<" -- Testing Hamiltonian factorization. \n";
       Timer.reset("Generic");
       Timer.start("Generic");
 
@@ -3364,7 +3497,7 @@ namespace qmcplusplus
        for(IndexType j=0; j<NMO; j++) 
         for(IndexType k=0; k<NMO; k++)
          for(IndexType l=0; l<NMO; l++,nt++) {     
-           if(nt<ik0||nt>ik1) continue;
+           if(nt<ik0||nt>=ik1) continue;
            ValueType v2 = H(i,j,k,l);
            ValueType v2c = 0.0;
            // is it L*L or LL*???
@@ -3400,58 +3533,62 @@ namespace qmcplusplus
 
       ValueType sqrtdt = std::sqrt(dt)*0.5;
 
-      std::vector<int> cnts,displ;
       std::vector<int> cnt_per_vec(2*L.size());
-      if(parallel) {
-        Lcomm.resize(NMO*NMO); 
-        if(rank()==0) {
-          cnts.resize(npr);
-          displ.resize(npr);
-          int nt = (NMO*NMO)/npr, next = (NMO*NMO)%npr;
-          for(int i=0; i<npr; i++) { 
-            if(i < next) {
-              ik0 = i*(nt+1);
-              ik1 = ik0 + nt;
-            } else {
-              ik0 = next*(nt+1) + (i-next)*nt;
-              ik1 = ik0 + nt - 1;
-            }
-            cnts[i]  = ik1-ik0+1;
-            displ[i] = ik0;
-          }
-        } 
-      }
+      std::vector<int> ik2padded;
+      if(parallel) { 
+        Lcomm.resize(npr*maxnterms); 
+        ik2padded.resize(npr*maxnterms);
+        for(int i=0; i<ik2padded.size(); i++) ik2padded[i]=i;
+        // to make it independent of behavior of FairDivide
+        const int tag = npr*maxnterms+10000;
+        std::vector<int>::iterator it = ik2padded.begin(), itc = cnts.begin();
+        for(; itc!=cnts.end(); itc++, it+=maxnterms) 
+          std::fill(it+(*itc), it+maxnterms,tag); 
+        std::stable_partition( ik2padded.begin(), ik2padded.end(), 
+            [tag] (const int& i) { return i<tag; }
+              ); 
+      } else {
+        ik2padded.resize(NMO*NMO);
+        for(int i=0; i<NMO*NMO; i++) ik2padded[i]=i;
+      }  
 
+      Timer.reset("Generic2");
+      Timer.start("Generic2");
       if(!sparse) cut=1e-8;
       else if(cut < 1e-12) cut=1e-12;
       int cnt=0, cntn=0;
       // generate sparse version
+      int nvecs=L.size();
       for(int n=0; n<L.size(); n++) { 
-       ValueType* Ls; 
-       if(parallel) {
-         myComm->gatherv(L[n].data(),Lcomm.data(),L[n].size(),cnts,displ,0,myComm->getMPI());
-         if(rank()==0) Ls = Lcomm.data();
-       } else {
-         Ls = L[n].data();
-       } 
-       if(rank()==0) {
-         int np=0, nm=0;
-         for(IndexType i=0; i<NMO; i++) 
-          for(IndexType k=0; k<NMO; k++) { 
-            // v+
-            //if(std::abs( (L[n][i*NMO+k] + myconj(L[n][k*NMO+i])) ) > cut) {
-            if(std::abs( (Ls[i*NMO+k] + myconj(Ls[k*NMO+i])) ) > cut) 
-              np++;
-            // v-
-            //if(std::abs( (L[n][i*NMO+k] - myconj(L[n][k*NMO+i])) ) > cut) { 
-            if(std::abs( (Ls[i*NMO+k] - myconj(Ls[k*NMO+i])) ) > cut)  
-              nm++;
-          }
-         cnt_per_vec[2*n] = np;
-         cnt_per_vec[2*n+1] = nm;
-         if(nm>0) cntn++;
-       } 
-      }
+        ValueType* Ls; 
+        if(parallel) {
+#if defined(QMC_COMPLEX)
+          MPI_Gather(L[n].data(),2*maxnterms,MPI_DOUBLE,Lcomm.data(),2*maxnterms,MPI_DOUBLE,0,myComm->getMPI());
+#else
+          MPI_Gather(L[n].data(),maxnterms,MPI_DOUBLE,Lcomm.data(),maxnterms,MPI_DOUBLE,0,myComm->getMPI());
+#endif
+          if(rank()==0) Ls = Lcomm.data();
+        } else {
+          Ls = L[n].data();
+        } 
+        if(rank()==0) {
+          int np=0, nm=0;
+          for(IndexType i=0; i<NMO; i++) 
+           for(IndexType k=0; k<NMO; k++) { 
+             // v+
+             if(std::abs( (Ls[ik2padded[i*NMO+k]] + myconj(Ls[ik2padded[k*NMO+i]])) ) > cut) 
+               np++;
+             // v-
+             if(std::abs( (Ls[ik2padded[i*NMO+k]] - myconj(Ls[ik2padded[k*NMO+i]])) ) > cut)  
+               nm++;
+           }
+          cnt_per_vec[2*n] = np;
+          cnt_per_vec[2*n+1] = nm;
+          if(nm>0) cntn++;
+        }
+        if(n>0 && (n%100==0))
+          myComm->barrier();
+      } 
 
       int nnodes = TGprop.getNNodesPerTG();
       int cv0=0,cvN=2*L.size();
@@ -3534,6 +3671,12 @@ namespace qmcplusplus
       int ncols = nvec_per_node[node_number];
       if(parallel) myComm->barrier();
 
+      Timer.stop("Generic2");
+      if(rnk==0) app_log()<<"     -- setup: " <<Timer.average("Generic2") <<"\n";
+
+      Timer.reset("Generic2");
+      Timer.reset("Generic3");
+
 #ifndef QMC_COMPLEX
       if(cntn>0)
         APP_ABORT("Found real Cholesky vectors with real integrals. This is not allowed with dense cholesky vectors. Run with sparse vectors or compile with complex integrals. \n\n\n");
@@ -3543,21 +3686,28 @@ namespace qmcplusplus
       for(int n=0; n<L.size(); n++) { 
        if( cnt_per_vec[2*n]==0 && cnt_per_vec[2*n+1]==0 ) continue;
        ValueType* Ls;
+       Timer.start("Generic2");
        if(parallel) {
-         myComm->gatherv(L[n].data(),Lcomm.data(),L[n].size(),cnts,displ,0,myComm->getMPI());
-         if(head_of_nodes) {
-           myComm->bcast(Lcomm.data(),Lcomm.size(),0,MPI_COMM_HEAD_OF_NODES);
-           Ls = Lcomm.data();
-         }
+#if defined(QMC_COMPLEX)
+         //MPI_Allgather(L[n].data(),2*maxnterms,MPI_DOUBLE,Lcomm.data(),2*maxnterms,MPI_DOUBLE,myComm->getMPI());
+         MPI_Gather(L[n].data(),2*maxnterms,MPI_DOUBLE,Lcomm.data(),2*maxnterms,MPI_DOUBLE,0,myComm->getMPI());
+         if(head_of_nodes)
+           MPI_Bcast(Lcomm.data(),2*Lcomm.size(),MPI_DOUBLE,0,MPI_COMM_HEAD_OF_NODES);   
+#else
+         MPI_Allgather(L[n].data(),maxnterms,MPI_DOUBLE,Lcomm.data(),maxnterms,MPI_DOUBLE,myComm->getMPI());
+#endif
+         Ls = Lcomm.data();
        } else {
          Ls = L[n].data();
        }
+       Timer.stop("Generic2");
+       Timer.start("Generic3");
        if(head_of_nodes && 2*n>=cv0 && 2*n<cvN && cnt_per_vec[2*n]>0) {
          int np=0;
          // v+
          for(IndexType i=0; i<NMO; i++)
           for(IndexType k=0; k<NMO; k++) { 
-           ValueType V = (Ls[i*NMO+k] + myconj(Ls[k*NMO+i])); 
+           ValueType V = (Ls[ik2padded[i*NMO+k]] + myconj(Ls[ik2padded[k*NMO+i]])); 
            if(std::abs(V) > cut) { 
              V*=sqrtdt;
              if(sparse) Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(V));
@@ -3575,9 +3725,9 @@ namespace qmcplusplus
          // v-
          for(IndexType i=0; i<NMO; i++)
           for(IndexType k=0; k<NMO; k++) { 
-           ValueType V = (Ls[i*NMO+k] - myconj(Ls[k*NMO+i]));
+           ValueType V = (Ls[ik2padded[i*NMO+k]] - myconj(Ls[ik2padded[k*NMO+i]]));
            if(std::abs(V) > cut) {
-             V*=ComplexType(0.0,-1.0)*sqrtdt;
+             V*=ComplexType(0.0,1.0)*sqrtdt;
              if(sparse) Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(V));
              else Dvn[(i*NMO+k)*ncols + cnt]=static_cast<SPValueType>(V);
              ++np;
@@ -3591,11 +3741,15 @@ namespace qmcplusplus
 #endif
        }
        // necessary to avoid the avalanche of messages to the root from cores that are not head_of_nodes
-       MPI_Barrier(TG.getNodeCommLocal()); 
+       if(n>0 && (n%100==0))
+         myComm->barrier(); 
+       Timer.stop("Generic3");
       }
+      app_log()<<"     -- av comm time: " <<Timer.average("Generic2") <<"\n";
+      app_log()<<"     -- av insert time: " <<Timer.average("Generic3") <<"\n";
 
       Timer.stop("Generic");
-      if(rnk==0) app_log()<<" -- Time to assemble Cholesky Matrix: " <<Timer.average("Generic") <<"\n";
+      app_log()<<" -- Time to assemble Cholesky Matrix: " <<Timer.average("Generic") <<"\n";
 
       if(rank()==0 && nnodes>1 && parallel) { 
         app_log()<<" Partition of Cholesky Vectors: 0 ";
@@ -3621,7 +3775,7 @@ namespace qmcplusplus
         Timer.reset("Generic");
         Timer.start("Generic");
 
-        if(parallel) Spvn.compress_parallel(TG.getNodeCommLocal());
+        if(parallel) Spvn.compress(TG.getNodeCommLocal());
         else if(head_of_nodes) Spvn.compress();
         //if(head_of_nodes) Spvn.compress();
 
@@ -3864,11 +4018,11 @@ namespace qmcplusplus
        for(IndexType i=0; i<NMO; i++)
         for(IndexType k=0; k<NMO; k++) { 
          if(std::abs( (L[n][i*NMO+k] - myconj(L[n][k*NMO+i])) ) > cut) { 
-           Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(ComplexType(0,-1.0)*sqrtdt*(L[n][i*NMO+k] - myconj(L[n][k*NMO+i]))));
+           Spvn.add(i*NMO+k,cnt,static_cast<SPValueType>(ComplexType(0,1.0)*sqrtdt*(L[n][i*NMO+k] - myconj(L[n][k*NMO+i]))));
            ++np;
          }
          if(std::abs( (L[n][NMO*NMO+i*NMO+k] - myconj(L[n][NMO*NMO+k*NMO+i])) ) > cut) {
-           Spvn.add(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(ComplexType(0,-1.0)*sqrtdt*(L[n][NMO*NMO+i*NMO+k] - myconj(L[n][NMO*NMO+k*NMO+i]))));
+           Spvn.add(NMO*NMO+i*NMO+k,cnt,static_cast<SPValueType>(ComplexType(0,1.0)*sqrtdt*(L[n][NMO*NMO+i*NMO+k] - myconj(L[n][NMO*NMO+k*NMO+i]))));
            ++np;
          }
         }
@@ -3898,15 +4052,6 @@ namespace qmcplusplus
 
       int NMO2 = spinRestricted?(NMO*NMO):(2*NMO*NMO);
 
-      SPValueMatrix v2prod(NMO2);
-      for(int i=0; i<NMO2; i++)
-       for(int j=0; j<NMO2; j++)
-#if defined(QMC_COMPLEX)
-        v2prod(i,j) = SparseMatrixOperators::product_SpVSpVc<SPValueType>(indx[i+1]-indx[i],cols+indx[i],vals+indx[i],indx[j+1]-indx[j],cols+indx[j],vals+indx[j]);
-#else
-        v2prod(i,j) = SparseMatrixOperators::product_SpVSpV<SPValueType>(indx[i+1]-indx[i],cols+indx[i],vals+indx[i],indx[j+1]-indx[j],cols+indx[j],vals+indx[j]);
-#endif
-
       RealType s=0.0;
       RealType max=0.0;
       for(IndexType i=0; i<2*NMO; i++)
@@ -3920,8 +4065,10 @@ namespace qmcplusplus
             if(!goodSpinSector(i,j,k,l,NMO))
              continue;
            }
-           ValueType v2 = dt*H(i,j,k,l);
-           ValueType v2c = static_cast<ValueType>(v2prod( i*NMO+Index2Col(k) , l*NMO+Index2Col(j)));
+           ValueType v2 = H(i,j,k,l);
+           int ik = i*NMO+k;
+           int jl = j*NMO+l;
+           ValueType v2c = SparseMatrixOperators::product_SpVSpV<ValueType>(indx[ik+1]-indx[ik],cols+indx[ik],vals+indx[ik],indx[jl+1]-indx[jl],cols+indx[jl],vals+indx[jl]) / dt;
            s+=std::abs(v2-v2c);
            if( max < std::abs(v2-v2c) ) max = std::abs(v2-v2c);
            if( std::abs(v2-v2c) > 10*cutoff_cholesky ) {
@@ -3946,6 +4093,8 @@ namespace qmcplusplus
   bool SparseGeneralHamiltonian::parse(xmlNodePtr cur)
   {
 
+    app_log()<<"\n\n --------------- Parsing Hamiltonian input ------------------ \n\n";
+
     if(cur == NULL)
       return false;
 
@@ -3961,6 +4110,7 @@ namespace qmcplusplus
     std::string str3("no"); 
     std::string str4("yes"); 
     std::string str5("yes"); 
+    std::string str6("no"); 
     ParameterSet m_param;
     m_param.add(order,"orderStates","std::string");    
     m_param.add(cutoff1bar,"cutoff_1bar","double");
@@ -3981,6 +4131,8 @@ namespace qmcplusplus
     m_param.add(str3,"fix_2eint","std::string");
     m_param.add(str4,"test_algo","std::string");
     m_param.add(str5,"inplace","std::string");
+    m_param.add(str6,"skip_V2","std::string");
+    m_param.add(n_reading_cores,"num_io_cores","int");
     m_param.put(cur);
 
     orderStates=false;
@@ -3993,6 +4145,7 @@ namespace qmcplusplus
     std::transform(str3.begin(),str3.end(),str3.begin(),(int (*)(int))tolower);
     std::transform(str4.begin(),str4.end(),str4.begin(),(int (*)(int))tolower);
     std::transform(str5.begin(),str5.end(),str5.begin(),(int (*)(int))tolower);
+    std::transform(str6.begin(),str6.end(),str6.begin(),(int (*)(int))tolower);
     if(order == "yes" || order == "true") orderStates = true;  
     if(bkp == "yes" || bkp == "true") test_breakup = true;  
     if(str1 == "yes" || str1 == "true") printEig = true;  
@@ -4000,6 +4153,10 @@ namespace qmcplusplus
     if(str3 == "yes" || str3 == "true") zero_bad_diag_2eints = true;  
     if(str4 == "no" || str4 == "false") test_algo = false;  
     if(str5 == "no" || str5 == "false") inplace = false;  
+    if(str6 == "yes" || str6 == "true") skip_V2 = true;  
+
+    if(skip_V2) 
+      app_log()<<" Skipping 2 electron integrals. Only correct if other objects are initialized from hdf5 files. \n";
    
     cur = curRoot->children;
     while (cur != NULL) {
@@ -4898,6 +5055,9 @@ namespace qmcplusplus
     //  Notice that in this case:   <ij|kl> != <kj|il> and other permutations            
     // 
 
+    if(skip_V2) 
+      APP_ABORT("Error: Calling SparseGeneralHamiltonian routines with skip_V2=yes. \n\n\n");
+
 #ifdef AFQMC_DEBUG
     app_log()<<" In SparseGeneralHamiltonian :: createHamiltonianForPureDeterminant." <<std::endl; 
 #endif
@@ -5293,48 +5453,6 @@ namespace qmcplusplus
         Timer.stop("Generic");
         app_log()<<"Time to generate full Hamiltonian from factorized form: " <<Timer.total("Generic") <<std::endl; 
  
-      myComm->barrier();
-
-      Timer.reset("Generic");
-      Timer.start("Generic");
-      if(head_of_nodes) {
-
-        int rk,npr,ptr,n0;
-        MPI_Comm_rank(MPI_COMM_HEAD_OF_NODES,&rk); 
-        MPI_Comm_size(MPI_COMM_HEAD_OF_NODES,&npr); 
-        n0 = Vijkl.size(); // my number of terms, always from zero to n0
-        ptr = n0; // position to copy elements to
-        std::vector<int> size(npr);
-        size[rk] = n0;
-        myComm->gsum(size,MPI_COMM_HEAD_OF_NODES);
-        int ntot = 0; 
-        for(int i=0; i<npr; i++) ntot+=size[i];
-        if(ntot != number_of_terms) { 
-          app_error()<<" Problems setting up hamiltonian for wavefunction from factorized form. Inconsistent number of terms. " <<std::endl;
-          return false; 
-        }
-        if( Vijkl.capacity() < ntot) {  
-          app_error()<<" Problems setting up hamiltonian for wavefunction from factorized form. Inconsistent std::vector capacity. " <<Vijkl.capacity() <<" " <<ntot <<std::endl;
-          return false; 
-        }
-        Vijkl.resize_serial(number_of_terms);
-        for(int i=0; i<npr; i++) {
-          if(i==rk) { // I send
-            myComm->bcast<int>(Vijkl.row_data(),n0,i,MPI_COMM_HEAD_OF_NODES);
-            myComm->bcast<int>(Vijkl.column_data(),n0,i,MPI_COMM_HEAD_OF_NODES);
-            myComm->bcast(Vijkl.values(),n0,i,MPI_COMM_HEAD_OF_NODES);
-          } else { // I reveive
-            myComm->bcast<int>(Vijkl.row_data()+ptr,size[i],i,MPI_COMM_HEAD_OF_NODES);
-            myComm->bcast<int>(Vijkl.column_data()+ptr,size[i],i,MPI_COMM_HEAD_OF_NODES);
-            myComm->bcast(Vijkl.values()+ptr,size[i],i,MPI_COMM_HEAD_OF_NODES);
-            ptr+=size[i]; 
-          }
-        }
-        std::cout<<"rank, size: " <<rk <<" " <<Vijkl.size() <<std::endl;
-      }
-      myComm->barrier();
-      Timer.stop("Generic");
-      app_log()<<"Time to communicate Hamiltonian: " <<Timer.total("Generic") <<std::endl; 
 
     } else {  //factorizedHamiltonian 
 
@@ -5585,6 +5703,7 @@ namespace qmcplusplus
       }
 
       myComm->allreduce(cnt2);
+long tmp_ = cnt2;
       Vijkl.allocate(cnt2+1000);
       cnt2=0; 
 
@@ -5762,46 +5881,26 @@ namespace qmcplusplus
       }
 
       myComm->barrier();
-
-      if(!communicate_Vijkl(Vijkl)) return false;
-
       Timer.stop("Generic");
       app_log()<<"Time to generate 2-body Hamiltonian: " <<Timer.total("Generic") <<std::endl;
-
   
     } // factrorizedHamiltonnian
 
+    Timer.reset("Generic");
+    Timer.start("Generic");
+    if(!communicate_Vijkl(Vijkl)) return false;
+    Timer.stop("Generic");
+    app_log()<<"Time to communicate Hamiltonian: " <<Timer.total("Generic") <<std::endl; 
 
-#ifdef AFQMC_DEBUG
-    app_log()<<" Done generating sparse hamiltonians. " <<std::endl; 
-    app_log()<<" Compressing sparse hamiltonians. " <<std::endl; 
-#endif
+    Timer.reset("Generic");
+    Timer.start("Generic");
 
-    if(head_of_nodes) {
-
-      Timer.reset("Generic");
-      Timer.start("Generic");
-
-      if(!Vijkl.remove_repeated_and_compress()) {
-        APP_ABORT("Error in call to SparseMatrix::remove_repeated(). \n");
-      }
-
-      Timer.stop("Generic");
-      app_log()<<"Time to remove_repeated_and_compress Hamiltonian: " <<Timer.total("Generic") <<std::endl;
-
-
-#ifdef AFQMC_DEBUG
-      app_log()<<" Done compressing sparse hamiltonians. " <<std::endl; 
-#endif
-
-      myComm->barrier();
-      myComm->barrier();
-
-    } else {
-      myComm->barrier();
-      if(!Vijkl.initializeChildren()) return false;
-      myComm->barrier();
+    if(!Vijkl.remove_repeated_and_compress(TG.getNodeCommLocal())) {
+      APP_ABORT("Error in call to SparseMatrix::remove_repeated(). \n");
     }
+
+    Timer.stop("Generic");
+    app_log()<<"Time to remove_repeated_and_compress Hamiltonian: " <<Timer.total("Generic") <<std::endl;
 
     return true;  
 
@@ -5814,21 +5913,29 @@ namespace qmcplusplus
 
     if(head_of_nodes) {
 
-      int rk,npr,ptr,n0;
+      int rk,npr;
+      long ptr,n0;
       MPI_Comm_rank(MPI_COMM_HEAD_OF_NODES,&rk);
       MPI_Comm_size(MPI_COMM_HEAD_OF_NODES,&npr);
       n0 = Vijkl.size(); // my number of terms, always from zero to n0
       ptr = n0; // position to copy elements to 
-      std::vector<int> size(npr);
+      std::vector<long> size(npr);
       size[rk] = n0;
       myComm->gsum(size,MPI_COMM_HEAD_OF_NODES);
-      int ntot = 0;
+      long ntot = 0;
       for(int i=0; i<npr; i++) ntot+=size[i];
+
+app_log()<<"size: " <<ntot <<" " <<n0 <<std::endl;
+
       if(ntot > Vijkl.capacity()) {
         app_error()<<" Problems gathering hamiltonian. Capacity of std::vector is not sufficient: " <<ntot <<" " <<Vijkl.capacity() <<" \n";
         return false;
       }
+
+app_log()<<" before resize: " <<std::endl;
       Vijkl.resize_serial(ntot);
+app_log()<<" after resize: " <<std::endl;
+
       for(int i=0; i<npr; i++) {
         if(i==rk) { // I send
           myComm->bcast<int>(Vijkl.row_data(),n0,i,MPI_COMM_HEAD_OF_NODES);
@@ -5841,6 +5948,7 @@ namespace qmcplusplus
           ptr+=size[i];
         }
       }
+app_log()<<" after bcasts: " <<std::endl;
     }
     myComm->barrier();
     return true; 
@@ -5854,15 +5962,16 @@ namespace qmcplusplus
 
     if(head_of_nodes) {
 
-      int rk,npr,ptr,n0;
+      int rk,npr;
+      long ptr,n0;
       MPI_Comm_rank(MPI_COMM_HEAD_OF_NODES,&rk);
       MPI_Comm_size(MPI_COMM_HEAD_OF_NODES,&npr);
       n0 = Vijkl.size(); // my number of terms, always from zero to n0
       ptr = n0; // position to copy elements to 
-      std::vector<int> size(npr);
+      std::vector<long> size(npr);
       size[rk] = n0;
       myComm->gsum(size,MPI_COMM_HEAD_OF_NODES);
-      int ntot = 0;
+      long ntot = 0;
       for(int i=0; i<npr; i++) ntot+=size[i];
       if(ntot > Vijkl.capacity()) {
         app_error()<<" Problems gathering hamiltonian. Capacity of std::vector is not sufficient: " <<ntot <<" " <<Vijkl.capacity() <<" \n";
@@ -6045,184 +6154,1020 @@ namespace qmcplusplus
 
 
     if(factorizedHamiltonian) {
-  
-      int ncvec = V2_fact.cols();
-      ComplexMatrix Qa, Qk, Rl;  
-      long cnter=0;
 
+      int nnodes = TG.getTotalNodes(), nodeid = TG.getNodeID();
+      int ncores = TG.getTotalCores(), coreid = TG.getCoreID();
+  
       // <ab||kl> = sum_n Qk(a,n) * Rl(b,n) - Rl(a,n)*Qk(b,n),
       // where:
       //   Qk(a,n) = sum_i conj(Amat(i,a)) * V2_fact(ik,n)
       //   Rl(a,n) = sum_i conj(Amat(i,a)) * conj(V2_fact(li,n))
       // For real build, Qk=Rk
+      //
+      // For parallelization, distribute (k,l) pairs over nodes.
+      // Build ahead of time Qk/Rl matrices in shared memory to reduce memory/setup time.
+      // Assemble integrals in parallel and fully distributed.
+      // Collect on all nodes.
+      //    - For distributed hamiltonians, you do not need to worry about keeping contiguous
+      //    segments of the hamiltonian. Only that the distribution over nodes is roughly equal.
+      //    Write a simple algorithm that balances the number of terms in a TG. 
+      //  
 
+      Timer.reset("Generic");
+      Timer.start("Generic");
+//      SPComplexSMVector::pointer Qkptr;
+//      SPComplexSMVector::pointer Rlptr;
+//      SPComplexSMVector tQk;    
+//      tQk.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_tQk"),TG.getNodeCommLocal());  
+//      SPComplexSMVector Qk;    
+//      Qk.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_Qk"),TG.getNodeCommLocal());  
+      SPComplexSMVector Rl;    
+      Rl.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_Rl"),TG.getNodeCommLocal());  
+
+      SPComplexSMSpMat SptQk;
+      SptQk.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_SptQk"),TG.getNodeCommLocal());
+      SPComplexSMSpMat SpQk;
+      SpQk.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_SpQk"),TG.getNodeCommLocal());
+      SPComplexSMSpMat SpRl;
+      SpRl.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_SpRl"),TG.getNodeCommLocal());
+
+      if(useSpMSpM) {
+        APP_ABORT(" Error: Not fully implemented. \n\n\n");
+      }  
+
+      int NMO2 = (walker_type == 0)?NMO:2*NMO;
+      int NAEA2 = (walker_type == 0)?NAEA:2*NAEA;
+      int ngrp = std::min(NMO2,nnodes);
+      std::vector<int> M_split(ngrp+1);
+
+      // split the orbitals among processors 
+      FairDivide(NMO2,ngrp,M_split);
+
+      // Construct your set of Q(k,a,m), R(l,b,m)
+      int l0 = (nodeid<ngrp)?(M_split[nodeid]):(-1);
+      int lN = (nodeid<ngrp)?(M_split[nodeid+1]):(-1);
+      bool amIAlpha = true; // for simplicity, subset of bands must be either elpha or beta, not mixed
+      if( l0 < NMO && (lN-1) < NMO )
+        amIAlpha = true;
+      else if( l0 >= NMO && lN >= NMO )
+        amIAlpha = false;
+      else {
+        std::cerr<<"l0, lN, nodeid, ngrp, NMO: " <<l0 <<" " <<lN <<" " <<nodeid <<" " <<ngrp <<" " <<NMO <<std::endl;  
+        std::cerr<<" Error: Current algorithm requires an even number of processors. \n\n\n";  
+        APP_ABORT(" Error: Current algorithm requires an even number of processors. \n\n\n");  
+      }
+      int norb = lN-l0;
+      int maxnorb = 0;
+      for(int i=0; i<ngrp; i++) maxnorb = std::max(maxnorb,M_split[i+1]-M_split[i]);  
+      int nvec = V2_fact.cols();
+      // Rl(k, a, m), k:[0:NMO2], a:[0:NAEA], m:[0:nvec] 
+      int mat_size = norb * NAEA * nvec; 
+      if(nodeid < ngrp ) {
+        //Qk.resize(mat_size);  
+        if(!useSpMSpM)
+          Rl.resize(mat_size);  
+      }
+      if(coreid==0 && !useSpMSpM) std::fill(Rl.begin(),Rl.end(),SPComplexType(0.0));
+//      if(coreid==0) std::fill(Qk.begin(),Qk.end(),SPComplexType(0.0));
+
+      int bl0=-1, blN=-1;
+      int nwork = std::min(norb*NAEA,ncores);  
+      if(coreid <nwork)
+        if(amIAlpha)
+          std::tie(bl0, blN) = FairDivideBoundary(coreid,norb*NAEA,nwork);
+        else
+          std::tie(bl0, blN) = FairDivideBoundary(coreid,norb*NAEB,nwork);
+      // right now this is an upper bound
+      int nak = blN-bl0;
+
+      SpQk.setDims(norb*NAEA,nvec);
+      if(useSpMSpM) 
+        SpRl.setDims(nvec,norb*NAEA);
+
+      std::vector<SPComplexType> vec(nvec);
+      std::vector<std::tuple<SPValueSMSpMat::intType,SPValueSMSpMat::intType,SPComplexType>> abkl;
+      int nmax = 1000000;
+      abkl.reserve(nmax);  
+
+      if(distribute_Ham) {
+        APP_ABORT(" Finish THIS (43)!!! \n\n\n");
+      } else {
+
+/*
+        //   Q(k,a,n) = sum_i conj(Amat(i,a)) * V2_fact(ik,n)
+        //   R(l,a,n) = sum_i conj(Amat(i,a)) * conj(V2_fact(li,n))
+        if(walker_type == 0) {
+
+          long sz=0;
+          for(int l=l0, nt=0, cnt=0; l<lN; l++, nt++) {
+            int n_ = (l<NMO)?0:NMO;
+            int NEL = (l<NMO)?NAEA:NAEB;
+            for(int a=0; a<NEL; a++, cnt++) {
+              if( cnt%ncores != coreid ) continue;
+              std::fill(vec.begin(),vec.end(),SPComplexType(0,0));
+              for(int i=0; i<NMO; i++) {
+                int il = i*NMO+l-n_;
+                SPValueSMSpMat::intType n0 = *(V2_fact.row_index(il));
+                SPValueSMSpMat::intType n1 = *(V2_fact.row_index(il+1));
+                if(n1==n0) continue;
+                SPValueSMSpMat::intType nv = n1-n0;
+                const SPValueSMSpMat::pointer itLval = V2_fact.values(n0);
+                const SPValueSMSpMat::intPtr itLcol = V2_fact.column_data(n0);
+                const ComplexType Aiac = std::conj(A(i+n_,a));  // alpha/beta
+                for(int n=0; n<nv; n++)
+                  vec[itLcol[n]] += Aiac * itLval[n];
+              }
+              for(int n=0; n<nvec; n++)
+                if(std::abs(vec[n])>cut) sz++;
+            }
+          }
+          {
+            long c_ = sz;
+            MPI_Allreduce(&c_,&sz,1,MPI_LONG,MPI_SUM,TG.getNodeCommLocal());
+          }
+          SpQk.allocate(sz);
+          SpQk.barrier();
+          abkl.clear();
+          for(int l=l0, nt=0, cnt=0; l<lN; l++, nt++) {
+            int n_ = (l<NMO)?0:NMO;
+            int NEL = (l<NMO)?NAEA:NAEB;
+            for(int a=0; a<NEL; a++, cnt++) {
+              if( cnt%ncores != coreid ) continue;
+              std::fill(vec.begin(),vec.end(),SPComplexType(0,0));
+              for(int i=0; i<NMO; i++) {
+                int il = i*NMO+l-n_;
+                SPValueSMSpMat::intType n0 = *(V2_fact.row_index(il));
+                SPValueSMSpMat::intType n1 = *(V2_fact.row_index(il+1));
+                if(n1==n0) continue;
+                SPValueSMSpMat::intType nv = n1-n0;
+                const SPValueSMSpMat::pointer itLval = V2_fact.values(n0);
+                const SPValueSMSpMat::intPtr itLcol = V2_fact.column_data(n0);
+                const ComplexType Aiac = std::conj(A(i+n_,a));  // alpha/beta
+                for(int n=0; n<nv; n++)
+                  vec[itLcol[n]] += Aiac * itLval[n];
+              }
+              for(int n=0; n<nvec; n++)
+                if(std::abs(vec[n])>cut) {
+                  abkl.push_back( std::make_tuple(cnt, n, vec[n]) );
+                  if(abkl.size()==nmax) {
+                    SpQk.add(abkl,true);
+                    abkl.clear();
+                  }
+                }
+            }
+          }
+          if(abkl.size()>0) {
+            SpQk.add(abkl,true);
+            abkl.clear();
+          }
+          SpQk.compress(TG.getNodeCommLocal())
+
+#if defined(QMC_COMPLEX)
+// Think about how to calculate Rl quickly since now it is (nvec,norb*NAEA)
+// If it is not possible to evaluate quickly, then calculate it in Qk with (norb*NAEA,nvec)
+// form and then transpose it into Rl
+          for(int l=l0, nt=0, cnt=0; l<lN; l++, nt++) {
+            for(int a=0; a<NAEA; a++, cnt++) {
+              if( cnt%ncores != coreid ) continue;
+              std::fill(vec.begin(),vec.end(),SPComplexType(0,0));
+              for(int i=0; i<NMO; i++) {
+                int li = l*NMO+i;
+                SPValueSMSpMat::intType n0 = *(V2_fact.row_index(li));  
+                SPValueSMSpMat::intType n1 = *(V2_fact.row_index(li+1));
+                if(n1==n0) continue;
+                SPValueSMSpMat::intType nv = n1-n0;  
+                const SPValueSMSpMat::pointer itLval = V2_fact.values(n0);
+                const SPValueSMSpMat::intPtr itLcol =  V2_fact.column_data(n0);
+                const ComplexType Aiac = std::conj(A(i,a));
+                for(int n=0; n<nv; n++)   
+                  vec[itLcol[n]] += Aiac * std::conj(itLval[n]); 
+                //Rlptr = Rl.values() + nt*NAEA*nvec + a*nvec; 
+                //for(int n=0; n<nv; n++)   
+                //  Rlptr[itLcol[n]] += Aiac * std::conj(itLval[n]); 
+              }
+              BLAS::axpy(nvec,SPComplexType(1.0),vec.data(),1,Rl.values()+cnt,norb*NAEA);
+            }    
+          }
+#else
+          if(useSpMSpM) {
+            SpRl.allocate(SpQk.size());
+            if(coreid==0) {
+              std::copy(SpQk.values(),SpQk.values()+SpQk.size(),SpRl.values());
+              std::copy(SpQk.column_data(),SpQk.column_data()+SpQk.size(),SpRl.row_data());
+              std::copy(SpQk.row_data(),SpQk.row_data()+SpQk.size(),SpRl.column_data());
+            }
+            SpRl.compress(TG.getNodeCommLocal());
+            SpRl.barrier();
+          } else {
+            if(coreid==0)
+              std::fill(Rl.begin(),Rl.end(),SPComplexType(0));
+            Rl.barrier();
+            int n0_,n1_;
+            assert(SpQk.size() >= ncores);
+            std::tie(n0_, n1_) = FairDivideBoundary(coreid,SpQk.size(),ncores);
+            SPComplexSMSpMat::iterator val = SpQk.vals_begin()+n0_;
+            SPComplexSMSpMat::iterator vend = SpQk.vals_begin()+n1_;
+            SPComplexSMSpMat::int_iterator col = SpQk.cols_begin()+n0_;
+            SPComplexSMSpMat::int_iterator row = SpQk.rows_begin()+n0_;
+            int ncol = SpQk.rows();
+            while(val != vend)
+              Rl[ (*(col++))*ncol + (*(row++)) ] = *(val++);
+            Rl.barrier();
+          }
+#endif
+        } else if(walker_type == 1) {  
+
+          assert(spinRestricted);
+*/
+/*
+          // Construct Qk[k,n,nvec]
+          for(int l=l0, nt=0, cnt=0; l<lN; l++, nt++) {
+            int n_ = (l<NMO)?0:NMO;
+            int NEL = (l<NMO)?NAEA:NAEB;
+            for(int a=0; a<NEL; a++, cnt++) {
+              if( cnt%ncores != coreid ) continue;
+              for(int i=0; i<NMO; i++) {
+                int il = i*NMO+l-n_;
+                SPValueSMSpMat::intType n0 = *(V2_fact.row_index(il));  
+                SPValueSMSpMat::intType n1 = *(V2_fact.row_index(il+1));
+                if(n1==n0) continue;
+                SPValueSMSpMat::intType nv = n1-n0;  
+                const SPValueSMSpMat::pointer itLval = V2_fact.values(n0);
+                const SPValueSMSpMat::intPtr itLcol = V2_fact.column_data(n0);
+                const ComplexType Aiac = std::conj(A(i+n_,a));  // alpha/beta
+                Qkptr = Qk.values() + nt*NEL*nvec + a*nvec; 
+                for(int n=0; n<nv; n++)   
+                  Qkptr[itLcol[n]] += Aiac * itLval[n]; 
+              }
+            }    
+          }
+*/ 
+
+        if(walker_type == 0 || walker_type == 1) {
+          // Construct SpQk[k,n,nvec]
+          long sz=0;
+          for(int l=l0, nt=0, cnt=0; l<lN; l++, nt++) {
+            int n_ = (l<NMO)?0:NMO;
+            int NEL = (l<NMO)?NAEA:NAEB;
+            for(int a=0; a<NEL; a++, cnt++) {
+              if( cnt%ncores != coreid ) continue;
+              std::fill(vec.begin(),vec.end(),SPComplexType(0,0));
+              for(int i=0; i<NMO; i++) {
+                int il = i*NMO+l-n_;
+                SPValueSMSpMat::intType n0 = *(V2_fact.row_index(il));
+                SPValueSMSpMat::intType n1 = *(V2_fact.row_index(il+1));
+                if(n1==n0) continue;
+                SPValueSMSpMat::intType nv = n1-n0;
+                const SPValueSMSpMat::pointer itLval = V2_fact.values(n0);
+                const SPValueSMSpMat::intPtr itLcol = V2_fact.column_data(n0);
+                const ComplexType Aiac = std::conj(A(i+n_,a));  // alpha/beta
+                for(int n=0; n<nv; n++)
+                  vec[itLcol[n]] += Aiac * itLval[n];
+              }
+              for(int n=0; n<nvec; n++)
+                if(std::abs(vec[n])>cut) sz++;     
+            }
+          }
+          {
+            long c_ = sz; 
+            MPI_Allreduce(&c_,&sz,1,MPI_LONG,MPI_SUM,TG.getNodeCommLocal());  
+          }
+          SpQk.allocate(sz);
+          SpQk.barrier();
+          abkl.clear();
+          for(int l=l0, nt=0, cnt=0; l<lN; l++, nt++) {
+            int n_ = (l<NMO)?0:NMO;
+            int NEL = (l<NMO)?NAEA:NAEB;
+            for(int a=0; a<NEL; a++, cnt++) {
+              if( cnt%ncores != coreid ) continue;
+              std::fill(vec.begin(),vec.end(),SPComplexType(0,0));
+              for(int i=0; i<NMO; i++) {
+                int il = i*NMO+l-n_;
+                SPValueSMSpMat::intType n0 = *(V2_fact.row_index(il));
+                SPValueSMSpMat::intType n1 = *(V2_fact.row_index(il+1));
+                if(n1==n0) continue;
+                SPValueSMSpMat::intType nv = n1-n0;
+                const SPValueSMSpMat::pointer itLval = V2_fact.values(n0);
+                const SPValueSMSpMat::intPtr itLcol = V2_fact.column_data(n0);
+                const ComplexType Aiac = std::conj(A(i+n_,a));  // alpha/beta
+                for(int n=0; n<nv; n++)
+                  vec[itLcol[n]] += Aiac * itLval[n];
+              }
+              for(int n=0; n<nvec; n++)
+                if(std::abs(vec[n])>cut) { 
+                  abkl.push_back( std::make_tuple(cnt, n, vec[n]) );
+                  if(abkl.size()==nmax) {
+                    SpQk.add(abkl,true);
+                    abkl.clear();
+                  }
+                }
+            }
+          }
+          if(abkl.size()>0) {
+            SpQk.add(abkl,true);
+            abkl.clear();
+          }
+          SpQk.compress(TG.getNodeCommLocal());
+
+#if defined(QMC_COMPLEX)
+          if(!useSpMSpM) {
+            for(int k=l0, nt=0, cnt=0; k<lN; k++, nt++) {
+              int n_ = (k<NMO)?0:NMO;
+              int NEL = (k<NMO)?NAEA:NAEB;
+              for(int a=0; a<NEL; a++, cnt++) {
+                if( cnt%ncores != coreid ) continue;
+                std::fill(vec.begin(),vec.end(),SPComplexType(0,0));
+                for(int i=0; i<NMO; i++) {
+                  int ki = (k-n_)*NMO+i;
+                  SPValueSMSpMat::intType n0 = *(V2_fact.row_index(ki));  
+                  SPValueSMSpMat::intType n1 = *(V2_fact.row_index(ki+1));
+                  if(n1==n0) continue;
+                  int nv = n1-n0;  
+                  const SPValueSMSpMat::pointer itLval = V2_fact.values(n0);
+                  const SPValueSMSpMat::intPtr itLcol = V2_fact.column_data(n0);
+                  const ComplexType Aiac = std::conj(A(i+n_,a));  // alpha/beta
+                  for(int n=0; n<nv; n++)   
+                    vec[itLcol[n]] += Aiac * std::conj(itLval[n]); 
+                }
+                BLAS::axpy(nvec,SPComplexType(1.0),vec.data(),1,Rl.values()+cnt,norb*NEL);
+              }    
+            }
+            Rl.barrier();
+          } else {  
+
+            // Construct SpRl[nvec,k,n]
+            sz=0;
+            for(int l=l0, nt=0, cnt=0; l<lN; l++, nt++) {
+              int n_ = (l<NMO)?0:NMO;
+              int NEL = (l<NMO)?NAEA:NAEB;
+              for(int a=0; a<NEL; a++, cnt++) {
+                if( cnt%ncores != coreid ) continue;
+                std::fill(vec.begin(),vec.end(),SPComplexType(0,0));
+                for(int i=0; i<NMO; i++) {
+                  int li = (l-n_)*NMO+i;
+                  SPValueSMSpMat::intType n0 = *(V2_fact.row_index(li));
+                  SPValueSMSpMat::intType n1 = *(V2_fact.row_index(li+1));
+                  if(n1==n0) continue;
+                  SPValueSMSpMat::intType nv = n1-n0;
+                  const SPValueSMSpMat::pointer itLval = V2_fact.values(n0);
+                  const SPValueSMSpMat::intPtr itLcol = V2_fact.column_data(n0);
+                  const ComplexType Aiac = std::conj(A(i+n_,a));  // alpha/beta
+                  for(int n=0; n<nv; n++)
+                    vec[itLcol[n]] += Aiac * std::conj(itLval[n]);
+                }
+                for(int n=0; n<nvec; n++)
+                  if(std::abs(vec[n])>cut) sz++;
+              }
+            }
+            {
+              long c_ = sz;
+              MPI_Allreduce(&c_,&sz,1,MPI_LONG,MPI_SUM,TG.getNodeCommLocal());
+            }
+            SpRl.allocate(sz);
+            SpRl.barrier();
+            abkl.clear();
+            for(int l=l0, nt=0, cnt=0; l<lN; l++, nt++) {
+              int n_ = (l<NMO)?0:NMO;
+              int NEL = (l<NMO)?NAEA:NAEB;
+              for(int a=0; a<NEL; a++, cnt++) {
+                if( cnt%ncores != coreid ) continue;
+                std::fill(vec.begin(),vec.end(),SPComplexType(0,0));
+                for(int i=0; i<NMO; i++) {
+                  int li = (l-n_)*NMO+i;
+                  SPValueSMSpMat::intType n0 = *(V2_fact.row_index(li));
+                  SPValueSMSpMat::intType n1 = *(V2_fact.row_index(li+1));
+                  if(n1==n0) continue;
+                  SPValueSMSpMat::intType nv = n1-n0;
+                  const SPValueSMSpMat::pointer itLval = V2_fact.values(n0);
+                  const SPValueSMSpMat::intPtr itLcol = V2_fact.column_data(n0);
+                  const ComplexType Aiac = std::conj(A(i+n_,a));  // alpha/beta
+                  for(int n=0; n<nv; n++)
+                    vec[itLcol[n]] += Aiac * std::conj(itLval[n]);
+                }
+                for(int n=0; n<nvec; n++)
+                  if(std::abs(vec[n])>cut) {
+                    abkl.push_back( std::make_tuple(n, cnt, vec[n]) );
+                    if(abkl.size()==nmax) {
+                      SpRl.add(abkl,true);
+                      abkl.clear();
+                    }
+                  }
+              }
+            }
+            if(abkl.size()>0) {
+              SpRl.add(abkl,true);
+              abkl.clear();
+            }
+            SpRl.compress(TG.getNodeCommLocal());
+          }
+#else
+          if(useSpMSpM) {
+            SpRl.allocate(SpQk.size());
+            if(coreid==0) {
+              std::copy(SpQk.values(),SpQk.values()+SpQk.size(),SpRl.values());
+              std::copy(SpQk.column_data(),SpQk.column_data()+SpQk.size(),SpRl.row_data());
+              std::copy(SpQk.row_data(),SpQk.row_data()+SpQk.size(),SpRl.column_data());
+            }
+            SpRl.compress(TG.getNodeCommLocal());
+            SpRl.barrier();
+          } else {
+            if(coreid==0)
+              std::fill(Rl.begin(),Rl.end(),SPComplexType(0));
+            Rl.barrier();
+            int n0_,n1_,sz_=SpQk.size();
+            assert(SpQk.size() >= ncores); 
+            std::tie(n0_, n1_) = FairDivideBoundary(coreid,sz_,ncores);   
+            SPComplexSMSpMat::iterator val = SpQk.vals_begin()+n0_;
+            SPComplexSMSpMat::iterator vend = SpQk.vals_begin()+n1_;
+            SPComplexSMSpMat::int_iterator col = SpQk.cols_begin()+n0_; 
+            SPComplexSMSpMat::int_iterator row = SpQk.rows_begin()+n0_; 
+            int ncol = SpQk.rows();
+            while(val != vend) 
+              Rl[ (*(col++))*ncol + (*(row++)) ] = *(val++);
+            Rl.barrier();   
+          }
+#endif
+        } else if(walker_type == 2) {  
+          APP_ABORT(" Error in createHamiltonianForGeneralDeterminant: GHF not implemented. \n\n\n");
+        } else {
+          APP_ABORT(" Error in createHamiltonianForGeneralDeterminant: Unknown walker_type. \n\n\n");
+        }
+
+      }  
+      SpQk.barrier();
+
+      // let the maximum message be 1 GB
+      int maxnt = std::max(1,static_cast<int>(std::floor(1024.0*1024.0*1024.0/sizeof(SPComplexType))));
+
+      std::vector<int> nkbounds;          // local bounds for communication  
+      std::vector<int> Qknum(nnodes);     // number of blocks per node
+      std::vector<int> Qksizes;           // number of terms and number of k vectors in block for all nodes
+      if(head_of_nodes) {
+        int n_=0, ntcnt=0, n0=0; 
+        int NEL = (amIAlpha)?NAEA:NAEB;
+        for(int i=0; i<norb; i++) {
+          int ntt = *SpQk.row_index((i+1)*NEL) - *SpQk.row_index(i*NEL); 
+          assert(ntt < maxnt);  
+          if(ntcnt+ntt > maxnt) {
+            nkbounds.push_back(ntcnt);
+            nkbounds.push_back(i-n0);
+            ntcnt=ntt;
+            n0=i;
+            n_++;
+          } else {
+            ntcnt+=ntt;
+          }   
+        }
+        if(ntcnt > 0) {
+          // push last block
+          n_++;
+          nkbounds.push_back(ntcnt);
+          nkbounds.push_back(norb-n0);
+        }
+
+        MPI_Allgather(&n_,1,MPI_INT,Qknum.data(),1,MPI_INT,MPI_COMM_HEAD_OF_NODES);
+
+        int ntt = std::accumulate(Qknum.begin(),Qknum.end(),0); 
+        Qksizes.resize(2*ntt);
+
+        std::vector<int> cnts(nnodes);
+        std::vector<int> disp(nnodes);
+        int cnt=0;
+        for(int i=0; i<nnodes; i++) {
+          cnts[i] = Qknum[i]*2;
+          disp[i]=cnt;
+          cnt+=cnts[i];  
+        }
+        MPI_Allgatherv(nkbounds.data(),nkbounds.size(),MPI_INT,Qksizes.data(),cnts.data(),disp.data(),MPI_INT,MPI_COMM_HEAD_OF_NODES );
+
+      }
+
+      MPI_Bcast(Qknum.data(),nnodes,MPI_INT,0,TG.getNodeCommLocal());
+      int ntt = std::accumulate(Qknum.begin(),Qknum.end(),0); 
+      if(!head_of_nodes)  
+        Qksizes.resize(2*ntt);
+      MPI_Bcast(Qksizes.data(),Qksizes.size(),MPI_INT,0,TG.getNodeCommLocal());
+
+// store {nterms,nk} for all nodes 
+// use it to know communication pattern 
+
+      int maxnk = 0;        // maximum number of k vectors in communication block 
+      long maxqksize = 0;   // maximum size of communication block
+      for(int i=0; i<ntt; i++) {
+        if(Qksizes[2*i] > maxqksize) maxqksize = Qksizes[2*i];
+        if(Qksizes[2*i+1] > maxnk) maxnk = Qksizes[2*i+1];
+      }    
+
+      SPComplexSMVector Ta;
+      Ta.setup(head_of_nodes,std::string("SparseGeneralHamiltonian_Ta"),TG.getNodeCommLocal());
+      Ta.resize(norb*NAEA*maxnk*NAEA);
+      Ta.barrier();
+       
+      // setup working sparse matrix  
+      SptQk.setDims(maxnk * NAEA, nvec);
+      SptQk.allocate(maxqksize+1000);
+
+      abkl.clear();  
+      std::vector<SPComplexSMSpMat::intType> rowI;
+      rowI.reserve( (maxnk*NAEA/ncores) + 1 );  
+
+      Timer.stop("Generic");
+      app_log()<<"Time to construct distributed rotated Cholesky vectors: " <<Timer.total("Generic") <<std::endl;
 
       Timer.reset("Generic");
       Timer.start("Generic");
 
-      if(walker_type == 0) {
+      std::size_t sz=0;  
+      std::size_t sz1=0, sz2=0, sz3=0;  
 
-        Qk.resize(NAEA,ncvec);
-        Rl.resize(NAEA,ncvec);
-        Qa.resize(NAEA,NAEA);
+      // now calculate fully distributed matrix elements
+      for(int nn=0, nb=0, nkcum=0; nn<ngrp; nn++) {
 
-        for(int k=0, nt=0; k<NMO; k++) {
-        for(int l=k; l<NMO; l++, nt++) {
-        
-          // instead of round robin, use FairShare on NMO*(NMO+1)/2, since that allows reuse of Qk
-          if( nt%npr != rk ) continue;
+        // just checking
+        assert(nkcum==M_split[nn]);
+        if(M_split[nn+1]==M_split[nn]) continue;
+        int nblk = Qknum[nn]; 
+        long ntermscum=0;
+        for( int bi = 0; bi < nblk; bi++, nb++) {
+          int nterms = Qksizes[2*nb];      // number of terms in block 
+          int nk = Qksizes[2*nb+1];        // number of k-blocks in block
+          int k0 = nkcum;                  // first value of k in block
+          nkcum+=nk;                       
+          int kN = nkcum;                  // last+1 value
+          int NEL0 = (k0<NMO)?NAEA:NAEB;   // number of electrons in this spin block
+          assert(nk > 0 && nk <= maxnk );  // just checking
 
-          // 1. check if Qk/Rl has been previously built. If not build and store it
-#if defined(QMC_COMPLEX)
-          ComplexType *Qkptr = Qk.data();
-          ComplexType *Rlptr = Rl.data();
-            
+/*
+Timer.reset("Generic2");
+Timer.start("Generic2");
+          if(head_of_nodes) {
+            if(nn == nodeid) {
+              std::copy(Qk.values()+bi*maxnk*NEL0*nvec,Qk.values()+(bi*maxnk+nk)*NEL0*nvec,tQk.values());
+            }  
+#if defined(AFQMC_SP)
+            MPI_Bcast(tQk.values(),nk*NEL0*nvec*2,MPI_FLOAT,nn,MPI_COMM_HEAD_OF_NODES);
 #else
-          ComplexType *Qkptr = Qk.data();
-          ComplexType *Rlptr = Rl.data();
+            MPI_Bcast(tQk.values(),nk*NEL0*nvec*2,MPI_DOUBLE,nn,MPI_COMM_HEAD_OF_NODES);
+#endif
+          } 
+          Qk.barrier();
 
-          Qk=0;
-          for(int i=0; i<NMO; i++) {
-            int ik = i*NMO+k;
-            int n0 = *(V2_fact.row_index() + ik);  
-            int n1 = *(V2_fact.row_index() + ik+1);
-            if(n1==n0) continue;
-            int nv = n1-n0;  
-            ValueSMSpMat::pointer itLval = V2_fact.values() + n0;
-            ValueSMSpMat::indxPtr itLcol = V2_fact.column_data() + n0;
-            const ComplexType* itAia = A[i];
-            for(int a=0; a<NAEA; a++, itAia++) {
-              Qkptr = Qk[a];
-              for(int n=0; n<nv; n++)   
-                //*(Qkptr+(*(itLcol+n))) += std::conj(*itAia) * (*(itLval+n));
-                Qk(a,itLcol[n]) += std::conj(A(i,a)) * itLval[n]; 
+Timer.stop("Generic2");
+app_log()<<"Time to Bcast tQk: " <<nn <<"  " <<Timer.total("Generic2") <<std::endl;
+*/
+
+Timer.reset("Generic2");
+Timer.start("Generic2");
+
+          if(head_of_nodes) {
+            if(nn == nodeid) {
+              long n0 = *SpQk.row_index( (k0-M_split[nn])*NEL0 );
+              long n1 = *SpQk.row_index( (k0-M_split[nn]+nk)*NEL0 );
+              int nt_ = static_cast<int>(n1-n0);
+              assert(ntermscum==n0);
+              assert(nt_==nterms);
+              SptQk.resize_serial(nterms);
+              std::copy(SpQk.values()+n0,SpQk.values()+n1,SptQk.values());
+              std::copy(SpQk.column_data()+n0,SpQk.column_data()+n1,SptQk.column_data());
+              for(int i=0, j=(k0-M_split[nn])*NEL0; i<=nk*NEL0; i++, j++)
+                SptQk.row_index()[i] = SpQk.row_index()[j]-n0;
             }
+            MPI_Bcast(&nterms,1,MPI_LONG,nn,MPI_COMM_HEAD_OF_NODES);
+            SptQk.resize_serial(nterms);
+#if defined(AFQMC_SP)
+            MPI_Bcast(SptQk.values(),nterms*2,MPI_FLOAT,nn,MPI_COMM_HEAD_OF_NODES);
+#else
+            MPI_Bcast(SptQk.values(),nterms*2,MPI_DOUBLE,nn,MPI_COMM_HEAD_OF_NODES);
+#endif
+            MPI_Bcast(SptQk.column_data(),nterms,MPI_INT,nn,MPI_COMM_HEAD_OF_NODES);
+            MPI_Bcast(SptQk.row_index(),nk*NEL0+1,MPI_INT,nn,MPI_COMM_HEAD_OF_NODES);
           }
-          Qkptr = Qk.data();
+          SptQk.setCompressed();
+          SptQk.barrier();
 
-          if(k==l) { 
-            Rlptr = Qk.data();
-          } else {
-            Rl=0;
-            for(int i=0; i<NMO; i++) {
-              int li = l*NMO+i;
-              int n0 = *(V2_fact.row_index() + li);
-              int n1 = *(V2_fact.row_index() + li+1);
-              if(n1==n0) continue;
-              int nv = n1-n0;
-              ValueSMSpMat::pointer itLval = V2_fact.values() + n0;
-              ValueSMSpMat::indxPtr itLcol = V2_fact.column_data() + n0;
-              const ComplexType* itAia = A[i];
-              for(int a=0; a<NAEA; a++, itAia++) {
-                Rlptr = Rl[a];
-                for(int n=0; n<nv; n++) 
-                  //*(Rlptr+(*(itLcol+n))) += std::conj(*itAia) * (*(itLval+n)); // conj(L) in complex
-                  Rl(a,itLcol[n]) += std::conj(A(i,a)) * itLval[n]; 
+          // for safety, keep track of sum
+          ntermscum += static_cast<long>(nterms);
+
+Timer.stop("Generic2");
+app_log()<<"Time to Bcast SptRl: " <<nn <<"  " <<Timer.total("Generic2") <<std::endl;
+
+Timer.reset("Generic2");
+Timer.start("Generic2");
+
+          if(walker_type == 0) {
+
+            // <a,b | k,l> = Qa(ka,lb) - Qb(la,kb)
+            // Qa(ka,lb) = Q(k,a,:)*R(l,b,:)
+            //DenseMatrixOperators::product(nk*NAEA,int(blN-bl0),nvec,SPComplexType(1.0),tQk.values(),nvec,Rl.values()+bl0,norb*NAEA,SPComplexType(0),Qa.values()+bl0,norb*NAEA);
+            //Qa.barrier();
+            SparseMatrixOperators::product_SpMatM(nk*NAEA,int(blN-bl0),nvec,SPComplexType(1.0),SptQk.values(),SptQk.column_data(), SptQk.row_index(), Rl.values()+bl0,norb*NAEA,SPComplexType(0),Ta.values()+bl0,norb*NAEA);
+            SpQk.barrier();
+            SPComplexType four = SPComplexType(4.0);
+            SPComplexType two = SPComplexType(2.0);
+            for(int k=k0, ka=0; k<kN; k++) {
+              for(int a=0; a<NAEA; a++, ka++) {
+                for(int lb=bl0; lb<blN; lb++) { // lb = (l-l0)*NAEA+b  
+                  int b = lb%NAEA;
+                  if(b<a) continue;
+                  int l = lb/NAEA+l0;
+                  int la = (l-l0)*NAEA+a;  
+                  int kb = (k-k0)*NAEA+b;  
+                  SPComplexType qkalb = *(Ta.values() + ka*norb*NAEA + lb);  // Qa(ka,lb)   
+                  SPComplexType qlakb = *(Ta.values() + kb*norb*NAEA + la);  // Qa(kb,la)   
+                  if(std::abs( four*qkalb - two*qlakb ) > cut) sz++;
+                }
               }
             }
-            Rlptr = Rl.data();
-          }  
-#endif 
 
-          // 2. Qa(a,b) = <ab|||kl> = 4*Qk*Rl.T - 2*Rl*Qk.T
-          RealType fct = (k==l)?1.0:2.0;
-          DenseMatrixOperators::product_ABt(NAEA,NAEA,ncvec,ComplexType(4.0*fct,0.0),Qkptr,ncvec,Rlptr,ncvec,ComplexType(0),Qa.data(),NAEA);
-          DenseMatrixOperators::product_ABt(NAEA,NAEA,ncvec,ComplexType(-2.0*fct,0.0),Rlptr,ncvec,Qkptr,ncvec,ComplexType(1),Qa.data(),NAEA);
+          } else if(walker_type == 1) {
 
-          // Now I have Q(a,b,k0,l0);
-          for(int a=0; a<NAEA; a++)
-           for(int b=0; b<NAEA; b++) 
-             if(std::abs(Qa(a,b)) > cut) cnter++; 
+            if( M_split[nn] < NMO && (M_split[nn+1]-1) < NMO ) {
+              // k is alpha
+            
+              if(amIAlpha) {  
+                // <a,b | k,l> = Qa(ka,lb) - Qb(la,kb)
+                // Qa(ka,lb) = Q(k,a,:)*R(l,b,:)
+//                DenseMatrixOperators::product(nk*NAEA,int(blN-bl0),nvec,SPComplexType(1.0),tQk.values(),nvec,Rl.values()+bl0,norb*NAEA,SPComplexType(0),Qa.values()+bl0,norb*NAEA);
+//                Qa.barrier();
+                SparseMatrixOperators::product_SpMatM(nk*NAEA,int(blN-bl0),nvec,SPComplexType(1.0),SptQk.values(),SptQk.column_data(), SptQk.row_index(), Rl.values()+bl0,norb*NAEA,SPComplexType(0),Ta.values()+bl0,norb*NAEA);
+                Ta.barrier();
+                for(int k=k0, ka=0; k<kN; k++) {
+                  for(int a=0; a<NAEA; a++, ka++) {
+                    for(int lb=bl0; lb<blN; lb++) { // lb = (l-l0)*NAEA+b  
+                      int b = lb%NAEA;
+                      if(b<=a) continue;
+                      int l = lb/NAEA+l0;
+                      int la = (l-l0)*NAEA+a;
+                      int kb = (k-k0)*NAEA+b;
+                      SPComplexType qkalb = *(Ta.values() + ka*norb*NAEA + lb);  // Qa(ka,lb)   
+                      SPComplexType qlakb = *(Ta.values() + kb*norb*NAEA + la);  // Qa(kb,la)   
+                      if(std::abs( qkalb - qlakb ) > cut) sz++;
+                      if(std::abs( qkalb - qlakb ) > cut) sz1++;
+                    }
+                  }
+                }
+              } else {
+                // <a,b | k,l> = Qa(ka,lb) = Q(k,a,:)*R(l,b,:) 
+                //DenseMatrixOperators::product(nk*NAEA,int(blN-bl0),nvec,SPComplexType(1.0),tQk.values(),nvec,Rl.values()+bl0,norb*NAEB,SPComplexType(0),Qa.values()+bl0,norb*NAEB);
+                SparseMatrixOperators::product_SpMatM(nk*NAEA,int(blN-bl0),nvec,SPComplexType(1.0),SptQk.values(),SptQk.column_data(), SptQk.row_index(), Rl.values()+bl0,norb*NAEB,SPComplexType(0),Ta.values()+bl0,norb*NAEB);
+                Ta.barrier();
+                for(int k=k0, ka=0; k<kN; k++) {
+                  for(int a=0; a<NAEA; a++, ka++) {
+                    for(int lb=bl0; lb<blN; lb++) { // lb = (l-l0)*NAEB+b  
+                      SPComplexType qkalb = *(Ta.values() + ka*norb*NAEB + lb);  // Qa(ka,lb)   
+                      if(std::abs( qkalb ) > cut) sz++;
+                      if(std::abs( qkalb ) > cut) sz2++;
+                    }
+                  }
+                }
+              }  
+
+            } else if(M_split[nn] >= NMO && M_split[nn+1] >= NMO) {
+              // k is beta           
+              if(!amIAlpha) {
+                // <a,b | k,l> = Qa(ka,lb) - Qb(la,kb)
+                // Qa(ka,lb) = Q(k,a,:)*R(l,b,:)                
+                //DenseMatrixOperators::product(nk*NAEB,int(blN-bl0),nvec,SPComplexType(1.0),tQk.values(),nvec,Rl.values()+bl0,norb*NAEB,SPComplexType(0),Qa.values()+bl0,norb*NAEB);
+                //Qa.barrier();
+                SparseMatrixOperators::product_SpMatM(nk*NAEB,int(blN-bl0),nvec,SPComplexType(1.0),SptQk.values(),SptQk.column_data(), SptQk.row_index(), Rl.values()+bl0,norb*NAEB,SPComplexType(0),Ta.values()+bl0,norb*NAEB);
+                Ta.barrier();
+                for(int k=k0, ka=0; k<kN; k++) {
+                  for(int a=0; a<NAEB; a++, ka++) {
+                    for(int lb=bl0; lb<blN; lb++) { // lb = (l-l0)*NAEB+b  
+                      int b = lb%NAEB;
+                      if(b<=a) continue;
+                      int l = lb/NAEB+l0;
+                      int la = (l-l0)*NAEB+a;
+                      int kb = (k-k0)*NAEB+b;
+                      SPComplexType qkalb = *(Ta.values() + ka*norb*NAEB + lb);  // Qa(ka,lb)   
+                      SPComplexType qlakb = *(Ta.values() + kb*norb*NAEB + la);  // Qa(kb,la)   
+                      if(std::abs( qkalb - qlakb ) > cut) sz++;
+                      if(std::abs( qkalb - qlakb ) > cut) sz3++;
+                    }
+                  }
+                }
+              }  
+            } else {
+              APP_ABORT(" Error: This should not happen. \n\n\n");
+            } 
+
+          } else if(walker_type == 2) {
+            APP_ABORT(" Error in createHamiltonianForGeneralDeterminant: GHF not implemented. \n\n\n");
+          }
+MPI_Barrier(myComm->getMPI()); // to measure actual time
+Timer.stop("Generic2");
+app_log()<<"Time to calculate Qab: " <<nn <<"  " <<Timer.total("Generic2") <<std::endl;
+
         }
-        }
 
-      } else if(walker_type == 1) {
-        APP_ABORT("Error: TODO: createHamiltonianForGeneralDeterminant not implemented for UHF walker type yet. \n\n\n");
-      } else if(walker_type == 2) {
-        APP_ABORT("Error: TODO: createHamiltonianForGeneralDeterminant not implemented for GHF walker type yet. \n\n\n");
       }
 
-      myComm->allreduce(cnter);
-      Vijkl.allocate(cnter+1000);
+      std::size_t sz_local=sz;
+      MPI_Allreduce(&sz_local,&sz,1,MPI_UNSIGNED_LONG,MPI_SUM,myComm->getMPI()); 
+      // not yet distributed, later on decide distribution here based on FairDivide
+      // and allocate appropriately          
+      app_log()<<"Number of terms in Vijkl: " <<sz <<" " <<sz*(sizeof(ValueType)+sizeof(int)*2)/1024.0/1024.0 <<" MB" <<std::endl;
+      Vijkl.allocate(sz);
 
-      if(walker_type == 0) {
+      std::size_t sz_1=0, sz_2=0, sz_3=0;
 
-        for(int k=0, nt=0; k<NMO; k++) {
-        for(int l=k; l<NMO; l++, nt++) {
-        
-          // instead of round robin, use FairShare on NMO*(NMO+1)/2, since that allows reuse of Qk
-          if( nt%npr != rk ) continue;
+      // now calculate fully distributed matrix elements
+      for(int nn=0, nb=0, nkcum=0; nn<ngrp; nn++) {
 
-          // 1. check if Qk/Rl has been previously built. If not build and store it
-#if defined(QMC_COMPLEX)
-          ComplexType *Qkptr = Qk.data();
-          ComplexType *Rlptr = Rl.data();
-            
+        assert(nkcum==M_split[nn]);
+        if(M_split[nn+1]==M_split[nn]) continue;
+        int nblk = Qknum[nn];
+        long ntermscum=0;
+        for( int bi = 0; bi < nblk; bi++, nb++) {
+          int nterms = Qksizes[2*nb];      // number of terms in block 
+          int nk = Qksizes[2*nb+1];        // number of k-blocks in block
+          int k0 = nkcum;                  // first value of k in block
+          nkcum+=nk;
+          int kN = nkcum;                  // last+1 value
+          int NEL0 = (k0<NMO)?NAEA:NAEB;   // number of electrons in this spin block
+          assert(nk > 0 && nk <= maxnk );  // just checking
+
+/*
+          if(head_of_nodes) {
+            if(nn == nodeid) {
+              std::copy(Qk.values()+bi*maxnk*NEL0*nvec,Qk.values()+(bi*maxnk+nk)*NEL0*nvec,tQk.values());
+            }  
+#if defined(AFQMC_SP)
+            MPI_Bcast(tQk.values(),nk*NEL0*nvec*2,MPI_FLOAT,nn,MPI_COMM_HEAD_OF_NODES);
 #else
-          ComplexType *Qkptr = Qk.data();
-          ComplexType *Rlptr = Rl.data();
+            MPI_Bcast(tQk.values(),nk*NEL0*nvec*2,MPI_DOUBLE,nn,MPI_COMM_HEAD_OF_NODES);
+#endif
+          } 
+          tQk.barrier();
 
-          Qk=0;
-          for(int i=0; i<NMO; i++) {
-            int ik = i*NMO+k;
-            int n0 = *(V2_fact.row_index() + ik);  
-            int n1 = *(V2_fact.row_index() + ik+1);
-            if(n1==n0) continue;
-            int nv = n1-n0;  
-            ValueSMSpMat::pointer itLval = V2_fact.values() + n0;
-            ValueSMSpMat::indxPtr itLcol = V2_fact.column_data() + n0;
-            const ComplexType* itAia = A[i];
-            for(int a=0; a<NAEA; a++, itAia++) {
-              Qkptr = Qk[a];
-              for(int n=0; n<nv; n++)   
-                //*(Qkptr+(*(itLcol+n))) += std::conj(*itAia) * (*(itLval+n));
-                Qk(a,itLcol[n]) += std::conj(A(i,a)) * itLval[n];
+*/
+
+Timer.reset("Generic2");
+Timer.start("Generic2");
+
+          assert(nblk==1);
+          if(head_of_nodes) {
+            if(nn == nodeid) {
+              long n0 = *SpQk.row_index( (k0-M_split[nn])*NEL0 );
+              long n1 = *SpQk.row_index( (k0-M_split[nn]+nk)*NEL0 );
+              int nt_ = static_cast<int>(n1-n0);
+              assert(ntermscum==n0);
+              assert(nt_==nterms);
+              SptQk.resize_serial(nterms);
+              std::copy(SpQk.values()+n0,SpQk.values()+n1,SptQk.values());
+              std::copy(SpQk.column_data()+n0,SpQk.column_data()+n1,SptQk.column_data());
+              for(int i=0, j=(k0-M_split[nn])*NEL0; i<=nk*NEL0; i++, j++)
+                SptQk.row_index()[i] = SpQk.row_index()[j]-n0;
             }
+            MPI_Bcast(&nterms,1,MPI_LONG,nn,MPI_COMM_HEAD_OF_NODES);
+            SptQk.resize_serial(nterms);
+#if defined(AFQMC_SP)
+            MPI_Bcast(SptQk.values(),nterms*2,MPI_FLOAT,nn,MPI_COMM_HEAD_OF_NODES);
+#else
+            MPI_Bcast(SptQk.values(),nterms*2,MPI_DOUBLE,nn,MPI_COMM_HEAD_OF_NODES);
+#endif
+            MPI_Bcast(SptQk.column_data(),nterms,MPI_INT,nn,MPI_COMM_HEAD_OF_NODES);
+            MPI_Bcast(SptQk.row_index(),nk*NEL0+1,MPI_INT,nn,MPI_COMM_HEAD_OF_NODES);
           }
-          Qkptr = Qk.data();
+          SptQk.setCompressed();
+          SptQk.barrier();
 
-          if(k==l) { 
-            Rlptr = Qk.data();
-          } else {
-            Rl=0;
-            for(int i=0; i<NMO; i++) {
-              int li = l*NMO+i;
-              int n0 = *(V2_fact.row_index() + li);
-              int n1 = *(V2_fact.row_index() + li+1);
-              if(n1==n0) continue;
-              int nv = n1-n0;
-              ValueSMSpMat::pointer itLval = V2_fact.values() + n0;
-              ValueSMSpMat::indxPtr itLcol = V2_fact.column_data() + n0;
-              const ComplexType* itAia = A[i];
-              for(int a=0; a<NAEA; a++, itAia++) {
-                Rlptr = Rl[a];
-                for(int n=0; n<nv; n++) 
-                  //*(Rlptr+(*(itLcol+n))) += std::conj(*itAia) * (*(itLval+n)); // conj(L) in complex
-                  Rl(a,itLcol[n]) += std::conj(A(i,a)) * itLval[n]; 
+Timer.stop("Generic2");
+app_log()<<"Time to Bcast SptQk: " <<nn <<"  " <<Timer.total("Generic2") <<std::endl;
+
+          // for safety, keep track of sum
+          ntermscum += static_cast<long>(nterms);
+
+//*/
+          if(walker_type == 0) {
+
+            // <a,b | k,l> = Qa(ka,lb) - Qb(la,kb)
+            // Qa(ka,lb) = 4*Q(k,a,:)*R(l,b,:)
+            //DenseMatrixOperators::product(nk*NAEA,int(blN-bl0),nvec,SPComplexType(1.0),tQk.values(),nvec,Rl.values()+bl0,norb*NAEA,SPComplexType(0),Qa.values()+bl0,norb*NAEA);
+            //Qa.barrier();
+            SparseMatrixOperators::product_SpMatM(nk*NAEA,int(blN-bl0),nvec,SPComplexType(1.0),
+                     SptQk.values(),SptQk.column_data(), SptQk.row_index(),
+                     Rl.values()+bl0,norb*NAEA,SPComplexType(0),Ta.values()+bl0,norb*NAEA);
+            Ta.barrier();
+            SPComplexType four = SPComplexType(4.0);
+            SPComplexType two = SPComplexType(2.0);
+            for(int k=k0, ka=0; k<kN; k++) {
+              for(int a=0; a<NAEA; a++, ka++) {
+                for(int lb=bl0; lb<blN; lb++) { // lb = (l-l0)*NAEA+b  
+                  int b = lb%NAEA;
+                  if(b<a) continue;
+                  int l = lb/NAEA+l0;
+                  int la = (l-l0)*NAEA+a;
+                  int kb = (k-k0)*NAEA+b;
+                  SPComplexType qkalb = *(Ta.values() + ka*norb*NAEA + lb);  // Qa(ka,lb)   
+                  SPComplexType qlakb = *(Ta.values() + kb*norb*NAEA + la);  // Qa(kb,la)   
+                  if(std::abs( four*qkalb - two*qlakb ) > cut) {
+                    abkl.push_back( std::make_tuple(a*NMO+k, b*NMO+l, 2.0*(four*qkalb - two*qlakb)) );
+                    if(abkl.size()==nmax) {
+                      Vijkl.add(abkl,true);
+                      abkl.clear();
+                    } 
+                  }
+                }
               }
             }
-            Rlptr = Rl.data();
-          }  
-#endif 
 
-          // 2. Qa(a,b) = <ab|||kl> = 4*Qk*Rl.T - 2*Rl*Qk.T
-          RealType fct = (k==l)?1.0:2.0;
-          DenseMatrixOperators::product_ABt(NAEA,NAEA,ncvec,ComplexType(4.0*fct,0.0),Qkptr,ncvec,Rlptr,ncvec,ComplexType(0),Qa.data(),NAEA);
-          DenseMatrixOperators::product_ABt(NAEA,NAEA,ncvec,ComplexType(-2.0*fct,0.0),Rlptr,ncvec,Qkptr,ncvec,ComplexType(1),Qa.data(),NAEA);
+          } else if(walker_type == 1) {
 
-          // Now I have Q(a,b,k0,l0);
-          for(int a=0; a<NAEA; a++)
-           for(int b=0; b<NAEA; b++) 
-             if(std::abs(Qa(a,b)) > cut)
-               Vijkl.add( a*NMO+k, b*NMO+l, static_cast<SPComplexType>(Qa(a,b)), true);
-        }
-        }
+            if( M_split[nn] < NMO && (M_split[nn+1]-1) < NMO ) {
+              // k is alpha
 
-      } else if(walker_type == 1) {
-        APP_ABORT("Error: TODO: createHamiltonianForGeneralDeterminant not implemented for UHF walker type yet. \n\n\n");
-      } else if(walker_type == 2) {
-        APP_ABORT("Error: TODO: createHamiltonianForGeneralDeterminant not implemented for GHF walker type yet. \n\n\n");
+              if(amIAlpha) {
+                // <a,b | k,l> = Qa(ka,lb) - Qb(la,kb)
+                // Qa(ka,lb) = Q(k,a,:)*R(l,b,:)
+              
+/*
+                Qa.barrier();
+Timer.reset("Generic2");
+Timer.start("Generic2");
+
+                DenseMatrixOperators::product(nk*NAEA,int(blN-bl0),nvec,SPComplexType(1.0),tQk.values(),nvec,Rl.values()+bl0,norb*NAEA,SPComplexType(0),Qa.values()+bl0,norb*NAEA);
+                Qa.barrier();
+
+
+Timer.stop("Generic2");
+app_log()<<"Time for dense DGEMM : " <<nn <<"  " <<Timer.total("Generic2") <<std::endl;
+*/
+/*
+              SptQk.toOneBase();
+              SpRl.toOneBase();
+              if(coreid==0)  
+                std::fill(Ta.begin(),Ta.end(),SPComplexType(0));  
+              SpRl.barrier();
+Timer.reset("Generic2");
+Timer.start("Generic2");
+
+#if defined(HAVE_MKL)
+              if(coreid < nk*NAEA) {
+                // partition on the fly
+                int nwork = std::min(nk*NAEA,ncores);
+                int ak0,akN;
+                std::tie(ak0, akN) = FairDivideBoundary(coreid,nk*NAEA,nwork);
+
+                char TRANS = 'N';
+                int M_ = (akN-ak0), N_ = norb*NAEA;
+                int ldc_ = nk*NAEA;
+                rowI.resize(M_+1);
+                SPComplexSMSpMat::intPtr r = SptQk.row_index(ak0);
+                int p0 = *r; 
+                std::vector<SPComplexSMSpMat::intType>::iterator it=rowI.begin();
+                std::vector<SPComplexSMSpMat::intType>::iterator itend=rowI.end();
+                int i_=0;
+                for(; it!=itend; it++,r++) 
+                  *it = *r-p0+1;
+                // CAREFUL!!! C matrix in fortran format
+                mkl_zcsrmultd (&TRANS, &M_ , &N_ , &nvec , 
+                        SptQk.values(p0-1), SptQk.column_data(p0-1) , rowI.data(), //SptQk.row_index(ak0), 
+                        SpRl.values()  , SpRl.column_data()  , SpRl.row_index() , 
+                        Ta.values()+ak0, &ldc_ );     
+              }
+              SptQk.barrier();  
+#else 
+              APP_ABORT(" Error: Requires MKL. Code alternative (Talk to Miguel) \n\n\n");
+#endif
+
+Timer.stop("Generic2");
+app_log()<<"Time for zcsrmultd : " <<nn <<"  " <<Timer.total("Generic2") <<std::endl;
+
+              if(coreid==0) {
+                for(int a=0; a<nk*NAEA; a++)
+                  for(int b=0; b<norb*NAEA; b++)
+                    if( std::abs(*(Qa.values()+a*norb*NAEA+b) - *(Ta.values()+b*nk*NAEA+a) ) > 5e-5)
+                      app_log()<<" Diff: " <<a <<" " <<b <<" " <<*(Qa.values()+a*norb*NAEA+b) <<" " <<*(Ta.values()+b*nk*NAEA+a) <<std::endl;
+              }  
+
+              SptQk.toZeroBase();
+              SpRl.toZeroBase();
+              SpQk.barrier();  
+*/
+///*
+//Timer.reset("Generic2");
+//Timer.start("Generic2");
+              SparseMatrixOperators::product_SpMatM(nk*NAEA,int(blN-bl0),nvec,SPComplexType(1.0),
+                            SptQk.values(),SptQk.column_data(), SptQk.row_index(), 
+                            Rl.values()+bl0,norb*NAEA,SPComplexType(0),Ta.values()+bl0,norb*NAEA);
+              SpQk.barrier();  
+//Timer.stop("Generic2");
+//app_log()<<"Time for sparse DGEMM : " <<nn <<"  " <<Timer.total("Generic2") <<std::endl;
+//              SpQk.barrier();  
+
+//              if(coreid==0) {
+//                for(int a=0; a<nk*NAEA; a++)
+//                  for(int b=0; b<norb*NAEA; b++)
+//                    if( std::abs(*(Qa.values()+a*norb*NAEA+b) - *(Ta.values()+a*norb*NAEA+b) ) > 1e-6)
+//                      app_log()<<" Diff: " <<a <<" " <<b <<" " <<*(Qa.values()+a*norb*NAEA+b) <<" " <<*(Ta.values()+a*norb*NAEA+b) <<std::endl;
+//              }
+
+//*/
+                for(int k=k0, ka=0; k<kN; k++) {
+                  for(int a=0; a<NAEA; a++, ka++) {
+                    for(int lb=bl0; lb<blN; lb++) { // lb = (l-l0)*NAEA+b  
+                      int b = lb%NAEA;
+                      if(b<=a) continue;
+                      int l = lb/NAEA+l0;
+                      int la = (l-l0)*NAEA+a;
+                      int kb = (k-k0)*NAEA+b;
+                      SPComplexType qkalb = *(Ta.values() + ka*norb*NAEA + lb);  // Qa(ka,lb)   
+                      SPComplexType qlakb = *(Ta.values() + kb*norb*NAEA + la);  // Qa(kb,la)
+                      if(std::abs( qkalb - qlakb ) > cut) {
+                        sz_1++;
+                        abkl.push_back( std::make_tuple(a*NMO+k, b*NMO+l, 2.0*(qkalb - qlakb)) );
+                        if(abkl.size()==nmax) {
+                          Vijkl.add(abkl,true);
+                          abkl.clear();
+                        }
+                      }
+                    }
+                  }
+                }
+
+              } else {
+                //DenseMatrixOperators::product(nk*NAEA,int(blN-bl0),nvec,SPComplexType(1.0),tQk.values(),nvec,Rl.values()+bl0,norb*NAEB,SPComplexType(0),Qa.values()+bl0,norb*NAEB);
+                SparseMatrixOperators::product_SpMatM(nk*NAEA,int(blN-bl0),nvec,SPComplexType(1.0),
+                            SptQk.values(),SptQk.column_data(), SptQk.row_index(),
+                            Rl.values()+bl0,norb*NAEB,SPComplexType(0),Ta.values()+bl0,norb*NAEB);
+                Ta.barrier();
+                for(int k=k0, ka=0; k<kN; k++) {
+                  for(int a=0; a<NAEA; a++, ka++) {
+                    for(int lb=bl0; lb<blN; lb++) { // lb = (l-l0)*NAEB+b  
+                      int b = lb%NAEB;
+                      int l = lb/NAEB+l0;
+                      SPComplexType qkalb = *(Ta.values() + ka*norb*NAEB + lb);  // Qa(ka,lb)   
+                      if(std::abs( qkalb ) > cut) { 
+                        sz_2++;
+                        abkl.push_back( std::make_tuple(a*NMO+k, NMO*NMO+b*NMO+l-NMO, 2.0*(qkalb)));
+                        if(abkl.size()==nmax) {
+                          Vijkl.add(abkl,true);
+                          abkl.clear();
+                        }
+                      }
+                    }
+                  }
+                }
+              }  
+
+            } else if(M_split[nn] >= NMO && M_split[nn+1] >= NMO) {
+              // k is beta
+              if(!amIAlpha) {
+                // <a,b | k,l> = Qa(ka,lb) - Qb(la,kb)
+                // Qa(ka,lb) = Q(k,a,:)*R(l,b,:)
+                //DenseMatrixOperators::product(nk*NAEB,int(blN-bl0),nvec,SPComplexType(1.0),tQk.values(),nvec,Rl.values()+bl0,norb*NAEB,SPComplexType(0),Qa.values()+bl0,norb*NAEB);
+                //Qa.barrier(); 
+                SparseMatrixOperators::product_SpMatM(nk*NAEB,int(blN-bl0),nvec,SPComplexType(1.0),
+                            SptQk.values(),SptQk.column_data(), SptQk.row_index(),
+                            Rl.values()+bl0,norb*NAEB,SPComplexType(0),Ta.values()+bl0,norb*NAEB);
+                Ta.barrier(); 
+                for(int k=k0, ka=0; k<kN; k++) {
+                  for(int a=0; a<NAEB; a++, ka++) {
+                    for(int lb=bl0; lb<blN; lb++) { // lb = (l-l0)*NAEB+b  
+                      int b = lb%NAEB;
+                      if(b<=a) continue;
+                      int l = lb/NAEB+l0;
+                      int la = (l-l0)*NAEB+a;
+                      int kb = (k-k0)*NAEB+b;
+                      SPComplexType qkalb = *(Ta.values() + ka*norb*NAEB + lb);  // Qa(ka,lb)   
+                      SPComplexType qlakb = *(Ta.values() + kb*norb*NAEB + la);  // Qa(kb,la)   
+                      if(std::abs( qkalb - qlakb ) > cut) {
+                        sz_3++;
+                        abkl.push_back( std::make_tuple(NMO*NMO+a*NMO+k-NMO, NMO*NMO+b*NMO+l-NMO, 2.0*(qkalb - qlakb)) );
+                        if(abkl.size()==nmax) {
+                          Vijkl.add(abkl,true);
+                          abkl.clear();
+                        }
+                      } 
+                    }
+                  }
+                }
+              }
+            } else {
+              APP_ABORT(" Error: This should not happen. \n\n\n");
+            }
+
+          } else if(walker_type == 2) {
+            APP_ABORT(" Error in createHamiltonianForGeneralDeterminant: GHF not implemented. \n\n\n");
+          }
+        } // bi < nblk
       }
+
+      if(abkl.size()>0) {
+        Vijkl.add(abkl,true);
+        abkl.clear();
+      }
+      SpQk.barrier();
+      myComm->barrier();
+
+      //debug debug debug
+      assert(sz1==sz_1);
+      assert(sz2==sz_2);
+      assert(sz3==sz_3);
+
+      Timer.stop("Generic");
+      app_log()<<"Time to calculate distributed Hamiltonian: " <<Timer.total("Generic") <<std::endl;
 
       if(!communicate_Vijkl(Vijkl)) return false;
       myComm->barrier();
@@ -6231,11 +7176,6 @@ namespace qmcplusplus
       app_log()<<"Time to generate 2-body Hamiltonian: " <<Timer.total("Generic") <<std::endl;
 
     } else {
-
-#if defined(QMC_COMPLEX)
-        app_log()<<"  WARNING WARNING WARNING!!!: createHamiltonianForGeneralDeterminant is not implemented for complex build yet. \n";
-        APP_ABORT("  WARNING WARNING WARNING!!!: createHamiltonianForGeneralDeterminant is not implemented for complex build yet. \n");
-#endif
 
         // Alg:
         // 0. Erase V2. Create full sparse hamiltonian (with symmetric terms)  
@@ -6642,16 +7582,14 @@ namespace qmcplusplus
     app_log()<<" Compressing sparse hamiltonians. " <<std::endl;
 #endif
 
-    if(head_of_nodes) {
-
-      if(!Vijkl.remove_repeated_and_compress()) {
-        APP_ABORT("Error in call to SparseMatrix::remove_repeated(). \n");
-      }
+    if(!Vijkl.remove_repeated_and_compress(TG.getNodeCommLocal())) {
+      APP_ABORT("Error in call to SparseMatrix::remove_repeated(). \n");
+    }
 
 #ifdef AFQMC_DEBUG
       app_log()<<" Done compressing sparse hamiltonians. " <<std::endl;
 #endif
-    }
+    
     myComm->barrier();
     return true;
   }

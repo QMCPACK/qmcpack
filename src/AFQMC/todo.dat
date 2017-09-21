@@ -1,18 +1,23 @@
-Parallelization / Distributed routines:
 
 Finish:
-1. Wave-function parallelization routines. Partition hamiltonian and write versions for MultiSD
-2. 
+1. Wave-function parallelization routines. 
+    - Partition hamiltonian and write versions for MultiSD
+    - Implement DGEMM version of eloc calculation
+2. Modify distributed LA code to overlap communication with computation.
+3. Speed-up/parallelize creation of Vijkl and Spvn with cholesky integrals
+    - Use Vijkl.add(std::vector<>) instead of term-by-term
+    - parallelize the routines that currently occur at rank()==0.
+4. Enable object reuse, e.g. multiple calls to Drivers with the same Wfn/Ham/Prop/etc objects
+    - Initialize only one, e.g. integrals can't change in Hamiltonian, Spvn can only be rescaled, etc 
+    - If already initialized, write a set of routines to reset that will be called instead of init.
+       -- reset will do necessary setup for the new run if anything changes, e.g. # walkers, etc.
+5. Write post-processing driver to process stored configurations.
+6. Fix single precision. Revert back to implementation where the only step done at single precision is
+   the GEMM with Spvn and SpHijkl. Everything else should be turned back to double precision.
+7. Implement back-propagation.
+8. Add estimators, e.g. density matrix. 
+9. Finish GHF walkers.
 
 Ideas to implement:
-- Cholesky vectors are symmetric when real (and hermitian when complex???). Think about how to use this in your favor. 
-- Postprocessing driver. This will look over walkers saved in configuration files and calculate properties.
 - Test and use idea where the projection is done with a large cutoff, but the energy is corrected by postprocessing configurations with a small cutoff. See how well it works.
-- Combine load balancing and population control into a single routine.
-- Implement version of energy and propagation routine where Spvn and Muv are stored as single precision real matrices. For chemical hamiltonians Spvn is purely complex and Muv is real, so no need to store these as complex. Apply complex factors as needed later. This should save a factor of 4 in memory.
-- Implement MP2 NO or selected CI rotation of the basis. 
-- Finish GHF walkers
 
-- implement a "meanfield_substraction" wave-function tag that can be used to calculate vMF in Propagator.
-  test the dependence of the variance and bias on the quality of vMF for a fixed importancesampling twf
-- In the hybrid method, there is a clear differentiation between the twf used for force bias and the twf used for force biasing. Implement the option to use different ones. For example, keep importancesampling for that purpose and add a force_bias type to the wfnhandler. Test the dependence of the variance, execution speed and bias on the choice of force-bias wfn and importance sampling. The point is that for large multideterminant twfs i the hybrid mode, the most expensive part of the calculation is the exaluation of the green's function, which depends only on the force-bias twf. You can use a medium quality function force-bias and a very high quality wavefunction for importance sampling. Is this useful?

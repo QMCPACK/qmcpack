@@ -17,7 +17,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Estimators/EstimatorManager.h"
+#include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/ScalarEstimatorBase.h"
 
 
@@ -39,13 +39,13 @@ class FakeEstimator : public ScalarEstimatorBase
   virtual ScalarEstimatorBase* clone() { return new FakeEstimator; }
 };
 
-TEST_CASE("EstimatorManager", "[estimators]")
+TEST_CASE("EstimatorManagerBase", "[estimators]")
 {
   OHMMS::Controller->initialize(0, NULL);
   Communicate *c = OHMMS::Controller;
   OhmmsInfo("testlogfile");
 
-  EstimatorManager em(c);
+  EstimatorManagerBase em(c);
 
   REQUIRE(em.size() == 0);
 
@@ -60,7 +60,7 @@ TEST_CASE("EstimatorManager", "[estimators]")
   REQUIRE(fake_est2 == fake_est);
 
   // Check the copy constructor
-  EstimatorManager em2(em);
+  EstimatorManagerBase em2(em);
   REQUIRE(em.size() == 1);
 
   em.start(2, true);
