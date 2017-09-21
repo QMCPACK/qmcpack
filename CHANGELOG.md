@@ -7,7 +7,7 @@ Notable changes to QMCPACK will be documented in this file.
 ### Notes
 
 This release provides a significant speed increase for
-many-calculations. A C++11 compiler is now required. It is a
+many calculations. A C++11 compiler is now required. It is a
 recommended update.
 
 ### QMCPACK updates
