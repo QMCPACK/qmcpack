@@ -64,8 +64,7 @@ struct ECPComponentBuilder: public MPIObjectBase, public QMCTraits
   //  5          18          5
   //  6          26          7
   //  7          50         11
-  bool SetQuadratureRule(int rule);
-  bool CheckQuadratureRule(int lexact);
+  void SetQuadratureRule(int rule);
 
   mGridType* createGrid(xmlNodePtr cur, bool useLinear=false);
   RadialPotentialType* createVrWithBasisGroup(xmlNodePtr cur, mGridType* agrid);

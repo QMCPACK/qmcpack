@@ -28,10 +28,10 @@ class AFQMCDriver: public Driver
   public:
 
     AFQMCDriver(Communicate *c):Driver(c),
-        compare_libraries(false),debug(false),dShift(1.0),
+        debug(false),dShift(1.0),
         min_total_weight(0.8),accum_ovlp(false),
         diagHam(0),diagHam_freq(10),set_nWalker_target(false),
-        print_timers(0),samplePeriod(-1)
+        print_timers(0),samplePeriod(-1),timer_first_call(true)
     {
       name = "AFQMC";
       project_title = "afqmc";
@@ -55,7 +55,6 @@ class AFQMCDriver: public Driver
 
     bool writeSamples();
 
-    bool compare_libraries;
     bool debug; 
 
     int print_timers;
@@ -78,6 +77,8 @@ class AFQMCDriver: public Driver
     // temporary 
     LocalWalkerHandler* localwlkBucket;
 
+    bool timer_first_call;
+    std::vector<std::string> tags;
     void output_timers(std::ofstream&,int);
 
 };

@@ -52,10 +52,10 @@ TEST_CASE("symmetric_distance_table", "[particle]")
   sym_dtd_t dist(source, source);
 
   dist.evaluate(source);
-  source.addTable(source);
+  source.addTable(source,DT_AOS);
   source.update();
 
-  DistanceTableData *dist2 = createDistanceTable(source);
+  DistanceTableData *dist2 = createDistanceTable(source,DT_AOS);
 }
 
 }

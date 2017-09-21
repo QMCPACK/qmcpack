@@ -83,17 +83,14 @@ public:
   ParticleIndex_t   ID;
   //!< Species ID
   ParticleIndex_t   GroupID;
-
   //!< Position
   ParticlePos_t    R;
-
   //!< Instantaneous Position in unit used by layout/nnlist engines, not added to myAttribList
-  ParticlePos_t    curR;
-
+  //ParticlePos_t    curR;
   //!< Default constructor
   ParticleBase();
 
-  ParticleBase(const ParticleBase<PT>& P): Counter(0), LocalNum(0), GlobalNum(0)
+  ParticleBase(const ParticleBase& P): Counter(0), LocalNum(0), GlobalNum(0)
   {
     initBase();
     assign(P);
@@ -106,11 +103,11 @@ public:
   {
     return AttribTypeMap[tname];
   }
-
   inline int getNumAttrib() const
   {
     return AttribList.size();
   }
+
   inline PAListIterator first_attrib()
   {
     return AttribList.begin();
@@ -122,65 +119,59 @@ public:
 
   bool hasAttrib(const std::string& attrib_name);
 
-  int addAttribute(const std::string& tname, const std::string& oname);
-  int addAttribute(ParticleIndex_t& pa);
-  int addAttribute(ParticleScalar_t& pa);
-  int addAttribute(ParticlePos_t& pa);
-  int addAttribute(ParticleTensor_t& pa);
+  /** generic get function attribute function 
+   * @param tname attribute type name
+   * @param oname attribute name
+   * @param pa pointer to ParticleAttrib<AT>*
+   * @return pointer to the attribute
+   */
+  template<typename AT> 
+    ParticleAttrib<AT>* getAttribute(const std::string& tname, const std::string& oname, ParticleAttrib<AT>*  pa)
+  {
+    bool foundit=false;
+    typedef ParticleAttrib<AT> attrib_type;
+    int oid=AttribList.size();
+    std::map<std::string,OhmmsObject*>::iterator it= AttribList.find(oname);
+    if(it != AttribList.end())
+    {
+      OhmmsObject* o=(*it).second;
+      return dynamic_cast<attrib_type*>(o);
+    }
+    else
+    {
+      if(pa == nullptr) //only 
+      {
+        pa=new attrib_type(tname,oname);
+        pa->resize(LocalNum);
+        pa->setID(AttribList.size());
 
-  ParticleIndex_t*  getIndexAttrib(const std::string& aname);
-  ParticleScalar_t* getScalarAttrib(const std::string& aname);
-  ParticlePos_t*    getVectorAttrib(const std::string& aname);
-  ParticleTensor_t* getTensorAttrib(const std::string& aname);
-
-  inline const ParticleIndex_t*  getIndexAttrib(int i) const
-  {
-    return INDEX[i];
-  }
-  inline const ParticleScalar_t* getScalarAttrib(int i) const
-  {
-    return VAL[i];
-  }
-  inline const ParticlePos_t*    getVectorAttrib(int i) const
-  {
-    return POS[i];
-  }
-  inline const ParticleTensor_t* getTensorAttrib(int i) const
-  {
-    return TENZOR[i];
-  }
-  inline ParticleIndex_t*  getIndexAttrib(int i)
-  {
-    return INDEX[i];
-  }
-  inline ParticleScalar_t* getScalarAttrib(int i)
-  {
-    return VAL[i];
-  }
-  inline ParticlePos_t*    getVectorAttrib(int i)
-  {
-    return POS[i];
-  }
-  inline ParticleTensor_t* getTensorAttrib(int i)
-  {
-    return TENZOR[i];
+        AllocatedList.push_back(pa);
+        AttribList[oname]=pa;
+      }
+    }
+    return pa;
   }
 
-#if defined(MIXED_PRECISION) || defined(QMC_COMPLEX)
-  int addAttribute(ParticleGradient_t& pa);
-#endif
-#if defined(QMC_COMPLEX)
-  int addAttribute(ParticleLaplacian_t& pa);
-#endif
+  void createBase(size_t m);
+  void createBase(const std::vector<int>& agroup);
 
-  void create(unsigned m);
-  void create(const std::vector<int>& agroup);
-
-  void resize(unsigned m);
+  void resize(size_t m);
   void clear();
 
   virtual void assign(const ParticleBase<PT>& ptclin)
   {
+    size_t nextra=ptclin.AllocatedList.size();
+    if(nextra)
+    {
+      AllocatedList.resize(nextra);
+      for(size_t i=0; i<nextra; ++i)
+      {
+        OhmmsObject* o=ptclin.AllocatedList[i]->makeClone();
+        AllocatedList[i]=o;
+        AttribList[o->objName()]=o;
+      }
+    }
+
     resize(ptclin.getLocalNum());
     Lattice = ptclin.Lattice;
     PrimitiveLattice = ptclin.PrimitiveLattice;
@@ -250,23 +241,150 @@ protected:
   int GlobalNum;
 
   ///array to handle a group of distinct particles per species
-  ParticleIndex_t             SubPtcl;
-
+  ParticleIndex_t                       SubPtcl;
   std::map<std::string,int>             AttribTypeMap;
-  std::map<std::string,int>             Name2Index;
   std::map<std::string,OhmmsObject*>    AttribList;
-  std::vector<ParticleIndex_t*>    INDEX;
-  std::vector<ParticleScalar_t*>   VAL;
-  std::vector<ParticlePos_t*>      POS;
-  std::vector<ParticleTensor_t*>   TENZOR;
-#if defined(MIXED_PRECISION) || defined(QMC_COMPLEX)
-  std::vector<ParticleGradient_t*>   GRADS;
-#endif
-#if defined(QMC_COMPLEX)
-  std::vector<ParticleLaplacian_t*>  LAPS;
-#endif
-  std::vector<OhmmsObject*>        myAttribList;
+  /** objects created by getXYZAttrib(aname) */
+  std::vector<OhmmsObject*>        AllocatedList;
+
+  /** add ParticleAttrib<AT>
+   * @tparm AT any element type, int, double, float ...
+   */
+  template<typename AT> 
+    int addAttribute(ParticleAttrib<AT>& pa)
+  {
+    if(pa.size() < getLocalNum()) pa.resize(getLocalNum());
+
+    int oid=AttribList.size();
+    std::map<std::string,OhmmsObject*>::iterator it= AttribList.find(pa.objName());
+    if(it == AttribList.end()) 
+    {
+      AttribList[pa.objName()]=&pa;
+      pa.setID(oid);
+    }
+    else
+    {
+      oid=(*it).second->id();
+    }
+    return oid;
+  }
+
 };
+
+/** Default constructor */
+template<class PL>
+ParticleBase<PL>::ParticleBase():Counter(0), LocalNum(0), GlobalNum(0)
+{
+  initBase();
+}
+
+template<class PL>
+void ParticleBase<PL>::initBase()
+{
+  R.setTypeName(ParticleTags::postype_tag);
+  R.setObjName(ParticleTags::position_tag);
+  ID.setTypeName(ParticleTags::indextype_tag);
+  ID.setObjName(ParticleTags::id_tag);
+  GroupID.setTypeName(ParticleTags::indextype_tag);
+  GroupID.setObjName(ParticleTags::ionid_tag);
+  //map[type-name] to enum
+  AttribTypeMap[ParticleTags::indextype_tag]  = PA_IndexType;
+  AttribTypeMap[ParticleTags::scalartype_tag] = PA_ScalarType;
+  AttribTypeMap[ParticleTags::stringtype_tag] = PA_StringType;
+  AttribTypeMap[ParticleTags::postype_tag]    = PA_PositionType;
+  AttribTypeMap[ParticleTags::tensortype_tag] = PA_TensorType;
+  //add basic attributes
+  addAttribute(R);
+  addAttribute(ID);
+  addAttribute(GroupID);
+  //curR is always in unit
+  //curR.setUnit(PosUnit::LatticeUnit);
+}
+
+template<class PL>
+ParticleBase<PL>::~ParticleBase()
+{
+  for(int i=0; i<AllocatedList.size(); i++)
+    delete AllocatedList[i];
+}
+
+/** check if named attribute exists
+ *  \param aname String for the attribute name
+ *  \return true if the name is found.
+ */
+template<class PL>
+bool ParticleBase<PL>::hasAttrib(const std::string& aname)
+{
+  return (AttribList.find(aname) != AttribList.end());
+}
+
+template<class PL>
+void ParticleBase<PL>::createBase(size_t m)
+{
+  std::map<std::string,OhmmsObject*>::iterator it= AttribList.begin();
+  while(it!=AttribList.end())
+  {
+    (*it).second->create(m);
+    ++it;
+  }
+
+  //curR.create(m);
+  LocalNum += m;
+  GlobalNum += m;
+}
+
+template<class PL>
+void ParticleBase<PL>::resize(size_t m)
+{
+  std::map<std::string,OhmmsObject*>::iterator it= AttribList.begin();
+  while(it!=AttribList.end())
+  {
+    (*it).second->resize(m);
+    ++it;
+  }
+
+  //curR.resize(m);
+  LocalNum = m;
+  GlobalNum = m;
+}
+
+template<class PL>
+void ParticleBase<PL>::clear()
+{
+  std::map<std::string,OhmmsObject*>::iterator it= AttribList.begin();
+  while(it!=AttribList.end())
+  {
+    (*it).second->clear();
+    ++it;
+  }
+  //curR.clear();
+  LocalNum = 0;
+  GlobalNum = 0;
+}
+
+/**function to create N-particle system
+ *@param agroup an integer array containing the number of particles belonging
+ *to a subgroup.
+ *@brief allocate the ParticleAttributes, such as R, G, L.
+ *The size of n is the number of distinct subgroups. SubPtcl class
+ *is used to efficient evaluate the subgroup properties.
+ */
+template<class PL>
+void ParticleBase<PL>::createBase(const std::vector<int>& agroup)
+{
+  SubPtcl.resize(agroup.size()+1);
+  SubPtcl[0] = 0;
+  for(int is=0; is<agroup.size(); is++)
+    SubPtcl[is+1] = SubPtcl[is]+agroup[is];
+  size_t nsum = SubPtcl[agroup.size()];
+  resize(nsum);
+  int loc=0;
+  for(int i=0; i<agroup.size(); i++)
+  {
+    for(int j=0; j<agroup[i]; j++,loc++)
+      GroupID[loc] = i;
+  }
+}
 
 template<class T, unsigned D>
 inline T* get_first_address(ParticleAttrib<TinyVector<T,D> >& a)
@@ -281,6 +399,5 @@ inline T* get_last_address(ParticleAttrib<TinyVector<T,D> >& a)
 }
 
 }
-#include "ParticleBase/ParticleBase.cpp"
 #endif
 

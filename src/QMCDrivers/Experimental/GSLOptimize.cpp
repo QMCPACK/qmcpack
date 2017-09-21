@@ -56,7 +56,7 @@ GSLOptimize::GSLOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHa
   H_KE.add(H.getHamiltonian("Kinetic"),"Kinetic");
   //create an etimator with H_KE
   if(Estimators == 0)
-    Estimators =new ScalarEstimatorManager(H_KE);
+    Estimators =new EstimatorManagerBase(H_KE);
   H_KE.add2WalkerProperty(W);
 }
 

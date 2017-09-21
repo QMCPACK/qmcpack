@@ -281,7 +281,7 @@ QMCCostFunctionCUDA::checkConfigurations()
     Walker_t& w(**it);
     RealType *prop = w.getPropertyBase();
     Return_t* restrict saved= &(Records(iw,0));
-    saved[ENERGY_TOT]   = prop[LOCALENERGY];
+    saved[ENERGY_TOT] = saved[ENERGY_NEW] = prop[LOCALENERGY];
     saved[ENERGY_FIXED] = prop[LOCALPOTENTIAL];
     saved[LOGPSI_FIXED] = prop[LOGPSI] - logPsi_free[iw];
     saved[LOGPSI_FREE]  = logPsi_free[iw];
@@ -355,8 +355,19 @@ QMCCostFunctionCUDA::checkConfigurations()
   app_log() << "  VMC Eavg = " << Etarget << std::endl;
   app_log() << "  VMC Evar = " << etemp[2]/etemp[1]-Etarget*Etarget << std::endl;
   app_log() << "  Total weights = " << etemp[1] << std::endl;
+  app_log().flush();
   setTargetEnergy(Etarget);
   ReportCounter=0;
+
+  //collect SumValue for computedCost
+  NumWalkersEff = etemp[1];
+  SumValue[SUM_WGT] = etemp[1];
+  SumValue[SUM_WGTSQ] = etemp[1];
+  SumValue[SUM_E_WGT] = etemp[0];
+  SumValue[SUM_ESQ_WGT] = etemp[2];
+  SumValue[SUM_E_BARE] = etemp[0];
+  SumValue[SUM_ESQ_BARE] = etemp[2];
+  SumValue[SUM_ABSE_BARE] = 0.0;
 }
 
 void QMCCostFunctionCUDA::resetPsi(bool final_reset)

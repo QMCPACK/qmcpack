@@ -153,7 +153,10 @@ int main(int argc, char **argv)
   //safe to move on
   Communicate* qmcComm=OHMMS::Controller;
   if(inputs.size()>1)
+  {
     qmcComm=new Communicate(*OHMMS::Controller,inputs.size());
+    qmc_common.mpi_groups=inputs.size();
+  }
   std::stringstream logname;
   int inpnum = (inputs.size() > 1) ? qmcComm->getGroupID() : 0;
   std::string myinput = inputs[qmcComm->getGroupID()];

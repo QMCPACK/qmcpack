@@ -166,7 +166,7 @@ public:
   BackflowTransformation(ParticleSet& els):
     targetPtcl(els),QP(els),cutOff(0.0)
   {
-    myTable = DistanceTable::add(els);
+    myTable = DistanceTable::add(els,DT_AOS);
     NumTargets=els.getTotalNum();
     Bmat.resize(NumTargets);
     Bmat_full.resize(NumTargets,NumTargets);
@@ -279,7 +279,7 @@ public:
   void resetTargetParticleSet(ParticleSet& P)
   {
     targetPtcl=P;
-    myTable = DistanceTable::add(P);
+    myTable = DistanceTable::add(P,DT_AOS);
     for(int i=0; i<bfFuns.size(); i++)
       bfFuns[i]->resetTargetParticleSet(P);
   }

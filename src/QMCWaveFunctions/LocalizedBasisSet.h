@@ -102,7 +102,7 @@ struct LocalizedBasisSet: public BasisSetBase<typename COT::value_type>
    */
   LocalizedBasisSet(ParticleSet& ions, ParticleSet& els): CenterSys(ions), myTable(0)
   {
-    myTable = DistanceTable::add(ions,els);
+    myTable = DistanceTable::add(ions,els,DT_AOS);
     myTableIndex=myTable->ID;
     NumCenters=CenterSys.getTotalNum();
     NumTargets=els.getTotalNum();
@@ -162,7 +162,7 @@ struct LocalizedBasisSet: public BasisSetBase<typename COT::value_type>
    */
   void resetTargetParticleSet(ParticleSet& P)
   {
-    myTable = DistanceTable::add(CenterSys,P);
+    myTable = DistanceTable::add(CenterSys,P,DT_AOS);
     for(int i=0; i<LOBasisSet.size(); i++)
       LOBasisSet[i]->setTable(myTable);
   }

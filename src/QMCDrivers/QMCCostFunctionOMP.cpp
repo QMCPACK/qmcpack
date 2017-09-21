@@ -382,7 +382,8 @@ void QMCCostFunctionOMP::checkConfigurations()
     {
       ParticleSet::Walker_t& thisWalker(*wRef[iw]);
       wRef.R=thisWalker.R;
-      wRef.update();
+      wRef.update(true);
+      wRef.donePbyP();
       Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
       //          Return_t logpsi(0);
       //          psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
@@ -422,7 +423,7 @@ void QMCCostFunctionOMP::checkConfigurations()
       else
         etmp= hClones[ip]->evaluate(wRef);
 
-      e0 += saved[ENERGY_TOT] = etmp;
+      e0 += saved[ENERGY_TOT] = saved[ENERGY_NEW] = etmp;
       e2 += etmp*etmp;
       saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
       if(nlpp)
@@ -447,11 +448,19 @@ void QMCCostFunctionOMP::checkConfigurations()
   app_log() << "  VMC Eavg = " << Etarget << std::endl;
   app_log() << "  VMC Evar = " << etemp[2]/etemp[1]-Etarget*Etarget << std::endl;
   app_log() << "  Total weights = " << etemp[1] << std::endl;
-
   app_log().flush();
-
   setTargetEnergy(Etarget);
   ReportCounter=0;
+
+  //collect SumValue for computedCost
+  NumWalkersEff = etemp[1];
+  SumValue[SUM_WGT] = etemp[1];
+  SumValue[SUM_WGTSQ] = etemp[1];
+  SumValue[SUM_E_WGT] = etemp[0];
+  SumValue[SUM_ESQ_WGT] = etemp[2];
+  SumValue[SUM_E_BARE] = etemp[0];
+  SumValue[SUM_ESQ_BARE] = etemp[2];
+  SumValue[SUM_ABSE_BARE] = 0.0;
 }
 
 #ifdef HAVE_LMY_ENGINE
@@ -558,7 +567,8 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
     {
       ParticleSet::Walker_t& thisWalker(*wRef[iw]);
       wRef.R=thisWalker.R;
-      wRef.update();
+      wRef.update(true);
+      wRef.donePbyP();
       Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
       //          Return_t logpsi(0);
       //          psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
@@ -708,6 +718,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
   }
 
+  const bool nlpp = (includeNonlocalH != "no");
   Return_t wgt_tot=0.0;
   Return_t wgt_tot2=0.0;
   Return_t NSm1 = 1.0/NumSamples;
@@ -729,7 +740,8 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
     {
       ParticleSet::Walker_t& thisWalker(**it);
       wRef.R=thisWalker.R;
-      wRef.update();
+      wRef.update(true);
+      if(nlpp) wRef.donePbyP(true);
       Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
       // buffer for MultiSlaterDet data
       Return_t logpsi;

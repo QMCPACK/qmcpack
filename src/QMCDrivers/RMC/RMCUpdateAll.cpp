@@ -330,6 +330,10 @@ namespace qmcplusplus
 
   }
 
+  void RMCUpdateAllWithDrift::advanceWalker (Walker_t& thisWalker, bool recompute)
+  {
+  }
+
   void RMCUpdateAllWithDrift::advanceWalkers (WalkerIter_t it,
 					      WalkerIter_t it_end,
 					      bool measure)

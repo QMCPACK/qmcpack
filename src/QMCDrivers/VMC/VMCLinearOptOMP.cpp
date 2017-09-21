@@ -495,7 +495,7 @@ void VMCLinearOptOMP::resetRun()
     for (int ip=0; ip<NumThreads; ++ip)
     {
       std::ostringstream os;
-      estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);
+      estimatorClones[ip]= new EstimatorManagerBase(*Estimators);//,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
@@ -559,9 +559,7 @@ void VMCLinearOptOMP::resetRun()
 #if !defined(REMOVE_TRACEMANAGER)
   else
   {
-#if !defined(BGP_BUG)
     #pragma omp parallel for
-#endif
     for(int ip=0; ip<NumThreads; ++ip)
     {
       traceClones[ip]->transfer_state_from(*Traces);

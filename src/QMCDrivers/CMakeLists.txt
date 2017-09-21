@@ -40,7 +40,6 @@ SET(QMCDRIVERS
   VMC/VMCFactory.cpp
   DMC/DMCOMP.cpp
   DMC/DMCUpdateAll.cpp
-  DMC/DMCUpdatePbyP.cpp
   DMC/DMCUpdatePbyPFast.cpp
   DMC/DMCFactory.cpp
   DMC/WalkerControlFactory.cpp
@@ -57,7 +56,8 @@ SET(QMCDRIVERS
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/RMCLocalEnergyEstimator.cpp
   ../Estimators/LocalEnergyEstimatorHDF.cpp
-  ../Estimators/EstimatorManager.cpp
+  ../Estimators/EstimatorManagerBase.cpp
+#  ../Estimators/EstimatorManager.cpp
   ../Estimators/MultipleEnergyEstimator.cpp
   ../Estimators/CollectablesEstimator.cpp
 )

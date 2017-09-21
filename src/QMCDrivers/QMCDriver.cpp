@@ -197,7 +197,7 @@ void QMCDriver::process(xmlNodePtr cur)
   Estimators = branchEngine->getEstimatorManager();
   if(Estimators==0)
   {
-    Estimators = new EstimatorManager(myComm);
+    Estimators = new EstimatorManagerBase(myComm);
     branchEngine->setEstimatorManager(Estimators);
     branchEngine->read(h5FileRoot);
   }
@@ -309,7 +309,7 @@ void QMCDriver::adiosCheckpoint(int block)
 #ifdef HAVE_ADIOS
   int64_t adios_handle;
   uint64_t adios_groupsize, adios_totalsize;
-  EstimatorManager* myEstimator = branchEngine->getEstimatorManager();
+  EstimatorManagerBase* myEstimator = branchEngine->getEstimatorManager();
   if (sizeof(OHMMS_PRECISION) == sizeof(double))
   {
     adios_open(&adios_handle, "checkpoint_double", (getRotationName(RootName) + ".config.bp").c_str(), "w", myComm->getMPI());

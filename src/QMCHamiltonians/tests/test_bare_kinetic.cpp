@@ -69,7 +69,7 @@ TEST_CASE("Bare Kinetic Energy", "[hamiltonian]")
   tspecies(massIdx, upIdx) = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  elec.addTable(ions);
+  elec.addTable(ions,DT_AOS);
   elec.update();
 
 

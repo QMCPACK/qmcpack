@@ -47,7 +47,7 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
   int ChargeAttribIndx;
   int MemberAttribIndx;
   int NumCenters;
-  RealType myConst;
+  Return_t myConst;
   RealType myRcut;
   std::string PtclRefName;
   std::vector<RealType> Zat,Zspec;

@@ -28,7 +28,7 @@
 #include <Utilities/PooledData.h>
 #include <OhmmsPETE/OhmmsArray.h>
 #include <Utilities/NewTimer.h>
-
+#include <OhmmsSoA/Container.h>
 
 namespace qmcplusplus
 {
@@ -60,8 +60,6 @@ struct MCDataType
   T R2Proposed;
   T LivingFraction;
 };
-
-
 
 
 /** Specialized paritlce class for atomistic simulations
@@ -104,10 +102,8 @@ public:
 
   ///differential laplacians of the particles
   ParticleLaplacian_t dL;
-
-  ///current position after applying PBC in the Lattice Unit
-  ParticlePos_t Runit;
-
+  ///SoA copy of R
+  VectorSoaContainer<RealType,DIM> RSoA;
   ///index to the primitice cell with tiling
   ParticleIndex_t PCID;
   /** ID map that reflects species group
@@ -130,6 +126,8 @@ public:
   bool IsGrouped;
   ///true if the particles have the same mass
   bool SameMass;
+  /// true if all the internal state is ready for estimators
+  bool Ready4Measure;
   ///threa id
   Index_t ThreadID;
   ///the index of the active particle for particle-by-particle moves
@@ -140,6 +138,8 @@ public:
   Index_t activeBead;
   ///the direction reptile traveling
   Index_t direction;
+  ///pointer to the working walker
+  Walker_t*  activeWalker;
 
   /** the position of the active particle for particle-by-particle moves
    *
@@ -215,6 +215,15 @@ public:
   ///default destructor
   virtual ~ParticleSet();
 
+  /** create  particles
+   * @param n number of particles
+   */
+  void create(unsigned n);
+  /** create grouped particles
+   * @param agroup number of particles per group
+   */
+  void create(const std::vector<int>& agroup);
+
   ///write to a std::ostream
   bool get(std::ostream& ) const;
 
@@ -270,7 +279,7 @@ public:
    *
    * Ensure that the distance for this-this is always created first.
    */
-  int  addTable(const ParticleSet& psrc);
+  int  addTable(const ParticleSet& psrc, int dt_type);
 
   /** returns index of a distance table, -1 if not present
    * @param psrc source particle set
@@ -285,25 +294,22 @@ public:
   }
 
   /** update the internal data
-   *@param iflag index for the update mode
+   *@param skip SK update if skipSK is true
    */
-  void update(int iflag=0);
+  void update(bool skipSK=false);
 
   /**update the internal data with new position
    *@param pos position vector assigned to R
    */
   void update(const ParticlePos_t& pos);
-  
-  /** prepare internal data to be able to handle virutal moves*/
-  void enableVirtualMoves();
-  
-  /** prepare distance tables to perform virtual moves, e.g., nlpp evals
-   */ 
-  void initVirtualMoves();
 
   /** create Structure Factor with PBCs
    */
   void createSK();
+
+  /** Turn on per particle storage in Structure Factor
+   */
+  void turnOnPerParticleSK();
 
   ///retrun the SpeciesSet of this particle set
   inline SpeciesSet& getSpeciesSet()
@@ -349,6 +355,14 @@ public:
 
   void resetGroups();
 
+  /** set active particle
+   * @param iat particle index
+   *
+   * Compute internal data based on current R[iat]
+   * Introduced to work with update-only methods.
+   */
+  void setActive(int iat);
+  
   /**move a particle
    *@param iat the index of the particle to be moved
    *@param displ random displacement of the iat-th particle
@@ -449,12 +463,16 @@ public:
    */
   void saveWalker(Walker_t& awalker);
 
-  //void registerData(Buffer_t& buf);
-  //void registerData(Walker_t& awalker, Buffer_t& buf);
-  //void updateBuffer(Walker_t& awalker, Buffer_t& buf);
-  //void updateBuffer(Buffer_t& buf);
-  //void copyToBuffer(Buffer_t& buf);
-  //void copyFromBuffer(Buffer_t& buf);
+  /** load a walker : R <= awalker->R 
+   *
+   * No other copy is made
+   */
+  void loadWalker(Walker_t* awalker);
+
+  /** update the buffer
+   *@param skip SK update if skipSK is true
+   */
+  void donePbyP(bool skipSK=false);
 
   //return the address of the values of Hamiltonian terms
   inline EstimatorRealType* restrict getPropertyBase()

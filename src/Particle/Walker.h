@@ -12,6 +12,7 @@
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -119,16 +120,18 @@ struct Walker
    */
   RealType Multiplicity;
 
-  /**the configuration vector (3N-dimensional vector to store
+  /** The configuration vector (3N-dimensional vector to store
      the positions of all the particles for a single walker)*/
   ParticlePos_t R;
+#if defined(SOA_MEMORY_OPTIMIZED)
+  /** Store only RealType array data */
+  Buffer_t PsiBuffer;
+#else
   /** \f$ \nabla_i d\log \Psi for the i-th particle */
   ParticleGradient_t G;
   /** \f$ \nabla^2_i d\log \Psi for the i-th particle */
   ParticleLaplacian_t L;
-  /////drift of the walker \f$ Drift({\bf R}) = \tau v_{drift}({\bf R}) \f$
-  //ParticlePos_t Drift;
-
+#endif
   ///scalar properties of a walker
   PropertyContainer_t  Properties;
 
@@ -294,8 +297,12 @@ struct Walker
     if (R.size()!=a.R.size())
       resize(a.R.size());
     R = a.R;
+#if defined(SOA_MEMORY_OPTIMIZED)
+    PsiBuffer=a.PsiBuffer;
+#else
     G = a.G;
     L = a.L;
+#endif
     //Drift = a.Drift;
     Properties.copy(a.Properties);
     DataSet=a.DataSet;
@@ -423,8 +430,12 @@ struct Walker
     int bsize =
       2*sizeof(long)+3*sizeof(int)+ PHindex.size()*sizeof(int)
       +Properties.size()*sizeof(EstimatorRealType)+(numPH+1)*sizeof(RealType)+DataSet.byteSize()
+#if defined(SOA_MEMORY_OPTIMIZED)
+      +R.size()*(DIM*sizeof(RealType)); //R
+#else
       +R.size()*(DIM*sizeof(RealType)+(DIM+1)*sizeof(ParticleValue_t));//R+G+L
-    //+R.size()*(DIM*2*sizeof(RealType)+(DIM+1)*sizeof(ValueType));//R+Drift+G+L
+#endif
+
 #ifdef QMC_CUDA
     bsize += 3 *sizeof (int); // size and N and M
     bsize += cuda_DataSize               * sizeof(CudaValueType);          // cuda_DataSet
@@ -442,6 +453,8 @@ struct Walker
     const int nat=R.size();
     m << ID << ParentID << Generation << Age << ReleasedNodeAge << ReleasedNodeWeight;
     m.Pack(&(R[0][0]),nat*OHMMS_DIM);
+
+#if !defined(SOA_MEMORY_OPTIMIZED)
 #if defined(QMC_COMPLEX)
     m.Pack(reinterpret_cast<RealType*>(&(G[0][0])),nat*OHMMS_DIM*2);
     m.Pack(reinterpret_cast<RealType*>(L.first_address()),nat*2);
@@ -449,6 +462,8 @@ struct Walker
     m.Pack(&(G[0][0]),nat*OHMMS_DIM);
     m.Pack(L.first_address(),nat);
 #endif
+#endif
+
     m.Pack(Properties.data(),Properties.size());
     m.Pack(DataSet.data(),DataSet.size());
     m.Pack(DataSet.data_DP(),DataSet.size_DP());
@@ -497,12 +512,14 @@ struct Walker
     const int nat=R.size();
     m>>ID >> ParentID >> Generation >> Age >> ReleasedNodeAge >> ReleasedNodeWeight;
     m.Unpack(&(R[0][0]),nat*OHMMS_DIM);
+#if !defined(SOA_MEMORY_OPTIMIZED)
 #if defined(QMC_COMPLEX)
     m.Unpack(reinterpret_cast<RealType*>(&(G[0][0])),nat*OHMMS_DIM*2);
     m.Unpack(reinterpret_cast<RealType*>(L.first_address()),nat*2);
 #else
     m.Unpack(&(G[0][0]),nat*OHMMS_DIM);
     m.Unpack(L.first_address(),nat);
+#endif
 #endif
     m.Unpack(Properties.data(),Properties.size());
     m.Unpack(DataSet.data(),DataSet.size());

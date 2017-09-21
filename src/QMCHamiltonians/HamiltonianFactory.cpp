@@ -37,7 +37,7 @@
 #include "QMCHamiltonians/LocalMomentEstimator.h"
 #include "QMCHamiltonians/DensityEstimator.h"
 #include "QMCHamiltonians/SkEstimator.h"
-#include "QMCHamiltonians/HarmonicExternalPotential.h"
+#include "QMCHamiltonians/model/HarmonicExternalPotential.h"
 #include "QMCHamiltonians/StaticStructureFactor.h"
 #include "QMCHamiltonians/SpinDensity.h"
 #include "QMCHamiltonians/OrbitalImages.h"
@@ -50,29 +50,29 @@
 #include "QMCHamiltonians/ChiesaCorrection.h"
 #include "QMCHamiltonians/SkAllEstimator.h"
 #if defined(HAVE_LIBFFTW_LS)
-#include "QMCHamiltonians/ModInsKineticEnergy.h"
+#include "QMCHamiltonians/model/ModInsKineticEnergy.h"
 #include "QMCHamiltonians/MomentumDistribution.h"
 #include "QMCHamiltonians/DispersionRelation.h"
 #endif
 #endif
 // #include "QMCHamiltonians/ZeroVarObs.h"
 #if !defined(QMC_CUDA) && QMC_BUILD_LEVEL>2
-#include "QMCHamiltonians/HardSphere.h"
-#include "QMCHamiltonians/GaussianPot.h"
-#include "QMCHamiltonians/HusePot.h"
-#include "QMCHamiltonians/OscillatoryPot.h"
 #include "QMCHamiltonians/SkPot.h"
-#include "QMCHamiltonians/ModPosTelPot.h"
-#include "QMCHamiltonians/HFDHE2Potential_tail.h"
-#include "QMCHamiltonians/HePressure.h"
-#include "QMCHamiltonians/JelliumPotential.h"
-#include "QMCHamiltonians/HFDHE2Potential.h"
-#include "QMCHamiltonians/HeEPotential.h"
-#include "QMCHamiltonians/HeEPotential_tail.h"
-#include "QMCHamiltonians/LennardJones_smoothed.h"
-#include "QMCHamiltonians/HFDHE2_Moroni1995.h"
+#include "QMCHamiltonians/model/HardSphere.h"
+#include "QMCHamiltonians/model/GaussianPot.h"
+#include "QMCHamiltonians/model/HusePot.h"
+#include "QMCHamiltonians/model/OscillatoryPot.h"
+#include "QMCHamiltonians/model/ModPosTelPot.h"
+#include "QMCHamiltonians/model/HFDHE2Potential_tail.h"
+#include "QMCHamiltonians/model/HePressure.h"
+#include "QMCHamiltonians/model/JelliumPotential.h"
+#include "QMCHamiltonians/model/HFDHE2Potential.h"
+#include "QMCHamiltonians/model/HeEPotential.h"
+#include "QMCHamiltonians/model/HeEPotential_tail.h"
+#include "QMCHamiltonians/model/LennardJones_smoothed.h"
+#include "QMCHamiltonians/model/HFDHE2_Moroni1995.h"
 //#include "QMCHamiltonians/HFDBHE_smoothed.h"
-#include "QMCHamiltonians/HeSAPT_smoothed.h"
+#include "QMCHamiltonians/model/HeSAPT_smoothed.h"
 #endif
 #include "OhmmsData/AttributeSet.h"
 #ifdef QMC_CUDA
@@ -808,13 +808,13 @@ bool HamiltonianFactory::put(xmlNodePtr cur)
 {
   bool success=build(cur,false);
   
-  if(targetH->EnableVirtualMoves)
-  {
-    app_log() << "  Hamiltonian enables VirtualMoves" << std::endl;
-    targetPtcl->enableVirtualMoves();
-  }
-  else
-    app_log() << "  Hamiltonian disables VirtualMoves" << std::endl;
+  //if(targetH->EnableVirtualMoves)
+  //{
+  //  app_log() << "  Hamiltonian enables VirtualMoves" << std::endl;
+  //  targetPtcl->enableVirtualMoves();
+  //}
+  //else
+  //  app_log() << "  Hamiltonian disables VirtualMoves" << std::endl;
   
   return success;
 }

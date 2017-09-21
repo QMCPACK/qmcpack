@@ -28,7 +28,7 @@
 #include "QMCWaveFunctions/ConstantOrbital.h"
 #include "QMCWaveFunctions/LinearOrbital.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
-#include "Estimators/EstimatorManager.h"
+#include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/TraceManager.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 
@@ -84,7 +84,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   tspecies(massIdx, upIdx) = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  elec.addTable(ions);
+  elec.addTable(ions,DT_AOS);
   elec.update();
 
 
@@ -101,7 +101,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
   DMCUpdatePbyPWithRejectionFast dmc(elec, *psi, h, rg);
-  EstimatorManager EM;
+  EstimatorManagerBase EM;
   double tau = 0.1;
   SimpleFixedNodeBranch branch(tau, 1);
   TraceManager TM;
@@ -186,7 +186,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   tspecies(massIdx, upIdx) = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  elec.addTable(ions);
+  elec.addTable(ions,DT_AOS);
   elec.update();
 
 
@@ -203,7 +203,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
   DMCUpdatePbyPWithRejectionFast dmc(elec, *psi, h, rg);
-  EstimatorManager EM;
+  EstimatorManagerBase EM;
   double tau = 0.1;
   SimpleFixedNodeBranch branch(tau, 1);
   TraceManager TM;

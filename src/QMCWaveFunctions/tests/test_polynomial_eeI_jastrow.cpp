@@ -25,6 +25,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/PolynomialFunctor3D.h"
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
@@ -68,6 +69,7 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   ions_.R[1][2] = 0.0;
   SpeciesSet& source_species(ions_.getSpeciesSet());
   source_species.addSpecies("O");
+  ions_.RSoA=ions_.R;
   //ions_.resetGroups();
 
   elec_.setName("elec");
@@ -94,7 +96,11 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
   target_species(chargeIdx, downIdx) = -1;
   //elec_.resetGroups();
 
-  elec_.addTable(ions_);
+#ifdef ENABLE_SOA
+  elec_.addTable(ions_,DT_SOA);
+#else
+  elec_.addTable(ions_,DT_AOS);
+#endif
   elec_.update();
 
   TrialWaveFunction psi = TrialWaveFunction(c);
@@ -125,8 +131,11 @@ const char *particles = \
 
   OrbitalBase *orb = psi.getOrbitals()[0];
 
+#ifdef ENABLE_SOA
+  typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
+#else
   typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;
-
+#endif
   J3Type *j3 = dynamic_cast<J3Type *>(orb);
   REQUIRE(j3 != NULL);
 
@@ -135,6 +144,25 @@ const char *particles = \
 
   double KE = -0.5*(Dot(elec_.G,elec_.G)+Sum(elec_.L));
   REQUIRE(KE == Approx(-0.058051245)); // note: number not validated
+
+  opt_variables_type optvars;
+  std::vector<OrbitalBase::RealType> dlogpsi;
+  std::vector<OrbitalBase::RealType> dhpsioverpsi;
+
+  psi.checkInVariables(optvars);
+  optvars.resetIndex();
+  const int NumOptimizables(optvars.size());
+  psi.checkOutVariables(optvars);
+  dlogpsi.resize(NumOptimizables);
+  dhpsioverpsi.resize(NumOptimizables);
+  psi.evaluateDerivatives(elec_, optvars, dlogpsi, dhpsioverpsi);
+
+  std::cout << std::endl << "reporting dlogpsi and dhpsioverpsi" << std::scientific << std::endl;
+  for(int iparam=0; iparam<NumOptimizables; iparam++)
+    std::cout << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
+
+  REQUIRE(dlogpsi[43] == Approx(1.3358726814e+05));
+  REQUIRE(dhpsioverpsi[43] == Approx(-2.3246270644e+05));
 
 }
 }

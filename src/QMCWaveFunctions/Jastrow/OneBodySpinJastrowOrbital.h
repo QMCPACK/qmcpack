@@ -75,7 +75,7 @@ public:
   {
     OrbitalName = "OneBodySpinJastrow";
     U.resize(els.getTotalNum());
-    myTableIndex=els.addTable(CenterRef);
+    myTableIndex=els.addTable(CenterRef,DT_AOS);
     //allocate vector of proper size  and set them to 0
     F.resize(CenterRef.groups(), els.groups());
     for(int i=0; i<F.size(); ++i)

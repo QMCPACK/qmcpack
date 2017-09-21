@@ -235,11 +235,7 @@ ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
     app_log() << "  Maxium cutoff for non-local pseudopotentials " << rc_check << std::endl;
   }
   doBreakUp(angList,vnn,rmax,Vprefactor);
-  bool quad_okay = SetQuadratureRule(Nrule);
-  if (!quad_okay)
-  {
-    APP_ABORT("Setting up spherical quadrature for Casino pseudopotential failed");
-  }
+  SetQuadratureRule(Nrule);
   app_log() << "    Non-local pseudopotential parameters" << std::endl;
   pp_nonloc->print(app_log());
   return true;

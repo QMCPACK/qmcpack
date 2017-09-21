@@ -40,7 +40,7 @@ public:
   CSVMCUpdateAll(MCWalkerConfiguration& w,  std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& h,
                  RandomGenerator_t& rg);
 
-  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalker(Walker_t& thisWalker, bool recompute);
 
 private:
 };
@@ -54,7 +54,7 @@ public:
   CSVMCUpdateAllWithDrift(MCWalkerConfiguration& w,  std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& h,
                  RandomGenerator_t& rg);
 
-  void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure);
+  void advanceWalker(Walker_t& thisWalker, bool recompute);
 
 private:
 };

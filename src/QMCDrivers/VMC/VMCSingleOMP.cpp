@@ -83,7 +83,8 @@ bool VMCSingleOMP::run()
         Movers[ip]->set_step(now_loc);
         //collectables are reset, it is accumulated while advancing walkers
         wClones[ip]->resetCollectables();
-        Movers[ip]->advanceWalkers(wit,wit_end,false);
+        bool recompute=(nBlocksBetweenRecompute && (step+1) == nSteps && (1+block)%nBlocksBetweenRecompute == 0 && QMCDriverMode[QMC_UPDATE_MODE] );
+        Movers[ip]->advanceWalkers(wit,wit_end,recompute);
         if(has_collectables)
           wClones[ip]->Collectables *= cnorm;
         Movers[ip]->accumulate(wit,wit_end);
@@ -94,8 +95,6 @@ bool VMCSingleOMP::run()
 //           if(storeConfigs && (now_loc%storeConfigs == 0))
 //             ForwardWalkingHistory.storeConfigsForForwardWalking(*wClones[ip]);
       }
-      if ( nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 && QMCDriverMode[QMC_UPDATE_MODE] )
-        Movers[ip]->recomputePsi(wit,wit_end);
       Movers[ip]->stopBlock(false);
     }//end-of-parallel for
     //Estimators->accumulateCollectables(wClones,nSteps);
@@ -148,13 +147,11 @@ void VMCSingleOMP::resetRun()
     estimatorClones.resize(NumThreads,0);
     traceClones.resize(NumThreads,0);
     Rng.resize(NumThreads,0);
-#if !defined(BGP_BUG)
     #pragma omp parallel for
-#endif
     for(int ip=0; ip<NumThreads; ++ip)
     {
       std::ostringstream os;
-      estimatorClones[ip]= new EstimatorManager(*Estimators);//,*hClones[ip]);
+      estimatorClones[ip]= new EstimatorManagerBase(*Estimators);//,*hClones[ip]);
       estimatorClones[ip]->resetTargetParticleSet(*wClones[ip]);
       estimatorClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
@@ -228,9 +225,7 @@ void VMCSingleOMP::resetRun()
 #if !defined(REMOVE_TRACEMANAGER)
   else
   {
-#if !defined(BGP_BUG)
     #pragma omp parallel for
-#endif
     for(int ip=0; ip<NumThreads; ++ip)
     {
       traceClones[ip]->transfer_state_from(*Traces);
@@ -245,9 +240,7 @@ void VMCSingleOMP::resetRun()
   //for (int ip=0; ip<NumThreads; ++ip)
   //  app_log()  << "    Sample size for thread " <<ip<<" = " << samples_th[ip] << std::endl;
   app_log().flush();
-#if !defined(BGP_BUG)
   #pragma omp parallel for
-#endif
   for(int ip=0; ip<NumThreads; ++ip)
   {
     //int ip=omp_get_thread_num();
@@ -260,9 +253,9 @@ void VMCSingleOMP::resetRun()
 //       if (UseDrift != "rn")
 //       {
     for (int prestep=0; prestep<nWarmupSteps; ++prestep)
-      Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-    if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
-      Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+      Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],false);
+    //if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
+    //  Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 //       }
   }
 

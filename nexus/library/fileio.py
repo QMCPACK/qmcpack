@@ -22,10 +22,12 @@
 
 import os
 import mmap
-from numpy import array,zeros,ndarray,around,arange,dot
+from numpy import array,zeros,ndarray,around,arange,dot,savetxt
+from numpy.linalg import det,norm
 from generic import obj
 from developer import DevBase
 from periodic_table import pt as ptable
+from unit_converter import convert
 from debug import *
 
 
@@ -382,7 +384,7 @@ class XsfFile(DevBase):
                     line = ''
                     while not line.startswith('end_block_datagrid'):
                         line = lines[i].strip().lower()
-                        if line.startswith('begin_datagrid'):
+                        if line.startswith('begin_datagrid') or line.startswith('datagrid_'):
                             grid_identifier = line.replace('begin_datagrid_{0}d_'.format(d),'')
                             grid   = array(lines[i+1].split(),dtype=int)[:d]
                             corner = array(lines[i+2].split(),dtype=float)
@@ -806,4 +808,100 @@ class XsfFile(DevBase):
             values = density
             )
     #end def add_density
+
+
+    def get_density(self):
+        return self.data.first().first().first()
+    #end def get_density
+
+
+    def change_units(self,in_unit,out_unit):
+        fac = 1.0/convert(1.0,in_unit,out_unit)**3
+        density = self.get_density()
+        density.values *= fac
+        if 'values_noghost' in density:
+            density.values_noghost *= fac
+        #end if
+    #end def change_units
+
+
+    def remove_ghost(self,density=None,transpose=True):
+        if density is None:
+            density = self.get_density()
+        #end if
+        if 'values_noghost' in density:
+            return density.values_noghost
+        #end if
+        data = density.values
+        if transpose: # switch from column major to row major
+            g = data.shape
+            d = data.ravel()
+            data = zeros(g,dtype=float)
+            n = 0
+            for k in xrange(g[2]):
+                for j in xrange(g[1]):
+                    for i in xrange(g[0]):
+                        data[i,j,k] = d[n]
+                        n+=1
+                    #end for
+                #end for
+            #end for
+        #end if
+        # remove the ghost cells
+        d = data
+        g = array(d.shape,dtype=int)-1
+        data = zeros(tuple(g),dtype=float)
+        data[:,:,:] = d[:g[0],:g[1],:g[2]]
+        density.values_noghost = data
+        return data
+    #end def remove_ghost
+
+    
+    def norm(self,density=None,vnorm=True):
+        if density is None:
+            density = self.get_density()
+        #end if
+        if 'values_noghost' not in density:
+            self.remove_ghost(density)
+        #end if
+        data = density.values_noghost
+        if vnorm:
+            dV = det(density.cell)/data.size
+        else:
+            dV = 1.0
+        #end if
+        return data.ravel().sum()*dV
+    #end def norm
+
+
+    def line_data(self,dim,density=None):
+        if density is None:
+            density = self.get_density()
+        #end if
+        if 'values_noghost' not in density:
+            self.remove_ghost(density)
+        #end if
+        data = density.values_noghost
+        dV = det(density.cell)/data.size
+        dr = norm(density.cell[dim])/data.shape[dim]
+        ndim = 3
+        permute = dim!=0
+        if permute:
+            r = range(0,ndim)
+            r.pop(dim)
+            permutation = tuple([dim]+r)
+            data = data.transpose(permutation)
+        #end if
+        s = data.shape
+        data.shape = s[0],s[1]*s[2]
+        line_data = data.sum(1)*dV/dr
+        r_data = density.corner[dim] + dr*arange(len(line_data),dtype=float)
+        return r_data,line_data
+    #end def line_data
+
+
+    def line_plot(self,dim,filepath):
+        r,d = self.line_data(dim)
+        savetxt(filepath,array(zip(r,d)))
+    #end def line_plot
 #end class XsfFile

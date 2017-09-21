@@ -15,6 +15,7 @@
     
 
 
+#include "Platforms/sysutil.h"
 #include "QMCDrivers/CorrelatedSampling/CSUpdateBase.h"
 #include "Estimators/CSEnergyEstimator.h"
 #include "QMCDrivers/DriftOperators.h"
@@ -42,6 +43,7 @@ void CSUpdateBase::resizeWorkSpace(int nw,int nptcls)
   if(logpsi.size())
     return;
   logpsi.resize(nPsi);
+  ratio.resize(nPsi);
   sumratio.resize(nPsi);
   invsumratio.resize(nPsi);
   avgNorm.resize(nPsi,1.0);
@@ -50,6 +52,7 @@ void CSUpdateBase::resizeWorkSpace(int nw,int nptcls)
   avgWeight.resize(nPsi,1.0);
   instRij.resize(nPsi*(nPsi-1)/2);
   ratioIJ.resize(nw,nPsi*(nPsi-1)/2);
+  RatioIJ.resize(nPsi,nPsi);
   dG.resize(nptcls);
 
   g1_new.resize(nPsi);
@@ -93,6 +96,84 @@ void CSUpdateBase::updateAvgWeights()
     cumNorm[ipsi]=0;
   }
 }
+
+void CSUpdateBase::computeSumRatio(const std::vector<RealType> & lpsi,
+                                   const std::vector<RealType> & avnorm,
+                                         std::vector<RealType> & sumrat)
+{
+  for(int ipsi=0; ipsi<nPsi; ipsi++)
+    sumrat[ipsi]=1.0;
+
+  for(int ipsi=0; ipsi< nPsi-1; ipsi++)
+  {
+    for(int jpsi=ipsi+1; jpsi< nPsi; jpsi++)
+      {
+        RealType ratioij=avnorm[ipsi]/avnorm[jpsi]*std::exp(2.0*(lpsi[jpsi]-lpsi[ipsi]));
+        sumrat[ipsi] += ratioij;
+        sumrat[jpsi] += 1.0/ratioij;
+      }
+  }
+}
+
+//This function assumes logpsi and avgnorm are available.  it returns
+//ratioij and sumratio.
+void CSUpdateBase::computeSumRatio(const std::vector<RealType> & lpsi,
+                                   const std::vector<RealType> & avnorm,
+                                         Matrix<RealType> & Ratioij,
+                                         std::vector<RealType> & sumrat)
+{
+  for(int ipsi=0; ipsi<nPsi; ipsi++)
+  {
+    sumrat[ipsi]=1.0;
+    Ratioij[ipsi][ipsi]=1.0;
+  }
+
+  for(int ipsi=0; ipsi< nPsi-1; ipsi++)
+  {
+    for(int jpsi=ipsi+1; jpsi< nPsi; jpsi++)
+      {
+        Ratioij[ipsi][jpsi]=avnorm[ipsi]/avnorm[jpsi]*std::exp(2.0*(lpsi[jpsi]-lpsi[ipsi]));
+        Ratioij[jpsi][ipsi]=1.0/Ratioij[ipsi][jpsi];
+        sumrat[ipsi] += Ratioij[ipsi][jpsi];
+        sumrat[jpsi] += Ratioij[jpsi][ipsi];
+      }
+  }
+}
+
+//This function assumes that Ratioij has been given, then computes sumratio.
+void CSUpdateBase::computeSumRatio(const Matrix<RealType> & Ratioij,
+                                    std::vector<RealType> & sumrat)
+{
+  for(int ipsi=0; ipsi<nPsi; ipsi++)
+    sumrat[ipsi]=1.0;
+
+  for(int ipsi=0; ipsi< nPsi-1; ipsi++)
+  {
+    for(int jpsi=ipsi+1; jpsi< nPsi; jpsi++)
+      {
+        sumrat[ipsi] += Ratioij[ipsi][jpsi];
+        sumrat[jpsi] += Ratioij[jpsi][ipsi];
+      }
+  }
+}
+
+//this function takes a matrix containing |psi_i(r)/psi_j(r)|^2, and a vector
+//containing |\psi_i(r')/\psi_i(r)|^2 to yield |psi_i(r')/psi_j(r')|^2
+void CSUpdateBase::updateRatioMatrix(const std::vector<RealType>& ratio_i, Matrix<RealType> & Ratioij)
+{
+  for(int ipsi=0; ipsi<nPsi; ipsi++)
+    Ratioij[ipsi][ipsi]=1.0;
+
+  for(int ipsi=0; ipsi< nPsi-1; ipsi++)
+  {
+    for(int jpsi=ipsi+1; jpsi< nPsi; jpsi++)
+      {
+        Ratioij[ipsi][jpsi]=Ratioij[ipsi][jpsi]*ratio_i[jpsi]/ratio_i[ipsi];
+        Ratioij[jpsi][ipsi]=1.0/Ratioij[ipsi][jpsi];
+      }
+  }
+}
+
 
 void CSUpdateBase::initCSWalkers(WalkerIter_t it, WalkerIter_t it_end,
                                  bool resetNorms)
@@ -165,41 +246,52 @@ void CSUpdateBase::initCSWalkers(WalkerIter_t it, WalkerIter_t it_end,
 void CSUpdateBase::initCSWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end,
                                         bool resetNorms)
 {
+
+  UpdatePbyP=true;
   nPsi=Psi1.size();
-  useDrift=(useDriftOption=="yes");
-  if(nPsi ==0)
-  {
-    app_error() << "  CSUpdateBase::initCSWalkers fails. Empyty Psi/H pairs" << std::endl;
-    abort();//FIX_ABORT
-  }
-  int nw = it_end-it;//W.getActiveWalkers();
+  int nw = it_end-it;
+  int iw(0);
   resizeWorkSpace(nw,W.getTotalNum());
+  //ratio is for temporary holding of psi_i(...r'...)/psi_i(...r...).
+  ratio.resize(nPsi,1.0);
+
   if(resetNorms)
     logNorm.resize(nPsi,0.0);
-  for(int ipsi=0; ipsi< nPsi; ipsi++)
+  for(int ipsi=0; ipsi<nPsi; ipsi++)
     avgNorm[ipsi]=std::exp(logNorm[ipsi]);
-  int iw=0;
-  while(it != it_end)
+  
+  for (; it != it_end; ++it)
   {
-    Walker_t& thisWalker(**it);
-    thisWalker.DataSet.clear();
-    thisWalker.DataSet.rewind();
-   ///W.registerData(thisWalker,(*it)->DataSet);
-    //evalaute the wavefunction and hamiltonian
-    for(int ipsi=0; ipsi< nPsi; ipsi++)
+    Walker_t& awalker(**it);
+    W.R=awalker.R;
+    W.update(true);
+    //W.loadWalker(awalker,UpdatePbyP);
+//    if (awalker.MDataSet.size()!=nPsi)
+//      awalker.MultDataSet.resize(nPsi);
+
+    awalker.DataSet.clear();
+    awalker.DataSet.rewind();
+    for( int ipsi=0; ipsi<nPsi; ipsi++)
     {
-      //Need to modify the return value of OrbitalBase::registerData
-      logpsi[ipsi]=Psi1[ipsi]->registerData(W,(*it)->DataSet);
-      Psi1[ipsi]->G=W.G;
-      thisWalker.Properties(ipsi,LOGPSI)=logpsi[ipsi];
-      thisWalker.Properties(ipsi,LOCALENERGY)=H1[ipsi]->evaluate(W);
-      H1[ipsi]->saveProperty(thisWalker.getPropertyBase(ipsi));
+
+      logpsi[ipsi]=Psi1[ipsi]->registerData(W,awalker.DataSet);
+      RealType logpsi2=Psi1[ipsi]->updateBuffer(W,awalker.DataSet,false);
+      Psi1[ipsi]->G = W.G;
+      *G1[ipsi] = W.G;
+      Psi1[ipsi]->L = W.L;
+      *L1[ipsi] = W.L;
+
+      awalker.Properties(ipsi,LOGPSI)=logpsi[ipsi];
+      awalker.Properties(ipsi,LOCALENERGY)=H1[ipsi]->evaluate(W);
+      H1[ipsi]->saveProperty(awalker.getPropertyBase(ipsi));
       sumratio[ipsi]=1.0;
     }
-    //Check SIMONE's note
-    //Compute the sum over j of Psi^2[j]/Psi^2[i] for each i
+    awalker.G=W.G;
+    awalker.L=W.L;
+ //   randomize(awalker);
+ 
     int indexij(0);
-    RealType *rPtr=ratioIJ[iw];
+    RealType *rPtr=ratioIJ[iw++];
     for(int ipsi=0; ipsi< nPsi-1; ipsi++)
     {
       for(int jpsi=ipsi+1; jpsi< nPsi; jpsi++, indexij++)
@@ -212,24 +304,16 @@ void CSUpdateBase::initCSWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end,
       }
     }
     //Re-use Multiplicity as the sumratio
-    thisWalker.Multiplicity=sumratio[0];
+    awalker.Multiplicity=sumratio[0];
     for(int ipsi=0; ipsi< nPsi; ipsi++)
     {
-      thisWalker.Properties(ipsi,UMBRELLAWEIGHT)
+      awalker.Properties(ipsi,UMBRELLAWEIGHT)
       = invsumratio[ipsi] =1.0/sumratio[ipsi];
       cumNorm[ipsi]+=1.0/sumratio[ipsi];
     }
-    //DON't forget DRIFT!!!
-///    thisWalker.Drift=0.0;
-///    if(useDrift)
-///    {
-///      for(int ipsi=0; ipsi< nPsi; ipsi++)
-///        PAOps<RealType,DIM>::axpy(invsumratio[ipsi],Psi1[ipsi]->G,thisWalker.Drift);
-///      setScaledDrift(Tau,thisWalker.Drift);
-///    }
-    ++it;
-    ++iw;
   }
+  #pragma omp master
+  print_mem("Memory Usage after the buffer registration", app_log());
 }
 
 void CSUpdateBase::updateCSWalkers(WalkerIter_t it, WalkerIter_t it_end)

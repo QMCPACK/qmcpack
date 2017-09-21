@@ -87,16 +87,18 @@ strongly encouraged}, but not absolutely essential. Generally newer versions are
 Section \ref{sec:buildperformance} for performance suggestions.
 
 \begin{itemize}
-\item C/C++ compilers such as GCC, Intel, IBM XLC. LLVM-based compilers
-  are supported only on a preliminary basis.
-\item MPI library such at OpenMPI \url{http://open-mpi.org}
+\item C/C++ compilers such as GNU, Clang, Intel, IBM XL. C++ compilers
+  are required to support C++11 standard. Use of recent (``current
+  year version'') compilers is strongly encouraged.
+\item MPI library such as OpenMPI \url{http://open-mpi.org} or vendor
+  optimized MPI.
 \item BLAS/LAPACK, numerical and linear algebra libraries. Use
   platform-optimized libraries where available, such as Intel MKL.
   ATLAS or other optimized open-source libraries may also be used
   \url{http://math-atlas.sourceforge.net}
 \item CMake, build utility, \url{http://www.cmake.org}
 \item Libxml2, XML parser, \url{http://xmlsoft.org}
-\item HDF5, portable I/O library, \url{http://www.hdfgroup.org/HDF5/}
+\item HDF5, portable I/O library, \url{http://www.hdfgroup.org/HDF5/}. Good performance at large scale requires parallel version $>=$ 1.10.
 \item BOOST, peer-reviewed portable C++ source libraries, \url{http://www.boost.org}
 \item FFTW, FFT library, \url{http://www.fftw.org/}
 \end{itemize}
@@ -204,6 +206,9 @@ QMC_MIXED_PRECISION Build the mixed precision (mixing double/float) version
                     The GPU support is quite mature.
                     Use always double for host side base and full precision
                     and use float and double for CUDA base and full precision.
+ENABLE_SOA          (Experimental) Enable CPU optimization based on Structure-
+                    of-Array (SoA) datatypes (1:yes, 0:no (default)).
+
 \end{verbatim}
   \item General build options
 \begin{verbatim}
@@ -234,10 +239,14 @@ QMC_BUILD_STATIC    Add -static flags to build
 QMC_DATA            Specify data directory for QMCPACK (currently
                     unused, but likely to be used for future performance tests)
 \end{verbatim}
-\item libxml related
+\item libxml2 related
 \begin{verbatim}
 Libxml2_INCLUDE_DIRS  Specify include directories for libxml2
 Libxml2_LIBRARY_DIRS  Specify library directories for libxml2
+\end{verbatim}
+ \item HDF5 related
+\begin{verbatim}
+ENABLE_PHDF5    1(default)/0, enables/disable parallel collective IO.
 \end{verbatim}
  \item FFTW related
 \begin{verbatim}
@@ -253,7 +262,7 @@ MPIEXEC_NUMPROC_FLAG   Specify the number of mpi processes flag, e.g. "-n", "-np
 \end{itemize}
 
 \subsection{Configure and build using cmake and make}
-To configure and build QMPACK, move to build directory, run cmake and make
+To configure and build QMCPACK, move to build directory, run cmake and make
 \begin{verbatim}
 cd build
 cmake ..
@@ -357,6 +366,28 @@ cmake \
 MKLROOT is the directory containing the MKL binary, examples, and lib
 directories (etc.) and is often /opt/intel/mkl 
 
+\subsection{Cross compiling}
+Cross-compiling is often difficult but is required on supercomputers
+with distinct host and compute processor generations or architectures.
+QMCPACK tried to do its best with CMake to facilitate cross-compiling.
+
+\begin{itemize}
+  \item On a machine using Cray programming environment, we rely on
+      compiler wrappers provided by Cray to set architecture specific
+      flags correctly. The CMake configure log should indicate that a
+      Cray machine was detected.
+  \item If not on a Cray machine, by default we assume building for
+    the host architecture. e.g. -xHost is added for the Intel compiler
+    and -march=native is added for GNU/Clang compilers.
+  \item If -x/-ax or -march is specified by the user in CMAKE\_C\_FLAGS and CMAKE\_CXX\_FLAGS,
+    we respect user's intention and do not add any architecture specific flags.
+\end{itemize}
+
+The general strategy for cross-compiling should therefore be to
+manually set CMAKE\_C\_FLAGS and CMAKE\_CXX\_FLAGS for the target
+archicture. Using \texttt{make VERBOSE=1} is a useful way to check the
+final compilation options.  If on a Cray machine, selection of the
+appropriate programming environment should be sufficient.
 
 \section{Installation instructions for common workstations and
   supercomputers}
@@ -524,7 +555,7 @@ cmake -DCMAKE_C_COMPILER=/usr/local/bin/mpicc \
       -DCMAKE_CXX_COMPILER=/usr/local/bin/mpicxx ..
 make -j 12
 \end{verbatim}
-\item Run the short tests. When mpich is used for the first time, OS
+\item Run the short tests. When MPICH is used for the first time, OS
   X will request approval of the network connection.
 \begin{verbatim}
 ctest -R short
@@ -533,19 +564,34 @@ ctest -R short
 
 \subsection{Installing on ANL ALCF Mira/Cetus IBM Blue Gene/Q}
 \label{sec:buildbgq}
-Mira/Cetus is a Blue Gene/Q supercomputer at Argonne National Laboratory's Argonne Leadership Computing Facility (ANL ALCF). Mira has 49152 compute nodes and each node has a 16-core PowerPC A2 processor with 16 GB DDR3 memory. Due to the fact that the login nodes and the compute nodes have different processors with distinct instruction sets, cross-compiling is required on this platform. See details about using Blue Gene/Q at \url{http://www.alcf.anl.gov/user-guides/compiling-linking}. On Mira, compilers are loaded via softenv and users need to add +mpiwrapper-xl and +cmake in \$HOME/.soft. In order to build QMCPACK, a toolchain file is provided for setting up CMake and the cmake command should be executed twice.
+Mira/Cetus is a Blue Gene/Q supercomputer at Argonne National Laboratory's Argonne Leadership Computing Facility (ANL ALCF).
+Mira has 49152 compute nodes and each node has a 16-core PowerPC A2 processor with 16 GB DDR3 memory.
+Due to the fact that the login nodes and the compute nodes have different processors with distinct instruction sets,
+cross-compiling is required on this platform. See details about using Blue Gene/Q at \url{http://www.alcf.anl.gov/user-guides/compiling-linking}.
+On Mira, compilers are loaded via softenv and users need to add +mpiwrapper-bgclang and +cmake in \$HOME/.soft.
+In order to build QMCPACK, a toolchain file is provided for setting up CMake and the cmake command should be executed twice.
+\textbf{BGClang is required for C++11 support. IBM XL C/C++ compiler should not be used.}
 
 \begin{verbatim}
 cd build
-cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_XL_ToolChain.cmake ..
-cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_XL_ToolChain.cmake ..
+cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_Clang++11_ToolChain.cmake ..
+cmake -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_Clang++11_ToolChain.cmake ..
 make -j 16
 ls -l bin/qmcpack
 \end{verbatim}
 
-In addition, adding a very useful cmake option
--DCMAKE\_VERBOSE\_MAKEFILE=TRUE allows printing all the build commands
-during the make step. Alternatively you can use make VERBOSE=1.
+\subsection{Installing on ALCF Theta, Cray XC40}
+Theta is a 9.65 petaflops system manufactured by Cray with 3624 compute nodes.
+Each node features a second-generation Intel Xeon Phi 7230 processor and 192 GB DDR4 RAM.
+
+\begin{verbatim}
+module unload cray-libsci
+module load cray-hdf5-parallel
+export BOOST_ROOT=/soft/libraries/boost/1.64.0/intel
+cmake ..
+make -j 24
+ls -l bin/qmcpack
+\end{verbatim}
 
 \subsection{Installing on ORNL OLCF Titan Cray XK7 (NVIDIA GPU
   accelerated)}
@@ -651,116 +697,106 @@ Edison is a Cray XC30 with dual 12-core Intel "Ivy Bridge" nodes
 installed at NERSC. The build settings are identical to eos.
 
 \begin{verbatim}
-module load cray-hdf5
-module load cmake
-module load fftw
-export FFTW_HOME=$FFTW_DIR/..
 module load boost
-mkdir build_edison
-cd build_edison
+module load cmake3
+module load cmake
+module load libxml2
+module load cray-hdf5-parallel
+module unload cray-libsci
 cmake ..
 make -j 8
 ls -l bin/qmcpack
 \end{verbatim}
-When the above was tested on 1 February 2016, the following module and
+When the above was tested on 15 September 2017, the following module and
 software versions were present:
 \begin{verbatim}
 qmcpack@edison04:trunk> module list
-Currently Loaded Modulefiles:
-  1) modules/3.2.10.3                        16) alps/5.2.3-2.0502.9295.14.14.ari
-  2) nsg/1.2.0                               17) rca/1.0.0-2.0502.57212.2.56.ari
-  3) eswrap/1.1.0-1.020200.1130.0            18) atp/1.8.3
-  4) switch/1.0-1.0502.57058.1.58.ari        19) PrgEnv-intel/5.2.56
-  5) craype-network-aries                    20) craype-ivybridge
-  6) craype/2.5.0                            21) cray-shmem/7.3.0
-  7) intel/15.0.1.133                        22) cray-mpich/7.3.0
-  8) cray-libsci/13.3.0                      23) slurm/edison
-  9) udreg/2.3.2-1.0502.9889.2.20.ari        24) altd/2.0
- 10) ugni/6.0-1.0502.10245.9.9.ari           25) darshan/2.3.0
- 11) pmi/5.0.10-1.0000.11050.0.0.ari         26) subversion/1.7.9
- 12) dmapp/7.0.1-1.0502.10246.8.47.ari       27) cray-hdf5/1.8.14
- 13) gni-headers/4.0-1.0502.10317.9.2.ari    28) cmake/2.8.11.2
- 14) xpmem/0.1-2.0502.57015.1.15.ari         29) fftw/3.3.4.6
- 15) dvs/2.5_0.9.0-1.0502.1958.2.55.ari      30) boost/1.54
+urrently Loaded Modulefiles:
+  1) modules/3.2.10.6                              14) rca/2.2.11-6.0.4.0_13.2__g84de67a.ari
+  2) intel/17.0.2.174                              15) atp/2.1.1
+  3) craype-network-aries                          16) PrgEnv-intel/6.0.4
+  4) craype/2.5.12.3                               17) craype-ivybridge
+  5) udreg/2.3.2-6.0.4.0_12.2__g2f9c3ee.ari        18) cray-shmem/7.6.0
+  6) ugni/6.0.14-6.0.4.0_14.1__ge7db4a2.ari        19) cray-mpich/7.6.0
+  7) pmi/5.0.12                                    20) altd/2.0
+  8) dmapp/7.1.1-6.0.4.0_46.2__gb8abda2.ari        21) darshan/3.1.4
+  9) gni-headers/5.0.11-6.0.4.0_7.2__g7136988.ari  22) boost/1.63
+ 10) xpmem/2.2.2-6.0.4.0_3.1__g43b0535.ari         23) cmake/3.8.1
+ 11) job/2.2.2-6.0.4.0_8.2__g3c644b5.ari           24) cray-hdf5-parallel/1.10.0.3
+ 12) dvs/2.7_2.2.30-6.0.4.1_5.4__gd731684          25) libxml2/2.9.4
+ 13) alps/6.4.1-6.0.4.0_7.2__g86d0f3d.ari
 \end{verbatim}
 
 \subsection{Installing on NERSC Cori, Haswell Partition, Cray XC40}
 Cori is a Cray XC40 with 16-core Intel "Haswell" nodes
-installed at NERSC. The build settings are similar to eos at OLCF, but
-a workround is needed for the newer Cray OS which does not include a static
-libXml2 library. A NERSC installed version and its dependencies are used:
+installed at NERSC.
 
 \begin{verbatim}
-module load cray-hdf5
+module unload cray-libsci  
+module load boost  
+module load cray-hdf5-parallel
 module load cmake
-module load fftw
-export FFTW_HOME=$FFTW_DIR/..
-module load boost
-export LIBXML2_HOME=/usr/common/software/libxml2/2.9.3/hsw
-mkdir build_cori
-cd build_cori
-cmake -DQMC_EXTRA_LIBS=/usr/common/software/liblzma/20160630/hsw/lib/liblzma.a ..
-make -j 8
-ls -l bin/qmcpack
-\end{verbatim}
-
-When the above was tested on 15 July 2016, the following module and
-software versions were present:
-
-\begin{verbatim}
-qmcpack@cori05:trunk> module list
-Currently Loaded Modulefiles:
-  1) nsg/1.2.0                             15) dvs/2.5_0.9.0-1.0502.2188.1.116.ari
-  2) modules/3.2.10.3                      16) alps/5.2.4-2.0502.9774.31.11.ari
-  3) eswrap/1.1.0-1.020200.1231.0          17) rca/1.0.0-2.0502.60530.1.62.ari
-  4) switch/1.0-1.0502.60522.1.61.ari      18) atp/1.8.3
-  5) intel/16.0.0.109                      19) PrgEnv-intel/5.2.82
-  6) craype-network-aries                  20) craype-haswell
-  7) craype/2.4.2                          21) cray-shmem/7.2.5
-  8) cray-libsci/13.2.0                    22) cray-mpich/7.2.5
-  9) udreg/2.3.2-1.0502.10518.2.17.ari     23) slurm/cori
- 10) ugni/6.0-1.0502.10863.8.29.ari        24) cray-hdf5/1.8.14
- 11) pmi/5.0.9-1.0000.10911.0.0.ari        25) gcc/5.1.0
- 12) dmapp/7.0.1-1.0502.11080.8.76.ari     26) cmake/3.3.2
- 13) gni-headers/4.0-1.0502.10859.7.8.ari  27) fftw/3.3.4.5
- 14) xpmem/0.1-2.0502.64982.5.3.ari        28) boost/1.59
-\end{verbatim}
-
-\subsection{Installing on NERSC Cori, Xeon Phi KNL Knight's Landing partition, Cray XC40}
-The second phase of NERSC's Cori uses Intel
-Xeon Phi Knight's Landing (KNL) nodes. Substantive optimizations for QMCPACK on KNL will
-be forthcoming. The following build recipe ensures that the code
-generation is appropriate for the KNL nodes:
-
-\begin{verbatim}
-module load cray-hdf5
-module load cmake
-module load fftw
-export FFTW_HOME=$FFTW_DIR/..
-module load boost
-export LIBXML2_HOME=/usr/common/software/libxml2/2.9.3/hsw
-module swap craype-haswell craype-mic-knl
-cmake -DQMC_EXTRA_LIBS=/usr/common/software/liblzma/20160630/hsw/lib/liblzma.a \
-       -DCMAKE_CXX_FLAGS="-xMIC-AVX512" -DCMAKE_C_FLAGS="-xMIC-AVX512" ..
+mkdir build_cori_hsw
+cd build_cori_hsw
+cmake ..
 make -j 16
 ls -l bin/qmcpack
 \end{verbatim}
 
-When the above was tested on 21 December 2016, the following module and
+When the above was tested on 29 August 2017, the following module and
+software versions were present:
+
+\begin{verbatim}
+build_cori_hsw> module list
+Currently Loaded Modulefiles:
+  1) modules/3.2.10.6                              14) alps/6.4.1-6.0.4.0_7.2__g86d0f3d.ari
+  2) nsg/1.2.0                                     15) rca/2.2.11-6.0.4.0_13.2__g84de67a.ari
+  3) intel/17.0.2.174                              16) atp/2.1.1
+  4) craype-network-aries                          17) PrgEnv-intel/6.0.4
+  5) craype/2.5.12                                 18) craype-haswell
+  6) udreg/2.3.2-6.0.4.0_12.2__g2f9c3ee.ari        19) cray-shmem/7.6.0
+  7) ugni/6.0.14-6.0.4.0_14.1__ge7db4a2.ari        20) cray-mpich/7.6.0
+  8) pmi/5.0.12                                    21) altd/2.0
+  9) dmapp/7.1.1-6.0.4.0_46.2__gb8abda2.ari        22) darshan/3.1.4
+ 10) gni-headers/5.0.11-6.0.4.0_7.2__g7136988.ari  23) boost/1.61
+ 11) xpmem/2.2.2-6.0.4.0_3.1__g43b0535.ari         24) cmake/3.3.2
+ 12) job/2.2.2-6.0.4.0_8.2__g3c644b5.ari           25) cray-hdf5-parallel/1.10.0.3
+ 13) dvs/2.7_2.2.31-6.0.4.1_6.1__gb3b87e6
+\end{verbatim}
+
+\subsection{Installing on NERSC Cori, Xeon Phi KNL partition, Cray XC40}
+The second phase of NERSC's Cori uses Intel
+Xeon Phi Knight's Landing (KNL) nodes. The following build recipe ensures that the code
+generation is appropriate for the KNL nodes:
+
+\begin{verbatim}
+module swap craype-haswell craype-mic-knl  
+module unload cray-libsci  
+module load boost  
+module load cray-hdf5-parallel
+module load cmake
+mkdir build_cori_knl
+cd build_cori_knl
+cmake ..
+make -j 16
+ls -l bin/qmcpack
+\end{verbatim}
+
+When the above was tested on 29 August 2017, the following module and
 software versions were present:
 
 \begin{verbatim}
 build_cori_knl> module list
 Currently Loaded Modulefiles:
-  1) modules/3.2.6.7                  11) dmapp/7.1.0-12.37                21) cray-shmem/7.4.4
-  2) nsg/1.2.0                        12) gni-headers/5.0.7-3.1            22) cray-mpich/7.4.4
-  3) modules/3.2.10.5                 13) xpmem/0.1-4.5                    23) altd/2.0
-  4) intel/17.0.1.132                 14) job/1.5.5-3.58                   24) darshan/3.0.1
-  5) craype-network-aries             15) dvs/2.7_0.9.0-2.221              25) subversion/1.7.22
-  6) craype/2.5.7                     16) alps/6.1.3-17.12                 26) cray-hdf5/1.8.16
-  7) cray-libsci/16.09.1              17) rca/1.0.0-8.1                    27) cmake/3.3.2
-  8) udreg/2.3.2-4.6                  18) atp/2.0.3                        28) fftw/3.3.4.10
-  9) ugni/6.0.12-2.1                  19) PrgEnv-intel/6.0.3               29) boost/1.61
+  1) modules/3.2.10.6                              10) gni-headers/5.0.11-6.0.4.0_7.2__g7136988.ari  19) cray-shmem/7.6.0
+  2) nsg/1.2.0                                     11) xpmem/2.2.2-6.0.4.0_3.1__g43b0535.ari         20) cray-mpich/7.6.0
+  3) intel/17.0.2.174                              12) job/2.2.2-6.0.4.0_8.2__g3c644b5.ari           21) altd/2.0
+  4) craype-network-aries                          13) dvs/2.7_2.2.31-6.0.4.1_6.1__gb3b87e6          22) darshan/3.1.4
+  5) craype/2.5.12                                 14) alps/6.4.1-6.0.4.0_7.2__g86d0f3d.ari          23) boost/1.61
+  6) udreg/2.3.2-6.0.4.0_12.2__g2f9c3ee.ari        15) rca/2.2.11-6.0.4.0_13.2__g84de67a.ari         24) cray-hdf5-parallel/1.10.0.3
+  7) ugni/6.0.14-6.0.4.0_14.1__ge7db4a2.ari        16) atp/2.1.1                                     25) cmake/3.3.2
+  8) pmi/5.0.12                                    17) PrgEnv-intel/6.0.4
+  9) dmapp/7.1.1-6.0.4.0_46.2__gb8abda2.ari        18) craype-mic-knl
 \end{verbatim}
 
 \subsection{Installing on Windows}
@@ -896,7 +932,7 @@ You can test the whole pw$\to$pw2qmcpack$\to$qmcpack workflow by
 ctest -R qe
 \end{verbatim}
 This provides a very solid test of the entire QMC
-toolchain for planewave generated wavefunctions.
+toolchain for plane wave generated wavefunctions.
 
 \subsection{Performance tests}
 \label{sec:perftests}
@@ -905,7 +941,7 @@ tests/performance directory. They can be used for benchmarking, comparing machin
 performance, or assessing optimizations. This is in
 contrast to the majority of the conventional integration tests where the particle
 counts are too small to be representative. Care is still needed to
-remove initiallization, I/O, and compute a representative performance
+remove initialization, I/O, and compute a representative performance
 measure.
 
 The ctest integration is sufficient to run the benchmarks and measure
@@ -930,7 +966,7 @@ will need to set ``-DQMC\_DATA=YOUR\_DATA\_FOLDER -DENABLE\_TIMERS=1''
 when running cmake as
 described in the README.
 
-Two sets of wavefunction are tested: splined orbitals with a one and
+Two sets of wavefunction are tested: spline orbitals with a one and
 two body Jastrow functions, and a more complex form with an additional
 three body Jastrow function. The Jastrows are the same for each run
 and are not reoptimized, as might be done for research purposes.  Runs
@@ -963,20 +999,26 @@ If the ctest execution is completed, look at \texttt{Testing/Temporary/LastTest.
 If you manually stop the testing (ctrl+c), look at \texttt{Testing/Temporary/LastTest.log.tmp}.
 You can locate the failing tests by searching for the key word `Fail'.
 
+\subsection{Slow testing with OpenMPI}
+OpenMPI has a default binding policy making all the threads running on a single core during testing when there are two or fewer MPI ranks.
+This significantly increases the testing time. If you are authorized to change the default setting, you can just add `hwloc\_base\_binding\_policy=none' in /etc/openmpi/openmpi-mca-params.conf.
+
 \section{Automated testing of QMCPACK}
 
 The QMCPACK developers run automatic tests of QMCPACK on several
-different computer systems,  many on a continuous basis. We currently test
+different computer systems,  many on a continuous basis. See reports at
+\url{https://cdash.qmcpack.org/CDash/index.php?project=QMCPACK}.
+We currently test
 the following combinations nightly (workstations) and weekly (supercomputers):
 
 \begin{itemize}
 \item On a Linux Intel Xeon workstation:
   \begin{itemize}
-  \item GCC 4.8.2 with OpenMPI and CUDA 7.0 (GPU build, run on NVIDIA K40s)
-  \item GCC 4.8.2 with OpenMPI with netlib BLAS
-  \item GCC 4.8.2 with OpenMPI with Intel MKL
+  \item GCC 4.8.5 with OpenMPI and CUDA 8.0 (GPU build, run on NVIDIA K40s)
+  \item GCC 4.8.5 with OpenMPI with Netlib BLAS
+  \item GCC 4.8.5 with OpenMPI with Intel MKL
   \item Intel 2017 with Intel MPI and MKL
-  \item Intel 2015 with Intel MPI and MKL and CUDA 7.0 (GPU build, run on NVIDIA K40s)
+  \item Intel 2015 with Intel MPI and MKL and CUDA 8.0 (GPU build, run on NVIDIA K40s)
   \item Intel 2015 with Intel MPI  and MKL
   \end{itemize}
 \item On a Linux Intel Knight's Landing workstation:
@@ -994,9 +1036,9 @@ the following combinations nightly (workstations) and weekly (supercomputers):
   \item The GCC programming environment and compiler with Cray MPI and CUDA
   \item The GCC programming environment and compiler with Cray MPI
   \end{itemize}
-\item On Cetus, an IBM Blue Gene Q:
+\item On Cetus, an IBM Blue Gene Q machine:
 \begin{itemize}
-\item Default programming environment configured using the  toolchain config/BGQToolChain.cmake
+\item Blue Gene Clang 4.0
 \end{itemize}
 \end{itemize}
 
@@ -1006,8 +1048,7 @@ the following combinations nightly (workstations) and weekly (supercomputers):
   \caption{Example test results for QMCPACK, showing data for a
     workstation (Intel, GCC, both CPU and GPU builds) and for two ORNL
     supercomputers. In this example, 4 errors were found. This
-    dashboard is not yet openly accessible, but the developers hope
-    to make it available at a later date.}
+    dashboard is accessible at \url{https://cdash.qmcpack.org/}.}
   \label{fig:cdash}
 \end{figure}
 
@@ -1015,7 +1056,7 @@ the following combinations nightly (workstations) and weekly (supercomputers):
 \label{sec:buildppconvert}
 QMCPACK includes a utility, ppconvert, to convert between different
 pseudopotential formats. Examples include effective core potential
-formats (in gaussians), the UPF format used by Quantum ESPRESSO, and
+formats (in Gaussians), the UPF format used by Quantum ESPRESSO, and
 the XML format used by QMCPACK itself. The utility also enables the
 atomic orbitals to recomputed via a numerical density functional
 calculation if they need to be reconstructed for use in an

@@ -28,7 +28,7 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/ConstantOrbital.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
-#include "Estimators/EstimatorManager.h"
+#include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/TraceManager.h"
 #include "QMCDrivers/VMC/VMCUpdatePbyP.h"
 
@@ -84,7 +84,7 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   tspecies(massIdx, upIdx) = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
-  elec.addTable(ions);
+  elec.addTable(ions,DT_AOS);
   elec.update();
 
 
@@ -101,7 +101,7 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
   VMCUpdatePbyP vmc(elec, psi, h, rg);
-  EstimatorManager EM;
+  EstimatorManagerBase EM;
   SimpleFixedNodeBranch branch(0.1, 1);
   TraceManager TM;
   vmc.resetRun(&branch, &EM, &TM);

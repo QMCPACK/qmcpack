@@ -70,7 +70,6 @@ OrbitalBasePtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp) const
   clone->C2node_up=C2node_up;
   clone->C2node_dn=C2node_dn;
   clone->Optimizable=Optimizable;
-  clone->RecomputeNeedsDistanceTable=RecomputeNeedsDistanceTable;
   clone->C=C;
   clone->myVars=myVars;
   clone->usingCSF=usingCSF;

@@ -43,6 +43,13 @@ Communicate::reduce(T* restrict , T* restrict, int n)
   APP_ABORT("Need specialization for reduce(T* restrict , T* restrict, int n)");
 }
 
+template<typename T>
+inline void
+Communicate::reduce_in_place(T* restrict, int n)
+{
+  APP_ABORT("Need specialization for reduce_in_place(T* restrict, int n)");
+}
+
 template<typename T> inline void
 Communicate::bcast(T& )
 {
@@ -457,6 +464,26 @@ Communicate::reduce(std::vector<double>& g)
 
 template<>
 inline void
+Communicate::reduce(std::vector<int>& g)
+{
+  std::vector<int> gt(g.size(), 0.0);
+  MPI_Reduce(&(g[0]),&(gt[0]),g.size(),MPI_INT,MPI_SUM,0,myMPI);
+  if(!d_mycontext)
+    g = gt;
+}
+
+template<>
+inline void
+Communicate::reduce(std::vector<long>& g)
+{
+  std::vector<long> gt(g.size(), 0.0);
+  MPI_Reduce(&(g[0]),&(gt[0]),g.size(),MPI_LONG,MPI_SUM,0,myMPI);
+  if(!d_mycontext)
+    g = gt;
+}
+
+template<>
+inline void
 Communicate::reduce(int* restrict g, int* restrict res, int n)
 {
   MPI_Reduce(g, res, n, MPI_INT, MPI_SUM, 0, myMPI);
@@ -467,6 +494,26 @@ inline void
 Communicate::reduce(double* restrict g, double* restrict res, int n)
 {
   MPI_Reduce(g, res, n, MPI_DOUBLE, MPI_SUM, 0, myMPI);
+}
+
+template<>
+inline void
+Communicate::reduce_in_place(double* restrict res, int n)
+{
+  if(!d_mycontext)
+    MPI_Reduce(MPI_IN_PLACE, res, n, MPI_DOUBLE, MPI_SUM, 0, myMPI);
+  else
+    MPI_Reduce(res, NULL, n, MPI_DOUBLE, MPI_SUM, 0, myMPI);
+}
+
+template<>
+inline void
+Communicate::reduce_in_place(float* restrict res, int n)
+{
+  if(!d_mycontext)
+    MPI_Reduce(MPI_IN_PLACE, res, n, MPI_FLOAT, MPI_SUM, 0, myMPI);
+  else
+    MPI_Reduce(res, NULL, n, MPI_FLOAT, MPI_SUM, 0, myMPI);
 }
 
 template<>
@@ -691,6 +738,20 @@ inline void
 Communicate::bcast(std::vector<double>& g)
 {
   MPI_Bcast(&(g[0]),g.size(),MPI_DOUBLE,0,myMPI);
+}
+
+template<>
+inline void
+Communicate::bcast(std::vector<std::complex<double>>& g)
+{
+  MPI_Bcast(&(g[0]),2*g.size(),MPI_DOUBLE,0,myMPI);
+}
+
+template<>
+inline void
+Communicate::bcast(std::vector<std::complex<float>>& g)
+{
+  MPI_Bcast(&(g[0]),2*g.size(),MPI_FLOAT,0,myMPI);
 }
 
 template<>
@@ -1059,8 +1120,17 @@ template<>
 inline void
 Communicate::gsum(std::vector<int>& g, mpi_comm_type comm)
 {
-  std::vector<int> gt(g.size(), 0.0);
+  std::vector<int> gt(g.size(), 0);
   MPI_Allreduce(&(g[0]),&(gt[0]),g.size(),MPI_INT,MPI_SUM,comm);
+  g = gt;
+}
+
+template<>
+inline void
+Communicate::gsum(std::vector<long>& g, mpi_comm_type comm)
+{
+  std::vector<long> gt(g.size(), long(0));
+  MPI_Allreduce(&(g[0]),&(gt[0]),g.size(),MPI_LONG,MPI_SUM,comm);
   g = gt;
 }
 
@@ -1068,7 +1138,7 @@ template<>
 inline void
 Communicate::gmax(std::vector<int>& g, mpi_comm_type comm)
 {
-  std::vector<int> gt(g.size(), 0.0);
+  std::vector<int> gt(g.size(), 0);
   MPI_Allreduce(&(g[0]),&(gt[0]),g.size(),MPI_INT,MPI_MAX,comm);
   g = gt;
 }

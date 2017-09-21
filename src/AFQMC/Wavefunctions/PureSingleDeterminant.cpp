@@ -40,6 +40,8 @@ bool PureSingleDeterminant::parse(xmlNodePtr cur)
     if(cur == NULL)
       return false;
 
+    app_log()<<"\n\n --------------- Parsing PureSD input ------------------ \n\n";
+
     xmlNodePtr curRoot=cur;
    
     std::string type("");
@@ -68,7 +70,9 @@ bool PureSingleDeterminant::parse(xmlNodePtr cur)
     m_param.add(nnodes_per_TG,"nodes","int");
     m_param.add(nnodes_per_TG,"nnodes","int");
     m_param.add(hdf_write_file,"hdf_write_file","std::string");
+    m_param.add(write_trial_density_matrix,"trial_density_matrix","std::string");
     m_param.add(cutoff,"cutoff","double");
+    m_param.add(initialDet,"initialDetType","int");
     m_param.put(cur);
 
     cur = curRoot->children;
@@ -161,7 +165,7 @@ bool PureSingleDeterminant::initFromAscii(std::string fileName)
         switch(wfn_type) {
           case 0:
           {
-            app_log()<<"Using a RHF-type trial wave-function in lSlaterDeterminant. \n";
+            app_log()<<"Using a RHF-type trial wave-function in SlaterDeterminant. \n";
             break;
           }
           case 1:
@@ -264,7 +268,8 @@ bool PureSingleDeterminant::initFromAscii(std::string fileName)
             if(j<NAEA) OrbMat(i,j) = dummy;
             if(j<NAEB) OrbMat(i+NMO,j) = dummy;
             if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in MultiPureSingleDeterminant. \n";
+              app_error()<<"Problems reading ASCII file in PureSingleDeterminant.  \n";
+              app_error()<<i <<" " <<j <<std::endl;
               in.close();
               return false;
             }
@@ -277,7 +282,8 @@ bool PureSingleDeterminant::initFromAscii(std::string fileName)
             if(j<NAEA) OrbMat(i,j) = dummy;
             if(j<NAEB) OrbMat(i+NMO,j) = dummy;
             if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in MultiPureSingleDeterminant. \n";
+              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
+              app_error()<<i <<" " <<j <<std::endl;
               in.close();
               return false;
             }
@@ -294,7 +300,8 @@ bool PureSingleDeterminant::initFromAscii(std::string fileName)
             in>>dummy;
             if(j<NAEA) OrbMat(i,j) = dummy;
             if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
+              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. (alpha) \n";
+              app_error()<<i <<" " <<j <<std::endl;
               in.close();
               return false;
             }
@@ -305,7 +312,8 @@ bool PureSingleDeterminant::initFromAscii(std::string fileName)
             in>>dummy;
             if(j<NAEB) OrbMat(i+NMO,j) = dummy;
             if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
+              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. (beta) \n";
+              app_error()<<i <<" " <<j <<std::endl;
               in.close();
               return false;
             }
@@ -317,7 +325,8 @@ bool PureSingleDeterminant::initFromAscii(std::string fileName)
             in>>dummy;
             if(j<NAEA) OrbMat(i,j) = dummy;
             if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
+              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. (alpha) \n";
+              app_error()<<i <<" " <<j <<std::endl;
               in.close();
               return false;
             }
@@ -328,7 +337,8 @@ bool PureSingleDeterminant::initFromAscii(std::string fileName)
             in>>dummy;
             if(j<NAEB) OrbMat(i+NMO,j) = dummy;
             if(in.fail()) {
-              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. \n";
+              app_error()<<"Problems reading ASCII file in PureSingleDeterminant. (beta) \n";
+              app_error()<<i <<" " <<j <<std::endl;
               in.close();
               return false;
             }
@@ -445,8 +455,6 @@ bool PureSingleDeterminant::setup_local()
     occup_beta.resize(NAEB);
     for(int i=0; i<NAEA; i++) occup_alpha[i]=i;
     for(int i=0; i<NAEB; i++) occup_beta[i]=NMO+i;
-    if(NAEA==NAEB)
-      wfn_type = 0;
   } else {
     if((occup_alpha.size() != NAEA ) || (occup_beta.size() != NAEB)) {
       app_error()<<"ERROR in PureSingleDeterminant::initFromAscii. occup_alpha/occup_beta wrongly defined. " <<std::endl;  
@@ -514,18 +522,20 @@ bool PureSingleDeterminant::getHamiltonian(HamPtr h)
   if(NCA==NCB && NAEA == NAEB && occup_alpha.size() == occup_beta.size() && spinRestricted && wfn_type==0 ) {
     closed_shell = true;
     for(int i=0; i<occup_alpha.size(); i++)
-      if( occup_alpha[i]+NMO != occup_beta[i] )
+      if( occup_alpha[i]+NMO != occup_beta[i] ) 
         closed_shell = false;
-  } else
+  } else 
     closed_shell = false;
 
   // walker_type will come from WalkerHandler, but for now only ROHF/UHF is implemented correctly.
   walker_type=1; 
   dm_type = std::max(wfn_type,1); 
   if(closed_shell) {
-    app_log()<<"Found closed shell system. " <<std::endl;
+    app_log()<<" Found closed shell system. " <<std::endl;
     dm_type=0;
-  }  
+  } else {
+    app_log()<<" System is not closed shell. " <<std::endl;
+  } 
 
   if(useFacHam) {
     APP_ABORT(" Error: Use of factorized hamiltonian is not implemented in PureSD. \n\n\n");
@@ -542,7 +552,7 @@ bool PureSingleDeterminant::getHamiltonian(HamPtr h)
         return false;
       }
     } else {
-      app_log()<<" PureSingleDeterminant - Creating Hamildm_tonian for Pure Determinant. \n"; 
+      app_log()<<" PureSingleDeterminant - Creating Hamiltonian for Pure Determinant. \n"; 
       if(!sHam->createHamiltonianForPureDeterminant(dm_type,useFacHam,isOcc_alpha,isOcc_beta,hij,SMSpHijkl,cutoff)) {
         app_error()<<"Error in createHamiltonianForPureDeterminant. \n";
         return false;
@@ -569,12 +579,21 @@ bool PureSingleDeterminant::getHamiltonian(HamPtr h)
   app_log()<<std::endl <<"*********************************************************************: \n"
            <<"  PureSingleDeterminant: \n"
            <<"     Number of terms and memory usage of hij:    " <<(rotated_hamiltonian?haj.size():hij.size()) <<"  " <<(rotated_hamiltonian?haj.size():hij.size())*sizeof(s1D<ValueType>)/1.0e6 <<"  MB. " <<std::endl
-           <<"     Number of terms and memory usage of Vijkl:  " <<(rotated_hamiltonian?SMSpHabkl.size():SMSpHijkl.size()) <<"  " <<(rotated_hamiltonian?SMSpHabkl.size()*sizeof(s2D<SPComplexType>):SMSpHijkl.size()*sizeof(s2D<SPValueType>))/1.0e6 <<"  MB. " <<std::endl; 
+           <<"     Number of terms and memory usage of Vijkl:  " <<(rotated_hamiltonian?SMSpHabkl.size():SMSpHijkl.size()) <<"  " <<(rotated_hamiltonian?SMSpHabkl.size()*sizeof(s2D<SPComplexType>):SMSpHijkl.size()*sizeof(s2D<SPValueType>))/1.0e6 <<"  MB. " <<std::endl;
 
     ComplexType e1,e2,o1,o2;
     HF.resize(2*NMO,NAEA);
-    for(int i=0; i<NAEA; i++) HF(occup_alpha[i],i)=ComplexType(1.0,0.0);
-    for(int i=0; i<NAEB; i++) HF(occup_beta[i],i)=ComplexType(1.0,0.0);
+    HF = ComplexType(0.0,0.0);
+    if(rotated_hamiltonian) {
+        std::copy(OrbMat.data(),OrbMat.data()+NAEA*NMO,HF.data());
+        if(wfn_type==0 || initialDet==0)
+            std::copy(OrbMat.data(),OrbMat.data()+NAEA*NMO,HF.data()+NAEA*NMO);
+        else
+            std::copy(OrbMat.data()+NAEA*NMO,OrbMat.data()+2*NAEA*NMO,HF.data()+NAEA*NMO);
+    } else {
+        for(int i=0; i<NAEA; i++) HF(occup_alpha[i],i)=ComplexType(1.0,0.0);
+        for(int i=0; i<NAEB; i++) HF(occup_beta[i],i)=ComplexType(1.0,0.0);
+    }
     evaluateLocalEnergy(HF.data(),e1,e2,o1,o2);
 
   app_log()<<"  Ehf:      " <<std::setprecision(12) <<e1+e2  <<"  \n" //<<ea+eb <<std::endl
@@ -582,6 +601,18 @@ bool PureSingleDeterminant::getHamiltonian(HamPtr h)
            <<"  Epot:     " <<std::setprecision(12) <<e2    <<"  \n" // <<eb <<std::endl
            <<"*********************************************************************: \n" <<std::endl <<std::endl;
 
+  if(write_trial_density_matrix != "" && rank() == 0) {
+    local_evaluateOneBodyTrialDensityMatrix(true);
+    std::ofstream out(write_trial_density_matrix.c_str());
+    out<<"# trial density matrix: NMO, NAEA, NAEB:" <<NMO <<" " <<NAEA <<" " <<NAEB <<"\n";
+    for(int i=0; i<2*NMO; i++) {
+      for(int j=0; j<NMO; j++)
+        out<<trial_density_matrix(i,j) <<" ";
+      out<<"\n";
+    }
+    out.flush();
+    out.close();
+  }
 #ifdef AFQMC_TIMER
     Timer.reset("PureSingleDeterminant:local_evaluateOneBodyMixedDensityMatrix");
     Timer.reset("PureSingleDeterminant:evaluateLocalEnergy");
@@ -615,15 +646,16 @@ bool PureSingleDeterminant::hdf_write()
   dump.push("PureSingleDeterminant");
 
   std::vector<int> Idata(8);
-  Idata[0]=hij.size();
   if(rotated_hamiltonian) { 
-   Idata[1]=SMSpHijkl.size();
-   Idata[2]=SMSpHijkl.rows();
-   Idata[3]=SMSpHijkl.cols();
-  } else {
+   Idata[0]=haj.size();
    Idata[1]=SMSpHabkl.size();
    Idata[2]=SMSpHabkl.rows();
    Idata[3]=SMSpHabkl.cols();
+  } else {
+   Idata[0]=hij.size();
+   Idata[1]=SMSpHijkl.size();
+   Idata[2]=SMSpHijkl.rows();
+   Idata[3]=SMSpHijkl.cols();
   }
   Idata[4]=NMO;
   Idata[5]=NAEA;
@@ -635,6 +667,13 @@ bool PureSingleDeterminant::hdf_write()
   for(int i=0; i<NAEA; i++) Idata[i] = occup_alpha[i];
   for(int i=NAEA, j=0; i<NAEA+NAEB; i++, j++) Idata[i] = occup_beta[j];
   dump.write(Idata,"occups");
+
+  // write wavefunction (mainly for miniapp) 
+  if(rotated_hamiltonian) {
+    std::vector<ComplexType> vvec(OrbMat.size());
+    std::copy(OrbMat.begin(),OrbMat.end(),vvec.begin());
+    dump.write(vvec,"Wavefun");
+  }
 
   std::vector<IndexType> ivec;
   if(rotated_hamiltonian) {
@@ -697,9 +736,10 @@ bool PureSingleDeterminant::initFromHDF5(hdf_archive& read,const std::string& ta
     if(!read.push("Wavefunctions")) return false;
     if(!read.push("PureSingleDeterminant")) return false;
 
-    std::vector<int> Idata(8);
+    std::vector<int> Idata;
+    Idata.reserve(9);
+    Idata.resize(8);
     if(!read.read(Idata,"dims")) return false;
-    hij.resize(Idata[0]);
 
     NCA = NCB = 0;
     if(NMO < 0) NMO = Idata[4];
@@ -719,6 +759,28 @@ bool PureSingleDeterminant::initFromHDF5(hdf_archive& read,const std::string& ta
     }
     spinRestricted = (Idata[7]==0)?(true):(false);
 
+    std::vector<ComplexType> vvec0;
+    if(read.read(vvec0,"Wavefun")) {
+      int nc_ = NAEA;
+      if(wfn_type==2) nc_ = NAEA+NAEB;
+      if(vvec0.size() != 2*NMO*nc_) return false;
+      OrbMat.resize(2*NMO,nc_);
+      std::copy(vvec0.begin(),vvec0.end(),OrbMat.begin());
+      Idata.push_back(1);
+    } else {
+      Idata.push_back(0);
+      rotated_hamiltonian = false;
+    }
+
+    myComm->bcast(Idata);   
+    if(rotated_hamiltonian) 
+      myComm->bcast(vvec0);  
+
+    if(rotated_hamiltonian) 
+      haj.resize(Idata[0]);
+    else
+      hij.resize(Idata[0]);
+
     if(rotated_hamiltonian) {
       SMSpHabkl.setDims(Idata[2],Idata[3]);
       if(!SMSpHabkl.allocate_serial(Idata[1])) return false;
@@ -729,7 +791,6 @@ bool PureSingleDeterminant::initFromHDF5(hdf_archive& read,const std::string& ta
       SMSpHijkl.resize_serial(Idata[1]);
     }
 
-    myComm->bcast(Idata);   
 
     occup_alpha.resize(NAEA);
     occup_beta.resize(NAEB);
@@ -737,8 +798,8 @@ bool PureSingleDeterminant::initFromHDF5(hdf_archive& read,const std::string& ta
     if(!read.read(Idata,"occups")) return false;
     for(int i=0; i<NAEA; i++) occup_alpha[i] = Idata[i];
     for(int i=NAEA, j=0; i<NAEA+NAEB; i++, j++) occup_beta[j] = Idata[i];
-
     myComm->bcast(Idata);   
+
 
     std::vector<int> ivec;
     if(rotated_hamiltonian) {
@@ -756,19 +817,20 @@ bool PureSingleDeterminant::initFromHDF5(hdf_archive& read,const std::string& ta
     }
 
     if(rotated_hamiltonian) {
-     std::vector<ValueType> vvec;
-     vvec.resize(haj.size());
-     if(!read.read(vvec,"hij")) return false;
-     for(int i=0; i<haj.size(); i++)
-       std::get<1>(haj[i]) = vvec[i]; 
-     myComm->bcast(vvec);
+      std::vector<ComplexType> vvec;
+      vvec.resize(haj.size());
+      if(!read.read(vvec,"hij")) return false;
+      for(int i=0; i<haj.size(); i++)
+        std::get<1>(haj[i]) = vvec[i]; 
+      myComm->bcast(vvec);
+
     } else {
-     std::vector<ValueType> vvec;
-     vvec.resize(hij.size());
-     if(!read.read(vvec,"hij")) return false;
-     for(int i=0; i<hij.size(); i++)
-       std::get<1>(hij[i]) = vvec[i]; 
-     myComm->bcast(vvec);
+      std::vector<ValueType> vvec;
+      vvec.resize(hij.size());
+      if(!read.read(vvec,"hij")) return false;
+      for(int i=0; i<hij.size(); i++)
+        std::get<1>(hij[i]) = vvec[i]; 
+      myComm->bcast(vvec);
     }
 
     if(rotated_hamiltonian) {
@@ -791,8 +853,17 @@ bool PureSingleDeterminant::initFromHDF5(hdf_archive& read,const std::string& ta
 
   } else {
 
-    std::vector<int> Idata(8);
+    std::vector<int> Idata(9);
     myComm->bcast(Idata);
+
+    rotated_hamiltonian = (Idata[8]!=0);
+    if(rotated_hamiltonian) 
+    {
+      std::vector<ComplexType> vvec(2*NMO*((wfn_type==2)?(NAEA+NAEB):NAEA));
+      myComm->bcast(vvec);
+      OrbMat.resize(2*NMO,(wfn_type==2)?(NAEA+NAEB):NAEA);
+      std::copy(vvec.begin(),vvec.end(),OrbMat.begin());
+    }
 
     if(rotated_hamiltonian) {
      haj.resize(Idata[0]);
@@ -840,7 +911,14 @@ bool PureSingleDeterminant::initFromHDF5(hdf_archive& read,const std::string& ta
      for(int i=0; i<hij.size(); i++)
        std::get<1>(hij[i]) = vvec[i];
     }
- 
+
+    {
+      std::vector<ComplexType> vvec(2*NMO*((wfn_type==2)?(NAEA+NAEB):NAEA));
+      myComm->bcast(vvec);
+      OrbMat.resize(2*NMO,(wfn_type==2)?(NAEA+NAEB):NAEA);
+      std::copy(vvec.begin(),vvec.end(),OrbMat.begin());
+    } 
+
     myComm->barrier();
     if(rotated_hamiltonian) {
      if(!SMSpHabkl.initializeChildren()) return false;
@@ -863,7 +941,7 @@ void PureSingleDeterminant::split_Ham_rows(IndexType N, SPValueSMSpMat::int_iter
     return;
   } 
 
-  std::vector<SPValueSMSpMat::indxType> subsets(ncores_per_TG+1); 
+  std::vector<SPValueSMSpMat::intType> subsets(ncores_per_TG+1); 
   if(core_rank==0) {
 
     balance_partition_ordered_set(N,&(*indx),subsets); 
@@ -1090,7 +1168,7 @@ void PureSingleDeterminant::local_evaluateOneBodyMixedDensityMatrix(const Comple
     // copy to mixed_density_matrix 
     for(int i=0; i<NAEB; i++)
      for(int j=0; j<NMO; j++)
-      *(dm++) = SS0(j,i); 
+      *(dm++) = SS0(j+NMO,i); 
 
   }
 }
@@ -1303,6 +1381,8 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
     TG.resize_buffer(nwglobal);
     nwglobal /= sz;
 
+// FIX FIX FIX: For rotated hamiltonian, inconsistent convention for location and index of beta blocks between
+// hamiltonian and green function!!!
     // calculate [oa,ob,G] for all walkers
     evaluateOneBodyMixedDensityMatrix(wset,buffer,sz,1,false,false);
 
@@ -1396,7 +1476,7 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
       }
 
       // rotate buffer 
-      if(distribute_Ham) TG.rotate_buffer(currnw,sz);
+      if(distribute_Ham && nnodes_per_TG>1) TG.rotate_buffer(currnw,sz);
     }
 
     // synchronize: rotate_buffer calls barrier, so no need to do it again 
@@ -1440,7 +1520,6 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
     Timer.start("PureSingleDeterminant:evaluateLocalEnergy"); 
 #endif
 
-
     ekin = 0;
     SPComplexMatrix::iterator itG = mixed_density_matrix.begin();
     if(rotated_hamiltonian) {
@@ -1454,15 +1533,6 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
       }  
     }
 
-// NOTES:
-// Expand this routine to enable the following options:
-//   1. single precision matrix
-//       - in this case copy mixed_density_matrix to a single precision vector and call the SP routine.
-//       - this should be automatically detected when ValueType != METype. (to be introduced)
-//   2. matrix stored in real type, detected when isComplex(METype)==false
-//       - do this by calling a SpMatM routine, where you interpret mixed_density_matrix as a 2 column matrix     
-//       - combine with DP->SP option  
-
     epot = 0; 
     int nr1=1, nc1=2*NMO*NMO;
     SPComplexType one = SPComplexType(1.0,0.0);
@@ -1475,14 +1545,271 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
     SPComplexVector::iterator itV = V0.begin();
     for(int i=0; i<nc1; i++,++itG,++itV) epot += static_cast<ComplexType>(*itV) * static_cast<ComplexType>(*itG); 
     epot = 0.5*epot+NuclearCoulombEnergy;   
-  
+
 #ifdef AFQMC_TIMER
     Timer.stop("PureSingleDeterminant:evaluateLocalEnergy"); 
 #endif
     
   }
 
-  void PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMSpMat& vn, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n)
+  // for PureSD, I half-rotate the transposed operator to the basis of PsiT.
+  // It is then always in compressed form. 
+  void PureSingleDeterminant::generateTransposedOneBodyOperator(bool addBetaBeta, SPValueSMVector& Dvn, SPComplexSMVector& DvnT) {
+    if(!addBetaBeta)
+        APP_ABORT("  Error: PureSingleDeterminant::generateTransposedOneBodyOperator not implemented with UHF integrals.");  
+    
+    ComplexType one = ComplexType(1.0,0.0);
+    ComplexType zero = ComplexType(0.0,0.0);
+    int NMO2=NMO*NMO;
+    int ncol = closed_shell?NAEA:(NAEA+NAEB);
+
+    // resize matrix
+    DvnT.setup(head_of_nodes,"DvnT",TG.getNodeCommLocal());
+    DvnT.setDims(Dvn.cols(),ncol*NMO);
+    DvnT.resize(Dvn.cols()*ncol*NMO);    
+
+    if(!rotated_hamiltonian) { 
+      OrbMat.resize(2*NMO,NAEA);
+      std::fill(OrbMat.begin(), OrbMat.end(), zero);
+      for(int i=0; i<NAEA; i++)
+        OrbMat(occup_alpha[i],i) = one; 
+      if(!closed_shell) 
+        for(int i=0; i<NAEB; i++)
+          OrbMat(occup_beta[i],i) = one; 
+    }
+
+    int npr,rnk;
+    MPI_Comm_rank(TG.getNodeCommLocal(),&rnk);
+    MPI_Comm_size(TG.getNodeCommLocal(),&npr);
+
+    ComplexMatrix CVn(NMO,NMO); 
+    ComplexMatrix CVnrot(ncol,NMO); 
+    for(int i=0, iend=Dvn.cols(); i<iend; i++) {
+
+      if(i%npr != rnk) continue;
+
+      std::fill(CVn.begin(), CVn.end(), zero);
+      // extract Cholesky vector i
+#if !defined(QMC_COMPLEX) || defined(AFQMC_SP)
+      for(int ik=0; ik<NMO2; ik++)
+        CVn(ik) = static_cast<ComplexType>(*(Dvn.values()+ik*iend+i));
+#else      
+      zcopy(NMO2, Dvn.values()+i, Dvn.cols(), CVn.data(), 1);
+#endif
+
+      // rotate the matrix: CVnrot = OrbMat^H * CVn
+      DenseMatrixOperators::product_AhB(NAEA,CVn.cols(),CVn.rows(), one, OrbMat.data(), OrbMat.cols(), CVn.data(), CVn.cols(), zero, CVnrot.data(), CVnrot.cols() );
+      if(!closed_shell) 
+        DenseMatrixOperators::product_AhB(NAEB,CVn.cols(),CVn.rows(), one, OrbMat.data()+NAEA*NMO, OrbMat.cols(), CVn.data(), CVn.cols(), zero, CVnrot.data()+NAEA+NMO, CVnrot.cols() );
+   
+      // insert it in DvnT
+#if !defined(QMC_COMPLEX) || defined(AFQMC_SP)
+      for(int ik=0, ikend=ncol*NMO; ik<ikend; ik++)
+        *(DvnT.values()+i*DvnT.cols()+ik) = static_cast<SPComplexType>(CVnrot(ik));
+#else      
+       zcopy(ncol*NMO, CVnrot.data() , 1, DvnT.values()+i*DvnT.cols(),1);
+#endif
+
+    }
+    MPI_Barrier(TG.getNodeCommLocal());
+
+  }
+ 
+  void PureSingleDeterminant::generateTransposedOneBodyOperator(bool addBetaBeta, SPValueSMSpMat& Spvn, SPComplexSMSpMat& SpvnT) {
+
+    if(!addBetaBeta)
+        APP_ABORT("  Error: PureSingleDeterminant::generateTransposedOneBodyOperator not implemented with UHF integrals.");
+
+    ComplexType one = ComplexType(1.0,0.0);
+    ComplexType zero = ComplexType(0.0,0.0);
+    int NMO2=NMO*NMO;
+    int ncol = closed_shell?NAEA:(NAEA+NAEB);
+
+    // resize matrix
+    SpvnT.setup(head_of_nodes,"SpvnT",TG.getNodeCommLocal());
+    SpvnT.setDims(Spvn.cols(),ncol*NMO);
+
+    int npr,rnk;
+    MPI_Comm_rank(TG.getNodeCommLocal(),&rnk);
+    MPI_Comm_size(TG.getNodeCommLocal(),&npr);
+
+    ComplexMatrix CVn, CVnrot;
+
+    std::size_t sz=0;
+    SPValueSMSpMat::intPtr row = Spvn.row_data();   
+    SPValueSMSpMat::intPtr row_index = Spvn.row_index();   
+    SPValueSMSpMat::intPtr col = Spvn.column_data();   
+    SPValueSMSpMat::pointer val = Spvn.values();   
+
+    if(rotated_hamiltonian) {
+
+      CVn.resize(NMO,NMO);
+      CVnrot.resize(ncol,NMO);
+
+      app_log()<<" Temporarily transposing Cholesky matrix. \n";
+      Spvn.transpose(TG.getNodeCommLocal());
+
+      col = Spvn.column_data();
+      val = Spvn.values();
+      row_index = Spvn.row_index();
+      for(int i=0, iend=Spvn.rows(); i<iend; i++, row_index++) {
+
+        int nterms = *(row_index+1) - (*row_index);
+        if(nterms==0) continue;
+
+        if(i%npr != rnk) {
+          col+=nterms;
+          val+=nterms;
+          continue;
+        }
+ 
+        std::fill(CVn.begin(), CVn.end(), zero);
+        // extract Cholesky vector i
+        for(int nt=0; nt<nterms; nt++, col++, val++) 
+          CVn(*col) = static_cast<ComplexType>(*val);
+
+        // rotate the matrix: CVnrot = OrbMat^H * CVn
+        DenseMatrixOperators::product_AhB(NAEA,CVn.cols(),CVn.rows(), one, OrbMat.data(), OrbMat.cols(), CVn.data(), CVn.cols(), zero, CVnrot.data(), CVnrot.cols() );
+        if(!closed_shell) 
+          DenseMatrixOperators::product_AhB(NAEB,CVn.cols(),CVn.rows(), one, OrbMat.data()+NAEA*NMO, OrbMat.cols(), CVn.data(), CVn.cols(), zero, CVnrot.data()+NAEA*NMO, CVnrot.cols() );
+ 
+      // insert it in DvnT
+       for(int ik=0, ikend=ncol*NMO; ik<ikend; ik++)
+        if(std::abs(CVnrot(ik)) > 1e-6)  // fixed cutoff for now
+          sz++;
+      }
+    
+    } else {
+
+      int nterms = Spvn.size();
+      int ntpc = nterms/npr, nex = nterms%npr;
+      int p0 = rnk*ntpc + std::min(rnk,nex);
+      int p1 = p0 + ntpc + ((rnk<nex)?1:0);
+       
+      col = Spvn.column_data()+p0;
+      val = Spvn.values()+p0;
+      row = Spvn.row_data()+p0;
+      SPValueSMSpMat::pointer vend = Spvn.values()+p1;
+      for(; val!= vend; val++, col++, row++) {
+        IndexType i = (*row)/NMO;
+        IndexType k = (*row)%NMO;
+        if(isOcc_alpha[i])
+          sz++;
+        if(!closed_shell && isOcc_beta[i+NMO])
+          sz++;
+      }
+
+    }
+
+    std::size_t sz_=sz;
+    MPI_Allreduce(&sz_,&sz,1,MPI_UNSIGNED_LONG,MPI_SUM,TG.getNodeCommLocal());
+    SpvnT.allocate(sz);    
+
+    using itype = SPComplexSMSpMat::intType;
+    using vtype = SPComplexSMSpMat::value_type;
+
+    int nmax = 10000;
+    std::vector< std::tuple<itype,itype,vtype> > ints;
+    ints.reserve(nmax); 
+
+    if(rotated_hamiltonian) {
+
+      col = Spvn.column_data();   
+      val = Spvn.values();   
+      row_index = Spvn.row_index();   
+      for(int i=0, iend=Spvn.rows(); i<iend; i++, row_index++) {
+
+        int nterms = *(row_index+1) - (*row_index);
+        if(nterms==0) continue;
+
+        if(i%npr != rnk) {
+          col+=nterms;
+          val+=nterms;
+          continue;
+        }
+
+        std::fill(CVn.begin(), CVn.end(), zero);
+        // extract Cholesky vector i
+        for(int nt=0; nt<nterms; nt++, col++, val++) 
+          CVn(*col) = static_cast<ComplexType>(*val);
+
+        // rotate the matrix: CVnrot = OrbMat^H * CVn
+        DenseMatrixOperators::product_AhB(NAEA,CVn.cols(),CVn.rows(), one, OrbMat.data(), OrbMat.cols(), CVn.data(), CVn.cols(), zero, CVnrot.data(), CVnrot.cols() );
+        if(!closed_shell) 
+          DenseMatrixOperators::product_AhB(NAEB,CVn.cols(),CVn.rows(), one, OrbMat.data()+NAEA*NMO, OrbMat.cols(), CVn.data(), CVn.cols(), zero, CVnrot.data()+NAEA*NMO, CVnrot.cols() );
+   
+        // insert it in DvnT
+        for(int ik=0, ikend=ncol*NMO; ik<ikend; ik++)
+          if(std::abs(CVnrot(ik)) > 1e-6)  {// fixed cutoff for now
+            ints.push_back(std::make_tuple(i,ik,static_cast<SPComplexType>(CVnrot(ik))));
+            if(ints.size() == nmax) {
+              SpvnT.add(ints,true);
+              ints.clear();
+            }
+          }
+      }
+      if(ints.size() > 0) {
+        SpvnT.add(ints,true);
+        ints.clear();
+      }
+
+    } else {
+
+      int nterms = Spvn.size();
+      int ntpc = nterms/npr, nex = nterms%npr;
+      int p0 = rnk*ntpc + std::min(rnk,nex);
+      int p1 = p0 + ntpc + ((rnk<nex)?1:0);
+
+      std::vector<SPComplexSMSpMat::intType> mymap(2*NMO,-1);
+      for(int i=0; i<NAEA; i++)
+        mymap[occup_alpha[i]] = i;  
+      for(int i=0; i<NAEB; i++)
+        mymap[occup_beta[i]] = NAEA+i;  
+
+      col = Spvn.column_data()+p0;
+      val = Spvn.values()+p0;
+      row = Spvn.row_data()+p0;
+      SPValueSMSpMat::pointer vend = Spvn.values()+p1;
+      for(; val!= vend; val++, col++, row++) {
+        itype i = (*row)/NMO;
+        itype k = (*row)%NMO;
+        if(isOcc_alpha[i]) {
+          assert(mymap[i] >= 0);
+          itype ik = mymap[i]*NMO+k;
+          ints.push_back(std::make_tuple(*col,ik,static_cast<SPComplexType>(*val)));
+          if(ints.size() == nmax) {
+            SpvnT.add(ints,true);
+            ints.clear();
+          }
+        }
+        if(!closed_shell && isOcc_beta[i+NMO]) {
+          assert(mymap[i+NMO] >= 0);
+          itype ik = mymap[i+NMO]*NMO+k;
+          ints.push_back(std::make_tuple(*col,ik,static_cast<SPComplexType>(*val)));
+          if(ints.size() == nmax) {
+            SpvnT.add(ints,true);
+            ints.clear();
+          }
+        }
+      }
+      if(ints.size() > 0) {
+        SpvnT.add(ints,true);
+        ints.clear();
+      }
+
+    }
+
+
+    app_log()<<" Compressing transposed Cholesky matrix. \n";
+    SpvnT.compress(TG.getNodeCommLocal());
+    if(rotated_hamiltonian) {
+      app_log()<<" Transposing Cholesky matrix back to original form. \n";
+      Spvn.transpose(TG.getNodeCommLocal());
+    }
+
+  }
+
+  void PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMSpMat& vn, SPComplexSMSpMat& vnT, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n)
   {
 
 #ifdef AFQMC_TIMER
@@ -1491,18 +1818,24 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
     ComplexType o1,o2;
     const SPComplexType *GF=GG;
     if(needsG) {
-     local_evaluateOneBodyMixedDensityMatrix(SlaterMat,o1,o2,true);
-     GF = mixed_density_matrix.data();
+      GF = mixed_density_matrix.data();
+      if(transposed) // transposed implies compact storage 
+       local_evaluateOneBodyMixedDensityMatrix(SlaterMat,o1,o2,mixed_density_matrix.data(),false);
+      else 
+       local_evaluateOneBodyMixedDensityMatrix(SlaterMat,o1,o2,true);
     }
 
-    SPValueType one = SPValueType(1.0);
-    const SPValueType zero = SPValueType(0.0);
-    if(closed_shell) one = SPValueType(2.0);      
     if(transposed) {
-      SparseMatrixOperators::product_SpMatV(vn.rows(),vn.cols(),one,vn.values(),vn.column_data(),vn.row_index(),GF,zero,v.data());
-      if(addBetaBeta && !closed_shell)
-        SparseMatrixOperators::product_SpMatV(vn.rows(),vn.cols(),one,vn.values(),vn.column_data(),vn.row_index(),GF+NMO*NMO,one,v.data());
+      SPComplexType one = SPComplexType(1.0);
+      const SPComplexType zero = SPComplexType(0.0);
+      if(closed_shell) one = SPComplexType(2.0);      
+      // since transposed implies compact storage, both components are done in one call
+      // if closed_shell, only 1 component is there and factor of 2 is accounted for through "one"
+      SparseMatrixOperators::product_SpMatV(vnT.rows(),vnT.cols(),one,vnT.values(),vnT.column_data(),vnT.row_index(),GF,zero,v.data());
     } else {
+      SPValueType one = SPValueType(1.0);
+      const SPValueType zero = SPValueType(0.0);
+      if(closed_shell) one = SPValueType(2.0);      
       SparseMatrixOperators::product_SpMatTV(vn.rows(),vn.cols(),one,vn.values(),vn.column_data(),vn.row_index(),GF,zero,v.data());
       if(addBetaBeta && !closed_shell)
         SparseMatrixOperators::product_SpMatTV(vn.rows(),vn.cols(),one,vn.values(),vn.column_data(),vn.row_index(),GF+NMO*NMO,one,v.data());
@@ -1514,7 +1847,7 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
 
   }
 
-  void PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMVector& vn, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n)
+  void PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMVector& vn, SPComplexSMVector& vnT, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n)
   {
 
 #ifdef AFQMC_TIMER
@@ -1523,18 +1856,22 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
     ComplexType o1,o2;
     const SPComplexType *GF=GG;
     if(needsG) {
-     local_evaluateOneBodyMixedDensityMatrix(SlaterMat,o1,o2,true);
-     GF = mixed_density_matrix.data();
+      GF = mixed_density_matrix.data();
+      if(transposed) // transposed implies compact storage 
+       local_evaluateOneBodyMixedDensityMatrix(SlaterMat,o1,o2,mixed_density_matrix.data(),false);
+      else 
+       local_evaluateOneBodyMixedDensityMatrix(SlaterMat,o1,o2,true);
     }
 
-    SPValueType one = SPValueType(1.0);
-    const SPValueType zero = SPValueType(0.0);
-    if(closed_shell) one = SPValueType(2.0);
     if(transposed) {
-      DenseMatrixOperators::product_Ax(vn.rows(),vn.cols(),one,vn.values(),vn.cols(),GF,zero,v.data());
-      if(addBetaBeta && !closed_shell)
-        DenseMatrixOperators::product_Ax(vn.rows(),vn.cols(),one,vn.values(),vn.cols(),GF+NMO*NMO,one,v.data());
+      SPComplexType one = SPComplexType(1.0);
+      const SPComplexType zero = SPComplexType(0.0);
+      if(closed_shell) one = SPComplexType(2.0);
+      DenseMatrixOperators::product_Ax(vnT.rows(),vnT.cols(),one,vnT.values(),vnT.cols(),GF,zero,v.data());
     } else {
+      SPValueType one = SPValueType(1.0);
+      const SPValueType zero = SPValueType(0.0);
+      if(closed_shell) one = SPValueType(2.0);
       DenseMatrixOperators::product_Atx(vn.rows(),vn.cols(),one,vn.values(),vn.cols(),GF,zero,v.data());
       if(addBetaBeta && !closed_shell)
         DenseMatrixOperators::product_Atx(vn.rows(),vn.cols(),one,vn.values(),vn.cols(),GF+NMO*NMO,one,v.data());
@@ -1548,18 +1885,24 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
 
   // buf is a matrix of walker information which includes the green's function. This matrix
   // was created above by "". The number of columns is walkerBlock and the number of rows is the size of G (since walkers go along columns, the rest of the buffer is irrelevant)
-  void PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int i0, int iN, int pi0, SPValueSMSpMat& vn, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n)
+  void PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int i0, int iN, SPValueSMSpMat& vn, SPComplexSMSpMat& vnT, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n)
   {
-    assert(v.size() >= nW*vn.cols());
+    if(transposed)
+      assert(v.size() >= nW*(iN-i0));
+    else
+      assert(v.size() >= nW*vn.cols());
     const SPComplexType *GF = buff+2*nW;
     int GFi0 = i0;
     int GFi02 = NMO*NMO+i0;
     SPValueType one = SPValueType(1.0);
     const SPValueType zero = SPValueType(0.0);
-    const SPComplexType czero = SPComplexType(0.0,0.0);
     if(closed_shell) one = SPValueType(2.0);      
+    const SPComplexType czero = SPComplexType(0.0,0.0);
+    SPComplexType cone = SPComplexType(1.0);
+    if(closed_shell) cone = SPComplexType(2.0);      
+
     Timer.start("PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer::setup");
-    if(!rotated_hamiltonian) {  
+    if(!rotated_hamiltonian && !transposed) {  
       // check if there is any work to be done
       // for spinRestricted (addBetaBeta==true)
       //   1: i0/NMO <= occup_alpha[NAEA-1]   
@@ -1605,10 +1948,12 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
       GFi0=l0;
       // GFi02 is the location of i0+NMO*NMO in the reduced matrix
       GFi02=nW*(jN-j0+1)*NMO+l0;
+
       for(int i=0; i<NAEA; i++, buff+=nW*NMO) { 
         if(occup_alpha[i] >= j0 && occup_alpha[i] <= jN)  
           std::copy(buff,buff+nW*NMO,cGF.begin()+(occup_alpha[i]-j0)*NMO*nW); 
       }
+
       if(!closed_shell) {  
         if(addBetaBeta) {
           for(int i=0; i<NAEB; i++,buff+=nW*NMO)
@@ -1621,18 +1966,25 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
         }
       }
       GF = cGF.data();
+
     }
     Timer.stop("PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer::setup");
 
+    std::size_t p_;
+    if(transposed)
+      p_ = static_cast<std::size_t>(*(vnT.row_index()+i0));
+    else 
+      p_ = static_cast<std::size_t>(*(vn.row_index()+i0));
     // walkerBlock implies MatV
     if(walkerBlock==1) {
 
       if(transposed) {      
-        APP_ABORT("Error: Transposed Spvn can not be used yet. \n\n\n");
+        // transposed implies compact DM
+        SparseMatrixOperators::product_SpMatV( int(iN-i0), vnT.cols(), cone, vnT.values() + p_, vnT.column_data() + p_, vnT.row_index()+i0, GF, czero, v.data());
       } else {
-        SparseMatrixOperators::product_SpMatTV( int(iN-i0), vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+i0, zero, v.data());
+        SparseMatrixOperators::product_SpMatTV( int(iN-i0), vn.cols(), one, vn.values() + p_, vn.column_data() + p_, vn.row_index()+i0, GF+GFi0, zero, v.data());
         if(addBetaBeta && !closed_shell)
-          SparseMatrixOperators::product_SpMatTV( int(iN-i0), vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+NMO*NMO+i0, one, v.data());
+          SparseMatrixOperators::product_SpMatTV( int(iN-i0), vn.cols(), one, vn.values() + p_, vn.column_data() + p_, vn.row_index()+i0, GF+GFi02, one, v.data());
       }
 
     } else {
@@ -1645,42 +1997,49 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
       for(int i=0; i<nblk; i++) {
 
         if(transposed) {
-          APP_ABORT("Error: Transposed vn can not be used yet. \n\n\n");
+          // transposed implies compact DM
+          SparseMatrixOperators::product_SpMatM( int(iN-i0), walkerBlock , vnT.cols(), cone, vnT.values() + p_, vnT.column_data() + p_, vnT.row_index()+i0, GF+i*walkerBlock, nW, czero, v.data()+i*walkerBlock, nW);
         } else {
-          SparseMatrixOperators::product_SpMatTM( int(iN-i0), walkerBlock , vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+i0*nW+i*walkerBlock, nW, zero, v.data(), nW);
+          SparseMatrixOperators::product_SpMatTM( int(iN-i0), walkerBlock , vn.cols(), one, vn.values() + p_, vn.column_data() + p_, vn.row_index()+i0, GF+GFi0*nW+i*walkerBlock, nW, zero, v.data()+i*walkerBlock, nW);
           if(addBetaBeta && !closed_shell)
-            SparseMatrixOperators::product_SpMatTM( int(iN-i0), walkerBlock , vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+(i0+NMO*NMO)*nW+i*walkerBlock, nW, one, v.data(), nW);
+            SparseMatrixOperators::product_SpMatTM( int(iN-i0), walkerBlock , vn.cols(), one, vn.values() + p_, vn.column_data() + p_, vn.row_index()+i0, GF+GFi02*nW+i*walkerBlock, nW, one, v.data()+i*walkerBlock, nW);
         } 
  
       }
       // perform remaining walkers. Should I pad this to the closest power of 2???
       if(nextra > 0) {
         if(transposed) {
-          APP_ABORT("Error: Transposed Spvn can not be used yet. \n\n\n");
+          // transposed implies compact DM
+          SparseMatrixOperators::product_SpMatM( int(iN-i0), nextra , vnT.cols(), cone, vnT.values() + p_, vnT.column_data() + p_, vnT.row_index()+i0, GF+nblk*walkerBlock, nW, czero, v.data()+nblk*walkerBlock, nW);
         } else {
-          SparseMatrixOperators::product_SpMatTM( int(iN-i0), nextra , vn.cols(), one, vn.values() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+i0*nW+nblk*walkerBlock, nW, zero, v.data(), nW);
+          SparseMatrixOperators::product_SpMatTM( int(iN-i0), nextra , vn.cols(), one, vn.values() + p_, vn.column_data() + p_, vn.row_index()+i0, GF+GFi0*nW+nblk*walkerBlock, nW, zero, v.data()+nblk*walkerBlock, nW);
           if(addBetaBeta && !closed_shell)
-            SparseMatrixOperators::product_SpMatTM( int(iN-i0), nextra , vn.cols(), one, vn.values
-() + pi0, vn.column_data() + pi0, vn.row_index()+i0, GF+(i0+NMO*NMO)*nW+nblk*walkerBlock, nW, one, v.data(), nW);
+            SparseMatrixOperators::product_SpMatTM( int(iN-i0), nextra , vn.cols(), one, vn.values() + p_, vn.column_data() + p_, vn.row_index()+i0, GF+GFi02*nW+nblk*walkerBlock, nW, one, v.data()+nblk*walkerBlock, nW);
         }
       }           
     }
+
   }
 
   // buf is a matrix of walker information which includes the green's function. This matrix
   // was created above by "". The number of columns is walkerBlock and the number of rows is the size of G (since walkers go along columns, the rest of the buffer is irrelevant)
-  void PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int i0, int iN, int pi0, SPValueSMVector& vn, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n)
+  void PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int i0, int iN, SPValueSMVector& vn, SPComplexSMVector& vnT, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n)
   {
-    assert(v.size() >= nW*vn.cols());
+    if(transposed)
+      assert(v.size() >= nW*(iN-i0));
+    else
+      assert(v.size() >= nW*vn.cols());
     const SPComplexType *GF = buff+2*nW;
     int GFi0 = i0;
     int GFi02 = NMO*NMO+i0;
     SPValueType one = SPValueType(1.0);
     const SPValueType zero = SPValueType(0.0);
-    const SPComplexType czero = SPComplexType(0.0,0.0);
     if(closed_shell) one = SPValueType(2.0);      
+    const SPComplexType czero = SPComplexType(0.0,0.0);
+    SPComplexType cone = SPComplexType(1.0);
+    if(closed_shell) cone = SPComplexType(2.0);      
     Timer.start("PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer::setup");
-    if(!rotated_hamiltonian) {  
+    if(!rotated_hamiltonian && !transposed) {  
       // check if there is any work to be done
       // for spinRestricted (addBetaBeta==true)
       //   1: i0/NMO <= occup_alpha[NAEA-1]   
@@ -1743,12 +2102,14 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
       }
       GF = cGF.data();
     }
+    // if transposed matrix is used, distribution is done over cholesky vectors.
     Timer.stop("PureSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer::setup");
 
     // walkerBlock implies MatV
     if(walkerBlock==1) {
       if(transposed) {
-          APP_ABORT("Error: Transposed Dvn can not be used yet. \n\n\n");
+        // transposed implies compact DM
+        DenseMatrixOperators::product_Ax( int(iN-i0), vnT.cols(), cone, vnT.values() + i0*vnT.cols(), vnT.cols(), GF, czero, v.data());
       } else {
         DenseMatrixOperators::product_Atx( int(iN-i0), vn.cols(), one, vn.values() + i0*vn.cols(), vn.cols(), GF+GFi0, zero, v.data());
         if(addBetaBeta && !closed_shell)
@@ -1763,26 +2124,30 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
 
       for(int i=0; i<nblk; i++) {
         if(transposed) {
-          APP_ABORT("Error: Transposed Spvn can not be used yet. \n\n\n");
+          // transposed implies compact DM
+          DenseMatrixOperators::product( int(iN-i0), walkerBlock, vnT.cols(), cone, vnT.values() + i0*vnT.cols(), vnT.cols(), 
+               GF+i*walkerBlock,nW,czero,v.data()+i*walkerBlock,nW);
         } else {
           DenseMatrixOperators::product_AtB( vn.cols(), walkerBlock, int(iN-i0), one, vn.values() + i0*vn.cols(), vn.cols(), 
-               GF+GFi0*nW+i*walkerBlock,nW,zero,v.data(),nW);
+               GF+GFi0*nW+i*walkerBlock,nW,zero,v.data()+i*walkerBlock,nW);
           if(addBetaBeta && !closed_shell)
             DenseMatrixOperators::product_AtB( vn.cols(), walkerBlock, int(iN-i0), one, vn.values() + i0*vn.cols(), vn.cols(), 
-               GF+GFi02*nW+i*walkerBlock,nW,one,v.data(),nW);
+               GF+GFi02*nW+i*walkerBlock,nW,one,v.data()+i*walkerBlock,nW);
         } 
  
       }
       // perform remaining walkers. Should I pad this to the closest power of 2???
       if(nextra > 0) {
         if(transposed) {
-          APP_ABORT("Error: Transposed Spvn can not be used yet. \n\n\n");
+          // transposed implies compact DM
+          DenseMatrixOperators::product( int(iN-i0), nextra, vnT.cols(), cone, vnT.values() + i0*vnT.cols(), vnT.cols(), 
+               GF+nblk*walkerBlock,nW,czero,v.data()+nblk*walkerBlock,nW);
         } else {
           DenseMatrixOperators::product_AtB( vn.cols(), nextra, int(iN-i0), one, vn.values() + i0*vn.cols(), vn.cols(), 
-               GF+GFi0*nW+nblk*walkerBlock,nW,zero,v.data(),nW);
+               GF+GFi0*nW+nblk*walkerBlock,nW,zero,v.data()+nblk*walkerBlock,nW);
           if(addBetaBeta && !closed_shell)
             DenseMatrixOperators::product_AtB( vn.cols(), nextra, int(iN-i0), one, vn.values() + i0*vn.cols(), vn.cols(),
-               GF+GFi02*nW+nblk*walkerBlock,nW,one,v.data(),nW);
+               GF+GFi02*nW+nblk*walkerBlock,nW,one,v.data()+nblk*walkerBlock,nW);
         }
       }           
     }
