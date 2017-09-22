@@ -10,15 +10,20 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/** @file SphericalBasisSet.h
- * @brief A basis set of spherical symmetry associated with a center
+/** @file SoaSphericalBasisSet.h
  */
 #ifndef QMCPLUSPLUS_SOA_SPHERICALORBITAL_BASISSET_H
 #define QMCPLUSPLUS_SOA_SPHERICALORBITAL_BASISSET_H
 
 namespace qmcplusplus
 {
-
+  /* A basis set for a center type 
+   *
+   * @tparam ROT : radial function type, e.g.,NGFunctor<T>
+   * @tparam SH : spherical or carteisan Harmonics for (l,m) expansion
+   *
+   * \f$ \phi_{n,l,m}({\bf r})=R_{n,l}(r) Y_{l,m}(\theta) \f$
+   */
   template<typename ROT, typename SH>
     struct SoaSphericalBasisSet
     {

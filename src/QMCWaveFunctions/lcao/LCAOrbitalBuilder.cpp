@@ -27,6 +27,10 @@ namespace qmcplusplus
   {
     ClassName="LCAOrbitalBuilder";
   }
+  LCAOrbitalBuilder::~LCAOrbitalBuilder()
+  {
+    //properly cleanup
+  }
 
   bool LCAOrbitalBuilder::put(xmlNodePtr cur)
   {
@@ -49,7 +53,7 @@ namespace qmcplusplus
 
     /** process atomicBasisSet per ion species */
     cur = cur->xmlChildrenNode;
-    while(cur!=NULL)
+    while(cur!=NULL) //loop over unique ioons
     {
       std::string cname((const char*)(cur->name));
 
@@ -110,7 +114,18 @@ namespace qmcplusplus
         }
       }
       cur = cur->next;
+    } // done with basis set
+
+    if(xyzBasisSet!=nullptr)
+    {
+      xyzBasisSet->setBasisSetSize(-1);
     }
+
+    if(ylmBasisSet!=nullptr)
+    {
+      ylmBasisSet->setBasisSetSize(-1);
+    }
+
     return true;
   }
 
@@ -177,7 +192,6 @@ namespace qmcplusplus
       lcos->setIdentity(true);
     }
     return lcos;
-    return nullptr;
   }
 }
 

@@ -48,6 +48,8 @@ namespace qmcplusplus
      */
     LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, bool cusp=false, std::string cusp_info="");
 
+    ~LCAOrbitalBuilder();
+
     inline bool is_same(const xmlChar* a, const char* b)
     {
       return !strcmp((const char*)a,b);

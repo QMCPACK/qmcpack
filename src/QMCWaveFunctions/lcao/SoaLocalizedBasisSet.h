@@ -75,7 +75,7 @@ struct SoaLocalizedBasisSet //: public BasisSetBase<typename COT::value_type>
     NumTargets=els.getTotalNum();
     LOBasisSet.resize(ions.getSpeciesSet().getTotalNum(),0);
     BasisOffset.resize(NumCenters+1);
-    BasisSetSize=-1;
+    BasisSetSize=0;
   }
 
   /** copy constructor */
@@ -92,7 +92,7 @@ struct SoaLocalizedBasisSet //: public BasisSetBase<typename COT::value_type>
    */
   void setBasisSetSize(int nbs)
   {
-    if(nbs == BasisSetSize) return;
+    if(BasisSetSize>0 && nbs == BasisSetSize) return;
 
     //evaluate the total basis dimension and offset for each center
     BasisOffset[0] = 0;
