@@ -71,6 +71,12 @@ struct SoaCartesianTensor
       XYZ[i]*= NormFactor[i];
   }
 
+  ///compute Ylm
+  inline void evaluateV(T x, T y, T z)
+  {
+    evaluateV(x,y,z,cXYZ.data(0));
+  }
+
   ///makes a table of \f$ r^l S_l^m \f$ and their gradients up to Lmax.
   void evaluateVGL(T x, T y, T z);
 
@@ -138,8 +144,8 @@ SoaCartesianTensor<T>::SoaCartesianTensor(const int l_max, bool addsign) : Lmax(
 //           coming from the Spherical Harmonics
 //           NormL = pow(2,L+1)*sqrt(2.0/static_cast<real_type>(DFactorial(2*l+1)))*pow(2.0/pi,0.25)
       double L = static_cast<T>(l);
-      double NormL = pow(2,L+1)*std::sqrt(2.0/static_cast<double>(DFactorial(2*l+1)))*pow(2.0/pi,0.25);
-      NormFactor[p++] = static_cast<T>(pow(2.0/pi,0.75)*pow(4.0,0.5*(a+b+c))
+      double NormL = std::pow(2,L+1)*std::sqrt(2.0/static_cast<double>(DFactorial(2*l+1)))*std::pow(2.0/pi,0.25);
+      NormFactor[p++] = static_cast<T>(std::pow(2.0/pi,0.75)*std::pow(4.0,0.5*(a+b+c))
           *std::sqrt(1.0/static_cast<double>((DFactorial(2*a-1)*DFactorial(2*b-1)*DFactorial(2*c-1))))/NormL);
     }
   }
@@ -178,7 +184,6 @@ void SoaCartesianTensor<T>::evaluate_bare(T x, T y, T z, T* restrict XYZ) const
     XYZ[17]=z2*x;
     XYZ[18]=z2*y;
     XYZ[19]=x*y*z;
-    break;
   case 2:
     XYZ[4]=x*x;
     XYZ[5]=y*y;
