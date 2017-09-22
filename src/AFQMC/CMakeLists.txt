@@ -11,6 +11,7 @@ SET (AFQMC_SRCS
   Drivers/AFQMCDriver.cpp 
   Drivers/selectedCI.cpp 
   Drivers/VMCDriver.cpp 
+  Drivers/BenchmarkDriver.cpp
   Hamiltonians/SparseGeneralHamiltonian.cpp
   Wavefunctions/WavefunctionHandler.cpp
   Wavefunctions/PureSingleDeterminant.cpp

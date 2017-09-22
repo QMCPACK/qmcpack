@@ -40,18 +40,20 @@ ELSEIF( ${HOSTNAME} MATCHES "cori" )
     SET( N_PROCS 32)
 ELSEIF( ${HOSTNAME} MATCHES "eos" )
 # Setup for eos.ccs.ornl.gov Cray XC30 Intel E5-2670 Aries interconnect.
+# N_NPROCS and N_PROCS_BUILD should be set to respect current OLCF limits
     SET( CC ${CMAKE_C_COMPILER} )
     SET( CXX ${CMAKE_CXX_COMPILER} )
     SET( CTEST_CMAKE_GENERATOR "Unix Makefiles")
     SET( CTEST_SITE "eos.ccs.ornl.gov" )
-    SET( N_PROCS 16)
+    SET( N_PROCS_BUILD 8 )
 ELSEIF( ${HOSTNAME} MATCHES "titan" )
 # Setup for titan.ccs.ornl.gov Cray XK7
+# N_NPROCS and N_PROCS_BUILD should be set to respect current OLCF limits
     SET( CC ${CMAKE_C_COMPILER} )
     SET( CXX ${CMAKE_CXX_COMPILER} )
     SET( CTEST_CMAKE_GENERATOR "Unix Makefiles")
     SET( CTEST_SITE "titan.ccs.ornl.gov" )
-    SET( N_PROCS 16)
+    SET( N_PROCS_BUILD 8 )
 ELSEIF( ${HOSTNAME} MATCHES "cetus" )
 # Setup for cetus.alcf.anl.gov BlueGene/Q
     SET( CTEST_CMAKE_GENERATOR "Unix Makefiles")
@@ -125,7 +127,6 @@ ELSEIF( ${CTEST_SCRIPT_ARG} STREQUAL "coverage" )
     SET( CTEST_COVERAGE_COMMAND "gcov" )
     SET( ENABLE_GCOV "true" )
     SET( CTEST_BUILD_NAME "${CTEST_BUILD_NAME}-coverage" )
-
 ELSE()
     MESSAGE(FATAL_ERROR "Invalid build (${CTEST_SCRIPT_ARG}): ctest -S /path/to/script,build (debug/opt/valgrind")
 ENDIF()
@@ -157,6 +158,12 @@ IF( NOT DEFINED N_PROCS )
     ENDIF()
 ENDIF()
 
+# Set the number of processors
+IF( NOT DEFINED N_PROCS_BUILD )
+     IF ( DEFINED $ENV{N_PROCS_BUILD} )
+        SET( N_PROCS_BUILD $ENV{N_PROCS_BUILD} )
+     ENDIF()
+ENDIF()	
 
 # Set basic variables
 SET( CTEST_PROJECT_NAME "QMCPACK" )
@@ -173,10 +180,14 @@ SET( CTEST_NIGHTLY_START_TIME "22:00:00 EST" )
 SET( CTEST_COMMAND "\"${CTEST_EXECUTABLE_NAME}\" -D ${CTEST_DASHBOARD}" )
 IF ( BUILD_SERIAL )
     SET( CTEST_BUILD_COMMAND "${MAKE_CMD} -i" )
+ELSEIF ( DEFINED N_PROCS_BUILD )
+    SET( CTEST_BUILD_COMMAND "${MAKE_CMD} -i -j ${N_PROCS_BUILD}" )
 ELSE()
     SET( CTEST_BUILD_COMMAND "${MAKE_CMD} -i -j ${N_PROCS}" )
 ENDIF()
 
+MESSAGE("Building with ${N_PROCS_BUILD} processors")
+MESSAGE("Testing with ${N_PROCS} processors")
 
 # Set valgrind options
 SET( VALGRIND_COMMAND_OPTIONS  "--tool=memcheck --leak-check=yes --track-fds=yes --num-callers=50 --show-reachable=yes --suppressions=${QMC_SOURCE_DIR}/src/ValgrindSuppresionFile" )

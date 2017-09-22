@@ -54,7 +54,7 @@ bool CSVMC::put(xmlNodePtr q)
   Estimators = branchEngine->getEstimatorManager();
   if(Estimators == 0)
   {
-    Estimators = new EstimatorManager(myComm);
+    Estimators = new EstimatorManagerBase(myComm);
     multiEstimator = new CSEnergyEstimator(H,nPsi);
     Estimators->add(multiEstimator,Estimators->MainEstimatorName);
     branchEngine->setEstimatorManager(Estimators);

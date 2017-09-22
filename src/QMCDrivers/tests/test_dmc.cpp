@@ -28,7 +28,7 @@
 #include "QMCWaveFunctions/ConstantOrbital.h"
 #include "QMCWaveFunctions/LinearOrbital.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
-#include "Estimators/EstimatorManager.h"
+#include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/TraceManager.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
 
@@ -101,7 +101,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
   DMCUpdatePbyPWithRejectionFast dmc(elec, *psi, h, rg);
-  EstimatorManager EM;
+  EstimatorManagerBase EM;
   double tau = 0.1;
   SimpleFixedNodeBranch branch(tau, 1);
   TraceManager TM;
@@ -203,7 +203,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
   DMCUpdatePbyPWithRejectionFast dmc(elec, *psi, h, rg);
-  EstimatorManager EM;
+  EstimatorManagerBase EM;
   double tau = 0.1;
   SimpleFixedNodeBranch branch(tau, 1);
   TraceManager TM;

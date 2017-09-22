@@ -24,7 +24,7 @@
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/RandomGenerator.h"
 #include "QMCDrivers/WalkerControlBase.h"
-#include "Estimators/EstimatorManager.h"
+#include "Estimators/EstimatorManagerBase.h"
 //#include "Estimators/DMCEnergyEstimator.h"
 #include "QMCDrivers/BranchIO.h"
 #include "Particle/Reptile.h"
@@ -203,7 +203,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   app_log() << "  target walkers = " << iParam[B_TARGETWALKERS] << std::endl;
   app_log() << "  branching cutoff scheme " << branching_cutoff_scheme << std::endl;
   app_log() << "  branch cutoff = " <<  vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX] << std::endl;
-  app_log() << "  Max and mimum walkers per node= " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS] << std::endl;
+  app_log() << "  Max and minimum walkers per node= " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS] << std::endl;
   app_log() << "  QMC Status (BranchMode) = " << BranchMode << std::endl;
 
   return int(round(double(iParam[B_TARGETWALKERS])/double(nwtot_now)));
@@ -697,7 +697,7 @@ void SimpleFixedNodeBranch::finalize(MCWalkerConfiguration& w)
     o << "\n    reference variance            = " << vParam[B_SIGMA2];
     o << "\n    target walkers                = " << iParam[B_TARGETWALKERS];
     o << "\n    branch cutoff                 = " << vParam[B_BRANCHCUTOFF] << " " << vParam[B_BRANCHMAX];
-    o << "\n    Max and mimum walkers per node= " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS];
+    o << "\n    Max and minimum walkers per node= " << iParam[B_MAXWALKERS] << " " << iParam[B_MINWALKERS];
     o << "\n    Feedback                      = " << vParam[B_FEEDBACK];
     o << "\n    QMC Status (BranchMode)       = " << BranchMode;
     o << "\n====================================================";
