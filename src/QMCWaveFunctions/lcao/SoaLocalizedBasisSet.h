@@ -21,6 +21,7 @@
 
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "Particle/DistanceTable.h"
+#include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus
 {
@@ -33,20 +34,21 @@ namespace qmcplusplus
  * a set of localized orbitals associated with a center.
  */
 template<class COT>
-struct SoaLocalizedBasisSet: public BasisSetBase
+struct SoaLocalizedBasisSet //: public BasisSetBase<typename COT::value_type>
 {
   typedef COT                            ThisCOT_t;
   typedef typename COT::RadialOrbital_t  ThisRadialOrbital_t;
   typedef typename COT::value_type       value_type;
+  typedef typename OrbitalSetTraits<value_type>::VGLVector_t VGLVector_t;
 
   ///number of centers, e.g., ions
   size_t NumCenters;
   ///number of quantum particles
   size_t NumTargets;
   ///number of quantum particles
-  size_t myTableIndex;
+  int myTableIndex;
   ///size of the basis set
-  size_t BasisSetSize;
+  int BasisSetSize;
   ///Reference to the center
   const ParticleSet::ParticleIndex_t& IonID;
 
@@ -66,7 +68,7 @@ struct SoaLocalizedBasisSet: public BasisSetBase
    * @param ions ionic system
    * @param els electronic system
    */
-  SoaLocalizedBasisSet(ParticleSet& ions, ParticleSet& els): IonID(ions.GroupID), myTable(0)
+  SoaLocalizedBasisSet(ParticleSet& ions, ParticleSet& els): IonID(ions.GroupID)
   {
     myTableIndex=els.addTable(ions,DT_SOA);
     NumCenters=ions.getTotalNum();
@@ -82,13 +84,13 @@ struct SoaLocalizedBasisSet: public BasisSetBase
   /** makeClone */
   SoaLocalizedBasisSet<COT>* makeClone() const
   {
-    return new LocalizedBasisSet<COT>(*this);
+    return new SoaLocalizedBasisSet<COT>(*this);
   }
 
 
   /** set BasisSetSize and allocate mVGL container
    */
-  void setBasisSetSize(size_t nbs)
+  void setBasisSetSize(int nbs)
   {
     if(nbs == BasisSetSize) return;
 
@@ -97,6 +99,11 @@ struct SoaLocalizedBasisSet: public BasisSetBase
     for(int c=0; c<NumCenters; c++)
       BasisOffset[c+1] = BasisOffset[c]+LOBasisSet[IonID[c]]->getBasisSetSize();
     BasisSetSize = BasisOffset[NumCenters];
+  }
+
+  inline int getBasisSetSize()
+  {
+    return BasisSetSize;
   }
 
   void resetParameters(const opt_variables_type& active)
@@ -108,17 +115,18 @@ struct SoaLocalizedBasisSet: public BasisSetBase
 
   /** reset the distance table with a new target P
    */
-  void resetTargetParticleSet(ParticleSet& P)
-  { }
+  void resetTargetParticleSet(ParticleSet& P) { }
 
-  inline void
-  evaluateWithHessian(const ParticleSet& P, int iat) { }
-
-  inline void
-  evaluateWithThirdDeriv(const ParticleSet& P, int iat) { }
-
-  inline void
-  evaluateThirdDerivOnly(const ParticleSet& P, int iat) { }
+  /** these virtual functions that can be removed once LO is completed */
+  //inline void evaluateWithHessian(const ParticleSet& P, int iat) { }
+  //inline void evaluateWithThirdDeriv(const ParticleSet& P, int iat) { }
+  //inline void evaluateThirdDerivOnly(const ParticleSet& P, int iat) { }
+  //inline void evaluateForWalkerMove(const ParticleSet& P){}
+  //inline void evaluateForWalkerMove(const ParticleSet& P, int iat){}
+  //inline void evaluateForPtclMove(const ParticleSet& P, int iat){}
+  //inline void evaluateAllForPtclMove(const ParticleSet& P, int iat){}
+  //inline void evaluateForPtclMoveWithHessian(const ParticleSet& P, int iat){}
+  /** @todo get rid of these */
 
   /** compute VGL 
    * @param P quantum particleset
@@ -126,7 +134,8 @@ struct SoaLocalizedBasisSet: public BasisSetBase
    * @param vgl Matrix(5,BasisSetSize)
    * @param trialMove if true, use Temp_r/Temp_dr
    */
-  inline void evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bool newp)
+  template<typename VGLT>
+  inline void evaluateVGL(const ParticleSet& P, int iat, VGLT& vgl, bool newp)
   {
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     const value_type* restrict  dist = (newp)? d_table->Temp_r.data(): d_table->Distances[iat];
@@ -139,6 +148,7 @@ struct SoaLocalizedBasisSet: public BasisSetBase
    *
    * Always uses Temp_r and Temp_dr
    */
+  template<typename T>
   inline void evaluateV(const ParticleSet& P, int iat, T* restrict vals)
   {
     const DistanceTableData* d_table=P.DistTables[myTableIndex];

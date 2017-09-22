@@ -24,6 +24,7 @@ namespace qmcplusplus
     {
       typedef ROT                      RadialOrbital_t;
       typedef typename ROT::value_type value_type;
+      typedef typename ROT::grid_type  grid_type;
 
       ///size of the basis set
       size_t BasisSetSize;
@@ -37,6 +38,8 @@ namespace qmcplusplus
       aligned_vector<ROT*> Rnl;
       ///container for the quantum-numbers
       std::vector<QuantumNumberType> RnlID;
+      ///set of grids
+      std::vector<grid_type*> Grids;
 
       ///the constructor
       explicit SoaSphericalBasisSet(int lmax, bool addsignforM=false)
@@ -98,7 +101,7 @@ namespace qmcplusplus
       { }
 
 
-      template<typename VGL>
+      template<typename T, typename PosType, typename VGL>
         inline void
         evaluateVGL(const T r, const PosType& dr, const size_t offset,  VGL& vgl)
         {
@@ -144,18 +147,20 @@ namespace qmcplusplus
           }
         }
 
+      template<typename T, typename PosType>
       inline void
         evaluateV(const T r, const PosType& dr, T* restrict psi)
         {
           CONSTEXPR T cone(1);
           CONSTEXPR T ctwo(2);
-          const nl_max=Rnl.size();
-          Ylm.evaluateV(dr[0],dr[1],dr[2]);
+          T ylm_v[16]; 
+          Ylm.evaluateV(dr[0],dr[1],dr[2],ylm_v);
+
+          const int nl_max=Rnl.size();
           T phi_r[nl_max];
           for(size_t nl=0; nl<nl_max; ++nl)
             phi_r[nl]=Rnl[nl]->evaluate(r);
 
-          const T* restrict ylm_v=Ylm[0];
           for(size_t ib=0; ib<BasisSetSize; ++ib)
           {
             psi[ib]  = ylm_v[ LM[ib] ]*phi_r[ NL[ib] ];

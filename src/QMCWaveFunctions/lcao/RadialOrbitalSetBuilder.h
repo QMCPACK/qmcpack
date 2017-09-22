@@ -18,10 +18,6 @@
 
 #include "Configuration.h"
 #include "OhmmsData/HDFAttribIO.h"
-#include "Numerics/OneDimCubicSpline.h"
-#include "Numerics/OneDimQuinticSpline.h"
-#include "Numerics/OptimizableFunctorBase.h"
-#include "QMCWaveFunctions/SphericalBasisSet.h"
 #include <HDFVersion.h>
 #include "Utilities/OhmmsInfo.h"
 #include "OhmmsData/HDFStringAttrib.h"
@@ -30,7 +26,6 @@
 #include "Numerics/GaussianBasisSet.h"
 #include "Numerics/SlaterBasisSet.h"
 #include "Numerics/Transform2GridFunctor.h"
-#include "Numerics/OneDimCubicSpline.h"
 #include "QMCFactory/OneDimGridFactory.h"
 
 namespace qmcplusplus
@@ -48,6 +43,8 @@ class RadialOrbitalSetBuilder: public QMCTraits
 
 public:
   typedef typename COT::RadialOrbital_t RadialOrbitalType;
+  typedef typename COT::grid_type  GridType;
+
 
   ///true, if the RadialOrbitalType is normalized
   bool Normalized;
@@ -269,7 +266,7 @@ private:
     }
 
   template<typename COT>
-  void RadialOrbitalSetBuilder::addGaussian(xmlNodePtr cur)
+  void RadialOrbitalSetBuilder<COT>::addGaussian(xmlNodePtr cur)
   {
     int L= m_nlms[1];
     GaussianCombo<RealType> gset(L,Normalized);
@@ -285,7 +282,7 @@ private:
   }
 
   template<typename COT>
-  void RadialOrbitalSetBuilder::addSlater(xmlNodePtr cur)
+  void RadialOrbitalSetBuilder<COT>::addSlater(xmlNodePtr cur)
   {
     ////pointer to the grid
     GridType* agrid = m_orbitals->Grids[0];
@@ -302,7 +299,7 @@ private:
   }
 
   template<typename COT>
-  void RadialOrbitalSetBuilder::addNumerical(xmlNodePtr cur, const std::string& dsname)
+  void RadialOrbitalSetBuilder<COT>::addNumerical(xmlNodePtr cur, const std::string& dsname)
   {
     int imin = 0;
     OhmmsAttributeSet aAttrib;

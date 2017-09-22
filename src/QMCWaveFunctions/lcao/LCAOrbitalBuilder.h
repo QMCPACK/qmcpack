@@ -19,11 +19,11 @@
 #define QMCPLUSPLUS_LCAO_ORBITAL_BUILDER_H
 
 #include "QMCWaveFunctions/BasisSetBase.h"
+#include "QMCWaveFunctions/lcao/NGFunctor.h"
 #include "QMCWaveFunctions/lcao/SoaCartesianTensor.h"
 #include "QMCWaveFunctions/lcao/SoaSphericalTensor.h"
 #include "QMCWaveFunctions/lcao/SoaSphericalBasisSet.h"
 #include "QMCWaveFunctions/lcao/SoaLocalizedBasisSet.h"
-#include "QMCWaveFunctions/lcao/NGFunctor.h"
 
 namespace qmcplusplus
 {
@@ -35,7 +35,7 @@ namespace qmcplusplus
   struct LCAOrbitalBuilder: public BasisSetBuilder
   {
     //for now, use the same cubic spline: use BsplineFunctor later
-    typedef NGFunctor RadFuncT;
+    typedef NGFunctor<RealType> RadFuncT;
     typedef SoaSphericalBasisSet<RadFuncT,SoaCartesianTensor<RealType> > XYZCOT;
     typedef SoaSphericalBasisSet<RadFuncT,SoaSphericalTensor<RealType> > YlmCOT;
     typedef SoaLocalizedBasisSet<XYZCOT> XYZBasisT;
@@ -46,11 +46,7 @@ namespace qmcplusplus
      * \param els reference to the electrons
      * \param ions reference to the ions
      */
-    LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, bool cusp=false, std::string cusp_info=""):
-      targetPtcl(els), sourcePtcl(ions), thisBasisSet(0),cuspCorr(cusp),cuspInfo(cusp_info)
-      {
-        ClassName="MolecularBasisBuilder";
-      }
+    LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, bool cusp=false, std::string cusp_info="");
 
     inline bool is_same(const xmlChar* a, const char* b)
     {
@@ -58,7 +54,6 @@ namespace qmcplusplus
     }
 
     bool put(xmlNodePtr cur);
-
     SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
 
     ///target ParticleSet

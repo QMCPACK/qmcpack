@@ -16,9 +16,10 @@
 #ifndef QMCPLUSPLUS_SOA_CARTESIAN_TENSOR_H
 #define QMCPLUSPLUS_SOA_CARTESIAN_TENSOR_H
 
-#include "OhmmsPETE/Tensor.h"
-#include "Configuration.h"
+#include "OhmmsSoA/Container.h"
 
+namespace qmcplusplus
+{
 /** CartesianTensor according to Gamess order
  * @tparam T, value_type, e.g. double
  *
@@ -28,7 +29,7 @@
  *    (following Gamess order)
  */
 template<class T>
-struct SoACartesianTensor
+struct SoaCartesianTensor
 {
   typedef T value_type;
   typedef TinyVector<Tensor<T,3>,3> ggg_type;
@@ -38,7 +39,7 @@ struct SoACartesianTensor
   ///normalization factor
   aligned_vector<T> NormFactor;
   ///composite V,Gx,Gy,Gz,[L | H00, H01, H02, H11, H12, H12]
-  VectorSoAContainer<T,10> cXYZ;
+  VectorSoaContainer<T,10> cXYZ;
   ///third derivative: keep the TinyyVector<Tensor<T,3>,3> and AoS for now
   std::vector<ggg_type> gggXYZ;
   //std::vector<ggg_type> gggXYZ;
@@ -49,7 +50,7 @@ struct SoACartesianTensor
    *
    * Evaluate all the constants and prefactors.
   */
-  explicit SoACartesianTensor(const int l_max, boolt addsign=false);
+  explicit SoaCartesianTensor(const int l_max, bool addsign=false);
 
   ///compute Ylm
   void evaluate_bare(T x, T y, T z, T* XYZ) const;
@@ -58,7 +59,7 @@ struct SoACartesianTensor
   inline void evaluateV(T x, T y, T z, T* XYZ) const
   {
     evaluate_bare(x,y,z,XYZ);
-    for (int i=0, nl=Ylm.size(); i<nl; i++)
+    for (int i=0, nl=cXYZ.size(); i<nl; i++)
       XYZ[i]*= NormFactor[i];
   }
 
@@ -66,12 +67,20 @@ struct SoACartesianTensor
   inline void evaluateV(T x, T y, T z, T* XYZ) 
   {
     evaluate_bare(x,y,z,XYZ);
-    for (int i=0, nl=Ylm.size(); i<nl; i++)
+    for (int i=0, nl=cXYZ.size(); i<nl; i++)
       XYZ[i]*= NormFactor[i];
   }
 
   ///makes a table of \f$ r^l S_l^m \f$ and their gradients up to Lmax.
   void evaluateVGL(T x, T y, T z);
+
+  void evaluateVGH(T x, T y, T z);
+
+  ///returns dummy: this is not used
+  inline int index(int l, int m) const
+  {
+    return (l*(l+1))+m;
+  }
 
   /** return the starting address of the component
    *
@@ -84,7 +93,7 @@ struct SoACartesianTensor
 
   inline size_t size() const
   {
-    return cYlm.size();
+    return cXYZ.size();
   }
 
   inline int lmax() const
@@ -102,7 +111,7 @@ struct SoACartesianTensor
 };
 
 template<class T>
-CartesianTensor<T>::CartesianTensor(const int l_max, bool addsign) : Lmax(l_max)
+SoaCartesianTensor<T>::SoaCartesianTensor(const int l_max, bool addsign) : Lmax(l_max)
 {
   if(Lmax < 0 || Lmax > 4)
   {
@@ -112,11 +121,11 @@ CartesianTensor<T>::CartesianTensor(const int l_max, bool addsign) : Lmax(l_max)
   int ntot = 0;
   for(int i=0; i<=Lmax; i++)
     ntot+=(i+1)*(i+2)/2;
-  cYlm.resize(ntot);
+  cXYZ.resize(ntot);
   NormFactor.resize(ntot,1);
   int p=0;
   int a,b,c;
-  const double pi = 4.0*atan(1.0);
+  const double pi = 4.0*std::atan(1.0);
   for(int l=0; l<=Lmax; l++)
   {
     int n = (l+1)*(l+2)/2;
@@ -128,15 +137,16 @@ CartesianTensor<T>::CartesianTensor(const int l_max, bool addsign) : Lmax(l_max)
 //           I add a term to the normalization to cancel the term
 //           coming from the Spherical Harmonics
 //           NormL = pow(2,L+1)*sqrt(2.0/static_cast<real_type>(DFactorial(2*l+1)))*pow(2.0/pi,0.25)
-      double L = static_cast<double>(l);
-      double NormL = pow(2,L+1)*sqrt(2.0/static_cast<double>(DFactorial(2*l+1)))*pow(2.0/pi,0.25);
-      NormFactor[p++] = pow(2.0/pi,0.75)*pow(4.0,0.5*(a+b+c))*std::sqrt(1.0/static_cast<double>((DFactorial(2*a-1)*DFactorial(2*b-1)*DFactorial(2*c-1))))/NormL;
+      double L = static_cast<T>(l);
+      double NormL = pow(2,L+1)*std::sqrt(2.0/static_cast<double>(DFactorial(2*l+1)))*pow(2.0/pi,0.25);
+      NormFactor[p++] = static_cast<T>(pow(2.0/pi,0.75)*pow(4.0,0.5*(a+b+c))
+          *std::sqrt(1.0/static_cast<double>((DFactorial(2*a-1)*DFactorial(2*b-1)*DFactorial(2*c-1))))/NormL);
     }
   }
 }
 
 template<class T>
-void CartesianTensor<T>::evaluate_bare(T x, T y, T z, T* restrict XYZ)
+void SoaCartesianTensor<T>::evaluate_bare(T x, T y, T z, T* restrict XYZ) const
 {
   const T x2=x*x, y2=y*y, z2=z*z;
   switch(Lmax)
@@ -188,10 +198,11 @@ void CartesianTensor<T>::evaluate_bare(T x, T y, T z, T* restrict XYZ)
 }
 
 template<class T>
-void CartesianTensor<T,Point_t, Tensor_t, GGG_t>::evaluateVGL(T x, T y, T z)
+void SoaCartesianTensor<T>::evaluateVGL(T x, T y, T z)
 {
   CONSTEXPR T czero(0);
   CONSTEXPR T cone(1);
+  CONSTEXPR T two(2);
   CONSTEXPR T three(3);
   CONSTEXPR T four(4);
   CONSTEXPR T six(6);
@@ -219,9 +230,9 @@ void CartesianTensor<T,Point_t, Tensor_t, GGG_t>::evaluateVGL(T x, T y, T z)
     gr2[22]= four*z3;
     lap[22]= twelve*z2;
     XYZ[23]= x3*y;
-    grX[23]= three*x2*y;
-    grY[23]= x3;
-    lal[23]= six*x*y;
+    gr0[23]= three*x2*y;
+    gr1[23]= x3;
+    lap[23]= six*x*y;
     XYZ[24]= x3*z;
     gr0[24]= three*x2*z;
     gr2[24]= x3;
@@ -249,7 +260,7 @@ void CartesianTensor<T,Point_t, Tensor_t, GGG_t>::evaluateVGL(T x, T y, T z)
     XYZ[30]= x2*z2;
     gr0[30]= two*x*z2;
     gr2[30]= two*x2*z;
-    lap[30]= two(x2+z2);
+    lap[30]= two*(x2+z2);
     XYZ[31]= y2*z2;
     gr1[31]= two*y*z2;
     gr2[31]= two*y2*z;
@@ -349,7 +360,7 @@ void CartesianTensor<T,Point_t, Tensor_t, GGG_t>::evaluateVGL(T x, T y, T z)
 }
 
 template<class T>
-void CartesianTensor<T,Point_t, Tensor_t, GGG_t>::evaluateVGH(T x, T y, T z)
+void SoaCartesianTensor<T>::evaluateVGH(T x, T y, T z)
 {
   const T x2=x*x, y2=y*y, z2=z*z;
   const T x3=x2*x, y3=y2*y, z3=z2*z;
@@ -651,7 +662,7 @@ void CartesianTensor<T,Point_t, Tensor_t, GGG_t>::evaluateThirdDerivOnly(const P
 #endif
 
 template<class T>
-void CartesianTensor<T>::getABC(int n, int& a, int& b, int& c)
+void SoaCartesianTensor<T>::getABC(int n, int& a, int& b, int& c)
 {
 // following Gamess notation
   switch(n)
@@ -828,4 +839,5 @@ void CartesianTensor<T>::getABC(int n, int& a, int& b, int& c)
   }
 }
 
+} //namespace qmcplusplus
 #endif
