@@ -59,7 +59,7 @@ struct SoaCartesianTensor
   inline void evaluateV(T x, T y, T z, T* XYZ) const
   {
     evaluate_bare(x,y,z,XYZ);
-    for (int i=0, nl=cXYZ.size(); i<nl; i++)
+    for (size_t i=0, nl=cXYZ.size(); i<nl; i++)
       XYZ[i]*= NormFactor[i];
   }
 
@@ -67,7 +67,7 @@ struct SoaCartesianTensor
   inline void evaluateV(T x, T y, T z, T* XYZ) 
   {
     evaluate_bare(x,y,z,XYZ);
-    for (int i=0, nl=cXYZ.size(); i<nl; i++)
+    for (size_t i=0, nl=cXYZ.size(); i<nl; i++)
       XYZ[i]*= NormFactor[i];
   }
 
@@ -540,6 +540,7 @@ void SoaCartesianTensor<T>::evaluateVGH(T x, T y, T z)
     XYZ[0]=1.0;
   }
 
+  const size_t ntot=cXYZ.size();
   for(size_t i=0; i<ntot; ++i)
   {
     XYZ[i]*= NormFactor[i];
