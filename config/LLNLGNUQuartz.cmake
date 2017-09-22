@@ -4,7 +4,7 @@
 #--------------------------------------------------------------------------
 set(CMAKE_CXX_COMPILER mpicxx)
 set(CMAKE_C_COMPILER  mpicc)
-set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline -D_TIMER_ -DUSE_MPI -D_LINUX_")
+set(GNU_OPTS "-DADD_ -DINLINE_ALL=inline -D_TIMER_ -DUSE_MPI -DMPI_VERSION=3 -D_LINUX_")
 
 set(INTEL_OPTS "-g -malign-double -fomit-frame-pointer -ffast-math -fopenmp -O3 -msse4 -Drestrict=__restrict__ -finline-limit=1000 -fstrict-aliasing -funroll-all-loops -Wno-deprecated")
 set(CMAKE_CXX_FLAGS "$ENV{CXX_FLAGS} ${GNU_OPTS} ${INTEL_OPTS} -std=c++11 ")

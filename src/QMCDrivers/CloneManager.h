@@ -82,7 +82,7 @@ protected:
 //     ///update engines
 //     std::vector<QMCRenyiUpdateBase*> RenyiMovers;
   ///estimator managers
-  std::vector<EstimatorManager*> estimatorClones;
+  std::vector<EstimatorManagerBase*> estimatorClones;
   ///trace managers
   std::vector<TraceManager*> traceClones;
   ///Branch engines

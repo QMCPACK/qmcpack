@@ -165,7 +165,8 @@ inline void set_appropriate_device_num(int num)
         cudaSetDevice (device);
         set_cuda_device=true;
         std::ostringstream out;
-        out << "<- Rank " << OHMMS::Controller->rank() << " has acquired CUDA device #" << device << std::endl;
+        out << "<- Rank " << OHMMS::Controller->rank() << " will use CUDA device #" << device ;
+        out << " (" << deviceProp.name << ")" << std::endl;
         std::cerr << out.str();
         std::cerr.flush();
         break; // the device is set, nothing more to do here

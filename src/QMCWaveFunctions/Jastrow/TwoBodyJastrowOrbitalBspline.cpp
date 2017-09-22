@@ -78,6 +78,8 @@ TwoBodyJastrowOrbitalBspline::addFunc(int ia, int ib, FT* j)
         for(int jg=0; jg<NumGroups; ++jg, ++ij)
           if(GPUSplines[ij]==0) GPUSplines[ij]=newSpline;
     }
+    else
+      GPUSplines[ia*NumGroups+ib]=newSpline;
   }
   else
   {

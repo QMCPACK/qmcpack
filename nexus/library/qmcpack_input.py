@@ -2205,6 +2205,13 @@ class flux(QIxml):
     attributes = ['type','name']
     identifier = 'name'
 #end class flux
+
+class momentum(QIxml):
+    tag = 'estimator'
+    attributes = ['type','name','grid','samples','hdf5','wavefunction']
+    identifier = 'name'
+    write_types = obj(hdf5=yesno)
+#end class momentum
     
 estimator = QIxmlFactory(
     name  = 'estimator',
@@ -2226,6 +2233,7 @@ estimator = QIxmlFactory(
                  skall               = skall,
                  gofr                = gofr,
                  flux                = flux,
+                 momentum            = momentum,
                  ),
     typekey  = 'type',
     typekey2 = 'name'
@@ -2457,7 +2465,7 @@ classes = [   #standard classes
     header,local,force,forwardwalking,observable,record,rmc,pressure,dmccorrection,
     nofk,mpc_est,flux,distancetable,cpp,element,spline,setparams,
     backflow,transformation,cubicgrid,molecular_orbital_builder,cmc,sk,skall,gofr,
-    host,date,user,rpa_jastrow
+    host,date,user,rpa_jastrow,momentum
     ]
 types = dict( #simple types and factories
     #host           = param,
@@ -2640,6 +2648,9 @@ force.defaults.set(
     )
 pressure.defaults.set(
     type='Pressure'
+    )
+momentum.defaults.set(
+    type='momentum'
     )
 
 

@@ -38,12 +38,7 @@ class WavefunctionHandler: public MPIObjectBase, public AFQMCInfo
       return ImpSampWfn->getHF();
     }
 
-    void setHeadComm(bool hd, MPI_Comm comm) {
-      head_of_nodes=hd;
-      MPI_COMM_HEAD_OF_NODES = comm;
-    }
-
-    bool init(std::vector<int>& TGdata, SPComplexSMVector *v,hdf_archive&,const std::string&, MPI_Comm, MPI_Comm); 
+    bool init(std::vector<int>& TGdata, SPComplexSMVector *v,hdf_archive&,const std::string&, MPI_Comm, MPI_Comm, MPI_Comm); 
 
     bool setup(HamPtr); 
 
@@ -51,24 +46,10 @@ class WavefunctionHandler: public MPIObjectBase, public AFQMCInfo
 
     void evaluateMeanFields() {}
 
-    void setupFactorizedHamiltonian(bool sp, SPValueSMSpMat* spvn_, SPValueSMVector* dvn_, RealType dt_, TaskGroup* tg_)
+    void setupFactorizedHamiltonian(bool sp, SPValueSMSpMat* spvn_, SPValueSMVector* dvn_, RealType dt_, afqmc::TaskGroup* tg_)
     {
       for(int i=0; i<wfns.size(); i++) 
         wfns[i]->setupFactorizedHamiltonian(sp,spvn_,dvn_,dt_,tg_);
-    }
-
-    bool isClosedShell(const std::string& type) {
-      if(type == std::string("ImportanceSampling")) {
-        return ImpSampWfn->isClosedShell();
-      } else if(type == std::string("Estimator")) {
-        if(EstimatorWfn!=NULL) {
-          return EstimatorWfn->isClosedShell();
-        }
-        APP_ABORT("Undefined wavefunction in isClosedShell('Estimator') \n\n\n");
-      } else {
-        APP_ABORT("Unknown wavefunction type in isClosedShell(). \n");
-      }
-      return  false;
     }
 
     inline int sizeOfInfoForDistributedPropagation(const std::string& type) {
@@ -170,26 +151,26 @@ class WavefunctionHandler: public MPIObjectBase, public AFQMCInfo
       }
     }
 
-    template<class T>
-    void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const std::string& type, const int n, ComplexType* SM, const SPComplexType* GG, T& Spvn , std::vector<SPComplexType>& v, bool transposed , bool needsG) {
+    template<class T1, class T2>
+    void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const std::string& type, const int n, ComplexType* SM, const SPComplexType* GG, T1& Spvn, T2& SpvnT , std::vector<SPComplexType>& v, bool transposed , bool needsG) {
 
       if(type == std::string("ImportanceSampling")) {
-        ImpSampWfn->calculateMixedMatrixElementOfOneBodyOperators(addBetaBeta,SM,GG,Spvn,v,transposed,needsG,n);
+        ImpSampWfn->calculateMixedMatrixElementOfOneBodyOperators(addBetaBeta,SM,GG,Spvn,SpvnT,v,transposed,needsG,n);
       } else if(type == std::string("Estimator")) {
-        EstimatorWfn->calculateMixedMatrixElementOfOneBodyOperators(addBetaBeta,SM,GG,Spvn,v,transposed,needsG,n);
+        EstimatorWfn->calculateMixedMatrixElementOfOneBodyOperators(addBetaBeta,SM,GG,Spvn,SpvnT,v,transposed,needsG,n);
       } else {
         APP_ABORT("Unknown wavefunction type in calculateMixedMatrixElementOfOneBodyOperators. \n");
       }
 
     } 
 
-    template<class T>
-    void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const std::string& type, const int n, SPComplexType* buff, int ik0, int ikN, int pik0, T& Spvn , std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed , bool needsG) {
+    template<class T1, class T2>
+    void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const std::string& type, const int n, SPComplexType* buff, int ik0, int ikN, T1& Spvn, T2& SpvnT, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed , bool needsG) {
 
       if(type == std::string("ImportanceSampling")) {
-        ImpSampWfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(addBetaBeta,buff,ik0,ikN,pik0,Spvn,v,walkerBlock,nW,transposed,needsG,n);
+        ImpSampWfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(addBetaBeta,buff,ik0,ikN,Spvn,SpvnT,v,walkerBlock,nW,transposed,needsG,n);
       } else if(type == std::string("Estimator")) {
-        EstimatorWfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(addBetaBeta,buff,ik0,ikN,pik0,Spvn,v,walkerBlock,nW,transposed,needsG,n);
+        EstimatorWfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(addBetaBeta,buff,ik0,ikN,Spvn,SpvnT,v,walkerBlock,nW,transposed,needsG,n);
       } else {
         APP_ABORT("Unknown wavefunction type in calculateMixedMatrixElementOfOneBodyOperators. \n");
       }
@@ -207,34 +188,19 @@ class WavefunctionHandler: public MPIObjectBase, public AFQMCInfo
 
     } 
 
-    bool isOccupAlpha( const std::string& type, int i) {
+    template<class T1, class T2>
+    void generateTransposedOneBodyOperator(bool addBetaBeta, const std::string& type, T1& Spvn, T2& SpvnT ) {
       if(type == std::string("ImportanceSampling")) {
-        return ImpSampWfn->isOccupAlpha(i);
+        ImpSampWfn->generateTransposedOneBodyOperator(addBetaBeta,Spvn,SpvnT);
       } else if(type == std::string("Estimator")) {
         if(EstimatorWfn!=NULL) {
-          return EstimatorWfn->isOccupAlpha(i);
+          EstimatorWfn->generateTransposedOneBodyOperator(addBetaBeta,Spvn,SpvnT);
         } else {
           APP_ABORT("Error: Attempting to access uninitialized Estimator wavefunction \n");
         }
       } else {
-        APP_ABORT("Unknown wavefunction type in isOccupAlpha. \n");
+        APP_ABORT("Unknown wavefunction type in generateTransposedOneBodyOperator. \n");
       }
-      return false;
-    } 
- 
-    bool isOccupBeta( const std::string& type, int i) {
-      if(type == std::string("ImportanceSampling")) {
-        return ImpSampWfn->isOccupBeta(i);
-      } else if(type == std::string("Estimator")) {
-        if(EstimatorWfn!=NULL) {
-          return EstimatorWfn->isOccupBeta(i);
-        } else {
-          APP_ABORT("Error: Attempting to access uninitialized Estimator wavefunction \n");
-        }
-      } else {
-        APP_ABORT("Unknown wavefunction type in isOccupBeta. \n");
-      }
-      return false;
     }
 
     bool check_initialized(const std::string& type)
