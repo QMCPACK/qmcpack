@@ -112,7 +112,8 @@ namespace qmcplusplus
         {
           CONSTEXPR T cone(1);
           CONSTEXPR T ctwo(2);
-          const T x=dr[0], y=dr[1], z=dr[2];
+          //SIGN Change!!
+          const T x=-dr[0], y=-dr[1], z=-dr[2];
           Ylm.evaluateVGL(x,y,z);
 
           const size_t nl_max=Rnl.size();
@@ -156,10 +157,8 @@ namespace qmcplusplus
       inline void
         evaluateV(const T r, const PosType& dr, T* restrict psi) const
         {
-          CONSTEXPR T cone(1);
-          CONSTEXPR T ctwo(2);
           T ylm_v[Ylm.size()]; 
-          Ylm.evaluateV(dr[0],dr[1],dr[2],ylm_v);
+          Ylm.evaluateV(-dr[0],-dr[1],-dr[2],ylm_v);
 
           const int nl_max=Rnl.size();
           T phi_r[nl_max];

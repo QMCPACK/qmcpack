@@ -149,14 +149,15 @@ namespace qmcplusplus
         OhmmsAttributeSet coeffAttrib;
         coeffAttrib.add (algorithm, "algorithm");
         coeffAttrib.put(cur);
-        app_log() << "Creating LCOrbitalSet with the input coefficients" << std::endl;
         if(xyzBasisSet!=nullptr)
         {
+          app_log() << "Creating LCAOrbitalSet<XYZBasisT> " << std::endl;
           lcos= new LCAOrbitalSet<XYZBasisT>(xyzBasisSet,ReportLevel);
           //take care of the cusp condition
         }
         if(ylmBasisSet!=nullptr)
         {
+          app_log() << "Creating LCAOrbitalSet<YLMBasisT> " << std::endl;
           lcos= new LCAOrbitalSet<YlmBasisT>(ylmBasisSet,ReportLevel);
           //take care of the cusp condition
         }

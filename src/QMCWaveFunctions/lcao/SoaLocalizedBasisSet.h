@@ -130,7 +130,9 @@ struct SoaLocalizedBasisSet //: public BasisSetBase<typename COT::value_type>
     const value_type* restrict  dist = (newp)? d_table->Temp_r.data(): d_table->Distances[iat];
     const auto&  displ= (newp)? d_table->Temp_dr: d_table->Displacements[iat];
     for(int c=0; c<NumCenters; c++)
+    {
       LOBasisSet[IonID[c]]->evaluateVGL(dist[c],displ[c],BasisOffset[c],vgl);
+    }
   }
 
   /** compute values for the iat-paricle move

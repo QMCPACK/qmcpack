@@ -183,10 +183,12 @@ namespace qmcplusplus
 #endif
       }
 
+    /* implement using gemm algorithm */
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
     {
-      const bool curpos=false;
+      const bool curpos=false; //hint that the full distance table used
+//#pramga omp for nowait
       for(size_t i=0, iat=first; iat<last; i++,iat++)
       {
         myBasisSet->evaluateVGL(P,iat,Temp,curpos);
@@ -202,6 +204,12 @@ namespace qmcplusplus
           dlogdet[i][j][2]=gz[j];
         }
         simd::copy_n(Tempv.data(4),OrbitalSetSize,d2logdet[i]);
+#if 0
+        for(int j=0; j<OrbitalSetSize; ++j)
+        {
+          printf("%d %.6f %.6f %.6f %.6f %.6f\n",j, logdet[i][j], dlogdet[i][j][0],dlogdet[i][j][1],dlogdet[i][j][2],d2logdet[i][j]);
+        }
+#endif
       }
     }
 
