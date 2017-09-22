@@ -25,12 +25,12 @@ namespace qmcplusplus
   LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, bool cusp, std::string cusp_info):
     targetPtcl(els), sourcePtcl(ions), xyzBasisSet(nullptr), ylmBasisSet(nullptr),cuspCorr(cusp),cuspInfo(cusp_info)
   {
-    ClassName="MolecularBasisBuilder";
+    ClassName="LCAOrbitalBuilder";
   }
 
   bool LCAOrbitalBuilder::put(xmlNodePtr cur)
   {
-    if(xyzBsisSet != nullptr || ylmBasisSet != nullptr) return true;
+    if(xyzBasisSet != nullptr || ylmBasisSet != nullptr) return true;
 
     ReportEngine PRE(ClassName,"put(xmlNodePtr)");
     PRE.echo(cur);
@@ -52,6 +52,7 @@ namespace qmcplusplus
     while(cur!=NULL)
     {
       std::string cname((const char*)(cur->name));
+
       if(cname == "atomicBasisSet")
       {
         std::string elementType;
@@ -67,6 +68,7 @@ namespace qmcplusplus
         if(elementType.empty())
           PRE.error("Missing elementType attribute of atomicBasisSet.",true);
         std::map<std::string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType);
+
         if(it == aoBuilders.end())
         {
           if(sph == "cartesian" || Morder == "Gamess")
@@ -97,22 +99,22 @@ namespace qmcplusplus
             {
               //add the new atomic basis to the basis set
               int activeCenter =sourcePtcl.getSpeciesSet().findSpecies(elementType);
-              YlmBasisSet->add(activeCenter, aoBasis);
+              ylmBasisSet->add(activeCenter, aoBasis);
             }
             aoBuilders[elementType]=any;
           }
         }
-      } 
-      else
-      {
-        PRE.warning("Species "+elementType+" is already initialized. Ignore the input.");
+        else
+        {
+          PRE.warning("Species "+elementType+" is already initialized. Ignore the input.");
+        }
       }
       cur = cur->next;
     }
     return true;
   }
 
-  SPOSetBase* LCAOrbtialBuilder::createSPOSetFromXML(xmlNodePtr cur)
+  SPOSetBase* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     ReportEngine PRE(ClassName,"createSPO(xmlNodePtr)");
     std::string spo_name(""), id, cusp_file("");
@@ -135,12 +137,12 @@ namespace qmcplusplus
         app_log() << "Creating LCOrbitalSet with the input coefficients" << std::endl;
         if(xyzBasisSet!=nullptr)
         {
-          lcos= new LCAOrtbialSet<XYZBasisT>(xyzBasisSet,ReportLevel);
+          lcos= new LCAOrbitalSet<XYZBasisT>(xyzBasisSet,ReportLevel);
           //take care of the cusp condition
         }
         if(ylmBasisSet!=nullptr)
         {
-          lcos= new LCAOrtbialSet<YlmBasisT>(ylmBasisSet,ReportLevel);
+          lcos= new LCAOrbitalSet<YlmBasisT>(ylmBasisSet,ReportLevel);
           //take care of the cusp condition
         }
         //#if QMC_BUILD_LEVEL>2
@@ -161,6 +163,7 @@ namespace qmcplusplus
         //            }
         //            else
         //#endif
+        
       }
       cur=cur->next;
     }
@@ -168,12 +171,13 @@ namespace qmcplusplus
     {//rare case
       app_log() << "Creating LCOrbitalSet with the Identity coefficient" << std::endl;
       if(xyzBasisSet!=nullptr)
-        lcos= new LCAOrtbialSet<XYZBasisT>(xyzBasisSet,ReportLevel,true);
+        lcos= new LCAOrbitalSet<XYZBasisT>(xyzBasisSet,ReportLevel);
       if(ylmBasisSet!=nullptr)
-        lcos= new LCAOrtbialSet<YlmBasisT>(ylmBasisSet,ReportLevel,true);
+        lcos= new LCAOrbitalSet<YlmBasisT>(ylmBasisSet,ReportLevel);
       lcos->setIdentity(true);
     }
     return lcos;
+    return nullptr;
   }
 }
 

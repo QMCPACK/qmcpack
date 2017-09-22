@@ -14,16 +14,22 @@
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_NGFUNCTOR_H
-#define QMCPLUSPLUS_NGFUNCTOR_H
+#ifndef QMCPLUSPLUS_NGFUNCTOR_FOR_SOA_H
+#define QMCPLUSPLUS_NGFUNCTOR_FOR_SOA_H
+
+#include "Numerics/OneDimCubicSpline.h"
+#include "Numerics/OneDimQuinticSpline.h"
+#include "Numerics/OptimizableFunctorBase.h"
 
 namespace qmcplusplus
 {
   //this is a temporary solution before switching to BsplineFunctor<T>
-  struct NGFunctor: public OptimizableFunctorBase
+  template<typename T>
+  struct NGFunctor//: public OptimizableFunctorBase
   {
-    typedef real_type                    value_type;
-    typedef real_type                    point_type;
+    typedef T                    real_type;
+    typedef T                    value_type;
+    typedef T                    point_type;
     typedef OneDimGridBase<real_type>    grid_type;
 #if QMC_BUILD_LEVEL>2
     typedef OneDimQuinticSpline<real_type> functor_type;
@@ -37,6 +43,8 @@ namespace qmcplusplus
 
     template<typename VV>
       NGFunctor(grid_type* agrid, const VV& nv):myFunc(agrid,nv) { }
+
+    NGFunctor(const NGFunctor& in):myFunc(in.myFunc) {}
 
     void checkInVariables(opt_variables_type& active) {}
     void checkOutVariables(const opt_variables_type& active) {}
@@ -57,10 +65,19 @@ namespace qmcplusplus
 
     OptimizableFunctorBase* makeClone()
     {
-      NGFunctor *myclone=new Functor(*this);
+      NGFunctor *myclone=new NGFunctor(*this);
       myclone->myFunc.m_grid=myFunc.m_grid->makeClone();
       myclone->setGridManager(true);
       return myclone;
+    }
+
+    inline value_type operator()(int i) const
+    {
+      return myFunc(i);
+    }
+    inline value_type& operator()(int i)
+    {
+      return myFunc(i);
     }
 
     inline real_type evaluate(real_type r)

@@ -57,9 +57,9 @@ namespace qmcplusplus
     ///pointer to the basis set
     BS* myBasisSet;
     ///Temp(BasisSetSize) : Row index=V,Gx,Gy,Gz,L
-    VectorSoaContainer<ValueType,OHMMS_DIM+2> Temp; 
+    VGLVector_t Temp; 
     ///Tempv(OrbitalSetSize) Tempv=C*Temp
-    VectorSoaContainer<ValueType,OHMMS_DIM+2> Tempv; 
+    VGLVector_t Tempv; 
     /** constructor
      * @param bs pointer to the BasisSet
      * @param id identifier of this LCOrbitalSet
@@ -76,7 +76,7 @@ namespace qmcplusplus
 
     SPOSetBase* makeClone() const
     {
-      SoaLCOrbitalSet<BS>* myclone = new SoaLCOrbitalSet<BS>(*this);
+      LCAOrbitalSet<BS>* myclone = new LCAOrbitalSet<BS>(*this);
       myclone->myBasisSet = myBasisSet->makeClone();
       return myclone;
     }
@@ -119,8 +119,8 @@ namespace qmcplusplus
 
     inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
     {
-      VectorViewer<value_type> vTemp(Temp.data(0),BasisSetSize);
-      myBasisSet->evaluateV(P,iat,vTemp);
+      VectorViewer<ValueType> vTemp(Temp.data(0),BasisSetSize);
+      myBasisSet->evaluateV(P,iat,vTemp.data());
       simd::gemv(C,Temp.data(0),psi.data());
     }
 
@@ -141,7 +141,7 @@ namespace qmcplusplus
       evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
       {
         const bool trialmove=true;
-        BS->evaluateVGL(P,iat,Temp,trialmove);
+        myBasisSet->evaluateVGL(P,iat,Temp,trialmove);
         Product_ABt(Temp,C,Tempv);
         simd::copy_n(Tempv.data(0),OrbitalSetSize,psi.data());
         const ValueType* restrict gx=Tempv.data(1);
@@ -161,11 +161,11 @@ namespace qmcplusplus
       {
         if(Identity)
         {
-          BS->evaluateVGL(P,iat,vgl,newpos);
+          myBasisSet->evaluateVGL(P,iat,vgl,newpos);
         }
         else
         {
-          BS->evaluateVGL(P,iat,Temp,newpos);
+          myBasisSet->evaluateVGL(P,iat,Temp,newpos);
           Product_ABt(Temp,C,vgl);
         }
       }
@@ -189,7 +189,7 @@ namespace qmcplusplus
       const bool curpos=false;
       for(size_t i=0, iat=first; iat<last; i++,iat++)
       {
-        BS->evaluateVGL(P,iat,Temp,curpos);
+        myBasisSet->evaluateVGL(P,iat,Temp,curpos);
         Product_ABt(Temp,C,Tempv);
         simd::copy_n(Tempv.data(0),OrbitalSetSize,logdet[i]);
         const ValueType* restrict gx=Tempv.data(1);

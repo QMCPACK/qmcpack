@@ -66,7 +66,7 @@ struct AOBasisBuilder: public BasisSetBuilder
 };
 
 template<typename COT>
-AOBasisBuilder<COT>::AtomicBasisBuilder(const std::string& eName):
+AOBasisBuilder<COT>::AOBasisBuilder(const std::string& eName):
   addsignforM(false), expandlm(GAUSSIAN_EXPAND), Morder("gaussian"),
   sph("default"), basisType("Numerical"), elementType(eName)
 {
@@ -79,7 +79,7 @@ AOBasisBuilder<COT>::AtomicBasisBuilder(const std::string& eName):
 }
 
 template<class COT>
-bool AtomicBasisBuilder<COT>::put(xmlNodePtr cur)
+bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
 {
   ReportEngine PRE("AtomicBasisBuilder","put(xmlNodePtr)");
   //Register valid attributes attributes
@@ -123,7 +123,7 @@ bool AtomicBasisBuilder<COT>::put(xmlNodePtr cur)
 }
 
 template<typename COT>
-COT* AtomicBasisBuilder<RFB>::createAOSet(xmlNodePtr cur)
+COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
 {
   ReportEngine PRE("AtomicBasisBuilder","createAOSet(xmlNodePtr)");
   app_log() << "  AO BasisSet for " << elementType << "\n";
@@ -176,11 +176,10 @@ COT* AtomicBasisBuilder<RFB>::createAOSet(xmlNodePtr cur)
         else
           num++;
     }
-    else
-      if(cname1 == "grid")
-      {
-        gptr = cur1;
-      }
+    else if(cname1 == "grid")
+    {
+      gptr = cur1;
+    }
     cur1 = cur1->next;
   }
   //create a new set of atomic orbitals sharing a center with (Lmax, num)
@@ -231,7 +230,7 @@ COT* AtomicBasisBuilder<RFB>::createAOSet(xmlNodePtr cur)
 
 
 template<typename COT>
-int AtomicBasisBuilder<COT>::expandYlm(const std::string& rnl, const QuantumNumberType& nlms, int num,
+int AOBasisBuilder<COT>::expandYlm(const std::string& rnl, const QuantumNumberType& nlms, int num,
                                        COT* aos, xmlNodePtr cur1, int expandlm)
 {
   if(expandlm == GAUSSIAN_EXPAND)
