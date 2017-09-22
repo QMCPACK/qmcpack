@@ -117,17 +117,6 @@ struct SoaLocalizedBasisSet //: public BasisSetBase<typename COT::value_type>
    */
   void resetTargetParticleSet(ParticleSet& P) { }
 
-  /** these virtual functions that can be removed once LO is completed */
-  //inline void evaluateWithHessian(const ParticleSet& P, int iat) { }
-  //inline void evaluateWithThirdDeriv(const ParticleSet& P, int iat) { }
-  //inline void evaluateThirdDerivOnly(const ParticleSet& P, int iat) { }
-  //inline void evaluateForWalkerMove(const ParticleSet& P){}
-  //inline void evaluateForWalkerMove(const ParticleSet& P, int iat){}
-  //inline void evaluateForPtclMove(const ParticleSet& P, int iat){}
-  //inline void evaluateAllForPtclMove(const ParticleSet& P, int iat){}
-  //inline void evaluateForPtclMoveWithHessian(const ParticleSet& P, int iat){}
-  /** @todo get rid of these */
-
   /** compute VGL 
    * @param P quantum particleset
    * @param iat active particle

@@ -21,10 +21,14 @@
 #include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilder.h"
 #if OHMMS_DIM == 3
 #if !defined(QMC_COMPLEX)
+#if defined(ENABLE_SOA)
+#include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
+#else
 #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
+#endif
 #endif
 
 #if defined(HAVE_EINSPLINE)
@@ -213,6 +217,9 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
       PRE.error("Missing basisset/@source.",true);
     else
       ions=(*pit).second;
+#if defined(ENABLE_SOA)
+    bb=new LCAOrbitalBuilder(targetPtcl,*ions,false);
+#else
     if(transformOpt == "yes")
     {
       app_log() << "Using MolecularBasisBuilder<NGOBuilder>" << std::endl;
@@ -233,6 +240,7 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
       else if(keyOpt == "STO")
         bb = new MolecularBasisBuilder<STOBuilder>(targetPtcl,*ions);
     }
+#endif
   }
 #endif //!QMC_COMPLEX
 #endif  //OHMMS_DIM==3

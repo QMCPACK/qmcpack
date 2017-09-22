@@ -27,7 +27,7 @@ namespace qmcplusplus
       typedef typename ROT::grid_type  grid_type;
 
       ///size of the basis set
-      size_t BasisSetSize;
+      int BasisSetSize;
       ///spherical harmonics
       SH Ylm;
       ///index of the corresponding real Spherical Harmonic with quantum numbers \f$ (l,m) \f$
@@ -149,11 +149,11 @@ namespace qmcplusplus
 
       template<typename T, typename PosType>
       inline void
-        evaluateV(const T r, const PosType& dr, T* restrict psi)
+        evaluateV(const T r, const PosType& dr, T* restrict psi) const
         {
           CONSTEXPR T cone(1);
           CONSTEXPR T ctwo(2);
-          T ylm_v[16]; 
+          T ylm_v[Ylm.size()]; 
           Ylm.evaluateV(dr[0],dr[1],dr[2],ylm_v);
 
           const int nl_max=Rnl.size();

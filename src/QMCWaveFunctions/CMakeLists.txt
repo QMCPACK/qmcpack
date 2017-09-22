@@ -90,6 +90,7 @@ IF(OHMMS_DIM MATCHES 3)
     MolecularOrbitals/GTOBuilder.cpp
     MolecularOrbitals/NGOBuilder.cpp
     MolecularOrbitals/BsplineAOBuilder.cpp
+    lcao/LCAOrbitalBuilder.cpp
     )
 
   IF(QMC_CUDA)
