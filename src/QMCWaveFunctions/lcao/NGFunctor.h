@@ -44,7 +44,13 @@ namespace qmcplusplus
     template<typename VV>
       NGFunctor(grid_type* agrid, const VV& nv):myFunc(agrid,nv) { }
 
-    NGFunctor(const NGFunctor& in):myFunc(in.myFunc) {}
+    NGFunctor(const NGFunctor& in)=default;
+
+    NGFunctor(const NGFunctor& in, grid_type* agrid, bool grid_manager): myFunc(in.myFunc)
+    {
+      myFunc.m_grid=agrid;
+      myFunc.setGridManager(grid_manager);
+    }
 
     void checkInVariables(opt_variables_type& active) {}
     void checkOutVariables(const opt_variables_type& active) {}
@@ -63,13 +69,15 @@ namespace qmcplusplus
       return true;
     }
 
-    OptimizableFunctorBase* makeClone()
-    {
-      NGFunctor *myclone=new NGFunctor(*this);
-      myclone->myFunc.m_grid=myFunc.m_grid->makeClone();
-      myclone->setGridManager(true);
-      return myclone;
-    }
+    //OptimizableFunctorBase* makeClone()
+    //NGFunctor<T>* makeClone()
+    //{
+    //  return new NGFunctor<T>(*this);
+    //  //NGFunctor<T> *myclone=new NGFunctor<T>(*this);
+    //  //myclone->myFunc.m_grid=myFunc.m_grid->makeClone();
+    //  //myclone->setGridManager(true);
+    //  //return myclone;
+    //}
 
     inline value_type operator()(int i) const
     {

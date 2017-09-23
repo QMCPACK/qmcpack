@@ -50,13 +50,19 @@ namespace qmcplusplus
       explicit SoaSphericalBasisSet(int lmax, bool addsignforM=false)
         :Ylm(lmax,addsignforM){}
 
+      SoaSphericalBasisSet(const SoaSphericalBasisSet& in)=default;
+
       ~SoaSphericalBasisSet(){ } //cleanup
 
       SoaSphericalBasisSet<ROT,SH>* makeClone() const
       {
+        grid_type *grid_clone=Grids[0]->makeClone();
         SoaSphericalBasisSet<ROT,SH>* myclone=new SoaSphericalBasisSet<ROT,SH>(*this);
+        myclone->Grids[0]=grid_clone;
         for(int i=0; i<Rnl.size(); ++i)
-          myclone->Rnl[i]=new ROT(Rnl[i]->makeClone());
+        {
+          myclone->Rnl[i]=new ROT(*Rnl[i],grid_clone,i==0);
+        }
         return myclone;
       }
 

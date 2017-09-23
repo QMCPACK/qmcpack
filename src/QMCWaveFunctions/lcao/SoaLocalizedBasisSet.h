@@ -84,7 +84,10 @@ struct SoaLocalizedBasisSet //: public BasisSetBase<typename COT::value_type>
   /** makeClone */
   SoaLocalizedBasisSet<COT>* makeClone() const
   {
-    return new SoaLocalizedBasisSet<COT>(*this);
+    SoaLocalizedBasisSet<COT>* myclone=new SoaLocalizedBasisSet<COT>(*this);
+    for(int i=0; i<LOBasisSet.size(); ++i)
+      myclone->LOBasisSet[i]=LOBasisSet[i]->makeClone();
+    return myclone;
   }
 
 

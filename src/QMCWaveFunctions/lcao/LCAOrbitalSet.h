@@ -68,6 +68,9 @@ namespace qmcplusplus
     {
       if(bs != nullptr) setBasisSet(bs);
     }
+
+    LCAOrbitalSet(const LCAOrbitalSet& in)=default;
+
     /** destructor
      *
      * BasisSet is deleted by the object with ID == 0
