@@ -221,6 +221,9 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
     num = expandYlm(rnl,nlms,num,aos,cur1,expandlm);
     ++it;
   }
+
+  //aos->Rmax can be set small
+  aos->setRmax(0); 
   aos->setBasisSetSize(-1);
   app_log() << "   Maximu Angular Momentum   = " << aos->Ylm.lmax() << std::endl
             << "   Number of Radial functors = " << aos->Rnl.size() << std::endl
@@ -281,53 +284,30 @@ int AOBasisBuilder<COT>::expandYlm(const std::string& rnl, const QuantumNumberTy
       }
     }
   }
-  else
-    if(expandlm == MOD_NATURAL_EXPAND)
+  else if(expandlm == MOD_NATURAL_EXPAND)
+  {
+    app_log() << "Expanding Ylm as L=1 as (1,-1,0) and L>1 as -l,-l+1,...,l-1,l" << std::endl;
+    std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
+    if(rnl_it == RnlID.end())
     {
-      app_log() << "Expanding Ylm as L=1 as (1,-1,0) and L>1 as -l,-l+1,...,l-1,l" << std::endl;
-      std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
-      if(rnl_it == RnlID.end())
+      int nl = aos->Rnl.size();
+      if(radFuncBuilder.addRadialOrbital(cur1,nlms))
       {
-        int nl = aos->Rnl.size();
-        if(radFuncBuilder.addRadialOrbital(cur1,nlms))
-        {
-          RnlID[rnl] = nl;
-          int l = nlms[q_l];
-          app_log()<< "   Adding " << 2*l+1 << " spherical orbitals"<< std::endl;
-          if(l==1) {
-            //px(1),py(-1),pz(0)
-            aos->LM[num] = aos->Ylm.index(1,1);
-            aos->NL[num] = nl;
-            num++;
-            aos->LM[num] = aos->Ylm.index(1,-1);
-            aos->NL[num] = nl;
-            num++;
-            aos->LM[num] = aos->Ylm.index(1,0);
-            aos->NL[num] = nl;
-            num++;
-          } else {
-            for(int tm=-l; tm<=l; tm++,num++)
-            {
-              aos->LM[num] = aos->Ylm.index(l,tm);
-              aos->NL[num] = nl;
-            }
-          }
-        }
-      }
-    }
-  else
-    if(expandlm == NATURAL_EXPAND)
-    {
-      app_log() << "Expanding Ylm as -l,-l+1,...,l-1,l" << std::endl;
-      std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
-      if(rnl_it == RnlID.end())
-      {
-        int nl = aos->Rnl.size();
-        if(radFuncBuilder.addRadialOrbital(cur1,nlms))
-        {
-          RnlID[rnl] = nl;
-          int l = nlms[q_l];
-          app_log()<< "   Adding " << 2*l+1 << " spherical orbitals"<< std::endl;
+        RnlID[rnl] = nl;
+        int l = nlms[q_l];
+        app_log()<< "   Adding " << 2*l+1 << " spherical orbitals"<< std::endl;
+        if(l==1) {
+          //px(1),py(-1),pz(0)
+          aos->LM[num] = aos->Ylm.index(1,1);
+          aos->NL[num] = nl;
+          num++;
+          aos->LM[num] = aos->Ylm.index(1,-1);
+          aos->NL[num] = nl;
+          num++;
+          aos->LM[num] = aos->Ylm.index(1,0);
+          aos->NL[num] = nl;
+          num++;
+        } else {
           for(int tm=-l; tm<=l; tm++,num++)
           {
             aos->LM[num] = aos->Ylm.index(l,tm);
@@ -336,55 +316,75 @@ int AOBasisBuilder<COT>::expandYlm(const std::string& rnl, const QuantumNumberTy
         }
       }
     }
+  }
+  else if(expandlm == NATURAL_EXPAND)
+  {
+    app_log() << "Expanding Ylm as -l,-l+1,...,l-1,l" << std::endl;
+    std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
+    if(rnl_it == RnlID.end())
+    {
+      int nl = aos->Rnl.size();
+      if(radFuncBuilder.addRadialOrbital(cur1,nlms))
+      {
+        RnlID[rnl] = nl;
+        int l = nlms[q_l];
+        app_log()<< "   Adding " << 2*l+1 << " spherical orbitals"<< std::endl;
+        for(int tm=-l; tm<=l; tm++,num++)
+        {
+          aos->LM[num] = aos->Ylm.index(l,tm);
+          aos->NL[num] = nl;
+        }
+      }
+    }
+  }
+  else if(expandlm==CARTESIAN_EXPAND)
+  {
+    app_log() << "Expanding Ylm (angular function) according to Gamess using cartesian gaussians" << std::endl;
+    std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
+    if(rnl_it == RnlID.end())
+    {
+      int nl = aos->Rnl.size();
+      if(radFuncBuilder.addRadialOrbital(cur1,nlms))
+      {
+        RnlID[rnl] = nl;
+        int l = nlms[q_l];
+        app_log() << "Adding " << (l+1)*(l+2)/2 << " cartesian gaussian orbitals for l= " << l<< std::endl;
+        int nbefore=0;
+        for(int i=0; i<l; i++)
+          nbefore += (i+1)*(i+2)/2;
+        for(int i=0; i<(l+1)*(l+2)/2; i++)
+        {
+          aos->LM[num] = nbefore+i;
+          aos->NL[num] = nl;
+          num++;
+        }
+      }
+    }
+  }
+  else
+  {
+    //assign the index for real Spherical Harmonic with (l,m)
+    aos->LM[num] = aos->Ylm.index(nlms[q_l],nlms[q_m]);
+    //radial orbitals: add only distinct orbitals
+    std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
+    if(rnl_it == RnlID.end())
+    {
+      int nl = aos->Rnl.size();
+      if(radFuncBuilder.addRadialOrbital(cur1,nlms))
+        //assign the index for radial orbital with (n,l)
+      {
+        aos->NL[num] = nl;
+        RnlID[rnl] = nl;
+      }
+    }
     else
-      if(expandlm==CARTESIAN_EXPAND)
-      {
-        app_log() << "Expanding Ylm (angular function) according to Gamess using cartesian gaussians" << std::endl;
-        std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
-        if(rnl_it == RnlID.end())
-        {
-          int nl = aos->Rnl.size();
-          if(radFuncBuilder.addRadialOrbital(cur1,nlms))
-          {
-            RnlID[rnl] = nl;
-            int l = nlms[q_l];
-            app_log() << "Adding " << (l+1)*(l+2)/2 << " cartesian gaussian orbitals for l= " << l<< std::endl;
-            int nbefore=0;
-            for(int i=0; i<l; i++)
-              nbefore += (i+1)*(i+2)/2;
-            for(int i=0; i<(l+1)*(l+2)/2; i++)
-            {
-              aos->LM[num] = nbefore+i;
-              aos->NL[num] = nl;
-              num++;
-            }
-          }
-        }
-      }
-      else
-      {
-        //assign the index for real Spherical Harmonic with (l,m)
-        aos->LM[num] = aos->Ylm.index(nlms[q_l],nlms[q_m]);
-        //radial orbitals: add only distinct orbitals
-        std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
-        if(rnl_it == RnlID.end())
-        {
-          int nl = aos->Rnl.size();
-          if(radFuncBuilder.addRadialOrbital(cur1,nlms))
-            //assign the index for radial orbital with (n,l)
-          {
-            aos->NL[num] = nl;
-            RnlID[rnl] = nl;
-          }
-        }
-        else
-        {
-          //assign the index for radial orbital with (n,l) if repeated
-          aos->NL[num] = (*rnl_it).second;
-        }
-        //increment number of basis functions
-        num++;
-      }
+    {
+      //assign the index for radial orbital with (n,l) if repeated
+      aos->NL[num] = (*rnl_it).second;
+    }
+    //increment number of basis functions
+    num++;
+  }
   return num;
 }
 

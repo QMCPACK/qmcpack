@@ -33,6 +33,8 @@ namespace qmcplusplus
 
       ///size of the basis set
       int BasisSetSize;
+      ///maximum radius of this center
+      value_type Rmax;
       ///spherical harmonics
       SH Ylm;
       ///index of the corresponding real Spherical Harmonic with quantum numbers \f$ (l,m) \f$
@@ -94,11 +96,19 @@ namespace qmcplusplus
 
       /** implement a BasisSetBase virutal function
        *
-       * Use the size of LM to set BasisSetSize
+       * Set Rmax and BasisSetSize
+       * @todo Should be able to overwrite Rmax to be much smaller than the maximum grid
        */
       inline void setBasisSetSize(int n)
       {
         BasisSetSize=LM.size();
+      }
+
+      /** Set Rmax */
+      template<typename T>
+      inline void setRmax(T rmax)
+      {
+        Rmax=(rmax>0)?rmax:Grids[0]->rmax();
       }
 
       /** reset the target ParticleSet
@@ -116,6 +126,13 @@ namespace qmcplusplus
         inline void
         evaluateVGL(const T r, const PosType& dr, const size_t offset,  VGL& vgl)
         {
+          //const size_t ib_max=NL.size();
+          if(r>Rmax) 
+          {
+            for(int i=0; i<5; ++i)
+              std::fill_n(vgl.data(i)+offset,BasisSetSize,T());
+            return;
+          }
           CONSTEXPR T cone(1);
           CONSTEXPR T ctwo(2);
           //SIGN Change!!
@@ -137,8 +154,7 @@ namespace qmcplusplus
           T* restrict dpsi_z=vgl.data(3)+offset; const T* restrict ylm_z=Ylm[3]; //gradZ
           T* restrict d2psi =vgl.data(4)+offset; const T* restrict ylm_l=Ylm[4]; //lap
           const T rinv=cone/r;
-          const size_t ib_max=NL.size();
-          for(size_t ib=0; ib<ib_max; ++ib)
+          for(size_t ib=0; ib<BasisSetSize; ++ib)
           {
             const int nl(NL[ib]);
             const int lm(LM[ib]);
@@ -163,6 +179,12 @@ namespace qmcplusplus
       inline void
         evaluateV(const T r, const PosType& dr, T* restrict psi) const
         {
+          if(r>Rmax) 
+          {
+            std::fill_n(psi,BasisSetSize,T());
+            return;
+          }
+
           T ylm_v[Ylm.size()]; 
           Ylm.evaluateV(-dr[0],-dr[1],-dr[2],ylm_v);
 

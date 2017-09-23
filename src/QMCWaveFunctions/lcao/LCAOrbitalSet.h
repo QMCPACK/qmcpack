@@ -190,16 +190,16 @@ namespace qmcplusplus
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
     {
-      const bool curpos=false; //hint that the full distance table used
+      CONSTEXPR bool curpos=false; //hint that the full distance table used
 //#pramga omp for nowait
       for(size_t i=0, iat=first; iat<last; i++,iat++)
       {
         myBasisSet->evaluateVGL(P,iat,Temp,curpos);
         Product_ABt(Temp,C,Tempv);
         simd::copy_n(Tempv.data(0),OrbitalSetSize,logdet[i]);
-        const ValueType* restrict gx=Tempv.data(1);
-        const ValueType* restrict gy=Tempv.data(2);
-        const ValueType* restrict gz=Tempv.data(3);
+        const auto restrict gx=Tempv.data(1);
+        const auto restrict gy=Tempv.data(2);
+        const auto restrict gz=Tempv.data(3);
         for(size_t j=0; j<OrbitalSetSize; j++)
         {
           dlogdet[i][j][0]=gx[j];

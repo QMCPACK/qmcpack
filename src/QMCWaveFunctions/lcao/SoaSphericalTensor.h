@@ -184,10 +184,9 @@ inline void SoaSphericalTensor<T>::evaluate_bare(T x, T y, T z, T* restrict Ylm)
   CONSTEXPR T czero(0);
   CONSTEXPR T cone(1);
   const T pi = 4.0*std::atan(1.0);
-  const T pi4 = 4.0*pi;
-  const T omega = 1.0/std::sqrt(pi4);
+  const T omega = 1.0/std::sqrt(4.0*pi);
   const T sqrt2 = std::sqrt(2.0);
-  const T eps2 = std::numeric_limits<T>::epsilon()*std::numeric_limits<T>::epsilon();
+  CONSTEXPR T eps2 = std::numeric_limits<T>::epsilon()*std::numeric_limits<T>::epsilon();
 
   /*  Calculate r, cos(theta), sin(theta), cos(phi), sin(phi) from input
       coordinates. Check here the coordinate singularity at cos(theta) = +-1.
