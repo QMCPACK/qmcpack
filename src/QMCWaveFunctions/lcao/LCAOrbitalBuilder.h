@@ -22,7 +22,7 @@
 #include "QMCWaveFunctions/lcao/NGFunctor.h"
 #include "QMCWaveFunctions/lcao/SoaCartesianTensor.h"
 #include "QMCWaveFunctions/lcao/SoaSphericalTensor.h"
-#include "QMCWaveFunctions/lcao/SoaSphericalBasisSet.h"
+#include "QMCWaveFunctions/lcao/SoaAtomicBasisSet.h"
 #include "QMCWaveFunctions/lcao/SoaLocalizedBasisSet.h"
 
 namespace qmcplusplus
@@ -36,8 +36,8 @@ namespace qmcplusplus
   {
     //for now, use the same cubic spline: use BsplineFunctor later
     typedef NGFunctor<RealType> RadFuncT;
-    typedef SoaSphericalBasisSet<RadFuncT,SoaCartesianTensor<RealType> > XYZCOT;
-    typedef SoaSphericalBasisSet<RadFuncT,SoaSphericalTensor<RealType> > YlmCOT;
+    typedef SoaAtomicBasisSet<RadFuncT,SoaCartesianTensor<RealType> > XYZCOT;
+    typedef SoaAtomicBasisSet<RadFuncT,SoaSphericalTensor<RealType> > YlmCOT;
     typedef SoaLocalizedBasisSet<XYZCOT> XYZBasisT;
     typedef SoaLocalizedBasisSet<YlmCOT> YlmBasisT;
 

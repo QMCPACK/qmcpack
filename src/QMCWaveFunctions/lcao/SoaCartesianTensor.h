@@ -24,7 +24,7 @@ namespace qmcplusplus
  * @tparam T, value_type, e.g. double
  *
  * Original implementation Numerics/CartesianTensor.h
- * Modified to use SoA for cXYZ and used by SoaSphericalBasisSet
+ * Modified to use SoA for cXYZ and used by SoaAtomicBasisSet
  * Array ordered as [S,X,Y,Z,XX,YY,ZZ,XY,XZ,YZ,...]
  *    (following Gamess order)
  */

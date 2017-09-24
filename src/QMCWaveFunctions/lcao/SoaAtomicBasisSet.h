@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/** @file SoaSphericalBasisSet.h
+/** @file SoaAtomicBasisSet.h
  */
 #ifndef QMCPLUSPLUS_SOA_SPHERICALORBITAL_BASISSET_H
 #define QMCPLUSPLUS_SOA_SPHERICALORBITAL_BASISSET_H
@@ -25,7 +25,7 @@ namespace qmcplusplus
    * \f$ \phi_{n,l,m}({\bf r})=R_{n,l}(r) Y_{l,m}(\theta) \f$
    */
   template<typename ROT, typename SH>
-    struct SoaSphericalBasisSet
+    struct SoaAtomicBasisSet
     {
       typedef ROT                      RadialOrbital_t;
       typedef typename ROT::value_type value_type;
@@ -49,17 +49,17 @@ namespace qmcplusplus
       std::vector<grid_type*> Grids;
 
       ///the constructor
-      explicit SoaSphericalBasisSet(int lmax, bool addsignforM=false)
+      explicit SoaAtomicBasisSet(int lmax, bool addsignforM=false)
         :Ylm(lmax,addsignforM){}
 
-      SoaSphericalBasisSet(const SoaSphericalBasisSet& in)=default;
+      SoaAtomicBasisSet(const SoaAtomicBasisSet& in)=default;
 
-      ~SoaSphericalBasisSet(){ } //cleanup
+      ~SoaAtomicBasisSet(){ } //cleanup
 
-      SoaSphericalBasisSet<ROT,SH>* makeClone() const
+      SoaAtomicBasisSet<ROT,SH>* makeClone() const
       {
         grid_type *grid_clone=Grids[0]->makeClone();
-        SoaSphericalBasisSet<ROT,SH>* myclone=new SoaSphericalBasisSet<ROT,SH>(*this);
+        SoaAtomicBasisSet<ROT,SH>* myclone=new SoaAtomicBasisSet<ROT,SH>(*this);
         myclone->Grids[0]=grid_clone;
         for(int i=0; i<Rnl.size(); ++i)
         {

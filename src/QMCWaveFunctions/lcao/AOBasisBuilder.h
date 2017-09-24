@@ -24,7 +24,7 @@
 namespace qmcplusplus
 {
   /** atomic basisset builder
-   * @tparam COT, CenteredOrbitalType = SoaSphericalBasisSet<RF,SH>
+   * @tparam COT, CenteredOrbitalType = SoaAtomicBasisSet<RF,SH>
    *
    * Reimplement AtomiBasisSetBuilder.h
    */
