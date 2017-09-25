@@ -11,7 +11,7 @@
 ## Settings should be consistent with test scripts e.g.       ##
 ##  ./tests/test_automation/nightly_ornl_olcf_eos.job         ##
 ##                                                            ##
-## Last modified: Jan 6, 2017                                 ##
+## Last modified: Sep 25, 2017                                ##
 ################################################################
 
 
