@@ -25,9 +25,13 @@ if (echo $LOADEDMODULES | grep -q gnu)
 then
 module unload PrgEnv-gnu
 fi
+if (echo $LOADEDMODULES | grep -q hdf5)
+then
+module unload cray-hdf5
+fi
 module load PrgEnv-intel
 module load gcc
-module load cray-hdf5
+module load cray-hdf5-parallel
 module load fftw
 module load boost
 module load subversion
