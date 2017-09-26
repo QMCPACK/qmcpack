@@ -31,6 +31,28 @@
 namespace qmcplusplus
 {
 
+  /** temporary function to compute the cutoff without constructing NGFunctor */
+template<typename Fin, typename T>
+inline double find_cutoff(Fin& in, T rmax)
+{
+  //myInFunc=in;
+  LogGrid<T> agrid;
+  const T delta=0.1;
+  const T eps=1e-5;
+  bool too_small=true;
+  agrid.set(eps,rmax,1001);
+  int i=1000;
+  T r=rmax;
+  while(too_small && i>0)
+  {
+    r=agrid[i--];
+    T x=in.f(r);
+    too_small=(std::abs(x)<eps);
+  }
+  return static_cast<double>(r);
+}
+
+
 /** Build a set of radial orbitals at the origin
  *
  * For a center,
@@ -63,7 +85,7 @@ public:
 
   ///constructor
   RadialOrbitalSetBuilder(xmlNodePtr cur=NULL);
-  ///destructor
+  ///destructor: cleanup gtoTemp, stoTemp
   ~RadialOrbitalSetBuilder();
 
   ///assign a CenteredOrbitalType to work on
@@ -83,11 +105,23 @@ public:
    */
   bool putCommon(xmlNodePtr cur);
 
+  /** This is when the radial orbitals are actually created */
+  void finalize();
+
 private:
+  //only check the cutoff
   void addGaussian(xmlNodePtr cur);
   void addSlater(xmlNodePtr cur);
   void addNumerical(xmlNodePtr cur, const std::string& dsname);
+
   hid_t m_fileid;
+
+  ///safe common cutoff radius
+  double m_rcut_safe;
+  ///store the temporary analytic data 
+  std::vector<GaussianCombo<RealType>*> gtoTemp;
+  std::vector<SlaterCombo<RealType>*> stoTemp;
+
 };
 
   template<typename COT>
@@ -209,6 +243,10 @@ private:
         //}
         //using 0.01 for the time being
       }
+
+      //set zero to use std::max
+      m_rcut_safe=0;
+
       return true;
     }
 
@@ -217,11 +255,6 @@ private:
    * \param nlms a vector containing the quantum numbers \f$(n,l,m,s)\f$
    * \return true is succeeds
    *
-   This function puts the STO on a logarithmic grid and calculates the boundary
-   conditions for the 1D Cubic Spline.  The derivates at the endpoint
-   are assumed to be all zero.  Note: for the radial orbital we use
-   \f[ f(r) = \frac{R(r)}{r^l}, \f] where \f$ R(r) \f$ is the usual
-   radial orbital and \f$ l \f$ is the angular momentum.
    */
   template<typename COT>
     bool
@@ -257,11 +290,13 @@ private:
       {
         addNumerical(cur,dsname);
       }
+#if !defined(USE_MULTIQUINTIC)
       if(lastRnl && m_orbitals->Rnl.size()> lastRnl)
       {
         app_log() << "\tSetting GridManager of " << lastRnl << " radial orbital to false" << std::endl;
         m_orbitals->Rnl[lastRnl]->setGridManager(false);
       }
+#endif
       return true;
     }
 
@@ -269,16 +304,69 @@ private:
   void RadialOrbitalSetBuilder<COT>::addGaussian(xmlNodePtr cur)
   {
     int L= m_nlms[1];
+#if defined(USE_MULTIQUINTIC)
+    GaussianCombo<RealType>* gset=new GaussianCombo<RealType>(L,Normalized);
+    gset->putBasisGroup(cur);
+    auto r0=find_cutoff(*gset,m_orbitals->Grids[0]->rmax());
+    m_rcut_safe=std::max(m_rcut_safe,r0);
+    //add this basisGroup
+    gtoTemp.push_back(gset);
+    m_orbitals->Rnl.push_back(nullptr); //CLEANUP
+    m_orbitals->RnlID.push_back(m_nlms);
+#else
     GaussianCombo<RealType> gset(L,Normalized);
     gset.putBasisGroup(cur);
     GridType* agrid = m_orbitals->Grids[0];
     RadialOrbitalType *radorb = new RadialOrbitalType(agrid);
-    if(m_rcut<0)
-      m_rcut = agrid->rmax();
+    if(m_rcut<0) m_rcut = agrid->rmax();
     Transform2GridFunctor<GaussianCombo<RealType>,RadialOrbitalType> transform(gset, *radorb);
     transform.generate(agrid->rmin(),m_rcut,agrid->size());
     m_orbitals->Rnl.push_back(radorb);
     m_orbitals->RnlID.push_back(m_nlms);
+#endif
+  }
+
+/* Finalize this set using the common grid
+ *
+ * This function puts the STO on a logarithmic grid and calculates the boundary
+ * conditions for the 1D Cubic Spline.  The derivates at the endpoint
+ * are assumed to be all zero.  Note: for the radial orbital we use
+ * \f[ f(r) = \frac{R(r)}{r^l}, \f] where \f$ R(r) \f$ is the usual
+ * radial orbital and \f$ l \f$ is the angular momentum.
+ */
+  template<typename COT>
+  void RadialOrbitalSetBuilder<COT>::finalize()
+  {
+    std::cout << "Going to finalize " << m_rcut_safe << std::endl;
+#if defined(USE_MULTIQUINTIC)
+    GridType* agrid = m_orbitals->Grids[0];
+    agrid->locate(static_cast<RealType>(m_rcut_safe));
+    agrid->set(agrid->rmin(),m_rcut_safe,agrid->Loc); 
+
+    m_orbitals->setRmax(m_rcut_safe);
+    int norbs=gtoTemp.size();
+
+    MultiQuinticSpline1D<RealType>* multiset=new MultiQuinticSpline1D<RealType>;;
+    int npts=agrid->size();
+    multiset->initialize(agrid,norbs);
+
+    if(gtoTemp.size())
+    {
+      RadialOrbitalType radorb(agrid);
+      for(int ib=0; ib<norbs; ++ib)
+      {
+        Transform2GridFunctor<GaussianCombo<RealType>,RadialOrbitalType> transform(*(gtoTemp[ib]), radorb);
+        transform.generate(agrid->rmin(),agrid->rmax(),agrid->size());
+        //m_orbitals->Rnl[ib]=radorb;
+        multiset->add_spline(ib,radorb.myFunc);
+        delete gtoTemp[ib];
+      }
+    }
+    m_orbitals->MultiRnl=multiset;
+#else
+    m_orbitals->setRmax(m_rcut);
+#endif
+
   }
 
   template<typename COT>

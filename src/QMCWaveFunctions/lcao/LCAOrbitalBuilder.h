@@ -18,8 +18,12 @@
 #ifndef QMCPLUSPLUS_LCAO_ORBITAL_BUILDER_H
 #define QMCPLUSPLUS_LCAO_ORBITAL_BUILDER_H
 
+//testing multiquintic
+//#define USE_MULTIQUINTIC
+
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "QMCWaveFunctions/lcao/NGFunctor.h"
+#include <QMCWaveFunctions/lcao/MultiQuinticSpline1D.h>
 #include "QMCWaveFunctions/lcao/SoaCartesianTensor.h"
 #include "QMCWaveFunctions/lcao/SoaSphericalTensor.h"
 #include "QMCWaveFunctions/lcao/SoaAtomicBasisSet.h"

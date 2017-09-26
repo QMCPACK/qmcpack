@@ -222,8 +222,9 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
     ++it;
   }
 
+  radFuncBuilder.finalize();
   //aos->Rmax can be set small
-  aos->setRmax(0); 
+  //aos->setRmax(0); 
   aos->setBasisSetSize(-1);
   app_log() << "   Maximu Angular Momentum   = " << aos->Ylm.lmax() << std::endl
             << "   Number of Radial functors = " << aos->Rnl.size() << std::endl

@@ -41,13 +41,16 @@ namespace qmcplusplus
       aligned_vector<int> LM;
       /**index of the corresponding radial orbital with quantum numbers \f$ (n,l) \f$ */
       aligned_vector<int> NL;
-      ///container for the radial orbitals
-      aligned_vector<ROT*> Rnl;
       ///container for the quantum-numbers
       std::vector<QuantumNumberType> RnlID;
-      ///set of grids
+      ///container for the radial orbitals
+      aligned_vector<ROT*> Rnl;
+#if defined(USE_MULTIQUINTIC)
+      ///Replace Rnl, Grids
+      MultiQuinticSpline1D<value_type> *MultiRnl;
+#endif
+      ///set of grids : keep this until completion
       std::vector<grid_type*> Grids;
-
       ///the constructor
       explicit SoaAtomicBasisSet(int lmax, bool addsignforM=false)
         :Ylm(lmax,addsignforM){}
@@ -58,6 +61,10 @@ namespace qmcplusplus
 
       SoaAtomicBasisSet<ROT,SH>* makeClone() const
       {
+#if defined(USE_MULTIQUINTIC)
+        SoaAtomicBasisSet<ROT,SH>* myclone=new SoaAtomicBasisSet<ROT,SH>(*this);
+        myclone->MultiRnl=MultiRnl->makeClone();
+#else
         grid_type *grid_clone=Grids[0]->makeClone();
         SoaAtomicBasisSet<ROT,SH>* myclone=new SoaAtomicBasisSet<ROT,SH>(*this);
         myclone->Grids[0]=grid_clone;
@@ -65,25 +72,26 @@ namespace qmcplusplus
         {
           myclone->Rnl[i]=new ROT(*Rnl[i],grid_clone,i==0);
         }
+#endif
         return myclone;
       }
 
       void checkInVariables(opt_variables_type& active)
       {
-        for(size_t nl=0; nl<Rnl.size(); nl++)
-          Rnl[nl]->checkInVariables(active);
+        //for(size_t nl=0; nl<Rnl.size(); nl++)
+        //  Rnl[nl]->checkInVariables(active);
       }
 
       void checkOutVariables(const opt_variables_type& active)
       {
-        for(size_t nl=0; nl<Rnl.size(); nl++)
-          Rnl[nl]->checkOutVariables(active);
+        //for(size_t nl=0; nl<Rnl.size(); nl++)
+        //  Rnl[nl]->checkOutVariables(active);
       }
 
       void resetParameters(const opt_variables_type& active)
       {
-        for(size_t nl=0; nl<Rnl.size(); nl++)
-          Rnl[nl]->resetParameters(active);
+        //for(size_t nl=0; nl<Rnl.size(); nl++)
+        //  Rnl[nl]->resetParameters(active);
       }
 
       /** return the number of basis functions
@@ -108,7 +116,11 @@ namespace qmcplusplus
       template<typename T>
       inline void setRmax(T rmax)
       {
-        Rmax=(rmax>0)?rmax:Grids[0]->rmax();
+#if defined(USE_MULTIQUINTIC)
+        Rmax=(rmax>0)? rmax: MultiRnl->rmax();
+#else
+        Rmax=(rmax>0)? rmax:Grids[0]->rmax();
+#endif
       }
 
       /** reset the target ParticleSet
@@ -139,13 +151,19 @@ namespace qmcplusplus
           const T x=-dr[0], y=-dr[1], z=-dr[2];
           Ylm.evaluateVGL(x,y,z);
 
-          const size_t nl_max=Rnl.size();
+          const size_t nl_max=RnlID.size();
           T phi[nl_max]; 
           T dphi[nl_max];
           T d2phi[nl_max];
 
+#if defined(USE_MULTIQUINTIC)
+          MultiRnl->evaluate(r,phi,dphi,d2phi);
+#else
           for(size_t nl=0; nl<nl_max; ++nl)
+          {
             phi[nl]=Rnl[nl]->evaluate(r,dphi[nl],d2phi[nl]);
+          }
+#endif
 
           //V,Gx,Gy,Gz,L
           T* restrict psi   =vgl.data(0)+offset; const T* restrict ylm_v=Ylm[0]; //value
@@ -188,10 +206,14 @@ namespace qmcplusplus
           T ylm_v[Ylm.size()]; 
           Ylm.evaluateV(-dr[0],-dr[1],-dr[2],ylm_v);
 
-          const int nl_max=Rnl.size();
+          const int nl_max=RnlID.size();
           T phi_r[nl_max];
+#if defined(USE_MULTIQUINTIC)
+          MultiRnl->evaluate(r,phi_r);
+#else
           for(size_t nl=0; nl<nl_max; ++nl)
             phi_r[nl]=Rnl[nl]->evaluate(r);
+#endif
 
           for(size_t ib=0; ib<BasisSetSize; ++ib)
           {
