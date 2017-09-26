@@ -661,7 +661,7 @@ BsplineFunctor<T>::evaluateV(const int iStart, const int iEnd,
   }
 
   real_type d = 0.0;
-#pragma simd reduction (+:d )
+#pragma omp simd reduction (+:d)
   for ( int jat = 0; jat < iCount; jat++ ) {
     real_type r = distArrayCompressed[jat];
     r *= DeltaRInv;
