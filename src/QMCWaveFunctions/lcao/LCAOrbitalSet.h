@@ -197,9 +197,9 @@ namespace qmcplusplus
         myBasisSet->evaluateVGL(P,iat,Temp,curpos);
         Product_ABt(Temp,C,Tempv);
         simd::copy_n(Tempv.data(0),OrbitalSetSize,logdet[i]);
-        const auto restrict gx=Tempv.data(1);
-        const auto restrict gy=Tempv.data(2);
-        const auto restrict gz=Tempv.data(3);
+        const ValueType* restrict gx=Tempv.data(1);
+        const ValueType* restrict gy=Tempv.data(2);
+        const ValueType* restrict gz=Tempv.data(3);
         for(size_t j=0; j<OrbitalSetSize; j++)
         {
           dlogdet[i][j][0]=gx[j];

@@ -44,7 +44,7 @@ struct MultiQuinticSpline1D
    * Coeffs[6*spline_points][num_splines]
    */
   grid_type* m_grid;
-  Matrix<value_type> *Coeffs;
+  Matrix<value_type, aligned_allocator<value_type> > *Coeffs;
   aligned_vector<value_type> first_deriv;
 
   MultiQuinticSpline1D():own_spline(false),m_grid(nullptr),Coeffs(nullptr){}
@@ -148,7 +148,7 @@ struct MultiQuinticSpline1D
     {
       spline_order=order;
       num_splines=norbs;
-      Coeffs=new Matrix<value_type>((order+1)*m_grid->size(),getAlignedSize<T>(norbs));
+      Coeffs=new Matrix<value_type, aligned_allocator<value_type> >((order+1)*m_grid->size(),getAlignedSize<T>(norbs));
       first_deriv.resize(num_splines);
       own_spline=true;
     }
