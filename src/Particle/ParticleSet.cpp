@@ -119,8 +119,6 @@ ParticleSet::~ParticleSet()
 void ParticleSet::create(int numPtcl)
 {
   resize(numPtcl);
-  GroupID=0;
-  R=RealType(0);
 }
 
 void ParticleSet::create(const std::vector<int>& agroup)
