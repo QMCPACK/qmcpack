@@ -182,6 +182,7 @@ private:
       mAllocator.deallocate(X,nAllocated);
     }
     X=mAllocator.allocate(n);
+    std::fill_n(X, n, T());
     nLocal=n;
     nAllocated=n;
   }
