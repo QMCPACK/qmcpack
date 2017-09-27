@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<qmcsystem>
+<hamiltonian name="h0" type="generic" target="e">
+<pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+<estimator type="gofr" name="gr" num_bin="200" rmax="9.712825"/>
+</hamiltonian>
+</qmcsystem>
