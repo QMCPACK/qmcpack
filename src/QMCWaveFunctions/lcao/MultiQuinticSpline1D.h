@@ -25,6 +25,40 @@
 namespace qmcplusplus
 {
 
+  template<typename T>
+    struct LogGridLight
+    {
+      T lower_bound;
+      T upper_bound;
+      T LogDelta;
+      T OneOverLogDelta;
+
+      template<typename T1>
+      inline void set(T1 ri, T1 rf, int n)
+      {
+        lower_bound=static_cast<T>(ri);
+        upper_bound=static_cast<T>(rf);
+        //num_points=n;
+        double ratio = rf/ri;
+        double log_ratio = std::log(ratio);
+        double dlog_ratio = log_ratio/static_cast<double>(n-1);
+        LogDelta = dlog_ratio;
+        OneOverLogDelta = 1.0/dlog_ratio;
+      }
+
+      inline int locate(T r) const
+      {
+        return static_cast<int>(std::log(r/lower_bound)*OneOverLogDelta);
+      }
+
+      inline T getCLForQuintic(T r, int& loc) const
+      {
+        constexpr T cone(1);
+        loc=static_cast<int>(std::log(r/lower_bound)*OneOverLogDelta);
+        return r-lower_bound*std::exp(loc*LogDelta);
+      }
+    };
+
   /** multivalue implementation for OneDimQuintic
    */
 template<typename T>
@@ -32,6 +66,7 @@ struct MultiQuinticSpline1D
 {
   typedef T value_type;
   typedef OneDimGridBase<T> grid_type;
+  typedef Matrix<value_type, aligned_allocator<value_type> > coeff_type;
 
   ///number of splines
   size_t num_splines;
@@ -40,11 +75,15 @@ struct MultiQuinticSpline1D
   ///default is false
   bool own_spline;
 
-  /** shared_ptr
-   * Coeffs[6*spline_points][num_splines]
-   */
+  ///will be the real grid
+  LogGridLight<T> myGrid;
   grid_type* m_grid;
-  Matrix<value_type, aligned_allocator<value_type> > *Coeffs;
+
+  /** Need to use shared_ptr
+   *
+   * Coeffs[6*spline_points][num_splines+padding]
+   */
+  coeff_type* Coeffs;
   aligned_vector<value_type> first_deriv;
 
   MultiQuinticSpline1D():own_spline(false),m_grid(nullptr),Coeffs(nullptr){}
@@ -54,7 +93,9 @@ struct MultiQuinticSpline1D
   MultiQuinticSpline1D<T>* makeClone() const
   {
     MultiQuinticSpline1D<T>* myclone= new MultiQuinticSpline1D<T>(*this);
+#if !defined(USE_MULTIQUINTIC)
     myclone->m_grid=m_grid->makeClone(); //wasting X, to remove this
+#endif
     myclone->own_spline=false;
     return myclone;
   }
@@ -66,6 +107,20 @@ struct MultiQuinticSpline1D
 
   inline void evaluate(T r, T* restrict u) 
   {
+#if defined(USE_MULTIQUINTIC)
+    if(r<myGrid.lower_bound)
+    {
+      const value_type dr=r-myGrid.lower_bound;
+      const value_type* restrict a=(*Coeffs)[0];
+      for(size_t i=0; i<num_splines; ++i)
+        u[i]=a[i]+first_deriv[i]*dr;
+    }
+    else
+    {
+      int loc;
+      const auto cL=myGrid.getCLForQuintic(r,loc);
+      const size_t offset=loc*6;
+#else
     if(r<m_grid->rmin())
     {
       const value_type dr=r-m_grid->rmin();
@@ -75,16 +130,16 @@ struct MultiQuinticSpline1D
     }
     else
     {
-      //m_grid->locate(r);
-      m_grid->updateForQuintic(r,false);
-      const size_t offset=m_grid->Loc*6; 
+      int loc;
+      const auto cL=myGrid.getCLForQuintic(r,loc);
+      const size_t offset=loc*6;
+#endif
       const value_type* restrict a=(*Coeffs)[offset+0];
       const value_type* restrict b=(*Coeffs)[offset+1];
       const value_type* restrict c=(*Coeffs)[offset+2];
       const value_type* restrict d=(*Coeffs)[offset+3];
       const value_type* restrict e=(*Coeffs)[offset+4];
       const value_type* restrict f=(*Coeffs)[offset+5];
-      const auto cL=m_grid->cL;
       for(size_t i=0; i<num_splines; ++i)
         u[i]=a[i]+cL*(b[i]+cL*(c[i]+cL*(d[i]+cL*(e[i]+cL*f[i]))));
     }
@@ -93,6 +148,24 @@ struct MultiQuinticSpline1D
   inline void evaluate(T r, T* restrict u, T* restrict du, T* restrict d2u) 
   {
     constexpr value_type czero(0);
+#if defined(USE_MULTIQUINTIC)
+    if(r<myGrid.lower_bound)
+    {
+      const value_type dr=r-myGrid.lower_bound;
+      const value_type* restrict a=(*Coeffs)[0];
+      for(size_t i=0; i<num_splines; ++i)
+      {
+        u[i]=a[i]+first_deriv[i]*dr;
+        du[i]=first_deriv[i]*dr;
+        d2u[i]=czero;
+      }
+    }
+    else
+    {
+      int loc;
+      const auto cL=myGrid.getCLForQuintic(r,loc);
+      const size_t offset=loc*6;
+#else
     if(r<m_grid->rmin())
     {
       const T dr=r-m_grid->rmin();
@@ -107,6 +180,9 @@ struct MultiQuinticSpline1D
     else
     {
       m_grid->updateForQuintic(r,true);
+      const size_t offset=m_grid->Loc*6;
+      const auto cL=m_grid->cL;
+#endif
       constexpr value_type ctwo(2);
       constexpr value_type cthree(3);
       constexpr value_type cfour(4);
@@ -115,15 +191,13 @@ struct MultiQuinticSpline1D
       constexpr value_type c12(5);
       constexpr value_type c20(6);
 
-      const size_t offset=m_grid->Loc*6; 
       const value_type* restrict a=(*Coeffs)[offset+0];
       const value_type* restrict b=(*Coeffs)[offset+1];
       const value_type* restrict c=(*Coeffs)[offset+2];
       const value_type* restrict d=(*Coeffs)[offset+3];
       const value_type* restrict e=(*Coeffs)[offset+4];
       const value_type* restrict f=(*Coeffs)[offset+5];
-      const auto cR=m_grid->cR;
-      const auto cL=m_grid->cL;
+
       for(size_t i=0; i<num_splines; ++i)
       {
         u[i]  = a[i]+cL*(b[i]+cL*(c[i]+cL*(d[i]+cL*(e[i]+cL*f[i]))));
@@ -132,6 +206,13 @@ struct MultiQuinticSpline1D
       }
     }
   }
+
+  /** initialize grid */
+  template<typename T1>
+    void setGrid(T1 rmin, T1 rmax, int npts)
+    {
+      myGrid.set(rmin,rmax,npts);
+    }
 
   /** initialize grid and container 
    * @param ri minimum  grid point
@@ -146,9 +227,9 @@ struct MultiQuinticSpline1D
     //this is very shaky
     if(Coeffs==nullptr && !own_spline)
     {
-      spline_order=order;
+      spline_order=order+1;
       num_splines=norbs;
-      Coeffs=new Matrix<value_type, aligned_allocator<value_type> >((order+1)*m_grid->size(),getAlignedSize<T>(norbs));
+      Coeffs=new coeff_type((order+1)*m_grid->size(),getAlignedSize<T>(norbs));
       first_deriv.resize(num_splines);
       own_spline=true;
     }
@@ -157,28 +238,28 @@ struct MultiQuinticSpline1D
   template<typename T1>
   void add_spline(int ispline, OneDimQuinticSpline<T1>& in)
   {
-    const T1* restrict A=in.m_Y.data();
-    const T1* restrict B=in.B.data();
-    const T1* restrict C=in.m_Y2.data();
-    const T1* restrict D=in.D.data();
-    const T1* restrict E=in.E.data();
-    const T1* restrict F=in.F.data();
-
     first_deriv[ispline]=in.first_deriv;
-
-    value_type* restrict out=Coeffs->data();
-    const size_t ncols=Coeffs->cols();
-    const size_t num_points=in.size();
-    for(size_t i=0; i<num_points; ++i)
+    //if(spline_order==QUINTIC)
     {
-      out[(i*6+0)*ncols+ispline]=A[i];
-      out[(i*6+1)*ncols+ispline]=B[i];
-      out[(i*6+2)*ncols+ispline]=C[i];
-      out[(i*6+3)*ncols+ispline]=D[i];
-      out[(i*6+4)*ncols+ispline]=E[i];
-      out[(i*6+5)*ncols+ispline]=F[i];
+      const T1* restrict A=in.m_Y.data();
+      const T1* restrict B=in.B.data();
+      const T1* restrict C=in.m_Y2.data();
+      const T1* restrict D=in.D.data();
+      const T1* restrict E=in.E.data();
+      const T1* restrict F=in.F.data();
+      value_type* restrict out=Coeffs->data();
+      const size_t ncols=Coeffs->cols();
+      const size_t num_points=in.size();
+      for(size_t i=0; i<num_points; ++i)
+      {
+        out[(i*6+0)*ncols+ispline]=static_cast<T>(A[i]);
+        out[(i*6+1)*ncols+ispline]=static_cast<T>(B[i]);
+        out[(i*6+2)*ncols+ispline]=static_cast<T>(C[i]);
+        out[(i*6+3)*ncols+ispline]=static_cast<T>(D[i]);
+        out[(i*6+4)*ncols+ispline]=static_cast<T>(E[i]);
+        out[(i*6+5)*ncols+ispline]=static_cast<T>(F[i]);
+      }
     }
-
   }
 #if 0
   template<typename InType, typename VV>

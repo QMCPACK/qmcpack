@@ -49,6 +49,9 @@ namespace qmcplusplus
       ///Replace Rnl, Grids
       MultiQuinticSpline1D<value_type> *MultiRnl;
 #endif
+      ///temporary storage 
+      VectorSoaContainer<value_type,4> tempS;
+
       ///set of grids : keep this until completion
       std::vector<grid_type*> Grids;
       ///the constructor
@@ -110,6 +113,7 @@ namespace qmcplusplus
       inline void setBasisSetSize(int n)
       {
         BasisSetSize=LM.size();
+        tempS.resize(std::max(Ylm.size(),RnlID.size()));
       }
 
       /** Set Rmax */
@@ -151,14 +155,18 @@ namespace qmcplusplus
           const T x=-dr[0], y=-dr[1], z=-dr[2];
           Ylm.evaluateVGL(x,y,z);
 
-          const size_t nl_max=RnlID.size();
-          T phi[nl_max]; 
-          T dphi[nl_max];
-          T d2phi[nl_max];
+          //T phi[nl_max]; 
+          //T dphi[nl_max];
+          //T d2phi[nl_max];
 
+          //one can assert the alignment
+          value_type* restrict phi=tempS.data(0);
+          value_type* restrict dphi=tempS.data(1);
+          value_type* restrict d2phi=tempS.data(2);
 #if defined(USE_MULTIQUINTIC)
           MultiRnl->evaluate(r,phi,dphi,d2phi);
 #else
+          const size_t nl_max=RnlID.size();
           for(size_t nl=0; nl<nl_max; ++nl)
           {
             phi[nl]=Rnl[nl]->evaluate(r,dphi[nl],d2phi[nl]);
@@ -195,7 +203,7 @@ namespace qmcplusplus
 
       template<typename T, typename PosType>
       inline void
-        evaluateV(const T r, const PosType& dr, T* restrict psi) const
+        evaluateV(const T r, const PosType& dr, T* restrict psi) 
         {
           if(r>Rmax) 
           {
@@ -203,14 +211,14 @@ namespace qmcplusplus
             return;
           }
 
-          T ylm_v[Ylm.size()]; 
-          Ylm.evaluateV(-dr[0],-dr[1],-dr[2],ylm_v);
+          value_type* restrict ylm_v=tempS.data(0);
+          value_type* restrict phi_r=tempS.data(1);
 
-          const int nl_max=RnlID.size();
-          T phi_r[nl_max];
+          Ylm.evaluateV(-dr[0],-dr[1],-dr[2],ylm_v);
 #if defined(USE_MULTIQUINTIC)
           MultiRnl->evaluate(r,phi_r);
 #else
+          const int nl_max=RnlID.size();
           for(size_t nl=0; nl<nl_max; ++nl)
             phi_r[nl]=Rnl[nl]->evaluate(r);
 #endif

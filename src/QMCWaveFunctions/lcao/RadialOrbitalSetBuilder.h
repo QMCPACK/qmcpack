@@ -31,26 +31,73 @@
 namespace qmcplusplus
 {
 
+  /** helper classes and function to handle transformations of the radial functions
+   */
   /** temporary function to compute the cutoff without constructing NGFunctor */
-template<typename Fin, typename T>
-inline double find_cutoff(Fin& in, T rmax)
-{
-  //myInFunc=in;
-  LogGrid<T> agrid;
-  const T delta=0.1;
-  const T eps=1e-5;
-  bool too_small=true;
-  agrid.set(eps,rmax,1001);
-  int i=1000;
-  T r=rmax;
-  while(too_small && i>0)
+  template<typename Fin, typename T>
+    inline double find_cutoff(Fin& in, T rmax)
+    {
+      //myInFunc=in;
+      LogGrid<T> agrid;
+      const T delta=0.1;
+      const T eps=1e-0;
+      bool too_small=true;
+      agrid.set(eps,rmax,1001);
+      int i=1000;
+      T r=rmax;
+      while(too_small && i>0)
+      {
+        r=agrid[i--];
+        T x=in.f(r);
+        too_small=(std::abs(x)<eps);
+      }
+      return static_cast<double>(r);
+    }
+
+  /** abstract class to defer generation of spline functors
+   * @tparam T precision of the final result
+  */
+  template<typename T>
+    struct TransformerBase
+    {
+      ///temporary grid in double precision
+      typedef OneDimGridBase<double> grid_type;
+      ///the multiple set 
+      typedef MultiQuinticSpline1D<T> FnOut;
+      /** convert input 1D functor to the multi set
+       * @param agrid  original grid
+       * @param multiset the object that should be populated
+       * @param ispline index of the this analytic function
+       * @param int order quintic (or cubic) only quintic is used
+       */
+      virtual void convert(grid_type* agrid, FnOut* multiset, int ispline, int order)=0;
+      virtual ~TransformerBase(){}
+    };
+
+  template<typename T, typename FnIn>
+    struct A2NTransformer: TransformerBase<T>
   {
-    r=agrid[i--];
-    T x=in.f(r);
-    too_small=(std::abs(x)<eps);
-  }
-  return static_cast<double>(r);
-}
+    typedef typename TransformerBase<T>::grid_type grid_type;
+    typedef typename TransformerBase<T>::FnOut FnOut;
+
+    FnIn* m_ref; //candidate for unique_ptr
+    A2NTransformer(FnIn* in): m_ref(in){}
+    ~A2NTransformer() { delete m_ref; }
+
+    inline double find_cutoff(T rmax) const
+    {
+      return find_cutoff(*m_ref,rmax);
+    }
+
+    void convert(grid_type* agrid, FnOut* multiset, int ispline, int order)
+    {
+      typedef OneDimQuinticSpline<double> spline_type;
+      spline_type radorb(agrid);
+      Transform2GridFunctor<FnIn,spline_type> transform(*m_ref,radorb);
+      transform.generate(agrid->rmin(),agrid->rmax(),agrid->size());
+      multiset->add_spline(ispline,radorb);
+    }
+  };
 
 
 /** Build a set of radial orbitals at the origin
@@ -109,6 +156,8 @@ public:
   void finalize();
 
 private:
+
+  OneDimGridBase<double>* myGrid;
   //only check the cutoff
   void addGaussian(xmlNodePtr cur);
   void addSlater(xmlNodePtr cur);
@@ -118,16 +167,22 @@ private:
 
   ///safe common cutoff radius
   double m_rcut_safe;
+
+  /** radial functors to be finalized
+   */
+  std::vector<TransformerBase<RealType>*> radTemp;
+  //std::vector<std::pair<int,OptimizableFunctorBase*> > radFuncTemp;
   ///store the temporary analytic data 
   std::vector<GaussianCombo<RealType>*> gtoTemp;
   std::vector<SlaterCombo<RealType>*> stoTemp;
 
+  std::tuple<int,double,double> grid_param_in;
 };
 
   template<typename COT>
     RadialOrbitalSetBuilder<COT>::RadialOrbitalSetBuilder(xmlNodePtr cur)
     : Normalized(true),m_orbitals(0),input_grid(nullptr),m_rcut(-1.0), 
-    m_infunctype("Gaussian"), m_fileid(-1)
+    m_infunctype("Gaussian"), m_fileid(-1), myGrid(nullptr)
   {
     if(cur != NULL)
       putCommon(cur);
@@ -194,7 +249,16 @@ private:
       {
         GridType *agrid = OneDimGridFactory::createGrid(cur);
         m_orbitals->Grids.push_back(agrid);
+#if 0
+        if(agrid->GridTag == LINEAR_1DGRID) 
+          myGrid=new LinearGrid;
+        else
+          myGrid=new LogGrid;
+        myGrid->set(static_cast<double>(agrid->rmin()),
+            static_cast<double>(agrid->rmax()),agrid->size());
+#endif
       }
+#if !defined(ENABLE_SOA)
       else
       {
         app_log() << "   Grid is created by the input paremters in h5" << std::endl;
@@ -243,6 +307,7 @@ private:
         //}
         //using 0.01 for the time being
       }
+#endif
 
       //set zero to use std::max
       m_rcut_safe=0;
@@ -305,12 +370,14 @@ private:
   {
     int L= m_nlms[1];
 #if defined(USE_MULTIQUINTIC)
-    GaussianCombo<RealType>* gset=new GaussianCombo<RealType>(L,Normalized);
+    using gto_type=GaussianCombo<double>;
+    gto_type* gset=new gto_type(L,Normalized);
     gset->putBasisGroup(cur);
-    auto r0=find_cutoff(*gset,m_orbitals->Grids[0]->rmax());
-    m_rcut_safe=std::max(m_rcut_safe,r0);
+
+    radTemp.push_back(new A2NTransformer<RealType,gto_type>(gset));
+
     //add this basisGroup
-    gtoTemp.push_back(gset);
+    //gtoTemp.push_back(gset);
     m_orbitals->Rnl.push_back(nullptr); //CLEANUP
     m_orbitals->RnlID.push_back(m_nlms);
 #else
@@ -337,19 +404,32 @@ private:
   template<typename COT>
   void RadialOrbitalSetBuilder<COT>::finalize()
   {
-    std::cout << "Going to finalize " << m_rcut_safe << std::endl;
+    //std::cout << "Going to finalize " << m_rcut_safe << std::endl;
 #if defined(USE_MULTIQUINTIC)
     GridType* agrid = m_orbitals->Grids[0];
-    agrid->locate(static_cast<RealType>(m_rcut_safe));
-    agrid->set(agrid->rmin(),m_rcut_safe,agrid->Loc); 
+    MultiQuinticSpline1D<RealType>* multiset=new MultiQuinticSpline1D<RealType>;
 
-    m_orbitals->setRmax(m_rcut_safe);
-    int norbs=gtoTemp.size();
-
-    MultiQuinticSpline1D<RealType>* multiset=new MultiQuinticSpline1D<RealType>;;
-    int npts=agrid->size();
+    if(myGrid==nullptr)
+    {
+      myGrid=new LogGrid<double>;
+      myGrid->set(1.e-6,1.e2,1001);
+    }
+      
+    int norbs=radTemp.size();
     multiset->initialize(agrid,norbs);
+    multiset->setGrid(myGrid->rmin(),myGrid->rmax(),myGrid->size());
 
+    for(int ib=0; ib<norbs; ++ib)
+      radTemp[ib]->convert(myGrid,multiset,ib,5);
+
+    m_orbitals->MultiRnl=multiset;
+
+    m_orbitals->setRmax(static_cast<RealType>(myGrid->rmax()));
+
+#if 0
+    int npts=agrid->size();
+    int norbs=gtoTemp.size();
+    multiset->initialize(agrid,norbs);
     if(gtoTemp.size())
     {
       RadialOrbitalType radorb(agrid);
@@ -363,6 +443,7 @@ private:
       }
     }
     m_orbitals->MultiRnl=multiset;
+#endif
 #else
     m_orbitals->setRmax(m_rcut);
 #endif
@@ -372,6 +453,17 @@ private:
   template<typename COT>
   void RadialOrbitalSetBuilder<COT>::addSlater(xmlNodePtr cur)
   {
+#if defined(USE_MULTIQUINTIC)
+    using sto_type=SlaterCombo<RealType>;
+    sto_type* gset=new sto_type(m_nlms[1],Normalized);
+
+    gset->putBasisGroup(cur);
+    auto r0=find_cutoff(*gset,m_orbitals->Grids[0]->rmax());
+    m_rcut_safe=std::max(m_rcut_safe,r0);
+
+    radTemp.push_back(new A2NTransformer<RealType,sto_type>(gset));
+    m_orbitals->RnlID.push_back(m_nlms);
+#else
     ////pointer to the grid
     GridType* agrid = m_orbitals->Grids[0];
     RadialOrbitalType *radorb = new RadialOrbitalType(agrid);
@@ -384,11 +476,15 @@ private:
     //add the radial orbital to the list
     m_orbitals->Rnl.push_back(radorb);
     m_orbitals->RnlID.push_back(m_nlms);
+#endif
   }
 
   template<typename COT>
   void RadialOrbitalSetBuilder<COT>::addNumerical(xmlNodePtr cur, const std::string& dsname)
   {
+#if defined(USE_MULTIQUINTIC)
+    APP_ABORT("RadialOrbitalSetBuilder<COT>::addNumerical is not working with multiquintic");
+#else
     int imin = 0;
     OhmmsAttributeSet aAttrib;
     aAttrib.add(imin,"imin");
@@ -447,6 +543,7 @@ private:
     //}
     //cout << " Power " << rinv_p << " size=" << rad_orb.size() << std::endl;
     //APP_ABORT("NGOBuilder::addNumerical");
+#endif
   }
 }
 #endif
