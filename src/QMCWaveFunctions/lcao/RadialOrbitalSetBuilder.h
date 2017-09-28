@@ -31,23 +31,22 @@
 namespace qmcplusplus
 {
 
-  /** helper classes and function to handle transformations of the radial functions
+  /** compute the safe cutoff radius of a radial functor
    */
   /** temporary function to compute the cutoff without constructing NGFunctor */
   template<typename Fin, typename T>
     inline double find_cutoff(Fin& in, T rmax)
     {
-      //myInFunc=in;
-      LogGrid<T> agrid;
-      const T delta=0.1;
-      const T eps=1e-0;
+      LogGridLight<double> agrid;
+      agrid.set(1.e-6,100.,1001);
+      const double eps=1e-6;
       bool too_small=true;
       agrid.set(eps,rmax,1001);
       int i=1000;
       T r=rmax;
       while(too_small && i>0)
       {
-        r=agrid[i--];
+        r=agrid(i--);
         T x=in.f(r);
         too_small=(std::abs(x)<eps);
       }
@@ -83,11 +82,6 @@ namespace qmcplusplus
     FnIn* m_ref; //candidate for unique_ptr
     A2NTransformer(FnIn* in): m_ref(in){}
     ~A2NTransformer() { delete m_ref; }
-
-    inline double find_cutoff(T rmax) const
-    {
-      return find_cutoff(*m_ref,rmax);
-    }
 
     void convert(grid_type* agrid, FnOut* multiset, int ispline, int order)
     {
@@ -156,8 +150,6 @@ public:
   void finalize();
 
 private:
-
-  OneDimGridBase<double>* myGrid;
   //only check the cutoff
   void addGaussian(xmlNodePtr cur);
   void addSlater(xmlNodePtr cur);
@@ -182,7 +174,7 @@ private:
   template<typename COT>
     RadialOrbitalSetBuilder<COT>::RadialOrbitalSetBuilder(xmlNodePtr cur)
     : Normalized(true),m_orbitals(0),input_grid(nullptr),m_rcut(-1.0), 
-    m_infunctype("Gaussian"), m_fileid(-1), myGrid(nullptr)
+    m_infunctype("Gaussian"), m_fileid(-1)
   {
     if(cur != NULL)
       putCommon(cur);
@@ -249,14 +241,6 @@ private:
       {
         GridType *agrid = OneDimGridFactory::createGrid(cur);
         m_orbitals->Grids.push_back(agrid);
-#if 0
-        if(agrid->GridTag == LINEAR_1DGRID) 
-          myGrid=new LinearGrid;
-        else
-          myGrid=new LogGrid;
-        myGrid->set(static_cast<double>(agrid->rmin()),
-            static_cast<double>(agrid->rmax()),agrid->size());
-#endif
       }
 #if !defined(ENABLE_SOA)
       else
@@ -374,6 +358,8 @@ private:
     gto_type* gset=new gto_type(L,Normalized);
     gset->putBasisGroup(cur);
 
+    double r0=find_cutoff(*gset,100.);
+    m_rcut_safe=std::max(m_rcut_safe,r0);
     radTemp.push_back(new A2NTransformer<RealType,gto_type>(gset));
 
     //add this basisGroup
@@ -404,46 +390,28 @@ private:
   template<typename COT>
   void RadialOrbitalSetBuilder<COT>::finalize()
   {
-    //std::cout << "Going to finalize " << m_rcut_safe << std::endl;
 #if defined(USE_MULTIQUINTIC)
-    GridType* agrid = m_orbitals->Grids[0];
     MultiQuinticSpline1D<RealType>* multiset=new MultiQuinticSpline1D<RealType>;
-
-    if(myGrid==nullptr)
-    {
-      myGrid=new LogGrid<double>;
-      myGrid->set(1.e-6,1.e2,1001);
-    }
-      
     int norbs=radTemp.size();
-    multiset->initialize(agrid,norbs);
-    multiset->setGrid(myGrid->rmin(),myGrid->rmax(),myGrid->size());
 
-    for(int ib=0; ib<norbs; ++ib)
-      radTemp[ib]->convert(myGrid,multiset,ib,5);
-
-    m_orbitals->MultiRnl=multiset;
-
-    m_orbitals->setRmax(static_cast<RealType>(myGrid->rmax()));
-
-#if 0
-    int npts=agrid->size();
-    int norbs=gtoTemp.size();
-    multiset->initialize(agrid,norbs);
-    if(gtoTemp.size())
+    OneDimGridBase<double>* grid_prec;
+    m_rcut_safe=100.;  //this can be estimated
+    //if(agrid->GridTag == LOG_1DGRID)
     {
-      RadialOrbitalType radorb(agrid);
-      for(int ib=0; ib<norbs; ++ib)
-      {
-        Transform2GridFunctor<GaussianCombo<RealType>,RadialOrbitalType> transform(*(gtoTemp[ib]), radorb);
-        transform.generate(agrid->rmin(),agrid->rmax(),agrid->size());
-        //m_orbitals->Rnl[ib]=radorb;
-        multiset->add_spline(ib,radorb.myFunc);
-        delete gtoTemp[ib];
-      }
+      grid_prec=new LogGrid<double>;
+      grid_prec->set(1.e-6,m_rcut_safe,1001);
     }
+    multiset->initialize(grid_prec,norbs);
+    
+    for(int ib=0; ib<norbs; ++ib)
+      radTemp[ib]->convert(grid_prec,multiset,ib,5);
+
     m_orbitals->MultiRnl=multiset;
-#endif
+
+    //app_log() << "  Setting cutoff radius " << m_rcut_safe << std::endl << std::endl;
+    m_orbitals->setRmax(static_cast<RealType>(m_rcut_safe));
+
+    delete grid_prec;
 #else
     m_orbitals->setRmax(m_rcut);
 #endif
@@ -454,12 +422,10 @@ private:
   void RadialOrbitalSetBuilder<COT>::addSlater(xmlNodePtr cur)
   {
 #if defined(USE_MULTIQUINTIC)
-    using sto_type=SlaterCombo<RealType>;
+    using sto_type=SlaterCombo<double>;
     sto_type* gset=new sto_type(m_nlms[1],Normalized);
 
     gset->putBasisGroup(cur);
-    auto r0=find_cutoff(*gset,m_orbitals->Grids[0]->rmax());
-    m_rcut_safe=std::max(m_rcut_safe,r0);
 
     radTemp.push_back(new A2NTransformer<RealType,sto_type>(gset));
     m_orbitals->RnlID.push_back(m_nlms);
