@@ -188,8 +188,8 @@ struct MultiQuinticSpline1D
       constexpr value_type cfour(4);
       constexpr value_type cfive(5);
       constexpr value_type csix(6);
-      constexpr value_type c12(5);
-      constexpr value_type c20(6);
+      constexpr value_type c12(12);
+      constexpr value_type c20(20);
 
       const value_type* restrict a=(*Coeffs)[offset+0];
       const value_type* restrict b=(*Coeffs)[offset+1];
