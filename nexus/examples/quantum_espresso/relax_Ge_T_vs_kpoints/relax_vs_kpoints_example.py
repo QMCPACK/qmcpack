@@ -10,7 +10,11 @@ from nexus import run_project
 # set global parameters of nexus
 settings(
     pseudo_dir    = '../pseudopotentials',# directory with pseudopotentials
-    generate_only = 0,                    # only generate input files, T/F
+    #generate_only   = False,
+    # Complicated setting only so examples can be run in test harness.
+    # For real runs, use the plain setting of 'generate_only' above.
+    generate_only   = globals().get('override_generate_only_setting',False),
+
     status_only   = 0,                    # only show run status, T/F
     machine       = 'ws16'                # local machine is 16 core workstation
     )
