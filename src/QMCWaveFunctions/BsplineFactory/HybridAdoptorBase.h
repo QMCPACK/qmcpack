@@ -67,6 +67,11 @@ struct AtomicOrbitalSoA
     rmin_sqrt=std::max(rmin,std::sqrt(std::numeric_limits<ST>::epsilon()));
   }
 
+  ~AtomicOrbitalSoA()
+  {
+    if(MultiSpline != nullptr) delete SplineInst;
+  }
+
   inline void resizeStorage(size_t Nb)
   {
     NumBands=Nb;
