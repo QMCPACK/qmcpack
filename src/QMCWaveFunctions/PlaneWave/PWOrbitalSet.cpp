@@ -58,7 +58,6 @@ void PWOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup)
   BasisSetSize=myBasisSet->NumPlaneWaves;
   C.resize(OrbitalSetSize,BasisSetSize);
   Temp.resize(OrbitalSetSize,PW_MAXINDEX);
-  t_logpsi.resize(OrbitalSetSize, OrbitalSetSize);
   app_log() << "  PWOrbitalSet::resize OrbitalSetSize =" << OrbitalSetSize << " BasisSetSize = " << BasisSetSize << std::endl;
 }
 

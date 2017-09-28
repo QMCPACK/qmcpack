@@ -19,7 +19,7 @@
 #define QMCPLUSPLUS_LCAO_ORBITAL_BUILDER_H
 
 //testing multiquintic
-//#define USE_MULTIQUINTIC
+#define USE_MULTIQUINTIC
 
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "QMCWaveFunctions/lcao/NGFunctor.h"

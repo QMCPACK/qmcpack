@@ -90,8 +90,10 @@ IF(OHMMS_DIM MATCHES 3)
     MolecularOrbitals/GTOBuilder.cpp
     MolecularOrbitals/NGOBuilder.cpp
     MolecularOrbitals/BsplineAOBuilder.cpp
-    lcao/LCAOrbitalBuilder.cpp
     )
+  IF(NOT QMC_COMPLEX AND ENABLE_SOA)
+    SET(FERMION_SRCS ${FERMION_SRCS} lcao/LCAOrbitalBuilder.cpp)
+  ENDIF(NOT QMC_COMPLEX)
 
   IF(QMC_CUDA)
     SET(FERMION_SRCS ${FERMION_SRCS}
@@ -141,37 +143,29 @@ IF(OHMMS_DIM MATCHES 3)
 
   ENDIF(HAVE_EINSPLINE)
 
-  #  IF(QMC_BUILD_LEVEL GREATER 1)
-  #
-      SET(FERMION_SRCS ${FERMION_SRCS}
-  #      Bspline3DSetBase.cpp
-  #      Bspline3DSet.cpp
-  #      Bspline3DSetTrunc.cpp
-  #      TricubicBsplineSetBuilder.cpp
-  #      TricubicBsplineSetBuilder.1.cpp
-  #      TricubicBsplineSetBuilder.2.cpp
-        PlaneWave/PWBasis.cpp
-        PlaneWave/PWParameterSet.cpp
-        PlaneWave/PWOrbitalBuilder.cpp
-        )
-     IF(QMC_COMPLEX)
-       SET(FERMION_SRCS ${FERMION_SRCS}
-        PlaneWave/PWOrbitalSet.cpp
-       )
-     ELSE()
-       SET(FERMION_SRCS ${FERMION_SRCS}
-        PlaneWave/PWRealOrbitalSet.cpp
-       )
-     ENDIF(QMC_COMPLEX)
-  #  ENDIF(QMC_BUILD_LEVEL GREATER 1)
+  # plane wave SPO
+  SET(FERMION_SRCS ${FERMION_SRCS}
+    PlaneWave/PWBasis.cpp
+    PlaneWave/PWParameterSet.cpp
+    PlaneWave/PWOrbitalBuilder.cpp
+    )
+  IF(QMC_COMPLEX)
+    SET(FERMION_SRCS ${FERMION_SRCS}
+      PlaneWave/PWOrbitalSet.cpp
+    )
+  ELSE()
+    SET(FERMION_SRCS ${FERMION_SRCS}
+      PlaneWave/PWRealOrbitalSet.cpp
+    )
+  ENDIF(QMC_COMPLEX)
 
   #only experimental version
   IF(QMC_BUILD_LEVEL GREATER 2)
-   IF(NOT QMC_COMPLEX) 
-   SET(FERMION_SRCS ${FERMION_SRCS}
+    IF(NOT QMC_COMPLEX)
+    SET(FERMION_SRCS ${FERMION_SRCS}
       AGPDeterminant.cpp AGPDeterminantBuilder.cpp
       )
-  ENDIF(NOT QMC_COMPLEX)
+    ENDIF(NOT QMC_COMPLEX)
   ENDIF(QMC_BUILD_LEVEL GREATER 2)
 
 ENDIF(OHMMS_DIM MATCHES 3)
