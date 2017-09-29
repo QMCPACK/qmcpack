@@ -67,14 +67,19 @@ public:
   bool CanUseGLCombo;
   ///if true, need distance tables
   bool NeedDistanceTables;
+  ///if true, do not clean up
+  bool IsCloned;
   ///number of Single-particle orbitals
   IndexType OrbitalSetSize;
   ///number of Single-particle orbitals
   IndexType BasisSetSize;
   ///index of the particle
   IndexType ActivePtcl;
-  ///matrix containing the coefficients
-  ValueMatrix_t C;
+  /** pointer matrix containing the coefficients
+   *
+   * makeClone makes a shallow copy
+   */
+  ValueMatrix_t* C;
   ///occupation number
   Vector<RealType> Occ;
   /// Optimizable variables
@@ -91,7 +96,7 @@ public:
   SPOSetBase();
 
   /** destructor */
-  virtual ~SPOSetBase() {}
+  virtual ~SPOSetBase();
 
   /** return the size of the orbital set
    */
@@ -124,31 +129,7 @@ public:
     return BasisSetSize;
   }
 
-
-  bool setIdentity(bool useIdentity)
-  {
-    Identity = useIdentity;
-
-    if ( (OrbitalSetSize > 0) && (BasisSetSize > 0) )
-      C.resize(OrbitalSetSize,BasisSetSize);
-    else {
-      app_error() << "either OrbitalSetSize or BasisSetSize has an invalid value !!\n";
-      app_error() << "OrbitalSetSize = " << OrbitalSetSize << std::endl;
-      app_error() << "BasisSetSize = " << BasisSetSize << std::endl;
-      abort();
-    }
-
-    if (OrbitalSetSize <= BasisSetSize) {
-      for (int i=0; i<OrbitalSetSize; i++)
-        C(i,i) = 1.0;
-    }
-    else {
-      for (int i=0; i<BasisSetSize; i++)
-        C(i,i) = 1.0;
-    }
-
-    return true;
-  }
+  bool setIdentity(bool useIdentity);
 
   void checkObject();
 

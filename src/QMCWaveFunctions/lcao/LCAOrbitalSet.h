@@ -81,6 +81,7 @@ namespace qmcplusplus
     {
       LCAOrbitalSet<BS>* myclone = new LCAOrbitalSet<BS>(*this);
       myclone->myBasisSet = myBasisSet->makeClone();
+      myclone->IsCloned=true;
       return myclone;
     }
 
@@ -124,7 +125,7 @@ namespace qmcplusplus
     {
       VectorViewer<ValueType> vTemp(Temp.data(0),BasisSetSize);
       myBasisSet->evaluateV(P,iat,vTemp.data());
-      simd::gemv(C,Temp.data(0),psi.data());
+      simd::gemv(*C,Temp.data(0),psi.data());
     }
 
     /** Find a better place for other user classes, Matrix should be padded as well */
@@ -145,7 +146,7 @@ namespace qmcplusplus
       {
         const bool trialmove=true;
         myBasisSet->evaluateVGL(P,iat,Temp,trialmove);
-        Product_ABt(Temp,C,Tempv);
+        Product_ABt(Temp,*C,Tempv);
         simd::copy_n(Tempv.data(0),OrbitalSetSize,psi.data());
         const ValueType* restrict gx=Tempv.data(1);
         const ValueType* restrict gy=Tempv.data(2);
@@ -169,7 +170,7 @@ namespace qmcplusplus
         else
         {
           myBasisSet->evaluateVGL(P,iat,Temp,newpos);
-          Product_ABt(Temp,C,vgl);
+          Product_ABt(Temp,*C,vgl);
         }
       }
 
@@ -195,7 +196,7 @@ namespace qmcplusplus
       for(size_t i=0, iat=first; iat<last; i++,iat++)
       {
         myBasisSet->evaluateVGL(P,iat,Temp,curpos);
-        Product_ABt(Temp,C,Tempv);
+        Product_ABt(Temp,*C,Tempv);
         simd::copy_n(Tempv.data(0),OrbitalSetSize,logdet[i]);
         const ValueType* restrict gx=Tempv.data(1);
         const ValueType* restrict gy=Tempv.data(2);

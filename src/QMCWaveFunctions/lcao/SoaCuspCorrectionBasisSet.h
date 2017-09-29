@@ -154,8 +154,7 @@ struct SoaCuspCorrection: public CuspCorrectionBase  //: public BasisSetBase<typ
     myVGL=czero;
 
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    const value_type* restrict  dist = (newp)? d_table->Temp_r.data(): d_table->Distances[iat];
-    const auto&  displ= (newp)? d_table->Temp_dr: d_table->Displacements[iat];
+    const auto restrict  dist = (newp)? d_table->Temp_r.data(): d_table->Distances[iat];
     for(int c=0; c<NumCenters; c++)
     {
       LOBasisSet[IonID[c]]->evaluate(dist[c],myVGL[0],myVGL[1],myVGL[2]);

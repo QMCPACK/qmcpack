@@ -38,12 +38,20 @@ inline void transpose(const T* restrict in, T* restrict out, int m)
 
 SPOSetBase::SPOSetBase()
 :Identity(false),OrbitalSetSize(0),BasisSetSize(0),
-  ActivePtcl(-1),Optimizable(false),ionDerivs(false),builder_index(-1)
+  ActivePtcl(-1),Optimizable(false),ionDerivs(false),builder_index(-1),C(nullptr)
 {
   CanUseGLCombo=false;
   className="invalid";
+  IsCloned=false;
   //default is false: LCOrbitalSet.h needs to set this true and recompute needs to check
   NeedDistanceTables=false;
+}
+
+/** clean up for shared data with clones
+ */
+SPOSetBase::~SPOSetBase()
+{
+  if(!IsCloned && C!= nullptr) delete C;
 }
 
 /** default implementation */
@@ -126,6 +134,25 @@ SPOSetBase* SPOSetBase::makeClone() const
   return 0;
 }
 
+bool SPOSetBase::setIdentity(bool useIdentity)
+{
+  Identity = useIdentity;
+  if(Identity) return true;
+
+  if ( C== nullptr && (OrbitalSetSize > 0) && (BasisSetSize > 0) )
+  {
+    C=new ValueMatrix_t(OrbitalSetSize,BasisSetSize);
+  }
+  else 
+  {
+    app_error() << "either OrbitalSetSize or BasisSetSize has an invalid value !!\n";
+    app_error() << "OrbitalSetSize = " << OrbitalSetSize << std::endl;
+    app_error() << "BasisSetSize = " << BasisSetSize << std::endl;
+    APP_ABORT("SPOSetBase::setIdentiy ");
+  }
+
+  return true;
+}
 
 /** Parse the xml file for information on the Dirac determinants.
  *@param cur the current xmlNode
@@ -171,7 +198,8 @@ bool SPOSetBase::put(xmlNodePtr cur)
   bool success2 = transformSPOSet();
   if(debugc=="yes")
   {
-    app_log() << "   Single-particle orbital coefficients dims=" << C.rows() << " x " << C.cols() << std::endl;
+    app_log() << "   Single-particle orbital coefficients dims=" 
+      << C->rows() << " x " << C->cols() << std::endl;
     app_log() << C << std::endl;
   }
   return success && success2;
@@ -179,7 +207,7 @@ bool SPOSetBase::put(xmlNodePtr cur)
 
 void SPOSetBase::checkObject()
 {
-  if(!(OrbitalSetSize == C.rows() && BasisSetSize == C.cols()))
+  if(!(OrbitalSetSize == C->rows() && BasisSetSize == C->cols()))
   {
     app_error() << "   SPOSetBase::checkObject Linear coeffient for SPOSet is not consistent with the input." << std::endl;
     OHMMS::Controller->abort();
@@ -256,7 +284,7 @@ bool SPOSetBase::putFromXML(xmlNodePtr coeff_ptr)
     {
       if(Occ[n]>std::numeric_limits<RealType>::epsilon())
       {
-        std::copy(cit,cit+BasisSetSize,C[i]);
+        std::copy(cit,cit+BasisSetSize,(*C)[i]);
         i++;
       }
       n++;
@@ -297,7 +325,7 @@ bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
   {
     if(Occ[n]>0.0)
     {
-      std::copy(Ctemp[n],Ctemp[n+1],C[i]);
+      std::copy(Ctemp[n],Ctemp[n+1],(*C)[i]);
       i++;
     }
     n++;

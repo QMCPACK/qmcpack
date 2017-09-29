@@ -167,11 +167,17 @@ void LCOrbitalSetWithCorrection<BS,false>::createLCOSets(int centr, LCOrbitalSet
   for(int i=0; i<bss; i++)
   {
     if(rmv[i])
+    {
+      auto &cref(*(Eta->C));
       for(int k=0; k<nOrbs; k++)
-        Eta->C(k,i) = 0.0;
+        cref(k,i)=0.0; //Eta->C(k,i) = 0.0;
+    }
     else
+    {
+      auto &cref(*(Phi->C));
       for(int k=0; k<nOrbs; k++)
-        Phi->C(k,i) = 0.0;
+        cref(k,i)=0.0; //Phi->C(k,i) = 0.0;
+    }
   }
 }
 
@@ -180,6 +186,7 @@ LCOrbitalSet<BS,false>* LCOrbitalSetWithCorrection<BS,false>::clone2LCOrbitalSet
 {
   BS* newBS = (BS*) myBasisSet->makeClone();
   LCOrbitalSet<BS,false>* newSPO = new LCOrbitalSet<BS,false>(newBS,ReportLevel);
+  newSPO->IsCloned=true;
   newSPO->setOrbitalSetSize(OrbitalSetSize);
   newSPO->setIdentity(Identity);
   newSPO->C = C;
@@ -403,9 +410,10 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
       bool corrO = false;
       if(corrCenter[i])
       {
-        for(int ip=0; ip<dummyLO1->C.cols(); ip++)
+        auto& cref(*(dummyLO1->C));
+        for(int ip=0; ip<cref.cols(); ip++)
         {
-          if(std::abs(dummyLO1->C(k,ip)) > 1e-8)
+          if(std::abs(cref(k,ip)) > 1e-8)
           {
             corrO = true;
             break;
@@ -544,7 +552,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
     {
       app_log()<<"removing basis element i: " <<i << std::endl;
       for(int k=0; k<OrbitalSetSize; k++)
-        C(k,i) = 0.0;
+        (*C)(k,i) = 0.0;
     }
   this->checkObject();
   if(!readCuspCoeff)
