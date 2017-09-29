@@ -284,8 +284,8 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
 #else
         //ParamPointers.push_back(&(C(state,i).real()));
         //ParamPointers.push_back(&(C(state,i).imag()));
-        ParamPointers.push_back(reinterpret_cast<RealType*>(C[state]+i));
-        ParamPointers.push_back(reinterpret_cast<RealType*>(C[state]+i)+1);
+        ParamPointers.push_back(reinterpret_cast<RealType*>(cref[state]+i));
+        ParamPointers.push_back(reinterpret_cast<RealType*>(cref[state]+i)+1);
         ParamIndex.push_back(TinyVector<int,2>(state,i));
         ParamIndex.push_back(TinyVector<int,2>(state,i));
         sstr << id << "_" << 2*i+0;
