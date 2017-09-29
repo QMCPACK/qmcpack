@@ -162,14 +162,15 @@ public:
   // assume Dets[0]: up, Dets[1]:down
   std::vector<MultiDiracDeterminantBase*> Dets;
 
-  /** Start: Keep these as pointers and make shallow copy*/
-  aligned_vector<int> DetID;
+  std::vector<int> DetID;
+
   std::map<std::string,int> SPOSetID;
+
   // map determinant in linear combination to unique det list
-  aligned_vector<int> C2node_up;
-  aligned_vector<int> C2node_dn;
-  aligned_vector<RealType> C;
-  /** End: Keep these as pointers and make shallow copy*/
+  std::vector<int> C2node_up;
+  std::vector<int> C2node_dn;
+
+  std::vector<RealType> C;
 
   ValueType curRatio;
   ValueType psiCurrent;
@@ -186,14 +187,11 @@ public:
 
 // CSFs
   // coefficients of csfs, these are only used during optm
-
-  /** Start: Keep these as pointers and make shallow copy*/
-  aligned_vector<RealType> CSFcoeff;
+  std::vector<RealType> CSFcoeff;
   // number of dets per csf
-  aligned_vector<int> DetsPerCSF;
+  std::vector<int> DetsPerCSF;
   // coefficient of csf expansion (smaller dimension)
-  aligned_vector<RealType> CSFexpansion;
-  /** End: Keep these as pointers and make shallow copy*/
+  std::vector<RealType> CSFexpansion;
 
   // transformation
   BackflowTransformation *BFTrans;
