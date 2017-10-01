@@ -226,8 +226,8 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
   //aos->Rmax can be set small
   //aos->setRmax(0); 
   aos->setBasisSetSize(-1);
-  app_log() << "   Maximu Angular Momentum   = " << aos->Ylm.lmax() << std::endl
-            << "   Number of Radial functors = " << aos->Rnl.size() << std::endl
+  app_log() << "   Maximum Angular Momentum  = " << aos->Ylm.lmax() << std::endl
+            << "   Number of Radial functors = " << aos->RnlID.size() << std::endl
             << "   Basis size                = " << aos->getBasisSetSize() << "\n\n";
   return aos;
 }
@@ -243,7 +243,7 @@ int AOBasisBuilder<COT>::expandYlm(const std::string& rnl, const QuantumNumberTy
     std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
     if(rnl_it == RnlID.end())
     {
-      int nl = aos->Rnl.size();
+      int nl = aos->RnlID.size();
       if(radFuncBuilder.addRadialOrbital(cur1,nlms))
       {
         RnlID[rnl] = nl;
@@ -291,7 +291,7 @@ int AOBasisBuilder<COT>::expandYlm(const std::string& rnl, const QuantumNumberTy
     std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
     if(rnl_it == RnlID.end())
     {
-      int nl = aos->Rnl.size();
+      int nl = aos->RnlID.size();
       if(radFuncBuilder.addRadialOrbital(cur1,nlms))
       {
         RnlID[rnl] = nl;
@@ -324,7 +324,7 @@ int AOBasisBuilder<COT>::expandYlm(const std::string& rnl, const QuantumNumberTy
     std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
     if(rnl_it == RnlID.end())
     {
-      int nl = aos->Rnl.size();
+      int nl = aos->RnlID.size();
       if(radFuncBuilder.addRadialOrbital(cur1,nlms))
       {
         RnlID[rnl] = nl;
@@ -344,7 +344,7 @@ int AOBasisBuilder<COT>::expandYlm(const std::string& rnl, const QuantumNumberTy
     std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
     if(rnl_it == RnlID.end())
     {
-      int nl = aos->Rnl.size();
+      int nl = aos->RnlID.size();
       if(radFuncBuilder.addRadialOrbital(cur1,nlms))
       {
         RnlID[rnl] = nl;
@@ -370,7 +370,7 @@ int AOBasisBuilder<COT>::expandYlm(const std::string& rnl, const QuantumNumberTy
     std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
     if(rnl_it == RnlID.end())
     {
-      int nl = aos->Rnl.size();
+      int nl = aos->RnlID.size();
       if(radFuncBuilder.addRadialOrbital(cur1,nlms))
         //assign the index for radial orbital with (n,l)
       {

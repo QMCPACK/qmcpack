@@ -26,7 +26,7 @@
 namespace qmcplusplus
 {
 
-/** A localized basis set derived from BasisSetBase<typename COT::value_type>
+/** A localized basis set derived from RealBasisSetBase<typename COT::value_type>
  *
  * This class performs the evaluation of the basis functions and their
  * derivatives for each of the N-particles in a configuration.
@@ -34,12 +34,12 @@ namespace qmcplusplus
  * a set of localized orbitals associated with a center.
  */
 template<class COT>
-struct SoaLocalizedBasisSet //: public BasisSetBase<typename COT::value_type>
+struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::value_type>
 {
-  typedef COT                            ThisCOT_t;
-  typedef typename COT::RadialOrbital_t  ThisRadialOrbital_t;
-  typedef typename COT::value_type       value_type;
-  typedef typename OrbitalSetTraits<value_type>::VGLVector_t VGLVector_t;
+  typedef typename COT::value_type value_type;
+  typedef typename RealBasisSetBase<value_type>::vgl_type vgl_type;
+
+  using RealBasisSetBase<value_type>::BasisSetSize;
 
   ///number of centers, e.g., ions
   size_t NumCenters;
@@ -47,8 +47,6 @@ struct SoaLocalizedBasisSet //: public BasisSetBase<typename COT::value_type>
   size_t NumTargets;
   ///number of quantum particles
   int myTableIndex;
-  ///size of the basis set
-  int BasisSetSize;
   ///Reference to the center
   const ParticleSet::ParticleIndex_t& IonID;
 
@@ -82,7 +80,8 @@ struct SoaLocalizedBasisSet //: public BasisSetBase<typename COT::value_type>
   SoaLocalizedBasisSet(const SoaLocalizedBasisSet& a)=default;
 
   /** makeClone */
-  SoaLocalizedBasisSet<COT>* makeClone() const
+  //SoaLocalizedBasisSet<COT>* makeClone() const
+  RealBasisSetBase<value_type>* makeClone() const
   {
     SoaLocalizedBasisSet<COT>* myclone=new SoaLocalizedBasisSet<COT>(*this);
     for(int i=0; i<LOBasisSet.size(); ++i)
@@ -100,10 +99,13 @@ struct SoaLocalizedBasisSet //: public BasisSetBase<typename COT::value_type>
     //evaluate the total basis dimension and offset for each center
     BasisOffset[0] = 0;
     for(int c=0; c<NumCenters; c++)
+    {
       BasisOffset[c+1] = BasisOffset[c]+LOBasisSet[IonID[c]]->getBasisSetSize();
+    }
     BasisSetSize = BasisOffset[NumCenters];
   }
 
+#if 0
   inline int getBasisSetSize()
   {
     return BasisSetSize;
@@ -119,6 +121,7 @@ struct SoaLocalizedBasisSet //: public BasisSetBase<typename COT::value_type>
   /** reset the distance table with a new target P
    */
   void resetTargetParticleSet(ParticleSet& P) { }
+#endif
 
   /** compute VGL 
    * @param P quantum particleset
@@ -126,8 +129,7 @@ struct SoaLocalizedBasisSet //: public BasisSetBase<typename COT::value_type>
    * @param vgl Matrix(5,BasisSetSize)
    * @param trialMove if true, use Temp_r/Temp_dr
    */
-  template<typename VGLT>
-  inline void evaluateVGL(const ParticleSet& P, int iat, VGLT& vgl, bool newp)
+  inline void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl, bool newp)
   {
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     const value_type* restrict  dist = (newp)? d_table->Temp_r.data(): d_table->Distances[iat];
@@ -142,8 +144,7 @@ struct SoaLocalizedBasisSet //: public BasisSetBase<typename COT::value_type>
    *
    * Always uses Temp_r and Temp_dr
    */
-  template<typename T>
-  inline void evaluateV(const ParticleSet& P, int iat, T* restrict vals)
+  inline void evaluateV(const ParticleSet& P, int iat, value_type* restrict vals)
   {
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     const value_type* restrict  dist=d_table->Temp_r.data();

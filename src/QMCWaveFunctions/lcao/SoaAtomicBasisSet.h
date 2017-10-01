@@ -27,7 +27,7 @@ namespace qmcplusplus
   template<typename ROT, typename SH>
     struct SoaAtomicBasisSet
     {
-      typedef ROT                      RadialOrbital_t;
+      typedef ROT RadialOrbital_t;
       typedef typename ROT::value_type value_type;
       typedef typename ROT::grid_type  grid_type;
 
@@ -37,18 +37,14 @@ namespace qmcplusplus
       value_type Rmax;
       ///spherical harmonics
       SH Ylm;
+      ///radial orbitals
+      ROT* MultiRnl;
       ///index of the corresponding real Spherical Harmonic with quantum numbers \f$ (l,m) \f$
       aligned_vector<int> LM;
       /**index of the corresponding radial orbital with quantum numbers \f$ (n,l) \f$ */
       aligned_vector<int> NL;
       ///container for the quantum-numbers
       std::vector<QuantumNumberType> RnlID;
-      ///container for the radial orbitals
-      aligned_vector<ROT*> Rnl;
-#if defined(USE_MULTIQUINTIC)
-      ///Replace Rnl, Grids
-      MultiQuinticSpline1D<value_type> *MultiRnl;
-#endif
       ///temporary storage 
       VectorSoaContainer<value_type,4> tempS;
 
@@ -64,18 +60,8 @@ namespace qmcplusplus
 
       SoaAtomicBasisSet<ROT,SH>* makeClone() const
       {
-#if defined(USE_MULTIQUINTIC)
         SoaAtomicBasisSet<ROT,SH>* myclone=new SoaAtomicBasisSet<ROT,SH>(*this);
         myclone->MultiRnl=MultiRnl->makeClone();
-#else
-        grid_type *grid_clone=Grids[0]->makeClone();
-        SoaAtomicBasisSet<ROT,SH>* myclone=new SoaAtomicBasisSet<ROT,SH>(*this);
-        myclone->Grids[0]=grid_clone;
-        for(int i=0; i<Rnl.size(); ++i)
-        {
-          myclone->Rnl[i]=new ROT(*Rnl[i],grid_clone,i==0);
-        }
-#endif
         return myclone;
       }
 
@@ -120,11 +106,7 @@ namespace qmcplusplus
       template<typename T>
       inline void setRmax(T rmax)
       {
-#if defined(USE_MULTIQUINTIC)
         Rmax=(rmax>0)? rmax: MultiRnl->rmax();
-#else
-        Rmax=(rmax>0)? rmax:Grids[0]->rmax();
-#endif
       }
 
       /** reset the target ParticleSet
@@ -155,23 +137,11 @@ namespace qmcplusplus
           const T x=-dr[0], y=-dr[1], z=-dr[2];
           Ylm.evaluateVGL(x,y,z);
 
-          //T phi[nl_max]; 
-          //T dphi[nl_max];
-          //T d2phi[nl_max];
-
           //one can assert the alignment
           value_type* restrict phi=tempS.data(0);
           value_type* restrict dphi=tempS.data(1);
           value_type* restrict d2phi=tempS.data(2);
-#if defined(USE_MULTIQUINTIC)
           MultiRnl->evaluate(r,phi,dphi,d2phi);
-#else
-          const size_t nl_max=RnlID.size();
-          for(size_t nl=0; nl<nl_max; ++nl)
-          {
-            phi[nl]=Rnl[nl]->evaluate(r,dphi[nl],d2phi[nl]);
-          }
-#endif
 
           //V,Gx,Gy,Gz,L
           T* restrict psi   =vgl.data(0)+offset; const T* restrict ylm_v=Ylm[0]; //value
@@ -215,13 +185,7 @@ namespace qmcplusplus
           value_type* restrict phi_r=tempS.data(1);
 
           Ylm.evaluateV(-dr[0],-dr[1],-dr[2],ylm_v);
-#if defined(USE_MULTIQUINTIC)
           MultiRnl->evaluate(r,phi_r);
-#else
-          const int nl_max=RnlID.size();
-          for(size_t nl=0; nl<nl_max; ++nl)
-            phi_r[nl]=Rnl[nl]->evaluate(r);
-#endif
 
           for(size_t ib=0; ib<BasisSetSize; ++ib)
           {

@@ -17,7 +17,6 @@
 #ifndef QMCPLUSPLUS_NGFUNCTOR_FOR_SOA_H
 #define QMCPLUSPLUS_NGFUNCTOR_FOR_SOA_H
 
-#include "Numerics/OneDimCubicSpline.h"
 #include "Numerics/OneDimQuinticSpline.h"
 #include "Numerics/OptimizableFunctorBase.h"
 
@@ -31,11 +30,7 @@ namespace qmcplusplus
     typedef T                    value_type;
     typedef T                    point_type;
     typedef OneDimGridBase<real_type>    grid_type;
-#if QMC_BUILD_LEVEL>2
     typedef OneDimQuinticSpline<real_type> functor_type;
-#else
-    typedef OneDimCubicSpline<real_type> functor_type;
-#endif
     functor_type myFunc;
     real_type Y, dY, d2Y, d3Y;
 

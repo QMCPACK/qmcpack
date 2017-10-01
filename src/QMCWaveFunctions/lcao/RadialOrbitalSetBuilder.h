@@ -26,6 +26,9 @@
 #include "Numerics/GaussianBasisSet.h"
 #include "Numerics/SlaterBasisSet.h"
 #include "Numerics/Transform2GridFunctor.h"
+#include "Numerics/OneDimCubicSpline.h"
+#include "Numerics/OneDimQuinticSpline.h"
+#include "Numerics/OptimizableFunctorBase.h"
 #include "QMCFactory/OneDimGridFactory.h"
 
 namespace qmcplusplus
@@ -101,10 +104,11 @@ namespace qmcplusplus
  *   - any number of radial orbitals
  */
 template<typename COT>
-class RadialOrbitalSetBuilder: public QMCTraits
+class RadialOrbitalSetBuilder //: public QMCTraits
 {
 
 public:
+  typedef QMCTraits::RealType RealType;
   typedef typename COT::RadialOrbital_t RadialOrbitalType;
   typedef typename COT::grid_type  GridType;
 
@@ -119,8 +123,6 @@ public:
   RealType m_rcut;
   ///the quantum number of this node
   QuantumNumberType m_nlms;
-  ///the species
-  std::string m_species;
   ///type of input function
   std::string m_infunctype;
 
@@ -226,7 +228,6 @@ private:
     RadialOrbitalSetBuilder<COT>::setOrbitalSet(COT* oset, const std::string& acenter)
     {
       m_orbitals = oset;
-      m_species = acenter;
     }
 
   template<typename COT>
@@ -325,7 +326,7 @@ private:
       //if(tptr) radtype = (const char*)tptr;
       //tptr = xmlGetProp(cur,(const xmlChar*)"rmax");
       //if(tptr) m_rcut = atof((const char*)tptr);
-      int lastRnl = m_orbitals->Rnl.size();
+      int lastRnl = m_orbitals->RnlID.size();
       m_nlms = nlms;
       if(radtype == "Gaussian" || radtype == "GTO")
       {
@@ -339,13 +340,6 @@ private:
       {
         addNumerical(cur,dsname);
       }
-#if !defined(USE_MULTIQUINTIC)
-      if(lastRnl && m_orbitals->Rnl.size()> lastRnl)
-      {
-        app_log() << "\tSetting GridManager of " << lastRnl << " radial orbital to false" << std::endl;
-        m_orbitals->Rnl[lastRnl]->setGridManager(false);
-      }
-#endif
       return true;
     }
 
@@ -353,7 +347,6 @@ private:
   void RadialOrbitalSetBuilder<COT>::addGaussian(xmlNodePtr cur)
   {
     int L= m_nlms[1];
-#if defined(USE_MULTIQUINTIC)
     using gto_type=GaussianCombo<double>;
     gto_type* gset=new gto_type(L,Normalized);
     gset->putBasisGroup(cur);
@@ -361,22 +354,7 @@ private:
     double r0=find_cutoff(*gset,100.);
     m_rcut_safe=std::max(m_rcut_safe,r0);
     radTemp.push_back(new A2NTransformer<RealType,gto_type>(gset));
-
-    //add this basisGroup
-    //gtoTemp.push_back(gset);
-    m_orbitals->Rnl.push_back(nullptr); //CLEANUP
     m_orbitals->RnlID.push_back(m_nlms);
-#else
-    GaussianCombo<RealType> gset(L,Normalized);
-    gset.putBasisGroup(cur);
-    GridType* agrid = m_orbitals->Grids[0];
-    RadialOrbitalType *radorb = new RadialOrbitalType(agrid);
-    if(m_rcut<0) m_rcut = agrid->rmax();
-    Transform2GridFunctor<GaussianCombo<RealType>,RadialOrbitalType> transform(gset, *radorb);
-    transform.generate(agrid->rmin(),m_rcut,agrid->size());
-    m_orbitals->Rnl.push_back(radorb);
-    m_orbitals->RnlID.push_back(m_nlms);
-#endif
   }
 
 /* Finalize this set using the common grid
@@ -390,7 +368,6 @@ private:
   template<typename COT>
   void RadialOrbitalSetBuilder<COT>::finalize()
   {
-#if defined(USE_MULTIQUINTIC)
     MultiQuinticSpline1D<RealType>* multiset=new MultiQuinticSpline1D<RealType>;
     int norbs=radTemp.size();
 
@@ -412,16 +389,11 @@ private:
     m_orbitals->setRmax(static_cast<RealType>(m_rcut_safe));
 
     delete grid_prec;
-#else
-    m_orbitals->setRmax(m_rcut);
-#endif
-
   }
 
   template<typename COT>
   void RadialOrbitalSetBuilder<COT>::addSlater(xmlNodePtr cur)
   {
-#if defined(USE_MULTIQUINTIC)
     using sto_type=SlaterCombo<double>;
     sto_type* gset=new sto_type(m_nlms[1],Normalized);
 
@@ -429,28 +401,13 @@ private:
 
     radTemp.push_back(new A2NTransformer<RealType,sto_type>(gset));
     m_orbitals->RnlID.push_back(m_nlms);
-#else
-    ////pointer to the grid
-    GridType* agrid = m_orbitals->Grids[0];
-    RadialOrbitalType *radorb = new RadialOrbitalType(agrid);
-    SlaterCombo<RealType> sto(m_nlms[1],Normalized);
-    sto.putBasisGroup(cur);
-    //spline the slater type orbital
-    Transform2GridFunctor<SlaterCombo<RealType>,RadialOrbitalType> transform(sto, *radorb);
-    transform.generate(agrid->rmin(), agrid->rmax(),agrid->size());
-    //transform.generate(agrid->rmax());
-    //add the radial orbital to the list
-    m_orbitals->Rnl.push_back(radorb);
-    m_orbitals->RnlID.push_back(m_nlms);
-#endif
   }
 
   template<typename COT>
   void RadialOrbitalSetBuilder<COT>::addNumerical(xmlNodePtr cur, const std::string& dsname)
   {
-#if defined(USE_MULTIQUINTIC)
     APP_ABORT("RadialOrbitalSetBuilder<COT>::addNumerical is not working with multiquintic");
-#else
+#if 0
     int imin = 0;
     OhmmsAttributeSet aAttrib;
     aAttrib.add(imin,"imin");

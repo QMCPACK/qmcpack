@@ -84,15 +84,16 @@ IF(OHMMS_DIM MATCHES 3)
     Jastrow/CBSOBuilder.cpp
     )
 
-
   SET(FERMION_SRCS ${FERMION_SRCS}
     MolecularOrbitals/STOBuilder.cpp
     MolecularOrbitals/GTOBuilder.cpp
     MolecularOrbitals/NGOBuilder.cpp
     MolecularOrbitals/BsplineAOBuilder.cpp
     )
+
   IF(NOT QMC_COMPLEX AND ENABLE_SOA)
-    SET(FERMION_SRCS ${FERMION_SRCS} lcao/LCAOrbitalBuilder.cpp)
+    #lcao is deigned for localized orbitals in bulk and complex
+    SET(FERMION_SRCS ${FERMION_SRCS}  lcao/LCAOrbitalSet.cpp lcao/LCAOrbitalBuilder.cpp)
   ENDIF(NOT QMC_COMPLEX AND ENABLE_SOA)
 
   IF(QMC_CUDA)
