@@ -29,7 +29,7 @@ namespace qmcplusplus
       for(int iat=0; iat<NumIons; iat++)
         if(PP[iat])
         {
-          PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
+          PP[iat]->randomize_grid();
           Value+=PP[iat]->evaluateValueAndDerivatives(P,iat,Psi,optvars,dlogpsi,dhpsioverpsi);
         }
       return Value;

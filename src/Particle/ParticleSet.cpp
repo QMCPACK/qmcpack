@@ -50,7 +50,7 @@ void add_p_timer(std::vector<NewTimer*>& timers)
 }
 
 ParticleSet::ParticleSet()
-  : UseBoundBox(true), UseSphereUpdate(true), IsGrouped(true)
+  : UseBoundBox(true), IsGrouped(true)
   , ThreadID(0), SK(0), ParentName("0")
   , quantum_domain(classical), TotalNum(0)
   , SameMass(true), myTwist(0.0), activePtcl(-1)
@@ -60,7 +60,7 @@ ParticleSet::ParticleSet()
 }
 
 ParticleSet::ParticleSet(const ParticleSet& p)
-  : UseBoundBox(p.UseBoundBox), UseSphereUpdate(p.UseSphereUpdate),IsGrouped(p.IsGrouped)
+  : UseBoundBox(p.UseBoundBox), IsGrouped(p.IsGrouped)
   , ThreadID(0), mySpecies(p.getSpeciesSet()),SK(0), ParentName(p.parentName())
   , SameMass(true), myTwist(0.0), activePtcl(-1)
 {
@@ -99,8 +99,6 @@ ParticleSet::ParticleSet(const ParticleSet& p)
     //createSK();
     //SK->DoUpdate=p.SK->DoUpdate;
   }
-  if (p.Sphere.size())
-    resizeSphere(p.Sphere.size());
   add_p_timer(myTimers);
   myTwist=p.myTwist;
 
@@ -113,7 +111,6 @@ ParticleSet::~ParticleSet()
   delete_iter(DistTables.begin(), DistTables.end());
   if (SK)
     delete SK;
-  delete_iter(Sphere.begin(), Sphere.end());
 }
 
 void ParticleSet::create(int numPtcl)
@@ -346,7 +343,6 @@ void ParticleSet::checkBoundBox(RealType rb)
         << "ParticleSet::checkBoundBox "
         << rb << "> SimulationCellRadius=" << Lattice.SimulationCellRadius
         << "\n Using SLOW method for the sphere update. " << std::endl;
-    UseSphereUpdate=false;
   }
 }
 //void ParticleSet::setUpdateMode(int updatemode) {
@@ -782,20 +778,6 @@ void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
   /// To fix, hazzard 0;
   for (size_t i=0; i< DistTables.size(); ++i)
     DistTables[i]->move(*this,newpos);
-}
-
-
-/** resize Sphere by the TotalNum
- * @param nc number of centers to which Spherical grid will be assigned.
- */
-void ParticleSet::resizeSphere(int nc)
-{
-  int nsadd=nc-Sphere.size();
-  while (nsadd>0)
-  {
-    Sphere.push_back(new ParticlePos_t);
-    --nsadd;
-  }
 }
 
 void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)

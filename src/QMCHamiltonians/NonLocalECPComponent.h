@@ -110,7 +110,7 @@ struct NonLocalECPComponent: public QMCTraits
 
   void resize_warrays(int n,int m,int l);
 
-  void randomize_grid(ParticleSet::ParticlePos_t& sphere, bool randomize);
+  void randomize_grid();
   template<typename T> void randomize_grid(std::vector<T> &sphere);
 
   RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& Psi, 

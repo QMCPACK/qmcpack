@@ -120,7 +120,6 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   if(hasNonLocalPot)
   {
     //resize the sphere
-    targetPtcl.resizeSphere(IonConfig.getTotalNum());
     RealType rc2=0.0;
 #ifdef QMC_CUDA
     NonLocalECPotential_CUDA* apot =
@@ -147,20 +146,6 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     targetPtcl.checkBoundBox(2*rc2);
 
     targetH.addOperator(apot,"NonLocalECP");
-    for(int ic=0; ic<IonConfig.getTotalNum(); ic++)
-    {
-      int ig=IonConfig.GroupID[ic];
-      if(nonLocalPot[ig])
-      {
-        if(nonLocalPot[ig]->nknot)
-        {
-          targetPtcl.Sphere[ic]->resize(nknot_max);
-          //targetPsi.resizeSphere(nknot_max);
-          //targetPtcl.Sphere[ic]->resize(nonLocalPot[ig]->nknot);
-          //targetPsi.resizeSphere(nonLocalPot[ig]->nknot);
-        }
-      }
-    }
   }
 
   //app_log() << "Checking THIS " << std::endl;
