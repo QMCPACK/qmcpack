@@ -569,7 +569,7 @@ OptimizableSPOSet::evaluate_notranspose
       for (int iorb=0; iorb<N; iorb++)
       {
         logdet(iel,iorb) = GSValMatrix(iel,iorb);
-        const auto restrict cptr=(*C)[iorb];
+        const ValueType *restrict cptr=(*C)[iorb];
         for (int ibasis=0; ibasis<M; ibasis++)
           logdet(iel,iorb) += cptr[ibasis]*GSValMatrix(iel,N+ibasis);
       }
@@ -579,7 +579,7 @@ OptimizableSPOSet::evaluate_notranspose
     for (int iel=0; iel<N; iel++)
       for (int iorb=0; iorb<N; iorb++)
       {
-        const auto restrict cptr=(*C)[iorb];
+        const ValueType *restrict cptr=(*C)[iorb];
         d2logdet(iel,iorb) = GSLaplMatrix(iel,iorb);
         for (int ibasis=0; ibasis<M; ibasis++)
           d2logdet(iel,iorb) += cptr[ibasis]*GSLaplMatrix(iel,N+ibasis);
@@ -589,7 +589,7 @@ OptimizableSPOSet::evaluate_notranspose
     for (int i=0; i<N; i++)
       for (int iorb=0; iorb<N; iorb++)
       {
-        const auto restrict cptr=(*C)[iorb];
+        const ValueType *restrict cptr=(*C)[iorb];
         dlogdet(i,iorb) = GSGradMatrix(i,iorb);
         for (int n=0; n<M; n++)
           dlogdet(i,iorb) += cptr[n]* GSGradMatrix(i,N+n);
