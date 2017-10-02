@@ -28,6 +28,11 @@ SlaterDet::SlaterDet(ParticleSet& targetPtcl)
 {
   Optimizable = false;
   OrbitalName = "SlaterDet";
+
+  //iat>LastUpSpin is used to sepect the spin channel of iat particle
+  LastUpSpin=targetPtcl.last(0)-1;
+
+#if defined(QMC_CUDA)
   M.resize(targetPtcl.groups() + 1, 0);
   for (int i = 0; i < M.size(); ++i)
     M[i] = targetPtcl.first(i);
@@ -35,7 +40,9 @@ SlaterDet::SlaterDet(ParticleSet& targetPtcl)
   for (int i = 0; i < targetPtcl.groups(); ++i)
     for (int j = targetPtcl.first(i); j < targetPtcl.last(i); ++j)
       DetID[j] = i;
-  Dets.resize(targetPtcl.groups(), 0);
+#endif
+
+  Dets.resize(targetPtcl.groups(), nullptr);
 }
 
 ///destructor
@@ -62,17 +69,13 @@ void SlaterDet::add(SPOSetBase* sposet, const std::string& aname)
 ///add a new DiracDeterminant to the list of determinants
 void SlaterDet::add(Determinant_t* det, int ispin)
 {
-  if (Dets[ispin])
+  if (Dets[ispin]!=nullptr)
   {
     APP_ABORT("SlaterDet::add(Determinant_t* det, int ispin) is alreaded instantiated.");
   }
   else
     Dets[ispin] = det;
   Optimizable = Optimizable || det->Optimizable;
-  //int last=Dets.size();
-  //Dets.push_back(det);
-  //M[last+1]=M[last]+Dets[last]->rows();
-  //DetID.insert(DetID.end(),det->rows(),last);
 }
 
 void SlaterDet::checkInVariables(opt_variables_type& active)

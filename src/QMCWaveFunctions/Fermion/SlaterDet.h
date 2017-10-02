@@ -40,9 +40,12 @@ class SlaterDet: public OrbitalBase, public FermionBase
 public:
   typedef DiracDeterminantBase Determinant_t;
   ///container for the DiracDeterminants
+  size_t LastUpSpin;
   std::vector<Determinant_t*>  Dets;
+#if defined(QMC_CUDA)
   std::vector<int> M;
   std::vector<int> DetID;
+#endif
   std::map<std::string,SPOSetBasePtr> mySPOSet;
 
   /**  constructor
@@ -151,7 +154,11 @@ public:
                          ParticleSet::ParticleGradient_t& dG,
                          ParticleSet::ParticleLaplacian_t& dL)
   {
+#if defined(QMC_CUDA)
     return Dets[DetID[iat]]->ratio(P,iat,dG,dL);
+#else
+    return Dets[iat>LastUpSpin]->ratio(P,iat,dG,dL);
+#endif
   }
 
   virtual
@@ -163,25 +170,41 @@ public:
   virtual
   inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
+#if defined(QMC_CUDA)
     return Dets[DetID[iat]]->ratioGrad(P,iat,grad_iat);
+#else
+    return Dets[iat>LastUpSpin]->ratioGrad(P,iat,grad_iat);
+#endif
   }
 
   virtual
   inline ValueType alternateRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
+#if defined(QMC_CUDA)
     return Dets[DetID[iat]]->alternateRatioGrad(P,iat,grad_iat);
+#else
+    return Dets[iat>LastUpSpin]->alternateRatioGrad(P,iat,grad_iat);
+#endif
   }
 
   virtual
   GradType evalGrad(ParticleSet& P, int iat)
   {
+#if defined(QMC_CUDA)
     return Dets[DetID[iat]]->evalGrad(P,iat);
+#else
+    return Dets[iat>LastUpSpin]->evalGrad(P,iat);
+#endif
   }
 
   virtual
   GradType alternateEvalGrad(ParticleSet& P, int iat)
   {
+#if defined(QMC_CUDA)
     return Dets[DetID[iat]]->alternateEvalGrad(P,iat);
+#else
+    return Dets[iat>LastUpSpin]->alternateEvalGrad(P,iat);
+#endif
   }
 
   virtual
@@ -209,14 +232,22 @@ public:
                             ParticleSet::ParticleGradient_t& dG,
                             ParticleSet::ParticleLaplacian_t& dL)
   {
+#if defined(QMC_CUDA)
     ValueType r = Dets[DetID[iat]]->ratio(P,iat,dG,dL);
+#else
+    ValueType r = Dets[iat>LastUpSpin]->ratio(P,iat,dG,dL);
+#endif
     return evaluateLogAndPhase(r,PhaseValue);
   }
 
   virtual
   inline void restore(int iat)
   {
+#if defined(QMC_CUDA)
     return Dets[DetID[iat]]->restore(iat);
+#else
+    return Dets[iat>LastUpSpin]->restore(iat);
+#endif
   }
 
   RealType getAlternatePhaseDiff()
@@ -229,19 +260,31 @@ public:
 
   RealType getAlternatePhaseDiff(int iat)
   {
+#if defined(QMC_CUDA)
     return Dets[DetID[iat]]->getAlternatePhaseDiff();
+#else
+    return Dets[iat>LastUpSpin]->getAlternatePhaseDiff();
+#endif
   }
 
   virtual
   inline void acceptMove(ParticleSet& P, int iat)
   {
+#if defined(QMC_CUDA)
     Dets[DetID[iat]]->acceptMove(P,iat);
+#else
+    Dets[iat>LastUpSpin]->acceptMove(P,iat);
+#endif
   }
 
   virtual
   inline ValueType ratio(ParticleSet& P, int iat)
   {
+#if defined(QMC_CUDA)
     return Dets[DetID[iat]]->ratio(P,iat);
+#else
+    return Dets[iat>LastUpSpin]->ratio(P,iat);
+#endif
   }
 
   virtual
@@ -266,7 +309,11 @@ public:
               ParticleSet::ParticleLaplacian_t& dL,
               int iat)
   {
+#if defined(QMC_CUDA)
     return Dets[DetID[iat]]->update(P,dG,dL,iat);
+#else
+    return Dets[iat>LastUpSpin]->update(P,dG,dL,iat);
+#endif
   }
 
   virtual
