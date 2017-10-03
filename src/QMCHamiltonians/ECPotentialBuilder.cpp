@@ -50,10 +50,12 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     nonLocalPot.resize(ng,0);
   }
   std::string ecpFormat("table");
+  std::string NLPP_algo("default");
   std::string pbc("yes");
   std::string forces("no");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(ecpFormat,"format");
+  pAttrib.add(NLPP_algo,"algorithm");
   pAttrib.add(pbc,"pbc");
   pAttrib.add(forces,"forces");
   pAttrib.put(cur);
@@ -126,7 +128,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       new NonLocalECPotential_CUDA(IonConfig,targetPtcl,targetPsi,usePBC,doForces);
 #else
     NonLocalECPotential* apot =
-      new NonLocalECPotential(IonConfig,targetPtcl,targetPsi, doForces);
+      new NonLocalECPotential(IonConfig,targetPtcl,targetPsi, doForces, NLPP_algo=="VP");
 #endif
     int nknot_max=0;
     for(int i=0; i<nonLocalPot.size(); i++)

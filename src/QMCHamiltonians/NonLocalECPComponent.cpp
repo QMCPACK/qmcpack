@@ -662,12 +662,9 @@ NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat,
 #endif
 }
 
-
 ///Randomly rotate sgrid_m
 void NonLocalECPComponent::randomize_grid()
 {
-  //const RealType twopi(6.28318530718);
-  //RealType phi(twopi*Random()),psi(twopi*Random()),cth(Random()-0.5),
   RealType phi(TWOPI*((*myRNG)())), psi(TWOPI*((*myRNG)())), cth(((*myRNG)())-0.5);
   RealType sph(std::sin(phi)),cph(std::cos(phi)),
            sth(std::sqrt(1.0-cth*cth)),sps(std::sin(psi)),
@@ -675,16 +672,8 @@ void NonLocalECPComponent::randomize_grid()
   TensorType rmat( cph*cth*cps-sph*sps, sph*cth*cps+cph*sps,-sth*cps,
                    -cph*cth*sps-sph*cps,-sph*cth*sps+cph*cps, sth*sps,
                    cph*sth,             sph*sth,             cth     );
-  SpherGridType::iterator it(sgridxyz_m.begin());
-  SpherGridType::iterator it_end(sgridxyz_m.end());
-  SpherGridType::iterator jt(rrotsgrid_m.begin());
-  int ic=0;
-  while(it != it_end)
-  {
-    *jt = dot(rmat,*it);
-    ++it;
-    ++jt;
-  }
+  for(int i=0; i<sgridxyz_m.size(); i++)
+    rrotsgrid_m[i] = dot(rmat,sgridxyz_m[i]);
 }
 
 template<typename T>
@@ -700,7 +689,6 @@ void NonLocalECPComponent::randomize_grid(std::vector<T> &sphere)
   SpherGridType::iterator it(sgridxyz_m.begin());
   SpherGridType::iterator it_end(sgridxyz_m.end());
   SpherGridType::iterator jt(rrotsgrid_m.begin());
-  int ic=0;
   while(it != it_end)
   {
     *jt = dot(rmat,*it);
