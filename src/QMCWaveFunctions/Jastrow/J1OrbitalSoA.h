@@ -141,7 +141,7 @@ struct  J1OrbitalSoA : public OrbitalBase
       for(int jg=0; jg<NumGroups; ++jg)
       {
         if(F[jg]!=nullptr) 
-          curAt += F[jg]->evaluateV(Ions.first(jg), Ions.last(jg), dist, DistCompressed.data() );
+          curAt += F[jg]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist, DistCompressed.data());
       }
     }
     else
@@ -209,7 +209,7 @@ struct  J1OrbitalSoA : public OrbitalBase
       for(int jg=0; jg<NumGroups; ++jg)
       {
         if(F[jg]==nullptr) continue;
-        F[jg]->evaluateVGL( Ions.first(jg), Ions.last(jg), dist, 
+        F[jg]->evaluateVGL(-1, Ions.first(jg), Ions.last(jg), dist,
             U.data(), dU.data(), d2U.data(), DistCompressed.data(), DistIndice.data());
       }
     }

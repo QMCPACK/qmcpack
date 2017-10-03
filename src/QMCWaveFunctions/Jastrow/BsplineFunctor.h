@@ -121,6 +121,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
   }
 
   /** compute value, gradient and laplacian for [iStart, iEnd) pairs
+   * @param iat dummy
    * @param iStart starting particle index
    * @param iEnd ending particle index
    * @param _distArray distance arrUay
@@ -130,7 +131,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
    * @param distArrayCompressed temp storage to filter r_j < cutoff_radius
    * @param distIndices temp storage for the compressed index
    */
-  void evaluateVGL(const int iStart, const int iEnd, 
+  void evaluateVGL(const int iat, const int iStart, const int iEnd,
       const T* _distArray,  
       T* restrict _valArray,
       T* restrict _gradArray, 
@@ -138,13 +139,14 @@ struct BsplineFunctor: public OptimizableFunctorBase
       T* restrict distArrayCompressed, int* restrict distIndices ) const;
 
   /** evaluate sum of the pair potentials for [iStart,iEnd)
+   * @param iat dummy
    * @param iStart starting particle index
    * @param iEnd ending particle index
    * @param _distArray distance arrUay
    * @param distArrayCompressed temp storage to filter r_j < cutoff_radius
    * @return \f$\sum u(r_j)\f$ for r_j < cutoff_radius
    */
-  T evaluateV(const int iStart, const int iEnd, 
+  T evaluateV(const int iat, const int iStart, const int iEnd,
       const T* restrict _distArray, 
       T* restrict distArrayCompressed) const;
 
@@ -644,7 +646,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
 
 template<typename T>
 inline T 
-BsplineFunctor<T>::evaluateV(const int iStart, const int iEnd,
+BsplineFunctor<T>::evaluateV(const int iat, const int iStart, const int iEnd,
     const T* restrict _distArray, T* restrict distArrayCompressed ) const
 {
   const real_type* restrict distArray = _distArray + iStart;
@@ -681,7 +683,7 @@ BsplineFunctor<T>::evaluateV(const int iStart, const int iEnd,
 }
 
 template<typename T> 
-inline void BsplineFunctor<T>::evaluateVGL(const int iStart, const int iEnd, 
+inline void BsplineFunctor<T>::evaluateVGL(const int iat, const int iStart, const int iEnd,
     const T* _distArray,  T* restrict _valArray, 
     T* restrict _gradArray, T* restrict _laplArray, 
     T* restrict distArrayCompressed, int* restrict distIndices ) const

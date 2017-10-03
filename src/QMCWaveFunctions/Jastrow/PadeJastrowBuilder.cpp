@@ -14,6 +14,7 @@
     
 #include "QMCWaveFunctions/Jastrow/PadeJastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/DiffOrbitalBase.h"
 #include "Utilities/IteratorUtility.h"
@@ -53,7 +54,11 @@ bool PadeJastrowBuilder::put(xmlNodePtr cur)
   if(sourceOpt == targetPtcl.getName())
   {
     //two-body
+#if defined(ENABLE_SOA)
+    typedef J2OrbitalSoA<RadFuncType> J2Type;
+#else
     typedef TwoBodyJastrowOrbital<RadFuncType> J2Type;
+#endif
     typedef DiffTwoBodyJastrowOrbital<RadFuncType> dJ2Type;
     int taskid=(targetPsi.is_manager())?targetPsi.getGroupID():-1;
     J2Type *J2 = new J2Type(targetPtcl,taskid);
