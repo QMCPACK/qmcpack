@@ -27,19 +27,24 @@ namespace qmcplusplus
    * Only for benchmarking.
    */
   template<typename FN>
-    struct MultiFunctor1D
+    struct MultiFunctorAdapter
     {
       typedef typename FN::real_type value_type;
       typedef LogGridLight<value_type> grid_type;
       typedef FN single_type;
       aligned_vector<single_type*> Rnl;
 
-      MultiFunctor1D<FN>* makeClone() const
+      MultiFunctorAdapter<FN>* makeClone() const
       {
-        MultiFunctor1D<FN>* clone=new MultiFunctor1D<FN>(*this);
+        MultiFunctorAdapter<FN>* clone=new MultiFunctorAdapter<FN>(*this);
         for(size_t i=0; i<Rnl.size(); ++i)
           clone->Rnl[i]=new single_type(*Rnl[i]);
         return clone;
+      }
+
+      ~MultiFunctorAdapter()
+      {
+        for(size_t i=0; i<Rnl.size(); ++i) delete Rnl[i];
       }
 
       inline value_type rmax() const
@@ -68,10 +73,10 @@ namespace qmcplusplus
     };
 
   template<typename FN, typename SH>
-    struct RadialOrbitalSetBuilder<SoaAtomicBasisSet<MultiFunctor1D<FN>, SH> >
+    struct RadialOrbitalSetBuilder<SoaAtomicBasisSet<MultiFunctorAdapter<FN>, SH> >
     {
-      typedef SoaAtomicBasisSet<MultiFunctor1D<FN>,SH> COT;
-      typedef MultiFunctor1D<FN>                       RadialOrbital_t;
+      typedef SoaAtomicBasisSet<MultiFunctorAdapter<FN>,SH> COT;
+      typedef MultiFunctorAdapter<FN>                       RadialOrbital_t;
       typedef typename RadialOrbital_t::single_type    single_type;
    
       ///true, if the RadialOrbitalType is normalized
