@@ -223,11 +223,11 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
 
     TT res=TT();
     if (bc_sign & 1)
-#pragma omp simd reduction(+:res)
+      #pragma omp simd reduction(+:res)
       for(size_t psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
         res -= vtmp[psiIndex-first_spo]*arow[psiIndex];
     else
-#pragma omp simd reduction(+:res)
+      #pragma omp simd reduction(+:res)
       for(size_t psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
         res += vtmp[psiIndex-first_spo]*arow[psiIndex];
     return res;
@@ -263,7 +263,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
 
     if (bc_sign & 1)
     {
-#pragma omp simd
+      #pragma omp simd
       for(size_t psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
       {
         const size_t j=psiIndex-first_spo;
@@ -276,7 +276,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     }
     else
     {
-#pragma omp simd
+      #pragma omp simd
       for(size_t psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
       {
         const size_t j=psiIndex-first_spo;
@@ -365,7 +365,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const size_t N=last_spo-first_spo;
     if (bc_sign & 1)
     {
-#pragma omp simd
+      #pragma omp simd
       for(int j=0; j<N; ++j)
       {
         psi [j]=-myV[j];
@@ -377,7 +377,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     }
     else
     {
-#pragma omp simd
+      #pragma omp simd
       for(int j=0; j<N; ++j)
       {
         psi [j]=myV[j];
@@ -445,7 +445,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     ST* restrict gg_zz=grad_grad_psi.data(8)+first_spo; ASSUME_ALIGNED(gg_zz);
 
     const ST cone = (bc_sign &1)? -1:1;
-#pragma simd
+    #pragma simd
     for (size_t j=0; j<N; ++j)
     {
       const ST kX=k0[j];
