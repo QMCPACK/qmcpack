@@ -40,12 +40,9 @@ class SlaterDet: public OrbitalBase, public FermionBase
 public:
   typedef DiracDeterminantBase Determinant_t;
   ///container for the DiracDeterminants
-  size_t LastUpSpin;
   std::vector<Determinant_t*>  Dets;
-#if defined(QMC_CUDA)
-  std::vector<int> M;
-  std::vector<int> DetID;
-#endif
+  ///the last particle of each group
+  std::vector<int> Last;
   std::map<std::string,SPOSetBasePtr> mySPOSet;
 
   /**  constructor
@@ -56,6 +53,15 @@ public:
 
   ///destructor
   ~SlaterDet();
+
+  //get Det ID
+  inline int getDetID(const int iat)
+  {
+    int id=0;
+    while(iat>Last[id])
+      id++;
+    return id;
+  }
 
   ///add a SPOSet
   void add(SPOSetBasePtr sposet, const std::string& aname);
@@ -154,11 +160,7 @@ public:
                          ParticleSet::ParticleGradient_t& dG,
                          ParticleSet::ParticleLaplacian_t& dL)
   {
-#if defined(QMC_CUDA)
-    return Dets[DetID[iat]]->ratio(P,iat,dG,dL);
-#else
-    return Dets[iat>LastUpSpin]->ratio(P,iat,dG,dL);
-#endif
+    return Dets[getDetID(iat)]->ratio(P,iat,dG,dL);
   }
 
   virtual
@@ -170,41 +172,25 @@ public:
   virtual
   inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
-#if defined(QMC_CUDA)
-    return Dets[DetID[iat]]->ratioGrad(P,iat,grad_iat);
-#else
-    return Dets[iat>LastUpSpin]->ratioGrad(P,iat,grad_iat);
-#endif
+    return Dets[getDetID(iat)]->ratioGrad(P,iat,grad_iat);
   }
 
   virtual
   inline ValueType alternateRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
-#if defined(QMC_CUDA)
-    return Dets[DetID[iat]]->alternateRatioGrad(P,iat,grad_iat);
-#else
-    return Dets[iat>LastUpSpin]->alternateRatioGrad(P,iat,grad_iat);
-#endif
+    return Dets[getDetID(iat)]->alternateRatioGrad(P,iat,grad_iat);
   }
 
   virtual
   GradType evalGrad(ParticleSet& P, int iat)
   {
-#if defined(QMC_CUDA)
-    return Dets[DetID[iat]]->evalGrad(P,iat);
-#else
-    return Dets[iat>LastUpSpin]->evalGrad(P,iat);
-#endif
+    return Dets[getDetID(iat)]->evalGrad(P,iat);
   }
 
   virtual
   GradType alternateEvalGrad(ParticleSet& P, int iat)
   {
-#if defined(QMC_CUDA)
-    return Dets[DetID[iat]]->alternateEvalGrad(P,iat);
-#else
-    return Dets[iat>LastUpSpin]->alternateEvalGrad(P,iat);
-#endif
+    return Dets[getDetID(iat)]->alternateEvalGrad(P,iat);
   }
 
   virtual
@@ -232,22 +218,14 @@ public:
                             ParticleSet::ParticleGradient_t& dG,
                             ParticleSet::ParticleLaplacian_t& dL)
   {
-#if defined(QMC_CUDA)
-    ValueType r = Dets[DetID[iat]]->ratio(P,iat,dG,dL);
-#else
-    ValueType r = Dets[iat>LastUpSpin]->ratio(P,iat,dG,dL);
-#endif
+    ValueType r = Dets[getDetID(iat)]->ratio(P,iat,dG,dL);
     return evaluateLogAndPhase(r,PhaseValue);
   }
 
   virtual
   inline void restore(int iat)
   {
-#if defined(QMC_CUDA)
-    return Dets[DetID[iat]]->restore(iat);
-#else
-    return Dets[iat>LastUpSpin]->restore(iat);
-#endif
+    return Dets[getDetID(iat)]->restore(iat);
   }
 
   RealType getAlternatePhaseDiff()
@@ -260,31 +238,19 @@ public:
 
   RealType getAlternatePhaseDiff(int iat)
   {
-#if defined(QMC_CUDA)
-    return Dets[DetID[iat]]->getAlternatePhaseDiff();
-#else
-    return Dets[iat>LastUpSpin]->getAlternatePhaseDiff();
-#endif
+    return Dets[getDetID(iat)]->getAlternatePhaseDiff();
   }
 
   virtual
   inline void acceptMove(ParticleSet& P, int iat)
   {
-#if defined(QMC_CUDA)
-    Dets[DetID[iat]]->acceptMove(P,iat);
-#else
-    Dets[iat>LastUpSpin]->acceptMove(P,iat);
-#endif
+    Dets[getDetID(iat)]->acceptMove(P,iat);
   }
 
   virtual
   inline ValueType ratio(ParticleSet& P, int iat)
   {
-#if defined(QMC_CUDA)
-    return Dets[DetID[iat]]->ratio(P,iat);
-#else
-    return Dets[iat>LastUpSpin]->ratio(P,iat);
-#endif
+    return Dets[getDetID(iat)]->ratio(P,iat);
   }
 
   virtual
@@ -309,11 +275,7 @@ public:
               ParticleSet::ParticleLaplacian_t& dL,
               int iat)
   {
-#if defined(QMC_CUDA)
-    return Dets[DetID[iat]]->update(P,dG,dL,iat);
-#else
-    return Dets[iat>LastUpSpin]->update(P,dG,dL,iat);
-#endif
+    return Dets[getDetID(iat)]->update(P,dG,dL,iat);
   }
 
   virtual
@@ -373,21 +335,21 @@ public:
   ratio (MCWalkerConfiguration &W, int iat
          , std::vector<ValueType> &psi_ratios,std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
   {
-    Dets[DetID[iat]]->ratio(W, iat, psi_ratios, grad, lapl);
+    Dets[getDetID(iat)]->ratio(W, iat, psi_ratios, grad, lapl);
   }
 
   void
   calcRatio (MCWalkerConfiguration &W, int iat
              , std::vector<ValueType> &psi_ratios,std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
   {
-    Dets[DetID[iat]]->calcRatio(W, iat, psi_ratios, grad, lapl);
+    Dets[getDetID(iat)]->calcRatio(W, iat, psi_ratios, grad, lapl);
   }
 
   void
   addRatio (MCWalkerConfiguration &W, int iat
             , std::vector<ValueType> &psi_ratios,std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
   {
-    Dets[DetID[iat]]->addRatio(W, iat, psi_ratios, grad, lapl);
+    Dets[getDetID(iat)]->addRatio(W, iat, psi_ratios, grad, lapl);
   }
 
 
@@ -397,17 +359,17 @@ public:
 
   void calcGradient(MCWalkerConfiguration &W, int iat, std::vector<GradType> &grad)
   {
-    Dets[DetID[iat]]->calcGradient(W, iat, grad);
+    Dets[getDetID(iat)]->calcGradient(W, iat, grad);
   }
 
   void addGradient(MCWalkerConfiguration &W, int iat, std::vector<GradType> &grad)
   {
-    Dets[DetID[iat]]->addGradient(W, iat, grad);
+    Dets[getDetID(iat)]->addGradient(W, iat, grad);
   }
 
   void update (std::vector<Walker_t*> &walkers, int iat)
   {
-    Dets[DetID[iat]]->update(walkers, iat);
+    Dets[getDetID(iat)]->update(walkers, iat);
   }
 
   void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList);

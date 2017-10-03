@@ -29,18 +29,9 @@ SlaterDet::SlaterDet(ParticleSet& targetPtcl)
   Optimizable = false;
   OrbitalName = "SlaterDet";
 
-  //iat>LastUpSpin is used to sepect the spin channel of iat particle
-  LastUpSpin=targetPtcl.last(0)-1;
-
-#if defined(QMC_CUDA)
-  M.resize(targetPtcl.groups() + 1, 0);
-  for (int i = 0; i < M.size(); ++i)
-    M[i] = targetPtcl.first(i);
-  DetID.resize(targetPtcl.getTotalNum());
-  for (int i = 0; i < targetPtcl.groups(); ++i)
-    for (int j = targetPtcl.first(i); j < targetPtcl.last(i); ++j)
-      DetID[j] = i;
-#endif
+  Last.resize(targetPtcl.groups());
+  for (int i = 0; i < Last.size(); ++i)
+    Last[i] = targetPtcl.last(i)-1;
 
   Dets.resize(targetPtcl.groups(), nullptr);
 }
