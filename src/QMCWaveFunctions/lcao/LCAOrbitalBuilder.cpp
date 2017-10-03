@@ -26,14 +26,16 @@
 #include "QMCWaveFunctions/lcao/RadialOrbitalSetBuilder.h"
 #include "QMCWaveFunctions/lcao/AOBasisBuilder.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
+#include "QMCWaveFunctions/lcao/MultiFunctorBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 
 namespace qmcplusplus
 {
-  /** traits for a localized basis set 
+  /** traits for a localized basis set; used by createBasisSet
    *
    * ROT {0=numuerica;, 1=gto; 2=sto} 
    * SH {0=cartesian, 1=spherical}
+   * If too confusing, inroduce enumeration.
    */
   template<typename T, int ROT, int SH> struct ao_traits{};
 
@@ -41,42 +43,53 @@ namespace qmcplusplus
   template<typename T>
     struct ao_traits<T,0,0>
     {
-      typedef MultiQuinticSpline1D<T> radial_type;
-      typedef SoaCartesianTensor<T> angular_type;
+      typedef MultiQuinticSpline1D<T>                     radial_type;
+      typedef SoaCartesianTensor<T>                       angular_type;
       typedef SoaAtomicBasisSet<radial_type,angular_type> ao_type;
-      typedef SoaLocalizedBasisSet<ao_type> basis_type;
+      typedef SoaLocalizedBasisSet<ao_type>               basis_type;
+
     };
 
   /** specialization for numerical-spherical AO */
   template<typename T>
     struct ao_traits<T,0,1>
     {
-      typedef MultiQuinticSpline1D<T> radial_type;
-      typedef SoaSphericalTensor<T> angular_type;
+      typedef MultiQuinticSpline1D<T>                     radial_type;
+      typedef SoaSphericalTensor<T>                       angular_type;
       typedef SoaAtomicBasisSet<radial_type,angular_type> ao_type;
-      typedef SoaLocalizedBasisSet<ao_type> basis_type;
+      typedef SoaLocalizedBasisSet<ao_type>               basis_type;
     };
 
-#if 0
-  /** specialization for GTO-carteian AO */
+  /** specialization for GTO-cartesian AO */
   template<typename T>
     struct ao_traits<T,1,0>
     {
-      typedef MultiSTO<T> radial_type;
-      typedef SoaSphericalTensor<T> angular_type;
+      typedef MultiFunctor1D<GaussianCombo<T> >           radial_type;
+      typedef SoaCartesianTensor<T>                       angular_type;
       typedef SoaAtomicBasisSet<radial_type,angular_type> ao_type;
-      typedef SoaLocalizedBasisSet<ao_type> basis_type;
+      typedef SoaLocalizedBasisSet<ao_type>               basis_type;
     };
+
+  /** specialization for GTO-cartesian AO */
+  template<typename T>
+    struct ao_traits<T,1,1>
+    {
+      typedef MultiFunctor1D<GaussianCombo<T> >           radial_type;
+      typedef SoaSphericalTensor<T>                       angular_type;
+      typedef SoaAtomicBasisSet<radial_type,angular_type> ao_type;
+      typedef SoaLocalizedBasisSet<ao_type>               basis_type;
+    };
+
   /** specialization for STO-spherical AO */
   template<typename T>
     struct ao_traits<T,2,1>
     {
-      typedef MultiSTO<T> radial_type;
-      typedef SoaSphericalTensor<T> angular_type;
+      typedef MultiFunctor1D<SlaterCombo<T> >             radial_type;
+      typedef SoaSphericalTensor<T>                       angular_type;
       typedef SoaAtomicBasisSet<radial_type,angular_type> ao_type;
-      typedef SoaLocalizedBasisSet<ao_type> basis_type;
+      typedef SoaLocalizedBasisSet<ao_type>               basis_type;
     };
-#endif
+
 
   inline bool is_same(const xmlChar* a, const char* b)
   {
@@ -124,8 +137,8 @@ namespace qmcplusplus
 
     ReportEngine PRE(ClassName,"put(xmlNodePtr)");
 
-    //if(radialOrbType<0)
-    //  PRE.error("Unknown radial function for LCAO orbitals",true);
+    if(radialOrbType<0)
+      PRE.error("Unknown radial function for LCAO orbitals",true);
 
     if(!is_same(cur->name,"basisset"))
     {//heck to handle things like <sposet_builder>
@@ -159,12 +172,36 @@ namespace qmcplusplus
     if(ylm<0)
       PRE.error("Missing angular attribute of atomicBasisSet.",true);
 
-    /** process atomicBasisSet per ion species */
-    //going to expand to (ng,sto,gto)x(cart,ylm)
     if(ylm==0)
-      myBasisSet=createBasisSet<0,0>(cur);
+      app_log() << "\tUsing SoaCartesianTensor for angular mementum" << std::endl;
     else
-      myBasisSet=createBasisSet<0,1>(cur);
+      app_log() << "\tUsing SoaSphericalTensor for angular mementum" << std::endl;
+
+    /** process atomicBasisSet per ion species */
+    switch(radialOrbType)
+    {
+      case(0): //numerical
+        app_log() << "\tSoaAtomicBasisSet<MultiQuintic,"<<ylm<<">" << std::endl;;
+        if(ylm) 
+          myBasisSet=createBasisSet<0,1>(cur);
+        else
+          myBasisSet=createBasisSet<0,0>(cur);
+        break;
+      case(1): //gto
+        app_log() << "\tSoaAtomicBasisSet<MultiGTO,"<<ylm<<">" << std::endl;;
+        if(ylm) 
+          myBasisSet=createBasisSet<1,1>(cur);
+        else
+          myBasisSet=createBasisSet<1,0>(cur);
+        break;
+      case(2): //sto
+        app_log() << "\tSoaAtomicBasisSet<MultiSTO,"<<ylm<<">" << std::endl;;
+        myBasisSet=createBasisSet<2,1>(cur);
+        break;
+      default:
+        PRE.error("Cannot construct SoaAtomicBasisSet<ROT,YLM>.",true);
+        break;
+    }
 
     return true;
   }
