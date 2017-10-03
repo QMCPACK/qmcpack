@@ -32,6 +32,8 @@ using std::string;
 namespace qmcplusplus
 {
 
+typedef QMCTraits::ValueType ValueType;
+
 template <typename T1, typename T2> void check_matrix(Matrix<T1> &a, Matrix<T2> &b)
 {
   REQUIRE(a.size() == b.size());
@@ -46,10 +48,10 @@ class FakeSPO : public SPOSetBase
 {
   public:
 
-  Matrix<double> a;
-  Matrix<double> a2;
-  Vector<double> v;
-  Matrix<double> v2;
+  Matrix<ValueType> a;
+  Matrix<ValueType> a2;
+  Vector<ValueType> v;
+  Matrix<ValueType> v2;
 
   FakeSPO();
   virtual ~FakeSPO() {}
@@ -211,7 +213,7 @@ TEST_CASE("DiracDeterminantBase_first", "[wavefunction][fermion]")
   elec.create(3);
   ddb.recompute(elec);
 
-  Matrix<double> b;
+  Matrix<ValueType> b;
   b.resize(3,3);
 
   b(0,0) = 0.6159749342;
@@ -228,8 +230,8 @@ TEST_CASE("DiracDeterminantBase_first", "[wavefunction][fermion]")
 
 
   DiracDeterminantBase::GradType grad;
-  QMCTraits::ValueType det_ratio = ddb.ratioGrad(elec, 0, grad);
-  QMCTraits::ValueType det_ratio1 = 0.178276269185;
+  ValueType det_ratio = ddb.ratioGrad(elec, 0, grad);
+  ValueType det_ratio1 = 0.178276269185;
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
 
   ddb.acceptMove(elec, 0);
@@ -270,7 +272,7 @@ TEST_CASE("DiracDeterminantBase_second", "[wavefunction][fermion]")
   elec.create(4);
   ddb.recompute(elec);
 
-  Matrix<double> orig_a;
+  Matrix<ValueType> orig_a;
   orig_a.resize(4,4);
   orig_a = spo->a2;
 
@@ -281,16 +283,16 @@ TEST_CASE("DiracDeterminantBase_second", "[wavefunction][fermion]")
   }
 
   //check_matrix(ddb.psiM, b);
-  DiracMatrix<double> dm;
+  DiracMatrix<ValueType> dm;
 
-  Matrix<double> a_update1;
+  Matrix<ValueType> a_update1;
   a_update1.resize(4,4);
   a_update1 = spo->a2;
   for (int j = 0; j < norb; j++) {
     a_update1(j,0) = spo->v2(0,j);
   }
 
-  Matrix<double> a_update2;
+  Matrix<ValueType> a_update2;
   a_update2.resize(4,4);
   a_update2 = spo->a2;
   for (int j = 0; j < norb; j++) {
@@ -298,7 +300,7 @@ TEST_CASE("DiracDeterminantBase_second", "[wavefunction][fermion]")
     a_update2(j,1) = spo->v2(1,j);
   }
 
-  Matrix<double> a_update3;
+  Matrix<ValueType> a_update3;
   a_update3.resize(4,4);
   a_update3 = spo->a2;
   for (int j = 0; j < norb; j++) {
@@ -309,12 +311,12 @@ TEST_CASE("DiracDeterminantBase_second", "[wavefunction][fermion]")
 
 
   DiracDeterminantBase::GradType grad;
-  QMCTraits::ValueType det_ratio = ddb.ratioGrad(elec, 0, grad);
+  ValueType det_ratio = ddb.ratioGrad(elec, 0, grad);
 
   dm.invert(a_update1, true);
-  double det_update1 = dm.LogDet;
-  double log_ratio1 = det_update1 - ddb.LogValue;
-  double det_ratio1 = std::exp(log_ratio1);
+  ValueType det_update1 = dm.LogDet;
+  ValueType log_ratio1 = det_update1 - ddb.LogValue;
+  ValueType det_ratio1 = std::exp(log_ratio1);
 #ifdef DUMP_INFO
   std::cout << "det 0 = " << std::exp(ddb.LogValue) << std::endl;
   std::cout << "det 1 = " << std::exp(det_update1) << std::endl;
@@ -327,27 +329,27 @@ TEST_CASE("DiracDeterminantBase_second", "[wavefunction][fermion]")
   ddb.acceptMove(elec, 0);
 
 
-  QMCTraits::ValueType det_ratio2 = ddb.ratioGrad(elec, 1, grad);
+  ValueType det_ratio2 = ddb.ratioGrad(elec, 1, grad);
   dm.invert(a_update2, true);
-  double det_update2 = dm.LogDet;
-  double log_ratio2 = det_update2 - det_update1;
-  double det_ratio2_val = std::exp(log_ratio2);
+  ValueType det_update2 = dm.LogDet;
+  ValueType log_ratio2 = det_update2 - det_update1;
+  ValueType det_ratio2_val = std::exp(log_ratio2);
 #ifdef DUMP_INFO
   std::cout << "det 1 = " << std::exp(ddb.LogValue) << std::endl;
   std::cout << "det 2 = " << std::exp(det_update2) << std::endl;
   std::cout << "det ratio 2 = " << det_ratio2 << std::endl;
 #endif
   //double det_ratio2_val = 0.178276269185;
-  REQUIRE(std::abs(det_ratio2) == Approx(det_ratio2_val));
+  REQUIRE(std::abs(det_ratio2) == ValueApprox(det_ratio2_val));
 
 
   ddb.acceptMove(elec, 1);
 
-  QMCTraits::ValueType det_ratio3 = ddb.ratioGrad(elec, 2, grad);
+  ValueType det_ratio3 = ddb.ratioGrad(elec, 2, grad);
   dm.invert(a_update3, true);
-  double det_update3 = dm.LogDet;
-  double log_ratio3 = det_update3 - det_update2;
-  double det_ratio3_val = std::exp(log_ratio3);
+  ValueType det_update3 = dm.LogDet;
+  ValueType log_ratio3 = det_update3 - det_update2;
+  ValueType det_ratio3_val = std::exp(log_ratio3);
 #ifdef DUMP_INFO
   std::cout << "det 2 = " << std::exp(ddb.LogValue) << std::endl;
   std::cout << "det 3 = " << std::exp(det_update3) << std::endl;

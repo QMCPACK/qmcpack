@@ -29,6 +29,8 @@ using std::string;
 namespace qmcplusplus
 {
 
+typedef QMCTraits::ValueType ValueType;
+
 template <typename T1, typename T2> void check_matrix(Matrix<T1> &a, Matrix<T2> &b)
 {
   REQUIRE(a.size() == b.size());
@@ -41,18 +43,18 @@ template <typename T1, typename T2> void check_matrix(Matrix<T1> &a, Matrix<T2> 
 
 TEST_CASE("DiracMatrix_identity", "[wavefunction][fermion]")
 {
-  DiracMatrix<double> dm;
+  DiracMatrix<ValueType> dm;
 
-  Matrix<double> m;
+  Matrix<ValueType> m;
   m.resize(3,3);
   m(0,0) = 1.0;
   m(1,1) = 1.0;
   m(2,2) = 1.0;
 
   dm.invert(m, true);
-  REQUIRE(dm.LogDet == Approx(0.0));
+  REQUIRE(dm.LogDet == ValueApprox(0.0));
 
-  Matrix<double> eye;
+  Matrix<ValueType> eye;
   eye.resize(3,3);
   eye(0,0) = 1.0;
   eye(1,1) = 1.0;
@@ -64,9 +66,9 @@ TEST_CASE("DiracMatrix_identity", "[wavefunction][fermion]")
 
 TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
 {
-  DiracMatrix<double> dm;
+  DiracMatrix<ValueType> dm;
 
-  Matrix<double> a;
+  Matrix<ValueType> a;
   a.resize(3,3);
 
   a(0,0) = 2.3;
@@ -80,9 +82,9 @@ TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
   a(2,2) = 4.9;
 
   dm.invert(a, true);
-  REQUIRE(dm.LogDet == Approx(3.78518913425));
+  REQUIRE(dm.LogDet == ValueApprox(3.78518913425));
 
-  Matrix<double> b;
+  Matrix<ValueType> b;
   b.resize(3,3);
 
   b(0,0) = 0.6159749342;
@@ -101,9 +103,9 @@ TEST_CASE("DiracMatrix_inverse", "[wavefunction][fermion]")
 
 TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
 {
-  DiracMatrix<double> dm;
+  DiracMatrix<ValueType> dm;
 
-  Matrix<double> a;
+  Matrix<ValueType> a;
   a.resize(3,3);
 
   a(0,0) = 2.3;
@@ -119,19 +121,19 @@ TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
   dm.invert(a,false);
 
   // new row
-  Vector<double> v;
+  Vector<ValueType> v;
   v.resize(3);
   v(0) = 1.9;
   v(1) = 2.0;
   v(2) = 3.1;
 
-  double det_ratio1 = simd::dot(a[0],v.data(),3);
+  ValueType det_ratio1 = simd::dot(a[0],v.data(),3);
 
-  double det_ratio = 0.178276269185;
-  REQUIRE(det_ratio1 == Approx(det_ratio));
+  ValueType det_ratio = 0.178276269185;
+  REQUIRE(det_ratio1 == ValueApprox(det_ratio));
   dm.updateRow(a, v.data(), 0, det_ratio);
 
-  Matrix<double> b;
+  Matrix<ValueType> b;
   b.resize(3,3);
 
   b(0,0) =  3.455170657;
