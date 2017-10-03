@@ -38,7 +38,22 @@ public:
         return is_equal;
     }
 
+    friend bool operator == (std::complex<float>& lhs, ComplexApprox const& rhs)
+    {
+        bool is_equal = Approx(lhs.real()) == rhs.m_value.real();
+        if (!rhs.m_compare_real_only)
+        {
+          is_equal &= Approx(lhs.imag()) == rhs.m_value.imag();
+        }
+        return is_equal;
+    }
+
     friend bool operator == (ComplexApprox const &lhs, std::complex<double>& rhs)
+    {
+        return operator==( rhs, lhs );
+    }
+
+    friend bool operator == (ComplexApprox const &lhs, std::complex<float>& rhs)
     {
         return operator==( rhs, lhs );
     }
