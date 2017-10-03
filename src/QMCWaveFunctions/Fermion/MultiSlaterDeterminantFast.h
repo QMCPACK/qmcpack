@@ -162,14 +162,11 @@ public:
   // assume Dets[0]: up, Dets[1]:down
   std::vector<MultiDiracDeterminantBase*> Dets;
 
-  std::vector<int> DetID;
-
-  std::map<std::string,int> SPOSetID;
-
+  std::vector<size_t> DetID;
+  std::map<std::string,size_t> SPOSetID;
   // map determinant in linear combination to unique det list
-  std::vector<int> C2node_up;
-  std::vector<int> C2node_dn;
-
+  std::vector<size_t> C2node_up;
+  std::vector<size_t> C2node_dn;
   std::vector<RealType> C;
 
   ValueType curRatio;
@@ -189,7 +186,7 @@ public:
   // coefficients of csfs, these are only used during optm
   std::vector<RealType> CSFcoeff;
   // number of dets per csf
-  std::vector<int> DetsPerCSF;
+  std::vector<size_t> DetsPerCSF;
   // coefficient of csf expansion (smaller dimension)
   std::vector<RealType> CSFexpansion;
 
