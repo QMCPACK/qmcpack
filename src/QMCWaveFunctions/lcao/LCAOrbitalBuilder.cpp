@@ -64,7 +64,7 @@ namespace qmcplusplus
   template<typename T>
     struct ao_traits<T,1,0>
     {
-      typedef MultiFunctor1D<GaussianCombo<T> >           radial_type;
+      typedef MultiFunctorAdapter<GaussianCombo<T> >           radial_type;
       typedef SoaCartesianTensor<T>                       angular_type;
       typedef SoaAtomicBasisSet<radial_type,angular_type> ao_type;
       typedef SoaLocalizedBasisSet<ao_type>               basis_type;
@@ -74,7 +74,7 @@ namespace qmcplusplus
   template<typename T>
     struct ao_traits<T,1,1>
     {
-      typedef MultiFunctor1D<GaussianCombo<T> >           radial_type;
+      typedef MultiFunctorAdapter<GaussianCombo<T> >           radial_type;
       typedef SoaSphericalTensor<T>                       angular_type;
       typedef SoaAtomicBasisSet<radial_type,angular_type> ao_type;
       typedef SoaLocalizedBasisSet<ao_type>               basis_type;
@@ -84,7 +84,7 @@ namespace qmcplusplus
   template<typename T>
     struct ao_traits<T,2,1>
     {
-      typedef MultiFunctor1D<SlaterCombo<T> >             radial_type;
+      typedef MultiFunctorAdapter<SlaterCombo<T> >             radial_type;
       typedef SoaSphericalTensor<T>                       angular_type;
       typedef SoaAtomicBasisSet<radial_type,angular_type> ao_type;
       typedef SoaLocalizedBasisSet<ao_type>               basis_type;
