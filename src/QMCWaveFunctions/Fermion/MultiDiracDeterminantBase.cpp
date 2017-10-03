@@ -54,14 +54,14 @@ void MultiDiracDeterminantBase::set(int first, int nel,int norb)
 void MultiDiracDeterminantBase::createDetData(ci_configuration2& ref, std::vector<int>& data,
     std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign)
 {
-  int nci = confgList.size(), nex;
-  std::vector<int> pos(NumPtcls);
-  std::vector<int> ocp(NumPtcls);
-  std::vector<int> uno(NumPtcls);
+  size_t nci = confgList.size(), nex;
+  std::vector<size_t> pos(NumPtcls);
+  std::vector<size_t> ocp(NumPtcls);
+  std::vector<size_t> uno(NumPtcls);
   data.clear();
   sign.resize(nci);
   pairs.clear();
-  for(int i=0; i<nci; i++)
+  for(size_t i=0; i<nci; i++)
   {
     sign[i] = ref.calculateExcitations(confgList[i],nex,pos,ocp,uno);
     data.push_back(nex);
@@ -125,16 +125,17 @@ void MultiDiracDeterminantBase::evaluateForWalkerMove(ParticleSet& P, bool fromS
   else
   {
     InverseTimer.start();
-    std::vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
-    for(int i=0; i<NumPtcls; i++)
+    //std::vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
+    auto it(confgList[ReferenceDeterminant].occup.begin());
+    for(size_t i=0; i<NumPtcls; i++)
     {
-      for(int j=0; j<NumPtcls; j++)
+      for(size_t j=0; j<NumPtcls; j++)
         psiMinv(j,i) = psiM(j,*it);
       it++;
     }
-    for(int i=0; i<NumPtcls; i++)
+    for(size_t i=0; i<NumPtcls; i++)
     {
-      for(int j=0; j<NumOrbitals; j++)
+      for(size_t j=0; j<NumOrbitals; j++)
         TpsiM(j,i) = psiM(i,j);
     }
     RealType phaseValueRef;
@@ -148,12 +149,12 @@ void MultiDiracDeterminantBase::evaluateForWalkerMove(ParticleSet& P, bool fromS
 #endif
     detValues[ReferenceDeterminant] = det0;
     BuildDotProductsAndCalculateRatios(ReferenceDeterminant,0,detValues,psiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
-    for(int iat=0; iat<NumPtcls; iat++)
+    for(size_t iat=0; iat<NumPtcls; iat++)
     {
       it = confgList[ReferenceDeterminant].occup.begin();
       GradType gradRatio;
       ValueType ratioLapl = 0.0;
-      for(int i=0; i<NumPtcls; i++)
+      for(size_t i=0; i<NumPtcls; i++)
       {
         gradRatio += psiMinv(i,iat)*dpsiM(iat,*it);
         ratioLapl += psiMinv(i,iat)*d2psiM(iat,*it);
@@ -161,29 +162,29 @@ void MultiDiracDeterminantBase::evaluateForWalkerMove(ParticleSet& P, bool fromS
       }
       grads(ReferenceDeterminant,iat) = det0*gradRatio;
       lapls(ReferenceDeterminant,iat) = det0*ratioLapl;
-      for(int idim=0; idim<OHMMS_DIM; idim++)
+      for(size_t idim=0; idim<OHMMS_DIM; idim++)
       {
         dpsiMinv = psiMinv;
         it = confgList[ReferenceDeterminant].occup.begin();
-        for(int i=0; i<NumPtcls; i++)
+        for(size_t i=0; i<NumPtcls; i++)
           psiV_temp[i] = dpsiM(iat,*(it++))[idim];
         InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,iat,gradRatio[idim]);
         //MultiDiracDeterminantBase::InverseUpdateByColumn_GRAD(dpsiMinv,dpsiV,workV1,workV2,iat,gradRatio[idim],idim);
-        for(int i=0; i<NumOrbitals; i++)
+        for(size_t i=0; i<NumOrbitals; i++)
           TpsiM(i,iat) = dpsiM(iat,i)[idim];
         BuildDotProductsAndCalculateRatios(ReferenceDeterminant,iat,grads,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns,idim);
       }
       dpsiMinv = psiMinv;
       it = confgList[ReferenceDeterminant].occup.begin();
-      for(int i=0; i<NumPtcls; i++)
+      for(size_t i=0; i<NumPtcls; i++)
         psiV_temp[i] = d2psiM(iat,*(it++));
       InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,iat,ratioLapl);
       //MultiDiracDeterminantBase::InverseUpdateByColumn(dpsiMinv,d2psiM,workV1,workV2,iat,ratioLapl,confgList[ReferenceDeterminant].occup.begin());
-      for(int i=0; i<NumOrbitals; i++)
+      for(size_t i=0; i<NumOrbitals; i++)
         TpsiM(i,iat) = d2psiM(iat,i);
       BuildDotProductsAndCalculateRatios(ReferenceDeterminant,iat,lapls,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
 // restore matrix
-      for(int i=0; i<NumOrbitals; i++)
+      for(size_t i=0; i<NumOrbitals; i++)
         TpsiM(i,iat) = psiM(iat,i);
     }
   } // NumPtcls==1
@@ -515,7 +516,7 @@ void MultiDiracDeterminantBase::copyFromDerivativeBuffer(ParticleSet& P, PooledD
       }
 }
 
-void MultiDiracDeterminantBase::setDetInfo(int ref, std::vector<ci_configuration2> list)
+void MultiDiracDeterminantBase::setDetInfo(int ref, const std::vector<ci_configuration2>& list)
 {
   ReferenceDeterminant = ref;
   confgList = list;
