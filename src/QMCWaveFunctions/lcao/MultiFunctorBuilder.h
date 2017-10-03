@@ -59,7 +59,8 @@ namespace qmcplusplus
         const value_type rinv=value_type(1)/r;
         for(size_t i=0, n=Rnl.size(); i<n; ++i)
         {
-          u[i]=Rnl[i]->evaluate(r,rinv);
+          Rnl[i]->evaluateAll(r,rinv);
+          u[i]=Rnl[i]->Y;
           du[i]=Rnl[i]->dY;
           d2u[i]=Rnl[i]->d2Y;
         }

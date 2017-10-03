@@ -215,7 +215,7 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
     else
       ions=(*pit).second;
 #if defined(ENABLE_SOA)
-    bb=new LCAOrbitalBuilder(targetPtcl,*ions,cur);
+    bb=new LCAOrbitalBuilder(targetPtcl,*ions,rootNode);
 #else
     if(transformOpt == "yes")
     {

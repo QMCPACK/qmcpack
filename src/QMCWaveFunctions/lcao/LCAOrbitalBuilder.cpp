@@ -115,7 +115,7 @@ namespace qmcplusplus
     aAttrib.add(cuspC,"cuspCorrection");
     aAttrib.add(cuspInfo,"cuspInfo");
     if(cur != NULL) aAttrib.put(cur);
-
+    
     radialOrbType=-1;
     if (transformOpt == "yes")
       radialOrbType=0;
@@ -172,37 +172,32 @@ namespace qmcplusplus
     if(ylm<0)
       PRE.error("Missing angular attribute of atomicBasisSet.",true);
 
-    if(ylm==0)
-      app_log() << "\tUsing SoaCartesianTensor for angular mementum" << std::endl;
-    else
-      app_log() << "\tUsing SoaSphericalTensor for angular mementum" << std::endl;
 
     /** process atomicBasisSet per ion species */
     switch(radialOrbType)
     {
       case(0): //numerical
-        app_log() << "\tSoaAtomicBasisSet<MultiQuintic,"<<ylm<<">" << std::endl;;
+        app_log() << "  LCAO: SoaAtomicBasisSet<MultiQuintic,"<<ylm<<">" << std::endl;;
         if(ylm) 
           myBasisSet=createBasisSet<0,1>(cur);
         else
           myBasisSet=createBasisSet<0,0>(cur);
         break;
       case(1): //gto
-        app_log() << "\tSoaAtomicBasisSet<MultiGTO,"<<ylm<<">" << std::endl;;
+        app_log() << "  LCAO: SoaAtomicBasisSet<MultiGTO,"<<ylm<<">" << std::endl;;
         if(ylm) 
           myBasisSet=createBasisSet<1,1>(cur);
         else
           myBasisSet=createBasisSet<1,0>(cur);
         break;
       case(2): //sto
-        app_log() << "\tSoaAtomicBasisSet<MultiSTO,"<<ylm<<">" << std::endl;;
+        app_log() << "  LCAO: SoaAtomicBasisSet<MultiSTO,"<<ylm<<">" << std::endl;;
         myBasisSet=createBasisSet<2,1>(cur);
         break;
       default:
         PRE.error("Cannot construct SoaAtomicBasisSet<ROT,YLM>.",true);
         break;
     }
-
     return true;
   }
 
