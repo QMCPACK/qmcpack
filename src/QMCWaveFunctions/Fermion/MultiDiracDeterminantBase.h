@@ -586,7 +586,7 @@ public:
       }
   */
 
-  void setDetInfo(int ref, const std::vector<ci_configuration2>& list);
+  void setDetInfo(int ref, std::vector<ci_configuration2>* list);
 
   inline void
   evaluateDetsForPtclMove(ParticleSet& P, int iat)
@@ -599,17 +599,18 @@ public:
     WorkingIndex = iat-FirstIndex;
     if(NumPtcls==1)
     {
-      std::vector<ci_configuration2>::iterator it(confgList.begin());
-      std::vector<ci_configuration2>::iterator last(confgList.end());
+      std::vector<ci_configuration2>::iterator it(ciConfigList->begin());
+      std::vector<ci_configuration2>::iterator last(ciConfigList->end());
       ValueVector_t::iterator det(new_detValues.begin());
       while(it != last)
       {
-        int orb = (it++)->occup[0];
+        size_t orb = (it++)->occup[0];
         *(det++) = psiV[orb];
       }
     }
     else
     {
+      const auto& confgList=*ciConfigList;
       //std::vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
       auto it(confgList[ReferenceDeterminant].occup.begin());
 // mmorales: the only reason this is here is because
@@ -646,13 +647,13 @@ public:
     WorkingIndex = iat-FirstIndex;
     if(NumPtcls==1)
     {
-      std::vector<ci_configuration2>::iterator it(confgList.begin());
-      std::vector<ci_configuration2>::iterator last(confgList.end());
+      std::vector<ci_configuration2>::iterator it(ciConfigList->begin());
+      std::vector<ci_configuration2>::iterator last(ciConfigList->end());
       ValueVector_t::iterator det(new_detValues.begin());
       GradMatrix_t::iterator grad(new_grads.begin());
       while(it != last)
       {
-        int orb = (it++)->occup[0];
+        size_t orb = (it++)->occup[0];
         *(det++) = psiV[orb];
         *(grad++) = dpsiV[orb];
       }
@@ -662,6 +663,7 @@ public:
       ExtraStuffTimer.start();
 //mmorales: check comment above
       psiMinv_temp = psiMinv;
+      const auto& confgList=*ciConfigList;
       //std::vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
       auto it(confgList[ReferenceDeterminant].occup.begin());
       GradType ratioGradRef;
@@ -703,12 +705,14 @@ public:
   evaluateGrads(ParticleSet& P, int iat)
   {
     WorkingIndex = iat-FirstIndex;
+
+    const auto& confgList=*ciConfigList;
     auto it= confgList[0].occup.begin(); //just to avoid using the type
     //std::vector<size_t>::iterator it;
     if(NumPtcls==1)
     {
-      std::vector<ci_configuration2>::iterator it(confgList.begin());
-      std::vector<ci_configuration2>::iterator last(confgList.end());
+      std::vector<ci_configuration2>::const_iterator it(confgList.begin());
+      std::vector<ci_configuration2>::const_iterator last(confgList.end());
       GradMatrix_t::iterator grad(grads.begin());
       while(it != last)
       {
@@ -750,14 +754,14 @@ public:
     WorkingIndex = iat-FirstIndex;
     if(NumPtcls==1)
     {
-      std::vector<ci_configuration2>::iterator it(confgList.begin());
-      std::vector<ci_configuration2>::iterator last(confgList.end());
+      std::vector<ci_configuration2>::const_iterator it(ciConfigList->begin());
+      std::vector<ci_configuration2>::const_iterator last(ciConfigList->end());
       ValueVector_t::iterator det(new_detValues.begin());
       ValueMatrix_t::iterator lap(new_lapls.begin());
       GradMatrix_t::iterator grad(new_grads.begin());
       while(it != last)
       {
-        int orb = (it++)->occup[0];
+        size_t orb = (it++)->occup[0];
         *(det++) = psiV[orb];
         *(lap++) = d2psiV[orb];
         *(grad++) = dpsiV[orb];
@@ -767,6 +771,9 @@ public:
     {
 //mmorales: check comment above
       psiMinv_temp = psiMinv;
+
+      const auto& confgList=*ciConfigList;
+
       //std::vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
       auto it(confgList[ReferenceDeterminant].occup.begin());
       //GradType ratioGradRef;
@@ -883,8 +890,10 @@ public:
   SPOSetBasePtr Phi;
   /// number of determinants handled by this object
   int NumDets;
-  ///
-  std::vector<ci_configuration2> confgList;
+  ///bool to cleanup
+  bool IsCloned;
+  ///use shared_ptr
+  std::vector<ci_configuration2>* ciConfigList;
 // the reference determinant never changes, so there is no need to store it.
 // if its value is zero, then use a data from backup, but always use this one
 // by default

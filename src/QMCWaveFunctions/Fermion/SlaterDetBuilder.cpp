@@ -605,7 +605,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
 // you should choose the det with highest weight for reference
   multiSD->Dets[0]->ReferenceDeterminant = 0; // for now
   multiSD->Dets[0]->NumDets=uniqueConfg_up.size();
-  std::vector<ci_configuration2>& list_up = multiSD->Dets[0]->confgList;
+  std::vector<ci_configuration2>& list_up = *(multiSD->Dets[0]->ciConfigList);
   list_up.resize(uniqueConfg_up.size());
   for(int i=0; i<list_up.size(); i++)
   {
@@ -622,7 +622,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   multiSD->Dets[0]->set(multiSD->FirstIndex_up,nels_up,multiSD->Dets[0]->Phi->getOrbitalSetSize());
   multiSD->Dets[1]->ReferenceDeterminant = 0; // for now
   multiSD->Dets[1]->NumDets=uniqueConfg_dn.size();
-  std::vector<ci_configuration2>& list_dn = multiSD->Dets[1]->confgList;
+  std::vector<ci_configuration2>& list_dn = *(multiSD->Dets[1]->ciConfigList);
   list_dn.resize(uniqueConfg_dn.size());
   for(int i=0; i<list_dn.size(); i++)
   {
