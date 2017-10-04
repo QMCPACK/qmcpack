@@ -223,33 +223,29 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict kx=myKcart.data(0);
     const ST* restrict ky=myKcart.data(1);
     const ST* restrict kz=myKcart.data(2);
-    {
+
     const TT* restrict arow_s=arow+first_spo;
     #pragma omp simd reduction(+:res)
     for (size_t j=0; j<nComplexBands; j++)
     {
-      ST s, c;
       const size_t jr=j<<1;
       const size_t ji=jr+1;
       const ST val_r=vtmp[jr];
       const ST val_i=vtmp[ji];
+      ST s, c;
       sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
       res+=arow_s[jr] * (val_r*c-val_i*s);
       res+=arow_s[ji] * (val_i*c+val_r*s);
     }
-    }
-
-
-    {
-    const TT* restrict arow_s=arow+first_spo+nComplexBands;
+    const TT* restrict arow_c=arow+first_spo+nComplexBands;
     #pragma omp simd reduction(+:res)
     for (size_t j=nComplexBands; j<N; j++)
     {
       const ST val_r=vtmp[2*j  ];
       const ST val_i=vtmp[2*j+1];
+      ST s, c;
       sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
-      res+=arow_s[j]*(val_r*c-val_i*s);
-    }
+      res+=arow_c[j]*(val_r*c-val_i*s);
     }
     return res;
   }
