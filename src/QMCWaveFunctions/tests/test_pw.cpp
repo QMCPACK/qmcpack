@@ -145,11 +145,7 @@ const char *particles =
   SPOSetBase::ValueVector_t orbs(orbSize);
   spo->evaluate(elec, 0, orbs);
 
-#ifdef QMC_COMPLEX
-  REQUIRE(orbs[0].real() == Approx(-1.2473558998));
-#else
-  REQUIRE(orbs[0] == Approx(-1.2473558998));
-#endif
+  REQUIRE(orbs[0] == ComplexApprox(-1.2473558998).compare_real_only());
 
 #if 0
   // Dump values of the orbitals
@@ -304,11 +300,7 @@ const char *particles =
   SPOSetBase::ValueVector_t orbs(orbSize);
   spo->evaluate(elec, 0, orbs);
 
-#ifdef QMC_COMPLEX
-  REQUIRE(orbs[0].real() == Approx(-14.3744302974));
-#else
-  REQUIRE(orbs[0] == Approx(-14.3744302974));
-#endif
+  REQUIRE(orbs[0] == ComplexApprox(-14.3744302974).compare_real_only());
 
 #if 0
   // Dump values of the orbitals

@@ -12,7 +12,10 @@ from nexus import loop,linear,vmc,dmc
 settings(
     pseudo_dir    = '../pseudopotentials',# directory with all pseudopotentials
     sleep         = 3,                    # check on runs every 'sleep' seconds
-    generate_only = 0,                    # only make input files
+    #generate_only = 0,                    # only make input files
+    # Complicated setting only so examples can be run in test harness.
+    # For real runs, use the plain setting of 'generate_only' above.
+    generate_only   = globals().get('override_generate_only_setting',False),
     status_only   = 0,                    # only show status of runs
     machine       = 'ws16',               # local machine is 16 core workstation
     )

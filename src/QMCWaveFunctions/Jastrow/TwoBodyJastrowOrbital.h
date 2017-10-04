@@ -80,6 +80,7 @@ public:
     init(p);
     FirstTime = true;
     OrbitalName = "TwoBodyJastrow";
+    p.addTable(p,DT_AOS);
   }
 
   ~TwoBodyJastrowOrbital() { }

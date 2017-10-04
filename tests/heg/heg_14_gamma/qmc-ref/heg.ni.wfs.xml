@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<qmcsystem>
+<wavefunction name="psi0" target="e">
+<determinantset type="electron-gas" shell="1" randomize="true"/>
+</wavefunction>
+</qmcsystem>

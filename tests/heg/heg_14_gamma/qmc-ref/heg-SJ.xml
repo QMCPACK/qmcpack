@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<simulation>
+<project id="heg_SJ" series="0">
+<application name="qmcapp">
+Sample qmc run for Slater-Jastrow HEG.
+</application>
+</project>
+<include href="heg.ptcl.xml"/>
+<include href="heg.sj.wfs.xml"/>
+<include href="heg.H.xml"/>
+<qmc method="vmc" move="pbyp">
+<parameter name="blocks">800</parameter>
+<parameter name="steps">4000</parameter>
+<parameter name="tau">5.0</parameter>
+</qmc>
+</simulation>
