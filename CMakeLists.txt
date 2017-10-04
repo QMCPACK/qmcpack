@@ -861,7 +861,9 @@ SUBDIRS(src)
 IF(NOT(QMC_BUILD_LEVEL GREATER 4))
   SUBDIRS(tests)
   SUBDIRS(examples)
-  SUBDIRS(nexus/examples)
+  IF(IS_DIRECTORY nexus)
+    SUBDIRS(nexus/examples)
+  ENDIF()
 ENDIF()
 
 #ADD_CUSTOM_TARGET(print_settings ALL
