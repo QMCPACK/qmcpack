@@ -67,7 +67,7 @@ struct SoaDistanceTableAA: public DTD_BConds<T,D,SC>, public DistanceTableData
     //P.RSoA.copyIn(P.R); 
     for(int iat=0; iat<Ntargets; ++iat)
     {
-      DTD_BConds<T,D,SC>::computeDistances(P.R[iat], P.RSoA, Distances[iat], Displacements[iat], 0, iat, iat);
+      DTD_BConds<T,D,SC>::computeDistances(P.R[iat], P.RSoA, Distances[iat], Displacements[iat], 0, Ntargets, iat);
       Distances[iat][iat]=BigR; //assign big distance
     }
   }
