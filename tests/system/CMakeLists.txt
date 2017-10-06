@@ -76,7 +76,7 @@ IF (NOT QMC_COMPLEX)
                     "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
                     heg_short_NI
                     heg-short-NI.xml
-                    16 1
+                    1 16
                     TRUE
                     0 HEG14GSNI_SCALARS
                     )
@@ -91,7 +91,7 @@ IF (NOT QMC_COMPLEX)
                     "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
                     heg_short_NI_dmc
                     heg-short-NI-dmc.xml
-                    16 1
+                    1 16
                     TRUE
                     1 HEG14GSNI_DMC_SCALARS # DMC
                     )
@@ -106,7 +106,7 @@ IF (NOT QMC_COMPLEX)
                     "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
                     heg_short_HF
                     heg-short-HF.xml
-                    16 1
+                    1 16
                     TRUE
                     0 HEG14GSHF_SCALARS # VMC
                     )
@@ -121,7 +121,7 @@ IF (NOT QMC_COMPLEX)
                     "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
                     heg_short_SJ
                     heg-short-SJ.xml
-                    16 1
+                    1 16
                     TRUE
                     0 HEG14GSSJ_SCALARS # VMC
                     )
@@ -136,7 +136,7 @@ IF (NOT QMC_COMPLEX)
                     "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
                     heg_short_SJ_new
                     heg-short-SJ-new.xml
-                    16 1
+                    1 16
                     TRUE
                     0 HEG14GSSJ_NEW_SCALARS # VMC
                     )
@@ -152,7 +152,7 @@ IF (NOT QMC_COMPLEX)
                     "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
                     heg_short_SJB
                     heg-short-SJB.xml
-                    16 1
+                    1 16
                     TRUE
                     0 HEG14GSSJB_SCALARS # VMC
                     )
@@ -185,7 +185,7 @@ IF (NOT QMC_COMPLEX)
                     "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
                     heg_short_SJ_dmc
                     heg-short-SJ-dmc.xml
-                    16 1
+                    1 16
                     TRUE
                     2 HEG14GSSJ_DMC_SCALARS # DMC
                     )
@@ -204,7 +204,7 @@ IF (NOT QMC_COMPLEX)
                     "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
                     heg_long_NI
                     heg-long-NI.xml
-                    16 1
+                    1 16
                     TRUE
                     0 HEG14GLNI_SCALARS # VMC
                     )
@@ -219,7 +219,7 @@ IF (NOT QMC_COMPLEX)
                     "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
                     heg_long_NI_dmc
                     heg-long-NI-dmc.xml
-                    16 1
+                    1 16
                     TRUE
                     1 HEG14GLNI_DMC_SCALARS # DMC
                     )
@@ -234,7 +234,7 @@ IF (NOT QMC_COMPLEX)
                     "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
                     heg_long_HF
                     heg-long-HF.xml
-                    16 1
+                    1 16
                     TRUE
                     0 HEG14GLHF_SCALARS # VMC
                     )
@@ -249,7 +249,7 @@ IF (NOT QMC_COMPLEX)
                     "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
                     heg_long_SJ
                     heg-long-SJ.xml
-                    16 1
+                    1 16
                     TRUE
                     0 HEG14GLSJ_SCALARS # VMC
                     )
@@ -264,7 +264,7 @@ IF (NOT QMC_COMPLEX)
                     "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
                     heg_long_SJ_new
                     heg-long-SJ-new.xml
-                    16 1
+                    1 16
                     TRUE
                     0 HEG14GLSJ_NEW_SCALARS # VMC
                     )
@@ -313,7 +313,7 @@ IF (NOT QMC_COMPLEX)
                     "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
                     heg_long_SJ_dmc
                     heg-long-SJ-dmc.xml
-                    16 1
+                    1 16
                     TRUE
                     2 HEG14GLSJ_DMC_SCALARS # DMC
                     )
@@ -345,7 +345,7 @@ IF (NOT QMC_COMPLEX)
                     "${CMAKE_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
                     Li2.STO.short
                     Li2.STO.short.in.xml
-                    16 1
+                    1 16
                     TRUE
                     0 LI2STOSJS_VMC_SCALARS # VMC
                     2 LI2STOSJS_DMC_SCALARS # DMC
@@ -371,7 +371,7 @@ IF (NOT QMC_COMPLEX)
                     "${CMAKE_SOURCE_DIR}/tests/molecules/Li2_STO_ae"
                     Li2.STO.long
                     Li2.STO.long.in.xml
-                    16 1
+                    1 16
                     TRUE
                     0 LI2STOSJL_VMC_SCALARS # VMC
                     2 LI2STOSJL_DMC_SCALARS # DMC
