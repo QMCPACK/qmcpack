@@ -1,5 +1,16 @@
 #!/bin/bash
 
+################################################################
+## * This script builds available configurations of QMCPACK   ##
+##   on OIC5, at Oak Ridge National Lab.                      ##
+##                                                            ##
+## * Execute this script in trunk/                            ##
+##   ./config/build_ornl_oic.sh                               ##
+##                                                            ##
+## Last modified: Oct 6, 2017                                 ##
+################################################################
+
+
 module () 
 { 
     eval `/opt/modules/3.1.6/bin/modulecmd bash $*`
