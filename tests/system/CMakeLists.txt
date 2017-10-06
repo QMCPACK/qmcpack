@@ -152,7 +152,7 @@ IF (NOT QMC_COMPLEX)
                     "${CMAKE_SOURCE_DIR}/tests/heg/heg_14_gamma"
                     heg_short_SJB
                     heg-short-SJB.xml
-                    1 16
+                    16 1
                     TRUE
                     0 HEG14GSSJB_SCALARS # VMC
                     )
