@@ -10,8 +10,7 @@
 #ifndef QMCPLUSPLUS_SLATERDETOPT_H
 #define QMCPLUSPLUS_SLATERDETOPT_H
 
-#include <QMCWaveFunctions/OrbitalBase.h>
-#include <QMCWaveFunctions/FermionBase.h>
+#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include <QMCWaveFunctions/SPOSetBase.h>
 
 namespace qmcplusplus {
@@ -22,7 +21,7 @@ class TrialWaveFunction;
 /// \brief  A class for a Slater determinant with optimizable orbitals.
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-class SlaterDetOpt: public OrbitalBase, public FermionBase {
+class SlaterDetOpt : public DiracDeterminantBase {
 
   // private data members
   private:

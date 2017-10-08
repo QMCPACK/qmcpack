@@ -25,7 +25,8 @@ namespace qmcplusplus {
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 SlaterDetOpt::SlaterDetOpt(ParticleSet & targetPtcl, SPOSetBase * spo_ptr, const int up_or_down)
-  : m_spo(spo_ptr)
+  : DiracDeterminantBase(spo_ptr, targetPtcl.first(up_or_down))
+  , m_spo(spo_ptr)
   , m_up_or_down(up_or_down)
   , m_nmo(spo_ptr->size())
   , m_first_var_pos(-1)
