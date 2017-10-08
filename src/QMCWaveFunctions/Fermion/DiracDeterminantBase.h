@@ -362,6 +362,9 @@ public:
 //
   virtual inline void setLogEpsilon(ValueType x) { }
 
+  virtual void buildOptVariables(std::vector<RealType>& input_params, const std::string & spo_name,
+                         bool params_supplied, bool print_vars) { };
+
 #ifdef QMC_CUDA
   /////////////////////////////////////////////////////
   // Functions for vectorized evaluation and updates //

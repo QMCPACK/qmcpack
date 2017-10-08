@@ -195,8 +195,6 @@ class SlaterDetOpt : public DiracDeterminantBase {
 
     RealType registerData(ParticleSet& P, BufferType& buf);
 
-    void registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
-
     RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
 
     void copyFromBuffer(ParticleSet& P, BufferType& buf);

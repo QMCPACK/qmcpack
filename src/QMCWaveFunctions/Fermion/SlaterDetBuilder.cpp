@@ -86,7 +86,7 @@ SlaterDetBuilder::~SlaterDetBuilder()
 ///         and returns a pointer to that determinant
 ///
 /// \param[in]      targetPtcl     reference to the particle set
-/// \param[in]      spomap         map between single particle orbital set names and pointers
+/// \param[in]      spo_ptr        pointer to the single particle orbital set
 /// \param[in]      spo_name       name of the single particle orbital set we want
 /// \param[in]      up_or_down     0 for up spin, 1 for down
 ///
@@ -94,18 +94,11 @@ SlaterDetBuilder::~SlaterDetBuilder()
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 SlaterDetOpt * SlaterDetBuilder::create_optimizable_sd(ParticleSet & targetPtcl,
-                                                       std::map<std::string,SPOSetBasePtr> & spomap,
+                                                       SPOSetBasePtr spo_ptr,
                                                        const std::string & spo_name,
                                                        const int up_or_down) {
 
-  // make sure the single particle orbital set exists
-  if ( spomap.find(spo_name) == spomap.end() ) {
-    app_error() << "In SlaterDetBuilder: SPOSet \"" << spo_name << "\" is not found.\n";
-    abort();
-  }
-
   // get a pointer to the single particle orbital set and make sure it is of the correct type
-  SPOSetBasePtr spo_ptr = spomap.find(spo_name)->second;
   if ( ! spo_ptr->is_of_type_LCOrbitalSetOpt() ) {
     app_error() << "SPOSet \"" << spo_name << "\" is not of type LCOrbitalSetOpt and thus cannot be used with SlaterDetOpt.\n";
     abort();
@@ -204,7 +197,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   }
 
   //missing basiset, e.g. einspline
-// mmorales: this should not be allowed now, either basisset or sposet must exist
+  // mmorales: this should not be allowed now, either basisset or sposet must exist
   //if (myBasisSetFactory == 0)
   //{
   //  myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi, ptclPool);
@@ -295,149 +288,35 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         a.put(cur);
       }
 
-      // optimizable slater determinant (Eric Neuscamman, March 2015)
-      if ( optimizable == "yes" ) {
+      if(slaterdet_0)
+      {
+        APP_ABORT("slaterdet is already instantiated.");
+      }
+      if(UseBackflow)
+        slaterdet_0 = new SlaterDetWithBackflow(targetPtcl,BFTrans);
+      else
+        slaterdet_0 = new SlaterDeterminant_t(targetPtcl);
 
-        std::vector<RealType> params_a, params_b;
-        bool params_supplied_a = false;
-        bool params_supplied_b = false;
-
-        // make sure we don't have other fermionic wave function components
-        if ( slaterdet_0 ) { APP_ABORT("cannot have both a standard and optimizable slater determinant."); }
-        if ( multislaterdet_0 || multislaterdetfast_0 ) { APP_ABORT("cannot have both an optimizable slater determinant and a multideterminant."); }
-
-        // not currently compatible with backflow
-        if ( UseBackflow ) { APP_ABORT("backflow not compatible with an optimizable slater determinant."); }
-
-        // read in the determinants' single particle orbital set names
-        std::string spo_a_name, spo_b_name;
-        for (xmlNodePtr subcur = cur->children; subcur != NULL; subcur = subcur->next) {
-
-          // find the determinants
-          std::string subname;
-          getNodeName(subname, subcur);
-          if ( subname == det_tag ) {
-
-            // for each determinant, read in the name of the spo set to use
-            std::string sposet;
-            std::string subdet_name;
-            OhmmsAttributeSet spoAttrib;
-            spoAttrib.add(sposet, "sposet");
-            spoAttrib.put(subcur);
-            if (sposet.empty())
-              APP_ABORT("empty sposet name when reading an optimizable determinant.");
-
-            // first determinant is up spin
-            if ( spo_a_name.empty() ) {
-              spo_a_name = sposet;
-              // Search for the XML tag called "opt_vars", which will specify
-              // initial values for the determinant's optimiziable variables.
-              for (xmlNodePtr subdet_cur = subcur->children; subdet_cur != NULL; subdet_cur = subdet_cur->next) {
-                getNodeName(subdet_name, subdet_cur);
-                if ( subdet_name == "opt_vars" ) {
-                  params_supplied_a = true;
-                  putContent(params_a, subdet_cur);
-                }
-              }
-            }
-
-            // second determinant is down spin
-            else if ( spo_b_name.empty() ) {
-              spo_b_name = sposet;
-              for (xmlNodePtr subdet_cur = subcur->children; subdet_cur != NULL; subdet_cur = subdet_cur->next) {
-                getNodeName(subdet_name, subdet_cur);
-                if ( subdet_name == "opt_vars" ) {
-                  params_supplied_b = true;
-                  putContent(params_b, subdet_cur);
-                }
-              }
-            }
-
-            // there should be exactly two determinants and no more
-            else
-              APP_ABORT("found more than two optimizable determinants.");
-
-          }
-
-        }
-
-        // Error if we didn't have names for both up and down single particle orbital sets.
-        // Note:  If there is only one type of electron spin, both determinants
-        //        should be specified in the xml input with the same spo set.
-        //        The create_optimizable_sd function call below will take care to avoid
-        //        creating a determinant with no electrons in it.
-        if ( spo_a_name.empty() || spo_b_name.empty() )
-          APP_ABORT("failed to find two optimizable determinants.");
-
-        // create the up and down electron optimizable slater determinants
-        optslaterdet_up = this->create_optimizable_sd(targetPtcl, spomap, spo_a_name, 0);
-        optslaterdet_dn = this->create_optimizable_sd(targetPtcl, spomap, spo_b_name, 1);
-
-        optslaterdet_up->buildOptVariables(params_a, spo_a_name, params_supplied_a, true);
-        optslaterdet_dn->buildOptVariables(params_b, spo_b_name, params_supplied_b, true);
-
-        // print what we built
-        app_log() << std::endl;
-        if ( optslaterdet_up && optslaterdet_dn && spo_a_name == spo_b_name )
+      // Copy any entries in sposetmap into slaterdet_0
+      std::map<std::string,SPOSetBasePtr>::iterator iter;
+      for (iter=spomap.begin(); iter!=spomap.end(); iter++)
+      {
+        slaterdet_0->add(iter->second,iter->first);
+      }
+      int spin_group = 0;
+      xmlNodePtr tcur = cur->children;
+      while (tcur != NULL)
+      {
+        getNodeName(tname,tcur);
+        if (tname == det_tag || tname == rn_tag)
         {
-          optslaterdet_up->Optimizable=true;
-          optslaterdet_dn->Optimizable=true;
-          app_log() << "Built alpha and beta slater determinants with the shared (i.e. restricted) set of optimizable single particle orbitals \"" << spo_a_name << "\"\n";
+          if(putDeterminant(tcur, spin_group, optimizable))
+            spin_group++;
         }
-        else if ( optslaterdet_up && optslaterdet_dn )
-        {
-          optslaterdet_up->Optimizable=true;
-          optslaterdet_dn->Optimizable=true;
-          app_log() << "Built alpha and beta slater determinants with the separate (i.e. unrestricted) sets of optimizable single particle orbitals \""
-                    << spo_a_name << "\" and \"" << spo_b_name << "\"\n";
-        }
-        else if (optslaterdet_up)
-        {
-          optslaterdet_up->Optimizable=true;
-          optslaterdet_dn->Optimizable=false;
-          app_log() << "Built an alpha slater determinant with \"" << spo_a_name << "\" as its set of optimizable single particle orbitals\n";
-        }
-        else if (optslaterdet_dn)
-        {
-          optslaterdet_up->Optimizable=false;
-          optslaterdet_dn->Optimizable=true;
-          app_log() << "Built a beta slater determinant with \"" << spo_b_name << "\" as its set of optimizable single particle orbitals\n";
-        }
-        else
-          APP_ABORT("both optimizable slater determinant pointers ended up empty.");
-        app_log() << std::endl;
-
-      // standard slater determinant
-      } else {
-        if(slaterdet_0)
-        {
-          APP_ABORT("slaterdet is already instantiated.");
-        }
-        if(UseBackflow)
-          slaterdet_0 = new SlaterDetWithBackflow(targetPtcl,BFTrans);
-        else
-          slaterdet_0 = new SlaterDeterminant_t(targetPtcl);
-
-        // Copy any entries in sposetmap into slaterdet_0
-        std::map<std::string,SPOSetBasePtr>::iterator iter;
-        for (iter=spomap.begin(); iter!=spomap.end(); iter++)
-        {
-          slaterdet_0->add(iter->second,iter->first);
-        }
-        int spin_group = 0;
-        xmlNodePtr tcur = cur->children;
-        while (tcur != NULL)
-        {
-          getNodeName(tname,tcur);
-          if (tname == det_tag || tname == rn_tag)
-          {
-            if(putDeterminant(tcur, spin_group))
-              spin_group++;
-          }
-          tcur = tcur->next;
-        }
+        tcur = tcur->next;
       }
     }
+
     else if(cname == multisd_tag)
     {
       multiDet=true;
@@ -594,11 +473,13 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
  * - type variantion of a determinant, type="AFM" uses a specialized determinant builder for Anti-Ferromagnetic system
  * Extra attributes to handled the original released-node case
  */
-bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
+bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, const std::string & slater_det_opt)
 {
   ReportEngine PRE(ClassName,"putDeterminant(xmlNodePtr,int)");
 
   SpeciesSet& myspecies=targetPtcl.mySpecies;
+
+  std::string spo_name;
 
   std::string spin_name=myspecies.speciesName[spin_group];
   std::string sposet; 
@@ -666,11 +547,13 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     //psi->put(cur); 
     psi->checkObject();
     slaterdet_0->add(psi,detname);
+    spo_name = detname;
   }
   else
   {
     app_log() << "  Reusing a SPO set " << sposet << std::endl;
     psi = (*lit).second;
+    spo_name = (*lit).first;
   }
 
   int firstIndex=targetPtcl.first(spin_group);
@@ -740,6 +623,26 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     {
       app_log()<<"Using the AFM determinant"<< std::endl;
       adet = new DiracDeterminantAFM(targetPtcl, psi, firstIndex);
+    }
+    else if (slater_det_opt == "yes")
+    {
+      std::vector<RealType> params;
+      bool params_supplied = false;
+
+      // Search for the XML tag called "opt_vars", which will specify
+      // initial values for the determinant's optimiziable variables.
+      std::string subdet_name;
+      for (xmlNodePtr subdet_cur = cur->children; subdet_cur != NULL; subdet_cur = subdet_cur->next) {
+        getNodeName(subdet_name, subdet_cur);
+        if ( subdet_name == "opt_vars" ) {
+          params_supplied = true;
+          putContent(params, subdet_cur);
+        }
+      }
+
+      adet = this->create_optimizable_sd(targetPtcl, psi, spo_name, spin_group);
+      adet->buildOptVariables(params, spo_name, params_supplied, true);
+      adet->Optimizable = true;
     }
     else if (psi->Optimizable)
       adet = new DiracDeterminantOpt(targetPtcl, psi, firstIndex);

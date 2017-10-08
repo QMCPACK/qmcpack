@@ -563,6 +563,11 @@ OrbitalBase::RealType SlaterDetOpt::evaluateLog(ParticleSet& P,BufferType& buf) 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 OrbitalBase::RealType SlaterDetOpt::registerData(ParticleSet& P, BufferType& buf) {
 
+  // first time
+  if(NP == 0) {
+    NP=P.getTotalNum();
+  }
+
   //app_log() << " EWN ENTERING SlaterDetOpt::registerData(ParticleSet& P, BufferType& buf)" << std::endl;
 
   // evaluate the orbital matrix, its inverse, and the log of the determinant value
@@ -590,18 +595,6 @@ OrbitalBase::RealType SlaterDetOpt::registerData(ParticleSet& P, BufferType& buf
   return LogValue;
 
 }
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  Stores data that will be needed later in computing derivative ratio information
-///         for the linear method in the provided buffer.
-///         Currently, this class recomputes everything on the fly and so stores no data here.
-///
-/// \param[in]      P              the particle set
-/// \param[in]      buf            the buffer to save data in
-/// \param[in]      storageType    a storage flag not used for this class
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////
-void SlaterDetOpt::registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType) {}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Initialize the object for the given particle positions and put its essential internal
