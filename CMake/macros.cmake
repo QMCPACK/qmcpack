@@ -276,6 +276,7 @@ ENDFUNCTION()
 
 
 # Add a test run and associated scalar checks
+# ---required inputs---
 # BASE_NAME - name of test (number of MPI processes, number of threads, and value to check (if applicable)
 #             will be appended to get the full test name)
 # BASE_DIR - source location of test input files
@@ -283,12 +284,16 @@ ENDFUNCTION()
 # INPUT_FILE - XML input file to QMCPACK
 # PROCS - number of MPI processes
 # THREADS - number of OpenMP threads
+# SHOULD_SUCCEED - whether the test is expected to pass or fail.  Expected failing tests will not have
+#                  the scalar tests added.
+# ---optional inputs---
+# ---any number of SERIES/SCALAR_VALUES list pairs can be provided
+# ---input pairs beyond the first result in the series number being added to the test name
+# ---support for this functionality is provided through the ARGN catch-all input list
+# SERIES - series index to compute
 # SCALAR_VALUES - list of output values to check with check_scalars.py
 #                 The list entries alternate between the value name and the value (usually a string with the
 #                 both the average and error).
-# SERIES - series index to compute
-# SHOULD_SUCCEED - whether the test is expected to pass or fail.  Expected failing tests will not have
-#                  the scalar tests added.
 
 FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SHOULD_SUCCEED)
     # Map from name of check to appropriate flag for check_scalars.py
