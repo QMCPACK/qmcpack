@@ -346,6 +346,7 @@ ENDIF(ENABLE_SOA)
                     0 # VMC
                     TRUE)
 
+IF(NOT MIXED_PRECISION)
   SIMPLE_RUN_AND_CHECK(short-bccH_3x3x3_ae-deriv
     "${CMAKE_SOURCE_DIR}/tests/solids/bccH_3x3x3_ae"
     deriv.xml
@@ -359,6 +360,7 @@ ENDIF(ENABLE_SOA)
     1 1
     check_grad_lap.py
   )
+ENDIF(NOT MIXED_PRECISION)
 
 # qmc_ref_vmc_dmc  series 1  -1.841352 +/- 0.000078
 # qmc_short_vmc_dmc  series 1  -1.84196 +/- 0.00073

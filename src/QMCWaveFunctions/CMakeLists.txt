@@ -116,8 +116,10 @@ IF(OHMMS_DIM MATCHES 3)
 
 
   IF(HAVE_EINSPLINE)
+    IF(NOT MIXED_PRECISION)
+      SET(FERMION_SRCS ${FERMION_SRCS} EinsplineSet.cpp)
+    ENDIF(NOT MIXED_PRECISION)
     SET(FERMION_SRCS ${FERMION_SRCS}
-      EinsplineSet.cpp
       EinsplineSetBuilderCommon.cpp
       EinsplineSetBuilderOld.cpp
       MuffinTin.cpp

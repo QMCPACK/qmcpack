@@ -339,6 +339,13 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   delta_mem=qmc_common.memory_allocated-delta_mem;
   app_log() <<"  MEMORY allocated SplineAdoptorReader " << (delta_mem>>20) << " MB" << std::endl;
   OrbitalSet = bspline_zd;
+#if defined(MIXED_PRECISION)
+  if(use_einspline_set_extended=="yes")
+  {
+    app_error() << "Option use_old_spline is not supported by the mixed precision build!" << std::endl;
+    abort();
+  }
+#else
   if(useGPU=="yes"||use_einspline_set_extended=="yes")
   {
     EinsplineSet *new_OrbitalSet;
@@ -389,6 +396,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     setTiling(new_OrbitalSet,numOrbs);
     OrbitalSet = new_OrbitalSet;
   }
+#endif
 #ifdef Ye_debug
 #ifndef QMC_COMPLEX
   if (myComm->rank()==0 && OrbitalSet->MuffinTins.size() > 0)

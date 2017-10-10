@@ -23,6 +23,7 @@
 namespace qmcplusplus
 {
 
+#if 0
 void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<std::complex<double > >* orbitalSet)
 {
   update_token(__FILE__,__LINE__,"ReadBands_ESHDF:complex");
@@ -665,6 +666,7 @@ void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<double>
     orbitalSet->AtomicOrbitals[i].registerTimers();
   //ExtendedMap_d[set] = orbitalSet->MultiSpline;
 }
+#endif
 
 bool EinsplineSetBuilder::ReadGvectors_ESHDF()
 {
