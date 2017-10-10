@@ -33,9 +33,8 @@
 namespace qmcplusplus
 {
 template<class T, class C = std::vector<T> >
-class Vector
+struct Vector
 {
-public:
 
   typedef T           Type_t;
   typedef C           Container_t;
@@ -318,8 +317,3 @@ std::istream& operator>>(std::istream& is, Vector<T,C>& rhs)
 }
 #endif // VEKTOR_H
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

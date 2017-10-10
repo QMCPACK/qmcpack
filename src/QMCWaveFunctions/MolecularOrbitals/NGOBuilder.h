@@ -22,6 +22,7 @@
 #include "Numerics/OneDimQuinticSpline.h"
 #include "Numerics/OptimizableFunctorBase.h"
 #include "QMCWaveFunctions/SphericalBasisSet.h"
+#include "io/hdf_archive.h"
 
 namespace qmcplusplus
 {
@@ -145,12 +146,14 @@ public:
 
   ///add a grid
   bool addGrid(xmlNodePtr cur);
+  bool addGridH5(hid_t EleTycBasisSet);
 
   /** add a radial functor
    * @param cur xml element
    * @param nlms quantum number
    */
   bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms);
+  bool addRadialOrbitalH5(hid_t basisGroup, const QuantumNumberType& nlms);
 
   /** put common element
    * @param cur xml element
@@ -159,6 +162,7 @@ public:
 
 private:
   void addGaussian(xmlNodePtr cur);
+  void addGaussianH5(hid_t basisGroup);
   void addSlater(xmlNodePtr cur);
   void addNumerical(xmlNodePtr cur, const std::string& dsname);
   void addPade(xmlNodePtr cur);
@@ -167,8 +171,3 @@ private:
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

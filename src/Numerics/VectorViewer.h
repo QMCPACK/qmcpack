@@ -25,27 +25,33 @@ namespace qmcplusplus
 template<typename T>
 struct VectorViewer
 {
-  T* data_ptr;
-  int data_size;
+#if (__cplusplus >= 201103L)
+  using value_type=T;
+#else
+  typedef T value_type;
+#endif
 
-  inline VectorViewer(T* a, int n):data_ptr(a),data_size(n) {}
+  T* data_ptr;
+  size_t data_size;
+
+  inline VectorViewer(T* a, size_t n):data_ptr(a),data_size(n) {}
 
   inline T* data()
   {
     return data_ptr;
   }
 
-  inline int size() const
+  inline size_t size() const
   {
     return data_size;
   }
 
-  inline T& operator[](int i)
+  inline T& operator[](size_t i)
   {
     return data_ptr[i];
   }
 
-  inline T operator[](int i) const
+  inline T operator[](size_t i) const
   {
     return data_ptr[i];
   }

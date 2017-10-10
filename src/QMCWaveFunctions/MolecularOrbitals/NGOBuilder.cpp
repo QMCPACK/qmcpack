@@ -23,6 +23,7 @@
 #include "Numerics/OneDimCubicSpline.h"
 #include "QMCFactory/OneDimGridFactory.h"
 #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
+#include "io/hdf_archive.h"
 namespace qmcplusplus
 {
 
@@ -82,11 +83,68 @@ bool NGOBuilder::putCommon(xmlNodePtr cur)
   return success;
 }
 
+
 void
 NGOBuilder::setOrbitalSet(CenteredOrbitalType* oset, const std::string& acenter)
 {
   m_orbitals = oset;
   m_species = acenter;
+}
+
+bool NGOBuilder::addGridH5(hid_t EleTycBasisSet)
+{
+  if(!m_orbitals)
+  {
+    APP_ABORT("NGOBuilder::addGrid SphericalOrbitals<ROT,GT>*, is not initialized");
+  }
+  
+  app_log() << "   Grid is created by the input paremters in h5" << std::endl;
+  std::string gridtype;
+  HDFAttribIO<std::string> gtypestr(gridtype);
+  gtypestr.read(EleTycBasisSet,"grid_type");
+  int npts=0;
+  RealType ri=0.0,rf=10.0,rmax_safe=10;
+  double tt=0;
+  HDFAttribIO<double> ri_in(tt);
+  ri_in.read(EleTycBasisSet,"grid_ri");
+  ri=tt;
+  ri_in.read(EleTycBasisSet,"grid_rf");
+  rf=tt;
+  ri_in.read(EleTycBasisSet,"rmax_safe");
+  rmax_safe=tt;
+  HDFAttribIO<int> n_in(npts);
+  n_in.read(EleTycBasisSet,"grid_npts");
+  if(gridtype.empty())
+  {
+    APP_ABORT("Grid type is not specified.");
+  }
+  if(gridtype == "log")
+  {
+    app_log() << "    Using log grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
+    input_grid = new LogGrid<RealType>;
+    input_grid->set(ri,rf,npts);
+    //GridType *agrid = new LinearGrid<RealType>;
+    //agrid->set(0.0,rmax_safe,rmax_safe/0.01);
+    //m_orbitals->Grids.push_back(agrid);
+    m_orbitals->Grids.push_back(input_grid);
+    input_grid=0;
+  }
+  else
+    if(gridtype == "linear")
+    {
+      app_log() << "    Using linear grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
+      input_grid = new LinearGrid<RealType>;
+      input_grid->set(ri,rf,npts);
+      m_orbitals->Grids.push_back(input_grid);
+      input_grid=0;
+    }
+  //if(!input_grid)
+  //{
+  //  APP_ABORT("Grid is not defined.");
+  //}
+  //using 0.01 for the time being
+
+  return true;
 }
 
 bool NGOBuilder::addGrid(xmlNodePtr cur)
@@ -152,6 +210,7 @@ bool NGOBuilder::addGrid(xmlNodePtr cur)
   return true;
 }
 
+
 /** Add a new Slater Type Orbital with quantum numbers \f$(n,l,m,s)\f$
  * \param cur  the current xmlNode to be processed
  * \param nlms a vector containing the quantum numbers \f$(n,l,m,s)\f$
@@ -212,6 +271,36 @@ NGOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
   return true;
 }
 
+bool
+NGOBuilder::addRadialOrbitalH5(hid_t basisGroup, const QuantumNumberType& nlms)
+{
+  if(!m_orbitals)
+  {
+    ERRORMSG("m_orbitals, SphericalOrbitals<ROT,GT>*, is not initialized")
+    return false;
+  }
+  std::string radtype(m_infunctype);
+  std::string dsname("0");
+  int lastRnl = m_orbitals->Rnl.size();
+  m_nlms = nlms;
+  if(radtype == "Gaussian" || radtype == "GTO")
+  {
+    addGaussianH5(basisGroup);
+  }
+  else
+  {
+    app_log()<<" RadType other than Gaussian not implemented to be read from H5 format"<<std::endl;
+    exit(0);
+  }
+  if(lastRnl && m_orbitals->Rnl.size()> lastRnl)
+  {
+    app_log() << "\tSetting GridManager of " << lastRnl << " radial orbital to false" << std::endl;
+    m_orbitals->Rnl[lastRnl]->setGridManager(false);
+  }
+  
+  return true;
+}
+
 void NGOBuilder::addGaussian(xmlNodePtr cur)
 {
   int L= m_nlms[1];
@@ -226,6 +315,26 @@ void NGOBuilder::addGaussian(xmlNodePtr cur)
   m_orbitals->Rnl.push_back(radorb);
   m_orbitals->RnlID.push_back(m_nlms);
 }
+
+void NGOBuilder::addGaussianH5(hid_t basisGroup)
+{
+  int L= m_nlms[1];
+
+  GaussianCombo<RealType> gset(L,Normalized);
+  gset.putBasisGroupH5(basisGroup);
+  GridType* agrid = m_orbitals->Grids[0];
+
+
+  RadialOrbitalType *radorb = new RadialOrbitalType(agrid);
+  if(m_rcut<0)
+    m_rcut = agrid->rmax();
+  Transform2GridFunctor<GaussianCombo<RealType>,RadialOrbitalType> transform(gset, *radorb);
+  transform.generate(agrid->rmin(),m_rcut,agrid->size());
+  m_orbitals->Rnl.push_back(radorb);
+  m_orbitals->RnlID.push_back(m_nlms);
+
+}
+
 
 void NGOBuilder::addSlater(xmlNodePtr cur)
 {
@@ -386,8 +495,3 @@ void NGOBuilder::addPade(xmlNodePtr cur)
   //m_orbitals->RnlID.push_back(m_nlms);
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

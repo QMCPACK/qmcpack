@@ -153,8 +153,3 @@ NonLocalECPComponent::evaluateVP(const ParticleSet& W, int iat, TrialWaveFunctio
 
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 6181 $   $Date: 2014-01-22 11:58:36 -0500 (Wed, 22 Jan 2014) $
- * $Id: NonLocalECPComponent.cpp 6181 2014-01-22 16:58:36Z jnkim $
- ***************************************************************************/

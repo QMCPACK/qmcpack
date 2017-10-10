@@ -120,10 +120,10 @@ bool ParticleSetPool::putLattice(xmlNodePtr cur)
     app_log() << "  Overwrite Global SuperCell " << std::endl;
   }
   LatticeParser a(*SimulationCell);
-  bool success=a.put(cur);
-  if(printcell)
+  bool lattice_defined=a.put(cur);
+  if(printcell && lattice_defined)
     SimulationCell->print(app_log());
-  return success;
+  return lattice_defined;
 }
 
 /** process an xml element
@@ -272,7 +272,31 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur,
     //initialize ions from hdf5
     hid_t h5=-1;
     if(myComm->rank()==0)
-      h5 = H5Fopen(h5name.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
+    {
+      //Rather than turn off all H5errors, we're going to
+      //temporarily disable it.
+      //
+      //old_func:  function pointer to current function that
+      //           displays when H5 encounters error.
+      herr_t (*old_func)(void*);
+      //old_client_data:  null pointer to associated error stream.
+      void *old_client_data;
+      //Grab the current handler info.
+      H5Eget_auto(&old_func,&old_client_data);
+      //Now kill error notifications.
+      H5Eset_auto(NULL,NULL);
+        h5 = H5Fopen(h5name.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
+      //and restore to defaults.
+      H5Eset_auto(old_func, old_client_data);
+      if (h5 < 0)
+      {
+        app_error() << "Could not open HDF5 file \"" << h5name
+                    << "\" in ParticleSetPool::createESParticleSet.  Aborting.\n"
+                    << "(Please ensure that your path is correct, the file exists, and that "
+                    << "you have read permissions.)\n";
+        APP_ABORT("ParticleSetPool::createESParticleSet");
+      }
+    }
     ESHDFIonsParser ap(*ions,h5,myComm);
     ap.put(cur);
     ap.expand(eshdf_tilematrix);
@@ -373,8 +397,3 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur,
   return qp;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

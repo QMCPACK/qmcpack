@@ -156,8 +156,3 @@ OrbitalBase* ProductOrbital::makeClone(ParticleSet& tpq) const
   return myclone;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

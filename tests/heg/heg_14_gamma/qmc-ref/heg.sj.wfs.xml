@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+<determinantset type="electron-gas" shell="1" randomize="true"/>
+<jastrow name="J2" type="Two-Body" function="Bspline" optimize="yes">
+<correlation speciesA="u" speciesB="u" size="5">
+<coefficients id="uu" type="Array" optimize="yes"> 1.082858193 0.6653279375 0.4358910287 0.2243616172 0.1102948764</coefficients>
+</correlation>
+<correlation speciesA="u" speciesB="d" size="5">
+<coefficients id="ud" type="Array" optimize="yes"> 1.696171854 1.047722154 0.6275148566 0.3175982878 0.1446706214</coefficients>
+</correlation>
+</jastrow>
+</wavefunction>
+</qmcsystem>

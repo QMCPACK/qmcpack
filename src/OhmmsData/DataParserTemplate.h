@@ -210,8 +210,3 @@ void AddElement(std::map<std::string,
   emap.insert(make_pair(apath,new OhmmsElement<T>(aref)));
 }
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

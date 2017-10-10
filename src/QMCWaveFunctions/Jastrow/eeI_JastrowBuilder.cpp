@@ -19,6 +19,7 @@
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowBuilder.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
@@ -61,14 +62,37 @@ bool eeI_JastrowBuilder::putkids (xmlNodePtr kids, J3type &J3)
       int eNum1 = eSet.findSpecies (eSpecies1);
       int eNum2 = eSet.findSpecies (eSpecies2);
       functor->put (kids);
-      if (functor->cutoff_radius < 1.0e-6)
+      if (sourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN)
       {
-        app_log()  << "  eeI functor rcut is currently zero.\n"
-                   << "  Setting to Wigner-Seitz radius = "
-                   << sourcePtcl->Lattice.WignerSeitzRadius << std::endl;
-        functor->cutoff_radius = sourcePtcl->Lattice.WignerSeitzRadius;
-        functor->reset();
+        const RealType WSRadius = sourcePtcl->Lattice.WignerSeitzRadius;
+        if (functor->cutoff_radius > WSRadius)
+        {
+          if ( functor->cutoff_radius - WSRadius > 1e-4 )
+          {
+            APP_ABORT("  The eeI Jastrow cutoff specified should not be larger than Wigner-Seitz radius.");
+          }
+          else
+          {
+            app_log() << "  The eeI Jastrow cutoff specified is slightly larger than the Wigner-Seitz radius.";
+            app_log() << "  Setting to Wigner-Seitz radius = " << WSRadius << ".\n";
+            functor->cutoff_radius = WSRadius;
+            functor->reset();
+          }
+        }
+        if (functor->cutoff_radius < 1.0e-6)
+        {
+          app_log()  << "  eeI functor rcut is currently zero.\n"
+                     << "  Setting to Wigner-Seitz radius = "
+                     << WSRadius << std::endl;
+          functor->cutoff_radius = WSRadius;
+          functor->reset();
+        }
       }
+      else
+        if (functor->cutoff_radius < 1.0e-6)
+        {
+          APP_ABORT("  eeI Jastrow cutoff unspecified.  Cutoff must be given when using open boundary conditions");
+        }
       J3.addFunc(iNum, eNum1, eNum2, functor);
     }
     kids = kids->next;
@@ -99,23 +123,30 @@ bool eeI_JastrowBuilder::put(xmlNodePtr cur)
     int numiSpecies = iSet.getTotalNum();
     if (ftype == "Bspline")
     {
+#ifdef ENABLE_SOA
+      typedef JeeIOrbitalSoA<BsplineFunctor3D> J3Type;
+#else
       typedef eeI_JastrowOrbital<BsplineFunctor3D> J3Type;
+#endif
+      J3Type &J3 = *(new J3Type(*sourcePtcl, targetPtcl, true));
+      putkids (kids, J3);
+    }
+    else if (ftype == "polynomial")
+    {
+#ifdef ENABLE_SOA
+      typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
+#else
+      typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;
+#endif
       J3Type &J3 = *(new J3Type(*sourcePtcl, targetPtcl, true));
       putkids (kids, J3);
     }
     else
-      if (ftype == "polynomial")
-      {
-        typedef eeI_JastrowOrbital<PolynomialFunctor3D> J3Type;
-        J3Type &J3 = *(new J3Type(*sourcePtcl, targetPtcl, true));
-        putkids (kids, J3);
-      }
-      else
-      {
-        app_error() << "Unknown function \"" << ftype << "\" in"
-                    << " eeI_JastrowBuilder.  Aborting.\n";
-        abort();
-      }
+    {
+      app_error() << "Unknown function \"" << ftype << "\" in"
+                  << " eeI_JastrowBuilder.  Aborting.\n";
+      abort();
+    }
     // 	// Find the number of the source species
     // 	bool success=false;
     // 	while (kids != NULL) {
@@ -292,8 +323,3 @@ bool eeI_JastrowBuilder::put(xmlNodePtr cur)
   // return true;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1691 $   $Date: 2007-02-01 15:51:50 -0600 (Thu, 01 Feb 2007) $
- * $Id: BsplineConstraints.h 1691 2007-02-01 21:51:50Z jnkim $
- ***************************************************************************/

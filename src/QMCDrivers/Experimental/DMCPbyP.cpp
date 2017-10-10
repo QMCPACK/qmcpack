@@ -40,7 +40,7 @@ DMCPbyP::DMCPbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonia
   m_param.add(NonLocalMove,"nonlocalmove","string");
   m_param.add(NonLocalMove,"nonlocalmoves","string");
   //create a ScalarEstimator and add DMCEnergyEstimator
-  Estimators = new ScalarEstimatorManager(H);
+  Estimators = new EstimatorManagerBase(H);
   Estimators->add(new DMCEnergyEstimator,"elocal");
 }
 
@@ -214,8 +214,3 @@ bool DMCPbyP::put(xmlNodePtr q)
 
 }
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

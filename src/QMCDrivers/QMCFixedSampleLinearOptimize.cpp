@@ -67,8 +67,8 @@ vdeps(1,std::vector<double>()),
   StabilizerMethod("best"), GEVSplit("no"), stepsize(0.25), doAdaptiveThreeShift(false),
   targetExcitedStr("no"), targetExcited(false), block_lmStr("no"), block_lm(false),
   bestShift_i(-1.0), bestShift_s(-1.0), shift_i_input(0.01), shift_s_input(1.00), doOneShiftOnly(false),
-  num_shifts(3), nblocks(1), nolds(1), nkept(1), nsamp_comp(0), omega_shift(0.0), max_param_change(0.5),
-  max_relative_cost_change(1.0), block_first(true), block_second(false), block_third(false)
+  num_shifts(3), nblocks(1), nolds(1), nkept(1), nsamp_comp(0), omega_shift(0.0), max_param_change(0.3),
+  max_relative_cost_change(10.0), block_first(true), block_second(false), block_third(false)
 {
   IsQMCDriver=false;
   //set the optimization flag
@@ -96,7 +96,7 @@ vdeps(1,std::vector<double>()),
   m_param.add(shift_s_input, "shift_s", "double");
   m_param.add(num_shifts, "num_shifts", "int");
 
-#ifdef HAVE_LMY_ENGINE
+  #ifdef HAVE_LMY_ENGINE
   //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
   std::vector<double> shift_scales(3, 1.0);
   EngineObj = new cqmc::engine::LMYEngine(&vdeps, 
@@ -116,6 +116,7 @@ vdeps(1,std::vector<double>()),
                                           false, // eom related
                                           false, // use block?
                                           120000, // number of samples
+                                          0,  // number of parameters
                                           60, // max krylov iter
                                           0, // max spam inner iter
                                           1, // spam appro degree
@@ -128,10 +129,10 @@ vdeps(1,std::vector<double>()),
                                           0.99, // minimum S singular val
                                           0.0, 
                                           0.0, 
-                                          0.0, // max change allowed
-                                          0.0, // identity shift
-                                          0.0, // overlap shift
-                                          0.0, // max parameter change
+                                          10.0, // max change allowed
+                                          1.00, // identity shift
+                                          1.00, // overlap shift
+                                          0.3, // max parameter change
                                           shift_scales, 
                                           app_log());
   #endif
@@ -153,6 +154,9 @@ vdeps(1,std::vector<double>()),
 /** Clean up the vector */
 QMCFixedSampleLinearOptimize::~QMCFixedSampleLinearOptimize()
 {
+  #ifdef HAVE_LMY_ENGINE
+  delete EngineObj;
+  #endif
 }
 
 QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealType dl)
@@ -215,7 +219,8 @@ bool QMCFixedSampleLinearOptimize::run()
     Matrix<RealType> Right(N,N);
     Matrix<RealType> S(N,N);
 //     stick in wrong matrix to reduce the number of matrices we need by 1.( Left is actually stored in Right, & vice-versa)
-    optTarget->fillOverlapHamiltonianMatrices(Right,Left,S);
+    optTarget->fillOverlapHamiltonianMatrices(Right,Left);
+    S.copy(Left);
     bool apply_inverse(true);
     if(apply_inverse)
     {
@@ -418,9 +423,14 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   doAdaptiveThreeShift = ( MinMethod == "adaptive" );
   doOneShiftOnly = ( MinMethod == "OneShiftOnly" );
 
+  // sanity check
+  if ( targetExcited && !doAdaptiveThreeShift )
+    APP_ABORT("targetExcited = \"yes\" requires that MinMethod = \"adaptive\"");
+
 #ifdef ENABLE_OPENMP
   if ( doAdaptiveThreeShift && (omp_get_max_threads() > 1) ) {
-        throw std::runtime_error("OpenMP threading not enabled with AdaptiveThreeShift optimizer.  Use MPI for parallelism instead, and set OMP_NUM_THREADS to 1.");
+        //throw std::runtime_error("OpenMP threading not enabled with AdaptiveThreeShift optimizer.  Use MPI for parallelism instead, and set OMP_NUM_THREADS to 1.");
+        app_log() << "test version of OpenMP threading with AdaptiveThreeShift optimizer" << std::endl;
   }
 #endif
 
@@ -650,7 +660,7 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
   Matrix<RealType> prdMat(N,N); prdMat = 0.0;
 
   // build the overlap and hamiltonian matrices
-  optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat, invMat);
+  optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
 
   //// print the hamiltonian matrix
   //app_log() << std::endl;
@@ -772,6 +782,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
                          false, // ssquare
                          block_lm, 
                          12000, 
+                         numParams,
                          omega_shift,
                          max_relative_cost_change,
                          shifts_i.at(central_index), 
@@ -902,9 +913,9 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   this->finish();
 
   // reset the number of samples
-  this->optTarget->setNumSamples(nsamp_comp);
-  nTargetSamples = nsamp_comp;
-  app_log() << "# of sample before correlated sampling is " << nTargetSamples << std::endl;
+  //this->optTarget->setNumSamples(nsamp_comp);
+  //nTargetSamples = nsamp_comp;
+  //app_log() << "# of sample before correlated sampling is " << nTargetSamples << std::endl;
   //app_log() << "number of samples is" << this->optTarget->getNumSamples() << std::endl;
   app_log() << std::endl
             << "*************************************************************" << std::endl
@@ -1062,8 +1073,14 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
   std::vector<RealType> parameterDirections;
   parameterDirections.assign(N, 0.0);
 
-  // have the cost function prepare derivative vectors for the matrix build and compute the initial cost
+  // compute the initial cost
+#ifdef QMC_CUDA
+  // Ye : can't call computedCost directly, internal data was not correct for ham,ovl matrices.
+  // more investiation is needed.
   const RealType initCost = optTarget->Cost(true);
+#else
+  const RealType initCost = optTarget->computedCost();
+#endif
 
   // say what we are doing
   app_log() << std::endl
@@ -1078,18 +1095,21 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
   Matrix<RealType> prdMat(N,N); prdMat = 0.0;
 
   // build the overlap and hamiltonian matrices
-  optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat, invMat);
-
-  // compute the inverse of the overlap matrix
+  optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
   invMat.copy(ovlMat);
-  invert_matrix(invMat, false);
 
   // prepare vector to hold largest parameter change for each shift
   RealType max_change(0.0);
 
   // apply the identity shift
   for (int i=1; i<N; i++)
+  {
     hamMat(i,i) += bestShift_i;
+    if(invMat(i,i)==0) invMat(i,i) = bestShift_i*bestShift_s;
+  }
+
+  // compute the inverse of the overlap matrix
+  invert_matrix(invMat, false);
 
   // apply the overlap shift
   for (int i=1; i<N; i++)
@@ -1124,8 +1144,8 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
   RealType bigVec(0);
   for (int i=0; i<numParams; i++)
     bigVec = std::max(bigVec,std::abs(parameterDirections.at(i+1)));
-  app_log() << std::endl
-            << "Largest LM parameter change : "
+  app_log() << std::endl << "Among totally " << numParams << " optimized parameters, "
+            << "largest LM parameter change : "
             << bigVec << std::endl;
 
   // compute the new cost
@@ -1144,17 +1164,14 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
             << "******************************************************************************" << std::endl;
 
   if ( !optTarget->IsValid || std::isnan(newCost)) {
-    app_log() << "The new set of parameters is not valid. Revert to the old set!" << std::endl;
+    app_log() << std::endl << "The new set of parameters is not valid. Revert to the old set!" << std::endl;
     for (int i=0; i<numParams; i++)
       optTarget->Params(i) = currentParameters.at(i);
     bestShift_s=bestShift_s*4.0;
   } else {
     if ( bestShift_s > 1.0e-2 ) bestShift_s=bestShift_s/4.0;
     // say what we are doing
-    app_log() << std::endl
-              << "*****************************" << std::endl
-              << "Updating the guiding function" << std::endl
-              << "*****************************" << std::endl;
+    app_log() << std::endl << "The new set of parameters is valid. Updating the trial wave function!" << std::endl;
   }
 
   app_log() << std::endl
@@ -1175,8 +1192,3 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
 }
 
 }
-/***************************************************************************
-* $RCSfile$   $Author: jnkim $
-* $Revision: 1286 $   $Date: 2006-08-17 12:33:18 -0500 (Thu, 17 Aug 2006) $
-* $Id: QMCFixedSampleLinearOptimize.cpp 1286 2006-08-17 17:33:18Z jnkim $
-***************************************************************************/

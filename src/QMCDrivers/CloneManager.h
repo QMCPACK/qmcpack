@@ -82,7 +82,7 @@ protected:
 //     ///update engines
 //     std::vector<QMCRenyiUpdateBase*> RenyiMovers;
   ///estimator managers
-  std::vector<EstimatorManager*> estimatorClones;
+  std::vector<EstimatorManagerBase*> estimatorClones;
   ///trace managers
   std::vector<TraceManager*> traceClones;
   ///Branch engines
@@ -101,8 +101,3 @@ protected:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile: CloneManager.h,v $   $Author: jnkim $
- * $Revision: 1.2 $   $Date: 2006/02/26 17:41:10 $
- * $Id: CloneManager.h,v 1.2 2006/02/26 17:41:10 jnkim Exp $
- ***************************************************************************/

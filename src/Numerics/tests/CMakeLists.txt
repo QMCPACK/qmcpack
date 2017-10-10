@@ -18,7 +18,8 @@ SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME unit_test_${SRC_DIR})
 
 
-ADD_EXECUTABLE(${UTEST_EXE} test_grid_functor.cpp test_nr_spline.cpp test_stdlib.cpp)
+ADD_EXECUTABLE(${UTEST_EXE} test_grid_functor.cpp test_nr_spline.cpp test_stdlib.cpp test_bessel.cpp
+               test_ylm.cpp test_e2iphi.cpp test_vector_viewer.cpp test_aligned_allocator.cpp)
 TARGET_LINK_LIBRARIES(${UTEST_EXE} qmcutil ${QMC_UTIL_LIBS})
 
 #ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")

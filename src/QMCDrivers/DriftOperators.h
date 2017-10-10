@@ -279,14 +279,10 @@ inline void assignDrift(T tau_au, const std::vector<T>& massinv,
   for(int iat=0; iat<massinv.size(); ++iat)
   {
     T tau=tau_au*massinv[iat];
-    drift[iat]=qf[iat]*T1(tau);
+    // naive drift "tau/mass*qf" can diverge
+    getScaledDrift(tau,qf[iat],drift[iat]);
   }
 }
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

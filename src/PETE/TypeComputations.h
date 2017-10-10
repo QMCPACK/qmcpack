@@ -461,8 +461,3 @@ struct TrinaryReturn
 #endif // PETE_PETE_TYPE_COMPUTATIONS_H
 
 // ACL:rcsinfo
-// ----------------------------------------------------------------------
-// $RCSfile$   $Author$
-// $Revision$   $Date$
-// ----------------------------------------------------------------------
-// ACL:rcsinfo

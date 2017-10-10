@@ -33,7 +33,7 @@ else()
   LIST(APPEND LIH_GAMMA_SCALARS "kinetic" "7.46326 0.024")
   LIST(APPEND LIH_GAMMA_SCALARS "localecp" "-11.78311 0.025")
   LIST(APPEND LIH_GAMMA_SCALARS "samples" "1600000 0.0")
-  LIST(APPEND LIH_GAMMA_SCALARS "flux" "0.0 0.05")
+#  LIST(APPEND LIH_GAMMA_SCALARS "flux" "0.0 0.05")
 
   QMC_RUN_AND_CHECK(${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
@@ -54,7 +54,7 @@ else()
   LIST(APPEND LIH_X_SCALARS "kinetic" "7.33899 0.024")
   LIST(APPEND LIH_X_SCALARS "localecp" "-11.37256 0.025")
   LIST(APPEND LIH_X_SCALARS "samples" "1600000 0.0")
-  LIST(APPEND LIH_X_SCALARS "flux" "0.0 0.05")
+#  LIST(APPEND LIH_X_SCALARS "flux" "0.0 0.05")
 
   QMC_RUN_AND_CHECK(${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/solids/LiH_solid_1x1x1_pp"
@@ -241,7 +241,7 @@ else()
   LIST(APPEND O_ATOM_SCALARS "nonlocalecp" "2.065389 0.020")
   LIST(APPEND O_ATOM_SCALARS "eeenergy"    "10.368642 0.014")
   LIST(APPEND O_ATOM_SCALARS "samples"     "64000 0.0")
-  LIST(APPEND O_ATOM_SCALARS "flux"        "0.0 0.25")
+#  LIST(APPEND O_ATOM_SCALARS "flux"        "0.0 0.25")
 
 
   RUN_QE_TEST(qe-atomO-polarized-no-collect ${CMAKE_SOURCE_DIR}/tests/solids/atomO_pp/dft-inputs

@@ -27,20 +27,33 @@
 #include "Numerics/HDFSTLAttrib.h"
 #include "ParticleIO/ESHDFParticleParser.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "Particle/DistanceTableData.h"
 #include <fftw3.h>
 #include <Utilities/ProgressReportEngine.h>
 #include <QMCWaveFunctions/einspline_helper.hpp>
-#include "QMCWaveFunctions/EinsplineAdoptor.h"
-#include "QMCWaveFunctions/SplineC2XAdoptor.h"
-#include "QMCWaveFunctions/SplineR2RAdoptor.h"
-#include "QMCWaveFunctions/SplineMixedAdoptor.h"
-
 #include "QMCWaveFunctions/BsplineReaderBase.h"
-#include "QMCWaveFunctions/SplineAdoptorReaderP.h"
-#include "QMCWaveFunctions/SplineMixedAdoptorReaderP.h"
+#include "QMCWaveFunctions/EinsplineAdoptor.h"
 
 namespace qmcplusplus
 {
+
+  ///create R2R, real wavefunction in double
+  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_rep);
+  ///create R2R, real wavefunction in float
+  BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, bool hybrid_rep);
+  ///create C2C or C2R, complex wavefunction in double
+  BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, bool hybrid_rep);
+  ///create C2C or C2R, complex wavefunction in single
+  BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybrid_rep);
+  ///disable truncated orbitals for now
+  BsplineReaderBase* createTruncatedSingle(EinsplineSetBuilder* e, int celltype)
+  {
+    return nullptr;
+  }
+  BsplineReaderBase* createTruncatedDouble(EinsplineSetBuilder* e, int celltype)
+  {
+    return nullptr;
+  }
 
 SPOSetBase*
 EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
@@ -58,11 +71,15 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string sourceName;
   std::string spo_prec("double");
   std::string truncate("no");
+  std::string hybrid_rep("no");
 #if defined(QMC_CUDA)
   std::string useGPU="yes";
 #else
   std::string useGPU="no";
 #endif
+  NewTimer* spo_timer = new NewTimer("einspline::CreateSPOSetFromXML", timer_level_medium);
+  TimerManager.addTimer(spo_timer);
+  spo_timer->start();
 
   {
     OhmmsAttributeSet a;
@@ -75,6 +92,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add (givenTwist,   "twist");
     a.add (sourceName, "source");
     a.add (MeshFactor, "meshfactor");
+    a.add (hybrid_rep, "hybridrep");
     a.add (useGPU,     "gpu");
     a.add (spo_prec,   "precision");
     a.add (truncate,   "truncate");
@@ -101,7 +119,11 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
   else
   { //keep the one-body distance table index 
-    myTableIndex=TargetPtcl.addTable(*SourcePtcl);
+#if defined(ENABLE_SOA)
+    myTableIndex=TargetPtcl.addTable(*SourcePtcl,DT_SOA_PREFERRED);
+#else
+    myTableIndex=TargetPtcl.addTable(*SourcePtcl,DT_AOS);
+#endif
   }
 
   ///////////////////////////////////////////////
@@ -154,12 +176,12 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   else
     NewOcc=false;
 #if defined(QMC_CUDA)
-  app_log() << "\t  QMC_CUDA=1 Overwriting the precision of the einspline storage on the host.\n";
+  app_log() << "\t  QMC_CUDA=1 Overwriting the einspline storage on the host to double precision.\n";
   spo_prec="double"; //overwrite
   truncate="no"; //overwrite
 #endif
 #if defined(MIXED_PRECISION)
-  app_log() << "\t  MIXED_PRECISION=1 Overwriting the precision of the einspline storage.\n";
+  app_log() << "\t  MIXED_PRECISION=1 Overwriting the einspline storage to single precision.\n";
   spo_prec="single"; //overwrite
 #endif
   H5OrbSet aset(H5FileName, spinSet, numOrbs);
@@ -174,6 +196,14 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   }
 
   if(FullBands[spinSet]==0) FullBands[spinSet]=new std::vector<BandInfo>;
+
+  // Ensure the first SPO set must be spinSet==0
+  // to correctly initialize key data of EinsplineSetBuilder
+  if ( SPOSetMap.size()==0 && spinSet!=0 )
+  {
+    app_error() << "The first SPO set must have spindataset=\"0\"" << std::endl;
+    abort();
+  }
 
   Timer mytimer;
   if(spinSet==0)
@@ -226,18 +256,20 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     app_log() <<  "TIMER  EinsplineSetBuilder::BroadcastOrbitalInfo " << mytimer.elapsed() << std::endl;
     app_log().flush();
 
-    // Now, analyze the k-point mesh to figure out the what k-points  are needed                                                    //
+    // setup primitive cell and supercell
     PrimCell.set(Lattice);
     SuperCell.set(SuperLattice);
     GGt=dot(transpose(PrimCell.G), PrimCell.G);
-
     for (int iat=0; iat<AtomicOrbitals.size(); iat++)
       AtomicOrbitals[iat].Lattice = Lattice;
+
     // Copy supercell into the ParticleSets
     // app_log() << "Overwriting XML lattice with that from the ESHDF file.\n";
     // PtclPoolType::iterator piter;
     // for(piter = ParticleSets.begin(); piter != ParticleSets.end(); piter++)
     //   piter->second->Lattice.copy(SuperCell);
+
+    // Now, analyze the k-point mesh to figure out the what k-points  are needed                                                    //
     TwistNum = TwistNum_inp;
     AnalyzeTwists2();
 
@@ -253,6 +285,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   bool use_single= (spo_prec == "single" || spo_prec == "float");
 
+#if !defined(QMC_COMPLEX)
   if (UseRealOrbitals)
   {
     //if(TargetPtcl.Lattice.SuperCellEnum != SUPERCELL_BULK && truncate=="yes")
@@ -261,34 +294,21 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       if(truncate=="yes")
       {
         if(use_single)
-        {
-          if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
-            MixedSplineReader= new SplineMixedAdoptorReader<SplineOpenAdoptor<float,RealType,3> >(this);
-          else if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_SLAB)
-            MixedSplineReader= new SplineMixedAdoptorReader<SplineMixedAdoptor<float,RealType,3> >(this);
-          else
-            MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<float,RealType,3> >(this);
-        }
+          MixedSplineReader=createTruncatedSingle(this,TargetPtcl.Lattice.SuperCellEnum);
         else
-        {
-          if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN)
-            MixedSplineReader= new SplineMixedAdoptorReader<SplineOpenAdoptor<double,RealType,3> >(this);
-          else if(TargetPtcl.Lattice.SuperCellEnum == SUPERCELL_SLAB)
-            MixedSplineReader= new SplineMixedAdoptorReader<SplineMixedAdoptor<double,RealType,3> >(this);
-          else
-            MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<double,RealType,3> >(this);
-        }
+          MixedSplineReader=createTruncatedDouble(this,TargetPtcl.Lattice.SuperCellEnum);
       }
       else
       {
         if(use_single)
-          MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<float,RealType,3> >(this);
+          MixedSplineReader= createBsplineRealSingle(this, hybrid_rep=="yes");
         else
-          MixedSplineReader= new SplineAdoptorReader<SplineR2RAdoptor<double,RealType,3> >(this);
+          MixedSplineReader= createBsplineRealDouble(this, hybrid_rep=="yes");
       }
     }
   }
   else
+#endif
   {
     if(MixedSplineReader==0)
     {
@@ -297,21 +317,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
         app_log() << "  Truncated orbitals with multiple kpoints are not supported yet!" << std::endl;
       }
       if(use_single)
-      {
-#if defined(QMC_COMPLEX)
-        MixedSplineReader= new SplineAdoptorReader<SplineC2CPackedAdoptor<float,RealType,3> >(this);
-#else
-        MixedSplineReader= new SplineAdoptorReader<SplineC2RPackedAdoptor<float,RealType,3> >(this);
-#endif
-      }
+        MixedSplineReader= createBsplineComplexSingle(this, hybrid_rep=="yes");
       else
-      {
-#if defined(QMC_COMPLEX)
-        MixedSplineReader= new SplineAdoptorReader<SplineC2CPackedAdoptor<double,RealType,3> >(this);
-#else
-        MixedSplineReader= new SplineAdoptorReader<SplineC2RPackedAdoptor<double,RealType,3> >(this);
-#endif
-      }
+        MixedSplineReader= createBsplineComplexDouble(this, hybrid_rep=="yes");
     }
   }
 
@@ -336,6 +344,8 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     else
       temp_OrbitalSet = new EinsplineSetExtended<double>;
     MixedSplineReader->export_MultiSpline(&(temp_OrbitalSet->MultiSpline));
+    //set the flags for anti periodic boundary conditions
+    temp_OrbitalSet->HalfG = dynamic_cast<SplineAdoptorBase<double,3> *>(OrbitalSet)->HalfG;
     new_OrbitalSet = temp_OrbitalSet;
   }
   else
@@ -427,6 +437,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     OrbitalSet->initGPU();
   }
 #endif
+  spo_timer->stop();
   return OrbitalSet;
 }
 

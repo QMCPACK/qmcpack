@@ -70,7 +70,6 @@ OrbitalBasePtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp) const
   clone->C2node_up=C2node_up;
   clone->C2node_dn=C2node_dn;
   clone->Optimizable=Optimizable;
-  clone->RecomputeNeedsDistanceTable=RecomputeNeedsDistanceTable;
   clone->C=C;
   clone->myVars=myVars;
   clone->usingCSF=usingCSF;
@@ -1051,8 +1050,3 @@ void MultiSlaterDeterminantFast::registerTimers()
 
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3416 $   $Date: 2008-12-07 11:34:49 -0600 (Sun, 07 Dec 2008) $
- * $Id: MultiSlaterDeterminantFast.cpp 3416 2008-12-07 17:34:49Z jnkim $
- ***************************************************************************/

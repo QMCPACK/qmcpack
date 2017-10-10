@@ -178,7 +178,7 @@ void DMCOMPOPT::resetUpdateEngines()
     #pragma omp parallel for
     for(int ip=0; ip<NumThreads; ++ip)
     {
-      estimatorClones[ip]= new EstimatorManager(*Estimators);
+      estimatorClones[ip]= new EstimatorManagerBase(*Estimators);
       estimatorClones[ip]->setCollectionMode(false);
       Rng[ip]=new RandomGenerator_t(*RandomNumberControl::Children[ip]);
       hClones[ip]->setRandomGenerator(Rng[ip]);
@@ -417,8 +417,3 @@ bool DMCOMPOPT::run()
 }
 }
 
-/***************************************************************************
- * $RCSfile: DMCOMPOPT.cpp,v $   $Author: jnkim $
- * $Revision: 1620 $   $Date: 2007-01-14 18:12:23 -0600 (Sun, 14 Jan 2007) $
- * $Id: DMCOMPOPT.cpp 1620 2007-01-15 00:12:23Z jnkim $
- ***************************************************************************/

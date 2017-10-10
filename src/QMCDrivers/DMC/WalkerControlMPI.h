@@ -53,9 +53,4 @@ struct WalkerControlMPI: public WalkerControlBase
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile: WalkerControlMPI.h,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

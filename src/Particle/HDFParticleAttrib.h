@@ -156,8 +156,3 @@ struct HDFAttribIO<ParticleAttrib<TinyVector<double,3> > >: public HDFAttribIOBa
 //   }
 // };
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

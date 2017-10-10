@@ -17,7 +17,7 @@
 #include "Configuration.h"
 #include "QMCWaveFunctions/SphericalBasisSet.h"
 #include "Numerics/SlaterBasisSet.h"
-
+#include "io/hdf_archive.h"
 namespace qmcplusplus
 {
 
@@ -50,15 +50,19 @@ public:
     return true;
   }
 
+  bool addGridH5(hid_t EleTycBasisSet)
+  {
+    return true;
+  }
+
   bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms);
 
+  bool addRadialOrbitalH5(hid_t radfunc, const QuantumNumberType& nlms)
+  {
+    return 0;
+  }
   bool putCommon(xmlNodePtr cur);
 
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

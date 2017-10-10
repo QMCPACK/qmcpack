@@ -888,9 +888,4 @@ struct ScaledPadeFunctor:public OptimizableFunctorBase
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

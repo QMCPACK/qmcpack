@@ -202,15 +202,11 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
   hout.write(number_of_walkers,hdf::num_walkers);
 
   TinyVector<int,3> gcounts(number_of_walkers,number_of_particles,OHMMS_DIM);
-  //vector<int> gcounts(3);
-  //gcounts[0]=number_of_walkers;
-  //gcounts[1]=number_of_particles;
-  //gcounts[2]=OHMMS_DIM;
 
-  if(hout.is_collective())
+  if(hout.is_parallel())
   { 
     TinyVector<int,3> counts(W.getActiveWalkers(),            number_of_particles,OHMMS_DIM);
-    TinyVector<int,3> offsets(W.WalkerOffsets[myComm->rank()],number_of_particles,OHMMS_DIM);
+    TinyVector<int,3> offsets(W.WalkerOffsets[myComm->rank()],0,0);
     hyperslab_proxy<BufferType,3> slab(*RemoteData[0],gcounts,counts,offsets);
     hout.write(slab,hdf::walkers);
   }
@@ -331,8 +327,3 @@ bool HDFWalkerOutput::dump(ForwardWalkingHistoryObject& FWO)
 }*/
 
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

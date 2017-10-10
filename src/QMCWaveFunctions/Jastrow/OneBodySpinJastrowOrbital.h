@@ -75,7 +75,7 @@ public:
   {
     OrbitalName = "OneBodySpinJastrow";
     U.resize(els.getTotalNum());
-    myTableIndex=els.addTable(CenterRef);
+    myTableIndex=els.addTable(CenterRef,DT_AOS);
     //allocate vector of proper size  and set them to 0
     F.resize(CenterRef.groups(), els.groups());
     for(int i=0; i<F.size(); ++i)
@@ -570,9 +570,4 @@ public:
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: kesler $
- * $Revision: 3708 $   $Date: 2009-03-25 17:30:09 -0500 (Wed, 25 Mar 2009) $
- * $Id: OneBodySpinJastrowOrbital.h 3708 2009-03-25 22:30:09Z kesler $
- ***************************************************************************/
 

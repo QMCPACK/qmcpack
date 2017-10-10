@@ -284,6 +284,7 @@ public:
   {
     return WalkerList[i];
   }
+
   inline const Walker_t* operator[](int i) const
   {
     return WalkerList[i];
@@ -414,8 +415,3 @@ private:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: yingwai $
- * $Revision: 7383 $   $Date: 2016-12-28 12:15:25 -0500 (Wed, 28 Dec 2016) $
- * $Id: MCWalkerConfiguration.h 7383 2016-12-28 17:15:25Z yingwai $
- st***************************************************************************/

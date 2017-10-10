@@ -225,6 +225,9 @@ public:
   /** recompute the value of the orbitals which require critical accuracy */
   void recompute(ParticleSet& P);
 
+  /** done PbyP update, prepare for the measurements */
+  void updateAfterSweep(ParticleSet& P);
+
   RealType evaluateDeltaLog(ParticleSet& P, bool recompute=false);
 
   void evaluateDeltaLog(ParticleSet& P,
@@ -259,9 +262,11 @@ public:
 
   void update(ParticleSet& P, int iat);
 
+#if 0
   RealType ratio(ParticleSet& P, int iat,
                  ParticleSet::ParticleGradient_t& dG,
                  ParticleSet::ParticleLaplacian_t& dL);
+#endif
 
   void printGL(ParticleSet::ParticleGradient_t& G,
                ParticleSet::ParticleLaplacian_t& L, std::string tag = "GL");
@@ -292,6 +297,9 @@ public:
   RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, BufferType& buf);
   RealType evaluateLog(ParticleSet& P, BufferType& buf);
+
+  //new function to streamline tmove computation
+  RealType acceptTMove(ParticleSet& P, int iat, PooledData<RealType>& buf);
 
   void dumpToBuffer(ParticleSet& P, BufferType& buf);
   void dumpFromBuffer(ParticleSet& P, BufferType& buf);
@@ -357,15 +365,10 @@ public:
     return FermionWF;
   }
 
-  inline bool needs_distance_table_for_recompute() { return RecomputeNeedsDistanceTable; }
-
 private:
 
   ///control how ratio is calculated
   bool Ordered;
-
-  ///true, if recompute needs precomputed distance tables
-  bool RecomputeNeedsDistanceTable;
 
   ///the size of ParticleSet
   int NumPtcls;
@@ -510,8 +513,3 @@ public:
 /**@}*/
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: tillackaf $
- * $Revision: 7408 $   $Date: 2017-01-10 13:29:49 -0500 (Tue, 10 Jan 2017) $
- * $Id: TrialWaveFunction.h 7408 2017-01-10 18:29:49Z tillackaf $
- ***************************************************************************/

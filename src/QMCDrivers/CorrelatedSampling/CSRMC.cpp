@@ -54,7 +54,7 @@ bool CSVMC::put(xmlNodePtr q)
   Estimators = branchEngine->getEstimatorManager();
   if(Estimators == 0)
   {
-    Estimators = new EstimatorManager(myComm);
+    Estimators = new EstimatorManagerBase(myComm);
     multiEstimator = new CSEnergyEstimator(H,nPsi);
     Estimators->add(multiEstimator,Estimators->MainEstimatorName);
     branchEngine->setEstimatorManager(Estimators);
@@ -128,8 +128,3 @@ bool CSVMC::run()
 }
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1593 $   $Date: 2007-01-04 17:23:27 -0600 (Thu, 04 Jan 2007) $
- * $Id: CSVMC.cpp 1593 2007-01-04 23:23:27Z jnkim $
- ***************************************************************************/

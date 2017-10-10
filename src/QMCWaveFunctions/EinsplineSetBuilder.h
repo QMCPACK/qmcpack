@@ -217,7 +217,7 @@ public:
   UnitCellType SuperCell, PrimCell, PrimCellInv;
   int NumBands, NumElectrons, NumSpins, NumTwists, NumCoreStates;
   int MaxNumGvecs;
-  RealType MeshFactor;
+  double MeshFactor;
   RealType BufferLayer;
   RealType MatchingTol;
   TinyVector<int,3> MeshSize;
@@ -228,6 +228,9 @@ public:
 
   Vector<int> IonTypes;
   Vector<TinyVector<double,OHMMS_DIM> > IonPos;
+  // mapping the ions in the supercell to the primitive cell
+  std::vector<int> Super2Prim;
+
   /////////////////////////////
   // Twist angle information //
   /////////////////////////////
@@ -286,6 +289,26 @@ public:
   ////////////////////////////////
   std::vector<AtomicOrbital<std::complex<double> > > AtomicOrbitals;
 
+  struct CenterInfo
+  {
+    std::vector<int> lmax, spline_npoints, GroupID;
+    std::vector<double> spline_radius, cutoff;
+    std::vector<TinyVector<double,OHMMS_DIM> > ion_pos;
+    int Ncenters;
+
+    CenterInfo(): Ncenters(0) {};
+
+    void resize(int ncenters)
+    {
+      Ncenters=ncenters;
+      lmax.resize(ncenters, -1);
+      spline_npoints.resize(ncenters, -1);
+      GroupID.resize(ncenters);
+      spline_radius.resize(ncenters, -1.0);
+      cutoff.resize(ncenters, -1.0);
+      ion_pos.resize(ncenters);
+    }
+  } AtomicCentersInfo;
 
   // This returns the path in the HDF5 file to the group for orbital
   // with twist ti and band bi

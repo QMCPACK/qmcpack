@@ -30,7 +30,7 @@ namespace qmcplusplus
 ThreeBodyBlockSparse::ThreeBodyBlockSparse(const ParticleSet& ions, ParticleSet& els):
   CenterRef(ions), GeminalBasis(0), IndexOffSet(1), ID_Lambda("j3"), SameBlocksForGroup(true)
 {
-  myTableIndex=els.addTable(ions);
+  myTableIndex=els.addTable(ions,DT_AOS);
   //d_table = DistanceTable::add(ions,els);
   NumPtcls=els.getTotalNum();
   Optimizable=true;
@@ -604,9 +604,4 @@ OrbitalBasePtr ThreeBodyBlockSparse::makeClone(ParticleSet& tqp) const
 //  }
 //}
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1796 $   $Date: 2007-02-22 11:40:21 -0600 (Thu, 22 Feb 2007) $
- * $Id: ThreeBodyBlockSparse.cpp 1796 2007-02-22 17:40:21Z jnkim $
- ***************************************************************************/
 

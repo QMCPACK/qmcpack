@@ -60,11 +60,11 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
   using SplineAdoptorBase<ST,D>::PrimLattice;
   using SplineAdoptorBase<ST,D>::kPoints;
 
-  using SplineAdoptorBase<ST,D>::myV;
-  using SplineAdoptorBase<ST,D>::myL;
-  using SplineAdoptorBase<ST,D>::myG;
-  using SplineAdoptorBase<ST,D>::myH;
-  using SplineAdoptorBase<ST,D>::myGH;
+  typename OrbitalSetTraits<ST>::ValueVector_t     myV;
+  typename OrbitalSetTraits<ST>::ValueVector_t     myL;
+  typename OrbitalSetTraits<ST>::GradVector_t      myG;
+  typename OrbitalSetTraits<ST>::HessVector_t      myH;
+  typename OrbitalSetTraits<ST>::GradHessVector_t  myGH;
 
   ///Actual spline table, multi_bspline_3d_(d,s)
   SplineType *MultiSpline;
@@ -158,8 +158,9 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV>
-  inline void evaluate_v(const PointType& r, VV& psi)
+  inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru(PrimLattice.toUnit_floor(r));
     einspline::evaluate(MultiSpline,ru,myV);
     assign_v(r,0,psi);
@@ -203,8 +204,9 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV, typename GV>
-  inline void evaluate_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
+  inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru(PrimLattice.toUnit_floor(r));
     einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
     assign_vgl(r,0,psi,dpsi,d2psi);
@@ -242,11 +244,18 @@ struct SplineC2CPackedAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV, typename GV, typename GGV>
-  void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+  void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru(PrimLattice.toUnit_floor(r));
     einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
     assign_vgh(r,0,psi,dpsi,grad_grad_psi);
+  }
+
+  template<typename VGL>
+  void evaluate_vgl_combo(const ParticleSet& P, const int iat, VGL& dpsi)
+  {
+    const PointType& r=P.R[iat];
   }
 };
 
@@ -272,11 +281,12 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
   using SplineAdoptorBase<ST,D>::kPoints;
   using SplineAdoptorBase<ST,D>::MakeTwoCopies;
 
-  using SplineAdoptorBase<ST,D>::myV;
-  using SplineAdoptorBase<ST,D>::myL;
-  using SplineAdoptorBase<ST,D>::myG;
-  using SplineAdoptorBase<ST,D>::myH;
-  using SplineAdoptorBase<ST,D>::myGH;
+  typename OrbitalSetTraits<ST>::ValueVector_t     myV;
+  typename OrbitalSetTraits<ST>::ValueVector_t     myL;
+  typename OrbitalSetTraits<ST>::GradVector_t      myG;
+  typename OrbitalSetTraits<ST>::HessVector_t      myH;
+  typename OrbitalSetTraits<ST>::GradHessVector_t  myGH;
+
   ///Actual spline table, multi_bspline_3d_(d,s)
   SplineType *MultiSpline;
   ///number of points of the original grid
@@ -394,8 +404,9 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV>
-  inline void evaluate_v(const PointType& r, VV& psi)
+  inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru(PrimLattice.toUnit_floor(r));
     einspline::evaluate(MultiSpline,ru,myV);
     assign_v(r,0,psi);
@@ -438,8 +449,9 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV, typename GV>
-  inline void evaluate_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
+  inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru(PrimLattice.toUnit_floor(r));
     einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
     assign_vgl(r,0,psi,dpsi,d2psi);
@@ -486,12 +498,20 @@ struct SplineC2RPackedAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV, typename GV, typename GGV>
-  void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+  void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru(PrimLattice.toUnit_floor(r));
     einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
     assign_vgh(r,0,psi,dpsi,grad_grad_psi);
   }
+
+  template<typename VGL>
+  void evaluate_vgl_combo(const ParticleSet& P, const int iat, VGL& dpsi)
+  {
+    const PointType& r=P.R[iat];
+  }
+
 };
 
 //  /** adoptor class to match std::complex<ST> spline with std::complex<TT> SPOs, just references

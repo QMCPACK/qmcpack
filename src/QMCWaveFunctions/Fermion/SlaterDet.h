@@ -127,6 +127,10 @@ public:
   virtual
   RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
 
+  virtual void updateAfterSweep(ParticleSet& P,
+      ParticleSet::ParticleGradient_t& G,
+      ParticleSet::ParticleLaplacian_t& L);
+
   virtual
   RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
 
@@ -380,8 +384,3 @@ private:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: yingwai $
- * $Revision: 7279 $   $Date: 2016-11-23 19:21:16 -0500 (Wed, 23 Nov 2016) $
- * $Id: SlaterDet.h 7279 2016-11-24 00:21:16Z yingwai $
- ***************************************************************************/

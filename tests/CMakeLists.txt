@@ -1,0 +1,10 @@
+SUBDIRS(converter)
+SUBDIRS(system)
+SUBDIRS(estimator)
+SUBDIRS(io)
+SUBDIRS(performance)
+
+IF(QE_BIN)
+  MESSAGE(STATUS "QE binary path ${QE_BIN}")
+  SUBDIRS(pw2qmcpack)
+ENDIF()

@@ -20,6 +20,8 @@
 #include "Numerics/OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
+#include "io/hdf_archive.h"   
+
 
 template<class T>
 struct GaussianCombo: public OptimizableFunctorBase
@@ -220,6 +222,7 @@ struct GaussianCombo: public OptimizableFunctorBase
   }
 
   bool putBasisGroup(xmlNodePtr cur);
+  bool putBasisGroupH5(hid_t basisGroup);
 
   /**  double factorial of num
    * @param num integer to be factored
@@ -290,9 +293,45 @@ bool GaussianCombo<T>::putBasisGroup(xmlNodePtr cur)
   return true;
 }
 
+template<class T>
+bool GaussianCombo<T>::putBasisGroupH5(hid_t basisGroup)
+{
+
+  int NbRadFunc(0); 
+  hid_t H5NbRadFunc=H5Dopen(basisGroup, "NbRadFunc");
+  H5Dread(H5NbRadFunc, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &NbRadFunc);
+  
+  H5Dclose(H5NbRadFunc);
+  hid_t RadFunc=H5Gopen(basisGroup, "radfunctions");
+
+  for (int i=0; i<NbRadFunc;i++)
+  {
+    real_type alpha(1.0),c(1.0);
+    std::stringstream tempdata;
+    std::string dataradID0="DataRad",dataradID;
+    tempdata<<dataradID0<<i;
+    dataradID=tempdata.str();
+    hid_t datarad = H5Gopen(RadFunc,dataradID.c_str());
+    hid_t RadFuncexp=H5Dopen(datarad, "exponent");
+    H5Dread(RadFuncexp, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &alpha);
+
+    hid_t RadFunccontract=H5Dopen(datarad, "contraction");
+    H5Dread(RadFunccontract, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &c);
+
+
+    real_type c0=c;
+    if(!Normalized)
+      c *= NormL*pow(alpha,NormPow);
+    LOGMSG("    Gaussian exponent = " << alpha
+           << "\n              contraction=" << c0 <<  " nomralized contraction = " << c)
+    gset.push_back(BasicGaussian(alpha,c));
+    H5Dclose(RadFuncexp);
+    H5Dclose(RadFunccontract);
+    H5Gclose(datarad);
+    
+  }
+  reset();
+  H5Gclose(RadFunc);
+  return true;
+}
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

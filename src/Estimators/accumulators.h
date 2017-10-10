@@ -74,6 +74,16 @@ struct accumulator_set
     properties[WEIGHT] =w;
   }
 
+  /** reset properties
+   * @param v cummulative value
+   * @param w cummulative weight
+   */
+  inline void reset(value_type v, value_type w)
+  {
+    properties[VALUE]  =v;
+    properties[VALUESQ]=v*v;
+    properties[WEIGHT] =w;
+  }
 
   /** add a value but set the weight 1
    *
@@ -169,8 +179,3 @@ std::ostream& operator<<(std::ostream& os, accumulator_set<T>& rhs)
 
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1931 $   $Date: 2007-04-21 11:56:27 -0500 (Sat, 21 Apr 2007) $
- * $Id: ScalarEstimatorBase.h 1931 2007-04-21 16:56:27Z jnkim $
- ***************************************************************************/

@@ -382,7 +382,8 @@ void QMCCostFunctionOMP::checkConfigurations()
     {
       ParticleSet::Walker_t& thisWalker(*wRef[iw]);
       wRef.R=thisWalker.R;
-      wRef.update();
+      wRef.update(true);
+      wRef.donePbyP();
       Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
       //          Return_t logpsi(0);
       //          psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
@@ -422,7 +423,7 @@ void QMCCostFunctionOMP::checkConfigurations()
       else
         etmp= hClones[ip]->evaluate(wRef);
 
-      e0 += saved[ENERGY_TOT] = etmp;
+      e0 += saved[ENERGY_TOT] = saved[ENERGY_NEW] = etmp;
       e2 += etmp*etmp;
       saved[ENERGY_FIXED] = hClones[ip]->getLocalPotential();
       if(nlpp)
@@ -447,11 +448,19 @@ void QMCCostFunctionOMP::checkConfigurations()
   app_log() << "  VMC Eavg = " << Etarget << std::endl;
   app_log() << "  VMC Evar = " << etemp[2]/etemp[1]-Etarget*Etarget << std::endl;
   app_log() << "  Total weights = " << etemp[1] << std::endl;
-
   app_log().flush();
-
   setTargetEnergy(Etarget);
   ReportCounter=0;
+
+  //collect SumValue for computedCost
+  NumWalkersEff = etemp[1];
+  SumValue[SUM_WGT] = etemp[1];
+  SumValue[SUM_WGTSQ] = etemp[1];
+  SumValue[SUM_E_WGT] = etemp[0];
+  SumValue[SUM_ESQ_WGT] = etemp[2];
+  SumValue[SUM_E_BARE] = etemp[0];
+  SumValue[SUM_ESQ_BARE] = etemp[2];
+  SumValue[SUM_ABSE_BARE] = 0.0;
 }
 
 #ifdef HAVE_LMY_ENGINE
@@ -558,7 +567,8 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
     {
       ParticleSet::Walker_t& thisWalker(*wRef[iw]);
       wRef.R=thisWalker.R;
-      wRef.update();
+      wRef.update(true);
+      wRef.donePbyP();
       Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
       //          Return_t logpsi(0);
       //          psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg],*d2LogPsi[iwg]);
@@ -627,10 +637,6 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
       if(nlpp)
         saved[ENERGY_FIXED] -= nlpp->Value;
     }
-#ifdef HAVE_LMY_ENGINE
-    // engine finish taking samples 
-    EngineObj->sample_finish();
-#endif
 
     //add them all using reduction
     et_tot+=e0;
@@ -638,6 +644,11 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
     // #pragma omp atomic
     //       eft_tot+=ef;
   }
+#ifdef HAVE_LMY_ENGINE
+  // engine finish taking samples 
+  EngineObj->sample_finish();
+#endif
+
   if ( EngineObj->block_first() ) {
     OptVariablesForPsi.setComputed();
     app_log() << "calling setComputed function" << std::endl;
@@ -707,6 +718,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
   }
 
+  const bool nlpp = (includeNonlocalH != "no");
   Return_t wgt_tot=0.0;
   Return_t wgt_tot2=0.0;
   Return_t NSm1 = 1.0/NumSamples;
@@ -728,7 +740,8 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
     {
       ParticleSet::Walker_t& thisWalker(**it);
       wRef.R=thisWalker.R;
-      wRef.update();
+      wRef.update(true);
+      if(nlpp) wRef.donePbyP(true);
       Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
       // buffer for MultiSlaterDet data
       Return_t logpsi;
@@ -842,88 +855,9 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
   return SumValue[SUM_WGT]*SumValue[SUM_WGT]/SumValue[SUM_WGTSQ];
 }
 
-QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap)
-{
-  //     resetPsi();
-  //     Return_t NWE = NumWalkersEff=correlatedSampling(true);
-  curAvg_w = SumValue[SUM_E_WGT]/SumValue[SUM_WGT];
-  Return_t curAvg2_w = SumValue[SUM_ESQ_WGT]/SumValue[SUM_WGT];
-  std::vector<Return_t> D_avg(NumParams(),0);
-  Return_t wgtinv = 1.0/SumValue[SUM_WGT];
-  for (int ip=0; ip<NumThreads; ip++)
-  {
-    int nw=wClones[ip]->getActiveWalkers();
-    for (int iw=0; iw<nw; iw++)
-    {
-      const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
-      Return_t weight=saved[REWEIGHT]*wgtinv;
-      const Return_t* Dsaved= (*DerivRecords[ip])[iw];
-      for (int pm=0; pm<NumParams(); pm++)
-      {
-        D_avg[pm]+= Dsaved[pm]*weight;
-      }
-    }
-  }
-  myComm->allreduce(D_avg);
-  ///zero out matrices before we start
-  for (int pm=0; pm<NumParams()+1; pm++)
-  {
-    for (int pm2=0; pm2<NumParams()+1; pm2++)
-    {
-      Overlap(pm,pm2)=0;
-      Hamiltonian(pm,pm2)=0;
-      H2(pm,pm2)=0;
-      Variance(pm,pm2)=0;
-    }
-  }
-  for (int ip=0; ip<NumThreads; ip++)
-  {
-    int nw=wClones[ip]->getActiveWalkers();
-    for (int iw=0; iw<nw; iw++)
-    {
-      const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
-      Return_t weight=saved[REWEIGHT]*wgtinv;
-      Return_t eloc_new=saved[ENERGY_NEW];
-      const Return_t* Dsaved= (*DerivRecords[ip])[iw];
-      const Return_t* HDsaved= (*HDerivRecords[ip])[iw];
-      for (int pm=0; pm<NumParams(); pm++)
-      {
-        Return_t wfe = (HDsaved[pm] + Dsaved[pm]*(eloc_new - curAvg_w) )*weight;
-        Return_t wfm = (HDsaved[pm] - 2.0*Dsaved[pm]*(eloc_new - curAvg_w) )*weight;
-        Return_t wfd = (Dsaved[pm]-D_avg[pm])*weight;
-        H2(0,pm+1) += wfe*(eloc_new);
-        H2(pm+1,0) += wfe*(eloc_new);
-        Return_t vterm = HDsaved[pm]*(eloc_new-curAvg_w)+(eloc_new*eloc_new-curAvg2_w)*Dsaved[pm]-2.0*curAvg_w*Dsaved[pm]*(eloc_new - curAvg_w);
-        Variance(0,pm+1) += vterm*weight;
-        Variance(pm+1,0) += vterm*weight;
-        Hamiltonian(0,pm+1) += wfe;
-        Hamiltonian(pm+1,0) += wfd*(eloc_new-curAvg_w);
-        for (int pm2=0; pm2<NumParams(); pm2++)
-        {
-          H2(pm+1,pm2+1) += wfe*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new - curAvg_w));
-          Hamiltonian(pm+1,pm2+1) += wfd*(HDsaved[pm2]+ Dsaved[pm2]*(eloc_new-curAvg_w));
-          Variance(pm+1,pm2+1) += wfm*(HDsaved[pm2] - 2.0*Dsaved[pm2]*(eloc_new - curAvg_w));
-          Overlap(pm+1,pm2+1) += wfd*(Dsaved[pm2]-D_avg[pm2]);
-        }
-      }
-    }
-  }
-  myComm->allreduce(Hamiltonian);
-  myComm->allreduce(Overlap);
-  myComm->allreduce(Variance);
-  myComm->allreduce(H2);
-  Hamiltonian(0,0) = curAvg_w;
-  Overlap(0,0) = 1.0;
-  H2(0,0) = curAvg2_w;
-  Variance(0,0) = curAvg2_w - curAvg_w*curAvg_w;
-  for (int pm=1; pm<NumParams()+1; pm++)
-    for (int pm2=1; pm2<NumParams()+1; pm2++)
-      Variance(pm,pm2) += Variance(0,0)*Overlap(pm,pm2);
-  return 1.0;
-}
 
 QMCCostFunctionOMP::Return_t
-QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right, Matrix<Return_t>& Overlap)
+QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right)
 {
   RealType b1,b2;
   if (GEVType=="H2")
@@ -939,7 +873,6 @@ QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matri
 
   Right=0.0;
   Left=0.0;
-  Overlap=0.0;
 
   //     resetPsi();
   //     Return_t NWE = NumWalkersEff=correlatedSampling(true);
@@ -1001,7 +934,6 @@ QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matri
           //                Overlap
           RealType ovlij=wfd*(Dsaved[pm2]-D_avg[pm2]);
           Right(pm+1,pm2+1) += ovlij;
-          Overlap(pm+1,pm2+1) += ovlij;
           //                Variance
           RealType varij=weight*(HDsaved[pm] - 2.0*(Dsaved[pm]-D_avg[pm])*eloc_new)*(HDsaved[pm2] - 2.0*(Dsaved[pm2]-D_avg[pm2])*eloc_new);
           //                  RealType varij=weight*(HDsaved[pm] +(Dsaved[pm]-D_avg[pm])*eloc_new-curAvg_w)*
@@ -1015,17 +947,11 @@ QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matri
   }
   myComm->allreduce(Right);
   myComm->allreduce(Left);
-  myComm->allreduce(Overlap);
   Left(0,0) = (1-b2)*curAvg_w + b2*V_avg;
-  Overlap(0,0) = Right(0,0) = 1.0+b1*H2_avg*V_avg;
+  Right(0,0) = 1.0+b1*H2_avg*V_avg;
   if (GEVType=="H2")
     return H2_avg;
 
   return 1.0;
 }
 }
-/***************************************************************************
-* $RCSfile$   $Author: jnkim $
-* $Revision: 1898 $   $Date: 2007-04-17 10:07:34 -0500 (Tue, 17 Apr 2007) $
-* $Id: QMCCostFunctionOMP.cpp 1898 2007-04-17 15:07:34Z jnkim $
-***************************************************************************/

@@ -110,9 +110,10 @@ public:
   eeI_JastrowOrbital(ParticleSet& ions, ParticleSet& elecs, bool is_master)
     : Write_Chiesa_Correction(is_master), KEcorr(0.0)
   {
+    OrbitalName = "eeI_JastrowOrbital";
     eRef = &elecs;
     IRef = &ions;
-    myTableIndex=elecs.addTable(ions);
+    myTableIndex=elecs.addTable(ions,DT_AOS);
     init(elecs);
     FirstTime = true;
     NumVars=0;
@@ -1499,9 +1500,4 @@ public:
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: kesler $
- * $Revision: 3708 $   $Date: 2009-03-25 17:30:09 -0500 (Wed, 25 Mar 2009) $
- * $Id: eeI_JastrowOrbital.h 3708 2009-03-25 22:30:09Z kesler $
- ***************************************************************************/
 

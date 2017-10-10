@@ -233,6 +233,16 @@ SlaterDet::RealType SlaterDet::registerData(ParticleSet& P,
   return LogValue;
 }
 
+void SlaterDet::updateAfterSweep(ParticleSet& P,
+      ParticleSet::ParticleGradient_t& G,
+      ParticleSet::ParticleLaplacian_t& L)
+{
+  for (size_t i = 0, n=Dets.size(); i < n; ++i)
+  {
+    Dets[i]->updateAfterSweep(P,G,L);
+  }
+}
+
 SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P,
     PooledData<RealType>& buf, bool fromscratch)
 {
@@ -306,7 +316,6 @@ OrbitalBasePtr SlaterDet::makeClone(ParticleSet& tqp) const
 {
   SlaterDet* myclone = new SlaterDet(tqp);
   myclone->Optimizable=Optimizable;
-  myclone->RecomputeNeedsDistanceTable=RecomputeNeedsDistanceTable;
   if (mySPOSet.size() > 1)
   {
     std::map<std::string,SPOSetBasePtr>::const_iterator Mit,Lit;
@@ -434,8 +443,3 @@ OrbitalBasePtr SlaterDet::makeClone(ParticleSet& tqp) const
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -211,7 +211,7 @@ public:
 
   bool put(xmlNodePtr cur);
 
-
+  void setMinMax(int nw_in, int nmax_in);
 
 //     struct ForwardWalkingData
 //     {
@@ -317,9 +317,4 @@ public:
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

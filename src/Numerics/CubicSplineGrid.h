@@ -207,8 +207,3 @@ struct CubicSplineGrid<T,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS>
 };
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1528 $   $Date: 2006-11-23 16:57:19 -0600 (Thu, 23 Nov 2006) $
- * $Id: OneDimCubicSpline.h 1528 2006-11-23 22:57:19Z jnkim $
- ***************************************************************************/

@@ -40,7 +40,7 @@ ZeroVarianceForce::ZeroVarianceForce(ParticleSet& ions, ParticleSet& elns,
 void
 ZeroVarianceForce::resetTargetParticleSet(ParticleSet& P)
 {
-  int tid=P.addTable(Ions);
+  int tid=P.addTable(Ions,DT_AOS);
   if(tid != myTableIndex)
     APP_ABORT("ZeroVarianceForce::resetTargetParticleSet found inconsistent table index");
 }
