@@ -19,8 +19,6 @@
 #include <Numerics/e2iphi.h>
 #include "QMCWaveFunctions/EinsplineSet.h"
 #include <einspline/multi_bspline.h>
-#include <einspline/legacy/multi_bspline_eval_std3_z_impl.h>
-#include <einspline/legacy/multi_bspline_eval_std3_d_impl.h>
 
 namespace qmcplusplus
 {
@@ -78,7 +76,7 @@ EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
                     const TinyVector<double,3>& r,
                     Vector<double> &psi)
 {
-  legacy_eval_multi_UBspline_3d_d (spline, r[0], r[1], r[2], psi.data());
+  eval_multi_UBspline_3d_d (spline, r[0], r[1], r[2], psi.data());
 }
 
 inline void
@@ -86,7 +84,7 @@ EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
                     TinyVector<double,3> r,
                     std::vector<double> &psi)
 {
-  legacy_eval_multi_UBspline_3d_d (spline, r[0], r[1], r[2], &(psi[0]));
+  eval_multi_UBspline_3d_d (spline, r[0], r[1], r[2], &(psi[0]));
 }
 
 inline void
@@ -95,7 +93,7 @@ EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
                     Vector<double> &psi,
                     Vector<TinyVector<double,3> > &grad)
 {
-  legacy_eval_multi_UBspline_3d_d_vg (spline, r[0], r[1], r[2],
+  eval_multi_UBspline_3d_d_vg (spline, r[0], r[1], r[2],
                                psi.data(),
                                (double*)grad.data());
 }
@@ -108,7 +106,7 @@ EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
                     Vector<TinyVector<double,3> > &grad,
                     Vector<Tensor<double,3> > &hess)
 {
-  legacy_eval_multi_UBspline_3d_d_vgh (spline, r[0], r[1], r[2],
+  eval_multi_UBspline_3d_d_vgh (spline, r[0], r[1], r[2],
                                 psi.data(),
                                 (double*)grad.data(),
                                 (double*)hess.data());
@@ -122,7 +120,7 @@ EinsplineMultiEval (multi_UBspline_3d_d *restrict spline,
                     Vector<Tensor<double,3> > &hess,
                     Vector<TinyVector<Tensor<double,3>,3> > &gradhess)
 {
-  legacy_eval_multi_UBspline_3d_d_vghgh(spline, r[0], r[1], r[2],
+  eval_multi_UBspline_3d_d_vghgh(spline, r[0], r[1], r[2],
                                  psi.data(),
                                  (double*)grad.data(),
                                  (double*)hess.data(),
@@ -139,7 +137,7 @@ EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
                     const TinyVector<double,3>& r,
                     Vector<std::complex<double> > &psi)
 {
-  legacy_eval_multi_UBspline_3d_z (spline, r[0], r[1], r[2], psi.data());
+  eval_multi_UBspline_3d_z (spline, r[0], r[1], r[2], psi.data());
 }
 
 inline void
@@ -148,7 +146,7 @@ EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
                     Vector<std::complex<double> > &psi,
                     Vector<TinyVector<std::complex<double>,3> > &grad)
 {
-  legacy_eval_multi_UBspline_3d_z_vg (spline, r[0], r[1], r[2],
+  eval_multi_UBspline_3d_z_vg (spline, r[0], r[1], r[2],
                                psi.data(),
                                (std::complex<double>*)grad.data());
 }
@@ -160,7 +158,7 @@ EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
                     Vector<TinyVector<std::complex<double>,3> > &grad,
                     Vector<Tensor<std::complex<double>,3> > &hess)
 {
-  legacy_eval_multi_UBspline_3d_z_vgh (spline, r[0], r[1], r[2],
+  eval_multi_UBspline_3d_z_vgh (spline, r[0], r[1], r[2],
                                 psi.data(),
                                 (std::complex<double>*)grad.data(),
                                 (std::complex<double>*)hess.data());
@@ -174,7 +172,7 @@ EinsplineMultiEval (multi_UBspline_3d_z *restrict spline,
                     Vector<Tensor<std::complex<double>,3> > &hess,
                     Vector<TinyVector<Tensor<std::complex<double>,3>,3> > &gradhess)
 {
-  legacy_eval_multi_UBspline_3d_z_vghgh(spline, r[0], r[1], r[2],
+  eval_multi_UBspline_3d_z_vghgh(spline, r[0], r[1], r[2],
                                  psi.data(),
                                  (std::complex<double>*)grad.data(),
                                  (std::complex<double>*)hess.data(),

@@ -366,14 +366,12 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #endif
         temp_OrbitalSet = new EinsplineSetExtended<std::complex<double> >;
       MixedSplineReader->export_MultiSpline(&(temp_OrbitalSet->MultiSpline));
+      temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
       temp_OrbitalSet->kPoints.resize(NumDistinctOrbitals);
       temp_OrbitalSet->MakeTwoCopies.resize(NumDistinctOrbitals);
       temp_OrbitalSet->StorageValueVector.resize(NumDistinctOrbitals);
-      //temp_OrbitalSet->BlendValueVector.resize(NumDistinctOrbitals);
       temp_OrbitalSet->StorageLaplVector.resize(NumDistinctOrbitals);
-      //temp_OrbitalSet->BlendLaplVector.resize(NumDistinctOrbitals);
       temp_OrbitalSet->StorageGradVector.resize(NumDistinctOrbitals);
-      //temp_OrbitalSet->BlendGradVector.resize(NumDistinctOrbitals);
       temp_OrbitalSet->StorageHessVector.resize(NumDistinctOrbitals);
       temp_OrbitalSet->StorageGradHessVector.resize(NumDistinctOrbitals);
       temp_OrbitalSet->phase.resize(NumDistinctOrbitals);

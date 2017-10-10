@@ -493,6 +493,10 @@ eval_multi_UBspline_3d_z (const multi_UBspline_3d_z *spline,
   wrapper_spline.y_grid.delta_inv = spline->y_grid.delta_inv;
   wrapper_spline.z_grid.delta_inv = spline->z_grid.delta_inv;
 
+  wrapper_spline.x_grid.num = spline->x_grid.num;
+  wrapper_spline.y_grid.num = spline->y_grid.num;
+  wrapper_spline.z_grid.num = spline->z_grid.num;
+
   wrapper_spline.x_stride = spline->x_stride*2 ;
   wrapper_spline.y_stride = spline->y_stride*2 ;
   wrapper_spline.z_stride = spline->z_stride*2 ;
@@ -521,6 +525,10 @@ eval_multi_UBspline_3d_z_vgh (const multi_UBspline_3d_z *spline,
   wrapper_spline.x_grid.delta_inv = spline->x_grid.delta_inv;
   wrapper_spline.y_grid.delta_inv = spline->y_grid.delta_inv;
   wrapper_spline.z_grid.delta_inv = spline->z_grid.delta_inv;
+
+  wrapper_spline.x_grid.num = spline->x_grid.num;
+  wrapper_spline.y_grid.num = spline->y_grid.num;
+  wrapper_spline.z_grid.num = spline->z_grid.num;
 
   wrapper_spline.x_stride = spline->x_stride*2 ;
   wrapper_spline.y_stride = spline->y_stride*2 ;
