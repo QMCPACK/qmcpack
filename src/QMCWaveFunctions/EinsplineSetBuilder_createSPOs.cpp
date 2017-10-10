@@ -359,6 +359,8 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #endif
         temp_OrbitalSet = new EinsplineSetExtended<double>;
       MixedSplineReader->export_MultiSpline(&(temp_OrbitalSet->MultiSpline));
+      temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
+      temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);
       //set the flags for anti periodic boundary conditions
       temp_OrbitalSet->HalfG = dynamic_cast<SplineAdoptorBase<double,3> *>(OrbitalSet)->HalfG;
       new_OrbitalSet = temp_OrbitalSet;
@@ -374,15 +376,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
         temp_OrbitalSet = new EinsplineSetExtended<std::complex<double> >;
       MixedSplineReader->export_MultiSpline(&(temp_OrbitalSet->MultiSpline));
       temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
-      temp_OrbitalSet->kPoints.resize(NumDistinctOrbitals);
-      temp_OrbitalSet->MakeTwoCopies.resize(NumDistinctOrbitals);
-      temp_OrbitalSet->StorageValueVector.resize(NumDistinctOrbitals);
-      temp_OrbitalSet->StorageLaplVector.resize(NumDistinctOrbitals);
-      temp_OrbitalSet->StorageGradVector.resize(NumDistinctOrbitals);
-      temp_OrbitalSet->StorageHessVector.resize(NumDistinctOrbitals);
-      temp_OrbitalSet->StorageGradHessVector.resize(NumDistinctOrbitals);
-      temp_OrbitalSet->phase.resize(NumDistinctOrbitals);
-      temp_OrbitalSet->eikr.resize(NumDistinctOrbitals);
+      temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);
       for (int iorb=0, num=0; iorb<NumDistinctOrbitals; iorb++)
       {
         int ti = (*FullBands[spinSet])[iorb].TwistIndex;
