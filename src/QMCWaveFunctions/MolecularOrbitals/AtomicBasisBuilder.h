@@ -20,6 +20,9 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "io/hdf_archive.h"
+#include "Numerics/HDFSTLAttrib.h"
+#include "OhmmsData/HDFStringAttrib.h"
+
 
 namespace qmcplusplus
 {
