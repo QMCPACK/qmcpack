@@ -708,7 +708,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
             << NumValenceOrbs << " valence states.\n";
 }
 
-
+#if 0
 /** TODO: FIXME RotateBands_ESHDF need psi_r */
 void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<std::complex<double > >* orbitalSet)
 {
@@ -1061,5 +1061,6 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<doub
       app_log()<<" No rotations defined"<< std::endl;
   }
 }
+#endif
 }
 

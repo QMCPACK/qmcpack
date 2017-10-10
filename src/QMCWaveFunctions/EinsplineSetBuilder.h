@@ -268,10 +268,12 @@ public:
   void OccupyBands(int spin, int sortBands, int numOrbs);
   void OccupyBands_ESHDF(int spin, int sortBands, int numOrbs);
 
+#if 0
   void ReadBands      (int spin, EinsplineSetExtended<std::complex<double> >* orbitalSet);
   void ReadBands_ESHDF(int spin, EinsplineSetExtended<std::complex<double> >* orbitalSet);
   void ReadBands      (int spin, EinsplineSetExtended<        double  >* orbitalSet);
   void ReadBands_ESHDF(int spin, EinsplineSetExtended<        double  >* orbitalSet);
+#endif
 
   void CopyBands(int numOrbs);
 
@@ -327,10 +329,12 @@ public:
   RealType qafm;
   int particle_hole_pairs;
   bool makeRotations;
+#if 0
   std::vector<RealType> rotationMatrix;
   std::vector<int> rotatedOrbitals;
   void RotateBands_ESHDF(int spin, EinsplineSetExtended<std::complex<double > >* orbitalSet);
   void RotateBands_ESHDF(int spin, EinsplineSetExtended<double>* orbitalSet);
+#endif
 
   /** broadcast SortBands
    * @param N number of state
