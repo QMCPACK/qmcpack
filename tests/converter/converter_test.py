@@ -81,8 +81,8 @@ def run_test(test_name, c4q_exe, conv_inp, gold_file, expect_fail, extra_cmd_arg
             okay = False
 	else:
             if '-hdf5' in extra_cmd_args:
-                os.system('h5dump test.eig.h5 > test.eig.h5dump')
-                if  compare('gold.eig.h5dump','test.eig.h5dump'):
+                os.system('h5dump test.orbs.h5 > test.orbs.h5dump')
+                if  compare('gold.orbs.h5dump','test.orbs.h5dump'):
                    print("  pass")
                    return True
                 else:
