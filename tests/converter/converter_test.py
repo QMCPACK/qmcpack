@@ -20,6 +20,26 @@ import sys
 # Only the wavefunction conversion is tested currently.
 # Structure conversion (gold.Gaussian-G2.ptcl.xml) is not tested.
 
+def compare(gold_file,test_file):
+        if not filecmp.cmp(gold_file, test_file):
+            print("Gold file comparison failed")
+            with open(gold_file, 'r') as f_gold:
+                gold_lines = f_gold.readlines()
+            with open(test_file, 'r') as f_test:
+                test_lines = f_test.readlines()
+
+            diff = difflib.unified_diff(gold_lines, test_lines, fromfile=gold_file, tofile=test_file)
+            diff_line_limit = 200
+            for i,diff_line in enumerate(diff):
+                print(diff_line,end="")
+                if i > diff_line_limit:
+                    print('< diff truncated due to line limit >')
+                    break
+
+	    return False
+	else:
+	    return True
+
 
 def run_test(test_name, c4q_exe, conv_inp, gold_file, expect_fail, extra_cmd_args):
     okay = True
@@ -59,26 +79,17 @@ def run_test(test_name, c4q_exe, conv_inp, gold_file, expect_fail, extra_cmd_arg
         if not os.path.exists(gold_file):
             print("Gold file missing")
             okay = False
-
-        test_file = gold_file.replace('gold', 'test')
-        if not filecmp.cmp(gold_file, test_file):
-            print("Gold file comparison failed")
-            okay = False
-            with open(gold_file, 'r') as f_gold:
-                gold_lines = f_gold.readlines()
-            with open(test_file, 'r') as f_test:
-                test_lines = f_test.readlines()
-
-            diff = difflib.unified_diff(gold_lines, test_lines, fromfile=gold_file, tofile=test_file)
-            diff_line_limit = 200
-            diff_lines = 0
-            for diff_line in diff:
-                print(diff_line,end="")
-                if diff_lines > diff_line_limit:
-                    print('< diff truncated due to line limit >')
-                    break
-        else:
-            okay = True
+	else:
+            if '-hdf5' in extra_cmd_args:
+                os.system('h5dump test.eig.h5 > test.eig.h5dump')
+                if  compare('gold.eig.h5dump','test.eig.h5dump'):
+                   print("  pass")
+                   return True
+                else:
+                   print("  FAIL")
+                   return False
+            test_file = gold_file.replace('gold', 'test')
+            okay = compare(gold_file, test_file)
 
     if okay:
         print("  pass")

@@ -1,4 +1,4 @@
-HDF5 "gold.eig.h5" {
+HDF5 "test.eig.h5" {
 GROUP "/" {
    GROUP "basisset" {
       GROUP "atomicBasisSet" {
