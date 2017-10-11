@@ -1615,6 +1615,8 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
   std::string fname = Title+"."+basisName+".xml";
   xmlSaveFormatFile(fname.c_str(),doc,1);
   xmlFreeDoc(doc);
+  if (numMO*SizeOfBasisSet>=500)
+     std::cout<<"Consider using HDF5 via -hdf5 for higher performance and smaller wavefunction files"<<std::endl;
 }
 void QMCGaussianParserBase::Fmodump(const std::string& psi_tag,
                                  const std::string& ion_tag,
