@@ -24,7 +24,7 @@
       <parameter name="GEVMethod"> mixed </parameter>
       <parameter name="bigchange">15.0</parameter>
       <estimator name="LocalEnergy" hdf5="no"/>
-      <parameter name="usebuffer"> yes </parameter>
+      <parameter name="usebuffer"> no </parameter>
       <parameter name="nonlocalpp"> yes </parameter>
       <parameter name="MinMethod">adaptive</parameter>
       <parameter name="shift_i"> 1.0 </parameter>
