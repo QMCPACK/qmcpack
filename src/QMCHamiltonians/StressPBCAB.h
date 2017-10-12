@@ -125,13 +125,6 @@ struct StressPBCAB: public QMCHamiltonianBase, public ForceBase
 
  // Return_t spevaluate(ParticleSet& P);
 
-//  Return_t registerData(ParticleSet& P, BufferType& buffer);
- // Return_t updateBuffer(ParticleSet& P, BufferType& buffer);
- // void copyFromBuffer(ParticleSet& P, BufferType& buf);
- // void copyToBuffer(ParticleSet& P, BufferType& buf);
- // Return_t evaluatePbyP(ParticleSet& P, int iat);
-//  void acceptMove(int iat);
-
   /** Do nothing */
   bool put(xmlNodePtr cur)
   {
@@ -159,7 +152,6 @@ struct StressPBCAB: public QMCHamiltonianBase, public ForceBase
  // Return_t evalSRwithForces(ParticleSet& P);
  // Return_t evalLRwithForces(ParticleSet& P);
   SymTensor<RealType, OHMMS_DIM> evalConsts(bool report=true);
-//  Return_t evaluateForPyP(ParticleSet& P);
  // void add(int groupID, RadFunctorType* ppot);
   void addObservables(PropertySetType& plist, BufferType& collectables)
   {
