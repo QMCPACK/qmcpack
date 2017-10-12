@@ -563,14 +563,6 @@ MultiDiracDeterminantBase::RealType MultiDiracDeterminantBase::updateBuffer(Part
   return 1.0;
 }
 
-void MultiDiracDeterminantBase::update(ParticleSet& P,
-                                       ParticleSet::ParticleGradient_t& dG,
-                                       ParticleSet::ParticleLaplacian_t& dL,
-                                       int iat)
-{
-  APP_ABORT("Need to implement  MultiDiracDeterminantBase::update \n");
-}
-
 void MultiDiracDeterminantBase::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
 {
   buf.get(psiM.first_address(),psiM.last_address());

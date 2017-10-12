@@ -147,17 +147,6 @@ public:
     return DiracDeterminantBase::ratio (P, iat, dG, dL);
   }
 
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL, int iat)
-  {
-    DiracDeterminantBase::update (P, dG, dL, iat);
-  }
-
-
-
-
-
   void update (std::vector<Walker_t*> &walkers, int iat);
   void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList);
 

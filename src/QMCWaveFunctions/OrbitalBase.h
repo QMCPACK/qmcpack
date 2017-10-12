@@ -367,22 +367,6 @@ struct OrbitalBase: public QMCTraits
     return 1.0;
   };
 
-  /** update the gradient and laplacian values by accepting a move
-   *@param P the active ParticleSet
-   *@param dG the differential gradients
-   *@param dL the differential laplacians
-   *@param iat the index of a particle
-   *
-   *Specialized for particle-by-particle move. Each Hamiltonian
-   *updates its data for next update and evaluates differential gradients
-   *and laplacians.
-   */
-  virtual void update(ParticleSet& P,
-                      ParticleSet::ParticleGradient_t& dG,
-                      ParticleSet::ParticleLaplacian_t& dL,
-                      int iat) =0;
-
-
   /** equivalent to evaluateLog(P,G,L) with write-back function */
   virtual RealType evaluateLog(ParticleSet& P,BufferType& buf)=0;
 

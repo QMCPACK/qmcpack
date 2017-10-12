@@ -207,17 +207,6 @@ void ThreeBodyBlockSparse::acceptMove(ParticleSet& P, int iat)
   }
 }
 
-void ThreeBodyBlockSparse::update(ParticleSet& P,
-                                  ParticleSet::ParticleGradient_t& dG,
-                                  ParticleSet::ParticleLaplacian_t& dL,
-                                  int iat)
-{
-  std::cout << "****  This is to be removed " << std::endl;
-  //dG[iat]+=curGrad-dUk[iat];
-  //dL[iat]+=curLap-d2Uk[iat];
-  acceptMove(P,iat);
-}
-
 OrbitalBase::RealType
 ThreeBodyBlockSparse::registerData(ParticleSet& P, PooledData<RealType>& buf)
 {

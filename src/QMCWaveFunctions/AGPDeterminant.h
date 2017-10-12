@@ -120,12 +120,6 @@ public:
   void restore(int iat);
 
 
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat);
-
-
   ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
 

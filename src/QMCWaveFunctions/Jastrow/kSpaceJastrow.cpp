@@ -743,17 +743,6 @@ kSpaceJastrow::acceptMove(ParticleSet& P, int iat)
   // d2U += offd2U;
 }
 
-void
-kSpaceJastrow::update(ParticleSet& P,
-                      ParticleSet::ParticleGradient_t& dG,
-                      ParticleSet::ParticleLaplacian_t& dL,
-                      int iat)
-{
-  app_error() << "kSpaceJastrow::update is INCOMPLETE " << std::endl;
-  abort();
-}
-
-
 kSpaceJastrow::RealType
 kSpaceJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf)
 {

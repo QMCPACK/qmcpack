@@ -178,23 +178,6 @@ public:
 
   inline void restore(int iat) {}
 
-  void update(ParticleSet& P, int iat)
-  {
-  }
-
-
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat)
-  {
-    dG[iat] += curGrad-dU[iat];
-    dU[iat]=curGrad;
-    dL[iat] += curLap-d2U[iat];
-    d2U[iat]=curLap;
-    U[iat] = curVal;
-  }
-
   void addFunc(int source_type, FT* afunc)
   {
     if(Funique[source_type])

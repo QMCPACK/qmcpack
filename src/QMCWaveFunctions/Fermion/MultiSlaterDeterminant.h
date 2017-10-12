@@ -108,9 +108,6 @@ public:
   virtual void acceptMove(ParticleSet& P, int iat);
   virtual void restore(int iat);
 
-  virtual void update(ParticleSet& P
-                      , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL
-                      , int iat);
   virtual RealType evaluateLog(ParticleSet& P,BufferType& buf);
   virtual RealType registerData(ParticleSet& P, BufferType& buf);
   virtual RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);

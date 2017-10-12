@@ -417,11 +417,6 @@ public:
   }
 
   //to be removed from QMCPACK: these are not used anymore with PbyPFast
-  inline void update(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL,
-                     int iat) {}
-
   ValueType ratio(ParticleSet& P, int iat,
                   ParticleSet::ParticleGradient_t& dG,
                   ParticleSet::ParticleLaplacian_t& dL)

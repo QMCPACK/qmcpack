@@ -280,15 +280,6 @@ void RPAJastrow::restore(int iat)
     Psi[i]->restore(iat);
 }
 
-void RPAJastrow::update(ParticleSet& P,
-                        ParticleSet::ParticleGradient_t& dG,
-                        ParticleSet::ParticleLaplacian_t& dL,
-                        int iat)
-{
-  for(int i=0; i<Psi.size(); i++)
-    Psi[i]->update(P,dG,dL,iat);
-}
-
 RPAJastrow::RealType
 RPAJastrow::registerData(ParticleSet& P, BufferType& buf)
 {

@@ -261,15 +261,6 @@ public:
   }
 
   virtual
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat)
-  {
-    return Dets[DetID[iat]]->update(P,dG,dL,iat);
-  }
-
-  virtual
   OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
   virtual

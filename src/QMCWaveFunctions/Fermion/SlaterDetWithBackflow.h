@@ -201,15 +201,6 @@ public:
     APP_ABORT("Need to implement SlaterDetWithBackflow::alternateRatio() \n");
   }
 
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat)
-  {
-    for(int i=0; i<Dets.size(); ++i)
-      Dets[i]->update(P,dG,dL,iat);
-  }
-
   OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
   SPOSetBasePtr getPhi(int i=0)

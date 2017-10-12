@@ -555,13 +555,6 @@ void AGPDeterminant::restore(int iat)
   curRatio=1.0;
 }
 
-void AGPDeterminant::update(ParticleSet& P,
-                            ParticleSet::ParticleGradient_t& dG,
-                            ParticleSet::ParticleLaplacian_t& dL,
-                            int iat)
-{
-}
-
 AGPDeterminant::ValueType AGPDeterminant::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
 {
   //if(UseBuffer)

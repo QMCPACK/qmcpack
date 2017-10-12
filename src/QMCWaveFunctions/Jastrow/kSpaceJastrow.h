@@ -190,10 +190,6 @@ public:
 
   void restore(int iat);
   void acceptMove(ParticleSet& P, int iat);
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat);
 
   // Allocate per-walker data in the PooledData buffer
   RealType registerData(ParticleSet& P, PooledData<RealType>& buf);

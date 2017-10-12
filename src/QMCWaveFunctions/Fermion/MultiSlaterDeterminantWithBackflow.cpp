@@ -594,13 +594,6 @@ void MultiSlaterDeterminantWithBackflow::restore(int iat)
   AccRejTimer.stop();
 }
 
-void MultiSlaterDeterminantWithBackflow::update(ParticleSet& P
-    , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL
-    , int iat)
-{
-  APP_ABORT("IMPLEMENT MultiSlaterDeterminantWithBackflow::update");
-}
-
 OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::evaluateLog(ParticleSet& P,BufferType& buf)
 {
   BFTrans->evaluate(P);

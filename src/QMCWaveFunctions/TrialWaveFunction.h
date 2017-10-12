@@ -260,14 +260,6 @@ public:
   void evaluateDerivRatios(VirtualParticleSet& P, const opt_variables_type& optvars,
       std::vector<RealType>& ratios, Matrix<RealType>& dratio);
 
-  void update(ParticleSet& P, int iat);
-
-#if 0
-  RealType ratio(ParticleSet& P, int iat,
-                 ParticleSet::ParticleGradient_t& dG,
-                 ParticleSet::ParticleLaplacian_t& dL);
-#endif
-
   void printGL(ParticleSet::ParticleGradient_t& G,
                ParticleSet::ParticleLaplacian_t& L, std::string tag = "GL");
 

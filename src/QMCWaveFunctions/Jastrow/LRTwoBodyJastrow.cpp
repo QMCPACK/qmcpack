@@ -535,15 +535,6 @@ void LRTwoBodyJastrow::acceptMove(ParticleSet& P, int iat)
   d2U += offd2U;
 }
 
-void LRTwoBodyJastrow::update(ParticleSet& P,
-                              ParticleSet::ParticleGradient_t& dG,
-                              ParticleSet::ParticleLaplacian_t& dL,
-                              int iat)
-{
-  app_error() << "LRTwoBodyJastrow::update is INCOMPLETE " << std::endl;
-}
-
-
 LRTwoBodyJastrow::RealType
 LRTwoBodyJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf)
 {

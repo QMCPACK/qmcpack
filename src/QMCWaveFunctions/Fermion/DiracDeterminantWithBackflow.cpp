@@ -805,16 +805,6 @@ void DiracDeterminantWithBackflow::restore(int iat)
   curRatio=1.0;
 }
 
-void DiracDeterminantWithBackflow::update(ParticleSet& P,
-    ParticleSet::ParticleGradient_t& dG,
-    ParticleSet::ParticleLaplacian_t& dL,
-    int iat)
-{
-  APP_ABORT(" Need to implement DiracDeterminantWithBackflow::update() \n");
-}
-
-
-
 DiracDeterminantWithBackflow::RealType
 DiracDeterminantWithBackflow::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
 {

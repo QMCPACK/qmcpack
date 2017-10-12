@@ -594,56 +594,6 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
 #endif
 }
 
-void   TrialWaveFunction::update(ParticleSet& P,int iat)
-{
-  //ready to collect "changes" in the gradients and laplacians by the move
-  delta_G=0.0;
-  delta_L=0.0;
-  for (int i=0, ii=ACCEPT_TIMER; i<Z.size(); i++,ii+=TIMER_SKIP)
-  {
-    myTimers[ii]->start();
-    Z[i]->update(P,delta_G,delta_L,iat);
-    myTimers[ii]->stop();
-  }
-  P.G += delta_G;
-  P.L += delta_L;
-}
-
-
-#if 0
-/** evaluate \f$ frac{\Psi({\bf R}_i^{'})}{\Psi({\bf R}_i)}\f$
- * @param P ParticleSet
- * @param iat index of the particle with a trial move
- * @param dG total differentcal gradients
- * @param dL total differential laplacians
- * @return ratio
- *
- * Each OrbitalBase object adds the differential gradients and lapacians.
- */
-TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P, int iat
-    , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL)
-{
-  //TAU_PROFILE("TrialWaveFunction::ratio","(P,iat,dG,dL)", TAU_USER);
-  dG = 0.0;
-  dL = 0.0;
-  ValueType r(1.0);
-  for (size_t i=0, ii=VGL_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
-  {
-    myTimers[ii]->start();
-    r *= Z[i]->ratio(P,iat,dG,dL);
-    myTimers[ii]->stop();
-  }
-#if defined(QMC_COMPLEX)
-  return std::exp(evaluateLogAndPhase(r,PhaseDiff));
-#else
-  if (r<0)
-    PhaseDiff=M_PI;
-  //     else PhaseDiff=0.0;
-  return r;
-#endif
-}
-#endif
-
 void TrialWaveFunction::printGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L, std::string tag)
 {
   std::ostringstream o;

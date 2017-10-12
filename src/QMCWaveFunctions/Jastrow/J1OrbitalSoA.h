@@ -377,18 +377,6 @@ struct  J1OrbitalSoA : public OrbitalBase
     return 1;
   }
 
-  /** must be removed */
-  inline void update(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL,
-                     int iat)
-  {
-    APP_ABORT("J1OrbitalSoA::update must not be used");
-  }
-
-
-
-
 };
 
 

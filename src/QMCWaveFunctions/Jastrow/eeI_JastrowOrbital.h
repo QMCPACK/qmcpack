@@ -1042,33 +1042,6 @@ public:
   }
 
 
-  inline void update(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL,
-                     int iat)
-  {
-    DiffValSum += DiffVal;
-    GradType sumg,dg;
-    ValueType suml=0.0,dl;
-    for(int jat=0,ij=iat*Nelec,ji=iat; jat<Nelec; jat++,ij++,ji+=Nelec)
-    {
-      sumg += (dg=curGrad_i[jat]-dU[ij]);
-      suml += (dl=curLap_i[jat]-d2U[ij]);
-      dU[ij]  = curGrad_i[jat];
-      dU[ji]  = curGrad_j[jat];
-      d2U[ij] = curLap_i[jat];
-      d2U[ji] = curLap_j[jat];
-      U[ij]   =  U[ji] = curVal[jat];
-      dG[jat] -= curGrad_j[jat] -  dU[ji];
-      dL[jat] -=  curLap_j[jat] - d2U[ji];
-      // dG[jat] -= dg;
-      // dL[jat] += dl;
-    }
-    dG[iat] -= sumg;
-    dL[iat] -= suml;
-  }
-
-
   inline void evaluateLogAndStore(ParticleSet& P,
                                   ParticleSet::ParticleGradient_t& G,
                                   ParticleSet::ParticleLaplacian_t& L)

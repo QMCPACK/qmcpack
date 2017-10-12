@@ -630,13 +630,6 @@ void MultiSlaterDeterminant::restore(int iat)
   AccRejTimer.stop();
 }
 
-void MultiSlaterDeterminant::update(ParticleSet& P
-                                    , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL
-                                    , int iat)
-{
-  APP_ABORT("IMPLEMENT MultiSlaterDeterminant::update");
-}
-
 OrbitalBase::RealType MultiSlaterDeterminant::evaluateLog(ParticleSet& P,BufferType& buf)
 {
   // Do I need to recalculate LogValue, it should be up to date...

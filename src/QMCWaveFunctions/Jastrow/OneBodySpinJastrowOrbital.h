@@ -428,19 +428,6 @@ public:
     d2U[iat]=curLap;
   }
 
-
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat)
-  {
-    dG[iat] += curGrad-dU[iat];
-    dU[iat]=curGrad;
-    dL[iat] += curLap-d2U[iat];
-    d2U[iat]=curLap;
-    U[iat] = curVal;
-  }
-
   void evaluateLogAndStore(ParticleSet& P,
                            ParticleSet::ParticleGradient_t& dG,
                            ParticleSet::ParticleLaplacian_t& dL)

@@ -73,11 +73,6 @@ public:
 
   void acceptMove(ParticleSet& P, int iat);
 
-  inline void update(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL,
-                     int iat);
-
   RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
 
   RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);

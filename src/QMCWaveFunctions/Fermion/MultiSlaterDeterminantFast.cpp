@@ -639,13 +639,6 @@ void MultiSlaterDeterminantFast::restore(int iat)
   AccRejTimer.stop();
 }
 
-void MultiSlaterDeterminantFast::update(ParticleSet& P
-                                        , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL
-                                        , int iat)
-{
-  APP_ABORT("IMPLEMENT MultiSlaterDeterminantFast::update");
-}
-
 OrbitalBase::RealType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P,BufferType& buf)
 {
   Dets[0]->evaluateLog(P,buf);

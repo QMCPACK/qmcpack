@@ -260,11 +260,6 @@ public:
    */
   virtual void restore(int iat);
 
-  virtual void update(ParticleSet& P,
-                      ParticleSet::ParticleGradient_t& dG,
-                      ParticleSet::ParticleLaplacian_t& dL,
-                      int iat);
-
   virtual RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
 

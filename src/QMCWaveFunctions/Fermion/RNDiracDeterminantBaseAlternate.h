@@ -97,11 +97,6 @@ public:
    */
   void acceptMove(ParticleSet& P, int iat);
 
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat);
-
   RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
   RealType getAlternatePhaseDiff()
   {

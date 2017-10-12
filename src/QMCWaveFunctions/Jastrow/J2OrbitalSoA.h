@@ -230,10 +230,6 @@ struct  J2OrbitalSoA : public OrbitalBase
   }
 
   //to be removed from QMCPACK: these are not used anymore with PbyPFast
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat) {}
   ValueType ratio(ParticleSet& P, int iat,
       ParticleSet::ParticleGradient_t& dG,
       ParticleSet::ParticleLaplacian_t& dL){ return ValueType(1);}

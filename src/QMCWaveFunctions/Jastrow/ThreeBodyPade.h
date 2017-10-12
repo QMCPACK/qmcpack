@@ -262,26 +262,6 @@ public:
 
   inline void restore(int iat) {}
 
-  void update(ParticleSet& P, int iat)
-  {
-    U[iat] = curVal;
-    dU[iat]=curGrad;
-    d2U[iat]=curLap;
-  }
-
-
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat)
-  {
-    dG[iat] += curGrad-dU[iat];
-    dU[iat]=curGrad;
-    dL[iat] += curLap-d2U[iat];
-    d2U[iat]=curLap;
-    U[iat] = curVal;
-  }
-
 // copied from OneBody... justn need it for now I think
   void addFunc(int source_type, FT* afunc)
   {

@@ -88,11 +88,6 @@ class DiracDeterminantSoA: public DiracDeterminantBase
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
 #if 0
-  void update(ParticleSet& P,
-      ParticleSet::ParticleGradient_t& dG,
-      ParticleSet::ParticleLaplacian_t& dL,
-      int iat);
-
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   GradType evalGrad(ParticleSet& P, int iat);
   GradType evalGradSource(ParticleSet &P, ParticleSet &source, int iat);

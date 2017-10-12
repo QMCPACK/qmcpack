@@ -85,16 +85,6 @@ public:
     return 1.0;
   }
 
-  virtual void update(ParticleSet& P,
-                      ParticleSet::ParticleGradient_t& dG,
-                      ParticleSet::ParticleLaplacian_t& dL,
-                      int iat)
-  {
-    APP_ABORT("LinearOrbital. update");
-    dG = 0.0;
-    dL = 0.0;
-  }
-
   virtual RealType evaluateLog(ParticleSet& P,BufferType& buf)
   {
     APP_ABORT("LinearOrbital. evaluteLogbuffer");

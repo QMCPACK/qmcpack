@@ -125,16 +125,6 @@ public:
     return 1.0;
   }
 
-  //@todo implement the virutal functions for particle-by-particle move
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat)
-  {
-    std::cerr << "PolarizedJastrow::update for particle-by-particle is empty " << std::endl;
-  }
-
-
   ValueType evaluate(ParticleSet& P,PooledData<RealType>& buf)
   {
     std::cerr << "PolarizedJastrow::evaluate for particle-by-particle is empty " << std::endl;
