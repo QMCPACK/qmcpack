@@ -1,17 +1,17 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="H2" series="0"/>
-  <random seed="130"/>
+  <project id="H4" series="0"/>
+  <random seed="281"/>
   <!-- input from gaussian converter -->
-  <include href="h2.ptcl.xml"/>
-  <include href="h2.wfn.xml"/>
+  <include href="h4.ptcl.xml"/>
+  <include href="h4.wfn.xml"/>
   <hamiltonian name="h0" type="generic" target="e"> 
     <pairpot name="ElecElec" type="coulomb" source="e" target="e"/> 
     <pairpot name="IonElec"  type="coulomb" source="ion0"/>
     <constant name="IonIon" type="coulomb" source="ion0" target="ion0"/> 
   </hamiltonian> 
 
-  <loop max="10">
+  <loop max="3">
     <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
       <parameter name="walkers"> 1 </parameter>
       <parameter name="blocks"> 256 </parameter>
@@ -33,14 +33,15 @@
       <parameter name="max_relative_cost_change"> 100.0 </parameter>
       <parameter name="max_param_change"> 3.0e-1 </parameter>
       <parameter name="targetExcited"> yes </parameter>
-      <parameter name="omega"> -1.50 </parameter>
+      <parameter name="omega"> -3.2 </parameter>
     </qmc>
   </loop>
 
-  <qmc method="vmc" target="e">
-    <parameter name="blocks"> 512 </parameter>
-    <parameter name="steps"> 200 </parameter>
-    <parameter name="warmupsteps"> 500 </parameter>
-    <parameter name="timestep"> 0.05 </parameter>
+  <qmc method="dmc" move="pbyp" target="e">
+    <parameter name="blocks">50</parameter>
+    <parameter name="steps">100</parameter>
+    <parameter name="targetwalkers">128</parameter>
+    <parameter name="warmupsteps">50</parameter>
+    <parameter name="timestep">0.01</parameter>
   </qmc>
 </simulation>
