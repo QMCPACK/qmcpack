@@ -351,7 +351,7 @@ xmlNodePtr QMCGaussianParserBase::createBasisSetWithHDF5()
   xmlNodePtr bset = xmlNewNode(NULL,(const xmlChar*)"basisset");
   hid_t h_file =  H5Fcreate(h5file.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
   hid_t basisset = H5Gcreate(h_file,"basisset",0);
-  std::string BasisSetName("LCAOBSet ");
+  std::string BasisSetName("LCAOBSet");
   HDFAttribIO<std::string>  ah(BasisSetName);
   ah.write(basisset,"name");
   hid_t atomicBasisSet = H5Gcreate(basisset,"atomicBasisSet",0);
@@ -1012,7 +1012,7 @@ void QMCGaussianParserBase::createCenterH5(int iat, int off_,int numelem)
   int numbasisgroups(0);
   std::stringstream tempcenter;
   std::string CenterID;
-  tempcenter<<CurrentCenter<<" ";
+  tempcenter<<CurrentCenter<<"";
   CenterID=tempcenter.str();
   std::stringstream tempElem;
   std::string ElemID0="Element",ElemID;
@@ -1044,7 +1044,7 @@ void QMCGaussianParserBase::createCenterH5(int iat, int off_,int numelem)
 
   double ValgridFirst(1.e-6), ValgridLast(1.e2);
   int Valnpts(1001);
-  std::string gridType("log ");
+  std::string gridType("log");
   double gridFirst(ValgridFirst);
   double gridLast(ValgridLast);
   int gridSize(Valnpts);
@@ -1113,7 +1113,7 @@ QMCGaussianParserBase::createShellH5(int n, int ig, int off_,int numelem)
 
 
   char l_name[4],n_name[4],a_name[32];
-  sprintf(a_name,"%s%d%d%s",CurrentCenter.c_str(),n,gShellID[gid]," ");
+  sprintf(a_name,"%s%d%d%s",CurrentCenter.c_str(),n,gShellID[gid]);
   sprintf(l_name,"%d",gShellID[gid]);
   sprintf(n_name,"%d",n);
 

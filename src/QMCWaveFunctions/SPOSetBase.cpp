@@ -114,7 +114,6 @@ SPOSetBase* SPOSetBase::makeClone() const
 /** Parse the xml file for information on the Dirac determinants.
  *@param cur the current xmlNode
  */
-//bool SPOSetBase::put(xmlNodePtr cur)
 bool SPOSetBase::put(xmlNodePtr cur)
 {
   //Check if HDF5 present

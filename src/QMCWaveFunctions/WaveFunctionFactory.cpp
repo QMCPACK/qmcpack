@@ -96,7 +96,6 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
       while(kcur != NULL)
       {
         std::string kname((const char*)(kcur->name));
-
         if (kname=="h5tag")
         {
           std::string hdfName;

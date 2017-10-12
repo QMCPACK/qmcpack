@@ -17,11 +17,13 @@
 
 #ifndef QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANBASISSET_H
 #define QMCPLUSPLUS_RADIALGRIDFUNCTOR_GAUSSIANBASISSET_H
+#include <io/hdf_archive.h>   
 #include "Numerics/OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
-#include "io/hdf_archive.h"   
 
+namespace qmcplusplus
+{
 
 template<class T>
 struct GaussianCombo: public OptimizableFunctorBase
@@ -76,22 +78,22 @@ struct GaussianCombo: public OptimizableFunctorBase
 
     inline real_type f(real_type rr) const
     {
-      return Coeff*exp(MinusSigma*rr);
+      return Coeff*std::exp(MinusSigma*rr);
     }
     inline real_type df(real_type r, real_type rr) const
     {
-      return CoeffP*r*exp(MinusSigma*rr);
+      return CoeffP*r*std::exp(MinusSigma*rr);
     }
     inline real_type evaluate(real_type r, real_type rr, real_type& du, real_type& d2u)
     {
-      real_type v=exp(MinusSigma*rr);
+      real_type v=std::exp(MinusSigma*rr);
       du += CoeffP*r*v;
       d2u += (CoeffP+CoeffPP*rr)*v;
       return Coeff*v;
     }
     inline real_type evaluate(real_type r, real_type rr, real_type& du, real_type& d2u, real_type& d3u)
     {
-      real_type v=exp(MinusSigma*rr);
+      real_type v=std::exp(MinusSigma*rr);
       du += CoeffP*r*v;
       d2u += (CoeffP+CoeffPP*rr)*v;
       d3u += (CoeffPPP1*r+CoeffPPP2*r*rr)*v;
@@ -222,7 +224,7 @@ struct GaussianCombo: public OptimizableFunctorBase
   }
 
   bool putBasisGroup(xmlNodePtr cur);
-  bool putBasisGroupH5(hid_t basisGroup);
+  bool putBasisGroupH5(hdf_archive &hin);
 
   /**  double factorial of num
    * @param num integer to be factored
@@ -247,8 +249,8 @@ GaussianCombo<T>::GaussianCombo(int l, bool normalized,
 {
   L = static_cast<real_type>(l);
   //Everything related to L goes to NormL and NormPow
-  const real_type pi = 4.0*atan(1.0);
-  NormL = pow(2,L+1)*sqrt(2.0/static_cast<real_type>(DFactorial(2*l+1)))*pow(2.0/pi,0.25);
+  const real_type pi = 4.0*std::atan(1.0);
+  NormL = std::pow(2,L+1)*std::sqrt(2.0/static_cast<real_type>(DFactorial(2*l+1)))*std::pow(2.0/pi,0.25);
   NormPow = 0.5*(L+1.0)+0.25;
 }
 
@@ -262,7 +264,7 @@ bool GaussianCombo<T>::put(xmlNodePtr cur)
   radAttrib.put(cur);
   real_type c0=c;
   if(!Normalized)
-    c *= NormL*pow(alpha,NormPow);
+    c *= NormL*std::pow(alpha,NormPow);
   LOGMSG("    Gaussian exponent = " << alpha
          << "\n              contraction=" << c0 <<  " nomralized contraction = " << c)
   gset.push_back(BasicGaussian(alpha,c));
@@ -294,15 +296,11 @@ bool GaussianCombo<T>::putBasisGroup(xmlNodePtr cur)
 }
 
 template<class T>
-bool GaussianCombo<T>::putBasisGroupH5(hid_t basisGroup)
+bool GaussianCombo<T>::putBasisGroupH5(hdf_archive &hin)
 {
-
   int NbRadFunc(0); 
-  hid_t H5NbRadFunc=H5Dopen(basisGroup, "NbRadFunc");
-  H5Dread(H5NbRadFunc, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &NbRadFunc);
-  
-  H5Dclose(H5NbRadFunc);
-  hid_t RadFunc=H5Gopen(basisGroup, "radfunctions");
+  hin.read(NbRadFunc,"NbRadFunc");
+  hin.push("radfunctions");
 
   for (int i=0; i<NbRadFunc;i++)
   {
@@ -311,27 +309,23 @@ bool GaussianCombo<T>::putBasisGroupH5(hid_t basisGroup)
     std::string dataradID0="DataRad",dataradID;
     tempdata<<dataradID0<<i;
     dataradID=tempdata.str();
-    hid_t datarad = H5Gopen(RadFunc,dataradID.c_str());
-    hid_t RadFuncexp=H5Dopen(datarad, "exponent");
-    H5Dread(RadFuncexp, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &alpha);
-
-    hid_t RadFunccontract=H5Dopen(datarad, "contraction");
-    H5Dread(RadFunccontract, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &c);
+    hin.push(dataradID.c_str());
+    hin.read(alpha, "exponent");
+    hin.read(c, "contraction");
 
 
     real_type c0=c;
     if(!Normalized)
-      c *= NormL*pow(alpha,NormPow);
+      c *= NormL*std::pow(alpha,NormPow);
     LOGMSG("    Gaussian exponent = " << alpha
            << "\n              contraction=" << c0 <<  " nomralized contraction = " << c)
     gset.push_back(BasicGaussian(alpha,c));
-    H5Dclose(RadFuncexp);
-    H5Dclose(RadFunccontract);
-    H5Gclose(datarad);
-    
+    hin.pop();
   }
   reset();
-  H5Gclose(RadFunc);
+  hin.pop();
   return true;
 }
+
+} // qmcplusplus
 #endif

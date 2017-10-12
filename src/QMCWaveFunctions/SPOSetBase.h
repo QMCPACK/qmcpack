@@ -157,7 +157,7 @@ public:
   void checkObject();
 
   ///get C and Occ
-  bool put(xmlNodePtr cur );
+  bool put(xmlNodePtr cur);
 
   virtual bool put(xmlNodePtr cur, SPOPool_t &spo_pool)
   {

@@ -141,6 +141,7 @@ struct LocalizedBasisSet: public BasisSetBase<typename COT::value_type>
       app_error() << "LocalizedBasisSet cannot function without a distance table. Abort" << std::endl;
     }
     //reset the distance table for the atomic orbitals
+    std::cout<<"--------------------------"<<std::endl;
     for(int i=0; i<LOBasisSet.size(); i++)
       LOBasisSet[i]->setTable(myTable);
     //evaluate the total basis dimension and offset for each center

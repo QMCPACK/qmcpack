@@ -50,14 +50,14 @@ public:
     return true;
   }
 
-  bool addGridH5(hid_t EleTycBasisSet)
+  bool addGridH5(hdf_archive &hin)
   {
     return true;
   }
 
   bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms);
 
-  bool addRadialOrbitalH5(hid_t radfunc, const QuantumNumberType& nlms)
+  bool addRadialOrbitalH5(hdf_archive &hin, const QuantumNumberType& nlms)
   {
     return 0;
   }

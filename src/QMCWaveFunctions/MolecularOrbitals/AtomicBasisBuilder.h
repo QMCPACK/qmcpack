@@ -53,7 +53,7 @@ struct AtomicBasisBuilder: public BasisSetBuilder
   AtomicBasisBuilder(const std::string& eName);
 
   bool put(xmlNodePtr cur);
-  bool putH5(hid_t EleTycBasisSet); 
+  bool putH5(hdf_archive &hin); 
 
   SPOSetBase* createSPOSetFromXML(xmlNodePtr cur)
   {
@@ -61,13 +61,13 @@ struct AtomicBasisBuilder: public BasisSetBuilder
   }
 
   COT* createAOSet(xmlNodePtr cur);
-  COT* createAOSetH5(hid_t EleTycBasisSet);
+  COT* createAOSetH5(hdf_archive &hin);
 
   int expandYlm(const std::string& rnl, const QuantumNumberType& nlms,
                 int num, COT* aos, xmlNodePtr cur1, int expandlm=DONOT_EXPAND);
 
   int expandYlmH5(const std::string& rnl, const QuantumNumberType& nlms,
-                int num, COT* aos, hid_t basisGroup, int expandlm=DONOT_EXPAND);
+                int num, COT* aos, hdf_archive &hin, int expandlm=DONOT_EXPAND);
 
 };
 
@@ -130,35 +130,19 @@ bool AtomicBasisBuilder<RFB>::put(xmlNodePtr cur)
 
 
 template<class RFB>
-bool AtomicBasisBuilder<RFB>::putH5(hid_t EleTycBasisSet)
+bool AtomicBasisBuilder<RFB>::putH5(hdf_archive &hin)
 {
-  
-
-
-
 
   std::string CenterID, Normalized, basisName; 
-  HDFAttribIO<std::string>  aa(sph);
-  aa.read(EleTycBasisSet,"angular");
+  hin.read(sph,"angular");
+  hin.read(basisType,"type");
 
-  HDFAttribIO<std::string>  ab(basisType);
-  ab.read(EleTycBasisSet,"type");
-
+  //TO BE EXPANDED TO OTHER FORMATS
   Morder="Gamess";
-  //HDFAttribIO<std::string>  ac(Morder);
-  //ac.read(EleTycBasisSet,"expandYlm");
-
-  
-  HDFAttribIO<std::string>  ad(CenterID);
-  ad.read(EleTycBasisSet,"elementType");
-
-  HDFAttribIO<std::string>  ae(Normalized);
-  ae.read(EleTycBasisSet,"normalized");
-
-  HDFAttribIO<std::string>  af(basisName);
-  af.read(EleTycBasisSet,"name");
-
-  app_log()<<"node= atomicBasisSet name="<<basisName<<"  angular="<<sph<<"  type="<<basisType<<"  elementType="<<CenterID<<"  normalized="<<Normalized<<std::endl; 
+  hin.read(CenterID,"elementType");
+  hin.read(Normalized,"normalized");
+  hin.read(basisName,"name");
+  app_log()<<"<input node=\"atomicBasisSet\" name=\""<<basisName<<"\"  angular=\""<<sph<<"\"  type=\""<<basisType<<"\"  elementType=\""<<CenterID<<"\"  normalized=\""<<Normalized<<"\"/>"<<std::endl; 
   bool tmp_addsignforM=addsignforM;
   if(sph == "spherical")
     addsignforM=1; //include (-1)^m
@@ -302,7 +286,7 @@ AtomicBasisBuilder<RFB>::createAOSet(xmlNodePtr cur)
 
 template<class RFB>
 typename AtomicBasisBuilder<RFB>::COT*
-AtomicBasisBuilder<RFB>::createAOSetH5(hid_t EleTycBasisSet)
+AtomicBasisBuilder<RFB>::createAOSetH5(hdf_archive &hin)
 {
   ReportEngine PRE("AtomicBasisBuilder","createAOSetH5(std::string)");
   app_log() << "  AO BasisSet for " << elementType << "\n";
@@ -339,12 +323,10 @@ AtomicBasisBuilder<RFB>::createAOSetH5(hid_t EleTycBasisSet)
   
   int numbasisgroups(0);
 
-  HDFAttribIO<int>  NbBasisGroups(numbasisgroups);
-  NbBasisGroups.read(EleTycBasisSet,"NbBasisGroups");
+  bool H5_NBGASGROUP= hin.read(numbasisgroups,"NbBasisGroups");
+  if  (H5_NBGASGROUP!=true)
+    PRE.error("Could not read NbBasisGroups in H5; Probably Corrupt H5 file",true);
 
-
-
-  
   for (int i=0; i<numbasisgroups;i++)
   {
     char n_name[4];
@@ -352,9 +334,8 @@ AtomicBasisBuilder<RFB>::createAOSetH5(hid_t EleTycBasisSet)
     std::string an_name(n_name);
     std::string basisGroupID="basisGroup"+an_name;
     int l(0);
-    hid_t basisGroup=H5Gopen(EleTycBasisSet,basisGroupID.c_str()); 
-    HDFAttribIO<int>  lval(l);
-    lval.read(basisGroup,"l");
+    hin.push(basisGroupID.c_str()); 
+    hin.read(l,"l");
       
     Lmax = std::max(Lmax,l);
     //expect that only Rnl is given
@@ -365,9 +346,9 @@ AtomicBasisBuilder<RFB>::createAOSetH5(hid_t EleTycBasisSet)
         num += 2*l+1;
       else
         num++;
-   H5Gclose(basisGroup);
+     hin.pop(); 
  }         
-
+ 
   char n_name[4];
   std::string basisGroupID;
 
@@ -377,40 +358,25 @@ AtomicBasisBuilder<RFB>::createAOSetH5(hid_t EleTycBasisSet)
   //Now, add distinct Radial Orbitals and (l,m) channels
   num=0;
   radFuncBuilder.setOrbitalSet(aos,elementType); //assign radial orbitals for the new center
-  radFuncBuilder.addGridH5(EleTycBasisSet); //assign a radial grid for the new center
+  radFuncBuilder.addGridH5(hin); //assign a radial grid for the new center
 
 
   for (int i=0; i<numbasisgroups;i++)
   {
-
-
-
     sprintf(n_name,"%d",i);
     std::string aan_name(n_name);
 
     basisGroupID="basisGroup"+aan_name;
-
-    hid_t basisGroup=H5Gopen(EleTycBasisSet,basisGroupID.c_str()); 
-     
-    HDFAttribIO<std::string>  rnlval(rnl);
-    rnlval.read(basisGroup,"rid");
-  
-    HDFAttribIO<int>  nlms0(nlms[0]);
-    nlms0.read(basisGroup,"n");
-
-    HDFAttribIO<int>  nlms1(nlms[1]);
-    nlms1.read(basisGroup,"l");
-
+    hin.push(basisGroupID.c_str()); 
+    hin.read(rnl,"rid");
+    hin.read(nlms[0],"n");
+    hin.read(nlms[1],"l");
  
     //add Ylm channels
     app_log() << "   R(n,l,m,s) " << nlms[0] << " " << nlms[1] << " " << nlms[2] << " " << nlms[3] << std::endl;
-    num = expandYlmH5(rnl,nlms,num,aos,basisGroup,expandlm);
-
-
-    H5Gclose(basisGroup);
-
+    num = expandYlmH5(rnl,nlms,num,aos,hin,expandlm);
+    hin.pop(); 
   } 
-  
   aos->setBasisSetSize(-1);
   app_log() << "   Maximu Angular Momentum   = " << aos->Ylm.Lmax << std::endl
             << "   Number of Radial functors = " << aos->Rnl.size() << std::endl
@@ -582,7 +548,7 @@ int AtomicBasisBuilder<RFB>::expandYlm(const std::string& rnl, const QuantumNumb
 
 template<class RFB>
 int AtomicBasisBuilder<RFB>::expandYlmH5(const std::string& rnl, const QuantumNumberType& nlms, int num,
-                                       COT* aos, hid_t basisGroup, int expandlm)
+                                       COT* aos, hdf_archive &hin, int expandlm)
 {
   
   if(expandlm==CARTESIAN_EXPAND)
@@ -592,10 +558,8 @@ int AtomicBasisBuilder<RFB>::expandYlmH5(const std::string& rnl, const QuantumNu
     if(rnl_it == RnlID.end())
     {
       int nl = aos->Rnl.size();
-      if(radFuncBuilder.addRadialOrbitalH5(basisGroup,nlms))
+      if(radFuncBuilder.addRadialOrbitalH5(hin,nlms))
       {
-        
-
         RnlID[rnl] = nl;
         int l = nlms[q_l];
         app_log() << "Adding " << (l+1)*(l+2)/2 << " cartesian gaussian orbitals for l= " << l<< std::endl;
@@ -615,7 +579,6 @@ int AtomicBasisBuilder<RFB>::expandYlmH5(const std::string& rnl, const QuantumNu
   {
      app_log()<<" NON CARTESIAN EXPAND OF BASIS SET NOT IMPLEMENTED WITH HDF5"<<std::endl;
      exit(0);
-
   }
   return num;
 }

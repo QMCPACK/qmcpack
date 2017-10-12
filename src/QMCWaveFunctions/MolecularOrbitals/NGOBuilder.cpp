@@ -14,9 +14,7 @@
     
 #include <HDFVersion.h>
 #include "Utilities/OhmmsInfo.h"
-#include "OhmmsData/HDFStringAttrib.h"
 #include "Numerics/LibxmlNumericIO.h"
-#include "Numerics/HDFNumericAttrib.h"
 #include "Numerics/GaussianBasisSet.h"
 #include "Numerics/SlaterBasisSet.h"
 #include "Numerics/Transform2GridFunctor.h"
@@ -24,6 +22,9 @@
 #include "QMCFactory/OneDimGridFactory.h"
 #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
 #include "io/hdf_archive.h"
+#include "Numerics/HDFNumericAttrib.h"
+#include "OhmmsData/HDFStringAttrib.h"
+
 namespace qmcplusplus
 {
 
@@ -83,7 +84,6 @@ bool NGOBuilder::putCommon(xmlNodePtr cur)
   return success;
 }
 
-
 void
 NGOBuilder::setOrbitalSet(CenteredOrbitalType* oset, const std::string& acenter)
 {
@@ -91,7 +91,7 @@ NGOBuilder::setOrbitalSet(CenteredOrbitalType* oset, const std::string& acenter)
   m_species = acenter;
 }
 
-bool NGOBuilder::addGridH5(hid_t EleTycBasisSet)
+bool NGOBuilder::addGridH5(hdf_archive &hin)
 {
   if(!m_orbitals)
   {
@@ -99,21 +99,26 @@ bool NGOBuilder::addGridH5(hid_t EleTycBasisSet)
   }
   
   app_log() << "   Grid is created by the input paremters in h5" << std::endl;
+
+
+
   std::string gridtype;
-  HDFAttribIO<std::string> gtypestr(gridtype);
-  gtypestr.read(EleTycBasisSet,"grid_type");
+  bool H5_GRIDTYPE = hin.read(gridtype, "grid_type");
+  if  (H5_GRIDTYPE!=true){
+      std::cerr<<"Could not read grid_type in H5; Probably Corrupt H5 file"<<std::endl;
+      exit(0);
+  }
   int npts=0;
   RealType ri=0.0,rf=10.0,rmax_safe=10;
   double tt=0;
-  HDFAttribIO<double> ri_in(tt);
-  ri_in.read(EleTycBasisSet,"grid_ri");
+  hin.read(tt,"grid_ri");
   ri=tt;
-  ri_in.read(EleTycBasisSet,"grid_rf");
+  hin.read(tt,"grid_rf");
   rf=tt;
-  ri_in.read(EleTycBasisSet,"rmax_safe");
+  hin.read(tt,"rmax_safe");
   rmax_safe=tt;
-  HDFAttribIO<int> n_in(npts);
-  n_in.read(EleTycBasisSet,"grid_npts");
+  hin.read(npts,"grid_npts");
+
   if(gridtype.empty())
   {
     APP_ABORT("Grid type is not specified.");
@@ -123,9 +128,6 @@ bool NGOBuilder::addGridH5(hid_t EleTycBasisSet)
     app_log() << "    Using log grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
     input_grid = new LogGrid<RealType>;
     input_grid->set(ri,rf,npts);
-    //GridType *agrid = new LinearGrid<RealType>;
-    //agrid->set(0.0,rmax_safe,rmax_safe/0.01);
-    //m_orbitals->Grids.push_back(agrid);
     m_orbitals->Grids.push_back(input_grid);
     input_grid=0;
   }
@@ -138,12 +140,6 @@ bool NGOBuilder::addGridH5(hid_t EleTycBasisSet)
       m_orbitals->Grids.push_back(input_grid);
       input_grid=0;
     }
-  //if(!input_grid)
-  //{
-  //  APP_ABORT("Grid is not defined.");
-  //}
-  //using 0.01 for the time being
-
   return true;
 }
 
@@ -272,7 +268,7 @@ NGOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
 }
 
 bool
-NGOBuilder::addRadialOrbitalH5(hid_t basisGroup, const QuantumNumberType& nlms)
+NGOBuilder::addRadialOrbitalH5(hdf_archive & hin, const QuantumNumberType& nlms)
 {
   if(!m_orbitals)
   {
@@ -285,7 +281,7 @@ NGOBuilder::addRadialOrbitalH5(hid_t basisGroup, const QuantumNumberType& nlms)
   m_nlms = nlms;
   if(radtype == "Gaussian" || radtype == "GTO")
   {
-    addGaussianH5(basisGroup);
+    addGaussianH5(hin);
   }
   else
   {
@@ -316,15 +312,13 @@ void NGOBuilder::addGaussian(xmlNodePtr cur)
   m_orbitals->RnlID.push_back(m_nlms);
 }
 
-void NGOBuilder::addGaussianH5(hid_t basisGroup)
+void NGOBuilder::addGaussianH5(hdf_archive &hin)
 {
   int L= m_nlms[1];
 
   GaussianCombo<RealType> gset(L,Normalized);
-  gset.putBasisGroupH5(basisGroup);
+  gset.putBasisGroupH5(hin);
   GridType* agrid = m_orbitals->Grids[0];
-
-
   RadialOrbitalType *radorb = new RadialOrbitalType(agrid);
   if(m_rcut<0)
     m_rcut = agrid->rmax();
@@ -332,7 +326,6 @@ void NGOBuilder::addGaussianH5(hid_t basisGroup)
   transform.generate(agrid->rmin(),m_rcut,agrid->size());
   m_orbitals->Rnl.push_back(radorb);
   m_orbitals->RnlID.push_back(m_nlms);
-
 }
 
 

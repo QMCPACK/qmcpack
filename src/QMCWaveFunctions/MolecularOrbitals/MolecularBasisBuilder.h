@@ -130,32 +130,24 @@ public:
 
       app_log()<<"Reading BasisSet from HDF5 file:"<<h5_path<<std::endl;
       
-      std::string basiset_name;
-      hid_t h_file,basisset,atomicBasisSet;
-
-
-      h_file= H5Fopen(h5_path.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
-      if(h_file<0){
-         std::cerr<<"Could not open H5 file"<<std::endl;
-         exit(0);
-      }
-      basisset= H5Gopen(h_file,"basisset");
-      if(basisset<0){
-         std::cerr<<"Could not open basisset group in H5; Probably Corrupt H5 file"<<std::endl;
-         exit(0);
-      }
-      atomicBasisSet= H5Gopen(basisset,"atomicBasisSet");
-      if(atomicBasisSet<0){
-         std::cerr<<"Could not open atomicBasisSet group in H5; Probably Corrupt H5 file"<<std::endl;
-         exit(0);
-      }
- 
-      HDFAttribIO<std::string> basisname(basiset_name); 
-      basisname.read(basisset,"name");
-
       int Nb_Elements(0);
-      HDFAttribIO<int> NumElement(Nb_Elements); 
-      NumElement.read(atomicBasisSet,"NumElemets");
+      std::string basiset_name;
+
+      hdf_archive hin(0);
+      bool HIN_OPEN=hin.open(h5_path.c_str(),H5F_ACC_RDONLY);
+      if(HIN_OPEN!=true)
+         PRE.error("Could not open H5 file",true);
+      
+      bool HIN_BASIS=hin.push("basisset");
+      if(HIN_BASIS!=true)
+         PRE.error("Could not open basisset group in H5; Probably Corrupt H5 file",true);
+
+      bool HIN_PUSH = hin.push("atomicBasisSet");
+      if(HIN_PUSH!=true)
+         PRE.error("Could not open atomicBasisSet group in H5; Probably Corrupt H5 file",true);
+ 
+
+      hin.read(Nb_Elements,"NumElemets"); 
   
       if(Nb_Elements<1)
           PRE.error("Missing elementType attribute of atomicBasisSet.",true);
@@ -164,7 +156,6 @@ public:
       
       for (int i=0;i<Nb_Elements;i++)
       {
-          hid_t EleTycBasisSet;  
           std::string elementType,dataset;
           
 
@@ -173,24 +164,25 @@ public:
           tempElem<<ElemID0<<i;
           ElemType=tempElem.str();
 
-          EleTycBasisSet= H5Gopen(atomicBasisSet,ElemType.c_str());
-          if(atomicBasisSet<0){
-            std::cerr<<"Could not open  group EleTycBasisSet in H5; Probably Corrupt H5 file"<<std::endl;
-            exit(0);
-          }
+          bool HIN_ELEMTYPE = hin.push(ElemType.c_str());
+          if(HIN_ELEMTYPE!=true)
+              PRE.error("Could not open  group EleTycBasisSet in H5; Probably Corrupt H5 file",true);
 
-          HDFAttribIO<std::string> Elementname(elementType);
-          Elementname.read(EleTycBasisSet,"elementType");
+          bool Bas_Name= hin.read(basiset_name,"name");
+          if  (Bas_Name!=true)
+              PRE.error("Could not find name of  basisset group in H5; Probably Corrupt H5 file",true);
+         
+          bool H5Elem_type = hin.read(elementType,"elementType");
+          if  (H5Elem_type!=true)
+              PRE.error("Could not read elementType in H5; Probably Corrupt H5 file",true);
            
-          app_log()<<"BasisSet name: "<<basiset_name<<"    Number of Atoms="<<Nb_Elements<<"     elementType="<<elementType<<std::endl;
-
           std::map<std::string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType);
           if(it == aoBuilders.end())
           {
             AtomicBasisBuilder<RFB>* any = new AtomicBasisBuilder<RFB>(elementType);
             any->setReportLevel(ReportLevel);
-            any->putH5(EleTycBasisSet);
-            COT* aoBasis= any->createAOSetH5(EleTycBasisSet);
+            any->putH5(hin);
+            COT* aoBasis= any->createAOSetH5(hin);
             if(aoBasis)
             {
               //add the new atomic basis to the basis set
@@ -199,15 +191,18 @@ public:
             }
             aoBuilders[elementType]=any;
           }
-          H5Gclose(EleTycBasisSet); 
+
+          hin.pop(); //ElemType.c_str()
       }
 
-      H5Gclose(atomicBasisSet);
-      H5Gclose(basisset);
-      H5Fclose(h_file);
+      
+      hin.pop(); 
+      hin.pop(); 
+      hin.close();     
     }
     //resize the basis set
     thisBasisSet->setBasisSetSize(-1);
+    std::cout<<"I am Here 6 "<<std::endl;
     return true;
   }
 
