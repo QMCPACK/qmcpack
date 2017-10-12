@@ -146,8 +146,8 @@ public:
   std::vector<DiracDeterminantPtr> dets_dn;
 
   // map determinant in linear combination to unique det list
-  std::vector<int> C2node_up;
-  std::vector<int> C2node_dn;
+  std::vector<size_t> C2node_up;
+  std::vector<size_t> C2node_dn;
 
   std::vector<RealType> C;
 
@@ -187,8 +187,8 @@ public:
   // coefficients of csfs, these are only used during optm
   std::vector<RealType> CSFcoeff;
   // number of dets per csf
-  std::vector<int> DetsPerCSF;
-  // coefficient of csf expansion (smaller dimension)
+  std::vector<size_t> DetsPerCSF;
+  // coefficiesize_tof csf expansion (smaller dimension)
   std::vector<RealType> CSFexpansion;
 
 };

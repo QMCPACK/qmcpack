@@ -468,7 +468,7 @@ OrbitalBase::ValueType MultiSlaterDeterminant::ratio(ParticleSet& P, int iat)
       detsRatios[i]=dets_up[i]->ratio(P,iat);
     }
     Ratio1Timer.stop();
-    std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+    std::vector<size_t>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
     std::vector<RealType>::iterator it(C.begin()),last(C.end());
     ValueType psiOld=0.0,psiNew=0.0;
     while(it != last)
@@ -495,7 +495,7 @@ OrbitalBase::ValueType MultiSlaterDeterminant::ratio(ParticleSet& P, int iat)
       detsRatios[i]=dets_dn[i]->ratio(P,iat);
     }
     Ratio1Timer.stop();
-    std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+    std::vector<size_t>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
     std::vector<RealType>::iterator it(C.begin()),last(C.end());
     ValueType psiOld=0.0,psiNew=0.0;
     while(it != last)
