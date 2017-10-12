@@ -175,18 +175,8 @@ public:
 
   ValueType ratio(ParticleSet& P, int iat);
 
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
-  {
-    return std::exp(logRatio(P,iat,dG,dL));
-  };
-
   GradType evalGrad(ParticleSet& P, int iat);
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  ValueType logRatio(ParticleSet& P, int iat,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL);
 
   void restore(int iat);
   void acceptMove(ParticleSet& P, int iat);

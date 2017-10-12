@@ -147,14 +147,6 @@ public:
   RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
   virtual
-  inline ValueType ratio(ParticleSet& P, int iat,
-                         ParticleSet::ParticleGradient_t& dG,
-                         ParticleSet::ParticleLaplacian_t& dL)
-  {
-    return Dets[DetID[iat]]->ratio(P,iat,dG,dL);
-  }
-
-  virtual
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
     return Dets[VP.activeGroup]->evaluateRatios(VP,ratios);
@@ -202,15 +194,6 @@ public:
     for (int iz=0; iz < size(); iz++)
       G += Dets[iz]->evalGradSource(P, src, iat, grad_grad, lapl_grad);
     return G;
-  }
-
-  virtual
-  inline ValueType logRatio(ParticleSet& P, int iat,
-                            ParticleSet::ParticleGradient_t& dG,
-                            ParticleSet::ParticleLaplacian_t& dL)
-  {
-    ValueType r = Dets[DetID[iat]]->ratio(P,iat,dG,dL);
-    return evaluateLogAndPhase(r,PhaseValue);
   }
 
   virtual

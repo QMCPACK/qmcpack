@@ -118,24 +118,6 @@ IonOrbital::ratio(ParticleSet& P, int iat)
 }
 
 
-
-/** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$
-    and fill-in the differential gradients/laplacians
-  * @param P active particle set
-  * @param iat particle that has been moved.
-  * @param dG partial gradients
-  * @param dL partial laplacians
-  */
-ValueType
-IonOrbital::ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
-{
-  return std::exp(logRatio (P, iat, dG, dL));
-}
-
-
-
 GradType
 IonOrbital::evalGrad(ParticleSet& P, int iat)
 {
@@ -170,34 +152,6 @@ IonOrbital::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   curGrad = -2.0*a*newdisp;
   grad_iat += curGrad;
   return std::exp(U[iat]-curVal);
-}
-
-ValueType
-IonOrbital::logRatio(ParticleSet& P, int iat,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL)
-{
-  int icent = ParticleCenter[iat];
-  if (icent == -1)
-    return 0.0;
-  int index = d_table->M[icent] + iat;
-  RealType a = ParticleAlpha[iat];
-  RealType newdist = d_table->Temp[icent].r1;
-  PosType  newdisp = d_table->Temp[icent].dr1;
-  curVal = a*newdist*newdist;
-  curGrad = -2.0*a*newdisp;
-  curLap  = -6.0*a;
-  dG[iat] += curGrad - dU[iat];
-  dL[iat] += curLap  - d2U[iat];
-  return U[iat] - curVal;
-  // fprintf (stderr, "new dist = %8.5f  old dist=%8.5f\n",
-  // 	     newdist, olddist);
-  // fprintf (stderr, "iat = %d   icent = %d\n", iat, icent);
-  // dG[iat] -= 2.0*a*(newdisp - olddisp);
-  // dL[iat] -= 0.0*a;
-  // RealType lograt = -a*(newdist*newdist - olddist*olddist);
-  // std::cerr << "lograt = " << lograt << std::endl;
-  // return lograt;
 }
 
 void

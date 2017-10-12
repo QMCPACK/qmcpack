@@ -322,41 +322,6 @@ public:
       ratios[i] = std::exp(ratios[i]);
   }
 
-
-  /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$ and fill-in the differential gradients/laplacians
-   * @param P active particle set
-   * @param iat particle that has been moved.
-   * @param dG partial gradients
-   * @param dL partial laplacians
-   */
-  inline ValueType ratio(ParticleSet& P, int iat,
-                         ParticleSet::ParticleGradient_t& dG,
-                         ParticleSet::ParticleLaplacian_t& dL)
-  {
-    //int n=d_table->size(VisitorIndex);
-    //curVal=0.0;
-    //curLap=0.0;
-    //curGrad = 0.0;
-    //RealType dudr, d2udr2;
-    //for(int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n) {
-    //  if(Fs[i]) {
-    //    curVal += Fs[i]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
-    //    dudr *= d_table->Temp[i].rinv1;
-    //    curGrad -= dudr*d_table->Temp[i].dr1;
-    //    curLap  -= d2udr2+2.0*dudr;
-    //  }
-    //  //int ij=d_table->PairID[nn];
-    //  //curVal += F[ij]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
-    //  //dudr *= d_table->Temp[i].rinv1;
-    //  //curGrad -= dudr*d_table->Temp[i].dr1;
-    //  //curLap  -= d2udr2+2.0*dudr;
-    //}
-    //dG[iat] += curGrad-dU[iat];
-    //dL[iat] += curLap-d2U[iat];
-    //return std::exp(U[iat]-curVal);
-    return std::exp(logRatio(P,iat,dG,dL));
-  }
-
   inline GradType evalGrad(ParticleSet& P, int iat)
   {
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
@@ -446,31 +411,6 @@ public:
     }
     grad_iat += curGrad;
     return std::exp(U[iat]-curVal);
-  }
-
-  inline ValueType logRatio(ParticleSet& P, int iat,
-                            ParticleSet::ParticleGradient_t& dG,
-                            ParticleSet::ParticleLaplacian_t& dL)
-  {
-    const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    int n=d_table->size(VisitorIndex);
-    curVal=0.0;
-    curLap=0.0;
-    curGrad = 0.0;
-    RealType dudr, d2udr2;
-    for (int i=0, nn=iat; i<d_table->size(SourceIndex); i++,nn+= n)
-    {
-      if (Fs[i] != nullptr)
-      {
-        curVal += Fs[i]->evaluate(d_table->Temp[i].r1,dudr,d2udr2);
-        dudr *= d_table->Temp[i].rinv1;
-        curGrad -= dudr*d_table->Temp[i].dr1;
-        curLap  -= d2udr2+2.0*dudr;
-      }
-    }
-    dG[iat] += curGrad-dU[iat];
-    dL[iat] += curLap-d2U[iat];
-    return U[iat]-curVal;
   }
 
   inline void restore(int iat) {}

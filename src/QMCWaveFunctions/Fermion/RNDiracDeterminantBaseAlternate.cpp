@@ -361,59 +361,7 @@ RNDiracDeterminantBaseAlternate::alternateRatioGrad(ParticleSet& P, int iat, Gra
   RatioTimer.stop();
   return alternateCurRatio;
 }
-/** return the ratio
- * @param P current configuration
- * @param iat particle whose position is moved
- * @param dG differential Gradients
- * @param dL differential Laplacians
- *
- * Data member *_temp contain the data assuming that the move is accepted
- * and are used to evaluate differential Gradients and Laplacians.
- */
-RNDiracDeterminantBaseAlternate::ValueType RNDiracDeterminantBaseAlternate::ratio(ParticleSet& P, int iat,
-    ParticleSet::ParticleGradient_t& dG,
-    ParticleSet::ParticleLaplacian_t& dL)
-{
-  UpdateMode=ORB_PBYP_ALL;
-  Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
-  RatioTimer.start();
-  WorkingIndex = iat-FirstIndex;
-  //psiM_temp = psiM;
-  curRatio= DetRatioByRow(psiM_temp, psiV, WorkingIndex);
-  RatioTimer.stop();
-  if (std::abs(curRatio)<std::numeric_limits<RealType>::epsilon())
-  {
-    app_log()<<"stepped on node"<< std::endl;
-    UpdateMode=ORB_PBYP_RATIO; //singularity! do not update inverse
-    return 0.0;
-  }
-  RealType R = std::abs(curRatio);
-  RealType logR = std::log(R);
-  RealType bp = 1+std::exp(logepsilon-2.0*LogValue-2.0*logR);
-  alternateCurRatio = R*std::sqrt(bp/(1+std::exp(logepsilon-2.0*LogValue)));
-  bp = 1.0/bp;
-  UpdateTimer.start();
-  //update psiM_temp with the row substituted
-  InverseUpdateByRow(psiM_temp,psiV,workV1,workV2,WorkingIndex,curRatio);
-  //update dpsiM_temp and d2psiM_temp
-  std::copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp[WorkingIndex]);
-  std::copy(d2psiV.begin(),d2psiV.end(),d2psiM_temp[WorkingIndex]);
-  UpdateTimer.stop();
-  RatioTimer.start();
-  for (int i=0,kat=FirstIndex; i<NumPtcls; i++,kat++)
-  {
-    //using inline dot functions
-    GradType rv=simd::dot(psiM_temp[i],dpsiM_temp[i],NumOrbitals);
-    ValueType lap=simd::dot(psiM_temp[i],d2psiM_temp[i],NumOrbitals);
-    ValueType rv2 = dot(rv,rv);
-    dG[kat] += rv - myG[kat];
-    myG_temp[kat]= rv;
-    dL[kat] += (lap - rv2) -myL[kat];
-    myL_temp[kat]= (lap - rv2) ;
-  }
-  RatioTimer.stop();
-  return curRatio;
-}
+
 
 /** move was accepted, update the real container
 */

@@ -317,18 +317,6 @@ public:
       ratios[i] = std::exp(ratios[i]);
   }  
   
-  
-  /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$ and fill-in the differential gradients/laplacians
-   * @param P active particle set
-   * @param iat particle that has been moved.
-   * @param dG partial gradients
-   * @param dL partial laplacians
-   */
-  inline ValueType ratio(ParticleSet& P, int iat
-                         , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL)
-  {
-    return std::exp(logRatio(P,iat,dG,dL));
-  }
 
   inline GradType evalGrad(ParticleSet& P, int iat)
   {
@@ -390,33 +378,6 @@ public:
     }
     grad_iat += curGrad;
     return std::exp(U[iat]-curVal);
-  }
-
-  inline ValueType logRatio(ParticleSet& P, int iat,
-                            ParticleSet::ParticleGradient_t& dG,
-                            ParticleSet::ParticleLaplacian_t& dL)
-  {
-    curVal=0.0;
-    curLap=0.0;
-    curGrad = 0.0;
-    const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    int tg=P.GroupID[iat];//pick the target group
-    RealType dudr, d2udr2;
-    for(int sg=0; sg<F.rows(); ++sg)
-    {
-      FT* func=F(sg,tg);
-      if(func)
-        for(int s=s_offset[sg]; s<s_offset[sg+1]; ++s)
-        {
-          curVal += func->evaluate(d_table->Temp[s].r1,dudr,d2udr2);
-          dudr *= d_table->Temp[s].rinv1;
-          curGrad -= dudr*d_table->Temp[s].dr1;
-          curLap  -= d2udr2+2.0*dudr;
-        }
-    }
-    dG[iat] += curGrad-dU[iat];
-    dL[iat] += curLap-d2U[iat];
-    return U[iat]-curVal;
   }
 
   inline void restore(int iat) {}

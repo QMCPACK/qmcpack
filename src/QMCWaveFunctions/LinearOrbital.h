@@ -62,20 +62,6 @@ public:
     return 0.0;
   }
 
-  virtual ValueType ratio(ParticleSet& P, int iat,
-                          ParticleSet::ParticleGradient_t& dG,
-                          ParticleSet::ParticleLaplacian_t& dL)
-  {
-    ValueType v = 0.0;
-    APP_ABORT("LinearOrbital. ratio");
-    for (int d = 0; d < OHMMS_DIM; d++) {
-      v += coeff[d]*P.R[iat][d];
-    }
-    dG = 1.0;
-    dL = 0.0;
-    return v;
-  }
-
   virtual void acceptMove(ParticleSet& P, int iat) {}
 
   virtual void restore(int iat) {}

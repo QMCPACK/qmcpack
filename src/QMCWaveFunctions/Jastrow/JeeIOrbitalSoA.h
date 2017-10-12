@@ -416,12 +416,6 @@ public:
     return std::exp(DiffVal);
   }
 
-  //to be removed from QMCPACK: these are not used anymore with PbyPFast
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
-  {return ValueType(1);}
-
   GradType evalGrad(ParticleSet& P, int iat)
   {
     return GradType(dUat[iat]);

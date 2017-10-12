@@ -55,7 +55,6 @@ public:
 
 
   DiracDeterminantBase::ValueType ratio(ParticleSet& P, int iat);
-  DiracDeterminantBase::ValueType ratio(ParticleSet& P, int iat,ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL);
 
   void resize(int nel, int morb);
   void set(int first, int nel);

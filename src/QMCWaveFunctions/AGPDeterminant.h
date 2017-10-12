@@ -85,31 +85,9 @@ public:
    */
   ValueType ratio(ParticleSet& P, int iat);
 
-  /** return the ratio
-   * @param P current configuration
-   * @param iat particle whose position is moved
-   * @param dG differential Gradients
-   * @param dL differential Laplacians
-   *
-   * Data member *_temp contain the data assuming that the move is accepted
-   * and are used to evaluate differential Gradients and Laplacians.
-   */
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL);
-
   void ratioUp(ParticleSet& P, int iat);
 
   void ratioDown(ParticleSet& P, int iat);
-
-  ValueType logRatio(ParticleSet& P, int iat,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL)
-  {
-    ValueType r=ratio(P,iat,dG,dL);
-    return evaluateLogAndPhase(r,PhaseValue);
-  }
-
 
   /** move was accepted, update the real container
    */

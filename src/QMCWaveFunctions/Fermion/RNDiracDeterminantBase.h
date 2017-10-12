@@ -70,18 +70,6 @@ public:
   }
   ValueType alternateRatio(ParticleSet& P);
   void alternateGrad(ParticleSet::ParticleGradient_t& G);
-  /** return the ratio
-   * @param P current configuration
-   * @param iat particle whose position is moved
-   * @param dG differential Gradients
-   * @param dL differential Laplacians
-   *
-   * Data member *_temp contain the data assuming that the move is accepted
-   * and are used to evaluate differential Gradients and Laplacians.
-   */
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL);
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   GradType evalGrad(ParticleSet& P, int iat);

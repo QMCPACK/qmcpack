@@ -71,10 +71,6 @@ public:
   RealType evaluateLog(ParticleSet& P,
                        ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL);
-
   ValueType ratio(ParticleSet& P, int iat);
 
   void acceptMove(ParticleSet& P, int iat);
@@ -99,11 +95,6 @@ public:
 
 
   OrbitalBase* makeClone(ParticleSet& tqp) const;
-
-  ValueType
-  logRatio(ParticleSet& P, int iat,
-           ParticleSet::ParticleGradient_t& dG,
-           ParticleSet::ParticleLaplacian_t& dL);
 
   void evaluateLogAndStore(ParticleSet& P,
                            ParticleSet::ParticleGradient_t& dG,

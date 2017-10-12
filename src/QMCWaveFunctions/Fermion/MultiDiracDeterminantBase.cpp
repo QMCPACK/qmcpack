@@ -294,15 +294,6 @@ void MultiDiracDeterminantBase::restore(int iat)
   */
 }
 
-/*
-  MultiDiracDeterminantBase::ValueType MultiDiracDeterminantBase::logRatio(ParticleSet& P, int iat,
-    ParticleSet::ParticleGradient_t& dG,
-    ParticleSet::ParticleLaplacian_t& dL) {
-  APP_ABORT("  logRatio is not allowed");
-  return 1.0;
-}
-*/
-
 MultiDiracDeterminantBase::RealType
 MultiDiracDeterminantBase::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
 {

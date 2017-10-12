@@ -100,9 +100,6 @@ void MultiSlaterDeterminantFast::resetTargetParticleSet(ParticleSet& P)
   }
 }
 
-//  void MultiSlaterDeterminantFast::resize(int n1, int n2)
-//  {
-//  }
 
 void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
 {
@@ -144,9 +141,7 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
   G=0;
   G0=0;
   L=0;
-  L0=0;
-//     log = msd->ratio(P,iat,G,L);
-  log0 = ratio(P,iat,G0,L0);
+  log0 = ratioGrad(P,iat,G0[iat]);
   std::cout <<"Psi: " <<log <<"   " <<log0 <<"   " <<log/log0 << std::endl;
   for(int i=0; i<n; i++)
   {
@@ -154,7 +149,6 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
         <<"  x: " <<G(i)[0]-G0(i)[0] <<"  " <<G(i)[0]   <<"\n"
         <<"  y: " <<G(i)[1]-G0(i)[1] <<"  " <<G(i)[1] <<"\n"
         <<"  z: " <<G(i)[2]-G0(i)[2] <<"  " <<G(i)[2] <<"\n"
-        <<"  d2: " <<L(i)-L0(i) <<"  " <<L(i) <<"\n"
         << std::endl;
   }
   std::cout << std::endl << std::endl;
@@ -397,127 +391,6 @@ OrbitalBase::ValueType MultiSlaterDeterminantFast::ratioGrad(ParticleSet& P
   }
 }
 
-
-// This routine need work, sloppy for now
-OrbitalBase::ValueType  MultiSlaterDeterminantFast::ratio(ParticleSet& P, int iat
-    , ParticleSet::ParticleGradient_t& dG,ParticleSet::ParticleLaplacian_t& dL)
-{
-  if(usingBF)
-  {
-    APP_ABORT("Fast MSD+BF: ratio(P,dG,dL) not implemented. \n");
-  }
-  UpdateMode=ORB_PBYP_ALL;
-  if(DetID[iat] == 0)
-  {
-    RatioAllTimer.start();
-    /*
-          P.acceptMove(iat);
-          Dets[0]->evaluateForWalkerMove(P);
-          ValueVector_t& detValues_up = Dets[0]->detValues;
-          ValueVector_t& detValues_dn = Dets[1]->detValues;
-          GradMatrix_t& grads_up = Dets[0]->grads;
-          GradMatrix_t& grads_dn = Dets[1]->grads;
-          ValueMatrix_t& lapls_up = Dets[0]->lapls;
-          ValueMatrix_t& lapls_dn = Dets[1]->lapls;
-    */
-//*
-    Ratio1AllTimer.start();
-    Dets[0]->evaluateAllForPtclMove(P,iat);
-    Ratio1AllTimer.stop();
-    ValueVector_t& detValues_up = Dets[0]->new_detValues;
-    ValueVector_t& detValues_dn = Dets[1]->detValues;
-    GradMatrix_t& grads_up = Dets[0]->new_grads;
-    GradMatrix_t& grads_dn = Dets[1]->grads;
-    ValueMatrix_t& lapls_up = Dets[0]->new_lapls;
-    ValueMatrix_t& lapls_dn = Dets[1]->lapls;
-//*/
-    int N1 = Dets[0]->FirstIndex;
-    int N2 = Dets[1]->FirstIndex;
-    int NP1 = Dets[0]->NumPtcls;
-    int NP2 = Dets[1]->NumPtcls;
-    ValueType psiNew=0.0;
-    // myG,myL should contain current grad and lapl
-    std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
-    std::vector<RealType>::iterator it(C.begin()),last(C.end());
-    myG_temp=0.0;
-    myL_temp=0.0;
-    while(it != last)
-    {
-      psiNew += (*it)*detValues_up[*upC]*detValues_dn[*dnC];
-      for(int k=0,n=N1; k<NP1; k++,n++)
-      {
-        myG_temp(n) += (*it)*grads_up(*upC,k)*detValues_dn[*dnC];
-        myL_temp(n) += (*it)*lapls_up(*upC,k)*detValues_dn[*dnC];
-      }
-      for(int k=0,n=N2; k<NP2; k++,n++)
-      {
-        myG_temp(n) += (*it)*grads_dn(*dnC,k)*detValues_up[*upC];
-        myL_temp(n) += (*it)*lapls_dn(*dnC,k)*detValues_up[*upC];
-      }
-      it++;
-      upC++;
-      dnC++;
-    }
-    ValueType psiNinv=(RealType)1.0/psiNew;
-    myG_temp *= psiNinv;
-    myL_temp *= psiNinv;
-    dG += myG_temp-myG;
-    for(int i=0; i<dL.size(); i++)
-      dL(i) += myL_temp[i] - myL[i] - dot(myG_temp[i],myG_temp[i]) + dot(myG[i],myG[i]);
-    curRatio = psiNew/psiCurrent;
-    RatioAllTimer.stop();
-    return curRatio;
-  }
-  else
-  {
-    RatioAllTimer.start();
-    Ratio1AllTimer.start();
-    Dets[1]->evaluateAllForPtclMove(P,iat);
-    Ratio1AllTimer.stop();
-    ValueVector_t& detValues_up = Dets[0]->detValues;
-    ValueVector_t& detValues_dn = Dets[1]->new_detValues;
-    GradMatrix_t& grads_up = Dets[0]->grads;
-    GradMatrix_t& grads_dn = Dets[1]->new_grads;
-    ValueMatrix_t& lapls_up = Dets[0]->lapls;
-    ValueMatrix_t& lapls_dn = Dets[1]->new_lapls;
-    int N1 = Dets[0]->FirstIndex;
-    int N2 = Dets[1]->FirstIndex;
-    int NP1 = Dets[0]->NumPtcls;
-    int NP2 = Dets[1]->NumPtcls;
-    ValueType psiNew=0.0;
-    // myG,myL should contain current grad and lapl
-    std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
-    std::vector<RealType>::iterator it(C.begin()),last(C.end());
-    myG_temp=0.0;
-    myL_temp=0.0;
-    while(it != last)
-    {
-      psiNew += (*it)*detValues_up[*upC]*detValues_dn[*dnC];
-      for(int k=0,n=N1; k<NP1; k++,n++)
-      {
-        myG_temp(n) += (*it)*grads_up(*upC,k)*detValues_dn[*dnC];
-        myL_temp(n) += (*it)*lapls_up(*upC,k)*detValues_dn[*dnC];
-      }
-      for(int k=0,n=N2; k<NP2; k++,n++)
-      {
-        myG_temp(n) += (*it)*grads_dn(*dnC,k)*detValues_up[*upC];
-        myL_temp(n) += (*it)*lapls_dn(*dnC,k)*detValues_up[*upC];
-      }
-      it++;
-      upC++;
-      dnC++;
-    }
-    ValueType psiNinv=(RealType)1.0/psiNew;
-    myG_temp *= psiNinv;
-    myL_temp *= psiNinv;
-    dG += myG_temp-myG;
-    for(int i=0; i<dL.size(); i++)
-      dL(i) += myL_temp[i] - myL[i] - dot(myG_temp[i],myG_temp[i]) + dot(myG[i],myG[i]);
-    curRatio = psiNew/psiCurrent;
-    RatioAllTimer.stop();
-    return curRatio;
-  }
-}
 
 // use ci_node for this routine only
 OrbitalBase::ValueType MultiSlaterDeterminantFast::ratio(ParticleSet& P, int iat)

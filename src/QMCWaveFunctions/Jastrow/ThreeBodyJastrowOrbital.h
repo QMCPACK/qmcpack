@@ -156,26 +156,6 @@ public:
     return 0;
   }
 
-  /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$ and fill-in the differential gradients/laplacians
-   * @param P active particle set
-   * @param iat particle that has been moved.
-   * @param dG partial gradients
-   * @param dL partial laplacians
-   */
-  inline ValueType ratio(ParticleSet& P, int iat,
-                         ParticleSet::ParticleGradient_t& dG,
-                         ParticleSet::ParticleLaplacian_t& dL)
-  {
-    return 0;
-  }
-
-  inline ValueType logRatio(ParticleSet& P, int iat,
-                            ParticleSet::ParticleGradient_t& dG,
-                            ParticleSet::ParticleLaplacian_t& dL)
-  {
-    return 0;
-  }
-
   inline void restore(int iat) {}
 
   void addFunc(int source_type, FT* afunc)

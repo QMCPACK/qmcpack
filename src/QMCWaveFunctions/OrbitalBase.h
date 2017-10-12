@@ -329,19 +329,6 @@ struct OrbitalBase: public QMCTraits
 
   virtual void alternateGrad(ParticleSet::ParticleGradient_t& G) {}
 
-  /** evaluate the ratio of the new to old orbital value
-   *@param P the active ParticleSet
-   *@param iat the index of a particle
-   *@param dG the differential gradient
-   *@param dL the differential laplacian
-   *@return \f$ \psi( \{ {\bf R}^{'} \} )/ \psi( \{ {\bf R}^{'} \}) \f$
-   *
-   *Paired with acceptMove(ParticleSet& P, int iat).
-   */
-  virtual ValueType ratio(ParticleSet& P, int iat,
-                          ParticleSet::ParticleGradient_t& dG,
-                          ParticleSet::ParticleLaplacian_t& dL) = 0;
-
   /** a move for iat-th particle is accepted. Update the content for the next moves
    * @param P target ParticleSet
    * @param iat index of the particle whose new position was proposed

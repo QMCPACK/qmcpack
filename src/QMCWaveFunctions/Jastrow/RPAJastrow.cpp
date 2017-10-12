@@ -228,17 +228,6 @@ RPAJastrow::evaluateLog(ParticleSet& P,
 }
 
 RPAJastrow::ValueType
-RPAJastrow::ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
-{
-  ValueType r(1.0);
-  for(int i=0; i<Psi.size(); i++)
-    r *= Psi[i]->ratio(P,iat,dG,dL);
-  return r;
-}
-
-RPAJastrow::ValueType
 RPAJastrow::ratio(ParticleSet& P, int iat)
 {
   ValueType r(1.0);

@@ -88,8 +88,6 @@ class DiracDeterminantSoA: public DiracDeterminantBase
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
 #if 0
-  ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  GradType evalGrad(ParticleSet& P, int iat);
   GradType evalGradSource(ParticleSet &P, ParticleSet &source, int iat);
 
   GradType evalGradSource
@@ -102,9 +100,6 @@ class DiracDeterminantSoA: public DiracDeterminantBase
    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
 
-  virtual ValueType logRatio(ParticleSet& P, int iat,
-                             ParticleSet::ParticleGradient_t& dG,
-                             ParticleSet::ParticleLaplacian_t& dL);
 #endif
 
 

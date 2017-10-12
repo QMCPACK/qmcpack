@@ -203,14 +203,6 @@ public:
     return ValueType();
   }
 
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
-  {
-    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
-    return ValueType();
-  }
-
   RealType evaluateLog(ParticleSet& P,
                        ParticleSet::ParticleGradient_t& G,
                        ParticleSet::ParticleLaplacian_t& L)

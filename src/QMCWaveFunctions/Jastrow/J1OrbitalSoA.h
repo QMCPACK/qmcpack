@@ -368,15 +368,6 @@ struct  J1OrbitalSoA : public OrbitalBase
   }
   /**@} */
 
-  /** must be removed */
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
-  {
-    APP_ABORT("OrbitalBase::ratio(P,iat,dG,dL) shuold not Used")
-    return 1;
-  }
-
 };
 
 

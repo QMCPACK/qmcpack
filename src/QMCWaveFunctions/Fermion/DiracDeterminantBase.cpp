@@ -288,13 +288,6 @@ void DiracDeterminantBase::copyFromBuffer(ParticleSet& P, PooledData<RealType>& 
   BufferTimer.stop();
 }
 
-DiracDeterminantBase::ValueType DiracDeterminantBase::logRatio(ParticleSet& P, int iat,
-    ParticleSet::ParticleGradient_t& dG,
-    ParticleSet::ParticleLaplacian_t& dL)
-{
-  APP_ABORT("DiracDeterminantBase::logRatio should not be used ");
-  return 0;
-}
 /** dump the inverse to the buffer
 */
 void DiracDeterminantBase::dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf)
@@ -329,14 +322,6 @@ DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int 
   return curRatio;
 }
 
-DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int iat,
-    ParticleSet::ParticleGradient_t& dG,
-    ParticleSet::ParticleLaplacian_t& dL)
-{
-  APP_ABORT("Forbidden to use DiracDeterminantBase::ratio(P,dG,dL)");
-  return 0;
-}
-
 void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
   Matrix<ValueType> psiT(ratios.size(),NumOrbitals);
@@ -351,8 +336,6 @@ void DiracDeterminantBase::get_ratios(ParticleSet& P, std::vector<ValueType>& ra
   SPOVTimer.stop();
   MatrixOperators::product(psiM,psiV.data(),&ratios[FirstIndex]);
 }
-
-
 
 DiracDeterminantBase::GradType
 DiracDeterminantBase::evalGradSource(ParticleSet& P, ParticleSet& source,

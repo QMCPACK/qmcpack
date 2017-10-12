@@ -101,9 +101,6 @@ public:
 
   virtual GradType evalGrad(ParticleSet& P, int iat);
   virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  virtual ValueType ratio(ParticleSet& P, int iat
-                          , ParticleSet::ParticleGradient_t& dG,ParticleSet::ParticleLaplacian_t& dL);
-
   virtual ValueType ratio(ParticleSet& P, int iat);
   virtual void acceptMove(ParticleSet& P, int iat);
   virtual void restore(int iat);

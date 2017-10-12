@@ -101,18 +101,6 @@ public:
   void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
   RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
-  inline ValueType ratio(ParticleSet& P, int iat,
-                         ParticleSet::ParticleGradient_t& dG,
-                         ParticleSet::ParticleLaplacian_t& dL)
-  {
-    BFTrans->evaluatePbyPAll(P,iat);
-    //BFTrans->evaluate(P);
-    ValueType psi=1.0;
-    for(int i=0; i<Dets.size(); ++i)
-      psi *= Dets[i]->ratio(P,iat,dG,dL);
-    return psi;
-  }
-
   inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
     BFTrans->evaluatePbyPWithGrad(P,iat);
@@ -155,14 +143,6 @@ public:
   {
     APP_ABORT("Need to implement SlaterDetWithBackflow::evalGradSource() \n");
     return GradType();
-  }
-
-  inline ValueType logRatio(ParticleSet& P, int iat,
-                            ParticleSet::ParticleGradient_t& dG,
-                            ParticleSet::ParticleLaplacian_t& dL)
-  {
-    APP_ABORT("Need to implement SlaterDetWithBackflow::logRatio() \n");
-    return ValueType();
   }
 
   inline void acceptMove(ParticleSet& P, int iat)

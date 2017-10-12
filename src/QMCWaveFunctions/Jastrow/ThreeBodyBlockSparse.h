@@ -59,16 +59,6 @@ public:
 
   ValueType ratio(ParticleSet& P, int iat);
 
-  /** later merge the loop */
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL);
-
-  /** later merge the loop */
-  ValueType logRatio(ParticleSet& P, int iat,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL);
-
   void restore(int iat);
 
   void acceptMove(ParticleSet& P, int iat);
