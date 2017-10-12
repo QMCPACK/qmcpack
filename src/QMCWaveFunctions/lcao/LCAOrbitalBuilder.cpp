@@ -103,8 +103,8 @@ namespace qmcplusplus
     ClassName="LCAOrbitalBuilder";
     ReportEngine PRE(ClassName,"createBasisSet");
 
-    std::string keyOpt("NMO"); //gaussian Molecular Orbital
-    std::string transformOpt("yes"); //numerical Molecular Orbital
+    std::string keyOpt("NMO"); // Numerical Molecular Orbital
+    std::string transformOpt("yes"); // Numerical Molecular Orbital
     std::string cuspC("no");  // cusp correction
     cuspInfo="";
     //std::string cuspInfo("");  // file with precalculated cusp correction info
@@ -124,6 +124,9 @@ namespace qmcplusplus
       if(keyOpt=="GTO") radialOrbType=1;
       if(keyOpt=="STO") radialOrbType=2;
     }
+
+    if(radialOrbType<0)
+      PRE.error("Unknown radial function for LCAO orbitals. Specify keyword=\"NMO/GTO/STO\" .",true);
   }
 
   LCAOrbitalBuilder::~LCAOrbitalBuilder()
@@ -136,9 +139,6 @@ namespace qmcplusplus
     if(myBasisSet != nullptr) return true;
 
     ReportEngine PRE(ClassName,"put(xmlNodePtr)");
-
-    if(radialOrbType<0)
-      PRE.error("Unknown radial function for LCAO orbitals",true);
 
     if(!is_same(cur->name,"basisset"))
     {//heck to handle things like <sposet_builder>
@@ -157,11 +157,9 @@ namespace qmcplusplus
       {
         if(is_same(cur1->name,"atomicBasisSet"))
         {
-          std::string type;
           std::string sph;
           OhmmsAttributeSet att;
           att.add(sph,"angular");
-          att.add(type,"type");
           att.put(cur1);
           ylm=(sph=="cartesian")?0:1;
         }
