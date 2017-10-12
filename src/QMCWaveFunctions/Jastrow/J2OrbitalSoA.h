@@ -242,7 +242,7 @@ struct  J2OrbitalSoA : public OrbitalBase
   
   /*@{ internal compute engines*/
   inline void computeU3(ParticleSet& P, int iat, const RealType* restrict dist,
-      RealType* restrict u, RealType* restrict du, RealType* restrict d2u);
+      RealType* restrict u, RealType* restrict du, RealType* restrict d2u, bool triangle=false);
 
   /** compute gradient
    */
@@ -259,26 +259,6 @@ struct  J2OrbitalSoA : public OrbitalBase
       grad[idim]=s;
     }
     return grad;
-  }
-
-  /** compute gradient and lap
-   */
-  inline void accumulateGL(const valT* restrict du, const valT* restrict d2u,
-      const RowContainer& displ, posT& grad, valT& lap) const
-  {
-    constexpr valT lapfac=OHMMS_DIM-RealType(1);
-    lap=valT(0);
-//#pragma omp simd reduction(+:lap)
-    for(int jat=0; jat<N; ++jat)
-      lap+=d2u[jat]+lapfac*du[jat];
-    for(int idim=0; idim<OHMMS_DIM; ++idim)
-    {
-      const valT* restrict dX=displ.data(idim);
-      valT s=valT();
-//#pragma omp simd reduction(+:s)
-      for(int jat=0; jat<N; ++jat) s+=du[jat]*dX[jat];
-      grad[idim]=s;
-    }
   }
 
 };
@@ -401,19 +381,20 @@ OrbitalBasePtr J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
 template<typename FT>
 inline void
 J2OrbitalSoA<FT>::computeU3(ParticleSet& P, int iat, const RealType* restrict dist,
-    RealType* restrict u, RealType* restrict du, RealType* restrict d2u)
+    RealType* restrict u, RealType* restrict du, RealType* restrict d2u, bool triangle)
 {
+  const int jelmax=triangle?iat:N;
   constexpr valT czero(0);
-  std::fill_n(u,  N,czero);
-  std::fill_n(du, N,czero);
-  std::fill_n(d2u,N,czero);
+  std::fill_n(u,  jelmax,czero);
+  std::fill_n(du, jelmax,czero);
+  std::fill_n(d2u,jelmax,czero);
 
   const int igt=P.GroupID[iat]*NumGroups;
   for(int jg=0; jg<NumGroups; ++jg)
   {
     const FuncType& f2(*F[igt+jg]);
     int iStart = P.first(jg);
-    int iEnd = P.last(jg);
+    int iEnd = std::min(jelmax,P.last(jg));
     f2.evaluateVGL(iat, iStart, iEnd, dist, u, du, d2u, DistCompressed.data(), DistIndice.data());
   }
   //u[iat]=czero;
@@ -524,13 +505,43 @@ J2OrbitalSoA<FT>::recompute(ParticleSet& P)
     const int igt=ig*NumGroups;
     for(int iat=P.first(ig),last=P.last(ig); iat<last; ++iat)
     {
-      computeU3(P,iat,d_table->Distances[iat],cur_u.data(),cur_du.data(),cur_d2u.data());
-      Uat[iat]=simd::accumulate_n(cur_u.data(),N,valT());
+      computeU3(P,iat,d_table->Distances[iat],cur_u.data(),cur_du.data(),cur_d2u.data(),true);
+      Uat[iat]=simd::accumulate_n(cur_u.data(),iat,valT());
       posT grad;
-      valT lap;
-      accumulateGL(cur_du.data(),cur_d2u.data(),d_table->Displacements[iat],grad,lap);
+      valT lap(0);
+      const valT* restrict    u = cur_u.data();
+      const valT* restrict   du = cur_du.data();
+      const valT* restrict  d2u = cur_d2u.data();
+      const RowContainer& displ = d_table->Displacements[iat];
+      constexpr valT lapfac=OHMMS_DIM-RealType(1);
+      #pragma omp simd reduction(+:lap) aligned(du,d2u)
+      for(int jat=0; jat<iat; ++jat)
+        lap+=d2u[jat]+lapfac*du[jat];
+      for(int idim=0; idim<OHMMS_DIM; ++idim)
+      {
+        const valT* restrict dX=displ.data(idim);
+        valT s=valT();
+        #pragma omp simd reduction(+:s) aligned(du,dX)
+        for(int jat=0; jat<iat; ++jat) s+=du[jat]*dX[jat];
+        grad[idim]=s;
+      }
       dUat(iat)=grad;
       d2Uat[iat]=-lap;
+      // add the contribution from the upper triangle
+      #pragma omp simd aligned(u,du,d2u)
+      for(int jat=0; jat<iat; jat++)
+      {
+        Uat[jat] += u[jat];
+        d2Uat[jat] -= d2u[jat]+lapfac*du[jat];
+      }
+      for(int idim=0; idim<OHMMS_DIM; ++idim)
+      {
+        valT* restrict save_g=dUat.data(idim);
+        const valT* restrict dX=displ.data(idim);
+        #pragma omp simd aligned(save_g,du,dX)
+        for(int jat=0; jat<iat; jat++)
+          save_g[jat]-=du[jat]*dX[jat];
+      }
     }
   }
 }

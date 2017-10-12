@@ -223,35 +223,29 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict kx=myKcart.data(0);
     const ST* restrict ky=myKcart.data(1);
     const ST* restrict kz=myKcart.data(2);
-    ST s, c;
-    {
+
     const TT* restrict arow_s=arow+first_spo;
-#pragma omp simd private(s,c) reduction(+:res)
+    #pragma omp simd reduction(+:res)
     for (size_t j=0; j<nComplexBands; j++)
-    //for (size_t j=0,psiIndex=first_spo; j<nComplexBands; j++, psiIndex+=2)
     {
       const size_t jr=j<<1;
       const size_t ji=jr+1;
       const ST val_r=vtmp[jr];
       const ST val_i=vtmp[ji];
+      ST s, c;
       sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
       res+=arow_s[jr] * (val_r*c-val_i*s);
       res+=arow_s[ji] * (val_i*c+val_r*s);
     }
-    }
-
-
-    {
-    const TT* restrict arow_s=arow+first_spo+nComplexBands;
-#pragma omp simd private(s,c) reduction(+:res)
+    const TT* restrict arow_c=arow+first_spo+nComplexBands;
+    #pragma omp simd reduction(+:res)
     for (size_t j=nComplexBands; j<N; j++)
-//    for (size_t j=nComplexBands,psiIndex=first_spo+2*nComplexBands; j<N; j++,psiIndex++)
     {
       const ST val_r=vtmp[2*j  ];
       const ST val_i=vtmp[2*j+1];
+      ST s, c;
       sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
-      res+=arow_s[j]*(val_r*c-val_i*s);
-    }
+      res+=arow_c[j]*(val_r*c-val_i*s);
     }
     return res;
   }
@@ -269,13 +263,13 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       ST* restrict KdotR=myH.data(0);
       ST* restrict CosV=myH.data(1);
       ST* restrict SinV=myH.data(2);
-#pragma omp simd
+      #pragma omp simd
       for(size_t j=0; j<N; ++j)
         KdotR[j]=-(x*kx[j]+y*ky[j]+z*kz[j]);
 
       eval_e2iphi(N,KdotR,CosV,SinV);
 
-#pragma omp simd
+      #pragma omp simd
       for (size_t j=0,psiIndex=first_spo; j<nComplexBands; j++, psiIndex+=2)
       {
         const ST val_r=myV[2*j  ];
@@ -283,7 +277,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
         psi[psiIndex  ] = val_r*CosV[j]-val_i*SinV[j];
         psi[psiIndex+1] = val_i*CosV[j]+val_r*SinV[j];
       }
-#pragma omp simd
+      #pragma omp simd
       for (size_t j=nComplexBands,psiIndex=first_spo+2*nComplexBands; j<N; j++,psiIndex++)
       {
         const ST val_r=myV[2*j  ];
@@ -292,13 +286,12 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       }
     }
 #else
-    ST s, c;
     {
       TT* restrict psi_s=psi.data()+first_spo;
-#pragma omp simd private(s,c)
+      #pragma omp simd
       for (size_t j=0; j<nComplexBands; j++)
-        //for (size_t j=0,psiIndex=first_spo; j<nComplexBands; j++, psiIndex+=2)
       {
+        ST s, c;
         const size_t jr=j<<1;
         const size_t ji=jr+1;
         const ST val_r=myV[jr];
@@ -311,10 +304,10 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 
     {
       TT* restrict psi_s=psi.data()+first_spo+nComplexBands;
-#pragma omp simd private(s,c)
+      #pragma omp simd
       for (size_t j=nComplexBands; j<N; j++)
-        //    for (size_t j=nComplexBands,psiIndex=first_spo+2*nComplexBands; j<N; j++,psiIndex++)
       {
+        ST s, c;
         const ST val_r=myV[2*j  ];
         const ST val_i=myV[2*j+1];
         sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
@@ -369,9 +362,8 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     }
 #endif
 
-#pragma omp simd
+    #pragma omp simd
     for (size_t j=0; j<nComplexBands; j++)
-    //for (size_t j=0, psiIndex=first_spo; j<nComplexBands; j++,psiIndex+=2)
     {
       const size_t jr=j<<1;
       const size_t ji=jr+1;
@@ -429,10 +421,8 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       dpsi[psiIndex+1][2]=c*gZ_i+s*gZ_r;
     }
 
-    //const size_t nComputed=2*nComplexBands;
-#pragma omp simd
+    #pragma omp simd
     for (size_t j=nComplexBands; j<N; j++)
-    //for (size_t j=nComplexBands,psiIndex=first_spo+nComputed; j<N; j++,psiIndex++)
     {
       const size_t jr=j<<1;
       const size_t ji=jr+1;
@@ -505,7 +495,6 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 
     #pragma omp simd
     for (size_t j=0; j<nComplexBands; j++)
-    //for (size_t j=0, psiIndex=first_spo; j<nComplexBands; j++,psiIndex+=2)
     {
       const size_t jr=j<<1;
       const size_t ji=jr+1;
@@ -558,7 +547,6 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     const size_t nComputed=2*nComplexBands;
     #pragma omp simd
     for (size_t j=nComplexBands; j<N; j++)
-    //for (size_t j=nComplexBands,psiIndex=first_spo+nComputed; j<N; j++,psiIndex++)
     {
       const size_t jr=j<<1;
       const size_t ji=jr+1;
@@ -640,7 +628,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict h22=myH.data(5); ASSUME_ALIGNED(h22);
     const size_t nsplines=myL.size();
 #if defined(PRECOMPUTE_L)
-#pragma omp simd
+    #pragma omp simd
     for(size_t j=0; j<nsplines; ++j)
     {
       myL[j]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
@@ -653,7 +641,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     TT* restrict vl_z=vgl.data(3)+first_spo; ASSUME_ALIGNED(vl_z);
     TT* restrict vl_l=vgl.data(4)+first_spo; ASSUME_ALIGNED(vl_l);
 
-#pragma omp simd
+    #pragma omp simd
     for (size_t j=0; j<nComplexBands; j++)
     {
       const size_t jr=j<<1;
@@ -709,9 +697,8 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       vl_l[ji]=c*lap_i+s*lap_r;
     }
 
-#pragma omp simd
+    #pragma omp simd
     for (size_t j=nComplexBands; j<N; j++)
-    //for (size_t j=nComplexBands, psiIndex=2*nComplexBands; j<N; j++,psiIndex++)
     {
       const size_t jr=j<<1;
       const size_t ji=jr+1;
@@ -820,7 +807,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     ComplexT* restrict gg_zy=grad_grad_psi.data(7)+first_spo; ASSUME_ALIGNED(gg_zy);
     ComplexT* restrict gg_zz=grad_grad_psi.data(8)+first_spo; ASSUME_ALIGNED(gg_zz);
 
-#pragma simd
+    #pragma simd
     for (size_t j=0; j<N; ++j)
     {
       int jr=j<<1;

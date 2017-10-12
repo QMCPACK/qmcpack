@@ -136,7 +136,10 @@ struct PadeFunctor:public OptimizableFunctorBase
     T* restrict distArrayCompressed, int* restrict distIndices ) const
   {
     for(int idx=iStart; idx<iEnd; idx++)
+    {
       valArray[idx] = evaluate(distArray[idx], gradArray[idx], laplArray[idx]);
+      gradArray[idx] /= distArray[idx];
+    }
     if ( iat>=iStart && iat<iEnd )
       valArray[iat] = gradArray[iat] = laplArray[iat] = T(0);
   }
