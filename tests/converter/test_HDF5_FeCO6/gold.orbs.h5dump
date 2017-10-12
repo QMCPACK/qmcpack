@@ -1,4 +1,4 @@
-HDF5 "test.orbs.h5" {
+HDF5 "/home/abenali/Work/Development/QMCPACK-Fork/qmcpack/tests/converter/test_HDF5_FeCO6/test.orbs.h5" {
 GROUP "/" {
    GROUP "basisset" {
       GROUP "atomicBasisSet" {
@@ -352,14 +352,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 5;
+                     STRSIZE 4;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "Fe00 "
+                  (0): "Fe00"
                   }
                }
                DATASET "type" {
@@ -705,14 +705,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 5;
+                     STRSIZE 4;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "Fe10 "
+                  (0): "Fe10"
                   }
                }
                DATASET "type" {
@@ -770,14 +770,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 6;
+                     STRSIZE 5;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "Fe101 "
+                  (0): "Fe101"
                   }
                }
                DATASET "type" {
@@ -931,14 +931,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 6;
+                     STRSIZE 5;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "Fe112 "
+                  (0): "Fe112"
                   }
                }
                DATASET "type" {
@@ -1092,14 +1092,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 6;
+                     STRSIZE 5;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "Fe122 "
+                  (0): "Fe122"
                   }
                }
                DATASET "type" {
@@ -1157,14 +1157,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 6;
+                     STRSIZE 5;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "Fe132 "
+                  (0): "Fe132"
                   }
                }
                DATASET "type" {
@@ -1238,14 +1238,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 6;
+                     STRSIZE 5;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "Fe143 "
+                  (0): "Fe143"
                   }
                }
                DATASET "type" {
@@ -1591,14 +1591,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 5;
+                     STRSIZE 4;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "Fe20 "
+                  (0): "Fe20"
                   }
                }
                DATASET "type" {
@@ -1944,14 +1944,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 5;
+                     STRSIZE 4;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "Fe30 "
+                  (0): "Fe30"
                   }
                }
                DATASET "type" {
@@ -2297,14 +2297,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 5;
+                     STRSIZE 4;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "Fe40 "
+                  (0): "Fe40"
                   }
                }
                DATASET "type" {
@@ -2362,14 +2362,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 5;
+                     STRSIZE 4;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "Fe50 "
+                  (0): "Fe50"
                   }
                }
                DATASET "type" {
@@ -2651,14 +2651,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 5;
+                     STRSIZE 4;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "Fe61 "
+                  (0): "Fe61"
                   }
                }
                DATASET "type" {
@@ -2940,14 +2940,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 5;
+                     STRSIZE 4;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "Fe71 "
+                  (0): "Fe71"
                   }
                }
                DATASET "type" {
@@ -3229,14 +3229,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 5;
+                     STRSIZE 4;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "Fe81 "
+                  (0): "Fe81"
                   }
                }
                DATASET "type" {
@@ -3518,14 +3518,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 5;
+                     STRSIZE 4;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "Fe91 "
+                  (0): "Fe91"
                   }
                }
                DATASET "type" {
@@ -3543,14 +3543,14 @@ GROUP "/" {
             }
             DATASET "elementType" {
                DATATYPE  H5T_STRING {
-                  STRSIZE 3;
+                  STRSIZE 2;
                   STRPAD H5T_STR_NULLTERM;
                   CSET H5T_CSET_ASCII;
                   CTYPE H5T_C_S1;
                }
                DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                DATA {
-               (0): "Fe "
+               (0): "Fe"
                }
             }
             DATASET "grid_npts" {
@@ -3576,14 +3576,14 @@ GROUP "/" {
             }
             DATASET "grid_type" {
                DATATYPE  H5T_STRING {
-                  STRSIZE 4;
+                  STRSIZE 3;
                   STRPAD H5T_STR_NULLTERM;
                   CSET H5T_CSET_ASCII;
                   CTYPE H5T_C_S1;
                }
                DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                DATA {
-               (0): "log "
+               (0): "log"
                }
             }
             DATASET "name" {
@@ -3797,14 +3797,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 4;
+                     STRSIZE 3;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "C00 "
+                  (0): "C00"
                   }
                }
                DATASET "type" {
@@ -3974,14 +3974,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 4;
+                     STRSIZE 3;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "C10 "
+                  (0): "C10"
                   }
                }
                DATASET "type" {
@@ -4039,14 +4039,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 4;
+                     STRSIZE 3;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "C20 "
+                  (0): "C20"
                   }
                }
                DATASET "type" {
@@ -4136,14 +4136,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 4;
+                     STRSIZE 3;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "C31 "
+                  (0): "C31"
                   }
                }
                DATASET "type" {
@@ -4201,14 +4201,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 4;
+                     STRSIZE 3;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "C41 "
+                  (0): "C41"
                   }
                }
                DATASET "type" {
@@ -4266,14 +4266,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 4;
+                     STRSIZE 3;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "C52 "
+                  (0): "C52"
                   }
                }
                DATASET "type" {
@@ -4291,14 +4291,14 @@ GROUP "/" {
             }
             DATASET "elementType" {
                DATATYPE  H5T_STRING {
-                  STRSIZE 2;
+                  STRSIZE 1;
                   STRPAD H5T_STR_NULLTERM;
                   CSET H5T_CSET_ASCII;
                   CTYPE H5T_C_S1;
                }
                DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                DATA {
-               (0): "C "
+               (0): "C"
                }
             }
             DATASET "grid_npts" {
@@ -4324,14 +4324,14 @@ GROUP "/" {
             }
             DATASET "grid_type" {
                DATATYPE  H5T_STRING {
-                  STRSIZE 4;
+                  STRSIZE 3;
                   STRPAD H5T_STR_NULLTERM;
                   CSET H5T_CSET_ASCII;
                   CTYPE H5T_C_S1;
                }
                DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                DATA {
-               (0): "log "
+               (0): "log"
                }
             }
             DATASET "name" {
@@ -4545,14 +4545,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 4;
+                     STRSIZE 3;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "O00 "
+                  (0): "O00"
                   }
                }
                DATASET "type" {
@@ -4722,14 +4722,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 4;
+                     STRSIZE 3;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "O10 "
+                  (0): "O10"
                   }
                }
                DATASET "type" {
@@ -4787,14 +4787,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 4;
+                     STRSIZE 3;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "O20 "
+                  (0): "O20"
                   }
                }
                DATASET "type" {
@@ -4884,14 +4884,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 4;
+                     STRSIZE 3;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "O31 "
+                  (0): "O31"
                   }
                }
                DATASET "type" {
@@ -4949,14 +4949,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 4;
+                     STRSIZE 3;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "O41 "
+                  (0): "O41"
                   }
                }
                DATASET "type" {
@@ -5014,14 +5014,14 @@ GROUP "/" {
                }
                DATASET "rid" {
                   DATATYPE  H5T_STRING {
-                     STRSIZE 4;
+                     STRSIZE 3;
                      STRPAD H5T_STR_NULLTERM;
                      CSET H5T_CSET_ASCII;
                      CTYPE H5T_C_S1;
                   }
                   DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                   DATA {
-                  (0): "O52 "
+                  (0): "O52"
                   }
                }
                DATASET "type" {
@@ -5039,14 +5039,14 @@ GROUP "/" {
             }
             DATASET "elementType" {
                DATATYPE  H5T_STRING {
-                  STRSIZE 2;
+                  STRSIZE 1;
                   STRPAD H5T_STR_NULLTERM;
                   CSET H5T_CSET_ASCII;
                   CTYPE H5T_C_S1;
                }
                DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                DATA {
-               (0): "O "
+               (0): "O"
                }
             }
             DATASET "grid_npts" {
@@ -5072,14 +5072,14 @@ GROUP "/" {
             }
             DATASET "grid_type" {
                DATATYPE  H5T_STRING {
-                  STRSIZE 4;
+                  STRSIZE 3;
                   STRPAD H5T_STR_NULLTERM;
                   CSET H5T_CSET_ASCII;
                   CTYPE H5T_C_S1;
                }
                DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
                DATA {
-               (0): "log "
+               (0): "log"
                }
             }
             DATASET "name" {
@@ -12331,14 +12331,14 @@ GROUP "/" {
       }
       DATASET "name" {
          DATATYPE  H5T_STRING {
-            STRSIZE 9;
+            STRSIZE 8;
             STRPAD H5T_STR_NULLTERM;
             CSET H5T_CSET_ASCII;
             CTYPE H5T_C_S1;
          }
          DATASPACE  SIMPLE { ( 1 ) / ( 1 ) }
          DATA {
-         (0): "LCAOBSet "
+         (0): "LCAOBSet"
          }
       }
    }
