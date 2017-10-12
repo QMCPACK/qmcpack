@@ -105,7 +105,7 @@ struct MultiQuinticSpline1D
 
   inline T rmax() const
   {
-    myGrid.upper_bound;
+    return myGrid.upper_bound;
   }
 
   inline void evaluate(T r, T* restrict u) 
