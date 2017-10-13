@@ -505,10 +505,10 @@ J2OrbitalSoA<FT>::recompute(ParticleSet& P)
 template<typename FT>
 typename J2OrbitalSoA<FT>::RealType
 J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
-    ParticleSet::ParticleGradient_t& dG,
-    ParticleSet::ParticleLaplacian_t& dL)
+    ParticleSet::ParticleGradient_t& G,
+    ParticleSet::ParticleLaplacian_t& L)
 {
-  evaluateGL(P,dG,dL,true);
+  evaluateGL(P,G,L,true);
   return LogValue;
 }
 
