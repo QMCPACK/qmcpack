@@ -385,18 +385,6 @@ struct OrbitalBase: public QMCTraits
   /** copy the internal data saved for optimization.*/
   virtual void copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf) {};
 
-  /** dump the internal data to buf for optimizations
-   *
-   * Implments the default function that does nothing
-   */
-  virtual void dumpToBuffer(ParticleSet& P, BufferType& buf) {}
-
-  /** copy the internal data from buf for optimizations
-   *
-   * Implments the default function that does nothing
-   */
-  virtual void dumpFromBuffer(ParticleSet& P, BufferType& buf) {}
-
   /** return a proxy orbital of itself
    */
   OrbitalBasePtr makeProxy(ParticleSet& tqp);

@@ -163,20 +163,6 @@ public:
 
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
-  /** dump the inverse to the buffer
-   */
-  void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    APP_ABORT("  Need to implement MSDFast::dumpToBuffer. \n");
-  }
-
-  /** copy the inverse from the buffer
-   */
-  void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    APP_ABORT("  Need to implement MSDFast::dumpFromBuffer. \n");
-  }
-
   /** move was accepted, update the real container
    */
   void acceptMove(ParticleSet& P, int iat);

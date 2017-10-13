@@ -65,20 +65,6 @@ public:
 
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
-  /** dump the inverse to the buffer
-   */
-  inline void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    buf.add(psiM.begin(),psiM.end());
-  }
-
-  /** copy the inverse from the buffer
-   */
-  inline void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    buf.get(psiM.begin(),psiM.end());
-  }
-
   /** return the ratio only for the  iat-th partcle move
    * @param P current configuration
    * @param iat the particle thas is being moved

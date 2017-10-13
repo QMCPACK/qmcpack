@@ -161,18 +161,6 @@ void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, PooledData<RealType>&
     Dets[i]->copyFromBuffer(P,buf);
 }
 
-void SlaterDetWithBackflow::dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf)
-{
-  for(int i=0; i<Dets.size(); i++)
-    Dets[i]->dumpToBuffer(P,buf);
-}
-
-void SlaterDetWithBackflow::dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
-{
-  for(int i=0; i<Dets.size(); i++)
-    Dets[i]->dumpFromBuffer(P,buf);
-}
-
 OrbitalBasePtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
 {
   BackflowTransformation *tr = BFTrans->makeClone(tqp);

@@ -97,8 +97,6 @@ public:
   RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
   RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-  void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf);
-  void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
   inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {

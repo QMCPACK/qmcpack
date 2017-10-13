@@ -197,14 +197,6 @@ public:
 
   virtual void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
-  /** dump the inverse to the buffer
-   */
-  void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  /** copy the inverse from the buffer
-   */
-  void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
   /** return the ratio only for the  iat-th partcle move
    * @param P current configuration
    * @param iat the particle thas is being moved

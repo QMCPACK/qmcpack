@@ -138,12 +138,6 @@ public:
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
   virtual
-  void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual
-  void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
     return Dets[VP.activeGroup]->evaluateRatios(VP,ratios);

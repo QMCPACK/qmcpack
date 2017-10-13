@@ -287,8 +287,6 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
 * that are invarient during optimizations.
 * It is expected that evaluateLog(P,false) is called later
 * and the external object adds the varying G and L and the fixed terms.
-* Additionally, dumpToBuffer and dumpFromBuffer is used to manage
-* necessary data for ratio evaluations.
 */
 void
 TrialWaveFunction::evaluateDeltaLog(ParticleSet& P
@@ -767,42 +765,6 @@ void TrialWaveFunction::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf
   //get the gradients and laplacians from the buffer
   buf.get(PhaseValue);
   buf.get(LogValue);
-}
-
-/** Dump data that are required to evaluate ratios to the buffer
-* @param P active ParticleSet
-* @param buf anonymous buffer to which the data will be dumped.
-*
-* This function lets the OrbitalBase objects store the minimal data
-* that are required to evaluate the ratio, even though the components
-* are invariant during the optimizations.
-*/
-void TrialWaveFunction::dumpToBuffer(ParticleSet& P, BufferType& buf)
-{
-  buf.rewind(BufferCursor,BufferCursor_DP);
-  std::vector<OrbitalBase*>::iterator it(Z.begin());
-  std::vector<OrbitalBase*>::iterator it_end(Z.end());
-  for (; it!=it_end; ++it)
-  {
-    (*it)->dumpToBuffer(P,buf);
-  }
-}
-
-/** copy data that are required to evaluate ratios from the buffer
-* @param P active ParticleSet
-* @param buf anonymous buffer from which the data will be copied.
-*
-* This function lets the OrbitalBase objects get the minimal data
-* that are required to evaluate the ratio from the buffer.
-* Only the data registered by dumToBuffer will be available.
-*/
-void TrialWaveFunction::dumpFromBuffer(ParticleSet& P, BufferType& buf)
-{
-  buf.rewind(BufferCursor,BufferCursor_DP);
-  std::vector<OrbitalBase*>::iterator it(Z.begin());
-  std::vector<OrbitalBase*>::iterator it_end(Z.end());
-  for (; it!=it_end; ++it)
-    (*it)->dumpFromBuffer(P,buf);
 }
 
 TrialWaveFunction::RealType

@@ -273,22 +273,6 @@ void DiracDeterminantBase::copyFromBuffer(ParticleSet& P, PooledData<RealType>& 
   BufferTimer.stop();
 }
 
-/** dump the inverse to the buffer
-*/
-void DiracDeterminantBase::dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf)
-{
-  APP_ABORT("DiracDeterminantBase::dumpToBuffer");
-  buf.add(psiM.first_address(),psiM.last_address());
-}
-
-/** copy the inverse from the buffer
-*/
-void DiracDeterminantBase::dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
-{
-  APP_ABORT("DiracDeterminantBase::dumpFromBuffer");
-  buf.get(psiM.first_address(),psiM.last_address());
-}
-
 /** return the ratio only for the  iat-th partcle move
  * @param P current configuration
  * @param iat the particle thas is being moved

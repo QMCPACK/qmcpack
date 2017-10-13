@@ -292,9 +292,6 @@ public:
   //new function to streamline tmove computation
   RealType acceptTMove(ParticleSet& P, int iat, PooledData<RealType>& buf);
 
-  void dumpToBuffer(ParticleSet& P, BufferType& buf);
-  void dumpFromBuffer(ParticleSet& P, BufferType& buf);
-
   RealType KECorrection() const;
 
   void evaluateDerivatives(ParticleSet& P,

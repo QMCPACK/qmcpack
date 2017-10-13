@@ -269,27 +269,6 @@ void SlaterDet::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
   DEBUG_PSIBUFFER(" SlaterDet::copyFromBuffer ",buf.current());
 }
 
-/** reimplements the virtual function
- *
- * The DiractDeterminants of SlaterDet need to save the inverse
- * of the determinant matrix to evaluate ratio
- */
-void SlaterDet::dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf)
-{
-  for (int i = 0; i < Dets.size(); i++)
-    Dets[i]->dumpToBuffer(P, buf);
-}
-
-/** reimplements the virtual function
- *
- * Matching function to dumpToBuffer.
- */
-void SlaterDet::dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
-{
-  for (int i = 0; i < Dets.size(); i++)
-    Dets[i]->dumpFromBuffer(P, buf);
-}
-
 OrbitalBasePtr SlaterDet::makeClone(ParticleSet& tqp) const
 {
   SlaterDet* myclone = new SlaterDet(tqp);
