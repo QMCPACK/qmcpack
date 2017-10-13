@@ -466,7 +466,6 @@ struct Walker
 
     m.Pack(Properties.data(),Properties.size());
     m.Pack(DataSet.data(),DataSet.size());
-    m.Pack(DataSet.data_DP(),DataSet.size_DP());
     //Properties.putMessage(m);
     //DataSet.putMessage(m);
     for (int iat=0; iat<PropertyHistory.size(); iat++)
@@ -523,7 +522,6 @@ struct Walker
 #endif
     m.Unpack(Properties.data(),Properties.size());
     m.Unpack(DataSet.data(),DataSet.size());
-    m.Unpack(DataSet.data_DP(),DataSet.size_DP());
     //Properties.getMessage(m);
     //DataSet.getMessage(m);
     for (int iat=0; iat<PropertyHistory.size(); iat++)

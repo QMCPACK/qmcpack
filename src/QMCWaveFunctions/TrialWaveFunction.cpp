@@ -31,7 +31,7 @@ typedef enum { V_TIMER, VGL_TIMER, ACCEPT_TIMER, NL_TIMER,
 
 TrialWaveFunction::TrialWaveFunction(Communicate* c)
   : MPIObjectBase(c)
-  , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0), BufferCursor_DP(0)
+  , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0)
   , PhaseValue(0.0),LogValue(0.0),OneOverM(1.0), PhaseDiff(0.0), FermionWF(0)
 {
   ClassName="TrialWaveFunction";
@@ -41,7 +41,7 @@ TrialWaveFunction::TrialWaveFunction(Communicate* c)
 ///private and cannot be used
 TrialWaveFunction::TrialWaveFunction()
   : MPIObjectBase(0)
-  , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0), BufferCursor_DP(0)
+  , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0)
   ,  PhaseValue(0.0),LogValue(0.0) ,OneOverM(1.0), PhaseDiff(0.0)
 {
   ClassName="TrialWaveFunction";
@@ -692,7 +692,6 @@ TrialWaveFunction::RealType TrialWaveFunction::registerData(ParticleSet& P, Pool
   P.L = 0.0;
   //save the current position
   BufferCursor=buf.current();
-  BufferCursor_DP=buf.current_DP();
   ValueType logpsi(0.0);
   PhaseValue=0.0;
   std::vector<OrbitalBase*>::iterator it(Z.begin());
@@ -738,7 +737,7 @@ TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P
   //TAU_PROFILE("TrialWaveFunction::updateBuffer","(P,..)", TAU_USER);
   P.G = 0.0;
   P.L = 0.0;
-  buf.rewind(BufferCursor,BufferCursor_DP);
+  buf.rewind(BufferCursor);
   ValueType logpsi(0.0);
   PhaseValue=0.0;
   std::vector<OrbitalBase*>::iterator it(Z.begin());
@@ -758,7 +757,7 @@ TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P
 
 void TrialWaveFunction::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
 {
-  buf.rewind(BufferCursor,BufferCursor_DP);
+  buf.rewind(BufferCursor);
   //TAU_PROFILE("TrialWaveFunction::copyFromBuffer","(P,..)", TAU_USER);
   for (int i=0; i<Z.size(); i++)
     Z[i]->copyFromBuffer(P,buf);
@@ -777,7 +776,7 @@ TrialWaveFunction::acceptTMove(ParticleSet& P, int iat, PooledData<RealType>& bu
   ValueType logpsi=czero;
   PhaseValue=czero;
 
-  buf.rewind(BufferCursor,BufferCursor_DP);
+  buf.rewind(BufferCursor);
   GradType grad;
   const size_t nz=Z.size();
   for (size_t i=0; i<nz; i++)
@@ -899,7 +898,6 @@ TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp)  const
 {
   TrialWaveFunction* myclone = new TrialWaveFunction(myComm);
   myclone->BufferCursor=BufferCursor;
-  myclone->BufferCursor_DP=BufferCursor_DP;
   for (int i=0; i<Z.size(); ++i)
     myclone->addOrbital(Z[i]->makeClone(tqp),"dummy",Z[i]->IsFermionWF);
   myclone->OneOverM=OneOverM;
