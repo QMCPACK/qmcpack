@@ -402,22 +402,6 @@ void RNDiracDeterminantBaseAlternate::acceptMove(ParticleSet& P, int iat)
 
 
 RNDiracDeterminantBaseAlternate::RealType
-RNDiracDeterminantBaseAlternate::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  buf.put(psiM.first_address(),psiM.last_address());
-  buf.put(FirstAddressOfdV,LastAddressOfdV);
-  buf.put(d2psiM.first_address(),d2psiM.last_address());
-  buf.put(myL.first_address(), myL.last_address());
-  buf.put(FirstAddressOfG,LastAddressOfG);
-  buf.put(LogValue);
-  buf.put(alternateLogValue);
-  buf.put(PhaseValue);
-  return LogValue;
-}
-
-
-
-RNDiracDeterminantBaseAlternate::RealType
 RNDiracDeterminantBaseAlternate::evaluateLog(ParticleSet& P,
     ParticleSet::ParticleGradient_t& G,
     ParticleSet::ParticleLaplacian_t& L)

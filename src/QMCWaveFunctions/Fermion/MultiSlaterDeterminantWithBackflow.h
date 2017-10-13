@@ -72,7 +72,6 @@ public:
   void acceptMove(ParticleSet& P, int iat);
   void restore(int iat);
 
-  RealType evaluateLog(ParticleSet& P,BufferType& buf);
   RealType registerData(ParticleSet& P, BufferType& buf);
   RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, BufferType& buf);

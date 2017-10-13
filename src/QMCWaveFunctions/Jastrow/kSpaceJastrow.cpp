@@ -713,41 +713,6 @@ kSpaceJastrow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
   }
 }
 
-kSpaceJastrow::RealType
-kSpaceJastrow::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  RealType J1(0.0), J2(0.0);
-  int N = P.getTotalNum();
-  for (int iat=0; iat<N; iat++)
-  {
-    PosType r(P.R[iat]);
-    int nOne = OneBodyGvecs.size();
-    for (int i=0; i<nOne; i++)
-      OneBodyPhase[i] = dot(OneBodyGvecs[i], r);
-    eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
-    for (int i=0; i<nOne; i++)
-    {
-      J1 +=  Prefactor*real(OneBodyCoefs[i]  * qmcplusplus::conj(OneBody_e2iGr[i]));
-    }
-  }
-  // Do two-body part
-  int nTwo = TwoBodyGvecs.size();
-  for (int i=0; i<nTwo; i++)
-    TwoBody_rhoG[i] = ComplexType();
-  for (int iat=0; iat<N; iat++)
-  {
-    PosType r(P.R[iat]);
-    for (int i=0; i<nTwo; i++)
-      TwoBodyPhase[i] = dot(TwoBodyGvecs[i], r);
-    eval_e2iphi (TwoBodyPhase, TwoBody_e2iGr_new);
-    for (int i=0; i<nTwo; i++)
-      TwoBody_rhoG[i] += TwoBody_e2iGr_new[i];
-  }
-  for (int i=0; i<nTwo; i++)
-    J2 += Prefactor*TwoBodyCoefs[i]*norm(TwoBody_rhoG[i]);
-  return J1+J2;
-}
-
 void kSpaceJastrow::checkInVariables(opt_variables_type& active)
 {
   active.insertFrom(myVars);

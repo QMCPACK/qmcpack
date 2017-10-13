@@ -189,7 +189,6 @@ public:
   // Pull data from the walker buffer at the beginning of a block of
   // single-particle moves
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
   ///process input file
   bool put(xmlNodePtr cur);

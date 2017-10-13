@@ -295,14 +295,6 @@ struct  J1OrbitalSoA : public OrbitalBase
 
   inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) { }
 
-  inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    const size_t n=P.getTotalNum();
-    for(size_t iat=0; iat<n; ++iat) P.G[iat]+=Grad[iat];
-    for(size_t iat=0; iat<n; ++iat) P.L[iat]-=Lap[iat];
-    return LogValue;
-  }
-
   OrbitalBasePtr makeClone(ParticleSet& tqp) const
   {
     J1OrbitalSoA<FT>* j1copy=new J1OrbitalSoA<FT>(Ions,tqp);

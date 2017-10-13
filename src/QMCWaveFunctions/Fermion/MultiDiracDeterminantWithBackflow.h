@@ -185,8 +185,6 @@ public:
    */
   void restore(int iat);
 
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
-
   OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
   /****************************************************************************

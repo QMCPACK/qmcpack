@@ -833,24 +833,6 @@ TrialWaveFunction::acceptTMove(ParticleSet& P, int iat, PooledData<RealType>& bu
   return LogValue;
 }
 
-TrialWaveFunction::RealType
-TrialWaveFunction::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  buf.rewind(BufferCursor,BufferCursor_DP);
-  LogValue=0.0;
-  PhaseValue=0.0;
-  for (int i=0; i<Z.size(); i++)
-  {
-    LogValue += Z[i]->evaluateLog(P,buf);
-    PhaseValue += Z[i]->PhaseValue;
-  }
-
-  buf.put(PhaseValue);
-  buf.put(LogValue);
-
-  return LogValue;
-}
-
 void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<RealType>& ratios)
 {
 #if defined(QMC_COMPLEX)

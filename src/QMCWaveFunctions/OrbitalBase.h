@@ -354,9 +354,6 @@ struct OrbitalBase: public QMCTraits
     return 1.0;
   };
 
-  /** equivalent to evaluateLog(P,G,L) with write-back function */
-  virtual RealType evaluateLog(ParticleSet& P,BufferType& buf)=0;
-
   /** add temporary data reserved for particle-by-particle move.
    *
    * Return the log|psi|  like evalaute evaluateLog

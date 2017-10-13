@@ -69,11 +69,6 @@ public:
     return 1.0;
   }
 
-  virtual RealType evaluateLog(ParticleSet& P,BufferType& buf)
-  {
-    return 0.0;
-  }
-
   virtual GradType evalGrad(ParticleSet &P, int iat)
   {
     return GradType(0.0);

@@ -109,6 +109,7 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
   ParticleSet::ParticleGradient_t G(n),G0(n);
   ParticleSet::ParticleLaplacian_t L(n),L0(n);
   ValueType log, log0;
+  GradType G1;
 //     log = msd->evaluate(P,G,L);
   log0 = evaluate(P,G0,L0);
   /*
@@ -141,7 +142,8 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
   G=0;
   G0=0;
   L=0;
-  log0 = ratioGrad(P,iat,G0[iat]);
+  log0 = ratioGrad(P,iat,G1);
+  G0[iat]=G1;
   std::cout <<"Psi: " <<log <<"   " <<log0 <<"   " <<log/log0 << std::endl;
   for(int i=0; i<n; i++)
   {
@@ -510,16 +512,6 @@ void MultiSlaterDeterminantFast::restore(int iat)
   Dets[DetID[iat]]->restore(iat);
   curRatio=1.0;
   AccRejTimer.stop();
-}
-
-OrbitalBase::RealType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P,BufferType& buf)
-{
-  Dets[0]->evaluateLog(P,buf);
-  Dets[1]->evaluateLog(P,buf);
-  buf.put(psiCurrent);
-  buf.put(myL.first_address(), myL.last_address());
-  buf.put(FirstAddressOfG,LastAddressOfG);
-  return LogValue = evaluateLogAndPhase(psiCurrent,PhaseValue);
 }
 
 OrbitalBase::RealType MultiSlaterDeterminantFast::registerData(ParticleSet& P, BufferType& buf)

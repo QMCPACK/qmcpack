@@ -221,14 +221,6 @@ struct  J2OrbitalSoA : public OrbitalBase
     return LogValue;
   }
 
-  inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    buf.put(Uat.begin(), Uat.end());
-    buf.put(FirstAddressOfdU,LastAddressOfdU);
-    buf.put(d2Uat.begin(), d2Uat.end());
-    return LogValue;
-  }
-
   /*@{ internal compute engines*/
   inline void computeU3(ParticleSet& P, int iat, const RealType* restrict dist,
       RealType* restrict u, RealType* restrict du, RealType* restrict d2u);

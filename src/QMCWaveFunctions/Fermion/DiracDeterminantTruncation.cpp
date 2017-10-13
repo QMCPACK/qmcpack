@@ -277,17 +277,6 @@ void DiracDeterminantTruncation::acceptMove(ParticleSet& P, int iat)
 }
 
 
-
-///SHOULD THIS REALLY NOT RETURN ANYTHING!
-DiracDeterminantBase::RealType
-DiracDeterminantTruncation::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  return DiracDeterminantBase::evaluateLog(P,buf);
-}
-
-
-
-
 DiracDeterminantBase::RealType
 DiracDeterminantTruncation::evaluateLog(ParticleSet& P,
                                         ParticleSet::ParticleGradient_t& G,

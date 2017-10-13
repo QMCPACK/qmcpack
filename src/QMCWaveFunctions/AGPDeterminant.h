@@ -97,10 +97,6 @@ public:
    */
   void restore(int iat);
 
-
-  ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
-
-
   void resizeByWalkers(int nwalkers);
 
   ///evaluate log of determinant for a particle set: should not be called

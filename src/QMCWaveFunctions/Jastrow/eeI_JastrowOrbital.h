@@ -1147,24 +1147,6 @@ public:
     DiffValSum=0.0;
   }
 
-  inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    //      std::cerr << "Called evaluateLog (P, buf).\n";
-    RealType x = (U[NN] += DiffValSum);
-    buf.put(U.begin(), U.end());
-    buf.put(d2U.begin(), d2U.end());
-    buf.put(FirstAddressOfdU,LastAddressOfdU);
-    // for (int i=0; i<IonDataList.size(); i++) {
-    // 	int n = IonDataList[i].elecs_inside.size();
-    // 	buf.put ((RealType)n);
-    // 	vector<RealType> elecs_inside(n);
-    // 	for (int j=0; j<n; j++)
-    // 	  elecs_inside[j] = IonDataList[i].elecs_inside[j];
-    // 	buf.put(elecs_inside.begin(), elecs_inside.end());
-    // }
-    return x;
-  }
-
   OrbitalBasePtr makeClone(ParticleSet& tqp) const
   {
     eeI_JastrowOrbital<FT>* eeIcopy=

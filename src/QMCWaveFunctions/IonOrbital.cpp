@@ -231,42 +231,6 @@ IonOrbital::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
   buf.get(FirstAddressOfdU,LastAddressOfdU);
 }
 
-/** return the current value and copy the current data to a buffer
- *@param P the ParticleSet to operate on
- *@param buf PooledData which stores the data for each walker
- */
-IonOrbital::RealType
-IonOrbital::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  RealType sumu = 0.0;
-  for (int i=0; i<U.size(); i++)
-    sumu+=U[i];
-  buf.put(U.first_address(), U.last_address());
-  buf.put(d2U.first_address(), d2U.last_address());
-  buf.put(FirstAddressOfdU,LastAddressOfdU);
-  return -sumu;
-  // int icent = 0;
-  // LogValue = 0.0;
-  // U = 0.0;
-  // for (int iat=0; iat<NumTargetPtcls; iat++) {
-  //   RealType a = ParticleAlpha[iat];
-  //   if (a > 0.0) {
-  // 	int index = d_table->M[icent] + iat;
-  // 	RealType dist = d_table->r(index);
-  // 	PosType  disp  = d_table->dr(index);
-  // 	LogValue -= a*dist*dist;
-  // 	icent++;
-  //   }
-  // }
-  // return LogValue;
-  // return evaluateLog(P, P.G, P.L);
-  // std::cerr << "IonOrbital::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) called.\n";
-  // buf.put(U.first_address(), U.last_address());
-  // buf.put(d2U.first_address(), d2U.last_address());
-  // buf.put(FirstAddressOfdU,LastAddressOfdU);
-  // return -sumu;
-}
-
 OrbitalBasePtr
 IonOrbital::makeClone(ParticleSet& tqp) const
 {

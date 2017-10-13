@@ -152,16 +152,6 @@ DiracDeterminantBase::ValueType DiracDeterminantIterative::ratio(ParticleSet& P,
 #endif
 }
 
-
-
-DiracDeterminantBase::RealType
-DiracDeterminantIterative::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  return DiracDeterminantBase::evaluateLog(P,buf);
-}
-
-
-
 DiracDeterminantBase::RealType
 DiracDeterminantIterative::evaluateLog(ParticleSet& P,
                                        ParticleSet::ParticleGradient_t& G,

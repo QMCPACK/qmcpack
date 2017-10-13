@@ -86,9 +86,6 @@ public:
   void
   copyFromBuffer(ParticleSet& P, BufferType& buf);
 
-  RealType
-  evaluateLog(ParticleSet& P,BufferType& buf);
-
   GradType evalGrad(ParticleSet& P, int iat);
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);

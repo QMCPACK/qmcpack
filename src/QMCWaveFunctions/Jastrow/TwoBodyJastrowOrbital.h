@@ -547,17 +547,6 @@ public:
     DiffValSum=0.0;
   }
 
-  inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    DEBUG_PSIBUFFER(" TwoBodyJastrow::evaluateLog ",buf.current());
-    RealType x = (U[NN] += DiffValSum);
-    buf.put(U.begin(), U.end());
-    buf.put(d2U.begin(), d2U.end());
-    buf.put(FirstAddressOfdU,LastAddressOfdU);
-    DEBUG_PSIBUFFER(" TwoBodyJastrow::evaluateLog ",buf.current());
-    return x;
-  }
-
   OrbitalBasePtr makeClone(ParticleSet& tqp) const
   {
     //TwoBodyJastrowOrbital<FT>* j2copy=new TwoBodyJastrowOrbital<FT>(tqp,Write_Chiesa_Correction);

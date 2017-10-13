@@ -105,7 +105,6 @@ public:
   virtual void acceptMove(ParticleSet& P, int iat);
   virtual void restore(int iat);
 
-  virtual RealType evaluateLog(ParticleSet& P,BufferType& buf);
   virtual RealType registerData(ParticleSet& P, BufferType& buf);
   virtual RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
   virtual void copyFromBuffer(ParticleSet& P, BufferType& buf);

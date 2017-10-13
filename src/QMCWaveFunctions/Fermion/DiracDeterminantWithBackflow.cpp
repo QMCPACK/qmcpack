@@ -680,21 +680,6 @@ void DiracDeterminantWithBackflow::restore(int iat)
   curRatio=1.0;
 }
 
-DiracDeterminantWithBackflow::RealType
-DiracDeterminantWithBackflow::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  buf.put(psiM.first_address(),psiM.last_address());
-  buf.put(FirstAddressOfdV,LastAddressOfdV);
-  buf.put(FirstAddressOfGGG,LastAddressOfGGG);
-  buf.put(myL.first_address(), myL.last_address());
-  buf.put(FirstAddressOfG,LastAddressOfG);
-  buf.put(FirstAddressOfFm,LastAddressOfFm);
-  buf.put(psiMinv.first_address(),psiMinv.last_address());
-  buf.put(LogValue);
-  buf.put(PhaseValue);
-  return LogValue;
-}
-
 
 /** Calculate the value of the Dirac determinant for particles
  *@param P input configuration containing N particles

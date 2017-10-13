@@ -120,7 +120,6 @@ public:
   void acceptMove(ParticleSet& P, int iat);
   void restore(int iat);
 
-  RealType evaluateLog(ParticleSet& P,BufferType& buf);
   RealType registerData(ParticleSet& P, BufferType& buf);
   void registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
   virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets)

@@ -525,24 +525,6 @@ public:
     DEBUG_PSIBUFFER(" OneBodyJastrow::copyFromBuffer ",buf.current());
   }
 
-  /** return the current value and copy the current data to a buffer
-   *@param P the ParticleSet to operate on
-   *@param buf PooledData which stores the data for each walker
-   */
-  inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    RealType sumu = 0.0;
-    for (int i=0; i<U.size(); i++)
-      sumu+=U[i];
-    DEBUG_PSIBUFFER(" OneBodyJastrow::evaluateLog ",buf.current());
-    buf.put(U.first_address(), U.last_address());
-    buf.put(d2U.first_address(), d2U.last_address());
-    buf.put(FirstAddressOfdU,LastAddressOfdU);
-    DEBUG_PSIBUFFER(" OneBodyJastrow::evaluateLog ",buf.current());
-    return -sumu;
-    //return std::exp(-sumu);
-  }
-
   OrbitalBasePtr makeClone(ParticleSet& tqp) const
   {
     OneBodyJastrowOrbital<FT>* j1copy=new OneBodyJastrowOrbital<FT>(CenterRef,tqp);

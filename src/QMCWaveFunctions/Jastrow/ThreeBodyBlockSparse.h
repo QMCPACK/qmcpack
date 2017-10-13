@@ -69,8 +69,6 @@ public:
 
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
-
   OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
   void setBasisSet(BasisSetType* abasis)

@@ -288,7 +288,6 @@ public:
   void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets);
   RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, BufferType& buf);
-  RealType evaluateLog(ParticleSet& P, BufferType& buf);
 
   //new function to streamline tmove computation
   RealType acceptTMove(ParticleSet& P, int iat, PooledData<RealType>& buf);

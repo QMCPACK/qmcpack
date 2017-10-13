@@ -143,8 +143,6 @@ public:
    */
   void restore(int iat);
 
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
-
   RealType evaluateLogForDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
   RealType evaluateLogFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);

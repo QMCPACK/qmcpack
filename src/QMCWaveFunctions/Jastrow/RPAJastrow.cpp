@@ -294,15 +294,6 @@ RPAJastrow::copyFromBuffer(ParticleSet& P, BufferType& buf)
     Psi[i]->copyFromBuffer(P,buf);
 }
 
-RPAJastrow::RealType
-RPAJastrow::evaluateLog(ParticleSet& P,BufferType& buf)
-{
-  LogValue=0.0;
-  for(int i=0; i<Psi.size(); i++)
-    LogValue += Psi[i]->evaluateLog(P,buf);
-  return LogValue;
-}
-
 OrbitalBase* RPAJastrow::makeClone(ParticleSet& tpq) const
 {
   HandlerType* tempHandler;

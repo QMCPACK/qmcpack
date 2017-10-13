@@ -501,29 +501,6 @@ void AGPDeterminant::restore(int iat)
   curRatio=1.0;
 }
 
-AGPDeterminant::ValueType AGPDeterminant::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  //if(UseBuffer)
-  {
-    //buf.put(CurrentDet);
-    buf.put(LogValue);
-    buf.put(psiM.begin(),psiM.end());
-    buf.put(phiT.begin(),phiT.end());
-    buf.put(d2psiU.begin(),d2psiU.end());
-    buf.put(d2psiD.begin(),d2psiD.end());
-    buf.put(FirstAddressOfdVU,LastAddressOfdVU);
-    buf.put(FirstAddressOfdVD,LastAddressOfdVD);
-    buf.put(d2Y.begin(),d2Y.end());
-    buf.put(FirstAddressOfdY,LastAddressOfdY);
-    buf.put(FirstAddressOfG,LastAddressOfG);
-    buf.put(myL.first_address(), myL.last_address());
-    //buf.put(myL.begin(), myL.end());
-  }
-  return LogValue;
-  //return evaluateLogAndPhase(CurrentDet,PhaseValue);
-  //return CurrentDet;
-}
-
 OrbitalBasePtr AGPDeterminant::makeClone(ParticleSet& tqp) const
 {
   AGPDeterminant* myclone = new AGPDeterminant(0);

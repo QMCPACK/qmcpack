@@ -66,8 +66,6 @@ public:
 
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
-
   void setBasisSet(BasisSetType* abasis)
   {
     GeminalBasis=abasis;

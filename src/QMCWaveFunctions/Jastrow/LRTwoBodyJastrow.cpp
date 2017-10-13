@@ -482,21 +482,6 @@ void LRTwoBodyJastrow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
 #endif
 }
 
-LRTwoBodyJastrow::RealType
-LRTwoBodyJastrow::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-#if defined(USE_REAL_STRUCT_FACTOR)
-  buf.put(Rhok_r.first_address(), Rhok_r.last_address());
-  buf.put(Rhok_i.first_address(), Rhok_i.last_address());
-#else
-  buf.put(Rhok.first_address(), Rhok.last_address());
-#endif
-  buf.put(U.first_address(), U.last_address());
-  buf.put(d2U.first_address(), d2U.last_address());
-  buf.put(FirstAddressOfdU,LastAddressOfdU);
-  return LogValue;
-}
-
 
 bool LRTwoBodyJastrow::put(xmlNodePtr cur)
 {

@@ -243,9 +243,6 @@ public:
    */
   virtual void restore(int iat);
 
-  virtual RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
-
-
   ///evaluate log of determinant for a particle set: should not be called
   virtual RealType
   evaluateLog(ParticleSet& P,

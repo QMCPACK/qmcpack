@@ -280,21 +280,6 @@ ThreeBodyGeminal::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
 }
 
 OrbitalBase::RealType
-ThreeBodyGeminal::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  buf.put(LogValue);
-  buf.put(V.begin(), V.end());
-  buf.put(Y.begin(), Y.end());
-  buf.put(FirstAddressOfdY,LastAddressOfdY);
-  buf.put(d2Y.begin(),d2Y.end());
-  buf.put(Uk.begin(), Uk.end());
-  buf.put(FirstAddressOfgU,LastAddressOfgU);
-  buf.put(d2Uk.begin(), d2Uk.end());
-  return LogValue;
-  //return std::exp(LogValue);
-}
-
-OrbitalBase::RealType
 ThreeBodyGeminal::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
                                bool fromscratch)
 {

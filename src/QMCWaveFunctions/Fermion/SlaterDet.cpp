@@ -290,28 +290,6 @@ void SlaterDet::dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
     Dets[i]->dumpFromBuffer(P, buf);
 }
 
-SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,
-    PooledData<RealType>& buf)
-{
-  DEBUG_PSIBUFFER(" SlaterDet::evaluateLog ",buf.current());
-  LogValue = 0.0;
-  PhaseValue = 0.0;
-  for (int i = 0; i < Dets.size(); i++)
-  {
-    LogValue += Dets[i]->evaluateLog(P, buf);
-    PhaseValue += Dets[i]->PhaseValue;
-  }
-  DEBUG_PSIBUFFER(" SlaterDet::evaluateLog ",buf.current());
-  return LogValue;
-}
-//SlaterDet::ValueType
-//  SlaterDet::evaluate(ParticleSet& P, PooledData<RealType>& buf)
-//  {
-//    ValueType r=1.0;
-//    for(int i=0; i<Dets.size(); i++) 	r *= Dets[i]->evaluate(P,buf);
-//    return r;
-//  }
-
 OrbitalBasePtr SlaterDet::makeClone(ParticleSet& tqp) const
 {
   SlaterDet* myclone = new SlaterDet(tqp);

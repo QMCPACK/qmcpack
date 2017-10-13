@@ -84,7 +84,6 @@ public:
    */
   void acceptMove(ParticleSet& P, int iat);
 
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
   RealType getAlternatePhaseDiff()
   {
     return evaluatePhase(curRatio);

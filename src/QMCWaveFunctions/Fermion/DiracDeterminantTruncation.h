@@ -81,10 +81,6 @@ public:
               ParticleSet::ParticleGradient_t& G,
               ParticleSet::ParticleLaplacian_t& L);
 
-  DiracDeterminantBase::RealType
-  evaluateLog(ParticleSet& P, PooledData<RealType>& buf) ;
-
-
   std::vector<std::list<std::pair<int,double> > > particleLists;
   std::list<std::pair<int,double> >  oldPtcl;
   double cutoff;

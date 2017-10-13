@@ -97,8 +97,6 @@ struct RPAJastrow: public OrbitalBase
 
   void copyFromBuffer(ParticleSet& P, BufferType& buf);
 
-  RealType evaluateLog(ParticleSet& P,BufferType& buf);
-
   OrbitalBase* makeClone(ParticleSet& tqp) const;
 
 private:

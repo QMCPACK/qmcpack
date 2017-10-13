@@ -230,21 +230,6 @@ DiracDeterminantBase::registerData(ParticleSet& P, PooledData<RealType>& buf)
   return LogValue;
 }
 
-DiracDeterminantBase::RealType
-DiracDeterminantBase::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  //add the data: inverse, gradient and laplacian
-  buf.put(psiM.first_address(),psiM.last_address());
-  if(BufferMode)
-  {
-    buf.put(FirstAddressOfdV,LastAddressOfdV);
-    buf.put(d2psiM.first_address(),d2psiM.last_address());
-  }
-  buf.put(LogValue);
-  buf.put(PhaseValue);
-  return LogValue;
-}
-
 DiracDeterminantBase::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P,
     PooledData<RealType>& buf, bool fromscratch)
 {

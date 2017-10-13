@@ -180,7 +180,6 @@ public:
   RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
   RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
   ///process input file
   bool put(xmlNodePtr cur);

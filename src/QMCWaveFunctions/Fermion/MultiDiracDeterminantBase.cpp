@@ -294,19 +294,6 @@ void MultiDiracDeterminantBase::restore(int iat)
   */
 }
 
-MultiDiracDeterminantBase::RealType
-MultiDiracDeterminantBase::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  buf.put(psiM.first_address(),psiM.last_address());
-  buf.put(FirstAddressOfdpsiM,LastAddressOfdpsiM);
-  buf.put(d2psiM.first_address(),d2psiM.last_address());
-  buf.put(psiMinv.first_address(),psiMinv.last_address());
-  buf.put(detValues.first_address(), detValues.last_address());
-  buf.put(FirstAddressOfGrads,LastAddressOfGrads);
-  buf.put(lapls.first_address(), lapls.last_address());
-  return 1.0;
-}
-
 // this has been fixed
 MultiDiracDeterminantBase::MultiDiracDeterminantBase(const MultiDiracDeterminantBase& s):
   OrbitalBase(s), NP(0), FirstIndex(s.FirstIndex),

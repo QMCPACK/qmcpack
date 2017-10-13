@@ -467,32 +467,6 @@ void MultiSlaterDeterminantWithBackflow::restore(int iat)
   AccRejTimer.stop();
 }
 
-OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::evaluateLog(ParticleSet& P,BufferType& buf)
-{
-  BFTrans->evaluate(P);
-  ValueType logpsi(0.0);
-  for (int i=0; i<dets_up.size(); i++)
-    logpsi += dets_up[i]->evaluateLog(BFTrans->QP,buf);
-  for (int i=0; i<dets_dn.size(); i++)
-    logpsi += dets_dn[i]->evaluateLog(BFTrans->QP,buf);
-  int TotalDim = PosType::Size*P.getTotalNum();
-  //buf.put(detValues_up.begin(),detValues_up.end());
-  //buf.put(detValues_dn.begin(),detValues_dn.end());
-  buf.put(detValues_up.first_address(),detValues_up.last_address());
-  buf.put(detValues_dn.first_address(),detValues_dn.last_address());
-  for(int i=0; i<NumUniqueDets_up; i++)
-  {
-    buf.put(&(grads_up[i][0][0]), &(grads_up[i][0][0])+TotalDim);
-    buf.put(&(lapls_up[i][0]), &(lapls_up[i][P.getTotalNum()]));
-  }
-  for(int i=0; i<NumUniqueDets_dn; i++)
-  {
-    buf.put(&(grads_dn[i][0][0]), &(grads_dn[i][0][0])+TotalDim);
-    buf.put(&(lapls_dn[i][0]), &(lapls_dn[i][P.getTotalNum()]));
-  }
-  return LogValue;
-}
-
 OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::registerData(ParticleSet& P, BufferType& buf)
 {
   BFTrans->evaluate(P);

@@ -90,9 +90,6 @@ public:
    */
   void acceptMove(ParticleSet& P, int iat);
 
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
-
-
   ///evaluate log of determinant for a particle set: should not be called
   RealType
   evaluateLog(ParticleSet& P,
