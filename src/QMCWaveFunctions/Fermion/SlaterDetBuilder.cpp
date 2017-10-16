@@ -599,7 +599,11 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   bool optimizeCI;
   int nels_up = multiSD->nels_up;
   int nels_dn = multiSD->nels_dn;
-  success = readDetList(cur,uniqueConfg_up,uniqueConfg_dn,multiSD->C2node_up, multiSD->C2node_dn,CItags,multiSD->C,optimizeCI,nels_up,nels_dn,multiSD->CSFcoeff,multiSD->DetsPerCSF,multiSD->CSFexpansion,multiSD->usingCSF);
+  multiSD->initialize();
+  success = readDetList(cur,uniqueConfg_up,uniqueConfg_dn,
+      *(multiSD->C2node_up), *(multiSD->C2node_dn),CItags,
+      *(multiSD->C),optimizeCI,nels_up,nels_dn,
+      *(multiSD->CSFcoeff),*(multiSD->DetsPerCSF),*(multiSD->CSFexpansion),multiSD->usingCSF);
   if(!success)
     return false;
 // you should choose the det with highest weight for reference
@@ -637,7 +641,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
     }
   }
   multiSD->Dets[1]->set(multiSD->FirstIndex_dn,nels_dn,multiSD->Dets[1]->Phi->getOrbitalSetSize());
-  if (multiSD->CSFcoeff.size()==1)
+  if (multiSD->CSFcoeff->size()==1)
     optimizeCI=false;
   if(optimizeCI)
   {
@@ -649,32 +653,32 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
     if (resetCI=="yes")
     {
       if(multiSD->usingCSF)
-        for(int i=1; i<multiSD->CSFcoeff.size(); i++)
-          multiSD->CSFcoeff[i]=0;
+        for(int i=1; i<multiSD->CSFcoeff->size(); i++)
+          (*(multiSD->CSFcoeff))[i]=0;
       else
-        for(int i=1; i<multiSD->C.size(); i++)
-          multiSD->C[i]=0;
+        for(int i=1; i<multiSD->C->size(); i++)
+          (*(multiSD->C))[i]=0;
       app_log() <<"CI coefficients are reset. \n";
     }
     multiSD->Optimizable=true;
     if(multiSD->usingCSF)
     {
 //          multiSD->myVars.insert(CItags[0],multiSD->CSFcoeff[0],false,optimize::LINEAR_P);
-      for(int i=1; i<multiSD->CSFcoeff.size(); i++)
+      for(int i=1; i<multiSD->CSFcoeff->size(); i++)
       {
         //std::stringstream sstr;
         //sstr << "CIcoeff" << "_" << i;
-        multiSD->myVars.insert(CItags[i],multiSD->CSFcoeff[i],true,optimize::LINEAR_P);
+        multiSD->myVars->insert(CItags[i],(*(multiSD->CSFcoeff))[i],true,optimize::LINEAR_P);
       }
     }
     else
     {
 //          multiSD->myVars.insert(CItags[0],multiSD->C[0],false,optimize::LINEAR_P);
-      for(int i=1; i<multiSD->C.size(); i++)
+      for(int i=1; i<multiSD->C->size(); i++)
       {
         //std::stringstream sstr;
         //sstr << "CIcoeff" << "_" << i;
-        multiSD->myVars.insert(CItags[i],multiSD->C[i],true,optimize::LINEAR_P);
+        multiSD->myVars->insert(CItags[i],(*(multiSD->C))[i],true,optimize::LINEAR_P);
       }
     }
   }

@@ -159,6 +159,7 @@ public:
 //                                       PooledData<RealType>& buf);
 
   void resize(int,int);
+  void initialize();
 
   void testMSD(ParticleSet& P, int iat);
 
@@ -166,39 +167,34 @@ public:
   size_t nels_up,nels_dn;
   size_t FirstIndex_up;
   size_t FirstIndex_dn;
+  size_t ActiveSpin;
   bool usingCSF;
   bool IsCloned;
-
-  // assume Dets[0]: up, Dets[1]:down
-  std::vector<MultiDiracDeterminantBase*> Dets;
-
-  std::vector<size_t> DetID;
-  std::map<std::string,size_t> SPOSetID;
-  // map determinant in linear combination to unique det list
-  std::vector<size_t> C2node_up;
-  std::vector<size_t> C2node_dn;
-  std::vector<RealType> C;
-
   ValueType curRatio;
   ValueType psiCurrent;
 
-  ParticleSet::ParticleValue_t *FirstAddressOfG;
-  ParticleSet::ParticleValue_t *LastAddressOfG;
+  // assume Dets[0]: up, Dets[1]:down
+  std::vector<MultiDiracDeterminantBase*> Dets;
+  std::map<std::string,size_t> SPOSetID;
+
+  // map determinant in linear combination to unique det list
+  std::vector<size_t>* C2node_up;
+  std::vector<size_t>* C2node_dn;
+  std::vector<RealType>* C;
 
   ParticleSet::ParticleGradient_t myG,myG_temp;
   ParticleSet::ParticleLaplacian_t myL,myL_temp;
   ValueVector_t laplSum_up;
   ValueVector_t laplSum_dn;
 
-  opt_variables_type myVars;
-
-// CSFs
+  //optimizable variable is shared with the clones
+  opt_variables_type* myVars;
   // coefficients of csfs, these are only used during optm
-  std::vector<RealType> CSFcoeff;
+  std::vector<RealType>* CSFcoeff;
   // number of dets per csf
-  std::vector<size_t> DetsPerCSF;
+  std::vector<size_t>* DetsPerCSF;
   // coefficient of csf expansion (smaller dimension)
-  std::vector<RealType> CSFexpansion;
+  std::vector<RealType>* CSFexpansion;
 
   // transformation
   BackflowTransformation *BFTrans;
