@@ -362,60 +362,6 @@ AGPDeterminant::ratio(ParticleSet& P, int iat)
   return curRatio;
 }
 
-/** return the ratio
- * @param P current configuration
- * @param iat particle whose position is moved
- * @param dG differential Gradients
- * @param dL differential Laplacians
- *
- * Data member *_temp contain the data assuming that the move is accepted
- * and are used to evaluate differential Gradients and Laplacians.
- */
-AGPDeterminant::ValueType
-AGPDeterminant::ratio(ParticleSet& P, int iat,
-                      ParticleSet::ParticleGradient_t& dG,
-                      ParticleSet::ParticleLaplacian_t& dL)
-{
-  UpdateMode=ORB_PBYP_ALL;
-  //copy the iat-row to temporary vectors, restore when rejected
-  copy(phiT[iat],phiT[iat]+BasisSize,phiTv.begin());
-  //GeminalBasis->evaluateAll(P,iat);
-  GeminalBasis->evaluateAllForPtclMove(P,iat);
-  //BLAS::gemv(Lambda.rows(),Lambda.cols(), Lambda.data(), GeminalBasis->y(0), phiT[iat]);
-  BLAS::gemv(Lambda.rows(),Lambda.cols(), Lambda.data(), GeminalBasis->Phi.data(), phiT[iat]);//@@
-  if(iat<Nup)
-    ratioUp(P,iat);
-  else
-    ratioDown(P,iat);
-  for(int kat=0; kat<Nup; kat++)
-  {
-    GradType rv=simd::dot(psiM_temp[kat],dpsiU[kat],Nup);
-    ValueType lap=simd::dot(psiM_temp[kat],d2psiU[kat],Nup);
-    lap -= dot(rv,rv);
-    dG[kat] += (rv-myG[kat]);
-    myG_temp[kat]=rv;
-    dL[kat] += (lap-myL[kat]);
-    myL_temp[kat]=lap;
-  }
-  for(int jat=Nup,d=0; jat<NumPtcls; jat++,d++)
-  {
-    GradType rv;
-    ValueType lap=0;
-    for(int u=0; u<Nup; u++)
-    {
-      ValueType dfac=psiM_temp(u,d);
-      rv += dfac*dpsiD(d,u);
-      lap += dfac*d2psiD(d,u);
-    }
-    lap -= dot(rv,rv);
-    dG[jat] +=  (rv-myG[jat]);
-    myG_temp[jat]=rv;
-    dL[jat] +=  (lap-myL[jat]);
-    myL_temp[jat]=lap;
-  }
-  return curRatio;
-}
-
 void AGPDeterminant::ratioUp(ParticleSet& P, int iat)
 {
   //const ValueType* restrict y_ptr=GeminalBasis->y(0);
@@ -553,36 +499,6 @@ void AGPDeterminant::restore(int iat)
     }
   }
   curRatio=1.0;
-}
-
-void AGPDeterminant::update(ParticleSet& P,
-                            ParticleSet::ParticleGradient_t& dG,
-                            ParticleSet::ParticleLaplacian_t& dL,
-                            int iat)
-{
-}
-
-AGPDeterminant::ValueType AGPDeterminant::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  //if(UseBuffer)
-  {
-    //buf.put(CurrentDet);
-    buf.put(LogValue);
-    buf.put(psiM.begin(),psiM.end());
-    buf.put(phiT.begin(),phiT.end());
-    buf.put(d2psiU.begin(),d2psiU.end());
-    buf.put(d2psiD.begin(),d2psiD.end());
-    buf.put(FirstAddressOfdVU,LastAddressOfdVU);
-    buf.put(FirstAddressOfdVD,LastAddressOfdVD);
-    buf.put(d2Y.begin(),d2Y.end());
-    buf.put(FirstAddressOfdY,LastAddressOfdY);
-    buf.put(FirstAddressOfG,LastAddressOfG);
-    buf.put(myL.first_address(), myL.last_address());
-    //buf.put(myL.begin(), myL.end());
-  }
-  return LogValue;
-  //return evaluateLogAndPhase(CurrentDet,PhaseValue);
-  //return CurrentDet;
 }
 
 OrbitalBasePtr AGPDeterminant::makeClone(ParticleSet& tqp) const

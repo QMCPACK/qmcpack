@@ -197,14 +197,6 @@ public:
 
   virtual void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
-  /** dump the inverse to the buffer
-   */
-  void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  /** copy the inverse from the buffer
-   */
-  void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
   /** return the ratio only for the  iat-th partcle move
    * @param P current configuration
    * @param iat the particle thas is being moved
@@ -219,19 +211,6 @@ public:
   {
     return 1.0;
   }
-  /** return the ratio
-   * @param P current configuration
-   * @param iat particle whose position is moved
-   * @param dG differential Gradients
-   * @param dL differential Laplacians
-   *
-   * Data member *_temp contain the data assuming that the move is accepted
-   * and are used to evaluate differential Gradients and Laplacians.
-   */
-  virtual ValueType ratio(ParticleSet& P, int iat,
-                          ParticleSet::ParticleGradient_t& dG,
-                          ParticleSet::ParticleLaplacian_t& dL);
-
 
   virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   virtual GradType evalGrad(ParticleSet& P, int iat);
@@ -248,10 +227,6 @@ public:
    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
 
-  virtual ValueType logRatio(ParticleSet& P, int iat,
-                             ParticleSet::ParticleGradient_t& dG,
-                             ParticleSet::ParticleLaplacian_t& dL);
-
   /** move was accepted, update the real container
    */
   virtual void acceptMove(ParticleSet& P, int iat);
@@ -259,14 +234,6 @@ public:
   /** move was rejected. copy the real container to the temporary to move on
    */
   virtual void restore(int iat);
-
-  virtual void update(ParticleSet& P,
-                      ParticleSet::ParticleGradient_t& dG,
-                      ParticleSet::ParticleLaplacian_t& dL,
-                      int iat);
-
-  virtual RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
-
 
   ///evaluate log of determinant for a particle set: should not be called
   virtual RealType
