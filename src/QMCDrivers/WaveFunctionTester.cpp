@@ -46,7 +46,7 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
                                        ParticleSetPool &ptclPool, WaveFunctionPool& ppool):
   QMCDriver(w,psi,h,ppool),checkRatio("no"),checkClone("no"), checkHamPbyP("no"),
   PtclPool(ptclPool), wftricks("no"),checkEloc("no"), checkBasic("yes"), checkRatioV("no"),
-  deltaParam(0.0), toleranceParam(0.0), outputDeltaVsError(false), wbyw(false)
+  deltaParam(0.0), toleranceParam(0.0), outputDeltaVsError(false), checkSlaterDet(true)
 {
   m_param.add(checkRatio,"ratio","string");
   m_param.add(checkClone,"clone","string");
@@ -58,6 +58,7 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
   m_param.add(checkRatioV,"virtual_move","string");
   m_param.add(deltaParam,"delta","none");
   m_param.add(toleranceParam,"tolerance","none");
+  m_param.add(checkSlaterDetOption,"sd","string");
 
   deltaR.resize(w.getTotalNum());
   makeGaussRandom(deltaR);
@@ -96,6 +97,7 @@ WaveFunctionTester::run()
   app_log() << "Starting a Wavefunction tester.  Additional information in "  << fname << std::endl;
 
   put(qmcNode);
+  if (checkSlaterDetOption=="no") checkSlaterDet = false;
   if (checkRatio == "yes")
   {
     //runRatioTest();
@@ -125,11 +127,6 @@ WaveFunctionTester::run()
     runNodePlot();
   else if (checkBasic == "yes")
     runBasicTest();
-  else if (checkBasic == "wbyw")
-  {
-    wbyw = true; // skip pbyp test
-    runBasicTest();
-  }
   else if (checkRatioV == "yes")
     runRatioV();
   else
@@ -754,7 +751,6 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
   {
     tol = toleranceParam;
   } 
-  if (wbyw) return all_okay; // !!!! hack to skip pybp test
 
   for (int iorb = 0; iorb < Psi.getOrbitals().size(); iorb++)
   {
@@ -800,6 +796,8 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
       all_okay = false;
     }
 
+    if (!checkSlaterDet) continue; // skip SlaterDet check if <backflow> is present
+    // DiracDeterminantWithBackflow::evaluateLog requires a call to BackflowTransformation::evaluate in its owning SlaterDetWithBackflow to work correctly.
     SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
     if (sd)
     {
@@ -808,7 +806,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
         ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
         ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
         DiracDeterminantBase *det = sd->Dets[isd];
-        RealType logpsi2 = det->evaluateLog(W, G, L);
+        RealType logpsi2 = det->evaluateLog(W, G, L); // this won't work with backflow
         fail_log << "  Slater Determiant " << isd << " (for particles " << det->FirstIndex << " to " << det->LastIndex << ") log psi = " << logpsi2 << std::endl;
         // Should really check the condition number on the matrix determinant.
         // For now, just ignore values that too small.
@@ -1603,7 +1601,9 @@ WaveFunctionTester::put(xmlNodePtr q)
     tcur = tcur->next;
   }
 
-  return putQMCInfo(q);
+  bool success = putQMCInfo(q);
+
+  return success;
 }
 
 void WaveFunctionTester::runDerivTest()

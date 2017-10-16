@@ -139,7 +139,7 @@
       </hamiltonian>
    </qmcsystem>
    <qmc method="wftest">
-     <basic> wbyw </basic>
+     <sd> no  </sd>
      <delta> 0.0001 </delta>
    </qmc>
 </simulation>

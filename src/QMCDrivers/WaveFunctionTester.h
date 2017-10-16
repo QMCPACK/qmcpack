@@ -67,7 +67,8 @@ private:
   double deltaParam;
   double toleranceParam;
   bool outputDeltaVsError;
-  bool wbyw; // flag to only test walker-by-walker moves, i.e. skip particle-by-particle test
+  bool checkSlaterDet; // flag to perform determinant-resolved test of SlaterDet
+  std::string checkSlaterDetOption;
   FiniteDiffErrData DeltaVsError;
  
   /// Copy Constructor (disabled)
