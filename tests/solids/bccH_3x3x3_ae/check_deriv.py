@@ -8,7 +8,7 @@ def parse_deriv_block(mm,header,nmax_deriv=1024):
   0  -0.07248163314  -0.07248151057  -1.225712021e-07
   1  4.129043141  4.129043225  -8.402355167e-08
    
-   Inputs:
+   Args:
     mm (mmap): memory map of wftest output file e.g. wftest.000
     header (str): 'Deriv' or 'Hderiv'
     nmax_deriv (int): maximum number of parameters to parse
@@ -22,6 +22,7 @@ def parse_deriv_block(mm,header,nmax_deriv=1024):
   mm.seek(idx)
   mm.readline()
 
+  cols = ['iparam','numeric','analytic','diff'] # define order of keys
   data = {'iparam':[],'numeric':[],'analytic':[],'diff':[]}
   for ider in range(nmax_deriv):
     tokens = mm.readline().split()
@@ -31,7 +32,7 @@ def parse_deriv_block(mm,header,nmax_deriv=1024):
       raise RuntimeError('please increase nmax_deriv')
     iparam = int( tokens[0] )
     numeric,analytic,diff = map(float,tokens[1:])
-    for name,val in zip(data.keys(),[iparam,numeric,analytic,diff]):
+    for name,val in zip(cols,[iparam,numeric,analytic,diff]):
       data[name].append(val)
     # end for 
   # end for ider
