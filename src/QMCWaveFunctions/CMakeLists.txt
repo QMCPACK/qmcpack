@@ -23,8 +23,6 @@ SET(WFBASE_SRCS
   DiffOrbitalBase.cpp
   OrbitalBuilderBase.cpp
   BasisSetBuilder.cpp
-  ProductOrbital.cpp
-  OrbitalConstraintsBase.cpp
   SPOInfo.cpp
   SPOSetInfo.cpp
   SPOSetInputInfo.cpp

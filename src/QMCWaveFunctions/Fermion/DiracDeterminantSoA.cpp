@@ -154,18 +154,6 @@ namespace qmcplusplus
       return LogValue;
     }
 
-  DiracDeterminantSoA::RealType
-    DiracDeterminantSoA::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-    {
-      buf.put(psiM.first_address(),psiM.last_address());
-      if(BufferMode)
-        buf.put(memoryPool.data(),memoryPool.data()+memoryPool.size());
-      buf.put(LogValue);
-      buf.put(PhaseValue);
-      return LogValue;
-    }
-
-
   DiracDeterminantSoA::RealType 
     DiracDeterminantSoA::updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch)
     {

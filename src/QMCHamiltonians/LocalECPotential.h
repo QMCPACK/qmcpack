@@ -84,13 +84,6 @@ struct LocalECPotential: public QMCHamiltonianBase
 
   Return_t evaluate_orig(ParticleSet& P);
 
-  Return_t registerData(ParticleSet& P, BufferType& buffer);
-  Return_t updateBuffer(ParticleSet& P, BufferType& buffer);
-  void copyFromBuffer(ParticleSet& P, BufferType& buf);
-  void copyToBuffer(ParticleSet& P, BufferType& buf);
-  Return_t evaluatePbyP(ParticleSet& P, int iat);
-  void acceptMove(int iat);
-
   bool put(xmlNodePtr cur)
   {
     return true;
@@ -110,7 +103,6 @@ struct LocalECPotential: public QMCHamiltonianBase
    * @param z effective charge of groupID particle
    */
   void add(int groupID, RadialPotentialType* ppot, RealType z);
-  Return_t evaluateForPbyP(ParticleSet& P);
 };
 }
 #endif

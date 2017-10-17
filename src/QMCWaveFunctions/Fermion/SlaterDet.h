@@ -147,23 +147,6 @@ public:
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
   virtual
-  void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual
-  void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual
-  inline ValueType ratio(ParticleSet& P, int iat,
-                         ParticleSet::ParticleGradient_t& dG,
-                         ParticleSet::ParticleLaplacian_t& dL)
-  {
-    return Dets[getDetID(iat)]->ratio(P,iat,dG,dL);
-  }
-
-  virtual
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
     return Dets[VP.activeGroup]->evaluateRatios(VP,ratios);
@@ -214,15 +197,6 @@ public:
   }
 
   virtual
-  inline ValueType logRatio(ParticleSet& P, int iat,
-                            ParticleSet::ParticleGradient_t& dG,
-                            ParticleSet::ParticleLaplacian_t& dL)
-  {
-    ValueType r = Dets[getDetID(iat)]->ratio(P,iat,dG,dL);
-    return evaluateLogAndPhase(r,PhaseValue);
-  }
-
-  virtual
   inline void restore(int iat)
   {
     return Dets[getDetID(iat)]->restore(iat);
@@ -267,15 +241,6 @@ public:
   {
     for(int i=0; i<Dets.size(); ++i)
       Dets[i]->alternateGrad(G);
-  }
-
-  virtual
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat)
-  {
-    return Dets[getDetID(iat)]->update(P,dG,dL,iat);
   }
 
   virtual

@@ -134,9 +134,6 @@ void MultiSlaterDeterminantFast::resetTargetParticleSet(ParticleSet& P)
   }
 }
 
-//  void MultiSlaterDeterminantFast::resize(int n1, int n2)
-//  {
-//  }
 
 void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
 {
@@ -146,6 +143,7 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
   ParticleSet::ParticleGradient_t G(n),G0(n);
   ParticleSet::ParticleLaplacian_t L(n),L0(n);
   ValueType log, log0;
+  GradType G1;
 //     log = msd->evaluate(P,G,L);
   log0 = evaluate(P,G0,L0);
   /*
@@ -178,9 +176,8 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
   G=0;
   G0=0;
   L=0;
-  L0=0;
-//     log = msd->ratio(P,iat,G,L);
-  log0 = ratio(P,iat,G0,L0);
+  log0 = ratioGrad(P,iat,G1);
+  G0[iat]=G1;
   std::cout <<"Psi: " <<log <<"   " <<log0 <<"   " <<log/log0 << std::endl;
   for(int i=0; i<n; i++)
   {
@@ -188,7 +185,6 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
         <<"  x: " <<G[i][0]-G0[i][0] <<"  " <<G[i][0]   <<"\n"
         <<"  y: " <<G[i][1]-G0[i][1] <<"  " <<G[i][1] <<"\n"
         <<"  z: " <<G[i][2]-G0[i][2] <<"  " <<G[i][2] <<"\n"
-        <<"  d2: " <<L[i]-L0[i] <<"  " <<L[i] <<"\n"
         << std::endl;
   }
   std::cout << std::endl << std::endl;
@@ -370,13 +366,6 @@ OrbitalBase::ValueType MultiSlaterDeterminantFast::ratioGrad(ParticleSet& P
   return curRatio;
 }
 
-OrbitalBase::ValueType  MultiSlaterDeterminantFast::ratio(ParticleSet& P, int iat
-    , ParticleSet::ParticleGradient_t& dG,ParticleSet::ParticleLaplacian_t& dL)
-{
-  APP_ABORT("Should not be used by anyone.\n");
-  return 0;
-}
-
 OrbitalBase::ValueType 
 MultiSlaterDeterminantFast::ratio_impl(ParticleSet& P, int iat)
 {
@@ -443,18 +432,6 @@ void MultiSlaterDeterminantFast::restore(int iat)
   //Dets[DetID[iat]]->restore(iat);
   curRatio=1.0;
   AccRejTimer.stop();
-}
-
-void MultiSlaterDeterminantFast::update(ParticleSet& P
-                                        , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL
-                                        , int iat)
-{
-  APP_ABORT("REMOVE MultiSlaterDeterminantFast::update");
-}
-
-OrbitalBase::RealType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P,BufferType& buf)
-{
-  APP_ABORT("REMOVE MultiSlaterDeterminantFast::evaluateLog(P,buf)");
 }
 
 OrbitalBase::RealType MultiSlaterDeterminantFast::registerData(ParticleSet& P, BufferType& buf)

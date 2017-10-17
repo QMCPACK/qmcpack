@@ -252,7 +252,7 @@ int main(int argc, char** argv)
 
       els.G=czero;
       els.L=czero;
-      J.evaluateGL(els);
+      J.evaluateGL(els,els.G,els.L);
 
       els_aos.G=czero;
       els_aos.L=czero;

@@ -66,15 +66,6 @@ StressKinetic::evaluate(ParticleSet& P)
  return 0.0;
 }
 
-StressKinetic::Return_t
-StressKinetic::evaluatePbyP(ParticleSet& P, int active)
-{
-
-    return 0.0;
-}
-
-
-
 QMCHamiltonianBase* StressKinetic::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   return new StressKinetic(*this);

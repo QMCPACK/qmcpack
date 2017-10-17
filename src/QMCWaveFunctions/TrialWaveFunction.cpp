@@ -287,8 +287,6 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
 * that are invarient during optimizations.
 * It is expected that evaluateLog(P,false) is called later
 * and the external object adds the varying G and L and the fixed terms.
-* Additionally, dumpToBuffer and dumpFromBuffer is used to manage
-* necessary data for ratio evaluations.
 */
 void
 TrialWaveFunction::evaluateDeltaLog(ParticleSet& P
@@ -594,56 +592,6 @@ TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
 #endif
 }
 
-void   TrialWaveFunction::update(ParticleSet& P,int iat)
-{
-  //ready to collect "changes" in the gradients and laplacians by the move
-  delta_G=0.0;
-  delta_L=0.0;
-  for (int i=0, ii=ACCEPT_TIMER; i<Z.size(); i++,ii+=TIMER_SKIP)
-  {
-    myTimers[ii]->start();
-    Z[i]->update(P,delta_G,delta_L,iat);
-    myTimers[ii]->stop();
-  }
-  P.G += delta_G;
-  P.L += delta_L;
-}
-
-
-#if 0
-/** evaluate \f$ frac{\Psi({\bf R}_i^{'})}{\Psi({\bf R}_i)}\f$
- * @param P ParticleSet
- * @param iat index of the particle with a trial move
- * @param dG total differentcal gradients
- * @param dL total differential laplacians
- * @return ratio
- *
- * Each OrbitalBase object adds the differential gradients and lapacians.
- */
-TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P, int iat
-    , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL)
-{
-  //TAU_PROFILE("TrialWaveFunction::ratio","(P,iat,dG,dL)", TAU_USER);
-  dG = 0.0;
-  dL = 0.0;
-  ValueType r(1.0);
-  for (size_t i=0, ii=VGL_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
-  {
-    myTimers[ii]->start();
-    r *= Z[i]->ratio(P,iat,dG,dL);
-    myTimers[ii]->stop();
-  }
-#if defined(QMC_COMPLEX)
-  return std::exp(evaluateLogAndPhase(r,PhaseDiff));
-#else
-  if (r<0)
-    PhaseDiff=M_PI;
-  //     else PhaseDiff=0.0;
-  return r;
-#endif
-}
-#endif
-
 void TrialWaveFunction::printGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L, std::string tag)
 {
   std::ostringstream o;
@@ -819,42 +767,6 @@ void TrialWaveFunction::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf
   buf.get(LogValue);
 }
 
-/** Dump data that are required to evaluate ratios to the buffer
-* @param P active ParticleSet
-* @param buf anonymous buffer to which the data will be dumped.
-*
-* This function lets the OrbitalBase objects store the minimal data
-* that are required to evaluate the ratio, even though the components
-* are invariant during the optimizations.
-*/
-void TrialWaveFunction::dumpToBuffer(ParticleSet& P, BufferType& buf)
-{
-  buf.rewind(BufferCursor,BufferCursor_DP);
-  std::vector<OrbitalBase*>::iterator it(Z.begin());
-  std::vector<OrbitalBase*>::iterator it_end(Z.end());
-  for (; it!=it_end; ++it)
-  {
-    (*it)->dumpToBuffer(P,buf);
-  }
-}
-
-/** copy data that are required to evaluate ratios from the buffer
-* @param P active ParticleSet
-* @param buf anonymous buffer from which the data will be copied.
-*
-* This function lets the OrbitalBase objects get the minimal data
-* that are required to evaluate the ratio from the buffer.
-* Only the data registered by dumToBuffer will be available.
-*/
-void TrialWaveFunction::dumpFromBuffer(ParticleSet& P, BufferType& buf)
-{
-  buf.rewind(BufferCursor,BufferCursor_DP);
-  std::vector<OrbitalBase*>::iterator it(Z.begin());
-  std::vector<OrbitalBase*>::iterator it_end(Z.end());
-  for (; it!=it_end; ++it)
-    (*it)->dumpFromBuffer(P,buf);
-}
-
 TrialWaveFunction::RealType
 TrialWaveFunction::acceptTMove(ParticleSet& P, int iat, PooledData<RealType>& buf)
 {
@@ -880,24 +792,6 @@ TrialWaveFunction::acceptTMove(ParticleSet& P, int iat, PooledData<RealType>& bu
   buf.put(LogValue);
 
   convert(logpsi,LogValue);
-  return LogValue;
-}
-
-TrialWaveFunction::RealType
-TrialWaveFunction::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  buf.rewind(BufferCursor,BufferCursor_DP);
-  LogValue=0.0;
-  PhaseValue=0.0;
-  for (int i=0; i<Z.size(); i++)
-  {
-    LogValue += Z[i]->evaluateLog(P,buf);
-    PhaseValue += Z[i]->PhaseValue;
-  }
-
-  buf.put(PhaseValue);
-  buf.put(LogValue);
-
   return LogValue;
 }
 

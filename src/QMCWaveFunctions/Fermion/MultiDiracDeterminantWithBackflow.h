@@ -163,20 +163,6 @@ public:
 
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
-  /** dump the inverse to the buffer
-   */
-  void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    APP_ABORT("  Need to implement MSDFast::dumpToBuffer. \n");
-  }
-
-  /** copy the inverse from the buffer
-   */
-  void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    APP_ABORT("  Need to implement MSDFast::dumpFromBuffer. \n");
-  }
-
   /** move was accepted, update the real container
    */
   void acceptMove(ParticleSet& P, int iat);
@@ -184,13 +170,6 @@ public:
   /** move was rejected. copy the real container to the temporary to move on
    */
   void restore(int iat);
-
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat);
-
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
   OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
@@ -211,14 +190,6 @@ public:
   }
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
-  {
-    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
-    return 0.0;
-  }
-
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
   {
     APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
     return 0.0;
