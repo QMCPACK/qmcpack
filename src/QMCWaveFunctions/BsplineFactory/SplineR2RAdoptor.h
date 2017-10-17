@@ -407,15 +407,13 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   template<typename VV, typename GV, typename GGV>
   void assign_vgh(int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
-#if 0
-    const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
-             g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
-             g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
-    const ST symGG[6]={GGt[0],GGt[1]+GGt[3],GGt[2]+GGt[6],GGt[4],GGt[5]+GGt[7],GGt[8]};
-
-    const ST* restrict k0=myKcart.data(0);
-    const ST* restrict k1=myKcart.data(1);
-    const ST* restrict k2=myKcart.data(2);
+    const ST cone = (bc_sign &1)? -1:1;
+    const ST g00=cone*PrimLattice.G(0), g01=cone*PrimLattice.G(1), g02=cone*PrimLattice.G(2),
+             g10=cone*PrimLattice.G(3), g11=cone*PrimLattice.G(4), g12=cone*PrimLattice.G(5),
+             g20=cone*PrimLattice.G(6), g21=cone*PrimLattice.G(7), g22=cone*PrimLattice.G(8);
+    const ST gg00=cone*GGt(0), gg01=cone*GGt(1), gg02=cone*GGt(2),
+             gg10=cone*GGt(3), gg11=cone*GGt(4), gg12=cone*GGt(5),
+             gg20=cone*GGt(6), gg21=cone*GGt(7), gg22=cone*GGt(8);
 
     const ST* restrict g0=myG.data(0);
     const ST* restrict g1=myG.data(1);
@@ -427,53 +425,29 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict h12=myH.data(4);
     const ST* restrict h22=myH.data(5);
 
-    const size_t N=kPoints.size();
     const size_t nsplines=myL.size();
-
-    ST* restrict psi =psi.data(0)+first_spo; ASSUME_ALIGNED(psi);
-    ST* restrict vg_x=dpsi.data(0)+first_spo; ASSUME_ALIGNED(vg_x);
-    ST* restrict vg_y=dpsi.data(1)+first_spo; ASSUME_ALIGNED(vg_y);
-    ST* restrict vg_z=dpsi.data(2)+first_spo; ASSUME_ALIGNED(vg_z);
-    ST* restrict gg_xx=grad_grad_psi.data(0)+first_spo; ASSUME_ALIGNED(gg_xx);
-    ST* restrict gg_xy=grad_grad_psi.data(1)+first_spo; ASSUME_ALIGNED(gg_xy);
-    ST* restrict gg_xz=grad_grad_psi.data(2)+first_spo; ASSUME_ALIGNED(gg_xz);
-    ST* restrict gg_yx=grad_grad_psi.data(3)+first_spo; ASSUME_ALIGNED(gg_yx);
-    ST* restrict gg_yy=grad_grad_psi.data(4)+first_spo; ASSUME_ALIGNED(gg_yy);
-    ST* restrict gg_yz=grad_grad_psi.data(5)+first_spo; ASSUME_ALIGNED(gg_yz);
-    ST* restrict gg_zx=grad_grad_psi.data(6)+first_spo; ASSUME_ALIGNED(gg_zx);
-    ST* restrict gg_zy=grad_grad_psi.data(7)+first_spo; ASSUME_ALIGNED(gg_zy);
-    ST* restrict gg_zz=grad_grad_psi.data(8)+first_spo; ASSUME_ALIGNED(gg_zz);
-
-    const ST cone = (bc_sign &1)? -1:1;
-    #pragma simd
-    for (size_t j=0; j<N; ++j)
+    const size_t N=last_spo-first_spo;
+#pragma omp simd
+    for(size_t j=0; j<N; ++j)
     {
-      const ST kX=k0[j];
-      const ST kY=k1[j];
-      const ST kZ=k2[j];
-      const ST val=myV[j];
-      const ST kkV=mKK[j]*val;
-
-      const ST gX = g00*g0[j]+g01*g1[j]+g02*g2[j];
-      const ST gY = g10*g0[j]+g11*g1[j]+g12*g2[j];
-      const ST gZ = g20*g0[j]+g21*g1[j]+g22*g2[j];
-
-      psi[j]  =cone*val;
-      vg_x[j] =cone*gX;
-      vg_y[j] =cone*gY;
-      vg_z[j] =cone*gZ;
-      gg_xx[j]=cone*(h00[j] + kkV + kX*gX);
-      gg_xy[j]=cone*(h01[j] + kkV + kX*gY);
-      gg_xz[j]=cone*(h02[j] + kkV + kX*gZ);
-      gg_yx[j]=cone*(h01[j] + kkV + kY*gX);
-      gg_yy[j]=cone*(h11[j] + kkV + kY*gY);
-      gg_yz[j]=cone*(h12[j] + kkV + kY*gZ);
-      gg_zx[j]=cone*(h02[j] + kkV + kz*gX);
-      gg_zy[j]=cone*(h12[j] + kkV + kz*gY);
-      gg_zz[j]=cone*(h22[j] + kkV + kz*gZ);
+      size_t psiIndex=first_spo+j;
+      psi[psiIndex]=cone*myV[j];
+      dpsi[psiIndex][0]=(g00*g0[j]+g01*g1[j]+g02*g2[j]);
+      dpsi[psiIndex][1]=(g10*g0[j]+g11*g1[j]+g12*g2[j]);
+      dpsi[psiIndex][2]=(g20*g0[j]+g21*g1[j]+g22*g2[j]);
+      //grad_grad_psi[psiIndex]=dot(myH,GGt)
+      grad_grad_psi[psiIndex][0]=h00[j]*gg00+h01[j]*gg10+h02[j]*gg20;
+      grad_grad_psi[psiIndex][1]=h00[j]*gg01+h01[j]*gg11+h02[j]*gg21;
+      grad_grad_psi[psiIndex][2]=h00[j]*gg02+h01[j]*gg12+h02[j]*gg22;
+      grad_grad_psi[psiIndex][3]=h01[j]*gg00+h11[j]*gg10+h12[j]*gg20;
+      grad_grad_psi[psiIndex][4]=h01[j]*gg01+h11[j]*gg11+h12[j]*gg21;
+      grad_grad_psi[psiIndex][5]=h01[j]*gg02+h11[j]*gg12+h12[j]*gg22;
+      grad_grad_psi[psiIndex][6]=h02[j]*gg00+h12[j]*gg10+h22[j]*gg20;
+      grad_grad_psi[psiIndex][7]=h02[j]*gg01+h12[j]*gg11+h22[j]*gg21;
+      grad_grad_psi[psiIndex][8]=h02[j]*gg02+h12[j]*gg12+h22[j]*gg22;
     }
-#endif
   }
+
 
   template<typename VV, typename GV, typename GGV>
   void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
