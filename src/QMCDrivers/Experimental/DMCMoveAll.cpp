@@ -36,7 +36,7 @@ DMCMoveAll::DMCMoveAll(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHami
   m_param.add(NonLocalMove,"nonlocalmoves","string");
   //create a ScalarEstimator and add DMCEnergyEstimator
 //     if (Estimators) delete Estimators;
-  Estimators = new ScalarEstimatorManager(H);
+  Estimators = new EstimatorManagerBase(H);
   Estimators->add(new DMCEnergyEstimator,"elocal");
 }
 

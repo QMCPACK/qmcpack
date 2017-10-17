@@ -1,0 +1,134 @@
+\section{Using PySCF to generate integrals for AFQMC}
+\label{sec:pyscf}
+
+PySCF (https://github.com/sunqm/pyscf) is a collection of electronic structure programs powered by Python. It is the recommended program for the generation of input for AFQMC calculations in QMCPACK. We refer the reader to the documentaion of the code (http://sunqm.github.io/pyscf/) for a detailed description of the features and the functionality of the code. While the notes below are not meant to replace a detailed study of the PySCF documentation, these notes describe useful knowledge and tips in the use of pyscf for the generation of input for QMCPACK. 
+
+For molecular systems or periodic calculations at the Gamma point, PySCF provides a routine that generates the integral file in Molpro's FCIDUMP format, which contains all the information needed to run AFQMC with a single determinant trial wave-function. Below is an example using this routine to generate the FCIDUMP file for an 8-atom unit cell of carbon in the diamond structure with HF orbitals. For a detailed description, see PySCF's documentation.  
+\begin{lstlisting}[caption=Simple example showing how to generate FCIDUMP files with PySCF]
+import numpy
+from pyscf.tools import fcidump
+from pyscf.pbc import gto, scf, tools
+
+cell = gto.Cell()
+cell.a = '''
+  3.5668 0 0
+  0 3.5668 0
+  0 0 3.5668'''
+cell.atom = '''
+  C 0. 0. 0. 
+  C 0.8917 0.8917 0.8917
+  C 1.7834 1.7834 0. 
+  C 2.6751 2.6751 0.8917
+  C 1.7834 0. 1.7834
+  C 2.6751 0.8917 2.6751
+  C 0. 1.7834 1.7834
+  C 0.8917 2.6751 2.6751'''
+cell.basis = 'gth-szv'
+cell.pseudo = 'gth-pade'
+cell.gs = [10]*3 # for testing purposes, must be increased for converged results 
+cell.verbose = 4
+cell.build()
+
+mf = scf.RHF(cell)
+ehf = mf.kernel()
+print("HF energy (per unit cell) = %.17g" % ehf) 
+
+c = mf.mo_coeff
+h1e = reduce(numpy.dot, (c.T, mf.get_hcore(), c))
+eri = mf.with_df.ao2mo(c,compact=True)
+
+# nuclear energy + electronic ewald 
+e0 = cell.energy_nuc() + tools.pbc.madelung(cell, numpy.zeros(3))*cell.nelectron * -.5
+fcidump.from_integrals('fcidump.dat', h1e, eri, c.shape[1],cell.nelectron, ms=0, tol=1e-8, nuc=e0)
+\end{lstlisting}
+
+%hcore = mf.get_hcore(kpt=kpt)            # obtain and store core hamiltonian
+%with h5py.File(mf.chkfile) as fh5:
+%  fh5['scf/hcore'] = hcore
+%\end{lstlisting}
+
+%\item {For a calculation with k-points:
+%Run a standard pyscf calculation, e.g. a HF or DFT calculation. Make sure you preserve the chkfile and make sure you store the core hamiltonian on the chkfile. An example of how to do this for a single k-point calculation is found below.}
+%
+%\begin{lstlisting}[caption=The following is an example PySCF input file for calculations with k-points.]
+%import numpy
+%import h5py
+%from mpi4py import MPI
+%from pyscf.pbc import gto, scf
+%
+%cell = gto.Cell()
+%cell.a = '''
+%3.5668 0 0
+%0 3.5668 0
+%0 0 3.5668'''
+%cell.atom = '''C 0. 0. 0. 
+%C 0.8917 0.8917 0.8917
+%C 1.7834 1.7834 0. 
+%C 2.6751 2.6751 0.8917
+%C 1.7834 0. 1.7834
+%C 2.6751 0.8917 2.6751
+%C 0. 1.7834 1.7834
+%C 0.8917 2.6751 2.6751'''
+%cell.basis = 'gth-szv'
+%cell.pseudo = 'gth-pade'
+%cell.gs = [10]*3 # 10 grids on postive x direction, => 21^3 grids in total
+%cell.verbose = 4
+%cell.build()
+%
+%nk = [2,2,2]
+%kpts = cell.make_kpts(nk) 
+%
+%mf = scf.KRHF(cell,kpts,exxdiv=0)
+%mf.chkfile = "scf.dump"                         # store checkpoint file in scf.dump
+%ehf = mf.kernel()
+%print("HF energy (per unit cell) = %.17g" % ehf)
+%
+%hcore = mf.get_hcore(kpts=kpts)          # obtain and store core hamiltonian
+%fock = (hcore + mf.get_veff(kpts=kpts))  # store fock matrix (required with orthoAO=True)
+%with h5py.File(mf.chkfile) as fh5:
+%  fh5['scf/hcore'] = hcore
+%  fh5['scf/fock'] = fock
+%\end{lstlisting}
+%\end{itemize}
+%
+%Once the checkpoint file has been created, it is now possible to generate the integral file. The recommended approach is:
+%
+%\begin{lstlisting}[caption=The following is an example input file for calculating the integrals.]
+%from mpi4py import MPI
+%from qmctools import integrals_from_chkfile
+%
+%comm = MPI.COMM_WORLD
+%rank = comm.Get_rank()
+%nproc = comm.Get_size()
+%
+%integrals_from_chkfile.eri_to_h5("fcidump", rank, nproc, "scf.dump")    
+%
+%comm.Barrier()
+%
+%if rank==0:
+%    integrals_from_chkfile.combine_eri_h5("fcidump", nproc)
+%\end{lstlisting}
+%
+%It is also possible to generated the Cholesky decomposed integrals in pyscf directly. This is typically faster and more appropriate. 
+%
+%For calculations with kpoints (those generated with K...), use integrals\_from\_chkfile.eri\_to\_h5\_kpts(...).
+%Additional arguments to eri\_to\_h5 are:
+%
+%\begin{itemize}
+%\item \textbf{cholesky}. Determines whether 2-electron integrals or their cholesky factorization is calculated.
+%  Default: False
+%\item \textbf{orthoAO}. If True, generates the integrals in the orthogonalized AO basis. If False, generates the integrals in the MO basis found on the checkpoint file. For UHF calculations, only orthoAO=True is allowed. If set to False, the fock matrix must be stored in the scf dump file.
+%  Default: False
+%\item \textbf{LINDEP\_CUTOFF}.  Cutoff used to define linearly dependent basis functions.
+%  Default: 1e-9
+%\item \textbf{gtol}. Cutoff applied during writing for 2-electron integrals. If cholesky=True, then this is the cutoff used in the iterative cholesky factorization. In this case, the resulting factorized hamiltonian will have a residual error smaller than the requested cutoff.
+%  Default: 1e-6
+%\item \textbf{wfnName}. Name of the file with the wavefuntion. This is only generated  when orthoAO=True.
+%  Default: ``wfn.dat''
+%\item \textbf{wfnPHF}. Name of file with initial guess for phfmol code.
+%  Default: None (no file is generated)
+%\item \textbf{MaxIntgs}. Maximum number of integrals  (or terms in cholesky matrix) per block in the hdf5 file. This controls the size of the hdf5 data sets.
+%  Default: 2000000
+%\item \textbf{maxvecs}. Represents the maximum number of Cholesky vectors allowed. The actual maximum number of cholesky vectors in the calculation is set to maxvecsnmo. So a value of 10 leads to an actual cutoff in the number of vectors of 10*nmo, where nmo is the total number of molecular orbitals in the calculation. The calculation will stop at the requested number of vectors even if the tolerance is not reached.
+%  Default: 20
+%\end{itemize}

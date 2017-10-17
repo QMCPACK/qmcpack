@@ -9,6 +9,7 @@
 
 #include "OhmmsData/libxmldefs.h"
 #include "io/hdf_archive.h"
+#include "Utilities/RandomGenerator.h"
 
 #include"AFQMC/config.h"
 #include <Message/MPIObjectBase.h>
@@ -28,8 +29,9 @@ class WalkerHandlerBase: public MPIObjectBase, public AFQMCInfo
   public:
 
   /// constructor
-  WalkerHandlerBase(Communicate* c, std::string type=""): MPIObjectBase(c),name("")
-           ,load_balance_alg("all"),core_rank(0),ncores_per_TG(1),walkerType(type)
+  WalkerHandlerBase(Communicate* c, RandomGenerator_t* r, std::string type=""): MPIObjectBase(c),rng(r),name("")
+           ,load_balance_alg("async"),core_rank(0),ncores_per_TG(1),walkerType(type)
+           ,pop_control_type("pair"),hdf_block_size(1000000000)
   { }
 
   /// destructor
@@ -47,7 +49,7 @@ class WalkerHandlerBase: public MPIObjectBase, public AFQMCInfo
   virtual bool parse(xmlNodePtr cur)=0; 
 
   // performs setup
-  virtual bool setup(int a,int b,int c,MPI_Comm, MPI_Comm comm, MPI_Comm,myTimer*)=0;
+  virtual bool setup(int a,int b,int c, MPI_Comm, MPI_Comm, MPI_Comm,myTimer*)=0;
 
   // cleans state of object. 
   //   -erases allocated memory 
@@ -66,16 +68,18 @@ class WalkerHandlerBase: public MPIObjectBase, public AFQMCInfo
   virtual RealType GlobalWeight()=0; 
 
   // load balancing algorithm
-  virtual void loadBalance()=0; 
+  virtual void loadBalance(MPI_Comm comm)=0; 
 
   // population control algorithm
-  virtual void popControl()=0; 
+  virtual void popControl(MPI_Comm comm, std::vector<ComplexType>& curData)=0; 
 
   virtual void setHF(const ComplexMatrix& HF)=0;
 
   virtual void Orthogonalize(int i)=0; 
 
   virtual void Orthogonalize()=0; 
+
+  virtual void benchmark(std::string&,int,int,int)=0;
 
   virtual ComplexType* getSM(int n)=0; 
   virtual ComplexType getWeight(int n)=0; 
@@ -119,14 +123,24 @@ class WalkerHandlerBase: public MPIObjectBase, public AFQMCInfo
   // type of walker
   std::string walkerType;
 
-  int nwalk_global, nwalk_min, nwalk_max;
+  RandomGenerator_t* rng;
+
+  int nwalk_global, nwalk_min, nwalk_max, targetN;
   std::vector<int> nwalk_counts_old, nwalk_counts_new;
 
   // type of load balancing
   std::string load_balance_alg;
 
+  std::string pop_control_type;
+
+  int hdf_block_size;
+
   int core_rank;
   int ncores_per_TG; 
+
+  // temporary data for testing/debugging/printing
+  double max_comm_time=0;
+  int max_nexch=0, max_nbranch=0; 
 
 };
 }

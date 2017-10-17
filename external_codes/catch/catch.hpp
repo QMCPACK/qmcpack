@@ -10443,5 +10443,7 @@ int main (int argc, char * const argv[]) {
 
 using Catch::Detail::Approx;
 
+#include "complex_approx.hpp"
+
 #endif // TWOBLUECUBES_SINGLE_INCLUDE_CATCH_HPP_INCLUDED
 

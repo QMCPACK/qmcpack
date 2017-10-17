@@ -68,17 +68,10 @@ public:
 
   GradType evalGrad(ParticleSet& P, int iat);
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  ValueType ratio(ParticleSet& P, int iat
-                  , ParticleSet::ParticleGradient_t& dG,ParticleSet::ParticleLaplacian_t& dL);
-
   ValueType ratio(ParticleSet& P, int iat);
   void acceptMove(ParticleSet& P, int iat);
   void restore(int iat);
 
-  void update(ParticleSet& P
-              , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL
-              , int iat);
-  RealType evaluateLog(ParticleSet& P,BufferType& buf);
   RealType registerData(ParticleSet& P, BufferType& buf);
   RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, BufferType& buf);

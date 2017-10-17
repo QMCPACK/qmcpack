@@ -37,6 +37,8 @@ bool GeneralSingleDeterminant::parse(xmlNodePtr cur)
     if(cur == NULL)
       return false;
 
+    app_log()<<"\n\n --------------- Parsing GenSD input ------------------ \n\n";
+
     xmlNodePtr curRoot=cur;
    
     std::string type("");
@@ -1068,7 +1070,7 @@ void GeneralSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
     
   }
 
-  void GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMSpMat& vn, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n)
+  void GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMSpMat& vn, SPComplexSMSpMat& vnT, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n)
   {
 
 #ifdef AFQMC_TIMER
@@ -1081,14 +1083,17 @@ void GeneralSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
      GF = mixed_density_matrix.data();
     }
 
-    SPValueType one = SPValueType(1.0);
-    SPValueType zero = SPValueType(0.0);
-    if(closed_shell) one = SPValueType(2.0);
     if(transposed) {
-      SparseMatrixOperators::product_SpMatV(vn.rows(),vn.cols(),one,vn.values(),vn.column_data(),vn.row_index(),GF,zero,v.data());
+      SPComplexType one = SPComplexType(1.0);
+      const SPComplexType zero = SPComplexType(0.0);
+      if(closed_shell) one = SPComplexType(2.0);
+      SparseMatrixOperators::product_SpMatV(vnT.rows(),vnT.cols(),one,vnT.values(),vnT.column_data(),vnT.row_index(),GF,zero,v.data());
       if(addBetaBeta && ! closed_shell)
-        SparseMatrixOperators::product_SpMatV(vn.rows(),vn.cols(),one,vn.values(),vn.column_data(),vn.row_index(),GF+NMO*NMO,one,v.data());
+        SparseMatrixOperators::product_SpMatV(vnT.rows(),vnT.cols(),one,vnT.values(),vnT.column_data(),vnT.row_index(),GF+NMO*NMO,one,v.data());
     } else {
+      SPValueType one = SPValueType(1.0);
+      SPValueType zero = SPValueType(0.0);
+      if(closed_shell) one = SPValueType(2.0);
       SparseMatrixOperators::product_SpMatTV(vn.rows(),vn.cols(),one,vn.values(),vn.column_data(),vn.row_index(),GF,zero,v.data());
       if(addBetaBeta && !closed_shell)
         SparseMatrixOperators::product_SpMatTV(vn.rows(),vn.cols(),one,vn.values(),vn.column_data(),vn.row_index(),GF+NMO*NMO,one,v.data());
@@ -1100,7 +1105,7 @@ void GeneralSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
  
   }
 
-  void GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMVector& vn, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n)
+  void GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMVector& vn, SPComplexSMVector& vnT, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n)
   {
 
 #ifdef AFQMC_TIMER
@@ -1113,14 +1118,17 @@ void GeneralSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
      GF = mixed_density_matrix.data();
     }
 
-    SPValueType one = SPValueType(1.0);
-    SPValueType zero = SPValueType(0.0);
-    if(closed_shell) one = SPValueType(2.0);
     if(transposed) {
-      DenseMatrixOperators::product_Ax(vn.rows(),vn.cols(),one,vn.values(),vn.cols(),GF,zero,v.data());
+      SPComplexType one = SPComplexType(1.0);
+      const SPComplexType zero = SPComplexType(0.0);
+      if(closed_shell) one = SPComplexType(2.0);
+      DenseMatrixOperators::product_Ax(vnT.rows(),vnT.cols(),one,vnT.values(),vnT.cols(),GF,zero,v.data());
       if(addBetaBeta && !closed_shell)
-        DenseMatrixOperators::product_Ax(vn.rows(),vn.cols(),one,vn.values(),vn.cols(),GF+NMO*NMO,one,v.data());
+        DenseMatrixOperators::product_Ax(vnT.rows(),vnT.cols(),one,vnT.values(),vnT.cols(),GF+NMO*NMO,one,v.data());
     } else {
+      SPValueType one = SPValueType(1.0);
+      SPValueType zero = SPValueType(0.0);
+      if(closed_shell) one = SPValueType(2.0);
       DenseMatrixOperators::product_Atx(vn.rows(),vn.cols(),one,vn.values(),vn.cols(),GF,zero,v.data());
       if(addBetaBeta && !closed_shell)
         DenseMatrixOperators::product_Atx(vn.rows(),vn.cols(),one,vn.values(),vn.cols(),GF+NMO*NMO,one,v.data());
@@ -1132,12 +1140,12 @@ void GeneralSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
 
   }
 
-  void GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int ik0, int ikN, int pik0, SPValueSMSpMat& vn, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n)
+  void GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int ik0, int ikN, SPValueSMSpMat& vn, SPComplexSMSpMat& vnT, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n)
   {
     APP_ABORT(" Error: Routine not implemented: GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators. \n\n\n");
   }
 
-  void GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int ik0, int ikN, int pik0, SPValueSMVector& vn, std::vector<SPComplexType>& v, int walkerBlock, int nW , bool transposed, bool needsG, const int n)
+  void GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int ik0, int ikN, SPValueSMVector& vn, SPComplexSMVector& vnT, std::vector<SPComplexType>& v, int walkerBlock, int nW , bool transposed, bool needsG, const int n)
   {
     APP_ABORT(" Error: Routine not implemented: GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators. \n\n\n");
   }

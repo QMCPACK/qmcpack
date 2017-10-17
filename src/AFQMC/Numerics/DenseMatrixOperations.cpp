@@ -389,19 +389,19 @@ void GeneralizedGramSchmidt(std::complex<double>* A, int LDA, int nR, int nC)
   std::vector<std::complex<double> > TAU(K),WORK(1);
   int info,lwork=-1; 
 
-  zgeqrf( &nR, &nC, AT.data(), &nR, TAU.data(), WORK.data(), &lwork, &info);
+  zgeqrf( nR, nC, AT.data(), nR, TAU.data(), WORK.data(), lwork, info);
 
   lwork = int(WORK[0].real());
   WORK.resize(lwork);
 
-  zgeqrf( &nR, &nC, AT.data(), &nR, TAU.data(), WORK.data(), &lwork, &info);
+  zgeqrf( nR, nC, AT.data(), nR, TAU.data(), WORK.data(), lwork, info);
 
   if(info != 0) {
     app_error()<<" Problems with QR decomposition; INFO: " <<info <<std::endl;
     APP_ABORT("Problems with QR decomposition. \n");
   }
   
-  zungqr( &nR, &nC, &K, AT.data(), &nR, TAU.data(), WORK.data(), &lwork, &info);
+  zungqr( nR, nC, K, AT.data(), nR, TAU.data(), WORK.data(), lwork, info);
 
   if(info != 0) {
     app_error()<<" Problems with QR decomposition (zungqr); INFO: " <<info <<std::endl;

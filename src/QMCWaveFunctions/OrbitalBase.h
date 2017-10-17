@@ -329,19 +329,6 @@ struct OrbitalBase: public QMCTraits
 
   virtual void alternateGrad(ParticleSet::ParticleGradient_t& G) {}
 
-  /** evaluate the ratio of the new to old orbital value
-   *@param P the active ParticleSet
-   *@param iat the index of a particle
-   *@param dG the differential gradient
-   *@param dL the differential laplacian
-   *@return \f$ \psi( \{ {\bf R}^{'} \} )/ \psi( \{ {\bf R}^{'} \}) \f$
-   *
-   *Paired with acceptMove(ParticleSet& P, int iat).
-   */
-  virtual ValueType ratio(ParticleSet& P, int iat,
-                          ParticleSet::ParticleGradient_t& dG,
-                          ParticleSet::ParticleLaplacian_t& dL) = 0;
-
   /** a move for iat-th particle is accepted. Update the content for the next moves
    * @param P target ParticleSet
    * @param iat index of the particle whose new position was proposed
@@ -366,25 +353,6 @@ struct OrbitalBase: public QMCTraits
   {
     return 1.0;
   };
-
-  /** update the gradient and laplacian values by accepting a move
-   *@param P the active ParticleSet
-   *@param dG the differential gradients
-   *@param dL the differential laplacians
-   *@param iat the index of a particle
-   *
-   *Specialized for particle-by-particle move. Each Hamiltonian
-   *updates its data for next update and evaluates differential gradients
-   *and laplacians.
-   */
-  virtual void update(ParticleSet& P,
-                      ParticleSet::ParticleGradient_t& dG,
-                      ParticleSet::ParticleLaplacian_t& dL,
-                      int iat) =0;
-
-
-  /** equivalent to evaluateLog(P,G,L) with write-back function */
-  virtual RealType evaluateLog(ParticleSet& P,BufferType& buf)=0;
 
   /** add temporary data reserved for particle-by-particle move.
    *
@@ -416,18 +384,6 @@ struct OrbitalBase: public QMCTraits
 
   /** copy the internal data saved for optimization.*/
   virtual void copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf) {};
-
-  /** dump the internal data to buf for optimizations
-   *
-   * Implments the default function that does nothing
-   */
-  virtual void dumpToBuffer(ParticleSet& P, BufferType& buf) {}
-
-  /** copy the internal data from buf for optimizations
-   *
-   * Implments the default function that does nothing
-   */
-  virtual void dumpFromBuffer(ParticleSet& P, BufferType& buf) {}
 
   /** return a proxy orbital of itself
    */

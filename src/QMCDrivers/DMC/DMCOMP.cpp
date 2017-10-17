@@ -27,6 +27,7 @@
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
 #include "Utilities/Timer.h"
+#include "Utilities/RunTimeManager.h"
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Utilities/ProgressReportEngine.h"
 #include <qmc_common.h>
@@ -85,7 +86,7 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
     delete Movers[ip];
     delete estimatorClones[ip];
     delete branchClones[ip];
-    estimatorClones[ip]= new EstimatorManager(*Estimators);
+    estimatorClones[ip]= new EstimatorManagerBase(*Estimators);
     estimatorClones[ip]->setCollectionMode(false);
     branchClones[ip] = new BranchEngineType(*branchEngine);
 #if !defined(REMOVE_TRACEMANAGER)
@@ -159,7 +160,7 @@ void DMCOMP::resetUpdateEngines()
     #pragma omp parallel for
     for(int ip=0; ip<NumThreads; ++ip)
     {
-      estimatorClones[ip]= new EstimatorManager(*Estimators);
+      estimatorClones[ip]= new EstimatorManagerBase(*Estimators);
       estimatorClones[ip]->setCollectionMode(false);
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
@@ -234,6 +235,7 @@ bool DMCOMP::run()
 {
 
   Profile prof("DMC","run",QMC_DMC_0_EVENT);
+  LoopTimer dmc_loop;
 
   bool variablePop = (Reconfiguration == "no");
   resetUpdateEngines();
@@ -245,14 +247,16 @@ bool DMCOMP::run()
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startRun(nBlocks,traceClones);
 #endif
-  Timer myclock;
   IndexType block = 0;
   IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
   int sample = 0;
 
+  bool enough_time_for_next_iteration = true;
+
   prof.push("dmc_loop");
   do // block
   {
+    dmc_loop.start();
     Estimators->startBlock(nSteps);
     for(int ip=0; ip<NumThreads; ip++)
       Movers[ip]->startBlock(nSteps);
@@ -327,7 +331,21 @@ bool DMCOMP::run()
         *(RandomNumberControl::Children[ip])=*(Rng[ip]);
     }
     recordBlock(block);
-  } while(block<nBlocks && myclock.elapsed()<MaxCPUSecs);
+    dmc_loop.stop();
+    double loop_time = dmc_loop.get_time_per_iteration();
+    double elapsed = RunTimeManager.elapsed();
+    double remaining = MaxCPUSecs - elapsed;
+    double runtime_safety_padding = 10.0;  // 10 seconds - enough to shut down?
+    double loop_margin = 1.10;             // 10% margin on average loop time?
+    if (loop_margin*loop_time + runtime_safety_padding  > remaining) enough_time_for_next_iteration = false;
+    if (!enough_time_for_next_iteration)
+    {
+      app_log() << "Time limit reached for DMC, stopping after block " << block-1 << std::endl;
+      app_log() << "  Iteration time per DMC block (seconds) = " << loop_time << std::endl;
+      app_log() << "  Elapsed time (seconds)       = " << elapsed << std::endl;
+      app_log() << "  Remaining time (seconds)      = " << remaining << std::endl;
+    }
+  } while(block<nBlocks && enough_time_for_next_iteration);
 
   prof.pop(); //close loop
 

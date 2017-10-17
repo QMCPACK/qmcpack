@@ -36,7 +36,7 @@ class SparseGeneralHamiltonian: public HamiltonianBase
 
   public:
  
-  SparseGeneralHamiltonian(Communicate *c):HamiltonianBase(c),orderStates(false),cutoff1bar(1e-8),cutoff_cholesky(1e-6),has_full_hamiltonian_for_matrix_elements(false),NMAX(-1),ascii_write_file(""),hdf_write_file(""),printEig(false),factorizedHamiltonian(false),v2full_transposed(false),test_2eint(false),zero_bad_diag_2eints(false),test_algo(true),has_hamiltonian_for_selCI(false),rotation(""),hdf_write_type("default"),inplace(true)
+  SparseGeneralHamiltonian(Communicate *c):HamiltonianBase(c),orderStates(false),cutoff1bar(1e-8),cutoff_cholesky(1e-6),has_full_hamiltonian_for_matrix_elements(false),NMAX(-1),ascii_write_file(""),hdf_write_file(""),printEig(false),factorizedHamiltonian(false),v2full_transposed(false),test_2eint(false),zero_bad_diag_2eints(false),test_algo(true),has_hamiltonian_for_selCI(false),rotation(""),hdf_write_type("default"),inplace(true),skip_V2(false),useSpMSpM(false)
   {
   }
 
@@ -44,11 +44,11 @@ class SparseGeneralHamiltonian: public HamiltonianBase
 
   // if ValueType=RealType and sparse=false, Dvn becomes the complex component of the propagator 
   // eventually this will also be true for the sparse format
-  void calculateHSPotentials(const RealType cut, const RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool paral); 
+  void calculateHSPotentials(const RealType cut, const RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, afqmc::TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool paral); 
 
-  void calculateHSPotentials_Diagonalization(const RealType cut, const RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool paral);
+  void calculateHSPotentials_Diagonalization(const RealType cut, const RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, afqmc::TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool paral);
 
-  void calculateHSPotentials_FactorizedHam(const RealType cut, const RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool paral);
+  void calculateHSPotentials_FactorizedHam(const RealType cut, const RealType dt, ComplexMatrix& vn0, SPValueSMSpMat& Spvn, SPValueSMVector& Dvn, afqmc::TaskGroup& TGprop, std::vector<int>& nvec_per_node, bool sparse, bool paral);
 
   void calculateOneBodyPropagator(const RealType cut, const RealType dt, ComplexMatrix& Hadd, std::vector<s2D<ComplexType> >& Pkin); 
   
@@ -165,10 +165,10 @@ class SparseGeneralHamiltonian: public HamiltonianBase
         app_error()<<" Error: Using uncompressed V2_fact in: SparseGeneralHamiltonian::H(I,J,K,L). " <<std::endl;
         APP_ABORT(" Error: Using uncompressed V2_fact in: SparseGeneralHamiltonian::H(I,J,K,L).");
       }
-      int* cols = V2_fact.column_data();
-      int* rows = V2_fact.row_data();
-      int* indx = V2_fact.row_index();
-      ValueType* vals = V2_fact.values();
+      SPValueSMSpMat::intPtr cols = V2_fact.column_data();
+      SPValueSMSpMat::intPtr rows = V2_fact.row_data();
+      SPValueSMSpMat::intPtr indx = V2_fact.row_index();
+      SPValueSMSpMat::pointer vals = V2_fact.values();
 
       int ik = I*NMO+Index2Col(K); 
       int lj = L*NMO+Index2Col(J); 
@@ -233,10 +233,10 @@ class SparseGeneralHamiltonian: public HamiltonianBase
         app_error()<<" Error: Using uncompressed V2_fact in: SparseGeneralHamiltonian::H(I,J,K,L,NT). " <<std::endl;
         APP_ABORT(" Error: Using uncompressed V2_fact in: SparseGeneralHamiltonian::H(I,J,K,L,NT).");
       }
-      int* cols = V2_fact.column_data();
-      int* rows = V2_fact.row_data();
-      int* indx = V2_fact.row_index();
-      ValueType* vals = V2_fact.values();
+      SPValueSMSpMat::intPtr cols = V2_fact.column_data();
+      SPValueSMSpMat::intPtr rows = V2_fact.row_data();
+      SPValueSMSpMat::intPtr indx = V2_fact.row_index();
+      SPValueSMSpMat::pointer vals = V2_fact.values();
 
       int ik = I*NT+K; 
       int lj = L*NT+J; 
@@ -295,7 +295,6 @@ if(cjgt)
 
   void get_selCI_excitations(OrbitalType I, OrbitalType J, int spinSector, RealType cutoff, OrbitalType* occs, std::vector<OrbitalType>& KLs); 
 
-
   protected:
 
   // name of restart file
@@ -312,6 +311,9 @@ if(cjgt)
   bool zero_bad_diag_2eints;
   bool test_algo; 
   bool inplace;  
+  bool skip_V2;
+
+  bool useSpMSpM;
 
   // stores one body integrals in s2D format 
   std::vector<s2D<ValueType> > H1;
@@ -335,7 +337,7 @@ if(cjgt)
   // similar to Spvn, without -dt/2 factor and without L+L* / L-L* rotation 
 // NOTE: Make this identical to Spvn and return pointer to this object to propagator
 // this avoids having 2 copied when reading in 3Index form 
-  ValueSMSpMat V2_fact; 
+  SPValueSMSpMat V2_fact; 
 
   std::vector<int> cholesky_residuals;
 

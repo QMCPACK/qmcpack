@@ -12,8 +12,8 @@ ENDIF(COMMAND cmake_policy)
 # Version 
 ######################################################################
 SET(QMCPACK_VERSION_MAJOR 3)
-SET(QMCPACK_VERSION_MINOR 1)
-SET(QMCPACK_VERSION_PATCH 1)
+SET(QMCPACK_VERSION_MINOR 2)
+SET(QMCPACK_VERSION_PATCH 0)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
 ######################################################################
@@ -861,6 +861,7 @@ SUBDIRS(src)
 IF(NOT(QMC_BUILD_LEVEL GREATER 4))
   SUBDIRS(tests)
   SUBDIRS(examples)
+  SUBDIRS(nexus/examples)
 ENDIF()
 
 #ADD_CUSTOM_TARGET(print_settings ALL

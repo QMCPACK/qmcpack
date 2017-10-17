@@ -299,47 +299,6 @@ struct BareKineticEnergy: public QMCHamiltonianBase
     return Value;
   }
 
-
-  inline Return_t
-  registerData(ParticleSet& P, BufferType& buffer)
-  {
-    Gtmp.resize(P.getTotalNum());
-    Ltmp.resize(P.getTotalNum());
-    Value = Dot(P.G,P.G) + Sum(P.L);
-    NewValue=Value*=-OneOver2M;
-    buffer.add(Value);
-    return Value;
-  }
-
-  inline Return_t
-  updateBuffer(ParticleSet& P, BufferType& buffer)
-  {
-    Value = Dot(P.G,P.G) + Sum(P.L);
-    NewValue=Value*=-OneOver2M;
-    buffer.put(Value);
-    return Value;
-  }
-
-  inline void copyFromBuffer(ParticleSet& P, BufferType& buffer)
-  {
-    buffer.get(Value);
-  }
-
-  inline void copyToBuffer(ParticleSet& P, BufferType& buffer)
-  {
-    buffer.put(Value);
-  }
-
-  inline Return_t
-  evaluatePbyP(ParticleSet& P, int active)
-  {
-    Gtmp=P.G+P.dG;
-    Ltmp=P.L+P.dL;
-    NewValue = Dot(Gtmp,Gtmp) + Sum(Ltmp);
-    return NewValue*=-OneOver2M;
-  }
-
-
   /** implements the virtual function.
    *
    * Nothing is done but should check the mass

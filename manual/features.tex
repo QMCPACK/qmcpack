@@ -92,4 +92,18 @@ SoA code path currently supports:
   \item Semilocal (nonlocal and local) pseudopotentials, Coulomb interaction (electron-electron, electron-ion) and MPC.
 \end{itemize}
 
+\subsection{Auxiliary-Field Quantum Monte Carlo}
 
+The orbital-space Auxiliary-Field Quantum Monte Carlo (AFMQC) method is now available in QMCPACK. The main input for the code are the matrix elements of the Hamiltonian in a given single particle basis set, which must be produced from a mean-field calculations like Hartree-Fock or Density Functional Theory. The code is under active development and many features are currently in development. Check the latest version of QMCPACK for an up-to-date description of the available features. A partial list of the current capabilities of the code follows. For a detailed description of the currently available features, see chapter \ref{chap:afqmc}.
+ 
+\begin{itemize}
+    \item Phaseless AFQMC algorithm of Zhang, et. al. (S. Zhang, H. Krakauer, "Quantum Monte Carlo Method using Phase-Free Random Walks with Slater Determinants", PRL 90, 136401 (2003)).
+    \item "Hybrid" and "local energy" propagation schemes.
+    \item Hamiltonian matrix elements from 1) Molpro's FCIDUMP format (which can be produced by Molpro, PySCF and VASP) and from 2) internal HDF5 format produced by PySCF (see AFQMC section below).
+    \item AFQMC calculations with RHF (closed shell doubly occupied), ROHF (open shell doubly occupied) and UHF (spin polarized broken symmetry) symmetry. 
+    \item Single and Multi-determinant trial wave-functions. Multi-determinant expansions with either orthogonal or non-orthogonal determinants allowed. 
+    \item Fast update scheme for orthogonal multi-determinant expansions.
+    \item Distributed propagation algorithms for large systems. Enables calculations where the data structures do not fit on a single node.
+    \item Complex implementation for PBC calculations with complex integrals.
+    \item Sparse representation of large matrices for reduced memory usage.
+\end{itemize}
