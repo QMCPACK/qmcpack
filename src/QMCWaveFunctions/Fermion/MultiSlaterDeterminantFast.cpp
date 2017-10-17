@@ -319,11 +319,11 @@ MultiSlaterDeterminantFast::evalGrad_impl(ParticleSet& P, int iat, bool newpos, 
     Dets[spin0]->evaluateGrads(P,iat);
 
   const GradMatrix_t& grads = (newpos)? Dets[spin0]->new_grads:Dets[spin0]->grads;
-  const auto restrict detValues0 = (newpos)? Dets[spin0]->new_detValues.data(): Dets[spin0]->detValues.data(); 
-  const auto restrict detValues1 = Dets[spin1]->detValues.data();
-  const auto restrict det0=(upspin)? C2node_up->data():C2node_dn->data();
-  const auto restrict det1=(upspin)? C2node_dn->data():C2node_up->data();
-  const auto restrict cptr=C->data();
+  const ValueType *restrict detValues0 = (newpos)? Dets[spin0]->new_detValues.data(): Dets[spin0]->detValues.data(); 
+  const ValueType *restrict detValues1 = Dets[spin1]->detValues.data();
+  const size_t *restrict det0=(upspin)? C2node_up->data():C2node_dn->data();
+  const size_t *restrict det1=(upspin)? C2node_dn->data():C2node_up->data();
+  const RealType *restrict cptr=C->data();
   const size_t nc=C->size();
   const size_t noffset=Dets[spin0]->FirstIndex;
   ValueType psi=ValueType(0);
@@ -386,11 +386,11 @@ MultiSlaterDeterminantFast::ratio_impl(ParticleSet& P, int iat)
 
   Dets[spin0]->evaluateDetsForPtclMove(P,iat);
 
-  const auto restrict detValues0 = Dets[spin0]->new_detValues.data(); //always new
-  const auto restrict detValues1 = Dets[spin1]->detValues.data();
-  const auto restrict det0=(upspin)? C2node_up->data():C2node_dn->data();
-  const auto restrict det1=(upspin)? C2node_dn->data():C2node_up->data();
-  const auto restrict cptr=C->data();
+  const ValueType *restrict detValues0 = Dets[spin0]->new_detValues.data(); //always new
+  const ValueType *restrict detValues1 = Dets[spin1]->detValues.data();
+  const size_t *restrict det0=(upspin)? C2node_up->data():C2node_dn->data();
+  const size_t *restrict det1=(upspin)? C2node_dn->data():C2node_up->data();
+  const RealType *restrict cptr=C->data();
   const size_t nc=C->size();
 
   ValueType psi=0;
@@ -546,7 +546,7 @@ void MultiSlaterDeterminantFast::resetParameters(const opt_variables_type& activ
   {
     if(usingCSF)
     {
-      auto restrict CSFcoeff_p=CSFcoeff->data();
+      RealType *restrict CSFcoeff_p=CSFcoeff->data();
       for(int i=0; i<CSFcoeff->size()-1; i++)
       {
         int loc=myVars->where(i);
@@ -556,8 +556,8 @@ void MultiSlaterDeterminantFast::resetParameters(const opt_variables_type& activ
         }
       }
       int cnt=0;
-      auto restrict C_p=C->data();
-      const auto restrict CSFexpansion_p=CSFexpansion->data();
+      RealType *restrict C_p=C->data();
+      const RealType *restrict CSFexpansion_p=CSFexpansion->data();
       for(int i=0; i<DetsPerCSF->size(); i++)
       {
         for(int k=0; k<(*DetsPerCSF)[i]; k++)
@@ -570,7 +570,7 @@ void MultiSlaterDeterminantFast::resetParameters(const opt_variables_type& activ
     }
     else
     {
-      auto restrict C_p=C->data();
+      RealType *restrict C_p=C->data();
       for(int i=0; i<C->size()-1; i++)
       {
         int loc=myVars->where(i);
@@ -653,7 +653,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
         it++;
       }
 
-      const auto restrict C_p=C->data();
+      const RealType *restrict C_p=C->data();
       for(size_t i=0; i<C->size(); i++)
       {
         size_t upC = (*C2node_up)[i];
@@ -686,7 +686,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
           continue;
         }
         ValueType cdet=0.0,q0=0.0,v1=0.0,v2=0.0;
-        const auto restrict CSFexpansion_p=CSFexpansion->data();
+        const RealType *restrict CSFexpansion_p=CSFexpansion->data();
         for(int k=0; k<(*DetsPerCSF)[ip]; k++)
         {
           size_t upC = (*C2node_up)[cnt];
@@ -756,7 +756,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
           (*it) += *ptr0;
         it++;
       }
-      const auto restrict C_p=C->data();
+      const RealType *restrict C_p=C->data();
       for(size_t i=0; i<C->size(); i++)
       {
         size_t upC = (*C2node_up)[i];
