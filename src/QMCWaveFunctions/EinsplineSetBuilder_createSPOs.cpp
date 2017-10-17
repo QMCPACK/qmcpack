@@ -143,6 +143,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string truncate("no");
   std::string hybrid_rep("no");
   std::string use_einspline_set_extended("no"); // use old spline library for high-order derivatives, e.g. needed for backflow optimization
+  std::string use_complex_orb("no"); // use complex orbitals for correct wf parameter derivatives in backflow
 #if defined(QMC_CUDA)
   std::string useGPU="yes";
 #else
@@ -169,6 +170,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add (truncate,   "truncate");
     a.add (BufferLayer, "buffer");
     a.add (use_einspline_set_extended,"use_old_spline");
+    a.add (use_complex_orb,"use_complex_orb");
     a.add (myName, "tag");
 #if defined(QMC_CUDA)
     a.add (gpu::MaxGPUSpineSizeMB, "Spline_Size_Limit_MB");
@@ -279,6 +281,34 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   // set the internal parameters
   if (spinSet == 0) set_metadata(numOrbs,TwistNum_inp);
+  if (use_complex_orb == "yes") UseRealOrbitals = false; // override given user input
+
+  // look for <backflow>, would be a lot easier with xpath, but I cannot get it to work
+  bool has_backflow = false;
+
+  xmlNodePtr wf  = XMLRoot->parent; // <wavefuntion>
+  xmlNodePtr kid = wf->children;
+  while (kid != NULL)
+  {
+    std::string tag((const char*)(kid->name));
+    if (tag=="determinantset" || tag=="sposet_builder")
+    {
+      xmlNodePtr kid1 = kid->children;
+      while (kid1 != NULL)
+      {
+        std::string tag1((const char*)(kid1->name));
+        if (tag1=="backflow")
+        {
+          has_backflow = true;
+        }
+        kid1 = kid1->next;
+      } 
+    }
+    kid = kid->next; 
+  }
+
+  if (has_backflow && UseRealOrbitals) APP_ABORT("backflow optimization is broken with UseRealOrbitals, please add use_complex_orb=\"yes\" to <determinantset> or <sposet_builder>.");
+  if (has_backflow && use_einspline_set_extended!="yes") APP_ABORT("backflow optimization does not yet function with EinsplinAdoptor, please add use_old_spline=\"yes\" to <determinantset> or <sposet_builder>.");
 
   //////////////////////////////////
   // Create the OrbitalSet object

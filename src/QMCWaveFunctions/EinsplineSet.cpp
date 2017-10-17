@@ -1800,12 +1800,12 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, in
       TinyVector<Tensor<std::complex<double>,OHMMS_DIM>,OHMMS_DIM> tmpghs;
       tmpg=dot(PrimLattice.G,StorageGradVector[j]);
       StorageGradVector[j]=tmpg;
-      tmphs=dot(transpose(PrimLattice.G),StorageHessVector[j]);
-      StorageHessVector[j]=dot(tmphs,PrimLattice.G);
+      tmphs=dot(PrimLattice.G,StorageHessVector[j]);
+      StorageHessVector[j]=dot(tmphs,PrimLattice.Gt);
       for (int n=0; n<OHMMS_DIM; n++)
       {
-        tmphs=dot(transpose(PrimLattice.G),StorageGradHessVector[j][n]);
-        tmpghs[n]=dot(tmphs,PrimLattice.G);
+        tmphs=dot(PrimLattice.G,StorageGradHessVector[j][n]);
+        tmpghs[n]=dot(tmphs,PrimLattice.Gt);
       }
       StorageGradHessVector[j]=dot(PrimLattice.G,tmpghs);
     }
