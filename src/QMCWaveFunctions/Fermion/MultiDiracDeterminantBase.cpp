@@ -212,14 +212,6 @@ MultiDiracDeterminantBase::RealType MultiDiracDeterminantBase::updateBuffer(Part
   return 1.0;
 }
 
-void MultiDiracDeterminantBase::update(ParticleSet& P,
-                                       ParticleSet::ParticleGradient_t& dG,
-                                       ParticleSet::ParticleLaplacian_t& dL,
-                                       int iat)
-{
-  APP_ABORT("Need to implement  MultiDiracDeterminantBase::update \n");
-}
-
 void MultiDiracDeterminantBase::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
 {
   buf.get(psiM.first_address(),psiM.last_address());
@@ -306,28 +298,6 @@ void MultiDiracDeterminantBase::restore(int iat)
           break;
       }
   */
-}
-
-/*
-  MultiDiracDeterminantBase::ValueType MultiDiracDeterminantBase::logRatio(ParticleSet& P, int iat,
-    ParticleSet::ParticleGradient_t& dG,
-    ParticleSet::ParticleLaplacian_t& dL) {
-  APP_ABORT("  logRatio is not allowed");
-  return 1.0;
-}
-*/
-
-MultiDiracDeterminantBase::RealType
-MultiDiracDeterminantBase::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  buf.put(psiM.first_address(),psiM.last_address());
-  buf.put(FirstAddressOfdpsiM,LastAddressOfdpsiM);
-  buf.put(d2psiM.first_address(),d2psiM.last_address());
-  buf.put(psiMinv.first_address(),psiMinv.last_address());
-  buf.put(detValues.first_address(), detValues.last_address());
-  buf.put(FirstAddressOfGrads,LastAddressOfGrads);
-  buf.put(lapls.first_address(), lapls.last_address());
-  return 1.0;
 }
 
 // this has been fixed

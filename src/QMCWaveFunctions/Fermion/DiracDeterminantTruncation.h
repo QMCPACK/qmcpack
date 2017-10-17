@@ -56,7 +56,6 @@ public:
   void set_truncation(int first, int nel,double &temp_cutoff,double &temp_radius);
   double radius;
   DiracDeterminantBase::ValueType ratio(ParticleSet& P, int iat);
-  DiracDeterminantBase::ValueType ratio(ParticleSet& P, int iat,ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL);
 
   void resize(int nel, int morb);
 
@@ -81,10 +80,6 @@ public:
   evaluateLog(ParticleSet& P,
               ParticleSet::ParticleGradient_t& G,
               ParticleSet::ParticleLaplacian_t& L);
-
-  DiracDeterminantBase::RealType
-  evaluateLog(ParticleSet& P, PooledData<RealType>& buf) ;
-
 
   std::vector<std::list<std::pair<int,double> > > particleLists;
   std::list<std::pair<int,double> >  oldPtcl;

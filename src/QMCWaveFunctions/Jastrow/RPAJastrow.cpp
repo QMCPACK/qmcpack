@@ -228,17 +228,6 @@ RPAJastrow::evaluateLog(ParticleSet& P,
 }
 
 RPAJastrow::ValueType
-RPAJastrow::ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
-{
-  ValueType r(1.0);
-  for(int i=0; i<Psi.size(); i++)
-    r *= Psi[i]->ratio(P,iat,dG,dL);
-  return r;
-}
-
-RPAJastrow::ValueType
 RPAJastrow::ratio(ParticleSet& P, int iat)
 {
   ValueType r(1.0);
@@ -280,15 +269,6 @@ void RPAJastrow::restore(int iat)
     Psi[i]->restore(iat);
 }
 
-void RPAJastrow::update(ParticleSet& P,
-                        ParticleSet::ParticleGradient_t& dG,
-                        ParticleSet::ParticleLaplacian_t& dL,
-                        int iat)
-{
-  for(int i=0; i<Psi.size(); i++)
-    Psi[i]->update(P,dG,dL,iat);
-}
-
 RPAJastrow::RealType
 RPAJastrow::registerData(ParticleSet& P, BufferType& buf)
 {
@@ -312,15 +292,6 @@ RPAJastrow::copyFromBuffer(ParticleSet& P, BufferType& buf)
 {
   for(int i=0; i<Psi.size(); i++)
     Psi[i]->copyFromBuffer(P,buf);
-}
-
-RPAJastrow::RealType
-RPAJastrow::evaluateLog(ParticleSet& P,BufferType& buf)
-{
-  LogValue=0.0;
-  for(int i=0; i<Psi.size(); i++)
-    LogValue += Psi[i]->evaluateLog(P,buf);
-  return LogValue;
 }
 
 OrbitalBase* RPAJastrow::makeClone(ParticleSet& tpq) const

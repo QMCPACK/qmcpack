@@ -120,11 +120,7 @@ public:
 
   GradType evalGrad(ParticleSet& P, int iat);
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-
   ValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
-
-  ValueType ratio(ParticleSet& P, int iat
-                  , ParticleSet::ParticleGradient_t& dG,ParticleSet::ParticleLaplacian_t& dL);
 
   ValueType ratio(ParticleSet& P, int iat);
   ValueType ratio_impl(ParticleSet& P, int iat);
@@ -132,10 +128,6 @@ public:
   void acceptMove(ParticleSet& P, int iat);
   void restore(int iat);
 
-  void update(ParticleSet& P
-              , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL
-              , int iat);
-  RealType evaluateLog(ParticleSet& P,BufferType& buf);
   RealType registerData(ParticleSet& P, BufferType& buf);
   void registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
   virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets)

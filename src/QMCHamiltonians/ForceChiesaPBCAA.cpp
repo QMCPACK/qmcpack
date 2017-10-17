@@ -152,8 +152,6 @@ void ForceChiesaPBCAA::initBreakup(ParticleSet& P)
  // }
 }
 
-//ForceChiesaPBCAA::Return_t ForceChiesaPBCAA::evaluatePbyP(
-
 void ForceChiesaPBCAA::evaluateLR(ParticleSet& P)
 {
   const StructFact& RhoKA(*(PtclA.SK));
