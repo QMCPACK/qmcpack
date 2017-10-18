@@ -178,14 +178,14 @@ struct PooledMemory
   template<typename T1>
   inline void put(std::complex<T1>& x)
   {
-    Scalar_ptr[Current_scalar++] = static_cast<T>(x.real());
-    Scalar_ptr[Current_scalar++] = static_cast<T>(x.imag());
+    Scalar_ptr[Current_scalar++] = static_cast<T_scalar>(x.real());
+    Scalar_ptr[Current_scalar++] = static_cast<T_scalar>(x.imag());
   }
 
   template<typename T1>
   inline void put(T1& x)
   {
-    Scalar_ptr[Current_scalar++] = static_cast<T>(x);
+    Scalar_ptr[Current_scalar++] = static_cast<T_scalar>(x);
   }
 
   template<typename T1>
