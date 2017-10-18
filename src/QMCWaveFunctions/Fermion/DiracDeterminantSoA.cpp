@@ -20,7 +20,6 @@ namespace qmcplusplus
   DiracDeterminantSoA::DiracDeterminantSoA(SPOSetBasePtr const &spos, int first): 
     DiracDeterminantBase(spos,first)
   { 
-    BufferMode=1;
     Need2Compute4PbyP=false; 
   }
 
@@ -73,11 +72,6 @@ namespace qmcplusplus
     DiracDeterminantSoA::evalGrad(ParticleSet& P, int iat)
     {
       WorkingIndex = iat-FirstIndex;
-      if(BufferMode == 0)//need to compute 
-      {
-        Phi->evaluateVGL(P, iat, vVGL,false); 
-        simd::copy_n(vVGL.data(1),BlockSize,mGL[WorkingIndex].data());
-      }
       return computeG(psiM[WorkingIndex],mGL[WorkingIndex]);
     }
 
@@ -147,8 +141,7 @@ namespace qmcplusplus
       LogValue=evaluateLog(P,P.G,P.L);
       //add the data: determinant, inverse, gradient and laplacians
       buf.add(psiM.first_address(),psiM.last_address());
-      if(BufferMode)
-        buf.add(memoryPool.data(),memoryPool.data()+memoryPool.size());
+      buf.add(memoryPool.data(),memoryPool.data()+memoryPool.size());
       buf.add(LogValue);
       buf.add(PhaseValue);
       return LogValue;
@@ -163,8 +156,7 @@ namespace qmcplusplus
         updateAfterSweep(P,P.G,P.L);
 
       buf.put(psiM.first_address(),psiM.last_address());
-      if(BufferMode)
-        buf.put(memoryPool.data(),memoryPool.data()+memoryPool.size());
+      buf.put(memoryPool.data(),memoryPool.data()+memoryPool.size());
       buf.put(LogValue);
       buf.put(PhaseValue);
       return LogValue;
@@ -173,8 +165,7 @@ namespace qmcplusplus
   void DiracDeterminantSoA::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     buf.get(psiM.first_address(),psiM.last_address());
-    if(BufferMode)
-      buf.get(memoryPool.data(),memoryPool.data()+memoryPool.size());
+    buf.get(memoryPool.data(),memoryPool.data()+memoryPool.size());
     buf.get(LogValue);
     buf.get(PhaseValue);
   }

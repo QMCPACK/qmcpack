@@ -199,7 +199,6 @@ struct  J2OrbitalSoA : public OrbitalBase
 
   inline RealType registerData(ParticleSet& P, WFBufferType& buf)
   {
-    evaluateLog(P,P.G,P.L);
     buf.add(Uat.begin(), Uat.end());
     buf.add(FirstAddressOfdU,LastAddressOfdU);
     buf.add(d2Uat.begin(), d2Uat.end());

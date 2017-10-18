@@ -286,7 +286,6 @@ struct  J1OrbitalSoA : public OrbitalBase
 
   inline RealType registerData(ParticleSet& P, WFBufferType& buf)
   {
-    evaluateLog(P,P.G,P.L);
     return LogValue;
   }
 

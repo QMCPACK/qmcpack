@@ -90,8 +90,11 @@ namespace qmcplusplus
 	if (awalker.DataSet.size ())
 	  awalker.DataSet.clear ();
 	awalker.DataSet.rewind ();
-	RealType logpsi = Psi.registerData (W, awalker.DataSet);
-	RealType logpsi2 = Psi.updateBuffer (W, awalker.DataSet, false);
+	Psi.registerData(W, awalker.DataSet);
+	awalker.DataSet.allocate();
+	Psi.copyFromBuffer(W, awalker.DataSet);
+	Psi.evaluateLog(W);
+	RealType logpsi = Psi.updateBuffer(W, awalker.DataSet, false);
 	awalker.G = W.G;
 	awalker.L = W.L;
 	//  268   W.saveWalker(awalker);

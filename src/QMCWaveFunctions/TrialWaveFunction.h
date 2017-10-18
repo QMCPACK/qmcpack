@@ -371,6 +371,9 @@ private:
   ///starting index of the buffer
   size_t BufferCursor;
 
+  ///starting index of the scalar buffer
+  size_t BufferCursor_scalar;
+
   ///sign of the trial wave function
   RealType PhaseValue;
 

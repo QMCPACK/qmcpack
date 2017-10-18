@@ -34,7 +34,6 @@ class DiracDeterminantBase: public OrbitalBase
 {
 protected:
   ParticleSet *targetPtcl;
-  int BufferMode;
 public:
   bool Optimizable;
   void registerTimers();

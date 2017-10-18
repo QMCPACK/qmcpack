@@ -155,6 +155,7 @@ struct PooledMemory
   template<typename T1>
   inline void get(T1* first, T1* last)
   {
+    // for backward compatibility
     constexpr int multiplier=sizeof(T1);
     std::copy_n(reinterpret_cast<T1*>(myData.data()+Current), last-first, first);
     Current += getAlignedSize<T>((last-first)*multiplier);
@@ -164,16 +165,14 @@ struct PooledMemory
   inline T1* attach(size_type n)
   {
     constexpr int multiplier=sizeof(T1);
-    const T1 *ptr = reinterpret_cast<T1*>(myData.data()+Current);
+    T1 *ptr = reinterpret_cast<T1*>(myData.data()+Current);
     Current += getAlignedSize<T>(n*multiplier);
     return ptr;
   }
 
-  template<typename T1>
   inline void forward(size_type n)
   {
-    constexpr int multiplier=sizeof(T1);
-    Current += getAlignedSize<T>(n*multiplier);
+    Current += n;
   }
 
   template<typename T1>
@@ -192,6 +191,7 @@ struct PooledMemory
   template<typename T1>
   inline void put(T1* first, T1* last)
   {
+    // for backward compatibility
     constexpr int multiplier=sizeof(T1);
     std::copy_n(first, last-first, reinterpret_cast<T1*>(myData.data()+Current));
     Current += getAlignedSize<T>((last-first)*multiplier);

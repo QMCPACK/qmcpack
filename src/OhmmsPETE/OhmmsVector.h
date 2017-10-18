@@ -96,6 +96,15 @@ public:
     }
   }
 
+  // Attach to pre-allocated memory
+  inline void attach(T* ref, size_t n)
+  {
+    if(nAllocated) throw std::runtime_error("Pointer attaching is not allowed on Vector with allocated memory.");
+    nLocal=n;
+    nAllocated=0;
+    X=ref;
+  }
+
   //! return the current size
   inline size_t size() const
   {
@@ -116,6 +125,18 @@ public:
 
   ///clear
   inline void clear() {nLocal=0;}
+
+  ///free
+  inline void free()
+  {
+    if(nAllocated)
+    {
+      mAllocator.deallocate(X,nAllocated);
+    }
+    nLocal=0;
+    nAllocated=0;
+    X=nullptr;
+  }
 
   // Get and Set Operations
   inline Type_t& operator[](size_t i)

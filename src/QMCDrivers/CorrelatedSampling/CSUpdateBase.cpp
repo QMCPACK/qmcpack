@@ -273,9 +273,14 @@ void CSUpdateBase::initCSWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end,
     awalker.DataSet.rewind();
     for( int ipsi=0; ipsi<nPsi; ipsi++)
     {
-
-      logpsi[ipsi]=Psi1[ipsi]->registerData(W,awalker.DataSet);
-      RealType logpsi2=Psi1[ipsi]->updateBuffer(W,awalker.DataSet,false);
+      Psi1[ipsi]->registerData(W,awalker.DataSet);
+    }
+    awalker.DataSet.allocate();
+    for( int ipsi=0; ipsi<nPsi; ipsi++)
+    {
+      Psi1[ipsi]->copyFromBuffer(W,awalker.DataSet);
+      Psi1[ipsi]->evaluateLog(W);
+      logpsi[ipsi] = Psi1[ipsi]->updateBuffer(W,awalker.DataSet,false);
       Psi1[ipsi]->G = W.G;
       *G1[ipsi] = W.G;
       Psi1[ipsi]->L = W.L;
