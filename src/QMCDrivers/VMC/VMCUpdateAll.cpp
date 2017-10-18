@@ -217,10 +217,10 @@ void VMCUpdateAllWithDrift::advanceWalker(Walker_t& thisWalker, bool recompute)
       W.saveWalker(thisWalker);
       RealType eloc=H.evaluate(W);
       thisWalker.resetProperty(logpsi,Psi.getPhase(),eloc);
-      H.auxHevaluate(W,thisWalker);
-      H.saveProperty(thisWalker.getPropertyBase());
       ++nAccept;
     }
+    H.auxHevaluate(W,thisWalker);
+    H.saveProperty(thisWalker.getPropertyBase());
 }
 
 VMCUpdateAllWithDrift::RealType VMCUpdateAllWithDrift::advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios)
