@@ -233,7 +233,7 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
 void QMCUpdateBase::randomize(Walker_t& awalker)
 {
   BadState=false;
-  //Walker_t::Buffer_t& w_buffer(awalker.DataSet);
+  //Walker_t::WFBuffer_t& w_buffer(awalker.DataSet);
   //W.loadWalker(awalker,true);
   //Psi.copyFromBuffer(W,w_buffer);
   RealType eloc_tot=0.0;
@@ -327,7 +327,7 @@ void QMCUpdateBase::updateWalkers(WalkerIter_t it, WalkerIter_t it_end)
     W.loadWalker(thisWalker,UpdatePbyP);
     //recompute distance tables
     W.update();
-    Walker_t::Buffer_t& w_buffer((*it)->DataSet);
+    Walker_t::WFBuffer_t& w_buffer((*it)->DataSet);
     RealType logpsi=Psi.updateBuffer(W,w_buffer,true);
     W.saveWalker(thisWalker);
   }

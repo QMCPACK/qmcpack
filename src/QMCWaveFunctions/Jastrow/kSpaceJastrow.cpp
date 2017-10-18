@@ -667,7 +667,7 @@ kSpaceJastrow::acceptMove(ParticleSet& P, int iat)
 }
 
 kSpaceJastrow::RealType
-kSpaceJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf)
+kSpaceJastrow::registerData(ParticleSet& P, WFBufferType& buf)
 {
   LogValue=evaluateLog(P,P.G,P.L);
   // eikr.resize(NumPtcls,MaxK);
@@ -684,7 +684,7 @@ kSpaceJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf)
 }
 
 kSpaceJastrow::RealType
-kSpaceJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+kSpaceJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf,
                             bool fromscratch)
 {
   LogValue=evaluateLog(P,P.G,P.L);
@@ -699,7 +699,7 @@ kSpaceJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
 }
 
 void
-kSpaceJastrow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+kSpaceJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   for (int i=0; i<TwoBodyCoefs.size(); i++)
     TwoBody_rhoG[i] = ComplexType();

@@ -93,8 +93,9 @@ struct OrbitalBase: public QMCTraits
 
   typedef ParticleAttrib<ValueType> ValueVectorType;
   typedef ParticleAttrib<GradType>  GradVectorType;
-  typedef PooledData<RealType>      BufferType;
   typedef ParticleSet::Walker_t     Walker_t;
+  typedef Walker_t::WFBuffer_t      WFBufferType;
+  typedef Walker_t::Buffer_t        BufferType;
   typedef OrbitalSetTraits<RealType>::ValueMatrix_t       RealMatrix_t;
   typedef OrbitalSetTraits<ValueType>::ValueMatrix_t      ValueMatrix_t;
   typedef OrbitalSetTraits<ValueType>::GradMatrix_t       GradMatrix_t;
@@ -358,7 +359,7 @@ struct OrbitalBase: public QMCTraits
    *
    * Return the log|psi|  like evalaute evaluateLog
    */
-  virtual RealType registerData(ParticleSet& P, BufferType& buf) =0;
+  virtual RealType registerData(ParticleSet& P, WFBufferType& buf) =0;
 
   /** add temporary (constant) data used to calculate analytical
    *  derivatives during linear optimization of parameters
@@ -377,10 +378,10 @@ struct OrbitalBase: public QMCTraits
    *
    * This function is introduced to update the data periodically for particle-by-particle move.
    */
-  virtual RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false) =0;
+  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false) =0;
 
   /** copy the internal data saved for particle-by-particle move.*/
-  virtual void copyFromBuffer(ParticleSet& P, BufferType& buf)=0;
+  virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf)=0;
 
   /** copy the internal data saved for optimization.*/
   virtual void copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf) {};

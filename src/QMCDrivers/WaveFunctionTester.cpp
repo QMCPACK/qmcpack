@@ -168,7 +168,7 @@ void WaveFunctionTester::runCloneTest()
     app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << std::endl;
     app_log() << "log (clone)    = " << logpsi2 << " energy = " << eloc2 << std::endl;
     app_log() << "Testing pbyp functions " << std::endl;
-    Walker_t::Buffer_t &wbuffer(awalker->DataSet);
+    Walker_t::WFBuffer_t &wbuffer(awalker->DataSet);
     wbuffer.clear();
     app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << std::endl;
     //W.registerData(wbuffer);
@@ -1055,7 +1055,7 @@ void WaveFunctionTester::runRatioTest()
   while (it != it_end)
   {
     makeGaussRandom(deltaR);
-    Walker_t::Buffer_t tbuffer;
+    Walker_t::WFBuffer_t tbuffer;
     W.R = (**it).R+Tau*deltaR;
     (**it).R=W.R;
     W.update();
@@ -1085,7 +1085,7 @@ void WaveFunctionTester::runRatioTest()
       fout << "\nStart Walker " << iw++ << std::endl;
       Walker_t& thisWalker(**it);
       W.loadWalker(thisWalker,pbyp_mode);
-      Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+      Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
       Psi.copyFromBuffer(W,w_buffer);
       H.copyFromBuffer(W,w_buffer);
 //             Psi.evaluateLog(W);
@@ -1169,7 +1169,7 @@ void WaveFunctionTester::runRatioTest()
       fout << "\nStart Walker " << iw++ << std::endl;
       Walker_t& thisWalker(**it);
       W.loadWalker(thisWalker,pbyp_mode);
-      Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+      Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
       //Psi.updateBuffer(W,w_buffer,true);
       Psi.copyFromBuffer(W,w_buffer);
       RealType eold(thisWalker.Properties(LOCALENERGY));
@@ -1230,7 +1230,7 @@ void WaveFunctionTester::runRatioTest()
   //for(it=W.begin();it != it_end; ++it)
   //{
   //  Walker_t& thisWalker(**it);
-  //  Walker_t::Buffer_t& w_buffer((*it)->DataSet);
+  //  Walker_t::WFBuffer_t& w_buffer((*it)->DataSet);
   //  w_buffer.rewind();
   //  W.updateBuffer(**it,w_buffer);
   //  RealType logpsi=Psi.updateBuffer(W,w_buffer,true);
@@ -1248,7 +1248,7 @@ void WaveFunctionTester::runRatioTest2()
   for (; it != it_end; ++it)
   {
     makeGaussRandom(deltaR);
-    Walker_t::Buffer_t tbuffer;
+    Walker_t::WFBuffer_t tbuffer;
     (**it).R  +=  Tau*deltaR;
     W.loadWalker(**it,true);
     RealType logpsi=Psi.registerData(W,tbuffer);
@@ -1271,7 +1271,7 @@ void WaveFunctionTester::runRatioTest2()
       fout << "\nStart Walker " << iw++ << std::endl;
       Walker_t& thisWalker(**it);
       W.loadWalker(thisWalker,true);
-      Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+      Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
       Psi.copyFromBuffer(W,w_buffer);
       RealType eold(thisWalker.Properties(LOCALENERGY));
       RealType logpsi(thisWalker.Properties(LOGPSI));
@@ -1303,7 +1303,7 @@ void WaveFunctionTester::runRatioTest2()
   //for(it=W.begin();it != it_end; ++it)
   //{
   //  Walker_t& thisWalker(**it);
-  //  Walker_t::Buffer_t& w_buffer((*it)->DataSet);
+  //  Walker_t::WFBuffer_t& w_buffer((*it)->DataSet);
   //  w_buffer.rewind();
   //  W.updateBuffer(**it,w_buffer);
   //  RealType logpsi=Psi.updateBuffer(W,w_buffer,true);
@@ -1340,7 +1340,7 @@ void WaveFunctionTester::runRatioV()
   while (it != it_end)
   {
     makeGaussRandom(deltaR);
-    Walker_t::Buffer_t tbuffer;
+    Walker_t::WFBuffer_t tbuffer;
     W.R = (**it).R+Tau*deltaR;
     (**it).R=W.R;
     W.update();
@@ -2207,7 +2207,7 @@ void  WaveFunctionTester::runNodePlot()
   R_unit.setUnit(PosUnit::LatticeUnit);
   Walker_t& thisWalker(**(W.begin()));
   W.loadWalker(thisWalker,true);
-  Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+  Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
   Psi.copyFromBuffer(W,w_buffer);
 #if OHMMS_DIM==2
   assert(Grid.size()==2);

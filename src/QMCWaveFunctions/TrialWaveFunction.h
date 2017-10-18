@@ -107,6 +107,7 @@ public:
   typedef OrbitalBase::PosType            PosType;
   typedef OrbitalBase::GradType           GradType;
   typedef OrbitalBase::BufferType         BufferType;
+  typedef OrbitalBase::WFBufferType       WFBufferType;
   typedef OrbitalBase::HessType           HessType;
   typedef OrbitalBase::HessVector_t       HessVector_t;
 #ifdef QMC_CUDA
@@ -283,11 +284,11 @@ public:
   void rejectMove(int iat);
   void acceptMove(ParticleSet& P, int iat);
 
-  RealType registerData(ParticleSet& P, BufferType& buf);
+  RealType registerData(ParticleSet& P, WFBufferType& buf);
   RealType registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
   void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets);
-  RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
-  void copyFromBuffer(ParticleSet& P, BufferType& buf);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   //new function to streamline tmove computation
   RealType acceptTMove(ParticleSet& P, int iat, PooledData<RealType>& buf);

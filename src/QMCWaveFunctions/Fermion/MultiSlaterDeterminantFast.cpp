@@ -162,7 +162,7 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
        std::cout << std::endl << std::endl;
        APP_ABORT("end of test 1");
   */
-  Walker_t::Buffer_t wbuffer;
+  Walker_t::WFBuffer_t wbuffer;
   wbuffer.clear();
   log=registerData(P,wbuffer);
 //     log = msd->evaluate(P,G,L);
@@ -434,7 +434,7 @@ void MultiSlaterDeterminantFast::restore(int iat)
   AccRejTimer.stop();
 }
 
-OrbitalBase::RealType MultiSlaterDeterminantFast::registerData(ParticleSet& P, BufferType& buf)
+OrbitalBase::RealType MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if(usingBF)
   {
@@ -463,7 +463,7 @@ void MultiSlaterDeterminantFast::registerDataForDerivatives(ParticleSet& P,
 }
 
 // FIX FIX FIX
-OrbitalBase::RealType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch)
+OrbitalBase::RealType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
 
   UpdateTimer.start();
@@ -483,7 +483,7 @@ OrbitalBase::RealType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P, B
   return LogValue = evaluateLogAndPhase(psiCurrent,PhaseValue);
 }
 
-void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, BufferType& buf)
+void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   if(usingBF)
   {

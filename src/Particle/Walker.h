@@ -26,6 +26,7 @@
 
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Utilities/PooledData.h"
+#include "Utilities/PooledMemory.h"
 #ifdef QMC_CUDA
 #include "Utilities/PointerPool.h"
 #include "CUDA/gpu_vector.h"
@@ -97,8 +98,9 @@ struct Walker
   typedef typename p_traits::ParticleValue_t ParticleValue_t;
 
   ///typedef for the property container, fixed size
-  typedef Matrix<EstimatorRealType>      PropertyContainer_t;
-  typedef PooledData<RealType>  Buffer_t;
+  typedef Matrix<EstimatorRealType>           PropertyContainer_t;
+  typedef PooledMemory<OHMMS_PRECISION_FULL>  WFBuffer_t;
+  typedef PooledData<RealType>                Buffer_t;
 
   ///id reserved for forward walking
   long ID;
@@ -140,7 +142,7 @@ struct Walker
   std::vector<int> PHindex;
 
   ///buffer for the data for particle-by-particle update
-  Buffer_t DataSet;
+  WFBuffer_t DataSet;
 
   ///buffer for the constant data in the evaluation of
   //analytical derivatives during linear optimization, e.g. MultiDeterminants

@@ -642,7 +642,7 @@ public:
       }
   }
 
-  inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
+  inline RealType registerData(ParticleSet& P, WFBufferType& buf)
   {
     evaluateLog(P,P.G,P.L);
     buf.add(Uat.begin(), Uat.end());
@@ -651,7 +651,7 @@ public:
     return LogValue;
   }
 
-  inline RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+  inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf,
                                bool fromscratch=false)
   {
     evaluateGL(P, P.G, P.L, false);
@@ -661,7 +661,7 @@ public:
     return LogValue;
   }
 
-  inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     buf.get(Uat.begin(), Uat.end());
     buf.get(FirstAddressOfdU,LastAddressOfdU);

@@ -208,8 +208,7 @@ void SlaterDet::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad_psi)
 	
 }
 
-SlaterDet::RealType SlaterDet::registerData(ParticleSet& P,
-    PooledData<RealType>& buf)
+SlaterDet::RealType SlaterDet::registerData(ParticleSet& P, WFBufferType& buf)
 {
   DEBUG_PSIBUFFER(" SlaterDet::registerData ",buf.current());
   //ValueType psi = 1.0;
@@ -237,8 +236,7 @@ void SlaterDet::updateAfterSweep(ParticleSet& P,
   }
 }
 
-SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P,
-    PooledData<RealType>& buf, bool fromscratch)
+SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   DEBUG_PSIBUFFER(" SlaterDet::updateBuffer ",buf.current());
   //ValueType psi = 1.0;
@@ -255,7 +253,7 @@ SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P,
   return LogValue;
 }
 
-void SlaterDet::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void SlaterDet::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   DEBUG_PSIBUFFER(" SlaterDet::copyFromBuffer ",buf.current());
   for (int i = 0; i < Dets.size(); i++)

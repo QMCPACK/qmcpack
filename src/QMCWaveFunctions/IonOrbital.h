@@ -78,13 +78,13 @@ public:
   void restore(int iat);
 
   RealType
-  registerData(ParticleSet& P, BufferType& buf);
+  registerData(ParticleSet& P, WFBufferType& buf);
 
   RealType
-  updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch);
+  updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch);
 
   void
-  copyFromBuffer(ParticleSet& P, BufferType& buf);
+  copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   GradType evalGrad(ParticleSet& P, int iat);
 

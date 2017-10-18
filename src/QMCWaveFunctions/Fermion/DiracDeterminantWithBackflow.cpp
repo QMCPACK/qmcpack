@@ -104,7 +104,7 @@ void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix_t& logdet, GradMatri
 }
 
 DiracDeterminantWithBackflow::RealType
-DiracDeterminantWithBackflow::registerData(ParticleSet& P, PooledData<RealType>& buf)
+DiracDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if(NP == 0)
     //first time, allocate once
@@ -150,7 +150,7 @@ DiracDeterminantWithBackflow::registerData(ParticleSet& P, PooledData<RealType>&
 }
 
 DiracDeterminantWithBackflow::RealType DiracDeterminantWithBackflow::updateBuffer(ParticleSet& P,
-    PooledData<RealType>& buf, bool fromscratch)
+    WFBufferType& buf, bool fromscratch)
 {
   // for now, always recalculate from scratch
   // enable from_scratch = true later
@@ -175,7 +175,7 @@ DiracDeterminantWithBackflow::RealType DiracDeterminantWithBackflow::updateBuffe
   return LogValue;
 }
 
-void DiracDeterminantWithBackflow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void DiracDeterminantWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   buf.get(psiM.first_address(),psiM.last_address());
   buf.get(FirstAddressOfdV,LastAddressOfdV);

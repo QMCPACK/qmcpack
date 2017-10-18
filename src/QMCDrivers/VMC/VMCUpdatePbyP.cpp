@@ -55,7 +55,7 @@ VMCUpdatePbyP::~VMCUpdatePbyP()
 void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
   W.loadWalker(thisWalker,true);
-  Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+  Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
   Psi.copyFromBuffer(W,w_buffer);
 
   myTimers[1]->start();
@@ -126,7 +126,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
 
 VMCUpdatePbyP::RealType VMCUpdatePbyP::advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios)
 {
-  Walker_t::Buffer_t& w_buffer(w1.DataSet);
+  Walker_t::WFBuffer_t& w_buffer(w1.DataSet);
   W.loadWalker(w1,true);
   Psi.copyFromBuffer(W,w_buffer);
   std::vector<RealType> runningratio(3,1.0);
@@ -199,7 +199,7 @@ VMCUpdatePbyPWithDriftFast::~VMCUpdatePbyPWithDriftFast()
 
 VMCUpdatePbyPWithDriftFast::RealType VMCUpdatePbyPWithDriftFast::advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios)
 {
-  Walker_t::Buffer_t& w_buffer(w1.DataSet);
+  Walker_t::WFBuffer_t& w_buffer(w1.DataSet);
   W.loadWalker(w1,true);
   Psi.copyFromBuffer(W,w_buffer);
   std::vector<RealType> logs;
@@ -267,7 +267,7 @@ VMCUpdatePbyPWithDriftFast::RealType VMCUpdatePbyPWithDriftFast::advanceWalkerFo
 
 void VMCUpdatePbyPWithDriftFast::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
-  Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+  Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
   W.loadWalker(thisWalker,true);
   Psi.copyFromBuffer(W,w_buffer);
 

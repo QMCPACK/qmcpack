@@ -210,7 +210,7 @@ void DiracDeterminantBase::updateAfterSweep(ParticleSet& P,
 }
 
 DiracDeterminantBase::RealType
-DiracDeterminantBase::registerData(ParticleSet& P, PooledData<RealType>& buf)
+DiracDeterminantBase::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if(NP == 0) //first time, allocate once
   {
@@ -235,7 +235,7 @@ DiracDeterminantBase::registerData(ParticleSet& P, PooledData<RealType>& buf)
 }
 
 DiracDeterminantBase::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P,
-    PooledData<RealType>& buf, bool fromscratch)
+    WFBufferType& buf, bool fromscratch)
 {
   if(fromscratch)
   {
@@ -258,7 +258,7 @@ DiracDeterminantBase::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P
   return LogValue;
 }
 
-void DiracDeterminantBase::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void DiracDeterminantBase::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BufferTimer.start();
   buf.get(psiM.first_address(),psiM.last_address());

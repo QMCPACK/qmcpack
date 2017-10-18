@@ -249,7 +249,7 @@ AGPDeterminant::evaluateLogAndStore(ParticleSet& P)
 }
 
 AGPDeterminant::ValueType
-AGPDeterminant::registerData(ParticleSet& P, PooledData<RealType>& buf)
+AGPDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 {
   evaluateLogAndStore(P);
   P.G += myG;
@@ -278,7 +278,7 @@ AGPDeterminant::registerData(ParticleSet& P, PooledData<RealType>& buf)
 }
 
 AGPDeterminant::ValueType
-AGPDeterminant::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+AGPDeterminant::updateBuffer(ParticleSet& P, WFBufferType& buf,
                              bool fromscratch)
 {
   evaluateLogAndStore(P);
@@ -304,7 +304,7 @@ AGPDeterminant::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
   //return CurrentDet;
 }
 
-void AGPDeterminant::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void AGPDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   //if(UseBuffer)
   {

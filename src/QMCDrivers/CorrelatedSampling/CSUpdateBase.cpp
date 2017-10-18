@@ -322,7 +322,7 @@ void CSUpdateBase::updateCSWalkers(WalkerIter_t it, WalkerIter_t it_end)
   while(it != it_end)
   {
     Walker_t& thisWalker(**it);
-    Walker_t::Buffer_t& w_buffer((*it)->DataSet);
+    Walker_t::WFBuffer_t& w_buffer((*it)->DataSet);
    //app_log()<<"DAMN.  YOU FOUND ME.  (updateCSWalkers called)\n";
    // w_buffer.rewind();
   //  W.updateBuffer(**it,w_buffer);

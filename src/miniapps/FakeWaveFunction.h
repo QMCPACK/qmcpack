@@ -50,7 +50,7 @@ namespace qmcplusplus
     using J2OrbType=TwoBodyJastrowOrbital<BsplineFunctor<valT> >;
     bool FirstTime;
     J2OrbType* J2;
-    PooledData<valT> Buffer;
+    PooledMemory<valT> Buffer;
 
     AoSWaveFunction(ParticleSet& ions, ParticleSet& els);
     ~AoSWaveFunction();

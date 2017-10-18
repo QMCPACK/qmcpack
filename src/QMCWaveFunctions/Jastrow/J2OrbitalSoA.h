@@ -197,7 +197,7 @@ struct  J2OrbitalSoA : public OrbitalBase
                      ParticleSet::ParticleGradient_t& G,
                      ParticleSet::ParticleLaplacian_t& L, bool fromscratch=false);
 
-  inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
+  inline RealType registerData(ParticleSet& P, WFBufferType& buf)
   {
     evaluateLog(P,P.G,P.L);
     buf.add(Uat.begin(), Uat.end());
@@ -206,14 +206,14 @@ struct  J2OrbitalSoA : public OrbitalBase
     return LogValue;
   }
 
-  inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     buf.get(Uat.begin(), Uat.end());
     buf.get(FirstAddressOfdU,LastAddressOfdU);
     buf.get(d2Uat.begin(), d2Uat.end());
   }
 
-  RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false)
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false)
   {
     evaluateGL(P, P.G, P.L, false);
     buf.put(Uat.begin(), Uat.end());

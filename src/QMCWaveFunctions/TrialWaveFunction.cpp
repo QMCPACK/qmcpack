@@ -684,7 +684,7 @@ void TrialWaveFunction::getPhases(std::vector<RealType>& pvals)
 }
 
 
-TrialWaveFunction::RealType TrialWaveFunction::registerData(ParticleSet& P, PooledData<RealType>& buf)
+TrialWaveFunction::RealType TrialWaveFunction::registerData(ParticleSet& P, WFBufferType& buf)
 {
   delta_G.resize(P.getTotalNum());
   delta_L.resize(P.getTotalNum());
@@ -732,7 +732,7 @@ void TrialWaveFunction::memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs
 }
 
 TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P
-    , PooledData<RealType>& buf, bool fromscratch)
+    , WFBufferType& buf, bool fromscratch)
 {
   //TAU_PROFILE("TrialWaveFunction::updateBuffer","(P,..)", TAU_USER);
   P.G = 0.0;
@@ -755,7 +755,7 @@ TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P
   return LogValue;
 }
 
-void TrialWaveFunction::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void TrialWaveFunction::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   buf.rewind(BufferCursor);
   //TAU_PROFILE("TrialWaveFunction::copyFromBuffer","(P,..)", TAU_USER);
@@ -766,6 +766,7 @@ void TrialWaveFunction::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf
   buf.get(LogValue);
 }
 
+#if 0
 TrialWaveFunction::RealType
 TrialWaveFunction::acceptTMove(ParticleSet& P, int iat, PooledData<RealType>& buf)
 {
@@ -793,6 +794,7 @@ TrialWaveFunction::acceptTMove(ParticleSet& P, int iat, PooledData<RealType>& bu
   convert(logpsi,LogValue);
   return LogValue;
 }
+#endif
 
 void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<RealType>& ratios)
 {

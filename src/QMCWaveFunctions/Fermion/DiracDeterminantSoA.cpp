@@ -142,7 +142,7 @@ namespace qmcplusplus
   }
 
   DiracDeterminantSoA::RealType
-    DiracDeterminantSoA::registerData(ParticleSet& P, PooledData<RealType>& buf)
+    DiracDeterminantSoA::registerData(ParticleSet& P, WFBufferType& buf)
     {
       LogValue=evaluateLog(P,P.G,P.L);
       //add the data: determinant, inverse, gradient and laplacians
@@ -155,7 +155,7 @@ namespace qmcplusplus
     }
 
   DiracDeterminantSoA::RealType 
-    DiracDeterminantSoA::updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch)
+    DiracDeterminantSoA::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
     {
       if(fromscratch)
         LogValue=evaluateLog(P,P.G,P.L);
@@ -170,7 +170,7 @@ namespace qmcplusplus
       return LogValue;
     }
 
-  void DiracDeterminantSoA::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  void DiracDeterminantSoA::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     buf.get(psiM.first_address(),psiM.last_address());
     if(BufferMode)

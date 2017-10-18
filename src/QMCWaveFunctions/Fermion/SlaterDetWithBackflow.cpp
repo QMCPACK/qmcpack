@@ -123,7 +123,7 @@ SlaterDetWithBackflow::evaluateLog(ParticleSet& P,
 */
 }
 
-SlaterDetWithBackflow::RealType SlaterDetWithBackflow::registerData(ParticleSet& P, PooledData<RealType>& buf)
+SlaterDetWithBackflow::RealType SlaterDetWithBackflow::registerData(ParticleSet& P, WFBufferType& buf)
 {
   BFTrans->registerData(P,buf);
   //BFTrans->evaluate(P);
@@ -137,7 +137,7 @@ SlaterDetWithBackflow::RealType SlaterDetWithBackflow::registerData(ParticleSet&
   return LogValue;
 }
 
-SlaterDetWithBackflow::RealType SlaterDetWithBackflow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+SlaterDetWithBackflow::RealType SlaterDetWithBackflow::updateBuffer(ParticleSet& P, WFBufferType& buf,
     bool fromscratch)
 {
   //BFTrans->updateBuffer(P,buf,fromscratch);
@@ -153,7 +153,7 @@ SlaterDetWithBackflow::RealType SlaterDetWithBackflow::updateBuffer(ParticleSet&
   return LogValue;
 }
 
-void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BFTrans->copyFromBuffer(P,buf);
   //BFTrans->evaluate(P);

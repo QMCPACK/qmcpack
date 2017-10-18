@@ -53,7 +53,7 @@ DMCUpdatePbyPWithRejectionFast::~DMCUpdatePbyPWithRejectionFast() { }
 
 void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
-  Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+  Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
   W.loadWalker(thisWalker,true);
   Psi.copyFromBuffer(W,w_buffer);
   //create a 3N-Dimensional Gaussian with variance=1

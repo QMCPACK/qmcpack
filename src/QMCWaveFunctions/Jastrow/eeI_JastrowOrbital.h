@@ -1025,7 +1025,7 @@ public:
     // }
   }
 
-  inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
+  inline RealType registerData(ParticleSet& P, WFBufferType& buf)
   {
     // std::cerr <<"REGISTERING 2 BODY JASTROW"<< std::endl;
     evaluateLogAndStore(P,P.G,P.L);
@@ -1066,7 +1066,7 @@ public:
     return LogValue;
   }
 
-  inline RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+  inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf,
                                bool fromscratch=false)
   {
     evaluateLogAndStore(P,P.G,P.L);
@@ -1115,7 +1115,7 @@ public:
     return LogValue;
   }
 
-  inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     //      std::cerr << "Called copyFromBuffer.\n";
     buf.get(U.begin(), U.end());

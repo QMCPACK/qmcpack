@@ -270,7 +270,7 @@ void RPAJastrow::restore(int iat)
 }
 
 RPAJastrow::RealType
-RPAJastrow::registerData(ParticleSet& P, BufferType& buf)
+RPAJastrow::registerData(ParticleSet& P, WFBufferType& buf)
 {
   LogValue=0.0;
   for(int i=0; i<Psi.size(); i++)
@@ -279,7 +279,7 @@ RPAJastrow::registerData(ParticleSet& P, BufferType& buf)
 }
 
 RPAJastrow::RealType
-RPAJastrow::updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch)
+RPAJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   LogValue=0.0;
   for(int i=0; i<Psi.size(); i++)
@@ -288,7 +288,7 @@ RPAJastrow::updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch)
 }
 
 void
-RPAJastrow::copyFromBuffer(ParticleSet& P, BufferType& buf)
+RPAJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   for(int i=0; i<Psi.size(); i++)
     Psi[i]->copyFromBuffer(P,buf);

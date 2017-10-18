@@ -260,7 +260,7 @@ public:
 
 
   /** equivalent to evalaute with additional data management */
-  ValueType registerData(ParticleSet& P, PooledData<RealType>& buf)
+  ValueType registerData(ParticleSet& P, WFBufferType& buf)
   {
     //U.resize(d_table->size(VisitorIndex));
     d2U.resize(d_table->size(VisitorIndex));
@@ -299,7 +299,7 @@ public:
     return LogValue;
   }
 
-  ValueType updateBuffer(ParticleSet& P, BufferType& buf)
+  ValueType updateBuffer(ParticleSet& P, WFBufferType& buf)
   {
     LogValue = 0.0;
     U=0.0;
@@ -340,7 +340,7 @@ public:
    *
    *copyFromBuffer uses the data stored by registerData or evaluate(P,buf)
    */
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     buf.get(U.begin(), U.end());
     buf.get(d2U.begin(), d2U.end());

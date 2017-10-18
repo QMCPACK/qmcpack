@@ -467,7 +467,7 @@ void MultiSlaterDeterminantWithBackflow::restore(int iat)
   AccRejTimer.stop();
 }
 
-OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::registerData(ParticleSet& P, BufferType& buf)
+OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferType& buf)
 {
   BFTrans->evaluate(P);
 // move resize of pbyp structures to here
@@ -509,7 +509,7 @@ OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::registerData(ParticleS
 }
 
 // FIX FIX FIX
-OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch)
+OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   UpdateTimer.start();
   if(fromscratch || UpdateMode == ORB_PBYP_RATIO)
@@ -591,7 +591,7 @@ OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::updateBuffer(ParticleS
   return LogValue = evaluateLogAndPhase(psi,PhaseValue);;
 }
 
-void MultiSlaterDeterminantWithBackflow::copyFromBuffer(ParticleSet& P, BufferType& buf)
+void MultiSlaterDeterminantWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BFTrans->evaluate(P);
   for (int i=0; i<dets_up.size(); i++)

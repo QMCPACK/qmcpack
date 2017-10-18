@@ -128,15 +128,15 @@ public:
   void acceptMove(ParticleSet& P, int iat);
   void restore(int iat);
 
-  RealType registerData(ParticleSet& P, BufferType& buf);
+  RealType registerData(ParticleSet& P, WFBufferType& buf);
   void registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
   virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets)
   {
     Dets[0]->memoryUsage_DataForDerivatives(P,orbs_only,orbs,invs,dets);
     Dets[1]->memoryUsage_DataForDerivatives(P,orbs_only,orbs,invs,dets);
   }
-  RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
-  void copyFromBuffer(ParticleSet& P, BufferType& buf);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   OrbitalBasePtr makeClone(ParticleSet& tqp) const;
   void evaluateDerivatives(ParticleSet& P,

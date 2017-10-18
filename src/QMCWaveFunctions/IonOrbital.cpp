@@ -196,7 +196,7 @@ IonOrbital::evaluateLogAndStore(ParticleSet& P,
 
 /** equivalent to evalaute with additional data management */
 IonOrbital::RealType
-IonOrbital::registerData(ParticleSet& P, PooledData<RealType>& buf)
+IonOrbital::registerData(ParticleSet& P, WFBufferType& buf)
 {
   evaluateLogAndStore(P, P.G, P.L);
   // Add U, d2U and dU. Keep the order!!!
@@ -207,7 +207,7 @@ IonOrbital::registerData(ParticleSet& P, PooledData<RealType>& buf)
 }
 
 IonOrbital::RealType
-IonOrbital::updateBuffer(ParticleSet& P, BufferType& buf,
+IonOrbital::updateBuffer(ParticleSet& P, WFBufferType& buf,
                          bool fromscratch=false)
 {
   evaluateLogAndStore(P,P.G,P.L);
@@ -224,7 +224,7 @@ IonOrbital::updateBuffer(ParticleSet& P, BufferType& buf,
  *copyFromBuffer uses the data stored by registerData or evaluate(P,buf)
  */
 void
-IonOrbital::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+IonOrbital::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   buf.get(U.first_address(), U.last_address());
   buf.get(d2U.first_address(), d2U.last_address());

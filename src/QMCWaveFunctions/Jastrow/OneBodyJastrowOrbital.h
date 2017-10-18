@@ -454,7 +454,7 @@ public:
   }
 
   /** equivalent to evalaute with additional data management */
-  RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
+  RealType registerData(ParticleSet& P, WFBufferType& buf)
   {
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     // std::cerr <<"REGISTERING 1 BODY JASTROW "<< std::endl;
@@ -477,7 +477,7 @@ public:
     evaluateLogAndStore(P,P.G,P.L);
   }
 
-  RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false)
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false)
   {
     evaluateLogAndStore(P,P.G,P.L);
     //LogValue = 0.0;
@@ -516,7 +516,7 @@ public:
    *
    *copyFromBuffer uses the data stored by registerData or evaluate(P,buf)
    */
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     DEBUG_PSIBUFFER(" OneBodyJastrow::copyFromBuffer ",buf.current());
     buf.get(U.first_address(), U.last_address());

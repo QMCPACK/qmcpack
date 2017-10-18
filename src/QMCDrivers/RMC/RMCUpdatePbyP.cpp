@@ -158,7 +158,7 @@ namespace qmcplusplus
     IndexType backward = (1 + direction) / 2;
     Walker_t & curhead = W.reptile->getHead ();
     Walker_t prophead (curhead);
-    Walker_t::Buffer_t & w_buffer (prophead.DataSet);
+    Walker_t::WFBuffer_t & w_buffer (prophead.DataSet);
     W.loadWalker (prophead, true);
     //app_log () << "advanceWalkersVMC()::initialized variables... " <<
     //   cpu_clock () - starttime << std::endl;
@@ -324,7 +324,7 @@ namespace qmcplusplus
     IndexType backward = (1 + direction) / 2;
     Walker_t & curhead = W.reptile->getHead ();
     Walker_t prophead (curhead);
-    Walker_t::Buffer_t & w_buffer (prophead.DataSet);
+    Walker_t::WFBuffer_t & w_buffer (prophead.DataSet);
     W.loadWalker (prophead, true);
     Psi.copyFromBuffer (W, w_buffer);
 
