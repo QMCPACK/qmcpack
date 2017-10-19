@@ -263,8 +263,7 @@ void VMCSingleOMP::resetRun()
   {
     size_t before=qmc_common.memory_allocated;
     app_log() << "  Anonymous Buffer size per walker : "
-              << W[0]->DataSet.size() << " in base precision, "
-              << "in total " << W[0]->DataSet.byteSize() << " bytes." << std::endl;
+              << W[0]->DataSet.byteSize() << " Bytes." << std::endl;
     qmc_common.memory_allocated+=W.getActiveWalkers()*W[0]->DataSet.byteSize();
     qmc_common.print_memory_change("VMCSingleOMP::resetRun",before);
   }

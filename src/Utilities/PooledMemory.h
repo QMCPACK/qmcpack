@@ -32,7 +32,7 @@ namespace qmcplusplus
  */
 template<typename T_scalar=OHMMS_PRECISION_FULL,
          size_t PageSize=4096,
-         typename Alloc=std::allocator<char> >
+         typename Alloc=Mallocator<char, PageSize> >
 struct PooledMemory
 {
   typedef char T;
