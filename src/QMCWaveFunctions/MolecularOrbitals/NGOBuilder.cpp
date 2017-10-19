@@ -24,6 +24,8 @@
 #include "io/hdf_archive.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"
+#include "Message/CommOperatorsMPI.h"
+
 
 namespace qmcplusplus
 {
@@ -103,21 +105,33 @@ bool NGOBuilder::addGridH5(hdf_archive &hin)
 
 
   std::string gridtype;
-  bool H5_GRIDTYPE = hin.read(gridtype, "grid_type");
-  if  (H5_GRIDTYPE!=true){
-      std::cerr<<"Could not read grid_type in H5; Probably Corrupt H5 file"<<std::endl;
-      exit(0);
+
+  if(hin.myComm->rank()==0){
+     if(!hin.read(gridtype, "grid_type")){
+         std::cerr<<"Could not read grid_type in H5; Probably Corrupt H5 file"<<std::endl;
+         exit(0);
+     }
   }
+  hin.myComm->bcast(gridtype);
+
   int npts=0;
   RealType ri=0.0,rf=10.0,rmax_safe=10;
-  double tt=0;
-  hin.read(tt,"grid_ri");
-  ri=tt;
-  hin.read(tt,"grid_rf");
-  rf=tt;
-  hin.read(tt,"rmax_safe");
-  rmax_safe=tt;
-  hin.read(npts,"grid_npts");
+
+  if(hin.myComm->rank()==0){
+      double tt=0;
+      hin.read(tt,"grid_ri");
+      ri=tt;
+      hin.read(tt,"grid_rf");
+      rf=tt;
+      hin.read(tt,"rmax_safe");
+      rmax_safe=tt;
+      hin.read(npts,"grid_npts");
+  }
+  hin.myComm->bcast(ri);
+  hin.myComm->bcast(rf);
+  hin.myComm->bcast(rmax_safe);
+  hin.myComm->bcast(npts);
+
 
   if(gridtype.empty())
   {

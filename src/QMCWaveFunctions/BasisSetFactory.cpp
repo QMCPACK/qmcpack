@@ -37,6 +37,8 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
 #include "OhmmsData/AttributeSet.h"
+#include "Message/MPIObjectBase.h"
+
 
 namespace qmcplusplus
 {

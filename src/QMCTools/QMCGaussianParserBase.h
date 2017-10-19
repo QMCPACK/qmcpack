@@ -33,7 +33,6 @@
 #include "OhmmsData/HDFStringAttrib.h"
 #include "io/hdf_archive.h"
 
-
 using namespace qmcplusplus;
 
 struct QMCGaussianParserBase

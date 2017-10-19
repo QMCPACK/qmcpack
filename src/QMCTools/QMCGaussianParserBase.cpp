@@ -351,22 +351,9 @@ xmlNodePtr QMCGaussianParserBase::createBasisSetWithHDF5()
   xmlNodePtr bset = xmlNewNode(NULL,(const xmlChar*)"basisset");
   hdf_archive hout(0); 
   hout.create(h5file.c_str(),H5F_ACC_TRUNC);
-//  hid_t h_file =  H5Fcreate(h5file.c_str(),H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
-
-
   hout.push("basisset",true);
-//  hid_t basisset = H5Gcreate(h_file,"basisset",0);
-
   std::string BasisSetName("LCAOBSet");
   hout.write(BasisSetName,"name");
-
-
-//  HDFAttribIO<std::string>  ah(BasisSetName);
-//  ah.write(basisset,"name");
-
-
-
-  //hid_t atomicBasisSet = H5Gcreate(basisset,"atomicBasisSet",0);
   hout.push("atomicBasisSet",true);
   
   std::map<int,int> species;
@@ -392,17 +379,8 @@ xmlNodePtr QMCGaussianParserBase::createBasisSetWithHDF5()
     }
     gtot += ng;
   }
-  //HDFAttribIO<int>  numElem(counter);
-  //numElem.write(atomicBasisSet,"NumElemets");
   hout.write(counter,"NumElemets");
-  
-  //hout.pop();
-  //hout.pop();
   hout.close();
- // H5Gclose(basisset);
- // H5Gclose(atomicBasisSet);
- // H5Fclose(h_file);
-
   return bset;
 }
 
@@ -1122,7 +1100,7 @@ QMCGaussianParserBase::createShellH5(int n, int ig, int off_,int numelem)
 
 
   char l_name[4],n_name[4],a_name[32];
-  sprintf(a_name,"%s%d%d%s",CurrentCenter.c_str(),n,gShellID[gid],"");
+  sprintf(a_name,"%s%d%d",CurrentCenter.c_str(),n,gShellID[gid]);
   sprintf(l_name,"%d",gShellID[gid]);
   sprintf(n_name,"%d",n);
 

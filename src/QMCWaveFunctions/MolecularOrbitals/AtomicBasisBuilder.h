@@ -134,14 +134,21 @@ bool AtomicBasisBuilder<RFB>::putH5(hdf_archive &hin)
 {
 
   std::string CenterID, Normalized, basisName; 
-  hin.read(sph,"angular");
-  hin.read(basisType,"type");
-
   //TO BE EXPANDED TO OTHER FORMATS
   Morder="Gamess";
-  hin.read(CenterID,"elementType");
-  hin.read(Normalized,"normalized");
-  hin.read(basisName,"name");
+  if(myComm->rank()==0){
+      hin.read(sph,"angular");
+      hin.read(basisType,"type");
+      hin.read(CenterID,"elementType");
+      hin.read(Normalized,"normalized");
+      hin.read(basisName,"name");
+  }
+  myComm->bcast(sph);
+  myComm->bcast(basisType);
+  myComm->bcast(CenterID);
+  myComm->bcast(Normalized);
+  myComm->bcast(basisName);
+
   app_log()<<"<input node=\"atomicBasisSet\" name=\""<<basisName<<"\"  angular=\""<<sph<<"\"  type=\""<<basisType<<"\"  elementType=\""<<CenterID<<"\"  normalized=\""<<Normalized<<"\"/>"<<std::endl; 
   bool tmp_addsignforM=addsignforM;
   if(sph == "spherical")
@@ -322,11 +329,12 @@ AtomicBasisBuilder<RFB>::createAOSetH5(hdf_archive &hin)
   int num(0);//the number of localized basis functions of this center
   
   int numbasisgroups(0);
-
-  bool H5_NBGASGROUP= hin.read(numbasisgroups,"NbBasisGroups");
-  if  (H5_NBGASGROUP!=true)
-    PRE.error("Could not read NbBasisGroups in H5; Probably Corrupt H5 file",true);
-
+  if(myComm->rank()==0){
+     if(!hin.read(numbasisgroups,"NbBasisGroups"))
+         PRE.error("Could not read NbBasisGroups in H5; Probably Corrupt H5 file",true);
+  }
+  myComm->bcast(numbasisgroups);
+   
   for (int i=0; i<numbasisgroups;i++)
   {
     char n_name[4];
@@ -334,8 +342,12 @@ AtomicBasisBuilder<RFB>::createAOSetH5(hdf_archive &hin)
     std::string an_name(n_name);
     std::string basisGroupID="basisGroup"+an_name;
     int l(0);
-    hin.push(basisGroupID.c_str()); 
-    hin.read(l,"l");
+    if(myComm->rank()==0){
+       hin.push(basisGroupID.c_str()); 
+       hin.read(l,"l");
+       hin.pop();
+    } 
+    myComm->bcast(l);
       
     Lmax = std::max(Lmax,l);
     //expect that only Rnl is given
@@ -346,7 +358,7 @@ AtomicBasisBuilder<RFB>::createAOSetH5(hdf_archive &hin)
         num += 2*l+1;
       else
         num++;
-     hin.pop(); 
+
  }         
  
   char n_name[4];
@@ -367,15 +379,22 @@ AtomicBasisBuilder<RFB>::createAOSetH5(hdf_archive &hin)
     std::string aan_name(n_name);
 
     basisGroupID="basisGroup"+aan_name;
-    hin.push(basisGroupID.c_str()); 
-    hin.read(rnl,"rid");
-    hin.read(nlms[0],"n");
-    hin.read(nlms[1],"l");
+    if(myComm->rank()==0){
+       hin.push(basisGroupID.c_str()); 
+       hin.read(rnl,"rid");
+       hin.read(nlms[0],"n");
+       hin.read(nlms[1],"l");
+    }
+    myComm->bcast(rnl);
+    myComm->bcast(nlms[0]);
+    myComm->bcast(nlms[1]);
  
     //add Ylm channels
     app_log() << "   R(n,l,m,s) " << nlms[0] << " " << nlms[1] << " " << nlms[2] << " " << nlms[3] << std::endl;
     num = expandYlmH5(rnl,nlms,num,aos,hin,expandlm);
-    hin.pop(); 
+
+    //if(myComm->rank()==0)
+       hin.pop(); 
   } 
   aos->setBasisSetSize(-1);
   app_log() << "   Maximu Angular Momentum   = " << aos->Ylm.Lmax << std::endl
@@ -577,8 +596,7 @@ int AtomicBasisBuilder<RFB>::expandYlmH5(const std::string& rnl, const QuantumNu
   }
   else
   {
-     app_log()<<" NON CARTESIAN EXPAND OF BASIS SET NOT IMPLEMENTED WITH HDF5"<<std::endl;
-     exit(0);
+     APP_ABORT(" NON CARTESIAN EXPAND OF BASIS SET NOT IMPLEMENTED WITH HDF5");
   }
   return num;
 }

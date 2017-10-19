@@ -21,6 +21,8 @@
 #include "Numerics/OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
+#include "Message/CommOperatorsMPI.h"
+
 
 namespace qmcplusplus
 {
@@ -299,8 +301,11 @@ template<class T>
 bool GaussianCombo<T>::putBasisGroupH5(hdf_archive &hin)
 {
   int NbRadFunc(0); 
-  hin.read(NbRadFunc,"NbRadFunc");
-  hin.push("radfunctions");
+  if(hin.myComm->rank()==0){  
+    hin.read(NbRadFunc,"NbRadFunc");
+    hin.push("radfunctions");
+  }
+  hin.myComm->bcast(NbRadFunc);  
 
   for (int i=0; i<NbRadFunc;i++)
   {
@@ -309,10 +314,15 @@ bool GaussianCombo<T>::putBasisGroupH5(hdf_archive &hin)
     std::string dataradID0="DataRad",dataradID;
     tempdata<<dataradID0<<i;
     dataradID=tempdata.str();
-    hin.push(dataradID.c_str());
-    hin.read(alpha, "exponent");
-    hin.read(c, "contraction");
 
+    if(hin.myComm->rank()==0){  
+       hin.push(dataradID.c_str());
+       hin.read(alpha, "exponent");
+       hin.read(c, "contraction");
+    }
+    
+    hin.myComm->bcast(alpha);  
+    hin.myComm->bcast(c);  
 
     real_type c0=c;
     if(!Normalized)
@@ -320,12 +330,14 @@ bool GaussianCombo<T>::putBasisGroupH5(hdf_archive &hin)
     LOGMSG("    Gaussian exponent = " << alpha
            << "\n              contraction=" << c0 <<  " nomralized contraction = " << c)
     gset.push_back(BasicGaussian(alpha,c));
-    hin.pop();
-  }
+    if(hin.myComm->rank()==0)  
+       hin.pop();
+    }
   reset();
-  hin.pop();
+  if(hin.myComm->rank()==0)  
+     hin.pop();
+
   return true;
 }
-
 } // qmcplusplus
 #endif
