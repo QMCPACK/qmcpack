@@ -18,26 +18,27 @@ namespace qmcplusplus {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Creates a slater determinant of the given spin with the given optimizable orbital set.
 ///
-/// \param[in]      targetPtcl     the particle set
+/// \param[in]      ptcl           the particle set
 /// \param[in]      spo_ptr        pointer to the optimizable single particle orbital set
 /// \param[in]      up_or_down     0 for up spin, 1 for down
 /// \param[in]      nmo            number of optimizable molecular orbitals
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-SlaterDetOpt::SlaterDetOpt(ParticleSet & targetPtcl, SPOSetBase * spo_ptr, const int up_or_down)
-  : DiracDeterminantBase(spo_ptr, targetPtcl.first(up_or_down))
-  , m_spo(spo_ptr)
+SlaterDetOpt::SlaterDetOpt(ParticleSet & ptcl, SPOSetBase * spo_ptr, const int up_or_down)
+  : DiracDeterminantBase(spo_ptr, ptcl.first(up_or_down))
   , m_up_or_down(up_or_down)
   , m_nmo(spo_ptr->size())
   , m_first_var_pos(-1)
   , m_act_rot_inds()
 {
+  targetPtcl = &ptcl;
+
   Optimizable=true;
   OrbitalName="SlaterDetOpt";
-  this->resetTargetParticleSet(targetPtcl);
+  this->resetTargetParticleSet(*targetPtcl);
 
-  m_nlc = m_spo->OrbitalSetSize;
-  m_nb = m_spo->BasisSetSize;
+  m_nlc = Phi->OrbitalSetSize;
+  m_nb = Phi->BasisSetSize;
 
   // make sure we didn't start with a bad m_nlc
   check_index_sanity();
@@ -67,8 +68,8 @@ SlaterDetOpt::SlaterDetOpt(ParticleSet & targetPtcl, SPOSetBase * spo_ptr, const
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //void SlaterDetOpt::add_orbs_to_tf(TrialWaveFunction & twf, const std::string & name) {
-//  if ( std::find(twf.getOrbitals().begin(), twf.getOrbitals().end(), m_spo->tf_component()) == twf.getOrbitals().end() )
-//    twf.addOrbital(m_spo->tf_component(), name, false);
+//  if ( std::find(twf.getOrbitals().begin(), twf.getOrbitals().end(), Phi->tf_component()) == twf.getOrbitals().end() )
+//    twf.addOrbital(Phi->tf_component(), name, false);
 //}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -111,7 +112,33 @@ void SlaterDetOpt::check_index_sanity() const {
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 OrbitalBasePtr SlaterDetOpt::makeClone(ParticleSet& tqp) const {
-  return ( new SlaterDetOpt(tqp, m_spo->makeClone(), m_up_or_down) );
+  SlaterDetOpt* clone = new SlaterDetOpt(tqp, Phi->makeClone(), m_up_or_down);
+
+  clone->set_spo_optimizable_rotations();
+  clone->Optimizable=Optimizable;
+  clone->myVars=myVars;
+  clone->m_first_var_pos = m_first_var_pos;
+
+  return clone;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  Makes a clone (copy) of the object that uses the supplied single
+///         particle orbital set.
+///
+/// \param[in]      spo       the single particle orbital set the copy should use
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+DiracDeterminantBase* SlaterDetOpt::makeCopy(SPOSetBasePtr spo) const
+{
+  SlaterDetOpt* copy = new SlaterDetOpt(*targetPtcl, spo, m_up_or_down);
+
+  copy->set_spo_optimizable_rotations();
+  copy->myVars=myVars;
+  copy->Optimizable=Optimizable;
+  copy->m_first_var_pos = m_first_var_pos;
+
+  return copy;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -187,7 +214,8 @@ void SlaterDetOpt::resetTargetParticleSet(ParticleSet& P) {
   m_nel = m_last - m_first;
 
   // reset our optimizable orbitals object
-  m_spo->resetTargetParticleSet(P);
+  Phi->resetTargetParticleSet(P);
+  targetPtcl = &P;
 
   // resize matrices and arrays
   m_orb_val_mat_all.resize(m_nel, m_nmo);
@@ -257,7 +285,7 @@ OrbitalBase::RealType SlaterDetOpt::evaluate_matrices_from_scratch(ParticleSet& 
 
   // either evaluate all of the molecular orbitals
   if (all) {
-    m_spo->evaluate_notranspose(P, m_first, m_last, m_orb_val_mat_all, m_orb_der_mat_all, m_orb_lap_mat_all);
+    Phi->evaluate_notranspose(P, m_first, m_last, m_orb_val_mat_all, m_orb_der_mat_all, m_orb_lap_mat_all);
     for (int i = 0; i < m_nel; i++)
     for (int j = 0; j < m_nel; j++) {
       m_orb_val_mat(i,j) = m_orb_val_mat_all(i,j);
@@ -267,7 +295,7 @@ OrbitalBase::RealType SlaterDetOpt::evaluate_matrices_from_scratch(ParticleSet& 
 
   // or just the molecular orbitals used by this determinant
   } else {
-    m_spo->evaluate_notranspose(P, m_first, m_last, m_orb_val_mat, m_orb_der_mat, m_orb_lap_mat);
+    Phi->evaluate_notranspose(P, m_first, m_last, m_orb_val_mat, m_orb_der_mat, m_orb_lap_mat);
   }
 
   // m_orb_val_mat slow (i.e. first) index is now particles
@@ -415,7 +443,7 @@ OrbitalBase::ValueType SlaterDetOpt::ratioGrad(ParticleSet& P, int iat, GradType
     return 1.0;
 
   // compute orbital values, gradients, and summed second derivatives for the particle's new position
-  m_spo->evaluate(P, iat, m_orb_val_vec, m_orb_der_vec, m_orb_lap_vec);
+  Phi->evaluate(P, iat, m_orb_val_vec, m_orb_der_vec, m_orb_lap_vec);
 
   // compute the ratio of new to old determinant values
   curRatio = simd::dot(m_orb_inv_mat[iat-m_first], m_orb_val_vec.data(), m_nel);
@@ -444,7 +472,7 @@ OrbitalBase::ValueType SlaterDetOpt::ratio(ParticleSet& P,
     return 1.0;
 
   // compute orbital values, gradients, and summed second derivatives for the particle's new position
-  m_spo->evaluate(P, iat, m_orb_val_vec, m_orb_der_vec, m_orb_lap_vec);
+  Phi->evaluate(P, iat, m_orb_val_vec, m_orb_der_vec, m_orb_lap_vec);
 
   // compute the ratio of new to old determinant values
   curRatio = simd::dot(m_orb_inv_mat[iat-m_first], m_orb_val_vec.data(), m_nel);
@@ -470,7 +498,7 @@ OrbitalBase::ValueType SlaterDetOpt::ratio(ParticleSet& P, int iat) {
     return 1.0;
 
   // compute orbital values, gradients, and summed second derivatives for the particle's new position
-  m_spo->evaluate(P, iat, m_orb_val_vec, m_orb_der_vec, m_orb_lap_vec);
+  Phi->evaluate(P, iat, m_orb_val_vec, m_orb_der_vec, m_orb_lap_vec);
 
   // compute the ratio of new to old determinant values
   curRatio = simd::dot(m_orb_inv_mat[iat-m_first], m_orb_val_vec.data(), m_nel);
@@ -741,8 +769,8 @@ void SlaterDetOpt::resetParameters(const opt_variables_type& active)
   this->exponentiate_matrix(m_nlc, &rot_mat.at(0));
 
   // get the linear combination coefficients by applying the rotation to the old coefficients
-  BLAS::gemm('N', 'T', m_nb, m_nlc, m_nlc, RealType(1.0), &(m_spo->m_init_B.at(0)),
-             m_nb, &rot_mat.at(0), m_nlc, RealType(0.0), &(m_spo->m_B.at(0)), m_nb);
+  BLAS::gemm('N', 'T', m_nb, m_nlc, m_nlc, RealType(1.0), &(Phi->m_init_B.at(0)),
+             m_nb, &rot_mat.at(0), m_nlc, RealType(0.0), &(Phi->m_B.at(0)), m_nb);
 
   // Store the orbital rotations parameters internally in myVars
   for (int i = 0; i < m_act_rot_inds.size(); i++)
@@ -844,9 +872,9 @@ void SlaterDetOpt::add_derivatives(const int nl,
 ///         w.r.t. rotations between its molecular orbitals.
 ///
 /// \param[in]      P              the particle set
-/// \param[in]      optvars        unused here as we are just preparing what m_spo will need
-/// \param[in,out]  dlogpsi        unused here as we are just preparing what m_spo will need
-/// \param[in,out]  dhpsioverpsi   unused here as we are just preparing what m_spo will need
+/// \param[in]      optvars        unused here as we are just preparing what Phi will need
+/// \param[in,out]  dlogpsi        unused here as we are just preparing what Phi will need
+/// \param[in,out]  dhpsioverpsi   unused here as we are just preparing what Phi will need
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
@@ -1037,7 +1065,7 @@ void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
 //LCOrbitalSetOptTrialFunc * SlaterDetOpt::tfc_ptr(const std::string & calling_func) {
 //
 //  // get pointer to the optimizable single particle orbital set's trial function component
-//  LCOrbitalSetOptTrialFunc * const ptr = dynamic_cast<LCOrbitalSetOptTrialFunc*>(m_spo->tf_component());
+//  LCOrbitalSetOptTrialFunc * const ptr = dynamic_cast<LCOrbitalSetOptTrialFunc*>(Phi->tf_component());
 //
 //  // check that the pointer conversion was successful
 //  if ( !ptr ) {
@@ -1169,8 +1197,8 @@ void SlaterDetOpt::buildOptVariables(std::vector<RealType>& input_params, const 
   this->exponentiate_matrix(m_nlc, &rot_mat.at(0));
   // Get the linear combination coefficients by applying the rotation to
   // the old coefficients
-  BLAS::gemm('N', 'T', m_nb, m_nlc, m_nlc, RealType(1.0), &(m_spo->m_init_B.at(0)), m_nb,
-             &rot_mat.at(0), m_nlc, RealType(0.0), &(m_spo->m_B.at(0)), m_nb);
+  BLAS::gemm('N', 'T', m_nb, m_nlc, m_nlc, RealType(1.0), &(Phi->m_init_B.at(0)), m_nb,
+             &rot_mat.at(0), m_nlc, RealType(0.0), &(Phi->m_B.at(0)), m_nb);
 }
 
 }

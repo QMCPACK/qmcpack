@@ -27,7 +27,7 @@ class SlaterDetOpt : public DiracDeterminantBase {
   private:
 
     /// \brief   pointer to the set of optimizable single particle orbitals
-    SPOSetBase * m_spo;
+    //SPOSetBase * m_spo;
 
     /// \brief   whether this is for up or down spins (0 for up, 1 for down)
     int m_up_or_down;
@@ -200,6 +200,8 @@ class SlaterDetOpt : public DiracDeterminantBase {
     void copyFromBuffer(ParticleSet& P, BufferType& buf);
 
     OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+
+    DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
 
     void add_derivatives(const int nl,
                          const int np,

@@ -263,15 +263,18 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
 
       // create a clone that contains a cloned spo set or basis set
       SPOSetBase * retval;
+
       if ( m_spo_set )
         retval = new LCOrbitalSetOpt(m_spo_set->makeClone(), m_report_level);
       else
         retval = new LCOrbitalSetOpt(m_basis_set->makeClone(), m_report_level);
 
-      // set the number of molecular orbitals
+      retval->C = C;
       retval->setOrbitalSetSize(this->OrbitalSetSize);
-
       retval->init_LCOrbitalSetOpt();
+
+      retval->m_B = m_B;
+      retval->m_init_B = m_init_B;
 
       // return the clone
       return retval;
