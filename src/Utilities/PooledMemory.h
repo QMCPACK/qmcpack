@@ -67,6 +67,7 @@ struct PooledMemory
     Current = in.Current;
     Current_scalar = in.Current_scalar;
     Scalar_ptr = reinterpret_cast<T_scalar*>(myData.data()+in.scalar_offset());
+    return *this;
   }
 
   ///return the size of the data
@@ -172,7 +173,7 @@ struct PooledMemory
 
   inline void forward(size_type n)
   {
-    Current += n;
+    Current += getAlignedSize<T>(n);
   }
 
   template<typename T1>

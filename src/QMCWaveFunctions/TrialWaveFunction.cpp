@@ -737,7 +737,7 @@ TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P
   buf.put(PhaseValue);
   buf.put(LogValue);
   // Ye: temperal added check, to be removed
-  assert(buf.size()==BufferCursor+BufferCursor_scalar*sizeof(double));
+  assert(buf.size()==buf.current()+buf.current_scalar()*sizeof(double));
   return LogValue;
 }
 
@@ -750,6 +750,7 @@ void TrialWaveFunction::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   //get the gradients and laplacians from the buffer
   buf.get(PhaseValue);
   buf.get(LogValue);
+  assert(buf.size()==buf.current()+buf.current_scalar()*sizeof(double));
 }
 
 #if 0
