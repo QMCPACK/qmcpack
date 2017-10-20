@@ -26,6 +26,7 @@
 #include "OhmmsData/HDFStringAttrib.h"
 #include "OhmmsData/AttributeSet.h"
 #include "io/hdf_archive.h"
+#include "Message/CommOperatorsMPI.h"
 #if QMC_BUILD_LEVEL>2
 #include "QMCWaveFunctions/Experimental/LCOrbitalSetWithCorrection.h"
 #endif
@@ -133,22 +134,23 @@ public:
       int Nb_Elements(0);
       std::string basiset_name;
 
-      hdf_archive hin(0);
-      bool HIN_OPEN=hin.open(h5_path.c_str(),H5F_ACC_RDONLY);
-      if(HIN_OPEN!=true)
-         PRE.error("Could not open H5 file",true);
-      
-      bool HIN_BASIS=hin.push("basisset");
-      if(HIN_BASIS!=true)
-         PRE.error("Could not open basisset group in H5; Probably Corrupt H5 file",true);
-
-      bool HIN_PUSH = hin.push("atomicBasisSet");
-      if(HIN_PUSH!=true)
-         PRE.error("Could not open atomicBasisSet group in H5; Probably Corrupt H5 file",true);
+      //hdf_archive hin(0);
+      hdf_archive hin(myComm);
+      if(myComm->rank()==0){
+          if(!hin.open(h5_path.c_str(),H5F_ACC_RDONLY))
+             PRE.error("Could not open H5 file",true);
+          
+          if(!hin.push("basisset"))
+             PRE.error("Could not open basisset group in H5; Probably Corrupt H5 file",true);
  
+          if(!hin.push("atomicBasisSet"))
+             PRE.error("Could not open atomicBasisSet group in H5; Probably Corrupt H5 file",true);
+ 
+          hin.read(Nb_Elements,"NumElemets"); 
+      }
 
-      hin.read(Nb_Elements,"NumElemets"); 
-  
+      myComm->bcast(Nb_Elements);
+
       if(Nb_Elements<1)
           PRE.error("Missing elementType attribute of atomicBasisSet.",true);
 
@@ -157,25 +159,25 @@ public:
       for (int i=0;i<Nb_Elements;i++)
       {
           std::string elementType,dataset;
-          
-
           std::stringstream tempElem;                                              
           std::string ElemID0="Element",ElemType;
           tempElem<<ElemID0<<i;
           ElemType=tempElem.str();
+          
+          if(myComm->rank()==0){
+             if(!hin.push(ElemType.c_str()))
+                 PRE.error("Could not open  group EleTycBasisSet in H5; Probably Corrupt H5 file",true);
 
-          bool HIN_ELEMTYPE = hin.push(ElemType.c_str());
-          if(HIN_ELEMTYPE!=true)
-              PRE.error("Could not open  group EleTycBasisSet in H5; Probably Corrupt H5 file",true);
+             if(!hin.read(basiset_name,"name"))
+                 PRE.error("Could not find name of  basisset group in H5; Probably Corrupt H5 file",true);
 
-          bool Bas_Name= hin.read(basiset_name,"name");
-          if  (Bas_Name!=true)
-              PRE.error("Could not find name of  basisset group in H5; Probably Corrupt H5 file",true);
-         
-          bool H5Elem_type = hin.read(elementType,"elementType");
-          if  (H5Elem_type!=true)
-              PRE.error("Could not read elementType in H5; Probably Corrupt H5 file",true);
-           
+
+             if(!hin.read(elementType,"elementType"))
+                 PRE.error("Could not read elementType in H5; Probably Corrupt H5 file",true);
+          }
+          myComm->bcast(basiset_name);
+          myComm->bcast(elementType);
+
           std::map<std::string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType);
           if(it == aoBuilders.end())
           {
@@ -192,17 +194,19 @@ public:
             aoBuilders[elementType]=any;
           }
 
-          hin.pop(); //ElemType.c_str()
+          if(myComm->rank()==0)
+             hin.pop(); 
       }
 
       
-      hin.pop(); 
-      hin.pop(); 
-      hin.close();     
+      if(myComm->rank()==0){
+        hin.pop(); 
+        hin.pop(); 
+        hin.close();     
+      }
     }
     //resize the basis set
     thisBasisSet->setBasisSetSize(-1);
-    std::cout<<"I am Here 6 "<<std::endl;
     return true;
   }
 
