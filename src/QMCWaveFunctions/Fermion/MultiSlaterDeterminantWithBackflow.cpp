@@ -467,7 +467,7 @@ void MultiSlaterDeterminantWithBackflow::restore(int iat)
   AccRejTimer.stop();
 }
 
-OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferType& buf)
+void MultiSlaterDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferType& buf)
 {
   BFTrans->evaluate(P);
 // move resize of pbyp structures to here
@@ -475,21 +475,19 @@ OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::registerData(ParticleS
   spo_dn->evaluateForWalkerMoveWithHessian(BFTrans->QP,FirstIndex_dn,LastIndex_dn);
   myG = P.G;
   myL = P.L;
-  ValueType logpsi(0.0);
-  PhaseValue=0.0;
   for (int i=0; i<dets_up.size(); i++)
   {
     spo_up->prepareFor(i);
-    logpsi += dets_up[i]->registerData(BFTrans->QP,buf);
+    dets_up[i]->registerData(BFTrans->QP,buf);
   }
   for (int i=0; i<dets_dn.size(); i++)
   {
     spo_dn->prepareFor(i);
-    logpsi += dets_dn[i]->registerData(BFTrans->QP,buf);
+    dets_dn[i]->registerData(BFTrans->QP,buf);
   }
   P.G = myG;
   P.L = myL;
-  logpsi = evaluateLog(P,P.G,P.L);
+  ValueType logpsi = evaluateLog(P,P.G,P.L);
   int TotalDim = PosType::Size*P.getTotalNum();
   //buf.add(detValues_up.begin(),detValues_up.end());
   //buf.add(detValues_dn.begin(),detValues_dn.end());
@@ -505,7 +503,6 @@ OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::registerData(ParticleS
     buf.add(&(grads_dn[i][0][0]), &(grads_dn[i][0][0])+TotalDim);
     buf.add(lapls_dn[i].first_address(),lapls_dn[i].last_address());
   }
-  return LogValue;
 }
 
 // FIX FIX FIX

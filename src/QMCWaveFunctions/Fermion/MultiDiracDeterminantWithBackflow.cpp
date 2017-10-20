@@ -720,8 +720,7 @@ MultiDiracDeterminantBase& MultiDiracDeterminantBase::operator=(const MultiDirac
   return *this;
 }
 
-
-MultiDiracDeterminantBase::RealType
+void
 MultiDiracDeterminantBase::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if(NP == 0)
@@ -743,7 +742,6 @@ MultiDiracDeterminantBase::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(detValues.first_address(), detValues.last_address());
   buf.add(FirstAddressOfGrads,LastAddressOfGrads);
   buf.add(lapls.first_address(), lapls.last_address());
-  return 1.0;
 }
 
 void MultiDiracDeterminantBase::registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf, int storageType)

@@ -642,12 +642,11 @@ public:
       }
   }
 
-  inline RealType registerData(ParticleSet& P, WFBufferType& buf)
+  inline void registerData(ParticleSet& P, WFBufferType& buf)
   {
     buf.add(Uat.begin(), Uat.end());
     buf.add(FirstAddressOfdU,LastAddressOfdU);
     buf.add(d2Uat.begin(), d2Uat.end());
-    return LogValue;
   }
 
   inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf,

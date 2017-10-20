@@ -79,7 +79,7 @@ public:
     return FakeGradRatio;
   }
 
-  virtual RealType registerData(ParticleSet& P, WFBufferType& buf) {return 0.0;}
+  virtual void registerData(ParticleSet& P, WFBufferType& buf) {}
 
   virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false) {return 0.0;}
 

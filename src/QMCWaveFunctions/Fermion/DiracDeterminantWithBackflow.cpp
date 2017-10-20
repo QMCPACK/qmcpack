@@ -103,7 +103,7 @@ void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix_t& logdet, GradMatri
   simd::transpose(psiM_temp.data(), NumOrbitals, psiM_temp.cols(), logdet.data(), NumOrbitals, logdet.cols());
 }
 
-DiracDeterminantWithBackflow::RealType
+void
 DiracDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if(NP == 0)
@@ -146,7 +146,6 @@ DiracDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(psiMinv.first_address(),psiMinv.last_address());
   buf.add(LogValue);
   buf.add(PhaseValue);
-  return LogValue;
 }
 
 DiracDeterminantWithBackflow::RealType DiracDeterminantWithBackflow::updateBuffer(ParticleSet& P,

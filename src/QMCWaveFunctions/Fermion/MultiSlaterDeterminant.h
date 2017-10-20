@@ -105,7 +105,7 @@ public:
   virtual void acceptMove(ParticleSet& P, int iat);
   virtual void restore(int iat);
 
-  virtual RealType registerData(ParticleSet& P, WFBufferType& buf);
+  virtual void registerData(ParticleSet& P, WFBufferType& buf);
   virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 

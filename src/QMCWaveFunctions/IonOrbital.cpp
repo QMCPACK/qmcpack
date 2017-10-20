@@ -195,7 +195,7 @@ IonOrbital::evaluateLogAndStore(ParticleSet& P,
 }
 
 /** equivalent to evalaute with additional data management */
-IonOrbital::RealType
+void
 IonOrbital::registerData(ParticleSet& P, WFBufferType& buf)
 {
   evaluateLogAndStore(P, P.G, P.L);
@@ -203,7 +203,6 @@ IonOrbital::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(U.begin(), U.end());
   buf.add(d2U.begin(), d2U.end());
   buf.add(FirstAddressOfdU,LastAddressOfdU);
-  return LogValue;
 }
 
 IonOrbital::RealType

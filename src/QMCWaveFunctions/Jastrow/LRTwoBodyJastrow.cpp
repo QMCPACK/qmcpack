@@ -400,7 +400,7 @@ void LRTwoBodyJastrow::acceptMove(ParticleSet& P, int iat)
   d2U += offd2U;
 }
 
-LRTwoBodyJastrow::RealType
+void
 LRTwoBodyJastrow::registerData(ParticleSet& P, WFBufferType& buf)
 {
   LogValue=evaluateLog(P,P.G,P.L);
@@ -432,7 +432,6 @@ LRTwoBodyJastrow::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(U.first_address(), U.last_address());
   buf.add(d2U.first_address(), d2U.last_address());
   buf.add(FirstAddressOfdU,LastAddressOfdU);
-  return LogValue;
 }
 
 LRTwoBodyJastrow::RealType

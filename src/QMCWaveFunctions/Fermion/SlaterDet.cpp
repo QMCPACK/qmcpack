@@ -208,22 +208,12 @@ void SlaterDet::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad_psi)
 	
 }
 
-SlaterDet::RealType SlaterDet::registerData(ParticleSet& P, WFBufferType& buf)
+void SlaterDet::registerData(ParticleSet& P, WFBufferType& buf)
 {
   DEBUG_PSIBUFFER(" SlaterDet::registerData ",buf.current());
-  //ValueType psi = 1.0;
-  //for(int i=0; i<Dets.size(); i++)
-  //  psi *= Dets[i]->registerData(P,buf);
-  //return LogValue = evaluateLogAndPhase(psi,PhaseValue);
-  LogValue = 0.0;
-  PhaseValue = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
-  {
-    LogValue += Dets[i]->registerData(P, buf);
-    PhaseValue += Dets[i]->PhaseValue;
-  }
+    Dets[i]->registerData(P, buf);
   DEBUG_PSIBUFFER(" SlaterDet::registerData ",buf.current());
-  return LogValue;
 }
 
 void SlaterDet::updateAfterSweep(ParticleSet& P,

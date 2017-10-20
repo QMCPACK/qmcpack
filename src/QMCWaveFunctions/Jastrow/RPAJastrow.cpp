@@ -269,13 +269,11 @@ void RPAJastrow::restore(int iat)
     Psi[i]->restore(iat);
 }
 
-RPAJastrow::RealType
+void
 RPAJastrow::registerData(ParticleSet& P, WFBufferType& buf)
 {
-  LogValue=0.0;
   for(int i=0; i<Psi.size(); i++)
-    LogValue += Psi[i]->registerData(P,buf);
-  return LogValue;
+    Psi[i]->registerData(P,buf);
 }
 
 RPAJastrow::RealType

@@ -505,7 +505,7 @@ void MultiSlaterDeterminant::restore(int iat)
   AccRejTimer.stop();
 }
 
-OrbitalBase::RealType MultiSlaterDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
+void MultiSlaterDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 {
 // move resize of pbyp structures to here
   spo_up->evaluateForWalkerMove(P,FirstIndex_up,LastIndex_up);
@@ -517,12 +517,12 @@ OrbitalBase::RealType MultiSlaterDeterminant::registerData(ParticleSet& P, WFBuf
   for (int i=0; i<dets_up.size(); i++)
   {
     spo_up->prepareFor(i);
-    logpsi += dets_up[i]->registerData(P,buf);
+    dets_up[i]->registerData(P,buf);
   }
   for (int i=0; i<dets_dn.size(); i++)
   {
     spo_dn->prepareFor(i);
-    logpsi += dets_dn[i]->registerData(P,buf);
+    dets_dn[i]->registerData(P,buf);
   }
   P.G = myG;
   P.L = myL;
@@ -544,7 +544,6 @@ OrbitalBase::RealType MultiSlaterDeterminant::registerData(ParticleSet& P, WFBuf
 //      buf.add(&(lapls_dn[i][0]), &(lapls_dn[i][P.getTotalNum()]));
     buf.add(lapls_dn[i].first_address(),lapls_dn[i].last_address());
   }
-  return LogValue;
 }
 
 // FIX FIX FIX

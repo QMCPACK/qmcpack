@@ -454,22 +454,16 @@ public:
   }
 
   /** equivalent to evalaute with additional data management */
-  RealType registerData(ParticleSet& P, WFBufferType& buf)
+  void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    // std::cerr <<"REGISTERING 1 BODY JASTROW "<< std::endl;
-    // std::cerr <<d_table->size(VisitorIndex)<< std::endl;
-    //U.resize(d_table->size(VisitorIndex));
     FirstAddressOfdU = &(dU[0][0]);
     LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
-    evaluateLogAndStore(P,P.G,P.L);
     //add U, d2U and dU. Keep the order!!!
     DEBUG_PSIBUFFER(" OneBodyJastrow::registerData ",buf.current());
     buf.add(U.begin(), U.end());
     buf.add(d2U.begin(), d2U.end());
     buf.add(FirstAddressOfdU,LastAddressOfdU);
     DEBUG_PSIBUFFER(" OneBodyJastrow::registerData ",buf.current());
-    return LogValue;
   }
 
   void evaluateGL(ParticleSet& P)

@@ -60,7 +60,7 @@ public:
 
   void acceptMove(ParticleSet& P, int iat);
 
-  RealType registerData(ParticleSet& P, WFBufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
 
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 

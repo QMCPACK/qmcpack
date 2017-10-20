@@ -101,7 +101,7 @@ public:
   ///reset the size: with the number of particles and number of orbtials
   void resize(int nel, int morb);
 
-  RealType registerData(ParticleSet& P, WFBufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
 
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 

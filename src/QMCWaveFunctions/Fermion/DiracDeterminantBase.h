@@ -169,7 +169,7 @@ public:
   ///reset the size: with the number of particles and number of orbtials
   virtual void resize(int nel, int morb);
 
-  virtual RealType registerData(ParticleSet& P, WFBufferType& buf);
+  virtual void registerData(ParticleSet& P, WFBufferType& buf);
 
   virtual void updateAfterSweep(ParticleSet& P,
       ParticleSet::ParticleGradient_t& G,

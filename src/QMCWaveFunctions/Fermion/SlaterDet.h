@@ -133,8 +133,7 @@ public:
     return Dets[i]->cols();
   }
 
-  virtual
-  RealType registerData(ParticleSet& P, WFBufferType& buf);
+  virtual void registerData(ParticleSet& P, WFBufferType& buf);
 
   virtual void updateAfterSweep(ParticleSet& P,
       ParticleSet::ParticleGradient_t& G,

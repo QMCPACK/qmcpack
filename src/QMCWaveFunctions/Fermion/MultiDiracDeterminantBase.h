@@ -135,7 +135,7 @@ public:
   ///reset the size: with the number of particles and number of orbtials
   virtual void resize(int nel, int morb);
 
-  RealType registerData(ParticleSet& P, WFBufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
 
   void registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf, int storageType=0);
 

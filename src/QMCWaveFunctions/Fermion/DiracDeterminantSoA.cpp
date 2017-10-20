@@ -135,16 +135,14 @@ namespace qmcplusplus
     }
   }
 
-  DiracDeterminantSoA::RealType
+  void
     DiracDeterminantSoA::registerData(ParticleSet& P, WFBufferType& buf)
     {
-      LogValue=evaluateLog(P,P.G,P.L);
       //add the data: determinant, inverse, gradient and laplacians
       buf.add(psiM.first_address(),psiM.last_address());
       buf.add(memoryPool.data(),memoryPool.data()+memoryPool.size());
       buf.add(LogValue);
       buf.add(PhaseValue);
-      return LogValue;
     }
 
   DiracDeterminantSoA::RealType 

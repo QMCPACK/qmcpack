@@ -182,7 +182,7 @@ public:
   void acceptMove(ParticleSet& P, int iat);
 
   // Allocate per-walker data in the PooledData buffer
-  RealType registerData(ParticleSet& P, WFBufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
   // Walker move has been accepted -- update the buffer
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf,
                         bool fromscratch=false);

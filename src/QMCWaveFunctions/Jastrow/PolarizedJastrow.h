@@ -114,10 +114,9 @@ public:
     return 1.0;
   }
 
-  ValueType registerData(ParticleSet& P, WFBufferType& buf)
+  void registerData(ParticleSet& P, WFBufferType& buf)
   {
     std::cerr << "PolarizedJastrow::registerData for particle-by-particle is empty " << std::endl;
-    return 0.0;
   }
 
   ValueType updateBuffer(ParticleSet& P, WFBufferType& buf)

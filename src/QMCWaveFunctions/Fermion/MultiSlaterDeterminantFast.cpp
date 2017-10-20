@@ -142,7 +142,7 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
   int n = nels_up+nels_dn;
   ParticleSet::ParticleGradient_t G(n),G0(n);
   ParticleSet::ParticleLaplacian_t L(n),L0(n);
-  ValueType log, log0;
+  ValueType log0;
   GradType G1;
 //     log = msd->evaluate(P,G,L);
   log0 = evaluate(P,G0,L0);
@@ -164,7 +164,7 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
   */
   Walker_t::WFBuffer_t wbuffer;
   wbuffer.clear();
-  log=registerData(P,wbuffer);
+  registerData(P,wbuffer);
 //     log = msd->evaluate(P,G,L);
   log0 = evaluate(P,G0,L0);
   PosType dr;
@@ -178,7 +178,7 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
   L=0;
   log0 = ratioGrad(P,iat,G1);
   G0[iat]=G1;
-  std::cout <<"Psi: " <<log <<"   " <<log0 <<"   " <<log/log0 << std::endl;
+  std::cout <<"Psi: " << log0 << std::endl;
   for(int i=0; i<n; i++)
   {
     std::cout <<i  <<"\n"
@@ -434,7 +434,7 @@ void MultiSlaterDeterminantFast::restore(int iat)
   AccRejTimer.stop();
 }
 
-OrbitalBase::RealType MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
+void MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if(usingBF)
   {
@@ -446,8 +446,6 @@ OrbitalBase::RealType MultiSlaterDeterminantFast::registerData(ParticleSet& P, W
   LogValue = evaluateLog(P,P.G,P.L);
 
   buf.add(psiCurrent);
-
-  return LogValue;
 }
 
 // this routine does not initialize the data, just reserves the space

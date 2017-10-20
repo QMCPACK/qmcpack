@@ -201,7 +201,7 @@ void ThreeBodyGeminal::acceptMove(ParticleSet& P, int iat)
   }
 }
 
-OrbitalBase::RealType
+void
 ThreeBodyGeminal::registerData(ParticleSet& P, WFBufferType& buf)
 {
   evaluateLogAndStore(P);
@@ -217,7 +217,6 @@ ThreeBodyGeminal::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(Uk.begin(), Uk.end());
   buf.add(FirstAddressOfgU,LastAddressOfgU);
   buf.add(d2Uk.begin(), d2Uk.end());
-  return LogValue;
 }
 
 void

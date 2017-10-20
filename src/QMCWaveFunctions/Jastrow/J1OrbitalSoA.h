@@ -284,10 +284,7 @@ struct  J1OrbitalSoA : public OrbitalBase
   }
 
 
-  inline RealType registerData(ParticleSet& P, WFBufferType& buf)
-  {
-    return LogValue;
-  }
+  inline void registerData(ParticleSet& P, WFBufferType& buf) { }
 
   inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false)
   {

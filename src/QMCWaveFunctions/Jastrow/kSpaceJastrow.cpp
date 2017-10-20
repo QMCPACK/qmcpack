@@ -666,7 +666,7 @@ kSpaceJastrow::acceptMove(ParticleSet& P, int iat)
   // d2U += offd2U;
 }
 
-kSpaceJastrow::RealType
+void
 kSpaceJastrow::registerData(ParticleSet& P, WFBufferType& buf)
 {
   LogValue=evaluateLog(P,P.G,P.L);
@@ -680,7 +680,6 @@ kSpaceJastrow::registerData(ParticleSet& P, WFBufferType& buf)
   // buf.add(d2U.first_address(), d2U.last_address());
   // buf.add(FirstAddressOfdU,LastAddressOfdU);
   // return LogValue;
-  return LogValue;
 }
 
 kSpaceJastrow::RealType

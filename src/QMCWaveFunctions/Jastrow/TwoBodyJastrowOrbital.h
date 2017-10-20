@@ -506,17 +506,13 @@ public:
     //  Uptcl[i]=std::accumulate(&(U[nat]),&(U[nat+N]),0.0);
   }
 
-  inline RealType registerData(ParticleSet& P, WFBufferType& buf)
+  inline void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    // std::cerr <<"REGISTERING 2 BODY JASTROW"<< std::endl;
-    evaluateLogAndStore(P,P.G,P.L);
     DEBUG_PSIBUFFER(" TwoBodyJastrow::registerData ",buf.current());
-    U[NN]=LogValue;
     buf.add(U.begin(), U.end());
     buf.add(d2U.begin(), d2U.end());
     buf.add(FirstAddressOfdU,LastAddressOfdU);
     DEBUG_PSIBUFFER(" TwoBodyJastrow::registerData ",buf.current());
-    return LogValue;
   }
 
   inline void evaluateGL(ParticleSet& P)

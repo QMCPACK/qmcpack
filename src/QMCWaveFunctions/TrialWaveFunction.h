@@ -284,7 +284,7 @@ public:
   void rejectMove(int iat);
   void acceptMove(ParticleSet& P, int iat);
 
-  RealType registerData(ParticleSet& P, WFBufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
   RealType registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
   void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets);
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
@@ -391,12 +391,6 @@ private:
 
   ///fermionic wavefunction
   FermionBase* FermionWF;
-
-  ///differential gradients
-  ParticleSet::ParticleGradient_t delta_G;
-
-  ///differential laplacians
-  ParticleSet::ParticleLaplacian_t delta_L;
 
   ///fake particleset
   ParticleSet* tempP;

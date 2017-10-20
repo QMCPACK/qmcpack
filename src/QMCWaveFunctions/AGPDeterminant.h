@@ -59,7 +59,7 @@ public:
   ///reset the size: with the number of particles and number of orbtials
   void resize(int nup, int ndown);
 
-  ValueType registerData(ParticleSet& P, WFBufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
 
   ValueType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 

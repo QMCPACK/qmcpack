@@ -93,7 +93,7 @@ void RNDiracDeterminantBaseAlternate::resize(int nel, int morb)
   grad_phi_alpha_Minv.resize(nel,norb);
 }
 
-RNDiracDeterminantBaseAlternate::RealType
+void
 RNDiracDeterminantBaseAlternate::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if (NP == 0) //first time, allocate once
@@ -132,7 +132,6 @@ RNDiracDeterminantBaseAlternate::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(LogValue);
   buf.add(alternateLogValue);
   buf.add(PhaseValue);
-  return LogValue;
 }
 
 RNDiracDeterminantBaseAlternate::RealType RNDiracDeterminantBaseAlternate::updateBuffer(ParticleSet& P,

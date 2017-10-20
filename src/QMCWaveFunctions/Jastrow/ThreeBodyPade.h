@@ -260,7 +260,7 @@ public:
 
 
   /** equivalent to evalaute with additional data management */
-  ValueType registerData(ParticleSet& P, WFBufferType& buf)
+  void registerData(ParticleSet& P, WFBufferType& buf)
   {
     //U.resize(d_table->size(VisitorIndex));
     d2U.resize(d_table->size(VisitorIndex));
@@ -296,7 +296,6 @@ public:
     buf.add(U.begin(), U.end());
     buf.add(d2U.begin(), d2U.end());
     buf.add(FirstAddressOfdU,LastAddressOfdU);
-    return LogValue;
   }
 
   ValueType updateBuffer(ParticleSet& P, WFBufferType& buf)

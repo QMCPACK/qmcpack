@@ -358,10 +358,8 @@ struct OrbitalBase: public QMCTraits
   };
 
   /** add temporary data reserved for particle-by-particle move.
-   *
-   * Return the log|psi|  like evalaute evaluateLog
    */
-  virtual RealType registerData(ParticleSet& P, WFBufferType& buf) =0;
+  virtual void registerData(ParticleSet& P, WFBufferType& buf) =0;
 
   /** add temporary (constant) data used to calculate analytical
    *  derivatives during linear optimization of parameters

@@ -175,9 +175,8 @@ public:
 
 
   /** equivalent to evalaute with additional data management */
-  ValueType registerData(ParticleSet& P, WFBufferType& buf)
+  void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    return LogValue;
   }
 
   ValueType updateBuffer(ParticleSet& P, WFBufferType& buf)

@@ -46,7 +46,7 @@ public:
 
   RNDiracDeterminantBase& operator=(const RNDiracDeterminantBase& s);
 
-  RealType registerData(ParticleSet& P, WFBufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
 
   void resize(int nel, int morb);
 

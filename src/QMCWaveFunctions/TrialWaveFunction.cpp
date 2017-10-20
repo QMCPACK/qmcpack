@@ -684,34 +684,17 @@ void TrialWaveFunction::getPhases(std::vector<RealType>& pvals)
 }
 
 
-TrialWaveFunction::RealType TrialWaveFunction::registerData(ParticleSet& P, WFBufferType& buf)
+void TrialWaveFunction::registerData(ParticleSet& P, WFBufferType& buf)
 {
-  delta_G.resize(P.getTotalNum());
-  delta_L.resize(P.getTotalNum());
-  P.G = 0.0;
-  P.L = 0.0;
   //save the current position
   BufferCursor=buf.current();
   BufferCursor_scalar=buf.current_scalar();
-  ValueType logpsi(0.0);
-  PhaseValue=0.0;
-  std::vector<OrbitalBase*>::iterator it(Z.begin());
-  std::vector<OrbitalBase*>::iterator it_end(Z.end());
-  for (; it!=it_end; ++it)
+  for (auto it=Z.begin(); it!=Z.end(); ++it)
   {
-    logpsi += (*it)->registerData(P,buf);
-    PhaseValue += (*it)->PhaseValue;
+    (*it)->registerData(P,buf);
   }
-  convert(logpsi,LogValue);
-  //LogValue=real(logpsi);
-//append current gradients and laplacians to the buffer
-  NumPtcls = P.getTotalNum();
-  TotalDim = PosType::Size*NumPtcls;
   buf.add(PhaseValue);
   buf.add(LogValue);
-  //buf.add(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
-  //buf.add(&(P.L[0]), &(P.L[P.getTotalNum()]));
-  return LogValue;
 }
 
 TrialWaveFunction::RealType TrialWaveFunction::registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf, int storageType)
@@ -844,43 +827,6 @@ void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP, const opt_va
   }
 #endif
 }
-
-//TrialWaveFunction::RealType
-//TrialWaveFunction::evaluate(ParticleSet& P, PooledData<RealType>& buf) {
-
-//  ValueType psi(1.0);
-//  for(int i=0; i<Z.size(); i++) psi *= Z[i]->evaluate(P,buf);
-//  buf.put(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
-//  buf.put(&(P.L[0]), &(P.L[0])+NumPtcls);
-//  return real(psi);
-//}
-//bool TrialWaveFunction::hasSPOSet(const std::string& aname) {
-//  return false;
-//  //bool notfoundit=true;
-//  //vector<OhmmsElementBase*>::iterator it(SPOSet.begin());
-//  //vector<OhmmsElementBase*>::iterator it_end(SPOSet.end());
-//  //while(notfoundit && it != it_end) {
-//  //  if((*it)->getName() == aname) notfoundit=false;
-//  //  ++it;
-//  //}
-//  //return !notfoundit;
-//}
-
-//OhmmsElementBase*
-//TrialWaveFunction::getSPOSet(const std::string& aname) {
-//  //bool notfoundit=true;
-//  //vector<OhmmsElementBase*>::iterator it(SPOSet.begin());
-//  //vector<OhmmsElementBase*>::iterator it_end(SPOSet.end());
-//  //while(notfoundit && it != it_end) {
-//  //  if((*it)->getName() == aname) return *it;
-//  //  ++it;
-//  //}
-//  return 0;
-//}
-
-//void TrialWaveFunction::addSPOSet(OhmmsElementBase* spo) {
-//  //SPOSet.push_back(spo);
-//}
 
 bool TrialWaveFunction::put(xmlNodePtr cur)
 {

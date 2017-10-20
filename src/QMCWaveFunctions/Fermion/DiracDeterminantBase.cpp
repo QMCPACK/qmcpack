@@ -212,7 +212,7 @@ void DiracDeterminantBase::updateAfterSweep(ParticleSet& P,
   UpdateTimer.stop();
 }
 
-DiracDeterminantBase::RealType
+void
 DiracDeterminantBase::registerData(ParticleSet& P, WFBufferType& buf)
 {
   // Ye: no idea about NP.
@@ -240,7 +240,6 @@ DiracDeterminantBase::registerData(ParticleSet& P, WFBufferType& buf)
   }
   buf.add(LogValue);
   buf.add(PhaseValue);
-  return LogValue;
 }
 
 DiracDeterminantBase::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P,

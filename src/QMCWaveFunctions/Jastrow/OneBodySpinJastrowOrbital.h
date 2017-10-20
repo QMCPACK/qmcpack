@@ -427,7 +427,7 @@ public:
   }
 
   /** equivalent to evalaute with additional data management */
-  RealType registerData(ParticleSet& P, WFBufferType& buf)
+  void registerData(ParticleSet& P, WFBufferType& buf)
   {
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     d2U.resize(d_table->size(VisitorIndex));
@@ -441,7 +441,6 @@ public:
     buf.add(d2U.begin(), d2U.end());
     buf.add(FirstAddressOfdU,LastAddressOfdU);
     DEBUG_PSIBUFFER(" OneBodySpinJastrow::registerData ",buf.current());
-    return LogValue;
   }
 
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false)
