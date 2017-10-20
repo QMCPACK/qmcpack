@@ -40,18 +40,8 @@ namespace qmcplusplus
     constexpr valT czero(0);
     P.G=czero;
     P.L=czero;
-    if(FirstTime)
-    {
-      Buffer.rewind();
-      LogValue=J2->registerData(P,Buffer);
-      FirstTime=false;
-    }
-    else
-    {
-      P.update();
-      Buffer.rewind();
-      J2->copyFromBuffer(P,Buffer);
-    }
+    LogValue=J2->evaluateLog(P,P.G,P.L);
+    FirstTime=false;
   }
 
   FakeWaveFunctionBase::posT AoSWaveFunction::evalGrad(ParticleSet& P, int iat)
