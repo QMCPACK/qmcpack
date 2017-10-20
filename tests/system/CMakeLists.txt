@@ -942,6 +942,16 @@ ENDIF(ENABLE_SOA)
                     1 DIAMOND2_DMC_SCALARS # DMC
                     )
 
+  LIST(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.00779")
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-dmc-reconf_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_short_vmc_dmc
+                    qmc_short_vmc_dmc_reconf.in.xml
+                    1 16
+                    TRUE
+                    1 DIAMOND2_DMC_SCALARS # DMC
+                    )
+
 
   LIST(APPEND HCP_BE_SCALARS "totenergy" "-1.481656 0.0005")
   LIST(APPEND HCP_BE_SCALARS "samples" "416000 0.0")
@@ -1072,6 +1082,15 @@ ENDIF(ENABLE_SOA)
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_long_vmc_dmc
                     qmc_long_vmc_dmc.in.xml
+                    1 16
+                    TRUE
+                    1 LONG_DIAMOND2_DMC_SCALARS # DMC
+                    )
+
+  QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-dmc-reconf_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_long_vmc_dmc
+                    qmc_long_vmc_dmc_reconf.in.xml
                     1 16
                     TRUE
                     1 LONG_DIAMOND2_DMC_SCALARS # DMC
