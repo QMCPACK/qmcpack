@@ -104,7 +104,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   add_p_timer(myTimers);
   myTwist=p.myTwist;
 
-  RSoA.resize(TotalNum);
+  RSoA=p.RSoA;
 }
 
 ParticleSet::~ParticleSet()
