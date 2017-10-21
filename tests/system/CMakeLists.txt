@@ -377,18 +377,20 @@ IF (NOT QMC_COMPLEX)
                     2 LI2STOSJL_DMC_SCALARS # DMC
                     )
 
- ELSE()
-    MESSAGE("Skipping all gaussian basis tests because they are not supported by complex build (QMC_COMPLEX=1)")  
- ENDIF()
-ELSE()
-    MESSAGE("Skipping all gaussian basis tests because they are not supported by CUDA build (QMC_CUDA=1)")  
-ENDIF()
+# C2 TZ PP multi determinants
+# Short tests
+  LIST(APPEND C2MSDJ_VMC_SCALARS "totenergy" "-11.066709  0.000926") # total energy
+  LIST(APPEND C2MSDJ_VMC_SCALARS "variance"  "  0.146694  0.003928") # energy variance
 
+  QMC_RUN_AND_CHECK(short-C2_pp-msdj_vmc
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
+                    C2_TZ_PP_MSDJ
+                    qmc_short_pp_msdj.xml
+                    1 16
+                    TRUE
+                    1 C2MSDJ_VMC_SCALARS # VMC
+                    )
 
-
-IF (NOT QMC_CUDA)
-
-IF (NOT QMC_COMPLEX)
 #
 # LiH molecular dimer gaussian tests, all electron
 # Also check results for different number of mpi tasks and threads keeping total constant
@@ -942,6 +944,16 @@ ENDIF(ENABLE_SOA)
                     1 DIAMOND2_DMC_SCALARS # DMC
                     )
 
+  LIST(APPEND DIAMOND2_DMC_SCALARS "totenergy" "-21.844975 0.00779")
+  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-dmc-reconf_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_short_vmc_dmc
+                    qmc_short_vmc_dmc_reconf.in.xml
+                    1 16
+                    TRUE
+                    1 DIAMOND2_DMC_SCALARS # DMC
+                    )
+
 
   LIST(APPEND HCP_BE_SCALARS "totenergy" "-1.481656 0.0005")
   LIST(APPEND HCP_BE_SCALARS "samples" "416000 0.0")
@@ -1072,6 +1084,15 @@ ENDIF(ENABLE_SOA)
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_long_vmc_dmc
                     qmc_long_vmc_dmc.in.xml
+                    1 16
+                    TRUE
+                    1 LONG_DIAMOND2_DMC_SCALARS # DMC
+                    )
+
+  QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-dmc-reconf_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
+                    qmc_long_vmc_dmc
+                    qmc_long_vmc_dmc_reconf.in.xml
                     1 16
                     TRUE
                     1 LONG_DIAMOND2_DMC_SCALARS # DMC

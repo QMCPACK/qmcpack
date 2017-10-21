@@ -7,6 +7,7 @@
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Andrew D. Baczewski, adbacze@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -28,9 +29,6 @@ WalkerReconfigurationMPI::WalkerReconfigurationMPI(Communicate* c):
   WalkerControlBase(c), TotalWalkers(0)
 {
   SwapMode=1;
-  UnitZeta=Random();
-  myComm->bcast(UnitZeta);
-  app_log() << "  First weight [0,1) for reconfiguration =" << UnitZeta << std::endl;
 }
 
 int
@@ -68,13 +66,15 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
     LastWalker=FirstWalker+nw;
     TotalWalkers = nw*NumContexts;
     nwInv = 1.0/static_cast<RealType>(TotalWalkers);
-    DeltaStep = UnitZeta*nwInv;
     ncopy_w.resize(nw);
     wConf.resize(nw);
     //wSum.resize(NumContexts);
     wOffset.resize(NumContexts+1);
     dN.resize(NumContexts+4);
   }
+  UnitZeta=Random();
+  myComm->bcast(UnitZeta);
+  DeltaStep=UnitZeta*nwInv;
   //std::fill(wSum.begin(),wSum.end(),0.0);
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
   int iw=0;
