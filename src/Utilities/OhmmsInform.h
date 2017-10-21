@@ -28,7 +28,6 @@
 #else
 #include <sstream>
 #endif
-#include <strstream>
 
 /**  Wrapper of std::ostream to provide uniform environments for run-time report
  *

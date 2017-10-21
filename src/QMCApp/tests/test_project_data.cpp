@@ -53,7 +53,7 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
   REQUIRE(proj2.getName() == std::string("test"));
 
   proj2.setCommunicator(c);
-  std::strstream o2;
+  std::stringstream o2;
   proj2.get(o2);
 }
 
