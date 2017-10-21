@@ -637,7 +637,13 @@ public:
       for(int i=0; i<NumPtcls; i++)
       {
         psiV_temp[i] = psiV(*it);
+#ifdef __bgq__
+        // this is a workaround for BGQ and BGClang
+        for(int idim=0; idim<OHMMS_DIM; idim++)
+          ratioGradRef[idim] += psiMinv_temp(i,WorkingIndex)*dpsiV[*it][idim];
+#else
         ratioGradRef += psiMinv_temp(i,WorkingIndex)*dpsiV(*it);
+#endif
         it++;
       }
       ValueType ratioRef = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
