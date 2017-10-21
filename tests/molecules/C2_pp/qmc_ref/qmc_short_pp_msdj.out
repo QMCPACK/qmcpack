@@ -1,19 +1,19 @@
   Input file(s): qmc_short_pp_msdj.xml 
 
 =====================================================
-                    QMCPACK 3.1.1 
+                    QMCPACK 3.1.0 
 
   (c) Copyright 2003-  QMCPACK developers            
 
   Git branch: HEAD
-  Last git commit: 07611637f823187ac5133d6e2249cdb86b92b04d
-  Last commit date: Tue Aug 1 21:15:04 2017 -0400
+  Last git commit: 146d920cf33590eac6a7a976f88871c1fe6418a6
+  Last commit date: Wed Jun 21 10:39:26 2017 -0400
 =====================================================
   Global options 
   async_swap=0 : using blocking send/recv for walker swaps 
 
-  MPI Nodes            = 1024
-  MPI Nodes per group  = 1024
+  MPI Nodes            = 512
+  MPI Nodes per group  = 512
   MPI Group ID         = 0
   OMP_NUM_THREADS      = 32
 
@@ -24,12 +24,12 @@
   Input XML = qmc_short_pp_msdj.xml
 
   Project = C2_TZ_PP_MSDJ
-  date    = 2017-10-20 03:29:50 UTC
-  host    = Q04-I4-J05
+  date    = 2017-10-21 01:45:33 UTC
+  host    = Q04-I7-J01
 
   DO NOT READ DENSITY
-  Offset for the random number seeds based on time 430
-  Random number offset = 430  seeds = 3011-391679
+  Offset for the random number seeds based on time 701
+  Random number offset = 701  seeds = 5303-189043
   Creating ion0 particleset
   All the species have the same mass 1
 Particles are grouped. Safe to use groups 
@@ -340,14 +340,14 @@ ParticleSetPool has:
 
     8
 
-    u -2.8336073010e-01  8.7505636205e-01 -1.9002843907e-01
-    u -1.4260735593e-01 -6.4334711493e-01 -6.6924986330e-01
-    u  3.0247833124e+00 -5.5523939421e-01 -3.4037824406e-01
-    u  1.9026278326e+00  7.4162955391e-01 -3.6567759718e-01
-    d  3.8420886239e-03 -2.3284324389e-01 -9.0988846015e-01
-    d  3.6942612519e-01  4.6782730255e-02  8.6224327307e-01
-    d  2.3439155081e+00  5.1783061408e-01 -7.8355738775e-01
-    d  3.0463577297e+00 -2.0125927722e-02  6.2775552623e-01
+    u -8.0099663284e-01  1.6469140425e-01 -4.6196199339e-01
+    u  7.4106875950e-01  5.6777033361e-01  1.0286734056e-01
+    u  2.9823984539e+00 -6.5264706973e-01  2.3188505857e-01
+    u  2.9164313516e+00 -1.7847585139e-01 -7.2609020309e-01
+    d -1.6609445216e-01  8.0813288942e-01  4.4884475466e-01
+    d  7.6329725136e-01  5.4038653832e-01  8.6530012419e-02
+    d  2.7254415351e+00 -3.5232867399e-01  7.8457720621e-01
+    d  2.9941333916e+00  1.3224584728e-01  6.6873307390e-01
 
   ParticleSet ion0 : 0 2 
 
@@ -370,8 +370,8 @@ ParticleSetPool has:
   File Root C2_TZ_PP_MSDJ.s001 append = no 
 =========================================================
   Adding 32 walkers to 0 existing sets
-  Total number of walkers: 3.2768000000e+04
-  Total weight: 3.2768000000e+04
+  Total number of walkers: 1.6384000000e+04
+  Total weight: 1.6384000000e+04
   Resetting Properties of the walkers 1 x 14
 
 <vmc function="put">
@@ -429,11 +429,11 @@ MEMORY increase 0 MB VMCSingleOMP::resetRun
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 0
     time step          = 0.5
-    reference energy   = -11.0674
-    reference variance = 0.139808
+    reference energy   = -11.0631
+    reference variance = 0.130203
 ====================================================
-  QMC Execution time = 1.9895e+02 secs 
-  Total Execution time = 1.9898e+02 secs
+  QMC Execution time = 2.1293e+02 secs 
+  Total Execution time = 2.1297e+02 secs
 
 =========================================================
   A new xml input file : C2_TZ_PP_MSDJ.s001.cont.xml

@@ -379,8 +379,8 @@ IF (NOT QMC_COMPLEX)
 
 # C2 TZ PP multi determinants
 # Short tests
-  LIST(APPEND C2MSDJ_VMC_SCALARS "totenergy" "-11.066709  0.000926") # total energy
-  LIST(APPEND C2MSDJ_VMC_SCALARS "variance"  "  0.146694  0.003928") # energy variance
+  LIST(APPEND C2MSDJS_VMC_SCALARS "totenergy" "-11.064964  0.000865") # total energy
+  LIST(APPEND C2MSDJS_VMC_SCALARS "variance"  "  0.149682  0.003928") # energy variance
 
   QMC_RUN_AND_CHECK(short-C2_pp-msdj_vmc
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
@@ -388,7 +388,19 @@ IF (NOT QMC_COMPLEX)
                     qmc_short_pp_msdj.xml
                     1 16
                     TRUE
-                    1 C2MSDJ_VMC_SCALARS # VMC
+                    1 C2MSDJS_VMC_SCALARS # VMC
+                    )
+
+  LIST(APPEND C2MSDJL_VMC_SCALARS "totenergy" "-11.064964  0.000274") # total energy
+  LIST(APPEND C2MSDJL_VMC_SCALARS "variance"  "  0.149682  0.001242") # energy variance
+
+  QMC_RUN_AND_CHECK(long-C2_pp-msdj_vmc
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
+                    C2_TZ_PP_MSDJ
+                    qmc_long_pp_msdj.xml
+                    1 16
+                    TRUE
+                    1 C2MSDJL_VMC_SCALARS # VMC
                     )
 
 #
