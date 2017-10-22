@@ -224,6 +224,20 @@ struct PooledMemory
     return m;
   }
 
+  template<typename T1>
+  inline PooledMemory& operator<<(T1 &x)
+  {
+    put(x);
+    return *this;
+  }
+
+  template<typename T1>
+  inline PooledMemory& operator>>(T1 &x)
+  {
+    get(x);
+    return *this;
+  }
+
 };
 
 }
