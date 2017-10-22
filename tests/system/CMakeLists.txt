@@ -155,6 +155,15 @@ IF(BUILD_LMYENGINE_INTERFACE)
                     H4_ORB_OPT_DMC_SCALARS
                     3 # Test the DMC results
                     TRUE)
+
+  QMC_RUN_AND_CHECK(short-H4-orb-opt-dmc
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_orb_opt_dmc"
+                    H4
+                    h4_orb_opt.xml
+                    1 16
+                    H4_ORB_OPT_DMC_SCALARS
+                    3 # Test the DMC results
+                    TRUE)
 ENDIF(BUILD_LMYENGINE_INTERFACE)
 
 #
