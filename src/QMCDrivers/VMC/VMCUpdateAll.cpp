@@ -39,14 +39,14 @@ void VMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
    * W.R will track the proposed configuration 
    *
    * upon Call:
-   *   thisWalker.R,G,L,DistTables,SK,Properties must be consistent
+   *   thisWalker.R,G,L,Properties must be consistent
    *   recompute flag is for pbyp driver and is not used here
    *
    * upon Return:
-   *   thisWalker.R,G,L,DistTables,SK,Properties must be kept consistent
+   *   thisWalker.R,G,L,Properties must be kept consistent
    * */
   bool updated=false;
-  W.loadWalker(thisWalker,false); // W.R,G,L = thisWalker.R,G,L
+  W.loadWalker(thisWalker,false); // W.R,G,L = thisWalker.R,G,L; false indicates W.DistTables & SK are not updated in this call. W.DistTables,SK are now stale.
   RealType logpsi_old=thisWalker.Properties(LOGPSI);
   for (int iter=0; iter<nSubSteps; ++iter)
   { // make a few Monte-Carlo steps to decorrelate samples without calculating observables
