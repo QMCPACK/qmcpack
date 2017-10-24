@@ -106,10 +106,10 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
         W.saveWalker(thisWalker);
         rr_accepted = rr_proposed;
         thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
-        H.auxHevaluate(W,thisWalker);
-        H.saveProperty(thisWalker.getPropertyBase());
       }
     }
+    H.auxHevaluate(W,thisWalker);
+    H.saveProperty(thisWalker.getPropertyBase());
     if(UseTMove)
     {
       int ibar=nonLocalOps.selectMove(RandomGen());
