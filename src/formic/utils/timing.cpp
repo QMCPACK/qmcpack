@@ -45,7 +45,7 @@ void formic::Stopwatch::reset(const std::string & name) {
 void formic::Stopwatch::start(const std::string & name) {
   if (_running)
     throw formic::Exception("cannot start Stopwatch \"%s\" because it is already running") % name;
-  _start_time = MPI::Wtime();
+  _start_time = MPI_Wtime();
   _running = true;
 }
 
@@ -56,7 +56,7 @@ void formic::Stopwatch::start(const std::string & name) {
 void formic::Stopwatch::stop(const std::string & name) {
   if (!_running)
     throw formic::Exception("cannot stop Stopwatch \"%s\" because it is not running") % name;
-  _elapsed_time = _elapsed_time + ( MPI::Wtime() - _start_time );
+  _elapsed_time = _elapsed_time + ( MPI_Wtime() - _start_time );
   _running = false;
 }
 
@@ -67,7 +67,7 @@ void formic::Stopwatch::stop(const std::string & name) {
 double formic::Stopwatch::elapsed_seconds() const {
   double total = _elapsed_time;
   if (_running)
-    total = total + ( MPI::Wtime() - _start_time );
+    total = total + ( MPI_Wtime() - _start_time );
   return total;
 }
 
