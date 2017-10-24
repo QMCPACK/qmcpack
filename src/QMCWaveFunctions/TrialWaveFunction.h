@@ -139,6 +139,7 @@ public:
   {
     return PhaseValue;
   }
+
   inline void setPhase(RealType PhaseValue_new)
   {
     PhaseValue = PhaseValue_new;
@@ -177,6 +178,8 @@ public:
   inline void resetPhaseDiff()
   {
     PhaseDiff=0.0;
+    for (int i=0; i<Z.size(); i++)
+      Z[i]->resetPhaseDiff();
   }
   inline RealType getLogPsi() const
   {

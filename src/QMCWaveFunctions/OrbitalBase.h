@@ -172,6 +172,8 @@ struct OrbitalBase: public QMCTraits
     return 0.0;
   }
 
+  virtual void resetPhaseDiff() {}
+
   ///assign a differential orbital
   virtual void setDiffOrbital(DiffOrbitalBasePtr d);
 

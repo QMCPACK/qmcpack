@@ -115,6 +115,8 @@ namespace qmcplusplus {
     std::vector<RealType> dlogpsi_fdlr_d;
     std::vector<RealType> dhpsioverpsi_fdlr_d;
 
+    ValueType curRatio;
+
     // Temporary particleset
     ParticleSet* tempP;
 
@@ -200,13 +202,13 @@ namespace qmcplusplus {
       xpd_vars.insertFromSum(x_vars,d_vars);
       // Make it so that m_wfn_xpd holds the parameters
       // x+d, where as before it just held d.
-      m_wfn_xpd->putParametersInStandardForm(xpd_vars, true);
+      m_wfn_xpd->resetParameters(xpd_vars);
 
       opt_variables_type xmd_vars;
       xmd_vars.insertFromDiff(x_vars,d_vars);
       // Make it so that m_wfn_xmd holds the parameters
       // x-d, where as before it just held x.
-      m_wfn_xmd->putParametersInStandardForm(xmd_vars, true);
+      m_wfn_xmd->resetParameters(xmd_vars);
 
       // Initialize G and L objects for both wave functions.
       m_wfn_xpd->G.create(P.G.size());
@@ -465,30 +467,6 @@ namespace qmcplusplus {
       m_wfn_xmd->resetParameters(xmd_vars);
     }
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    /// \brief  This does the same as resetParameters, except that calling
-    ///         putParametersInStandardForm for m_wfn_xpd and m_wfn_xmd allows their OrbitalBase
-    ///         objects to store the new parameters internally. But at this level this function
-    ///         looks the same as resetParameters.
-    ///
-    /// \param[in]      active      variable set to read new "x" and "d" parameters from.
-    /// \param[in]      copy_back   whether to update the internally stored parameters to equal
-    ///                             those passed in through active, for the OrbitalBase
-    ///                             objects which make up the TrialWaveFunction objects.
-    ///
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    void putParametersInStandardForm(opt_variables_type & active, const bool copy_back)
-    {
-      // Set xpd_vars and xmd_vars using the input active.
-      opt_variables_type xpd_vars, xmd_vars;
-      extract_xpd_and_xmd_vars(active, xpd_vars, xmd_vars);
-
-      // Apply the summed "x+d" parameters to the m_wfn_xpd wave function.
-      m_wfn_xpd->putParametersInStandardForm(xpd_vars, copy_back);
-      // Apply the subtracted "x-d" parameters to the m_wfn_xmd wave function.
-      m_wfn_xmd->putParametersInStandardForm(xmd_vars, copy_back);
-    }
-
     void reportStatus(std::ostream& os) {
       throw std::runtime_error("FDLRWfn::reportStatus not yet implemented");
     }
@@ -735,15 +713,15 @@ namespace qmcplusplus {
       GradType grad = scaling_fac_1_new * G_plus - scaling_fac_2_new * G_minus;
 
       // Calculate the ratio of new and old FDLR wave functions:
-      // rat = \frac{ \psi_+(R_new) - \psi_-(R_new) }{ \psi_+(R_old) - \psi_-(R_old) }
+      // curRatio = \frac{ \psi_+(R_new) - \psi_-(R_new) }{ \psi_+(R_old) - \psi_-(R_old) }
       // This can be arranged to the following:
-      ValueType rat = scaling_fac_1 * rat_plus - scaling_fac_2 * rat_minus;
+      curRatio = scaling_fac_1 * rat_plus - scaling_fac_2 * rat_minus;
 
       // Also sum the gradient of the log of the FDLR wave function at the
       // new coordinates into the running total.
       grad_iat += grad;
 
-      return rat;
+      return curRatio;
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -788,8 +766,8 @@ namespace qmcplusplus {
       buf.add(&(P.L[0]), &(P.L[P.getTotalNum()]));
 
       // Store the value of G and L for the xmd wave function.
-      m_wfn_xpd->G = P.G;
-      m_wfn_xpd->L = P.L;
+      m_wfn_xmd->G = P.G;
+      m_wfn_xmd->L = P.L;
 
       // Now calculate LogValue, L and G for the full FDLR wave function.
       P.G = 0.0;
@@ -801,6 +779,9 @@ namespace qmcplusplus {
                                  m_wfn_xpd->L, m_wfn_xmd->L);
       P.G += tempP->G;
       P.L += tempP->L;
+
+      buf.add(LogValue);
+      buf.add(PhaseValue);
 
       return LogValue;
     }
@@ -860,6 +841,9 @@ namespace qmcplusplus {
       P.G += tempP->G;
       P.L += tempP->L;
 
+      buf.put(LogValue);
+      buf.put(PhaseValue);
+
       return LogValue;
     }
 
@@ -904,6 +888,9 @@ namespace qmcplusplus {
                                  m_wfn_xpd->L, m_wfn_xmd->L);
       P.G += tempP->G;
       P.L += tempP->L;
+
+      buf.get(LogValue);
+      buf.get(PhaseValue);
     }
 
     ValueType ratio(ParticleSet& P, int iat, ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL) {
@@ -934,11 +921,11 @@ namespace qmcplusplus {
       ValueType scaling_fac_2_new = 1/(psi_plus_new/psi_minus_new - 1);
 
       // Calculate the ratio of new and old FDLR wave functions:
-      // rat = \frac{ \psi_+(R_new) - \psi_-(R_new) }{ \psi_+(R_old) - \psi_-(R_old) }
+      // curRatio = \frac{ \psi_+(R_new) - \psi_-(R_new) }{ \psi_+(R_old) - \psi_-(R_old) }
       // This can be arranged to the following:
-      ValueType rat = scaling_fac_1 * rat_plus - scaling_fac_2 * rat_minus;
+      curRatio = scaling_fac_1 * rat_plus - scaling_fac_2 * rat_minus;
 
-      return rat;
+      return curRatio;
     }
 
     void update(ParticleSet& P, ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL, int iat) {
@@ -960,11 +947,10 @@ namespace qmcplusplus {
       m_wfn_xpd->acceptMove(P, iat);
       m_wfn_xmd->acceptMove(P, iat);
 
-      //RealType LogValue_plus = m_wfn_xpd->getLogPsi();
-      //RealType LogValue_minus = m_wfn_xmd->getLogPsi();
-      //LogValue = std::log(std::exp(LogValue_plus) - std::exp(LogValue_minus));
+      PhaseValue += evaluatePhase(curRatio);
+      LogValue += std::log(std::abs(curRatio));
 
-      LogValue = evaluateLog(P,P.G,P.L);
+      curRatio = 1.0;
     }
 
 
@@ -979,6 +965,8 @@ namespace qmcplusplus {
     {
       m_wfn_xpd->rejectMove(iat);
       m_wfn_xmd->rejectMove(iat);
+
+      curRatio = 1.0;
     }
 
 
@@ -1377,6 +1365,11 @@ namespace qmcplusplus {
       throw std::runtime_error("FDLRWfn::evaluateDerivRatios not yet implemented");
     }
 
+    void resetPhaseDiff()
+    {
+      m_wfn_xpd->resetPhaseDiff();
+      m_wfn_xmd->resetPhaseDiff();
+    }
 };
 
 } // end namespace qmcplusplus
