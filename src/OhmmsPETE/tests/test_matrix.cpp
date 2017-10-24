@@ -13,6 +13,7 @@
 #include "catch.hpp"
 
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "config.h"
 
 #include <stdio.h>
 #include <string>
@@ -25,7 +26,7 @@ namespace qmcplusplus
 
 TEST_CASE("matrix", "[OhmmsPETE]")
 {
-  typedef Matrix<double> mat_t;
+  typedef Matrix<OHMMS_PRECISION> mat_t;
   mat_t A(3,3);
   mat_t B(3,3);
   mat_t C(3,3);
@@ -56,6 +57,22 @@ TEST_CASE("matrix", "[OhmmsPETE]")
   REQUIRE(D.rows() == 3);
   REQUIRE(D.cols() == 3);
 
+  // swap_rows
+  A(0,0)=0.0;
+  A(0,1)=1.0;
+  A(1,0)=1.0;
+  A(1,1)=2.0;
+  A.swap_rows(0,1);
+  REQUIRE(A(0,0) == 1.0);
+  REQUIRE(A(0,1) == 2.0);
+  REQUIRE(A(1,0) == 0.0);
+  REQUIRE(A(1,1) == 1.0);
+  // swap_cols
+  A.swap_cols(0,1);
+  REQUIRE(A(0,0) == 2.0);
+  REQUIRE(A(0,1) == 1.0);
+  REQUIRE(A(1,0) == 1.0);
+  REQUIRE(A(1,1) == 0.0);
 }
 
 }

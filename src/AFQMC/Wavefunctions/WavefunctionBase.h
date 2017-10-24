@@ -23,19 +23,14 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
     WavefunctionBase(Communicate *c):MPIObjectBase(c),readHamFromFile(false),
        hdf_write_file(""),hdf_read_tag(""),hdf_write_tag(""),wfn_role(""),closed_shell(false),
        filetype(""),TG(c,"WavefunctionTG"),distribute_Ham(false),min_ik(-1),max_ik(-1),ncores_per_TG(1),
-       core_rank(0),nnodes_per_TG(1),parallel(false),dm_type(1),walker_type(1),wfn_type(1),
-       useFacHam(false),sparse_vn(false),dt(1.0)
+       core_rank(0),nnodes_per_TG(1),parallel(false),dm_type(0),walker_type(1),wfn_type(0),
+       useFacHam(false),sparse_vn(false),dt(1.0),initialDet(1),write_trial_density_matrix("")
     {
     }
 
     ~WavefunctionBase() {}
 
-    void setHeadComm(bool hd, MPI_Comm comm) {
-      head_of_nodes=hd;
-      MPI_COMM_HEAD_OF_NODES = comm;
-    }
-
-    virtual bool init(std::vector<int>& TGdata, SPComplexSMVector *v, hdf_archive& read, const std::string& tag, MPI_Comm tg_comm, MPI_Comm node_comm)
+    virtual bool init(std::vector<int>& TGdata, SPComplexSMVector *v, hdf_archive& read, const std::string& tag, MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm node_heads_comm)
     {
 
       // setup TG
@@ -48,6 +43,9 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
       core_rank = TG.getCoreRank(); 
       TG.setNodeCommLocal(node_comm);
       TG.setTGCommLocal(tg_comm);   
+      MPI_COMM_HEAD_OF_NODES = node_heads_comm;
+      TG.setHeadOfNodesComm(MPI_COMM_HEAD_OF_NODES);
+      head_of_nodes = (TG.getCoreID()==0);
 
       // setup WFN
       if(filetype == "none" && init_type=="ground")   
@@ -93,7 +91,7 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
 
     ComplexMatrix& getHF() { return HF; }
 
-    void setupFactorizedHamiltonian(bool sp, SPValueSMSpMat* spvn_, SPValueSMVector* dvn_, RealType dt_, TaskGroup* tg_)
+    void setupFactorizedHamiltonian(bool sp, SPValueSMSpMat* spvn_, SPValueSMVector* dvn_, RealType dt_, afqmc::TaskGroup* tg_)
     {
       sparse_vn=sp;
       Spvn=spvn_;
@@ -254,11 +252,11 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
 
     virtual void evaluateTwoBodyMixedDensityMatrix()=0;
 
-    virtual void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMSpMat&, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n=-1)=0;
-    virtual void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMVector&, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n=-1)=0;
+    virtual void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMSpMat&, SPComplexSMSpMat&, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n=-1)=0;
+    virtual void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMVector&, SPComplexSMVector&, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n=-1)=0;
 
-    virtual void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int ik0, int ikN, int pik0, SPValueSMSpMat&, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n=-1)=0;
-    virtual void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int ik0, int ikN, int pik0, SPValueSMVector&, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n=-1)=0;
+    virtual void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int ik0, int ikN, SPValueSMSpMat&, SPComplexSMSpMat&, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n=-1)=0;
+    virtual void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int ik0, int ikN, SPValueSMVector&, SPComplexSMVector&, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n=-1)=0;
 
 
     // Two body operators: Not used yet
@@ -269,12 +267,51 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
 
     virtual bool check_occ_orbs() {return true; } 
 
-    virtual bool isOccupAlpha( int i) { return true; }
-    virtual bool isOccupBeta(int i) { return true; }
-
     void setCommBuffer(SPComplexSMVector& bf)
     {
         //commBuff = bf;
+    }
+
+    // generate transposed of Spvn
+    // done here since storage of density matrix is dependent on wavefunction type 
+    // base class implementation creates an exact transpose without modification 
+    virtual void generateTransposedOneBodyOperator(bool addBetaBeta, SPValueSMVector& Dvn, SPComplexSMVector& DvnT ) {
+
+      if(!addBetaBeta)
+        APP_ABORT("  Error: generateTransposedOneBodyOperator not implemented with UHF integrals.");      
+      DvnT.setup(head_of_nodes,"DvnT",TG.getNodeCommLocal());
+      DvnT.setDims(Dvn.cols(), Dvn.rows());
+      DvnT.resize(Dvn.cols()*Dvn.rows());
+
+      if(head_of_nodes) {
+        int nr = DvnT.rows(); // == Dvn.cols() 
+        int nc = DvnT.cols(); // == Dvn.rows()
+        for(int i=0, ii=0; i<nr; i++)
+          for(int j=0; j<nc; j++, ii++)
+            DvnT[ii] = Dvn[j*nr+i]; // DvnT(i,j) = Dvn(j,i)
+      }
+      MPI_Barrier(TG.getNodeCommLocal());
+
+    }
+
+    // base class implementation creates an (almost) exact transpose without modification 
+    // The number of columns is NMO*NMO, instead of the default 2*NMO*NMO
+    virtual void generateTransposedOneBodyOperator(bool addBetaBeta, SPValueSMSpMat& Spvn, SPComplexSMSpMat& SpvnT) {
+
+      assert(Spvn.size() > 0);
+      if(!addBetaBeta)
+        APP_ABORT("  Error: generateTransposedOneBodyOperator not implemented with UHF integrals.");
+      SpvnT.setup(head_of_nodes,"SpvnT",TG.getNodeCommLocal());
+      int NMO2 = NMO*NMO;
+      SpvnT.setDims(Spvn.cols(),NMO2);
+      SpvnT.resize(Spvn.size());
+      if(head_of_nodes) {
+        std::copy(Spvn.vals_begin(),Spvn.vals_end(),SpvnT.vals_begin());
+        std::copy(Spvn.rows_begin(),Spvn.rows_end(),SpvnT.cols_begin());
+        std::copy(Spvn.cols_begin(),Spvn.cols_end(),SpvnT.rows_begin());
+      }
+      app_log()<<" Compressing transposed Cholesky matrix. \n";
+      SpvnT.compress(TG.getNodeCommLocal());
     }
 
   protected:
@@ -284,12 +321,14 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
       return false;
     }
 
-    TaskGroup TG; 
+    afqmc::TaskGroup TG; 
     bool distribute_Ham;  
     bool parallel;
     int min_ik, max_ik;    
     int core_rank,ncores_per_TG;
     int nnodes_per_TG;
+
+    int initialDet; // 0: RHF, 1: UHF
 
     std::string filename;
     std::string filetype;
@@ -299,6 +338,8 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
     std::string hdf_read_tag;
     std::string hdf_write_tag;
 
+    std::string write_trial_density_matrix;
+
     // in case the coulomb energy is evaluated using the factorized hamiltonian
     bool useFacHam;
     bool sparse_vn;
@@ -307,7 +348,7 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
     int nCholVecs;
     SPValueSMSpMat *Spvn;
     SPValueSMVector *Dvn;
-    TaskGroup* TG_vn;     // task group of the factorized hamiltonian
+    afqmc::TaskGroup* TG_vn;     // task group of the factorized hamiltonian
 
     bool closed_shell;
     // in both cases below: closed_shell=0, UHF/ROHF=1, GHF=2

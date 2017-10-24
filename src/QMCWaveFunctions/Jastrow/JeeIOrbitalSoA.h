@@ -171,7 +171,7 @@ public:
     F=nullptr;
     elecs_inside.resize(Nion,eGroups);
     elecs_inside_dist.resize(Nion,eGroups);
-    Ion_cutoff.resize(Nion);
+    Ion_cutoff.resize(Nion, 0.0);
 
     mVGL.resize(Nelec);
     DistkI_Compressed.resize(Nelec);
@@ -332,9 +332,10 @@ public:
         for (int jg=0; jg<eGroups; jg++)
           for (int kg=0; kg<eGroups; kg++)
           {
-            FT &func_ijk = *F(ig, jg, kg);
-            VarOffset(ig,jg,kg).first  = func_ijk.myVars.Index.front()-varoffset;
-            VarOffset(ig,jg,kg).second = func_ijk.myVars.Index.size()+VarOffset(ig,jg,kg).first;
+            FT *func_ijk = F(ig, jg, kg);
+            if(func_ijk==nullptr) continue;
+            VarOffset(ig,jg,kg).first  = func_ijk->myVars.Index.front()-varoffset;
+            VarOffset(ig,jg,kg).second = func_ijk->myVars.Index.size()+VarOffset(ig,jg,kg).first;
           }
     }
   }
@@ -414,17 +415,6 @@ public:
     DiffVal=Uat[iat]-cur_Uat;
     return std::exp(DiffVal);
   }
-
-  //to be removed from QMCPACK: these are not used anymore with PbyPFast
-  inline void update(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL,
-                     int iat) {}
-
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
-  {return ValueType(1);}
 
   GradType evalGrad(ParticleSet& P, int iat)
   {
@@ -664,14 +654,6 @@ public:
     buf.get(FirstAddressOfdU,LastAddressOfdU);
     buf.get(d2Uat.begin(), d2Uat.end());
     build_compact_list(P);
-  }
-
-  inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    buf.put(Uat.begin(), Uat.end());
-    buf.put(FirstAddressOfdU,LastAddressOfdU);
-    buf.put(d2Uat.begin(), d2Uat.end());
-    return LogValue;
   }
 
   void evaluateGL(ParticleSet& P,

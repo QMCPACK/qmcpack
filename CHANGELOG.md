@@ -2,6 +2,45 @@
 
 Notable changes to QMCPACK will be documented in this file. 
 
+## [3.2.0] - 2017-09-21
+
+### Notes
+
+This release provides a significant speed increase for
+many calculations. A C++11 compiler is now required. It is a
+recommended update.
+
+### QMCPACK updates
+
+* Major speedup for calculations using spline wavefunctions via
+  initial implementation of "Structure of Arrays" data layout and
+  improved algorithms. Enabled via -DENABLE_SOA=1. Benefits all CPU
+  architectures. Many runs are doubled in speed. Not yet available for
+  Gaussian-basis sets or for all observables and QMC methods. See
+  writeup in manual for guidance.
+* A compiler supporting C++11 is now required.
+* DMC respects MaxCPUSecs parameter and will gracefully shut down and
+  not start a new block if there is not sufficient estimated time to
+  complete it.
+* Checkpointing code rewritten for robustness and performance at scale.
+  Parallel as well as serial HDF5 supported and autodetected.
+* Improved beta-release of AFQMC code and documentation.  
+* Backflow documentation and optimization tips added.
+* Correlated sampling VMC drivers reactivated.
+* Added carbon graphite performance test similar to CORAL benchmark.
+* Improvements to CMake and CTest usage.
+* Build instructions for NERSC, ALCF, and OLCF machines updated.
+* Latest manual PDF now available at http://docs.qmcpack.org
+
+### NEXUS
+
+* Significantly improved manual entry for "qmca" analysis tool, the
+  main recommended tool for statistical analysis of QMCPACK data.
+* Added time step fitting tool "qfit" for timestep extrapolation. Uses
+  jack-knife statistical technique.
+* Improved density file postprocessing.
+* Support for Makov-Payne corrections.
+
 ## [3.1.1] - 2017-08-01
 
 ### Notes

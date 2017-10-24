@@ -44,13 +44,13 @@ TEST_CASE("double_1d_natural", "[einspline]")
 
   double val;
   eval_UBspline_1d_d(s, 1.0, &val);
-  REQUIRE(val == 2.0);
+  REQUIRE(val == Approx(2.0));
 
   eval_UBspline_1d_d(s, 10.0, &val);
-  REQUIRE(val == 3.0);
+  REQUIRE(val == Approx(3.0));
 
   eval_UBspline_1d_d(s, 5.5, &val);
-  REQUIRE(val == 2.5);
+  REQUIRE(val == Approx(2.5));
 
   destroy_Bspline(s);
 }
@@ -76,7 +76,7 @@ TEST_CASE("double_1d_multi", "[einspline]")
 
   double val;
   eval_multi_UBspline_1d_d(s, 1.0, &val);
-  REQUIRE(val == 2.0);
+  REQUIRE(val == Approx(2.0));
 }
 
 #ifdef QMC_CUDA

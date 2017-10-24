@@ -221,24 +221,6 @@ struct  J2OrbitalSoA : public OrbitalBase
     return LogValue;
   }
 
-  inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    buf.put(Uat.begin(), Uat.end());
-    buf.put(FirstAddressOfdU,LastAddressOfdU);
-    buf.put(d2Uat.begin(), d2Uat.end());
-    return LogValue;
-  }
-
-  //to be removed from QMCPACK: these are not used anymore with PbyPFast
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat) {}
-  ValueType ratio(ParticleSet& P, int iat,
-      ParticleSet::ParticleGradient_t& dG,
-      ParticleSet::ParticleLaplacian_t& dL){ return ValueType(1);}
-
-  
   /*@{ internal compute engines*/
   inline void computeU3(ParticleSet& P, int iat, const RealType* restrict dist,
       RealType* restrict u, RealType* restrict du, RealType* restrict d2u);
@@ -336,6 +318,8 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
         for(int jg=0; jg<NumGroups; ++jg, ++ij)
           if(F[ij]==nullptr) F[ij]=j;
     }
+    else
+      F[ia*NumGroups+ib]=j;
   }
   else
   {
@@ -351,8 +335,7 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
     {
       // generic case
       F[ia*NumGroups+ib]=j;
-      if(ia<ib)
-        F[ib*NumGroups+ia]=j;
+      F[ib*NumGroups+ia]=j;
     }
   }
   std::stringstream aname;
@@ -522,10 +505,10 @@ J2OrbitalSoA<FT>::recompute(ParticleSet& P)
 template<typename FT>
 typename J2OrbitalSoA<FT>::RealType
 J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
-    ParticleSet::ParticleGradient_t& dG,
-    ParticleSet::ParticleLaplacian_t& dL)
+    ParticleSet::ParticleGradient_t& G,
+    ParticleSet::ParticleLaplacian_t& L)
 {
-  evaluateGL(P,dG,dL,true);
+  evaluateGL(P,G,L,true);
   return LogValue;
 }
 

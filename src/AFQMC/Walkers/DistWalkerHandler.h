@@ -35,10 +35,11 @@ class DistWalkerHandler: public WalkerHandlerBase
   public:
 
   /// constructor
-  DistWalkerHandler(Communicate* c): WalkerHandlerBase(c,std::string("DistWalkerHandler")),
+  DistWalkerHandler(Communicate* c,  RandomGenerator_t* r): WalkerHandlerBase(c,r,std::string("DistWalkerHandler")),
       min_weight(0.05),max_weight(4.0)
-      ,reset_weight(1.0),extra_empty_spaces(10),distribution(0.0,1.0)
+      ,reset_weight(1.0),extra_empty_spaces(10)
       ,head(false),walker_memory_usage(0),tot_num_walkers(0),maximum_num_walkers(0)
+      ,popcontrol_on_master(true)
   { }
 
   /// destructor
@@ -55,10 +56,7 @@ class DistWalkerHandler: public WalkerHandlerBase
   bool restartFromHDF5(int n, hdf_archive&, const std::string&, bool set_to_target); 
   bool dumpToHDF5(hdf_archive&, const std::string&); 
 
-  bool dumpSamplesHDF5(hdf_archive& dump, int nW) {
-    std::cerr<<" DistlWalkerHandler:dumpSamplesHDF5() not implemented. Not writing anything. \n";
-    return true;
-  }
+  bool dumpSamplesHDF5(hdf_archive& dump, int nW); 
 
   // reads xml and performs setup
   bool parse(xmlNodePtr cur); 
@@ -73,10 +71,23 @@ class DistWalkerHandler: public WalkerHandlerBase
   // called at the beginning of each executable section
   void resetNumberWalkers(int n, bool a=true, ComplexMatrix* S=NULL); 
 
+  // perform and report tests/timings
+  void benchmark(std::string& blist,int maxnW,int delnW,int repeat);
+
   inline bool initWalkers(int n) {
+   targetN_per_TG = n;
+   // if working with a fixed number of walkers, set extra_empty_spaces to 2*targetN_per_TG 
+   if(pop_control_type.find("simple")==std::string::npos) 
+     extra_empty_spaces = n;
    resetNumberWalkers(n,true,&HFMat);
+   targetN = GlobalPopulation();
    return true;   
   } 
+
+  inline void set_TG_target_population(int N) { targetN_per_TG = N; }
+
+  inline int get_TG_target_population() { return targetN_per_TG; }
+  inline int get_global_target_population() { return targetN; }
 
   inline int numWalkers(bool dummy=false) {
 // checking
@@ -114,10 +125,10 @@ class DistWalkerHandler: public WalkerHandlerBase
   }
 
   // load balancing algorithm
-  void loadBalance(); 
+  void loadBalance(MPI_Comm comm); 
 
   // population control algorithm
-  void popControl(); 
+  void popControl(MPI_Comm comm, std::vector<ComplexType>& curData); 
 
   void setHF(const ComplexMatrix& HF);
 
@@ -141,10 +152,6 @@ class DistWalkerHandler: public WalkerHandlerBase
 
   //private:
  
-  // using std::random for simplicity now
-  std::default_random_engine generator;
-  std::uniform_real_distribution<double> distribution;
-
   enum walker_data { INFO=0, SM=1, WEIGHT=2, ELOC=3, ELOC_OLD=4, OVLP_A=5, OVLP_B=6, OLD_OVLP_A=7, OLD_OVLP_B=8};
 
   // n is zero-based
@@ -264,6 +271,11 @@ class DistWalkerHandler: public WalkerHandlerBase
     return &((walkers)[walker_size*n+data_displ[SM]]);
   }
 
+  void kill(int n) {
+    walkers[walker_size*n+data_displ[INFO]] = ComplexType(-1.0);
+    tot_num_walkers--;
+  }
+
   bool isAlive(int n) {
     return ((n>=maximum_num_walkers)?false:(walkers[walker_size*n+data_displ[INFO]].real()>0)); // for now
   }
@@ -275,6 +287,40 @@ class DistWalkerHandler: public WalkerHandlerBase
   } 
 
   void push_walkers_to_front();
+
+  // useful when consistency breaks in algorithm
+  void reset_walker_count() {
+    maximum_num_walkers == walkers.size()/walker_size;
+    tot_num_walkers=0;
+    for(ComplexSMVector::iterator it=walkers.begin()+data_displ[INFO]; it<walkers.end(); it+=walker_size)
+      if(it->real() > 0) tot_num_walkers++;
+  }
+
+  int single_walker_memory_usage() { return walker_memory_usage; } 
+  int single_walker_size() { return walker_size; } 
+
+  // copies a single walker at position "n" to/from buffer "data"
+  void copy_to_buffer(int n, ComplexType* data) { 
+    std::copy(walkers.values()+n*walker_size,walkers.values()+(n+1)*walker_size,data); 
+  } 
+  void copy_from_buffer(int n, ComplexType* data) { 
+    std::copy(data,data+walker_size,walkers.values()+n*walker_size);
+  } 
+
+  // adds/removes n walkers from data. Puts/takes from the end of the list
+  void pop_walkers(int n, ComplexType* data);
+  void push_walkers(int n, ComplexType* data);
+
+  void pop_walkers(int n, std::vector<ComplexType>& data) { pop_walkers(n,data.data()); }
+  void push_walkers(int n, std::vector<ComplexType>& data) { push_walkers(n,data.data()); }
+
+  int local_pair_branching(std::vector<int>& windx);
+  // modifies the weight of walker at position branch_from and copies the resulting walker to branch_to
+  void pair_branch(RealType w, int branch_from, int branch_to);
+  // modifies the weight of walker at position "n" to "w" 
+  // and adds "num" copies of the walker to the list 
+  void branch(RealType w, int n, int num);
+
 
   // Stored data [all assumed std::complex numbers]:
   //   - INFO:                 1  (e.g. alive, init, etc)  
@@ -292,6 +338,9 @@ class DistWalkerHandler: public WalkerHandlerBase
   //   Total: 14+NROW*NCOL
   int type, nrow, ncol; 
   int walker_size, data_displ[9], walker_memory_usage; 
+  bool popcontrol_on_master;
+
+  int targetN_per_TG;
 
   int tot_num_walkers;
   int maximum_num_walkers;
@@ -317,6 +366,7 @@ class DistWalkerHandler: public WalkerHandlerBase
   std::vector<std::tuple<int,int>> outgoing, incoming; 
   std::vector<int> counts,displ;
   std::vector<char> bufferall;
+  std::vector<char> bufferlocal;
   std::vector<ComplexType> commBuff;
 
   myTimer* LocalTimer;

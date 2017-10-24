@@ -23,8 +23,6 @@ SET(WFBASE_SRCS
   DiffOrbitalBase.cpp
   OrbitalBuilderBase.cpp
   BasisSetBuilder.cpp
-  ProductOrbital.cpp
-  OrbitalConstraintsBase.cpp
   SPOInfo.cpp
   SPOSetInfo.cpp
   SPOSetInputInfo.cpp
@@ -107,7 +105,6 @@ IF(OHMMS_DIM MATCHES 3)
       )
     IF(HAVE_EINSPLINE)
       SET(FERMION_SRCS ${FERMION_SRCS}
-        EinsplineSet.cpp
         EinsplineSetCuda.cpp
         PhaseFactors.cu
         AtomicOrbitalCuda.cu
@@ -117,6 +114,9 @@ IF(OHMMS_DIM MATCHES 3)
 
 
   IF(HAVE_EINSPLINE)
+    IF(NOT MIXED_PRECISION)
+      SET(FERMION_SRCS ${FERMION_SRCS} EinsplineSet.cpp)
+    ENDIF(NOT MIXED_PRECISION)
     SET(FERMION_SRCS ${FERMION_SRCS}
       EinsplineSetBuilderCommon.cpp
       EinsplineSetBuilderOld.cpp

@@ -28,7 +28,7 @@
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 //#define ENABLE_COMPOSITE_ESTIMATOR
 //#include "Estimators/CompositeEstimators.h"
-#include "Estimators/EstimatorManager.h"
+#include "Estimators/EstimatorManagerBase.h"
 namespace qmcplusplus
 {
 
@@ -92,9 +92,9 @@ public:
    *
    * Update time-step variables to move walkers
    */
-  void resetRun(BranchEngineType* brancher, EstimatorManager* est);
+  void resetRun(BranchEngineType* brancher, EstimatorManagerBase* est);
 
-  void resetRun(BranchEngineType* brancher, EstimatorManager* est, TraceManager* traces);
+  void resetRun(BranchEngineType* brancher, EstimatorManagerBase* est, TraceManager* traces);
 
   inline RealType getTau()
   {
@@ -281,7 +281,7 @@ protected:
   ///branch engine
   BranchEngineType* branchEngine;
   ///estimator
-  EstimatorManager* Estimators;
+  EstimatorManagerBase* Estimators;
   ///parameters
   ParameterSet myParams;
   ///1/Mass per species

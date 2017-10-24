@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<simulation>
+<project id="heg_long_HF" series="0">
+<application name="qmcapp" class="serial">
+Sample qmc run for Hartree-Fock HEG.
+</application>
+</project>
+<include href="heg.ptcl.xml"/>
+<include href="heg.hf.wfs.xml"/>
+<include href="heg.H.xml"/>
+<qmc method="vmc" move="pbyp">
+<parameter name="warmupsteps">200</parameter>
+<parameter name="blocks">800</parameter>
+<parameter name="steps">4000</parameter>
+<parameter name="tau">5.0</parameter>
+</qmc>
+</simulation>

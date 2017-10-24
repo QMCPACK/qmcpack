@@ -178,7 +178,7 @@ void DMCOMPOPT::resetUpdateEngines()
     #pragma omp parallel for
     for(int ip=0; ip<NumThreads; ++ip)
     {
-      estimatorClones[ip]= new EstimatorManager(*Estimators);
+      estimatorClones[ip]= new EstimatorManagerBase(*Estimators);
       estimatorClones[ip]->setCollectionMode(false);
       Rng[ip]=new RandomGenerator_t(*RandomNumberControl::Children[ip]);
       hClones[ip]->setRandomGenerator(Rng[ip]);

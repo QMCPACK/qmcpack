@@ -46,9 +46,11 @@ public:
   std::vector<RealType> logNorm;
   std::vector<RealType> cumNorm;
   std::vector<RealType> instRij;
+  std::vector<RealType> ratio;
   Matrix<RealType> ratioIJ;
   std::string useDriftOption;
 
+  Matrix<RealType> RatioIJ;
   ///multiple estimator
   CSEnergyEstimator* multiEstimator;
   ///a list of TrialWaveFunctions for multiple method
@@ -62,6 +64,26 @@ public:
   //a list of single particle gradients for multiple wavefunctions;
   std::vector<GradType> g1_old;
   std::vector<GradType> g1_new;
+  
+  //The following are utility functiosn for computing sumratio
+  //when using pbyp moves.  
+  //
+  //Using psi and <w> (logpsi and avgnorm), this computes
+  // \Sum_i |\frac{\Psi_i}{\Psi_j}|^2 for all j.  
+  void computeSumRatio(const std::vector<RealType>& logpsi, 
+                       const std::vector<RealType>& avgNorm,
+                             std::vector<RealType>& sumratio);
+                        
+  void computeSumRatio(const Matrix<RealType>& ratioij, 
+                             std::vector<RealType>& sumratio);
+                        
+  void computeSumRatio(const std::vector<RealType>& logpsi, 
+                       const std::vector<RealType>& avgNorm,
+                             Matrix<RealType> & ratioij,
+                             std::vector<RealType>& sumratio);
+  
+  void updateRatioMatrix(const std::vector<RealType>& ratio_pbyp,
+                           Matrix<RealType> & ratioij);  
 
   void resizeWorkSpace(int nw, int nptcls);
   void updateNorms();

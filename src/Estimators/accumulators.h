@@ -74,6 +74,16 @@ struct accumulator_set
     properties[WEIGHT] =w;
   }
 
+  /** reset properties
+   * @param v cummulative value
+   * @param w cummulative weight
+   */
+  inline void reset(value_type v, value_type w)
+  {
+    properties[VALUE]  =v;
+    properties[VALUESQ]=v*v;
+    properties[WEIGHT] =w;
+  }
 
   /** add a value but set the weight 1
    *

@@ -155,20 +155,6 @@ public:
 
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
-  /** dump the inverse to the buffer
-   */
-  void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    APP_ABORT("  Need to implement MSDFast::dumpToBuffer. \n");
-  }
-
-  /** copy the inverse from the buffer
-   */
-  void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    APP_ABORT("  Need to implement MSDFast::dumpFromBuffer. \n");
-  }
-
   /** move was accepted, update the real container
    */
   void acceptMove(ParticleSet& P, int iat);
@@ -176,13 +162,6 @@ public:
   /** move was rejected. copy the real container to the temporary to move on
    */
   void restore(int iat);
-
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat);
-
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
   OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
@@ -203,14 +182,6 @@ public:
   }
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
-  {
-    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
-    return ValueType();
-  }
-
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
   {
     APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
     return ValueType();
@@ -666,7 +637,18 @@ public:
       for(int i=0; i<NumPtcls; i++)
       {
         psiV_temp[i] = psiV(*it);
+#ifdef __bgq__
+        /* This is a workaround for BGQ and BGClang.
+         * The following lines correct the wrong summation in ratioGradRef.
+         * To reproduce the issue:
+         * Remove the Jastrow factor in the C2_pp-msdj_vmc test.
+         * The VMC energy is significantly lower than it should be.
+         */
+        for(int idim=0; idim<OHMMS_DIM; idim++)
+          ratioGradRef[idim] += psiMinv_temp(i,WorkingIndex)*dpsiV[*it][idim];
+#else
         ratioGradRef += psiMinv_temp(i,WorkingIndex)*dpsiV(*it);
+#endif
         it++;
       }
       ValueType ratioRef = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);

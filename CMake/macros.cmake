@@ -276,6 +276,7 @@ ENDFUNCTION()
 
 
 # Add a test run and associated scalar checks
+# ---required inputs---
 # BASE_NAME - name of test (number of MPI processes, number of threads, and value to check (if applicable)
 #             will be appended to get the full test name)
 # BASE_DIR - source location of test input files
@@ -283,17 +284,21 @@ ENDFUNCTION()
 # INPUT_FILE - XML input file to QMCPACK
 # PROCS - number of MPI processes
 # THREADS - number of OpenMP threads
+# SHOULD_SUCCEED - whether the test is expected to pass or fail.  Expected failing tests will not have
+#                  the scalar tests added.
+# ---optional inputs---
+# ---any number of SERIES/SCALAR_VALUES list pairs can be provided
+# ---input pairs beyond the first result in the series number being added to the test name
+# ---support for this functionality is provided through the ARGN catch-all input list
+# SERIES - series index to compute
 # SCALAR_VALUES - list of output values to check with check_scalars.py
 #                 The list entries alternate between the value name and the value (usually a string with the
 #                 both the average and error).
-# SERIES - series index to compute
-# SHOULD_SUCCEED - whether the test is expected to pass or fail.  Expected failing tests will not have
-#                  the scalar tests added.
 
-FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SCALAR_VALUES SERIES SHOULD_SUCCEED)
+FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SHOULD_SUCCEED)
     # Map from name of check to appropriate flag for check_scalars.py
-    LIST(APPEND SCALAR_CHECK_TYPE "kinetic" "totenergy" "eeenergy" "samples" "potential" "ionion" "localecp" "nonlocalecp" "flux" "kinetic_mixed" "kinetic_pure" "eeenergy_mixed" "eeenergy_pure" "potential_pure")
-    LIST(APPEND CHECK_SCALAR_FLAG "--ke"    "--le"      "--ee"     "--ts"    "--lp"      "--ii"       "--lpp"    "--nlpp" "--fl" "--ke_m" "--ke_p" "--ee_m" "--ee_p" "--lp_p")
+    LIST(APPEND SCALAR_CHECK_TYPE "kinetic" "totenergy" "variance" "eeenergy" "samples" "potential" "ionion" "localecp" "nonlocalecp" "flux" "kinetic_mixed" "kinetic_pure" "eeenergy_mixed" "eeenergy_pure" "potential_pure" "totenergy_A" "totenergy_B" "dtotenergy_AB" "ionion_A" "ionion_B" "dionion_AB" "eeenergy_A" "eeenergy_B" "deeenergy_AB")
+    LIST(APPEND CHECK_SCALAR_FLAG "--ke"    "--le"    "--va"    "--ee"     "--ts"    "--lp"      "--ii"       "--lpp"    "--nlpp" "--fl" "--ke_m" "--ke_p" "--ee_m" "--ee_p" "--lp_p" "--le_A" "--le_B" "--dle_AB" "--ii_A" "--ii_B" "--dii_AB" "--ee_A" "--ee_B" "--dee_AB")
 
     SET( TEST_ADDED FALSE )
     SET( FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}" )
@@ -310,27 +315,44 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SC
     ENDIF()
 
     IF ( TEST_ADDED AND SHOULD_SUCCEED)
-        FOREACH(SCALAR_CHECK IN LISTS SCALAR_CHECK_TYPE)
-            LIST(FIND ${SCALAR_VALUES} ${SCALAR_CHECK} IDX1)
-            IF (IDX1 GREATER -1)
-                LIST(FIND SCALAR_CHECK_TYPE ${SCALAR_CHECK} IDX)
-                LIST(GET CHECK_SCALAR_FLAG ${IDX} FLAG)
-
-                MATH( EXPR IDX2 "${IDX1} + 1")
-                LIST(GET ${SCALAR_VALUES} ${IDX2} VALUE)
-
-                SET( TEST_NAME "${FULL_NAME}-${SCALAR_CHECK}" )
-                #MESSAGE("Adding scalar check ${TEST_NAME}")
-                SET(CHECK_CMD ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e 2 ${FLAG} ${VALUE})
-                #MESSAGE("check command = ${CHECK_CMD}")
-                ADD_TEST( NAME ${TEST_NAME}
-                    COMMAND ${CHECK_CMD}
-                    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}"
-                )
-                SET_PROPERTY( TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${FULL_NAME} )
-                SET_PROPERTY( TEST ${TEST_NAME} APPEND PROPERTY LABELS "QMCPACK-checking-results" )
+        SET(IDX0 0)
+        FOREACH(V ${ARGN})
+            MATH(EXPR MOD_IDX0 "${IDX0}%2")
+            IF(MOD_IDX0 EQUAL 0)
+                #MESSAGE("   SERIES   : ${V}")
+                SET(SERIES ${V})
             ENDIF()
-        ENDFOREACH(SCALAR_CHECK)
+            IF(MOD_IDX0 EQUAL 1)
+                #MESSAGE("   CHECKLIST: ${V}")
+                SET(SCALAR_VALUES ${V})
+                FOREACH(SCALAR_CHECK IN LISTS SCALAR_CHECK_TYPE)
+                    LIST(FIND ${SCALAR_VALUES} ${SCALAR_CHECK} IDX1)
+                    IF (IDX1 GREATER -1)
+                        LIST(FIND SCALAR_CHECK_TYPE ${SCALAR_CHECK} IDX)
+                        LIST(GET CHECK_SCALAR_FLAG ${IDX} FLAG)
+                
+                        MATH( EXPR IDX2 "${IDX1} + 1")
+                        LIST(GET ${SCALAR_VALUES} ${IDX2} VALUE)
+
+                        IF(IDX0 LESS 2)
+                            SET( TEST_NAME "${FULL_NAME}-${SCALAR_CHECK}" )
+                        ELSE()
+                            SET( TEST_NAME "${FULL_NAME}-${SERIES}-${SCALAR_CHECK}" )
+                        ENDIF()
+                        #MESSAGE("Adding scalar check ${TEST_NAME}")
+                        SET(CHECK_CMD ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e 2 ${FLAG} ${VALUE})
+                        #MESSAGE("check command = ${CHECK_CMD}")
+                        ADD_TEST( NAME ${TEST_NAME}
+                            COMMAND ${CHECK_CMD}
+                            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${FULL_NAME}"
+                        )
+                        SET_PROPERTY( TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${FULL_NAME} )
+                        SET_PROPERTY( TEST ${TEST_NAME} APPEND PROPERTY LABELS "QMCPACK-checking-results" )
+                    ENDIF()
+                ENDFOREACH(SCALAR_CHECK)
+            ENDIF()
+            MATH(EXPR IDX0 "${IDX0}+1")
+        ENDFOREACH(V)
     ENDIF()
 ENDFUNCTION()
 
