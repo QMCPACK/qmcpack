@@ -271,6 +271,7 @@ void CSUpdateBase::initCSWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end,
 
     awalker.DataSet.clear();
     awalker.DataSet.rewind();
+    awalker.registerData();
     for( int ipsi=0; ipsi<nPsi; ipsi++)
     {
       Psi1[ipsi]->registerData(W,awalker.DataSet);
