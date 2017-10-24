@@ -24,6 +24,7 @@
 #include <vector>
 #include <iostream>
 #include <type_traits>
+#include <stdexcept>
 
 namespace qmcplusplus
 {
