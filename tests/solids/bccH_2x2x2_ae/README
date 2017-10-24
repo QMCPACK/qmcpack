@@ -1,0 +1,6 @@
+pwscf.pwscf.h5 is generated from "folded"
+gamma.pwscf.h5 is generated from "super"
+
+pw2qmcpack.x should be from https://github.com/Paul-St-Young/qmcpack-espresso-5.3.0
+
+pseudopotential is from http://www.quantum-espresso.org/wp-content/uploads/upf_files/H.coulomb-ae.UPF
