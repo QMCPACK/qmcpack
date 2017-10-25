@@ -61,7 +61,7 @@ namespace mpi {
   /// \return the global communicator
   ///
   ///////////////////////////////////////////////////////////////////////////////////////////////////
-  inline const MPI_Comm world() {
+  inline MPI_Comm world() {
     return MPI_COMM_WORLD;
   }
 
@@ -243,26 +243,26 @@ namespace mpi {
   /// \return the appropriate MPI datatype
   ///
   ///////////////////////////////////////////////////////////////////////////////////////////////////
-  template<class T> inline const MPI_Datatype datatype() {
+  template<class T> inline MPI_Datatype datatype() {
     throw formic::Exception("unknown mpi datatype");
     return MPI_DOUBLE;
   }
-  template <> inline const MPI_Datatype  datatype< char                      >() { return MPI_CHAR;                }
-  template <> inline const MPI_Datatype  datatype< signed short              >() { return MPI_SHORT;               }
-  template <> inline const MPI_Datatype  datatype< signed int                >() { return MPI_INT;                 }
-  template <> inline const MPI_Datatype  datatype< signed long               >() { return MPI_LONG;                }
-  template <> inline const MPI_Datatype  datatype< signed char               >() { return MPI_SIGNED_CHAR;         }
-  template <> inline const MPI_Datatype  datatype< unsigned char             >() { return MPI_UNSIGNED_CHAR;       }
-  template <> inline const MPI_Datatype  datatype< unsigned short            >() { return MPI_UNSIGNED_SHORT;      }
-  template <> inline const MPI_Datatype  datatype< unsigned int              >() { return MPI_UNSIGNED;            }
-  template <> inline const MPI_Datatype  datatype< unsigned long int         >() { return MPI_UNSIGNED_LONG;       }
-  template <> inline const MPI_Datatype  datatype< float                     >() { return MPI_FLOAT;               }
-  template <> inline const MPI_Datatype  datatype< double                    >() { return MPI_DOUBLE;              }
-  template <> inline const MPI_Datatype  datatype< long double               >() { return MPI_LONG_DOUBLE;         }
-  template <> inline const MPI_Datatype  datatype< bool                      >() { return MPI_INT;                 }
-  template <> inline const MPI_Datatype  datatype< std::complex<float>       >() { return MPI_COMPLEX;             }
-  template <> inline const MPI_Datatype  datatype< std::complex<double>      >() { return MPI_DOUBLE_COMPLEX;      }
-  //template <> inline const MPI_Datatype  datatype< std::complex<long double> >() { return MPI_LONG_DOUBLE_COMPLEX; }
+  template <> inline MPI_Datatype  datatype< char                      >() { return MPI_CHAR;                }
+  template <> inline MPI_Datatype  datatype< signed short              >() { return MPI_SHORT;               }
+  template <> inline MPI_Datatype  datatype< signed int                >() { return MPI_INT;                 }
+  template <> inline MPI_Datatype  datatype< signed long               >() { return MPI_LONG;                }
+  template <> inline MPI_Datatype  datatype< signed char               >() { return MPI_SIGNED_CHAR;         }
+  template <> inline MPI_Datatype  datatype< unsigned char             >() { return MPI_UNSIGNED_CHAR;       }
+  template <> inline MPI_Datatype  datatype< unsigned short            >() { return MPI_UNSIGNED_SHORT;      }
+  template <> inline MPI_Datatype  datatype< unsigned int              >() { return MPI_UNSIGNED;            }
+  template <> inline MPI_Datatype  datatype< unsigned long int         >() { return MPI_UNSIGNED_LONG;       }
+  template <> inline MPI_Datatype  datatype< float                     >() { return MPI_FLOAT;               }
+  template <> inline MPI_Datatype  datatype< double                    >() { return MPI_DOUBLE;              }
+  template <> inline MPI_Datatype  datatype< long double               >() { return MPI_LONG_DOUBLE;         }
+  template <> inline MPI_Datatype  datatype< bool                      >() { return MPI_INT;                 }
+  template <> inline MPI_Datatype  datatype< std::complex<float>       >() { return MPI_COMPLEX;             }
+  template <> inline MPI_Datatype  datatype< std::complex<double>      >() { return MPI_DOUBLE_COMPLEX;      }
+  //template <> inline MPI_Datatype  datatype< std::complex<long double> >() { return MPI_LONG_DOUBLE_COMPLEX; }
 
   template<class T> void read_and_bcast(formic::Archive & arch,
                                         T & val,
