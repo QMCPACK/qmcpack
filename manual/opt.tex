@@ -25,7 +25,7 @@ A typical optimization block looks like the following. It starts with method=``l
     <estimator name="LocalEnergy" hdf5="no"/>
     ...
     <!-- Specify the correlated sampling options and define the cost function -->
-    <parameter name="minwalkers">           0.3 </parameter>
+    <parameter name="minwalkers">            0.3 </parameter>
          <cost name="energy">               0.95 </cost>
          <cost name="unreweightedvariance"> 0.00 </cost>
          <cost name="reweightedvariance">   0.05 </cost>
@@ -156,23 +156,35 @@ When the energy gradually converges, we can have a large \texttt{minwalkers} to 
  <loop max="6">
   <qmc method="linear" move="pbyp" gpu="yes">
     <!-- Specify the VMC options -->
-    ...
-    <!-- Specify the correlated sampling options and define the cost function -->
-    <parameter name="minwalkers"> 1e-4 </parameter>
-    ...
+    <parameter name="walkers">                1 </parameter>
+    <parameter name="samples">            10000 </parameter>
+    <parameter name="stepsbetweensamples">    1 </parameter>
+    <parameter name="substeps">               5 </parameter>
+    <parameter name="warmupSteps">            5 </parameter>
+    <parameter name="blocks">                25 </parameter>
+    <parameter name="timestep">             1.0 </parameter>
+    <parameter name="usedrift">              no </parameter>
+    <estimator name="LocalEnergy" hdf5="no"/>
     <!-- Specify the optimizer options -->
-    <parameter name="MinMethod">OneShiftOnly</parameter>
+    <parameter name="MinMethod">    OneShiftOnly </parameter>
+    <parameter name="minwalkers">           1e-4 </parameter>
   </qmc>
  </loop>
  <loop max="12">
   <qmc method="linear" move="pbyp" gpu="yes">
     <!-- Specify the VMC options -->
-    ...
-    <!-- Specify the correlated sampling options and define the cost function -->
-    <parameter name="minwalkers"> 0.5 </parameter>
-    ...
+    <parameter name="walkers">                1 </parameter>
+    <parameter name="samples">            20000 </parameter>
+    <parameter name="stepsbetweensamples">    1 </parameter>
+    <parameter name="substeps">               5 </parameter>
+    <parameter name="warmupSteps">            2 </parameter>
+    <parameter name="blocks">                50 </parameter>
+    <parameter name="timestep">             1.0 </parameter>
+    <parameter name="usedrift">              no </parameter>
+    <estimator name="LocalEnergy" hdf5="no"/>
     <!-- Specify the optimizer options -->
-    <parameter name="MinMethod">OneShiftOnly</parameter>
+    <parameter name="MinMethod">    OneShiftOnly </parameter>
+    <parameter name="minwalkers">            0.5 </parameter>
   </qmc>
  </loop>
 \end{lstlisting}
@@ -257,6 +269,22 @@ Recommendations:
 \end{itemize}
 
 \begin{lstlisting}
+ <loop max="15">
+  <qmc method="linear" move="pbyp">
+    <!-- Specify the VMC options -->
+    <parameter name="walkers">                1 </parameter>
+    <parameter name="samples">            20000 </parameter>
+    <parameter name="stepsbetweensamples">    1 </parameter>
+    <parameter name="substeps">               5 </parameter>
+    <parameter name="warmupSteps">            5 </parameter>
+    <parameter name="blocks">                50 </parameter>
+    <parameter name="timestep">             1.0 </parameter>
+    <parameter name="usedrift">              no </parameter>
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <!-- Specify the correlated sampling options and define the cost function -->
+         <cost name="energy">               1.00 </cost>
+         <cost name="unreweightedvariance"> 0.00 </cost>
+         <cost name="reweightedvariance">   0.00 </cost>
     <!-- Specify the optimizer options -->
     <parameter name="MinMethod">adaptive</parameter>
     <parameter name="max_relative_cost_change">10.0</parameter>
@@ -269,6 +297,8 @@ Recommendations:
     <parameter name="nblocks"> 100 </parameter>
     <parameter name="nolds"> 5 </parameter>
     <parameter name="nkept"> 3 </parameter>
+  </qmc>
+ </loop>
 \end{lstlisting}
 %To activate this optimizer, add ``-D BUILD\_LMYENGINE\_INTERFACE=1'' in the CMake command line.
 
