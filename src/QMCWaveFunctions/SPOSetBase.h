@@ -92,7 +92,10 @@ public:
    * Several user classes can own SPOSetBase and use objectName as counter
    */
   std::string objectName;
-
+  
+  ///Pass Communicator
+  Communicate *myComm;
+  
   /** constructor */
   SPOSetBase();
 
@@ -338,6 +341,7 @@ public:
   virtual void
   evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi);
 #endif
+
 
 protected:
   bool putOccupation(xmlNodePtr occ_ptr);

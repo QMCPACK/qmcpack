@@ -41,7 +41,6 @@ struct AtomicBasisBuilder: public BasisSetBuilder
   int expandlm;
   std::string Morder;
   std::string sph;
-  std::string basisType;
   std::string elementType;
 
   ///map for the radial orbitals
@@ -74,7 +73,7 @@ struct AtomicBasisBuilder: public BasisSetBuilder
 template<class RFB>
 AtomicBasisBuilder<RFB>::AtomicBasisBuilder(const std::string& eName):
   addsignforM(false), expandlm(GAUSSIAN_EXPAND), Morder("gaussian"),
-  sph("default"), basisType("Numerical"), elementType(eName)
+  sph("default"), elementType(eName)
 {
 // mmorales: for "Cartesian Gaussian", m is an integer that maps
 //           the component to Gamess notation, see Numerics/CartesianTensor.h
@@ -91,7 +90,6 @@ bool AtomicBasisBuilder<RFB>::put(xmlNodePtr cur)
   //Register valid attributes attributes
   OhmmsAttributeSet aAttrib;
   //aAttrib.add(elementType,"elementType"); aAttrib.add(elementType,"species");
-  aAttrib.add(basisType,"type");
   aAttrib.add(sph,"angular");
   aAttrib.add(addsignforM,"expM");
   aAttrib.add(Morder,"expandYlm");
@@ -138,18 +136,16 @@ bool AtomicBasisBuilder<RFB>::putH5(hdf_archive &hin)
   Morder="Gamess";
   if(myComm->rank()==0){
       hin.read(sph,"angular");
-      hin.read(basisType,"type");
       hin.read(CenterID,"elementType");
       hin.read(Normalized,"normalized");
       hin.read(basisName,"name");
   }
   myComm->bcast(sph);
-  myComm->bcast(basisType);
   myComm->bcast(CenterID);
   myComm->bcast(Normalized);
   myComm->bcast(basisName);
 
-  app_log()<<"<input node=\"atomicBasisSet\" name=\""<<basisName<<"\"  angular=\""<<sph<<"\"  type=\""<<basisType<<"\"  elementType=\""<<CenterID<<"\"  normalized=\""<<Normalized<<"\"/>"<<std::endl; 
+  app_log()<<"<input node=\"atomicBasisSet\" name=\""<<basisName<<"\"  angular=\""<<sph<<"\"  elementType=\""<<CenterID<<"\"  normalized=\""<<Normalized<<"\"/>"<<std::endl; 
   bool tmp_addsignforM=addsignforM;
   if(sph == "spherical")
     addsignforM=1; //include (-1)^m

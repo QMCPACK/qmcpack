@@ -46,7 +46,8 @@ public:
 
   typedef typename RFB::CenteredOrbitalType COT;
   typedef LocalizedBasisSet<COT>   ThisBasisSetType;
-
+  
+  
   /** constructor
    * \param els reference to the electrons
    * \param ions reference to the ions
@@ -143,10 +144,7 @@ public:
           if(!hin.push("basisset"))
              PRE.error("Could not open basisset group in H5; Probably Corrupt H5 file",true);
  
-          if(!hin.push("atomicBasisSet"))
-             PRE.error("Could not open atomicBasisSet group in H5; Probably Corrupt H5 file",true);
- 
-          hin.read(Nb_Elements,"NumElemets"); 
+          hin.read(Nb_Elements,"NbElements"); 
       }
 
       myComm->bcast(Nb_Elements);
@@ -160,13 +158,13 @@ public:
       {
           std::string elementType,dataset;
           std::stringstream tempElem;                                              
-          std::string ElemID0="Element",ElemType;
+          std::string ElemID0="atomicBasisSet",ElemType;
           tempElem<<ElemID0<<i;
           ElemType=tempElem.str();
           
           if(myComm->rank()==0){
              if(!hin.push(ElemType.c_str()))
-                 PRE.error("Could not open  group EleTycBasisSet in H5; Probably Corrupt H5 file",true);
+                 PRE.error("Could not open  group Containing atomic Basis set in H5; Probably Corrupt H5 file",true);
 
              if(!hin.read(basiset_name,"name"))
                  PRE.error("Could not find name of  basisset group in H5; Probably Corrupt H5 file",true);
@@ -239,6 +237,7 @@ public:
           if(cusp_file != "")
             tmp=cusp_file;
           lcos= new LCOrbitalSetWithCorrection<ThisBasisSetType,false>(thisBasisSet,&targetPtcl,&sourcePtcl,ReportLevel,0.1,tmp,algorithm);
+          lcos->myComm=myComm;
 // mmorales:
 // this is a small hack to allow the cusp correction to work
 // but it should be fixed, all basisset/sposet objects should always be named
@@ -252,6 +251,8 @@ public:
         {
           app_log() << "Creating LCOrbitalSet with the input coefficients" << std::endl;
           lcos= new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet,ReportLevel,algorithm);
+          lcos->myComm=myComm;
+
         }
       }
       cur=cur->next;
@@ -260,10 +261,10 @@ public:
     {
       app_log() << "Creating LCOrbitalSet with the Identity coefficient" << std::endl;
       lcos = new LCOrbitalSet<ThisBasisSetType,true>(thisBasisSet,ReportLevel);
+      lcos->myComm=myComm;
     }
     return lcos;
   }
-
 private:
   ///target ParticleSet
   ParticleSet& targetPtcl;

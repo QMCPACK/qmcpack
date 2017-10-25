@@ -44,6 +44,7 @@ SPOSetBase::SPOSetBase()
   className="invalid";
   //default is false: LCOrbitalSet.h needs to set this true and recompute needs to check
   NeedDistanceTables=false;
+  myComm=nullptr;
 }
 
 void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
@@ -135,8 +136,6 @@ bool SPOSetBase::put(xmlNodePtr cur)
    
   const char* MOhref2((const char*)MOhreftemp);
 
-  
-
   //initialize the number of orbital by the basis set size
   int norb= BasisSetSize;
   std::string debugc("no");
@@ -180,6 +179,7 @@ bool SPOSetBase::put(xmlNodePtr cur)
       }
       else
       {
+          std::cout<<"YUPYUPYUP"<<std::endl;
           success = putFromH5(MOhref2, coeff_ptr);
       }
   bool success2 = transformSPOSet();
@@ -189,6 +189,8 @@ bool SPOSetBase::put(xmlNodePtr cur)
     app_log() << C << std::endl;
   }
   return success && success2;
+
+ return true;
 }
 
 void SPOSetBase::checkObject()
@@ -299,42 +301,37 @@ bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
   aAttrib.add(neigs,"orbitals");
   aAttrib.put(coeff_ptr);
   setIdentity(false);
+  hdf_archive hin(myComm);
   
-  //Communicate *myComm;
-  //hdf_archive hin(myComm);
-  hdf_archive hin(0);
-  //if(hin.myComm->rank()==0){
+  if(myComm->rank()==0){
     hin.open(fname);
     if (!hin.open(fname)){
         APP_ABORT("SPOSetBase::putFromH5 missing or incorrect path to H5 file.");
     }
-  //}
-  Matrix<RealType> Ctemp(BasisSetSize,BasisSetSize);
-  char name[72];
-  sprintf(name,"%s%d","/basisset/determinant_0/eigenset_",setVal);
-  setname=name;
- // if(hin.myComm->rank()==0){
-     if(!hin.read(Ctemp,setname))
-     {
-        setname="SPOSetBase::putFromH5 Missing "+setname+" from HDF5 File.";
-        APP_ABORT(setname.c_str());
-     }
-  //}
-  //hin.myComm->bcast(Ctemp);
   
-  //if(hin.myComm->rank()==0)
-     hin.close();
-
-  int n=0,i=0;
-  while(i<norbs)
-  {
-    if(Occ[n]>0.0)
+    Matrix<RealType> Ctemp(BasisSetSize,BasisSetSize);
+    char name[72];
+    sprintf(name,"%s%d","/determinant/eigenset_",setVal);
+    setname=name;
+    if(!hin.read(Ctemp,setname))
     {
-      std::copy(Ctemp[n],Ctemp[n+1],C[i]);
-      i++;
+       setname="SPOSetBase::putFromH5 Missing "+setname+" from HDF5 File.";
+       APP_ABORT(setname.c_str());
     }
-    n++;
-  }
+    hin.close();
+ 
+    int n=0,i=0;
+    while(i<norbs)
+    {
+      if(Occ[n]>0.0)
+      {
+        std::copy(Ctemp[n],Ctemp[n+1],C[i]);
+        i++;
+      }
+      n++;
+    }
+ }
+ myComm->bcast(C.data(),C.size());
 #else
   APP_ABORT("SPOSetBase::putFromH5 HDF5 is disabled.")
 #endif

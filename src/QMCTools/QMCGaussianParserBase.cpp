@@ -354,7 +354,6 @@ xmlNodePtr QMCGaussianParserBase::createBasisSetWithHDF5()
   hout.push("basisset",true);
   std::string BasisSetName("LCAOBSet");
   hout.write(BasisSetName,"name");
-  hout.push("atomicBasisSet",true);
   
   std::map<int,int> species;
   int gtot = 0;
@@ -379,7 +378,7 @@ xmlNodePtr QMCGaussianParserBase::createBasisSetWithHDF5()
     }
     gtot += ng;
   }
-  hout.write(counter,"NumElemets");
+  hout.write(counter,"NbElements");
   hout.close();
   return bset;
 }
@@ -417,8 +416,7 @@ QMCGaussianParserBase::createDeterminantSetWithHDF5()
   
   hdf_archive hout(0);
   hout.open(h5file.c_str(),H5F_ACC_RDWR);
-  hout.push("basisset");
-  hout.push("determinant_0",true);
+  hout.push("determinant",true);
 
   Matrix<double> Ctemp(SizeOfBasisSet,SizeOfBasisSet);
 
@@ -1027,18 +1025,16 @@ void QMCGaussianParserBase::createCenterH5(int iat, int off_,int numelem)
   tempcenter<<CurrentCenter<<"";
   CenterID=tempcenter.str();
   std::stringstream tempElem;
-  std::string ElemID0="Element",ElemID;
+  std::string ElemID0="atomicBasisSet",ElemID;
   tempElem<<ElemID0<<numelem;
   ElemID=tempElem.str();
 
   hdf_archive hout(0);
   hout.open(h5file.c_str(),H5F_ACC_RDWR);
   hout.push("basisset");
-  hout.push("atomicBasisSet");
   hout.push(ElemID.c_str(),true);
   hout.write(basisName,"name");
   hout.write(angular_type,"angular");
-  hout.write(basisType,"type");
   hout.write(CenterID,"elementType");
   hout.write(Normalized,"normalized");
 
@@ -1060,7 +1056,6 @@ void QMCGaussianParserBase::createCenterH5(int iat, int off_,int numelem)
     off_ += gNumber[ig];
     numbasisgroups=n+1;
   }
-  //std::cout<<"numbasisgroups="<<numbasisgroups<<std::endl; 
   
   hout.write(numbasisgroups,"NbBasisGroups");
   hout.close();
@@ -1108,19 +1103,16 @@ QMCGaussianParserBase::createShellH5(int n, int ig, int off_,int numelem)
   std::string an_name(n_name);
   std::string al_name(l_name);
   std::string at_name("Gaussian");
-  //std::string basisGroupID="basisGroup"+aa_name;
   std::string basisGroupID="basisGroup"+an_name;
 
-  //std::cout << "basisGroupID="<<basisGroupID<<std::endl;
   std::stringstream tempElem;
-  std::string ElemID0="Element",ElemID;
+  std::string ElemID0="atomicBasisSet",ElemID;
   tempElem<<ElemID0<<numelem;
   ElemID=tempElem.str();
 
   hdf_archive hout(0);
   hout.open(h5file.c_str(),H5F_ACC_RDWR);
   hout.push("basisset");
-  hout.push("atomicBasisSet");
   hout.push(ElemID.c_str());
   hout.push(basisGroupID.c_str(),true);
   hout.write(aa_name,"rid");

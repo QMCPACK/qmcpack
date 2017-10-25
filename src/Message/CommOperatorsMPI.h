@@ -804,13 +804,6 @@ Communicate::bcast(std::vector<qmcplusplus::TinyVector<float,3> > &g)
   MPI_Bcast(&(g[0][0]), 3*g.size(), MPI_FLOAT, 0, myMPI);
 }
 
-//template<>
-//inline void
-//Communicate::bcast(char* g,int x)
-//{
-//  MPI_Bcast(g,x,MPI_CHAR,0,myMPI);
-//}
-
 template<>
 inline void
 Communicate::bcast(std::vector<int>& g)
@@ -862,7 +855,17 @@ template<>
 inline void
 Communicate::bcast(std::string &g)
 {
-  char * temp_char_g; 
+
+  int string_size=g.size(); 
+
+  bcast(string_size);
+  if(rank()!=0)
+     g.resize(string_size);
+
+  bcast(&g[0],g.size());
+  
+
+/*  char * temp_char_g; 
   int string_size; 
   std::stringstream tmp_g;
 
@@ -880,7 +883,7 @@ Communicate::bcast(std::string &g)
   tmp_g <<temp_char_g;
   tmp_g >>g;
   delete [] temp_char_g;
-
+*/
 }
 
 template<> inline void
