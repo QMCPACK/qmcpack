@@ -863,27 +863,6 @@ Communicate::bcast(std::string &g)
      g.resize(string_size);
 
   bcast(&g[0],g.size());
-  
-
-/*  char * temp_char_g; 
-  int string_size; 
-  std::stringstream tmp_g;
-
-  if(rank()==0){
-     string_size=g.length() + 1;  
-     temp_char_g = new char[string_size];
-     strcpy(temp_char_g, g.c_str());             
-
-  }
-  bcast(string_size);
-  if(rank()!=0)
-     temp_char_g = new char[string_size];
-
-  bcast(temp_char_g,string_size);
-  tmp_g <<temp_char_g;
-  tmp_g >>g;
-  delete [] temp_char_g;
-*/
 }
 
 template<> inline void

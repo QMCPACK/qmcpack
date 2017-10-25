@@ -22,8 +22,6 @@
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
 #include "Message/CommOperatorsMPI.h"
-
-
 namespace qmcplusplus
 {
 
