@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<resources>
+  <hardware>
+    <mpi_size>12</mpi_size>
+    <mpi>true</mpi>
+    <openmp_threads>32</openmp_threads>
+    <openmp>true</openmp>
+    <gpu>false</gpu>
+  </hardware>
+</resources>
