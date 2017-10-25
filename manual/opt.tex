@@ -14,29 +14,24 @@ A typical optimization block looks like the following. It starts with method=``l
  <loop max="10">
   <qmc method="linear" move="pbyp" gpu="yes">
     <!-- Specify the VMC options -->
-    <parameter name="walkers">    256 </parameter>
-    <parameter name="samples">    2867200 </parameter>
+    <parameter name="walkers">              256 </parameter>
+    <parameter name="samples">          2867200 </parameter>
     <parameter name="stepsbetweensamples">    1 </parameter>
-    <parameter name="substeps">  5 </parameter>
-    <parameter name="warmupSteps">  5 </parameter>
-    <parameter name="blocks">  70 </parameter>
-    <parameter name="timestep">  1.0 </parameter>
-    <parameter name="usedrift">   no </parameter>
+    <parameter name="substeps">               5 </parameter>
+    <parameter name="warmupSteps">            5 </parameter>
+    <parameter name="blocks">                70 </parameter>
+    <parameter name="timestep">             1.0 </parameter>
+    <parameter name="usedrift">              no </parameter>
     <estimator name="LocalEnergy" hdf5="no"/>
     ...
     <!-- Specify the correlated sampling options and define the cost function -->
-    <parameter name="usebuffer"> no </parameter>
-    <parameter name="nonlocalpp"> yes </parameter>
-         <cost name="energy">                   0.95 </cost>
-         <cost name="unreweightedvariance">     0.00 </cost>
-         <cost name="reweightedvariance">       0.05 </cost>
+    <parameter name="minwalkers">           0.3 </parameter>
+         <cost name="energy">               0.95 </cost>
+         <cost name="unreweightedvariance"> 0.00 </cost>
+         <cost name="reweightedvariance">   0.05 </cost>
     ...
     <!-- Specify the optimizer options -->
-    <parameter name="MinMethod">quartic</parameter>
-    <parameter name="exp0">-6</parameter>
-    <parameter name="alloweddifference"> 1.0e-4 </parameter>
-    <parameter name="nstabilizers"> 1 </parameter>
-    <parameter name="bigchange">15.0</parameter>
+    <parameter name="MinMethod">    OneShiftOnly </parameter>
     ...
   </qmc>
  </loop>
@@ -89,8 +84,12 @@ The input parameters are listed in the following table.
 Additional information:
 \begin{itemize}
 \item \texttt{maxWeight}. The default should be good.
-\item \texttt{usebuffer}. It saves a lot of computation especially with the `quartic' optimizer.
-\item \texttt{nonlocalpp}. It is recommended to enable it when 3 body Jastrow is on. GPU code has a implementation issue that large amount of memory is consumed with this option.
+\item \texttt{nonlocalpp}. Non-local PP contribution to the local energy depends on the wavefunction.
+When a new set of parameter is proposed, this contribution needs to be updated if the cost function consists of local energy.
+Fortunately, non-local contribution is chosen small when making a PP for small locality error.
+We can ignore its change and avoid the expensive computational cost.
+GPU code has a implementation issue that large amount of memory is consumed with this option.
+\item \texttt{usebuffer}. It saves computation when nonlocalpp=`yes' at the cost of extra memory footprint. The more correlated sampling is called the more this option saves.
 \item \texttt{minwalkers}. A CRITICAL parameter. When the ratio of effective samples to actual number of samples in a reweighting step goes lower than \texttt{minwalkers},
 the proposed set of parameters is invalid. % The last set of acceptable parameters is kept.
 \end{itemize}
@@ -104,14 +103,18 @@ The cost function consists of three components: energy, unreweighted variance an
 
 \subsection{Optimizers}
 QMCPACK implements a few optimizers having different preference aiming for different priorities.
-They can be switched among `rescale', `quartic' (default), `adaptive' and `OneShiftOnly' by the following line in the optimization block.
+They can be switched among  `OneShiftOnly' (default), `adaptive' and `quartic' (old) by the following line in the optimization block.
 \begin{lstlisting}
 <parameter name="MinMethod"> THE METHOD YOU LIKE </parameter>
 \end{lstlisting}
 
-\subsubsection{quartic}
-The quartic optimizer fits a quartic polynomial to 7 values of the cost function obtained using reweighting along chosen direction and determines the optimal move.
-This optimizer is very robust but a bit conservative to accept new steps especially when large parameters changes are proposed.
+\subsubsection{OneShiftOnly}
+The OneShiftOnly optimizer targets a fast optimization by moving parameters more aggressively. It works with OpenMP and GPU and can be considered for large systems.
+This method relies on the effective weight of correlated sampling rather than the cost function value to justify a new set of parameters.
+If effective weight is larger than \texttt{minwalkers}, the new set is taken no matter the cost function value decreases or not.
+If a proposed set is rejected, the standard output prints the measured ratio of effective samples to the total number of samples
+and adjustment on \texttt{minwalkers} can be made if needed.
+
 \begin{table}[h]
 \begin{center}
 \begin{tabularx}{\textwidth}{l l l l l l }
@@ -120,13 +123,8 @@ This optimizer is very robust but a bit conservative to accept new steps especia
 \hline
 \multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   %&   \texttt{stepsize} &  real     & 0--1 & 0.25  & Step size for moving parameters\\
-   &   \texttt{bigchange} &  real     & $>0$ & 50.0  & Largest parameter change allowed\\
-   &   \texttt{alloweddifference} &  real     & $>0$ & 1e-4 & Allowed increased in energy\\
-   &   \texttt{exp0} &  real     & any value & -16.0 & Initial value for stabilizer\\
-   &   \texttt{stabilizerscale} &  real     & $>0$ & 2.0 & Increase in value of exp0 between iterations\\
-   &   \texttt{nstabilizers} &  integer     & $>0$ & 3 & Number of stabilizers to try\\
-   &   \texttt{max\_its} &  integer   & $>0$ & 1 & Number of inner loops with same samples\\
+   &   \texttt{shift\_i} &  real     & $>0$ & 0.01 & Direct stabilizer added to the Hamiltonian matrix\\
+   &   \texttt{shift\_s} &  real     & $>0$ & 1.00 & Initial stabilizer based on the overlap matrix\\
   \hline
 \end{tabularx}
 \end{center}
@@ -134,23 +132,61 @@ This optimizer is very robust but a bit conservative to accept new steps especia
 
 Additional information:
 \begin{itemize}
-\item \texttt{exp0}. It is the initial value for stabilizer (shift to diagonal of H). The actual value of stabilizer is $10^\textrm{exp0}$.
+\item \texttt{shift\_i}. This is the direct term added to the diagonal of the Hamiltonian matrix.
+                         More stable but slower optimization with a large value.
+\item \texttt{shift\_s}. This is the initial value of the stabilizer based on the overlap matrix added to the Hamiltonian matrix.
+                         More stable but slower optimization with a large value. The used value is auto-adjusted by the optimizer.
 \end{itemize}
+
 
 Recommendations:
 \begin{itemize}
-  \item{For hard cases (e.g. simultaneous optimization of long MSD and 3-Body J), set exp0
-to 0 and do a single inner iteration (max its=1) per sample of configurations.}
+  \item Default \texttt{shift\_i}, \texttt{shift\_s} should be fine.
+  \item For hard cases, increasing \texttt{shift\_i} (factor of 5 or 10) can significantly stabilize the optimization by reducing the pace towards the optimal parameter set.
+  \item If the VMC energy of the last optimization iterations grows significantly, increase \texttt{minwalkers} closer to 1 and make the optimization stable.
+  \item If the first iterations of optimization are rejected on a reasonable initial wavefunction, 
+        lower the \texttt{minwalkers} value based on the measured value printed in the standard output to accept the move.
 \end{itemize}
 
+It is recommended to use this optimizer in two sections with a very small \texttt{minwalkers} in the first and a large value in the second like the following.
+In the very beginning, parameters are far away form optimal values and large changes are proposed by the optimizer.
+Having a small \texttt{minwalkers} allows accepting these changes much easier.
+When the energy gradually converges, we can have a large \texttt{minwalkers} to avoid risky parameter sets.
 \begin{lstlisting}
+ <loop max="6">
+  <qmc method="linear" move="pbyp" gpu="yes">
+    <!-- Specify the VMC options -->
+    ...
+    <!-- Specify the correlated sampling options and define the cost function -->
+    <parameter name="minwalkers"> 1e-4 </parameter>
+    ...
     <!-- Specify the optimizer options -->
-    <parameter name="MinMethod">quartic</parameter>
-    <parameter name="exp0">-6</parameter>
-    <parameter name="alloweddifference"> 1.0e-4 </parameter>
-    <parameter name="nstabilizers"> 1 </parameter>
-    <parameter name="bigchange">15.0</parameter>
+    <parameter name="MinMethod">OneShiftOnly</parameter>
+  </qmc>
+ </loop>
+ <loop max="12">
+  <qmc method="linear" move="pbyp" gpu="yes">
+    <!-- Specify the VMC options -->
+    ...
+    <!-- Specify the correlated sampling options and define the cost function -->
+    <parameter name="minwalkers"> 0.5 </parameter>
+    ...
+    <!-- Specify the optimizer options -->
+    <parameter name="MinMethod">OneShiftOnly</parameter>
+  </qmc>
+ </loop>
 \end{lstlisting}
+
+For each optimization step, you will see
+\begin{lstlisting}
+The new set of parameters is valid. Updating the trial wave function!
+\end{lstlisting}
+or
+\begin{lstlisting}
+The new set of parameters is not valid. Revert to the old set!
+\end{lstlisting}
+Occasional rejection is fine. Frequent rejection indicates potential problems and users should inspect the VMC calculation or change optimization strategy.
+To track the progress of optimization, using command ``qmca -q ev *.scalar.dat'' to look at the VMC energy and variance for each optimization step.
 
 \subsubsection{adaptive}
 
@@ -275,12 +311,10 @@ Excited state recommendations:
         principle for the excited state creates a bias in favor of the ground state. 
 \end{itemize}
 
-\subsubsection{OneShiftOnly}
-The OneShiftOnly optimizer targets a fast optimization by moving parameters more aggressively. It works with OpenMP and GPU and can be considered for large systems.
-This method relies on \texttt{minwalkers} to justify a new set of parameters. If it is valid, the new set is taken no matter if the cost function value decreases or not.
-If a proposed set is rejected, the standard output prints the measured ratio of effective samples to the total number of samples
-and adjustment on \texttt{minwalkers} can be made if needed.
-
+\subsubsection{quartic}
+\textbf{This is an older optimizer method retained for compatibility. We recommend starting with the newest OneShiftOnly or adaptive optimizers.}
+The quartic optimizer fits a quartic polynomial to 7 values of the cost function obtained using reweighting along chosen direction and determines the optimal move.
+This optimizer is very robust but a bit conservative to accept new steps especially when large parameters changes are proposed.
 \begin{table}[h]
 \begin{center}
 \begin{tabularx}{\textwidth}{l l l l l l }
@@ -289,8 +323,13 @@ and adjustment on \texttt{minwalkers} can be made if needed.
 \hline
 \multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{shift\_i} &  real     & $>0$ & 0.01 & Direct stabilizer added to the Hamiltonian matrix\\
-   &   \texttt{shift\_s} &  real     & $>0$ & 1.00 & Initial stabilizer based on the overlap matrix\\
+   %&   \texttt{stepsize} &  real     & 0--1 & 0.25  & Step size for moving parameters\\
+   &   \texttt{bigchange} &  real     & $>0$ & 50.0  & Largest parameter change allowed\\
+   &   \texttt{alloweddifference} &  real     & $>0$ & 1e-4 & Allowed increased in energy\\
+   &   \texttt{exp0} &  real     & any value & -16.0 & Initial value for stabilizer\\
+   &   \texttt{stabilizerscale} &  real     & $>0$ & 2.0 & Increase in value of exp0 between iterations\\
+   &   \texttt{nstabilizers} &  integer     & $>0$ & 3 & Number of stabilizers to try\\
+   &   \texttt{max\_its} &  integer   & $>0$ & 1 & Number of inner loops with same samples\\
   \hline
 \end{tabularx}
 \end{center}
@@ -298,61 +337,23 @@ and adjustment on \texttt{minwalkers} can be made if needed.
 
 Additional information:
 \begin{itemize}
-\item \texttt{shift\_i}. This is the direct term added to the diagonal of the Hamiltonian matrix.
-                         More stable but slower optimization with a large value.
-\item \texttt{shift\_s}. This is the initial value of the stabilizer based on the overlap matrix added to the Hamiltonian matrix. 
-                         More stable but slower optimization with a large value. The used value is auto-adjusted by the optimizer.
+\item \texttt{exp0}. It is the initial value for stabilizer (shift to diagonal of H). The actual value of stabilizer is $10^\textrm{exp0}$.
 \end{itemize}
-
 
 Recommendations:
 \begin{itemize}
-  \item Default \texttt{shift\_i}, \texttt{shift\_s} should be fine.
-  \item For hard cases, increasing \texttt{shift\_i} (factor of 5 or 10) can significantly stabilize the optimization by reducing the pace towards the optimal parameter set.
-  \item If the VMC energy of the last optimization iterations grows significantly, increase \texttt{minwalkers} closer to 1 and make the optimization stable.
-  \item If the first iterations of optimization are rejected on a reasonable initial wavefunction, 
-        lower the \texttt{minwalkers} value based on the measured value printed in the standard output to accept the move.
+  \item{For hard cases (e.g. simultaneous optimization of long MSD and 3-Body J), set exp0
+to 0 and do a single inner iteration (max its=1) per sample of configurations.}
 \end{itemize}
 
-It is recommended to use this optimizer in two sections with a very small \texttt{minwalkers} in the first and a large value in the second like the following.
-In the very beginning, parameters are far away form optimal values and large changes are proposed by the optimizer.
-Having a small \texttt{minwalkers} allows accepting these changes much easier.
-When the energy gradually converges, we can have a large \texttt{minwalkers} to guarantee a stable optimization.
 \begin{lstlisting}
- <loop max="6">
-  <qmc method="linear" move="pbyp" gpu="yes">
-    <!-- Specify the VMC options -->
-    ...
-    <!-- Specify the correlated sampling options and define the cost function -->
-    <parameter name="minwalkers"> 1e-4 </parameter>
-    ...
     <!-- Specify the optimizer options -->
-    <parameter name="MinMethod">OneShiftOnly</parameter>
-  </qmc>
- </loop>
- <loop max="12">
-  <qmc method="linear" move="pbyp" gpu="yes">
-    <!-- Specify the VMC options -->
-    ...
-    <!-- Specify the correlated sampling options and define the cost function -->
-    <parameter name="minwalkers"> 0.5 </parameter>
-    ...
-    <!-- Specify the optimizer options -->
-    <parameter name="MinMethod">OneShiftOnly</parameter>
-  </qmc>
- </loop>
+    <parameter name="MinMethod">quartic</parameter>
+    <parameter name="exp0">-6</parameter>
+    <parameter name="alloweddifference"> 1.0e-4 </parameter>
+    <parameter name="nstabilizers"> 1 </parameter>
+    <parameter name="bigchange">15.0</parameter>
 \end{lstlisting}
-
-For each optimization step, you will see
-\begin{lstlisting}
-The new set of parameters is valid. Updating the trial wave function!
-\end{lstlisting}
-or
-\begin{lstlisting}
-The new set of parameters is not valid. Revert to the old set!
-\end{lstlisting}
-Occasional rejection is fine. Frequent rejection indicates potential problems and users should inspect the VMC calculation or change optimization strategy.
-To track the progress of optimization, using command ``qmca -q ev *.scalar.dat'' to look at the VMC energy and variance for each optimization step.
 
 \subsection{General recommendations}
 Here are a few reminders to make wavefunction easier.
