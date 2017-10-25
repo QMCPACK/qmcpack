@@ -174,14 +174,11 @@ bool SPOSetBase::put(xmlNodePtr cur)
   if(H5file==false)
     success = putFromXML(coeff_ptr);
   else
-      if(H5file!=true){
+      if(H5file!=true)
          APP_ABORT("Error in Opening HDF5");
-      }
       else
-      {
-          std::cout<<"YUPYUPYUP"<<std::endl;
           success = putFromH5(MOhref2, coeff_ptr);
-      }
+
   bool success2 = transformSPOSet();
   if(debugc=="yes")
   {
