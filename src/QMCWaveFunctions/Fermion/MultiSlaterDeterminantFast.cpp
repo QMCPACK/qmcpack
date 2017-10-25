@@ -753,7 +753,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
       }
       for(size_t i=1; i<C->size(); i++)
       {
-        size_t kk=myVars->where(i-1);
+        int kk=myVars->where(i-1);
         if (kk<0)
           continue;
         const size_t upC = (*C2node_up)[i];
