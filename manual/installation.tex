@@ -585,6 +585,7 @@ Theta is a 9.65 petaflops system manufactured by Cray with 3624 compute nodes.
 Each node features a second-generation Intel Xeon Phi 7230 processor and 192 GB DDR4 RAM.
 
 \begin{verbatim}
+export CRAYPE_LINK_TYPE=dynamic
 module unload cray-libsci
 module load cray-hdf5-parallel
 export BOOST_ROOT=/soft/libraries/boost/1.64.0/intel
@@ -697,6 +698,7 @@ Edison is a Cray XC30 with dual 12-core Intel "Ivy Bridge" nodes
 installed at NERSC. The build settings are identical to eos.
 
 \begin{verbatim}
+export CRAYPE_LINK_TYPE=dynamic
 module load boost
 module load cmake3
 module load cmake
@@ -732,6 +734,7 @@ Cori is a Cray XC40 with 16-core Intel "Haswell" nodes
 installed at NERSC.
 
 \begin{verbatim}
+export CRAYPE_LINK_TYPE=dynamic
 module unload cray-libsci  
 module load boost  
 module load cray-hdf5-parallel
@@ -770,6 +773,7 @@ Xeon Phi Knight's Landing (KNL) nodes. The following build recipe ensures that t
 generation is appropriate for the KNL nodes:
 
 \begin{verbatim}
+export CRAYPE_LINK_TYPE=dynamic
 module swap craype-haswell craype-mic-knl  
 module unload cray-libsci  
 module load boost  
