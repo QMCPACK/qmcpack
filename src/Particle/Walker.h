@@ -125,10 +125,7 @@ struct Walker
   /** The configuration vector (3N-dimensional vector to store
      the positions of all the particles for a single walker)*/
   ParticlePos_t R;
-#if defined(SOA_MEMORY_OPTIMIZED)
-  /** Store only RealType array data */
-  Buffer_t PsiBuffer;
-#else
+#if !defined(SOA_MEMORY_OPTIMIZED)
   /** \f$ \nabla_i d\log \Psi for the i-th particle */
   ParticleGradient_t G;
   /** \f$ \nabla^2_i d\log \Psi for the i-th particle */
@@ -300,9 +297,7 @@ struct Walker
     if (R.size()!=a.R.size())
       resize(a.R.size());
     R = a.R;
-#if defined(SOA_MEMORY_OPTIMIZED)
-    PsiBuffer=a.PsiBuffer;
-#else
+#if !defined(SOA_MEMORY_OPTIMIZED)
     G = a.G;
     L = a.L;
 #endif
