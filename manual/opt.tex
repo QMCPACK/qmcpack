@@ -293,10 +293,12 @@ Recommendations:
     <parameter name="max_param_change"> 0.3 </parameter>
     <parameter name="chase_lowest"> yes </parameter>
     <parameter name="chase_closest"> yes </parameter>
-    <parameter name="block_lm"> yes </parameter>
-    <parameter name="nblocks"> 100 </parameter>
-    <parameter name="nolds"> 5 </parameter>
-    <parameter name="nkept"> 3 </parameter>
+    <parameter name="block_lm"> no </parameter>
+    <!-- Specify the BLM specific options if needed
+      <parameter name="nblocks"> 100 </parameter>
+      <parameter name="nolds"> 5 </parameter>
+      <parameter name="nkept"> 3 </parameter>
+    -->
   </qmc>
  </loop>
 \end{lstlisting}
