@@ -157,9 +157,9 @@ struct PooledMemory
   inline void get(T1* first, T1* last)
   {
     // for backward compatibility
-    constexpr int multiplier=sizeof(T1);
-    std::copy_n(reinterpret_cast<T1*>(myData.data()+Current), last-first, first);
-    Current += getAlignedSize<T>((last-first)*multiplier);
+    const size_t nbytes=(last-first)*sizeof(T1);
+    std::memcpy(first, myData.data()+Current, nbytes);
+    Current += getAlignedSize<T>(nbytes);
   }
 
   template<typename T1>
@@ -193,9 +193,9 @@ struct PooledMemory
   inline void put(T1* first, T1* last)
   {
     // for backward compatibility
-    constexpr int multiplier=sizeof(T1);
-    std::copy_n(first, last-first, reinterpret_cast<T1*>(myData.data()+Current));
-    Current += getAlignedSize<T>((last-first)*multiplier);
+    const size_t nbytes=(last-first)*sizeof(T1);
+    std::memcpy(myData.data()+Current, first, nbytes);
+    Current += getAlignedSize<T>(nbytes);
   }
 
   /** return the address of the first element **/
