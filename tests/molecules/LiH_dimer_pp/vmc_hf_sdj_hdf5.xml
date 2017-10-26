@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="vmc_hf_sdj_xml" series="0"/>
+  <project id="vmc_hf_sdj_hdf5" series="0"/>
 
   <include href="LiH_dimer_pp-ptcl.xml"/>
   <include href="LiH_dimer_pp-wfshdf5.xml"/>
