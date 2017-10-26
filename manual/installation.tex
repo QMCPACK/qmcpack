@@ -629,6 +629,7 @@ As noted in Section\ref{sec:titanbuildgpu} for the GPU, building on
 Crays requires only loading the appropriate library modules.
 
 \begin{verbatim}
+export CRAYPE_LINK_TYPE=dynamic
 module swap PrgEnv-pgi PrgEnv-gnu # Use gnu compilers
 module unload cudatoolkit         # No CUDA for CPU build
 module load cray-hdf5
@@ -649,6 +650,8 @@ by the Aries interconnect. The build process is identical to Titan,
 except that we use the default Intel programming environment. This is
 usually preferred to GNU.
 \begin{verbatim}
+export CRAYPE_LINK_TYPE=dynamic
+module unload cray-libsci
 module load cray-hdf5
 module load cmake
 module load fftw
@@ -699,12 +702,12 @@ installed at NERSC. The build settings are identical to eos.
 
 \begin{verbatim}
 export CRAYPE_LINK_TYPE=dynamic
+module unload cray-libsci
 module load boost
 module load cmake3
 module load cmake
 module load libxml2
 module load cray-hdf5-parallel
-module unload cray-libsci
 cmake ..
 make -j 8
 ls -l bin/qmcpack
