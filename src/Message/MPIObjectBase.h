@@ -22,7 +22,7 @@
 #define QMCPLUSPLUS_MPIOBJECTBASE_H
 #include "Message/Communicate.h"
 #include "Utilities/OhmmsInfo.h"
-#include <strstream>
+#include <sstream>
 
 namespace qmcplusplus
 {
