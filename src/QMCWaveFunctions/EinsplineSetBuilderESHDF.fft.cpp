@@ -708,8 +708,7 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
             << NumValenceOrbs << " valence states.\n";
 }
 
-
-#ifdef QMC_CUDA
+#if 0
 /** TODO: FIXME RotateBands_ESHDF need psi_r */
 void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<std::complex<double > >* orbitalSet)
 {

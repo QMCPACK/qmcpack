@@ -1,0 +1,144 @@
+<?xml version="1.0"?>
+<simulation>
+   <project id="bcc54" series="0">
+      <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+   </project>
+   <qmcsystem>
+      <simulationcell>
+         <parameter name="lattice" units="bohr">
+                  7.98176160        0.00000000        0.00000000
+                  0.00000000        7.98176160        0.00000000
+                  0.00000000        0.00000000        7.98176160
+         </parameter>
+         <parameter name="bconds">
+            p p p
+         </parameter>
+         <parameter name="LR_dim_cutoff"       >    15                 </parameter>
+      </simulationcell>
+      <particleset name="e" random="yes">
+         <group name="u" size="27" mass="1.0">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+         <group name="d" size="27" mass="1.0">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+      </particleset>
+      <particleset name="ion0">
+         <group name="H" size="54" mass="1837.36221934">
+            <parameter name="charge"              >    1                     </parameter>
+            <parameter name="valence"             >    1                     </parameter>
+            <parameter name="atomicnumber"        >    1                     </parameter>
+            <parameter name="mass"                >    1837.36221934            </parameter>
+            <attrib name="position" datatype="posArray" condition="0">
+                     7.98176160        0.00000000        0.00000000
+                     1.33029360        1.33029360        1.33029360
+                     2.66058720        0.00000000        0.00000000
+                     3.99088080        1.33029360        1.33029360
+                     5.32117440        0.00000000        0.00000000
+                     6.65146800        1.33029360        1.33029360
+                     0.00000000        2.66058720        0.00000000
+                     1.33029360        3.99088080        1.33029360
+                     2.66058720        2.66058720        0.00000000
+                     3.99088080        3.99088080        1.33029360
+                     5.32117440        2.66058720        0.00000000
+                     6.65146800        3.99088080        1.33029360
+                     0.00000000        5.32117440        0.00000000
+                     1.33029360        6.65146800        1.33029360
+                     2.66058720        5.32117440        0.00000000
+                     3.99088080        6.65146800        1.33029360
+                     5.32117440        5.32117440        0.00000000
+                     6.65146800        6.65146800        1.33029360
+                     0.00000000        0.00000000        2.66058720
+                     1.33029360        1.33029360        3.99088080
+                     2.66058720        0.00000000        2.66058720
+                     3.99088080        1.33029360        3.99088080
+                     5.32117440        0.00000000        2.66058720
+                     6.65146800        1.33029360        3.99088080
+                     0.00000000        2.66058720        2.66058720
+                     1.33029360        3.99088080        3.99088080
+                     2.66058720        2.66058720        2.66058720
+                     3.99088080        3.99088080        3.99088080
+                     5.32117440        2.66058720        2.66058720
+                     6.65146800        3.99088080        3.99088080
+                     0.00000000        5.32117440        2.66058720
+                     1.33029360        6.65146800        3.99088080
+                     2.66058720        5.32117440        2.66058720
+                     3.99088080        6.65146800        3.99088080
+                     5.32117440        5.32117440        2.66058720
+                     6.65146800        6.65146800        3.99088080
+                     0.00000000        0.00000000        5.32117440
+                     1.33029360        1.33029360        6.65146800
+                     2.66058720        0.00000000        5.32117440
+                     3.99088080        1.33029360        6.65146800
+                     5.32117440        0.00000000        5.32117440
+                     6.65146800        1.33029360        6.65146800
+                     0.00000000        2.66058720        5.32117440
+                     1.33029360        3.99088080        6.65146800
+                     2.66058720        2.66058720        5.32117440
+                     3.99088080        3.99088080        6.65146800
+                     5.32117440        2.66058720        5.32117440
+                     6.65146800        3.99088080        6.65146800
+                     0.00000000        5.32117440        5.32117440
+                     1.33029360        6.65146800        6.65146800
+                     2.66058720        5.32117440        5.32117440
+                     3.99088080        6.65146800        6.65146800
+                     5.32117440        5.32117440        5.32117440
+                     6.65146800        6.65146800        6.65146800
+            </attrib>
+         </group>
+      </particleset>
+      <wavefunction name="psi0" target="e">
+         <sposet_builder type="bspline" href="pwscf.pwscf.h5" tilematrix="3 0 0 0 3 0 0 0 3" twistnum="0" source="ion0" size="27" use_old_spline="yes">
+           <sposet type="bspline" name="spo_ud" size="27" spindataset="0"/> 
+         </sposet_builder>
+         <determinantset>
+            <backflow optimize="yes">
+              <transformation name="eHB" type="e-I" function="Bspline" source="ion0">
+                <correlation cusp="0.0" size="8" type="shortrange" init="no" elementType="H">
+                 <coefficients id="eHB1" type="Array" optimize="yes"> -0.5291053533 -0.3339249627 -0.2352932581 -0.1542842429 -0.09164448593 -0.04439923625 -0.01609985361 -0.0024351196</coefficients>
+                </correlation>
+              </transformation>
+              <transformation name="eeB" type="e-e" function="Bspline" source="ion0">
+                <correlation cusp="0.0" size="8" type="shortrange" init="no" speciesA="u" speciesB="u">
+                 <coefficients id="uuB1" type="Array" optimize="yes"> 0.03527528279 0.05506233223 0.03096849559 0.0202843672 0.01164178615 0.006945078075 0.003309935421 0.001590382181</coefficients>
+                </correlation>
+                <correlation cusp="0.0" size="8" type="shortrange" init="no" speciesA="d" speciesB="u">
+                 <coefficients id="udB1" type="Array" optimize="yes"> 0.1599043386 0.1047652701 0.06606423157 0.03895215443 0.02101954678 0.01121748153 0.004561581768 0.001646705688</coefficients>
+                </correlation>
+              </transformation>
+            </backflow>
+            <slaterdeterminant>
+               <determinant id="updet" group="u" sposet="spo_ud" size="27">
+                 <occupation mode="ground"  spindataset="0"/>
+               </determinant>
+               <determinant id="downdet" group="d" sposet="spo_ud" size="27">
+                 <occupation mode="ground"  spindataset="0"/>
+               </determinant>
+            </slaterdeterminant>
+         </determinantset>
+         <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
+            <correlation elementType="H" size="8" rcut="3.9908808" cusp="1">
+               <coefficients id="eH" type="Array" optimize="yes"> -0.9764493531 -0.5776171028 -0.3315385021 -0.1808475959 -0.08676739594 -0.03502906907 -0.01023738123 -0.001060222202</coefficients>
+            </correlation>
+         </jastrow>
+         <jastrow type="Two-Body" name="J2" function="bspline" print="yes">
+            <correlation speciesA="u" speciesB="u" size="8" rcut="3.9908808">
+               <coefficients id="uu" type="Array" optimize="yes"> 0.3832630953 0.2850431673 0.204690868 0.1412891592 0.09129089551 0.05480756269 0.02824643743 0.01312191595</coefficients>
+            </correlation>
+            <correlation speciesA="u" speciesB="d" size="8" rcut="3.9908808">
+               <coefficients id="ud" type="Array" optimize="yes"> 0.5890307002 0.401830576 0.2653285364 0.1686834606 0.1020501048 0.05881420765 0.03005237773 0.01412692541</coefficients>
+            </correlation>
+         </jastrow>
+      </wavefunction>
+      <hamiltonian name="h0" type="generic" target="e">
+         <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
+         <pairpot type="coulomb" name="ElecIon" source="ion0" target="e"/>
+      </hamiltonian>
+   </qmcsystem>
+   <qmc method="wftest">
+     <ratio> deriv </ratio>
+   </qmc>
+</simulation>
