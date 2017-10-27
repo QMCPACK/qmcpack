@@ -38,7 +38,7 @@ int main(int argc, char **argv)
   if(argc<2)
   {
     std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamessAscii|-gamessFMO |-VSVB| -QP] filename ";
-     std::cout << "[-nojastrow -hdf5 -psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf -size npts -ci file.out -threshold cimin -TargetState state_number -NaturalOrbitals NumToRead -add3BodyJ -prefix title -addCusp]"
+     std::cout << "[-nojastrow -hdf5 -psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf -size npts -ci file.out -threshold cimin -TargetState state_number -NaturalOrbitals NumToRead -prefix title -addCusp]"
               << std::endl;
     std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01 -TargetState 0 -prefix sample" << std::endl;
     std::cout << "When the input format is missing, the  extension of filename is used to determine the parser " << std::endl;
@@ -232,6 +232,7 @@ int main(int argc, char **argv)
     parser->VSVB=VSVB;
     parser->parse(in_file);
     parser->dump(psi_tag, ion_tag);
+    parser->dumpStdInput(psi_tag, ion_tag);
     OHMMS::Controller->finalize();
     
 
