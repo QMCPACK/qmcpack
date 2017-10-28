@@ -21,7 +21,7 @@
 #include "Numerics/OptimizableFunctorBase.h"
 #include "OhmmsData/AttributeSet.h"
 #include <cmath>
-#include "Message/CommOperatorsMPI.h"
+#include "Message/CommOperators.h"
 namespace qmcplusplus
 {
 

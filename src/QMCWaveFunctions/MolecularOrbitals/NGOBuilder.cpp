@@ -24,7 +24,7 @@
 #include "io/hdf_archive.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include "OhmmsData/HDFStringAttrib.h"
-#include "Message/CommOperatorsMPI.h"
+#include "Message/CommOperators.h"
 
 
 namespace qmcplusplus

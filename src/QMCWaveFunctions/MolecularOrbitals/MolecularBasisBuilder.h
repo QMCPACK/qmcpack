@@ -26,7 +26,7 @@
 #include "OhmmsData/HDFStringAttrib.h"
 #include "OhmmsData/AttributeSet.h"
 #include "io/hdf_archive.h"
-#include "Message/CommOperatorsMPI.h"
+#include "Message/CommOperators.h"
 #if QMC_BUILD_LEVEL>2
 #include "QMCWaveFunctions/Experimental/LCOrbitalSetWithCorrection.h"
 #endif

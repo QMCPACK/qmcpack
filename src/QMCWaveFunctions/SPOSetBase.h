@@ -23,7 +23,7 @@
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
-#include "Message/CommOperatorsMPI.h"
+#include "Message/CommOperators.h"
 
 #if defined(ENABLE_SMARTPOINTER)
 #include <boost/shared_ptr.hpp>
