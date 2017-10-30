@@ -401,15 +401,9 @@ public:
    *     -i1,i2,...,in : occupied orbital to be replaced (these must be numbers from 0:Nptcl-1)
    *     -a1,a2,...,an : excited states that replace the orbitals (these can be anything)
    */
-  std::vector<int> detData;
-  std::vector<std::pair<int,int> > uniquePairs;
-  std::vector<RealType> DetSigns;
-
-  int backup_reference;
-  std::vector<int> backup_detData;
-  std::vector<std::pair<int,int> > backup_uniquePairs;
-  std::vector<RealType> backup_DetSigns;
-
+  std::vector<int>* detData;
+  std::vector<std::pair<int,int> >* uniquePairs;
+  std::vector<RealType>* DetSigns;
   MyDeterminant<ValueType> DetCalculator;
 
 };

@@ -207,7 +207,8 @@ namespace qmcplusplus
       for(size_t i=0; i<NumOrbitals; i++)
         TpsiM(i,WorkingIndex) = psiV[i];
       ExtraStuffTimer.stop();
-      BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,new_detValues,psiMinv_temp,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
+      BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,
+          new_detValues,psiMinv_temp,TpsiM,dotProducts,*detData,*uniquePairs,*DetSigns);
 // check comment above
       for(size_t i=0; i<NumOrbitals; i++)
         TpsiM(i,WorkingIndex) = psiM(WorkingIndex,i);
@@ -268,7 +269,8 @@ namespace qmcplusplus
       for(size_t i=0; i<NumOrbitals; i++)
         TpsiM(i,WorkingIndex) = psiV[i];
       ExtraStuffTimer.stop();
-      BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,new_detValues,psiMinv_temp,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
+      BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,
+          new_detValues,psiMinv_temp,TpsiM,dotProducts,*detData,*uniquePairs,*DetSigns);
       for(size_t idim=0; idim<OHMMS_DIM; idim++)
       {
         ExtraStuffTimer.start();
@@ -281,7 +283,8 @@ namespace qmcplusplus
         for(size_t i=0; i<NumOrbitals; i++)
           TpsiM(i,WorkingIndex) = dpsiV[i][idim];
         ExtraStuffTimer.stop();
-        BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,new_grads,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns,idim);
+        BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,
+            new_grads,dpsiMinv,TpsiM,dotProducts,*detData,*uniquePairs,*DetSigns,idim);
       }
 // check comment above
       for(int i=0; i<NumOrbitals; i++)
@@ -325,7 +328,8 @@ namespace qmcplusplus
         InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,WorkingIndex,ratioG);
         for(size_t i=0; i<NumOrbitals; i++)
           TpsiM(i,WorkingIndex) = dpsiM(WorkingIndex,i)[idim];
-        BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,grads,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns,idim);
+        BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,
+            grads,dpsiMinv,TpsiM,dotProducts,*detData,*uniquePairs,*DetSigns,idim);
       }
 // check comment above
       for(size_t i=0; i<NumOrbitals; i++)
@@ -379,7 +383,8 @@ namespace qmcplusplus
       InverseUpdateByColumn(psiMinv_temp,psiV_temp,workV1,workV2,WorkingIndex,ratioRef);
       for(size_t i=0; i<NumOrbitals; i++)
         TpsiM(i,WorkingIndex) = psiV[i];
-      BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,new_detValues,psiMinv_temp,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
+      BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,
+          new_detValues,psiMinv_temp,TpsiM,dotProducts,*detData,*uniquePairs,*DetSigns);
       for(size_t jat=0; jat<NumPtcls; jat++)
       {
         it = confgList[ReferenceDeterminant].occup.begin();
@@ -404,7 +409,8 @@ namespace qmcplusplus
             InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,jat,gradRatio[idim]);
             for(size_t i=0; i<NumOrbitals; i++)
               TpsiM(i,jat) = dpsiV[i][idim];
-            BuildDotProductsAndCalculateRatios(ReferenceDeterminant,jat,new_grads,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns,idim);
+            BuildDotProductsAndCalculateRatios(ReferenceDeterminant,jat,
+                new_grads,dpsiMinv,TpsiM,dotProducts,*detData,*uniquePairs,*DetSigns,idim);
           }
           dpsiMinv = psiMinv_temp;
           it = confgList[ReferenceDeterminant].occup.begin();
@@ -413,7 +419,8 @@ namespace qmcplusplus
           InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,jat,ratioLapl);
           for(size_t i=0; i<NumOrbitals; i++)
             TpsiM(i,jat) = d2psiV[i];
-          BuildDotProductsAndCalculateRatios(ReferenceDeterminant,jat,new_lapls,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
+          BuildDotProductsAndCalculateRatios(ReferenceDeterminant,jat,
+              new_lapls,dpsiMinv,TpsiM,dotProducts,*detData,*uniquePairs,*DetSigns);
           for(size_t i=0; i<NumOrbitals; i++)
             TpsiM(i,jat) = psiV[i];
         }
@@ -436,7 +443,8 @@ namespace qmcplusplus
             InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,jat,gradRatio[idim]);
             for(size_t i=0; i<NumOrbitals; i++)
               TpsiM(i,jat) = dpsiM(jat,i)[idim];
-            BuildDotProductsAndCalculateRatios(ReferenceDeterminant,jat,new_grads,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns,idim);
+            BuildDotProductsAndCalculateRatios(ReferenceDeterminant,jat,
+                new_grads,dpsiMinv,TpsiM,dotProducts,*detData,*uniquePairs,*DetSigns,idim);
           }
           dpsiMinv = psiMinv_temp;
           it = confgList[ReferenceDeterminant].occup.begin();
@@ -445,7 +453,8 @@ namespace qmcplusplus
           InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,jat,ratioLapl);
           for(size_t i=0; i<NumOrbitals; i++)
             TpsiM(i,jat) = d2psiM(jat,i);
-          BuildDotProductsAndCalculateRatios(ReferenceDeterminant,jat,new_lapls,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
+          BuildDotProductsAndCalculateRatios(ReferenceDeterminant,jat,
+              new_lapls,dpsiMinv,TpsiM,dotProducts,*detData,*uniquePairs,*DetSigns);
           for(size_t i=0; i<NumOrbitals; i++)
             TpsiM(i,jat) = psiM(jat,i);
         }
