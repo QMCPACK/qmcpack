@@ -71,7 +71,8 @@ public:
   IndexType NonLocalMoveAccepted;
   ///timestep
   RealType Tau;
-
+  ///use Drift
+  bool UseDrift;
 
   /// Constructor.
   QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,

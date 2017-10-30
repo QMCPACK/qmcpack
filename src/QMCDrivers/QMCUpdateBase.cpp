@@ -60,6 +60,7 @@ QMCUpdateBase::~QMCUpdateBase()
 void QMCUpdateBase::setDefaults()
 {
   UpdatePbyP=true;
+  UseDrift=true;
   UseTMove=false;
   NumPtcl=0;
   nSubSteps=1;
