@@ -31,7 +31,7 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 DiracDeterminantBase::DiracDeterminantBase(SPOSetBasePtr const &spos, int first):
-  NP(0), Phi(spos), FirstIndex(first)
+  NP(0), Phi(spos), FirstIndex(first), ndelay(0)
   ,UpdateTimer("DiracDeterminantBase::update",timer_level_fine)
   ,RatioTimer("DiracDeterminantBase::ratio",timer_level_fine)
   ,InverseTimer("DiracDeterminantBase::inverse",timer_level_fine)
@@ -64,9 +64,10 @@ DiracDeterminantBase& DiracDeterminantBase::operator=(const DiracDeterminantBase
  *@param first index of first particle
  *@param nel number of particles in the determinant
  */
-void DiracDeterminantBase::set(int first, int nel)
+void DiracDeterminantBase::set(int first, int nel, int delay)
 {
   FirstIndex = first;
+  ndelay = delay;
   resize(nel,nel);
 }
 
@@ -101,6 +102,13 @@ void DiracDeterminantBase::resize(int nel, int morb)
     norb = nel; // for morb == -1 (default)
   psiM.resize(nel,norb);
   psiM_temp.resize(nel,norb);
+
+  if(ndelay)
+  {
+    delayedEng.resize(norb,ndelay);
+    Ainv_row.resize(norb);
+  }
+
   dpsiM.resize(nel,norb);
   d2psiM.resize(nel,norb);
   psiV.resize(norb);
@@ -132,7 +140,20 @@ DiracDeterminantBase::evalGrad(ParticleSet& P, int iat)
 {
   WorkingIndex = iat-FirstIndex;
   RatioTimer.start();
-  DiracDeterminantBase::GradType g = simd::dot(psiM[WorkingIndex],dpsiM[WorkingIndex],NumOrbitals);
+  DiracDeterminantBase::GradType g;
+  if (ndelay)
+  {
+    delayedEng.getInvRow(psiM, WorkingIndex, Ainv_row.data());
+#if 0
+    for(int ind=0; ind<NumOrbitals; ind++)
+      std::cout << "inverse Row [" << ind << "] SM = " << psiM[WorkingIndex][ind] << " Ainv_row = " << Ainv_row[ind] << std::endl;
+#endif
+    g = simd::dot(Ainv_row.data(),dpsiM[WorkingIndex],NumOrbitals);
+  }
+  else
+  {
+    g = simd::dot(psiM[WorkingIndex],dpsiM[WorkingIndex],NumOrbitals);
+  }
   RatioTimer.stop();
   return g;
 }
@@ -146,8 +167,17 @@ DiracDeterminantBase::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   RatioTimer.start();
   WorkingIndex = iat-FirstIndex;
   UpdateMode=ORB_PBYP_PARTIAL;
-  curRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
-  GradType rv=simd::dot(psiM[WorkingIndex],dpsiV.data(),NumOrbitals);
+  GradType rv;
+  if (ndelay)
+  {
+    curRatio=simd::dot(Ainv_row.data(),psiV.data(),NumOrbitals);
+    rv=simd::dot(Ainv_row.data(),dpsiV.data(),NumOrbitals);
+  }
+  else
+  {
+    curRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
+    rv=simd::dot(psiM[WorkingIndex],dpsiV.data(),NumOrbitals);
+  }
   grad_iat += ((RealType)1.0/curRatio) * rv;
   RatioTimer.stop();
   return curRatio;
@@ -160,7 +190,15 @@ void DiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
   PhaseValue += evaluatePhase(curRatio);
   LogValue +=std::log(std::abs(curRatio));
   UpdateTimer.start();
-  detEng.updateRow(psiM,psiV.data(),WorkingIndex,curRatio);
+  if (ndelay)
+  {
+    delayedEng.acceptRow(psiM,psiV.data(),WorkingIndex);
+    if ( iat+1 == LastIndex ) delayedEng.udpateInvMat(psiM);
+  }
+  else
+  {
+    detEng.updateRow(psiM,psiV.data(),WorkingIndex,curRatio);
+  }
   if(UpdateMode == ORB_PBYP_PARTIAL)
   {
     simd::copy(dpsiM[WorkingIndex],  dpsiV.data(),  NumOrbitals);
@@ -175,6 +213,9 @@ void DiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
 void DiracDeterminantBase::restore(int iat)
 {
   curRatio=1.0;
+  if (ndelay)
+    if ( iat+1 == LastIndex )
+      delayedEng.udpateInvMat(psiM);
 }
 
 void DiracDeterminantBase::updateAfterSweep(ParticleSet& P,
@@ -289,7 +330,15 @@ DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int 
   Phi->evaluate(P, iat, psiV);
   SPOVTimer.stop();
   RatioTimer.start();
-  curRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
+  if (ndelay && delayedEng.delay_count)
+  {
+    delayedEng.getInvRow(psiM, WorkingIndex, Ainv_row.data());
+    curRatio=simd::dot(Ainv_row.data(),psiV.data(),NumOrbitals);
+  }
+  else
+  {
+    curRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
+  }
   //curRatio = DetRatioByRow(psiM, psiV,WorkingIndex);
   RatioTimer.stop();
   return curRatio;
@@ -703,12 +752,12 @@ OrbitalBasePtr DiracDeterminantBase::makeClone(ParticleSet& tqp) const
 DiracDeterminantBase* DiracDeterminantBase::makeCopy(SPOSetBasePtr spo) const
 {
   DiracDeterminantBase* dclone= new DiracDeterminantBase(spo);
-  dclone->set(FirstIndex,LastIndex-FirstIndex);
+  dclone->set(FirstIndex,LastIndex-FirstIndex,ndelay);
   return dclone;
 }
 
 DiracDeterminantBase::DiracDeterminantBase(const DiracDeterminantBase& s)
-  : OrbitalBase(s), NP(0),Phi(s.Phi),FirstIndex(s.FirstIndex)
+  : OrbitalBase(s), NP(0),Phi(s.Phi), FirstIndex(s.FirstIndex), ndelay(s.ndelay)
   ,UpdateTimer(s.UpdateTimer)
   ,RatioTimer(s.RatioTimer)
   ,InverseTimer(s.InverseTimer)

@@ -35,6 +35,7 @@ class DiracDeterminantBase: public OrbitalBase
 protected:
   ParticleSet *targetPtcl;
   int BufferMode;
+  int ndelay;
 public:
   bool Optimizable;
   void registerTimers();
@@ -102,7 +103,7 @@ public:
    *@param first index of first particle
    *@param nel number of particles in the determinant
    */
-  virtual void set(int first, int nel);
+  virtual void set(int first, int nel, int delay=0);
   virtual RealType getAlternatePhaseDiff()
   {
     return 0.0;
@@ -306,6 +307,8 @@ public:
   ValueVector_t d2psiV;
   ValueVector_t workV1, workV2;
   GradVector_t workG;
+  // up-to-date Ainv row
+  ValueVector_t Ainv_row;
 
 #ifdef MIXED_PRECISION
   /// temporal matrix and workspace in higher precision for the accurate inversion.
@@ -314,6 +317,7 @@ public:
   DiracMatrix<mValueType> detEng_hp;
 #endif
   DiracMatrix<ValueType> detEng;
+  DelayedUpdate<ValueType> delayedEng;
 
   Vector<ValueType> WorkSpace;
   Vector<IndexType> Pivot;

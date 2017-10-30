@@ -15,6 +15,7 @@
 #include "Numerics/Blasf.h"
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include <type_traits/scalar_traits.h>
+#include <simd/simd.hpp>
 
 namespace qmcplusplus { 
 
@@ -127,11 +128,11 @@ namespace qmcplusplus {
 
       DiracMatrix():Lwork(0) {}
 
-      inline void invert(Matrix<T>& amat, bool computeDet)
+      inline void invert(Matrix<T>& amat, bool computeDet, const int n_in=0)
       {
-        const int n=amat.rows();
         const int lda=amat.cols();
-        if(Lwork<n) reset(amat,n,lda);
+        const int n=n_in?n_in:amat.rows();
+        if(Lwork<lda) reset(amat,lda);
         int status;
         Xgetrf(n,n,amat.data(),lda,m_pivot.data());
         if(computeDet)
@@ -141,16 +142,13 @@ namespace qmcplusplus {
         Xgetri(n,  amat.data(),lda,m_pivot.data(),m_work.data(),Lwork);
       }
 
-      inline void reset(Matrix<T>& amat,int n, int lda)
+      inline void reset(Matrix<T>& amat, const int lda)
       {
-        //Lwork=n;
-        //m_work.resize(n);
-        //m_pivot.resize(n);
         m_pivot.resize(lda);
         Lwork=-1;
         T tmp;
         real_type lw;
-        Xgetri(n, amat.data(),lda,m_pivot.data(),&tmp,Lwork);
+        Xgetri(lda, amat.data(),lda,m_pivot.data(),&tmp,Lwork);
         convert(tmp,lw);
         Lwork=static_cast<int>(lw);
         m_work.resize(Lwork); 
@@ -168,6 +166,107 @@ namespace qmcplusplus {
         temp[rowchanged]=cone-c_ratio;
         simd::copy_n(a[rowchanged],m,rcopy);
         BLAS::ger(m,m,-cone,rcopy,1,temp,1,a.data(),lda);
+#if 0
+        std::cout << "updateRow temp " << temp[0] << " " << temp[1] << " " << temp[2] << " " << temp[3] << std::endl;
+        std::cout << "updateRow " << rcopy[0] << " " << rcopy[1] << " " << rcopy[2] << " " << rcopy[3] << std::endl;
+#endif
+      }
+    };
+
+  template<typename T>
+    struct DelayedUpdate
+    {
+      typedef typename scalar_traits<T>::real_type real_type;
+      Matrix<T> Ainv_U, V, Binv, tempMat;
+      DiracMatrix<T> deteng;
+      std::vector<int> delay_list;
+      int delay_count;
+
+      DelayedUpdate():delay_count(0) {}
+
+      inline void resize(int norb, int delay)
+      {
+        Ainv_U.resize(delay, norb);
+        V.resize(delay, norb);
+        tempMat.resize(delay, norb);
+        Binv.resize(delay, delay);
+        deteng.reset(Binv, delay);
+        Binv = T(0);
+        for(int i=0; i<delay; i++)
+          Binv(i,i) = T(1);
+        delay_count = 0;
+        delay_list.resize(delay);
+      }
+
+      inline void getInvRow(const Matrix<T>& Ainv, int rowchanged, T* new_AinvRow)
+      {
+        if ( delay_count == 0 )
+        {
+          simd::copy_n(Ainv[rowchanged],Ainv.rows(),new_AinvRow);
+          return;
+        }
+        CONSTEXPR T cone(1);
+        CONSTEXPR T czero(0);
+        const T* AinvRow=Ainv[rowchanged];
+        const int norb=Ainv.rows();
+        const int lda_Binv=Binv.cols();
+        T temp[lda_Binv];
+        // multiply Ainv_U (NxK) Binv(kxk) V(kxN) AinvRow right to the left
+        BLAS::gemv('T', norb, delay_count, cone, V.data(), norb, AinvRow, 1, czero, new_AinvRow, 1);
+        BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, new_AinvRow, 1, czero, temp, 1);
+        BLAS::gemv('N', norb, delay_count, -cone, Ainv_U.data(), norb, temp, 1, czero, new_AinvRow, 1);
+        // AinvRow - new_AinvRow
+        simd::add(norb, AinvRow, new_AinvRow);
+      }
+
+      inline void acceptRow(Matrix<T>& Ainv, T* arow, int rowchanged)
+      {
+        CONSTEXPR T cone(1);
+        CONSTEXPR T czero(0);
+        const int norb=Ainv.rows();
+        const int lda_Binv=Binv.cols();
+        simd::copy_n(Ainv[rowchanged], norb, Ainv_U[delay_count]);
+        simd::copy_n(arow, norb, V[delay_count]);
+        delay_list[delay_count] = rowchanged;
+        delay_count++;
+        BLAS::gemm('T', 'N', delay_count, delay_count, norb, cone, V.data(), norb, Ainv_U.data(), norb, czero, Binv.data(), lda_Binv);
+#if 0
+        std::cout << "debug V[0] " << V(0,0) << " " << V(0,1) << " " << V(0,2) << " " << V(0,3) << std::endl;
+        std::cout << "debug Ainv_U[0] " << Ainv_U(0,0) << " " << Ainv_U(0,1) << " " << Ainv_U(0,2) << " " << Ainv_U(0,3) << std::endl;
+
+  std::cout << " Binv " << std::endl;
+  for(int i=0; i<Binv.rows(); i++)
+  {
+    for(int j=0; j<Binv.cols(); j++)
+      std::cout << Binv(i,j) << " ";
+    std::cout << std::endl;
+  }
+        std::cout << "debug curRatio_in " << curRatio_in << " before Binv(0,0) " << Binv(0,0) << std::endl;
+#endif
+        deteng.invert(Binv,false,delay_count);
+#if 0
+        std::cout << "debug curRatio_in " << 1.0/simd::dot(Ainv[rowchanged],arow,norb) << " Binv(0,0) " << Binv(0,0) << std::endl;
+#endif
+        if(delay_count==lda_Binv) udpateInvMat(Ainv);
+      }
+
+      inline void udpateInvMat(Matrix<T>& Ainv)
+      {
+        if(delay_count==0) return;
+        // update the inverse matrix
+        CONSTEXPR T cone(1);
+        CONSTEXPR T czero(0);
+        const int norb=Ainv.rows();
+        const int lda_Binv=Binv.cols();
+        BLAS::gemm('T', 'N', norb, delay_count, norb, cone, Ainv.data(), norb, V.data(), norb, czero, tempMat.data(), norb);
+        for(int i=0; i<delay_count; i++) tempMat(i,delay_list[i]) -= cone;
+        BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, Ainv_U.data(), norb, Binv.data(), lda_Binv, czero, V.data(), norb);
+#if 0
+        std::cout << "udpateInvMat tempMat " << tempMat[0][0] << " " << tempMat[0][1] << " " << tempMat[0][2] << " " << tempMat[0][3] << std::endl;
+        std::cout << "udpateInvMat " << V[0][0] << " " << V[0][1] << " " << V[0][2] << " " << V[0][3] << std::endl;
+#endif
+        BLAS::gemm('N', 'T', norb, norb, delay_count, -cone, V.data(), norb, tempMat.data(), norb, cone, Ainv.data(), norb);
+        delay_count = 0;
       }
     };
 }

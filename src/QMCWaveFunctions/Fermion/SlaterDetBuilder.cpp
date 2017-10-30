@@ -444,12 +444,14 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
   std::string s_radius("0.0");
   int s_smallnumber(-999999);
   int rntype(0);
+  int delay_rank(0);
   aAttrib.add(s_cutoff,"Cutoff");
   aAttrib.add(s_radius,"Radius");
   aAttrib.add(s_smallnumber,"smallnumber");
   aAttrib.add(s_smallnumber,"eps");
   aAttrib.add(rntype,"primary");
   aAttrib.add(spin_name,"group");
+  aAttrib.add(delay_rank,"delay_rank");
   aAttrib.put(cur);
 
   { //check determinant@group
@@ -581,7 +583,11 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     }
 #endif
   }
-  adet->set(firstIndex,lastIndex-firstIndex);
+  if(delay_rank>0)
+    app_log() << "Using rank-" << delay_rank << " delayed update" << std::endl;
+  else
+    app_log() << "Using rank-1 sherman-morrison update" << std::endl;
+  adet->set(firstIndex,lastIndex-firstIndex, delay_rank);
   slaterdet_0->add(adet,spin_group);
   if (psi->Optimizable)
     slaterdet_0->Optimizable = true;
