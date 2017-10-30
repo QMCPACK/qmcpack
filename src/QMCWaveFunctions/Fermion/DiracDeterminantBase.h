@@ -317,7 +317,7 @@ public:
   DiracMatrix<mValueType> detEng_hp;
 #endif
   DiracMatrix<ValueType> detEng;
-  DelayedUpdate<ValueType> delayedEng;
+  DelayedUpdate<ValueType, mValueType> delayedEng;
 
   Vector<ValueType> WorkSpace;
   Vector<IndexType> Pivot;

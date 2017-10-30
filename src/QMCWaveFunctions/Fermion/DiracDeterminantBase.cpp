@@ -144,10 +144,6 @@ DiracDeterminantBase::evalGrad(ParticleSet& P, int iat)
   if (ndelay)
   {
     delayedEng.getInvRow(psiM, WorkingIndex, Ainv_row.data());
-#if 0
-    for(int ind=0; ind<NumOrbitals; ind++)
-      std::cout << "inverse Row [" << ind << "] SM = " << psiM[WorkingIndex][ind] << " Ainv_row = " << Ainv_row[ind] << std::endl;
-#endif
     g = simd::dot(Ainv_row.data(),dpsiM[WorkingIndex],NumOrbitals);
   }
   else

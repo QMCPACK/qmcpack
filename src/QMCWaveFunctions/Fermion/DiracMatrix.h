@@ -166,19 +166,16 @@ namespace qmcplusplus {
         temp[rowchanged]=cone-c_ratio;
         simd::copy_n(a[rowchanged],m,rcopy);
         BLAS::ger(m,m,-cone,rcopy,1,temp,1,a.data(),lda);
-#if 0
-        std::cout << "updateRow temp " << temp[0] << " " << temp[1] << " " << temp[2] << " " << temp[3] << std::endl;
-        std::cout << "updateRow " << rcopy[0] << " " << rcopy[1] << " " << rcopy[2] << " " << rcopy[3] << std::endl;
-#endif
       }
     };
 
-  template<typename T>
+  template<typename T, typename T_hp>
     struct DelayedUpdate
     {
       typedef typename scalar_traits<T>::real_type real_type;
       Matrix<T> Ainv_U, V, Binv, tempMat;
-      DiracMatrix<T> deteng;
+      Matrix<T_hp> Binv_hp;
+      DiracMatrix<T_hp> deteng;
       std::vector<int> delay_list;
       int delay_count;
 
@@ -190,10 +187,12 @@ namespace qmcplusplus {
         V.resize(delay, norb);
         tempMat.resize(delay, norb);
         Binv.resize(delay, delay);
+#ifdef MIXED_PRECISION
+        Binv_hp.resize(delay, delay);
+        deteng.reset(Binv_hp, delay);
+#else
         deteng.reset(Binv, delay);
-        Binv = T(0);
-        for(int i=0; i<delay; i++)
-          Binv(i,i) = T(1);
+#endif
         delay_count = 0;
         delay_list.resize(delay);
       }
@@ -230,22 +229,16 @@ namespace qmcplusplus {
         delay_list[delay_count] = rowchanged;
         delay_count++;
         BLAS::gemm('T', 'N', delay_count, delay_count, norb, cone, V.data(), norb, Ainv_U.data(), norb, czero, Binv.data(), lda_Binv);
-#if 0
-        std::cout << "debug V[0] " << V(0,0) << " " << V(0,1) << " " << V(0,2) << " " << V(0,3) << std::endl;
-        std::cout << "debug Ainv_U[0] " << Ainv_U(0,0) << " " << Ainv_U(0,1) << " " << Ainv_U(0,2) << " " << Ainv_U(0,3) << std::endl;
-
-  std::cout << " Binv " << std::endl;
-  for(int i=0; i<Binv.rows(); i++)
-  {
-    for(int j=0; j<Binv.cols(); j++)
-      std::cout << Binv(i,j) << " ";
-    std::cout << std::endl;
-  }
-        std::cout << "debug curRatio_in " << curRatio_in << " before Binv(0,0) " << Binv(0,0) << std::endl;
-#endif
+#ifdef MIXED_PRECISION
+        for(int i=0; i<delay_count; i++)
+          for(int j=0; j<delay_count; j++)
+            Binv_hp[i][j] = Binv[i][j];
+        deteng.invert(Binv_hp,false,delay_count);
+        for(int i=0; i<delay_count; i++)
+          for(int j=0; j<delay_count; j++)
+            Binv[i][j] = Binv_hp[i][j];
+#else
         deteng.invert(Binv,false,delay_count);
-#if 0
-        std::cout << "debug curRatio_in " << 1.0/simd::dot(Ainv[rowchanged],arow,norb) << " Binv(0,0) " << Binv(0,0) << std::endl;
 #endif
         if(delay_count==lda_Binv) udpateInvMat(Ainv);
       }
@@ -261,10 +254,6 @@ namespace qmcplusplus {
         BLAS::gemm('T', 'N', norb, delay_count, norb, cone, Ainv.data(), norb, V.data(), norb, czero, tempMat.data(), norb);
         for(int i=0; i<delay_count; i++) tempMat(i,delay_list[i]) -= cone;
         BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, Ainv_U.data(), norb, Binv.data(), lda_Binv, czero, V.data(), norb);
-#if 0
-        std::cout << "udpateInvMat tempMat " << tempMat[0][0] << " " << tempMat[0][1] << " " << tempMat[0][2] << " " << tempMat[0][3] << std::endl;
-        std::cout << "udpateInvMat " << V[0][0] << " " << V[0][1] << " " << V[0][2] << " " << V[0][3] << std::endl;
-#endif
         BLAS::gemm('N', 'T', norb, norb, delay_count, -cone, V.data(), norb, tempMat.data(), norb, cone, Ainv.data(), norb);
         delay_count = 0;
       }
