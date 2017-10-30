@@ -209,9 +209,12 @@ void DiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
 void DiracDeterminantBase::restore(int iat)
 {
   curRatio=1.0;
-  if (ndelay)
-    if ( iat+1 == LastIndex )
-      delayedEng.udpateInvMat(psiM);
+  if (ndelay && iat+1 == LastIndex )
+  {
+    UpdateTimer.start();
+    delayedEng.udpateInvMat(psiM);
+    UpdateTimer.stop();
+  }
 }
 
 void DiracDeterminantBase::updateAfterSweep(ParticleSet& P,
