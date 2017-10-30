@@ -221,7 +221,7 @@ void VMCSingleOMP::resetRun()
   }
   else
   {
-    app_log() <<" Walker moves without drift"<< std::endl;
+    app_log() <<"  Walker moves without drift"<< std::endl;
     for(int i=0; i<Movers.size(); i++)
       Movers[i]->UseDrift=false;
   }

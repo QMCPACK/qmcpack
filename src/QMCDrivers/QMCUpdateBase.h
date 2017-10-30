@@ -325,6 +325,8 @@ private:
   {
     return *this;
   }
+  ///
+  NewTimer* InitWalkersTimer;
 };
 }
 

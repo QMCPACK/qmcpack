@@ -79,6 +79,8 @@ void QMCUpdateBase::setDefaults()
     for(int iat=W.first(ig); iat<W.last(ig); ++iat)
       MassInvP[iat]=MassInvS[ig];
   }
+
+  InitWalkersTimer = TimerManager.createTimer("QMCUpdateBase::WalkerInit", timer_level_medium);
 }
 
 bool QMCUpdateBase::put(xmlNodePtr cur)
@@ -188,6 +190,7 @@ void QMCUpdateBase::stopBlock(bool collectall)
 void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
 {
   UpdatePbyP=false;
+  InitWalkersTimer->start();
   //ignore different mass
   //RealType tauovermass = Tau*MassInv[0];
   for (; it != it_end; ++it)
@@ -206,11 +209,13 @@ void QMCUpdateBase::initWalkers(WalkerIter_t it, WalkerIter_t it_end)
     (*it)->Weight=1;
     H.saveProperty((*it)->getPropertyBase());
   }
+  InitWalkersTimer->stop();
 }
 
 void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
 {
   UpdatePbyP=true;
+  InitWalkersTimer->start();
   for (; it != it_end; ++it)
   {
     Walker_t& awalker(**it);
@@ -226,6 +231,7 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
     awalker.L=W.L;
     randomize(awalker);
   }
+  InitWalkersTimer->stop();
   #pragma omp master
   print_mem("Memory Usage after the buffer registration", app_log());
 }

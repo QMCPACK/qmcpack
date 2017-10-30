@@ -22,8 +22,6 @@
 namespace qmcplusplus
 {
 
-void add_vmc_timers(std::vector<NewTimer*>& timers);
-
 /** @ingroup QMCDrivers  ParticleByParticle
  *@brief Implements the VMC algorithm using particle-by-particle move.
  */
