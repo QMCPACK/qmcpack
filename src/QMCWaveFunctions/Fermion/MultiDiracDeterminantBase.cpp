@@ -543,7 +543,8 @@ void MultiDiracDeterminantBase::resize(int nel, int morb)
   psiMinv.resize(nel,nel);
   dpsiMinv.resize(nel,nel);
   psiMinv_temp.resize(nel,nel);
-  WorkSpace.resize(nel);
+  //scratch spaces: stateless
+  WorkSpace.resize(std::max(nel,NumDets)); 
   Pivot.resize(nel);
   workV1.resize(nel);
   workV2.resize(nel);

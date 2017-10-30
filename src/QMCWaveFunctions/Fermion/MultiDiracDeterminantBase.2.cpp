@@ -18,16 +18,51 @@
  * @brief Implement build functions: Function bodies are too big to be in a header file
  */
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h"
+#include "Numerics/MatrixOperators.h"
 
 namespace qmcplusplus
 {
+  /** shared function used by BuildDotProductsAndCalculateRatios */
+  void MultiDiracDeterminantBase::BuildDotProductsAndCalculateRatios_impl(int ref, ValueType det0,
+      ValueType* restrict ratios, const ValueMatrix_t &psiinv, const ValueMatrix_t &psi, ValueMatrix_t& dotProducts, 
+      const std::vector<int>& data, const std::vector<std::pair<int,int> >& pairs, const std::vector<RealType>& sign)
+  {
+    buildTableTimer.start();
+    const size_t num=psi.extent(1);
+    const size_t npairs=pairs.size();
+    //MatrixOperators::product_ABt(psiinv,psi,dotProducts);
+    const std::pair<int,int>* restrict p=pairs.data();
+    for(size_t i=0; i< npairs; ++i)
+    {
+      const int I=p[i].first;
+      const int J=p[i].second;
+      dotProducts(I,J)=simd::dot(psiinv[I],psi[J],num);
+    }
+    buildTableTimer.stop();
+    readMatTimer.start();
+    std::vector<int>::const_iterator it2=data.begin();
+    const size_t nitems=sign.size();
+    // explore Inclusive Scan for OpenMP
+    for(size_t count=0; count<nitems; ++count)
+    {
+      const size_t n=*it2;
+      //ratios[count]=(count!=ref)?sign[count]*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1):det0;
+      if(count!=ref)
+        ratios[count] = sign[count]*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1);
+      it2+=3*n+1;
+    }
+    ratios[ref]=det0;
+    readMatTimer.stop();
+  }
 
   void MultiDiracDeterminantBase::BuildDotProductsAndCalculateRatios(int ref, int iat, 
-      ValueVector_t& ratios, ValueMatrix_t &psiinv, ValueMatrix_t &psi, 
-      ValueMatrix_t& dotProducts, std::vector<int>& data, std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign)
+      ValueVector_t& ratios, const ValueMatrix_t &psiinv, const ValueMatrix_t &psi, ValueMatrix_t& dotProducts, 
+      const std::vector<int>& data, const std::vector<std::pair<int,int> >& pairs, const std::vector<RealType>& sign)
   {
-    ValueType det0 = ratios[ref];
+    BuildDotProductsAndCalculateRatios_impl(ref,ratios[ref],ratios.data(),psiinv,psi,dotProducts,data,pairs,sign);
+#if 0
     buildTableTimer.start();
+    ValueType det0 = ratios[ref];
     int num=psi.extent(1);
     std::vector<std::pair<int,int> >::iterator it(pairs.begin()), last(pairs.end());
     while(it != last)
@@ -35,36 +70,35 @@ namespace qmcplusplus
       dotProducts((*it).first,(*it).second) = simd::dot(psiinv[(*it).first],psi[(*it).second],num);
       it++;
     }
-    buildTableTimer.stop();
-    readMatTimer.start();
     std::vector<int>::iterator it2 = data.begin();
-    //ValueVector_t::iterator itr = ratios.begin();
-    //vector<RealType>::iterator its = sign.begin();
     int count= 0;  // number of determinants processed
     while(it2 != data.end())
     {
-      int n = *it2; // number of excitations
+      const int n = *it2; // number of excitations
       if(count == ref)
       {
         it2+=3*n+1;  // number of integers used to encode the current excitation
-        //itr++;
-        //its++;
         count++;
         continue;
       }
       ratios[count] = sign[count]*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1);
-      //*(itr++) = *(its++)*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1);
       count++;
       it2+=3*n+1;
     }
     readMatTimer.stop();
+#endif
   }
 
-  void MultiDiracDeterminantBase::BuildDotProductsAndCalculateRatios(int ref,
-      int iat, GradMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi,
+  void MultiDiracDeterminantBase::BuildDotProductsAndCalculateRatios(int ref, int iat, 
+      GradMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi,
       ValueMatrix_t& dotProducts, std::vector<int>& data,
       std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign, int dx)
   {
+    const ValueType det0 = ratios(ref,iat)[dx];
+    BuildDotProductsAndCalculateRatios_impl(ref,det0,WorkSpace.data(),psiinv,psi,dotProducts,data,pairs,sign);
+    for(size_t count=0; count<NumDets; ++count)
+      ratios(count,iat)[dx]=WorkSpace[count];
+#if 0
     ValueType det0 = ratios(ref,iat)[dx];
     buildTableGradTimer.start();
     int num=psi.extent(1);
@@ -92,13 +126,21 @@ namespace qmcplusplus
       it2+=3*n+1;
     }
     readMatGradTimer.stop();
+#endif
   }
 
-  void MultiDiracDeterminantBase::BuildDotProductsAndCalculateRatios(int ref,
-      int iat, ValueMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t&
-      psi, ValueMatrix_t& dotProducts, std::vector<int>& data,
-      std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign)
+  void MultiDiracDeterminantBase::BuildDotProductsAndCalculateRatios(int ref, int iat, 
+      ValueMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, 
+      std::vector<int>& data,
+      std::vector<std::pair<int,int> >& pairs, 
+      std::vector<RealType>& sign)
   {
+    const ValueType det0=ratios(ref,iat);
+    BuildDotProductsAndCalculateRatios_impl(ref,det0,WorkSpace.data(),psiinv,psi,dotProducts,data,pairs,sign);
+    //splatt
+    for(size_t count=0; count<NumDets; ++count)
+      ratios(count,iat)=WorkSpace[count];
+#if 0
     ValueType det0 = ratios(ref,iat);
     int num=psi.extent(1);
     std::vector<std::pair<int,int> >::iterator it(pairs.begin()), last(pairs.end());
@@ -122,6 +164,7 @@ namespace qmcplusplus
       count++;
       it2+=3*n+1;
     }
+#endif
   }
 
   void MultiDiracDeterminantBase::evaluateDetsForPtclMove(ParticleSet& P, int iat)

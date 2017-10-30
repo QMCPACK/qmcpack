@@ -212,235 +212,93 @@ public:
   // this works with confgList, which shouldn't change during a simulation
   void createDetData(ci_configuration2& ref, std::vector<int>& data,
                      std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign);
-  /*
-      void testDets() {
 
-         std::vector<int> indx(16);
-         ValueMatrix_t Mat(8,8);
-         NewTimer dummy("dummy");
-         dummy.reset();
-
-         std::ifstream in("matrix.txt");
-         for(int i=0; i<8; i++)
-         for(int j=0; j<8; j++)
-            in>>Mat(i,j);
-         in.close();
-
-         std::vector<RealType> dets(9);
-         dets[2] =  -0.085167; // 2x2
-         dets[3] = 0.051971; // 3x3
-         dets[4] = 0.029865; // 4x4
-         dets[5] = -0.055246; // 5x5
-         dets[6] = -0.0087414; // 6x6
-         dets[7] = 0.025257; // 7x7
-         dets[8] = 0.067119; // 8x8
-
-         for(int q=2; q<=8; q++) {
-           int k=0;
-           for(int i=0; i<q; i++)
-            indx[k++] = i;
-           for(int i=0; i<q; i++)
-            indx[k++] = i;
-           std::cout <<"determinant of " <<q <<": " <<dets[q] <<"  -  " <<CalculateRatioFromMatrixElements(q,Mat,indx.begin()) << std::endl;
-         }
-         int k=0;
-         for(int i=0; i<4; i++)
-          indx[k++] = i;
-         for(int i=0; i<4; i++)
-          indx[k++] = i;
-
-         std::cout <<"Timing n=4 \n";
-         ValueType res;
-         dummy.start();
-         for(int i=0; i<1000; i++)
-           res=CalculateRatioFromMatrixElements(4,Mat,indx.begin());
-         dummy.stop();
-         RealType direct = dummy.get_total();
-         dummy.reset();
-         dummy.start();
-         for(int i=0; i<1000; i++)
-           res=NewCalculateRatioFromMatrixElements(4,Mat,indx.begin());
-         dummy.stop();
-         RealType func = dummy.get_total();
-         std::cout <<"Direct, function: " <<direct <<"  " <<func << std::endl << std::endl;
-
-         k=0;
-         for(int i=0; i<5; i++)
-          indx[k++] = i;
-         for(int i=0; i<5; i++)
-          indx[k++] = i;
-
-         std::cout <<"Timing n=5 \n";
-         dummy.start();
-         for(int i=0; i<1000; i++)
-           res=CalculateRatioFromMatrixElements(5,Mat,indx.begin());
-         dummy.stop();
-         direct = dummy.get_total();
-         dummy.reset();
-         dummy.start();
-         for(int i=0; i<1000; i++)
-           res=NewCalculateRatioFromMatrixElements(5,Mat,indx.begin());
-         dummy.stop();
-         func = dummy.get_total();
-         std::cout <<"Direct, function: " <<direct <<"  " <<func << std::endl << std::endl;
-
-         k=0;
-         for(int i=0; i<6; i++)
-          indx[k++] = i;
-         for(int i=0; i<6; i++)
-          indx[k++] = i;
-
-         std::cout <<"Timing n=6 \n";
-         dummy.start();
-         for(int i=0; i<1000; i++)
-           res=CalculateRatioFromMatrixElements(6,Mat,indx.begin());
-         dummy.stop();
-         direct = dummy.get_total();
-         dummy.reset();
-         dummy.start();
-         for(int i=0; i<1000; i++)
-           res=NewCalculateRatioFromMatrixElements(6,Mat,indx.begin());
-         dummy.stop();
-         func = dummy.get_total();
-         std::cout <<"Direct, function: " <<direct <<"  " <<func << std::endl << std::endl;
-
-         exit(1);
-      }
-  */
-
-  inline ValueType CalculateRatioFromMatrixElements(int n, ValueMatrix_t& dotProducts, std::vector<int>::iterator it)
+  template<typename ITER>
+  inline ValueType CalculateRatioFromMatrixElements(int n, ValueMatrix_t& dotProducts, ITER it)
   {
     switch(n)
     {
-    case 0:
-      return 1.0;
-    case 1:
-      return dotProducts(*it,*(it+1));
-      break;
-    case 2:
-    {
-      register int i=*it;
-      register int j=*(it+1);
-      register int a=*(it+2);
-      register int b=*(it+3);
-      return dotProducts(i,a)*dotProducts(j,b)-dotProducts(i,b)*dotProducts(j,a);
-      break;
-    }
-    case 3:
-    {
-      register int i1=*it;
-      register int i2=*(it+1);
-      register int i3=*(it+2);
-      register int a1=*(it+3);
-      register int a2=*(it+4);
-      register int a3=*(it+5);
-      return DetCalculator.evaluate(
-               dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),
-               dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),
-               dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3));
-      break;
-    }
-    case 4:
-    {
-      register int i1=*it;
-      register int i2=*(it+1);
-      register int i3=*(it+2);
-      register int i4=*(it+3);
-      register int a1=*(it+4);
-      register int a2=*(it+5);
-      register int a3=*(it+6);
-      register int a4=*(it+7);
-      return DetCalculator.evaluate(
-               dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),dotProducts(i1,a4),
-               dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),dotProducts(i2,a4),
-               dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3),dotProducts(i3,a4),
-               dotProducts(i4,a1),dotProducts(i4,a2),dotProducts(i4,a3),dotProducts(i4,a4));
-      break;
-    }
-    case 5:
-    {
-      register int i1=*it;
-      register int i2=*(it+1);
-      register int i3=*(it+2);
-      register int i4=*(it+3);
-      register int i5=*(it+4);
-      register int a1=*(it+5);
-      register int a2=*(it+6);
-      register int a3=*(it+7);
-      register int a4=*(it+8);
-      register int a5=*(it+9);
-      return DetCalculator.evaluate(
-               dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),dotProducts(i1,a4),dotProducts(i1,a5),
-               dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),dotProducts(i2,a4),dotProducts(i2,a5),
-               dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3),dotProducts(i3,a4),dotProducts(i3,a5),
-               dotProducts(i4,a1),dotProducts(i4,a2),dotProducts(i4,a3),dotProducts(i4,a4),dotProducts(i4,a5),
-               dotProducts(i5,a1),dotProducts(i5,a2),dotProducts(i5,a3),dotProducts(i5,a4),dotProducts(i5,a5));
-      break;
-    }
-    /*
-              case 6:
-              {
-                register int i1=*it;
-                register int i2=*(it+1);
-                register int i3=*(it+2);
-                register int i4=*(it+3);
-                register int i5=*(it+4);
-                register int i6=*(it+5);
-                register int a1=*(it+6);
-                register int a2=*(it+7);
-                register int a3=*(it+8);
-                register int a4=*(it+9);
-                register int a5=*(it+10);
-                register int a6=*(it+11);
-                return DetCalculator.evaluate(
-                        dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),dotProducts(i1,a4),dotProducts(i1,a5),dotProducts(i1,a6),
-                        dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),dotProducts(i2,a4),dotProducts(i2,a5),dotProducts(i2,a6),
-                        dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3),dotProducts(i3,a4),dotProducts(i3,a5),dotProducts(i3,a6),
-                        dotProducts(i4,a1),dotProducts(i4,a2),dotProducts(i4,a3),dotProducts(i4,a4),dotProducts(i4,a5),dotProducts(i4,a6),
-                        dotProducts(i5,a1),dotProducts(i5,a2),dotProducts(i5,a3),dotProducts(i5,a4),dotProducts(i5,a5),dotProducts(i5,a6),
-                        dotProducts(i6,a1),dotProducts(i6,a2),dotProducts(i6,a3),dotProducts(i6,a4),dotProducts(i6,a5),dotProducts(i6,a6));
-                break;
-              }
-    */
-    default:
-    {
-      return DetCalculator.evaluate(dotProducts,it,n);
-    }
+      case 0:
+        return 1.0;
+      case 1:
+        return dotProducts(*it,*(it+1));
+      case 2:
+        {
+          const int i=*it;
+          const int j=*(it+1);
+          const int a=*(it+2);
+          const int b=*(it+3);
+          return dotProducts(i,a)*dotProducts(j,b)-dotProducts(i,b)*dotProducts(j,a);
+        }
+      case 3:
+        {
+          const int i1=*it;
+          const int i2=*(it+1);
+          const int i3=*(it+2);
+          const int a1=*(it+3);
+          const int a2=*(it+4);
+          const int a3=*(it+5);
+          return DetCalculator.evaluate(
+              dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),
+              dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),
+              dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3));
+        }
+      case 4:
+        {
+          const int i1=*it;
+          const int i2=*(it+1);
+          const int i3=*(it+2);
+          const int i4=*(it+3);
+          const int a1=*(it+4);
+          const int a2=*(it+5);
+          const int a3=*(it+6);
+          const int a4=*(it+7);
+          return DetCalculator.evaluate(
+              dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),dotProducts(i1,a4),
+              dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),dotProducts(i2,a4),
+              dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3),dotProducts(i3,a4),
+              dotProducts(i4,a1),dotProducts(i4,a2),dotProducts(i4,a3),dotProducts(i4,a4));
+        }
+      case 5:
+        {
+          const int i1=*it;
+          const int i2=*(it+1);
+          const int i3=*(it+2);
+          const int i4=*(it+3);
+          const int i5=*(it+4);
+          const int a1=*(it+5);
+          const int a2=*(it+6);
+          const int a3=*(it+7);
+          const int a4=*(it+8);
+          const int a5=*(it+9);
+          return DetCalculator.evaluate(
+              dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),dotProducts(i1,a4),dotProducts(i1,a5),
+              dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),dotProducts(i2,a4),dotProducts(i2,a5),
+              dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3),dotProducts(i3,a4),dotProducts(i3,a5),
+              dotProducts(i4,a1),dotProducts(i4,a2),dotProducts(i4,a3),dotProducts(i4,a4),dotProducts(i4,a5),
+              dotProducts(i5,a1),dotProducts(i5,a2),dotProducts(i5,a3),dotProducts(i5,a4),dotProducts(i5,a5));
+        }
+      default:
+        return DetCalculator.evaluate(dotProducts,it,n);
     }
     return 0.0;
   }
-  /*
-      inline ValueType NewCalculateRatioFromMatrixElements(int n, ValueMatrix_t& dotProducts, std::vector<int>::iterator it)
-      {
-         switch(n)
-         {
-            case 0:
-              return 1.0;
-            case 1:
-              return dotProducts(*it,*(it+1));
-              break;
-            case 2:
-            {
-              register int i=*it;
-              register int j=*(it+1);
-              register int a=*(it+2);
-              register int b=*(it+3);
-              return dotProducts(i,a)*dotProducts(j,b)-dotProducts(i,b)*dotProducts(j,a);
-              break;
-            }
-            default:
-            {
-              return DetCalculator.evaluate(dotProducts,it,n);
-            }
-         }
-      }
-  */
 
-  void BuildDotProductsAndCalculateRatios(int ref, int iat, ValueVector_t& ratios, ValueMatrix_t &psiinv, ValueMatrix_t &psi, ValueMatrix_t& dotProducts, std::vector<int>& data, std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign);
+  void BuildDotProductsAndCalculateRatios_impl(int ref, ValueType det0,
+      ValueType* restrict ratios, const ValueMatrix_t &psiinv, const ValueMatrix_t &psi, ValueMatrix_t& dotProducts, 
+      const std::vector<int>& data, const std::vector<std::pair<int,int> >& pairs,const std::vector<RealType>& sign);
 
-  void BuildDotProductsAndCalculateRatios(int ref, int iat, GradMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, std::vector<int>& data, std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign, int dx);
+  void BuildDotProductsAndCalculateRatios(int ref, int iat, 
+      ValueVector_t& ratios, const ValueMatrix_t &psiinv, const ValueMatrix_t &psi, ValueMatrix_t& dotProducts, 
+      const std::vector<int>& data, const std::vector<std::pair<int,int> >& pairs,const std::vector<RealType>& sign);
 
-  void BuildDotProductsAndCalculateRatios(int ref, int iat, ValueMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, std::vector<int>& data, std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign);
+  void BuildDotProductsAndCalculateRatios(int ref, int iat, 
+      GradMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, 
+      std::vector<int>& data, std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign, int dx);
+
+  void BuildDotProductsAndCalculateRatios(int ref, int iat, 
+      ValueMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, 
+      std::vector<int>& data,  std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign);
 
 //   Finish this at some point
   inline void InverseUpdateByColumn_GRAD(ValueMatrix_t& Minv
