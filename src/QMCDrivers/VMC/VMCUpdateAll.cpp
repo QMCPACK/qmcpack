@@ -151,49 +151,4 @@ void VMCUpdateAllWithDrift::advanceWalker(Walker_t& thisWalker, bool recompute)
   H.saveProperty(thisWalker.getPropertyBase());
 }
 
-VMCUpdateAllWithDrift::RealType VMCUpdateAllWithDrift::advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios)
-{
-  // !!!! 2017-10-18: fixed SK update bug in advanceWalker. This function needs to be checked!
-  W.loadWalker(w1,false);
-  std::vector<RealType> orb_ratios(4,1.0);
-  int nshells(rs.size());
-  std::vector<RealType> orb_phases0,orb_logs0;
-  Psi.evaluateLog(W);
-  RealType pt=Psi.getPhase();
-  RealType lt=Psi.getLogPsi();
-  Psi.getPhases(orb_phases0);
-  Psi.getLogs(orb_logs0);
-  int nmoved(0);
-  int i(0);
-  while(i<rs.size())
-  {
-    deltaR=0;
-    while(nmoved<rs[i])
-    {
-      int iat=iats[nmoved];
-      W.R[iat]+=dR[nmoved];
-      nmoved++;
-    }
-    RealType logpsi(Psi.evaluateLog(W));
-    std::vector<RealType> orb_phases,orb_logs;
-    Psi.getPhases(orb_phases);
-    Psi.getLogs(orb_logs);
-    orb_ratios[0]=std::cos(pt-Psi.getPhase())*std::exp(logpsi-lt);
-    orb_ratios[1]=std::cos(orb_phases[0] - orb_phases0[0])*std::exp(orb_logs[0] - orb_logs0[0]);
-    orb_ratios[2]=std::cos(orb_phases[1] - orb_phases0[1])*std::exp(orb_logs[1] - orb_logs0[1]);
-    orb_ratios[3]=orb_ratios[0]/orb_ratios[1];
-    while(nmoved==rs[i])
-    {
-      ratios[i]=orb_ratios[0];
-      ratios[nshells+i]=orb_ratios[1];
-      ratios[nshells*2+i]=orb_ratios[2];
-      ratios[nshells*3+i]=orb_ratios[3];
-      i++;
-      if(i==rs.size())
-        break;
-    }
-  }
-  return 0.0;
-}
-
 }
