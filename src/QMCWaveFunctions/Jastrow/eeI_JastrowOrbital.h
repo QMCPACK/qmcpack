@@ -1230,9 +1230,6 @@ public:
       dLogPsi=0.0;
       gradLogPsi = PosType();
       lapLogPsi = 0.0;
-      RealType u;
-      PosType gradF;
-      Tensor<RealType,3> hessF;
       // Now, evaluate three-body term for each ion
       for (int i=0; i<Nion; i++)
       {
@@ -1255,11 +1252,6 @@ public:
             int idx = J3UniqueIndex[F.data()[TripletID(i, jel, kel)]];
             func.evaluateDerivatives(r_jk, r_Ij, r_Ik, du_dalpha[idx],
                                      dgrad_dalpha[idx], dhess_dalpha[idx]);
-            u = func.evaluate (r_jk, r_Ij, r_Ik, gradF, hessF);
-            LogValue -= u;
-            // Save for ratio
-            U[jel*Nelec+kel] += u;
-            U[kel*Nelec+jel] += u;
             int first = VarOffset(i,jel,kel).first;
             int last  = VarOffset(i,jel,kel).second;
             std::vector<RealType> &dlog = du_dalpha[idx];

@@ -91,15 +91,14 @@ struct MyDeterminant
             +a61*(a12*(a23*(a34*(a45*a56-a55*a46)-a44*(a35*a56-a55*a36)+a54*(a35*a46-a45*a36))-a33*(a24*(a45*a56-a55*a46)-a44*(a25*a56-a55*a26)+a54*(a25*a46-a45*a26))+a43*(a24*(a35*a56-a55*a36)-a34*(a25*a56-a55*a26)+a54*(a25*a36-a35*a26))-a53*(a24*(a35*a46-a45*a36)-a34*(a25*a46-a45*a26)+a44*(a25*a36-a35*a26)))-a22*(a13*(a34*(a45*a56-a55*a46)-a44*(a35*a56-a55*a36)+a54*(a35*a46-a45*a36))-a33*(a14*(a45*a56-a55*a46)-a44*(a15*a56-a55*a16)+a54*(a15*a46-a45*a16))+a43*(a14*(a35*a56-a55*a36)-a34*(a15*a56-a55*a16)+a54*(a15*a36-a35*a16))-a53*(a14*(a35*a46-a45*a36)-a34*(a15*a46-a45*a16)+a44*(a15*a36-a35*a16)))+a32*(a13*(a24*(a45*a56-a55*a46)-a44*(a25*a56-a55*a26)+a54*(a25*a46-a45*a26))-a23*(a14*(a45*a56-a55*a46)-a44*(a15*a56-a55*a16)+a54*(a15*a46-a45*a16))+a43*(a14*(a25*a56-a55*a26)-a24*(a15*a56-a55*a16)+a54*(a15*a26-a25*a16))-a53*(a14*(a25*a46-a45*a26)-a24*(a15*a46-a45*a16)+a44*(a15*a26-a25*a16)))-a42*(a13*(a24*(a35*a56-a55*a36)-a34*(a25*a56-a55*a26)+a54*(a25*a36-a35*a26))-a23*(a14*(a35*a56-a55*a36)-a34*(a15*a56-a55*a16)+a54*(a15*a36-a35*a16))+a33*(a14*(a25*a56-a55*a26)-a24*(a15*a56-a55*a16)+a54*(a15*a26-a25*a16))-a53*(a14*(a25*a36-a35*a26)-a24*(a15*a36-a35*a16)+a34*(a15*a26-a25*a16)))+a52*(a13*(a24*(a35*a46-a45*a36)-a34*(a25*a46-a45*a26)+a44*(a25*a36-a35*a26))-a23*(a14*(a35*a46-a45*a36)-a34*(a15*a46-a45*a16)+a44*(a15*a36-a35*a16))+a33*(a14*(a25*a46-a45*a26)-a24*(a15*a46-a45*a16)+a44*(a15*a26-a25*a16))-a43*(a14*(a25*a36-a35*a26)-a24*(a15*a36-a35*a16)+a34*(a15*a26-a25*a16)))));
   }
 
-  inline T evaluate(Matrix<T>& dots, std::vector<int>::iterator it, int n)
+  template<typename ITER>
+  inline T evaluate(Matrix<T>& dots, ITER it, int n)
   {
-    //vector<T>::iterator d(M.data());
-    T* d = &(M[0]);
+    T* restrict d = M.data();
     for(int i=0; i<n; i++)
       for(int j=0; j<n; j++)
-        //M(i,j) = dots(*(it+i),*(it+n+j));
         *(d++)= dots(*(it+i),*(it+n+j));
-    return Determinant(&(M[0]),n,n,&(Pivot[0]));
+    return Determinant(d,n,n,Pivot.data());
   }
 
 };
