@@ -214,11 +214,6 @@ struct OrbitalBase: public QMCTraits
            ParticleSet::ParticleGradient_t& G,
            ParticleSet::ParticleLaplacian_t& L) = 0;
 
-  /** done PbyP update, prepare for the measurements */
-  virtual void updateAfterSweep(ParticleSet& P,
-           ParticleSet::ParticleGradient_t& G,
-           ParticleSet::ParticleLaplacian_t& L);
-
   /** evaluate the value of the orbital
    * @param P active ParticleSet
    * @param G Gradients, \f$\nabla\ln\Psi\f$

@@ -42,10 +42,11 @@ private:
 
 enum DMCTimers
 {
-  DMC_advance,
+  DMC_buffer,
   DMC_movePbyP,
-  DMC_updateMBO,
-  DMC_energy
+  DMC_hamiltonian,
+  DMC_collectables,
+  DMC_tmoves
 };
 
 extern TimerNameList_t<DMCTimers> DMCTimerNames;
