@@ -45,30 +45,6 @@ private:
   }
 };
 
-/** @ingroup QMCDrivers  ParticleByParticle
- *@brief Implements the VMC algorithm using particle-by-particle move with the drift equation.
- */
-class VMCUpdateAllWithDrift: public QMCUpdateBase
-{
-public:
-  /// Constructor.
-  VMCUpdateAllWithDrift(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                        QMCHamiltonian& h, RandomGenerator_t& rg);
-
-  ~VMCUpdateAllWithDrift();
-
-  void advanceWalker(Walker_t& thisWalker, bool recompute);
-
-private:
-  /// Copy Constructor (disabled)
-  VMCUpdateAllWithDrift(const VMCUpdateAllWithDrift& a): QMCUpdateBase(a) { }
-  /// Copy operator (disabled).
-  VMCUpdateAllWithDrift& operator=(const VMCUpdateAllWithDrift&)
-  {
-    return *this;
-  }
-};
-
 }
 
 #endif
