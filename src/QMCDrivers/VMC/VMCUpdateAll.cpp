@@ -54,7 +54,7 @@ void VMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
     updated=false;
     if(UseDrift)
     {
-      assignDrift(Tau,MassInvP,W.G,drift); // fill variable drift, require W.G to be up-to-date
+      assignDrift(Tau,MassInvP,thisWalker.G,drift); // fill variable drift
       if (W.makeMoveWithDrift(thisWalker,drift,deltaR,SqrtTauOverMass))
       { // W.R = thisWalker.R + drift + deltaR; W.DistTables,SK are updated; W.G,L are now stale
         RealType logpsi=Psi.evaluateLog(W);  // update W.G,L; update Psi.PhaseValue,LogValue
@@ -65,11 +65,7 @@ void VMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
 
         RealType g= std::exp(logGb-logGf+2.0*(logpsi-logpsi_old));
         // accept or reject
-        if (RandomGen() > g)
-        {
-          W.G=thisWalker.G; // revert W.G to the last accepted configuration
-        }
-        else
+        if (RandomGen() <= g)
         {
           thisWalker.R=W.R; thisWalker.G=W.G;
           ++nAccept; logpsi_old=logpsi; updated=true;
