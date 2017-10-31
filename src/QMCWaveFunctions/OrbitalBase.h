@@ -217,11 +217,6 @@ struct OrbitalBase: public QMCTraits
            ParticleSet::ParticleGradient_t& G,
            ParticleSet::ParticleLaplacian_t& L) = 0;
 
-  /** done PbyP update, prepare for the measurements */
-  virtual void updateAfterSweep(ParticleSet& P,
-           ParticleSet::ParticleGradient_t& G,
-           ParticleSet::ParticleLaplacian_t& L);
-
   /** evaluate the value of the orbital
    * @param P active ParticleSet
    * @param G Gradients, \f$\nabla\ln\Psi\f$
@@ -476,6 +471,7 @@ struct OrbitalBase: public QMCTraits
   {
     app_error() << "Need specialization of OrbitalBase::addLog for "
                 << OrbitalName << ".\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -490,6 +486,7 @@ struct OrbitalBase: public QMCTraits
          std::vector<ValueType> &psi_ratios)
   {
     app_error() << "Need specialization of OrbitalBase::ratio.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -500,6 +497,7 @@ struct OrbitalBase: public QMCTraits
          std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad)
   {
     app_error() << "Need specialization of OrbitalBase::ratio.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -509,6 +507,7 @@ struct OrbitalBase: public QMCTraits
          std::vector<ValueType> &lapl)
   {
     app_error() << "Need specialization of OrbitalBase::ratio.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -518,6 +517,7 @@ struct OrbitalBase: public QMCTraits
              std::vector<ValueType> &lapl)
   {
     app_error() << "Need specialization of OrbitalBase::calcRatio.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -527,6 +527,7 @@ struct OrbitalBase: public QMCTraits
             std::vector<ValueType> &lapl)
   {
     app_error() << "Need specialization of OrbitalBase::addRatio.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -536,6 +537,7 @@ struct OrbitalBase: public QMCTraits
          std::vector<GradType>  &grad,  std::vector<ValueType> &lapl)
   {
     app_error() << "Need specialization of OrbitalBase::ratio.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -546,6 +548,7 @@ struct OrbitalBase: public QMCTraits
   {
     app_error() << "Need specialization of OrbitalBase::addGradient for "
                 << OrbitalName << ".\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -555,6 +558,7 @@ struct OrbitalBase: public QMCTraits
   {
     app_error() << "Need specialization of OrbitalBase::calcGradient for "
                 << OrbitalName << ".\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -564,6 +568,7 @@ struct OrbitalBase: public QMCTraits
   {
     app_error() << "Need specialization of OrbitalBase::gradLapl for "
                 << OrbitalName << ".\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -572,6 +577,7 @@ struct OrbitalBase: public QMCTraits
   update (std::vector<Walker_t*> &walkers, int iat)
   {
     app_error() << "Need specialization of OrbitalBase::update.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -580,6 +586,7 @@ struct OrbitalBase: public QMCTraits
           const std::vector<int> &iatList)
   {
     app_error() << "Need specialization of OrbitalBase::update.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -589,6 +596,7 @@ struct OrbitalBase: public QMCTraits
             std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios)
   {
     app_error() << "Need specialization of OrbitalBase::NLRatios.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -600,6 +608,7 @@ struct OrbitalBase: public QMCTraits
             int numQuadPoints)
   {
     app_error() << "Need specialization of OrbitalBase::NLRatios.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -610,6 +619,7 @@ struct OrbitalBase: public QMCTraits
                        RealMatrix_t &dhpsi_over_psi)
   {
     app_error() << "Need specialization of OrbitalBase::evaluateDerivatives.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 #endif

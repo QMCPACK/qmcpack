@@ -109,7 +109,6 @@ IF(OHMMS_DIM MATCHES 3)
       )
     IF(HAVE_EINSPLINE)
       SET(FERMION_SRCS ${FERMION_SRCS}
-        EinsplineSet.cpp
         EinsplineSetCuda.cpp
         PhaseFactors.cu
         AtomicOrbitalCuda.cu
@@ -119,6 +118,9 @@ IF(OHMMS_DIM MATCHES 3)
 
 
   IF(HAVE_EINSPLINE)
+    IF(NOT MIXED_PRECISION)
+      SET(FERMION_SRCS ${FERMION_SRCS} EinsplineSet.cpp)
+    ENDIF(NOT MIXED_PRECISION)
     SET(FERMION_SRCS ${FERMION_SRCS}
       EinsplineSetBuilderCommon.cpp
       EinsplineSetBuilderOld.cpp
@@ -179,6 +181,7 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/MultiSlaterDeterminant.cpp
   Fermion/MultiSlaterDeterminantFast.cpp
   Fermion/MultiDiracDeterminantBase.cpp
+  Fermion/MultiDiracDeterminantBase.2.cpp
   Fermion/BackflowBuilder.cpp 
   Fermion/DiracDeterminantWithBackflow.cpp
   Fermion/SlaterDetWithBackflow.cpp

@@ -29,6 +29,10 @@ if (echo $LOADEDMODULES | grep -q hdf5)
 then
 module unload cray-hdf5
 fi
+if (echo $LOADEDMODULES | grep -q libsci)
+then
+module unload cray-libsci
+fi
 module load PrgEnv-intel
 module load gcc
 module load cray-hdf5-parallel
@@ -37,6 +41,8 @@ module load boost
 module load subversion
 module load cmake
 
+# always dynamic linking
+export CRAYPE_LINK_TYPE=dynamic
 
 # Set environment variables
 export FFTW_HOME=$FFTW_DIR/..

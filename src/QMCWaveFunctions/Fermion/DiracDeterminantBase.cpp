@@ -191,7 +191,6 @@ void DiracDeterminantBase::updateAfterSweep(ParticleSet& P,
     SPOVGLTimer.stop();
   }
 
-  UpdateTimer.start();
   if(NumPtcls==1)
   {
     ValueType y = psiM(0,0);
@@ -209,7 +208,6 @@ void DiracDeterminantBase::updateAfterSweep(ParticleSet& P,
       L[iat]+=dot_temp-dot(rv,rv);
     }
   }
-  UpdateTimer.stop();
 }
 
 void

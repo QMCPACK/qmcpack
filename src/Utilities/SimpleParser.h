@@ -26,11 +26,7 @@
 #include <iomanip>
 #include <vector>
 #include <list>
-#if (__GNUC__ == 2)
-#include <strstream.h>
-#else
 #include <sstream>
-#endif
 
 char* readLine(char *s, int max, std::istream &fp);
 

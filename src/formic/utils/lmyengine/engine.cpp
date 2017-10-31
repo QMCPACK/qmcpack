@@ -582,7 +582,7 @@ void cqmc::engine::LMYEngine::sample_finish() {
   }
 
   double total_weight = 0.0;
-  formic::mpi::allreduce(&_tw, &total_weight, 1, MPI::SUM);
+  formic::mpi::allreduce(&_tw, &total_weight, 1, MPI_SUM);
 
   // for energy evaluation only calculation, do nothing
   if ( !_wfn_update )
@@ -641,7 +641,7 @@ void cqmc::engine::LMYEngine::sample_finish() {
       double all_samp_weight = 0.0;
 
       // mpi all reduce
-      formic::mpi::allreduce(&total_weight, &all_samp_weight, 1, MPI::SUM);
+      formic::mpi::allreduce(&total_weight, &all_samp_weight, 1, MPI_SUM);
 
       // call the finalize function for the block algorithm object
       _lmb.mpi_finalize(all_samp_weight);
@@ -665,7 +665,7 @@ void cqmc::engine::LMYEngine::sample_finish() {
       double all_samp_weight = 0.0;
 
       // mpi all reduce
-      formic::mpi::allreduce(&tot_weight, &all_samp_weight, 1, MPI::SUM);
+      formic::mpi::allreduce(&tot_weight, &all_samp_weight, 1, MPI_SUM);
       
       // sum over threads for block matrices 
       for (int ip = 1; ip < NumThreads; ip++) {
@@ -678,8 +678,8 @@ void cqmc::engine::LMYEngine::sample_finish() {
       formic::Matrix<double> ss_block_tot(ss_block[0].rows(), ss_block[0].cols());
 
       // compute average of matrices
-      formic::mpi::reduce(&hh_block[0].at(0,0), &hh_block_tot.at(0,0), hh_block[0].size(), MPI::SUM);
-      formic::mpi::reduce(&ss_block[0].at(0,0), &ss_block_tot.at(0,0), ss_block[0].size(), MPI::SUM); 
+      formic::mpi::reduce(&hh_block[0].at(0,0), &hh_block_tot.at(0,0), hh_block[0].size(), MPI_SUM);
+      formic::mpi::reduce(&ss_block[0].at(0,0), &ss_block_tot.at(0,0), ss_block[0].size(), MPI_SUM);
 
       // compute average on root process
       if ( my_rank == 0 ) {
