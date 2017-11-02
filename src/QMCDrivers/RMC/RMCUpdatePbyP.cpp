@@ -281,7 +281,7 @@ namespace qmcplusplus
 	prophead.resetProperty (logpsi, Psi.getPhase (), enew, rr_accepted,
 				rr_proposed, 0.0);
 	prophead.Weight = 1.0;
-	H.auxHevaluate (W, prophead);
+	H.auxHevaluateProperties (W, prophead);
 	H.saveProperty (prophead.getPropertyBase ());
 	newhead = prophead;
 	nAccept++;
@@ -302,6 +302,9 @@ namespace qmcplusplus
 	gf_acc = 1.0;
 	nReject++;
       }
+      Walker_t& centerbead = W.reptile->getCenter();
+      W.loadWalker(centerbead,true);
+      H.auxHevaluateCollectables(W,centerbead);
     // Traces->buffer_sample();
   }
 
@@ -533,9 +536,10 @@ namespace qmcplusplus
 	prophead.Properties (LOCALENERGY) = eloc;
 	prophead.Properties (R2ACCEPTED) = rr_accepted;
 	prophead.Properties (R2PROPOSED) = rr_proposed;
-	H.auxHevaluate (W, prophead);
+	H.auxHevaluateProperties (W, prophead);
 	//H.saveProperty(overwriteWalker.getPropertyBase());
 	H.saveProperty (prophead.getPropertyBase ());
+        
 	//overwriteWalker.Age=0;
 	prophead.Age = 0;
 
@@ -552,6 +556,11 @@ namespace qmcplusplus
 	W.reptile->flip ();
 	// return;
       }
+
+      Walker_t& centerbead = W.reptile->getCenter();
+      W.loadWalker(centerbead,true);
+      W.update(false);  //skip S(k) evaluation?  False
+      H.auxHevaluateCollectables(W,centerbead);
   }
 
   void RMCUpdatePbyPWithDrift::advanceWalker (Walker_t& thisWalker, bool recompute)

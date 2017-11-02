@@ -101,8 +101,8 @@ namespace qmcplusplus
 	  Movers[ip]->startBlock (nSteps);
 	  int now_loc = CurrentStep;
 
-	  RealType cnorm =
-	    1.0 / static_cast < RealType > (wPerNode[ip + 1] - wPerNode[ip]);
+	  RealType cnorm = 1.0; //This is because there is only one reptile per walkerset.
+//	    1.0 / static_cast < RealType > (NumThreads);
 
 
 
