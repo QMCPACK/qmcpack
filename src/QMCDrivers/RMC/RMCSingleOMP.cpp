@@ -290,7 +290,7 @@ namespace qmcplusplus
 	//set up initial action and transprob.
 	MCWalkerConfiguration::iterator wit (W.begin () + wPerNode[ip]),
 	  wit_end (W.begin () + wPerNode[ip + 1]);
-
+      }
 
 
     app_log()<<"Finished "<<prestepsVMC<<" VMC presteps\n";

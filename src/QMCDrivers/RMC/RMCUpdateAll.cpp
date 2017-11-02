@@ -298,10 +298,6 @@ namespace qmcplusplus
 	//    W.reptile->flip();
 	return;
       }
-      Walker_t& centerbead = W.reptile->getCenter();
-      W.loadWalker(centerbead,true);
-      W.update(false);  //skip S(k) evaluation?  False
-      H.auxHevaluateCollectables(W,centerbead);
   }
 
 
@@ -594,8 +590,7 @@ namespace qmcplusplus
 	// app_log()<<"Reject\n";
 	return;
       }
-      Walker_t& centerbead = W.reptile->getCenter();
-      W.loadWalker(centerbead,false);  //pbyp run?  False.
+      W.loadWalker(centerbead,true);
       W.update(false);  //skip S(k) evaluation?  False
       H.auxHevaluateCollectables(W,centerbead);
     
