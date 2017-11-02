@@ -537,7 +537,7 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker)
     auxH[i]->setParticlePropertyList(P.PropertyList,myIndex);
   }
 }
-///This allows one to evaluate any combination of properties or collectibles
+///Evaluate properties only.
 void QMCHamiltonian::auxHevaluateProperties(ParticleSet& P, Walker_t& ThisWalker)
 {
 #if !defined(REMOVE_TRACEMANAGER)
@@ -558,7 +558,7 @@ void QMCHamiltonian::auxHevaluateProperties(ParticleSet& P, Walker_t& ThisWalker
     }
   }
 }
-
+///Evaluate collectables only.
 void QMCHamiltonian::auxHevaluateCollectables(ParticleSet& P, Walker_t& ThisWalker)
 {
 #if !defined(REMOVE_TRACEMANAGER)
