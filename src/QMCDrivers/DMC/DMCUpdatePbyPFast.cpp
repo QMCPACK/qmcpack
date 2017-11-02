@@ -39,7 +39,7 @@ TimerNameList_t<DMCTimers> DMCTimerNames =
   {DMC_movePbyP, "DMCUpdatePbyP::movePbyP"},
   {DMC_hamiltonian, "DMCUpdatePbyP::Hamiltonian"},
   {DMC_collectables, "DMCUpdatePbyP::Collectables"},
-  {DMC_tmoves, "DMCUpdatePbyP::tmoves"}
+  {DMC_tmoves, "DMCUpdatePbyP::Tmoves"}
 };
 
 
