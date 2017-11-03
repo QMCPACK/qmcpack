@@ -137,7 +137,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       }
     }
   }
-
+  Psi.completeUpdates();
   W.donePbyP();
   myTimers[DMC_movePbyP]->stop();
 

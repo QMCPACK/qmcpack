@@ -187,14 +187,9 @@ void DiracDeterminantBase::acceptMove(ParticleSet& P, int iat, bool delay)
   LogValue +=std::log(std::abs(curRatio));
   UpdateTimer.start();
   if (ndelay && delay)
-  {
     delayedEng.acceptRow(psiM,psiV.data(),WorkingIndex);
-    if ( iat+1 == LastIndex ) delayedEng.udpateInvMat(psiM);
-  }
   else
-  {
     detEng.updateRow(psiM,psiV.data(),WorkingIndex,curRatio);
-  }
   if(UpdateMode == ORB_PBYP_PARTIAL)
   {
     simd::copy(dpsiM[WorkingIndex],  dpsiV.data(),  NumOrbitals);
@@ -209,7 +204,11 @@ void DiracDeterminantBase::acceptMove(ParticleSet& P, int iat, bool delay)
 void DiracDeterminantBase::restore(int iat)
 {
   curRatio=1.0;
-  if (ndelay && iat+1 == LastIndex )
+}
+
+void DiracDeterminantBase::completeUpdates()
+{
+  if (ndelay)
   {
     UpdateTimer.start();
     delayedEng.udpateInvMat(psiM);

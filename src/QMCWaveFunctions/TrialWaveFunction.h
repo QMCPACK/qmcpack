@@ -279,6 +279,7 @@ public:
 
   void rejectMove(int iat);
   void acceptMove(ParticleSet& P, int iat, bool delay=true);
+  void completeUpdates();
 
   RealType registerData(ParticleSet& P, BufferType& buf);
   RealType registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
