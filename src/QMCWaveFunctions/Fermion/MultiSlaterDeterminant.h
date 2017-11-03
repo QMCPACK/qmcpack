@@ -102,7 +102,7 @@ public:
   virtual GradType evalGrad(ParticleSet& P, int iat);
   virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   virtual ValueType ratio(ParticleSet& P, int iat);
-  virtual void acceptMove(ParticleSet& P, int iat);
+  virtual void acceptMove(ParticleSet& P, int iat, bool delay);
   virtual void restore(int iat);
 
   virtual RealType registerData(ParticleSet& P, BufferType& buf);

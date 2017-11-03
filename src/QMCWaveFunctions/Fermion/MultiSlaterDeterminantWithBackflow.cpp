@@ -347,7 +347,7 @@ OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::ratio(ParticleSet& P,
   }
 }
 
-void MultiSlaterDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat)
+void MultiSlaterDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat, bool delay)
 {
 // this should depend on the type of update, ratio / ratioGrad
 // for now is incorrect fot ratio(P,iat,dG,dL) updates
@@ -357,7 +357,7 @@ void MultiSlaterDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat)
   if(DetID[iat] == 0)
   {
     for(int i=0; i<dets_up.size(); i++)
-      dets_up[i]->acceptMove(P,iat);
+      dets_up[i]->acceptMove(P,iat,delay);
     switch(UpdateMode)
     {
     case ORB_PBYP_RATIO:
@@ -403,7 +403,7 @@ void MultiSlaterDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat)
   else
   {
     for(int i=0; i<dets_dn.size(); i++)
-      dets_dn[i]->acceptMove(P,iat);
+      dets_dn[i]->acceptMove(P,iat,delay);
     switch(UpdateMode)
     {
     case ORB_PBYP_RATIO:

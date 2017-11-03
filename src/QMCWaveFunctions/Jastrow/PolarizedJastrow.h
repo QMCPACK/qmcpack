@@ -97,7 +97,7 @@ public:
   inline void restore(int iat) { }
 
   //@todo implement the virutal functions for particle-by-particle move
-  void acceptMove(ParticleSet& P, int iat)
+  void acceptMove(ParticleSet& P, int iat, bool delay)
   {
     std::cerr << "PolarizedJastrow::update for particle-by-particle is empty " << std::endl;
   }

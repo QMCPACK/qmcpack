@@ -362,7 +362,7 @@ public:
     return exp(-sumu);
   }
 
-  void acceptMove(ParticleSet& P, int iat)
+  void acceptMove(ParticleSet& P, int iat, bool delay)
   {
     std::cerr << "ThreeBodyPade::acceptMove does nothing right now" << std::endl;
   }

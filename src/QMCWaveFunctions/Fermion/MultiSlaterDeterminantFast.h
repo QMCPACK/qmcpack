@@ -125,7 +125,7 @@ public:
   ValueType ratio(ParticleSet& P, int iat);
   ValueType ratio_impl(ParticleSet& P, int iat);
 
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool delay);
   void restore(int iat);
 
   RealType registerData(ParticleSet& P, BufferType& buf);

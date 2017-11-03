@@ -69,7 +69,7 @@ public:
   GradType evalGrad(ParticleSet& P, int iat);
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   ValueType ratio(ParticleSet& P, int iat);
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool delay);
   void restore(int iat);
 
   RealType registerData(ParticleSet& P, BufferType& buf);

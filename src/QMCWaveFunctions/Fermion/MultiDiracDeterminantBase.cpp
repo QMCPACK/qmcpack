@@ -242,7 +242,7 @@ void MultiDiracDeterminantBase::copyFromBuffer(ParticleSet& P, PooledData<RealTy
 
 /** move was accepted, update the real container
 */
-void MultiDiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
+void MultiDiracDeterminantBase::acceptMove(ParticleSet& P, int iat, bool delay)
 {
   WorkingIndex = iat-FirstIndex;
   switch(UpdateMode)

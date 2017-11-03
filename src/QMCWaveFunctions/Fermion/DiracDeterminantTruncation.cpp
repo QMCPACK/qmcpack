@@ -238,7 +238,7 @@ DiracDeterminantBase::ValueType DiracDeterminantTruncation::ratio(ParticleSet& P
 
 /** move was accepted, update the real container
  */
-void DiracDeterminantTruncation::acceptMove(ParticleSet& P, int iat)
+void DiracDeterminantTruncation::acceptMove(ParticleSet& P, int iat, bool delay)
 {
   PhaseValue += evaluatePhase(curRatio);
   LogValue +=std::log(std::abs(curRatio));

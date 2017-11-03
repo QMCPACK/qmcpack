@@ -188,7 +188,7 @@ struct  J2OrbitalSoA : public OrbitalBase
   ValueType ratio(ParticleSet& P, int iat);
   GradType evalGrad(ParticleSet& P, int iat);
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool delay);
   inline void restore(int iat) {}
 
   /** compute G and L after the sweep
@@ -429,7 +429,7 @@ J2OrbitalSoA<FT>::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 
 template<typename FT>
 void
-J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
+J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat, bool delay)
 {
   // get the old u, du, d2u
   const DistanceTableData* d_table=P.DistTables[0];

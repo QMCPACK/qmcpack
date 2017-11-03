@@ -268,7 +268,7 @@ struct  J1OrbitalSoA : public OrbitalBase
   inline void restore(int iat) { }
 
   /** Accpted move. Update Vat[iat],Grad[iat] and Lap[iat] */
-  void acceptMove(ParticleSet& P, int iat)
+  void acceptMove(ParticleSet& P, int iat, bool delay)
   {
 
     if(UpdateMode == ORB_PBYP_RATIO)

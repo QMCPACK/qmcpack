@@ -431,7 +431,7 @@ public:
 
   inline void restore(int iat) {}
 
-  void acceptMove(ParticleSet& P, int iat)
+  void acceptMove(ParticleSet& P, int iat, bool delay)
   {
     const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
     const DistanceTableData& ee_table=(*P.DistTables[0]);

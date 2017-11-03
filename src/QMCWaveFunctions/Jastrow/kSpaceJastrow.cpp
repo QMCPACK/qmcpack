@@ -655,7 +655,7 @@ kSpaceJastrow::restore(int iat)
 }
 
 void
-kSpaceJastrow::acceptMove(ParticleSet& P, int iat)
+kSpaceJastrow::acceptMove(ParticleSet& P, int iat, bool delay)
 {
   for (int i=0; i<TwoBody_e2iGr_new.size(); i++)
     TwoBody_rhoG[i] += Delta_e2iGr(iat,i);

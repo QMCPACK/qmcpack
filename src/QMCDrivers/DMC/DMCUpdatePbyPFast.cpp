@@ -200,7 +200,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       {
         GradType grad_iat;
         Psi.ratioGrad(W,iat,grad_iat);
-        Psi.acceptMove(W,iat);
+        Psi.acceptMove(W,iat,false);
 #ifndef ENABLE_SOA
         W.acceptMove(iat);
 #endif

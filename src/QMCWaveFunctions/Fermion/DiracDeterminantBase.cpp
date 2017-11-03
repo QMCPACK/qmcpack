@@ -141,7 +141,7 @@ DiracDeterminantBase::evalGrad(ParticleSet& P, int iat)
   WorkingIndex = iat-FirstIndex;
   RatioTimer.start();
   DiracDeterminantBase::GradType g;
-  if (ndelay)
+  if (ndelay && delayedEng.delay_count)
   {
     delayedEng.getInvRow(psiM, WorkingIndex, Ainv_row.data());
     g = simd::dot(Ainv_row.data(),dpsiM[WorkingIndex],NumOrbitals);
@@ -164,7 +164,7 @@ DiracDeterminantBase::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   WorkingIndex = iat-FirstIndex;
   UpdateMode=ORB_PBYP_PARTIAL;
   GradType rv;
-  if (ndelay)
+  if (ndelay && delayedEng.delay_count)
   {
     curRatio=simd::dot(Ainv_row.data(),psiV.data(),NumOrbitals);
     rv=simd::dot(Ainv_row.data(),dpsiV.data(),NumOrbitals);
@@ -181,12 +181,12 @@ DiracDeterminantBase::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 
 /** move was accepted, update the real container
 */
-void DiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
+void DiracDeterminantBase::acceptMove(ParticleSet& P, int iat, bool delay)
 {
   PhaseValue += evaluatePhase(curRatio);
   LogValue +=std::log(std::abs(curRatio));
   UpdateTimer.start();
-  if (ndelay)
+  if (ndelay && delay)
   {
     delayedEng.acceptRow(psiM,psiV.data(),WorkingIndex);
     if ( iat+1 == LastIndex ) delayedEng.udpateInvMat(psiM);
@@ -754,7 +754,7 @@ DiracDeterminantBase* DiracDeterminantBase::makeCopy(SPOSetBasePtr spo) const
 }
 
 DiracDeterminantBase::DiracDeterminantBase(const DiracDeterminantBase& s)
-  : OrbitalBase(s), NP(0),Phi(s.Phi), FirstIndex(s.FirstIndex), ndelay(s.ndelay)
+  : OrbitalBase(s), NP(0), Phi(s.Phi), FirstIndex(s.FirstIndex), ndelay(s.ndelay)
   ,UpdateTimer(s.UpdateTimer)
   ,RatioTimer(s.RatioTimer)
   ,InverseTimer(s.InverseTimer)

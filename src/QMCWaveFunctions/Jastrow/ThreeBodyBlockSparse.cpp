@@ -117,7 +117,7 @@ void ThreeBodyBlockSparse::restore(int iat)
   //nothing to do here
 }
 
-void ThreeBodyBlockSparse::acceptMove(ParticleSet& P, int iat)
+void ThreeBodyBlockSparse::acceptMove(ParticleSet& P, int iat, bool delay)
 {
   //add the differential
   LogValue += diffVal;

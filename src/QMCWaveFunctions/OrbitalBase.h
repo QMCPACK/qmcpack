@@ -328,7 +328,7 @@ struct OrbitalBase: public QMCTraits
    * @param P target ParticleSet
    * @param iat index of the particle whose new position was proposed
    */
-  virtual void acceptMove(ParticleSet& P, int iat) =0;
+  virtual void acceptMove(ParticleSet& P, int iat, bool delay) =0;
 
   /** a move for iat-th particle is reject. Restore to the content.
    * @param iat index of the particle whose new position was proposed

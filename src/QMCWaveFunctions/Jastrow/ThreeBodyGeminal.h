@@ -58,7 +58,7 @@ public:
 
   void restore(int iat);
 
-  void acceptMove(ParticleSet& P, int iat);
+  void acceptMove(ParticleSet& P, int iat, bool delay);
 
   RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
 

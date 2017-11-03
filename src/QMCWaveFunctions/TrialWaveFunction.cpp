@@ -625,12 +625,12 @@ void TrialWaveFunction::rejectMove(int iat)
  * The proposed move of the iath particle is accepted.
  * All the temporary data should be incorporated so that the next move is valid.
  */
-void   TrialWaveFunction::acceptMove(ParticleSet& P,int iat)
+void   TrialWaveFunction::acceptMove(ParticleSet& P, int iat, bool delay)
 {
   for (int i=0, ii=ACCEPT_REJECT_TIMER; i<Z.size(); i++, ii+=TIMER_SKIP)
   {
     myTimers[ii]->start();
-    Z[i]->acceptMove(P,iat);
+    Z[i]->acceptMove(P, iat, delay);
     myTimers[ii]->stop();
   }
   PhaseValue += PhaseDiff;
