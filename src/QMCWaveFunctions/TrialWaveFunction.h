@@ -287,9 +287,6 @@ public:
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-  //new function to streamline tmove computation
-  RealType acceptTMove(ParticleSet& P, int iat, PooledData<RealType>& buf);
-
   RealType KECorrection() const;
 
   void evaluateDerivatives(ParticleSet& P,
