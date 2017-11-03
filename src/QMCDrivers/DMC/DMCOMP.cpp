@@ -251,6 +251,7 @@ bool DMCOMP::run()
   IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
   int sample = 0;
 
+  RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
   bool enough_time_for_next_iteration = true;
 
   prof.push("dmc_loop");
@@ -332,18 +333,13 @@ bool DMCOMP::run()
     }
     recordBlock(block);
     dmc_loop.stop();
-    double loop_time = dmc_loop.get_time_per_iteration();
-    double elapsed = RunTimeManager.elapsed();
-    double remaining = MaxCPUSecs - elapsed;
-    double runtime_safety_padding = 10.0;  // 10 seconds - enough to shut down?
-    double loop_margin = 1.10;             // 10% margin on average loop time?
-    if (loop_margin*loop_time + runtime_safety_padding  > remaining) enough_time_for_next_iteration = false;
+    enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(dmc_loop);
+    // Rank 0 decides whether the time limit was reached
+    myComm->bcast(enough_time_for_next_iteration);
+
     if (!enough_time_for_next_iteration)
     {
-      app_log() << "Time limit reached for DMC, stopping after block " << block-1 << std::endl;
-      app_log() << "  Iteration time per DMC block (seconds) = " << loop_time << std::endl;
-      app_log() << "  Elapsed time (seconds)       = " << elapsed << std::endl;
-      app_log() << "  Remaining time (seconds)      = " << remaining << std::endl;
+      app_log() << runtimeControl.time_limit_message("DMC", block);
     }
   } while(block<nBlocks && enough_time_for_next_iteration);
 
