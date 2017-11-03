@@ -774,34 +774,6 @@ void TrialWaveFunction::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf
   buf.get(LogValue);
 }
 
-TrialWaveFunction::RealType
-TrialWaveFunction::acceptTMove(ParticleSet& P, int iat, PooledData<RealType>& buf)
-{
-
-  CONSTEXPR RealType czero(0);
-  P.G=czero;
-  P.L=czero;
-  ValueType logpsi=czero;
-  PhaseValue=czero;
-
-  buf.rewind(BufferCursor,BufferCursor_DP);
-  GradType grad;
-  const size_t nz=Z.size();
-  for (size_t i=0; i<nz; i++)
-  {
-    Z[i]->ratioGrad(P,iat,grad);
-    Z[i]->acceptMove(P,iat);
-    logpsi += Z[i]->updateBuffer(P,buf,false);
-    PhaseValue += Z[i]->PhaseValue;
-  }
-
-  buf.put(PhaseValue);
-  buf.put(LogValue);
-
-  convert(logpsi,LogValue);
-  return LogValue;
-}
-
 void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<RealType>& ratios)
 {
 #if defined(QMC_COMPLEX)
