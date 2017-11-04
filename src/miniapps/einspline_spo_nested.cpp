@@ -17,7 +17,7 @@
 #include <Particle/ParticleSet.h>
 #include <random/random.hpp>
 #include <mpi/collectives.h>
-#include <miniapps/graphite.hpp>
+#include <miniapps/input.hpp>
 #include <miniapps/pseudo.hpp>
 #include <Utilities/Timer.h>
 #include <miniapps/common.hpp>
@@ -101,9 +101,9 @@ int main(int argc, char** argv)
     Tensor<OHMMS_PRECISION,3> lattice_b;
     ParticleSet ions;
     OHMMS_PRECISION scale=1.0;
-    lattice_b=tile_graphite(ions,tmat,scale);
+    lattice_b=tile_cell(ions,tmat,scale);
     const int nions=ions.getTotalNum();
-    const int nels=2*nions;
+    const int nels=count_electrons(ions)/2;
     tileSize=(tileSize>0)?tileSize:nels;
     nTiles=nels/tileSize;
     if(ionode)
@@ -130,13 +130,11 @@ int main(int argc, char** argv)
     RandomGenerator<RealType> random_th(MakeSeed(ip,np));
 
     ParticleSet ions, els;
-    ions.setName("ion");
-    els.setName("e");
     const OHMMS_PRECISION scale=1.0;
-    tile_graphite(ions,tmat,scale);
+    tile_cell(ions,tmat,scale);
 
     const int nions=ions.getTotalNum();
-    const int nels=4*nions;
+    const int nels=count_electrons(ions);
     const int nels3=3*nels;
 
 #pragma omp master

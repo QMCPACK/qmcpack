@@ -20,7 +20,7 @@
 #include <OhmmsSoA/VectorSoaContainer.h>
 #include <random/random.hpp>
 #include <mpi/collectives.h>
-#include <miniapps/graphite.hpp>
+#include <miniapps/input.hpp>
 #include <miniapps/pseudo.hpp>
 #include <Utilities/Timer.h>
 #include <miniapps/common.hpp>
@@ -86,16 +86,15 @@ int main(int argc, char** argv)
   RandomGenerator<RealType> random_th(11);
 
   ParticleSet ions, els;
-  ions.setName("ion");
-  els.setName("e");
 
+  ions.setName("ion0");
   ions.Lattice.BoxBConds=1;
   ions.Lattice.LR_rc=5;
-  tile_graphite(ions,tmat,scale);
+  tile_cell(ions,tmat,scale);
   ions.RSoA=ions.R; //this needs to be handled internally
 
   const int nions=ions.getTotalNum();
-  const int nels=4*nions;
+  const int nels=count_electrons(ions);
   const int nels3=3*nels;
 
   {//create up/down electrons
@@ -108,6 +107,7 @@ int main(int argc, char** argv)
     random_th.generate_uniform(&els.R[0][0],nels3);
     els.convert2Cart(els.R); // convert to Cartiesian
     els.RSoA=els.R; //this needs to be handled internally
+    els.setName("e");
   }
 
   constexpr RealType eps=numeric_limits<float>::epsilon();
