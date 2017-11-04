@@ -376,8 +376,3 @@ void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
   }
 }
 }
-/***********************************************************************
- * $RCSfilMCMain.cpp,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
