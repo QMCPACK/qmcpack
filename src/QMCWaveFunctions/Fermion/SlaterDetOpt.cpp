@@ -354,30 +354,6 @@ OrbitalBase::RealType SlaterDetOpt::evaluateLog(ParticleSet& P, ParticleSet::Par
 
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  Evaluates the log of the determinant value and adds the gradient and laplacian of the
-///         log of the determinant to the total gradient and laplacian data.
-///         Currently, this class computes everything from scratch and so does not use the buffer.
-///
-/// \param[in]      P              the particle set
-/// \param[in,out]  G              gradient to add to
-/// \param[in,out]  L              laplacian to add to
-/// \param[in,out]  buf            buffer to load or store temporary data from
-/// \param[in]      fillBuffer     whether to fill data into the buffer or read data from it
-///
-/// \return  the log of the determinant value
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////
-OrbitalBase::RealType SlaterDetOpt::evaluateLog(ParticleSet& P,
-                                                ParticleSet::ParticleGradient_t& G,
-                                                ParticleSet::ParticleLaplacian_t& L,
-                                                PooledData<RealType>& buf,
-                                                bool fillBuffer ) {
-  return this->evaluateLog(P,G,L);
-  //APP_ABORT("ERROR:  SlaterDetOpt::evaluateLog(P,G,L,buff,bool) not implemented\n");
-//  return 0.0;
-}
-
 // BEGIN EWN DEBUG 
 //template<class T> void eval_grad_print_mat_opt(T & mat) {
 //  for (int i = 0; i < mat.rows(); i++) {
@@ -456,33 +432,6 @@ OrbitalBase::ValueType SlaterDetOpt::ratioGrad(ParticleSet& P, int iat, GradType
 
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  Not yet implemented.
-///
-/// \return  ???
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////
-OrbitalBase::ValueType SlaterDetOpt::ratio(ParticleSet& P,
-                                           int iat,
-                                           ParticleSet::ParticleGradient_t& dG,
-                                           ParticleSet::ParticleLaplacian_t& dL) {
-
-  // no contribution if the particle is not part of this determinant
-  if ( iat < m_first || iat >= m_last )
-    return 1.0;
-
-  // compute orbital values, gradients, and summed second derivatives for the particle's new position
-  Phi->evaluate(P, iat, m_orb_val_vec, m_orb_der_vec, m_orb_lap_vec);
-
-  // compute the ratio of new to old determinant values
-  curRatio = simd::dot(m_orb_inv_mat[iat-m_first], m_orb_val_vec.data(), m_nel);
-  
-  return curRatio;
-
-//  throw std::runtime_error("SlaterDetOpt::ratio(P, iat, dG, dL) not implemented");
-//  return 0.0;
-
-}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Not yet implemented.
@@ -553,30 +502,6 @@ void SlaterDetOpt::acceptMove(ParticleSet& P, int iat) {
 void SlaterDetOpt::restore(int iat)
 {
   curRatio=1.0;
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  Not yet implemented.
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////
-void SlaterDetOpt::update(ParticleSet& P,
-                          ParticleSet::ParticleGradient_t& dG,
-                          ParticleSet::ParticleLaplacian_t& dL,
-                          int iat) {
-
-  throw std::runtime_error("SlaterDetOpt::update(P, dG, dL, iat) not implemented");
-
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  Not yet implemented.
-///
-/// \return  ???
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////
-OrbitalBase::RealType SlaterDetOpt::evaluateLog(ParticleSet& P,BufferType& buf) {
-  throw std::runtime_error("SlaterDetOpt::evaluateLog(P, buf) not implemented");
-  return 0.0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
