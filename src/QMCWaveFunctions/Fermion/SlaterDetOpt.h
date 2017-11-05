@@ -154,8 +154,7 @@ class SlaterDetOpt : public DiracDeterminantBase {
 
     void set_spo_optimizable_rotations();
 
-    void buildOptVariables(std::vector<RealType>& input_params, const std::string & spo_name,
-                           bool params_supplied, bool print_vars);
+    void buildOptVariables(std::vector<RealType>& input_params, bool params_supplied, bool print_vars);
 
     void checkInVariables(opt_variables_type& active);
 

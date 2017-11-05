@@ -1128,13 +1128,12 @@ void SlaterDetOpt::set_spo_optimizable_rotations() {
 ///
 /// \param[in]    input_params     the input list of parameters - can be empty, if no parameters
 ///                                were supplied by the user
-/// \param[in]    spo_name         name of the single particle basis set object
 /// \param[in]    params_supplied  true if parameters are provided in input_params, false if
 ///                                input_params is empty
 /// \param[in]    print_vars       if true, then print out the initialized values of the variables
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void SlaterDetOpt::buildOptVariables(std::vector<RealType>& input_params, const std::string & spo_name,
+void SlaterDetOpt::buildOptVariables(std::vector<RealType>& input_params,
                        bool params_supplied, bool print_vars) {
 
   int p, q;
@@ -1152,7 +1151,7 @@ void SlaterDetOpt::buildOptVariables(std::vector<RealType>& input_params, const 
     p = m_act_rot_inds.at(i).first;
     q = m_act_rot_inds.at(i).second;
     std::stringstream sstr;
-    sstr << spo_name
+    sstr << Phi->objectName
          << "_orb_rot_"
          << ( p <   10 ? "0" : "" )
          << ( p <  100 ? "0" : "" )

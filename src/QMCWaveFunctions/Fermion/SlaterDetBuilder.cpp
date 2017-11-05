@@ -69,6 +69,7 @@ SlaterDetBuilder::SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi,
   BFTrans=0;
   UseBackflow=false;
 }
+
 SlaterDetBuilder::~SlaterDetBuilder()
 {
   DEBUG_MEMORY("SlaterDetBuilder::~SlaterDetBuilder");
@@ -77,46 +78,6 @@ SlaterDetBuilder::~SlaterDetBuilder()
     delete myBasisSetFactory;
   }
 }
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  finds the single particle orbital set of the given name, checks that it is of the
-///         correct optimizable type, uses it to construct an optimizable slater determinant,
-///         and returns a pointer to that determinant
-///
-/// \param[in]      targetPtcl     reference to the particle set
-/// \param[in]      spo_ptr        pointer to the single particle orbital set
-/// \param[in]      spo_name       name of the single particle orbital set we want
-/// \param[in]      up_or_down     0 for up spin, 1 for down
-///
-/// \return  a pointer to the newly created optimizable slater determinant
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////
-SlaterDetOpt * SlaterDetBuilder::create_optimizable_sd(ParticleSet & targetPtcl,
-                                                       SPOSetBasePtr spo_ptr,
-                                                       const std::string & spo_name,
-                                                       const int up_or_down) {
-
-  // get a pointer to the single particle orbital set and make sure it is of the correct type
-  if ( ! spo_ptr->is_of_type_LCOrbitalSetOpt() ) {
-    app_error() << "SPOSet \"" << spo_name << "\" is not of type LCOrbitalSetOpt and thus cannot be used with SlaterDetOpt.\n";
-    abort();
-  }
-
-  // if there are no particles of the given type, then don't build any determinant for that type
-  if ( targetPtcl.last(up_or_down) - targetPtcl.first(up_or_down) < 1 )
-    return 0;
-
-  // build the optimizable slater determinant
-  SlaterDetOpt * const retval = new SlaterDetOpt(targetPtcl, spo_ptr, up_or_down);
-
-  // set which orbital rotations are optimizable in the single particle orbital set
-  retval->set_spo_optimizable_rotations();
-
-  // return the slater determinant
-  return retval;
-
-}
-
 
 /** process <determinantset>
  *
@@ -308,13 +269,12 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         getNodeName(tname,tcur);
         if (tname == det_tag || tname == rn_tag)
         {
-          if(putDeterminant(tcur, spin_group, optimizable))
+          if(putDeterminant(tcur, spin_group, optimizable == "yes"))
             spin_group++;
         }
         tcur = tcur->next;
       }
     }
-
     else if(cname == multisd_tag)
     {
       multiDet=true;
@@ -468,13 +428,11 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
  * - type variantion of a determinant, type="AFM" uses a specialized determinant builder for Anti-Ferromagnetic system
  * Extra attributes to handled the original released-node case
  */
-bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, const std::string & slater_det_opt)
+bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slater_det_opt)
 {
   ReportEngine PRE(ClassName,"putDeterminant(xmlNodePtr,int)");
 
   SpeciesSet& myspecies=targetPtcl.mySpecies;
-
-  std::string spo_name;
 
   std::string spin_name=myspecies.speciesName[spin_group];
   std::string sposet; 
@@ -542,13 +500,11 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, const std:
     //psi->put(cur); 
     psi->checkObject();
     slaterdet_0->add(psi,detname);
-    spo_name = detname;
   }
   else
   {
     app_log() << "  Reusing a SPO set " << sposet << std::endl;
     psi = (*lit).second;
-    spo_name = (*lit).first;
   }
 
   int firstIndex=targetPtcl.first(spin_group);
@@ -619,7 +575,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, const std:
       app_log()<<"Using the AFM determinant"<< std::endl;
       adet = new DiracDeterminantAFM(targetPtcl, psi, firstIndex);
     }
-    else if (slater_det_opt == "yes")
+    else if (slater_det_opt)
     {
       std::vector<RealType> params;
       bool params_supplied = false;
@@ -635,8 +591,23 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, const std:
         }
       }
 
-      adet = this->create_optimizable_sd(targetPtcl, psi, spo_name, spin_group);
-      adet->buildOptVariables(params, spo_name, params_supplied, true);
+      // YE: TODO, replace the following with LCOrbitalSetOpt wrapping
+      // get a pointer to the single particle orbital set and make sure it is of the correct type
+      if ( ! psi->is_of_type_LCOrbitalSetOpt() ) {
+        app_error() << "SPOSet \"" << psi->objectName << "\" is not of type LCOrbitalSetOpt and thus cannot be used with SlaterDetOpt.\n";
+        abort();
+      }
+
+      // build the optimizable slater determinant
+      SlaterDetOpt * const retval = new SlaterDetOpt(targetPtcl, psi, spin_group);
+
+      // set which orbital rotations are optimizable in the single particle orbital set
+      retval->set_spo_optimizable_rotations();
+
+      // load extra parameters for SlaterDetOpt
+      retval->buildOptVariables(params, params_supplied, true);
+
+      adet = retval;
       adet->Optimizable = true;
     }
     else if (psi->Optimizable)

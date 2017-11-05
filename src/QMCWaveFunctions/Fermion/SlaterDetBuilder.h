@@ -29,8 +29,6 @@
 namespace qmcplusplus
 {
 
-class SlaterDetOpt;
-
 /** derived class from OrbitalBuilderBase
  *
  * Builder SlaterDeterminant with LCOrbitalSet
@@ -64,8 +62,6 @@ private:
   PtclPoolType& ptclPool;
   BasisSetFactory* myBasisSetFactory;
   SlaterDeterminant_t* slaterdet_0;
-  SlaterDetOpt* optslaterdet_up;
-  SlaterDetOpt* optslaterdet_dn;
   MultiSlaterDeterminant_t* multislaterdet_0;
   MultiSlaterDeterminantFast* multislaterdetfast_0;
 
@@ -77,14 +73,13 @@ private:
    * @param firstIndex index of the determinant
    * @return firstIndex+number of orbitals
    */
-  bool putDeterminant(xmlNodePtr cur, int firstIndex, const std::string & slater_det_opt);
+  bool putDeterminant(xmlNodePtr cur, int firstIndex, bool slater_det_opt);
 
   bool createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur);
 
   bool createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNodePtr cur);
 
   bool readDetList(xmlNodePtr cur, std::vector<ci_configuration>& uniqueConfg_up, std::vector<ci_configuration>& uniqueConfg_dn, std::vector<int>& C2node_up, std::vector<int>& C2node_dn, std::vector<std::string>& CItags, std::vector<RealType>& coeff, bool& optimizeCI, int nels_up, int nels_dn, std::vector<RealType>& CSFcoeff, std::vector<int>& DetsPerCSF, std::vector<RealType>& CSFexpansion, bool& usingCSF);
-  SlaterDetOpt * create_optimizable_sd(ParticleSet & targetPtcl, SPOSetBasePtr spo_ptr, const std::string & spo_name, const int up_or_down);
 
 };
 }
