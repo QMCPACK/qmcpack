@@ -24,6 +24,8 @@
 #include "OhmmsData/AttributeSet.h"
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantSoA.h"
+#include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
+#include "QMCWaveFunctions/LocalizedBasisSet.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetOpt.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
@@ -591,11 +593,21 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
         }
       }
 
-      // YE: TODO, replace the following with LCOrbitalSetOpt wrapping
+      // YE: need check
       // get a pointer to the single particle orbital set and make sure it is of the correct type
       if ( ! psi->is_of_type_LCOrbitalSetOpt() ) {
-        app_error() << "SPOSet \"" << psi->objectName << "\" is not of type LCOrbitalSetOpt and thus cannot be used with SlaterDetOpt.\n";
-        abort();
+        std::string newname = "LCOrbitalSetOpt_" + psi->objectName;
+        SPOSetBasePtr newpsi = get_sposet(newname);
+        if(newpsi == nullptr)
+        {
+          app_log() << "using an existing SPO object " << psi->objectName << " (not a clone) for the basis of an optimizable SPO set.\n";
+          newpsi = new LCOrbitalSetOpt<LocalizedBasisSet<NGOBuilder::CenteredOrbitalType> >(psi);
+          // YE: FIXME, need to register newpsi
+        }
+        else
+        {
+          psi = newpsi;
+        }
       }
 
       // build the optimizable slater determinant

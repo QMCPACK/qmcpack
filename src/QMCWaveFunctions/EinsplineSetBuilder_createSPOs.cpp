@@ -34,9 +34,6 @@
 #include "QMCWaveFunctions/BsplineReaderBase.h"
 #include "QMCWaveFunctions/EinsplineAdoptor.h"
 
-#include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
-#include "QMCWaveFunctions/LocalizedBasisSet.h"
-#include "QMCWaveFunctions/LCOrbitalSetOpt.h"
 namespace qmcplusplus
 {
 
@@ -145,7 +142,6 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   std::string spo_prec("double");
   std::string truncate("no");
   std::string hybrid_rep("no");
-  std::string optimizable("no");
   std::string use_einspline_set_extended("no"); // use old spline library for high-order derivatives, e.g. needed for backflow optimization
 #if defined(QMC_CUDA)
   std::string useGPU="yes";
@@ -182,7 +178,6 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add (numOrbs,    "size");
     a.add (numOrbs,    "norbs");
     a.add(spinSet,"spindataset"); a.add(spinSet,"group");
-    a.add (optimizable,"optimizable");
     a.put (cur);
 
     if(myName.empty()) myName="einspline";
@@ -267,21 +262,10 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if ((iter != SPOSetMap.end() ) && (!NewOcc) && (qafm==0))
   {
     qafm=0;
-
-    // if requested, use an optimizable orbital set that has the spline orbital set as its basis
-    if ( optimizable == "yes" ) {
-      app_log() << "using an existing EinsplineSet object (not a clone) for the basis of an optimizable SPO set.\n";
-      return new LCOrbitalSetOpt<LocalizedBasisSet<NGOBuilder::CenteredOrbitalType> >(SPOSetMap.find(aset)->second);
-    }
-
     app_log() << "SPOSet parameters match in EinsplineSetBuilder:  "
               << "cloning EinsplineSet object.\n";
     return iter->second->makeClone();
   }
-
-  // if we are using the spline orbital set as the basis for an optimizable orbital set, the spline set should already have been created
-  if ( optimizable == "yes" )
-    APP_ABORT("failed to find an acceptable EinsplineSet to use as the basis for an otimizable single particle orbital set");
 
   if(FullBands[spinSet]==0) FullBands[spinSet]=new std::vector<BandInfo>;
 
