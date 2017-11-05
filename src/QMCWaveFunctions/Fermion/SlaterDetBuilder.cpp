@@ -64,8 +64,6 @@ SlaterDetBuilder::SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi,
   : OrbitalBuilderBase(els,psi), ptclPool(psets)
   , myBasisSetFactory(0), slaterdet_0(0), multislaterdet_0(0)
   , multislaterdetfast_0(0)
-  , optslaterdet_up(0)
-  , optslaterdet_dn(0)
 {
   ClassName="SlaterDetBuilder";
   BFTrans=0;
@@ -404,7 +402,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   }
 
 
-  if (!multiDet && !slaterdet_0 && !optslaterdet_up && !optslaterdet_dn )
+  if (!multiDet && !slaterdet_0)
   {
     //fatal
     PRE.error("Failed to create a SlaterDeterminant.",true);
@@ -452,9 +450,6 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       targetPsi.addOrbital(multislaterdetfast_0,"MultiSlaterDeterminantFast",true);
     else
       targetPsi.addOrbital(multislaterdet_0,"MultiSlaterDeterminant",true);
-  } else if ( optslaterdet_up || optslaterdet_dn ) {
-    if ( optslaterdet_up ) targetPsi.addOrbital(optslaterdet_up, "SlaterDetOpt_up", true);     // first add the determinants
-    if ( optslaterdet_dn ) targetPsi.addOrbital(optslaterdet_dn, "SlaterDetOpt_dn", true);     //
   } else {
     targetPsi.addOrbital(slaterdet_0,"SlaterDet",true);
   }
