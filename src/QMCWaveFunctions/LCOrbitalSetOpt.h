@@ -101,6 +101,85 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
 
     }
 
+    /// \brief  vector to hold orbital indices
+    std::vector<int> m_oidx;
+
+    /// \brief  vector to hold particle indices
+    std::vector<int> m_pidx;
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    /// \brief  Place the indices from a range of indices specified by iterators into a vector.
+    ///         Note that the vector may be longer than the index range (it is not shrunk to fit it)
+    ///         but that an iterator to the end of the range is returned.
+    ///
+    /// \param[in]      start       iterator for the start of the range (should dereference to int)
+    /// \param[in]      end         iterator for the end   of the range (should dereference to int)
+    /// \param[in]      vec         vector to store the range in
+    ///
+    /// \return  iterator to the end of the entered range
+    ///
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    template<class IntIter> static std::vector<int>::iterator prepare_index_vector(IntIter start, IntIter end, std::vector<int> & vec) {
+
+      // get the length
+      int length = 0;
+      for (IntIter s = start; s != end; s++)
+        length++;
+
+      // expand the vector if necessary
+      ensure_vector_is_big_enough(vec, length);
+
+      // put the values in the vector
+      std::copy(start, end, vec.begin());
+
+      // return an iterator to the end of the range inside the vector
+      return ( vec.begin() + length );
+
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    /// \brief  Place a range of contiguous indices [start,end) into a vector.
+    ///         Note that the vector may be longer than the index range (it is not shrunk to fit it)
+    ///         but an iterator to the end of the range returned.
+    ///
+    /// \param[in]      start       start of the range
+    /// \param[in]      end         end of the range
+    /// \param[in]      vec         vector to store the range in
+    ///
+    /// \return  iterator to the end of the entered range
+    ///
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    static std::vector<int>::iterator prepare_index_vector_contiguous(const int start, const int end, std::vector<int> & vec) {
+
+      // check sanity
+      if ( end < start )
+        throw std::runtime_error("end is less than start in prepare_index_vector_contiguous");
+
+      // expand the vector if necessary
+      ensure_vector_is_big_enough(vec, end - start);
+
+      // put the range into the vector
+      std::vector<int>::iterator it = vec.begin();
+      for(int i = start; i < end; i++, it++)
+        *it = i;
+
+      // return the end of the range
+      return it;
+
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    /// \brief  Enlarges the supplied vector if it is not big enough
+    ///
+    /// \param[in,out]  v              the vector
+    /// \param[in]      n              the minimum length we want the vector to have
+    ///
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    template <class T> static void ensure_vector_is_big_enough(T & v, const size_t n) {
+      if ( v.size() < n )
+        v.resize(n);
+    }
+
   // public member functions
   public:
 
@@ -262,7 +341,7 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
     SPOSetBase * makeClone() const {
 
       // create a clone that contains a cloned spo set or basis set
-      SPOSetBase * retval;
+      LCOrbitalSetOpt * retval;
 
       if ( m_spo_set )
         retval = new LCOrbitalSetOpt(m_spo_set->makeClone(), m_report_level);
@@ -271,7 +350,7 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
 
       retval->C = C;
       retval->setOrbitalSetSize(this->OrbitalSetSize);
-      retval->init_LCOrbitalSetOpt();
+      retval->init_LCOrbitalSetOpt(0.0);
 
       retval->m_B = m_B;
       retval->m_init_B = m_init_B;
@@ -380,10 +459,10 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
       assert( nb >= np );
 
       // resize the temporary arrays if they are not big enough
-      SPOSetBase::ensure_vector_is_big_enough(m_lc_coeffs, no * nb);
-      SPOSetBase::ensure_vector_is_big_enough(m_basis_vals, np * nb);
-      SPOSetBase::ensure_vector_is_big_enough(m_basis_der1, 3 * np * nb);
-      SPOSetBase::ensure_vector_is_big_enough(m_basis_der2, np * nb);
+      ensure_vector_is_big_enough(m_lc_coeffs, no * nb);
+      ensure_vector_is_big_enough(m_basis_vals, np * nb);
+      ensure_vector_is_big_enough(m_basis_der1, 3 * np * nb);
+      ensure_vector_is_big_enough(m_basis_der2, np * nb);
       if ( m_temp_p.size() != nb ) m_temp_p.resize(nb);
       if ( m_temp_g.size() != nb ) m_temp_g.resize(nb);
       if ( m_temp_l.size() != nb ) m_temp_l.resize(nb);
@@ -527,13 +606,13 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
         throw std::runtime_error("particle end (pe) is less than start (ps) in LCOrbitalSetOpt::evaluate_notranspose_ranges");
 
       // prepare orbital list
-      std::vector<int>::const_iterator oend = SPOSetBase::prepare_index_vector_contiguous(os, oe, m_oidx);
+      std::vector<int>::const_iterator oend = prepare_index_vector_contiguous(os, oe, m_oidx);
 
       // prepare particle list
-      std::vector<int>::const_iterator pend = SPOSetBase::prepare_index_vector_contiguous(ps, pe, m_pidx);
+      std::vector<int>::const_iterator pend = prepare_index_vector_contiguous(ps, pe, m_pidx);
 
       // evaluate
-      this->evaluate_notranspose_general(P, mt, m_oidx.begin(), oend, m_pidx.begin(), pend, vmat, gmat, lmat);
+      evaluate_notranspose_general(P, mt, m_oidx.begin(), oend, m_pidx.begin(), pend, vmat, gmat, lmat);
 
     }
 

@@ -46,15 +46,6 @@ SPOSetBase::SPOSetBase()
   NeedDistanceTables=false;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  returns any trial function component that this object depends on
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////
-OrbitalBase * SPOSetBase::tf_component() {
-  app_error() << "this particular single particle orbital set has no trial function component\n";
-  abort();
-  return 0;
-}
 void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
                           ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
 {

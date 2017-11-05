@@ -31,8 +31,6 @@
 namespace qmcplusplus
 {
 
-class OrbitalBase;
-
 /** base class for Single-particle orbital sets
  *
  * SPOSetBase stands for S(ingle)P(article)O(rbital)SetBase which contains
@@ -276,65 +274,6 @@ public:
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   virtual bool is_of_type_LCOrbitalSetOpt() const { return false; }
 
-  virtual OrbitalBase * tf_component();
-
-  ///////////////////////////////////////////////////////////////////////////////////////////////////
-  /// \brief  Evaluates the values, x,y,z derivatives, and x-y-z-summed second derivatives of the
-  ///         specified linear combinations of basis set orbitals at the specified particles'
-  ///         positions.
-  ///
-  /// \param[in]      P            Object containing information on particle positions.
-  /// \param[in]      mt           the move type: 'p' for particle move, 'w' for walker move
-  /// \param[in]      ostart       Iterator for the start of the index range specifying which linear combinations of orbitals to evaluate.
-  /// \param[in]      oend         Iterator for the end   of the index range specifying which linear combinations of orbitals to evaluate.
-  /// \param[in]      pstart       Iterator for the start of the index range specifying which particles' positions to use.
-  /// \param[in]      pend         Iterator for the end   of the index range specifying which particles' positions to use.
-  /// \param[in,out]  vmat         On input, points to an array of length (# of linear combinations) * (# of particle).
-  ///                              On exit, holds a column-major-ordered (# of linear combinations) by (# of particle) matrix
-  ///                              of the values of the specified linear combinations for the specified particles' positions.
-  /// \param[in,out]  gmat         On input, points to an array of length (# of linear combinations) * (# of particle).
-  ///                              On exit, holds a column-major-ordered (# of linear combinations) by (# of particle) matrix,
-  ///                              each element of which is a length 3 vector containing the x,y,z gradients of the values in vmat.
-  /// \param[in,out]  lmat         On input, points to an array of length (# of linear combinations) * (# of particle).
-  ///                              On exit, holds a column-major-ordered (# of linear combinations) by (# of particle) matrix,
-  ///                              each element of which is the sum of x^2, y^2, and z^2 second derivatives of the values in vmat.
-  ///
-  ///////////////////////////////////////////////////////////////////////////////////////////////////
-  template<class IntIter> void evaluate_notranspose_iterators(const ParticleSet& P,
-                                                              const char mt,
-                                                              IntIter ostart,
-                                                              IntIter oend,
-                                                              IntIter pstart,
-                                                              IntIter pend,
-                                                              ValueType * const vmat,
-                                                              GradType * const gmat,
-                                                              ValueType * const lmat) {
-
-    // prepare the vector of orbital indices
-    std::vector<int>::const_iterator oe = SPOSetBase::prepare_index_vector(ostart, oend, this->m_oidx);
-
-    // prepare the vector of particle indices
-    std::vector<int>::const_iterator pe = SPOSetBase::prepare_index_vector(pstart, pend, this->m_pidx);
-
-    // call the child class's evaluate function
-    this->evaluate_notranspose_general(P, mt, m_oidx.begin(), oe, m_pidx.begin(), pe, vmat, gmat, lmat);
-
-  }
-
-  virtual void evaluate_notranspose_general(const ParticleSet& P,
-                                            const char mt,
-                                            std::vector<int>::const_iterator ostart,
-                                            std::vector<int>::const_iterator oend,
-                                            std::vector<int>::const_iterator pstart,
-                                            std::vector<int>::const_iterator pend,
-                                            ValueType * const vmat,
-                                            GradType * const gmat,
-                                            ValueType * const lmat) {
-
-    throw std::runtime_error("SPOSetBase::evaluate_notranspose_general not implemented");
-
-  }
-
   virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
                                     , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)=0;
 
@@ -380,19 +319,6 @@ public:
   // Should be empty for other derived classes
   virtual void init_LCOrbitalSetOpt(const double mix_factor=0.0) { };
 
-
-  ///////////////////////////////////////////////////////////////////////////////////////////////////
-  /// \brief  Enlarges the supplied vector if it is not big enough
-  ///
-  /// \param[in,out]  v              the vector
-  /// \param[in]      n              the minimum length we want the vector to have
-  ///
-  ///////////////////////////////////////////////////////////////////////////////////////////////////
-  template <class T> static void ensure_vector_is_big_enough(T & v, const size_t n) {
-    if ( v.size() < n )
-      v.resize(n);
-  }
-
 #ifdef QMC_CUDA
 
   /** evaluate the values of this single-particle orbital set
@@ -434,74 +360,6 @@ protected:
   bool putOccupation(xmlNodePtr occ_ptr);
   bool putFromXML(xmlNodePtr coeff_ptr);
   bool putFromH5(const char* fname, xmlNodePtr coeff_ptr);
-
-  /// \brief  vector to hold orbital indices
-  std::vector<int> m_oidx;
-
-  /// \brief  vector to hold particle indices
-  std::vector<int> m_pidx;
-
-  ///////////////////////////////////////////////////////////////////////////////////////////////////
-  /// \brief  Place the indices from a range of indices specified by iterators into a vector.
-  ///         Note that the vector may be longer than the index range (it is not shrunk to fit it)
-  ///         but that an iterator to the end of the range is returned.
-  ///
-  /// \param[in]      start       iterator for the start of the range (should dereference to int)
-  /// \param[in]      end         iterator for the end   of the range (should dereference to int)
-  /// \param[in]      vec         vector to store the range in
-  ///
-  /// \return  iterator to the end of the entered range
-  ///
-  ///////////////////////////////////////////////////////////////////////////////////////////////////
-  template<class IntIter> static std::vector<int>::iterator prepare_index_vector(IntIter start, IntIter end, std::vector<int> & vec) {
-
-    // get the length
-    int length = 0;
-    for (IntIter s = start; s != end; s++)
-      length++;
-
-    // expand the vector if necessary
-    SPOSetBase::ensure_vector_is_big_enough(vec, length);
-
-    // put the values in the vector
-    std::copy(start, end, vec.begin());
-
-    // return an iterator to the end of the range inside the vector
-    return ( vec.begin() + length );
-
-  }
-
-  ///////////////////////////////////////////////////////////////////////////////////////////////////
-  /// \brief  Place a range of contiguous indices [start,end) into a vector.
-  ///         Note that the vector may be longer than the index range (it is not shrunk to fit it)
-  ///         but an iterator to the end of the range returned.
-  ///
-  /// \param[in]      start       start of the range
-  /// \param[in]      end         end of the range
-  /// \param[in]      vec         vector to store the range in
-  ///
-  /// \return  iterator to the end of the entered range
-  ///
-  ///////////////////////////////////////////////////////////////////////////////////////////////////
-  static std::vector<int>::iterator prepare_index_vector_contiguous(const int start, const int end, std::vector<int> & vec) {
-
-    // check sanity
-    if ( end < start )
-      throw std::runtime_error("end is less than start in SPOSetBase::prepare_index_vector_contiguous");
-
-    // expand the vector if necessary
-    SPOSetBase::ensure_vector_is_big_enough(vec, end - start);
-
-    // put the range into the vector
-    std::vector<int>::iterator it = vec.begin();
-    for(int i = start; i < end; i++, it++)
-      *it = i;
-
-    // return the end of the range
-    return it;
-
-  }
-
 };
 
 #if defined(ENABLE_SMARTPOINTER)

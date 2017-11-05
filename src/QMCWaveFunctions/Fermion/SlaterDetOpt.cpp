@@ -980,31 +980,6 @@ void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  Return a pointer to the single particle orbital set's trial function component.
-///
-/// \param[in]      calling_func   name of calling function for use in error reporting
-///
-/// \return  a pointer to the single particle orbital set's trial function component.
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////
-//LCOrbitalSetOptTrialFunc * SlaterDetOpt::tfc_ptr(const std::string & calling_func) {
-//
-//  // get pointer to the optimizable single particle orbital set's trial function component
-//  LCOrbitalSetOptTrialFunc * const ptr = dynamic_cast<LCOrbitalSetOptTrialFunc*>(Phi->tf_component());
-//
-//  // check that the pointer conversion was successful
-//  if ( !ptr ) {
-//    std::stringstream message;
-//    message << "dynamic_cast failure for trial function component pointer in " << calling_func;
-//    throw std::runtime_error(message.str());
-//  }
-//
-//  // return the pointer
-//  return ptr;
-//
-//}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Set the optimizable rotations to be those between the two specified orbital sets.
 ///
 /// \param[in]      istart         1st index in the 1st orbital set
