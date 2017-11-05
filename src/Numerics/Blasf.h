@@ -34,7 +34,8 @@
 #define ssymv ssymv_
 #define csymv csymv_
 #define zsymv zsymv_
-#define dscal  dscal_
+#define dscal dscal_
+#define sscal sscal_
 #define dcopy dcopy_
 #define zcopy zcopy_
 #define dsyrk  dsyrk_
@@ -125,6 +126,7 @@ extern "C" {
 
 
   double dscal(const int& n, const double&, double* x, const int&);
+  double sscal(const int& n, const float&, float* x, const int&);
 
   void  dsymv(const char& uplo, const int& n, const double& alpha,
               const double& a, const int& lda, const double* x, const int& incx,

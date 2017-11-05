@@ -80,6 +80,12 @@ struct BLAS
   }
 
   inline static
+  void axpy(int n, float x, const float* a, float* b)
+  {
+    saxpy(n, x, a, INCX, b, INCY);
+  }
+
+  inline static
   void axpy(int n, const std::complex<float> x, const std::complex<float>* a, int incx,
             std::complex<float>* b, int incy)
   {
@@ -115,6 +121,12 @@ struct BLAS
   void scal(int n, double alpha, double* x)
   {
     dscal(n,alpha,x,INCX);
+  }
+
+  inline static
+  void scal(int n, float alpha, float* x)
+  {
+    sscal(n,alpha,x,INCX);
   }
 
   //inline static

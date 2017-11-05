@@ -24,9 +24,6 @@
 #include "OhmmsData/AttributeSet.h"
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantSoA.h"
-#include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
-#include "QMCWaveFunctions/LocalizedBasisSet.h"
-#include "QMCWaveFunctions/Fermion/SlaterDetOpt.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
 //this is only for Bryan
@@ -35,10 +32,14 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminantTruncation.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h"
 #endif
-//Cannot use complex and released node
 #if !defined(QMC_COMPLEX)
+//Cannot use complex with released node
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
+//Cannot use complex with SlaterDetOpt
+#include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
+#include "QMCWaveFunctions/LocalizedBasisSet.h"
+#include "QMCWaveFunctions/Fermion/SlaterDetOpt.h"
 #endif
 #ifdef QMC_CUDA
 #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
@@ -579,6 +580,10 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
     }
     else if (slater_det_opt)
     {
+#ifdef QMC_COMPLEX
+      app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
+      abort();
+#else
       std::vector<RealType> params;
       bool params_supplied = false;
 
@@ -621,6 +626,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
 
       adet = retval;
       adet->Optimizable = true;
+#endif
     }
     else if (psi->Optimizable)
       adet = new DiracDeterminantOpt(targetPtcl, psi, firstIndex);

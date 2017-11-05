@@ -185,7 +185,6 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/MultiSlaterDeterminant.cpp
   Fermion/MultiSlaterDeterminantFast.cpp
   Fermion/MultiDiracDeterminantBase.cpp
-  Fermion/SlaterDetOpt.cpp
   Fermion/BackflowBuilder.cpp 
   Fermion/DiracDeterminantWithBackflow.cpp
   Fermion/SlaterDetWithBackflow.cpp
@@ -199,6 +198,7 @@ IF(NOT QMC_COMPLEX)
   SET(FERMION_SRCS ${FERMION_SRCS}
     Fermion/RNDiracDeterminantBase.cpp
     Fermion/RNDiracDeterminantBaseAlternate.cpp
+    Fermion/SlaterDetOpt.cpp
     )
 ENDIF(NOT QMC_COMPLEX)
 
