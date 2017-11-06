@@ -256,6 +256,7 @@ namespace qmcplusplus
       }
       Walker_t& centerbead = W.reptile->getCenter();
       W.loadWalker(centerbead,true);
+      W.update();
       H.auxHevaluateCollectables(W,centerbead);
     // Traces->buffer_sample();
   }
@@ -392,9 +393,7 @@ namespace qmcplusplus
 	prophead.Properties (R2PROPOSED) = rr_proposed;
 	H.auxHevaluateProperties (W, prophead);
 	H.saveProperty (prophead.getPropertyBase ());
-        
 	prophead.Age = 0;
-
 	overwriteWalker = prophead;
 	++nAccept;
       }
@@ -411,7 +410,7 @@ namespace qmcplusplus
       //Collectables should be evaluated on center bead.  Here we go.
       Walker_t& centerbead = W.reptile->getCenter();
       W.loadWalker(centerbead,true);
-      W.update(false);  //Called to recompute S(k) and distance tables.  Recompute S(k)?  False.
+      W.update();  //Called to recompute S(k) and distance tables.  Recompute S(k)?  False.
       H.auxHevaluateCollectables(W,centerbead);
   }
 
