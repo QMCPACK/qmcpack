@@ -233,15 +233,6 @@ public:
                         ParticleSet::ParticleGradient_t& fixedG,
                         ParticleSet::ParticleLaplacian_t& fixedL);
 
-  RealType evaluateDeltaLog(ParticleSet& P,BufferType& buf);
-
-  void evaluateDeltaLog(ParticleSet& P,
-                        RealType& logpsi_fixed,
-                        RealType& logpsi_opt,
-                        ParticleSet::ParticleGradient_t& fixedG,
-                        ParticleSet::ParticleLaplacian_t& fixedL,
-                        BufferType& buf);
-
   /** functions to handle particle-by-particle update */
   RealType ratio(ParticleSet& P, int iat);
   /** evaluate ratios for EE */
@@ -281,8 +272,6 @@ public:
   void acceptMove(ParticleSet& P, int iat);
 
   RealType registerData(ParticleSet& P, BufferType& buf);
-  RealType registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
-  void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets);
   RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, BufferType& buf);
 
@@ -293,12 +282,6 @@ public:
                            std::vector<RealType>& dlogpsi,
                            std::vector<RealType>& dhpsioverpsi,
                            bool project=false);
-
-  void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi,
-                           BufferType& buf);
 
   /** evalaute the values of the wavefunction, gradient and laplacian  for all the walkers */
   //void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);

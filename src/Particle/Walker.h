@@ -142,10 +142,6 @@ struct Walker
   ///buffer for the data for particle-by-particle update
   Buffer_t DataSet;
 
-  ///buffer for the constant data in the evaluation of
-  //analytical derivatives during linear optimization, e.g. MultiDeterminants
-  Buffer_t DataSetForDerivatives;
-
   /// Data for GPU-vectorized versions
 #ifdef QMC_CUDA
   static int cuda_DataSize;
