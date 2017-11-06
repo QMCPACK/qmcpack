@@ -410,7 +410,7 @@ namespace qmcplusplus
       //Collectables should be evaluated on center bead.  Here we go.
       Walker_t& centerbead = W.reptile->getCenter();
       W.loadWalker(centerbead,true);
-      W.update();  //Called to recompute S(k) and distance tables.  Recompute S(k)?  False.
+      W.update();  //Called to recompute S(k) and distance tables.  
       H.auxHevaluateCollectables(W,centerbead);
   }
 
