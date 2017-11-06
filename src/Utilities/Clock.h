@@ -28,7 +28,7 @@ namespace qmcplusplus
 #if defined(USE_FAKE_CLOCK)
 extern double fake_cpu_clock_value;
 extern double fake_cpu_clock_increment;
-double fake_cpu_clock()
+inline double fake_cpu_clock()
 {
     fake_cpu_clock_value += fake_cpu_clock_increment;
     return fake_cpu_clock_value;

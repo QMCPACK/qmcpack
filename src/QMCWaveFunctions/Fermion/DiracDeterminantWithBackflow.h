@@ -119,18 +119,6 @@ public:
   {
     return 1.0;
   }
-  /** return the ratio
-   * @param P current configuration
-   * @param iat particle whose position is moved
-   * @param dG differential Gradients
-   * @param dL differential Laplacians
-   *
-   * Data member *_temp contain the data assuming that the move is accepted
-   * and are used to evaluate differential Gradients and Laplacians.
-   */
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL);
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   GradType evalGrad(ParticleSet& P, int iat);
@@ -147,10 +135,6 @@ public:
    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
 
-  ValueType logRatio(ParticleSet& P, int iat,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL);
-
   /** move was accepted, update the real container
    */
   void acceptMove(ParticleSet& P, int iat);
@@ -158,17 +142,6 @@ public:
   /** move was rejected. copy the real container to the temporary to move on
    */
   void restore(int iat);
-
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat);
-
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
-
-  RealType evaluateLogForDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  RealType evaluateLogFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
   RealType
   evaluateLog(ParticleSet& P,
@@ -227,7 +200,6 @@ public:
   ValueType *LastAddressOfGGG;
   ValueType *FirstAddressOfFm;
   ValueType *LastAddressOfFm;
-  bool usingDerivBuffer;
 
   void testDerivFjj(ParticleSet& P, int pa);
   void testGGG(ParticleSet& P);

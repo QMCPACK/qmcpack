@@ -107,33 +107,13 @@ public:
               , ParticleSet::ParticleGradient_t& G
               , ParticleSet::ParticleLaplacian_t& L);
 
-  RealType
-  evaluateLog(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& G,
-              ParticleSet::ParticleLaplacian_t& L,
-              PooledData<RealType>& buf,
-              bool fillBuffer );
-
   GradType evalGrad(ParticleSet& P, int iat);
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  ValueType ratio(ParticleSet& P, int iat
-                  , ParticleSet::ParticleGradient_t& dG,ParticleSet::ParticleLaplacian_t& dL);
-
   ValueType ratio(ParticleSet& P, int iat);
   void acceptMove(ParticleSet& P, int iat);
   void restore(int iat);
 
-  void update(ParticleSet& P
-              , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL
-              , int iat);
-  RealType evaluateLog(ParticleSet& P,BufferType& buf);
   RealType registerData(ParticleSet& P, BufferType& buf);
-  void registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
-  virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets)
-  {
-    Dets[0]->memoryUsage_DataForDerivatives(P,orbs_only,orbs,invs,dets);
-    Dets[1]->memoryUsage_DataForDerivatives(P,orbs_only,orbs,invs,dets);
-  }
   RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, BufferType& buf);
 
@@ -142,12 +122,6 @@ public:
                            const opt_variables_type& optvars,
                            std::vector<RealType>& dlogpsi,
                            std::vector<RealType>& dhpsioverpsi);
-
-//      void evaluateDerivatives(ParticleSet& P,
-//                                       const opt_variables_type& optvars,
-//                                       std::vector<RealType>& dlogpsi,
-//                                       std::vector<RealType>& dhpsioverpsi,
-//                                       PooledData<RealType>& buf);
 
   void resize(int,int);
 

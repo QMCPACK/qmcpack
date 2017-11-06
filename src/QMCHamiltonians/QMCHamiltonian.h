@@ -272,18 +272,6 @@ public:
    */
   RealType evaluateVariableEnergy(ParticleSet& P, bool free_nlpp);
 
-  /*@{*/
-  /** @brief functions to handle particle-by-particle move
-  */
-  Return_t registerData(ParticleSet& P, BufferType& buffer);
-  Return_t updateBuffer(ParticleSet& P, BufferType& buf);
-  void copyFromBuffer(ParticleSet& P, BufferType& buf);
-  Return_t evaluate(ParticleSet& P, BufferType& buf);
-  Return_t evaluatePbyP(ParticleSet& P, int active);
-  void acceptMove(int active);
-  void rejectMove(int active);
-  /*@}*/
-
   /** return an average value of the LocalEnergy
    *
    * Introduced to get a collective value

@@ -225,9 +225,6 @@ public:
   /** recompute the value of the orbitals which require critical accuracy */
   void recompute(ParticleSet& P);
 
-  /** done PbyP update, prepare for the measurements */
-  void updateAfterSweep(ParticleSet& P);
-
   RealType evaluateDeltaLog(ParticleSet& P, bool recompute=false);
 
   void evaluateDeltaLog(ParticleSet& P,
@@ -235,15 +232,6 @@ public:
                         RealType& logpsi_opt,
                         ParticleSet::ParticleGradient_t& fixedG,
                         ParticleSet::ParticleLaplacian_t& fixedL);
-
-  RealType evaluateDeltaLog(ParticleSet& P,BufferType& buf);
-
-  void evaluateDeltaLog(ParticleSet& P,
-                        RealType& logpsi_fixed,
-                        RealType& logpsi_opt,
-                        ParticleSet::ParticleGradient_t& fixedG,
-                        ParticleSet::ParticleLaplacian_t& fixedL,
-                        BufferType& buf);
 
   /** functions to handle particle-by-particle update */
   RealType ratio(ParticleSet& P, int iat);
@@ -259,14 +247,6 @@ public:
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(VirtualParticleSet& P, const opt_variables_type& optvars,
       std::vector<RealType>& ratios, Matrix<RealType>& dratio);
-
-  void update(ParticleSet& P, int iat);
-
-#if 0
-  RealType ratio(ParticleSet& P, int iat,
-                 ParticleSet::ParticleGradient_t& dG,
-                 ParticleSet::ParticleLaplacian_t& dL);
-#endif
 
   void printGL(ParticleSet::ParticleGradient_t& G,
                ParticleSet::ParticleLaplacian_t& L, std::string tag = "GL");
@@ -292,17 +272,8 @@ public:
   void acceptMove(ParticleSet& P, int iat);
 
   RealType registerData(ParticleSet& P, BufferType& buf);
-  RealType registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
-  void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets);
   RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, BufferType& buf);
-  RealType evaluateLog(ParticleSet& P, BufferType& buf);
-
-  //new function to streamline tmove computation
-  RealType acceptTMove(ParticleSet& P, int iat, PooledData<RealType>& buf);
-
-  void dumpToBuffer(ParticleSet& P, BufferType& buf);
-  void dumpFromBuffer(ParticleSet& P, BufferType& buf);
 
   RealType KECorrection() const;
 
@@ -311,12 +282,6 @@ public:
                            std::vector<RealType>& dlogpsi,
                            std::vector<RealType>& dhpsioverpsi,
                            bool project=false);
-
-  void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi,
-                           BufferType& buf);
 
   /** evalaute the values of the wavefunction, gradient and laplacian  for all the walkers */
   //void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);

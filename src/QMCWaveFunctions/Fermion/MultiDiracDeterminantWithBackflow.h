@@ -145,37 +145,9 @@ public:
 
   RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
 
-  void registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf, int storageType=0);
-
-  virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only, long& orbs, long& invs, long& dets)
-  {
-    orbs_only += NumPtcls*NumOrbitals;
-    orbs += NumPtcls*NumOrbitals*5;
-    invs += NumPtcls*NumPtcls;
-    dets += NumDets*(1 + 4*NumPtcls);
-  }
-
-  void copyToDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  void copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
   RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
 
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  /** dump the inverse to the buffer
-   */
-  void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    APP_ABORT("  Need to implement MSDFast::dumpToBuffer. \n");
-  }
-
-  /** copy the inverse from the buffer
-   */
-  void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    APP_ABORT("  Need to implement MSDFast::dumpFromBuffer. \n");
-  }
 
   /** move was accepted, update the real container
    */
@@ -184,13 +156,6 @@ public:
   /** move was rejected. copy the real container to the temporary to move on
    */
   void restore(int iat);
-
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat);
-
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
   OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
@@ -211,14 +176,6 @@ public:
   }
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
-  {
-    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
-    return 0.0;
-  }
-
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
   {
     APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
     return 0.0;

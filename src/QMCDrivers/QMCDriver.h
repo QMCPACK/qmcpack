@@ -26,6 +26,7 @@
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Utilities/PooledData.h"
+#include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
@@ -398,6 +399,8 @@ protected:
   void adiosCheckpointFinal(int block, bool dumpwalkers);
   std::string getRotationName( std::string RootName);
   std::string getLastRotationName( std::string RootName);
+
+  NewTimer *checkpointTimer;
 
 };
 /**@}*/

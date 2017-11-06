@@ -228,7 +228,7 @@ public:
     {
       APP_ABORT("JeeIOrbitalSoA::addFunc  Jastrow function pointer is NULL");
     }
-    std::strstream aname;
+    std::stringstream aname;
     aname << iSpecies << "_" << eSpecies1 << "_" << eSpecies2;
     J3Unique[aname.str()]=j;
     initUnique();
@@ -415,17 +415,6 @@ public:
     DiffVal=Uat[iat]-cur_Uat;
     return std::exp(DiffVal);
   }
-
-  //to be removed from QMCPACK: these are not used anymore with PbyPFast
-  inline void update(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL,
-                     int iat) {}
-
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
-  {return ValueType(1);}
 
   GradType evalGrad(ParticleSet& P, int iat)
   {
@@ -665,14 +654,6 @@ public:
     buf.get(FirstAddressOfdU,LastAddressOfdU);
     buf.get(d2Uat.begin(), d2Uat.end());
     build_compact_list(P);
-  }
-
-  inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    buf.put(Uat.begin(), Uat.end());
-    buf.put(FirstAddressOfdU,LastAddressOfdU);
-    buf.put(d2Uat.begin(), d2Uat.end());
-    return LogValue;
   }
 
   void evaluateGL(ParticleSet& P,

@@ -1,0 +1,88 @@
+<?xml version="1.0"?>
+<simulation>
+   <project id="bcc16" series="0"/>
+   <qmcsystem>
+      <simulationcell>
+         <parameter name="lattice" units="bohr">
+                  5.32117440        0.00000000        0.00000000
+                  0.00000000        5.32117440        0.00000000
+                  0.00000000        0.00000000        5.32117440
+         </parameter>
+         <parameter name="bconds">
+            p p p
+         </parameter>
+         <parameter name="LR_dim_cutoff"       >    15                 </parameter>
+      </simulationcell>
+      <particleset name="e" random="yes">
+         <group name="u" size="8" mass="1.0">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+         <group name="d" size="8" mass="1.0">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+      </particleset>
+      <particleset name="ion0">
+         <group name="H" size="16" mass="1837.36221934">
+            <parameter name="charge"              >    1                     </parameter>
+            <parameter name="valence"             >    1                     </parameter>
+            <parameter name="atomicnumber"        >    1                     </parameter>
+            <parameter name="mass"                >    1837.36221934            </parameter>
+            <attrib name="position" datatype="posArray" condition="0">
+                     0.00000000        0.00000000        0.00000000
+                     1.33029360        1.33029360        1.33029360
+                     2.66058720        0.00000000        0.00000000
+                     3.99088080        1.33029360        1.33029360
+                     0.00000000        2.66058720        0.00000000
+                     1.33029360        3.99088080        1.33029360
+                     2.66058720        2.66058720        0.00000000
+                     3.99088080        3.99088080        1.33029360
+                     0.00000000        0.00000000        2.66058720
+                     1.33029360        1.33029360        3.99088080
+                     2.66058720        0.00000000        2.66058720
+                     3.99088080        1.33029360        3.99088080
+                     0.00000000        2.66058720        2.66058720
+                     1.33029360        3.99088080        3.99088080
+                     2.66058720        2.66058720        2.66058720
+                     3.99088080        3.99088080        3.99088080
+            </attrib>
+         </group>
+      </particleset>
+      <wavefunction name="psi0" target="e">
+         <sposet_builder type="bspline" href="gamma.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" version="0.10" meshfactor="1.0" use_old_spline="yes">
+            <sposet type="bspline" name="spo_ud" size="8" spindataset="0"/>
+         </sposet_builder>
+         <determinantset>
+            <backflow>
+              <transformation name="eHB" type="e-I" function="Bspline" source="ion0">
+                 <correlation elementType="H" cusp="0.0" size="8" rcut="1.0">
+                  <coefficients id="eHB" type="Array" optimize="yes"> -0.1607770658 -0.01312455519 -0.01096274521 -0.02064241065 -0.0163772626 -0.01206014211 -0.01003052047 -0.004077335794</coefficients>
+                 </correlation>
+              </transformation>
+              <transformation name="eeB" type="e-e" function="Bspline">
+                 <correlation speciesA="u" speciesB="u" cusp="0.0" size="8" rcut="1.0">
+                  <coefficients id="uuB" type="Array" optimize="yes"> 0.09613117178 0.0693866824 0.03958692855 0.0257978026 0.01445303622 0.007976855226 0.003592602563 0.001525251225</coefficients>
+                 </correlation>
+                 <correlation speciesA="u" speciesB="d" cusp="0.0" size="8" rcut="1.0">
+                  <coefficients id="udB" type="Array" optimize="yes"> 0.1754712467 0.1132199636 0.06953867095 0.04139840285 0.02288496026 0.01144408177 0.005019197667 0.002024292924</coefficients>
+                 </correlation>
+              </transformation>
+            </backflow>
+            <slaterdeterminant>
+               <determinant id="updet" group="u" sposet="spo_ud" size="8"/>
+               <determinant id="downdet" group="d" sposet="spo_ud" size="8"/>
+            </slaterdeterminant>
+         </determinantset>
+      </wavefunction>
+      <hamiltonian name="h0" type="generic" target="e">
+         <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
+         <pairpot type="coulomb" name="ElecIon" source="ion0" target="e"/>
+      </hamiltonian>
+   </qmcsystem>
+   <qmc method="wftest">
+     <ratio> deriv </ratio>
+     <sd> no </sd>
+   </qmc>
+</simulation>

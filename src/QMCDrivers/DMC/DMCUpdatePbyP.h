@@ -18,6 +18,7 @@
 #ifndef QMCPLUSPLUS_DMC_UPDATE_PARTICLEBYPARTCLE_H
 #define QMCPLUSPLUS_DMC_UPDATE_PARTICLEBYPARTCLE_H
 #include "QMCDrivers/QMCUpdateBase.h"
+#include "Utilities/NewTimer.h"
 namespace qmcplusplus
 {
 
@@ -35,8 +36,21 @@ public:
   void advanceWalker(Walker_t& thisWalker, bool recompute);
 
 private:
-  std::vector<NewTimer*> myTimers;
+  TimerList_t myTimers;
 };
+
+
+enum DMCTimers
+{
+  DMC_buffer,
+  DMC_movePbyP,
+  DMC_hamiltonian,
+  DMC_collectables,
+  DMC_tmoves
+};
+
+extern TimerNameList_t<DMCTimers> DMCTimerNames;
+
 
 }
 

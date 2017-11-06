@@ -475,6 +475,7 @@ bool QMCMain::validateXML()
   xmlNodePtr rptr = myRandomControl.initialize(m_context);
   //preserve the input order
   xmlNodePtr cur=XmlDocStack.top()->getRoot()->children;
+  lastInputNode = NULL;
   while(cur != NULL)
   {
     std::string cname((const char*)cur->name);
@@ -567,7 +568,7 @@ bool QMCMain::processPWH(xmlNodePtr cur)
   //return true and will be ignored
   if(cur == NULL)
     return true;
-  bool inputnode=true;
+  bool inputnode=false;
   //save the root to grep @tilematrix
   xmlNodePtr cur_root=cur;
   cur=cur->children;
@@ -576,25 +577,28 @@ bool QMCMain::processPWH(xmlNodePtr cur)
     std::string cname((const char*)cur->name);
     if(cname == "simulationcell")
     {
+      inputnode=true;
       ptclPool->putLattice(cur);
     }
     else if(cname == "particleset")
     {
+      inputnode=true;
       ptclPool->putTileMatrix(cur_root);
       ptclPool->put(cur);
     }
     else if(cname == "wavefunction")
     {
+      inputnode=true;
       psiPool->put(cur);
     }
     else if(cname == "hamiltonian")
     {
+      inputnode=true;
       hamPool->put(cur);
     }
     else
       //add to m_qmcaction
     {
-      inputnode=false;
       m_qmcaction.push_back(std::pair<xmlNodePtr,bool>(xmlCopyNode(cur,1),false));
     }
     cur=cur->next;
@@ -724,10 +728,4 @@ void QMCMain::postprocess(xmlNodePtr cur,int qacur)
 #endif
 }
 
-
 }
-/***********************************************************************
- * $RCSfilMCMain.cpp,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
