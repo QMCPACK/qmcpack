@@ -161,41 +161,6 @@ void SlaterDet::recompute(ParticleSet& P)
     Dets[i]->recompute(P);
 }
 
-void SlaterDet::registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType)
-{
-  for (int i = 0; i < Dets.size(); ++i)
-    Dets[i]->registerDataForDerivatives(P,buf,storageType);
-}
-
-SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,
-    ParticleSet::ParticleGradient_t& G,
-    ParticleSet::ParticleLaplacian_t& L,
-    PooledData<RealType>& buf,
-    bool fillBuffer )
-{
-  LogValue = 0.0;
-  PhaseValue = 0.0;
-  if(fillBuffer)
-  {
-    for (int i = 0; i < Dets.size(); ++i)
-    {
-      LogValue +=Dets[i]->evaluateLogForDerivativeBuffer(P, buf);
-      Dets[i]->copyToDerivativeBuffer(P, buf);
-      PhaseValue += Dets[i]->PhaseValue;
-    }
-  }
-  else
-  {
-    for (int i = 0; i < Dets.size(); ++i)
-    {
-      Dets[i]->copyFromDerivativeBuffer(P,buf);
-      LogValue += Dets[i]->evaluateLogFromDerivativeBuffer(P, buf);
-      PhaseValue += Dets[i]->PhaseValue;
-    }
-  }
-  return LogValue;
-}
-
 void SlaterDet::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad_psi)
 {
 	grad_grad_psi.resize(P.getTotalNum());
@@ -268,49 +233,6 @@ void SlaterDet::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
     Dets[i]->copyFromBuffer(P, buf);
   DEBUG_PSIBUFFER(" SlaterDet::copyFromBuffer ",buf.current());
 }
-
-/** reimplements the virtual function
- *
- * The DiractDeterminants of SlaterDet need to save the inverse
- * of the determinant matrix to evaluate ratio
- */
-void SlaterDet::dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf)
-{
-  for (int i = 0; i < Dets.size(); i++)
-    Dets[i]->dumpToBuffer(P, buf);
-}
-
-/** reimplements the virtual function
- *
- * Matching function to dumpToBuffer.
- */
-void SlaterDet::dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
-{
-  for (int i = 0; i < Dets.size(); i++)
-    Dets[i]->dumpFromBuffer(P, buf);
-}
-
-SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,
-    PooledData<RealType>& buf)
-{
-  DEBUG_PSIBUFFER(" SlaterDet::evaluateLog ",buf.current());
-  LogValue = 0.0;
-  PhaseValue = 0.0;
-  for (int i = 0; i < Dets.size(); i++)
-  {
-    LogValue += Dets[i]->evaluateLog(P, buf);
-    PhaseValue += Dets[i]->PhaseValue;
-  }
-  DEBUG_PSIBUFFER(" SlaterDet::evaluateLog ",buf.current());
-  return LogValue;
-}
-//SlaterDet::ValueType
-//  SlaterDet::evaluate(ParticleSet& P, PooledData<RealType>& buf)
-//  {
-//    ValueType r=1.0;
-//    for(int i=0; i<Dets.size(); i++) 	r *= Dets[i]->evaluate(P,buf);
-//    return r;
-//  }
 
 OrbitalBasePtr SlaterDet::makeClone(ParticleSet& tqp) const
 {

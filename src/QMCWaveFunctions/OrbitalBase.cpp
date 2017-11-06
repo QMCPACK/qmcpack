@@ -112,16 +112,6 @@ OrbitalBase::RealType OrbitalBase::KECorrection()
   return 0;
 }
 
-/** done PbyP update, prepare for the measurements */
-void OrbitalBase::updateAfterSweep(ParticleSet& P,
-    ParticleSet::ParticleGradient_t& G,
-    ParticleSet::ParticleLaplacian_t& L)
-{
-  std::ostringstream o;
-  o << "OrbitalBase::updateAfterSweep is not implemented by " << OrbitalName;
-  APP_ABORT(o.str());
-}
-
 void OrbitalBase::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   std::ostringstream o;

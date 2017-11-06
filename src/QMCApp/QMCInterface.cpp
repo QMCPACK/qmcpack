@@ -469,8 +469,3 @@ bool QMCInterface::setMCWalkers(xmlXPathContextPtr context_)
   return true;
 }
 }
-/***********************************************************************
- * $RCSfilMCInterface.cpp,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

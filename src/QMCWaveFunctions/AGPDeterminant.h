@@ -65,51 +65,15 @@ public:
 
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
-  /** dump the inverse to the buffer
-   */
-  inline void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    buf.add(psiM.begin(),psiM.end());
-  }
-
-  /** copy the inverse from the buffer
-   */
-  inline void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    buf.get(psiM.begin(),psiM.end());
-  }
-
   /** return the ratio only for the  iat-th partcle move
    * @param P current configuration
    * @param iat the particle thas is being moved
    */
   ValueType ratio(ParticleSet& P, int iat);
 
-  /** return the ratio
-   * @param P current configuration
-   * @param iat particle whose position is moved
-   * @param dG differential Gradients
-   * @param dL differential Laplacians
-   *
-   * Data member *_temp contain the data assuming that the move is accepted
-   * and are used to evaluate differential Gradients and Laplacians.
-   */
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL);
-
   void ratioUp(ParticleSet& P, int iat);
 
   void ratioDown(ParticleSet& P, int iat);
-
-  ValueType logRatio(ParticleSet& P, int iat,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL)
-  {
-    ValueType r=ratio(P,iat,dG,dL);
-    return evaluateLogAndPhase(r,PhaseValue);
-  }
-
 
   /** move was accepted, update the real container
    */
@@ -118,16 +82,6 @@ public:
   /** move was rejected. copy the real container to the temporary to move on
    */
   void restore(int iat);
-
-
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat);
-
-
-  ValueType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
-
 
   void resizeByWalkers(int nwalkers);
 

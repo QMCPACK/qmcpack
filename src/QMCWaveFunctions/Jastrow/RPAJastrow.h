@@ -83,10 +83,6 @@ struct RPAJastrow: public OrbitalBase
   RealType evaluateLog(ParticleSet& P,
                        ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL);
-
   ValueType ratio(ParticleSet& P, int iat);
   GradType evalGrad(ParticleSet& P, int iat);
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
@@ -95,18 +91,11 @@ struct RPAJastrow: public OrbitalBase
 
   void restore(int iat);
 
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat);
-
   RealType registerData(ParticleSet& P, BufferType& buf);
 
   RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
 
   void copyFromBuffer(ParticleSet& P, BufferType& buf);
-
-  RealType evaluateLog(ParticleSet& P,BufferType& buf);
 
   OrbitalBase* makeClone(ParticleSet& tqp) const;
 

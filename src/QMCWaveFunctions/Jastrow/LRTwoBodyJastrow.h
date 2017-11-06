@@ -170,33 +170,16 @@ public:
 
   ValueType ratio(ParticleSet& P, int iat);
 
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
-  {
-    return std::exp(logRatio(P,iat,dG,dL));
-  }
-
   ValueType ratioGrad(ParticleSet& P, int iat, GradType & g);
-
-  ValueType logRatio(ParticleSet& P, int iat,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL);
 
   GradType evalGrad(ParticleSet& P, int iat);
 
   void restore(int iat);
   void acceptMove(ParticleSet& P, int iat);
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat);
-
 
   RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
   RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
   ///process input file
   bool put(xmlNodePtr cur);

@@ -69,20 +69,6 @@ public:
     return 1.0;
   }
 
-  virtual void update(ParticleSet& P,
-                      ParticleSet::ParticleGradient_t& dG,
-                      ParticleSet::ParticleLaplacian_t& dL,
-                      int iat)
-  {
-    dG = 0.0;
-    dL = 0.0;
-  }
-
-  virtual RealType evaluateLog(ParticleSet& P,BufferType& buf)
-  {
-    return 0.0;
-  }
-
   virtual GradType evalGrad(ParticleSet &P, int iat)
   {
     return GradType(0.0);

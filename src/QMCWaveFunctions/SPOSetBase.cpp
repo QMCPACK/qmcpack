@@ -394,6 +394,7 @@ void SPOSetBase::evaluate (std::vector<Walker_t*> &walkers, int iat,
                            gpu::device_vector<CudaValueType*> &phi)
 {
   app_error() << "Need specialization of vectorized evaluate in SPOSetBase.\n";
+  app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
   abort();
 }
 
@@ -401,6 +402,7 @@ void SPOSetBase::evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType>
                            gpu::device_vector<CudaValueType*> &phi)
 {
   app_error() << "Need specialization of vectorized evaluate in SPOSetBase.\n";
+  app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
   abort();
 }
 
@@ -411,6 +413,7 @@ void SPOSetBase::evaluate (std::vector<Walker_t*> &walkers,
                            int row_stride)
 {
   app_error() << "Need specialization of vectorized eval_grad_lapl in SPOSetBase.\n";
+  app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
   abort();
 }
 
@@ -418,6 +421,7 @@ void SPOSetBase::evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaRea
 {
   app_error() << "Need specialization of vectorized evaluate "
               << "in SPOSetBase.\n";
+  app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
   abort();
 }
 
@@ -425,6 +429,7 @@ void SPOSetBase::evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaCom
 {
   app_error() << "Need specialization of vectorized evaluate "
               << "in SPOSetBase.\n";
+  app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
   abort();
 }
 #endif

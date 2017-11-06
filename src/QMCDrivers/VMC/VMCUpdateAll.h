@@ -34,44 +34,12 @@ public:
   ~VMCUpdateAll();
 
   void advanceWalker(Walker_t& thisWalker, bool recompute);
-//       void advanceCSWalkers(std::vector<TrialWaveFunction*>& pclone, std::vector<MCWalkerConfiguration*>& wclone, std::vector<QMCHamiltonian*>& hclone, std::vector<RandomGenerator_t*>& rng, std::vector<RealType>& c_i);
-//       void estimateNormWalkers(std::vector<TrialWaveFunction*>& pclone
-//     , std::vector<MCWalkerConfiguration*>& wclone
-//     , std::vector<QMCHamiltonian*>& hclone
-//     , std::vector<RandomGenerator_t*>& rng
-//     , std::vector<RealType>& ratio_i_0);
 
 private:
   /// Copy Constructor (disabled)
   VMCUpdateAll(const VMCUpdateAll& a): QMCUpdateBase(a) { }
   /// Copy operator (disabled).
   VMCUpdateAll& operator=(const VMCUpdateAll&)
-  {
-    return *this;
-  }
-};
-
-/** @ingroup QMCDrivers  ParticleByParticle
- *@brief Implements the VMC algorithm using particle-by-particle move with the drift equation.
- */
-class VMCUpdateAllWithDrift: public QMCUpdateBase
-{
-public:
-  /// Constructor.
-  VMCUpdateAllWithDrift(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                        QMCHamiltonian& h, RandomGenerator_t& rg);
-
-  ~VMCUpdateAllWithDrift();
-
-  void advanceWalker(Walker_t& thisWalker, bool recompute);
-
-  RealType advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios);
-
-private:
-  /// Copy Constructor (disabled)
-  VMCUpdateAllWithDrift(const VMCUpdateAllWithDrift& a): QMCUpdateBase(a) { }
-  /// Copy operator (disabled).
-  VMCUpdateAllWithDrift& operator=(const VMCUpdateAllWithDrift&)
   {
     return *this;
   }

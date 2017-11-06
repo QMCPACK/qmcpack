@@ -89,28 +89,7 @@ public:
   virtual void recompute(ParticleSet& P);
 
   virtual
-  RealType evaluateLog(ParticleSet& P,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L,
-                       PooledData<RealType>& buf,
-                       bool fillBuffer);
-                       
-  virtual
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
-
-  void registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
-
-  virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets)
-  {
-    for (int i = 0; i < Dets.size(); ++i)
-      Dets[i]->memoryUsage_DataForDerivatives(P,orbs_only,orbs,invs,dets);
-  }
-
-  virtual void  copyFromDerivativeBuffer(ParticleSet& P, BufferType& buf)
-  {
-    for (int i = 0; i < Dets.size(); ++i)
-      Dets[i]->copyFromDerivativeBuffer(P,buf);
-  }
 
   ///return the total number of Dirac determinants
   inline int size() const
@@ -136,23 +115,6 @@ public:
 
   virtual
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual
-  void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual
-  void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual
-  inline ValueType ratio(ParticleSet& P, int iat,
-                         ParticleSet::ParticleGradient_t& dG,
-                         ParticleSet::ParticleLaplacian_t& dL)
-  {
-    return Dets[DetID[iat]]->ratio(P,iat,dG,dL);
-  }
 
   virtual
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
@@ -205,15 +167,6 @@ public:
   }
 
   virtual
-  inline ValueType logRatio(ParticleSet& P, int iat,
-                            ParticleSet::ParticleGradient_t& dG,
-                            ParticleSet::ParticleLaplacian_t& dL)
-  {
-    ValueType r = Dets[DetID[iat]]->ratio(P,iat,dG,dL);
-    return evaluateLogAndPhase(r,PhaseValue);
-  }
-
-  virtual
   inline void restore(int iat)
   {
     return Dets[DetID[iat]]->restore(iat);
@@ -258,15 +211,6 @@ public:
   {
     for(int i=0; i<Dets.size(); ++i)
       Dets[i]->alternateGrad(G);
-  }
-
-  virtual
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat)
-  {
-    return Dets[DetID[iat]]->update(P,dG,dL,iat);
   }
 
   virtual

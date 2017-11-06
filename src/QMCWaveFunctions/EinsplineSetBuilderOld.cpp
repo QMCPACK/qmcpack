@@ -275,7 +275,7 @@ EinsplineSetBuilder::MuffinTinPath(int ti, int bi, int tin)
   return groupPath.str();
 }
 
-#ifdef QMC_CUDA
+#if 0
 void
 EinsplineSetBuilder::ReadBands
 (int spin, EinsplineSetExtended<std::complex<double> >* orbitalSet)

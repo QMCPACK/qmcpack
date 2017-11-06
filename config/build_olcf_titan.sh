@@ -31,8 +31,10 @@ module load cray-hdf5-parallel
 module load fftw
 module load boost
 module load subversion
-module load cmake/2.8.11.2
+module load cmake3/3.6.1
 
+# always dynamic linking
+export CRAYPE_LINK_TYPE=dynamic
 
 # Set environment variables
 export FFTW_HOME=$FFTW_DIR/..
