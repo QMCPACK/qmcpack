@@ -9,8 +9,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_SLATERTYPEORBITAL_BUILDER_H
 #define QMCPLUSPLUS_SLATERTYPEORBITAL_BUILDER_H
 

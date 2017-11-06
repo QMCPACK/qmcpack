@@ -13,8 +13,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_MOBASISBUILDER_H
 #define QMCPLUSPLUS_MOBASISBUILDER_H
 
@@ -22,8 +22,6 @@
 #include "QMCWaveFunctions/MolecularOrbitals/AtomicBasisBuilder.h"
 #include "QMCWaveFunctions/LCOrbitalSet.h"
 #include "Utilities/ProgressReportEngine.h"
-#include "Numerics/HDFSTLAttrib.h"
-#include "OhmmsData/HDFStringAttrib.h"
 #include "OhmmsData/AttributeSet.h"
 #include "io/hdf_archive.h"
 #include "Message/CommOperators.h"
@@ -46,8 +44,8 @@ public:
 
   typedef typename RFB::CenteredOrbitalType COT;
   typedef LocalizedBasisSet<COT>   ThisBasisSetType;
-  
-  
+
+
   /** constructor
    * \param els reference to the electrons
    * \param ions reference to the ions
@@ -71,7 +69,7 @@ public:
 
     //Reading from XML
     if(h5Ref==false)
-    {  
+    {
       ReportEngine PRE(ClassName,"put(xmlNodePtr)");
       PRE.echo(cur);
       //create the BasisSetType
@@ -85,7 +83,7 @@ public:
           cur1=cur1->next;
         }
       }
- 
+
       //create the basis set
       //go thru the tree
       cur = cur->xmlChildrenNode;
@@ -123,7 +121,7 @@ public:
         cur = cur->next;
       }
     }
-    //Reading from H5 
+    //Reading from H5
     else
     {
       ReportEngine PRE(ClassName,"put(xmlNodePtr)");
@@ -131,7 +129,7 @@ public:
       thisBasisSet = new ThisBasisSetType(sourcePtcl,targetPtcl);
 
       app_log()<<"Reading BasisSet from HDF5 file:"<<h5_path<<std::endl;
-      
+
       int Nb_Elements(0);
       std::string basiset_name;
 
@@ -140,11 +138,11 @@ public:
       if(myComm->rank()==0){
           if(!hin.open(h5_path.c_str(),H5F_ACC_RDONLY))
              PRE.error("Could not open H5 file",true);
-          
+
           if(!hin.push("basisset"))
              PRE.error("Could not open basisset group in H5; Probably Corrupt H5 file",true);
- 
-          hin.read(Nb_Elements,"NbElements"); 
+
+          hin.read(Nb_Elements,"NbElements");
       }
 
       myComm->bcast(Nb_Elements);
@@ -153,15 +151,15 @@ public:
           PRE.error("Missing elementType attribute of atomicBasisSet.",true);
 
 
-      
+
       for (int i=0;i<Nb_Elements;i++)
       {
           std::string elementType,dataset;
-          std::stringstream tempElem;                                              
+          std::stringstream tempElem;
           std::string ElemID0="atomicBasisSet",ElemType;
           tempElem<<ElemID0<<i;
           ElemType=tempElem.str();
-          
+
           if(myComm->rank()==0){
              if(!hin.push(ElemType.c_str()))
                  PRE.error("Could not open  group Containing atomic Basis set in H5; Probably Corrupt H5 file",true);
@@ -193,14 +191,14 @@ public:
           }
 
           if(myComm->rank()==0)
-             hin.pop(); 
+             hin.pop();
       }
 
-      
+
       if(myComm->rank()==0){
-        hin.pop(); 
-        hin.pop(); 
-        hin.close();     
+        hin.pop();
+        hin.pop();
+        hin.close();
       }
     }
     //resize the basis set

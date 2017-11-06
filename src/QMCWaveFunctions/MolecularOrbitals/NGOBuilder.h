@@ -11,8 +11,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_NUMERICALGRIDORBITALBUILDER_H
 #define QMCPLUSPLUS_NUMERICALGRIDORBITALBUILDER_H
 

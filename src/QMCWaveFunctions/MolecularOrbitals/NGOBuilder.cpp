@@ -10,8 +10,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #include <HDFVersion.h>
 #include "Utilities/OhmmsInfo.h"
 #include "Numerics/LibxmlNumericIO.h"
@@ -99,7 +99,7 @@ bool NGOBuilder::addGridH5(hdf_archive &hin)
   {
     APP_ABORT("NGOBuilder::addGrid SphericalOrbitals<ROT,GT>*, is not initialized");
   }
-  
+
   app_log() << "   Grid is created by the input paremters in h5" << std::endl;
 
 
@@ -307,7 +307,7 @@ NGOBuilder::addRadialOrbitalH5(hdf_archive & hin, const QuantumNumberType& nlms)
     app_log() << "\tSetting GridManager of " << lastRnl << " radial orbital to false" << std::endl;
     m_orbitals->Rnl[lastRnl]->setGridManager(false);
   }
-  
+
   return true;
 }
 

@@ -12,17 +12,14 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_ATOMICORBITALBUILDER_H
 #define QMCPLUSPLUS_ATOMICORBITALBUILDER_H
 
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "io/hdf_archive.h"
-#include "Numerics/HDFSTLAttrib.h"
-#include "OhmmsData/HDFStringAttrib.h"
-
 
 namespace qmcplusplus
 {
@@ -52,7 +49,7 @@ struct AtomicBasisBuilder: public BasisSetBuilder
   AtomicBasisBuilder(const std::string& eName);
 
   bool put(xmlNodePtr cur);
-  bool putH5(hdf_archive &hin); 
+  bool putH5(hdf_archive &hin);
 
   SPOSetBase* createSPOSetFromXML(xmlNodePtr cur)
   {
@@ -112,7 +109,7 @@ bool AtomicBasisBuilder<RFB>::put(xmlNodePtr cur)
   }
   else if(Morder == "pyscf")
   {
-    expandlm = MOD_NATURAL_EXPAND; 
+    expandlm = MOD_NATURAL_EXPAND;
     addsignforM=tmp_addsignforM;
     if(sph != "spherical") {
       APP_ABORT(" Error: expandYlm='pwscf' only compatible with angular='spherical'. Aborting.\n");
@@ -131,7 +128,7 @@ template<class RFB>
 bool AtomicBasisBuilder<RFB>::putH5(hdf_archive &hin)
 {
 
-  std::string CenterID, Normalized, basisName; 
+  std::string CenterID, Normalized, basisName;
   //TO BE EXPANDED TO OTHER FORMATS
   Morder="Gamess";
   if(myComm->rank()==0){
@@ -145,7 +142,7 @@ bool AtomicBasisBuilder<RFB>::putH5(hdf_archive &hin)
   myComm->bcast(Normalized);
   myComm->bcast(basisName);
 
-  app_log()<<"<input node=\"atomicBasisSet\" name=\""<<basisName<<"\"  angular=\""<<sph<<"\"  elementType=\""<<CenterID<<"\"  normalized=\""<<Normalized<<"\"/>"<<std::endl; 
+  app_log()<<"<input node=\"atomicBasisSet\" name=\""<<basisName<<"\"  angular=\""<<sph<<"\"  elementType=\""<<CenterID<<"\"  normalized=\""<<Normalized<<"\"/>"<<std::endl;
   bool tmp_addsignforM=addsignforM;
   if(sph == "spherical")
     addsignforM=1; //include (-1)^m
@@ -163,7 +160,7 @@ bool AtomicBasisBuilder<RFB>::putH5(hdf_archive &hin)
   }
   else if(Morder == "pyscf")
   {
-    expandlm = MOD_NATURAL_EXPAND; 
+    expandlm = MOD_NATURAL_EXPAND;
     addsignforM=tmp_addsignforM;
     if(sph != "spherical") {
       APP_ABORT(" Error: expandYlm='pwscf' only compatible with angular='spherical'. Aborting.\n");
@@ -174,7 +171,7 @@ bool AtomicBasisBuilder<RFB>::putH5(hdf_archive &hin)
     expandlm = CARTESIAN_EXPAND;
     addsignforM=0;
   }
-  
+
   radFuncBuilder.Normalized=false;
   radFuncBuilder.Normalized=(Normalized=="yes");
   return true;
@@ -293,7 +290,7 @@ AtomicBasisBuilder<RFB>::createAOSetH5(hdf_archive &hin)
 {
   ReportEngine PRE("AtomicBasisBuilder","createAOSetH5(std::string)");
   app_log() << "  AO BasisSet for " << elementType << "\n";
-  
+
   if(expandlm!=CARTESIAN_EXPAND)
   {
     if(addsignforM )
@@ -318,19 +315,19 @@ AtomicBasisBuilder<RFB>::createAOSetH5(hdf_archive &hin)
   default:
     app_log() << "   Angular momentum m is explicitly given." << std::endl;
   }
-  
+
   QuantumNumberType nlms;
   std::string rnl;
   int Lmax(0); //maxmimum angular momentum of this center
   int num(0);//the number of localized basis functions of this center
-  
+
   int numbasisgroups(0);
   if(myComm->rank()==0){
      if(!hin.read(numbasisgroups,"NbBasisGroups"))
          PRE.error("Could not read NbBasisGroups in H5; Probably Corrupt H5 file",true);
   }
   myComm->bcast(numbasisgroups);
-   
+
   for (int i=0; i<numbasisgroups;i++)
   {
     char n_name[4];
@@ -339,12 +336,12 @@ AtomicBasisBuilder<RFB>::createAOSetH5(hdf_archive &hin)
     std::string basisGroupID="basisGroup"+an_name;
     int l(0);
     if(myComm->rank()==0){
-       hin.push(basisGroupID.c_str()); 
+       hin.push(basisGroupID.c_str());
        hin.read(l,"l");
        hin.pop();
-    } 
+    }
     myComm->bcast(l);
-      
+
     Lmax = std::max(Lmax,l);
     //expect that only Rnl is given
     if(expandlm == CARTESIAN_EXPAND)
@@ -355,8 +352,8 @@ AtomicBasisBuilder<RFB>::createAOSetH5(hdf_archive &hin)
       else
         num++;
 
- }         
- 
+ }
+
   char n_name[4];
   std::string basisGroupID;
 
@@ -376,7 +373,7 @@ AtomicBasisBuilder<RFB>::createAOSetH5(hdf_archive &hin)
 
     basisGroupID="basisGroup"+aan_name;
     if(myComm->rank()==0){
-       hin.push(basisGroupID.c_str()); 
+       hin.push(basisGroupID.c_str());
        hin.read(rnl,"rid");
        hin.read(nlms[0],"n");
        hin.read(nlms[1],"l");
@@ -384,14 +381,14 @@ AtomicBasisBuilder<RFB>::createAOSetH5(hdf_archive &hin)
     myComm->bcast(rnl);
     myComm->bcast(nlms[0]);
     myComm->bcast(nlms[1]);
- 
+
     //add Ylm channels
     app_log() << "   R(n,l,m,s) " << nlms[0] << " " << nlms[1] << " " << nlms[2] << " " << nlms[3] << std::endl;
     num = expandYlmH5(rnl,nlms,num,aos,hin,expandlm);
 
     //if(myComm->rank()==0)
-       hin.pop(); 
-  } 
+       hin.pop();
+  }
   aos->setBasisSetSize(-1);
   app_log() << "   Maximu Angular Momentum   = " << aos->Ylm.Lmax << std::endl
             << "   Number of Radial functors = " << aos->Rnl.size() << std::endl
@@ -565,7 +562,7 @@ template<class RFB>
 int AtomicBasisBuilder<RFB>::expandYlmH5(const std::string& rnl, const QuantumNumberType& nlms, int num,
                                        COT* aos, hdf_archive &hin, int expandlm)
 {
-  
+
   if(expandlm==CARTESIAN_EXPAND)
   {
     app_log() << "Expanding Ylm (angular function) according to Gamess using cartesian gaussians" << std::endl;
