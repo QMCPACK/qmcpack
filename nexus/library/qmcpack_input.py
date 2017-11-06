@@ -2017,7 +2017,7 @@ class pseudopotential(QIxml):
 #end class pseudopotential
 
 class pseudo(QIxml):
-    attributes = ['elementtype','href','format','cutoff','lmax','nrule']
+    attributes = ['elementtype','href','format','cutoff','lmax','nrule','l-local']
     elements   = ['header','local','grid']
     identifier = 'elementtype'
 #end class pseudo
