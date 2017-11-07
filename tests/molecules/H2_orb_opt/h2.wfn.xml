@@ -34,7 +34,7 @@
         </atomicBasisSet>
       </basisset>
 
-      <slaterdeterminant optimizable="yes">
+      <slaterdeterminant optimize="yes">
         <determinant id="det_up" sposet="spo-up">
           <opt_vars size="27">
             0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
@@ -48,7 +48,7 @@
         </determinant>
       </slaterdeterminant>
 
-      <sposet basisset="LCAOBSet" name="spo-up" size="28" optimizable="yes">
+      <sposet basisset="LCAOBSet" name="spo-up" size="28" optimize="yes">
         <occupation mode="ground"/>
         <coefficient size="28" id="updetC">
     1.61128000000000e-01  2.85480000000000e-01  1.79120000000000e-01  0.00000000000000e+00
@@ -263,7 +263,7 @@
    -1.19462800000000e+00  0.00000000000000e+00  0.00000000000000e+00  0.00000000000000e+00
   </coefficient>
         </sposet>
-        <sposet basisset="LCAOBSet" name="spo-dn" size="28" optimizable="yes">
+        <sposet basisset="LCAOBSet" name="spo-dn" size="28" optimize="yes">
           <occupation mode="ground"/>
           <coefficient size="28" id="downdetC">
     1.61128000000000e-01  2.85480000000000e-01  1.79120000000000e-01  0.00000000000000e+00
