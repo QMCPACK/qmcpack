@@ -618,9 +618,6 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
       // build the optimizable slater determinant
       SlaterDetOpt * const retval = new SlaterDetOpt(targetPtcl, psi, spin_group);
 
-      // set which orbital rotations are optimizable in the single particle orbital set
-      retval->set_spo_optimizable_rotations();
-
       // load extra parameters for SlaterDetOpt
       retval->buildOptVariables(params, params_supplied, true);
 

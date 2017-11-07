@@ -57,6 +57,9 @@ SlaterDetOpt::SlaterDetOpt(ParticleSet & ptcl, SPOSetBase * spo_ptr, const int u
 
   // prepare matrices that will hold derivatives wrt orbital rotations
   this->initialize_matrices();
+
+  // add this determinant's contribution to the orbital linear combinations' derivatives
+  set_optimizable_rotation_ranges(0, m_nel, m_nel, m_nmo);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -114,7 +117,6 @@ void SlaterDetOpt::check_index_sanity() const {
 OrbitalBasePtr SlaterDetOpt::makeClone(ParticleSet& tqp) const {
   SlaterDetOpt* clone = new SlaterDetOpt(tqp, Phi->makeClone(), m_up_or_down);
 
-  clone->set_spo_optimizable_rotations();
   clone->Optimizable=Optimizable;
   clone->myVars=myVars;
   clone->m_first_var_pos = m_first_var_pos;
@@ -133,7 +135,6 @@ DiracDeterminantBase* SlaterDetOpt::makeCopy(SPOSetBasePtr spo) const
 {
   SlaterDetOpt* copy = new SlaterDetOpt(*targetPtcl, spo, m_up_or_down);
 
-  copy->set_spo_optimizable_rotations();
   copy->myVars=myVars;
   copy->Optimizable=Optimizable;
   copy->m_first_var_pos = m_first_var_pos;
@@ -1007,17 +1008,6 @@ void SlaterDetOpt::set_optimizable_rotation_ranges(const int istart, const int i
       if ( i != j )
         m_act_rot_inds.push_back(std::pair<int,int>(std::min(i,j), std::max(i,j)));
 
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  Sets the single particle orbital set's optimizable rotations to be only those
-///         between occupied and virtual molecular orbitals.
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////
-void SlaterDetOpt::set_spo_optimizable_rotations() {
-
-  // add this determinant's contribution to the orbital linear combinations' derivatives
-  set_optimizable_rotation_ranges(0, m_nel, m_nel, m_nmo);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
