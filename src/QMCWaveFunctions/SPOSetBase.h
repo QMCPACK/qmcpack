@@ -20,7 +20,6 @@
 #ifndef QMCPLUSPLUS_SINGLEPARTICLEORBITALSETBASE_H
 #define QMCPLUSPLUS_SINGLEPARTICLEORBITALSETBASE_H
 
-#include <stdexcept>
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
