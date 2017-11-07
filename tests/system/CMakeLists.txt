@@ -460,6 +460,64 @@ IF (NOT QMC_COMPLEX)
                     )
 
 #
+# H2 test in a DZV basis set, using optimizable determinants, and the adaptive linear method
+#
+  LIST(APPEND H2_OPT_SCALARS "totenergy" "-1.124563 0.00084") # total energy
+
+IF(BUILD_LMYENGINE_INTERFACE)
+  QMC_RUN_AND_CHECK(short-H2-orb-opt
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H2_orb_opt"
+                    H2
+                    h2_orb_opt.xml
+                    16 1
+                    H2_OPT_SCALARS
+                    10 # Final VMC step
+                    TRUE)
+ENDIF(BUILD_LMYENGINE_INTERFACE)
+
+#
+# H4 starting from perturbed orbitals, using optimizable determinants, and the adaptive linear method
+#
+  LIST(APPEND H4_ORB_OPT_SCALARS "totenergy" "-1.93045653 0.00837934") # total energy
+
+IF(BUILD_LMYENGINE_INTERFACE)
+  QMC_RUN_AND_CHECK(short-H4-orb-opt
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_orb_opt"
+                    H4
+                    h4_orb_opt.xml
+                    16 1
+                    H4_ORB_OPT_SCALARS
+                    14 # Final VMC step
+                    TRUE)
+ENDIF(BUILD_LMYENGINE_INTERFACE)
+
+#
+# H4 starting from converged wave function, doing a quick adaptive linear method run (using the same
+# spo set for both spin-up and spin-down determinants) and then doing a DMC calculation
+#
+  LIST(APPEND H4_ORB_OPT_DMC_SCALARS "totenergy" "-2.191461 0.0048") # total energy
+
+IF(BUILD_LMYENGINE_INTERFACE)
+  QMC_RUN_AND_CHECK(short-H4-orb-opt-dmc
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_orb_opt_dmc"
+                    H4
+                    h4_orb_opt.xml
+                    16 1
+                    H4_ORB_OPT_DMC_SCALARS
+                    3 # Test the DMC results
+                    TRUE)
+
+  QMC_RUN_AND_CHECK(short-H4-orb-opt-dmc
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/H4_orb_opt_dmc"
+                    H4
+                    h4_orb_opt.xml
+                    1 16
+                    H4_ORB_OPT_DMC_SCALARS
+                    3 # Test the DMC results
+                    TRUE)
+ENDIF(BUILD_LMYENGINE_INTERFACE)
+
+#
 # 4 H atom cluster gaussian tests, all electron
 # Also check results for different number of mpi tasks and threads keeping total constant
 #
