@@ -16,19 +16,19 @@
       <slaterdeterminant optimize="yes">
         <determinant id="det_up" sposet="spo">
           <opt_vars size="4">
-            -6.3402e-02
-            8.2899e-03
-            8.3638e-02
-            -2.9902e-02
+            -6.2352e-02
+            1.5072e-02
+            8.3825e-02
+            -2.4339e-02
           </opt_vars>
         </determinant>
 
         <determinant id="det_down" sposet="spo">
           <opt_vars size="4">
-            -6.3402e-02
-            8.2899e-03
-            8.3638e-02
-            -2.9902e-02
+            -6.2352e-02
+            1.5072e-02
+            8.3825e-02
+            -2.4339e-02
           </opt_vars>
         </determinant>
       </slaterdeterminant>
@@ -45,34 +45,49 @@
     </determinantset>
 
     <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+      <correlation rcut="2" size="10" speciesA="u" speciesB="u">
+        <coefficients id="uu" type="Array">
+          2.2381e-02
+          1.5167e-01
+          1.0912e-01
+          1.0807e-01
+          8.1643e-02
+          6.1254e-02
+          4.3210e-02
+          2.7384e-02
+          1.5194e-02
+          6.3094e-03
+        </coefficients>
+      </correlation>
       <correlation rcut="2" size="10" speciesA="u" speciesB="d">
         <coefficients id="ud" type="Array">
-          4.7796e-01
-          3.9423e-01
-          3.1906e-01
-          2.5403e-01
-          1.9591e-01
-          1.4548e-01
-          1.0128e-01
-          6.4482e-02
-          3.4898e-02
-          1.3541e-02
+          4.7842e-01
+          3.9434e-01
+          3.2027e-01
+          2.5477e-01
+          1.9602e-01
+          1.4543e-01
+          1.0142e-01
+          6.4350e-02
+          3.4675e-02
+          1.3348e-02
         </coefficients>
       </correlation>
     </jastrow>
+
     <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" print="yes">
       <correlation rcut="2" size="10" cusp="1" elementType="H">
         <coefficients id="eH" type="Array">
-          2.5133e-02
-          1.4898e-01
-          1.7034e-01
-          1.2967e-01
-          7.7216e-02
-          4.4857e-02
-          3.1763e-02
-          2.4458e-02
-          1.5528e-02
-          6.4352e-03
+          2.5151e-02
+          1.4825e-01
+          1.6955e-01
+          1.2869e-01
+          7.6468e-02
+          4.4240e-02
+          3.1098e-02
+          2.3827e-02
+          1.5289e-02
+          6.2995e-03
         </coefficients>
       </correlation>
     </jastrow>
