@@ -1,11 +1,14 @@
-///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \file src/QMCWaveFunctions/LCOrbitalSetOpt.h
-///
-/// \brief   A class for an optimizable set of linear combinations of single particle orbitals.
-///
-/// \author  Eric Neuscamman
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2017 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Eric Neuscamman, eneuscamman@berkeley.edu, University of California, Berkeley
+//                    Nick Blunt, nicksblunt@gmail.com, University of Cambridge
+//
+// File created by: Eric Neuscamman, eneuscamman@berkeley.edu, University of California, Berkeley
+//////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_LINEARCOMIBINATIONORBITALSET_OPTIMIZABLE_H
 #define QMCPLUSPLUS_LINEARCOMIBINATIONORBITALSET_OPTIMIZABLE_H

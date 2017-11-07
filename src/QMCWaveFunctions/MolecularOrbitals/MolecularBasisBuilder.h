@@ -128,7 +128,7 @@ public:
     spoAttrib.add (spo_name, "name");
     spoAttrib.add (id, "id");
     spoAttrib.add (cusp_file, "cuspInfo");
-    spoAttrib.add (use_new_opt_class, "optimizable");
+    spoAttrib.add (use_new_opt_class, "optimize");
     spoAttrib.put(cur);
     SPOSetBase *lcos=0;
     cur = cur->xmlChildrenNode;

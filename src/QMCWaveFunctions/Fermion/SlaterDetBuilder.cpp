@@ -243,10 +243,10 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
     {
       multiDet=false;
       // read in whether to use an optimizable slater determinant
-      std::string optimizable("no");
+      std::string optimize("no");
       {
         OhmmsAttributeSet a;
-        a.add(optimizable, "optimizable");
+        a.add(optimize, "optimize");
         a.put(cur);
       }
 
@@ -272,7 +272,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         getNodeName(tname,tcur);
         if (tname == det_tag || tname == rn_tag)
         {
-          if(putDeterminant(tcur, spin_group, optimizable == "yes"))
+          if(putDeterminant(tcur, spin_group, optimize == "yes"))
             spin_group++;
         }
         tcur = tcur->next;
