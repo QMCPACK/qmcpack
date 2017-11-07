@@ -9,17 +9,23 @@
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#include <ParticleIO/ParticleIOUtility.h>
 
+#ifndef QMCPLUSPLUS_MINIAPPS_GRAPHITE_HPP
+#define QMCPLUSPLUS_MINIAPPS_GRAPHITE_HPP
 namespace qmcplusplus
 {
+  inline int count_electrons(const ParticleSet &ions)
+  {
+    return ions.getTotalNum() * 4;
+  }
+
   /** expand 4-atom graphite 
    * @param ions particle set
    * @param tmat tiling matrix
    * @param scale scaling factor
    */
   template<typename T>
-    Tensor<T,3>  tile_graphite(ParticleSet& ions, Tensor<int,3>& tmat, T scale)
+    Tensor<T,3>  tile_cell(ParticleSet& ions, Tensor<int,3>& tmat, T scale)
     {
       Tensor<T,3> graphite={4.65099, 0.0, 0.0, 
                            -2.3255, 4.02788,0.0, 
@@ -213,3 +219,4 @@ namespace qmcplusplus
       J1.addFunc(0,f);
     }
 }
+#endif

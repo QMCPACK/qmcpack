@@ -98,28 +98,7 @@ public:
   virtual void recompute(ParticleSet& P);
 
   virtual
-  RealType evaluateLog(ParticleSet& P,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L,
-                       PooledData<RealType>& buf,
-                       bool fillBuffer);
-                       
-  virtual
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
-
-  void registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
-
-  virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets)
-  {
-    for (int i = 0; i < Dets.size(); ++i)
-      Dets[i]->memoryUsage_DataForDerivatives(P,orbs_only,orbs,invs,dets);
-  }
-
-  virtual void  copyFromDerivativeBuffer(ParticleSet& P, BufferType& buf)
-  {
-    for (int i = 0; i < Dets.size(); ++i)
-      Dets[i]->copyFromDerivativeBuffer(P,buf);
-  }
 
   ///return the total number of Dirac determinants
   inline int size() const

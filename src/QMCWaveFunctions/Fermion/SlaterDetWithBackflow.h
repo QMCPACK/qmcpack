@@ -88,12 +88,6 @@ public:
                        ,ParticleSet::ParticleGradient_t& G
                        ,ParticleSet::ParticleLaplacian_t& L);
 
-  RealType evaluateLog(ParticleSet& P,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L,
-                       PooledData<RealType>& buf,
-                       bool fillBuffer);
-
   void registerData(ParticleSet& P, WFBufferType& buf);
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);

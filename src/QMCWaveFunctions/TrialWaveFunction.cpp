@@ -235,38 +235,6 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
   return LogValue;
 }
 
-TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  P.G = 0.0;
-  P.L = 0.0;
-  ValueType logpsi(0.0);
-  PhaseValue=0.0;
-  buf.rewind();
-  std::vector<OrbitalBase*>::iterator it(Z.begin());
-  std::vector<OrbitalBase*>::iterator it_end(Z.end());
-  int ii=RECOMPUTE_TIMER;
-  for (; it!=it_end; ++it,ii+=TIMER_SKIP)
-  {
-// mmorales: I don't remember if I did this, but eliminating the "if ((*it)->Optimizable)"
-//           forces everything to be evaluated. This was probably done because for optm with the
-//           nonlocal component in the cost function, the slater determinant might not be optimizable
-//           but this must be called anyway to load the inverse. CHECK CHECK CHECK, FIX FIX FIX
-    myTimers[ii]->start();
-    if ((*it)->Optimizable)
-    {
-      logpsi += (*it)->evaluateLog(P, P.G, P.L,buf,false);
-      PhaseValue += (*it)->PhaseValue;
-    }
-    else
-//          ValueType x = (*it)->evaluateLog(P, P.G, P.L,buf,false);
-      (*it)->copyFromDerivativeBuffer(P,buf);//keep buffer synched
-    myTimers[ii]->stop();
-  }
-  convert(logpsi,LogValue);
-  return LogValue;
-  //return LogValue=real(logpsi);
-}
-
 
 /** evalaute the sum of log value of optimizable many-body wavefunctions
 * @param P  input configuration containing N particles
@@ -303,41 +271,6 @@ TrialWaveFunction::evaluateDeltaLog(ParticleSet& P
       logpsi_opt += (*it)->evaluateLog(P, P.G, P.L);
     else
       logpsi_fixed += (*it)->evaluateLog(P, fixedG, fixedL);
-    myTimers[ii]->stop();
-  }
-  P.G += fixedG;
-  P.L += fixedL;
-  convert(logpsi_fixed,logpsi_fixed_r);
-  convert(logpsi_opt,logpsi_opt_r);
-  //logpsi_fixed_r = real(logpsi_fixed);
-  //logpsi_opt_r = real(logpsi_opt);
-}
-
-void
-TrialWaveFunction::evaluateDeltaLog(ParticleSet& P
-                                    , RealType& logpsi_fixed_r, RealType& logpsi_opt_r
-                                    , ParticleSet::ParticleGradient_t& fixedG
-                                    , ParticleSet::ParticleLaplacian_t& fixedL
-                                    , PooledData<RealType>& buf)
-{
-  //TAU_PROFILE("TrialWaveFunction::evaluateDeltaLog","ParticleSet& P", TAU_USER);
-  P.G = 0.0;
-  P.L = 0.0;
-  fixedG = 0.0;
-  fixedL = 0.0;
-  ValueType logpsi_fixed(0.0);
-  ValueType logpsi_opt(0.0);
-  buf.rewind();
-  std::vector<OrbitalBase*>::iterator it(Z.begin());
-  std::vector<OrbitalBase*>::iterator it_end(Z.end());
-  int ii=RECOMPUTE_TIMER;
-  for (; it!=it_end; ++it,ii+=TIMER_SKIP)
-  {
-    myTimers[ii]->start();
-    if ((*it)->Optimizable)
-      logpsi_opt += (*it)->evaluateLog(P, P.G, P.L,buf,true);
-    else
-      logpsi_fixed += (*it)->evaluateLog(P, fixedG, fixedL,buf,true);
     myTimers[ii]->stop();
   }
   P.G += fixedG;
@@ -700,24 +633,6 @@ void TrialWaveFunction::registerData(ParticleSet& P, WFBufferType& buf)
   }
   buf.add(PhaseValue);
   buf.add(LogValue);
-}
-
-TrialWaveFunction::RealType TrialWaveFunction::registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf, int storageType)
-{
-  std::vector<OrbitalBase*>::iterator it(Z.begin());
-  std::vector<OrbitalBase*>::iterator it_end(Z.end());
-  for (; it!=it_end; ++it)
-    (*it)->registerDataForDerivatives(P,buf,storageType);
-  return 1.0;
-}
-
-void TrialWaveFunction::memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets)
-{
-  orbs_only=orbs=invs=dets=0;
-  std::vector<OrbitalBase*>::iterator it(Z.begin());
-  std::vector<OrbitalBase*>::iterator it_end(Z.end());
-  for (; it!=it_end; ++it)
-    (*it)->memoryUsage_DataForDerivatives(P,orbs_only,orbs,invs,dets);
 }
 
 TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P

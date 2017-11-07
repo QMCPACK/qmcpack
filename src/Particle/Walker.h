@@ -142,10 +142,6 @@ struct Walker
   WFBuffer_t DataSet;
   size_t block_end, scalar_end;
 
-  ///buffer for the constant data in the evaluation of
-  //analytical derivatives during linear optimization, e.g. MultiDeterminants
-  Buffer_t DataSetForDerivatives;
-
   /// Data for GPU-vectorized versions
 #ifdef QMC_CUDA
   static int cuda_DataSize;
