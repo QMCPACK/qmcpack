@@ -69,16 +69,6 @@ IF(QMC_CUDA)
    QMCCostFunctionCUDA.cpp)
 ENDIF(QMC_CUDA)
 
-# IF(QMC_BUILD_LEVEL GREATER 2)
-#    SET(QMCDRIVERS ${QMCDRIVERS}
-#    EE/EEFactory.cpp
-#    EE/VMCMultiRenyiOMP.cpp
-#    EE/VMCRenyiOMP.cpp
-#    EE/QMCRenyiUpdateBase.cpp
-#    EE/RenyiUpdatePbyP.cpp
-#    )
-# ENDIF(QMC_BUILD_LEVEL GREATER 2)
-
   SET(QMCDRIVERS ${QMCDRIVERS} 
       VMC/VMCSingleOMP.cpp
       VMC/VMCLinearOptOMP.cpp

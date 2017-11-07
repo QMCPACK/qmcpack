@@ -56,7 +56,7 @@ V = & \sum_\vL \sum_\alpha \left\{
 where $N^\alpha$ is the number particles of species $\alpha$.
 If the potentials $v^{\alpha\beta}(r)$ are indeed long-range, the
 summation over direct lattice vectors will not converge in this naive
-form.  A solution to the problem was positted by Ewald.  We break the
+form.  A solution to the problem was posited by Ewald.  We break the
 central potentials into two pieces -- a short range and a long range
 part define by
 \begin{equation}
@@ -66,9 +66,7 @@ We will perform the summation over images for the short-range part in
 real space, while performing the sum for the long-range part in
 reciprocal space.  For simplicity, we choose $v^{\alpha \beta}_s(r)$
 so that it is identically zero at the half the box length.  This
-eliminates the need to sum over images in real space. In this letter,
-we develop the details of the calculation and provide a way for
-integrating this into a Path Integral Monte Carlo simulation.
+eliminates the need to sum over images in real space.
 
 
 \subsection{Reciprocal-Space Sums}
@@ -191,7 +189,7 @@ v_M^{\alpha} & = & \frac{1}{2} \sum_{\vL \neq \mathbf{0}} v^{\alpha
 \end{eqnarray}
 
 \subsubsection{$\vk=\mathbf{0}$ terms}
-Thusfar, we have neglected what happens at the special point $\vk =
+Thus far, we have neglected what happens at the special point $\vk =
 \mathbf{0}$.  For many long-range potentials, such as the coulomb
 potential, $v_k^{\alpha \alpha}$ diverges for $k=0$.  However, we
 recognize that for a charge-neutral system, the divergent part of the
@@ -228,7 +226,7 @@ For systems with a net charge, such as the one-component plasma
 (jellium), we add a uniform background charge which makes the system
 neutral.  When we do this, we must add a term which comes from the
 interaction of the particle with the neutral background.  It is a
-constant term, indendent of the particle positions.  In general, we
+constant term, independent of the particle positions.  In general, we
 have a compensating background for each species, which largely cancels
 out for neutral systems.
 \begin{equation}
@@ -372,7 +370,7 @@ v_k = \frac{4\pi q_1 q_2 \exp\left[\frac{-k^2}{4\alpha^2}\right]}{\Omega k^2}.
 
 \subsection{Optimized Breakup Method}
 In this section, we undertake the task of choosing a
-long-range/short-range partioning of the potential which is optimimum
+long-range/short-range partitioning of the potential which is optimal
 in that it minimizes the error for given real and $k$-space cutoffs
 $r_c$ and $k_c$.  Here, we modify slightly the method introduced
 Natoli and Ceperley\cite{Natoli1995}. We choose $r_c =
@@ -380,9 +378,9 @@ Natoli and Ceperley\cite{Natoli1995}. We choose $r_c =
 real space summation.  $k_c$ is then chosen so as to satisfy our
 accuracy requirements.
 
-Here we modify our notation slightly to accomodate details not
+Here we modify our notation slightly to accommodate details not
 required above.  We restrict our discussion to the interaction of two
-paricles species (which may be the same), and drop our species
+particles species (which may be the same), and drop our species
 indices.  Thus we are looking for short and long-range potentials
 defined by,
 \renewcommand{\vs}{v^s}
@@ -390,7 +388,7 @@ defined by,
 \begin{equation}
 v(r) = \vs(r) + \vl(r)
 \end{equation}
-Define $\vs_k$ and $\vl_k$ to be the respective fourier transforms of
+Define $\vs_k$ and $\vl_k$ to be the respective Fourier transforms of
 the above.  The goal is to choose $v_s(r)$ such that its value and
 first two derivatives vanish at $r_c$, while making $\vl(r)$ as smooth as
 possible so that $k$-space components, $\vl_k$, are very small for
@@ -440,7 +438,7 @@ we define,
 \end{cases}
 \end{equation}
 where the $h_n(r)$ are a set of $J$ basis functions.  We require that
-the two cases agree on the value and first two derivatves at $r_c$.
+the two cases agree on the value and first two derivatives at $r_c$.
 We may then define
 \begin{equation}
 c_{nk} \equiv \frac{1}{\Omega} \int_0^{r_c} d^3 \vr \ e^{-i\vk\cdot\vr} h_n(r).
@@ -501,7 +499,7 @@ We take the derivative w.r.t. $t_{m}$,
  e^{i(\vk-\vk')\cdot \vr}
 \left(x_k -\sum_{n=0}^{J-1} t_n c_{nk} \right) c_{mk'}
 \end{equation}
-We integrate w.r.t. $\vr$, yielding a kroneker $\delta$.
+We integrate w.r.t. $\vr$, yielding a Kronecker $\delta$.
 \begin{equation}
 \frac{\partial (\chi^2)}{\partial t_{m}} =
 2 \ns\ns\ns\ns\ns\ns\ns 
@@ -545,7 +543,7 @@ where $\bU^T\bU = \bV^T\bV = 1$ and $\bS$ is diagonal.  In this form, we have
 \mathbf{t} = \sum_{i=0}^{J-1} \left( \frac{\bU_{(i)} \cdot
   \bb}{\bS_{ii}} \right) \bV_{(i)},
 \end{equation}
-where the parethesized subscripts refer to columns.  The advantage of
+where the parenthesized subscripts refer to columns.  The advantage of
 this form is that if $\bS_{ii}$ is zero or very near zero, the
 contribution of the $i^{\text{th}}$ of $\bV$, may be neglected, since
 it represents a numerical instability and has little physical
@@ -565,7 +563,7 @@ removed, and $\bb^*$ as $\vb'$ with the $n^\text{th}$ element removed.  Then
 we solve the reduced equation $\bA^* \mathbf{t}^* = \bb^*$, and
 finally insert $t_n$ back into the appropriate place in $\mathbf{t}^*$
 to recover the complete, constrained vector $\mathbf{t}$.  This may be
-trivially generalized to an arbitray number of constraints.
+trivially generalized to an arbitrary number of constraints.
 \label{sec:contraints}
 
 \subsubsection{The LPQHI basis}
@@ -628,7 +626,7 @@ h_{j2}(r_j)=0, & h'_{j2}(r_j)=0, & h''_{j2}(r_j)= 1
 These properties allow the control of the value and first two derivatives
 of the represented function at any knot value simply by setting the
 coefficients of the basis functions centered around that knot.  Used
-in combination with the method discribed in
+in combination with the method described in
 section~\ref{sec:contraints} above, boundary conditions can easily be
 enforced.  In our case, we wish require that
 \begin{equation}
@@ -699,7 +697,7 @@ is already an entry with that magnitude on our list, incrementing the
 corresponding $N$ if there is, or creating a new entry if not.  Doing
 so typically saves a factor of $\sim 200$ in storage and computation.
 
-This reduction is still not sufficent for large $k_max$, since it
+This reduction is still not sufficient for large $k_max$, since it
 requires that we still look over $10^9$ entries.  To further reduce
 cost, we may pick an intermediate cutoff, $k_\text{cont}$, above which
 we will approximate the degeneracy assuming a continuum of
@@ -774,7 +772,7 @@ x_k^{1/r^4} = -\frac{4 \pi}{\Omega k}
 %H^{\alpha\beta} = -\lambda^{\alpha\beta} \nabla^2 + v^{\alpha\beta}(|\vr|),
 %\end{equation}
 %where $\vr \equiv \vr_i - \vr_j$ and particles $i$ and $j$ are members
-%of species $\alpha$ and $\beta$, respecively, and
+%of species $\alpha$ and $\beta$, respectively, and
 %$\lambda^{\alpha\beta}$ is given by
 %\begin{equation}
 %\lambda^{\alpha \beta} = \frac{\hbar^2}{2m_{\alpha}} +
@@ -827,7 +825,7 @@ x_k^{1/r^4} = -\frac{4 \pi}{\Omega k}
 %diagonal actions, respectively, borrowing the notation for short and
 %long vowels.
 %We subtract the long range part form the total pair action in a
-%quasi-primitive appoximation by defining
+%quasi-primitive approximation by defining
 %\begin{equation}
 %\bar{u}^{\alpha\beta}_\text{diag}(r) \equiv \tau \bar{v}^{\alpha \beta}(r).
 %\end{equation}
@@ -1073,7 +1071,7 @@ x_k^{1/r^4} = -\frac{4 \pi}{\Omega k}
 %\bar{u}_k^{\alpha \gamma} \hat{u}_k^{\beta \gamma}
 %\right)
 %\end{equation}
-%Next, we need an equation for the time propogation of
+%Next, we need an equation for the time propagation of
 %$\hat{u}_k^{\alpha \beta}$.  Above, we assumed that $\hat{U}$ was the
 %solution to the short-range problem.  Our Bloch equation for
 %$\hat{mathcal{U}}$ is then given by
@@ -1160,7 +1158,7 @@ x_k^{1/r^4} = -\frac{4 \pi}{\Omega k}
 
 Given a lattice of vectors $\Lv$, its associated reciprocal
 lattice of vectors $\kv$ and a function $\psi(\rv)$ periodic
-on the lattice we define its fourier transform $\widetilde{\psi}(\kv)$ as
+on the lattice we define its Fourier transform $\widetilde{\psi}(\kv)$ as
 \begin{equation}
 \widetilde{\psi}(\kv)=\frac{1}{\Omega}\int_\Omega d\rv \psi(\rv) e^{-i\kv\rv}
 \end{equation}
@@ -1174,7 +1172,7 @@ at a particular point $\rv$ inside the cell is given by
 \begin{equation}
 V(\rv)=\sum_{\Lv}v(|\rv+\Lv|)
 \end{equation}
-and its fourier transform can be explicitely written as a function of $V$ or $v$
+and its Fourier transform can be explicitly written as a function of $V$ or $v$
 \begin{equation}
 \widetilde{V}(\kv)=\frac{1}{\Omega}\int_\Omega d\rv V(\rv) e^{-i\kv\rv}=
 \frac{1}{\Omega}\int_{\mathbb{R}^3} d\rv v(\rv) e^{-i\kv\rv}
@@ -1201,7 +1199,7 @@ or the reciprocal space equivalent
   \label{chi2k}
 \end{equation}
 Eq.\ref{chi2k} follows from Eq.\ref{chi2r} and the unitarity
-(norm conservation) of the fourier transform.
+(norm conservation) of the Fourier transform.
 
 This last condition is minimized by
 \begin{equation}
@@ -1277,7 +1275,7 @@ the linear system as
 
 \subsection{Fourier components of the basis functions in 3D}
 \subsubsection*{$k\ne 0$, non coulomb case.}
-We now need to evaluate the fourier transforn $\tc_{i\alpha}(k)$. Let us start
+We now need to evaluate the Fourier transform $\tc_{i\alpha}(k)$. Let us start
 by writing the definition
 \begin{equation}
 \tc_{i\alpha}(k)=\frac{1}{\omega}\int_\Omega d\rv  e^{-i\kv\rv} c_{i\alpha}(r)
@@ -1300,7 +1298,7 @@ D_{in}^\pm(k)=\pm\frac{4\pi}{k\Omega}\Im\left[\int_{r_i}^{r_i\pm\Delta}
 dr\left(\frac{r-r_i}{\Delta}\right)^n r e^{ikr}\right]
 \label{D+-}
 \end{equation}
-obtained by integrating the angular part of the fourier transform.
+obtained by integrating the angular part of the Fourier transform.
 Using the identity
 \begin{equation}
 \left(\frac{r-r_i}{\Delta}\right)^n r=\Delta\left(\frac{r-r_i}{\Delta}\right)^{n+1}+\left(\frac{r-r_i}{\Delta}\right)^n r_i
@@ -1407,7 +1405,7 @@ zero order Bessel function of the first kind
 J_0(z)=\frac{1}{\pi}\int_0^\pi e^{iz\cos\theta}d\theta
 \end{equation}
 and the binomial expansion for $(r-r_i)^n$.
-The integrals can be computed recursively using the following identitities
+The integrals can be computed recursively using the following identities
 \begin{center}
 \begin{minipage}{0.7\textwidth}
 \begin{align}
@@ -1459,7 +1457,7 @@ b_j=&\sum_{k>k_c} \left(\tV(k)-\sum_{m=1}^g \gamma_m \tc_m(k)\right)\tc_j(k)\qua
 %start from $0$ which corresponds to $k=0$. The number of shells such that
 %$k\le k_c$ is also passed as input and called \verb!nf!. Additional input variables 
 %are  \verb!coul! a logical variable specifying if the potential is coulombic; 
-%\verb!vmad! the exact value of the madelung constant;
+%\verb!vmad! the exact value of the Madelung constant;
 %\verb!t0,t1! logical variables specifying if a constraint has to be put
 %on element $t_0$ or $t_1$ and \verb!vt0,vt1! the value at which $t_0$ and $t_1$
 %have to be set if corresponding constraints are active. 
@@ -1470,12 +1468,12 @@ b_j=&\sum_{k>k_c} \left(\tV(k)-\sum_{m=1}^g \gamma_m \tc_m(k)\right)\tc_j(k)\qua
 %\item for every $k$ point, knot $i$ and polynomial $\alpha$ compute $\tc_{i\alpha}(k)$
 %      using Eq.\ref{fourier_transform}. $D^\pm_{in}(k)$ is provided by {\em splint3D}
 %      or {\em splint2D}. The routine uses \verb!ialpha!$=i(m+1)+\alpha$ (the range of 
-%      variability of $\alpha$ and $i$ is specified aboce Eq.\ref{basisdef}).
+%      variability of $\alpha$ and $i$ is specified above Eq.\ref{basisdef}).
 %\item Matrix elements are constructed according to Eq.\ref{matrix_elements}
 %\item Matrix elements are modified according to Eq.\ref{modified_matrix_elements} 
 %      if constraints are active
 %\item $t_i$ are computed solving the linear system. $\tY(k)$ are computed.
-%\item A comparison with the exact madelung constant is performed.
+%\item A comparison with the exact Madelung constant is performed.
 %\end{itemize}
 %
 %\subsubsection*{splint3D}
@@ -1599,7 +1597,7 @@ Let us define
 \lambda_i & \equiv & \frac{h_i}{2(h_i+h_{i-1})} \\
 \mu_i & \equiv & \frac{h_{i-1}}{2(h_i+h_{i-1})}  = \frac{1}{2} - \lambda_i.
 \end{eqnarray}
-Then we may rearrage,
+Then we may rearrange,
 \begin{equation}
 \lambda_i y'_{i-1} + y'_i + \mu_i y'_{i+1} = \underbrace{3 \left[\lambda_i \frac{y_i - y_{i-1}}{h_{i-1}} + \mu_i \frac{y_{i+1}
     - y_i}{h_i} \right] }_{d_i}
@@ -1640,7 +1638,7 @@ row by subtracting the appropriate multiple of the previous row.  At
 the same time, we also eliminate the first element in the last row,
 shifting the position of the first non-zero element to the right with
 each iteration.  When we get to the final row, we will have the value
-for $y'_{N-1}$.  We can then procede back upward, backstubstituting
+for $y'_{N-1}$.  We can then proceed back upward, backsubstituting
 values from the rows below to calculate all the derivatives.
 
 \subsubsection{Complete boundary conditions}
@@ -1730,7 +1728,7 @@ p_1(v)\\ p_2(v)\\ k q_1(v) \\ k q_2(v)
 \subsubsection{Construction bicubic splines}
 We now address the issue of how to compute the derivatives that are
 needed for the interpolation.  The algorithm is quite simple.  For
-every $x_i$, we perform the triadiagonal solution as we did in the 1D
+every $x_i$, we perform the tridiagonal solution as we did in the 1D
 splines to compute $F^y_{ij}$.  Similarly, we perform a tridiagonal
 solve for every value of $F^x_{ij}$.  Finally, in order to compute the
 cross-derivative we may {\em either} to the tridiagonal solve in the $y$
@@ -1833,7 +1831,7 @@ supercell calculations in QMC is to reduce finite-size errors.  These
 errors result from three sources:  1) the quantization of the crystal
 momentum;  2) the unphysical periodicity of the exchange-correlation
 hole of the electron; and 3) the kinetic-energy contribution from the
-periodicty of the long-range jastrow correlation functions.  The first
+periodicity of the long-range jastrow correlation functions.  The first
 source of error can be largely eliminated by twist averaging.  If the
 simulation cell is large enough that XC hole does not ``leak'' out of
 the simulation cell, the second source can be eliminated either
@@ -1847,7 +1845,7 @@ choice, it is best to use a cell which is as nearly cubic as possible,
 since this choice maximizes $L_\text{min}$ for a given number of
 atoms.  Most often, however, the primitive cell is not cubic.  In
 these cases, if we wish to choose the optimal supercell to reduce
-finite size effects, we cannnot utilize the simple primitive tiling
+finite size effects, we cannot utilize the simple primitive tiling
 scheme.  In the generalized scheme we present, it is possible to
 choose far better supercells (from the standpoint of finite-size
 errors), while retaining the storage efficiency of the original tiling
@@ -1882,7 +1880,7 @@ units of the lattice constant, are given by
 \vs_3 & = &   \ \      \xv + \frac{1}{2}\yv + \frac{1}{2}\zv 
 \end{eqnarray}
 This primitive cell contains two iron atoms and two oxygen atoms. It
-is a very elongated cell with accute angles, and thus has a short
+is a very elongated cell with acute angles, and thus has a short
 minimum distance between adjacent images.
 
 The smallest cubic cell consistent with the AFM ordering can be
@@ -1904,7 +1902,7 @@ savings of a factor of 16.
 
 \subsubsection{The k-point mesh}
 In order to be able to use the generalized tiling scheme, we need to
-have the appropriate number of bands to occuppy in the supercell.
+have the appropriate number of bands to occupy in the supercell.
 This may be achieved by appropriately choosing the k-point mesh.  In
 this section, we explain how these points are chosen.  
 
@@ -2253,7 +2251,7 @@ save time.
 
 \subsection{One-body Jastrow}
 The one-body Jastrow has a similar form, but depends on the
-displacment from the electrons to the ions in the system.
+displacement from the electrons to the ions in the system.
 \begin{equation}
 J_1 = \sum_{\vG\neq\mathbf{0}} \sum_{\alpha}
 \sum_{i\in\vI^\alpha}\sum_{j\in\text{elec.}} b^{\alpha}_\vG
@@ -2271,7 +2269,7 @@ where
 \end{equation}
 We note that in the above equation, for a single configuration of the
 ions, the sum in brackets can be rewritten as a single constant.  This
-implies that the per-species one-body coefficents, $b^\alpha_\vG$, are
+implies that the per-species one-body coefficients, $b^\alpha_\vG$, are
 underdetermined for single configuration of the ions.  In general, if
 we have $N$ species, we need $N$ linearly independent ion
 configurations to uniquely determine $b^{\alpha}_\vG$.  For this

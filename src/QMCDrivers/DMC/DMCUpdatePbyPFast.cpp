@@ -33,19 +33,22 @@ typedef int TraceManager;
 namespace qmcplusplus
 {
 
+TimerNameList_t<DMCTimers> DMCTimerNames =
+{
+  {DMC_buffer, "DMCUpdatePbyP::Buffer"},
+  {DMC_movePbyP, "DMCUpdatePbyP::movePbyP"},
+  {DMC_hamiltonian, "DMCUpdatePbyP::Hamiltonian"},
+  {DMC_collectables, "DMCUpdatePbyP::Collectables"},
+  {DMC_tmoves, "DMCUpdatePbyP::Tmoves"}
+};
+
+
 /// Constructor.
 DMCUpdatePbyPWithRejectionFast::DMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w,
     TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg):
   QMCUpdateBase(w,psi,h,rg)
 {
-  myTimers.push_back(new NewTimer("DMCUpdatePbyP::advance")); //timer for the walker loop
-  myTimers.push_back(new NewTimer("DMCUpdatePbyP::movePbyP")); //timer for MC, ratio etc
-  myTimers.push_back(new NewTimer("DMCUpdatePbyP::updateMBO")); //timer for measurements
-  myTimers.push_back(new NewTimer("DMCUpdatePbyP::energy")); //timer for measurements
-  TimerManager.addTimer(myTimers[0]);
-  TimerManager.addTimer(myTimers[1]);
-  TimerManager.addTimer(myTimers[2]);
-  TimerManager.addTimer(myTimers[3]);
+  setup_timers(myTimers, DMCTimerNames, timer_level_medium);
 }
 
 /// destructor
@@ -53,9 +56,11 @@ DMCUpdatePbyPWithRejectionFast::~DMCUpdatePbyPWithRejectionFast() { }
 
 void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
+  myTimers[DMC_buffer]->start();
   Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
   W.loadWalker(thisWalker,true);
   Psi.copyFromBuffer(W,w_buffer);
+  myTimers[DMC_buffer]->stop();
   //create a 3N-Dimensional Gaussian with variance=1
   makeGaussRandomWithEngine(deltaR,RandomGen);
   int nAcceptTemp(0);
@@ -66,7 +71,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
   RealType rr_proposed=0.0;
   RealType rr_accepted=0.0;
   RealType gf_acc=1.0;
-  myTimers[1]->start();
+  myTimers[DMC_movePbyP]->start();
   for(int ig=0; ig<W.groups(); ++ig) //loop over species
   {
     RealType tauovermass = Tau*MassInvS[ig];
@@ -132,35 +137,33 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
       }
     }
   }
-  myTimers[1]->stop();
-  //RealType nodecorr_old=thisWalker.Properties(DRIFTSCALE);
-  //RealType nodecorr=nodecorr_old;
-  if(UseTMove)
-    nonLocalOps.reset();
 
   W.donePbyP();
+  myTimers[DMC_movePbyP]->stop();
 
+  if(UseTMove)
+    nonLocalOps.reset();
   bool advanced=true;
   if(nAcceptTemp>0)
   {
     //need to overwrite the walker properties
-    myTimers[2]->start();
+    myTimers[DMC_buffer]->start();
     thisWalker.Age=0;
     RealType logpsi = Psi.updateBuffer(W,w_buffer,recompute);
     W.saveWalker(thisWalker);
-    myTimers[2]->stop();
-    myTimers[3]->start();
+    myTimers[DMC_buffer]->stop();
+    myTimers[DMC_hamiltonian]->start();
     if(UseTMove)
       enew= H.evaluate(W,nonLocalOps.Txy);
     else
       enew= H.evaluate(W);
-    myTimers[3]->stop();
-    //nodecorr=getNodeCorrection(W.G,thisWalker.Drift);
-    //thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
+    myTimers[DMC_hamiltonian]->stop();
     thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,1.0 );
     thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
+    myTimers[DMC_collectables]->start();
     H.auxHevaluate(W,thisWalker);
     H.saveProperty(thisWalker.getPropertyBase());
+    myTimers[DMC_collectables]->stop();
   }
   else
   {
@@ -184,6 +187,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
 #endif
   if(UseTMove)
   {
+    myTimers[DMC_tmoves]->start();
     int ibar = nonLocalOps.selectMove(RandomGen());
     //make a non-local move
     if(ibar)
@@ -194,7 +198,6 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
 #endif
       if(W.makeMoveAndCheck(iat,nonLocalOps.delta(ibar)))
       {
-        myTimers[2]->start();
         GradType grad_iat;
         Psi.ratioGrad(W,iat,grad_iat);
         Psi.acceptMove(W,iat);
@@ -206,11 +209,11 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
         //W.update(true);
         //RealType logpsi2 = Psi.evaluateLog(W);
         //if(logpsi!=logpsi2) std::cout << " logpsi " << logpsi << " logps2i " << logpsi2 << " diff " << logpsi2-logpsi << std::endl;
-        myTimers[2]->stop();
         W.saveWalker(thisWalker);
         ++NonLocalMoveAccepted;
       }
     }
+    myTimers[DMC_tmoves]->stop();
   }
   //2008-06-26: select any
   //bare green function by setting nodecorr=nodecorr_old=1.0

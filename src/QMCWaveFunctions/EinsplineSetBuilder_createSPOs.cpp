@@ -374,7 +374,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     abort();
   }
 #else
-  if(useGPU=="yes"||use_einspline_set_extended=="yes")
+#ifndef QMC_CUDA
+  if(use_einspline_set_extended=="yes")
+#endif
   {
     EinsplineSet *new_OrbitalSet;
     if (UseRealOrbitals)
