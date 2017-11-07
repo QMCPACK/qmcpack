@@ -177,23 +177,6 @@ public:
       ParticleSet::ParticleGradient_t& G,
       ParticleSet::ParticleLaplacian_t& L);
 
-  virtual void registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf, int storageType=0);
-
-  virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only, long& orbs, long& invs, long& dets)
-  {
-    // mmorales: not sure you need to store myL,myG for nonlocal psp optimization
-    orbs_only += NumPtcls*NumOrbitals;
-    orbs += NumPtcls*NumOrbitals + NP*4 + 2;
-  }
-
-  virtual void copyToDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual void copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual RealType evaluateLogForDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual RealType evaluateLogFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
   virtual RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
 
   virtual void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);

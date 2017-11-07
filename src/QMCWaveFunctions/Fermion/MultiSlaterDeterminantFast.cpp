@@ -271,39 +271,8 @@ OrbitalBase::RealType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P
   return LogValue = evaluateLogAndPhase(psi,PhaseValue);
 }
 
-OrbitalBase::RealType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P,
-    ParticleSet::ParticleGradient_t& G,
-    ParticleSet::ParticleLaplacian_t& L,
-    PooledData<RealType>& buf,
-    bool fillBuffer )
-{
-  if(fillBuffer)
-  {
-    Dets[0]->evaluateForWalkerMove(P);
-    Dets[0]->copyToDerivativeBuffer(P,buf);
-    Dets[1]->evaluateForWalkerMove(P);
-    Dets[1]->copyToDerivativeBuffer(P,buf);
-  }
-  else
-  {
-    Dets[0]->copyFromDerivativeBuffer(P,buf);
-    Dets[1]->copyFromDerivativeBuffer(P,buf);
-  }
-
-  psiCurrent=evaluate_vgl_impl(P,myG,myL);
-
-  buf.add(psiCurrent);
-
-  G += myG;
-  for(int i=0; i<L.size(); i++)
-    L[i] += myL[i] - dot(myG[i],myG[i]);
-
-  return evaluateLogAndPhase(psiCurrent,PhaseValue);
-}
-
-
-OrbitalBase::ValueType 
-MultiSlaterDeterminantFast::evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at) 
+OrbitalBase::ValueType
+MultiSlaterDeterminantFast::evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at)
 {
   const bool upspin=(iat<FirstIndex_dn);
   const int spin0=(upspin)? 0: 1;
@@ -315,7 +284,7 @@ MultiSlaterDeterminantFast::evalGrad_impl(ParticleSet& P, int iat, bool newpos, 
     Dets[spin0]->evaluateGrads(P,iat);
 
   const GradMatrix_t& grads = (newpos)? Dets[spin0]->new_grads:Dets[spin0]->grads;
-  const ValueType *restrict detValues0 = (newpos)? Dets[spin0]->new_detValues.data(): Dets[spin0]->detValues.data(); 
+  const ValueType *restrict detValues0 = (newpos)? Dets[spin0]->new_detValues.data(): Dets[spin0]->detValues.data();
   const ValueType *restrict detValues1 = Dets[spin1]->detValues.data();
   const size_t *restrict det0=(upspin)? C2node_up->data():C2node_dn->data();
   const size_t *restrict det1=(upspin)? C2node_dn->data():C2node_up->data();
@@ -448,18 +417,6 @@ OrbitalBase::RealType MultiSlaterDeterminantFast::registerData(ParticleSet& P, B
   buf.add(psiCurrent);
 
   return LogValue;
-}
-
-// this routine does not initialize the data, just reserves the space
-void MultiSlaterDeterminantFast::registerDataForDerivatives(ParticleSet& P, 
-    BufferType& buf, int storageType)
-{
-  if(usingBF)
-  {
-    APP_ABORT("Fast MSD+BF: registerDataForDerivatives not implemented. \n");
-  }
-  Dets[0]->registerDataForDerivatives(P,buf,storageType);
-  Dets[1]->registerDataForDerivatives(P,buf,storageType);
 }
 
 // FIX FIX FIX

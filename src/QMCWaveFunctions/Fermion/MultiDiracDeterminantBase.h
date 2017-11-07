@@ -137,20 +137,6 @@ public:
 
   RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
 
-  void registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf, int storageType=0);
-
-  virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only, long& orbs, long& invs, long& dets)
-  {
-    orbs_only += NumPtcls*NumOrbitals;
-    orbs += NumPtcls*NumOrbitals*5;
-    invs += NumPtcls*NumPtcls;
-    dets += NumDets*(1 + 4*NumPtcls);
-  }
-
-  void copyToDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  void copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
   RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
 
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);

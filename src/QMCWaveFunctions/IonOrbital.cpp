@@ -221,7 +221,7 @@ IonOrbital::updateBuffer(ParticleSet& P, BufferType& buf,
  *@param P the ParticleSet to operate on
  *@param buf PooledData which stores the data for each walker
  *
- *copyFromBuffer uses the data stored by registerData or evaluate(P,buf)
+ *copyFromBuffer uses the data stored by registerData
  */
 void
 IonOrbital::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)

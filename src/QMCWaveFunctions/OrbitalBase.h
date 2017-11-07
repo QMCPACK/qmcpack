@@ -229,23 +229,6 @@ struct OrbitalBase: public QMCTraits
    */
   virtual void recompute(ParticleSet& P) {};
 
-  /** evaluate the value of the orbital
-   * @param P active ParticleSet
-   * @param G Gradients, \f$\nabla\ln\Psi\f$
-   * @param L Laplacians, \f$\nabla^2\ln\Psi\f$
-   * @param buf Buffer, data for analytical derivative calculation
-   *
-   */
-  virtual RealType
-  evaluateLog(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& G,
-              ParticleSet::ParticleLaplacian_t& L,
-              PooledData<RealType>& buf,
-              bool fillBuffer )
-  {
-    return evaluateLog(P,G,L);
-  }
-  
  // virtual void evaluateHessian(ParticleSet& P, IndexType iat, HessType& grad_grad_psi)
  // {
  //   APP_ABORT("OrbitalBase::evaluateHessian is not implemented");  
@@ -359,17 +342,6 @@ struct OrbitalBase: public QMCTraits
    */
   virtual RealType registerData(ParticleSet& P, BufferType& buf) =0;
 
-  /** add temporary (constant) data used to calculate analytical
-   *  derivatives during linear optimization of parameters
-   */
-  virtual void registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0)
-  {
-  }
-
-  virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only ,long& orbs, long& invs, long& dets)
-  {
-  }
-
   /** re-evaluate the content and buffer data
    * @param P particle set
    * @param buf Anonymous storage
@@ -380,9 +352,6 @@ struct OrbitalBase: public QMCTraits
 
   /** copy the internal data saved for particle-by-particle move.*/
   virtual void copyFromBuffer(ParticleSet& P, BufferType& buf)=0;
-
-  /** copy the internal data saved for optimization.*/
-  virtual void copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf) {};
 
   /** return a proxy orbital of itself
    */
@@ -412,15 +381,6 @@ struct OrbitalBase: public QMCTraits
       dlogpsi[loc] *= myrat;
     }
   };
-
-//      virtual void evaluateDerivatives(ParticleSet& P,
-//                                       const opt_variables_type& optvars,
-//                                       std::vector<RealType>& dlogpsi,
-//                                       std::vector<RealType>& dhpsioverpsi,
-//                                       PooledData<RealType>& buf)
-//      {
-//         evaluateDerivatives(P,optvars,dlogpsi,dhpsioverpsi);
-//      }
 
   virtual void finalizeOptimization() { }
 

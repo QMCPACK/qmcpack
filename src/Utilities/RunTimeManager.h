@@ -17,6 +17,7 @@
 #define QMCPLUSPLUS_RUNTIME_MANAGER_H
 
 #include <Utilities/Clock.h>
+#include <string>
 
 
 namespace qmcplusplus
@@ -48,6 +49,31 @@ private:
   double start_time;
   double total_time;
 };
+
+class RunTimeControl
+{
+  int MaxCPUSecs;
+  double m_runtime_safety_padding;
+  double m_loop_margin;
+  double m_loop_time;
+  double m_elapsed;
+  double m_remaining;
+  RunTimeManagerClass &runtimeManager;
+public:
+
+  RunTimeControl(RunTimeManagerClass &rm, int maxCPUSecs) : runtimeManager(rm), MaxCPUSecs(maxCPUSecs) {
+     m_runtime_safety_padding = 10.0; // 10 seconds - enough to shut down?
+     m_loop_margin = 1.1; // 10% margin on average loop time?
+  }
+
+  void runtime_padding(int runtime_padding) { m_runtime_safety_padding = runtime_padding; }
+  void loop_margin(int loopMargin) { m_loop_margin = loopMargin; }
+
+  bool enough_time_for_next_iteration(LoopTimer &loop_timer);
+  std::string time_limit_message(const std::string &driverName, int block);
+
+};
+
 
 }
 #endif

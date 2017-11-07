@@ -143,10 +143,6 @@ public:
    */
   void restore(int iat);
 
-  RealType evaluateLogForDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  RealType evaluateLogFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
   RealType
   evaluateLog(ParticleSet& P,
               ParticleSet::ParticleGradient_t& G,
@@ -204,7 +200,6 @@ public:
   ValueType *LastAddressOfGGG;
   ValueType *FirstAddressOfFm;
   ValueType *LastAddressOfFm;
-  bool usingDerivBuffer;
 
   void testDerivFjj(ParticleSet& P, int pa);
   void testGGG(ParticleSet& P);

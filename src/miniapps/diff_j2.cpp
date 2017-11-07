@@ -19,7 +19,7 @@
 #include <OhmmsSoA/VectorSoaContainer.h>
 #include <Utilities/PrimeNumberSet.h>
 #include <random/random.hpp>
-#include <miniapps/graphite.hpp>
+#include <miniapps/input.hpp>
 #include <miniapps/pseudo.hpp>
 #include <Utilities/Timer.h>
 #include <miniapps/common.hpp>
@@ -96,8 +96,6 @@ int main(int argc, char** argv)
 #pragma omp parallel reduction(+:t0,ratio)
   {
     ParticleSet ions, els;
-    ions.setName("ion");
-    els.setName("e");
     OHMMS_PRECISION scale=1.0;
 
     int np=omp_get_num_threads();
@@ -106,10 +104,10 @@ int main(int argc, char** argv)
     //create generator within the thread
     RandomGenerator<RealType> random_th(myPrimes[ip]);
 
-    tile_graphite(ions,tmat,scale);
+    tile_cell(ions,tmat,scale);
 
     const int nions=ions.getTotalNum();
-    const int nels=4*nions;
+    const int nels=count_electrons(ions);
     const int nels3=3*nels;
 
 #pragma omp master
