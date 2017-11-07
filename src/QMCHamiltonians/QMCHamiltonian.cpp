@@ -538,7 +538,7 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker)
   }
 }
 ///Evaluate properties only.
-void QMCHamiltonian::auxHevaluateProperties(ParticleSet& P, Walker_t& ThisWalker)
+void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker,bool do_properties, bool do_collectables)
 {
 #if !defined(REMOVE_TRACEMANAGER)
   collect_walker_traces(ThisWalker,P.current_step);
@@ -546,28 +546,8 @@ void QMCHamiltonian::auxHevaluateProperties(ParticleSet& P, Walker_t& ThisWalker
   for(int i=0; i<auxH.size(); ++i)
   {
     bool is_property = !(auxH[i]->getMode(QMCHamiltonianBase::COLLECTABLE));
-    if (is_property)
-    {
-      auxH[i]->setHistories(ThisWalker);
-      RealType sink = auxH[i]->evaluate(P);
-      auxH[i]->setObservables(Observables);
-#if !defined(REMOVE_TRACEMANAGER)
-      auxH[i]->collect_scalar_traces();
-#endif
-      auxH[i]->setParticlePropertyList(P.PropertyList,myIndex);
-    }
-  }
-}
-///Evaluate collectables only.
-void QMCHamiltonian::auxHevaluateCollectables(ParticleSet& P, Walker_t& ThisWalker)
-{
-#if !defined(REMOVE_TRACEMANAGER)
-  collect_walker_traces(ThisWalker,P.current_step);
-#endif
-  for(int i=0; i<auxH.size(); ++i)
-  {
     bool is_collectable = (auxH[i]->getMode(QMCHamiltonianBase::COLLECTABLE));
-    if (is_collectable)
+    if ( (is_property && do_properties) || (is_collectable && do_collectables) )
     {
       auxH[i]->setHistories(ThisWalker);
       RealType sink = auxH[i]->evaluate(P);
@@ -579,7 +559,6 @@ void QMCHamiltonian::auxHevaluateCollectables(ParticleSet& P, Walker_t& ThisWalk
     }
   }
 }
-
 
 void QMCHamiltonian::rejectedMove(ParticleSet& P, Walker_t& ThisWalker )
 {

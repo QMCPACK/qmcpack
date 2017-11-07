@@ -233,7 +233,7 @@ namespace qmcplusplus
 	prophead.resetProperty (logpsi, Psi.getPhase (), enew, rr_accepted,
 				rr_proposed, 0.0);
 	prophead.Weight = 1.0;
-	H.auxHevaluateProperties (W, prophead);
+	H.auxHevaluate (W, prophead,true,false); //evaluate properties but not collectables.
 	H.saveProperty (prophead.getPropertyBase ());
 	newhead = prophead;
 	nAccept++;
@@ -257,7 +257,7 @@ namespace qmcplusplus
       Walker_t& centerbead = W.reptile->getCenter();
       W.loadWalker(centerbead,true);
       W.update();
-      H.auxHevaluateCollectables(W,centerbead);
+      H.auxHevaluate(W,centerbead); //evaluate collectables but not properties.
     // Traces->buffer_sample();
   }
 
@@ -391,7 +391,7 @@ namespace qmcplusplus
 	prophead.Properties (LOCALENERGY) = eloc;
 	prophead.Properties (R2ACCEPTED) = rr_accepted;
 	prophead.Properties (R2PROPOSED) = rr_proposed;
-	H.auxHevaluateProperties (W, prophead);
+	H.auxHevaluate (W, prophead, true, false);  //evaluate properties? true.  collectables?  false.
 	H.saveProperty (prophead.getPropertyBase ());
 	prophead.Age = 0;
 	overwriteWalker = prophead;
@@ -411,7 +411,7 @@ namespace qmcplusplus
       Walker_t& centerbead = W.reptile->getCenter();
       W.loadWalker(centerbead,true);
       W.update();  //Called to recompute S(k) and distance tables.  
-      H.auxHevaluateCollectables(W,centerbead);
+      H.auxHevaluate(W,centerbead,false, true); //evaluate properties?  false.  Collectables?  true.
   }
 
   void RMCUpdatePbyPWithDrift::advanceWalker (Walker_t& thisWalker, bool recompute)
