@@ -698,8 +698,7 @@ void SlaterDetOpt::resetParameters(const opt_variables_type& active)
   this->exponentiate_matrix(m_nlc, &rot_mat.at(0));
 
   // get the linear combination coefficients by applying the rotation to the old coefficients
-  BLAS::gemm('N', 'T', m_nb, m_nlc, m_nlc, RealType(1.0), &(Phi->m_init_B.at(0)),
-             m_nb, &rot_mat.at(0), m_nlc, RealType(0.0), &(Phi->m_B.at(0)), m_nb);
+  Phi->rotate_B(rot_mat);
 
   // Store the orbital rotations parameters internally in myVars
   for (int i = 0; i < m_act_rot_inds.size(); i++)
@@ -1087,10 +1086,8 @@ void SlaterDetOpt::buildOptVariables(std::vector<RealType>& input_params,
   }
   // Exponentiate antisymmetric matrix to get the unitary rotation.
   this->exponentiate_matrix(m_nlc, &rot_mat.at(0));
-  // Get the linear combination coefficients by applying the rotation to
-  // the old coefficients
-  BLAS::gemm('N', 'T', m_nb, m_nlc, m_nlc, RealType(1.0), &(Phi->m_init_B.at(0)), m_nb,
-             &rot_mat.at(0), m_nlc, RealType(0.0), &(Phi->m_B.at(0)), m_nb);
+  // get the linear combination coefficients by applying the rotation to the old coefficients
+  Phi->rotate_B(rot_mat);
 }
 
 }

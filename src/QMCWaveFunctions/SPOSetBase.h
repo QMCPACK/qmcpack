@@ -79,15 +79,6 @@ public:
   ValueMatrix_t t_logpsi;
   ///matrix containing the coefficients
   ValueMatrix_t C;
-
-  /// For use by the LCOrbitalSetOpt class, derived from this:
-  /// the column-major-order m_nb by m_nlc matrix of orbital coefficients
-  /// resulting from a rotation of the old coefficients
-  std::vector<RealType> m_B;
-  /// the column-major-order m_nb by m_nlc initial orbital coefficients
-  /// at the start of the simulation, from which rotations are performed
-  std::vector<RealType> m_init_B;
-
   ///occupation number
   Vector<RealType> Occ;
   /// Optimizable variables
@@ -315,8 +306,12 @@ public:
   }
 
   // Routine to set up data for the LCOrbitalSetOpt child class specifically
-  // Should be empty for other derived classes
+  // Should be left empty for other derived classes
   virtual void init_LCOrbitalSetOpt(const double mix_factor=0.0) { };
+
+  // Routine to update internal data for the LCOrbitalSetOpt child class specifically
+  // Should be left empty for other derived classes
+  virtual void rotate_B(const std::vector<RealType> &rot_mat) { };
 
 #ifdef QMC_CUDA
 

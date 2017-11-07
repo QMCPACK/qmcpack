@@ -56,6 +56,15 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
     /// \brief  the level of printing
     int m_report_level;
 
+    /// For use by the LCOrbitalSetOpt class, derived from this:
+    /// the column-major-order m_nb by m_nlc matrix of orbital coefficients
+    /// resulting from a rotation of the old coefficients
+    std::vector<RealType> m_B;
+
+    /// the column-major-order m_nb by m_nlc initial orbital coefficients
+    /// at the start of the simulation, from which rotations are performed
+    std::vector<RealType> m_init_B;
+
     /// \brief  workspace matrix 
     std::vector<ValueType> m_lc_coeffs;
 
@@ -230,6 +239,19 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
       }
 
       this->print_B();
+    }
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    /// \brief rotate m_init_B to m_B
+    /// \param[in]     rot_mat     rotation matrix
+    ///
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+    void rotate_B(const std::vector<RealType> &rot_mat)
+    {
+      // get the linear combination coefficients by applying the rotation to the old coefficients
+      BLAS::gemm('N', 'T', m_nb, m_nlc, m_nlc, RealType(1.0), m_init_B.data(),
+                 m_nb, rot_mat.data(), m_nlc, RealType(0.0), m_B.data(), m_nb);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
