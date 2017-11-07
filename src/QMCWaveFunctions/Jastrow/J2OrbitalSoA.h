@@ -186,7 +186,6 @@ struct  J2OrbitalSoA : public OrbitalBase
   }
 
   ValueType ratio(ParticleSet& P, int iat);
-  void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
   GradType evalGrad(ParticleSet& P, int iat);
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   void acceptMove(ParticleSet& P, int iat);
@@ -556,13 +555,6 @@ J2OrbitalSoA<FT>::evaluateGL(ParticleSet& P,
 
   constexpr valT mhalf(-0.5);
   LogValue=mhalf*LogValue;
-}
-
-template<typename FT>
-void J2OrbitalSoA<FT>::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
-{
-  for(size_t iat=0; iat<N; ++iat)
-    ratios[iat]=ratio(P,iat);
 }
 
 }
