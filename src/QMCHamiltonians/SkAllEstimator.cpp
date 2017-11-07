@@ -135,6 +135,8 @@ SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
     {
       int kc=myIndex;
       for(int k=0; k<NumK; k++,kc++)
+        P.Collectables[kc] += values[k];
+      for(int k=0; k<NumK; k++,kc++)
         P.Collectables[kc] += w*RhokTot_r[k];
       for(int k=0; k<NumK; k++,kc++)
         P.Collectables[kc] += w*RhokTot_i[k];
@@ -168,6 +170,8 @@ SkAllEstimator::Return_t SkAllEstimator::evaluate(ParticleSet& P)
     {
       int kc=myIndex;
       for(int k=0; k<NumK; k++,kc++)
+        P.Collectables[kc] += values[k];
+      for(int k=0; k<NumK; k++,kc++)
         P.Collectables[kc] += w*rhok[k].real();
       for(int k=0; k<NumK; k++,kc++)
         P.Collectables[kc] += w*rhok[k].imag();
@@ -191,7 +195,7 @@ void SkAllEstimator::addObservables(PropertySetType& plist, BufferType& collecta
   if(hdf5_out)
   {
     myIndex=collectables.size();
-    std::vector<RealType> tmp(2*NumK); // space for real & imag
+    std::vector<RealType> tmp(3*NumK); // space for e-e modulus, e real, e imag
     collectables.add(tmp.begin(),tmp.end());
   }
   else
@@ -292,14 +296,19 @@ void SkAllEstimator::registerCollectables(std::vector<observable_helper*>& h5des
     // Add electron-electron S(k)
     std::vector<int> ng(1);
     ng[0] = NumK;
-    //  real part
-    oh=new observable_helper("rhok_e_e_real");
+    //  modulus
+    oh=new observable_helper("rhok_e_e");
     oh->set_dimensions(ng,myIndex);
     oh->open(sgid); // add to SkAll hdf group
     h5desc.push_back(oh);
-    //  imaginary part
-    oh=new observable_helper("rhok_e_e_imag");
+    //  real part
+    oh=new observable_helper("rhok_e_r");
     oh->set_dimensions(ng,myIndex+NumK);
+    oh->open(sgid); // add to SkAll hdf group
+    h5desc.push_back(oh);
+    //  imaginary part
+    oh=new observable_helper("rhok_e_i");
+    oh->set_dimensions(ng,myIndex+2*NumK);
     oh->open(sgid); // add to SkAll hdf group
     h5desc.push_back(oh);
     
