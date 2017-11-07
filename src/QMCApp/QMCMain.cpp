@@ -728,10 +728,4 @@ void QMCMain::postprocess(xmlNodePtr cur,int qacur)
 #endif
 }
 
-
 }
-/***********************************************************************
- * $RCSfilMCMain.cpp,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

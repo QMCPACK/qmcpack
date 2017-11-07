@@ -69,7 +69,6 @@ The input parameters are listed in the following table.
 \hline
 \multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{usebuffer} &  text     & yes, minimum, no & no  & buffer info to speed up the correlated sampling\\
    &   \texttt{nonlocalpp} &  text     & yes, no & no  & include non-local PP energy in the cost function\\
 %   &   \texttt{GEVMethod} &  text     & mixed, H2 & mixed  & methods of generalized eigenvalue problem\\
 %   &   \texttt{beta} &  real     & any value & 0.0  & a parameter for GEVMethod\\
@@ -89,7 +88,6 @@ When a new set of parameter is proposed, this contribution needs to be updated i
 Fortunately, non-local contribution is chosen small when making a PP for small locality error.
 We can ignore its change and avoid the expensive computational cost.
 GPU code has a implementation issue that large amount of memory is consumed with this option.
-\item \texttt{usebuffer}. It saves computation when nonlocalpp=`yes' at the cost of extra memory footprint. The more correlated sampling is called the more this option saves.
 \item \texttt{minwalkers}. A CRITICAL parameter. When the ratio of effective samples to actual number of samples in a reweighting step goes lower than \texttt{minwalkers},
 the proposed set of parameters is invalid. % The last set of acceptable parameters is kept.
 \end{itemize}
