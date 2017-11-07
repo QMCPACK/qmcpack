@@ -198,6 +198,7 @@ IF(NOT QMC_COMPLEX)
   SET(FERMION_SRCS ${FERMION_SRCS}
     Fermion/RNDiracDeterminantBase.cpp
     Fermion/RNDiracDeterminantBaseAlternate.cpp
+    Fermion/SlaterDetOpt.cpp
     )
 ENDIF(NOT QMC_COMPLEX)
 
