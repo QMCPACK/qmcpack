@@ -201,6 +201,13 @@ class SlaterDetOpt : public DiracDeterminantBase {
                          const RealType * const dBchi,
                          const RealType * const d2Bchi);
 
+    void add_grad_derivatives(const int nl,
+                              const int np,
+                              const RealType * const dh0,
+                              const RealType * const dh1,
+                              const RealType * const Bchi,
+                              const RealType * const dBchi);
+
     void evaluateDerivatives(ParticleSet& P,
                              const opt_variables_type& optvars,
                              std::vector<RealType>& dlogpsi,

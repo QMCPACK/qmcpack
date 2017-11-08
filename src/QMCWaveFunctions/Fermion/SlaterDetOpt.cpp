@@ -813,7 +813,7 @@ void SlaterDetOpt::add_derivatives(const int nl,
 ///                            molecular orbitals at each particle's position.
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void add_grad_derivatives(const int nl,
+void SlaterDetOpt::add_grad_derivatives(const int nl,
                           const int np,
                           const RealType * const dh0,
                           const RealType * const dh1,
