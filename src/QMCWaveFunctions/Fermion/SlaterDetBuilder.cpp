@@ -17,7 +17,6 @@
     
     
 #include "QMCWaveFunctions/BasisSetFactory.h"
-#include "QMCWaveFunctions/LCOrbitalSetOpt.h"
 #include "QMCWaveFunctions/SPOSetScanner.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -39,6 +38,7 @@
 //Cannot use complex with SlaterDetOpt
 #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
 #include "QMCWaveFunctions/LocalizedBasisSet.h"
+#include "QMCWaveFunctions/LCOrbitalSetOpt.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetOpt.h"
 #endif
 #ifdef QMC_CUDA
