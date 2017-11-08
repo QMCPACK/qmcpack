@@ -1317,49 +1317,6 @@ namespace qmcplusplus {
       }
     }
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    /// \brief  Stores data needed for computing derivative ratio information for the linear
-    ///         method in the provided buffer.
-    ///
-    /// \param[in]      P              the particle set
-    /// \param[in]      buf            the buffer to save data in
-    /// \param[in]      storageType    a storage flag
-    ///
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    void registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType) {
-      TrialWaveFunction::RealType returned_val;
-      returned_val = m_wfn_xpd->registerDataForDerivatives(P, buf, storageType);
-      returned_val = m_wfn_xmd->registerDataForDerivatives(P, buf, storageType);
-    }
-
-    void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only ,long& orbs, long& invs, long& dets) {
-      // TODO: Check more thoroughly the introduction of the zero_vars boolean,
-      //       if causing problems.
-      m_wfn_xpd->memoryUsage_DataForDerivatives(P, orbs_only, orbs, invs, dets, false);
-      m_wfn_xmd->memoryUsage_DataForDerivatives(P, orbs_only, orbs, invs, dets, false);
-    }
-
-    void copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf)
-    {
-      std::vector<OrbitalBase*>& Orbitals_plus = m_wfn_xpd->getOrbitals();
-      std::vector<OrbitalBase*>::iterator it_plus(Orbitals_plus.begin());
-      std::vector<OrbitalBase*>::iterator it_plus_end(Orbitals_plus.end());
-
-      for (; it_plus!=it_plus_end; ++it_plus)
-      {
-        (*it_plus)->copyFromDerivativeBuffer(P,buf);
-      }
-
-      std::vector<OrbitalBase*>& Orbitals_minus = m_wfn_xmd->getOrbitals();
-      std::vector<OrbitalBase*>::iterator it_minus(Orbitals_minus.begin());
-      std::vector<OrbitalBase*>::iterator it_minus_end(Orbitals_minus.end());
-
-      for (; it_minus!=it_minus_end; ++it_minus)
-      {
-        (*it_minus)->copyFromDerivativeBuffer(P,buf);
-      }
-    }
-
     void evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
         std::vector<ValueType>& ratios, Matrix<ValueType>& dratios) {
       throw std::runtime_error("FDLRWfn::evaluateDerivRatios not yet implemented");
