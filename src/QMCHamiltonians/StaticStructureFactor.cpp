@@ -113,6 +113,10 @@ namespace qmcplusplus
   void StaticStructureFactor::registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const 
   {
     hid_t sgid=H5Gcreate(gid,myName.c_str(),0);
+    observable_helper* oh=new observable_helper("kpoints");
+    oh->open(sgid); // add to SkAll hdf group
+    oh->addProperty(const_cast<std::vector<PosType>&>(Pinit.SK->KLists.kpts_cart),"value");
+    h5desc.push_back(oh);
     std::vector<int> ng(2);
     ng[0] = 2;
     ng[1] = nkpoints;

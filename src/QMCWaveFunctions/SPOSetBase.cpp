@@ -162,10 +162,12 @@ bool SPOSetBase::put(xmlNodePtr cur)
   //initialize the number of orbital by the basis set size
   int norb= BasisSetSize;
   std::string debugc("no");
+  double orbital_mix_magnitude = 0.0;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(norb,"orbitals");
   aAttrib.add(norb,"size");
   aAttrib.add(debugc,"debug");
+  aAttrib.add(orbital_mix_magnitude, "orbital_mix_magnitude");
   aAttrib.put(cur);
   setOrbitalSetSize(norb);
   const xmlChar* h=xmlGetProp(cur, (const xmlChar*)"href");
@@ -202,6 +204,9 @@ bool SPOSetBase::put(xmlNodePtr cur)
       << C->rows() << " x " << C->cols() << std::endl;
     app_log() << C << std::endl;
   }
+
+  init_LCOrbitalSetOpt(orbital_mix_magnitude);
+
   return success && success2;
 }
 

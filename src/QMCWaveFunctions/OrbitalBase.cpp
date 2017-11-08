@@ -132,5 +132,6 @@ void OrbitalBase::evaluateDerivRatios(VirtualParticleSet& VP, const opt_variable
   //default is only ratios and zero derivatives
   evaluateRatios(VP,ratios);
 }
+
 }
 
