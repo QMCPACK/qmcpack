@@ -24,14 +24,18 @@ module load git
 module load cudatoolkit/8.0.44
 
 env
-
 module list
 
-mkdir -p build
 
+echo ""
+echo ""
+echo "starting new test for real full precision"
+echo ""
+echo ""
+
+mkdir -p build
 cd build
 
-echo "starting new test for real full precision"
 cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_intel14.0.4/include" -DQMC_CUDA=1 .. 2>&1 | tee cmake.out
 
 # hacky way to check on cmake. works for now
@@ -45,35 +49,59 @@ fi
 # because Andreas tells me (and I observe) that GPU builds are unstable with Cmake
 make -j 1
 make -j 24
-
 ctest -L unit
 
 
+echo ""
+echo ""
 echo "starting new test for real mixed precision"
-rm -rf ./*
+echo ""
+echo ""
+
+cd ../
+rm -rf ./build
+mkdir -p build
+cd build
+
 cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_intel14.0.4/include" -DQMC_CUDA=1 .. 2>&1 | tee cmake.out
 
 make -j 1
 make -j 24
-
 ctest -L unit
 
+
+echo ""
+echo ""
 echo "starting new test for complex full precision"
-rm -rf ./*
+echo ""
+echo ""
+
+cd ../
+rm -rf ./build
+mkdir -p build
+cd build
+
 cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_intel14.0.4/include" -DQMC_CUDA=1 .. 2>&1 | tee cmake.out
 
 make -j 1
 make -j 24
-
 ctest -L unit
 
+echo ""
+echo ""
 echo "starting new test for complex mixed precision"
-rm -rf ./*
-cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_intel14.0.4/include" -DQMC_CUDA=1 .. 2>&1 | tee cmake.out
+echo ""
+echo ""
+
+cd ../
+rm -rf ./build
+mkdir -p build
+cd build
+
+cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_intel14.0.4/include" -DQMC_CUDA=1 .. 2>&1 | tee cmake.out
 
 make -j 1
 make -j 24
-
 ctest -L unit
 
 EOF
