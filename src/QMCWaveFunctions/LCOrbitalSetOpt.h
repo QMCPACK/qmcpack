@@ -212,8 +212,8 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
       m_B.resize(m_nlc*m_nb, 0.0);
       m_init_B.resize(m_nlc*m_nb, 0.0);
 
-      std::copy( C.data(), C.data() + m_B.size(),      m_B.begin()      );
-      std::copy( C.data(), C.data() + m_init_B.size(), m_init_B.begin() );
+      std::copy( C->data(), C->data() + m_B.size(),      m_B.begin()      );
+      std::copy( C->data(), C->data() + m_init_B.size(), m_init_B.begin() );
 
       // if requested, mix the initial basis orbitals together
       if ( mix_factor != 0.0 ) {
@@ -774,7 +774,7 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
     ///      in this routine, the dgemm call multiplies a  (norbs) by (basis size)   by a   (basis size) by (nparticle)   matrix
     ///
     ///      this implies that the data inside C has all (basis size) orbital coefficients for each molecular orbital stored contiguously
-    ///      i.e. if the C.data() array is viewed as a column major matrix, the coefficients for one MO would all be in one column
+    ///      i.e. if the C->data() array is viewed as a column major matrix, the coefficients for one MO would all be in one column
     ///
     ///      thus in its own row major ordering, psiM is an  (nparticle) by (norbs)  matrix
     ///
