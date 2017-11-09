@@ -459,6 +459,7 @@ IF (NOT QMC_COMPLEX)
                     0 LIH_PP_SCALARS # VMC
                     )
 
+IF(NOT MIXED_PRECISION)
 #
 # H2 test in a DZV basis set, using optimizable determinants, and the adaptive linear method
 #
@@ -569,6 +570,7 @@ ENDIF(BUILD_LMYENGINE_INTERFACE)
                     TRUE
                     5 H4_OPT_SCALARS # OPT step 5
                     )
+ENDIF()
 
  ELSE()
     MESSAGE("Skipping all gaussian basis tests because they are not supported by complex build (QMC_COMPLEX=1)")  
@@ -983,6 +985,7 @@ ENDIF(ENABLE_SOA)
                     0 DIAMOND_SCALARS # VMC
                     )
 
+IF(NOT MIXED_PRECISION)
 # Reference OPT run in qmc-ref
   LIST(APPEND DIAMOND_OPT_SCALARS "totenergy"   "-10.49370 0.0024")
   LIST(APPEND DIAMOND_OPT_SCALARS "kinetic"     "11.5504 0.021")
@@ -998,6 +1001,7 @@ ENDIF(ENABLE_SOA)
                     TRUE
                     3 DIAMOND_OPT_SCALARS # VMC
                     )
+ENDIF()
 
 # Reference DMC run in qmc-ref "-10.531583 0.000265"
   LIST(APPEND DIAMOND_DMC_SCALARS "totenergy" "-10.531583 0.0024")

@@ -24,6 +24,7 @@ IF(NOT QMC_CUDA AND NOT QMC_COMPLEX AND NOT ENABLE_SOA)
                     1 HE_SIMPLE_DMC_SCALARS # series for DMC data
                     )
 
+IF(NOT MIXED_PRECISION)
   LIST(APPEND HE_SIMPLE_OPT_SCALARS "totenergy" "-2.88 .004") # total energy
 
   QMC_RUN_AND_CHECK(example_He_simple_opt
@@ -34,6 +35,7 @@ IF(NOT QMC_CUDA AND NOT QMC_COMPLEX AND NOT ENABLE_SOA)
                     TRUE
                     10 HE_SIMPLE_OPT_SCALARS # final optimized series
                     )
+ENDIF()
 
   LIST(APPEND HE_FROM_GAMESS_SCALARS "totenergy" "-2.872 .003") # total energy
 
