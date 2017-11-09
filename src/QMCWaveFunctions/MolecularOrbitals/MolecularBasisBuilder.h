@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/LocalizedBasisSet.h"
 #include "QMCWaveFunctions/MolecularOrbitals/AtomicBasisBuilder.h"
 #include "QMCWaveFunctions/LCOrbitalSet.h"
+#include "QMCWaveFunctions/LCOrbitalSetOpt.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #if QMC_BUILD_LEVEL>2
@@ -122,10 +123,12 @@ public:
   {
     ReportEngine PRE(ClassName,"createSPO(xmlNodePtr)");
     std::string spo_name(""), id, cusp_file("");
+    std::string use_new_opt_class("no");
     OhmmsAttributeSet spoAttrib;
     spoAttrib.add (spo_name, "name");
     spoAttrib.add (id, "id");
     spoAttrib.add (cusp_file, "cuspInfo");
+    spoAttrib.add (use_new_opt_class, "optimize");
     spoAttrib.put(cur);
     SPOSetBase *lcos=0;
     cur = cur->xmlChildrenNode;
@@ -157,8 +160,17 @@ public:
         else
 #endif
         {
-          app_log() << "Creating LCOrbitalSet with the input coefficients" << std::endl;
-          lcos= new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet,ReportLevel,algorithm);
+          if ( use_new_opt_class == "yes" ) {
+            app_log() << "Creating LCOrbitalSetOpt with the input coefficients" << std::endl;
+            lcos= new LCOrbitalSetOpt<ThisBasisSetType>(thisBasisSet,ReportLevel);
+            if(spo_name != "")
+              lcos->objectName=spo_name;
+            else
+              throw std::runtime_error("LCOrbitalSetOpt spo set must have a name");
+          } else {
+            app_log() << "Creating LCOrbitalSet with the input coefficients" << std::endl;
+            lcos= new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet,ReportLevel,algorithm);
+          }
         }
       }
       cur=cur->next;

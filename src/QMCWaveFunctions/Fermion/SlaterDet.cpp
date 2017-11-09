@@ -161,41 +161,6 @@ void SlaterDet::recompute(ParticleSet& P)
     Dets[i]->recompute(P);
 }
 
-void SlaterDet::registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType)
-{
-  for (int i = 0; i < Dets.size(); ++i)
-    Dets[i]->registerDataForDerivatives(P,buf,storageType);
-}
-
-SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,
-    ParticleSet::ParticleGradient_t& G,
-    ParticleSet::ParticleLaplacian_t& L,
-    PooledData<RealType>& buf,
-    bool fillBuffer )
-{
-  LogValue = 0.0;
-  PhaseValue = 0.0;
-  if(fillBuffer)
-  {
-    for (int i = 0; i < Dets.size(); ++i)
-    {
-      LogValue +=Dets[i]->evaluateLogForDerivativeBuffer(P, buf);
-      Dets[i]->copyToDerivativeBuffer(P, buf);
-      PhaseValue += Dets[i]->PhaseValue;
-    }
-  }
-  else
-  {
-    for (int i = 0; i < Dets.size(); ++i)
-    {
-      Dets[i]->copyFromDerivativeBuffer(P,buf);
-      LogValue += Dets[i]->evaluateLogFromDerivativeBuffer(P, buf);
-      PhaseValue += Dets[i]->PhaseValue;
-    }
-  }
-  return LogValue;
-}
-
 void SlaterDet::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad_psi)
 {
 	grad_grad_psi.resize(P.getTotalNum());

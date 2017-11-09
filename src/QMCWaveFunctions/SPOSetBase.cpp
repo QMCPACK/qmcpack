@@ -118,10 +118,12 @@ bool SPOSetBase::put(xmlNodePtr cur)
   //initialize the number of orbital by the basis set size
   int norb= BasisSetSize;
   std::string debugc("no");
+  double orbital_mix_magnitude = 0.0;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(norb,"orbitals");
   aAttrib.add(norb,"size");
   aAttrib.add(debugc,"debug");
+  aAttrib.add(orbital_mix_magnitude, "orbital_mix_magnitude");
   aAttrib.put(cur);
   setOrbitalSetSize(norb);
   TotalOrbitalSize=norb;
@@ -160,6 +162,9 @@ bool SPOSetBase::put(xmlNodePtr cur)
     app_log() << "   Single-particle orbital coefficients dims=" << C.rows() << " x " << C.cols() << std::endl;
     app_log() << C << std::endl;
   }
+
+  init_LCOrbitalSetOpt(orbital_mix_magnitude);
+
   return success && success2;
 }
 
@@ -352,6 +357,7 @@ void SPOSetBase::evaluate (std::vector<Walker_t*> &walkers, int iat,
                            gpu::device_vector<CudaValueType*> &phi)
 {
   app_error() << "Need specialization of vectorized evaluate in SPOSetBase.\n";
+  app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
   abort();
 }
 
@@ -359,6 +365,7 @@ void SPOSetBase::evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType>
                            gpu::device_vector<CudaValueType*> &phi)
 {
   app_error() << "Need specialization of vectorized evaluate in SPOSetBase.\n";
+  app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
   abort();
 }
 
@@ -369,6 +376,7 @@ void SPOSetBase::evaluate (std::vector<Walker_t*> &walkers,
                            int row_stride)
 {
   app_error() << "Need specialization of vectorized eval_grad_lapl in SPOSetBase.\n";
+  app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
   abort();
 }
 
@@ -376,6 +384,7 @@ void SPOSetBase::evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaRea
 {
   app_error() << "Need specialization of vectorized evaluate "
               << "in SPOSetBase.\n";
+  app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
   abort();
 }
 
@@ -383,6 +392,7 @@ void SPOSetBase::evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaCom
 {
   app_error() << "Need specialization of vectorized evaluate "
               << "in SPOSetBase.\n";
+  app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
   abort();
 }
 #endif

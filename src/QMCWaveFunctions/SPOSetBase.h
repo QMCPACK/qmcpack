@@ -258,6 +258,12 @@ public:
   evaluateThirdDeriv(const ParticleSet& P, int first, int last
                      , GGGMatrix_t& grad_grad_grad_logdet);
 
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  /// \brief  returns whether this is an LCOrbitalSetOpt object
+  ///
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  virtual bool is_of_type_LCOrbitalSetOpt() const { return false; }
+
   virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
                                     , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)=0;
 
@@ -299,6 +305,13 @@ public:
     return true;
   }
 
+  // Routine to set up data for the LCOrbitalSetOpt child class specifically
+  // Should be left empty for other derived classes
+  virtual void init_LCOrbitalSetOpt(const double mix_factor=0.0) { };
+
+  // Routine to update internal data for the LCOrbitalSetOpt child class specifically
+  // Should be left empty for other derived classes
+  virtual void rotate_B(const std::vector<RealType> &rot_mat) { };
 
 #ifdef QMC_CUDA
 

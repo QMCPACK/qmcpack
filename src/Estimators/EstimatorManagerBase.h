@@ -303,12 +303,8 @@ protected:
 private:
   ///number of maximum data for a scalar.dat
   int max4ascii;
-  ///number of requests
-  int pendingRequests;
   //Data for communication
   std::vector<BufferType*> RemoteData;
-  //storage for MPI_Request
-  std::vector<Communicate::request> myRequest;
   ///collect data and write
   void collectBlockAverages(int num_threads);
   ///add header to an std::ostream

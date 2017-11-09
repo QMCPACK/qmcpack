@@ -37,7 +37,6 @@
 #include "HDFVersion.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Estimators/CSEnergyEstimator.h"
-//#define QMC_ASYNC_COLLECT
 //leave it for serialization debug
 //#define DEBUG_ESTIMATOR_ARCHIVE
 
@@ -58,7 +57,7 @@ EstimatorManagerBase::EstimatorManagerBase(Communicate* c)
   : RecordCount(0),h_file(-1), FieldWidth(20)
   , MainEstimatorName("LocalEnergy"), Archive(0), DebugArchive(0)
   , myComm(0), MainEstimator(0), Collectables(0)
-  , max4ascii(8), pendingRequests(0)
+  , max4ascii(8)
 {
   setCommunicator(c);
 }
@@ -67,7 +66,7 @@ EstimatorManagerBase::EstimatorManagerBase(EstimatorManagerBase& em)
   : RecordCount(0),h_file(-1), FieldWidth(20)
   , MainEstimatorName(em.MainEstimatorName), Options(em.Options), Archive(0), DebugArchive(0)
   , myComm(0), MainEstimator(0), Collectables(0)
-  , EstimatorMap(em.EstimatorMap), max4ascii(em.max4ascii), pendingRequests(0)
+  , EstimatorMap(em.EstimatorMap), max4ascii(em.max4ascii)
 {
   //inherit communicator
   setCommunicator(em.myComm);
@@ -95,18 +94,10 @@ void EstimatorManagerBase::setCommunicator(Communicate* c)
   //set the default options
   Options.set(COLLECT,myComm->size()>1);
   Options.set(MANAGE,myComm->rank() == 0);
-  myRequest.resize(2);
-  if(Options[COLLECT] && Options[MANAGE])
-    myRequest.resize(myComm->size()-1);
   if(RemoteData.empty())
   {
-#if defined(QMC_ASYNC_COLLECT)
-    for(int i=0; i<myComm->size(); i++)
-      RemoteData.push_back(new BufferType);
-#else
     RemoteData.push_back(new BufferType);
     RemoteData.push_back(new BufferType);
-#endif
   }
 }
 
@@ -178,11 +169,7 @@ void EstimatorManagerBase::start(int blocks, bool record)
   PropertyCache.resize(BlockProperties.size());
   //count the buffer size for message
   BufferSize=2*AverageCache.size()+PropertyCache.size();
-#if defined(QMC_ASYNC_COLLECT)
-  int sources=myComm->size();
-#else
   int sources=2;
-#endif
   //allocate buffer for data collection
   if(RemoteData.empty())
     for(int i=0; i<sources; ++i)
@@ -220,18 +207,6 @@ void EstimatorManagerBase::start(int blocks, bool record)
       Estimators[i]->registerObservables(h5desc,h_file);
     if(Collectables)
       Collectables->registerObservables(h5desc,h_file);
-#if defined(QMC_ASYNC_COLLECT)
-    if(Options[COLLECT])
-    {
-      //issue a irecv
-      pendingRequests=0;
-      for(int i=1,is=0; i<myComm->size(); i++,is++)
-      {
-        myRequest[is]=myComm->irecv(i,i,*RemoteData[i]);//request only has size-1
-        pendingRequests++;
-      }
-    }
-#endif
   }
 }
 
@@ -267,12 +242,6 @@ void EstimatorManagerBase::stop(const std::vector<EstimatorManagerBase*> est)
  */
 void EstimatorManagerBase::stop()
 {
-  //clean up pending messages
-  if(pendingRequests)
-  {
-    cancel(myRequest);
-    pendingRequests=0;
-  }
   //close any open files
   if(Archive)
   {
@@ -351,19 +320,7 @@ void EstimatorManagerBase::collectBlockAverages(int num_threads)
       copy(SquaredAverageCache.begin(),SquaredAverageCache.end(),cur+n1);
       copy(PropertyCache.begin(),PropertyCache.end(),cur+n2);
     }
-#if defined(QMC_ASYNC_COLLECT)
-    if(Options[MANAGE])
-    {
-      //wait all the message but we can choose to wait one-by-one with a timer
-      wait_all(myRequest.size(),&myRequest[0]);
-      for(int is=1; is<myComm->size(); is++)
-        accumulate_elements(RemoteData[is]->begin(),RemoteData[is]->end(), RemoteData[0]->begin());
-    }
-    else //not a master, pack and send the data
-      myRequest[0]=myComm->isend(0,myComm->rank(),*RemoteData[0]);
-#else
     myComm->reduce(*RemoteData[0]);
-#endif
     if(Options[MANAGE])
     {
       BufferType::iterator cur(RemoteData[0]->begin());
