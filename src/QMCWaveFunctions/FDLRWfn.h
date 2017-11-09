@@ -1,9 +1,13 @@
-///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \file src/QMCWaveFunctions/FDLRWfn.h
-///
-/// \brief   A class for a finite-difference linear response wavefunction.
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2017 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by: Nick Blunt, nicksblunt@gmail.com, University of Cambridge
+//
+// File created by: Nick Blunt, nicksblunt@gmail.com, University of Cambridge
+//////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_FDLRWFN_H
 #define QMCPLUSPLUS_FDLRWFN_H
@@ -280,7 +284,6 @@ namespace qmcplusplus {
     ///
     ///////////////////////////////////////////////////////////////////////////////////////////////
     OrbitalBasePtr makeClone(ParticleSet& P) const {
-      // TODO: Check this more thoroughly.
       TrialWaveFunction* wfn_xpd_clone = m_wfn_xpd->makeClone(P);
       TrialWaveFunction* wfn_xmd_clone = m_wfn_xmd->makeClone(P);
       FDLRWfn* fdlr_clone = new FDLRWfn( wfn_xpd_clone, wfn_xmd_clone, P );
@@ -562,7 +565,6 @@ namespace qmcplusplus {
 
       // Calculate \frac{ \del psi \cdot \del \psi}{ psi^2 }, for
       // \psi=\psi_+ and then for \psi=\psi_-.
-      // TODO: Update comments.
       for (int i=0; i < G.size(); i++)
         G_FDLR_mag[i] = dot(G_FDLR[i], G_FDLR[i]);
       for (int i=0; i < G.size(); i++)
@@ -922,9 +924,6 @@ namespace qmcplusplus {
       curRatio = 1.0;
     }
 
-
-    // TODO: Check what to do with the project variable, present in the
-    // TODO: TrialWavefunction version of evaluateDeriviatives.
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     /// \brief  Evaluate the FDLR wave function's contribution to the derivatives of log of the
