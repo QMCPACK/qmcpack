@@ -244,6 +244,13 @@ public:
       Dets[i]->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
   }
 
+  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                               std::vector<RealType>& dgradlogpsi)
+  {
+    for (int i=0; i<Dets.size(); i++)
+      Dets[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
+  }
+
 #ifdef QMC_CUDA
   /////////////////////////////////////////////////////
   // Functions for vectorized evaluation and updates //

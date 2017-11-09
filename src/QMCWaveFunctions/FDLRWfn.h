@@ -243,52 +243,6 @@ namespace qmcplusplus {
     };
 
     void init_driver_vars_singlet_or_triplet() {
-      // The singlet/triplet symmetry option is only sensible (and more
-      // importantly, only implemented) for the case where the FDLR wave
-      // function objects (i.e., both \psi^+ and \psi_^-) are formed from
-      // exactly two determinants, one for spin up electrons and another for
-      // spin down electrons, but otherwise equal. So to start with, just
-      // perform some sanity checks:
-
-      // Each of the "up" and "down" determinants have two OrbitalBase objects
-      // (LCOrbitalSetOptTrialFunc and SlaterDetOpt), so there should be 4 in total.
-      if (m_wfn_xpd->size() != 4)
-        throw std::runtime_error("FDLRWfn::resetTargetParticleSet not yet implemented");
-
-      // Loop over OrbitalBase objects in the TrialWavefunction object, and
-      // check that they are allowed.
-      std::vector<OrbitalBase*>& Orbitals_plus = m_wfn_xpd->getOrbitals();
-      std::vector<OrbitalBase*>::iterator it_plus(Orbitals_plus.begin());
-      std::vector<OrbitalBase*>::iterator it_plus_end(Orbitals_plus.end());
-
-      for (; it_plus!=it_plus_end; ++it_plus)
-      {
-        if ( !( (*it_plus)->OrbitalName == "SlaterDetOpt" || (*it_plus)->OrbitalName == "LCOrbitalSetOptTrialFunc" ) )
-        {
-          throw std::runtime_error("Only optimizable determinant objects may be used in the FDLR wave function, " \
-                                    "when enforcing singlet or triplet symmetry.");
-        }
-      }
-
-      // Now do the same for "-" part of the FDLR wave function.
-      if (m_wfn_xmd->size() != 4)
-        throw std::runtime_error("FDLRWfn::resetTargetParticleSet not yet implemented");
-
-      // Loop over OrbitalBase objects in the TrialWavefunction object, and
-      // check that they are allowed.
-      std::vector<OrbitalBase*>& Orbitals_minus = m_wfn_xmd->getOrbitals();
-      std::vector<OrbitalBase*>::iterator it_minus(Orbitals_minus.begin());
-      std::vector<OrbitalBase*>::iterator it_minus_end(Orbitals_minus.end());
-
-      for (; it_minus!=it_minus_end; ++it_minus)
-      {
-        if ( !( (*it_minus)->OrbitalName == "SlaterDetOpt" || (*it_minus)->OrbitalName == "LCOrbitalSetOptTrialFunc" ) )
-        {
-          throw std::runtime_error("Only optimizable determinant objects may be used in the FDLR wave function, " \
-                                    "when enforcing singlet or triplet symmetry.");
-        }
-      }
-
       // The number of "up" parameters should be the same as the number of
       // "down ones, so halve the total number.
       int nvars_up = x_vars.size()/2;
@@ -317,7 +271,6 @@ namespace qmcplusplus {
         sstr << "d_" << str_full;
         d_vars_driver.insert(sstr.str(), d_vars[i], true);
       }
-
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
