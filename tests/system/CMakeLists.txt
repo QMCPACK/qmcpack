@@ -50,6 +50,11 @@ else()
 #    SET (USE_EXT_MPI_FOR_SERIAL_TESTS)
 
 
+IF(MIXED_PRECISION)
+  SET(MP_SUCCESS FALSE)
+ELSE()
+  SET(MP_SUCCESS TRUE)
+ENDIF()
 
 #
 # Homogeneous electron gas (HEG) tests
@@ -387,7 +392,7 @@ IF (NOT QMC_COMPLEX)
                     C2_TZ_PP_MSDJ
                     qmc_short_pp_msdj.xml
                     1 16
-                    TRUE
+                    ${MP_SUCCESS}
                     1 C2MSDJS_VMC_SCALARS # VMC
                     )
 
@@ -399,7 +404,7 @@ IF (NOT QMC_COMPLEX)
                     C2_TZ_PP_MSDJ
                     qmc_long_pp_msdj.xml
                     1 16
-                    TRUE
+                    ${MP_SUCCESS}
                     1 C2MSDJL_VMC_SCALARS # VMC
                     )
 
@@ -459,7 +464,6 @@ IF (NOT QMC_COMPLEX)
                     0 LIH_PP_SCALARS # VMC
                     )
 
-IF(NOT MIXED_PRECISION)
 #
 # H2 test in a DZV basis set, using optimizable determinants, and the adaptive linear method
 #
@@ -471,9 +475,9 @@ IF(BUILD_LMYENGINE_INTERFACE)
                     H2
                     h2_orb_opt.xml
                     16 1
-                    H2_OPT_SCALARS
-                    10 # Final VMC step
-                    TRUE)
+                    ${MP_SUCCESS}
+                    10 H2_OPT_SCALARS # Final VMC step
+                    )
 ENDIF(BUILD_LMYENGINE_INTERFACE)
 
 #
@@ -487,9 +491,9 @@ IF(BUILD_LMYENGINE_INTERFACE)
                     H4
                     h4_orb_opt.xml
                     16 1
-                    H4_ORB_OPT_SCALARS
-                    14 # Final VMC step
-                    TRUE)
+                    ${MP_SUCCESS}
+                    14 H4_ORB_OPT_SCALARS # Final VMC step
+                    )
 ENDIF(BUILD_LMYENGINE_INTERFACE)
 
 #
@@ -504,18 +508,18 @@ IF(BUILD_LMYENGINE_INTERFACE)
                     H4
                     h4_orb_opt.xml
                     16 1
-                    H4_ORB_OPT_DMC_SCALARS
-                    3 # Test the DMC results
-                    TRUE)
+                    ${MP_SUCCESS}
+                    3 H4_ORB_OPT_DMC_SCALARS # Test the DMC results
+                    )
 
   QMC_RUN_AND_CHECK(short-H4-orb-opt-dmc
                     "${CMAKE_SOURCE_DIR}/tests/molecules/H4_orb_opt_dmc"
                     H4
                     h4_orb_opt.xml
                     1 16
-                    H4_ORB_OPT_DMC_SCALARS
-                    3 # Test the DMC results
-                    TRUE)
+                    ${MP_SUCCESS}
+                    3 H4_ORB_OPT_DMC_SCALARS # Test the DMC results
+                    )
 ENDIF(BUILD_LMYENGINE_INTERFACE)
 
 #
@@ -529,7 +533,7 @@ ENDIF(BUILD_LMYENGINE_INTERFACE)
                     H4-linear
                     optm-linear.xml
                     16 1
-                    TRUE
+                    ${MP_SUCCESS}
                     5 H4_OPT_SCALARS # OPT step 5
                     )
 
@@ -539,7 +543,7 @@ IF(BUILD_LMYENGINE_INTERFACE)
                     H4-adaptive
                     optm-adaptive.xml
                     16 1
-                    TRUE
+                    ${MP_SUCCESS}
                     5 H4_OPT_SCALARS # OPT step 5
                     )
 
@@ -548,7 +552,7 @@ IF(BUILD_LMYENGINE_INTERFACE)
                     H4-adaptive
                     optm-adaptive.xml
                     1 16
-                    TRUE
+                    ${MP_SUCCESS}
                     5 H4_OPT_SCALARS # OPT step 5
                     )
 ENDIF(BUILD_LMYENGINE_INTERFACE)
@@ -558,7 +562,7 @@ ENDIF(BUILD_LMYENGINE_INTERFACE)
                     H4-OneShiftOnly
                     optm-OneShiftOnly.xml
                     16 1
-                    TRUE
+                    ${MP_SUCCESS}
                     5 H4_OPT_SCALARS # OPT step 5
                     )
 
@@ -567,10 +571,9 @@ ENDIF(BUILD_LMYENGINE_INTERFACE)
                     H4-OneShiftOnly
                     optm-OneShiftOnly.xml
                     1 16
-                    TRUE
+                    ${MP_SUCCESS}
                     5 H4_OPT_SCALARS # OPT step 5
                     )
-ENDIF()
 
  ELSE()
     MESSAGE("Skipping all gaussian basis tests because they are not supported by complex build (QMC_COMPLEX=1)")  
@@ -985,7 +988,6 @@ ENDIF(ENABLE_SOA)
                     0 DIAMOND_SCALARS # VMC
                     )
 
-IF(NOT MIXED_PRECISION)
 # Reference OPT run in qmc-ref
   LIST(APPEND DIAMOND_OPT_SCALARS "totenergy"   "-10.49370 0.0024")
   LIST(APPEND DIAMOND_OPT_SCALARS "kinetic"     "11.5504 0.021")
@@ -998,10 +1000,9 @@ IF(NOT MIXED_PRECISION)
                     qmc_short
                     qmc_short_opt.in.xml
                     1 16
-                    TRUE
+                    ${MP_SUCCESS}
                     3 DIAMOND_OPT_SCALARS # VMC
                     )
-ENDIF()
 
 # Reference DMC run in qmc-ref "-10.531583 0.000265"
   LIST(APPEND DIAMOND_DMC_SCALARS "totenergy" "-10.531583 0.0024")
