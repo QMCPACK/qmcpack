@@ -71,7 +71,7 @@ void ThreeBodyGeminal::resetParameters(const opt_variables_type& active)
   int aii=0;//counter for the variables that are meant to be optimized
   for(int ib=0; ib<BasisSize; ib++)
   {
-    if(FreeLambda(ii++))
+    if(FreeLambda[ii++])
     {
       int loc=myVars.where(aii++);
       if(loc>=0)
@@ -79,7 +79,7 @@ void ThreeBodyGeminal::resetParameters(const opt_variables_type& active)
     }
     for(int jb=ib+1; jb<BasisSize; jb++)
     {
-      if(FreeLambda(ii++))
+      if(FreeLambda[ii++])
       {
         int loc=myVars.where(aii++);
         if(loc>=0)
@@ -261,8 +261,8 @@ ThreeBodyGeminal::evaluateLogAndStore(ParticleSet& P)
         lap += (d2Uk(i,j)= simd::dot(vptr,d2ptr,BasisSize));
       }
     }
-    P.G(i)+=grad;
-    P.L(i)+=lap;
+    P.G[i]+=grad;
+    P.L[i]+=lap;
   }
 }
 
@@ -366,7 +366,7 @@ bool ThreeBodyGeminal::put(xmlNodePtr cur)
           int j=jIn-IndexOffSet;
           double c=atof((const char*)(xmlGetProp(tcur,(const xmlChar*)"c")));
           Lambda(i,j)=c;
-          FreeLambda(i*BasisSize+j)=true;
+          FreeLambda[i*BasisSize+j]=true;
           if(i != j)
             Lambda(j,i)=c;
           //sprintf(coeffname,"%s_%d_%d",aname.c_str(),iIn,jIn);
@@ -382,14 +382,14 @@ bool ThreeBodyGeminal::put(xmlNodePtr cur)
   int ii=0;
   for(int ib=0; ib<BasisSize; ib++)
   {
-    if(FreeLambda(ii++))
+    if(FreeLambda[ii++])
     {
       sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib,ib);
       myVars.insert(coeffname,Lambda(ib,ib));
     }
     for(int jb=ib+1; jb<BasisSize; jb++)
     {
-      if(FreeLambda(ii++))
+      if(FreeLambda[ii++])
       {
         sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib,jb);
         myVars.insert(coeffname,Lambda(ib,jb));

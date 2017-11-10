@@ -4,189 +4,193 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
-//		      Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign   
+// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
+//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign 
+// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifndef OHMMS_PETE_VECTOR_H
-#define OHMMS_PETE_VECTOR_H
-
-/** A one-dimensional vector class based on PETE
+/** @file Vector.h
  *
- *  Closely related to PETE STL vector example.
- *  Equivalent to blitz::Array<T,1>, pooma::Array<1,T>.
- *  class C is a container class. Default is std::vector<T>
- *  \todo Implement openMP compatible container class or evaluate function.
- *  \todo Implement get/put member functions for MPI-like parallelism
+ *  Declaraton of Vector<T,Alloc>
+ *  Manage memory through Alloc directly and allow referencing an existing memory.
  */
 
-
+#ifndef OHMMS_NEW_VECTOR_H
+#define OHMMS_NEW_VECTOR_H
 #include "PETE/PETE.h"
-
-#include <cstdlib>
+#include <algorithm>
 #include <vector>
 #include <iostream>
-//
+#include <type_traits>
+#include <stdexcept>
+
 namespace qmcplusplus
 {
-template<class T, class C = std::vector<T> >
-struct Vector
+
+template<class T, typename Alloc=std::allocator<T> >
+class Vector
 {
+public:
+  typedef T  Type_t;
+  typedef T* iterator;
+  typedef const T* const_iterator;
+  typedef typename Alloc::size_type size_type;
+  typedef typename Alloc::pointer pointer;
+  typedef typename Alloc::const_pointer const_pointer;
+  typedef Vector<T,Alloc> This_t;
 
-  typedef T           Type_t;
-  typedef C           Container_t;
-  typedef Vector<T,C> This_t;
-  typedef typename Container_t::iterator iterator;
-  typedef typename Container_t::const_iterator const_iterator;
-
-  Vector() { } // Default Constructor initializes to zero.
-
-  Vector(unsigned n)
+  /** constructor with size n*/
+  explicit inline
+    Vector(size_t n=0): nLocal(n), nAllocated(0), X(nullptr)
   {
-    resize(n);
-    assign(*this, T());
+    if(n) resize_impl(n);
   }
 
-  // Copy Constructor
-  Vector(const Vector<T,C> &rhs)
+  /** constructor with an initialized ref */
+  explicit inline Vector(T* ref, size_t n) : nLocal(n), nAllocated(0), X(ref){}
+
+  /** copy constructor */
+  Vector(const Vector& rhs)
+    :nLocal(rhs.nLocal), nAllocated(0), X(nullptr)
   {
-    resize(rhs.size());
-    assign(*this,rhs);
+    resize_impl(rhs.nLocal);
+    std::copy_n(rhs.data(),nLocal,X);
   }
 
-  // Destructor
-  ~Vector() { }
-
-  inline unsigned size() const
+  // default assignment operator
+  inline Vector& operator=(const Vector& rhs)
   {
-    return X.size();
-  }
-  void resize(unsigned n); // resize to n
-  void create(unsigned n); // add n elements
-
-  // Assignment Operators
-  This_t& operator=(const Vector<T,C> &rhs)
-  {
-    return assign(*this,rhs);
+    if(this==&rhs) return *this;
+    if(nLocal!=rhs.nLocal) resize(rhs.nLocal);
+    std::copy_n(rhs.data(),nLocal,X);
+    return *this;
   }
 
-  const This_t &operator=(const Vector<T, C> &rhs) const
+  // assignment operator from anther Vector class
+  template<typename T1, typename C1>
+  inline Vector& operator=(const Vector<T1,C1>& rhs)
   {
-    return assign(*this, rhs);
+    if(std::is_convertible<T1,T>::value)
+    {
+      if(nLocal!=rhs.nLocal) resize(rhs.nLocal);
+      std::copy_n(rhs.data(),nLocal,X);
+    }
+    return *this;
   }
 
+  // assigment operator to enable PETE
   template<class RHS>
-  This_t& operator=(const RHS& rhs)
+  inline Vector& operator=(const RHS& rhs)
   {
-    return assign(*this,rhs);
+    assign(*this,rhs);
+    return *this;
   }
 
-  inline Type_t* data()
+  //! Destructor
+  virtual ~Vector()
   {
-    return &(X[0]);
-  }
-  inline const Type_t* data() const
-  {
-    return &(X[0]);
-  }
-
-  inline Type_t* first_address()
-  {
-    return &(X[0]);
-  }
-  inline const Type_t* first_address() const
-  {
-    return &(X[0]);
+    if(nAllocated)
+    {
+      mAllocator.deallocate(X,nAllocated);
+    }
   }
 
-  inline Type_t* last_address()
+  //! return the current size
+  inline size_t size() const
   {
-    return &(X[0])+size();
-  }
-  inline const Type_t* last_address() const
-  {
-    return &(X[0])+size();
+    return nLocal;
   }
 
-  inline iterator begin()
+  ///resize
+  inline void resize(size_t n)
   {
-    return X.begin();
-  }
-  inline const_iterator begin() const
-  {
-    return X.begin();
-  }
-
-  inline iterator end()
-  {
-    return X.end();
-  }
-  inline const_iterator end() const
-  {
-    return X.end();
+    if(nLocal>nAllocated)
+      throw std::runtime_error("Resize not allowed on Vector constructed by initialized memory.");
+    if(n>nAllocated)
+      resize_impl(n);
+    else
+      nLocal=n;
+    return;
   }
 
-  //inline Type_t* begin() { return X.begin();}
-  //inline const Type_t* begin() const { return X.begin();}
-
-  //inline Type_t* end() { return X.end();}
-  //inline const Type_t* end() const { return X.end();}
+  ///clear
+  inline void clear() {nLocal=0;}
 
   // Get and Set Operations
-  inline Type_t& operator[](unsigned int i)
+  inline Type_t& operator[](size_t i)
   {
     return X[i];
   }
 
-  inline Type_t operator[](unsigned int i) const
+  inline const Type_t& operator[](size_t i) const
   {
     return X[i];
   }
 
-  inline Type_t& operator()(unsigned int i)
-  {
-    return X[i];
-  }
-
-  inline Type_t operator()( unsigned int i) const
-  {
-    return X[i];
-  }
-
-  //----------------------------------------------------------------------
-  // parallel communication
-
-  //Message& putMessage(Message& m) const {
-  //  m.setCopy(true);
-  //  ::putMessage(m, X, X + D);
-  //    return m;
+  //inline Type_t& operator()(size_t i)
+  //{
+  //  return X[i];
   //}
 
-  //Message& getMessage(Message& m) {
-  //  ::getMessage(m, X, X + D);
-  //  return m;
+  //inline Type_t operator()( size_t i) const
+  //{
+  //  return X[i];
   //}
 
+  inline iterator begin() { return X;}
+  inline const_iterator begin() const { return X;}
+
+  inline iterator end() { return X+nLocal;}
+  inline const_iterator end() const { return X+nLocal;}
+
+  inline pointer data() { return X;}
+  inline const_pointer data() const { return X;}
+
+  inline pointer first_address()
+  {
+    return X;
+  }
+  inline const_pointer first_address() const
+  {
+    return X;
+  }
+
+  inline pointer last_address()
+  {
+    return X+nLocal;
+  }
+  inline const_pointer last_address() const
+  {
+    return X+nLocal;
+  }
 
 private:
-  Container_t X;
+  ///size
+  size_t nLocal;
+  ///The number of allocated
+  size_t nAllocated;
+  ///pointer to the data managed by this object
+  T* X;
+  ///allocator
+  Alloc  mAllocator;
+
+  inline void resize_impl(size_t n)
+  {
+    if(nAllocated)
+    {
+      mAllocator.deallocate(X,nAllocated);
+    }
+    X=mAllocator.allocate(n);
+    std::fill_n(X, n, T());
+    nLocal=n;
+    nAllocated=n;
+  }
+
 };
 
-template<class T, class C>
-void Vector<T,C>::resize(unsigned n)
-{
-  X = C(n,T());
-}
-
-template<class T, class C>
-void Vector<T,C>::create(unsigned n)
-{
-  X.insert(X.end(), n, T());
-}
-}
+}//end-of qmcplusplus
 
 #include "OhmmsPETE/OhmmsVectorOperators.h"
 
@@ -315,5 +319,5 @@ std::istream& operator>>(std::istream& is, Vector<T,C>& rhs)
 }
 
 }
-#endif // VEKTOR_H
 
+#endif // OHMMS_PARTICLEATTRIB_PEPE_H

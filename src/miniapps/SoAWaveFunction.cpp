@@ -11,7 +11,7 @@
 // -*- C++ -*-
 #include <omp.h>
 #include <miniapps/FakeWaveFunction.h>
-#include <miniapps/graphite.hpp>
+#include <miniapps/input.hpp>
 
 namespace qmcplusplus
 {

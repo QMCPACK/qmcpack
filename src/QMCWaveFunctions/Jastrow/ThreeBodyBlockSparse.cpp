@@ -205,8 +205,8 @@ ThreeBodyBlockSparse::evaluateLogAndStore(ParticleSet& P)
         lap += (d2Uk(i,j)= simd::dot(vptr,d2ptr,BasisSize));
       }
     }
-    P.G(i)+=grad;
-    P.L(i)+=lap;
+    P.G[i]+=grad;
+    P.L[i]+=lap;
   }
 }
 

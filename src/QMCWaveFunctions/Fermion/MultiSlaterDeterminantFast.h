@@ -60,8 +60,8 @@ public:
   NewTimer Ratio1Timer,Ratio1GradTimer,Ratio1AllTimer, AccRejTimer;
 
   typedef MultiDiracDeterminantBase*    DiracDeterminantPtr;
-  typedef SPOSetBase*              SPOSetBasePtr;
-  typedef SPOSetProxyForMSD*             SPOSetProxyPtr;
+  typedef SPOSetBase*                   SPOSetBasePtr;
+  typedef SPOSetProxyForMSD*            SPOSetProxyPtr;
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
@@ -96,6 +96,10 @@ public:
     Dets[1]->setBF(bf);
   }
 
+  ValueType
+  evaluate_vgl_impl(ParticleSet& P
+           ,ParticleSet::ParticleGradient_t& g_tmp
+           ,ParticleSet::ParticleLaplacian_t& l_tmp);
 
   ValueType
   evaluate(ParticleSet& P
@@ -109,7 +113,11 @@ public:
 
   GradType evalGrad(ParticleSet& P, int iat);
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+  ValueType evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at);
+
   ValueType ratio(ParticleSet& P, int iat);
+  ValueType ratio_impl(ParticleSet& P, int iat);
+
   void acceptMove(ParticleSet& P, int iat);
   void restore(int iat);
 
@@ -124,48 +132,42 @@ public:
                            std::vector<RealType>& dhpsioverpsi);
 
   void resize(int,int);
+  void initialize();
 
   void testMSD(ParticleSet& P, int iat);
 
-  int NP;
-  int nels_up,nels_dn;
-  int FirstIndex_up;
-  int FirstIndex_dn;
+  size_t NP;
+  size_t nels_up,nels_dn;
+  size_t FirstIndex_up;
+  size_t FirstIndex_dn;
+  size_t ActiveSpin;
   bool usingCSF;
-
-  // assume Dets[0]: up, Dets[1]:down
-  std::vector<MultiDiracDeterminantBase*> Dets;
-
-  std::vector<int> DetID;
-
-  std::map<std::string,int> SPOSetID;
-
-  // map determinant in linear combination to unique det list
-  std::vector<int> C2node_up;
-  std::vector<int> C2node_dn;
-
-  std::vector<RealType> C;
-
+  bool IsCloned;
   ValueType curRatio;
   ValueType psiCurrent;
 
-  ParticleSet::ParticleValue_t *FirstAddressOfG;
-  ParticleSet::ParticleValue_t *LastAddressOfG;
+  // assume Dets[0]: up, Dets[1]:down
+  std::vector<MultiDiracDeterminantBase*> Dets;
+  std::map<std::string,size_t> SPOSetID;
+
+  // map determinant in linear combination to unique det list
+  std::vector<size_t>* C2node_up;
+  std::vector<size_t>* C2node_dn;
+  std::vector<RealType>* C;
 
   ParticleSet::ParticleGradient_t myG,myG_temp;
   ParticleSet::ParticleLaplacian_t myL,myL_temp;
   ValueVector_t laplSum_up;
   ValueVector_t laplSum_dn;
 
-  opt_variables_type myVars;
-
-// CSFs
+  //optimizable variable is shared with the clones
+  opt_variables_type* myVars;
   // coefficients of csfs, these are only used during optm
-  std::vector<RealType> CSFcoeff;
+  std::vector<RealType>* CSFcoeff;
   // number of dets per csf
-  std::vector<int> DetsPerCSF;
+  std::vector<size_t>* DetsPerCSF;
   // coefficient of csf expansion (smaller dimension)
-  std::vector<RealType> CSFexpansion;
+  std::vector<RealType>* CSFexpansion;
 
   // transformation
   BackflowTransformation *BFTrans;
