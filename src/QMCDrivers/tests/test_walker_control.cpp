@@ -98,8 +98,11 @@ TEST_CASE("Walker control assign walkers", "[drivers][walker_control]")
 
 TEST_CASE("Walker control assign walkers many", "[drivers][walker_control][property]")
 {
-  std::random_device rd;
-  std::mt19937 mt(rd());
+  // Use random device for seed for coverage
+  //std::random_device rd;
+  //std::mt19937 mt(rd());
+  // Use fixed seed for reproducibility
+  std::mt19937 mt(100);
   std::uniform_int_distribution<int> NumNodes(1,1000);
   std::uniform_int_distribution<int> TotalPop(0,1000);
 
