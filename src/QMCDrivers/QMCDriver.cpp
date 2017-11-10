@@ -146,6 +146,8 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamilt
   //H.add2WalkerProperty(W);
   //if (storeConfigs) ForwardWalkingHistory.storeConfigsForForwardWalking(w);
   rotation = 0;
+
+  checkpointTimer = TimerManager.createTimer("checkpoint::recordBlock", timer_level_medium);
 }
 
 QMCDriver::~QMCDriver()
@@ -434,6 +436,7 @@ void QMCDriver::recordBlock(int block)
 {
   if(DumpConfig && block % Period4CheckPoint == 0)
   {
+    checkpointTimer->start();
     if(ADIOS::useADIOS())
     {
       adiosCheckpoint(block);
@@ -444,6 +447,7 @@ void QMCDriver::recordBlock(int block)
     }
     branchEngine->write(RootName,true); //save energy_history
     RandomNumberControl::write(RootName,myComm);
+    checkpointTimer->stop();
   }
 }
 

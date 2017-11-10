@@ -72,7 +72,7 @@ TEST_CASE("gaussian random particle attrib array length 1", "[particle_base]")
 {
   FakeRandom rg;
   ParticleAttrib<TinyVector<double, 1> > PA;
-  PA.create(1);
+  PA.resize(1);
   makeGaussRandomWithEngine(PA, rg);
 
   // assuming RNG input is 0.5

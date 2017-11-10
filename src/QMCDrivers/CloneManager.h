@@ -23,13 +23,11 @@
 #define QMCPLUSPLUS_CLONEMANAGER_H
 #include "QMCDrivers/QMCUpdateBase.h"
 #include "CorrelatedSampling/CSUpdateBase.h"
-// #include "QMCDrivers/EE/QMCRenyiUpdateBase.h"
 
 namespace qmcplusplus
 {
 
 class HamiltonianPool;
-//   class QMCRenyiUpdateBase;
 
 /** Manager clones for threaded applications
  *
@@ -79,8 +77,6 @@ protected:
   static std::vector<QMCHamiltonian*> hClones;
   ///update engines
   std::vector<QMCUpdateBase*> Movers;
-//     ///update engines
-//     std::vector<QMCRenyiUpdateBase*> RenyiMovers;
   ///estimator managers
   std::vector<EstimatorManagerBase*> estimatorClones;
   ///trace managers

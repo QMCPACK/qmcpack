@@ -71,7 +71,7 @@ void ThreeBodyGeminal::resetParameters(const opt_variables_type& active)
   int aii=0;//counter for the variables that are meant to be optimized
   for(int ib=0; ib<BasisSize; ib++)
   {
-    if(FreeLambda(ii++))
+    if(FreeLambda[ii++])
     {
       int loc=myVars.where(aii++);
       if(loc>=0)
@@ -79,7 +79,7 @@ void ThreeBodyGeminal::resetParameters(const opt_variables_type& active)
     }
     for(int jb=ib+1; jb<BasisSize; jb++)
     {
-      if(FreeLambda(ii++))
+      if(FreeLambda[ii++])
       {
         int loc=myVars.where(aii++);
         if(loc>=0)
@@ -170,65 +170,6 @@ ThreeBodyGeminal::ratio(ParticleSet& P, int iat)
   return std::exp(diffVal);
 }
 
-/** later merge the loop */
-OrbitalBase::ValueType
-ThreeBodyGeminal::ratio(ParticleSet& P, int iat,
-                        ParticleSet::ParticleGradient_t& dG,
-                        ParticleSet::ParticleLaplacian_t& dL)
-{
-  UpdateMode=ORB_PBYP_ALL;
-  return std::exp(logRatio(P,iat,dG,dL));
-}
-
-/** later merge the loop */
-OrbitalBase::ValueType
-ThreeBodyGeminal::logRatio(ParticleSet& P, int iat,
-                           ParticleSet::ParticleGradient_t& dG,
-                           ParticleSet::ParticleLaplacian_t& dL)
-{
-  //GeminalBasis->evaluateAll(P,iat);
-  GeminalBasis->evaluateAllForPtclMove(P,iat);
-  //const ValueType* restrict y_ptr=GeminalBasis->y(0);
-  //const GradType* restrict  dy_ptr=GeminalBasis->dy(0);
-  //const ValueType* restrict d2y_ptr=GeminalBasis->d2y(0);
-  const BasisSetType::RealType* restrict y_ptr=GeminalBasis->Phi.data();
-  const BasisSetType::GradType* restrict  dy_ptr=GeminalBasis->dPhi.data();
-  const BasisSetType::RealType* restrict d2y_ptr=GeminalBasis->d2Phi.data();
-  for(int k=0; k<BasisSize; k++)
-  {
-    curV[k] = BLAS::dot(BasisSize,y_ptr,Lambda[k]);
-    delV[k] = curV[k]-V[iat][k];
-  }
-  diffVal=0.0;
-  BasisSetType::GradType dg_acc(0.0);
-  BasisSetType::ValueType dl_acc(0.0);
-  const RealType* restrict vptr=V[0];
-  for(int j=0; j<NumPtcls; j++, vptr+=BasisSize)
-  {
-    if(j == iat)
-    {
-      curLap[j]=0.0;
-      curGrad[j]=0.0;
-      tLap[j]=0.0;
-      tGrad[j]=0.0;
-    }
-    else
-    {
-      diffVal+= (curVal[j]=simd::dot(delV.data(),Y[j],BasisSize));
-      dG[j] += (tGrad[j]=simd::dot(delV.data(),dY[j],BasisSize));
-      dL[j] += (tLap[j]=simd::dot(delV.data(),d2Y[j],BasisSize));
-      curGrad[j]= simd::dot(vptr,dy_ptr,BasisSize);
-      curLap[j] = simd::dot(vptr,d2y_ptr,BasisSize);
-      dg_acc += curGrad[j]-dUk(iat,j);
-      dl_acc += curLap[j]-d2Uk(iat,j);
-    }
-  }
-  dG[iat] += dg_acc;
-  dL[iat] += dl_acc;
-  curVal[iat]=diffVal;
-  return diffVal;
-}
-
 void ThreeBodyGeminal::restore(int iat)
 {
   //nothing to do here
@@ -258,17 +199,6 @@ void ThreeBodyGeminal::acceptMove(ParticleSet& P, int iat)
     d2Y.replaceRow(GeminalBasis->d2Phi.data(),iat);
     V.replaceRow(curV.begin(),iat);
   }
-}
-
-void ThreeBodyGeminal::update(ParticleSet& P,
-                              ParticleSet::ParticleGradient_t& dG,
-                              ParticleSet::ParticleLaplacian_t& dL,
-                              int iat)
-{
-  std::cout << "****  This is to be removed " << std::endl;
-  //dG[iat]+=curGrad-dUk[iat];
-  //dL[iat]+=curLap-d2Uk[iat];
-  acceptMove(P,iat);
 }
 
 OrbitalBase::RealType
@@ -331,8 +261,8 @@ ThreeBodyGeminal::evaluateLogAndStore(ParticleSet& P)
         lap += (d2Uk(i,j)= simd::dot(vptr,d2ptr,BasisSize));
       }
     }
-    P.G(i)+=grad;
-    P.L(i)+=lap;
+    P.G[i]+=grad;
+    P.L[i]+=lap;
   }
 }
 
@@ -347,21 +277,6 @@ ThreeBodyGeminal::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
   buf.get(Uk.begin(), Uk.end());
   buf.get(FirstAddressOfgU,LastAddressOfgU);
   buf.get(d2Uk.begin(), d2Uk.end());
-}
-
-OrbitalBase::RealType
-ThreeBodyGeminal::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  buf.put(LogValue);
-  buf.put(V.begin(), V.end());
-  buf.put(Y.begin(), Y.end());
-  buf.put(FirstAddressOfdY,LastAddressOfdY);
-  buf.put(d2Y.begin(),d2Y.end());
-  buf.put(Uk.begin(), Uk.end());
-  buf.put(FirstAddressOfgU,LastAddressOfgU);
-  buf.put(d2Uk.begin(), d2Uk.end());
-  return LogValue;
-  //return std::exp(LogValue);
 }
 
 OrbitalBase::RealType
@@ -451,7 +366,7 @@ bool ThreeBodyGeminal::put(xmlNodePtr cur)
           int j=jIn-IndexOffSet;
           double c=atof((const char*)(xmlGetProp(tcur,(const xmlChar*)"c")));
           Lambda(i,j)=c;
-          FreeLambda(i*BasisSize+j)=true;
+          FreeLambda[i*BasisSize+j]=true;
           if(i != j)
             Lambda(j,i)=c;
           //sprintf(coeffname,"%s_%d_%d",aname.c_str(),iIn,jIn);
@@ -467,14 +382,14 @@ bool ThreeBodyGeminal::put(xmlNodePtr cur)
   int ii=0;
   for(int ib=0; ib<BasisSize; ib++)
   {
-    if(FreeLambda(ii++))
+    if(FreeLambda[ii++])
     {
       sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib,ib);
       myVars.insert(coeffname,Lambda(ib,ib));
     }
     for(int jb=ib+1; jb<BasisSize; jb++)
     {
-      if(FreeLambda(ii++))
+      if(FreeLambda[ii++])
       {
         sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib,jb);
         myVars.insert(coeffname,Lambda(ib,jb));

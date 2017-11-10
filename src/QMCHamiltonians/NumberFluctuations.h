@@ -299,33 +299,6 @@ struct NumberFluctuations: public QMCHamiltonianBase
     return evaluate(P);
   }
 
-  inline Return_t
-  registerData(ParticleSet& P, BufferType& buffer)
-  {
-    return 0.0;
-  }
-
-  inline Return_t
-  updateBuffer(ParticleSet& P, BufferType& buffer)
-  {
-    return 0.0;
-  }
-
-  inline void copyFromBuffer(ParticleSet& P, BufferType& buffer)
-  {
-  }
-
-  inline void copyToBuffer(ParticleSet& P, BufferType& buffer)
-  {
-  }
-
-  inline Return_t
-  evaluatePbyP(ParticleSet& P, int active)
-  {
-    APP_ABORT("NumberFluctuations::evaluatePbyP");
-    return 0.0;
-  }
-
   /** Do nothing */
   bool put(xmlNodePtr cur)
   {

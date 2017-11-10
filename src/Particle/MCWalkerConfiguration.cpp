@@ -144,7 +144,7 @@ void MCWalkerConfiguration::createWalkers(int n)
   {
     while(n)
     {
-      Walker_t* awalker=new Walker_t(GlobalNum);
+      Walker_t* awalker=new Walker_t(TotalNum);
       awalker->R = R;
       WalkerList.push_back(awalker);
       --n;
@@ -183,7 +183,7 @@ void MCWalkerConfiguration::createWalkers(int n)
 
 void MCWalkerConfiguration::resize(int numWalkers, int numPtcls)
 {
-  if(GlobalNum && WalkerList.size())
+  if(TotalNum && WalkerList.size())
     app_warning() << "MCWalkerConfiguration::resize cleans up the walker list." << std::endl;
   ParticleSet::resize(unsigned(numPtcls));
   int dn=numWalkers-WalkerList.size();
@@ -210,7 +210,7 @@ void MCWalkerConfiguration::resize(int numWalkers, int numPtcls)
   //}
   //WalkerList.erase(WalkerList.begin(),WalkerList.end());
   //R.resize(np);
-  //GlobalNum = np;
+  //TotalNum = np;
   //createWalkers(nw);
 }
 
@@ -318,7 +318,7 @@ void MCWalkerConfiguration::reset()
 
 //void MCWalkerConfiguration::clearAuxDataSet() {
 //  UpdateMode=Update_Particle;
-//  int nbytes=128*GlobalNum*sizeof(RealType);//could be pagesize
+//  int nbytes=128*TotalNum*sizeof(RealType);//could be pagesize
 //  if(WalkerList.size())//check if capacity is bigger than the estimated one
 //    nbytes = (WalkerList[0]->DataSet.capacity()>nbytes)?WalkerList[0]->DataSet.capacity():nbytes;
 //  iterator it(WalkerList.begin());
@@ -393,7 +393,7 @@ void MCWalkerConfiguration::setNumSamples(int n)
   int nadd=n-SampleStack.size();
   while(nadd>0)
   {
-    SampleStack.push_back(new MCSample(GlobalNum));
+    SampleStack.push_back(new MCSample(TotalNum));
     --nadd;
   }
 }
@@ -432,7 +432,7 @@ void MCWalkerConfiguration::loadEnsemble()
   WalkerList.resize(nsamples);
   for(int i=0; i<nsamples; ++i)
   {
-    Walker_t* awalker=new Walker_t(GlobalNum);
+    Walker_t* awalker=new Walker_t(TotalNum);
     awalker->Properties.copy(prop);
     SampleStack[i]->get(*awalker);
     WalkerList[i]=awalker;
@@ -455,7 +455,7 @@ void MCWalkerConfiguration::loadEnsemble()
 //
 //  for(int i=0; i<nsamples; ++i)
 //  {
-//    Walker_t* awalker=new Walker_t(GlobalNum);
+//    Walker_t* awalker=new Walker_t(TotalNum);
 //    awalker->Properties.copy(prop);
 //    SampleStack[i]->get(*awalker);
 //    WalkerList[i]=awalker;
@@ -485,7 +485,7 @@ MCWalkerConfiguration::dumpEnsemble(std::vector<MCWalkerConfiguration*>& others
 {
 #if !(defined(__bgp__)||(__bgq__))
   MCWalkerConfiguration wtemp;
-  wtemp.resize(0,GlobalNum);
+  wtemp.resize(0,TotalNum);
   wtemp.loadEnsemble(others,false);
   int w=wtemp.getActiveWalkers();
   if(w==0)
@@ -519,7 +519,7 @@ void MCWalkerConfiguration::loadEnsemble(std::vector<MCWalkerConfiguration*>& ot
       std::vector<MCSample*>& astack(others[i]->SampleStack);
       for(int j=0, iw=off[i]; iw<off[i+1]; ++j, ++iw)
       {
-        Walker_t* awalker=new Walker_t(GlobalNum);
+        Walker_t* awalker=new Walker_t(TotalNum);
         awalker->Properties.copy(prop);
         astack[j]->get(*awalker);
         WalkerList[iw]=awalker;

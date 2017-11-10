@@ -11,7 +11,7 @@
 ## Settings should be consistent with test scripts e.g.       ##
 ##  ./tests/test_automation/nightly_ornl_olcf_eos.job         ##
 ##                                                            ##
-## Last modified: Jan 6, 2017                                 ##
+## Last modified: Sep 25, 2017                                ##
 ################################################################
 
 
@@ -25,14 +25,24 @@ if (echo $LOADEDMODULES | grep -q gnu)
 then
 module unload PrgEnv-gnu
 fi
+if (echo $LOADEDMODULES | grep -q hdf5)
+then
+module unload cray-hdf5
+fi
+if (echo $LOADEDMODULES | grep -q libsci)
+then
+module unload cray-libsci
+fi
 module load PrgEnv-intel
 module load gcc
-module load cray-hdf5
+module load cray-hdf5-parallel
 module load fftw
 module load boost
 module load subversion
 module load cmake
 
+# always dynamic linking
+export CRAYPE_LINK_TYPE=dynamic
 
 # Set environment variables
 export FFTW_HOME=$FFTW_DIR/..

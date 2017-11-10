@@ -8,7 +8,7 @@
 ##   ./config/build_titan.sh                                  ##
 ##                                                            ##
 ## (c) Scientific Computing Group, NCCS, ORNL.                ##
-## Last modified: Mar 21, 2016                                ##
+## Last modified: Sep 25, 2017                                ##
 ################################################################
 
 
@@ -22,20 +22,26 @@ if (echo $LOADEDMODULES | grep -q cuda)
 then
 module unload cudatoolkit
 fi
+if (echo $LOADEDMODULES | grep -q hdf5)
+then
+module unload cray-hdf5
+fi
 module load PrgEnv-gnu
-module load cray-hdf5
+module load cray-hdf5-parallel
 module load fftw
 module load boost
 module load subversion
-module load cmake/2.8.11.2
+module load cmake3/3.6.1
 
+# always dynamic linking
+export CRAYPE_LINK_TYPE=dynamic
 
 # Set environment variables
 export FFTW_HOME=$FFTW_DIR/..
 
 export CC=cc
 export CXX=CC
-XT_FLAGS="-march=bdver1 -DHAVE_FMA4=1 -DHAVE_AMDLIBM=1"
+XT_FLAGS="-DHAVE_AMDLIBM=1"
 
 # Set cmake variables, shared for cpu builds
 CMAKE_FLAGS="-D QMC_INCLUDE=/sw/xk7/amdlibm/include \
@@ -78,6 +84,7 @@ echo "building qmcpack for gpu real"
 mkdir build_gpu_real
 cd build_gpu_real
 cmake -D QMC_CUDA=1 ..
+cmake -D QMC_CUDA=1 ..
 make -j 32
 cd ..
 ln -s ./build_gpu_real/bin/qmcpack ./qmcpack_gpu_real
@@ -88,6 +95,7 @@ echo ""
 echo "building qmcpack for gpu complex"
 mkdir build_gpu_comp
 cd build_gpu_comp
+cmake -D QMC_CUDA=1 -D QMC_COMPLEX=1 ..
 cmake -D QMC_CUDA=1 -D QMC_COMPLEX=1 ..
 make -j 32
 cd ..

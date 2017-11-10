@@ -54,14 +54,11 @@ namespace qmcplusplus
 
     /** use aligned sized */
     psiM.resize(nel,NorbPad);
+    psiM_temp.resize(nel,NorbPad);
 #ifdef MIXED_PRECISION
     psiM_hp.resize(nel,NorbPad);
 #endif
     psiV.resize(NorbPad); 
-
-    //resize t_logpsi with the padding: this is used as a scratch array for the inversion after the transpose
-    //this can be used to store psi[i] for the delayed update
-    Phi->t_logpsi.resize(NumOrbitals,NorbPad);
 
     BlockSize=NorbPad*(OHMMS_DIM+1);
     memoryPool.resize(nel*BlockSize);
@@ -157,18 +154,6 @@ namespace qmcplusplus
       return LogValue;
     }
 
-  DiracDeterminantSoA::RealType
-    DiracDeterminantSoA::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-    {
-      buf.put(psiM.first_address(),psiM.last_address());
-      if(BufferMode)
-        buf.put(memoryPool.data(),memoryPool.data()+memoryPool.size());
-      buf.put(LogValue);
-      buf.put(PhaseValue);
-      return LogValue;
-    }
-
-
   DiracDeterminantSoA::RealType 
     DiracDeterminantSoA::updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch)
     {
@@ -227,17 +212,17 @@ namespace qmcplusplus
     for(size_t i=0,iat=FirstIndex; i<NumPtcls; ++i,++iat)
     {
       Phi->evaluateVGL(P, iat, vVGL, curpos); 
-      simd::copy_n(vVGL.data(0), NumOrbitals,Phi->t_logpsi[i]);
+      simd::copy_n(vVGL.data(0), NumOrbitals, psiM_temp[i]);
       simd::copy_n(vVGL.data(1), BlockSize,  mGL[i].data());
     }
 #ifdef MIXED_PRECISION
-    simd::transpose(Phi->t_logpsi.data(), NumOrbitals, NorbPad, psiM_hp.data(), NumOrbitals, psiM_hp.cols());
+    simd::transpose(psiM_temp.data(), NumOrbitals, NorbPad, psiM_hp.data(), NumOrbitals, psiM_hp.cols());
     detEng_hp.invert(psiM_hp,true);
     LogValue  =static_cast<RealType>(detEng_hp.LogDet);
     PhaseValue=static_cast<RealType>(detEng_hp.Phase);
     psiM=psiM_hp;
 #else
-    simd::transpose(Phi->t_logpsi.data(), NumOrbitals, NorbPad, psiM.data(), NumOrbitals, psiM.cols());
+    simd::transpose(psiM_temp.data(), NumOrbitals, NorbPad, psiM.data(), NumOrbitals, psiM.cols());
     detEng.invert(psiM,true);
     LogValue  =detEng.LogDet;
     PhaseValue=detEng.Phase;

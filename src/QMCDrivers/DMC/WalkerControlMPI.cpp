@@ -42,6 +42,20 @@ namespace qmcplusplus
 
 //#define MCWALKERSET_MPI_DEBUG
 
+enum DMC_MPI_Timers
+{
+  DMC_MPI_branch,
+  DMC_MPI_prebalance,
+  DMC_MPI_loadbalance
+};
+
+TimerNameList_t<DMC_MPI_Timers> DMCMPITimerNames =
+{
+  {DMC_MPI_branch, "WalkerControlMPI::branch"},
+  {DMC_MPI_prebalance, "WalkerControlMPI::pre-loadbalance"},
+  {DMC_MPI_loadbalance, "WalkerControlMPI::loadbalance"}
+};
+
 /** default constructor
  *
  * set SwapMode
@@ -56,12 +70,7 @@ WalkerControlMPI::WalkerControlMPI(Communicate* c): WalkerControlBase(c)
   sprintf(fname,"test.%d",MyContext);
   std::ofstream fout(fname);
 #endif
-  myTimers.push_back(new NewTimer("WalkerControlMPI::branch")); //timer for the branch
-  myTimers.push_back(new NewTimer("WalkerControlMPI::pre-loadbalance")); //timer for the branch
-  myTimers.push_back(new NewTimer("WalkerControlMPI::loadbalance")); //timer for the branch
-  TimerManager.addTimer(myTimers[0]);
-  TimerManager.addTimer(myTimers[1]);
-  TimerManager.addTimer(myTimers[2]);
+  setup_timers(myTimers, DMCMPITimerNames, timer_level_medium);
 }
 
 int
@@ -69,8 +78,8 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
 {
   DMC_BRANCH_START(Timer localTimer);
   TinyVector<RealType,3> bTime(0.0);
-  myTimers[0]->start();
-  myTimers[1]->start();
+  myTimers[DMC_MPI_branch]->start();
+  myTimers[DMC_MPI_prebalance]->start();
   std::fill(curData.begin(),curData.end(),0);
   //std::fill(NumPerNode.begin(),NumPerNode.end(),0);
   sortWalkers(W);
@@ -99,13 +108,13 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
   {
     Cur_pop+= NumPerNode[i]=static_cast<int>(curData[j]);
   }
-  myTimers[1]->stop();
-  myTimers[2]->start();
+  myTimers[DMC_MPI_prebalance]->stop();
+  myTimers[DMC_MPI_loadbalance]->start();
   if(qmc_common.async_swap)
     swapWalkersAsync(W);
   else
     swapWalkersSimple(W);
-  myTimers[2]->stop();
+  myTimers[DMC_MPI_loadbalance]->stop();
   //Do not need to use a trigger.
   //Cur_min=Nmax;
   //Cur_max=0;
@@ -134,19 +143,22 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
   W.setWalkerOffsets(FairOffSet);
   DMC_BRANCH_STOP(bTime[2],localTimer.elapsed());
   DMC_BRANCH_DUMP(iter,bTime[0],bTime[1],bTime[2]);
-  myTimers[0]->stop();
+  myTimers[DMC_MPI_branch]->stop();
   return Cur_pop;
 }
 
-/** swap Walkers with Recv/Send
- *
- * The algorithm ensures that the load per node can differ only by one walker.
- * The communication is one-dimensional.
- */
-void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
+// determine new walker population on each node
+void determineNewWalkerPopulation(int Cur_pop, int NumContexts, int MyContext, std::vector<int> NumPerNode, std::vector<int> &minus, std::vector<int> &plus)
 {
+  // Cur_pop - in - current population
+  // NumContexts -in - number of MPI processes
+  // MyContext - in - my MPI rank
+  // NumPerNode - in - current walkers per node
+  // minus - out - number of walkers to be removed from each node
+  // plus -  out - number of walkers to be added to each node
+
+  std::vector<int> FairOffSet;
   FairDivideLow(Cur_pop,NumContexts,FairOffSet);
-  std::vector<int> minus, plus;
   int deltaN;
   for(int ip=0; ip<NumContexts; ip++)
   {
@@ -157,12 +169,23 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
     {
       plus.insert(plus.end(),dn,ip);
     }
-    else
-      if(dn<0)
-      {
-        minus.insert(minus.end(),-dn,ip);
-      }
+    else if(dn<0)
+    {
+      minus.insert(minus.end(),-dn,ip);
+    }
   }
+}
+
+/** swap Walkers with Recv/Send
+ *
+ * The algorithm ensures that the load per node can differ only by one walker.
+ * The communication is one-dimensional.
+ */
+void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
+{
+  std::vector<int> minus, plus;
+  determineNewWalkerPopulation(Cur_pop, NumContexts, MyContext, NumPerNode, minus, plus);
+
   Walker_t& wRef(*W[0]);
   std::vector<Walker_t*> newW;
   std::vector<Walker_t*> oldW;
@@ -186,6 +209,10 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   }
   fout << std::endl;
 #endif
+ //  From the class
+  // MyContext (read)
+  // myComm (read)
+  // NumWalkersSent (write)
   int nswap=std::min(plus.size(), minus.size());
   int last=W.getActiveWalkers()-1;
   int nsend=0;
@@ -227,24 +254,8 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
  */
 void WalkerControlMPI::swapWalkersAsync(MCWalkerConfiguration& W)
 {
-  FairDivideLow(Cur_pop,NumContexts,FairOffSet);
   std::vector<int> minus, plus;
-  int deltaN;
-  for(int ip=0; ip<NumContexts; ip++)
-  {
-    int dn=NumPerNode[ip]-(FairOffSet[ip+1]-FairOffSet[ip]);
-    if(ip == MyContext)
-      deltaN=dn;
-    if(dn>0)
-    {
-      plus.insert(plus.end(),dn,ip);
-    }
-    else
-      if(dn<0)
-      {
-        minus.insert(minus.end(),-dn,ip);
-      }
-  }
+  determineNewWalkerPopulation(Cur_pop, NumContexts, MyContext, NumPerNode, minus, plus);
   Walker_t& wRef(*W[0]);
   std::vector<Walker_t*> newW;
   std::vector<Walker_t*> oldW;

@@ -60,25 +60,31 @@ public:
   enum { Size = D*D };
 
   // Default Constructor
-  Tensor()
+  inline Tensor()
   {
-    OTAssign<Tensor<T,D>,T,OpAssign>::apply(*this,T(0),OpAssign());
+    for(size_t d=0; d<Size; ++d)
+      X[d] = T(0);
   }
 
   // A noninitializing ctor.
   class DontInitialize {};
-  Tensor(DontInitialize) {}
+  inline Tensor(DontInitialize) {}
 
   // Copy Constructor
-  Tensor(const Tensor<T,D> &rhs)
+  inline Tensor(const Tensor& rhs) = default;
+
+  template<class T1>
+  inline Tensor(const Tensor<T1,D> &rhs)
   {
-    OTAssign< Tensor<T,D> , Tensor<T,D> ,OpAssign >::apply(*this,rhs,OpAssign());
+    for(size_t d=0; d<Size; ++d)
+      X[d] = rhs[d];
   }
 
   // constructor from a single T
-  Tensor(const T& x00)
+  inline Tensor(const T& x00)
   {
-    OTAssign< Tensor<T,D> , T ,OpAssign >::apply(*this,x00,OpAssign());
+    for(size_t d=0; d<Size; ++d)
+      X[d] = x00;
   }
 
   // constructors for fixed dimension
@@ -113,11 +119,7 @@ public:
   ~Tensor() { };
 
   // assignment operators
-  inline Tensor<T,D>& operator= (const Tensor<T,D> &rhs)
-  {
-    OTAssign< Tensor<T,D> , Tensor<T,D> ,OpAssign> :: apply(*this,rhs,OpAssign());
-    return *this;
-  }
+  inline Tensor& operator=(const Tensor& rhs) = default;
 
   template<class T1>
   inline Tensor<T,D>& operator= (const Tensor<T1,D> &rhs)

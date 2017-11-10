@@ -86,9 +86,6 @@
 /* Define to 1 if complex wavefunctions are used */
 #cmakedefine QMC_COMPLEX @QMC_COMPLEX@
 
-/* Define to 1 if using AYSNC comm for estimator */
-#cmakedefine QMC_ASYNC_COLLECT @QMC_ASYNC_COLLECT@
-
 /* Define to 1 if using recursive SK evaluation */
 #cmakedefine QMC_SK_USE_RECURSIVE @QMC_SK_USE_RECURSIVE@
 
@@ -100,6 +97,9 @@
 
 /* Define if sincos function exists */
 #cmakedefine HAVE_SINCOS @HAVE_SINCOS@
+
+/* Define if iszero function exists */
+#cmakedefine HAVE_ISZERO @HAVE_ISZERO@
 
 /* Define if einspline lib exists */
 #cmakedefine HAVE_EINSPLINE @HAVE_EINSPLINE@

@@ -585,6 +585,7 @@ Theta is a 9.65 petaflops system manufactured by Cray with 3624 compute nodes.
 Each node features a second-generation Intel Xeon Phi 7230 processor and 192 GB DDR4 RAM.
 
 \begin{verbatim}
+export CRAYPE_LINK_TYPE=dynamic
 module unload cray-libsci
 module load cray-hdf5-parallel
 export BOOST_ROOT=/soft/libraries/boost/1.64.0/intel
@@ -628,6 +629,7 @@ As noted in Section\ref{sec:titanbuildgpu} for the GPU, building on
 Crays requires only loading the appropriate library modules.
 
 \begin{verbatim}
+export CRAYPE_LINK_TYPE=dynamic
 module swap PrgEnv-pgi PrgEnv-gnu # Use gnu compilers
 module unload cudatoolkit         # No CUDA for CPU build
 module load cray-hdf5
@@ -648,6 +650,8 @@ by the Aries interconnect. The build process is identical to Titan,
 except that we use the default Intel programming environment. This is
 usually preferred to GNU.
 \begin{verbatim}
+export CRAYPE_LINK_TYPE=dynamic
+module unload cray-libsci
 module load cray-hdf5
 module load cmake
 module load fftw
@@ -697,12 +701,12 @@ Edison is a Cray XC30 with dual 12-core Intel "Ivy Bridge" nodes
 installed at NERSC. The build settings are identical to eos.
 
 \begin{verbatim}
+export CRAYPE_LINK_TYPE=dynamic
+module unload cray-libsci
 module load boost
-module load cmake3
 module load cmake
 module load libxml2
 module load cray-hdf5-parallel
-module unload cray-libsci
 cmake ..
 make -j 8
 ls -l bin/qmcpack
@@ -732,6 +736,7 @@ Cori is a Cray XC40 with 16-core Intel "Haswell" nodes
 installed at NERSC.
 
 \begin{verbatim}
+export CRAYPE_LINK_TYPE=dynamic
 module unload cray-libsci  
 module load boost  
 module load cray-hdf5-parallel
@@ -770,6 +775,7 @@ Xeon Phi Knight's Landing (KNL) nodes. The following build recipe ensures that t
 generation is appropriate for the KNL nodes:
 
 \begin{verbatim}
+export CRAYPE_LINK_TYPE=dynamic
 module swap craype-haswell craype-mic-knl  
 module unload cray-libsci  
 module load boost  
@@ -865,14 +871,20 @@ ctest -V -R short   # Verbose short tests
 
 The test system includes specific tests for the complex version of the code.
 
-The data files for the tests are located in the tests directory. The
-runs occur in build/tests/system/test\_name. The numerical
-comparisons and test definitions are in
-tests/system/CMakeLists.txt. If \textit{all} the QMC tests fail it is likely
+The input data files for the tests are located in the \texttt{tests} directory.
+The system-level test directories are grouped into \texttt{heg}, \texttt{molecules}, and \texttt{solids}, with particular physical systems under each (for example \texttt{molecules/H4\_ae}
+\footnote{The suffix `ae' is short for `all-electron' and `pp' is short for `pseudopotential'}).
+Under each physical system directory there may be tests for multiple QMC methods or parameter variations.
+The numerical comparisons and test definitions are in the \texttt{CMakeLists.txt} file in each physical system directory.
+
+If \textit{all} the QMC tests fail it is likely
 that the appropriate mpiexec (or aprun, srun) is not being
 called or found. If the QMC runs appear to work but all the other
 tests fail it is possible that python is not working on your system -
-we suggest checking some of the test outputs in build/test/system/test\_name.
+we suggest checking some of the test console output in \texttt{build/Testing/Temporary/LastTest.log}
+or the output files under \texttt{build/tests/}.
+%The runs occur in \texttt{build/tests/test\_dir/test\_name}. 
+ 
 
 Note that because most of these tests are very small, consisting of only a few
 electrons, the performance is not representative of larger

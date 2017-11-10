@@ -14,7 +14,10 @@ settings(
     runs          = '',
     results       = '',
     status_only   = 0,
-    generate_only = 0,
+    #generate_only   = False,
+    # Complicated setting only so examples can be run in test harness.
+    # For real runs, use the plain setting of 'generate_only' above.
+    generate_only   = globals().get('override_generate_only_setting',False),
     sleep         = 3,
     machine       = 'ws16',
     ) 
