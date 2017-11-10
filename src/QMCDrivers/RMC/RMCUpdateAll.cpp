@@ -285,7 +285,7 @@ namespace qmcplusplus
 	overwriteWalker.Properties (W.reptile->TransProb[backward]) =
 	  W.Properties (W.reptile->TransProb[backward]);
 	overwriteWalker.resetProperty (logpsi, Psi.getPhase (), eloc);
-	H.auxHevaluate (W, overwriteWalker);
+	H.auxHevaluate (W, overwriteWalker,true,false); //properties but not collectables.
 	H.saveProperty (overwriteWalker.getPropertyBase ());
 	overwriteWalker.Age = 0;
 	++nAccept;
@@ -569,7 +569,7 @@ namespace qmcplusplus
 	overwriteWalker.Properties (R2PROPOSED) = r2proposed;
 
 	// lastbead.Properties(R2PROPOSED)=lastbead.Properties(R2ACCEPTED)=nextlastbead.Properties(R2PROPOSED);
-	H.auxHevaluate (W, overwriteWalker);
+	H.auxHevaluate (W, overwriteWalker,true,false); //evaluate properties but not collectables.
 	H.saveProperty (overwriteWalker.getPropertyBase ());
 	overwriteWalker.Age = 0;
 
@@ -590,6 +590,10 @@ namespace qmcplusplus
 	// app_log()<<"Reject\n";
 	return;
       }
+      W.loadWalker(centerbead,true);
+      W.update(false);  //skip S(k) evaluation?  False
+      H.auxHevaluate(W,centerbead,false, true); //collectables, but not properties
+    
   }
 
   void RMCUpdateAllWithDrift::accumulate (WalkerIter_t it,
