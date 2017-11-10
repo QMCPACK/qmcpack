@@ -1,7 +1,6 @@
 
 IF (NOT QMC_CUDA)
-
-IF (NOT QMC_COMPLEX)
+ IF (NOT QMC_COMPLEX)
 
 # C2 TZ PP multi determinants
 # Short tests
@@ -13,7 +12,7 @@ IF (NOT QMC_COMPLEX)
                     C2_TZ_PP_MSDJ
                     qmc_short_pp_msdj.xml
                     1 16
-                    TRUE
+                    ${MP_SUCCESS}
                     1 C2MSDJS_VMC_SCALARS # VMC
                     )
 
@@ -25,9 +24,13 @@ IF (NOT QMC_COMPLEX)
                     C2_TZ_PP_MSDJ
                     qmc_long_pp_msdj.xml
                     1 16
-                    TRUE
+                    ${MP_SUCCESS}
                     1 C2MSDJL_VMC_SCALARS # VMC
                     )
+ ELSE()
+    MESSAGE("Skipping C2_pp tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
+ ENDIF()
+ELSE()
+    MESSAGE("Skipping C2_pp tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
+ENDIF()
 
-ENDIF()
-ENDIF()

@@ -36,7 +36,7 @@
                     1 BCC_H_DMC_SCALARS # DMC
                     )
 
-  IF(NOT QMC_CUDA)
+IF (NOT QMC_CUDA)
 
 # Check VMCUpdateAll driver using all-particle updates
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc-all-nodrift_sdj
@@ -139,16 +139,17 @@
                     TRUE
                     1 BCC_H_RMC_SCALARS #series#
                     )
-  ENDIF()
+ELSE()
+  MESSAGE("Skipping bccH_1x1x1_ae tests for VMC all-particle moves, CSVMC, and RMC because they are not supported by CUDA build (QMC_CUDA=1)")
+ENDIF()
 
-                     
 # Plane wave test of bccH (no pp, so faster than typical solids)
 # Reduced number of blocks and samples compared to other short bccH tests
   LIST(APPEND BCC_H_PW_SCALARS "totenergy" "-1.834032 0.001")
   LIST(APPEND BCC_H_PW_SCALARS "samples" "96000 0.0")
 #  LIST(APPEND BCC_H_PW_SCALARS "flux" "0.0 0.1")
-  IF(NOT QMC_CUDA)
 # No GPU implementation. Would be fast if implemented
+IF(NOT QMC_CUDA)
   QMC_RUN_AND_CHECK(short-bccH_1x1x1_ae-vmc_sdj-pw
                     "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
                     qmc_short_pw
@@ -157,7 +158,9 @@
                     TRUE
                     0 BCC_H_PW_SCALARS # VMC
                     )
-  ENDIF()
+ELSE()
+  MESSAGE("Skipping bccH_1x1x1_ae plane wave tests because they are not supported by CUDA build (QMC_CUDA=1)")
+ENDIF()
 
 
 #
@@ -188,7 +191,7 @@
                     1 LONG_BCC_H_DMC_SCALARS # DMC
                     )
 
-  IF(NOT QMC_CUDA)
+IF(NOT QMC_CUDA)
   LIST(APPEND LONG_BCC_H_RMC_SCALARS "totenergy" "-1.84150 0.00011")
   LIST(APPEND LONG_BCC_H_RMC_SCALARS "potential" "-2.01964 0.00072")
   LIST(APPEND LONG_BCC_H_RMC_SCALARS "potential_pure" "-2.01907 0.00085")
@@ -204,5 +207,5 @@
                     TRUE
                     1 LONG_BCC_H_RMC_SCALARS # DMC
                     )
-  ENDIF()
+ENDIF()
 

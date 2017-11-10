@@ -1,6 +1,6 @@
 
 IF (NOT QMC_CUDA)
-IF (NOT QMC_COMPLEX)
+ IF (NOT QMC_COMPLEX)
 #
 # LiH molecular dimer pseudopotential tests
 #
@@ -19,6 +19,10 @@ IF (NOT QMC_COMPLEX)
                     TRUE
                     0 LIH_PP_SCALARS # VMC
                     )
+ ELSE()
+    MESSAGE("Skipping LiH_dimer_pp test because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
+ ENDIF()
+ELSE()
+    MESSAGE("Skipping LiH_dimer_pp test because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
+ENDIF()
 
-ENDIF()
-ENDIF()

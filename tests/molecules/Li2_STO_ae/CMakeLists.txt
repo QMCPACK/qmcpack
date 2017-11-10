@@ -1,7 +1,6 @@
 
 IF (NOT QMC_CUDA)
-
-IF (NOT QMC_COMPLEX)
+ IF (NOT QMC_COMPLEX)
 #
 # Li2 molecular dimer STO tests, all electron
 #   Reproduces UNR 1993
@@ -49,5 +48,10 @@ IF (NOT QMC_COMPLEX)
                     2 LI2STOSJL_DMC_SCALARS # DMC
                     )
 
+ ELSE()
+    MESSAGE("Skipping Li2_STO_ae tests because the basis sets are not supported by complex build (QMC_COMPLEX=1)")
+ ENDIF()
+ELSE()
+    MESSAGE("Skipping Li2_STO_ae tests because the basis sets are not supported by CUDA build (QMC_CUDA=1)")
 ENDIF()
-ENDIF()
+

@@ -27,6 +27,8 @@ IF(ENABLE_SOA)
                     TRUE
                     0 DIAMOND2_SCALARS # VMC
                     )
+ELSE()
+  MESSAGE("Skipping diamondC_2x1x1_hybridrep_pp-vmc_sdj test because SOA is not enabled (ENABLE_SOA=0)")
 ENDIF(ENABLE_SOA)
 
 # Reference DMC run in qmc-ref "-21.844975 0.001113"

@@ -1,6 +1,6 @@
 
 IF (NOT QMC_CUDA)
-IF (NOT QMC_COMPLEX)
+ IF (NOT QMC_COMPLEX)
 #
 # LiH molecular dimer gaussian tests, all electron
 # Also check results for different number of mpi tasks and threads keeping total constant
@@ -37,5 +37,10 @@ IF (NOT QMC_COMPLEX)
                     TRUE
                     0 LIH_SCALARS # VMC
                     )
+ ELSE()
+    MESSAGE("Skipping LiH_dimer_ae tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
+ ENDIF()
+ELSE()
+    MESSAGE("Skipping LiH_dimer_ae tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
 ENDIF()
-ENDIF()
+

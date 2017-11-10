@@ -27,6 +27,8 @@ IF(ENABLE_SOA)
                     TRUE
                     0 DIAMOND_SCALARS # VMC
                     )
+ELSE()
+  MESSAGE("Skipping diamondC_1x1x1_hybridrep_pp-vmc_sdj test because SOA is not enabled (ENABLE_SOA=0)")
 ENDIF(ENABLE_SOA)
 
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj-meshf
@@ -50,7 +52,7 @@ ENDIF(ENABLE_SOA)
                     qmc_short
                     qmc_short_opt.in.xml
                     1 16
-                    TRUE
+                    ${MP_SUCCESS}
                     3 DIAMOND_OPT_SCALARS # VMC
                     )
 

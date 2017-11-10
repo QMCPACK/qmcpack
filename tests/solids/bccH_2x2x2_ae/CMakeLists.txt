@@ -1,5 +1,5 @@
 
-IF(NOT MIXED_PRECISION)
+IF (NOT MIXED_PRECISION)
   SIMPLE_RUN_AND_CHECK(short-bccH_2x2x2_ae-grad-lap
     "${CMAKE_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
     grad_lap.xml
@@ -20,4 +20,6 @@ IF(NOT MIXED_PRECISION)
     1 1
     ../short-bccH_3x3x3_ae-deriv-1-1/check_deriv.py
   )
-ENDIF(NOT MIXED_PRECISION)
+ELSE()
+ MESSAGE("Skipping bccH_2x2x2_ae derivative tests in mixed precision (QMC_MIXED_PRECISION=1)")
+ENDIF (NOT MIXED_PRECISION)

@@ -59,6 +59,9 @@ IF(ENABLE_SOA)
                     TRUE
                     0 LIH_X_SCALARS # VMC
                     )
+ELSE()
+  MESSAGE("Skipping LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj test because SOA is not enabled (ENABLE_SOA=0)")
+
 ENDIF(ENABLE_SOA)
 
 # Arbitrary k-point requires complex build to run. Ensure fails with real/non-complex build
