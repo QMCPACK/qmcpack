@@ -80,9 +80,12 @@ implementation, QMCPACK should be configured with \texttt{-DENABLE\_SOA=1}.
 SoA code path currently does NOT support:
 \begin{itemize}
   \item Backflow wavefunctions
-  \item All electron calulation requiring cusp corrected orbitals
+  \item All electron calculations requiring cusp corrected orbitals
+  \item Many observables
   %\item Orbital optimization via rotation
 \end{itemize}
+
+If using any non-core feature with the SoA code, please check carefully vs the conventional AoS (non-SOA enabled) code.
 
 \subsection{Auxiliary-Field Quantum Monte Carlo}
 
