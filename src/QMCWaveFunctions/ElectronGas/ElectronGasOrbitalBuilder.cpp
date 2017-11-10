@@ -42,7 +42,6 @@ RealEGOSet::RealEGOSet(const std::vector<PosType>& k, const std::vector<RealType
   Identity=true;
   OrbitalSetSize=2*k.size()+1;
   BasisSetSize=2*k.size()+1;
-  t_logpsi.resize(OrbitalSetSize,BasisSetSize);
   className="EGOSet";
 }
 

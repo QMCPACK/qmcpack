@@ -221,11 +221,11 @@ void ParticleSet::applyBC(ParticlePos_t& pos)
   const bool orthogonal = ParticleLayout_t::IsOrthogonal;
   if(pos.getUnit()==PosUnit::LatticeUnit)
   {
-    ApplyBConds<ParticlePos_t,Tensor_t,DIM,orthogonal>::Unit2Unit(pos,0,LocalNum);
+    ApplyBConds<ParticlePos_t,Tensor_t,DIM,orthogonal>::Unit2Unit(pos,0,TotalNum);
   }
   else
   {
-    ApplyBConds<ParticlePos_t,Tensor_t,DIM,orthogonal>::Cart2Cart(pos,Lattice.G,Lattice.R,0,LocalNum);
+    ApplyBConds<ParticlePos_t,Tensor_t,DIM,orthogonal>::Cart2Cart(pos,Lattice.G,Lattice.R,0,TotalNum);
   }
 }
 

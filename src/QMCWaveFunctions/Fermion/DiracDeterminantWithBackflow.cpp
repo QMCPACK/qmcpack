@@ -89,6 +89,19 @@ void DiracDeterminantWithBackflow::resize(int nel, int morb)
   */
 }
 
+/** replace of SPOSetBase::evaluate function with the removal of t_logpsi */
+void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
+{
+  Phi->evaluate_notranspose(BFTrans->QP, FirstIndex, LastIndex, psiM_temp, dlogdet, grad_grad_logdet);
+  simd::transpose(psiM_temp.data(), NumOrbitals, psiM_temp.cols(), logdet.data(), NumOrbitals, logdet.cols());
+}
+
+void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
+{
+  Phi->evaluate_notranspose(BFTrans->QP, FirstIndex, LastIndex, psiM_temp, dlogdet, grad_grad_logdet,grad_grad_grad_logdet);
+  simd::transpose(psiM_temp.data(), NumOrbitals, psiM_temp.cols(), logdet.data(), NumOrbitals, logdet.cols());
+}
+
 DiracDeterminantWithBackflow::RealType
 DiracDeterminantWithBackflow::registerData(ParticleSet& P, PooledData<RealType>& buf)
 {
@@ -236,7 +249,7 @@ DiracDeterminantWithBackflow::evalGrad(ParticleSet& P, int iat)
   g=0.0;
   for(int j=0; j<NumPtcls; j++)
   {
-    g += dot(BFTrans->Amat(iat,FirstIndex+j),Fmatdiag(j));
+    g += dot(BFTrans->Amat(iat,FirstIndex+j),Fmatdiag[j]);
   }
   return g;
 }
@@ -293,8 +306,8 @@ DiracDeterminantWithBackflow::ratioGrad(ParticleSet& P, int iat, GradType& grad_
     Phi->evaluate(BFTrans->QP, *it, psiV, dpsiV, d2psiV);
     for(int orb=0; orb<psiV.size(); orb++)
       psiM_temp(orb,jat) = psiV[orb];
-    copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp.begin(jat));
-    copy(grad_gradV.begin(),grad_gradV.end(),grad_grad_psiM_temp.begin(jat));
+    std::copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp.begin(jat));
+    std::copy(grad_gradV.begin(),grad_gradV.end(),grad_grad_psiM_temp.begin(jat));
     BFTrans->QP.rejectMove(*it);
     it++;
   }
@@ -308,8 +321,8 @@ DiracDeterminantWithBackflow::ratioGrad(ParticleSet& P, int iat, GradType& grad_
   // update Fmatdiag_temp
   for(int j=0; j<NumPtcls; j++)
   {
-    Fmatdiag_temp(j)=simd::dot(psiMinv_temp[j],dpsiM_temp[j],NumOrbitals);
-    grad_iat += dot(BFTrans->Amat_temp(iat,FirstIndex+j),Fmatdiag_temp(j));
+    Fmatdiag_temp[j]=simd::dot(psiMinv_temp[j],dpsiM_temp[j],NumOrbitals);
+    grad_iat += dot(BFTrans->Amat_temp(iat,FirstIndex+j),Fmatdiag_temp[j]);
   }
 #if defined(QMC_COMPLEX)
   RealType ratioMag = std::exp(NewLog-LogValue);
@@ -349,7 +362,7 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
   P.update();
   BFTrans->evaluate(P);
   // calculate backflow matrix, 1st and 2nd derivatives
-  Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM);
+  evaluate_SPO(psiM, dpsiM, grad_grad_psiM);
   //std::copy(psiM.begin(),psiM.end(),psiMinv.begin());
   psiMinv=psiM;
   // invert backflow matrix
@@ -364,7 +377,7 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
     {
       Fmat(i,j)=simd::dot(psiMinv[i],dpsiM[j],NumOrbitals);
     }
-    Fmatdiag(i) = Fmat(i,i);
+    Fmatdiag[i] = Fmat(i,i);
   }
   // calculate gradients and first piece of laplacians
   GradType temp;
@@ -373,7 +386,7 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
   for(int i=0; i<num; i++)
     for(int j=0; j<NumPtcls; j++)
       for(int a=0; a<3; a++)
-        (Bij(i,j))(a) = (BFTrans->Bmat_full(i,FirstIndex+j))(a);
+        (Bij(i,j))[a] = (BFTrans->Bmat_full(i,FirstIndex+j))[a];
   for(int i=0; i<num; i++)
   {
     for(int j=0; j<NumPtcls; j++)
@@ -392,12 +405,12 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
             if(j==k)
             {
               for(int c=0; c<3; c++)
-                qijab -= ((BFTrans->Amat(i,FirstIndex+k))(a,c)) * ( ((Fmat(j,k))(c)) * ((Fmat(k,j))(b)) - q_j(b,c) );
+                qijab -= ((BFTrans->Amat(i,FirstIndex+k))(a,c)) * ( ((Fmat(j,k))[c]) * ((Fmat(k,j))[b]) - q_j(b,c) );
             }
             else
             {
               for(int c=0; c<3; c++)
-                qijab -= ((BFTrans->Amat(i,FirstIndex+k))(a,c)) * ( ((Fmat(j,k))(c)) * ((Fmat(k,j))(b))  );
+                qijab -= ((BFTrans->Amat(i,FirstIndex+k))(a,c)) * ( ((Fmat(j,k))[c]) * ((Fmat(k,j))[b])  );
             }
           }
         }
@@ -409,52 +422,52 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
   {
     for(int a=0; a<3; a++)
     {
-      (P.R[i])(a) += dr;
+      (P.R[i])[a] += dr;
       P.update();
       BFTrans->evaluate(P);
-      Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM);
+      evaluate_SPO(psiM, dpsiM, grad_grad_psiM);
       psiMinv=psiM;
       InverseTimer.start();
       LogValue=InvertWithLog(psiMinv.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue);
       InverseTimer.stop();
       for(int j=0; j<NumPtcls; j++)
       {
-        Fdiag_p(j)=simd::dot(psiMinv[j],dpsiM[j],NumOrbitals);
+        Fdiag_p[j]=simd::dot(psiMinv[j],dpsiM[j],NumOrbitals);
       }
       for(int j=0; j<NumPtcls; j++)
         for(int b=0; b<3; b++)
         {
           (Aij_p(i,j))(a,b) = (BFTrans->Amat(i,FirstIndex+j))(a,b);
         }
-      (P.R[i])(a) -= 2.0*dr;
+      (P.R[i])[a] -= 2.0*dr;
       P.update();
       BFTrans->evaluate(P);
-      Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM);
+      evaluate_SPO(psiM, dpsiM, grad_grad_psiM);
       psiMinv=psiM;
       InverseTimer.start();
       LogValue=InvertWithLog(psiMinv.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue);
       InverseTimer.stop();
       for(int j=0; j<NumPtcls; j++)
       {
-        Fdiag_m(j)=simd::dot(psiMinv[j],dpsiM[j],NumOrbitals);
+        Fdiag_m[j]=simd::dot(psiMinv[j],dpsiM[j],NumOrbitals);
       }
       for(int j=0; j<NumPtcls; j++)
         for(int b=0; b<3; b++)
         {
           (Aij_m(i,j))(a,b) = (BFTrans->Amat(i,FirstIndex+j))(a,b);
         }
-      (P.R[i])(a) += dr;
+      (P.R[i])[a] += dr;
       P.update();
       BFTrans->evaluate(P);
       for(int j=0; j<NumPtcls; j++)
         for(int b=0; b<3; b++)
         {
-          (Kij(i,j))(a,b) = ( (Fdiag_p(j))(b) - (Fdiag_m(j))(b)   )/((RealType)2.0*dr);
+          (Kij(i,j))(a,b) = ( (Fdiag_p[j])[b] - (Fdiag_m[j])[b]   )/((RealType)2.0*dr);
         }
       for(int j=0; j<NumPtcls; j++)
         for(int b=0; b<3; b++)
         {
-          (dAij(i,j))(b) += ( (Aij_p(i,j))(a,b) - (Aij_m(i,j))(a,b) ) / ((RealType)2.0*dr);
+          (dAij(i,j))[b] += ( (Aij_p(i,j))(a,b) - (Aij_m(i,j))(a,b) ) / ((RealType)2.0*dr);
         }
     }
   }
@@ -476,7 +489,7 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
       std::cout <<"i,j: " <<i <<" " <<j << std::endl;
       for(int a=0; a<3; a++)
       {
-        std::cout <<a <<" " <<((dAij(i,j))(a)) - ((Bij(i,j))(a)) <<" -- " <<((dAij(i,j))(a)) <<" -- "  <<((Bij(i,j))(a)) << std::endl;
+        std::cout <<a <<" " <<((dAij(i,j))[a]) - ((Bij(i,j))[a]) <<" -- " <<((dAij(i,j))[a]) <<" -- "  <<((Bij(i,j))[a]) << std::endl;
       }
     }
   std::cout.flush();
@@ -491,7 +504,7 @@ DiracDeterminantWithBackflow::evaluateLog(ParticleSet& P,
   //testGG(P);
   //testL(P);
   // calculate backflow matrix, 1st and 2nd derivatives
-  Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM);
+  evaluate_SPO(psiM, dpsiM, grad_grad_psiM);
   //std::copy(psiM.begin(),psiM.end(),psiMinv.begin());
   psiMinv=psiM;
   // invert backflow matrix
@@ -506,7 +519,7 @@ DiracDeterminantWithBackflow::evaluateLog(ParticleSet& P,
     {
       Fmat(i,j)=simd::dot(psiMinv[i],dpsiM[j],NumOrbitals);
     }
-    Fmatdiag(i) = Fmat(i,i);
+    Fmatdiag[i] = Fmat(i,i);
   }
   // calculate gradients and first piece of laplacians
   GradType temp;
@@ -525,8 +538,8 @@ DiracDeterminantWithBackflow::evaluateLog(ParticleSet& P,
       temp  += dot(BFTrans->Amat(i,FirstIndex+j),Fmat(j,j));
       //temp2 += rcdot(BFTrans->Bmat_full(i,FirstIndex+j),Fmat(j,j));
     }
-    myG(i) += temp;
-    myL(i) += temp2;
+    myG[i] += temp;
+    myL[i] += temp2;
   }
 // NOTE: check derivatives of Fjj and Amat numerically here, the problem has to come from somewhere
   for(int j=0; j<NumPtcls; j++)
@@ -538,8 +551,8 @@ DiracDeterminantWithBackflow::evaluateLog(ParticleSet& P,
     for(int i=0; i<num; i++)
     {
       Tensor<RealType,OHMMS_DIM> AA = dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+j));
-      myL(i) += traceAtB(AA,q_j);
-      //myL(i) += traceAtB(dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+j)),q_j);
+      myL[i] += traceAtB(AA,q_j);
+      //myL[i] += traceAtB(dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+j)),q_j);
     }
     for(int k=0; k<NumPtcls; k++)
     {
@@ -547,15 +560,15 @@ DiracDeterminantWithBackflow::evaluateLog(ParticleSet& P,
       {
         Tensor<RealType,OHMMS_DIM> AA = dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+k));
         HessType FF = outerProduct(Fmat(k,j),Fmat(j,k));
-        myL(i) -= traceAtB(AA,FF);
-        //myL(i) -= traceAtB(dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+k)), outerProduct(Fmat(k,j),Fmat(j,k)));
+        myL[i] -= traceAtB(AA,FF);
+        //myL[i] -= traceAtB(dot(transpose(BFTrans->Amat(i,FirstIndex+j)),BFTrans->Amat(i,FirstIndex+k)), outerProduct(Fmat(k,j),Fmat(j,k)));
       }
     }
   }
   for(int i=0; i<num; i++)
   {
-    L(i) += myL(i);
-    G(i) += myG(i);
+    L[i] += myL[i];
+    G[i] += myG[i];
   }
   return LogValue;
 }
@@ -648,7 +661,7 @@ DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
    */
   {
 //       must compute if didn;t call earlier function
-    Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM, dpsiM, grad_grad_psiM, grad_grad_grad_psiM);
+    evaluate_SPO(psiM, dpsiM, grad_grad_psiM, grad_grad_grad_psiM);
 //       copy(psiM.begin(),psiM.end(),psiMinv.begin());
     psiMinv=psiM;
 //       invert backflow matrix
@@ -707,7 +720,7 @@ DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
       for(int j=0; j<NumPtcls; j++)
         temp += (dot(BFTrans->Xmat(pa,i,FirstIndex+j),Fmat(j,j))
                  + dot(BFTrans->Amat(i,FirstIndex+j),dFa(j,j)));
-      Gtemp(i) += temp;
+      Gtemp[i] += temp;
     }
     for(int j=0; j<NumPtcls; j++)
     {
@@ -790,7 +803,7 @@ DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
    *       -psiM_inv
    *       -Fmat
    */
-  Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM,grad_grad_grad_psiM);
+  evaluate_SPO(psiM, dpsiM, grad_grad_psiM, grad_grad_grad_psiM);
   //std::copy(psiM.begin(),psiM.end(),psiMinv.begin());
   psiMinv=psiM;
   // invert backflow matrix
@@ -850,7 +863,7 @@ DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
       for(int j=0; j<NumPtcls; j++)
         temp += (dot(BFTrans->Xmat(pa,i,FirstIndex+j),Fmat(j,j))
                  + dot(BFTrans->Amat(i,FirstIndex+j),dFa(j,j)));
-      Gtemp(i) += temp;
+      Gtemp[i] += temp;
     }
     for(int j=0; j<NumPtcls; j++)
     {
@@ -902,7 +915,7 @@ DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
 #endif
     // \sum_i (\nabla_pa  \nabla2_i D) / D
     for(int k=0; k<num; k++)
-      dG(offset,pa,k) = Gtemp(k) + myG(k)*static_cast<ParticleSet::ParticleValue_t>(dpsia);  // (\nabla_pa \nabla_i D) / D
+      dG(offset,pa,k) = Gtemp[k] + myG[k]*static_cast<ParticleSet::ParticleValue_t>(dpsia);  // (\nabla_pa \nabla_i D) / D
   }
 }
 
@@ -914,7 +927,7 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     ParticleSet::ParticleLaplacian_t* L0,
     int pa )
 {
-  Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM,grad_grad_grad_psiM);
+  evaluate_SPO(psiM, dpsiM, grad_grad_psiM, grad_grad_grad_psiM);
   //std::copy(psiM.begin(),psiM.end(),psiMinv.begin());
   psiMinv=psiM;
   // invert backflow matrix
@@ -961,7 +974,7 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
       for(int j=0; j<NumPtcls; j++)
         temp += (dot(BFTrans->Xmat(pa,i,FirstIndex+j),Fmat(j,j))
                  + dot(BFTrans->Amat(i,FirstIndex+j),dFa(j,j)));
-      Gtemp(i) += temp;
+      Gtemp[i] += temp;
     }
     for(int j=0; j<NumPtcls; j++)
     {
@@ -1075,7 +1088,7 @@ void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
   const RealType dh = 0.0000000001;//PREC_WARNING
   for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
     qp_0[i] = BFTrans->QP.R[i];
-  Phi->evaluate_notranspose(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,ggM);
+  Phi->evaluate_notranspose(BFTrans->QP, FirstIndex, LastIndex, psiM, dpsiM, ggM);
   app_log() <<"Testing GGType calculation: " << std::endl;
   for(int lx=0; lx<3; lx++)
   {
@@ -1088,17 +1101,17 @@ void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
         for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
           BFTrans->QP.R[i][lx] = qp_0[i][lx] + dh;
         BFTrans->QP.update();
-        Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM_1,dpsiM_1,ggM0);
+        evaluate_SPO(psiM_1, dpsiM_1, ggM0);
         for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
           BFTrans->QP.R[i] = qp_0[i];
         for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
           BFTrans->QP.R[i][lx] = qp_0[i][lx] - dh;
         BFTrans->QP.update();
-        Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM_2,dpsiM_1,ggM0);
+        evaluate_SPO(psiM_2, dpsiM_1, ggM0);
         for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
           BFTrans->QP.R[i] = qp_0[i];
         BFTrans->QP.update();
-        Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM_3,dpsiM_1,ggM0);
+        evaluate_SPO(psiM_3, dpsiM_1, ggM0);
         for(int i=0; i<NumPtcls; i++)
           for(int j=0; j<NumOrbitals; j++)
             (dgM(i,j))(lx,ly) = (psiM_1(i,j)+psiM_2(i,j)-(RealType)2.0*psiM_3(i,j))/(dh*dh);
@@ -1112,7 +1125,7 @@ void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
         for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
           BFTrans->QP.R[i][ly] = qp_0[i][ly] + dh;
         BFTrans->QP.update();
-        Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM_1,dpsiM_1,ggM0);
+        evaluate_SPO(psiM_1, dpsiM_1, ggM0);
         for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
           BFTrans->QP.R[i] = qp_0[i];
         for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
@@ -1120,7 +1133,7 @@ void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
         for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
           BFTrans->QP.R[i][ly] = qp_0[i][ly] - dh;
         BFTrans->QP.update();
-        Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM_2,dpsiM_1,ggM0);
+        evaluate_SPO(psiM_2, dpsiM_1, ggM0);
         for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
           BFTrans->QP.R[i] = qp_0[i];
         for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
@@ -1128,7 +1141,7 @@ void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
         for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
           BFTrans->QP.R[i][ly] = qp_0[i][ly] - dh;
         BFTrans->QP.update();
-        Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM_3,dpsiM_1,ggM0);
+        evaluate_SPO(psiM_3,dpsiM_1,ggM0);
         for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
           BFTrans->QP.R[i] = qp_0[i];
         for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
@@ -1136,7 +1149,7 @@ void DiracDeterminantWithBackflow::testGG(ParticleSet& P)
         for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
           BFTrans->QP.R[i][ly] = qp_0[i][ly] + dh;
         BFTrans->QP.update();
-        Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM_4,dpsiM_1,ggM0);
+        evaluate_SPO(psiM_4, dpsiM_1, ggM0);
         for(int i=0; i<NumPtcls; i++)
           for(int j=0; j<NumOrbitals; j++)
             (dgM(i,j))(lx,ly) = (psiM_1(i,j)+psiM_2(i,j)-psiM_3(i,j)-psiM_4(i,j))/((RealType)4.0*dh*dh);
@@ -1177,7 +1190,7 @@ void DiracDeterminantWithBackflow::testGGG(ParticleSet& P)
   const RealType dh = 0.000001; //PREC_WARNING
   for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
     qp_0[i] = BFTrans->QP.R[i];
-  Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM,grad_grad_grad_psiM);
+  evaluate_SPO(psiM, dpsiM, grad_grad_psiM, grad_grad_grad_psiM);
   app_log() <<"Testing GGGType calculation: " << std::endl;
   for(int lc=0; lc<3; lc++)
   {
@@ -1186,11 +1199,11 @@ void DiracDeterminantWithBackflow::testGGG(ParticleSet& P)
     for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
       BFTrans->QP.R[i][lc] = qp_0[i][lc] + dh;
     BFTrans->QP.update();
-    Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM_1,dpsiM_1,ggM_1,ggg_psiM1);
+    evaluate_SPO(psiM_1, dpsiM_1, ggM_1, ggg_psiM1);
     for(int i=0; i<BFTrans->QP.getTotalNum(); i++)
       BFTrans->QP.R[i][lc] = qp_0[i][lc] - dh;
     BFTrans->QP.update();
-    Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM_2,dpsiM_2,ggM_2,ggg_psiM2);
+    evaluate_SPO(psiM_2, dpsiM_2, ggM_2, ggg_psiM2);
     const RealType dh2=RealType(0.5/dh);
     RealType maxD(0);
     ValueType av(0);
@@ -1243,7 +1256,7 @@ void DiracDeterminantWithBackflow::testDerivFjj(ParticleSet& P, int pa)
   wfvar_prime[pr] = wfVars[pr]+ dh;
   BFTrans->resetParameters(wfvar_prime);
   BFTrans->evaluateDerivatives(P);
-  Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM,grad_grad_grad_psiM);
+  evaluate_SPO(psiM, dpsiM, grad_grad_psiM, grad_grad_grad_psiM);
   //std::copy(psiM.begin(),psiM.end(),psiMinv.begin());
   psiMinv=psiM;
   // invert backflow matrix
@@ -1262,7 +1275,7 @@ void DiracDeterminantWithBackflow::testDerivFjj(ParticleSet& P, int pa)
   wfvar_prime[pr] = wfVars[pr]- dh;
   BFTrans->resetParameters(wfvar_prime);
   BFTrans->evaluateDerivatives(P);
-  Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM,grad_grad_grad_psiM);
+  evaluate_SPO(psiM, dpsiM, grad_grad_psiM, grad_grad_grad_psiM);
   //std::copy(psiM.begin(),psiM.end(),psiMinv.begin());
   psiMinv=psiM;
   // invert backflow matrix
@@ -1280,7 +1293,7 @@ void DiracDeterminantWithBackflow::testDerivFjj(ParticleSet& P, int pa)
     wfvar_prime[j]=wfVars[j];
   BFTrans->resetParameters(wfvar_prime);
   BFTrans->evaluateDerivatives(P);
-  Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM,grad_grad_grad_psiM);
+  evaluate_SPO(psiM, dpsiM, grad_grad_psiM, grad_grad_grad_psiM);
   //std::copy(psiM.begin(),psiM.end(),psiMinv.begin());
   psiMinv=psiM;
   // invert backflow matrix
@@ -1324,7 +1337,7 @@ void DiracDeterminantWithBackflow::testDerivFjj(ParticleSet& P, int pa)
 
 void DiracDeterminantWithBackflow::testDerivLi(ParticleSet& P, int pa)
 {
-  //app_log() <<"Testing new L(i): \n";
+  //app_log() <<"Testing new L[i]: \n";
   opt_variables_type wfVars,wfvar_prime;
   BFTrans->checkInVariables(wfVars);
   BFTrans->checkOutVariables(wfVars);
@@ -1341,7 +1354,7 @@ void DiracDeterminantWithBackflow::testDerivLi(ParticleSet& P, int pa)
   //ValueType ps = evaluateLog(P,myG,myL);
   //L0 = Sum(myL);
   //app_log() <<"L old, L new: " <<L0 <<"  " <<L1+L2+L3 << std::endl;
-  app_log() << std::endl <<" Testing derivatives of L(i) matrix. " << std::endl;
+  app_log() << std::endl <<" Testing derivatives of L[i] matrix. " << std::endl;
   for (int j=0; j<Nvars; j++)
     wfvar_prime[j]=wfVars[j];
   wfvar_prime[pa] = wfVars[pa]+ dh;
@@ -1377,11 +1390,11 @@ void DiracDeterminantWithBackflow::testDerivLi(ParticleSet& P, int pa)
 }
 
 
-// evaluate \sum_i L(i) splitted into three pieces
+// evaluate \sum_i L[i] splitted into three pieces
 void DiracDeterminantWithBackflow::dummyEvalLi(ValueType& L1, ValueType& L2, ValueType& L3)
 {
   L1=L2=L3=0.0;
-  Phi->evaluate(BFTrans->QP, FirstIndex, LastIndex, psiM,dpsiM,grad_grad_psiM);
+  evaluate_SPO(psiM, dpsiM, grad_grad_psiM);
   psiMinv=psiM;
   InverseTimer.start();
   LogValue=InvertWithLog(psiMinv.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue);

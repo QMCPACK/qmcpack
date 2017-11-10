@@ -145,7 +145,7 @@ int main(int argc, char** argv)
     ions.RSoA=ions.R; //fill the SoA
 
     const int nions=ions.getTotalNum();
-    const int nels=4*nions;
+    const int nels=count_electrons(ions);
     const int nels3=3*nels;
 
 #pragma omp master

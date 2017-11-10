@@ -67,18 +67,19 @@ public:
   bool CanUseGLCombo;
   ///if true, need distance tables
   bool NeedDistanceTables;
-  ///total number of orbitals
-  IndexType TotalOrbitalSize;
+  ///if true, do not clean up
+  bool IsCloned;
   ///number of Single-particle orbitals
   IndexType OrbitalSetSize;
   ///number of Single-particle orbitals
   IndexType BasisSetSize;
   ///index of the particle
   IndexType ActivePtcl;
-  ///matrix to store temporary value before transpose
-  ValueMatrix_t t_logpsi;
-  ///matrix containing the coefficients
-  ValueMatrix_t C;
+  /** pointer matrix containing the coefficients
+   *
+   * makeClone makes a shallow copy
+   */
+  ValueMatrix_t* C;
   ///occupation number
   Vector<RealType> Occ;
   /// Optimizable variables
@@ -95,7 +96,7 @@ public:
   SPOSetBase();
 
   /** destructor */
-  virtual ~SPOSetBase() {}
+  virtual ~SPOSetBase();
 
   /** return the size of the orbital set
    */
@@ -128,31 +129,7 @@ public:
     return BasisSetSize;
   }
 
-
-  bool setIdentity(bool useIdentity)
-  {
-    Identity = useIdentity;
-
-    if ( (OrbitalSetSize > 0) && (BasisSetSize > 0) )
-      C.resize(OrbitalSetSize,BasisSetSize);
-    else {
-      app_error() << "either OrbitalSetSize or BasisSetSize has an invalid value !!\n";
-      app_error() << "OrbitalSetSize = " << OrbitalSetSize << std::endl;
-      app_error() << "BasisSetSize = " << BasisSetSize << std::endl;
-      abort();
-    }
-
-    if (OrbitalSetSize <= BasisSetSize) {
-      for (int i=0; i<OrbitalSetSize; i++)
-        C(i,i) = 1.0;
-    }
-    else {
-      for (int i=0; i<BasisSetSize; i++)
-        C(i,i) = 1.0;
-    }
-
-    return true;
-  }
+  bool setIdentity(bool useIdentity);
 
   void checkObject();
 
@@ -200,6 +177,10 @@ public:
   virtual void
   evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)=0;
 
+  /** compute dot_product of new row and old row */
+  virtual ValueType RATIO(const ParticleSet& P, int iat, const ValueType*
+      restrict arow);
+
   /** evaluate VGL using SoA container for gl
    *
    * If newp is true, use particle set data for the proposed move
@@ -242,17 +223,19 @@ public:
    *
    * Call evaluate_notranspose to build logdet
    */
+#if 0
   virtual void
-  evaluate(const ParticleSet& P, int first, int last
+  evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi
            , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
 
   virtual void
-  evaluate(const ParticleSet& P, int first, int last
+  evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi
            , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet);
 
   virtual void
-  evaluate(const ParticleSet& P, int first, int last
+  evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi
            , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet);
+#endif
 
   virtual void
   evaluateThirdDeriv(const ParticleSet& P, int first, int last

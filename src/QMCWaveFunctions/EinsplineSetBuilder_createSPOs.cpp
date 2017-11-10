@@ -77,7 +77,7 @@ void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
   if (matrixNotSet)
     for (int i=0; i<3; i++)
       for (int j=0; j<3; j++)
-        TileMatrix(i,j) = (i==j) ? TileFactor(i) : 0;
+        TileMatrix(i,j) = (i==j) ? TileFactor[i] : 0;
   char buff[1000];
   if (myComm->rank() == 0)
   {
