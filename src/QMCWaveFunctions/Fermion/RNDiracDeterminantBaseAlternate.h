@@ -46,14 +46,14 @@ public:
 
   RNDiracDeterminantBaseAlternate& operator=(const RNDiracDeterminantBaseAlternate& s);
 
-  RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
 
   void resize(int nel, int morb);
   void restore(int iat);
 
-  RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   /** return the ratio only for the  iat-th partcle move
    * @param P current configuration

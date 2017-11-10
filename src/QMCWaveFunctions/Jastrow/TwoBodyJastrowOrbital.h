@@ -506,17 +506,13 @@ public:
     //  Uptcl[i]=std::accumulate(&(U[nat]),&(U[nat+N]),0.0);
   }
 
-  inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
+  inline void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    // std::cerr <<"REGISTERING 2 BODY JASTROW"<< std::endl;
-    evaluateLogAndStore(P,P.G,P.L);
     DEBUG_PSIBUFFER(" TwoBodyJastrow::registerData ",buf.current());
-    U[NN]=LogValue;
     buf.add(U.begin(), U.end());
     buf.add(d2U.begin(), d2U.end());
     buf.add(FirstAddressOfdU,LastAddressOfdU);
     DEBUG_PSIBUFFER(" TwoBodyJastrow::registerData ",buf.current());
-    return LogValue;
   }
 
   inline void evaluateGL(ParticleSet& P)
@@ -524,7 +520,7 @@ public:
     RealType t=evaluateLog(P,P.G,P.L);
   }
 
-  inline RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+  inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf,
                                bool fromscratch=false)
   {
     evaluateLogAndStore(P,P.G,P.L);
@@ -537,7 +533,7 @@ public:
     return LogValue;
   }
 
-  inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     DEBUG_PSIBUFFER(" TwoBodyJastrow::copyFromBuffer ",buf.current());
     buf.get(U.begin(), U.end());

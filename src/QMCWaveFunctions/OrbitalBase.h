@@ -93,8 +93,9 @@ struct OrbitalBase: public QMCTraits
 
   typedef ParticleAttrib<ValueType> ValueVectorType;
   typedef ParticleAttrib<GradType>  GradVectorType;
-  typedef PooledData<RealType>      BufferType;
   typedef ParticleSet::Walker_t     Walker_t;
+  typedef Walker_t::WFBuffer_t      WFBufferType;
+  typedef Walker_t::Buffer_t        BufferType;
   typedef OrbitalSetTraits<RealType>::ValueMatrix_t       RealMatrix_t;
   typedef OrbitalSetTraits<ValueType>::ValueMatrix_t      ValueMatrix_t;
   typedef OrbitalSetTraits<ValueType>::GradMatrix_t       GradMatrix_t;
@@ -145,6 +146,8 @@ struct OrbitalBase: public QMCTraits
   std::string OrbitalName;
   ///list of variables this orbital handles
   opt_variables_type myVars;
+  ///Bytes in WFBuffer
+  size_t Bytes_in_WFBuffer;
 
   /// default constructor
   OrbitalBase();
@@ -333,10 +336,8 @@ struct OrbitalBase: public QMCTraits
   };
 
   /** add temporary data reserved for particle-by-particle move.
-   *
-   * Return the log|psi|  like evalaute evaluateLog
    */
-  virtual RealType registerData(ParticleSet& P, BufferType& buf) =0;
+  virtual void registerData(ParticleSet& P, WFBufferType& buf) =0;
 
   /** re-evaluate the content and buffer data
    * @param P particle set
@@ -344,10 +345,10 @@ struct OrbitalBase: public QMCTraits
    *
    * This function is introduced to update the data periodically for particle-by-particle move.
    */
-  virtual RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false) =0;
+  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false) =0;
 
   /** copy the internal data saved for particle-by-particle move.*/
-  virtual void copyFromBuffer(ParticleSet& P, BufferType& buf)=0;
+  virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf)=0;
 
   /** return a proxy orbital of itself
    */

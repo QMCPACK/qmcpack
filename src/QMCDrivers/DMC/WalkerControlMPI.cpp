@@ -220,18 +220,20 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   {
     if(plus[ic]==MyContext)
     {
-      OOMPI_Packed sendBuffer(wRef.byteSize(),myComm->getComm());
-      W[last]->putMessage(sendBuffer);
+      size_t byteSize = W[last]->byteSize();
+      W[last]->updateBuffer();
+      OOMPI_Message sendBuffer(W[last]->DataSet.data(), byteSize);
       myComm->getComm()[minus[ic]].Send(sendBuffer);
       --last;
       ++nsend;
     }
     if(minus[ic]==MyContext)
     {
-      OOMPI_Packed recvBuffer(wRef.byteSize(),myComm->getComm());
-      myComm->getComm()[plus[ic]].Recv(recvBuffer);
       Walker_t *awalker= new Walker_t(wRef);
-      awalker->getMessage(recvBuffer);
+      size_t byteSize = awalker->byteSize();
+      OOMPI_Message recvBuffer(awalker->DataSet.data(), byteSize);
+      myComm->getComm()[plus[ic]].Recv(recvBuffer);
+      awalker->copyFromBuffer();
       newW.push_back(awalker);
     }
   }
