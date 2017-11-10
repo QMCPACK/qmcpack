@@ -871,14 +871,20 @@ ctest -V -R short   # Verbose short tests
 
 The test system includes specific tests for the complex version of the code.
 
-The data files for the tests are located in the tests directory. The
-runs occur in build/tests/system/test\_name. The numerical
-comparisons and test definitions are in
-tests/system/CMakeLists.txt. If \textit{all} the QMC tests fail it is likely
+The input data files for the tests are located in the \texttt{tests} directory.
+The system-level test directories are grouped into \texttt{heg}, \texttt{molecules}, and \texttt{solids}, with particular physical systems under each (for example \texttt{molecules/H4\_ae}
+\footnote{The suffix `ae' is short for `all-electron' and `pp' is short for `pseudopotential'}).
+Under each physical system directory there may be tests for multiple QMC methods or parameter variations.
+The numerical comparisons and test definitions are in the \texttt{CMakeLists.txt} file in each physical system directory.
+
+If \textit{all} the QMC tests fail it is likely
 that the appropriate mpiexec (or aprun, srun) is not being
 called or found. If the QMC runs appear to work but all the other
 tests fail it is possible that python is not working on your system -
-we suggest checking some of the test outputs in build/test/system/test\_name.
+we suggest checking some of the test console output in \texttt{build/Testing/Temporary/LastTest.log}
+or the output files under \texttt{build/tests/}.
+%The runs occur in \texttt{build/tests/test\_dir/test\_name}. 
+ 
 
 Note that because most of these tests are very small, consisting of only a few
 electrons, the performance is not representative of larger
