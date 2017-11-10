@@ -121,6 +121,7 @@ struct QMCGaussianParserBase
   void createGridNode(int argc, char** argv);
 
   void createSPOSets(xmlNodePtr,xmlNodePtr);
+  void createSPOSetsH5(xmlNodePtr,xmlNodePtr);
   xmlNodePtr createElectronSet();
   xmlNodePtr createIonSet();
   xmlNodePtr createHamiltonian(const std::string& ion_tag, const std::string& psi_tag);

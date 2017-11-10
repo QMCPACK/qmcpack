@@ -43,6 +43,7 @@ SET(MOSRCS
   GamesFMOParser.cpp
   VSVBParser.cpp
   QPParser.cpp
+  MoldenParser.cpp
 )
 
 # create libmocommon 

@@ -68,8 +68,10 @@ void QPParser::parse(const std::string& fname)
      usingECP=true; 
      ECP=true;
   }
-  else
+  else{
      usingECP=false;
+     ECP=false;
+  }
   std::cout <<"usingECP: " <<(usingECP?("yes"):("no")) << std::endl;
   std::cout.flush();
 
@@ -167,7 +169,6 @@ void QPParser::parse(const std::string& fname)
     //fin.seekg(pivot_begin);
     getQPCI(fin);
   }
-
 }
 
 void QPParser::getGeometry(std::istream& is)

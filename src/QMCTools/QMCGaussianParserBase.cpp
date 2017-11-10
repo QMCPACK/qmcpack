@@ -42,7 +42,7 @@ QMCGaussianParserBase::QMCGaussianParserBase():
   Title("sample"),basisType("Gaussian"),basisName("generic"),DoCusp(false),
   Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01)
   ,usingCSF(false),readNO(0),readGuess(0),zeroCI(false),target_state(0)
-  ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false),QP(false)
+  ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false),QP(false),ECP(false)
 {
 }
 
@@ -52,7 +52,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
   Title("sample"),basisType("Gaussian"),basisName("generic"),numMO(0),numMO2print(-1),
   Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),target_state(0),
   angular_type("spherical"),usingCSF(false),readNO(0),readGuess(0),zeroCI(false)
-  ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false), QP(false)
+  ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false), QP(false),ECP(false)
 {
   //IonSystem.setName("i");
   IonChargeIndex=IonSystem.getSpeciesSet().addAttribute("charge");
@@ -411,8 +411,6 @@ QMCGaussianParserBase::createDeterminantSetWithHDF5()
   xmlAddChild(udet,coeff_data);
   //add udet to slaterdet
   xmlNodePtr cur = xmlAddChild(slaterdet,udet);
-  std::vector<int> dim(2, SizeOfBasisSet);
-  dim[numMO];
   
   hdf_archive hout(0);
   hout.open(h5file.c_str(),H5F_ACC_RDWR);
@@ -660,6 +658,91 @@ QMCGaussianParserBase::createSPOSets(xmlNodePtr spoUP, xmlNodePtr spoDN)
     xmlNewProp(det_data,(const xmlChar*)"id",(const xmlChar*)"downdetC");
   }
 }
+
+void
+QMCGaussianParserBase::createSPOSetsH5(xmlNodePtr spoUP, xmlNodePtr spoDN)
+{
+  setOccupationNumbers();
+  Matrix<double> Ctemp(SizeOfBasisSet,SizeOfBasisSet);
+  int n=0;  
+  hdf_archive hout(0);
+  hout.open(h5file.c_str(),H5F_ACC_RDWR);
+  hout.push("sposet",true);
+
+
+
+  std::ostringstream up_size, down_size, b_size, occ, nstates_alpha,nstates_beta;
+  up_size <<NumberOfAlpha;
+  down_size << NumberOfBeta;
+  b_size<<numMO;
+  nstates_alpha <<ci_nstates+ci_nca;;
+  nstates_beta <<ci_nstates+ci_ncb;
+
+  //create a spoUp
+  xmlNewProp(spoUP,(const xmlChar*)"name",(const xmlChar*)"spo-up");
+  xmlNewProp(spoUP,(const xmlChar*)"size",(const xmlChar*)nstates_alpha.str().c_str());
+
+  //create a spoDN
+  xmlNewProp(spoDN,(const xmlChar*)"name",(const xmlChar*)"spo-dn");
+  xmlNewProp(spoDN,(const xmlChar*)"size",(const xmlChar*)nstates_beta.str().c_str());
+
+
+  if (DoCusp==true){
+     xmlNewProp(spoUP,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/spo-up.cuspInfo.xml");
+     xmlNewProp(spoDN,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/spo-dn.cuspInfo.xml");
+  }
+
+
+  //add occupation UP
+  xmlNodePtr occ_data = xmlNewNode(NULL,(const xmlChar*)"occupation");
+  xmlNewProp(occ_data,(const xmlChar*)"mode",(const xmlChar*)"ground");
+  xmlAddChild(spoUP,occ_data);
+
+
+
+
+  //add coefficients
+  xmlNodePtr coeff_data = xmlNewNode(NULL,(const xmlChar*)"coefficient");
+  xmlNewProp(coeff_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
+  xmlNewProp(coeff_data,(const xmlChar*)"spindataset",(const xmlChar*)"0");
+  xmlAddChild(spoUP,coeff_data);
+
+
+  for (int i=0; i<SizeOfBasisSet; i++)
+     for (int j=0; j<SizeOfBasisSet; j++){
+         Ctemp[i][j]=EigVec[n];
+         n++;
+     }
+
+
+  hout.write(Ctemp,"eigenset_0");
+
+  //add occupation DN
+  occ_data = xmlNewNode(NULL,(const xmlChar*)"occupation");
+  xmlNewProp(occ_data,(const xmlChar*)"mode",(const xmlChar*)"ground");
+  xmlAddChild(spoDN,occ_data);
+
+  coeff_data = xmlNewNode(NULL,(const xmlChar*)"coefficient");
+  xmlNewProp(coeff_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
+  if(SpinRestricted)
+    xmlNewProp(coeff_data,(const xmlChar*)"spindataset",(const xmlChar*)"0");
+  else
+  { 
+    xmlNewProp(coeff_data,(const xmlChar*)"spindataset",(const xmlChar*)"1");
+    n=numMO*SizeOfBasisSet;  
+    for (int i=0; i<SizeOfBasisSet; i++)
+       for (int j=0; j<SizeOfBasisSet; j++){
+           Ctemp[i][j]=EigVec[n];
+           n++;
+       } 
+    hout.write(Ctemp,"eigenset_1");
+  }
+  xmlAddChild(spoDN,coeff_data);
+
+ hout.close();
+
+}
+
 
 xmlNodePtr
 QMCGaussianParserBase::createMultiDeterminantSetQP()
@@ -1486,11 +1569,19 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
           xmlNodePtr spodnPtr = xmlNewNode(NULL,(const xmlChar*)"sposet");
           xmlNewProp(spoupPtr,(const xmlChar*)"basisset",(const xmlChar*)"LCAOBSet");
           xmlNewProp(spodnPtr,(const xmlChar*)"basisset",(const xmlChar*)"LCAOBSet");
-          createSPOSets(spoupPtr,spodnPtr);
-          xmlAddChild(detPtr,spoupPtr);
-          xmlAddChild(detPtr,spodnPtr);
+          if(UseHDF5)
+          {
+            createSPOSetsH5(spoupPtr,spodnPtr);
+            xmlAddChild(detPtr,spoupPtr);
+            xmlAddChild(detPtr,spodnPtr);
+          }
+          else
+          {
+            createSPOSets(spoupPtr,spodnPtr);
+            xmlAddChild(detPtr,spoupPtr);
+            xmlAddChild(detPtr,spodnPtr);
+          }
           xmlNodePtr multislaterdetPtr=NULL;
-
 
           if (VSVB!=true && QP!=true) 
              multislaterdetPtr = createMultiDeterminantSet();
@@ -2011,8 +2102,7 @@ xmlNodePtr QMCGaussianParserBase::createHamiltonian(const std::string& ion_tag,c
     xmlNewProp(pairpot2,(const xmlChar*)"source", (const xmlChar*)ion_tag.c_str());
     xmlNewProp(pairpot2,(const xmlChar*)"target", (const xmlChar*)ion_tag.c_str());
     xmlAddChild(hamPtr,pairpot2);
-
-    if (!ECP){
+    if (ECP==false){
       xmlNodePtr pairpot3 = xmlNewNode(NULL,(const xmlChar*)"pairpot");
       xmlNewProp(pairpot3,(const xmlChar*)"name", (const xmlChar*)"IonElec");
       xmlNewProp(pairpot3,(const xmlChar*)"type", (const xmlChar*)"coulomb");
