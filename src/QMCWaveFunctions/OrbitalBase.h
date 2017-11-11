@@ -318,7 +318,7 @@ struct OrbitalBase: public QMCTraits
 
   /** complete all the delayed updates
    */
-  virtual void completeUpdates() {};
+  virtual void completeUpdates(ParticleSet& P) {};
 
   /** a move for iat-th particle is reject. Restore to the content.
    * @param iat index of the particle whose new position was proposed

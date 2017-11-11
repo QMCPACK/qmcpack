@@ -291,7 +291,7 @@ void QMCUpdateBase::randomize(Walker_t& awalker)
       }
     }
   }
-  Psi.completeUpdates();
+  Psi.completeUpdates(W);
   W.donePbyP();
   //for subSteps must update thiswalker
   //awalker.R=W.R;

@@ -200,10 +200,10 @@ public:
   }
 
   virtual
-  void completeUpdates()
+  void completeUpdates(ParticleSet& P)
   {
     for(int i=0; i<Dets.size(); i++)
-      Dets[i]->completeUpdates();
+      Dets[i]->completeUpdates(P);
   }
 
   virtual

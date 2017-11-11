@@ -209,8 +209,15 @@ void DiracDeterminantBase::restore(int iat)
   curRatio=1.0;
 }
 
-void DiracDeterminantBase::completeUpdates()
+void DiracDeterminantBase::completeUpdates(ParticleSet& P)
 {
+  if(UpdateMode == ORB_PBYP_RATIO)
+  { //need to compute dpsiM and d2psiM. Do not touch psiM!
+    SPOVGLTimer.start();
+    Phi->evaluate_notranspose(P,FirstIndex,LastIndex,psiM_temp,dpsiM,d2psiM);
+    SPOVGLTimer.stop();
+  }
+
   if (ndelay)
   {
     UpdateTimer.start();
@@ -223,13 +230,6 @@ void DiracDeterminantBase::updateAfterSweep(ParticleSet& P,
       ParticleSet::ParticleGradient_t& G,
       ParticleSet::ParticleLaplacian_t& L)
 {
-  if(UpdateMode == ORB_PBYP_RATIO)
-  { //need to compute dpsiM and d2psim. Use Phi->t_logpsi. Do not touch psiM!
-    SPOVGLTimer.start();
-    Phi->evaluate_notranspose(P,FirstIndex,LastIndex,psiM_temp,dpsiM,d2psiM);
-    SPOVGLTimer.stop();
-  }
-
   if(NumPtcls==1)
   {
     ValueType y = psiM(0,0);

@@ -271,7 +271,7 @@ public:
 
   void rejectMove(int iat);
   void acceptMove(ParticleSet& P, int iat, bool delay=true);
-  void completeUpdates();
+  void completeUpdates(ParticleSet& P);
 
   void registerData(ParticleSet& P, WFBufferType& buf);
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);

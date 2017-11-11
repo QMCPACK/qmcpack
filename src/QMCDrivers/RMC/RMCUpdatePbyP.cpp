@@ -218,6 +218,7 @@ namespace qmcplusplus
 	  }
       }
     myTimers[1]->stop ();
+    Psi.completeUpdates(W);
     W.donePbyP();
     bool advanced = true;
 
@@ -361,6 +362,7 @@ namespace qmcplusplus
 	  }
       }
     myTimers[1]->stop ();
+    Psi.completeUpdates(W);
     W.donePbyP();
 // In the rare case that all proposed moves fail, we bounce.
     if (nAcceptTemp == 0)
