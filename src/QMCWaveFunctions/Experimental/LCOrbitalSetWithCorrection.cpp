@@ -358,10 +358,16 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
   dummyLO1->setOrbitalSetSize(OrbitalSetSize);
   dummyLO1->BasisSetSize = BasisSetSize;
   dummyLO1->setIdentity(Identity);
-  dummyLO1->C = C;
+  (*dummyLO1->C) = *C;
   dummyLO1->Occ.resize(Occ.size());
   dummyLO1->Occ = Occ;
-  dummyLO2 = (LCOrbitalSet<BS,false>*) dummyLO1->makeClone();
+  dummyLO2 = new LCOrbitalSet<BS,false>(myBasisSet,ReportLevel);
+  dummyLO2->setOrbitalSetSize(OrbitalSetSize);
+  dummyLO2->BasisSetSize = BasisSetSize;
+  dummyLO2->setIdentity(Identity);
+  (*dummyLO2->C) = *C;
+  dummyLO2->Occ.resize(Occ.size());
+  dummyLO2->Occ = Occ;
   Matrix<TinyVector<RealType,9> > info;
   info.resize(numCentr,OrbitalSetSize);
   info=0;
@@ -386,8 +392,8 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
   for(int i=0; i<numCentr; i++ )
   {
     app_log()<<"Transforming orbitals of center " << i << std::endl;
-    dummyLO1->C = C;
-    dummyLO2->C = C;
+    (*dummyLO1->C) = *C;
+    (*dummyLO2->C) = *C;
     createLCOSets(i,dummyLO1,dummyLO2);
     COT *myCOT = new COT(0,true);  // assuming gaussian package
     myCOT->Grids.resize(1);

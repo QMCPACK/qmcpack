@@ -141,6 +141,17 @@ namespace qmcplusplus
         myData=myAlloc.allocate(nAllocated);
       }
 
+      /** free myData
+       */
+      __forceinline void free()
+      {
+        if(nAllocated) myAlloc.deallocate(myData,nAllocated);
+        nLocal=0;
+        nGhosts=0;
+        nAllocated=0;
+        myData=nullptr;
+      }
+
       /** reset by pre-allocated data
        * @param n new nLocal 
        * @param n_padded new nGhosts

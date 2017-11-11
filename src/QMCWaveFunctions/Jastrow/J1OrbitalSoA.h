@@ -284,19 +284,15 @@ struct  J1OrbitalSoA : public OrbitalBase
   }
 
 
-  inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    evaluateLog(P,P.G,P.L);
-    return LogValue;
-  }
+  inline void registerData(ParticleSet& P, WFBufferType& buf) { }
 
-  inline RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false)
+  inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false)
   {
     evaluateGL(P, P.G, P.L, false);
     return LogValue;
   }
 
-  inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) { }
+  inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf) { }
 
   OrbitalBasePtr makeClone(ParticleSet& tqp) const
   {

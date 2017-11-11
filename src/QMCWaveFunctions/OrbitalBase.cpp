@@ -22,8 +22,9 @@
 namespace qmcplusplus
 {
 OrbitalBase::OrbitalBase():
-  IsOptimizing(false), Optimizable(true), UpdateMode(ORB_WALKER), //UseBuffer(true), //Counter(0),
-  LogValue(1.0),PhaseValue(0.0),OrbitalName("OrbitalBase"), derivsDone(false), parameterType(0)
+  IsOptimizing(false), Optimizable(true), UpdateMode(ORB_WALKER),
+  LogValue(1.0),PhaseValue(0.0),OrbitalName("OrbitalBase"),
+  derivsDone(false), parameterType(0), Bytes_in_WFBuffer(0)
 #if !defined(ENABLE_SMARTPOINTER)
   ,dPsi(0), ionDerivs(false)
 #endif
@@ -132,5 +133,6 @@ void OrbitalBase::evaluateDerivRatios(VirtualParticleSet& VP, const opt_variable
   //default is only ratios and zero derivatives
   evaluateRatios(VP,ratios);
 }
+
 }
 

@@ -175,12 +175,11 @@ public:
 
 
   /** equivalent to evalaute with additional data management */
-  ValueType registerData(ParticleSet& P, PooledData<RealType>& buf)
+  void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    return LogValue;
   }
 
-  ValueType updateBuffer(ParticleSet& P, BufferType& buf)
+  ValueType updateBuffer(ParticleSet& P, WFBufferType& buf)
   {
     return LogValue;
   }
@@ -191,7 +190,7 @@ public:
    *
    *copyFromBuffer uses the data stored by registerData or evaluate(P,buf)
    */
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
   }
 

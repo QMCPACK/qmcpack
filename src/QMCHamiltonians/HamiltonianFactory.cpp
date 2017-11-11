@@ -486,6 +486,10 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
 #if OHMMS_DIM==3
       else if(potType == "chiesa")
       {
+#ifdef ENABLE_SOA
+        app_warning() << "Skip Chiesa estimator due to the lack of support with SoA."
+                      << " Access the correction via AoS at the moment." << std::endl;
+#else
         std::string PsiName="psi0";
         std::string SourceName = "e";
         OhmmsAttributeSet hAttrib;
@@ -506,6 +510,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         const TrialWaveFunction &psi = *psi_it->second->targetPsi;
         ChiesaCorrection *chiesa = new ChiesaCorrection (source, psi);
         targetH->addOperator(chiesa,"KEcorr",false);
+#endif
       }
       else if(potType == "skall")
       {
@@ -524,10 +529,10 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         if(PBCType)
         {
 
-                SkAllEstimator* apot=new SkAllEstimator(*source, *targetPtcl);
-                apot->put(cur);
-                targetH->addOperator(apot,potName,false);
-                app_log()<<"Adding S(k) ALL estimator"<<std::endl;
+          SkAllEstimator* apot=new SkAllEstimator(*source, *targetPtcl);
+          apot->put(cur);
+          targetH->addOperator(apot,potName,false);
+          app_log()<<"Adding S(k) ALL estimator"<<std::endl;
         }
       }
 

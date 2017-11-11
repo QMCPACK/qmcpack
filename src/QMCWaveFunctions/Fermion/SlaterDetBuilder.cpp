@@ -31,10 +31,15 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminantTruncation.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h"
 #endif
-//Cannot use complex and released node
 #if !defined(QMC_COMPLEX)
+//Cannot use complex with released node
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
+//Cannot use complex with SlaterDetOpt
+#include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
+#include "QMCWaveFunctions/LocalizedBasisSet.h"
+#include "QMCWaveFunctions/LCOrbitalSetOpt.h"
+#include "QMCWaveFunctions/Fermion/SlaterDetOpt.h"
 #endif
 #ifdef QMC_CUDA
 #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
@@ -67,6 +72,7 @@ SlaterDetBuilder::SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi,
   BFTrans=0;
   UseBackflow=false;
 }
+
 SlaterDetBuilder::~SlaterDetBuilder()
 {
   DEBUG_MEMORY("SlaterDetBuilder::~SlaterDetBuilder");
@@ -75,7 +81,6 @@ SlaterDetBuilder::~SlaterDetBuilder()
     delete myBasisSetFactory;
   }
 }
-
 
 /** process <determinantset>
  *
@@ -154,7 +159,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   }
 
   //missing basiset, e.g. einspline
-// mmorales: this should not be allowed now, either basisset or sposet must exist
+  // mmorales: this should not be allowed now, either basisset or sposet must exist
   //if (myBasisSetFactory == 0)
   //{
   //  myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi, ptclPool);
@@ -237,6 +242,14 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
     else if (cname == sd_tag)
     {
       multiDet=false;
+      // read in whether to use an optimizable slater determinant
+      std::string optimize("no");
+      {
+        OhmmsAttributeSet a;
+        a.add(optimize, "optimize");
+        a.put(cur);
+      }
+
       if(slaterdet_0)
       {
         APP_ABORT("slaterdet is already instantiated.");
@@ -259,7 +272,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         getNodeName(tname,tcur);
         if (tname == det_tag || tname == rn_tag)
         {
-          if(putDeterminant(tcur, spin_group))
+          if(putDeterminant(tcur, spin_group, optimize == "yes"))
             spin_group++;
         }
         tcur = tcur->next;
@@ -276,6 +289,9 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       {
         APP_ABORT("multideterminant is already instantiated.");
       }
+#ifdef MIXED_PRECISION
+      APP_ABORT("multideterminant is not safe with mixed precision. Please use full precision build instead.");
+#endif
       std::string spo_alpha;
       std::string spo_beta;
       std::string fastAlg("yes");
@@ -395,13 +411,14 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
     }
   }
   //only single slater determinant
-  if(multiDet)
+  if(multiDet) {
     if(FastMSD)
       targetPsi.addOrbital(multislaterdetfast_0,"MultiSlaterDeterminantFast",true);
     else
       targetPsi.addOrbital(multislaterdet_0,"MultiSlaterDeterminant",true);
-  else
+  } else {
     targetPsi.addOrbital(slaterdet_0,"SlaterDet",true);
+  }
   delete myBasisSetFactory;
   myBasisSetFactory=0;
   return success;
@@ -417,7 +434,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
  * - type variantion of a determinant, type="AFM" uses a specialized determinant builder for Anti-Ferromagnetic system
  * Extra attributes to handled the original released-node case
  */
-bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
+bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slater_det_opt)
 {
   ReportEngine PRE(ClassName,"putDeterminant(xmlNodePtr,int)");
 
@@ -565,6 +582,53 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
     {
       app_log()<<"Using the AFM determinant"<< std::endl;
       adet = new DiracDeterminantAFM(targetPtcl, psi, firstIndex);
+    }
+    else if (slater_det_opt)
+    {
+#ifdef QMC_COMPLEX
+      app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";
+      abort();
+#else
+      std::vector<RealType> params;
+      bool params_supplied = false;
+
+      // Search for the XML tag called "opt_vars", which will specify
+      // initial values for the determinant's optimiziable variables.
+      std::string subdet_name;
+      for (xmlNodePtr subdet_cur = cur->children; subdet_cur != NULL; subdet_cur = subdet_cur->next) {
+        getNodeName(subdet_name, subdet_cur);
+        if ( subdet_name == "opt_vars" ) {
+          params_supplied = true;
+          putContent(params, subdet_cur);
+        }
+      }
+
+      // YE: need check
+      // get a pointer to the single particle orbital set and make sure it is of the correct type
+      if ( ! psi->is_of_type_LCOrbitalSetOpt() ) {
+        std::string newname = "LCOrbitalSetOpt_" + psi->objectName;
+        SPOSetBasePtr newpsi = get_sposet(newname);
+        if(newpsi == nullptr)
+        {
+          app_log() << "using an existing SPO object " << psi->objectName << " (not a clone) for the basis of an optimizable SPO set.\n";
+          newpsi = new LCOrbitalSetOpt<LocalizedBasisSet<NGOBuilder::CenteredOrbitalType> >(psi);
+          // YE: FIXME, need to register newpsi
+        }
+        else
+        {
+          psi = newpsi;
+        }
+      }
+
+      // build the optimizable slater determinant
+      SlaterDetOpt * const retval = new SlaterDetOpt(targetPtcl, psi, spin_group);
+
+      // load extra parameters for SlaterDetOpt
+      retval->buildOptVariables(params, params_supplied, true);
+
+      adet = retval;
+      adet->Optimizable = true;
+#endif
     }
     else if (psi->Optimizable)
       adet = new DiracDeterminantOpt(targetPtcl, psi, firstIndex);

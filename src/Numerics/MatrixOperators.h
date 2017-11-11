@@ -132,7 +132,7 @@ namespace MatrixOperators
   template<typename T>
     inline void transpose(const Matrix<T>& A, Matrix<T>& B)
   {
-    simd::transpose(A.data(),B.data(),A.rows(),A.cols());
+    simd::transpose(A.data(), A.rows(), A.cols(), B.data(), B.rows(), B.cols());
   }
 
 

@@ -248,37 +248,27 @@ AGPDeterminant::evaluateLogAndStore(ParticleSet& P)
   d2Y = GeminalBasis->d2Y;
 }
 
-AGPDeterminant::ValueType
-AGPDeterminant::registerData(ParticleSet& P, PooledData<RealType>& buf)
+void
+AGPDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 {
-  evaluateLogAndStore(P);
-  P.G += myG;
-  P.L += myL;
-  //copy psiM to temporary
-  psiM_temp = psiM;
-  //if(UseBuffer)
-  {
-    //add the data: determinant, inverse, gradient and laplacians
-    //buf.add(CurrentDet);
-    buf.add(LogValue);
-    buf.add(psiM.begin(),psiM.end());
-    buf.add(phiT.begin(),phiT.end());
-    buf.add(d2psiU.begin(),d2psiU.end());
-    buf.add(d2psiD.begin(),d2psiD.end());
-    buf.add(FirstAddressOfdVU,LastAddressOfdVU);
-    buf.add(FirstAddressOfdVD,LastAddressOfdVD);
-    buf.add(d2Y.begin(),d2Y.end());
-    buf.add(FirstAddressOfdY,LastAddressOfdY);
-    buf.add(FirstAddressOfG,LastAddressOfG);
-    buf.add(myL.first_address(), myL.last_address());
-    //buf.add(myL.begin(), myL.end());
-  }
-  return LogValue;
-  //return LogValue = evaluateLogAndPhase(CurrentDet,PhaseValue);
+  //add the data: determinant, inverse, gradient and laplacians
+  //buf.add(CurrentDet);
+  buf.add(LogValue);
+  buf.add(psiM.begin(),psiM.end());
+  buf.add(phiT.begin(),phiT.end());
+  buf.add(d2psiU.begin(),d2psiU.end());
+  buf.add(d2psiD.begin(),d2psiD.end());
+  buf.add(FirstAddressOfdVU,LastAddressOfdVU);
+  buf.add(FirstAddressOfdVD,LastAddressOfdVD);
+  buf.add(d2Y.begin(),d2Y.end());
+  buf.add(FirstAddressOfdY,LastAddressOfdY);
+  buf.add(FirstAddressOfG,LastAddressOfG);
+  buf.add(myL.first_address(), myL.last_address());
+  //buf.add(myL.begin(), myL.end());
 }
 
 AGPDeterminant::ValueType
-AGPDeterminant::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+AGPDeterminant::updateBuffer(ParticleSet& P, WFBufferType& buf,
                              bool fromscratch)
 {
   evaluateLogAndStore(P);
@@ -304,7 +294,7 @@ AGPDeterminant::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
   //return CurrentDet;
 }
 
-void AGPDeterminant::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void AGPDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   //if(UseBuffer)
   {

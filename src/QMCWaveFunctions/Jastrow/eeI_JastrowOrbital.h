@@ -1025,48 +1025,14 @@ public:
     // }
   }
 
-  inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
+  inline void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    // std::cerr <<"REGISTERING 2 BODY JASTROW"<< std::endl;
-    evaluateLogAndStore(P,P.G,P.L);
-    //LogValue=0.0;
-    //RealType dudr, d2udr2,u;
-    //GradType gr;
-    //PairID.resize(ee_table->size(SourceIndex),ee_table->size(SourceIndex));
-    //int nsp=P.groups();
-    //for(int i=0; i<ee_table->size(SourceIndex); i++)
-    //  for(int j=0; j<ee_table->size(SourceIndex); j++)
-    //    PairID(i,j) = P.GroupID[i]*nsp+P.GroupID[j];
-    //for(int i=0; i<ee_table->size(SourceIndex); i++) {
-    //  for(int nn=ee_table->M[i]; nn<ee_table->M[i+1]; nn++) {
-    //    int j = ee_table->J[nn];
-    //    //ValueType sumu = F.evaluate(ee_table->r(nn));
-    //    u = F[ee_table->PairID[nn]]->evaluate(ee_table->r(nn), dudr, d2udr2);
-    //    LogValue -= u;
-    //    dudr *= ee_table->rinv(nn);
-    //    gr = dudr*ee_table->dr(nn);
-    //    //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)\f$
-    //    RealType lap = d2udr2+2.0*dudr;
-    //    int ij = i*Nelec+j, ji=j*Nelec+i;
-    //    U[ij]=u; U[ji]=u;
-    //    //dU[ij] = gr; dU[ji] = -1.0*gr;
-    //    dU[ij] = gr; dU[ji] = gr*-1.0;
-    //    d2U[ij] = -lap; d2U[ji] = -lap;
-    //    //add gradient and laplacian contribution
-    //    P.G[i] += gr;
-    //    P.G[j] -= gr;
-    //    P.L[i] -= lap;
-    //    P.L[j] -= lap;
-    //  }
-    //}
-    U[NN]= LogValue;
     buf.add(U.begin(), U.end());
     buf.add(d2U.begin(), d2U.end());
     buf.add(FirstAddressOfdU,LastAddressOfdU);
-    return LogValue;
   }
 
-  inline RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+  inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf,
                                bool fromscratch=false)
   {
     evaluateLogAndStore(P,P.G,P.L);
@@ -1115,7 +1081,7 @@ public:
     return LogValue;
   }
 
-  inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     //      std::cerr << "Called copyFromBuffer.\n";
     buf.get(U.begin(), U.end());

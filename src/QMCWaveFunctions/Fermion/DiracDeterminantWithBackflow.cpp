@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright [c] 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
@@ -102,8 +102,8 @@ void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix_t& logdet, GradMatri
   simd::transpose(psiM_temp.data(), NumOrbitals, psiM_temp.cols(), logdet.data(), NumOrbitals, logdet.cols());
 }
 
-DiracDeterminantWithBackflow::RealType
-DiracDeterminantWithBackflow::registerData(ParticleSet& P, PooledData<RealType>& buf)
+void
+DiracDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if(NP == 0)
     //first time, allocate once
@@ -145,11 +145,10 @@ DiracDeterminantWithBackflow::registerData(ParticleSet& P, PooledData<RealType>&
   buf.add(psiMinv.first_address(),psiMinv.last_address());
   buf.add(LogValue);
   buf.add(PhaseValue);
-  return LogValue;
 }
 
 DiracDeterminantWithBackflow::RealType DiracDeterminantWithBackflow::updateBuffer(ParticleSet& P,
-    PooledData<RealType>& buf, bool fromscratch)
+    WFBufferType& buf, bool fromscratch)
 {
   // for now, always recalculate from scratch
   // enable from_scratch = true later
@@ -174,7 +173,7 @@ DiracDeterminantWithBackflow::RealType DiracDeterminantWithBackflow::updateBuffe
   return LogValue;
 }
 
-void DiracDeterminantWithBackflow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void DiracDeterminantWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   buf.get(psiM.first_address(),psiM.last_address());
   buf.get(FirstAddressOfdV,LastAddressOfdV);

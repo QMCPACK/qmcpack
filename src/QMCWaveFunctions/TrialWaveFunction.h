@@ -107,6 +107,7 @@ public:
   typedef OrbitalBase::PosType            PosType;
   typedef OrbitalBase::GradType           GradType;
   typedef OrbitalBase::BufferType         BufferType;
+  typedef OrbitalBase::WFBufferType       WFBufferType;
   typedef OrbitalBase::HessType           HessType;
   typedef OrbitalBase::HessVector_t       HessVector_t;
 #ifdef QMC_CUDA
@@ -272,9 +273,9 @@ public:
   void acceptMove(ParticleSet& P, int iat, bool delay=true);
   void completeUpdates();
 
-  RealType registerData(ParticleSet& P, BufferType& buf);
-  RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
-  void copyFromBuffer(ParticleSet& P, BufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   RealType KECorrection() const;
 
@@ -348,8 +349,8 @@ private:
   ///starting index of the buffer
   size_t BufferCursor;
 
-  ///starting index of the buffer DP
-  size_t BufferCursor_DP;
+  ///starting index of the scalar buffer
+  size_t BufferCursor_scalar;
 
   ///sign of the trial wave function
   RealType PhaseValue;
@@ -368,12 +369,6 @@ private:
 
   ///fermionic wavefunction
   FermionBase* FermionWF;
-
-  ///differential gradients
-  ParticleSet::ParticleGradient_t delta_G;
-
-  ///differential laplacians
-  ParticleSet::ParticleLaplacian_t delta_L;
 
   ///fake particleset
   ParticleSet* tempP;
