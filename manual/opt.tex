@@ -1,4 +1,6 @@
 \section{Wavefunction Optimization}
+\label{sec:optimization}
+
 Optimizing wavefunction is critical in all kinds of real-space quantum Monte Carlo calculations
 because it significantly improves both the accuracy and efficiency of computation.
 However, it is very difficult to directly adopt deterministic minimization approaches due to the stochastic nature of evaluating quantities with Monte Carlo.
@@ -386,15 +388,14 @@ to 0 and do a single inner iteration (max its=1) per sample of configurations.}
 \end{lstlisting}
 
 \subsection{General recommendations}
-Here are a few reminders to make wavefunction easier.
+Here are a few recommendations to make wavefunction easier.
 \begin{itemize}
-\item All electron wavefunctions are more difficult to optimize than pseudopotential ones especially when the cusp is not removed.
-\item Two body Jastrow contributes the largest portion of correlation energy from bare Slater determinants. It's also the easiest part for optimizer and gains most. For this reason, the recommend order optimizing wavefunction components is two-body, one-body, three-body Jastrow factors and MSD coefficients.
-\item Never use all-zero two-body spline Jastrow and always start from a reasonable one. 
-      You might want to bang your head against a brick wall for a bad two-body Jastrow.
-\item One-body spline Jastrow from old calculations can be good starting point.
-\item Three-body polynomial Jastrow should start from zero.
+\item All electron wavefunctions are typically more difficult to optimize than pseudopotential ones due to the importance of the wavefunction near the nucleus.
+\item Two body Jastrow contributes the largest portion of correlation energy from bare Slater determinants. It's also the easiest part for optimizer and gains most. For this reason, the recommend order optimizing wavefunction components is two-body, two-body, three-body Jastrow factors and MSD coefficients.
+\item For two-body spline Jastrows, always start from a reasonable one. The lack of physically-motivated constraints in the functional form at large distances can cause slow convergence if starting from zero. 
+\item One-body spline Jastrow from old calculations can be a good starting point.
+\item Three-body polynomial Jastrow can start from zero.
+\item When adding higher-body terms, it can help to perform an initial optimization with the lower body terms held fixed. e.g. Hold the one and two body fixed when initially adding three-body terms.
 \end{itemize}
 
-\label{sec:optimization}
 
