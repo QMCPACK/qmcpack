@@ -82,7 +82,6 @@ namespace qmcplusplus
 	if (awalker.DataSet.size ())
 	  awalker.DataSet.clear ();
 	awalker.DataSet.rewind ();
-	awalker.registerData();
 	Psi.registerData(W, awalker.DataSet);
 	awalker.DataSet.allocate();
 	Psi.copyFromBuffer(W, awalker.DataSet);
