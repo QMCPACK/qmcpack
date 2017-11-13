@@ -135,6 +135,7 @@ struct QMCGaussianParserBase
   xmlNodePtr createMultiDeterminantSet();
   xmlNodePtr createMultiDeterminantSetVSVB();
   xmlNodePtr createMultiDeterminantSetQP();
+  xmlNodePtr createMultiDeterminantSetQPHDF5();
   xmlNodePtr createDeterminantSetWithHDF5();
   xmlNodePtr createJ3();
   xmlNodePtr createJ2();

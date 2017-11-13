@@ -743,6 +743,68 @@ QMCGaussianParserBase::createSPOSetsH5(xmlNodePtr spoUP, xmlNodePtr spoDN)
 
 }
 
+xmlNodePtr
+QMCGaussianParserBase::createMultiDeterminantSetQPHDF5()
+{
+  xmlNodePtr multislaterdet = xmlNewNode(NULL,(const xmlChar*)"multideterminant");
+  xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+  xmlNewProp(multislaterdet,(const xmlChar*)"spo_up",(const xmlChar*)"spo-up");
+  xmlNewProp(multislaterdet,(const xmlChar*)"spo_dn",(const xmlChar*)"spo-dn");
+  xmlNodePtr detlist = xmlNewNode(NULL,(const xmlChar*)"detlist");
+  std::ostringstream nstates,cisize,cinca,cincb,cinea,cineb,ci_thr;
+  cisize <<ci_size;
+  nstates <<ci_nstates;
+  cinca <<ci_nca;
+  cincb <<ci_ncb;
+  cinea <<ci_nea;
+  cineb <<ci_neb;
+  ci_thr <<ci_threshold;
+  xmlNewProp(detlist,(const xmlChar*)"size",(const xmlChar*)cisize.str().c_str());
+  xmlNewProp(detlist,(const xmlChar*)"type",(const xmlChar*)"DETS");
+  xmlNewProp(detlist,(const xmlChar*)"nca",(const xmlChar*)cinca.str().c_str());
+  xmlNewProp(detlist,(const xmlChar*)"ncb",(const xmlChar*)cincb.str().c_str());
+  xmlNewProp(detlist,(const xmlChar*)"nea",(const xmlChar*)cinea.str().c_str());
+  xmlNewProp(detlist,(const xmlChar*)"neb",(const xmlChar*)cineb.str().c_str());
+  xmlNewProp(detlist,(const xmlChar*)"nstates",(const xmlChar*)nstates.str().c_str());
+  xmlNewProp(detlist,(const xmlChar*)"cutoff",(const xmlChar*)ci_thr.str().c_str());
+  if(CIcoeff.size() == 0)
+  {
+    std::cerr <<" CI configuration list is empty. \n";
+    exit(101);
+  }
+  if(CIcoeff.size() != CIalpha.size() || CIcoeff.size() != CIbeta.size())
+  {
+    std::cerr <<" Problem with CI configuration lists. \n";
+    exit(102);
+  }
+  int iv=0;
+
+
+  hdf_archive hout(0); 
+  hout.open(h5file.c_str(),H5F_ACC_RDWR);
+  hout.push("MultiSlaterDeterminant",true);
+
+  for(int i=0; i<CIcoeff.size(); i++)
+  {
+      std::string loc_alpha=CIalpha[i].substr(0,ci_nstates);
+      std::string loc_beta=CIbeta[i].substr(0,ci_nstates);
+      std::ostringstream coeff;
+      std::ostringstream qc_coeff;
+      qc_coeff<<CIcoeff[i];
+      coeff<<CIcoeff[i];
+      std::ostringstream tag;
+      tag<<"CIcoeff_" <<iv++;
+      hout.push(tag.str().c_str(),true);
+      hout.write(CIcoeff[i],"coeff");
+      hout.write(CIcoeff[i],"qc_coeff");
+      hout.write(loc_alpha,"alpha");
+      hout.write(loc_beta,"beta");
+      hout.pop();
+  }
+  xmlAddChild(multislaterdet,detlist);
+  hout.close();
+  return multislaterdet;
+}
 
 xmlNodePtr
 QMCGaussianParserBase::createMultiDeterminantSetQP()
@@ -812,7 +874,7 @@ QMCGaussianParserBase::createMultiDeterminantSetQP()
       }
     xmlAddChild(multislaterdet,detlist);
   return multislaterdet;
-  }
+}
 
 xmlNodePtr
 QMCGaussianParserBase::createMultiDeterminantSetVSVB()
@@ -1590,7 +1652,12 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
              if (VSVB)        
                 multislaterdetPtr = createMultiDeterminantSetVSVB();
              else
-                multislaterdetPtr = createMultiDeterminantSetQP();
+             {
+                if(UseHDF5)
+                  multislaterdetPtr = createMultiDeterminantSetQPHDF5();
+                else
+                  multislaterdetPtr = createMultiDeterminantSetQP();
+             }
 
           }
   
