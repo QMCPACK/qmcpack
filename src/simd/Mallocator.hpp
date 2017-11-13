@@ -21,8 +21,11 @@ namespace qmcplusplus
   template<typename T, size_t Align>
   struct Mallocator
   {
-    typedef T value_type;
-    typedef size_t size_type;
+    typedef T         value_type;
+    typedef size_t    size_type;
+    typedef T*        pointer;
+    typedef const T*  const_pointer;
+
     Mallocator() = default;
     template <class U> Mallocator(const Mallocator<U,Align>&) {}
 

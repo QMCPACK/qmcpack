@@ -877,7 +877,7 @@ EinsplineSetExtended<StorageType>::evaluate
     convert(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
     //convertVec(e_mikr*(-eye*u*ck + gradu), dpsi[j]);
     //convert(e_mikr*(-dot(k,k)*u - 2.0*eye*dot(ck,gradu) + laplu), d2psi[j]);
-    convert(e_mikr*(hs -u*outerProduct(ck,ck) - eye*outerProduct(ck,gradu) - eye*outerProduct(gradu,ck)),grad_grad_psi(j));
+    convert(e_mikr*(hs -u*outerProduct(ck,ck) - eye*outerProduct(ck,gradu) - eye*outerProduct(gradu,ck)),grad_grad_psi[j]);
   }
   VGLTimer.stop();
 }

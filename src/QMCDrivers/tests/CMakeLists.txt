@@ -17,7 +17,12 @@ SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME unit_test_${SRC_DIR})
 
 
-ADD_EXECUTABLE(${UTEST_EXE} test_vmc.cpp test_dmc.cpp)
+SET(DRIVER_TEST_SRC test_vmc.cpp test_dmc.cpp)
+IF(HAVE_MPI)
+  SET(DRIVER_TEST_SRC ${DRIVER_TEST_SRC} test_walker_control.cpp)
+ENDIF()
+ADD_EXECUTABLE(${UTEST_EXE} ${DRIVER_TEST_SRC})
+
 USE_FAKE_RNG(${UTEST_EXE})
 TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc qmcdriver_unit qmcham qmcwfs qmcbase qmcutil qmcfakerng ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
 

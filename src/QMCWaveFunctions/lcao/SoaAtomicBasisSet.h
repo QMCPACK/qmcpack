@@ -10,64 +10,77 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/** @file SphericalBasisSet.h
- * @brief A basis set of spherical symmetry associated with a center
+/** @file SoaAtomicBasisSet.h
  */
 #ifndef QMCPLUSPLUS_SOA_SPHERICALORBITAL_BASISSET_H
 #define QMCPLUSPLUS_SOA_SPHERICALORBITAL_BASISSET_H
 
 namespace qmcplusplus
 {
-
+  /* A basis set for a center type 
+   *
+   * @tparam ROT : radial function type, e.g.,NGFunctor<T>
+   * @tparam SH : spherical or carteisan Harmonics for (l,m) expansion
+   *
+   * \f$ \phi_{n,l,m}({\bf r})=R_{n,l}(r) Y_{l,m}(\theta) \f$
+   */
   template<typename ROT, typename SH>
-    struct SoaSphericalBasisSet
+    struct SoaAtomicBasisSet
     {
-      typedef ROT                      RadialOrbital_t;
+      typedef ROT RadialOrbital_t;
       typedef typename ROT::value_type value_type;
+      typedef typename ROT::grid_type  grid_type;
 
       ///size of the basis set
-      size_t BasisSetSize;
+      int BasisSetSize;
+      ///maximum radius of this center
+      value_type Rmax;
       ///spherical harmonics
       SH Ylm;
+      ///radial orbitals
+      ROT* MultiRnl;
       ///index of the corresponding real Spherical Harmonic with quantum numbers \f$ (l,m) \f$
       aligned_vector<int> LM;
       /**index of the corresponding radial orbital with quantum numbers \f$ (n,l) \f$ */
       aligned_vector<int> NL;
-      ///container for the radial orbitals
-      aligned_vector<ROT*> Rnl;
       ///container for the quantum-numbers
       std::vector<QuantumNumberType> RnlID;
+      ///temporary storage 
+      VectorSoaContainer<value_type,4> tempS;
 
+      ///set of grids : keep this until completion
+      std::vector<grid_type*> Grids;
       ///the constructor
-      explicit SoaSphericalBasisSet(int lmax, bool addsignforM=false)
+      explicit SoaAtomicBasisSet(int lmax, bool addsignforM=false)
         :Ylm(lmax,addsignforM){}
 
-      ~SoaSphericalBasisSet(){ } //cleanup
+      SoaAtomicBasisSet(const SoaAtomicBasisSet& in)=default;
 
-      SoaSphericalBasisSet<ROT,SH>* makeClone() const
+      ~SoaAtomicBasisSet(){ } //cleanup
+
+      SoaAtomicBasisSet<ROT,SH>* makeClone() const
       {
-        SoaSphericalBasisSet<ROT,SH>* myclone=new SoaSphericalBasisSet<ROT,SH>(*this);
-        for(int i=0; i<Rnl.size(); ++i)
-          myclone->Rnl[i]=new ROT(Rnl[i]->makeClone());
+        SoaAtomicBasisSet<ROT,SH>* myclone=new SoaAtomicBasisSet<ROT,SH>(*this);
+        myclone->MultiRnl=MultiRnl->makeClone();
         return myclone;
       }
 
       void checkInVariables(opt_variables_type& active)
       {
-        for(size_t nl=0; nl<Rnl.size(); nl++)
-          Rnl[nl]->checkInVariables(active);
+        //for(size_t nl=0; nl<Rnl.size(); nl++)
+        //  Rnl[nl]->checkInVariables(active);
       }
 
       void checkOutVariables(const opt_variables_type& active)
       {
-        for(size_t nl=0; nl<Rnl.size(); nl++)
-          Rnl[nl]->checkOutVariables(active);
+        //for(size_t nl=0; nl<Rnl.size(); nl++)
+        //  Rnl[nl]->checkOutVariables(active);
       }
 
       void resetParameters(const opt_variables_type& active)
       {
-        for(size_t nl=0; nl<Rnl.size(); nl++)
-          Rnl[nl]->resetParameters(active);
+        //for(size_t nl=0; nl<Rnl.size(); nl++)
+        //  Rnl[nl]->resetParameters(active);
       }
 
       /** return the number of basis functions
@@ -80,11 +93,20 @@ namespace qmcplusplus
 
       /** implement a BasisSetBase virutal function
        *
-       * Use the size of LM to set BasisSetSize
+       * Set Rmax and BasisSetSize
+       * @todo Should be able to overwrite Rmax to be much smaller than the maximum grid
        */
       inline void setBasisSetSize(int n)
       {
         BasisSetSize=LM.size();
+        tempS.resize(std::max(Ylm.size(),RnlID.size()));
+      }
+
+      /** Set Rmax */
+      template<typename T>
+      inline void setRmax(T rmax)
+      {
+        Rmax=(rmax>0)? rmax: MultiRnl->rmax();
       }
 
       /** reset the target ParticleSet
@@ -98,22 +120,28 @@ namespace qmcplusplus
       { }
 
 
-      template<typename VGL>
+      template<typename T, typename PosType, typename VGL>
         inline void
         evaluateVGL(const T r, const PosType& dr, const size_t offset,  VGL& vgl)
         {
+          //const size_t ib_max=NL.size();
+          if(r>Rmax) 
+          {
+            for(int i=0; i<5; ++i)
+              std::fill_n(vgl.data(i)+offset,BasisSetSize,T());
+            return;
+          }
           CONSTEXPR T cone(1);
           CONSTEXPR T ctwo(2);
-          const T x=dr[0], y=dr[1], z=dr[2];
+          //SIGN Change!!
+          const T x=-dr[0], y=-dr[1], z=-dr[2];
           Ylm.evaluateVGL(x,y,z);
 
-          const size_t nl_max=Rnl.size();
-          T phi[nl_max]; 
-          T dphi[nl_max];
-          T d2phi[nl_max];
-
-          for(size_t nl=0; nl<nl_max; ++nl)
-            phi[nl]=Rnl[nl]->evaluate(r,dphi[nl],d2phi[nl]);
+          //one can assert the alignment
+          value_type* restrict phi=tempS.data(0);
+          value_type* restrict dphi=tempS.data(1);
+          value_type* restrict d2phi=tempS.data(2);
+          MultiRnl->evaluate(r,phi,dphi,d2phi);
 
           //V,Gx,Gy,Gz,L
           T* restrict psi   =vgl.data(0)+offset; const T* restrict ylm_v=Ylm[0]; //value
@@ -122,8 +150,7 @@ namespace qmcplusplus
           T* restrict dpsi_z=vgl.data(3)+offset; const T* restrict ylm_z=Ylm[3]; //gradZ
           T* restrict d2psi =vgl.data(4)+offset; const T* restrict ylm_l=Ylm[4]; //lap
           const T rinv=cone/r;
-          const size_t ib_max=NL.size();
-          for(size_t ib=0; ib<ib_max; ++ib)
+          for(size_t ib=0; ib<BasisSetSize; ++ib)
           {
             const int nl(NL[ib]);
             const int lm(LM[ib]);
@@ -144,18 +171,22 @@ namespace qmcplusplus
           }
         }
 
+      template<typename T, typename PosType>
       inline void
-        evaluateV(const T r, const PosType& dr, T* restrict psi)
+        evaluateV(const T r, const PosType& dr, T* restrict psi) 
         {
-          CONSTEXPR T cone(1);
-          CONSTEXPR T ctwo(2);
-          const nl_max=Rnl.size();
-          Ylm.evaluateV(dr[0],dr[1],dr[2]);
-          T phi_r[nl_max];
-          for(size_t nl=0; nl<nl_max; ++nl)
-            phi_r[nl]=Rnl[nl]->evaluate(r);
+          if(r>Rmax) 
+          {
+            std::fill_n(psi,BasisSetSize,T());
+            return;
+          }
 
-          const T* restrict ylm_v=Ylm[0];
+          value_type* restrict ylm_v=tempS.data(0);
+          value_type* restrict phi_r=tempS.data(1);
+
+          Ylm.evaluateV(-dr[0],-dr[1],-dr[2],ylm_v);
+          MultiRnl->evaluate(r,phi_r);
+
           for(size_t ib=0; ib<BasisSetSize; ++ib)
           {
             psi[ib]  = ylm_v[ LM[ib] ]*phi_r[ NL[ib] ];

@@ -323,7 +323,7 @@ struct CoulombPotential: public QMCHamiltonianBase
 
   void update_source(ParticleSet& s)
   {
-    if(myTableIndex == 0 && (s.tag() == Pa->tag() || s.parent() == Pa->tag()))
+    if(myTableIndex == 0)
       {
         Value=evaluateAA(s.DistTables[myTableIndex],s.Z.first_address());
       }
