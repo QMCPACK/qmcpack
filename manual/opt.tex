@@ -388,7 +388,7 @@ to 0 and do a single inner iteration (max its=1) per sample of configurations.}
 \end{lstlisting}
 
 \subsection{General recommendations}
-Here are a few recommendations to make wavefunction easier.
+Here are a few recommendations to make wavefunction optimization easier.
 \begin{itemize}
 \item All electron wavefunctions are typically more difficult to optimize than pseudopotential ones due to the importance of the wavefunction near the nucleus.
 \item Two body Jastrow contributes the largest portion of correlation energy from bare Slater determinants. It's also the easiest part for optimizer and gains most. For this reason, the recommend order optimizing wavefunction components is two-body, two-body, three-body Jastrow factors and MSD coefficients.
