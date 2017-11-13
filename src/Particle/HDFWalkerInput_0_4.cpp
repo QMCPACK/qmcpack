@@ -298,7 +298,7 @@ bool HDFWalkerInput_0_4::read_phdf5( std::string h5name)
   bool success;
 
   { // handle small dataset with master rank
-    hdf_archive hin(myComm,false); //everone reads this
+    hdf_archive hin(myComm,false);
     if(!myComm->rank())
     {
       success=hin.open(h5name,H5F_ACC_RDONLY);
@@ -326,6 +326,8 @@ bool HDFWalkerInput_0_4::read_phdf5( std::string h5name)
     mpi::bcast(*myComm,success);
     if(!success) return false;
 
+    // load woffsets by master
+    // can not read collectively since the size may differ from Nranks+1.
     if(!myComm->rank())
     {
       hin.read(woffsets,"walker_partition");

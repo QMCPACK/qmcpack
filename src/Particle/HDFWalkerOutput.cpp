@@ -203,7 +203,8 @@ void HDFWalkerOutput::write_configuration(MCWalkerConfiguration& W, hdf_archive&
 
   if(hout.is_parallel())
   {
-    { // write walker offset
+    { // write walker offset.
+      // Though it is a small array, it needs to be written collectively in large scale runs.
       TinyVector<int,1> gcounts(myComm->size()+1);
       TinyVector<int,1> counts;
       TinyVector<int,1> offsets(myComm->rank());
