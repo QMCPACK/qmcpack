@@ -181,9 +181,10 @@ namespace qmcplusplus {
 
     /** transpose of A(m,n) to B(n,m) 
      * @param A starting address, A(m,lda)
-     * @param m number of rows 
+     * @param m number of A rows
      * @param lda stride of A's row
      * @param B starting address B(n,ldb)
+     * @param n number of B rows
      * @param ldb stride of B's row
      *
      * Blas-like interface

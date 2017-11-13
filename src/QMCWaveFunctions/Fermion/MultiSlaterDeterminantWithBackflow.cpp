@@ -161,7 +161,7 @@ OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::evaluate(ParticleSet&
   myL *= psiinv;
   G += myG;
   for(int i=0; i<L.size(); i++)
-    L(i) += myL[i] - dot(myG[i],myG[i]);
+    L[i] += myL[i] - dot(myG[i],myG[i]);
   EvaluateTimer.stop();
   return psi;
 }
@@ -182,7 +182,7 @@ OrbitalBase::GradType MultiSlaterDeterminantWithBackflow::evalGrad(ParticleSet& 
     for(int i=0; i<dets_up.size(); i++)
     {
       spo_up->prepareFor(i);
-      grads_up[i](iat) = dets_up[i]->evalGrad(P,iat);
+      grads_up[i][iat] = dets_up[i]->evalGrad(P,iat);
     }
     ValueType psi=0.0;
     for(int i=0; i<C.size(); i++)
@@ -191,7 +191,7 @@ OrbitalBase::GradType MultiSlaterDeterminantWithBackflow::evalGrad(ParticleSet& 
       int dnC = C2node_dn[i];
       ParticleSet::ParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
       psi += tmp;
-      grad_iat += grads_up[upC](iat)*tmp;
+      grad_iat += grads_up[upC][iat]*tmp;
     }
     grad_iat *= (RealType)1.0/psi;
     return grad_iat;
@@ -202,7 +202,7 @@ OrbitalBase::GradType MultiSlaterDeterminantWithBackflow::evalGrad(ParticleSet& 
     for(int i=0; i<dets_dn.size(); i++)
     {
       spo_dn->prepareFor(i);
-      grads_dn[i](iat) = dets_dn[i]->evalGrad(P,iat);
+      grads_dn[i][iat] = dets_dn[i]->evalGrad(P,iat);
     }
     for(int i=0; i<C.size(); i++)
     {
@@ -210,7 +210,7 @@ OrbitalBase::GradType MultiSlaterDeterminantWithBackflow::evalGrad(ParticleSet& 
       int dnC = C2node_dn[i];
       ParticleSet::ParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
       psi += tmp;
-      grad_iat += grads_dn[dnC](iat)*tmp;
+      grad_iat += grads_dn[dnC][iat]*tmp;
     }
     grad_iat *= (RealType)1.0/psi;
     return grad_iat;
@@ -302,7 +302,7 @@ OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::ratio(ParticleSet& P,
       detsRatios[i]=dets_up[i]->ratio(P,iat);
     }
     Ratio1Timer.stop();
-    std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+    std::vector<size_t>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
     std::vector<RealType>::iterator it(C.begin()),last(C.end());
     ValueType psiOld=0.0,psiNew=0.0;
     while(it != last)
@@ -329,7 +329,7 @@ OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::ratio(ParticleSet& P,
       detsRatios[i]=dets_dn[i]->ratio(P,iat);
     }
     Ratio1Timer.stop();
-    std::vector<int>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
+    std::vector<size_t>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());
     std::vector<RealType>::iterator it(C.begin()),last(C.end());
     ValueType psiOld=0.0,psiNew=0.0;
     while(it != last)
@@ -586,7 +586,7 @@ OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::updateBuffer(ParticleS
   myL *= psiinv;
   P.G += myG;
   for(int i=0; i<P.L.size(); i++)
-    P.L(i) += myL[i] - dot(myG[i],myG[i]);
+    P.L[i] += myL[i] - dot(myG[i],myG[i]);
   UpdateTimer.stop();
   return LogValue = evaluateLogAndPhase(psi,PhaseValue);;
 }
@@ -870,10 +870,10 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
             ParticleSet::ParticleGradient_t& g1 = grads_up[upC];
             ParticleSet::ParticleGradient_t& g2 = grads_dn[dnC];
             for(int k=0; k<n; k++)
-              dot1 += dot((g2(k)-gmP(k)),dGa_up(upC,pa,k))
-                      + dot((g1(k)-gmP(k)),dGa_dn(dnC,pa,k))
-                      - static_cast<ParticleSet::ParticleValue_t>(dpsi1)*(dot(gmP(k),g2(k)))
-                      - static_cast<ParticleSet::ParticleValue_t>(dpsi2)*(dot(gmP(k),g1(k)));
+              dot1 += dot((g2[k]-gmP[k]),dGa_up(upC,pa,k))
+                      + dot((g1[k]-gmP[k]),dGa_dn(dnC,pa,k))
+                      - static_cast<ParticleSet::ParticleValue_t>(dpsi1)*(dot(gmP[k],g2[k]))
+                      - static_cast<ParticleSet::ParticleValue_t>(dpsi2)*(dot(gmP[k],g1[k]));
             dlog += cdet*(dpsi1+dpsi2);
             dhpsi += cdet*( dLa_up(upC,pa) + dLa_dn(dnC,pa)
                             + dpsi2*tempstorage_up[upC] + dpsi1*tempstorage_dn[dnC]

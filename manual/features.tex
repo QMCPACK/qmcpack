@@ -77,20 +77,15 @@ $\ge$4.9 and Intel compiler versions $\ge 15.0$. \textbf{Users should
 As described in \ref{sec:cmakeoptions}, to enable the SoA
 implementation, QMCPACK should be configured with \texttt{-DENABLE\_SOA=1}.
 
-SoA code path currently supports:
+SoA code path currently does NOT support:
 \begin{itemize}
-  \item VMC, wavefunction optimization, DMC, RMC.
-  \item Periodic, open and mixed boundary conditions.
-  \item Wavefunctions:
-    \begin{enumerate}
-      \item Single and multiple Slater determinants with 3D B-spline
-        orbitals. Twist-averaged boundary conditions and complex
-        wavefunctions are fully supported. Gaussian type orbitals are
-        not supported yet.
-      \item One-body and two-body Jastrows represented as 1D B-splines and three-body Jastrow represented as polynomials.
-    \end{enumerate}
-  \item Semilocal (nonlocal and local) pseudopotentials, Coulomb interaction (electron-electron, electron-ion) and MPC.
+  \item Backflow wavefunctions
+  \item All electron calculations requiring cusp corrected orbitals
+  \item Many observables
+  %\item Orbital optimization via rotation
 \end{itemize}
+
+If using any non-core feature with the SoA code, please check carefully vs the conventional AoS (non-SOA enabled) code.
 
 \subsection{Auxiliary-Field Quantum Monte Carlo}
 

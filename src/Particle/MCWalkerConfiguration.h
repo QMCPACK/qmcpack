@@ -358,7 +358,7 @@ public:
   template<typename ForwardIter>
   inline void putConfigurations(ForwardIter target)
   {
-    int ds=OHMMS_DIM*GlobalNum;
+    int ds=OHMMS_DIM*TotalNum;
     for(iterator it=WalkerList.begin(); it!= WalkerList.end(); ++it,target+=ds)
     {
       copy(get_first_address((*it)->R),get_last_address((*it)->R),target);

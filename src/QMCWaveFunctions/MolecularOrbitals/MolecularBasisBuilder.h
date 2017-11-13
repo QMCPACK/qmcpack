@@ -21,6 +21,7 @@
 #include "QMCWaveFunctions/LocalizedBasisSet.h"
 #include "QMCWaveFunctions/MolecularOrbitals/AtomicBasisBuilder.h"
 #include "QMCWaveFunctions/LCOrbitalSet.h"
+#include "QMCWaveFunctions/LCOrbitalSetOpt.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "io/hdf_archive.h"
@@ -211,10 +212,12 @@ public:
   {
     ReportEngine PRE(ClassName,"createSPO(xmlNodePtr)");
     std::string spo_name(""), id, cusp_file("");
+    std::string use_new_opt_class("no");
     OhmmsAttributeSet spoAttrib;
     spoAttrib.add (spo_name, "name");
     spoAttrib.add (id, "id");
     spoAttrib.add (cusp_file, "cuspInfo");
+    spoAttrib.add (use_new_opt_class, "optimize");
     spoAttrib.put(cur);
     SPOSetBase *lcos=0;
     cur = cur->xmlChildrenNode;
@@ -235,7 +238,6 @@ public:
           if(cusp_file != "")
             tmp=cusp_file;
           lcos= new LCOrbitalSetWithCorrection<ThisBasisSetType,false>(thisBasisSet,&targetPtcl,&sourcePtcl,ReportLevel,0.1,tmp,algorithm);
-          lcos->myComm=myComm;
 // mmorales:
 // this is a small hack to allow the cusp correction to work
 // but it should be fixed, all basisset/sposet objects should always be named
@@ -247,10 +249,17 @@ public:
         else
 #endif
         {
-          app_log() << "Creating LCOrbitalSet with the input coefficients" << std::endl;
-          lcos= new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet,ReportLevel,algorithm);
-          lcos->myComm=myComm;
-
+          if ( use_new_opt_class == "yes" ) {
+            app_log() << "Creating LCOrbitalSetOpt with the input coefficients" << std::endl;
+            lcos= new LCOrbitalSetOpt<ThisBasisSetType>(thisBasisSet,ReportLevel);
+            if(spo_name != "")
+              lcos->objectName=spo_name;
+            else
+              throw std::runtime_error("LCOrbitalSetOpt spo set must have a name");
+          } else {
+            app_log() << "Creating LCOrbitalSet with the input coefficients" << std::endl;
+            lcos= new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet,ReportLevel,algorithm);
+          }
         }
       }
       cur=cur->next;
@@ -259,8 +268,8 @@ public:
     {
       app_log() << "Creating LCOrbitalSet with the Identity coefficient" << std::endl;
       lcos = new LCOrbitalSet<ThisBasisSetType,true>(thisBasisSet,ReportLevel);
-      lcos->myComm=myComm;
     }
+    lcos->myComm=myComm;
     return lcos;
   }
 private:

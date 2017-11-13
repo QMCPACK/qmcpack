@@ -13,13 +13,13 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #include "QMCWaveFunctions/SPOSetBase.h"
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsData/AttributeSet.h"
 #include <simd/simd.hpp>
-#include "Utilities/ProgressReportEngine.h"  
+#include "Utilities/ProgressReportEngine.h"
 #include <io/hdf_archive.h>
 #include <limits>
 
@@ -37,43 +37,68 @@ inline void transpose(const T* restrict in, T* restrict out, int m)
 #endif
 
 SPOSetBase::SPOSetBase()
-:Identity(false),TotalOrbitalSize(0),OrbitalSetSize(0),BasisSetSize(0),
-  ActivePtcl(-1),Optimizable(false),ionDerivs(false),builder_index(-1)
+:Identity(false),OrbitalSetSize(0),BasisSetSize(0),
+  ActivePtcl(-1),Optimizable(false),ionDerivs(false),builder_index(-1),C(nullptr)
 {
   CanUseGLCombo=false;
   className="invalid";
+  IsCloned=false;
   //default is false: LCOrbitalSet.h needs to set this true and recompute needs to check
   NeedDistanceTables=false;
   myComm=nullptr;
 }
 
-void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
+/** clean up for shared data with clones
+ */
+SPOSetBase::~SPOSetBase()
+{
+  if(!IsCloned && C!= nullptr) delete C;
+}
+
+/** default implementation */
+SPOSetBase::ValueType
+SPOSetBase::RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
+{
+  int ip=omp_get_thread_num();
+  // YYYY to fix
+  /*
+  ValueVector_t psi(t_logpsi[ip],OrbitalSetSize);
+  evaluate(P,iat,psi);
+  return simd::dot(psi.data(),arow,OrbitalSetSize,ValueType());
+  */
+  return ValueType();
+}
+
+
+#if 0
+void SPOSetBase::evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi,
                           ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
 {
   evaluate_notranspose(P,first,last,t_logpsi,dlogdet,d2logdet);
-  simd::transpose(t_logpsi.data(), OrbitalSetSize, t_logpsi.cols(), 
+  simd::transpose(t_logpsi.data(), OrbitalSetSize, t_logpsi.cols(),
       logdet.data(), OrbitalSetSize, logdet.cols());
   //transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
 }
 
-void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
+void SPOSetBase::evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi,
                           ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
 {
   evaluate_notranspose(P,first,last,t_logpsi,dlogdet,grad_grad_logdet);
-  simd::transpose(t_logpsi.data(), OrbitalSetSize, t_logpsi.cols(), 
+  simd::transpose(t_logpsi.data(), OrbitalSetSize, t_logpsi.cols(),
       logdet.data(), OrbitalSetSize, logdet.cols());
   //transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
 }
 
-void SPOSetBase::evaluate(const ParticleSet& P, int first, int last,
+void SPOSetBase::evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi,
                           ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
 {
   logdet=0;
   evaluate_notranspose(P,first,last,t_logpsi,dlogdet,grad_grad_logdet,grad_grad_grad_logdet);
-  simd::transpose(t_logpsi.data(), OrbitalSetSize, t_logpsi.cols(), 
+  simd::transpose(t_logpsi.data(), OrbitalSetSize, t_logpsi.cols(),
       logdet.data(), OrbitalSetSize, logdet.cols());
   //transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
 }
+#endif
 
 void SPOSetBase::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bool newp)
 {
@@ -110,6 +135,26 @@ SPOSetBase* SPOSetBase::makeClone() const
   return 0;
 }
 
+bool SPOSetBase::setIdentity(bool useIdentity)
+{
+  Identity = useIdentity;
+  if(Identity) return true;
+
+  if ( C== nullptr && (OrbitalSetSize > 0) && (BasisSetSize > 0) )
+  {
+    C=new ValueMatrix_t(OrbitalSetSize,BasisSetSize);
+  }
+  else
+  {
+    app_error() << "either OrbitalSetSize or BasisSetSize has an invalid value !!\n";
+    app_error() << "OrbitalSetSize = " << OrbitalSetSize << std::endl;
+    app_error() << "BasisSetSize = " << BasisSetSize << std::endl;
+    APP_ABORT("SPOSetBase::setIdentiy ");
+  }
+
+  return true;
+}
+
 /** Parse the xml file for information on the Dirac determinants.
  *@param cur the current xmlNode
  */
@@ -118,7 +163,7 @@ bool SPOSetBase::put(xmlNodePtr cur)
   #undef FunctionName
 #define FunctionName printf("Calling FunctionName from %s\n",__FUNCTION__);FunctionNameReal
   //Check if HDF5 present
-  ReportEngine PRE("SPOSetBase","put(xmlNodePtr)"); 
+  ReportEngine PRE("SPOSetBase","put(xmlNodePtr)");
   xmlNodePtr curtemp=cur->parent->parent;
   std::string MOtype,MOhref;
   bool H5file=false;
@@ -133,22 +178,20 @@ bool SPOSetBase::put(xmlNodePtr cur)
      H5file=true;
      PRE.echo(curtemp);
   }
-   
+
   const char* MOhref2((const char*)MOhreftemp);
 
   //initialize the number of orbital by the basis set size
   int norb= BasisSetSize;
   std::string debugc("no");
+  double orbital_mix_magnitude = 0.0;
   OhmmsAttributeSet aAttrib;
   aAttrib.add(norb,"orbitals");
   aAttrib.add(norb,"size");
   aAttrib.add(debugc,"debug");
+  aAttrib.add(orbital_mix_magnitude, "orbital_mix_magnitude");
   aAttrib.put(cur);
   setOrbitalSetSize(norb);
-  TotalOrbitalSize=norb;
-  //allocate temporary t_logpsi
-  t_logpsi.resize(TotalOrbitalSize,OrbitalSetSize);
-  //const xmlChar* h=xmlGetProp(cur, (const xmlChar*)"href");
   xmlNodePtr occ_ptr=NULL;
   xmlNodePtr coeff_ptr=NULL;
   cur = cur->xmlChildrenNode;
@@ -183,9 +226,13 @@ bool SPOSetBase::put(xmlNodePtr cur)
   bool success2 = transformSPOSet();
   if(debugc=="yes")
   {
-    app_log() << "   Single-particle orbital coefficients dims=" << C.rows() << " x " << C.cols() << std::endl;
+    app_log() << "   Single-particle orbital coefficients dims="
+      << C->rows() << " x " << C->cols() << std::endl;
     app_log() << C << std::endl;
   }
+
+  init_LCOrbitalSetOpt(orbital_mix_magnitude);
+
   return success && success2;
 
  return true;
@@ -193,7 +240,7 @@ bool SPOSetBase::put(xmlNodePtr cur)
 
 void SPOSetBase::checkObject()
 {
-  if(!(OrbitalSetSize == C.rows() && BasisSetSize == C.cols()))
+  if(!(OrbitalSetSize == C->rows() && BasisSetSize == C->cols()))
   {
     app_error() << "   SPOSetBase::checkObject Linear coeffient for SPOSet is not consistent with the input." << std::endl;
     OHMMS::Controller->abort();
@@ -270,7 +317,7 @@ bool SPOSetBase::putFromXML(xmlNodePtr coeff_ptr)
     {
       if(Occ[n]>std::numeric_limits<RealType>::epsilon())
       {
-        std::copy(cit,cit+BasisSetSize,C[i]);
+        std::copy(cit,cit+BasisSetSize,(*C)[i]);
         i++;
       }
       n++;
@@ -300,13 +347,13 @@ bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
   aAttrib.put(coeff_ptr);
   setIdentity(false);
   hdf_archive hin(myComm);
-  
+
   if(myComm->rank()==0){
     hin.open(fname);
     if (!hin.open(fname)){
         APP_ABORT("SPOSetBase::putFromH5 missing or incorrect path to H5 file.");
     }
-  
+
     Matrix<RealType> Ctemp(BasisSetSize,BasisSetSize);
     char name[72];
     sprintf(name,"%s%d","/determinant/eigenset_",setVal);
@@ -317,19 +364,19 @@ bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
        APP_ABORT(setname.c_str());
     }
     hin.close();
- 
+
     int n=0,i=0;
     while(i<norbs)
     {
       if(Occ[n]>0.0)
       {
-        std::copy(Ctemp[n],Ctemp[n+1],C[i]);
+        std::copy(Ctemp[n],Ctemp[n+1],(*C)[i]);
         i++;
       }
       n++;
     }
  }
- myComm->bcast(C.data(),C.size());
+ myComm->bcast(C->data(),C->size());
 #else
   APP_ABORT("SPOSetBase::putFromH5 HDF5 is disabled.")
 #endif

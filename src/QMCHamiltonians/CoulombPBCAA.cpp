@@ -32,8 +32,6 @@ CoulombPBCAA::CoulombPBCAA(ParticleSet& ref, bool active,
   ReportEngine PRE("CoulombPBCAA","CoulombPBCAA");
   set_energy_domain(potential);
   two_body_quantum_domain(ref);
-  //save source tag
-  SourceID=ref.tag();
   //create a distance table: just to get the table name
   DistanceTableData *d_aa = DistanceTable::add(ref,DT_SOA_PREFERRED);
   PtclRefName=d_aa->Name;
@@ -62,22 +60,19 @@ void CoulombPBCAA::addObservables(PropertySetType& plist, BufferType& collectabl
 
 void CoulombPBCAA::update_source(ParticleSet& s)
 {
-  if(s.tag() == SourceID || s.parent() == SourceID)
+  mRealType eL(0.0), eS(0.0);
+  if (ComputeForces)
   {
-    mRealType eL(0.0), eS(0.0);
-    if (ComputeForces)
-    {
-      forces = 0.0;
-      eS=evalSRwithForces(s);
-      eL=evalLRwithForces(s);
-    }
-    else
-    {
-      eL=evalLR(s);
-      eS=evalSR(s);
-    }
-    NewValue=Value = eL+eS+myConst;
+    forces = 0.0;
+    eS=evalSRwithForces(s);
+    eL=evalLRwithForces(s);
   }
+  else
+  {
+    eL=evalLR(s);
+    eS=evalSR(s);
+  }
+  NewValue=Value = eL+eS+myConst;
 }
 
 void CoulombPBCAA::resetTargetParticleSet(ParticleSet& P)

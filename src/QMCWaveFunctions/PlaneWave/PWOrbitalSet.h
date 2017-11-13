@@ -80,7 +80,7 @@ public:
   inline ValueType evaluate(int ib, const PosType& pos)
   {
     myBasisSet->evaluate(pos);
-    return BLAS::dot(BasisSetSize,C[ib],myBasisSet->Zv.data());
+    return BLAS::dot(BasisSetSize,(*C)[ib],myBasisSet->Zv.data());
   }
 
   void
