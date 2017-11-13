@@ -198,6 +198,13 @@ public:
   inline void acceptMove(ParticleSet& P, int iat)
   {
     Dets[getDetID(iat)]->acceptMove(P,iat);
+
+    LogValue=0.0;
+    PhaseValue=0.0;
+    for(int i=0; i<Dets.size(); ++i) {
+      LogValue+= Dets[i]->LogValue;
+      PhaseValue+= Dets[i]->PhaseValue;
+    }
   }
 
   virtual
