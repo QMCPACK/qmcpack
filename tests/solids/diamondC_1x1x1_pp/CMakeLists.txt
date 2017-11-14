@@ -81,7 +81,33 @@ ENDIF(ENABLE_SOA)
   ENDIF()
 
 # Test time limit
-  SET(FULL_NAME "cpu_limit-diamondC_1x1x1_pp-dmc")
+  SET(FULL_NAME "cpu_limit-diamondC_1x1x1_pp-vmc-1-1")
+  SET(TEST_ADDED FALSE)
+  RUN_QMC_APP(${FULL_NAME}
+              "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+              1 1
+              TEST_ADDED
+              qmc_cpu_limit_vmc.xml)
+
+  IF (TEST_ADDED)
+    SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY TIMEOUT 120)
+    SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY PASS_REGULAR_EXPRESSION "Time limit reached for")
+  ENDIF()
+
+  SET(FULL_NAME "cpu_limit-diamondC_1x1x1_pp-vmc-4-4")
+  SET(TEST_ADDED FALSE)
+  RUN_QMC_APP(${FULL_NAME}
+              "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+              4 4
+              TEST_ADDED
+              qmc_cpu_limit_vmc.xml)
+
+  IF (TEST_ADDED)
+    SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY TIMEOUT 120)
+    SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY PASS_REGULAR_EXPRESSION "Time limit reached for")
+  ENDIF()
+
+  SET(FULL_NAME "cpu_limit-diamondC_1x1x1_pp-dmc-1-1")
   SET(TEST_ADDED FALSE)
   RUN_QMC_APP(${FULL_NAME}
               "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -94,6 +120,18 @@ ENDIF(ENABLE_SOA)
     SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY PASS_REGULAR_EXPRESSION "Time limit reached for")
   ENDIF()
 
+  SET(FULL_NAME "cpu_limit-diamondC_1x1x1_pp-dmc-4-4")
+  SET(TEST_ADDED FALSE)
+  RUN_QMC_APP(${FULL_NAME}
+              "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+              4 4
+              TEST_ADDED
+              qmc_cpu_limit_dmc.xml)
+
+  IF (TEST_ADDED)
+    SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY TIMEOUT 120)
+    SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY PASS_REGULAR_EXPRESSION "Time limit reached for")
+  ENDIF()
 
 
 #
