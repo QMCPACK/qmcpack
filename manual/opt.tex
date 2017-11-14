@@ -394,8 +394,7 @@ Here are a few recommendations to make wavefunction optimization easier.
 \item Two body Jastrow contributes the largest portion of correlation energy from bare Slater determinants. For this reason, the recommended order for optimizing wavefunction components is two-body, one-body, three-body Jastrow factors and MSD coefficients.
 \item For two-body spline Jastrows, always start from a reasonable one. The lack of physically-motivated constraints in the functional form at large distances can cause slow convergence if starting from zero. 
 \item One-body spline Jastrow from old calculations can be a good starting point.
-\item Three-body polynomial Jastrow can start from zero.
-\item When adding higher-body terms, it can help to perform an initial optimization with the lower body terms held fixed. e.g. Hold the one and two body fixed when initially adding three-body terms.
+\item Three-body polynomial Jastrow can start from zero. It is beneficial to first optimize one-body and two-body Jastrow factors without adding three-body terms in the calculation and then add the three-body Jastrow and optimize all the three components together.
 \end{itemize}
 
 
