@@ -139,6 +139,21 @@ IF (NOT QMC_CUDA)
                     TRUE
                     1 BCC_H_RMC_SCALARS #series#
                     )
+
+  # Check CPU time limit
+  SET(FULL_NAME "cpu_limit-bccH_1x1x1_ae-rmc-1-1")
+  SET(TEST_ADDED FALSE)
+  RUN_QMC_APP(${FULL_NAME}
+              "${CMAKE_SOURCE_DIR}/tests/solids/bccH_1x1x1_ae"
+              1 1
+              TEST_ADDED
+              qmc_cpu_limit_rmc.xml)
+
+  IF (TEST_ADDED)
+    SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY TIMEOUT 120)
+    SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY PASS_REGULAR_EXPRESSION "Time limit reached for")
+  ENDIF()
+
 ELSE()
   MESSAGE("Skipping bccH_1x1x1_ae tests for VMC all-particle moves, CSVMC, and RMC because they are not supported by CUDA build (QMC_CUDA=1)")
 ENDIF()
