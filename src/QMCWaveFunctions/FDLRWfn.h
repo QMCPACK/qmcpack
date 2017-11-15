@@ -215,10 +215,10 @@ namespace qmcplusplus {
       m_wfn_xmd->resetParameters(xmd_vars);
 
       // Initialize G and L objects for both wave functions.
-      m_wfn_xpd->G.create(P.G.size());
-      m_wfn_xmd->G.create(P.G.size());
-      m_wfn_xpd->L.create(P.L.size());
-      m_wfn_xmd->L.create(P.L.size());
+      m_wfn_xpd->G.resize(P.G.size());
+      m_wfn_xmd->G.resize(P.G.size());
+      m_wfn_xpd->L.resize(P.L.size());
+      m_wfn_xmd->L.resize(P.L.size());
 
       // Initialize the tempP members of the TrialWaveFunction objects.
       m_wfn_xpd->resizeTempP(P);
@@ -540,10 +540,10 @@ namespace qmcplusplus {
       ParticleSet::ParticleLaplacian_t G_FDLR_mag;
       ParticleSet::ParticleLaplacian_t L_temp_1;
       ParticleSet::ParticleLaplacian_t L_temp_2;
-      G_FDLR.create(G.size());
-      G_FDLR_mag.create(G.size());
-      L_temp_1.create(L.size());
-      L_temp_2.create(L.size());
+      G_FDLR.resize(G.size());
+      G_FDLR_mag.resize(G.size());
+      L_temp_1.resize(L.size());
+      L_temp_2.resize(L.size());
 
       // ----Calculating the log of the FDLR wave function--------------------
 
@@ -967,10 +967,10 @@ namespace qmcplusplus {
 
       // Gradient of the FDLR wave function.
       ParticleSet::ParticleGradient_t G_FDLR;
-      G_FDLR.create(P.G.size());
+      G_FDLR.resize(P.G.size());
       // DIfference between the total FDLR wave function gradients.
       ParticleSet::ParticleGradient_t G_diff;
-      G_diff.create(P.G.size());
+      G_diff.resize(P.G.size());
 
       // Store the total FDLR wave function's G and L values in a temporary
       // particle set, because we will need to set P's G and L to equal those
@@ -1064,8 +1064,8 @@ namespace qmcplusplus {
 
       ParticleSet::ParticleLaplacian_t G_plus_mag;
       ParticleSet::ParticleLaplacian_t G_minus_mag;
-      G_plus_mag.create(m_wfn_xpd->G.size());
-      G_minus_mag.create(m_wfn_xmd->G.size());
+      G_plus_mag.resize(m_wfn_xpd->G.size());
+      G_minus_mag.resize(m_wfn_xmd->G.size());
       G_plus_mag = 0.0;
       G_minus_mag = 0.0;
 
@@ -1077,8 +1077,8 @@ namespace qmcplusplus {
 
       ParticleSet::ParticleLaplacian_t L_temp_1;
       ParticleSet::ParticleLaplacian_t L_temp_2;
-      L_temp_1.create(m_wfn_xpd->L.size());
-      L_temp_2.create(m_wfn_xmd->L.size());
+      L_temp_1.resize(m_wfn_xpd->L.size());
+      L_temp_2.resize(m_wfn_xmd->L.size());
 
       // m_wfn_xpd->L stores the laplacian divided by the wave function, minus
       // the magnitude of gradient for the "x+d" wave function divded by that
