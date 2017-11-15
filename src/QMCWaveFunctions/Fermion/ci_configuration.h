@@ -28,7 +28,10 @@ struct ci_configuration
   bool taken;
   int nExct; // with respect to base ci_configuration, which we assume is hf
 
-  ci_configuration(): taken(false),nExct(0) {}
+  ci_configuration(): taken(false),nExct(0) 
+  {
+   occup.resize(0);
+  }
 
   ci_configuration(std::vector<bool> &v, int n): occup(v),taken(false),nExct(n) {}
   ci_configuration(const ci_configuration& c):occup(c.occup),taken(c.taken),nExct(c.nExct) {}
@@ -115,6 +118,21 @@ struct ci_configuration
     return res;
   }
 
+  void to_bool(std::string &str) {
+    int str_size=str.size();
+    occup.resize(str_size);
+    for (int i=0; i<str_size;i++){
+       bool b;
+       std::stringstream ss;
+       ss<<str[i];
+       std::string a;
+       ss>>a;
+       std::istringstream(a) >> b;
+       occup[i]=b;
+    }
+  }
+
+
 };
 
 inline std::ostream& operator<<(std::ostream& out, const ci_configuration& c)
@@ -125,6 +143,5 @@ inline std::ostream& operator<<(std::ostream& out, const ci_configuration& c)
   out<< std::endl;
   return out;
 };
-
 }
 #endif
