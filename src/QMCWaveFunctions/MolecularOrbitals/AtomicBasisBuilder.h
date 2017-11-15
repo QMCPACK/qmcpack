@@ -12,8 +12,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-
-
 #ifndef QMCPLUSPLUS_ATOMICORBITALBUILDER_H
 #define QMCPLUSPLUS_ATOMICORBITALBUILDER_H
 

@@ -51,8 +51,8 @@ public:
    * \param els reference to the electrons
    * \param ions reference to the ions
    */
-  MolecularBasisBuilder(ParticleSet& els, ParticleSet& ions, bool cusp=false, std::string cusp_info="",bool H5Ref=false,std::string MOH5Ref=""):
-    targetPtcl(els), sourcePtcl(ions), thisBasisSet(0),cuspCorr(cusp),cuspInfo(cusp_info),h5Ref(H5Ref),h5_path(MOH5Ref)
+  MolecularBasisBuilder(ParticleSet& els, ParticleSet& ions, bool cusp=false, std::string cusp_info="",std::string MOH5Ref=""):
+    targetPtcl(els), sourcePtcl(ions), thisBasisSet(0),cuspCorr(cusp),cuspInfo(cusp_info),h5_path(MOH5Ref)
   {
     ClassName="MolecularBasisBuilder";
   }
@@ -69,7 +69,7 @@ public:
 
 
     //Reading from XML
-    if(h5Ref==false)
+    if(MOH5Ref=="")
     {
       ReportEngine PRE(ClassName,"put(xmlNodePtr)");
       PRE.echo(cur);
@@ -285,7 +285,7 @@ private:
   bool cuspCorr;
   std::string cuspInfo;
   ///read wf info from hdf5
-  bool h5Ref;
+  std::string MOH5Ref;
   std::string h5_path;
 };
 }

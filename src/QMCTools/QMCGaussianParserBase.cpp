@@ -1866,7 +1866,7 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
          xmlAddChild(initopt,parameter(initopt, "warmupSteps" ,"5"));
          xmlAddChild(initopt,parameter(initopt, "timestep" ,"0.5"));
          xmlAddChild(initopt,parameter(initopt, "walkers" ,"1"));
-         xmlAddChild(initopt,parameter(initopt, "samples" ,"8000"));
+         xmlAddChild(initopt,parameter(initopt, "samples" ,"16000"));
          xmlAddChild(initopt,parameter(initopt, "substeps" ,"5"));
          xmlAddChild(initopt,parameter(initopt, "usedrift" ,"no"));
          xmlAddChild(initopt,parameter(initopt, "MinMethod" ,"OneShiftOnly"));

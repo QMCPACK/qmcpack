@@ -154,10 +154,6 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
   //when name is missing, type becomes the input
   if(name.empty()) name=type_in;
 
-  bool H5Ref=false;
-  if (MOH5Ref!="")
-    H5Ref=true;
-  
   BasisSetBuilder* bb=0;
 
   //check if builder can be reused
@@ -231,7 +227,7 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
     {
       app_log() << "Using MolecularBasisBuilder<NGOBuilder>" << std::endl;
 #if QMC_BUILD_LEVEL>2
-      bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,cuspC=="yes",cuspInfo,H5Ref,MOH5Ref);
+      bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,cuspC=="yes",cuspInfo,MOH5Ref);
 #else
       bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,false);
 #endif
