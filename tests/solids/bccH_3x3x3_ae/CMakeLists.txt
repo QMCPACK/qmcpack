@@ -28,5 +28,5 @@ IF (NOT MIXED_PRECISION)
     check_deriv.py
   )
 ELSE()
- MESSAGE("Skipping bccH_2x2x2_ae derivative tests in mixed precision (QMC_MIXED_PRECISION=1)")
+ MESSAGE("Skipping bccH_3x3x3_ae derivative tests in mixed precision (QMC_MIXED_PRECISION=1)")
 ENDIF (NOT MIXED_PRECISION)
