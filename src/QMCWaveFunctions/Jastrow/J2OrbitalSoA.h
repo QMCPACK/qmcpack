@@ -471,7 +471,7 @@ J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat, bool delay)
     const valT* restrict cur_du_pt=cur_du.data();
     const valT* restrict old_du_pt=old_du.data();
     valT* restrict save_g=dUat.data(idim);
-    valT& cur_g=cur_dUat[idim];
+    valT cur_g=cur_dUat[idim];
     #pragma omp simd reduction(+:cur_g) aligned(old_dX,new_dX,save_g,cur_du_pt,old_du_pt)
     for(int jat=0; jat<N; jat++)
     {
@@ -480,6 +480,7 @@ J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat, bool delay)
       save_g[jat]  -= dg;
       cur_g += newg;
     }
+    cur_dUat[idim] = cur_g;
   }
   Uat[iat]   = cur_Uat;
   dUat(iat)  = cur_dUat;
