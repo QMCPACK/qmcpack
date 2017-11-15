@@ -1210,9 +1210,9 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
         confAttrib.put(cur);
 
         
-        //Assumes the coefficients are sorted from heaviest to lightest
+       //Will always loop through the whole determinant set as no assumption on the order of the determinant is made 
         if(std::abs(ci) < cutoff)
-          break;
+          continue;
 
         for(size_t i=0; i<nstates; i++){
           if(alpha[i] != '0' && alpha[i] != '1')
