@@ -26,6 +26,7 @@
 #include "Message/CommOperators.h"
 #include "tau/profiler.h"
 #include "Particle/Reptile.h"
+#include "Utilities/RunTimeManager.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
@@ -76,8 +77,11 @@ namespace qmcplusplus
 #endif
     const bool has_collectables = W.Collectables.size ();
 
+    LoopTimer rmc_loop;
+    RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
     for (int block = 0; block < nBlocks; ++block)
-      {
+    {
+      rmc_loop.start();
 #pragma omp parallel
 	{
 	  int ip = omp_get_thread_num ();
@@ -113,6 +117,17 @@ namespace qmcplusplus
 	//why was this commented out? Are checkpoints stored some other way?
 	if (storeConfigs)
 	  recordBlock (block);
+
+        rmc_loop.stop();
+        bool enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(rmc_loop);
+        // Rank 0 decides whether the time limit was reached
+        myComm->bcast(enough_time_for_next_iteration);
+
+        if (!enough_time_for_next_iteration)
+        {
+          app_log() << runtimeControl.time_limit_message("RMC", block);
+          break;
+        }
       }				//block
     Estimators->stop (estimatorClones);
     //copy back the random states
