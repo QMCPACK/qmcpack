@@ -58,6 +58,8 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminantAFM.h"
 
 #include <bitset>
+#include <unordered_set>
+#include <unordered_map>
 
 namespace qmcplusplus
 {
@@ -664,6 +666,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   int nels_up = multiSD->nels_up;
   int nels_dn = multiSD->nels_dn;
   multiSD->initialize();
+  app_log()<<"------------1 Anouar"<<std::endl;
   success = readDetList(cur,uniqueConfg_up,uniqueConfg_dn,
       *(multiSD->C2node_up), *(multiSD->C2node_dn),CItags,
       *(multiSD->C),optimizeCI,nels_up,nels_dn,
@@ -818,6 +821,7 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
   bool optimizeCI;
   int nels_up = multiSD->nels_up;
   int nels_dn = multiSD->nels_dn;
+  app_log()<<"------------2 Anouar"<<std::endl;
   success = readDetList(cur,uniqueConfg_up,uniqueConfg_dn,multiSD->C2node_up, multiSD->C2node_dn,CItags,multiSD->C,
       optimizeCI,nels_up,nels_dn,multiSD->CSFcoeff,multiSD->DetsPerCSF,multiSD->CSFexpansion,multiSD->usingCSF);
   if(!success)
@@ -1003,9 +1007,14 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
   for(size_t i=0; i<NCB+NEB; i++)
     dummyC_beta.occup[i]=true;
   RealType sumsq_qc=0.0;
+  RealType sumsq=0.0;
   //app_log() <<"alpha reference: \n" <<dummyC_alpha;
   //app_log() <<"beta reference: \n" <<dummyC_beta;
   size_t ntot=0;
+  std::unordered_set <std::string> CIUP;
+  std::unordered_set <std::string> CIDN;
+  std::map<int, std::string> MapUp;
+  std::map<int, std::string> MapDn;
   if(usingCSF)
   {
     app_log() <<"Reading CSFs." << std::endl;
@@ -1120,10 +1129,78 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
       } // if (name == "csf")
       cur = cur->next;
     }
+    if(cnt0 != ndets)
+    {
+      std::cerr <<"count, ndets: " <<cnt0 <<"  " <<ndets << std::endl;
+      APP_ABORT("Problems reading determinant ci_configurations. Found a number of determinants inconsistent with xml file size parameter.\n");
+    }
+    //if(!usingCSF)
+    //  if(confgList_up.size() != ndets || confgList_dn.size() != ndets || coeff.size() != ndets) {
+    //    APP_ABORT("Problems reading determinant ci_configurations.");
+    //  }
+    C2node_up.resize(coeff.size());
+    C2node_dn.resize(coeff.size());
+    app_log() <<"Found " <<coeff.size() <<" terms in the MSD expansion.\n";
+    RealType sumsq=0.0;
+    for(size_t i=0; i<coeff.size(); i++)
+      sumsq += coeff[i]*coeff[i];
+    app_log() <<"Norm of ci vector (sum of ci^2): " <<sumsq << std::endl;
+    app_log() <<"Norm of qchem ci vector (sum of qchem_ci^2): " <<sumsq_qc << std::endl;
+    for(size_t i=0; i<confgList_up.size(); i++)
+    {
+      bool found=false;
+      size_t k=-1;
+      for(size_t j=0; j<uniqueConfg_up.size(); j++)
+      {
+        if(confgList_up[i] == uniqueConfg_up[j])
+        {
+          found=true;
+          k=j;
+          break;
+        }
+      }
+      if(found)
+      {
+        C2node_up[i]=k;
+      }
+      else
+      {
+        uniqueConfg_up.push_back(confgList_up[i]);
+        C2node_up[i]=uniqueConfg_up.size()-1;
+      }
+    }
+    for(size_t i=0; i<confgList_dn.size(); i++)
+    {
+      bool found=false;
+      size_t k=-1;
+      for(size_t j=0; j<uniqueConfg_dn.size(); j++)
+      {
+        if(confgList_dn[i] == uniqueConfg_dn[j])
+        {
+          found=true;
+          k=j;
+          break;
+        }
+      }
+      if(found)
+      {
+        C2node_dn[i]=k;
+      }
+      else
+      {
+        uniqueConfg_dn.push_back(confgList_dn[i]);
+        C2node_dn[i]=uniqueConfg_dn.size()-1;
+      }
+    }
   }
   else
   {
     app_log() <<"Reading CI expansion." << std::endl;
+
+    int cntup=0;
+    int cntdn=0;
+    std::unordered_map<std::string,int>  MyMapUp;
+    std::unordered_map<std::string,int>  MyMapDn;
     while (cur != NULL)//check the basis set
     {
       getNodeName(cname,cur);
@@ -1138,157 +1215,95 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
         confAttrib.add(beta,"beta");
         confAttrib.add(tag,"id");
         confAttrib.put(cur);
-        if(qc_ci == 0.0)
-          qc_ci = ci;
-        if(std::abs(qc_ci) < cutoff)
-        {
-          cur = cur->next;
-          cnt0++;
-          continue;
-        }
-        cnt0++;
-        if(std::abs(qc_ci) < zero_cutoff)
-          ci=0.0;
-        size_t nq=0,na,nr;
-        if(alpha.size() < nstates)
-        {
-          std::cerr <<"alpha: " <<alpha << std::endl;
-          APP_ABORT("Found incorrect alpha determinant label. size < nca+nstates");
-        }
-        for(size_t i=0; i<nstates; i++)
-        {
+        
+
+        
+        //Assumes the coefficients are sorted from heaviest to lightest
+        if(std::abs(ci) < cutoff)
+          break;
+
+        for(size_t i=0; i<nstates; i++){
           if(alpha[i] != '0' && alpha[i] != '1')
           {
             std::cerr <<alpha << std::endl;
             APP_ABORT("Found incorrect determinant label.");
           }
-          if(alpha[i] == '1')
-            nq++;
-        }
-        if(nq != NEA)
-        {
-          std::cerr <<"alpha: " <<alpha << std::endl;
-          APP_ABORT("Found incorrect alpha determinant label. noccup != nca+nea");
-        }
-        nq=0;
-        if(beta.size() < nstates)
-        {
-          std::cerr <<"beta: " <<beta << std::endl;
-          APP_ABORT("Found incorrect beta determinant label. size < ncb+nstates");
-        }
-        for(size_t i=0; i<nstates; i++)
-        {
           if(beta[i] != '0' && beta[i] != '1')
           {
             std::cerr <<beta << std::endl;
             APP_ABORT("Found incorrect determinant label.");
           }
-          if(beta[i] == '1')
-            nq++;
         }
-        if(nq != NEB)
+ 
+        if(alpha.size() < nstates)
+        {
+          std::cerr <<"alpha: " <<alpha << std::endl;
+          APP_ABORT("Found incorrect alpha determinant label. size < nca+nstates");
+        }
+        if(beta.size() < nstates)
         {
           std::cerr <<"beta: " <<beta << std::endl;
-          APP_ABORT("Found incorrect beta determinant label. noccup != ncb+neb");
+          APP_ABORT("Found incorrect beta determinant label. size < ncb+nstates");
         }
-        count++;
+
+
         coeff.push_back(ci);
-        sumsq_qc += qc_ci*qc_ci;
         CItags.push_back(tag);
-        confgList_up.push_back(dummyC_alpha);
-        for(size_t i=0; i<NCA; i++)
-          confgList_up.back().occup[i]=true;
-        for(size_t i=NCA; i<NCA+nstates; i++)
-          confgList_up.back().occup[i]= (alpha[i-NCA]=='1');
-        confgList_dn.push_back(dummyC_beta);
-        for(size_t i=0; i<NCB; i++)
-          confgList_dn.back().occup[i]=true;
-        for(size_t i=NCB; i<NCB+nstates; i++)
-          confgList_dn.back().occup[i]=(beta[i-NCB]=='1');
+
+
+
+
+        std::unordered_map<std::string,int>::const_iterator gotup = MyMapUp.find (alpha);
+
+
+        if(gotup==MyMapUp.end()){
+           uniqueConfg_up.push_back(dummyC_alpha);
+           uniqueConfg_up.back().to_bool(alpha);
+           C2node_up.push_back(cntup);
+           MyMapUp.insert (std::pair<std::string,int>(alpha,cntup));
+           cntup++;
+        }
+        else{
+           C2node_up.push_back(gotup->second);
+        }
+
+        std::unordered_map<std::string,int>::const_iterator gotdn = MyMapDn.find (beta);
+
+        if(gotdn==MyMapDn.end()){
+           uniqueConfg_dn.push_back(dummyC_beta);
+           uniqueConfg_dn.back().to_bool(beta);
+           C2node_dn.push_back(cntdn);
+           MyMapDn.insert (std::pair<std::string,int>(beta,cntdn));
+           cntdn++;
+        }
+        else{
+           C2node_dn.push_back(gotdn->second);
+        }
+
+
+
+
+        if(qc_ci == 0.0)
+          qc_ci = ci;
+
+         
+        cnt0++;
+        sumsq_qc += qc_ci*qc_ci;
+        sumsq += ci*ci;
       }
       cur = cur->next;
     }
-  } //usingCSF
-  //if(count != ndets) {
-  if(cnt0 != ndets)
-  {
-    std::cerr <<"count, ndets: " <<cnt0 <<"  " <<ndets << std::endl;
-    APP_ABORT("Problems reading determinant ci_configurations. Found a number of determinants inconsistent with xml file size parameter.\n");
-  }
-  //if(!usingCSF)
-  //  if(confgList_up.size() != ndets || confgList_dn.size() != ndets || coeff.size() != ndets) {
-  //    APP_ABORT("Problems reading determinant ci_configurations.");
-  //  }
-  C2node_up.resize(coeff.size());
-  C2node_dn.resize(coeff.size());
+
   app_log() <<"Found " <<coeff.size() <<" terms in the MSD expansion.\n";
-  RealType sumsq=0.0;
-  for(size_t i=0; i<coeff.size(); i++)
-    sumsq += coeff[i]*coeff[i];
   app_log() <<"Norm of ci vector (sum of ci^2): " <<sumsq << std::endl;
   app_log() <<"Norm of qchem ci vector (sum of qchem_ci^2): " <<sumsq_qc << std::endl;
-  for(size_t i=0; i<confgList_up.size(); i++)
-  {
-    bool found=false;
-    size_t k=-1;
-    for(size_t j=0; j<uniqueConfg_up.size(); j++)
-    {
-      if(confgList_up[i] == uniqueConfg_up[j])
-      {
-        found=true;
-        k=j;
-        break;
-      }
-    }
-    if(found)
-    {
-      C2node_up[i]=k;
-    }
-    else
-    {
-      uniqueConfg_up.push_back(confgList_up[i]);
-      C2node_up[i]=uniqueConfg_up.size()-1;
-    }
-  }
-  for(size_t i=0; i<confgList_dn.size(); i++)
-  {
-    bool found=false;
-    size_t k=-1;
-    for(size_t j=0; j<uniqueConfg_dn.size(); j++)
-    {
-      if(confgList_dn[i] == uniqueConfg_dn[j])
-      {
-        found=true;
-        k=j;
-        break;
-      }
-    }
-    if(found)
-    {
-      C2node_dn[i]=k;
-    }
-    else
-    {
-      uniqueConfg_dn.push_back(confgList_dn[i]);
-      C2node_dn[i]=uniqueConfg_dn.size()-1;
-    }
-  }
+
+  } //usingCSF
+  
   app_log() <<"Found " <<uniqueConfg_up.size() <<" unique up determinants.\n";
   app_log() <<"Found " <<uniqueConfg_dn.size() <<" unique down determinants.\n";
+  
   return success;
 }
 
-
-
-// void SlaterDetBuilder::buildMultiSlaterDetermiant()
-// {
-//   MultiSlaterDeterminant *multidet= new MultiSlaterDeterminant;
-//   for (size_t i=0; i<SlaterDetSet.size(); i++)
-//     {
-//       multidet->add(SlaterDetSet[i],sdet_coeff[i]);
-//     }
-//   // multidet->setOptimizable(true);
-//   //add a MultiDeterminant to the trial wavefuntion
-//   targetPsi.addOrbital(multidet,"MultiSlateDet");
-// }
 }
