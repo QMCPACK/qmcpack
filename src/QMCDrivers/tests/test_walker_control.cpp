@@ -37,7 +37,7 @@ namespace qmcplusplus
 {
 
 // add declaration here so it's accessible for testing
-void determineNewWalkerPopulation(int Cur_pop, int NumContexts, int MyContext, std::vector<int> NumPerNode, std::vector<int> &minus, std::vector<int> &plus);
+void determineNewWalkerPopulation(int Cur_pop, int NumContexts, int MyContext, const std::vector<int> &NumPerNode, std::vector<int> &FairOffset, std::vector<int> &minus, std::vector<int> &plus);
 
 void output_vector(const std::string &name, std::vector<int> &vec)
 {
@@ -55,6 +55,7 @@ TEST_CASE("Walker control assign walkers", "[drivers][walker_control]")
   int NumContexts = 4;
   int MyContext = 0;
   std::vector<int> NumPerNode = {4,4,0,0};
+  std::vector<int> FairOffset(NumContexts+1);
 
   std::vector<int> NewNum = NumPerNode;
   for (int me = 0; me < NumContexts; me++)
@@ -63,7 +64,7 @@ TEST_CASE("Walker control assign walkers", "[drivers][walker_control]")
     std::vector<int> plus;
 
     //std::cout << "For processor number " << me << std::endl;
-    determineNewWalkerPopulation(Cur_pop, NumContexts, me, NumPerNode, minus, plus);
+    determineNewWalkerPopulation(Cur_pop, NumContexts, me, NumPerNode, FairOffset, minus, plus);
 
     REQUIRE(minus.size() == plus.size());
     //output_vector("  Minus: ", minus);
@@ -79,8 +80,6 @@ TEST_CASE("Walker control assign walkers", "[drivers][walker_control]")
   }
   //output_vector("New num per node: ", NewNum);
 
-  std::vector<int> FairOffset;
-  FairDivideLow(Cur_pop,NumContexts,FairOffset);
   for (int i = 0; i < NewNum.size(); i++) {
     int num = FairOffset[i+1] - FairOffset[i];
     REQUIRE(NewNum[i] == num);
