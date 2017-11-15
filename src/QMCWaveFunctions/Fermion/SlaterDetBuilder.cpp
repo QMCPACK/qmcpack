@@ -1210,9 +1210,9 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
         confAttrib.put(cur);
 
         
-        //Assumes the coefficients are sorted from heaviest to lightest
+       //Will always loop through the whole determinant set as no assumption on the order of the determinant is made 
         if(std::abs(ci) < cutoff)
-          break;
+          continue;
 
         for(size_t i=0; i<nstates; i++){
           if(alpha[i] != '0' && alpha[i] != '1')
@@ -1246,7 +1246,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
 
         if(gotup==MyMapUp.end()){
            uniqueConfg_up.push_back(dummyC_alpha);
-           uniqueConfg_up.back().to_bool(alpha);
+           uniqueConfg_up.back().add_occupation(alpha);
            C2node_up.push_back(cntup);
            MyMapUp.insert (std::pair<std::string,int>(alpha,cntup));
            cntup++;
@@ -1259,7 +1259,7 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
 
         if(gotdn==MyMapDn.end()){
            uniqueConfg_dn.push_back(dummyC_beta);
-           uniqueConfg_dn.back().to_bool(beta);
+           uniqueConfg_dn.back().add_occupation(beta);
            C2node_dn.push_back(cntdn);
            MyMapDn.insert (std::pair<std::string,int>(beta,cntdn));
            cntdn++;
