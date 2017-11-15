@@ -58,7 +58,6 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminantAFM.h"
 
 #include <bitset>
-#include <unordered_set>
 #include <unordered_map>
 
 namespace qmcplusplus
@@ -666,7 +665,6 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
   int nels_up = multiSD->nels_up;
   int nels_dn = multiSD->nels_dn;
   multiSD->initialize();
-  app_log()<<"------------1 Anouar"<<std::endl;
   success = readDetList(cur,uniqueConfg_up,uniqueConfg_dn,
       *(multiSD->C2node_up), *(multiSD->C2node_dn),CItags,
       *(multiSD->C),optimizeCI,nels_up,nels_dn,
@@ -821,7 +819,6 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
   bool optimizeCI;
   int nels_up = multiSD->nels_up;
   int nels_dn = multiSD->nels_dn;
-  app_log()<<"------------2 Anouar"<<std::endl;
   success = readDetList(cur,uniqueConfg_up,uniqueConfg_dn,multiSD->C2node_up, multiSD->C2node_dn,CItags,multiSD->C,
       optimizeCI,nels_up,nels_dn,multiSD->CSFcoeff,multiSD->DetsPerCSF,multiSD->CSFexpansion,multiSD->usingCSF);
   if(!success)
@@ -1011,10 +1008,6 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
   //app_log() <<"alpha reference: \n" <<dummyC_alpha;
   //app_log() <<"beta reference: \n" <<dummyC_beta;
   size_t ntot=0;
-  std::unordered_set <std::string> CIUP;
-  std::unordered_set <std::string> CIDN;
-  std::map<int, std::string> MapUp;
-  std::map<int, std::string> MapDn;
   if(usingCSF)
   {
     app_log() <<"Reading CSFs." << std::endl;
@@ -1215,7 +1208,6 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
         confAttrib.add(beta,"beta");
         confAttrib.add(tag,"id");
         confAttrib.put(cur);
-        
 
         
         //Assumes the coefficients are sorted from heaviest to lightest
@@ -1246,12 +1238,8 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
           APP_ABORT("Found incorrect beta determinant label. size < ncb+nstates");
         }
 
-
         coeff.push_back(ci);
         CItags.push_back(tag);
-
-
-
 
         std::unordered_map<std::string,int>::const_iterator gotup = MyMapUp.find (alpha);
 
@@ -1280,12 +1268,8 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
            C2node_dn.push_back(gotdn->second);
         }
 
-
-
-
         if(qc_ci == 0.0)
           qc_ci = ci;
-
          
         cnt0++;
         sumsq_qc += qc_ci*qc_ci;
@@ -1294,9 +1278,9 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
       cur = cur->next;
     }
 
-  app_log() <<"Found " <<coeff.size() <<" terms in the MSD expansion.\n";
-  app_log() <<"Norm of ci vector (sum of ci^2): " <<sumsq << std::endl;
-  app_log() <<"Norm of qchem ci vector (sum of qchem_ci^2): " <<sumsq_qc << std::endl;
+    app_log() <<"Found " <<coeff.size() <<" terms in the MSD expansion.\n";
+    app_log() <<"Norm of ci vector (sum of ci^2): " <<sumsq << std::endl;
+    app_log() <<"Norm of qchem ci vector (sum of qchem_ci^2): " <<sumsq_qc << std::endl;
 
   } //usingCSF
   
