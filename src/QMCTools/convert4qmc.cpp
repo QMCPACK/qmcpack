@@ -25,7 +25,6 @@
 #include "QMCTools/GamesAsciiParser.h"
 #include "QMCTools/VSVBParser.h"
 #include "QMCTools/QPParser.h"
-#include "QMCTools/MoldenParser.h"
 #include "QMCTools/GamesFMOParser.h"
 #include "QMCTools/BParser.h"
 #include "Message/Communicate.h"
@@ -38,7 +37,7 @@ int main(int argc, char **argv)
 {
   if(argc<2)
   {
-    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamessAscii|-gamessFMO|-VSVB|-QP|Molden] filename ";
+    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamessAscii|-gamessFMO|-VSVB|-QP] filename ";
      std::cout << "[-nojastrow -hdf5 -psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf -size npts -ci file.out -threshold cimin -TargetState state_number -NaturalOrbitals NumToRead -prefix title -addCusp]"
               << std::endl;
     std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01 -TargetState 0 -prefix sample" << std::endl;
@@ -100,11 +99,6 @@ int main(int argc, char **argv)
       parser = new GamesFMOParser(argc,argv);
       in_file =argv[++iargc];
       fmo=true;
-    }
-    else if(a == "-Molden")
-    {
-      parser = new MoldenParser(argc,argv);
-      in_file =argv[++iargc];
     }
     else if(a == "-casino")
     {
@@ -194,11 +188,6 @@ int main(int argc, char **argv)
     {
       WARNMSG("Creating GamesXmlParser")
       parser = new GamesXmlParser(argc,argv);
-    }
-    else if(ext == "molden")
-    {
-      WARNMSG("Creating Molden")
-      parser = new MoldenParser(argc,argv);
     }
     else if(ext == "10")
     {
