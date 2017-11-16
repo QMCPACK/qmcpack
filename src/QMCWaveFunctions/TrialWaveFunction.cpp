@@ -24,7 +24,7 @@
 namespace qmcplusplus
 {
 
-typedef enum { V_TIMER, VGL_TIMER, ACCEPT_REJECT_TIMER, NL_TIMER,
+typedef enum { V_TIMER, VGL_TIMER, ACCEPT_TIMER, NL_TIMER,
                RECOMPUTE_TIMER, BUFFER_TIMER, DERIVS_TIMER, TIMER_SKIP
              } TimerEnum;
 
@@ -101,7 +101,7 @@ TrialWaveFunction::addOrbital(OrbitalBase* aterm, const std::string& aname, bool
   std::vector<std::string> suffixes(7);
   suffixes[0] = "_V";
   suffixes[1] = "_VGL";
-  suffixes[2] = "_accept_reject";
+  suffixes[2] = "_accept";
   suffixes[3] = "_NLratio";
   suffixes[4] = "_recompute";
   suffixes[5] = "_buffer";
@@ -542,12 +542,8 @@ void TrialWaveFunction::printGL(ParticleSet::ParticleGradient_t& G, ParticleSet:
  */
 void TrialWaveFunction::rejectMove(int iat)
 {
-  for (int i=0, ii=ACCEPT_REJECT_TIMER; i<Z.size(); i++, ii+=TIMER_SKIP)
-  {
-    myTimers[ii]->start();
+  for (int i=0; i<Z.size(); i++)
     Z[i]->restore(iat);
-    myTimers[ii]->stop();
-  }
   PhaseDiff=0;
 }
 
@@ -560,7 +556,7 @@ void TrialWaveFunction::rejectMove(int iat)
  */
 void TrialWaveFunction::acceptMove(ParticleSet& P, int iat, bool delay)
 {
-  for (int i=0, ii=ACCEPT_REJECT_TIMER; i<Z.size(); i++, ii+=TIMER_SKIP)
+  for (int i=0, ii=ACCEPT_TIMER; i<Z.size(); i++, ii+=TIMER_SKIP)
   {
     myTimers[ii]->start();
     Z[i]->acceptMove(P, iat, delay);
@@ -575,7 +571,7 @@ void TrialWaveFunction::acceptMove(ParticleSet& P, int iat, bool delay)
 
 void TrialWaveFunction::completeUpdates(ParticleSet& P)
 {
-  for (int i=0, ii=ACCEPT_REJECT_TIMER; i<Z.size(); i++, ii+=TIMER_SKIP)
+  for (int i=0, ii=ACCEPT_TIMER; i<Z.size(); i++, ii+=TIMER_SKIP)
   {
     myTimers[ii]->start();
     Z[i]->completeUpdates(P);
