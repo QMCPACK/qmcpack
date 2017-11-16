@@ -56,6 +56,7 @@ public:
    */
   bool put(xmlNodePtr cur);
 
+
 private:
 
   ///reference to a PtclPoolType
