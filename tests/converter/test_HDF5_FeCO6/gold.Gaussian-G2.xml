@@ -5,11 +5,11 @@
       <slaterdeterminant>
         <determinant id="updet" size="39">
           <occupation mode="ground"/>
-          <coefficient size="211" spindataset="0"/>
+          <coefficient size="411" spindataset="0"/>
         </determinant>
         <determinant id="downdet" size="35">
           <occupation mode="ground"/>
-          <coefficient size="211" spindataset="0"/>
+          <coefficient size="411" spindataset="0"/>
         </determinant>
       </slaterdeterminant>
     </determinantset>
