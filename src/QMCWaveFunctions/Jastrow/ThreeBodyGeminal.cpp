@@ -377,20 +377,20 @@ bool ThreeBodyGeminal::put(xmlNodePtr cur)
   }
   //myVars are set
   myVars.clear();
-  char coeffname[16];
+  std::string coeffname;
   int ii=0;
   for(int ib=0; ib<BasisSize; ib++)
   {
     if(FreeLambda[ii++])
     {
-      sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib,ib);
+      coeffname=ID_Lambda+"_"+std::to_string(ib)+"_"+std::to_string(ib);
       myVars.insert(coeffname,Lambda(ib,ib));
     }
     for(int jb=ib+1; jb<BasisSize; jb++)
     {
       if(FreeLambda[ii++])
       {
-        sprintf(coeffname,"%s_%d_%d",ID_Lambda.c_str(),ib,jb);
+        coeffname=ID_Lambda+"_"+std::to_string(ib)+"_"+std::to_string(jb);
         myVars.insert(coeffname,Lambda(ib,jb));
       }
     }

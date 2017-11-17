@@ -568,7 +568,6 @@ DiracDeterminantBase::evaluateLog(ParticleSet& P,
   }
   else
   {
-    RatioTimer.start();
     for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++)
     {
       mGradType rv=simd::dot(psiM[i],dpsiM[i],NumOrbitals);
@@ -576,7 +575,6 @@ DiracDeterminantBase::evaluateLog(ParticleSet& P,
       G[iat] += rv;
       L[iat] += lap - dot(rv,rv);
     }
-    RatioTimer.stop();
   }
   return LogValue;
 }
