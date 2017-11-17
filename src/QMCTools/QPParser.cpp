@@ -35,6 +35,7 @@ QPParser::QPParser()
   NFZC=0;
   numAO=0;
   FixValence=true;
+  ECP=false;
   
 }
 
@@ -52,6 +53,7 @@ QPParser::QPParser(int argc, char** argv):
   NFZC=0;
   numAO=0;
   FixValence=true;
+  ECP=false;
 }
 
 void QPParser::parse(const std::string& fname)
@@ -62,10 +64,14 @@ void QPParser::parse(const std::string& fname)
 
   search(fin,"do_pseudo",aline);
   parsewords(aline.c_str(),currentWords);
-  if(currentWords[1]=="True")
+  if(currentWords[1]=="True"){
      usingECP=true; 
-  else
+     ECP=true;
+  }
+  else{
      usingECP=false;
+     ECP=false;
+  }
   std::cout <<"usingECP: " <<(usingECP?("yes"):("no")) << std::endl;
   std::cout.flush();
 
@@ -163,7 +169,6 @@ void QPParser::parse(const std::string& fname)
     //fin.seekg(pivot_begin);
     getQPCI(fin);
   }
-
 }
 
 void QPParser::getGeometry(std::istream& is)

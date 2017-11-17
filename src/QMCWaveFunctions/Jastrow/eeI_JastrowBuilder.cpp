@@ -99,7 +99,7 @@ bool eeI_JastrowBuilder::putkids (xmlNodePtr kids, J3type &J3)
   }
   //check that each ion species has up and down components
   J3.check_complete();
-  targetPsi.addOrbital(&J3,"eeI");
+  targetPsi.addOrbital(&J3,"JeeI");
   J3.setOptimizable(true);
   return true;
 }
