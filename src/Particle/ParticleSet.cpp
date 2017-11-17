@@ -43,12 +43,9 @@ template<> int ParticleSet::Walker_t::cuda_DataSize = 0;
 
 void add_p_timer(std::vector<NewTimer*>& timers)
 {
-  timers.push_back(new NewTimer("ParticleSet::makeMove",timer_level_fine)); //timer for moves
-  timers.push_back(new NewTimer("ParticleSet::makeMoveOnSphere",timer_level_fine)); //timer for NLPP moves
-  timers.push_back(new NewTimer("ParticleSet::donePbyP",timer_level_fine)); //timer for donePbyP
-  TimerManager.addTimer(timers[0]);
-  TimerManager.addTimer(timers[1]);
-  TimerManager.addTimer(timers[2]);
+  timers.push_back(TimerManager.createTimer("ParticleSet::makeMove", timer_level_fine)); // timer for moves
+  timers.push_back(TimerManager.createTimer("ParticleSet::makeMoveOnSphere", timer_level_fine)); // timer for NLPP moves
+  timers.push_back(TimerManager.createTimer("ParticleSet::donePbyP", timer_level_fine)); // timer for donePbyP
 }
 
 ParticleSet::ParticleSet()
