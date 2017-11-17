@@ -704,7 +704,7 @@ namespace qmcplusplus {
       RealType phasevalue_plus = m_wfn_xpd->getPhase();
       buf.add(phasevalue_plus);
       buf.add(logpsi_plus);
-      buf.add(&(P.G[0][0]), &(P.G[0][0])+m_wfn_xpd->TotalDim);
+      buf.add(&(P.G[0][0]), &(P.G[0][0])+P.G.size()*DIM);
       buf.add(&(P.L[0]), &(P.L[P.getTotalNum()]));
 
       // Store the value of G and L for the xpd wave function.
@@ -717,7 +717,7 @@ namespace qmcplusplus {
       RealType phasevalue_minus = m_wfn_xmd->getPhase();
       buf.add(phasevalue_minus);
       buf.add(logpsi_minus);
-      buf.add(&(P.G[0][0]), &(P.G[0][0])+m_wfn_xmd->TotalDim);
+      buf.add(&(P.G[0][0]), &(P.G[0][0])+P.G.size()*DIM);
       buf.add(&(P.L[0]), &(P.L[P.getTotalNum()]));
 
       // Store the value of G and L for the xmd wave function.
@@ -766,7 +766,7 @@ namespace qmcplusplus {
       RealType phasevalue_plus = m_wfn_xpd->getPhase();
       buf.put(phasevalue_plus);
       buf.put(logpsi_plus);
-      buf.put(&(P.G[0][0]), &(P.G[0][0])+m_wfn_xpd->TotalDim);
+      buf.put(&(P.G[0][0]), &(P.G[0][0])+P.G.size()*DIM);
       buf.put(&(P.L[0]), &(P.L[P.getTotalNum()]));
 
       m_wfn_xpd->G = P.G;
@@ -779,7 +779,7 @@ namespace qmcplusplus {
       RealType phasevalue_minus = m_wfn_xmd->getPhase();
       buf.put(phasevalue_minus);
       buf.put(logpsi_minus);
-      buf.put(&(P.G[0][0]), &(P.G[0][0])+m_wfn_xmd->TotalDim);
+      buf.put(&(P.G[0][0]), &(P.G[0][0])+P.G.size()*DIM);
       buf.put(&(P.L[0]), &(P.L[P.getTotalNum()]));
 
       m_wfn_xmd->G = P.G;
@@ -823,7 +823,7 @@ namespace qmcplusplus {
       m_wfn_xpd->copyFromBuffer(P, buf);
       buf.get(phasevalue_plus);
       buf.get(logpsi_plus);
-      buf.get(&(m_wfn_xpd->G[0][0]), &(m_wfn_xpd->G[0][0])+m_wfn_xpd->TotalDim);
+      buf.get(&(m_wfn_xpd->G[0][0]), &(m_wfn_xpd->G[0][0])+P.G.size()*DIM);
       buf.get(&(m_wfn_xpd->L[0]), &(m_wfn_xpd->L[P.getTotalNum()]));
 
       P.L = 0.0;
@@ -831,7 +831,7 @@ namespace qmcplusplus {
       m_wfn_xmd->copyFromBuffer(P, buf);
       buf.get(phasevalue_minus);
       buf.get(logpsi_minus);
-      buf.get(&(m_wfn_xmd->G[0][0]), &(m_wfn_xmd->G[0][0])+m_wfn_xmd->TotalDim);
+      buf.get(&(m_wfn_xmd->G[0][0]), &(m_wfn_xmd->G[0][0])+P.G.size()*DIM);
       buf.get(&(m_wfn_xmd->L[0]), &(m_wfn_xmd->L[P.getTotalNum()]));
 
       P.L = 0.0;
