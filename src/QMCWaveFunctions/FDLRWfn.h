@@ -1157,58 +1157,6 @@ namespace qmcplusplus {
         std::copy(dhpsioverpsi_fdlr_d.begin(), dhpsioverpsi_fdlr_d.begin()+d_vars_driver.size(), dhpsioverpsi.begin()+d_loc);
       }
 
-      // Print debugging info
-      if ( false ) {
-
-        app_log() << "scaling_fac_1:  " << scaling_fac_1 << std::endl;
-        app_log() << "scaling_fac_2:  " << scaling_fac_2 << std::endl << std::endl;
-
-        app_log() << "kinetic_plus:  " << kinetic_plus << std::endl;
-        app_log() << "kinetic_minus:  " << kinetic_minus << std::endl;
-        app_log() << "kinetic_FDLR:  " << kinetic_FDLR << std::endl << std::endl;
-
-        app_log() << "dlogpsi_xpd: ";
-        for (std::vector<double>::const_iterator i = dlogpsi_xpd.begin(); i != dlogpsi_xpd.end(); ++i)
-          app_log() << *i << ' ';
-        app_log() << std::endl << std::endl;
-
-        app_log() << "dlogpsi_xmd: ";
-        for (std::vector<double>::const_iterator i = dlogpsi_xmd.begin(); i != dlogpsi_xmd.end(); ++i)
-          app_log() << *i << ' ';
-        app_log() << std::endl << std::endl;
-
-        app_log() << "dhpsioverpsi_xpd: ";
-        for (std::vector<double>::const_iterator i = dhpsioverpsi_xpd.begin(); i != dhpsioverpsi_xpd.end(); ++i)
-          app_log() << *i << ' ';
-        app_log() << std::endl << std::endl;
-
-        app_log() << "dhpsioverpsi_xmd: ";
-        for (std::vector<double>::const_iterator i = dhpsioverpsi_xmd.begin(); i != dhpsioverpsi_xmd.end(); ++i)
-          app_log() << *i << ' ';
-        app_log() << std::endl << std::endl;
-
-        app_log() << "dlogpsi_fdlr_x: ";
-        for (std::vector<double>::const_iterator i = dlogpsi_fdlr_x.begin(); i != dlogpsi_fdlr_x.end(); ++i)
-          app_log() << *i << ' ';
-        app_log() << std::endl << std::endl;
-
-        app_log() << "dlogpsi_fdlr_d: ";
-        for (std::vector<double>::const_iterator i = dlogpsi_fdlr_d.begin(); i != dlogpsi_fdlr_d.end(); ++i)
-          app_log() << *i << ' ';
-        app_log() << std::endl;
-
-        app_log() << "dhpsioverpsi_fdlr_x: ";
-        for (std::vector<double>::const_iterator i = dhpsioverpsi_fdlr_x.begin(); i != dhpsioverpsi_fdlr_x.end(); ++i)
-          app_log() << *i << ' ';
-        app_log() << std::endl << std::endl;
-
-        app_log() << "dhpsioverpsi_fdlr_d: ";
-        for (std::vector<double>::const_iterator i = dhpsioverpsi_fdlr_d.begin(); i != dhpsioverpsi_fdlr_d.end(); ++i)
-          app_log() << *i << ' ';
-        app_log() << std::endl << std::endl << std::endl << std::endl << std::endl;
-
-      } // End of printing debugging info
-
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
