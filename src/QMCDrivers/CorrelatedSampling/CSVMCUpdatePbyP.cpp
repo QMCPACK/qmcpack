@@ -107,13 +107,13 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
     {
       ++nAllRejected;
     }
+    for(int ipsi=0; ipsi<nPsi; ipsi++)
+      Psi1[ipsi]->completeUpdates(W);
     thisWalker.R=W.R;
   }
 //  myTimers[1]->stop();
 //  myTimers[2]->start();
 
-  for(int ipsi=0; ipsi<nPsi; ipsi++)
-    Psi1[ipsi]->completeUpdates(W);
   W.donePbyP();
 
   for(int ipsi=0; ipsi<nPsi; ipsi++)

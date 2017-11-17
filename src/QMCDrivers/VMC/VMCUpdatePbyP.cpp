@@ -117,9 +117,9 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
         }
       }
     }
+    Psi.completeUpdates(W);
     thisWalker.R=W.R;
   }
-  Psi.completeUpdates(W);
   W.donePbyP();
   myTimers[1]->stop();
   myTimers[0]->start();

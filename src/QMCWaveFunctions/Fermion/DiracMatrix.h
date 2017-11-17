@@ -172,14 +172,13 @@ namespace qmcplusplus {
   template<typename T, typename T_hp>
     struct DelayedUpdate
     {
-      typedef typename scalar_traits<T>::real_type real_type;
       Matrix<T> Ainv_U, V, Binv, tempMat;
       Matrix<T_hp> Binv_hp;
       DiracMatrix<T_hp> deteng;
       std::vector<int> delay_list;
       int delay_count;
 
-      DelayedUpdate():delay_count(0) {}
+      DelayedUpdate(): delay_count(0) {}
 
       inline void resize(int norb, int delay)
       {
@@ -210,7 +209,7 @@ namespace qmcplusplus {
         const int norb=Ainv.rows();
         const int lda_Binv=Binv.cols();
         T temp[lda_Binv];
-        // multiply Ainv_U (NxK) Binv(kxk) V(kxN) AinvRow right to the left
+        // multiply Ainv_U (NxK) Binv(KxK) V(KxN) AinvRow right to the left
         BLAS::gemv('T', norb, delay_count, cone, V.data(), norb, AinvRow, 1, czero, new_AinvRow, 1);
         BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, new_AinvRow, 1, czero, temp, 1);
         BLAS::gemv('N', norb, delay_count, -cone, Ainv_U.data(), norb, temp, 1, czero, new_AinvRow, 1);
