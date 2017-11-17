@@ -376,7 +376,6 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
     readCuspCoeff = readCuspInfo(info);
   targetPtcl->R[0]=0;
   CuspCorr<BS> myCorr(0.2,500,targetPtcl,sourcePtcl,true);
-  char buff1[10],buff2[10];
   Vector<RealType> rad_orb, xgrid;
   std::vector<bool> rmv;
   rmv.resize(myBasisSet->BasisSetSize);
@@ -402,7 +401,6 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
     myCOT->NL.resize(OrbitalSetSize);
     myCOT->Rnl.resize(OrbitalSetSize);
     myCOT->RnlID.resize(OrbitalSetSize);
-    std::sprintf(buff1,"%d",i);
     xmlNodePtr ctr = xmlNewNode(NULL,(const xmlChar*)"center");
     std::ostringstream num;
     num <<i;
@@ -410,6 +408,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
     for(int k=0; k<OrbitalSetSize; k++ )
     {
       xmlNodePtr orb = xmlNewNode(NULL,(const xmlChar*)"orbital");
+      const std::string fileprefix("newOrbs."+objectName+".C"+std::to_string(i)+".MO"+std::to_string(k));
       std::ostringstream num0,redo,C,sg,rc,a1,a2,a3,a4,a5;
       num0<<k;
       xmlNewProp(orb,(const xmlChar*)"num",(const xmlChar*)num0.str().c_str());
@@ -440,16 +439,14 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
             if(redo > 10)
               // recompute with rc loop
             {
-              std::sprintf(buff2,"%d",k);
-              myCorr.executeWithRCLoop(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,"newOrbs."+objectName+".C"+std::string(buff1)+".MO"+std::string(buff2),Rcut,info(i,k).data());
+              myCorr.executeWithRCLoop(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,fileprefix,Rcut,info(i,k).data());
             }
             else
               if(redo > 1)
                 // no rc loop, read rc from file
               {
                 RealType rc = info(i,k)[3];
-                std::sprintf(buff2,"%d",k);
-                myCorr.execute(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,"newOrbs."+objectName+".C"+std::string(buff1)+".MO"+std::string(buff2),rc,info(i,k).data());
+                myCorr.execute(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,fileprefix,rc,info(i,k).data());
               }
               else
                 // read from file
@@ -459,8 +456,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
         }
         else
         {
-          std::sprintf(buff2,"%d",k);
-          myCorr.executeWithRCLoop(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,"newOrbs."+objectName+".C"+std::string(buff1)+".MO"+std::string(buff2),Rcut,info(i,k).data());
+          myCorr.executeWithRCLoop(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,fileprefix,Rcut,info(i,k).data());
           info(i,k)[0]=0;
         }
       }
