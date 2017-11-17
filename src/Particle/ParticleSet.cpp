@@ -43,10 +43,12 @@ template<> int ParticleSet::Walker_t::cuda_DataSize = 0;
 
 void add_p_timer(std::vector<NewTimer*>& timers)
 {
-  timers.push_back(new NewTimer("ParticleSet::makeMove",timer_level_fine)); //timer for MC, ratio etc
-  timers.push_back(new NewTimer("ParticleSet::makeMoveOnSphere",timer_level_fine)); //timer for the walker loop
+  timers.push_back(new NewTimer("ParticleSet::makeMove",timer_level_fine)); //timer for moves
+  timers.push_back(new NewTimer("ParticleSet::makeMoveOnSphere",timer_level_fine)); //timer for NLPP moves
+  timers.push_back(new NewTimer("ParticleSet::donePbyP",timer_level_fine)); //timer for donePbyP
   TimerManager.addTimer(timers[0]);
   TimerManager.addTimer(timers[1]);
+  TimerManager.addTimer(timers[2]);
 }
 
 ParticleSet::ParticleSet()
@@ -719,6 +721,7 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
 void
 ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ)
 {
+  myTimers[1]->start();
   activePtcl=iat;
   activePos=R[iat]; //save the current position
   SingleParticlePos_t newpos(activePos+displ);
@@ -727,6 +730,7 @@ ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ)
   R[iat]=newpos;
   if (SK && SK->DoUpdate)
     SK->makeMove(iat,R[iat]);
+  myTimers[1]->stop();
 }
 
 /** update the particle attribute by the proposed move
@@ -767,11 +771,13 @@ void ParticleSet::rejectMove(Index_t iat)
 
 void ParticleSet::donePbyP(bool skipSK)
 {
+  myTimers[2]->start();
   for (size_t i=0; i<DistTables.size(); i++)
     DistTables[i]->donePbyP();
   if (!skipSK && SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);
   Ready4Measure=true;
+  myTimers[2]->stop();
 }
 
 void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
