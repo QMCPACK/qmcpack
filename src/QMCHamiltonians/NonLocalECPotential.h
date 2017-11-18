@@ -38,6 +38,8 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
   std::vector<NonLocalECPComponent*> PPset;
   ///reference to the center ion
   ParticleSet& IonConfig;
+  ///reference to the electrons
+  ParticleSet& Peln;
   ///target TrialWaveFunction
   TrialWaveFunction& Psi;
   ///true if we should compute forces
@@ -50,8 +52,6 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
   Array<TraceReal,1>* Ve_sample;
   Array<TraceReal,1>* Vi_sample;
 #endif
-  ParticleSet& Peln;
-  ParticleSet& Pion;
 
   NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
                       TrialWaveFunction& psi, bool computeForces=false, bool useVP=false);

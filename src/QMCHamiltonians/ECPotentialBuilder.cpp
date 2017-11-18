@@ -55,7 +55,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   std::string forces("no");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(ecpFormat,"format");
-  pAttrib.add(NLPP_algo,"algorithm");
+  pAttrib.add(NLPP_algo,"algo");
   pAttrib.add(pbc,"pbc");
   pAttrib.add(forces,"forces");
   pAttrib.put(cur);

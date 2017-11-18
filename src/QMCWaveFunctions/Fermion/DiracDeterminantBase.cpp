@@ -292,7 +292,7 @@ void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, std::vector<Va
 {
   Matrix<ValueType> psiT(ratios.size(),NumOrbitals);
   Phi->evaluateValues(VP,psiT);
-  MatrixOperators::product(psiT,psiM[VP.activePtcl-FirstIndex],&ratios[0]);
+  MatrixOperators::product(psiT,psiM[VP.activePtcl-FirstIndex],ratios.data());
 }
 
 void DiracDeterminantBase::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)

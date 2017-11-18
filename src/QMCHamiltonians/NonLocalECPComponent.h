@@ -96,7 +96,7 @@ struct NonLocalECPComponent: public QMCTraits
   ///destructor
   ~NonLocalECPComponent();
 
-  NonLocalECPComponent* makeClone();
+  NonLocalECPComponent* makeClone(const ParticleSet &qp);
 
   ///add a new Non Local component
   void add(int l, RadialPotentialType* pp);
@@ -139,7 +139,7 @@ struct NonLocalECPComponent: public QMCTraits
 
   void print(std::ostream& os);
 
-  void initVirtualParticle(ParticleSet* qp);
+  void initVirtualParticle(const ParticleSet& qp);
 
   void setRandomGenerator(RandomGenerator_t* rng)
   {

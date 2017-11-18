@@ -34,7 +34,7 @@ void NonLocalECPotential::resetTargetParticleSet(ParticleSet& P)
 NonLocalECPotential::NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
     TrialWaveFunction& psi, bool computeForces, bool useVP):
   IonConfig(ions), Psi(psi), ComputeForces(computeForces),
-  UseVP(useVP), ForceBase(ions,els),Peln(els),Pion(ions)
+  UseVP(useVP), ForceBase(ions,els), Peln(els)
 {
   set_energy_domain(potential);
   two_body_quantum_domain(ions,els);
@@ -74,7 +74,7 @@ void NonLocalECPotential::checkout_particle_quantities(TraceManager& tm)
   if( streaming_particles)
   {
     Ve_sample = tm.checkout_real<1>(myName,Peln);
-    Vi_sample = tm.checkout_real<1>(myName,Pion);
+    Vi_sample = tm.checkout_real<1>(myName,IonConfig);
     for(int iat=0; iat<NumIons; iat++)
     {
       if(PP[iat])
@@ -306,6 +306,7 @@ NonLocalECPotential::add(int groupID, NonLocalECPComponent* ppot)
     if(IonConfig.GroupID[iat]==groupID)
       PP[iat]=ppot;
   PPset[groupID]=ppot;
+  if(UseVP) ppot->initVirtualParticle(Peln);
 }
 
 QMCHamiltonianBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
@@ -316,7 +317,7 @@ QMCHamiltonianBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFun
   {
     if(PPset[ig])
     {
-      NonLocalECPComponent* ppot=PPset[ig]->makeClone();
+      NonLocalECPComponent* ppot=PPset[ig]->makeClone(qp);
       myclone->add(ig,ppot);
     }
   }

@@ -35,21 +35,19 @@ NonLocalECPComponent::~NonLocalECPComponent()
   if(VP) delete VP;
 }
 
-NonLocalECPComponent* NonLocalECPComponent::makeClone()
+NonLocalECPComponent* NonLocalECPComponent::makeClone(const ParticleSet &qp)
 {
   NonLocalECPComponent* myclone=new NonLocalECPComponent(*this);
   for(int i=0; i<nlpp_m.size(); ++i)
     myclone->nlpp_m[i]=nlpp_m[i]->makeClone();
-  myclone->VP=0; 
+  if(VP) myclone->VP=new VirtualParticleSet(qp,nknot);
   return myclone;
 }
 
-void NonLocalECPComponent::initVirtualParticle(ParticleSet* qp)
+void NonLocalECPComponent::initVirtualParticle(const ParticleSet &qp)
 {
-  //if(VP) 
-  //  VP->reset(qp);
-  //else
-  //  VP=new VirtualParticleSet(qp,nknot);
+  assert(VP==0);
+  VP=new VirtualParticleSet(qp,nknot);
 }
 
 void NonLocalECPComponent::add(int l, RadialPotentialType* pp)
@@ -115,7 +113,7 @@ NonLocalECPComponent::evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& ps
   RealType lpol_[lmax+1];
   RealType vrad_[nchannel];
   RealType psiratio_[nknot];
-  PosType deltaV[16];
+  PosType deltaV[nknot];
 
   // Compute ratio of wave functions
   for (int j=0; j < nknot ; j++)
@@ -131,6 +129,22 @@ NonLocalECPComponent::evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& ps
     psi.resetPhaseDiff();
     //psi.rejectMove(iel);
   }
+
+  // Compute ratios with VP
+  if(VP)
+  {
+    for (int j=0; j<nknot; j++)
+      deltaV[j]=r*rrotsgrid_m[j]-dr;
+    ParticleSet::ParticlePos_t VPos(nknot);
+    for (int j=0; j<nknot; j++)
+      VPos[j]=deltaV[j]+W.R[iel];
+    VP->makeMoves(iel,VPos,true);
+    std::vector<RealType> ratios(nknot);
+    psi.evaluateRatios(*VP,ratios);
+    for (int j=0; j<nknot; j++)
+      std::cout << "debug knot=" << j << " moved ratios = " << psiratio_[j] << " evaluateRatios = " << ratios[j] << std::endl;
+  }
+
   // Compute radial potential
   for(int ip=0; ip< nchannel; ip++)
     vrad_[ip]=nlpp_m[ip]->splint(r)*wgt_angpp_m[ip];

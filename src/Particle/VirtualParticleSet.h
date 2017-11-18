@@ -27,12 +27,18 @@ namespace qmcplusplus
    */
   class VirtualParticleSet: public ParticleSet
   {
-    public:
-    ///reference particle ID
-    Index_t refID;
+    private:
+    /// true, if virtual particles are on a sphere for NLPP
+    bool onSphere;
 
+    public:
     /// ParticleSet this object refers to
     const ParticleSet& refPtcl;
+
+    inline bool isOnSphere() const
+    {
+      return onSphere;
+    }
 
     /** constructor 
      * @param p ParticleSet whose virtual moves are handled by this object
@@ -41,7 +47,7 @@ namespace qmcplusplus
     VirtualParticleSet(const ParticleSet& p, int nptcl);
 
     /// move virtual particles to new postions and update distance tables
-    void makeMoves(int iat, const ParticlePos_t& vitualPos);
+    void makeMoves(int iat, const ParticlePos_t& vitualPos, bool sphere=false);
   };
 }
 #endif

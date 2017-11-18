@@ -127,7 +127,7 @@ public:
   virtual
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
-    return Dets[VP.activeGroup]->evaluateRatios(VP,ratios);
+    return Dets[getDetID(VP.activePtcl)]->evaluateRatios(VP,ratios);
   }
 
   virtual

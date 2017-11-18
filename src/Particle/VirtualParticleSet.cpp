@@ -45,9 +45,10 @@ namespace qmcplusplus
   }
 
   /// move virtual particles to new postions and update distance tables
-  void VirtualParticleSet::makeMoves(int iat, const ParticlePos_t& vitualPos)
+  void VirtualParticleSet::makeMoves(int iat, const ParticlePos_t& vitualPos, bool sphere)
   {
-    refID=iat;
+    onSphere=sphere;
+    activePtcl=iat;
     R=vitualPos;
     RSoA.copyIn(R);
     for (int i=0; i<DistTables.size(); i++)
