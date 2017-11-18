@@ -143,6 +143,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     app_log() << "\n  Using NonLocalECP potential \n"
               << "    Maximum grid on a sphere for NonLocalECPotential: "
               << nknot_max << std::endl;
+    if(NLPP_algo=="VP") app_log() << "    Using Virtual Particles" << std::endl;
 
     rcore_max=std::max(rc2,rcore_max);
     targetPtcl.checkBoundBox(2*rc2);
