@@ -133,16 +133,20 @@ NonLocalECPComponent::evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& ps
   // Compute ratios with VP
   if(VP)
   {
-    for (int j=0; j<nknot; j++)
-      deltaV[j]=r*rrotsgrid_m[j]-dr;
     ParticleSet::ParticlePos_t VPos(nknot);
     for (int j=0; j<nknot; j++)
+    {
+      deltaV[j]=r*rrotsgrid_m[j]-dr;
       VPos[j]=deltaV[j]+W.R[iel];
+    }
     VP->makeMoves(iel,VPos,true);
     std::vector<RealType> ratios(nknot);
     psi.evaluateRatios(*VP,ratios);
     for (int j=0; j<nknot; j++)
+    {
+      ratios[j]*=sgridweight_m[j];
       std::cout << "debug knot=" << j << " moved ratios = " << psiratio_[j] << " evaluateRatios = " << ratios[j] << std::endl;
+    }
   }
 
   // Compute radial potential

@@ -29,6 +29,7 @@ namespace qmcplusplus
 
     //initialize local data structure
     Lattice = p.Lattice;
+    TotalNum = nptcl;
     R.resize(nptcl);
     RSoA.resize(nptcl);
 
