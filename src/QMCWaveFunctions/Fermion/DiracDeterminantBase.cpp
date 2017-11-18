@@ -290,9 +290,20 @@ DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int 
 
 void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
-  Matrix<ValueType> psiT(ratios.size(),NumOrbitals);
-  Phi->evaluateValues(VP,psiT);
-  MatrixOperators::product(psiT,psiM[VP.activePtcl-FirstIndex],ratios.data());
+  const int nVP = VP.getTotalNum();
+  ValueType *ref;
+  if(psiM_temp.rows()<nVP)
+  {
+    if(psiM_multi.rows()<nVP) psiM_multi.resize(nVP, NumOrbitals);
+    ref=psiM_multi.data();
+  }
+  else
+  {
+    ref=psiM_temp.data();
+  }
+  Matrix<ValueType> psiT(ref, nVP, NumOrbitals);
+  Phi->evaluateValues(VP, psiT);
+  MatrixOperators::product(psiT, psiM[VP.activePtcl-FirstIndex], ratios.data());
 }
 
 void DiracDeterminantBase::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
