@@ -117,24 +117,19 @@ NonLocalECPotential::evaluate(ParticleSet& P)
     (*Vi_sample) = 0.0;
   }
 #endif
+  for(int ipp=0; ipp<PPset.size(); ipp++)
+    if(PPset[ipp]) PPset[ipp]->randomize_grid();
   //loop over all the ions
   if (ComputeForces)
   {
     for(int iat=0; iat<NumIons; iat++)
       if(PP[iat])
-      {
-        PP[iat]->randomize_grid();
-        //Value += PP[iat]->evaluate(P,iat,Psi, forces[iat]);
-        Value += PP[iat]->evaluate(P,IonConfig,iat,Psi, forces[iat],
-                                   PulayTerm[iat]);
-      }
+        Value += PP[iat]->evaluate(P,IonConfig,iat,Psi, forces[iat], PulayTerm[iat]);
   }
   else
   {
     std::vector<NonLocalData> Txy;
     const DistanceTableData* myTable = P.DistTables[myTableIndex];
-    for(int ipp=0; ipp<PPset.size(); ipp++)
-      if(PPset[ipp]) PPset[ipp]->randomize_grid();
 #if 0
     if(myTable->DTType == DT_SOA)
     {
@@ -220,21 +215,18 @@ NonLocalECPotential::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
     (*Vi_sample) = 0.0;
   }
 #endif
+  for(int ipp=0; ipp<PPset.size(); ipp++)
+    if(PPset[ipp]) PPset[ipp]->randomize_grid();
   //loop over all the ions
   if (ComputeForces)
   {
     for(int iat=0; iat<NumIons; iat++)
       if(PP[iat])
-      {
-        PP[iat]->randomize_grid();
         Value += PP[iat]->evaluate(P,Psi,iat,Txy, forces[iat]);
-      }
   }
   else
   {
     const DistanceTableData* myTable = P.DistTables[myTableIndex];
-    for(int ipp=0; ipp<PPset.size(); ipp++)
-      if(PPset[ipp]) PPset[ipp]->randomize_grid();
     if(myTable->DTType == DT_SOA)
     {
       for(int iat=0; iat<NumIons; iat++)

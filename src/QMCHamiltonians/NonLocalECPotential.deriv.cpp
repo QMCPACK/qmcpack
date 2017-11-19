@@ -26,12 +26,11 @@ namespace qmcplusplus
         std::vector<RealType>& dhpsioverpsi)
     {
       Value=0.0;
+      for(int ipp=0; ipp<PPset.size(); ipp++)
+        if(PPset[ipp]) PPset[ipp]->randomize_grid();
       for(int iat=0; iat<NumIons; iat++)
         if(PP[iat])
-        {
-          PP[iat]->randomize_grid();
           Value+=PP[iat]->evaluateValueAndDerivatives(P,iat,Psi,optvars,dlogpsi,dhpsioverpsi);
-        }
       return Value;
 
       //int Nvars=optvars.size();
