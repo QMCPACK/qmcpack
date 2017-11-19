@@ -23,6 +23,8 @@
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "Message/CommOperators.h"
+
 #if defined(ENABLE_SMARTPOINTER)
 #include <boost/shared_ptr.hpp>
 #endif
@@ -54,7 +56,7 @@ public:
   typedef OrbitalSetTraits<ValueType>::VGLVector_t      VGLVector_t;
   typedef ParticleSet::Walker_t                      Walker_t;
   typedef std::map<std::string,SPOSetBase*> SPOPool_t;
-
+  
   ///index in the builder list of sposets
   int builder_index;
   ///true if C is an identity matrix
@@ -91,7 +93,10 @@ public:
    * Several user classes can own SPOSetBase and use objectName as counter
    */
   std::string objectName;
-
+  
+  ///Pass Communicator
+  Communicate *myComm;
+  
   /** constructor */
   SPOSetBase();
 
@@ -332,6 +337,7 @@ public:
   virtual void
   evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi);
 #endif
+
 
 protected:
   bool putOccupation(xmlNodePtr occ_ptr);
