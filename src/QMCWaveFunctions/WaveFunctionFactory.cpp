@@ -23,7 +23,10 @@
 #include "QMCWaveFunctions/Jastrow/JastrowBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "QMCWaveFunctions/IonOrbitalBuilder.h"
+
+#if !defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/FDLRWfn.h"
+#endif
 
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
@@ -128,7 +131,11 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     }
     else if (cname ==  OrbitalBuilderBase::fdlrwfn_tag)
     {
+#ifdef QMC_COMPLEX
+      APP_ABORT("FDLR wave functions are not implemented with QMC_COMPLEX enabled.");
+#else
       success = addFDLRTerm(cur);
+#endif
     }
     else if (cname == OrbitalBuilderBase::ionorb_tag)
     {
@@ -199,6 +206,7 @@ bool WaveFunctionFactory::addFermionTerm(xmlNodePtr cur)
   return true;
 }
 
+#ifndef QMC_COMPLEX
 bool WaveFunctionFactory::addFDLRTerm(xmlNodePtr cur)
 {
   bool opt_x = false, opt_d = false, singlet = false, triplet = false;
@@ -285,6 +293,7 @@ bool WaveFunctionFactory::addFDLRTerm(xmlNodePtr cur)
 
   return true;
 }
+#endif
 
 bool WaveFunctionFactory::addNode(OrbitalBuilderBase* b, xmlNodePtr cur)
 {
