@@ -3,6 +3,21 @@ IF (NOT QMC_CUDA)
  IF (NOT QMC_COMPLEX)
 
 #
+# H2 test in a DZV basis set, using optimizable determinants, and the adaptive linear method
+#
+  LIST(APPEND H2_OPT_SCALARS "totenergy" "-1.124563 0.00084") # total energy
+
+  IF(BUILD_LMYENGINE_INTERFACE)
+    QMC_RUN_AND_CHECK(short-H2-orb-opt
+                      "${CMAKE_SOURCE_DIR}/tests/molecules/H2_ae"
+                      H2
+                      h2_orb_opt.xml
+                      16 1
+                      ${MP_SUCCESS}
+                      10 H2_OPT_SCALARS # Final VMC step
+                      TRUE)
+
+#
 # H2 starting from unoptimized CIS coefficients and orbital
 # Targetting the first excited state, and using the adaptive linear method
 # The Jastrow is already optimized (by itself). This test optimizes both orbitals and CIS coefficients
@@ -11,7 +26,7 @@ IF (NOT QMC_CUDA)
 
   IF(BUILD_LMYENGINE_INTERFACE)
     QMC_RUN_AND_CHECK(short-H2-FDLR
-                      "${CMAKE_SOURCE_DIR}/tests/molecules/H2_FDLR_opt"
+                      "${CMAKE_SOURCE_DIR}/tests/molecules/H2_ae"
                       H2
                       h2_fdlr.xml
                       16 1

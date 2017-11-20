@@ -3,8 +3,8 @@
   <project id="H2" series="0"/>
   <random seed="9975"/>
   <!-- input from gaussian converter -->
-  <include href="h2.ptcl.xml"/>
-  <include href="h2.wfn.xml"/>
+  <include href="h2.ptcl_fdlr.xml"/>
+  <include href="h2.wfs_fdlr.xml"/>
   <hamiltonian name="h0" type="generic" target="e"> 
     <pairpot name="ElecElec" type="coulomb" source="e" target="e"/> 
     <pairpot name="IonElec"  type="coulomb" source="ion0"/>
