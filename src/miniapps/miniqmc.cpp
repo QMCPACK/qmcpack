@@ -162,7 +162,7 @@ int main(int argc, char** argv)
     Timer clock, clock_mc;
     clock.restart();
 
-    ParticleSet ions, els; 
+    ParticleSet ions, els;
     ions.setName("ion");
     els.setName("e");
     const OHMMS_PRECISION scale=1.0;

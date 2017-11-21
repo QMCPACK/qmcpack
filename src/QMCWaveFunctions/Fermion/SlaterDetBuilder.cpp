@@ -651,7 +651,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
   if(delay_rank>0)
     app_log() << "Using rank-" << delay_rank << " delayed update" << std::endl;
   else
-    app_log() << "Using rank-1 sherman-morrison update" << std::endl;
+    app_log() << "Using rank-1 Sherman-Morrison update" << std::endl;
   adet->set(firstIndex,lastIndex-firstIndex, delay_rank);
   slaterdet_0->add(adet,spin_group);
   if (psi->Optimizable)
