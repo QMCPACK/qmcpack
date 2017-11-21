@@ -29,8 +29,8 @@ namespace qmcplusplus {
   /// \param[in]   triplet_loc  If true, enforce triplet symmetry on WF parameters.
   ///
   ///////////////////////////////////////////////////////////////////////////////////////////////
-  FDLRWfn::FDLRWfn(TrialWaveFunction * wfn_1, TrialWaveFunction * wfn_2, ParticleSet& P,
-          bool opt_x, bool opt_d, bool singlet_loc, bool triplet_loc) :
+  FDLRWfn::FDLRWfn(TrialWaveFunction * const wfn_1, TrialWaveFunction * const wfn_2, ParticleSet& P,
+          const bool opt_x, const bool opt_d, const bool singlet_loc, const bool triplet_loc) :
     m_wfn_xpd(wfn_1), m_wfn_xmd(wfn_2), opt_x_vars(opt_x), opt_d_vars(opt_d)
   {
     // Temporary hack: I get very odd results when turning off Optimizable
@@ -419,10 +419,10 @@ namespace qmcplusplus {
   ///
   ///////////////////////////////////////////////////////////////////////////////////////////////
   FDLRWfn::RealType FDLRWfn::evaluateLogFDLR(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L,
-                           FDLRWfn::RealType& logpsi_plus,                    FDLRWfn::RealType logpsi_minus,
-                           FDLRWfn::RealType& phasevalue_plus,                FDLRWfn::RealType phasevalue_minus,
-                           ParticleSet::ParticleGradient_t& G_plus,  ParticleSet::ParticleGradient_t& G_minus,
-                           ParticleSet::ParticleLaplacian_t& L_plus, ParticleSet::ParticleLaplacian_t& L_minus)
+                           const FDLRWfn::RealType& logpsi_plus,           const FDLRWfn::RealType logpsi_minus,
+                           const FDLRWfn::RealType& phasevalue_plus,       const FDLRWfn::RealType phasevalue_minus,
+                           const ParticleSet::ParticleGradient_t& G_plus,  const ParticleSet::ParticleGradient_t& G_minus,
+                           const ParticleSet::ParticleLaplacian_t& L_plus, const ParticleSet::ParticleLaplacian_t& L_minus)
   {
     FDLRWfn::ValueType logpsi(0.0), psi(0.0), psi_plus(0.0), psi_minus(0.0);
     FDLRWfn::ValueType scaling_fac_1, scaling_fac_2;
