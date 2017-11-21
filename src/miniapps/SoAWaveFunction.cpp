@@ -62,7 +62,7 @@ namespace qmcplusplus
   }
   void SoAWaveFunction::acceptMove(ParticleSet& P, int iat)
   {
-    J2->acceptMove(P,iat);
+    J2->acceptMove(P,iat,false);
   }
   void SoAWaveFunction::restore(int iat) {}
 
