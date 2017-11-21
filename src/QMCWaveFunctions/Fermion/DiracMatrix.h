@@ -228,17 +228,24 @@ namespace qmcplusplus {
         delay_list[delay_count] = rowchanged;
         delay_count++;
         BLAS::gemm('T', 'N', delay_count, delay_count, norb, cone, V.data(), norb, Ainv_U.data(), norb, czero, Binv.data(), lda_Binv);
+        if(delay_count==1)
+        {
+          Binv[0][0]=1.0/Binv[0][0];
+        }
+        else
+        {
 #ifdef MIXED_PRECISION
-        for(int i=0; i<delay_count; i++)
-          for(int j=0; j<delay_count; j++)
-            Binv_hp[i][j] = Binv[i][j];
-        deteng.invert(Binv_hp,false,delay_count);
-        for(int i=0; i<delay_count; i++)
-          for(int j=0; j<delay_count; j++)
-            Binv[i][j] = Binv_hp[i][j];
+          for(int i=0; i<delay_count; i++)
+            for(int j=0; j<delay_count; j++)
+              Binv_hp[i][j] = Binv[i][j];
+          deteng.invert(Binv_hp,false,delay_count);
+          for(int i=0; i<delay_count; i++)
+            for(int j=0; j<delay_count; j++)
+              Binv[i][j] = Binv_hp[i][j];
 #else
-        deteng.invert(Binv,false,delay_count);
+          deteng.invert(Binv,false,delay_count);
 #endif
+        }
         if(delay_count==lda_Binv) udpateInvMat(Ainv);
       }
 
@@ -249,11 +256,20 @@ namespace qmcplusplus {
         CONSTEXPR T cone(1);
         CONSTEXPR T czero(0);
         const int norb=Ainv.rows();
-        const int lda_Binv=Binv.cols();
-        BLAS::gemm('T', 'N', norb, delay_count, norb, cone, Ainv.data(), norb, V.data(), norb, czero, tempMat.data(), norb);
-        for(int i=0; i<delay_count; i++) tempMat(i,delay_list[i]) -= cone;
-        BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, Ainv_U.data(), norb, Binv.data(), lda_Binv, czero, V.data(), norb);
-        BLAS::gemm('N', 'T', norb, norb, delay_count, -cone, V.data(), norb, tempMat.data(), norb, cone, Ainv.data(), norb);
+        if(delay_count==1)
+        {
+          BLAS::gemv('T', norb, norb, cone, Ainv.data(), norb, V[0], 1, czero, tempMat[0], 1);
+          tempMat(0,delay_list[0]) -= cone;
+          BLAS::ger(norb,norb,-Binv[0][0],Ainv_U[0],1,tempMat[0],1,Ainv.data(),norb);
+        }
+        else
+        {
+          const int lda_Binv=Binv.cols();
+          BLAS::gemm('T', 'N', norb, delay_count, norb, cone, Ainv.data(), norb, V.data(), norb, czero, tempMat.data(), norb);
+          for(int i=0; i<delay_count; i++) tempMat(i,delay_list[i]) -= cone;
+          BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, Ainv_U.data(), norb, Binv.data(), lda_Binv, czero, V.data(), norb);
+          BLAS::gemm('N', 'T', norb, norb, delay_count, -cone, V.data(), norb, tempMat.data(), norb, cone, Ainv.data(), norb);
+        }
         delay_count = 0;
       }
     };
