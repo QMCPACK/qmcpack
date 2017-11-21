@@ -214,15 +214,7 @@ void DiracDeterminantBase::completeUpdates(ParticleSet& P)
   if (ndelay)
   {
     UpdateTimer.start();
-    if(delayedEng.delay_count==1)
-    {
-      detEng.updateRow(psiM,psiV.data(),delayedEng.delay_list[0],curRatio);
-      delayedEng.delay_count=0;
-    }
-    else
-    {
-      delayedEng.udpateInvMat(psiM);
-    }
+    delayedEng.udpateInvMat(psiM);
     UpdateTimer.stop();
   }
 }
