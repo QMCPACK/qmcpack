@@ -432,7 +432,7 @@ void AGPDeterminant::ratioDown(ParticleSet& P, int iat)
 
 /** move was accepted, update the real container
  */
-void AGPDeterminant::acceptMove(ParticleSet& P, int iat, bool delay)
+void AGPDeterminant::acceptMove(ParticleSet& P, int iat)
 {
   PhaseValue += evaluatePhase(curRatio);
   LogValue +=std::log(std::abs(curRatio));

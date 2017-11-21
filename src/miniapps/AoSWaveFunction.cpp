@@ -60,7 +60,7 @@ namespace qmcplusplus
   }
   void AoSWaveFunction::acceptMove(ParticleSet& P, int iat)
   {
-    J2->acceptMove(P,iat,false);
+    J2->acceptMove(P,iat);
   }
 
   void AoSWaveFunction::restore(int iat) 

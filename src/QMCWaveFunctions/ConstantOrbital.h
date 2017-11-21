@@ -60,7 +60,7 @@ public:
     return 1.0;
   }
 
-  virtual void acceptMove(ParticleSet& P, int iat, bool delay) {}
+  virtual void acceptMove(ParticleSet& P, int iat) {}
 
   virtual void restore(int iat) {}
 

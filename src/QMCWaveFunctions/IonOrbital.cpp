@@ -158,7 +158,7 @@ void
 IonOrbital::restore(int iat) {}
 
 void
-IonOrbital::acceptMove(ParticleSet& P, int iat, bool delay)
+IonOrbital::acceptMove(ParticleSet& P, int iat)
 {
   U[iat] = curVal;
   dU[iat]=curGrad;

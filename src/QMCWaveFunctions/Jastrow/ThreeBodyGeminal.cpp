@@ -175,7 +175,7 @@ void ThreeBodyGeminal::restore(int iat)
   //nothing to do here
 }
 
-void ThreeBodyGeminal::acceptMove(ParticleSet& P, int iat, bool delay)
+void ThreeBodyGeminal::acceptMove(ParticleSet& P, int iat)
 {
   //add the differential
   LogValue += diffVal;

@@ -61,7 +61,7 @@ public:
 
   void restore(int iat);
 
-  void acceptMove(ParticleSet& P, int iat, bool delay);
+  void acceptMove(ParticleSet& P, int iat);
 
   void registerData(ParticleSet& P, WFBufferType& buf);
 

@@ -202,7 +202,7 @@ public:
   {
   }
 
-  void acceptMove(ParticleSet& P, int iat, bool delay)
+  void acceptMove(ParticleSet& P, int iat)
   {
   }
 

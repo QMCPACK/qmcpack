@@ -382,7 +382,7 @@ public:
 
   inline void restore(int iat) {}
 
-  void acceptMove(ParticleSet& P, int iat, bool delay)
+  void acceptMove(ParticleSet& P, int iat)
   {
     U[iat] = curVal;
     dU[iat]=curGrad;

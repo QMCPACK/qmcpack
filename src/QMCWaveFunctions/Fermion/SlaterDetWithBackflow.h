@@ -136,11 +136,11 @@ public:
     return GradType();
   }
 
-  inline void acceptMove(ParticleSet& P, int iat, bool delay)
+  inline void acceptMove(ParticleSet& P, int iat)
   {
     BFTrans->acceptMove(P,iat);
     for(int i=0; i<Dets.size(); i++)
-      Dets[i]->acceptMove(P,iat,delay);
+      Dets[i]->acceptMove(P,iat);
   }
 
   inline void restore(int iat)

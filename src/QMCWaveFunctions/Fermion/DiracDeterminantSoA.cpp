@@ -92,7 +92,7 @@ namespace qmcplusplus
 
   /** move was accepted, update the real container
   */
-  void DiracDeterminantSoA::acceptMove(ParticleSet& P, int iat, bool delay)
+  void DiracDeterminantSoA::acceptMove(ParticleSet& P, int iat)
   {
     PhaseValue += evaluatePhase(curRatio);
     LogValue +=std::log(std::abs(curRatio));

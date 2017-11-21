@@ -575,7 +575,7 @@ DiracDeterminantWithBackflow::evaluateLog(ParticleSet& P,
 
 /** move was accepted, update the real container
 */
-void DiracDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat, bool delay)
+void DiracDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat)
 {
   PhaseValue += evaluatePhase(curRatio);
   LogValue +=std::log(std::abs(curRatio));

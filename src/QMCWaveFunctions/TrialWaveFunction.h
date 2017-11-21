@@ -270,7 +270,7 @@ public:
   GradType alternateEvalGrad(ParticleSet& P, int iat);
 
   void rejectMove(int iat);
-  void acceptMove(ParticleSet& P, int iat, bool delay=true);
+  void acceptMove(ParticleSet& P, int iat);
   void completeUpdates(ParticleSet& P);
 
   void registerData(ParticleSet& P, WFBufferType& buf);

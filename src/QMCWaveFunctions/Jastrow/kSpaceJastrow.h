@@ -179,7 +179,7 @@ public:
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
   void restore(int iat);
-  void acceptMove(ParticleSet& P, int iat, bool delay);
+  void acceptMove(ParticleSet& P, int iat);
 
   // Allocate per-walker data in the PooledData buffer
   void registerData(ParticleSet& P, WFBufferType& buf);

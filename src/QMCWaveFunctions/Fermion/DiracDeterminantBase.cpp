@@ -184,12 +184,12 @@ DiracDeterminantBase::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 
 /** move was accepted, update the real container
 */
-void DiracDeterminantBase::acceptMove(ParticleSet& P, int iat, bool delay)
+void DiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
 {
   PhaseValue += evaluatePhase(curRatio);
   LogValue +=std::log(std::abs(curRatio));
   UpdateTimer.start();
-  if (ndelay && delay)
+  if (ndelay)
     delayedEng.acceptRow(psiM,psiV.data(),WorkingIndex);
   else
     detEng.updateRow(psiM,psiV.data(),WorkingIndex,curRatio);
@@ -214,7 +214,15 @@ void DiracDeterminantBase::completeUpdates(ParticleSet& P)
   if (ndelay)
   {
     UpdateTimer.start();
-    delayedEng.udpateInvMat(psiM);
+    if(delayedEng.delay_count==1)
+    {
+      detEng.updateRow(psiM,psiV.data(),delayedEng.delay_list[0],curRatio);
+      delayedEng.delay_count=0;
+    }
+    else
+    {
+      delayedEng.udpateInvMat(psiM);
+    }
     UpdateTimer.stop();
   }
 }

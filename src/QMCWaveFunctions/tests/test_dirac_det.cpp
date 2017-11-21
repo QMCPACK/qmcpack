@@ -233,7 +233,7 @@ TEST_CASE("DiracDeterminantBase_first", "[wavefunction][fermion]")
   ValueType det_ratio1 = 0.178276269185;
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
 
-  ddb.acceptMove(elec, 0, false);
+  ddb.acceptMove(elec, 0);
 
   b(0,0) =  3.455170657;
   b(0,1) =  -1.35124809;
@@ -325,7 +325,7 @@ TEST_CASE("DiracDeterminantBase_second", "[wavefunction][fermion]")
 
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
 
-  ddb.acceptMove(elec, 0, false);
+  ddb.acceptMove(elec, 0);
 
 
   ValueType det_ratio2 = ddb.ratioGrad(elec, 1, grad);
@@ -342,7 +342,7 @@ TEST_CASE("DiracDeterminantBase_second", "[wavefunction][fermion]")
   REQUIRE(std::abs(det_ratio2) == ValueApprox(det_ratio2_val));
 
 
-  ddb.acceptMove(elec, 1, false);
+  ddb.acceptMove(elec, 1);
 
   ValueType det_ratio3 = ddb.ratioGrad(elec, 2, grad);
   dm.invert(a_update3, true);
@@ -357,7 +357,7 @@ TEST_CASE("DiracDeterminantBase_second", "[wavefunction][fermion]")
   REQUIRE(det_ratio3 == ValueApprox(det_ratio3_val));
   //check_value(det_ratio3, det_ratio3_val);
 
-  ddb.acceptMove(elec, 2, false);
+  ddb.acceptMove(elec, 2);
 
   dm.invert(orig_a,false);
 

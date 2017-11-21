@@ -387,7 +387,7 @@ void LRTwoBodyJastrow::restore(int iat)
   }
 }
 
-void LRTwoBodyJastrow::acceptMove(ParticleSet& P, int iat, bool delay)
+void LRTwoBodyJastrow::acceptMove(ParticleSet& P, int iat)
 {
 #if defined(USE_REAL_STRUCT_FACTOR)
   std::copy(eikr_new_r.data(),eikr_new_r.data()+MaxK,eikr_r[iat]);

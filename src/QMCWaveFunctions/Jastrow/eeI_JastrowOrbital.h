@@ -874,7 +874,7 @@ public:
 
   inline void restore(int iat) {}
 
-  void acceptMove(ParticleSet& P, int iat, bool delay)
+  void acceptMove(ParticleSet& P, int iat)
   {
     const DistanceTableData* eI_table=P.DistTables[myTableIndex];
     //      std::cerr << "acceptMove called.\n";

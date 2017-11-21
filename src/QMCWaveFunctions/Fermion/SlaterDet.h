@@ -194,9 +194,9 @@ public:
   }
 
   virtual
-  inline void acceptMove(ParticleSet& P, int iat, bool delay)
+  inline void acceptMove(ParticleSet& P, int iat)
   {
-    Dets[getDetID(iat)]->acceptMove(P,iat,delay);
+    Dets[getDetID(iat)]->acceptMove(P,iat);
   }
 
   virtual
