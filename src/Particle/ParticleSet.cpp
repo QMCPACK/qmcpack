@@ -463,6 +463,7 @@ void ParticleSet::update(bool skipSK)
     SK->UpdateAllPart(*this);
 
   Ready4Measure=true;
+  activePtcl=-1;
 }
 
 void ParticleSet::update(const ParticlePos_t& pos)
@@ -477,6 +478,7 @@ void ParticleSet::update(const ParticlePos_t& pos)
     SK->UpdateAllPart(*this);
 
   Ready4Measure=true;
+  activePtcl=-1;
 }
 
 /** move a particle iat
@@ -491,16 +493,14 @@ ParticleSet::SingleParticlePos_t
 ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
 {
   activePtcl=iat;
-  activePos=R[iat]; //save the current position
-  SingleParticlePos_t newpos(activePos+displ);
+  activePos=R[iat]+displ;
   for (int i=0; i< DistTables.size(); ++i)
-    DistTables[i]->move(*this,newpos,iat);
-  R[iat]=newpos;
+    DistTables[i]->move(*this,activePos);
   //Do not change SK: 2007-05-18
   //Change SK only if DoUpdate is true: 2008-09-12
   if (SK && SK->DoUpdate)
-    SK->makeMove(iat,newpos);
-  return newpos;
+    SK->makeMove(iat,activePos);
+  return activePos;
 }
 
 void ParticleSet::setActive(int iat)
@@ -525,6 +525,7 @@ ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ)
 {
   myTimers[0]->start();
   activePtcl=iat;
+  activePos=R[iat]+displ;
   //SingleParticlePos_t red_displ(Lattice.toUnit(displ));
   if (UseBoundBox)
   {
@@ -533,16 +534,13 @@ ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ)
       myTimers[0]->stop();
       return false;
     }
-    activePos=R[iat]; //save the current position
-    SingleParticlePos_t newpos(activePos+displ);
-    newRedPos=Lattice.toUnit(newpos);
+    newRedPos=Lattice.toUnit(activePos);
     if (Lattice.isValid(newRedPos))
     {
       for (int i=0; i< DistTables.size(); ++i)
-        DistTables[i]->move(*this,newpos,iat);
-      R[iat]=newpos;
+        DistTables[i]->move(*this,activePos);
       if (SK && SK->DoUpdate)
-        SK->makeMove(iat,newpos);
+        SK->makeMove(iat,activePos);
       myTimers[0]->stop();
       return true;
     }
@@ -552,11 +550,8 @@ ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ)
   }
   else
   {
-    activePos=R[iat]; //save the current position
-    SingleParticlePos_t newpos(activePos+displ);
     for (int i=0; i< DistTables.size(); ++i)
-      DistTables[i]->move(*this,newpos,iat);
-    R[iat]=newpos;
+      DistTables[i]->move(*this,activePos);
     myTimers[0]->stop();
     return true;
   }
@@ -723,11 +718,9 @@ ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ)
 {
   myTimers[1]->start();
   activePtcl=iat;
-  activePos=R[iat]; //save the current position
-  SingleParticlePos_t newpos(activePos+displ);
+  activePos=R[iat]+displ;
   for (int i=0; i< DistTables.size(); ++i)
-    DistTables[i]->moveOnSphere(*this,newpos,iat);
-  R[iat]=newpos;
+    DistTables[i]->moveOnSphere(*this,activePos);
   if (SK && SK->DoUpdate)
     SK->makeMove(iat,R[iat]);
   myTimers[1]->stop();
@@ -747,11 +740,13 @@ void ParticleSet::acceptMove(Index_t iat)
     for (int i=0,n=DistTables.size(); i< n; i++)
       DistTables[i]->update(iat);
 
-    RSoA(iat)=R[iat];
-
     //Do not change SK: 2007-05-18
     if (SK && SK->DoUpdate)
       SK->acceptMove(iat,GroupID[iat],activePos);
+
+    R[iat]=activePos;
+    RSoA(iat)=activePos;
+    activePtcl=-1;
   }
   else
   {
@@ -763,10 +758,7 @@ void ParticleSet::acceptMove(Index_t iat)
 
 void ParticleSet::rejectMove(Index_t iat)
 {
-  //restore the position by the saved activePos
-  R[iat]=activePos;
-  for (int i=0; i< DistTables.size(); ++i)
-    DistTables[i]->activePtcl=-1;
+  activePtcl=-1;
 }
 
 void ParticleSet::donePbyP(bool skipSK)
@@ -777,16 +769,16 @@ void ParticleSet::donePbyP(bool skipSK)
   if (!skipSK && SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);
   Ready4Measure=true;
+  activePtcl=-1;
   myTimers[2]->stop();
 }
 
 void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
 {
-  activePtcl=0;
-  activePos=R[0];
+  activePtcl=-1;
+  /// To fix, hazzard 0;
   for (size_t i=0; i< DistTables.size(); ++i)
-    DistTables[i]->move(*this,newpos,0);
-  R[0]=newpos;
+    DistTables[i]->move(*this,newpos);
 }
 
 
@@ -824,6 +816,7 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
   }
 
   Ready4Measure=false;
+  activePtcl=-1;
 }
 
 void ParticleSet::loadWalker(Walker_t* awalker)

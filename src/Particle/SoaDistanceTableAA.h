@@ -74,29 +74,26 @@ struct SoaDistanceTableAA: public DTD_BConds<T,D,SC>, public DistanceTableData
 
   inline void evaluate(ParticleSet& P, IndexType jat)
   {
-    activePtcl=jat;
     DTD_BConds<T,D,SC>::computeDistances(P.R[jat], P.RSoA, Distances[jat], Displacements[jat], 0, Ntargets, jat);
     Distances[jat][jat]=std::numeric_limits<T>::max(); //assign a big number
   }
 
-  inline void moveOnSphere(const ParticleSet& P, const PosType& rnew, IndexType jat) 
+  inline void moveOnSphere(const ParticleSet& P, const PosType& rnew)
   {
-    DTD_BConds<T,D,SC>::computeDistances(rnew, P.RSoA, Temp_r.data(),Temp_dr, 0, Ntargets,jat);
-    Temp_r[jat]=std::numeric_limits<T>::max(); //assign a big number
+    DTD_BConds<T,D,SC>::computeDistances(rnew, P.RSoA, Temp_r.data(),Temp_dr, 0, Ntargets, P.activePtcl);
   }
 
   ///evaluate the temporary pair relations
-  inline void move(const ParticleSet& P, const PosType& rnew, IndexType jat)
+  inline void move(const ParticleSet& P, const PosType& rnew)
   {
     //#pragma omp master
-    activePtcl=jat;
-    moveOnSphere(P,rnew,jat);
+    moveOnSphere(P,rnew);
   }
 
   ///update the iat-th row for iat=[0,iat-1)
   inline void update(IndexType iat)
   {
-    if(iat==0 || iat!=activePtcl) return;
+    if(iat==0) return;
     //update by a cache line
     const int nupdate=getAlignedSize<T>(iat);
     simd::copy_n(Temp_r.data(),nupdate,Distances[iat]);
