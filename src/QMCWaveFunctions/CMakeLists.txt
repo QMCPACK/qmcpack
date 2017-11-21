@@ -30,11 +30,16 @@ SET(WFBASE_SRCS
   FermionBase.cpp
   OptimizableSPOSet.cpp
   AFMSPOSet.cpp
-  FDLRWfn.cpp
   CompositeSPOSet.cpp
   HarmonicOscillator/SHOSet.cpp
   HarmonicOscillator/SHOSetBuilder.cpp
   )
+
+IF(NOT QMC_COMPLEX)
+  SET(WFBASE_SRCS ${WFBASE_SRCS}
+    FDLRWfn.cpp
+    )
+ENDIF(NOT QMC_COMPLEX)
 
 
 ########################
