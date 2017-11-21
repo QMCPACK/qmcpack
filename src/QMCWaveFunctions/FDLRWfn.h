@@ -32,7 +32,7 @@ namespace qmcplusplus {
   class FDLRWfn : public OrbitalBase {
 
   // protected data members
-  protected:
+  private:
 
     // List of variables for the "x" parameters
     opt_variables_type x_vars;
