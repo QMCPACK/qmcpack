@@ -46,6 +46,7 @@ void add_p_timer(std::vector<NewTimer*>& timers)
   timers.push_back(TimerManager.createTimer("ParticleSet::makeMove", timer_level_fine)); // timer for moves
   timers.push_back(TimerManager.createTimer("ParticleSet::makeMoveOnSphere", timer_level_fine)); // timer for NLPP moves
   timers.push_back(TimerManager.createTimer("ParticleSet::donePbyP", timer_level_fine)); // timer for donePbyP
+  timers.push_back(TimerManager.createTimer("ParticleSet::setActive", timer_level_fine)); // timer for setActive
 }
 
 ParticleSet::ParticleSet()
@@ -504,8 +505,10 @@ ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
 
 void ParticleSet::setActive(int iat)
 {
+  myTimers[3]->start();
   for (size_t i=0,n=DistTables.size(); i< n; i++)
     DistTables[i]->evaluate(*this,iat);
+  myTimers[3]->stop();
 }
 
 

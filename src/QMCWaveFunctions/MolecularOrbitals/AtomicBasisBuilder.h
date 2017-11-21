@@ -330,13 +330,10 @@ AtomicBasisBuilder<RFB>::createAOSetH5(hdf_archive &hin)
 
   for (int i=0; i<numbasisgroups;i++)
   {
-    char n_name[4];
-    sprintf(n_name,"%d",i);
-    std::string an_name(n_name);
-    std::string basisGroupID="basisGroup"+an_name;
+    std::string basisGroupID="basisGroup"+std::to_string(i);
     int l(0);
     if(myComm->rank()==0){
-       hin.push(basisGroupID.c_str());
+       hin.push(basisGroupID);
        hin.read(l,"l");
        hin.pop();
     }
@@ -352,10 +349,7 @@ AtomicBasisBuilder<RFB>::createAOSetH5(hdf_archive &hin)
       else
         num++;
 
- }
-
-  char n_name[4];
-  std::string basisGroupID;
+  }
 
   COT* aos = new COT(Lmax,addsignforM,expandlm==CARTESIAN_EXPAND);
   aos->LM.resize(num);
@@ -368,12 +362,9 @@ AtomicBasisBuilder<RFB>::createAOSetH5(hdf_archive &hin)
 
   for (int i=0; i<numbasisgroups;i++)
   {
-    sprintf(n_name,"%d",i);
-    std::string aan_name(n_name);
-
-    basisGroupID="basisGroup"+aan_name;
+    std::string basisGroupID="basisGroup"+std::to_string(i);
     if(myComm->rank()==0){
-       hin.push(basisGroupID.c_str());
+       hin.push(basisGroupID);
        hin.read(rnl,"rid");
        hin.read(nlms[0],"n");
        hin.read(nlms[1],"l");
