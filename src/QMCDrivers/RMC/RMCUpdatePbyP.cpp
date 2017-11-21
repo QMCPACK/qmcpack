@@ -179,7 +179,6 @@ namespace qmcplusplus
 	      }
 	    if (!W.makeMoveAndCheck (iat, dr))
 	      continue;
-	    PosType newpos (W.R[iat]);
 	    RealType ratio = Psi.ratioGrad (W, iat, grad_iat);
 	    bool valid_move = false;
 	    //node is crossed reject the move
@@ -195,7 +194,7 @@ namespace qmcplusplus
 		RealType logGf = -0.5 * dot (deltaR[iat], deltaR[iat]);
 		//Use the force of the particle iat
 		getScaledDrift (tauovermass, grad_iat, dr);
-		dr = prophead.R[iat] - newpos - dr;
+		dr = W.R[iat] - W.activePos - dr;
 		RealType logGb = -oneover2tau * dot (dr, dr);
 		RealType prob = ratio * ratio * std::exp (logGb - logGf);
 		if (RandomGen () < prob)
@@ -319,10 +318,8 @@ namespace qmcplusplus
 		++nRejectTemp;
 		continue;
 	      }
-	    //PosType newpos(W.makeMove(iat,dr));
 	    if (!W.makeMoveAndCheck (iat, dr))
 	      continue;
-	    PosType newpos (W.R[iat]);
 	    RealType ratio = Psi.ratioGrad (W, iat, grad_iat);
 	    bool valid_move = false;
 	    //node is crossed reject the move
@@ -338,7 +335,7 @@ namespace qmcplusplus
 		RealType logGf = -0.5 * dot (deltaR[iat], deltaR[iat]);
 		//Use the force of the particle iat
 		getScaledDrift (tauovermass, grad_iat, dr);
-		dr = prophead.R[iat] - newpos - dr;
+		dr = W.R[iat] - W.activePos - dr;
 		RealType logGb = -oneover2tau * dot (dr, dr);
 		RealType prob = ratio * ratio * std::exp (logGb - logGf);
 		if (RandomGen () < prob)

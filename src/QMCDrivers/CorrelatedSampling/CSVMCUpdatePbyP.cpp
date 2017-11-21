@@ -107,7 +107,6 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
     {
       ++nAllRejected;
     }
-    thisWalker.R=W.R;
   }
 //  myTimers[1]->stop();
 //  myTimers[2]->start();
