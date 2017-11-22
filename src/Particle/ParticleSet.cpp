@@ -531,6 +531,7 @@ ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ)
   {
     if (Lattice.outOfBound(Lattice.toUnit(displ)))
     {
+      activePtcl=-1;
       myTimers[0]->stop();
       return false;
     }
@@ -545,6 +546,7 @@ ParticleSet::makeMoveAndCheck(Index_t iat, const SingleParticlePos_t& displ)
       return true;
     }
     //out of bound
+    activePtcl=-1;
     myTimers[0]->stop();
     return false;
   }
