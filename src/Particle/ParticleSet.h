@@ -415,11 +415,6 @@ public:
    */
   void rejectMove(Index_t iat);
 
-  inline SingleParticlePos_t getOldPos() const
-  {
-    return activePos;
-  }
-
   void initPropertyList();
   inline int addProperty(const std::string& pname)
   {
