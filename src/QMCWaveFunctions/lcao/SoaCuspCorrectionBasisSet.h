@@ -154,7 +154,7 @@ struct SoaCuspCorrection: public CuspCorrectionBase  //: public BasisSetBase<typ
     myVGL=czero;
 
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    const auto restrict  dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
+    const auto restrict dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
     for(int c=0; c<NumCenters; c++)
     {
       LOBasisSet[IonID[c]]->evaluate(dist[c],myVGL[0],myVGL[1],myVGL[2]);
@@ -192,8 +192,7 @@ struct SoaCuspCorrection: public CuspCorrectionBase  //: public BasisSetBase<typ
     std::fill_n(tmp_vals,myVGL.capacity(),czero);
 
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    const value_type* restrict  dist=d_table->Temp_r.data();
-    const auto&  displ=d_table->Temp_dr;
+    const auto restrict dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
 
     //THIS IS SERIAL, only way to avoid this is to use myVGL 
     for(int c=0; c<NumCenters; c++)

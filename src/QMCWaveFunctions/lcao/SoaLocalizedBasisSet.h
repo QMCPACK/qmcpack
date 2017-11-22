@@ -133,7 +133,7 @@ struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::value_type>
   {
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
     const value_type* restrict  dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
-    const auto&  displ= (P.activePtcl==iat)? d_table->Temp_dr: d_table->Displacements[iat];
+    const auto& displ= (P.activePtcl==iat)? d_table->Temp_dr: d_table->Displacements[iat];
     for(int c=0; c<NumCenters; c++)
     {
       LOBasisSet[IonID[c]]->evaluateVGL(dist[c],displ[c],BasisOffset[c],vgl);
@@ -147,8 +147,8 @@ struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::value_type>
   inline void evaluateV(const ParticleSet& P, int iat, value_type* restrict vals)
   {
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    const value_type* restrict  dist=d_table->Temp_r.data();
-    const auto&  displ=d_table->Temp_dr;
+    const value_type* restrict  dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
+    const auto& displ= (P.activePtcl==iat)? d_table->Temp_dr: d_table->Displacements[iat];
     for(int c=0; c<NumCenters; c++)
       LOBasisSet[IonID[c]]->evaluateV(dist[c],displ[c],vals+BasisOffset[c]);
   }
