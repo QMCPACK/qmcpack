@@ -238,7 +238,7 @@ DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratio(Part
 
 void DiracDeterminantWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
-  APP_ABORT(" Need to implement DiracDeterminantWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, int iat). \n");
+  APP_ABORT(" Need to implement DiracDeterminantWithBackflow::evaluateRatiosAlltoOne. \n");
 }
 
 DiracDeterminantWithBackflow::GradType
