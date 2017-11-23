@@ -49,7 +49,6 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
   //will use temp[i].r1 for the Compton profile
   const DistanceTableData &d_aa(*P.DistTables[0]);
   const std::vector<DistanceTableData::TempDistType>& temp(d_aa.Temp);
-  Vector<RealType> tmpn_k(nofK);
   for (int s=0; s<M; ++s)
   {
     PosType newpos;
@@ -60,7 +59,6 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
     P.makeVirtualMoves(newpos); //updated: temp[i].r1=|newpos-P.R[i]|, temp[i].dr1=newpos-P.R[i]
     refPsi.evaluateRatiosAlltoOne(P,psi_ratios);
 //         for (int i=0; i<np; ++i) app_log()<<i<<" "<<psi_ratios[i].real()<<" "<<psi_ratios[i].imag()<< std::endl;
-    P.rejectMove(0); //restore P.R[0] to the orginal position
     for (int ik=0; ik < kPoints.size(); ++ik)
     {
       if(d_aa.DTType == DT_SOA)
@@ -76,16 +74,16 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
       eval_e2iphi(np,kdotp.data(),phases.data());
       RealType nofk_here(std::real(BLAS::dot(np,phases.data(),&psi_ratios[0])));//psi_ratios.data())));
       nofK[ik]+= nofk_here;
-      tmpn_k[ik]=nofk_here;
     }
-    for (int iq=0; iq < compQ.size(); ++iq)
-      for (int i=0; i<mappedQtonofK[iq].size(); ++i)
-        compQ[iq] += tmpn_k[mappedQtonofK[iq][i]];
+  }
+  for (int iq=0; iq < compQ.size(); ++iq)
+  {
+    for (int i=0; i<mappedQtonofK[iq].size(); ++i)
+      compQ[iq] += nofK[mappedQtonofK[iq][i]];
+    compQ[iq] *= mappedQnorms[iq];
   }
   for (int ik=0; ik<nofK.size(); ++ik)
     nofK[ik] *= norm_nofK;
-  for (int iq=0; iq<compQ.size(); ++iq)
-    compQ[iq] *= mappedQnorms[iq];
   if (hdf5_out)
   {
     int j=myIndex;
