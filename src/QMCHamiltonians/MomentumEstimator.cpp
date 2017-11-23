@@ -47,7 +47,8 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
   nofK=0.0;
   compQ=0.0;
   //will use temp[i].r1 for the Compton profile
-  const std::vector<DistanceTableData::TempDistType>& temp(P.DistTables[0]->Temp);
+  const DistanceTableData &d_aa(*P.DistTables[0]);
+  const std::vector<DistanceTableData::TempDistType>& temp(d_aa.Temp);
   Vector<RealType> tmpn_k(nofK);
   for (int s=0; s<M; ++s)
   {
@@ -62,8 +63,16 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
     P.rejectMove(0); //restore P.R[0] to the orginal position
     for (int ik=0; ik < kPoints.size(); ++ik)
     {
-      for (int i=0; i<np; ++i)
-        kdotp[i]=dot(kPoints[ik],temp[i].dr1_nobox);
+      if(d_aa.DTType == DT_SOA)
+      {
+        for (int i=0; i<np; ++i)
+          kdotp[i]=dot(kPoints[ik],d_aa.Temp_dr[i]);
+      }
+      else
+      {
+        for (int i=0; i<np; ++i)
+          kdotp[i]=dot(kPoints[ik],temp[i].dr1_nobox);
+      }
       eval_e2iphi(np,kdotp.data(),phases.data());
       RealType nofk_here(std::real(BLAS::dot(np,phases.data(),&psi_ratios[0])));//psi_ratios.data())));
       nofK[ik]+= nofk_here;
