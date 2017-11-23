@@ -57,7 +57,7 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
     //make it cartesian
     newpos=Lattice.toCart(newpos);
     P.makeVirtualMoves(newpos); //updated: temp[i].r1=|newpos-P.R[i]|, temp[i].dr1=newpos-P.R[i]
-    refPsi.get_ratios(P,psi_ratios);
+    refPsi.evaluateRatiosAlltoOne(P,psi_ratios);
 //         for (int i=0; i<np; ++i) app_log()<<i<<" "<<psi_ratios[i].real()<<" "<<psi_ratios[i].imag()<< std::endl;
     P.rejectMove(0); //restore P.R[0] to the orginal position
     for (int ik=0; ik < kPoints.size(); ++ik)

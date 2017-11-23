@@ -118,10 +118,10 @@ void SlaterDet::resetTargetParticleSet(ParticleSet& P)
     Dets[i]->resetTargetParticleSet(P);
 }
 
-void SlaterDet::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   for (int i = 0; i < Dets.size(); ++i)
-    Dets[i]->get_ratios(P, ratios);
+    Dets[i]->evaluateRatiosAlltoOne(P, ratios);
 }
 
 SlaterDet::ValueType SlaterDet::evaluate(ParticleSet& P,
