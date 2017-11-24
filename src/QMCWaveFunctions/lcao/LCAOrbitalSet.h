@@ -80,9 +80,9 @@ namespace qmcplusplus
       return (myBasisSet==nullptr)? 0: myBasisSet->getBasisSetSize();
     }
 
-    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
+    void evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi);
 
-    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+    void evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
 
     void evaluateVGL(const ParticleSet& P, int iat, VGLVector_t vgl);
 

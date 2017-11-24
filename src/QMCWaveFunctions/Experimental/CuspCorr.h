@@ -95,7 +95,7 @@ public:
   {
     targetPtcl->R[0] = sourcePtcl->R[curCenter];
     TinyVector<RealType,3> ddr2=targetPtcl->makeMove(0,r);
-    Psi->evaluate(*targetPtcl,0,val,grad,lapl);
+    Psi->evaluate(*targetPtcl,0,targetPtcl->activeR(0),val,grad,lapl);
   }
 
   RealType phi( RealType r)

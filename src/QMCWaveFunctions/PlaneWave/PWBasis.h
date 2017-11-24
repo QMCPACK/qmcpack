@@ -263,10 +263,10 @@ public:
    * These can be "dotted" with coefficients later to complete orbital evaluations.
    */
   inline void
-  evaluateAll(const ParticleSet& P, int iat)
+  evaluateAll(const ParticleSet& P, int iat, const PosType& p_iat)
   {
-    BuildRecursionCoefs(P.R[iat]);
-    RealType twistdotr = dot(twist_cart,P.R[iat]);
+    BuildRecursionCoefs(p_iat);
+    RealType twistdotr = dot(twist_cart,p_iat);
     ComplexType pw0(std::cos(twistdotr),std::sin(twistdotr));
     //Evaluate the planewaves and derivatives.
     ComplexType* restrict zptr=Z.data();
@@ -298,10 +298,10 @@ public:
     eval_e2iphi(NumPlaneWaves, phi.data(), Zv.data());
   }
   inline void
-  evaluateAll(const ParticleSet& P, int iat)
+  evaluateAll(const ParticleSet& P, int iat, const PosType& p_iat)
   {
     ComplexType* restrict zptr=Z.data();
-    evaluate(P.R[iat]);
+    evaluate(p_iat);
     for(int ig=0; ig<NumPlaneWaves; ig++,zptr+=5)
     {
       //PW is initialized as exp(i*twist.r) so that the final basis evaluations

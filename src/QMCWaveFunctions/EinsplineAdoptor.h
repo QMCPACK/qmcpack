@@ -258,7 +258,7 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
     return ValueType();
   }
 
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+  inline void evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi)
   {
     SplineAdoptor::evaluate_v(P,iat,psi);
   }
@@ -273,7 +273,7 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
     }
   }
 
-  inline void evaluate(const ParticleSet& P, int iat,
+  inline void evaluate(const ParticleSet& P, int iat,const PosType& p_iat, 
                        ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     SplineAdoptor::evaluate_vgl(P,iat,psi,dpsi,d2psi);

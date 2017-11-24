@@ -128,21 +128,21 @@ namespace qmcplusplus
       add(master.components[c]->makeClone());
   }
 
-  void CompositeSPOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+  void CompositeSPOSet::evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi)
   {
     int n=0;
     for(int c=0;c<components.size();++c)
     {
       SPOSetBase&    component = *components[c];
       ValueVector_t& values    = *component_values[c];
-      component.evaluate(P,iat,values);
+      component.evaluate(P,iat,p_iat,values);
       std::copy(values.begin(),values.end(),psi.begin()+n);
       n += component.size();
     }
   }
 
   
-  void CompositeSPOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, 
+  void CompositeSPOSet::evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi, 
                 GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     int n=0;
@@ -152,7 +152,7 @@ namespace qmcplusplus
       ValueVector_t& values     = *component_values[c];
       GradVector_t&  gradients  = *component_gradients[c];
       ValueVector_t& laplacians = *component_laplacians[c];
-      component.evaluate(P,iat,values,gradients,laplacians);
+      component.evaluate(P,iat,p_iat,values,gradients,laplacians);
       std::copy(values.begin(),    values.end(),    psi.begin()+n  );
       std::copy(gradients.begin(), gradients.end(), dpsi.begin()+n );
       std::copy(laplacians.begin(),laplacians.end(),d2psi.begin()+n);

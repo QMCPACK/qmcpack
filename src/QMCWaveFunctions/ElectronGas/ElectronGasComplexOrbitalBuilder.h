@@ -45,7 +45,7 @@ struct EGOSet: public SPOSetBase
   void setOrbitalSetSize(int norbs) { }
 
   inline void
-  evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+  evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi)
   {
     const PosType &r=P.activePtcl==iat?P.activePos:P.R[iat];
     RealType sinkr,coskr;
@@ -64,7 +64,7 @@ struct EGOSet: public SPOSetBase
    * @param d2psi laplacian row
    */
   inline void
-  evaluate(const ParticleSet& P, int iat,
+  evaluate(const ParticleSet& P, int iat,  const PosType& p_iat,
            ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     const PosType &r=P.activePtcl==iat?P.activePos:P.R[iat];
@@ -92,7 +92,7 @@ struct EGOSet: public SPOSetBase
       ValueVector_t v(logdet[i],OrbitalSetSize);
       GradVector_t g(dlogdet[i],OrbitalSetSize);
       ValueVector_t l(d2logdet[i],OrbitalSetSize);
-      evaluate(P,iat,v,g,l);
+      evaluate(P,iat,P.R[iat],v,g,l);
     }
   }
   void evaluate_notranspose(const ParticleSet& P, int first, int last

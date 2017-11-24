@@ -39,7 +39,7 @@ namespace qmcplusplus
   }
 
   void LCAOrbitalSet::evaluate(const ParticleSet& P, 
-      int iat, ValueVector_t& psi)
+      int iat, const PosType& p_iat, ValueVector_t& psi)
   {
     if(Identity)
     { //PAY ATTENTION TO COMPLEX
@@ -82,7 +82,7 @@ namespace qmcplusplus
     simd::copy_n(temp.data(4),OrbitalSetSize,d2psi.data());
   }
 
-  void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, 
+  void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat,  const PosType& p_iat,
       ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
     {
       //TAKE CARE OF IDENTITY

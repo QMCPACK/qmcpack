@@ -1198,7 +1198,7 @@ namespace qmcplusplus
   inline void DensityMatrices1B::update_basis(const PosType& r)
   {
     Pq.makeMove(0,r-Pq.R[0]);
-    basis_functions.evaluate(Pq,0,basis_values);
+    basis_functions.evaluate(Pq,0,Pq.activeR(0),basis_values);
     Pq.rejectMove(0);
     for(int i=0;i<basis_size;++i)
       basis_values[i]*=basis_norms[i];
@@ -1208,7 +1208,7 @@ namespace qmcplusplus
   inline void DensityMatrices1B::update_basis_d012(const PosType& r)
   {
     Pq.makeMove(0,r-Pq.R[0]);
-    basis_functions.evaluate(Pq,0,basis_values,basis_gradients,basis_laplacians);
+    basis_functions.evaluate(Pq,0,Pq.activeR(0),basis_values,basis_gradients,basis_laplacians);
     Pq.rejectMove(0);
     for(int i=0;i<basis_size;++i)
       basis_values[i]*=basis_norms[i];

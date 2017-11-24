@@ -197,7 +197,7 @@ EinsplineSetExtended<StorageType>::setOrbitalSetSize(int norbs)
 
 template<typename StorageType> void
 EinsplineSetExtended<StorageType>::evaluate
-(const ParticleSet& P, int iat, RealValueVector_t& psi)
+(const ParticleSet& P, int iat, const PosType& p_iat, RealValueVector_t& psi)
 {
   ValueTimer.start();
   const PosType &r(P.activePtcl==iat?P.activePos:P.R[iat]);
@@ -311,7 +311,7 @@ EinsplineSetExtended<StorageType>::evaluate
 
 template<typename StorageType> void
 EinsplineSetExtended<StorageType>::evaluate
-(const ParticleSet& P, int iat, ComplexValueVector_t& psi)
+(const ParticleSet& P, int iat, const PosType& p_iat, ComplexValueVector_t& psi)
 {
   ValueTimer.start();
   const PosType &r(P.activePtcl==iat?P.activePos:P.R[iat]);
@@ -339,7 +339,7 @@ EinsplineSetExtended<StorageType>::evaluate
 // point.
 template<> void
 EinsplineSetExtended<double>::evaluate
-(const ParticleSet &P, int iat, RealValueVector_t& psi)
+(const ParticleSet &P, int iat, const PosType& p_iat, RealValueVector_t& psi)
 {
   ValueTimer.start();
   const PosType &r(P.activePtcl==iat?P.activePos:P.R[iat]);
@@ -407,7 +407,7 @@ EinsplineSetExtended<double>::evaluate
 // Value, gradient, and laplacian
 template<typename StorageType> void
 EinsplineSetExtended<StorageType>::evaluate
-(const ParticleSet& P, int iat, RealValueVector_t& psi,
+(const ParticleSet& P, int iat, const PosType& p_iat, RealValueVector_t& psi,
  RealGradVector_t& dpsi, RealValueVector_t& d2psi)
 {
   VGLTimer.start();
@@ -800,7 +800,7 @@ EinsplineSetExtended<StorageType>::evaluate
 // Value, gradient, and laplacian
 template<typename StorageType> void
 EinsplineSetExtended<StorageType>::evaluate
-(const ParticleSet& P, int iat, ComplexValueVector_t& psi,
+(const ParticleSet& P, int iat, const PosType& p_iat, ComplexValueVector_t& psi,
  ComplexGradVector_t& dpsi, ComplexValueVector_t& d2psi)
 {
   VGLTimer.start();
@@ -885,7 +885,7 @@ EinsplineSetExtended<StorageType>::evaluate
 
 template<> void
 EinsplineSetExtended<double>::evaluate
-(const ParticleSet& P, int iat, RealValueVector_t& psi,
+(const ParticleSet& P, int iat, const PosType& p_iat, RealValueVector_t& psi,
  RealGradVector_t& dpsi, RealValueVector_t& d2psi)
 {
   VGLTimer.start();

@@ -98,21 +98,21 @@ void PWOrbitalSet::addVector(const std::vector<RealType>& coefs,int jorb)
 }
 
 void
-PWOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+PWOrbitalSet::evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi)
 {
   //Evaluate every orbital for particle iat.
   //Evaluate the basis-set at these coordinates:
   //myBasisSet->evaluate(P,iat);
-  myBasisSet->evaluate(P.R[iat]);
+  myBasisSet->evaluate(p_iat);
   MatrixOperators::product(*C,myBasisSet->Zv,&psi[0]);
 }
 
 void
-PWOrbitalSet::evaluate(const ParticleSet& P, int iat,
+PWOrbitalSet::evaluate(const ParticleSet& P, int iat, const PosType& p_iat,
                        ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
 {
   //Evaluate the orbitals and derivatives for particle iat only.
-  myBasisSet->evaluateAll(P,iat);
+  myBasisSet->evaluateAll(P,iat,p_iat);
   MatrixOperators::product(*C,myBasisSet->Z,Temp);
   const ValueType* restrict tptr=Temp.data();
   for(int j=0; j< OrbitalSetSize; j++, tptr+=PW_MAXINDEX)
@@ -129,7 +129,7 @@ PWOrbitalSet::evaluate_notranspose(const ParticleSet& P, int first, int last,
 {
   for(int iat=first,i=0; iat<last; iat++,i++)
   {
-    myBasisSet->evaluateAll(P,iat);
+    myBasisSet->evaluateAll(P,iat,P.R[iat]);
     MatrixOperators::product(*C,myBasisSet->Z,Temp);
     const ValueType* restrict tptr=Temp.data();
     for(int j=0; j< OrbitalSetSize; j++,tptr+=PW_MAXINDEX)

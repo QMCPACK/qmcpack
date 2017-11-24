@@ -144,7 +144,7 @@ DiracDeterminantBase::ValueType
 DiracDeterminantBase::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   SPOVGLTimer.start();
-  Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
+  Phi->evaluate(P, iat, P.activeR(iat), psiV, dpsiV, d2psiV);
   SPOVGLTimer.stop();
   RatioTimer.start();
   WorkingIndex = iat-FirstIndex;
@@ -279,7 +279,7 @@ DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int 
   UpdateMode=ORB_PBYP_RATIO;
   WorkingIndex = iat-FirstIndex;
   SPOVTimer.start();
-  Phi->evaluate(P, iat, psiV);
+  Phi->evaluate(P, iat, P.activeR(iat), psiV);
   SPOVTimer.stop();
   RatioTimer.start();
   curRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
@@ -298,7 +298,7 @@ void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, std::vector<Va
 void DiracDeterminantBase::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   SPOVTimer.start();
-  Phi->evaluate(P, -1, psiV);
+  Phi->evaluate(P, -1, P.activePos, psiV);
   SPOVTimer.stop();
   MatrixOperators::product(psiM,psiV.data(),&ratios[FirstIndex]);
 }

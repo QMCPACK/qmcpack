@@ -102,7 +102,7 @@ public:
   }
 
   inline void
-  evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+  evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi)
   {
     myBasisSet->evaluateForPtclMove(P,iat);
     for(int j=0 ; j<OrbitalSetSize; j++)
@@ -110,7 +110,7 @@ public:
   }
 
   inline void
-  evaluate(const ParticleSet& P, int iat,
+  evaluate(const ParticleSet& P, int iat, const PosType& p_iat,
            ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     myBasisSet->evaluateAllForPtclMove(P,iat);
@@ -261,14 +261,14 @@ public:
   }
 
   inline void
-  evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+  evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi)
   {
     myBasisSet->evaluateForPtclMove(P,iat);
     simd::gemv(*C,myBasisSet->Phi.data(),psi.data());
   }
 
   inline void
-  evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+  evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     myBasisSet->evaluateAllForPtclMove(P,iat);
 

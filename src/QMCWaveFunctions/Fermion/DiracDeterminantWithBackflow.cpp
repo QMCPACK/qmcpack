@@ -215,7 +215,7 @@ DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratio(Part
     int jat = *it-FirstIndex;
     PosType dr = BFTrans->newQP[*it] - BFTrans->QP.R[*it];
     BFTrans->QP.makeMoveAndCheck(*it,dr);
-    Phi->evaluate(BFTrans->QP, *it, psiV);
+    Phi->evaluate(BFTrans->QP, *it, BFTrans->QP.activeR(*it),psiV);
     for(int orb=0; orb<psiV.size(); orb++)
       psiM_temp(orb,jat) = psiV[orb];
     BFTrans->QP.rejectMove(*it);
@@ -302,7 +302,7 @@ DiracDeterminantWithBackflow::ratioGrad(ParticleSet& P, int iat, GradType& grad_
     int jat = *it-FirstIndex;
     PosType dr = BFTrans->newQP[*it] - BFTrans->QP.R[*it];
     BFTrans->QP.makeMoveAndCheck(*it,dr);
-    Phi->evaluate(BFTrans->QP, *it, psiV, dpsiV, d2psiV);
+    Phi->evaluate(BFTrans->QP, *it, BFTrans->QP.activeR(*it), psiV, dpsiV, d2psiV);
     for(int orb=0; orb<psiV.size(); orb++)
       psiM_temp(orb,jat) = psiV[orb];
     std::copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp.begin(jat));

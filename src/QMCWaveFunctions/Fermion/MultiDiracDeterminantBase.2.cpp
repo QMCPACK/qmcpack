@@ -172,7 +172,7 @@ namespace qmcplusplus
     UpdateMode=ORB_PBYP_RATIO;
     RatioTimer.start();
     evalOrbTimer.start();
-    Phi->evaluate(P,iat,psiV);
+    Phi->evaluate(P,iat,P.activeR(iat),psiV);
     evalOrbTimer.stop();
     WorkingIndex = iat-FirstIndex;
     if(NumPtcls==1)
@@ -220,7 +220,7 @@ namespace qmcplusplus
   {
     UpdateMode=ORB_PBYP_PARTIAL;
     evalOrb1Timer.start();
-    Phi->evaluate(P,iat,psiV,dpsiV,d2psiV);
+    Phi->evaluate(P,iat,P.activeR(iat),psiV,dpsiV,d2psiV);
     evalOrb1Timer.stop();
     WorkingIndex = iat-FirstIndex;
     if(NumPtcls==1)
@@ -340,7 +340,7 @@ namespace qmcplusplus
   void MultiDiracDeterminantBase::evaluateAllForPtclMove(ParticleSet& P, int iat)
   {
     UpdateMode=ORB_PBYP_ALL;
-    Phi->evaluate(P,iat,psiV,dpsiV,d2psiV);
+    Phi->evaluate(P,iat,P.activeR(iat),psiV,dpsiV,d2psiV);
     WorkingIndex = iat-FirstIndex;
     if(NumPtcls==1)
     {
