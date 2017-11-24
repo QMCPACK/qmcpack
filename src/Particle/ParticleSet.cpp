@@ -53,7 +53,7 @@ ParticleSet::ParticleSet()
   : UseBoundBox(true), UseSphereUpdate(true), IsGrouped(true)
   , ThreadID(0), SK(0), ParentName("0")
   , quantum_domain(classical), TotalNum(0)
-  , SameMass(true), myTwist(0.0), activeWalker(nullptr)
+  , SameMass(true), myTwist(0.0), activePtcl(-1)
 {
   initPropertyList();
   add_p_timer(myTimers);
@@ -62,7 +62,7 @@ ParticleSet::ParticleSet()
 ParticleSet::ParticleSet(const ParticleSet& p)
   : UseBoundBox(p.UseBoundBox), UseSphereUpdate(p.UseSphereUpdate),IsGrouped(p.IsGrouped)
   , ThreadID(0), mySpecies(p.getSpeciesSet()),SK(0), ParentName(p.parentName())
-  , SameMass(true), myTwist(0.0), activeWalker(nullptr)
+  , SameMass(true), myTwist(0.0), activePtcl(-1)
 {
   set_quantum_domain(p.quantum_domain);
   assign(p); //only the base is copied, assumes that other properties are not assignable
@@ -820,15 +820,6 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 
   Ready4Measure=false;
   activePtcl=-1;
-}
-
-void ParticleSet::loadWalker(Walker_t* awalker)
-{
-  if(activeWalker != awalker)
-  {
-    activeWalker=awalker;
-    R = awalker->R;
-  }
 }
 
 void ParticleSet::saveWalker(Walker_t& awalker)
