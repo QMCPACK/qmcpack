@@ -357,6 +357,15 @@ public:
    * Introduced to work with update-only methods.
    */
   void setActive(int iat);
+
+  /** return the position of the active partice
+   *
+   * activePtcl=-1 is used to flag non-physical moves
+   */
+  inline PosType activeR(int iat) const
+  {
+    return (activePtcl == iat)? activePos:R[iat];
+  }
   
   /**move a particle
    *@param iat the index of the particle to be moved
