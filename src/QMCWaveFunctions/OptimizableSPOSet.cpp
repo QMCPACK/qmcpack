@@ -359,7 +359,7 @@ OptimizableSPOSet::evaluateDerivatives
   // Evaluate basis states
   if (BasisOrbitals)
   {
-    BasisOrbitals->evaluate(P,iat,P.R[iat],BasisVal);
+    BasisOrbitals->evaluate(P,iat,BasisVal);
     std::vector<TinyVector<int,2> >::iterator iter;
     std::vector<TinyVector<int,2> >& act = ActiveBasis[iat];
     for (iter=act.begin(); iter != act.end(); iter++)
@@ -377,12 +377,12 @@ OptimizableSPOSet::evaluateDerivatives
 }
 
 void
-OptimizableSPOSet::evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi)
+OptimizableSPOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
-  GSOrbitals->evaluate(P,iat,p_iat,GSVal);
+  GSOrbitals->evaluate(P,iat,GSVal);
   if (BasisOrbitals)
   {
-    BasisOrbitals->evaluate(P,iat,p_iat,BasisVal);
+    BasisOrbitals->evaluate(P,iat,BasisVal);
     BLAS::gemv_trans (N, M, C->data(), &(BasisVal[0]), &(psi[0]));
   }
   else
@@ -405,15 +405,15 @@ OptimizableSPOSet::evaluate(const ParticleSet& P, const PosType& r,
 }
 
 void
-OptimizableSPOSet::evaluate(const ParticleSet& P, int iat, const PosType& p_iat,
+OptimizableSPOSet::evaluate(const ParticleSet& P, int iat,
                             ValueVector_t& psi, GradVector_t& dpsi,
                             ValueVector_t& d2psi)
 {
-  GSOrbitals->evaluate(P,iat,p_iat,GSVal,GSGrad,GSLapl);
+  GSOrbitals->evaluate(P,iat,GSVal,GSGrad,GSLapl);
   const ValueMatrix_t& cref(*C);
   if (BasisOrbitals)
   {
-    BasisOrbitals->evaluate(P,iat,p_iat,BasisVal,BasisGrad,BasisLapl);
+    BasisOrbitals->evaluate(P,iat,BasisVal,BasisGrad,BasisLapl);
     BLAS::gemv_trans (N, M, C->data(), &(BasisVal[0]),  &(psi[0]));
     BLAS::gemv_trans (N, M, C->data(), &(BasisLapl[0]), &(d2psi[0]));
     for (int iorb=0; iorb<N; iorb++)
@@ -470,7 +470,7 @@ OptimizableSPOSet::evaluateBasis (const ParticleSet &P, int first, int last,
   {
     for (int iat=first; iat<last; iat++)
     {
-      GSOrbitals->evaluate (P, iat, P.R[iat],GSVal, GSGrad, GSLapl);
+      GSOrbitals->evaluate(P, iat, GSVal, GSGrad, GSLapl);
       for (int i=0; i<M; i++)
       {
         basis_val (iat-first,i) = GSVal[N+i];

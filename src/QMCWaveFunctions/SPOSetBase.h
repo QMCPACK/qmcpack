@@ -180,7 +180,7 @@ public:
    * @param psi values of the SPO
    */
   virtual void
-  evaluate(const ParticleSet& P, int iat, const PosType& pos_iat, ValueVector_t& psi)=0;
+  evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)=0;
 
   /** compute dot_product of new row and old row */
   virtual ValueType RATIO(const ParticleSet& P, int iat, const ValueType*
@@ -206,7 +206,7 @@ public:
    * @param psi values of the SPO
    */
   virtual void
-  evaluate(const ParticleSet& P, int iat, const PosType& pos_iat,
+  evaluate(const ParticleSet& P, int iat,
            ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)=0;
 
   /** evaluate the values, gradients and hessians of this single-particle orbital set

@@ -423,7 +423,7 @@ OrbitalBase::ValueType SlaterDetOpt::ratioGrad(ParticleSet& P, int iat, GradType
     return 1.0;
 
   // compute orbital values, gradients, and summed second derivatives for the particle's new position
-  Phi->evaluate(P, iat, P.activeR(iat), m_orb_val_vec, m_orb_der_vec, m_orb_lap_vec);
+  Phi->evaluate(P, iat, m_orb_val_vec, m_orb_der_vec, m_orb_lap_vec);
 
   // compute the ratio of new to old determinant values
   curRatio = simd::dot(m_orb_inv_mat[iat-m_first], m_orb_val_vec.data(), m_nel);
@@ -451,7 +451,7 @@ OrbitalBase::ValueType SlaterDetOpt::ratio(ParticleSet& P, int iat) {
     return 1.0;
 
   // compute orbital values, gradients, and summed second derivatives for the particle's new position
-  Phi->evaluate(P, iat, P.activeR(iat), m_orb_val_vec, m_orb_der_vec, m_orb_lap_vec);
+  Phi->evaluate(P, iat, m_orb_val_vec, m_orb_der_vec, m_orb_lap_vec);
 
   // compute the ratio of new to old determinant values
   curRatio = simd::dot(m_orb_inv_mat[iat-m_first], m_orb_val_vec.data(), m_nel);

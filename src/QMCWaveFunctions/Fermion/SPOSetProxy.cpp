@@ -52,18 +52,18 @@ void SPOSetProxy::setOrbitalSetSize(int norbs)
   d2psiV.resize(norbs);
 }
 
-void SPOSetProxy::evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi)
+void SPOSetProxy::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
-  refPhi->evaluate(P, iat, p_iat,psiV);
+  refPhi->evaluate(P, iat, psiV);
   std::copy(psiV.begin(),psiV.begin()+OrbitalSetSize,psi.begin());
 // mmorales: needed for MultiSlaterDeterminant moves: put an if statement??
   std::copy(psiV.begin(),psiV.end(),psiM[iat]);
 }
 
-void SPOSetProxy::evaluate(const ParticleSet& P, int iat, const PosType& p_iat,
+void SPOSetProxy::evaluate(const ParticleSet& P, int iat,
                            ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
 {
-  refPhi->evaluate(P, iat, p_iat, psiV,dpsiV,d2psiV);
+  refPhi->evaluate(P, iat, psiV, dpsiV, d2psiV);
   std::copy(psiV.begin(),psiV.begin()+OrbitalSetSize,psi.begin());
   std::copy(dpsiV.begin(),dpsiV.begin()+OrbitalSetSize,dpsi.begin());
   std::copy(d2psiV.begin(),d2psiV.begin()+OrbitalSetSize,d2psi.begin());

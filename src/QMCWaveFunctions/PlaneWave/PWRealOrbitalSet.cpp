@@ -103,19 +103,19 @@ void PWRealOrbitalSet::addVector(const std::vector<ComplexType>& coefs,int jorb)
 }
 
 void
-PWRealOrbitalSet::evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi)
+PWRealOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
-  myBasisSet->evaluate(p_iat);
+  myBasisSet->evaluate(P.activeR(iat));
   MatrixOperators::product(CC,myBasisSet->Zv,tempPsi.data());
   for(int j=0; j<OrbitalSetSize; j++)
     psi[j]=tempPsi[j].real();
 }
 
 void
-PWRealOrbitalSet::evaluate(const ParticleSet& P, int iat, const PosType& p_iat,
+PWRealOrbitalSet::evaluate(const ParticleSet& P, int iat,
                            ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
 {
-  myBasisSet->evaluateAll(P,iat,p_iat);
+  myBasisSet->evaluateAll(P,iat);
   MatrixOperators::product(CC,myBasisSet->Z,Temp);
   const ComplexType* restrict tptr=Temp.data();
   for(int j=0; j< OrbitalSetSize; j++, tptr+=PW_MAXINDEX)
@@ -140,7 +140,7 @@ PWRealOrbitalSet::evaluate_notranspose(const ParticleSet& P, int first, int last
 {
   for(int iat=first,i=0; iat<last; iat++,i++)
   {
-    myBasisSet->evaluateAll(P,iat,P.R[iat]);
+    myBasisSet->evaluateAll(P,iat);
     MatrixOperators::product(CC,myBasisSet->Z,Temp);
     const ComplexType* restrict tptr=Temp.data();
     for(int j=0; j< OrbitalSetSize; j++,tptr+=PW_MAXINDEX)

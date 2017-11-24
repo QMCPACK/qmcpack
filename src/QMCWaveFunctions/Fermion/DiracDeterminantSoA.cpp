@@ -173,7 +173,7 @@ namespace qmcplusplus
     {
       UpdateMode=ORB_PBYP_RATIO;
       WorkingIndex = iat-FirstIndex;
-      Phi->evaluate(P, iat, P.activeR(iat), psiV);
+      Phi->evaluate(P, iat, psiV);
       curRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
       return curRatio;
     }

@@ -141,10 +141,10 @@ AFMSPOSet::evaluateDerivatives
 }
 
 void
-AFMSPOSet::evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi)
+AFMSPOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
-  GSOrbitals->evaluate(P,iat,p_iat,GSVal);
-  BasisOrbitals->evaluate(P,iat,p_iat,BasisVal);
+  GSOrbitals->evaluate(P,iat,GSVal);
+  BasisOrbitals->evaluate(P,iat,BasisVal);
   for (int i=0; i<N; i++)
     psi[i] = costheta*GSVal[i] + pm*sintheta*BasisVal[i];
 }
@@ -158,12 +158,12 @@ AFMSPOSet::evaluate(const ParticleSet& P, const PosType& r,
 }
 
 void
-AFMSPOSet::evaluate(const ParticleSet& P, int iat, const PosType& p_iat,
+AFMSPOSet::evaluate(const ParticleSet& P, int iat,
                     ValueVector_t& psi, GradVector_t& dpsi,
                     ValueVector_t& d2psi)
 {
-  GSOrbitals->evaluate(P,iat,p_iat,GSVal,GSGrad,GSLapl);
-  BasisOrbitals->evaluate(P,iat,p_iat,BasisVal,BasisGrad,BasisLapl);
+  GSOrbitals->evaluate(P,iat,GSVal,GSGrad,GSLapl);
+  BasisOrbitals->evaluate(P,iat,BasisVal,BasisGrad,BasisLapl);
   for (int iorb=0; iorb<N; iorb++)
   {
     psi  [iorb] = costheta*GSVal[iorb] + pm*sintheta*BasisVal[iorb];

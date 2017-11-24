@@ -80,9 +80,9 @@ namespace qmcplusplus
     //SPOSetBase interface methods
     SPOSetBase* makeClone() const;
 
-    void evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi);
+    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
 
-    void evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi, 
+    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi,
                   GradVector_t& dpsi, ValueVector_t& d2psi);
 
     void evaluate_notranspose(const ParticleSet& P, int first, int last, 

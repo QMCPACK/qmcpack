@@ -229,7 +229,7 @@ RNDiracDeterminantBaseAlternate::ValueType RNDiracDeterminantBaseAlternate::rati
 {
   UpdateMode=ORB_PBYP_RATIO;
   WorkingIndex = iat-FirstIndex;
-  Phi->evaluate(P, iat, P.activeR(iat), psiV);
+  Phi->evaluate(P, iat, psiV);
   RatioTimer.start();
   curRatio = DetRatioByRow(psiM, psiV,WorkingIndex);
   if (std::abs(curRatio)< std::numeric_limits<RealType>::epsilon())
@@ -312,7 +312,7 @@ RNDiracDeterminantBaseAlternate::evalGradSource
 RNDiracDeterminantBaseAlternate::ValueType
 RNDiracDeterminantBaseAlternate::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
-  Phi->evaluate(P, iat, P.activeR(iat), psiV, dpsiV, d2psiV);
+  Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
   RatioTimer.start();
   WorkingIndex = iat-FirstIndex;
   UpdateMode=ORB_PBYP_PARTIAL;
@@ -338,7 +338,7 @@ RNDiracDeterminantBaseAlternate::ratioGrad(ParticleSet& P, int iat, GradType& gr
 RNDiracDeterminantBaseAlternate::ValueType
 RNDiracDeterminantBaseAlternate::alternateRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
-  Phi->evaluate(P, iat, P.activeR(iat), psiV, dpsiV, d2psiV);
+  Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
   RatioTimer.start();
   WorkingIndex = iat-FirstIndex;
   UpdateMode=ORB_PBYP_PARTIAL;

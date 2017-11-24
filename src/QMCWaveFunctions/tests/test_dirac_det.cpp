@@ -62,10 +62,10 @@ class FakeSPO : public SPOSetBase
   virtual void setOrbitalSetSize(int norbs);
 
   virtual void
-  evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi);
+  evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
 
   virtual void
-  evaluate(const ParticleSet& P, int iat, const PosType& p_iat,
+  evaluate(const ParticleSet& P, int iat,
            ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
 
   virtual void
@@ -137,7 +137,7 @@ void FakeSPO::setOrbitalSetSize(int norbs)
 }
 
 void
-FakeSPO::evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi)
+FakeSPO::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
   if (OrbitalSetSize == 3) {
     for (int i = 0; i < 3; i++) {
@@ -151,7 +151,7 @@ FakeSPO::evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVect
 }
 
 void
-FakeSPO::evaluate(const ParticleSet& P, int iat, 
+FakeSPO::evaluate(const ParticleSet& P, int iat,
            ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)
 {
   for (int i = 0; i < 3; i++) {
@@ -159,7 +159,7 @@ FakeSPO::evaluate(const ParticleSet& P, int iat,
   }
 }
 void
-FakeSPO::evaluate(const ParticleSet& P, int iat, const PosType& p_iat,
+FakeSPO::evaluate(const ParticleSet& P, int iat,
            ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
 {
   if (OrbitalSetSize == 3) {

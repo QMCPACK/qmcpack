@@ -57,12 +57,12 @@ void SPOSetProxyForMSD::setOrbitalSetSize(int norbs)
 
 void SPOSetProxyForMSD::evaluateForPtclMove(const ParticleSet& P, int iat)
 {
-  refPhi->evaluate(P, iat, P.activePos, psiV);
+  refPhi->evaluate(P, iat, psiV);
 }
 
 void SPOSetProxyForMSD::evaluateAllForPtclMove(const ParticleSet& P, int iat)
 {
-  refPhi->evaluate(P, iat, P.activePos, psiV,dpsiV,d2psiV);
+  refPhi->evaluate(P, iat, psiV, dpsiV, d2psiV);
 }
 
 void SPOSetProxyForMSD::evaluateForWalkerMove(const ParticleSet& P, int first, int last)
@@ -80,7 +80,7 @@ void SPOSetProxyForMSD::evaluateForWalkerMoveWithThirdDeriv(const ParticleSet& P
   refPhi->evaluate_notranspose(P,first,last,psiM,dpsiM,grad_grad_psiM,grad_grad_grad_psiM);
 }
 
-void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi)
+void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
   int n=occup.cols();
   for(int i=0; i<n; i++)
@@ -90,8 +90,8 @@ void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int iat, const PosType& p
   }
 }
 
-void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int iat,const PosType& p_iat
-                                 , ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int iat,
+                                 ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
 {
   int n=occup.cols();
   for(int i=0; i<n; i++)
@@ -103,8 +103,8 @@ void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int iat,const PosType& p_
   }
 }
 
-void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int first, int last
-                                 , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
+void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int first, int last,
+                                 ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
 {
   int n=occup.cols();
   for(int k=first,p=0; k<last; k++,p++)
@@ -119,8 +119,8 @@ void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int first, int last
   }
 }
 
-void SPOSetProxyForMSD::evaluate_notranspose(const ParticleSet& P, int first, int last
-    , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
+void SPOSetProxyForMSD::evaluate_notranspose(const ParticleSet& P, int first, int last,
+    ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
 {
   int n=occup.cols();
   for(int k=first,p=0; k<last; k++,p++)
@@ -135,8 +135,8 @@ void SPOSetProxyForMSD::evaluate_notranspose(const ParticleSet& P, int first, in
   }
 }
 
-void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int first, int last
-                                 , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
+void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int first, int last,
+                                 ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
 {
   int n=occup.cols();
   for(int k=first,p=0; k<last; k++,p++)
@@ -151,9 +151,9 @@ void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int first, int last
   }
 }
 
-void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int first, int last
-                                 , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet
-                                 , GGGMatrix_t& grad_grad_grad_logdet)
+void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int first, int last,
+                                 ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet,
+                                 GGGMatrix_t& grad_grad_grad_logdet)
 {
   int n=occup.cols();
   for(int k=first,p=0; k<last; k++,p++)
@@ -169,8 +169,8 @@ void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int first, int last
   }
 }
 
-void SPOSetProxyForMSD::evaluate_notranspose(const ParticleSet& P, int first, int last
-    , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
+void SPOSetProxyForMSD::evaluate_notranspose(const ParticleSet& P, int first, int last,
+     ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
 {
   int n=occup.cols();
   for(int k=first,p=0; k<last; k++,p++)
@@ -185,9 +185,9 @@ void SPOSetProxyForMSD::evaluate_notranspose(const ParticleSet& P, int first, in
   }
 }
 
-void SPOSetProxyForMSD::evaluate_notranspose(const ParticleSet& P, int first, int last
-    , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet
-    , GGGMatrix_t& grad_grad_grad_logdet)
+void SPOSetProxyForMSD::evaluate_notranspose(const ParticleSet& P, int first, int last,
+     ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet,
+     GGGMatrix_t& grad_grad_grad_logdet)
 {
   int n=occup.cols();
   for(int k=first,p=0; k<last; k++,p++)

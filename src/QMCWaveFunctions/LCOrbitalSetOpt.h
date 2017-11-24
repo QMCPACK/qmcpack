@@ -506,7 +506,7 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
         for (Iter it = pstart; it != pend; it++, i++) {
 
           // evaluate basis set data using the internal spo set if we have one
-          if ( m_spo_set ) m_spo_set->evaluate(P, *it, P.activeR(*it), m_temp_p, m_temp_g, m_temp_l);
+          if ( m_spo_set ) m_spo_set->evaluate(P, *it, m_temp_p, m_temp_g, m_temp_l);
 
           // evaluate basis set data for a particle move
           else if ( mt == 'p' ) m_basis_set->evaluateAllForPtclMove(P, *it);
@@ -689,7 +689,7 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
     ///                              On exit, holds the linear combinations' values for the specified particle position.
     ///
     ///////////////////////////////////////////////////////////////////////////////////////////////////
-    inline void evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi) {
+    inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi) {
 
       // check input vector dimension
       this->check_input_dim("psi", "LCOrbitalSetOpt::evaluate", psi.size(), this->OrbitalSetSize);
@@ -721,7 +721,7 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
     ///                              On exit, each element is the sum of x^2, y^2, and z^2 second derivatives for the specified particle position.
     ///
     ///////////////////////////////////////////////////////////////////////////////////////////////////
-    inline void evaluate(const ParticleSet& P, int iat, const PosType& p_iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) {
+    inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) {
 
       // check sanity
       this->check_input_dim("d2psi", "LCOrbitalSetOpt::evaluate", d2psi.size(), this->OrbitalSetSize);
