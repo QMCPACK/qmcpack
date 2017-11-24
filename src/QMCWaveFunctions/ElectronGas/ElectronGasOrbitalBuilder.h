@@ -88,7 +88,7 @@ struct RealEGOSet: public SPOSetBase
 
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
-    const PosType &r=P.activePtcl==iat?P.activePos:P.R[iat];
+    const PosType &r=P.activeR(iat);
     RealType sinkr,coskr;
     psi[0]=1.0;
     for(int ik=0, j=1; ik<KptMax; ik++)
@@ -111,7 +111,7 @@ struct RealEGOSet: public SPOSetBase
     psi[0]=1.0;
     dpsi[0]=0.0;
     d2psi[0]=0.0;
-    const PosType &r=P.activePtcl==iat?P.activePos:P.R[iat];
+    const PosType &r=P.activeR(iat);
     RealType coskr, sinkr;
     for(int ik=0,j1=1; ik<KptMax; ik++,j1+=2)
     {
@@ -138,7 +138,7 @@ struct RealEGOSet: public SPOSetBase
     psi[0]=1.0;
     dpsi[0]=0.0;
     hess[0]=0.0;
-    const PosType &r=P.activePtcl==iat?P.activePos:P.R[iat];
+    const PosType &r=P.activeR(iat);
     RealType coskr, sinkr;
     for(int ik=0,j1=1; ik<KptMax; ik++,j1+=2)
     {

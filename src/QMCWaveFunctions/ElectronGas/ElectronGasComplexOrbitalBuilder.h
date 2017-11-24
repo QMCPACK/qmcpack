@@ -47,7 +47,7 @@ struct EGOSet: public SPOSetBase
   inline void
   evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
-    const PosType &r=P.activePtcl==iat?P.activePos:P.R[iat];
+    const PosType &r=P.activeR(iat);
     RealType sinkr,coskr;
     for(int ik=0; ik<KptMax; ik++)
     {
@@ -67,7 +67,7 @@ struct EGOSet: public SPOSetBase
   evaluate(const ParticleSet& P, int iat,
            ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
-    const PosType &r=P.activePtcl==iat?P.activePos:P.R[iat];
+    const PosType &r=P.activeR(iat);
     RealType sinkr,coskr;
     for(int ik=0; ik<KptMax; ik++)
     {

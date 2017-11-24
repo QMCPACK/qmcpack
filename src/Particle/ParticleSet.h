@@ -362,7 +362,7 @@ public:
    *
    * activePtcl=-1 is used to flag non-physical moves
    */
-  inline PosType activeR(int iat) const
+  inline const PosType& activeR(int iat) const
   {
     return (activePtcl == iat)? activePos:R[iat];
   }
