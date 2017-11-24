@@ -199,9 +199,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
         GradType grad_iat;
         Psi.ratioGrad(W,iat,grad_iat);
         Psi.acceptMove(W,iat);
-#ifndef ENABLE_SOA
         W.acceptMove(iat);
-#endif
         RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
         // debugging lines
         //W.update(true);
