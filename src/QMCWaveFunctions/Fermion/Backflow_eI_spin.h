@@ -185,37 +185,37 @@ public:
     case ORB_PBYP_RATIO:
       num = UIJ.cols();
       for(int i=0; i<num; i++)
-        UIJ(iat,i) = UIJ_temp(i);
+        UIJ(iat,i) = UIJ_temp[i];
       break;
     case ORB_PBYP_PARTIAL:
       num = UIJ.cols();
       for(int i=0; i<num; i++)
-        UIJ(iat,i) = UIJ_temp(i);
+        UIJ(iat,i) = UIJ_temp[i];
       num = AIJ.cols();
       for(int i=0; i<num; i++)
-        AIJ(iat,i) = AIJ_temp(i);
+        AIJ(iat,i) = AIJ_temp[i];
       break;
     case ORB_PBYP_ALL:
       num = UIJ.cols();
       for(int i=0; i<num; i++)
-        UIJ(iat,i) = UIJ_temp(i);
+        UIJ(iat,i) = UIJ_temp[i];
       num = AIJ.cols();
       for(int i=0; i<num; i++)
-        AIJ(iat,i) = AIJ_temp(i);
+        AIJ(iat,i) = AIJ_temp[i];
       num = BIJ.cols();
       for(int i=0; i<num; i++)
-        BIJ(iat,i) = BIJ_temp(i);
+        BIJ(iat,i) = BIJ_temp[i];
       break;
     default:
       num = UIJ.cols();
       for(int i=0; i<num; i++)
-        UIJ(iat,i) = UIJ_temp(i);
+        UIJ(iat,i) = UIJ_temp[i];
       num = AIJ.cols();
       for(int i=0; i<num; i++)
-        AIJ(iat,i) = AIJ_temp(i);
+        AIJ(iat,i) = AIJ_temp[i];
       num = BIJ.cols();
       for(int i=0; i<num; i++)
-        BIJ(iat,i) = BIJ_temp(i);
+        BIJ(iat,i) = BIJ_temp[i];
       break;
     }
     UIJ_temp=0.0;
@@ -298,7 +298,7 @@ public:
               hess[8] += uij;
               Amat(jat,jat) += hess;
               //u = (d2u+4.0*du)*myTable->dr(nn);
-              Bmat(jat) += (BIJ(jat,iat)=(d2u+4.0*du)*myTable->dr(nn));
+              Bmat[jat] += (BIJ(jat,iat)=(d2u+4.0*du)*myTable->dr(nn));
             }
           else
             nn+=t_offset[tg+1]-t_offset[tg];//move forward by the number of particles in the group tg
@@ -371,7 +371,7 @@ public:
         for(int j=s_offset[sg]; j< s_offset[sg+1]; ++j)
         {
           RealType uij = func->evaluate(myTable->Temp[j].r1,du,d2u);
-          PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+          PosType u = (UIJ_temp[j]=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
           newQP[iat] += u;
         }
       }
@@ -399,9 +399,9 @@ public:
         for(int j=s_offset[sg]; j< s_offset[sg+1]; ++j)
         {
           RealType uij = func->evaluate(myTable->Temp[j].r1,du,d2u);
-          PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+          PosType u = (UIJ_temp[j]=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
           newQP[iat] += u;
-          HessType& hess = AIJ_temp(j);
+          HessType& hess = AIJ_temp[j];
           hess = (du*myTable->Temp[j].rinv1)*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
           hess[0] += uij;
           hess[4] += uij;
@@ -434,17 +434,17 @@ public:
         for(int j=s_offset[sg]; j< s_offset[sg+1]; ++j)
         {
           RealType uij = func->evaluate(myTable->Temp[j].r1,du,d2u);
-          PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+          PosType u = (UIJ_temp[j]=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
           newQP[iat] += u;
           du *= myTable->Temp[j].rinv1;
-          HessType& hess = AIJ_temp(j);
+          HessType& hess = AIJ_temp[j];
           hess = du*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
           hess[0] += uij;
           hess[4] += uij;
           hess[8] += uij;
           Amat(iat,iat) += (hess - AIJ(iat,j));
-          BIJ_temp(j)=(d2u+4.0*du)*myTable->Temp[j].dr1;
-          Bmat_full(iat,iat) += (BIJ_temp(j)-BIJ(iat,j));
+          BIJ_temp[j]=(d2u+4.0*du)*myTable->Temp[j].dr1;
+          Bmat_full(iat,iat) += (BIJ_temp[j]-BIJ(iat,j));
         }
       }
     }

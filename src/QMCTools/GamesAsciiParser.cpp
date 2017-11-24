@@ -37,6 +37,7 @@ GamesAsciiParser::GamesAsciiParser()
   angular_type="cartesian";
   readtype=0;
   NFZC=0;
+  ECP=false;
 }
 
 GamesAsciiParser::GamesAsciiParser(int argc, char** argv):
@@ -45,6 +46,7 @@ GamesAsciiParser::GamesAsciiParser(int argc, char** argv):
   basisName = "Gaussian-G2";
   Normalized = "no";
   usingECP=false;
+  ECP=false;
   BohrUnit=true;
   MOtype="Canonical";
   angular_type="cartesian";
@@ -119,6 +121,7 @@ void GamesAsciiParser::parse(const std::string& fname)
   if(usingECP)
   {
     std::cout <<"Using ECP." << std::endl;
+    ECP=true;
     search(fin,"NUMBER OF ELECTRONS KEPT IN THE CALCULATION IS",aline);
     parsewords(aline.c_str(),currentWords);
     NumberOfEls = atoi(currentWords[8].c_str());
@@ -364,6 +367,7 @@ void GamesAsciiParser::getGeometry(std::istream& is)
       // eureka!!!
     {
       usingECP=true;
+      ECP=true;
       core.resize(NumberOfAtoms);
       getwords(currentWords,is); // -------------
 // this only works if all atoms have an ECP, fix later

@@ -26,6 +26,7 @@
 #include "Message/CommOperators.h"
 #include "tau/profiler.h"
 #include "Particle/Reptile.h"
+#include "Utilities/RunTimeManager.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
@@ -54,30 +55,21 @@ namespace qmcplusplus
     m_param.add (beads, "beads", "int");
     m_param.add (resizeReptile, "resize", "int");
     m_param.add (prestepsVMC, "vmcpresteps", "int");
-    // if (w.reptile_new==0){w.reptile_new = new Reptile_new(&w);};
-
-    // w.reptile_new->loadFromWalkerList(w.WalkerList);
-//  app_log()<<"  reptile_new.size()="<<w.reptile_new->size()<< std::endl;
-//  app_log()<<"  WalkerList.size()="<<w.WalkerList.size()<< std::endl;
 
     Action.resize (3);
     Action[0] = w.addProperty ("ActionBackward");
     Action[1] = w.addProperty ("ActionForward");
     Action[2] = w.addProperty ("ActionLocal");
-//     app_log()<<Action[0]<<" "<<Action[1]<<" "<<Action[2]<< std::endl;
     TransProb.resize (2);
     TransProb[0] = w.addProperty ("TransProbBackward");
     TransProb[1] = w.addProperty ("TransProbForward");
-//     app_log()<<TransProb[0]<<" "<<TransProb[1]<< std::endl;
   }
 
   bool RMCSingleOMP::run ()
   {
     resetRun ();
     //start the main estimator
-//  app_log()<<"Starting Estimators\n";
     Estimators->start (nBlocks);
-//  app_log()<<"Starting Movers\n";
     for (int ip = 0; ip < NumThreads; ++ip)
       Movers[ip]->startRun (nBlocks, false);
 #if !defined(REMOVE_TRACEMANAGER)
@@ -85,65 +77,57 @@ namespace qmcplusplus
 #endif
     const bool has_collectables = W.Collectables.size ();
 
+    LoopTimer rmc_loop;
+    RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
     for (int block = 0; block < nBlocks; ++block)
-      {
-	//    app_log()<<"Block "<<block<< std::endl;
+    {
+      rmc_loop.start();
 #pragma omp parallel
 	{
 	  int ip = omp_get_thread_num ();
-	  //IndexType updatePeriod=(QMCDriverMode[QMC_UPDATE_MODE])?Period4CheckProperties:(nBlocks+1)*nSteps;
 	  IndexType updatePeriod =
 	    (QMCDriverMode[QMC_UPDATE_MODE]) ? Period4CheckProperties : 0;
 	  //assign the iterators and resuse them
 	  MCWalkerConfiguration::iterator wit (W.begin () + wPerNode[ip]),
 	    wit_end (W.begin () + wPerNode[ip + 1]);
-//         MCWalkerConfiguration::iterator wit(first);
 	  Movers[ip]->startBlock (nSteps);
 	  int now_loc = CurrentStep;
 
-	  RealType cnorm =
-	    1.0 / static_cast < RealType > (wPerNode[ip + 1] - wPerNode[ip]);
-
-
+	  RealType cnorm = 1.0; //This is because there is only one reptile per walkerset.
 
 	  for (int step = 0; step < nSteps; ++step)
 	    {
 	      //collectables are reset, it is accumulated while advancing walkers
 	      wClones[ip]->resetCollectables ();
-//           wit=first;
 	      Movers[ip]->advanceWalkers (wit, wit_end, false);
 	      if (has_collectables)
 		wClones[ip]->Collectables *= cnorm;
-//           wit=first;
 	      Movers[ip]->accumulate (wit, wit_end);
 
 	      ++now_loc;
-	      //if (updatePeriod&& now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);
 	      if (Period4WalkerDump && now_loc % myPeriod4WalkerDump == 0)
 		wClones[ip]->saveEnsemble (wit, wit_end);
 
 	      branchEngine->collect (CurrentStep, W, branchClones);	//Ray Clay:  For now, collects and syncs based on first reptile.  Need a better way to do this.
 	    }
-	  // wClones[ip]->reptile->calcTauScaling();
-	  // wClones[ip]->reptile->calcERun();
-	  //branchEngine->collect(CurrentStep, W, branchClones);
-	  // wClones[ip]->reptile->resetR2Avg();
 	  Movers[ip]->stopBlock (false);
-	  //  if (block > 2*wClones[ip]->reptile->nbeads){
-	  //       wClones[ip]->reptile->printState();
-	  //       ((RMCUpdateAllWithDrift*)Movers[ip])->checkReptile(wit,wit_end);
-
-	  //      if (block>1) branchEngine->updateReptileStats(*wClones[ip]);
-
-	  //}
 	}			//end-of-parallel for
-	//Estimators->accumulateCollectables(wClones,nSteps);
 	CurrentStep += nSteps;
-	// branchEngine->collect(CurrentStep, W, branchClones);
 	Estimators->stopBlock (estimatorClones);
 	//why was this commented out? Are checkpoints stored some other way?
 	if (storeConfigs)
 	  recordBlock (block);
+
+        rmc_loop.stop();
+        bool enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(rmc_loop);
+        // Rank 0 decides whether the time limit was reached
+        myComm->bcast(enough_time_for_next_iteration);
+
+        if (!enough_time_for_next_iteration)
+        {
+          app_log() << runtimeControl.time_limit_message("RMC", block);
+          break;
+        }
       }				//block
     Estimators->stop (estimatorClones);
     //copy back the random states
@@ -151,9 +135,6 @@ namespace qmcplusplus
       *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
     //return nbeads and stuff to its orginal unset state;
     resetVars ();
-   // app_log () << "Reptile State of Thread #0\n";
-    //W.ReptileList[0]->printState ();
-    //finalize a qmc section
     return finalize (nBlocks);
   }
 
@@ -225,29 +206,6 @@ namespace qmcplusplus
     //Now that we know if we're starting from scratch... decide whether to force VMC warmup.
     if (prestepsVMC == -1 && fromScratch == true)
       prestepsVMC = beads + 2;
-/*  if(resizeReptile<2)
-    {
-//     compute number of beads you need. either by looking at the beads parameter, or by looking at beta and tau.
-      if(beads<1)
-        beads=beta/Tau;
-      else
-        beta=beads*Tau;
-      //here we resize the number of walkers if it is wrong.
-      //new walkers go on the end of W
-      int nwtot= beads*NumThreads;
-      FairDivideLow(nwtot,NumThreads,wPerNode);
-      if(W.getActiveWalkers()-nwtot !=0)
-        addWalkers(nwtot-W.getActiveWalkers());
-        
-       //   W.reptile_new->loadFromWalkerList(W.WalkerList);
- // app_log()<<"  reptile_new.size()="<<W.reptile_new->size()<< std::endl;
-  //app_log()<<"  WalkerList.size()="<<W.WalkerList.size()<< std::endl;
-    }
-  else
-    {
-      ///Norm
-      app_log()<<"resizing the reptile not yet implemented."<< std::endl;
-    }*/
     makeClones (W, Psi, H);
     myPeriod4WalkerDump =
       (Period4WalkerDump > 0) ? Period4WalkerDump : (nBlocks + 1) * nSteps;
@@ -259,7 +217,6 @@ namespace qmcplusplus
 	estimatorClones.resize (NumThreads, 0);
 	traceClones.resize (NumThreads, 0);
 	Rng.resize (NumThreads, 0);
-	//   W.loadEnsemble(wClones);
 	branchEngine->initReptile (W);
 #pragma omp parallel for
 	for (int ip = 0; ip < NumThreads; ++ip)
@@ -275,7 +232,6 @@ namespace qmcplusplus
 #endif
 	    hClones[ip]->setRandomGenerator (Rng[ip]);
 	    branchClones[ip] = new BranchEngineType (*branchEngine);
-	    // branchClones[ip]->initReptile(W);
 	    if (QMCDriverMode[QMC_UPDATE_MODE])
 	      {
 		os <<
@@ -338,36 +294,20 @@ namespace qmcplusplus
 	  {
 	    Movers[ip]->initWalkers (W.begin () + wPerNode[ip],
 				     W.begin () + wPerNode[ip + 1]);
-	    //  wClones[ip]->reptile = new Reptile(*wClones[ip], W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 	  }
 
-//	app_log () <<
-//	  "ResetRun()::Reptile state after resizing and init for thread #0\n";
-//	W.ReptileList[0]->printState ();
 	//this will "unroll" the reptile according to forced VMC steps (no bounce).  See beginning of function for logic of setting prestepVMC.
 	for (IndexType prestep = 0; prestep < prestepsVMC; prestep++)
 	  {
-//	    app_log () << "prestep# " << prestep << std::endl;
 	    Movers[ip]->advanceWalkers (W.begin (), W.begin (), true);
 	  }
-     
 
 	//set up initial action and transprob.
 	MCWalkerConfiguration::iterator wit (W.begin () + wPerNode[ip]),
 	  wit_end (W.begin () + wPerNode[ip + 1]);
-
-	//IndexType initsteps = wClones[ip]->reptile->nbeads * 2;
-
-
-/// thermalization Norm
-	//      for (int prestep=0; prestep<nWarmupSteps; ++prestep)
-//       {
-//           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-//         branchEngine->collect(CurrentStep, W, branchClones);
-//       }
-//         if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
-	//          Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
       }
+
+
     app_log()<<"Finished "<<prestepsVMC<<" VMC presteps\n";
     branchEngine->checkParameters (W);
 
@@ -376,10 +316,8 @@ namespace qmcplusplus
       {
 	for (int prestep = 0; prestep < nWarmupSteps; ++prestep)
 	  {
-	    //      app_log()<<"Advance Walkers\n";
 	    Movers[ip]->advanceWalkers (W.begin () + wPerNode[ip],
 					W.begin () + wPerNode[ip + 1], false);
-	    //  app_log()<<"Collect\n";
 	    branchEngine->collect (CurrentStep, W, branchClones);
 	  }
 	Movers[ip]->updateWalkers (W.begin () + wPerNode[ip],

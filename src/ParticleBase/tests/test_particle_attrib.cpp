@@ -35,13 +35,10 @@ TEST_CASE("particle_attrib_scalar", "[particle_base]")
   ParticleAttrib<double> PA1;
   REQUIRE(PA1.size() == 0);
 
-  PA1.create(4);
+  PA1.resize(4);
   REQUIRE(PA1.size() == 4);
 
-  ParticleAttrib<double> PA2("type_name", "object_name");
-  REQUIRE(PA2.size() == 0);
-
-  ParticleAttrib<double> PA3("type_name", "object_name",3);
+  ParticleAttrib<double> PA3(3);
   REQUIRE(PA3.size() == 3);
 
   REQUIRE(PA3[0] == 0.0);
@@ -65,10 +62,11 @@ TEST_CASE("particle_attrib_vector", "[particle_base]")
   ParticleAttrib<TinyVector<double, 2> > PA1;
   REQUIRE(PA1.size() == 0);
 
-  PA1.create(3);
+  PA1.resize(3);
   REQUIRE(PA1.size() == 3);
 
   PA1[0] = 1.0;
+  PA1[1] = 0.0;
   REQUIRE(PA1[0][0] == 1.0);
   REQUIRE(PA1[0][1] == 1.0);
   REQUIRE(PA1[1][0] == 0.0);

@@ -45,8 +45,6 @@ struct  J1OrbitalSoA : public OrbitalBase
   int Nelec;
   ///number of groups
   int NumGroups;
-  ///task id
-  int TaskID;
   ///reference to the sources (ions)
   const ParticleSet& Ions;
 
@@ -60,12 +58,12 @@ struct  J1OrbitalSoA : public OrbitalBase
   aligned_vector<valT> U, dU, d2U;
   aligned_vector<valT> DistCompressed;
   aligned_vector<int> DistIndice;
-  ParticleAttrib<posT> Grad;
-  ParticleAttrib<valT> Lap;
+  Vector<posT> Grad;
+  Vector<valT> Lap;
   ///Container for \f$F[ig*NumGroups+jg]\f$
   std::vector<FT*> F;
 
-  J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els) : Ions(ions),TaskID(0)
+  J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els) : Ions(ions)
   {
     initalize(els);
     myTableID=els.addTable(ions,DT_SOA);
@@ -144,7 +142,7 @@ struct  J1OrbitalSoA : public OrbitalBase
       for(int jg=0; jg<NumGroups; ++jg)
       {
         if(F[jg]!=nullptr) 
-          curAt += F[jg]->evaluateV(Ions.first(jg), Ions.last(jg), dist, DistCompressed.data() );
+          curAt += F[jg]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist, DistCompressed.data());
       }
     }
     else
@@ -217,7 +215,7 @@ struct  J1OrbitalSoA : public OrbitalBase
       for(int jg=0; jg<NumGroups; ++jg)
       {
         if(F[jg]==nullptr) continue;
-        F[jg]->evaluateVGL( Ions.first(jg), Ions.last(jg), dist, 
+        F[jg]->evaluateVGL(-1, Ions.first(jg), Ions.last(jg), dist,
             U.data(), dU.data(), d2U.data(), DistCompressed.data(), DistIndice.data());
       }
     }

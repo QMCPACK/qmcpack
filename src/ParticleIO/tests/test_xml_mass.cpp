@@ -99,7 +99,7 @@ const char *particles =
   int massind=tspecies.addAttribute("mass");
   char order[]="uuuudddd";
   for (int iat=0;iat<electrons.getTotalNum(); iat++){
-    int species_id = electrons.GroupID(iat);
+    int species_id = electrons.GroupID[iat];
     std::string species_name = tspecies.speciesName[species_id];
     REQUIRE(*species_name.c_str() == order[iat]);
     REQUIRE(tspecies(massind,species_id) == Approx(1.0));
@@ -110,7 +110,7 @@ const char *particles =
   int pmassind=pspecies.addAttribute("mass");
   char porder[]="HHHHHHHH";
   for (int iat=0;iat<ions.getTotalNum(); iat++){
-    int species_id = ions.GroupID(iat);
+    int species_id = ions.GroupID[iat];
     std::string species_name = pspecies.speciesName[species_id];
     REQUIRE(*species_name.c_str() == porder[iat]);
     REQUIRE(pspecies(pmassind,species_id) == Approx(1836.15));

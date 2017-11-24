@@ -23,6 +23,8 @@
 #include "Utilities/RandomGenerator.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCDrivers/DriftOperators.h"
+#include "Utilities/RunTimeManager.h"
+#include "Message/CommOperators.h"
 #include "type_traits/scalar_traits.h"
 
 
@@ -107,8 +109,13 @@ bool DMCcuda::run()
   std::vector<std::vector<NonLocalData> > Txy(nw);
   for (int iw=0; iw<nw; iw++)
     W[iw]->Weight = 1.0;
+
+  LoopTimer dmc_loop;
+  RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
+  bool enough_time_for_next_iteration = true;
   do
   {
+    dmc_loop.start();
     IndexType step = 0;
     nAccept = nReject = 0;
     Estimators->startBlock(nSteps);
@@ -372,8 +379,16 @@ bool DMCcuda::run()
     nRejectTot += nReject;
     ++block;
     recordBlock(block);
+    dmc_loop.stop();
+    enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(dmc_loop);
+    // Rank 0 decides whether the time limit was reached
+    myComm->bcast(enough_time_for_next_iteration);
+    if (!enough_time_for_next_iteration)
+    {
+      app_log() << runtimeControl.time_limit_message("DMC", block);
+    }
   }
-  while(block<nBlocks);
+  while(block<nBlocks && enough_time_for_next_iteration);
   //finalize a qmc section
   return finalize(block);
 }

@@ -143,7 +143,7 @@ public:
   }
 
   ///invert psiM or its copies
-  void invertPsiM(ValueMatrix_t& amat);
+  void invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat);
 
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& active,
@@ -157,6 +157,9 @@ public:
                                    Matrix<RealType>& dlogpsi,
                                    Array<GradType,3>& dG,
                                    Matrix<RealType>& dL) {}
+
+  //virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+  //                                     std::vector<RealType>& dgradlogpsi);
 
   inline void reportStatus(std::ostream& os)
   {

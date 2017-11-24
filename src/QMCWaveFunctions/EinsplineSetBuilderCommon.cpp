@@ -344,8 +344,8 @@ EinsplineSetBuilder::TileIons()
 
   IonPos.resize(SourcePtcl->getTotalNum());
   IonTypes.resize(SourcePtcl->getTotalNum());
-  copy(SourcePtcl->R.begin(),SourcePtcl->R.end(),IonPos.begin());
-  copy(SourcePtcl->GroupID.begin(),SourcePtcl->GroupID.end(),IonTypes.begin());
+  std::copy(SourcePtcl->R.begin(),SourcePtcl->R.end(),IonPos.begin());
+  std::copy(SourcePtcl->GroupID.begin(),SourcePtcl->GroupID.end(),IonTypes.begin());
 
   //app_log() << "  Primitive Cell\n";
   //SourcePtcl->PrimitiveLattice.print(app_log());

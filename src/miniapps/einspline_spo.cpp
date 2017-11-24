@@ -17,7 +17,7 @@
 #include <Particle/ParticleSet.h>
 #include <random/random.hpp>
 #include <mpi/collectives.h>
-#include <miniapps/graphite.hpp>
+#include <miniapps/input.hpp>
 #include <miniapps/pseudo.hpp>
 #include <Utilities/Timer.h>
 #include <miniapps/common.hpp>
@@ -43,12 +43,15 @@ int main(int argc, char** argv)
   //use the global generator
 
   bool ionode=(mycomm->rank() == 0);
-  int na=4;
-  int nb=4;
-  int nc=1;
+#if USE_NIO
+  int na=1; int nb=1; int nc=1;
+  int nx=37,ny=37,nz=37;
+#else
+  int na=4; int nb=4; int nc=1;
+  int nx=48,ny=48,nz=60;
+#endif
   int nsteps=100;
   int iseed=11;
-  int nx=48,ny=48,nz=60;
   //thread blocking
   //int ncrews=1; //default is 1
   int tileSize=-1;
@@ -104,9 +107,9 @@ int main(int argc, char** argv)
     Tensor<OHMMS_PRECISION,3> lattice_b;
     ParticleSet ions;
     OHMMS_PRECISION scale=1.0;
-    lattice_b=tile_graphite(ions,tmat,scale);
+    lattice_b=tile_cell(ions,tmat,scale);
     const int nions=ions.getTotalNum();
-    const int nels=2*nions;
+    const int nels=count_electrons(ions)/2;
     tileSize=(tileSize>0)?tileSize:nels;
     nTiles=nels/tileSize;
     if(ionode)
@@ -147,10 +150,10 @@ int main(int argc, char** argv)
     ParticleSet ions, els;
     const OHMMS_PRECISION scale=1.0;
     ions.Lattice.BoxBConds=1;  
-    tile_graphite(ions,tmat,scale);
+    tile_cell(ions,tmat,scale);
 
     const int nions=ions.getTotalNum();
-    const int nels=4*nions;
+    const int nels=count_electrons(ions);
     const int nels3=3*nels;
 
 #pragma omp master
