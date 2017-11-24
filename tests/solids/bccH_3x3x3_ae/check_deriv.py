@@ -1,5 +1,23 @@
 #!/usr/bin/env python
 
+def real_or_comp(str_rep):
+  """ convert the string representation of a real or complex number into float or complex
+  e.g. real_or_comp('1.5') -> 1.5, real_or_comp('(1.0,-1.0)') -> 1.0-1j*1.0
+  Args:
+    str_rep (str): string representation of a real or complex number
+  Returns:
+    complex/real: value of str_rep
+  """
+  val = None
+  if str_rep.strip().startswith('('):
+    ri_list = map(float,str_rep.replace('(','').replace(')','').split(','))
+    val = ri_list[0] + 1j*ri_list[1]
+  else:
+    val = float(str_rep)
+  # end if
+  return val
+# end def real_or_comp
+
 def parse_deriv_block(mm,header,nmax_deriv=1024):
   """ parse overlap/hamiltonian matrix derivatives
    
@@ -31,7 +49,7 @@ def parse_deriv_block(mm,header,nmax_deriv=1024):
     if ider >= nmax_deriv:
       raise RuntimeError('please increase nmax_deriv')
     iparam = int( tokens[0] )
-    numeric,analytic,diff = map(float,tokens[1:])
+    numeric,analytic,diff = map(real_or_comp,tokens[1:])
     for name,val in zip(cols,[iparam,numeric,analytic,diff]):
       data[name].append(val)
     # end for 
@@ -59,7 +77,7 @@ def check_relative_error(data,rel_tol=1e-3,eps=1e-16):
     # end if
   # end for
   return success
-
+# end def check_relative_error
 
 if __name__ == '__main__':
   fname = 'wftest.000'
