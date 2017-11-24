@@ -7,8 +7,10 @@ QMC_MPI                = @QMC_MPI@
 QMC_OMP                = @QMC_OMP@
 QMC_CUDA               = @QMC_CUDA@
 QMC_COMPLEX            = @QMC_COMPLEX@
+QMC_MIXED_PRECISION    = @QMC_MIXED_PRECISION@
 BUILD_AFQMC            = @BUILD_AFQMC@
 BUILD_FCIQMC           = @BUILD_FCIQMC@
+ENABLE_SOA             = @ENABLE_SOA@
 
 #system variables
 QMC_HOSTNAME           = @QMC_HOSTNAME@
