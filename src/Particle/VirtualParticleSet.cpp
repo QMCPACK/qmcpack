@@ -23,7 +23,7 @@
 namespace qmcplusplus
 {
 
-  VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl): refPtcl(p)
+  VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl): refPS(p)
   {
     setName("virtual");
 
@@ -34,12 +34,12 @@ namespace qmcplusplus
     RSoA.resize(nptcl);
 
     //create distancetables
-    if(refPtcl.DistTables.size())
+    if(refPS.DistTables.size())
     {
-      DistTables.resize(refPtcl.DistTables.size());
+      DistTables.resize(refPS.DistTables.size());
       for(int i=0; i<DistTables.size(); ++i)
       {
-        DistTables[i]=createDistanceTable(refPtcl.DistTables[i]->origin(),*this, refPtcl.DistTables[0]->DTType);
+        DistTables[i]=createDistanceTable(refPS.DistTables[i]->origin(),*this, refPS.DistTables[0]->DTType);
         DistTables[i]->ID=i;
       }
     }
@@ -49,7 +49,7 @@ namespace qmcplusplus
   void VirtualParticleSet::makeMoves(int iat, const ParticlePos_t& vitualPos, bool sphere)
   {
     onSphere=sphere;
-    activePtcl=iat;
+    refPtcl=iat;
     R=vitualPos;
     RSoA.copyIn(R);
     for (int i=0; i<DistTables.size(); i++)

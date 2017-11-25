@@ -389,13 +389,13 @@ struct OrbitalBase: public QMCTraits
 
   /** evaluate ratios to evaluate the non-local PP
    * @param VP VirtualParticleSet
-   * @param ratios ratios with new positions VP.R[k] the VP.activePtcl
+   * @param ratios ratios with new positions VP.R[k] the VP.refPtcl
    */
   virtual void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios);
 
   /** evaluate ratios to evaluate the non-local PP
    * @param VP VirtualParticleSet
-   * @param ratios ratios with new positions VP.R[k] the VP.activePtcl
+   * @param ratios ratios with new positions VP.R[k] the VP.refPtcl
    * @param dratios \f$\partial_{\alpha}(\ln \Psi ({\bf R}^{\prime}) - \ln \Psi ({\bf R})) \f$
    */
   virtual void evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,

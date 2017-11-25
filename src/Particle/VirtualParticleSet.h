@@ -32,8 +32,11 @@ namespace qmcplusplus
     bool onSphere;
 
     public:
+    /// Reference particle
+    int refPtcl;
+
     /// ParticleSet this object refers to
-    const ParticleSet& refPtcl;
+    const ParticleSet& refPS;
 
     inline bool isOnSphere() const
     {
