@@ -679,6 +679,7 @@ void TrialWaveFunction::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 
 void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<RealType>& ratios)
 {
+  assert(VP.getTotalNum()==ratios.size());
 #if defined(QMC_COMPLEX)
   std::vector<ValueType> t(ratios.size()),r(ratios.size(),1.0);;
   for (int i=0; i<Z.size(); ++i)

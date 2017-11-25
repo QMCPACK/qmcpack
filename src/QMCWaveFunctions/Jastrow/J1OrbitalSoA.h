@@ -135,24 +135,7 @@ struct  J1OrbitalSoA : public OrbitalBase
   ValueType ratio(ParticleSet& P, int iat)
   {
     UpdateMode=ORB_PBYP_RATIO;
-    curAt = valT(0);
-    const valT* restrict dist=P.DistTables[myTableID]->Temp_r.data();
-    if(NumGroups>0)
-    {
-      for(int jg=0; jg<NumGroups; ++jg)
-      {
-        if(F[jg]!=nullptr) 
-          curAt += F[jg]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist, DistCompressed.data());
-      }
-    }
-    else
-    {
-      for(int c=0; c<Nions; ++c)
-      {
-        int gid=Ions.GroupID[c];
-        if(F[gid]!=nullptr) curAt += F[gid]->evaluate(dist[c]);
-      }
-    }
+    curAt = computeU(P.DistTables[myTableID]->Temp_r.data());
 
     if(!P.Ready4Measure)
     {//need to compute per atom
@@ -162,6 +145,35 @@ struct  J1OrbitalSoA : public OrbitalBase
     }
 
     return std::exp(Vat[iat]-curAt);
+  }
+
+  inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+  {
+    for(int k=0; k<ratios.size(); ++k)
+      ratios[k]=std::exp(Vat[VP.refPtcl] -
+                         computeU(VP.DistTables[myTableID]->Distances[k]));
+  }
+
+  inline valT computeU(const valT* dist)
+  {
+    valT curVat(0);
+    if(NumGroups>0)
+    {
+      for(int jg=0; jg<NumGroups; ++jg)
+      {
+        if(F[jg]!=nullptr)
+          curVat += F[jg]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist, DistCompressed.data());
+      }
+    }
+    else
+    {
+      for(int c=0; c<Nions; ++c)
+      {
+        int gid=Ions.GroupID[c];
+        if(F[gid]!=nullptr) curVat += F[gid]->evaluate(dist[c]);
+      }
+    }
+    return curVat;
   }
 
   inline void evaluateGL(ParticleSet& P,
