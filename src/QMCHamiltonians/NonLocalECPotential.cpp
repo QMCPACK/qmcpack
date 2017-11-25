@@ -298,7 +298,7 @@ NonLocalECPotential::add(int groupID, NonLocalECPComponent* ppot)
     if(IonConfig.GroupID[iat]==groupID)
       PP[iat]=ppot;
   PPset[groupID]=ppot;
-  if(UseVP) ppot->initVirtualParticle(Peln);
+  if(UseVP && ppot->VP==0) ppot->initVirtualParticle(Peln);
 }
 
 QMCHamiltonianBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
