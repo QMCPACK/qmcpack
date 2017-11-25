@@ -112,27 +112,12 @@ NonLocalECPComponent::evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& ps
 
   RealType lpol_[lmax+1];
   RealType vrad_[nchannel];
-  RealType psiratio_[nknot];
+  std::vector<RealType> psiratio_(nknot);
   PosType deltaV[nknot];
 
-  // Compute ratio of wave functions
-  for (int j=0; j < nknot ; j++)
-  {
-    deltaV[j]=r*rrotsgrid_m[j]-dr;
-    W.makeMoveOnSphere(iel,deltaV[j]);
-#if defined(QMC_COMPLEX)
-    psiratio_[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getPhaseDiff());
-#else
-    psiratio_[j]=psi.ratio(W,iel)*sgridweight_m[j];
-#endif
-    W.rejectMove(iel);
-    psi.resetPhaseDiff();
-    //psi.rejectMove(iel);
-  }
-
-  // Compute ratios with VP
   if(VP)
   {
+    // Compute ratios with VP
     ParticleSet::ParticlePos_t VPos(nknot);
     for (int j=0; j<nknot; j++)
     {
@@ -140,12 +125,25 @@ NonLocalECPComponent::evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& ps
       VPos[j]=deltaV[j]+W.R[iel];
     }
     VP->makeMoves(iel,VPos,true);
-    std::vector<RealType> ratios(nknot);
-    psi.evaluateRatios(*VP,ratios);
+    psi.evaluateRatios(*VP,psiratio_);
+    for (int j=0; j<nknot; j++)
+      psiratio_[j]*=sgridweight_m[j];
+  }
+  else
+  {
+    // Compute ratio of wave functions
     for (int j=0; j<nknot; j++)
     {
-      ratios[j]*=sgridweight_m[j];
-      std::cout << "debug knot=" << j << " moved ratios = " << psiratio_[j] << " evaluateRatios = " << ratios[j] << std::endl;
+      deltaV[j]=r*rrotsgrid_m[j]-dr;
+      W.makeMoveOnSphere(iel,deltaV[j]);
+#if defined(QMC_COMPLEX)
+      psiratio_[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getPhaseDiff());
+#else
+      psiratio_[j]=psi.ratio(W,iel)*sgridweight_m[j];
+#endif
+      W.rejectMove(iel);
+      psi.resetPhaseDiff();
+      //psi.rejectMove(iel);
     }
   }
 
