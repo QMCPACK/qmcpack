@@ -126,10 +126,6 @@ struct NonLocalECPComponent: public QMCTraits
   evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, std::vector<NonLocalData>& Txy,
            PosType &force_iat);
 
-  /** compute with virtual moves */
-  RealType evaluateVP(const ParticleSet& W, int iat, TrialWaveFunction& Psi);
-  RealType evaluateVP(const ParticleSet& W, int iat, TrialWaveFunction& Psi,std::vector<NonLocalData>& Txy);
-
   RealType
   evaluateValueAndDerivatives(ParticleSet& P,
       int iat, TrialWaveFunction& psi,
