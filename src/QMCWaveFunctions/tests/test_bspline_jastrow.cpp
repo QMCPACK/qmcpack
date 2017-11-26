@@ -239,6 +239,15 @@ const char *particles = \
   REQUIRE(ratio_0 == ComplexApprox(0.9522052017).compare_real_only());
   REQUIRE(ratio_1 == ComplexApprox(0.9871985577).compare_real_only());
 
+  VirtualParticleSet VP(elec_,2);
+  ParticleSet::ParticlePos_t newpos2(2);
+  newpos2[0] = newpos;
+  newpos2[1] = PosType(0.2,0.5,0.3);
+  VP.makeMoves(1, newpos2);
+  j2->evaluateRatios(VP, ratios);
+
+  REQUIRE(ratios[0] == ComplexApprox(0.9871985577).compare_real_only());
+  REQUIRE(ratios[1] == ComplexApprox(0.9989268241).compare_real_only());
 }
 }
 
