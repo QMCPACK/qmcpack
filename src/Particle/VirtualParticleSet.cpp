@@ -49,11 +49,13 @@ namespace qmcplusplus
   void VirtualParticleSet::makeMoves(int iat, const ParticlePos_t& vitualPos, bool sphere)
   {
     onSphere=sphere;
+    myTimers[1]->start();
     refPtcl=iat;
     R=vitualPos;
     RSoA.copyIn(R);
     for (int i=0; i<DistTables.size(); i++)
       DistTables[i]->evaluate(*this);
+    myTimers[1]->stop();
   }
 
 }
