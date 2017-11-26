@@ -794,6 +794,52 @@ void SlaterDetOpt::add_derivatives(const int nl,
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  add to the \grad(\textrm{log}(Psi)) derivatives
+///
+/// \param[in]      nl         The number of molecular orbitals.
+/// \param[in]      np         The number of particles over which to sum derivative contributions.
+/// \param[in]      dh0        An nl by np column-major-ordered matrix of the derivatives
+///                            of \grad(\textrm{log}(Psi)) with respect to the values of the
+///                            molecular orbitals at each particle's position.
+/// \param[in]      dh1        Three nl by np column-major-ordered matrices (stored contiguously
+///                            one after the other) of the derivatives of
+///                            of \grad(\textrm{log}(Psi)) with respect to the values of the
+///                            molecular orbitals' first position derivatives (w.r.t. x,y,z)
+///                            at each particle's position.
+/// \param[in]      Bchi       An nl by np column-major-ordered matrix of the values of the
+///                            molecular orbitals at each particle's position.
+/// \param[in]      dBchi      Three nl by np column-major-ordered matrices (stored contiguously
+///                            one after the other) of the first position derivatives of the
+///                            molecular orbitals at each particle's position.
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void SlaterDetOpt::add_grad_derivatives(const int nl,
+                          const int np,
+                          const RealType * const dh0,
+                          const RealType * const dh1,
+                          const RealType * const Bchi,
+                          const RealType * const dBchi) {
+
+  // ensure the number of linear combinations is correct
+  if ( nl != m_nlc ) {
+    std::stringstream error_msg;
+    error_msg << "supplied number of linear combinations (" << nl << ") does not match that held internally (" << m_nlc << ") in LCOrbitalSetOptTrialFunc::add_grad_derivatives";
+    throw std::runtime_error(error_msg.str());
+  }
+
+  // ensure orbital derivative matrices are the correct size
+  if ( m_hder_mat.size() != nl * nl ) {
+    std::stringstream error_msg;
+    error_msg << "nl (" << nl << ") does not match size of m_hder_mat (" << m_hder_mat.size() << ") in LCOrbitalSetOptTrialFunc::add_grad_derivatives";
+    throw std::runtime_error(error_msg.str());
+  }
+
+  BLAS::gemm('N', 'T', nl, nl, np, RealType(1.0), dh0, nl, Bchi, nl, RealType(1.0), &m_hder_mat.at(0), nl);
+  for (int i = 0; i < 3; i++)
+    BLAS::gemm('N', 'T', nl, nl, np, RealType(1.0), dh1+i*nl*np, nl, dBchi+i*nl*np, nl, RealType(1.0), &m_hder_mat.at(0), nl);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Evaluate the determinant's contribution to the derivatives of log of the trial function
 ///         and the local energy w.r.t. the molecular orbital coefficients, which will be used
 ///         by the orbital set's trial function component determine the corresponding derivatives
@@ -976,6 +1022,90 @@ void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
         app_log() << buff[k];
       app_log() << std::endl;
     }
+  }
+
+  // reset the internally stored derivatives to zero in preperation for the next sample
+  this->initialize_matrices();
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+/// \brief  Evaluate the derivatives (with respect to optimizable parameters) of the gradient of
+///         the logarithm of the optimizable determinant wave function. The dot product of this
+///         object is then taken (with respect to the gradient vector components) with the
+///         input G_in gradient vector. The resulting object is a vector in the optimizable
+///         parameter components, which is returned by this function in dgradlogpsi.
+///
+/// \param[in]  G_in         Some gradient vector to be dotted with d(\grad(\textrm{log}(\psi)))
+///                          where \psi is just the optimiziable determinant.
+/// \param[out] dgradlogpsi  The dot product of G_in with d(\grad(\textrm{log}(\psi)))
+///                          (not calculated here but in the evaluateGradDerivatives function in
+///                          LCOrbitalSetOpt.h, for this particular wave function ansatz).
+///
+///////////////////////////////////////////////////////////////////////////////////////////////////
+void SlaterDetOpt::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                        std::vector<RealType>& dgradlogpsi) {
+
+  // construct temporary Y matrix
+  RealType * const Ymat = &m_work.at(0);
+
+  for (int b = 0; b < m_nel; b++) { // loop over particles
+    const OrbitalBase::GradType g = G_in[m_first+b];
+    for (int q = 0; q < m_nel; q++) // loop over orbitals
+      Ymat[q+b*m_nel] = - qmcplusplus::dot(m_orb_der_mat(b,q), g);
+  }
+
+  // contract Y with inverse matrices to get contribution of gradient
+  // derivatives w.r.t. orbital values
+  BLAS::gemm('N', 'T', m_nel, m_nel, m_nel, 1.0,    m_orb_inv_mat.data(), m_nel,                 Ymat, m_nel, 0.0, &m_work.at(m_nel*m_nel), m_nel);
+  BLAS::gemm('N', 'N', m_nel, m_nel, m_nel, 1.0, &m_work.at(m_nel*m_nel), m_nel, m_orb_inv_mat.data(), m_nel, 0.0,           &m_work.at(0), m_nel);
+
+  // fill result of contraction into top of gradient derivatives w.r.t.
+  // molecular orbital value matrix (derivatives w.r.t. virtual orbitals are
+  // zero and so we leave the bottom of the matrix alone)
+  for (int b = 0; b < m_nel; b++) // loop over particles
+  for (int q = 0; q < m_nel; q++) // loop over orbitals
+    m_dh0(b,q) = m_work[ q + b * m_nel ];
+
+  // fill matrices of contributions to gradient derivatives w.r.t. orbital
+  // first derivatives
+  for (int a = 0; a < m_nel; a++) { // loop over particles
+    const OrbitalBase::GradType g = G_in[m_first+a];
+    for (int v = 0; v < 3; v++) // loop over particle coordinates x,y,z
+      for (int p = 0; p < m_nel; p++) // loop over orbitals
+        m_dh1(a+v*m_nel,p) = m_orb_inv_mat(a,p) * g[v];
+  }
+
+  // use the work matrix to arrange the molecular orbital derivative data in
+  // the order needed
+  for (int a = 0; a < m_nel; a++) // loop over particles
+    for (int p = 0; p < m_nmo; p++) // loop over orbitals
+      for (int k = 0; k < 3; k++) // loop over particle coordinates x,y,z
+        m_work[ p + a*m_nmo + k*m_nmo*m_nel ] = m_orb_der_mat_all(a,p)[k];
+
+  // add this determinant's contribution to the orbital linear combinations' derivatives
+  add_grad_derivatives(m_nmo, m_nel, m_dh0.data(), m_dh1.data(), m_orb_val_mat_all.data(), &m_work.at(0));
+
+  // check that we have the position of the first of our variables in the
+  // overall list.
+  if ( myVars.size() > 0 && m_first_var_pos < 0 )
+    throw std::runtime_error("position of first variable was not set on entry to "
+                              "LCOrbitalSetOptTrialFunc::evaluateGradDerivatives");
+
+  // check that my number of variables is consistent with the
+  // number of active rotations.
+  if ( myVars.size() != m_act_rot_inds.size() ) {
+    std::stringstream error_msg;
+    error_msg << "mismatch between myVars.size() (" << myVars.size()
+              << ") and m_act_rot_inds.size() (" << m_act_rot_inds.size()
+              << ") in LCOrbitalSetOptTrialFunc::evaluateGradDerivatives";
+    throw std::runtime_error(error_msg.str());
+  }
+
+  // add derivatives to totals.
+  for (int i = 0; i < m_act_rot_inds.size(); i++) {
+    const int p = m_act_rot_inds.at(i).first;
+    const int q = m_act_rot_inds.at(i).second;
+    dgradlogpsi.at(m_first_var_pos+i) += m_hder_mat.at(p+q*m_nlc) - m_hder_mat.at(q+p*m_nlc);
   }
 
   // reset the internally stored derivatives to zero in preperation for the next sample

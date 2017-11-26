@@ -175,6 +175,8 @@ struct OrbitalBase: public QMCTraits
     return 0.0;
   }
 
+  virtual void resetPhaseDiff() {}
+
   ///assign a differential orbital
   virtual void setDiffOrbital(DiffOrbitalBasePtr d);
 
@@ -378,6 +380,17 @@ struct OrbitalBase: public QMCTraits
       dlogpsi[loc] *= myrat;
     }
   };
+
+  /** Calculates the derivatives of \grad(\textrm{log}(\psi)) with respect to
+      the optimizable parameters, and the dot product of this is then
+      performed with the passed-in G_in gradient vector. This object is then
+      returned as dgradlogpsi.
+   */
+  virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                                       std::vector<RealType>& dgradlogpsi) {
+    app_error() << "Need specialization of OrbitalBase::evaluateGradDerivatives.\n";
+    abort();
+  }
 
   virtual void finalizeOptimization() { }
 
