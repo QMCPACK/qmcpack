@@ -122,8 +122,11 @@ namespace qmcplusplus {
 
     ValueType curRatio;
 
-    // Temporary particleset
-    ParticleSet* tempP;
+    // gradients of FDLR wavefunction
+    ParticleSet::ParticleGradient_t G_FDLR;
+    // laplacians of FDLR wavefunction
+    ParticleSet::ParticleLaplacian_t L_FDLR;
+
 
   public:
 
