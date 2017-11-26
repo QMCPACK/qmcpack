@@ -230,7 +230,7 @@ namespace qmcplusplus {
         BLAS::gemm('T', 'N', delay_count, delay_count, norb, cone, V.data(), norb, Ainv_U.data(), norb, czero, Binv.data(), lda_Binv);
         if(delay_count==1)
         {
-          Binv[0][0]=1.0/Binv[0][0];
+          Binv[0][0]=1.0/T_hp(Binv[0][0]);
         }
         else
         {
