@@ -779,7 +779,6 @@ void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
 {
   activePtcl=-1;
   activePos=newpos;
-  /// To fix, hazzard 0;
   for (size_t i=0; i< DistTables.size(); ++i)
     DistTables[i]->move(*this,newpos);
 }
