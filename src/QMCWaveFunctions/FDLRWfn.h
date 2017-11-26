@@ -177,23 +177,17 @@ namespace qmcplusplus {
                              const ParticleSet::ParticleGradient_t& G_plus,  const ParticleSet::ParticleGradient_t& G_minus,
                              const ParticleSet::ParticleLaplacian_t& L_plus, const ParticleSet::ParticleLaplacian_t& L_minus);
 
-    RealType evaluateLog(ParticleSet& P, BufferType& buf);
-
     GradType evalGrad(ParticleSet& P, int iat);
 
     ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
-    RealType registerData(ParticleSet& P, BufferType& buf);
+    void registerData(ParticleSet& P, WFBufferType& buf);
 
-    RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
+    RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 
-    void copyFromBuffer(ParticleSet& P, BufferType& buf);
-
-    ValueType ratio(ParticleSet& P, int iat, ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL);
+    void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
     ValueType ratio(ParticleSet& P, int iat);
-
-    void update(ParticleSet& P, ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL, int iat);
 
     void acceptMove(ParticleSet& P, int iat);
 

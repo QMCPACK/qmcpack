@@ -478,11 +478,6 @@ namespace qmcplusplus {
     return LogValue;
   }
 
-  FDLRWfn::RealType FDLRWfn::evaluateLog(ParticleSet& P, BufferType& buf) {
-    throw std::runtime_error("FDLRWfn::evaluateLog(P, buff) not yet implemented");
-    return 0.0;
-  }
-
   ///////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Evaluates and returns the gradient of the log of the FDLR wave function w.r.t. a
   ///         specified particle's position.
@@ -582,10 +577,8 @@ namespace qmcplusplus {
   /// \param[in]      P              the particle set
   /// \param[in]      buf            the buffer to add essential data to
   ///
-  /// \return  the log of the FDLR wave function value
-  ///
   ///////////////////////////////////////////////////////////////////////////////////////////////////
-  FDLRWfn::RealType FDLRWfn::registerData(ParticleSet& P, BufferType& buf)
+  void FDLRWfn::registerData(ParticleSet& P, WFBufferType& buf)
   {
     // Store the current values of G and L before we zero them temporarily.
     tempP->G = P.G;
@@ -593,8 +586,10 @@ namespace qmcplusplus {
 
     P.G = 0.0;
     P.L = 0.0;
-    FDLRWfn::RealType logpsi_plus = m_wfn_xpd->registerData(P, buf);
-    FDLRWfn::RealType phasevalue_plus = m_wfn_xpd->getPhase();
+    FDLRWfn::RealType logpsi_plus;
+    m_wfn_xpd->registerData(P, buf);
+    FDLRWfn::RealType phasevalue_plus;
+    m_wfn_xpd->getPhase();
     buf.add(phasevalue_plus);
     buf.add(logpsi_plus);
     buf.add(&(P.G[0][0]), &(P.G[0][0])+P.G.size()*DIM);
@@ -606,8 +601,10 @@ namespace qmcplusplus {
 
     P.G = 0.0;
     P.L = 0.0;
-    FDLRWfn::RealType logpsi_minus = m_wfn_xmd->registerData(P, buf);
-    FDLRWfn::RealType phasevalue_minus = m_wfn_xmd->getPhase();
+    FDLRWfn::RealType logpsi_minus;
+    m_wfn_xmd->registerData(P, buf);
+    FDLRWfn::RealType phasevalue_minus;
+    m_wfn_xmd->getPhase();
     buf.add(phasevalue_minus);
     buf.add(logpsi_minus);
     buf.add(&(P.G[0][0]), &(P.G[0][0])+P.G.size()*DIM);
@@ -630,8 +627,6 @@ namespace qmcplusplus {
 
     buf.add(LogValue);
     buf.add(PhaseValue);
-
-    return LogValue;
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -647,7 +642,7 @@ namespace qmcplusplus {
   /// \return  the log of the FDLR wave function.
   ///
   ///////////////////////////////////////////////////////////////////////////////////////////////////
-  FDLRWfn::RealType FDLRWfn::updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch)
+  FDLRWfn::RealType FDLRWfn::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
   {
     tempP->G = P.G;
     tempP->L = P.L;
@@ -703,7 +698,7 @@ namespace qmcplusplus {
   /// \param[in]    buf       the buffer to read from
   ///
   ///////////////////////////////////////////////////////////////////////////////////////////////////
-  void FDLRWfn::copyFromBuffer(ParticleSet& P, BufferType& buf)
+  void FDLRWfn::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     FDLRWfn::RealType logpsi_plus, logpsi_minus;
     FDLRWfn::RealType phasevalue_plus, phasevalue_minus;
@@ -741,11 +736,6 @@ namespace qmcplusplus {
     buf.get(PhaseValue);
   }
 
-  FDLRWfn::ValueType FDLRWfn::ratio(ParticleSet& P, int iat, ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL) {
-    throw std::runtime_error("FDLRWfn::ratio not yet implemented");
-    return 0.0;
-  }
-
   FDLRWfn::ValueType FDLRWfn::ratio(ParticleSet& P, int iat)
   {
     FDLRWfn::RealType logpsi_plus = m_wfn_xpd->getLogPsi();
@@ -774,10 +764,6 @@ namespace qmcplusplus {
     curRatio = scaling_fac_1 * rat_plus - scaling_fac_2 * rat_minus;
 
     return curRatio;
-  }
-
-  void FDLRWfn::update(ParticleSet& P, ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL, int iat) {
-    throw std::runtime_error("FDLRWfn::update not yet implemented");
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
