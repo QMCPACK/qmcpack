@@ -283,8 +283,14 @@ public:
   void rejectMove(int iat);
   void acceptMove(ParticleSet& P, int iat);
 
+  /** register all the wavefunction components in buffer.
+   *  See OrbitalBase::registerData for more detail */
   void registerData(ParticleSet& P, WFBufferType& buf);
+  /** update all the wavefunction components in buffer.
+   *  See OrbitalBase::updateBuffer for more detail */
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  /** copy all the wavefunction components from buffer.
+   *  See OrbitalBase::updateBuffer for more detail */
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   RealType KECorrection() const;

@@ -337,19 +337,30 @@ struct OrbitalBase: public QMCTraits
     return 1.0;
   };
 
-  /** add temporary data reserved for particle-by-particle move.
+  /** For particle-by-particle move. Requests space in the buffer
+   *  based on the data type sizes of the objects in this class.
+   * @param P particle set
+   * @param buf Anonymous storage
    */
   virtual void registerData(ParticleSet& P, WFBufferType& buf) =0;
 
-  /** re-evaluate the content and buffer data
+  /** For particle-by-particle move. Put the objects of this class
+   *  in the walker buffer or forward the memory cursor.
    * @param P particle set
    * @param buf Anonymous storage
-   *
-   * This function is introduced to update the data periodically for particle-by-particle move.
+   * @param fromscratch request recomputing the precision critical
+   *        pieces of wavefunction from scratch
+   * @return log value of the wavefunction.
    */
   virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false) =0;
 
-  /** copy the internal data saved for particle-by-particle move.*/
+  /** For particle-by-particle move. Copy data or attach memory
+   *  from a walker buffer to the objects of this class.
+   *  The log value, P.G and P.L contribution from the objects
+   *  of this class are also added.
+   * @param P particle set
+   * @param buf Anonymous storage
+   */
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf)=0;
 
   /** return a proxy orbital of itself
