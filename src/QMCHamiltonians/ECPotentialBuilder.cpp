@@ -194,13 +194,14 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       hAttrib.put(cur);
       SpeciesSet& ion_species(IonConfig.getSpeciesSet());
       int speciesIndex=ion_species.findSpecies(ionName);
+      int chargeIndex=ion_species.findAttribute("charge");
+      bool success=false;
       if(speciesIndex < ion_species.getTotalNum())
       {
         app_log() << std::endl << "  Adding pseudopotential for " << ionName << std::endl;
         RealType rmax=0.0;
 
         ECPComponentBuilder ecp(ionName,myComm);
-        bool success=false;
         if(format == "xml")
         {
           if(href == "none")
@@ -234,11 +235,31 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
           }
           int rcutIndex=ion_species.addAttribute("rmax_core");
           ion_species(rcutIndex,speciesIndex)=rmax;
+          if(chargeIndex == -1)
+          {
+            app_error() << "  Ion species " << ionName << " needs parameter \'charge\'" << std::endl;
+            success=false;
+          }
+          else
+          {
+            RealType ion_charge = ion_species(chargeIndex,speciesIndex);
+            if( std::fabs(ion_charge - ecp.Zeff) > 1e-4 )
+            {
+              app_error() << "  Ion species " << ionName << " charge " << ion_charge
+                          << " pseudopotential charge " << ecp.Zeff << " mismatch!" << std::endl;
+              success=false;
+            }
+          }
         }
       }
       else
       {
         app_error() << "  Ion species " << ionName << " is not found." << std::endl;
+      }
+      if(!success)
+      {
+        app_error() << " Failed to add pseudopotential for element " << ionName << std::endl;
+        APP_ABORT("ECPotentialBuilder::useXmlFormat failed!");
       }
     }
     cur=cur->next;
