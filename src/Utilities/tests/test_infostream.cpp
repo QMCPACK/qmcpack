@@ -65,3 +65,14 @@ TEST_CASE("InfoStream redirect to file", "[utilities]")
   in >> s;
   REQUIRE(s == "test");
 }
+
+TEST_CASE("InfoStream double pause", "[utilities]")
+{
+  std::ostringstream out;
+  InfoStream info(&out);
+  info.pause();
+  info.pause();
+  info.resume();
+  info.getStream() << "test";
+  REQUIRE(out.str() == "test");
+}

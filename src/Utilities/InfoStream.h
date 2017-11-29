@@ -54,6 +54,10 @@ public:
     return *currStream;
   }
 
+  void setStream(std::ostream *output_stream) {
+    currStream = output_stream;
+  }
+
 
   void flush() {
     currStream->flush();

@@ -21,8 +21,11 @@ InfoStream::~InfoStream()
 }
 
 void InfoStream::pause() {
-  prevStream = currStream;
-  currStream = nullStream;
+  if (currStream != nullStream)
+  {
+    prevStream = currStream;
+    currStream = nullStream;
+  }
 }
 
 void InfoStream::resume() {
