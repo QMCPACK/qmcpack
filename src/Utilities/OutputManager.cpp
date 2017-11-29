@@ -19,7 +19,8 @@ InfoStream infoLog(&std::cout);
 InfoStream infoError(&std::cerr);
 InfoStream infoDebug(&std::cout);
 
-OutputManagerClass outputManager;
+// default verbosity is high for now.  After converting to app_summary, the default will be low.
+OutputManagerClass outputManager(Verbosity::HIGH);
 
 
 void

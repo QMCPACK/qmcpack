@@ -25,6 +25,7 @@
 #include "Utilities/OhmmsInfo.h"
 #include "Utilities/SimpleParser.h"
 #include "Utilities/ProgressReportEngine.h"
+#include "Utilities/OutputManager.h"
 #include "OhmmsData/FileUtility.h"
 #include "Platforms/sysutil.h"
 #include "Platforms/devices.h"
@@ -94,6 +95,27 @@ int main(int argc, char **argv)
           else
           {
             std::cerr << "Unknown timer level: " << timer_level << std::endl;
+          }
+        }
+      }
+      if (c.find("-verbose") < c.size())
+      {
+        int pos = c.find("=");
+        if (pos != std::string::npos)
+        {
+          std::string verbose_level = c.substr(pos+1);
+          if (verbose_level == "low") {
+            outputManager.setVerbosity(Verbosity::LOW);
+          }
+          else if (verbose_level == "high") {
+            outputManager.setVerbosity(Verbosity::HIGH);
+          }
+          else if (verbose_level == "debug") {
+            outputManager.setVerbosity(Verbosity::DEBUG);
+          }
+          else
+          {
+            std::cerr << "Unknown verbose level: " << verbose_level << std::endl;
           }
         }
       }

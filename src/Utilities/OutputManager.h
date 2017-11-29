@@ -32,7 +32,7 @@ class OutputManagerClass
   Verbosity global_verbosity_level;
 
 public:
-  OutputManagerClass() : global_verbosity_level(Verbosity::LOW) {}
+  OutputManagerClass(Verbosity level=Verbosity::LOW) { setVerbosity(level); }
 
   void setVerbosity(Verbosity level);
 
