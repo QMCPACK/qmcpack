@@ -131,6 +131,7 @@ ENDIF(HAVE_OOMPI)
     Utilities/SimpleParser.cpp 
     Utilities/OhmmsInform.cpp 
     Utilities/OhmmsInfo.cpp 
+    Utilities/InfoStream.cpp
     Utilities/NewTimer.cpp
     Utilities/RunTimeManager.cpp
     Utilities/ProgressReportEngine.cpp
