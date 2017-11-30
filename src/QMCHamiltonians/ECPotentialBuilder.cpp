@@ -195,6 +195,8 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       SpeciesSet& ion_species(IonConfig.getSpeciesSet());
       int speciesIndex=ion_species.findSpecies(ionName);
       int chargeIndex=ion_species.findAttribute("charge");
+      int AtomicNumberIndex=ion_species.findAttribute("atomicnumber");
+      if(AtomicNumberIndex==-1) AtomicNumberIndex=ion_species.findAttribute("atomic_number");
       bool success=false;
       if(speciesIndex < ion_species.getTotalNum())
       {
@@ -247,6 +249,21 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
             {
               app_error() << "  Ion species " << ionName << " charge " << ion_charge
                           << " pseudopotential charge " << ecp.Zeff << " mismatch!" << std::endl;
+              success=false;
+            }
+          }
+          if(AtomicNumberIndex == -1)
+          {
+            app_error() << "  Ion species " << ionName << " needs parameter \'atomicnumber\'" << std::endl;
+            success=false;
+          }
+          else
+          {
+            int atomic_number = ion_species(AtomicNumberIndex,speciesIndex);
+            if(atomic_number != ecp.AtomicNumber)
+            {
+              app_error() << "  Ion species " << ionName << " atomicnumber " << atomic_number
+                          << " pseudopotential atomic-number " << ecp.AtomicNumber << " mismatch!" << std::endl;
               success=false;
             }
           }
