@@ -35,6 +35,11 @@ void InfoStream::resume() {
    }
 }
 
+void InfoStream::shutOff() {
+  prevStream = NULL;
+  currStream = nullStream;
+}
+
 void InfoStream::redirectToFile(const std::string &fname) {
   currStream = new std::ofstream(fname);
   ownStream = true;

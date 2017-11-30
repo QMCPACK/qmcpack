@@ -75,6 +75,9 @@ public:
   /// Copy a stream
   void redirectToSameStream(InfoStream &info);
 
+  ///  Permanently turn off the stream
+  void shutOff();
+
 private:
 
   // Keep track of whether we should delete the stream or not

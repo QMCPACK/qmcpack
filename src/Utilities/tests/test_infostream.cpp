@@ -76,3 +76,14 @@ TEST_CASE("InfoStream double pause", "[utilities]")
   info.getStream() << "test";
   REQUIRE(out.str() == "test");
 }
+
+TEST_CASE("InfoStream shutOff", "[utilities]")
+{
+  std::ostringstream out;
+  InfoStream info(&out);
+  info.shutOff();
+  info.pause();
+  info.resume();
+  info.getStream() << "test";
+  REQUIRE(out.str() == "");
+}
