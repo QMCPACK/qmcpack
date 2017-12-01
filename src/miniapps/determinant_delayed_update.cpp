@@ -42,8 +42,7 @@ int main(int argc, char** argv)
   OhmmsInfo welcome(argc,argv,OHMMS::Controller->rank());
   Communicate* mycomm=OHMMS::Controller;
 
-  typedef OHMMS_PRECISION REAL_T;
-
+  //typedef OHMMS_PRECISION REAL_T;
   //use the global generator
 
   bool ionode=(mycomm->rank() == 0);
@@ -218,10 +217,17 @@ int main(int argc, char** argv)
   cout.setf(std::ios::scientific, std::ios::floatfield);
   cout.precision(4);
 
+  int nthreads_nested=1;
+#pragma omp parallel
+  {
+#pragma omp master
+    nthreads_nested=omp_get_max_threads();
+  }
+
   cout << "determinant " << nels << " rank " << delay << " Total accepted " << naccepted << " /" << nels*nsteps << " " 
     << naccepted/static_cast<double>(nels*nsteps) << " error " << error*omp_fac << endl;
-  cout << "Total " << (t_ratio+t_accept) << " ratio " << t_ratio  << " accept " << t_accept << endl;
-  cout << "Per   " << (t_ratio+t_accept)/(nsteps/nsubsteps) << " ratio " << t_ratio/(nsteps*nels)  << " accept " << t_accept/naccepted << endl;
+  cout << nels << " " << delay << " " << nthreads << " " << nthreads_nested << " total " << (t_ratio+t_accept) << " ratio " << t_ratio  << " accept " << t_accept << endl;
+  cout << nels << " " << delay << " " << nthreads << " " << nthreads_nested << " per   " << (t_ratio+t_accept)/(nsteps/nsubsteps) << " ratio " << t_ratio/(nsteps*nels)  << " accept " << t_accept/naccepted << endl;
   //t_diffusion*=1.0/static_cast<double>(nsteps*nsubsteps*nthreads);
   //t_pseudo   *=1.0/static_cast<double>(nsteps*nthreads);
   //cout << "#per MC step steps " << nsteps << " substeps " << nsubsteps << endl;
