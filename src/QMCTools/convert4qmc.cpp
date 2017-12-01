@@ -28,10 +28,9 @@
 #include "QMCTools/GamesFMOParser.h"
 #include "QMCTools/BParser.h"
 #include "Message/Communicate.h"
-#include "Utilities/OhmmsInfo.h"
 #include "OhmmsData/FileUtility.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
+#include "Utilities/OutputManager.h"
 
 int main(int argc, char **argv)
 {
@@ -46,7 +45,9 @@ int main(int argc, char **argv)
     return 1;
   }
   OHMMS::Controller->initialize(argc,argv);
-  OhmmsInfo welcome(argc,argv,OHMMS::Controller->rank());
+  if (OHMMS::Controller->rank() != 0) {
+    outputManager.shutOff();
+  }
   Random.init(0,1,-1);
   std::cout.setf(std::ios::scientific, std::ios::floatfield);
   std::cout.setf(std::ios::right,std::ios::adjustfield);
