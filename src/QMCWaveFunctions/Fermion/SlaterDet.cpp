@@ -19,7 +19,6 @@
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
 #include "Message/Communicate.h"
-#include "Utilities/OhmmsInfo.h"
 
 namespace qmcplusplus
 {
