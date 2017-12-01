@@ -246,10 +246,10 @@ namespace qmcplusplus {
           deteng.invert(Binv,false,delay_count);
 #endif
         }
-        if(delay_count==lda_Binv) udpateInvMat(Ainv);
+        if(delay_count==lda_Binv) updateInvMat(Ainv);
       }
 
-      inline void udpateInvMat(Matrix<T>& Ainv)
+      inline void updateInvMat(Matrix<T>& Ainv)
       {
         if(delay_count==0) return;
         // update the inverse matrix

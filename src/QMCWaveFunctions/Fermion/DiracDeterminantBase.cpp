@@ -214,7 +214,7 @@ void DiracDeterminantBase::completeUpdates(ParticleSet& P)
   if (ndelay)
   {
     UpdateTimer.start();
-    delayedEng.udpateInvMat(psiM);
+    delayedEng.updateInvMat(psiM);
     UpdateTimer.stop();
   }
 }
