@@ -15,7 +15,6 @@
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
@@ -48,7 +47,6 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   ParticleSet ions;
   MCWalkerConfiguration elec;
@@ -150,7 +148,6 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   ParticleSet ions;
   MCWalkerConfiguration elec;
