@@ -48,6 +48,11 @@ public:
     currStream = output_stream;
   }
 
+  InfoStream(InfoStream &in): prevStream(NULL), nullStream(new NullStream),
+      ownStream(false) {
+    redirectToSameStream(in);
+  }
+
   ~InfoStream();
 
   std::ostream &getStream(const std::string &tag = "") {
@@ -91,6 +96,14 @@ private:
   // Created at construction. Used during pause
   std::ostream *nullStream;
 };
+
+template<class T>
+inline
+InfoStream& operator<<(InfoStream& o, const T& val)
+{
+  o.getStream() << val;
+  return o;
+}
 
 
 #endif
