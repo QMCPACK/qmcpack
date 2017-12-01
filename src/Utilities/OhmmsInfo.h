@@ -21,6 +21,7 @@
 #define OHMMS_OHMMSINFO_H
 
 #include "Utilities/OhmmsInform.h"
+#include "Utilities/OutputManager.h"
 /** Control object for run-time information
  *
  * Similar class to PoomaInfo  of Pooma with very limited functions
@@ -69,6 +70,7 @@ private:
  * - WARNMSG warning message
  * - DEBUGMSG debug message
  */
+#if 0
 #ifdef DONOTUSEOHMMSINFO
 #define LOGMSG(msg)
 #define ERRORMSG(msg)
@@ -90,6 +92,7 @@ private:
 #define DEBUGMSG(msg) OhmmsInfo::Debug->getStream() << msg << std::endl
 #else
 #define DEBUGMSG(msg)
+#endif
 #endif
 #endif
 #endif//OHMMS_OHMMSINFO_H

@@ -47,3 +47,23 @@ bool OutputManagerClass::isActive(Verbosity level)
   return level <= global_verbosity_level;
 }
 
+void OutputManagerClass::pause()
+{
+  infoSummary.pause();
+  infoLog.pause();
+}
+
+void OutputManagerClass::resume()
+{
+  infoSummary.resume();
+  infoLog.resume();
+}
+
+void OutputManagerClass::shutOff()
+{
+  infoSummary.shutOff();
+  infoLog.shutOff();
+  infoError.shutOff();
+  infoDebug.shutOff();
+}
+

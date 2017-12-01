@@ -60,6 +60,15 @@ public:
       return infoDebug.getStream();
     }
   }
+
+  /// Pause the summary and log streams
+  void pause();
+
+  /// Resume the summary and log streams
+  void resume();
+
+  /// Permanently shut off all streams
+  void shutOff();
 };
 
 extern OutputManagerClass outputManager;
@@ -96,6 +105,20 @@ inline std::ostream& app_debug_stream()
 // From https://stackoverflow.com/questions/11826554/standard-no-op-output-stream
 // If debugging is not active, this skips evaluation of the arguments
 #define app_debug if (!outputManager.isDebugActive()) {} else app_debug_stream
+
+
+
+// Keep these macros temporarily until all output uses streams
+#define LOGMSG(msg) {qmcplusplus::app_log() << msg << std::endl;}
+#define ERRORMSG(msg) {app_error() << msg << std::endl;}
+#define WARNMSG(msg) {app_warning() << msg << std::endl;}
+#ifdef PRINT_DEBUG
+#define DEBUGMSG(msg) {app_debug() << msg << std::endl;}
+#else
+#define DEBUGMSG(msg)
+#endif
+
+#define XMLReport(msg)
 
 };
 

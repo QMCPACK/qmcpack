@@ -22,21 +22,23 @@ static std::ostringstream app_out;
 static std::ostringstream err_out;
 static std::ostringstream debug_out;
 
+void reset_string_output()
+{
+  summary_out.str("");
+  app_out.str("");
+  err_out.str("");
+  debug_out.str("");
+}
+
 void init_string_output()
 {
   infoSummary.setStream(&summary_out);
   infoLog.setStream(&app_out);
   infoError.setStream(&err_out);
   infoDebug.setStream(&debug_out);
+  reset_string_output();
 }
 
-void reset_string_output()
-{
-  summary_out.seekp(0);
-  app_out.seekp(0);
-  err_out.seekp(0);
-  debug_out.seekp(0);
-}
 
 TEST_CASE("OutputManager basic", "[utilities]")
 {
@@ -103,6 +105,46 @@ TEST_CASE("OutputManager output", "[utilities]")
   REQUIRE(app_out.str() == "testA");
   REQUIRE(debug_out.str() == "testB");
   REQUIRE(err_out.str() == "ERROR testC");
+}
+
+TEST_CASE("OutputManager pause", "[utilities]")
+{
+  init_string_output();
+
+  outputManager.pause();
+
+  app_summary() << "test1";
+  app_log() << "test2";
+
+  REQUIRE(summary_out.str() == "");
+  REQUIRE(app_out.str() == "");
+
+  reset_string_output();
+
+  outputManager.resume();
+  app_summary() << "test3";
+  app_log() << "test4";
+
+  REQUIRE(summary_out.str() == "test3");
+  REQUIRE(app_out.str() == "test4");
+}
+
+
+TEST_CASE("OutputManager shutoff", "[utilities]")
+{
+  init_string_output();
+
+  outputManager.shutOff();
+
+  app_summary() << "test1";
+  app_log() << "test2";
+  app_error() << "test3";
+  app_debug() << "test4";
+
+  REQUIRE(summary_out.str() == "");
+  REQUIRE(app_out.str() == "");
+  REQUIRE(err_out.str() == "");
+  REQUIRE(debug_out.str() == "");
 }
 
 }
