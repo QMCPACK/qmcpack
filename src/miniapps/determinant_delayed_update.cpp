@@ -170,7 +170,12 @@ int main(int argc, char** argv)
             t_accept_loc+=clock_mc.elapsed();
           }
         }
-        delayedEng.updateInvMat(psiM_inv);
+        if(delayedEng.delay_count>0)
+        {
+          clock_mc.restart();
+          delayedEng.updateInvMat(psiM_inv);
+          t_accept_loc+=clock_mc.elapsed();
+        }
       }
     }
     else
