@@ -200,7 +200,8 @@ bool QMCMain::execute()
   }
   //initialize all the instances of distance tables and evaluate them
   ptclPool->reset();
-  OhmmsInfo::flush();
+  infoSummary.flush();
+  infoLog.flush();
   app_log() << "  Initialization Execution time = " << std::setprecision(4) << t0.elapsed() << " secs" << std::endl;
   //write stuff
   app_log() << "=========================================================\n";
@@ -627,7 +628,8 @@ bool QMCMain::runQMC(xmlNodePtr cur)
     qmcDriver->putTraces(traces_xml);
 #endif
     qmcDriver->process(cur);
-    OhmmsInfo::flush();
+    infoSummary.flush();
+    infoLog.flush();
     Timer qmcTimer;
     NewTimer *t1 = TimerManager.createTimer(qmcDriver->getEngineName(), timer_level_coarse);
     t1->start();

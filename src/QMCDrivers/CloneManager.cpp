@@ -89,8 +89,7 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H." << std::endl;
   app_log() << "  Cloning methods for both Psi and H are used" << std::endl;
   print_mem("Memory Usage before cloning", app_log());
-  infoLog.pause();
-  infoSummary.pause();
+  outputManager.pause();
 
   #pragma omp parallel for shared(w,psi,ham)
   for(int ip=1; ip<NumThreads; ++ip)
@@ -179,8 +178,7 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
     return;
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H Pools." << std::endl;
   app_log() << "  Cloning methods for both Psi and H are used" << std::endl;
-  infoSummary.pause();
-  infoLog.pause();
+  outputManager.pause();
 
   bool io_node=qmc_common.io_node;
   qmc_common.io_node=false;
@@ -233,8 +231,7 @@ void CloneManager::makeClones_new(MCWalkerConfiguration& w,
     return;
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for W/Psi/H." << std::endl;
   app_log() << "  Cloning methods for both Psi and H are used" << std::endl;
-  infoSummary.pause();
-  infoLog.pause();
+  outputManager.pause();
   char pname[16];
   for(int ip=1; ip<NumThreads; ++ip)
   {
@@ -262,8 +259,7 @@ void CloneManager::makeClones(TrialWaveFunction& guide)
   if(NumThreads==1)
     return;
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide/wg." << std::endl;
-  infoSummary.pause();
-  infoLog.pause();
+  outputManager.pause();
   char pname[16];
   for(int ip=1; ip<NumThreads; ++ip)
   {
@@ -291,8 +287,7 @@ void CloneManager::makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guid
   if(NumThreads==1)
     return;
   app_log() << "  CloneManager::makeClones makes " << NumThreads << " clones for guide/wg." << std::endl;
-  infoSummary.pause();
-  infoLog.pause();
+  outputManager.pause();
   char pname[16];
   for(int ip=1; ip<NumThreads; ++ip)
   {
