@@ -42,6 +42,8 @@ int main(int argc, char** argv)
   OhmmsInfo welcome(argc,argv,OHMMS::Controller->rank());
   Communicate* mycomm=OHMMS::Controller;
 
+  typedef OHMMS_PRECISION REAL_T;
+
   //use the global generator
 
   bool ionode=(mycomm->rank() == 0);
@@ -169,6 +171,7 @@ int main(int argc, char** argv)
             t_accept_loc+=clock_mc.elapsed();
           }
         }
+        delayedEng.updateInvMat(psiM_inv);
       }
     }
     else
