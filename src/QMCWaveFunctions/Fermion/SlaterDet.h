@@ -112,18 +112,17 @@ public:
     return Dets[i]->cols();
   }
 
-  virtual
-  RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
+  virtual void registerData(ParticleSet& P, WFBufferType& buf);
 
   virtual void updateAfterSweep(ParticleSet& P,
       ParticleSet::ParticleGradient_t& G,
       ParticleSet::ParticleLaplacian_t& L);
 
   virtual
-  RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 
   virtual
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   virtual
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
@@ -198,6 +197,13 @@ public:
   inline void acceptMove(ParticleSet& P, int iat)
   {
     Dets[getDetID(iat)]->acceptMove(P,iat);
+
+    LogValue=0.0;
+    PhaseValue=0.0;
+    for(int i=0; i<Dets.size(); ++i) {
+      LogValue+= Dets[i]->LogValue;
+      PhaseValue+= Dets[i]->PhaseValue;
+    }
   }
 
   virtual
@@ -251,6 +257,13 @@ public:
     // Now add on contribution from each determinant to the derivatives
     for (int i=0; i<Dets.size(); i++)
       Dets[i]->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
+  }
+
+  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                               std::vector<RealType>& dgradlogpsi)
+  {
+    for (int i=0; i<Dets.size(); i++)
+      Dets[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
   }
 
 #ifdef QMC_CUDA

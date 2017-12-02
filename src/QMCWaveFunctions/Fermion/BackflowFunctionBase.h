@@ -32,6 +32,9 @@ class BackflowFunctionBase //: public OrbitalSetTraits<QMCTraits::ValueType>
 
 public:
 
+  typedef ParticleSet::Walker_t     Walker_t;
+  typedef Walker_t::WFBuffer_t      WFBufferType;
+
   // All BF quantities should be real, so eliminating complex (ValueType) possibility
   enum {DIM=OHMMS_DIM};
   typedef OHMMS_PRECISION                RealType;
@@ -166,16 +169,16 @@ public:
     return numParams;
   }
 
-  virtual void registerData(PooledData<RealType>& buf)=0;
+  virtual void registerData(WFBufferType& buf)=0;
 
-  void updateBuffer(PooledData<RealType>& buf)
+  void updateBuffer(WFBufferType& buf)
   {
     buf.put(FirstOfU,LastOfU);
     buf.put(FirstOfA,LastOfA);
     buf.put(FirstOfB,LastOfB);
   }
 
-  void copyFromBuffer(PooledData<RealType>& buf)
+  void copyFromBuffer(WFBufferType& buf)
   {
     buf.get(FirstOfU,LastOfU);
     buf.get(FirstOfA,LastOfA);

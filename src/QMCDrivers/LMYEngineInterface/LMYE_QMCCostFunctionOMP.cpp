@@ -25,7 +25,7 @@ namespace qmcplusplus {
 int QMCCostFunctionOMP::total_samples() {
 
   // for the unfamiliar, the [] starts a lambda function
-  return std::accumulate(wClones.begin(), wClones.begin()+NumThreads, 0, [] (int x, const MCWalkerConfiguration * p) { return x + p->getActiveWalkers(); });
+  return std::accumulate(wClones.begin(), wClones.begin()+NumThreads, 0, [] (int x, const MCWalkerConfiguration * p) { return x + p->numSamples(); });
 
 }
 
@@ -49,7 +49,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::LMYEngineCost_detail(cqmc::engi
   {
     int ip = omp_get_thread_num();     
     // for each thread, loop over samples
-    const int nw = wClones[ip]->getActiveWalkers();
+    const int nw = wClones[ip]->numSamples();
     for (int iw = 0; iw < nw; iw++) {
 
       // get a pointer to the record for this sample

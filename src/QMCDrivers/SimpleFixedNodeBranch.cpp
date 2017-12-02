@@ -854,7 +854,7 @@ void SimpleFixedNodeBranch::read(const std::string& fname)
 
 void SimpleFixedNodeBranch::setBranchCutoff(EstimatorRealType variance, EstimatorRealType targetSigma, EstimatorRealType maxSigma, int Nelec)
 {
-  if(branching_cutoff_scheme=="UNR")
+  if(branching_cutoff_scheme=="DRV")
   {
     // eq.(3), J. Chem. Phys. 89, 3629 (1988).
     // eq.(9), J. Chem. Phys. 99, 2865 (1993).

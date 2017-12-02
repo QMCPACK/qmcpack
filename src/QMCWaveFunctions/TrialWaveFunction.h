@@ -107,6 +107,7 @@ public:
   typedef OrbitalBase::PosType            PosType;
   typedef OrbitalBase::GradType           GradType;
   typedef OrbitalBase::BufferType         BufferType;
+  typedef OrbitalBase::WFBufferType       WFBufferType;
   typedef OrbitalBase::HessType           HessType;
   typedef OrbitalBase::HessVector_t       HessVector_t;
 #ifdef QMC_CUDA
@@ -135,6 +136,11 @@ public:
   inline RealType getPhase() const
   {
     return PhaseValue;
+  }
+
+  inline void setPhase(RealType PhaseValue_new)
+  {
+    PhaseValue = PhaseValue_new;
   }
   void getLogs(std::vector<RealType>& lvals);
   void getPhases(std::vector<RealType>& pvals);
@@ -170,10 +176,16 @@ public:
   inline void resetPhaseDiff()
   {
     PhaseDiff=0.0;
+    for (int i=0; i<Z.size(); i++)
+      Z[i]->resetPhaseDiff();
   }
   inline RealType getLogPsi() const
   {
     return LogValue;
+  }
+  inline void setLogPsi(RealType LogPsi_new)
+  {
+    LogValue = LogPsi_new;
   }
 
   ///Add an OrbitalBase
@@ -271,9 +283,15 @@ public:
   void rejectMove(int iat);
   void acceptMove(ParticleSet& P, int iat);
 
-  RealType registerData(ParticleSet& P, BufferType& buf);
-  RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
-  void copyFromBuffer(ParticleSet& P, BufferType& buf);
+  /** register all the wavefunction components in buffer.
+   *  See OrbitalBase::registerData for more detail */
+  void registerData(ParticleSet& P, WFBufferType& buf);
+  /** update all the wavefunction components in buffer.
+   *  See OrbitalBase::updateBuffer for more detail */
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  /** copy all the wavefunction components from buffer.
+   *  See OrbitalBase::updateBuffer for more detail */
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   RealType KECorrection() const;
 
@@ -282,6 +300,9 @@ public:
                            std::vector<RealType>& dlogpsi,
                            std::vector<RealType>& dhpsioverpsi,
                            bool project=false);
+
+  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                               std::vector<RealType>& dgradlogpsi);
 
   /** evalaute the values of the wavefunction, gradient and laplacian  for all the walkers */
   //void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);
@@ -347,8 +368,8 @@ private:
   ///starting index of the buffer
   size_t BufferCursor;
 
-  ///starting index of the buffer DP
-  size_t BufferCursor_DP;
+  ///starting index of the scalar buffer
+  size_t BufferCursor_scalar;
 
   ///sign of the trial wave function
   RealType PhaseValue;
@@ -367,12 +388,6 @@ private:
 
   ///fermionic wavefunction
   FermionBase* FermionWF;
-
-  ///differential gradients
-  ParticleSet::ParticleGradient_t delta_G;
-
-  ///differential laplacians
-  ParticleSet::ParticleLaplacian_t delta_L;
 
   ///fake particleset
   ParticleSet* tempP;

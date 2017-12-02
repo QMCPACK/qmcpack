@@ -402,11 +402,9 @@ template<>
 inline void
 Communicate::allreduce(PooledData<float>& g)
 {
-  PooledData<float> gt(g.size(), g.size_DP());
+  PooledData<float> gt(g.size());
   MPI_Allreduce(g.data(),gt.data(),g.size(),MPI_FLOAT,MPI_SUM,
                 myMPI);
-  if (g.size_DP()) MPI_Allreduce(g.data_DP(),gt.data_DP(),g.size_DP(),
-                                 MPI_DOUBLE,MPI_SUM,myMPI);
   g = gt;
 }
 
@@ -773,7 +771,6 @@ inline void
 Communicate::bcast(PooledData<float>& g)
 {
   MPI_Bcast(g.data(),g.size(),MPI_FLOAT,0,myMPI);
-  if (g.size_DP()) MPI_Bcast(g.data_DP(),g.size_DP(),MPI_DOUBLE,0,myMPI);
 }
 
 template<>
@@ -803,7 +800,6 @@ Communicate::bcast(std::vector<qmcplusplus::TinyVector<float,3> > &g)
 {
   MPI_Bcast(&(g[0][0]), 3*g.size(), MPI_FLOAT, 0, myMPI);
 }
-
 
 template<>
 inline void
@@ -850,6 +846,20 @@ inline void
 Communicate::bcast(char* restrict x, int n)
 {
   MPI_Bcast(x,n,MPI_CHAR,0,myMPI);
+}
+
+template<>
+inline void
+Communicate::bcast(std::string &g)
+{
+
+  int string_size=g.size(); 
+
+  bcast(string_size);
+  if(rank()!=0)
+     g.resize(string_size);
+
+  bcast(&g[0],g.size());
 }
 
 template<> inline void

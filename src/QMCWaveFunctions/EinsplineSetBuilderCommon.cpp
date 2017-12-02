@@ -138,7 +138,7 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
   int numIons = IonTypes.size();
   int numAtomicOrbitals = AtomicOrbitals.size();
   int numDensityGvecs = TargetPtcl.DensityReducedGvecs.size();
-  PooledData<RealType> abuffer;
+  PooledData<double> abuffer;
   PooledData<int>       aibuffer;
   aibuffer.add(Version.begin(),Version.end()); //myComm->bcast(Version);
   aibuffer.add(Format);
@@ -154,7 +154,7 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
   aibuffer.add(NumMuffinTins);
   aibuffer.add(numAtomicOrbitals);
   aibuffer.add(numDensityGvecs);
-  aibuffer.add((int)HaveOrbDerivs);
+  aibuffer.add(HaveOrbDerivs);
   myComm->bcast(abuffer);
   myComm->bcast(aibuffer);
   if(myComm->rank())
@@ -198,7 +198,7 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
     IonPos.resize(numIons);
   }
   //new buffer
-  PooledData<RealType> bbuffer;
+  PooledData<double> bbuffer;
   PooledData<int> bibuffer;
   for(int i=0; i<numIons; ++i)
     bibuffer.add(IonTypes[i]);
@@ -277,7 +277,7 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
     }
   }
   //buffer to bcast hybrid representation atomic orbital info
-  PooledData<RealType> cbuffer;
+  PooledData<double> cbuffer;
   PooledData<int> cibuffer;
   myComm->bcast(cbuffer);
   myComm->bcast(cibuffer);

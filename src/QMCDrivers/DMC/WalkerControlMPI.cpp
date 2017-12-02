@@ -148,16 +148,16 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
 }
 
 // determine new walker population on each node
-void determineNewWalkerPopulation(int Cur_pop, int NumContexts, int MyContext, std::vector<int> NumPerNode, std::vector<int> &minus, std::vector<int> &plus)
+void determineNewWalkerPopulation(int Cur_pop, int NumContexts, int MyContext, const std::vector<int> &NumPerNode, std::vector<int> &FairOffSet, std::vector<int> &minus, std::vector<int> &plus)
 {
   // Cur_pop - in - current population
   // NumContexts -in - number of MPI processes
   // MyContext - in - my MPI rank
   // NumPerNode - in - current walkers per node
+  // FairOffSet - out - new walker offset
   // minus - out - number of walkers to be removed from each node
   // plus -  out - number of walkers to be added to each node
 
-  std::vector<int> FairOffSet;
   FairDivideLow(Cur_pop,NumContexts,FairOffSet);
   int deltaN;
   for(int ip=0; ip<NumContexts; ip++)
@@ -184,7 +184,7 @@ void determineNewWalkerPopulation(int Cur_pop, int NumContexts, int MyContext, s
 void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
 {
   std::vector<int> minus, plus;
-  determineNewWalkerPopulation(Cur_pop, NumContexts, MyContext, NumPerNode, minus, plus);
+  determineNewWalkerPopulation(Cur_pop, NumContexts, MyContext, NumPerNode, FairOffSet, minus, plus);
 
   Walker_t& wRef(*W[0]);
   std::vector<Walker_t*> newW;
@@ -220,18 +220,20 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   {
     if(plus[ic]==MyContext)
     {
-      OOMPI_Packed sendBuffer(wRef.byteSize(),myComm->getComm());
-      W[last]->putMessage(sendBuffer);
+      size_t byteSize = W[last]->byteSize();
+      W[last]->updateBuffer();
+      OOMPI_Message sendBuffer(W[last]->DataSet.data(), byteSize);
       myComm->getComm()[minus[ic]].Send(sendBuffer);
       --last;
       ++nsend;
     }
     if(minus[ic]==MyContext)
     {
-      OOMPI_Packed recvBuffer(wRef.byteSize(),myComm->getComm());
-      myComm->getComm()[plus[ic]].Recv(recvBuffer);
       Walker_t *awalker= new Walker_t(wRef);
-      awalker->getMessage(recvBuffer);
+      size_t byteSize = awalker->byteSize();
+      OOMPI_Message recvBuffer(awalker->DataSet.data(), byteSize);
+      myComm->getComm()[plus[ic]].Recv(recvBuffer);
+      awalker->copyFromBuffer();
       newW.push_back(awalker);
     }
   }
@@ -255,7 +257,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
 void WalkerControlMPI::swapWalkersAsync(MCWalkerConfiguration& W)
 {
   std::vector<int> minus, plus;
-  determineNewWalkerPopulation(Cur_pop, NumContexts, MyContext, NumPerNode, minus, plus);
+  determineNewWalkerPopulation(Cur_pop, NumContexts, MyContext, NumPerNode, FairOffSet, minus, plus);
   Walker_t& wRef(*W[0]);
   std::vector<Walker_t*> newW;
   std::vector<Walker_t*> oldW;

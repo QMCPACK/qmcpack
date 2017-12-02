@@ -41,6 +41,8 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
 #include "OhmmsData/AttributeSet.h"
+#include "Message/MPIObjectBase.h"
+
 
 namespace qmcplusplus
 {
@@ -131,6 +133,7 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
   std::string transformOpt("yes"); //numerical Molecular Orbital
   std::string cuspC("no");  // cusp correction
   std::string cuspInfo("");  // file with precalculated cusp correction info
+  std::string MOH5Ref("");  // Path to H5 file for MO calculations 
   OhmmsAttributeSet aAttrib;
   aAttrib.add(sourceOpt,"source");
   aAttrib.add(cuspC,"cuspCorrection");
@@ -140,6 +143,8 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
   aAttrib.add(name,"name");
   aAttrib.add(transformOpt,"transform");
   aAttrib.add(cuspInfo,"cuspInfo");
+  aAttrib.add(MOH5Ref,"href");
+
   if(rootNode != NULL)
     aAttrib.put(rootNode);
 
@@ -159,6 +164,7 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
     app_log().flush();
     bb=(*bbit).second;
     bb->put(rootNode);
+   
     return last_builder=bb;
   }
 
@@ -221,7 +227,7 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
     {
       app_log() << "Using MolecularBasisBuilder<NGOBuilder>" << std::endl;
 #if QMC_BUILD_LEVEL>2
-      bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,cuspC=="yes",cuspInfo);
+      bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,cuspC=="yes",cuspInfo,MOH5Ref);
 #else
       bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,false);
 #endif

@@ -57,16 +57,18 @@ struct hdf_archive
   H5E_auto_t err_func;
   ///error handling
   void *client_data;
+  ///Pointer to communicator
+  Communicate* myComm;
   ///FILO to handle H5Group
   std::stack<hid_t> group_id;
   /** constructor
    * @param c communicator
    * @param request_pio turns on parallel I/O,
-   *        if ture and PHDF5 is available, hdf_archive is in parallel collective IO mode
-   *        if ture and PHDF5 is not available, hdf_archive is in master-only IO mode
+   *        if true and PHDF5 is available, hdf_archive is in parallel collective IO mode
+   *        if true and PHDF5 is not available, hdf_archive is in master-only IO mode
    *        if false, hdf_archive is in independent IO mode
    */
-  hdf_archive(Communicate* c=0, bool request_pio=false);
+  hdf_archive(Communicate* c=nullptr, bool request_pio=false);
   ///destructor
   ~hdf_archive();
 

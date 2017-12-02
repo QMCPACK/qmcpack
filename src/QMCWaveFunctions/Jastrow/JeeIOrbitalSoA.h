@@ -45,6 +45,8 @@ class JeeIOrbitalSoA: public OrbitalBase
   int myTableID;
   //nuber of particles
   int Nelec, Nion;
+  ///number of particles + padded
+  size_t Nelec_padded;
   //number of groups of the target particleset
   int eGroups, iGroups;
   ///reference to the sources (ions)
@@ -57,7 +59,6 @@ class JeeIOrbitalSoA: public OrbitalBase
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
   using gContainer_type=VectorSoaContainer<valT,OHMMS_DIM>;
   gContainer_type dUat,olddUk,newdUk;
-  valT *FirstAddressOfdU, *LastAddressOfdU;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
   Vector<valT> d2Uat,oldd2Uk,newd2Uk;
   /// current values during PbyP
@@ -145,14 +146,13 @@ public:
   void init(ParticleSet& p)
   {
     Nelec=p.getTotalNum();
+    Nelec_padded=getAlignedSize<valT>(Nelec);
     Nion = Ions.getTotalNum();
     iGroups=Ions.getSpeciesSet().getTotalNum();
     eGroups=p.groups();
 
     Uat.resize(Nelec);
     dUat.resize(Nelec);
-    FirstAddressOfdU = dUat.data();
-    LastAddressOfdU = dUat.end();
     d2Uat.resize(Nelec);
 
     oldUk.resize(Nelec);
@@ -642,30 +642,39 @@ public:
       }
   }
 
-  inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
+  inline void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    evaluateLog(P,P.G,P.L);
-    buf.add(Uat.begin(), Uat.end());
-    buf.add(FirstAddressOfdU,LastAddressOfdU);
-    buf.add(d2Uat.begin(), d2Uat.end());
-    return LogValue;
+    if ( Bytes_in_WFBuffer == 0 )
+    {
+      Bytes_in_WFBuffer = buf.current();
+      buf.add(Uat.begin(), Uat.end());
+      buf.add(dUat.data(), dUat.end());
+      buf.add(d2Uat.begin(), d2Uat.end());
+      Bytes_in_WFBuffer = buf.current()-Bytes_in_WFBuffer;
+      // free local space
+      Uat.free();
+      dUat.free();
+      d2Uat.free();
+    }
+    else
+    {
+      buf.forward(Bytes_in_WFBuffer);
+    }
   }
 
-  inline RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+  inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf,
                                bool fromscratch=false)
   {
     evaluateGL(P, P.G, P.L, false);
-    buf.put(Uat.begin(), Uat.end());
-    buf.put(FirstAddressOfdU,LastAddressOfdU);
-    buf.put(d2Uat.begin(), d2Uat.end());
+    buf.forward(Bytes_in_WFBuffer);
     return LogValue;
   }
 
-  inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
-    buf.get(Uat.begin(), Uat.end());
-    buf.get(FirstAddressOfdU,LastAddressOfdU);
-    buf.get(d2Uat.begin(), d2Uat.end());
+    Uat.attach(buf.attach<valT>(Nelec), Nelec);
+    dUat.attach(Nelec, Nelec_padded, buf.attach<valT>(Nelec_padded*OHMMS_DIM));
+    d2Uat.attach(buf.attach<valT>(Nelec), Nelec);
     build_compact_list(P);
   }
 

@@ -57,6 +57,8 @@ struct  J2OrbitalSoA : public OrbitalBase
 
   ///number of particles
   size_t N;
+  ///number of particles + padded
+  size_t N_padded;
   ///number of groups of the target particleset
   size_t NumGroups;
   ///task id
@@ -72,7 +74,6 @@ struct  J2OrbitalSoA : public OrbitalBase
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
   using gContainer_type=VectorSoaContainer<valT,OHMMS_DIM>;
   gContainer_type dUat;
-  valT *FirstAddressOfdU, *LastAddressOfdU;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
   Vector<valT> d2Uat;
   valT cur_Uat;
@@ -197,28 +198,37 @@ struct  J2OrbitalSoA : public OrbitalBase
                      ParticleSet::ParticleGradient_t& G,
                      ParticleSet::ParticleLaplacian_t& L, bool fromscratch=false);
 
-  inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
+  inline void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    evaluateLog(P,P.G,P.L);
-    buf.add(Uat.begin(), Uat.end());
-    buf.add(FirstAddressOfdU,LastAddressOfdU);
-    buf.add(d2Uat.begin(), d2Uat.end());
-    return LogValue;
+    if ( Bytes_in_WFBuffer == 0 )
+    {
+      Bytes_in_WFBuffer = buf.current();
+      buf.add(Uat.begin(), Uat.end());
+      buf.add(dUat.data(), dUat.end());
+      buf.add(d2Uat.begin(), d2Uat.end());
+      Bytes_in_WFBuffer = buf.current()-Bytes_in_WFBuffer;
+      // free local space
+      Uat.free();
+      dUat.free();
+      d2Uat.free();
+    }
+    else
+    {
+      buf.forward(Bytes_in_WFBuffer);
+    }
   }
 
-  inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
-    buf.get(Uat.begin(), Uat.end());
-    buf.get(FirstAddressOfdU,LastAddressOfdU);
-    buf.get(d2Uat.begin(), d2Uat.end());
+    Uat.attach(buf.attach<valT>(N), N);
+    dUat.attach(N, N_padded, buf.attach<valT>(N_padded*OHMMS_DIM));
+    d2Uat.attach(buf.attach<valT>(N), N);
   }
 
-  RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false)
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false)
   {
     evaluateGL(P, P.G, P.L, false);
-    buf.put(Uat.begin(), Uat.end());
-    buf.put(FirstAddressOfdU,LastAddressOfdU);
-    buf.put(d2Uat.begin(), d2Uat.end());
+    buf.forward(Bytes_in_WFBuffer);
     return LogValue;
   }
 
@@ -269,12 +279,11 @@ template<typename FT>
 void J2OrbitalSoA<FT>::init(ParticleSet& p)
 {
   N=p.getTotalNum();
+  N_padded=getAlignedSize<valT>(N);
   NumGroups=p.groups();
 
   Uat.resize(N); 
   dUat.resize(N);
-  FirstAddressOfdU = dUat.data();
-  LastAddressOfdU = dUat.end();
   d2Uat.resize(N);
   cur_u.resize(N);
   cur_du.resize(N);
@@ -462,7 +471,7 @@ J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
     const valT* restrict cur_du_pt=cur_du.data();
     const valT* restrict old_du_pt=old_du.data();
     valT* restrict save_g=dUat.data(idim);
-    valT& cur_g=cur_dUat[idim];
+    valT cur_g=cur_dUat[idim];
     #pragma omp simd reduction(+:cur_g) aligned(old_dX,new_dX,save_g,cur_du_pt,old_du_pt)
     for(int jat=0; jat<N; jat++)
     {
@@ -471,6 +480,7 @@ J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
       save_g[jat]  -= dg;
       cur_g += newg;
     }
+    cur_dUat[idim] = cur_g;
   }
   Uat[iat]   = cur_Uat;
   dUat(iat)  = cur_dUat;

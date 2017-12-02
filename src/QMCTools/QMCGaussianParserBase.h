@@ -29,6 +29,9 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Utilities/SimpleParser.h"
 #include "Particle/ParticleSet.h"
+#include "Numerics/HDFSTLAttrib.h"
+#include "OhmmsData/HDFStringAttrib.h"
+#include "io/hdf_archive.h"
 
 using namespace qmcplusplus;
 
@@ -47,6 +50,7 @@ struct QMCGaussianParserBase
   bool orderByExcitation;
   bool addJastrow;
   bool addJastrow3Body;
+  bool ECP;
   int IonChargeIndex;
   int ValenceChargeIndex;
   int AtomicNumberIndex;
@@ -60,7 +64,7 @@ struct QMCGaussianParserBase
 // mmorales: number of Molecular orbitals, not always equal to SizeOfBasisSet
   int numMO, readNO, readGuess, numMO2print;
 // benali: Point Charge from FMO ESP 
-  int *  ESPIonChargeIndex;
+  int * ESPIonChargeIndex;
   int * ESPValenceChargeIndex;
   int * ESPAtomicNumberIndex;
   int TotNumMonomer;
@@ -80,6 +84,7 @@ struct QMCGaussianParserBase
   std::string CurrentCenter;
   std::string outputFile;
   std::string angular_type;
+  std::string h5file;
 
   ParticleSet IonSystem;
 
@@ -116,20 +121,27 @@ struct QMCGaussianParserBase
   void createGridNode(int argc, char** argv);
 
   void createSPOSets(xmlNodePtr,xmlNodePtr);
+  void createSPOSetsH5(xmlNodePtr,xmlNodePtr);
   xmlNodePtr createElectronSet();
   xmlNodePtr createIonSet();
+  xmlNodePtr createHamiltonian(const std::string& ion_tag, const std::string& psi_tag);
   xmlNodePtr createBasisSet();
+  xmlNodePtr createBasisSetWithHDF5();
   xmlNodePtr createCenter(int iat, int _off);
+  void createCenterH5(int iat, int _off,int numelem);
   void createShell(int n, int ig, int off_, xmlNodePtr abasis);
+  void createShellH5(int n, int ig, int off_,int numelem);
   xmlNodePtr createDeterminantSet();
   xmlNodePtr createMultiDeterminantSet();
   xmlNodePtr createMultiDeterminantSetVSVB();
   xmlNodePtr createMultiDeterminantSetQP();
+  xmlNodePtr createMultiDeterminantSetQPHDF5();
   xmlNodePtr createDeterminantSetWithHDF5();
   xmlNodePtr createJ3();
   xmlNodePtr createJ2();
   xmlNodePtr createJ1();
 
+  xmlNodePtr parameter(xmlNodePtr Parent, std::string Mypara ,std::string a);
 
   int numberOfExcitationsCSF( std::string&);
 
@@ -137,6 +149,9 @@ struct QMCGaussianParserBase
   virtual void parse(const std::string& fname) = 0;
 
   virtual void dump(const std::string& psi_tag,
+                    const std::string& ion_tag);
+
+  void dumpStdInput(const std::string& psi_tag,
                     const std::string& ion_tag);
 
   virtual void Fmodump(const std::string& psi_tag,

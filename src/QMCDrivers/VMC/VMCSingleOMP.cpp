@@ -24,6 +24,7 @@
 #include "OhmmsApp/RandomNumberControl.h"
 #include "Message/OpenMP.h"
 #include "Message/CommOperators.h"
+#include "Utilities/RunTimeManager.h"
 #include "tau/profiler.h"
 #include <qmc_common.h>
 //#define ENABLE_VMC_OMP_MASTER
@@ -65,9 +66,15 @@ bool VMCSingleOMP::run()
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->startRun(nBlocks,traceClones);
 #endif
+
+  LoopTimer vmc_loop;
+  RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
+  bool enough_time_for_next_iteration = true;
+
   const bool has_collectables=W.Collectables.size();
   for (int block=0; block<nBlocks; ++block)
   {
+    vmc_loop.start();
     #pragma omp parallel
     {
       int ip=omp_get_thread_num();
@@ -105,6 +112,13 @@ bool VMCSingleOMP::run()
 #endif
     if(storeConfigs)
       recordBlock(block);
+    vmc_loop.stop();
+    enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(vmc_loop);
+    myComm->bcast(enough_time_for_next_iteration);
+    if (!enough_time_for_next_iteration) {
+      app_log() << runtimeControl.time_limit_message("VMC", block);
+      break;
+    }
   }//block
   Estimators->stop(estimatorClones);
   for (int ip=0; ip<NumThreads; ++ip)
@@ -235,11 +249,7 @@ void VMCSingleOMP::resetRun()
   {
     size_t before=qmc_common.memory_allocated;
     app_log() << "  Anonymous Buffer size per walker : "
-              << W[0]->DataSet.size() << " in base precision, "
-#ifdef MIXED_PRECISION
-              << W[0]->DataSet.size_DP() << " in full precision, "
-#endif
-              << "in total " << W[0]->DataSet.byteSize() << " bytes." << std::endl;
+              << W[0]->DataSet.byteSize() << " Bytes." << std::endl;
     qmc_common.memory_allocated+=W.getActiveWalkers()*W[0]->DataSet.byteSize();
     qmc_common.print_memory_change("VMCSingleOMP::resetRun",before);
   }
