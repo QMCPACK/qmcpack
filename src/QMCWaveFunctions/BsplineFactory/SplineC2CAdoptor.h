@@ -17,7 +17,6 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_C2C_SOA_ADOPTOR_H
 #define QMCPLUSPLUS_EINSPLINE_C2C_SOA_ADOPTOR_H
 
-#include <Numerics/VectorViewer.h>
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
 //#define USE_VECTOR_ML 1
@@ -174,7 +173,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
 
   void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
   {
-    VectorViewer<ST> v_r(psi_r,0), v_i(psi_i,0);
+    Vector<ST> v_r(psi_r,0), v_i(psi_i,0);
     SplineInst->set(2*ispline  ,v_r);
     SplineInst->set(2*ispline+1,v_i);
   }

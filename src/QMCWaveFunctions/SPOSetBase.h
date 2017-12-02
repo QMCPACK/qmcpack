@@ -52,7 +52,6 @@ public:
   typedef OrbitalSetTraits<ValueType>::GradHessType  GGGType;
   typedef OrbitalSetTraits<ValueType>::GradHessVector_t GGGVector_t;
   typedef OrbitalSetTraits<ValueType>::GradHessMatrix_t GGGMatrix_t;
-  typedef OrbitalSetTraits<ValueType>::RefVector_t      RefVector_t;
   typedef OrbitalSetTraits<ValueType>::VGLVector_t      VGLVector_t;
   typedef ParticleSet::Walker_t                      Walker_t;
   typedef std::map<std::string,SPOSetBase*> SPOPool_t;

@@ -37,7 +37,6 @@
 #include <spline/einspline_engine.hpp>
 #include <spline/einspline_util.hpp>
 #include <simd/allocator.hpp>
-#include <Numerics/VectorViewer.h>
 
 namespace qmcplusplus
 {
@@ -330,9 +329,9 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
     typedef GradMatrix_t::value_type grad_type;
     for(int iat=first, i=0; iat<last; ++iat,++i)
     {
-      VectorViewer<value_type> v(logdet[i],OrbitalSetSize);
-      VectorViewer<grad_type> g(dlogdet[i],OrbitalSetSize);
-      VectorViewer<value_type> l(d2logdet[i],OrbitalSetSize);
+      ValueVector_t v(logdet[i],OrbitalSetSize);
+      GradVector_t  g(dlogdet[i],OrbitalSetSize);
+      ValueVector_t l(d2logdet[i],OrbitalSetSize);
       SplineAdoptor::evaluate_vgl(P,iat,v,g,l);
     }
   }
@@ -345,9 +344,9 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
     typedef HessMatrix_t::value_type hess_type;
     for(int iat=first, i=0; iat<last; ++iat,++i)
     {
-      VectorViewer<value_type> v(logdet[i],OrbitalSetSize);
-      VectorViewer<grad_type> g(dlogdet[i],OrbitalSetSize);
-      VectorViewer<hess_type> h(grad_grad_logdet[i],OrbitalSetSize);
+      ValueVector_t v(logdet[i],OrbitalSetSize);
+      GradVector_t  g(dlogdet[i],OrbitalSetSize);
+      HessVector_t  h(grad_grad_logdet[i],OrbitalSetSize);
       SplineAdoptor::evaluate_vgh(P,iat,v,g,h);
     }
   }
