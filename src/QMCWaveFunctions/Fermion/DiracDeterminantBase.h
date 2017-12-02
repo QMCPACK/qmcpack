@@ -265,9 +265,6 @@ public:
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   ValueMatrix_t psiM, psiM_temp;
 
-  /// temporary container for evaluateRatios if psiM_temp is not large enough;
-  ValueMatrix_t psiM_multi;
-
   /// temporary container for testing
   ValueMatrix_t psiMinv;
 
