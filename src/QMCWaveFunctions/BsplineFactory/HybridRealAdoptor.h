@@ -29,6 +29,7 @@ template<typename BaseAdoptor>
 struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename BaseAdoptor::DataType>
 {
   using HybridBase       = HybridAdoptorBase<typename BaseAdoptor::DataType>;
+  using ST               = typename BaseAdoptor::DataType;
   using PointType        = typename BaseAdoptor::PointType;
   using SingleSplineType = typename BaseAdoptor::SingleSplineType;
   using RealType         = typename SPOSetBase::RealType;
