@@ -139,13 +139,8 @@ int main(int argc, char** argv)
         generate(random_th, psiV.data(), nels);
         ratio_0=simd::dot(psiM0[iel],psiV.data(),nels);
 
-        if(delayedEng.delay_count)
-        {
-          delayedEng.getInvRow(psiM_inv,iel,Ainv_row.data());
-          ratio_1=simd::dot(Ainv_row.data(),psiV.data(),nels);
-        }
-        else
-          ratio_1=simd::dot(psiM_inv[iel],psiV.data(),nels);
+        delayedEng.getInvRow(psiM_inv,iel,Ainv_row.data());
+        ratio_1=simd::dot(Ainv_row.data(),psiV.data(),nels);
 
         err += std::abs(ratio_1-ratio_0);
         if(ratio_0>0 && ratio_0>0.5*random_th())
@@ -154,6 +149,7 @@ int main(int argc, char** argv)
           delayedEng.acceptRow(psiM_inv,psiV.data(),iel);
         }
       }
+      delayedEng.updateInvMat(psiM_inv);
       error += err;
     }
 
