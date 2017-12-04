@@ -435,7 +435,7 @@ QMCGaussianParserBase::createDeterminantSetWithHDF5()
     xmlSetProp(ddet,(const xmlChar*)"id",(const xmlChar*)"downdet");
     xmlSetProp(ddet,(const xmlChar*)"size",(const xmlChar*)down_size.str().c_str());
     if (DoCusp==true)
-       xmlNewProp(udet,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/updet.cuspInfo.xml");
+       xmlSetProp(ddet,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/downdet.cuspInfo.xml");
   }
   else
   {
@@ -443,7 +443,7 @@ QMCGaussianParserBase::createDeterminantSetWithHDF5()
     xmlSetProp(ddet,(const xmlChar*)"id",(const xmlChar*)"downdet");
     xmlSetProp(ddet,(const xmlChar*)"size",(const xmlChar*)down_size.str().c_str());
     if (DoCusp==true)
-       xmlNewProp(udet,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/updet.cuspInfo.xml");
+       xmlNewProp(ddet,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/downdet.cuspInfo.xml");
     xmlNodePtr o= xmlAddChild(ddet,xmlCopyNode(occ_data,1));
     xmlNodePtr c= xmlCopyNode(coeff_data,1);
     xmlSetProp(c,(const xmlChar*)"spindataset",(const xmlChar*)"1");
