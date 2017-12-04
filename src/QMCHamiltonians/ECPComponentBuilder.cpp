@@ -30,7 +30,7 @@ namespace qmcplusplus
 
 ECPComponentBuilder::ECPComponentBuilder(const std::string& aname, Communicate* c):
   MPIObjectBase(c),
-  RcutMax(-1), NumNonLocal(0), Lmax(0), Zeff(0), Species(aname), Nrule(4),
+  RcutMax(-1), NumNonLocal(0), Lmax(0), AtomicNumber(0), Zeff(0), Species(aname), Nrule(4),
   grid_global(0),pp_loc(0), pp_nonloc(0)
 {
   angMon["s"]=0;
@@ -163,6 +163,7 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
     if(cname == "header")
     {
       Zeff = atoi((const char*)xmlGetProp(cur,(const xmlChar*)"zval"));
+      AtomicNumber = atoi((const char*)xmlGetProp(cur,(const xmlChar*)"atomic-number"));
     }
     else if(cname == "grid")
     {
