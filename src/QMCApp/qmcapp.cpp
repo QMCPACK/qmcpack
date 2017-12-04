@@ -183,14 +183,11 @@ int main(int argc, char **argv)
   std::string myinput = inputs[qmcComm->getGroupID()];
   myinput = myinput.substr(0,myinput.size()-4);
   logname << myinput;
-// Need to turn off output for rank != 0
-// Need to redirect to files for input.size > 1
+
   if (qmcComm->rank() != 0) {
     outputManager.shutOff();
     // might need to redirect debug stream to a file per rank if debugging is enabled
   }
-// keep off until entire output is converted from OhmmsInfo
-#if 0
   if (inputs.size() > 1 && qmcComm->rank() == 0) {
     char fn[128];
     snprintf(fn, 127, "%s.g%03d.qmc",logname.str().c_str(),qmcComm->getGroupID());
@@ -199,7 +196,6 @@ int main(int argc, char **argv)
     infoLog.redirectToSameStream(infoSummary);
     infoError.redirectToSameStream(infoSummary);
   }
-#endif
 
 //#if defined(MPIRUN_EXTRA_ARGUMENTS)
 //  //broadcast the input file name to other nodes
