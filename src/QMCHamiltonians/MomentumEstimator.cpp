@@ -21,7 +21,7 @@
 #include <Utilities/SimpleParser.h>
 #include <Particle/DistanceTableData.h>
 #include <Numerics/DeterminantOperators.h>
-
+//#include <cstdint>
 #include <set>
 
 namespace qmcplusplus
@@ -42,7 +42,8 @@ void MomentumEstimator::resetTargetParticleSet(ParticleSet& P)
 }
 
 MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
-{
+{ 
+  RealType w=tWalker->Weight;
   const int np=P.getTotalNum();
   nofK=0.0;
   compQ=0.0;
@@ -57,18 +58,22 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
     //make it cartesian
     newpos=Lattice.toCart(newpos);
     P.makeVirtualMoves(newpos); //updated: temp[i].r1=|newpos-P.R[i]|, temp[i].dr1=newpos-P.R[i]
+
     refPsi.get_ratios(P,psi_ratios);
+
 //         for (int i=0; i<np; ++i) app_log()<<i<<" "<<psi_ratios[i].real()<<" "<<psi_ratios[i].imag()<< std::endl;
     P.rejectMove(0); //restore P.R[0] to the orginal position
     for (int ik=0; ik < kPoints.size(); ++ik)
     {
       for (int i=0; i<np; ++i)
-        kdotp[i]=dot(kPoints[ik],temp[i].dr1_nobox);
+        kdotp[i]=-dot(kPoints[ik],temp[i].dr1_nobox);
       eval_e2iphi(np,kdotp.data(),phases.data());
       RealType nofk_here(std::real(BLAS::dot(np,phases.data(),&psi_ratios[0])));//psi_ratios.data())));
+
       nofK[ik]+= nofk_here;
       tmpn_k[ik]=nofk_here;
     }
+
     for (int iq=0; iq < compQ.size(); ++iq)
       for (int i=0; i<mappedQtonofK[iq].size(); ++i)
         compQ[iq] += tmpn_k[mappedQtonofK[iq][i]];
@@ -81,9 +86,9 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
   {
     int j=myIndex;
     for (int ik=0; ik<nofK.size(); ++ik,++j)
-      P.Collectables[j]+= nofK[ik];
+      P.Collectables[j]+= w*nofK[ik];
     for (int iq=0; iq<compQ.size(); ++iq,++j)
-      P.Collectables[j]+= compQ[iq];
+      P.Collectables[j]+= w*compQ[iq];
   }
   return 0.0;
 }
@@ -213,7 +218,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
           kpt[2]=k-twist[2];
           //convert to Cartesian: note that 2Pi is multiplied
           kpt=Lattice.k_cart(kpt);
-          kPoints.push_back(kpt);
+	  kPoints.push_back(kpt);
           mappedQtonofK[i+kgrid].push_back(indx);
           mappedQtonofK[j+kgrid+(2*kgrid+1)].push_back(indx);
           mappedQtonofK[k+kgrid+(4*kgrid+2)].push_back(indx);
