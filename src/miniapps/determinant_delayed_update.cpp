@@ -42,11 +42,11 @@ int main(int argc, char** argv)
   OhmmsInfo welcome(argc,argv,OHMMS::Controller->rank());
   Communicate* mycomm=OHMMS::Controller;
 
-  //typedef OHMMS_PRECISION REAL_T;
+  typedef OHMMS_PRECISION REAL_T;
   //use the global generator
 
   bool ionode=(mycomm->rank() == 0);
-  int nels=8;
+  int nels=128;
   int iseed=11;
   int nsteps=100;
   int ncrews=1;
@@ -99,7 +99,7 @@ int main(int argc, char** argv)
   bigClock.restart();
   double t_compute=0.0, t_ratio=0.0, t_accept=0.0, error=0.0;
   int naccepted=0;
-#pragma omp parallel reduction(+:t_compute, t_ratio, t_accept, error, naccepted)
+#pragma omp parallel reduction(+:error, naccepted, t_ratio,t_accept,t_compute)
   {
     Timer clock, clock_mc;
     clock.restart();
@@ -234,10 +234,15 @@ int main(int argc, char** argv)
     nthreads_nested=omp_get_max_threads();
   }
 
-  cout << "determinant " << nels << " rank " << delay << " Total accepted " << naccepted << " /" << nels*nsteps << " " 
-    << naccepted/static_cast<double>(nels*nsteps) << " error " << error*omp_fac << endl;
-  cout << nels << " " << delay << " " << nthreads << " " << nthreads_nested << " total " << (t_ratio+t_accept) << " ratio " << t_ratio  << " accept " << t_accept << endl;
-  cout << nels << " " << delay << " " << nthreads << " " << nthreads_nested << " per   " << (t_ratio+t_accept)/(nsteps/nsubsteps) << " ratio " << t_ratio/(nsteps*nels)  << " accept " << t_accept/naccepted << endl;
+  if(mycomm->rank()==0)
+  { 
+    cout << "# determinant " << nels << " rank " << delay << " Total accepted " << naccepted << " /" << nels*nsteps << " " 
+      << naccepted/static_cast<double>(nels*nsteps) << " error " << error*omp_fac << endl;
+    cout << "# N K MPI OMP-walker OMP-det T_accept T_ratio T_total T_accept/call T_ratio/call T_total/step " << endl;
+    cout << "Det " << nels << " " << delay << " " << mycomm->size() << " " << nthreads << " " << nthreads_nested << " " 
+      << t_accept << " "<< t_ratio  << " " << (t_ratio+t_accept) << " " 
+      << t_accept/naccepted << " " << t_ratio/(nsteps*nels)  << " " << (t_ratio+t_accept)/(nsteps/nsubsteps) << endl;
+  }
   //t_diffusion*=1.0/static_cast<double>(nsteps*nsubsteps*nthreads);
   //t_pseudo   *=1.0/static_cast<double>(nsteps*nthreads);
   //cout << "#per MC step steps " << nsteps << " substeps " << nsubsteps << endl;
