@@ -70,7 +70,7 @@ int main(int argc, char **argv)
   token = prefix.substr(0, pos);
   prefix.erase(0, pos + delimiter.length());
   prefix=token;
-  std::cout << "PREFIX="<<prefix << std::endl;
+  std::cout << "Using "<<prefix <<" to name output files"<< std::endl;
 
   int TargetState=0;
   bool usehdf5=false;
