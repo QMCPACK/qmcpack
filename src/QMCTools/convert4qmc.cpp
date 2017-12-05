@@ -148,10 +148,6 @@ int main(int argc, char **argv)
     {
       addCusp = true;
     }
-   // else if(a == "-nojastrow" )
-   // {
-   //    = true;
-   // }
     else if(a == "-threshold" )
     {
       thres = atof(argv[++iargc]);
