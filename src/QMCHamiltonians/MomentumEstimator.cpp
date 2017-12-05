@@ -21,7 +21,6 @@
 #include <Utilities/SimpleParser.h>
 #include <Particle/DistanceTableData.h>
 #include <Numerics/DeterminantOperators.h>
-//#include <cstdint>
 #include <set>
 
 namespace qmcplusplus
@@ -42,8 +41,7 @@ void MomentumEstimator::resetTargetParticleSet(ParticleSet& P)
 }
 
 MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
-{ 
-  RealType w=tWalker->Weight;
+{
   const int np=P.getTotalNum();
   nofK=0.0;
   compQ=0.0;
@@ -84,6 +82,7 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
     compQ[iq] *= mappedQnorms[iq];
   if (hdf5_out)
   {
+    RealType w=tWalker->Weight;
     int j=myIndex;
     for (int ik=0; ik<nofK.size(); ++ik,++j)
       P.Collectables[j]+= w*nofK[ik];
@@ -218,7 +217,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
           kpt[2]=k-twist[2];
           //convert to Cartesian: note that 2Pi is multiplied
           kpt=Lattice.k_cart(kpt);
-	  kPoints.push_back(kpt);
+          kPoints.push_back(kpt);
           mappedQtonofK[i+kgrid].push_back(indx);
           mappedQtonofK[j+kgrid+(2*kgrid+1)].push_back(indx);
           mappedQtonofK[k+kgrid+(4*kgrid+2)].push_back(indx);
