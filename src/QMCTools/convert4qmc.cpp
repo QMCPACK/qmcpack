@@ -55,10 +55,23 @@ int main(int argc, char **argv)
   QMCGaussianParserBase *parser=0;
   int iargc=0;
   std::string in_file(argv[1]);
+
+  
   std::string punch_file;
   std::string psi_tag("psi0");
   std::string ion_tag("ion0");
-  std::string prefix("sample");
+  std::string prefix(argv[2]);
+
+
+  std::string delimiter =".out";
+  int pos = 0;
+  std::string token;
+  pos = prefix.find(delimiter);
+  token = prefix.substr(0, pos);
+  prefix.erase(0, pos + delimiter.length());
+  prefix=token;
+  std::cout << "PREFIX="<<prefix << std::endl;
+
   int TargetState=0;
   bool usehdf5=false;
   bool ci=false,zeroCI=false,orderByExcitation=false,VSVB=false, fmo=false,addCusp=false;
@@ -135,6 +148,10 @@ int main(int argc, char **argv)
     {
       addCusp = true;
     }
+   // else if(a == "-nojastrow" )
+   // {
+   //    = true;
+   // }
     else if(a == "-threshold" )
     {
       thres = atof(argv[++iargc]);

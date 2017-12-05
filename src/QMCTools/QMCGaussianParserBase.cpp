@@ -40,7 +40,7 @@ std::vector<int> QMCGaussianParserBase::gShellID;
 
 QMCGaussianParserBase::QMCGaussianParserBase():
   Title("sample"),basisType("Gaussian"),basisName("generic"),DoCusp(false),
-  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01)
+  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),WFS_name("wfj")
   ,usingCSF(false),readNO(0),readGuess(0),zeroCI(false),target_state(0)
   ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false),QP(false),ECP(false)
 {
@@ -48,7 +48,7 @@ QMCGaussianParserBase::QMCGaussianParserBase():
 
 QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
   BohrUnit(true),SpinRestricted(false),NumberOfAtoms(0),NumberOfEls(0),DoCusp(false),
-  SpinMultiplicity(0),NumberOfAlpha(0),NumberOfBeta(0),SizeOfBasisSet(0),
+  SpinMultiplicity(0),NumberOfAlpha(0),NumberOfBeta(0),SizeOfBasisSet(0),WFS_name("wfj"),
   Title("sample"),basisType("Gaussian"),basisName("generic"),numMO(0),numMO2print(-1),
   Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),target_state(0),
   angular_type("spherical"),usingCSF(false),readNO(0),readGuess(0),zeroCI(false)
@@ -217,17 +217,9 @@ void QMCGaussianParserBase::setOccupationNumbers()
     Occ_beta[i]=1;
 }
 
-xmlNodePtr QMCGaussianParserBase::createElectronSet()
+xmlNodePtr QMCGaussianParserBase::createElectronSet(const std::string& ion_tag)
 {
-//  const double ang_to_bohr=1.0/0.529177e0;
-//   if(!BohrUnit) IonSystem.R *= ang_to_bohr;
-//   SpeciesSet& ionSpecies(IonSystem.getSpeciesSet());
-//   for(int i=0; i<NumberOfAtoms; i++) {
-//     ionSpecies.addSpecies(GroupName[i]);
-//   }
-//   for(int i=0; i<NumberOfAtoms; i++) {
-//     ionSpecies(IonChargeIndex,IonSystem.GroupID[i])=Qv[i];
-//   }
+
   ParticleSet els;
   els.setName("e");
   std::vector<int> nel(2);
@@ -239,20 +231,37 @@ xmlNodePtr QMCGaussianParserBase::createElectronSet()
   int ic=els.getSpeciesSet().addAttribute("charge");
   els.getSpeciesSet()(ic,iu)=-1;
   els.getSpeciesSet()(ic,id)=-1;
-  //Create InitMolecularSystem to assign random electron positions
-  InitMolecularSystem m(0,"test");
-  if(IonSystem.getTotalNum()>1)
+
+  xmlNodePtr cur = xmlNewNode(NULL,(const xmlChar*)"particleset");
+  xmlNewProp(cur,(const xmlChar*)"name",(const xmlChar*)els.getName().c_str());
+  xmlNewProp(cur,(const xmlChar*)"random",(const xmlChar*)"yes");
+  xmlNewProp(cur,(const xmlChar*)"randomsrc",(const xmlChar*)ion_tag.c_str());
+
+  //Electron up
   {
-    std::cout <<"Total number atoms "<<IonSystem.getTotalNum()<< std::endl;
-    m.initAtom(&IonSystem,&els);
-    //m.initMolecule(&IonSystem,&els);
+    std::ostringstream ng;
+    ng << els.last(0)-els.first(0);
+    xmlNodePtr g=xmlNewNode(NULL,(const xmlChar*)"group");
+    xmlNewProp(g,(const xmlChar*)"name",(const xmlChar*)"u");
+    xmlNewProp(g,(const xmlChar*)"size",(const xmlChar*)ng.str().c_str());
+    xmlNodePtr p=xmlNewTextChild(g,NULL,
+                                   (const xmlChar*)"parameter", (const xmlChar*)"-1");
+          xmlNewProp(p,(const xmlChar*)"name",(const xmlChar*)"charge");
+    xmlAddChild(cur,g);
   }
-  else
+  //Electron dn
   {
-    m.initAtom(&IonSystem,&els);
+    std::ostringstream ng;
+    ng << els.last(1)-els.first(1);
+    xmlNodePtr g=xmlNewNode(NULL,(const xmlChar*)"group");
+    xmlNewProp(g,(const xmlChar*)"name",(const xmlChar*)"d");
+    xmlNewProp(g,(const xmlChar*)"size",(const xmlChar*)ng.str().c_str());
+    xmlNodePtr p=xmlNewTextChild(g,NULL,
+                                   (const xmlChar*)"parameter", (const xmlChar*)"-1");
+          xmlNewProp(p,(const xmlChar*)"name",(const xmlChar*)"charge");
+    xmlAddChild(cur,g);
   }
-  XMLSaveParticle o(els);
-  return o.createNode(false);
+  return cur;
 }
 
 xmlNodePtr QMCGaussianParserBase::createESPSet(int iesp)
@@ -1566,6 +1575,7 @@ void QMCGaussianParserBase::createGridNode(int argc, char** argv)
             if(a == "-nojastrow")
             {
               addJastrow=false;
+              WFS_name="wfnoj";
             }
             else
               if(a == "-numMO")
@@ -1587,10 +1597,10 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
   {
     xmlDocPtr doc_p = xmlNewDoc((const xmlChar*)"1.0");
     xmlNodePtr qm_root_p = xmlNewNode(NULL, BAD_CAST "qmcsystem");
-    xmlAddChild(qm_root_p,createElectronSet());
     xmlAddChild(qm_root_p,createIonSet());
+    xmlAddChild(qm_root_p,createElectronSet(ion_tag));
     xmlDocSetRootElement(doc_p, qm_root_p);
-    std::string fname = Title+"."+basisName+".ptcl.xml";
+    std::string fname = Title+".structure.xml";
     xmlSaveFormatFile(fname.c_str(),doc_p,1);
     xmlFreeDoc(doc_p);
   }
@@ -1702,7 +1712,7 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
     }
   }
   xmlXPathFreeObject(result);
-  std::string fname = Title+"."+basisName+".xml";
+  std::string fname = Title+"."+WFS_name+".xml";
   xmlSaveFormatFile(fname.c_str(),doc,1);
   xmlFreeDoc(doc);
   if (numMO*SizeOfBasisSet>=500 && !UseHDF5)
@@ -1739,12 +1749,12 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
     Comment<<" Link to the location of the Atomic Coordinates and the location of the Wavefunction.";
     xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
     xmlAddChild(qm_root_input,MyComment);
-    std::string Ptclname = Title+"."+basisName+".ptcl.xml";
+    std::string Ptclname = Title+".structure.xml";
     xmlNodePtr ptcl = xmlNewNode(NULL,(const xmlChar*)"include");
     xmlNewProp(ptcl,(const xmlChar*)"href", (const xmlChar*)Ptclname.c_str());
     xmlAddChild(qm_root_input,ptcl);
 
-    std::string Wfsname = Title+"."+basisName+".xml";
+    std::string Wfsname = Title+"."+WFS_name+".xml";
     xmlNodePtr wfs = xmlNewNode(NULL,(const xmlChar*)"include");
     xmlNewProp(wfs,(const xmlChar*)"href", (const xmlChar*)Wfsname.c_str());
     xmlAddChild(qm_root_input,wfs);
@@ -1760,12 +1770,12 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
   }
   
   ///Adding Electrons Initialization 
-  {
+  /*{
     xmlNodePtr initE = xmlNewNode(NULL,(const xmlChar*)"init");
     xmlNewProp(initE,(const xmlChar*)"source", (const xmlChar*)ion_tag.c_str());
     xmlNewProp(initE,(const xmlChar*)"target", (const xmlChar*)"e");
     xmlAddChild(qm_root_input,initE);
-  }
+  }*/
 
   ///Adding Optimization Block based on One Shift Only
   {
@@ -1951,7 +1961,7 @@ void QMCGaussianParserBase::Fmodump(const std::string& psi_tag,
    
        xmlDocPtr doc_p = xmlNewDoc((const xmlChar*)"1.0");
        xmlNodePtr qm_root_p = xmlNewNode(NULL, BAD_CAST "qmcsystem");
-       xmlAddChild(qm_root_p,createElectronSet());
+       xmlAddChild(qm_root_p,createElectronSet(ion_tag));
 
      for(int i=0 ; i<NumberOfAtoms; i++)
        xmlAddChild(qm_root_p,createIonSet());
@@ -1965,7 +1975,7 @@ void QMCGaussianParserBase::Fmodump(const std::string& psi_tag,
    {
     xmlDocPtr doc_p = xmlNewDoc((const xmlChar*)"1.0");
     xmlNodePtr qm_root_p = xmlNewNode(NULL, BAD_CAST "qmcsystem");
-    xmlAddChild(qm_root_p,createElectronSet());
+    xmlAddChild(qm_root_p,createElectronSet(ion_tag));
     xmlAddChild(qm_root_p,createIonSet());
     for (int iesp=0;iesp<TotNumMonomer;iesp++)
     {
