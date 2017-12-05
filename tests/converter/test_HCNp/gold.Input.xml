@@ -11,7 +11,9 @@
     <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
     <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
     <pairpot name="PseudoPot" type="pseudo" source="ion0" wavefunction="psi0" format="xml">
-      <pseudo elementType="He" href="He.qmcpp.xml"/>
+      <pseudo elementType="C" href="C.qmcpp.xml"/>
+      <pseudo elementType="H" href="H.qmcpp.xml"/>
+      <pseudo elementType="N" href="N.qmcpp.xml"/>
     </pairpot>
   </hamiltonian>
   <!-- 
