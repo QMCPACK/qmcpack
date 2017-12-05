@@ -1763,7 +1763,7 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
   ///Adding Hamiltonian
   {
     std::ostringstream Comment;
-    Comment<<" Hamiltonian of the system. By Default, We assume BFD ECP. Please rename if needed.";
+    Comment<<" Hamiltonian of the system. Default ECP name is assumed. Please rename for the type of ECP you will be using.";
     xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
     xmlAddChild(qm_root_input,MyComment);
     xmlAddChild(qm_root_input,createHamiltonian(ion_tag,psi_tag));
@@ -2202,7 +2202,7 @@ xmlNodePtr QMCGaussianParserBase::createHamiltonian(const std::string& ion_tag,c
         
         for (int iat=0;iat<AtomNames.size();iat++)
         {
-          std::string PPname = AtomNames[iat]+".BFD.xml";
+          std::string PPname = AtomNames[iat]+".qmcpp.xml";
           xmlNodePtr a= xmlNewNode(NULL,(const xmlChar*)"pseudo");
           xmlNewProp(a,(const xmlChar*)"elementType", (const xmlChar*)AtomNames[iat].c_str());
           xmlNewProp(a,(const xmlChar*)"href", (const xmlChar*)PPname.c_str());
