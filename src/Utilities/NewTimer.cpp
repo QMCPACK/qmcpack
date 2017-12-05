@@ -265,13 +265,14 @@ TimerManagerClass::print_flat(Communicate* comm)
   {
     #pragma omp master
     {
-      char tmpout[256];
+      const int bufsize = 256;
+      char tmpout[bufsize];
       std::map<std::string,int>::iterator it(p.nameList.begin()), it_end(p.nameList.end());
       while(it != it_end)
       {
         int i=(*it).second;
         //if(callList[i]) //skip zeros
-        snprintf (tmpout, 255, "%-40s  %9.4f  %13ld  %16.9f  %12.6f TIMER\n"
+        snprintf (tmpout, bufsize, "%-40s  %9.4f  %13ld  %16.9f  %12.6f TIMER\n"
         , (*it).first.c_str()
         , p.timeList[i], p.callList[i]
         , p.timeList[i]/(static_cast<double>(p.callList[i])+std::numeric_limits<double>::epsilon())
@@ -320,12 +321,12 @@ TimerManagerClass::print_stack(Communicate* comm)
       max_name_len = std::max(name_len, max_name_len);
     }
 
-    char tmpout[256];
+    const int bufsize = 256;
+    char tmpout[bufsize];
     std::string timer_name;
     pad_string("Timer", timer_name, max_name_len);
 
-    snprintf(tmpout, 255, "%s  %-9s  %-9s  %-10s  %-13s\n",timer_name.c_str(),"Inclusive_time","Exclusive_time","Calls","Time_per_call");
-    tmpout[255] = '\0';
+    snprintf(tmpout, bufsize, "%s  %-9s  %-9s  %-10s  %-13s\n",timer_name.c_str(),"Inclusive_time","Exclusive_time","Calls","Time_per_call");
     app_log() << tmpout;
 
     for (int i = 0; i < p.names.size(); i++)
@@ -337,13 +338,12 @@ TimerManagerClass::print_stack(Communicate* comm)
       std::string indented_str = indent_str + name;
       std::string padded_name_str;
       pad_string(indented_str, padded_name_str, max_name_len);
-      snprintf (tmpout, 255, "%s  %9.4f  %9.4f  %13ld  %16.9f\n"
+      snprintf (tmpout, bufsize, "%s  %9.4f  %9.4f  %13ld  %16.9f\n"
               , padded_name_str.c_str()
               , p.timeList[i]
               , p.timeExclList[i]
               , p.callList[i]
               , p.timeList[i]/(static_cast<double>(p.callList[i])+std::numeric_limits<double>::epsilon()));
-      tmpout[255] = '\0';
       app_log() << tmpout;
     }
   }
