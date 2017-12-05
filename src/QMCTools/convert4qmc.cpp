@@ -60,20 +60,13 @@ int main(int argc, char **argv)
   std::string punch_file;
   std::string psi_tag("psi0");
   std::string ion_tag("ion0");
-  std::string prefix(argv[2]);
 
+  std::string prefix;
 
-  std::string delimiter =".out";
-  int pos = 0;
-  std::string token;
-  pos = prefix.find(delimiter);
-  token = prefix.substr(0, pos);
-  prefix.erase(0, pos + delimiter.length());
-  prefix=token;
-  std::cout << "Using "<<prefix <<" to name output files"<< std::endl;
 
   int TargetState=0;
   bool usehdf5=false;
+  bool useprefix=false;
   bool ci=false,zeroCI=false,orderByExcitation=false,VSVB=false, fmo=false,addCusp=false;
   double thres=0.01;
   int readNO=0; // if > 0, read Natural Orbitals from gamess output
@@ -138,6 +131,7 @@ int main(int argc, char **argv)
     else if(a == "-prefix")
     {
       prefix=argv[++iargc];
+      useprefix=true;
     }
     else if(a == "-ci")
     {
@@ -218,6 +212,18 @@ int main(int argc, char **argv)
       exit(1);
     }
   }
+  if (useprefix!=true)
+  {
+    prefix=in_file;
+    std::string delimiter =".out";
+    int pos = 0;
+    std::string token;
+    pos = prefix.find(delimiter);
+    token = prefix.substr(0, pos);
+    prefix.erase(0, pos + delimiter.length());
+    prefix=token;
+  }
+  std::cout << "Using "<<prefix <<" to name output files"<< std::endl;
   if(fmo)
   {
     parser->Title=prefix;
