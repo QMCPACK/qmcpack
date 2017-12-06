@@ -17,6 +17,7 @@
 #include <vector>
 #include <complex>
 #include <limits>
+#include <cstring>
 #include "simd/allocator.hpp"
 
 namespace qmcplusplus
