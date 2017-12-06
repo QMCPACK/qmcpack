@@ -27,6 +27,10 @@
 class NullStreamBuf : public std::streambuf
 {
 protected:
+    virtual std::streamsize xsputn(const char *s, std::streamsize n) {
+        return n;
+    }
+
     virtual int overflow(int c) { return c; }
 };
 
