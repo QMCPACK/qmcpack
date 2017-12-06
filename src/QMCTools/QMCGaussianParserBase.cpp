@@ -302,6 +302,7 @@ xmlNodePtr QMCGaussianParserBase::createIonSet()
     if(valence>CoreTable[z]&& FixValence!=true)
       valence-=CoreTable[z];
     ionSpecies(ValenceChargeIndex,i)=valence;
+    ionSpecies(AtomicNumberIndex,i)=z;
   }
   XMLSaveParticle o(IonSystem);
   return o.createNode(Periodicity);
