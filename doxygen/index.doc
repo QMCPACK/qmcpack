@@ -1,13 +1,17 @@
 /*!  \mainpage Overview
 
-QMCPACK, an open-source QMC simulation code written in C++, implements advanced
-continuum QMC algorithms for large-scale parallel computers. Its main
-applications are electronic structure calculatinos of molecular, quasi-2D and
-solid-state systems. Designed with the modularity afforded by object-oriented
-architecture, it makes extensive use of template metaprogramming to achieve
-high computational efficiency through inlined specializations. It utilizes a
-hybrid (OpenMP,CUDA)/MPI approach to parallelization to take advantage of the growing
-number of cores per SMP node or GPUs. Finally, it utilizes standard file formats for
-input and output in XML and HDF5 to facilitate data exchange.
+This website contains per class and per file-based documentation and
+diagrams for QMCPACK generated from the source code using the doxygen
+tool. QMCPACK is an open-source production level many-body ab initio
+Quantum Monte Carlo code for computing the electronic structure of
+atoms, molecules, and solids, including metals. Designed with the
+modularity afforded by object-oriented architecture, QMCPACK makes
+extensive use of template programming to achieve high
+computational efficiency through inlined specializations. Full details
+of QMCPACK are accessible via the main site http://www.qmcpack.org ,
+including the latest manual PDF at
+https://docs.qmcpack.org/qmcpack_manual.pdf
+
+Development of QMCPACK is managed via https://github.com/QMCPACK/qmcpack
 
 */
