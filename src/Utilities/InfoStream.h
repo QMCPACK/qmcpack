@@ -22,24 +22,6 @@
 #include <iomanip>
 #include <sstream>
 
-// Bit bucket to discard output
-// From https://stackoverflow.com/questions/7818371/printing-to-nowhere-with-ostream
-class NullStreamBuf : public std::streambuf
-{
-protected:
-    virtual std::streamsize xsputn(const char *s, std::streamsize n) {
-        return n;
-    }
-
-    virtual int overflow(int c) { return c; }
-};
-
-class NullStream : public NullStreamBuf, public std::ostream
-{
-public:
-    NullStream() : std::ostream(this) {}
-};
-
 /**
  *  Interface to output streams.  Can redirect output to stdout/stderr, a file, or a null stream.
  */
@@ -47,12 +29,12 @@ public:
 class InfoStream
 {
 public:
-  InfoStream(std::ostream *output_stream): prevStream(NULL), nullStream(new NullStream),
+  InfoStream(std::ostream *output_stream): prevStream(NULL), nullStream(new std::ostream(NULL)),
       ownStream(false) {
     currStream = output_stream;
   }
 
-  InfoStream(InfoStream &in): prevStream(NULL), nullStream(new NullStream),
+  InfoStream(InfoStream &in): prevStream(NULL), nullStream(new std::ostream(NULL)),
       ownStream(false) {
     redirectToSameStream(in);
   }
