@@ -198,6 +198,13 @@ public:
   inline void acceptMove(ParticleSet& P, int iat)
   {
     Dets[getDetID(iat)]->acceptMove(P,iat);
+
+    LogValue=0.0;
+    PhaseValue=0.0;
+    for(int i=0; i<Dets.size(); ++i) {
+      LogValue+= Dets[i]->LogValue;
+      PhaseValue+= Dets[i]->PhaseValue;
+    }
   }
 
   virtual
@@ -251,6 +258,13 @@ public:
     // Now add on contribution from each determinant to the derivatives
     for (int i=0; i<Dets.size(); i++)
       Dets[i]->evaluateDerivatives(P, active, dlogpsi, dhpsioverpsi);
+  }
+
+  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                               std::vector<RealType>& dgradlogpsi)
+  {
+    for (int i=0; i<Dets.size(); i++)
+      Dets[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
   }
 
 #ifdef QMC_CUDA

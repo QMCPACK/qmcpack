@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction id="psi0" target="e">
+    <fdlrwfn name="FDLR">
+      <include wfn_x_href="h2.wfs_fdlr_x.xml" wfn_d_href="h2.wfs_fdlr_d.xml" opt_x="yes" opt_d="yes" singlet="yes"/>
+    </fdlrwfn>
+
+    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+      <correlation rcut="2" size="10" speciesA="u" speciesB="d">
+        <coefficients id="ud" type="Array" optimize="no">
+          4.7046e-01
+          3.8625e-01
+          3.1151e-01
+          2.4617e-01
+          1.8903e-01
+          1.3937e-01
+          9.6799e-02
+          6.1365e-02
+          3.2947e-02
+          1.2724e-02
+        </coefficients>
+      </correlation>
+    </jastrow>
+
+    <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" print="yes">
+      <correlation rcut="2" size="10" cusp="1" elementType="H">
+        <coefficients id="eH" type="Array" optimize="no">
+         -4.1023e-02
+         -2.8983e-02
+         -4.8587e-02
+         -3.5540e-02
+         -3.8003e-02
+         -3.7201e-02
+         -2.9247e-02
+         -1.8850e-02
+         -9.7391e-03
+         -3.7065e-03
+        </coefficients>
+      </correlation>
+    </jastrow>
+  </wavefunction>
+</qmcsystem>
