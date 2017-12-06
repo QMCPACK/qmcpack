@@ -28,7 +28,9 @@ int main(int argc, char** argv)
 {
 
   OHMMS::Controller->initialize(argc,argv);
-  OhmmsInfo welcome(argc,argv,OHMMS::Controller->rank());
+  if (OHMMS::Controller->rank()!=0) {
+    outputManager.shutOff();
+  }
   Communicate* mycomm=OHMMS::Controller;
 
   //use the global generator
@@ -75,8 +77,7 @@ int main(int argc, char** argv)
   //turn off output
   if(omp_get_max_threads()>1)
   {
-    OhmmsInfo::Log->turnoff();
-    OhmmsInfo::Warn->turnoff();
+    outputManager.pause();
   }
 
   Timer bigClock;
