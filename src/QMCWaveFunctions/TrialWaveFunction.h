@@ -136,6 +136,11 @@ public:
   {
     return PhaseValue;
   }
+
+  inline void setPhase(RealType PhaseValue_new)
+  {
+    PhaseValue = PhaseValue_new;
+  }
   void getLogs(std::vector<RealType>& lvals);
   void getPhases(std::vector<RealType>& pvals);
 
@@ -170,10 +175,16 @@ public:
   inline void resetPhaseDiff()
   {
     PhaseDiff=0.0;
+    for (int i=0; i<Z.size(); i++)
+      Z[i]->resetPhaseDiff();
   }
   inline RealType getLogPsi() const
   {
     return LogValue;
+  }
+  inline void setLogPsi(RealType LogPsi_new)
+  {
+    LogValue = LogPsi_new;
   }
 
   ///Add an OrbitalBase
@@ -282,6 +293,9 @@ public:
                            std::vector<RealType>& dlogpsi,
                            std::vector<RealType>& dhpsioverpsi,
                            bool project=false);
+
+  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                               std::vector<RealType>& dgradlogpsi);
 
   /** evalaute the values of the wavefunction, gradient and laplacian  for all the walkers */
   //void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);

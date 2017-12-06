@@ -1,0 +1,100 @@
+\section{Finite-difference linear response wave functions}
+
+\label{sec:fdlr}
+
+The finite-difference linear response wave function (FDLR) is an
+experimental wave function type, described in detail in
+Ref.\cite{blunt_charge-transfer_2017}. In this method, the wave
+function is formed as the linear response of some existing trial wave
+function in QMCPACK. This derivatives of this linear response are
+approximated by a simple finite-difference.
+
+Forming a wave function within the linear response space of an existing ansatz can be very powerful. For example, a configuration interaction singles (CIS) wave function can be formed as a linear combination of the first derivatives of a Slater determinant (with respect to its orbital rotation parameters). Thus, in this sense, CIS is the linear response of Hartree--Fock theory.
+
+Forming a CIS wave function as the linear response of an optimizable Slater determinant is where all testing of this wave function has been performed. In theory the implementation is flexible and it can be used with other trial wave functions in QMCPACK, but this has not been tested. The FDLR trial wave function is experimental.
+
+Mathematically, the FDLR wave function has the form:
+\begin{equation}
+\Psi_{\textrm{FDLR}} (\mathbf{\mu}, \mathbf{X}) = \Psi (\mathbf{X} + \mathbf{\mu}) - \Psi (\mathbf{X} - \mathbf{\mu}),
+\end{equation}
+where $\Psi(\mathbf{P})$ is some trial wave function in QMCPACK, and $\mathbf{P}$ are its optimizable parameters. $\mathbf{X}$ are the ``base'' parameters about which the finite difference is performed (for example, an overall orbital rotation). $\mathbf{\mu}$ are the ``finite difference'' parameters, which define the direction of the derivative, and whose magnitude determines the magnitude of the finite-difference. In the limit that the magnitude of $\mathbf{mu}$ goes to $0$, the $\Psi_{\textrm{FDLR}}$ object defined above becomes equivalent to
+\begin{equation}
+\Psi_{\textrm{FDLR}} (\mathbf{\mu}, \mathbf{X}) = \sum_{pq} \mu_{pq} \: \frac{\partial \Psi_{\textrm{det}} (\mathbf{X}) }{\partial X_{pq}},
+\end{equation}
+which is the desired linear response wave function that we are approximating. In the case that $\Psi(\mathbf{P})$ is a determinant with orbital rotation parameters $\mathbf{P}$, the above is a CIS wave function with CIS expansion coefficients $\mathbf{\mu}$ and orbital rotation $\mathbf{X}$.
+
+\subsection{Input Specifications}
+An FDLR wave function is specified within a \texttt{<fdlr> ... </fdlr>} block.
+
+To fully specify an FDLR wave function as above, we require the initial parameters for both $\mathbf{X}$ and $\mathbf{\mu}$ to be input. This therefore requires two trial wave functions to be provided on input. Each of these is best specified in its own XML file. The names of these two files are provided in an \texttt{<include>} tag via \texttt{<include wfn\_x\_href=`` ... '' wfn\_d\_href=`` ... ''>}. \texttt{wfn\_x\_href} specifies the file that will hold the $\mathbf{X}$ parameters. \texttt{wfn\_d\_href} specifies the file that will hold the $\mathbf{\mu}$ parameters.
+
+Other options inside the \texttt{<include>} tag are \texttt{opt\_x} and \texttt{opt\_d}, which specify whether or not $\mathbf{X}$ and $\mathbf{\mu}$ parameters are optimizable, respectively.
+
+\subsection{Example Use Case}
+
+\begin{lstlisting}
+<fdlrwfn name="FDLR">
+  <include wfn_x_href="h2.wfn_x.xml" wfn_d_href="h2.wfn_d.xml" opt_x="yes" opt_d="yes"/>
+</fdlrwfn>
+\end{lstlisting}
+
+with the \texttt{h2.wfn\_x.xml} file containing one of the wave functions and corresponding set of $\mathbf{X}$ parameters, such as:
+
+\begin{lstlisting}
+<?xml version="1.0"?>
+<wfn_x>
+    <determinantset name="LCAOBSet" type="MolecularOrbital" transform="yes" source="ion0">
+      <basisset name="LCAOBSet">
+        <atomicBasisSet name="Gaussian-G2" angular="cartesian" type="Gaussian" elementType="H" normalized="no">
+          <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+          <basisGroup rid="H00" n="0" l="0" type="Gaussian">
+            <radfunc exponent="1.923840000000e+01" contraction="3.282799101900e-02"/>
+            <radfunc exponent="2.898720000000e+00" contraction="2.312039367510e-01"/>
+            <radfunc exponent="6.534720000000e-01" contraction="8.172257764360e-01"/>
+          </basisGroup>
+          <basisGroup rid="H10" n="1" l="0" type="Gaussian">
+            <radfunc exponent="1.630642000000e-01" contraction="1.000000000000e+00"/>
+          </basisGroup>
+        </atomicBasisSet>
+      </basisset>
+
+    <slaterdeterminant optimize="yes">
+      <determinant id="det_up" sposet="spo-up">
+        <opt_vars size="3">
+          0.0 0.0 0.0
+        </opt_vars>
+      </determinant>
+
+      <determinant id="det_down" sposet="spo-dn">
+        <opt_vars size="3">
+          0.0 0.0 0.0
+        </opt_vars>
+      </determinant>
+    </slaterdeterminant>
+
+      <sposet basisset="LCAOBSet" name="spo-up" size="4" optimize="yes">
+        <occupation mode="ground"/>
+        <coefficient size="4" id="updetC">
+  2.83630000000000e-01  3.35683000000000e-01  2.83630000000000e-01  3.35683000000000e-01
+  1.66206000000000e-01  1.22367400000000e+00 -1.66206000000000e-01 -1.22367400000000e+00
+  8.68279000000000e-01 -6.95081000000000e-01  8.68279000000000e-01 -6.95081000000000e-01
+ -9.77898000000000e-01  1.19682400000000e+00  9.77898000000000e-01 -1.19682400000000e+00
+</coefficient>
+      </sposet>
+      <sposet basisset="LCAOBSet" name="spo-dn" size="4" optimize="yes">
+        <occupation mode="ground"/>
+        <coefficient size="4" id="downdetC">
+  2.83630000000000e-01  3.35683000000000e-01  2.83630000000000e-01  3.35683000000000e-01
+  1.66206000000000e-01  1.22367400000000e+00 -1.66206000000000e-01 -1.22367400000000e+00
+  8.68279000000000e-01 -6.95081000000000e-01  8.68279000000000e-01 -6.95081000000000e-01
+ -9.77898000000000e-01  1.19682400000000e+00  9.77898000000000e-01 -1.19682400000000e+00
+</coefficient>
+      </sposet>
+
+    </determinantset>
+</wfn_x>
+\end{lstlisting}
+and similarly for the \texttt{h2.wfn\_d.xml} file, which will hold the initial $\mathbf{\mu}$ parameters.
+
+The above is a wave function file for an optimizable determinant wave function for H$_2$, in a double zeta valence basis set. Thus, the FDLR wave function here would perform CIS on H$_2$ in a double zeta basis set.
+
