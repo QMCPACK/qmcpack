@@ -34,6 +34,7 @@ then
 module unload cray-libsci
 fi
 module load PrgEnv-intel
+module unload gcc
 module load gcc
 module load cray-hdf5-parallel
 module load fftw
