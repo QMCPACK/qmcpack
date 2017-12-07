@@ -12,7 +12,6 @@
 
 #include "catch.hpp"
 #include "Numerics/GaussianBasisSet.h"
-#include "Utilities/OhmmsInfo.h"
 
 #include <stdio.h>
 #include <string>
@@ -25,7 +24,6 @@ namespace qmcplusplus
 {
 
 TEST_CASE("Basic Gaussian", "[numerics]") {
-  OhmmsInfo("log.txt");
   GaussianCombo<real_type>::BasicGaussian g1(3.0, 1.0);
 
   real_type alpha = 3.0;
@@ -61,7 +59,6 @@ TEST_CASE("Basic Gaussian", "[numerics]") {
 }
 
 TEST_CASE("Gaussian Combo", "[numerics]") {
-  OhmmsInfo("log.txt");
   GaussianCombo<real_type> gc(0,false);
 
   // STO-3G for H

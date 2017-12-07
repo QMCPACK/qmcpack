@@ -46,7 +46,6 @@ int main(int argc, char** argv)
 {
 
   OHMMS::Controller->initialize(0, NULL);
-  OhmmsInfo("restart");
   Communicate* myComm=OHMMS::Controller;
   myComm->setName("restart");
 
@@ -111,8 +110,7 @@ int main(int argc, char** argv)
   //turn off output
   if(myComm->rank())
   {
-    OhmmsInfo::Log->turnoff();
-    OhmmsInfo::Warn->turnoff();
+    outputManager.shutOff();
   }
 
   int nptcl=0;

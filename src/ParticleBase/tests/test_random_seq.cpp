@@ -14,7 +14,6 @@
 
 #include "Utilities/FakeRandom.h"
 #include "Message/Communicate.h"
-#include "Utilities/OhmmsInfo.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/TinyVector.h"
 #include <vector>

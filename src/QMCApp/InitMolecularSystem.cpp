@@ -25,7 +25,6 @@
 #include "QMCApp/InitMolecularSystem.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include "ParticleBase/RandomSeqGenerator.h"

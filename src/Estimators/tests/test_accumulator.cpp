@@ -14,7 +14,6 @@
 
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Estimators/accumulators.h"
 
 

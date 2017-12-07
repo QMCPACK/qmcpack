@@ -21,7 +21,6 @@
 #include "Particle/ParticleSet.h"
 #include "Utilities/PooledData.h"
 #include "Utilities/IteratorUtility.h"
-#include "Utilities/OhmmsInfo.h"
 namespace qmcplusplus
 {
 
