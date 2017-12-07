@@ -25,26 +25,51 @@ export LIBXML2_HOME=/home/j1k/share/oic5_gcc4/libxml2-2.7.6/build
 CMAKE_FLAGS="-DCMAKE_C_COMPILER=mpicc \ 
              -DCMAKE_CXX_COMPILER=mpicxx"
 
-# Configure and build cpu real
+# Configure and build cpu real AoS
 echo ""
 echo ""
-echo "building qmcpack for cpu real"
-mkdir build_cpu_real
-cd build_cpu_real
+echo "building qmcpack for cpu AoS real for oic5"
+mkdir -p build_cpu_AoS_real_oic
+cd build_cpu_AoS_real_oic
 cmake $CMAKE_FLAGS ..
 make -j 32 
 cd ..
-ln -s ./build_cpu_real/bin/qmcpack ./qmcpack_cpu_real
+ln -sf ./build_cpu_AoS_real_oic/bin/qmcpack ./qmcpack_cpu_AoS_real_oic
 
-# Configure and build cpu complex
+# Configure and build cpu complex AoS
 echo ""
 echo ""
-echo "building qmcpack for cpu complex"
-mkdir build_cpu_comp
-cd build_cpu_comp
+echo "building qmcpack for cpu AoS complex for oic5"
+mkdir -p build_cpu_AoS_comp_oic
+cd build_cpu_AoS_comp_oic
 cmake -DQMC_COMPLEX=1 $CMAKE_FLAGS ..
 make -j 32 
 cd ..
-ln -s ./build_cpu_comp/bin/qmcpack ./qmcpack_cpu_comp
+ln -sf ./build_cpu_AoS_comp_oic/bin/qmcpack ./qmcpack_cpu_AoS_comp_oic
+
+
+# Configure and build cpu real SoA
+echo ""
+echo ""
+echo "building qmcpack for cpu SoA real for oic5"
+mkdir -p build_cpu_SoA_real_oic
+cd build_cpu_SoA_real_oic
+cmake -DENABLE_SOA=1 $CMAKE_FLAGS ..
+make -j 32 
+cd ..
+ln -sf ./build_cpu_SoA_real_oic/bin/qmcpack ./qmcpack_cpu_SoA_real_oic
+
+# Configure and build cpu complex SoA
+echo ""
+echo ""
+echo "building qmcpack for cpu SoA complex for oic5"
+mkdir -p build_cpu_SoA_comp_oic
+cd build_cpu_SoA_comp_oic
+cmake -DQMC_COMPLEX=1 -DENABLE_SOA=1 $CMAKE_FLAGS ..
+make -j 32 
+cd ..
+ln -sf ./build_cpu_SoA_comp_oic/bin/qmcpack ./qmcpack_cpu_SoA_comp_oic
+
+
 
 
