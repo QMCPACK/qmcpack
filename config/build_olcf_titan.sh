@@ -5,10 +5,10 @@
 ##   on Titan, Oak Ridge National Lab.                        ##
 ##                                                            ##
 ## * Execute this script in trunk/                            ##
-##   ./config/build_titan.sh                                  ##
+##   ./config/build_olcf_titan.sh                             ##
 ##                                                            ##
 ## (c) Scientific Computing Group, NCCS, ORNL.                ##
-## Last modified: Sep 25, 2017                                ##
+## Last modified: Dec 7, 2017                                 ##
 ################################################################
 
 
@@ -47,56 +47,88 @@ XT_FLAGS="-DHAVE_AMDLIBM=1"
 CMAKE_FLAGS="-D QMC_INCLUDE=/sw/xk7/amdlibm/include \
              -D QMC_EXTRA_LIBS=/sw/xk7/amdlibm/lib/static/libamdlibm.a"
 
-# Configure and build cpu real
+
+
+# Configure and build cpu real AoS
 echo ""
 echo ""
-echo "building qmcpack for cpu real"
-mkdir build_cpu_real
-cd build_cpu_real
+echo "building qmcpack for cpu AoS real for titan"
+mkdir -p build_titan_cpu_real
+cd build_titan_cpu_real
 cmake -D CMAKE_C_FLAGS="$XT_FLAGS" \
       -D CMAKE_CXX_FLAGS="$XT_FLAGS" \
       $CMAKE_FLAGS ..
 make -j 32
 cd ..
-ln -s ./build_cpu_real/bin/qmcpack ./qmcpack_cpu_real
+ln -sf ./build_titan_cpu_real/bin/qmcpack ./qmcpack_titan_cpu_real
 
 
-# Configure and build cpu complex
+# Configure and build cpu complex AoS
 echo ""
 echo ""
-echo "building qmcpack for cpu complex"
-mkdir build_cpu_comp
-cd build_cpu_comp
+echo "building qmcpack for cpu AoS complex for titan"
+mkdir -p build_titan_cpu_comp
+cd build_titan_cpu_comp
 cmake -D CMAKE_C_FLAGS="$XT_FLAGS" \
       -D CMAKE_CXX_FLAGS="$XT_FLAGS" \
       -D QMC_COMPLEX=1 $CMAKE_FLAGS ..
 make -j 32
 cd ..
-ln -s ./build_cpu_comp/bin/qmcpack ./qmcpack_cpu_comp
+ln -sf ./build_titan_cpu_comp/bin/qmcpack ./qmcpack_titan_cpu_comp
+
+# Configure and build cpu real SoA
+echo ""
+echo ""
+echo "building qmcpack for cpu SoA real for titan"
+mkdir -p build_titan_cpu_real_SoA
+cd build_titan_cpu_real_SoA
+cmake -D CMAKE_C_FLAGS="$XT_FLAGS" \
+      -D CMAKE_CXX_FLAGS="$XT_FLAGS" \
+      -D ENABLE_SOA=1 \
+      $CMAKE_FLAGS ..
+make -j 32
+cd ..
+ln -sf ./build_titan_cpu_real_SoA/bin/qmcpack ./qmcpack_titan_cpu_real_SoA
+
+
+# Configure and build cpu complex SoA
+echo ""
+echo ""
+echo "building qmcpack for cpu SoA complex for titan"
+mkdir -p build_titan_cpu_comp_SoA
+cd build_titan_cpu_comp_SoA
+cmake -D CMAKE_C_FLAGS="$XT_FLAGS" \
+      -D CMAKE_CXX_FLAGS="$XT_FLAGS" \
+      -D ENABLE_SOA=1 \
+      -D QMC_COMPLEX=1 $CMAKE_FLAGS ..
+make -j 32
+cd ..
+ln -sf ./build_titan_cpu_comp_SoA/bin/qmcpack ./qmcpack_titan_cpu_comp_SoA
+
 
 # load cuda toolkit for gpu build
 module load cudatoolkit
 
-# Configure and build gpu real
+# Configure and build gpu real for titan
 echo ""
 echo ""
-echo "building qmcpack for gpu real"
-mkdir build_gpu_real
-cd build_gpu_real
+echo "building qmcpack for gpu real for titan"
+mkdir -p build_titan_gpu_real
+cd build_titan_gpu_real
 cmake -D QMC_CUDA=1 ..
 cmake -D QMC_CUDA=1 ..
 make -j 32
 cd ..
-ln -s ./build_gpu_real/bin/qmcpack ./qmcpack_gpu_real
+ln -sf ./build_titan_gpu_real/bin/qmcpack ./qmcpack_titan_gpu_real
 
 # Configure and build gpu complex
 echo ""
 echo ""
-echo "building qmcpack for gpu complex"
-mkdir build_gpu_comp
-cd build_gpu_comp
+echo "building qmcpack for gpu complex for titan"
+mkdir -p build_titan_gpu_comp
+cd build_titan_gpu_comp
 cmake -D QMC_CUDA=1 -D QMC_COMPLEX=1 ..
 cmake -D QMC_CUDA=1 -D QMC_COMPLEX=1 ..
 make -j 32
 cd ..
-ln -s ./build_gpu_comp/bin/qmcpack ./qmcpack_gpu_comp
+ln -sf ./build_titan_gpu_comp/bin/qmcpack ./qmcpack_titan_gpu_comp
