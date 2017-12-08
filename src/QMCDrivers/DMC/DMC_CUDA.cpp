@@ -99,6 +99,7 @@ bool DMCcuda::run()
   std::vector<RealType>  R2prop(nw), R2acc(nw);
 #ifdef QMC_COMPLEX
   std::vector<RealType>  ratios_real(nw);
+  std::vector<PosType>   oldG_real(nw), newG_real(nw),wG_real(nw);
 #endif
   std::vector<GradType>  oldG(nw), newG(nw);
   std::vector<ValueType> oldL(nw), newL(nw);
@@ -134,6 +135,9 @@ bool DMCcuda::run()
       ratios.resize(nw);
 #ifdef QMC_COMPLEX
       ratios_real.resize(nw);
+      oldG_real.resize(nw);
+      newG_real.resize(nw);
+      wG_real.resize(nw);
 #endif
       rplus.resize(nw);
       rminus.resize(nw);
@@ -171,11 +175,15 @@ bool DMCcuda::run()
         for(int iw=0; iw<nw; iw++)
         {
           delpos[iw] *= m_sqrttau;
-          oldScale[iw] = getDriftScale(m_tauovermass,oldG[iw]);
 #ifdef QMC_COMPLEX
-          convert(oldScale[iw] * oldG[iw], dr[iw]);
-          dr[iw] += delpos[iw];
+          //For complex wavefunctions, we use |\Psi_T| as the guiding function.  Therefore,
+          //we work with the REAL part of grad(log(Psi)).  This pattern continues in 
+          //subsequent #ifdef QMC_COMPLEX sections.
+          convert(oldG[iw],oldG_real[iw]);
+          oldScale[iw] = getDriftScale(m_tauovermass,oldG_real[iw]);
+          dr[iw] = delpos[iw] + (oldScale[iw]*oldG_real[iw]);
 #else
+          oldScale[iw] = getDriftScale(m_tauovermass,oldG[iw]);
           dr[iw] = delpos[iw] + (oldScale[iw]*oldG[iw]);
 #endif
           newpos[iw]=W[iw]->R[iat] + dr[iw];
@@ -196,9 +204,8 @@ bool DMCcuda::run()
         for(int iw=0; iw<nw; ++iw)
         {
 #ifdef QMC_COMPLEX
-          PosType drOld = 0.0;
-          convert(oldScale[iw] * oldG[iw], drOld);
-          drOld = newpos[iw] - (W[iw]->R[iat] + drOld);
+          PosType drOld = 
+            newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG_real[iw]);
 #else
           PosType drOld =
             newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG[iw]);
@@ -212,12 +219,13 @@ bool DMCcuda::run()
 #endif
         for(int iw=0; iw<nw; ++iw)
         {
-          newScale[iw]   = getDriftScale(m_tauovermass,newG[iw]);
 #ifdef QMC_COMPLEX
-          PosType drNew  = 0.0;
-          convert(newScale[iw] * newG[iw], drNew);
-          drNew += newpos[iw] - W[iw]->R[iat];
+          convert(newG[iw],newG_real[iw]);
+          newScale[iw]   = getDriftScale(m_tauovermass,newG_real[iw]);
+          PosType drNew  =
+            (newpos[iw] + newScale[iw]*newG_real[iw]) - W[iw]->R[iat];
 #else
+          newScale[iw]   = getDriftScale(m_tauovermass,newG[iw]);
           PosType drNew  =
             (newpos[iw] + newScale[iw]*newG[iw]) - W[iw]->R[iat];
 #endif
@@ -238,15 +246,25 @@ bool DMCcuda::run()
             W[iw]->Age = 0;
             acc[iw] = true;
             R2acc[iw] += dot(delpos[iw], delpos[iw]);
+#ifdef QMC_COMPLEX
+            V2[iw]    += m_tauovermass * m_tauovermass * dot(newG_real[iw],newG_real[iw]);
+            V2bar[iw] +=  newScale[iw] *  newScale[iw] * dot(newG_real[iw],newG_real[iw]);
+#else
             V2[iw]    += m_tauovermass * m_tauovermass * dot(newG[iw],newG[iw]);
             V2bar[iw] +=  newScale[iw] *  newScale[iw] * dot(newG[iw],newG[iw]);
+#endif
           }
           else
           {
             acc[iw] = false;
             nReject++;
+#ifdef QMC_COMPLEX
+            V2[iw]    += m_tauovermass * m_tauovermass * dot(oldG_real[iw],oldG_real[iw]);
+            V2bar[iw] +=  oldScale[iw] *  oldScale[iw] * dot(oldG_real[iw],oldG_real[iw]);
+#else
             V2[iw]    += m_tauovermass * m_tauovermass * dot(oldG[iw],oldG[iw]);
             V2bar[iw] +=  oldScale[iw] *  oldScale[iw] * dot(oldG[iw],oldG[iw]);
+#endif
           }
         }
         W.acceptMove_GPU(acc);
@@ -330,16 +348,21 @@ bool DMCcuda::run()
         for(int iat=0; iat<nat; iat++)
         {
 #ifdef QMC_COMPLEX
-          v2 += dot_real(W.G[iat],W.G[iat]);
+          convert(W.G[iat],wG_real[iat]);
+          v2 += dot(wG_real[iat],wG_real[iat]);
 #else
           // should be removed when things work fine
           v2 += dot(W.G[iat],W.G[iat]);
 #endif
-          RealType newscale = getDriftScale(m_tauovermass,newG[iw]);
 #ifdef QMC_COMPLEX
-          v2 += m_tauovermass * m_tauovermass * dot_real(newG[iw],newG[iw]);
-          v2bar +=  newscale * newscale * dot_real(newG[iw],newG[iw]);
+          //I assume newG has been messed with since last time getDriftScale was called.
+          //Recompute the real part.
+          convert(newG[iat],newG_real[iat]);
+          RealType newscale = getDriftScale(m_tauovermass,newG_real[iw]);
+          v2 += m_tauovermass * m_tauovermass * dot(newG_real[iw],newG_real[iw]);
+          v2bar +=  newscale * newscale * dot_real(newG_real[iw],newG_real[iw]);
 #else
+          RealType newscale = getDriftScale(m_tauovermass,newG[iw]);
           v2 += m_tauovermass * m_tauovermass * dot(newG[iw],newG[iw]);
           v2bar +=  newscale * newscale * dot(newG[iw],newG[iw]);
 #endif
@@ -394,7 +417,7 @@ bool DMCcuda::run()
 }
 
 
-
+////THIS IS A DEPRECATED ROUTINE.  REMOVE
 bool DMCcuda::runWithNonlocal()
 {
   resetRun();
