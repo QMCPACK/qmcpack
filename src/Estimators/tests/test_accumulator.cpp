@@ -23,38 +23,6 @@
 namespace qmcplusplus
 {
 
-TEST_CASE("accumulator basic int", "[estimators]")
-{
-  //std::cout << "int eps = " << std::numeric_limits<int>::epsilon() << std::endl;
-  //std::cout << "int max = " << std::numeric_limits<int>::max() << std::endl;
-  accumulator_set<int> a1;
-  REQUIRE(a1.count() == 0);
-  REQUIRE(a1.good() == false);
-  REQUIRE(a1.mean() == 0);
-  REQUIRE(a1.mean2() == 0);
-  REQUIRE(a1.variance() == 0);
-  // doesn't work becase epsilon for int is zero
-  //CHECK(a1.bad() == true);
-
-  a1(2);
-  REQUIRE(a1.count() == 1);
-  REQUIRE(a1.good() == true);
-  REQUIRE(a1.result() == 2);
-  REQUIRE(a1.result2() == 4);
-  REQUIRE(a1.mean() == 2);
-  REQUIRE(a1.mean2() == 4);
-  REQUIRE(a1.variance() == 0);
-
-  std::pair<int, int> mv = a1.mean_and_variance();
-  REQUIRE(mv.first == a1.mean());
-  REQUIRE(mv.second == a1.variance());
-
-  a1.clear();
-  REQUIRE(a1.count() == 0);
-  REQUIRE(a1.result() == 0);
-  REQUIRE(a1.result2() == 0);
-}
-
 template<typename T>
 void test_real_accumulator_basic()
 {
