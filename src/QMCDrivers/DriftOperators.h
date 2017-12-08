@@ -67,10 +67,14 @@ inline void getScaledDrift(Tt tau, const TinyVector<TG,D>& qf, TinyVector<T,D>& 
 template<class Tt, class TG, class T, unsigned D>
 inline void getScaledDrift(Tt tau, const TinyVector<std::complex<TG>,D>& qf, TinyVector<T,D>& drift)
 {
-  T vsq=OTCDot<TG,TG,D>::apply(qf,qf);
-  vsq=(vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+  //We convert the complex gradient to real and temporarily store in drift.
   for(int i=0; i<D; ++i)
-    convert(TG(vsq)*qf[i],drift[i]);
+    convert(qf[i],drift[i]);
+  
+  T vsq=OTCDot<TG,TG,D>::apply(drift,drift);
+  vsq=(vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+  //Apply the umrigar scaled drift.  
+  drift*=vsq;
 }
 
 

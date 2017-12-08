@@ -60,11 +60,15 @@ void DMCNonLocalUpdatePbyP::advanceWalkers(WalkerIter_t it
     RealType rr_proposed=0.0;
     RealType rr_accepted=0.0;
     myTimers[1]->start();
+
+    PosType real_grad_iat(0.0);
     for(int iat=0; iat<NumPtcl; ++iat)
     {
       //PosType dr(m_sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
-      RealType sc=getDriftScale(Tau,W.G[iat]);
-      PosType dr(m_sqrttau*deltaR[iat]+sc*real(W.G[iat]));
+      real_grad_iat = real(W.G[iat]);
+      
+      RealType sc=getDriftScale(Tau,real_grad_iat);
+      PosType dr(m_sqrttau*deltaR[iat]+sc*real_grad_iat);
       //RealType rr=dot(dr,dr);
       RealType rr=m_tauovermass*dot(deltaR[iat],deltaR[iat]);
       rr_proposed+=rr;
@@ -86,10 +90,12 @@ void DMCNonLocalUpdatePbyP::advanceWalkers(WalkerIter_t it
       else
       {
         G = W.G+dG;
+        real_grad_iat=real(G[iat]);
+
         RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
         //RealType scale=getDriftScale(Tau,G);
-        RealType scale=getDriftScale(m_tauovermass,G[iat]);
-        dr = thisWalker.R[iat]-newpos-scale*real(G[iat]);
+        RealType scale=getDriftScale(m_tauovermass,real_grad_iat);
+        dr = thisWalker.R[iat]-newpos-scale*real_grad_iat;
         RealType logGb = -m_oneover2tau*dot(dr,dr);
         RealType prob = std::min(1.0,ratio*ratio*std::exp(logGb-logGf));
         if(RandomGen() < prob)
@@ -213,8 +219,9 @@ void DMCNonLocalUpdatePbyPFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it_
       //get the displacement
       //PosType dr(m_sqrttau*deltaR[iat]+thisWalker.Drift[iat]);
       GradType grad_iat=Psi.evalGrad(W,iat);
-      RealType sc=getDriftScale(m_tauovermass,grad_iat);
-      PosType dr(m_sqrttau*deltaR[iat]+sc*real(grad_iat));
+      PosType real_grad_iat = real(grad_iat);
+      RealType sc=getDriftScale(m_tauovermass,real_grad_iat);
+      PosType dr(m_sqrttau*deltaR[iat]+sc*real_grad_iat);
       //RealType rr=dot(dr,dr);
       RealType rr=m_tauovermass*dot(deltaR[iat],deltaR[iat]);
       rr_proposed+=rr;
@@ -241,8 +248,9 @@ void DMCNonLocalUpdatePbyPFast::advanceWalkers(WalkerIter_t it, WalkerIter_t it_
       {
         RealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
         //Use the force of the particle iat
-        RealType scale=getDriftScale(m_tauovermass,grad_iat);
-        dr = thisWalker.R[iat]-newpos-scale*real(grad_iat);
+        real_grad_iat = real(grad_iat);
+        RealType scale=getDriftScale(m_tauovermass,real_grad_iat);
+        dr = thisWalker.R[iat]-newpos-scale*real_grad_iat;
         RealType logGb = -m_oneover2tau*dot(dr,dr);
         RealType prob = ratio*ratio*std::exp(logGb-logGf);
         if(RandomGen() < prob)
