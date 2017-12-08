@@ -7,7 +7,7 @@
 ## * Execute this script in trunk/                            ##
 ##   ./config/build_ornl_oic.sh                               ##
 ##                                                            ##
-## Last modified: Oct 6, 2017                                 ##
+## Last modified: Dec 7, 2017                                 ##
 ################################################################
 
 
@@ -29,46 +29,46 @@ CMAKE_FLAGS="-DCMAKE_C_COMPILER=mpicc \
 echo ""
 echo ""
 echo "building qmcpack for cpu AoS real for oic5"
-mkdir -p build_cpu_AoS_real_oic
-cd build_cpu_AoS_real_oic
+mkdir -p build_oic_cpu_real
+cd build_oic_cpu_real
 cmake $CMAKE_FLAGS ..
 make -j 32 
 cd ..
-ln -sf ./build_cpu_AoS_real_oic/bin/qmcpack ./qmcpack_cpu_AoS_real_oic
+ln -sf ./build_oic_cpu_real/bin/qmcpack ./qmcpack_oic_cpu_real
 
 # Configure and build cpu complex AoS
 echo ""
 echo ""
 echo "building qmcpack for cpu AoS complex for oic5"
-mkdir -p build_cpu_AoS_comp_oic
-cd build_cpu_AoS_comp_oic
+mkdir -p build_oic_cpu_comp
+cd build_oic_cpu_comp
 cmake -DQMC_COMPLEX=1 $CMAKE_FLAGS ..
 make -j 32 
 cd ..
-ln -sf ./build_cpu_AoS_comp_oic/bin/qmcpack ./qmcpack_cpu_AoS_comp_oic
+ln -sf ./build_oic_cpu_comp/bin/qmcpack ./qmcpack_oic_cpu_comp
 
 
 # Configure and build cpu real SoA
 echo ""
 echo ""
 echo "building qmcpack for cpu SoA real for oic5"
-mkdir -p build_cpu_SoA_real_oic
-cd build_cpu_SoA_real_oic
+mkdir -p build_oic_cpu_real_SoA
+cd build_oic_cpu_real_SoA
 cmake -DENABLE_SOA=1 $CMAKE_FLAGS ..
 make -j 32 
 cd ..
-ln -sf ./build_cpu_SoA_real_oic/bin/qmcpack ./qmcpack_cpu_SoA_real_oic
+ln -sf ./build_oic_cpu_real_SoA/bin/qmcpack ./qmcpack_oic_cpu_real_SoA
 
 # Configure and build cpu complex SoA
 echo ""
 echo ""
 echo "building qmcpack for cpu SoA complex for oic5"
-mkdir -p build_cpu_SoA_comp_oic
-cd build_cpu_SoA_comp_oic
+mkdir -p build_oic_cpu_comp_SoA
+cd build_oic_cpu_comp_SoA
 cmake -DQMC_COMPLEX=1 -DENABLE_SOA=1 $CMAKE_FLAGS ..
 make -j 32 
 cd ..
-ln -sf ./build_cpu_SoA_comp_oic/bin/qmcpack ./qmcpack_cpu_SoA_comp_oic
+ln -sf ./build_oic_cpu_comp_SoA/bin/qmcpack ./qmcpack_oic_cpu_comp_SoA
 
 
 

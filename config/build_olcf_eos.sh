@@ -11,7 +11,7 @@
 ## Settings should be consistent with test scripts e.g.       ##
 ##  ./tests/test_automation/nightly_ornl_olcf_eos.job         ##
 ##                                                            ##
-## Last modified: Sep 25, 2017                                ##
+## Last modified: Dec 7, 2017                                 ##
 ################################################################
 
 
@@ -58,47 +58,47 @@ CMAKE_FLAGS="-DCMAKE_C_COMPILER=cc \
 echo ""
 echo ""
 echo "building qmcpack for cpu AoS real for eos"
-mkdir -p build_cpu_AoS_real_eos
-cd build_cpu_AoS_real_eos
+mkdir -p build_eos_cpu_real
+cd build_eos_cpu_real
 cmake $CMAKE_FLAGS .. 
 make -j 32
 cd ..
-ln -sf ./build_cpu_AoS_real_eos/bin/qmcpack ./qmcpack_cpu_AoS_real_eos
+ln -sf ./build_eos_cpu_real/bin/qmcpack ./qmcpack_eos_cpu_real
 
 
 # Configure and build cpu complex AoS
 echo ""
 echo ""
 echo "building qmcpack for cpu AoS complex for eos"
-mkdir -p build_cpu_AoS_comp_eos
-cd build_cpu_AoS_comp_eos
+mkdir -p build_eos_cpu_comp
+cd build_eos_cpu_comp
 cmake -DQMC_COMPLEX=1 $CMAKE_FLAGS .. 
 make -j 32
 cd ..
-ln -sf ./build_cpu_AoS_comp_eos/bin/qmcpack ./qmcpack_cpu_AoS_comp_eos
+ln -sf ./build_eos_cpu_comp/bin/qmcpack ./qmcpack_eos_cpu_comp
 
 
 # Configure and build cpu real SoA
 echo ""
 echo ""
 echo "building qmcpack for cpu SoA real for eos"
-mkdir -p build_cpu_SoA_real_eos
-cd build_cpu_SoA_real_eos
+mkdir -p build_eos_cpu_real_SoA
+cd build_eos_cpu_real_SoA
 cmake -DENABLE_SOA=1 $CMAKE_FLAGS .. 
 make -j 32
 cd ..
-ln -sf ./build_cpu_SoA_real_eos/bin/qmcpack ./qmcpack_cpu_SoA_real_eos
+ln -sf ./build_eos_cpu_real_SoA/bin/qmcpack ./qmcpack_eos_cpu_real_SoA
 
 # Configure and build cpu complex SoA
 echo ""
 echo ""
 echo "building qmcpack for cpu SoA complex for eos"
-mkdir -p build_cpu_SoA_comp_eos
-cd build_cpu_SoA_comp_eos
+mkdir -p build_eos_cpu_comp_SoA
+cd build_eos_cpu_comp_SoA
 cmake -DQMC_COMPLEX=1 -DENABLE_SOA=1 $CMAKE_FLAGS .. 
 make -j 32
 cd ..
-ln -sf ./build_cpu_SoA_comp_eos/bin/qmcpack ./qmcpack_cpu_SoA_comp_eos
+ln -sf ./build_eos_cpu_comp_SoA/bin/qmcpack ./qmcpack_eos_cpu_comp_SoA
 
 
 
