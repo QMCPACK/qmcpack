@@ -256,6 +256,7 @@ void VMCcuda::advanceWalkersWithDrift()
   std::vector<ValueType> ratios(nw);
 #ifdef QMC_COMPLEX
   std::vector<RealType>  ratios_real(nw);
+  std::vector<PosType>   oldG_real(nw), newG_real(nw), wG_real(nw);
 #endif
   std::vector<GradType>  oldG(nw), newG(nw);
   std::vector<ValueType> oldL(nw), newL(nw);
@@ -271,11 +272,12 @@ void VMCcuda::advanceWalkersWithDrift()
       Psi.addGradient(W, iat, oldG);
       for(int iw=0; iw<nw; iw++)
       {
-        oldScale[iw] = getDriftScale(m_tauovermass,oldG[iw]);
 #ifdef QMC_COMPLEX
-        convert(oldScale[iw]*oldG[iw], dr[iw]);
-        dr[iw] += m_sqrttau * delpos[iw];
+        convert(oldG[iw], oldG_real[iw]);
+        oldScale[iw] = getDriftScale(m_tauovermass,oldG_real[iw]);
+        dr[iw] = (m_sqrttau*delpos[iw]) + (oldScale[iw]*oldG_real[iw]);
 #else
+        oldScale[iw] = getDriftScale(m_tauovermass,oldG[iw]);
         dr[iw] = (m_sqrttau*delpos[iw]) + (oldScale[iw]*oldG[iw]);
 #endif
         newpos[iw]=W[iw]->R[iat] + dr[iw];
@@ -295,9 +297,8 @@ void VMCcuda::advanceWalkersWithDrift()
       for(int iw=0; iw<nw; ++iw)
       {
 #ifdef QMC_COMPLEX
-        PosType drOld = 0.0;
-        convert(oldScale[iw] * oldG[iw], drOld);
-        drOld = newpos[iw] - (W[iw]->R[iat] + drOld);
+        PosType drOld =
+          newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG_real[iw]);
 #else
         PosType drOld =
           newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG[iw]);
@@ -311,12 +312,13 @@ void VMCcuda::advanceWalkersWithDrift()
 #endif
       for(int iw=0; iw<nw; ++iw)
       {
-        newScale[iw]   = getDriftScale(m_tauovermass,newG[iw]);
 #ifdef QMC_COMPLEX
-        PosType drNew = 0.0;
-        convert(newScale[iw] * newG[iw], drNew);
-        drNew += newpos[iw] - W[iw]->R[iat];
+        convert( newG[iw], newG_real[iw]);
+        newScale[iw]   = getDriftScale(m_tauovermass,newG_real[iw]);
+        PosType drNew  =
+          (newpos[iw] + newScale[iw]*newG_real[iw]) - W[iw]->R[iat];
 #else
+        newScale[iw]   = getDriftScale(m_tauovermass,newG[iw]);
         PosType drNew  =
           (newpos[iw] + newScale[iw]*newG[iw]) - W[iw]->R[iat];
 #endif
