@@ -33,6 +33,7 @@ inline T getDriftScale(T tau, const ParticleAttrib<TinyVector<TG,D> >& ga)
 template<class T, class TG, unsigned D>
 inline T getDriftScale(T tau, const ParticleAttrib<TinyVector<std::complex<TG>,D> >& ga)
 {
+  APP_ABORT("getDriftScale: Scaled drift computable only with real wavefunction forces.\n")
   T vsq=Dot(ga,ga);
   return (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
 }
@@ -47,6 +48,7 @@ inline T getDriftScale(T tau, const TinyVector<TG,D>& qf)
 template<class T, class TG, unsigned D>
 inline T getDriftScale(T tau, const TinyVector<std::complex<TG>,D>& qf)
 {
+  APP_ABORT("getDriftScale: Scaled drift computable only with real wavefunction forces.\n")
   T vsq=OTCDot<TG,TG,D>::apply(qf,qf);
   return (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
 }
@@ -86,6 +88,7 @@ inline void getScaledDrift(Tt tau, const TinyVector<std::complex<TG>,D>& qf, Tin
 template<class T, unsigned D>
 inline T getNodeCorrectionP(T tau, const ParticleAttrib<TinyVector<T,D> >& ga, T a=1)
 {
+  APP_ABORT("getNodeCorrectionP: unexpected deprecated code path.  Contact a developer.\n");
   T norm=0.0, norm_scaled=0.0;
   for(int i=0; i<ga.size(); ++i)
   {
@@ -105,6 +108,7 @@ inline T getNodeCorrectionP(T tau, const ParticleAttrib<TinyVector<T,D> >& ga, T
 template<class T, unsigned D>
 inline T getNodeCorrectionW(T tau, const ParticleAttrib<TinyVector<T,D> >& ga)
 {
+  APP_ABORT("getNodeCorrectionW: unexpected deprecated code path.  Contact a developer.\n");
   T vsq=Dot(ga,ga);
   T x=tau*vsq;
   return (vsq<std::numeric_limits<T>::epsilon())? 1.0:((-1.0+std::sqrt(1.0+2.0*x))/x);
@@ -121,6 +125,7 @@ inline void setScaledDriftPbyP(T tau,
                                const ParticleAttrib<TinyVector<T,D> >& qf,
                                ParticleAttrib<TinyVector<T,D> >& drift)
 {
+  APP_ABORT("setScaledDriftPbyP: unexpected deprecated code path.  Contact a developer.\n");
   for(int iat=0; iat<qf.size(); ++iat)
   {
     T vsq=dot(qf[iat],qf[iat]);
@@ -145,12 +150,13 @@ inline T setScaledDriftPbyPandNodeCorr(T tau,
   T norm=0.0, norm_scaled=0.0, tau2=tau*tau, vsq;
   for(int iat=0; iat<qf.size(); ++iat)
   {
-    convert(dot(qf[iat],qf[iat]),vsq);
+    convert(qf[iat],drift[iat]);
+    vsq=dot(drift[iat],drift[iat]);
     //T vsq=dot(qf[iat],qf[iat]);
     T sc=(vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
     norm_scaled+=vsq*sc*sc;
     norm+=vsq*tau2;
-    drift[iat]=qf[iat]*T1(sc);
+    drift[iat]*=sc;
   }
   return std::sqrt(norm_scaled/norm);
 }
@@ -171,12 +177,12 @@ inline T setScaledDriftPbyPandNodeCorr(T tau_au, const std::vector<T>& massinv,
   for(int iat=0; iat<massinv.size(); ++iat)
   {
     T tau=tau_au*massinv[iat];
-    convert(dot(qf[iat],qf[iat]),vsq);
-    //T vsq=dot(qf[iat],qf[iat]);
+    convert(qf[iat],drift[iat]);
+    vsq=dot(drift[iat],drift[iat]);
     T sc=(vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
     norm_scaled+=vsq*sc*sc;
     norm+=vsq*tau*tau;
-    drift[iat]=qf[iat]*T1(sc);
+    drift[iat]*=sc;
   }
   return std::sqrt(norm_scaled/norm);
 }
@@ -186,6 +192,7 @@ inline T setLargestScaledDriftPbyP(T tau,
                                    const ParticleAttrib<TinyVector<T,D> >& qf,
                                    ParticleAttrib<TinyVector<T,D> >& drift)
 {
+  APP_ABORT("setLargestScaledDriftPbyP: unexpected deprecated code path.  Contact a developer.\n");
   T maxSC=tau;
   for(int iat=0; iat<qf.size(); ++iat)
   {
@@ -201,6 +208,8 @@ inline T setLargestScaledDriftPbyP(T tau,
 }
 
 
+//NOTE: While poorly named, setScaledDrift is the all-electron analogue of 
+//      getScaledDrift.   
 
 /** da = scaled(tau)*ga
  * @param tau time step
@@ -240,8 +249,11 @@ inline void setScaledDrift(T tau,
                            const ParticleAttrib<TinyVector<std::complex<TG>,D> >& qf,
                            ParticleAttrib<TinyVector<T,D> >& drift)
 {
-  T s = getDriftScale(tau,qf);
-  PAOps<T,D,TG>::scale(s,qf,drift);
+  for(int iat=0; iat<qf.size(); ++iat)
+    convert(qf[iat],drift[iat]);
+ 
+  T s = getDriftScale(tau,drift);
+  drift*=s;
 }
 
 /** da = scaled(tau)*ga
@@ -254,6 +266,7 @@ inline void setScaledDrift(T tau,
                            const ParticleAttrib<TinyVector<std::complex<T>,D> >& qf,
                            ParticleAttrib<TinyVector<std::complex<T>,D> >& drift)
 {
+  APP_ABORT("setScaledDrift: untested code pathway.  Please contact a developer");
   T s = getDriftScale(tau,qf);
   ///INCOMPLETE implementation
   //PAOps<T,D>::scale(s,qf,drift);
@@ -272,9 +285,11 @@ inline void assignDrift(T s,
                         const ParticleAttrib<TinyVector<std::complex<TG>,D> >& ga,
                         ParticleAttrib<TinyVector<T,D> >& da)
 {
+  //This operation does s*ga, and takes the real part.  
   PAOps<T,D,TG>::scale(s,ga,da);
 }
 
+//Assign drift does pbyp calculation of the scaled drift on all drift components.  
 template<class T, class T1, unsigned D>
 inline void assignDrift(T tau_au, const std::vector<T>& massinv,
                                        const ParticleAttrib<TinyVector<T1,D> >& qf,
