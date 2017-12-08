@@ -21,7 +21,6 @@
 
 #include "QMCDrivers/DMC/DMCOMP.h"
 #include "QMCDrivers/DMC/DMCUpdatePbyP.h"
-//#include "QMCDrivers/DMC/DMCNonLocalUpdate.h"
 #include "QMCDrivers/DMC/DMCUpdateAll.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "Message/Communicate.h"
