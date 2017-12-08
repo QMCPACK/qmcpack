@@ -16,7 +16,8 @@
 #include <type_traits>
 
 #ifndef HAVE_ISZERO
-template<typename T, typename = std::enable_if<std::is_floating_point<T>::value>>
+template<typename T,
+  typename = typename std::enable_if<std::is_floating_point<T>::value>::type>
 inline bool iszero(T a)
 {
   return (std::abs(a)<std::numeric_limits<T>::epsilon());

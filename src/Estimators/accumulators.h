@@ -32,7 +32,8 @@
  *
  * To simplify i/o, the values are storged in contens
  */
-template<typename T, typename = std::enable_if<std::is_floating_point<T>::value>>
+template<typename T,
+  typename = typename std::enable_if<std::is_floating_point<T>::value>::type>
 struct accumulator_set
 {
   typedef T value_type;
