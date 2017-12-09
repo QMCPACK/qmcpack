@@ -139,22 +139,45 @@ inline T setScaledDriftPbyPandNodeCorr(T tau,
  * @param qf quantum forces
  * @param drift scaled quantum forces
  * @param return correction term
+ *
+ * Fill the drift vector one particle at a time (pbyp).
+ *
+ * The naive drift is tau/mass*grad_psi_over_psi,
+ *  namely the log derivative of the guiding wavefunction; tau is timestep; mass is particle mass
+ * The naive drift diverges at a node, causing persistent configurations.
+ * The norm of the drift vector should be limited in two ways:
+ *  1. Umrigar: suppress drift divergence to mimic wf divergence
+ *  2. Ceperley: limit max drift rate to diffusion rate -> set Umrigar "a" parameter
+ * The choice of drift vector does not affect VMC correctness
+ *  so long as the proposal probabilities are correctly calculated.
+ * The choice of drift vector changes the DMC Green's function. BE CAREFUL!
+ *
+ * T should be either float or double
+ * T1 may be real or complex
+ * D should be the number of spatial dimensions (int)
  */
 template<class T, class T1, unsigned D>
 inline T setScaledDriftPbyPandNodeCorr(T tau_au, const std::vector<T>& massinv,
                                        const ParticleAttrib<TinyVector<T1,D> >& qf,
                                        ParticleAttrib<TinyVector<T,D> >& drift)
 {
-  T norm=0.0, norm_scaled=0.0, vsq;
+  T vsq, tau_over_mass, sc;    // temp. variables to be assigned
+  T norm=0.0, norm_scaled=0.0; // variables to be accumulated
   for(int iat=0; iat<massinv.size(); ++iat)
   {
-    T tau=tau_au*massinv[iat];
+    // effectively set the Umrigar "a" parameter to particle mass
+    T tau_over_mass = tau_au*massinv[iat]; // !!!! assume timestep is scaled by mass
+    // save real part of wf log derivative in drift
     convert(qf[iat],drift[iat]);
-    vsq=dot(drift[iat],drift[iat]);
-    T sc=(vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+    vsq = dot(drift[iat],drift[iat]);
+    // calculate drift scalar "sc" of Umrigar, JCP 99, 2865 (1993); eq. (34) * tau
+    // use naive drift if vsq may cause numerical instability in the denominator
+    vsq = (vsq < std::numeric_limits<T>::epsilon()) ? tau_over_mass : vsq;
+    sc  = (-1.0+std::sqrt(1.0+2.0*tau_over_mass*vsq))/vsq;
+    drift[iat] *= sc;
+
     norm_scaled+=vsq*sc*sc;
-    norm+=vsq*tau*tau;
-    drift[iat]*=sc;
+    norm+=vsq*tau_over_mass*tau_over_mass;
   }
   return std::sqrt(norm_scaled/norm);
 }
