@@ -46,10 +46,10 @@ inline void getScaledDrift(Tt tau, const TinyVector<TG,D>& qf, TinyVector<T,D>& 
 {
   //We convert the complex gradient to real and temporarily store in drift.
   convert(qf,drift);
-  T vsq=dot(drift,drift);
-  vsq= (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+  T vsq=dot(drift,drift),sc;
+  sc = (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
   //Apply the umrigar scaled drift.
-  drift*=vsq;
+  drift*=sc;
 }
 
 /** evaluate \f$\gamma\f$ for \f$ \bar V= \gamma V\f$
@@ -153,7 +153,7 @@ inline T setScaledDriftPbyPandNodeCorr(T tau,
  * The choice of drift vector changes the DMC Green's function. BE CAREFUL!
  *
  * T should be either float or double
- * T1 may be real or complex
+ * T1 may be real (float or double) or complex<floadt or double>
  * D should be the number of spatial dimensions (int)
  */
 template<class T, class T1, unsigned D>
@@ -172,8 +172,7 @@ inline T setScaledDriftPbyPandNodeCorr(T tau_au, const std::vector<T>& massinv,
     vsq = dot(drift[iat],drift[iat]);
     // calculate drift scalar "sc" of Umrigar, JCP 99, 2865 (1993); eq. (34) * tau
     // use naive drift if vsq may cause numerical instability in the denominator
-    vsq = (vsq < std::numeric_limits<T>::epsilon()) ? tau_over_mass : vsq;
-    sc  = (-1.0+std::sqrt(1.0+2.0*tau_over_mass*vsq))/vsq;
+    sc  = (vsq < std::numeric_limits<T>::epsilon()) ? tau_over_mass : (-1.0+std::sqrt(1.0+2.0*tau_over_mass*vsq))/vsq;
     drift[iat] *= sc;
 
     norm_scaled+=vsq*sc*sc;
@@ -292,9 +291,9 @@ inline void assignDrift(T tau_au, const std::vector<T>& massinv,
 {
   for(int iat=0; iat<massinv.size(); ++iat)
   {
-    T tau=tau_au*massinv[iat];
+    T tau_over_mass=tau_au*massinv[iat];
     // naive drift "tau/mass*qf" can diverge
-    getScaledDrift(tau,qf[iat],drift[iat]);
+    getScaledDrift(tau_over_mass,qf[iat],drift[iat]);
   }
 }
 
