@@ -170,8 +170,8 @@ inline T setScaledDriftPbyPandNodeCorr(T tau,
  *
  * Fill the drift vector one particle at a time (pbyp).
  *
- * The naive drift is tau*grad_psi_over_psi,
- *  namely the log derivative of the guiding wavefunction; tau is timestep.
+ * The naive drift is tau/mass*grad_psi_over_psi,
+ *  namely the log derivative of the guiding wavefunction; tau is timestep; mass is particle mass
  * The naive drift diverges at a node, causing persistent configurations.
  * The norm of the drift vector should be limited in two ways:
  *  1. Umrigar: suppress drift divergence to mimic wf divergence
