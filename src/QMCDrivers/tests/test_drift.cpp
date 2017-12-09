@@ -33,9 +33,9 @@ TEST_CASE("drift pbyp and node correction real", "[drivers][drift]")
   agroup[0] = 1;
   elec.create(agroup);
 
-  double tau = 0.5;
-  double mass= 0.85;
-  std::vector<double> massinv(1,1./mass);
+  ParticleSet::RealType tau = 0.5;
+  ParticleSet::RealType mass= 0.85;
+  std::vector<ParticleSet::RealType> massinv(1,1./mass);
   ParticleSet::ParticlePos_t drift(1);
 
   // check from -xtot/2 to xtot/2 in step size of dx i.e. np.arange(-xtot/2,xtot/2,dx) 
@@ -60,6 +60,7 @@ TEST_CASE("drift pbyp and node correction real", "[drivers][drift]")
   //app_log() << " end printing." << std::endl;
 }
 
+#ifdef QMC_COMPLEX
 TEST_CASE("drift pbyp and node correction complex", "[drivers][drift]")
 { // basically copy and pasted from real test, except "myi"
   Communicate *c;
@@ -74,9 +75,9 @@ TEST_CASE("drift pbyp and node correction complex", "[drivers][drift]")
   agroup[0] = 1;
   elec.create(agroup);
 
-  double tau = 0.5;
-  double mass= 0.85;
-  std::vector<double> massinv(1,1./mass);
+  ParticleSet::RealType tau = 0.5;
+  ParticleSet::RealType mass= 0.85;
+  std::vector<ParticleSet::RealType> massinv(1,1./mass);
   ParticleSet::ParticlePos_t drift(1);
 
   // check from -xtot/2 to xtot/2 in step size of dx i.e. np.arange(-xtot/2,xtot/2,dx) 
@@ -99,6 +100,7 @@ TEST_CASE("drift pbyp and node correction complex", "[drivers][drift]")
     gradx += dx;
   }
 }
+#endif
 
 TEST_CASE("get scaled drift real", "[drivers][drift]")
 {
@@ -114,9 +116,9 @@ TEST_CASE("get scaled drift real", "[drivers][drift]")
   agroup[0] = 1;
   elec.create(agroup);
 
-  double tau = 0.5;
-  double mass= 0.85;
-  std::vector<double> massinv(1,1./mass);
+  ParticleSet::RealType tau = 0.5;
+  ParticleSet::RealType mass= 0.85;
+  std::vector<ParticleSet::RealType> massinv(1,1./mass);
   ParticleSet::PosType drift;
 
   // check from -xtot/2 to xtot/2 in step size of dx i.e. np.arange(-xtot/2,xtot/2,dx) 
@@ -138,6 +140,7 @@ TEST_CASE("get scaled drift real", "[drivers][drift]")
   }
 }
 
+#ifdef QMC_COMPLEX
 TEST_CASE("get scaled drift complex", "[drivers][drift]")
 {
   Communicate *c;
@@ -152,9 +155,9 @@ TEST_CASE("get scaled drift complex", "[drivers][drift]")
   agroup[0] = 1;
   elec.create(agroup);
 
-  double tau = 0.5;
-  double mass= 0.85;
-  std::vector<double> massinv(1,1./mass);
+  ParticleSet::RealType tau = 0.5;
+  ParticleSet::RealType mass= 0.85;
+  std::vector<ParticleSet::RealType> massinv(1,1./mass);
   ParticleSet::PosType drift;
 
   // check from -xtot/2 to xtot/2 in step size of dx i.e. np.arange(-xtot/2,xtot/2,dx) 
@@ -177,5 +180,7 @@ TEST_CASE("get scaled drift complex", "[drivers][drift]")
     gradx += dx;
   }
 }
+#endif
+
 }
 
