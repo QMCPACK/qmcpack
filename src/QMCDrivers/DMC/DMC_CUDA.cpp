@@ -309,7 +309,7 @@ bool DMCcuda::run()
           v2 += dot(W.G[iat],W.G[iat]);
 #endif
         }
-        RealType scNew = std::sqrt(v2bar/v2);
+        RealType scNew = std::sqrt(v2bar/(v2*m_tauovermass*m_tauovermass));
         RealType scOld = (CurrentStep == 1) ? scNew : W[iw]->getPropertyBase()[DRIFTSCALE];
         W[iw]->getPropertyBase()[DRIFTSCALE] = scNew;
         // fprintf (stderr, "iw = %d  scNew = %1.8f  scOld = %1.8f\n", iw, scNew, scOld);
