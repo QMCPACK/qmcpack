@@ -11,8 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_QMCDRIFTOPERATORS_H
@@ -50,7 +48,7 @@ inline void getScaledDrift(Tt tau, const TinyVector<TG,D>& qf, TinyVector<T,D>& 
   convert(qf,drift);
   T vsq=dot(drift,drift);
   vsq= (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
-  //Apply the umrigar scaled drift.  
+  //Apply the umrigar scaled drift.
   drift*=vsq;
 }
 
@@ -182,8 +180,8 @@ inline T setLargestScaledDriftPbyP(T tau,
 }
 
 
-//NOTE: While poorly named, setScaledDrift is the all-electron analogue of 
-//      getScaledDrift.   
+//NOTE: While poorly named, setScaledDrift is the all-electron analogue of
+//      getScaledDrift.
 
 /** da = scaled(tau)*ga
  * @param tau time step
@@ -225,7 +223,7 @@ inline void setScaledDrift(T tau,
 {
   for(int iat=0; iat<qf.size(); ++iat)
     convert(qf[iat],drift[iat]);
- 
+
   T s = getDriftScale(tau,drift);
   drift*=s;
 }
@@ -259,11 +257,11 @@ inline void assignDrift(T s,
                         const ParticleAttrib<TinyVector<std::complex<TG>,D> >& ga,
                         ParticleAttrib<TinyVector<T,D> >& da)
 {
-  //This operation does s*ga, and takes the real part.  
+  //This operation does s*ga, and takes the real part.
   PAOps<T,D,TG>::scale(s,ga,da);
 }
 
-//Assign drift does pbyp calculation of the scaled drift on all drift components.  
+//Assign drift does pbyp calculation of the scaled drift on all drift components.
 template<class T, class T1, unsigned D>
 inline void assignDrift(T tau_au, const std::vector<T>& massinv,
                                        const ParticleAttrib<TinyVector<T1,D> >& qf,
