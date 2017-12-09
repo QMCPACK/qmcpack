@@ -46,8 +46,8 @@ inline void getScaledDrift(Tt tau, const TinyVector<TG,D>& qf, TinyVector<T,D>& 
 {
   //We convert the complex gradient to real and temporarily store in drift.
   convert(qf,drift);
-  T vsq=dot(drift,drift),sc;
-  sc = (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+  T vsq=dot(drift,drift);
+  T sc = (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
   //Apply the umrigar scaled drift.
   drift*=sc;
 }
@@ -119,11 +119,11 @@ inline T setScaledDriftPbyPandNodeCorr(T tau,
                                        const ParticleAttrib<TinyVector<T1,D> >& qf,
                                        ParticleAttrib<TinyVector<T,D> >& drift)
 {
-  T norm=0.0, norm_scaled=0.0, tau2=tau*tau, vsq;
+  T norm=0.0, norm_scaled=0.0, tau2=tau*tau;
   for(int iat=0; iat<qf.size(); ++iat)
   {
     convert(qf[iat],drift[iat]);
-    vsq=dot(drift[iat],drift[iat]);
+    T vsq=dot(drift[iat],drift[iat]);
     //T vsq=dot(qf[iat],qf[iat]);
     T sc=(vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
     norm_scaled+=vsq*sc*sc;
@@ -153,7 +153,7 @@ inline T setScaledDriftPbyPandNodeCorr(T tau,
  * The choice of drift vector changes the DMC Green's function. BE CAREFUL!
  *
  * T should be either float or double
- * T1 may be real (float or double) or complex<floadt or double>
+ * T1 may be real (float or double) or complex<float or double>
  * D should be the number of spatial dimensions (int)
  */
 template<class T, class T1, unsigned D>
@@ -161,7 +161,6 @@ inline T setScaledDriftPbyPandNodeCorr(T tau_au, const std::vector<T>& massinv,
                                        const ParticleAttrib<TinyVector<T1,D> >& qf,
                                        ParticleAttrib<TinyVector<T,D> >& drift)
 {
-  T vsq, tau_over_mass, sc;    // temp. variables to be assigned
   T norm=0.0, norm_scaled=0.0; // variables to be accumulated
   for(int iat=0; iat<massinv.size(); ++iat)
   {
@@ -169,10 +168,10 @@ inline T setScaledDriftPbyPandNodeCorr(T tau_au, const std::vector<T>& massinv,
     T tau_over_mass = tau_au*massinv[iat]; // !!!! assume timestep is scaled by mass
     // save real part of wf log derivative in drift
     convert(qf[iat],drift[iat]);
-    vsq = dot(drift[iat],drift[iat]);
+    T vsq = dot(drift[iat],drift[iat]);
     // calculate drift scalar "sc" of Umrigar, JCP 99, 2865 (1993); eq. (34) * tau
     // use naive drift if vsq may cause numerical instability in the denominator
-    sc  = (vsq < std::numeric_limits<T>::epsilon()) ? tau_over_mass : (-1.0+std::sqrt(1.0+2.0*tau_over_mass*vsq))/vsq;
+    T sc  = (vsq < std::numeric_limits<T>::epsilon()) ? tau_over_mass : (-1.0+std::sqrt(1.0+2.0*tau_over_mass*vsq))/vsq;
     drift[iat] *= sc;
 
     norm_scaled+=vsq*sc*sc;
