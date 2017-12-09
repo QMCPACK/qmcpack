@@ -249,14 +249,11 @@ void VMCcuda::advanceWalkersWithDrift()
 {
   int nat = W.getTotalNum();
   int nw  = W.getActiveWalkers();
-  std::vector<RealType>  oldScale(nw), newScale(nw);
   std::vector<PosType>   delpos(nw);
-  std::vector<PosType>   dr(nw);
   std::vector<PosType>   newpos(nw);
   std::vector<ValueType> ratios(nw);
 #ifdef QMC_COMPLEX
   std::vector<RealType>  ratios_real(nw);
-  std::vector<PosType>   oldG_real(nw), newG_real(nw), wG_real(nw);
 #endif
   std::vector<GradType>  oldG(nw), newG(nw);
   std::vector<ValueType> oldL(nw), newL(nw);
@@ -272,15 +269,10 @@ void VMCcuda::advanceWalkersWithDrift()
       Psi.addGradient(W, iat, oldG);
       for(int iw=0; iw<nw; iw++)
       {
-#ifdef QMC_COMPLEX
-        convert(oldG[iw], oldG_real[iw]);
-        oldScale[iw] = getDriftScale(m_tauovermass,oldG_real[iw]);
-        dr[iw] = (m_sqrttau*delpos[iw]) + (oldScale[iw]*oldG_real[iw]);
-#else
-        oldScale[iw] = getDriftScale(m_tauovermass,oldG[iw]);
-        dr[iw] = (m_sqrttau*delpos[iw]) + (oldScale[iw]*oldG[iw]);
-#endif
-        newpos[iw]=W[iw]->R[iat] + dr[iw];
+        PosType dr;
+        delpos[iw] *= m_sqrttau;
+        getScaledDrift(m_tauovermass,oldG[iw],dr);
+        newpos[iw] = W[iw]->R[iat] + delpos[iw] + dr;
         ratios[iw] = 1.0;
 #ifdef QMC_COMPLEX
         ratios_real[iw] = 1.0;
@@ -296,14 +288,7 @@ void VMCcuda::advanceWalkersWithDrift()
       std::vector<RealType> rand_v(nw);
       for(int iw=0; iw<nw; ++iw)
       {
-#ifdef QMC_COMPLEX
-        PosType drOld =
-          newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG_real[iw]);
-#else
-        PosType drOld =
-          newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG[iw]);
-#endif
-        logGf_v[iw] = -m_oneover2tau * dot(drOld, drOld);
+        logGf_v[iw] = -m_oneover2tau * dot(delpos[iw], delpos[iw]);
         rand_v[iw] = Random();
       }
       Psi.addRatio(W, iat, ratios, newG, newL);
@@ -312,19 +297,12 @@ void VMCcuda::advanceWalkersWithDrift()
 #endif
       for(int iw=0; iw<nw; ++iw)
       {
-#ifdef QMC_COMPLEX
-        convert( newG[iw], newG_real[iw]);
-        newScale[iw]   = getDriftScale(m_tauovermass,newG_real[iw]);
-        PosType drNew  =
-          (newpos[iw] + newScale[iw]*newG_real[iw]) - W[iw]->R[iat];
-#else
-        newScale[iw]   = getDriftScale(m_tauovermass,newG[iw]);
-        PosType drNew  =
-          (newpos[iw] + newScale[iw]*newG[iw]) - W[iw]->R[iat];
-#endif
+        PosType drNew;
+        getScaledDrift(m_tauovermass,newG[iw],drNew);
+        drNew += newpos[iw] - W[iw]->R[iat];
         // if (dot(drNew, drNew) > 25.0)
         //   std::cerr << "Large drift encountered!  Drift = " << drNew << std::endl;
-        RealType logGb =  -m_oneover2tau * dot(drNew, drNew);
+        RealType logGb = -m_oneover2tau * dot(drNew, drNew);
         RealType x = logGb - logGf_v[iw];
 #ifdef QMC_COMPLEX
         RealType prob = ratios_real[iw]*ratios_real[iw]*std::exp(x);

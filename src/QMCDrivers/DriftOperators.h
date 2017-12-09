@@ -38,21 +38,6 @@ inline T getDriftScale(T tau, const ParticleAttrib<TinyVector<std::complex<TG>,D
   return (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
 }
 
-template<class T, class TG, unsigned D>
-inline T getDriftScale(T tau, const TinyVector<TG,D>& qf)
-{
-  T vsq=dot(qf,qf);
-  return (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
-}
-
-template<class T, class TG, unsigned D>
-inline T getDriftScale(T tau, const TinyVector<std::complex<TG>,D>& qf)
-{
-  APP_ABORT("getDriftScale: Scaled drift computable only with real wavefunction forces.\n")
-  T vsq=OTCDot<TG,TG,D>::apply(qf,qf);
-  return (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
-}
-
 /** evaluate a drift with a real force
  * @param tau timestep
  * @param qf quantum force
@@ -61,24 +46,13 @@ inline T getDriftScale(T tau, const TinyVector<std::complex<TG>,D>& qf)
 template<class Tt, class TG, class T, unsigned D>
 inline void getScaledDrift(Tt tau, const TinyVector<TG,D>& qf, TinyVector<T,D>& drift)
 {
-  T vsq=dot(qf,qf);
-  vsq= (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
-  drift=vsq*qf;
-}
-
-template<class Tt, class TG, class T, unsigned D>
-inline void getScaledDrift(Tt tau, const TinyVector<std::complex<TG>,D>& qf, TinyVector<T,D>& drift)
-{
   //We convert the complex gradient to real and temporarily store in drift.
-  for(int i=0; i<D; ++i)
-    convert(qf[i],drift[i]);
-  
-  T vsq=OTCDot<TG,TG,D>::apply(drift,drift);
-  vsq=(vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
+  convert(qf,drift);
+  T vsq=dot(drift,drift);
+  vsq= (vsq<std::numeric_limits<T>::epsilon())? tau:((-1.0+std::sqrt(1.0+2.0*tau*vsq))/vsq);
   //Apply the umrigar scaled drift.  
   drift*=vsq;
 }
-
 
 /** evaluate \f$\gamma\f$ for \f$ \bar V= \gamma V\f$
  *
