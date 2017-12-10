@@ -39,19 +39,19 @@ std::vector<std::string> QMCGaussianParserBase::gShellType;
 std::vector<int> QMCGaussianParserBase::gShellID;
 
 QMCGaussianParserBase::QMCGaussianParserBase():
-  Title("sample"),basisType("Gaussian"),basisName("generic"),DoCusp(false),
+  Title("sample"),basisType("Gaussian"),basisName("generic"),DoCusp(false),debug(false),
   Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),WFS_name("wfj")
-  ,usingCSF(false),readNO(0),readGuess(0),zeroCI(false),target_state(0)
+  ,usingCSF(false),readNO(0),readGuess(0),zeroCI(false),target_state(0),Structure(false)
   ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false),QP(false),ECP(false)
 {
 }
 
 QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
-  BohrUnit(true),SpinRestricted(false),NumberOfAtoms(0),NumberOfEls(0),DoCusp(false),
+  BohrUnit(true),SpinRestricted(false),NumberOfAtoms(0),NumberOfEls(0),DoCusp(false),debug(false),
   SpinMultiplicity(0),NumberOfAlpha(0),NumberOfBeta(0),SizeOfBasisSet(0),WFS_name("wfj"),
   Title("sample"),basisType("Gaussian"),basisName("generic"),numMO(0),numMO2print(-1),
   Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),target_state(0),
-  angular_type("spherical"),usingCSF(false),readNO(0),readGuess(0),zeroCI(false)
+  angular_type("spherical"),usingCSF(false),readNO(0),readGuess(0),zeroCI(false),Structure(false)
   ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false), QP(false),ECP(false)
 {
   //IonSystem.setName("i");
@@ -1539,7 +1539,7 @@ void QMCGaussianParserBase::map2GridFunctors(xmlNodePtr cur)
   {
     rbuilder.addRadialOrbital(phi_ptr[i],nlms[i]);
   }
-  rbuilder.print(acenter,1);
+  rbuilder.print(acenter,1,debug);
 }
 
 void QMCGaussianParserBase::createGridNode(int argc, char** argv)
@@ -1573,16 +1573,10 @@ void QMCGaussianParserBase::createGridNode(int argc, char** argv)
             gridSize=argv[++iargc];
           }
           else
-            if(a == "-nojastrow")
+            if(a == "-numMO")
             {
-              addJastrow=false;
-              WFS_name="wfnoj";
+              numMO2print = atoi(argv[++iargc]); 
             }
-            else
-              if(a == "-numMO")
-              {
-                numMO2print = atoi(argv[++iargc]); 
-              }
     ++iargc;
   }
   xmlNewProp(gridPtr,(const xmlChar*)"type",(const xmlChar*)gridType.c_str());
@@ -1595,6 +1589,7 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
                                  const std::string& ion_tag)
 {
   std::cout << " QMCGaussianParserBase::dump " << std::endl;
+  if (!Structure)
   {
     xmlDocPtr doc_p = xmlNewDoc((const xmlChar*)"1.0");
     xmlNodePtr qm_root_p = xmlNewNode(NULL, BAD_CAST "qmcsystem");
@@ -1604,6 +1599,7 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
     std::string fname = Title+".structure.xml";
     xmlSaveFormatFile(fname.c_str(),doc_p,1);
     xmlFreeDoc(doc_p);
+    Structure=true;
   }
   xmlDocPtr doc = xmlNewDoc((const xmlChar*)"1.0");
   xmlNodePtr qm_root = xmlNewNode(NULL, BAD_CAST "qmcsystem");
@@ -1713,7 +1709,7 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
     }
   }
   xmlXPathFreeObject(result);
-  std::string fname = Title+"."+WFS_name+".xml";
+  std::string fname = Title+".wf"+WFS_name+".xml";
   xmlSaveFormatFile(fname.c_str(),doc,1);
   xmlFreeDoc(doc);
   if (numMO*SizeOfBasisSet>=500 && !UseHDF5)
@@ -1726,7 +1722,7 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
   std::cout<<"Generating Standard Input file containing standard optmization blocks followed by VMC and DMC blocks;"<<std::endl;
   std::cout<<" Modify according to the accuracy you would like to achieve. "<<std::endl;
 
-  std::string fname = Title+".Input.xml";
+  std::string fname = Title+".Input-wf"+WFS_name+".xml";
 
   xmlDocPtr doc_input = xmlNewDoc((const xmlChar*)"1.0");
   xmlNodePtr qm_root_input = xmlNewNode(NULL, BAD_CAST "simulation");
@@ -1755,7 +1751,7 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
     xmlNewProp(ptcl,(const xmlChar*)"href", (const xmlChar*)Ptclname.c_str());
     xmlAddChild(qm_root_input,ptcl);
 
-    std::string Wfsname = Title+"."+WFS_name+".xml";
+    std::string Wfsname = Title+".wf"+WFS_name+".xml";
     xmlNodePtr wfs = xmlNewNode(NULL,(const xmlChar*)"include");
     xmlNewProp(wfs,(const xmlChar*)"href", (const xmlChar*)Wfsname.c_str());
     xmlAddChild(qm_root_input,wfs);

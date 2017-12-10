@@ -51,6 +51,8 @@ struct QMCGaussianParserBase
   bool addJastrow;
   bool addJastrow3Body;
   bool ECP;
+  bool debug;
+  bool Structure;
   int IonChargeIndex;
   int ValenceChargeIndex;
   int AtomicNumberIndex;
