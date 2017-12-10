@@ -1789,7 +1789,7 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
     xmlNewProp(initvmc,(const xmlChar*)"method", (const xmlChar*)"vmc");
     xmlNewProp(initvmc,(const xmlChar*)"move", (const xmlChar*)"pbyp");
     xmlNewProp(initvmc,(const xmlChar*)"checkpoint", (const xmlChar*)"-1");
-    xmlNewProp(initvmc,(const xmlChar*)"gpu", (const xmlChar*)"no");
+    //xmlNewProp(initvmc,(const xmlChar*)"gpu", (const xmlChar*)"no");
     {
       xmlNodePtr estimator = xmlNewNode(NULL,(const xmlChar*)"estimator");
       xmlNewProp(estimator,(const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
@@ -1825,7 +1825,7 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
        xmlNewProp(initopt,(const xmlChar*)"method", (const xmlChar*)"linear");
        xmlNewProp(initopt,(const xmlChar*)"move", (const xmlChar*)"pbyp");
        xmlNewProp(initopt,(const xmlChar*)"checkpoint", (const xmlChar*)"-1");
-       xmlNewProp(initopt,(const xmlChar*)"gpu", (const xmlChar*)"no");
+       //xmlNewProp(initopt,(const xmlChar*)"gpu", (const xmlChar*)"no");
        {
          xmlNodePtr estimator = xmlNewNode(NULL,(const xmlChar*)"estimator");
          xmlNewProp(estimator,(const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
@@ -1862,7 +1862,7 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
        xmlNewProp(initopt,(const xmlChar*)"method", (const xmlChar*)"linear");
        xmlNewProp(initopt,(const xmlChar*)"move", (const xmlChar*)"pbyp");
        xmlNewProp(initopt,(const xmlChar*)"checkpoint", (const xmlChar*)"-1");
-       xmlNewProp(initopt,(const xmlChar*)"gpu", (const xmlChar*)"no");
+       //xmlNewProp(initopt,(const xmlChar*)"gpu", (const xmlChar*)"no");
        {
          xmlNodePtr estimator = xmlNewNode(NULL,(const xmlChar*)"estimator");
          xmlNewProp(estimator,(const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
@@ -1902,7 +1902,7 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
   xmlNewProp(vmc,(const xmlChar*)"method", (const xmlChar*)"vmc");
   xmlNewProp(vmc,(const xmlChar*)"move", (const xmlChar*)"pbyp");
   xmlNewProp(vmc,(const xmlChar*)"checkpoint", (const xmlChar*)"-1");
-  xmlNewProp(vmc,(const xmlChar*)"gpu", (const xmlChar*)"no");
+  //xmlNewProp(vmc,(const xmlChar*)"gpu", (const xmlChar*)"no");
   {
     xmlNodePtr estimator = xmlNewNode(NULL,(const xmlChar*)"estimator");
     xmlNewProp(estimator,(const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
@@ -1925,7 +1925,7 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
   xmlNewProp(dmc,(const xmlChar*)"method", (const xmlChar*)"dmc");
   xmlNewProp(dmc,(const xmlChar*)"move", (const xmlChar*)"pbyp");
   xmlNewProp(dmc,(const xmlChar*)"checkpoint", (const xmlChar*)"20");
-  xmlNewProp(dmc,(const xmlChar*)"gpu", (const xmlChar*)"no");
+  //xmlNewProp(dmc,(const xmlChar*)"gpu", (const xmlChar*)"no");
   {
     xmlNodePtr estimator = xmlNewNode(NULL,(const xmlChar*)"estimator");
     xmlNewProp(estimator,(const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
