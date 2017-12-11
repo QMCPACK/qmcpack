@@ -48,8 +48,8 @@ struct WalkerControlMPI: public WalkerControlBase
 
   //old implementations
   void swapWalkersAsync(MCWalkerConfiguration& W);
-  void swapWalkersBlocked(MCWalkerConfiguration& W);
-  void swapWalkersMap(MCWalkerConfiguration& W);
+  // Removed swapWalkersBlocked and swapWalkersMap (minimize size and number of messages)
+
 };
 }
 #endif
