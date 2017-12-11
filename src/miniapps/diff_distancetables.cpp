@@ -33,7 +33,6 @@ int main(int argc, char** argv)
 {
 
   OHMMS::Controller->initialize(0, NULL);
-  OhmmsInfo("distancetablelogfile");
   Communicate* mycomm=OHMMS::Controller;
 
   //use the global generator

@@ -22,7 +22,6 @@
 #include <iostream>
 #include <fstream>
 #include "OhmmsData/FileUtility.h"
-#include "Utilities/OhmmsInfo.h"
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"

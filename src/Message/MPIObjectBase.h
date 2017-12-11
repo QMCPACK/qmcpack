@@ -21,7 +21,6 @@
 #ifndef QMCPLUSPLUS_MPIOBJECTBASE_H
 #define QMCPLUSPLUS_MPIOBJECTBASE_H
 #include "Message/Communicate.h"
-#include "Utilities/OhmmsInfo.h"
 
 namespace qmcplusplus
 {

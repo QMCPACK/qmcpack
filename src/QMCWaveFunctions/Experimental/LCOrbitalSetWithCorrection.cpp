@@ -16,7 +16,6 @@
     
 #include "QMCWaveFunctions/LCOrbitalSet.h"
 #include "ParticleIO/XMLParticleIO.h"
-#include "Utilities/OhmmsInfo.h"
 #include "OhmmsData/Libxml2Doc.h"
 
 

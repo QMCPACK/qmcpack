@@ -15,7 +15,6 @@
 
 
 
-#include "Utilities/OhmmsInfo.h"
 #include "Numerics/LibxmlNumericIO.h"
 #include "Numerics/OneDimCubicSpline.h"
 #if defined(HAVE_LIBHDF5)

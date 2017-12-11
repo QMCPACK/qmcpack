@@ -13,7 +13,6 @@
 #include "catch.hpp"
 
 #include "Message/Communicate.h"
-#include "Utilities/OhmmsInfo.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "Lattice/CrystalLattice.h"
@@ -52,7 +51,6 @@ template<unsigned int D> void double_test_case()
 TEST_CASE("particle_attrib_ops_double", "[particle_base]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  OhmmsInfo("testlogfile");
 
   SECTION("dim = 1") {
     double_test_case<1>();
@@ -97,7 +95,6 @@ template <unsigned int D> void complex_test_case()
 TEST_CASE("particle_attrib_ops_complex", "[particle_base]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  OhmmsInfo("testlogfile");
 
   SECTION("dim = 1") {
     complex_test_case<1>();
