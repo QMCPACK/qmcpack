@@ -344,9 +344,11 @@ void VSVBParser::getGaussianCenters(std::istream& is)
                  expo[currPos].push_back(atof(currentWords[0].c_str()));
                  coef[currPos].push_back(atof(currentWords[1].c_str()));
                  shID[currPos][nshll[currPos]] = Shell_temp; 
-                 std::cout << currPos << ":" <<expo[currPos].back() << " " << coef[currPos].back() << " " 
-                 << ncoeffpershell[currPos][nshll[currPos]] 
-                 << " " << shID[currPos][nshll[currPos]]<< std::endl; 
+                 if (debug){
+                    std::cout << currPos << ":" <<expo[currPos].back() << " " << coef[currPos].back() << " " 
+                    << ncoeffpershell[currPos][nshll[currPos]] 
+                    << " " << shID[currPos][nshll[currPos]]<< std::endl; 
+                 }
               }              
             nshll[currPos]++;
             ncoeffpershell[currPos].push_back(0);
