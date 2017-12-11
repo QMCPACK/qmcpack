@@ -15,7 +15,6 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/Tensor.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Particle/ParticleSet.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "ParticleIO/ParticleLayoutIO.h"
@@ -35,7 +34,6 @@ TEST_CASE("distance_open_z", "[distance_table][xml]")
 
   OHMMS::Controller->initialize(0, NULL);
   Communicate *c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
 const char *particles =
 "<tmp> \
@@ -128,7 +126,6 @@ TEST_CASE("distance_open_xy", "[distance_table][xml]")
 
   OHMMS::Controller->initialize(0, NULL);
   Communicate *c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
 const char *particles =
 "<tmp> \
@@ -226,7 +223,6 @@ TEST_CASE("distance_open_species_deviation", "[distance_table][xml]")
 
   OHMMS::Controller->initialize(0, NULL);
   Communicate *c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
 const char *particles =
 "<tmp> \
@@ -332,7 +328,6 @@ TEST_CASE("distance_pbc_z", "[distance_table][xml]")
 
   OHMMS::Controller->initialize(0, NULL);
   Communicate *c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
 const char *particles =
 "<tmp> \

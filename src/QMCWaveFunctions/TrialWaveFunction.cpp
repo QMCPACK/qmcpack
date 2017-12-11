@@ -18,7 +18,6 @@
     
     
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus

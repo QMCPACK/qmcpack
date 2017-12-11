@@ -5,7 +5,9 @@ subjob=qsub
 
 for size in 8 16 32 64
 do
-  source_folder=dmc-S$size-cpu
+  Natom=$((size * 4))
+  Nelec=$((size * 48))
+  source_folder=dmc-a$Natom-e$Nelec-cpu
   folder=$source_folder-${appendix}
   echo $folder
   mkdir $folder

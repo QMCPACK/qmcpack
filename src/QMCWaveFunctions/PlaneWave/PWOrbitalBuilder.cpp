@@ -16,7 +16,6 @@
 /** @file PWOribitalBuilder.cpp
  * @brief Definition of a builder class for PWOrbitalSet
  */
-#include "Utilities/OhmmsInfo.h"
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"

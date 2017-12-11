@@ -16,7 +16,6 @@
 
 
 
-#include "Utilities/OhmmsInfo.h"
 #include "Numerics/LibxmlNumericIO.h"
 #include "Numerics/Transform2GridFunctor.h"
 #include "Numerics/OneDimCubicSpline.h"

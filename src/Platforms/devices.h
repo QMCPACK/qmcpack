@@ -23,7 +23,6 @@
 #ifdef QMC_CUDA
 #include "Configuration.h"
 #include "Message/Communicate.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Message/CommOperators.h"
 #include <cuda_runtime_api.h>
 #include <unistd.h>

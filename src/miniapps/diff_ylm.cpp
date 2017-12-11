@@ -27,7 +27,10 @@ int main(int argc, char** argv)
 {
 
   OHMMS::Controller->initialize(argc,argv);
-  OhmmsInfo welcome(argc,argv,OHMMS::Controller->rank());
+  if (OHMMS::Controller->rank() != 0) {
+    outputManager.shutOff();
+  }
+
   Communicate* mycomm=OHMMS::Controller;
 
   typedef float RealType;

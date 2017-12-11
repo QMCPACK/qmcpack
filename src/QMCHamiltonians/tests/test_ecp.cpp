@@ -56,7 +56,6 @@ TEST_CASE("ReadFileBuffer_simple_mpi","[hamiltonian]")
 {
   OHMMS::Controller->initialize(0, NULL);
   Communicate *c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   ReadFileBuffer buf(c);
   bool open_okay = buf.open_file("simple.txt");
@@ -72,7 +71,6 @@ TEST_CASE("ReadFileBuffer_ecp","[hamiltonian]")
 {
   OHMMS::Controller->initialize(0, NULL);
   Communicate *c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   ECPComponentBuilder ecp("test_read_ecp",c);
 

@@ -1,19 +1,5 @@
 <?xml version="1.0"?>
 <qmcsystem>
-  <particleset name="e">
-    <group name="u" size="1">
-      <parameter name="charge">-1</parameter>
-      <attrib name="position" datatype="posArray">
-  4.1616017374e-01  1.5208454249e-01 -6.5289168458e-01
-</attrib>
-    </group>
-    <group name="d" size="1">
-      <parameter name="charge">-1</parameter>
-      <attrib name="position" datatype="posArray">
- -3.0591391869e-01 -1.1744790040e-01 -1.5858110839e+00
-</attrib>
-    </group>
-  </particleset>
   <particleset name="ion0" size="1">
     <group name="He">
       <parameter name="charge">2</parameter>
@@ -26,5 +12,13 @@
     <attrib name="ionid" datatype="stringArray">
  He 
 </attrib>
+  </particleset>
+  <particleset name="e" random="yes" randomsrc="ion0">
+    <group name="u" size="1">
+      <parameter name="charge">-1</parameter>
+    </group>
+    <group name="d" size="1">
+      <parameter name="charge">-1</parameter>
+    </group>
   </particleset>
 </qmcsystem>
