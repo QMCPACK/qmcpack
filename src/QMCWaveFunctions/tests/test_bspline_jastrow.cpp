@@ -35,6 +35,10 @@
 #include <stdio.h>
 #include <string>
 
+
+// Uncomment to print information and values from the underlying functor
+//#define PRINT_SPLINE_DATA
+
 using std::string;
 
 namespace qmcplusplus
@@ -189,7 +193,7 @@ const char *particles = \
     REQUIRE(Vals[i].ddu == Approx(ddv));
   }
 
-#if 0
+#ifdef PRINT_SPLINE_DATA
   // write out values of the Bspline functor
   //BsplineFunctor<double> *bf = j2->F[0];
   printf("NumParams = %d\n",bf->NumParams);
@@ -353,7 +357,7 @@ const char *particles = \
     REQUIRE(Vals[i].ddu == Approx(ddv));
   }
 
-#if 0
+#ifdef PRINT_SPLINE_DATA
   // write out values of the Bspline functor
   //BsplineFunctor<double> *bf = j1->F[0];
   printf("NumParams = %d\n",bf->NumParams);
