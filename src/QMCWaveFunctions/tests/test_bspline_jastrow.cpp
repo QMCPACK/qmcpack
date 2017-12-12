@@ -23,11 +23,13 @@
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowBuilder.h"
 #include "ParticleBase/ParticleAttribOps.h"
 #ifdef ENABLE_SOA
 #include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
+#include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #endif
 
 #include <stdio.h>
@@ -60,7 +62,7 @@ TEST_CASE("BSpline functor one", "[wavefunction]")
   REQUIRE(u == 0.0);
 }
 
-TEST_CASE("BSpline builder Jastrow", "[wavefunction]")
+TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
 {
 
   Communicate *c;
@@ -190,6 +192,170 @@ const char *particles = \
 #if 0
   // write out values of the Bspline functor
   //BsplineFunctor<double> *bf = j2->F[0];
+  printf("NumParams = %d\n",bf->NumParams);
+  printf("CuspValue = %g\n",bf->CuspValue);
+  printf("DeltaR = %g\n",bf->DeltaR);
+  printf("SplineCoeffs size = %d\n",bf->SplineCoefs.size());
+  for (int j = 0; j < bf->SplineCoefs.size(); j++)
+  {
+    printf("%d %g\n",j,bf->SplineCoefs[j]);
+  }
+  printf("\n");
+
+  for (int i = 0; i < 20; i++) {
+    double r = 0.6*i;
+    elec_.R[0][0] = r;
+    elec_.update();
+    double logpsi = psi.evaluateLog(elec_);
+    //double alt_val = bf->evaluate(r);
+    double dv = 0.0;
+    double ddv = 0.0;
+    double alt_val = bf->evaluate(r,dv,ddv);
+    printf("%g %g %g %g %g\n",r,logpsi,alt_val,dv,ddv);
+  }
+#endif
+
+
+}
+
+TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
+{
+
+  Communicate *c;
+  OHMMS::Controller->initialize(0, NULL);
+  c = OHMMS::Controller;
+
+  ParticleSet ions_;
+  ParticleSet elec_;
+
+  ions_.setName("ion");
+  ions_.create(1);
+  ions_.R[0][0] = 2.0;
+  ions_.R[0][1] = 0.0;
+  ions_.R[0][2] = 0.0;
+
+  SpeciesSet &ispecies =  ions_.getSpeciesSet();
+  int CIdx = ispecies.addSpecies("C");
+  int ichargeIdx = ispecies.addAttribute("charge");
+  ispecies(ichargeIdx, CIdx) = 4;
+  ions_.resetGroups();
+  ions_.update();
+
+  elec_.setName("elec");
+  std::vector<int> ud(2); ud[0]=ud[1]=1;
+  elec_.create(ud);
+  elec_.R[0][0] = 1.00;
+  elec_.R[0][1] = 0.0;
+  elec_.R[0][2] = 0.0;
+  elec_.R[1][0] = 0.0;
+  elec_.R[1][1] = 0.0;
+  elec_.R[1][2] = 0.0;
+
+  SpeciesSet &tspecies =  elec_.getSpeciesSet();
+  int upIdx = tspecies.addSpecies("u");
+  int downIdx = tspecies.addSpecies("d");
+  int chargeIdx = tspecies.addAttribute("charge");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(chargeIdx, downIdx) = -1;
+
+#ifdef ENABLE_SOA
+  elec_.addTable(ions_,DT_SOA);
+#else
+  elec_.addTable(ions_,DT_AOS);
+#endif
+  elec_.resetGroups();
+  elec_.update();
+
+
+  TrialWaveFunction psi = TrialWaveFunction(c);
+
+const char *particles = \
+"<tmp> \
+   <jastrow type=\"One-Body\" name=\"J1\" function=\"bspline\" source=\"ion\" print=\"yes\"> \
+       <correlation elementType=\"C\" rcut=\"10\" size=\"8\" cusp=\"0.0\"> \
+               <coefficients id=\"eC\" type=\"Array\"> \
+-0.2032153051 -0.1625595974 -0.143124599 -0.1216434956 -0.09919771951 -0.07111729038 \
+-0.04445345869 -0.02135082917 \
+               </coefficients> \
+            </correlation> \
+         </jastrow> \
+</tmp> \
+";
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(particles);
+  REQUIRE(okay);
+
+  xmlNodePtr root = doc.getRoot();
+
+  xmlNodePtr jas1 = xmlFirstElementChild(root);
+
+  BsplineJastrowBuilder jastrow(elec_, psi, ions_);
+  bool build_okay = jastrow.put(jas1);
+  REQUIRE(build_okay);
+
+  OrbitalBase *orb = psi.getOrbitals()[0];
+
+#ifdef ENABLE_SOA
+  typedef J1OrbitalSoA<BsplineFunctor<OrbitalBase::RealType> > J1Type;
+#else
+  typedef OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > J1Type;
+#endif
+  J1Type *j1 = dynamic_cast<J1Type *>(orb);
+  REQUIRE(j1 != NULL);
+
+
+  struct JValues
+  {
+   double r;
+   double u;
+   double du;
+   double ddu;
+  };
+
+  // Cut and paste from output of gen_bspline_jastrow.py
+ const int N = 20;
+ JValues Vals[N] = {
+  {0.00,   -0.1896634025,               0,   0.06586224647},
+  {0.60,   -0.1804990512,   0.02606308248,   0.02101469513},
+  {1.20,   -0.1637586749,    0.0255799351,  -0.01568108497},
+  {1.80,   -0.1506226948,   0.01922435549, -0.005504180392},
+  {2.40,   -0.1394848415,   0.01869442683,  0.001517191423},
+  {3.00,    -0.128023472,   0.01946283614,   0.00104417293},
+  {3.60,   -0.1161729491,   0.02009651096,  0.001689229059},
+  {4.20,   -0.1036884223,   0.02172284322,  0.003731878464},
+  {4.80,  -0.08992443283,    0.0240346508,  0.002736384838},
+  {5.40,  -0.07519614609,   0.02475121662, -0.000347832122},
+  {6.00,  -0.06054074137,   0.02397053075, -0.001842295859},
+  {6.60,  -0.04654631918,    0.0225837382, -0.002780345968},
+  {7.20,  -0.03347994129,   0.02104406699,  -0.00218107833},
+  {7.80,   -0.0211986378,   0.01996899618,  -0.00173646255},
+  {8.40,  -0.01004416026,   0.01635533409,  -0.01030907776},
+  {9.00, -0.002594125744,  0.007782377232,  -0.01556475446},
+  {9.60, -0.0001660240476,  0.001245180357, -0.006225901786},
+  {10.20,               0,               0,               0},
+  {10.80,               0,               0,               0},
+  {11.40,               0,               0,               0}
+ };
+
+
+#ifdef ENABLE_SOA
+  BsplineFunctor<OrbitalBase::RealType> *bf = j1->F[0];
+#else
+  BsplineFunctor<OrbitalBase::RealType> *bf = j1->Fs[0];
+#endif
+
+  for (int i = 0; i < N; i++) {
+    OrbitalBase::RealType dv = 0.0;
+    OrbitalBase::RealType ddv = 0.0;
+    OrbitalBase::RealType val = bf->evaluate(Vals[i].r,dv,ddv);
+    REQUIRE(Vals[i].u == Approx(val));
+    REQUIRE(Vals[i].du == Approx(dv));
+    REQUIRE(Vals[i].ddu == Approx(ddv));
+  }
+
+#if 0
+  // write out values of the Bspline functor
+  //BsplineFunctor<double> *bf = j1->F[0];
   printf("NumParams = %d\n",bf->NumParams);
   printf("CuspValue = %g\n",bf->CuspValue);
   printf("DeltaR = %g\n",bf->DeltaR);
