@@ -106,13 +106,13 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     }
     else if (smooth_factor==cone)
     {
-      const PointType& r=P.R[iat];
+      const PointType& r=P.activeR(iat);
       int bc_sign=HybridBase::get_bc_sign(r, PrimLattice, HalfG);
       BaseAdoptor::assign_v(bc_sign,psi);
     }
     else
     {
-      const PointType& r=P.R[iat];
+      const PointType& r=P.activeR(iat);
       psi_AO.resize(psi.size());
       int bc_sign=HybridBase::get_bc_sign(r, PrimLattice, HalfG);
       BaseAdoptor::assign_v(bc_sign,psi_AO);
@@ -143,13 +143,13 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     }
     else if(smooth_factor==cone)
     {
-      const PointType& r=P.R[iat];
+      const PointType& r=P.activeR(iat);
       int bc_sign=HybridBase::get_bc_sign(r, PrimLattice, HalfG);
       BaseAdoptor::assign_vgl_from_l(bc_sign,psi,dpsi,d2psi);
     }
     else
     {
-      const PointType& r=P.R[iat];
+      const PointType& r=P.activeR(iat);
       const RealType ctwo(2);
       const RealType rinv(1.0/dist_r);
       psi_AO.resize(psi.size());
@@ -181,7 +181,7 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     APP_ABORT("HybridRealSoA::evaluate_vgl_combo not implemented!");
     if(HybridBase::evaluate_vgh(P,iat,myV,myG,myH))
     {
-      const PointType& r=P.R[iat];
+      const PointType& r=P.activeR(iat);
       int bc_sign=HybridBase::get_bc_sign(r, PrimLattice, HalfG);
       BaseAdoptor::assign_vgl_soa(bc_sign,vgl);
     }
@@ -195,7 +195,7 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     APP_ABORT("HybridRealSoA::evaluate_vgh not implemented!");
     if(HybridBase::evaluate_vgh(P,iat,myV,myG,myH))
     {
-      const PointType& r=P.R[iat];
+      const PointType& r=P.activeR(iat);
       int bc_sign=HybridBase::get_bc_sign(r, PrimLattice, HalfG);
       BaseAdoptor::assign_vgh(bc_sign,psi,dpsi,grad_grad_psi);
     }

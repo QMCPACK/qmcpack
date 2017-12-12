@@ -61,13 +61,14 @@ TEST_CASE("pack scalar", "[utilities]")
   p.put(i6.data(),i6.data()+i6.size());
 
   p.rewind();
-  int j0 = i0;
-  long j1 = i1;
-  float j2 = i2;
-  double j3 = i3;
-  complex<float> j4 = i4;
-  complex<double> j5 = i5;
+  int j0 = i0; i0 = 0;
+  long j1 = i1; i1 = 0;
+  float j2 = i2; i2 = 0;
+  double j3 = i3; i3 = 0;
+  complex<float> j4 = i4; i4 = 0;
+  complex<double> j5 = i5; i5 = 0;
   std::vector<complex<double> > j6(i6);
+  i6[0] = 0; i6[1] = 0; i6[2] = 0;
   p >> i0;
   p >> i1;
   p >> i2;

@@ -277,7 +277,7 @@ void QMCUpdateBase::randomize(Walker_t& awalker)
       }
       RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
       getScaledDrift(tauovermass,grad_new,dr);
-      dr = awalker.R[iat]-W.R[iat]-dr;
+      dr = W.R[iat]-W.activePos-dr;
       RealType logGb = -oneover2tau*dot(dr,dr);
       if (RandomGen() < prob*std::exp(logGb-logGf))
       {

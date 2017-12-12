@@ -17,7 +17,6 @@
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
 #include "Message/Communicate.h"
-#include "Utilities/OhmmsInfo.h"
 
 namespace qmcplusplus
 {
@@ -34,10 +33,10 @@ SlaterDetWithBackflow::~SlaterDetWithBackflow()
   ///clean up SPOSet
 }
 
-void SlaterDetWithBackflow::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+void SlaterDetWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   for(int i=0; i<Dets.size(); ++i)
-    Dets[i]->get_ratios(P,ratios);
+    Dets[i]->evaluateRatiosAlltoOne(P,ratios);
 }
 
 void SlaterDetWithBackflow::resetTargetParticleSet(ParticleSet& P)

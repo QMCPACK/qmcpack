@@ -20,7 +20,6 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "Particle/HDFParticleAttrib.h"
 #include "Numerics/HDFNumericAttrib.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/FileUtility.h"
 namespace qmcplusplus

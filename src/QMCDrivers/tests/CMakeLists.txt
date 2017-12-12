@@ -17,7 +17,7 @@ SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME unit_test_${SRC_DIR})
 
 
-SET(DRIVER_TEST_SRC test_vmc.cpp test_dmc.cpp)
+SET(DRIVER_TEST_SRC test_vmc.cpp test_dmc.cpp test_drift.cpp)
 IF(HAVE_MPI)
   SET(DRIVER_TEST_SRC ${DRIVER_TEST_SRC} test_walker_control.cpp)
 ENDIF()

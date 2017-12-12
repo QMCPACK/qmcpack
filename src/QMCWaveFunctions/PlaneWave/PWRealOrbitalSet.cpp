@@ -105,7 +105,7 @@ void PWRealOrbitalSet::addVector(const std::vector<ComplexType>& coefs,int jorb)
 void
 PWRealOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
-  myBasisSet->evaluate(P.R[iat]);
+  myBasisSet->evaluate(P.activeR(iat));
   MatrixOperators::product(CC,myBasisSet->Zv,tempPsi.data());
   for(int j=0; j<OrbitalSetSize; j++)
     psi[j]=tempPsi[j].real();

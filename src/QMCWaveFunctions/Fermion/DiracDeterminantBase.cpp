@@ -295,10 +295,10 @@ void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, std::vector<Va
   MatrixOperators::product(psiT,psiM[VP.activePtcl-FirstIndex],&ratios[0]);
 }
 
-void DiracDeterminantBase::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+void DiracDeterminantBase::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   SPOVTimer.start();
-  Phi->evaluate(P, 0, psiV);
+  Phi->evaluate(P, -1, psiV);
   SPOVTimer.stop();
   MatrixOperators::product(psiM,psiV.data(),&ratios[FirstIndex]);
 }

@@ -22,7 +22,6 @@
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Utilities/OhmmsInfo.h"
 
 namespace qmcplusplus
 {

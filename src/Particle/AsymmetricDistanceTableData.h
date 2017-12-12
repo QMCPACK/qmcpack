@@ -189,10 +189,9 @@ struct AsymmetricDTD
   }
 
   ///evaluate the temporary pair relations
-  inline void move(const ParticleSet& P, const PosType& rnew, IndexType jat)
+  inline void move(const ParticleSet& P, const PosType& rnew)
   {
-    activePtcl=jat;
-    for(int iat=0, loc=jat; iat<N[SourceIndex]; iat++,loc+=N[VisitorIndex])
+    for(int iat=0; iat<N[SourceIndex]; iat++)
     {
       PosType drij(rnew-Origin->R[iat]);
       //RealType sep2(BC::apply(Origin.Lattice,drij));
@@ -200,17 +199,13 @@ struct AsymmetricDTD
       Temp[iat].r1=sep;
       Temp[iat].rinv1=1.0/sep;
       Temp[iat].dr1=drij;
-      //Temp[iat].r0=r_m[loc];
-      //Temp[iat].rinv0=rinv_m[loc];
-      //Temp[iat].dr0=dr_m[loc];
     }
   }
 
   ///evaluate the temporary pair relations
-  inline void moveOnSphere(const ParticleSet& P, const PosType& rnew, IndexType jat)
+  inline void moveOnSphere(const ParticleSet& P, const PosType& rnew)
   {
-    activePtcl=jat;
-    for(int iat=0, loc=jat; iat<N[SourceIndex]; iat++,loc+=N[VisitorIndex])
+    for(int iat=0; iat<N[SourceIndex]; iat++)
     {
       PosType drij(rnew-Origin->R[iat]);
       Temp[iat].r1=std::sqrt(DTD_BConds<T,D,SC>::apply_bc(drij));

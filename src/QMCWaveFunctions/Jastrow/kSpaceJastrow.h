@@ -206,7 +206,7 @@ public:
 
   /** evaluate the ratio
   */
-  inline void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
+  inline void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
 private:
   void copyFrom(const kSpaceJastrow& old);

@@ -10,8 +10,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 
 
 
@@ -26,12 +26,14 @@
 
 #include <config/stdlib/limits.h>
 #include <iostream>
+#include <type_traits>
 
 /** generic accumulator of a scalar type
  *
  * To simplify i/o, the values are storged in contens
  */
-template<typename T>
+template<typename T,
+  typename = typename std::enable_if<std::is_floating_point<T>::value>::type>
 struct accumulator_set
 {
   typedef T value_type;

@@ -24,7 +24,6 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "ParticleBase/RandomSeqGenerator.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Utilities/Timer.h"
 #include "QMCDrivers/QMCDriver.h"
 //#include "QMCDrivers/CMC/DummyIonMove.h"

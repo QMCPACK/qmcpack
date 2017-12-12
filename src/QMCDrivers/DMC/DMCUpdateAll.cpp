@@ -120,7 +120,6 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
         W.R[iat] += nonLocalOps.delta(ibar);
         W.update();
         logpsi=Psi.evaluateLog(W);
-        setScaledDrift(Tau,W.G,drift);
         thisWalker.resetProperty(logpsi,Psi.getPhase(),eold);
         thisWalker.R[iat] = W.R[iat];
         ++NonLocalMoveAccepted;

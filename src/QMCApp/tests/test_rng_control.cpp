@@ -16,7 +16,6 @@
 //#include "Utilities/RandomGenerator.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
-#include "Utilities/OhmmsInfo.h"
 #include "OhmmsApp/RandomNumberControl.h"
 
 
@@ -34,7 +33,6 @@ TEST_CASE("RandomNumberControl make_seeds", "[ohmmsapp]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   RandomNumberControl::make_seeds();
 
@@ -46,7 +44,6 @@ TEST_CASE("RandomNumberControl no random in xml", "[ohmmsapp]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   const char *xml_input="<tmp></tmp>";
 
@@ -65,7 +62,6 @@ TEST_CASE("RandomNumberControl random in xml", "[ohmmsapp]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   const char *xml_input="<tmp><random seed='0'></random></tmp>";
 

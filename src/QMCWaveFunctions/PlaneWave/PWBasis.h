@@ -265,8 +265,9 @@ public:
   inline void
   evaluateAll(const ParticleSet& P, int iat)
   {
-    BuildRecursionCoefs(P.R[iat]);
-    RealType twistdotr = dot(twist_cart,P.R[iat]);
+    const PosType &r(P.activeR(iat));
+    BuildRecursionCoefs(r);
+    RealType twistdotr = dot(twist_cart,r);
     ComplexType pw0(std::cos(twistdotr),std::sin(twistdotr));
     //Evaluate the planewaves and derivatives.
     ComplexType* restrict zptr=Z.data();
@@ -300,8 +301,9 @@ public:
   inline void
   evaluateAll(const ParticleSet& P, int iat)
   {
+    const PosType &r(P.activeR(iat));
+    evaluate(r);
     ComplexType* restrict zptr=Z.data();
-    evaluate(P.R[iat]);
     for(int ig=0; ig<NumPlaneWaves; ig++,zptr+=5)
     {
       //PW is initialized as exp(i*twist.r) so that the final basis evaluations
