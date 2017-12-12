@@ -87,7 +87,7 @@ TEST_CASE("drift pbyp and node correction complex", "[drivers][drift]")
   double dx    = xtot/nx;
 
   // imaginary component of wf gradient should NOT affect drift
-  complex<double> myi(0,1.9);
+  std::complex<double> myi(0,1.9);
   for (int ix=0;ix<nx;ix++)
   {
     elec.G[0][0] = gradx+myi;
@@ -167,7 +167,7 @@ TEST_CASE("get scaled drift complex", "[drivers][drift]")
   double dx    = xtot/nx;
 
   // imaginary component of wf gradient should NOT affect drift
-  complex<double> myi(0,1.9);
+  std::complex<double> myi(0,1.9);
   for (int ix=0;ix<nx;ix++)
   {
     elec.G[0][0] = gradx+myi;
