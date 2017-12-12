@@ -325,9 +325,12 @@ class ScalarsHDFAnalyzer(HDFAnalyzer):
         self.info.nblocks_exclude = nbe
         for varname,val in self.data.iteritems():
             (mean,var,error,kappa)=simstats(val.value[nbe:,...].ravel())
+            nblock = len(val.value[nbe:])
+            neffective = nblock/kappa
+            mean_variance = error**2.*neffective
             self[varname] = obj(
                 mean            = mean,
-                variance        = val.value_squared[nbe:,...].mean()-mean**2,
+                variance        = mean_variance,
                 sample_variance = var,
                 error           = error,
                 kappa           = kappa
