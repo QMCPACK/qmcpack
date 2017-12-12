@@ -16,7 +16,6 @@
 
 
 #include "QMCDrivers/CorrelatedSampling/CSVMCUpdatePbyP.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"

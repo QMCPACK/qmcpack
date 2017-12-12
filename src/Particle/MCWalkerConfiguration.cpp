@@ -20,7 +20,6 @@
 
 
 
-#include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"

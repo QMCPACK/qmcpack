@@ -12,7 +12,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Utilities/OhmmsInfo.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"

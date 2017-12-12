@@ -16,7 +16,6 @@
 
 
 
-#include "Utilities/OhmmsInfo.h"
 #include "QMCTools/GamesXmlParser.h"
 #include "QMCHamiltonians/ConservedEnergy.h"
 

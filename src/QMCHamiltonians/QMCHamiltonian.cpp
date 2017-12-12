@@ -20,7 +20,6 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Utilities/NewTimer.h"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"

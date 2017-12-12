@@ -129,8 +129,8 @@ ENDIF(HAVE_OOMPI)
     Utilities/OhmmsObject.cpp 
     Utilities/SpeciesSet.cpp 
     Utilities/SimpleParser.cpp 
-    Utilities/OhmmsInform.cpp 
-    Utilities/OhmmsInfo.cpp 
+    Utilities/InfoStream.cpp
+    Utilities/OutputManager.cpp
     Utilities/NewTimer.cpp
     Utilities/RunTimeManager.cpp
     Utilities/ProgressReportEngine.cpp

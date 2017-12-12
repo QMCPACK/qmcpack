@@ -24,7 +24,6 @@
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Message/OpenMP.h"
 #include "Utilities/ProgressReportEngine.h"
 

@@ -17,8 +17,8 @@
 
 
 #include "Lattice/Uniform3DGridLayout.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Message/OpenMP.h"
+#include "Utilities/OutputManager.h"
 #include <limits>
 
 using namespace qmcplusplus;
@@ -323,13 +323,10 @@ int Uniform3DGridLayout::connectGrid(value_type int_rad, value_type con_rad)
 
 void Uniform3DGridLayout::print(std::ostream& os) const
 {
-  os << "<unitcell>" << std::endl;
+  os << "Unit Cell" << std::endl;
   Base_t::print(os);
-  os << "<note>" << std::endl;
-  os << "\tLong-range breakup parameters:" << std::endl;
-  os << "\trc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc << "\n" << std::endl;
-  os << "</note>" << std::endl;
-  os << "</unitcell>" << std::endl;
+  os << "    Long-range breakup parameters:" << std::endl;
+  os << "    rc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc << "\n" << std::endl;
   ////printGrid(os);
   //for(int ig=0; ig<c_offset.size()-1; ig++) {
   //  os << ig << " has neighboring cell "

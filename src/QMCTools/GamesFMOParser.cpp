@@ -637,9 +637,11 @@ void GamesFMOParser::getGaussianCenters(std::istream& is)
               std::cerr <<"Can't handle H basis states or higher yet. Fix later.\n";
               abort();
             }
-            std::cout << currPos << ":" <<expo[currPos].back() << " " << coef[currPos].back() << " " 
-              << ncoeffpershell[currPos][nshll[currPos]] 
-              << " " << shID[currPos][nshll[currPos]] << std::endl;
+            if (debug){
+              std::cout << currPos << ":" <<expo[currPos].back() << " " << coef[currPos].back() << " " 
+                << ncoeffpershell[currPos][nshll[currPos]] 
+                << " " << shID[currPos][nshll[currPos]] << std::endl;
+            }
           }
         }
       }
