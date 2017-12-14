@@ -117,7 +117,7 @@ void RandomNumberControl::make_children()
     o << "  Random seeds Node = " << rank << ":";
     for(int ip=0; ip<nthreads; ip++)
       o << std::setw(12) << myprimes[ip];
-    std::cout << o.str() << std::endl;
+    app_log() << o.str() << std::endl;
   }
 }
 
@@ -200,6 +200,8 @@ bool RandomNumberControl::put(xmlNodePtr cur)
       pid = OHMMS::Controller->rank();
       nprocs = OHMMS::Controller->size();
     }
+    app_log() << " Random Number" << std::endl;
+    app_log() << " -------------" << std::endl;
     if(offset_in<0)
     {
       offset_in=static_cast<int>(static_cast<uint_type>(std::time(0))%1024);
@@ -215,6 +217,7 @@ bool RandomNumberControl::put(xmlNodePtr cur)
     Random.init(pid,nprocs,mySeeds[pid],Offset+pid);
     app_log() << "  Random number offset = " << Offset
               <<  "  seeds = " << mySeeds[0] <<"-" << mySeeds[nprocs*omp_get_max_threads()] <<  std::endl;
+    app_log() << std::endl;
     if(nprocs<4)
     {
       int imax=8*(mySeeds.size()/8);
@@ -231,6 +234,7 @@ bool RandomNumberControl::put(xmlNodePtr cur)
     }
     make_children();
     NeverBeenInitialized = false;
+    app_log() << std::endl;
   }
   else
     reset();

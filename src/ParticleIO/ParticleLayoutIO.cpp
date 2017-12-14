@@ -49,6 +49,8 @@ bool LatticeParser::put(xmlNodePtr cur)
   bool bconds_defined=false;
   int boxsum=0;
 
+  app_log() << " Lattice" << std::endl;
+  app_log() << " -------" << std::endl;
   cur = cur->xmlChildrenNode;
   while (cur != NULL)
   {
@@ -186,6 +188,7 @@ bool LatticeParser::put(xmlNodePtr cur)
   app_log() << std::fixed;
   app_log() << "  Simulation cell radius = " << ref_.SimulationCellRadius << std::endl;
   app_log() << "  Wigner-Seitz    radius = " << ref_.WignerSeitzRadius    << std::endl;
+  app_log() << std::endl;
 
   //initialize the global cell
   //qmc_common.theSuperCell=lattice_in;

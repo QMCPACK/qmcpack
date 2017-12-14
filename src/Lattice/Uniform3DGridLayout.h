@@ -209,7 +209,7 @@ public:
   {
     return Grid[glevel][ig];
   }
-  void print(std::ostream& os) const;
+  void print(std::ostream& os, int level=2) const;
 
   inline void update()
   {

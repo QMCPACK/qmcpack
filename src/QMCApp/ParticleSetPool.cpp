@@ -111,18 +111,23 @@ bool ParticleSetPool::putLattice(xmlNodePtr cur)
   bool printcell=false;
   if(SimulationCell==0)
   {
-    app_log() << "  Create Global SuperCell " << std::endl;
+    app_debug() << "  Creating global supercell " << std::endl;
     SimulationCell = new ParticleSet::ParticleLayout_t;
     printcell=true;
   }
   else
   {
-    app_log() << "  Overwrite Global SuperCell " << std::endl;
+    app_log() << "  Overwriting global supercell " << std::endl;
   }
   LatticeParser a(*SimulationCell);
   bool lattice_defined=a.put(cur);
-  if(printcell && lattice_defined)
-    SimulationCell->print(app_log());
+  if(printcell && lattice_defined) {
+    if (outputManager.isHighActive()) {
+      SimulationCell->print(app_log(),2);
+    } else {
+      SimulationCell->print(app_summary(),1);
+    }
+  }
   return lattice_defined;
 }
 
