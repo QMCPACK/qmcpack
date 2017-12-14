@@ -185,9 +185,10 @@ bool LatticeParser::put(xmlNodePtr cur)
   ref_.makeGrid(grid);
   if(ref_.SuperCellEnum == SUPERCELL_OPEN)
     ref_.WignerSeitzRadius=ref_.SimulationCellRadius;
+  std::string unit_name = "bohr";
   app_log() << std::fixed;
-  app_log() << "  Simulation cell radius = " << ref_.SimulationCellRadius << std::endl;
-  app_log() << "  Wigner-Seitz    radius = " << ref_.WignerSeitzRadius    << std::endl;
+  app_log() << "  Simulation cell radius   = " << ref_.SimulationCellRadius << " " << unit_name << std::endl;
+  app_log() << "  Wigner-Seitz cell radius = " << ref_.WignerSeitzRadius    << " " << unit_name << std::endl;
   app_log() << std::endl;
 
   //initialize the global cell

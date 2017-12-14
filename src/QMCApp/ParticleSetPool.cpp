@@ -331,7 +331,7 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur,
     qp->Lattice.copy(ions->Lattice);
 
     app_log() << "  Simulation cell radius = " << qp->Lattice.SimulationCellRadius << std::endl;
-    app_log() << "  Wigner-Seitz    radius = " << qp->Lattice.WignerSeitzRadius    << std::endl;
+    app_log() << "  Wigner-Seitz cell radius = " << qp->Lattice.WignerSeitzRadius    << std::endl;
     SimulationCell->print(app_log());
 
     // Goback to the // and OhmmsXPathObject handles it internally

@@ -203,8 +203,11 @@ void CrystalLattice<T,D,ORTHO>::print(std::ostream& os, int level) const
    *      level == 1: lattice vectors, boundary conditions, grid
    *      level == 2: + all the internal values
    */
-  os << "  Lattice: ";
-  std::string pad = "           ";
+  std::string unit_name = "bohr";
+
+  std::string lattice_name = "  Lattice (" + unit_name + "):";
+  std::string pad(lattice_name.length(),' ');
+  os <<  lattice_name;
   for(int i=0; i<D; ++i) {
     if (i > 0) {
       os << pad;
@@ -227,7 +230,7 @@ void CrystalLattice<T,D,ORTHO>::print(std::ostream& os, int level) const
   if(level > 1)
   {
     os << std::endl;
-    os << "  Volume (A^3) = " << Volume << std::endl;
+    os << "  Volume (bohr^3) = " << Volume << std::endl;
     os << std::endl;
     os << "  Reciprocal vectors without 2*pi.\n";
     for(int i=0; i<D; ++i)
