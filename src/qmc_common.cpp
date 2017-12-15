@@ -72,6 +72,12 @@ void QMCState::initialize(int argc, char **argv)
     {
       stopit=true;
     }
+    else if(c.find("--vacuum")<c.size())
+    {
+      std::cerr << "  command line option --vacuum has been deprecated. "
+                << "Use vac_scale as described in the manual." << std::endl;
+      stopit=true;
+    }
     else if(c.find("--noprint")<c.size())
     {//do not print Jastrow or PP
       io_node=false;
