@@ -30,7 +30,7 @@ ELSEIF( ${HOSTNAME} MATCHES "hyperion" )
     SET( CXX ${CMAKE_CXX_COMPILER} )
     SET( CTEST_CMAKE_GENERATOR "Unix Makefiles")
     SET( CTEST_SITE "hyperion.alcf.anl.gov" )
-    SET( N_PROCS 32)
+    SET( N_PROCS 64)
 ELSEIF( ${HOSTNAME} MATCHES "cori" )
 # Setup for cori.nersc.gov phase 1
     SET( CC ${CMAKE_C_COMPILER} )
