@@ -64,6 +64,11 @@ bool LatticeParser::put(xmlNodePtr cur)
       }
       else if(aname == "lattice")
       {
+        const char *units_prop = (const char *)(xmlGetProp(cur, (const xmlChar *) "units"));
+        if (units_prop && std::string(units_prop) != "bohr") {
+          APP_ABORT("LatticeParser::put. Only atomic units (bohr) supported for lattice units. Input file uses: " << std::string(units_prop));
+        }
+
         putContent(lattice_in,cur);
         lattice_defined=true;
         //putContent(ref_.R,cur);
