@@ -60,8 +60,7 @@ IF(ENABLE_SOA OR QMC_CUDA)
                     0 LIH_X_SCALARS # VMC
                     )
 ELSE()
-  MESSAGE("Skipping LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj test because SOA and/or GPU is not enabled (ENABLE_SOA=0 or QMC_CUDA=0)")
-
+  MESSAGE("Skipping LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj test because neither SOA nor GPU is enabled")
 ENDIF()
 
 # Arbitrary k-point requires complex build to run. Ensure fails with real/non-complex build

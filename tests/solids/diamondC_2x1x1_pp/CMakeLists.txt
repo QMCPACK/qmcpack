@@ -28,7 +28,7 @@ IF(ENABLE_SOA OR QMC_CUDA)
                     0 DIAMOND2_SCALARS # VMC
                     )
 ELSE()
-  MESSAGE("Skipping diamondC_2x1x1_hybridrep_pp-vmc_sdj test because SOA or GPU is not enabled (ENABLE_SOA=0 or QMC_CUDA=0)")
+  MESSAGE("Skipping diamondC_2x1x1_hybridrep_pp-vmc_sdj test because neither SOA nor CUDA is enabled")
 ENDIF()
 
 # Reference DMC run in qmc-ref "-21.844975 0.001113"
