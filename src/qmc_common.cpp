@@ -40,7 +40,6 @@ QMCState::QMCState()
 #else
   compute_device=0;
 #endif
-  vacuum=1.0;
   master_eshd_name="none";
 }
 
@@ -72,10 +71,6 @@ void QMCState::initialize(int argc, char **argv)
     else if(c.find("--version")<c.size())
     {
       stopit=true;
-    }
-    else if(c.find("--vacuum")<c.size())
-    {
-      vacuum=atof(argv[++i]);
     }
     else if(c.find("--noprint")<c.size())
     {//do not print Jastrow or PP

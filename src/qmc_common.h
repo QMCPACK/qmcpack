@@ -52,8 +52,6 @@ struct QMCState
   /** size of memory allocated in byte per MPI
    */
   size_t memory_allocated;
-  ///vacuum layer for non-periodic dimension
-  OHMMS_PRECISION_FULL vacuum;
   ///supercell in full precision
   Tensor<OHMMS_PRECISION_FULL,OHMMS_DIM> theSuperCell;
 
