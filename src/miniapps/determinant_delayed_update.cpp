@@ -42,7 +42,13 @@ int main(int argc, char** argv)
   OhmmsInfo welcome(argc,argv,OHMMS::Controller->rank());
   Communicate* mycomm=OHMMS::Controller;
 
-  typedef OHMMS_PRECISION REAL_T;
+  typedef QMCTraits::RealType RealType;
+  typedef QMCTraits::ValueType ValueType;
+#if defined(QMC_COMPLEX)
+  typedef std::complex<OHMMS_PRECISION_FULL> mValueType;
+#else
+  typedef OHMMS_PRECISION_FULL mValueType;
+#endif
   //use the global generator
 
   bool ionode=(mycomm->rank() == 0);
@@ -111,13 +117,13 @@ int main(int argc, char** argv)
     const int teamID=ip/ncrews;
     const int crewID=ip%ncrews;
 
-    RandomGenerator<REAL_T> random_th(myPrimes[ip]);
+    RandomGenerator<RealType> random_th(myPrimes[ip]);
 
-    Matrix<REAL_T> psiM(nels,nels),psiM_inv(nels,nels);
-    Vector<REAL_T> psiV(nels), Ainv_row(nels);
+    Matrix<ValueType> psiM(nels,nels),psiM_inv(nels,nels);
+    Vector<ValueType> psiV(nels), Ainv_row(nels);
 
-    DiracMatrix<REAL_T> detEng;
-    DelayedUpdate<REAL_T,double> delayedEng;
+    DiracMatrix<ValueType> detEng;
+    DelayedUpdate<ValueType, mValueType> delayedEng;
 
     delayedEng.resize(nels,delay);
 
@@ -128,10 +134,10 @@ int main(int argc, char** argv)
 
     if(debug)
     {
-      Matrix<REAL_T> psiM0(nels,nels);
+      Matrix<ValueType> psiM0(nels,nels);
       psiM0=psiM_inv;
 
-      REAL_T ratio_0, ratio_1;
+      ValueType ratio_0, ratio_1;
       double err=0.0;
       for(int iel=0; iel<nels; ++iel)
       {
@@ -143,7 +149,7 @@ int main(int argc, char** argv)
         ratio_1=simd::dot(Ainv_row.data(),psiV.data(),nels);
 
         err += std::abs(ratio_1-ratio_0);
-        if(ratio_0>0 && ratio_0>0.5*random_th())
+        if(std::abs(ratio_0)>0.5*random_th())
         {
           detEng.updateRow(psiM0,psiV.data(),iel,ratio_0);
           delayedEng.acceptRow(psiM_inv,psiV.data(),iel);
@@ -156,7 +162,7 @@ int main(int argc, char** argv)
     int naccepted_loc=0;
     if(delay>1)
     {//use delayed update
-      REAL_T ratio;
+      ValueType ratio;
       for(int mc=0; mc<nsteps; ++mc)
       {
         for(int iel=0; iel<nels; ++iel)
@@ -167,7 +173,7 @@ int main(int argc, char** argv)
           ratio=simd::dot(Ainv_row.data(),psiV.data(),nels);
           t_ratio_loc+=clock_mc.elapsed();
 
-          if(ratio>0 && ratio>0.5*random_th())
+          if(std::abs(ratio)>0.5*random_th())
           {
             naccepted_loc++;
             clock_mc.restart();
@@ -185,7 +191,7 @@ int main(int argc, char** argv)
     }
     else
     {
-      REAL_T ratio;
+      ValueType ratio;
       for(int mc=0; mc<nsteps; ++mc)
       {
         for(int iel=0; iel<nels; ++iel)
@@ -194,7 +200,7 @@ int main(int argc, char** argv)
           clock_mc.restart();
           ratio=simd::dot(psiM_inv[iel],psiV.data(),nels);
           t_ratio_loc+=clock_mc.elapsed();
-          if(ratio>0 && ratio>0.5*random_th())
+          if(std::abs(ratio)>0.5*random_th())
           {
             naccepted_loc++;
             clock_mc.restart();
