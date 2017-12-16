@@ -103,7 +103,7 @@ bool LatticeParser::put(xmlNodePtr cur)
           }
         }
       }
-      else if(aname == "vac_scale")
+      else if(aname == "vacuum")
       {
         putContent(ref_.VacuumScale,cur);
       }
