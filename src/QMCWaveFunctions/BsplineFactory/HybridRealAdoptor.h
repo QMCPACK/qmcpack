@@ -91,6 +91,28 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
       BaseAdoptor::evaluate_v(P,iat,psi);
   }
 
+  template<typename VM>
+  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM)
+  {
+    const size_t m=psiM.cols();
+    if(VP.isOnSphere())
+    {
+      for(int iat=0; iat<VP.getTotalNum(); ++iat)
+      {
+        Vector<SPOSetBase::ValueType> psi(psiM[iat],m);
+        evaluate_v(VP,iat,psi);
+      }
+    }
+    else
+    {
+      for(int iat=0; iat<VP.getTotalNum(); ++iat)
+      {
+        Vector<SPOSetBase::ValueType> psi(psiM[iat],m);
+        evaluate_v(VP,iat,psi);
+      }
+    }
+  }
+
   template<typename T1>
   inline T1 evaluate_dot(const ParticleSet& P, int iat, const T1* restrict arow, ST* scratch)
   {

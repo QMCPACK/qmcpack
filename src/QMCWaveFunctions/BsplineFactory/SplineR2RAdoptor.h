@@ -242,6 +242,17 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     assign_v(bc_sign,psi);
   }
 
+  template<typename VM>
+  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM)
+  {
+    const size_t m=psiM.cols();
+    for(int iat=0; iat<VP.getTotalNum(); ++iat)
+    {
+      Vector<TT> psi(psiM[iat],m);
+      evaluate_v(VP,iat,psi);
+    }
+  }
+
   template<typename VV, typename GV>
   inline void assign_vgl(int bc_sign, VV& psi, GV& dpsi, VV& d2psi)
   {

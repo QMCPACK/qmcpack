@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/** @file EsinplineAdoptor.h
+/** @file EinsplineAdoptor.h
  *
  * Adoptor classes and BsplineSet<SplineAdoptor>
  * BsplineSet<SplineAdoptor> is a SPOSetBase class to work with determinant classes
@@ -264,12 +264,7 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
 
   inline void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM)
   {
-    const size_t m=psiM.cols();
-    for(int iat=0; iat<VP.getTotalNum(); ++iat)
-    {
-      ValueVector_t psi(psiM[iat],m);
-      SplineAdoptor::evaluate_v(VP,iat,psi);
-    }
+    SplineAdoptor::evaluateValues(VP, psiM);
   }
 
   inline void evaluate(const ParticleSet& P, int iat,
