@@ -18,7 +18,7 @@
                     0 DIAMOND_SCALARS # VMC
                     )
 
-IF(ENABLE_SOA)
+IF(ENABLE_SOA OR QMC_CUDA)
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_hybridrep_pp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
                     qmc_short
@@ -28,8 +28,8 @@ IF(ENABLE_SOA)
                     0 DIAMOND_SCALARS # VMC
                     )
 ELSE()
-  MESSAGE("Skipping diamondC_1x1x1_hybridrep_pp-vmc_sdj test because SOA is not enabled (ENABLE_SOA=0)")
-ENDIF(ENABLE_SOA)
+  MESSAGE("Skipping diamondC_1x1x1_hybridrep_pp-vmc_sdj test because neiher SOA nor CUDA is enabled")
+ENDIF()
 
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj-meshf
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
@@ -90,7 +90,7 @@ ENDIF(ENABLE_SOA)
               qmc_cpu_limit_vmc.xml)
 
   IF (TEST_ADDED)
-    SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY TIMEOUT 120)
+    SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY TIMEOUT 180)
     SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY PASS_REGULAR_EXPRESSION "Time limit reached for")
   ENDIF()
 
@@ -116,7 +116,7 @@ ENDIF(ENABLE_SOA)
               qmc_cpu_limit_dmc.xml)
 
   IF (TEST_ADDED)
-    SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY TIMEOUT 120)
+    SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY TIMEOUT 240)
     SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY PASS_REGULAR_EXPRESSION "Time limit reached for")
   ENDIF()
 

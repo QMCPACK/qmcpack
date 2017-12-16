@@ -276,7 +276,7 @@ void GaussianCombo<T>::addGaussian(real_type c, real_type alpha)
     c *= NormL*std::pow(alpha,NormPow);
   }
   LOGMSG("    Gaussian exponent = " << alpha
-         << "\n              contraction=" << c0 <<  " nomralized contraction = " << c)
+         << "\n              contraction=" << c0 <<  " normalized contraction = " << c)
   gset.push_back(BasicGaussian(alpha,c));
 }
 

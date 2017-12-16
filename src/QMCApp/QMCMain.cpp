@@ -468,10 +468,7 @@ bool QMCMain::validateXML()
   {
     app_log() << "  hamiltonian has MPC. Will read density if it is found." << std::endl;
   }
-  else
-  {
-    app_log() << "  DO NOT READ DENSITY" << std::endl;
-  }
+
   //initialize the random number generator
   xmlNodePtr rptr = myRandomControl.initialize(m_context);
   //preserve the input order
