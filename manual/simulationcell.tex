@@ -66,15 +66,16 @@ Examples of valid \texttt{bconds} include:
 
 \subsection{Vacuum}
 For slab or wire boundary conditions (\texttt{bconds= p p n} or \texttt{bconds= p n n}, respectively),
-the factor \texttt{vacuum} increases the size of the axis labeled n. The default value is 1,
-\textit{i.e.} no change to the specified axis.
+The box used for Ewald summation increases the size of the axis labeled \texttt{n} by a factor of \texttt{vacuum}.
+The default value is 1, \textit{i.e.} no change to the specified axis.
+All the particles remains in the original box without altering their positions.
 
 This option helps reducing the computational cost of DFT and memory requirement in QMC.
 For instance, a slab calculation requires a large box with a very long z direction
 to minimize the interaction between periodic images in DFT.
 Since QMC uses the orbitals from DFT contained in the same box,
 a lot of memory is needed when orbitals are stored in B-Spline representation.
-With `vacuum' option, the DFT calculation can use a smaller box but still large enough for accuracy
+With `vacuum' option, the DFT calculation can use a smaller box but still large enough for the accuracy
 and the QMC calculation rescale the open directions of the box to
 have the Coulomb interations calculated in large box.
 
