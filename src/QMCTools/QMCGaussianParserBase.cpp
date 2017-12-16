@@ -1429,6 +1429,7 @@ xmlNodePtr QMCGaussianParserBase::createJ2()
   xmlNewProp(j2,(const xmlChar*)"type", (const xmlChar*)"Two-Body");
   xmlNewProp(j2,(const xmlChar*)"function", (const xmlChar*)"Bspline");
   xmlNewProp(j2,(const xmlChar*)"print", (const xmlChar*)"yes");
+  if (NumberOfAlpha>1||NumberOfBeta>1)
   {
     xmlNodePtr uu = xmlNewNode(NULL,(const xmlChar*)"correlation");
     xmlNewProp(uu,(const xmlChar*)"rcut", (const xmlChar*)"10");
@@ -1440,6 +1441,7 @@ xmlNodePtr QMCGaussianParserBase::createJ2()
     xmlNewProp(a,(const xmlChar*)"type", (const xmlChar*)"Array");
     xmlAddChild(j2,uu);
   }
+  if (NumberOfAlpha>0&&NumberOfBeta>0)
   {
     xmlNodePtr uu = xmlNewNode(NULL,(const xmlChar*)"correlation");
     xmlNewProp(uu,(const xmlChar*)"rcut", (const xmlChar*)"10");
@@ -1689,8 +1691,12 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
         std::cout << "Adding Two-Body and One-Body jastrows with rcut=\"10\" and size=\"10\"" << std::endl;
         xmlAddChild(wfPtr,createJ2());
         xmlAddChild(wfPtr,createJ1());
-        std::cout << "Adding Three-Body jastrows with rcut=\"5\"" << std::endl;
-        xmlAddChild(wfPtr,createJ3());
+	SpeciesSet& ionSpecies(IonSystem.getSpeciesSet());
+	if (ionSpecies.getTotalNum()>1)
+	  {
+	    std::cout << "Adding Three-Body jastrows with rcut=\"5\"" << std::endl;
+	    xmlAddChild(wfPtr,createJ3());
+	  }
       }
     }
     xmlAddChild(qm_root,wfPtr);
@@ -1711,18 +1717,17 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
   std::string fname = Title+".wf"+WFS_name+".xml";
   xmlSaveFormatFile(fname.c_str(),doc,1);
   xmlFreeDoc(doc);
-  if (numMO*SizeOfBasisSet>=500 && !UseHDF5)
+  if (numMO*SizeOfBasisSet>=4000 && !UseHDF5)
      std::cout<<"Consider using HDF5 via -hdf5 for higher performance and smaller wavefunction files"<<std::endl;
 }
 
 void QMCGaussianParserBase::dumpStdInputProd(const std::string& psi_tag,
                                  const std::string& ion_tag)
 {
-  std::cout<<"Generating Standard Input file containing standard optmization blocks followed by VMC and DMC blocks;"<<std::endl;
-  std::cout<<" This is a production file with no Comments."<<std::endl;
+  std::cout<<" Generating production input file designed for large calculations."<<std::endl;
   std::cout<<" Modify according to the accuracy you would like to achieve. "<<std::endl;
 
-  std::string fname = Title+".Input-wf"+WFS_name+".xml";
+  std::string fname = Title+".qmc.in-wf"+WFS_name+".xml";
 
   xmlDocPtr doc_input = xmlNewDoc((const xmlChar*)"1.0");
   xmlNodePtr qm_root_input = xmlNewNode(NULL, BAD_CAST "simulation");
@@ -1893,10 +1898,10 @@ void QMCGaussianParserBase::dumpStdInputProd(const std::string& psi_tag,
 void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
                                  const std::string& ion_tag)
 {
-  std::cout<<"Generating Standard Input file containing standard optmization blocks followed by VMC and DMC blocks"<<std::endl;
+  std::cout<<" Generating Standard Input file containing VMC, standard optmization, and DMC blocks."<<std::endl;
   std::cout<<" Modify according to the accuracy you would like to achieve. "<<std::endl;
 
-  std::string fname = Title+".Input-wf"+WFS_name+".xml";
+  std::string fname = Title+".qmc.in-wf"+WFS_name+".xml";
 
   xmlDocPtr doc_input = xmlNewDoc((const xmlChar*)"1.0");
   xmlNodePtr qm_root_input = xmlNewNode(NULL, BAD_CAST "simulation");
@@ -1962,10 +1967,6 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
     xmlAddChild(qm_root_input,initE);
   }*/
 
-  ///Adding Optimization Block based on One Shift Only
-  if (addJastrow)  
-  {
-    ///Adding a VMC Block to help equilibrate
     {
       Comment.str("");
       Comment.clear();
@@ -1994,141 +1995,144 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
     xmlAddChild(qm_root_input,initvmc);
 
 
-    ///Adding First loop of Cheap optimization blocks
-    {
-      Comment.str("");
-      Comment.clear();
-      Comment<<"\n \nExample initial VMC optimization \n \nNumber of steps required will be computed from total requested sample \ncount and total number of walkers \n\n";
-      xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
-      xmlAddChild(qm_root_input,MyComment);
-    }
-    xmlNodePtr loopopt1 = xmlNewNode(NULL,(const xmlChar*)"loop");
-    xmlNewProp(loopopt1,(const xmlChar*)"max", (const xmlChar*)"4");
-    {
-       xmlNodePtr initopt = xmlNewNode(NULL,(const xmlChar*)"qmc");
-       xmlNewProp(initopt,(const xmlChar*)"method", (const xmlChar*)"linear");
-       xmlNewProp(initopt,(const xmlChar*)"move", (const xmlChar*)"pbyp");
-       xmlNewProp(initopt,(const xmlChar*)"checkpoint", (const xmlChar*)"-1");
-       {
-         xmlNodePtr estimator = xmlNewNode(NULL,(const xmlChar*)"estimator");
-         xmlNewProp(estimator,(const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
-         xmlNewProp(estimator,(const xmlChar*)"hdf5", (const xmlChar*)"no");
-         xmlAddChild(initopt,estimator);
-
-         xmlAddChild(initopt,parameter(initopt, "warmupSteps" ,"100"));
-         xmlAddChild(initopt,parameter(initopt, "blocks" ,"20"));
-         xmlAddChild(initopt,parameter(initopt, "timestep" ,"0.5"));
-         xmlAddChild(initopt,parameter(initopt, "walkers" ,"1"));
-         xmlAddChild(initopt,parameter(initopt, "samples" ,"16000"));
-         xmlAddChild(initopt,parameter(initopt, "substeps" ,"4"));
-         xmlAddChild(initopt,parameter(initopt, "usedrift" ,"no"));
-         xmlAddChild(initopt,parameter(initopt, "MinMethod" ,"OneShiftOnly"));
-         xmlAddChild(initopt,parameter(initopt, "minwalkers" ,"0.0001"));
-       }
-       xmlAddChild(loopopt1,initopt);
-    }
-    xmlAddChild(qm_root_input,loopopt1);
-   
-    ///Adding loop for  optimization blocks
-    {
-      Comment.str("");
-      Comment.clear();
-      Comment<<"\n \nExample follow-up VMC optimization using more samples for greater accuracy\n\n";
-      xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
-      xmlAddChild(qm_root_input,MyComment);
-    }
-    xmlNodePtr loopopt = xmlNewNode(NULL,(const xmlChar*)"loop");
-    xmlNewProp(loopopt,(const xmlChar*)"max", (const xmlChar*)"10");
-    {
-       xmlNodePtr initopt = xmlNewNode(NULL,(const xmlChar*)"qmc");
-       xmlNewProp(initopt,(const xmlChar*)"method", (const xmlChar*)"linear");
-       xmlNewProp(initopt,(const xmlChar*)"move", (const xmlChar*)"pbyp");
-       xmlNewProp(initopt,(const xmlChar*)"checkpoint", (const xmlChar*)"-1");
-       //xmlNewProp(initopt,(const xmlChar*)"gpu", (const xmlChar*)"no");
-       {
-         xmlNodePtr estimator = xmlNewNode(NULL,(const xmlChar*)"estimator");
-         xmlNewProp(estimator,(const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
-         xmlNewProp(estimator,(const xmlChar*)"hdf5", (const xmlChar*)"no");
-         xmlAddChild(initopt,estimator);
-
-         xmlAddChild(initopt,parameter(initopt, "warmupSteps" ,"100"));
-         xmlAddChild(initopt,parameter(initopt, "blocks" ,"20"));
-         xmlAddChild(initopt,parameter(initopt, "timestep" ,"0.5"));
-         xmlAddChild(initopt,parameter(initopt, "walkers" ,"1"));
-         xmlAddChild(initopt,parameter(initopt, "samples" ,"64000"));
-         xmlAddChild(initopt,parameter(initopt, "substeps" ,"4"));
-         xmlAddChild(initopt,parameter(initopt, "usedrift" ,"no"));
-         xmlAddChild(initopt,parameter(initopt, "MinMethod" ,"OneShiftOnly"));
-         xmlAddChild(initopt,parameter(initopt, "minwalkers" ,"0.3"));
-       }
-       xmlAddChild(loopopt,initopt);
-    }
-    xmlAddChild(qm_root_input,loopopt);
-  }
-
-
-  ///Adding a VMC Block to the Input
-  {
-    Comment.str("");
-    Comment.clear();
-    Comment<<"\n\nProduction VMC and DMC\n\nExamine the results of the optimization before running these blocks.\ne.g. Choose the best optimized jastrow from all obtained, put in \nwavefunction file, do not reoptimize.\n\n";
-    xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
-    xmlAddChild(qm_root_input,MyComment);
-  }
-  xmlNodePtr vmc = xmlNewNode(NULL,(const xmlChar*)"qmc");
-  xmlNewProp(vmc,(const xmlChar*)"method", (const xmlChar*)"vmc");
-  xmlNewProp(vmc,(const xmlChar*)"move", (const xmlChar*)"pbyp");
-  xmlNewProp(vmc,(const xmlChar*)"checkpoint", (const xmlChar*)"-1");
-  //xmlNewProp(vmc,(const xmlChar*)"gpu", (const xmlChar*)"no");
-  {
-    std::ostringstream Comment;
-    xmlNodePtr estimator = xmlNewNode(NULL,(const xmlChar*)"estimator");
-    xmlNewProp(estimator,(const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
-    xmlNewProp(estimator,(const xmlChar*)"hdf5", (const xmlChar*)"no");
-    xmlAddChild(vmc,estimator);
-
-    xmlAddChild(vmc,parameter(vmc, "warmupSteps" ,"100"));
-    xmlAddChild(vmc,parameter(vmc, "blocks" ,"200"));
-    xmlAddChild(vmc,parameter(vmc, "steps" ,"50"));
-    xmlAddChild(vmc,parameter(vmc, "substeps" ,"8"));
-    xmlAddChild(vmc,parameter(vmc, "timestep" ,"0.5"));
-    xmlAddChild(vmc,parameter(vmc, "usedrift" ,"no"));
-    Comment.str("");
-    Comment.clear();
-    Comment<<"Sample count should match targetwalker count for DMC. Will be obtained from all nodes.";
-    xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
-    xmlAddChild(vmc,MyComment);
-    xmlAddChild(vmc,parameter(vmc, "samples" ,"16000"));
+    if (addJastrow)  
+      {
+	///Adding First loop of Cheap optimization blocks
+	{
+	  Comment.str("");
+	  Comment.clear();
+	  Comment<<"\n \nExample initial VMC optimization \n \nNumber of steps required will be computed from total requested sample \ncount and total number of walkers \n\n";
+	  xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
+	  xmlAddChild(qm_root_input,MyComment);
+	}
+	xmlNodePtr loopopt1 = xmlNewNode(NULL,(const xmlChar*)"loop");
+	xmlNewProp(loopopt1,(const xmlChar*)"max", (const xmlChar*)"4");
+	{
+	  xmlNodePtr initopt = xmlNewNode(NULL,(const xmlChar*)"qmc");
+	  xmlNewProp(initopt,(const xmlChar*)"method", (const xmlChar*)"linear");
+	  xmlNewProp(initopt,(const xmlChar*)"move", (const xmlChar*)"pbyp");
+	  xmlNewProp(initopt,(const xmlChar*)"checkpoint", (const xmlChar*)"-1");
+	  {
+	    xmlNodePtr estimator = xmlNewNode(NULL,(const xmlChar*)"estimator");
+	    xmlNewProp(estimator,(const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
+	    xmlNewProp(estimator,(const xmlChar*)"hdf5", (const xmlChar*)"no");
+	    xmlAddChild(initopt,estimator);
+	    
+	    xmlAddChild(initopt,parameter(initopt, "warmupSteps" ,"100"));
+	    xmlAddChild(initopt,parameter(initopt, "blocks" ,"20"));
+	    xmlAddChild(initopt,parameter(initopt, "timestep" ,"0.5"));
+	    xmlAddChild(initopt,parameter(initopt, "walkers" ,"1"));
+	    xmlAddChild(initopt,parameter(initopt, "samples" ,"16000"));
+	    xmlAddChild(initopt,parameter(initopt, "substeps" ,"4"));
+	    xmlAddChild(initopt,parameter(initopt, "usedrift" ,"no"));
+	    xmlAddChild(initopt,parameter(initopt, "MinMethod" ,"OneShiftOnly"));
+	    xmlAddChild(initopt,parameter(initopt, "minwalkers" ,"0.0001"));
+	  }
+	  xmlAddChild(loopopt1,initopt);
+	}
+	xmlAddChild(qm_root_input,loopopt1);
+	
+	///Adding loop for  optimization blocks
+	{
+	  Comment.str("");
+	  Comment.clear();
+	  Comment<<"\n \nExample follow-up VMC optimization using more samples for greater accuracy\n\n";
+	  xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
+	  xmlAddChild(qm_root_input,MyComment);
+	}
+	xmlNodePtr loopopt = xmlNewNode(NULL,(const xmlChar*)"loop");
+	xmlNewProp(loopopt,(const xmlChar*)"max", (const xmlChar*)"10");
+	{
+	  xmlNodePtr initopt = xmlNewNode(NULL,(const xmlChar*)"qmc");
+	  xmlNewProp(initopt,(const xmlChar*)"method", (const xmlChar*)"linear");
+	  xmlNewProp(initopt,(const xmlChar*)"move", (const xmlChar*)"pbyp");
+	  xmlNewProp(initopt,(const xmlChar*)"checkpoint", (const xmlChar*)"-1");
+	  //xmlNewProp(initopt,(const xmlChar*)"gpu", (const xmlChar*)"no");
+	  {
+	    xmlNodePtr estimator = xmlNewNode(NULL,(const xmlChar*)"estimator");
+	    xmlNewProp(estimator,(const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
+	    xmlNewProp(estimator,(const xmlChar*)"hdf5", (const xmlChar*)"no");
+	    xmlAddChild(initopt,estimator);
+	    
+	    xmlAddChild(initopt,parameter(initopt, "warmupSteps" ,"100"));
+	    xmlAddChild(initopt,parameter(initopt, "blocks" ,"20"));
+	    xmlAddChild(initopt,parameter(initopt, "timestep" ,"0.5"));
+	    xmlAddChild(initopt,parameter(initopt, "walkers" ,"1"));
+	    xmlAddChild(initopt,parameter(initopt, "samples" ,"64000"));
+	    xmlAddChild(initopt,parameter(initopt, "substeps" ,"4"));
+	    xmlAddChild(initopt,parameter(initopt, "usedrift" ,"no"));
+	    xmlAddChild(initopt,parameter(initopt, "MinMethod" ,"OneShiftOnly"));
+	    xmlAddChild(initopt,parameter(initopt, "minwalkers" ,"0.3"));
+	  }
+	  xmlAddChild(loopopt,initopt);
+	}
+	xmlAddChild(qm_root_input,loopopt);
+	
     
-  }
-  xmlAddChild(qm_root_input,vmc);
-
-  ///Adding a DMC Block to the Input
-  xmlNodePtr dmc = xmlNewNode(NULL,(const xmlChar*)"qmc");
-  xmlNewProp(dmc,(const xmlChar*)"method", (const xmlChar*)"dmc");
-  xmlNewProp(dmc,(const xmlChar*)"move", (const xmlChar*)"pbyp");
-  xmlNewProp(dmc,(const xmlChar*)"checkpoint", (const xmlChar*)"20");
-  //xmlNewProp(dmc,(const xmlChar*)"gpu", (const xmlChar*)"no");
-  {
-    xmlNodePtr estimator = xmlNewNode(NULL,(const xmlChar*)"estimator");
-    xmlNewProp(estimator,(const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
-    xmlNewProp(estimator,(const xmlChar*)"hdf5", (const xmlChar*)"no");
-    xmlAddChild(dmc,estimator);
-
-    xmlAddChild(dmc,parameter(dmc, "targetwalkers" ,"16000"));
-    xmlAddChild(dmc,parameter(dmc, "reconfiguration" ,"no"));
-    xmlAddChild(dmc,parameter(dmc, "warmupSteps" ,"100"));
-    xmlAddChild(dmc,parameter(dmc, "timestep" ,"0.005"));
-    xmlAddChild(dmc,parameter(dmc, "steps" ,"100"));
-    xmlAddChild(dmc,parameter(dmc, "blocks" ,"100"));
-    xmlAddChild(dmc,parameter(dmc, "nonlocalmoves" ,"yes"));
-  }
-  xmlAddChild(qm_root_input,dmc);
-
-  xmlDocSetRootElement(doc_input, qm_root_input);
-  xmlSaveFormatFile(fname.c_str(),doc_input,1);
-  xmlFreeDoc(doc_input);
+    ///Adding a VMC Block to the Input
+	{
+	  Comment.str("");
+	  Comment.clear();
+	  Comment<<"\n\nProduction VMC and DMC\n\nExamine the results of the optimization before running these blocks.\ne.g. Choose the best optimized jastrow from all obtained, put in \nwavefunction file, do not reoptimize.\n\n";
+	  xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
+	  xmlAddChild(qm_root_input,MyComment);
+	}
+	xmlNodePtr vmc = xmlNewNode(NULL,(const xmlChar*)"qmc");
+	xmlNewProp(vmc,(const xmlChar*)"method", (const xmlChar*)"vmc");
+	xmlNewProp(vmc,(const xmlChar*)"move", (const xmlChar*)"pbyp");
+	xmlNewProp(vmc,(const xmlChar*)"checkpoint", (const xmlChar*)"-1");
+	//xmlNewProp(vmc,(const xmlChar*)"gpu", (const xmlChar*)"no");
+	{
+	  std::ostringstream Comment;
+	  xmlNodePtr estimator = xmlNewNode(NULL,(const xmlChar*)"estimator");
+	  xmlNewProp(estimator,(const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
+	  xmlNewProp(estimator,(const xmlChar*)"hdf5", (const xmlChar*)"no");
+	  xmlAddChild(vmc,estimator);
+	  
+	  xmlAddChild(vmc,parameter(vmc, "warmupSteps" ,"100"));
+	  xmlAddChild(vmc,parameter(vmc, "blocks" ,"200"));
+	  xmlAddChild(vmc,parameter(vmc, "steps" ,"50"));
+	  xmlAddChild(vmc,parameter(vmc, "substeps" ,"8"));
+	  xmlAddChild(vmc,parameter(vmc, "timestep" ,"0.5"));
+	  xmlAddChild(vmc,parameter(vmc, "usedrift" ,"no"));
+	  Comment.str("");
+	  Comment.clear();
+	  Comment<<"Sample count should match targetwalker count for DMC. Will be obtained from all nodes.";
+	  xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
+	  xmlAddChild(vmc,MyComment);
+	  xmlAddChild(vmc,parameter(vmc, "samples" ,"16000"));
+	  
+	}
+	xmlAddChild(qm_root_input,vmc);
+	
+	///Adding a DMC Block to the Input
+	xmlNodePtr dmc = xmlNewNode(NULL,(const xmlChar*)"qmc");
+	xmlNewProp(dmc,(const xmlChar*)"method", (const xmlChar*)"dmc");
+	xmlNewProp(dmc,(const xmlChar*)"move", (const xmlChar*)"pbyp");
+	xmlNewProp(dmc,(const xmlChar*)"checkpoint", (const xmlChar*)"20");
+	//xmlNewProp(dmc,(const xmlChar*)"gpu", (const xmlChar*)"no");
+	{
+	  xmlNodePtr estimator = xmlNewNode(NULL,(const xmlChar*)"estimator");
+	  xmlNewProp(estimator,(const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
+	  xmlNewProp(estimator,(const xmlChar*)"hdf5", (const xmlChar*)"no");
+	  xmlAddChild(dmc,estimator);
+	  
+	  xmlAddChild(dmc,parameter(dmc, "targetwalkers" ,"16000"));
+	  xmlAddChild(dmc,parameter(dmc, "reconfiguration" ,"no"));
+	  xmlAddChild(dmc,parameter(dmc, "warmupSteps" ,"100"));
+	  xmlAddChild(dmc,parameter(dmc, "timestep" ,"0.005"));
+	  xmlAddChild(dmc,parameter(dmc, "steps" ,"100"));
+	  xmlAddChild(dmc,parameter(dmc, "blocks" ,"100"));
+	  xmlAddChild(dmc,parameter(dmc, "nonlocalmoves" ,"yes"));
+	}
+	xmlAddChild(qm_root_input,dmc);
+      }
+    
+    xmlDocSetRootElement(doc_input, qm_root_input);
+    xmlSaveFormatFile(fname.c_str(),doc_input,1);
+    xmlFreeDoc(doc_input);
 }
+
 void QMCGaussianParserBase::Fmodump(const std::string& psi_tag,
                                  const std::string& ion_tag,
                                  std::string Mytag)
@@ -2229,8 +2233,12 @@ void QMCGaussianParserBase::Fmodump(const std::string& psi_tag,
         std::cout << "Adding Two-Body and One-Body jastrows with rcut=\"10\" and size=\"10\"" << std::endl;
         xmlAddChild(wfPtr,createJ2());
         xmlAddChild(wfPtr,createJ1());
-        std::cout << "Adding Three-Body jastrows with rcut=\"5\"" << std::endl;
-        xmlAddChild(wfPtr,createJ3());
+	SpeciesSet& ionSpecies(IonSystem.getSpeciesSet());
+	if (ionSpecies.getTotalNum()>1)
+	  {
+	    std::cout << "Adding Three-Body jastrows with rcut=\"5\"" << std::endl;
+	    xmlAddChild(wfPtr,createJ3());
+	  }
       }
     }
     xmlAddChild(qm_root,wfPtr);
