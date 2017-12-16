@@ -46,6 +46,7 @@ struct QMCGaussianParserBase
   bool SpinRestricted;
   bool Periodicity;
   bool UseHDF5;
+  bool production;
   bool zeroCI;
   bool orderByExcitation;
   bool addJastrow;
@@ -154,6 +155,9 @@ struct QMCGaussianParserBase
                     const std::string& ion_tag);
 
   void dumpStdInput(const std::string& psi_tag,
+                    const std::string& ion_tag);
+
+  void dumpStdInputProd(const std::string& psi_tag,
                     const std::string& ion_tag);
 
   virtual void Fmodump(const std::string& psi_tag,
