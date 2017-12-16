@@ -77,21 +77,27 @@ void ParticleSet::createSK()
   {
     Lattice.SetLRCutoffs();
     LRBox=Lattice;
+    bool changed = false;
     if(Lattice.SuperCellEnum == SUPERCELL_SLAB)
     {
       LRBox.R(2,2)*=qmc_common.vacuum;
+      changed = true;
     }
     else if(Lattice.SuperCellEnum == SUPERCELL_WIRE)
     {
       LRBox.R(1,1)*=qmc_common.vacuum;
       LRBox.R(2,2)*=qmc_common.vacuum;
+      changed = true;
     }
     LRBox.reset();
     LRBox.SetLRCutoffs();
 
-    app_log() << "--------------------------------------- " << std::endl;
-    LRBox.print(app_log());
-    app_log() << "--------------------------------------- " << std::endl;
+    if (changed) {
+      app_summary() << "  Simulation box changed by vacuum supercell conditions" << std::endl;
+      app_log() << "--------------------------------------- " << std::endl;
+      LRBox.print(app_log());
+      app_log() << "--------------------------------------- " << std::endl;
+    }
 
     if(SK)
     {
