@@ -190,11 +190,13 @@ public:
     }
     GradTmpSrc.resize(M,N);
     GradTmpDest.resize(N,N);
-    C.resize(N,M);
+
+    if(C==nullptr) 
+      C=new ValueMatrix_t(N,M);
+    else 
+      C->resize(N,M);
     ActiveBasis.resize(N);
     BasisSetSize = M;
-    ///from inherited class
-    t_logpsi.resize(N,N);
   }
 
   // Make a copy of myself

@@ -14,7 +14,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "Utilities/OhmmsInfo.h"
 #include "QMCWaveFunctions/ElectronGas/ElectronGasComplexOrbitalBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #if QMC_BUILD_LEVEL>2
@@ -158,8 +157,3 @@ SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromIndices(indices_t& indices)
 
 
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

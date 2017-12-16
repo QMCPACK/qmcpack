@@ -329,8 +329,3 @@ GridMolecularOrbitals::expandYlm(const std::string& rnl, const QuantumNumberType
   return num;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

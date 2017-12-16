@@ -26,11 +26,11 @@
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Utilities/PooledData.h"
+#include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Estimators/EstimatorManager.h"
-#include "Utilities/OhmmsInfo.h"
+#include "Estimators/EstimatorManagerBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
 class Communicate;
@@ -202,7 +202,7 @@ public:
   //virtual std::vector<RandomGenerator_t*>& getRng() {}
 
   ///Observables manager
-  EstimatorManager* Estimators;
+  EstimatorManagerBase* Estimators;
 
   ///Traces manager
   TraceManager* Traces;
@@ -360,9 +360,6 @@ protected:
   ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
 
-  ///stream for the log file
-  //OhmmsInform *LogOut;
-
   ///temporary buffer to accumulate data
   //ostrstream log_buffer;
 
@@ -399,13 +396,10 @@ protected:
   std::string getRotationName( std::string RootName);
   std::string getLastRotationName( std::string RootName);
 
+  NewTimer *checkpointTimer;
+
 };
 /**@}*/
 }
 
 #endif
-/***************************************************************************
- * $RCSfile: QMCDriver.h,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

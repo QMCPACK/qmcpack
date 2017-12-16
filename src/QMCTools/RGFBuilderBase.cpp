@@ -15,7 +15,6 @@
 
 
 
-#include "Utilities/OhmmsInfo.h"
 #include "Numerics/LibxmlNumericIO.h"
 #include "Numerics/OneDimCubicSpline.h"
 #if defined(HAVE_LIBHDF5)
@@ -43,7 +42,7 @@ RGFBuilderBase::~RGFBuilderBase()
  * @param aroot filename
  * @param omode mode, 0=check cubic spline quality, 1=ascii and 2=hdf5
  */
-void RGFBuilderBase::print(const std::string& aroot, int omode)
+void RGFBuilderBase::print(const std::string& aroot, int omode, bool debug)
 {
   enum {DEBUG_OUTPUT=0, ASCII_OUTPUT, HDF_OUTPUT};
   if(omode == DEBUG_OUTPUT)
@@ -76,7 +75,7 @@ void RGFBuilderBase::print(const std::string& aroot, int omode)
     }
   }
   else
-    if(omode == ASCII_OUTPUT)
+    if(omode == ASCII_OUTPUT && debug==true)
     {
       GridType& agrid(m_orbitals->Rnl[0]->grid());
       char fname[128];
@@ -164,8 +163,3 @@ RGFBuilderBase::addGrid(xmlNodePtr cur)
   return true;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

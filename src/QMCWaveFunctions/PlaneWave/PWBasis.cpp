@@ -189,8 +189,3 @@ void PWBasis::trimforecut()
   app_log() << "                       NumPlaneWaves (after)  =" <<NumPlaneWaves << std::endl;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

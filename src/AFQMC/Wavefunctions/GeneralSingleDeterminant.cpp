@@ -37,6 +37,8 @@ bool GeneralSingleDeterminant::parse(xmlNodePtr cur)
     if(cur == NULL)
       return false;
 
+    app_log()<<"\n\n --------------- Parsing GenSD input ------------------ \n\n";
+
     xmlNodePtr curRoot=cur;
    
     std::string type("");
@@ -147,8 +149,8 @@ bool GeneralSingleDeterminant::initFromAscii(std::string fileName)
           app_error()<<"Format error in ASCII integral file. UHF/GHF \n";
           return false;
         }
-        wfntype = atoi((++it)->c_str());
-        switch(wfntype) {
+        wfn_type = atoi((++it)->c_str());
+        switch(wfn_type) {
           case 0:
           {
             app_log()<<"Using a RHF-type trial wave-function in GeneralSlaterDeterminant. \n";  
@@ -166,7 +168,7 @@ bool GeneralSingleDeterminant::initFromAscii(std::string fileName)
           }
           default: 
           {
-            app_error()<<"Unknown wave-function type in GeneralSlaterDeterminant: " <<wfntype <<std::endl;
+            app_error()<<"Unknown wave-function type in GeneralSlaterDeterminant: " <<wfn_type <<std::endl;
             return false; 
           } 
         }
@@ -179,14 +181,14 @@ bool GeneralSingleDeterminant::initFromAscii(std::string fileName)
   } while((words[0].find(std::string("/"))==std::string::npos && words[0].find(std::string("&END"))==std::string::npos));
 
   int ncols = NAEA;
-  if(wfntype == 2) 
+  if(wfn_type == 2) 
     ncols = NAEA+NAEB;
 
   OrbMat.resize(2*NMO,ncols); 
   ComplexType dummy;
   int nread; 
  
-  if (wfntype == 0 ) {
+  if (wfn_type == 0 ) {
  
     if(Cstyle) {
      nread = fullMOMat?NMO:NAEA;
@@ -216,7 +218,7 @@ bool GeneralSingleDeterminant::initFromAscii(std::string fileName)
        }
     }
 
-  } else if(wfntype == 1) {
+  } else if(wfn_type == 1) {
 
     if(Cstyle) {
      nread = fullMOMat?NMO:NAEA;
@@ -266,7 +268,7 @@ bool GeneralSingleDeterminant::initFromAscii(std::string fileName)
        }
     }
 
-  } else if(wfntype == 2) {
+  } else if(wfn_type == 2) {
 
    if(Cstyle) {
 
@@ -367,6 +369,8 @@ bool GeneralSingleDeterminant::initFromAscii(std::string fileName)
 
 }
 
+// this should be moved to further down in the initialization line, since at this point I
+// don't think I know walker_type.
 bool GeneralSingleDeterminant::setup_local()
 {
 
@@ -377,8 +381,13 @@ bool GeneralSingleDeterminant::setup_local()
   } 
 
   int ncols = NAEA;
-  if(wfntype == 2)
+  if(wfn_type == 2)
     ncols = NAEA+NAEB;  
+
+  // NOTE: this is wrong if walker_type > 1
+  int dm_ncols = NMO;
+  if(wfn_type == 2)
+    dm_ncols *= 2; 
 
   if(init_type == "diagh1" && !readHamFromFile) {
     OrbMat.resize(2*NMO,ncols);
@@ -387,36 +396,39 @@ bool GeneralSingleDeterminant::setup_local()
   } else if(init_type == "ground" && !readHamFromFile) {
     OrbMat.resize(2*NMO,ncols);
     for(int i=0; i<NAEA; i++) OrbMat(i,i)=ComplexType(1.0); 
-    int shft = (wfntype == 2)?NAEA:0; 
+    int shft = (wfn_type == 2)?NAEA:0; 
     for(int i=0; i<NAEB; i++) OrbMat(i+NMO,i+shft)=ComplexType(1.0); 
   } 
 
   //trial_density_matrix.resize(NAEA+NAEB,NMO);
-  trial_density_matrix.resize(2*NMO,NMO);
+  trial_density_matrix.resize(2*NMO,dm_ncols);
+  SPtrial_density_matrix.resize(2*NMO,dm_ncols);
 
   //mixed_density_matrix.resize(NAEA+NAEB,NMO);
-  mixed_density_matrix.resize(2*NMO,NMO);
+  mixed_density_matrix.resize(2*NMO,dm_ncols);
+  temp_density_matrix.resize(2*NMO,dm_ncols);
 
   // not used right now 
-  overlap_inv.resize(NAEA+NAEB,NAEA); 
+  //overlap_inv.resize(NAEA+NAEB,NAEA); 
 
   // temporary storage
   S0.resize(NAEA,NAEA); 
-  if(wfntype == 2) {
+  if(wfn_type == 2) {
     T0.resize(NAEA+NAEB,NAEA+NAEB); 
+    T1.resize(NAEA+NAEB,2*NMO); 
     SM.resize(2*NMO,NAEA+NAEB); 
     SS0.resize(NAEA,NMO); 
   } else {
     SS0.resize(2*NMO,NAEA); 
   }
   S1.resize(NAEB,NAEB); 
-  V0.resize(2*NMO*NMO); 
+  V0.resize(2*NMO*dm_ncols); 
 
   Cwork.resize(2*NMO);
   pivot.resize(2*NMO);
 
   //SpHij.setDims(1,2*NMO*NMO);
-  if(!readHamFromFile) SMSpHijkl.setDims(2*NMO*NMO,2*NMO*NMO);
+  if(!readHamFromFile) SMSpHijkl.setDims(2*NMO*dm_ncols,2*NMO*dm_ncols);
   if(!readHamFromFile) SMSpHijkl.setup(head_of_nodes,"SMSpHijkl",TG.getNodeCommLocal());
 
   return true;
@@ -439,8 +451,24 @@ bool GeneralSingleDeterminant::getHamiltonian(HamPtr h)
 
   spinRestricted = sHam->RHF();
   closed_shell = false;
-  if(wfntype==0 && NCA==NCB && NAEA == NAEB && sHam->RHF() && init_type != "diagh1") {
+  if(wfn_type==0 && NCA==NCB && NAEA == NAEB && sHam->RHF() && init_type != "diagh1") {
     closed_shell = std::equal(OrbMat.begin(),OrbMat.begin()+NMO*NAEA,OrbMat.begin()+NMO*NAEA);
+  }
+
+  // walker_type will come from WalkerHandler, but for now only ROHF/UHF is implemented correctly.
+  walker_type=1;
+  dm_type = std::max(wfn_type,1);
+  if(closed_shell) {
+    app_log()<<"Found closed shell system. " <<std::endl;
+    dm_type=0;
+  }
+
+  // only allow GHF walkers with GHF wavefunctions. The opposite doesn't make sense to me.
+  if(walker_type == 2 && wfn_type < 2)
+    APP_ABORT(" Error in GeneralSingleDeterminant::getHamiltonian: GHF walker is only allowed with GHF wavefunction. \n\n\n");
+
+  if(useFacHam) {
+    APP_ABORT(" Error: Use of factorized hamiltonian is not implemented in PureSD. \n\n\n");
   }
 
   NuclearCoulombEnergy = static_cast<ValueType>(sHam->NuclearCoulombEnergy);
@@ -448,14 +476,14 @@ bool GeneralSingleDeterminant::getHamiltonian(HamPtr h)
     std::map<IndexType,bool> isOcc; 
     isOcc.clear();
     for(IndexType i=0; i<2*NMO; i++) isOcc[i]=true;
-    if(!sHam->createHamiltonianForPureDeterminant(isOcc,isOcc,hij,SMSpHijkl,cutoff)) {
+    if(!sHam->createHamiltonianForPureDeterminant(dm_type,useFacHam,isOcc,isOcc,hij,SMSpHijkl,cutoff)) {
       app_error()<<"Error in createHamiltonianForGeneralDeterminant. \n";
       return false;
     }
   }
 
   if(init_type == "diagh1" && !readHamFromFile) {
-    if(wfntype==2) {
+    if(wfn_type==2) {
       app_error()<<" Error in GeneralSlaterDeterminant::getHamiltonian: init_type=diagh1 not implemented for GHF wavefunctions. \n" <<std::endl;
       return false;
     }
@@ -514,33 +542,32 @@ bool GeneralSingleDeterminant::getHamiltonian(HamPtr h)
   app_log()<<std::endl <<"*********************************************************************: \n"
            <<" GeneralSingleDeterminant: \n"
            <<"     Number of terms and memory usage of hij:    " <<hij.size() <<"  " <<hij.size()*sizeof(s1D<ValueType>)/1.0e6 <<"  MB. " <<std::endl
-           <<"     Number of terms and memory usage of Vijkl:  " <<SMSpHijkl.size() <<"  " <<SMSpHijkl.size()*sizeof(s2D<ValueType>)/1.0e6 <<"  MB. " <<std::endl; 
+           <<"     Number of terms and memory usage of Vijkl:  " <<SMSpHijkl.size() <<"  " <<SMSpHijkl.size()*sizeof(s2D<SPValueType>)/1.0e6 <<"  MB. " <<std::endl; 
 
   ComplexType e1,e2,o1,o2;
   // Keeping HF and Dalpha/Dbeta in separate places, since HF is used for initialization  
 
-// testing 
-  if(wfntype==2) {
-    uhf_walker = false;
+  if(wfn_type==2 && walker_type != 2) {
     HF.resize(2*NMO,NAEA+NAEB);
     HF = OrbMat;
+    int wt0=walker_type;
+    walker_type=2;
     evaluateLocalEnergy(HF.data(),e1,e2,o1,o2);
     app_log()<<" With <Psi| = <Psi_T(GHF)| \n";
     app_log()<<" Ehf:     " <<std::setprecision(12) <<e1+e2  <<"  \n " //<<ea+eb <<std::endl
              <<" Ekin:     " <<std::setprecision(12) <<e1    <<"  \n " //<<ea <<std::endl
              <<" Epot:     " <<std::setprecision(12) <<e2    <<"  \n "; // <<eb <<std::endl
     app_log()<<" With <Psi| = <Psi_T(UHF)| \n";
-    uhf_walker = true;
-  }
-
- 
+    walker_type=wt0;
+  } 
+  
   // eventually will allow GHF walkers, for now only UHF 
   HF.resize(2*NMO,NAEA);
   // force HF state to be diagonal for now
   for(int i=0; i<NMO; i++)
     for(int j=0; j<NAEA; j++)
       HF(i,j) = OrbMat(i,j); 
-  int shft= (wfntype==2)?NAEA:0;
+  int shft= (wfn_type==2)?NAEA:0;
   for(int i=NMO; i<2*NMO; i++)
     for(int j=0; j<NAEB; j++)
       HF(i,j) = OrbMat(i,j+shft); 
@@ -563,6 +590,10 @@ bool GeneralSingleDeterminant::getHamiltonian(HamPtr h)
 
 bool GeneralSingleDeterminant::hdf_write()
 {
+  if(wfn_type==2) {
+    app_error()<<" Error in GeneralSlaterDeterminant::hdf_write() not implemented for GHF wavefunctions yet. \n NO RESTART FILE WRITTEN. \n" <<std::endl;
+    return true;
+  }
 
   if(hdf_write_file == std::string("")) return true;
   if(readHamFromFile) return true;
@@ -593,7 +624,7 @@ bool GeneralSingleDeterminant::hdf_write()
   Idata[7]=spinRestricted?(0):(1);
   dump.write(Idata,"dims");
 
-// need to write OrbMat and related info (wfntype, etc)
+// need to write OrbMat and related info (wfn_type, etc)
 
   std::vector<IndexType> ivec;
   ivec.resize(hij.size());
@@ -732,7 +763,7 @@ bool GeneralSingleDeterminant::initFromHDF5(hdf_archive& read,const std::string&
   return setup_local();
 }
     
-void GeneralSingleDeterminant::local_evaluateOneBodyMixedDensityMatrix(const ComplexType* SlaterMat, ComplexType& ovl_alpha, ComplexType& ovl_beta)
+void GeneralSingleDeterminant::local_evaluateOneBodyMixedDensityMatrix(const ComplexType* SlaterMat, ComplexType& ovl_alpha, ComplexType& ovl_beta, bool diagOnly)
 {
 
   // G = transpose( B * ( transpose(conjg(A)) * B )^-1 * transpose(conjg(A)) ) 
@@ -742,7 +773,8 @@ void GeneralSingleDeterminant::local_evaluateOneBodyMixedDensityMatrix(const Com
   const ComplexType one = ComplexType(1.0);
   const ComplexType zero = ComplexType(0.0); 
 
-  if(wfntype == 0 || wfntype==1) {
+  // right now only uhf_walker
+  if(wfn_type == 0 || wfn_type==1) {
     // RHF or UHF
 
     // S0 = transpose(conjg(A))*B
@@ -752,10 +784,17 @@ void GeneralSingleDeterminant::local_evaluateOneBodyMixedDensityMatrix(const Com
     ovl_alpha = Invert(S0.data(), NAEA, NAEA, Cwork.data(),pivot.data());
 
     // SS0 = SlaterMat * S0
-    DenseMatrixOperators::product(NMO,NAEA,NAEA,SlaterMat,NAEA,S0.data(),NAEA,SS0.data(),NAEA);
+    DenseMatrixOperators::product(NMO,NAEA,NAEA,one,SlaterMat,NAEA,S0.data(),NAEA,zero,SS0.data(),NAEA);
+
     // G(alpha) = SS0*transpose(conjg(Dalpha))  
+#if defined(AFQMC_SP)
+    DenseMatrixOperators::product_ABh(NMO,NMO,NAEA,one,SS0.data(),NAEA,OrbMat.data(),NAEA,zero,temp_density_matrix.data(),NMO);
+    std::copy(temp_density_matrix.begin(), temp_density_matrix.begin()+NMO*NMO, mixed_density_matrix.begin());
+#else    
     DenseMatrixOperators::product_ABh(NMO,NMO,NAEA,one,SS0.data(),NAEA,OrbMat.data(),NAEA,zero,mixed_density_matrix.data(),NMO);
+#endif
     DenseMatrixOperators::transpose(NMO,mixed_density_matrix.data(),NMO);
+
     if(closed_shell) {
       ovl_beta=ovl_alpha;
       // once this fully works, you will not need the beta sector at all
@@ -770,97 +809,85 @@ void GeneralSingleDeterminant::local_evaluateOneBodyMixedDensityMatrix(const Com
     ovl_beta = Invert(S1.data(), NAEB, NAEB, Cwork.data(),pivot.data());
 
     // SS0(beta) = SlaterMat(beta) * S1
-    DenseMatrixOperators::product(NMO,NAEB,NAEB,SlaterMat+NAEA*NMO,NAEA,S1.data(),NAEB,SS0.data()+NAEA*NMO,NAEA);
+    DenseMatrixOperators::product(NMO,NAEB,NAEB,one,SlaterMat+NAEA*NMO,NAEA,S1.data(),NAEB,zero,SS0.data()+NAEA*NMO,NAEA);
 
     // G(beta) = SS0*transpose(conjg(Dbeta))  
+#if defined(AFQMC_SP)
+    DenseMatrixOperators::product_ABh(NMO,NMO,NAEB,one,SS0.data()+NAEA*NMO,NAEA,OrbMat.data()+NAEA*NMO,NAEA,zero,temp_density_matrix.data(),NMO);
+    std::copy(temp_density_matrix.begin(), temp_density_matrix.begin()+NMO*NMO, mixed_density_matrix.begin()+NMO*NMO);
+#else
     DenseMatrixOperators::product_ABh(NMO,NMO,NAEB,one,SS0.data()+NAEA*NMO,NAEA,OrbMat.data()+NAEA*NMO,NAEA,zero,mixed_density_matrix.data()+NMO*NMO,NMO);
+#endif
     DenseMatrixOperators::transpose(NMO,mixed_density_matrix.data()+NMO*NMO,NMO);
 
   } else {
 
-    if(uhf_walker) {
+    // GHF state
+    const int ncols = NAEA+NAEB; 
 
-      // GHF state
-      // In this case, we only return the (alpha,alpha) and (beta,beta) sectors of the density matrix  
-      int ncols = NAEA+NAEB; 
-      // SM = GHF version of SlaterMat 
-      const ComplexType* ptr1 = SlaterMat;   
-      ComplexType* ptr2 = SM.data(); 
+    const ComplexType *ptr=SlaterMat;
+    if(walker_type==0) { 
+      const ComplexType* ptr1 = SlaterMat;
+      ptr = SM.data();
+      ComplexType* ptr2 = SM.data();
+      for(int i=0; i<NMO; i++,ptr1+=NAEA,ptr2+=ncols) {
+        std::copy(ptr1,ptr1+NAEA,ptr2);
+        std::copy(ptr1,ptr1+NAEA,ptr2+NAEA+ncols*NMO);
+      }
+    } else if(walker_type==1) {
+      const ComplexType* ptr1 = SlaterMat;
+      ptr = SM.data();
+      ComplexType* ptr2 = SM.data();
       for(int i=0; i<NMO; i++,ptr1+=NAEA,ptr2+=ncols)
         std::copy(ptr1,ptr1+NAEA,ptr2);
-      ptr2 += NAEA; 
+      ptr2 += NAEA;
       for(int i=0; i<NMO; i++,ptr1+=NAEA,ptr2+=ncols)
-        std::copy(ptr1,ptr1+NAEB,ptr2);    
+        std::copy(ptr1,ptr1+NAEB,ptr2);
+    } 
 
-      // T0 = transpose(conjg(A))*SM
-      DenseMatrixOperators::product_AhB(ncols,ncols,2*NMO,one,OrbMat.data(),ncols,SM.data(),ncols,zero,T0.data(),ncols);
+    // T0 = transpose(conjg(A))*SM
+    DenseMatrixOperators::product_AhB(ncols,ncols,2*NMO,one,OrbMat.data(),ncols,ptr,ncols,zero,T0.data(),ncols);
 
-      // T0 = T0^-1       
-      ovl_alpha = Invert(T0.data(), ncols, ncols, Cwork.data(),pivot.data());
-      ovl_beta = one;
+    // T0 = T0^-1       
+    ovl_alpha = Invert(T0.data(), ncols, ncols, Cwork.data(),pivot.data());
+    ovl_beta = one;
 
-      // SS0 = Taa*transpose(conjg(Dalphalpha)) + Tab*transpose(conjg(Dalphabeta))   
-      DenseMatrixOperators::product_ABh(NAEA,NMO,NAEA,one,T0.data(),ncols,OrbMat.data(),ncols,zero,SS0.data(),NMO);
-      DenseMatrixOperators::product_ABh(NAEA,NMO,NAEB,one,T0.data()+NAEA,ncols,OrbMat.data()+NAEA,ncols,one,SS0.data(),NMO);
-      // G(alpha) = SlaterMat*SS0
-      DenseMatrixOperators::product(NMO,NMO,NAEA,SlaterMat,NAEA,SS0.data(),NMO,mixed_density_matrix.data(),NMO);
-      DenseMatrixOperators::transpose(NMO,mixed_density_matrix.data(),NMO);
+    // T1 = T*transpose(conjg(OrbMat)) 
+    DenseMatrixOperators::product_ABh(ncols,2*NMO,ncols,one,T0.data(),ncols,OrbMat.data(),ncols,zero,T1.data(),2*NMO);
+   
+    // G = SlaterMat*T1
+    if(diagOnly) {
+      // return only diagonal block in UHF format/indexing
+      // this is used for operations involving 1-body operators in RHF/ROHF/UHF storage format for walker_type<=1 
+      // Gaa 
+#if defined(AFQMC_SP)
+      DenseMatrixOperators::product(NMO,NMO,ncols,one,ptr,ncols,T1.data(),2*NMO,zero,temp_density_matrix.data(),NMO);
+      std::copy(temp_density_matrix.begin(), temp_density_matrix.begin()+NMO*NMO, mixed_density_matrix.begin());
+#else
+      DenseMatrixOperators::product(NMO,NMO,ncols,one,ptr,ncols,T1.data(),2*NMO,zero,mixed_density_matrix.data(),NMO);
+#endif
+      DenseMatrixOperators::transpose(NMO,mixed_density_matrix.data(),NMO); 
 
-      // SS0 = Tba*transpose(conjg(Dbetaalpha)) + Tbb*transpose(conjg(Dbetabeta))   
-      DenseMatrixOperators::product_ABh(NAEB,NMO,NAEA,one,T0.data()+ncols*NAEA,ncols,OrbMat.data()+ncols*NMO,ncols,zero,SS0.data(),NMO);
-      DenseMatrixOperators::product_ABh(NAEB,NMO,NAEB,one,T0.data()+ncols*NAEA+NAEA,ncols,OrbMat.data()+ncols*NMO+NAEA,ncols,one,SS0.data(),NMO);
-      // G(beta) = SlaterMat*SS0
-      DenseMatrixOperators::product(NMO,NMO,NAEB,SlaterMat+NAEA*NMO,NAEA,SS0.data(),NMO,mixed_density_matrix.data()+NMO*NMO,NMO);
-      DenseMatrixOperators::transpose(NMO,mixed_density_matrix.data()+NMO*NMO,NMO);
-
+      // Gbb 
+#if defined(AFQMC_SP)
+      DenseMatrixOperators::product(NMO,NMO,ncols,one,ptr+ncols*NMO,ncols,T1.data()+NMO,2*NMO,zero,temp_density_matrix.data(),NMO);
+      std::copy(temp_density_matrix.begin(), temp_density_matrix.begin()+NMO*NMO, mixed_density_matrix.begin()+NMO*NMO);
+#else
+      DenseMatrixOperators::product(NMO,NMO,ncols,one,ptr+ncols*NMO,ncols,T1.data()+NMO,2*NMO,zero,mixed_density_matrix.data()+NMO*NMO,NMO);
+#endif
+      DenseMatrixOperators::transpose(NMO,mixed_density_matrix.data()+NMO*NMO,NMO); 
     } else {
-
-      // GHF state
-      // In this case, we only return the (alpha,alpha) and (beta,beta) sectors of the density matrix  
-      int ncols = NAEA+NAEB; 
-
-// FIX FIX FIX
-      ComplexMatrix T1(ncols,2*NMO), DM(2*NMO,2*NMO); 
-      // T0 = transpose(conjg(A))*SM
-      DenseMatrixOperators::product_AhB(ncols,ncols,2*NMO,one,OrbMat.data(),ncols,SlaterMat,ncols,zero,T0.data(),ncols);
-
-//cout<<"T0: " <<T0 <<std::endl;
-std::cout<<"T0: " <<std::endl;
-for(int i=0; i<ncols; i++)
- for(int j=0; j<ncols; j++)
-   if(std::abs(T0(i,j)) > 1e-8) std::cout<<i <<" " <<j <<" " <<T0(i,j) <<std::endl;
-
-      // T0 = T0^-1       
-      ovl_alpha = Invert(T0.data(), ncols, ncols, Cwork.data(),pivot.data());
-      ovl_beta = one;
-
-std::cout<<"ovlp: " <<ovl_alpha <<std::endl;
-//cout<<"T0: " <<T0 <<std::endl;
-std::cout<<"T0: " <<std::endl;
-for(int i=0; i<ncols; i++)
- for(int j=0; j<ncols; j++)
-   if(std::abs(T0(i,j)) > 1e-8) std::cout<<i <<" " <<j <<" " <<T0(i,j) <<std::endl;
- 
-
-      // T1 = T*transpose(conjg(OrbMat)) 
-      DenseMatrixOperators::product_ABh(ncols,2*NMO,ncols,one,T0.data(),ncols,OrbMat.data(),ncols,zero,T1.data(),2*NMO);
-      // G = SlaterMat*T1
-      DenseMatrixOperators::product(2*NMO,2*NMO,ncols,SlaterMat,ncols,T1.data(),2*NMO,DM.data(),2*NMO);
-      DenseMatrixOperators::transpose(2*NMO,DM.data(),2*NMO);
-
-std::cout<<"DM: " <<DM <<std::endl;
-
-      for(int i=0; i<NMO; i++)
-       for(int j=0; j<NMO; j++)
-        mixed_density_matrix(i,j) = DM(i,j);
-      for(int i=0; i<NMO; i++)
-       for(int j=0; j<NMO; j++)
-        mixed_density_matrix(i+NMO,j) = DM(i+NMO,j+NMO);
-
+      // return full matrix [2*NMO,2*NMO]
+#if defined(AFQMC_SP)
+      DenseMatrixOperators::product(2*NMO,2*NMO,ncols,one,ptr,ncols,T1.data(),2*NMO,zero,temp_density_matrix.data(),2*NMO);
+      std::copy(temp_density_matrix.begin(), temp_density_matrix.begin()+4*NMO*NMO, mixed_density_matrix.begin());
+#else
+      DenseMatrixOperators::product(2*NMO,2*NMO,ncols,one,ptr,ncols,T1.data(),2*NMO,zero,mixed_density_matrix.data(),2*NMO);
+#endif
+      DenseMatrixOperators::transpose(2*NMO,mixed_density_matrix.data(),2*NMO);
     }
- 
-  }
 
+  }
 } 
 
 void GeneralSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
@@ -873,7 +900,7 @@ void GeneralSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
   const ComplexType one = ComplexType(1.0);
   const ComplexType zero = ComplexType(0.0); 
 
-  if(wfntype == 0 || wfntype == 1) {
+  if(wfn_type == 0 || wfn_type == 1) {
     // S0 = transpose(conjg(A))*B
     DenseMatrixOperators::product_AhB(NAEA,NAEA,NMO,one,OrbMat.data(),NAEA,OrbMat.data(),NAEA,zero,S0.data(),NAEA);
 
@@ -881,7 +908,7 @@ void GeneralSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
     ComplexType ovl = Invert(S0.data(), NAEA, NAEA, Cwork.data(),pivot.data());
 
     // SS0 = OrbMat * S0
-    DenseMatrixOperators::product(NMO,NAEA,NAEA,OrbMat.data(),NAEA,S0.data(),NAEA,SS0.data(),NAEA);
+    DenseMatrixOperators::product(NMO,NAEA,NAEA,one,OrbMat.data(),NAEA,S0.data(),NAEA,zero,SS0.data(),NAEA);
     // G(alpha) = SS0*transpose(conjg(Dalpha))  
     DenseMatrixOperators::product_ABh(NMO,NMO,NAEA,one,SS0.data(),NAEA,OrbMat.data(),NAEA,zero,trial_density_matrix.data(),NMO);
 
@@ -899,7 +926,7 @@ void GeneralSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
     ovl *= Invert(S1.data(), NAEB, NAEB, Cwork.data(),pivot.data()); 
 
     // SS0(beta) = OrbMat(beta) * S1
-    DenseMatrixOperators::product(NMO,NAEB,NAEB,OrbMat.data()+NAEA*NMO,NAEA,S1.data(),NAEB,SS0.data()+NAEA*NMO,NAEA);
+    DenseMatrixOperators::product(NMO,NAEB,NAEB,one,OrbMat.data()+NAEA*NMO,NAEA,S1.data(),NAEB,zero,SS0.data()+NAEA*NMO,NAEA);
 
     // G(beta) = SS0*transpose(conjg(Dbeta))  
     DenseMatrixOperators::product_ABh(NMO,NMO,NAEB,one,SS0.data()+NAEA*NMO,NAEA,OrbMat.data()+NAEA*NMO,NAEA,zero,trial_density_matrix.data()+NMO*NMO,NMO);
@@ -908,27 +935,18 @@ void GeneralSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
   } else {
 
     // GHF state
-    // In this case, we only return the (alpha,alpha) and (beta,beta) sectors of the density matrix  
-    int ncols = NAEA+NAEB; 
+    const int ncols = NAEA+NAEB;
     // T0 = transpose(conjg(A))*SM
     DenseMatrixOperators::product_AhB(ncols,ncols,2*NMO,one,OrbMat.data(),ncols,OrbMat.data(),ncols,zero,T0.data(),ncols);
 
     // T0 = T0^-1       
     ComplexType ovl = Invert(T0.data(), ncols, ncols, Cwork.data(),pivot.data());
 
-    // SS0 = Taa*transpose(conjg(Dalphalpha)) + Tab*transpose(conjg(Dalphabeta))   
-    DenseMatrixOperators::product_ABh(NAEA,NMO,NAEA,one,T0.data(),ncols,OrbMat.data(),ncols,zero,SS0.data(),NMO);
-    DenseMatrixOperators::product_ABh(NAEA,NMO,NAEB,one,T0.data()+NAEA,ncols,OrbMat.data()+NAEA,ncols,one,SS0.data(),NMO);
-    // G(alpha) = SlaterMat*SS0
-    DenseMatrixOperators::product(NMO,NMO,NAEA,OrbMat.data(),ncols,SS0.data(),NMO,trial_density_matrix.data(),NMO);
-    DenseMatrixOperators::transpose(NMO,trial_density_matrix.data(),NMO);
-
-    // SS0 = Tba*transpose(conjg(Dbetaalpha)) + Tbb*transpose(conjg(Dbetabeta))   
-    DenseMatrixOperators::product_ABh(NAEB,NMO,NAEA,one,T0.data()+ncols*NAEA,ncols,OrbMat.data()+ncols*NMO,ncols,zero,SS0.data(),NMO);
-    DenseMatrixOperators::product_ABh(NAEB,NMO,NAEB,one,T0.data()+ncols*NAEA+NAEA,ncols,OrbMat.data()+ncols*NMO+NAEA,ncols,one,SS0.data(),NMO);
-    // G(beta) = SlaterMat*SS0
-    DenseMatrixOperators::product(NMO,NMO,NAEB,OrbMat.data()+ncols*NMO+NAEA,ncols,SS0.data(),NMO,trial_density_matrix.data()+NMO*NMO,NMO);
-    DenseMatrixOperators::transpose(NMO,trial_density_matrix.data()+NMO*NMO,NMO);
+    // T1 = T*transpose(conjg(OrbMat)) 
+    DenseMatrixOperators::product_ABh(ncols,2*NMO,ncols,one,T0.data(),ncols,OrbMat.data(),ncols,zero,T1.data(),2*NMO);
+    // G = SlaterMat*T1
+    DenseMatrixOperators::product(2*NMO,2*NMO,ncols,one,OrbMat.data(),ncols,T1.data(),2*NMO,zero,trial_density_matrix.data(),2*NMO);
+    DenseMatrixOperators::transpose(2*NMO,trial_density_matrix.data(),2*NMO);
 
   }
 
@@ -941,7 +959,7 @@ void GeneralSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
     const ComplexType one = ComplexType(1.0);
     const ComplexType zero = ComplexType(0.0); 
 
-    if(wfntype==0 || wfntype==1) {
+    if(wfn_type==0 || wfn_type==1) {
 
       // S0 = transpose(conjg(A))*B
       DenseMatrixOperators::product_AhB(NAEA,NAEA,NMO,one,OrbMat.data(),NAEA,SlaterMat,NAEA,zero,S0.data(),NAEA);
@@ -963,17 +981,30 @@ void GeneralSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
     } else {
 
       int ncols = NAEA+NAEB; 
-      // SM = GHF version of SlaterMat 
-      const ComplexType* ptr1 = SlaterMat;   
-      ComplexType* ptr2 = SM.data(); 
-      for(int i=0; i<NMO; i++,ptr1+=NAEA,ptr2+=ncols)
-        std::copy(ptr1,ptr1+NAEA,ptr2);
-      ptr2 += NAEA; 
-      for(int i=0; i<NMO; i++,ptr1+=NAEA,ptr2+=ncols)
-        std::copy(ptr1,ptr1+NAEB,ptr2);    
+      const ComplexType *ptr=SlaterMat;
+      if(walker_type==0) {
+        // SM = GHF version of SlaterMat 
+        const ComplexType* ptr1 = SlaterMat;
+        ptr = SM.data();
+        ComplexType* ptr2 = SM.data();
+        for(int i=0; i<NMO; i++,ptr1+=NAEA,ptr2+=ncols) {
+          std::copy(ptr1,ptr1+NAEA,ptr2);
+          std::copy(ptr1,ptr1+NAEA,ptr2+NAEA+ncols*NMO);
+        }
+      } else if(walker_type==1) {
+        // SM = GHF version of SlaterMat 
+        const ComplexType* ptr1 = SlaterMat;
+        ptr = SM.data();
+        ComplexType* ptr2 = SM.data();
+        for(int i=0; i<NMO; i++,ptr1+=NAEA,ptr2+=ncols)
+          std::copy(ptr1,ptr1+NAEA,ptr2);
+        ptr2 += NAEA;
+        for(int i=0; i<NMO; i++,ptr1+=NAEA,ptr2+=ncols)
+          std::copy(ptr1,ptr1+NAEB,ptr2);
+      }
     
       // T0 = transpose(conjg(A))*SM
-      DenseMatrixOperators::product_AhB(ncols,ncols,2*NMO,one,OrbMat.data(),ncols,SM.data(),ncols,zero,T0.data(),ncols);
+      DenseMatrixOperators::product_AhB(ncols,ncols,2*NMO,one,OrbMat.data(),ncols,ptr,ncols,zero,T0.data(),ncols);
 
       // T0 = T0^-1       
       ovl_alpha = Invert(T0.data(), ncols, ncols, Cwork.data(),pivot.data());
@@ -992,7 +1023,7 @@ void GeneralSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
 #ifdef AFQMC_TIMER
     Timer.start("GeneralSingleDeterminant:local_evaluateOneBodyMixedDensityMatrix"); 
 #endif
-    local_evaluateOneBodyMixedDensityMatrix(SlaterMat,ovl_alpha,ovl_beta);
+    local_evaluateOneBodyMixedDensityMatrix(SlaterMat,ovl_alpha,ovl_beta,false);
 #ifdef AFQMC_TIMER
     Timer.stop("GeneralSingleDeterminant:local_evaluateOneBodyMixedDensityMatrix"); 
 #endif
@@ -1014,23 +1045,23 @@ void GeneralSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
 
     ekin = 0;
     s1Dit end1 = hij.end();
-    ComplexMatrix::iterator itG = mixed_density_matrix.begin();
+    SPComplexMatrix::iterator itG = mixed_density_matrix.begin();
     for(s1Dit it = hij.begin(); it != end1; it++) 
-      ekin += *(itG + std::get<0>(*it)) * std::get<1>(*it);
+      ekin += static_cast<ComplexType>(*(itG + std::get<0>(*it))) * std::get<1>(*it);
 
 // for closed_shell, you can rewrite this as  sum_ik_jl Ga(ik) * ( 2*<ij|kl> - <ij|lk>  ) * Ga(jl)
 // which reduces the cost from ~4M^4 to ~M^4
 // but all of the changes happen on the creation of SMSpHijkl, not here 
 
     epot = 0; 
-    int nr1=1, nc1=2*NMO*NMO;
+    const int nr1=1, nc1=SMSpHijkl.cols();
 // if(closed_shell) nc1 = NMO*NMO;
-    ComplexType one = ComplexType(1.0,0.0);
-    ComplexType zero = ComplexType(0.0,0.0);
-    SparseMatrixOperators::product_SpMatV<ComplexSMSpMat>(nc1,nc1,one,SMSpHijkl,mixed_density_matrix.data(),zero,V0.data()); 
+    const SPValueType one = SPValueType(1.0);
+    const SPValueType zero = SPValueType(0.0);
+    SparseMatrixOperators::product_SpMatV(nc1,nc1,one,SMSpHijkl.values(),SMSpHijkl.column_data(),SMSpHijkl.row_index(),mixed_density_matrix.data(),zero,V0.data()); 
     itG = mixed_density_matrix.begin();
-    ComplexVector::iterator itV = V0.begin();
-    for(int i=0; i<nc1; i++,++itG,++itV) epot += (*itV) * (*itG); 
+    SPComplexVector::iterator itV = V0.begin();
+    for(int i=0; i<nc1; i++,++itG,++itV) epot += static_cast<ComplexType>(*itV) * static_cast<ComplexType>(*itG); 
     epot = 0.5*epot+NuclearCoulombEnergy;   
 
 #ifdef AFQMC_TIMER
@@ -1039,30 +1070,68 @@ void GeneralSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
     
   }
 
-  void GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, ComplexSpMat& Spvn, std::vector<ComplexType>& v, bool transposed, bool needsG, const int n)
+  void GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMSpMat& vn, SPComplexSMSpMat& vnT, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n)
   {
 
 #ifdef AFQMC_TIMER
     Timer.start("GeneralSingleDeterminant:calculateMixedMatrixElementOfOneBodyOperators"); 
 #endif
     ComplexType o1,o2;
-    const ComplexType *GF=SlaterMat;
+    const SPComplexType *GF=GG;
     if(needsG) {
-     GF = mixed_density_matrix.data();
      local_evaluateOneBodyMixedDensityMatrix(SlaterMat,o1,o2);
+     GF = mixed_density_matrix.data();
     }
 
-    ComplexType one = ComplexType(1.0,0.0);
-    ComplexType zero = ComplexType(0.0,0.0);
-    if(closed_shell) one = ComplexType(2.0,0.0);
     if(transposed) {
-      SparseMatrixOperators::product_SpMatV<ComplexSpMat>(Spvn.rows(),Spvn.cols(),one,Spvn,GF,zero,v.data());
+      SPComplexType one = SPComplexType(1.0);
+      const SPComplexType zero = SPComplexType(0.0);
+      if(closed_shell) one = SPComplexType(2.0);
+      SparseMatrixOperators::product_SpMatV(vnT.rows(),vnT.cols(),one,vnT.values(),vnT.column_data(),vnT.row_index(),GF,zero,v.data());
+      if(addBetaBeta && ! closed_shell)
+        SparseMatrixOperators::product_SpMatV(vnT.rows(),vnT.cols(),one,vnT.values(),vnT.column_data(),vnT.row_index(),GF+NMO*NMO,one,v.data());
+    } else {
+      SPValueType one = SPValueType(1.0);
+      SPValueType zero = SPValueType(0.0);
+      if(closed_shell) one = SPValueType(2.0);
+      SparseMatrixOperators::product_SpMatTV(vn.rows(),vn.cols(),one,vn.values(),vn.column_data(),vn.row_index(),GF,zero,v.data());
       if(addBetaBeta && !closed_shell)
-        SparseMatrixOperators::product_SpMatV<ComplexSpMat>(Spvn.rows(),Spvn.cols(),one,Spvn,GF+NMO*NMO,one,v.data());
-    } else { 
-      SparseMatrixOperators::product_SpMatTV<ComplexSpMat>(Spvn.rows(),Spvn.cols(),one,Spvn,GF,zero,v.data());
+        SparseMatrixOperators::product_SpMatTV(vn.rows(),vn.cols(),one,vn.values(),vn.column_data(),vn.row_index(),GF+NMO*NMO,one,v.data());
+    }
+
+#ifdef AFQMC_TIMER
+    Timer.stop("GeneralSingleDeterminant:calculateMixedMatrixElementOfOneBodyOperators"); 
+#endif
+ 
+  }
+
+  void GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMVector& vn, SPComplexSMVector& vnT, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n)
+  {
+
+#ifdef AFQMC_TIMER
+    Timer.start("GeneralSingleDeterminant:calculateMixedMatrixElementOfOneBodyOperators"); 
+#endif
+    ComplexType o1,o2;
+    const SPComplexType *GF=GG;
+    if(needsG) {
+     local_evaluateOneBodyMixedDensityMatrix(SlaterMat,o1,o2);
+     GF = mixed_density_matrix.data();
+    }
+
+    if(transposed) {
+      SPComplexType one = SPComplexType(1.0);
+      const SPComplexType zero = SPComplexType(0.0);
+      if(closed_shell) one = SPComplexType(2.0);
+      DenseMatrixOperators::product_Ax(vnT.rows(),vnT.cols(),one,vnT.values(),vnT.cols(),GF,zero,v.data());
       if(addBetaBeta && !closed_shell)
-        SparseMatrixOperators::product_SpMatTV<ComplexSpMat>(Spvn.rows(),Spvn.cols(),one,Spvn,GF+NMO*NMO,one,v.data());
+        DenseMatrixOperators::product_Ax(vnT.rows(),vnT.cols(),one,vnT.values(),vnT.cols(),GF+NMO*NMO,one,v.data());
+    } else {
+      SPValueType one = SPValueType(1.0);
+      SPValueType zero = SPValueType(0.0);
+      if(closed_shell) one = SPValueType(2.0);
+      DenseMatrixOperators::product_Atx(vn.rows(),vn.cols(),one,vn.values(),vn.cols(),GF,zero,v.data());
+      if(addBetaBeta && !closed_shell)
+        DenseMatrixOperators::product_Atx(vn.rows(),vn.cols(),one,vn.values(),vn.cols(),GF+NMO*NMO,one,v.data());
     }
 
 #ifdef AFQMC_TIMER
@@ -1071,78 +1140,17 @@ void GeneralSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
 
   }
 
-  void GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, ComplexSMSpMat& Spvn, std::vector<ComplexType>& v, bool transposed, bool needsG,  const int n)
-  {
-
-#ifdef AFQMC_TIMER
-    Timer.start("GeneralSingleDeterminant:calculateMixedMatrixElementOfOneBodyOperators");
-#endif
-    ComplexType o1,o2;
-    const ComplexType *GF=SlaterMat;
-    if(needsG) {
-     GF = mixed_density_matrix.data();
-     local_evaluateOneBodyMixedDensityMatrix(SlaterMat,o1,o2);
-    }
-
-    ComplexType one = ComplexType(1.0,0.0);
-    ComplexType zero = ComplexType(0.0,0.0);
-    if(closed_shell) one = ComplexType(2.0,0.0);
-    if(transposed) {
-      SparseMatrixOperators::product_SpMatV<ComplexSMSpMat>(Spvn.rows(),Spvn.cols(),one,Spvn,GF,zero,v.data());
-      if(addBetaBeta && !closed_shell)
-        SparseMatrixOperators::product_SpMatV<ComplexSMSpMat>(Spvn.rows(),Spvn.cols(),one,Spvn,GF+NMO*NMO,one,v.data());
-    } else {
-      SparseMatrixOperators::product_SpMatTV<ComplexSMSpMat>(Spvn.rows(),Spvn.cols(),one,Spvn,GF,zero,v.data());
-      if(addBetaBeta && !closed_shell)
-        SparseMatrixOperators::product_SpMatTV<ComplexSMSpMat>(Spvn.rows(),Spvn.cols(),one,Spvn,GF+NMO*NMO,one,v.data());
-    }
-
-#ifdef AFQMC_TIMER
-    Timer.stop("GeneralSingleDeterminant:calculateMixedMatrixElementOfOneBodyOperators");
-#endif
-
-  }
-
-  void GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const ComplexType* buff, int ik0, int ikN, int pik0, ComplexSpMat& Spvn, std::vector<ComplexType>& v, bool transposed, bool needsG, const int n)
-  {
-    APP_ABORT(" Error: Routine not implemented: GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators. \n\n\n");
-  } 
-    
-  void GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const ComplexType* buff, int ik0, int ikN, int pik0, ComplexSMSpMat& Spvn, std::vector<ComplexType>& v, bool transposed, bool needsG, const int n)
+  void GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int ik0, int ikN, SPValueSMSpMat& vn, SPComplexSMSpMat& vnT, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n)
   {
     APP_ABORT(" Error: Routine not implemented: GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators. \n\n\n");
   }
 
-
-  void GeneralSingleDeterminant::calculateMixedMatrixElementOfTwoBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const std::vector<s4D<ComplexType> >& vn, const std::vector<IndexType>& vn_indx, ComplexSpMat& Spvn, std::vector<ComplexType>& v, const int n)
+  void GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int ik0, int ikN, SPValueSMVector& vn, SPComplexSMVector& vnT, std::vector<SPComplexType>& v, int walkerBlock, int nW , bool transposed, bool needsG, const int n)
   {
-
-#ifdef AFQMC_TIMER
-    Timer.start("GeneralSingleDeterminant:calculateMixedMatrixElementOfTwoBodyOperators"); 
-#endif
-    ComplexType o1,o2;
-    local_evaluateOneBodyMixedDensityMatrix(SlaterMat,o1,o2);
-
-
-    ComplexMatrix::iterator itG = mixed_density_matrix.begin();
-    for(int i=0; i<vn_indx.size()-1; i++) {
-      v[i] = static_cast<ComplexType>(0.0); 
-      for(int n = vn_indx[i]; n<vn_indx[i+1]; n++) {
-        IndexType ik = Index2Mat(std::get<0>(vn[n]),std::get<2>(vn[n])); 
-        IndexType jl = Index2Mat(std::get<1>(vn[n]),std::get<3>(vn[n])); 
-        IndexType il = Index2Mat(std::get<0>(vn[n]),std::get<3>(vn[n])); 
-        IndexType jk = Index2Mat(std::get<1>(vn[n]),std::get<2>(vn[n])); 
-        v[i] += (*(itG + ik)) * (*(itG + jl) - *(itG + il)) * (*(itG + jk)) * std::get<4>(vn[n]);
-      }
-    }
-
-#ifdef AFQMC_TIMER
-    Timer.stop("GeneralSingleDeterminant:calculateMixedMatrixElementOfTwoBodyOperators"); 
-#endif
-
+    APP_ABORT(" Error: Routine not implemented: GeneralSingleDeterminant::calculateMixedMatrixElementOfOneBodyOperators. \n\n\n");
   }
 
-  void GeneralSingleDeterminant::calculateMixedMatrixElementOfTwoBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const std::vector<s4D<ComplexType> >& vn, const std::vector<IndexType>& vn_indx, ComplexSMSpMat& Spvn, std::vector<ComplexType>& v, const int n)
+  void GeneralSingleDeterminant::calculateMixedMatrixElementOfTwoBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const std::vector<s4D<SPComplexType> >& v2n, const std::vector<IndexType>& vn_indx, SPValueSMSpMat& vn, std::vector<SPComplexType>& v, const int n)
   {
 
 #ifdef AFQMC_TIMER
@@ -1152,15 +1160,15 @@ void GeneralSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
     local_evaluateOneBodyMixedDensityMatrix(SlaterMat,o1,o2);
 
 
-    ComplexMatrix::iterator itG = mixed_density_matrix.begin();
+    SPComplexMatrix::iterator itG = mixed_density_matrix.begin();
     for(int i=0; i<vn_indx.size()-1; i++) {
-      v[i] = static_cast<ComplexType>(0.0);
+      v[i] = static_cast<SPComplexType>(0.0);
       for(int n = vn_indx[i]; n<vn_indx[i+1]; n++) {
-        IndexType ik = Index2Mat(std::get<0>(vn[n]),std::get<2>(vn[n]));
-        IndexType jl = Index2Mat(std::get<1>(vn[n]),std::get<3>(vn[n]));
-        IndexType il = Index2Mat(std::get<0>(vn[n]),std::get<3>(vn[n]));
-        IndexType jk = Index2Mat(std::get<1>(vn[n]),std::get<2>(vn[n]));
-        v[i] += (*(itG + ik)) * (*(itG + jl) - *(itG + il)) * (*(itG + jk)) * std::get<4>(vn[n]);
+        IndexType ik = Index2Mat(std::get<0>(v2n[n]),std::get<2>(v2n[n]));
+        IndexType jl = Index2Mat(std::get<1>(v2n[n]),std::get<3>(v2n[n]));
+        IndexType il = Index2Mat(std::get<0>(v2n[n]),std::get<3>(v2n[n]));
+        IndexType jk = Index2Mat(std::get<1>(v2n[n]),std::get<2>(v2n[n]));
+        v[i] += (*(itG + ik)) * (*(itG + jl) - *(itG + il)) * (*(itG + jk)) * std::get<4>(v2n[n]);
       }
     }
 
@@ -1170,31 +1178,19 @@ void GeneralSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
 
   }
 
-  void GeneralSingleDeterminant::calculateMeanFieldMatrixElementOfOneBodyOperators(bool addBetaBeta, ComplexSpMat& Spvn, std::vector<ComplexType>& v, const int n)
+  void GeneralSingleDeterminant::calculateMeanFieldMatrixElementOfOneBodyOperators(bool addBetaBeta, SPValueSMVector& vn, std::vector<SPComplexType>& v, const int n)
   {
-
-    if(trialDensityMatrix_needsupdate) {
-      trialDensityMatrix_needsupdate = false;
-      ComplexType o1,o2;
-      local_evaluateOneBodyTrialDensityMatrix();
-    }
-
-    ComplexType one = ComplexType(1.0,0.0);
-    ComplexType zero = ComplexType(0.0,0.0);
-    if(closed_shell) one = ComplexType(2.0,0.0);
-    SparseMatrixOperators::product_SpMatTV<ComplexSpMat>(Spvn.rows(),Spvn.cols(),one,Spvn,trial_density_matrix.data(),zero,v.data());
-    if(addBetaBeta && !closed_shell)
-      SparseMatrixOperators::product_SpMatTV<ComplexSpMat>(Spvn.rows(),Spvn.cols(),one,Spvn,trial_density_matrix.data()+NMO*NMO,one,v.data());
-
+    APP_ABORT(" Error: calculateMeanFieldMatrixElementOfOneBodyOperators(Dvn) not implemented yet. \n\n\n");
   }
 
-  void GeneralSingleDeterminant::calculateMeanFieldMatrixElementOfOneBodyOperators(bool addBetaBeta, ComplexSMSpMat& Spvn, std::vector<ComplexType>& v, const int n)
+  void GeneralSingleDeterminant::calculateMeanFieldMatrixElementOfOneBodyOperators(bool addBetaBeta, SPValueSMSpMat& vn, std::vector<SPComplexType>& v, const int n)
   {
 
     if(trialDensityMatrix_needsupdate) {
       trialDensityMatrix_needsupdate = false;
       ComplexType o1,o2;
       local_evaluateOneBodyTrialDensityMatrix();
+      SPtrial_density_matrix = trial_density_matrix;
     }
 
 /*
@@ -1204,12 +1200,12 @@ void GeneralSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix()
       if(std::abs(trial_density_matrix(i,j)) > 1e-8) app_log()<<i <<" " <<j <<" " <<trial_density_matrix(i,j) <<std::endl;
 */   
 
-    ComplexType one = ComplexType(1.0,0.0);
-    ComplexType zero = ComplexType(0.0,0.0);
-    if(closed_shell) one = ComplexType(2.0,0.0);
-    SparseMatrixOperators::product_SpMatTV<ComplexSMSpMat>(Spvn.rows(),Spvn.cols(),one,Spvn,trial_density_matrix.data(),zero,v.data());
+    SPValueType one = SPValueType(1.0);
+    SPValueType zero = SPValueType(0.0);
+    if(closed_shell) one = SPValueType(2.0);
+    SparseMatrixOperators::product_SpMatTV(vn.rows(),vn.cols(),one,vn.values(),vn.column_data(),vn.row_index(),SPtrial_density_matrix.data(),zero,v.data());
     if(addBetaBeta && !closed_shell)
-      SparseMatrixOperators::product_SpMatTV<ComplexSMSpMat>(Spvn.rows(),Spvn.cols(),one,Spvn,trial_density_matrix.data()+NMO*NMO,one,v.data());
+      SparseMatrixOperators::product_SpMatTV(vn.rows(),vn.cols(),one,vn.values(),vn.column_data(),vn.row_index(),SPtrial_density_matrix.data()+NMO*NMO,one,v.data());
 
   }
 

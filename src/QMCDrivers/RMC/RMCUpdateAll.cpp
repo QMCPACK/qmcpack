@@ -83,22 +83,26 @@ namespace qmcplusplus
     if (driftoption)
       {
 	scaleDrift = true;
-	app_log () << "  Using Umrigar scaled drift\n";
+        if (omp_get_thread_num()==0)
+	  app_log () << "  Using Umrigar scaled drift\n";
 	// H.rejectedMove(W,thisWalker);
       }
     else
       {
-	app_log () << "  Using non-scaled drift\n";
+        if (omp_get_thread_num()==0)
+	  app_log () << "  Using non-scaled drift\n";
       }
 
     if (action == "DMC")
       {
 	actionType = DMC_ACTION;
-	app_log () << "  Using DMC link-action\n";
+	if (omp_get_thread_num()==0)
+          app_log () << "  Using DMC link-action\n";
       }
     else
       {
-	app_log () << "  Using Symmetrized Link-Action\n";
+        if (omp_get_thread_num()==0)
+	  app_log () << "  Using Symmetrized Link-Action\n";
       }
 
     return true;
@@ -281,7 +285,7 @@ namespace qmcplusplus
 	overwriteWalker.Properties (W.reptile->TransProb[backward]) =
 	  W.Properties (W.reptile->TransProb[backward]);
 	overwriteWalker.resetProperty (logpsi, Psi.getPhase (), eloc);
-	H.auxHevaluate (W, overwriteWalker);
+	H.auxHevaluate (W, overwriteWalker,true,false); //properties but not collectables.
 	H.saveProperty (overwriteWalker.getPropertyBase ());
 	overwriteWalker.Age = 0;
 	++nAccept;
@@ -324,6 +328,10 @@ namespace qmcplusplus
     for (int n = 0; n < initsteps; n++)
       advanceWalkersVMC ();
 
+  }
+
+  void RMCUpdateAllWithDrift::advanceWalker (Walker_t& thisWalker, bool recompute)
+  {
   }
 
   void RMCUpdateAllWithDrift::advanceWalkers (WalkerIter_t it,
@@ -561,7 +569,7 @@ namespace qmcplusplus
 	overwriteWalker.Properties (R2PROPOSED) = r2proposed;
 
 	// lastbead.Properties(R2PROPOSED)=lastbead.Properties(R2ACCEPTED)=nextlastbead.Properties(R2PROPOSED);
-	H.auxHevaluate (W, overwriteWalker);
+	H.auxHevaluate (W, overwriteWalker,true,false); //evaluate properties but not collectables.
 	H.saveProperty (overwriteWalker.getPropertyBase ());
 	overwriteWalker.Age = 0;
 
@@ -582,6 +590,10 @@ namespace qmcplusplus
 	// app_log()<<"Reject\n";
 	return;
       }
+      W.loadWalker(centerbead,true);
+      W.update(false);  //skip S(k) evaluation?  False
+      H.auxHevaluate(W,centerbead,false, true); //collectables, but not properties
+    
   }
 
   void RMCUpdateAllWithDrift::accumulate (WalkerIter_t it,

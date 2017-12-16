@@ -21,7 +21,6 @@
 #include <Utilities/SimpleParser.h>
 #include <Particle/DistanceTableData.h>
 #include <Numerics/DeterminantOperators.h>
-
 #include <set>
 
 namespace qmcplusplus
@@ -57,18 +56,22 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
     //make it cartesian
     newpos=Lattice.toCart(newpos);
     P.makeVirtualMoves(newpos); //updated: temp[i].r1=|newpos-P.R[i]|, temp[i].dr1=newpos-P.R[i]
+
     refPsi.get_ratios(P,psi_ratios);
+
 //         for (int i=0; i<np; ++i) app_log()<<i<<" "<<psi_ratios[i].real()<<" "<<psi_ratios[i].imag()<< std::endl;
     P.rejectMove(0); //restore P.R[0] to the orginal position
     for (int ik=0; ik < kPoints.size(); ++ik)
     {
       for (int i=0; i<np; ++i)
-        kdotp[i]=dot(kPoints[ik],temp[i].dr1_nobox);
+        kdotp[i]=-dot(kPoints[ik],temp[i].dr1_nobox);
       eval_e2iphi(np,kdotp.data(),phases.data());
       RealType nofk_here(std::real(BLAS::dot(np,phases.data(),&psi_ratios[0])));//psi_ratios.data())));
+
       nofK[ik]+= nofk_here;
       tmpn_k[ik]=nofk_here;
     }
+
     for (int iq=0; iq < compQ.size(); ++iq)
       for (int i=0; i<mappedQtonofK[iq].size(); ++i)
         compQ[iq] += tmpn_k[mappedQtonofK[iq][i]];
@@ -79,11 +82,12 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
     compQ[iq] *= mappedQnorms[iq];
   if (hdf5_out)
   {
+    RealType w=tWalker->Weight;
     int j=myIndex;
     for (int ik=0; ik<nofK.size(); ++ik,++j)
-      P.Collectables[j]+= nofK[ik];
+      P.Collectables[j]+= w*nofK[ik];
     for (int iq=0; iq<compQ.size(); ++iq,++j)
-      P.Collectables[j]+= compQ[iq];
+      P.Collectables[j]+= w*compQ[iq];
   }
   return 0.0;
 }
@@ -166,124 +170,107 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
   OhmmsAttributeSet pAttrib;
   std::string hdf5_flag="yes";
   pAttrib.add(hdf5_flag,"hdf5");
+  pAttrib.add(kgrid,"grid");
   pAttrib.add(M,"samples");
   pAttrib.put(cur);
   hdf5_out = (hdf5_flag=="yes");
-//     app_log()<<" MomentumEstimator::putSpecial "<< std::endl;
-  xmlNodePtr kids=cur->children;
-  while (kids!=NULL)
-  {
-    std::string cname((const char*)(kids->name));
-//         app_log()<<" MomentumEstimator::cname : "<<cname<< std::endl;
-    if (cname=="kpoints")
-    {
-      std::string ctype("manual");
-      OhmmsAttributeSet pAttrib;
-      pAttrib.add(ctype,"mode");
-      pAttrib.add(kgrid,"grid");
-      pAttrib.put(kids);
 #if OHMMS_DIM==3
-      int numqtwists(6*kgrid+3);
-      std::vector<int> qk(0);
-      mappedQtonofK.resize(numqtwists,qk);
-      compQ.resize(numqtwists);
-      RealType qn(4.0*M_PI*M_PI*std::pow(Lattice.Volume,-2.0/3.0));
-      mappedQnorms.resize(numqtwists,qn*0.5/RealType(M));
-      if (twist[0]==0)
-        mappedQnorms[kgrid]=qn/RealType(M);
-      if (twist[1]==0)
-        mappedQnorms[3*kgrid+1]=qn/RealType(M);
-      if (twist[2]==0)
-        mappedQnorms[5*kgrid+2]=qn/RealType(M);
-//             app_log()<<" Jnorm="<<qn<< std::endl;
-      Q.resize(numqtwists);
-      for (int i=-kgrid; i<(kgrid+1); i++)
+  int numqtwists(6*kgrid+3);
+  std::vector<int> qk(0);
+  mappedQtonofK.resize(numqtwists,qk);
+  compQ.resize(numqtwists);
+  RealType qn(4.0*M_PI*M_PI*std::pow(Lattice.Volume,-2.0/3.0));
+  mappedQnorms.resize(numqtwists,qn*0.5/RealType(M));
+  if (twist[0]==0)
+    mappedQnorms[kgrid]=qn/RealType(M);
+  if (twist[1]==0)
+    mappedQnorms[3*kgrid+1]=qn/RealType(M);
+  if (twist[2]==0)
+    mappedQnorms[5*kgrid+2]=qn/RealType(M);
+  Q.resize(numqtwists);
+  for (int i=-kgrid; i<(kgrid+1); i++)
+  {
+    PosType kpt;
+    kpt[0]=i-twist[0];
+    kpt[1]=i-twist[1];
+    kpt[2]=i-twist[2];
+    kpt=Lattice.k_cart(kpt);
+    Q[i+kgrid]=std::abs(kpt[0]);
+    Q[i+kgrid+(2*kgrid+1)]=std::abs(kpt[1]);
+    Q[i+kgrid+(4*kgrid+2)]=std::abs(kpt[2]);
+  }
+  app_log()<<" Using all k-space points with (nx^2+ny^2+nz^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<< std::endl;
+  app_log()<<"  My twist is:"<<twist[0]<<"  "<<twist[1]<<"  "<<twist[2]<< std::endl;
+  int indx(0);
+  int kgrid_squared=kgrid*kgrid;
+  for (int i=-kgrid; i<(kgrid+1); i++)
+  {
+    for (int j=-kgrid; j<(kgrid+1); j++)
+    {
+      for (int k=-kgrid; k<(kgrid+1); k++)
       {
-        PosType kpt;
-        kpt[0]=i-twist[0];
-        kpt[1]=i-twist[1];
-        kpt[2]=i-twist[2];
-        kpt=Lattice.k_cart(kpt);
-        Q[i+kgrid]=std::abs(kpt[0]);
-        Q[i+kgrid+(2*kgrid+1)]=std::abs(kpt[1]);
-        Q[i+kgrid+(4*kgrid+2)]=std::abs(kpt[2]);
-      }
-      app_log()<<" Using all k-space points with (nx^2+ny^2+nz^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<< std::endl;
-      app_log()<<"  My twist is:"<<twist[0]<<"  "<<twist[1]<<"  "<<twist[2]<< std::endl;
-      int indx(0);
-      int kgrid_squared=kgrid*kgrid;
-      for (int i=-kgrid; i<(kgrid+1); i++)
-      {
-        for (int j=-kgrid; j<(kgrid+1); j++)
+        if (i*i+j*j+k*k<=kgrid_squared) //if (std::sqrt(i*i+j*j+k*k)<=kgrid)
         {
-          for (int k=-kgrid; k<(kgrid+1); k++)
-          {
-            if (i*i+j*j+k*k<=kgrid_squared) //if (std::sqrt(i*i+j*j+k*k)<=kgrid)
-            {
-              PosType kpt;
-              kpt[0]=i-twist[0];
-              kpt[1]=j-twist[1];
-              kpt[2]=k-twist[2];
-              //convert to Cartesian: note that 2Pi is multiplied
-              kpt=Lattice.k_cart(kpt);
-              kPoints.push_back(kpt);
-              mappedQtonofK[i+kgrid].push_back(indx);
-              mappedQtonofK[j+kgrid+(2*kgrid+1)].push_back(indx);
-              mappedQtonofK[k+kgrid+(4*kgrid+2)].push_back(indx);
-              indx++;
-            }
-          }
+          PosType kpt;
+          kpt[0]=i-twist[0];
+          kpt[1]=j-twist[1];
+          kpt[2]=k-twist[2];
+          //convert to Cartesian: note that 2Pi is multiplied
+          kpt=Lattice.k_cart(kpt);
+          kPoints.push_back(kpt);
+          mappedQtonofK[i+kgrid].push_back(indx);
+          mappedQtonofK[j+kgrid+(2*kgrid+1)].push_back(indx);
+          mappedQtonofK[k+kgrid+(4*kgrid+2)].push_back(indx);
+          indx++;
         }
       }
+    }
+  }
 #endif
 #if OHMMS_DIM==2
-      int numqtwists(4*kgrid+2);
-      std::vector<int> qk(0);
-      mappedQtonofK.resize(numqtwists,qk);
-      compQ.resize(numqtwists);
-      RealType qn(2.0*M_PI/std::sqrt(Lattice.Volume));
-      mappedQnorms.resize(numqtwists,qn*0.5/RealType(M));
-      if (twist[0]==0)
-        mappedQnorms[kgrid]=qn/RealType(M);
-      if (twist[1]==0)
-        mappedQnorms[3*kgrid+1]=qn/RealType(M);
-//             app_log()<<" Jnorm="<<qn<< std::endl;
-      Q.resize(numqtwists);
-      for (int i=-kgrid; i<(kgrid+1); i++)
+  int numqtwists(4*kgrid+2);
+  std::vector<int> qk(0);
+  mappedQtonofK.resize(numqtwists,qk);
+  compQ.resize(numqtwists);
+  RealType qn(2.0*M_PI/std::sqrt(Lattice.Volume));
+  mappedQnorms.resize(numqtwists,qn*0.5/RealType(M));
+  if (twist[0]==0)
+    mappedQnorms[kgrid]=qn/RealType(M);
+  if (twist[1]==0)
+    mappedQnorms[3*kgrid+1]=qn/RealType(M);
+  Q.resize(numqtwists);
+  for (int i=-kgrid; i<(kgrid+1); i++)
+  {
+    PosType kpt;
+    kpt[0]=i-twist[0];
+    kpt[1]=i-twist[1];
+    kpt=Lattice.k_cart(kpt);
+    Q[i+kgrid]=std::abs(kpt[0]);
+    Q[i+kgrid+(2*kgrid+1)]=std::abs(kpt[1]);
+  }
+  app_log()<<" Using all k-space points with (nx^2+ny^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<< std::endl;
+  app_log()<<"  My twist is:"<<twist[0]<<"  "<<twist[1]<< std::endl;
+  int indx(0);
+  int kgrid_squared=kgrid*kgrid;
+  for (int i=-kgrid; i<(kgrid+1); i++)
+  {
+    for (int j=-kgrid; j<(kgrid+1); j++)
+    {
+      if (i*i+j*j<=kgrid_squared) //if (std::sqrt(i*i+j*j+k*k)<=kgrid)
       {
         PosType kpt;
         kpt[0]=i-twist[0];
-        kpt[1]=i-twist[1];
+        kpt[1]=j-twist[1];
+        //convert to Cartesian: note that 2Pi is multiplied
         kpt=Lattice.k_cart(kpt);
-        Q[i+kgrid]=std::abs(kpt[0]);
-        Q[i+kgrid+(2*kgrid+1)]=std::abs(kpt[1]);
+        kPoints.push_back(kpt);
+        mappedQtonofK[i+kgrid].push_back(indx);
+        mappedQtonofK[j+kgrid+(2*kgrid+1)].push_back(indx);
+        indx++;
       }
-      app_log()<<" Using all k-space points with (nx^2+ny^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<< std::endl;
-      app_log()<<"  My twist is:"<<twist[0]<<"  "<<twist[1]<< std::endl;
-      int indx(0);
-      int kgrid_squared=kgrid*kgrid;
-      for (int i=-kgrid; i<(kgrid+1); i++)
-      {
-        for (int j=-kgrid; j<(kgrid+1); j++)
-        {
-          if (i*i+j*j<=kgrid_squared) //if (std::sqrt(i*i+j*j+k*k)<=kgrid)
-          {
-            PosType kpt;
-            kpt[0]=i-twist[0];
-            kpt[1]=j-twist[1];
-            //convert to Cartesian: note that 2Pi is multiplied
-            kpt=Lattice.k_cart(kpt);
-            kPoints.push_back(kpt);
-            mappedQtonofK[i+kgrid].push_back(indx);
-            mappedQtonofK[j+kgrid+(2*kgrid+1)].push_back(indx);
-            indx++;
-          }
-        }
-      }
-#endif
     }
-    kids=kids->next;
   }
+#endif
   if (rootNode)
   {
     std::stringstream sstr;
@@ -364,8 +351,3 @@ void MomentumEstimator::setRandomGenerator(RandomGenerator_t* rng)
 }
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2945 $   $Date: 2008-08-05 10:21:33 -0500 (Tue, 05 Aug 2008) $
- * $Id: ForceBase.h 2945 2008-08-05 15:21:33Z jnkim $
- ***************************************************************************/

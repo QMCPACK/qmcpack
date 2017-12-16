@@ -23,7 +23,7 @@
 namespace qmcplusplus
 {
 
-#ifdef QMC_CUDA
+#if 0
 void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<std::complex<double > >* orbitalSet)
 {
   update_token(__FILE__,__LINE__,"ReadBands_ESHDF:complex");
@@ -529,7 +529,9 @@ void EinsplineSetBuilder::ReadBands_ESHDF(int spin, EinsplineSetExtended<double>
       myComm->bcast(cG);
       unpack4fftw(cG,Gvecs[0],MeshSize,FFTbox);
       fftw_execute (FFTplan);
-      fix_phase_rotate_c2r(FFTbox,splineData,TwistAngles[ti]);
+      double phase_r,phase_i;
+      compute_phase(FFTbox,TwistAngles[ti],phase_r,phase_i);
+      fix_phase_rotate_c2r(FFTbox,splineData,TwistAngles[ti],phase_r,phase_i);
       set_multi_UBspline_3d_d (orbitalSet->MultiSpline, ival, splineData.data());
     }
     fftw_destroy_plan(FFTplan);
@@ -816,8 +818,3 @@ bool EinsplineSetBuilder::ReadGvectors_ESHDF()
 
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jeongnim.kim $
- * $Revision: 5260 $   $Date: 2011-06-18 07:45:58 -0400 (Sat, 18 Jun 2011) $
- * $Id: EinsplineSetBuilderESHDF.cpp 5260 2011-06-18 11:45:58Z jeongnim.kim $
- ***************************************************************************/

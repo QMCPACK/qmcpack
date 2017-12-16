@@ -39,13 +39,15 @@ namespace qmcplusplus
     // start by just setting to zero
     Pmat.resize(2*NMO,2*NMO); 
     Pmat=0;
+  
     return true;
   }
 
   bool DDProjector::initFromHDF5(const std::string& fileName)
   {
 
-    return false;
+    return true;
+
 /*
     hdf_archive dump(myComm);
     if(!dump.open(fileName,H5F_ACC_RDONLY)) {
@@ -244,11 +246,6 @@ namespace qmcplusplus
     dump.flush();
     dump.close();
 */
-  }
-
-  void DDProjector::calculateHSPotentials_SparseDiagonalization(ComplexSMSpMat& Spvn)
-  {
-
   }
 
   void DDProjector::calculateHSPotentials_Diagonalization(ComplexSMSpMat& Spvn)

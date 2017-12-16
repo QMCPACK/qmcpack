@@ -148,7 +148,7 @@ struct CorrectingOrbitalBasisSet: public BasisSetBase<typename COT::value_type>
    */
   void resetTargetParticleSet(ParticleSet& P)
   {
-    myTable = DistanceTable::add(CenterSys,P);
+    myTable = DistanceTable::add(CenterSys,P,DT_AOS);
     for(int i=0; i<LOBasis.size(); i++)
       LOBasis[i]->setTable(myTable);
   }
@@ -233,9 +233,4 @@ struct CorrectingOrbitalBasisSet: public BasisSetBase<typename COT::value_type>
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3851 $   $Date: 2009-05-20 13:49:01 -0500 (Wed, 20 May 2009) $
- * $Id: CorrectingOrbitalBasisSet.h 3851 2009-05-20 18:49:01Z jnkim $
- ***************************************************************************/
 

@@ -104,7 +104,11 @@ EinsplineSetBuilder::CheckLattice()
   double diff=0.0;
   for (int i=0; i<OHMMS_DIM; i++)
     for (int j=0; j<OHMMS_DIM; j++)
-      diff=std::max(diff,std::abs(SuperLattice(i,j) - TargetPtcl.Lattice.R(i,j)));
+    {
+      double max_abs=std::max(std::abs(SuperLattice(i,j)),static_cast<double>(std::abs(TargetPtcl.Lattice.R(i,j))));
+      if(max_abs>MatchingTol)
+        diff=std::max(diff,std::abs(SuperLattice(i,j) - TargetPtcl.Lattice.R(i,j))/max_abs);
+    }
 
   if(diff>MatchingTol)
   {
@@ -119,8 +123,8 @@ EinsplineSetBuilder::CheckLattice()
     o << TargetPtcl.Lattice.R << std::endl;
     o << " Difference " << std::endl;
     o << SuperLattice-TargetPtcl.Lattice.R << std::endl;
-    o << " Max difference = "<<diff<< std::endl;
-    o << " Tolerance      = "<<MatchingTol<< std::endl;
+    o << " Max relative error = "<< diff << std::endl;
+    o << " Tolerance      = "<< MatchingTol << std::endl;
     APP_ABORT(o.str());
   }
   return true;
@@ -272,6 +276,32 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
       bbuffer.get  (orb.PolyRadius);
     }
   }
+  //buffer to bcast hybrid representation atomic orbital info
+  PooledData<RealType> cbuffer;
+  PooledData<int> cibuffer;
+  myComm->bcast(cbuffer);
+  myComm->bcast(cibuffer);
+  AtomicCentersInfo.resize(numIons);
+  Super2Prim.resize(SourcePtcl->R.size());
+  cbuffer.add(AtomicCentersInfo.cutoff.begin(), AtomicCentersInfo.cutoff.end());
+  cbuffer.add(AtomicCentersInfo.spline_radius.begin(), AtomicCentersInfo.spline_radius.end());
+  cibuffer.add(Super2Prim.begin(),Super2Prim.end());
+  cibuffer.add(AtomicCentersInfo.lmax.begin(), AtomicCentersInfo.lmax.end());
+  cibuffer.add(AtomicCentersInfo.spline_npoints.begin(), AtomicCentersInfo.spline_npoints.end());
+  myComm->bcast(cbuffer);
+  myComm->bcast(cibuffer);
+  if(myComm->rank())
+  {
+    cbuffer.rewind();
+    cibuffer.rewind();
+    cbuffer.get(AtomicCentersInfo.cutoff.begin(), AtomicCentersInfo.cutoff.end());
+    cbuffer.get(AtomicCentersInfo.spline_radius.begin(), AtomicCentersInfo.spline_radius.end());
+    cibuffer.get(Super2Prim.begin(),Super2Prim.end());
+    cibuffer.get(AtomicCentersInfo.lmax.begin(), AtomicCentersInfo.lmax.end());
+    cibuffer.get(AtomicCentersInfo.spline_npoints.begin(), AtomicCentersInfo.spline_npoints.end());
+    for (int i=0; i<numIons; i++)
+      AtomicCentersInfo.ion_pos[i]=IonPos[i];
+  }
 }
 
 ////////////////////////////////////////////////////////////////
@@ -314,8 +344,8 @@ EinsplineSetBuilder::TileIons()
 
   IonPos.resize(SourcePtcl->getTotalNum());
   IonTypes.resize(SourcePtcl->getTotalNum());
-  copy(SourcePtcl->R.begin(),SourcePtcl->R.end(),IonPos.begin());
-  copy(SourcePtcl->GroupID.begin(),SourcePtcl->GroupID.end(),IonTypes.begin());
+  std::copy(SourcePtcl->R.begin(),SourcePtcl->R.end(),IonPos.begin());
+  std::copy(SourcePtcl->GroupID.begin(),SourcePtcl->GroupID.end(),IonTypes.begin());
 
   //app_log() << "  Primitive Cell\n";
   //SourcePtcl->PrimitiveLattice.print(app_log());
@@ -767,6 +797,14 @@ EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs)
 {
   update_token(__FILE__,__LINE__, "OccupyBands");
   if (myComm->rank() != 0) return;
+  if(spin>=NumSpins)
+  {
+    app_error() << "To developer: User is requesting for orbitals in an invalid spin group " << spin
+                << ". Current h5 file only contains spin groups " << "[0.." << NumSpins-1 << "]." << std::endl;
+    app_error() << "To user: Orbital H5 file contains no spin down data and is appropriate only for spin unpolarized calculations. "
+                << "If this is your intent, please replace 'spindataset=1' with 'spindataset=0' in the input file." << std::endl;
+    abort();
+  }
   if (Format == ESHDF)
   {
     OccupyBands_ESHDF (spin, sortBands, numOrbs);

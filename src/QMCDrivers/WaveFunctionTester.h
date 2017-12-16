@@ -67,6 +67,8 @@ private:
   double deltaParam;
   double toleranceParam;
   bool outputDeltaVsError;
+  bool checkSlaterDet; // flag to perform determinant-resolved test of SlaterDet
+  std::string checkSlaterDetOption;
   FiniteDiffErrData DeltaVsError;
  
   /// Copy Constructor (disabled)
@@ -118,8 +120,3 @@ private:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

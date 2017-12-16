@@ -17,7 +17,6 @@
 
 
 #include "QMCDrivers/CorrelatedSampling/CSVMCUpdatePbyP.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
@@ -181,8 +180,3 @@ void CSVMCUpdatePbyP::advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool 
 }
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1593 $   $Date: 2007-01-04 17:23:27 -0600 (Thu, 04 Jan 2007) $
- * $Id: CSVMCUpdatePbyP.cpp 1593 2007-01-04 23:23:27Z jnkim $
- ***************************************************************************/

@@ -110,11 +110,36 @@ class SimulationBundle(Simulation):
 
     def bundle_dependencies(self):
         deps = []
+        sim_ids = set()
+        depsim_ids = set()
         for sim in self.sims:
+            sim_ids.add(sim.simid)
+            depsim_ids |= sim.downstream_simids()
             for d in sim.dependencies:
                 deps.append((d.sim,'other'))
             #end for
         #end for
+        # guard against dependencies within the bundle
+        internal_deps = sim_ids & depsim_ids
+        if len(internal_deps)>0:
+            sims = dict()
+            for sim in self.sims:
+                sims[sim.simid]=sim
+            #end for
+            msg = 'attempted to bundle simulations that depend on each other\nsimulations can only be bundled if they can be executed simultaneously\nbundle identifier, simid, and directory:\n  {0:<8} {1:>4} {2}\n'.format(self.identifier,self.simid,self.locdir)
+            msg+='sims in the bundle that can remain:\n'
+            for simid in sorted(sim_ids-internal_deps):
+                sim = sims[simid]
+                msg +='  {0:<8} {1:>4} {2}\n'.format(sim.identifier,sim.simid,sim.locdir)
+            #end for
+            msg+='sims in the bundle that need to be removed:\n'
+            for simid in sorted(internal_deps):
+                sim = sims[simid]
+                msg +='  {0:<8} {1:>4} {2}\n'.format(sim.identifier,sim.simid,sim.locdir)
+            #end for
+            msg+='please remove the necessary sims from the bundle and try again\nthe excluded sims can likely be bundled separately'
+            self.error(msg,'bundle')
+        #end if
         self.depends(*deps)
     #end def bundle_dependencies
 
@@ -194,7 +219,7 @@ class SimulationBundle(Simulation):
 
 
     def progress(self,dependency_id=None):
-        if dependency_id!=None:
+        if dependency_id!=None and dependency_id in self.wait_ids:
             self.wait_ids.remove(dependency_id)
         #end if
         if len(self.wait_ids)==0 and not self.block and not self.failed:

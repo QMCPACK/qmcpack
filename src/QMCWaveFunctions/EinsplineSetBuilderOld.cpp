@@ -275,7 +275,7 @@ EinsplineSetBuilder::MuffinTinPath(int ti, int bi, int tin)
   return groupPath.str();
 }
 
-#ifdef QMC_CUDA
+#if 0
 void
 EinsplineSetBuilder::ReadBands
 (int spin, EinsplineSetExtended<std::complex<double> >* orbitalSet)
@@ -452,7 +452,7 @@ EinsplineSetBuilder::ReadBands
       }
       myComm->bcast (g);
       myComm->bcast (r);
-      double Z = (double)IonTypes(atom);
+      double Z = (double)IonTypes[atom];
       orbitalSet->MuffinTins[atom].addCore (l, m, r, g, k, Z);
       icore++;
     }
@@ -516,7 +516,7 @@ EinsplineSetBuilder::ReadBands
         myComm->bcast(u_lm_r);
         myComm->bcast(du_lm_dr);
         myComm->bcast(k);
-        double Z = (double)IonTypes(tin);
+        double Z = (double)IonTypes[tin];
         orbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r, du_lm_dr, Z);
       }
       ival++;
@@ -739,7 +739,7 @@ EinsplineSetBuilder::ReadBands
       }
       myComm->bcast (g);
       myComm->bcast (r);
-      double Z = (double)IonTypes(atom);
+      double Z = (double)IonTypes[atom];
       orbitalSet->MuffinTins[atom].addCore (l, m, r, g, k, Z);
       icore++;
     }
@@ -815,7 +815,7 @@ EinsplineSetBuilder::ReadBands
         myComm->bcast(u_lm_r);
         myComm->bcast(du_lm_dr);
         myComm->bcast(k);
-        double Z = (double)IonTypes(tin);
+        double Z = (double)IonTypes[tin];
         orbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r, du_lm_dr, Z);
       }
       ival++;

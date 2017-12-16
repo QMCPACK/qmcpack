@@ -24,7 +24,6 @@
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "ParticleBase/RandomSeqGenerator.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Utilities/Timer.h"
 #include "QMCDrivers/QMCDriver.h"
 //#include "QMCDrivers/CMC/DummyIonMove.h"
@@ -120,8 +119,3 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
 }
 
 }
-/***********************************************************************
- * $RCSfilMCMain.cpp,v $   $Author: jnkim $
- * $Revision: 5845 $   $Date: 2013-05-14 16:10:18 -0400 (Tue, 14 May 2013) $
- * $Id: QMCMain.cpp 5845 2013-05-14 20:10:18Z jnkim $
- ***************************************************************************/

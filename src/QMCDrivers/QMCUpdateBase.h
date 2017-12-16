@@ -28,7 +28,7 @@
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 //#define ENABLE_COMPOSITE_ESTIMATOR
 //#include "Estimators/CompositeEstimators.h"
-#include "Estimators/EstimatorManager.h"
+#include "Estimators/EstimatorManagerBase.h"
 namespace qmcplusplus
 {
 
@@ -71,7 +71,8 @@ public:
   IndexType NonLocalMoveAccepted;
   ///timestep
   RealType Tau;
-
+  ///use Drift
+  bool UseDrift;
 
   /// Constructor.
   QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
@@ -92,9 +93,9 @@ public:
    *
    * Update time-step variables to move walkers
    */
-  void resetRun(BranchEngineType* brancher, EstimatorManager* est);
+  void resetRun(BranchEngineType* brancher, EstimatorManagerBase* est);
 
-  void resetRun(BranchEngineType* brancher, EstimatorManager* est, TraceManager* traces);
+  void resetRun(BranchEngineType* brancher, EstimatorManagerBase* est, TraceManager* traces);
 
   inline RealType getTau()
   {
@@ -153,6 +154,18 @@ public:
   /** set the multiplicity of the walkers to branch */
   void setMultiplicity(WalkerIter_t it, WalkerIter_t it_end);
 
+  inline void setMultiplicity(Walker_t& awalker) const
+  {
+    CONSTEXPR RealType onehalf(0.5);
+    CONSTEXPR RealType cone(1);
+    RealType M=awalker.Weight;
+    if (awalker.Age>MaxAge)
+      M = std::min(onehalf,M);
+    else
+      if (awalker.Age > 0) M = std::min(cone,M);
+    awalker.Multiplicity = M + RandomGen();
+  }
+
   /** set the multiplicity of the walkers to branch */
   void setReleasedNodeMultiplicity(WalkerIter_t it, WalkerIter_t it_end);
 
@@ -168,10 +181,6 @@ public:
    */
   void updateWalkers(WalkerIter_t it, WalkerIter_t it_end);
 
-  /** trigger the trial WF recompute
-   */
-  void recomputePsi(WalkerIter_t it, WalkerIter_t it_end);
-
   /** simple routine to test the performance
    */
   void benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip);
@@ -185,17 +194,16 @@ public:
     Estimators->accumulate(W,it,it_end);
   }
 
-  ///move a walker, all-particle (waler) move, using drift
-  // void advanceWalker(Walker_t& thisWalker);
-  ///move a walker, by particle-by-particle move using fast drift
-  // void advancePbyP(Walker_t& thisWalker);
-
   /** advance walkers executed at each step
    *
    * Derived classes implement how to move walkers and accept/reject
    * moves.
    */
-  virtual void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool measure)=0;
+  virtual void advanceWalkers(WalkerIter_t it, WalkerIter_t it_end, bool recompute);
+
+  ///move a walker
+  virtual void advanceWalker(Walker_t& thisWalker, bool recompute)=0;
+
   virtual RealType advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios)
   {
     return 0.0;
@@ -234,10 +242,12 @@ public:
 
   inline RealType logBackwardGF(const ParticleSet::ParticlePos_t& displ)
   {
-    RealType t=0.5/Tau;
     RealType logGb=0.0;
     for(int iat=0; iat<W.getTotalNum(); ++iat)
-      logGb += t*MassInvP[iat]*dot(displ[iat],displ[iat]);
+    {
+      RealType mass_over_tau = 1.0/(SqrtTauOverMass[iat]*SqrtTauOverMass[iat]);
+      logGb += 0.5*dot(displ[iat],displ[iat])*mass_over_tau;
+    }
     return -logGb;
   }
 
@@ -272,7 +282,7 @@ protected:
   ///branch engine
   BranchEngineType* branchEngine;
   ///estimator
-  EstimatorManager* Estimators;
+  EstimatorManagerBase* Estimators;
   ///parameters
   ParameterSet myParams;
   ///1/Mass per species
@@ -315,12 +325,9 @@ private:
   {
     return *this;
   }
+  ///
+  NewTimer* InitWalkersTimer;
 };
 }
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1592 $   $Date: 2007-01-04 16:48:00 -0600 (Thu, 04 Jan 2007) $
- * $Id: QMCUpdateBase.h 1592 2007-01-04 22:48:00Z jnkim $
- ***************************************************************************/

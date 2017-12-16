@@ -6,7 +6,7 @@ These benchmarks for VMC and DMC represent real research runs and are
 large enough to be used for performance measurements. This is in
 contrast to the conventional integration tests where the particle
 counts are too small to be representative. Care is still needed to
-remove initiallization, I/O, and compute a representative performance
+remove initialization, I/O, and compute a representative performance
 measure.
 
 The ctest integration is sufficient to run the benchmarks and measure
@@ -175,7 +175,7 @@ their speed.
 
 7. Additional considerations
 
-When testing the mixed precision build, not that it performs more
+When testing the mixed precision build, note that it performs more
 computation than the full precision build to ensure numerical
 accuracy.  One significant overhead is the recomputation of the
 inverse of the Slater determinants at every block.  It can be diluted
@@ -185,7 +185,7 @@ in each block.
 <parameter name="blocks_between_recompute">0</parameter>
 
 These settings will be revisited once performance data is obtained and
-analysed for a wide variety of platforms, with the goal of short but
+analyzed for a wide variety of platforms, with the goal of short but
 representative runs.
 
 Please ask in QMCPACK's Google group if you have any questions.

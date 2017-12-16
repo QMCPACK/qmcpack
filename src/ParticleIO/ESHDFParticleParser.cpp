@@ -53,7 +53,7 @@ bool ESHDFIonsParser::put(xmlNodePtr cur)
   int iatnumber= tspecies.addAttribute(atomic_number_tag);
   int membersize= tspecies.addAttribute("membersize");
   int massind= tspecies.addAttribute(mass_tag);
-  if(myComm->rank()==0 && hfile_id>=-1)
+  if(myComm->rank()==0 && hfile_id>=0)
     readESHDF();
   if(myComm->size()==1)
     return true;
@@ -267,8 +267,3 @@ void ESHDFIonsParser::expand(Tensor<int,3>& tmat)
 }
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: qmc $
- * $Revision: 1048 $   $Date: 2006-05-18 13:49:04 -0500 (Thu, 18 May 2006) $
- * $Id: ESHDFParticleParser.cpp 1048 2006-05-18 18:49:04Z qmc $
- ***************************************************************************/

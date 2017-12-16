@@ -55,7 +55,6 @@ public:
 
 
   DiracDeterminantBase::ValueType ratio(ParticleSet& P, int iat);
-  DiracDeterminantBase::ValueType ratio(ParticleSet& P, int iat,ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL);
 
   void resize(int nel, int morb);
   void set(int first, int nel);
@@ -70,10 +69,6 @@ public:
               ParticleSet::ParticleGradient_t& G,
               ParticleSet::ParticleLaplacian_t& L);
 
-  DiracDeterminantBase::RealType
-  evaluateLog(ParticleSet& P, PooledData<RealType>& buf) ;
-
-
   std::vector<std::list<std::pair<int,double> > > particleLists;
   std::list<std::pair<int,double> >  oldPtcl;
   double cutoff;
@@ -82,8 +77,3 @@ public:
 }
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3265 $   $Date: 2008-10-15 09:20:33 -0500 (Wed, 15 Oct 2008) $
- * $Id: DiracDeterminantIterative.h 3265 2008-10-15 14:20:33Z jnkim $
- ***************************************************************************/

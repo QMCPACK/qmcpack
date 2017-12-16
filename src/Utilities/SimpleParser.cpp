@@ -284,8 +284,3 @@ getXwords(std::vector<std::string>& slist,std::istream& fpos, const char* termin
   return slist.size();
 }
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

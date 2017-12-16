@@ -40,7 +40,6 @@ SET(QMCDRIVERS
   VMC/VMCFactory.cpp
   DMC/DMCOMP.cpp
   DMC/DMCUpdateAll.cpp
-  DMC/DMCUpdatePbyP.cpp
   DMC/DMCUpdatePbyPFast.cpp
   DMC/DMCFactory.cpp
   DMC/WalkerControlFactory.cpp
@@ -57,7 +56,8 @@ SET(QMCDRIVERS
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/RMCLocalEnergyEstimator.cpp
   ../Estimators/LocalEnergyEstimatorHDF.cpp
-  ../Estimators/EstimatorManager.cpp
+  ../Estimators/EstimatorManagerBase.cpp
+#  ../Estimators/EstimatorManager.cpp
   ../Estimators/MultipleEnergyEstimator.cpp
   ../Estimators/CollectablesEstimator.cpp
 )
@@ -68,16 +68,6 @@ IF(QMC_CUDA)
    DMC/DMC_CUDA.cpp
    QMCCostFunctionCUDA.cpp)
 ENDIF(QMC_CUDA)
-
-# IF(QMC_BUILD_LEVEL GREATER 2)
-#    SET(QMCDRIVERS ${QMCDRIVERS}
-#    EE/EEFactory.cpp
-#    EE/VMCMultiRenyiOMP.cpp
-#    EE/VMCRenyiOMP.cpp
-#    EE/QMCRenyiUpdateBase.cpp
-#    EE/RenyiUpdatePbyP.cpp
-#    )
-# ENDIF(QMC_BUILD_LEVEL GREATER 2)
 
   SET(QMCDRIVERS ${QMCDRIVERS} 
       VMC/VMCSingleOMP.cpp

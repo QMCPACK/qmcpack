@@ -1,0 +1,696 @@
+<?xml version="1.0"?>
+<simulation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd">
+  <project id="NiO-fcc-S128-dmc" series="1">
+    <application name="qmcapp" role="molecu" class="serial" version="0.2">
+      DMC for NiO-fcc-S128-tw0
+    </application>
+  </project>
+
+  <random seed="49154"/>
+  <qmcsystem>
+  <simulationcell>
+    <parameter name="lattice">
+      31.5244   0   0
+      0   31.5244   0
+      0   0   31.5244
+    </parameter>
+    <parameter name="bconds">p p p </parameter>
+    <parameter name="LR_dim_cutoff">15</parameter>
+  </simulationcell>
+  </qmcsystem>
+  <particleset name="i" size="512">
+    <group name="O">
+      <parameter name="charge">6.000000</parameter>
+      <parameter name="valence">6.000000</parameter>
+      <parameter name="atomicnumber">8.000000</parameter>
+    </group>
+    <group name="Ni">
+      <parameter name="charge">18</parameter>
+      <parameter name="valence">18</parameter>
+      <parameter name="atomicnumber">28</parameter>
+    </group>
+    <attrib name="position" datatype="posArray" condition="1">
+    0.125   0.125   0.125
+    0   0   0.375
+    0.125   0   0.25
+    0.25   0   0.125
+    0   0.125   0.25
+    0.25   0.125   0
+    0   0.25   0.125
+    0.125   0.25   0
+    0.125   0.125   0.625
+    0.25   0.125   0.5
+    0.375   0.125   0.375
+    0.125   0.25   0.5
+    0.25   0.25   0.375
+    0.375   0.25   0.25
+    0.125   0.375   0.375
+    0.25   0.375   0.25
+    0.375   0.375   0.125
+    0.375   0   0
+    0   0.375   0
+    0   0   0.875
+    0.125   0   0.75
+    0.25   0   0.625
+    0.375   0   0.5
+    0.5   0   0.375
+    0   0.125   0.75
+    0.5   0.125   0.25
+    0   0.25   0.625
+    0.5   0.25   0.125
+    0   0.375   0.5
+    0.5   0.375   0
+    0   0.5   0.375
+    0.125   0.5   0.25
+    0.25   0.5   0.125
+    0.375   0.5   0
+    0.375   0.125   0.875
+    0.5   0.125   0.75
+    0.625   0.125   0.625
+    0.25   0.25   0.875
+    0.375   0.25   0.75
+    0.5   0.25   0.625
+    0.625   0.25   0.5
+    0.125   0.375   0.875
+    0.25   0.375   0.75
+    0.375   0.375   0.625
+    0.5   0.375   0.5
+    0.625   0.375   0.375
+    0.125   0.5   0.75
+    0.25   0.5   0.625
+    0.375   0.5   0.5
+    0.5   0.5   0.375
+    0.625   0.5   0.25
+    0.125   0.625   0.625
+    0.25   0.625   0.5
+    0.375   0.625   0.375
+    0.5   0.625   0.25
+    0.625   0.625   0.125
+    0.625   0   0.25
+    0.625   0.125   0.125
+    0.625   0.25   0
+    0   0.625   0.25
+    0.125   0.625   0.125
+    0.25   0.625   0
+    0.5   0   0.875
+    0.625   0   0.75
+    0.75   0   0.625
+    0.75   0.125   0.5
+    0.75   0.25   0.375
+    0.75   0.375   0.25
+    0   0.5   0.875
+    0.75   0.5   0.125
+    0   0.625   0.75
+    0.75   0.625   0
+    0   0.75   0.625
+    0.125   0.75   0.5
+    0.25   0.75   0.375
+    0.375   0.75   0.25
+    0.5   0.75   0.125
+    0.625   0.75   0
+    0.875   0.125   0.875
+    0.75   0.25   0.875
+    0.875   0.25   0.75
+    0.625   0.375   0.875
+    0.75   0.375   0.75
+    0.875   0.375   0.625
+    0.5   0.5   0.875
+    0.625   0.5   0.75
+    0.75   0.5   0.625
+    0.875   0.5   0.5
+    0.375   0.625   0.875
+    0.5   0.625   0.75
+    0.625   0.625   0.625
+    0.75   0.625   0.5
+    0.875   0.625   0.375
+    0.25   0.75   0.875
+    0.375   0.75   0.75
+    0.5   0.75   0.625
+    0.625   0.75   0.5
+    0.75   0.75   0.375
+    0.875   0.75   0.25
+    0.125   0.875   0.875
+    0.25   0.875   0.75
+    0.375   0.875   0.625
+    0.5   0.875   0.5
+    0.625   0.875   0.375
+    0.75   0.875   0.25
+    0.875   0.875   0.125
+    0.75   0   0.125
+    0.75   0.125   0
+    0   0.75   0.125
+    0.125   0.75   0
+    0.875   0   0.5
+    0.875   0.125   0.375
+    0.875   0.25   0.25
+    0.875   0.375   0.125
+    0.875   0.5   0
+    0   0.875   0.5
+    0.125   0.875   0.375
+    0.25   0.875   0.25
+    0.375   0.875   0.125
+    0.5   0.875   0
+    0.875   0.625   0.875
+    0.75   0.75   0.875
+    0.875   0.75   0.75
+    0.625   0.875   0.875
+    0.75   0.875   0.75
+    0.875   0.875   0.625
+    0.875   0   0
+    0   0.875   0
+    0   0   0.125
+    0.125   0   0
+    0   0.125   0
+    0.125   0.125   0.375
+    0.25   0.125   0.25
+    0.375   0.125   0.125
+    0.125   0.25   0.25
+    0.25   0.25   0.125
+    0.375   0.25   0
+    0.125   0.375   0.125
+    0.25   0.375   0
+    0   0   0.625
+    0.125   0   0.5
+    0.25   0   0.375
+    0.375   0   0.25
+    0.5   0   0.125
+    0   0.125   0.5
+    0.5   0.125   0
+    0   0.25   0.375
+    0   0.375   0.25
+    0   0.5   0.125
+    0.125   0.5   0
+    0.125   0.125   0.875
+    0.25   0.125   0.75
+    0.375   0.125   0.625
+    0.5   0.125   0.5
+    0.625   0.125   0.375
+    0.125   0.25   0.75
+    0.25   0.25   0.625
+    0.375   0.25   0.5
+    0.5   0.25   0.375
+    0.625   0.25   0.25
+    0.125   0.375   0.625
+    0.25   0.375   0.5
+    0.375   0.375   0.375
+    0.5   0.375   0.25
+    0.625   0.375   0.125
+    0.125   0.5   0.5
+    0.25   0.5   0.375
+    0.375   0.5   0.25
+    0.5   0.5   0.125
+    0.625   0.5   0
+    0.125   0.625   0.375
+    0.25   0.625   0.25
+    0.375   0.625   0.125
+    0.5   0.625   0
+    0.625   0   0
+    0   0.625   0
+    0.25   0   0.875
+    0.375   0   0.75
+    0.5   0   0.625
+    0.625   0   0.5
+    0.75   0   0.375
+    0.75   0.125   0.25
+    0   0.25   0.875
+    0.75   0.25   0.125
+    0   0.375   0.75
+    0.75   0.375   0
+    0   0.5   0.625
+    0   0.625   0.5
+    0   0.75   0.375
+    0.125   0.75   0.25
+    0.25   0.75   0.125
+    0.375   0.75   0
+    0.625   0.125   0.875
+    0.75   0.125   0.75
+    0.875   0.125   0.625
+    0.5   0.25   0.875
+    0.625   0.25   0.75
+    0.75   0.25   0.625
+    0.875   0.25   0.5
+    0.375   0.375   0.875
+    0.5   0.375   0.75
+    0.625   0.375   0.625
+    0.75   0.375   0.5
+    0.875   0.375   0.375
+    0.25   0.5   0.875
+    0.375   0.5   0.75
+    0.5   0.5   0.625
+    0.625   0.5   0.5
+    0.75   0.5   0.375
+    0.875   0.5   0.25
+    0.125   0.625   0.875
+    0.25   0.625   0.75
+    0.375   0.625   0.625
+    0.5   0.625   0.5
+    0.625   0.625   0.375
+    0.75   0.625   0.25
+    0.875   0.625   0.125
+    0.125   0.75   0.75
+    0.25   0.75   0.625
+    0.375   0.75   0.5
+    0.5   0.75   0.375
+    0.625   0.75   0.25
+    0.75   0.75   0.125
+    0.875   0.75   0
+    0.125   0.875   0.625
+    0.25   0.875   0.5
+    0.375   0.875   0.375
+    0.5   0.875   0.25
+    0.625   0.875   0.125
+    0.75   0.875   0
+    0.875   0   0.25
+    0.875   0.125   0.125
+    0.875   0.25   0
+    0   0.875   0.25
+    0.125   0.875   0.125
+    0.25   0.875   0
+    0.75   0   0.875
+    0.875   0   0.75
+    0   0.75   0.875
+    0   0.875   0.75
+    0.875   0.375   0.875
+    0.75   0.5   0.875
+    0.875   0.5   0.75
+    0.625   0.625   0.875
+    0.75   0.625   0.75
+    0.875   0.625   0.625
+    0.5   0.75   0.875
+    0.625   0.75   0.75
+    0.75   0.75   0.625
+    0.875   0.75   0.5
+    0.375   0.875   0.875
+    0.5   0.875   0.75
+    0.625   0.875   0.625
+    0.75   0.875   0.5
+    0.875   0.875   0.375
+    0.875   0.875   0.875
+    0   0   0
+    0   0   0.5
+    0.125   0   0.375
+    0.25   0   0.25
+    0   0.125   0.375
+    0.125   0.125   0.25
+    0.25   0.125   0.125
+    0   0.25   0.25
+    0.125   0.25   0.125
+    0.25   0.25   0
+    0.375   0   0.125
+    0.375   0.125   0
+    0   0.375   0.125
+    0.125   0.375   0
+    0.125   0   0.875
+    0.25   0   0.75
+    0.375   0   0.625
+    0.5   0   0.5
+    0   0.125   0.875
+    0.125   0.125   0.75
+    0.25   0.125   0.625
+    0.375   0.125   0.5
+    0.5   0.125   0.375
+    0   0.25   0.75
+    0.125   0.25   0.625
+    0.25   0.25   0.5
+    0.375   0.25   0.375
+    0.5   0.25   0.25
+    0   0.375   0.625
+    0.125   0.375   0.5
+    0.25   0.375   0.375
+    0.375   0.375   0.25
+    0.5   0.375   0.125
+    0   0.5   0.5
+    0.125   0.5   0.375
+    0.25   0.5   0.25
+    0.375   0.5   0.125
+    0.5   0.5   0
+    0.5   0   0
+    0   0.5   0
+    0.625   0   0.375
+    0.625   0.125   0.25
+    0.625   0.25   0.125
+    0.625   0.375   0
+    0   0.625   0.375
+    0.125   0.625   0.25
+    0.25   0.625   0.125
+    0.375   0.625   0
+    0.625   0   0.875
+    0.75   0   0.75
+    0.5   0.125   0.875
+    0.625   0.125   0.75
+    0.75   0.125   0.625
+    0.375   0.25   0.875
+    0.5   0.25   0.75
+    0.625   0.25   0.625
+    0.75   0.25   0.5
+    0.25   0.375   0.875
+    0.375   0.375   0.75
+    0.5   0.375   0.625
+    0.625   0.375   0.5
+    0.75   0.375   0.375
+    0.125   0.5   0.875
+    0.25   0.5   0.75
+    0.375   0.5   0.625
+    0.5   0.5   0.5
+    0.625   0.5   0.375
+    0.75   0.5   0.25
+    0   0.625   0.875
+    0.125   0.625   0.75
+    0.25   0.625   0.625
+    0.375   0.625   0.5
+    0.5   0.625   0.375
+    0.625   0.625   0.25
+    0.75   0.625   0.125
+    0   0.75   0.75
+    0.125   0.75   0.625
+    0.25   0.75   0.5
+    0.375   0.75   0.375
+    0.5   0.75   0.25
+    0.625   0.75   0.125
+    0.75   0.75   0
+    0.75   0   0.25
+    0.75   0.125   0.125
+    0.75   0.25   0
+    0   0.75   0.25
+    0.125   0.75   0.125
+    0.25   0.75   0
+    0.875   0   0.625
+    0.875   0.125   0.5
+    0.875   0.25   0.375
+    0.875   0.375   0.25
+    0.875   0.5   0.125
+    0.875   0.625   0
+    0   0.875   0.625
+    0.125   0.875   0.5
+    0.25   0.875   0.375
+    0.375   0.875   0.25
+    0.5   0.875   0.125
+    0.625   0.875   0
+    0.875   0.25   0.875
+    0.75   0.375   0.875
+    0.875   0.375   0.75
+    0.625   0.5   0.875
+    0.75   0.5   0.75
+    0.875   0.5   0.625
+    0.5   0.625   0.875
+    0.625   0.625   0.75
+    0.75   0.625   0.625
+    0.875   0.625   0.5
+    0.375   0.75   0.875
+    0.5   0.75   0.75
+    0.625   0.75   0.625
+    0.75   0.75   0.5
+    0.875   0.75   0.375
+    0.25   0.875   0.875
+    0.375   0.875   0.75
+    0.5   0.875   0.625
+    0.625   0.875   0.5
+    0.75   0.875   0.375
+    0.875   0.875   0.25
+    0.875   0   0.125
+    0.875   0.125   0
+    0   0.875   0.125
+    0.125   0.875   0
+    0.875   0.75   0.875
+    0.75   0.875   0.875
+    0.875   0.875   0.75
+    0.125   0.125   0
+    0   0   0.25
+    0.125   0   0.125
+    0.25   0   0
+    0   0.125   0.125
+    0   0.25   0
+    0.125   0.125   0.5
+    0.25   0.125   0.375
+    0.375   0.125   0.25
+    0.125   0.25   0.375
+    0.25   0.25   0.25
+    0.375   0.25   0.125
+    0.125   0.375   0.25
+    0.25   0.375   0.125
+    0.375   0.375   0
+    0   0   0.75
+    0.125   0   0.625
+    0.25   0   0.5
+    0.375   0   0.375
+    0.5   0   0.25
+    0   0.125   0.625
+    0.5   0.125   0.125
+    0   0.25   0.5
+    0.5   0.25   0
+    0   0.375   0.375
+    0   0.5   0.25
+    0.125   0.5   0.125
+    0.25   0.5   0
+    0.25   0.125   0.875
+    0.375   0.125   0.75
+    0.5   0.125   0.625
+    0.625   0.125   0.5
+    0.125   0.25   0.875
+    0.25   0.25   0.75
+    0.375   0.25   0.625
+    0.5   0.25   0.5
+    0.625   0.25   0.375
+    0.125   0.375   0.75
+    0.25   0.375   0.625
+    0.375   0.375   0.5
+    0.5   0.375   0.375
+    0.625   0.375   0.25
+    0.125   0.5   0.625
+    0.25   0.5   0.5
+    0.375   0.5   0.375
+    0.5   0.5   0.25
+    0.625   0.5   0.125
+    0.125   0.625   0.5
+    0.25   0.625   0.375
+    0.375   0.625   0.25
+    0.5   0.625   0.125
+    0.625   0.625   0
+    0.625   0   0.125
+    0.625   0.125   0
+    0   0.625   0.125
+    0.125   0.625   0
+    0.375   0   0.875
+    0.5   0   0.75
+    0.625   0   0.625
+    0.75   0   0.5
+    0.75   0.125   0.375
+    0.75   0.25   0.25
+    0   0.375   0.875
+    0.75   0.375   0.125
+    0   0.5   0.75
+    0.75   0.5   0
+    0   0.625   0.625
+    0   0.75   0.5
+    0.125   0.75   0.375
+    0.25   0.75   0.25
+    0.375   0.75   0.125
+    0.5   0.75   0
+    0.75   0.125   0.875
+    0.875   0.125   0.75
+    0.625   0.25   0.875
+    0.75   0.25   0.75
+    0.875   0.25   0.625
+    0.5   0.375   0.875
+    0.625   0.375   0.75
+    0.75   0.375   0.625
+    0.875   0.375   0.5
+    0.375   0.5   0.875
+    0.5   0.5   0.75
+    0.625   0.5   0.625
+    0.75   0.5   0.5
+    0.875   0.5   0.375
+    0.25   0.625   0.875
+    0.375   0.625   0.75
+    0.5   0.625   0.625
+    0.625   0.625   0.5
+    0.75   0.625   0.375
+    0.875   0.625   0.25
+    0.125   0.75   0.875
+    0.25   0.75   0.75
+    0.375   0.75   0.625
+    0.5   0.75   0.5
+    0.625   0.75   0.375
+    0.75   0.75   0.25
+    0.875   0.75   0.125
+    0.125   0.875   0.75
+    0.25   0.875   0.625
+    0.375   0.875   0.5
+    0.5   0.875   0.375
+    0.625   0.875   0.25
+    0.75   0.875   0.125
+    0.875   0.875   0
+    0.75   0   0
+    0   0.75   0
+    0.875   0   0.375
+    0.875   0.125   0.25
+    0.875   0.25   0.125
+    0.875   0.375   0
+    0   0.875   0.375
+    0.125   0.875   0.25
+    0.25   0.875   0.125
+    0.375   0.875   0
+    0.875   0   0.875
+    0   0.875   0.875
+    0.875   0.5   0.875
+    0.75   0.625   0.875
+    0.875   0.625   0.75
+    0.625   0.75   0.875
+    0.75   0.75   0.75
+    0.875   0.75   0.625
+    0.5   0.875   0.875
+    0.625   0.875   0.75
+    0.75   0.875   0.625
+    0.875   0.875   0.5
+    </attrib>
+    <attrib name="ionid" datatype="stringArray">
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      O  O  O  O  O  O  O  O  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+      Ni  Ni  Ni  Ni  Ni  Ni  Ni  Ni  
+    </attrib>
+  </particleset>
+  <particleset name="e" random="yes" randomsrc="i">
+    <group name="u" size="3072">
+      <parameter name="charge">-1</parameter>
+    </group>
+    <group name="d" size="3072">
+      <parameter name="charge">-1</parameter>
+    </group>
+  </particleset>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="einspline" source="i" href="../NiO-fcc-supertwist111-supershift000-S128.h5" tilematrix="2 -2 6 2 6 -2 2 -2 -2" twistnum="-1" gpu="yes" meshfactor="0.9" precision="single" twist="0  0  0">
+      <slaterdeterminant>
+        <determinant id="updet" size="3072" ref="updet">
+          <occupation mode="ground" spindataset="0">
+          </occupation>
+        </determinant>
+        <determinant id="downdet" size="3072" ref="downdet">
+          <occupation mode="ground" spindataset="1">
+          </occupation>
+        </determinant>
+      </slaterdeterminant>
+    </determinantset>
+    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+      <correlation speciesA="u" speciesB="u" size="10" rcut="5.5727792532">
+        <coefficients id="uu" type="Array"> 0.28622356 0.1947736865 0.1319544873 0.08893394669 0.05695575776 0.03565958405 0.0220695026 0.01296086466 0.006601006996 0.00278714433</coefficients>
+      </correlation>
+      <correlation speciesA="u" speciesB="d" size="10" rcut="5.5727792532">
+        <coefficients id="ud" type="Array"> 0.3689309537 0.2226722029 0.1484296802 0.09617039126 0.0591878654 0.03660855878 0.02262411664 0.01322279598 0.006736329049 0.002871931038</coefficients>
+      </correlation>
+    </jastrow>
+    <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="i">
+      <correlation elementType="O" cusp="0.0" size="10" rcut="4.8261684030">
+        <coefficients id="O" type="Array"> -0.2249112633 -0.1847494689 -0.115481408 -0.04000122947 0.01731711068 0.05360131926 0.05983040879 0.03955999983 0.0173998007 0.005162164083</coefficients>
+      </correlation>
+      <correlation elementType="Ni" cusp="0.0" size="10" rcut="4.8261684030">
+        <coefficients id="Ni" type="Array"> -1.64485534 -1.470658909 -1.078893976 -0.6878964509 -0.3907004509 -0.1962103494 -0.08512755539 -0.02752356864 -0.00401798318 0.0007665934444</coefficients>
+      </correlation>
+    </jastrow>
+  </wavefunction>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot type="pseudo" name="PseudoPot" source="i" wavefunction="psi0" format="xml">
+      <pseudo elementType="O" href="../O.xml"/>
+      <pseudo elementType="Ni" href="../Ni.opt.xml"/>
+    </pairpot>
+    <constant name="IonIon" type="coulomb" source="i" target="i"/>
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+    <estimator name="KEcorr" type="chiesa" source="e" psi="psi0"/>
+  </hamiltonian>
+
+
+  <qmc method="vmc" move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no" />
+    <parameter name="walkers">               32 </parameter>
+    <parameter name="stepsbetweensamples">    1 </parameter>
+    <parameter name="warmupSteps">            5 </parameter>
+    <parameter name="substeps">               5 </parameter>
+    <parameter name="steps">                  1 </parameter>
+    <parameter name="blocks">                 2 </parameter>
+    <parameter name="timestep">             1.0 </parameter>
+    <parameter name="usedrift">              no </parameter>
+  </qmc>
+  <qmc method="vmc" move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no" />
+    <parameter name="walkers">               32 </parameter>
+    <parameter name="stepsbetweensamples">    1 </parameter>
+    <parameter name="warmupSteps">            5 </parameter>
+    <parameter name="substeps">               5 </parameter>
+    <parameter name="steps">                  1 </parameter>
+    <parameter name="blocks">                 2 </parameter>
+    <parameter name="timestep">             1.0 </parameter>
+    <parameter name="usedrift">             yes </parameter>
+  </qmc>
+  <qmc method="dmc" move="pbyp" checkpoint="-1" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no" />
+    <parameter name="walkers">               32 </parameter>
+    <!--parameter name="targetwalkers">  32000 </parameter-->
+    <!--parameter name="max_walkers">   0    </parameter-->
+    <parameter name="reconfiguration">      yes </parameter>
+    <parameter name="warmupSteps">          250 </parameter>
+    <parameter name="timestep">           0.001 </parameter>
+    <parameter name="steps">                  5 </parameter>
+    <parameter name="blocks">                 5 </parameter>
+    <parameter name="nonlocalmoves">        yes </parameter>
+  </qmc>
+</simulation>

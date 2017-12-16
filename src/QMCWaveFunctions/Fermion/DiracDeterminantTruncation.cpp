@@ -236,67 +236,6 @@ DiracDeterminantBase::ValueType DiracDeterminantTruncation::ratio(ParticleSet& P
 
 
 
-DiracDeterminantBase::ValueType DiracDeterminantTruncation::ratio(ParticleSet& P, int iat,
-    ParticleSet::ParticleGradient_t& dG,
-    ParticleSet::ParticleLaplacian_t& dL)
-{
-  //    std::cerr <<"doing large update"<< std::endl;
-  UpdateMode=ORB_PBYP_ALL;
-  Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
-  WorkingIndex = iat-FirstIndex;
-#ifdef DIRAC_USE_BLAS
-  curRatio = BLAS::dot(NumOrbitals,psiM_temp[WorkingIndex],&psiV[0]);
-#else
-  curRatio= DetRatio(psiM_temp, psiV.begin(),WorkingIndex);
-#endif
-  if(std::abs(curRatio)<std::numeric_limits<RealType>::epsilon())
-  {
-    UpdateMode=ORB_PBYP_RATIO; //singularity! do not update inverse
-    return 0.0;
-  }
-  //update psiM_temp with the row substituted
-  DetUpdate(psiM_temp,psiV,workV1,workV2,WorkingIndex,curRatio);
-  //update dpsiM_temp and d2psiM_temp
-  for(int j=0; j<NumOrbitals; j++)
-  {
-    dpsiM_temp(WorkingIndex,j)=dpsiV[j];
-    d2psiM_temp(WorkingIndex,j)=d2psiV[j];
-  }
-  int kat=FirstIndex;
-  const ValueType* restrict yptr=psiM_temp.data();
-  const ValueType* restrict d2yptr=d2psiM_temp.data();
-  const GradType* restrict dyptr=dpsiM_temp.data();
-  for(int i=0; i<NumPtcls; i++,kat++)
-  {
-    //This mimics gemm with loop optimization
-    GradType rv;
-    ValueType lap=0.0;
-    for(int j=0; j<NumOrbitals; j++,yptr++)
-    {
-      rv += *yptr * *dyptr++;
-      lap += *yptr * *d2yptr++;
-    }
-    //using inline dot functions
-    //GradType rv=dot(psiM_temp[i],dpsiM_temp[i],NumOrbitals);
-    //ValueType lap=dot(psiM_temp[i],d2psiM_temp[i],NumOrbitals);
-    //Old index: This is not pretty
-    //GradType rv =psiM_temp(i,0)*dpsiM_temp(i,0);
-    //ValueType lap=psiM_temp(i,0)*d2psiM_temp(i,0);
-    //for(int j=1; j<NumOrbitals; j++) {
-    //  rv += psiM_temp(i,j)*dpsiM_temp(i,j);
-    //  lap += psiM_temp(i,j)*d2psiM_temp(i,j);
-    //}
-    lap -= dot(rv,rv);
-    dG[kat] += rv - myG[kat];
-    myG_temp[kat]=rv;
-    dL[kat] += lap -myL[kat];
-    myL_temp[kat]=lap;
-  }
-  return curRatio;
-}
-
-
-
 /** move was accepted, update the real container
  */
 void DiracDeterminantTruncation::acceptMove(ParticleSet& P, int iat)
@@ -336,17 +275,6 @@ void DiracDeterminantTruncation::acceptMove(ParticleSet& P, int iat)
   }
   curRatio=1.0;
 }
-
-
-
-///SHOULD THIS REALLY NOT RETURN ANYTHING!
-DiracDeterminantBase::RealType
-DiracDeterminantTruncation::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  return DiracDeterminantBase::evaluateLog(P,buf);
-}
-
-
 
 
 DiracDeterminantBase::RealType
@@ -415,8 +343,3 @@ DiracDeterminantTruncation::evaluateLog(ParticleSet& P,
 
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3265 $   $Date: 2008-10-15 09:20:33 -0500 (Wed, 15 Oct 2008) $
- * $Id: DiracDeterminantTruncation.cpp 3265 2008-10-15 14:20:33Z jnkim $
- ***************************************************************************/

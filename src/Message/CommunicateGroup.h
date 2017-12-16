@@ -27,8 +27,3 @@ struct CommunicateGroup: public Communicate
   CommunicateGroup(Communicate& acomm, int ndiv=1);
 };
 #endif //QMCPACK_COMMUNICATIONGROUP_H 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

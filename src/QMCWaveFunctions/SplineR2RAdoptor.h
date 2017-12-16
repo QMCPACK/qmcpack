@@ -15,6 +15,10 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_R2RADOPTOR_H
 #define QMCPLUSPLUS_EINSPLINE_R2RADOPTOR_H
 
+#include <Numerics/VectorViewer.h>
+#include <OhmmsSoA/Container.h>
+#include <spline2/MultiBspline.hpp>
+
 namespace qmcplusplus
 {
 
@@ -37,11 +41,12 @@ struct SplineR2RAdoptor: public SplineAdoptorBase<ST,D>
   using SplineAdoptorBase<ST,D>::GGt;
   using SplineAdoptorBase<ST,D>::PrimLattice;
 
-  using SplineAdoptorBase<ST,D>::myV;
-  using SplineAdoptorBase<ST,D>::myL;
-  using SplineAdoptorBase<ST,D>::myG;
-  using SplineAdoptorBase<ST,D>::myH;
-  using SplineAdoptorBase<ST,D>::myGH;
+  typename OrbitalSetTraits<ST>::ValueVector_t     myV;
+  typename OrbitalSetTraits<ST>::ValueVector_t     myL;
+  typename OrbitalSetTraits<ST>::GradVector_t      myG;
+  typename OrbitalSetTraits<ST>::HessVector_t      myH;
+  typename OrbitalSetTraits<ST>::GradHessVector_t  myGH;
+
   SplineType *MultiSpline;
 
   ///number of points of the original grid
@@ -168,8 +173,9 @@ struct SplineR2RAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV>
-  inline void evaluate_v(const PointType& r, VV& psi)
+  inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru;
     int bc_sign=convertPos(r,ru);
     einspline::evaluate(MultiSpline,ru,myV);
@@ -203,8 +209,9 @@ struct SplineR2RAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV, typename GV>
-  inline void evaluate_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
+  inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru;
     int bc_sign=convertPos(r,ru);
     einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
@@ -236,20 +243,23 @@ struct SplineR2RAdoptor: public SplineAdoptorBase<ST,D>
   }
 
   template<typename VV, typename GV, typename GGV>
-  void evaluate_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+  void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
+    const PointType& r=P.R[iat];
     PointType ru;
     int bc_sign=convertPos(r,ru);
     einspline::evaluate_vgh(MultiSpline,ru,myV,myG,myH);
     assign_vgh(r,bc_sign,psi,dpsi,grad_grad_psi);
   }
+
+  template<typename VGL>
+  void evaluate_vgl_combo(const ParticleSet& P, const int iat, VGL& dpsi)
+  {
+    const PointType& r=P.R[iat];
+  }
 };
+
 
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author: jeongnim.kim $
- * $Revision: 5260 $   $Date: 2011-06-18 07:45:58 -0400 (Sat, 18 Jun 2011) $
- * $Id: SplineR2RAdoptor.h 5260 2011-06-18 11:45:58Z jeongnim.kim $
- ***************************************************************************/

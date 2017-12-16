@@ -348,7 +348,7 @@ MuffinTinClass::set_APW (int orbNum, TinyVector<double,3> k,
       for (int m=-l; m<=l; m++)
       {
         int lm = l*(l+1) + m;
-        u_lm(lm, ir) /= r2l;
+        u_lm(lm, ir) = u_lm(lm,ir)/r2l; //u_lm(lm, ir) /= r2l;
       }
       r2l *= r;
     }

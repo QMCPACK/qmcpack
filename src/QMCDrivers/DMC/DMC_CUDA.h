@@ -35,7 +35,6 @@ public:
   /// Constructor.
   DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,WaveFunctionPool& ppool);
   bool run();
-  bool runWithNonlocal();
   bool put(xmlNodePtr cur);
   void resetUpdateEngine();
 
@@ -79,8 +78,3 @@ private:
 }
 
 #endif
-/***************************************************************************
- * $RCSfile: DMCcuda.h,v $   $Author: jnkim $
- * $Revision: 1.5 $   $Date: 2006/07/17 14:29:40 $
- * $Id: DMCcuda.h,v 1.5 2006/07/17 14:29:40 jnkim Exp $
- ***************************************************************************/

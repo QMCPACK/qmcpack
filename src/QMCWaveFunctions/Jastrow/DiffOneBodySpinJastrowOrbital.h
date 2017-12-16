@@ -60,7 +60,7 @@ public:
   DiffOneBodySpinJastrowOrbital(const ParticleSet& centers, ParticleSet& els)
     :Spin(false),CenterRef(centers),NumVars(0),VarOffset(0)
   {
-    myTableIndex=els.addTable(CenterRef);
+    myTableIndex=els.addTable(CenterRef,DT_SOA_PREFERRED);
     NumPtcls=els.getTotalNum();
     F.resize(CenterRef.groups(), els.groups());
     for(int i=0; i<F.size(); ++i)
@@ -270,9 +270,4 @@ public:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1761 $   $Date: 2007-02-17 17:11:59 -0600 (Sat, 17 Feb 2007) $
- * $Id: OneBodyJastrowOrbital.h 1761 2007-02-17 23:11:59Z jnkim $
- ***************************************************************************/
 

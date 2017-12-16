@@ -16,9 +16,9 @@
 
 
 #include "Lattice/Uniform2DGridLayout.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Message/OpenMP.h"
 #include "Message/Communicate.h"
+#include "Utilities/OutputManager.h"
 #include <limits>
 
 namespace qmcplusplus
@@ -281,8 +281,3 @@ void Uniform2DGridLayout::print(std::ostream& os) const
 }
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3140 $   $Date: 2008-09-19 12:17:54 -0500 (Fri, 19 Sep 2008) $
- * $Id: Uniform3DGridLayout.cpp 3140 2008-09-19 17:17:54Z jnkim $
- ***************************************************************************/

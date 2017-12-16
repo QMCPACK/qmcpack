@@ -10,8 +10,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_BSPLINE_AO_BUILDER_H
 #define QMCPLUSPLUS_BSPLINE_AO_BUILDER_H
 
@@ -56,8 +56,3 @@ public:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1253 $   $Date: 2006-08-13 10:15:48 -0500 (Sun, 13 Aug 2006) $
- * $Id: BsplineAOBuilder.h 1253 2006-08-13 15:15:48Z jnkim $
- ***************************************************************************/

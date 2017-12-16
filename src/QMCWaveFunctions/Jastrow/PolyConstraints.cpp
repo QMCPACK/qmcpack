@@ -197,8 +197,3 @@ OrbitalBase* PolyConstraints::createOneBody(ParticleSet& source)
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1693 $   $Date: 2007-02-02 12:13:11 -0600 (Fri, 02 Feb 2007) $
- * $Id: PolyConstraints.cpp 1693 2007-02-02 18:13:11Z jnkim $
- ***************************************************************************/

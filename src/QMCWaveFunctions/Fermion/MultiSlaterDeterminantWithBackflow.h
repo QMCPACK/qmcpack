@@ -68,17 +68,10 @@ public:
 
   GradType evalGrad(ParticleSet& P, int iat);
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  ValueType ratio(ParticleSet& P, int iat
-                  , ParticleSet::ParticleGradient_t& dG,ParticleSet::ParticleLaplacian_t& dL);
-
   ValueType ratio(ParticleSet& P, int iat);
   void acceptMove(ParticleSet& P, int iat);
   void restore(int iat);
 
-  void update(ParticleSet& P
-              , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL
-              , int iat);
-  RealType evaluateLog(ParticleSet& P,BufferType& buf);
   RealType registerData(ParticleSet& P, BufferType& buf);
   RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, BufferType& buf);
@@ -102,8 +95,3 @@ public:
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: miguel.mmorales $
- * $Revision: 4791 $   $Date: 2010-05-12 12:08:35 -0500 (Wed, 12 May 2010) $
- * $Id: MultiSlaterDeterminantWithBackflow.h 4791 2010-05-12 17:08:35Z miguel.mmorales $
- ay**************************************************************************/

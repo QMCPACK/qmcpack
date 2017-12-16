@@ -48,7 +48,6 @@ public:
    */
   LCOrbitalSet(BS* bs=0,int rl=0): myBasisSet(0), ReportLevel(rl)
   {
-    NeedsDistanceTable=true;
     if(bs)
       setBasisSet(bs);
   }
@@ -63,6 +62,7 @@ public:
   {
     LCOrbitalSet<BS,true>* myclone = new LCOrbitalSet<BS,true>(*this);
     myclone->myBasisSet = myBasisSet->makeClone();
+    myclone->IsCloned=true;
     return myclone;
   }
 
@@ -196,7 +196,6 @@ public:
    */
   LCOrbitalSet(BS* bs=0,int rl=0, std::string algorithm=""): myBasisSet(0), ReportLevel(rl)
   {
-    NeedsDistanceTable=true;
     if(algorithm=="legacy_gemv")
     {
       Algo=0;
@@ -265,7 +264,7 @@ public:
   evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
     myBasisSet->evaluateForPtclMove(P,iat);
-    simd::gemv(C,myBasisSet->Phi.data(),psi.data());
+    simd::gemv(*C,myBasisSet->Phi.data(),psi.data());
   }
 
   inline void
@@ -286,7 +285,7 @@ public:
         Temp[4][i]=myBasisSet->dPhi[i][2];
       }
     
-      MatrixOperators::product_ABt(Temp,C,Tempv);
+      MatrixOperators::product_ABt(Temp,*C,Tempv);
     
       // Tempv stores SOA SPOset
       simd::copy(psi.data(), Tempv.data(), OrbitalSetSize);
@@ -301,9 +300,9 @@ public:
     else
     {
       // legacy algorithm
-      simd::gemv(C,myBasisSet->Phi.data(),psi.data());
-      simd::gemv(C,myBasisSet->dPhi.data(),dpsi.data());
-      simd::gemv(C,myBasisSet->d2Phi.data(),d2psi.data());
+      simd::gemv(*C,myBasisSet->Phi.data(),psi.data());
+      simd::gemv(*C,myBasisSet->dPhi.data(),dpsi.data());
+      simd::gemv(*C,myBasisSet->d2Phi.data(),d2psi.data());
     }
   }
 
@@ -313,15 +312,15 @@ public:
            HessVector_t& grad_grad_psi)
   {
     myBasisSet->evaluateForPtclMoveWithHessian(P,iat);
-    simd::gemv(C,myBasisSet->Phi.data(),psi.data());
-    simd::gemv(C,myBasisSet->dPhi.data(),dpsi.data());
-    simd::gemv(C,myBasisSet->grad_grad_Phi.data(),grad_grad_psi.data());
+    simd::gemv(*C,myBasisSet->Phi.data(),psi.data());
+    simd::gemv(*C,myBasisSet->dPhi.data(),dpsi.data());
+    simd::gemv(*C,myBasisSet->grad_grad_Phi.data(),grad_grad_psi.data());
 //#if defined(USE_BLAS2)
 //      MatrixOperators::product(C,myBasisSet->Phi.data(),psi.data());
 //      MatrixOperators::product(C,myBasisSet->dPhi.data(),dpsi.data());
 //      MatrixOperators::product(C,myBasisSet->grad_grad_Phi.data(),grad_grad_psi.data());
 //#else
-//      const ValueType* restrict cptr=C.data();
+//      const ValueType* restrict cptr=C->data();
 //      const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
 //      const typename BS::HessType* restrict d2ptr=myBasisSet->grad_grad_Phi.data();
 //      const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
@@ -344,7 +343,7 @@ public:
   void evaluate_notranspose(const ParticleSet& P, int first, int last,
                             ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
   {
-    const ValueType* restrict cptr=C.data();
+    const ValueType* restrict cptr=C->data();
     for(int i=0,ij=0, iat=first; iat<last; i++,iat++)
     {
       myBasisSet->evaluateForWalkerMove(P,iat);
@@ -362,7 +361,7 @@ public:
           Temp[4][k]=myBasisSet->dPhi[k][2];
         }
 
-        MatrixOperators::product_ABt(Temp,C,Tempv);
+        MatrixOperators::product_ABt(Temp,*C,Tempv);
 
         // Tempv stores SOA SPOset
         simd::copy(logdet[i], Tempv.data(), OrbitalSetSize);
@@ -377,8 +376,8 @@ public:
       else
       {
         // legacy algorithm
-        MatrixOperators::product(C,myBasisSet->Phi,logdet[i]);
-        MatrixOperators::product(C,myBasisSet->d2Phi,d2logdet[i]);
+        MatrixOperators::product(*C,myBasisSet->Phi,logdet[i]);
+        MatrixOperators::product(*C,myBasisSet->d2Phi,d2logdet[i]);
         const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
         for(int j=0,jk=0; j<OrbitalSetSize; j++)
         {
@@ -395,12 +394,12 @@ public:
   void evaluate_notranspose(const ParticleSet& P, int first, int last,
                             ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
   {
-    const ValueType* restrict cptr=C.data();
+    const ValueType* restrict cptr=C->data();
 #pragma ivdep
     for(int i=0,ij=0, iat=first; iat<last; i++,iat++)
     {
       myBasisSet->evaluateWithHessian(P,iat);
-      MatrixOperators::product(C,myBasisSet->Phi,logdet[i]);
+      MatrixOperators::product(*C,myBasisSet->Phi,logdet[i]);
       const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
       const typename BS::HessType* restrict d2ptr=myBasisSet->grad_grad_Phi.data();
       for(int j=0,jk=0; j<OrbitalSetSize; j++)
@@ -422,12 +421,12 @@ public:
   void evaluate_notranspose(const ParticleSet& P, int first, int last
                             , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
   {
-    const ValueType* restrict cptr=C.data();
+    const ValueType* restrict cptr=C->data();
 #pragma ivdep
     for(int i=0,ij=0, iat=first; iat<last; i++,iat++)
     {
       myBasisSet->evaluateWithThirdDeriv(P,iat);
-      MatrixOperators::product(C,myBasisSet->Phi,logdet[i]);
+      MatrixOperators::product(*C,myBasisSet->Phi,logdet[i]);
       const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
       const typename BS::HessType* restrict d2ptr=myBasisSet->grad_grad_Phi.data();
       const typename BS::GGGType* restrict gggptr=myBasisSet->grad_grad_grad_Phi.data();
@@ -461,7 +460,7 @@ public:
   {
     ValueMatrix_t phiM(P.getTotalNum(),BasisSetSize);
     myBasisSet->evaluateValues(P,phiM);
-    MatrixOperators::product_ABt(phiM,C,psiM);
+    MatrixOperators::product_ABt(phiM,*C,psiM);
     //for(int i=0; i<psiM.rows(); ++i)
     //  for(int j=0; j<psiM.cols(); ++j)
     //    psiM(i,j)=simd::dot(C[j],phiM[i],BasisSetSize);
@@ -470,7 +469,7 @@ public:
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last
                           , GGGMatrix_t& grad_grad_grad_logdet)
   {
-    const ValueType* restrict cptr=C.data();
+    const ValueType* restrict cptr=C->data();
 #pragma ivdep
     for(int i=0,ij=0, iat=first; iat<last; i++,iat++)
     {
@@ -495,9 +494,4 @@ public:
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

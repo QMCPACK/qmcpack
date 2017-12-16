@@ -22,9 +22,9 @@
 
 #include "Configuration.h"
 #include "Message/Communicate.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Utilities/SimpleParser.h"
 #include "Utilities/ProgressReportEngine.h"
+#include "Utilities/OutputManager.h"
 #include "OhmmsData/FileUtility.h"
 #include "Platforms/sysutil.h"
 #include "Platforms/devices.h"
@@ -97,6 +97,27 @@ int main(int argc, char **argv)
           }
         }
       }
+      if (c.find("-verbosity") < c.size())
+      {
+        int pos = c.find("=");
+        if (pos != std::string::npos)
+        {
+          std::string verbose_level = c.substr(pos+1);
+          if (verbose_level == "low") {
+            outputManager.setVerbosity(Verbosity::LOW);
+          }
+          else if (verbose_level == "high") {
+            outputManager.setVerbosity(Verbosity::HIGH);
+          }
+          else if (verbose_level == "debug") {
+            outputManager.setVerbosity(Verbosity::DEBUG);
+          }
+          else
+          {
+            std::cerr << "Unknown verbosity level: " << verbose_level << std::endl;
+          }
+        }
+      }
     }
     else
     {
@@ -153,13 +174,29 @@ int main(int argc, char **argv)
   //safe to move on
   Communicate* qmcComm=OHMMS::Controller;
   if(inputs.size()>1)
+  {
     qmcComm=new Communicate(*OHMMS::Controller,inputs.size());
+    qmc_common.mpi_groups=inputs.size();
+  }
   std::stringstream logname;
   int inpnum = (inputs.size() > 1) ? qmcComm->getGroupID() : 0;
   std::string myinput = inputs[qmcComm->getGroupID()];
   myinput = myinput.substr(0,myinput.size()-4);
   logname << myinput;
-  OhmmsInfo Welcome(logname.str(),qmcComm->rank(),qmcComm->getGroupID(),inputs.size());
+
+  if (qmcComm->rank() != 0) {
+    outputManager.shutOff();
+    // might need to redirect debug stream to a file per rank if debugging is enabled
+  }
+  if (inputs.size() > 1 && qmcComm->rank() == 0) {
+    char fn[128];
+    snprintf(fn, 127, "%s.g%03d.qmc",logname.str().c_str(),qmcComm->getGroupID());
+    fn[127] = '\0';
+    infoSummary.redirectToFile(fn);
+    infoLog.redirectToSameStream(infoSummary);
+    infoError.redirectToSameStream(infoSummary);
+  }
+
 //#if defined(MPIRUN_EXTRA_ARGUMENTS)
 //  //broadcast the input file name to other nodes
 //  MPI_Bcast(fname.c_str(),fname.size(),MPI_CHAR,0,OHMMS::Controller->getID());
@@ -221,8 +258,3 @@ void output_hardware_info(Communicate *comm, Libxml2Document &doc, xmlNodePtr ro
   doc.addChild(hardware, "gpu", using_gpu);
 
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

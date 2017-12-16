@@ -23,18 +23,14 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
     WavefunctionBase(Communicate *c):MPIObjectBase(c),readHamFromFile(false),
        hdf_write_file(""),hdf_read_tag(""),hdf_write_tag(""),wfn_role(""),closed_shell(false),
        filetype(""),TG(c,"WavefunctionTG"),distribute_Ham(false),min_ik(-1),max_ik(-1),ncores_per_TG(1),
-       core_rank(0),nnodes_per_TG(1),parallel(false)
+       core_rank(0),nnodes_per_TG(1),parallel(false),dm_type(0),walker_type(1),wfn_type(0),
+       useFacHam(false),sparse_vn(false),dt(1.0),initialDet(1),write_trial_density_matrix("")
     {
     }
 
     ~WavefunctionBase() {}
 
-    void setHeadComm(bool hd, MPI_Comm comm) {
-      head_of_nodes=hd;
-      MPI_COMM_HEAD_OF_NODES = comm;
-    }
-
-    virtual bool init(std::vector<int>& TGdata, ComplexSMVector *v, hdf_archive& read, const std::string& tag, MPI_Comm tg_comm, MPI_Comm node_comm)
+    virtual bool init(std::vector<int>& TGdata, SPComplexSMVector *v, hdf_archive& read, const std::string& tag, MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm node_heads_comm)
     {
 
       // setup TG
@@ -47,11 +43,14 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
       core_rank = TG.getCoreRank(); 
       TG.setNodeCommLocal(node_comm);
       TG.setTGCommLocal(tg_comm);   
+      MPI_COMM_HEAD_OF_NODES = node_heads_comm;
+      TG.setHeadOfNodesComm(MPI_COMM_HEAD_OF_NODES);
+      head_of_nodes = (TG.getCoreID()==0);
 
       // setup WFN
       if(filetype == "none" && init_type=="ground")   
         return setup_local(); 
-      else if(filetype == "fcidump" || filetype == "ascii" || filetype == "sqc_ascii")
+      else if(filetype == "fcidump" || filetype == "ascii")
         return initFromAscii(filename);
       else if(filetype == "xml")
         return initFromXML(filename);
@@ -68,14 +67,14 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
         readHamFromFile=true;
         if(head_of_nodes) readF.close();
         return true;
-      } else {
-        if(!initFromHDF5(read,tag)) {
-          app_error()<<" Problems reading restart file in WavefunctionBase::init()"; 
-          APP_ABORT(" Problems reading hdf5 file in WavefunctionBase::init()");
-          return false;
-        }
-        readHamFromFile=true;
-        return true;
+//      } else {
+//        if(!initFromHDF5(read,tag)) {
+//          app_error()<<" Problems reading restart file in WavefunctionBase::init()"; 
+//          APP_ABORT(" Problems reading hdf5 file in WavefunctionBase::init()");
+//          return false;
+//        }
+//        readHamFromFile=true;
+//        return true;
       }
       app_error()<<" Could not find a wavefunction initialization type. \n";
       return false;
@@ -92,14 +91,27 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
 
     ComplexMatrix& getHF() { return HF; }
 
+    void setupFactorizedHamiltonian(bool sp, SPValueSMSpMat* spvn_, SPValueSMVector* dvn_, RealType dt_, afqmc::TaskGroup* tg_)
+    {
+      sparse_vn=sp;
+      Spvn=spvn_;
+      Dvn=dvn_;
+      dt=dt_;
+      TG_vn = tg_;
+      local_nCholVecs = ((sparse_vn)?(Spvn->cols()):(Dvn->cols())); 
+      nCholVecs = ((sparse_vn)?(Spvn->cols()):(Dvn->cols())); 
+    }
+
+    bool useFactorizedHamiltonian() { return useFacHam; }
+
     virtual int sizeOfInfoForDistributedPropagation() 
     {  
       APP_ABORT("WavefunctionBase::sizeOfInfoForDistributedPropagation() not implemented for this wavefunction type. \n");
       return 0;
     }
 
-    virtual void calculateMeanFieldMatrixElementOfOneBodyOperators(bool addBetaBeta, ComplexSpMat&, std::vector<ComplexType>& v, const int n=-1 )=0;
-    virtual void calculateMeanFieldMatrixElementOfOneBodyOperators(bool addBetaBeta, ComplexSMSpMat&, std::vector<ComplexType>& v, const int n=-1 )=0;
+    virtual void calculateMeanFieldMatrixElementOfOneBodyOperators(bool addBetaBeta, SPValueSMSpMat&, std::vector<SPComplexType>& v, const int n=-1 )=0;
+    virtual void calculateMeanFieldMatrixElementOfOneBodyOperators(bool addBetaBeta, SPValueSMVector&, std::vector<SPComplexType>& v, const int n=-1 )=0;
 
     // no need to reimplement this in derived class
     void evaluateLocalEnergy(WalkerHandlerBase* wset, bool first , const int n=-1)
@@ -108,6 +120,35 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
         dist_evaluateLocalEnergy(wset,first,n);
       else
         serial_evaluateLocalEnergy(wset,first,n);
+    }
+
+    void verifyWalkerData(WalkerHandlerBase* wset, bool first , const int n=-1)
+    {
+      if(parallel)
+        dist_verifyWalkerData(wset,first,n);
+      else
+        serial_verifyWalkerData(wset,first,n);
+    }
+
+    // right now just dumping messages to app_error
+    void serial_verifyWalkerData(WalkerHandlerBase* wset, bool first, const int n=-1)
+    {
+      int nw = wset->numWalkers(true);
+      if(nw==0) return;
+      ComplexType ekin,epot,ovlp_a,ovlp_b;
+      for(int i=0; i<nw; i++) {
+        if(!wset->isAlive(i) || std::abs(wset->getWeight(i)) <= 1e-6) continue;
+        evaluateLocalEnergy(wset->getSM(i),ekin,epot,ovlp_a,ovlp_b,n);
+        if(first) {
+          if(std::abs(wset->getEloc(i)-ekin-epot)>1e-8) app_error()<<" diff in verifyWalkerData: eloc (old-new): "<<wset->getEloc(i)<<" "<<(ekin+epot)<<"\n";
+          if(std::abs(wset->getOvlpAlpha(i)-ovlp_a)>1e-8) app_error()<<" diff in verifyWalkerData: ovlp_a (old-new): "<<wset->getOvlpAlpha(i)<<" "<<ovlp_a<<"\n";
+          if(std::abs(wset->getOvlpBeta(i)-ovlp_b)>1e-8) app_error()<<" diff in verifyWalkerData: ovlp_b (old-new): "<<wset->getOvlpBeta(i)<<" "<<ovlp_b<<"\n";
+        } else {
+          if(std::abs(wset->getEloc2(i)-ekin-epot)>1e-8) app_error()<<" diff in verifyWalkerData: eloc2 (old-new): "<<wset->getEloc2(i)<<" "<<(ekin+epot)<<"\n";
+          if(std::abs(wset->getOvlpAlpha2(i)-ovlp_a)>1e-8) app_error()<<" diff in verifyWalkerData: ovlp_a2 (old-new): "<<wset->getOvlpAlpha2(i)<<" "<<ovlp_a<<"\n";
+          if(std::abs(wset->getOvlpBeta2(i)-ovlp_b)>1e-8) app_error()<<" diff in verifyWalkerData: ovlp_b2 (old-new): "<<wset->getOvlpBeta2(i)<<" "<<ovlp_b<<"\n";
+        }
+      }
     }
 
     // no need to reimplement this in derived class
@@ -128,12 +169,34 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
       }
     }
 
+    virtual void dist_verifyWalkerData(WalkerHandlerBase* wset, bool first, const int n=-1)
+    {  
+      serial_verifyWalkerData(wset,first,n);
+    }  
+
     virtual void dist_evaluateLocalEnergy(WalkerHandlerBase* wset, bool first, const int n=-1)
-    {  APP_ABORT("WavefunctionBase::dist_evaluateLocalEnergy not implemented for this wavefunction type. \n"); }
+    {
+      int nw = wset->numWalkers(true);
+      if(nw==0) return;
+      ComplexType ekin,epot,ovlp_a,ovlp_b;
+      for(int i=0,cnt=0; i<nw; i++,cnt++) {
+        if(!wset->isAlive(i) || std::abs(wset->getWeight(i)) <= 1e-6) continue;
+        if(cnt%ncores_per_TG == core_rank) {
+          evaluateLocalEnergy(wset->getSM(i),ekin,epot,ovlp_a,ovlp_b,n);
+          if(first)
+            wset->setWalker(i,ekin+epot,ovlp_a,ovlp_b);
+          else {
+            wset->setEloc2(i,ekin+epot);
+            wset->setOvlp2(i,ovlp_a,ovlp_b);
+          }
+        }
+        cnt++;
+      }
+    } 
 
     virtual void evaluateLocalEnergy(const ComplexType* SlaterMat, ComplexType& ekin, ComplexType& epot, ComplexType& ovl_alpha, ComplexType& ovl_beta, const int n=-1)=0;
 
-    virtual void evaluateLocalEnergy(bool addBetaBeta, RealType dt, const ComplexType* SlaterMat, const ComplexSMSpMat& Spvn, ComplexType& ekin, ComplexType& epot, ComplexType& ovl_alpha, ComplexType& ovl_beta, bool transposed, const int n=-1) 
+    virtual void evaluateLocalEnergy(bool addBetaBeta, RealType dt, const ComplexType* SlaterMat, const SPValueSMSpMat& Spvn, ComplexType& ekin, ComplexType& epot, ComplexType& ovl_alpha, ComplexType& ovl_beta, bool transposed, const int n=-1) 
     {  APP_ABORT("WavefunctionBase::evaluateLocalEnergy with factorized H not implemented for this wavefunction type. \n"); } 
 
     // no need to reimplement this in derived class
@@ -146,7 +209,22 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
     }
 
     virtual void dist_evaluateOverlap(WalkerHandlerBase* wset, bool first, const int n=-1)
-    {  APP_ABORT("WavefunctionBase::dist_evaluateOverlap not implemented for this wavefunction type. \n"); }
+    {
+      int nw = wset->numWalkers(true);
+      if(nw==0) return;
+      ComplexType ovlp_a,ovlp_b;
+      for(int i=0, cnt=0; i<nw; i++) {
+        if(!wset->isAlive(i) || std::abs(wset->getWeight(i)) <= 1e-6) continue;
+        if(cnt%ncores_per_TG == core_rank) {
+          evaluateOverlap(wset->getSM(i),ovlp_a,ovlp_b,n);
+          if(first)
+            wset->setOvlp(i,ovlp_a,ovlp_b);
+          else
+            wset->setOvlp2(i,ovlp_a,ovlp_b);
+        }
+        cnt++;
+      }
+    } 
 
     // no need to reimplement this in derived class
     void serial_evaluateOverlap(WalkerHandlerBase* wset, bool first, const int n=-1)
@@ -166,7 +244,7 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
 
     virtual void evaluateOverlap(const ComplexType* SlaterMat, ComplexType& ovl_alpha, ComplexType& ovl_beta, const int n=-1)=0;
 
-    virtual void evaluateOneBodyMixedDensityMatrix(WalkerHandlerBase* wset, ComplexSMVector* buf, int wlksz, int gfoffset, bool full=true) {
+    virtual void evaluateOneBodyMixedDensityMatrix(WalkerHandlerBase* wset, SPComplexSMVector* buf, int wlksz, int gfoffset, bool transposed, bool full=true) {
       APP_ABORT(" Error: evaluateOneBodyMixedDensityMatrix not implemented for this wave-function. \n\n\n");
     }
 
@@ -174,26 +252,66 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
 
     virtual void evaluateTwoBodyMixedDensityMatrix()=0;
 
-    virtual void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, ComplexSpMat&, std::vector<ComplexType>& v, bool transposed, bool needsG, const int n=-1)=0;
-    virtual void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, ComplexSMSpMat&, std::vector<ComplexType>& v, bool transposed, bool needsG, const int n=-1)=0;
+    virtual void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMSpMat&, SPComplexSMSpMat&, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n=-1)=0;
+    virtual void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const SPComplexType* GG, SPValueSMVector&, SPComplexSMVector&, std::vector<SPComplexType>& v, bool transposed, bool needsG, const int n=-1)=0;
 
-    virtual void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const ComplexType* buff, int ik0, int ikN, int pik0, ComplexSpMat&, std::vector<ComplexType>& v, bool transposed, bool needsG, const int n=-1)=0;
-    virtual void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const ComplexType* buff, int ik0, int ikN, int pik0, ComplexSMSpMat&, std::vector<ComplexType>& v, bool transposed, bool needsG, const int n=-1)=0;
+    virtual void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int ik0, int ikN, SPValueSMSpMat&, SPComplexSMSpMat&, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n=-1)=0;
+    virtual void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const SPComplexType* buff, int ik0, int ikN, SPValueSMVector&, SPComplexSMVector&, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed, bool needsG, const int n=-1)=0;
 
-    virtual void calculateMixedMatrixElementOfTwoBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const std::vector<s4D<ComplexType> >& vn, const std::vector<IndexType>& vn_indx, ComplexSpMat&, std::vector<ComplexType>& v, const int n=-1 )=0;
-    virtual void calculateMixedMatrixElementOfTwoBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const std::vector<s4D<ComplexType> >& vn, const std::vector<IndexType>& vn_indx, ComplexSMSpMat&, std::vector<ComplexType>& v, const int n=-1 )=0;
+
+    // Two body operators: Not used yet
+    virtual void calculateMixedMatrixElementOfTwoBodyOperators(bool addBetaBeta, const ComplexType* SlaterMat, const std::vector<s4D<SPComplexType> >& vn, const std::vector<IndexType>& vn_indx, SPValueSMSpMat&, std::vector<SPComplexType>& v, const int n=-1 )=0;
 
     std::string name;
     std::string wfn_role;
 
     virtual bool check_occ_orbs() {return true; } 
 
-    virtual bool isOccupAlpha( int i) { return true; }
-    virtual bool isOccupBeta(int i) { return true; }
-
-    void setCommBuffer(ComplexSMVector& bf)
+    void setCommBuffer(SPComplexSMVector& bf)
     {
         //commBuff = bf;
+    }
+
+    // generate transposed of Spvn
+    // done here since storage of density matrix is dependent on wavefunction type 
+    // base class implementation creates an exact transpose without modification 
+    virtual void generateTransposedOneBodyOperator(bool addBetaBeta, SPValueSMVector& Dvn, SPComplexSMVector& DvnT ) {
+
+      if(!addBetaBeta)
+        APP_ABORT("  Error: generateTransposedOneBodyOperator not implemented with UHF integrals.");      
+      DvnT.setup(head_of_nodes,"DvnT",TG.getNodeCommLocal());
+      DvnT.setDims(Dvn.cols(), Dvn.rows());
+      DvnT.resize(Dvn.cols()*Dvn.rows());
+
+      if(head_of_nodes) {
+        int nr = DvnT.rows(); // == Dvn.cols() 
+        int nc = DvnT.cols(); // == Dvn.rows()
+        for(int i=0, ii=0; i<nr; i++)
+          for(int j=0; j<nc; j++, ii++)
+            DvnT[ii] = Dvn[j*nr+i]; // DvnT(i,j) = Dvn(j,i)
+      }
+      MPI_Barrier(TG.getNodeCommLocal());
+
+    }
+
+    // base class implementation creates an (almost) exact transpose without modification 
+    // The number of columns is NMO*NMO, instead of the default 2*NMO*NMO
+    virtual void generateTransposedOneBodyOperator(bool addBetaBeta, SPValueSMSpMat& Spvn, SPComplexSMSpMat& SpvnT) {
+
+      assert(Spvn.size() > 0);
+      if(!addBetaBeta)
+        APP_ABORT("  Error: generateTransposedOneBodyOperator not implemented with UHF integrals.");
+      SpvnT.setup(head_of_nodes,"SpvnT",TG.getNodeCommLocal());
+      int NMO2 = NMO*NMO;
+      SpvnT.setDims(Spvn.cols(),NMO2);
+      SpvnT.resize(Spvn.size());
+      if(head_of_nodes) {
+        std::copy(Spvn.vals_begin(),Spvn.vals_end(),SpvnT.vals_begin());
+        std::copy(Spvn.rows_begin(),Spvn.rows_end(),SpvnT.cols_begin());
+        std::copy(Spvn.cols_begin(),Spvn.cols_end(),SpvnT.rows_begin());
+      }
+      app_log()<<" Compressing transposed Cholesky matrix. \n";
+      SpvnT.compress(TG.getNodeCommLocal());
     }
 
   protected:
@@ -203,12 +321,14 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
       return false;
     }
 
-    TaskGroup TG; 
+    afqmc::TaskGroup TG; 
     bool distribute_Ham;  
     bool parallel;
     int min_ik, max_ik;    
     int core_rank,ncores_per_TG;
     int nnodes_per_TG;
+
+    int initialDet; // 0: RHF, 1: UHF
 
     std::string filename;
     std::string filetype;
@@ -218,7 +338,24 @@ class WavefunctionBase: public MPIObjectBase, public AFQMCInfo
     std::string hdf_read_tag;
     std::string hdf_write_tag;
 
+    std::string write_trial_density_matrix;
+
+    // in case the coulomb energy is evaluated using the factorized hamiltonian
+    bool useFacHam;
+    bool sparse_vn;
+    RealType dt;
+    int local_nCholVecs;
+    int nCholVecs;
+    SPValueSMSpMat *Spvn;
+    SPValueSMVector *Dvn;
+    afqmc::TaskGroup* TG_vn;     // task group of the factorized hamiltonian
+
     bool closed_shell;
+    // in both cases below: closed_shell=0, UHF/ROHF=1, GHF=2
+    int walker_type;
+    int wfn_type;
+    // dm_type is the DM type, which should be the largest of walker and wfn types
+    int dm_type;
 
     ComplexMatrix HF;
 

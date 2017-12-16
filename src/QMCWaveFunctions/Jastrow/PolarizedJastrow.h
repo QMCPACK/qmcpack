@@ -94,23 +94,6 @@ public:
   }
 #endif
 
-
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
-  {
-    std::cerr << "PolarizedJastrow::ratio for particle-by-particle is empty " << std::endl;
-    return 1.0;
-  }
-
-  ValueType logRatio(ParticleSet& P, int iat,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL)
-  {
-    std::cerr << "PolarizedJastrow::logRatio for particle-by-particle is empty " << std::endl;
-    return 0.0;
-  }
-
   inline void restore(int iat) { }
 
   //@todo implement the virutal functions for particle-by-particle move
@@ -124,16 +107,6 @@ public:
     std::cerr << "PolarizedJastrow::ratio for particle-by-particle is empty " << std::endl;
     return 1.0;
   }
-
-  //@todo implement the virutal functions for particle-by-particle move
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat)
-  {
-    std::cerr << "PolarizedJastrow::update for particle-by-particle is empty " << std::endl;
-  }
-
 
   ValueType evaluate(ParticleSet& P,PooledData<RealType>& buf)
   {
@@ -162,9 +135,4 @@ public:
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

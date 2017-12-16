@@ -24,7 +24,6 @@
 #include "QMCApp/HamiltonianPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Particle/HDFWalkerIO.h"
 #include "QMCApp/InitMolecularSystem.h"
 #include "Particle/DistanceTable.h"
@@ -469,8 +468,3 @@ bool QMCInterface::setMCWalkers(xmlXPathContextPtr context_)
   return true;
 }
 }
-/***********************************************************************
- * $RCSfilMCInterface.cpp,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -34,10 +34,10 @@ QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunc
   MPIObjectBase(0),
   W(w),H(h),Psi(psi),  Write2OneXml(true),
   PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(1e6),
-  w_en(0.0), w_var(1.0), w_abs(0.0),w_w(0.0),w_beta(0.0), GEVType("mixed"),
+  w_en(0.9), w_var(0.1), w_abs(0.0), w_w(0.0), w_beta(0.0), GEVType("mixed"),
   CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0),
-  SmallWeight(0),usebuffer("no"), includeNonlocalH("no"),needGrads(true), vmc_or_dmc(2.0),
-  StoreDerivInfo(true),DerivStorageLevel(-1), targetExcitedStr("no"), targetExcited(false), omega_shift(0.0)
+  SmallWeight(0), includeNonlocalH("no"),needGrads(true), vmc_or_dmc(2.0),
+  targetExcitedStr("no"), targetExcited(false), omega_shift(0.0)
 {
   GEVType="mixed";
   //paramList.resize(10);
@@ -160,7 +160,11 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::computedCost()
   if(NumWalkersEff < NumSamples*MinNumWalkers)
     //    if (NumWalkersEff < MinNumWalkers)
   {
-    ERRORMSG("CostFunction-> Number of Effective Walkers is too small " << NumWalkersEff << " NumWalkersEff/NumSamples " << 1.0*NumWalkersEff/NumSamples);
+    ERRORMSG("CostFunction-> Number of Effective Walkers is too small! " << std::endl
+          << "  Number of effective walkers (samples) / total number of samples = " << (1.0*NumWalkersEff)/NumSamples << std::endl
+          << "  User specified threshold minwalkers = " << MinNumWalkers << std::endl
+          << "  If this message appears frequently. You might have to be cautious. " << std::endl
+          << "  Find info about parameter \"minwalkers\" in the user manual!");
     // ERRORMSG("Going to stop now.")
     IsValid=false;
   }
@@ -480,8 +484,6 @@ QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(writeXmlPerStep,"dumpXML","string");
   m_param.add(MinNumWalkers,"minwalkers","scalar");
   m_param.add(MaxWeight,"maxWeight","scalar");
-  m_param.add(usebuffer,"useBuffer","string");
-  m_param.add(usebuffer,"usebuffer","string");
   m_param.add(includeNonlocalH,"nonlocalpp","string");
   m_param.add(computeNLPPderiv,"use_nonlocalpp_deriv","string");
   m_param.add(w_beta,"beta","double");
@@ -658,15 +660,12 @@ void QMCCostFunctionBase::resetCostFunction(std::vector<xmlNodePtr>& cset)
     pAttrib.put(cset[i]);
     if (pname == "energy")
       putContent(w_en,cset[i]);
-    else
-      if ((pname == "variance")|| (pname == "unreweightedvariance"))
-        putContent(w_w,cset[i]);
-      else
-        if (pname == "difference")
-          putContent(w_abs,cset[i]);
-        else
-          if ((pname == "reweightedVariance") ||(pname == "reweightedvariance"))
-            putContent(w_var,cset[i]);
+    else if ((pname == "variance") || (pname == "unreweightedvariance"))
+      putContent(w_w,cset[i]);
+    else if (pname == "difference")
+      putContent(w_abs,cset[i]);
+    else if ((pname == "reweightedVariance") || (pname == "reweightedvariance"))
+      putContent(w_var,cset[i]);
   }
 }
 
@@ -988,8 +987,3 @@ QMCCostFunctionBase::Return_t QMCCostFunctionBase::LMYEngineCost(const bool need
 #endif
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1793 $   $Date: 2007-02-21 17:51:06 -0600 (Wed, 21 Feb 2007) $
- * $Id: QMCCostFunctionBase.cpp 1793 2007-02-21 23:51:06Z jnkim $
- ***************************************************************************/

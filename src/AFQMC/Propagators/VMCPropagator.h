@@ -29,17 +29,21 @@ class VMCPropagator: public PropagatorBase
 
   ~VMCPropagator() {}
 
-  void Propagate(int n, WalkerHandlerBase*, RealType& E1, const RealType E2=0);
+  void Propagate(int steps, int& steps_total, WalkerHandlerBase*, RealType& E1);
 
   bool parse(xmlNodePtr);
 
-  bool setup(std::vector<int>& TGdata, ComplexSMVector *v,HamiltonianBase*,WavefunctionHandler*, RealType dt, hdf_archive&, const std::string&,MPI_Comm tg_comm, MPI_Comm node_comm);
+  bool setup(std::vector<int>& TGdata, SPComplexSMVector *v,HamiltonianBase*,WavefunctionHandler*, RealType dt, hdf_archive&, const std::string&,MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm);
 
   bool hdf_write(hdf_archive&, const std::string&);
 
   bool hdf_read(hdf_archive&,const std::string&);
 
-  void benchmark() {};
+  void benchmark(std::string&,int,int,int,WalkerHandlerBase*) {}
+
+  SPValueSMVector* getDvn() { return NULL; } 
+
+  SPValueSMSpMat* getSpvn() { return NULL; }
 
   private:
 

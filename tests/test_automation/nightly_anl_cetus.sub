@@ -21,8 +21,8 @@
 place=/projects/PSFMat/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
 
 #define compiler
-compiler=XL
-#compiler=Clang++11
+#compiler=XL
+compiler=Clang++11
 
 if [ ! -e $place ]; then
 mkdir $place
@@ -52,11 +52,15 @@ cd $entry
 
 git checkout $branch
 
-for sys in build_BGQ_${compiler}_real build_BGQ_${compiler}_complex build_BGQ_${compiler}_MP_real build_BGQ_${compiler}_MP_complex
+for sys in build_BGQ_${compiler}_real build_BGQ_${compiler}_complex build_BGQ_${compiler}_MP_real build_BGQ_${compiler}_MP_complex build_BGQ_${compiler}_real_SoA build_BGQ_${compiler}_complex_SoA
 do
 
+if [ -e $sys ]; then
+rm -r $sys
+fi
 mkdir $sys
 cd $sys
+
 echo --- Building for $sys `date`
 
 # create log file folder if not exist
@@ -67,6 +71,16 @@ then
 fi
 
 case $sys in
+"build_BGQ_${compiler}_real_SoA")
+# Build the real version with ${compiler} compiler on BGQ
+    export QMCPACK_TEST_SUBMIT_NAME=BGQ-${compiler}-Real-SoA-Release
+    ctest -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_${compiler}_ToolChain.cmake -DQMC_COMPLEX=0 -DENABLE_SOA=1 -S $PWD/../CMake/ctest_script.cmake,release -R "short" -E "dmc|opt|csvmc" -VV &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
+    ;;
+"build_BGQ_${compiler}_complex_SoA")
+# Build the complex version with ${compiler} compiler on BGQ
+    export QMCPACK_TEST_SUBMIT_NAME=BGQ-${compiler}-Complex-SoA-Release
+    ctest -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_${compiler}_ToolChain.cmake -DQMC_COMPLEX=1 -DENABLE_SOA=1 -S $PWD/../CMake/ctest_script.cmake,release -R "short" -E "dmc|opt|csvmc" -VV &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
+    ;;
 "build_BGQ_${compiler}_real")
 # Build the real version with ${compiler} compiler on BGQ
     export QMCPACK_TEST_SUBMIT_NAME=BGQ-${compiler}-Real-Release

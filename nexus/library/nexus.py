@@ -25,6 +25,7 @@
 import os
 
 from generic import obj
+from developer import error
 
 from nexus_base      import NexusCore,nexus_core,nexus_noncore,nexus_core_noncore
 from machines        import Job,job,Machine,Supercomputer,get_machine
@@ -385,4 +386,38 @@ def run_project(*args,**kwargs):
     pm = ProjectManager()
     pm.add_simulations(*args,**kwargs)
     pm.run_project()
+    return pm
 #end def run_project
+
+
+
+
+
+
+
+
+# read input function
+#   place here for now as it depends on all other input functions
+def read_input(filepath,format=None):
+    if not os.path.exists(filepath):
+        error('cannot read input file\nfile does not exist: {0}'.format(filepath),'read_input')
+    #end if
+    if format is None:
+        if filepath.endswith('in.xml'):
+            format = 'qmcpack'
+        else:
+            error('cannot identify file format\nplease provide format for file: {0}'.format(filepath))
+        #end if
+    #end if
+    format = format.lower()
+    if format=='qmcpack':
+        input = QmcpackInput(filepath)
+    elif format=='pwscf':
+        input = PwscfInput(filepath)
+    elif format=='gamess':
+        input = GamessInput(filepath)
+    else:
+        error('cannot read input file\nfile format "{0}" is unsupported'.format(format))
+    #end if
+    return input
+#end def read_input

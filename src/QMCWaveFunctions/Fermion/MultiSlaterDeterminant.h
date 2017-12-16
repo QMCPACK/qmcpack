@@ -101,17 +101,10 @@ public:
 
   virtual GradType evalGrad(ParticleSet& P, int iat);
   virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  virtual ValueType ratio(ParticleSet& P, int iat
-                          , ParticleSet::ParticleGradient_t& dG,ParticleSet::ParticleLaplacian_t& dL);
-
   virtual ValueType ratio(ParticleSet& P, int iat);
   virtual void acceptMove(ParticleSet& P, int iat);
   virtual void restore(int iat);
 
-  virtual void update(ParticleSet& P
-                      , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL
-                      , int iat);
-  virtual RealType evaluateLog(ParticleSet& P,BufferType& buf);
   virtual RealType registerData(ParticleSet& P, BufferType& buf);
   virtual RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
   virtual void copyFromBuffer(ParticleSet& P, BufferType& buf);
@@ -146,8 +139,8 @@ public:
   std::vector<DiracDeterminantPtr> dets_dn;
 
   // map determinant in linear combination to unique det list
-  std::vector<int> C2node_up;
-  std::vector<int> C2node_dn;
+  std::vector<size_t> C2node_up;
+  std::vector<size_t> C2node_dn;
 
   std::vector<RealType> C;
 
@@ -187,16 +180,11 @@ public:
   // coefficients of csfs, these are only used during optm
   std::vector<RealType> CSFcoeff;
   // number of dets per csf
-  std::vector<int> DetsPerCSF;
-  // coefficient of csf expansion (smaller dimension)
+  std::vector<size_t> DetsPerCSF;
+  // coefficiesize_tof csf expansion (smaller dimension)
   std::vector<RealType> CSFexpansion;
 
 };
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: miguel.mmorales $
- * $Revision: 4791 $   $Date: 2010-05-12 12:08:35 -0500 (Wed, 12 May 2010) $
- * $Id: MultiSlaterDeterminant.h 4791 2010-05-12 17:08:35Z miguel.mmorales $
- ***************************************************************************/
