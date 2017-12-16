@@ -12,8 +12,8 @@
 //
 // File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 
 
 
@@ -493,7 +493,7 @@ void GamesAsciiParser::getGaussianCenters(std::istream& is)
   }
 
   std::vector<std::vector<double> > expo(nUniqAt),coef(nUniqAt),coef2(nUniqAt);
-  std::vector<int> nshll(nUniqAt,0); //use this to 
+  std::vector<int> nshll(nUniqAt,0); //use this to
   std::vector<std::vector<int> > ncoeffpershell(nUniqAt);
   std::vector<std::vector<std::string> > shID(nUniqAt);
   std::map<std::string,int> gsMap;
@@ -604,9 +604,9 @@ void GamesAsciiParser::getGaussianCenters(std::istream& is)
               std::cerr <<"Can't handle H basis states or higher yet. Fix later.\n";
               abort();
             }
-            if(debug){            
-               std::cout << currPos << ":" <<expo[currPos].back() << " " << coef[currPos].back() << " " 
-                 << ncoeffpershell[currPos][nshll[currPos]] 
+            if(debug){
+               std::cout << currPos << ":" <<expo[currPos].back() << " " << coef[currPos].back() << " "
+                 << ncoeffpershell[currPos][nshll[currPos]]
                  << " " << shID[currPos][nshll[currPos]] << std::endl;
             }
           }
@@ -614,7 +614,7 @@ void GamesAsciiParser::getGaussianCenters(std::istream& is)
       }
     }
   }
-  
+
 
   /*
   getwords(currentWords,is);  // tag of first atom
@@ -802,7 +802,7 @@ void GamesAsciiParser::getMO(std::istream& is)
     getwords(currentWords,is);  // empty line
     getMO_single_set(is, CartMat, EigVal_beta);
   }
-    
+
   for(int i=0; i<numMO; i++)
     for(int k=0; k<SizeOfBasisSet; k++)
       EigVec[cnt++] = CartMat[i][k];
@@ -1009,9 +1009,9 @@ void GamesAsciiParser::getCSF(std::istream& is)
   coeff2csf.clear();
   usingCSF=true;
 
-  // set a count to check if we arrive our target state or not 
+  // set a count to check if we arrive our target state or not
   int state_num = -1;
-  
+
   std::cout << "Target State Number is " << target_state << std::endl;
 
   do
@@ -1028,7 +1028,7 @@ void GamesAsciiParser::getCSF(std::istream& is)
         currentWords[1] == "COEF" &&
         currentWords[2] == "OCCUPANCY" )
     {
-      
+
       // add the state number by one
       state_num++;
 
