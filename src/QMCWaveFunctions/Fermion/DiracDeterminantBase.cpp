@@ -293,6 +293,7 @@ void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, std::vector<Va
   const int nVP = VP.getTotalNum();
   if(psiM_temp.rows()<nVP)
   {
+    // usually in small systems
     for(int iat=0; iat<nVP; iat++)
     {
       SPOVTimer.start();

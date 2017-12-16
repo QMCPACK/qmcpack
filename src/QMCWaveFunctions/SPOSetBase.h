@@ -22,6 +22,7 @@
 
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Particle/ParticleSet.h"
+#include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Message/CommOperators.h"
 
@@ -197,7 +198,7 @@ public:
    * @param psiM single-particle orbitals psiM(i,j) for the i-th particle and the j-th orbital
    */
   virtual void
-  evaluateValues(const ParticleSet& VP, ValueMatrix_t& psiM);
+  evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM);
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet
