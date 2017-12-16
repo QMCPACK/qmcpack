@@ -1689,7 +1689,10 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
       if(addJastrow)
       {
         std::cout << "Adding Two-Body and One-Body jastrows with rcut=\"10\" and size=\"10\"" << std::endl;
-        xmlAddChild(wfPtr,createJ2());
+	if (NumberOfEls>1)
+	  {
+	    xmlAddChild(wfPtr,createJ2());
+	  }
         xmlAddChild(wfPtr,createJ1());
 	SpeciesSet& ionSpecies(IonSystem.getSpeciesSet());
 	if (ionSpecies.getTotalNum()>1)
@@ -2231,7 +2234,10 @@ void QMCGaussianParserBase::Fmodump(const std::string& psi_tag,
       if(addJastrow)
       {
         std::cout << "Adding Two-Body and One-Body jastrows with rcut=\"10\" and size=\"10\"" << std::endl;
-        xmlAddChild(wfPtr,createJ2());
+	if (NumberOfEls>1)
+	  {
+	    xmlAddChild(wfPtr,createJ2());
+	  }
         xmlAddChild(wfPtr,createJ1());
 	SpeciesSet& ionSpecies(IonSystem.getSpeciesSet());
 	if (ionSpecies.getTotalNum()>1)
