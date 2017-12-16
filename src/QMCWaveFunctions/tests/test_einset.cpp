@@ -15,7 +15,6 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
@@ -41,16 +40,18 @@ TEST_CASE("Einspline SPO from HDF", "[wavefunction]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   ParticleSet ions_;
   ParticleSet elec_;
 
   ions_.setName("ion");
-  ions_.create(1);
-  ions_.R[0][0] = 2.0;
+  ions_.create(2);
+  ions_.R[0][0] = 0.0;
   ions_.R[0][1] = 0.0;
   ions_.R[0][2] = 0.0;
+  ions_.R[1][0] = 1.68658058;
+  ions_.R[1][1] = 1.68658058;
+  ions_.R[1][2] = 1.68658058;
 
 
   elec_.setName("elec");
@@ -93,7 +94,11 @@ TEST_CASE("Einspline SPO from HDF", "[wavefunction]")
   tspecies(chargeIdx, upIdx) = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
-  elec_.addTable(ions_);
+#ifdef ENABLE_SOA
+  elec_.addTable(ions_,DT_SOA);
+#else
+  elec_.addTable(ions_,DT_AOS);
+#endif
   elec_.resetGroups();
   elec_.update();
 

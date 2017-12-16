@@ -11,13 +11,35 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-
+#include<cstdlib>
+#include<tuple>
 
 #ifndef OHMMS_UTILITYFUNCTIONS_H
 #define OHMMS_UTILITYFUNCTIONS_H
 /**@file UtilityFunctions.h
  *@brief A collection of utility functions.
  */
+
+/** Partition ntot over npart
+ *\param me index of boundaries being returned
+ *\param ntot the total size
+ *\param npart the number of partitions
+ *
+ *Simply divide ntot data among npart partitions so that the size of
+ *each group cannot differ by more than 1.
+ *Return the boundaries of the partition associated with partition 'me'
+ *
+ */
+template<typename IType>
+inline std::tuple<IType,IType> FairDivideBoundary(IType me, IType ntot, IType npart)
+{
+  IType bat=ntot/npart;
+  IType residue = ntot%npart;
+  if(me < residue)
+    return std::make_tuple( me*(bat+1), (me+1)*(bat+1) );
+  else 
+    return std::make_tuple( me*bat + residue, (me+1)*bat + residue );    
+}
 
 /** Partition ntot over npart
  *\param ntot the total size
@@ -136,8 +158,3 @@ inline int FairDivideLow(int me, int ntot, int npart, IV& adist)
 }
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -15,7 +15,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "Utilities/OhmmsInfo.h"
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
@@ -42,7 +41,6 @@ RealEGOSet::RealEGOSet(const std::vector<PosType>& k, const std::vector<RealType
   Identity=true;
   OrbitalSetSize=2*k.size()+1;
   BasisSetSize=2*k.size()+1;
-  t_logpsi.resize(OrbitalSetSize,BasisSetSize);
   className="EGOSet";
 }
 
@@ -275,8 +273,3 @@ SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromXML(xmlNodePtr cur)
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -320,8 +320,3 @@ ostream& operator<<(std::ostream& out, const TinyMatrix<T,D1,D2>& rhs)
 }
 #endif // OHMMS_TINYMATRIX_H
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

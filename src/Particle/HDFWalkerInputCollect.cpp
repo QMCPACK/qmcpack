@@ -22,7 +22,6 @@
 #include "Particle/HDFParticleAttrib.h"
 #include "Numerics/HDFNumericAttrib.h"
 #endif
-#include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/RandomGeneratorIO.h"
@@ -331,8 +330,3 @@ void HDFWalkerInputCollect::distribute(hsize_t nw)
 {
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

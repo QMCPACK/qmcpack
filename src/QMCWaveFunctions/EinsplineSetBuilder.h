@@ -26,9 +26,7 @@
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "QMCWaveFunctions/BandInfo.h"
 #include "QMCWaveFunctions/AtomicOrbital.h"
-#ifdef QMC_CUDA
 #include "QMCWaveFunctions/EinsplineSet.h"
-#endif
 #include "Numerics/HDFNumericAttrib.h"
 #include <map>
 
@@ -170,6 +168,11 @@ public:
    */
   SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
 
+  /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
+   * @param cur the current xml node
+   */
+  void set_metadata(int numOrbs, int TwistNum_inp);
+
   /** initialize with the existing SPOSet */
   SPOSetBase* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info);
 
@@ -228,6 +231,9 @@ public:
 
   Vector<int> IonTypes;
   Vector<TinyVector<double,OHMMS_DIM> > IonPos;
+  // mapping the ions in the supercell to the primitive cell
+  std::vector<int> Super2Prim;
+
   /////////////////////////////
   // Twist angle information //
   /////////////////////////////
@@ -262,7 +268,7 @@ public:
   void OccupyBands(int spin, int sortBands, int numOrbs);
   void OccupyBands_ESHDF(int spin, int sortBands, int numOrbs);
 
-#ifdef QMC_CUDA
+#if 0
   void ReadBands      (int spin, EinsplineSetExtended<std::complex<double> >* orbitalSet);
   void ReadBands_ESHDF(int spin, EinsplineSetExtended<std::complex<double> >* orbitalSet);
   void ReadBands      (int spin, EinsplineSetExtended<        double  >* orbitalSet);
@@ -286,6 +292,26 @@ public:
   ////////////////////////////////
   std::vector<AtomicOrbital<std::complex<double> > > AtomicOrbitals;
 
+  struct CenterInfo
+  {
+    std::vector<int> lmax, spline_npoints, GroupID;
+    std::vector<double> spline_radius, cutoff;
+    std::vector<TinyVector<double,OHMMS_DIM> > ion_pos;
+    int Ncenters;
+
+    CenterInfo(): Ncenters(0) {};
+
+    void resize(int ncenters)
+    {
+      Ncenters=ncenters;
+      lmax.resize(ncenters, -1);
+      spline_npoints.resize(ncenters, -1);
+      GroupID.resize(ncenters);
+      spline_radius.resize(ncenters, -1.0);
+      cutoff.resize(ncenters, -1.0);
+      ion_pos.resize(ncenters);
+    }
+  } AtomicCentersInfo;
 
   // This returns the path in the HDF5 file to the group for orbital
   // with twist ti and band bi
@@ -303,9 +329,9 @@ public:
   RealType qafm;
   int particle_hole_pairs;
   bool makeRotations;
+#if 0
   std::vector<RealType> rotationMatrix;
   std::vector<int> rotatedOrbitals;
-#ifdef QMC_CUDA
   void RotateBands_ESHDF(int spin, EinsplineSetExtended<std::complex<double > >* orbitalSet);
   void RotateBands_ESHDF(int spin, EinsplineSetExtended<double>* orbitalSet);
 #endif

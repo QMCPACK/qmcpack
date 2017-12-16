@@ -28,7 +28,7 @@ IonOrbital::IonOrbital (ParticleSet &centers, ParticleSet &ptcls) :
   OrbitalName="IonOrbital";
   NumTargetPtcls = ptcls.getTotalNum();
   NumCenters     = centers.getTotalNum();
-  d_table = DistanceTable::add(CenterRef, PtclRef);
+  d_table = DistanceTable::add(CenterRef, PtclRef, DT_AOS);
   U.resize(NumTargetPtcls);
   dU.resize(NumTargetPtcls);
   d2U.resize(NumTargetPtcls);
@@ -42,7 +42,7 @@ IonOrbital::~IonOrbital() {  }
 void
 IonOrbital::resetTargetParticleSet(ParticleSet& P)
 {
-  d_table = DistanceTable::add(CenterRef,P);
+  d_table = DistanceTable::add(CenterRef,P, DT_AOS);
   //if (dPsi) dPsi->resetTargetParticleSet(P);
 }
 
@@ -118,24 +118,6 @@ IonOrbital::ratio(ParticleSet& P, int iat)
 }
 
 
-
-/** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$
-    and fill-in the differential gradients/laplacians
-  * @param P active particle set
-  * @param iat particle that has been moved.
-  * @param dG partial gradients
-  * @param dL partial laplacians
-  */
-ValueType
-IonOrbital::ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
-{
-  return std::exp(logRatio (P, iat, dG, dL));
-}
-
-
-
 GradType
 IonOrbital::evalGrad(ParticleSet& P, int iat)
 {
@@ -172,34 +154,6 @@ IonOrbital::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   return std::exp(U[iat]-curVal);
 }
 
-ValueType
-IonOrbital::logRatio(ParticleSet& P, int iat,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL)
-{
-  int icent = ParticleCenter[iat];
-  if (icent == -1)
-    return 0.0;
-  int index = d_table->M[icent] + iat;
-  RealType a = ParticleAlpha[iat];
-  RealType newdist = d_table->Temp[icent].r1;
-  PosType  newdisp = d_table->Temp[icent].dr1;
-  curVal = a*newdist*newdist;
-  curGrad = -2.0*a*newdisp;
-  curLap  = -6.0*a;
-  dG[iat] += curGrad - dU[iat];
-  dL[iat] += curLap  - d2U[iat];
-  return U[iat] - curVal;
-  // fprintf (stderr, "new dist = %8.5f  old dist=%8.5f\n",
-  // 	     newdist, olddist);
-  // fprintf (stderr, "iat = %d   icent = %d\n", iat, icent);
-  // dG[iat] -= 2.0*a*(newdisp - olddisp);
-  // dL[iat] -= 0.0*a;
-  // RealType lograt = -a*(newdist*newdist - olddist*olddist);
-  // std::cerr << "lograt = " << lograt << std::endl;
-  // return lograt;
-}
-
 void
 IonOrbital::restore(int iat) {}
 
@@ -209,20 +163,6 @@ IonOrbital::acceptMove(ParticleSet& P, int iat)
   U[iat] = curVal;
   dU[iat]=curGrad;
   d2U[iat]=curLap;
-}
-
-
-void
-IonOrbital::update(ParticleSet& P,
-                   ParticleSet::ParticleGradient_t& dG,
-                   ParticleSet::ParticleLaplacian_t& dL,
-                   int iat)
-{
-  dG[iat] += curGrad-dU[iat];
-  dU[iat]=curGrad;
-  dL[iat] += curLap-d2U[iat];
-  d2U[iat]=curLap;
-  U[iat] = curVal;
 }
 
 void
@@ -281,7 +221,7 @@ IonOrbital::updateBuffer(ParticleSet& P, BufferType& buf,
  *@param P the ParticleSet to operate on
  *@param buf PooledData which stores the data for each walker
  *
- *copyFromBuffer uses the data stored by registerData or evaluate(P,buf)
+ *copyFromBuffer uses the data stored by registerData
  */
 void
 IonOrbital::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
@@ -289,42 +229,6 @@ IonOrbital::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
   buf.get(U.first_address(), U.last_address());
   buf.get(d2U.first_address(), d2U.last_address());
   buf.get(FirstAddressOfdU,LastAddressOfdU);
-}
-
-/** return the current value and copy the current data to a buffer
- *@param P the ParticleSet to operate on
- *@param buf PooledData which stores the data for each walker
- */
-IonOrbital::RealType
-IonOrbital::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  RealType sumu = 0.0;
-  for (int i=0; i<U.size(); i++)
-    sumu+=U[i];
-  buf.put(U.first_address(), U.last_address());
-  buf.put(d2U.first_address(), d2U.last_address());
-  buf.put(FirstAddressOfdU,LastAddressOfdU);
-  return -sumu;
-  // int icent = 0;
-  // LogValue = 0.0;
-  // U = 0.0;
-  // for (int iat=0; iat<NumTargetPtcls; iat++) {
-  //   RealType a = ParticleAlpha[iat];
-  //   if (a > 0.0) {
-  // 	int index = d_table->M[icent] + iat;
-  // 	RealType dist = d_table->r(index);
-  // 	PosType  disp  = d_table->dr(index);
-  // 	LogValue -= a*dist*dist;
-  // 	icent++;
-  //   }
-  // }
-  // return LogValue;
-  // return evaluateLog(P, P.G, P.L);
-  // std::cerr << "IonOrbital::evaluateLog(ParticleSet& P, PooledData<RealType>& buf) called.\n";
-  // buf.put(U.first_address(), U.last_address());
-  // buf.put(d2U.first_address(), d2U.last_address());
-  // buf.put(FirstAddressOfdU,LastAddressOfdU);
-  // return -sumu;
 }
 
 OrbitalBasePtr

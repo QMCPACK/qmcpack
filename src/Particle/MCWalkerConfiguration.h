@@ -284,6 +284,7 @@ public:
   {
     return WalkerList[i];
   }
+
   inline const Walker_t* operator[](int i) const
   {
     return WalkerList[i];
@@ -357,7 +358,7 @@ public:
   template<typename ForwardIter>
   inline void putConfigurations(ForwardIter target)
   {
-    int ds=OHMMS_DIM*GlobalNum;
+    int ds=OHMMS_DIM*TotalNum;
     for(iterator it=WalkerList.begin(); it!= WalkerList.end(); ++it,target+=ds)
     {
       copy(get_first_address((*it)->R),get_last_address((*it)->R),target);
@@ -414,8 +415,3 @@ private:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: yingwai $
- * $Revision: 7383 $   $Date: 2016-12-28 12:15:25 -0500 (Wed, 28 Dec 2016) $
- * $Id: MCWalkerConfiguration.h 7383 2016-12-28 17:15:25Z yingwai $
- st***************************************************************************/

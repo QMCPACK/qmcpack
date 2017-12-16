@@ -154,9 +154,4 @@ struct ForwardWalkingHistoryObject
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: mcminis2 $
- * $Revision: 3737 $   $Date: 2009-04-06 11:40:52 -0500 (Mon, 06 Apr 2009) $
- * $Id: ForwardWalkingStructure.h 3737 2009-04-06 16:40:52Z mcminis2 $
- ***************************************************************************/
 

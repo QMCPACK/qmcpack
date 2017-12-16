@@ -41,42 +41,39 @@ namespace qmcplusplus
 template<> int ParticleSet::Walker_t::cuda_DataSize = 0;
 #endif
 
-///object counter
-int  ParticleSet::PtclObjectCounter = 0;
-
 void add_p_timer(std::vector<NewTimer*>& timers)
 {
-  timers.push_back(new NewTimer("ParticleSet::makeMove",timer_level_fine)); //timer for MC, ratio etc
-  timers.push_back(new NewTimer("ParticleSet::makeMoveOnSphere",timer_level_fine)); //timer for the walker loop
-  TimerManager.addTimer(timers[0]);
-  TimerManager.addTimer(timers[1]);
+  timers.push_back(TimerManager.createTimer("ParticleSet::makeMove", timer_level_fine)); // timer for moves
+  timers.push_back(TimerManager.createTimer("ParticleSet::makeMoveOnSphere", timer_level_fine)); // timer for NLPP moves
+  timers.push_back(TimerManager.createTimer("ParticleSet::donePbyP", timer_level_fine)); // timer for donePbyP
+  timers.push_back(TimerManager.createTimer("ParticleSet::setActive", timer_level_fine)); // timer for setActive
 }
 
 ParticleSet::ParticleSet()
   : UseBoundBox(true), UseSphereUpdate(true), IsGrouped(true)
-  , ThreadID(0), SK(0), ParentTag(-1), ParentName("0")
-  , quantum_domain(classical)
+  , ThreadID(0), SK(0), ParentName("0")
+  , quantum_domain(classical), TotalNum(0)
+  , SameMass(true), myTwist(0.0), activeWalker(nullptr)
 {
-  initParticleSet();
   initPropertyList();
   add_p_timer(myTimers);
 }
 
 ParticleSet::ParticleSet(const ParticleSet& p)
   : UseBoundBox(p.UseBoundBox), UseSphereUpdate(p.UseSphereUpdate),IsGrouped(p.IsGrouped)
-  , ThreadID(0), mySpecies(p.getSpeciesSet()),SK(0), ParentTag(p.tag()), ParentName(p.parentName())
+  , ThreadID(0), mySpecies(p.getSpeciesSet()),SK(0), ParentName(p.parentName())
+  , SameMass(true), myTwist(0.0), activeWalker(nullptr)
 {
   set_quantum_domain(p.quantum_domain);
-  initBase();
-  initParticleSet();
   assign(p); //only the base is copied, assumes that other properties are not assignable
   //need explicit copy:
   Mass=p.Mass;
   Z=p.Z;
-  std::ostringstream o;
-  o<<p.getName()<<ObjectTag;
-  this->setName(o.str());
-  app_log() << "  Copying a particle set " << p.getName() << " to " << this->getName() << " groups=" << groups() << std::endl;
+  //std::ostringstream o;
+  //o<<p.getName()<<ObjectTag;
+  //this->setName(o.str());
+  //app_log() << "  Copying a particle set " << p.getName() << " to " << this->getName() << " groups=" << groups() << std::endl;
+  myName=p.getName();
   PropertyList.Names=p.PropertyList.Names;
   PropertyList.Values=p.PropertyList.Values;
   PropertyHistory=p.PropertyHistory;
@@ -85,9 +82,14 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   if(p.DistTables.size())
   {
     app_log() << "  Cloning distance tables. It has " << p.DistTables.size() << std::endl;
-    addTable(*this); //first is always for this-this paier
+    addTable(*this,p.DistTables[0]->DTType); //first is always for this-this pair
     for (int i=1; i<p.DistTables.size(); ++i)
-      addTable(p.DistTables[i]->origin());
+      addTable(p.DistTables[i]->origin(),p.DistTables[i]->DTType);
+  }
+  for(int i=0; i<p.DistTables.size(); ++i)
+  {
+    DistTables[i]->Need_full_table_loadWalker = p.DistTables[i]->Need_full_table_loadWalker;
+    DistTables[i]->Rmax = p.DistTables[i]->Rmax;
   }
   if(p.SK)
   {
@@ -101,6 +103,8 @@ ParticleSet::ParticleSet(const ParticleSet& p)
     resizeSphere(p.Sphere.size());
   add_p_timer(myTimers);
   myTwist=p.myTwist;
+
+  RSoA=p.RSoA;
 }
 
 ParticleSet::~ParticleSet()
@@ -112,67 +116,34 @@ ParticleSet::~ParticleSet()
   delete_iter(Sphere.begin(), Sphere.end());
 }
 
+void ParticleSet::create(int numPtcl)
+{
+  resize(numPtcl);
+}
+
+void ParticleSet::create(const std::vector<int>& agroup)
+{
+  SubPtcl.resize(agroup.size()+1);
+  SubPtcl[0] = 0;
+  for(int is=0; is<agroup.size(); is++)
+    SubPtcl[is+1] = SubPtcl[is]+agroup[is];
+  size_t nsum = SubPtcl[agroup.size()];
+  resize(nsum);
+  TotalNum = nsum;
+  int loc=0;
+  for(int i=0; i<agroup.size(); i++)
+  {
+    for(int j=0; j<agroup[i]; j++,loc++)
+      GroupID[loc] = i;
+  }
+}
+
 void ParticleSet::set_quantum_domain(quantum_domains qdomain)
 {
   if(quantum_domain_valid(qdomain))
     quantum_domain = qdomain;
   else
     APP_ABORT("ParticleSet::set_quantum_domain\n  input quantum domain is not valid for particles");
-}
-
-void ParticleSet::initParticleSet()
-{
-  #pragma omp critical (PtclObjectCounter)
-  {
-    ObjectTag = PtclObjectCounter;
-    PtclObjectCounter++;
-  }
-#if defined(QMC_COMPLEX)
-  G.setTypeName(ParticleTags::gradtype_tag);
-  L.setTypeName(ParticleTags::laptype_tag);
-  dG.setTypeName(ParticleTags::gradtype_tag);
-  dL.setTypeName(ParticleTags::laptype_tag);
-#else
-  G.setTypeName(ParticleTags::postype_tag);
-  L.setTypeName(ParticleTags::scalartype_tag);
-  dG.setTypeName(ParticleTags::postype_tag);
-  dL.setTypeName(ParticleTags::scalartype_tag);
-#endif
-  G.setObjName("grad");
-  L.setObjName("lap");
-  dG.setObjName("dgrad");
-  dL.setObjName("dlap");
-  addAttribute(G);
-  addAttribute(L);
-  addAttribute(dG);
-  addAttribute(dL);
-
-  //more particle attributes
-  Mass.setTypeName(ParticleTags::scalartype_tag);
-  Mass.setObjName("mass");
-  SameMass=true; //default is SameMass
-  addAttribute(Mass);
-  Z.setTypeName(ParticleTags::scalartype_tag);
-  Z.setObjName("charge");
-  addAttribute(Z);
-  IndirectID.setTypeName(ParticleTags::indextype_tag); //add PCID tags
-  IndirectID.setObjName("pcid");
-  addAttribute(PCID);
-  IndirectID.setTypeName(ParticleTags::indextype_tag); //add IndirectID tags
-  IndirectID.setObjName("id1");
-  addAttribute(IndirectID);
-  //orgID.setTypeName(ParticleTags::indextype_tag); //add ID tags
-  //orgID.setObjName("id0");
-  //addAttribute(orgID);
-  //
-  //orgGroupID.setTypeName(ParticleTags::indextype_tag); //add ID tags
-  //orgGroupID.setObjName("gid0");
-  //addAttribute(orgGroupID);
-  myTwist=0.0;
-  ////this has to be in unit
-  Runit.setObjName("posunit");
-  Runit.InUnit=PosUnit::LatticeUnit;
-  addAttribute(Runit);
 }
 
 void ParticleSet::resetGroups()
@@ -327,18 +298,18 @@ bool ParticleSet::get(std::ostream& os) const
   os << "  ParticleSet " << getName() << " : ";
   for (int i=0; i<SubPtcl.size(); i++)
     os << SubPtcl[i] << " ";
-  os <<"\n\n    " << LocalNum << "\n\n";
+  os <<"\n\n    " << TotalNum << "\n\n";
   const int maxParticlesToPrint = 10;
-  int numToPrint = std::min(LocalNum, maxParticlesToPrint);
+  int numToPrint = std::min(TotalNum, maxParticlesToPrint);
 
   for (int i=0; i<numToPrint; i++)
   {
     os << "    " << mySpecies.speciesName[GroupID[i]]  << R[i] << std::endl;
   }
 
-  if (numToPrint < LocalNum)
+  if (numToPrint < TotalNum)
   {
-    os << "    (... and " << (LocalNum-numToPrint) << " more particle positions ...)" << std::endl;
+    os << "    (... and " << (TotalNum-numToPrint) << " more particle positions ...)" << std::endl;
   }
 
   return true;
@@ -403,39 +374,60 @@ void ParticleSet::checkBoundBox(RealType rb)
 //  }
 //  DistTables.push_back(d_table);
 //}
-int ParticleSet::addTable(const ParticleSet& psrc)
+int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
 {
+  if(myName=="none") APP_ABORT("ParticleSet::addTable needs a proper name for this particle set.");
   if (DistTables.empty())
   {
     DistTables.reserve(4);
-    DistTables.push_back(createDistanceTable(*this));
+#if defined(ENABLE_SOA)
+    DistTables.push_back(createDistanceTable(*this,DT_SOA));
+#else
+    //if(dt_type==DT_SOA_PREFERRED) dt_type=DT_AOS; //safety
+    DistTables.push_back(createDistanceTable(*this,dt_type));
+#endif
     //add  this-this pair
     myDistTableMap.clear();
-    myDistTableMap[ObjectTag]=0;
+    myDistTableMap[myName]=0;
     app_log() << "  ... ParticleSet::addTable Create Table #0 " << DistTables[0]->Name << std::endl;
     DistTables[0]->ID=0;
-    if (psrc.tag() == ObjectTag)
+    if (psrc.getName() == myName)
       return 0;
   }
-  if (psrc.tag() == ObjectTag)
+  if (psrc.getName() == myName)
   {
     app_log() << "  ... ParticleSet::addTable Reuse Table #" << 0 << " " << DistTables[0]->Name << std::endl;
+    //if(!DistTables[0]->is_same_type(dt_type))
+    //{//itself is special, cannot mix them: some of the users do not check the index
+    //  APP_ABORT("ParticleSet::addTable for itself Cannot mix AoS and SoA distance tables.\n");
+    //}
     return 0;
   }
-  int tsize=DistTables.size(),tid;
-  std::map<int,int>::iterator tit(myDistTableMap.find(psrc.tag()));
+  int tid;
+  std::map<std::string,int>::iterator tit(myDistTableMap.find(psrc.getName()));
   if (tit == myDistTableMap.end())
   {
     tid=DistTables.size();
-    DistTables.push_back(createDistanceTable(psrc,*this));
-    myDistTableMap[psrc.tag()]=tid;
+    DistTables.push_back(createDistanceTable(psrc,*this,dt_type));
+    myDistTableMap[psrc.getName()]=tid;
     DistTables[tid]->ID=tid;
     app_log() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->Name << std::endl;
   }
   else
   {
     tid = (*tit).second;
-    app_log() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << std::endl;
+    if(dt_type == DT_SOA_PREFERRED || DistTables[tid]->is_same_type(dt_type))  //good to reuse
+    {
+      app_log() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << std::endl;
+    }
+    else
+    {
+      APP_ABORT("ParticleSet::addTable Cannot mix AoS and SoA distance tables.\n");
+    }
+    //if(dt_type == DT_SOA || dt_type == DT_AOS) //not compatible
+    //{
+    //}
+    //for DT_SOA_PREFERRED or DT_AOS_PREFERRED, return the existing table
   }
   app_log().flush();
   return tid;
@@ -447,11 +439,11 @@ int ParticleSet::getTable(const ParticleSet& psrc)
   if (DistTables.empty())
     tid = -1;
   else
-    if (psrc.tag() == ObjectTag)
+    if (psrc.getName() == myName)
       tid = 0;
     else
     {
-      std::map<int,int>::iterator tit(myDistTableMap.find(psrc.tag()));
+      std::map<std::string,int>::iterator tit(myDistTableMap.find(psrc.getName()));
       if (tit == myDistTableMap.end())
         tid = -1;
       else
@@ -460,37 +452,32 @@ int ParticleSet::getTable(const ParticleSet& psrc)
   return tid;
 }
 
-void ParticleSet::update(int iflag)
+void ParticleSet::update(bool skipSK)
 {
+#if defined(ENABLE_SOA)
+  RSoA.copyIn(R); 
+#endif
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
-  if (SK)
+  if (!skipSK && SK)
     SK->UpdateAllPart(*this);
+
+  Ready4Measure=true;
 }
 
 void ParticleSet::update(const ParticlePos_t& pos)
 {
   R = pos;
+#if defined(ENABLE_SOA)
+  RSoA.copyIn(R); 
+#endif
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);
-}
 
-/** will use transpose */
-void ParticleSet::enableVirtualMoves()
-{
-  for (int i=0; i< DistTables.size(); i++)
-    DistTables[i]->resizeTranspose();
+  Ready4Measure=true;
 }
-
-/** update trans_r and trans_dr for virtual moves */
-void ParticleSet::initVirtualMoves()
-{
-  for (int i=0; i< DistTables.size(); i++)
-    DistTables[i]->setTranspose();
-}
-
 
 /** move a particle iat
  * @param iat the index of the particle to be moved
@@ -515,6 +502,15 @@ ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
     SK->makeMove(iat,newpos);
   return newpos;
 }
+
+void ParticleSet::setActive(int iat)
+{
+  myTimers[3]->start();
+  for (size_t i=0,n=DistTables.size(); i< n; i++)
+    DistTables[i]->evaluate(*this,iat);
+  myTimers[3]->stop();
+}
+
 
 /** move a particle iat
  * @param iat the index of the particle to be moved
@@ -588,6 +584,9 @@ bool ParticleSet::makeMove(const Walker_t& awalker
     for (int iat=0; iat<deltaR.size(); ++iat)
       R[iat]=awalker.R[iat]+dt*deltaR[iat];
   }
+#if defined(ENABLE_SOA)
+  RSoA.copyIn(R); 
+#endif
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -599,6 +598,7 @@ bool ParticleSet::makeMove(const Walker_t& awalker
 bool ParticleSet::makeMove(const Walker_t& awalker
                            , const ParticlePos_t& deltaR, const std::vector<RealType>& dt)
 {
+  Ready4Measure=false;
   activePtcl=-1;
   if (UseBoundBox)
   {
@@ -618,6 +618,9 @@ bool ParticleSet::makeMove(const Walker_t& awalker
     for (int iat=0; iat<deltaR.size(); ++iat)
       R[iat]=awalker.R[iat]+dt[iat]*deltaR[iat];
   }
+#if defined(ENABLE_SOA)
+  RSoA.copyIn(R); 
+#endif
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK)
@@ -637,6 +640,7 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
                                     , const ParticlePos_t& drift , const ParticlePos_t& deltaR
                                     , RealType dt)
 {
+  Ready4Measure=false;
   activePtcl=-1;
   if (UseBoundBox)
   {
@@ -656,8 +660,13 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
     for (int iat=0; iat<deltaR.size(); ++iat)
       R[iat]=awalker.R[iat]+dt*deltaR[iat]+drift[iat];
   }
+#if defined(ENABLE_SOA)
+  RSoA.copyIn(R); 
+#endif
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
+  for (size_t i=0; i<DistTables.size(); i++)
+    DistTables[i]->donePbyP();
   if (SK)
     SK->UpdateAllPart(*this);
   //every move is valid
@@ -668,6 +677,7 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
                                     , const ParticlePos_t& drift , const ParticlePos_t& deltaR
                                     , const std::vector<RealType>& dt)
 {
+  Ready4Measure=false;
   activePtcl=-1;
   if (UseBoundBox)
   {
@@ -687,8 +697,15 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
     for (int iat=0; iat<deltaR.size(); ++iat)
       R[iat]=awalker.R[iat]+dt[iat]*deltaR[iat]+drift[iat];
   }
+
+#if defined(ENABLE_SOA)
+  RSoA.copyIn(R); 
+#endif
+
   for (int i=0; i< DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
+  for (size_t i=0; i<DistTables.size(); i++)
+    DistTables[i]->donePbyP();
   if (SK)
     SK->UpdateAllPart(*this);
   //every move is valid
@@ -704,6 +721,7 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
 void
 ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ)
 {
+  myTimers[1]->start();
   activePtcl=iat;
   activePos=R[iat]; //save the current position
   SingleParticlePos_t newpos(activePos+displ);
@@ -712,6 +730,7 @@ ParticleSet::makeMoveOnSphere(Index_t iat, const SingleParticlePos_t& displ)
   R[iat]=newpos;
   if (SK && SK->DoUpdate)
     SK->makeMove(iat,R[iat]);
+  myTimers[1]->stop();
 }
 
 /** update the particle attribute by the proposed move
@@ -725,13 +744,14 @@ void ParticleSet::acceptMove(Index_t iat)
   if (iat == activePtcl)
   {
     //Update position + distance-table
-    for (int i=0; i< DistTables.size(); i++)
-    {
+    for (int i=0,n=DistTables.size(); i< n; i++)
       DistTables[i]->update(iat);
-    }
+
+    RSoA(iat)=R[iat];
+
     //Do not change SK: 2007-05-18
     if (SK && SK->DoUpdate)
-      SK->acceptMove(iat,GroupID[iat]);
+      SK->acceptMove(iat,GroupID[iat],activePos);
   }
   else
   {
@@ -741,24 +761,36 @@ void ParticleSet::acceptMove(Index_t iat)
   }
 }
 
-void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
-{
-  activePtcl=0;
-  activePos=R[0];
-  for (int i=0; i< DistTables.size(); ++i)
-    DistTables[i]->move(*this,newpos,0);
-  R[0]=newpos;
-}
-
 void ParticleSet::rejectMove(Index_t iat)
 {
   //restore the position by the saved activePos
   R[iat]=activePos;
-  //Do not change SK: 2007-05-18
-  //if(SK && SK->DoUpdate) SK->rejectMove(iat);
+  for (int i=0; i< DistTables.size(); ++i)
+    DistTables[i]->activePtcl=-1;
 }
 
-/** resize Sphere by the LocalNum
+void ParticleSet::donePbyP(bool skipSK)
+{
+  myTimers[2]->start();
+  for (size_t i=0; i<DistTables.size(); i++)
+    DistTables[i]->donePbyP();
+  if (!skipSK && SK && !SK->DoUpdate)
+    SK->UpdateAllPart(*this);
+  Ready4Measure=true;
+  myTimers[2]->stop();
+}
+
+void ParticleSet::makeVirtualMoves(const SingleParticlePos_t& newpos)
+{
+  activePtcl=0;
+  activePos=R[0];
+  for (size_t i=0; i< DistTables.size(); ++i)
+    DistTables[i]->move(*this,newpos,0);
+  R[0]=newpos;
+}
+
+
+/** resize Sphere by the TotalNum
  * @param nc number of centers to which Spherical grid will be assigned.
  */
 void ParticleSet::resizeSphere(int nc)
@@ -774,143 +806,48 @@ void ParticleSet::resizeSphere(int nc)
 void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
 {
   R = awalker.R;
+#if defined(ENABLE_SOA)
+  RSoA.copyIn(R); 
+#endif
+#if !defined(SOA_MEMORY_OPTIMIZED)
   G = awalker.G;
   L = awalker.L;
-  //awalker.DataSet.rewind();
-  //identical to copyFromBuffer but forbid using buffer
-//#if defined(PACK_DISTANCETABLES)
-//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->copyFromBuffer(buf);
-//    if(SK) SK->copyFromBuffer(buf);
-//#else
+#endif
   if (pbyp)
   {
+    // in certain cases, full tables must be ready
     for (int i=0; i< DistTables.size(); i++)
-      DistTables[i]->evaluate(*this);
+      if(DistTables[i]->Need_full_table_loadWalker) DistTables[i]->evaluate(*this);
     //computed so that other objects can use them, e.g., kSpaceJastrow
     if(SK && SK->DoUpdate)
       SK->UpdateAllPart(*this);
   }
-//#endif
+
+  Ready4Measure=false;
+}
+
+void ParticleSet::loadWalker(Walker_t* awalker)
+{
+  if(activeWalker != awalker)
+  {
+    activeWalker=awalker;
+    R = awalker->R;
+  }
 }
 
 void ParticleSet::saveWalker(Walker_t& awalker)
 {
   awalker.R=R;
+#if !defined(SOA_MEMORY_OPTIMIZED)
   awalker.G=G;
   awalker.L=L;
+#endif
   //PAOps<RealType,OHMMS_DIM>::copy(G,awalker.Drift);
-  if (SK)
-    SK->UpdateAllPart(*this);
+  //if (SK)
+  //  SK->UpdateAllPart(*this);
   //awalker.DataSet.rewind();
 }
 
-
-//  void
-//  ParticleSet::registerData(Walker_t& awalker, PooledData<RealType>& buf) {
-//    R = awalker.R;
-//#if defined(PACK_DISTANCETABLES)
-//    for(int i=0; i< DistTables.size(); i++)
-//    {
-//      DistTables[i]->evaluate(*this);
-//      DistTables[i]->registerData(buf);
-//    }
-//    if(SK)
-//    {
-//      SK->UpdateAllPart();
-//      SK->registerData(buf);
-//    }
-//#else
-//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-//    if(SK) SK->UpdateAllPart();
-//#endif
-//  }
-//
-//  void
-//  ParticleSet::registerData(PooledData<RealType>& buf) {
-//#if defined(PACK_DISTANCETABLES)
-//    for(int i=0; i< DistTables.size(); i++)
-//    {
-//      DistTables[i]->evaluate(*this);
-//      DistTables[i]->registerData(buf);
-//    }
-//    if(SK)
-//    {
-//      SK->UpdateAllPart();
-//      SK->registerData(buf);
-//    }
-//#else
-//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-//    if(SK) SK->UpdateAllPart();
-//#endif
-//  }
-//
-//  void
-//  ParticleSet::updateBuffer(Walker_t& awalker, PooledData<RealType>& buf) {
-//    R = awalker.R;
-//#if defined(PACK_DISTANCETABLES)
-//    for(int i=0; i< DistTables.size(); i++)
-//    {
-//      DistTables[i]->evaluate(*this);
-//      DistTables[i]->updateBuffer(buf);
-//    }
-//    if(SK)
-//    {
-//      SK->UpdateAllPart();
-//      SK->updateBuffer(buf);
-//    }
-//#else
-//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-//    if(SK) SK->UpdateAllPart();
-//#endif
-//  }
-//
-//  void
-//  ParticleSet::updateBuffer(PooledData<RealType>& buf) {
-//#if defined(PACK_DISTANCETABLES)
-//    for(int i=0; i< DistTables.size(); i++)
-//    {
-//      DistTables[i]->evaluate(*this);
-//      DistTables[i]->updateBuffer(buf);
-//    }
-//    if(SK)
-//    {
-//      SK->UpdateAllPart();
-//      SK->updateBuffer(buf);
-//    }
-//#else
-//    //for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-//    if(SK) SK->UpdateAllPart();
-//#endif
-//  }
-//
-//  void
-//  ParticleSet::copyToBuffer(PooledData<RealType>& buf) {
-//#if defined(PACK_DISTANCETABLES)
-//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->copyToBuffer(buf);
-//    //Do not change SK: 2007-05-18
-//    //if(SK) SK->copyToBuffer(buf);
-//    if(SK)
-//    {//need to calculate the Sk with the current position
-//      if(!SK->DoUpdate) SK->UpdateAllPart();
-//      SK->copyToBuffer(buf);
-//    }
-//#else
-//    if(SK && !SK->DoUpdate) SK->UpdateAllPart();
-//#endif
-//  }
-//
-//  void
-//  ParticleSet::copyFromBuffer(PooledData<RealType>& buf)
-//  {
-//#if defined(PACK_DISTANCETABLES)
-//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->copyFromBuffer(buf);
-//    if(SK) SK->copyFromBuffer(buf);
-//#else
-//    for(int i=0; i< DistTables.size(); i++) DistTables[i]->evaluate(*this);
-//    if(SK) SK->UpdateAllPart();
-//#endif
-//  }
-//
 void ParticleSet::initPropertyList()
 {
   PropertyList.clear();
@@ -988,8 +925,3 @@ int ParticleSet::addPropertyHistory(int leng)
 
 }
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

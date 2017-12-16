@@ -54,8 +54,3 @@ struct MolecularOrbitalBuilder: public OrbitalBuilderBase
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

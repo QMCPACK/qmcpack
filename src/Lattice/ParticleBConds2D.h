@@ -280,8 +280,3 @@ struct DTD_BConds<T,2,SUPERCELL_WIRE>
 #endif // OHMMS_PARTICLE_BCONDS_2D_H
 
 
-/***************************************************************************
- * $RCSfile$   $Author: jeongnim.kim $
- * $Revision: 5204 $   $Date: 2011-04-29 11:33:50 -0500 (Fri, 29 Apr 2011) $
- * $Id: ParticleBConds.h 5204 2011-04-29 16:33:50Z jeongnim.kim $
- ***************************************************************************/

@@ -175,25 +175,11 @@ public:
 
   ValueType ratio(ParticleSet& P, int iat);
 
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
-  {
-    return std::exp(logRatio(P,iat,dG,dL));
-  };
-
   GradType evalGrad(ParticleSet& P, int iat);
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  ValueType logRatio(ParticleSet& P, int iat,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL);
 
   void restore(int iat);
   void acceptMove(ParticleSet& P, int iat);
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat);
 
   // Allocate per-walker data in the PooledData buffer
   RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
@@ -203,7 +189,6 @@ public:
   // Pull data from the walker buffer at the beginning of a block of
   // single-particle moves
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
 
   ///process input file
   bool put(xmlNodePtr cur);
@@ -231,8 +216,3 @@ private:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2595 $   $Date: 2008-04-17 07:52:58 -0500 (Thu, 17 Apr 2008) $
- * $Id: kSpaceJastrow.h 2595 2008-04-17 12:52:58Z jnkim $
- ***************************************************************************/

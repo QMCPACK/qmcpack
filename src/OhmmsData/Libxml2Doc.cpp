@@ -284,8 +284,3 @@ bool Libxml2Document::parseFromString(const std::string& data)
 //      delete [] charbuff;
 //    }
 //#else
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

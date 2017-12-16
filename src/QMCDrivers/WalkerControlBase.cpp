@@ -200,7 +200,10 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
       r2_accepted+=(*it)->Properties(R2ACCEPTED);
       r2_proposed+=(*it)->Properties(R2PROPOSED);
       RealType e((*it)->Properties(LOCALENERGY));
-      RealType wgt=((*it)->Weight);
+      // This is a trick to estimate the number of walkers
+      // after the first iterration branching.
+      //RealType wgt=((*it)->Weight);
+      RealType wgt=RealType(nc);
       esum += wgt*e;
       e2sum += wgt*e*e;
       wsum += wgt;
@@ -226,7 +229,8 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
   measureProperties(iter);
   trialEnergy=EnsembleProperty.Energy;
   W.EnsembleProperty=EnsembleProperty;
-  return W.getActiveWalkers();
+  //return W.getActiveWalkers();
+  return int(curData[WEIGHT_INDEX]);
 }
 
 int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
@@ -252,6 +256,12 @@ int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, RealType trigg
   }
   //set the global number of walkers
   W.setGlobalNumWalkers(nw_tot);
+  // Update offsets in non-MPI case, needed to ensure checkpoint outputs the correct
+  // number of configurations.
+  if (W.WalkerOffsets.size() == 2)
+  {
+    W.WalkerOffsets[1] = nw_tot;
+  }
   return nw_tot;
 }
 
@@ -466,13 +476,21 @@ bool WalkerControlBase::put(xmlNodePtr cur)
 
   bool success=params.put(cur);
 
+  setMinMax(nw_target,nw_max);
   app_log() << "  WalkerControlBase parameters " << std::endl;
   //app_log() << "    energyBound = " << targetEnergyBound << std::endl;
   //app_log() << "    sigmaBound = " << targetSigma << std::endl;
   app_log() << "    maxCopy = " << MaxCopy << std::endl;
-  if(nw_target>0)
+  app_log() << "    Max Walkers per node " << Nmax << std::endl;
+  app_log() << "    Min Walkers per node " << Nmin << std::endl;
+  return true;
+}
+
+void WalkerControlBase::setMinMax(int nw_in, int nmax_in)
+{
+  if(nw_in>0)
   {
-    int npernode=nw_target/NumContexts;
+    int npernode=nw_in/NumContexts;
     if(MyMethod)
     {
       Nmax=npernode;
@@ -480,19 +498,11 @@ bool WalkerControlBase::put(xmlNodePtr cur)
     }
     else
     {
-      Nmax=2*npernode+1;
+      Nmax=MaxCopy*npernode+1;
       Nmin=npernode/5+1;
+      if(nmax_in>0) Nmax=nmax_in;
     }
   }
-  if(nw_max>0) Nmax=nw_max;
-  app_log() << "   Max Walkers per node " << Nmax << std::endl;
-  app_log() << "   Min Walkers per node " << Nmin << std::endl;
-  return true;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

@@ -307,20 +307,6 @@ public:
   virtual void setObservables(PropertySetType& plist) {}
   virtual void setParticlePropertyList(PropertySetType& plist, int offset) {}
   virtual void setHistories(Walker_t& ThisWalker) {}
-
-  // does not participate in single particle moves
-  virtual Return_t registerData(ParticleSet& P, BufferType& buffer)
-  {
-    return 0.0;
-  }
-  virtual Return_t updateBuffer(ParticleSet& P, BufferType& buf)
-  {
-    return 0.0;
-  }
-  virtual void copyFromBuffer(ParticleSet& P, BufferType& buf) {}
-  virtual void copyToBuffer(ParticleSet& P, BufferType& buf) {}
-  virtual void acceptMove(int active) {}
-  virtual void rejectMove(int active) {}
 };
 
 }

@@ -58,15 +58,14 @@ DiracDeterminantOpt::resetParameters(const opt_variables_type& optvars)
 {
   Phi->resetParameters(optvars);
   // Update the direct matrices
-  Phi->evaluate(*targetPtcl, FirstIndex, LastIndex, psiM,dpsiM, d2psiM);
+  Phi->evaluate_notranspose(*targetPtcl, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
   // Invert PsiM
   if(NumPtcls==1)
-    psiM(0,0) = (RealType)1.0/psiM(0,0);
+    psiM(0,0) = (RealType)1.0/psiM_temp(0,0);
   else
   {
     InverseTimer.start();
-    LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,
-                           WorkSpace.data(),Pivot.data(),PhaseValue);
+    invertPsiM(psiM_temp,psiM);
     InverseTimer.stop();
   }
   psiM_temp = psiM;

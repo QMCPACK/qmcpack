@@ -55,7 +55,7 @@ struct NumberFluctuations: public QMCHamiltonianBase
       i--;
     }
     PBCType=(P.Lattice.SuperCellEnum>1);
-    d_table = DistanceTable::add(P);
+    d_table = DistanceTable::add(P,DT_AOS);
   }
 
   ~NumberFluctuations() { }
@@ -299,33 +299,6 @@ struct NumberFluctuations: public QMCHamiltonianBase
     return evaluate(P);
   }
 
-  inline Return_t
-  registerData(ParticleSet& P, BufferType& buffer)
-  {
-    return 0.0;
-  }
-
-  inline Return_t
-  updateBuffer(ParticleSet& P, BufferType& buffer)
-  {
-    return 0.0;
-  }
-
-  inline void copyFromBuffer(ParticleSet& P, BufferType& buffer)
-  {
-  }
-
-  inline void copyToBuffer(ParticleSet& P, BufferType& buffer)
-  {
-  }
-
-  inline Return_t
-  evaluatePbyP(ParticleSet& P, int active)
-  {
-    APP_ABORT("NumberFluctuations::evaluatePbyP");
-    return 0.0;
-  }
-
   /** Do nothing */
   bool put(xmlNodePtr cur)
   {
@@ -391,9 +364,4 @@ struct NumberFluctuations: public QMCHamiltonianBase
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author: jeongnim.kim $
- * $Revision: 4238 $   $Date: 2009-09-29 12:43:33 -0500 (Tue, 29 Sep 2009) $
- * $Id: CoulombPotential.h 4238 2009-09-29 17:43:33Z jeongnim.kim $
- ***************************************************************************/
 

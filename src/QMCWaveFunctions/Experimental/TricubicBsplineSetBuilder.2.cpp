@@ -209,8 +209,3 @@ void TricubicBsplineSetBuilder::readComplex2RealDataWithTruncation(const char* h
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2082 $   $Date: 2007-06-15 16:25:49 -0500 (Fri, 15 Jun 2007) $
- * $Id: TricubicBsplineSetBuilder.cpp 2082 2007-06-15 21:25:49Z jnkim $
- ***************************************************************************/

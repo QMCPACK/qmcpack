@@ -47,8 +47,6 @@ namespace qmcplusplus {
     scalars.resize(NumCopies  + 
 		   h_components.size()*(NumCopies+NumCopies*(NumCopies-1)/2));
     scalars_saved.resize(scalars.size());
-    //    std::cerr << "scalars.size() = " << scalars.size() << std::endl;
-    //d_data.resize(NumCopies*3+NumCopies*(NumCopies-1)/2);
   }
 
   ScalarEstimatorBase* CSEnergyEstimator::clone()
@@ -128,81 +126,25 @@ namespace qmcplusplus {
 
     for(int i=0; i<NumCopies; i++) 
     {
-      
       scalars[ii++](uweights[i],1.0);
-      //scalars.average()
-      RealType ui_avg=scalars_saved[ii-1].mean();
-      if (ui_avg > 0) weightaverage[i]=ui_avg;
-      else weightaverage[i]=1;
-     // app_log()<<"i="<<i<<" ii="<<ii<<" uweight[i]="<<uweights[i]<<" scalars[ii]="<<scalars_saved[ii-1].result()<<" wa="<<weightaverage[i]<< std::endl; 
     }
 
+    int ii_i(0);  //index of observable ii for copy i
+    int ii_j(0);  //index of observable ii for copy j
     for(int i=0; i<NumCopies; i++) 
     {
-      RealType ui=uweights[i];
       for(int j=i+1; j<NumCopies; j++)
       {
-        RealType uj=uweights[j];
-	// std::cerr << "ui = " << ui << "  uj = " << uj << std::endl;
-	// std::cerr << "diff        = " << tmp_data(j,0) - tmp_data(i,0) << std::endl;
-	// std::cerr << "LOCALENERGY = " << uj*awalker.getPropertyBase(j)[LOCALENERGY] 
-	//   - ui*awalker.getPropertyBase(i)[LOCALENERGY] << std::endl;
-
-        for(int k=0; k<tmp_data.cols(); ++k){
-	 		 
-          scalars[ii++]((ui*tmp_data(i,k)/weightaverage[i]-uj*tmp_data(j,k)/weightaverage[j]),1.0);
-//          app_log()<<"i="<<i<<" ii="<<ii<<" wai="<<weightaverage[i]<<" waj="<<weightaverage[j]<< std::endl;
-	  }
-	  // scalars[ii++](awalker.getPropertyBase(j)[LOCALENERGY] -
-	  // 		awalker.getPropertyBase(i)[LOCALENERGY],1.0);
+        for(int k=0; k<tmp_data.cols(); ++k)
+        {
+          ii_i=i*tmp_data.cols()+k;
+          ii_j=j*tmp_data.cols()+k; 
+	  
+          //reset is used here because we do no accumulating.  Just overwrite.
+          scalars[ii++].reset(scalars[ii_i].mean()-scalars[ii_j].mean(),1.0);
+	}
       }
     }
-    //d_data[ii++]+=uw[i]*e[i]-uw[j]*e[j];
   }
 
-  void 
-  CSEnergyEstimator::evaluateDiff() 
-  {
-//    int ii=0;
-//    for(int i=0; i<NumCopies; i++,ii+=3) 
-//    {
-//      RealType r= d_wgt/d_data[ii+2];
-//      d_data[ii] *= r;
-//      d_data[ii+1] *= r;
-//    }
-//
-//    //d_wgt=1.0;
-//    for(int i=0; i<NumCopies-1; i++) 
-//      for(int j=i+1; j<NumCopies; j++)
-//        d_data[ii++]+=d_data[j*3]-d_data[i*3];
-  }
-
-//  ///Set CurrentWalker to zero so that accumulation is done in a vectorized way
-//  void CSEnergyEstimator::reset() 
-//  {
-//    //d_wgt=0.0;
-//    //std::fill(d_data.begin(), d_data.end(),0.0);
-//  }
-//
-//  void CSEnergyEstimator::report(RecordNamedProperty<RealType>& record, RealType wgtinv)
-//  {
-//  }
-//
-//  /** calculate the averages and reset to zero
-//   * @param record a container class for storing scalar records (name,value)
-//   * @param wgtinv the inverse weight
-//   *
-//   * Disable collection. CSEnergyEstimator does not need to communiate at all.
-//   */
-//  void CSEnergyEstimator::report(RecordNamedProperty<RealType>& record, 
-//      RealType wgtinv, BufferType& msg) 
-//  {
-//  //  msg.get(d_data.begin(),d_data.end());
-//  //  report(record,wgtinv);
-//  }
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1926 $   $Date: 2007-04-20 12:30:26 -0500 (Fri, 20 Apr 2007) $
- * $Id: CSEnergyEstimator.cpp 1926 2007-04-20 17:30:26Z jnkim $
- ***************************************************************************/

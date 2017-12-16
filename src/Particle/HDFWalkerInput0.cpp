@@ -22,7 +22,6 @@
 #include "Particle/HDFParticleAttrib.h"
 #include "Numerics/HDFNumericAttrib.h"
 #endif
-#include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/RandomGeneratorIO.h"
 #include "OhmmsData/FileUtility.h"
@@ -304,8 +303,3 @@ void  HDFWalkerInput0::getRandomState(bool restart)
   ERRORMSG("HDF5 is disabled")
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -88,30 +88,9 @@ public:
                        ,ParticleSet::ParticleGradient_t& G
                        ,ParticleSet::ParticleLaplacian_t& L);
 
-  RealType evaluateLog(ParticleSet& P,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L,
-                       PooledData<RealType>& buf,
-                       bool fillBuffer);
-
   RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
   RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-  void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf);
-  void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
-
-  inline ValueType ratio(ParticleSet& P, int iat,
-                         ParticleSet::ParticleGradient_t& dG,
-                         ParticleSet::ParticleLaplacian_t& dL)
-  {
-    BFTrans->evaluatePbyPAll(P,iat);
-    //BFTrans->evaluate(P);
-    ValueType psi=1.0;
-    for(int i=0; i<Dets.size(); ++i)
-      psi *= Dets[i]->ratio(P,iat,dG,dL);
-    return psi;
-  }
 
   inline ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
@@ -157,14 +136,6 @@ public:
     return GradType();
   }
 
-  inline ValueType logRatio(ParticleSet& P, int iat,
-                            ParticleSet::ParticleGradient_t& dG,
-                            ParticleSet::ParticleLaplacian_t& dL)
-  {
-    APP_ABORT("Need to implement SlaterDetWithBackflow::logRatio() \n");
-    return ValueType();
-  }
-
   inline void acceptMove(ParticleSet& P, int iat)
   {
     BFTrans->acceptMove(P,iat);
@@ -201,15 +172,6 @@ public:
     APP_ABORT("Need to implement SlaterDetWithBackflow::alternateRatio() \n");
   }
 
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat)
-  {
-    for(int i=0; i<Dets.size(); ++i)
-      Dets[i]->update(P,dG,dL,iat);
-  }
-
   OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
   SPOSetBasePtr getPhi(int i=0)
@@ -231,8 +193,3 @@ public:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jeongnim.kim $
- * $Revision: 4711 $   $Date: 2010-03-07 18:06:54 -0600 (Sun, 07 Mar 2010) $
- * $Id: SlaterDetWithBackflow.h 4711 2010-03-08 00:06:54Z jeongnim.kim $
- ***************************************************************************/

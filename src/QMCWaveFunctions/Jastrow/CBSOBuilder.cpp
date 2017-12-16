@@ -12,7 +12,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "Utilities/OhmmsInfo.h"
 #include "Numerics/LibxmlNumericIO.h"
 #include "Numerics/GaussianBasisSet.h"
 #include "Numerics/SlaterBasisSet.h"
@@ -147,8 +146,3 @@ CBSOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1269 $   $Date: 2006-08-15 16:27:38 -0500 (Tue, 15 Aug 2006) $
- * $Id: CBSOBuilder.cpp 1269 2006-08-15 21:27:38Z jnkim $
- ***************************************************************************/

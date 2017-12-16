@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef OHMMS_RANDOMNUMBERCONTROL_H__
@@ -19,6 +17,7 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/PrimeNumberSet.h"
+#include <io/hdf_archive.h>
 
 class Communicate;
 
@@ -56,17 +55,48 @@ public:
 
   xmlNodePtr initialize(xmlXPathContextPtr);
 
-  /** read random state from a hdf file
+  /** read in parallel or serial
    * @param fname file name
-   * @param comm communicator so that everyone reads its own data
+   * @param comm communicator
    */
   static void read(const std::string& fname, Communicate* comm);
-  /** write random state to a hdf file
+  /** write in parallel or serial
    * @param fname file name
-   * @param comm communicator so that everyone writes its own data
+   * @param comm communicator
    */
   static void write(const std::string& fname, Communicate* comm);
-
+  /** read random state from a hdf file in parallel
+   * @param hdf_archive set to parallel
+   * @param comm communicator
+   */
+  static void read_parallel(hdf_archive& hin, Communicate* comm);
+  /** write random state to a hdf file in parallel
+   * @param hdf_archive set to parallel
+   * @param comm communicator
+   */
+  static void write_parallel(hdf_archive& hout, Communicate* comm);
+  /** rank 0 reads random states from a hdf file
+   * and distributes them to all the other ranks
+   * @param hdf_archive set to serial
+   * @param comm communicator
+   */
+  static void read_rank_0(hdf_archive& hin, Communicate* comm);
+  /** rank 0 gathers the random states from all the other ranks
+   * and write them to a hdf file
+   * @param hin hdf_archive object set to serial
+   * @param comm communicator
+   */
+  static void write_rank_0(hdf_archive& hout, Communicate* comm);
+   /** read random state from a xml file
+   * @param fname file name
+   * @param comm communicator
+   */
+  static void read_old(const std::string& fname, Communicate* comm);
+   /** write random state to a xml file
+   * @param fname file name
+   * @param comm communicator
+   */
+  static void write_old(const std::string& fname, Communicate* comm);
 private:
 
   bool NeverBeenInitialized;
@@ -77,8 +107,3 @@ private:
 
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

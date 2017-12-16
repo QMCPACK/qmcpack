@@ -136,9 +136,4 @@ struct LinearCombinationFunctor: public OptimizableFunctorBase
 };
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1697 $   $Date: 2007-02-04 15:12:32 -0600 (Sun, 04 Feb 2007) $
- * $Id: OptimizableFunctorBase.h 1697 2007-02-04 21:12:32Z jnkim $
- ***************************************************************************/
 

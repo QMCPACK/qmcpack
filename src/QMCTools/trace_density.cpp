@@ -26,7 +26,6 @@
 #include <io/hdf_archive.h>
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsData/AttributeSet.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/Timer.h"
 #include "Message/Communicate.h"
@@ -1125,8 +1124,10 @@ struct TraceAnalyzer
 
   void analyze(char* infile)
   {
-    //initialize mpi
-    OhmmsInfo Welcome("density",comm->rank());
+    if (comm->rank() != 0) {
+      outputManager.shutOff();
+    }
+
     Random.init(0,1,11);
     master = comm->rank()==master_rank;
 

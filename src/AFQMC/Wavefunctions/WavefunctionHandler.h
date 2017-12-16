@@ -38,12 +38,7 @@ class WavefunctionHandler: public MPIObjectBase, public AFQMCInfo
       return ImpSampWfn->getHF();
     }
 
-    void setHeadComm(bool hd, MPI_Comm comm) {
-      head_of_nodes=hd;
-      MPI_COMM_HEAD_OF_NODES = comm;
-    }
-
-    bool init(std::vector<int>& TGdata, ComplexSMVector *v,hdf_archive&,const std::string&, MPI_Comm, MPI_Comm); 
+    bool init(std::vector<int>& TGdata, SPComplexSMVector *v,hdf_archive&,const std::string&, MPI_Comm, MPI_Comm, MPI_Comm); 
 
     bool setup(HamPtr); 
 
@@ -51,18 +46,10 @@ class WavefunctionHandler: public MPIObjectBase, public AFQMCInfo
 
     void evaluateMeanFields() {}
 
-    bool isClosedShell(const std::string& type) {
-      if(type == std::string("ImportanceSampling")) {
-        return ImpSampWfn->isClosedShell();
-      } else if(type == std::string("Estimator")) {
-        if(EstimatorWfn!=NULL) {
-          return EstimatorWfn->isClosedShell();
-        }
-        APP_ABORT("Undefined wavefunction in isClosedShell('Estimator') \n\n\n");
-      } else {
-        APP_ABORT("Unknown wavefunction type in isClosedShell(). \n");
-      }
-      return  false;
+    void setupFactorizedHamiltonian(bool sp, SPValueSMSpMat* spvn_, SPValueSMVector* dvn_, RealType dt_, afqmc::TaskGroup* tg_)
+    {
+      for(int i=0; i<wfns.size(); i++) 
+        wfns[i]->setupFactorizedHamiltonian(sp,spvn_,dvn_,dt_,tg_);
     }
 
     inline int sizeOfInfoForDistributedPropagation(const std::string& type) {
@@ -78,6 +65,8 @@ class WavefunctionHandler: public MPIObjectBase, public AFQMCInfo
       }
       return 0;
     } 
+
+ 
  
     inline void evaluateLocalEnergyAndOverlap(const std::string& type, const int n, WalkerHandlerBase* wset)
     {
@@ -94,45 +83,19 @@ class WavefunctionHandler: public MPIObjectBase, public AFQMCInfo
         } else {
           APP_ABORT("Unknown wavefunction type in evaluateLocalEnergyAndOverlap(wset). \n");
         }      
+    }
 
-/*
-      if(new_algo) {
+    inline void verifyWalkerData(const std::string& type, const int n, WalkerHandlerBase* wset)
+    {
         if(type == std::string("ImportanceSampling")) {
-          ImpSampWfn->evaluateLocalEnergy(wset,n);
+          ImpSampWfn->verifyWalkerData(wset,true,n);
         } else if(type == std::string("Estimator")) {
           if(EstimatorWfn!=NULL) {
-            EstimatorWfn->evaluateLocalEnergy(wset,n);
-          } else {
-            for(int i=0; i<nw; i++)
-              wset->setEloc2(i,ComplexType(0,0));
+            EstimatorWfn->verifyWalkerData(wset,false,n);
           }
         } else {
-          APP_ABORT("Unknown wavefunction type in evaluateLocalEnergyAndOverlap. \n");
+          APP_ABORT("Unknown wavefunction type in verifyWalkerData(wset). \n");
         }
-      } else {  
-        if(type == std::string("ImportanceSampling")) {
-          for(int i=0; i<nw; i++) {
-            if(!wset->isAlive(i) || std::abs(wset->getWeight(i)) <= 1e-6) continue; 
-            ImpSampWfn->evaluateLocalEnergy(wset->getSM(i),ekin,epot,ovlp_a,ovlp_b,n);
-            wset->setWalker(i,ekin+epot,ovlp_a,ovlp_b); 
-          } 
-        } else if(type == std::string("Estimator")) {
-          if(EstimatorWfn!=NULL) {
-            for(int i=0; i<nw; i++) {
-              if(!wset->isAlive(i) || std::abs(wset->getWeight(i)) <= 1e-6) continue; 
-              EstimatorWfn->evaluateLocalEnergy(wset->getSM(i),ekin,epot,ovlp_a,ovlp_b,n);
-              wset->setEloc2(i,ekin+epot); 
-              wset->setOvlp2(i,ovlp_a,ovlp_b); 
-            } 
-          } else {
-            for(int i=0; i<nw; i++) 
-              wset->setEloc2(i,ComplexType(0,0)); 
-          }
-        } else {
-          APP_ABORT("Unknown wavefunction type in evaluateLocalEnergyAndOverlap. \n");
-        }
-      }
-*/
     }
 
     inline void evaluateLocalEnergyAndOverlap(const std::string& type, const int n, ComplexType* SM, ComplexType& eloc, ComplexType& ovlp_a, ComplexType& ovlp_b)
@@ -153,27 +116,8 @@ class WavefunctionHandler: public MPIObjectBase, public AFQMCInfo
       }
     } 
 
-    inline void evaluateLocalEnergyAndOverlap(bool addBetaBeta, const std::string& type, const int n, ComplexType* SM, ComplexType& eloc, ComplexType& ovlp_a, ComplexType& ovlp_b, const ComplexSMSpMat& Spvn, bool transposed, RealType dt)
-    {
-      ComplexType ekin,epot;
-      if(type == std::string("ImportanceSampling")) {
-        ImpSampWfn->evaluateLocalEnergy(addBetaBeta,dt,SM,Spvn,ekin,epot,ovlp_a,ovlp_b,transposed,n);
-        eloc = ekin+epot;
-      } else if(type == std::string("Estimator")) {
-        if(EstimatorWfn!=NULL) {
-          EstimatorWfn->evaluateLocalEnergy(addBetaBeta,dt,SM,Spvn,ekin,epot,ovlp_a,ovlp_b,transposed,n);
-          eloc = ekin+epot;
-        } else {
-          eloc = 0;
-        }
-      } else {
-        APP_ABORT("Unknown wavefunction type in evaluateLocalEnergyAndOverlap(Spvn). \n");
-      }
-    }
-
     inline void evaluateOverlap(const std::string& type, const int n, WalkerHandlerBase* wset) 
     {
-
         if(type == std::string("ImportanceSampling")) {
           ImpSampWfn->evaluateOverlap(wset,true,n);
         } else if(type == std::string("Estimator")) {
@@ -183,41 +127,6 @@ class WavefunctionHandler: public MPIObjectBase, public AFQMCInfo
         } else {
           APP_ABORT("Unknown wavefunction type in evaluateOverlap(wset). \n");
         } 
-
-/*
-      int nw = wset->numWalkers(true);
-      if(nw==0) return;
-      ComplexType ovlp_a,ovlp_b;
-      if(new_algo) {
-        if(type == std::string("ImportanceSampling")) {
-          //ImpSampWfn->dist_evaluateOverlap(wset,n);
-        } else if(type == std::string("Estimator")) {
-          if(EstimatorWfn!=NULL) {
-            //EstimatorWfn->dist_evaluateOverlap(wset,n);
-          }   
-        } else {
-          APP_ABORT("Unknown wavefunction type in evaluateLocalEnergyAndOverlap. \n");
-        } 
-      } else { 
-        if(type == std::string("ImportanceSampling")) {
-          for(int i=0; i<nw; i++) {
-            if(!wset->isAlive(i) || std::abs(wset->getWeight(i)) <= 1e-6) continue;
-            ImpSampWfn->evaluateOverlap(wset->getSM(i),ovlp_a,ovlp_b,n);
-            wset->setOvlp(i,ovlp_a,ovlp_b);
-          }
-        } else if(type == std::string("Estimator")) {
-          if(EstimatorWfn!=NULL) {
-            for(int i=0; i<nw; i++) {
-              if(!wset->isAlive(i) || std::abs(wset->getWeight(i)) <= 1e-6) continue;
-              EstimatorWfn->evaluateOverlap(wset->getSM(i),ovlp_a,ovlp_b,n);
-              wset->setOvlp2(i,ovlp_a,ovlp_b);
-            }
-          }
-        } else {
-          APP_ABORT("Unknown wavefunction type in evaluateLocalEnergyAndOverlap. \n");
-        }
-      }
-*/
     }
 
     inline void evaluateOverlap(const std::string& type, const int n, ComplexType* SM, ComplexType& ovlp_a, ComplexType& ovlp_b)
@@ -231,41 +140,37 @@ class WavefunctionHandler: public MPIObjectBase, public AFQMCInfo
       }
     }
 
-    inline void evaluateOneBodyMixedDensityMatrix(const std::string& type, WalkerHandlerBase* wset, ComplexSMVector* buf, int wlksz, int gfoffset, bool full=true) 
+    inline void evaluateOneBodyMixedDensityMatrix(const std::string& type, WalkerHandlerBase* wset, SPComplexSMVector* buf, int wlksz, int gfoffset, bool transposed, bool full=true) 
     {
       if(type == std::string("ImportanceSampling")) {
-        ImpSampWfn->evaluateOneBodyMixedDensityMatrix(wset,buf,wlksz,gfoffset,full);
+        ImpSampWfn->evaluateOneBodyMixedDensityMatrix(wset,buf,wlksz,gfoffset,transposed,full);
       } else if(type == std::string("Estimator")) {
-        EstimatorWfn->evaluateOneBodyMixedDensityMatrix(wset,buf,wlksz,gfoffset,full);
+        EstimatorWfn->evaluateOneBodyMixedDensityMatrix(wset,buf,wlksz,gfoffset,transposed,full);
       } else {
         APP_ABORT("Unknown wavefunction type in evaluateOneBodyMixedDensityMatrix. \n");
       }
     }
 
-//    ComplexType evaluateLocalEnergy(const std::string& type, const int n, ComplexMatrix& SD) {}
-
-//    ComplexType evaluateOverlap(const std::string& type, const int n, ComplexMatrix& SD) {}
-
-    template<class T>
-    void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const std::string& type, const int n, ComplexType* SM, T& Spvn , std::vector<ComplexType>& v, bool transposed , bool needsG) {
+    template<class T1, class T2>
+    void calculateMixedMatrixElementOfOneBodyOperators(bool addBetaBeta, const std::string& type, const int n, ComplexType* SM, const SPComplexType* GG, T1& Spvn, T2& SpvnT , std::vector<SPComplexType>& v, bool transposed , bool needsG) {
 
       if(type == std::string("ImportanceSampling")) {
-        ImpSampWfn->calculateMixedMatrixElementOfOneBodyOperators(addBetaBeta,SM,Spvn,v,transposed,needsG,n);
+        ImpSampWfn->calculateMixedMatrixElementOfOneBodyOperators(addBetaBeta,SM,GG,Spvn,SpvnT,v,transposed,needsG,n);
       } else if(type == std::string("Estimator")) {
-        EstimatorWfn->calculateMixedMatrixElementOfOneBodyOperators(addBetaBeta,SM,Spvn,v,transposed,needsG,n);
+        EstimatorWfn->calculateMixedMatrixElementOfOneBodyOperators(addBetaBeta,SM,GG,Spvn,SpvnT,v,transposed,needsG,n);
       } else {
         APP_ABORT("Unknown wavefunction type in calculateMixedMatrixElementOfOneBodyOperators. \n");
       }
 
     } 
 
-    template<class T>
-    void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const std::string& type, const int n, ComplexType* buff, int ik0, int ikN, int pik0, T& Spvn , std::vector<ComplexType>& v, bool transposed , bool needsG) {
+    template<class T1, class T2>
+    void calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(bool addBetaBeta, const std::string& type, const int n, SPComplexType* buff, int ik0, int ikN, T1& Spvn, T2& SpvnT, std::vector<SPComplexType>& v, int walkerBlock, int nW, bool transposed , bool needsG) {
 
       if(type == std::string("ImportanceSampling")) {
-        ImpSampWfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(addBetaBeta,buff,ik0,ikN,pik0,Spvn,v,transposed,needsG,n);
+        ImpSampWfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(addBetaBeta,buff,ik0,ikN,Spvn,SpvnT,v,walkerBlock,nW,transposed,needsG,n);
       } else if(type == std::string("Estimator")) {
-        EstimatorWfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(addBetaBeta,buff,ik0,ikN,pik0,Spvn,v,transposed,needsG,n);
+        EstimatorWfn->calculateMixedMatrixElementOfOneBodyOperatorsFromBuffer(addBetaBeta,buff,ik0,ikN,Spvn,SpvnT,v,walkerBlock,nW,transposed,needsG,n);
       } else {
         APP_ABORT("Unknown wavefunction type in calculateMixedMatrixElementOfOneBodyOperators. \n");
       }
@@ -273,18 +178,7 @@ class WavefunctionHandler: public MPIObjectBase, public AFQMCInfo
     }
 
     template<class T>
-    void calculateMixedMatrixElementOfTwoBodyOperators(bool addBetaBeta, const std::string& type, const int n, ComplexType* SM, const std::vector<s4D<ComplexType> >& vn, const std::vector<IndexType>& vn_indx, T&Spvn, std::vector<ComplexType>& v ) {
-
-      if(type == std::string("ImportanceSampling")) {
-        ImpSampWfn->calculateMixedMatrixElementOfTwoBodyOperators(addBetaBeta,SM,vn,vn_indx,Spvn,v,n);
-      } else {
-        APP_ABORT("Unknown wavefunction type in calculateMixedMatrixElementOfTwoBodyOperators. \n");
-      }
-    }
-
-
-    template<class T>
-    void calculateMeanFieldMatrixElementOfOneBodyOperators(bool addBetaBeta, const std::string& type, const int n, T& Spvn, std::vector<ComplexType>& v ) {
+    void calculateMeanFieldMatrixElementOfOneBodyOperators(bool addBetaBeta, const std::string& type, const int n, T& Spvn, std::vector<SPComplexType>& v ) {
 
       if(type == std::string("ImportanceSampling")) {
         ImpSampWfn->calculateMeanFieldMatrixElementOfOneBodyOperators(addBetaBeta,Spvn,v,n);
@@ -294,40 +188,25 @@ class WavefunctionHandler: public MPIObjectBase, public AFQMCInfo
 
     } 
 
-    bool isOccupAlpha( const std::string& type, int i) {
+    template<class T1, class T2>
+    void generateTransposedOneBodyOperator(bool addBetaBeta, const std::string& type, T1& Spvn, T2& SpvnT ) {
       if(type == std::string("ImportanceSampling")) {
-        return ImpSampWfn->isOccupAlpha(i);
+        ImpSampWfn->generateTransposedOneBodyOperator(addBetaBeta,Spvn,SpvnT);
       } else if(type == std::string("Estimator")) {
         if(EstimatorWfn!=NULL) {
-          return EstimatorWfn->isOccupAlpha(i);
+          EstimatorWfn->generateTransposedOneBodyOperator(addBetaBeta,Spvn,SpvnT);
         } else {
           APP_ABORT("Error: Attempting to access uninitialized Estimator wavefunction \n");
         }
       } else {
-        APP_ABORT("Unknown wavefunction type in isOccupAlpha. \n");
+        APP_ABORT("Unknown wavefunction type in generateTransposedOneBodyOperator. \n");
       }
-      return false;
-    } 
- 
-    bool isOccupBeta( const std::string& type, int i) {
-      if(type == std::string("ImportanceSampling")) {
-        return ImpSampWfn->isOccupBeta(i);
-      } else if(type == std::string("Estimator")) {
-        if(EstimatorWfn!=NULL) {
-          return EstimatorWfn->isOccupBeta(i);
-        } else {
-          APP_ABORT("Error: Attempting to access uninitialized Estimator wavefunction \n");
-        }
-      } else {
-        APP_ABORT("Unknown wavefunction type in isOccupBeta. \n");
-      }
-      return false;
     }
 
     bool check_initialized(const std::string& type)
     {
       if(type == std::string("ImportanceSampling")) {
-         ImpSampWfn!=NULL;
+         return ImpSampWfn!=NULL;
       } else if(type == std::string("Estimator")) {
         return EstimatorWfn!=NULL; 
       }

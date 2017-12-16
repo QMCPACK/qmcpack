@@ -24,7 +24,7 @@ NumericalRadialPotential::NumericalRadialPotential(ParticleSet& center): sourceP
   VofR(0)
 {
   IsPairPotential=true;
-  d_table = DistanceTable::add(center);
+  d_table = DistanceTable::add(center,DT_AOS);
   Centers = center.getTotalNum();
 }
 
@@ -32,7 +32,7 @@ NumericalRadialPotential::NumericalRadialPotential(ParticleSet& center, Particle
   sourcePtcl(center), VofR(0)
 {
   IsPairPotential=false;
-  d_table = DistanceTable::add(center,visitor);
+  d_table = DistanceTable::add(center,visitor,DT_AOS);
   Centers = center.getTotalNum();
 }
 
@@ -46,9 +46,9 @@ NumericalRadialPotential::~NumericalRadialPotential()
 void NumericalRadialPotential::resetTargetParticleSet(ParticleSet& P)
 {
   if(IsPairPotential)
-    d_table = DistanceTable::add(P);
+    d_table = DistanceTable::add(P,DT_AOS);
   else
-    d_table = DistanceTable::add(sourcePtcl,P);
+    d_table = DistanceTable::add(sourcePtcl,P,DT_AOS);
 }
 
 QMCHamiltonianBase::Return_t
@@ -138,9 +138,4 @@ NumericalRadialPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 }
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1581 $   $Date: 2007-01-04 10:02:14 -0600 (Thu, 04 Jan 2007) $
- * $Id: NumericalRadialPotential.h 1581 2007-01-04 16:02:14Z jnkim $
- ***************************************************************************/
 

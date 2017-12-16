@@ -92,6 +92,8 @@ public:
     return myName;
   }
 
+  virtual OhmmsObject* makeClone() const = 0;
+
 protected:
 
   ///the type name of this object
@@ -104,12 +106,7 @@ protected:
   int ElementByteSize;
 
 private:
-  static int ObjectCounter;
+  //static int ObjectCounter;
 };
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

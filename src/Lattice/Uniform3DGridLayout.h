@@ -22,7 +22,6 @@
 #endif
 #include <vector>
 #include <iostream>
-#include "Utilities/OhmmsInfo.h"
 #include "Lattice/CrystalLattice.h"
 #include "Lattice/UniformCartesianGrid.h"
 
@@ -210,7 +209,7 @@ public:
   {
     return Grid[glevel][ig];
   }
-  void print(std::ostream& os) const;
+  void print(std::ostream& os, int level=2) const;
 
   inline void update()
   {
@@ -282,8 +281,3 @@ public:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -19,7 +19,6 @@
 #include <utility>
 #include <iostream>
 #include <fstream>
-#include "Utilities/OhmmsInfo.h"
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "ParticleIO/HDFParticleIO.h"
 #include "ParticleBase/ParticleUtility.h"
@@ -256,8 +255,3 @@ bool HDFSaveParticle::put(xmlNodePtr cur)
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

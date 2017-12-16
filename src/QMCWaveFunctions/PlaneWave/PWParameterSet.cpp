@@ -17,7 +17,6 @@
  * @brief Utility class to handle hdf5
  */
 #include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Message/Communicate.h"
 #include "Message/CommOperators.h"
 
@@ -251,8 +250,3 @@ void PWParameterSet::writeParameters(hid_t gid)
   H5Gclose(h1);
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

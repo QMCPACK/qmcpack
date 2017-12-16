@@ -1,0 +1,104 @@
+\chapter{Features of QMCPACK}
+\label{chap:features}
+\section{Features in production}
+The following lists the main production level features of QMCPACK. If
+you do not see a specific feature that you are interested in listed,
+see the remainder of this manual and ask to see if specific feature is
+available or can be made full production level quickly.
+
+\begin{itemize}
+\item Variational Monte Carlo
+\item Diffusion Monte Carlo
+\item Reptation Monte Carlo
+\item Single and multi-determinant Slater Jastrow wavefunctions
+\item Wavefunction updates using optimized multi-determinant algorithm of Clark et al.
+\item Backflow wavefunctions
+\item One, two, and three-body Jastrow factors
+\item Excited state calculations via flexible occupancy assignment of Slater determinants
+\item All electron and non-local pseudopotential calculations
+\item Casula T-moves for variational evaluation of non-local
+  pseudopotentials (non-size consistent)
+\item Wavefunction optimization using the ``linear method'' of Umrigar
+  and co-workers, with arbitrary mix of variance and energy in the
+  objective function
+\item Blocked, low memory adaptive shift optimizer of Zhao and Neuscamman. 
+\item Gaussian, Slater, plane-wave and real-space spline basis sets for orbitals
+\item Interface and conversion utilities for plane-wave wavefunctions from Quantum Espresso (PWSCF)
+\item Interface and conversion utilities for Gaussian-basis wavefunctions from GAMESS
+\item Easy extension and interfacing to other electronic structure codes via standardized XML and HDF5 inputs
+\item MPI parallelism
+\item Fully threaded using OpenMP
+\item GPU (NVIDIA CUDA) implementation (limited functionality)
+\item HDF5 input/output for large data
+\item Nexus: advanced workflow tool to automate all aspects of QMC calculation from initial DFT calculations through to final analysis
+\item Analysis tools for minimal environments (perl only) through to python-based with graphs produced via matplotlib.
+\end{itemize}
+
+\subsection{Supported GPU features}
+
+The GPU implementation supports multiple GPUs per node, with MPI tasks assigned
+in a round-robin order to the GPUs. Currently, for large runs, 1 MPI task should
+be used per GPU per node. For smaller calculations, use of multiple
+MPI tasks per GPU may yield improved performance.
+
+\begin{itemize}
+  \item VMC, wavefunction optimization, DMC.
+  \item Periodic and open boundary conditions. Mixed boundary conditions are not yet supported.
+  \item Wavefunctions:
+    \begin{enumerate}
+        \item Single Slater determinants with 3D B-spline orbitals. Twist-averaged boundary conditions and complex wavefunctions are fully supported. Gaussian type orbitals are not supported yet.
+        \item Hybrid Mixed basis representation in which orbitals are represented as 1D splines times spherical harmonics in spherical regions (muffin tins) around atoms, and 3D B-splines in the interstitial region.
+        \item One-body and two-body Jastrows represented as 1D
+          B-splines are supported. Threee-body jastrow functions are
+          not yet supported.
+    \end{enumerate}
+  \item Semilocal (nonlocal and local) pseudopotentials, Coulomb interaction (electron-electron, electron-ion) and Model periodic Coulomb (MPC) interaction.
+\end{itemize}
+
+\section{Beta test teatures}
+
+This section describes developmental features in QMCPACK that might be
+ready for production, but require additional testing, features or
+documentation to be ready for general use. We describe them here
+because they offer significant benefits and are well tested in
+specific cases.
+
+\subsection{High performance CPU SoA optimizations}
+The Structure-of-Arrays (SoA) optimizations \cite{IPCC_SC17} are a set
+of improved data layouts facilitating vectorization on modern CPUs
+with wide SIMD units. \textbf{For many calculations and architectures, the SoA
+  implementation at least doubles the speed of the code.}  Meanwhile,
+the memory footprint is dramatically reduced by better algorithms. For full benefit, modern
+compilers supporting OpenMP 4.0 SIMD are recommended, e.g. GCC version
+$\ge$4.9 and Intel compiler versions $\ge 15.0$. \textbf{Users should
+  check what is currently tested on cdash/ctest and make specific
+  requests to expand the functionality that they need.}
+
+As described in \ref{sec:cmakeoptions}, to enable the SoA
+implementation, QMCPACK should be configured with \texttt{-DENABLE\_SOA=1}.
+
+SoA code path currently does NOT support:
+\begin{itemize}
+  \item Backflow wavefunctions
+  \item All electron calculations requiring cusp corrected orbitals
+  \item Many observables
+  %\item Orbital optimization via rotation
+\end{itemize}
+
+If using any non-core feature with the SoA code, please check carefully vs the conventional AoS (non-SOA enabled) code.
+
+\subsection{Auxiliary-Field Quantum Monte Carlo}
+
+The orbital-space Auxiliary-Field Quantum Monte Carlo (AFMQC) method is now available in QMCPACK. The main input for the code are the matrix elements of the Hamiltonian in a given single particle basis set, which must be produced from a mean-field calculations like Hartree-Fock or Density Functional Theory. The code is under active development and many features are currently in development. Check the latest version of QMCPACK for an up-to-date description of the available features. A partial list of the current capabilities of the code follows. For a detailed description of the currently available features, see chapter \ref{chap:afqmc}.
+ 
+\begin{itemize}
+    \item Phaseless AFQMC algorithm of Zhang, et. al. (S. Zhang, H. Krakauer, "Quantum Monte Carlo Method using Phase-Free Random Walks with Slater Determinants", PRL 90, 136401 (2003)).
+    \item "Hybrid" and "local energy" propagation schemes.
+    \item Hamiltonian matrix elements from 1) Molpro's FCIDUMP format (which can be produced by Molpro, PySCF and VASP) and from 2) internal HDF5 format produced by PySCF (see AFQMC section below).
+    \item AFQMC calculations with RHF (closed shell doubly occupied), ROHF (open shell doubly occupied) and UHF (spin polarized broken symmetry) symmetry. 
+    \item Single and Multi-determinant trial wave-functions. Multi-determinant expansions with either orthogonal or non-orthogonal determinants allowed. 
+    \item Fast update scheme for orthogonal multi-determinant expansions.
+    \item Distributed propagation algorithms for large systems. Enables calculations where the data structures do not fit on a single node.
+    \item Complex implementation for PBC calculations with complex integrals.
+    \item Sparse representation of large matrices for reduced memory usage.
+\end{itemize}

@@ -49,8 +49,3 @@ qmcplusplus::HFAtomicSTOSet::HFAtomicSTOSet(): Ylm(0)
 //   if(DetD) asymmpsi->add(DetD);
 //   wfs_ref.add(asymmpsi,d_ei);
 // }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

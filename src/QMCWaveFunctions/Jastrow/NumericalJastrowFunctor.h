@@ -166,8 +166,3 @@ struct NumericalJastrow: public OptimizableFunctorBase
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

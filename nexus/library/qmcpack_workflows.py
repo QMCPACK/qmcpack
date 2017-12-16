@@ -10,7 +10,7 @@ from bundle import bundle as bundle_function
 from machines import job,Job
 from vasp  import generate_vasp
 from pwscf import generate_pwscf
-from pwscf_postprocessors import generate_projwfc
+from pwscf_postprocessors import generate_projwfc,generate_pp
 from qmcpack_converters import generate_pw2qmcpack
 from qmcpack_input import generate_jastrow,loop,linear,cslinear,vmc,dmc
 from qmcpack import generate_qmcpack
@@ -715,6 +715,25 @@ pwf_input_defaults = obj(
         ),
     )
 
+pp_workflow_keys = [
+    'src',
+    ]
+fixed_defaults = obj(
+    src = None,
+    )
+pp_input_defaults = obj(
+    minimal = obj(
+        identifier = 'pp',
+        **fixed_defaults
+        ),
+    v1 = obj(
+        identifier = 'pp',
+        **fixed_defaults
+        ),
+    )
+
+
+
 opt_workflow_keys = [
     'J2_run','J3_run','J_defaults',
     'struct_src','orb_src','J2_src','J3_src',
@@ -916,6 +935,8 @@ def resolve_path(name,ch,loc='resolve_path'):
         elif task.name=='p2q':
             index = wf.orb_src
         elif task.name=='pwf':
+            index = wf.src
+        elif task.name=='pp':
             index = wf.src
         #end if
     #end if
@@ -1458,6 +1479,11 @@ def process_pwf_inputs(inputs,shared,task,loc):
 #end def process_pwf_inputs
 
 
+def process_pp_inputs(inputs,shared,task,loc):
+    return inputs
+#end def process_pp_inputs
+
+
 def process_opt_inputs(inputs,shared,task,loc):
     inputs.set(
         system  = shared.system,
@@ -1532,6 +1558,7 @@ sim_input_defaults = obj(
     nscf = nscf_input_defaults,
     p2q  = p2q_input_defaults,
     pwf  = pwf_input_defaults,
+    pp   = pp_input_defaults,
     opt  = opt_input_defaults,
     vmc  = vmc_input_defaults,
     dmc  = dmc_input_defaults,
@@ -1543,6 +1570,7 @@ sim_workflow_keys = obj(
     nscf = nscf_workflow_keys,
     p2q  = p2q_workflow_keys,
     pwf  = pwf_workflow_keys,
+    pp   = pp_workflow_keys,
     opt  = opt_workflow_keys,
     vmc  = vmc_workflow_keys,
     dmc  = dmc_workflow_keys,
@@ -1554,6 +1582,7 @@ process_sim_inp = obj(
     nscf = process_nscf_inputs,
     p2q  = process_p2q_inputs,
     pwf  = process_pwf_inputs,
+    pp   = process_pp_inputs,
     opt  = process_opt_inputs,
     vmc  = process_vmc_inputs,
     dmc  = process_dmc_inputs,
@@ -1570,7 +1599,7 @@ def process_sim_inputs(name,inputs_in,defaults,shared,task,loc):
 #end def process_sim_inputs
 
 
-qmcpack_chain_sim_names = ['system','vasp','scf','nscf','p2q','pwf','opt','vmc','dmc']
+qmcpack_chain_sim_names = ['system','vasp','scf','nscf','p2q','pwf','pp','opt','vmc','dmc']
 def capture_qmcpack_chain_inputs(kwargs):
     kw_deep    = obj()
     kw_shallow = obj()
@@ -1900,6 +1929,23 @@ def gen_pwf_chain(ch,loc):
 #end def gen_pwf_chain
 
 
+def gen_pp_chain(ch,loc):
+    kw   = ch.kw
+    task = ch.task
+    wf   = task.workflow
+    run  = kw.run
+    source = 'scf'
+    path = resolve_path(source,ch,loc)
+    deps = resolve_deps('pp',[(source,'other')],ch,loc)
+    pp = generate_pp(
+        path         = path,
+        dependencies = deps,
+        **task.inputs
+        )
+    return pp
+#end def gen_pp_chain
+
+
 def gen_opt_chain(ch,loc):
     kw   = ch.kw
     task = ch.task
@@ -1963,7 +2009,10 @@ def gen_vmc(simlabel,ch,depset,J,test=0,loc=''):
     else:
         qmcjob = wf.job
     #end if
-    if J=='J0':
+    other_inputs = obj(task.inputs)
+    if 'jastrows' in other_inputs:
+        jastrows = other_inputs.delete('jastrows')
+    elif J=='J0':
         jastrows = []
     elif J=='J2':
         jastrows = jastrow_factor(**task.J2_inputs)
@@ -1976,7 +2025,7 @@ def gen_vmc(simlabel,ch,depset,J,test=0,loc=''):
         jastrows     = jastrows,
         calculations = vmc_sections(test=test,J0=J=='J0',**task.sec_inputs),
         dependencies = deps,
-        **task.inputs
+        **other_inputs
         )
     sims[simlabel] = qmc
 #end def gen_vmc
@@ -2031,14 +2080,16 @@ def gen_dmc(simlabel,ch,depset,J,nlmove=None,test=0,loc=''):
     else:
         qmcjob = wf.job
     #end if
-    if J=='J0':
+    other_inputs = obj(task.inputs)
+    if 'jastrows' in other_inputs:
+        jastrows = other_inputs.delete('jastrows')    
+    elif J=='J0':
         jastrows = []
     elif J=='J2':
         jastrows = jastrow_factor(**task.J2_inputs)
     elif J=='J3':
         jastrows = jastrow_factor(**task.J3_inputs)
     #end if
-    other_inputs = obj(task.inputs)
     if 'calculations' not in other_inputs:
         other_inputs.calculations = dmc_sections(nlmove=nlmove,test=test,J0=J=='J0',**task.sec_inputs)
     #end if
@@ -2117,6 +2168,7 @@ gen_sim_ch = obj(
     nscf = gen_nscf_chain,
     p2q  = gen_p2q_chain,
     pwf  = gen_pwf_chain,
+    pp   = gen_pp_chain,
     opt  = gen_opt_chain,
     vmc  = gen_vmc_chain,
     dmc  = gen_dmc_chain,
@@ -2190,6 +2242,9 @@ def qmcpack_chain(**kwargs):
         #end if
         if run.pwf:
             gen_sim_chain('pwf',ch,loc)
+        #end if
+        if run.pp:
+            gen_sim_chain('pp',ch,loc)
         #end if
     #end if
 

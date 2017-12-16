@@ -64,7 +64,7 @@ bool VMCMultiple::put(xmlNodePtr q)
   Estimators = branchEngine->getEstimatorManager();
   if(Estimators == 0)
   {
-    Estimators = new EstimatorManager(H);
+    Estimators = new EstimatorManagerBase(H);
     multiEstimator = new MultipleEnergyEstimator(H,nPsi);
     Estimators->add(multiEstimator,Estimators->MainEstimatorName);
     branchEngine->setEstimatorManager(Estimators);
@@ -265,8 +265,3 @@ VMCMultiple::advanceWalkerByWalker()
 }
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1593 $   $Date: 2007-01-04 17:23:27 -0600 (Thu, 04 Jan 2007) $
- * $Id: VMCMultiple.cpp 1593 2007-01-04 23:23:27Z jnkim $
- ***************************************************************************/

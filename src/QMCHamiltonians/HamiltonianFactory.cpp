@@ -26,6 +26,8 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
 #include "QMCHamiltonians/ConservedEnergy.h"
+#include "QMCHamiltonians/SpeciesKineticEnergy.h"
+#include "QMCHamiltonians/LatticeDeviationEstimator.h"
 #include "QMCHamiltonians/NumericalRadialPotential.h"
 #include "QMCHamiltonians/MomentumEstimator.h"
 #include "QMCHamiltonians/Pressure.h"
@@ -35,7 +37,7 @@
 #include "QMCHamiltonians/LocalMomentEstimator.h"
 #include "QMCHamiltonians/DensityEstimator.h"
 #include "QMCHamiltonians/SkEstimator.h"
-#include "QMCHamiltonians/HarmonicExternalPotential.h"
+#include "QMCHamiltonians/model/HarmonicExternalPotential.h"
 #include "QMCHamiltonians/StaticStructureFactor.h"
 #include "QMCHamiltonians/SpinDensity.h"
 #include "QMCHamiltonians/OrbitalImages.h"
@@ -48,29 +50,29 @@
 #include "QMCHamiltonians/ChiesaCorrection.h"
 #include "QMCHamiltonians/SkAllEstimator.h"
 #if defined(HAVE_LIBFFTW_LS)
-#include "QMCHamiltonians/ModInsKineticEnergy.h"
+#include "QMCHamiltonians/model/ModInsKineticEnergy.h"
 #include "QMCHamiltonians/MomentumDistribution.h"
 #include "QMCHamiltonians/DispersionRelation.h"
 #endif
 #endif
 // #include "QMCHamiltonians/ZeroVarObs.h"
 #if !defined(QMC_CUDA) && QMC_BUILD_LEVEL>2
-#include "QMCHamiltonians/HardSphere.h"
-#include "QMCHamiltonians/GaussianPot.h"
-#include "QMCHamiltonians/HusePot.h"
-#include "QMCHamiltonians/OscillatoryPot.h"
 #include "QMCHamiltonians/SkPot.h"
-#include "QMCHamiltonians/ModPosTelPot.h"
-#include "QMCHamiltonians/HFDHE2Potential_tail.h"
-#include "QMCHamiltonians/HePressure.h"
-#include "QMCHamiltonians/JelliumPotential.h"
-#include "QMCHamiltonians/HFDHE2Potential.h"
-#include "QMCHamiltonians/HeEPotential.h"
-#include "QMCHamiltonians/HeEPotential_tail.h"
-#include "QMCHamiltonians/LennardJones_smoothed.h"
-#include "QMCHamiltonians/HFDHE2_Moroni1995.h"
+#include "QMCHamiltonians/model/HardSphere.h"
+#include "QMCHamiltonians/model/GaussianPot.h"
+#include "QMCHamiltonians/model/HusePot.h"
+#include "QMCHamiltonians/model/OscillatoryPot.h"
+#include "QMCHamiltonians/model/ModPosTelPot.h"
+#include "QMCHamiltonians/model/HFDHE2Potential_tail.h"
+#include "QMCHamiltonians/model/HePressure.h"
+#include "QMCHamiltonians/model/JelliumPotential.h"
+#include "QMCHamiltonians/model/HFDHE2Potential.h"
+#include "QMCHamiltonians/model/HeEPotential.h"
+#include "QMCHamiltonians/model/HeEPotential_tail.h"
+#include "QMCHamiltonians/model/LennardJones_smoothed.h"
+#include "QMCHamiltonians/model/HFDHE2_Moroni1995.h"
 //#include "QMCHamiltonians/HFDBHE_smoothed.h"
-#include "QMCHamiltonians/HeSAPT_smoothed.h"
+#include "QMCHamiltonians/model/HeSAPT_smoothed.h"
 #endif
 #include "OhmmsData/AttributeSet.h"
 #ifdef QMC_CUDA
@@ -328,6 +330,42 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       {
         targetH->addOperator(new ConservedEnergy,potName,false);
       }
+      else if(potType =="specieskinetic")
+      {
+        SpeciesKineticEnergy* apot = new SpeciesKineticEnergy(*targetPtcl);
+        apot->put(cur);
+        targetH->addOperator(apot,potName,false);
+      }
+      else if(potType =="latticedeviation")
+      {
+        // find target particle set
+        PtclPoolType::iterator pit(ptclPool.find(targetInp));
+        if(pit == ptclPool.end())
+        {
+          APP_ABORT("Unknown target \"" + targetInp + "\" for LatticeDeviation.");
+        }
+        ParticleSet* target_particle_set = (*pit).second;
+
+        // find source particle set
+        PtclPoolType::iterator spit(ptclPool.find(sourceInp));
+        if(spit == ptclPool.end())
+        {
+          APP_ABORT("Unknown source \"" + sourceInp + "\" for LatticeDeviation.");
+        }
+        ParticleSet* source_particle_set = (*spit).second;
+
+        // read xml node
+        OhmmsAttributeSet local_attrib;
+        std::string target_group,source_group;
+        local_attrib.add(target_group,"tgroup");
+        local_attrib.add(source_group,"sgroup");
+        local_attrib.put(cur);
+
+        LatticeDeviationEstimator* apot = new LatticeDeviationEstimator(*target_particle_set
+          ,*source_particle_set,target_group,source_group);
+        apot->put(cur);
+        targetH->addOperator(apot,potName,false);
+      }
       else if(potType == "Force")
       {
         addForceHam(cur);
@@ -448,6 +486,10 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
 #if OHMMS_DIM==3
       else if(potType == "chiesa")
       {
+#ifdef ENABLE_SOA
+        app_warning() << "Skip Chiesa estimator due to the lack of support with SoA."
+                      << " Access the correction via AoS at the moment." << std::endl;
+#else
         std::string PsiName="psi0";
         std::string SourceName = "e";
         OhmmsAttributeSet hAttrib;
@@ -468,6 +510,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         const TrialWaveFunction &psi = *psi_it->second->targetPsi;
         ChiesaCorrection *chiesa = new ChiesaCorrection (source, psi);
         targetH->addOperator(chiesa,"KEcorr",false);
+#endif
       }
       else if(potType == "skall")
       {
@@ -486,10 +529,10 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         if(PBCType)
         {
 
-                SkAllEstimator* apot=new SkAllEstimator(*source, *targetPtcl);
-                apot->put(cur);
-                targetH->addOperator(apot,potName,false);
-                app_log()<<"Adding S(k) ALL estimator"<<std::endl;
+          SkAllEstimator* apot=new SkAllEstimator(*source, *targetPtcl);
+          apot->put(cur);
+          targetH->addOperator(apot,potName,false);
+          app_log()<<"Adding S(k) ALL estimator"<<std::endl;
         }
       }
 
@@ -770,21 +813,16 @@ bool HamiltonianFactory::put(xmlNodePtr cur)
 {
   bool success=build(cur,false);
   
-  if(targetH->EnableVirtualMoves)
-  {
-    app_log() << "  Hamiltonian enables VirtualMoves" << std::endl;
-    targetPtcl->enableVirtualMoves();
-  }
-  else
-    app_log() << "  Hamiltonian disables VirtualMoves" << std::endl;
+  //if(targetH->EnableVirtualMoves)
+  //{
+  //  app_log() << "  Hamiltonian enables VirtualMoves" << std::endl;
+  //  targetPtcl->enableVirtualMoves();
+  //}
+  //else
+  //  app_log() << "  Hamiltonian disables VirtualMoves" << std::endl;
   
   return success;
 }
 
 void HamiltonianFactory::reset() { }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

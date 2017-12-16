@@ -62,8 +62,3 @@ void WFMCOnlyEstimator::registerObservables(std::vector<observable_helper*>& h5d
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3449 $   $Date: 2009-01-11 08:47:20 -0600 (Sun, 11 Jan 2009) $
- * $Id: WFMCOnlyEstimator.cpp 3449 2009-01-11 14:47:20Z jnkim $
- ***************************************************************************/

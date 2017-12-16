@@ -241,6 +241,7 @@ void LocalWalkerHandler::setHF(const ComplexMatrix& HF)
 
 bool LocalWalkerHandler::setup(int cr, int nc, int tgn, MPI_Comm heads_comm, MPI_Comm tg_comm, MPI_Comm node_comm, myTimer* timer)
 {
+
   LocalTimer=timer;
   if(cr != 0) {
     app_error()<<" Error: Found core_rank != 0 in LocalWalkerHandler::setup. \n";  
@@ -280,6 +281,7 @@ bool LocalWalkerHandler::clean()
 {
   for(int i=0; i<walkers.size(); i++) 
     walkers[i].clear();
+  return true;
 }
 
 // called at the beginning of each executable section
@@ -396,7 +398,7 @@ void LocalWalkerHandler::resetNumberWalkers(int n, bool a, ComplexMatrix* S)
 }  
 */
 // load balancing algorithm
-void LocalWalkerHandler::loadBalance() 
+void LocalWalkerHandler::loadBalance(MPI_Comm comm) 
 {
 
   int rank = myComm->rank(); 
@@ -544,7 +546,7 @@ app_log()<<std::endl;
 } 
 
 // population control algorithm
-void LocalWalkerHandler::popControl()
+void LocalWalkerHandler::popControl(MPI_Comm comm, std::vector<ComplexType>& curData)
 {
 
   for(WalkerIterator it=walkers.begin(); it!=walkers.end(); ) 
@@ -558,7 +560,7 @@ void LocalWalkerHandler::popControl()
     // if below cutoff, flip a coin and kill walker if necessary
     // check if this is correct, do I reset the weight to min_weight if successful??? 
     if( it->alive && std::abs(it->weight) < std::abs(min_weight) ) { 
-      if( (int)(distribution(generator) + std::abs(it->weight)/std::abs(reset_weight)) == 0  ) {
+      if( (int)((*rng)() + std::abs(it->weight)/std::abs(reset_weight)) == 0  ) {
          it=walkers.erase(it);
       } else {
         (it++)->weight = reset_weight;
@@ -576,7 +578,7 @@ void LocalWalkerHandler::popControl()
       RealType w = std::abs(it->weight);
       int n = (int) (w/std::abs(reset_weight));
       RealType rem = w-n*std::abs(reset_weight);
-      if( ( (int)(distribution(generator) + std::abs(rem/reset_weight) ) ) != 0 ) n++;      
+      if( ( (int)((*rng)() + std::abs(rem/reset_weight) ) ) != 0 ) n++;      
       it->weight *= reset_weight/w; 
       for(int i=0; i<n-1; i++) {
         w_.push_back(SlaterDetWalker(*it));
@@ -590,53 +592,9 @@ void LocalWalkerHandler::popControl()
   for(int i=0; i<w_.size(); i++)
     walkers[sz+i] = w_[i];
 
+  // call load balance at the end of every population control event
+  loadBalance(comm);
 }
-/*
-// population control algorithm
-void LocalWalkerHandler::popControl()
-{
 
-  // handle small weights first 
-  for(WalkerIterator it=walkers.begin(); it!=walkers.end(); ++it) 
-    // if below cutoff, flip a coin and kill walker if necessary
-    // check if this is correct, do I reset the weight to min_weight if successful??? 
-    if( it->alive && std::abs(it->weight) < std::abs(min_weight) ) 
-      if( ( (int)(distribution(generator) + std::abs(it->weight)) ) == 0  ) {
-        it->weight = RealType(0.0); 
-        //it->weight = ComplexType(0.0); 
-        it->alive = false;
-        if(emptyWalkers.size() == emptyWalkers.capacity()) 
-          emptyWalkers.reserve(static_cast<int>(emptyWalkers.size()*2));
-        emptyWalkers.push_back(std::distance(walkers.begin(),it));
-      } else {
-        // is this correct?????
-        it->weight = min_weight;
-      } 
-  
-  // now handle large weights
-  for(WalkerIterator it=walkers.begin(); it!=walkers.end(); ++it)  
-    if( it->alive && std::abs(it->weight) > std::abs(max_weight) ) {
-  
-      RealType w = std::abs(it->weight);
-      int n = (int) (w/std::abs(reset_weight));
-      RealType rem = w-n*std::abs(reset_weight);
-      if( ( (int)(distribution(generator) + std::abs(rem/reset_weight) ) ) != 0 ) n++;      
-      it->weight *= reset_weight/w; 
-      for(int i=0; i<n-1; i++) {
-        if(emptyWalkers.size() == 0) { 
-          // hack for now, to guarantee that I'm not here twice in a loop
-          extra_empty_spaces += n;   
-          resetNumberWalkers(numWalkers(),false,NULL); 
-          extra_empty_spaces -= n;   
-        }
-        int pos = emptyWalkers.back();
-        emptyWalkers.pop_back();
-        walkers[pos] = *it; 
-      }
-
-    } 
-
-}
-*/
 }
 

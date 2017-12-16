@@ -138,8 +138,12 @@ bool VMCPropagator::hdf_read(hdf_archive& dump,const std::string& tag)
 
 
 
-bool VMCPropagator::setup(std::vector<int>& TGdata, ComplexSMVector *v, HamiltonianBase* ham,WavefunctionHandler* w, RealType dt_, hdf_archive& dump_read, const std::string& hdf_restart_tag,MPI_Comm tg_comm, MPI_Comm node_comm)
+bool VMCPropagator::setup(std::vector<int>& TGdata, SPComplexSMVector *v, HamiltonianBase* ham,WavefunctionHandler* w, RealType dt_, hdf_archive& dump_read, const std::string& hdf_restart_tag,MPI_Comm tg_comm, MPI_Comm node_comm, MPI_Comm node_heads_comm)
 {
+
+  MPI_COMM_HEAD_OF_NODES = node_heads_comm;
+  head_of_nodes = (TGdata[1]==0);
+
   dt = dt_;
 
   proj0->copyInfo(*this);
@@ -190,7 +194,7 @@ bool VMCPropagator::setup(std::vector<int>& TGdata, ComplexSMVector *v, Hamilton
         Timer.start("Generic1");
 
         // calculates Hubbard-Stratonovich potentials (vn) 
-        proj0->calculateHSPotentials(Spvn);
+        //proj0->calculateHSPotentials(Spvn);
 	
         Timer.stop("Generic1");
         app_log()<<" -- Time to calculate HS potentials: " <<Timer.average("Generic1") <<"\n";
@@ -203,7 +207,7 @@ bool VMCPropagator::setup(std::vector<int>& TGdata, ComplexSMVector *v, Hamilton
       myComm->bcast(ni);        
 
       // do this later through a proper MPI object
-      myComm->bcast<RealType>(reinterpret_cast<RealType*>(Spvn.values()),2*Spvn.size(),MPI_COMM_HEAD_OF_NODES);
+      myComm->bcast<char>(reinterpret_cast<char*>(Spvn.values()),sizeof(ComplexType)*Spvn.size(),MPI_COMM_HEAD_OF_NODES);
       myComm->bcast<int>(Spvn.row_data(),Spvn.size(),MPI_COMM_HEAD_OF_NODES);
       myComm->bcast<int>(Spvn.column_data(),Spvn.size(),MPI_COMM_HEAD_OF_NODES);
       myComm->bcast<int>(Spvn.row_index(),Spvn.rows()+1,MPI_COMM_HEAD_OF_NODES);
@@ -221,7 +225,7 @@ bool VMCPropagator::setup(std::vector<int>& TGdata, ComplexSMVector *v, Hamilton
         Spvn.allocate_serial(ni[0]);
         Spvn.resize_serial(ni[0]);
 
-        myComm->bcast<RealType>(reinterpret_cast<RealType*>(Spvn.values()),2*Spvn.size(),MPI_COMM_HEAD_OF_NODES);
+        myComm->bcast<char>(reinterpret_cast<char*>(Spvn.values()),sizeof(ComplexType)*Spvn.size(),MPI_COMM_HEAD_OF_NODES);
         myComm->bcast<int>(Spvn.row_data(),Spvn.size(),MPI_COMM_HEAD_OF_NODES);
         myComm->bcast<int>(Spvn.column_data(),Spvn.size(),MPI_COMM_HEAD_OF_NODES);
         myComm->bcast<int>(Spvn.row_index(),Spvn.rows()+1,MPI_COMM_HEAD_OF_NODES);
@@ -277,7 +281,7 @@ bool VMCPropagator::setup(std::vector<int>& TGdata, ComplexSMVector *v, Hamilton
 }
 
 // right now using local energy form of important sampling
-void VMCPropagator::Propagate(int n, WalkerHandlerBase* w, RealType& accept, const RealType dummy) 
+void VMCPropagator::Propagate(int steps, int& steps_total, WalkerHandlerBase*, RealType& E1)
 {
 /*
   int sz = NMO*NAEA;
@@ -324,7 +328,7 @@ void VMCPropagator::applyHSPropagator(ComplexType* SD, std::vector<ComplexType>&
   for(ComplexMatrix::iterator it=vHS.begin(); it!=vHS.end(); it++) *it=zero;
 
   Timer.start("build_vHS");
-  SparseMatrixOperators::product_SpMatV(Spvn.rows(),Spvn.cols(),one,Spvn,sigma.data(),zero,vHS.data());
+  SparseMatrixOperators::product_SpMatV(Spvn.rows(),Spvn.cols(),one,Spvn.values(),Spvn.column_data(),Spvn.row_index(),sigma.data(),zero,vHS.data());
   Timer.stop("build_vHS");
 
   // calculate exp(vHS)*S through a Taylor expansion of exp(vHS)

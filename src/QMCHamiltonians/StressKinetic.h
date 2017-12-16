@@ -53,7 +53,6 @@ struct StressKinetic: public QMCHamiltonianBase, public ForceBase
   ~StressKinetic();
   
   Return_t evaluate(ParticleSet& P);
-  Return_t evaluatePbyP(ParticleSet& P, int iat);
   
   inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   {
@@ -108,9 +107,4 @@ struct StressKinetic: public QMCHamiltonianBase, public ForceBase
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author: jtkrogel $
- * $Revision: 5976 $   $Date: 2013-09-13 13:39:44 -0500 (Fri, 13 Sep 2013) $
- * $Id: StressKinetic.h 5976 2013-09-13 18:39:44Z jtkrogel $
- ***************************************************************************/
 

@@ -75,7 +75,7 @@ public:
   {
     OrbitalName = "OneBodySpinJastrow";
     U.resize(els.getTotalNum());
-    myTableIndex=els.addTable(CenterRef);
+    myTableIndex=els.addTable(CenterRef,DT_AOS);
     //allocate vector of proper size  and set them to 0
     F.resize(CenterRef.groups(), els.groups());
     for(int i=0; i<F.size(); ++i)
@@ -317,18 +317,6 @@ public:
       ratios[i] = std::exp(ratios[i]);
   }  
   
-  
-  /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$ and fill-in the differential gradients/laplacians
-   * @param P active particle set
-   * @param iat particle that has been moved.
-   * @param dG partial gradients
-   * @param dL partial laplacians
-   */
-  inline ValueType ratio(ParticleSet& P, int iat
-                         , ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL)
-  {
-    return std::exp(logRatio(P,iat,dG,dL));
-  }
 
   inline GradType evalGrad(ParticleSet& P, int iat)
   {
@@ -392,33 +380,6 @@ public:
     return std::exp(U[iat]-curVal);
   }
 
-  inline ValueType logRatio(ParticleSet& P, int iat,
-                            ParticleSet::ParticleGradient_t& dG,
-                            ParticleSet::ParticleLaplacian_t& dL)
-  {
-    curVal=0.0;
-    curLap=0.0;
-    curGrad = 0.0;
-    const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    int tg=P.GroupID[iat];//pick the target group
-    RealType dudr, d2udr2;
-    for(int sg=0; sg<F.rows(); ++sg)
-    {
-      FT* func=F(sg,tg);
-      if(func)
-        for(int s=s_offset[sg]; s<s_offset[sg+1]; ++s)
-        {
-          curVal += func->evaluate(d_table->Temp[s].r1,dudr,d2udr2);
-          dudr *= d_table->Temp[s].rinv1;
-          curGrad -= dudr*d_table->Temp[s].dr1;
-          curLap  -= d2udr2+2.0*dudr;
-        }
-    }
-    dG[iat] += curGrad-dU[iat];
-    dL[iat] += curLap-d2U[iat];
-    return U[iat]-curVal;
-  }
-
   inline void restore(int iat) {}
 
   void acceptMove(ParticleSet& P, int iat)
@@ -426,19 +387,6 @@ public:
     U[iat] = curVal;
     dU[iat]=curGrad;
     d2U[iat]=curLap;
-  }
-
-
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat)
-  {
-    dG[iat] += curGrad-dU[iat];
-    dU[iat]=curGrad;
-    dL[iat] += curLap-d2U[iat];
-    d2U[iat]=curLap;
-    U[iat] = curVal;
   }
 
   void evaluateLogAndStore(ParticleSet& P,
@@ -522,24 +470,6 @@ public:
     DEBUG_PSIBUFFER(" OneBodySpinJastrow::copyFromBuffer ",buf.current());
   }
 
-  /** return the current value and copy the current data to a buffer
-   *@param P the ParticleSet to operate on
-   *@param buf PooledData which stores the data for each walker
-   */
-  inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    RealType sumu = 0.0;
-    for (int i=0; i<U.size(); i++)
-      sumu+=U[i];
-    DEBUG_PSIBUFFER(" OneBodySpinJastrow::evaluateLog ",buf.current());
-    buf.put(U.first_address(), U.last_address());
-    buf.put(d2U.first_address(), d2U.last_address());
-    buf.put(FirstAddressOfdU,LastAddressOfdU);
-    DEBUG_PSIBUFFER(" OneBodySpinJastrow::evaluateLog ",buf.current());
-    return -sumu;
-    //return std::exp(-sumu);
-  }
-
   OrbitalBasePtr makeClone(ParticleSet& tqp) const
   {
     OneBodySpinJastrowOrbital<FT>* j1copy=new OneBodySpinJastrowOrbital<FT>(CenterRef,tqp);
@@ -570,9 +500,4 @@ public:
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: kesler $
- * $Revision: 3708 $   $Date: 2009-03-25 17:30:09 -0500 (Wed, 25 Mar 2009) $
- * $Id: OneBodySpinJastrowOrbital.h 3708 2009-03-25 22:30:09Z kesler $
- ***************************************************************************/
 

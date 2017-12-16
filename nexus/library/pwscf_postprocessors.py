@@ -339,23 +339,21 @@ class NamelistInput(SimulationInput):
     def write_text(self,filepath=None):
         cls = self.__class__
         text = ''
-        if len(cls.namelist_set)==0:
-            for name,namelist in self.iteritems():
-                text += namelist.write_text()+'\n'
-            #end for
-        else:
-            for name,namelist in self.iteritems():
-                if name in cls.namelist_set:
-                    text += namelist.write_text()+'\n'
-                else:
-                    msg = 'encountered invalid namelist during write\ninvalid namelist: {0}\nvalid namelists are: {1}'.format(name,cls.namelists)
-                    if filepath!=None:
-                        msg += '\nfilepath: {0}'.format(filepath)
-                    #end if
-                    self.error(msg)
+        for name,namelist in self.iteritems():
+            if name not in cls.namelist_set:
+                msg = 'encountered invalid namelist during write\ninvalid namelist: {0}\nvalid namelists are: {1}'.format(name,cls.namelists)
+                if filepath!=None:
+                    msg += '\nfilepath: {0}'.format(filepath)
                 #end if
-            #end for
-        #end if
+                self.error(msg)
+            #end if
+        #end for
+        for name in cls.namelists:
+            if name in self:
+                namelist = self[name]
+                text += namelist.write_text()+'\n'
+            #end if
+        #end for
         return text
     #end def write_text
 #end class NamelistInput
@@ -411,7 +409,7 @@ class PPPlotNamelist(Namelist):
 
 
 class PPInput(NamelistInput):
-    namelists = ['pp']
+    namelists = ['inputpp','plot']
     namelist_classes = obj(
         inputpp = PPInputppNamelist,
         plot    = PPPlotNamelist,

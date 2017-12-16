@@ -44,62 +44,57 @@
 
 namespace qmcplusplus
 {
-//////////////////////////////////////////////////////////////////////
-//
-// Definition of class TinyVector.
-//
-//////////////////////////////////////////////////////////////////////
+/** Fixed-size array. candidate for array<T,D>
+ */
 template<class T, unsigned D>
-class TinyVector
+struct TinyVector
 {
-public:
-
   typedef T Type_t;
   enum { Size = D };
+  T X[Size];
 
   // Default Constructor initializes to zero.
-  TinyVector()
+  inline TinyVector()
   {
-    OTAssign<TinyVector<T,D>, T, OpAssign>::apply(*this,T(0), OpAssign());
+    for(size_t d=0; d<D; ++d)
+      X[d] = T(0);
   }
 
   // A noninitializing ctor.
   class DontInitialize {};
-  TinyVector(DontInitialize) {}
+  inline TinyVector(DontInitialize) {}
 
   // Copy Constructor
-  TinyVector(const TinyVector<T,D> &rhs)
-  {
-    OTAssign< TinyVector<T,D> , TinyVector<T,D> ,OpAssign>::apply(*this,rhs, OpAssign());
-  }
+  inline TinyVector(const TinyVector& rhs) = default;
 
   // Templated TinyVector constructor.
-  template<class T1, unsigned D1>
-  TinyVector(const TinyVector<T1,D1> &rhs)
+  template<class T1>
+  inline TinyVector(const TinyVector<T1,D> &rhs)
   {
-    for (unsigned d=0; d<D; ++d)
-      X[d] = (d < D1) ? rhs[d] : T1(0);
+    for(size_t d=0; d<D; ++d)
+      X[d] = rhs[d];
   }
 
   // Constructor from a single T
-  TinyVector(const T& x00)
+  inline TinyVector(const T& x00)
   {
-    OTAssign<TinyVector<T,D>,T,OpAssign>::apply(*this,x00,OpAssign());
+    for(size_t d=0; d<D; ++d)
+      X[d] = x00;
   }
 
   // Constructors for fixed dimension
-  TinyVector(const T& x00, const T& x01)
+  inline TinyVector(const T& x00, const T& x01)
   {
     X[0] = x00;
     X[1] = x01;
   }
-  TinyVector(const T& x00, const T& x01, const T& x02)
+  inline TinyVector(const T& x00, const T& x01, const T& x02)
   {
     X[0] = x00;
     X[1] = x01;
     X[2] = x02;
   }
-  TinyVector(const T& x00, const T& x01, const T& x02, const T& x03)
+  inline TinyVector(const T& x00, const T& x01, const T& x02, const T& x03)
   {
     X[0] = x00;
     X[1] = x01;
@@ -107,7 +102,7 @@ public:
     X[3] = x03;
   }
 
-  TinyVector(const T& x00, const T& x01, const T& x02, const T& x03,
+  inline TinyVector(const T& x00, const T& x01, const T& x02, const T& x03,
              const T& x10, const T& x11, const T& x12, const T& x13,
              const T& x20, const T& x21, const T& x22, const T& x23,
              const T& x30, const T& x31, const T& x32, const T& x33)
@@ -130,6 +125,13 @@ public:
     X[15] = x33;
   }
 
+  inline TinyVector(const T* restrict base, int offset)
+  {
+    #pragma unroll
+    for(int i=0; i<D; ++i)
+      X[i]=base[i*offset];
+  }
+
   // Destructor
   ~TinyVector() { }
 
@@ -143,11 +145,7 @@ public:
     return D*sizeof(T);
   }
 
-  inline TinyVector<T,D>& operator=(const TinyVector<T,D> &rhs)
-  {
-    OTAssign<TinyVector<T,D>,TinyVector<T,D>,OpAssign>::apply(*this,rhs,OpAssign());
-    return *this;
-  }
+  inline TinyVector& operator=(const TinyVector& rhs) = default;
 
   template<class T1>
   inline TinyVector<T,D>& operator=(const TinyVector<T1,D> &rhs)
@@ -167,18 +165,18 @@ public:
   {
     return X[i];
   }
-  inline Type_t operator[](unsigned int i) const
+  inline const Type_t& operator[](unsigned int i) const
   {
     return X[i];
   }
-  inline Type_t& operator()(unsigned int i)
-  {
-    return X[i];
-  }
-  inline Type_t operator()( unsigned int i) const
-  {
-    return X[i];
-  }
+  //inline Type_t& operator()(unsigned int i)
+  //{
+  //  return X[i];
+  //}
+  //inline Type_t operator()( unsigned int i) const
+  //{
+  //  return X[i];
+  //}
 
   inline Type_t* data()
   {
@@ -239,11 +237,6 @@ public:
     return m;
   }
 
-private:
-
-  // Just store D elements of type T.
-  T X[Size];
-
 };
 
 //OHMMS_TINYVECTOR_ACCUM_OPERATORS(operator+=,OpAddAssign)
@@ -291,34 +284,6 @@ inline Tensor<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D>
 outerProduct(const TinyVector<T1,D> &lhs, const TinyVector<T2,D> &rhs)
 {
   return OuterProduct< TinyVector<T1,D> , TinyVector<T2,D> > :: apply(lhs,rhs);
-}
-
-template < class T1, unsigned D >
-inline TinyVector<Tensor<T1,D>,D>
-outerdot(const TinyVector<T1,D> &lhs, const TinyVector<T1,D> &mhs, const TinyVector<T1,D> &rhs)
-{
-  TinyVector<Tensor<T1,D>,D> ret;
-  Tensor<T1,D> tmp=OuterProduct< TinyVector<T1,D> , TinyVector<T1,D> > :: apply(lhs,mhs);
-  for(unsigned i(0); i<D; i++)
-    ret[i]=rhs[i]*tmp;
-  return ret;
-}
-
-template < class T1, class T2, class T3, unsigned D >
-inline TinyVector<Tensor<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D>,D>
-symouterdot(const TinyVector<T1,D> &lhs, const TinyVector<T2,D> &mhs, const TinyVector<T3,D> &rhs)
-{
-  TinyVector<Tensor<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D>,D> ret;
-  Tensor<typename BinaryReturn<T1,T2,OpMultiply>::Type_t,D> tmp=OuterProduct< TinyVector<T1,D> , TinyVector<T2,D> > :: apply(lhs,mhs);
-  for(unsigned i(0); i<D; i++)
-    ret[i]=rhs[i]*tmp;
-  tmp=OuterProduct< TinyVector<T2,D> , TinyVector<T3,D> > :: apply(mhs,rhs);
-  for(unsigned i(0); i<D; i++)
-    ret[i]+=lhs[i]*tmp;
-  tmp=OuterProduct< TinyVector<T1,D> , TinyVector<T3,D> > :: apply(lhs,rhs);
-  for(unsigned i(0); i<D; i++)
-    ret[i]+=mhs[i]*tmp;
-  return ret;
 }
 
 //----------------------------------------------------------------------
@@ -383,8 +348,3 @@ std::istream& operator>>(std::istream& is, TinyVector<T,D>& rhs)
 
 #endif // VEKTOR_H
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

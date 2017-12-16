@@ -20,7 +20,6 @@
 #include "OhmmsPETE/OhmmsVector.h"
 #include "Particle/HDFParticleAttrib.h"
 #include "Numerics/HDFNumericAttrib.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/FileUtility.h"
 namespace qmcplusplus
@@ -111,7 +110,7 @@ bool  HDFWalkerInput_0_0::put(xmlNodePtr cur)
   MCWalkerConfiguration::iterator it_end = targetW.end();
   while(it != it_end)
   {
-    copy(Pos_temp[iw],Pos_temp[iw+1], (*it)->R.begin());
+    std::copy(Pos_temp[iw],Pos_temp[iw+1], (*it)->R.begin());
     ++it;
     ++iw;
   }
@@ -180,8 +179,3 @@ bool  HDFWalkerInput_0_0::put(xmlNodePtr cur)
 //  }
 //}
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1911 $   $Date: 2007-04-17 10:19:35 -0500 (Tue, 17 Apr 2007) $
- * $Id: HDFWalkerInput_0_0.cpp 1911 2007-04-17 15:19:35Z jnkim $
- ***************************************************************************/

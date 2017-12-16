@@ -21,7 +21,7 @@
 
 /// LitFit performs a least-squares fit to data given in y with the
 /// errors given by sigma.  It performs a fit to a function of the
-/// form \f[ y_{\text{fit}}(x) \approx \sum_{j=0}^M a_j F_j(x) \f]. 
+/// form \f[ y_{\mathrm{fit}}(x) \approx \sum_{j=0}^M a_j F_j(x) \f]. 
 /// \f$ F_{ij} = F_j(x_i) \f$.  
 void LinFitLU (Array<double,1> &y, Array<double,1> &sigma,   // inputs
 	       Array<double,2> &F,                           // input

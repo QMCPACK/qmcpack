@@ -783,8 +783,3 @@ struct OTDot< AntiSymTensor<T1,3> , TinyVector<T2,3> >
 
 #endif // OHMMS_TINYVECTOR_DOTCROSS_H 
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

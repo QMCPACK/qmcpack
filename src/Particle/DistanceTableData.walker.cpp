@@ -114,8 +114,3 @@ void AsymmetricDTD::evaluate(const PosVector_t& a, int visitors, int copies)
   }
 }
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

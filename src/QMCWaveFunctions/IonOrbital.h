@@ -71,20 +71,11 @@ public:
   RealType evaluateLog(ParticleSet& P,
                        ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL);
-
   ValueType ratio(ParticleSet& P, int iat);
 
   void acceptMove(ParticleSet& P, int iat);
 
   void restore(int iat);
-
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat);
 
   RealType
   registerData(ParticleSet& P, BufferType& buf);
@@ -95,20 +86,12 @@ public:
   void
   copyFromBuffer(ParticleSet& P, BufferType& buf);
 
-  RealType
-  evaluateLog(ParticleSet& P,BufferType& buf);
-
   GradType evalGrad(ParticleSet& P, int iat);
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
 
   OrbitalBase* makeClone(ParticleSet& tqp) const;
-
-  ValueType
-  logRatio(ParticleSet& P, int iat,
-           ParticleSet::ParticleGradient_t& dG,
-           ParticleSet::ParticleLaplacian_t& dL);
 
   void evaluateLogAndStore(ParticleSet& P,
                            ParticleSet::ParticleGradient_t& dG,
@@ -118,8 +101,3 @@ public:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: esler $
- * $Revision: 3848 $   $Date: 2009-05-20 12:38:03 -0500 (Wed, 20 May 2009) $
- * $Id: IonOrbital.h 3848 2009-05-20 17:38:03Z jnkim $
- ***************************************************************************/

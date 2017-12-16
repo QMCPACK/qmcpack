@@ -136,6 +136,11 @@ public:
   {
     return PhaseValue;
   }
+
+  inline void setPhase(RealType PhaseValue_new)
+  {
+    PhaseValue = PhaseValue_new;
+  }
   void getLogs(std::vector<RealType>& lvals);
   void getPhases(std::vector<RealType>& pvals);
 
@@ -170,10 +175,16 @@ public:
   inline void resetPhaseDiff()
   {
     PhaseDiff=0.0;
+    for (int i=0; i<Z.size(); i++)
+      Z[i]->resetPhaseDiff();
   }
   inline RealType getLogPsi() const
   {
     return LogValue;
+  }
+  inline void setLogPsi(RealType LogPsi_new)
+  {
+    LogValue = LogPsi_new;
   }
 
   ///Add an OrbitalBase
@@ -233,15 +244,6 @@ public:
                         ParticleSet::ParticleGradient_t& fixedG,
                         ParticleSet::ParticleLaplacian_t& fixedL);
 
-  RealType evaluateDeltaLog(ParticleSet& P,BufferType& buf);
-
-  void evaluateDeltaLog(ParticleSet& P,
-                        RealType& logpsi_fixed,
-                        RealType& logpsi_opt,
-                        ParticleSet::ParticleGradient_t& fixedG,
-                        ParticleSet::ParticleLaplacian_t& fixedL,
-                        BufferType& buf);
-
   /** functions to handle particle-by-particle update */
   RealType ratio(ParticleSet& P, int iat);
   /** evaluate ratios for EE */
@@ -256,12 +258,6 @@ public:
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(VirtualParticleSet& P, const opt_variables_type& optvars,
       std::vector<RealType>& ratios, Matrix<RealType>& dratio);
-
-  void update(ParticleSet& P, int iat);
-
-  RealType ratio(ParticleSet& P, int iat,
-                 ParticleSet::ParticleGradient_t& dG,
-                 ParticleSet::ParticleLaplacian_t& dL);
 
   void printGL(ParticleSet::ParticleGradient_t& G,
                ParticleSet::ParticleLaplacian_t& L, std::string tag = "GL");
@@ -287,14 +283,8 @@ public:
   void acceptMove(ParticleSet& P, int iat);
 
   RealType registerData(ParticleSet& P, BufferType& buf);
-  RealType registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
-  void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets);
   RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, BufferType& buf);
-  RealType evaluateLog(ParticleSet& P, BufferType& buf);
-
-  void dumpToBuffer(ParticleSet& P, BufferType& buf);
-  void dumpFromBuffer(ParticleSet& P, BufferType& buf);
 
   RealType KECorrection() const;
 
@@ -304,11 +294,8 @@ public:
                            std::vector<RealType>& dhpsioverpsi,
                            bool project=false);
 
-  void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi,
-                           BufferType& buf);
+  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                               std::vector<RealType>& dgradlogpsi);
 
   /** evalaute the values of the wavefunction, gradient and laplacian  for all the walkers */
   //void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);
@@ -357,15 +344,10 @@ public:
     return FermionWF;
   }
 
-  inline bool needs_distance_table_for_recompute() { return RecomputeNeedsDistanceTable; }
-
 private:
 
   ///control how ratio is calculated
   bool Ordered;
-
-  ///true, if recompute needs precomputed distance tables
-  bool RecomputeNeedsDistanceTable;
 
   ///the size of ParticleSet
   int NumPtcls;
@@ -510,8 +492,3 @@ public:
 /**@}*/
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: tillackaf $
- * $Revision: 7408 $   $Date: 2017-01-10 13:29:49 -0500 (Tue, 10 Jan 2017) $
- * $Id: TrialWaveFunction.h 7408 2017-01-10 18:29:49Z tillackaf $
- ***************************************************************************/

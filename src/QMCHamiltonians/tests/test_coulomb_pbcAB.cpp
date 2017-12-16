@@ -15,7 +15,6 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Lattice/ParticleBConds.h"
 #include "Lattice/Uniform3DGridLayout.h"
 #include "Particle/ParticleSet.h"
@@ -43,7 +42,6 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   Uniform3DGridLayout grid;
   grid.BoxBConds = true; // periodic
@@ -87,7 +85,7 @@ TEST_CASE("Coulomb PBC A-B", "[hamiltonian]")
 
   elec.createSK();
 
-  elec.addTable(ions);
+  elec.addTable(ions,DT_AOS);
   elec.update();
 
 
@@ -121,7 +119,6 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   Uniform3DGridLayout grid;
   grid.BoxBConds = true; // periodic
@@ -171,7 +168,7 @@ TEST_CASE("Coulomb PBC A-B BCC H", "[hamiltonian]")
 
   elec.createSK();
 
-  elec.addTable(ions);
+  elec.addTable(ions,DT_AOS);
   elec.update();
 
 

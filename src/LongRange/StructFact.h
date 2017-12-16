@@ -47,6 +47,8 @@ public:
    * unless Hamiltonian uses pbyp.
    */
   bool DoUpdate;
+  /// default false, the per particle data is not saved
+  bool StorePerParticle;
   /** enumeration for the methods to handle mixed bconds
    *
    * Allow overwriting lattice::SuperCellEnum to use D-dim k-point sets with mixed BC
@@ -57,7 +59,6 @@ public:
   ///1-D container for the phase
   Vector<RealType> phiV;
   ///2-D container for the phase
-  Matrix<RealType> phiM;
 #if defined(USE_REAL_STRUCT_FACTOR)
   Matrix<RealType> rhok_r, rhok_i;
   Matrix<RealType> eikr_r, eikr_i;
@@ -94,7 +95,7 @@ public:
    * @param active index of the moved particle
    * @param gid group id of the active particle
    */
-  void acceptMove(int active, int gid);
+  void acceptMove(int active, int gid, const PosType& rold);
   /** discard any temporary data
    * @param active index of the moved particle
    * @param gid group id of the active particle
@@ -173,6 +174,12 @@ public:
     buf.get(eikr.first_address(),eikr.last_address());
 #endif
   }
+
+  /** @brief switch on the storage per particle
+   *
+   * allocate the memory and precompute the data
+   */
+  void turnOnStorePerParticle(ParticleSet& P);
 
 private:
   ///data for recursive evaluation for a given position

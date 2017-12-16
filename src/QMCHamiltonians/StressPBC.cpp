@@ -44,7 +44,7 @@ StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Ps
   //This sets up the long range breakups. 
   
   kcdifferent=false;
-  myTableIndex=elns.addTable(PtclA);
+  myTableIndex=elns.addTable(PtclA,DT_AOS);
   initBreakup(PtclTarg);
   
   targetconsts=0.0;
@@ -485,8 +485,3 @@ QMCHamiltonianBase* StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi
 }
 
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3015 $   $Date: 2008-08-18 16:08:06 -0500 (Mon, 18 Aug 2008) $
- * $Id: StressPBC.cpp 3015 2008-08-18 21:08:06Z jnkim $
- ***************************************************************************/

@@ -23,6 +23,7 @@
 #include <cstring>
 
 #ifdef ADD_
+#define caxpy caxpy_
 #define daxpy daxpy_
 #define saxpy saxpy_
 #define zaxpy zaxpy_
@@ -33,11 +34,8 @@
 #define ssymv ssymv_
 #define csymv csymv_
 #define zsymv zsymv_
-#define ddot  ddot_
-#define sdot  sdot_
-#define zdot  zdot_
-#define zdotu  zdotu_
-#define dscal  dscal_
+#define dscal dscal_
+#define sscal sscal_
 #define dcopy dcopy_
 #define zcopy zcopy_
 #define dsyrk  dsyrk_
@@ -83,27 +81,34 @@
 #define zgeqrf zgeqrf_
 #define zungqr zungqr_
 
+#define cgeqrf cgeqrf_
+#define sgeqrf sgeqrf_
+#define dorgqr dorgqr_
+#define sorgqr sorgqr_
+#define cungqr cungqr_
+#define zgelqf zgelqf_
+#define dgelqf dgelqf_
+#define cgelqf cgelqf_
+#define sgelqf sgelqf_
+#define dorglq dorglq_
+#define sorglq sorglq_
+#define zunglq zunglq_
+#define cunglq cunglq_
+
+#if defined(HAVE_MKL)
+#define dzgemv  dzgemv_
+#define scgemv  scgemv_
+#define dzgemm  dzgemm_
+#define scgemm  scgemm_
 #endif
 
-// Clang issues a warning if the C return type is std::complex<double>
-// Use the C return type instead
-#define complex_ret double _Complex
+#endif
 
 // declaring Fortran interfaces
 extern "C" {
 
-  double ddot(const int& n, const double *dx, const int& incx, const double *dy, const int &incy);
-
-  float sdot(const int& n, const float *dx, const int& incx,  const float *dy, const int &incy);
-
-  complex_ret
-  zdot(const int& n, const std::complex<double> *dx, const int& incx,
-       const std::complex<double> *dy, const int &incy);
-
-  complex_ret
-  zdotu(const int& n, const std::complex<double> *dx, const int& incx,
-        const std::complex<double> *dy, const int &incy);
-
+  void caxpy(const int& n, const std::complex<float>&  da,  const std::complex<float> *dx,
+             const int& incx, std::complex<float> *dy, const int& incy);
 
   void daxpy(const int& n, const double& da,
              const double *dx, const int& incx, double *dy, const int& incy);
@@ -121,6 +126,7 @@ extern "C" {
 
 
   double dscal(const int& n, const double&, double* x, const int&);
+  double sscal(const int& n, const float&, float* x, const int&);
 
   void  dsymv(const char& uplo, const int& n, const double& alpha,
               const double& a, const int& lda, const double* x, const int& incx,
@@ -196,6 +202,30 @@ extern "C" {
              const std::complex<float>* bv, const int& incx,
              const std::complex<float>& beta, std::complex<float>* cv, const int& incy);
 
+#if defined(HAVE_MKL)
+
+  void dzgemm(const char&, const char&,
+             const int&, const int&, const int&,
+             const std::complex<double>&, const double*, const int&, const std::complex<double>*, const int&,
+             const std::complex<double>&, std::complex<double>*, const int&);
+
+  void scgemm(const char&, const char&,
+             const int&, const int&, const int&,
+             const std::complex<float>&, const float*, const int&, const std::complex<float>*, const int&,
+             const std::complex<float>&, std::complex<float>*, const int&);
+
+  void dzgemv(const char& trans, const int& nr, const int& nc,
+             const std::complex<double>& alpha, const double* amat, const int& lda,
+             const std::complex<double>* bv, const int& incx,
+             const std::complex<double>& beta, std::complex<double>* cv, const int& incy);
+
+  void scgemv(const char& trans, const int& nr, const int& nc,
+             const std::complex<float>& alpha, const float* amat, const int& lda,
+             const std::complex<float>* bv, const int& incx,
+             const std::complex<float>& beta, std::complex<float>* cv, const int& incy);
+
+#endif
+
   void dsyrk(const char&, const char&, const int&, const int&,
              const double&, const double*, const int&,
              const double&, double*,const int&);
@@ -258,9 +288,40 @@ extern "C" {
              int &LDB, double &VL, double &VU, int &IL, int &IU, double &ABSTOL, int &M, double *W, std::complex<double>* Z, 
              int &LDZ, std::complex<double> *WORK, int &LWORK, double* RWORK, int* IWORK, int* IFAIL, int &INFO);
 
-  void zgeqrf( const int *M, const int *N, std::complex<double> *A, const int *LDA, std::complex<double> *TAU, std::complex<double> *WORK, const int *LWORK, int *INFO );
+  void zgeqrf( const int &M, const int &N, std::complex<double> *A, const int &LDA, std::complex<double> *TAU, std::complex<double> *WORK, const int &LWORK, int &INFO );
 
-  void zungqr( const int *M, const int *N, const int *K, std::complex<double> *A, const int *LDA, std::complex<double> *TAU, std::complex<double> *WORK, const int *LWORK, int *INFO );
+  void cgeqrf( const int &M, const int &N, std::complex<float> *A, const int &LDA, std::complex<float> *TAU, std::complex<float> *WORK, const int &LWORK, int &INFO );
+
+  void dgeqrf( const int &M, const int &N, double *A, const int &LDA, double *TAU, double *WORK, const int &LWORK, int &INFO );
+
+  void sgeqrf( const int &M, const int &N, float *A, const int &LDA, float *TAU, float *WORK, const int &LWORK, int &INFO );
+
+
+  void zungqr( const int &M, const int &N, const int &K, std::complex<double> *A, const int &LDA, std::complex<double> *TAU, std::complex<double> *WORK, const int &LWORK, int &INFO );
+
+  void cungqr( const int &M, const int &N, const int &K, std::complex<float> *A, const int &LDA, std::complex<float> *TAU, std::complex<float> *WORK, const int &LWORK, int &INFO );
+
+  void dorgqr( const int &M, const int &N, const int &K, double *A, const int &LDA, double *TAU, double *WORK, const int &LWORK, int &INFO );
+
+  void sorgqr( const int &M, const int &N, const int &K, float *A, const int &LDA, float *TAU, float *WORK, const int &LWORK, int &INFO );
+
+  void zgelqf( const int &M, const int &N, std::complex<double> *A, const int &LDA, std::complex<double> *TAU, std::complex<double> *WORK, const int &LWORK, int &INFO );
+
+  void cgelqf( const int &M, const int &N, std::complex<float> *A, const int &LDA, std::complex<float> *TAU, std::complex<float> *WORK, const int &LWORK, int &INFO );
+
+  void dgelqf( const int &M, const int &N, double *A, const int &LDA, double *TAU, double *WORK, const int &LWORK, int &INFO );
+
+  void sgelqf( const int &M, const int &N, float *A, const int &LDA, float *TAU, float *WORK, const int &LWORK, int &INFO );
+
+
+  void zunglq( const int &M, const int &N, const int &K, std::complex<double> *A, const int &LDA, std::complex<double> *TAU, std::complex<double> *WORK, const int &LWORK, int &INFO );
+
+  void cunglq( const int &M, const int &N, const int &K, std::complex<float> *A, const int &LDA, std::complex<float> *TAU, std::complex<float> *WORK, const int &LWORK, int &INFO );
+
+  void dorglq( const int &M, const int &N, const int &K, double *A, const int &LDA, double *TAU, double *WORK, const int &LWORK, int &INFO );
+
+  void sorglq( const int &M, const int &N, const int &K, float *A, const int &LDA, float *TAU, float *WORK, const int &LWORK, int &INFO );
+
 
   void dger(const int* m, const int* n, const double* alpha
             , const double* x, const int* incx, const double* y, const int* incy
@@ -278,8 +339,6 @@ extern "C" {
              , const std::complex<float>* x, const int* incx, const std::complex<float>* y, const int* incy
              , std::complex<float>* a, const int* lda);
 
-  void dgeqrf( const int *M, const int *N, double *A, const int *LDA, double *TAU, double *WORK, const int *LWORK, int *INFO );
-
   void dormqr( const char *SIDE, const char *TRANS, const int *M, const int *N, const int *K, const double *A, const int * LDA, const double *TAU, double *C, const int *LDC, double *WORK, int *LWORK, int *INFO );
 
   void dgghrd(const char *COMPQ, const char *COMPZ, const int *N, const int *ILO, const int *IHI, double *A, const int *LDA, double *B, const int *LDB, double *Q, const int *LDQ, double *Z, const int *LDZ, int *INFO );
@@ -292,8 +351,3 @@ extern "C" {
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
