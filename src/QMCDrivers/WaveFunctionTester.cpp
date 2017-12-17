@@ -24,7 +24,6 @@
 #include "Message/Communicate.h"
 #include "QMCDrivers/WaveFunctionTester.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "Utilities/OhmmsInform.h"
 #include "LongRange/StructFact.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
@@ -1035,7 +1034,7 @@ void WaveFunctionTester::runBasicTest()
       dphase -= 2.0*M_PI;
     ValueType ratDiff=std::complex<OHMMS_PRECISION>(ratioMag*std::cos(dphase),ratioMag*std::sin(dphase)) ;
     // TODO - test complex ratio against a tolerance
-    fout << iat << " ratio " << aratio*std::complex<OHMMS_PRECISION>(std::cos(phaseDiff),std::sin(phaseDiff))/ratDiff << " " << ratDiff << std::endl;
+    fout << iat << " " << aratio*std::complex<OHMMS_PRECISION>(std::cos(phaseDiff),std::sin(phaseDiff))/ratDiff << " " << ratDiff << " " << aratio*std::complex<OHMMS_PRECISION>(std::cos(phaseDiff),std::sin(phaseDiff)) << std::endl;
     fout << "     ratioMag " << aratio/ratioMag << " " << ratioMag << std::endl;
     fout << "     PhaseDiff " << phaseDiff/dphase << " " << phaseDiff  <<" " << dphase << std::endl;
 #else

@@ -48,6 +48,9 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   using SplineAdoptorBase<ST,D>::HalfG;
   using BaseType::GGt;
   using BaseType::PrimLattice;
+  using BaseType::kPoints;
+  using BaseType::offset_cplx;
+  using BaseType::offset_real;
 
   ///number of points of the original grid
   int BaseN[3];
@@ -113,6 +116,16 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     chunked_reduce(comm, MultiSpline);
   }
 
+  void gather_tables(Communicate* comm)
+  {
+    if(comm->size()==1) return;
+    const int Nbands = kPoints.size();
+    const int Nbandgroups = comm->size();
+    offset_real.resize(Nbandgroups+1,0);
+    FairDivideLow(Nbands,Nbandgroups,offset_real);
+    gatherv(comm, MultiSpline, MultiSpline->z_stride, offset_real);
+  }
+
   template<typename GT, typename BCT>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
@@ -155,13 +168,13 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
 
   inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
   {
-    SplineInst->copy_spline(spline_r,ispline  ,BaseOffset, BaseN);
+    SplineInst->copy_spline(spline_r, ispline, BaseOffset, BaseN);
   }
 
   void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
   {
     Vector<ST> v_r(psi_r,0);
-    SplineInst->set(ispline  ,v_r);
+    SplineInst->set(ispline, v_r);
   }
 
   inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i,

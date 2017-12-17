@@ -1860,14 +1860,6 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, in
     int psiIndex(0);
     for (int j=0; j<NumValenceOrbs; j++)
     {
-      bool trs(true);
-      for(unsigned a0(0); a0<OHMMS_DIM; a0++)
-      {
-        double olp= std::abs((PrimLattice.R[a0]*kPoints[j][a0])/M_PI +1e-6);
-        olp -= (int)olp;
-        if (olp>1e-4)
-          trs=false;
-      }
       if (MakeTwoCopies[j])
       {
         psi(i,psiIndex)=imag(StorageValueVector[j]);
@@ -1890,30 +1882,17 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, in
         psiIndex++;
       }
       else
-        if (trs)
-        {
-          psi(i,psiIndex)=real(StorageValueVector[j]);
-          for (int n=0; n<OHMMS_DIM; n++)
-            dpsi(i,psiIndex)[n] = real(StorageGradVector[j][n]);
-          for (int n=0; n<OHMMS_DIM*OHMMS_DIM; n++)
-            grad_grad_psi(i,psiIndex)[n] = real(StorageHessVector[j](n));
-          for (int n=0; n<OHMMS_DIM; n++)
-            for (int m=0; m<OHMMS_DIM*OHMMS_DIM; m++)
-              grad_grad_grad_logdet(i,psiIndex)[n][m] = real(StorageGradHessVector[j][n](m));
-          psiIndex++;
-        }
-        else
-        {
-          psi(i,psiIndex)=imag(StorageValueVector[j])-real(StorageValueVector[j]);
-          for (int n=0; n<OHMMS_DIM; n++)
-            dpsi(i,psiIndex)[n] = imag(StorageGradVector[j][n]) - real(StorageGradVector[j][n]);
-          for (int n=0; n<OHMMS_DIM*OHMMS_DIM; n++)
-            grad_grad_psi(i,psiIndex)[n] = imag(StorageHessVector[j](n)) -real(StorageHessVector[j](n));
-          for (int n=0; n<OHMMS_DIM; n++)
-            for (int m=0; m<OHMMS_DIM*OHMMS_DIM; m++)
-              grad_grad_grad_logdet(i,psiIndex)[n][m] = imag(StorageGradHessVector[j][n](m)) - real(StorageGradHessVector[j][n](m));
-          psiIndex++;
-        }
+      {
+        psi(i,psiIndex)=real(StorageValueVector[j]);
+        for (int n=0; n<OHMMS_DIM; n++)
+          dpsi(i,psiIndex)[n] = real(StorageGradVector[j][n]);
+        for (int n=0; n<OHMMS_DIM*OHMMS_DIM; n++)
+          grad_grad_psi(i,psiIndex)[n] = real(StorageHessVector[j](n));
+        for (int n=0; n<OHMMS_DIM; n++)
+          for (int m=0; m<OHMMS_DIM*OHMMS_DIM; m++)
+            grad_grad_grad_logdet(i,psiIndex)[n][m] = real(StorageGradHessVector[j][n](m));
+        psiIndex++;
+      }
     }
   }
   VGLMatTimer.stop();
@@ -2174,12 +2153,12 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, in
     for (int j=0; j<NumValenceOrbs; j++)
     {
       convert(dot(PG,StorageGradVector[j]),StorageGradVector[j]);
-      convert(dot(TPG,StorageHessVector[j]),tmphs);
-      convert(dot(PG,tmphs),StorageHessVector[j]);
+      convert(dot(PG,StorageHessVector[j]),tmphs);
+      convert(dot(tmphs,TPG),StorageHessVector[j]);
       for (int n=0; n<OHMMS_DIM; n++)
       {
-        convert(dot(TPG,StorageGradHessVector[j][n]),tmpghs[n]);
-        convert(dot(PG,tmpghs[n]),StorageGradHessVector[j][n]);
+        convert(dot(PG,StorageGradHessVector[j][n]),tmpghs[n]);
+        convert(dot(tmpghs[n],TPG),StorageGradHessVector[j][n]);
       }
       convert(dot(PG,StorageGradHessVector[j]),StorageGradHessVector[j]);
 //              grad_grad_grad_logdet(i,j)=StorageGradHessVector[j];

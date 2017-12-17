@@ -35,6 +35,12 @@ SET(WFBASE_SRCS
   HarmonicOscillator/SHOSetBuilder.cpp
   )
 
+IF(NOT QMC_COMPLEX)
+  SET(WFBASE_SRCS ${WFBASE_SRCS}
+    FDLRWfn.cpp
+    )
+ENDIF(NOT QMC_COMPLEX)
+
 
 ########################
 # build jastrows

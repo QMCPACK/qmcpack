@@ -46,7 +46,6 @@ int main(int argc, char** argv)
 {
 
   OHMMS::Controller->initialize(0, NULL);
-  OhmmsInfo("restart");
   Communicate* myComm=OHMMS::Controller;
   myComm->setName("restart");
 
@@ -111,8 +110,7 @@ int main(int argc, char** argv)
   //turn off output
   if(myComm->rank())
   {
-    OhmmsInfo::Log->turnoff();
-    OhmmsInfo::Warn->turnoff();
+    outputManager.shutOff();
   }
 
   int nptcl=0;
@@ -292,10 +290,10 @@ int main(int argc, char** argv)
   walkerWrite = timers[3]/myComm->size();
   if(myComm->rank() == 0)
   {
-    cout << "\nTotal time of writing random seeds to HDF5 file: " << setprecision(2) << h5write << "\n";
-    cout << "\nTotal time of reading random seeds in HDF5 file: " << setprecision(2) << h5read << "\n";
-    cout << "\nTotal time of writing walkers to HDF5 file: " << setprecision(2) << walkerWrite << "\n";
-    cout << "\nTotal time of reading walkers in HDF5 file: " << setprecision(2) << walkerRead << "\n";
+    cout << "\nTotal time of writing random seeds to HDF5 file: " << setprecision(6) << h5write << "\n";
+    cout << "\nTotal time of reading random seeds in HDF5 file: " << setprecision(6) << h5read << "\n";
+    cout << "\nTotal time of writing walkers to HDF5 file: " << setprecision(6) << walkerWrite << "\n";
+    cout << "\nTotal time of reading walkers in HDF5 file: " << setprecision(6) << walkerRead << "\n";
   }
 
   if(myComm->size()>1)

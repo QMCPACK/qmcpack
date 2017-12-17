@@ -21,7 +21,6 @@
 #include <Utilities/SimpleParser.h>
 #include <Particle/DistanceTableData.h>
 #include <Numerics/DeterminantOperators.h>
-
 #include <set>
 
 namespace qmcplusplus
@@ -64,12 +63,12 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
       if(d_aa.DTType == DT_SOA)
       {
         for (int i=0; i<np; ++i)
-          kdotp[i]=dot(kPoints[ik],d_aa.Temp_dr[i]);
+          kdotp[i]=-dot(kPoints[ik],d_aa.Temp_dr[i]);
       }
       else
       {
         for (int i=0; i<np; ++i)
-          kdotp[i]=dot(kPoints[ik],temp[i].dr1_nobox);
+          kdotp[i]=-dot(kPoints[ik],temp[i].dr1_nobox);
       }
       eval_e2iphi(np,kdotp.data(),phases.data());
       RealType nofk_here(std::real(BLAS::dot(np,phases.data(),&psi_ratios[0])));//psi_ratios.data())));
@@ -86,11 +85,12 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
     nofK[ik] *= norm_nofK;
   if (hdf5_out)
   {
+    RealType w=tWalker->Weight;
     int j=myIndex;
     for (int ik=0; ik<nofK.size(); ++ik,++j)
-      P.Collectables[j]+= nofK[ik];
+      P.Collectables[j]+= w*nofK[ik];
     for (int iq=0; iq<compQ.size(); ++iq,++j)
-      P.Collectables[j]+= compQ[iq];
+      P.Collectables[j]+= w*compQ[iq];
   }
   return 0.0;
 }

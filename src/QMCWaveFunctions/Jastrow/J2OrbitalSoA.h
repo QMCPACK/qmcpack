@@ -227,7 +227,7 @@ struct  J2OrbitalSoA : public OrbitalBase
   inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     Uat.attach(buf.attach<valT>(N), N);
-    dUat.resetByRef(N, N_padded, buf.attach<valT>(N_padded*OHMMS_DIM));
+    dUat.attach(N, N_padded, buf.attach<valT>(N_padded*OHMMS_DIM));
     d2Uat.attach(buf.attach<valT>(N), N);
   }
 

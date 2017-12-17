@@ -34,6 +34,7 @@ struct ECPComponentBuilder: public MPIObjectBase, public QMCTraits
 
   int NumNonLocal;
   int Lmax, Llocal, Nrule;
+  int AtomicNumber;
   RealType Zeff;
   RealType RcutMax;
   std::string Species;

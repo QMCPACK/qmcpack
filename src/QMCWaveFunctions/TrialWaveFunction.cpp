@@ -18,7 +18,6 @@
     
     
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus
@@ -793,6 +792,13 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
     RealType psiValue=std::exp(-LogValue)*std::cos(PhaseValue);
     for (int i=0; i<dlogpsi.size(); i++)
       dlogpsi[i] *= psiValue;
+  }
+}
+
+void TrialWaveFunction::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                                                std::vector<RealType>& dgradlogpsi) {
+  for (int i=0; i<Z.size(); i++) {
+    Z[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
   }
 }
 

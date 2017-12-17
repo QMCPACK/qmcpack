@@ -67,6 +67,9 @@ struct WaveFunctionFactory: public MPIObjectBase
   /** add Fermion wavefunction term */
   bool addFermionTerm(xmlNodePtr cur);
 
+  /** add finite-difference linear response wavefunction term */
+  bool addFDLRTerm(xmlNodePtr cur);
+
   /** add an OrbitalBuilder and the matching xml node
    * @param b OrbitalBuilderBase*
    * @oaram cur xmlNode for b

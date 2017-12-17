@@ -32,7 +32,6 @@ typedef Walker<QMCTraits, PtclOnLatticeTraits> Walker_t;
 TEST_CASE("walker", "[particle]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  OhmmsInfo("testlogfile");
 
   Walker_t w(1);
   REQUIRE(w.R.size() == 1);
@@ -46,7 +45,6 @@ TEST_CASE("walker HDF read and write", "[particle]")
 {
   OHMMS::Controller->initialize(0, NULL);
   Communicate *c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   Walker_t w1(1);
   w1.R[0] = 1.0;

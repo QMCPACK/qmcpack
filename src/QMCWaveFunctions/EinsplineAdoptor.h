@@ -156,7 +156,8 @@ struct SplineAdoptorBase
   std::vector<TinyVector<ST,D> >  kPoints;
   ///remap band
   aligned_vector<int> BandIndexMap;
-
+  /// band offsets
+  std::vector<int> offset_real, offset_cplx;
   ///name of the adoptor
   std::string AdoptorName;
   ///keyword used to match hdf5

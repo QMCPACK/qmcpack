@@ -52,6 +52,8 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   using BaseType::PrimLattice;
   using BaseType::kPoints;
   using BaseType::MakeTwoCopies;
+  using BaseType::offset_cplx;
+  using BaseType::offset_real;
 
   ///number of points of the original grid
   int BaseN[3];
@@ -130,6 +132,18 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   void reduce_tables(Communicate* comm)
   {
     chunked_reduce(comm, MultiSpline);
+  }
+
+  void gather_tables(Communicate* comm)
+  {
+    if(comm->size()==1) return;
+    const int Nbands = kPoints.size();
+    const int Nbandgroups = comm->size();
+    offset_cplx.resize(Nbandgroups+1,0);
+    FairDivideLow(Nbands,Nbandgroups,offset_cplx);
+    for(size_t ib=0; ib<offset_cplx.size(); ib++)
+      offset_cplx[ib]*=2;
+    gatherv(comm, MultiSpline, MultiSpline->z_stride, offset_cplx);
   }
 
   template<typename GT, typename BCT>

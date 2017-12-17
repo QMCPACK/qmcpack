@@ -23,7 +23,6 @@
 #include "OhmmsData/FileUtility.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
-#include "Utilities/OhmmsInfo.h"
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "ParticleIO/ParticleIOUtility.h"

@@ -13,7 +13,6 @@
 #include "Message/catch_mpi_main.hpp"
 
 #include "Message/Communicate.h"
-#include "Utilities/OhmmsInfo.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "Lattice/CrystalLattice.h"
@@ -30,7 +29,6 @@ namespace qmcplusplus
 TEST_CASE("particle_attrib_scalar", "[particle_base]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  OhmmsInfo("testlogfile");
 
   ParticleAttrib<double> PA1;
   REQUIRE(PA1.size() == 0);
@@ -57,7 +55,6 @@ TEST_CASE("particle_attrib_scalar", "[particle_base]")
 TEST_CASE("particle_attrib_vector", "[particle_base]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  OhmmsInfo("testlogfile");
 
   ParticleAttrib<TinyVector<double, 2> > PA1;
   REQUIRE(PA1.size() == 0);

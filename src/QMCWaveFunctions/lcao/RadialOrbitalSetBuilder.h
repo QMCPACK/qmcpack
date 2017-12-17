@@ -19,7 +19,6 @@
 #include "Configuration.h"
 #include "OhmmsData/HDFAttribIO.h"
 #include <HDFVersion.h>
-#include "Utilities/OhmmsInfo.h"
 #include "OhmmsData/HDFStringAttrib.h"
 #include "Numerics/LibxmlNumericIO.h"
 #include "Numerics/HDFNumericAttrib.h"

@@ -20,7 +20,6 @@
  */
 #include "Particle/ParticleSet.h"
 #include "Particle/FastParticleOperators.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Message/OpenMP.h"
 #include "LongRange/StructFact.h"
 #include "qmc_common.h"

@@ -216,6 +216,8 @@ struct GaussianCombo: public OptimizableFunctorBase
 
   bool put(xmlNodePtr cur);
 
+  void addGaussian(real_type c, real_type alpha);
+
   void checkInVariables(opt_variables_type& active) { }
   void checkOutVariables(const opt_variables_type& active) { }
   void resetParameters(const opt_variables_type& active)
@@ -262,13 +264,20 @@ bool GaussianCombo<T>::put(xmlNodePtr cur)
   radAttrib.add(alpha,expName);
   radAttrib.add(c,coeffName);
   radAttrib.put(cur);
+  addGaussian(c, alpha);
+  return true;
+}
+
+template<class T>
+void GaussianCombo<T>::addGaussian(real_type c, real_type alpha)
+{
   real_type c0=c;
-  if(!Normalized)
+  if(!Normalized) {
     c *= NormL*std::pow(alpha,NormPow);
+  }
   LOGMSG("    Gaussian exponent = " << alpha
          << "\n              contraction=" << c0 <<  " nomralized contraction = " << c)
   gset.push_back(BasicGaussian(alpha,c));
-  return true;
 }
 
 template<class T>
