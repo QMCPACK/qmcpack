@@ -99,10 +99,11 @@ void DiracDeterminantBase::resize(int nel, int morb)
   if(norb <= 0)
     norb = nel; // for morb == -1 (default)
   psiM.resize(nel,norb);
-  psiM_temp.resize(nel,norb);
   dpsiM.resize(nel,norb);
   d2psiM.resize(nel,norb);
   psiV.resize(norb);
+  memoryPool.resize(nel*norb);
+  psiM_temp.attach(memoryPool.data(),nel,norb);
 #ifdef MIXED_PRECISION
   psiM_hp.resize(nel,norb);
 #endif

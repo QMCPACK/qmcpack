@@ -38,6 +38,9 @@ namespace qmcplusplus
     /// ParticleSet this object refers to
     const ParticleSet& refPS;
 
+    /// SPO scratch memory. Always use existing memory
+    Vector<RealType,aligned_allocator<RealType> > SPOmem;
+
     inline bool isOnSphere() const
     {
       return onSphere;

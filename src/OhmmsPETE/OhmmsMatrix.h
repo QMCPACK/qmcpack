@@ -51,7 +51,7 @@ public:
   }
 
   /** constructor with an initialized ref */
-  inline Matrix(T* ref, size_type n, size_type m) : D1(n), D2(m), X(ref,n*m) {}
+  inline Matrix(T* ref, size_type n, size_type m) : D1(n), D2(m), TotSize(n*m), X(ref,n*m) {}
 
   // Copy Constructor
   Matrix(const Matrix<T,Alloc> &rhs)
@@ -139,6 +139,14 @@ public:
   // Attach to pre-allocated memory
   inline void attach(T* ref)
   {
+    X.attach(ref, TotSize);
+  }
+
+  inline void attach(T* ref, size_type n, size_type m)
+  {
+    D1 = n;
+    D2 = m;
+    TotSize=n*m;
     X.attach(ref, TotSize);
   }
 
