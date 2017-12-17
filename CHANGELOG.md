@@ -1,6 +1,67 @@
 # Change Log
 
-Notable changes to QMCPACK will be documented in this file. 
+Notable changes to QMCPACK will be documented in this file.
+
+## [Unreleased]
+
+### Notes
+
+### QMCPACK updates
+
+* Support for finite different linear response (FDLR) method and
+  wavefunctions, developed and contributed by Nick Blunt and Eric
+  Neuscamman, see Journal of Chemical Physics 147, 194101 (2017),
+  https://doi.org/10.1063/1.4998197 and
+  https://arxiv.org/abs/1707.09439 .
+* Major update to convert4qmc, conversion from GAMESS and other
+  gaussian basis set codes. HDF5 output is now supported for large
+  wavefunctions with -hdf5 option. Significantly improved example
+  inputs \*.qmc.in.xml.
+* Gaussian based trial wavefunctions now supported by structure of
+  arrays implementation (ENABLE_SOA=1). A full reimplementation that
+  will also support gaussians in periodic boundary conditions, e.g.
+  from pyscf, is in progress.
+* Initialization of multideterminant wavefunctions improved for faster
+  startup and lower memory usage. In practice this significantly
+  raises the usable maximum number of determinants.
+* Maximum CPU time setting (maxcpusecs): QMC drivers will not
+  start a new block if there is not enough estimated time remaining to
+  complete the next block and gracefully shut down.
+* Homogeneous electron gas wavefunction support and tests.
+* New command line verbosity command line flag -verbosity. Output of
+  QMCPACK will be overhauled over the next few releases to
+  support low, high, and debug options, and also to significantly improve
+  readability and utility.
+* Bugfix: Umrigar drift diffusion term is now consistent with the
+  Umrigar small time step error algorithm with complex wavefunctions.
+* Bugfix: Momentum distribution is now correctly weighted and also
+  correctly signed for twist averaging.
+* Bugfix: DMC with reconfiguration corrected
+  (reconfiguration="yes"), enabling DMC with constant walker
+  population and variable weights.
+* Renamed performance tests with atom and electron count.
+* Removed support for "buffering" of non-local pseudopotential
+  wavefunction components during optimization (useBuffer setting) to
+  reduce memory usage and for simplicity.
+* doxygen documentation for developer-level documentation of the code
+  and file structure. Produced via make in qmcpack/doxygen. HTML
+  currently published at http://docs.qmcpack.org/doxygen/doxy/
+* Many minor bug fixes and improved tests.
+
+### NEXUS
+
+* Improved postprocessing support for Quantum Espresso.
+* Various minor bug fixes.
+
+### Known issues and limitations
+
+* Documentation, examples and tutorials are not yet consistent with
+ the updated converter convert4qmc.
+* Core functionality is largely compatible with ENABLE_SOA but
+  some specialized wavefunctions and observables are not.
+* Use of GNU compilers with glibc 2.23 builds will crash due to a bug
+  in libmvec of glibc. The glibc version can be verified by
+  "ldd --version".
 
 ## [3.2.0] - 2017-09-21
 
@@ -94,7 +155,7 @@ testing. It is a recommended update.
 * Significantly updated optimizer description in manual, including excited state optimization.
 * Added description of using Intel MKL with non-Intel compilers in manual.
 * Added description of MPIEXEC and MPIEXEC_NUMPROCS_FLAG to manual for systems where MPI runner is non-standard.
-* Updated labs with correct pseudopotentials, basis set files. 
+* Updated labs with correct pseudopotentials, basis set files.
 * Many updated error messages and warnings.
 
 ### Known problems
@@ -118,7 +179,7 @@ testing. It is a recommended update.
 We are adopting [Semantic Versioning](http://semver.org) with this
 release. It is the first to be made from the git repository on GitHub,
 and the first named release since 2016-06-02 and subversion
-revision 6964. 
+revision 6964.
 
 A potentially severe bug is fixed for periodic wavefunctions in this version,
 in addition to many usability improvements and bugfixes. All users are
@@ -140,7 +201,7 @@ NEXUS updates are listed after QMCPACK updates.
   as might be used for molecular work. Requires QE_BIN and computes
   trial wavefunction on the fly.
 * Added DMC, optimizer and additional system tests.
-* Added unit tests using the Catch framework. 
+* Added unit tests using the Catch framework.
 * Plane wave wavefunctions can be evaluated in plane waves, use "pw"
   as determinantset type. Slow, but useful for checking spline accuracy. Tests added.
 * Complex implementation on GPUs, supports arbitrary twists and
@@ -161,7 +222,7 @@ NEXUS updates are listed after QMCPACK updates.
   version printed during configure and on standard output.
 * Source files headers updated to consistently show UIUC/NCSA open source
   license and list development history.
-* Numerous manual updates. 
+* Numerous manual updates.
 * Updated QMCPACK tutorial laboratories.
 * Many small bug fixes, improvements and optimizations.
 
@@ -177,7 +238,7 @@ NEXUS updates are listed after QMCPACK updates.
   *  Additional elements can be added to workflow chains over time as needed.
   *  Scans of structural parameters and input parameters at any level of the chain are possible.
   *  No programming constructs are required (for/if, etc).
-  *  Directory substructure is automatically generated in the case of scans. 
+  *  Directory substructure is automatically generated in the case of scans.
   *  Native support for visualizing workflows via pydot is provided.
   *  Documentation for this feature is pending.
 * Quantum Espresso workflows
@@ -203,4 +264,3 @@ NEXUS updates are listed after QMCPACK updates.
     * New command line tool for jack-knife fitting of QMCPACK data.
     * Timestep extrapolation currently supported.
     * General binding/equation of state fitting pending.
- 
