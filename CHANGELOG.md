@@ -36,9 +36,6 @@ Notable changes to QMCPACK will be documented in this file.
   Umrigar small time step error algorithm with complex wavefunctions.
 * Bugfix: Momentum distribution is now correctly weighted and also
   correctly signed for twist averaging.
-* Bugfix: DMC with reconfiguration corrected
-  (reconfiguration="yes"), enabling DMC with constant walker
-  population and variable weights.
 * Renamed performance tests with atom and electron count.
 * Removed support for "buffering" of non-local pseudopotential
   wavefunction components during optimization (useBuffer setting) to
