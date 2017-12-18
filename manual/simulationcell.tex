@@ -57,20 +57,20 @@ the behavior of the $x$, $y$, and $z$, axes, respectively.
 Examples of valid \texttt{bconds} include:
 
 \begin{description}
-\item[``p p p''] Periodic boundary conditions. Corresponds to 3d crystal.
-\item[``n n n''] Open boundary conditions. Corresponds to isolated molecule in a vacuum.
-\item[``p p n''] Slab geometry. Corresponds to 2d crystal.
-\item[``p n n''] Wire geometry. Corresponds to 1d crystal.
+\item[``p p p''] Periodic boundary conditions. Corresponds to a 3d crystal.
+\item[``n n n''] Open boundary conditions. Corresponds to an isolated molecule in a vacuum.
+\item[``p p n''] Slab geometry. Corresponds to a 2d crystal.
+\item[``p n n''] Wire geometry. Corresponds to a 1d crystal.
 \end{description}
 
 \subsection{Vacuum}
 For slab or wire boundary conditions (\texttt{bconds= p p n} or \texttt{bconds= p n n}, respectively),
-The box used for Ewald summation increases the size of the axis labeled \texttt{n} by a factor of \texttt{vacuum}.
+the box used for Ewald summation increases along the axis labeled \texttt{n} by a factor of \texttt{vacuum}.
 The default value is 1, \textit{i.e.} no change to the specified axis.
-All the particles remains in the original box without altering their positions.
+All the particles remain in the original box without altering their positions.
 
 An example of a \texttt{simulationcell} block using \texttt{vacuum} is given below.
-The z-axis is increased from 12 to 18 by \texttt{vacuum} 1.5.
+The size of the box along the z-axis increases from 12 to 18 by the vacuum scale of 1.5.
 \begin{shade}
   <simulationcell>
     <parameter name="lattice">
@@ -86,14 +86,14 @@ The z-axis is increased from 12 to 18 by \texttt{vacuum} 1.5.
   </simulationcell>
 \end{shade}
 
-This option helps reducing the computational cost of DFT and memory requirement in QMC.
+This option helps reduce the computational cost of DFT and memory requirement in QMC.
 For instance, a slab calculation requires a large box with a very long z direction
 to minimize the interaction between periodic images in DFT.
 Since QMC uses the orbitals from DFT contained in the same box,
-a lot of memory is needed when orbitals are stored in B-Spline representation.
-With `vacuum' option, the DFT calculation can use a smaller box but still large enough for the accuracy
-and the QMC calculation rescale the open directions of the box to
-have the long-range parts of Coulomb interations calculated in large box.
+a lot of memory is needed to store the orbitals in B-Spline representation.
+With the `vacuum' option, the DFT calculation can use a smaller box (but still large enough for accuracy)
+and the QMC calculation can rescale the open directions of the box to
+have the long-range parts of Coulomb interations calculated in the large box.
 
 \subsection{\texttt{LR\_dim\_cutoff}}
 When using periodic boundary conditions direct calculation of the Coulomb energy is
