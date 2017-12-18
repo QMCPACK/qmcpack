@@ -85,10 +85,10 @@ protected:
   ParticleAttrib<RealType> U,d2U;
   ParticleAttrib<PosType> dU;
   RealType *FirstAddressOfdU, *LastAddressOfdU;
-  std::vector<FT*> Fs;
   std::vector<FT*> Funique;
 
 public:
+  std::vector<FT*> Fs;
 
   typedef FT FuncType;
 

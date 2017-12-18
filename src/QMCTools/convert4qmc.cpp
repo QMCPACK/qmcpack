@@ -36,11 +36,12 @@ int main(int argc, char **argv)
 {
   if(argc<2)
   {
-    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-VSVB|-QP] filename ";
-     std::cout << "[-nojastrow -hdf5 -psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf -size npts -ci file.out -threshold cimin -TargetState state_number -NaturalOrbitals NumToRead -prefix title -addCusp -writewfjonly]"
-              << std::endl;
+    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-VSVB|-QP] filename " << std::endl;
+    std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production]" << std::endl;
+    std::cout << "[-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]" << std::endl;
+    std::cout << "[-size npts -ci file.out -threshold cimin -TargetState state_number -NaturalOrbitals NumToRead]" << std::endl;
     std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01 -TargetState 0 -prefix sample" << std::endl;
-    std::cout << "When the input format is missing, the  extension of filename is used to determine the parser " << std::endl;
+    std::cout << "When the input format is missing, the  extension of filename is used to determine the format " << std::endl;
     std::cout << " *.Fchk -> gaussian; *.out -> gamess; *.data -> casino; *.xml -> gamesxml" << std::endl;
     return 1;
   }
@@ -61,16 +62,16 @@ int main(int argc, char **argv)
   std::string punch_file;
   std::string psi_tag("psi0");
   std::string ion_tag("ion0");
-  std:: string jastrow("j");
+  std::string jastrow("j");
   std::string prefix;
 
 
   int TargetState=0;
   bool addJastrow=true;
-  bool writewfjonly=false;
   bool usehdf5=false;
   bool useprefix=false;
   bool debug = false;
+  bool prod=false;
   bool ci=false,zeroCI=false,orderByExcitation=false,VSVB=false, fmo=false,addCusp=false;
   double thres=0.01;
   int readNO=0; // if > 0, read Natural Orbitals from gamess output
@@ -91,7 +92,7 @@ int main(int argc, char **argv)
     else if(a == "-gamessAscii" || a == "-gamess")
     {
       if (a == "-gamessAscii" )
-          std::cout<<"Option \"-gamessAscii\" is deprecated and will be remove in the next release. Please use instead the option: \"-gamess\" "<<std::endl;
+          std::cout<<"Option \"-gamessAscii\" is deprecated and will be removed in the next release. Please use instead the option: \"-gamess\" "<<std::endl;
       parser = new GamesAsciiParser(argc,argv);
       in_file =argv[++iargc];
     }
@@ -129,6 +130,10 @@ int main(int argc, char **argv)
     else if(a == "-psi_tag")
     {
       psi_tag=argv[++iargc];
+    }
+    else if(a == "-production")
+    {
+      prod=true; 
     }
     else if(a == "-ion_tag")
     {
@@ -179,10 +184,6 @@ int main(int argc, char **argv)
     else if(a == "-debug")
     {
       debug = true;
-    }
-    else if(a == "-writewfjonly")
-    {
-      writewfjonly=true;
     }
     else if(a == "-nojastrow")
     {
@@ -262,6 +263,7 @@ int main(int argc, char **argv)
       parser->h5file=parser->Title+".orbs.h5";
     parser->IonSystem.setName(ion_tag);
     parser->multideterminant=ci;
+    parser->production=prod;
     parser->ci_threshold=thres;
     parser->target_state=TargetState;
     parser->readNO=readNO;
@@ -271,25 +273,25 @@ int main(int argc, char **argv)
     parser->outputFile=punch_file;
     parser->VSVB=VSVB;
     parser->parse(in_file);
-    parser->addJastrow=addJastrow;
-    parser->WFS_name=jastrow;
-    parser->dump(psi_tag, ion_tag);
-    parser->dumpStdInput(psi_tag, ion_tag);
-    if(!writewfjonly)
+    if(prod)
     {
-      if(addJastrow==true)
-      {
-         parser->addJastrow=false;
-         jastrow="noj";
-      } 
-      else
-      {
-         parser->addJastrow=true;
-         jastrow="j";
-      }  
-      parser->WFS_name=jastrow;
-      parser->dump(psi_tag, ion_tag);
-      parser->dumpStdInput(psi_tag, ion_tag);
+       parser->addJastrow=addJastrow;
+       parser->WFS_name=jastrow;
+       parser->dump(psi_tag, ion_tag);
+       parser->dumpStdInputProd(psi_tag, ion_tag);
+    }
+    else{
+       parser->addJastrow=false;
+       jastrow="noj";
+       parser->WFS_name=jastrow;
+       parser->dump(psi_tag, ion_tag);
+       parser->dumpStdInput(psi_tag, ion_tag);
+
+       parser->addJastrow=true;
+       jastrow="j";
+       parser->WFS_name=jastrow;
+       parser->dump(psi_tag, ion_tag);
+       parser->dumpStdInput(psi_tag, ion_tag);
     }
     
 

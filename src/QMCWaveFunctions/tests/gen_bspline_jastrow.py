@@ -65,24 +65,12 @@ def recreate_piecewise(basis_map, c, xs):
 
 
 
-# Generate output for these parameters
-
-#<jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\"> \
-#   <correlation rcut=\"10\" size=\"10\" speciesA=\"u\" speciesB=\"d\"> \
-#      <coefficients id=\"ud\" type=\"Array\"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients> \
-#    </correlation> \
-#</jastrow> \
-
-def gen_case_one():
-
-  rcut_val = 10
-  param = np.array([0.02904699284, -0.1004179, -0.1752703883, -0.2232576505, -0.2728029201, -0.3253286875, -0.3624525145, -0.3958223107, -0.4268582166, -0.4394531176])
 
 
+def gen_bspline_jastrow(nknots, rcut_val, param, cusp_val):
   xs = Symbol('x')
 
   Delta = Symbol('Delta',positive=True)
-  nknots = 10
   knots = [i*Delta for i in range(nknots)]
   print 'knots = ',knots
   all_knots = [i*Delta for i in range(-3,nknots+3)]
@@ -100,7 +88,6 @@ def gen_case_one():
   jastrow_spline = recreate_piecewise(jastrow_cond_map, c, xs)
 
 
-  cusp_val = -0.5
   Delta_val = rcut_val*1.0/(nknots+1)
   #print 'Delta = ',Delta_val
   #print 'coeff size = ',nknots+4
@@ -147,5 +134,40 @@ def gen_case_one():
   print s
 
 
+# Generate output for these parameters
+
+#<jastrow name=\"J2\" type=\"Two-Body\" function=\"Bspline\" print=\"yes\"> \
+#   <correlation rcut=\"10\" size=\"10\" speciesA=\"u\" speciesB=\"d\"> \
+#      <coefficients id=\"ud\" type=\"Array\"> 0.02904699284 -0.1004179 -0.1752703883 -0.2232576505 -0.2728029201 -0.3253286875 -0.3624525145 -0.3958223107 -0.4268582166 -0.4394531176</coefficients> \
+#    </correlation> \
+#</jastrow> \
+
+def gen_case_two_body():
+  rcut_val = 10
+  param = np.array([0.02904699284, -0.1004179, -0.1752703883, -0.2232576505, -0.2728029201, -0.3253286875, -0.3624525145, -0.3958223107, -0.4268582166, -0.4394531176])
+  nknots = 10
+  cusp_val = -0.5
+  gen_bspline_jastrow(nknots, rcut_val, param, cusp_val)
+
+
+#   <jastrow type=\"One-Body\" name=\"J1\" function=\"bspline\" source=\"ion0\" print=\"yes\"> \
+#       <correlation elementType=\"C\" size=\"8\" cusp=\"0.0\"> \
+#               <coefficients id=\"eC\" type=\"Array\"> \
+#-0.2032153051 -0.1625595974 -0.143124599 -0.1216434956 -0.09919771951 -0.07111729038 \
+#-0.04445345869 -0.02135082917 \
+#               </coefficients> \
+#            </correlation> \
+#         </jastrow> \
+
+
+def gen_case_one_body():
+  rcut_val = 10
+  param = np.array([-0.2032153051, -0.1625595974, -0.143124599, -0.1216434956, -0.09919771951, -0.07111729038, -0.04445345869, -0.02135082917])
+  nknots = 8
+  cusp_val = 0.0
+  gen_bspline_jastrow(nknots, rcut_val, param, cusp_val)
+
 if __name__ == '__main__':
-  gen_case_one()
+  #gen_case_two_body()
+  gen_case_one_body()
+
