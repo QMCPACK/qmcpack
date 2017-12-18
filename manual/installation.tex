@@ -988,19 +988,20 @@ future machines and require very large memory.
 
 \begin{table}[h]
 \begin{center}
-\begin{tabular}{|c|c|c|c|}
+\begin{tabular}{|c|c|c|c|c|}
 \hline
-\bfseries Name&  \bfseries Atoms& \bfseries Electrons&  \bfseries Electrons per spin \\
+\bfseries Performance Test Name&  \bfseries Historical name &\bfseries Atoms& \bfseries Electrons&  \bfseries Electrons/spin \\
 \hline
- S8  &  32  &    384  &   192 \\
-S16 &   64  &    768  &  384 \\
-S32  & 128  &   1536 &           768 \\
-S64  & 256  &   3072 &     1536 \\
-S128  & 512  &   6144 &      3072 \\
-S256  & 1024 & 12288 &  6144 \\
+performance-NiO-cpu-a32-e384  & S8 & 32 & 384 & 192 \\
+performance-NiO-cpu-a64-e768  & S16 & 64 & 768 & 384 \\
+performance-NiO-cpu-a128-e1536 & S32 & 128 & 1536 & 768 \\
+performance-NiO-cpu-a256-e3072 & S64 & 256 & 3072 & 1536 \\
+performance-NiO-cpu-a512-e6144 & S128 & 512 & 6144 & 3072 \\
+performance-NiO-cpu-a1024-e12288& S256 & 1024 & 12288 & 6144 \\
 \hline
 \end{tabular}
-  \caption{System sizes for NiO performance tests}
+  \caption{System sizes and names for NiO performance tests. GPU performance
+    tests are named similarly but have different walker counts.}
   \label{tab:niotests}
 \end{center}
 \end{table}
