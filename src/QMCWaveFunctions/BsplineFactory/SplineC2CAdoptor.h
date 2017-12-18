@@ -254,7 +254,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV>
-  inline void assign_v(const PointType& r, VV& psi)
+  inline void assign_v(const PointType& r, const vContainer_type& myV, VV& psi)
   {
     typedef std::complex<TT> ComplexT;
     const size_t N=kPoints.size();
@@ -293,7 +293,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
     SplineInst->evaluate(ru,myV);
-    assign_v(r,psi);
+    assign_v(r,myV,psi);
   }
 
   template<typename VM>
@@ -305,6 +305,11 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
       Vector<std::complex<TT> > psi(psiM[iat],m);
       evaluate_v(VP,iat,psi);
     }
+  }
+
+  inline size_t estimateMemory(const int nP)
+  {
+    return kPoints.size()*nP;
   }
 
   /** assign_vgl

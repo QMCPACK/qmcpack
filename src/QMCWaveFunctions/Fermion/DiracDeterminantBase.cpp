@@ -292,7 +292,9 @@ DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int 
 void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
   const int nVP = VP.getTotalNum();
-  if(psiM_temp.rows()<nVP)
+  const size_t memory_needed = Phi->estimateMemory(nVP);
+  //std::cout << "debug " << memory_needed << " pool " << memoryPool.size() << std::endl;
+  if(memoryPool.size()<memory_needed)
   {
     // usually in small systems
     for(int iat=0; iat<nVP; iat++)
@@ -307,7 +309,9 @@ void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, std::vector<Va
   }
   else
   {
-    Matrix<ValueType> psiT(psiM_temp.data(), nVP, NumOrbitals);
+    const size_t offset = memory_needed-nVP*NumOrbitals;
+    VP.SPOMem.attach((RealType*)memoryPool.data(),offset*sizeof(ValueType)/sizeof(RealType));
+    Matrix<ValueType> psiT(memoryPool.data()+offset, nVP, NumOrbitals);
     SPOVTimer.start();
     Phi->evaluateValues(VP, psiT);
     SPOVTimer.stop();

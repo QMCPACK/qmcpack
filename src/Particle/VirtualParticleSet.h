@@ -39,7 +39,7 @@ namespace qmcplusplus
     const ParticleSet& refPS;
 
     /// SPO scratch memory. Always use existing memory
-    Vector<RealType,aligned_allocator<RealType> > SPOmem;
+    Vector<RealType,aligned_allocator<RealType> > SPOMem;
 
     inline bool isOnSphere() const
     {

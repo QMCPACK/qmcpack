@@ -189,6 +189,36 @@ struct AtomicOrbitalSoA
     }
   }
 
+  template<typename DISPL, typename VM>
+  inline void evaluateValues(const DISPL& Displacements, const int center_idx, const ST& r, VM& multi_myV)
+  {
+    if(r<=std::numeric_limits<ST>::epsilon())
+      Ylm.evaluateV(0,0,1);
+    const ST* restrict Ylm_v=Ylm[0];
+
+    const size_t m=multi_myV.cols();
+    CONSTEXPR ST czero(0);
+    std::fill(multi_myV.begin(),multi_myV.end(),czero);
+    SplineInst->evaluate(r,localV);
+
+    for(int ivp=0; ivp<Displacements.size(); ivp++)
+    {
+      PointType dr=Displacements[ivp][center_idx];
+      if(r>std::numeric_limits<ST>::epsilon())
+      Ylm.evaluateV(-dr[0]/r, -dr[1]/r, -dr[2]/r);
+
+      ST* restrict val=multi_myV[ivp];
+      ST* restrict local_val=localV.data();
+      for(size_t lm=0; lm<lm_tot; lm++)
+      {
+        #pragma omp simd aligned(val,local_val)
+        for(size_t ib=0; ib<m; ib++)
+          val[ib]+=Ylm_v[lm]*local_val[ib];
+        local_val+=Npad;
+      }
+    }
+  }
+
   //evaluate VGL
   template<typename VV, typename GV>
   inline void evaluate_vgl(const ST& r, const PointType& dr, VV& myV, GV& myG, VV& myL)
@@ -494,6 +524,24 @@ struct HybridAdoptorBase
       PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
       r_image=myCenter.pos+dr;
       myCenter.evaluate_v(dist_r, dr, myV);
+      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
+    }
+    return RealType(-1);
+  }
+
+  template<typename VM>
+  inline RealType evaluateValues(const VirtualParticleSet& VP, VM& multi_myV)
+  {
+    const auto* ei_0=VP.refPS.DistTables[myTableID];
+    const int center_idx=ei_0->get_first_neighbor(VP.refPtcl, dist_r, dist_dr, false);
+    if(center_idx<0) abort();
+    auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
+    if ( dist_r < myCenter.cutoff )
+    {
+      //PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
+      //r_image=myCenter.pos+dr;
+      //myCenter.evaluate_v(dist_r, dr, myV);
+      myCenter.evaluateValues(VP.DistTables[myTableID]->Displacements, center_idx, dist_r, multi_myV);
       return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
     }
     return RealType(-1);

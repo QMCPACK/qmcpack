@@ -268,6 +268,11 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
     SplineAdoptor::evaluateValues(VP, psiM);
   }
 
+  inline size_t estimateMemory(const int nP)
+  {
+    return SplineAdoptor::estimateMemory(nP);
+  }
+
   inline void evaluate(const ParticleSet& P, int iat,
                        ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {

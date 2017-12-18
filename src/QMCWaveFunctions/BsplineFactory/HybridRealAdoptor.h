@@ -144,6 +144,11 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     }
   }
 
+  inline size_t estimateMemory(const int nP)
+  {
+    return BaseAdoptor::estimateMemory(nP)+myV.size()*sizeof(ST)/sizeof(ValueType)*nP;
+  }
+
   template<typename T1>
   inline T1 evaluate_dot(const ParticleSet& P, int iat, const T1* restrict arow, ST* scratch)
   {

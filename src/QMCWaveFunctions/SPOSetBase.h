@@ -200,6 +200,12 @@ public:
   virtual void
   evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM);
 
+  /** estimate the memory needs for evaluating SPOs of particles in the size of ValueType
+   * @param nP, number of particles.
+   */
+  virtual size_t
+  estimateMemory(const int nP) { return OrbitalSetSize*nP; }
+
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet
    * @param iat active particle
