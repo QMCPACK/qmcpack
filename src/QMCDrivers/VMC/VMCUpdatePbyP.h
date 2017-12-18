@@ -22,8 +22,6 @@
 namespace qmcplusplus
 {
 
-void add_vmc_timers(std::vector<NewTimer*>& timers);
-
 /** @ingroup QMCDrivers  ParticleByParticle
  *@brief Implements the VMC algorithm using particle-by-particle move.
  */
@@ -38,27 +36,6 @@ public:
 
   void advanceWalker(Walker_t& thisWalker, bool recompute);
 
-  RealType advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios);
-
-private:
-  std::vector<NewTimer*> myTimers;
-};
-
-/** @ingroup QMCDrivers  ParticleByParticle
- *@brief Implements the VMC algorithm using particle-by-particle move with the drift equation.
- */
-class VMCUpdatePbyPWithDriftFast: public QMCUpdateBase
-{
-public:
-  /// Constructor.
-  VMCUpdatePbyPWithDriftFast(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                             QMCHamiltonian& h, RandomGenerator_t& rg);
-
-  ~VMCUpdatePbyPWithDriftFast();
-
-  void advanceWalker(Walker_t& thisWalker, bool recompute);
-
-  RealType advanceWalkerForEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios);
 private:
   std::vector<NewTimer*> myTimers;
 };

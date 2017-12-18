@@ -20,7 +20,6 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Utilities/NewTimer.h"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
@@ -537,6 +536,28 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker)
     auxH[i]->setParticlePropertyList(P.PropertyList,myIndex);
   }
 }
+///Evaluate properties only.
+void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker,bool do_properties, bool do_collectables)
+{
+#if !defined(REMOVE_TRACEMANAGER)
+  collect_walker_traces(ThisWalker,P.current_step);
+#endif
+  for(int i=0; i<auxH.size(); ++i)
+  {
+    bool is_property = !(auxH[i]->getMode(QMCHamiltonianBase::COLLECTABLE));
+    bool is_collectable = (auxH[i]->getMode(QMCHamiltonianBase::COLLECTABLE));
+    if ( (is_property && do_properties) || (is_collectable && do_collectables) )
+    {
+      auxH[i]->setHistories(ThisWalker);
+      RealType sink = auxH[i]->evaluate(P);
+      auxH[i]->setObservables(Observables);
+#if !defined(REMOVE_TRACEMANAGER)
+      auxH[i]->collect_scalar_traces();
+#endif
+      auxH[i]->setParticlePropertyList(P.PropertyList,myIndex);
+    }
+  }
+}
 
 void QMCHamiltonian::rejectedMove(ParticleSet& P, Walker_t& ThisWalker )
 {
@@ -637,88 +658,6 @@ QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& ps
   //myclone->setTau(tau);
   return myclone;
 }
-
-QMCHamiltonian::Return_t QMCHamiltonian::registerData(ParticleSet& P, BufferType& buffer)
-{
-  LocalEnergy=0.0;
-  for(int i=0; i<H.size(); ++i)
-  {
-    LocalEnergy+=H[i]->registerData(P,buffer);
-    H[i]->setObservables(Observables);
-  }
-  buffer.add(LocalEnergy);
-  return LocalEnergy;
-}
-
-QMCHamiltonian::Return_t QMCHamiltonian::updateBuffer(ParticleSet& P, BufferType& buffer)
-{
-  LocalEnergy=0.0;
-  for(int i=0; i<H.size(); ++i)
-  {
-    LocalEnergy+=H[i]->updateBuffer(P,buffer);
-    H[i]->setObservables(Observables);
-  }
-  buffer.add(LocalEnergy);
-  return LocalEnergy;
-}
-
-void QMCHamiltonian::copyFromBuffer(ParticleSet& P, BufferType& buffer)
-{
-  for(int i=0; i<H.size(); ++i)
-    H[i]->copyFromBuffer(P,buffer);
-  buffer.get(LocalEnergy);
-}
-
-QMCHamiltonian::Return_t QMCHamiltonian::evaluate(ParticleSet& P, BufferType& buffer)
-{
-  LocalEnergy = 0.0;
-  for(int i=0; i<H.size(); ++i)
-  {
-    LocalEnergy += H[i]->Value;
-    H[i]->setObservables(Observables);
-#if !defined(REMOVE_TRACEMANAGER)
-    H[i]->collect_scalar_traces();
-#endif
-  }
-  KineticEnergy=H[0]->Value;
-  P.PropertyList[LOCALENERGY]=LocalEnergy;
-  P.PropertyList[LOCALPOTENTIAL]=LocalEnergy-KineticEnergy;
-  for(int i=0; i<auxH.size(); ++i)
-  {
-    RealType sink = auxH[i]->evaluate(P);
-    auxH[i]->setObservables(Observables);
-#if !defined(REMOVE_TRACEMANAGER)
-    auxH[i]->collect_scalar_traces();
-#endif
-  }
-  for(int i=0; i<H.size(); ++i)
-    H[i]->copyToBuffer(P,buffer);
-  buffer.put(LocalEnergy);
-  return LocalEnergy;
-}
-
-QMCHamiltonian::Return_t QMCHamiltonian::evaluatePbyP(ParticleSet& P, int active)
-{
-  NewLocalEnergy = 0.0;
-  for(int i=0; i<H.size(); ++i)
-    NewLocalEnergy +=H[i]->evaluatePbyP(P,active);
-  return NewLocalEnergy;
-}
-void QMCHamiltonian::acceptMove(int active)
-{
-  for(int i=0; i<H.size(); ++i)
-    H[i]->acceptMove(active);
-  LocalEnergy=NewLocalEnergy;
-  for(int i=0; i<H.size(); ++i)
-    H[i]->setObservables(Observables);
-}
-
-void QMCHamiltonian::rejectMove(int active)
-{
-  for(int i=0; i<H.size(); ++i)
-    H[i]->rejectMove(active);
-}
-
 
 #ifdef QMC_CUDA
 void

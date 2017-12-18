@@ -308,14 +308,20 @@ class ScalarsHDFAnalyzer(HDFAnalyzer):
         corrvars = ['LocalEnergy','ElecElec','MPC','KEcorr']
         if set(corrvars)<set(self.data.keys()):
             Ed,Ved,Vmd,Kcd = self.data.tuple(*corrvars)
-            E,E2 = Ed.value,Ed.value_squared
-            Ve,Ve2 = Ved.value,Ved.value_squared
-            Vm,Vm2 = Vmd.value,Vmd.value_squared
-            Kc,Kc2 = Kcd.value,Kcd.value_squared
-            self.data.LocalEnergy_mpc_kc = obj(
-                value = E-Ve+Vm+Kc,
-                value_squared = E2+Ve2+Vm2+Kc2 + 2*(E*(-Ve+Vm+Kc)-Ve*(Vm+Kc)+Vm*Kc)
-                )
+            E_mpc_kc = obj()
+            E  = Ed.value 
+            Ve = Ved.value
+            Vm = Vmd.value
+            Kc = Kcd.value
+            E_mpc_kc.value = E-Ve+Vm+Kc
+            if 'value_squared' in Ed:
+                E2  = Ed.value_squared
+                Ve2 = Ved.value_squared
+                Vm2 = Vmd.value_squared
+                Kc2 = Kcd.value_squared
+                E_mpc_kc.value_squared = E2+Ve2+Vm2+Kc2 + 2*(E*(-Ve+Vm+Kc)-Ve*(Vm+Kc)+Vm*Kc)
+            #end if
+            self.data.LocalEnergy_mpc_kc = E_mpc_kc
         #end if
     #end def load_data_local
 
@@ -325,9 +331,14 @@ class ScalarsHDFAnalyzer(HDFAnalyzer):
         self.info.nblocks_exclude = nbe
         for varname,val in self.data.iteritems():
             (mean,var,error,kappa)=simstats(val.value[nbe:,...].ravel())
+            if 'value_squared' in val:
+                variance = val.value_squared[nbe:,...].mean()-mean**2
+            else:
+                variance = var
+            #end if
             self[varname] = obj(
                 mean            = mean,
-                variance        = val.value_squared[nbe:,...].mean()-mean**2,
+                variance        = variance,
                 sample_variance = var,
                 error           = error,
                 kappa           = kappa
@@ -441,7 +452,7 @@ class EnergyDensityAnalyzer(HDFAnalyzer):
         #  add simple data first
         for k,v in data._iteritems():
             if not sg_pattern.match(k):
-                self._add_attribute(k,v)
+                self[k] = v
             else:
                 nspacegrids+=1
             #end if
@@ -1896,7 +1907,9 @@ class SpinDensityAnalyzer(DensityAnalyzerBase):
         for d in self.data:
             b = len(d.value)
             d.value.shape = (b,g[0],g[1],g[2])
-            d.value_squared.shape = (b,g[0],g[1],g[2])
+            if 'value_squared' in d:
+                d.value_squared.shape = (b,g[0],g[1],g[2])
+            #end if
         #end for
     #end def load_data_local
 
@@ -2308,7 +2321,7 @@ class SpaceGridBase(QAobject):
     def check_complete(self,exit_on_fail=True):
         succeeded = True
         for k,v in self._iteritems():
-            if k[0]!='_' and v==None:
+            if k[0]!='_' and v is None:
                 succeeded=False
                 if exit_on_fail:
                     self.error('SpaceGridBase.'+k+' must be provided',exit=False)

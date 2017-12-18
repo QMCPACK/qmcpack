@@ -13,7 +13,11 @@ settings(
     runs            = 'runs',
     results         = 'results',
     sleep           = 3,
-    generate_only   = 0,
+    #generate_only   = False,
+    # Complicated setting only so examples can be run in test harness.
+    # For real runs, use the plain setting of 'generate_only' above.
+    generate_only   = globals().get('override_generate_only_setting',False),
+
     status_only     = 0,
     machine         = 'ws1',
     )
@@ -45,7 +49,7 @@ rocksalt_LiH = generate_physical_system(
     basis_vectors   = 'conventional',
     constants       = 7.1,
     units           = 'B',
-    kgrid           = (17,17,17),
+    kgrid           = (7,7,7),
     kshift          = (1,1,1),
     net_charge      = 0,
     net_spin        = 0,

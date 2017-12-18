@@ -18,13 +18,13 @@
 //  Boston, MA  02110-1301  USA                                            //
 /////////////////////////////////////////////////////////////////////////////
 
-#ifndef MULTI_BSPLINE_EVAL_STD2_Z_IMPL_H
-#define MULTI_BSPLINE_EVAL_STD2_Z_IMPL_H
+#ifndef MULTI_BSPLINE_EVAL_STD3_Z_IMPL_H
+#define MULTI_BSPLINE_EVAL_STD3_Z_IMPL_H
 
 #include <math.h>
 #include <stdio.h>
-#include "bspline_base.h"
-#include "multi_bspline_structs.h"
+#include <einspline/bspline_base.h>
+#include <einspline/multi_bspline_structs.h>
 
 extern const double* restrict   Ad;
 extern const double* restrict  dAd;

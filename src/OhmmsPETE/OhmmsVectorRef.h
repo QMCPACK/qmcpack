@@ -19,6 +19,9 @@ struct VectorRef
 
   typedef T value_type;
   VectorRef(T* datain):dptr(datain) {}
+  inline void set(T* datain) { dptr=datain;}
+  inline T* data() { return dptr;}
+  inline const T* data() const { return dptr;}
 
   inline T& operator[](int i)
   {

@@ -159,6 +159,7 @@ def read_command_line():
         quantities = dict(
             ar   = 'AcceptRatio',
             le   = 'LocalEnergy',
+            va   = 'Variance',
             ke   = 'Kinetic',
             lp   = 'LocalPotential',
             ee   = 'ElecElec',

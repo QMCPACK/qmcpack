@@ -24,7 +24,6 @@
 #include "Message/Communicate.h"
 #include "QMCDrivers/WaveFunctionTester.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "Utilities/OhmmsInform.h"
 #include "LongRange/StructFact.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
@@ -46,7 +45,7 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
                                        ParticleSetPool &ptclPool, WaveFunctionPool& ppool):
   QMCDriver(w,psi,h,ppool),checkRatio("no"),checkClone("no"), checkHamPbyP("no"),
   PtclPool(ptclPool), wftricks("no"),checkEloc("no"), checkBasic("yes"), checkRatioV("no"),
-  deltaParam(0.0), toleranceParam(0.0)
+  deltaParam(0.0), toleranceParam(0.0), outputDeltaVsError(false), checkSlaterDet(true)
 {
   m_param.add(checkRatio,"ratio","string");
   m_param.add(checkClone,"clone","string");
@@ -58,6 +57,7 @@ WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
   m_param.add(checkRatioV,"virtual_move","string");
   m_param.add(deltaParam,"delta","none");
   m_param.add(toleranceParam,"tolerance","none");
+  m_param.add(checkSlaterDetOption,"sd","string");
 
   deltaR.resize(w.getTotalNum());
   makeGaussRandom(deltaR);
@@ -96,6 +96,7 @@ WaveFunctionTester::run()
   app_log() << "Starting a Wavefunction tester.  Additional information in "  << fname << std::endl;
 
   put(qmcNode);
+  if (checkSlaterDetOption=="no") checkSlaterDet = false;
   if (checkRatio == "yes")
   {
     //runRatioTest();
@@ -794,6 +795,8 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
       all_okay = false;
     }
 
+    if (!checkSlaterDet) continue; // skip SlaterDet check if <backflow> is present
+    // DiracDeterminantWithBackflow::evaluateLog requires a call to BackflowTransformation::evaluate in its owning SlaterDetWithBackflow to work correctly.
     SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
     if (sd)
     {
@@ -802,7 +805,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
         ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
         ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
         DiracDeterminantBase *det = sd->Dets[isd];
-        RealType logpsi2 = det->evaluateLog(W, G, L);
+        RealType logpsi2 = det->evaluateLog(W, G, L); // this won't work with backflow
         fail_log << "  Slater Determiant " << isd << " (for particles " << det->FirstIndex << " to " << det->LastIndex << ") log psi = " << logpsi2 << std::endl;
         // Should really check the condition number on the matrix determinant.
         // For now, just ignore values that too small.
@@ -1025,7 +1028,7 @@ void WaveFunctionTester::runBasicTest()
       dphase -= 2.0*M_PI;
     ValueType ratDiff=std::complex<OHMMS_PRECISION>(ratioMag*std::cos(dphase),ratioMag*std::sin(dphase)) ;
     // TODO - test complex ratio against a tolerance
-    fout << iat << " ratio " << aratio*std::complex<OHMMS_PRECISION>(std::cos(phaseDiff),std::sin(phaseDiff))/ratDiff << " " << ratDiff << std::endl;
+    fout << iat << " " << aratio*std::complex<OHMMS_PRECISION>(std::cos(phaseDiff),std::sin(phaseDiff))/ratDiff << " " << ratDiff << " " << aratio*std::complex<OHMMS_PRECISION>(std::cos(phaseDiff),std::sin(phaseDiff)) << std::endl;
     fout << "     ratioMag " << aratio/ratioMag << " " << ratioMag << std::endl;
     fout << "     PhaseDiff " << phaseDiff/dphase << " " << phaseDiff  <<" " << dphase << std::endl;
 #else
@@ -1597,7 +1600,9 @@ WaveFunctionTester::put(xmlNodePtr q)
     tcur = tcur->next;
   }
 
-  return putQMCInfo(q);
+  bool success = putQMCInfo(q);
+
+  return success;
 }
 
 void WaveFunctionTester::runDerivTest()
@@ -2061,8 +2066,9 @@ void WaveFunctionTester::runwftricks()
             //evaluate orbitals
 //                 Phi->evaluate(W,0,values);
             Psi.evaluateLog(W);
-            for(int n=0; n<NumOrbitals; n++)
-              values[n] = Phi->t_logpsi(0,n);
+            // YYYY: is the following two lines still maintained?
+            //for(int n=0; n<NumOrbitals; n++)
+            //  values[n] = Phi->t_logpsi(0,n);
             if (l==0)
             {
               identityValues=values;

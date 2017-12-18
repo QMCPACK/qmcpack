@@ -187,7 +187,7 @@ struct DistanceTableData
   /**defgroup SoA data */
   /*@{*/
   /** Distances[i][j] , [Nsources][Ntargets] */
-  Matrix<RealType, aligned_vector<RealType> > Distances;
+  Matrix<RealType, aligned_allocator<RealType> > Distances;
 
   /** Displacements[Nsources]x[3][Ntargets] */
   std::vector<RowContainer> Displacements;
@@ -456,11 +456,11 @@ struct DistanceTableData
   /** displacement vectors \f$dr(i,j) = R(j)-R(i)\f$  */
   std::vector<PosType> dr_m;
   /** full distance AB or AA  return r2_m(iat,jat) */
-  Matrix<RealType,aligned_vector<RealType> > r_m2;
+  Matrix<RealType,aligned_allocator<RealType> > r_m2;
   /** full displacement  AB or AA  */
   Matrix<PosType> dr_m2;
   /** J2 for compact neighbors */
-  Matrix<int,aligned_vector<int> > J2;
+  Matrix<int,aligned_allocator<int> > J2;
   /*@}*/
 
   /**resize the storage

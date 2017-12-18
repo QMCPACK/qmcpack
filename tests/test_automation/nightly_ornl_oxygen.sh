@@ -32,8 +32,13 @@ if [ -e qmcpack/CMakeLists.txt ]; then
 
 echo --- Starting test builds and tests
 
+# Specify GPU on oxygen for testing. Enquire via "nvidia-smi -L"
+# GPU 0: Tesla K40c (UUID: GPU-224da96d-fb1a-955e-b082-a0f2214877e3)
+export CUDA_VISIBLE_DEVICES=GPU-224da96d-fb1a-955e-b082-a0f2214877e3
+
 #Caution: intel2015 also builds QE and sets QE_BIN directory. Should be run ahead of intel2015_complex, intel2015_cuda, intel2015_cuda_complex
-for sys in build_intel2017_nompi build_intel2017_nompi_soa build_intel2017 build_intel2017_soa build_intel2017_complex build_intel2017_complex_soa build_gcc_mkl build_gcc_cuda build_intel2017_mixed build_intel2017_mixed_soa build_intel2017_complex_mixed build_intel2017_complex_mixed_soa build_gcc_mkl_complex build_intel2015 build_intel2015_complex build_intel2015_cuda build_intel2015_cuda_complex build_gcc build_gcc_complex build_gcc_cuda_complex build_gcc_cuda_full build_gcc_cuda_complex_full build_gcc_mkl_soa build_gcc_cuda_soa 
+#for sys in build_intel2017_nompi build_intel2017_nompi_soa build_intel2017 build_intel2017_soa build_intel2017_complex build_intel2017_complex_soa build_gcc_mkl build_gcc_cuda build_intel2017_mixed build_intel2017_mixed_soa build_intel2017_complex_mixed build_intel2017_complex_mixed_soa build_gcc_mkl_complex build_intel2015 build_intel2015_complex build_intel2015_cuda build_intel2015_cuda_complex build_gcc build_gcc_complex build_gcc_cuda_complex build_gcc_cuda_full build_gcc_cuda_complex_full build_gcc_mkl_soa build_gcc_cuda_soa 
+for sys in build_intel2017_nompi build_intel2017_nompi_soa build_intel2017 build_intel2017_soa build_intel2017_complex build_intel2017_complex_soa build_gcc_mkl build_gcc_cuda build_gcc_cuda_complex build_intel2017_mixed build_intel2017_mixed_soa build_intel2017_complex_mixed build_intel2017_complex_mixed_soa build_gcc_mkl_complex build_intel2015 build_intel2015_complex build_gcc build_gcc_complex build_gcc_mkl_soa build_gcc_cuda_soa
 do
 
 echo --- Building for $sys `date`

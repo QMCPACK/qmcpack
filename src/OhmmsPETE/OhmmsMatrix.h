@@ -16,13 +16,13 @@
 
 #include "PETE/PETE.h"
 #include <cstdlib>
-#include <vector>
+#include "OhmmsPETE/OhmmsVector.h"
 #include <iostream>
 
 namespace qmcplusplus
 {
 
-template<class T, class C = std::vector<T> >
+template<class T, typename Alloc=std::allocator<T> >
 class Matrix
 {
 public:
@@ -31,10 +31,10 @@ public:
   typedef T            value_type;
   typedef T*           pointer;
   typedef const T*     const_pointer;
-  typedef C            Container_t;
-  typedef typename C::size_type size_type;
+  typedef Vector<T,Alloc>  Container_t;
+  typedef typename Container_t::size_type size_type;
   typedef typename Container_t::iterator iterator;
-  typedef Matrix<T,C>  This_t;
+  typedef Matrix<T,Alloc>  This_t;
 
   Matrix():D1(0),D2(0) { } // Default Constructor initializes to zero.
 
@@ -51,7 +51,7 @@ public:
   }
 
   // Copy Constructor
-  Matrix(const Matrix<T,C> &rhs)
+  Matrix(const Matrix<T,Alloc> &rhs)
   {
     copy(rhs);
   }
@@ -133,20 +133,20 @@ public:
     D1 += n;
   }
 
-  inline void copy(const Matrix<T,C>& rhs)
+  inline void copy(const Matrix<T,Alloc>& rhs)
   {
     resize(rhs.D1, rhs.D2);
     assign(*this, rhs);
   }
 
   // Assignment Operators
-  inline This_t& operator=(const Matrix<T,C> &rhs)
+  inline This_t& operator=(const Matrix<T,Alloc> &rhs)
   {
     resize(rhs.D1,rhs.D2);
     return assign(*this,rhs);
   }
 
-  inline const This_t &operator=(const Matrix<T, C> &rhs) const
+  inline const This_t &operator=(const Matrix<T,Alloc> &rhs) const
   {
     return assign(*this, rhs);
   }
@@ -161,60 +161,60 @@ public:
   // returns a pointer of i-th row
   inline pointer data()
   {
-    return &(X[0]);
+    return X.data();
   }
 
   // returns a pointer of i-th row
   inline const_pointer data() const
   {
-    return &(X[0]);
+    return X.data();
   }
 
   // returns a const pointer of i-th row
   inline const Type_t* data(size_type i) const
   {
-    return &(X[0]) + i*D2;
+    return X.data() + i*D2;
   }
 
   /// returns a pointer of i-th row, g++ iterator problem
   inline Type_t* data(size_type i)
   {
-    return &(X[0]) + i*D2;
+    return X.data() + i*D2;
   }
 
   inline pointer first_address()
   {
-    return &(X[0]);
+    return X.data();
   }
 
   // returns a pointer of i-th row
   inline const_pointer first_address() const
   {
-    return &(X[0]);
+    return X.data();
   }
 
   inline pointer last_address()
   {
-    return &(X[0])+TotSize;
+    return X.data()+TotSize;
   }
 
   // returns a pointer of i-th row
   inline const Type_t* last_address() const
   {
-    return &(X[0])+TotSize;
+    return X.data()+TotSize;
   }
 
 
   // returns a const pointer of i-th row
   inline const Type_t* operator[](size_type i) const
   {
-    return &(X[0]) + i*D2;
+    return X.data() + i*D2;
   }
 
   /// returns a pointer of i-th row, g++ iterator problem
   inline Type_t* operator[](size_type i)
   {
-    return &(X[0]) + i*D2;
+    return X.data() + i*D2;
   }
 
   inline Type_t& operator()(size_type i)
@@ -345,14 +345,14 @@ public:
   template<class Msg>
   inline Msg& putMessage(Msg& m)
   {
-    m.Pack(&X[0],D1*D2);
+    m.Pack(X.data(),D1*D2);
     return m;
   }
 
   template<class Msg>
   inline Msg& getMessage(Msg& m)
   {
-    m.Unpack(&X[0],D1*D2);
+    m.Unpack(X.data(),D1*D2);
     return m;
   }
 
@@ -363,10 +363,10 @@ protected:
 };
 
 // I/O
-template<class T, class C>
-std::ostream& operator<<(std::ostream& out, const Matrix<T,C>& rhs)
+template<class T, typename Alloc>
+std::ostream& operator<<(std::ostream& out, const Matrix<T,Alloc>& rhs)
 {
-  typedef typename Matrix<T,C>::size_type size_type;
+  typedef typename Matrix<T,Alloc>::size_type size_type;
   size_type ii=0;
   for(size_type i=0; i<rhs.rows(); i++)
   {
@@ -378,10 +378,10 @@ std::ostream& operator<<(std::ostream& out, const Matrix<T,C>& rhs)
 }
 
 
-template<class T, class C>
-std::istream& operator>>(std::istream& is, Matrix<T,C>& rhs)
+template<class T, typename Alloc>
+std::istream& operator>>(std::istream& is, Matrix<T,Alloc>& rhs)
 {
-  typedef typename Matrix<T,C>::size_type size_type;
+  typedef typename Matrix<T,Alloc>::size_type size_type;
   size_type ii=0;
   for(size_type i=0; i<rhs.size(); i++)
   {
@@ -393,12 +393,12 @@ std::istream& operator>>(std::istream& is, Matrix<T,C>& rhs)
 // We need to specialize CreateLeaf<T> for our class, so that operators
 // know what to stick in the leaves of the expression tree.
 //-----------------------------------------------------------------------------
-template<class T, class C>
-struct CreateLeaf<Matrix<T, C> >
+template<class T, typename Alloc>
+struct CreateLeaf<Matrix<T,Alloc> >
 {
-  typedef Reference<Matrix<T, C> > Leaf_t;
+  typedef Reference<Matrix<T,Alloc> > Leaf_t;
   inline static
-  Leaf_t make(const Matrix<T, C> &a)
+  Leaf_t make(const Matrix<T,Alloc> &a)
   {
     return Leaf_t(a);
   }
@@ -441,12 +441,12 @@ struct LeafFunctor<Scalar<T>, SizeLeaf2>
   }
 };
 
-template<class T, class C>
-struct LeafFunctor<Matrix<T, C>, SizeLeaf2>
+template<class T, typename Alloc>
+struct LeafFunctor<Matrix<T,Alloc>, SizeLeaf2>
 {
   typedef bool Type_t;
   inline static
-  bool apply(const Matrix<T, C> &v, const SizeLeaf2 &s)
+  bool apply(const Matrix<T,Alloc> &v, const SizeLeaf2 &s)
   {
     return s(v.rows(), v.cols());
   }
@@ -456,12 +456,12 @@ struct LeafFunctor<Matrix<T, C>, SizeLeaf2>
 // EvalLeaf1 is used to evaluate expression with matrices.
 // (It's already defined for Scalar values.)
 //-----------------------------------------------------------------------------
-//  template<class T, class C>
-//  struct LeafFunctor<Matrix<T, C>,EvalLeaf1>
+//  template<class T, typename Alloc>
+//  struct LeafFunctor<Matrix<T,Alloc>,EvalLeaf1>
 //  {
 //    typedef T Type_t;
 //    inline static
-//    Type_t apply(const Matrix<T, C>& mat, const EvalLeaf1 &f)
+//    Type_t apply(const Matrix<T,Alloc>& mat, const EvalLeaf1 &f)
 //    {
 //      return vec[f.val1()];
 //    }
@@ -470,12 +470,12 @@ struct LeafFunctor<Matrix<T, C>, SizeLeaf2>
 // EvalLeaf2 is used to evaluate expression with matrices.
 // (It's already defined for Scalar values.)
 //-----------------------------------------------------------------------------
-template<class T, class C>
-struct LeafFunctor<Matrix<T, C>,EvalLeaf2>
+template<class T, typename Alloc>
+struct LeafFunctor<Matrix<T,Alloc>,EvalLeaf2>
 {
   typedef T Type_t;
   inline static
-  Type_t apply(const Matrix<T, C>& mat, const EvalLeaf2 &f)
+  Type_t apply(const Matrix<T,Alloc>& mat, const EvalLeaf2 &f)
   {
     return mat(f.val1(), f.val2());
   }
@@ -486,8 +486,8 @@ struct LeafFunctor<Matrix<T, C>,EvalLeaf2>
 ///////////////////////////////////////////////////////////////////////////////
 // LOOP is done by evaluate function
 ///////////////////////////////////////////////////////////////////////////////
-template<class T, class C, class Op, class RHS>
-inline void evaluate(Matrix<T, C> &lhs, const Op &op,
+template<class T, typename Alloc, class Op, class RHS>
+inline void evaluate(Matrix<T,Alloc> &lhs, const Op &op,
                      const Expression<RHS> &rhs)
 {
   if (forEach(rhs, SizeLeaf2(lhs.rows(), lhs.cols()), AndCombine()))

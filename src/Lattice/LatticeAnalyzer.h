@@ -116,9 +116,9 @@ struct LatticeAnalyzer<T,3>
     //{
     for (int i=0; i<3; ++i)
     {
-      SingleParticlePos_t A = a(i);
-      SingleParticlePos_t B = a((i+1)%3);
-      SingleParticlePos_t C = a((i+2)%3);
+      SingleParticlePos_t A = a[i];
+      SingleParticlePos_t B = a[(i+1)%3];
+      SingleParticlePos_t C = a[(i+2)%3];
       SingleParticlePos_t BxC = cross(B,C);
       T dist = 0.5*std::abs(dot(A,BxC))/std::sqrt(dot(BxC,BxC));
       scr = std::min(scr, dist);
@@ -292,7 +292,7 @@ inline bool found_shorter_base(TinyVector<TinyVector<T,3>,3>& rb)
     }
   }
 
-  T rmax = sqrt(r2max);
+  T rmax = std::sqrt(r2max);
   T tol = 2.0*rmax*eps; //Error propagation for x^2
 
   TinyVector<TinyVector<T,3>,4> rb_new;

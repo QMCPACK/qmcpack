@@ -185,7 +185,7 @@ namespace qmcplusplus
 
       /** return TinyVector<T,D>
        */
-      __forceinline Type_t operator[](size_t i) const
+      __forceinline const Type_t operator[](size_t i) const
       {
         return Type_t(myData+i,nGhosts); 
       }
@@ -198,7 +198,7 @@ namespace qmcplusplus
         __forceinline Accessor(T* a, size_t ng) : _base(a), M(ng){}
         __forceinline Accessor& operator=(const TinyVector<T,D>& rhs)
         {
-#pragma unroll(D)
+          #pragma unroll
           for(size_t i=0; i<D; ++i) *(_base+M*i)=rhs[i];
           return *this;
         }
@@ -207,7 +207,7 @@ namespace qmcplusplus
         template<typename T1>
         __forceinline Accessor& operator=(T1 rhs)
         {
-#pragma unroll(D)
+          #pragma unroll
           for(size_t i=0; i<D; ++i) *(_base+M*i)=rhs;
           return *this;
         }
@@ -229,6 +229,10 @@ namespace qmcplusplus
       __forceinline T* restrict data(size_t i) { return myData+i*nGhosts;}
       ///return the const pointer of the i-th components
       __forceinline const T* restrict data(size_t i) const { return myData+i*nGhosts;}
+      ///return the end
+      __forceinline T* end() { return myData+D*nGhosts;}
+      ///return the end
+      __forceinline const T* end() const { return myData+D*nGhosts;}
 
       /** serialization function */
       template<class Archive>

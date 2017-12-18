@@ -63,7 +63,7 @@ QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration
 vdeps(1,std::vector<double>()),
 #endif
  Max_iterations(1), exp0(-16), nstabilizers(3),
-  stabilizerScale(2.0), bigChange(50), w_beta(0.0),  MinMethod("quartic"), GEVtype("mixed"),
+  stabilizerScale(2.0), bigChange(50), w_beta(0.0),  MinMethod("OneShiftOnly"), GEVtype("mixed"),
   StabilizerMethod("best"), GEVSplit("no"), stepsize(0.25), doAdaptiveThreeShift(false),
   targetExcitedStr("no"), targetExcited(false), block_lmStr("no"), block_lm(false),
   bestShift_i(-1.0), bestShift_s(-1.0), shift_i_input(0.01), shift_s_input(1.00), doOneShiftOnly(false),

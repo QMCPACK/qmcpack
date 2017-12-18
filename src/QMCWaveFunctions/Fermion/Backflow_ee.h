@@ -173,62 +173,62 @@ public:
       num = UIJ.rows();
       for(int i=0; i<num; i++)
       {
-        UIJ(iat,i) = UIJ_temp(i);
-        UIJ(i,iat) = -1.0*UIJ_temp(i);
+        UIJ(iat,i) = UIJ_temp[i];
+        UIJ(i,iat) = -1.0*UIJ_temp[i];
       }
       break;
     case ORB_PBYP_PARTIAL:
       num = UIJ.rows();
       for(int i=0; i<num; i++)
       {
-        UIJ(iat,i) = UIJ_temp(i);
-        UIJ(i,iat) = -1.0*UIJ_temp(i);
+        UIJ(iat,i) = UIJ_temp[i];
+        UIJ(i,iat) = -1.0*UIJ_temp[i];
       }
       num = AIJ.rows();
       for(int i=0; i<num; i++)
       {
-        AIJ(iat,i) = AIJ_temp(i);
-        AIJ(i,iat) = AIJ_temp(i);
+        AIJ(iat,i) = AIJ_temp[i];
+        AIJ(i,iat) = AIJ_temp[i];
       }
       break;
     case ORB_PBYP_ALL:
       num = UIJ.rows();
       for(int i=0; i<num; i++)
       {
-        UIJ(iat,i) = UIJ_temp(i);
-        UIJ(i,iat) = -1.0*UIJ_temp(i);
+        UIJ(iat,i) = UIJ_temp[i];
+        UIJ(i,iat) = -1.0*UIJ_temp[i];
       }
       num = AIJ.rows();
       for(int i=0; i<num; i++)
       {
-        AIJ(iat,i) = AIJ_temp(i);
-        AIJ(i,iat) = AIJ_temp(i);
+        AIJ(iat,i) = AIJ_temp[i];
+        AIJ(i,iat) = AIJ_temp[i];
       }
       num = BIJ.rows();
       for(int i=0; i<num; i++)
       {
-        BIJ(iat,i) = BIJ_temp(i);
-        BIJ(i,iat) = -1.0*BIJ_temp(i);
+        BIJ(iat,i) = BIJ_temp[i];
+        BIJ(i,iat) = -1.0*BIJ_temp[i];
       }
       break;
     default:
       num = UIJ.rows();
       for(int i=0; i<num; i++)
       {
-        UIJ(iat,i) = UIJ_temp(i);
-        UIJ(i,iat) = -1.0*UIJ_temp(i);
+        UIJ(iat,i) = UIJ_temp[i];
+        UIJ(i,iat) = -1.0*UIJ_temp[i];
       }
       num = AIJ.rows();
       for(int i=0; i<num; i++)
       {
-        AIJ(iat,i) = AIJ_temp(i);
-        AIJ(i,iat) = AIJ_temp(i);
+        AIJ(iat,i) = AIJ_temp[i];
+        AIJ(i,iat) = AIJ_temp[i];
       }
       num = BIJ.rows();
       for(int i=0; i<num; i++)
       {
-        BIJ(iat,i) = BIJ_temp(i);
-        BIJ(i,iat) = -1.0*BIJ_temp(i);
+        BIJ(iat,i) = BIJ_temp[i];
+        BIJ(i,iat) = -1.0*BIJ_temp[i];
       }
       break;
     }
@@ -298,8 +298,8 @@ public:
         Amat(j,j)-=Amat(i,j);
 // this will create problems with QMC_COMPLEX, because Bmat is ValueType and dr is RealType
         u = 2.0*(d2u+(OHMMS_DIM+1.0)*du)*myTable->dr(nn);
-        Bmat(i) -= u;
-        Bmat(j) += u;
+        Bmat[i] -= u;
+        Bmat[j] += u;
       }
     }
   }
@@ -364,7 +364,7 @@ public:
       int j = index[i];
       // Temp[j].dr1 = (ri - rj)
       RealType uij = RadFun[PairID(iat,j)]->evaluate(myTable->Temp[j].r1,du,d2u);
-      PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+      PosType u = (UIJ_temp[j]=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
       newQP[iat] += u;
       newQP[j] -= u;
     }
@@ -380,7 +380,7 @@ public:
     {
       // Temp[j].dr1 = (ri - rj)
       RealType uij = RadFun[PairID(iat,i)]->evaluate(myTable->Temp[i].r1,du,d2u);
-      PosType u = (UIJ_temp(i)=uij*myTable->Temp[i].dr1)-UIJ(iat,i);
+      PosType u = (UIJ_temp[i]=uij*myTable->Temp[i].dr1)-UIJ(iat,i);
       newQP[iat] += u;
       newQP[i] -= u;
     }
@@ -388,7 +388,7 @@ public:
     {
       // Temp[j].dr1 = (ri - rj)
       RealType uij = RadFun[PairID(iat,i)]->evaluate(myTable->Temp[i].r1,du,d2u);
-      PosType u = (UIJ_temp(i)=uij*myTable->Temp[i].dr1)-UIJ(iat,i);
+      PosType u = (UIJ_temp[i]=uij*myTable->Temp[i].dr1)-UIJ(iat,i);
       newQP[iat] += u;
       newQP[i] -= u;
     }
@@ -408,10 +408,10 @@ public:
     {
       int j = index[i];
       RealType uij = RadFun[PairID(iat,j)]->evaluate(myTable->Temp[j].r1,du,d2u);
-      PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+      PosType u = (UIJ_temp[j]=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
       newQP[iat] += u;
       newQP[j] -= u;
-      HessType& hess = AIJ_temp(j);
+      HessType& hess = AIJ_temp[j];
       hess = (du*myTable->Temp[j].rinv1)*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
 #if OHMMS_DIM==3
       hess[0] += uij;
@@ -440,10 +440,10 @@ public:
     for(int j=0; j<iat; j++)
     {
       RealType uij = RadFun[PairID(iat,j)]->evaluate(myTable->Temp[j].r1,du,d2u);
-      PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+      PosType u = (UIJ_temp[j]=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
       newQP[iat] += u;
       newQP[j] -= u;
-      HessType& hess = AIJ_temp(j);
+      HessType& hess = AIJ_temp[j];
       hess = (du*myTable->Temp[j].rinv1)*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
 #if OHMMS_DIM==3
       hess[0] += uij;
@@ -462,10 +462,10 @@ public:
     for(int j=iat+1; j<NumTargets; j++)
     {
       RealType uij = RadFun[PairID(iat,j)]->evaluate(myTable->Temp[j].r1,du,d2u);
-      PosType u = (UIJ_temp(j)=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
+      PosType u = (UIJ_temp[j]=uij*myTable->Temp[j].dr1)-UIJ(iat,j);
       newQP[iat] += u;
       newQP[j] -= u;
-      HessType& hess = AIJ_temp(j);
+      HessType& hess = AIJ_temp[j];
       hess = (du*myTable->Temp[j].rinv1)*outerProduct(myTable->Temp[j].dr1,myTable->Temp[j].dr1);
 #if OHMMS_DIM==3
       hess[0] += uij;
@@ -498,11 +498,11 @@ public:
     {
       int j = index[i];
       RealType uij = RadFun[PairID(iat,j)]->evaluate(TMP[j].r1,du,d2u);
-      PosType u = (UIJ_temp(j)=uij*TMP[j].dr1)-UIJ(iat,j);
+      PosType u = (UIJ_temp[j]=uij*TMP[j].dr1)-UIJ(iat,j);
       newQP[iat] += u;
       newQP[j] -= u;
       du *= TMP[j].rinv1;
-      HessType& hess = AIJ_temp(j);
+      HessType& hess = AIJ_temp[j];
       hess = du*outerProduct(TMP[j].dr1,TMP[j].dr1);
 #if OHMMS_DIM==3
       hess[0] += uij;
@@ -517,7 +517,7 @@ public:
       Amat(j,j) += dA;
       Amat(iat,j) -= dA;
       Amat(j,iat) -= dA;
-      GradType& grad = BIJ_temp(j);  // dr = r_iat - r_j
+      GradType& grad = BIJ_temp[j];  // dr = r_iat - r_j
       grad = (d2u+(OHMMS_DIM+1)*du)*TMP[j].dr1;
       GradType dg = grad - BIJ(iat,j);
       Bmat(iat,iat) += dg;
@@ -539,11 +539,11 @@ public:
     for(int j=0; j<iat; j++)
     {
       RealType uij = RadFun[PairID(iat,j)]->evaluate(TMP[j].r1,du,d2u);
-      PosType u = (UIJ_temp(j)=uij*TMP[j].dr1)-UIJ(iat,j);
+      PosType u = (UIJ_temp[j]=uij*TMP[j].dr1)-UIJ(iat,j);
       newQP[iat] += u;
       newQP[j] -= u;
       du *= TMP[j].rinv1;
-      HessType& hess = AIJ_temp(j);
+      HessType& hess = AIJ_temp[j];
       hess = du*outerProduct(TMP[j].dr1,TMP[j].dr1);
 #if OHMMS_DIM==3
       hess[0] += uij;
@@ -558,7 +558,7 @@ public:
       Amat(j,j) += dA;
       Amat(iat,j) -= dA;
       Amat(j,iat) -= dA;
-      GradType& grad = BIJ_temp(j);  // dr = r_iat - r_j
+      GradType& grad = BIJ_temp[j];  // dr = r_iat - r_j
       grad = (d2u+(OHMMS_DIM+1)*du)*TMP[j].dr1;
       GradType dg = grad - BIJ(iat,j);
       Bmat(iat,iat) += dg;
@@ -569,11 +569,11 @@ public:
     for(int j=iat+1; j<NumTargets; j++)
     {
       RealType uij = RadFun[PairID(iat,j)]->evaluate(TMP[j].r1,du,d2u);
-      PosType u = (UIJ_temp(j)=uij*TMP[j].dr1)-UIJ(iat,j);
+      PosType u = (UIJ_temp[j]=uij*TMP[j].dr1)-UIJ(iat,j);
       newQP[iat] += u;
       newQP[j] -= u;
       du *= TMP[j].rinv1;
-      HessType& hess = AIJ_temp(j);
+      HessType& hess = AIJ_temp[j];
       hess = du*outerProduct(TMP[j].dr1,TMP[j].dr1);
 #if OHMMS_DIM==3
       hess[0] += uij;
@@ -588,7 +588,7 @@ public:
       Amat(j,j) += dA;
       Amat(iat,j) -= dA;
       Amat(j,iat) -= dA;
-      GradType& grad = BIJ_temp(j);  // dr = r_iat - r_j
+      GradType& grad = BIJ_temp[j];  // dr = r_iat - r_j
       grad = (d2u+(OHMMS_DIM+1)*du)*TMP[j].dr1;
       GradType dg = grad - BIJ(iat,j);
       Bmat(iat,iat) += dg;

@@ -23,8 +23,8 @@
 
 #include <math.h>
 #include <stdio.h>
-#include "bspline_base.h"
-#include "multi_bspline_structs.h"
+#include <einspline/bspline_base.h>
+#include <einspline/multi_bspline_structs.h>
 
 extern const double* restrict   Ad;
 extern const double* restrict  dAd;

@@ -52,6 +52,10 @@ void test_tiny_vector()
   // Dot product
   double dotp = dot(v2, v4);
   REQUIRE(sum == Approx(dotp));
+
+  // Multiply add
+  v1 += 2.0*v4;
+  REQUIRE(2.0*sum == dot(v2, v1));
 }
 
 template <unsigned int D>

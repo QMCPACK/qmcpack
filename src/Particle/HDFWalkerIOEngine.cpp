@@ -20,7 +20,6 @@
  */
 #include "Particle/HDFWalkerIOEngine.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
@@ -60,7 +59,7 @@ void HDFWalkerIOEngine::read(hid_t grp, const char* name)
     //std::copy(Post_temp[iw],Post_temp[iw+1], (*it)->R.begin());
     for(int iat=0; iat < count[1]; iat++,ii++)
     {
-      (*it)->R(iat) = posIn[ii];
+      (*it)->R[iat] = posIn[ii];
     }
     ++it;
   }
@@ -123,7 +122,7 @@ void HDFWalkerIOEngine::readAll(hid_t grp, const char* name, Communicate* comm)
     //std::copy(Post_temp[iw],Post_temp[iw+1], (*it)->R.begin());
     for(int iat=0; iat < count[1]; iat++,ii++)
     {
-      (*it)->R(iat) = posIn[ii];
+      (*it)->R[iat] = posIn[ii];
     }
     ++it;
   }

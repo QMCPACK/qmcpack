@@ -41,10 +41,10 @@ struct  J1OrbitalSoA : public OrbitalBase
   int myTableID;
   ///number of ions
   int Nions;
+  ///number of electrons
+  int Nelec;
   ///number of groups
   int NumGroups;
-  ///task id
-  int TaskID;
   ///reference to the sources (ions)
   const ParticleSet& Ions;
 
@@ -58,12 +58,12 @@ struct  J1OrbitalSoA : public OrbitalBase
   aligned_vector<valT> U, dU, d2U;
   aligned_vector<valT> DistCompressed;
   aligned_vector<int> DistIndice;
-  ParticleAttrib<posT> Grad;
-  ParticleAttrib<valT> Lap;
+  Vector<posT> Grad;
+  Vector<valT> Lap;
   ///Container for \f$F[ig*NumGroups+jg]\f$
   std::vector<FT*> F;
 
-  J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els) : Ions(ions),TaskID(0)
+  J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els) : Ions(ions)
   {
     initalize(els);
     myTableID=els.addTable(ions,DT_SOA);
@@ -88,10 +88,10 @@ struct  J1OrbitalSoA : public OrbitalBase
     {
       NumGroups=0;
     }
-    const int N=els.getTotalNum();
-    Vat.resize(N); 
-    Grad.resize(N);
-    Lap.resize(N);
+    Nelec=els.getTotalNum();
+    Vat.resize(Nelec);
+    Grad.resize(Nelec);
+    Lap.resize(Nelec);
 
     U.resize(Nions);
     dU.resize(Nions);
@@ -106,21 +106,22 @@ struct  J1OrbitalSoA : public OrbitalBase
     F[source_type]=afunc;
   }
 
+  void recompute(ParticleSet& P)
+  {
+    const DistanceTableData& d_ie(*(P.DistTables[myTableID]));
+    for(int iat=0; iat<Nelec; ++iat)
+    {
+      computeU3(P,iat,d_ie.Distances[iat]);
+      Vat[iat]=simd::accumulate_n(U.data(),Nions,valT());
+      Lap[iat]=accumulateGL(dU.data(),d2U.data(),d_ie.Displacements[iat],Grad[iat]);
+    }
+  }
+
   RealType evaluateLog(ParticleSet& P,
                        ParticleSet::ParticleGradient_t& G,
                        ParticleSet::ParticleLaplacian_t& L)
   {
-    const int n=P.getTotalNum();
-    const DistanceTableData& d_ie(*(P.DistTables[myTableID]));
-    LogValue=valT();
-    for(int iat=0; iat<n; ++iat)
-    {
-      computeU3(P,iat,d_ie.Distances[iat]);
-      LogValue-=Vat[iat]=simd::accumulate_n(U.data(),Nions,valT());
-      Lap[iat]=accumulateGL(dU.data(),d2U.data(),d_ie.Displacements[iat],Grad[iat]);
-      G[iat]+=Grad[iat];
-      L[iat]-=Lap[iat];
-    }
+    evaluateGL(P,G,L,true);
     return LogValue;
   }
 
@@ -141,7 +142,7 @@ struct  J1OrbitalSoA : public OrbitalBase
       for(int jg=0; jg<NumGroups; ++jg)
       {
         if(F[jg]!=nullptr) 
-          curAt += F[jg]->evaluateV(Ions.first(jg), Ions.last(jg), dist, DistCompressed.data() );
+          curAt += F[jg]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist, DistCompressed.data());
       }
     }
     else
@@ -163,11 +164,16 @@ struct  J1OrbitalSoA : public OrbitalBase
     return std::exp(Vat[iat]-curAt);
   }
 
-  inline void evaluateGL(ParticleSet& P)
+  inline void evaluateGL(ParticleSet& P,
+                         ParticleSet::ParticleGradient_t& G,
+                         ParticleSet::ParticleLaplacian_t& L,
+                         bool fromscratch=false)
   {
-    const size_t n=P.getTotalNum();
-    for(size_t iat=0; iat<n; ++iat) P.G[iat]+=Grad[iat];
-    for(size_t iat=0; iat<n; ++iat) P.L[iat]-=Lap[iat];
+    if(fromscratch) recompute(P);
+
+    for(size_t iat=0; iat<Nelec; ++iat) G[iat]+=Grad[iat];
+    for(size_t iat=0; iat<Nelec; ++iat) L[iat]-=Lap[iat];
+    LogValue=-simd::accumulate_n(Vat.data(), Nelec, valT());
   }
 
   /** compute gradient and lap
@@ -209,7 +215,7 @@ struct  J1OrbitalSoA : public OrbitalBase
       for(int jg=0; jg<NumGroups; ++jg)
       {
         if(F[jg]==nullptr) continue;
-        F[jg]->evaluateVGL( Ions.first(jg), Ions.last(jg), dist, 
+        F[jg]->evaluateVGL(-1, Ions.first(jg), Ions.last(jg), dist,
             U.data(), dU.data(), d2U.data(), DistCompressed.data(), DistIndice.data());
       }
     }
@@ -284,24 +290,11 @@ struct  J1OrbitalSoA : public OrbitalBase
 
   inline RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false)
   {
-    const size_t n=P.getTotalNum();
-    for(size_t iat=0; iat<n; ++iat) P.G[iat]+=Grad[iat];
-    for(size_t iat=0; iat<n; ++iat) P.L[iat]-=Lap[iat];
-
-    //constexpr RealType mone(-1);
-    LogValue=-simd::accumulate_n(Vat.data(), P.getTotalNum(), valT());
+    evaluateGL(P, P.G, P.L, false);
     return LogValue;
   }
 
   inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) { }
-
-  inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    const size_t n=P.getTotalNum();
-    for(size_t iat=0; iat<n; ++iat) P.G[iat]+=Grad[iat];
-    for(size_t iat=0; iat<n; ++iat) P.L[iat]-=Lap[iat];
-    return LogValue;
-  }
 
   OrbitalBasePtr makeClone(ParticleSet& tqp) const
   {
@@ -367,27 +360,6 @@ struct  J1OrbitalSoA : public OrbitalBase
       dPsi->resetParameters(active);
   }
   /**@} */
-
-  /** must be removed */
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
-  {
-    APP_ABORT("OrbitalBase::ratio(P,iat,dG,dL) shuold not Used")
-    return 1;
-  }
-
-  /** must be removed */
-  inline void update(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL,
-                     int iat)
-  {
-    APP_ABORT("J1OrbitalSoA::update must not be used");
-  }
-
-
-
 
 };
 

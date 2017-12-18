@@ -22,7 +22,7 @@
 #include <Utilities/Timer.h>
 #include <random/random.hpp>
 #include <mpi/collectives.h>
-#include <miniapps/graphite.hpp>
+#include <miniapps/input.hpp>
 #include <miniapps/pseudo.hpp>
 #include <miniapps/common.hpp>
 #include <miniapps/einspline_spo.hpp>
@@ -36,7 +36,10 @@ int main(int argc, char** argv)
 {
 
   OHMMS::Controller->initialize(argc,argv);
-  OhmmsInfo welcome(argc,argv,OHMMS::Controller->rank());
+  if (OHMMS::Controller->rank() != 0) {
+    outputManager.shutOff();
+  }
+
   Communicate* mycomm=OHMMS::Controller;
 
   typedef QMCTraits::RealType           RealType;
@@ -48,12 +51,14 @@ int main(int argc, char** argv)
   //use the global generator
 
   bool ionode=(mycomm->rank() == 0);
-  int na=4;
-  int nb=4;
-  int nc=1;
+#if USE_NIO
+  int na=1; int nb=1; int nc=1;
+#else
+  int na=4; int nb=4; int nc=1;
+#endif
+  int nx=NX,ny=NY,nz=NZ;
   int nsteps=100;
   int iseed=11;
-  int nx=48,ny=48,nz=60;
   //thread blocking
   //int ncrews=1; //default is 1
   int tileSize=-1;
@@ -103,8 +108,7 @@ int main(int argc, char** argv)
   //turn off output
   if(omp_get_max_threads()>1)
   {
-    OhmmsInfo::Log->turnoff();
-    OhmmsInfo::Warn->turnoff();
+    outputManager.pause();
   }
 
   int nptcl=0;
@@ -120,9 +124,9 @@ int main(int argc, char** argv)
     Tensor<OHMMS_PRECISION,3> lattice_b;
     ParticleSet ions;
     OHMMS_PRECISION scale=1.0;
-    lattice_b=tile_graphite(ions,tmat,scale);
+    lattice_b=tile_cell(ions,tmat,scale);
     const int nions=ions.getTotalNum();
-    const int nels=2*nions;
+    const int nels=count_electrons(ions)/2;
     tileSize=(tileSize>0)?tileSize:nels;
     nTiles=nels/tileSize;
     if(ionode) {
@@ -176,10 +180,10 @@ int main(int argc, char** argv)
     RandomGenerator<RealType> random_th(myPrimes[ip]);
 
     ions.Lattice.BoxBConds=1;
-    tile_graphite(ions,tmat,scale);
+    tile_cell(ions,tmat,scale);
 
     const int nions=ions.getTotalNum();
-    const int nels=4*nions;
+    const int nels=count_electrons(ions);
     const int nels3=3*nels;
 
 #pragma omp master

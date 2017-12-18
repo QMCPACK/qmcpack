@@ -73,7 +73,6 @@ int main(int argc, char** argv)
   //create two MPI groups
   mpi::communicator rows=world.split(world.rank()/2);
 
-  OhmmsInfo("walker");
 
   typedef QMCTraits::RealType           RealType;
   typedef ParticleSet::ParticlePos_t    ParticlePos_t;
@@ -120,8 +119,7 @@ int main(int argc, char** argv)
   //turn off output
   if(omp_get_max_threads()>1)
   {
-    OhmmsInfo::Log->turnoff();
-    OhmmsInfo::Warn->turnoff();
+    outputManager.pause();
   }
 
   size_t nptcl=0;
@@ -145,7 +143,7 @@ int main(int argc, char** argv)
     ions.RSoA=ions.R; //fill the SoA
 
     const int nions=ions.getTotalNum();
-    const int nels=4*nions;
+    const int nels=count_electrons(ions);
     const int nels3=3*nels;
 
 #pragma omp master

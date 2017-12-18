@@ -41,9 +41,6 @@ class JeeIOrbitalSoA: public OrbitalBase
   using posT=TinyVector<valT,OHMMS_DIM>;
   ///use the same container
   using RowContainer=DistanceTableData::RowContainer;
-  ///define container types
-  using vContainer_type=aligned_vector<valT>;
-  using gContainer_type=VectorSoaContainer<valT,OHMMS_DIM>;
   ///table index for i-el, el-el is always zero
   int myTableID;
   //nuber of particles
@@ -56,18 +53,16 @@ class JeeIOrbitalSoA: public OrbitalBase
   RealType DiffVal;
 
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
-  ParticleAttrib<valT> Uat;
-  vContainer_type oldUk,newUk;
+  Vector<valT> Uat,oldUk,newUk;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
-  ParticleAttrib<posT> dUat;
+  using gContainer_type=VectorSoaContainer<valT,OHMMS_DIM>;
+  gContainer_type dUat,olddUk,newdUk;
   valT *FirstAddressOfdU, *LastAddressOfdU;
-  gContainer_type olddUk,newdUk;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
-  ParticleAttrib<valT> d2Uat;
-  vContainer_type oldd2Uk,newd2Uk;
+  Vector<valT> d2Uat,oldd2Uk,newd2Uk;
   /// current values during PbyP
   valT cur_Uat,cur_d2Uat;
-  posT cur_dUat;
+  posT cur_dUat, dUat_temp;
   ///container for the Jastrow functions
   Array<FT*,3> F;
 
@@ -156,8 +151,8 @@ public:
 
     Uat.resize(Nelec);
     dUat.resize(Nelec);
-    FirstAddressOfdU = &(dUat[0][0]);
-    LastAddressOfdU = FirstAddressOfdU + dUat.size()*OHMMS_DIM;
+    FirstAddressOfdU = dUat.data();
+    LastAddressOfdU = dUat.end();
     d2Uat.resize(Nelec);
 
     oldUk.resize(Nelec);
@@ -228,7 +223,7 @@ public:
     {
       APP_ABORT("JeeIOrbitalSoA::addFunc  Jastrow function pointer is NULL");
     }
-    std::strstream aname;
+    std::stringstream aname;
     aname << iSpecies << "_" << eSpecies1 << "_" << eSpecies2;
     J3Unique[aname.str()]=j;
     initUnique();
@@ -416,17 +411,6 @@ public:
     return std::exp(DiffVal);
   }
 
-  //to be removed from QMCPACK: these are not used anymore with PbyPFast
-  inline void update(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL,
-                     int iat) {}
-
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
-  {return ValueType(1);}
-
   GradType evalGrad(ParticleSet& P, int iat)
   {
     return GradType(dUat[iat]);
@@ -453,22 +437,31 @@ public:
     const DistanceTableData& ee_table=(*P.DistTables[0]);
     // get the old value, grad, lapl
     computeU3(P, iat, eI_table.Distances[iat], eI_table.Displacements[iat], ee_table.Distances[iat], ee_table.Displacements[iat],
-              Uat[iat], dUat[iat], d2Uat[iat], oldUk, olddUk, oldd2Uk);
+              Uat[iat], dUat_temp, d2Uat[iat], oldUk, olddUk, oldd2Uk);
     if(UpdateMode == ORB_PBYP_RATIO)
     {//ratio-only during the move; need to compute derivatives
       computeU3(P, iat, eI_table.Temp_r.data(), eI_table.Temp_dr, ee_table.Temp_r.data(), ee_table.Temp_dr,
                 cur_Uat, cur_dUat, cur_d2Uat, newUk, newdUk, newd2Uk);
     }
 
+    #pragma omp simd
     for(int jel=0; jel<Nelec; jel++)
     {
       Uat[jel]   += newUk[jel]-oldUk[jel];
-      dUat[jel]  += newdUk[jel]-olddUk[jel];
       d2Uat[jel] += newd2Uk[jel]-oldd2Uk[jel];
+    }
+    for(int idim=0; idim<OHMMS_DIM; ++idim)
+    {
+      valT* restrict save_g=dUat.data(idim);
+      const valT* restrict new_g=newdUk.data(idim);
+      const valT* restrict old_g=olddUk.data(idim);
+      #pragma omp simd aligned(save_g,new_g,old_g)
+      for(int jel=0; jel<Nelec; jel++)
+        save_g[jel]+=new_g[jel]-old_g[jel];
     }
 
     Uat[iat]   = cur_Uat;
-    dUat[iat]  = cur_dUat;
+    dUat(iat)  = cur_dUat;
     d2Uat[iat] = cur_d2Uat;
 
     const int ig = P.GroupID[iat];
@@ -511,13 +504,22 @@ public:
     for(int jel=0; jel<Nelec; ++jel)
     {
       computeU3(P, jel, eI_table.Distances[jel], eI_table.Displacements[jel], ee_table.Distances[jel], ee_table.Displacements[jel],
-                Uat[jel], dUat[jel], d2Uat[jel], newUk, newdUk, newd2Uk, true);
+                Uat[jel], dUat_temp, d2Uat[jel], newUk, newdUk, newd2Uk, true);
+      dUat(jel) = dUat_temp;
       // add the contribution from the upper triangle
+      #pragma omp simd
       for(int kel=0; kel<jel; kel++)
       {
         Uat[kel] += newUk[kel];
-        dUat[kel] += newdUk[kel];
         d2Uat[kel] += newd2Uk[kel];
+      }
+      for(int idim=0; idim<OHMMS_DIM; ++idim)
+      {
+        valT* restrict save_g=dUat.data(idim);
+        const valT* restrict new_g=newdUk.data(idim);
+        #pragma omp simd aligned(save_g,new_g)
+        for(int kel=0; kel<jel; kel++)
+          save_g[kel]+=new_g[kel];
       }
     }
   }
@@ -560,7 +562,7 @@ public:
                         const RealType* distjI, const RowContainer& displjI,
                         const RealType* distjk, const RowContainer& displjk,
                         valT& Uj, posT& dUj, valT& d2Uj,
-                        vContainer_type& Uk, gContainer_type& dUk, vContainer_type& d2Uk, bool triangle=false)
+                        Vector<valT>& Uk, gContainer_type& dUk, Vector<valT>& d2Uk, bool triangle=false)
   {
     constexpr valT czero(0);
     constexpr valT cone(1);
@@ -665,14 +667,6 @@ public:
     buf.get(FirstAddressOfdU,LastAddressOfdU);
     buf.get(d2Uat.begin(), d2Uat.end());
     build_compact_list(P);
-  }
-
-  inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    buf.put(Uat.begin(), Uat.end());
-    buf.put(FirstAddressOfdU,LastAddressOfdU);
-    buf.put(d2Uat.begin(), d2Uat.end());
-    return LogValue;
   }
 
   void evaluateGL(ParticleSet& P,

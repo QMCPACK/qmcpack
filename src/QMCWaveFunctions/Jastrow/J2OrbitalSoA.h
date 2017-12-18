@@ -68,12 +68,13 @@ struct  J2OrbitalSoA : public OrbitalBase
   ///Correction
   RealType KEcorr;
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
-  ParticleAttrib<valT> Uat;
+  Vector<valT> Uat;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
-  ParticleAttrib<posT> dUat;
+  using gContainer_type=VectorSoaContainer<valT,OHMMS_DIM>;
+  gContainer_type dUat;
   valT *FirstAddressOfdU, *LastAddressOfdU;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
-  ParticleAttrib<valT> d2Uat;
+  Vector<valT> d2Uat;
   valT cur_Uat;
   aligned_vector<valT> cur_u, cur_du, cur_d2u;
   aligned_vector<valT> old_u, old_du, old_d2u;
@@ -221,27 +222,9 @@ struct  J2OrbitalSoA : public OrbitalBase
     return LogValue;
   }
 
-  inline RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    buf.put(Uat.begin(), Uat.end());
-    buf.put(FirstAddressOfdU,LastAddressOfdU);
-    buf.put(d2Uat.begin(), d2Uat.end());
-    return LogValue;
-  }
-
-  //to be removed from QMCPACK: these are not used anymore with PbyPFast
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat) {}
-  ValueType ratio(ParticleSet& P, int iat,
-      ParticleSet::ParticleGradient_t& dG,
-      ParticleSet::ParticleLaplacian_t& dL){ return ValueType(1);}
-
-  
   /*@{ internal compute engines*/
   inline void computeU3(ParticleSet& P, int iat, const RealType* restrict dist,
-      RealType* restrict u, RealType* restrict du, RealType* restrict d2u);
+      RealType* restrict u, RealType* restrict du, RealType* restrict d2u, bool triangle=false);
 
   /** compute gradient
    */
@@ -258,26 +241,6 @@ struct  J2OrbitalSoA : public OrbitalBase
       grad[idim]=s;
     }
     return grad;
-  }
-
-  /** compute gradient and lap
-   */
-  inline void accumulateGL(const valT* restrict du, const valT* restrict d2u,
-      const RowContainer& displ, posT& grad, valT& lap) const
-  {
-    constexpr valT lapfac=OHMMS_DIM-RealType(1);
-    lap=valT(0);
-//#pragma omp simd reduction(+:lap)
-    for(int jat=0; jat<N; ++jat)
-      lap+=d2u[jat]+lapfac*du[jat];
-    for(int idim=0; idim<OHMMS_DIM; ++idim)
-    {
-      const valT* restrict dX=displ.data(idim);
-      valT s=valT();
-//#pragma omp simd reduction(+:s)
-      for(int jat=0; jat<N; ++jat) s+=du[jat]*dX[jat];
-      grad[idim]=s;
-    }
   }
 
 };
@@ -310,8 +273,8 @@ void J2OrbitalSoA<FT>::init(ParticleSet& p)
 
   Uat.resize(N); 
   dUat.resize(N);
-  FirstAddressOfdU = &(dUat[0][0]);
-  LastAddressOfdU = FirstAddressOfdU + dUat.size()*OHMMS_DIM;
+  FirstAddressOfdU = dUat.data();
+  LastAddressOfdU = dUat.end();
   d2Uat.resize(N);
   cur_u.resize(N);
   cur_du.resize(N);
@@ -400,20 +363,21 @@ OrbitalBasePtr J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
 template<typename FT>
 inline void
 J2OrbitalSoA<FT>::computeU3(ParticleSet& P, int iat, const RealType* restrict dist,
-    RealType* restrict u, RealType* restrict du, RealType* restrict d2u)
+    RealType* restrict u, RealType* restrict du, RealType* restrict d2u, bool triangle)
 {
+  const int jelmax=triangle?iat:N;
   constexpr valT czero(0);
-  std::fill_n(u,  N,czero);
-  std::fill_n(du, N,czero);
-  std::fill_n(d2u,N,czero);
+  std::fill_n(u,  jelmax,czero);
+  std::fill_n(du, jelmax,czero);
+  std::fill_n(d2u,jelmax,czero);
 
   const int igt=P.GroupID[iat]*NumGroups;
   for(int jg=0; jg<NumGroups; ++jg)
   {
     const FuncType& f2(*F[igt+jg]);
     int iStart = P.first(jg);
-    int iEnd = P.last(jg);
-    f2.evaluateVGL(iStart, iEnd, dist, u, du, d2u, DistCompressed.data(), DistIndice.data());
+    int iEnd = std::min(jelmax,P.last(jg));
+    f2.evaluateVGL(iat, iStart, iEnd, dist, u, du, d2u, DistCompressed.data(), DistIndice.data());
   }
   //u[iat]=czero;
   //du[iat]=czero;
@@ -436,7 +400,7 @@ J2OrbitalSoA<FT>::ratio(ParticleSet& P, int iat)
     const FuncType& f2(*F[igt+jg]);
     int iStart = P.first(jg);
     int iEnd = P.last(jg);
-    cur_Uat += f2.evaluateV( iStart, iEnd, dist, DistCompressed.data() );
+    cur_Uat += f2.evaluateV(iat, iStart, iEnd, dist, DistCompressed.data());
   }
 
   return std::exp(Uat[iat]-cur_Uat);
@@ -477,25 +441,40 @@ J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
   }
 
   valT cur_d2Uat(0);
-  posT cur_dUat;
   const auto& new_dr=d_table->Temp_dr;
   const auto& old_dr=d_table->Displacements[iat];
+  constexpr valT lapfac=OHMMS_DIM-RealType(1);
+  #pragma omp simd reduction(+:cur_d2Uat)
   for(int jat=0; jat<N; jat++)
   {
-    constexpr valT lapfac=OHMMS_DIM-RealType(1);
-    valT du   = cur_u[jat] - old_u[jat];
-    posT newg = cur_du[jat] * new_dr[jat];
-    posT dg   = newg - old_du[jat]*old_dr[jat];
-    valT newl = cur_d2u[jat] + lapfac*cur_du[jat];
-    valT dl   = old_d2u[jat] + lapfac*old_du[jat] - newl;
+    const valT du   = cur_u[jat] - old_u[jat];
+    const valT newl = cur_d2u[jat] + lapfac*cur_du[jat];
+    const valT dl   = old_d2u[jat] + lapfac*old_du[jat] - newl;
     Uat[jat]   += du;
-    dUat[jat]  -= dg;
     d2Uat[jat] += dl;
-    cur_dUat   += newg;
     cur_d2Uat  -= newl;
   }
+  posT cur_dUat;
+  for(int idim=0; idim<OHMMS_DIM; ++idim)
+  {
+    const valT* restrict new_dX=new_dr.data(idim);
+    const valT* restrict old_dX=old_dr.data(idim);
+    const valT* restrict cur_du_pt=cur_du.data();
+    const valT* restrict old_du_pt=old_du.data();
+    valT* restrict save_g=dUat.data(idim);
+    valT cur_g=cur_dUat[idim];
+    #pragma omp simd reduction(+:cur_g) aligned(old_dX,new_dX,save_g,cur_du_pt,old_du_pt)
+    for(int jat=0; jat<N; jat++)
+    {
+      const valT newg = cur_du_pt[jat] * new_dX[jat];
+      const valT dg   = newg - old_du_pt[jat]*old_dX[jat];
+      save_g[jat]  -= dg;
+      cur_g += newg;
+    }
+    cur_dUat[idim] = cur_g;
+  }
   Uat[iat]   = cur_Uat;
-  dUat[iat]  = cur_dUat;
+  dUat(iat)  = cur_dUat;
   d2Uat[iat] = cur_d2Uat;
 }
 
@@ -509,13 +488,43 @@ J2OrbitalSoA<FT>::recompute(ParticleSet& P)
     const int igt=ig*NumGroups;
     for(int iat=P.first(ig),last=P.last(ig); iat<last; ++iat)
     {
-      computeU3(P,iat,d_table->Distances[iat],cur_u.data(),cur_du.data(),cur_d2u.data());
-      Uat[iat]=simd::accumulate_n(cur_u.data(),N,valT());
+      computeU3(P,iat,d_table->Distances[iat],cur_u.data(),cur_du.data(),cur_d2u.data(),true);
+      Uat[iat]=simd::accumulate_n(cur_u.data(),iat,valT());
       posT grad;
-      valT lap;
-      accumulateGL(cur_du.data(),cur_d2u.data(),d_table->Displacements[iat],grad,lap);
-      dUat[iat]=grad;
+      valT lap(0);
+      const valT* restrict    u = cur_u.data();
+      const valT* restrict   du = cur_du.data();
+      const valT* restrict  d2u = cur_d2u.data();
+      const RowContainer& displ = d_table->Displacements[iat];
+      constexpr valT lapfac=OHMMS_DIM-RealType(1);
+      #pragma omp simd reduction(+:lap) aligned(du,d2u)
+      for(int jat=0; jat<iat; ++jat)
+        lap+=d2u[jat]+lapfac*du[jat];
+      for(int idim=0; idim<OHMMS_DIM; ++idim)
+      {
+        const valT* restrict dX=displ.data(idim);
+        valT s=valT();
+        #pragma omp simd reduction(+:s) aligned(du,dX)
+        for(int jat=0; jat<iat; ++jat) s+=du[jat]*dX[jat];
+        grad[idim]=s;
+      }
+      dUat(iat)=grad;
       d2Uat[iat]=-lap;
+      // add the contribution from the upper triangle
+      #pragma omp simd aligned(u,du,d2u)
+      for(int jat=0; jat<iat; jat++)
+      {
+        Uat[jat] += u[jat];
+        d2Uat[jat] -= d2u[jat]+lapfac*du[jat];
+      }
+      for(int idim=0; idim<OHMMS_DIM; ++idim)
+      {
+        valT* restrict save_g=dUat.data(idim);
+        const valT* restrict dX=displ.data(idim);
+        #pragma omp simd aligned(save_g,du,dX)
+        for(int jat=0; jat<iat; jat++)
+          save_g[jat]-=du[jat]*dX[jat];
+      }
     }
   }
 }
@@ -523,10 +532,10 @@ J2OrbitalSoA<FT>::recompute(ParticleSet& P)
 template<typename FT>
 typename J2OrbitalSoA<FT>::RealType
 J2OrbitalSoA<FT>::evaluateLog(ParticleSet& P,
-    ParticleSet::ParticleGradient_t& dG,
-    ParticleSet::ParticleLaplacian_t& dL)
+    ParticleSet::ParticleGradient_t& G,
+    ParticleSet::ParticleLaplacian_t& L)
 {
-  evaluateGL(P,dG,dL,true);
+  evaluateGL(P,G,L,true);
   return LogValue;
 }
 

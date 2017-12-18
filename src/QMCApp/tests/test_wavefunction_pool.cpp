@@ -15,7 +15,6 @@
 
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
-#include "Utilities/OhmmsInfo.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCApp/WaveFunctionPool.h"
 
@@ -90,7 +89,6 @@ TEST_CASE("WaveFunctionPool", "[qmcapp]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   WaveFunctionPool wp(c);
 

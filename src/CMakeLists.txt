@@ -129,8 +129,8 @@ ENDIF(HAVE_OOMPI)
     Utilities/OhmmsObject.cpp 
     Utilities/SpeciesSet.cpp 
     Utilities/SimpleParser.cpp 
-    Utilities/OhmmsInform.cpp 
-    Utilities/OhmmsInfo.cpp 
+    Utilities/InfoStream.cpp
+    Utilities/OutputManager.cpp
     Utilities/NewTimer.cpp
     Utilities/RunTimeManager.cpp
     Utilities/ProgressReportEngine.cpp
@@ -206,6 +206,7 @@ ENDIF(HAVE_OOMPI)
   ####################################
   SET(PARTICLE ${PARTICLE}
     Particle/ParticleSet.cpp 
+    Particle/VirtualParticleSet.cpp
     Particle/ParticleSet.BC.cpp 
     Particle/MCWalkerConfiguration.cpp 
     Particle/DistanceTableAA.cpp

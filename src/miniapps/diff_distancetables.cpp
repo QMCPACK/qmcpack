@@ -20,7 +20,7 @@
 #include <OhmmsSoA/VectorSoaContainer.h>
 #include <random/random.hpp>
 #include <mpi/collectives.h>
-#include <miniapps/graphite.hpp>
+#include <miniapps/input.hpp>
 #include <miniapps/pseudo.hpp>
 #include <Utilities/Timer.h>
 #include <miniapps/common.hpp>
@@ -33,7 +33,6 @@ int main(int argc, char** argv)
 {
 
   OHMMS::Controller->initialize(0, NULL);
-  OhmmsInfo("distancetablelogfile");
   Communicate* mycomm=OHMMS::Controller;
 
   //use the global generator
@@ -90,11 +89,11 @@ int main(int argc, char** argv)
   ions.setName("ion0");
   ions.Lattice.BoxBConds=1;
   ions.Lattice.LR_rc=5;
-  tile_graphite(ions,tmat,scale);
+  tile_cell(ions,tmat,scale);
   ions.RSoA=ions.R; //this needs to be handled internally
 
   const int nions=ions.getTotalNum();
-  const int nels=4*nions;
+  const int nels=count_electrons(ions);
   const int nels3=3*nels;
 
   {//create up/down electrons

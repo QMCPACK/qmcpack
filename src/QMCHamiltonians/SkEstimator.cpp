@@ -56,8 +56,8 @@ SkEstimator::Return_t SkEstimator::evaluate(ParticleSet& P)
 {
 #if defined(USE_REAL_STRUCT_FACTOR)
   //sum over species
-  copy(P.SK->rhok_r[0],P.SK->rhok_r[0]+NumK,RhokTot_r.begin());
-  copy(P.SK->rhok_i[0],P.SK->rhok_i[0]+NumK,RhokTot_i.begin());
+  std::copy(P.SK->rhok_r[0],P.SK->rhok_r[0]+NumK,RhokTot_r.begin());
+  std::copy(P.SK->rhok_i[0],P.SK->rhok_i[0]+NumK,RhokTot_i.begin());
   for(int i=1; i<NumSpecies; ++i)
     accumulate_elements(P.SK->rhok_r[i],P.SK->rhok_r[i]+NumK,RhokTot_r.begin());
   for(int i=1; i<NumSpecies; ++i)
@@ -78,7 +78,7 @@ SkEstimator::Return_t SkEstimator::evaluate(ParticleSet& P)
   }
 #else
   //sum over species
-  copy(P.SK->rhok[0],P.SK->rhok[0]+NumK,RhokTot.begin());
+  std::copy(P.SK->rhok[0],P.SK->rhok[0]+NumK,RhokTot.begin());
   for(int i=1; i<NumSpecies; ++i)
     accumulate_elements(P.SK->rhok[i],P.SK->rhok[i]+NumK,RhokTot.begin());
   if(hdf5_out)
@@ -131,14 +131,14 @@ void SkEstimator::addObservables(PropertySetType& plist )
 void SkEstimator::setObservables(PropertySetType& plist)
 {
   if (!hdf5_out)
-    copy(values.begin(),values.end(),plist.begin()+myIndex);
+    std::copy(values.begin(),values.end(),plist.begin()+myIndex);
 }
 
 void SkEstimator::setParticlePropertyList(PropertySetType& plist
     , int offset)
 {
   if (!hdf5_out)
-    copy(values.begin(),values.end(),plist.begin()+myIndex+offset);
+    std::copy(values.begin(),values.end(),plist.begin()+myIndex+offset);
 }
 
 

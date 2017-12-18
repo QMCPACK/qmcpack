@@ -13,7 +13,6 @@
 #include "Message/catch_mpi_main.hpp"
 
 
-#include "Utilities/OhmmsInfo.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsApp/ProjectData.h"
 
@@ -34,7 +33,6 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
 
   ProjectData proj1;
@@ -53,7 +51,7 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
   REQUIRE(proj2.getName() == std::string("test"));
 
   proj2.setCommunicator(c);
-  std::strstream o2;
+  std::stringstream o2;
   proj2.get(o2);
 }
 
@@ -63,7 +61,6 @@ TEST_CASE("ProjectData::put no series", "[ohmmsapp]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   ProjectData proj("test");
 
@@ -84,7 +81,6 @@ TEST_CASE("ProjectData::put with series", "[ohmmsapp]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   ProjectData proj("test");
 

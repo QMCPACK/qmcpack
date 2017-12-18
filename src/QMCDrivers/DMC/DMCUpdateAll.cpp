@@ -106,10 +106,10 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
         W.saveWalker(thisWalker);
         rr_accepted = rr_proposed;
         thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
-        H.auxHevaluate(W,thisWalker);
-        H.saveProperty(thisWalker.getPropertyBase());
       }
     }
+    H.auxHevaluate(W,thisWalker);
+    H.saveProperty(thisWalker.getPropertyBase());
     if(UseTMove)
     {
       int ibar=nonLocalOps.selectMove(RandomGen());
@@ -120,7 +120,6 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
         W.R[iat] += nonLocalOps.delta(ibar);
         W.update();
         logpsi=Psi.evaluateLog(W);
-        setScaledDrift(Tau,W.G,drift);
         thisWalker.resetProperty(logpsi,Psi.getPhase(),eold);
         thisWalker.R[iat] = W.R[iat];
         ++NonLocalMoveAccepted;

@@ -21,10 +21,14 @@
 #include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilder.h"
 #if OHMMS_DIM == 3
 #if !defined(QMC_COMPLEX)
+#if defined(ENABLE_SOA)
+#include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
+#else
 #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
+#endif
 #endif
 
 #if defined(HAVE_EINSPLINE)
@@ -37,6 +41,8 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
 #include "OhmmsData/AttributeSet.h"
+#include "Message/MPIObjectBase.h"
+
 
 namespace qmcplusplus
 {
@@ -127,6 +133,7 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
   std::string transformOpt("yes"); //numerical Molecular Orbital
   std::string cuspC("no");  // cusp correction
   std::string cuspInfo("");  // file with precalculated cusp correction info
+  std::string MOH5Ref("");  // Path to H5 file for MO calculations 
   OhmmsAttributeSet aAttrib;
   aAttrib.add(sourceOpt,"source");
   aAttrib.add(cuspC,"cuspCorrection");
@@ -136,6 +143,8 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
   aAttrib.add(name,"name");
   aAttrib.add(transformOpt,"transform");
   aAttrib.add(cuspInfo,"cuspInfo");
+  aAttrib.add(MOH5Ref,"href");
+
   if(rootNode != NULL)
     aAttrib.put(rootNode);
 
@@ -155,6 +164,7 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
     app_log().flush();
     bb=(*bbit).second;
     bb->put(rootNode);
+   
     return last_builder=bb;
   }
 
@@ -200,9 +210,6 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
 #if !defined(QMC_COMPLEX)
   else if(type == "molecularorbital" || type == "mo")
   {
-#if defined(ENABLE_SOA)
-    PRE.error("Molecular orbital support is not ready on SoA builds. Stay tuned!",true);
-#endif
     ParticleSet* ions=0;
     //do not use box to check the boundary conditions
     if(targetPtcl.Lattice.SuperCellEnum==SUPERCELL_OPEN)
@@ -213,11 +220,14 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
       PRE.error("Missing basisset/@source.",true);
     else
       ions=(*pit).second;
+#if defined(ENABLE_SOA)
+    bb=new LCAOrbitalBuilder(targetPtcl,*ions,rootNode);
+#else
     if(transformOpt == "yes")
     {
       app_log() << "Using MolecularBasisBuilder<NGOBuilder>" << std::endl;
 #if QMC_BUILD_LEVEL>2
-      bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,cuspC=="yes",cuspInfo);
+      bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,cuspC=="yes",cuspInfo,MOH5Ref);
 #else
       bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,false);
 #endif
@@ -233,6 +243,7 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
       else if(keyOpt == "STO")
         bb = new MolecularBasisBuilder<STOBuilder>(targetPtcl,*ions);
     }
+#endif
   }
 #endif //!QMC_COMPLEX
 #endif  //OHMMS_DIM==3

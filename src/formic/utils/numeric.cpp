@@ -254,7 +254,7 @@ void formic::mpi_unbiased_ratio_of_means(const int n, const double * const p, co
     y[4] += x * g[i];
   }
   double z[7];
-  formic::mpi::allreduce(&y[0], &z[0], 7, MPI::SUM);
+  formic::mpi::allreduce(&y[0], &z[0], 7, MPI_SUM);
   const double mf = z[1] / z[0]; // mean of numerator
   const double mg = z[2] / z[0]; // mean of denominator
   const double sf = z[3] / z[0]; // mean of the square of the numerator terms

@@ -12,7 +12,7 @@ ENDIF(COMMAND cmake_policy)
 # Version 
 ######################################################################
 SET(QMCPACK_VERSION_MAJOR 3)
-SET(QMCPACK_VERSION_MINOR 2)
+SET(QMCPACK_VERSION_MINOR 3)
 SET(QMCPACK_VERSION_PATCH 0)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
@@ -141,9 +141,13 @@ SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 INCLUDE(${CMAKE_ROOT}/Modules/CheckFunctionExists.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckIncludeFile.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckTypeSize.cmake)
+INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXSourceCompiles.cmake)
 
 CHECK_FUNCTION_EXISTS(sincos HAVE_SINCOS)
 CHECK_FUNCTION_EXISTS(posix_memalign HAVE_POSIX_MEMALIGN)
+SET(CHECK_ISZERO_SOURCE "#include <math.h>
+                         int main() {iszero(1.0); return 0;}")
+CHECK_CXX_SOURCE_COMPILES("${CHECK_ISZERO_SOURCE}" HAVE_ISZERO)
 
 CHECK_INCLUDE_FILE(dlfcn.h HAVE_DLFCN_H)
 CHECK_INCLUDE_FILE(inttypes.h HAVE_INTTYPES_H)
@@ -330,7 +334,6 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
         ENDFOREACH(type)
       ELSE(QMC_BUILD_STATIC)
         MESSAGE(STATUS "Building CPU code. Linking dynamically.")
-        SET(CMAKE_EXE_LINKER_FLAGS "-dynamic")
       ENDIF(QMC_BUILD_STATIC)
     ENDIF(QMC_CUDA)
   ENDIF($ENV{CRAYPE_VERSION} MATCHES ".")
@@ -844,7 +847,7 @@ endif()
 #ADD_DEFINITIONS(-DDISABLE_WS_CELL)
 
 EXECUTE_PROCESS(COMMAND hostname OUTPUT_VARIABLE QMC_HOSTNAME OUTPUT_STRIP_TRAILING_WHITESPACE)
-CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/qmcpack.settings ${qmcpack_BINARY_DIR}/bin/qmcpack.settings)
+CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/qmcpack.settings ${qmcpack_BINARY_DIR}/bin/qmcpack.settings)
 
 #########################
 # add definitions for adios profile
@@ -861,6 +864,9 @@ SUBDIRS(src)
 IF(NOT(QMC_BUILD_LEVEL GREATER 4))
   SUBDIRS(tests)
   SUBDIRS(examples)
+  IF(IS_DIRECTORY nexus)
+    SUBDIRS(nexus/examples)
+  ENDIF()
 ENDIF()
 
 #ADD_CUSTOM_TARGET(print_settings ALL

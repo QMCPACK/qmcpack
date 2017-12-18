@@ -78,8 +78,9 @@ ELSE()
   FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/../NiO/process_perf.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
   FOREACH(SIZE IN LISTS C_SIZES)
-    SET(PERF_TEST performance-C-graphite-${COMPUTE_TYPE}-S${SIZE}-1-16)
-    SET(TEST_DIR dmc-S${SIZE}-${COMPUTE_TYPE})
+    MATH(EXPR ATOM_COUNT "${SIZE} / 4")
+    SET(PERF_TEST performance-C-graphite-${COMPUTE_TYPE}-a${ATOM_COUNT}-e${SIZE}-1-16)
+    SET(TEST_DIR dmc-a${ATOM_COUNT}-e${SIZE}-${COMPUTE_TYPE})
     SET(INPUT_FILE C-graphite-S${SIZE}-dmc.xml)
 # H5 filename is fixed consistent with CORAL name, but should be templated if a range of carbon sizes is added
     SET(H5_FILE lda.pwscf.h5)

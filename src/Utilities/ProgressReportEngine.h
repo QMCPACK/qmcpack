@@ -21,7 +21,7 @@
 #ifndef QMCPLUSPLUS_PROGRESSREPORTENGINE_H
 #define QMCPLUSPLUS_PROGRESSREPORTENGINE_H
 
-#include "Utilities/OhmmsInfo.h"
+#include "Utilities/OutputManager.h"
 #include "Message/Communicate.h"
 #include "Utilities/Timer.h"
 #include "OhmmsData/OhmmsElementBase.h"
@@ -37,7 +37,7 @@ class ReportEngine
 public:
 
   inline ReportEngine(const std::string& cname, const std::string& fname, int atype=1):
-    ReportType(atype),ClassName(cname), FuncName(fname), LogBuffer(*OhmmsInfo::Log)
+    ReportType(atype),ClassName(cname), LogBuffer(infoLog), FuncName(fname)
   {
     if (DoOutput) {
       LogBuffer << "  " << ClassName << "::" << FuncName << "\n";
@@ -101,9 +101,9 @@ private:
   std::vector<std::string> ArgList;
   /** stream for log message
    */
-  OhmmsInform& LogBuffer;
+  InfoStream& LogBuffer;
   //disable copy constructor
-  ReportEngine(const ReportEngine& a):LogBuffer(*OhmmsInfo::Log) {}
+  ReportEngine(const ReportEngine& a):LogBuffer(infoLog) {}
 
   static bool DoOutput;
 
