@@ -33,7 +33,6 @@
 
 //#include <QMCHamiltonians/Ylm.h>
 //#define PRINT_RADIAL
-//#define REPORT_MISMATCH
 
 namespace qmcplusplus
 {
@@ -158,9 +157,6 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
   UBspline_3d_d* spline_i;
   BsplineSet<adoptor_type>* bspline;
   fftw_plan FFTplan;
-#ifdef REPORT_MISMATCH
-  std::vector<std::vector<double> > mismatch_energy_AO_to_PW;
-#endif
 
   SplineHybridAdoptorReader(EinsplineSetBuilder* e)
     : BsplineReaderBase(e), spline_r(NULL), spline_i(NULL),
@@ -447,9 +443,6 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       }
       if(!success) abort();
 
-#ifdef REPORT_MISMATCH
-      mismatch_energy_AO_to_PW.resize(ACInfo.Ncenters);
-#endif
       for(int center_idx=0; center_idx<ACInfo.Ncenters; center_idx++)
       {
         AtomicOrbitalSoA<DataType> oneCenter(ACInfo.lmax[center_idx]);
@@ -458,11 +451,6 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         centers.push_back(oneCenter);
       }
     }
-
-#ifdef REPORT_MISMATCH
-    for(int center_idx=0; center_idx<ACInfo.Ncenters; center_idx++)
-      mismatch_energy_AO_to_PW[center_idx].resize(std::max(ACInfo.spline_npoints[center_idx]-3,0),0.0);
-#endif
   }
 
   /** initialize construct atomic orbital radial functions from plane waves */
@@ -762,78 +750,9 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       fclose(fout_spline_l);
 #endif
 
-#ifdef REPORT_MISMATCH
-      const int total_grid_size=mismatch_energy_AO_to_PW[center_idx].size();
-      Quadrature3D<double> quad(7);
-      #pragma omp parallel for
-      for(int ip=0; ip<total_grid_size; ip++)
-      {
-        double r=delta*static_cast<double>(ip+1);
-        double AO_to_PW(0.0);
-        int quad_counter=0;
-        // sum up quadratures
-        for(int j=0; j<quad.nk; j++)
-        {
-          typedef TinyVector<DataType,3> PosType;
-          PosType pos_quad=quad.xyz_m[j]*r+mycenter.pos;
-          double PW_ene, AO_ene, PW_norm2, AO_norm2;
-
-          // Evaluate PW.
-          std::complex<double> PW_psi, PW_d2psi;
-          Gvecs.evaluate_psi_r(cG, pos_quad, PW_psi, PW_d2psi);
-          PW_psi*=std::complex<double>(rotate_phase_r, rotate_phase_i);
-          PW_d2psi*=std::complex<double>(rotate_phase_r, rotate_phase_i);
-          if(bspline->is_complex)
-          {
-            PW_ene  =PW_psi.real()*PW_d2psi.real()+PW_psi.imag()*PW_d2psi.imag();
-            PW_norm2=PW_psi.real()*  PW_psi.real()+PW_psi.imag()*  PW_psi.imag();
-          }
-          else
-          {
-            PW_ene  =PW_psi.real()*PW_d2psi.real();
-            PW_norm2=PW_psi.real()*  PW_psi.real();
-          }
-
-          // Evaluate AO. This is a lazy implementation.
-          // The evaluation goes over all the bands althought the results of only one band is used.
-          auto& myV=bspline->myV;
-          auto& myG=bspline->myG;
-          auto& myL=bspline->myL;
-          #pragma omp critical
-          mycenter.evaluate_vgl(r, quad.xyz_m[j]*r, myV, myG, myL);
-          if(bspline->is_complex)
-          {
-            AO_ene  =myV[iorb*2]*myL[iorb*2]+myV[iorb*2+1]*myL[iorb*2+1];
-            AO_norm2=myV[iorb*2]*myV[iorb*2]+myV[iorb*2+1]*myV[iorb*2+1];
-          }
-          else
-          {
-            AO_ene  =myV[iorb]*myL[iorb];
-            AO_norm2=myV[iorb]*myV[iorb];
-          }
-
-          //collect mismatch energy
-          if(AO_norm2>std::numeric_limits<float>::epsilon() && PW_norm2>std::numeric_limits<float>::epsilon())
-          {
-            quad_counter++;
-            AO_to_PW+=std::fabs(AO_ene-PW_ene)/2.0;
-          }
-
-          //std::cout << "debug PW KE " << PW_ene << std::endl;
-          //std::cout << "debug AO KE " << AO_ene << std::endl;
-        }
-        //std::cout << "debug iorb=" << iorb << " center=" << center_idx << " ip=" << ip << " r=" << r << " mismatch_energy_AO_to_PW=" << AO_to_PW/(quad_counter>0?quad_counter:1) << std::endl;
-        mismatch_energy_AO_to_PW[center_idx][ip]+=AO_to_PW/(quad_counter>0?quad_counter:1);
-      }
-#endif
     }
     // collect atomic orbitals from all the centers
     bspline->reduce_atomic_tables(center_group_comm.GroupLeaderComm);
-#ifdef REPORT_MISMATCH
-    // collect mismatch_energy
-    for(int center_idx=0; center_idx<Ncenters; center_idx++)
-      mpi::reduce(*center_group_comm.GroupLeaderComm,mismatch_energy_AO_to_PW[center_idx]);
-#endif
   }
 
 
@@ -880,73 +799,11 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       now.restart();
       bspline->gather_tables(band_group_comm.GroupLeaderComm);
       app_log() << "  Time to gather the table = " << now.elapsed() << std::endl;
-#ifdef REPORT_MISMATCH
-      // collect mismatch_energy
-      for(int center_idx=0; center_idx<bspline->AtomicCenters.size(); center_idx++)
-        mpi::reduce(*band_group_comm.GroupLeaderComm,mismatch_energy_AO_to_PW[center_idx]);
-#endif
     }
     now.restart();
     bspline->bcast_tables(myComm);
     app_log() << "  Time to bcast the table = " << now.elapsed() << std::endl;
-
-#ifdef REPORT_MISMATCH
-    if(!myComm->rank()) print_mismatch_scan(spin);
-#endif
   }
-
-
-#ifdef REPORT_MISMATCH
-  /** print the mismatch energy between plane waves and AO */
-  void print_mismatch_scan(const int spin)
-  {
-    const auto& mySpecies=mybuilder->SourcePtcl->mySpecies;
-    int Nspecies=mySpecies.size();
-    std::vector<int> atom_counter(Nspecies,0),lmax_per_species(Nspecies,0.0);
-    std::vector<double> delta_per_species(Nspecies,0.0);
-    std::vector<std::vector<double> > mismatch_ene_species_AO_to_PW(Nspecies);
-    const auto& AtomicCenters=bspline->AtomicCenters;
-    // set proper size
-    for(int center_idx=0; center_idx<AtomicCenters.size(); center_idx++)
-    {
-      const int my_GroupID = mybuilder->AtomicCentersInfo.GroupID[center_idx];
-      if(mismatch_energy_AO_to_PW[center_idx].size()>mismatch_ene_species_AO_to_PW[my_GroupID].size())
-      {
-        mismatch_ene_species_AO_to_PW[my_GroupID].resize(mismatch_energy_AO_to_PW[center_idx].size(),0.0);
-        delta_per_species[my_GroupID]=AtomicCenters[center_idx].spline_radius/static_cast<double>(AtomicCenters[center_idx].spline_npoints-1);
-        lmax_per_species[my_GroupID]=AtomicCenters[center_idx].lmax;
-      }
-    }
-    // average per species
-    for(int center_idx=0; center_idx<AtomicCenters.size(); center_idx++)
-    {
-      //app_log() << " Yedebug center=" << center_idx << std::endl;
-      //for(int j=0; j<mismatch_energy_AO_to_PW[center_idx].size(); j++)
-      //  app_log() << " ip=" << j << " dis=" << (j+1)*AtomicCenters[center_idx].spline_radius/static_cast<double>(AtomicCenters[center_idx].spline_npoints-1)
-      //            << " mismatch=" << mismatch_energy_AO_to_PW[center_idx][j] << std::endl;
-      const int my_GroupID = mybuilder->AtomicCentersInfo.GroupID[center_idx];
-      for(int ip=0; ip<mismatch_energy_AO_to_PW[center_idx].size(); ip++)
-        mismatch_ene_species_AO_to_PW[my_GroupID][ip]+=mismatch_energy_AO_to_PW[center_idx][ip];
-      atom_counter[my_GroupID]++;
-    }
-    // print per species
-    for(int ispecies=0; ispecies<Nspecies; ispecies++)
-    {
-      std::ostringstream filename;
-      filename << "AO_to_PW.spin_" << spin << ".tw" << mybuilder->TwistNum << "." << mySpecies.speciesName[ispecies]
-               << ".lmax" << lmax_per_species[ispecies] << ".dat";
-      std::ofstream outfile(filename.str().c_str());
-      outfile << "# ip r abs(Ediff)" << std::endl;
-      for(int ip=0; ip<mismatch_ene_species_AO_to_PW[ispecies].size(); ip++)
-        outfile << ip << "  " << std::fixed << std::setprecision(4) << (ip+1)*delta_per_species[ispecies] << "  "
-                << std::setprecision(9)
-                << mismatch_ene_species_AO_to_PW[ispecies][ip]/(atom_counter[ispecies]>0?atom_counter[ispecies]:1)
-                << std::endl;
-      outfile.close();
-    }
-  }
-#endif
-
 
   void initialize_spline_psi_r(int spin, const BandInfoGroup& bandgroup)
   {
