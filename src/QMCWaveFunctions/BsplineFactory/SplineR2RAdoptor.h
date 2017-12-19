@@ -218,7 +218,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   {
     Vector<ST> vtmp(scratch,myV.size());
     PointType ru;
-    int bc_sign=convertPos(P.R[iat],ru);
+    int bc_sign=convertPos(P.activeR(iat),ru);
     if(compute_spline) SplineInst->evaluate(ru,vtmp);
 
     TT res=TT();
@@ -236,7 +236,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   template<typename VV>
   inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
   {
-    const PointType& r=P.R[iat];
+    const PointType& r=P.activeR(iat);
     PointType ru;
     int bc_sign=convertPos(r,ru);
     SplineInst->evaluate(ru,myV);
@@ -329,7 +329,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   template<typename VV, typename GV>
   inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {
-    const PointType& r=P.R[iat];
+    const PointType& r=P.activeR(iat);
     PointType ru;
     int bc_sign=convertPos(r,ru);
     SplineInst->evaluate_vgh(ru,myV,myG,myH);
@@ -397,7 +397,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   template<typename VGL>
   inline void evaluate_vgl_combo(const ParticleSet& P, const int iat, VGL& vgl)
   {
-    const PointType& r=P.R[iat];
+    const PointType& r=P.activeR(iat);
     PointType ru;
     int bc_sign=convertPos(r,ru);
     SplineInst->evaluate_vgh(ru,myV,myG,myH);
@@ -452,7 +452,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   template<typename VV, typename GV, typename GGV>
   void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
-    const PointType& r=P.R[iat];
+    const PointType& r=P.activeR(iat);
     PointType ru;
     int bc_sign=convertPos(r,ru);
     SplineInst->evaluate_vgh(ru,myV,myG,myH);

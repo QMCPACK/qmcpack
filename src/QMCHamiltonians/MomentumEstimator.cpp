@@ -45,9 +45,7 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
   const int np=P.getTotalNum();
   nofK=0.0;
   compQ=0.0;
-  //will use temp[i].r1 for the Compton profile
-  const std::vector<DistanceTableData::TempDistType>& temp(P.DistTables[0]->Temp);
-  Vector<RealType> tmpn_k(nofK);
+  const DistanceTableData &d_aa(*P.DistTables[0]);
   for (int s=0; s<M; ++s)
   {
     PosType newpos;
@@ -55,31 +53,33 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
       newpos[i]=myRNG();
     //make it cartesian
     newpos=Lattice.toCart(newpos);
-    P.makeVirtualMoves(newpos); //updated: temp[i].r1=|newpos-P.R[i]|, temp[i].dr1=newpos-P.R[i]
-
-    refPsi.get_ratios(P,psi_ratios);
-
-//         for (int i=0; i<np; ++i) app_log()<<i<<" "<<psi_ratios[i].real()<<" "<<psi_ratios[i].imag()<< std::endl;
-    P.rejectMove(0); //restore P.R[0] to the orginal position
+    P.makeVirtualMoves(newpos);
+    refPsi.evaluateRatiosAlltoOne(P,psi_ratios);
     for (int ik=0; ik < kPoints.size(); ++ik)
     {
-      for (int i=0; i<np; ++i)
-        kdotp[i]=-dot(kPoints[ik],temp[i].dr1_nobox);
+      if(d_aa.DTType == DT_SOA)
+      {
+        for (int i=0; i<np; ++i)
+          kdotp[i] = dot(kPoints[ik], P.R[i]-P.activePos);
+      }
+      else
+      {
+        for (int i=0; i<np; ++i)
+          kdotp[i] = -dot(kPoints[ik], d_aa.Temp[i].dr1_nobox);
+      }
       eval_e2iphi(np,kdotp.data(),phases.data());
       RealType nofk_here(std::real(BLAS::dot(np,phases.data(),&psi_ratios[0])));//psi_ratios.data())));
-
       nofK[ik]+= nofk_here;
-      tmpn_k[ik]=nofk_here;
     }
-
-    for (int iq=0; iq < compQ.size(); ++iq)
-      for (int i=0; i<mappedQtonofK[iq].size(); ++i)
-        compQ[iq] += tmpn_k[mappedQtonofK[iq][i]];
+  }
+  for (int iq=0; iq < compQ.size(); ++iq)
+  {
+    for (int i=0; i<mappedQtonofK[iq].size(); ++i)
+      compQ[iq] += nofK[mappedQtonofK[iq][i]];
+    compQ[iq] *= mappedQnorms[iq];
   }
   for (int ik=0; ik<nofK.size(); ++ik)
     nofK[ik] *= norm_nofK;
-  for (int iq=0; iq<compQ.size(); ++iq)
-    compQ[iq] *= mappedQnorms[iq];
   if (hdf5_out)
   {
     RealType w=tWalker->Weight;

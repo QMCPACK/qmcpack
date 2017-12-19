@@ -143,6 +143,42 @@ const char *particles = \
   double KE = -0.5*(Dot(elec_.G,elec_.G)+Sum(elec_.L));
   REQUIRE(KE == Approx(-0.058051245)); // note: number not validated
 
+  typedef QMCTraits::ValueType ValueType;
+  typedef QMCTraits::PosType PosType;
+
+  // set virtutal particle position
+  PosType newpos(0.3,0.2,0.5);
+
+  elec_.makeVirtualMoves(newpos);
+  std::vector<ValueType> ratios(elec_.getTotalNum());
+  j3->evaluateRatiosAlltoOne(elec_,ratios);
+
+  REQUIRE(ratios[0] == ComplexApprox(0.8744938582).compare_real_only());
+  REQUIRE(ratios[1] == ComplexApprox(1.0357541137).compare_real_only());
+  REQUIRE(ratios[2] == ComplexApprox(0.8302245609).compare_real_only());
+  REQUIRE(ratios[3] == ComplexApprox(0.7987703724).compare_real_only());
+
+  elec_.makeMove(0, newpos-elec_.R[0]);
+  ValueType ratio_0 = j3->ratio(elec_,0);
+  elec_.rejectMove(0);
+
+  elec_.makeMove(1, newpos-elec_.R[1]);
+  ValueType ratio_1 = j3->ratio(elec_,1);
+  elec_.rejectMove(1);
+
+  elec_.makeMove(2, newpos-elec_.R[2]);
+  ValueType ratio_2 = j3->ratio(elec_,2);
+  elec_.rejectMove(2);
+
+  elec_.makeMove(3, newpos-elec_.R[3]);
+  ValueType ratio_3 = j3->ratio(elec_,3);
+  elec_.rejectMove(3);
+
+  REQUIRE(ratio_0 == ComplexApprox(0.8744938582).compare_real_only());
+  REQUIRE(ratio_1 == ComplexApprox(1.0357541137).compare_real_only());
+  REQUIRE(ratio_2 == ComplexApprox(0.8302245609).compare_real_only());
+  REQUIRE(ratio_3 == ComplexApprox(0.7987703724).compare_real_only());
+
   opt_variables_type optvars;
   std::vector<OrbitalBase::RealType> dlogpsi;
   std::vector<OrbitalBase::RealType> dhpsioverpsi;

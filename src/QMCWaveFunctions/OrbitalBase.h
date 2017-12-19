@@ -405,11 +405,11 @@ struct OrbitalBase: public QMCTraits
 
   virtual void finalizeOptimization() { }
 
-  /** evaluate ratios to evaluate the momentum distribution
+  /** evaluate the ratios of one virtual move with respect to all the particles
    * @param P reference particleset
    * @param ratios \f$ ratios[i]=\{{\bf R}\}\rightarrow {r_0,\cdots,r_i^p=pos,\cdots,r_{N-1}}\f$
    */
-  virtual void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
+  virtual void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
   /** evaluate ratios to evaluate the non-local PP
    * @param VP VirtualParticleSet

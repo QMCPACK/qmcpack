@@ -806,13 +806,13 @@ TrialWaveFunction::KECorrection() const
   return sum;
 }
 
-void TrialWaveFunction::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+void TrialWaveFunction::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   std::fill(ratios.begin(),ratios.end(),1.0);
   std::vector<ValueType> t(ratios.size());
   for (int i=0; i<Z.size(); ++i)
   {
-    Z[i]->get_ratios(P,t);
+    Z[i]->evaluateRatiosAlltoOne(P,t);
     for (int j=0; j<t.size(); ++j)
       ratios[j]*=t[j];
   }

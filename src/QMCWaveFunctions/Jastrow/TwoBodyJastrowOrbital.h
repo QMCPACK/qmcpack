@@ -331,10 +331,8 @@ public:
         grad_grad_psi[j] -= hess;
       }
     }
-    
-    
-	  
   }
+
   ValueType ratio(ParticleSet& P, int iat)
   {
     const DistanceTableData* d_table=P.DistTables[0];
@@ -380,22 +378,6 @@ public:
     for(int k=0; k<ratios.size(); ++k)
       ratios[k]=std::exp(myr[k]);
   }
-
-  /** evaluate the ratio
-  */
-  inline void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
-  {
-    const DistanceTableData* d_table=P.DistTables[0];
-    for (int i=0,ij=0; i<N; ++i)
-    {
-      RealType res=0.0;
-      for(int j=0; j<N; ++j,++ij)
-        if(i!=j)
-          res+=U[ij]-F[PairID(ij)]->evaluate(d_table->Temp[j].r1);
-      ratios[i]=std::exp(res);
-    }
-  }
-
 
   GradType evalGrad(ParticleSet& P, int iat)
   {
