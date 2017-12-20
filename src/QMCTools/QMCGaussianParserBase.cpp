@@ -39,7 +39,7 @@ std::vector<int> QMCGaussianParserBase::gShellID;
 
 QMCGaussianParserBase::QMCGaussianParserBase():
   Title("sample"),basisType("Gaussian"),basisName("generic"),DoCusp(false),debug(false),production(false),
-  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),WFS_name("wfj")
+  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),WFS_name("wfj"),AllH5(false)
   ,usingCSF(false),readNO(0),readGuess(0),zeroCI(false),target_state(0),Structure(false)
   ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false),QP(false),ECP(false)
 {
@@ -49,7 +49,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
   BohrUnit(true),SpinRestricted(false),NumberOfAtoms(0),NumberOfEls(0),DoCusp(false),debug(false),
   SpinMultiplicity(0),NumberOfAlpha(0),NumberOfBeta(0),SizeOfBasisSet(0),WFS_name("wfj"),
   Title("sample"),basisType("Gaussian"),basisName("generic"),numMO(0),numMO2print(-1),production(false),
-  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),target_state(0),
+  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),target_state(0),AllH5(false),
   angular_type("spherical"),usingCSF(false),readNO(0),readGuess(0),zeroCI(false),Structure(false)
   ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false), QP(false),ECP(false)
 {
@@ -279,9 +279,11 @@ xmlNodePtr QMCGaussianParserBase::createESPSet(int iesp)
 
 xmlNodePtr QMCGaussianParserBase::createIonSet()
 {
-  const double ang_to_bohr=1.0/0.529177e0;
+  const double ang_to_bohr=1.889725989;
   if(!BohrUnit)
+  {  
     IonSystem.R *= ang_to_bohr;
+  }
   double CoreTable[] =
   {
     0, /* index zero*/
@@ -350,7 +352,6 @@ xmlNodePtr QMCGaussianParserBase::createBasisSet()
   }
   return bset;
 }
-
 
 
 xmlNodePtr QMCGaussianParserBase::createBasisSetWithHDF5()
@@ -475,7 +476,86 @@ QMCGaussianParserBase::createDeterminantSetWithHDF5()
 }
 
 
+xmlNodePtr
+QMCGaussianParserBase::PrepareDeterminantSetFromHDF5()
+{
+  setOccupationNumbers();
+  xmlNodePtr slaterdet = xmlNewNode(NULL,(const xmlChar*)"slaterdeterminant");
+  std::ostringstream up_size, down_size, b_size;
+  up_size <<NumberOfAlpha;
+  down_size << NumberOfBeta;
+  b_size<<numMO;
+  //create a determinant Up
+  xmlNodePtr udet = xmlNewNode(NULL,(const xmlChar*)"determinant");
+  xmlNewProp(udet,(const xmlChar*)"id",(const xmlChar*)"updet");
+  xmlNewProp(udet,(const xmlChar*)"size",(const xmlChar*)up_size.str().c_str());
+  if (DoCusp==true)
+     xmlNewProp(udet,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/updet.cuspInfo.xml");
 
+  //add occupation
+  xmlNodePtr occ_data = xmlNewNode(NULL,(const xmlChar*)"occupation");
+  xmlNewProp(occ_data,(const xmlChar*)"mode",(const xmlChar*)"ground");
+  xmlAddChild(udet,occ_data);
+  //add coefficients
+  xmlNodePtr coeff_data = xmlNewNode(NULL,(const xmlChar*)"coefficient");
+  xmlNewProp(coeff_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
+  xmlNewProp(coeff_data,(const xmlChar*)"spindataset",(const xmlChar*)"0");
+  xmlAddChild(udet,coeff_data);
+  //add udet to slaterdet
+  xmlNodePtr cur = xmlAddChild(slaterdet,udet);
+  
+//  hdf_archive hout(0);
+//  hout.open(h5file.c_str(),H5F_ACC_RDWR);
+//  hout.push("determinant",true);
+
+//  Matrix<double> Ctemp(SizeOfBasisSet,SizeOfBasisSet);
+
+//  int n=0;  
+//  for (int i=0; i<SizeOfBasisSet; i++)
+//     for (int j=0; j<SizeOfBasisSet; j++){
+//         Ctemp[i][j]=EigVec[n];
+//         n++;
+//     }
+
+//  hout.write(Ctemp,"eigenset_0");
+
+
+  xmlNodePtr ddet;
+  if(SpinRestricted)
+  {
+    ddet = xmlCopyNode(udet,1);
+    xmlSetProp(ddet,(const xmlChar*)"id",(const xmlChar*)"downdet");
+    xmlSetProp(ddet,(const xmlChar*)"size",(const xmlChar*)down_size.str().c_str());
+    if (DoCusp==true)
+       xmlSetProp(ddet,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/downdet.cuspInfo.xml");
+  }
+  else
+  {
+    ddet = xmlCopyNode(udet,2);
+    xmlSetProp(ddet,(const xmlChar*)"id",(const xmlChar*)"downdet");
+    xmlSetProp(ddet,(const xmlChar*)"size",(const xmlChar*)down_size.str().c_str());
+    if (DoCusp==true)
+       xmlNewProp(ddet,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/downdet.cuspInfo.xml");
+    xmlNodePtr o= xmlAddChild(ddet,xmlCopyNode(occ_data,1));
+    xmlNodePtr c= xmlCopyNode(coeff_data,1);
+    xmlSetProp(c,(const xmlChar*)"spindataset",(const xmlChar*)"1");
+    o = xmlAddSibling(o,c);
+
+//  n=numMO*SizeOfBasisSet;  
+//  for (int i=0; i<SizeOfBasisSet; i++)
+//     for (int j=0; j<SizeOfBasisSet; j++){
+//         Ctemp[i][j]=EigVec[n];
+//         n++;
+//     }
+
+//   hout.write(Ctemp,"eigenset_1");
+
+  }
+  cur = xmlAddSibling(cur,ddet);
+//    hout.close();
+  //return slaterdeterminant node
+  return slaterdet;
+}
 
 xmlNodePtr
 QMCGaussianParserBase::createDeterminantSet()
@@ -1618,11 +1698,10 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
 
       if (DoCusp==true)
          xmlNewProp(detPtr,(const xmlChar*)"cuspCorrection",(const xmlChar*)"yes");
-      if(UseHDF5)
+      if(UseHDF5 || AllH5)
       {
          xmlNewProp(detPtr,(const xmlChar*)"href",(const xmlChar*)h5file.c_str());
       }
-
       {
         if(UseHDF5)
         {
@@ -1630,8 +1709,11 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
         }
         else
         {
-          xmlNodePtr bsetPtr = createBasisSet();
-          xmlAddChild(detPtr,bsetPtr);
+          if(!AllH5)
+          {
+            xmlNodePtr bsetPtr = createBasisSet();
+            xmlAddChild(detPtr,bsetPtr);
+          }
         }
         if(multideterminant)
         {
@@ -1680,7 +1762,11 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
           }
           else
           {
-            slaterdetPtr = createDeterminantSet();
+            if(AllH5)
+              slaterdetPtr = PrepareDeterminantSetFromHDF5();
+            else
+              slaterdetPtr = createDeterminantSet();
+
           }
           xmlAddChild(detPtr,slaterdetPtr);
         }
@@ -1719,7 +1805,7 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
   std::string fname = Title+".wf"+WFS_name+".xml";
   xmlSaveFormatFile(fname.c_str(),doc,1);
   xmlFreeDoc(doc);
-  if (numMO*SizeOfBasisSet>=4000 && !UseHDF5)
+  if (numMO*SizeOfBasisSet>=4000 && (!UseHDF5||AllH5))
      std::cout<<"Consider using HDF5 via -hdf5 for higher performance and smaller wavefunction files"<<std::endl;
 }
 

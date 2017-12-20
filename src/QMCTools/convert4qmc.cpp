@@ -26,6 +26,7 @@
 #include "QMCTools/VSVBParser.h"
 #include "QMCTools/QPParser.h"
 #include "QMCTools/GamesFMOParser.h"
+#include "QMCTools/PyscfParser.h"
 #include "QMCTools/BParser.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/FileUtility.h"
@@ -36,7 +37,7 @@ int main(int argc, char **argv)
 {
   if(argc<2)
   {
-    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-VSVB|-QP] filename " << std::endl;
+    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-VSVB|-QP|-Pyscf] filename " << std::endl;
     std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production]" << std::endl;
     std::cout << "[-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]" << std::endl;
     std::cout << "[-size npts -ci file.out -threshold cimin -TargetState state_number -NaturalOrbitals NumToRead]" << std::endl;
@@ -67,6 +68,7 @@ int main(int argc, char **argv)
 
 
   int TargetState=0;
+  bool allH5=false;
   bool addJastrow=true;
   bool usehdf5=false;
   bool useprefix=false;
@@ -100,6 +102,12 @@ int main(int argc, char **argv)
     {
       parser = new QPParser(argc,argv);
       in_file =argv[++iargc];
+    }
+    else if(a == "-Pyscf")
+    {
+      parser = new PyscfParser(argc,argv);
+      in_file =argv[++iargc];
+      allH5=true;
     }
     else if(a == "-VSVB")
     {
@@ -235,7 +243,11 @@ int main(int argc, char **argv)
   if (useprefix!=true)
   {
     prefix=in_file;
-    std::string delimiter =".out";
+    std::string delimiter;
+    if (allH5)
+      delimiter =".h5";
+    else
+      delimiter =".out";
     int pos = 0;
     std::string token;
     pos = prefix.find(delimiter);
@@ -260,8 +272,14 @@ int main(int argc, char **argv)
     parser->ECP=!addCusp;
     parser->UseHDF5=usehdf5;
     if (usehdf5)
-      parser->h5file=parser->Title+".orbs.h5";
+      parser->h5file=parser->Title+"orbs.h5";
     parser->IonSystem.setName(ion_tag);
+    parser->AllH5=allH5;
+    if(allH5)
+    {
+      parser->UseHDF5=false;
+      parser->h5file=in_file;
+    }
     parser->multideterminant=ci;
     parser->production=prod;
     parser->ci_threshold=thres;

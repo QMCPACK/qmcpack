@@ -24,15 +24,15 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsData/OhmmsElementBase.h"
 
-class QPParser: public QMCGaussianParserBase,
+class PyscfParser: public QMCGaussianParserBase,
   public OhmmsAsciiParser
 {
 
 public:
 
-  QPParser();
+  PyscfParser();
 
-  QPParser(int argc, char** argv);
+  PyscfParser(int argc, char** argv);
 
   std::streampos pivot_begin;
   std::vector<std::string> tags;
@@ -42,15 +42,7 @@ public:
 
   void parse(const std::string& fname);
 
-  void getGeometry(std::istream& is);
-
-  void getGaussianCenters(std::istream& is);
-
-  void getMO(std::istream& is);
-
-  void getMO_single_set(std::istream& is, Matrix<double> &CartMat, std::vector<value_type>& EigVal_alpha);
-
-  void getQPCI(std::istream& is);
+  void getGeometry(const std::string& fname);
 
 
 };
