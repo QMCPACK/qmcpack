@@ -288,7 +288,7 @@ public:
 
   /** evaluate the ratio
    */
-  inline void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+  inline void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
   {
     std::fill(ratios.begin(),ratios.end(),0.0);
     const DistanceTableData* d_table=P.DistTables[myTableIndex];

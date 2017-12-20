@@ -83,7 +83,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   {
     if(HybridBase::evaluate_v(P,iat,myV))
     {
-      const PointType& r=P.R[iat];
+      const PointType& r=P.activeR(iat);
       BaseAdoptor::assign_v(r,psi);
     }
     else
@@ -105,7 +105,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   {
     if(HybridBase::evaluate_vgl(P,iat,myV,myG,myL))
     {
-      const PointType& r=P.R[iat];
+      const PointType& r=P.activeR(iat);
       BaseAdoptor::assign_vgl_from_l(r,psi,dpsi,d2psi);
     }
     else
@@ -122,7 +122,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   {
     if(HybridBase::evaluate_vgh(P,iat,myV,myG,myH))
     {
-      const PointType& r=P.R[iat];
+      const PointType& r=P.activeR(iat);
       BaseAdoptor::assign_vgl_soa(r,vgl);
     }
     else
@@ -134,7 +134,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   {
     if(HybridBase::evaluate_vgh(P,iat,myV,myG,myH))
     {
-      const PointType& r=P.R[iat];
+      const PointType& r=P.activeR(iat);
       BaseAdoptor::assign_vgh(r,psi,dpsi,grad_grad_psi);
     }
     else

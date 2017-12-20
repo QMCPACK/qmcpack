@@ -160,7 +160,7 @@ struct RealBasisSetBase
 
   virtual RealBasisSetBase<T>* makeClone() const = 0;
   virtual void setBasisSetSize(int nbs)=0;
-  virtual void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl, bool newp)=0;
+  virtual void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl)=0;
   virtual void evaluateV(const ParticleSet& P, int iat, value_type* restrict vals)=0;
 };
 

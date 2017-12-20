@@ -117,6 +117,10 @@ public:
 
   ValueType ratio(ParticleSet& P, int iat);
   ValueType ratio_impl(ParticleSet& P, int iat);
+  void evaluateRatiosAlltoOne(ParticleSet& P, int iat)
+  {
+    APP_ABORT(" Need to implement MultiSlaterDeterminantFast::evaluateRatiosAlltoOne. \n");
+  }
 
   void acceptMove(ParticleSet& P, int iat);
   void restore(int iat);
