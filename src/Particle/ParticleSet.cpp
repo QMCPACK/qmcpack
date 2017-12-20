@@ -744,7 +744,7 @@ void ParticleSet::acceptMove(Index_t iat)
 
     //Do not change SK: 2007-05-18
     if (SK && SK->DoUpdate)
-      SK->acceptMove(iat,GroupID[iat],activePos);
+      SK->acceptMove(iat,GroupID[iat],R[iat]);
 
     R[iat]=activePos;
     RSoA(iat)=activePos;
