@@ -46,7 +46,7 @@ struct SoaDistanceTableBA: public DTD_BConds<T,D,SC>, public DistanceTableData
     memoryPool.resize(Ntargets*BlockSize);
     Displacements.resize(Ntargets); 
     for(int i=0; i<Ntargets; ++i)
-      Displacements[i].attach(Nsources,Nsources_padded,memoryPool.data()+i*BlockSize);
+      Displacements[i].attachReference(Nsources,Nsources_padded,memoryPool.data()+i*BlockSize);
 
     Temp_r.resize(Nsources);
     Temp_dr.resize(Nsources);

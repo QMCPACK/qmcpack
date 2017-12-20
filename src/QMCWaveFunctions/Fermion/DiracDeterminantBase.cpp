@@ -262,9 +262,9 @@ DiracDeterminantBase::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P
 void DiracDeterminantBase::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BufferTimer.start();
-  psiM.attach(buf.attach<ValueType>(psiM.size()));
-  dpsiM.attach(buf.attach<GradType>(dpsiM.size()));
-  d2psiM.attach(buf.attach<ValueType>(d2psiM.size()));
+  psiM.attachReference(buf.lendReference<ValueType>(psiM.size()));
+  dpsiM.attachReference(buf.lendReference<GradType>(dpsiM.size()));
+  d2psiM.attachReference(buf.lendReference<ValueType>(d2psiM.size()));
   buf.get(LogValue);
   buf.get(PhaseValue);
   BufferTimer.stop();

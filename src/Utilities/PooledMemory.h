@@ -164,7 +164,7 @@ struct PooledMemory
   }
 
   template<typename T1>
-  inline T1* attach(size_type n)
+  inline T1* lendReference(size_type n)
   {
     constexpr int multiplier=sizeof(T1);
     T1 *ptr = reinterpret_cast<T1*>(myData.data()+Current);
