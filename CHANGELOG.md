@@ -2,13 +2,17 @@
 
 Notable changes to QMCPACK will be documented in this file.
 
-## [Unreleased]
+## [3.3.0] - 2017-12-18
 
 ### Notes
 
+This release includes new methods, converter updates, and many
+optimizations, feature improvements, and bug fixes. It is a
+recommended update for all users.
+ 
 ### QMCPACK updates
 
-* Support for finite different linear response (FDLR) method and
+* Support for finite difference linear response (FDLR) method and
   wavefunctions, developed and contributed by Nick Blunt and Eric
   Neuscamman, see Journal of Chemical Physics 147, 194101 (2017),
   https://doi.org/10.1063/1.4998197 and
