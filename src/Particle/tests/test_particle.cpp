@@ -59,4 +59,55 @@ TEST_CASE("symmetric_distance_table", "[particle]")
   DistanceTableData *dist2 = createDistanceTable(source,DT_AOS);
 }
 
+TEST_CASE("particle set lattice with vacuum", "[particle]")
+{
+
+  OHMMS::Controller->initialize(0, NULL);
+
+  typedef SymmetricDTD<double, 3, SUPERCELL_BULK> sym_dtd_t;
+  ParticleSet source;
+
+  Uniform3DGridLayout grid;
+  // PPP case
+  grid.BoxBConds = true;
+  for(int i=0; i<9; i++)
+    grid.R(i) = i+1;
+  grid.VacuumScale=2.0;
+  grid.reset();
+
+  source.setName("electrons");
+  source.Lattice.copy(grid);
+  source.createSK();
+
+  REQUIRE( source.LRBox.R(0,0) == 1.0 );
+  REQUIRE( source.LRBox.R(0,1) == 2.0 );
+  REQUIRE( source.LRBox.R(0,2) == 3.0 );
+
+  // PPN case
+  grid.BoxBConds[2] = false;
+  grid.reset();
+  source.Lattice.copy(grid);
+  source.createSK();
+
+  REQUIRE( source.LRBox.R(2,0) == 14.0 );
+  REQUIRE( source.LRBox.R(2,1) == 16.0 );
+  REQUIRE( source.LRBox.R(2,2) == 18.0 );
+
+  // PNN case
+  grid.BoxBConds[1] = false;
+  grid.reset();
+  source.Lattice.copy(grid);
+  source.createSK();
+
+  REQUIRE( source.LRBox.R(0,0) ==  1.0 );
+  REQUIRE( source.LRBox.R(0,1) ==  2.0 );
+  REQUIRE( source.LRBox.R(0,2) ==  3.0 );
+  REQUIRE( source.LRBox.R(1,0) ==  8.0 );
+  REQUIRE( source.LRBox.R(1,1) == 10.0 );
+  REQUIRE( source.LRBox.R(1,2) == 12.0 );
+  REQUIRE( source.LRBox.R(2,0) == 14.0 );
+  REQUIRE( source.LRBox.R(2,1) == 16.0 );
+  REQUIRE( source.LRBox.R(2,2) == 18.0 );
+}
+
 }

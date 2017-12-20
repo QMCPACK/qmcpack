@@ -90,3 +90,31 @@ The overall structure of the input file reflects different aspects of the QMC si
 \end{shade}
 The omitted portions (\texttt{...}) are more fine-grained inputs such as the axes of the simulation cell, the number of up and down electrons, positions of atomic species, external orbital files, starting Jastrow parameters, and external pseudopotential files.  
 
+
+\section{Project}
+The \texttt{<project>} tag uses the \texttt{id} and \texttt{series} attributes.
+The value of \texttt{id} is the first part of the prefix for output file names.
+
+Output file names also contain the series number, starting at the value given by the
+\texttt{series} tag.  After every \texttt{<qmc>} section the series value will increment, giving each section a unique prefix.
+
+For the input file shown previously, the output files will start with \texttt{vmc.s000}, for example \texttt{vmc.s000.scalar.dat}.
+If there were another \texttt{<qmc>} section in the input file, the corresponding output files would use the prefix \texttt{vmc.s001}.
+
+
+
+\section{Random number initialization}
+
+The random number generator state is initialized from the \texttt{random} element using the \texttt{seed} attribute.
+\begin{shade}
+<random seed="1000"/>
+\end{shade}
+
+If the random element is not present, or the seed value is negative, the seed will be generated from the current time.
+
+In order to initialize the many independent random number generators (one per thread and MPI process), the seed value is used (modulo 1024) as a starting index into a list of prime numbers.
+Entries in this offset list of prime numbers are then used as the seed for the random generator on each thread and process.
+
+If checkpointing is enabled, the random number state is written to an HDF file at the end of each block (suffix: \texttt{.random.h5}).
+This file will be read if the \texttt{mcwalkerset} tag is present to perform a restart.
+For more information, see the \texttt{checkpoint} element in the QMC methods chapter (\ref{chap:qmcmethods}) and the section on checkpoint and restart files in \ref{sec:checkpoint_files}.
