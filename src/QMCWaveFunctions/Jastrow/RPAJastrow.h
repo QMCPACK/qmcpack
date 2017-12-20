@@ -91,11 +91,11 @@ struct RPAJastrow: public OrbitalBase
 
   void restore(int iat);
 
-  RealType registerData(ParticleSet& P, BufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
 
-  RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 
-  void copyFromBuffer(ParticleSet& P, BufferType& buf);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   OrbitalBase* makeClone(ParticleSet& tqp) const;
 

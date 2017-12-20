@@ -114,19 +114,18 @@ public:
     return 1.0;
   }
 
-  ValueType registerData(ParticleSet& P, PooledData<RealType>& buf)
+  void registerData(ParticleSet& P, WFBufferType& buf)
   {
     std::cerr << "PolarizedJastrow::registerData for particle-by-particle is empty " << std::endl;
-    return 0.0;
   }
 
-  ValueType updateBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  ValueType updateBuffer(ParticleSet& P, WFBufferType& buf)
   {
     std::cerr << "PolarizedJastrow::updateBuffer for particle-by-particle is empty " << std::endl;
     return 0.0;
   }
 
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     std::cerr << "PolarizedJastrow::copyFromBuffer for particle-by-particle is empty " << std::endl;
   }
