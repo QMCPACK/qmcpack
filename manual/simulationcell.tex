@@ -57,17 +57,26 @@ the behavior of the $x$, $y$, and $z$, axes, respectively.
 Examples of valid \texttt{bconds} include:
 
 \begin{description}
-\item[``p p p''] Periodic boundary conditions. Corresponds to a 3d crystal.
+\item[``p p p''] Periodic boundary conditions. Corresponds to a 3D crystal.
 \item[``n n n''] Open boundary conditions. Corresponds to an isolated molecule in a vacuum.
-\item[``p p n''] Slab geometry. Corresponds to a 2d crystal.
-\item[``p n n''] Wire geometry. Corresponds to a 1d crystal.
+\item[``p p n''] Slab geometry. Corresponds to a 2D crystal.
+\item[``p n n''] Wire geometry. Corresponds to a 1D crystal.
 \end{description}
 
 \subsection{Vacuum}
-For slab or wire boundary conditions (\texttt{bconds= p p n} or \texttt{bconds= p n n}, respectively),
-the box used for Ewald summation increases along the axis labeled \texttt{n} by a factor of \texttt{vacuum}.
-The default value is 1, \textit{i.e.} no change to the specified axis.
-All the particles remain in the original box without altering their positions.
+The vacuum option allows adding a vacuum region in slab or wire boundary conditions
+(\texttt{bconds= p p n} or \texttt{bconds= p n n}, respectively). The main use is
+to save memory with spline or plane-wave basis trial wavefunctions, because no basis
+functions are required inside the vacuum region. For example, a large vacuum region
+can be added above and below a graphene sheet without having to generate the trial
+wavefunction in such a large box or to have as many splines as would otherwise
+be required. Note that the trial wavefunction must still be generated in a
+large enough box to sufficiently reduce periodic interactions in the underlying
+electronic structure calculation.
+
+With the vacuum option, the box used for Ewald summation increases along the axis labeled \texttt{n} by a factor of \texttt{vacuum}.
+Note that all the particles remain in the original box without altering their positions. i.e. Bond lengths are not changed by this option.
+The default value is 1, no change to the specified axes.
 
 An example of a \texttt{simulationcell} block using \texttt{vacuum} is given below.
 The size of the box along the z-axis increases from 12 to 18 by the vacuum scale of 1.5.
@@ -86,19 +95,10 @@ The size of the box along the z-axis increases from 12 to 18 by the vacuum scale
   </simulationcell>
 \end{shade}
 
-This option helps reduce the computational cost of DFT and memory requirement in QMC.
-For instance, a slab calculation requires a large box with a very long z direction
-to minimize the interaction between periodic images in DFT.
-Since QMC uses the orbitals from DFT contained in the same box,
-a lot of memory is needed to store the orbitals in B-Spline representation.
-With the `vacuum' option, the DFT calculation can use a smaller box (but still large enough for accuracy)
-and the QMC calculation can rescale the open directions of the box to
-have the long-range parts of Coulomb interations calculated in the large box.
-
 \subsection{\texttt{LR\_dim\_cutoff}}
 When using periodic boundary conditions direct calculation of the Coulomb energy is
 not well behaved. As a result, QMCPACK uses an optimized Ewald summation technique
-to compute the Coulomb interaction. %% Reference: Natoli & Ceperley 1995 JCP.
+to compute the Coulomb interaction.\cite{Natoli1995}
 
 In the Ewald summation, the energy is broken into short- and long-ranged terms.
 The short-ranged term is computed directly in real space, while the long-ranged term is computed in reciprocal space.
