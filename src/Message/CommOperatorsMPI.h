@@ -402,11 +402,9 @@ template<>
 inline void
 Communicate::allreduce(PooledData<float>& g)
 {
-  PooledData<float> gt(g.size(), g.size_DP());
+  PooledData<float> gt(g.size());
   MPI_Allreduce(g.data(),gt.data(),g.size(),MPI_FLOAT,MPI_SUM,
                 myMPI);
-  if (g.size_DP()) MPI_Allreduce(g.data_DP(),gt.data_DP(),g.size_DP(),
-                                 MPI_DOUBLE,MPI_SUM,myMPI);
   g = gt;
 }
 
@@ -773,7 +771,6 @@ inline void
 Communicate::bcast(PooledData<float>& g)
 {
   MPI_Bcast(g.data(),g.size(),MPI_FLOAT,0,myMPI);
-  if (g.size_DP()) MPI_Bcast(g.data_DP(),g.size_DP(),MPI_DOUBLE,0,myMPI);
 }
 
 template<>
