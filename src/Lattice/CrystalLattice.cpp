@@ -33,6 +33,7 @@ template<class T, unsigned D,bool ORTHO>
 CrystalLattice<T,D,ORTHO>::CrystalLattice()
 {
   BoxBConds=0;
+  VacuumScale=1.0;
   R.diagonal(1e10);
   G = R;
   M = R;
@@ -95,6 +96,7 @@ void
 CrystalLattice<T,D,ORTHO>::set(const CrystalLattice<T,D,ORTHO>& oldlat, int *uc)
 {
   BoxBConds = oldlat.BoxBConds;
+  VacuumScale = oldlat.VacuumScale;
   R = oldlat.R;
   if(uc)
   {
@@ -226,6 +228,8 @@ void CrystalLattice<T,D,ORTHO>::print(std::ostream& os, int level) const
         os << " n ";
     }
     os << std::endl;
+    if(VacuumScale != 1.0)
+      os << "  Vacuum scale: " << VacuumScale << std::endl;
   }
   if(level > 1)
   {
