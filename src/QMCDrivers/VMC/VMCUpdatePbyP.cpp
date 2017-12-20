@@ -49,7 +49,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
   myTimers[0]->start();
   W.loadWalker(thisWalker,true);
-  Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+  Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
   Psi.copyFromBuffer(W,w_buffer);
   myTimers[0]->stop();
 
