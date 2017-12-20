@@ -93,6 +93,8 @@ struct CrystalLattice
   int SuperCellEnum;
   ///The boundary condition in each direction.
   TinyVector<int,D> BoxBConds;
+  ///The scale factor for adding vacuum.
+  T VacuumScale;
   //@{
   /**@brief Physcial properties of a supercell*/
   /// Volume of a supercell
