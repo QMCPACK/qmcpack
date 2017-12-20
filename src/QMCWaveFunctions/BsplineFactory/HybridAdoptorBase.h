@@ -529,8 +529,9 @@ struct HybridAdoptorBase
     return RealType(-1);
   }
 
+  // C2C, C2R cases
   template<typename VM>
-  inline RealType evaluateValues(const VirtualParticleSet& VP, VM& multi_myV)
+  inline RealType evaluateValuesC2X(const VirtualParticleSet& VP, VM& multi_myV)
   {
     const auto* ei_0=VP.refPS.DistTables[myTableID];
     const int center_idx=ei_0->get_first_neighbor(VP.refPtcl, dist_r, dist_dr, false);
@@ -538,10 +539,31 @@ struct HybridAdoptorBase
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
     if ( dist_r < myCenter.cutoff )
     {
-      //PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
-      //r_image=myCenter.pos+dr;
-      //myCenter.evaluate_v(dist_r, dr, myV);
       myCenter.evaluateValues(VP.DistTables[myTableID]->Displacements, center_idx, dist_r, multi_myV);
+      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
+    }
+    return RealType(-1);
+  }
+
+  // R2R case
+  template<typename VM, typename Cell, typename SV>
+  inline RealType evaluateValuesR2R(const VirtualParticleSet& VP,
+                                    const Cell& PrimLattice, TinyVector<int,D>& HalfG,
+                                    VM& multi_myV, SV& bc_signs)
+  {
+    const auto* ei_0=VP.refPS.DistTables[myTableID];
+    const int center_idx=ei_0->get_first_neighbor(VP.refPtcl, dist_r, dist_dr, false);
+    if(center_idx<0) abort();
+    auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
+    if ( dist_r < myCenter.cutoff )
+    {
+      const auto &displ=VP.DistTables[myTableID]->Displacements;
+      for(int ivp=0; ivp<VP.getTotalNum(); ivp++)
+      {
+        r_image=myCenter.pos+displ[ivp][center_idx];
+        bc_signs[ivp]=get_bc_sign(VP.R[ivp], PrimLattice, HalfG);;
+      }
+      myCenter.evaluateValues(displ, center_idx, dist_r, multi_myV);
       return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
     }
     return RealType(-1);

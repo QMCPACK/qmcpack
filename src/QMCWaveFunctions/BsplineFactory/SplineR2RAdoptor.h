@@ -216,7 +216,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV>
-  inline void assign_v(int bc_sign, VV& psi)
+  inline void assign_v(int bc_sign, const vContainer_type& myV, VV& psi)
   {
     if (bc_sign & 1)
       for(size_t psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
@@ -252,7 +252,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     PointType ru;
     int bc_sign=convertPos(r,ru);
     SplineInst->evaluate(ru,myV);
-    assign_v(bc_sign,psi);
+    assign_v(bc_sign,myV,psi);
   }
 
   template<typename VM>

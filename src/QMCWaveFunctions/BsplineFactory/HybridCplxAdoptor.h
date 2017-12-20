@@ -126,7 +126,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     if(VP.isOnSphere())
     {
       Matrix<ST,aligned_allocator<ST> > multi_myV((ST*)VP.SPOMem.data(),VP.getTotalNum(),myV.size());
-      const RealType smooth_factor=HybridBase::evaluateValues(VP,multi_myV);
+      const RealType smooth_factor=HybridBase::evaluateValuesC2X(VP,multi_myV);
       const RealType cone(1);
       if(smooth_factor<0)
       {

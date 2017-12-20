@@ -27,6 +27,7 @@ IF(ENABLE_SOA)
                     TRUE
                     0 DIAMOND2_SCALARS # VMC
                     )
+
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_hybridrep_VPpp-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
                     qmc_short
