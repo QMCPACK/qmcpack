@@ -361,7 +361,7 @@ namespace qmcplusplus
     mpi::bcast(*myComm,nbands);
 
     //buffer to serialize BandInfo
-    PooledData<RealType> misc(nbands[0]*5);
+    PooledData<OHMMS_PRECISION_FULL> misc(nbands[0]*5);
     bool isCore=false;
     n=NumDistinctOrbitals=nbands[1];
     NumValenceOrbs=nbands[2];

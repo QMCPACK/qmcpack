@@ -563,7 +563,7 @@ MultiDiracDeterminantBase::RealType MultiDiracDeterminantBase::updateBuffer(Part
   return 1.0;
 }
 
-void MultiDiracDeterminantBase::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void MultiDiracDeterminantBase::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   buf.get(psiM.first_address(),psiM.last_address());
   buf.get(FirstAddressOfdpsiM,LastAddressOfdpsiM);
@@ -720,9 +720,8 @@ MultiDiracDeterminantBase& MultiDiracDeterminantBase::operator=(const MultiDirac
   return *this;
 }
 
-
-MultiDiracDeterminantBase::RealType
-MultiDiracDeterminantBase::registerData(ParticleSet& P, PooledData<RealType>& buf)
+void
+MultiDiracDeterminantBase::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if(NP == 0)
     //first time, allocate once
@@ -743,7 +742,6 @@ MultiDiracDeterminantBase::registerData(ParticleSet& P, PooledData<RealType>& bu
   buf.add(detValues.first_address(), detValues.last_address());
   buf.add(FirstAddressOfGrads,LastAddressOfGrads);
   buf.add(lapls.first_address(), lapls.last_address());
-  return 1.0;
 }
 
 void MultiDiracDeterminantBase::setDetInfo(int ref, std::vector<ci_configuration2> list)

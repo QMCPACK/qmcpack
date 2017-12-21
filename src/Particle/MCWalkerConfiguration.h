@@ -337,6 +337,8 @@ public:
   void saveEnsemble();
   ///save the position of current walkers
   void saveEnsemble(iterator first, iterator last);
+  /// load a single sample from SampleStack
+  void loadSample(ParticleSet::ParticlePos_t &Pos, size_t iw) const;
   /** load SampleStack data to current walkers
    */
   void loadEnsemble();

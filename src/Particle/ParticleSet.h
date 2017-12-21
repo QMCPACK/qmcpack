@@ -77,11 +77,11 @@ class ParticleSet
 {
 public:
   ///@typedef walker type
-  typedef Walker<QMCTraits,PtclOnLatticeTraits> Walker_t;
+  typedef Walker<QMCTraits,PtclOnLatticeTraits>  Walker_t;
   ///@typedef container type to store the property
-  typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
+  typedef Walker_t::PropertyContainer_t          PropertyContainer_t;
   ///@typedef buffer type for a serialized buffer
-  typedef Walker_t::Buffer_t             Buffer_t;
+  typedef PooledData<RealType>                   Buffer_t;
 
   enum quantum_domains {no_quantum_domain=0,classical,quantum};
 
