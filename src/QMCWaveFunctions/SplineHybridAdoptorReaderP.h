@@ -33,7 +33,6 @@
 
 //#include <QMCHamiltonians/Ylm.h>
 //#define PRINT_RADIAL
-//#define REPORT_MISMATCH
 
 namespace qmcplusplus
 {
@@ -45,13 +44,15 @@ struct Gvectors
   typedef std::complex<ST> ValueType;
 
   const LT& Lattice;
-  const std::vector<TinyVector<int,3> >& gvecs;
   std::vector<PosType>                   gvecs_cart; //Cartesian.
   std::vector<ST>                        gmag;
   const size_t NumGvecs;
 
-  Gvectors(const std::vector<TinyVector<int,3> >& gvecs_in, const LT& Lattice_in, const TinyVector<int,3>& HalfG):
-  gvecs(gvecs_in), Lattice(Lattice_in), NumGvecs(gvecs.size())
+  Gvectors(const std::vector<TinyVector<int,3> >& gvecs_in,
+           const LT& Lattice_in,
+           const TinyVector<int,3>& HalfG,
+           size_t first, size_t last):
+  Lattice(Lattice_in), NumGvecs(last-first)
   {
     gvecs_cart.resize(NumGvecs);
     gmag.resize(NumGvecs);
@@ -59,7 +60,7 @@ struct Gvectors
     for(size_t ig=0; ig<NumGvecs; ig++)
     {
       TinyVector<ST,3> gvec_shift;
-      gvec_shift=gvecs[ig]+HalfG*0.5;
+      gvec_shift=gvecs_in[ig+first]+HalfG*0.5;
       gvecs_cart[ig]=Lattice.k_cart(gvec_shift);
       gmag[ig]=std::sqrt(dot(gvecs_cart[ig],gvecs_cart[ig]));
     }
@@ -95,7 +96,7 @@ struct Gvectors
     const ST &gv_y=gvecs_cart[ig][1];
     const ST &gv_z=gvecs_cart[ig][2];
 
-    //#pragma omp simd aligned(px,py,pz,v_r,v_i)
+    #pragma omp simd aligned(px,py,pz,v_r,v_i)
     for(size_t iat=0; iat<RSoA.size(); iat++)
       sincos(px[iat]*gv_x+py[iat]*gv_y+pz[iat]*gv_z,v_i+iat,v_r+iat);
   }
@@ -158,9 +159,6 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
   UBspline_3d_d* spline_i;
   BsplineSet<adoptor_type>* bspline;
   fftw_plan FFTplan;
-#ifdef REPORT_MISMATCH
-  std::vector<std::vector<double> > mismatch_energy_AO_to_PW;
-#endif
 
   SplineHybridAdoptorReader(EinsplineSetBuilder* e)
     : BsplineReaderBase(e), spline_r(NULL), spline_i(NULL),
@@ -447,9 +445,6 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       }
       if(!success) abort();
 
-#ifdef REPORT_MISMATCH
-      mismatch_energy_AO_to_PW.resize(ACInfo.Ncenters);
-#endif
       for(int center_idx=0; center_idx<ACInfo.Ncenters; center_idx++)
       {
         AtomicOrbitalSoA<DataType> oneCenter(ACInfo.lmax[center_idx]);
@@ -458,40 +453,32 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         centers.push_back(oneCenter);
       }
     }
-
-#ifdef REPORT_MISMATCH
-    for(int center_idx=0; center_idx<ACInfo.Ncenters; center_idx++)
-      mismatch_energy_AO_to_PW[center_idx].resize(std::max(ACInfo.spline_npoints[center_idx]-3,0),0.0);
-#endif
   }
 
   /** initialize construct atomic orbital radial functions from plane waves */
   inline void create_atomic_centers_Gspace(Vector<std::complex<double> >& cG, Communicate& band_group_comm, int iorb)
   {
-    std::vector<AtomicOrbitalSoA<DataType> >& centers=bspline->AtomicCenters;
-    //distribute atomic centers over processor groups
-    int Ncenters=centers.size();
+    //distribute G-vectors over processor groups
+    const int Ngvecs=mybuilder->Gvecs[0].size();
     const int Nprocs=band_group_comm.size();
-    const int Ncentergroups=std::min(Ncenters,Nprocs);
-    Communicate center_group_comm(band_group_comm, Ncentergroups);
-    std::vector<int> center_groups(Ncentergroups+1,0);
-    FairDivideLow(Ncenters,Ncentergroups,center_groups);
-    int center_first=center_groups[center_group_comm.getGroupID()];
-    int center_last =center_groups[center_group_comm.getGroupID()+1];
-
-    // no workload case
-    if(!center_group_comm.isGroupLeader()) return;
-
-    typedef typename EinsplineSetBuilder::UnitCellType UnitCellType;
+    const int Ngvecgroups=std::min(Ngvecs,Nprocs);
+    Communicate gvec_group_comm(band_group_comm, Ngvecgroups);
+    std::vector<int> gvec_groups(Ngvecgroups+1,0);
+    FairDivideLow(Ngvecs,Ngvecgroups,gvec_groups);
+    const int gvec_first=gvec_groups[gvec_group_comm.getGroupID()];
+    const int gvec_last=gvec_groups[gvec_group_comm.getGroupID()+1];
 
     // prepare Gvecs Ylm(G)
-    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell, bspline->HalfG);
+    typedef typename EinsplineSetBuilder::UnitCellType UnitCellType;
+    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell, bspline->HalfG,
+                                         gvec_first, gvec_last);
     // if(band_group_comm.isGroupLeader()) std::cout << "print band=" << iorb << " KE=" << Gvecs.evaluate_KE(cG) << std::endl;
-    app_log() << "Transforming band " << iorb << " centers from " << center_first << " to " << center_last-1 << " on Rank 0" << std::endl;
 
+    std::vector<AtomicOrbitalSoA<DataType> >& centers=bspline->AtomicCenters;
+    app_log() << "Transforming band " << iorb << " on Rank 0" << std::endl;
     // collect atomic centers by group
     std::vector<int> uniq_species;
-    for(int center_idx=center_first; center_idx<center_last; center_idx++)
+    for(int center_idx=0; center_idx<centers.size(); center_idx++)
     {
       auto& ACInfo = mybuilder->AtomicCentersInfo;
       const int my_GroupID = ACInfo.GroupID[center_idx];
@@ -505,7 +492,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
     }
     // construct group list
     std::vector<std::vector<int> > group_list(uniq_species.size());
-    for(int center_idx=center_first; center_idx<center_last; center_idx++)
+    for(int center_idx=0; center_idx<centers.size(); center_idx++)
     {
       auto& ACInfo = mybuilder->AtomicCentersInfo;
       const int my_GroupID = ACInfo.GroupID[center_idx];
@@ -538,12 +525,13 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         i_temp*=std::complex<double>(0.0,1.0);
       }
 
-      std::vector<std::vector<aligned_vector<double> > > all_vals(natoms);
+      std::vector<Matrix<double> > all_vals(natoms);
       std::vector<std::vector<aligned_vector<double> > > vals_local(spline_npoints*omp_get_max_threads());
       VectorSoaContainer<double,3> myRSoA(natoms);
       for(size_t idx=0; idx<natoms; idx++)
       {
-        all_vals[idx].resize(spline_npoints);
+        all_vals[idx].resize(spline_npoints, lm_tot*2);
+        all_vals[idx]=0.0;
         myRSoA(idx)=centers[mygroup[idx]].pos;
       }
 
@@ -617,8 +605,8 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
               for(size_t lm=0; lm<lm_tot; lm++)
                 j_lm_G[lm]*=YlmG[ig_local][lm];
 
-              const double cG_r=cG[ig].real();
-              const double cG_i=cG[ig].imag();
+              const double cG_r=cG[ig+gvec_first].real();
+              const double cG_i=cG[ig+gvec_first].imag();
               if(policy==1)
               {
                 for(size_t lm=0; lm<lm_tot; lm++)
@@ -665,8 +653,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         for(int ip=0; ip<spline_npoints; ip++)
           for(size_t idx=0; idx<natoms; idx++)
           {
-            auto &vals = all_vals[idx][ip];
-            vals.resize(lm_tot*2, 0.0);
+            double *vals = all_vals[idx][ip];
             for(size_t tid=0; tid<nt; tid++)
               for(size_t lm=0; lm<lm_tot; lm++)
               {
@@ -692,6 +679,10 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       //app_log() << "Building band " << iorb << " at center " << center_idx << std::endl;
 
       for(size_t idx=0; idx<natoms; idx++)
+      {
+        // reduce all_vals
+        band_group_comm.reduce_in_place(all_vals[idx].data(),all_vals[idx].size());
+        if(!band_group_comm.isGroupLeader()) continue;
         #pragma omp parallel for
         for(int lm=0; lm<lm_tot; lm++)
         {
@@ -720,6 +711,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
             einspline::destroy(atomic_spline_i);
           }
         }
+      }
 
 #ifdef PRINT_RADIAL
       char fname[64];
@@ -746,7 +738,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         fprintf(fout_spline_l, "%15.10lf  ", r);
         for(int lm=0; lm<lm_tot; lm++)
         {
-          fprintf(fout_pw, "%15.10lf  %15.10lf  ", all_vals[ip][lm].real(), all_vals[ip][lm].imag());
+          fprintf(fout_pw, "%15.10lf  %15.10lf  ", all_vals[center_idx][ip][lm].real(), all_vals[center_idx][ip][lm].imag());
           fprintf(fout_spline_v, "%15.10lf  %15.10lf  ", mycenter.localV[lm*mycenter.Npad+iorb*2], mycenter.localV[lm*mycenter.Npad+iorb*2+1]);
           fprintf(fout_spline_g, "%15.10lf  %15.10lf  ", mycenter.localG[lm*mycenter.Npad+iorb*2], mycenter.localG[lm*mycenter.Npad+iorb*2+1]);
           fprintf(fout_spline_l, "%15.10lf  %15.10lf  ", mycenter.localL[lm*mycenter.Npad+iorb*2], mycenter.localL[lm*mycenter.Npad+iorb*2+1]);
@@ -761,79 +753,7 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       fclose(fout_spline_g);
       fclose(fout_spline_l);
 #endif
-
-#ifdef REPORT_MISMATCH
-      const int total_grid_size=mismatch_energy_AO_to_PW[center_idx].size();
-      Quadrature3D<double> quad(7);
-      #pragma omp parallel for
-      for(int ip=0; ip<total_grid_size; ip++)
-      {
-        double r=delta*static_cast<double>(ip+1);
-        double AO_to_PW(0.0);
-        int quad_counter=0;
-        // sum up quadratures
-        for(int j=0; j<quad.nk; j++)
-        {
-          typedef TinyVector<DataType,3> PosType;
-          PosType pos_quad=quad.xyz_m[j]*r+mycenter.pos;
-          double PW_ene, AO_ene, PW_norm2, AO_norm2;
-
-          // Evaluate PW.
-          std::complex<double> PW_psi, PW_d2psi;
-          Gvecs.evaluate_psi_r(cG, pos_quad, PW_psi, PW_d2psi);
-          PW_psi*=std::complex<double>(rotate_phase_r, rotate_phase_i);
-          PW_d2psi*=std::complex<double>(rotate_phase_r, rotate_phase_i);
-          if(bspline->is_complex)
-          {
-            PW_ene  =PW_psi.real()*PW_d2psi.real()+PW_psi.imag()*PW_d2psi.imag();
-            PW_norm2=PW_psi.real()*  PW_psi.real()+PW_psi.imag()*  PW_psi.imag();
-          }
-          else
-          {
-            PW_ene  =PW_psi.real()*PW_d2psi.real();
-            PW_norm2=PW_psi.real()*  PW_psi.real();
-          }
-
-          // Evaluate AO. This is a lazy implementation.
-          // The evaluation goes over all the bands althought the results of only one band is used.
-          auto& myV=bspline->myV;
-          auto& myG=bspline->myG;
-          auto& myL=bspline->myL;
-          #pragma omp critical
-          mycenter.evaluate_vgl(r, quad.xyz_m[j]*r, myV, myG, myL);
-          if(bspline->is_complex)
-          {
-            AO_ene  =myV[iorb*2]*myL[iorb*2]+myV[iorb*2+1]*myL[iorb*2+1];
-            AO_norm2=myV[iorb*2]*myV[iorb*2]+myV[iorb*2+1]*myV[iorb*2+1];
-          }
-          else
-          {
-            AO_ene  =myV[iorb]*myL[iorb];
-            AO_norm2=myV[iorb]*myV[iorb];
-          }
-
-          //collect mismatch energy
-          if(AO_norm2>std::numeric_limits<float>::epsilon() && PW_norm2>std::numeric_limits<float>::epsilon())
-          {
-            quad_counter++;
-            AO_to_PW+=std::fabs(AO_ene-PW_ene)/2.0;
-          }
-
-          //std::cout << "debug PW KE " << PW_ene << std::endl;
-          //std::cout << "debug AO KE " << AO_ene << std::endl;
-        }
-        //std::cout << "debug iorb=" << iorb << " center=" << center_idx << " ip=" << ip << " r=" << r << " mismatch_energy_AO_to_PW=" << AO_to_PW/(quad_counter>0?quad_counter:1) << std::endl;
-        mismatch_energy_AO_to_PW[center_idx][ip]+=AO_to_PW/(quad_counter>0?quad_counter:1);
-      }
-#endif
     }
-    // collect atomic orbitals from all the centers
-    bspline->reduce_atomic_tables(center_group_comm.GroupLeaderComm);
-#ifdef REPORT_MISMATCH
-    // collect mismatch_energy
-    for(int center_idx=0; center_idx<Ncenters; center_idx++)
-      mpi::reduce(*center_group_comm.GroupLeaderComm,mismatch_energy_AO_to_PW[center_idx]);
-#endif
   }
 
 
@@ -880,73 +800,11 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       now.restart();
       bspline->gather_tables(band_group_comm.GroupLeaderComm);
       app_log() << "  Time to gather the table = " << now.elapsed() << std::endl;
-#ifdef REPORT_MISMATCH
-      // collect mismatch_energy
-      for(int center_idx=0; center_idx<bspline->AtomicCenters.size(); center_idx++)
-        mpi::reduce(*band_group_comm.GroupLeaderComm,mismatch_energy_AO_to_PW[center_idx]);
-#endif
     }
     now.restart();
     bspline->bcast_tables(myComm);
     app_log() << "  Time to bcast the table = " << now.elapsed() << std::endl;
-
-#ifdef REPORT_MISMATCH
-    if(!myComm->rank()) print_mismatch_scan(spin);
-#endif
   }
-
-
-#ifdef REPORT_MISMATCH
-  /** print the mismatch energy between plane waves and AO */
-  void print_mismatch_scan(const int spin)
-  {
-    const auto& mySpecies=mybuilder->SourcePtcl->mySpecies;
-    int Nspecies=mySpecies.size();
-    std::vector<int> atom_counter(Nspecies,0),lmax_per_species(Nspecies,0.0);
-    std::vector<double> delta_per_species(Nspecies,0.0);
-    std::vector<std::vector<double> > mismatch_ene_species_AO_to_PW(Nspecies);
-    const auto& AtomicCenters=bspline->AtomicCenters;
-    // set proper size
-    for(int center_idx=0; center_idx<AtomicCenters.size(); center_idx++)
-    {
-      const int my_GroupID = mybuilder->AtomicCentersInfo.GroupID[center_idx];
-      if(mismatch_energy_AO_to_PW[center_idx].size()>mismatch_ene_species_AO_to_PW[my_GroupID].size())
-      {
-        mismatch_ene_species_AO_to_PW[my_GroupID].resize(mismatch_energy_AO_to_PW[center_idx].size(),0.0);
-        delta_per_species[my_GroupID]=AtomicCenters[center_idx].spline_radius/static_cast<double>(AtomicCenters[center_idx].spline_npoints-1);
-        lmax_per_species[my_GroupID]=AtomicCenters[center_idx].lmax;
-      }
-    }
-    // average per species
-    for(int center_idx=0; center_idx<AtomicCenters.size(); center_idx++)
-    {
-      //app_log() << " Yedebug center=" << center_idx << std::endl;
-      //for(int j=0; j<mismatch_energy_AO_to_PW[center_idx].size(); j++)
-      //  app_log() << " ip=" << j << " dis=" << (j+1)*AtomicCenters[center_idx].spline_radius/static_cast<double>(AtomicCenters[center_idx].spline_npoints-1)
-      //            << " mismatch=" << mismatch_energy_AO_to_PW[center_idx][j] << std::endl;
-      const int my_GroupID = mybuilder->AtomicCentersInfo.GroupID[center_idx];
-      for(int ip=0; ip<mismatch_energy_AO_to_PW[center_idx].size(); ip++)
-        mismatch_ene_species_AO_to_PW[my_GroupID][ip]+=mismatch_energy_AO_to_PW[center_idx][ip];
-      atom_counter[my_GroupID]++;
-    }
-    // print per species
-    for(int ispecies=0; ispecies<Nspecies; ispecies++)
-    {
-      std::ostringstream filename;
-      filename << "AO_to_PW.spin_" << spin << ".tw" << mybuilder->TwistNum << "." << mySpecies.speciesName[ispecies]
-               << ".lmax" << lmax_per_species[ispecies] << ".dat";
-      std::ofstream outfile(filename.str().c_str());
-      outfile << "# ip r abs(Ediff)" << std::endl;
-      for(int ip=0; ip<mismatch_ene_species_AO_to_PW[ispecies].size(); ip++)
-        outfile << ip << "  " << std::fixed << std::setprecision(4) << (ip+1)*delta_per_species[ispecies] << "  "
-                << std::setprecision(9)
-                << mismatch_ene_species_AO_to_PW[ispecies][ip]/(atom_counter[ispecies]>0?atom_counter[ispecies]:1)
-                << std::endl;
-      outfile.close();
-    }
-  }
-#endif
-
 
   void initialize_spline_psi_r(int spin, const BandInfoGroup& bandgroup)
   {
