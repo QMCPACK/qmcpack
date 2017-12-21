@@ -400,8 +400,8 @@ void LRTwoBodyJastrow::acceptMove(ParticleSet& P, int iat)
   d2U += offd2U;
 }
 
-LRTwoBodyJastrow::RealType
-LRTwoBodyJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf)
+void
+LRTwoBodyJastrow::registerData(ParticleSet& P, WFBufferType& buf)
 {
   LogValue=evaluateLog(P,P.G,P.L);
 #if defined(USE_REAL_STRUCT_FACTOR)
@@ -432,11 +432,10 @@ LRTwoBodyJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf)
   buf.add(U.first_address(), U.last_address());
   buf.add(d2U.first_address(), d2U.last_address());
   buf.add(FirstAddressOfdU,LastAddressOfdU);
-  return LogValue;
 }
 
 LRTwoBodyJastrow::RealType
-LRTwoBodyJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+LRTwoBodyJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf,
                                bool fromscratch)
 {
   LogValue=evaluateLog(P,P.G,P.L);
@@ -459,7 +458,7 @@ LRTwoBodyJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
   return LogValue;
 }
 
-void LRTwoBodyJastrow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void LRTwoBodyJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
 #if defined(USE_REAL_STRUCT_FACTOR)
   buf.get(Rhok_r.first_address(), Rhok_r.last_address());
