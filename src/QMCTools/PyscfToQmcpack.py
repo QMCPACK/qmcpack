@@ -93,7 +93,9 @@ def savetoqmcpack(cell,mf,Title):
     atmname=str(uniq_atoms[x][0])
     groupSpecies=groupAtom.create_group("species_"+str(x))
     groupSpecies.create_dataset("atomic_number",(1,),dtype="i4",data=uniq_atoms[x][1])
-    groupSpecies.create_dataset("name",(1,),dtype=dt,data=atmname)
+    mylen="S"+str(len(atmname))
+    AtmName=groupSpecies.create_dataset("name",(1,),dtype=mylen)
+    AtmName[0:]=atmname
     groupSpecies.create_dataset("charge",(1,),dtype="f8",data=uniq_atoms[x][2])
     groupSpecies.create_dataset("core",(1,),dtype="f8",data=uniq_atoms[x][3])
   SpeciesID=groupAtom.create_dataset("species_ids",(natom,),dtype="i4")
@@ -108,7 +110,6 @@ def savetoqmcpack(cell,mf,Title):
   #print 'Total number of contracted GTO', cell.nao_cart()
   #print 'Total number of NR', cell.nao_nr()
   #print 'offset of every Shell', cell.ao_loc_2c()
-  #print 'aoslice by atom',cell.aoslice_by_atom()
   #print 'aoslice NR by atom',cell.aoslice_nr_by_atom()
   #print 'Nb of Shells per atom: 1',cell.atom_nshells(0)
   #print 'Nb of Shells per atom: 2',cell.atom_nshells(1)
@@ -142,10 +143,10 @@ def savetoqmcpack(cell,mf,Title):
 
   
 
-  print 'Spin=',Spin
-  print 'Total Nb of Electrons=',cell.nelec[0]+cell.nelec[1]
-  print 'Total Nb of Electrons Alpha=',cell.nelec[0]
-  print 'Total Nb of Electrons Beta=',cell.nelec[1]
+#  print 'Spin=',Spin
+#  print 'Total Nb of Electrons=',cell.nelec[0]+cell.nelec[1]
+#  print 'Total Nb of Electrons Alpha=',cell.nelec[0]
+#  print 'Total Nb of Electrons Beta=',cell.nelec[1]
 
 
 
@@ -156,14 +157,16 @@ def savetoqmcpack(cell,mf,Title):
   #Dataset Number Of Atoms
   GroupBasisSet.create_dataset("NbElements",(1,),dtype="i4",data=NbSpecies)
 
-  GroupBasisSet.create_dataset("name",(1,),dtype=dt,data="LCAOBset")
+  LCAOName=GroupBasisSet.create_dataset("name",(1,),dtype="S8")
+  LCAOName[0:]="LCAOBset"
 
   #atomicBasisSets Group
   for x in range(NbSpecies):
     atomicBasisSetGroup=GroupBasisSet.create_group("atomicBasisSet"+str(x))
     #Dataset NbBasisGroups
     atomicBasisSetGroup.create_dataset("NbBasisGroups",(1,),dtype="i4",data=cell.atom_nshells(idxAtomstoSpecies[x]))
-    atomicBasisSetGroup.create_dataset("angular",(1,),dtype=dt,data="cartesian")
+    Angular=atomicBasisSetGroup.create_dataset("angular",(1,),dtype="S9")
+    Angular[0:]="cartesian"
     for i in range(cell.atom_nshells(idxAtomstoSpecies[x])):
       BasisGroup=atomicBasisSetGroup.create_group("basisGroup"+str(i))
       BasisGroup.create_dataset("NbRadFunc",(1,),dtype="i4",data=cell.bas_nprim(cell.atom_shell_ids(idxAtomstoSpecies[x])[i]))
@@ -174,15 +177,26 @@ def savetoqmcpack(cell,mf,Title):
          DataRadGrp=RadGroup.create_group("DataRad"+str(j))
          DataRadGrp.create_dataset("contraction",(1,),dtype="f8",data=cell.bas_ctr_coeff(cell.atom_shell_ids(idxAtomstoSpecies[x])[i])[j])
          DataRadGrp.create_dataset("exponent",(1,),dtype="f8",data=cell.bas_exp(cell.atom_shell_ids(idxAtomstoSpecies[x])[i])[j])
-      BasisGroup.create_dataset("rid",(1,),dtype=dt,data=(uniq_atoms[x][0]+str(i)+str(cell.bas_angular(cell.atom_shell_ids(idxAtomstoSpecies[x])[i]))))
-      BasisGroup.create_dataset("type",(1,),dtype=dt,data="Gaussian")
-    atomicBasisSetGroup.create_dataset("elementType",(1,),dtype=dt,data=uniq_atoms[x][0])
+      mylen="S"+str(len((uniq_atoms[x][0]+str(i)+str(cell.bas_angular(cell.atom_shell_ids(idxAtomstoSpecies[x])[i])))))
+      RID=BasisGroup.create_dataset("rid",(1,),dtype=mylen)
+      RID[0:]=(uniq_atoms[x][0]+str(i)+str(cell.bas_angular(cell.atom_shell_ids(idxAtomstoSpecies[x])[i])))
+      basisType=BasisGroup.create_dataset("type",(1,),dtype="S8")
+      basisType[0:]="Gaussian"
+    mylen="S"+str(len(uniq_atoms[x][0]))
+    elemtype=atomicBasisSetGroup.create_dataset("elementType",(1,),dtype=mylen)
+    elemtype[0:]=uniq_atoms[x][0]
     atomicBasisSetGroup.create_dataset("grid_npts",(1,),dtype="i4",data=1001)
     atomicBasisSetGroup.create_dataset("grid_rf",(1,),dtype="i4",data=100)
-    atomicBasisSetGroup.create_dataset("grid_ri",(1,),dtype="i4",data=1e-06)
-    atomicBasisSetGroup.create_dataset("grid_type",(1,),dtype=dt,data="log")
-    atomicBasisSetGroup.create_dataset("name",(1,),dtype=dt,data="Gaussian-G2")
-    atomicBasisSetGroup.create_dataset("normalized",(1,),dtype=dt,data="no")
+    atomicBasisSetGroup.create_dataset("grid_ri",(1,),dtype="f8",data=1e-06)
+    #atomicBasisSetGroup.create_dataset("grid_type",(1,),dtype=dt,data="log")
+    gridType=atomicBasisSetGroup.create_dataset("grid_type",(1,),dtype="S3")
+    gridType[0:]="log"
+     
+    mylen="S"+str(len(cell.basis))
+    nameBase=atomicBasisSetGroup.create_dataset("name",(1,),dtype=mylen)
+    nameBase[0:]=cell.basis
+    Normalized=atomicBasisSetGroup.create_dataset("normalized",(1,),dtype="S2")
+    Normalized[0:]="no"
  
     
 
