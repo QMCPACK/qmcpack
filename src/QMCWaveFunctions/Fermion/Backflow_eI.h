@@ -184,7 +184,7 @@ public:
     BIJ_temp=0.0;
   }
 
-  void registerData(PooledData<RealType>& buf)
+  void registerData(WFBufferType& buf)
   {
     FirstOfU = &(UIJ(0,0)[0]);
     LastOfU = FirstOfU + OHMMS_DIM*NumTargets*NumCenters;
