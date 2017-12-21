@@ -515,8 +515,6 @@ void SlaterDetOpt::restore(int iat)
 /// \param[in]      P              the particle set
 /// \param[in]      buf            the buffer to add essential data to
 ///
-/// \return  the log of the determinant value
-///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void SlaterDetOpt::registerData(ParticleSet& P, WFBufferType& buf) {
 
