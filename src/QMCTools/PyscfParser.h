@@ -5,7 +5,7 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by: Anouar Benali, benali@anl.gov, Argonne National Laboratory
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//  
 //
 // File created by: Anouar Benali, benali@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
