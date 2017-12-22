@@ -102,7 +102,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=0):
 
   #Parameter Group
   GroupParameter=H5_qmcpack.create_group("parameters")
-  GroupParameter.create_dataset("ECP",(1,),dtype="b1",data=bool(cell.has_ecp))
+  GroupParameter.create_dataset("ECP",(1,),dtype="b1",data=bool(cell.has_ecp()))
   bohrUnit=True
   Spin=cell.spin 
 
@@ -142,7 +142,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=0):
       RID=BasisGroup.create_dataset("rid",(1,),dtype=mylen)
       RID[0:]=(uniq_atoms[x][0]+str(i)+str(cell.bas_angular(cell.atom_shell_ids(idxAtomstoSpecies[x])[i])))
       basisType=BasisGroup.create_dataset("type",(1,),dtype="S8")
-      basisType[0:]="Gaussian"
+      basisType[0:]="pyscf"
     mylen="S"+str(len(uniq_atoms[x][0]))
     elemtype=atomicBasisSetGroup.create_dataset("elementType",(1,),dtype=mylen)
     elemtype[0:]=uniq_atoms[x][0]
