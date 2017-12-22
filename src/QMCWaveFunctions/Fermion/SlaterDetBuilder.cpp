@@ -243,14 +243,6 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
     else if (cname == sd_tag)
     {
       multiDet=false;
-      // read in whether to use an optimizable slater determinant
-      std::string optimize("no");
-      {
-        OhmmsAttributeSet a;
-        a.add(optimize, "optimize");
-        a.put(cur);
-      }
-
       if(slaterdet_0)
       {
         APP_ABORT("slaterdet is already instantiated.");
@@ -273,7 +265,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         getNodeName(tname,tcur);
         if (tname == det_tag || tname == rn_tag)
         {
-          if(putDeterminant(tcur, spin_group, optimize == "yes"))
+          if(putDeterminant(tcur, spin_group))
             spin_group++;
         }
         tcur = tcur->next;
@@ -435,7 +427,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
  * - type variantion of a determinant, type="AFM" uses a specialized determinant builder for Anti-Ferromagnetic system
  * Extra attributes to handled the original released-node case
  */
-bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slater_det_opt)
+bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group)
 {
   ReportEngine PRE(ClassName,"putDeterminant(xmlNodePtr,int)");
 
@@ -462,15 +454,21 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
   std::string s_radius("0.0");
   int s_smallnumber(-999999);
   int rntype(0);
-  int delay_rank(0);
   aAttrib.add(s_cutoff,"Cutoff");
   aAttrib.add(s_radius,"Radius");
   aAttrib.add(s_smallnumber,"smallnumber");
   aAttrib.add(s_smallnumber,"eps");
   aAttrib.add(rntype,"primary");
   aAttrib.add(spin_name,"group");
-  aAttrib.add(delay_rank,"delay_rank");
   aAttrib.put(cur);
+
+  // whether to use an optimizable slater determinant
+  std::string optimize("no");
+  int delay_rank(0);
+  OhmmsAttributeSet sdAttrib;
+  sdAttrib.add(delay_rank,"delay_rank");
+  sdAttrib.add(optimize, "optimize");
+  sdAttrib.put(cur->parent);
 
   { //check determinant@group
     int spin_group_in=spin_group;
@@ -584,7 +582,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
       app_log()<<"Using the AFM determinant"<< std::endl;
       adet = new DiracDeterminantAFM(targetPtcl, psi, firstIndex);
     }
-    else if (slater_det_opt)
+    else if (optimize == "yes")
     {
 #ifdef QMC_COMPLEX
       app_error() << "Orbital optimization via rotation doesn't support complex wavefunction yet.\n";

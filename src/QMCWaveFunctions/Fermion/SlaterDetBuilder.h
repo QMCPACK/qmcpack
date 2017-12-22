@@ -74,7 +74,7 @@ private:
    * @param firstIndex index of the determinant
    * @return firstIndex+number of orbitals
    */
-  bool putDeterminant(xmlNodePtr cur, int firstIndex, bool slater_det_opt);
+  bool putDeterminant(xmlNodePtr cur, int firstIndex);
 
   bool createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur);
 
