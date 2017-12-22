@@ -12,7 +12,7 @@
 
 
 
-def savetoqmcpack(cell,mf,Title="Default",kpts=0):
+def savetoqmcpack(cell,mf,title="Default",kpts=0):
   import h5py, re
   from collections import defaultdict
   from pyscf.pbc import gto, scf, df, dft
@@ -35,7 +35,7 @@ def savetoqmcpack(cell,mf,Title="Default",kpts=0):
   IonName=dict([('H',1),  ('He',2),  ('Li',3),('Be',4),  ('B', 5),  ('C', 6),  ('N', 7),('O', 8),  ('F', 9),   ('Ne',10),   ('Na',11),('Mg',12),   ('Al',13),   ('Si',14),   ('P', 15),   ('S', 16),('Cl',17),   ('Ar',18),   ('K', 19),   ('Ca',20),   ('Sc',21),   ('Ti',22),   ('V', 23),   ('Cr',24),   ('Mn',25),   ('Fe',26),   ('Co',27),   ('Ni',28),   ('Cu',29),   ('Zn',30),   ('Ga',31),   ('Ge',32),   ('As',33),   ('Se',34),   ('Br',35),   ('Kr',36),   ('Rb',37),   ('Sr',38),   ('Y', 39),  ('Zr',40),   ('Nb',41),   ('Mo',42),   ('Tc',43),   ('Ru',44),   ('Rh',45),   ('Pd',46),   ('Ag',47),   ('Cd',48),   ('In',49),   ('Sn',50),   ('Sb',51),   ('Te',52),   ('I', 53),   ('Xe',54),   ('Cs',55),   ('Ba',56),   ('La',57),   ('Ce',58), ('Pr',59),   ('Nd',60),   ('Pm',61),   ('Sm',62),   ('Eu',63),   ('Gd',64),   ('Tb',65),   ('Dy',66),   ('Ho',67),  ('Er',68),   ('Tm',69),   ('Yb',70),   ('Lu',71),   ('Hf',72),   ('Ta',73),   ('W', 74),   ('Re',75),   ('Os',76),   ('Ir',77),   ('Pt',78),   ('Au',79),   ('Hg',80), ('Tl',81),   ('Pb',82),  ('Bi',83),   ('Po',84),   ('At',85),   ('Rn',86),   ('Fr',87),   ('Ra',88),   ('Ac',89),   ('Th',90),   ('Pa',91),   ('U', 92),   ('Np',93)]) 
 
 
-  H5_qmcpack=h5py.File(Title+'.h5','w')
+  H5_qmcpack=h5py.File(title+'.h5','w')
   groupApp=H5_qmcpack.create_group("application")
   CodeData  = groupApp.create_dataset("code",(1,),dtype="S5")
   CodeData[0:] = "PySCF"
@@ -223,7 +223,7 @@ def savetoqmcpack(cell,mf,Title="Default",kpts=0):
   
 
   print 'Wavefunction successfuly saved to QMCPACK HDF5 Format'
-  print 'Use: "convert4qmc -Pyscf  {}.h5" to generate QMCPACK input files'.format(Title)
+  print 'Use: "convert4qmc -Pyscf  {}.h5" to generate QMCPACK input files'.format(title)
   # Close the file before exiting
   H5_qmcpack.close()
       
