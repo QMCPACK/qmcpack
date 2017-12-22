@@ -276,10 +276,10 @@ public:
       Dets[id]->recompute(W, firstTime);
   }
 
-  void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool)
+  void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool, int kblocksize=1)
   {
     for (int id=0; id<Dets.size(); id++)
-      Dets[id]->reserve(pool);
+      Dets[id]->reserve(pool,kblocksize);
   }
 
   void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi)
@@ -296,6 +296,16 @@ public:
   }
 
   void
+  det_lookahead (MCWalkerConfiguration &W,
+                 std::vector<ValueType> &psi_ratios,
+                 std::vector<GradType>  &grad,
+                 std::vector<ValueType> &lapl,
+                 int iat, int k, int kd, int nw)
+  {
+    Dets[getDetID(iat)]->det_lookahead(W, psi_ratios, grad, lapl, iat, k, kd, nw);
+  }
+
+  void
   calcRatio (MCWalkerConfiguration &W, int iat
              , std::vector<ValueType> &psi_ratios,std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
   {
@@ -303,10 +313,10 @@ public:
   }
 
   void
-  addRatio (MCWalkerConfiguration &W, int iat
+  addRatio (MCWalkerConfiguration &W, int iat, int k
             , std::vector<ValueType> &psi_ratios,std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
   {
-    Dets[getDetID(iat)]->addRatio(W, iat, psi_ratios, grad, lapl);
+    Dets[getDetID(iat)]->addRatio(W, iat, k, psi_ratios, grad, lapl);
   }
 
 
@@ -314,9 +324,9 @@ public:
               std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
               std::vector<GradType>  &grad, std::vector<ValueType> &lapl);
 
-  void calcGradient(MCWalkerConfiguration &W, int iat, std::vector<GradType> &grad)
+  void calcGradient(MCWalkerConfiguration &W, int iat, int k, std::vector<GradType> &grad)
   {
-    Dets[getDetID(iat)]->calcGradient(W, iat, grad);
+    Dets[getDetID(iat)]->calcGradient(W, iat, k, grad);
   }
 
   void addGradient(MCWalkerConfiguration &W, int iat, std::vector<GradType> &grad)
@@ -324,9 +334,9 @@ public:
     Dets[getDetID(iat)]->addGradient(W, iat, grad);
   }
 
-  void update (std::vector<Walker_t*> &walkers, int iat)
+  void update (MCWalkerConfiguration *W, std::vector<Walker_t*> &walkers, int iat, std::vector<bool> *acc, int k)
   {
-    Dets[getDetID(iat)]->update(walkers, iat);
+    Dets[getDetID(iat)]->update(W, walkers, iat, acc, k);
   }
 
   void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList);

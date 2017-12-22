@@ -442,7 +442,7 @@ struct OrbitalBase: public QMCTraits
   virtual void recompute(MCWalkerConfiguration &W, bool firstTime)
   { }
 
-  virtual void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool)
+  virtual void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool, int kblocksize=1)
   { }
 
   /** Evaluate the log of the WF for all walkers
@@ -495,6 +495,17 @@ struct OrbitalBase: public QMCTraits
     abort();
   }
 
+  virtual void 
+  det_lookahead (MCWalkerConfiguration &W,
+                 std::vector<ValueType> &psi_ratios,
+                 std::vector<GradType>  &grad,
+                 std::vector<ValueType> &lapl,
+                 int iat, int k, int kd, int nw)
+  {
+    app_error() << "Need specialization of OrbitalBase::det_lookahead.\n";
+    abort();
+  }
+
   virtual void
   calcRatio (MCWalkerConfiguration &W, int iat,
              std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
@@ -506,7 +517,7 @@ struct OrbitalBase: public QMCTraits
   }
 
   virtual void
-  addRatio (MCWalkerConfiguration &W, int iat,
+  addRatio (MCWalkerConfiguration &W, int iat, int k,
             std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
             std::vector<ValueType> &lapl)
   {
@@ -537,7 +548,7 @@ struct OrbitalBase: public QMCTraits
   }
 
   virtual void
-  calcGradient(MCWalkerConfiguration &W, int iat,
+  calcGradient(MCWalkerConfiguration &W, int iat, int k,
                std::vector<GradType> &grad)
   {
     app_error() << "Need specialization of OrbitalBase::calcGradient for "
@@ -558,7 +569,7 @@ struct OrbitalBase: public QMCTraits
 
 
   virtual void
-  update (std::vector<Walker_t*> &walkers, int iat)
+  update (MCWalkerConfiguration *W, std::vector<Walker_t*> &walkers, int iat, std::vector<bool> *acc, int k)
   {
     app_error() << "Need specialization of OrbitalBase::update.\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";

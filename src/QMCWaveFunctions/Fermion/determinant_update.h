@@ -22,8 +22,6 @@ struct updateJob
   int iat;
 };
 
-
-
 void
 update_inverse_cuda(float *A_g[], float *Ainv_g[], float *u_g[],
                     float *Ainv_delta_g[], float *Ainv_colk_g[],
@@ -176,6 +174,47 @@ calc_grad_lapl (std::complex<double> *Ainv_list[], std::complex<double> *grad_la
                 std::complex<double> *out_list[], int N, int row_stride, int num_mats);
 #endif
 
+void
+update_onemove (float *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int accepted, int k, int kdelay, int rowstride, int num);
+
+void
+update_onemove (double *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int accepted, int k, int kdelay, int rowstride, int num);
+
+void
+multi_row_copy (float *dest[], float *src[], int len, int offset, int rows, int stride, int num);
+
+void
+multi_row_copy (double *dest[], double *src[], int len, int offset, int rows, int stride, int num);
+
+void
+calc_lemma_column (float *a[], float *ainv[], float *newrow[], float *lemma[], float *ainvu[], int k, int kd, int kstart, int N, int stride, int num);
+
+void
+calc_lemma_column (double *a[], double *ainv[], double *newrow[], double *lemma[], double *ainvu[], int k, int kd, int kstart, int N, int stride, int num);
+
+void
+copy_update_block (float *lemma_lu[], float *lemma[], float *ainv_work[], float *ainv_kblock[], int k, int kd, int stride, int num);
+
+void
+copy_update_block (double *lemma_lu[], double *lemma[], double *ainv_work[], double *ainv_kblock[], int k, int kd, int stride, int num);
+
+void
+copy_delayed (float *lemma_lu[], float *lemma[], float *ainv_row[], float *ainv_kblock[], int k, int kd, int stride, int num);
+
+void
+copy_delayed (double *lemma_lu[], double *lemma[], double *ainv_row[], double *ainv_kblock[], int k, int kd, int stride, int num);
+
+void
+calc_gradlapl_and_collect (float *lemma_lu[], float *Ainv_row[], float *GL_col[], float ratios[], int k, int kdelay, int N, int rowstride, int num);
+
+void
+calc_gradlapl_and_collect (double *lemma_lu[], double *Ainv_row[], double *GL_col[], double ratios[], int k, int kdelay, int N, int rowstride, int num);
+
+void
+calc_gradient_delayed (float *Ainv_row[], float *GL_col[], float ratios[], int N, int rowstride, int num);
+
+void
+calc_gradient_delayed (double *Ainv_row[], double *GL_col[], double ratios[], int N, int rowstride, int num);
 
 void
 multi_copy (float *dest[], float *src[], int len, int num);

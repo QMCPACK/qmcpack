@@ -1415,6 +1415,7 @@ calc_ratio_grad_lapl (T **Ainv_list, T **new_row_list, T **grad_lapl_list,
   // ratio to make it w.r.t. new position
   if (tid < 4)
     ratio_prod[BS1*(tid+1)] /= ratio_prod[0];
+  // Copy data back for every walker
   if (tid < 5)
     ratio_grad_lapl[5*blockIdx.x+tid] = ratio_prod[tid*BS1];
 }
@@ -2135,8 +2136,330 @@ calc_grad_lapl (std::complex<double> *Ainv_list[], std::complex<double> *grad_la
 }
 #endif
 
-
 #define COPY_BS 256
+
+template<typename T>
+__global__ void
+update_onemove (T **buff,
+                int newrow_off, int row_off,
+                int newgl_off, int gl_off,
+                int ainvu_off, int lemma_off,
+                int accepted, int k, int kdelay, int rowstride)
+{
+  __shared__ T *my_row, *my_gl, *my_newrow, *my_newgl, *my_ainvu, *my_lemma;
+  if (threadIdx.x ==0)
+  {
+    T* ptr    = buff[blockIdx.y];
+    my_row    = ptr + row_off;
+    my_gl     = ptr + gl_off;
+    my_newrow = ptr + newrow_off;
+    my_newgl  = ptr + newgl_off;
+    // these are only needed for rejected moves
+    my_ainvu  = ptr + ainvu_off;
+    my_lemma  = ptr + lemma_off;
+  }
+  __syncthreads();
+  int i = blockIdx.x * COPY_BS + threadIdx.x;
+  int i4 = 4*i;
+  if (i < rowstride)
+  {
+    if (blockIdx.y < accepted) // accepted moves
+    {
+      my_row[i]   = my_newrow[i];
+      my_gl[i4]   = my_newgl[i4];
+      my_gl[i4+1] = my_newgl[i4+1];
+      my_gl[i4+2] = my_newgl[i4+2];
+      my_gl[i4+3] = my_newgl[i4+3];
+    } else // rejected moves
+    {
+      my_newrow[i]   = my_row[i];
+#ifdef AINVU_TRANSPOSE
+      my_ainvu[i*kdelay]    = 0.0;
+#else
+      my_ainvu[i]    = 0.0;
+#endif
+      my_newgl[i4]   = my_gl[i4];
+      my_newgl[i4+1] = my_gl[i4+1];
+      my_newgl[i4+2] = my_gl[i4+2];
+      my_newgl[i4+3] = my_gl[i4+3];
+      if (i < kdelay)
+        my_lemma[i] = 0.0;
+      if (i == k)
+        my_lemma[k] = 1.0;
+    }
+  }
+}
+
+
+void
+update_onemove (float *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int accepted, int k, int kdelay, int rowstride, int num)
+{
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((rowstride+COPY_BS-1)/COPY_BS, num);
+  update_onemove<float><<<dimGrid,dimBlock>>>(buff, newrow_off, row_off, newgl_off, gl_off, ainvu_off, lemma_off, accepted, k, kdelay, rowstride);
+}
+
+
+void
+update_onemove (double *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int accepted, int k, int kdelay, int rowstride, int num)
+{
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((rowstride+COPY_BS-1)/COPY_BS, num);
+  update_onemove<double><<<dimGrid,dimBlock>>>(buff, newrow_off, row_off, newgl_off, gl_off, ainvu_off, lemma_off, accepted, k, kdelay, rowstride);
+}
+
+
+
+template<typename T>
+__global__ void
+multi_row_copy (T **dest, T **src, int len, int offset, int rows, int stride)
+{
+  __shared__ T *mysrc, *mydest;
+  if (threadIdx.x ==0)
+  {
+    mysrc = src[blockIdx.y];
+    mydest = dest[blockIdx.y];
+  }
+  __syncthreads();
+  int i = blockIdx.x * COPY_BS + threadIdx.x;
+  int j = i % rows;
+  int k = i / rows;
+  if (i < len)
+    mydest[i] = mysrc[j + k*stride + offset];
+}
+
+
+void
+multi_row_copy (float *dest[], float *src[], int len, int offset, int rows, int stride, int num)
+{
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
+  multi_row_copy<float><<<dimGrid,dimBlock>>>(dest, src, len, offset, rows, stride);
+}
+
+
+void
+multi_row_copy (double *dest[], double *src[], int len, int offset, int rows, int stride, int num)
+{
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid (len/COPY_BS, num);
+  if (len % COPY_BS)
+    dimGrid.x++;
+  multi_row_copy<double><<<dimGrid,dimBlock>>>(dest, src, len, offset, rows, stride);
+}
+
+template<typename T>
+__global__ void
+calc_lemma_column (T **a, T **ainv, T **newrow, T **lemma, T** ainvu, int k, int kd, int kstart, int N, int stride)
+{
+  __shared__ T *mya_col, *myainv, *mynewrow, *mylemma_col, *myainvu_col;
+  int tid = threadIdx.x;
+  if (tid ==0)
+  {
+    mya_col     = a[blockIdx.y]+k*stride; // (kstart+k)-th column of a (the kstart is in the list definition in calcRatio)
+    myainv      = ainv[blockIdx.y];
+    mynewrow    = newrow[blockIdx.y]+k*stride;
+    mylemma_col = lemma[blockIdx.y]+k*kd;
+    myainvu_col = ainvu[blockIdx.y]+k*stride;
+  }
+  __syncthreads();
+  int i = blockIdx.x * COPY_BS + tid;
+  int ki = kstart + i;
+  T prod = 0.0;
+  if (i < kd)
+  {
+    for (int j=0; j<N; j++) // multiply (kstart+i)-th row of ainv with new column of phi's
+      prod += mynewrow[j] * myainv[ki+j*stride];
+    mylemma_col[i] = prod;
+  }
+  prod = 0.0;
+  if (i < N)
+  {
+    for (int j=0; j<N; j++) // multiply i-th row of ainv with -dU
+      prod += (mya_col[j] - mynewrow[j]) * myainv[i+j*stride];
+    myainvu_col[i] = prod;
+  }
+}
+
+void
+calc_lemma_column (float *a[], float *ainv[], float *newrow[], float *lemma[], float *ainvu[], int k, int kd, int kstart, int N, int stride, int num)
+{
+  int len = stride;
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
+  calc_lemma_column<float><<<dimGrid,dimBlock>>>(a, ainv, newrow, lemma, ainvu, k, kd, kstart, N, stride);
+}
+
+void
+calc_lemma_column (double *a[], double *ainv[], double *newrow[], double *lemma[], double *ainvu[], int k, int kd, int kstart, int N, int stride, int num)
+{
+  int len = stride;
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
+  calc_lemma_column<double><<<dimGrid,dimBlock>>>(a, ainv, newrow, lemma, ainvu, k, kd, kstart, N, stride);
+}
+
+
+template<typename T>
+__global__ void
+copy_delayed (T **lemma_lu, T **lemma, T **ainv_row, T **ainv_kblock, int k, int kd, int stride)
+{
+  __shared__ T *mylemma_lu, *mylemma, *myainv_kblock, *myainv_row;
+  if (threadIdx.x ==0)
+  {
+    mylemma_lu    = lemma_lu[blockIdx.y];
+    mylemma       = lemma[blockIdx.y];
+    myainv_kblock = ainv_kblock[blockIdx.y];
+    myainv_row    = ainv_row[blockIdx.y];
+  }
+  __syncthreads();
+  int i = blockIdx.x * COPY_BS + threadIdx.x;
+  if (i < stride)
+    myainv_row[i] = myainv_kblock[i*stride + k];
+  if (i < (k+1)*kd)
+    mylemma_lu[i] = mylemma[i];
+}
+
+void
+copy_delayed (float *lemma_lu[], float *lemma[], float *ainv_row[], float *ainv_kblock[], int k, int kd, int stride, int num)
+{
+  int len = stride;
+  if ((k+1)*kd > len)
+    len = (k+1)*kd;
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
+  copy_delayed<float><<<dimGrid,dimBlock>>>(lemma_lu, lemma, ainv_row, ainv_kblock, k, kd, stride);
+}
+
+void
+copy_delayed (double *lemma_lu[], double *lemma[], double *ainv_row[], double *ainv_kblock[], int k, int kd, int stride, int num)
+{
+  int len = stride;
+  if ((k+1)*kd > len)
+    len = (k+1)*kd;
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
+  copy_delayed<double><<<dimGrid,dimBlock>>>(lemma_lu, lemma, ainv_row, ainv_kblock, k, kd, stride);
+}
+
+
+template<typename T>
+__global__ void
+copy_update_block (T **lemma_lu, T **lemma, T **ainv_work, T **ainv_kblock, int k1, int kd, int stride)
+{
+  __shared__ T *mylemma_lu, *mylemma, *myainv_kblock, *myainv_work;
+  int tid = threadIdx.x;
+  if (tid==0)
+  {
+    mylemma_lu    = lemma_lu[blockIdx.y];
+    mylemma       = lemma[blockIdx.y];
+    myainv_kblock = ainv_kblock[blockIdx.y];
+    myainv_work   = ainv_work[blockIdx.y];
+  }
+  __syncthreads();
+  int i = blockIdx.x * COPY_BS + tid;
+  int j = i % k1;
+  int k = i / k1;
+  if (i < k1*stride)
+    myainv_work[i] = myainv_kblock[j + k*stride];
+  if (i < k1*kd)
+    mylemma_lu[i] = mylemma[i];
+}
+
+void
+copy_update_block (float *lemma_lu[], float *lemma[], float *ainv_work[], float *ainv_kblock[], int k, int kd, int stride, int num)
+{
+  int len = (k+1)*stride;
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
+  copy_update_block<float><<<dimGrid,dimBlock>>>(lemma_lu, lemma, ainv_work, ainv_kblock, k+1, kd, stride);
+}
+
+void
+copy_update_block (double *lemma_lu[], double *lemma[], double *ainv_work[], double *ainv_kblock[], int k, int kd, int stride, int num)
+{
+  int len = (k+1)*stride;
+  dim3 dimBlock(COPY_BS);
+  dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
+  copy_update_block<double><<<dimGrid,dimBlock>>>(lemma_lu, lemma, ainv_work, ainv_kblock, k+1, kd, stride);
+}
+
+
+template<typename T>
+__global__ void
+calc_gradlapl_and_collect (T** lemma_lu, T **Ainv_row, T **GL_col, T *ratios, int k, int kdelay, int N, int rowstride)
+{
+  __shared__ T *my_row, *my_col;
+  int curr = 5*blockIdx.x;
+  if (threadIdx.x ==0)
+  {
+    my_row       = Ainv_row[blockIdx.x];
+    my_col       = GL_col[blockIdx.x];
+    ratios[curr] = lemma_lu[blockIdx.x][k+k*kdelay];
+  }
+  __syncthreads();
+  T prod = 0.0;
+  if (threadIdx.x<4)
+  {
+    for (int j=0; j<N; j++)
+      prod += my_row[j] * my_col[j + threadIdx.x*rowstride];
+    ratios[curr + threadIdx.x + 1] = prod;
+  }
+}
+
+void
+calc_gradlapl_and_collect (float *lemma_lu[], float *Ainv_row[], float *GL_col[], float ratios[], int k, int kdelay, int N, int rowstride, int num)
+{
+  dim3 dimBlock(4);
+  dim3 dimGrid (num);
+  calc_gradlapl_and_collect<float><<<dimGrid,dimBlock>>>(lemma_lu, Ainv_row, GL_col, ratios, k, kdelay, N, rowstride);
+}
+
+void
+calc_gradlapl_and_collect (double *lemma_lu[], double *Ainv_row[], double *GL_col[], double ratios[], int k, int kdelay, int N, int rowstride, int num)
+{
+  dim3 dimBlock(4);
+  dim3 dimGrid (num);
+  calc_gradlapl_and_collect<double><<<dimGrid,dimBlock>>>(lemma_lu, Ainv_row, GL_col, ratios, k, kdelay, N, rowstride);
+}
+
+
+template<typename T>
+__global__ void
+calc_gradient_delayed (T **Ainv_row, T **GL_col, T *ratios, int N, int rowstride)
+{
+  __shared__ T *my_row, *my_col;
+  if (threadIdx.x ==0)
+  {
+    my_row       = Ainv_row[blockIdx.x];
+    my_col       = GL_col[blockIdx.x];
+  }
+  __syncthreads();
+  T prod = 0.0;
+  if (threadIdx.x<3)
+  {
+    for (int j=0; j<N; j++)
+      prod += my_row[j] * my_col[j + threadIdx.x*rowstride];
+    ratios[3*blockIdx.x + threadIdx.x] = prod;
+  }
+}
+
+void
+calc_gradient_delayed (float *Ainv_row[], float *GL_col[], float ratios[], int N, int rowstride, int num)
+{
+  dim3 dimBlock(3);
+  dim3 dimGrid (num);
+  calc_gradient_delayed<float><<<dimGrid,dimBlock>>>(Ainv_row, GL_col, ratios, N, rowstride);
+}
+
+void
+calc_gradient_delayed (double *Ainv_row[], double *GL_col[], double ratios[], int N, int rowstride, int num)
+{
+  dim3 dimBlock(3);
+  dim3 dimGrid (num);
+  calc_gradient_delayed<double><<<dimGrid,dimBlock>>>(Ainv_row, GL_col, ratios, N, rowstride);
+}
+
 
 template<typename T>
 __global__ void
@@ -2173,7 +2496,6 @@ multi_copy (T **buff, int dest_off, int src_off, int len)
 }
 
 
-
 void
 multi_copy (float *dest[], float *src[], int len, int num)
 {
@@ -2191,7 +2513,6 @@ multi_copy (double *dest[], double *src[], int len, int num)
     dimGrid.x++;
   multi_copy<double><<<dimGrid,dimBlock>>>(dest, src, len);
 }
-
 
 
 #ifdef QMC_COMPLEX

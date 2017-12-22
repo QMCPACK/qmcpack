@@ -555,14 +555,14 @@ void MCWalkerConfiguration::updateLists_GPU()
 {
   int nw = WalkerList.size();
   int NumSpecies = getSpeciesSet().TotalNum;
-  if (Rnew_GPU.size() != nw)
+  if (Rnew_GPU.size() != nw*kblocksize)
   {
-    Rnew_GPU.resize(nw);
+    Rnew_GPU.resize(nw*kblocksize);
     RhokLists_GPU.resize(NumSpecies);
     for (int isp=0; isp<NumSpecies; isp++)
       RhokLists_GPU[isp].resize(nw);
-    Rnew_host.resize(nw);
-    Rnew.resize(nw);
+    Rnew_host.resize(nw*kblocksize);
+    Rnew.resize(nw*kblocksize);
     AcceptList_GPU.resize(nw);
     AcceptList_host.resize(nw);
     RList_GPU.resize(nw);
@@ -574,6 +574,7 @@ void MCWalkerConfiguration::updateLists_GPU()
   hostlist_valueType.resize(nw);
   hostlist_AA.resize(nw);
 
+// TODO: May need to think about R_GPU now potentially being a block... (AT)
   for (int iw=0; iw<nw; iw++)
   {
     if (WalkerList[iw]->R_GPU.size() != R.size())
@@ -654,20 +655,45 @@ void MCWalkerConfiguration::copyWalkerGradToGPU()
 }
 
 void MCWalkerConfiguration::proposeMove_GPU
-(std::vector<PosType> &newPos, int iat)
+(std::vector<PosType> &newPos, int iat, int nat)
 {
-  if (Rnew_host.size() < newPos.size())
-    Rnew_host.resize(newPos.size());
-  for (int i=0; i<newPos.size(); i++)
+  int nw=newPos.size();
+  if (Rnew_host.size() < nw*kblocksize)
+  {
+    Rnew.resize(nw*kblocksize);
+    Rnew_host.resize(nw*kblocksize);
+  }
+  // store things sequentially with k to make evaluation more straight-forward:
+  //           k=0     k=1     k=kblocksize
+  // Rnew = [0,..,nw|0,..,nw|...|0,..,nw]
+  int offset=kcurr*nw;
+  for (int i=0; i<nw; i++)
+  {
     for (int dim=0; dim<OHMMS_DIM; dim++)
-      Rnew_host[i][dim] = newPos[i][dim];
-  Rnew_GPU.asyncCopy(Rnew_host);
-  Rnew = newPos;
+    {
+      Rnew[i+offset][dim] = newPos[i][dim];
+      Rnew_host[i+offset][dim] = newPos[i][dim];
+    }
+  }
+  if(kDelay){
+    kcurr=(kcurr+1)%kblocksize; // loop kcurr around every k blocks
+    kstart=kblock*kblocksize;
+    if(kcurr==0)
+      kblock++; // keep increasing kblock (even beyond available matrix blocks) - the update check takes care of self-consistency
+    // only copy new position matrix when needed (when update is imminent)
+    if(klinear)
+    {
+      Rnew_GPU.asyncCopy(&(Rnew_host[offset]),nw*kblocksize,offset,nw);
+    } else
+      if(kcurr==0 || (kcurr+kblock*kblocksize>=nat/2)) // TODO: Make sure we do *not* divide by two if there is no spin up/down matrix savings
+        Rnew_GPU.asyncCopy(Rnew_host);
+  } else
+    Rnew_GPU.asyncCopy(Rnew_host);
   CurrentParticle = iat;
 }
 
 
-void MCWalkerConfiguration::acceptMove_GPU(std::vector<bool> &toAccept)
+void MCWalkerConfiguration::acceptMove_GPU(std::vector<bool> &toAccept, int k)
 {
   if (AcceptList_host.size() < toAccept.size())
     AcceptList_host.resize(toAccept.size());
@@ -682,13 +708,13 @@ void MCWalkerConfiguration::acceptMove_GPU(std::vector<bool> &toAccept)
 //   app_log() << "RList_GPU.size()       = " << RList_GPU.size() << std::endl;
   if (RList_GPU.size() != WalkerList.size())
     std::cerr << "Error in RList_GPU size.\n";
-  if (Rnew_GPU.size() != WalkerList.size())
+  if (Rnew_GPU.size() != WalkerList.size()*kblocksize)
     std::cerr << "Error in Rnew_GPU size.\n";
   if (AcceptList_GPU.size() != WalkerList.size())
-    std::cerr << "Error in AcceptList_GPU_GPU size.\n";
+    std::cerr << "Error in AcceptList_GPU size.\n";
   accept_move_GPU_cuda
   (RList_GPU.data(), (CUDA_PRECISION*)Rnew_GPU.data(),
-   AcceptList_GPU.data(), CurrentParticle, WalkerList.size());
+   AcceptList_GPU.data(), CurrentParticle++, WalkerList.size(), k);
 }
 
 
@@ -703,6 +729,7 @@ void MCWalkerConfiguration::NLMove_GPU(std::vector<Walker_t*> &walkers,
     NLlist_GPU.resize(N);
     NLlist_host.resize(N);
   }
+// TODO: In case delayed updates are including DMC, need to work here (AT)
   if (Rnew_GPU.size() < N)
   {
     Rnew_host.resize(N);

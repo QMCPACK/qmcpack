@@ -402,10 +402,18 @@ public:
                  gpu::device_vector<CudaRealType*> &phi);
   void evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
                  gpu::device_vector<CudaComplexType*> &phi);
+  inline
   void evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
                  gpu::device_vector<CudaRealType*> &phi,
                  gpu::device_vector<CudaRealType*> &grad_lapl,
-                 int row_stride);
+                 int row_stride)
+  {
+    evaluate(walkers,newpos,phi,grad_lapl,row_stride,0,false);
+  }
+  void evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
+                 gpu::device_vector<CudaRealType*> &phi,
+                 gpu::device_vector<CudaRealType*> &grad_lapl,
+                 int row_stride, int k, bool klinear);
   void evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
                  gpu::device_vector<CudaComplexType*> &phi,
                  gpu::device_vector<CudaComplexType*> &grad_lapl,

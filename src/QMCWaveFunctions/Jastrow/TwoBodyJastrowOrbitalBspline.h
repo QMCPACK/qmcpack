@@ -32,6 +32,7 @@ class TwoBodyJastrowOrbitalBspline :
 {
 private:
   bool UsePBC;
+  int kcurr=0;
   typedef CUDA_PRECISION CudaReal;
   //typedef double CudaReal;
 
@@ -69,7 +70,7 @@ public:
   void recompute(MCWalkerConfiguration &W, bool firstTime);
   void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool);
   void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi);
-  void update (std::vector<Walker_t*> &walkers, int iat);
+  void update (MCWalkerConfiguration *W, std::vector<Walker_t*> &walkers, int iat, std::vector<bool> *acc, int k);
   void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList)
   {
     /* This function doesn't really need to return the ratio */
@@ -82,7 +83,7 @@ public:
   void calcRatio (MCWalkerConfiguration &W, int iat,
                   std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
                   std::vector<ValueType> &lapl);
-  void addRatio (MCWalkerConfiguration &W, int iat,
+  void addRatio (MCWalkerConfiguration &W, int iat, int k,
                  std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
                  std::vector<ValueType> &lapl);
   void ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
@@ -92,7 +93,23 @@ public:
     /* This function doesn't really need to return the ratio */
   }
 
-  void calcGradient(MCWalkerConfiguration &W, int iat,
+  void det_lookahead (MCWalkerConfiguration &W,
+                      std::vector<ValueType> &psi_ratios,
+                      std::vector<GradType>  &grad,
+                      std::vector<ValueType> &lapl,
+                      int iat, int k, int kd, int nw)
+  {
+    /* The two-body jastrow depends on the accepted positions of other electrons,
+       hence needs to be calculated every time here */
+    if (k>0 && !W.getklinear())
+    {
+      kcurr=k;
+      ratio (W, iat+k, psi_ratios, grad, lapl);
+      kcurr=0;
+    }
+  }
+
+  void calcGradient(MCWalkerConfiguration &W, int iat, int k,
                     std::vector<GradType> &grad);
   void addGradient(MCWalkerConfiguration &W, int iat,
                    std::vector<GradType> &grad);

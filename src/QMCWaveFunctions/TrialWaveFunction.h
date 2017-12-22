@@ -412,11 +412,13 @@ public:
   void recompute (MCWalkerConfiguration &W, bool firstTime=true);
 
   void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool,
-                bool onlyOptimizable=false);
+                bool onlyOptimizable=false, int kblocksize=1);
   void getGradient (MCWalkerConfiguration &W, int iat,
                     std::vector<GradType> &grad);
-  void calcGradient (MCWalkerConfiguration &W, int iat,
+  void calcGradient (MCWalkerConfiguration &W, int iat, int k,
                      std::vector<GradType> &grad);
+  void calcGradient (MCWalkerConfiguration &W, int iat,
+                     std::vector<GradType> &grad) { calcGradient (W, iat, 0, grad); }
   void addGradient (MCWalkerConfiguration &W, int iat,
                     std::vector<GradType> &grad);
   void evaluateLog (MCWalkerConfiguration &W,
@@ -434,10 +436,21 @@ public:
                   std::vector<ValueType> &psi_ratios,
                   std::vector<GradType> &newG,
                   std::vector<ValueType> &newL);
-  void addRatio (MCWalkerConfiguration &W, int iat,
+  void addRatio (MCWalkerConfiguration &W, int iat, int k,
                  std::vector<ValueType> &psi_ratios,
                  std::vector<GradType> &newG,
                  std::vector<ValueType> &newL);
+  void addRatio (MCWalkerConfiguration &W, int iat,
+                 std::vector<ValueType> &psi_ratios,
+                 std::vector<GradType> &newG,
+                 std::vector<ValueType> &newL)
+  { addRatio (W, iat, 0, psi_ratios, newG, newL); }
+  void det_lookahead (MCWalkerConfiguration &W,
+                      std::vector<ValueType> &psi_ratios,
+                      std::vector<GradType>  &grad,
+                      std::vector<ValueType> &lapl,
+                      int iat, int k, int kd, int nw);
+
 #ifdef QMC_COMPLEX
   void convertRatiosFromComplexToReal (std::vector<ValueType> &psi_ratios,
                                        std::vector<RealType> &psi_ratios_real);
@@ -459,7 +472,8 @@ public:
   void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
                  std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
 
-  void update (std::vector<Walker_t*> &walkers, int iat);
+  void update (MCWalkerConfiguration *W, std::vector<Walker_t*> &walkers, int iat, std::vector<bool> *acc, int k);
+  void update (std::vector<Walker_t*> &walkers, int iat){ update(NULL,walkers,iat,NULL,0); }
   void update (const std::vector<Walker_t*> &walkers,
                const std::vector<int> &iatList);
 

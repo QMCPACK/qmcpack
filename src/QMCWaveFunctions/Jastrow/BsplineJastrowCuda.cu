@@ -250,7 +250,7 @@ two_body_sum (double *R[], int e1_first, int e1_last, int e2_first, int e2_last,
 template<typename T, int BS>
 __global__ void
 two_body_ratio_kernel(T **R, int first, int last,
-                      T *Rnew, int inew,
+                      T *Rnew, int inew, int offset,
                       T *spline_coefs, int numCoefs, T rMax, T* sum)
 {
   T dr = rMax/(T)(numCoefs-3);
@@ -266,7 +266,7 @@ two_body_ratio_kernel(T **R, int first, int last,
   __syncthreads();
   if (tid < 3 )
   {
-    myRnew[tid] = Rnew[3*blockIdx.x+tid];
+    myRnew[tid] = Rnew[3*(blockIdx.x+offset)+tid];
     myRold[tid] = myR[3*inew+tid];
   }
   __syncthreads();
@@ -324,7 +324,7 @@ two_body_ratio_kernel(T **R, int first, int last,
 
 void
 two_body_ratio (float *R[], int first, int last,
-                float Rnew[], int inew,
+                float Rnew[], int inew, int offset,
                 float spline_coefs[], int numCoefs, float rMax,
                 float sum[], int numWalkers)
 {
@@ -334,14 +334,14 @@ two_body_ratio (float *R[], int first, int last,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
   two_body_ratio_kernel<float,BS><<<dimGrid,dimBlock>>>
-  (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax, sum);
+  (R, first, last, Rnew, inew, offset, spline_coefs, numCoefs, rMax, sum);
 }
 
 
 
 void
 two_body_ratio (double *R[], int first, int last,
-                double Rnew[], int inew,
+                double Rnew[], int inew, int offset,
                 double spline_coefs[], int numCoefs, double rMax,
                 double sum[], int numWalkers)
 {
@@ -350,7 +350,7 @@ two_body_ratio (double *R[], int first, int last,
   dim3 dimBlock(128);
   dim3 dimGrid(numWalkers);
   two_body_ratio_kernel<double,128><<<dimGrid,dimBlock>>>
-  (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax, sum);
+  (R, first, last, Rnew, inew, offset, spline_coefs, numCoefs, rMax, sum);
 }
 
 
@@ -358,7 +358,7 @@ two_body_ratio (double *R[], int first, int last,
 template<typename T, int BS>
 __global__ void
 two_body_ratio_grad_kernel(T **R, int first, int last,
-                           T *Rnew, int inew,
+                           T *Rnew, int inew, int offset,
                            T *spline_coefs, int numCoefs, T rMax,
                            bool zero, T *ratio_grad)
 {
@@ -375,7 +375,7 @@ two_body_ratio_grad_kernel(T **R, int first, int last,
   __syncthreads();
   if (tid < 3 )
   {
-    myRnew[tid] = Rnew[3*blockIdx.x+tid];
+    myRnew[tid] = Rnew[3*(blockIdx.x+offset)+tid];
     myRold[tid] = myR[3*inew+tid];
   }
   __syncthreads();
@@ -467,7 +467,7 @@ two_body_ratio_grad_kernel(T **R, int first, int last,
 
 void
 two_body_ratio_grad(float *R[], int first, int last,
-                    float  Rnew[], int inew,
+                    float  Rnew[], int inew, int offset,
                     float spline_coefs[], int numCoefs, float rMax,
                     bool zero, float ratio_grad[], int numWalkers)
 {
@@ -477,14 +477,14 @@ two_body_ratio_grad(float *R[], int first, int last,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
   two_body_ratio_grad_kernel<float,BS><<<dimGrid,dimBlock>>>
-  (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
+  (R, first, last, Rnew, inew, offset, spline_coefs, numCoefs, rMax,
    zero, ratio_grad);
 }
 
 
 void
 two_body_ratio_grad(double *R[], int first, int last,
-                    double  Rnew[], int inew,
+                    double  Rnew[], int inew, int offset,
                     double spline_coefs[], int numCoefs, double rMax,
                     bool zero, double ratio_grad[], int numWalkers)
 {
@@ -494,7 +494,7 @@ two_body_ratio_grad(double *R[], int first, int last,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
   two_body_ratio_grad_kernel<double,BS><<<dimGrid,dimBlock>>>
-  (R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
+  (R, first, last, Rnew, inew, offset, spline_coefs, numCoefs, rMax,
    zero, ratio_grad);
 }
 
@@ -1250,7 +1250,7 @@ template<typename T, int BS>
 __global__ void
 one_body_ratio_kernel(T *C, T **R, int cfirst, int clast,
                       T *Rnew, int inew,
-                      T *spline_coefs, int numCoefs, T rMax,
+                      T *spline_coefs, int numCoefs, int nw, T rMax,
                       T *sum)
 {
   T dr = rMax/(T)(numCoefs-3);
@@ -1262,12 +1262,12 @@ one_body_ratio_kernel(T *C, T **R, int cfirst, int clast,
   __shared__ T *myR;
   __shared__ T myRnew[3], myRold[3];
   if (tid == 0)
-    myR = R[blockIdx.x];
+    myR = R[blockIdx.x%nw];
   __syncthreads();
   if (tid < 3 )
   {
     myRnew[tid] = Rnew[3*blockIdx.x+tid];
-    myRold[tid] = myR[3*inew+tid];
+    myRold[tid] = myR[3*(inew+blockIdx.x/nw)+tid];
   }
   __syncthreads();
   __shared__ T coefs[MAX_COEFS];
@@ -1324,7 +1324,7 @@ one_body_ratio_kernel(T *C, T **R, int cfirst, int clast,
 void
 one_body_ratio (float C[], float *R[], int first, int last,
                 float Rnew[], int inew,
-                float spline_coefs[], int numCoefs, float rMax,
+                float spline_coefs[], int numCoefs, int nw, float rMax,
                 float sum[], int numWalkers)
 {
   if (!AisInitialized)
@@ -1333,7 +1333,7 @@ one_body_ratio (float C[], float *R[], int first, int last,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
   one_body_ratio_kernel<float,BS><<<dimGrid,dimBlock>>>
-  (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax, sum);
+  (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, nw, rMax, sum);
 }
 
 
@@ -1341,7 +1341,7 @@ one_body_ratio (float C[], float *R[], int first, int last,
 void
 one_body_ratio (double C[], double *R[], int first, int last,
                 double Rnew[], int inew,
-                double spline_coefs[], int numCoefs, double rMax,
+                double spline_coefs[], int numCoefs, int nw, double rMax,
                 double sum[], int numWalkers)
 {
   if (!AisInitialized)
@@ -1349,7 +1349,7 @@ one_body_ratio (double C[], double *R[], int first, int last,
   dim3 dimBlock(128);
   dim3 dimGrid(numWalkers);
   one_body_ratio_kernel<double,128><<<dimGrid,dimBlock>>>
-  (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax, sum);
+  (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, nw, rMax, sum);
 }
 
 
@@ -1357,7 +1357,7 @@ template<typename T, int BS>
 __global__ void
 one_body_ratio_grad_kernel(T *C, T **R, int cfirst, int clast,
                            T *Rnew, int inew,
-                           T *spline_coefs, int numCoefs, T rMax,
+                           T *spline_coefs, int numCoefs, int nw, T rMax,
                            bool zero, T *ratio_grad)
 {
   T dr = rMax/(T)(numCoefs-3);
@@ -1369,12 +1369,12 @@ one_body_ratio_grad_kernel(T *C, T **R, int cfirst, int clast,
   __shared__ T *myR;
   __shared__ T myRnew[3], myRold[3];
   if (tid == 0)
-    myR = R[blockIdx.x];
+    myR = R[blockIdx.x%nw];
   __syncthreads();
   if (tid < 3 )
   {
     myRnew[tid] = Rnew[3*blockIdx.x+tid];
-    myRold[tid] = myR[3*inew+tid];
+    myRold[tid] = myR[3*(inew+blockIdx.x/nw)+tid];
   }
   __syncthreads();
   __shared__ T coefs[MAX_COEFS];
@@ -1466,7 +1466,7 @@ one_body_ratio_grad_kernel(T *C, T **R, int cfirst, int clast,
 void
 one_body_ratio_grad (float C[], float *R[], int first, int last,
                      float Rnew[], int inew,
-                     float spline_coefs[], int numCoefs, float rMax,
+                     float spline_coefs[], int numCoefs, int nw, float rMax,
                      bool zero, float ratio_grad[], int numWalkers)
 {
   if (!AisInitialized)
@@ -1475,7 +1475,7 @@ one_body_ratio_grad (float C[], float *R[], int first, int last,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
   one_body_ratio_grad_kernel<float,BS><<<dimGrid,dimBlock>>>
-  (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
+  (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, nw, rMax,
    zero, ratio_grad);
 }
 
@@ -1483,7 +1483,7 @@ one_body_ratio_grad (float C[], float *R[], int first, int last,
 void
 one_body_ratio_grad (double C[], double *R[], int first, int last,
                      double Rnew[], int inew,
-                     double spline_coefs[], int numCoefs, double rMax,
+                     double spline_coefs[], int numCoefs, int nw, double rMax,
                      bool zero, double ratio_grad[], int numWalkers)
 {
   if (!AisInitialized)
@@ -1492,7 +1492,7 @@ one_body_ratio_grad (double C[], double *R[], int first, int last,
   dim3 dimBlock(BS);
   dim3 dimGrid(numWalkers);
   one_body_ratio_grad_kernel<double,BS><<<dimGrid,dimBlock>>>
-  (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, rMax,
+  (C, R, first, last, Rnew, inew, spline_coefs, numCoefs, nw, rMax,
    zero, ratio_grad);
 }
 

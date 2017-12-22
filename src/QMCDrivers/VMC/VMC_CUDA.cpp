@@ -58,18 +58,23 @@ bool VMCcuda::checkBounds (std::vector<PosType> &newpos,
   return true;
 }
 
+// #define DEBUG_DELAYED
+
 void VMCcuda::advanceWalkers()
 {
   int nat = W.getTotalNum();
   int nw  = W.getActiveWalkers();
+  int kd = W.getkblocksize();
+  int rcounter = 0;
   std::vector<PosType>   delpos(nw);
   std::vector<PosType>   newpos(nw);
-  std::vector<ValueType> ratios(nw);
+  std::vector<ValueType> ratios(kd*nw);
+  std::vector<RealType> acc_random_nrs(kd*nw);
 #ifdef QMC_COMPLEX
   std::vector<RealType> ratios_real(nw);
 #endif
-  std::vector<GradType>  newG(nw);
-  std::vector<ValueType> newL(nw);
+  std::vector<GradType>  newG(nw*kd);
+  std::vector<ValueType> newL(nw*kd);
   std::vector<Walker_t*> accepted(nw);
 
   for (int isub=0; isub<nSubSteps; isub++)
@@ -82,42 +87,81 @@ void VMCcuda::advanceWalkers()
       {
         GradType G = W[iw]->G[iat];
         newpos[iw]=W[iw]->R[iat] + m_sqrttau*delpos[iw];
-        ratios[iw] = 1.0;
+        for(int k=0; k<kd; k++)
+        {
+          ratios[iw+k*nw] = 1.0;
 #ifdef QMC_COMPLEX
-        ratios_real[iw] = 1.0;
+          ratios_real[iw+k*nw] = 1.0;
 #endif
+        }
       }
-      W.proposeMove_GPU(newpos, iat);
-      Psi.ratio(W,iat,ratios,newG, newL);
-#ifdef QMC_COMPLEX
-      Psi.convertRatiosFromComplexToReal(ratios, ratios_real);
-#endif
-      accepted.clear();
-      std::vector<bool> acc(nw, true);
-      if (W.UseBoundBox)
-        checkBounds (newpos, acc);
-      for(int iw=0; iw<nw; ++iw)
+      // For each walker, do
+      // 1. generate k proposed new positions   [delpos, newpos] -> Done (AT)
+      // 2. generate the matrix Rnew (nxk) that contains k proposed new positions -> Done, extended Rnew vector to n vectors (AT)
+      W.proposeMove_GPU(newpos, iat, nat);
+
+      // Store acceptance random numbers
+      for(int iw=0; iw<nw; ++iw) acc_random_nrs[rcounter++]=Random();
+
+      // check if we are ready to update and if not (k-delay) skip ahead in iat-loop
+      if(!W.update_now(nat)) continue;
+      kd=W.getkupdate();
+      int curr_iat=iat-kd+1;
+
+      Psi.ratio(W,curr_iat,ratios,newG, newL);
+      rcounter = 0;
+      for(int k=0; k<kd; ++k)
       {
-#ifdef QMC_COMPLEX
-        if(acc[iw] && ratios_real[iw]*ratios_real[iw] > Random())
-#else
-        if(acc[iw] && ratios[iw]*ratios[iw] > Random())
+#ifdef DEBUG_DELAYED
+        fprintf(stderr,"k = %i:\n",k);
 #endif
+        accepted.clear();
+        for(int iw=0; iw<nw; ++iw)
+          newpos[iw] = W.Rnew_host[iw+k*nw];
+        std::vector<bool> acc(nw, true);
+        if (W.UseBoundBox)
+          checkBounds (newpos, acc);
+        if (kDelay)
+          Psi.det_lookahead (W, ratios, newG, newL, curr_iat, k, kd, nw);
+#ifdef QMC_COMPLEX
+        Psi.convertRatiosFromComplexToReal(ratios, ratios_real);
+#endif
+#ifdef DEBUG_DELAYED
+        for(int iw=0; iw<nw; ++iw)
+          fprintf(stderr,"walker #%i: %f | (%f, %f, %f)\n",iw,ratios[iw+k*nw],newG[iw+k*nw][0],newG[iw+k*nw][1],newG[iw+k*nw][2]);
+#endif
+        for(int iw=0; iw<nw; ++iw)
         {
-          accepted.push_back(W[iw]);
-          nAccept++;
-          W[iw]->R[iat] = newpos[iw];
-          acc[iw] = true;
+#ifdef DEBUG_DELAYED
+          fprintf(stderr,"Walker #%i (ratio = %f) move ",iw,ratios[iw+k*nw]);
+#endif
+#ifdef QMC_COMPLEX
+          if(acc[iw] && ratios_real[iw+k*nw]*ratios_real[iw+k*nw] > acc_random_nrs[iw+k*nw])
+#else
+          if(acc[iw] && ratios[iw+k*nw]*ratios[iw+k*nw] > acc_random_nrs[iw+k*nw])
+#endif
+          {
+#ifdef DEBUG_DELAYED
+            fprintf(stderr,"accepted.\n");
+#endif
+            accepted.push_back(W[iw]);
+            nAccept++;
+            W[iw]->R[curr_iat+k] = W.Rnew_host[iw+k*nw];
+            acc[iw] = true;
+          }
+          else
+          {
+#ifdef DEBUG_DELAYED
+            fprintf(stderr,"not accepted.\n");
+#endif
+            acc[iw] = false;
+            nReject++;
+          }
         }
-        else
-        {
-          acc[iw] = false;
-          nReject++;
-        }
+        W.acceptMove_GPU(acc,k);
+        if (accepted.size() || (kDelay>1))
+          Psi.update(&W,accepted,curr_iat,&acc,k);
       }
-      W.acceptMove_GPU(acc);
-      if (accepted.size())
-        Psi.update(accepted,iat);
     }
   }
 }
@@ -247,8 +291,10 @@ bool VMCcuda::run()
 
 void VMCcuda::advanceWalkersWithDrift()
 {
+  bool update_now=false;
   int nat = W.getTotalNum();
   int nw  = W.getActiveWalkers();
+  std::vector<RealType>  oldScale(nw), newScale(nw);
   std::vector<PosType>   delpos(nw);
   std::vector<PosType>   newpos(nw);
   std::vector<ValueType> ratios(nw);
@@ -261,9 +307,11 @@ void VMCcuda::advanceWalkersWithDrift()
 
   for (int isub=0; isub<nSubSteps; isub++)
   {
+    int k=0;
+    int kd=0;
     for(int iat=0; iat<nat; iat++)
     {
-      Psi.calcGradient (W, iat, oldG);
+      Psi.calcGradient (W, iat, k, oldG);
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(delpos,Random);
       Psi.addGradient(W, iat, oldG);
@@ -272,26 +320,41 @@ void VMCcuda::advanceWalkersWithDrift()
         PosType dr;
         delpos[iw] *= m_sqrttau;
         getScaledDrift(m_tauovermass,oldG[iw],dr);
-        newpos[iw] = W[iw]->R[iat] + delpos[iw] + dr;
+        newpos[iw]=W[iw]->R[iat] + delpos[iw] + dr;
         ratios[iw] = 1.0;
 #ifdef QMC_COMPLEX
         ratios_real[iw] = 1.0;
 #endif
       }
-      W.proposeMove_GPU(newpos, iat);
+      W.proposeMove_GPU(newpos, iat, nat);
+      update_now = W.update_now(nat);
+      if(update_now)
+      {
+        kd=W.getkupdate();
+      } else kd=W.getkblocksize();
       Psi.calcRatio(W,iat,ratios,newG, newL);
       accepted.clear();
       std::vector<bool> acc(nw, true);
       if (W.UseBoundBox)
         checkBounds (newpos, acc);
+      if (kDelay)
+        Psi.det_lookahead (W, ratios, newG, newL, iat, k, kd, nw);
       std::vector<RealType> logGf_v(nw);
       std::vector<RealType> rand_v(nw);
       for(int iw=0; iw<nw; ++iw)
       {
-        logGf_v[iw] = -m_oneover2tau * dot(delpos[iw], delpos[iw]);
+#ifdef QMC_COMPLEX
+        PosType drOld = 0.0;
+        convert(oldScale[iw] * oldG[iw], drOld);
+        drOld = newpos[iw] - (W[iw]->R[iat] + drOld);
+#else
+        PosType drOld =
+          newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG[iw]);
+#endif
+        logGf_v[iw] = -m_oneover2tau * dot(drOld, drOld);
         rand_v[iw] = Random();
       }
-      Psi.addRatio(W, iat, ratios, newG, newL);
+      Psi.addRatio(W, iat, k, ratios, newG, newL);
 #ifdef QMC_COMPLEX
       Psi.convertRatiosFromComplexToReal(ratios, ratios_real);
 #endif
@@ -309,8 +372,14 @@ void VMCcuda::advanceWalkersWithDrift()
 #else
         RealType prob = ratios[iw]*ratios[iw]*std::exp(x);
 #endif
+#ifdef DEBUG_DELAYED
+          fprintf(stderr,"Walker #%i (ratio = %f) move ",iw,ratios[iw]);
+#endif
         if(acc[iw] && rand_v[iw] < prob)
         {
+#ifdef DEBUG_DELAYED
+          fprintf(stderr,"accepted.\n");
+#endif
           accepted.push_back(W[iw]);
           nAccept++;
           W[iw]->R[iat] = newpos[iw];
@@ -318,13 +387,20 @@ void VMCcuda::advanceWalkersWithDrift()
         }
         else
         {
+#ifdef DEBUG_DELAYED
+          fprintf(stderr,"not accepted.\n");
+#endif
           acc[iw] = false;
           nReject++;
         }
       }
-      W.acceptMove_GPU(acc);
-      if (accepted.size())
-        Psi.update(accepted,iat);
+      W.acceptMove_GPU(acc,k);
+      if (accepted.size() || (kDelay>1))
+        Psi.update(&W,accepted,iat,&acc,k);
+      if(kDelay>1)
+        k++;
+      if(update_now)
+        k=0;
     }
   }
 }
@@ -452,7 +528,7 @@ void VMCcuda::resetRun()
   // Compute the size of data needed for each walker on the GPU card
   PointerPool<Walker_t::cuda_Buffer_t > pool;
   app_log() << "Starting VMCcuda::resetRun() " << std::endl;
-  Psi.reserve (pool);
+  Psi.reserve (pool,false,W.getkblocksize());
   app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CudaValueType)
             << " bytes in GPU memory.\n";
   // Now allocate memory on the GPU card for each walker

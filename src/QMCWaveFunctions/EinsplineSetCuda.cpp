@@ -215,7 +215,7 @@ EinsplineSetExtended<double>::evaluate
 (std::vector<Walker_t*> &walkers, int iat,
  gpu::device_vector<CudaRealType*> &phi)
 {
-  // app_log() << "Start EinsplineSet CUDA evaluation\n";
+  //  app_log() << "Start EinsplineSet CUDA evaluation\n";
   int N = walkers.size();
   CudaRealType plus_minus[2] = {1.0, -1.0};
   if (cudapos.size() < N)
@@ -317,7 +317,7 @@ EinsplineSetExtended<double>::evaluate
 (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
  gpu::device_vector<CudaRealType*> &phi)
 {
-  // app_log() << "Start EinsplineSet CUDA evaluation\n";
+  //  app_log() << "Start EinsplineSet CUDA evaluation\n";
   int N = newpos.size();
   CudaRealType plus_minus[2] = {1.0, -1.0};
   if (cudapos.size() < N)
@@ -473,9 +473,16 @@ template<> void
 EinsplineSetExtended<double>::evaluate
 (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
  gpu::device_vector<CudaRealType*> &phi, gpu::device_vector<CudaRealType*> &grad_lapl,
- int row_stride)
+ int row_stride, int k, bool klinear)
 {
-  int N = walkers.size();
+  int nw = walkers.size();
+  int N = newpos.size(); // should work out-of-the-box for k-delayed positions now
+  int offset = 0;
+  if((nw != N) && klinear)
+  {
+    offset = k*nw;
+    N = nw;
+  }
   CudaRealType plus_minus[2] = {1.0, -1.0};
   if (cudapos.size() < N)
   {
@@ -486,7 +493,7 @@ EinsplineSetExtended<double>::evaluate
   }
   for (int iw=0; iw < N; iw++)
   {
-    PosType r = newpos[iw];
+    PosType r = newpos[iw+offset];
     PosType ru(PrimLattice.toUnit(r));
     int image[OHMMS_DIM];
     for (int i=0; i<OHMMS_DIM; i++)
@@ -505,7 +512,7 @@ EinsplineSetExtended<double>::evaluate
   cudaSign = hostSign;
   eval_multi_multi_UBspline_3d_vgl_cuda
   (CudaMultiSpline, (CudaRealType*)cudapos.data(), cudaSign.data(),
-   Linv_cuda.data(), phi.data(), grad_lapl.data(), N, row_stride);
+   Linv_cuda.data(), &(phi.data()[offset]), &(grad_lapl.data()[offset]), N, row_stride);
   //gpu::host_vector<CudaRealType*> pointers;
   //pointers = phi;
   //CudaRealType data[N];
@@ -519,11 +526,17 @@ template<> void
 EinsplineSetExtended<std::complex<double> >::evaluate
 (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
  gpu::device_vector<CudaRealType*> &phi, gpu::device_vector<CudaRealType*> &grad_lapl,
- int row_stride)
+ int row_stride, int k, bool klinear)
 {
-  //    app_log() << "Eval 3.\n";
-  int N = walkers.size();
-  int M = CudaMultiSpline->num_splines;
+  //  app_log() << "Eval 3.\n";
+  int nw = walkers.size();
+  int N = newpos.size(); // should work out-of-the-box for k-delayed positions now
+  int offset = 0;
+  if((nw != N) && klinear)
+  {
+    offset = k*nw;
+    N = nw;
+  }
   if (CudaValuePointers.size() < N)
     resize_cuda(N);
   if (cudapos.size() < N)
@@ -533,7 +546,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   }
   for (int iw=0; iw < N; iw++)
   {
-    PosType r = newpos[iw];
+    PosType r = newpos[iw+offset];
     PosType ru(PrimLattice.toUnit(r));
     ru[0] -= std::floor (ru[0]);
     ru[1] -= std::floor (ru[1]);
@@ -544,29 +557,9 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   eval_multi_multi_UBspline_3d_vgl_cuda
   (CudaMultiSpline, (CudaRealType*)cudapos.data(),  Linv_cuda.data(), CudaValuePointers.data(),
    CudaGradLaplPointers.data(), N, CudaMultiSpline->num_splines);
-  // DEBUG
-  //  TinyVector<double,OHMMS_DIM> r(hostPos[0][0], hostPos[0][1], hostPos[0][2]);
-  //  Vector<std::complex<double > > psi(M);
-  //  Vector<TinyVector<std::complex<double>,3> > grad(M);
-  //  Vector<Tensor<std::complex<double>,3> > hess(M);
-  //  EinsplineMultiEval (MultiSpline, r, psi, grad, hess);
-  //  // std::complex<double> cpuSpline[M];
-  //  // TinyVector<std::complex<double>,OHMMS_DIM> std::complex<double> cpuGrad[M];
-  //  // Tensor cpuHess[M];
-  //  // eval_multi_UBspline_3d_z_vgh (MultiSpline, hostPos[0][0], hostPos[0][1], hostPos[0][2],
-  //  // 				  cpuSpline);
-  //  gpu::host_vector<CudaStorageType*> pointers;
-  //  pointers = CudaGradLaplPointers;
-  //  std::complex<CudaRealType> gpuSpline[4*M];
-  //  cudaMemcpy(gpuSpline, pointers[10], 4*M * sizeof(std::complex<CudaRealType>), cudaMemcpyDeviceToHost);
-  //  for (int i=0; i<M; i++)
-  //    fprintf (stderr, "real: %10.6e %10.6e %10.6e , imag: %10.6e %10.6e %10.6e .\n",
-  //             trace(hess[i],GGt).real(), gpuSpline[3*M+i].real(), trace(hess[i],GGt).real() - gpuSpline[3*M+i].real(),
-  //             trace(hess[i], GGt).imag(), gpuSpline[3*M+i].imag(), trace(hess[i], GGt).imag() - gpuSpline[3*M+i].imag());
-  //  fprintf (stderr, "\n");
   // Now, add on phases
   for (int iw=0; iw < N; iw++)
-    hostPos[iw] = newpos[iw];
+    hostPos[iw] = newpos[iw+offset];
   cudapos = hostPos;
 
   /* Original implementation
@@ -575,16 +568,31 @@ EinsplineSetExtended<std::complex<double> >::evaluate
                        (CudaRealType*)cudapos.data(),
                        (CudaRealType**)CudaValuePointers.data(), phi.data(),
                        (CudaRealType**)CudaGradLaplPointers.data(), grad_lapl.data(),
-                       CudaMultiSpline->num_splines,  walkers.size(), row_stride);
+                       CudaMultiSpline->num_splines, walkers.size(), row_stride);
   */
   // Ye: optimized memory access.
   apply_phase_factors ((CudaRealType*) CudakPoints.data(),
                        CudaMakeTwoCopies.data(),
                        CudaTwoCopiesIndex.data(),
                        (CudaRealType*)cudapos.data(),
-                       (CudaRealType**)CudaValuePointers.data(), phi.data(),
-                       (CudaRealType**)CudaGradLaplPointers.data(), grad_lapl.data(),
-                       CudaMultiSpline->num_splines,  walkers.size(), row_stride);
+                       (CudaRealType**)CudaValuePointers.data(), &(phi.data()[offset]),
+                       (CudaRealType**)CudaGradLaplPointers.data(), &(grad_lapl.data()[offset]),
+                       CudaMultiSpline->num_splines, N, row_stride);
+
+  // AT Debug:
+/*  int M=128;
+  gpu::host_vector<CudaRealType*> pointers;
+  pointers = phi;
+  CudaRealType data[M];
+  for (int i=0; i<N; i++)
+  {
+    cudaMemcpy (data, pointers[i], M*sizeof(CudaRealType), cudaMemcpyDeviceToHost);
+    if(i%walkers.size()==0)
+      fprintf(stderr, "\nk = %i:\n", i/walkers.size());
+    for (int j=0; j<M; j++)
+      fprintf (stderr, "%1.12e\n", data[j]);
+    fprintf(stderr,"---\n");
+  }*/
 }
 
 
@@ -594,7 +602,7 @@ EinsplineSetExtended<double>::evaluate
 (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
  gpu::device_vector<CudaComplexType*> &phi,
  gpu::device_vector<CudaComplexType*> &grad_lapl,
- int row_stride)
+ int row_stride, int k, bool klinear)
 {
   app_error() << "Code should not arrive at this point: "
               << "EinsplineSetExtended<double>::evaluate at line " 

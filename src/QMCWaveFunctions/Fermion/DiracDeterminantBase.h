@@ -325,7 +325,7 @@ public:
   }
 
   virtual void
-  reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool)
+  reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool, int kblocksize=1)
   {
     std::cerr << "Need specialization of DiracDetermiantBase::reserve.\n";
     abort();
@@ -347,7 +347,7 @@ public:
     abort();
   }
   virtual void
-  addRatio (MCWalkerConfiguration &W, int iat,
+  addRatio (MCWalkerConfiguration &W, int iat, int k,
             std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
             std::vector<ValueType> &lapl)
   {
@@ -363,7 +363,16 @@ public:
     abort();
   }
 
-
+  virtual void
+  det_lookahead (MCWalkerConfiguration &W,
+                 std::vector<ValueType> &psi_ratios,
+                 std::vector<GradType>  &grad,
+                 std::vector<ValueType> &lapl,
+                 int iat, int k, int kd, int nw)
+  {
+    std::cerr << "Need specialization of DiracDetermiantBase::det_lookahead.\n";
+    abort();
+  }
 
   virtual void
   ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
@@ -382,7 +391,7 @@ public:
     abort();
   }
   virtual void
-  calcGradient(MCWalkerConfiguration &W, int iat,
+  calcGradient(MCWalkerConfiguration &W, int iat, int k,
                std::vector<GradType> &grad)
   {
     std::cerr << "Need specialization of DiracDetermiantBase::calcGradient.\n";
@@ -390,7 +399,7 @@ public:
   }
 
 
-  virtual void update (std::vector<Walker_t*> &walkers, int iat)
+  virtual void update (MCWalkerConfiguration *W, std::vector<Walker_t*> &walkers, int iat, std::vector<bool> *acc, int k)
   {
     std::cerr << "Need specialization of DiracDetermiantBase::update.\n";
     abort();
