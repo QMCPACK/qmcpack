@@ -207,7 +207,7 @@ void ParticleSet::resetGroups()
   for(int iat=0; iat<ID.size(); ++iat)
     IsGrouped &= (IndirectID[iat]==ID[iat]);
   if(!IsGrouped)
-    app_warning() << "  Particles are not grouped in the input file.  Algorithms may not be optimal. " << std::endl;
+    app_warning() << "  Particles are not grouped by species in the input file.  Algorithms may not be optimal. " << std::endl;
 }
 
 void
