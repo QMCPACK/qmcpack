@@ -206,11 +206,11 @@
     #if defined(__AVX512F__)
       #define QMC_CLINE 64
       #define QMC_ALIGNAS alignas(64)
-      #define ASSUME_ALIGNED(x) __builtin_assume_aligned(x,64)
+      #define ASSUME_ALIGNED(x) (x) = (__typeof__(x)) __builtin_assume_aligned(x,64)
     #else
       #define QMC_CLINE 32
       #define QMC_ALIGNAS alignas(32)
-      #define ASSUME_ALIGNED(x) __builtin_assume_aligned(x,32)
+      #define ASSUME_ALIGNED(x) (x) = (__typeof__(x)) __builtin_assume_aligned(x,32)
     #endif
   #else
    #define QMC_CLINE 32

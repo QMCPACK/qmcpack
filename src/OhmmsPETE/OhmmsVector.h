@@ -98,7 +98,7 @@ public:
   }
 
   // Attach to pre-allocated memory
-  inline void attach(T* ref, size_t n)
+  inline void attachReference(T* ref, size_t n)
   {
     if(nAllocated) throw std::runtime_error("Pointer attaching is not allowed on Vector with allocated memory.");
     nLocal=n;
