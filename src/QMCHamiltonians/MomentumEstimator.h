@@ -68,9 +68,9 @@ public:
   ///nofK internal
   Vector<RealType> kdotp;
   ///phases
-  Vector<ComplexType> phases;
+  VectorSoaContainer<RealType,2> phases;
   ///phases of vPos
-  Matrix<ComplexType> phases_vPos;
+  std::vector<VectorSoaContainer<RealType,2> > phases_vPos;
   ///list of k-points in Cartesian Coordinates
   std::vector<PosType> kPoints;
   ///weight of k-points (make use of symmetry)
@@ -78,7 +78,7 @@ public:
   ///dims of a grid for k points
   int kgrid;
   ///nofK
-  Vector<RealType> nofK;
+  aligned_vector<RealType> nofK;
   ///list of Q for the Compton profile
   std::vector<RealType> Q;
   ///compton profile at q
