@@ -134,9 +134,9 @@ public:
   }
 
   // Attach to pre-allocated memory
-  inline void attach(T* ref)
+  inline void attachReference(T* ref)
   {
-    X.attach(ref, TotSize);
+    X.attachReference(ref, TotSize);
   }
 
   inline void add(size_type n)   // you can add rows: adding columns are forbidden

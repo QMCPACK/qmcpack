@@ -1209,11 +1209,11 @@ def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_st
     if reblock_factors is None:
         # find block targets based on autocorrelation time, if needed
         for n in range(len(Edata)):
-            block_targets.append(len(E)/Ekap[n])
+            block_targets.append(len(Edata[n])/Ekap[n])
         #end if
     else:
         for n in range(len(Edata)):
-            block_targets.append(len(E)/reblock_factors[n])
+            block_targets.append(len(Edata[n])/reblock_factors[n])
         #end if        
     #end if
 

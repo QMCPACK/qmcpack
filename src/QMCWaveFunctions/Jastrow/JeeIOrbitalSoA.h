@@ -672,9 +672,9 @@ public:
 
   inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
-    Uat.attach(buf.attach<valT>(Nelec), Nelec);
-    dUat.attach(Nelec, Nelec_padded, buf.attach<valT>(Nelec_padded*OHMMS_DIM));
-    d2Uat.attach(buf.attach<valT>(Nelec), Nelec);
+    Uat.attachReference(buf.lendReference<valT>(Nelec), Nelec);
+    dUat.attachReference(Nelec, Nelec_padded, buf.lendReference<valT>(Nelec_padded*OHMMS_DIM));
+    d2Uat.attachReference(buf.lendReference<valT>(Nelec), Nelec);
     build_compact_list(P);
   }
 

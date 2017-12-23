@@ -159,7 +159,7 @@ namespace qmcplusplus
        *
        * Free existing memory and reset the internal variables
        */
-      __forceinline void attach(size_t n, size_t n_padded, T* ptr)
+      __forceinline void attachReference(size_t n, size_t n_padded, T* ptr)
       {
         if(nAllocated) throw std::runtime_error("Pointer attaching is not allowed on VectorSoaContainer with allocated memory.");
         nAllocated=0;

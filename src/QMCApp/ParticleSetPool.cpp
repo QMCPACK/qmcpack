@@ -161,7 +161,10 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   ParticleSet* pTemp = getParticleSet(id);
   if(pTemp == 0)
   {
-    app_log() << "  Creating " << id << " particleset" << std::endl;
+    app_summary() <<" Particle Set " << std::endl;
+    app_summary() <<" ------------" << std::endl;
+    app_summary() <<"  Name: " << id << std::endl;
+
     pTemp = new MCWalkerConfiguration;
     //if(role == "MC")
     //  pTemp = new MCWalkerConfiguration;
@@ -169,7 +172,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     //  pTemp = new ParticleSet;
     if(SimulationCell)
     {
-      app_log() << "  Initializing the lattice of " << id << " by the global supercell" << std::endl;
+      app_log() << "  Initializing the lattice by the global supercell" << std::endl;
       pTemp->Lattice.copy(*SimulationCell);
     }
     myPool[id] = pTemp;
@@ -184,13 +187,15 @@ bool ParticleSetPool::put(xmlNodePtr cur)
       randomize_nodes.push_back(anode);
     }
     pTemp->setName(id);
-    app_log() << pTemp->getName() << std::endl;
+    app_summary() << "  Particle set size: " << pTemp->getTotalNum() << std::endl;
+    app_summary() << std::endl;
     return success;
   }
   else
   {
-    app_warning() << "particleset " << id << " is already created. Ignore this" << std::endl;
+    app_warning() << "Particle set " << id << " is already created. Ignoring this section." << std::endl;
   }
+  app_summary() << std::endl;
   return true;
 }
 
