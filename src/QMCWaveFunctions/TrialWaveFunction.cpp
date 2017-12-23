@@ -810,11 +810,13 @@ void TrialWaveFunction::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<Value
 {
   std::fill(ratios.begin(),ratios.end(),1.0);
   std::vector<ValueType> t(ratios.size());
-  for (int i=0; i<Z.size(); ++i)
+  for (int i=0, ii=V_TIMER; i<Z.size(); ++i,ii+=TIMER_SKIP)
   {
+    myTimers[ii]->start();
     Z[i]->evaluateRatiosAlltoOne(P,t);
     for (int j=0; j<t.size(); ++j)
       ratios[j]*=t[j];
+    myTimers[ii]->stop();
   }
 }
 
