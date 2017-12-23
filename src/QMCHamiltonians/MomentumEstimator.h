@@ -68,7 +68,9 @@ public:
   ///nofK internal
   Vector<RealType> kdotp;
   ///phases
-  Vector<ComplexType> phases, phases_activePos;
+  Vector<ComplexType> phases;
+  ///phases of vPos
+  Matrix<ComplexType> phases_vPos;
   ///list of k-points in Cartesian Coordinates
   std::vector<PosType> kPoints;
   ///weight of k-points (make use of symmetry)
