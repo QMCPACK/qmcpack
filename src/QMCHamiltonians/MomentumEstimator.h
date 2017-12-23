@@ -59,12 +59,16 @@ public:
   ParticleSet::ParticleLayout_t Lattice;
   ///random generator
   RandomGenerator_t myRNG;
+  ///sample positions
+  std::vector<PosType> vPos;
   ///wavefunction ratios
   std::vector<ValueType> psi_ratios;
+  ///wavefunction ratios all samples
+  Matrix<ValueType> psi_ratios_all;
   ///nofK internal
   Vector<RealType> kdotp;
   ///phases
-  Vector<ComplexType> phases;
+  Vector<ComplexType> phases, phases_activePos;
   ///list of k-points in Cartesian Coordinates
   std::vector<PosType> kPoints;
   ///weight of k-points (make use of symmetry)

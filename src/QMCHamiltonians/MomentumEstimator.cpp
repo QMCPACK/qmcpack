@@ -31,8 +31,6 @@ MomentumEstimator::MomentumEstimator(ParticleSet& elns, TrialWaveFunction& psi)
 {
   UpdateMode.set(COLLECTABLE,1);
   psi_ratios.resize(elns.getTotalNum());
-  kdotp.resize(elns.getTotalNum());
-  phases.resize(elns.getTotalNum());
   twist=elns.getTwist();
 }
 
@@ -43,36 +41,39 @@ void MomentumEstimator::resetTargetParticleSet(ParticleSet& P)
 MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
 {
   const int np=P.getTotalNum();
-  nofK=0.0;
-  compQ=0.0;
-  const DistanceTableData &d_aa(*P.DistTables[0]);
+  const int nk=kPoints.size();
   for (int s=0; s<M; ++s)
   {
     PosType newpos;
     for (int i=0; i<OHMMS_DIM; ++i)
       newpos[i]=myRNG();
     //make it cartesian
-    newpos=Lattice.toCart(newpos);
-    P.makeVirtualMoves(newpos);
+    vPos[s]=Lattice.toCart(newpos);
+    P.makeVirtualMoves(vPos[s]);
     refPsi.evaluateRatiosAlltoOne(P,psi_ratios);
-    for (int ik=0; ik < kPoints.size(); ++ik)
+    for (int i=0; i<np; ++i)
+      psi_ratios_all[s][i] = psi_ratios[i];
+  }
+
+  nofK=0.0;
+  for (int i=0; i<np; ++i)
+  {
+    for (int ik=0; ik<nk; ++ik)
+      kdotp[ik] = dot(kPoints[ik], P.R[i]);
+    eval_e2iphi(nk, kdotp.data(), phases.data());
+    for (int s=0; s<M; ++s)
     {
-      if(d_aa.DTType == DT_SOA)
-      {
-        for (int i=0; i<np; ++i)
-          kdotp[i] = dot(kPoints[ik], P.R[i]-P.activePos);
-      }
-      else
-      {
-        for (int i=0; i<np; ++i)
-          kdotp[i] = -dot(kPoints[ik], d_aa.Temp[i].dr1_nobox);
-      }
-      eval_e2iphi(np,kdotp.data(),phases.data());
-      RealType nofk_here(std::real(BLAS::dot(np,phases.data(),&psi_ratios[0])));//psi_ratios.data())));
-      nofK[ik]+= nofk_here;
+      for (int ik=0; ik<nk; ++ik)
+         kdotp[ik] = -dot(kPoints[ik], vPos[s]);
+      eval_e2iphi(nk, kdotp.data(), phases_activePos.data());
+
+      for (int ik=0; ik<nk; ++ik)
+        nofK[ik]+=std::real(phases[ik]*phases_activePos[ik]*psi_ratios_all[s][i]);
     }
   }
-  for (int iq=0; iq < compQ.size(); ++iq)
+
+  compQ=0.0;
+  for (int iq=0; iq<compQ.size(); ++iq)
   {
     for (int i=0; i<mappedQtonofK[iq].size(); ++i)
       compQ[iq] += nofK[mappedQtonofK[iq][i]];
@@ -308,6 +309,11 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
     qout.close();
   }
   nofK.resize(kPoints.size());
+  kdotp.resize(kPoints.size());
+  vPos.resize(M);
+  phases.resize(kPoints.size());
+  phases_activePos.resize(kPoints.size());
+  psi_ratios_all.resize(M,elns.getTotalNum());
   norm_nofK=1.0/RealType(M);
   return true;
 }
