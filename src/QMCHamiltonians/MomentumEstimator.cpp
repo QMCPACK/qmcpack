@@ -313,7 +313,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
   vPos.resize(M);
   phases.resize(kPoints.size());
   phases_activePos.resize(kPoints.size());
-  psi_ratios_all.resize(M,elns.getTotalNum());
+  psi_ratios_all.resize(M,psi_ratios.size());
   norm_nofK=1.0/RealType(M);
   return true;
 }
@@ -327,7 +327,7 @@ QMCHamiltonianBase* MomentumEstimator::makeClone(ParticleSet& qp
     , TrialWaveFunction& psi)
 {
   MomentumEstimator* myclone=new MomentumEstimator(qp,psi);
-  myclone->resize(kPoints,Q);
+  myclone->resize(kPoints,Q,M);
   myclone->myIndex=myIndex;
   myclone->kgrid=kgrid;
   myclone->norm_nofK=norm_nofK;
@@ -336,18 +336,24 @@ QMCHamiltonianBase* MomentumEstimator::makeClone(ParticleSet& qp
     myclone->mappedQtonofK[i]=mappedQtonofK[i];
   myclone->hdf5_out=hdf5_out;
   myclone->mappedQnorms=mappedQnorms;
-  myclone->M=M;
   return myclone;
 }
 
-void MomentumEstimator::resize(const std::vector<PosType>& kin, const std::vector<RealType>& qin)
+void MomentumEstimator::resize(const std::vector<PosType>& kin, const std::vector<RealType>& qin, const int Min)
 {
   //copy kpoints
   kPoints=kin;
   nofK.resize(kin.size());
+  kdotp.resize(kPoints.size());
+  phases.resize(kPoints.size());
+  phases_activePos.resize(kPoints.size());
   //copy q
   Q=qin;
   compQ.resize(qin.size());
+  //M
+  M=Min;
+  vPos.resize(M);
+  psi_ratios_all.resize(M,psi_ratios.size());
 }
 
 void MomentumEstimator::setRandomGenerator(RandomGenerator_t* rng)

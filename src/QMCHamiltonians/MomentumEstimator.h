@@ -46,7 +46,7 @@ public:
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
   void setRandomGenerator(RandomGenerator_t* rng);
   //resize the internal data by input k-point list
-  void resize(const std::vector<PosType>& kin,const std::vector<RealType>& qin);
+  void resize(const std::vector<PosType>& kin,const std::vector<RealType>& qin, const int Min);
   ///number of samples
   int M;
   ///normalization factor for n(k)
