@@ -82,12 +82,11 @@ namespace qmcplusplus
     simd::copy_n(temp.data(4),OrbitalSetSize,d2psi.data());
   }
 
-  void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat, 
+  void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat,
       ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
     {
       //TAKE CARE OF IDENTITY
-      const bool trialmove=true;
-      myBasisSet->evaluateVGL(P,iat,Temp,trialmove);
+      myBasisSet->evaluateVGL(P,iat,Temp);
       if(Identity) 
         evaluate_vgl_impl(Temp,psi,dpsi,d2psi);
       else
@@ -98,13 +97,13 @@ namespace qmcplusplus
     }
 
   void LCAOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, 
-      VGLVector_t vgl, bool newpos)
+      VGLVector_t vgl)
   {
     if(Identity)
-      myBasisSet->evaluateVGL(P,iat,vgl,newpos);
+      myBasisSet->evaluateVGL(P,iat,vgl);
     else
     {
-      myBasisSet->evaluateVGL(P,iat,Temp,newpos);
+      myBasisSet->evaluateVGL(P,iat,Temp);
       Product_ABt(Temp,*C,vgl);
     }
   }
@@ -141,13 +140,11 @@ namespace qmcplusplus
   void LCAOrbitalSet::evaluate_notranspose(const ParticleSet& P, int first, int last,
       ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
   {
-    CONSTEXPR bool curpos=false; //hint that the full distance table used
-
     if(Identity)
     {
       for(size_t i=0, iat=first; iat<last; i++,iat++)
       {
-        myBasisSet->evaluateVGL(P,iat,Temp,curpos);
+        myBasisSet->evaluateVGL(P,iat,Temp);
         evaluate_vgl_impl(Temp,i,logdet,dlogdet,d2logdet);
       }
     }
@@ -155,7 +152,7 @@ namespace qmcplusplus
     {
       for(size_t i=0, iat=first; iat<last; i++,iat++)
       {
-        myBasisSet->evaluateVGL(P,iat,Temp,curpos);
+        myBasisSet->evaluateVGL(P,iat,Temp);
         Product_ABt(Temp,*C,Tempv);
         evaluate_vgl_impl(Tempv,i,logdet,dlogdet,d2logdet);
       }

@@ -141,8 +141,6 @@ struct DistanceTableData
   int ID;
   ///Type of DT
   int DTType;
-  ///Index of the particle  with a trial move
-  IndexType activePtcl;
   ///size of indicies
   TinyVector<IndexType,4> N;
   ///true, if ratio computations need displacement, e.g. LCAO type
@@ -363,10 +361,10 @@ struct DistanceTableData
   virtual void evaluate(ParticleSet& P, int jat)=0;
 
   ///evaluate the temporary pair relations
-  virtual void move(const ParticleSet& P, const PosType& rnew, IndexType jat) =0;
+  virtual void move(const ParticleSet& P, const PosType& rnew) =0;
 
   ///evaluate the distance tables with a sphere move
-  virtual void moveOnSphere(const ParticleSet& P, const PosType& rnew, IndexType jat) =0;
+  virtual void moveOnSphere(const ParticleSet& P, const PosType& rnew) =0;
 
   ///update the distance table by the pair relations
   virtual void update(IndexType jat) = 0;
@@ -388,7 +386,7 @@ struct DistanceTableData
    * @param iat source particle id
    * @return the id of the nearest particle, -1 not found
    */
-  virtual int get_first_neighbor(IndexType iat, RealType& r, PosType& dr) const
+  virtual int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const
   {
     return -1;
   }
