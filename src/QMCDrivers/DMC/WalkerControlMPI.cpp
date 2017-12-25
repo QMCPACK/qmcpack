@@ -24,35 +24,27 @@
 namespace qmcplusplus
 {
 
-//#if defined(PRINT_DEBUG)
-//#define DMC_BRANCH_START(NOW) NOW
-//#define DMC_BRANCH_STOP(TID,TM) TID=TM
-//#define DMC_BRANCH_DUMP(IT,T1,T2,T3)  \
-//  OhmmsInfo::Debug->getStream()  << "BRANCH " \
-//<< std::setw(8) << IT \
-//<< " SORT" << std::setw(16) << T1 \
-//<< " GSUM" << std::setw(16) << T2 \
-//<< " SWAP" << std::setw(16) << T3 << std::endl
-//#else
-#define DMC_BRANCH_START(NOW)
-#define DMC_BRANCH_STOP(TID,TM)
-#define DMC_BRANCH_DUMP(IT,T1,T2,T3)
-//#endif
-
-
 //#define MCWALKERSET_MPI_DEBUG
 
 enum DMC_MPI_Timers
 {
   DMC_MPI_branch,
+  DMC_MPI_imbalance,
   DMC_MPI_prebalance,
+  DMC_MPI_sortWalkers,
+  DMC_MPI_copyWalkers,
+  DMC_MPI_allreduce,
   DMC_MPI_loadbalance
 };
 
 TimerNameList_t<DMC_MPI_Timers> DMCMPITimerNames =
 {
   {DMC_MPI_branch, "WalkerControlMPI::branch"},
+  {DMC_MPI_imbalance, "WalkerControlMPI::imbalance"},
   {DMC_MPI_prebalance, "WalkerControlMPI::pre-loadbalance"},
+  {DMC_MPI_sortWalkers, "WalkerControlMPI::sortWalkers"},
+  {DMC_MPI_copyWalkers, "WalkerControlMPI::copyWalkers"},
+  {DMC_MPI_allreduce, "WalkerControlMPI::allreduce"},
   {DMC_MPI_loadbalance, "WalkerControlMPI::loadbalance"}
 };
 
@@ -76,60 +68,47 @@ WalkerControlMPI::WalkerControlMPI(Communicate* c): WalkerControlBase(c)
 int
 WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
 {
-  DMC_BRANCH_START(Timer localTimer);
-  TinyVector<RealType,3> bTime(0.0);
   myTimers[DMC_MPI_branch]->start();
   myTimers[DMC_MPI_prebalance]->start();
+  myTimers[DMC_MPI_sortWalkers]->start();
   std::fill(curData.begin(),curData.end(),0);
-  //std::fill(NumPerNode.begin(),NumPerNode.end(),0);
   sortWalkers(W);
+  myTimers[DMC_MPI_sortWalkers]->stop();
   //use NumWalkersSent from the previous exchange
   curData[SENTWALKERS_INDEX]=NumWalkersSent;
   //update the number of walkers for this node
   curData[LE_MAX+MyContext]=NumWalkers;
-  DMC_BRANCH_STOP(bTime[0],localTimer.elapsed());
-  DMC_BRANCH_START(localTimer.restart());
+  myTimers[DMC_MPI_copyWalkers]->start();
   int nw = copyWalkers(W);
+  //myComm->barrier();
+  myTimers[DMC_MPI_copyWalkers]->stop();
+  //myTimers[DMC_MPI_imbalance]->start();
+  //myComm->barrier();
+  //myTimers[DMC_MPI_imbalance]->stop();
+  myTimers[DMC_MPI_allreduce]->start();
   myComm->allreduce(curData);
+  myTimers[DMC_MPI_allreduce]->stop();
   measureProperties(iter);
   W.EnsembleProperty=EnsembleProperty;
-  DMC_BRANCH_STOP(bTime[1],localTimer.elapsed());
-  DMC_BRANCH_START(localTimer.restart());
-  ////update the samples and weights
-  //W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
-  //W.EnsembleProperty.Weight=curData[WEIGHT_INDEX];
-  //RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
-  //accumData[ENERGY_INDEX]     += curData[ENERGY_INDEX]*wgtInv;
-  //accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
-  //accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
-  //accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
   Cur_pop=0;
   for(int i=0, j=LE_MAX; i<NumContexts; i++,j++)
   {
     Cur_pop+= NumPerNode[i]=static_cast<int>(curData[j]);
   }
   myTimers[DMC_MPI_prebalance]->stop();
-  myTimers[DMC_MPI_loadbalance]->start();
   if(qmc_common.async_swap)
+  {
+    myTimers[DMC_MPI_loadbalance]->start();
     swapWalkersAsync(W);
+    myTimers[DMC_MPI_loadbalance]->stop();
+  }
   else
+  {
+    myTimers[DMC_MPI_loadbalance]->start();
     swapWalkersSimple(W);
-  myTimers[DMC_MPI_loadbalance]->stop();
-  //Do not need to use a trigger.
-  //Cur_min=Nmax;
-  //Cur_max=0;
-  //Cur_pop=0;
-  //for(int i=0, j=LE_MAX; i<NumContexts; i++,j++) {
-  //  Cur_pop+= NumPerNode[i]=static_cast<int>(curData[j]);
-  //  Cur_min = std::min(Cur_min,NumPerNode[i]);
-  //  Cur_max = std::max(Cur_max,NumPerNode[i]);
-  //}
-  //int max_diff = std::max(Cur_max*NumContexts-Cur_pop,Cur_pop-Cur_min*NumContexts);
-  //double diff_pop = static_cast<double>(max_diff)/static_cast<double>(Cur_pop);
-  //if(diff_pop > trigger) {
-  //  swapWalkersSimple(W);
-  //  //swapWalkersMap(W);
-  //}
+    //myComm->barrier();
+    myTimers[DMC_MPI_loadbalance]->stop();
+  }
   //set Weight and Multiplicity to default values
   MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
   while(it != it_end)
@@ -141,8 +120,6 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
   //update the global number of walkers and offsets
   W.setGlobalNumWalkers(Cur_pop);
   W.setWalkerOffsets(FairOffSet);
-  DMC_BRANCH_STOP(bTime[2],localTimer.elapsed());
-  DMC_BRANCH_DUMP(iter,bTime[0],bTime[1],bTime[2]);
   myTimers[DMC_MPI_branch]->stop();
   return Cur_pop;
 }
