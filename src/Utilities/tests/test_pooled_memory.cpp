@@ -95,9 +95,10 @@ TEST_CASE("pack scalar", "[utilities]")
   REQUIRE(i6[1]==i6[1]);
   REQUIRE(i6[2]==i6[2]);
 
-  for(size_t size_scale=15; size_scale<29; size_scale++)
+  // up to 512 MB.
+  for(size_t size_scale=15; size_scale<30; size_scale++)
   {
-    const size_t size = 1<<size_scale+17*8;
+    const size_t size = (1<<size_scale)+17*8;
     {
       PooledMemory<double> pm_walker;
       pm_walker.Current = size;
