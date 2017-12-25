@@ -14,11 +14,10 @@
 #ifndef QMCPLUSPLUS_POOLEDMEMORY_H
 #define QMCPLUSPLUS_POOLEDMEMORY_H
 
-#include <vector>
 #include <complex>
-#include <limits>
 #include <cstring>
 #include "simd/allocator.hpp"
+#include "OhmmsPETE/OhmmsVector.h"
 
 namespace qmcplusplus
 {
@@ -38,12 +37,12 @@ struct PooledMemory
 {
   typedef char T;
   typedef T value_type;
-  typedef typename std::vector<T>::size_type size_type;
+  typedef typename Vector<T, Alloc>::size_type size_type;
 
   const int scalar_multiplier;
   size_type Current, Current_scalar;
   T_scalar *Scalar_ptr;
-  std::vector<T, Alloc> myData;
+  Vector<T, Alloc> myData;
 
   ///default constructor
   inline PooledMemory():
