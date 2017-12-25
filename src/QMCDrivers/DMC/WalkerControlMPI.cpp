@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #include <QMCDrivers/DMC/WalkerControlMPI.h>
@@ -31,7 +29,6 @@ enum DMC_MPI_Timers
   DMC_MPI_branch,
   DMC_MPI_imbalance,
   DMC_MPI_prebalance,
-  DMC_MPI_sortWalkers,
   DMC_MPI_copyWalkers,
   DMC_MPI_allreduce,
   DMC_MPI_loadbalance
@@ -42,7 +39,6 @@ TimerNameList_t<DMC_MPI_Timers> DMCMPITimerNames =
   {DMC_MPI_branch, "WalkerControlMPI::branch"},
   {DMC_MPI_imbalance, "WalkerControlMPI::imbalance"},
   {DMC_MPI_prebalance, "WalkerControlMPI::pre-loadbalance"},
-  {DMC_MPI_sortWalkers, "WalkerControlMPI::sortWalkers"},
   {DMC_MPI_copyWalkers, "WalkerControlMPI::copyWalkers"},
   {DMC_MPI_allreduce, "WalkerControlMPI::allreduce"},
   {DMC_MPI_loadbalance, "WalkerControlMPI::loadbalance"}
@@ -70,18 +66,12 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
 {
   myTimers[DMC_MPI_branch]->start();
   myTimers[DMC_MPI_prebalance]->start();
-  myTimers[DMC_MPI_sortWalkers]->start();
   std::fill(curData.begin(),curData.end(),0);
   sortWalkers(W);
-  myTimers[DMC_MPI_sortWalkers]->stop();
   //use NumWalkersSent from the previous exchange
   curData[SENTWALKERS_INDEX]=NumWalkersSent;
   //update the number of walkers for this node
   curData[LE_MAX+MyContext]=NumWalkers;
-  myTimers[DMC_MPI_copyWalkers]->start();
-  int nw = copyWalkers(W);
-  //myComm->barrier();
-  myTimers[DMC_MPI_copyWalkers]->stop();
   //myTimers[DMC_MPI_imbalance]->start();
   //myComm->barrier();
   //myTimers[DMC_MPI_imbalance]->stop();
@@ -98,6 +88,10 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
   myTimers[DMC_MPI_prebalance]->stop();
   if(qmc_common.async_swap)
   {
+    myTimers[DMC_MPI_copyWalkers]->start();
+    copyWalkers(W);
+    //myComm->barrier();
+    myTimers[DMC_MPI_copyWalkers]->stop();
     myTimers[DMC_MPI_loadbalance]->start();
     swapWalkersAsync(W);
     myTimers[DMC_MPI_loadbalance]->stop();
@@ -108,6 +102,10 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
     swapWalkersSimple(W);
     //myComm->barrier();
     myTimers[DMC_MPI_loadbalance]->stop();
+    myTimers[DMC_MPI_copyWalkers]->start();
+    copyWalkers(W);
+    //myComm->barrier();
+    myTimers[DMC_MPI_copyWalkers]->stop();
   }
   //set Weight and Multiplicity to default values
   MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
@@ -163,9 +161,8 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   std::vector<int> minus, plus;
   determineNewWalkerPopulation(Cur_pop, NumContexts, MyContext, NumPerNode, FairOffSet, minus, plus);
 
-  Walker_t& wRef(*W[0]);
+  Walker_t& wRef(*good_w[0]);
   std::vector<Walker_t*> newW;
-  std::vector<Walker_t*> oldW;
 #ifdef MCWALKERSET_MPI_DEBUG
   char fname[128];
   sprintf(fname,"test.%d",MyContext);
@@ -191,22 +188,41 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   // myComm (read)
   // NumWalkersSent (write)
   int nswap=std::min(plus.size(), minus.size());
-  int last=W.getActiveWalkers()-1;
   int nsend=0;
   for(int ic=0; ic<nswap; ic++)
   {
     if(plus[ic]==MyContext)
     {
-      size_t byteSize = W[last]->byteSize();
-      W[last]->updateBuffer();
-      OOMPI_Message sendBuffer(W[last]->DataSet.data(), byteSize);
+      //always send the last good walker
+      Walker_t* &awalker = good_w.back();
+      size_t byteSize = awalker->byteSize();
+      awalker->updateBuffer();
+      OOMPI_Message sendBuffer(awalker->DataSet.data(), byteSize);
       myComm->getComm()[minus[ic]].Send(sendBuffer);
-      --last;
       ++nsend;
+
+      // update copy counter
+      if(ncopy_w.back()>0)
+        --ncopy_w.back();
+      else
+      {
+        good_w.pop_back();
+        ncopy_w.pop_back();
+        bad_w.push_back(awalker);
+      }
     }
     if(minus[ic]==MyContext)
     {
-      Walker_t *awalker= new Walker_t(wRef);
+      Walker_t* awalker;
+      if(bad_w.empty())
+      {
+        awalker=new Walker_t(wRef);
+      }
+      else
+      {
+        awalker=bad_w.back();
+        bad_w.pop_back();
+      }
       size_t byteSize = awalker->byteSize();
       OOMPI_Message recvBuffer(awalker->DataSet.data(), byteSize);
       myComm->getComm()[plus[ic]].Recv(recvBuffer);
@@ -216,14 +232,12 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   }
   //save the number of walkers sent
   NumWalkersSent=nsend;
-  if(nsend)
-  {
-    nsend=NumPerNode[MyContext]-nsend;
-    W.destroyWalkers(W.begin()+nsend, W.end());
-  }
   //add walkers from other node
   if(newW.size())
-    W.insert(W.end(),newW.begin(),newW.end());
+  {
+    good_w.insert(good_w.end(),newW.begin(),newW.end());
+    ncopy_w.insert(ncopy_w.end(),newW.size(),0);
+  }
 }
 
 /** swap Walkers with Irecv/Send
