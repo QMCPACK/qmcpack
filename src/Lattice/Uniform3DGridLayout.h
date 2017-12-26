@@ -220,6 +220,8 @@ public:
   ///Set LR_rc = radius of smallest sphere inside box and kc=dim/rc
   void SetLRCutoffs();
 
+  void printCutoffs();
+
   /** set the lattice vector with a tensor
    *@param lat a tensor representing a supercell
    *
