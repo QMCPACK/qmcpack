@@ -125,6 +125,12 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigge
   //update the global number of walkers and offsets
   W.setGlobalNumWalkers(Cur_pop);
   W.setWalkerOffsets(FairOffSet);
+
+  // walker count safety check
+  //if(W.getActiveWalkers()!=FairOffSet[MyContext+1]-FairOffSet[MyContext])
+  //  std::cout << " Strange on rank " << MyContext
+  //            << " should be " << FairOffSet[MyContext+1]-FairOffSet[MyContext]
+  //            << " walker but actually " << W.getActiveWalkers() << std::endl;
   myTimers[DMC_MPI_branch]->stop();
   return Cur_pop;
 }
@@ -170,6 +176,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
 
   Walker_t& wRef(*good_w[0]);
   std::vector<Walker_t*> newW;
+  std::vector<int> ncopy_newW;
 #ifdef MCWALKERSET_MPI_DEBUG
   char fname[128];
   sprintf(fname,"test.%d",MyContext);
@@ -190,23 +197,38 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   }
   fout << std::endl;
 #endif
- //  From the class
-  // MyContext (read)
-  // myComm (read)
-  // NumWalkersSent (write)
   int nswap=std::min(plus.size(), minus.size());
   int nsend=0;
   for(int ic=0; ic<nswap; ic++)
   {
     if(plus[ic]==MyContext)
     {
-      //always send the last good walker
+      // always send the last good walker
       Walker_t* &awalker = good_w.back();
+
+      // count the possible copies in one send
+      auto &nsentcopy = awalker->NumSentCopies;
+      nsentcopy = 0;
+
+      for(int id=ic+1; id<nswap; id++)
+        if(plus[ic]==plus[id]&&minus[ic]==minus[id]&&ncopy_w.back()>0)
+        { // increment copy counter
+          --ncopy_w.back();
+          nsentcopy++;
+        }
+        else
+        { // not enough copies to send or not the same send/recv pattern
+          break;
+        }
+
+      // pack data and send
       size_t byteSize = awalker->byteSize();
       awalker->updateBuffer();
       OOMPI_Message sendBuffer(awalker->DataSet.data(), byteSize);
       myComm->getComm()[minus[ic]].Send(sendBuffer);
+      // update counter and cursor
       ++nsend;
+      ic+=nsentcopy;
 
       // update copy counter
       if(ncopy_w.back()>0)
@@ -230,11 +252,17 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
         awalker=bad_w.back();
         bad_w.pop_back();
       }
+
+      // receive and unpack data
       size_t byteSize = awalker->byteSize();
       OOMPI_Message recvBuffer(awalker->DataSet.data(), byteSize);
       myComm->getComm()[plus[ic]].Recv(recvBuffer);
       awalker->copyFromBuffer();
       newW.push_back(awalker);
+      ncopy_newW.push_back(awalker->NumSentCopies);
+
+      // update counter and cursor
+      ic+=awalker->NumSentCopies;
     }
   }
   //save the number of walkers sent
@@ -243,7 +271,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   if(newW.size())
   {
     good_w.insert(good_w.end(),newW.begin(),newW.end());
-    ncopy_w.insert(ncopy_w.end(),newW.size(),0);
+    ncopy_w.insert(ncopy_w.end(),ncopy_newW.begin(),ncopy_newW.end());
   }
 }
 
