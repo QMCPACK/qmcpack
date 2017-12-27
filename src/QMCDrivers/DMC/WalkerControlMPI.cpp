@@ -198,22 +198,30 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   fout << std::endl;
 #endif
   int nswap=std::min(plus.size(), minus.size());
+
+  // sort good walkers by the number of copies
+  assert(good_w.size()==ncopy_w.size());
+  std::vector<std::pair<int,int> > ncopy_pairs;
+  for(int iw=0; iw<ncopy_w.size(); iw++)
+    ncopy_pairs.push_back(std::make_pair(ncopy_w[iw],iw));
+  std::sort(ncopy_pairs.begin(), ncopy_pairs.end());
+
   int nsend=0;
   for(int ic=0; ic<nswap; ic++)
   {
     if(plus[ic]==MyContext)
     {
       // always send the last good walker
-      Walker_t* &awalker = good_w.back();
+      Walker_t* &awalker = good_w[ncopy_pairs.back().second];
 
       // count the possible copies in one send
       auto &nsentcopy = awalker->NumSentCopies;
       nsentcopy = 0;
 
       for(int id=ic+1; id<nswap; id++)
-        if(plus[ic]==plus[id]&&minus[ic]==minus[id]&&ncopy_w.back()>0)
+        if(plus[ic]==plus[id]&&minus[ic]==minus[id]&&ncopy_pairs.back().first>0)
         { // increment copy counter
-          --ncopy_w.back();
+          ncopy_pairs.back().first--;
           nsentcopy++;
         }
         else
@@ -231,12 +239,14 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
       ic+=nsentcopy;
 
       // update copy counter
-      if(ncopy_w.back()>0)
-        --ncopy_w.back();
+      if(ncopy_pairs.back().first>0)
+      {
+        ncopy_pairs.back().first--;
+        std::sort(ncopy_pairs.begin(), ncopy_pairs.end());
+      }
       else
       {
-        good_w.pop_back();
-        ncopy_w.pop_back();
+        ncopy_pairs.pop_back();
         bad_w.push_back(awalker);
       }
     }
@@ -267,6 +277,15 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   }
   //save the number of walkers sent
   NumWalkersSent=nsend;
+  // rebuild good_w and ncopy_w
+  std::vector<Walker_t*> good_w_temp(good_w);
+  good_w.resize(ncopy_pairs.size());
+  ncopy_w.resize(ncopy_pairs.size());
+  for(int iw=0; iw<ncopy_pairs.size(); iw++)
+  {
+    good_w[iw]=good_w_temp[ncopy_pairs[iw].second];
+    ncopy_w[iw]=ncopy_pairs[iw].first;
+  }
   //add walkers from other node
   if(newW.size())
   {

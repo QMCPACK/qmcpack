@@ -225,6 +225,7 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
   curData[RNSIZE_INDEX]=nrn;
   curData[B_ENERGY_INDEX]=besum;
   curData[B_WGT_INDEX]=bwgtsum;
+  curData[SENTWALKERS_INDEX]=NumWalkersSent=0;
   myComm->allreduce(curData);
   measureProperties(iter);
   trialEnergy=EnsembleProperty.Energy;
@@ -438,19 +439,6 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
       ncopy_w.push_back(ncopy_rn[indy]);
       it++,indy++;
     }
-  }
-
-  // sort good walkers by the number of copies
-  assert(good_w.size()==ncopy_w.size());
-  std::vector<Walker_t*> good_w_temp(good_w);
-  std::vector<std::pair<int,int> > ncopy_pairs;
-  for(int iw=0; iw<ncopy_w.size(); iw++)
-    ncopy_pairs.push_back(std::make_pair(ncopy_w[iw],iw));
-  std::sort(ncopy_pairs.begin(), ncopy_pairs.end());
-  for(int iw=0; iw<ncopy_w.size(); iw++)
-  {
-    good_w[iw]=good_w_temp[ncopy_pairs[iw].second];
-    ncopy_w[iw]=ncopy_pairs[iw].first;
   }
   return NumWalkers;
 }
