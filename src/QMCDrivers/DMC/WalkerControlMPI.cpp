@@ -31,7 +31,9 @@ enum DMC_MPI_Timers
   DMC_MPI_prebalance,
   DMC_MPI_copyWalkers,
   DMC_MPI_allreduce,
-  DMC_MPI_loadbalance
+  DMC_MPI_loadbalance,
+  DMC_MPI_send,
+  DMC_MPI_recv,
 };
 
 TimerNameList_t<DMC_MPI_Timers> DMCMPITimerNames =
@@ -41,7 +43,9 @@ TimerNameList_t<DMC_MPI_Timers> DMCMPITimerNames =
   {DMC_MPI_prebalance, "WalkerControlMPI::pre-loadbalance"},
   {DMC_MPI_copyWalkers, "WalkerControlMPI::copyWalkers"},
   {DMC_MPI_allreduce, "WalkerControlMPI::allreduce"},
-  {DMC_MPI_loadbalance, "WalkerControlMPI::loadbalance"}
+  {DMC_MPI_loadbalance, "WalkerControlMPI::loadbalance"},
+  {DMC_MPI_send, "WalkerControlMPI::send"},
+  {DMC_MPI_recv, "WalkerControlMPI::recv"}
 };
 
 /** default constructor
@@ -233,11 +237,13 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W, bool use_isen
       // pack data and send
       size_t byteSize = awalker->byteSize();
       awalker->updateBuffer();
+      myTimers[DMC_MPI_send]->start();
       OOMPI_Message sendBuffer(awalker->DataSet.data(), byteSize);
       if(use_isend)
         requests.push_back(myComm->getComm()[minus[ic]].Isend(sendBuffer));
       else
         myComm->getComm()[minus[ic]].Send(sendBuffer);
+      myTimers[DMC_MPI_send]->stop();
       // update counter and cursor
       ++nsend;
       ic+=nsentcopy;
@@ -269,8 +275,10 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W, bool use_isen
 
       // receive and unpack data
       size_t byteSize = awalker->byteSize();
+      myTimers[DMC_MPI_recv]->start();
       OOMPI_Message recvBuffer(awalker->DataSet.data(), byteSize);
       myComm->getComm()[plus[ic]].Recv(recvBuffer);
+      myTimers[DMC_MPI_recv]->stop();
       awalker->copyFromBuffer();
       newW.push_back(awalker);
       ncopy_newW.push_back(awalker->NumSentCopies);
@@ -282,8 +290,10 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W, bool use_isen
   // wait all the isend
   if(nsend>0&&use_isend)
   {
+    myTimers[DMC_MPI_send]->start();
     for(int im=0; im<requests.size(); im++)
       requests[im].Wait();
+    myTimers[DMC_MPI_send]->stop();
     requests.clear();
   }
   //save the number of walkers sent
