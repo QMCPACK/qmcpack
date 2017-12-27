@@ -106,7 +106,7 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigge
   else
   {
     myTimers[DMC_MPI_loadbalance]->start();
-    swapWalkersSimple(W);
+    swapWalkersSimple(W,true);
     //myComm->barrier();
     myTimers[DMC_MPI_loadbalance]->stop();
     myTimers[DMC_MPI_copyWalkers]->start();
@@ -169,7 +169,7 @@ void determineNewWalkerPopulation(int Cur_pop, int NumContexts, int MyContext, c
  * The algorithm ensures that the load per node can differ only by one walker.
  * The communication is one-dimensional.
  */
-void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
+void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W, bool use_isend)
 {
   std::vector<int> minus, plus;
   determineNewWalkerPopulation(Cur_pop, NumContexts, MyContext, NumPerNode, FairOffSet, minus, plus);
@@ -207,6 +207,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   std::sort(ncopy_pairs.begin(), ncopy_pairs.end());
 
   int nsend=0;
+  std::vector<OOMPI_Request> requests;
   for(int ic=0; ic<nswap; ic++)
   {
     if(plus[ic]==MyContext)
@@ -233,7 +234,10 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
       size_t byteSize = awalker->byteSize();
       awalker->updateBuffer();
       OOMPI_Message sendBuffer(awalker->DataSet.data(), byteSize);
-      myComm->getComm()[minus[ic]].Send(sendBuffer);
+      if(use_isend)
+        requests.push_back(myComm->getComm()[minus[ic]].Isend(sendBuffer));
+      else
+        myComm->getComm()[minus[ic]].Send(sendBuffer);
       // update counter and cursor
       ++nsend;
       ic+=nsentcopy;
@@ -274,6 +278,13 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
       // update counter and cursor
       ic+=awalker->NumSentCopies;
     }
+  }
+  // wait all the isend
+  if(nsend>0&&use_isend)
+  {
+    for(int im=0; im<requests.size(); im++)
+      requests[im].Wait();
+    requests.clear();
   }
   //save the number of walkers sent
   NumWalkersSent=nsend;
