@@ -168,7 +168,7 @@ void determineNewWalkerPopulation(int Cur_pop, int NumContexts, int MyContext, c
   }
 }
 
-/** swap Walkers with Recv/Send
+/** swap Walkers with Recv/Send or Irecv/Isend
  *
  * The algorithm ensures that the load per node can differ only by one walker.
  * The communication is one-dimensional.
@@ -201,8 +201,12 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W, bool use_nonb
   }
   fout << std::endl;
 #endif
-  int nswap=std::min(plus.size(), minus.size());
-
+  if(plus.size()!=minus.size())
+  {
+    app_error() << "Walker send/recv pattern doesn't match." << std::endl;
+    APP_ABORT("WalkerControlMPI::swapWalkersSimple");
+  }
+  int nswap=plus.size();
   // sort good walkers by the number of copies
   assert(good_w.size()==ncopy_w.size());
   std::vector<std::pair<int,int> > ncopy_pairs, nrecv_pairs;
@@ -237,13 +241,15 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W, bool use_nonb
       // pack data and send
       size_t byteSize = awalker->byteSize();
       awalker->updateBuffer();
-      myTimers[DMC_MPI_send]->start();
       OOMPI_Message sendBuffer(awalker->DataSet.data(), byteSize);
       if(use_nonblocking)
         requests.push_back(myComm->getComm()[minus[ic]].Isend(sendBuffer));
       else
+      {
+        myTimers[DMC_MPI_send]->start();
         myComm->getComm()[minus[ic]].Send(sendBuffer);
-      myTimers[DMC_MPI_send]->stop();
+        myTimers[DMC_MPI_send]->stop();
+      }
       // update counter and cursor
       ++nsend;
       ic+=nsentcopy;
@@ -279,10 +285,12 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W, bool use_nonb
     if(use_nonblocking)
     {
       // wait all the isend
-      myTimers[DMC_MPI_send]->start();
       for(int im=0; im<requests.size(); im++)
+      {
+        myTimers[DMC_MPI_send]->start();
         requests[im].Wait();
-      myTimers[DMC_MPI_send]->stop();
+        myTimers[DMC_MPI_send]->stop();
+      }
       requests.clear();
     }
   }
