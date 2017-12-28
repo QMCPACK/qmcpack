@@ -173,7 +173,7 @@ void determineNewWalkerPopulation(int Cur_pop, int NumContexts, int MyContext, c
  * The algorithm ensures that the load per node can differ only by one walker.
  * The communication is one-dimensional.
  */
-void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W, bool use_isend)
+void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W, bool use_nonblocking)
 {
   std::vector<int> minus, plus;
   determineNewWalkerPopulation(Cur_pop, NumContexts, MyContext, NumPerNode, FairOffSet, minus, plus);
@@ -205,7 +205,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W, bool use_isen
 
   // sort good walkers by the number of copies
   assert(good_w.size()==ncopy_w.size());
-  std::vector<std::pair<int,int> > ncopy_pairs;
+  std::vector<std::pair<int,int> > ncopy_pairs, nrecv_pairs;
   for(int iw=0; iw<ncopy_w.size(); iw++)
     ncopy_pairs.push_back(std::make_pair(ncopy_w[iw],iw));
   std::sort(ncopy_pairs.begin(), ncopy_pairs.end());
@@ -230,7 +230,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W, bool use_isen
           nsentcopy++;
         }
         else
-        { // not enough copies to send or not the same send/recv pattern
+        { // not enough copies to send or not the same send/recv pair
           break;
         }
 
@@ -239,7 +239,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W, bool use_isen
       awalker->updateBuffer();
       myTimers[DMC_MPI_send]->start();
       OOMPI_Message sendBuffer(awalker->DataSet.data(), byteSize);
-      if(use_isend)
+      if(use_nonblocking)
         requests.push_back(myComm->getComm()[minus[ic]].Isend(sendBuffer));
       else
         myComm->getComm()[minus[ic]].Send(sendBuffer);
@@ -262,39 +262,115 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W, bool use_isen
     }
     if(minus[ic]==MyContext)
     {
-      Walker_t* awalker;
-      if(bad_w.empty())
+      // count receive pairs, (source,copy)
+      nrecv_pairs.push_back(std::make_pair(plus[ic],0));
+      for(int id=ic+1; id<nswap; id++)
+        if(plus[ic]==plus[id]&&minus[ic]==minus[id])
+          nrecv_pairs.back().second++;
+        else
+          break;
+      // update cursor
+      ic+=nrecv_pairs.back().second;
+    }
+  }
+
+  if(nsend>0)
+  {
+    if(use_nonblocking)
+    {
+      // wait all the isend
+      myTimers[DMC_MPI_send]->start();
+      for(int im=0; im<requests.size(); im++)
+        requests[im].Wait();
+      myTimers[DMC_MPI_send]->stop();
+      requests.clear();
+    }
+  }
+  else
+  {
+    struct job {
+      OOMPI_Request request;
+      int walkerID;
+      int queueID;
+      job(const OOMPI_Request &req, int wid, int qid): request(req), walkerID(wid), queueID(qid) {};
+    };
+    std::vector<job> job_list;
+    std::vector<bool> queue_status(nrecv_pairs.size(),true);
+
+    bool completed=false;
+    while(!completed)
+    {
+      // receive data
+      for(int ic=0; ic<nrecv_pairs.size(); ic++)
+        if(queue_status[ic]&&nrecv_pairs[ic].second>=0)
+        {
+          Walker_t* awalker;
+          if(bad_w.empty())
+          {
+            awalker=new Walker_t(wRef);
+          }
+          else
+          {
+            awalker=bad_w.back();
+            bad_w.pop_back();
+          }
+
+          size_t byteSize = awalker->byteSize();
+          myTimers[DMC_MPI_recv]->start();
+          OOMPI_Message recvBuffer(awalker->DataSet.data(), byteSize);
+          if(use_nonblocking)
+          {
+            job_list.push_back(job(myComm->getComm()[nrecv_pairs[ic].first].Irecv(recvBuffer),
+                               newW.size(),ic));
+            queue_status[ic]=false;
+          }
+          else
+          {
+            myComm->getComm()[nrecv_pairs[ic].first].Recv(recvBuffer);
+            job_list.push_back(job(OOMPI_Request(),newW.size(),ic));
+          }
+          myTimers[DMC_MPI_recv]->stop();
+
+          newW.push_back(awalker);
+          ncopy_newW.push_back(0);
+        }
+
+      if(use_nonblocking)
       {
-        awalker=new Walker_t(wRef);
+        OOMPI_Status status;
+        for(auto jobit=job_list.begin(); jobit!=job_list.end(); jobit++)
+          if(jobit->request.Test(status))
+          {
+            auto &awalker=newW[jobit->walkerID];
+            // unpack data
+            awalker->copyFromBuffer();
+            ncopy_newW[jobit->walkerID]=awalker->NumSentCopies;
+            // update counter
+            nrecv_pairs[jobit->queueID].second-=(awalker->NumSentCopies+1);
+            queue_status[jobit->queueID]=true;
+            job_list.erase(jobit);
+            break;
+          }
       }
       else
       {
-        awalker=bad_w.back();
-        bad_w.pop_back();
+        for(auto jobit=job_list.begin(); jobit!=job_list.end(); jobit++)
+        {
+          auto &awalker=newW[jobit->walkerID];
+          // unpack data
+          awalker->copyFromBuffer();
+          ncopy_newW[jobit->walkerID]=awalker->NumSentCopies;
+          // update counter
+          nrecv_pairs[jobit->queueID].second-=(awalker->NumSentCopies+1);
+        }
+        job_list.clear();
       }
 
-      // receive and unpack data
-      size_t byteSize = awalker->byteSize();
-      myTimers[DMC_MPI_recv]->start();
-      OOMPI_Message recvBuffer(awalker->DataSet.data(), byteSize);
-      myComm->getComm()[plus[ic]].Recv(recvBuffer);
-      myTimers[DMC_MPI_recv]->stop();
-      awalker->copyFromBuffer();
-      newW.push_back(awalker);
-      ncopy_newW.push_back(awalker->NumSentCopies);
-
-      // update counter and cursor
-      ic+=awalker->NumSentCopies;
+      // check the completion of queues
+      completed=true;
+      for(int ic=0; ic<nrecv_pairs.size(); ic++)
+        completed = completed && (nrecv_pairs[ic].second==-1);
     }
-  }
-  // wait all the isend
-  if(nsend>0&&use_isend)
-  {
-    myTimers[DMC_MPI_send]->start();
-    for(int im=0; im<requests.size(); im++)
-      requests[im].Wait();
-    myTimers[DMC_MPI_send]->stop();
-    requests.clear();
   }
   //save the number of walkers sent
   NumWalkersSent=nsend;
