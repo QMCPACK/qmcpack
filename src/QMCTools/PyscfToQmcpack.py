@@ -123,26 +123,89 @@ def savetoqmcpack(cell,mf,title="Default",kpts=0):
 
   #atomicBasisSets Group
   for x in range(NbSpecies):
+
+    MyIdx=idxAtomstoSpecies[x]
     atomicBasisSetGroup=GroupBasisSet.create_group("atomicBasisSet"+str(x))
-    #Dataset NbBasisGroups
-    atomicBasisSetGroup.create_dataset("NbBasisGroups",(1,),dtype="i4",data=cell.atom_nshells(idxAtomstoSpecies[x]))
+    NbShellPerAtom=0
+    NbShellIndex=0
+    while True:
+      try:
+             if len(cell.bas_ctr_coeff(cell.atom_shell_ids(MyIdx)[NbShellPerAtom])[0])==1:
+                ShellIdPerAtom=cell.atom_shell_ids(MyIdx)[NbShellPerAtom]
+                BasisGroup=atomicBasisSetGroup.create_group("basisGroup"+str(NbShellIndex))
+                BasisGroup.create_dataset("Shell_coord",(3,),dtype="f8",data=cell.bas_coord(ShellIdPerAtom))
+                BasisGroup.create_dataset("NbRadFunc",(1,),dtype="i4",data=cell.bas_nprim(ShellIdPerAtom))
+                Val_l=BasisGroup.create_dataset("l",(1,),dtype="i4",data=cell.bas_angular(ShellIdPerAtom))
+                Val_n=BasisGroup.create_dataset("n",(1,),dtype="i4",data=NbShellIndex)
+                RadGroup=BasisGroup.create_group("radfunctions")
+                for j in range(cell.bas_nprim(cell.atom_shell_ids(MyIdx)[NbShellPerAtom])):
+                   DataRadGrp=RadGroup.create_group("DataRad"+str(j))
+                   DataRadGrp.create_dataset("exponent",(1,),dtype="f8",data=cell.bas_exp(cell.atom_shell_ids(idxAtomstoSpecies[x])[NbShellPerAtom])[j])
+                   DataRadGrp.create_dataset("contraction",(1,),dtype="f8",data=cell.bas_ctr_coeff(ShellIdPerAtom)[j])
+                mylen="S"+str(len((uniq_atoms[x][0]+str(NbShellPerAtom)+str(cell.bas_angular(cell.atom_shell_ids(idxAtomstoSpecies[x])[NbShellPerAtom])))))
+                RID=BasisGroup.create_dataset("rid",(1,),dtype=mylen)
+                RID[0:]=(uniq_atoms[x][0]+str(NbShellIndex)+str(cell.bas_angular(cell.atom_shell_ids(idxAtomstoSpecies[x])[NbShellPerAtom])))
+                basisType=BasisGroup.create_dataset("type",(1,),dtype="S8")
+                basisType[0:]="Gaussian"
+
+                #print "<basisGroup",NbShellIndex," rid=",uniq_atoms[x][0]+str(NbShellIndex)+str(cell.bas_angular(cell.atom_shell_ids(idxAtomstoSpecies[x])[NbShellPerAtom]))," n=",NbShellIndex,"  l=",cell.bas_angular(ShellIdPerAtom) ,"type=Gaussian>"
+                #for j in range(cell.bas_nprim(cell.atom_shell_ids(MyIdx)[NbShellPerAtom])):
+                #     print  "<radfunc exponent=",cell.bas_exp(cell.atom_shell_ids(idxAtomstoSpecies[x])[NbShellPerAtom])[j]," contraction=",cell.bas_ctr_coeff(ShellIdPerAtom)[j][0],"/>"
+
+                NbShellPerAtom=NbShellPerAtom+1
+                NbShellIndex=NbShellIndex+1
+   
+             else:
+                ShellIdPerAtom=cell.atom_shell_ids(MyIdx)[NbShellPerAtom]
+                BasisGroup=atomicBasisSetGroup.create_group("basisGroup"+str(NbShellPerAtom))
+                BasisGroup.create_dataset("Shell_coord",(3,),dtype="f8",data=cell.bas_coord(ShellIdPerAtom))
+                BasisGroup.create_dataset("NbRadFunc",(1,),dtype="i4",data=cell.bas_nprim(ShellIdPerAtom))
+                Val_l=BasisGroup.create_dataset("l",(1,),dtype="i4",data=cell.bas_angular(ShellIdPerAtom))
+                Val_n=BasisGroup.create_dataset("n",(1,),dtype="i4",data=NbShellIndex)
+                RadGroup=BasisGroup.create_group("radfunctions")
+                for j in range(cell.bas_nprim(cell.atom_shell_ids(MyIdx)[NbShellPerAtom])):
+                   DataRadGrp=RadGroup.create_group("DataRad"+str(j))
+                   DataRadGrp.create_dataset("exponent",(1,),dtype="f8",data=cell.bas_exp(cell.atom_shell_ids(idxAtomstoSpecies[x])[NbShellPerAtom])[j])
+                   DataRadGrp.create_dataset("contraction",(1,),dtype="f8",data=cell.bas_ctr_coeff(ShellIdPerAtom)[j][0])
+                mylen="S"+str(len((uniq_atoms[x][0]+str(NbShellPerAtom)+str(cell.bas_angular(cell.atom_shell_ids(idxAtomstoSpecies[x])[NbShellPerAtom])))))
+                RID=BasisGroup.create_dataset("rid",(1,),dtype=mylen)
+                RID[0:]=(uniq_atoms[x][0]+str(NbShellIndex)+str(cell.bas_angular(cell.atom_shell_ids(idxAtomstoSpecies[x])[NbShellPerAtom])))
+                basisType=BasisGroup.create_dataset("type",(1,),dtype="S8")
+                basisType[0:]="Gaussian"
+
+                #print "<basisGroup",NbShellIndex," rid=",uniq_atoms[x][0]+str(NbShellIndex)+str(cell.bas_angular(cell.atom_shell_ids(idxAtomstoSpecies[x])[NbShellPerAtom]))," n=",NbShellIndex,"  l=",cell.bas_angular(ShellIdPerAtom) ,"type=Gaussian>"
+                #for j in range(cell.bas_nprim(cell.atom_shell_ids(MyIdx)[NbShellPerAtom])):
+                #     print  "<radfunc exponent=",cell.bas_exp(cell.atom_shell_ids(idxAtomstoSpecies[x])[NbShellPerAtom])[j]," contraction=",cell.bas_ctr_coeff(ShellIdPerAtom)[j][0],"/>"
+                NbShellIndex=NbShellIndex+1
+
+                ShellIdPerAtom=cell.atom_shell_ids(MyIdx)[NbShellPerAtom]
+                BasisGroup=atomicBasisSetGroup.create_group("basisGroup"+str(NbShellPerAtom+1))
+                BasisGroup.create_dataset("Shell_coord",(3,),dtype="f8",data=cell.bas_coord(ShellIdPerAtom))
+                BasisGroup.create_dataset("NbRadFunc",(1,),dtype="i4",data=cell.bas_nprim(ShellIdPerAtom))
+                Val_l=BasisGroup.create_dataset("l",(1,),dtype="i4",data=cell.bas_angular(ShellIdPerAtom))
+                Val_n=BasisGroup.create_dataset("n",(1,),dtype="i4",data=NbShellPerAtom+1)
+                RadGroup=BasisGroup.create_group("radfunctions")
+                for j in range(cell.bas_nprim(cell.atom_shell_ids(MyIdx)[NbShellPerAtom])):
+                   DataRadGrp=RadGroup.create_group("DataRad"+str(j))
+                   DataRadGrp.create_dataset("exponent",(1,),dtype="f8",data=cell.bas_exp(cell.atom_shell_ids(idxAtomstoSpecies[x])[NbShellPerAtom])[j])
+                   DataRadGrp.create_dataset("contraction",(1,),dtype="f8",data=cell.bas_ctr_coeff(ShellIdPerAtom)[j][1])
+                mylen="S"+str(len((uniq_atoms[x][0]+str(NbShellPerAtom)+str(cell.bas_angular(cell.atom_shell_ids(idxAtomstoSpecies[x])[NbShellPerAtom])))))
+                RID=BasisGroup.create_dataset("rid",(1,),dtype=mylen)
+                RID[0:]=(uniq_atoms[x][0]+str(NbShellIndex)+str(cell.bas_angular(cell.atom_shell_ids(idxAtomstoSpecies[x])[NbShellPerAtom])))
+                basisType=BasisGroup.create_dataset("type",(1,),dtype="S8")
+                basisType[0:]="Gaussian"
+
+                #print "<basisGroup",NbShellIndex," rid=",uniq_atoms[x][0]+str(NbShellIndex)+str(cell.bas_angular(cell.atom_shell_ids(idxAtomstoSpecies[x])[NbShellPerAtom]))," n=",NbShellIndex,"  l=",cell.bas_angular(ShellIdPerAtom) ,"type=Gaussian>"
+                #for j in range(cell.bas_nprim(cell.atom_shell_ids(MyIdx)[NbShellPerAtom])):
+                #     print  "<radfunc exponent=",cell.bas_exp(cell.atom_shell_ids(idxAtomstoSpecies[x])[NbShellPerAtom])[j]," contraction=",cell.bas_ctr_coeff(ShellIdPerAtom)[j][1],"/>"
+                NbShellPerAtom=NbShellPerAtom+1
+                NbShellIndex=NbShellIndex+1
+      except:
+         break
+
+    atomicBasisSetGroup.create_dataset("NbBasisGroups",(1,),dtype="i4",data=NbShellIndex)
     Angular=atomicBasisSetGroup.create_dataset("angular",(1,),dtype="S9")
     Angular[0:]="cartesian"
-    for i in range(cell.atom_nshells(idxAtomstoSpecies[x])):
-      BasisGroup=atomicBasisSetGroup.create_group("basisGroup"+str(i))
-      BasisGroup.create_dataset("NbRadFunc",(1,),dtype="i4",data=cell.bas_nprim(cell.atom_shell_ids(idxAtomstoSpecies[x])[i]))
-      Val_l=BasisGroup.create_dataset("l",(1,),dtype="i4",data=cell.bas_angular(cell.atom_shell_ids(idxAtomstoSpecies[x])[i]))
-      Val_n=BasisGroup.create_dataset("n",(1,),dtype="i4",data=i)
-      RadGroup=BasisGroup.create_group("radfunctions")
-      for j in range(cell.bas_nprim(cell.atom_shell_ids(idxAtomstoSpecies[x])[i])):
-         DataRadGrp=RadGroup.create_group("DataRad"+str(j))
-         DataRadGrp.create_dataset("contraction",(1,),dtype="f8",data=cell.bas_ctr_coeff(cell.atom_shell_ids(idxAtomstoSpecies[x])[i])[j])
-         DataRadGrp.create_dataset("exponent",(1,),dtype="f8",data=cell.bas_exp(cell.atom_shell_ids(idxAtomstoSpecies[x])[i])[j])
-      mylen="S"+str(len((uniq_atoms[x][0]+str(i)+str(cell.bas_angular(cell.atom_shell_ids(idxAtomstoSpecies[x])[i])))))
-      RID=BasisGroup.create_dataset("rid",(1,),dtype=mylen)
-      RID[0:]=(uniq_atoms[x][0]+str(i)+str(cell.bas_angular(cell.atom_shell_ids(idxAtomstoSpecies[x])[i])))
-      basisType=BasisGroup.create_dataset("type",(1,),dtype="S8")
-      basisType[0:]="pyscf"
     mylen="S"+str(len(uniq_atoms[x][0]))
     elemtype=atomicBasisSetGroup.create_dataset("elementType",(1,),dtype=mylen)
     elemtype[0:]=uniq_atoms[x][0]
@@ -226,4 +289,4 @@ def savetoqmcpack(cell,mf,title="Default",kpts=0):
   print 'Use: "convert4qmc -Pyscf  {}.h5" to generate QMCPACK input files'.format(title)
   # Close the file before exiting
   H5_qmcpack.close()
-      
+
