@@ -504,8 +504,9 @@ ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
 void ParticleSet::setActive(int iat)
 {
   myTimers[3]->start();
-  for (size_t i=0,n=DistTables.size(); i< n; i++)
-    DistTables[i]->evaluate(*this,iat);
+  for (size_t i=0; i<DistTables.size(); i++)
+    if(DistTables[i]->DTType==DT_SOA)
+      DistTables[i]->evaluate(*this,iat);
   myTimers[3]->stop();
 }
 
@@ -809,7 +810,8 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
   {
     // in certain cases, full tables must be ready
     for (int i=0; i< DistTables.size(); i++)
-      if(DistTables[i]->Need_full_table_loadWalker) DistTables[i]->evaluate(*this);
+      if(DistTables[i]->DTType==DT_AOS||DistTables[i]->Need_full_table_loadWalker)
+        DistTables[i]->evaluate(*this);
     //computed so that other objects can use them, e.g., kSpaceJastrow
     if(SK && SK->DoUpdate)
       SK->UpdateAllPart(*this);
