@@ -225,7 +225,7 @@ void update_dot (T a, T b, T sum, T corr, T *new_sum, T *new_corr)
 */
 template<typename T, int BS>
 __device__ __forceinline__
-void update_inverse_core1 (const T * __restrict__ A,
+void update_inverse_core1 (T * __restrict__ A,
                            const T * __restrict__ Ainv,
                            const T * __restrict__ u,
                            T * __restrict__ delta_Ainv,
@@ -233,72 +233,38 @@ void update_inverse_core1 (const T * __restrict__ A,
                            int k, int N, int rowstride)
 {
 #ifdef QMC_COMPLEX
-  __shared__ uninitialized_array<T,BS> Ainv_colk_shared, delta;
+  __shared__ uninitialized_array<T,BS> delta;
 #else
-  __shared__ T Ainv_colk_shared[BS], delta[BS];
+  __shared__ T delta[BS];
 #endif
   T sum = (T)0, corr = (T)0;// compensated dot-product delta*Ainv(*,col_Ainv)
   int tidx = threadIdx.x;
   int col_Ainv = blockIdx.x*BS + tidx;
   int numBlocks = (N + BS - 1) / BS;
-  int kBlock = k/BS;     // thread block handling the k-th column of Ainv
-  if (blockIdx.x == kBlock)
+  for (int block = 0; block < numBlocks; block++)
   {
-    // this thread block needs to copy out the k-th column of Ainv
-    for (int block = 0; block < numBlocks; block++)
+    int blockStart = block * BS;
+    int col_A = blockStart + tidx;
+    if (col_A < N)
     {
-      int blockStart = block * BS;
-      int col_A = blockStart + tidx;
-      int row_Ainv;
-      if (col_A < N)
-      {
-        delta[tidx] = u[col_A] - A[k*rowstride + col_A];
-      }
-      __syncthreads();
-      for (int i = 0; i < min(BS, N-blockStart); i++)
-      {
-        row_Ainv = blockStart + i;
-        T Ainv_elem = Ainv[row_Ainv*rowstride + col_Ainv];
-        update_dot<T> (delta[i], Ainv_elem, sum, corr, &sum, &corr);
-        if (col_Ainv == k)
-        {
-          Ainv_colk_shared[i] = Ainv_elem;
-        }
-      }
-      __syncthreads();
-      // Write segment of k-th column of Ainv back to global memory
-      row_Ainv = blockStart + tidx;
-      if (row_Ainv < N)
-      {
-        Ainv_colk[row_Ainv] = Ainv_colk_shared[tidx];
-      }
+      delta[tidx] = u[col_A];
+      A[k*rowstride + col_A] = u[col_A];
     }
-  }
-  else
-  {
-    for (int block = 0; block < numBlocks; block++)
+    __syncthreads();
+    for (int i = 0; i < min(BS, N-blockStart); i++)
     {
-      int blockStart = block * BS;
-      int col_A = blockStart + tidx;
-      int row_Ainv;
-      if (col_A < N)
-      {
-        delta[tidx] = u[col_A] - A[k*rowstride + col_A];
-      }
-      __syncthreads();
-      for (int i = 0; i < min(BS, N-blockStart); i++)
-      {
-        row_Ainv = blockStart + i;
-        T Ainv_elem = Ainv[row_Ainv*rowstride + col_Ainv];
-        update_dot<T> (delta[i], Ainv_elem, sum, corr, &sum, &corr);
-      }
-      __syncthreads();
+      const int row_Ainv = blockStart + i;
+      T Ainv_elem = Ainv[row_Ainv*rowstride + col_Ainv];
+      update_dot<T> (delta[i], Ainv_elem, sum, corr, &sum, &corr);
     }
+    __syncthreads();
   }
   // Write segment of row vector delta*Ainv back to global memory
   if (col_Ainv < N)
   {
     delta_Ainv[col_Ainv] = sum + corr;
+    // save the column k of Ainv
+    Ainv_colk[col_Ainv] = Ainv[col_Ainv*rowstride + k];
   }
 }
 
@@ -320,9 +286,7 @@ void update_inverse_core1 (const T * __restrict__ A,
 */
 template<typename T, int BS>
 __device__ __forceinline__
-void update_inverse_core2 (T * __restrict__ A,
-                           T * __restrict__ Ainv,
-                           const T * __restrict__ u,
+void update_inverse_core2 (T * __restrict__ Ainv,
                            const T * __restrict__ delta_Ainv,
                            const T * __restrict__ Ainv_colk,
                            int k, int N, int rowstride)
@@ -336,16 +300,14 @@ void update_inverse_core2 (T * __restrict__ A,
   T prefact;
   int tidx = threadIdx.x;
   int col_Ainv = blockIdx.x*BS + tidx;
-  int col_A = col_Ainv;
   int numBlocks = (N + BS - 1) / BS;
   // Cache one segment of row vector delta*Ainv, and replace one segment of
   // the k-th row of A with the corresponding segment from row vector u
   if (col_Ainv < N)
-  {
     delta_Ainv_shared = delta_Ainv[col_Ainv];
-    A[k*rowstride + col_A] = u[col_A];
-  }
-  prefact = (T) -1.0f / ((T) 1.0f + delta_Ainv[k]);
+  if ( col_Ainv == k )
+    delta_Ainv_shared = delta_Ainv[k] - T(1);
+  prefact = - T(1) / delta_Ainv[k];
   for (int block = 0; block < numBlocks; block++)
   {
     int blockStart = block * BS;
@@ -373,12 +335,10 @@ void update_inverse_core2 (T * __restrict__ A,
 
 template<typename T, int BS>
 __device__ __forceinline__
-void update_inverse_core2_subblock (T * __restrict__ A,
-                           T * __restrict__ Ainv,
-                           const T * __restrict__ u,
-                           const T * __restrict__ delta_Ainv,
-                           const T * __restrict__ Ainv_colk,
-                           int k, int N, int rowstride)
+void update_inverse_core2_subblock(T * __restrict__ Ainv,
+                                   const T * __restrict__ delta_Ainv,
+                                   const T * __restrict__ Ainv_colk,
+                                   int k, int N, int rowstride)
 {
   T delta_Ainv_shared;
 #ifdef QMC_COMPLEX
@@ -389,16 +349,14 @@ void update_inverse_core2_subblock (T * __restrict__ A,
   T prefact;
   int tidx = threadIdx.x;
   int col_Ainv = blockIdx.y*BS + tidx;
-  int col_A = col_Ainv;
   // int numBlocks = (N + BS - 1) / BS;
   // Cache one segment of row vector delta*Ainv, and replace one segment of
   // the k-th row of A with the corresponding segment from row vector u
   if (col_Ainv < N)
-  {
     delta_Ainv_shared = delta_Ainv[col_Ainv];
-    A[k*rowstride + col_A] = u[col_A];
-  }
-  prefact = (T) -1.0f / ((T) 1.0f + delta_Ainv[k]);
+  if ( col_Ainv == k )
+    delta_Ainv_shared = delta_Ainv[k] - T(1);
+  prefact = - T(1) / delta_Ainv[k];
   const int blockStart = blockIdx.z * BS;
   int row_Ainv;
   row_Ainv = blockStart + tidx;
@@ -432,7 +390,7 @@ update_inverse_kernel1 (T **data, int *iat, int A_off, int Ainv_off,
                         int N, int rowstride)
 {
   T* const sdata = data[blockIdx.y];
-  const T *A     = sdata + A_off;          // A
+  T *A           = sdata + A_off;          // A
   const T *Ainv  = sdata + Ainv_off;       // Ainv
   const T *u     = sdata + newRow_off;     // new k-th row of A
   T *delta_Ainv  = sdata + AinvDelta_off;  // delta * Ainv
@@ -450,13 +408,11 @@ update_inverse_kernel2 (T **data, int *iat, int A_off, int Ainv_off,
 
 {
   T * const sdata     = data[blockIdx.y];
-  T *A                = sdata + A_off;         // A
   T *Ainv             = sdata + Ainv_off;      // Ainv
-  const T *u          = sdata + newRow_off;    // new k-th row of A
   const T *delta_Ainv = sdata + AinvDelta_off; // delta * Ainv
   const T *Ainv_colk  = sdata + AinvColk_off;  // k-th column of orig. Ainv
   int k = iat[blockIdx.y];
-  update_inverse_core2<T,BS> (A, Ainv, u, delta_Ainv, Ainv_colk, k, N,
+  update_inverse_core2<T,BS> (Ainv, delta_Ainv, Ainv_colk, k, N,
                               rowstride);
 }
 
@@ -591,7 +547,7 @@ update_inverse_kernel1 (T **data, int k, int A_off, int Ainv_off,
                         int N, int rowstride)
 {
   T* const sdata = data[blockIdx.y];
-  const T *A     = sdata + A_off;          // A
+  T *A           = sdata + A_off;          // A
   const T *Ainv  = sdata + Ainv_off;       // Ainv
   const T *u     = sdata + newRow_off;     // new k-th row of A
   T *delta_Ainv  = sdata + AinvDelta_off;  // delta * Ainv
@@ -625,12 +581,10 @@ update_inverse_kernel2_subblock (T **data, int k, int A_off, int Ainv_off,
 
 {
   T * const sdata     = data[blockIdx.x];
-  T *A                = sdata + A_off;         // A
   T *Ainv             = sdata + Ainv_off;      // Ainv
-  const T *u          = sdata + newRow_off;    // new k-th row of A
   const T *delta_Ainv = sdata + AinvDelta_off; // delta * Ainv
   const T *Ainv_colk  = sdata + AinvColk_off;  // k-th column of orig. Ainv
-  update_inverse_core2_subblock<T,BS> (A, Ainv, u, delta_Ainv, Ainv_colk, k, N,
+  update_inverse_core2_subblock<T,BS> (Ainv, delta_Ainv, Ainv_colk, k, N,
                               rowstride);
 }
 
