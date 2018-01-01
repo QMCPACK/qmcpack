@@ -1921,7 +1921,7 @@ scale_grad_lapl(float *grad_list[], float *hess_list[],
 }
 
 
-template<typename T>
+template<typename T, int BS>
 __global__ void
 all_ratios_grad_lapl_kernel (T **Ainv_list, T **grad_lapl_list,
                              T **out_list, int N, int row_stride)
@@ -1935,98 +1935,58 @@ all_ratios_grad_lapl_kernel (T **Ainv_list, T **grad_lapl_list,
   }
   __syncthreads();
 #ifdef QMC_COMPLEX
-  __shared__ uninitialized_array<T,RATIO_BS*(RATIO_BS+1)> Ainv_block;
-  __shared__ uninitialized_array<T,RATIO_BS*(RATIO_BS+1)> grad_lapl_block[4];
+  __shared__ uninitialized_array<T,BS*(BS+1)> Ainv_block;
+  __shared__ uninitialized_array<T,BS*(BS+1)> grad_lapl_block[4];
 #else
-  __shared__ T Ainv_block[RATIO_BS*(RATIO_BS+1)];
-  __shared__ T grad_lapl_block[4][RATIO_BS*(RATIO_BS+1)];
+  __shared__ T Ainv_block[BS*(BS+1)];
+  __shared__ T grad_lapl_block[4][BS*(BS+1)];
 #endif
-  unsigned int numBlocks = N >> 4;
-  if (N & 15)
-    numBlocks++;
-  __syncthreads();
+  const unsigned int numBlocks = (N+BS-1)/BS;
+  const unsigned int index_local = threadIdx.y*(BS+1)+threadIdx.x;
   for (unsigned int yBlock=0; yBlock<numBlocks; yBlock++)
   {
-    __syncthreads();
-    grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x] = 0.0f;
-    grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x] = 0.0f;
-    grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x] = 0.0f;
-    grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x] = 0.0f;
-    __syncthreads();
+    grad_lapl_block[0][index_local] = 0.0f;
+    grad_lapl_block[1][index_local] = 0.0f;
+    grad_lapl_block[2][index_local] = 0.0f;
+    grad_lapl_block[3][index_local] = 0.0f;
     for (unsigned int xBlock=0; xBlock<numBlocks; xBlock++)
     {
-      unsigned int xIndex = yBlock * RATIO_BS + threadIdx.x;
-      unsigned int yIndex = xBlock * RATIO_BS + threadIdx.y;
+      unsigned int xIndex = yBlock * BS + threadIdx.x;
+      unsigned int yIndex = xBlock * BS + threadIdx.y;
       unsigned int index  = yIndex*row_stride + xIndex;
+
       if ((xIndex < N) && (yIndex < N))
-        Ainv_block[threadIdx.x*(RATIO_BS+1)+threadIdx.y] = Ainv[index];
+        Ainv_block[threadIdx.x*(BS+1)+threadIdx.y] = Ainv[index];
       __syncthreads();
-      xIndex = xBlock * RATIO_BS + threadIdx.x;
-      yIndex = yBlock * RATIO_BS + threadIdx.y;
+      xIndex = xBlock * BS + threadIdx.x;
+      yIndex = yBlock * BS + threadIdx.y;
       index  = 4*yIndex*row_stride + xIndex;
-      __syncthreads();
       if ((xIndex < N) && (yIndex < N))
       {
-        grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-          gl_array[index+0*row_stride] * Ainv_block[threadIdx.y*(RATIO_BS+1)+threadIdx.x];
-        grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-          gl_array[index+1*row_stride] * Ainv_block[threadIdx.y*(RATIO_BS+1)+threadIdx.x];
-        grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-          gl_array[index+2*row_stride] * Ainv_block[threadIdx.y*(RATIO_BS+1)+threadIdx.x];
-        grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-          gl_array[index+3*row_stride] * Ainv_block[threadIdx.y*(RATIO_BS+1)+threadIdx.x];
+        grad_lapl_block[0][index_local] +=
+          gl_array[index+0*row_stride] * Ainv_block[index_local];
+        grad_lapl_block[1][index_local] +=
+          gl_array[index+1*row_stride] * Ainv_block[index_local];
+        grad_lapl_block[2][index_local] +=
+          gl_array[index+2*row_stride] * Ainv_block[index_local];
+        grad_lapl_block[3][index_local] +=
+          gl_array[index+3*row_stride] * Ainv_block[index_local];
       }
       __syncthreads();
     }
     // Now, we have to do the reduction across the lapl_blocks
-    if (threadIdx.x < 8)
+    for (int s=BS>>1; s>0; s>>=1)
     {
-      grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-        grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x+8];
-      grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-        grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x+8];
-      grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-        grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x+8];
-      grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-        grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x+8];
+
+      if (threadIdx.x<s)
+      {
+        grad_lapl_block[0][index_local] += grad_lapl_block[0][index_local+s];
+        grad_lapl_block[1][index_local] += grad_lapl_block[1][index_local+s];
+        grad_lapl_block[2][index_local] += grad_lapl_block[2][index_local+s];
+        grad_lapl_block[3][index_local] += grad_lapl_block[3][index_local+s];
+      }
+      __syncthreads();
     }
-    __syncthreads();
-    if (threadIdx.x < 4)
-    {
-      grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-        grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x+4];
-      grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-        grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x+4];
-      grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-        grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x+4];
-      grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-        grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x+4];
-    }
-    __syncthreads();
-    if (threadIdx.x < 2)
-    {
-      grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-        grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x+2];
-      grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-        grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x+2];
-      grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-        grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x+2];
-      grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-        grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x+2];
-    }
-    __syncthreads();
-    if (threadIdx.x < 1)
-    {
-      grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-        grad_lapl_block[0][threadIdx.y*(RATIO_BS+1)+threadIdx.x+1];
-      grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-        grad_lapl_block[1][threadIdx.y*(RATIO_BS+1)+threadIdx.x+1];
-      grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-        grad_lapl_block[2][threadIdx.y*(RATIO_BS+1)+threadIdx.x+1];
-      grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x] +=
-        grad_lapl_block[3][threadIdx.y*(RATIO_BS+1)+threadIdx.x+1];
-    }
-    __syncthreads();
     // unsigned int yIndex = yBlock * RATIO_BS + threadIdx.x;
     // if (threadIdx.y == 0 && yIndex < N) {
     //   out[4*yIndex+0] = grad_lapl_block[0][threadIdx.x][0];
@@ -2035,10 +1995,10 @@ all_ratios_grad_lapl_kernel (T **Ainv_list, T **grad_lapl_list,
     //   out[4*yIndex+3] = grad_lapl_block[3][threadIdx.x][0];
     // }
     //unsigned int yIndex = 4*yBlock*RATIO_BS + 4*threadIdx.y + threadIdx.x;
-    unsigned int ix = 16*threadIdx.y + threadIdx.x;
-    unsigned int yIndex = RATIO_BS * yBlock + (ix >> 2);
-    if (ix < 64 && yIndex < N)
-      out[64*yBlock + ix] = grad_lapl_block[ix&3][(ix>>2)*(RATIO_BS+1)];
+    unsigned int ix = BS*threadIdx.y + threadIdx.x;
+    unsigned int yIndex = BS * yBlock + (ix >> 2);
+    if (ix < BS*4 && yIndex < N)
+      out[4*BS*yBlock + ix] = grad_lapl_block[ix&3][(ix>>2)*(BS+1)];
     // IMPORTANT!!!
     __syncthreads();
   }
@@ -2050,7 +2010,7 @@ calc_grad_lapl (float *Ainv_list[], float *grad_lapl_list[],
 {
   dim3 dimBlock(RATIO_BS, RATIO_BS);
   dim3 dimGrid (num_mats);
-  all_ratios_grad_lapl_kernel<float><<<dimGrid,dimBlock>>>
+  all_ratios_grad_lapl_kernel<float, RATIO_BS><<<dimGrid,dimBlock>>>
   (Ainv_list, grad_lapl_list, out_list, N, row_stride);
 }
 
@@ -2061,7 +2021,7 @@ calc_grad_lapl (double *Ainv_list[], double *grad_lapl_list[],
 {
   dim3 dimBlock(RATIO_BS, RATIO_BS);
   dim3 dimGrid (num_mats);
-  all_ratios_grad_lapl_kernel<double><<<dimGrid,dimBlock>>>
+  all_ratios_grad_lapl_kernel<double, RATIO_BS><<<dimGrid,dimBlock>>>
   (Ainv_list, grad_lapl_list, out_list, N, row_stride);
 }
 
@@ -2074,7 +2034,7 @@ calc_grad_lapl (std::complex<float> *Ainv_list[], std::complex<float> *grad_lapl
   dim3 dimBlock(RATIO_BS, RATIO_BS);
   dim3 dimGrid (num_mats);
 
-  all_ratios_grad_lapl_kernel<thrust::complex<float> > <<<dimGrid,dimBlock>>>
+  all_ratios_grad_lapl_kernel<thrust::complex<float>, RATIO_BS> <<<dimGrid,dimBlock>>>
   ((thrust::complex<float>**)Ainv_list, (thrust::complex<float>**)grad_lapl_list, (thrust::complex<float>**)out_list, N, row_stride);
 }
 
@@ -2086,7 +2046,7 @@ calc_grad_lapl (std::complex<double> *Ainv_list[], std::complex<double> *grad_la
   dim3 dimBlock(RATIO_BS, RATIO_BS);
   dim3 dimGrid (num_mats);
 
-  all_ratios_grad_lapl_kernel<thrust::complex<double> > <<<dimGrid,dimBlock>>>
+  all_ratios_grad_lapl_kernel<thrust::complex<double>, RATIO_BS> <<<dimGrid,dimBlock>>>
   ((thrust::complex<double>**)Ainv_list, (thrust::complex<double>**)grad_lapl_list, (thrust::complex<double>**)out_list, N, row_stride);
 }
 #endif
