@@ -179,36 +179,6 @@ update_inverse_cuda(updateJob updateList[], double dummy,
   }
 }
 
-/* Update compensated dot product using algorithm CompDot from: S. Graillat,
-   Ph. Langlois, and N. Louvet: Accurate dot products with FMA. RNC 7, pp.
-   141-142. See also: http://rnc7.loria.fr/louvet_poster.pdf. The product of
-   a and b is added to the dot product stored in sum and corr, where sum
-   represents the head and corr represents the tail. The result is written
-   back to the locations pointed to by new_sum and new_corr.
-*/
-template<typename T>
-__device__ __forceinline__
-void update_dot (T a, T b, T sum, T corr, T *new_sum, T *new_corr)
-{
-  T h, l, t, r, s;
-  // 2ProdFMA: h + l = a * b
-  h = a * b;
-#ifdef QMC_COMPLEX
-  l = a * b - h;
-#else
-  l = fma (a, b, -h);
-#endif
-  // 2Sum: s + r = sum + h
-  s = sum + h;
-  t = s - h;
-  r = s - t;
-  t = sum - t;
-  r = h - r;
-  r = t + r;
-  *new_sum = s;
-  *new_corr = (l + r) + corr;
-}
-
 /* Update of Ainv after rank-1 update to A, using Sherman-Morrison algorithm,
    part 1. See also K. P. Esler, J. Kim, D. M. Ceperley, and L. Shulenburger:
    Accelerating Quantum Monte Carlo Simulations of Real Materials on GPU
@@ -237,7 +207,7 @@ void update_inverse_core1 (T * __restrict__ A,
 #else
   __shared__ T delta[BS];
 #endif
-  T sum = (T)0, corr = (T)0;// compensated dot-product delta*Ainv(*,col_Ainv)
+  T sum(0);
   int tidx = threadIdx.x;
   int col_Ainv = blockIdx.x*BS + tidx;
   int numBlocks = (N + BS - 1) / BS;
@@ -254,15 +224,14 @@ void update_inverse_core1 (T * __restrict__ A,
     for (int i = 0; i < min(BS, N-blockStart); i++)
     {
       const int row_Ainv = blockStart + i;
-      T Ainv_elem = Ainv[row_Ainv*rowstride + col_Ainv];
-      update_dot<T> (delta[i], Ainv_elem, sum, corr, &sum, &corr);
+      sum += delta[i]*Ainv[row_Ainv*rowstride + col_Ainv];
     }
     __syncthreads();
   }
   // Write segment of row vector delta*Ainv back to global memory
   if (col_Ainv < N)
   {
-    delta_Ainv[col_Ainv] = sum + corr;
+    delta_Ainv[col_Ainv] = sum;
     // save the column k of Ainv
     Ainv_colk[col_Ainv] = Ainv[col_Ainv*rowstride + k];
   }
