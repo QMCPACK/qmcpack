@@ -137,6 +137,7 @@ struct SymmetricDTD
 
   inline void evaluate(ParticleSet& P, int jat)
   {
+    APP_ABORT("  No need to call SymmetricDTD::evaluate(ParticleSet& P, int jat)");
     //based on full evaluation. Only compute it if jat==0
     if(jat==0) evaluate(P);
   }
