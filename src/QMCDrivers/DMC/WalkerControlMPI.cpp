@@ -61,8 +61,15 @@ WalkerControlMPI::WalkerControlMPI(Communicate* c): WalkerControlBase(c)
   setup_timers(myTimers, DMCMPITimerNames, timer_level_medium);
 }
 
-int
-WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
+/** perform branch and swap walkers as required
+ *
+ *  it takes 4 steps:
+ *    1. shortWalkers marks good and bad walkers.
+ *    2. allreduce and make the decision of load balancing.
+ *    3. send/recv walkers. Receiving side recycle bad walkers' memory first.
+ *    4. copyWalkers generate walker copies of good walkers.
+ */
+int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
 {
   myTimers[DMC_MPI_branch]->start();
   myTimers[DMC_MPI_prebalance]->start();

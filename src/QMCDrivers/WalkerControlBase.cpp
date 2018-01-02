@@ -283,7 +283,11 @@ void WalkerControlBase::Write2XYZ(MCWalkerConfiguration& W)
 }
 
 
-/** evaluate curData and mark the bad/good walkers
+/** evaluate curData and mark the bad/good walkers.
+ *
+ *  Each good walker has a counter registering the
+ *  number of copies needed to be generated from this walker.
+ *  Bad walkers will be either recycled or removed later.
  */
 int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
 {
@@ -438,6 +442,11 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
   return NumWalkers;
 }
 
+/** copy good walkers to W
+ *
+ *  Good walkers are copied based on the registered number of copies
+ *  Bad walkers are recycled to avoid memory allocation and deallocation.
+ */
 int WalkerControlBase::copyWalkers(MCWalkerConfiguration& W)
 {
   // save current good walker size.
