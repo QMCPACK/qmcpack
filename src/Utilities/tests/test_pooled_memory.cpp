@@ -22,6 +22,8 @@
 #include <random>
 #include <complex>
 
+//#define CHECK_ALLOCATION_PERF
+
 using std::string;
 using std::vector;
 using std::complex;
@@ -95,6 +97,7 @@ TEST_CASE("pack scalar", "[utilities]")
   REQUIRE(i6[1]==i6[1]);
   REQUIRE(i6[2]==i6[2]);
 
+#ifdef CHECK_ALLOCATION_PERF
   // up to 512 MB.
   for(size_t size_scale=15; size_scale<30; size_scale++)
   {
@@ -122,6 +125,7 @@ TEST_CASE("pack scalar", "[utilities]")
 
     std::cout << std::endl;
   }
+#endif
 }
 
 }
