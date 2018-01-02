@@ -45,7 +45,11 @@ public:
   explicit inline
     Vector(size_t n=0): nLocal(n), nAllocated(0), X(nullptr)
   {
-    if(n) resize_impl(n);
+    if(n)
+    {
+      resize_impl(n);
+      std::fill_n(X, n, T());
+    }
   }
 
   /** constructor with an initialized ref */
@@ -118,7 +122,10 @@ public:
     if(nLocal>nAllocated)
       throw std::runtime_error("Resize not allowed on Vector constructed by initialized memory.");
     if(n>nAllocated)
+    {
       resize_impl(n);
+      std::fill_n(X, n, T());
+    }
     else
       nLocal=n;
     return;
@@ -204,7 +211,6 @@ private:
       mAllocator.deallocate(X,nAllocated);
     }
     X=mAllocator.allocate(n);
-    std::fill_n(X, n, T());
     nLocal=n;
     nAllocated=n;
   }
