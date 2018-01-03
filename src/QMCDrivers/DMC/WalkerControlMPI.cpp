@@ -97,27 +97,12 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigge
     Cur_pop+= NumPerNode[i]=static_cast<int>(curData[j]);
   }
   myTimers[DMC_MPI_prebalance]->stop();
-  if(qmc_common.async_swap)
-  {
-    myTimers[DMC_MPI_copyWalkers]->start();
-    copyWalkers(W);
-    //myComm->barrier();
-    myTimers[DMC_MPI_copyWalkers]->stop();
-    myTimers[DMC_MPI_loadbalance]->start();
-    swapWalkersAsync(W);
-    myTimers[DMC_MPI_loadbalance]->stop();
-  }
-  else
-  {
-    myTimers[DMC_MPI_loadbalance]->start();
-    swapWalkersSimple(W,true);
-    //myComm->barrier();
-    myTimers[DMC_MPI_loadbalance]->stop();
-    myTimers[DMC_MPI_copyWalkers]->start();
-    copyWalkers(W);
-    //myComm->barrier();
-    myTimers[DMC_MPI_copyWalkers]->stop();
-  }
+  myTimers[DMC_MPI_loadbalance]->start();
+  swapWalkersSimple(W,true);
+  myTimers[DMC_MPI_loadbalance]->stop();
+  myTimers[DMC_MPI_copyWalkers]->start();
+  copyWalkers(W);
+  myTimers[DMC_MPI_copyWalkers]->stop();
   //set Weight and Multiplicity to default values
   MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
   while(it != it_end)
@@ -398,127 +383,6 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W, bool use_nonb
     ncopy_w.insert(ncopy_w.end(),ncopy_newW.begin(),ncopy_newW.end());
   }
 }
-
-/** swap Walkers with Irecv/Send
- *
- * The algorithm ensures that the load per node can differ only by one walker.
- * The communication is one-dimensional.
- */
-void WalkerControlMPI::swapWalkersAsync(MCWalkerConfiguration& W)
-{
-  std::vector<int> minus, plus;
-  determineNewWalkerPopulation(Cur_pop, NumContexts, MyContext, NumPerNode, FairOffSet, minus, plus);
-  Walker_t& wRef(*W[0]);
-  std::vector<Walker_t*> newW;
-  std::vector<Walker_t*> oldW;
-#ifdef MCWALKERSET_MPI_DEBUG
-  char fname[128];
-  sprintf(fname,"test.%d",MyContext);
-  std::ofstream fout(fname, std::ios::app);
-  //fout << NumSwaps << " " << Cur_pop << " ";
-  //for(int ic=0; ic<NumContexts; ic++) fout << NumPerNode[ic] << " ";
-  //fout << " | ";
-  //for(int ic=0; ic<NumContexts; ic++) fout << FairOffSet[ic+1]-FairOffSet[ic] << " ";
-  //fout << " | ";
-  for(int ic=0; ic<plus.size(); ic++)
-  {
-    fout << plus[ic] << " ";
-  }
-  fout << " | ";
-  for(int ic=0; ic<minus.size(); ic++)
-  {
-    fout << minus[ic] << " ";
-  }
-  fout << std::endl;
-#endif
-  int nswap=std::min(plus.size(), minus.size());
-  int last=W.getActiveWalkers()-1;
-  int nsend=0;
-  int countSend = 1;
-  OOMPI_Packed ** sendBuffers = new OOMPI_Packed*[NumContexts];
-  OOMPI_Packed ** recvBuffers = new OOMPI_Packed*[NumContexts];
-  std::vector<OOMPI_Request> requests(NumContexts);
-  std::vector<int> sendCounts(NumContexts,0);
-  for(int ip=0; ip < NumContexts; ++ip)
-    sendBuffers[ip] = 0;
-  for(int ip=0; ip < NumContexts; ++ip)
-    recvBuffers[ip] = 0;
-  for(int ic=0; ic<nswap; ic++)
-  {
-    if(plus[ic]==MyContext)
-    {
-      if((ic < nswap - 1) && (plus[ic] == plus[ic+1]) && (minus[ic] == minus[ic+1]))
-      {
-        countSend++;
-      }
-      else
-      {
-        //OOMPI_Packed sendBuffer(wRef.byteSize(),OOMPI_COMM_WORLD);
-        sendBuffers[minus[ic]] = new OOMPI_Packed(countSend * wRef.byteSize(),myComm->getComm());
-        for(int cs = 0; cs < countSend; ++cs)
-        {
-          W[last]->putMessage(*(sendBuffers[minus[ic]]));
-          --last;
-        }
-        //OOMPI_COMM_WORLD[minus[ic]].Send(sendBuffer);
-        requests[minus[ic]] = myComm->getComm()[minus[ic]].Isend(*(sendBuffers[minus[ic]]), plus[ic]);
-        nsend += countSend;
-        countSend = 1;
-      }
-    }
-    if(minus[ic]==MyContext)
-    {
-      if((ic < nswap - 1) && (plus[ic] == plus[ic+1]) && (minus[ic] == minus[ic+1]))
-      {
-        countSend++;
-      }
-      else
-      {
-        //OOMPI_Packed recvBuffer(wRef.byteSize(),OOMPI_COMM_WORLD);
-        recvBuffers[plus[ic]] = new OOMPI_Packed(countSend * wRef.byteSize(),myComm->getComm());
-        //OOMPI_COMM_WORLD[plus[ic]].Recv(recvBuffer);
-        requests[plus[ic]] = myComm->getComm()[plus[ic]].Irecv(*(recvBuffers[plus[ic]]), plus[ic]);
-        sendCounts[plus[ic]] = countSend;
-        countSend = 1;
-      }
-    }
-  }
-  for(int ip = 0; ip < NumContexts; ++ip)
-  {
-    if(recvBuffers[ip])
-    {
-      requests[ip].Wait();
-      for(int cs = 0; cs < sendCounts[ip]; ++cs)
-      {
-        Walker_t *awalker= new Walker_t(wRef);
-        awalker->getMessage(*(recvBuffers[ip]));
-        newW.push_back(awalker);
-      }
-      delete recvBuffers[ip];
-    }
-  }
-  for(int ip = 0; ip < NumContexts; ++ip)
-  {
-    if(sendBuffers[ip])
-    {
-      requests[ip].Wait();
-      delete sendBuffers[ip];
-    }
-  }
-  delete[] sendBuffers;
-  delete[] recvBuffers;
-  //save the number of walkers sent
-  NumWalkersSent=nsend;
-  if(nsend)
-  {
-    nsend=NumPerNode[MyContext]-nsend;
-    W.destroyWalkers(W.begin()+nsend, W.end());
-  }
-  //add walkers from other node
-  if(newW.size())
-    W.insert(W.end(),newW.begin(),newW.end());
-}
-
 
 }
 

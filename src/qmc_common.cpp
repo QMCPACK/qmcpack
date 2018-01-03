@@ -29,7 +29,6 @@ QMCState::QMCState()
   use_density=false;
   dryrun=false;
   save_wfs=false;
-  async_swap=false;
   io_node=true;
   mpi_groups=1;
   use_ewald=false;
@@ -59,10 +58,6 @@ void QMCState::initialize(int argc, char **argv)
     else if(c.find("--save_wfs") < c.size())
     {
       save_wfs=(c.find("no")>=c.size());
-    }
-    else if(c.find("--async_swap") < c.size())
-    {
-      async_swap=(c.find("no")>=c.size());
     }
     else if(c.find("--help")< c.size())
     {
@@ -99,7 +94,7 @@ void QMCState::initialize(int argc, char **argv)
     std::cerr << "  git last commit date: " << QMCPACK_GIT_COMMIT_LAST_CHANGED << std::endl;
     std::cerr << "  git last commit subject: " << QMCPACK_GIT_COMMIT_SUBJECT << std::endl;
 #endif
-    std::cerr << std::endl << "Usage: qmcpack input [--dryrun --save_wfs[=no] --async_swap[=no] --gpu]" << std::endl << std::endl;
+    std::cerr << std::endl << "Usage: qmcpack input [--dryrun --save_wfs[=no] --gpu]" << std::endl << std::endl;
   }
   if(stopit)
   {
@@ -115,10 +110,6 @@ void QMCState::print_options(std::ostream& os)
     os << "  dryrun : qmc sections will be ignored." << std::endl;
   if(save_wfs)
     os << "  save_wfs=1 : save wavefunctions in hdf5. " << std::endl;
-  if(async_swap)
-    os << "  async_swap=1 : using async isend/irecv for walker swaps " << std::endl;
-  else
-    os << "  async_swap=0 : using blocking send/recv for walker swaps " << std::endl;
 }
 
 void QMCState::print_memory_change(const std::string& who, size_t before)

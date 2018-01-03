@@ -47,10 +47,6 @@ struct WalkerControlMPI: public WalkerControlBase
   //current implementations
   void swapWalkersSimple(MCWalkerConfiguration& W, bool use_nonblocking);
 
-  //old implementations
-  void swapWalkersAsync(MCWalkerConfiguration& W);
-  // Removed swapWalkersBlocked and swapWalkersMap (minimize size and number of messages)
-
 };
 }
 #endif
