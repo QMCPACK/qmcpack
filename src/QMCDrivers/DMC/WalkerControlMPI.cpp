@@ -193,7 +193,10 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
 #endif
   if(plus.size()!=minus.size())
   {
-    app_error() << "Walker send/recv pattern doesn't match." << std::endl;
+    app_error() << "Walker send/recv pattern doesn't match. "
+                << "The send size " << plus.size()
+                << " is not equal to the receive size " << minus.size()
+                << " ." << std::endl;
     APP_ABORT("WalkerControlMPI::swapWalkersSimple");
   }
   int nswap=plus.size();
