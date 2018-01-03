@@ -119,7 +119,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=0):
   GroupBasisSet.create_dataset("NbElements",(1,),dtype="i4",data=NbSpecies)
 
   LCAOName=GroupBasisSet.create_dataset("name",(1,),dtype="S8")
-  LCAOName[0:]="LCAOBset"
+  LCAOName[0:]="LCAOBSet"
 
   #atomicBasisSets Group
   for x in range(NbSpecies):
@@ -204,10 +204,22 @@ def savetoqmcpack(cell,mf,title="Default",kpts=0):
          break
 
     atomicBasisSetGroup.create_dataset("NbBasisGroups",(1,),dtype="i4",data=NbShellIndex)
-    Angular=atomicBasisSetGroup.create_dataset("angular",(1,),dtype="S9")
-    Angular[0:]="cartesian"
+
+    if cell.cart==True:
+      Angular=atomicBasisSetGroup.create_dataset("angular",(1,),dtype="S9")
+      ExpandYLM=atomicBasisSetGroup.create_dataset("expandYlm",(1,),dtype="S6")
+      Angular[0:]="cartesian"
+      ExpandYLM[0:]="Gamess"
+    else:
+      Angular=atomicBasisSetGroup.create_dataset("angular",(1,),dtype="S9")
+      ExpandYLM=atomicBasisSetGroup.create_dataset("expandYlm",(1,),dtype="S5")
+      Angular[0:]="spherical"
+      ExpandYLM[0:]="pyscf"
     mylen="S"+str(len(uniq_atoms[x][0]))
     elemtype=atomicBasisSetGroup.create_dataset("elementType",(1,),dtype=mylen)
+
+
+
     elemtype[0:]=uniq_atoms[x][0]
     atomicBasisSetGroup.create_dataset("grid_npts",(1,),dtype="i4",data=1001)
     atomicBasisSetGroup.create_dataset("grid_rf",(1,),dtype="i4",data=100)
@@ -231,6 +243,82 @@ def savetoqmcpack(cell,mf,title="Default",kpts=0):
 
 
   GroupDet=H5_qmcpack.create_group("determinant")
+
+
+  if cell.cart==True:
+    d_gms_order ={ 0:["s"],
+       1:[ "x", "y", "z" ],
+       2:[ "xx", "yy", "zz", "xy", "xz", "yz" ],
+       3:[ "xxx", "yyy", "zzz", "xxy", "xxz", "yyx", "yyz", "zzx", "zzy", "xyz"],
+       4: ["xxxx", "yyyy", "zzzz", "xxxy", "xxxz", "yyyx", "yyyz", "zzzx", "zzzy", "xxyy", "xxzz", "yyzz", "xxyz", "yyxz", "zzxy", "xxxx", "yyyy", "zzzz", "xxxy", "xxxz", "yyyx", "yyyz", "zzzx", "zzzy", "xxyy", "xxzz", "yyzz", "xxyz", "yyxz","zzxy"] }
+  
+    
+    d_l = {'s':0,'p':1, 'd':2, 'f':3,'g':4}
+  
+    def n_orbital(n):
+      if n==0:
+          return 1
+      elif n==1:
+          return 3
+      else:
+          return 2*n_orbital(n-1)-n_orbital(n-2)+1
+  
+  
+    def compare_gamess_style(item1, item2):
+      # Warning:
+      # 	- d_gms_order is a global variable
+      n1,n2 = map(len,(item1,item2))
+      assert (n1 == n2)
+      try:
+          l = d_gms_order[n1]
+      except KeyError:
+          return 0
+      else:
+          a = l.index(item1)
+          b = l.index(item2)
+          return cmp( a, b )
+  
+    ao_label = cell.ao_labels(False)
+  
+  
+    # Create a list of shell
+    l_l = []
+    for label, name, t, l in ao_label:
+          # Change yyx -> xyy "
+          q =  "".join(sorted(l, key=l.count, reverse=True))
+          l_l.append(q)
+  
+    # Pyscf ordering of shell
+    l_order = list(range(len(l_l)))
+  
+    # Shell ordering indexed
+    n = 1
+    l_order_new = []
+    for  i,(label, name, t, l) in enumerate(ao_label):
+          r = d_l[t[-1]]
+          # print r,n_orbital(r)
+          if n != 1:
+                  n-=1
+          else:
+                  n = n_orbital(r)
+                  unordered_l = l_l[i:i+n]
+                  unordered = l_order[i:i+n]
+                  #print i,n,unordered 
+                  ordered = [x for _,x in sorted(zip(unordered_l,unordered),key=lambda p: p[0], cmp=compare_gamess_style)]
+                  l_order_new.extend(ordered)
+  
+    
+    def order_mo_coef(ll):
+          # Order a list of transposed mo_coeff (Ao,Mo) -> (Mo,Ao) ordered
+          # Warning:
+          #	- l_order_new is used as global variable
+          #	- gamess order
+  
+          ll_new= []
+          for l in zip(*ll):
+          	ll_new.append([l[i] for i in l_order_new])
+          return ll_new
+  
   mo_coeff = mf.mo_coeff
   Complex=is_complex(mo_coeff)
   if Complex:
@@ -246,12 +334,15 @@ def savetoqmcpack(cell,mf,title="Default",kpts=0):
     if UnRestricted==False:
       NbMO=len(mo_coeff)
       NbAO=len(mo_coeff[0])
-      eigenset=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=mo_coeff)
+      if cell.cart==True:
+        eigenset=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=order_mo_coef(mo_coeff))
+      else:
+        eigenset=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=zip(*mo_coeff))
     else:
       NbMO=len(mo_coeff[0])
       NbAO=len(mo_coeff[0][0])
-      eigenset_up=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=mo_coeff[0])
-      eigenset_dn=GroupDet.create_dataset("eigenset_1",(NbMO,NbAO),dtype="f8",data=mo_coeff[1])
+      eigenset_up=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=order_mo_coef(mo_coeff[0]))
+      eigenset_dn=GroupDet.create_dataset("eigenset_1",(NbMO,NbAO),dtype="f8",data=order_mo_coef(mo_coeff[1]))
   else:
     #Cell Parameters
     GroupCell=H5_qmcpack.create_group("Cell")
@@ -259,7 +350,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=0):
 
     Nbkpts=len(kpts)
     GroupDet.create_dataset("Nb_Kpoints",(1,),dtype="i4",data=Nbkpts)
-    if UnRestricted==False:
+    if not UnRestricted:
       NbMO=len(mo_coeff[0])
       NbAO=len(mo_coeff[0][0])
     else:
@@ -270,12 +361,19 @@ def savetoqmcpack(cell,mf,title="Default",kpts=0):
       GroupKpts.create_dataset("Coord",(1,3),dtype="f8",data=kpts[i])
       GroupSpin=GroupKpts.create_group("spin_Up")
       if not UnRestricted:
-        GroupSpin.create_dataset("MO_Coeff",(NbMO,NbAO),dtype=mytype,data=mo_coeff[i])
+        if cell.cart==True:
+          GroupSpin.create_dataset("MO_Coeff",(NbMO,NbAO),dtype=mytype,data=order_mo_coef(mo_coeff[i]))
+        else: 
+          GroupSpin.create_dataset("MO_Coeff",(NbMO,NbAO),dtype=mytype,data=zip(*mo_coeff[i]))
         GroupSpin.create_dataset("MO_EIGENVALUES",(1,NbMO),dtype="f8",data=mf.mo_energy[i])
       else:
         GroupSpindn=GroupKpts.create_group("spin_Dn")
-        GroupSpin.create_dataset("MO_Coeff",(NbMO,NbAO),dtype=mytype,data=mo_coeff[0][i])
-        GroupSpindn.create_dataset("MO_Coeff",(NbMO,NbAO),dtype=mytype,data=mo_coeff[1][i])
+        if cell.cart==True:
+          GroupSpin.create_dataset("MO_Coeff",(NbMO,NbAO),dtype=mytype,data=order_mo_coef(mo_coeff[0][i]))
+          GroupSpindn.create_dataset("MO_Coeff",(NbMO,NbAO),dtype=mytype,data=order_mo_coef(mo_coeff[1][i]))
+        else:
+          GroupSpin.create_dataset("MO_Coeff",(NbMO,NbAO),dtype=mytype,data=zip(*mo_coeff[0][i]))
+          GroupSpindn.create_dataset("MO_Coeff",(NbMO,NbAO),dtype=mytype,data=zip(*mo_coeff[1][i]))
 
         GroupSpin.create_dataset("MO_EIGENVALUES",(1,NbMO),dtype="f8",data=mf.mo_energy[0][i])
         GroupSpindn.create_dataset("MO_EIGENVALUES",(1,NbMO),dtype="f8",data=mf.mo_energy[1][i])

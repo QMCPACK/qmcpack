@@ -71,7 +71,6 @@ void PyscfParser::parse(const std::string& fname)
 
   multideterminant=false;
   std::cout <<"Multideterminant: " <<(multideterminant?("yes"):("no")) << std::endl;
-
   hin.read(SpinRestricted,"SpinResticted");
 
   if(SpinRestricted)
