@@ -29,6 +29,7 @@ IonOrbitalBuilder:: put(xmlNodePtr cur)
 {
   ParticleSet &p = targetPtcl;
   widthOpt.resize(targetPtcl.getTotalNum());
+  widthOpt = -1;
   OhmmsAttributeSet oAttrib;
   oAttrib.add(sourceOpt, "source");
   oAttrib.add(nameOpt,   "name"  );
@@ -37,20 +38,12 @@ IonOrbitalBuilder:: put(xmlNodePtr cur)
   if(nameOpt == "")
   {
     app_warning() << "  IonOrbitalBuilder::put does not have name "<< std::endl;
-    return false;
-  }
-  if (!widthOpt.size())
-  {
-    app_error() << "  You must specify the \"width\" attribute to "
-                << " an ionwf.";
-    abort();
   }
   std::map<std::string,ParticleSet*>::iterator pa_it(ptclPool.find(sourceOpt));
   if(pa_it == ptclPool.end())
   {
     app_error() << "Could not file source ParticleSet "
                 << sourceOpt << " for ion wave function.\n";
-    return false;
   }
   ParticleSet* sourcePtcl= (*pa_it).second;
   IonOrbital *orb = new IonOrbital (*sourcePtcl, targetPtcl);
