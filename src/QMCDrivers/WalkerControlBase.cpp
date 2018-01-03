@@ -283,12 +283,16 @@ void WalkerControlBase::Write2XYZ(MCWalkerConfiguration& W)
 }
 
 
-/** evaluate curData and mark the bad/good walkers
+/** evaluate curData and mark the bad/good walkers.
+ *
+ *  Each good walker has a counter registering the
+ *  number of copies needed to be generated from this walker.
+ *  Bad walkers will be either recycled or removed later.
  */
 int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
 {
   MCWalkerConfiguration::iterator it(W.begin());
-  std::vector<Walker_t*> bad,good_rn;
+  std::vector<Walker_t*> good_rn;
   std::vector<int> ncopy_rn;
   NumWalkers=0;
   MCWalkerConfiguration::iterator it_end(W.end());
@@ -353,7 +357,7 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
     }
     else
     {
-      bad.push_back(*it);
+      bad_w.push_back(*it);
     }
     ++it;
   }
@@ -378,9 +382,6 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
   //W.EnsembleProperty.Energy=(esum/=wsum);
   //W.EnsembleProperty.Variance=(e2sum/wsum-esum*esum);
   //W.EnsembleProperty.Variance=(e2sum*wsum-esum*esum)/(wsum*wsum-w2sum);
-  //remove bad walkers empty the container
-  for(int i=0; i<bad.size(); i++)
-    delete bad[i];
   if (!WriteRN)
   {
     if(good_w.empty())
@@ -441,25 +442,47 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
   return NumWalkers;
 }
 
+/** copy good walkers to W
+ *
+ *  Good walkers are copied based on the registered number of copies
+ *  Bad walkers are recycled to avoid memory allocation and deallocation.
+ */
 int WalkerControlBase::copyWalkers(MCWalkerConfiguration& W)
 {
+  // save current good walker size.
+  const int size_good_w = good_w.size();
+  for(int i=0; i<size_good_w; i++)
+  {
+    for(int j=0; j<ncopy_w[i]; j++)
+    {
+      Walker_t* awalker;
+      if(bad_w.empty())
+      {
+        awalker=new Walker_t(*(good_w[i]));
+      }
+      else
+      {
+        awalker=bad_w.back();
+        *awalker=*(good_w[i]);
+        bad_w.pop_back();
+      }
+      awalker->ID=(++NumWalkersCreated)*NumContexts+MyContext;
+      awalker->ParentID=good_w[i]->ParentID;
+      good_w.push_back(awalker);
+    }
+  }
+
   //clear the WalkerList to populate them with the good walkers
   W.clear();
   W.insert(W.begin(), good_w.begin(), good_w.end());
-  int cur_walker = good_w.size();
-  for(int i=0; i<good_w.size(); i++)
-    //,ie+=ncols) {
-  {
-    for(int j=0; j<ncopy_w[i]; j++, cur_walker++)
-    {
-      Walker_t* awalker=new Walker_t(*(good_w[i]));
-      awalker->ID=(++NumWalkersCreated)*NumContexts+MyContext;
-      awalker->ParentID=good_w[i]->ParentID;
-      W.push_back(awalker);
-    }
-  }
+
+  //remove bad walkers if there is any left
+  for(int i=0; i<bad_w.size(); i++)
+    delete bad_w[i];
+
   //clear good_w and ncopy_w for the next branch
   good_w.clear();
+  bad_w.clear();
   ncopy_w.clear();
   return W.getActiveWalkers();
 }
