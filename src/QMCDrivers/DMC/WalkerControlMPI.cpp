@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #include <QMCDrivers/DMC/WalkerControlMPI.h>
@@ -24,35 +22,25 @@
 namespace qmcplusplus
 {
 
-//#if defined(PRINT_DEBUG)
-//#define DMC_BRANCH_START(NOW) NOW
-//#define DMC_BRANCH_STOP(TID,TM) TID=TM
-//#define DMC_BRANCH_DUMP(IT,T1,T2,T3)  \
-//  OhmmsInfo::Debug->getStream()  << "BRANCH " \
-//<< std::setw(8) << IT \
-//<< " SORT" << std::setw(16) << T1 \
-//<< " GSUM" << std::setw(16) << T2 \
-//<< " SWAP" << std::setw(16) << T3 << std::endl
-//#else
-#define DMC_BRANCH_START(NOW)
-#define DMC_BRANCH_STOP(TID,TM)
-#define DMC_BRANCH_DUMP(IT,T1,T2,T3)
-//#endif
-
-
 //#define MCWALKERSET_MPI_DEBUG
 
 enum DMC_MPI_Timers
 {
   DMC_MPI_branch,
+  DMC_MPI_imbalance,
   DMC_MPI_prebalance,
+  DMC_MPI_copyWalkers,
+  DMC_MPI_allreduce,
   DMC_MPI_loadbalance
 };
 
 TimerNameList_t<DMC_MPI_Timers> DMCMPITimerNames =
 {
   {DMC_MPI_branch, "WalkerControlMPI::branch"},
+  {DMC_MPI_imbalance, "WalkerControlMPI::imbalance"},
   {DMC_MPI_prebalance, "WalkerControlMPI::pre-loadbalance"},
+  {DMC_MPI_copyWalkers, "WalkerControlMPI::copyWalkers"},
+  {DMC_MPI_allreduce, "WalkerControlMPI::allreduce"},
   {DMC_MPI_loadbalance, "WalkerControlMPI::loadbalance"}
 };
 
@@ -73,63 +61,59 @@ WalkerControlMPI::WalkerControlMPI(Communicate* c): WalkerControlBase(c)
   setup_timers(myTimers, DMCMPITimerNames, timer_level_medium);
 }
 
-int
-WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
+/** perform branch and swap walkers as required
+ *
+ *  it takes 4 steps:
+ *    1. shortWalkers marks good and bad walkers.
+ *    2. allreduce and make the decision of load balancing.
+ *    3. send/recv walkers. Receiving side recycle bad walkers' memory first.
+ *    4. copyWalkers generate walker copies of good walkers.
+ */
+int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
 {
-  DMC_BRANCH_START(Timer localTimer);
-  TinyVector<RealType,3> bTime(0.0);
   myTimers[DMC_MPI_branch]->start();
   myTimers[DMC_MPI_prebalance]->start();
   std::fill(curData.begin(),curData.end(),0);
-  //std::fill(NumPerNode.begin(),NumPerNode.end(),0);
   sortWalkers(W);
   //use NumWalkersSent from the previous exchange
   curData[SENTWALKERS_INDEX]=NumWalkersSent;
   //update the number of walkers for this node
   curData[LE_MAX+MyContext]=NumWalkers;
-  DMC_BRANCH_STOP(bTime[0],localTimer.elapsed());
-  DMC_BRANCH_START(localTimer.restart());
-  int nw = copyWalkers(W);
+  //myTimers[DMC_MPI_imbalance]->start();
+  //myComm->barrier();
+  //myTimers[DMC_MPI_imbalance]->stop();
+  myTimers[DMC_MPI_allreduce]->start();
   myComm->allreduce(curData);
+  myTimers[DMC_MPI_allreduce]->stop();
   measureProperties(iter);
   W.EnsembleProperty=EnsembleProperty;
-  DMC_BRANCH_STOP(bTime[1],localTimer.elapsed());
-  DMC_BRANCH_START(localTimer.restart());
-  ////update the samples and weights
-  //W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
-  //W.EnsembleProperty.Weight=curData[WEIGHT_INDEX];
-  //RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
-  //accumData[ENERGY_INDEX]     += curData[ENERGY_INDEX]*wgtInv;
-  //accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
-  //accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
-  //accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
   Cur_pop=0;
   for(int i=0, j=LE_MAX; i<NumContexts; i++,j++)
   {
     Cur_pop+= NumPerNode[i]=static_cast<int>(curData[j]);
   }
   myTimers[DMC_MPI_prebalance]->stop();
-  myTimers[DMC_MPI_loadbalance]->start();
   if(qmc_common.async_swap)
+  {
+    myTimers[DMC_MPI_copyWalkers]->start();
+    copyWalkers(W);
+    //myComm->barrier();
+    myTimers[DMC_MPI_copyWalkers]->stop();
+    myTimers[DMC_MPI_loadbalance]->start();
     swapWalkersAsync(W);
+    myTimers[DMC_MPI_loadbalance]->stop();
+  }
   else
+  {
+    myTimers[DMC_MPI_loadbalance]->start();
     swapWalkersSimple(W);
-  myTimers[DMC_MPI_loadbalance]->stop();
-  //Do not need to use a trigger.
-  //Cur_min=Nmax;
-  //Cur_max=0;
-  //Cur_pop=0;
-  //for(int i=0, j=LE_MAX; i<NumContexts; i++,j++) {
-  //  Cur_pop+= NumPerNode[i]=static_cast<int>(curData[j]);
-  //  Cur_min = std::min(Cur_min,NumPerNode[i]);
-  //  Cur_max = std::max(Cur_max,NumPerNode[i]);
-  //}
-  //int max_diff = std::max(Cur_max*NumContexts-Cur_pop,Cur_pop-Cur_min*NumContexts);
-  //double diff_pop = static_cast<double>(max_diff)/static_cast<double>(Cur_pop);
-  //if(diff_pop > trigger) {
-  //  swapWalkersSimple(W);
-  //  //swapWalkersMap(W);
-  //}
+    //myComm->barrier();
+    myTimers[DMC_MPI_loadbalance]->stop();
+    myTimers[DMC_MPI_copyWalkers]->start();
+    copyWalkers(W);
+    //myComm->barrier();
+    myTimers[DMC_MPI_copyWalkers]->stop();
+  }
   //set Weight and Multiplicity to default values
   MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
   while(it != it_end)
@@ -141,8 +125,6 @@ WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
   //update the global number of walkers and offsets
   W.setGlobalNumWalkers(Cur_pop);
   W.setWalkerOffsets(FairOffSet);
-  DMC_BRANCH_STOP(bTime[2],localTimer.elapsed());
-  DMC_BRANCH_DUMP(iter,bTime[0],bTime[1],bTime[2]);
   myTimers[DMC_MPI_branch]->stop();
   return Cur_pop;
 }
@@ -186,9 +168,8 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   std::vector<int> minus, plus;
   determineNewWalkerPopulation(Cur_pop, NumContexts, MyContext, NumPerNode, FairOffSet, minus, plus);
 
-  Walker_t& wRef(*W[0]);
+  Walker_t& wRef(*good_w[0]);
   std::vector<Walker_t*> newW;
-  std::vector<Walker_t*> oldW;
 #ifdef MCWALKERSET_MPI_DEBUG
   char fname[128];
   sprintf(fname,"test.%d",MyContext);
@@ -214,22 +195,41 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   // myComm (read)
   // NumWalkersSent (write)
   int nswap=std::min(plus.size(), minus.size());
-  int last=W.getActiveWalkers()-1;
   int nsend=0;
   for(int ic=0; ic<nswap; ic++)
   {
     if(plus[ic]==MyContext)
     {
-      size_t byteSize = W[last]->byteSize();
-      W[last]->updateBuffer();
-      OOMPI_Message sendBuffer(W[last]->DataSet.data(), byteSize);
+      //always send the last good walker
+      Walker_t* &awalker = good_w.back();
+      size_t byteSize = awalker->byteSize();
+      awalker->updateBuffer();
+      OOMPI_Message sendBuffer(awalker->DataSet.data(), byteSize);
       myComm->getComm()[minus[ic]].Send(sendBuffer);
-      --last;
       ++nsend;
+
+      // update copy counter
+      if(ncopy_w.back()>0)
+        --ncopy_w.back();
+      else
+      {
+        good_w.pop_back();
+        ncopy_w.pop_back();
+        bad_w.push_back(awalker);
+      }
     }
     if(minus[ic]==MyContext)
     {
-      Walker_t *awalker= new Walker_t(wRef);
+      Walker_t* awalker;
+      if(bad_w.empty())
+      {
+        awalker=new Walker_t(wRef);
+      }
+      else
+      {
+        awalker=bad_w.back();
+        bad_w.pop_back();
+      }
       size_t byteSize = awalker->byteSize();
       OOMPI_Message recvBuffer(awalker->DataSet.data(), byteSize);
       myComm->getComm()[plus[ic]].Recv(recvBuffer);
@@ -239,14 +239,12 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   }
   //save the number of walkers sent
   NumWalkersSent=nsend;
-  if(nsend)
-  {
-    nsend=NumPerNode[MyContext]-nsend;
-    W.destroyWalkers(W.begin()+nsend, W.end());
-  }
   //add walkers from other node
   if(newW.size())
-    W.insert(W.end(),newW.begin(),newW.end());
+  {
+    good_w.insert(good_w.end(),newW.begin(),newW.end());
+    ncopy_w.insert(ncopy_w.end(),newW.size(),0);
+  }
 }
 
 /** swap Walkers with Irecv/Send
