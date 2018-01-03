@@ -28,6 +28,7 @@ bool
 IonOrbitalBuilder:: put(xmlNodePtr cur)
 {
   ParticleSet &p = targetPtcl;
+  widthOpt.resize(targetPtcl.getTotalNum());
   OhmmsAttributeSet oAttrib;
   oAttrib.add(sourceOpt, "source");
   oAttrib.add(nameOpt,   "name"  );
