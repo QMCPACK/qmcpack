@@ -72,6 +72,11 @@ WalkerControlMPI::WalkerControlMPI(Communicate* c): WalkerControlBase(c)
  *    2. allreduce and make the decision of load balancing.
  *    3. send/recv walkers. Receiving side recycle bad walkers' memory first.
  *    4. copyWalkers generate walker copies of good walkers.
+ *  In order to minimize the memory footprint fluctuation
+ *  the walker copying is placed as the last step.
+ *  In order to reduce the time for allocating walker memory,
+ *  this algorithm does not destroy the bad walkers in step 1.
+ *  All the bad walkers are recyled as much as possible in step 3/4.
  */
 int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
 {
@@ -115,11 +120,6 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigge
   W.setGlobalNumWalkers(Cur_pop);
   W.setWalkerOffsets(FairOffSet);
 
-  // walker count safety check
-  //if(W.getActiveWalkers()!=FairOffSet[MyContext+1]-FairOffSet[MyContext])
-  //  std::cout << " Strange on rank " << MyContext
-  //            << " should be " << FairOffSet[MyContext+1]-FairOffSet[MyContext]
-  //            << " walker but actually " << W.getActiveWalkers() << std::endl;
   myTimers[DMC_MPI_branch]->stop();
   return Cur_pop;
 }
@@ -156,7 +156,12 @@ void determineNewWalkerPopulation(int Cur_pop, int NumContexts, int MyContext, c
 /** swap Walkers with Recv/Send or Irecv/Isend
  *
  * The algorithm ensures that the load per node can differ only by one walker.
- * The communication is one-dimensional.
+ * Each MPI rank can only be sending or receiving or silient.
+ * The communication is one-dimensional and very local.
+ * If mutiple copies of a walker need to be sent to the target rank,
+ * only one walker is sent and the number of copies is encoded in the message.
+ * The blocking send/recv may become serialized and worsen load imbalance.
+ * Non blocking send/recv algorithm avoids completely serialziation.
  */
 void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
 {
