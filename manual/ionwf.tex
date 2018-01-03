@@ -8,6 +8,8 @@ The Gaussian Product wavefunction implements eq.~\ref{eq:gauss_prod_wf}
 \end{equation}
 where $\vec{R}_i$ is the position of the $i^{\text{th}}$ quantum particle and $\vec{R}_i^o$ is its center. $\sigma_i$ is the width of the Gaussian orbital around center $i$.
 
+This variational wavefunction enhances single-particle density at chosen spatial locations with adjustable strengths. It is useful whenever such localization is physically relevant yet not captured by other parts of the trial wavefunction. For example, in an electron-ion simulation of a solid, the ions are localized around their crystal lattice sites. This single-particle localization is not captured by the ion-ion Jastrow. Therefore the addition of this localization term will improve the wavefunction. The simplest use case of this wavefunction is perhaps the quantum harmonic oscillator (please see the ``tests/models/sho'' folder for examples).
+
 \subsubsection{Input Specification}
 
 \begin{table}[h]
