@@ -98,7 +98,7 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigge
   }
   myTimers[DMC_MPI_prebalance]->stop();
   myTimers[DMC_MPI_loadbalance]->start();
-  swapWalkersSimple(W,true);
+  swapWalkersSimple(W);
   myTimers[DMC_MPI_loadbalance]->stop();
   myTimers[DMC_MPI_copyWalkers]->start();
   copyWalkers(W);
@@ -158,7 +158,7 @@ void determineNewWalkerPopulation(int Cur_pop, int NumContexts, int MyContext, c
  * The algorithm ensures that the load per node can differ only by one walker.
  * The communication is one-dimensional.
  */
-void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W, bool use_nonblocking)
+void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
 {
   std::vector<int> minus, plus;
   determineNewWalkerPopulation(Cur_pop, NumContexts, MyContext, NumPerNode, FairOffSet, minus, plus);
