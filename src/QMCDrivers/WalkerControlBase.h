@@ -131,6 +131,8 @@ public:
   std::vector<int> ncopy_w;
   ///Add released-node fields to .dmc.dat file
   bool WriteRN;
+  ///Use non-blocking isend/irecv
+  bool use_nonblocking;
 
   /** default constructor
    *
