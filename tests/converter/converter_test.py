@@ -41,14 +41,20 @@ def compare(gold_file,test_file):
 	    return True
 
 
-def run_test(test_name, c4q_exe, conv_inp, gold_file, expect_fail, extra_cmd_args):
+def run_test(test_name, c4q_exe, conv_inp, gold_file, expect_fail, extra_cmd_args,code):
     okay = True
 
     # Example invocation of converter
     #convert4qmc -nojastrow -prefix gold -gamessAscii be.out
 
     cmd = c4q_exe.split()
-    cmd.extend(['-nojastrow', '-prefix', 'test', '-gamessAscii', conv_inp])
+    if code=='pyscf':
+        cmd.extend(['-nojastrow', '-prefix', 'test', '-pyscf', conv_inp])
+    if code=='qp':
+        cmd.extend(['-nojastrow', '-prefix', 'test', '-QP',  conv_inp])
+    if code=='gamess':
+        cmd.extend(['-nojastrow', '-prefix', 'test', '-gamessAscii', conv_inp])
+
     for ex_arg in extra_cmd_args:
         if ex_arg == '-ci':
             cmd.extend(['-ci', conv_inp])
@@ -80,14 +86,15 @@ def run_test(test_name, c4q_exe, conv_inp, gold_file, expect_fail, extra_cmd_arg
             print("Gold file missing")
             okay = False
 	else:
-            if '-hdf5' in extra_cmd_args:
-                os.system('h5dump test.orbs.h5 > test.orbs.h5dump')
-                if  compare('gold.orbs.h5dump','test.orbs.h5dump'):
-                   print("  pass")
-                   return True
-                else:
-                   print("  FAIL")
-                   return False
+            if (code != 'qp'): 
+                if '-hdf5' in extra_cmd_args:
+                   os.system('h5dump test.orbs.h5 > test.orbs.h5dump')
+                   if  compare('gold.orbs.h5dump','test.orbs.h5dump'):
+                      print("  pass")
+                      return True
+                   else:
+                      print("  FAIL")
+                      return False
             test_file = gold_file.replace('gold', 'test')
             okay = compare(gold_file, test_file)
 
@@ -111,9 +118,23 @@ def read_extra_args():
 
 
 def run_one_converter_test(c4q_exe):
+    code='gamess'
+    if os.path.exists('pyscf'):
+       code='pyscf'
+    if os.path.exists('quantum_package'):
+       code='qp'
+    
     test_name = os.path.split(os.getcwd())[-1]
+    
+    if code=='gamess': 
+       conv_input_files = glob.glob('*.out')
 
-    conv_input_files = glob.glob('*.out')
+    if code=='pyscf': 
+       conv_input_files = glob.glob('*.h5')
+
+    if code=='qp': 
+       conv_input_files = glob.glob('*.dump')
+
     if len(conv_input_files) != 1:
         print("Unexpected number of inputs files (should be 1): ",
               len(conv_input_files))
@@ -130,9 +151,8 @@ def run_one_converter_test(c4q_exe):
         if not os.path.exists(gold_file):
             print("Gold file missing")
             return False
-
     return run_test(test_name, c4q_exe, conv_input_file, gold_file,
-                    expect_fail, extra_cmd_args)
+                    expect_fail, extra_cmd_args,code)
 
 
 if __name__ == '__main__':

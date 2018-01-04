@@ -25,7 +25,7 @@
 
 QPParser::QPParser()
 {
-  basisName = "Gaussian-G2";
+  basisName = "Gaussian";
   Normalized = "no";
   BohrUnit=true;
   MOtype="Canonical";
@@ -40,7 +40,7 @@ QPParser::QPParser()
 QPParser::QPParser(int argc, char** argv):
   QMCGaussianParserBase(argc,argv)
 {
-  basisName = "Gaussian-G2";
+  basisName = "Gaussian";
   Normalized = "no";
   BohrUnit=true;
   MOtype="Canonical";

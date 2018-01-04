@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 {
   if(argc<2)
   {
-    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-VSVB|-QP|-Pyscf] filename " << std::endl;
+    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-VSVB|-QP|-pyscf] filename " << std::endl;
     std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production]" << std::endl;
     std::cout << "[-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]" << std::endl;
     std::cout << "[-size npts -ci file.out -threshold cimin -TargetState state_number -NaturalOrbitals NumToRead]" << std::endl;
@@ -103,7 +103,7 @@ int main(int argc, char **argv)
       parser = new QPParser(argc,argv);
       in_file =argv[++iargc];
     }
-    else if(a == "-Pyscf")
+    else if(a == "-pyscf")
     {
       parser = new PyscfParser(argc,argv);
       in_file =argv[++iargc];
@@ -272,7 +272,7 @@ int main(int argc, char **argv)
     parser->ECP=!addCusp;
     parser->UseHDF5=usehdf5;
     if (usehdf5)
-      parser->h5file=parser->Title+"orbs.h5";
+      parser->h5file=parser->Title+".orbs.h5";
     parser->IonSystem.setName(ion_tag);
     parser->AllH5=allH5;
     if(allH5)
