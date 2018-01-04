@@ -77,6 +77,7 @@ IonOrbital::evaluateLog(ParticleSet& P,
   //d_table->evaluate(PtclRef);
   for (int iat=0; iat<NumTargetPtcls; iat++)
   {
+    restore(iat);
     RealType a = ParticleAlpha[iat];
     if (a > 0.0)
     {
@@ -155,7 +156,12 @@ IonOrbital::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 }
 
 void
-IonOrbital::restore(int iat) {}
+IonOrbital::restore(int iat)
+{
+  U[iat]   = 0.0;
+  dU[iat]  = 0.0;
+  d2U[iat] = 0.0;
+}
 
 void
 IonOrbital::acceptMove(ParticleSet& P, int iat)
