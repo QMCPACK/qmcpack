@@ -24,7 +24,7 @@
 
 PyscfParser::PyscfParser()
 {
-  basisName = "Gaussian-G2";
+  basisName = "Gaussian";
   Normalized = "no";
   BohrUnit=true;
   MOtype="Canonical";
@@ -37,7 +37,7 @@ PyscfParser::PyscfParser()
 PyscfParser::PyscfParser(int argc, char** argv):
   QMCGaussianParserBase(argc,argv)
 {
-  basisName = "Gaussian-G2";
+  basisName = "Gaussian";
   Normalized = "no";
   BohrUnit=true;
   MOtype="Canonical";
