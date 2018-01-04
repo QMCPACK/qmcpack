@@ -259,7 +259,7 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
     bb->setReportLevel(ReportLevel);
     bb->initCommunicator(myComm);
     bb->put(cur);
-    app_log()<<"Built BasisSetBuilder \""<< name<< "\" of type "<< type << std::endl;
+    app_log()<<"  Created basis set builder named '"<< name<< "' of type "<< type << std::endl;
     basis_builders[name]=bb; //use name, if missing type is used
   }
   last_builder = bb;
@@ -304,7 +304,7 @@ SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur)
   }
   if(bb)
   {
-    app_log()<<" Building SPOset "<<sname<<" with "<<bname<<" basis set."<< std::endl;
+    app_log()<<"  Building SPOset '" << sname << "' with '" << bname << "' basis set."<< std::endl;
     return bb->createSPOSet(cur);
   }
   else
