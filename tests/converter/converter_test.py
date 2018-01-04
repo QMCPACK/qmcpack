@@ -86,7 +86,7 @@ def run_test(test_name, c4q_exe, conv_inp, gold_file, expect_fail, extra_cmd_arg
             print("Gold file missing")
             okay = False
 	else:
-            if (code != 'qp'): 
+            if (code != 'pyscf'): 
                 if '-hdf5' in extra_cmd_args:
                    os.system('h5dump test.orbs.h5 > test.orbs.h5dump')
                    if  compare('gold.orbs.h5dump','test.orbs.h5dump'):
