@@ -7,21 +7,21 @@ FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl.cxx"
     "#include <iostream>\n #include <mkl.h>\n int main() { return 0; }\n" )
 try_compile(HAVE_MKL ${CMAKE_BINARY_DIR}
       ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl.cxx
-      CMAKE_FLAGS "${CMAKE_CXX_FLAGS} -mkl" )
+      COMPILE_DEFINITIONS "-mkl" )
 
 # Check for mkl_vml_functions.h
 FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_vml.cxx"
     "#include <iostream>\n #include <mkl_vml_functions.h>\n int main() { return 0; }\n" )
 try_compile(HAVE_MKL_VML ${CMAKE_BINARY_DIR}
       ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_vml.cxx
-      CMAKE_FLAGS "${CMAKE_CXX_FLAGS} -mkl" )
+      COMPILE_DEFINITIONS "-mkl" )
 
 # Check for fftw3
 FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_fftw3.cxx"
     "#include <iostream>\n #include <fftw/fftw3.h>\n int main() { return 0; }\n" )
 try_compile(HAVE_MKL_FFTW3 ${CMAKE_BINARY_DIR}
       ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_fftw3.cxx
-      CMAKE_FLAGS "${CMAKE_CXX_FLAGS} -mkl" )
+      COMPILE_DEFINITIONS "-mkl" )
 
 IF ( HAVE_MKL )
     SET( MKL_FOUND 1 )
