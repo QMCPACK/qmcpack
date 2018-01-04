@@ -37,7 +37,6 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type)
   int sc=s.Lattice.SuperCellEnum;
   DistanceTableData* dt=0;
   std::ostringstream o;
-  std::ostringstream dbg;
   bool useSoA=(dt_type == DT_SOA || dt_type == DT_SOA_PREFERRED);
   o << "  Distance table for similar particles (A-A):" << std::endl;
   o << "    source/target: " << s.getName() << std::endl;
@@ -51,45 +50,39 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type)
   {
     if(s.Lattice.DiagonalOnly)
     {
+      o << "    PBC: bulk   Orthorhombic: yes   Type: PPPO" << std::endl;
       if(useSoA)
       {
-        o << "    PBC: bulk   Orthorhombic: yes" << std::endl;
-        dbg << "    Using SoaDistanceTableAA<T,D,PPPO> " << PPPO << std::endl;
         dt = new SoaDistanceTableAA<RealType,DIM,PPPO+SOA_OFFSET>(s);
       }
       else
       {
-        o << "    PBC: bulk   Orthorhombic: yes" << std::endl;
-        dbg << "    Using SymmetricDTD<T,DIM,PPPO> " << PPPO << std::endl;
         dt = new SymmetricDTD<RealType,DIM,PPPO>(s,s);
       }
     }
     else
     {
-      o << "    PBC: bulk   Orthorhombic: no" << std::endl;
       if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
       {
+        o << "    PBC: bulk   Orthorhombic: no   Type: PPPG" << std::endl;
         if(useSoA)
         {
-          dbg << "  Using SoaDistanceTableAA<T,D,PPPG> of SoA layout " << PPPG << std::endl;
           dt = new SoaDistanceTableAA<RealType,DIM,PPPG+SOA_OFFSET>(s);
         }
         else
         {
-          dbg << "  Using SymmetricDTD<T,D,PPPG> " << PPPG << std::endl;
           dt = new  SymmetricDTD<RealType,DIM,PPPG>(s,s);
         }
       }
       else
       {
+        o << "    PBC: bulk   Orthorhombic: no   Type: PPPS" << std::endl;
         if(useSoA)
         {
-          dbg << "  Using SoaDistanceTableAA<T,D,PPPS> of SoA layout " << PPPS << std::endl;
           dt = new SoaDistanceTableAA<RealType,DIM,PPPS+SOA_OFFSET>(s);
         }
         else
         {
-          dbg << "  Using SymmetricDTD<T,D,PPPS> " << PPPS << std::endl;
           dt = new  SymmetricDTD<RealType,DIM,PPPS>(s,s);
         }
       }
@@ -100,45 +93,40 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type)
   {
     if(s.Lattice.DiagonalOnly)
     {
+      o << "    PBC: slab   Orthorhombic: yes   Type: PPNO" << std::endl;
       if(useSoA)
       {
-        o << "    PBC: slab   Orthorhombic: yes" << std::endl;
-        dbg << "    Using SoaDistanceTableAA<T,D,PPNO> of SoA layout " << PPNO << std::endl;
         dt = new SoaDistanceTableAA<RealType,DIM,PPNO+SOA_OFFSET>(s);
       }
       else
       {
-        o << "    PBC: slab   Orthorhombic: yes" << std::endl;
-        dbg << "    Using SymmetricDTD<T,D,PPNO> " << PPNO << std::endl;
         dt = new SymmetricDTD<RealType,DIM,PPNO>(s,s);
       }
     }
     else
     {
-      o << "    PBC: slab   Orthorhombic: no";
       if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
       {
         if(useSoA)
         {
-          dbg << "  Using SoaDistanceTableAA<T,D,PPNG> of SoA layout " << PPNG << std::endl;
+          o << "    PBC: slab   Orthorhombic: no   Type: PPNG";
           dt = new SoaDistanceTableAA<RealType,DIM,PPNG+SOA_OFFSET>(s);
         }
         else
         {
-          dbg << "  Using SymmetricDTD<T,D,PPNX> " << PPNX << std::endl;
+          o << "    PBC: slab   Orthorhombic: no   Type: PPNX";
           dt = new SymmetricDTD<RealType,DIM,PPNX>(s,s);
         }
       }
       else
       {
+        o << "    PBC: slab   Orthorhombic: no   Type: PPNS";
         if(useSoA)
         {
-          dbg << "  Using SoaDistanceTableAA<T,D,PPNS> of SoA layout " << PPNS << std::endl;
           dt = new SoaDistanceTableAA<RealType,DIM,PPNS+SOA_OFFSET>(s);
         }
         else
         {
-          dbg << "  Using SymmetricDTD<T,D,PPNS> " << PPNS << std::endl;
           dt = new SymmetricDTD<RealType,DIM,PPNS>(s,s);
         }
       }
@@ -146,35 +134,29 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type)
   }
   else if(sc == SUPERCELL_WIRE)
   {
+    o << "    PBC: wire   Orthorhombic: NA" << std::endl;
     if(useSoA)
     {
-      o << "    PBC: wire   Orthorhombic: NA  Using SoA layout" << std::endl;
       dt = new SoaDistanceTableAA<RealType,DIM,SUPERCELL_WIRE+SOA_OFFSET>(s);
     }
     else
     {
-      o << "    PBC: wire   Orthorhombic: NA" << std::endl;
       dt = new SymmetricDTD<RealType,DIM,SUPERCELL_WIRE>(s,s);
     }
   }
   else  //open boundary condition
   {
+    o << "    PBC: open   Orthorhombic: NA" << std::endl;
     if(useSoA)
     {
-      o << "    PBC: open   Orthorhombic: NA  Using SoA layout" << std::endl;
       dt = new SoaDistanceTableAA<RealType,DIM,SUPERCELL_OPEN+SOA_OFFSET>(s);
     }
     else
     {
-      o << "    PBC: open   Orthorhombic: NA" << std::endl;
       dt = new SymmetricDTD<RealType,DIM,SUPERCELL_OPEN>(s,s);
     }
   }
 
-
-  if (outputManager.isDebugActive()) {
-    o << dbg.str();
-  }
 
   //set dt properties
   dt->CellType=sc;
