@@ -191,9 +191,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
     if(ibar)
     {
       int iat=nonLocalOps.id(ibar);
-#ifdef ENABLE_SOA
       W.setActive(iat);
-#endif
       if(W.makeMoveAndCheck(iat,nonLocalOps.delta(ibar)))
       {
         GradType grad_iat;
@@ -225,9 +223,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
         const NonLocalData *oneTMove = nonLocalOps.selectMove(RandomGen(), iat);
         if(oneTMove)
         {
-#ifdef ENABLE_SOA
           W.setActive(iat);
-#endif
           if(W.makeMoveAndCheck(iat,oneTMove->Delta))
           {
             Psi.ratioGrad(W,iat,grad_iat);
