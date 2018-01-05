@@ -406,9 +406,38 @@ public:
 
     const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
     const DistanceTableData& ee_table=(*P.DistTables[0]);
-    cur_Uat=computeU(P, iat, eI_table.Temp_r.data(), ee_table.Temp_r.data());
+    cur_Uat=computeU(P, iat, P.GroupID[iat], eI_table.Temp_r.data(), ee_table.Temp_r.data());
     DiffVal=Uat[iat]-cur_Uat;
     return std::exp(DiffVal);
+  }
+
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
+  {
+    const DistanceTableData* d_table=P.DistTables[0];
+    const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
+    const DistanceTableData& ee_table=(*P.DistTables[0]);
+
+    for(int jg=0; jg<eGroups; ++jg)
+    {
+      const valT sumU=computeU(P, -1, jg, eI_table.Temp_r.data(), ee_table.Temp_r.data());
+
+      for(int j=P.first(jg); j<P.last(jg); ++j)
+      {
+        // remove self-interaction
+        valT Uself(0);
+        for(int iat=0; iat<Nion; ++iat)
+        {
+          const valT &r_Ij = eI_table.Temp_r[iat];
+          const valT &r_Ik = eI_table.Distances[j][iat];
+          if(r_Ij<Ion_cutoff[iat]&&r_Ik<Ion_cutoff[iat])
+          {
+            const int ig=Ions.GroupID[iat];
+            Uself+=F(ig,jg,jg)->evaluate(ee_table.Temp_r[j],r_Ij,r_Ik);
+          }
+        }
+        ratios[j]=std::exp(Uat[j]+Uself-sumU);
+      }
+    }
   }
 
   GradType evalGrad(ParticleSet& P, int iat)
@@ -524,14 +553,12 @@ public:
     }
   }
 
-  inline valT computeU(ParticleSet& P, int jel,
+  inline valT computeU(ParticleSet& P, int jel, int jg,
                         const RealType* distjI, const RealType* distjk)
   {
-    valT Uj = valT(0);
-
     const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
-    const int jg=P.GroupID[jel];
 
+    valT Uj = valT(0);
     for(int iat=0; iat<Nion; ++iat)
       if(distjI[iat]<Ion_cutoff[iat])
       {

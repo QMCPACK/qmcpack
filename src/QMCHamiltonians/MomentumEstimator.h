@@ -46,7 +46,7 @@ public:
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
   void setRandomGenerator(RandomGenerator_t* rng);
   //resize the internal data by input k-point list
-  void resize(const std::vector<PosType>& kin,const std::vector<RealType>& qin);
+  void resize(const std::vector<PosType>& kin,const std::vector<RealType>& qin, const int Min);
   ///number of samples
   int M;
   ///normalization factor for n(k)
@@ -59,12 +59,18 @@ public:
   ParticleSet::ParticleLayout_t Lattice;
   ///random generator
   RandomGenerator_t myRNG;
+  ///sample positions
+  std::vector<PosType> vPos;
   ///wavefunction ratios
   std::vector<ValueType> psi_ratios;
+  ///wavefunction ratios all samples
+  Matrix<ValueType> psi_ratios_all;
   ///nofK internal
   Vector<RealType> kdotp;
   ///phases
-  Vector<ComplexType> phases;
+  VectorSoaContainer<RealType,2> phases;
+  ///phases of vPos
+  std::vector<VectorSoaContainer<RealType,2> > phases_vPos;
   ///list of k-points in Cartesian Coordinates
   std::vector<PosType> kPoints;
   ///weight of k-points (make use of symmetry)
@@ -72,7 +78,7 @@ public:
   ///dims of a grid for k points
   int kgrid;
   ///nofK
-  Vector<RealType> nofK;
+  aligned_vector<RealType> nofK;
   ///list of Q for the Compton profile
   std::vector<RealType> Q;
   ///compton profile at q

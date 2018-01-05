@@ -256,8 +256,6 @@ public:
     }
   } 
   
-//  ValueType evaluate(ParticleSet& P, ParticleSet::
-
   /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$
    * @param P active particle set
    * @param iat particle that has been moved.
