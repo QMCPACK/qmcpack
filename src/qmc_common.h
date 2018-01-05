@@ -37,8 +37,6 @@ struct QMCState
   bool dryrun;
   ///true, if wave functions are stored for next runs
   bool save_wfs;
-  ///true, if walker swap is done by async
-  bool async_swap;
   ///true, print out file
   bool io_node;
   ///true, use Ewald instead of optimal breakup for the Coulomb

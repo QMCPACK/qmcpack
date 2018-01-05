@@ -125,12 +125,14 @@ public:
   std::vector<RealType> accumData;
   ///any temporary data
   std::vector<RealType> curData;
-  ///temporary storage for good walkers
-  std::vector<Walker_t*> good_w;
+  ///temporary storage for good and bad walkers
+  std::vector<Walker_t*> good_w, bad_w;
   ///temporary storage for copy counters
   std::vector<int> ncopy_w;
   ///Add released-node fields to .dmc.dat file
   bool WriteRN;
+  ///Use non-blocking isend/irecv
+  bool use_nonblocking;
 
   /** default constructor
    *
