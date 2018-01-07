@@ -50,6 +50,7 @@ int NonLocalTOperator::put(xmlNodePtr cur)
   if(use_tmove=="no")
   {
     v_tmove=TMOVE_OFF;
+    o << "  Using Locality Approximation";
   }
   else if(use_tmove=="yes"||use_tmove=="v0")
   {
