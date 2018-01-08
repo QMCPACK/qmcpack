@@ -99,7 +99,7 @@ where $N$ is the current population.
 \item \texttt{substeps}.  Same as BranchInterval.
 
 
-\item \texttt{nonlocalmoves}. Evaluate pseudopotentials using one of the nonlocal move algorithms such as t-moves.  Setting nonlocalmoves to false will impose the locality approximation. `yes/v0' implements the algorithm in the 2006 Casula paper~\cite{Casula2006} and `v1' implements the v1 algorithm in the 2010 Casula paper~\cite{Casula2010}.
+\item \texttt{nonlocalmoves}. Evaluate pseudopotentials using one of the nonlocal move algorithms such as t-moves.  Setting nonlocalmoves to `no' will impose the locality approximation. `yes/v0' implements the algorithm in the 2006 Casula paper~\cite{Casula2006} and `v1' implements the v1 algorithm in the 2010 Casula paper~\cite{Casula2010}.
 The v1 algorithm is size-consistent and an important advance over the previous v0 non-size-consistent algorithm. Investigating the importance of size consistency is highly recommended.
 
 \item \texttt{scaleweight}. Scaling weight per Umrigar/Nightengale.  CUDA only.
