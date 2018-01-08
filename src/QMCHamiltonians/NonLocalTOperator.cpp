@@ -64,7 +64,7 @@ int NonLocalTOperator::put(xmlNodePtr cur)
   }
   else
   {
-    APP_ABORT("NonLocalTOperator::put uknown nonlocalmove option");
+    APP_ABORT("NonLocalTOperator::put unknown nonlocalmove option " + use_tmove);
   }
   #pragma omp master
   app_log() << o.str() << std::endl;
