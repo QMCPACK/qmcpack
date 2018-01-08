@@ -52,7 +52,7 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
   {
     if(s.Lattice.DiagonalOnly)
     {
-      o << "    PBC: bulk   Orthorhombic: yes   Type: PPPO" << std::endl;
+      o << "    Distance computations use orthorhombic periodic cell in 3D." << std::endl;
       if(useSoA)
       {
         dt = new SoaDistanceTableBA<RealType,DIM,PPPO+SOA_OFFSET>(s,t);
@@ -66,7 +66,7 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
     {
       if(s.Lattice.WignerSeitzRadius>s.Lattice.SimulationCellRadius)
       {
-        o << "    PBC: bulk   Orthorhombic: no   Type: PPPG"  << std::endl;
+        o << "    Distance computations use general periodic cell in 3D with corner image checks." << std::endl;
         if(useSoA)
         {
           dt = new SoaDistanceTableBA<RealType,DIM,PPPG+SOA_OFFSET>(s,t);
@@ -78,7 +78,7 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
       }
       else
       {
-        o << "    PBC: bulk   Orthorhombic: no   Type: PPPS"  << std::endl;
+        o << "    Distance computations use general periodic cell in 3D without corner image checks." << std::endl;
         if(useSoA)
         {
           dt = new SoaDistanceTableBA<RealType,DIM,PPPS+SOA_OFFSET>(s,t);
@@ -95,7 +95,7 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
   {
     if(s.Lattice.DiagonalOnly)
     {
-      o << "    PBC: bulk   Orthorhombic: yes   Type: PPNO" << std::endl;
+      o << "    Distance computations use orthorhombic code for periodic cell in 2D." << std::endl;
       if(useSoA)
       {
         dt = new SoaDistanceTableBA<RealType,DIM,PPNO+SOA_OFFSET>(s,t);
@@ -111,18 +111,18 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
       {
         if(useSoA)
         {
-          o << "    PBC: slab   Orthorhombic: no   Type: PPNG" << std::endl;
+          o << "    Distance computations use general periodic cell in 2D with corner image checks." << std::endl;
           dt = new SoaDistanceTableBA<RealType,DIM,PPNG+SOA_OFFSET>(s,t);
         }
         else
         {
-          o << "    PBC: slab   Orthorhombic: no   Type: PPNX" << std::endl;
+          o << "    Distance computations use general periodic cell in 2D with all surrounding image checks." << std::endl;
           dt = new AsymmetricDTD<RealType,DIM,PPNX>(s,t);
         }
       }
       else
       {
-        o << "    PBC: slab   Orthorhombic: no   Type: PPNS" << std::endl;
+        o << "    Distance computations use general periodic cell in 2D without corner image checks." << std::endl;
         if(useSoA)
         {
           dt = new SoaDistanceTableBA<RealType,DIM,PPNS+SOA_OFFSET>(s,t);
@@ -136,7 +136,7 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
   }
   else if(sc == SUPERCELL_WIRE)
   {
-    o << "    PBC: wire   Orthorhombic: NA" << std::endl;
+    o << "    Distance computations use periodic cell in one dimension." << std::endl;
     if(useSoA)
     {
       dt = new SoaDistanceTableBA<RealType,DIM,SUPERCELL_WIRE+SOA_OFFSET>(s,t);
@@ -148,7 +148,7 @@ DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int
   }
   else  //open boundary condition
   {
-    o << "   PBC: open   Orthorhombic: NA" << std::endl;
+    o << "    Distance computations use open boundary conditions in 3D." << std::endl;
     if(useSoA)
     {
       dt = new SoaDistanceTableBA<RealType,DIM,SUPERCELL_OPEN+SOA_OFFSET>(s,t);
