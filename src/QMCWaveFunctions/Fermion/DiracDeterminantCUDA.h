@@ -40,7 +40,7 @@ public:
   typedef ParticleSet::Walker_t     Walker_t;
 
   DiracDeterminantCUDA(SPOSetBasePtr const &spos, int first=0);
-  DiracDeterminantCUDA(const DiracDeterminantCUDA& s);
+  DiracDeterminantCUDA(const DiracDeterminantCUDA& s) = delete;
 
 protected:
   /////////////////////////////////////////////////////
@@ -60,6 +60,9 @@ protected:
   gpu::device_vector<CudaValueType*> srcList_d, destList_d, AList_d, AinvList_d, newRowList_d, 
                                     AinvDeltaList_d, AinvColkList_d, gradLaplList_d, 
                                     newGradLaplList_d, AWorkList_d, AinvWorkList_d, GLList_d;
+  gpu::device_vector<int> PivotArray_d;
+  gpu::device_vector<int> infoArray_d;
+  gpu::host_vector<int> infoArray_host;
   gpu::device_vector<CudaValueType> ratio_d;
   gpu::host_vector<CudaValueType> ratio_host;
   gpu::device_vector<CudaValueType> gradLapl_d;
@@ -118,6 +121,9 @@ protected:
     // HACK HACK HACK
     // gradLapl_d.resize   (numWalkers*NumOrbitals*4);
     // gradLapl_host.resize(numWalkers*NumOrbitals*4);
+    infoArray_d.resize(numWalkers*2);
+    infoArray_host.resize(numWalkers*2);
+    PivotArray_d.resize(numWalkers*NumOrbitals);
     gradLapl_d.resize   (numWalkers*RowStride*4);
     gradLapl_host.resize(numWalkers*RowStride*4);
     NLrowBuffer_d.resize(NLrowBufferRows*RowStride);

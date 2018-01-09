@@ -121,6 +121,8 @@ struct Walker
    * When Multiplicity = 0, this walker will be destroyed.
    */
   RealType Multiplicity;
+  ////Number of copies sent only for MPI
+  int NumSentCopies;
 
   /** The configuration vector (3N-dimensional vector to store
      the positions of all the particles for a single walker)*/
@@ -437,6 +439,7 @@ struct Walker
     DataSet.add(Age);
     DataSet.add(ReleasedNodeAge);
     DataSet.add(ReleasedNodeWeight);
+    DataSet.add(NumSentCopies);
     // vectors
     DataSet.add(R.first_address(), R.last_address());
 #if !defined(SOA_MEMORY_OPTIMIZED)
@@ -466,7 +469,7 @@ struct Walker
   void copyFromBuffer()
   {
     DataSet.rewind();
-    DataSet >> ID >> ParentID >> Generation >> Age >> ReleasedNodeAge >> ReleasedNodeWeight;
+    DataSet >> ID >> ParentID >> Generation >> Age >> ReleasedNodeAge >> ReleasedNodeWeight >> NumSentCopies;
     // vectors
     DataSet.get(R.first_address(), R.last_address());
 #if !defined(SOA_MEMORY_OPTIMIZED)
@@ -513,7 +516,7 @@ struct Walker
   void updateBuffer()
   {
     DataSet.rewind();
-    DataSet << ID << ParentID << Generation << Age << ReleasedNodeAge << ReleasedNodeWeight;
+    DataSet << ID << ParentID << Generation << Age << ReleasedNodeAge << ReleasedNodeWeight << NumSentCopies;
     // vectors
     DataSet.put(R.first_address(), R.last_address());
 #if !defined(SOA_MEMORY_OPTIMIZED)

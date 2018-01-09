@@ -187,6 +187,7 @@ struct  J2OrbitalSoA : public OrbitalBase
   }
 
   ValueType ratio(ParticleSet& P, int iat);
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
   GradType evalGrad(ParticleSet& P, int iat);
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   void acceptMove(ParticleSet& P, int iat);
@@ -413,6 +414,34 @@ J2OrbitalSoA<FT>::ratio(ParticleSet& P, int iat)
   }
 
   return std::exp(Uat[iat]-cur_Uat);
+}
+
+template<typename FT>
+inline void
+J2OrbitalSoA<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
+{
+  const DistanceTableData* d_table=P.DistTables[0];
+  const auto dist=d_table->Temp_r.data();
+
+  for(int ig=0; ig<NumGroups; ++ig)
+  {
+    const int igt=ig*NumGroups;
+    valT sumU(0);
+    for(int jg=0; jg<NumGroups; ++jg)
+    {
+      const FuncType& f2(*F[igt+jg]);
+      int iStart = P.first(jg);
+      int iEnd = P.last(jg);
+      sumU += f2.evaluateV(-1, iStart, iEnd, dist, DistCompressed.data());
+    }
+
+    for(int i=P.first(ig); i<P.last(ig); ++i)
+    {
+      // remove self-interaction
+      const valT Uself = F[igt+ig]->evaluate(dist[i]);
+      ratios[i]=std::exp(Uat[i]+Uself-sumU);
+    }
+  }
 }
 
 template<typename FT>

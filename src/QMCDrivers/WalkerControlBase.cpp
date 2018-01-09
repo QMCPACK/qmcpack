@@ -225,6 +225,7 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
   curData[RNSIZE_INDEX]=nrn;
   curData[B_ENERGY_INDEX]=besum;
   curData[B_WGT_INDEX]=bwgtsum;
+  curData[SENTWALKERS_INDEX]=NumWalkersSent=0;
   myComm->allreduce(curData);
   measureProperties(iter);
   trialEnergy=EnsembleProperty.Energy;
@@ -451,25 +452,36 @@ int WalkerControlBase::copyWalkers(MCWalkerConfiguration& W)
 {
   // save current good walker size.
   const int size_good_w = good_w.size();
+  std::vector<int> copy_list;
   for(int i=0; i<size_good_w; i++)
   {
     for(int j=0; j<ncopy_w[i]; j++)
     {
-      Walker_t* awalker;
       if(bad_w.empty())
       {
-        awalker=new Walker_t(*(good_w[i]));
+        good_w.push_back(nullptr);
       }
       else
       {
-        awalker=bad_w.back();
-        *awalker=*(good_w[i]);
+        good_w.push_back(bad_w.back());
         bad_w.pop_back();
       }
-      awalker->ID=(++NumWalkersCreated)*NumContexts+MyContext;
-      awalker->ParentID=good_w[i]->ParentID;
-      good_w.push_back(awalker);
+      copy_list.push_back(i);
     }
+  }
+
+  #pragma omp parallel for
+  for(int i=size_good_w; i<good_w.size(); i++)
+  {
+    auto &wRef=good_w[copy_list[i-size_good_w]];
+    auto &awalker=good_w[i];
+    if(awalker==nullptr)
+      awalker=new Walker_t(*wRef);
+    else
+      *awalker=*wRef;
+    // not fully sure this is correct or even used
+    awalker->ID=(i-size_good_w)*NumContexts+MyContext;
+    awalker->ParentID=wRef->ParentID;
   }
 
   //clear the WalkerList to populate them with the good walkers
@@ -490,22 +502,26 @@ int WalkerControlBase::copyWalkers(MCWalkerConfiguration& W)
 bool WalkerControlBase::put(xmlNodePtr cur)
 {
   int nw_target=0, nw_max=0;
+  std::string nonblocking="yes";
   ParameterSet params;
   params.add(targetEnergyBound,"energyBound","double");
   params.add(targetSigma,"sigmaBound","double");
   params.add(MaxCopy,"maxCopy","int");
   params.add(nw_target,"targetwalkers","int");
   params.add(nw_max,"max_walkers","int");
+  params.add(nonblocking,"use_nonblocking","string");
 
   bool success=params.put(cur);
 
   setMinMax(nw_target,nw_max);
+  use_nonblocking = nonblocking=="yes";
   app_log() << "  WalkerControlBase parameters " << std::endl;
   //app_log() << "    energyBound = " << targetEnergyBound << std::endl;
   //app_log() << "    sigmaBound = " << targetSigma << std::endl;
   app_log() << "    maxCopy = " << MaxCopy << std::endl;
   app_log() << "    Max Walkers per node " << Nmax << std::endl;
   app_log() << "    Min Walkers per node " << Nmin << std::endl;
+  app_log() << "    Using " << (use_nonblocking?"non-":"") << "blocking send/recv" << std::endl;
   return true;
 }
 

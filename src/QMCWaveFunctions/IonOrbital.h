@@ -32,8 +32,10 @@ private:
   ParticleAttrib<RealType> U,d2U;
   ParticleAttrib<PosType> dU;
   RealType *FirstAddressOfdU, *LastAddressOfdU;
-  DistanceTableData* d_table;
-  ParticleSet &CenterRef, &PtclRef;
+  ///table index
+  int myTableID;
+  ///orbital centers
+  ParticleSet &CenterRef;
   int NumTargetPtcls, NumCenters;
   RealType curVal, curLap;
   PosType curGrad;
