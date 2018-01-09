@@ -227,6 +227,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
           W.setActive(iat);
           if(W.makeMoveAndCheck(iat,oneTMove->Delta))
           {
+            Psi.evalGrad(W,iat);
             Psi.ratioGrad(W,iat,grad_iat);
             Psi.acceptMove(W,iat);
             W.acceptMove(iat);
@@ -237,6 +238,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
     }
     if(NonLocalMoveAcceptedTemp)
     {
+      Psi.completeUpdates(W);
       Psi.updateBuffer(W,w_buffer,false);
       W.saveWalker(thisWalker);
       NonLocalMoveAccepted+=NonLocalMoveAcceptedTemp;
