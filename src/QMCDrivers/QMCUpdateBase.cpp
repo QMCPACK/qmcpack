@@ -32,21 +32,21 @@ namespace qmcplusplus
 
 /// Constructor.
 QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide, QMCHamiltonian& h, RandomGenerator_t& rg)
-  : W(w),Psi(psi),Guide(guide),H(h), RandomGen(rg), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
+  : W(w), Psi(psi), Guide(guide), H(h), nonLocalOps(w.getTotalNum()), RandomGen(rg), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
 {
   setDefaults();
 }
 
 /// Constructor.
 QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
-  : W(w),Psi(psi),H(h),Guide(psi), RandomGen(rg), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
+  : W(w), Psi(psi), H(h), nonLocalOps(w.getTotalNum()), Guide(psi), RandomGen(rg), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
 {
   setDefaults();
 }
 
 ///copy constructor
 QMCUpdateBase::QMCUpdateBase(const QMCUpdateBase& a)
-  : W(a.W), Psi(a.Psi), Guide(a.Guide), H(a.H), RandomGen(a.RandomGen)
+  : W(a.W), Psi(a.Psi), Guide(a.Guide), H(a.H), nonLocalOps(a.W.getTotalNum()), RandomGen(a.RandomGen)
   , branchEngine(0), Estimators(0), Traces(0)
 {
   APP_ABORT("QMCUpdateBase::QMCUpdateBase(const QMCUpdateBase& a) Not Allowed");
@@ -277,7 +277,7 @@ void QMCUpdateBase::randomize(Walker_t& awalker)
       }
       RealType logGf = -0.5e0*dot(deltaR[iat],deltaR[iat]);
       getScaledDrift(tauovermass,grad_new,dr);
-      dr = awalker.R[iat]-W.R[iat]-dr;
+      dr = W.R[iat]-W.activePos-dr;
       RealType logGb = -oneover2tau*dot(dr,dr);
       if (RandomGen() < prob*std::exp(logGb-logGf))
       {

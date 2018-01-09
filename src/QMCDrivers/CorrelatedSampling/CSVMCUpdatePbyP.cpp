@@ -16,7 +16,6 @@
 
 
 #include "QMCDrivers/CorrelatedSampling/CSVMCUpdatePbyP.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "Particle/HDFWalkerIO.h"
 #include "ParticleBase/ParticleUtility.h"
@@ -109,7 +108,6 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
     }
     for(int ipsi=0; ipsi<nPsi; ipsi++)
       Psi1[ipsi]->completeUpdates(W);
-    thisWalker.R=W.R;
   }
 //  myTimers[1]->stop();
 //  myTimers[2]->start();

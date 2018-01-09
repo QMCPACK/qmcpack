@@ -34,7 +34,6 @@ int main(int argc, char** argv)
 {
 
   OHMMS::Controller->initialize(0, NULL);
-  OhmmsInfo("j2debuglogfile");
   Communicate* mycomm=OHMMS::Controller;
 
   typedef QMCTraits::RealType           RealType;
@@ -82,8 +81,7 @@ int main(int argc, char** argv)
   //turn off output
   if(omp_get_max_threads()>1)
   {
-    OhmmsInfo::Log->turnoff();
-    OhmmsInfo::Warn->turnoff();
+    outputManager.pause();
   }
 
   int nptcl=0;
@@ -94,6 +92,8 @@ int main(int argc, char** argv)
 
   {
     ParticleSet ions, els;
+    ions.setName("ion");
+    els.setName("e");
     OHMMS_PRECISION scale=1.0;
 
     int np=omp_get_num_threads();

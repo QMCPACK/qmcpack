@@ -15,7 +15,6 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Utilities/OhmmsInfo.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "Numerics/OhmmsBlas.h"
 #include "QMCWaveFunctions/SPOSetBase.h"

@@ -301,9 +301,9 @@ DiracDeterminantBase::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P
 void DiracDeterminantBase::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BufferTimer.start();
-  psiM.attach(buf.attach<ValueType>(psiM.size()));
-  dpsiM.attach(buf.attach<GradType>(dpsiM.size()));
-  d2psiM.attach(buf.attach<ValueType>(d2psiM.size()));
+  psiM.attachReference(buf.lendReference<ValueType>(psiM.size()));
+  dpsiM.attachReference(buf.lendReference<GradType>(dpsiM.size()));
+  d2psiM.attachReference(buf.lendReference<ValueType>(d2psiM.size()));
   buf.get(LogValue);
   buf.get(PhaseValue);
   BufferTimer.stop();
@@ -342,10 +342,10 @@ void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, std::vector<Va
   MatrixOperators::product(psiT,psiM[VP.activePtcl-FirstIndex],&ratios[0]);
 }
 
-void DiracDeterminantBase::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+void DiracDeterminantBase::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   SPOVTimer.start();
-  Phi->evaluate(P, 0, psiV);
+  Phi->evaluate(P, -1, psiV);
   SPOVTimer.stop();
   MatrixOperators::product(psiM,psiV.data(),&ratios[FirstIndex]);
 }

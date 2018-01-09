@@ -15,7 +15,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "Utilities/OhmmsInfo.h"
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"

@@ -85,10 +85,10 @@ protected:
   ParticleAttrib<RealType> U,d2U;
   ParticleAttrib<PosType> dU;
   RealType *FirstAddressOfdU, *LastAddressOfdU;
-  std::vector<FT*> Fs;
   std::vector<FT*> Funique;
 
 public:
+  std::vector<FT*> Fs;
 
   typedef FT FuncType;
 
@@ -256,8 +256,6 @@ public:
     }
   } 
   
-//  ValueType evaluate(ParticleSet& P, ParticleSet::
-
   /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$
    * @param P active particle set
    * @param iat particle that has been moved.
@@ -299,27 +297,6 @@ public:
     evaluateRatios(VP,ratios);
     if(dPsi)
       dPsi->evaluateDerivRatios(VP,optvars,dratios);
-  }
-
-
-  /** evaluate the ratio
-   */
-  inline void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
-  {
-    const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    std::fill(ratios.begin(),ratios.end(),0.0);
-    for (int i=0; i<d_table->size(SourceIndex); ++i)
-    {
-      if (Fs[i] != nullptr)
-      {
-        RealType up=Fs[i]->evaluate(d_table->Temp[i].r1);
-        for (int nn=d_table->M[i],j=0; nn<d_table->M[i+1]; ++nn,++j)
-          ratios[j]+=Fs[i]->evaluate(d_table->r(nn))-up;
-        //delta_u[d_table->J[nn]]+=Fs[i]->evaluate(d_table->r(nn))-u0;
-      }
-    }
-    for(int i=0; i<ratios.size(); ++i)
-      ratios[i] = std::exp(ratios[i]);
   }
 
   inline GradType evalGrad(ParticleSet& P, int iat)

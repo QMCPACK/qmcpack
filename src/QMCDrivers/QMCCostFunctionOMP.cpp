@@ -190,8 +190,7 @@ void QMCCostFunctionOMP::getConfigurations(const std::string& aroot)
   }
   
   app_log()<<"  Using Nonlocal PP in Opt: " << includeNonlocalH << std::endl;
-  OhmmsInfo::Log->turnoff();
-  OhmmsInfo::Warn->turnoff();
+  outputManager.pause();
   //#pragma omp parallel for
   for (int ip=0; ip<NumThreads; ++ip)
   {
@@ -214,8 +213,7 @@ void QMCCostFunctionOMP::getConfigurations(const std::string& aroot)
   }
 
   //load samples from SampleStack
-  OhmmsInfo::Log->reset();
-  OhmmsInfo::Warn->reset();
+  outputManager.resume();
   app_log() << "   Number of samples loaded to each thread : ";
   wPerNode[0]=0;
   for (int ip=0; ip<NumThreads; ++ip)

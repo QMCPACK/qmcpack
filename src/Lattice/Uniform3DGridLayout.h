@@ -22,7 +22,6 @@
 #endif
 #include <vector>
 #include <iostream>
-#include "Utilities/OhmmsInfo.h"
 #include "Lattice/CrystalLattice.h"
 #include "Lattice/UniformCartesianGrid.h"
 
@@ -210,7 +209,7 @@ public:
   {
     return Grid[glevel][ig];
   }
-  void print(std::ostream& os) const;
+  void print(std::ostream& os, int level=2) const;
 
   inline void update()
   {
@@ -220,6 +219,8 @@ public:
 
   ///Set LR_rc = radius of smallest sphere inside box and kc=dim/rc
   void SetLRCutoffs();
+
+  void printCutoffs();
 
   /** set the lattice vector with a tensor
    *@param lat a tensor representing a supercell

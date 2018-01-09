@@ -46,11 +46,14 @@ struct QMCGaussianParserBase
   bool SpinRestricted;
   bool Periodicity;
   bool UseHDF5;
+  bool production;
   bool zeroCI;
   bool orderByExcitation;
   bool addJastrow;
   bool addJastrow3Body;
   bool ECP;
+  bool debug;
+  bool Structure;
   int IonChargeIndex;
   int ValenceChargeIndex;
   int AtomicNumberIndex;
@@ -85,7 +88,7 @@ struct QMCGaussianParserBase
   std::string outputFile;
   std::string angular_type;
   std::string h5file;
-
+  std::string WFS_name;
   ParticleSet IonSystem;
 
 
@@ -122,7 +125,7 @@ struct QMCGaussianParserBase
 
   void createSPOSets(xmlNodePtr,xmlNodePtr);
   void createSPOSetsH5(xmlNodePtr,xmlNodePtr);
-  xmlNodePtr createElectronSet();
+  xmlNodePtr createElectronSet(const std::string& ion_tag);
   xmlNodePtr createIonSet();
   xmlNodePtr createHamiltonian(const std::string& ion_tag, const std::string& psi_tag);
   xmlNodePtr createBasisSet();
@@ -152,6 +155,9 @@ struct QMCGaussianParserBase
                     const std::string& ion_tag);
 
   void dumpStdInput(const std::string& psi_tag,
+                    const std::string& ion_tag);
+
+  void dumpStdInputProd(const std::string& psi_tag,
                     const std::string& ion_tag);
 
   virtual void Fmodump(const std::string& psi_tag,

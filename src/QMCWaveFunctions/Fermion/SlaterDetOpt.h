@@ -181,11 +181,11 @@ class SlaterDetOpt : public DiracDeterminantBase {
 
     void restore(int iat);
 
-    RealType registerData(ParticleSet& P, BufferType& buf);
+    void registerData(ParticleSet& P, WFBufferType& buf);
 
-    RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
+    RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 
-    void copyFromBuffer(ParticleSet& P, BufferType& buf);
+    void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
     OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
@@ -201,10 +201,20 @@ class SlaterDetOpt : public DiracDeterminantBase {
                          const RealType * const dBchi,
                          const RealType * const d2Bchi);
 
+    void add_grad_derivatives(const int nl,
+                              const int np,
+                              const RealType * const dh0,
+                              const RealType * const dh1,
+                              const RealType * const Bchi,
+                              const RealType * const dBchi);
+
     void evaluateDerivatives(ParticleSet& P,
                              const opt_variables_type& optvars,
                              std::vector<RealType>& dlogpsi,
                              std::vector<RealType>& dhpsioverpsi);
+
+    void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                                 std::vector<RealType>& dgradlogpsi);
 
 };
 

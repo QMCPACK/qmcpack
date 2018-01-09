@@ -20,7 +20,6 @@
  */
 #include "Particle/HDFWalkerIOEngine.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus

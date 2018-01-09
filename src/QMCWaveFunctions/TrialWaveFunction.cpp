@@ -18,7 +18,6 @@
     
     
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Utilities/IteratorUtility.h"
 
 namespace qmcplusplus
@@ -793,6 +792,13 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
   }
 }
 
+void TrialWaveFunction::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                                                std::vector<RealType>& dgradlogpsi) {
+  for (int i=0; i<Z.size(); i++) {
+    Z[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
+  }
+}
+
 TrialWaveFunction::RealType
 TrialWaveFunction::KECorrection() const
 {
@@ -802,15 +808,17 @@ TrialWaveFunction::KECorrection() const
   return sum;
 }
 
-void TrialWaveFunction::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+void TrialWaveFunction::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   std::fill(ratios.begin(),ratios.end(),1.0);
   std::vector<ValueType> t(ratios.size());
-  for (int i=0; i<Z.size(); ++i)
+  for (int i=0, ii=V_TIMER; i<Z.size(); ++i,ii+=TIMER_SKIP)
   {
-    Z[i]->get_ratios(P,t);
+    myTimers[ii]->start();
+    Z[i]->evaluateRatiosAlltoOne(P,t);
     for (int j=0; j<t.size(); ++j)
       ratios[j]*=t[j];
+    myTimers[ii]->stop();
   }
 }
 

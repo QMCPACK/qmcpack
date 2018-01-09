@@ -34,6 +34,57 @@ IF (NOT QMC_CUDA)
                       ${MP_SUCCESS}
                       5 H4_OPT_SCALARS # OPT step 5
                       )
+    #
+    # H4 starting from perturbed orbitals, using optimizable determinants, and the adaptive linear method
+    #
+    LIST(APPEND H4_ORB_OPT_SCALARS "totenergy" "-2.0889 0.001") # total energy
+
+    QMC_RUN_AND_CHECK(short-H4-orb-opt
+                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                      H4
+                      h4_orb_opt.xml
+                      16 1
+                      ${MP_SUCCESS}
+                      14 H4_ORB_OPT_SCALARS # Final VMC step
+                      TRUE)
+
+    #
+    # H4 starting from converged wave function, doing a quick adaptive linear method run (using the same
+    # spo set for both spin-up and spin-down determinants) and then doing a DMC calculation
+    #
+    LIST(APPEND H4_ORB_OPT_DMC_SCALARS "totenergy" "-2.191461 0.0048") # total energy
+
+    QMC_RUN_AND_CHECK(short-H4-orb-opt-dmc
+                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                      H4
+                      h4_orb_opt_dmc.xml
+                      16 1
+                      ${MP_SUCCESS}
+                      3 H4_ORB_OPT_DMC_SCALARS # Test the DMC results
+                      TRUE)
+
+    QMC_RUN_AND_CHECK(short-H4-orb-opt-dmc
+                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                      H4
+                      h4_orb_opt_dmc.xml
+                      1 16
+                      ${MP_SUCCESS}
+                      3 H4_ORB_OPT_DMC_SCALARS # Test the DMC results
+                      TRUE)
+    #
+    # H4 starting from unoptimized CIS coefficients, targetting the first excited state, and using the adaptive linear method
+    #
+    LIST(APPEND H4_FDLR_SCALARS "totenergy" "-1.82507816 0.001") # total energy
+
+    QMC_RUN_AND_CHECK(short-H4-FDLR
+                      "${CMAKE_SOURCE_DIR}/tests/molecules/H4_ae"
+                      H4
+                      H4_FDLR_CIS_opt.xml
+                      16 1
+                      ${MP_SUCCESS}
+                      8 H4_FDLR_SCALARS # Final VMC step
+                      TRUE)
+
   ELSE()
    MESSAGE("Skipping H4_ae adaptive optimizer tests because lmyengine interface was not built (BUILD_LMYENGINE_INTERFACE=0)")
   ENDIF(BUILD_LMYENGINE_INTERFACE)

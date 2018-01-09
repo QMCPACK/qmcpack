@@ -31,7 +31,6 @@
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
-#include "Utilities/OhmmsInfo.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
 class Communicate;
@@ -360,9 +359,6 @@ protected:
 
   ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
-
-  ///stream for the log file
-  //OhmmsInform *LogOut;
 
   ///temporary buffer to accumulate data
   //ostrstream log_buffer;

@@ -12,7 +12,7 @@ ENDIF(COMMAND cmake_policy)
 # Version 
 ######################################################################
 SET(QMCPACK_VERSION_MAJOR 3)
-SET(QMCPACK_VERSION_MINOR 2)
+SET(QMCPACK_VERSION_MINOR 3)
 SET(QMCPACK_VERSION_PATCH 0)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
@@ -847,7 +847,7 @@ endif()
 #ADD_DEFINITIONS(-DDISABLE_WS_CELL)
 
 EXECUTE_PROCESS(COMMAND hostname OUTPUT_VARIABLE QMC_HOSTNAME OUTPUT_STRIP_TRAILING_WHITESPACE)
-CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/qmcpack.settings ${qmcpack_BINARY_DIR}/bin/qmcpack.settings)
+CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/src/qmcpack.settings ${qmcpack_BINARY_DIR}/bin/qmcpack.settings)
 
 #########################
 # add definitions for adios profile

@@ -35,13 +35,10 @@ public:
   /// Constructor.
   DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,WaveFunctionPool& ppool);
   bool run();
-  bool runWithNonlocal();
   bool put(xmlNodePtr cur);
   void resetUpdateEngine();
 
 private:
-  ///input std::string to determine to use nonlocal move
-  std::string NonLocalMove;
   std::string ScaleWeight;
   /// tau/mass
   RealType m_tauovermass;
@@ -54,13 +51,7 @@ private:
   ///update engine
   QMCUpdateBase* Mover;
   /// Copy Constructor (disabled)
-  DMCcuda(const DMCcuda& a): QMCDriver(a),
-    ResizeTimer("DMCcuda::resize"),
-    DriftDiffuseTimer("DMCcuda::Drift_Diffuse"),
-    BranchTimer("DMCcuda::Branch"),
-    HTimer("DMCcuda::Hamiltonian")
-
-  { }
+  DMCcuda(const DMCcuda& a) = delete;
 
   bool checkBounds (const PosType &newpos);
   void checkBounds (std::vector<PosType> &newpos, std::vector<bool> &valid);
@@ -73,6 +64,8 @@ private:
   ///hide initialization from the main function
   void resetRun();
   NonLocalTOperator NLop;
+  ///use T-moves
+  int UseTMove;
 
   NewTimer ResizeTimer, DriftDiffuseTimer, BranchTimer, HTimer;
 };

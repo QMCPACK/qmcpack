@@ -64,7 +64,7 @@ namespace qmcplusplus
     mGL.resize(nel);
     //map mGL[i] to a block of memoryPool
     for(size_t i=0; i<nel; ++i)
-      mGL[i].resetByRef(norb,NorbPad,memoryPool.data()+i*BlockSize);
+      mGL[i].attachReference(norb,NorbPad,memoryPool.data()+i*BlockSize);
     vVGL.resize(norb);
   }
 

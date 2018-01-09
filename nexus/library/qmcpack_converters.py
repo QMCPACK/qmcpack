@@ -179,7 +179,7 @@ class Pw2qmcpackInput(SimulationInput):
 #end class Pw2qmcpackInput
 
 
-def generate_pw2qmcpack_input(prefix='pwscf',outdir='pwscf_output',write_psir=True):
+def generate_pw2qmcpack_input(prefix='pwscf',outdir='pwscf_output',write_psir=False):
     pw = Pw2qmcpackInput(
         prefix     = prefix,
         outdir     = outdir,

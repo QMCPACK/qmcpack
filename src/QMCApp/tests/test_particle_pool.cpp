@@ -15,7 +15,6 @@
 
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
-#include "Utilities/OhmmsInfo.h"
 #include "QMCApp/ParticleSetPool.h"
 
 
@@ -34,7 +33,6 @@ TEST_CASE("ParticleSetPool", "[qmcapp]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   ParticleSetPool pp(c);
 
@@ -86,7 +84,6 @@ TEST_CASE("ParticleSetPool random", "[qmcapp]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   ParticleSetPool pp(c);
 
@@ -137,7 +134,6 @@ TEST_CASE("ParticleSetPool putTileMatrix", "[qmcapp]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   ParticleSetPool pp(c);
 
@@ -168,7 +164,6 @@ TEST_CASE("ParticleSetPool putLattice", "[qmcapp]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   ParticleSetPool pp(c);
 

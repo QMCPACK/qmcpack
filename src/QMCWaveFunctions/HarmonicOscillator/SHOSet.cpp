@@ -95,18 +95,20 @@ namespace qmcplusplus
 
   void SHOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
+    const PosType &r(P.activeR(iat));
     ValueViewer_t p(&psi[0],size());
-    evaluate_v(P.R[iat],p);
+    evaluate_v(r,p);
   }
 
 
-  void SHOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, 
+  void SHOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi,
                         GradVector_t& dpsi, ValueVector_t& d2psi)
   {
+    const PosType &r(P.activeR(iat));
     ValueViewer_t   p(  &psi[0],size());
     GradViewer_t   dp( &dpsi[0],size());
     ValueViewer_t d2p(&d2psi[0],size());
-    evaluate_vgl(P.R[iat],p,dp,d2p);
+    evaluate_vgl(r,p,dp,d2p);
   }
   
 

@@ -14,7 +14,6 @@
 
 
 #include "Utilities/OhmmsObject.h"
-#include "Utilities/OhmmsInfo.h"
 
 /**@file OhmmsObject.cpp
  *@brief Definitions of the member functions of OhmmsObject

@@ -34,7 +34,6 @@
 #include "QMCDrivers/QMCFixedSampleLinearOptimize.h"
 #include "QMCDrivers/QMCCorrelatedSamplingLinearOptimize.h"
 #include "QMCDrivers/WaveFunctionTester.h"
-#include "Utilities/OhmmsInfo.h"
 #include <queue>
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
@@ -113,7 +112,8 @@ bool QMCDriverFactory::setQMCDriver(int curSeries, xmlNodePtr cur)
 #if defined(QMC_CUDA)
   WhatToDo[GPU_MODE      ] = (gpu_tag     == "yes");
 #endif
-  OhmmsInfo::flush();
+  infoSummary.flush();
+  infoLog.flush();
 
   std::string wf_test_name("wftest");
   QMCRunType newRunType = DUMMY_RUN;
@@ -214,7 +214,8 @@ bool QMCDriverFactory::setQMCDriver(int curSeries, xmlNodePtr cur)
   //branchEngine has to be transferred to a new QMCDriver
   if(branchEngine)
     qmcDriver->setBranchEngine(branchEngine);
-  OhmmsInfo::flush();
+  infoSummary.flush();
+  infoLog.flush();
   qmcDriver->allow_traces = allow_traces;
   return append_run;
 }

@@ -14,11 +14,11 @@ import sys
 # *.inp - Gamess input file.  Not strictly necessary for this test, but useful for reproducing the run
 # *.out - Gamess output file.  Serves as input to convert4qmc
 # One of the following
-#  gold.Gaussian-G2.xml - expected version of output from convert4qmc
+#  gold.wfnoj.xml - expected version of output from convert4qmc
 #  'expect_fail.txt' - if present, converter should fail
 
 # Only the wavefunction conversion is tested currently.
-# Structure conversion (gold.Gaussian-G2.ptcl.xml) is not tested.
+# Structure conversion (gold.structure.xml) is not tested.
 
 def compare(gold_file,test_file):
         if not filecmp.cmp(gold_file, test_file):
@@ -123,7 +123,7 @@ def run_one_converter_test(c4q_exe):
     extra_cmd_args = read_extra_args()
 
     expect_fail = os.path.exists('expect_fail.txt')
-    gold_file = 'gold.Gaussian-G2.xml'
+    gold_file = 'gold.wfnoj.xml'
     if expect_fail:
         gold_file = ''
     else:

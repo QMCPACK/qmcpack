@@ -14,7 +14,6 @@
 
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
@@ -43,7 +42,6 @@ TEST_CASE("EstimatorManagerBase", "[estimators]")
 {
   OHMMS::Controller->initialize(0, NULL);
   Communicate *c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   EstimatorManagerBase em(c);
 

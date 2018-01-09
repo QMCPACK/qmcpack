@@ -12,9 +12,6 @@ are performed. If the flag is absent, then the corresponding
 option is disabled.
 
 \begin{description}
-\item[\texttt{-{}-async\_swap}]{ When enabled, this option will launch a new thread
-  to handle the communication between walkers. If it is not enabled,
-  then the communication happens on the current thread. }
 \item[\texttt{-{}-dryrun}]{ Validate the input file without performing the simulation.
   This is a good way to ensure that QMCPACK will do what you think it will. }
 \item[\texttt{-{}-help}]{ Print version information as well as a list of optional
@@ -27,12 +24,7 @@ option is disabled.
 \item[\texttt{-{}-save\_wfs}]{ Write a \texttt{.h5} file containing the real-space B-spline
   coefficients of the single particle wave functions. See the manual
   \ref{sec:spo_spline} for more information.}
-\item[\texttt{-{}-vacuum X}]{ For slab or wire boundary conditions
-  (\texttt{bconds= p p n}, or \texttt{bconds= p n n}, respectively),
-  increase the size of the axis with the open boundary condition(s)
-  by a factor \texttt{X}. The default value is 1,
-  \textit{i.e.} no change to the specified axis. For more details
-  on boundary conditions, see \ref{chap:simulationcell}. }
+\item[\texttt{-{}-vacuum X}]{deprecated, use `vacuum' input tag described in \ref{chap:simulationcell}. }
 \item[\texttt{-{}-version}]{ Print version information and optional arguments.
   Same as \texttt{-{}-help}. }
 \end{description}

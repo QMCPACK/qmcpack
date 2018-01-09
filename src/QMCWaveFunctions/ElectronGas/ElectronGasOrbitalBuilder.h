@@ -88,27 +88,30 @@ struct RealEGOSet: public SPOSetBase
 
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
+    const PosType &r=P.activeR(iat);
     RealType sinkr,coskr;
     psi[0]=1.0;
     for(int ik=0, j=1; ik<KptMax; ik++)
     {
-      sincos(dot(K[ik],P.R[iat]),&sinkr,&coskr);
+      sincos(dot(K[ik],r),&sinkr,&coskr);
       psi[j++]=coskr;
       psi[j++]=sinkr;
     }
   }
 
   /** generic inline function to handle a row
-   * @param r position of the particle
+   * @param P current ParticleSet
+   * @param iat active particle
    * @param psi value row
    * @param dpsi gradient row
    * @param d2psi laplacian row
    */
-  inline void evaluate_p(const PosType& r, ValueType* restrict psi, GradType* restrict dpsi, ValueType* restrict d2psi)
+  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     psi[0]=1.0;
     dpsi[0]=0.0;
     d2psi[0]=0.0;
+    const PosType &r=P.activeR(iat);
     RealType coskr, sinkr;
     for(int ik=0,j1=1; ik<KptMax; ik++,j1+=2)
     {
@@ -124,16 +127,18 @@ struct RealEGOSet: public SPOSetBase
   }
 
   /** generic inline function to handle a row
-   * @param r position of the particle
+   * @param P current ParticleSet
+   * @param iat active particle
    * @param psi value row
    * @param dpsi gradient row
    * @param hess hessian row
    */
-  inline void evaluate_p(const PosType& r, ValueType* restrict psi, GradType* restrict dpsi, HessType* restrict hess)
+  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& hess)
   {
     psi[0]=1.0;
     dpsi[0]=0.0;
     hess[0]=0.0;
+    const PosType &r=P.activeR(iat);
     RealType coskr, sinkr;
     for(int ik=0,j1=1; ik<KptMax; ik++,j1+=2)
     {
@@ -158,45 +163,16 @@ struct RealEGOSet: public SPOSetBase
     }
   }
 
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
-  {
-    evaluate_p(P.R[iat],psi.data(),dpsi.data(),d2psi.data());
-  }
-
-  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)
-  {
-    evaluate_p(P.R[iat],psi.data(),dpsi.data(),grad_grad_psi.data());
-  }
-
-
-  /*
-  void evaluate(const ParticleSet& P, int first, int last,
-      ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
-  {
-    RealType coskr, sinkr;
-    for(int i=0,iat=first; iat<last; i++,iat++) {
-      logdet(0,i)=1.0;
-      dlogdet(i,0)=0.0;
-      d2logdet(i,0)=0.0;
-      for(int ik=0,j1=1; ik<KptMax; ik++,j1+=2) {
-        sincos(dot(K[ik],P.R[iat]),&sinkr,&coskr);
-        int j2=j1+1;
-        logdet(j1,i)=coskr;
-        logdet(j2,i)=sinkr;
-        dlogdet(i,j1)=-sinkr*K[ik];
-        dlogdet(i,j2)= coskr*K[ik];
-        d2logdet(i,j1)=mK2[ik]*coskr;
-        d2logdet(i,j2)=mK2[ik]*sinkr;
-      }
-    }
-  }
-  */
-
   void evaluate_notranspose(const ParticleSet& P, int first, int last,
                             ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
   {
-    for(int i=0,iat=first; iat<last; i++,iat++)
-      evaluate_p(P.R[iat],logdet[i],dlogdet[i],d2logdet[i]);
+    for(int iat=first, i=0; iat<last; ++iat,++i)
+    {
+      ValueVector_t v(logdet[i],OrbitalSetSize);
+      GradVector_t g(dlogdet[i],OrbitalSetSize);
+      ValueVector_t l(d2logdet[i],OrbitalSetSize);
+      evaluate(P,iat,v,g,l);
+    }
   }
 
   void evaluate_notranspose(const ParticleSet& P, int first, int last
@@ -205,7 +181,6 @@ struct RealEGOSet: public SPOSetBase
   {
     for(int i=0,iat=first; iat<last; i++,iat++)
     {
-      //evaluate_p(P.R[iat],logdet[i],dlogdet[i],d2logdet[i]);
       ValueType* psi=logdet[i];
       GradType* dpsi=dlogdet[i];
       HessType*  hess=grad_grad_logdet[i];
@@ -242,7 +217,6 @@ struct RealEGOSet: public SPOSetBase
   {
     for(int i=0,iat=first; iat<last; i++,iat++)
     {
-      //evaluate_p(P.R[iat],logdet[i],dlogdet[i],d2logdet[i]);
       ValueType* psi=logdet[i];
       GradType* dpsi=dlogdet[i];
       HessType*  hess=grad_grad_logdet[i];
