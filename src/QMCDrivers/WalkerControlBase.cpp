@@ -502,7 +502,7 @@ int WalkerControlBase::copyWalkers(MCWalkerConfiguration& W)
 bool WalkerControlBase::put(xmlNodePtr cur)
 {
   int nw_target=0, nw_max=0;
-  std::string nonblocking="yes";
+  std::string nonblocking="no";
   ParameterSet params;
   params.add(targetEnergyBound,"energyBound","double");
   params.add(targetSigma,"sigmaBound","double");
@@ -513,8 +513,23 @@ bool WalkerControlBase::put(xmlNodePtr cur)
 
   bool success=params.put(cur);
 
+  // validating input
+  if(nonblocking=="yes")
+  {
+    APP_ABORT("WalkerControlBase::put use_nonblocking==\"yes\" is disabled currently!");
+    use_nonblocking = true;
+  }
+  else if(nonblocking=="no")
+  {
+    use_nonblocking = false;
+  }
+  else
+  {
+    APP_ABORT("WalkerControlBase::put unknown use_nonblocking option " + nonblocking);
+  }
+
   setMinMax(nw_target,nw_max);
-  use_nonblocking = nonblocking=="yes";
+
   app_log() << "  WalkerControlBase parameters " << std::endl;
   //app_log() << "    energyBound = " << targetEnergyBound << std::endl;
   //app_log() << "    sigmaBound = " << targetSigma << std::endl;
