@@ -153,8 +153,9 @@ void determineNewWalkerPopulation(int Cur_pop, int NumContexts, int MyContext, c
  * The algorithm ensures that the load per node can differ only by one walker.
  * Each MPI rank can only send or receive or be silent.
  * The communication is one-dimensional and very local.
- * If multiple copies of a walker need to be sent to the target rank,
- * only one walker is sent and the number of copies is encoded in the message.
+ * If multiple copies of a walker need to be sent to the target rank, only send one.
+ * The number of copies is communicated ahead via blocking send/recv.
+ * Then the walkers are transferred via blocking or non-blocking send/recv.
  * The blocking send/recv may become serialized and worsen load imbalance.
  * Non blocking send/recv algorithm avoids serialization completely.
  */
