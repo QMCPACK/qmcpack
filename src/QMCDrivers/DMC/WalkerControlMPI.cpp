@@ -198,7 +198,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   int nswap=plus.size();
   // sort good walkers by the number of copies
   assert(good_w.size()==ncopy_w.size());
-  std::vector<std::pair<int,int> > ncopy_pairs, nrecv_pairs;
+  std::vector<std::pair<int,int> > ncopy_pairs;
   for(int iw=0; iw<ncopy_w.size(); iw++)
     ncopy_pairs.push_back(std::make_pair(ncopy_w[iw],iw));
   std::sort(ncopy_pairs.begin(), ncopy_pairs.end());
