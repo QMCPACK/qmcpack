@@ -214,7 +214,7 @@ bool SlaterCombo<T>::putBasisGroup(xmlNodePtr cur)
 template<class T>
 bool SlaterCombo<T>::putBasisGroupH5(hdf_archive &hin)
 {
-  APP_ABORT(" Error: Slater Orbitals with HDF5 not implemented. Please contat developpers. Aborting.\n");
+  APP_ABORT(" Error: Slater Orbitals with HDF5 not implemented. Please contat developers. Aborting.\n");
   return true;
 }
 }
