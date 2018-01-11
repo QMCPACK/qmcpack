@@ -96,6 +96,7 @@ namespace qmcplusplus
       ///implement functions used by AOBasisBuilder
       void setOrbitalSet(COT* oset, const std::string& acenter) { m_orbitals = oset; }
       bool addGrid(xmlNodePtr cur) { return true;}
+      bool addGridH5(hdf_archive &hin) { return true;}
       inline bool putCommon(xmlNodePtr cur) 
       { 
         const xmlChar* a=xmlGetProp(cur,(const xmlChar*)"normalized");
@@ -130,6 +131,22 @@ namespace qmcplusplus
         m_multiset->Rnl.push_back(radorb);
         return true;
       }
+
+      bool addRadialOrbitalH5(hdf_archive & hin, const QuantumNumberType& nlms)
+      {
+        if(m_multiset==nullptr)
+          m_multiset=new RadialOrbital_t;
+
+        single_type* radorb= new single_type(nlms[q_l],Normalized);
+        radorb->putBasisGroupH5(hin);
+
+        m_orbitals->RnlID.push_back(nlms);
+        m_multiset->Rnl.push_back(radorb);
+
+        return true;
+     }
+
+
 
       void finalize() 
       {

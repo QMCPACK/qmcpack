@@ -19,6 +19,8 @@
 #define QMCPLUSPLUS_SOA_LCAO_ORBITAL_BUILDER_H
 
 #include "QMCWaveFunctions/BasisSetBase.h"
+#include "io/hdf_archive.h"
+#include "Message/CommOperators.h"
 
 namespace qmcplusplus
 {
@@ -39,6 +41,8 @@ namespace qmcplusplus
     LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, xmlNodePtr cur);
     ~LCAOrbitalBuilder();
     bool put(xmlNodePtr cur);
+    bool putXML(xmlNodePtr cur);
+    bool putH5();
     SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
 
     private:
@@ -53,12 +57,14 @@ namespace qmcplusplus
     int radialOrbType;
     bool cuspCorr;
     std::string cuspInfo;
+    std::string h5_path; //Path to HDF5 Wavefunction
 
     /** create basis set
      *
      * Use ao_traits<T,I,J> to match (ROT)x(SH) combo
      */
     template<int I, int J> BasisSet_t* createBasisSet(xmlNodePtr cur);
+    template<int I, int J> BasisSet_t* createBasisSetH5();
 
   };
 }

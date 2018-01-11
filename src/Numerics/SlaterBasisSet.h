@@ -15,12 +15,16 @@
 
 
 
+
 #ifndef QMCPLUSPLUS_RADIALGRIDFUNCTOR_SLATERBASISSET_H
 #define QMCPLUSPLUS_RADIALGRIDFUNCTOR_SLATERBASISSET_H
 #include "Numerics/OptimizableFunctorBase.h"
 #include "Numerics/SlaterTypeOrbital.h"
 #include "OhmmsData/AttributeSet.h"
+#include "io/hdf_archive.h"
 
+namespace qmcplusplus
+{
 template<class T>
 struct SlaterCombo: public OptimizableFunctorBase
 {
@@ -138,6 +142,7 @@ struct SlaterCombo: public OptimizableFunctorBase
 //  }
 
   bool putBasisGroup(xmlNodePtr cur);
+  bool putBasisGroupH5(hdf_archive &hin);
 
   bool put(xmlNodePtr cur)
   {
@@ -206,4 +211,11 @@ bool SlaterCombo<T>::putBasisGroup(xmlNodePtr cur)
   return true;
 }
 
+template<class T>
+bool SlaterCombo<T>::putBasisGroupH5(hdf_archive &hin)
+{
+  APP_ABORT(" Error: Slater Orbitals with HDF5 not implemented. Please contat developpers. Aborting.\n");
+  return true;
+}
+}
 #endif

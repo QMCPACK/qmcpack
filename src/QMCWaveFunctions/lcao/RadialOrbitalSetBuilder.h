@@ -135,12 +135,14 @@ public:
 
   ///add a grid
   bool addGrid(xmlNodePtr cur);
+  bool addGridH5(hdf_archive &hin);
 
   /** add a radial functor
    * @param cur xml element
    * @param nlms quantum number
    */
   bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms);
+  bool addRadialOrbitalH5(hdf_archive &hin, const QuantumNumberType& nlms);
 
   /** put common element
    * @param cur xml element
@@ -153,6 +155,7 @@ public:
 private:
   //only check the cutoff
   void addGaussian(xmlNodePtr cur);
+  void addGaussianH5(hdf_archive &hin);
   void addSlater(xmlNodePtr cur);
   void addNumerical(xmlNodePtr cur, const std::string& dsname);
 
@@ -299,6 +302,73 @@ private:
       return true;
     }
 
+  template<typename COT>
+    bool
+    RadialOrbitalSetBuilder<COT>::addGridH5(hdf_archive &hin)
+    {
+      if(!m_orbitals)
+      {
+        APP_ABORT("NGOBuilder::addGrid SphericalOrbitals<ROT,GT>*, is not initialized");
+      }
+
+      app_log() << "   Grid is created by the input paremters in h5" << std::endl;
+
+
+      std::string gridtype;
+  
+      if(hin.myComm->rank()==0){
+         if(!hin.read(gridtype, "grid_type")){
+             std::cerr<<"Could not read grid_type in H5; Probably Corrupt H5 file"<<std::endl;
+             exit(0);
+         }
+      }
+      hin.myComm->bcast(gridtype);
+  
+      int npts=0;
+      RealType ri=0.0,rf=10.0,rmax_safe=10;
+  
+      if(hin.myComm->rank()==0){
+          double tt=0;
+          hin.read(tt,"grid_ri");
+          ri=tt;
+          hin.read(tt,"grid_rf");
+          rf=tt;
+          hin.read(tt,"rmax_safe");
+          rmax_safe=tt;
+          hin.read(npts,"grid_npts");
+      }
+      hin.myComm->bcast(ri);
+      hin.myComm->bcast(rf);
+      hin.myComm->bcast(rmax_safe);
+      hin.myComm->bcast(npts);
+  
+  
+      if(gridtype.empty())
+      {
+        APP_ABORT("Grid type is not specified.");
+      }
+      if(gridtype == "log")
+      {
+        app_log() << "    Using log grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
+        input_grid = new LogGrid<RealType>;
+        input_grid->set(ri,rf,npts);
+        m_orbitals->Grids.push_back(input_grid);
+        input_grid=0;
+      }
+      else
+        if(gridtype == "linear")
+        {
+          app_log() << "    Using linear grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
+          input_grid = new LinearGrid<RealType>;
+          input_grid->set(ri,rf,npts);
+          m_orbitals->Grids.push_back(input_grid);
+          input_grid=0;
+        }
+      //set zero to use std::max
+      m_rcut_safe=0;
+      return true;
+    }
+
   /** Add a new Slater Type Orbital with quantum numbers \f$(n,l,m,s)\f$
    * \param cur  the current xmlNode to be processed
    * \param nlms a vector containing the quantum numbers \f$(n,l,m,s)\f$
@@ -343,6 +413,39 @@ private:
     }
 
   template<typename COT>
+    bool
+    RadialOrbitalSetBuilder<COT>::addRadialOrbitalH5(hdf_archive &hin, const QuantumNumberType& nlms)
+    {
+      if(!m_orbitals)
+      {
+        ERRORMSG("m_orbitals, SphericalOrbitals<ROT,GT>*, is not initialized")
+          return false;
+      }
+      std::string radtype(m_infunctype);
+      std::string dsname("0");
+      OhmmsAttributeSet aAttrib;
+
+      int lastRnl = m_orbitals->RnlID.size();
+      m_nlms = nlms;
+      if(radtype == "Gaussian" || radtype == "GTO")
+      {
+        addGaussianH5(hin);
+      }
+      else if(radtype == "Slater" || radtype == "STO")
+      {
+       // addSlaterH5(hin);
+         app_error()<<" RadType: Slater. Any type other than Gaussian not implemented in H5 format. Please contact developers. Abort"<<std::endl;
+      }
+      else
+      {
+        //addNumericalH5(hin,dsname);
+        app_error()<<" RadType: Numerical. Any type other than Gaussian not implemented in H5 format. Please contact developers. Abort"<<std::endl;
+      }
+      return true;
+    }
+
+
+  template<typename COT>
   void RadialOrbitalSetBuilder<COT>::addGaussian(xmlNodePtr cur)
   {
     int L= m_nlms[1];
@@ -355,6 +458,24 @@ private:
     radTemp.push_back(new A2NTransformer<RealType,gto_type>(gset));
     m_orbitals->RnlID.push_back(m_nlms);
   }
+
+
+
+  template<typename COT>
+  void RadialOrbitalSetBuilder<COT>::addGaussianH5(hdf_archive &hin)
+  {
+    int L= m_nlms[1];
+    using gto_type=GaussianCombo<double>;
+    gto_type* gset=new gto_type(L,Normalized);
+    gset->putBasisGroupH5(hin);
+
+    double r0=find_cutoff(*gset,100.);
+    m_rcut_safe=std::max(m_rcut_safe,r0);
+    radTemp.push_back(new A2NTransformer<RealType,gto_type>(gset));
+    m_orbitals->RnlID.push_back(m_nlms);
+  }
+
+
 
 /* Finalize this set using the common grid
  *
