@@ -76,12 +76,17 @@ class JeeIOrbitalSoA: public OrbitalBase
   /// the electrons around ions within the cutoff radius, grouped by species
   Array<std::vector<int>,2> elecs_inside;
   Array<std::vector<valT>,2> elecs_inside_dist;
+  /// the ions around
+  std::vector<int> ions_nearby;
 
+  /// work buffer size
+  size_t Nbuffer;
   /// compressed distances
-  aligned_vector<valT> Distjk_Compressed, DistkI_Compressed;
+  aligned_vector<valT> Distjk_Compressed, DistkI_Compressed, DistjI_Compressed;
   std::vector<int> DistIndice;
+  /// compressed displacements
   gContainer_type Disp_jk_Compressed, Disp_kI_Compressed;
-
+  /// work result buffer
   VectorSoaContainer<valT,9> mVGL;
 
   // Used for evaluating derivatives with respect to the parameters
@@ -167,14 +172,18 @@ public:
     F=nullptr;
     elecs_inside.resize(Nion,eGroups);
     elecs_inside_dist.resize(Nion,eGroups);
+    ions_nearby.resize(Nion);
     Ion_cutoff.resize(Nion, 0.0);
 
-    mVGL.resize(Nelec);
-    DistkI_Compressed.resize(Nelec);
-    Distjk_Compressed.resize(Nelec);
-    Disp_jk_Compressed.resize(Nelec);
-    Disp_kI_Compressed.resize(Nelec);
-    DistIndice.resize(Nelec);
+    //initialize buffers
+    Nbuffer=Nelec;
+    mVGL.resize(Nbuffer);
+    DistkI_Compressed.resize(Nbuffer);
+    Distjk_Compressed.resize(Nbuffer);
+    Disp_jk_Compressed.resize(Nbuffer);
+    Disp_kI_Compressed.resize(Nbuffer);
+    DistjI_Compressed.resize(Nbuffer);
+    DistIndice.resize(Nbuffer);
   }
 
   void initUnique()
@@ -563,30 +572,45 @@ public:
   {
     const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
 
-    valT Uj = valT(0);
+    ions_nearby.clear();
     for(int iat=0; iat<Nion; ++iat)
       if(distjI[iat]<Ion_cutoff[iat])
-      {
-        const int ig=Ions.GroupID[iat];
-        const valT r_Ij     = distjI[iat];
+        ions_nearby.push_back(iat);
 
-        for(int kg=0; kg<eGroups; ++kg)
+    valT Uj = valT(0);
+    for(int kg=0; kg<eGroups; ++kg)
+    {
+      int kel_counter = 0;
+      for(int iind=0; iind<ions_nearby.size(); ++iind)
+      {
+        const int iat = ions_nearby[iind];
+        const int ig = Ions.GroupID[iat];
+        const valT r_jI = distjI[iat];
+        for(int kind=0; kind<elecs_inside(iat,kg).size(); kind++)
+        {
+          const int kel=elecs_inside(iat,kg)[kind];
+          if(kel!=jel)
+          {
+            DistkI_Compressed[kel_counter]=elecs_inside_dist(iat,kg)[kind];
+            Distjk_Compressed[kel_counter]=distjk[kel];
+            DistjI_Compressed[kel_counter]=r_jI;
+            kel_counter++;
+            if(kel_counter==Nbuffer)
+            {
+              const FT& feeI(*F(ig,jg,kg));
+              Uj += feeI.evaluateV(kel_counter, Distjk_Compressed.data(), DistjI_Compressed.data(), DistkI_Compressed.data());
+              kel_counter = 0;
+	    }
+          }
+        }
+        if((iind+1==ions_nearby.size() || ig!=Ions.GroupID[ions_nearby[iind+1]]) && kel_counter>0)
         {
           const FT& feeI(*F(ig,jg,kg));
-          int kel_counter=0;
-          for(int kind=0; kind<elecs_inside(iat,kg).size(); kind++)
-          {
-            const int kel=elecs_inside(iat,kg)[kind];
-            if(kel!=jel)
-            {
-              DistkI_Compressed[kel_counter]=elecs_inside_dist(iat,kg)[kind];
-              Distjk_Compressed[kel_counter]=distjk[kel];
-              kel_counter++;
-            }
-          }
-          Uj += feeI.evaluateV(kel_counter, Distjk_Compressed.data(), r_Ij, DistkI_Compressed.data());
+          Uj += feeI.evaluateV(kel_counter, Distjk_Compressed.data(), DistjI_Compressed.data(), DistkI_Compressed.data());
+          kel_counter = 0;
         }
       }
+    }
     return Uj;
   }
 
@@ -650,11 +674,17 @@ public:
           feeI.evaluateVGL(kel_counter, Distjk_Compressed.data(), r_Ij, DistkI_Compressed.data(),
                            val, gradF0, gradF1, gradF2, hessF00, hessF11, hessF22, hessF01, hessF02);
 
-          for(int kel_index=0; kel_index<kel_counter; kel_index++)
+          for(int idim=0; idim<OHMMS_DIM; ++idim)
           {
-            const int kel=DistIndice[kel_index];
-            Disp_kI_Compressed(kel_index) = eI_table.Displacements[kel][iat];
-            Disp_jk_Compressed(kel_index) = displjk[kel];
+            valT *restrict kI = Disp_kI_Compressed.data(idim);
+            valT *restrict jk = Disp_jk_Compressed.data(idim);
+            const valT *restrict displjk_x = displjk.data(idim);
+            for(int kel_index=0; kel_index<kel_counter; kel_index++)
+            {
+              const int kel=DistIndice[kel_index];
+              kI[kel_index] = eI_table.Displacements[kel].data(idim)[iat];
+              jk[kel_index] = displjk_x[kel];
+            }
           }
 
           // compute the contribution to jel, kel
