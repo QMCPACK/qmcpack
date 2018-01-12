@@ -432,12 +432,12 @@ private:
       else if(radtype == "Slater" || radtype == "STO")
       {
         // addSlaterH5(hin);
-        app_error()<<" RadType: Slater. Any type other than Gaussian not implemented in H5 format. Please contact developers. Abort"<<std::endl;
+        APP_ABORT(" RadType: Slater. Any type other than Gaussian not implemented in H5 format. Please contact developers.");
       }
       else
       {
         //addNumericalH5(hin,dsname);
-        app_error()<<" RadType: Numerical. Any type other than Gaussian not implemented in H5 format. Please contact developers. Abort"<<std::endl;
+        APP_ABORT(" RadType: Numerical. Any type other than Gaussian not implemented in H5 format. Please contact developers.");
       }
       return true;
     }

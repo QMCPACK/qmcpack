@@ -185,21 +185,21 @@ namespace qmcplusplus
     switch(radialOrbType)
     {
       case(0): //numerical
-        app_log() << "  LCAO: SoaAtomicBasisSet<MultiQuintic,"<<ylm<<">" << std::endl;;
+        app_log() << "  LCAO: SoaAtomicBasisSet<MultiQuintic,"<<ylm<<">" << std::endl;
         if(ylm) 
           myBasisSet=createBasisSet<0,1>(cur);
         else
           myBasisSet=createBasisSet<0,0>(cur);
         break;
       case(1): //gto
-        app_log() << "  LCAO: SoaAtomicBasisSet<MultiGTO,"<<ylm<<">" << std::endl;;
+        app_log() << "  LCAO: SoaAtomicBasisSet<MultiGTO,"<<ylm<<">" << std::endl;
         if(ylm) 
           myBasisSet=createBasisSet<1,1>(cur);
         else
           myBasisSet=createBasisSet<1,0>(cur);
         break;
       case(2): //sto
-        app_log() << "  LCAO: SoaAtomicBasisSet<MultiSTO,"<<ylm<<">" << std::endl;;
+        app_log() << "  LCAO: SoaAtomicBasisSet<MultiSTO,"<<ylm<<">" << std::endl;
         myBasisSet=createBasisSet<2,1>(cur);
         break;
       default:
@@ -239,21 +239,21 @@ namespace qmcplusplus
     switch(radialOrbType)
     {
       case(0): //numerical
-        app_log() << "  LCAO: SoaAtomicBasisSet<MultiQuintic,"<<ylm<<">" << std::endl;;
+        app_log() << "  LCAO: SoaAtomicBasisSet<MultiQuintic,"<<ylm<<">" << std::endl;
         if(ylm) 
           myBasisSet=createBasisSetH5<0,1>();
         else
           myBasisSet=createBasisSetH5<0,0>();
         break;
       case(1): //gto
-        app_log() << "  LCAO: SoaAtomicBasisSet<MultiGTO,"<<ylm<<">" << std::endl;;
+        app_log() << "  LCAO: SoaAtomicBasisSet<MultiGTO,"<<ylm<<">" << std::endl;
         if(ylm) 
           myBasisSet=createBasisSetH5<1,1>();
         else
           myBasisSet=createBasisSetH5<1,0>();
         break;
       case(2): //sto
-        app_log() << "  LCAO: SoaAtomicBasisSet<MultiSTO,"<<ylm<<">" << std::endl;;
+        app_log() << "  LCAO: SoaAtomicBasisSet<MultiSTO,"<<ylm<<">" << std::endl;
         myBasisSet=createBasisSetH5<2,1>();
         break;
       default:
