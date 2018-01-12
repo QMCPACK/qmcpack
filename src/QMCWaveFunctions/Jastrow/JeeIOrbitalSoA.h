@@ -80,6 +80,7 @@ class JeeIOrbitalSoA: public OrbitalBase
   /// compressed distances
   aligned_vector<valT> Distjk_Compressed, DistkI_Compressed;
   std::vector<int> DistIndice;
+  gContainer_type Disp_jk_Compressed, Disp_kI_Compressed;
 
   VectorSoaContainer<valT,9> mVGL;
 
@@ -171,6 +172,8 @@ public:
     mVGL.resize(Nelec);
     DistkI_Compressed.resize(Nelec);
     Distjk_Compressed.resize(Nelec);
+    Disp_jk_Compressed.resize(Nelec);
+    Disp_kI_Compressed.resize(Nelec);
     DistIndice.resize(Nelec);
   }
 
@@ -516,8 +519,10 @@ public:
       {
         if(iter!=elecs_inside(jat,ig).end())
         {
-          elecs_inside(jat,ig).erase(iter);
-          elecs_inside_dist(jat,ig).erase(iter_dist);
+          *iter = elecs_inside(jat,ig).back();
+          elecs_inside(jat,ig).pop_back();
+          *iter_dist = elecs_inside_dist(jat,ig).back();
+          elecs_inside_dist(jat,ig).pop_back();
         }
       }
     }
@@ -647,23 +652,55 @@ public:
 
           for(int kel_index=0; kel_index<kel_counter; kel_index++)
           {
-            int kel=DistIndice[kel_index];
-            const posT disp_Ik  = cminus*eI_table.Displacements[kel][iat];
-            const posT disp_jk  = displjk[kel];
+            const int kel=DistIndice[kel_index];
+            Disp_kI_Compressed(kel_index) = eI_table.Displacements[kel][iat];
+            Disp_jk_Compressed(kel_index) = displjk[kel];
+          }
 
-            // compute the contribution to jel
-            Uj += val[kel_index];
-            dUj += gradF0[kel_index] * disp_jk - gradF1[kel_index] * disp_Ij;
-            d2Uj -= hessF00[kel_index] + hessF11[kel_index]
-                    + lapfac*(gradF0[kel_index] + gradF1[kel_index])
-                    - ctwo*hessF01[kel_index]*dot(disp_jk,disp_Ij);
+          // compute the contribution to jel, kel
+          Uj=simd::accumulate_n(val,kel_counter,Uj);
+          valT gradF0_sum=simd::accumulate_n(gradF0,kel_counter,valT(0));
+          valT gradF1_sum=simd::accumulate_n(gradF1,kel_counter,valT(0));
+          valT hessF00_sum=simd::accumulate_n(hessF00,kel_counter,valT(0));
+          valT hessF11_sum=simd::accumulate_n(hessF11,kel_counter,valT(0));
+          for(int idim=0; idim<OHMMS_DIM; ++idim)
+            dUj[idim]-=gradF1_sum*disp_Ij[idim];
+          d2Uj-=hessF00_sum+hessF11_sum+lapfac*(gradF0_sum+gradF1_sum);
+          std::fill_n(hessF11,kel_counter,czero);
+          for(int idim=0; idim<OHMMS_DIM; ++idim)
+          {
+            valT *restrict kI = Disp_kI_Compressed.data(idim);
+            valT *restrict jk = Disp_jk_Compressed.data(idim);
+            valT sum(0);
+            #pragma omp simd aligned(gradF0,gradF2,hessF01,hessF11,kI,jk) reduction(+:sum)
+            for(int kel_index=0; kel_index<kel_counter; kel_index++)
+            {
+              // recycle hessF11
+              hessF11[kel_index] += kI[kel_index] * jk[kel_index];
+              sum += hessF01[kel_index] * jk[kel_index];
+              // destroy jk
+              jk[kel_index] *= gradF0[kel_index];
+              kI[kel_index] = kI[kel_index] * gradF2[kel_index] - jk[kel_index];
+            }
+            dUj[idim]=simd::accumulate_n(jk,kel_counter,dUj[idim]);
+            d2Uj += ctwo * sum * disp_Ij[idim];
 
-            // compute the contribution to kel
+            valT *restrict dUk_x = dUk.data(idim);
+            for(int kel_index=0; kel_index<kel_counter; kel_index++)
+              dUk_x[DistIndice[kel_index]] += kI[kel_index];
+          }
+
+          #pragma omp simd aligned(hessF00,hessF22,gradF0,gradF2,hessF02,hessF11)
+          for(int kel_index=0; kel_index<kel_counter; kel_index++)
+            hessF00[kel_index] = hessF00[kel_index] + hessF22[kel_index]
+                               + lapfac*(gradF0[kel_index] + gradF2[kel_index])
+                               - ctwo*hessF02[kel_index] * hessF11[kel_index];
+
+          for(int kel_index=0; kel_index<kel_counter; kel_index++)
+          {
+            const int kel=DistIndice[kel_index];
             Uk[kel] += val[kel_index];
-            dUk(kel) = dUk[kel] - gradF0[kel_index] * disp_jk - gradF2[kel_index] * disp_Ik;
-            d2Uk[kel] -= hessF00[kel_index] + hessF22[kel_index]
-                         + lapfac*(gradF0[kel_index] + gradF2[kel_index])
-                         + ctwo*hessF02[kel_index]*dot(disp_jk,disp_Ik);
+            d2Uk[kel] -= hessF00[kel_index];
           }
         }
       }
