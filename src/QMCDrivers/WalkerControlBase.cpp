@@ -517,11 +517,6 @@ bool WalkerControlBase::put(xmlNodePtr cur)
   if(nonblocking=="yes")
   {
     use_nonblocking = true;
-    if(MaxCopy>2)
-    {
-      app_warning() << "use_nonblocking==\"yes\" doesn't support maxCopy>2. Overwriting it to 2." << std::endl;
-      MaxCopy=2;
-    }
   }
   else if(nonblocking=="no")
   {
