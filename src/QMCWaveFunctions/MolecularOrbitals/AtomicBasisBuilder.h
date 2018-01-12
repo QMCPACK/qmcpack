@@ -9,6 +9,7 @@
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
+//	              Anouar Benali, benali@anl.gov, Argonne National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -127,22 +128,23 @@ bool AtomicBasisBuilder<RFB>::put(xmlNodePtr cur)
 template<class RFB>
 bool AtomicBasisBuilder<RFB>::putH5(hdf_archive &hin)
 {
-
   std::string CenterID, Normalized, basisName;
   //TO BE EXPANDED TO OTHER FORMATS
-  Morder="Gamess";
+
   if(myComm->rank()==0){
       hin.read(sph,"angular");
       hin.read(CenterID,"elementType");
       hin.read(Normalized,"normalized");
+      hin.read(Morder,"expandYlm");
       hin.read(basisName,"name");
   }
   myComm->bcast(sph);
+  myComm->bcast(Morder);
   myComm->bcast(CenterID);
   myComm->bcast(Normalized);
   myComm->bcast(basisName);
 
-  app_log()<<"<input node=\"atomicBasisSet\" name=\""<<basisName<<"\"  angular=\""<<sph<<"\"  elementType=\""<<CenterID<<"\"  normalized=\""<<Normalized<<"\"/>"<<std::endl;
+  app_log()<<"<input node=\"atomicBasisSet\" name=\""<<basisName<<"\" Morder=\""<<Morder<<"\" angular=\""<<sph<<"\"  elementType=\""<<CenterID<<"\"  normalized=\""<<Normalized<<"\"/>"<<std::endl;
   bool tmp_addsignforM=addsignforM;
   if(sph == "spherical")
     addsignforM=1; //include (-1)^m
@@ -166,7 +168,7 @@ bool AtomicBasisBuilder<RFB>::putH5(hdf_archive &hin)
       APP_ABORT(" Error: expandYlm='pwscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
-  if(sph == "cartesia" || Morder == "Gamess")
+  if(sph == "cartesian" || Morder == "Gamess")
   {
     expandlm = CARTESIAN_EXPAND;
     addsignforM=0;
@@ -580,7 +582,30 @@ int AtomicBasisBuilder<RFB>::expandYlmH5(const std::string& rnl, const QuantumNu
   }
   else
   {
-     APP_ABORT(" NON CARTESIAN EXPAND OF BASIS SET NOT IMPLEMENTED WITH HDF5");
+       //assign the index for real Spherical Harmonic with (l,m)
+       // aos->LM[num] = aos->Ylm.index(nlms[q_l],nlms[q_m]);
+        //radial orbitals: add only distinct orbitals
+       // std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
+       // if(rnl_it == RnlID.end())
+       // {
+       //   int nl = aos->Rnl.size();
+       //   if(radFuncBuilder.addRadialOrbitalH5(hin,nlms))
+       //     //assign the index for radial orbital with (n,l)
+       //   {
+       //     aos->NL[num] = nl;
+       //     RnlID[rnl] = nl;
+       //   }
+       // }
+       // else
+       // {
+       //   //assign the index for radial orbital with (n,l) if repeated
+       //   aos->NL[num] = (*rnl_it).second;
+       // }
+       // //increment number of basis functions
+       // num++;
+      APP_ABORT(" Error: expandYlm='pwscf'  with angular='spherical' And HDF5 not implemented in AOS version of the code. Aborting.\n");
+       
+
   }
   return num;
 }
