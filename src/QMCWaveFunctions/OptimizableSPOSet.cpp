@@ -470,7 +470,7 @@ OptimizableSPOSet::evaluateBasis (const ParticleSet &P, int first, int last,
   {
     for (int iat=first; iat<last; iat++)
     {
-      GSOrbitals->evaluate (P, iat, GSVal, GSGrad, GSLapl);
+      GSOrbitals->evaluate(P, iat, GSVal, GSGrad, GSLapl);
       for (int i=0; i<M; i++)
       {
         basis_val (iat-first,i) = GSVal[N+i];

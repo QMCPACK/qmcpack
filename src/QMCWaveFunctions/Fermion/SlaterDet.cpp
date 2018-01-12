@@ -117,10 +117,10 @@ void SlaterDet::resetTargetParticleSet(ParticleSet& P)
     Dets[i]->resetTargetParticleSet(P);
 }
 
-void SlaterDet::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   for (int i = 0; i < Dets.size(); ++i)
-    Dets[i]->get_ratios(P, ratios);
+    Dets[i]->evaluateRatiosAlltoOne(P, ratios);
 }
 
 SlaterDet::ValueType SlaterDet::evaluate(ParticleSet& P,
@@ -172,23 +172,12 @@ void SlaterDet::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad_psi)
 	
 }
 
-SlaterDet::RealType SlaterDet::registerData(ParticleSet& P,
-    PooledData<RealType>& buf)
+void SlaterDet::registerData(ParticleSet& P, WFBufferType& buf)
 {
   DEBUG_PSIBUFFER(" SlaterDet::registerData ",buf.current());
-  //ValueType psi = 1.0;
-  //for(int i=0; i<Dets.size(); i++)
-  //  psi *= Dets[i]->registerData(P,buf);
-  //return LogValue = evaluateLogAndPhase(psi,PhaseValue);
-  LogValue = 0.0;
-  PhaseValue = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
-  {
-    LogValue += Dets[i]->registerData(P, buf);
-    PhaseValue += Dets[i]->PhaseValue;
-  }
+    Dets[i]->registerData(P, buf);
   DEBUG_PSIBUFFER(" SlaterDet::registerData ",buf.current());
-  return LogValue;
 }
 
 void SlaterDet::updateAfterSweep(ParticleSet& P,
@@ -201,8 +190,7 @@ void SlaterDet::updateAfterSweep(ParticleSet& P,
   }
 }
 
-SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P,
-    PooledData<RealType>& buf, bool fromscratch)
+SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   DEBUG_PSIBUFFER(" SlaterDet::updateBuffer ",buf.current());
   //ValueType psi = 1.0;
@@ -219,7 +207,7 @@ SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P,
   return LogValue;
 }
 
-void SlaterDet::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void SlaterDet::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   DEBUG_PSIBUFFER(" SlaterDet::copyFromBuffer ",buf.current());
   for (int i = 0; i < Dets.size(); i++)

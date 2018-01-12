@@ -31,8 +31,6 @@ MomentumEstimator::MomentumEstimator(ParticleSet& elns, TrialWaveFunction& psi)
 {
   UpdateMode.set(COLLECTABLE,1);
   psi_ratios.resize(elns.getTotalNum());
-  kdotp.resize(elns.getTotalNum());
-  phases.resize(elns.getTotalNum());
   twist=elns.getTwist();
 }
 
@@ -43,43 +41,56 @@ void MomentumEstimator::resetTargetParticleSet(ParticleSet& P)
 MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
 {
   const int np=P.getTotalNum();
-  nofK=0.0;
-  compQ=0.0;
-  //will use temp[i].r1 for the Compton profile
-  const std::vector<DistanceTableData::TempDistType>& temp(P.DistTables[0]->Temp);
-  Vector<RealType> tmpn_k(nofK);
+  const int nk=kPoints.size();
   for (int s=0; s<M; ++s)
   {
     PosType newpos;
     for (int i=0; i<OHMMS_DIM; ++i)
       newpos[i]=myRNG();
     //make it cartesian
-    newpos=Lattice.toCart(newpos);
-    P.makeVirtualMoves(newpos); //updated: temp[i].r1=|newpos-P.R[i]|, temp[i].dr1=newpos-P.R[i]
+    vPos[s]=Lattice.toCart(newpos);
+    P.makeVirtualMoves(vPos[s]);
+    refPsi.evaluateRatiosAlltoOne(P,psi_ratios);
+    for (int i=0; i<np; ++i)
+      psi_ratios_all[s][i] = psi_ratios[i];
 
-    refPsi.get_ratios(P,psi_ratios);
+    for (int ik=0; ik<nk; ++ik)
+       kdotp[ik] = -dot(kPoints[ik], vPos[s]);
+    eval_e2iphi(nk, kdotp.data(), phases_vPos[s].data(0), phases_vPos[s].data(1));
+  }
 
-//         for (int i=0; i<np; ++i) app_log()<<i<<" "<<psi_ratios[i].real()<<" "<<psi_ratios[i].imag()<< std::endl;
-    P.rejectMove(0); //restore P.R[0] to the orginal position
-    for (int ik=0; ik < kPoints.size(); ++ik)
+  std::fill_n(nofK.begin(),nk,RealType(0));
+  for (int i=0; i<np; ++i)
+  {
+    for (int ik=0; ik<nk; ++ik)
+      kdotp[ik] = dot(kPoints[ik], P.R[i]);
+    eval_e2iphi(nk, kdotp.data(), phases.data(0), phases.data(1));
+    for (int s=0; s<M; ++s)
     {
-      for (int i=0; i<np; ++i)
-        kdotp[i]=-dot(kPoints[ik],temp[i].dr1_nobox);
-      eval_e2iphi(np,kdotp.data(),phases.data());
-      RealType nofk_here(std::real(BLAS::dot(np,phases.data(),&psi_ratios[0])));//psi_ratios.data())));
-
-      nofK[ik]+= nofk_here;
-      tmpn_k[ik]=nofk_here;
+      const ComplexType one_ratio(psi_ratios_all[s][i]);
+      const RealType ratio_c = one_ratio.real();
+      const RealType ratio_s = one_ratio.imag();
+      const RealType *restrict phases_c = phases.data(0);
+      const RealType *restrict phases_s = phases.data(1);
+      const RealType *restrict phases_vPos_c = phases_vPos[s].data(0);
+      const RealType *restrict phases_vPos_s = phases_vPos[s].data(1);
+      RealType *restrict nofK_here=nofK.data();
+      #pragma omp simd aligned(nofK_here,phases_c,phases_s,phases_vPos_c,phases_vPos_s)
+      for (int ik=0; ik<nk; ++ik)
+        nofK_here[ik] += ( phases_c[ik]*phases_vPos_c[ik] - phases_s[ik]*phases_vPos_s[ik] ) * ratio_c
+                       - ( phases_s[ik]*phases_vPos_c[ik] + phases_c[ik]*phases_vPos_s[ik] ) * ratio_s ;
     }
+  }
 
-    for (int iq=0; iq < compQ.size(); ++iq)
-      for (int i=0; i<mappedQtonofK[iq].size(); ++i)
-        compQ[iq] += tmpn_k[mappedQtonofK[iq][i]];
+  compQ=0.0;
+  for (int iq=0; iq<compQ.size(); ++iq)
+  {
+    for (int i=0; i<mappedQtonofK[iq].size(); ++i)
+      compQ[iq] += nofK[mappedQtonofK[iq][i]];
+    compQ[iq] *= mappedQnorms[iq];
   }
   for (int ik=0; ik<nofK.size(); ++ik)
     nofK[ik] *= norm_nofK;
-  for (int iq=0; iq<compQ.size(); ++iq)
-    compQ[iq] *= mappedQnorms[iq];
   if (hdf5_out)
   {
     RealType w=tWalker->Weight;
@@ -308,6 +319,13 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
     qout.close();
   }
   nofK.resize(kPoints.size());
+  kdotp.resize(kPoints.size());
+  vPos.resize(M);
+  phases.resize(kPoints.size());
+  phases_vPos.resize(M);
+  for(int im=0; im<M; im++)
+    phases_vPos[im].resize(kPoints.size());
+  psi_ratios_all.resize(M,psi_ratios.size());
   norm_nofK=1.0/RealType(M);
   return true;
 }
@@ -321,7 +339,7 @@ QMCHamiltonianBase* MomentumEstimator::makeClone(ParticleSet& qp
     , TrialWaveFunction& psi)
 {
   MomentumEstimator* myclone=new MomentumEstimator(qp,psi);
-  myclone->resize(kPoints,Q);
+  myclone->resize(kPoints,Q,M);
   myclone->myIndex=myIndex;
   myclone->kgrid=kgrid;
   myclone->norm_nofK=norm_nofK;
@@ -330,18 +348,26 @@ QMCHamiltonianBase* MomentumEstimator::makeClone(ParticleSet& qp
     myclone->mappedQtonofK[i]=mappedQtonofK[i];
   myclone->hdf5_out=hdf5_out;
   myclone->mappedQnorms=mappedQnorms;
-  myclone->M=M;
   return myclone;
 }
 
-void MomentumEstimator::resize(const std::vector<PosType>& kin, const std::vector<RealType>& qin)
+void MomentumEstimator::resize(const std::vector<PosType>& kin, const std::vector<RealType>& qin, const int Min)
 {
   //copy kpoints
   kPoints=kin;
   nofK.resize(kin.size());
+  kdotp.resize(kPoints.size());
+  phases.resize(kPoints.size());
   //copy q
   Q=qin;
   compQ.resize(qin.size());
+  //M
+  M=Min;
+  vPos.resize(M);
+  psi_ratios_all.resize(M,psi_ratios.size());
+  phases_vPos.resize(M);
+  for(int im=0; im<M; im++)
+    phases_vPos[im].resize(kPoints.size());
 }
 
 void MomentumEstimator::setRandomGenerator(RandomGenerator_t* rng)

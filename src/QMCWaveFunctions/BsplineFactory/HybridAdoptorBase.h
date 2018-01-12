@@ -466,7 +466,7 @@ struct HybridAdoptorBase
   {
     bool inAtom=false;
     const auto* ei_dist=P.DistTables[myTableID];
-    const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr);
+    const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl==iat);
     if(center_idx<0) abort();
     r=dist_r;
     dr[0]=-dist_dr[0];
@@ -488,7 +488,7 @@ struct HybridAdoptorBase
   {
     bool inAtom=false;
     const auto* ei_dist=P.DistTables[myTableID];
-    const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr);
+    const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl==iat);
     if(center_idx<0) abort();
     r=dist_r;
     dr[0]=-dist_dr[0];
@@ -510,7 +510,7 @@ struct HybridAdoptorBase
   {
     bool inAtom=false;
     const auto* ei_dist=P.DistTables[myTableID];
-    const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr);
+    const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl==iat);
     if(center_idx<0) abort();
     r=dist_r;
     dr[0]=-dist_dr[0];

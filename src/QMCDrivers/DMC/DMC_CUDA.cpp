@@ -35,6 +35,7 @@ namespace qmcplusplus
 DMCcuda::DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi,
                  QMCHamiltonian& h,WaveFunctionPool& ppool):
   QMCDriver(w,psi,h,ppool), myWarmupSteps(0), Mover(0),
+  NLop(w.getTotalNum()),
   ResizeTimer("DMCcuda::resize"),
   DriftDiffuseTimer("DMCcuda::Drift_Diffuse"),
   BranchTimer("DMCcuda::Branch"),
@@ -46,8 +47,6 @@ DMCcuda::DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi,
   QMCDriverMode.set(QMC_WARMUP,0);
   //m_param.add(myWarmupSteps,"warmupSteps","int");
   //m_param.add(nTargetSamples,"targetWalkers","int");
-  m_param.add(NonLocalMove,"nonlocalmove","string");
-  m_param.add(NonLocalMove,"nonlocalmoves","string");
   m_param.add(ScaleWeight, "scaleweight", "string");
   TimerManager.addTimer (&ResizeTimer);
   TimerManager.addTimer (&DriftDiffuseTimer);
@@ -76,12 +75,9 @@ void DMCcuda::checkBounds (std::vector<PosType> &newpos,
 
 bool DMCcuda::run()
 {
-  bool NLmove = NonLocalMove == "yes";
   bool scaleweight = ScaleWeight == "yes";
-  if (NLmove)
-    app_log() << "  Using Casula nonlocal moves in DMCcuda.\n";
   if (scaleweight)
-    app_log() << "  Scaling weight per Umrigar/Nightengale.\n";
+    app_log() << "  Scaling weight per Umrigar/Nightingale.\n";
   resetRun();
   Mover->MaxAge = 1;
   IndexType block = 0;
@@ -141,7 +137,7 @@ bool DMCcuda::run()
       R2acc.resize(nw,0.0);
       W.updateLists_GPU();
       ResizeTimer.stop();
-      if (NLmove)
+      if (UseTMove)
       {
         Txy.resize(nw);
         for (int iw=0; iw<nw; iw++)
@@ -222,19 +218,16 @@ bool DMCcuda::run()
           Psi.update(accepted,iat);
       }
       DriftDiffuseTimer.stop();
-      //	Psi.recompute(W, false);
       Psi.gradLapl(W, grad, lapl);
       HTimer.start();
-      if (NLmove)	  H.evaluate (W, LocalEnergy, Txy);
-      else    	  H.evaluate (W, LocalEnergy);
+      if (UseTMove)
+        H.evaluate (W, LocalEnergy, Txy);
+      else
+        H.evaluate (W, LocalEnergy);
       HTimer.stop();
-// 	for (int iw=0; iw<nw; iw++) {
-// 	  branchEngine->clampEnergy(LocalEnergy[iw]);
-// 	  W[iw]->getPropertyBase()[LOCALENERGY] = LocalEnergy[iw];
-// 	}
       if (CurrentStep == 1)
         LocalEnergyOld = LocalEnergy;
-      if (NLmove)
+      if (UseTMove==TMOVE_V0)
       {
         // Now, attempt nonlocal move
         accepted.clear();
@@ -242,27 +235,6 @@ bool DMCcuda::run()
         std::vector<PosType> accPos;
         for (int iw=0; iw<nw; iw++)
         {
-          /// HACK HACK HACK
-// 	    if (LocalEnergy[iw] < -2300.0) {
-// 	      std::cerr << "Walker " << iw << " has energy "
-// 		   << LocalEnergy[iw] << std::endl;;
-// 	      double maxWeight = 0.0;
-// 	      int elMax = -1;
-// 	      PosType posMax;
-// 	      for (int j=1; j<Txy[iw].size(); j++)
-// 		if (std::abs(Txy[iw][j].Weight) > std::abs(maxWeight)) {
-// 		  maxWeight = Txy[iw][j].Weight;
-// 		  elMax = Txy[iw][j].PID;
-// 		  posMax = W[iw]->R[elMax] + Txy[iw][j].Delta;
-// 		}
-// 	      std::cerr << "Maximum weight is " << maxWeight << " for electron "
-// 		   << elMax << " at position " << posMax << std::endl;
-// 	      PosType unit = W.Lattice.toUnit(posMax);
-// 	      unit[0] -= round(unit[0]);
-// 	      unit[1] -= round(unit[1]);
-// 	      unit[2] -= round(unit[2]);
-// 	      std::cerr << "Reduced position = " << unit << std::endl;
-// 	    }
           int ibar = NLop.selectMove(Random(), Txy[iw]);
           if (ibar)
           {
@@ -283,12 +255,11 @@ bool DMCcuda::run()
           for (int i=0; i<accepted.size(); i++)
             accepted[i]->R[iatList[i]] = accPos[i];
           W.NLMove_GPU (accepted, accPos, iatList);
-          // HACK HACK HACK
-          // Recompute the kinetic energy
-          // Psi.gradLapl(W, grad, lapl);
-          // H.evaluate (W, LocalEnergy);
-          //W.copyWalkersToGPU();
         }
+      }
+      else if(UseTMove==TMOVE_V1)
+      {
+        APP_ABORT("Tmove v1 has not been implemented on GPU.\n  please contact the developers if you need this feature");
       }
       // Now branch
       BranchTimer.start();
@@ -434,7 +405,7 @@ bool
 DMCcuda::put(xmlNodePtr q)
 {
   //nothing to add
-  NLop.put(q);
+  UseTMove = NLop.put(q);
 
   BranchInterval=-1;
   ParameterSet p;

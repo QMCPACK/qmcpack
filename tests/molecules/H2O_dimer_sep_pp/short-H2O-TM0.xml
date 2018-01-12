@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="H2O" series="1">
+    <application name="qmcapp" role="molecu" class="serial" version="0.2">
+      Simple Example of moleculear H2O
+    </application>
+  </project>
+
+  <include href="H2O.ptcl.xml"/>
+  <include href="H2O.wfs.xml"/>
+
+  <!--  Hamiltonian -->
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+    <pairpot name="ELEMENT-ECP" type="pseudo" source="ion0" target="e" format="xml" wavefunction="psi0" >
+       <pseudo elementType="O" format="xml" href="O.BFD.xml" />
+       <pseudo elementType="H" format="xml" href="H.BFD.xml" />
+    </pairpot>
+    <constant name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+  </hamiltonian>
+
+  <qmc method="vmc" move="pbyp" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="walkers">       1 </parameter>
+    <parameter name="substeps">      5 </parameter>
+    <parameter name="warmupSteps">  10 </parameter>
+    <parameter name="steps">        10 </parameter>
+    <parameter name="blocks">       10 </parameter>
+    <parameter name="samples">     512 </parameter>
+    <parameter name="timestep">    0.5 </parameter>
+    <parameter name="usedrift">     no </parameter>
+  </qmc>
+  <qmc method="dmc" move="pbyp" checkpoint="-1" gpu="yes">
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="reconfiguration">  no </parameter>
+    <parameter name="warmupSteps">     100 </parameter>
+    <parameter name="timestep">        0.2 </parameter>
+    <parameter name="steps">            10 </parameter>
+    <parameter name="blocks">          100 </parameter>
+    <parameter name="nonlocalmoves">    v0 </parameter>
+  </qmc>
+
+</simulation>

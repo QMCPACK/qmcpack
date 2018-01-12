@@ -77,11 +77,11 @@ class ParticleSet
 {
 public:
   ///@typedef walker type
-  typedef Walker<QMCTraits,PtclOnLatticeTraits> Walker_t;
+  typedef Walker<QMCTraits,PtclOnLatticeTraits>  Walker_t;
   ///@typedef container type to store the property
-  typedef Walker_t::PropertyContainer_t  PropertyContainer_t;
+  typedef Walker_t::PropertyContainer_t          PropertyContainer_t;
   ///@typedef buffer type for a serialized buffer
-  typedef Walker_t::Buffer_t             Buffer_t;
+  typedef PooledData<RealType>                   Buffer_t;
 
   enum quantum_domains {no_quantum_domain=0,classical,quantum};
 
@@ -145,8 +145,6 @@ public:
   Index_t activeBead;
   ///the direction reptile traveling
   Index_t direction;
-  ///pointer to the working walker
-  Walker_t*  activeWalker;
 
   /** the position of the active particle for particle-by-particle moves
    *
@@ -357,6 +355,15 @@ public:
    * Introduced to work with update-only methods.
    */
   void setActive(int iat);
+
+  /** return the position of the active partice
+   *
+   * activePtcl=-1 is used to flag non-physical moves
+   */
+  inline const PosType& activeR(int iat) const
+  {
+    return (activePtcl == iat)? activePos:R[iat];
+  }
   
   /**move a particle
    *@param iat the index of the particle to be moved
@@ -415,11 +422,6 @@ public:
    */
   void rejectMove(Index_t iat);
 
-  inline SingleParticlePos_t getOldPos() const
-  {
-    return activePos;
-  }
-
   void initPropertyList();
   inline int addProperty(const std::string& pname)
   {
@@ -457,12 +459,6 @@ public:
   /** save this to awalker
    */
   void saveWalker(Walker_t& awalker);
-
-  /** load a walker : R <= awalker->R 
-   *
-   * No other copy is made
-   */
-  void loadWalker(Walker_t* awalker);
 
   /** update the buffer
    *@param skip SK update if skipSK is true

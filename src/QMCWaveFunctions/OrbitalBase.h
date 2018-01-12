@@ -93,8 +93,9 @@ struct OrbitalBase: public QMCTraits
 
   typedef ParticleAttrib<ValueType> ValueVectorType;
   typedef ParticleAttrib<GradType>  GradVectorType;
-  typedef PooledData<RealType>      BufferType;
   typedef ParticleSet::Walker_t     Walker_t;
+  typedef Walker_t::WFBuffer_t      WFBufferType;
+  typedef Walker_t::Buffer_t        BufferType;
   typedef OrbitalSetTraits<RealType>::ValueMatrix_t       RealMatrix_t;
   typedef OrbitalSetTraits<ValueType>::ValueMatrix_t      ValueMatrix_t;
   typedef OrbitalSetTraits<ValueType>::GradMatrix_t       GradMatrix_t;
@@ -145,6 +146,8 @@ struct OrbitalBase: public QMCTraits
   std::string OrbitalName;
   ///list of variables this orbital handles
   opt_variables_type myVars;
+  ///Bytes in WFBuffer
+  size_t Bytes_in_WFBuffer;
 
   /// default constructor
   OrbitalBase();
@@ -334,22 +337,31 @@ struct OrbitalBase: public QMCTraits
     return 1.0;
   };
 
-  /** add temporary data reserved for particle-by-particle move.
-   *
-   * Return the log|psi|  like evalaute evaluateLog
-   */
-  virtual RealType registerData(ParticleSet& P, BufferType& buf) =0;
-
-  /** re-evaluate the content and buffer data
+  /** For particle-by-particle move. Requests space in the buffer
+   *  based on the data type sizes of the objects in this class.
    * @param P particle set
    * @param buf Anonymous storage
-   *
-   * This function is introduced to update the data periodically for particle-by-particle move.
    */
-  virtual RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false) =0;
+  virtual void registerData(ParticleSet& P, WFBufferType& buf) =0;
 
-  /** copy the internal data saved for particle-by-particle move.*/
-  virtual void copyFromBuffer(ParticleSet& P, BufferType& buf)=0;
+  /** For particle-by-particle move. Put the objects of this class
+   *  in the walker buffer or forward the memory cursor.
+   * @param P particle set
+   * @param buf Anonymous storage
+   * @param fromscratch request recomputing the precision critical
+   *        pieces of wavefunction from scratch
+   * @return log value of the wavefunction.
+   */
+  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false) =0;
+
+  /** For particle-by-particle move. Copy data or attach memory
+   *  from a walker buffer to the objects of this class.
+   *  The log value, P.G and P.L contribution from the objects
+   *  of this class are also added.
+   * @param P particle set
+   * @param buf Anonymous storage
+   */
+  virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf)=0;
 
   /** return a proxy orbital of itself
    */
@@ -393,11 +405,11 @@ struct OrbitalBase: public QMCTraits
 
   virtual void finalizeOptimization() { }
 
-  /** evaluate ratios to evaluate the momentum distribution
+  /** evaluate the ratios of one virtual move with respect to all the particles
    * @param P reference particleset
    * @param ratios \f$ ratios[i]=\{{\bf R}\}\rightarrow {r_0,\cdots,r_i^p=pos,\cdots,r_{N-1}}\f$
    */
-  virtual void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
+  virtual void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
   /** evaluate ratios to evaluate the non-local PP
    * @param VP VirtualParticleSet

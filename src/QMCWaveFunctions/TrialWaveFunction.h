@@ -107,6 +107,7 @@ public:
   typedef OrbitalBase::PosType            PosType;
   typedef OrbitalBase::GradType           GradType;
   typedef OrbitalBase::BufferType         BufferType;
+  typedef OrbitalBase::WFBufferType       WFBufferType;
   typedef OrbitalBase::HessType           HessType;
   typedef OrbitalBase::HessVector_t       HessVector_t;
 #ifdef QMC_CUDA
@@ -282,9 +283,15 @@ public:
   void rejectMove(int iat);
   void acceptMove(ParticleSet& P, int iat);
 
-  RealType registerData(ParticleSet& P, BufferType& buf);
-  RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
-  void copyFromBuffer(ParticleSet& P, BufferType& buf);
+  /** register all the wavefunction components in buffer.
+   *  See OrbitalBase::registerData for more detail */
+  void registerData(ParticleSet& P, WFBufferType& buf);
+  /** update all the wavefunction components in buffer.
+   *  See OrbitalBase::updateBuffer for more detail */
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  /** copy all the wavefunction components from buffer.
+   *  See OrbitalBase::updateBuffer for more detail */
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   RealType KECorrection() const;
 
@@ -318,7 +325,8 @@ public:
     return Z;
   }
 
-  void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
+
   void setTwist(std::vector<RealType> t)
   {
     myTwist=t;
@@ -361,8 +369,8 @@ private:
   ///starting index of the buffer
   size_t BufferCursor;
 
-  ///starting index of the buffer DP
-  size_t BufferCursor_DP;
+  ///starting index of the scalar buffer
+  size_t BufferCursor_scalar;
 
   ///sign of the trial wave function
   RealType PhaseValue;
@@ -381,12 +389,6 @@ private:
 
   ///fermionic wavefunction
   FermionBase* FermionWF;
-
-  ///differential gradients
-  ParticleSet::ParticleGradient_t delta_G;
-
-  ///differential laplacians
-  ParticleSet::ParticleLaplacian_t delta_L;
 
   ///fake particleset
   ParticleSet* tempP;

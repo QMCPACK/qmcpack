@@ -45,6 +45,8 @@ class JeeIOrbitalSoA: public OrbitalBase
   int myTableID;
   //nuber of particles
   int Nelec, Nion;
+  ///number of particles + padded
+  size_t Nelec_padded;
   //number of groups of the target particleset
   int eGroups, iGroups;
   ///reference to the sources (ions)
@@ -57,7 +59,6 @@ class JeeIOrbitalSoA: public OrbitalBase
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
   using gContainer_type=VectorSoaContainer<valT,OHMMS_DIM>;
   gContainer_type dUat,olddUk,newdUk;
-  valT *FirstAddressOfdU, *LastAddressOfdU;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
   Vector<valT> d2Uat,oldd2Uk,newd2Uk;
   /// current values during PbyP
@@ -145,14 +146,13 @@ public:
   void init(ParticleSet& p)
   {
     Nelec=p.getTotalNum();
+    Nelec_padded=getAlignedSize<valT>(Nelec);
     Nion = Ions.getTotalNum();
     iGroups=Ions.getSpeciesSet().getTotalNum();
     eGroups=p.groups();
 
     Uat.resize(Nelec);
     dUat.resize(Nelec);
-    FirstAddressOfdU = dUat.data();
-    LastAddressOfdU = dUat.end();
     d2Uat.resize(Nelec);
 
     oldUk.resize(Nelec);
@@ -406,9 +406,38 @@ public:
 
     const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
     const DistanceTableData& ee_table=(*P.DistTables[0]);
-    cur_Uat=computeU(P, iat, eI_table.Temp_r.data(), ee_table.Temp_r.data());
+    cur_Uat=computeU(P, iat, P.GroupID[iat], eI_table.Temp_r.data(), ee_table.Temp_r.data());
     DiffVal=Uat[iat]-cur_Uat;
     return std::exp(DiffVal);
+  }
+
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
+  {
+    const DistanceTableData* d_table=P.DistTables[0];
+    const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
+    const DistanceTableData& ee_table=(*P.DistTables[0]);
+
+    for(int jg=0; jg<eGroups; ++jg)
+    {
+      const valT sumU=computeU(P, -1, jg, eI_table.Temp_r.data(), ee_table.Temp_r.data());
+
+      for(int j=P.first(jg); j<P.last(jg); ++j)
+      {
+        // remove self-interaction
+        valT Uself(0);
+        for(int iat=0; iat<Nion; ++iat)
+        {
+          const valT &r_Ij = eI_table.Temp_r[iat];
+          const valT &r_Ik = eI_table.Distances[j][iat];
+          if(r_Ij<Ion_cutoff[iat]&&r_Ik<Ion_cutoff[iat])
+          {
+            const int ig=Ions.GroupID[iat];
+            Uself+=F(ig,jg,jg)->evaluate(ee_table.Temp_r[j],r_Ij,r_Ik);
+          }
+        }
+        ratios[j]=std::exp(Uat[j]+Uself-sumU);
+      }
+    }
   }
 
   GradType evalGrad(ParticleSet& P, int iat)
@@ -524,14 +553,12 @@ public:
     }
   }
 
-  inline valT computeU(ParticleSet& P, int jel,
+  inline valT computeU(ParticleSet& P, int jel, int jg,
                         const RealType* distjI, const RealType* distjk)
   {
-    valT Uj = valT(0);
-
     const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
-    const int jg=P.GroupID[jel];
 
+    valT Uj = valT(0);
     for(int iat=0; iat<Nion; ++iat)
       if(distjI[iat]<Ion_cutoff[iat])
       {
@@ -642,30 +669,39 @@ public:
       }
   }
 
-  inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
+  inline void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    evaluateLog(P,P.G,P.L);
-    buf.add(Uat.begin(), Uat.end());
-    buf.add(FirstAddressOfdU,LastAddressOfdU);
-    buf.add(d2Uat.begin(), d2Uat.end());
-    return LogValue;
+    if ( Bytes_in_WFBuffer == 0 )
+    {
+      Bytes_in_WFBuffer = buf.current();
+      buf.add(Uat.begin(), Uat.end());
+      buf.add(dUat.data(), dUat.end());
+      buf.add(d2Uat.begin(), d2Uat.end());
+      Bytes_in_WFBuffer = buf.current()-Bytes_in_WFBuffer;
+      // free local space
+      Uat.free();
+      dUat.free();
+      d2Uat.free();
+    }
+    else
+    {
+      buf.forward(Bytes_in_WFBuffer);
+    }
   }
 
-  inline RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+  inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf,
                                bool fromscratch=false)
   {
     evaluateGL(P, P.G, P.L, false);
-    buf.put(Uat.begin(), Uat.end());
-    buf.put(FirstAddressOfdU,LastAddressOfdU);
-    buf.put(d2Uat.begin(), d2Uat.end());
+    buf.forward(Bytes_in_WFBuffer);
     return LogValue;
   }
 
-  inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
-    buf.get(Uat.begin(), Uat.end());
-    buf.get(FirstAddressOfdU,LastAddressOfdU);
-    buf.get(d2Uat.begin(), d2Uat.end());
+    Uat.attachReference(buf.lendReference<valT>(Nelec), Nelec);
+    dUat.attachReference(Nelec, Nelec_padded, buf.lendReference<valT>(Nelec_padded*OHMMS_DIM));
+    d2Uat.attachReference(buf.lendReference<valT>(Nelec), Nelec);
     build_compact_list(P);
   }
 

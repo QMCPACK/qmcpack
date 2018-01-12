@@ -219,6 +219,29 @@ const char *particles = \
   }
 #endif
 
+  typedef QMCTraits::ValueType ValueType;
+  typedef QMCTraits::PosType PosType;
+
+  // set virtutal particle position
+  PosType newpos(0.3,0.2,0.5);
+
+  elec_.makeVirtualMoves(newpos);
+  std::vector<ValueType> ratios(elec_.getTotalNum());
+  j2->evaluateRatiosAlltoOne(elec_,ratios);
+
+  REQUIRE(ratios[0] == ComplexApprox(0.9522052017).compare_real_only());
+  REQUIRE(ratios[1] == ComplexApprox(0.9871985577).compare_real_only());
+
+  elec_.makeMove(0, newpos-elec_.R[0]);
+  ValueType ratio_0 = j2->ratio(elec_,0);
+  elec_.rejectMove(0);
+
+  elec_.makeMove(1, newpos-elec_.R[1]);
+  ValueType ratio_1 = j2->ratio(elec_,1);
+  elec_.rejectMove(1);
+
+  REQUIRE(ratio_0 == ComplexApprox(0.9522052017).compare_real_only());
+  REQUIRE(ratio_1 == ComplexApprox(0.9871985577).compare_real_only());
 
 }
 
@@ -307,6 +330,8 @@ const char *particles = \
   J1Type *j1 = dynamic_cast<J1Type *>(orb);
   REQUIRE(j1 != NULL);
 
+  double logpsi = psi.evaluateLog(elec_);
+  REQUIRE(logpsi == Approx(0.3160552244)); // note: number not validated
 
   struct JValues
   {
@@ -383,6 +408,29 @@ const char *particles = \
   }
 #endif
 
+  typedef QMCTraits::ValueType ValueType;
+  typedef QMCTraits::PosType PosType;
+
+  // set virtutal particle position
+  PosType newpos(0.3,0.2,0.5);
+
+  elec_.makeVirtualMoves(newpos);
+  std::vector<ValueType> ratios(elec_.getTotalNum());
+  j1->evaluateRatiosAlltoOne(elec_,ratios);
+
+  REQUIRE(ratios[0] == ComplexApprox(0.9819208747).compare_real_only());
+  REQUIRE(ratios[1] == ComplexApprox(1.0040884258).compare_real_only());
+
+  elec_.makeMove(0, newpos-elec_.R[0]);
+  ValueType ratio_0 = j1->ratio(elec_,0);
+  elec_.rejectMove(0);
+
+  elec_.makeMove(1, newpos-elec_.R[1]);
+  ValueType ratio_1 = j1->ratio(elec_,1);
+  elec_.rejectMove(1);
+
+  REQUIRE(ratio_0 == ComplexApprox(0.9819208747).compare_real_only());
+  REQUIRE(ratio_1 == ComplexApprox(1.0040884258).compare_real_only());
 
 }
 }

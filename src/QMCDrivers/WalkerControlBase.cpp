@@ -225,6 +225,7 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
   curData[RNSIZE_INDEX]=nrn;
   curData[B_ENERGY_INDEX]=besum;
   curData[B_WGT_INDEX]=bwgtsum;
+  curData[SENTWALKERS_INDEX]=NumWalkersSent=0;
   myComm->allreduce(curData);
   measureProperties(iter);
   trialEnergy=EnsembleProperty.Energy;
@@ -283,12 +284,16 @@ void WalkerControlBase::Write2XYZ(MCWalkerConfiguration& W)
 }
 
 
-/** evaluate curData and mark the bad/good walkers
+/** evaluate curData and mark the bad/good walkers.
+ *
+ *  Each good walker has a counter registering the
+ *  number of copies needed to be generated from this walker.
+ *  Bad walkers will be either recycled or removed later.
  */
 int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
 {
   MCWalkerConfiguration::iterator it(W.begin());
-  std::vector<Walker_t*> bad,good_rn;
+  std::vector<Walker_t*> good_rn;
   std::vector<int> ncopy_rn;
   NumWalkers=0;
   MCWalkerConfiguration::iterator it_end(W.end());
@@ -353,7 +358,7 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
     }
     else
     {
-      bad.push_back(*it);
+      bad_w.push_back(*it);
     }
     ++it;
   }
@@ -378,9 +383,6 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
   //W.EnsembleProperty.Energy=(esum/=wsum);
   //W.EnsembleProperty.Variance=(e2sum/wsum-esum*esum);
   //W.EnsembleProperty.Variance=(e2sum*wsum-esum*esum)/(wsum*wsum-w2sum);
-  //remove bad walkers empty the container
-  for(int i=0; i<bad.size(); i++)
-    delete bad[i];
   if (!WriteRN)
   {
     if(good_w.empty())
@@ -441,25 +443,58 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
   return NumWalkers;
 }
 
+/** copy good walkers to W
+ *
+ *  Good walkers are copied based on the registered number of copies
+ *  Bad walkers are recycled to avoid memory allocation and deallocation.
+ */
 int WalkerControlBase::copyWalkers(MCWalkerConfiguration& W)
 {
+  // save current good walker size.
+  const int size_good_w = good_w.size();
+  std::vector<int> copy_list;
+  for(int i=0; i<size_good_w; i++)
+  {
+    for(int j=0; j<ncopy_w[i]; j++)
+    {
+      if(bad_w.empty())
+      {
+        good_w.push_back(nullptr);
+      }
+      else
+      {
+        good_w.push_back(bad_w.back());
+        bad_w.pop_back();
+      }
+      copy_list.push_back(i);
+    }
+  }
+
+  #pragma omp parallel for
+  for(int i=size_good_w; i<good_w.size(); i++)
+  {
+    auto &wRef=good_w[copy_list[i-size_good_w]];
+    auto &awalker=good_w[i];
+    if(awalker==nullptr)
+      awalker=new Walker_t(*wRef);
+    else
+      *awalker=*wRef;
+    // not fully sure this is correct or even used
+    awalker->ID=(i-size_good_w)*NumContexts+MyContext;
+    awalker->ParentID=wRef->ParentID;
+  }
+
   //clear the WalkerList to populate them with the good walkers
   W.clear();
   W.insert(W.begin(), good_w.begin(), good_w.end());
-  int cur_walker = good_w.size();
-  for(int i=0; i<good_w.size(); i++)
-    //,ie+=ncols) {
-  {
-    for(int j=0; j<ncopy_w[i]; j++, cur_walker++)
-    {
-      Walker_t* awalker=new Walker_t(*(good_w[i]));
-      awalker->ID=(++NumWalkersCreated)*NumContexts+MyContext;
-      awalker->ParentID=good_w[i]->ParentID;
-      W.push_back(awalker);
-    }
-  }
+
+  //remove bad walkers if there is any left
+  for(int i=0; i<bad_w.size(); i++)
+    delete bad_w[i];
+
   //clear good_w and ncopy_w for the next branch
   good_w.clear();
+  bad_w.clear();
   ncopy_w.clear();
   return W.getActiveWalkers();
 }
@@ -467,22 +502,45 @@ int WalkerControlBase::copyWalkers(MCWalkerConfiguration& W)
 bool WalkerControlBase::put(xmlNodePtr cur)
 {
   int nw_target=0, nw_max=0;
+  std::string nonblocking="yes";
   ParameterSet params;
   params.add(targetEnergyBound,"energyBound","double");
   params.add(targetSigma,"sigmaBound","double");
   params.add(MaxCopy,"maxCopy","int");
   params.add(nw_target,"targetwalkers","int");
   params.add(nw_max,"max_walkers","int");
+  params.add(nonblocking,"use_nonblocking","string");
 
   bool success=params.put(cur);
 
+  // validating input
+  if(nonblocking=="yes")
+  {
+    use_nonblocking = true;
+    if(MaxCopy>2)
+    {
+      app_warning() << "use_nonblocking==\"yes\" doesn't support maxCopy>2. Overwriting it to 2." << std::endl;
+      MaxCopy=2;
+    }
+  }
+  else if(nonblocking=="no")
+  {
+    use_nonblocking = false;
+  }
+  else
+  {
+    APP_ABORT("WalkerControlBase::put unknown use_nonblocking option " + nonblocking);
+  }
+
   setMinMax(nw_target,nw_max);
+
   app_log() << "  WalkerControlBase parameters " << std::endl;
   //app_log() << "    energyBound = " << targetEnergyBound << std::endl;
   //app_log() << "    sigmaBound = " << targetSigma << std::endl;
   app_log() << "    maxCopy = " << MaxCopy << std::endl;
   app_log() << "    Max Walkers per node " << Nmax << std::endl;
   app_log() << "    Min Walkers per node " << Nmin << std::endl;
+  app_log() << "    Using " << (use_nonblocking?"non-":"") << "blocking send/recv" << std::endl;
   return true;
 }
 

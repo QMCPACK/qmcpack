@@ -22,8 +22,9 @@
 namespace qmcplusplus
 {
 OrbitalBase::OrbitalBase():
-  IsOptimizing(false), Optimizable(true), UpdateMode(ORB_WALKER), //UseBuffer(true), //Counter(0),
-  LogValue(1.0),PhaseValue(0.0),OrbitalName("OrbitalBase"), derivsDone(false), parameterType(0)
+  IsOptimizing(false), Optimizable(true), UpdateMode(ORB_WALKER),
+  LogValue(1.0),PhaseValue(0.0),OrbitalName("OrbitalBase"),
+  derivsDone(false), parameterType(0), Bytes_in_WFBuffer(0)
 #if !defined(ENABLE_SMARTPOINTER)
   ,dPsi(0), ionDerivs(false)
 #endif
@@ -112,11 +113,11 @@ OrbitalBase::RealType OrbitalBase::KECorrection()
   return 0;
 }
 
-void OrbitalBase::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+void OrbitalBase::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
-  std::ostringstream o;
-  o << "OrbitalBase::get_ratios is not implemented by " << OrbitalName;
-  APP_ABORT(o.str());
+  assert(P.getTotalNum()==ratios.size());
+  for (int i=0; i<P.getTotalNum(); ++i)
+    ratios[i]=ratio(P,i);
 }
 
 void OrbitalBase::evaluateRatios(VirtualParticleSet& P, std::vector<ValueType>& ratios)

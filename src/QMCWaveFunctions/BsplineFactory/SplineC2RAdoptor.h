@@ -210,7 +210,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   TT evaluate_dot(const ParticleSet& P, int iat, const TT* restrict arow, ST* scratch, bool compute_spline=true)
   {
     Vector<ST> vtmp(scratch,myV.size());
-    const PointType& r=P.R[iat];
+    const PointType& r=P.activeR(iat);
     if(compute_spline)
     {
       PointType ru(PrimLattice.toUnit_floor(r));
@@ -320,7 +320,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   template<typename VV>
   inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
   {
-    const PointType& r=P.R[iat];
+    const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
     SplineInst->evaluate(ru,myV);
     assign_v(r,psi);
@@ -593,7 +593,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   template<typename VV, typename GV>
   inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {
-    const PointType& r=P.R[iat];
+    const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
     SplineInst->evaluate_vgh(ru,myV,myG,myH);
     assign_vgl(r,psi,dpsi,d2psi);
@@ -756,7 +756,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   template<typename VGL>
   inline void evaluate_vgl_combo(const ParticleSet& P, const int iat, VGL& vgl)
   {
-    const PointType& r=P.R[iat];
+    const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
     SplineInst->evaluate_vgh(ru,myV,myG,myH);
     assign_vgl_soa(r,vgl);
@@ -894,7 +894,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   template<typename VV, typename GV, typename GGV>
   void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
-    const PointType& r=P.R[iat];
+    const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
     SplineInst->evaluate_vgh(ru,myV,myG,myH);
     assign_vgh(r,psi,dpsi,grad_grad_psi);

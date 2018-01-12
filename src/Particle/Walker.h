@@ -26,6 +26,7 @@
 
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Utilities/PooledData.h"
+#include "Utilities/PooledMemory.h"
 #ifdef QMC_CUDA
 #include "Utilities/PointerPool.h"
 #include "CUDA/gpu_vector.h"
@@ -97,8 +98,9 @@ struct Walker
   typedef typename p_traits::ParticleValue_t ParticleValue_t;
 
   ///typedef for the property container, fixed size
-  typedef Matrix<EstimatorRealType>      PropertyContainer_t;
-  typedef PooledData<RealType>  Buffer_t;
+  typedef Matrix<EstimatorRealType>           PropertyContainer_t;
+  typedef PooledMemory<OHMMS_PRECISION_FULL>  WFBuffer_t;
+  typedef PooledData<RealType>                Buffer_t;
 
   ///id reserved for forward walking
   long ID;
@@ -119,14 +121,13 @@ struct Walker
    * When Multiplicity = 0, this walker will be destroyed.
    */
   RealType Multiplicity;
+  ////Number of copies sent only for MPI
+  int NumSentCopies;
 
   /** The configuration vector (3N-dimensional vector to store
      the positions of all the particles for a single walker)*/
   ParticlePos_t R;
-#if defined(SOA_MEMORY_OPTIMIZED)
-  /** Store only RealType array data */
-  Buffer_t PsiBuffer;
-#else
+#if !defined(SOA_MEMORY_OPTIMIZED)
   /** \f$ \nabla_i d\log \Psi for the i-th particle */
   ParticleGradient_t G;
   /** \f$ \nabla^2_i d\log \Psi for the i-th particle */
@@ -140,7 +141,8 @@ struct Walker
   std::vector<int> PHindex;
 
   ///buffer for the data for particle-by-particle update
-  Buffer_t DataSet;
+  WFBuffer_t DataSet;
+  size_t block_end, scalar_end;
 
   /// Data for GPU-vectorized versions
 #ifdef QMC_CUDA
@@ -293,9 +295,7 @@ struct Walker
     if (R.size()!=a.R.size())
       resize(a.R.size());
     R = a.R;
-#if defined(SOA_MEMORY_OPTIMIZED)
-    PsiBuffer=a.PsiBuffer;
-#else
+#if !defined(SOA_MEMORY_OPTIMIZED)
     G = a.G;
     L = a.L;
 #endif
@@ -418,56 +418,115 @@ struct Walker
    *
    * ID, Age, Properties, R, Drift, DataSet is packed
    */
-  inline int byteSize()
+  inline size_t byteSize()
   {
-    int numPH(0);
-    for (int iat=0; iat<PropertyHistory.size(); iat++)
-      numPH += PropertyHistory[iat].size();
-    int bsize =
-      2*sizeof(long)+3*sizeof(int)+ PHindex.size()*sizeof(int)
-      +Properties.size()*sizeof(EstimatorRealType)+(numPH+1)*sizeof(RealType)+DataSet.byteSize()
-#if defined(SOA_MEMORY_OPTIMIZED)
-      +R.size()*(DIM*sizeof(RealType)); //R
-#else
-      +R.size()*(DIM*sizeof(RealType)+(DIM+1)*sizeof(ParticleValue_t));//R+G+L
-#endif
-
-#ifdef QMC_CUDA
-    bsize += 3 *sizeof (int); // size and N and M
-    bsize += cuda_DataSize               * sizeof(CudaValueType);          // cuda_DataSet
-    bsize += R.size()        * OHMMS_DIM * sizeof(CudaPosType);            // R_GPU
-    bsize += G.size()        * OHMMS_DIM * sizeof(CudaValueType);          // Grad_GPU
-    bsize += L.size()        * 1         * sizeof(CudaLapType);            // Lap_GPU
-    bsize += Rhok_GPU.size()             * sizeof(CUDA_PRECISION_FULL); // Rhok
-#endif
-    return bsize;
+    if(!DataSet.size())
+    {
+      registerData();
+      DataSet.allocate();
+    }
+    return DataSet.byteSize();
   }
 
-  template<class Msg>
-  inline Msg& putMessage(Msg& m)
+  void registerData()
   {
-    const int nat=R.size();
-    m << ID << ParentID << Generation << Age << ReleasedNodeAge << ReleasedNodeWeight;
-    m.Pack(&(R[0][0]),nat*OHMMS_DIM);
-
+    // walker data must be placed at the beginning
+    assert(DataSet.size()==0);
+    // scalars
+    DataSet.add(ID);
+    DataSet.add(ParentID);
+    DataSet.add(Generation);
+    DataSet.add(Age);
+    DataSet.add(ReleasedNodeAge);
+    DataSet.add(ReleasedNodeWeight);
+    DataSet.add(NumSentCopies);
+    // vectors
+    DataSet.add(R.first_address(), R.last_address());
 #if !defined(SOA_MEMORY_OPTIMIZED)
-#if defined(QMC_COMPLEX)
-    m.Pack(reinterpret_cast<RealType*>(&(G[0][0])),nat*OHMMS_DIM*2);
-    m.Pack(reinterpret_cast<RealType*>(L.first_address()),nat*2);
-#else
-    m.Pack(&(G[0][0]),nat*OHMMS_DIM);
-    m.Pack(L.first_address(),nat);
+    DataSet.add(G.first_address(), G.last_address());
+    DataSet.add(L.first_address(), L.last_address());
 #endif
-#endif
-
-    m.Pack(Properties.data(),Properties.size());
-    m.Pack(DataSet.data(),DataSet.size());
-    m.Pack(DataSet.data_DP(),DataSet.size_DP());
-    //Properties.putMessage(m);
-    //DataSet.putMessage(m);
+    DataSet.add(Properties.first_address(), Properties.last_address());
     for (int iat=0; iat<PropertyHistory.size(); iat++)
-      m.Pack(&(PropertyHistory[iat][0]),PropertyHistory[iat].size());
-    m.Pack(&(PHindex[0]),PHindex.size());
+      DataSet.add(PropertyHistory[iat].data(), PropertyHistory[iat].data()+PropertyHistory[iat].size());
+    DataSet.add(PHindex.data(), PHindex.data()+PHindex.size());
+#ifdef QMC_CUDA
+    size_t size = cuda_DataSet.size();
+    size_t N = R_GPU.size();
+    size_t M = Rhok_GPU.size();
+    TinyVector<size_t, 3> dim(size, N, M);
+    DataSet.add(dim.data(), dim.data()+3);
+    DataSet.add(cuda_DataSet.data(), cuda_DataSet.data()+size);
+    DataSet.add(R_GPU.data(), R_GPU.data()+N);
+    DataSet.add(Grad_GPU.data(), Grad_GPU.data()+N);
+    DataSet.add(Lap_GPU.data(), Lap_GPU.data()+N);
+    DataSet.add(Rhok_GPU.data(), Rhok_GPU.data()+M);
+#endif
+    block_end = DataSet.current();
+    scalar_end = DataSet.current_scalar();
+  }
+
+  void copyFromBuffer()
+  {
+    DataSet.rewind();
+    DataSet >> ID >> ParentID >> Generation >> Age >> ReleasedNodeAge >> ReleasedNodeWeight >> NumSentCopies;
+    // vectors
+    DataSet.get(R.first_address(), R.last_address());
+#if !defined(SOA_MEMORY_OPTIMIZED)
+    DataSet.get(G.first_address(), G.last_address());
+    DataSet.get(L.first_address(), L.last_address());
+#endif
+    DataSet.get(Properties.first_address(), Properties.last_address());
+    for (int iat=0; iat<PropertyHistory.size(); iat++)
+      DataSet.get(PropertyHistory[iat].data(), PropertyHistory[iat].data()+PropertyHistory[iat].size());
+    DataSet.get(PHindex.data(), PHindex.data()+PHindex.size());
+#ifdef QMC_CUDA
+    // Unpack GPU data
+    std::vector<CudaValueType> host_data;
+    std::vector<CUDA_PRECISION_FULL> host_rhok;
+    std::vector<CudaPosType> R_host;
+    std::vector<CudaGradType> Grad_host;
+    std::vector<CudaLapType>  host_lapl;
+
+    TinyVector<size_t, 3> dim;
+    DataSet.get(dim.data(), dim.data()+3);
+    size_t size = dim[0];
+    size_t N = dim[1];
+    size_t M = dim[2];
+    host_data.resize(size);
+    R_host.resize(N);
+    Grad_host.resize(N);
+    host_lapl.resize(N);
+    host_rhok.resize(M);
+    DataSet.get(host_data.data(), host_data.data()+size);
+    DataSet.get(R_host.data(),    R_host.data()+N);
+    DataSet.get(Grad_host.data(), Grad_host.data()+N);
+    DataSet.get(host_lapl.data(), host_lapl.data()+N);
+    DataSet.get(host_rhok.data(), host_rhok.data()+M);
+    cuda_DataSet = host_data;
+    R_GPU = R_host;
+    Grad_GPU = Grad_host;
+    Lap_GPU = host_lapl;
+    Rhok_GPU = host_rhok;
+#endif
+    assert(block_end == DataSet.current());
+    assert(scalar_end == DataSet.current_scalar());
+  }
+
+  void updateBuffer()
+  {
+    DataSet.rewind();
+    DataSet << ID << ParentID << Generation << Age << ReleasedNodeAge << ReleasedNodeWeight << NumSentCopies;
+    // vectors
+    DataSet.put(R.first_address(), R.last_address());
+#if !defined(SOA_MEMORY_OPTIMIZED)
+    DataSet.put(G.first_address(), G.last_address());
+    DataSet.put(L.first_address(), L.last_address());
+#endif
+    DataSet.put(Properties.first_address(), Properties.last_address());
+    for (int iat=0; iat<PropertyHistory.size(); iat++)
+      DataSet.put(PropertyHistory[iat].data(), PropertyHistory[iat].data()+PropertyHistory[iat].size());
+    DataSet.put(PHindex.data(), PHindex.data()+PHindex.size());
 #ifdef QMC_CUDA
     // Pack GPU data
     std::vector<CudaValueType> host_data;
@@ -480,86 +539,46 @@ struct Walker
     R_GPU.copyFromGPU(R_host);
     Grad_GPU.copyFromGPU(Grad_host);
     Lap_GPU.copyFromGPU(host_lapl);
+    Rhok_GPU.copyFromGPU(host_rhok);
     int size = host_data.size();
     int N = R_host.size();
-    m.Pack(size);
-    m.Pack(N);
-    m.Pack(&(R_host[0][0]), OHMMS_DIM*R_host.size());
-#ifdef QMC_COMPLEX
-    m.Pack(reinterpret_cast<CudaRealType*>(&(host_data[0])), host_data.size()*2);
-    m.Pack(reinterpret_cast<CudaRealType*>(&(Grad_host[0][0])),OHMMS_DIM*Grad_host.size()*2);
-    m.Pack(reinterpret_cast<CudaRealType*>(&(host_lapl[0])), host_lapl.size()*2);
-#else
-    m.Pack(&(host_data[0]), host_data.size());
-    m.Pack(&(Grad_host[0][0]), OHMMS_DIM*Grad_host.size());
-    m.Pack(&(host_lapl[0]), host_lapl.size());
-#endif
-    Rhok_GPU.copyFromGPU(host_rhok);
     int M = host_rhok.size();
-    m.Pack(M);
-    m.Pack(&(host_rhok[0]), host_rhok.size());
+    TinyVector<size_t, 3> dim(size, N, M);
+    DataSet.put(dim.data(), dim.data()+3);
+    DataSet.put(host_data.data(), host_data.data()+size);
+    DataSet.put(R_host.data(),    R_host.data()+N);
+    DataSet.put(Grad_host.data(), Grad_host.data()+N);
+    DataSet.put(host_lapl.data(), host_lapl.data()+N);
+    DataSet.put(host_rhok.data(), host_rhok.data()+M);
 #endif
+    assert(block_end == DataSet.current());
+    assert(scalar_end == DataSet.current_scalar());
+  }
+
+  template<class Msg>
+  inline Msg& putMessage(Msg& m)
+  {
+    // Pack DataSet buffer
+    if(!DataSet.size())
+    {
+      registerData();
+      DataSet.allocate();
+    }
+    updateBuffer();
+    m.Pack(DataSet.data(),DataSet.size());
     return m;
   }
 
   template<class Msg>
   inline Msg& getMessage(Msg& m)
   {
-    const int nat=R.size();
-    m>>ID >> ParentID >> Generation >> Age >> ReleasedNodeAge >> ReleasedNodeWeight;
-    m.Unpack(&(R[0][0]),nat*OHMMS_DIM);
-#if !defined(SOA_MEMORY_OPTIMIZED)
-#if defined(QMC_COMPLEX)
-    m.Unpack(reinterpret_cast<RealType*>(&(G[0][0])),nat*OHMMS_DIM*2);
-    m.Unpack(reinterpret_cast<RealType*>(L.first_address()),nat*2);
-#else
-    m.Unpack(&(G[0][0]),nat*OHMMS_DIM);
-    m.Unpack(L.first_address(),nat);
-#endif
-#endif
-    m.Unpack(Properties.data(),Properties.size());
+    if(!DataSet.size())
+    {
+      registerData();
+      DataSet.allocate();
+    }
     m.Unpack(DataSet.data(),DataSet.size());
-    m.Unpack(DataSet.data_DP(),DataSet.size_DP());
-    //Properties.getMessage(m);
-    //DataSet.getMessage(m);
-    for (int iat=0; iat<PropertyHistory.size(); iat++)
-      m.Unpack(&(PropertyHistory[iat][0]),PropertyHistory[iat].size());
-    m.Unpack(&(PHindex[0]),PHindex.size());
-#ifdef QMC_CUDA
-    // Unpack GPU data
-    std::vector<CudaValueType> host_data;
-    std::vector<CUDA_PRECISION_FULL> host_rhok;
-    std::vector<CudaPosType> R_host;
-    std::vector<CudaGradType> Grad_host;
-    std::vector<CudaLapType>  host_lapl;
-
-    int size, N;
-    m.Unpack(size);
-    m.Unpack(N);
-    host_data.resize(size);
-    R_host.resize(N);
-    Grad_host.resize(N);
-    host_lapl.resize(N);
-    m.Unpack(&(R_host[0][0]), OHMMS_DIM*N);
-    R_GPU = R_host;
-#ifdef QMC_COMPLEX
-    m.Unpack(reinterpret_cast<CudaRealType*>(&(host_data[0])), size*2);
-    m.Unpack(reinterpret_cast<CudaRealType*>(&(Grad_host[0][0])),OHMMS_DIM*N*2);
-    m.Unpack(reinterpret_cast<CudaRealType*>(&(host_lapl[0])), N*2);
-#else
-    m.Unpack(&(host_data[0]), size);
-    m.Unpack(&(Grad_host[0][0]), OHMMS_DIM*N);
-    m.Unpack(&(host_lapl[0]), N);
-#endif
-    cuda_DataSet = host_data;
-    Grad_GPU = Grad_host;
-    Lap_GPU = host_lapl;
-    int M;
-    m.Unpack(M);
-    host_rhok.resize(M);
-    m.Unpack(&(host_rhok[0]), M);
-    Rhok_GPU = host_rhok;
-#endif
+    copyFromBuffer();
     return m;
   }
 

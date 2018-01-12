@@ -1,5 +1,6 @@
 SUBDIRS(converter)
 SUBDIRS(estimator)
+SUBDIRS(models)
 SUBDIRS(io)
 SUBDIRS(performance)
 

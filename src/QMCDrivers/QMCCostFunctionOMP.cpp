@@ -48,20 +48,6 @@ QMCCostFunctionOMP::~QMCCostFunctionOMP()
   delete_iter(HDerivRecords.begin(),HDerivRecords.end());
 }
 
-
-void QMCCostFunctionOMP::resetWalkers()
-{
-  //remove walkers of the clones
-  for (int ip=0; ip<NumThreads; ++ip)
-  {
-    if(wClones[ip]->getActiveWalkers()>nVMCWalkers[ip])
-      wClones[ip]->destroyWalkers(wClones[ip]->getActiveWalkers()-nVMCWalkers[ip]);
-    else
-      wClones[ip]->createWalkers(nVMCWalkers[ip]-wClones[ip]->getActiveWalkers());
-    nVMCWalkers[ip]=0;
-  }
-}
-
 void QMCCostFunctionOMP::GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff)
 {
   if (FiniteDiff > 0)
@@ -98,7 +84,7 @@ void QMCCostFunctionOMP::GradCost(std::vector<Return_t>& PGradient, const std::v
     Return_t delE_bar=0;
     for (int ip=0; ip<NumThreads; ip++)
     {
-      int nw=wClones[ip]->getActiveWalkers();
+      int nw=wClones[ip]->numSamples();
       for (int iw=0; iw<nw; iw++)
       {
         const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
@@ -116,7 +102,7 @@ void QMCCostFunctionOMP::GradCost(std::vector<Return_t>& PGradient, const std::v
       HD_avg[pm] *= 1.0/static_cast<Return_t>(NumSamples);
     for (int ip=0; ip<NumThreads; ip++)
     {
-      int nw=wClones[ip]->getActiveWalkers();
+      int nw=wClones[ip]->numSamples();
       for (int iw=0; iw<nw; iw++)
       {
         const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
@@ -147,7 +133,7 @@ void QMCCostFunctionOMP::GradCost(std::vector<Return_t>& PGradient, const std::v
     Return_t smpinv=1.0/static_cast<Return_t>(NumSamples);
     for (int ip=0; ip<NumThreads; ip++)
     {
-      int nw=wClones[ip]->getActiveWalkers();
+      int nw=wClones[ip]->numSamples();
       for (int iw=0; iw<nw; iw++)
       {
         const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
@@ -195,7 +181,7 @@ void QMCCostFunctionOMP::getConfigurations(const std::string& aroot)
   //makeClones(W,Psi,H);
   if (H_KE_Node.empty())
   {
-    app_log() << "  QMCCostFunctionOMP is created with " << NumThreads << std::endl;
+    app_log() << "  QMCCostFunctionOMP is created with " << NumThreads << " threads." << std::endl;
     //make H_KE_Node
     H_KE_Node.resize(NumThreads,0);
     RecordsOnNode.resize(NumThreads,0);
@@ -203,9 +189,7 @@ void QMCCostFunctionOMP::getConfigurations(const std::string& aroot)
     HDerivRecords.resize(NumThreads,0);
   }
   
-  app_log() << "   Loading configuration from MCWalkerConfiguration::SampleStack " << std::endl;
-  app_log() << "    number of walkers before load " << W.getActiveWalkers() << std::endl;
-  app_log()<<"  Using Nonlocal PP in Opt: "<<includeNonlocalH<< std::endl;
+  app_log()<<"  Using Nonlocal PP in Opt: " << includeNonlocalH << std::endl;
   outputManager.pause();
   //#pragma omp parallel for
   for (int ip=0; ip<NumThreads; ++ip)
@@ -228,29 +212,14 @@ void QMCCostFunctionOMP::getConfigurations(const std::string& aroot)
     }
   }
 
-  app_log() << "    number of walkers before load: ";
-  nVMCWalkers.resize(NumThreads);
-  for (int ip=0; ip<NumThreads; ++ip)
-  {
-    nVMCWalkers[ip]=wClones[ip]->getActiveWalkers();
-    app_log() <<  wClones[ip]->getActiveWalkers() <<  " " ;
-  }
-  app_log() << std::endl;
-
-#pragma omp parallel for
-  for (int ip=0; ip<NumThreads; ++ip)
-  {
-    wClones[ip]->loadEnsemble();
-  }
-
-  //load walkers from SampleStack
+  //load samples from SampleStack
   outputManager.resume();
-  app_log() << "    number of walkers after load: ";
+  app_log() << "   Number of samples loaded to each thread : ";
   wPerNode[0]=0;
   for (int ip=0; ip<NumThreads; ++ip)
   {
-    wPerNode[ip+1]=wPerNode[ip]+wClones[ip]->getActiveWalkers();
-    app_log() <<  wClones[ip]->getActiveWalkers() <<  " " ;
+    wPerNode[ip+1] = wPerNode[ip] + wClones[ip]->numSamples();
+    app_log() << wClones[ip]->numSamples() <<  " " ;
   }
   app_log() << std::endl;
   app_log().flush();
@@ -268,13 +237,6 @@ void QMCCostFunctionOMP::getConfigurations(const std::string& aroot)
     for (int i=0; i<nwtot; ++i)
       d2LogPsi[i]=new ParticleLaplacian_t(nptcl);
   }
-  //JNKIM TO JEREMY
-  //for(int ip=1; ip<NumThreads;++ip)
-  //{
-  //  opt_variables_type dummy;
-  //  psiClone->checkInVariables(dummy);
-  //  PsiClone[ip]->checkOutVariables(OptVariablesForPsi);
-  //}
 }
 
 /** evaluate everything before optimization */
@@ -289,22 +251,22 @@ void QMCCostFunctionOMP::checkConfigurations()
     if (RecordsOnNode[ip] ==0)
     {
       RecordsOnNode[ip]=new Matrix<Return_t>;
-      RecordsOnNode[ip]->resize(wRef.getActiveWalkers(),SUM_INDEX_SIZE);
+      RecordsOnNode[ip]->resize(wRef.numSamples(),SUM_INDEX_SIZE);
       if (needGrads)
       {
         DerivRecords[ip]=new Matrix<Return_t>;
-        DerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);
+        DerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
         HDerivRecords[ip]=new Matrix<Return_t>;
-        HDerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);
+        HDerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
       }
     }
-    else if (RecordsOnNode[ip]->size1()!=wRef.getActiveWalkers())
+    else if (RecordsOnNode[ip]->size1()!=wRef.numSamples())
     {
-      RecordsOnNode[ip]->resize(wRef.getActiveWalkers(),SUM_INDEX_SIZE);
+      RecordsOnNode[ip]->resize(wRef.numSamples(),SUM_INDEX_SIZE);
       if (needGrads)
       {
-        DerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);
-        HDerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);
+        DerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
+        HDerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
       }
     }
     QMCHamiltonianBase* nlpp = (includeNonlocalH =="no")?  0: hClones[ip]->getHamiltonian(includeNonlocalH);
@@ -315,20 +277,17 @@ void QMCCostFunctionOMP::checkConfigurations()
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
     //int nat = wRef.getTotalNum();
-    //int totalElements=W.getTotalNum()*OHMMS_DIM;
-    typedef MCWalkerConfiguration::Walker_t Walker_t;
     Return_t e0=0.0;
     //       Return_t ef=0.0;
     Return_t e2=0.0;
-    for (int iw=0, iwg=wPerNode[ip]; iw<wRef.getActiveWalkers(); ++iw,++iwg)
+    for (int iw=0, iwg=wPerNode[ip]; iw<wRef.numSamples(); ++iw,++iwg)
     {
-      ParticleSet::Walker_t& thisWalker(*wRef[iw]);
-      wRef.R=thisWalker.R;
+      wRef.loadSample(wRef.R, iw);
       wRef.update(true);
       wRef.donePbyP();
       Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
       psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]);
-      saved[REWEIGHT]=thisWalker.Weight=1.0;
+      saved[REWEIGHT]=1.0;
       Return_t etmp;
       if (needGrads)
       {
@@ -396,22 +355,22 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
     if (RecordsOnNode[ip] ==0)
     {
       RecordsOnNode[ip]=new Matrix<Return_t>;
-      RecordsOnNode[ip]->resize(wRef.getActiveWalkers(),SUM_INDEX_SIZE);
+      RecordsOnNode[ip]->resize(wRef.numSamples(),SUM_INDEX_SIZE);
       if (needGrads)
       {
         DerivRecords[ip]=new Matrix<Return_t>;
-        //DerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);
+        //DerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
         HDerivRecords[ip]=new Matrix<Return_t>;
-        //HDerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);
+        //HDerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
       }
     }
-    else if (RecordsOnNode[ip]->size1()!=wRef.getActiveWalkers())
+    else if (RecordsOnNode[ip]->size1()!=wRef.numSamples())
     {
-      RecordsOnNode[ip]->resize(wRef.getActiveWalkers(),SUM_INDEX_SIZE);
+      RecordsOnNode[ip]->resize(wRef.numSamples(),SUM_INDEX_SIZE);
       if (needGrads)
       {
-        //DerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);
-        //HDerivRecords[ip]->resize(wRef.getActiveWalkers(),NumOptimizables);
+        //DerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
+        //HDerivRecords[ip]->resize(wRef.numSamples(),NumOptimizables);
       }
     }
     QMCHamiltonianBase* nlpp = (includeNonlocalH =="no")?  0: hClones[ip]->getHamiltonian(includeNonlocalH.c_str());
@@ -422,20 +381,17 @@ void QMCCostFunctionOMP::engine_checkConfigurations(cqmc::engine::LMYEngine * En
     (*MoverRng[ip]) = (*RngSaved[ip]);
     hClones[ip]->setRandomGenerator(MoverRng[ip]);
     //int nat = wRef.getTotalNum();
-    //int totalElements=W.getTotalNum()*OHMMS_DIM;
-    typedef MCWalkerConfiguration::Walker_t Walker_t;
     Return_t e0=0.0;
     //       Return_t ef=0.0;
     Return_t e2=0.0;
-    for (int iw=0, iwg=wPerNode[ip]; iw<wRef.getActiveWalkers(); ++iw,++iwg)
+    for (int iw=0, iwg=wPerNode[ip]; iw<wRef.numSamples(); ++iw,++iwg)
     {
-      ParticleSet::Walker_t& thisWalker(*wRef[iw]);
-      wRef.R=thisWalker.R;
+      wRef.loadSample(wRef.R, iw);
       wRef.update(true);
       wRef.donePbyP();
       Return_t* restrict saved=(*RecordsOnNode[ip])[iw];
       psiClones[ip]->evaluateDeltaLog(wRef, saved[LOGPSI_FIXED], saved[LOGPSI_FREE], *dLogPsi[iwg], *d2LogPsi[iwg]);
-      saved[REWEIGHT]=thisWalker.Weight=1.0;
+      saved[REWEIGHT]=1.0;
       Return_t etmp;
       if (needGrads)
       {
@@ -552,7 +508,6 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
   Return_t wgt_tot2=0.0;
   Return_t NSm1 = 1.0/NumSamples;
   Return_t inv_n_samples=1.0/NumSamples;
-  typedef MCWalkerConfiguration::Walker_t Walker_t;
 #pragma omp parallel reduction(+:wgt_tot,wgt_tot2)
   {
     int ip = omp_get_thread_num();
@@ -561,14 +516,9 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
 
     MCWalkerConfiguration& wRef(*wClones[ip]);
     Return_t wgt_node=0.0, wgt_node2=0.0;
-    //int totalElements=W.getTotalNum()*OHMMS_DIM;
-    MCWalkerConfiguration::iterator it(wRef.begin());
-    MCWalkerConfiguration::iterator it_end(wRef.end());
-    int iw=0,iwg=wPerNode[ip];
-    for (; it!= it_end; ++it,++iw,++iwg)
+    for (int iw=0, iwg=wPerNode[ip]; iw<wRef.numSamples(); ++iw,++iwg)
     {
-      ParticleSet::Walker_t& thisWalker(**it);
-      wRef.R=thisWalker.R;
+      wRef.loadSample(wRef.R, iw);
       wRef.update(true);
       if(nlpp) wRef.donePbyP(true);
       Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
@@ -576,7 +526,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
       logpsi=psiClones[ip]->evaluateDeltaLog(wRef,compute_all_from_scratch);
       wRef.G += *dLogPsi[iwg];
       wRef.L += *d2LogPsi[iwg];
-      Return_t weight = saved[REWEIGHT] = vmc_or_dmc*(logpsi-saved[LOGPSI_FREE])+std::log(thisWalker.Weight);
+      Return_t weight = saved[REWEIGHT] = vmc_or_dmc*(logpsi-saved[LOGPSI_FREE]);
       if (needGrad)
       {
         std::vector<Return_t> Dsaved(NumOptimizables,0);
@@ -611,7 +561,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
   wgt_tot=0.0;
   for (int ip=0; ip<NumThreads; ip++)
   {
-    int nw=wClones[ip]->getActiveWalkers();
+    int nw=wClones[ip]->numSamples();
     for (int iw=0; iw<nw; iw++)
     {
       Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
@@ -625,7 +575,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
   wgt_tot=0.0;
   for (int ip=0; ip<NumThreads; ip++)
   {
-    int nw=wClones[ip]->getActiveWalkers();
+    int nw=wClones[ip]->numSamples();
     for (int iw=0; iw<nw; iw++)
     {
       Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
@@ -640,7 +590,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::correlatedSampling(bool needGra
   CSWeight=wgt_tot=(wgt_tot==0)?1:1.0/wgt_tot;
   for (int ip=0; ip<NumThreads; ip++)
   {
-    int nw=wClones[ip]->getActiveWalkers();
+    int nw=wClones[ip]->numSamples();
     for (int iw=0; iw<nw; iw++)
     {
       const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
@@ -699,7 +649,7 @@ QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matri
   Return_t wgtinv = 1.0/SumValue[SUM_WGT];
   for (int ip=0; ip<NumThreads; ip++)
   {
-    int nw=wClones[ip]->getActiveWalkers();
+    int nw=wClones[ip]->numSamples();
     for (int iw=0; iw<nw; iw++)
     {
       const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
@@ -716,7 +666,7 @@ QMCCostFunctionOMP::fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matri
 
   for (int ip=0; ip<NumThreads; ip++)
   {
-    int nw=wClones[ip]->getActiveWalkers();
+    int nw=wClones[ip]->numSamples();
     for (int iw=0; iw<nw; iw++)
     {
       const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];

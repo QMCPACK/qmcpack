@@ -1,4 +1,6 @@
 \documentclass[11pt,usletter]{report}
+\usepackage{bibtopic}
+\bibliographystyle{ieeetr}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{delarray}
@@ -147,6 +149,9 @@
 \tableofcontents
 \newpage
 
+\begin{btUnit}
+\begin{btSect}{bibliography}
+
 \input{introduction}
 \input{features}
 \input{installation}
@@ -167,6 +172,7 @@
 \input{multideterminants}
 \input{backflow}
 \input{fdlr}
+\input{ionwf}
 
 \input{hamiltonianobservable}
 
@@ -198,15 +204,20 @@
 \input{design_features}
 \input{developing}
 
-\input{appendices}
-
-
-\newpage
 \chapter{References}
 %\begingroup  % Avoid "References" section title
 %\renewcommand{\section}[2]{}%
-\bibliographystyle{ieeetr}
-\bibliography{bibliography}
+%\bibliographystyle{ieeetr}
+%\bibliography{bibliography}
 %\endgroup
 
+\btPrintCited
+\end{btSect}
+\end{btUnit}
+
+\appendix
+\input{appendices}
+\begin{btUnit}
+\input{qmcpack_papers}
+\end{btUnit}
 \end{document}

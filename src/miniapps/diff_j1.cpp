@@ -92,6 +92,8 @@ int main(int argc, char** argv)
 
   {
     ParticleSet ions, els;
+    ions.setName("ion");
+    els.setName("e");
     OHMMS_PRECISION scale=1.0;
 
     int np=omp_get_num_threads();

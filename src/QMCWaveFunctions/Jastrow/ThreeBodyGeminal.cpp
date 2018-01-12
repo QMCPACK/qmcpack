@@ -201,8 +201,8 @@ void ThreeBodyGeminal::acceptMove(ParticleSet& P, int iat)
   }
 }
 
-OrbitalBase::RealType
-ThreeBodyGeminal::registerData(ParticleSet& P, PooledData<RealType>& buf)
+void
+ThreeBodyGeminal::registerData(ParticleSet& P, WFBufferType& buf)
 {
   evaluateLogAndStore(P);
   FirstAddressOfdY=&(dY(0,0)[0]);
@@ -217,7 +217,6 @@ ThreeBodyGeminal::registerData(ParticleSet& P, PooledData<RealType>& buf)
   buf.add(Uk.begin(), Uk.end());
   buf.add(FirstAddressOfgU,LastAddressOfgU);
   buf.add(d2Uk.begin(), d2Uk.end());
-  return LogValue;
 }
 
 void
@@ -267,7 +266,7 @@ ThreeBodyGeminal::evaluateLogAndStore(ParticleSet& P)
 }
 
 void
-ThreeBodyGeminal::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+ThreeBodyGeminal::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   buf.get(LogValue);
   buf.get(V.begin(), V.end());
@@ -280,7 +279,7 @@ ThreeBodyGeminal::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
 }
 
 OrbitalBase::RealType
-ThreeBodyGeminal::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+ThreeBodyGeminal::updateBuffer(ParticleSet& P, WFBufferType& buf,
                                bool fromscratch)
 {
   evaluateLogAndStore(P);

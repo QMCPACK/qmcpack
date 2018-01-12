@@ -171,7 +171,7 @@ LRTwoBodyJastrow::ratio(ParticleSet& P, int iat)
   const RealType* restrict rhok_r_ptr(Rhok_r.data());
   const RealType* restrict rhok_i_ptr(Rhok_i.data());
 
-  PosType pos(P.R[iat]);
+  const PosType &pos(P.activePos);
   curVal=0.0;
   int ki=0;
   for(int ks=0; ks<MaxKshell; ks++)
@@ -195,7 +195,7 @@ LRTwoBodyJastrow::ratio(ParticleSet& P, int iat)
   const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
   const ComplexType* restrict eikr_ptr(P.SK->eikr[iat]);
   const ComplexType* restrict rhok_ptr(Rhok.data());
-  PosType pos(P.R[iat]);
+  const PosType &pos(P.activePos);
   curVal=0.0;
   int ki=0;
   for(int ks=0; ks<MaxKshell; ks++)
@@ -220,7 +220,7 @@ LRTwoBodyJastrow::ratioGrad(ParticleSet& P, int iat, GradType & g)
   NeedToRestore=true;
   const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
   {
-    PosType pos(P.R[iat]);
+    const PosType &pos(P.activePos);
     RealType c,s;
   #if defined(USE_REAL_STRUCT_FACTOR)
     RealType* restrict eikr1_r(eikr_new_r.data());
@@ -302,7 +302,7 @@ LRTwoBodyJastrow::evalGrad(ParticleSet& P, int iat)
   NeedToRestore=true;
   const KContainer::VContainer_t& kpts(P.SK->KLists.kpts_cart);
   {
-    PosType pos(P.R[iat]);
+    const PosType &pos(P.R[iat]);
     RealType c,s;
   #if defined(USE_REAL_STRUCT_FACTOR)
     RealType* restrict eikr1_r(eikr_new_r.data());
@@ -400,8 +400,8 @@ void LRTwoBodyJastrow::acceptMove(ParticleSet& P, int iat)
   d2U += offd2U;
 }
 
-LRTwoBodyJastrow::RealType
-LRTwoBodyJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf)
+void
+LRTwoBodyJastrow::registerData(ParticleSet& P, WFBufferType& buf)
 {
   LogValue=evaluateLog(P,P.G,P.L);
 #if defined(USE_REAL_STRUCT_FACTOR)
@@ -432,11 +432,10 @@ LRTwoBodyJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf)
   buf.add(U.first_address(), U.last_address());
   buf.add(d2U.first_address(), d2U.last_address());
   buf.add(FirstAddressOfdU,LastAddressOfdU);
-  return LogValue;
 }
 
 LRTwoBodyJastrow::RealType
-LRTwoBodyJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+LRTwoBodyJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf,
                                bool fromscratch)
 {
   LogValue=evaluateLog(P,P.G,P.L);
@@ -459,7 +458,7 @@ LRTwoBodyJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
   return LogValue;
 }
 
-void LRTwoBodyJastrow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void LRTwoBodyJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
 #if defined(USE_REAL_STRUCT_FACTOR)
   buf.get(Rhok_r.first_address(), Rhok_r.last_address());

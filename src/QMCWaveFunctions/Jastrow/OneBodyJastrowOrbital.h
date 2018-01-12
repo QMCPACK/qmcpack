@@ -256,8 +256,6 @@ public:
     }
   } 
   
-//  ValueType evaluate(ParticleSet& P, ParticleSet::
-
   /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$
    * @param P active particle set
    * @param iat particle that has been moved.
@@ -299,27 +297,6 @@ public:
     evaluateRatios(VP,ratios);
     if(dPsi)
       dPsi->evaluateDerivRatios(VP,optvars,dratios);
-  }
-
-
-  /** evaluate the ratio
-   */
-  inline void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
-  {
-    const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    std::fill(ratios.begin(),ratios.end(),0.0);
-    for (int i=0; i<d_table->size(SourceIndex); ++i)
-    {
-      if (Fs[i] != nullptr)
-      {
-        RealType up=Fs[i]->evaluate(d_table->Temp[i].r1);
-        for (int nn=d_table->M[i],j=0; nn<d_table->M[i+1]; ++nn,++j)
-          ratios[j]+=Fs[i]->evaluate(d_table->r(nn))-up;
-        //delta_u[d_table->J[nn]]+=Fs[i]->evaluate(d_table->r(nn))-u0;
-      }
-    }
-    for(int i=0; i<ratios.size(); ++i)
-      ratios[i] = std::exp(ratios[i]);
   }
 
   inline GradType evalGrad(ParticleSet& P, int iat)
@@ -454,22 +431,16 @@ public:
   }
 
   /** equivalent to evalaute with additional data management */
-  RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
+  void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    const DistanceTableData* d_table=P.DistTables[myTableIndex];
-    // std::cerr <<"REGISTERING 1 BODY JASTROW "<< std::endl;
-    // std::cerr <<d_table->size(VisitorIndex)<< std::endl;
-    //U.resize(d_table->size(VisitorIndex));
     FirstAddressOfdU = &(dU[0][0]);
     LastAddressOfdU = FirstAddressOfdU + dU.size()*DIM;
-    evaluateLogAndStore(P,P.G,P.L);
     //add U, d2U and dU. Keep the order!!!
     DEBUG_PSIBUFFER(" OneBodyJastrow::registerData ",buf.current());
     buf.add(U.begin(), U.end());
     buf.add(d2U.begin(), d2U.end());
     buf.add(FirstAddressOfdU,LastAddressOfdU);
     DEBUG_PSIBUFFER(" OneBodyJastrow::registerData ",buf.current());
-    return LogValue;
   }
 
   void evaluateGL(ParticleSet& P)
@@ -477,7 +448,7 @@ public:
     evaluateLogAndStore(P,P.G,P.L);
   }
 
-  RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false)
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false)
   {
     evaluateLogAndStore(P,P.G,P.L);
     //LogValue = 0.0;
@@ -516,7 +487,7 @@ public:
    *
    *copyFromBuffer uses the data stored by registerData or evaluate(P,buf)
    */
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     DEBUG_PSIBUFFER(" OneBodyJastrow::copyFromBuffer ",buf.current());
     buf.get(U.first_address(), U.last_address());

@@ -22,13 +22,13 @@ typedef IonOrbital::ValueType ValueType;
 typedef IonOrbital::GradType  GradType;
 
 IonOrbital::IonOrbital (ParticleSet &centers, ParticleSet &ptcls) :
-  CenterRef(centers), PtclRef(ptcls)
+  CenterRef(centers)
 {
   Optimizable=false;
   OrbitalName="IonOrbital";
   NumTargetPtcls = ptcls.getTotalNum();
   NumCenters     = centers.getTotalNum();
-  d_table = DistanceTable::add(CenterRef, PtclRef, DT_AOS);
+  myTableID=ptcls.addTable(CenterRef,DT_AOS);
   U.resize(NumTargetPtcls);
   dU.resize(NumTargetPtcls);
   d2U.resize(NumTargetPtcls);
@@ -36,20 +36,14 @@ IonOrbital::IonOrbital (ParticleSet &centers, ParticleSet &ptcls) :
   LastAddressOfdU = FirstAddressOfdU + dU.size()*OHMMS_DIM;
 }
 
-IonOrbital::~IonOrbital() {  }
+IonOrbital::~IonOrbital() { }
 
 //evaluate the distance table with P
-void
-IonOrbital::resetTargetParticleSet(ParticleSet& P)
-{
-  d_table = DistanceTable::add(CenterRef,P, DT_AOS);
-  //if (dPsi) dPsi->resetTargetParticleSet(P);
-}
-
+void IonOrbital::resetTargetParticleSet(ParticleSet& P)              { }
 void IonOrbital::checkInVariables(opt_variables_type& active)        { }
 void IonOrbital::checkOutVariables(const opt_variables_type& active) { }
 void IonOrbital::resetParameters(const opt_variables_type& active)   { }
-void IonOrbital::reportStatus(std::ostream& os)                           { }
+void IonOrbital::reportStatus(std::ostream& os)                      { }
 
 /**
      *@param P input configuration containing N particles
@@ -70,13 +64,14 @@ IonOrbital::evaluateLog(ParticleSet& P,
                         ParticleSet::ParticleGradient_t& G,
                         ParticleSet::ParticleLaplacian_t& L)
 {
+  const auto &d_table=P.DistTables[myTableID];
   int icent = 0;
   LogValue = 0.0;
-  //P.update();
-  //CenterRef.update();
-  //d_table->evaluate(PtclRef);
   for (int iat=0; iat<NumTargetPtcls; iat++)
   {
+    U[iat]   = 0.0;
+    dU[iat]  = 0.0;
+    d2U[iat] = 0.0;
     RealType a = ParticleAlpha[iat];
     if (a > 0.0)
     {
@@ -108,6 +103,7 @@ IonOrbital::evaluate(ParticleSet& P,
 ValueType
 IonOrbital::ratio(ParticleSet& P, int iat)
 {
+  const auto &d_table=P.DistTables[myTableID];
   int icent = ParticleCenter[iat];
   if (icent == -1)
     return 1.0;
@@ -121,6 +117,7 @@ IonOrbital::ratio(ParticleSet& P, int iat)
 GradType
 IonOrbital::evalGrad(ParticleSet& P, int iat)
 {
+  const auto &d_table=P.DistTables[myTableID];
   int icent = ParticleCenter[iat];
   if (icent == -1)
     return GradType();
@@ -142,6 +139,7 @@ IonOrbital::evalGrad(ParticleSet& P, int iat)
 ValueType
 IonOrbital::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
+  const auto &d_table=P.DistTables[myTableID];
   int icent = ParticleCenter[iat];
   if (icent == -1)
     return 1.0;
@@ -170,6 +168,7 @@ IonOrbital::evaluateLogAndStore(ParticleSet& P,
                                 ParticleSet::ParticleGradient_t& dG,
                                 ParticleSet::ParticleLaplacian_t& dL)
 {
+  const auto &d_table=P.DistTables[myTableID];
   int icent = 0;
   LogValue = 0.0;
   U=0.0;
@@ -195,19 +194,18 @@ IonOrbital::evaluateLogAndStore(ParticleSet& P,
 }
 
 /** equivalent to evalaute with additional data management */
-IonOrbital::RealType
-IonOrbital::registerData(ParticleSet& P, PooledData<RealType>& buf)
+void
+IonOrbital::registerData(ParticleSet& P, WFBufferType& buf)
 {
   evaluateLogAndStore(P, P.G, P.L);
   // Add U, d2U and dU. Keep the order!!!
   buf.add(U.begin(), U.end());
   buf.add(d2U.begin(), d2U.end());
   buf.add(FirstAddressOfdU,LastAddressOfdU);
-  return LogValue;
 }
 
 IonOrbital::RealType
-IonOrbital::updateBuffer(ParticleSet& P, BufferType& buf,
+IonOrbital::updateBuffer(ParticleSet& P, WFBufferType& buf,
                          bool fromscratch=false)
 {
   evaluateLogAndStore(P,P.G,P.L);
@@ -224,7 +222,7 @@ IonOrbital::updateBuffer(ParticleSet& P, BufferType& buf,
  *copyFromBuffer uses the data stored by registerData
  */
 void
-IonOrbital::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+IonOrbital::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   buf.get(U.first_address(), U.last_address());
   buf.get(d2U.first_address(), d2U.last_address());

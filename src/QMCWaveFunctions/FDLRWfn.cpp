@@ -106,13 +106,8 @@ namespace qmcplusplus {
     m_wfn_xmd->G.resize(P.G.size());
     m_wfn_xpd->L.resize(P.L.size());
     m_wfn_xmd->L.resize(P.L.size());
-
-    // Initialize the tempP members of the TrialWaveFunction objects.
-    m_wfn_xpd->resizeTempP(P);
-    m_wfn_xmd->resizeTempP(P);
-
-    // And similarly, create a temporary particleset for this object.
-    tempP = new ParticleSet(P);
+    G_FDLR.resize(P.G.size());
+    L_FDLR.resize(P.L.size());
 
     dlogpsi_xpd.resize(xpd_vars.size(), 0.0);
     dlogpsi_xmd.resize(xmd_vars.size(), 0.0);
@@ -166,8 +161,6 @@ namespace qmcplusplus {
 
   FDLRWfn::~FDLRWfn()
   {
-    // Just the temporary particle set not cleaned up by default destructors.
-    delete tempP;
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -347,49 +340,22 @@ namespace qmcplusplus {
   ///////////////////////////////////////////////////////////////////////////////////////////////
   FDLRWfn::RealType FDLRWfn::evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
-    FDLRWfn::ValueType logpsi_plus(0.0), logpsi_minus(0.0);
-    FDLRWfn::RealType phasevalue_plus(0.0), phasevalue_minus(0.0);
+    // "x+d"
+    m_wfn_xpd->evaluateLog(P);
+    m_wfn_xpd->G = P.G;
+    m_wfn_xpd->L = P.L;
 
-    // Zero these, because evaluateLog calls below accumulate them.
-    m_wfn_xpd->G = 0.0;
-    m_wfn_xmd->G = 0.0;
-    m_wfn_xpd->L = 0.0;
-    m_wfn_xmd->L = 0.0;
-
-    // Iterator over all OrbitalBase objects within the "x+d" wave function.
-    std::vector<OrbitalBase*>& Orbitals_plus = m_wfn_xpd->getOrbitals();
-    std::vector<OrbitalBase*>::iterator it_plus(Orbitals_plus.begin());
-    std::vector<OrbitalBase*>::iterator it_plus_end(Orbitals_plus.end());
-
-    for (; it_plus!=it_plus_end; ++it_plus)
-    {
-      logpsi_plus += (*it_plus)->evaluateLog(P, m_wfn_xpd->G, m_wfn_xpd->L);
-      phasevalue_plus += (*it_plus)->PhaseValue;
-    }
-    m_wfn_xpd->setLogPsi(logpsi_plus);
-    m_wfn_xpd->setPhase(phasevalue_plus);
-
-    // Now do the same as above for the "x-d" wave function.
-
-    // Iterator over all OrbitalBase objects within the "x-d" wave function.
-    std::vector<OrbitalBase*>& Orbitals_minus = m_wfn_xmd->getOrbitals();
-    std::vector<OrbitalBase*>::iterator it_minus(Orbitals_minus.begin());
-    std::vector<OrbitalBase*>::iterator it_minus_end(Orbitals_minus.end());
-
-    for (; it_minus!=it_minus_end; ++it_minus)
-    {
-      logpsi_minus += (*it_minus)->evaluateLog(P, m_wfn_xmd->G, m_wfn_xmd->L);
-      phasevalue_minus += (*it_minus)->PhaseValue;
-    }
-    m_wfn_xmd->setLogPsi(logpsi_minus);
-    m_wfn_xmd->setPhase(phasevalue_minus);
+    // "x-d"
+    m_wfn_xmd->evaluateLog(P);
+    m_wfn_xmd->G = P.G;
+    m_wfn_xmd->L = P.L;
 
     // Update the log value, gradient and laplacian for the FDLR wave
     // function, given these objects for the individual "x+d" and "x-d"
     // wave functions.
     LogValue = evaluateLogFDLR(P, G, L,
-                               logpsi_plus, logpsi_minus,
-                               phasevalue_plus, phasevalue_minus,
+                               m_wfn_xpd->getLogPsi(), m_wfn_xmd->getLogPsi(),
+                               m_wfn_xpd->getPhase(), m_wfn_xmd->getPhase(),
                                m_wfn_xpd->G, m_wfn_xmd->G,
                                m_wfn_xpd->L, m_wfn_xmd->L);
 
@@ -429,11 +395,9 @@ namespace qmcplusplus {
 
     // Temporary space needed for calculating the gradient and the laplacian
     // of the FDLR wfn.
-    ParticleSet::ParticleGradient_t G_FDLR;
     ParticleSet::ParticleLaplacian_t G_FDLR_mag;
     ParticleSet::ParticleLaplacian_t L_temp_1;
     ParticleSet::ParticleLaplacian_t L_temp_2;
-    G_FDLR.resize(G.size());
     G_FDLR_mag.resize(G.size());
     L_temp_1.resize(L.size());
     L_temp_2.resize(L.size());
@@ -451,15 +415,14 @@ namespace qmcplusplus {
     scaling_fac_1 = 1/(1 - psi_minus/psi_plus);
     scaling_fac_2 = 1/(psi_plus/psi_minus - 1);
 
-    G_FDLR = scaling_fac_1 * G_plus - scaling_fac_2 * G_minus;
-    G += G_FDLR;
+    G = scaling_fac_1 * G_plus - scaling_fac_2 * G_minus;
 
     // ----Calculating the laplacian of the log of the FDLR wave function---
 
     // Calculate \frac{ \del psi \cdot \del \psi}{ psi^2 }, for
     // \psi=\psi_+ and then for \psi=\psi_-.
     for (int i=0; i < G.size(); i++)
-      G_FDLR_mag[i] = dot(G_FDLR[i], G_FDLR[i]);
+      G_FDLR_mag[i] = dot(G[i], G[i]);
     for (int i=0; i < G.size(); i++)
       L_temp_1[i] = dot(G_plus[i],  G_plus[i]);
     for (int i=0; i < G.size(); i++)
@@ -469,18 +432,13 @@ namespace qmcplusplus {
     L_temp_1 = L_plus  + L_temp_1;
     L_temp_2 = L_minus + L_temp_2;
 
-    L += scaling_fac_1*L_temp_1 - scaling_fac_2*L_temp_2 - G_FDLR_mag;
+    L = scaling_fac_1*L_temp_1 - scaling_fac_2*L_temp_2 - G_FDLR_mag;
 
     // ---------------------------------------------------------------------
 
     convert(logpsi, LogValue);
 
     return LogValue;
-  }
-
-  FDLRWfn::RealType FDLRWfn::evaluateLog(ParticleSet& P, BufferType& buf) {
-    throw std::runtime_error("FDLRWfn::evaluateLog(P, buff) not yet implemented");
-    return 0.0;
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -582,56 +540,19 @@ namespace qmcplusplus {
   /// \param[in]      P              the particle set
   /// \param[in]      buf            the buffer to add essential data to
   ///
-  /// \return  the log of the FDLR wave function value
-  ///
   ///////////////////////////////////////////////////////////////////////////////////////////////////
-  FDLRWfn::RealType FDLRWfn::registerData(ParticleSet& P, BufferType& buf)
+  void FDLRWfn::registerData(ParticleSet& P, WFBufferType& buf)
   {
-    // Store the current values of G and L before we zero them temporarily.
-    tempP->G = P.G;
-    tempP->L = P.L;
+    m_wfn_xpd->registerData(P, buf);
+    buf.add(m_wfn_xpd->G.first_address(),m_wfn_xpd->G.last_address());
+    buf.add(m_wfn_xpd->L.first_address(),m_wfn_xpd->L.last_address());
 
-    P.G = 0.0;
-    P.L = 0.0;
-    FDLRWfn::RealType logpsi_plus = m_wfn_xpd->registerData(P, buf);
-    FDLRWfn::RealType phasevalue_plus = m_wfn_xpd->getPhase();
-    buf.add(phasevalue_plus);
-    buf.add(logpsi_plus);
-    buf.add(&(P.G[0][0]), &(P.G[0][0])+P.G.size()*DIM);
-    buf.add(&(P.L[0]), &(P.L[P.getTotalNum()]));
-
-    // Set G and L for the xpd wave function to their original values.
-    m_wfn_xpd->G = P.G;
-    m_wfn_xpd->L = P.L;
-
-    P.G = 0.0;
-    P.L = 0.0;
-    FDLRWfn::RealType logpsi_minus = m_wfn_xmd->registerData(P, buf);
-    FDLRWfn::RealType phasevalue_minus = m_wfn_xmd->getPhase();
-    buf.add(phasevalue_minus);
-    buf.add(logpsi_minus);
-    buf.add(&(P.G[0][0]), &(P.G[0][0])+P.G.size()*DIM);
-    buf.add(&(P.L[0]), &(P.L[P.getTotalNum()]));
-
-    // Set G and L for the xmd wave function to their original values.
-    m_wfn_xmd->G = P.G;
-    m_wfn_xmd->L = P.L;
-
-    // Now calculate LogValue, L and G for the full FDLR wave function.
-    P.G = 0.0;
-    P.L = 0.0;
-    LogValue = evaluateLogFDLR(P, P.G, P.L,
-                               logpsi_plus, logpsi_minus,
-                               phasevalue_plus, phasevalue_minus,
-                               m_wfn_xpd->G, m_wfn_xmd->G,
-                               m_wfn_xpd->L, m_wfn_xmd->L);
-    P.G += tempP->G;
-    P.L += tempP->L;
+    m_wfn_xmd->registerData(P, buf);
+    buf.add(m_wfn_xmd->G.first_address(),m_wfn_xmd->G.last_address());
+    buf.add(m_wfn_xmd->L.first_address(),m_wfn_xmd->L.last_address());
 
     buf.add(LogValue);
     buf.add(PhaseValue);
-
-    return LogValue;
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -647,48 +568,28 @@ namespace qmcplusplus {
   /// \return  the log of the FDLR wave function.
   ///
   ///////////////////////////////////////////////////////////////////////////////////////////////////
-  FDLRWfn::RealType FDLRWfn::updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch)
+  FDLRWfn::RealType FDLRWfn::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
   {
-    tempP->G = P.G;
-    tempP->L = P.L;
-
     // Update buffer with data from the "x+d" part of the wave function.
-    P.G = 0.0;
-    P.L = 0.0;
     FDLRWfn::RealType logpsi_plus = m_wfn_xpd->updateBuffer(P, buf, fromscratch);
-    FDLRWfn::RealType phasevalue_plus = m_wfn_xpd->getPhase();
-    buf.put(phasevalue_plus);
-    buf.put(logpsi_plus);
-    buf.put(&(P.G[0][0]), &(P.G[0][0])+P.G.size()*DIM);
-    buf.put(&(P.L[0]), &(P.L[P.getTotalNum()]));
-
     m_wfn_xpd->G = P.G;
     m_wfn_xpd->L = P.L;
+    buf.put(m_wfn_xpd->G.first_address(),m_wfn_xpd->G.last_address());
+    buf.put(m_wfn_xpd->L.first_address(),m_wfn_xpd->L.last_address());
 
     // Update buffer with data from the "x-d" part of the wave function.
-    P.G = 0.0;
-    P.L = 0.0;
     FDLRWfn::RealType logpsi_minus = m_wfn_xmd->updateBuffer(P, buf, fromscratch);
-    FDLRWfn::RealType phasevalue_minus = m_wfn_xmd->getPhase();
-    buf.put(phasevalue_minus);
-    buf.put(logpsi_minus);
-    buf.put(&(P.G[0][0]), &(P.G[0][0])+P.G.size()*DIM);
-    buf.put(&(P.L[0]), &(P.L[P.getTotalNum()]));
-
     m_wfn_xmd->G = P.G;
     m_wfn_xmd->L = P.L;
+    buf.put(m_wfn_xmd->G.first_address(),m_wfn_xmd->G.last_address());
+    buf.put(m_wfn_xmd->L.first_address(),m_wfn_xmd->L.last_address());
 
     // Calculate data for the overall FDLR wave function.
-    P.G = 0.0;
-    P.L = 0.0;
     LogValue = evaluateLogFDLR(P, P.G, P.L,
                                logpsi_plus, logpsi_minus,
-                               phasevalue_plus, phasevalue_minus,
+                               m_wfn_xpd->getPhase(), m_wfn_xmd->getPhase(),
                                m_wfn_xpd->G, m_wfn_xmd->G,
                                m_wfn_xpd->L, m_wfn_xmd->L);
-    P.G += tempP->G;
-    P.L += tempP->L;
-
     buf.put(LogValue);
     buf.put(PhaseValue);
 
@@ -703,47 +604,23 @@ namespace qmcplusplus {
   /// \param[in]    buf       the buffer to read from
   ///
   ///////////////////////////////////////////////////////////////////////////////////////////////////
-  void FDLRWfn::copyFromBuffer(ParticleSet& P, BufferType& buf)
+  void FDLRWfn::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
-    FDLRWfn::RealType logpsi_plus, logpsi_minus;
-    FDLRWfn::RealType phasevalue_plus, phasevalue_minus;
-
-    tempP->G = P.G;
-    tempP->L = P.L;
-
-    P.L = 0.0;
-    P.G = 0.0;
     m_wfn_xpd->copyFromBuffer(P, buf);
-    buf.get(phasevalue_plus);
-    buf.get(logpsi_plus);
-    buf.get(&(m_wfn_xpd->G[0][0]), &(m_wfn_xpd->G[0][0])+P.G.size()*DIM);
-    buf.get(&(m_wfn_xpd->L[0]), &(m_wfn_xpd->L[P.getTotalNum()]));
+    buf.get(m_wfn_xpd->G.first_address(),m_wfn_xpd->G.last_address());
+    buf.get(m_wfn_xpd->L.first_address(),m_wfn_xpd->L.last_address());
 
-    P.L = 0.0;
-    P.G = 0.0;
     m_wfn_xmd->copyFromBuffer(P, buf);
-    buf.get(phasevalue_minus);
-    buf.get(logpsi_minus);
-    buf.get(&(m_wfn_xmd->G[0][0]), &(m_wfn_xmd->G[0][0])+P.G.size()*DIM);
-    buf.get(&(m_wfn_xmd->L[0]), &(m_wfn_xmd->L[P.getTotalNum()]));
+    buf.get(m_wfn_xmd->G.first_address(),m_wfn_xmd->G.last_address());
+    buf.get(m_wfn_xmd->L.first_address(),m_wfn_xmd->L.last_address());
 
-    P.L = 0.0;
-    P.G = 0.0;
     LogValue = evaluateLogFDLR(P, P.G, P.L,
-                               logpsi_plus, logpsi_minus,
-                               phasevalue_plus, phasevalue_minus,
+                               m_wfn_xpd->getLogPsi(), m_wfn_xmd->getLogPsi(),
+                               m_wfn_xpd->getPhase(), m_wfn_xmd->getPhase(),
                                m_wfn_xpd->G, m_wfn_xmd->G,
                                m_wfn_xpd->L, m_wfn_xmd->L);
-    P.G += tempP->G;
-    P.L += tempP->L;
-
     buf.get(LogValue);
     buf.get(PhaseValue);
-  }
-
-  FDLRWfn::ValueType FDLRWfn::ratio(ParticleSet& P, int iat, ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL) {
-    throw std::runtime_error("FDLRWfn::ratio not yet implemented");
-    return 0.0;
   }
 
   FDLRWfn::ValueType FDLRWfn::ratio(ParticleSet& P, int iat)
@@ -774,10 +651,6 @@ namespace qmcplusplus {
     curRatio = scaling_fac_1 * rat_plus - scaling_fac_2 * rat_minus;
 
     return curRatio;
-  }
-
-  void FDLRWfn::update(ParticleSet& P, ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL, int iat) {
-    throw std::runtime_error("FDLRWfn::update not yet implemented");
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -857,9 +730,6 @@ namespace qmcplusplus {
     std::fill(dgradlogpsi_xpd.begin(), dgradlogpsi_xpd.begin()+xpd_vars.size(), 0.0);
     std::fill(dgradlogpsi_xmd.begin(), dgradlogpsi_xmd.begin()+xmd_vars.size(), 0.0);
 
-    // Gradient of the FDLR wave function.
-    ParticleSet::ParticleGradient_t G_FDLR;
-    G_FDLR.resize(P.G.size());
     // Difference between the total FDLR wave function gradients.
     ParticleSet::ParticleGradient_t G_diff;
     G_diff.resize(P.G.size());
@@ -869,8 +739,8 @@ namespace qmcplusplus {
     // of the "xpd" and "xmd" wave functions individually for the following
     // evaluateDerivatives call. evaluateDerivatives uses P.G for certain
     // wave function components.
-    tempP->G = P.G;
-    tempP->L = P.L;
+    G_FDLR = P.G;
+    L_FDLR = P.L;
 
     P.G = m_wfn_xpd->G;
     P.L = m_wfn_xpd->L;
@@ -882,8 +752,8 @@ namespace qmcplusplus {
 
     // Return G and L to their original values for the entire FDLR wave
     // function.
-    P.G = tempP->G;
-    P.L = tempP->L;
+    P.G = G_FDLR;
+    P.L = L_FDLR;
 
     // Calculate the log of the \psi_+ and \psi_- wave functions, and use
     // these values to calculate the required scaling factors for the

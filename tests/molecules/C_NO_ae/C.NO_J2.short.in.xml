@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="C.NO_J2_short" series="0">
+    <application name="qmcapp" role="molecu" class="serial" version="0.2">
+      QMC of C atom using radial Hartree-Fock orbitals.  The spin configuration
+      is (4,2).
+    </application>
+  </project>
+  <particleset name="atom" size="1">
+    <group name="C">
+      <parameter name="charge">6</parameter>
+    </group>
+  </particleset>
+  <particleset name="e">
+    <group name="u" size="4">
+      <parameter name="charge">-1</parameter>
+    </group>
+    <group name="d" size="2">
+      <parameter name="charge">-1</parameter>
+    </group>
+  </particleset>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="MO" transform="yes" source="atom">
+      <basisset>
+        <atomicBasisSet type="Numerical" elementType="C" expandYlm="no" href="C.s000.h5">
+          <basisGroup rid="R000" ds="orbital0000" n="1" l="0" m="0" zeta="1"/>
+          <basisGroup rid="R001" ds="orbital0001" n="2" l="0" m="0" zeta="1"/>
+          <basisGroup rid="R002" ds="orbital0002" n="2" l="1" m="0" zeta="1"/>
+          <basisGroup rid="R002" ds="orbital0002" n="2" l="1" m="1" zeta="1"/>
+        </atomicBasisSet>
+      </basisset>
+      <slaterdeterminant>
+        <determinant spin="1" id="detu" size="4"/>
+        <determinant spin="-1" id="detd" size="2"/>
+      </slaterdeterminant>
+    </determinantset>
+    <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="atom">
+      <correlation elementType="C" cusp="0.0" rcut="3" size="6">
+        <coefficients id="ce" type="Array"> -0.4359817241 -0.3342666325 -0.2166769752 -0.1198759072 -0.05561211797 -0.01991557043</coefficients>
+      </correlation>
+    </jastrow>
+    <jastrow name="Jee" type="Two-Body" function="pade">
+      <correlation speciesA="u" speciesB="u"> 
+        <var id="uu_b" name="B">7.7001948661e-01</var>
+      </correlation>
+      <correlation speciesA="u" speciesB="d"> 
+        <var id="ud_b" name="B">1.1212209439e+00</var>
+      </correlation>
+    </jastrow>
+  </wavefunction>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+    <pairpot name="Coulomb" type="coulomb" source="atom" target="e"/>
+  </hamiltonian>
+  <init source="atom" target="e"/>
+  <qmc method="vmc" move="pbyp">
+    <parameter name="walkers"> 1</parameter>
+    <estimator name="LocalEnergy"/>
+    <parameter name="blocks">1000</parameter>
+    <parameter name="warmupsteps">100</parameter>
+    <parameter name="steps">500</parameter>
+    <parameter name="timestep">0.2</parameter>
+    <parameter name="dmcwalkersperthread">495</parameter>
+  </qmc>
+  <qmc method="dmc" move="pbyp" checkpoint="-1">
+    <estimator name="LocalEnergy"/>
+    <parameter name="blocks">140</parameter>
+    <parameter name="steps">5</parameter>
+    <parameter name="warmupsteps">4</parameter>
+    <parameter name="timestep">0.01</parameter>
+  </qmc>
+  <qmc method="dmc" move="pbyp" checkpoint="100">
+    <estimator name="LocalEnergy"/>
+    <parameter name="blocks">400</parameter>
+    <parameter name="steps">5</parameter>
+    <parameter name="warmupsteps">20</parameter>
+    <parameter name="timestep">0.01</parameter>
+  </qmc>
+
+</simulation>
