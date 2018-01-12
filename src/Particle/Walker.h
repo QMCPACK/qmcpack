@@ -121,7 +121,7 @@ struct Walker
    * When Multiplicity = 0, this walker will be destroyed.
    */
   RealType Multiplicity;
-  /// mark ture if this walker is being sent.
+  /// mark true if this walker is being sent.
   bool SendInProgress;
 
   /** The configuration vector (3N-dimensional vector to store
