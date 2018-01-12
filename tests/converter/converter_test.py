@@ -41,7 +41,7 @@ def compare(gold_file,test_file):
 	    return True
 
 
-def run_test(test_name, c4q_exe, conv_inp, gold_file, expect_fail, extra_cmd_args,code):
+def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, extra_cmd_args,code):
     okay = True
 
     # Example invocation of converter
@@ -88,8 +88,8 @@ def run_test(test_name, c4q_exe, conv_inp, gold_file, expect_fail, extra_cmd_arg
 	else:
             if (code != 'pyscf'): 
                 if '-hdf5' in extra_cmd_args:
-                   os.system('h5dump test.orbs.h5 > test.orbs.h5dump')
-                   if  compare('gold.orbs.h5dump','test.orbs.h5dump'):
+                   ret = os.system(h5diff_exe + ' gold.orbs.h5 test.orbs.h5')
+                   if ret==0:
                       print("  pass")
                       return True
                    else:
@@ -117,7 +117,7 @@ def read_extra_args():
     return extra_cmd_args
 
 
-def run_one_converter_test(c4q_exe):
+def run_one_converter_test(c4q_exe, h5diff_exe):
     code='gamess'
     if os.path.exists('pyscf'):
        code='pyscf'
@@ -151,7 +151,7 @@ def run_one_converter_test(c4q_exe):
         if not os.path.exists(gold_file):
             print("Gold file missing")
             return False
-    return run_test(test_name, c4q_exe, conv_input_file, gold_file,
+    return run_test(test_name, c4q_exe, h5diff_exe, conv_input_file, gold_file,
                     expect_fail, extra_cmd_args,code)
 
 
@@ -162,6 +162,9 @@ if __name__ == '__main__':
     parser.add_argument('--exe',
                         default='convert4qmc',
                         help='Location of convert4qmc executable')
+    parser.add_argument('--h5diff',
+                        default='h5diff',
+                        help='Location of h5diff executable')
     args = parser.parse_args()
 
     test_dir = args.test_name
@@ -172,7 +175,7 @@ if __name__ == '__main__':
     curr_dir = os.getcwd()
     os.chdir(test_dir)
 
-    ret = run_one_converter_test(args.exe)
+    ret = run_one_converter_test(args.exe, args.h5diff)
 
     os.chdir(curr_dir)
 
