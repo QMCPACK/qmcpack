@@ -688,17 +688,23 @@ public:
       }
       dUj[idim] += dUj_x;
 
+      valT *restrict jk0 = Disp_jk_Compressed.data(0);
+      if(idim>0)
+      {
+        #pragma omp simd aligned(jk,jk0)
+        for(int kel_index=0; kel_index<kel_counter; kel_index++)
+          jk0[kel_index] += jk[kel_index];
+      }
+
       valT *restrict dUk_x = dUk.data(idim);
       for(int kel_index=0; kel_index<kel_counter; kel_index++)
         dUk_x[DistIndice_k[kel_index]] += kI[kel_index];
     }
     valT sum(0);
-    valT *restrict jk_x = Disp_jk_Compressed.data(0);
-    valT *restrict jk_y = Disp_jk_Compressed.data(1);
-    valT *restrict jk_z = Disp_jk_Compressed.data(2);
-    #pragma omp simd aligned(jk_x,jk_y,jk_z,hessF01) reduction(+:sum)
+    valT *restrict jk0 = Disp_jk_Compressed.data(0);
+    #pragma omp simd aligned(jk0,hessF01) reduction(+:sum)
     for(int kel_index=0; kel_index<kel_counter; kel_index++)
-      sum += hessF01[kel_index] * (jk_x[kel_index]+jk_y[kel_index]+jk_z[kel_index]);
+      sum += hessF01[kel_index] * jk0[kel_index];
     d2Uj -= ctwo * sum;
 
     #pragma omp simd aligned(hessF00,hessF22,gradF0,gradF2,hessF02,hessF11)
