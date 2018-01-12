@@ -388,7 +388,7 @@ struct BsplineFunctor3D: public OptimizableFunctorBase
 
   // assume r_1I < L && r_2I < L, compression and screening is handled outside
   inline void evaluateVGL(int Nptcl, const real_type* restrict r_12_array,
-                          const real_type r_1I,
+                          const real_type* restrict r_1I_array,
                           const real_type* restrict r_2I_array,
                           real_type* restrict val_array,
                           real_type* restrict grad0_array,

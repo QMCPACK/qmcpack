@@ -83,9 +83,9 @@ class JeeIOrbitalSoA: public OrbitalBase
   size_t Nbuffer;
   /// compressed distances
   aligned_vector<valT> Distjk_Compressed, DistkI_Compressed, DistjI_Compressed;
-  std::vector<int> DistIndice;
+  std::vector<int> DistIndice_k, DistIndice_i;
   /// compressed displacements
-  gContainer_type Disp_jk_Compressed, Disp_kI_Compressed;
+  gContainer_type Disp_jk_Compressed, Disp_jI_Compressed, Disp_kI_Compressed;
   /// work result buffer
   VectorSoaContainer<valT,9> mVGL;
 
@@ -181,9 +181,11 @@ public:
     DistkI_Compressed.resize(Nbuffer);
     Distjk_Compressed.resize(Nbuffer);
     Disp_jk_Compressed.resize(Nbuffer);
+    Disp_jI_Compressed.resize(Nbuffer);
     Disp_kI_Compressed.resize(Nbuffer);
     DistjI_Compressed.resize(Nbuffer);
-    DistIndice.resize(Nbuffer);
+    DistIndice_k.resize(Nbuffer);
+    DistIndice_i.resize(Nbuffer);
   }
 
   void initUnique()
@@ -614,29 +616,19 @@ public:
     return Uj;
   }
 
-  inline void computeU3(ParticleSet& P, int jel,
-                        const RealType* distjI, const RowContainer& displjI,
-                        const RealType* distjk, const RowContainer& displjk,
-                        valT& Uj, posT& dUj, valT& d2Uj,
-                        Vector<valT>& Uk, gContainer_type& dUk, Vector<valT>& d2Uk, bool triangle=false)
+  inline void computeU3_engine(const ParticleSet& P,
+                               const FT &feeI, int kel_counter,
+                               const RowContainer& displjI, const RowContainer& displjk,
+                               valT& Uj, posT& dUj, valT& d2Uj,
+                               Vector<valT>& Uk, gContainer_type& dUk, Vector<valT>& d2Uk)
   {
+    const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
+
     constexpr valT czero(0);
     constexpr valT cone(1);
     constexpr valT cminus(-1);
     constexpr valT ctwo(2);
     constexpr valT lapfac=OHMMS_DIM-cone;
-    Uj = czero;
-    dUj = posT();
-    d2Uj = czero;
-
-    const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
-    const int jg=P.GroupID[jel];
-
-    const int kelmax=triangle?jel:Nelec;
-    std::fill_n(Uk.data(),kelmax,czero);
-    std::fill_n(d2Uk.data(),kelmax,czero);
-    for(int idim=0; idim<OHMMS_DIM; ++idim)
-      std::fill_n(dUk.data(idim),kelmax,czero);
 
     valT* restrict val=mVGL.data(0);
     valT* restrict gradF0=mVGL.data(1);
@@ -648,92 +640,142 @@ public:
     valT* restrict hessF01=mVGL.data(7);
     valT* restrict hessF02=mVGL.data(8);
 
+    feeI.evaluateVGL(kel_counter, Distjk_Compressed.data(), DistjI_Compressed.data(), DistkI_Compressed.data(),
+                     val, gradF0, gradF1, gradF2, hessF00, hessF11, hessF22, hessF01, hessF02);
+
+    for(int idim=0; idim<OHMMS_DIM; ++idim)
+    {
+      valT *restrict jk = Disp_jk_Compressed.data(idim);
+      valT *restrict jI = Disp_jI_Compressed.data(idim);
+      valT *restrict kI = Disp_kI_Compressed.data(idim);
+      const valT *restrict displjk_x = displjk.data(idim);
+      const valT *restrict displjI_x = displjI.data(idim);
+      for(int kel_index=0; kel_index<kel_counter; kel_index++)
+      {
+        const int kel=DistIndice_k[kel_index];
+        const int iat=DistIndice_i[kel_index];
+        jk[kel_index] = displjk_x[kel];
+        jI[kel_index] = displjI_x[iat];
+        kI[kel_index] = eI_table.Displacements[kel].data(idim)[iat];
+      }
+    }
+
+    // compute the contribution to jel, kel
+    Uj=simd::accumulate_n(val,kel_counter,Uj);
+    valT gradF0_sum=simd::accumulate_n(gradF0,kel_counter,czero);
+    valT gradF1_sum=simd::accumulate_n(gradF1,kel_counter,czero);
+    valT hessF00_sum=simd::accumulate_n(hessF00,kel_counter,czero);
+    valT hessF11_sum=simd::accumulate_n(hessF11,kel_counter,czero);
+    d2Uj-=hessF00_sum+hessF11_sum+lapfac*(gradF0_sum+gradF1_sum);
+    std::fill_n(hessF11,kel_counter,czero);
+    for(int idim=0; idim<OHMMS_DIM; ++idim)
+    {
+      valT *restrict jk = Disp_jk_Compressed.data(idim);
+      valT *restrict jI = Disp_jI_Compressed.data(idim);
+      valT *restrict kI = Disp_kI_Compressed.data(idim);
+      valT dUj_x(0);
+      #pragma omp simd aligned(gradF0,gradF1,gradF2,hessF11,jk,jI,kI) reduction(+:dUj_x)
+      for(int kel_index=0; kel_index<kel_counter; kel_index++)
+      {
+        // recycle hessF11
+        hessF11[kel_index] += kI[kel_index] * jk[kel_index];
+        dUj_x += gradF1[kel_index] * jI[kel_index];
+        // destroy kI
+        const valT temp = jk[kel_index] * gradF0[kel_index];
+        dUj_x += temp;
+        jk[kel_index] *= jI[kel_index];
+        kI[kel_index] = kI[kel_index] * gradF2[kel_index] - temp;
+      }
+      dUj[idim] += dUj_x;
+
+      valT *restrict dUk_x = dUk.data(idim);
+      for(int kel_index=0; kel_index<kel_counter; kel_index++)
+        dUk_x[DistIndice_k[kel_index]] += kI[kel_index];
+    }
+    valT sum(0);
+    valT *restrict jk_x = Disp_jk_Compressed.data(0);
+    valT *restrict jk_y = Disp_jk_Compressed.data(1);
+    valT *restrict jk_z = Disp_jk_Compressed.data(2);
+    #pragma omp simd aligned(jk_x,jk_y,jk_z,hessF01) reduction(+:sum)
+    for(int kel_index=0; kel_index<kel_counter; kel_index++)
+      sum += hessF01[kel_index] * (jk_x[kel_index]+jk_y[kel_index]+jk_z[kel_index]);
+    d2Uj -= ctwo * sum;
+
+    #pragma omp simd aligned(hessF00,hessF22,gradF0,gradF2,hessF02,hessF11)
+    for(int kel_index=0; kel_index<kel_counter; kel_index++)
+      hessF00[kel_index] = hessF00[kel_index] + hessF22[kel_index]
+                         + lapfac*(gradF0[kel_index] + gradF2[kel_index])
+                         - ctwo*hessF02[kel_index] * hessF11[kel_index];
+
+    for(int kel_index=0; kel_index<kel_counter; kel_index++)
+    {
+      const int kel=DistIndice_k[kel_index];
+      Uk[kel] += val[kel_index];
+      d2Uk[kel] -= hessF00[kel_index];
+    }
+  }
+
+  inline void computeU3(ParticleSet& P, int jel,
+                        const RealType* distjI, const RowContainer& displjI,
+                        const RealType* distjk, const RowContainer& displjk,
+                        valT& Uj, posT& dUj, valT& d2Uj,
+                        Vector<valT>& Uk, gContainer_type& dUk, Vector<valT>& d2Uk, bool triangle=false)
+  {
+    constexpr valT czero(0);
+    constexpr valT cminus(-1);
+
+    Uj = czero;
+    dUj = posT();
+    d2Uj = czero;
+
+    const int jg=P.GroupID[jel];
+
+    const int kelmax=triangle?jel:Nelec;
+    std::fill_n(Uk.data(),kelmax,czero);
+    std::fill_n(d2Uk.data(),kelmax,czero);
+    for(int idim=0; idim<OHMMS_DIM; ++idim)
+      std::fill_n(dUk.data(idim),kelmax,czero);
+
+    ions_nearby.clear();
     for(int iat=0; iat<Nion; ++iat)
       if(distjI[iat]<Ion_cutoff[iat])
+        ions_nearby.push_back(iat);
+
+    for(int kg=0; kg<eGroups; ++kg)
+    {
+      int kel_counter = 0;
+      for(int iind=0; iind<ions_nearby.size(); ++iind)
       {
-        const int ig=Ions.GroupID[iat];
-        const valT r_Ij     = distjI[iat];
-        const posT disp_Ij  = cminus*displjI[iat];
-
-        for(int kg=0; kg<eGroups; ++kg)
+        const int iat = ions_nearby[iind];
+        const int ig = Ions.GroupID[iat];
+        const valT r_jI = distjI[iat];
+        for(int kind=0; kind<elecs_inside(iat,kg).size(); kind++)
         {
-          const FT& feeI(*F(ig,jg,kg));
-          int kel_counter=0;
-          for(int kind=0; kind<elecs_inside(iat,kg).size(); kind++)
+          const int kel=elecs_inside(iat,kg)[kind];
+          if(kel<kelmax && kel!=jel)
           {
-            const int kel=elecs_inside(iat,kg)[kind];
-            if(kel<kelmax && kel!=jel)
+            DistkI_Compressed[kel_counter]=elecs_inside_dist(iat,kg)[kind];
+            DistjI_Compressed[kel_counter]=r_jI;
+            Distjk_Compressed[kel_counter]=distjk[kel];
+            DistIndice_k[kel_counter]=kel;
+            DistIndice_i[kel_counter]=iat;
+            kel_counter++;
+            if(kel_counter==Nbuffer)
             {
-              DistkI_Compressed[kel_counter]=elecs_inside_dist(iat,kg)[kind];
-              Distjk_Compressed[kel_counter]=distjk[kel];
-              DistIndice[kel_counter]=kel;
-              kel_counter++;
-            }
-          }
-
-          feeI.evaluateVGL(kel_counter, Distjk_Compressed.data(), r_Ij, DistkI_Compressed.data(),
-                           val, gradF0, gradF1, gradF2, hessF00, hessF11, hessF22, hessF01, hessF02);
-
-          for(int idim=0; idim<OHMMS_DIM; ++idim)
-          {
-            valT *restrict kI = Disp_kI_Compressed.data(idim);
-            valT *restrict jk = Disp_jk_Compressed.data(idim);
-            const valT *restrict displjk_x = displjk.data(idim);
-            for(int kel_index=0; kel_index<kel_counter; kel_index++)
-            {
-              const int kel=DistIndice[kel_index];
-              kI[kel_index] = eI_table.Displacements[kel].data(idim)[iat];
-              jk[kel_index] = displjk_x[kel];
-            }
-          }
-
-          // compute the contribution to jel, kel
-          Uj=simd::accumulate_n(val,kel_counter,Uj);
-          valT gradF0_sum=simd::accumulate_n(gradF0,kel_counter,valT(0));
-          valT gradF1_sum=simd::accumulate_n(gradF1,kel_counter,valT(0));
-          valT hessF00_sum=simd::accumulate_n(hessF00,kel_counter,valT(0));
-          valT hessF11_sum=simd::accumulate_n(hessF11,kel_counter,valT(0));
-          for(int idim=0; idim<OHMMS_DIM; ++idim)
-            dUj[idim]-=gradF1_sum*disp_Ij[idim];
-          d2Uj-=hessF00_sum+hessF11_sum+lapfac*(gradF0_sum+gradF1_sum);
-          std::fill_n(hessF11,kel_counter,czero);
-          for(int idim=0; idim<OHMMS_DIM; ++idim)
-          {
-            valT *restrict kI = Disp_kI_Compressed.data(idim);
-            valT *restrict jk = Disp_jk_Compressed.data(idim);
-            valT sum(0);
-            #pragma omp simd aligned(gradF0,gradF2,hessF01,hessF11,kI,jk) reduction(+:sum)
-            for(int kel_index=0; kel_index<kel_counter; kel_index++)
-            {
-              // recycle hessF11
-              hessF11[kel_index] += kI[kel_index] * jk[kel_index];
-              sum += hessF01[kel_index] * jk[kel_index];
-              // destroy jk
-              jk[kel_index] *= gradF0[kel_index];
-              kI[kel_index] = kI[kel_index] * gradF2[kel_index] - jk[kel_index];
-            }
-            dUj[idim]=simd::accumulate_n(jk,kel_counter,dUj[idim]);
-            d2Uj += ctwo * sum * disp_Ij[idim];
-
-            valT *restrict dUk_x = dUk.data(idim);
-            for(int kel_index=0; kel_index<kel_counter; kel_index++)
-              dUk_x[DistIndice[kel_index]] += kI[kel_index];
-          }
-
-          #pragma omp simd aligned(hessF00,hessF22,gradF0,gradF2,hessF02,hessF11)
-          for(int kel_index=0; kel_index<kel_counter; kel_index++)
-            hessF00[kel_index] = hessF00[kel_index] + hessF22[kel_index]
-                               + lapfac*(gradF0[kel_index] + gradF2[kel_index])
-                               - ctwo*hessF02[kel_index] * hessF11[kel_index];
-
-          for(int kel_index=0; kel_index<kel_counter; kel_index++)
-          {
-            const int kel=DistIndice[kel_index];
-            Uk[kel] += val[kel_index];
-            d2Uk[kel] -= hessF00[kel_index];
+              const FT& feeI(*F(ig,jg,kg));
+              computeU3_engine(P, feeI, kel_counter, displjI, displjk, Uj, dUj, d2Uj, Uk, dUk, d2Uk);
+              kel_counter = 0;
+	    }
           }
         }
+        if((iind+1==ions_nearby.size() || ig!=Ions.GroupID[ions_nearby[iind+1]]) && kel_counter>0)
+        {
+          const FT& feeI(*F(ig,jg,kg));
+          computeU3_engine(P, feeI, kel_counter, displjI, displjk, Uj, dUj, d2Uj, Uk, dUk, d2Uk);
+          kel_counter = 0;
+        }
       }
+    }
   }
 
   inline void registerData(ParticleSet& P, WFBufferType& buf)
