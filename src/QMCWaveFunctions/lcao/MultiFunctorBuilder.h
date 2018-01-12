@@ -144,9 +144,7 @@ namespace qmcplusplus
         m_multiset->Rnl.push_back(radorb);
 
         return true;
-     }
-
-
+      }
 
       void finalize() 
       {

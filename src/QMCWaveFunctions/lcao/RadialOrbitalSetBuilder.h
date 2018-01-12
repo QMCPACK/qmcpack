@@ -313,35 +313,34 @@ private:
 
       app_log() << "   Grid is created by the input paremters in h5" << std::endl;
 
-
       std::string gridtype;
-  
-      if(hin.myComm->rank()==0){
-         if(!hin.read(gridtype, "grid_type")){
-             std::cerr<<"Could not read grid_type in H5; Probably Corrupt H5 file"<<std::endl;
-             exit(0);
-         }
+      if(hin.myComm->rank()==0)
+      {
+        if(!hin.read(gridtype, "grid_type"))
+        {
+          std::cerr<<"Could not read grid_type in H5; Probably Corrupt H5 file"<<std::endl;
+          exit(0);
+        }
       }
       hin.myComm->bcast(gridtype);
   
       int npts=0;
       RealType ri=0.0,rf=10.0,rmax_safe=10;
-  
-      if(hin.myComm->rank()==0){
-          double tt=0;
-          hin.read(tt,"grid_ri");
-          ri=tt;
-          hin.read(tt,"grid_rf");
-          rf=tt;
-          hin.read(tt,"rmax_safe");
-          rmax_safe=tt;
-          hin.read(npts,"grid_npts");
+      if(hin.myComm->rank()==0)
+      {
+        double tt=0;
+        hin.read(tt,"grid_ri");
+        ri=tt;
+        hin.read(tt,"grid_rf");
+        rf=tt;
+        hin.read(tt,"rmax_safe");
+        rmax_safe=tt;
+        hin.read(npts,"grid_npts");
       }
       hin.myComm->bcast(ri);
       hin.myComm->bcast(rf);
       hin.myComm->bcast(rmax_safe);
       hin.myComm->bcast(npts);
-  
   
       if(gridtype.empty())
       {
@@ -355,15 +354,14 @@ private:
         m_orbitals->Grids.push_back(input_grid);
         input_grid=0;
       }
-      else
-        if(gridtype == "linear")
-        {
-          app_log() << "    Using linear grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
-          input_grid = new LinearGrid<RealType>;
-          input_grid->set(ri,rf,npts);
-          m_orbitals->Grids.push_back(input_grid);
-          input_grid=0;
-        }
+      else if(gridtype == "linear")
+      {
+        app_log() << "    Using linear grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
+        input_grid = new LinearGrid<RealType>;
+        input_grid->set(ri,rf,npts);
+        m_orbitals->Grids.push_back(input_grid);
+        input_grid=0;
+      }
       //set zero to use std::max
       m_rcut_safe=0;
       return true;
@@ -433,8 +431,8 @@ private:
       }
       else if(radtype == "Slater" || radtype == "STO")
       {
-       // addSlaterH5(hin);
-         app_error()<<" RadType: Slater. Any type other than Gaussian not implemented in H5 format. Please contact developers. Abort"<<std::endl;
+        // addSlaterH5(hin);
+        app_error()<<" RadType: Slater. Any type other than Gaussian not implemented in H5 format. Please contact developers. Abort"<<std::endl;
       }
       else
       {
@@ -460,7 +458,6 @@ private:
   }
 
 
-
   template<typename COT>
   void RadialOrbitalSetBuilder<COT>::addGaussianH5(hdf_archive &hin)
   {
@@ -474,7 +471,6 @@ private:
     radTemp.push_back(new A2NTransformer<RealType,gto_type>(gset));
     m_orbitals->RnlID.push_back(m_nlms);
   }
-
 
 
 /* Finalize this set using the common grid

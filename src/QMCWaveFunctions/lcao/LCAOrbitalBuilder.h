@@ -19,8 +19,6 @@
 #define QMCPLUSPLUS_SOA_LCAO_ORBITAL_BUILDER_H
 
 #include "QMCWaveFunctions/BasisSetBase.h"
-#include "io/hdf_archive.h"
-#include "Message/CommOperators.h"
 
 namespace qmcplusplus
 {
@@ -57,7 +55,8 @@ namespace qmcplusplus
     int radialOrbType;
     bool cuspCorr;
     std::string cuspInfo;
-    std::string h5_path; //Path to HDF5 Wavefunction
+    ///Path to HDF5 Wavefunction
+    std::string h5_path;
 
     /** create basis set
      *

@@ -129,17 +129,17 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive &hin)
   ReportEngine PRE("AtomicBasisBuilder","putH5(hin)");
   std::string CenterID, Normalized, basisName;
 
-  if(myComm->rank()==0){
-      hin.read(sph,"angular");
-      hin.read(CenterID,"elementType");
-      hin.read(Normalized,"normalized");
-      hin.read(Morder,"expandYlm");
-      hin.read(basisName,"name");
-      hin.read(basisType,"type");
-      hin.read(addsignforM,"expM");
-
-
+  if(myComm->rank()==0)
+  {
+    hin.read(sph,"angular");
+    hin.read(CenterID,"elementType");
+    hin.read(Normalized,"normalized");
+    hin.read(Morder,"expandYlm");
+    hin.read(basisName,"name");
+    hin.read(basisType,"type");
+    hin.read(addsignforM,"expM");
   }
+
   myComm->bcast(sph);
   myComm->bcast(Morder);
   myComm->bcast(CenterID);
@@ -148,7 +148,13 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive &hin)
   myComm->bcast(basisType);
   myComm->bcast(addsignforM);
 
-  app_log()<<"<input node=\"atomicBasisSet\" name=\""<<basisName<<"\" Morder=\""<<Morder<<"\" angular=\""<<sph<<"\"  elementType=\""<<CenterID<<"\"  normalized=\""<<Normalized<<"  basisType=\""<<basisType<<"\" />"<<std::endl;
+  app_log() << "<input node=\"atomicBasisSet\" name=\"" << basisName
+            << "\" Morder=\"" << Morder
+            << "\" angular=\"" << sph
+            << "\"  elementType=\"" << CenterID
+            << "\"  normalized=\"" << Normalized
+            << "  basisType=\"" << basisType
+            << "\" />" << std::endl;
   bool tmp_addsignforM=addsignforM;
   if(sph == "spherical")
     addsignforM=1; //include (-1)^m
@@ -201,20 +207,20 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
   }
   switch(expandlm)
   {
-  case(GAUSSIAN_EXPAND):
-    app_log() << "   Angular momentum m expanded according to Gaussian" << std::endl;
-    break;
-  case(NATURAL_EXPAND):
-    app_log() << "   Angular momentum m expanded as -l, ... ,l" << std::endl;
-    break;
-  case(MOD_NATURAL_EXPAND):
-    app_log() << "   Angular momentum m expanded as -l, ... ,l, with the exception of L=1 (1,-1,0)" << std::endl;
-    break;
-  case(CARTESIAN_EXPAND):
-    app_log() << "   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess" << std::endl;
-    break;
-  default:
-    app_log() << "   Angular momentum m is explicitly given." << std::endl;
+    case(GAUSSIAN_EXPAND):
+      app_log() << "   Angular momentum m expanded according to Gaussian" << std::endl;
+      break;
+    case(NATURAL_EXPAND):
+      app_log() << "   Angular momentum m expanded as -l, ... ,l" << std::endl;
+      break;
+    case(MOD_NATURAL_EXPAND):
+      app_log() << "   Angular momentum m expanded as -l, ... ,l, with the exception of L=1 (1,-1,0)" << std::endl;
+      break;
+    case(CARTESIAN_EXPAND):
+      app_log() << "   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess" << std::endl;
+      break;
+    default:
+      app_log() << "   Angular momentum m is explicitly given." << std::endl;
   }
   QuantumNumberType nlms;
   std::string rnl;
@@ -235,11 +241,10 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
       //expect that only Rnl is given
       if(expandlm == CARTESIAN_EXPAND)
         num += (l+1)*(l+2)/2;
+      else if(expandlm)
+        num += 2*l+1;
       else
-        if(expandlm)
-          num += 2*l+1;
-        else
-          num++;
+        num++;
     }
     else if(cname1 == "grid")
     {
@@ -326,20 +331,20 @@ COT* AOBasisBuilder<COT>::createAOSetH5(hdf_archive &hin)
   }
   switch(expandlm)
   {
-  case(GAUSSIAN_EXPAND):
-    app_log() << "   Angular momentum m expanded according to Gaussian" << std::endl;
-    break;
-  case(NATURAL_EXPAND):
-    app_log() << "   Angular momentum m expanded as -l, ... ,l" << std::endl;
-    break;
-  case(MOD_NATURAL_EXPAND):
-    app_log() << "   Angular momentum m expanded as -l, ... ,l, with the exception of L=1 (1,-1,0)" << std::endl;
-    break;
-  case(CARTESIAN_EXPAND):
-    app_log() << "   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess" << std::endl;
-    break;
-  default:
-    app_log() << "   Angular momentum m is explicitly given." << std::endl;
+    case(GAUSSIAN_EXPAND):
+      app_log() << "   Angular momentum m expanded according to Gaussian" << std::endl;
+      break;
+    case(NATURAL_EXPAND):
+      app_log() << "   Angular momentum m expanded as -l, ... ,l" << std::endl;
+      break;
+    case(MOD_NATURAL_EXPAND):
+      app_log() << "   Angular momentum m expanded as -l, ... ,l, with the exception of L=1 (1,-1,0)" << std::endl;
+      break;
+    case(CARTESIAN_EXPAND):
+      app_log() << "   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess" << std::endl;
+      break;
+    default:
+      app_log() << "   Angular momentum m is explicitly given." << std::endl;
   }
 
   QuantumNumberType nlms;
@@ -348,9 +353,10 @@ COT* AOBasisBuilder<COT>::createAOSetH5(hdf_archive &hin)
   int num(0);//the number of localized basis functions of this center
 
   int numbasisgroups(0);
-  if(myComm->rank()==0){
-     if(!hin.read(numbasisgroups,"NbBasisGroups"))
-         PRE.error("Could not read NbBasisGroups in H5; Probably Corrupt H5 file",true);
+  if(myComm->rank()==0)
+  {
+    if(!hin.read(numbasisgroups,"NbBasisGroups"))
+      PRE.error("Could not read NbBasisGroups in H5; Probably Corrupt H5 file",true);
   }
   myComm->bcast(numbasisgroups);
 
@@ -358,10 +364,11 @@ COT* AOBasisBuilder<COT>::createAOSetH5(hdf_archive &hin)
   {
     std::string basisGroupID="basisGroup"+std::to_string(i);
     int l(0);
-    if(myComm->rank()==0){
-       hin.push(basisGroupID);
-       hin.read(l,"l");
-       hin.pop();
+    if(myComm->rank()==0)
+    {
+      hin.push(basisGroupID);
+      hin.read(l,"l");
+      hin.pop();
     }
     myComm->bcast(l);
 
@@ -369,11 +376,10 @@ COT* AOBasisBuilder<COT>::createAOSetH5(hdf_archive &hin)
     //expect that only Rnl is given
     if(expandlm == CARTESIAN_EXPAND)
       num += (l+1)*(l+2)/2;
+    else if(expandlm)
+      num += 2*l+1;
     else
-      if(expandlm)
-        num += 2*l+1;
-      else
-        num++;
+      num++;
 
   }
 
@@ -387,11 +393,12 @@ COT* AOBasisBuilder<COT>::createAOSetH5(hdf_archive &hin)
   for (int i=0; i<numbasisgroups;i++)
   {
     std::string basisGroupID="basisGroup"+std::to_string(i);
-    if(myComm->rank()==0){
-       hin.push(basisGroupID);
-       hin.read(rnl,"rid");
-       hin.read(nlms[0],"n");
-       hin.read(nlms[1],"l");
+    if(myComm->rank()==0)
+    {
+      hin.push(basisGroupID);
+      hin.read(rnl,"rid");
+      hin.read(nlms[0],"n");
+      hin.read(nlms[1],"l");
     }
     myComm->bcast(rnl);
     myComm->bcast(nlms[0]);
