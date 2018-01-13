@@ -178,12 +178,12 @@ public:
     //initialize buffers
     Nbuffer=Nelec;
     mVGL.resize(Nbuffer);
-    DistkI_Compressed.resize(Nbuffer);
     Distjk_Compressed.resize(Nbuffer);
+    DistjI_Compressed.resize(Nbuffer);
+    DistkI_Compressed.resize(Nbuffer);
     Disp_jk_Compressed.resize(Nbuffer);
     Disp_jI_Compressed.resize(Nbuffer);
     Disp_kI_Compressed.resize(Nbuffer);
-    DistjI_Compressed.resize(Nbuffer);
     DistIndice_k.resize(Nbuffer);
     DistIndice_i.resize(Nbuffer);
   }
@@ -643,6 +643,7 @@ public:
     feeI.evaluateVGL(kel_counter, Distjk_Compressed.data(), DistjI_Compressed.data(), DistkI_Compressed.data(),
                      val, gradF0, gradF1, gradF2, hessF00, hessF11, hessF22, hessF01, hessF02);
 
+    // collect displacements
     for(int idim=0; idim<OHMMS_DIM; ++idim)
     {
       valT *restrict jk = Disp_jk_Compressed.data(idim);
