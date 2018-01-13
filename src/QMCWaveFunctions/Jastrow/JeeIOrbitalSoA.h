@@ -76,6 +76,7 @@ class JeeIOrbitalSoA: public OrbitalBase
   /// the electrons around ions within the cutoff radius, grouped by species
   Array<std::vector<int>,2> elecs_inside;
   Array<std::vector<valT>,2> elecs_inside_dist;
+  Array<std::vector<posT>,2> elecs_inside_displ;
   /// the ions around
   std::vector<int> ions_nearby;
 
@@ -83,7 +84,7 @@ class JeeIOrbitalSoA: public OrbitalBase
   size_t Nbuffer;
   /// compressed distances
   aligned_vector<valT> Distjk_Compressed, DistkI_Compressed, DistjI_Compressed;
-  std::vector<int> DistIndice_k, DistIndice_i;
+  std::vector<int> DistIndice_k;
   /// compressed displacements
   gContainer_type Disp_jk_Compressed, Disp_jI_Compressed, Disp_kI_Compressed;
   /// work result buffer
@@ -172,6 +173,7 @@ public:
     F=nullptr;
     elecs_inside.resize(Nion,eGroups);
     elecs_inside_dist.resize(Nion,eGroups);
+    elecs_inside_displ.resize(Nion,eGroups);
     ions_nearby.resize(Nion);
     Ion_cutoff.resize(Nion, 0.0);
 
@@ -185,7 +187,6 @@ public:
     Disp_jI_Compressed.resize(Nbuffer);
     Disp_kI_Compressed.resize(Nbuffer);
     DistIndice_k.resize(Nbuffer);
-    DistIndice_i.resize(Nbuffer);
   }
 
   void initUnique()
@@ -387,6 +388,7 @@ public:
       {
         elecs_inside(iat,jg).clear();
         elecs_inside_dist(iat,jg).clear();
+        elecs_inside_displ(iat,jg).clear();
       }
 
     for(int jg=0; jg<eGroups; ++jg)
@@ -396,6 +398,7 @@ public:
           {
             elecs_inside(iat,jg).push_back(jel);
             elecs_inside_dist(iat,jg).push_back(eI_table.Distances[jel][iat]);
+            elecs_inside_displ(iat,jg).push_back(eI_table.Displacements[jel][iat]);
           }
   }
 
@@ -512,18 +515,21 @@ public:
     for (int jat=0; jat < Nion; jat++)
     {
       bool inside = eI_table.Temp_r[jat] < Ion_cutoff[jat];
-      std::vector<int>::iterator iter = find(elecs_inside(jat,ig).begin(), elecs_inside(jat,ig).end(), iat);
-      std::vector<RealType>::iterator iter_dist = elecs_inside_dist(jat,ig).begin()+std::distance(elecs_inside(jat,ig).begin(),iter);
+      auto iter = find(elecs_inside(jat,ig).begin(), elecs_inside(jat,ig).end(), iat);
+      auto iter_dist = elecs_inside_dist(jat,ig).begin()+std::distance(elecs_inside(jat,ig).begin(),iter);
+      auto iter_displ = elecs_inside_displ(jat,ig).begin()+std::distance(elecs_inside(jat,ig).begin(),iter);
       if(inside)
       {
         if(iter==elecs_inside(jat,ig).end())
         {
           elecs_inside(jat,ig).push_back(iat);
           elecs_inside_dist(jat,ig).push_back(eI_table.Temp_r[jat]);
+          elecs_inside_displ(jat,ig).push_back(eI_table.Temp_dr[jat]);
         }
         else
         {
           *iter_dist = eI_table.Temp_r[jat];
+          *iter_displ = eI_table.Temp_dr[jat];
         }
       }
       else
@@ -534,6 +540,8 @@ public:
           elecs_inside(jat,ig).pop_back();
           *iter_dist = elecs_inside_dist(jat,ig).back();
           elecs_inside_dist(jat,ig).pop_back();
+          *iter_displ = elecs_inside_displ(jat,ig).back();
+          elecs_inside_displ(jat,ig).pop_back();
         }
       }
     }
@@ -618,7 +626,6 @@ public:
 
   inline void computeU3_engine(const ParticleSet& P,
                                const FT &feeI, int kel_counter,
-                               const RowContainer& displjI, const RowContainer& displjk,
                                valT& Uj, posT& dUj, valT& d2Uj,
                                Vector<valT>& Uk, gContainer_type& dUk, Vector<valT>& d2Uk)
   {
@@ -642,24 +649,6 @@ public:
 
     feeI.evaluateVGL(kel_counter, Distjk_Compressed.data(), DistjI_Compressed.data(), DistkI_Compressed.data(),
                      val, gradF0, gradF1, gradF2, hessF00, hessF11, hessF22, hessF01, hessF02);
-
-    // collect displacements
-    for(int idim=0; idim<OHMMS_DIM; ++idim)
-    {
-      valT *restrict jk = Disp_jk_Compressed.data(idim);
-      valT *restrict jI = Disp_jI_Compressed.data(idim);
-      valT *restrict kI = Disp_kI_Compressed.data(idim);
-      const valT *restrict displjk_x = displjk.data(idim);
-      const valT *restrict displjI_x = displjI.data(idim);
-      for(int kel_index=0; kel_index<kel_counter; kel_index++)
-      {
-        const int kel=DistIndice_k[kel_index];
-        const int iat=DistIndice_i[kel_index];
-        jk[kel_index] = displjk_x[kel];
-        jI[kel_index] = displjI_x[iat];
-        kI[kel_index] = eI_table.Displacements[kel].data(idim)[iat];
-      }
-    }
 
     // compute the contribution to jel, kel
     Uj=simd::accumulate_n(val,kel_counter,Uj);
@@ -756,6 +745,7 @@ public:
         const int iat = ions_nearby[iind];
         const int ig = Ions.GroupID[iat];
         const valT r_jI = distjI[iat];
+        const posT disp_Ij = displjI[iat];
         for(int kind=0; kind<elecs_inside(iat,kg).size(); kind++)
         {
           const int kel=elecs_inside(iat,kg)[kind];
@@ -764,13 +754,15 @@ public:
             DistkI_Compressed[kel_counter]=elecs_inside_dist(iat,kg)[kind];
             DistjI_Compressed[kel_counter]=r_jI;
             Distjk_Compressed[kel_counter]=distjk[kel];
+            Disp_kI_Compressed(kel_counter)=elecs_inside_displ(iat,kg)[kind];
+            Disp_jI_Compressed(kel_counter)=disp_Ij;
+            Disp_jk_Compressed(kel_counter)=displjk[kel];
             DistIndice_k[kel_counter]=kel;
-            DistIndice_i[kel_counter]=iat;
             kel_counter++;
             if(kel_counter==Nbuffer)
             {
               const FT& feeI(*F(ig,jg,kg));
-              computeU3_engine(P, feeI, kel_counter, displjI, displjk, Uj, dUj, d2Uj, Uk, dUk, d2Uk);
+              computeU3_engine(P, feeI, kel_counter, Uj, dUj, d2Uj, Uk, dUk, d2Uk);
               kel_counter = 0;
 	    }
           }
@@ -778,7 +770,7 @@ public:
         if((iind+1==ions_nearby.size() || ig!=Ions.GroupID[ions_nearby[iind+1]]) && kel_counter>0)
         {
           const FT& feeI(*F(ig,jg,kg));
-          computeU3_engine(P, feeI, kel_counter, displjI, displjk, Uj, dUj, d2Uj, Uk, dUk, d2Uk);
+          computeU3_engine(P, feeI, kel_counter, Uj, dUj, d2Uj, Uk, dUk, d2Uk);
           kel_counter = 0;
         }
       }
