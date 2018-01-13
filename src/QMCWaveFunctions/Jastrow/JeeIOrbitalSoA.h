@@ -670,7 +670,7 @@ public:
         // recycle hessF11
         hessF11[kel_index] += kI[kel_index] * jk[kel_index];
         dUj_x += gradF1[kel_index] * jI[kel_index];
-        // destroy kI
+        // destroy jk, kI
         const valT temp = jk[kel_index] * gradF0[kel_index];
         dUj_x += temp;
         jk[kel_index] *= jI[kel_index];
@@ -861,7 +861,7 @@ public:
 
       build_compact_list(P);
 
-      dLogPsi=czero;
+      dLogPsi = czero;
       gradLogPsi = PosType();
       lapLogPsi = czero;
 
@@ -873,7 +873,7 @@ public:
           {
             const int jel=elecs_inside(jg,iat)[jind];
             const valT r_Ij     = elecs_inside_dist(jg,iat)[jind];
-            const posT disp_Ij  = cminus*eI_table.Displacements[jel][iat];
+            const posT disp_Ij  = cminus*elecs_inside_displ(jg,iat)[jind];
             const valT r_Ij_inv = cone/r_Ij;
 
             for(int kg=0; kg<eGroups; ++kg)
@@ -885,7 +885,7 @@ public:
                   const FT& feeI(*F(ig,jg,kg));
 
                   const valT r_Ik     = elecs_inside_dist(kg,iat)[kind];
-                  const posT disp_Ik  = cminus*eI_table.Displacements[kel][iat];
+                  const posT disp_Ik  = cminus*elecs_inside_displ(kg,iat)[kind];
                   const valT r_Ik_inv = cone/r_Ik;
 
                   const valT r_jk     = ee_table.Distances[jel][kel];
