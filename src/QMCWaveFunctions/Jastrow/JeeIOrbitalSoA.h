@@ -171,9 +171,9 @@ public:
 
     F.resize(iGroups,eGroups,eGroups);
     F=nullptr;
-    elecs_inside.resize(Nion,eGroups);
-    elecs_inside_dist.resize(Nion,eGroups);
-    elecs_inside_displ.resize(Nion,eGroups);
+    elecs_inside.resize(eGroups,Nion);
+    elecs_inside_dist.resize(eGroups,Nion);
+    elecs_inside_displ.resize(eGroups,Nion);
     ions_nearby.resize(Nion);
     Ion_cutoff.resize(Nion, 0.0);
 
@@ -386,9 +386,9 @@ public:
     for(int iat=0; iat<Nion; ++iat)
       for(int jg=0; jg<eGroups; ++jg)
       {
-        elecs_inside(iat,jg).clear();
-        elecs_inside_dist(iat,jg).clear();
-        elecs_inside_displ(iat,jg).clear();
+        elecs_inside(jg,iat).clear();
+        elecs_inside_dist(jg,iat).clear();
+        elecs_inside_displ(jg,iat).clear();
       }
 
     for(int jg=0; jg<eGroups; ++jg)
@@ -396,9 +396,9 @@ public:
         for(int iat=0; iat<Nion; ++iat)
           if(eI_table.Distances[jel][iat]<Ion_cutoff[iat])
           {
-            elecs_inside(iat,jg).push_back(jel);
-            elecs_inside_dist(iat,jg).push_back(eI_table.Distances[jel][iat]);
-            elecs_inside_displ(iat,jg).push_back(eI_table.Displacements[jel][iat]);
+            elecs_inside(jg,iat).push_back(jel);
+            elecs_inside_dist(jg,iat).push_back(eI_table.Distances[jel][iat]);
+            elecs_inside_displ(jg,iat).push_back(eI_table.Displacements[jel][iat]);
           }
   }
 
@@ -515,16 +515,16 @@ public:
     for (int jat=0; jat < Nion; jat++)
     {
       bool inside = eI_table.Temp_r[jat] < Ion_cutoff[jat];
-      auto iter = find(elecs_inside(jat,ig).begin(), elecs_inside(jat,ig).end(), iat);
-      auto iter_dist = elecs_inside_dist(jat,ig).begin()+std::distance(elecs_inside(jat,ig).begin(),iter);
-      auto iter_displ = elecs_inside_displ(jat,ig).begin()+std::distance(elecs_inside(jat,ig).begin(),iter);
+      auto iter = find(elecs_inside(ig,jat).begin(), elecs_inside(ig,jat).end(), iat);
+      auto iter_dist = elecs_inside_dist(ig,jat).begin()+std::distance(elecs_inside(ig,jat).begin(),iter);
+      auto iter_displ = elecs_inside_displ(ig,jat).begin()+std::distance(elecs_inside(ig,jat).begin(),iter);
       if(inside)
       {
-        if(iter==elecs_inside(jat,ig).end())
+        if(iter==elecs_inside(ig,jat).end())
         {
-          elecs_inside(jat,ig).push_back(iat);
-          elecs_inside_dist(jat,ig).push_back(eI_table.Temp_r[jat]);
-          elecs_inside_displ(jat,ig).push_back(eI_table.Temp_dr[jat]);
+          elecs_inside(ig,jat).push_back(iat);
+          elecs_inside_dist(ig,jat).push_back(eI_table.Temp_r[jat]);
+          elecs_inside_displ(ig,jat).push_back(eI_table.Temp_dr[jat]);
         }
         else
         {
@@ -534,14 +534,14 @@ public:
       }
       else
       {
-        if(iter!=elecs_inside(jat,ig).end())
+        if(iter!=elecs_inside(ig,jat).end())
         {
-          *iter = elecs_inside(jat,ig).back();
-          elecs_inside(jat,ig).pop_back();
-          *iter_dist = elecs_inside_dist(jat,ig).back();
-          elecs_inside_dist(jat,ig).pop_back();
-          *iter_displ = elecs_inside_displ(jat,ig).back();
-          elecs_inside_displ(jat,ig).pop_back();
+          *iter = elecs_inside(ig,jat).back();
+          elecs_inside(ig,jat).pop_back();
+          *iter_dist = elecs_inside_dist(ig,jat).back();
+          elecs_inside_dist(ig,jat).pop_back();
+          *iter_displ = elecs_inside_displ(ig,jat).back();
+          elecs_inside_displ(ig,jat).pop_back();
         }
       }
     }
@@ -596,12 +596,12 @@ public:
         const int iat = ions_nearby[iind];
         const int ig = Ions.GroupID[iat];
         const valT r_jI = distjI[iat];
-        for(int kind=0; kind<elecs_inside(iat,kg).size(); kind++)
+        for(int kind=0; kind<elecs_inside(kg,iat).size(); kind++)
         {
-          const int kel=elecs_inside(iat,kg)[kind];
+          const int kel=elecs_inside(kg,iat)[kind];
           if(kel!=jel)
           {
-            DistkI_Compressed[kel_counter]=elecs_inside_dist(iat,kg)[kind];
+            DistkI_Compressed[kel_counter]=elecs_inside_dist(kg,iat)[kind];
             Distjk_Compressed[kel_counter]=distjk[kel];
             DistjI_Compressed[kel_counter]=r_jI;
             kel_counter++;
@@ -746,15 +746,15 @@ public:
         const int ig = Ions.GroupID[iat];
         const valT r_jI = distjI[iat];
         const posT disp_Ij = displjI[iat];
-        for(int kind=0; kind<elecs_inside(iat,kg).size(); kind++)
+        for(int kind=0; kind<elecs_inside(kg,iat).size(); kind++)
         {
-          const int kel=elecs_inside(iat,kg)[kind];
+          const int kel=elecs_inside(kg,iat)[kind];
           if(kel<kelmax && kel!=jel)
           {
-            DistkI_Compressed[kel_counter]=elecs_inside_dist(iat,kg)[kind];
+            DistkI_Compressed[kel_counter]=elecs_inside_dist(kg,iat)[kind];
             DistjI_Compressed[kel_counter]=r_jI;
             Distjk_Compressed[kel_counter]=distjk[kel];
-            Disp_kI_Compressed(kel_counter)=elecs_inside_displ(iat,kg)[kind];
+            Disp_kI_Compressed(kel_counter)=elecs_inside_displ(kg,iat)[kind];
             Disp_jI_Compressed(kel_counter)=disp_Ij;
             Disp_jk_Compressed(kel_counter)=displjk[kel];
             DistIndice_k[kel_counter]=kel;
@@ -869,22 +869,22 @@ public:
       {
         const int ig=Ions.GroupID[iat];
         for(int jg=0; jg<eGroups; ++jg)
-          for(int jind=0; jind<elecs_inside(iat,jg).size(); jind++)
+          for(int jind=0; jind<elecs_inside(jg,iat).size(); jind++)
           {
-            const int jel=elecs_inside(iat,jg)[jind];
-            const valT r_Ij     = elecs_inside_dist(iat,jg)[jind];
+            const int jel=elecs_inside(jg,iat)[jind];
+            const valT r_Ij     = elecs_inside_dist(jg,iat)[jind];
             const posT disp_Ij  = cminus*eI_table.Displacements[jel][iat];
             const valT r_Ij_inv = cone/r_Ij;
 
             for(int kg=0; kg<eGroups; ++kg)
-              for(int kind=0; kind<elecs_inside(iat,kg).size(); kind++)
+              for(int kind=0; kind<elecs_inside(kg,iat).size(); kind++)
               {
-                const int kel=elecs_inside(iat,kg)[kind];
+                const int kel=elecs_inside(kg,iat)[kind];
                 if(kel<jel)
                 {
                   const FT& feeI(*F(ig,jg,kg));
 
-                  const valT r_Ik     = elecs_inside_dist(iat,kg)[kind];
+                  const valT r_Ik     = elecs_inside_dist(kg,iat)[kind];
                   const posT disp_Ik  = cminus*eI_table.Displacements[kel][iat];
                   const valT r_Ik_inv = cone/r_Ik;
 
