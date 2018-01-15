@@ -16,6 +16,7 @@ IF (NOT QMC_CUDA)
                     vmc_hf_noj
                     vmc_hf_noj.in.xml
                     16 1
+                    ${AoS_SUCCESS}
                     TRUE
                     0 LIH_SCALARS # VMC
                     )
