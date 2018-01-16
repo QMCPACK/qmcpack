@@ -236,5 +236,8 @@
 /* Internal timers */
 #cmakedefine ENABLE_TIMERS @ENABLE_TIMERS@
 
+/* Use VTune Task API with timers */
+#cmakedefine USE_VTUNE_TASKS @USE_VTUNE_TASKS@
+
 #endif // QMCPLUSPLUS_CONFIGURATION_H
 
