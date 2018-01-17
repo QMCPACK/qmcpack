@@ -236,6 +236,9 @@
 /* Internal timers */
 #cmakedefine ENABLE_TIMERS @ENABLE_TIMERS@
 
+/* Use VTune API */
+#cmakedefine USE_VTUNE_API @USE_VTUNE_API@
+
 /* Use VTune Task API with timers */
 #cmakedefine USE_VTUNE_TASKS @USE_VTUNE_TASKS@
 
