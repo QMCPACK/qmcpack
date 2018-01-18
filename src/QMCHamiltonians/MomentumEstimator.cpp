@@ -180,12 +180,30 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
 {
   OhmmsAttributeSet pAttrib;
   std::string hdf5_flag="yes";
+  kgrid=0;
+  kmax=0.0;
   pAttrib.add(hdf5_flag,"hdf5");
   pAttrib.add(kgrid,"grid");
+  pAttrib.add(kmax,"kmax");
   pAttrib.add(M,"samples");
   pAttrib.put(cur);
-  hdf5_out = (hdf5_flag=="yes");
+  hdf5_out = (hdf5_flag=="yes");  
 #if OHMMS_DIM==3
+  if (kgrid==0 && kmax<1.0e-10)
+  {
+    // default kmax=2.5 times that of non-interacting k_F
+    kmax = 2.5*std::pow(6.0*pi*pi*elns.getTotalNum()/elns.Lattice.Volume/2,1.0/3);
+    kgrid = int(kmax/std::min(elns.Lattice.Length))+1;
+  }
+  else
+  {
+    if (kgrid==0)
+    {
+      // i.e., kmax given in the input
+      kgrid = int(kmax/std::min(elns.Lattice.Length))+1;
+    }
+    // if kgrid is given, no need to modify kmax from kmax=0.0
+  }  
   int numqtwists(6*kgrid+3);
   std::vector<int> qk(0);
   mappedQtonofK.resize(numqtwists,qk);
@@ -210,35 +228,78 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
     Q[i+kgrid+(2*kgrid+1)]=std::abs(kpt[1]);
     Q[i+kgrid+(4*kgrid+2)]=std::abs(kpt[2]);
   }
-  app_log()<<" Using all k-space points with (nx^2+ny^2+nz^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<< std::endl;
+  if (kmax<1.0e-10)
+  {
+    app_log()<<" Using all k-space points with (nx^2+ny^2+nz^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<< std::endl;
+  }
+  else
+  {
+    app_log()<<" Using all k-space points with (kx^2+ky^2+kz^2)^0.5 < "<< kmax <<" for Momentum Distribution."<< std::endl;
+  }
   app_log()<<"  My twist is:"<<twist[0]<<"  "<<twist[1]<<"  "<<twist[2]<< std::endl;
   int indx(0);
   int kgrid_squared=kgrid*kgrid;
+  RealType kmax_squared=kmax*kmax;
   for (int i=-kgrid; i<(kgrid+1); i++)
   {
     for (int j=-kgrid; j<(kgrid+1); j++)
     {
       for (int k=-kgrid; k<(kgrid+1); k++)
       {
-        if (i*i+j*j+k*k<=kgrid_squared) //if (std::sqrt(i*i+j*j+k*k)<=kgrid)
-        {
-          PosType kpt;
-          kpt[0]=i-twist[0];
-          kpt[1]=j-twist[1];
-          kpt[2]=k-twist[2];
-          //convert to Cartesian: note that 2Pi is multiplied
-          kpt=Lattice.k_cart(kpt);
-          kPoints.push_back(kpt);
-          mappedQtonofK[i+kgrid].push_back(indx);
-          mappedQtonofK[j+kgrid+(2*kgrid+1)].push_back(indx);
-          mappedQtonofK[k+kgrid+(4*kgrid+2)].push_back(indx);
-          indx++;
-        }
+	if (kmax<1.0e-10)
+	{
+	  if (i*i+j*j+k*k<=kgrid_squared) //if (std::sqrt(i*i+j*j+k*k)<=kgrid)	
+          {
+	    PosType kpt;
+	    kpt[0]=i-twist[0];
+	    kpt[1]=j-twist[1];
+	    kpt[2]=k-twist[2];
+	    //convert to Cartesian: note that 2Pi is multiplied
+	    kpt=Lattice.k_cart(kpt);
+	    kPoints.push_back(kpt);
+	    mappedQtonofK[i+kgrid].push_back(indx);
+	    mappedQtonofK[j+kgrid+(2*kgrid+1)].push_back(indx);
+	    mappedQtonofK[k+kgrid+(4*kgrid+2)].push_back(indx);
+	    indx++;
+	  }
+	}
+	else
+	{
+	  PosType kpt;
+	  kpt[0]=i-twist[0];
+	  kpt[1]=j-twist[1];
+	  kpt[2]=k-twist[2];
+	  //convert to Cartesian: note that 2Pi is multiplied
+	  kpt=Lattice.k_cart(kpt);
+	  if (kpt[0]*kpt[0]+kpt[1]*kpt[1]+kpt[2]*kpt[2]<=kmax_squared) //if (std::sqrt(kx*kx+ky*ky+kz*kz)<=kmax)
+	  {
+	    kPoints.push_back(kpt);
+	    mappedQtonofK[i+kgrid].push_back(indx);
+	    mappedQtonofK[j+kgrid+(2*kgrid+1)].push_back(indx);
+	    mappedQtonofK[k+kgrid+(4*kgrid+2)].push_back(indx);
+	    indx++;
+	  }
+	}
       }
     }
   }
 #endif
 #if OHMMS_DIM==2
+  if (kgrid==0 && kmax<1.0e-10)
+  {
+    // default kmax=2.5 times that of non-interacting k_F
+    kmax = 2.5*std::pow(4.0*pi*elns.getTotalNum()/elns.Lattice.Volume/2,0.5);
+    kgrid = int(kmax/std::min(elns.Lattice.Length))+1;
+  }
+  else
+  {
+    if (kgrid==0)
+    {
+      // i.e., kmax is given in the input
+      kgrid = int(kmax/std::min(elns.Lattice.Length))+1;
+    }
+    // if kgrid is given, no need to modify kmax from kmax=0.0
+  }
   int numqtwists(4*kgrid+2);
   std::vector<int> qk(0);
   mappedQtonofK.resize(numqtwists,qk);
@@ -259,25 +320,51 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
     Q[i+kgrid]=std::abs(kpt[0]);
     Q[i+kgrid+(2*kgrid+1)]=std::abs(kpt[1]);
   }
-  app_log()<<" Using all k-space points with (nx^2+ny^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<< std::endl;
+  if (kmax<1.0e-10)
+  {
+    app_log()<<" Using all k-space points with (nx^2+ny^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<< std::endl;
+  }
+  else
+  {
+    app_log()<<" Using all k-space points with (kx^2+ky^2)^0.5 < "<< kmax <<" for Momentum Distribution."<< std::endl;
+  }
   app_log()<<"  My twist is:"<<twist[0]<<"  "<<twist[1]<< std::endl;
   int indx(0);
   int kgrid_squared=kgrid*kgrid;
+  RealType kmax_squared=kmax*kmax;
   for (int i=-kgrid; i<(kgrid+1); i++)
   {
     for (int j=-kgrid; j<(kgrid+1); j++)
     {
-      if (i*i+j*j<=kgrid_squared) //if (std::sqrt(i*i+j*j+k*k)<=kgrid)
+      if (kmax<1.0e-10)
       {
-        PosType kpt;
-        kpt[0]=i-twist[0];
-        kpt[1]=j-twist[1];
-        //convert to Cartesian: note that 2Pi is multiplied
-        kpt=Lattice.k_cart(kpt);
-        kPoints.push_back(kpt);
-        mappedQtonofK[i+kgrid].push_back(indx);
-        mappedQtonofK[j+kgrid+(2*kgrid+1)].push_back(indx);
-        indx++;
+	if (i*i+j*j<=kgrid_squared) //if (std::sqrt(i*i+j*j)<=kgrid)
+	{
+	  PosType kpt;
+	  kpt[0]=i-twist[0];
+	  kpt[1]=j-twist[1];
+	  //convert to Cartesian: note that 2Pi is multiplied
+	  kpt=Lattice.k_cart(kpt);
+	  kPoints.push_back(kpt);
+	  mappedQtonofK[i+kgrid].push_back(indx);
+	  mappedQtonofK[j+kgrid+(2*kgrid+1)].push_back(indx);
+	  indx++;
+	}
+      }
+      else
+      {      
+	PosType kpt;
+	kpt[0]=i-twist[0];
+	kpt[1]=j-twist[1];
+	//convert to Cartesian: note that 2Pi is multiplied
+	kpt=Lattice.k_cart(kpt);
+	if (kpt[0]*kpt[0]+kpt[1]*kpt[1]<=kmax_squared)	//if (std:sqrt(kx*kx+ky*ky)<=kmax)
+	{
+	  kPoints.push_back(kpt);
+	  mappedQtonofK[i+kgrid].push_back(indx);
+	  mappedQtonofK[j+kgrid+(2*kgrid+1)].push_back(indx);
+	  indx++;
+	}
       }
     }
   }

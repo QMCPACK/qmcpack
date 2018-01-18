@@ -77,6 +77,8 @@ public:
   std::vector<int> kWeights;
   ///dims of a grid for k points
   int kgrid;
+  ///maximum k-value in the k-grid
+  RealType kmax;
   ///nofK
   aligned_vector<RealType> nofK;
   ///list of Q for the Compton profile
