@@ -55,8 +55,9 @@ IF (IS_GIT_PROJECT)
     COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_COMMIT_LAST_CHANGED_RAW " >> ${GITREV_TMP}
     COMMAND ${GIT_EXECUTABLE} log -1 --format=%ad >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo >> ${GITREV_TMP}
-    COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_COMMIT_SUBJECT_RAW " >> ${GITREV_TMP}
-    COMMAND ${GIT_EXECUTABLE} log -1 --format="%s" >> ${GITREV_TMP}
+    COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_COMMIT_SUBJECT_RAW \"" >> ${GITREV_TMP}
+    COMMAND ${GIT_EXECUTABLE} log -1 --format=%s | sed -E "s/\"/\\\\\"/g" | tr -d '\\n' >> ${GITREV_TMP}
+    COMMAND ${CMAKE_COMMAND} -E echo_append "\"" >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${GITREV_TMP} ${GITREV_FILE}
     COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP}
