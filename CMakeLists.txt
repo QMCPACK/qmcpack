@@ -257,9 +257,8 @@ SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
 ######################################################
 FIND_PACKAGE(Git)
 
-SET(IS_GIT_PROJECT false)
-IF (EXISTS "${PROJECT_SOURCE_DIR}/.git")
-  SET(IS_GIT_PROJECT true)
+IF (GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+  SET(IS_GIT_PROJECT 1)
 ENDIF()
 
 
