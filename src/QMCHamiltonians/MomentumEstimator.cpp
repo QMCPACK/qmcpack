@@ -27,7 +27,7 @@ namespace qmcplusplus
 {
 
 MomentumEstimator::MomentumEstimator(ParticleSet& elns, TrialWaveFunction& psi)
-  :M(1), refPsi(psi), kgrid(4), Lattice(elns.Lattice), norm_nofK(1), hdf5_out(false)
+  :M(40), refPsi(psi), Lattice(elns.Lattice), norm_nofK(1), hdf5_out(false)
 {
   UpdateMode.set(COLLECTABLE,1);
   psi_ratios.resize(elns.getTotalNum());
@@ -81,14 +81,6 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
                        - ( phases_s[ik]*phases_vPos_c[ik] + phases_c[ik]*phases_vPos_s[ik] ) * ratio_s ;
     }
   }
-
-  compQ=0.0;
-  for (int iq=0; iq<compQ.size(); ++iq)
-  {
-    for (int i=0; i<mappedQtonofK[iq].size(); ++i)
-      compQ[iq] += nofK[mappedQtonofK[iq][i]];
-    compQ[iq] *= mappedQnorms[iq];
-  }
   for (int ik=0; ik<nofK.size(); ++ik)
     nofK[ik] *= norm_nofK;
   if (hdf5_out)
@@ -97,8 +89,6 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
     int j=myIndex;
     for (int ik=0; ik<nofK.size(); ++ik,++j)
       P.Collectables[j]+= w*nofK[ik];
-    for (int iq=0; iq<compQ.size(); ++iq,++j)
-      P.Collectables[j]+= w*compQ[iq];
   }
   return 0.0;
 }
@@ -118,13 +108,6 @@ void MomentumEstimator::registerCollectables(std::vector<observable_helper*>& h5
     h5o->addProperty(const_cast<std::vector<PosType>&>(kPoints),"kpoints");
     h5o->addProperty(const_cast<std::vector<int>&>(kWeights),"kweights");
     h5desc.push_back(h5o);
-    //add compQ
-    ng[0]=Q.size();
-    h5o=new observable_helper("compQ");
-    h5o->set_dimensions(ng,myIndex+nofK.size());
-    h5o->open(gid);
-    h5o->addProperty(const_cast<std::vector<RealType>&>(Q),"q");
-    h5desc.push_back(h5o);
   }
 }
 
@@ -135,7 +118,6 @@ void MomentumEstimator::addObservables(PropertySetType& plist, BufferType& colle
   {
     myIndex=collectables.size();
     collectables.add(nofK.begin(),nofK.end());
-    collectables.add(compQ.begin(),compQ.end());
   }
   else
   {
@@ -144,12 +126,6 @@ void MomentumEstimator::addObservables(PropertySetType& plist, BufferType& colle
     {
       std::stringstream sstr;
       sstr << "nofk_" <<i;
-      int id=plist.add(sstr.str());
-    }
-    for (int i=0; i<Q.size(); i++)
-    {
-      std::stringstream sstr;
-      sstr << "Q_" <<i;
       int id=plist.add(sstr.str());
     }
   }
@@ -162,7 +138,6 @@ void MomentumEstimator::setObservables(PropertySetType& plist)
   if (!hdf5_out)
   {
     copy(nofK.begin(),nofK.end(),plist.begin()+myIndex);
-    copy(compQ.begin(),compQ.end(),plist.begin()+myIndex+nofK.size());
   }
 }
 
@@ -172,7 +147,6 @@ void MomentumEstimator::setParticlePropertyList(PropertySetType& plist
   if (!hdf5_out)
   {
     copy(nofK.begin(),nofK.end(),plist.begin()+myIndex+offset);
-    copy(compQ.begin(),compQ.end(),plist.begin()+myIndex+nofK.size()+offset);
   }
 }
 
@@ -180,65 +154,64 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
 {
   OhmmsAttributeSet pAttrib;
   std::string hdf5_flag="yes";
-  kgrid=0;
   kmax=0.0;
+  kmax0=0.0;
+  kmax1=0.0;
+  kmax2=0.0;
   pAttrib.add(hdf5_flag,"hdf5");
-  pAttrib.add(kgrid,"grid");
+  //pAttrib.add(kgrid,"grid");
   pAttrib.add(kmax,"kmax");
-  pAttrib.add(M,"samples");
+  pAttrib.add(kmax0,"kmax0");
+  pAttrib.add(kmax1,"kmax1");
+  pAttrib.add(kmax2,"kmax2");
+  pAttrib.add(M,"samples"); // default value is 40 (in the constructor)
   pAttrib.put(cur);
   hdf5_out = (hdf5_flag=="yes");  
+  RealType min_Length=1.0e10;
+  PosType vec_length(0);
+  for (int i=0; i<OHMMS_DIM; i++)
+  {    
+    PosType a(0);
+    for (int j=0; j<OHMMS_DIM; j++)
+      a[j]=elns.Lattice.G(j,i);
+    //length of reciprocal lattice vector
+    vec_length[i]=2.0*M_PI*std::sqrt(dot(a,a));
+    if (min_Length>vec_length[i])
+      min_Length=vec_length[i];
+  }
 #if OHMMS_DIM==3
-  if (kgrid==0 && kmax<1.0e-10)
+  PosType kmaxs(0);
+  kmaxs[0]=kmax0;
+  kmaxs[1]=kmax1;
+  kmaxs[2]=kmax2;
+  RealType sum_kmaxs=kmaxs[0]+kmaxs[1]+kmaxs[2];
+  if (kmax<1.0e-10 && sum_kmaxs<1.0e-10)
   {
-    // default kmax=2.5 times that of non-interacting k_F
-    kmax = 2.5*std::pow(6.0*pi*pi*elns.getTotalNum()/elns.Lattice.Volume/2,1.0/3);
-    kgrid = int(kmax/std::min(elns.Lattice.Length))+1;
+    // default: kmax = 2 x k_F of polarized non-interacting electron system
+    kmax = 2.0*std::pow(6.0*M_PI*M_PI*elns.getTotalNum()/elns.Lattice.Volume,1.0/3);
+    kgrid = int(kmax/min_Length)+1;
   }
   else
   {
-    if (kgrid==0)
+    for (int i=0; i<OHMMS_DIM; i++)
     {
-      // i.e., kmax given in the input
-      kgrid = int(kmax/std::min(elns.Lattice.Length))+1;
+      if (kmaxs[i]>kmax)
+	kmax=kmaxs[i];
     }
-    // if kgrid is given, no need to modify kmax from kmax=0.0
-  }  
-  int numqtwists(6*kgrid+3);
-  std::vector<int> qk(0);
-  mappedQtonofK.resize(numqtwists,qk);
-  compQ.resize(numqtwists);
-  RealType qn(4.0*M_PI*M_PI*std::pow(Lattice.Volume,-2.0/3.0));
-  mappedQnorms.resize(numqtwists,qn*0.5/RealType(M));
-  if (twist[0]==0)
-    mappedQnorms[kgrid]=qn/RealType(M);
-  if (twist[1]==0)
-    mappedQnorms[3*kgrid+1]=qn/RealType(M);
-  if (twist[2]==0)
-    mappedQnorms[5*kgrid+2]=qn/RealType(M);
-  Q.resize(numqtwists);
-  for (int i=-kgrid; i<(kgrid+1); i++)
-  {
-    PosType kpt;
-    kpt[0]=i-twist[0];
-    kpt[1]=i-twist[1];
-    kpt[2]=i-twist[2];
-    kpt=Lattice.k_cart(kpt);
-    Q[i+kgrid]=std::abs(kpt[0]);
-    Q[i+kgrid+(2*kgrid+1)]=std::abs(kpt[1]);
-    Q[i+kgrid+(4*kgrid+2)]=std::abs(kpt[2]);
+    kgrid = int(kmax/min_Length)+1;
   }
-  if (kmax<1.0e-10)
-  {
-    app_log()<<" Using all k-space points with (nx^2+ny^2+nz^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<< std::endl;
-  }
-  else
+  if (sum_kmaxs<1.0e-10)
   {
     app_log()<<" Using all k-space points with (kx^2+ky^2+kz^2)^0.5 < "<< kmax <<" for Momentum Distribution."<< std::endl;
   }
-  app_log()<<"  My twist is:"<<twist[0]<<"  "<<twist[1]<<"  "<<twist[2]<< std::endl;
-  int indx(0);
-  int kgrid_squared=kgrid*kgrid;
+  else
+  {
+    app_log()<<" Using all k-space points within cut-offs "<< kmax0 << ", " << kmax1 << ", " << kmax2 <<" for Momentum Distribution."<< std::endl;
+  }
+  app_log()<<"  My twist is: "<<twist[0]<<"  "<<twist[1]<<"  "<<twist[2]<< std::endl;
+  int kgrid_squared[OHMMS_DIM];
+  for (int i=0; i<OHMMS_DIM; i++)
+    kgrid_squared[i]=int(std::round(kmaxs[i]*kmaxs[i]/vec_length[i]/vec_length[i]));
   RealType kmax_squared=kmax*kmax;
   for (int i=-kgrid; i<(kgrid+1); i++)
   {
@@ -246,24 +219,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
     {
       for (int k=-kgrid; k<(kgrid+1); k++)
       {
-	if (kmax<1.0e-10)
-	{
-	  if (i*i+j*j+k*k<=kgrid_squared) //if (std::sqrt(i*i+j*j+k*k)<=kgrid)	
-          {
-	    PosType kpt;
-	    kpt[0]=i-twist[0];
-	    kpt[1]=j-twist[1];
-	    kpt[2]=k-twist[2];
-	    //convert to Cartesian: note that 2Pi is multiplied
-	    kpt=Lattice.k_cart(kpt);
-	    kPoints.push_back(kpt);
-	    mappedQtonofK[i+kgrid].push_back(indx);
-	    mappedQtonofK[j+kgrid+(2*kgrid+1)].push_back(indx);
-	    mappedQtonofK[k+kgrid+(4*kgrid+2)].push_back(indx);
-	    indx++;
-	  }
-	}
-	else
+	if (sum_kmaxs<1.0e-10)
 	{
 	  PosType kpt;
 	  kpt[0]=i-twist[0];
@@ -274,10 +230,25 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
 	  if (kpt[0]*kpt[0]+kpt[1]*kpt[1]+kpt[2]*kpt[2]<=kmax_squared) //if (std::sqrt(kx*kx+ky*ky+kz*kz)<=kmax)
 	  {
 	    kPoints.push_back(kpt);
-	    mappedQtonofK[i+kgrid].push_back(indx);
-	    mappedQtonofK[j+kgrid+(2*kgrid+1)].push_back(indx);
-	    mappedQtonofK[k+kgrid+(4*kgrid+2)].push_back(indx);
-	    indx++;
+	  }
+	}
+	else
+	{
+	  if (i*i<=kgrid_squared[0])
+	  {
+	    if (j*j<=kgrid_squared[1])
+	    {
+	      if (k*k<=kgrid_squared[2])
+	      {
+		PosType kpt;
+		kpt[0]=i-twist[0];
+		kpt[1]=j-twist[1];
+		kpt[2]=k-twist[2];
+		//convert to Cartesian: note that 2Pi is multiplied
+		kpt=Lattice.k_cart(kpt);
+		kPoints.push_back(kpt);
+	      }
+	    }
 	  }
 	}
       }
@@ -285,85 +256,67 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
   }
 #endif
 #if OHMMS_DIM==2
-  if (kgrid==0 && kmax<1.0e-10)
+  PosType kmaxs(0);
+  kmaxs[0]=kmax0;
+  kmaxs[1]=kmax1;
+  RealType sum_kmaxs=kmaxs[0]+kmaxs[1];
+  if (kmax<1.0e-10 && sum_kmaxs<1.0e-10)
   {
-    // default kmax=2.5 times that of non-interacting k_F
-    kmax = 2.5*std::pow(4.0*pi*elns.getTotalNum()/elns.Lattice.Volume/2,0.5);
-    kgrid = int(kmax/std::min(elns.Lattice.Length))+1;
+    // default: kmax = 2 x k_F of polarized non-interacting electron system
+    kmax = 2.0*std::pow(4.0*pi*elns.getTotalNum()/elns.Lattice.Volume,0.5);
+    kgrid = int(kmax/min_Length)+1;
   }
   else
   {
-    if (kgrid==0)
+    for (int i=0; i<OHMMS_DIM; i++)
     {
-      // i.e., kmax is given in the input
-      kgrid = int(kmax/std::min(elns.Lattice.Length))+1;
+      if (kmaxs[i]>kmax)
+	kmax=kmaxs[i];
     }
-    // if kgrid is given, no need to modify kmax from kmax=0.0
+    kgrid = int(kmax/min_Length)+1;
   }
-  int numqtwists(4*kgrid+2);
-  std::vector<int> qk(0);
-  mappedQtonofK.resize(numqtwists,qk);
-  compQ.resize(numqtwists);
-  RealType qn(2.0*M_PI/std::sqrt(Lattice.Volume));
-  mappedQnorms.resize(numqtwists,qn*0.5/RealType(M));
-  if (twist[0]==0)
-    mappedQnorms[kgrid]=qn/RealType(M);
-  if (twist[1]==0)
-    mappedQnorms[3*kgrid+1]=qn/RealType(M);
-  Q.resize(numqtwists);
-  for (int i=-kgrid; i<(kgrid+1); i++)
-  {
-    PosType kpt;
-    kpt[0]=i-twist[0];
-    kpt[1]=i-twist[1];
-    kpt=Lattice.k_cart(kpt);
-    Q[i+kgrid]=std::abs(kpt[0]);
-    Q[i+kgrid+(2*kgrid+1)]=std::abs(kpt[1]);
-  }
-  if (kmax<1.0e-10)
-  {
-    app_log()<<" Using all k-space points with (nx^2+ny^2)^0.5 < "<< kgrid <<" for Momentum Distribution."<< std::endl;
-  }
-  else
+  if (sum_kmaxs<1.0e-10)
   {
     app_log()<<" Using all k-space points with (kx^2+ky^2)^0.5 < "<< kmax <<" for Momentum Distribution."<< std::endl;
   }
+  else
+  {
+    app_log()<<" Using all k-space points within approximate cut-offs "<< kmax0 << ", " << kmax1 <<" for Momentum Distribution."<< std::endl;
+  }
   app_log()<<"  My twist is:"<<twist[0]<<"  "<<twist[1]<< std::endl;
-  int indx(0);
-  int kgrid_squared=kgrid*kgrid;
+  int kgrid_squared[OHMMS_DIM];
+  for (int i=0; i<OHMMS_DIM; i++)
+    kgrid_squared[i]=int(std::round(kmaxs[i]*kmaxs[i]/vec_length[i]/vec_length[i]));
   RealType kmax_squared=kmax*kmax;
   for (int i=-kgrid; i<(kgrid+1); i++)
   {
     for (int j=-kgrid; j<(kgrid+1); j++)
     {
-      if (kmax<1.0e-10)
+      if (sum_kmaxs<1.0e-10)
       {
-	if (i*i+j*j<=kgrid_squared) //if (std::sqrt(i*i+j*j)<=kgrid)
-	{
-	  PosType kpt;
-	  kpt[0]=i-twist[0];
-	  kpt[1]=j-twist[1];
-	  //convert to Cartesian: note that 2Pi is multiplied
-	  kpt=Lattice.k_cart(kpt);
-	  kPoints.push_back(kpt);
-	  mappedQtonofK[i+kgrid].push_back(indx);
-	  mappedQtonofK[j+kgrid+(2*kgrid+1)].push_back(indx);
-	  indx++;
-	}
-      }
-      else
-      {      
 	PosType kpt;
 	kpt[0]=i-twist[0];
 	kpt[1]=j-twist[1];
 	//convert to Cartesian: note that 2Pi is multiplied
 	kpt=Lattice.k_cart(kpt);
-	if (kpt[0]*kpt[0]+kpt[1]*kpt[1]<=kmax_squared)	//if (std:sqrt(kx*kx+ky*ky)<=kmax)
+	if (kpt[0]*kpt[0]+kpt[1]*kpt[1]<=kmax_squared) //if (std::sqrt(kx*kx+ky*ky)<=kmax)
 	{
 	  kPoints.push_back(kpt);
-	  mappedQtonofK[i+kgrid].push_back(indx);
-	  mappedQtonofK[j+kgrid+(2*kgrid+1)].push_back(indx);
-	  indx++;
+	}
+      }
+      else
+      {
+	if (i*i<=kgrid_squared[0])
+	{
+	  if (j*j<=kgrid_squared[1])
+	  {
+	    PosType kpt;
+	    kpt[0]=i-twist[0];
+	    kpt[1]=j-twist[1];
+	    //convert to Cartesian: note that 2Pi is multiplied
+	    kpt=Lattice.k_cart(kpt);
+	    kPoints.push_back(kpt);	
+	  }
 	}
       }
     }
@@ -391,19 +344,6 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
       fout<< std::endl;
     }
     fout.close();
-    sstr.str("");
-    sstr<<"Qpoints";
-    for(int i(0); i<OHMMS_DIM; i++)
-      sstr<<"_"<<round(100.0*twist[i]);
-    sstr<<".dat";
-    std::ofstream qout(sstr.str().c_str());
-    qout.setf(std::ios::scientific, std::ios::floatfield);
-    qout << "# mag_q" << std::endl;
-    for (int i=0; i<Q.size(); i++)
-    {
-      qout<<Q[i]<< std::endl;
-    }
-    qout.close();
   }
   nofK.resize(kPoints.size());
   kdotp.resize(kPoints.size());
@@ -426,28 +366,21 @@ QMCHamiltonianBase* MomentumEstimator::makeClone(ParticleSet& qp
     , TrialWaveFunction& psi)
 {
   MomentumEstimator* myclone=new MomentumEstimator(qp,psi);
-  myclone->resize(kPoints,Q,M);
+  myclone->resize(kPoints,M);
   myclone->myIndex=myIndex;
   myclone->kgrid=kgrid;
   myclone->norm_nofK=norm_nofK;
-  myclone->mappedQtonofK.resize(mappedQtonofK.size());
-  for(int i=0; i<mappedQtonofK.size(); i++)
-    myclone->mappedQtonofK[i]=mappedQtonofK[i];
   myclone->hdf5_out=hdf5_out;
-  myclone->mappedQnorms=mappedQnorms;
   return myclone;
 }
 
-void MomentumEstimator::resize(const std::vector<PosType>& kin, const std::vector<RealType>& qin, const int Min)
+void MomentumEstimator::resize(const std::vector<PosType>& kin, const int Min)
 {
   //copy kpoints
   kPoints=kin;
   nofK.resize(kin.size());
   kdotp.resize(kPoints.size());
   phases.resize(kPoints.size());
-  //copy q
-  Q=qin;
-  compQ.resize(qin.size());
   //M
   M=Min;
   vPos.resize(M);
