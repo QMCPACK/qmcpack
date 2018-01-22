@@ -188,7 +188,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
   if (kmax<1.0e-10 && sum_kmaxs<1.0e-10)
   {
     // default: kmax = 2 x k_F of polarized non-interacting electron system
-    kmax = 2.0*std::pow(6.0*M_PI*M_PI*elns.getTotalNum()/elns.Lattice.Volume,1.0/3);
+    kmax = 2.0*std::pow(6.0*M_PI*M_PI*elns.getTotalNum()/elns.Lattice.Volume,1.0/3);    
     kgrid = int(kmax/min_Length)+1;
   }
   else
@@ -200,19 +200,16 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
     }
     kgrid = int(kmax/min_Length)+1;
   }
-  if (sum_kmaxs<1.0e-10)
-  {
-    app_log()<<" Using all k-space points with (kx^2+ky^2+kz^2)^0.5 < "<< kmax <<" for Momentum Distribution."<< std::endl;
-  }
-  else
-  {
-    app_log()<<" Using all k-space points within cut-offs "<< kmax0 << ", " << kmax1 << ", " << kmax2 <<" for Momentum Distribution."<< std::endl;
-  }
-  app_log()<<"  My twist is: "<<twist[0]<<"  "<<twist[1]<<"  "<<twist[2]<< std::endl;
-  int kgrid_squared[OHMMS_DIM];
+  int kgrid_squared[OHMMS_DIM];  
   for (int i=0; i<OHMMS_DIM; i++)
     kgrid_squared[i]=int(std::round(kmaxs[i]*kmaxs[i]/vec_length[i]/vec_length[i]));
   RealType kmax_squared=kmax*kmax;
+  std::vector<int> kcount0;
+  std::vector<int> kcount1;
+  std::vector<int> kcount2;
+  kcount0.resize(2*kgrid+1,0);
+  kcount1.resize(2*kgrid+1,0);
+  kcount2.resize(2*kgrid+1,0);
   for (int i=-kgrid; i<(kgrid+1); i++)
   {
     for (int j=-kgrid; j<(kgrid+1); j++)
@@ -234,26 +231,47 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
 	}
 	else
 	{
-	  if (i*i<=kgrid_squared[0])
+	  if (i*i<=kgrid_squared[0] && j*j<=kgrid_squared[1] && k*k<=kgrid_squared[2])
 	  {
-	    if (j*j<=kgrid_squared[1])
-	    {
-	      if (k*k<=kgrid_squared[2])
-	      {
-		PosType kpt;
-		kpt[0]=i-twist[0];
-		kpt[1]=j-twist[1];
-		kpt[2]=k-twist[2];
-		//convert to Cartesian: note that 2Pi is multiplied
-		kpt=Lattice.k_cart(kpt);
-		kPoints.push_back(kpt);
-	      }
-	    }
+	    PosType kpt;
+	    kpt[0]=i-twist[0];
+	    kpt[1]=j-twist[1];
+	    kpt[2]=k-twist[2];
+	    //convert to Cartesian: note that 2Pi is multiplied
+	    kpt=Lattice.k_cart(kpt);
+	    kPoints.push_back(kpt);
+	    kcount0[kgrid+i]=1;
+	    kcount1[kgrid+j]=1;
+	    kcount2[kgrid+k]=1;
 	  }
 	}
       }
     }
   }
+  if (sum_kmaxs<1.0e-10)
+  {
+    app_log()<<"   Using all k-space points with (kx^2+ky^2+kz^2)^0.5 < "<< kmax <<" for Momentum Distribution."<< std::endl;
+    app_log()<<"   Total number of k-points for Momentum Distribution is "<< kPoints.size() << std::endl;
+  }
+  else
+  {
+    int sums[3];
+    sums[0]=0;
+    sums[1]=0;
+    sums[2]=0;
+    for (int i=0; i<2*kgrid+1; i++)
+    {
+      sums[0]+=kcount0[i];
+      sums[1]+=kcount1[i];
+      sums[2]+=kcount2[i];
+    }
+    app_log()<<"   Using all k-space points within cut-offs "<< kmax0 << ", " << kmax1 << ", " << kmax2 <<" for Momentum Distribution."<< std::endl;
+    app_log()<<"   Total number of k-points for Momentum Distribution is "<< kPoints.size() << std::endl;
+    app_log()<<"    Number of k-points in kmax0 direction " << sums[0] << std::endl;
+    app_log()<<"    Number of k-points in kmax1 direction " << sums[1] << std::endl;
+    app_log()<<"    Number of k-points in kmax2 direction " << sums[2] << std::endl;
+  }
+  app_log()<<"  My twist is: "<<twist[0]<<"  "<<twist[1]<<"  "<<twist[2]<< std::endl;
 #endif
 #if OHMMS_DIM==2
   PosType kmaxs(0);
@@ -284,7 +302,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
     app_log()<<" Using all k-space points within approximate cut-offs "<< kmax0 << ", " << kmax1 <<" for Momentum Distribution."<< std::endl;
   }
   app_log()<<"  My twist is:"<<twist[0]<<"  "<<twist[1]<< std::endl;
-  int kgrid_squared[OHMMS_DIM];
+  int kgrid_squared[OHMMS_DIM];  
   for (int i=0; i<OHMMS_DIM; i++)
     kgrid_squared[i]=int(std::round(kmaxs[i]*kmaxs[i]/vec_length[i]/vec_length[i]));
   RealType kmax_squared=kmax*kmax;
@@ -306,17 +324,14 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
       }
       else
       {
-	if (i*i<=kgrid_squared[0])
+	if (i*i<=kgrid_squared[0] && j*j<=kgrid_squared[1])
 	{
-	  if (j*j<=kgrid_squared[1])
-	  {
-	    PosType kpt;
-	    kpt[0]=i-twist[0];
-	    kpt[1]=j-twist[1];
-	    //convert to Cartesian: note that 2Pi is multiplied
-	    kpt=Lattice.k_cart(kpt);
-	    kPoints.push_back(kpt);	
-	  }
+	  PosType kpt;
+	  kpt[0]=i-twist[0];
+	  kpt[1]=j-twist[1];
+	  //convert to Cartesian: note that 2Pi is multiplied
+	  kpt=Lattice.k_cart(kpt);
+	  kPoints.push_back(kpt);
 	}
       }
     }
