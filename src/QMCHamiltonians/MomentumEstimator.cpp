@@ -242,7 +242,8 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
         //convert to Cartesian: note that 2Pi is multiplied
         kpt=Lattice.k_cart(kpt);
         bool not_recorded=true;
-        if (i*i<=kgrid_squared[0] && j*j<=kgrid_squared[1] && k*k<=kgrid_squared[2] && !sphere_only)
+        // This collects the k-points within the parallelepiped (if not in sphere_only mode)
+        if (!sphere_only && i*i<=kgrid_squared[0] && j*j<=kgrid_squared[1] && k*k<=kgrid_squared[2])
         {
           kPoints.push_back(kpt);
           kcount0[kgrid+i]=1;
@@ -250,7 +251,8 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
           kcount2[kgrid+k]=1;
           not_recorded=false;
         }
-        if (kpt[0]*kpt[0]+kpt[1]*kpt[1]+kpt[2]*kpt[2]<=kmax_squared && !directional_only && not_recorded) //if (std::sqrt(kx*kx+ky*ky+kz*kz)<=sphere_kmax)
+        // This collects the k-points within a sphere (if not in directional_only mode, and the k-point has not been recorded yet)
+        if (!directional_only && not_recorded && kpt[0]*kpt[0]+kpt[1]*kpt[1]+kpt[2]*kpt[2]<=kmax_squared) //if (std::sqrt(kx*kx+ky*ky+kz*kz)<=sphere_kmax)
         {
           kPoints.push_back(kpt);
         }
@@ -259,8 +261,8 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
   }
   if (sphere_only)
   {
-    app_log()<<"   Using all k-space points with (kx^2+ky^2+kz^2)^0.5 < "<< sphere_kmax <<" for Momentum Distribution."<< std::endl;
-    app_log()<<"   Total number of k-points for Momentum Distribution is "<< kPoints.size() << std::endl;
+    app_log()<<"    Using all k-space points with (kx^2+ky^2+kz^2)^0.5 < "<< sphere_kmax <<" for Momentum Distribution."<< std::endl;
+    app_log()<<"    Total number of k-points for Momentum Distribution is "<< kPoints.size() << std::endl;
   }
   else if (directional_only)
   {
@@ -274,11 +276,11 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
       sums[1]+=kcount1[i];
       sums[2]+=kcount2[i];
     }
-    app_log()<<"   Using all k-space points within cut-offs "<< kmax0 << ", " << kmax1 << ", " << kmax2 <<" for Momentum Distribution."<< std::endl;
-    app_log()<<"   Total number of k-points for Momentum Distribution: "<< kPoints.size() << std::endl;
-    app_log()<<"    Number of grid points in kmax0 direction: " << sums[0] << std::endl;
-    app_log()<<"    Number of grid points in kmax1 direction: " << sums[1] << std::endl;
-    app_log()<<"    Number of grid points in kmax2 direction: " << sums[2] << std::endl;
+    app_log()<<"    Using all k-space points within cut-offs "<< kmax0 << ", " << kmax1 << ", " << kmax2 <<" for Momentum Distribution."<< std::endl;
+    app_log()<<"    Total number of k-points for Momentum Distribution: "<< kPoints.size() << std::endl;
+    app_log()<<"      Number of grid points in kmax0 direction: " << sums[0] << std::endl;
+    app_log()<<"      Number of grid points in kmax1 direction: " << sums[1] << std::endl;
+    app_log()<<"      Number of grid points in kmax2 direction: " << sums[2] << std::endl;
   }
   else
   {
@@ -292,15 +294,15 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
       sums[1]+=kcount1[i];
       sums[2]+=kcount2[i];
     }
-    app_log()<<"   Using all k-space points with (kx^2+ky^2+kz^2)^0.5 < "<< sphere_kmax <<", and"<< std::endl;
-    app_log()<<"   within the cut-offs "<< kmax0 << ", " << kmax1 << ", " << kmax2 <<" for Momentum Distribution."<< std::endl;
-    app_log()<<"   Total number of k-points for Momentum Distribution is "<< kPoints.size() << std::endl;
-    app_log()<<"   The number of k-points within the cut-off region: "<< sums[0]*sums[1]*sums[2] << std::endl;
-    app_log()<<"    Number of grid points in kmax0 direction: " << sums[0] << std::endl;
-    app_log()<<"    Number of grid points in kmax1 direction: " << sums[1] << std::endl;
-    app_log()<<"    Number of grid points in kmax2 direction: " << sums[2] << std::endl;
+    app_log()<<"    Using all k-space points with (kx^2+ky^2+kz^2)^0.5 < "<< sphere_kmax <<", and"<< std::endl;
+    app_log()<<"    within the cut-offs "<< kmax0 << ", " << kmax1 << ", " << kmax2 <<" for Momentum Distribution."<< std::endl;
+    app_log()<<"    Total number of k-points for Momentum Distribution is "<< kPoints.size() << std::endl;
+    app_log()<<"    The number of k-points within the cut-off region: "<< sums[0]*sums[1]*sums[2] << std::endl;
+    app_log()<<"      Number of grid points in kmax0 direction: " << sums[0] << std::endl;
+    app_log()<<"      Number of grid points in kmax1 direction: " << sums[1] << std::endl;
+    app_log()<<"      Number of grid points in kmax2 direction: " << sums[2] << std::endl;
   }
-  app_log()<<"  My twist is: "<<twist[0]<<"  "<<twist[1]<<"  "<<twist[2]<< std::endl;
+  app_log()<<"    My twist is: "<<twist[0]<<"  "<<twist[1]<<"  "<<twist[2]<< std::endl;
 #endif
 #if OHMMS_DIM==2
   PosType kmaxs(0);
@@ -359,14 +361,14 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
       //convert to Cartesian: note that 2Pi is multiplied
       kpt=Lattice.k_cart(kpt);
       bool not_recorded=true;
-      if (i*i<=kgrid_squared[0] && j*j<=kgrid_squared[1] && !disk_only)
+      if (!disk_only && i*i<=kgrid_squared[0] && j*j<=kgrid_squared[1])
       {
         kPoints.push_back(kpt);
         kcount0[kgrid+i]=1;
         kcount1[kgrid+j]=1;
         not_recorded=false;
       }
-      if (kpt[0]*kpt[0]+kpt[1]*kpt[1]<=kmax_squared && !directional_only && not_recorded) //if (std::sqrt(kx*kx+ky*ky)<=disk_kmax)
+      if (!directional_only && not_recorded && kpt[0]*kpt[0]+kpt[1]*kpt[1]<=kmax_squared) //if (std::sqrt(kx*kx+ky*ky)<=disk_kmax)
       {
         kPoints.push_back(kpt);
       }
@@ -374,8 +376,8 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
   }
   if (disk_only)
   {
-    app_log()<<"   Using all k-space points with (kx^2+ky^2)^0.5 < "<< disk_kmax <<" for Momentum Distribution."<< std::endl;
-    app_log()<<"   Total number of k-points for Momentum Distribution is "<< kPoints.size() << std::endl;
+    app_log()<<"    Using all k-space points with (kx^2+ky^2)^0.5 < "<< disk_kmax <<" for Momentum Distribution."<< std::endl;
+    app_log()<<"    Total number of k-points for Momentum Distribution is "<< kPoints.size() << std::endl;
   }
   else if (directional_only)
   {
@@ -387,10 +389,10 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
       sums[0]+=kcount0[i];
       sums[1]+=kcount1[i];
     }
-    app_log()<<"   Using all k-space points within cut-offs "<< kmax0 << ", " << kmax1 <<" for Momentum Distribution."<< std::endl;
-    app_log()<<"   Total number of k-points for Momentum Distribution: "<< kPoints.size() << std::endl;
-    app_log()<<"    Number of grid points in kmax0 direction: " << sums[0] << std::endl;
-    app_log()<<"    Number of grid points in kmax1 direction: " << sums[1] << std::endl;
+    app_log()<<"    Using all k-space points within cut-offs "<< kmax0 << ", " << kmax1 <<" for Momentum Distribution."<< std::endl;
+    app_log()<<"    Total number of k-points for Momentum Distribution: "<< kPoints.size() << std::endl;
+    app_log()<<"      Number of grid points in kmax0 direction: " << sums[0] << std::endl;
+    app_log()<<"      Number of grid points in kmax1 direction: " << sums[1] << std::endl;
   }
   else
   {
@@ -402,14 +404,14 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
       sums[0]+=kcount0[i];
       sums[1]+=kcount1[i];
     }
-    app_log()<<"   Using all k-space points with (kx^2+ky^2)^0.5 < "<< disk_kmax <<", and"<< std::endl;
-    app_log()<<"   within the cut-offs "<< kmax0 << ", " << kmax1 <<" for Momentum Distribution."<< std::endl;
-    app_log()<<"   Total number of k-points for Momentum Distribution is "<< kPoints.size() << std::endl;
-    app_log()<<"   The number of k-points within the cut-off region: "<< sums[0]*sums[1] << std::endl;
-    app_log()<<"    Number of grid points in kmax0 direction: " << sums[0] << std::endl;
-    app_log()<<"    Number of grid points in kmax1 direction: " << sums[1] << std::endl;
+    app_log()<<"    Using all k-space points with (kx^2+ky^2)^0.5 < "<< disk_kmax <<", and"<< std::endl;
+    app_log()<<"    within the cut-offs "<< kmax0 << ", " << kmax1 <<" for Momentum Distribution."<< std::endl;
+    app_log()<<"    Total number of k-points for Momentum Distribution is "<< kPoints.size() << std::endl;
+    app_log()<<"    The number of k-points within the cut-off region: "<< sums[0]*sums[1] << std::endl;
+    app_log()<<"      Number of grid points in kmax0 direction: " << sums[0] << std::endl;
+    app_log()<<"      Number of grid points in kmax1 direction: " << sums[1] << std::endl;
   }
-  app_log()<<"  My twist is: "<<twist[0]<<"  "<<twist[1]<<"  "<<twist[2]<< std::endl;
+  app_log()<<"    My twist is: "<<twist[0]<<"  "<<twist[1]<<"  "<<twist[2]<< std::endl;
 #endif
   if (rootNode)
   {
