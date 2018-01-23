@@ -167,18 +167,12 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
   pAttrib.add(M,"samples"); // default value is 40 (in the constructor)
   pAttrib.put(cur);
   hdf5_out = (hdf5_flag=="yes");
-  RealType min_Length=1.0e10;
-  PosType vec_length(0);
+  // minimal length as 2 x WS radius.
+  RealType min_Length = elns.Lattice.WignerSeitzRadius_G*4.0*M_PI;
+  PosType vec_length;
+  //length of reciprocal lattice vector
   for (int i=0; i<OHMMS_DIM; i++)
-  {
-    PosType a(0);
-    for (int j=0; j<OHMMS_DIM; j++)
-      a[j]=elns.Lattice.G(j,i);
-    //length of reciprocal lattice vector
-    vec_length[i]=2.0*M_PI*std::sqrt(dot(a,a));
-    if (min_Length>vec_length[i])
-      min_Length=vec_length[i];
-  }
+    vec_length[i]=2.0*M_PI*std::sqrt(dot(elns.Lattice.Gv[i],elns.Lattice.Gv[i]));
 #if OHMMS_DIM==3
   PosType kmaxs(0);
   kmaxs[0]=kmax0;
