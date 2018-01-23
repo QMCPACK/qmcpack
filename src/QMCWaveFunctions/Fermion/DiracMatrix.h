@@ -184,7 +184,7 @@ namespace qmcplusplus {
       {
         Ainv_U.resize(delay, norb);
         V.resize(delay, norb);
-        tempMat.resize(delay, norb);
+        tempMat.resize(norb, delay);
         Binv.resize(delay, delay);
 #ifdef MIXED_PRECISION
         Binv_hp.resize(delay, delay);
@@ -258,6 +258,7 @@ namespace qmcplusplus {
         const int norb=Ainv.rows();
         if(delay_count==1)
         {
+          // Only use the first norb elements of tempMat as a temporal array
           BLAS::gemv('T', norb, norb, cone, Ainv.data(), norb, V[0], 1, czero, tempMat[0], 1);
           tempMat(0,delay_list[0]) -= cone;
           BLAS::ger(norb,norb,-Binv[0][0],Ainv_U[0],1,tempMat[0],1,Ainv.data(),norb);
@@ -265,10 +266,10 @@ namespace qmcplusplus {
         else
         {
           const int lda_Binv=Binv.cols();
-          BLAS::gemm('T', 'N', norb, delay_count, norb, cone, Ainv.data(), norb, V.data(), norb, czero, tempMat.data(), norb);
-          for(int i=0; i<delay_count; i++) tempMat(i,delay_list[i]) -= cone;
+          BLAS::gemm('T', 'N', delay_count, norb, norb, cone, V.data(), norb, Ainv.data(), norb, czero, tempMat.data(), lda_Binv);
+          for(int i=0; i<delay_count; i++) tempMat(delay_list[i], i) -= cone;
           BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, Ainv_U.data(), norb, Binv.data(), lda_Binv, czero, V.data(), norb);
-          BLAS::gemm('N', 'T', norb, norb, delay_count, -cone, V.data(), norb, tempMat.data(), norb, cone, Ainv.data(), norb);
+          BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, V.data(), norb, tempMat.data(), lda_Binv, cone, Ainv.data(), norb);
         }
         delay_count = 0;
       }
