@@ -633,7 +633,6 @@ public:
 
     constexpr valT czero(0);
     constexpr valT cone(1);
-    constexpr valT cminus(-1);
     constexpr valT ctwo(2);
     constexpr valT lapfac=OHMMS_DIM-cone;
 
@@ -718,7 +717,6 @@ public:
                         Vector<valT>& Uk, gContainer_type& dUk, Vector<valT>& d2Uk, bool triangle=false)
   {
     constexpr valT czero(0);
-    constexpr valT cminus(-1);
 
     Uj = czero;
     dUj = posT();
