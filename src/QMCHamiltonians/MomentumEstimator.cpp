@@ -81,15 +81,19 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
                        - ( phases_s[ik]*phases_vPos_c[ik] + phases_c[ik]*phases_vPos_s[ik] ) * ratio_s ;
     }
   }
-  for (int ik=0; ik<nofK.size(); ++ik)
-    nofK[ik] *= norm_nofK;
   if (hdf5_out)
   {
-    RealType w=tWalker->Weight;
+    RealType w=tWalker->Weight*norm_nofK;
     int j=myIndex;
     for (int ik=0; ik<nofK.size(); ++ik,++j)
       P.Collectables[j]+= w*nofK[ik];
   }
+  else
+  {
+    for (int ik=0; ik<nofK.size(); ++ik)
+      nofK[ik] *= norm_nofK; 
+  }
+
   return 0.0;
 }
 
@@ -154,10 +158,13 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
 {
   OhmmsAttributeSet pAttrib;
   std::string hdf5_flag="yes";
-  kmax=0.0;
-  kmax0=0.0;
-  kmax1=0.0;
-  kmax2=0.0;
+  kgrid=0;
+  //maximum k-value in the k-grid in cartesian coordinates
+  RealType kmax=0.0;
+  //maximum k-values in the k-grid along the reciprocal cell axis
+  RealType kmax0=0.0;
+  RealType kmax1=0.0;
+  RealType kmax2=0.0;
   pAttrib.add(hdf5_flag,"hdf5");
   //pAttrib.add(kgrid,"grid");
   pAttrib.add(kmax,"kmax");
@@ -178,44 +185,26 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
   kmaxs[0]=kmax0;
   kmaxs[1]=kmax1;
   kmaxs[2]=kmax2;
-  bool sphere_only=true;
-  bool directional_only=true;
   RealType sum_kmaxs=kmaxs[0]+kmaxs[1]+kmaxs[2];
   RealType sphere_kmax;
-  if (kmax<1.0e-10 && sum_kmaxs<1.0e-10)
+  bool sphere = kmax>0.0 ? true:false;
+  bool directional= sum_kmaxs>0.0 ? true:false;
+  if (!sphere && !directional)
   {
     // default: kmax = 2 x k_F of polarized non-interacting electron system
     kmax = 2.0*std::pow(6.0*M_PI*M_PI*elns.getTotalNum()/elns.Lattice.Volume,1.0/3);
-    kgrid = int(kmax/min_Length)+1;
-    sphere_kmax=kmax;
-    sphere_only=true;
-    directional_only=false;
+    sphere = true;
   }
-  else
-  {
-    sphere_kmax=kmax;
-    if (sum_kmaxs>0.0 && kmax>0.0)
-    {
-      directional_only=false;
-      sphere_only=false;
-    }
-    else
-    {
-      if (kmax<1.0e-10)
-        sphere_only=false;
-      if (sum_kmaxs<1.0e-10)
-        directional_only=false;
-    }
-    for (int i=0; i<OHMMS_DIM; i++)
-    {
-      if (kmaxs[i]>kmax)
-        kmax=kmaxs[i];
-    }
-    kgrid = int(kmax/min_Length)+1;
-  }
-  int kgrid_squared[OHMMS_DIM];
+  sphere_kmax=kmax;
   for (int i=0; i<OHMMS_DIM; i++)
-    kgrid_squared[i]=int(std::round(kmaxs[i]*kmaxs[i]/vec_length[i]/vec_length[i]));
+  {
+    if (kmaxs[i]>kmax)
+      kmax=kmaxs[i];
+  }
+  kgrid = int(kmax/min_Length)+1;
+  RealType kgrid_squared[OHMMS_DIM];
+  for (int i=0; i<OHMMS_DIM; i++)
+    kgrid_squared[i]=kmaxs[i]*kmaxs[i]/vec_length[i]/vec_length[i];
   RealType kmax_squared=sphere_kmax*sphere_kmax;
   std::vector<int> kcount0;
   std::vector<int> kcount1;
@@ -229,15 +218,16 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
     {
       for (int k=-kgrid; k<(kgrid+1); k++)
       {
-        PosType kpt;
-        kpt[0]=i-twist[0];
-        kpt[1]=j-twist[1];
-        kpt[2]=k-twist[2];
+        PosType ikpt,kpt;
+        ikpt[0]=i-twist[0];
+        ikpt[1]=j-twist[1];
+        ikpt[2]=k-twist[2];
+        kpt=ikpt;
         //convert to Cartesian: note that 2Pi is multiplied
         kpt=Lattice.k_cart(kpt);
         bool not_recorded=true;
-        // This collects the k-points within the parallelepiped (if not in sphere_only mode)
-        if (!sphere_only && i*i<=kgrid_squared[0] && j*j<=kgrid_squared[1] && k*k<=kgrid_squared[2])
+        // This collects the k-points within the parallelepiped (if enabled)
+        if (directional && ikpt[0]*ikpt[0]<=kgrid_squared[0] && ikpt[1]*ikpt[1]<=kgrid_squared[1] && ikpt[2]*ikpt[2]<=kgrid_squared[2])
         {
           kPoints.push_back(kpt);
           kcount0[kgrid+i]=1;
@@ -245,20 +235,20 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
           kcount2[kgrid+k]=1;
           not_recorded=false;
         }
-        // This collects the k-points within a sphere (if not in directional_only mode, and the k-point has not been recorded yet)
-        if (!directional_only && not_recorded && kpt[0]*kpt[0]+kpt[1]*kpt[1]+kpt[2]*kpt[2]<=kmax_squared) //if (std::sqrt(kx*kx+ky*ky+kz*kz)<=sphere_kmax)
+        // This collects the k-points within a sphere (if enabled and the k-point has not been recorded yet)
+        if (sphere && not_recorded && kpt[0]*kpt[0]+kpt[1]*kpt[1]+kpt[2]*kpt[2]<=kmax_squared) //if (std::sqrt(kx*kx+ky*ky+kz*kz)<=sphere_kmax)
         {
           kPoints.push_back(kpt);
         }
       }
     }
   }
-  if (sphere_only)
+  if (sphere && !directional)
   {
     app_log()<<"    Using all k-space points with (kx^2+ky^2+kz^2)^0.5 < "<< sphere_kmax <<" for Momentum Distribution."<< std::endl;
     app_log()<<"    Total number of k-points for Momentum Distribution is "<< kPoints.size() << std::endl;
   }
-  else if (directional_only)
+  else if (directional && !sphere)
   {
     int sums[3];
     sums[0]=0;
@@ -296,50 +286,33 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
     app_log()<<"      Number of grid points in kmax1 direction: " << sums[1] << std::endl;
     app_log()<<"      Number of grid points in kmax2 direction: " << sums[2] << std::endl;
   }
+  app_log()<<"    Number of samples: "<< M << std::endl;
   app_log()<<"    My twist is: "<<twist[0]<<"  "<<twist[1]<<"  "<<twist[2]<< std::endl;
 #endif
 #if OHMMS_DIM==2
   PosType kmaxs(0);
   kmaxs[0]=kmax0;
   kmaxs[1]=kmax1;
-  bool disk_only=true;
-  bool directional_only=true;
   RealType sum_kmaxs=kmaxs[0]+kmaxs[1];
   RealType disk_kmax;
-  if (kmax<1.0e-10 && sum_kmaxs<1.0e-10)
+  bool disk = kmax>0.0 ? true:false;
+  bool directional = sum_kmaxs>0.0 ? true:false;
+  if (!disk && !directional)
   {
     // default: kmax = 2 x k_F of polarized non-interacting electron system
     kmax = 2.0*std::pow(4.0*pi*elns.getTotalNum()/elns.Lattice.Volume,0.5);
-    kgrid = int(kmax/min_Length)+1;
-    disk_kmax=kmax;
-    disk_only=true;
-    directional_only=false;
+    disk=true;
   }
-  else
-  {
-    disk_kmax=kmax;
-    if (sum_kmaxs>0.0 && kmax>0.0)
-    {
-      directional_only=false;
-      disk_only=false;
-    }
-    else
-    {
-      if (kmax<1.0e-10)
-        disk_only=false;
-      if (sum_kmaxs<1.0e-10)
-        directional_only=false;
-    }
-    for (int i=0; i<OHMMS_DIM; i++)
-    {
-      if (kmaxs[i]>kmax)
-        kmax=kmaxs[i];
-    }
-    kgrid = int(kmax/min_Length)+1;
-  }
-  int kgrid_squared[OHMMS_DIM];
+  disk_kmax=kmax;
   for (int i=0; i<OHMMS_DIM; i++)
-    kgrid_squared[i]=int(std::round(kmaxs[i]*kmaxs[i]/vec_length[i]/vec_length[i]));
+  {
+    if (kmaxs[i]>kmax)
+      kmax=kmaxs[i];
+  }
+  kgrid = int(kmax/min_Length)+1;
+  RealType kgrid_squared[OHMMS_DIM];
+  for (int i=0; i<OHMMS_DIM; i++)
+    kgrid_squared[i]=kmaxs[i]*kmaxs[i]/vec_length[i]/vec_length[i];
   RealType kmax_squared=disk_kmax*disk_kmax;
   std::vector<int> kcount0;
   std::vector<int> kcount1;
@@ -349,31 +322,32 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
   {
     for (int j=-kgrid; j<(kgrid+1); j++)
     {
-      PosType kpt;
-      kpt[0]=i-twist[0];
-      kpt[1]=j-twist[1];
+      PosType ikpt,kpt;
+      ikpt[0]=i-twist[0];
+      ikpt[1]=j-twist[1];
+      kpt=ikpt;
       //convert to Cartesian: note that 2Pi is multiplied
       kpt=Lattice.k_cart(kpt);
       bool not_recorded=true;
-      if (!disk_only && i*i<=kgrid_squared[0] && j*j<=kgrid_squared[1])
+      if (directional && ikpt[0]*ikpt[0]<=kgrid_squared[0] && ikpt[1]*ikpt[1]<=kgrid_squared[1])
       {
         kPoints.push_back(kpt);
         kcount0[kgrid+i]=1;
         kcount1[kgrid+j]=1;
         not_recorded=false;
       }
-      if (!directional_only && not_recorded && kpt[0]*kpt[0]+kpt[1]*kpt[1]<=kmax_squared) //if (std::sqrt(kx*kx+ky*ky)<=disk_kmax)
+      if (disk && not_recorded && kpt[0]*kpt[0]+kpt[1]*kpt[1]<=kmax_squared) //if (std::sqrt(kx*kx+ky*ky)<=disk_kmax)
       {
         kPoints.push_back(kpt);
       }
     }
   }
-  if (disk_only)
+  if (disk && !directional)
   {
     app_log()<<"    Using all k-space points with (kx^2+ky^2)^0.5 < "<< disk_kmax <<" for Momentum Distribution."<< std::endl;
     app_log()<<"    Total number of k-points for Momentum Distribution is "<< kPoints.size() << std::endl;
   }
-  else if (directional_only)
+  else if (directional && !disk)
   {
     int sums[2];
     sums[0]=0;
@@ -405,6 +379,7 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
     app_log()<<"      Number of grid points in kmax0 direction: " << sums[0] << std::endl;
     app_log()<<"      Number of grid points in kmax1 direction: " << sums[1] << std::endl;
   }
+  app_log()<<"    Number of samples: "<< M << std::endl;
   app_log()<<"    My twist is: "<<twist[0]<<"  "<<twist[1]<<"  "<<twist[2]<< std::endl;
 #endif
   if (rootNode)

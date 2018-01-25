@@ -69,18 +69,12 @@ public:
   VectorSoaContainer<RealType,2> phases;
   ///phases of vPos
   std::vector<VectorSoaContainer<RealType,2> > phases_vPos;
+  ///dims of a grid for k points
+  int kgrid;
   ///list of k-points in Cartesian Coordinates
   std::vector<PosType> kPoints;
   ///weight of k-points (make use of symmetry)
   std::vector<int> kWeights;
-  ///dims of a grid for k points
-  int kgrid;
-  ///maximum k-value in the k-grid in cartesian coordinates
-  RealType kmax;
-  ///maximum k-values in the k-grid along the reciprocal cell axis
-  RealType kmax0;
-  RealType kmax1;
-  RealType kmax2;
   ///nofK
   aligned_vector<RealType> nofK;
   /// print to hdf5 or scalar.dat
