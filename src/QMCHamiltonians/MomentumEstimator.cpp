@@ -60,8 +60,6 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
   }
 
   std::fill_n(nofK.begin(),nk,RealType(0));
-  std::fill_n(nofk_grad.begin(),nk,PosType(0));
-  std::fill_n(nofk_hess.begin(),nk,Tensor<RealType,OHMMS_DIM>(0));
   for (int i=0; i<np; ++i)
   {
     for (int ik=0; ik<nk; ++ik)
@@ -408,8 +406,6 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
   }
   nofK.resize(kPoints.size());
   kdotp.resize(kPoints.size());
-  nofk_grad.resize(kPoints.size());
-  nofk_hess.resize(kPoints.size());
   vPos.resize(M);
   phases.resize(kPoints.size());
   phases_vPos.resize(M);
@@ -441,8 +437,6 @@ void MomentumEstimator::resize(const std::vector<PosType>& kin, const int Min)
   //copy kpoints
   kPoints=kin;
   nofK.resize(kin.size());
-  nofk_grad.resize(kin.size());
-  nofk_hess.resize(kin.size());
   kdotp.resize(kPoints.size());
   phases.resize(kPoints.size());
   //M
