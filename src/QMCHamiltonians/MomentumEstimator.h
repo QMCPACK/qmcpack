@@ -46,13 +46,11 @@ public:
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
   void setRandomGenerator(RandomGenerator_t* rng);
   //resize the internal data by input k-point list
-  void resize(const std::vector<PosType>& kin,const std::vector<RealType>& qin, const int Min);
+  void resize(const std::vector<PosType>& kin, const int Min);
   ///number of samples
   int M;
   ///normalization factor for n(k)
   RealType norm_nofK;
-  ///normalization factor for the Compton profile
-  RealType norm_compQ;
   ///reference to the trial wavefunction for ratio evaluations
   TrialWaveFunction& refPsi;
   ///lattice vector
@@ -75,21 +73,10 @@ public:
   std::vector<PosType> kPoints;
   ///weight of k-points (make use of symmetry)
   std::vector<int> kWeights;
-  ///dims of a grid for k points
-  int kgrid;
   ///nofK
   aligned_vector<RealType> nofK;
-  ///list of Q for the Compton profile
-  std::vector<RealType> Q;
-  ///compton profile at q
-  Vector<RealType> compQ;
   /// print to hdf5 or scalar.dat
   bool hdf5_out;
-
-  std::vector<std::vector<int> > mappedQtonofK;
-//     std::vector<std::vector<int> > mappednofKtoK;
-  std::vector<RealType> mappedQnorms;
-  std::vector<RealType> mappedKnorms;
   PosType twist;
 };
 
