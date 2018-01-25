@@ -5,14 +5,14 @@ IF (NOT QMC_CUDA)
 # LiH molecular dimer gaussian tests, all electron
 # Also check results for different number of mpi tasks and threads keeping total constant
 #
-  LIST(APPEND LIH_SCALARS "kinetic" "7.9914014383 0.03") # kinetic energy
-  LIST(APPEND LIH_SCALARS "totenergy" "-7.9873236457 0.003") # total energy
-  LIST(APPEND LIH_SCALARS "eeenergy" "3.4888166386 0.0024") # e-e energy
+  LIST(APPEND LIH_SCALARS "kinetic" "8.084 0.035") # kinetic energy
+  LIST(APPEND LIH_SCALARS "totenergy" "-7.9498 0.0032") # total energy
+  LIST(APPEND LIH_SCALARS "eeenergy" "3.4307 0.0033") # e-e energy
   LIST(APPEND LIH_SCALARS "samples" "1600000 0.0") # samples
 #  LIST(APPEND LIH_SCALARS "flux" "0.0 0.1") # sampling check, should be zero
 
-  QMC_RUN_AND_CHECK(short-LiH_dimer_ae-vmc_hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae"
+  QMC_RUN_AND_CHECK(short-LiH_dimer_ae_pyscf-vmc_hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae_pyscf"
                     vmc_hf_noj
                     vmc_hf_noj.in.xml
                     16 1
@@ -20,8 +20,8 @@ IF (NOT QMC_CUDA)
                     0 LIH_SCALARS # VMC
                     )
 
-  QMC_RUN_AND_CHECK(short-LiH_dimer_ae-vmc_hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae"
+  QMC_RUN_AND_CHECK(short-LiH_dimer_ae_pyscf-vmc_hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae_pyscf"
                     vmc_hf_noj
                     vmc_hf_noj.in.xml
                     4 4
@@ -29,8 +29,8 @@ IF (NOT QMC_CUDA)
                     0 LIH_SCALARS # VMC
                     )
 
-  QMC_RUN_AND_CHECK(short-LiH_dimer_ae-vmc_hf_noj
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae"
+  QMC_RUN_AND_CHECK(short-LiH_dimer_ae_pyscf-vmc_hf_noj
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae_pyscf"
                     vmc_hf_noj
                     vmc_hf_noj.in.xml
                     1 16

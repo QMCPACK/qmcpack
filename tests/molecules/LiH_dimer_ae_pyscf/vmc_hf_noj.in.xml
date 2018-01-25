@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<simulation>
+  <project id="vmc_hf_noj" series="0"/>
+  <include href="LiH.structure.xml"/>
+  <include href="LiH.wfnoj.xml"/>
+  <hamiltonian name="h0" type="generic" target="e">
+    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+    <pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+    <pairpot name="IonElec" type="coulomb" source="ion0" target="e"/>
+  </hamiltonian>
+   <qmc method="vmc" move="pbyp">
+      <parameter name="walkers"             >    1               </parameter>
+      <parameter name="blocks"              >    100             </parameter>
+      <parameter name="steps"               >    1000            </parameter>
+      <parameter name="subSteps"            >    3               </parameter>
+      <parameter name="timestep"            >    0.4             </parameter>
+      <parameter name="warmupSteps"         >    50              </parameter>
+      <parameter name="samples"             >    1600000         </parameter>
+   </qmc>
+</simulation>
