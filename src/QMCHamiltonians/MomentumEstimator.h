@@ -69,14 +69,16 @@ public:
   VectorSoaContainer<RealType,2> phases;
   ///phases of vPos
   std::vector<VectorSoaContainer<RealType,2> > phases_vPos;
-  ///dims of a grid for k points
-  int kgrid;
   ///list of k-points in Cartesian Coordinates
   std::vector<PosType> kPoints;
   ///weight of k-points (make use of symmetry)
   std::vector<int> kWeights;
   ///nofK
   aligned_vector<RealType> nofK;
+  ///Gradient of nofK
+  std::vector<PosType> nofk_grad;
+  ///Hessian of nofK
+  std::vector<Tensor<RealType,OHMMS_DIM>> nofk_hess;
   /// print to hdf5 or scalar.dat
   bool hdf5_out;
   PosType twist;

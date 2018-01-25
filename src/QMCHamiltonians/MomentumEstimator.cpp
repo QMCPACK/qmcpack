@@ -60,6 +60,8 @@ MomentumEstimator::Return_t MomentumEstimator::evaluate(ParticleSet& P)
   }
 
   std::fill_n(nofK.begin(),nk,RealType(0));
+  std::fill_n(nofk_grad.begin(),nk,PosType(0));
+  std::fill_n(nofk_hess.begin(),nk,Tensor<RealType,OHMMS_DIM>(0));
   for (int i=0; i<np; ++i)
   {
     for (int ik=0; ik<nk; ++ik)
@@ -158,7 +160,8 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
 {
   OhmmsAttributeSet pAttrib;
   std::string hdf5_flag="yes";
-  kgrid=0;
+  ///dims of a grid for generating k points (obtained below)
+  int kgrid=0;
   //maximum k-value in the k-grid in cartesian coordinates
   RealType kmax=0.0;
   //maximum k-values in the k-grid along the reciprocal cell axis
@@ -222,9 +225,8 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
         ikpt[0]=i-twist[0];
         ikpt[1]=j-twist[1];
         ikpt[2]=k-twist[2];
-        kpt=ikpt;
         //convert to Cartesian: note that 2Pi is multiplied
-        kpt=Lattice.k_cart(kpt);
+        kpt=Lattice.k_cart(ikpt);
         bool not_recorded=true;
         // This collects the k-points within the parallelepiped (if enabled)
         if (directional && ikpt[0]*ikpt[0]<=kgrid_squared[0] && ikpt[1]*ikpt[1]<=kgrid_squared[1] && ikpt[2]*ikpt[2]<=kgrid_squared[2])
@@ -325,9 +327,8 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
       PosType ikpt,kpt;
       ikpt[0]=i-twist[0];
       ikpt[1]=j-twist[1];
-      kpt=ikpt;
       //convert to Cartesian: note that 2Pi is multiplied
-      kpt=Lattice.k_cart(kpt);
+      kpt=Lattice.k_cart(ikpt);
       bool not_recorded=true;
       if (directional && ikpt[0]*ikpt[0]<=kgrid_squared[0] && ikpt[1]*ikpt[1]<=kgrid_squared[1])
       {
@@ -407,6 +408,8 @@ bool MomentumEstimator::putSpecial(xmlNodePtr cur, ParticleSet& elns, bool rootN
   }
   nofK.resize(kPoints.size());
   kdotp.resize(kPoints.size());
+  nofk_grad.resize(kPoints.size());
+  nofk_hess.resize(kPoints.size());
   vPos.resize(M);
   phases.resize(kPoints.size());
   phases_vPos.resize(M);
@@ -428,7 +431,6 @@ QMCHamiltonianBase* MomentumEstimator::makeClone(ParticleSet& qp
   MomentumEstimator* myclone=new MomentumEstimator(qp,psi);
   myclone->resize(kPoints,M);
   myclone->myIndex=myIndex;
-  myclone->kgrid=kgrid;
   myclone->norm_nofK=norm_nofK;
   myclone->hdf5_out=hdf5_out;
   return myclone;
@@ -439,6 +441,8 @@ void MomentumEstimator::resize(const std::vector<PosType>& kin, const int Min)
   //copy kpoints
   kPoints=kin;
   nofK.resize(kin.size());
+  nofk_grad.resize(kin.size());
+  nofk_hess.resize(kin.size());
   kdotp.resize(kPoints.size());
   phases.resize(kPoints.size());
   //M
