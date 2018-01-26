@@ -110,7 +110,7 @@ private:
   RealType bestShift_s;
   /// current shift_i, shift_s input values
   RealType shift_i_input, shift_s_input;
-  /// accept history
+  /// accept history, remember the last 2 iterations, value 0(00), 1(01), 2(11), 3(10)
   int accept_history;
   /// Shift_s adjustment base
   RealType shift_s_base;
