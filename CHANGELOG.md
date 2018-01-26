@@ -2,6 +2,39 @@
 
 Notable changes to QMCPACK will be documented in this file.
 
+## [Unreleased]
+
+* Size consistent t-moves implemented (Casula 2010 algorithm).
+  Enabled via nonlocalmoves parameter, see manual.
+* Bugfix: For non-git builds, build process failed on some systems
+  due to git-rev.h handling.
+* Optimized load balancing in DMC. Command line option async_swap
+  removed. Parameter use_nonblocking now disables non-blocking MPI
+  load balancing.
+* Improved memory handling and usage in SoA code, increases
+  performance.  
+* Improved stability of GPU matrix inversion for large runs.
+* Ongoing improvements to output to improve readability.
+* Initial interface to PySCF for real space QMC trial wavefunctions.
+* Enabled use of HDF5 files for Gaussian based wavefunctions
+  with SoA implementation.
+* Added Appendix to manual listing all known QMCPACK publications.
+  This will be updated on an ongoing basis. Please advise of any
+  missing publications.
+* Improved Momentum distribution estimator: optimized and
+* Support for labeled timers in Intel VTune based profiling.
+
+### NEXUS
+
+* Minor bugfixes and improvements.
+
+### Known limitations
+
+PySCF interface is preliminary. convert4qmc is updated, but manual entries are
+not yet provided. This will be improved in later versions. The interface is
+currently only for isolated molecular systems. A full periodic implementation
+is in progress.
+
 ## [3.3.0] - 2017-12-18
 
 ### Notes
@@ -9,7 +42,7 @@ Notable changes to QMCPACK will be documented in this file.
 This release includes new methods, converter updates, and many
 optimizations, feature improvements, and bug fixes. It is a
 recommended update for all users.
- 
+
 ### QMCPACK updates
 
 * Support for finite difference linear response (FDLR) method and
