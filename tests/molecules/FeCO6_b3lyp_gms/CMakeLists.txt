@@ -11,7 +11,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND LIH_SCALARS "samples" "32000 0.0") # samples
 #  LIST(APPEND LIH_SCALARS "flux" "0.0 0.1") # sampling check, should be zero
 
-  QMC_RUN_AND_CHECK(short-FeCO6_gms-vmc_b3lyp_noj
+  QMC_RUN_AND_CHECK(long-FeCO6_gms-vmc_b3lyp_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_gms"
                     vmc_b3lyp_noj
                     vmc_b3lyp_noj.in.xml
@@ -20,7 +20,7 @@ IF (NOT QMC_CUDA)
                     0 FeCO6_GMS_SCALARS # VMC
                     )
 
-  QMC_RUN_AND_CHECK(short-FeCO6_gms-vmc_b3lyp_noj
+  QMC_RUN_AND_CHECK(long-FeCO6_gms-vmc_b3lyp_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_gms"
                     vmc_b3lyp_noj
                     vmc_b3lyp_noj.in.xml
@@ -29,7 +29,7 @@ IF (NOT QMC_CUDA)
                     0 FeCO6_GMS_SCALARS # VMC
                     )
 
-  QMC_RUN_AND_CHECK(short-FeCO6_gms-vmc_b3lyp_noj
+  QMC_RUN_AND_CHECK(long-FeCO6_gms-vmc_b3lyp_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_gms"
                     vmc_b3lyp_noj
                     vmc_b3lyp_noj.in.xml
