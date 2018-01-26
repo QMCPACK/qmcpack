@@ -21,7 +21,7 @@ Notable changes to QMCPACK will be documented in this file.
 * Added Appendix to manual listing all known QMCPACK publications.
   This will be updated on an ongoing basis. Please advise of any
   missing publications.
-* Improved Momentum distribution estimator: optimized and
+* Optimized momentum distribution estimator.
 * Support for labeled timers in Intel VTune based profiling.
 
 ### NEXUS
