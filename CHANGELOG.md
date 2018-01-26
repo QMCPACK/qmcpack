@@ -21,7 +21,8 @@ Notable changes to QMCPACK will be documented in this file.
 * Added Appendix to manual listing all known QMCPACK publications.
   This will be updated on an ongoing basis. Please advise of any
   missing publications.
-* Optimized momentum distribution estimator.
+* Optimized momentum distribution estimator. Supported by SoA and
+  1,2,3-body Jastrow functions.
 * Support for labeled timers in Intel VTune based profiling.
 
 ### NEXUS
