@@ -1174,17 +1174,18 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
     for (int i=0; i<numParams; i++)
       optTarget->Params(i) = currentParameters.at(i);
     bestShift_s=bestShift_s*shift_s_base;
-    if(accept_history==1) // rejected the one before last and accepted the last
+    if(accept_history[0]==true && accept_history[1]==false) // rejected the one before last and accepted the last
     {
       shift_s_base = std::sqrt(shift_s_base);
       app_log() << "Update shift_s_base to " << shift_s_base << std::endl;
     }
-    accept_history = (accept_history*2)%4;
+    accept_history <<= 1;
   } else {
     if ( bestShift_s > 1.0e-2 ) bestShift_s=bestShift_s/shift_s_base;
     // say what we are doing
     app_log() << std::endl << "The new set of parameters is valid. Updating the trial wave function!" << std::endl;
-    accept_history = (accept_history*2)%4+1;
+    accept_history <<= 1;
+    accept_history.set(0,true);
   }
 
   app_log() << std::endl
