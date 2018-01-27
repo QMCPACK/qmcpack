@@ -16,7 +16,7 @@ IF (NOT QMC_CUDA)
                     vmc_hf_noj
                     vmc_hf_noj.in.xml
                     16 1
-                    TRUE
+                    ${SOA_SUCCESS}
                     0 LIH_SCALARS # VMC
                     )
 
@@ -25,7 +25,7 @@ IF (NOT QMC_CUDA)
                     vmc_hf_noj
                     vmc_hf_noj.in.xml
                     4 4
-                    TRUE
+                    ${SOA_SUCCESS}
                     0 LIH_SCALARS # VMC
                     )
 
@@ -34,7 +34,7 @@ IF (NOT QMC_CUDA)
                     vmc_hf_noj
                     vmc_hf_noj.in.xml
                     1 16
-                    TRUE
+                    ${SOA_SUCCESS}
                     0 LIH_SCALARS # VMC
                     )
  ELSE()
