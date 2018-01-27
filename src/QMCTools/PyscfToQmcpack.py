@@ -12,7 +12,7 @@
 
 
 
-def savetoqmcpack(cell,mf,title="Default",kpts=0):
+def savetoqmcpack(cell,mf,title="Default",kpts=[]):
   import h5py, re
   from collections import defaultdict
   from pyscf.pbc import gto, scf, df, dft
@@ -21,6 +21,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=0):
   PBC=False
   UnRestricted=False
   Complex=False
+  
 
   val=str(mf)
   ComputeMode= re.split('[. ]',val)
@@ -31,6 +32,10 @@ def savetoqmcpack(cell,mf,title="Default",kpts=0):
            UnRestricted=True
      if ComputeMode[i]=="pbc":
            PBC=True
+
+  if PBC and len(kpts) == 0:
+	sys.exit("You need to specify explicit the list of K-point (including gamma)")
+
 
   IonName=dict([('H',1),  ('He',2),  ('Li',3),('Be',4),  ('B', 5),  ('C', 6),  ('N', 7),('O', 8),  ('F', 9),   ('Ne',10),   ('Na',11),('Mg',12),   ('Al',13),   ('Si',14),   ('P', 15),   ('S', 16),('Cl',17),   ('Ar',18),   ('K', 19),   ('Ca',20),   ('Sc',21),   ('Ti',22),   ('V', 23),   ('Cr',24),   ('Mn',25),   ('Fe',26),   ('Co',27),   ('Ni',28),   ('Cu',29),   ('Zn',30),   ('Ga',31),   ('Ge',32),   ('As',33),   ('Se',34),   ('Br',35),   ('Kr',36),   ('Rb',37),   ('Sr',38),   ('Y', 39),  ('Zr',40),   ('Nb',41),   ('Mo',42),   ('Tc',43),   ('Ru',44),   ('Rh',45),   ('Pd',46),   ('Ag',47),   ('Cd',48),   ('In',49),   ('Sn',50),   ('Sb',51),   ('Te',52),   ('I', 53),   ('Xe',54),   ('Cs',55),   ('Ba',56),   ('La',57),   ('Ce',58), ('Pr',59),   ('Nd',60),   ('Pm',61),   ('Sm',62),   ('Eu',63),   ('Gd',64),   ('Tb',65),   ('Dy',66),   ('Ho',67),  ('Er',68),   ('Tm',69),   ('Yb',70),   ('Lu',71),   ('Hf',72),   ('Ta',73),   ('W', 74),   ('Re',75),   ('Os',76),   ('Ir',77),   ('Pt',78),   ('Au',79),   ('Hg',80), ('Tl',81),   ('Pb',82),  ('Bi',83),   ('Po',84),   ('At',85),   ('Rn',86),   ('Fr',87),   ('Ra',88),   ('Ac',89),   ('Th',90),   ('Pa',91),   ('U', 92),   ('Np',93)]) 
 
@@ -308,6 +313,8 @@ def savetoqmcpack(cell,mf,title="Default",kpts=0):
     GroupCell=H5_qmcpack.create_group("Cell")
     GroupCell.create_dataset("LaticeVectors",(3,3),dtype="f8",data=cell.lattice_vectors())
 
+
+    
     Nbkpts=len(kpts)
     GroupDet.create_dataset("Nb_Kpoints",(1,),dtype="i4",data=Nbkpts)
     if not UnRestricted:
@@ -316,24 +323,29 @@ def savetoqmcpack(cell,mf,title="Default",kpts=0):
     else:
       NbMO=len(mo_coeff[0][0])
       NbAO=len(mo_coeff[0][0][0])
+
+
+    def get_mo(mo_coeff, cart):
+	return order_mo_coef(mo_coeff) if cart else zip(*mo_coeff)
+
     for i in range(Nbkpts):
       GroupKpts=GroupDet.create_group("Kpoint_"+str(i))
       GroupKpts.create_dataset("Coord",(1,3),dtype="f8",data=kpts[i])
       GroupSpin=GroupKpts.create_group("spin_Up")
       if not UnRestricted:
-        if cell.cart==True:
-          GroupSpin.create_dataset("MO_Coeff",(NbMO,NbAO),dtype=mytype,data=order_mo_coef(mo_coeff[i]))
-        else: 
-          GroupSpin.create_dataset("MO_Coeff",(NbMO,NbAO),dtype=mytype,data=zip(*mo_coeff[i]))
+        mo_coeff_ = get_mo(mo_coeff[i], cell.cart) 
+
+        GroupSpin.create_dataset("MO_Coeff",(NbMO,NbAO),dtype=mytype,data=mo_coeff_) 
         GroupSpin.create_dataset("MO_EIGENVALUES",(1,NbMO),dtype="f8",data=mf.mo_energy[i])
+
       else:
         GroupSpindn=GroupKpts.create_group("spin_Dn")
-        if cell.cart==True:
-          GroupSpin.create_dataset("MO_Coeff",(NbMO,NbAO),dtype=mytype,data=order_mo_coef(mo_coeff[0][i]))
-          GroupSpindn.create_dataset("MO_Coeff",(NbMO,NbAO),dtype=mytype,data=order_mo_coef(mo_coeff[1][i]))
-        else:
-          GroupSpin.create_dataset("MO_Coeff",(NbMO,NbAO),dtype=mytype,data=zip(*mo_coeff[0][i]))
-          GroupSpindn.create_dataset("MO_Coeff",(NbMO,NbAO),dtype=mytype,data=zip(*mo_coeff[1][i]))
+
+	mo_coeff_up = get_mo(mo_coeff[0][i], cell.cart) 
+	mo_coeff_down = get_mo(mo_coeff[1][i], cell.cart)
+
+        GroupSpin.create_dataset("MO_Coeff",(NbMO,NbAO),dtype=mytype,data=mo_coeff_up)
+        GroupSpindn.create_dataset("MO_Coeff",(NbMO,NbAO),dtype=mytype,data=mo_coeff_down)
 
         GroupSpin.create_dataset("MO_EIGENVALUES",(1,NbMO),dtype="f8",data=mf.mo_energy[0][i])
         GroupSpindn.create_dataset("MO_EIGENVALUES",(1,NbMO),dtype="f8",data=mf.mo_energy[1][i])
