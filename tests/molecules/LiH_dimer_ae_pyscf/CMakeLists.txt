@@ -4,10 +4,11 @@ IF (NOT QMC_CUDA)
 #
 # LiH molecular dimer gaussian tests, all electron
 # Also check results for different number of mpi tasks and threads keeping total constant
+# Energy from Gamess: E=-7.9873236457148  
 #
-  LIST(APPEND LIH_SCALARS "kinetic" "8.084 0.035") # kinetic energy
-  LIST(APPEND LIH_SCALARS "totenergy" "-7.9498 0.0032") # total energy
-  LIST(APPEND LIH_SCALARS "eeenergy" "3.4307 0.0033") # e-e energy
+  LIST(APPEND LIH_SCALARS "kinetic" "8.027 0.043") # kinetic energy
+  LIST(APPEND LIH_SCALARS "totenergy" "-7.9886 0.0035") # total energy
+  LIST(APPEND LIH_SCALARS "eeenergy" "3.4947 0.0043") # e-e energy
   LIST(APPEND LIH_SCALARS "samples" "1600000 0.0") # samples
 #  LIST(APPEND LIH_SCALARS "flux" "0.0 0.1") # sampling check, should be zero
 
