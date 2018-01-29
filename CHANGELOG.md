@@ -2,7 +2,16 @@
 
 Notable changes to QMCPACK will be documented in this file.
 
-## [Unreleased]
+## [3.4.0] - 2018-01-29
+
+### Notes
+
+This release includes size-consistent t-moves, and improvements to
+load balancing and memory usage that will be visible in large
+runs. Significant revisions have been made to the gaussian
+wavefunction reader and a PySCF interface is in progress.  A bug
+affecting non-git installs (from release tarballs) is fixed. Feedback
+is particularly welcome on the new features.
 
 * Size consistent t-moves implemented (Casula 2010 algorithm).
   Enabled via nonlocalmoves parameter, see manual.
@@ -31,10 +40,13 @@ Notable changes to QMCPACK will be documented in this file.
 
 ### Known limitations
 
-PySCF interface is preliminary. convert4qmc is updated, but manual entries are
-not yet provided. This will be improved in later versions. The interface is
-currently only for isolated molecular systems. A full periodic implementation
-is in progress.
+* PySCF interface is preliminary. convert4qmc is updated, but manual
+  entries are not yet provided. This will be improved in later
+  versions. The interface is currently only for isolated molecular
+  systems. A full periodic implementation is in progress.
+
+* Documentation, examples and tutorials are not yet consistent with
+  the updated converter convert4qmc.
 
 ## [3.3.0] - 2017-12-18
 
