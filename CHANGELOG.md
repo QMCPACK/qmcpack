@@ -10,7 +10,7 @@ Notable changes to QMCPACK will be documented in this file.
   due to git-rev.h handling.
 * Optimized load balancing in DMC. Command line option async_swap
   removed. Parameter use_nonblocking now disables non-blocking MPI
-  load balancing.
+  load balancing. Non-blocking MPI is now enabled by default.
 * Improved memory handling and usage in SoA code, increases
   performance.  
 * Improved stability of GPU matrix inversion for large runs.
