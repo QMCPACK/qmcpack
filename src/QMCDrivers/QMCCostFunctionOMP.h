@@ -47,7 +47,6 @@ public:
   void engine_checkConfigurations(cqmc::engine::LMYEngine * EngineObj);
 #endif
   void resetPsi(bool final_reset=false);
-  void resetWalkers();   
   void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff=0);
   Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right);
 
@@ -61,11 +60,9 @@ protected:
   std::vector<Matrix<Return_t>* > HDerivRecords;
   Return_t CSWeight;
 
-  ///vmc walkers to clean up
-  std::vector<int> nVMCWalkers;
   Return_t correlatedSampling(bool needGrad=true);
 
-    #ifdef HAVE_LMY_ENGINE
+  #ifdef HAVE_LMY_ENGINE
   int total_samples();
   Return_t LMYEngineCost_detail(cqmc::engine::LMYEngine * EngineObj);
   #endif

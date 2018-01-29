@@ -37,7 +37,7 @@
    &   \texttt{reconfiguration     } &  string  & yes/pure/other & no   & fixed population technique  \\
    &   \texttt{branchInterval      } &  integer  & $\ge 0$ & 1   & branching interval \\
    &   \texttt{substeps            } &  integer  & $\ge 0$ & 1   & branching interval \\
-   &   \texttt{nonlocalmoves       } &  string  & yes/other & no   & run with tmoves  \\
+   &   \texttt{nonlocalmoves       } &  string  & yes/v0/v1/no & no   & run with tmoves  \\
    &   \texttt{scaleweight         } &  string  & yes/other & yes   & scale weights (CUDA only)  \\
    &   \texttt{MaxAge              } &  double  & $\ge 0$ & 10   & kill persistent walkers  \\
     &   \texttt{MaxCopy             } &  double  & $\ge 0$ &2   & limit population growth \\
@@ -46,6 +46,7 @@
  %  &   \texttt{wlen                } &  integer  & $\ge 0$ & 0   & number of samples per  thread  \\
    &   \texttt{maxDisplSq      } &  real  & all values & -1   & maximum particle move  \\
    &   \texttt{storeconfigs        } &  integer  & all values & 0   & store configurations  \\
+   &   \texttt{use\_nonblocking    } &  string  & yes/no & yes   & using non-blocking send/recv \\
    &   \texttt{blocks\_between\_recompute} &  integer  & $\ge 0$ & dep.  & wavefunction recompute frequency  \\
   \hline
 \end{tabularx}
@@ -98,7 +99,8 @@ where $N$ is the current population.
 \item \texttt{substeps}.  Same as BranchInterval.
 
 
-\item \texttt{nonlocalmoves}. DMC driver for running Hamiltonians with non-local moves.  An typical usage is to simulate Hamiltonians with non-local psuedopotentials with T-Moves.  Setting this equal to false will impose the locality approximation.
+\item \texttt{nonlocalmoves}. Evaluate pseudopotentials using one of the nonlocal move algorithms such as t-moves.  Setting nonlocalmoves to `no' will impose the locality approximation. `yes/v0' implements the algorithm in the 2006 Casula paper~\cite{Casula2006} and `v1' implements the v1 algorithm in the 2010 Casula paper~\cite{Casula2010}.
+The v1 algorithm is size-consistent and an important advance over the previous v0 non-size-consistent algorithm. Investigating the importance of size consistency is highly recommended.
 
 \item \texttt{scaleweight}. Scaling weight per Umrigar/Nightengale.  CUDA only.
 

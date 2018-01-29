@@ -81,8 +81,8 @@ void RNDiracDeterminantBase::resize(int nel, int morb)
   grad_phi_alpha_Minv.resize(nel,norb);
 }
 
-RNDiracDeterminantBase::RealType
-RNDiracDeterminantBase::registerData(ParticleSet& P, PooledData<RealType>& buf)
+void
+RNDiracDeterminantBase::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if (NP == 0) //first time, allocate once
   {
@@ -120,11 +120,10 @@ RNDiracDeterminantBase::registerData(ParticleSet& P, PooledData<RealType>& buf)
   buf.add(LogValue);
   buf.add(alternateLogValue);
   buf.add(alternatePhaseValue);
-  return LogValue;
 }
 
 RNDiracDeterminantBase::RealType RNDiracDeterminantBase::updateBuffer(ParticleSet& P,
-    PooledData<RealType>& buf, bool fromscratch)
+    WFBufferType& buf, bool fromscratch)
 {
   myG=0.0;
   myL=0.0;
@@ -190,7 +189,7 @@ RNDiracDeterminantBase::RealType RNDiracDeterminantBase::updateBuffer(ParticleSe
   return LogValue;
 }
 
-void RNDiracDeterminantBase::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void RNDiracDeterminantBase::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   buf.get(psiM.first_address(),psiM.last_address());
   buf.get(FirstAddressOfdV,LastAddressOfdV);

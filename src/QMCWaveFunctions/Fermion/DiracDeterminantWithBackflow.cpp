@@ -102,8 +102,8 @@ void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix_t& logdet, GradMatri
   simd::transpose(psiM_temp.data(), NumOrbitals, psiM_temp.cols(), logdet.data(), NumOrbitals, logdet.cols());
 }
 
-DiracDeterminantWithBackflow::RealType
-DiracDeterminantWithBackflow::registerData(ParticleSet& P, PooledData<RealType>& buf)
+void
+DiracDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if(NP == 0)
     //first time, allocate once
@@ -145,11 +145,10 @@ DiracDeterminantWithBackflow::registerData(ParticleSet& P, PooledData<RealType>&
   buf.add(psiMinv.first_address(),psiMinv.last_address());
   buf.add(LogValue);
   buf.add(PhaseValue);
-  return LogValue;
 }
 
 DiracDeterminantWithBackflow::RealType DiracDeterminantWithBackflow::updateBuffer(ParticleSet& P,
-    PooledData<RealType>& buf, bool fromscratch)
+    WFBufferType& buf, bool fromscratch)
 {
   // for now, always recalculate from scratch
   // enable from_scratch = true later
@@ -174,7 +173,7 @@ DiracDeterminantWithBackflow::RealType DiracDeterminantWithBackflow::updateBuffe
   return LogValue;
 }
 
-void DiracDeterminantWithBackflow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void DiracDeterminantWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   buf.get(psiM.first_address(),psiM.last_address());
   buf.get(FirstAddressOfdV,LastAddressOfdV);
@@ -237,9 +236,9 @@ DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratio(Part
 #endif
 }
 
-void DiracDeterminantWithBackflow::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+void DiracDeterminantWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
-  APP_ABORT(" Need to implement DiracDeterminantWithBackflow::get_ratios(ParticleSet& P, int iat). \n");
+  APP_ABORT(" Need to implement DiracDeterminantWithBackflow::evaluateRatiosAlltoOne. \n");
 }
 
 DiracDeterminantWithBackflow::GradType

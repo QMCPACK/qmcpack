@@ -143,8 +143,8 @@ void ThreeBodyBlockSparse::acceptMove(ParticleSet& P, int iat)
   }
 }
 
-OrbitalBase::RealType
-ThreeBodyBlockSparse::registerData(ParticleSet& P, PooledData<RealType>& buf)
+void
+ThreeBodyBlockSparse::registerData(ParticleSet& P, WFBufferType& buf)
 {
   evaluateLogAndStore(P);
   FirstAddressOfdY=&(dY(0,0)[0]);
@@ -159,7 +159,6 @@ ThreeBodyBlockSparse::registerData(ParticleSet& P, PooledData<RealType>& buf)
   buf.add(Uk.begin(), Uk.end());
   buf.add(FirstAddressOfgU,LastAddressOfgU);
   buf.add(d2Uk.begin(), d2Uk.end());
-  return LogValue;
 }
 
 void
@@ -211,7 +210,7 @@ ThreeBodyBlockSparse::evaluateLogAndStore(ParticleSet& P)
 }
 
 void
-ThreeBodyBlockSparse::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+ThreeBodyBlockSparse::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   buf.get(LogValue);
   buf.get(V.begin(), V.end());
@@ -224,7 +223,7 @@ ThreeBodyBlockSparse::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
 }
 
 OrbitalBase::RealType
-ThreeBodyBlockSparse::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+ThreeBodyBlockSparse::updateBuffer(ParticleSet& P, WFBufferType& buf,
                                    bool fromscratch)
 {
   evaluateLogAndStore(P);

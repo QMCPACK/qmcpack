@@ -29,7 +29,7 @@ void Cartesian2Spherical(int n, double* Cart, double* Sphe);
 
 GamesAsciiParser::GamesAsciiParser()
 {
-  basisName = "Gaussian-G2";
+  basisName = "Gaussian";
   Normalized = "no";
   usingECP=false;
   BohrUnit=true;
@@ -43,7 +43,7 @@ GamesAsciiParser::GamesAsciiParser()
 GamesAsciiParser::GamesAsciiParser(int argc, char** argv):
   QMCGaussianParserBase(argc,argv)
 {
-  basisName = "Gaussian-G2";
+  basisName = "Gaussian";
   Normalized = "no";
   usingECP=false;
   ECP=false;

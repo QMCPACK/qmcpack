@@ -23,6 +23,9 @@
 /* define the git last commit date */
 // #cmakedefine QMCPLUSPLUS_LAST_CHANGED_DATE  "@QMCPLUSPLUS_LAST_CHANGED_DATE@"
 
+/* building from Git repository or not */
+#cmakedefine IS_GIT_PROJECT  @IS_GIT_PROJECT@
+
 /* define QMC_BUILD_LEVEL */
 #cmakedefine QMC_BUILD_LEVEL @QMC_BUILD_LEVEL@
 
@@ -206,11 +209,11 @@
     #if defined(__AVX512F__)
       #define QMC_CLINE 64
       #define QMC_ALIGNAS alignas(64)
-      #define ASSUME_ALIGNED(x) __builtin_assume_aligned(x,64)
+      #define ASSUME_ALIGNED(x) (x) = (__typeof__(x)) __builtin_assume_aligned(x,64)
     #else
       #define QMC_CLINE 32
       #define QMC_ALIGNAS alignas(32)
-      #define ASSUME_ALIGNED(x) __builtin_assume_aligned(x,32)
+      #define ASSUME_ALIGNED(x) (x) = (__typeof__(x)) __builtin_assume_aligned(x,32)
     #endif
   #else
    #define QMC_CLINE 32
@@ -235,6 +238,12 @@
 
 /* Internal timers */
 #cmakedefine ENABLE_TIMERS @ENABLE_TIMERS@
+
+/* Use VTune API */
+#cmakedefine USE_VTUNE_API @USE_VTUNE_API@
+
+/* Use VTune Task API with timers */
+#cmakedefine USE_VTUNE_TASKS @USE_VTUNE_TASKS@
 
 #endif // QMCPLUSPLUS_CONFIGURATION_H
 

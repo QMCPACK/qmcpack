@@ -1,0 +1,392 @@
+Rank =    7  Free Memory = 127728 MB
+Rank =    8  Free Memory = 127728 MB
+Rank =    9  Free Memory = 127728 MB
+Rank =   10  Free Memory = 127728 MB
+Rank =   11  Free Memory = 127728 MB
+Rank =   12  Free Memory = 127728 MB
+Rank =   13  Free Memory = 127728 MB
+Rank =   14  Free Memory = 127728 MB
+Rank =   15  Free Memory = 127728 MB
+Rank =    0  Free Memory = 127728 MB
+Rank =    1  Free Memory = 127728 MB
+Rank =    2  Free Memory = 127728 MB
+Rank =    3  Free Memory = 127728 MB
+Rank =    4  Free Memory = 127728 MB
+Rank =    5  Free Memory = 127728 MB
+Rank =    6  Free Memory = 127728 MB
+  Input file(s): C.NO_J3.in.xml 
+
+=====================================================
+                    QMCPACK 1.0.0 
+
+  (c) Copyright 2003-  QMCPACK developers            
+
+  Subversion branch 6259
+  Last modified     2014-02-28 09:47:36 -0500 (Fri, 28 Feb 2014)
+=====================================================
+  Global options 
+  async_swap=0 : using blocking send/recv for walker swaps 
+
+  MPI Nodes            = 16
+  MPI Nodes per group  = 16
+  MPI Group ID         = 0
+  OMP_NUM_THREADS      = 1
+  Input XML = C.NO_J3.in.xml
+
+  Project = C.NO_J3
+  date    = 2017-12-19 11:20:52 EST
+  host    = jaguar
+  user    = auser
+
+  DO NOT READ DENSITY
+  Offset for the random number seeds based on time 100
+  Random number offset = 100  seeds = 557-647
+  ParticleSetPool::put
+  Creating atom particleset
+  XMLParticleParser::putSpecial
+  All the species have the same mass 1
+Particles are grouped. Safe to use groups 
+atom
+  ParticleSetPool::put
+  Creating e particleset
+  XMLParticleParser::putSpecial
+  All the species have the same mass 1
+Particles are grouped. Safe to use groups 
+e
+ Adding WavefunctionFactory for psi0
+  WaveFunctionFactory::build
+  WaveFunctionFactory::addFermionTerm
+  SlaterDetBuilder::put(xmlNodePtr)
+  BasisSetFactory::createBasisSet
+Using MolecularBasisBuilder<NGOBuilder>
+
+  MolecularBasisBuilder::put(xmlNodePtr)
+<input node="basisset"/>
+  Distance table for AA: source/target = e
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates with 
+  ... ParticleSet::addTable Create Table #0 e_e
+  Distance table for AB: source = atom target = e
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates 
+  ... ParticleSet::addTable Create Table #1 atom_e
+  AtomicBasisBuilder::put(xmlNodePtr)
+<input node="atomicBasisSet"  type="Numerical"  elementType="C"  expandYlm="no"  href="C.s000.h5"/>
+  C.s000.h5 version 0 1
+  AtomicBasisBuilder::createAOSet(xmlNodePtr)
+  AO BasisSet for C
+   Spherical Harmonics  DO NOT contain (-1)^m factor
+   Angular momentum m is explicitly given.
+   Grid is created by the input paremters in h5
+    Using log grid ri = 1.66667e-07 rf = 163.299 npts = 2001
+   R(n,l,m,s) 1 0 0 0
+   R(n,l,m,s) 2 0 0 0
+	Setting GridManager of 1 radial orbital to false
+   R(n,l,m,s) 2 1 0 0
+	Setting GridManager of 2 radial orbital to false
+   R(n,l,m,s) 2 1 1 0
+   Maximu Angular Momentum   = 1
+   Number of Radial functors = 3
+   Basis size                = 4
+
+Built BasisSetBuilder "MO" of type mo
+  BasisSetFactory::createBasisSet
+Reuse BasisSetBuilder "MO" type MO
+ Building SPOset  with  basis set.
+  MolecularBasisBuilder::createSPO(xmlNodePtr)
+Creating LCOrbitalSet with the Identity coefficient
+   Using Identity for the LCOrbitalSet 
+  BasisSetFactory::createBasisSet
+Reuse BasisSetBuilder "MO" type MO
+ Building SPOset  with  basis set.
+  MolecularBasisBuilder::createSPO(xmlNodePtr)
+Creating LCOrbitalSet with the Identity coefficient
+   Using Identity for the LCOrbitalSet 
+  SlaterDetBuilder::putDeterminant(xmlNodePtr,int)
+  Creating a determinant detu group=0 sposet=detu
+  Reusing a SPO set detu
+
+  SlaterDetBuilder::putDeterminant(xmlNodePtr,int)
+  Creating a determinant detd group=1 sposet=detd
+  Reusing a SPO set detd
+
+  FermionWF=SlaterDet
+  JastrowBuilder::addOneBody(xmlNodePtr)
+
+  Using BsplineBuilder for one-body jastrow with B-spline functions
+  BsplineJastrowBuilder::put(xmlNodePtr)
+  BsplineJastrowBuilder::createOneBodyJastrow(xmlNodePtr)
+  ... ParticleSet::addTable Reuse Table #1 atom_e
+  ... ParticleSet::addTable Reuse Table #1 atom_e
+  BsplineFunctor::put(xmlNodePtr)
+ size = 6 parameters 
+ cusp = 0
+ rcut = 3
+Parameter     Name      Value
+ce_0 -0.435982 1 1  ON 0
+ce_1 -0.334267 1 1  ON 1
+ce_2 -0.216677 1 1  ON 2
+ce_3 -0.119876 1 1  ON 3
+ce_4 -0.0556121 1 1  ON 4
+ce_5 -0.0199156 1 1  ON 5
+  JastrowBuilder::addTwoBody(xmlNodePtr)
+  PadeJastrowBuilder::put()
+  HamiltonianPool::put
+  QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
+  ... ParticleSet::addTable Reuse Table #0 e_e
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+  ... ParticleSet::addTable Reuse Table #1 atom_e
+  QMCHamiltonian::addOperator Coulomb to H, physical Hamiltonian 
+
+  QMCHamiltonian::add2WalkerProperty added
+    3 to P::PropertyList 
+    0 to P::Collectables 
+    starting Index of the observables in P::PropertyList = 9
+  Hamiltonian disables VirtualMoves
+<init source="atom" target="e">
+</init>
+ParticleSetPool::randomize 
+=========================================================
+ Summary of QMC systems 
+=========================================================
+ParticleSetPool has: 
+
+  ParticleSet atom : 0 1 
+
+    1
+
+    C  0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+
+  ParticleSet e : 0 4 6 
+
+    6
+
+    u  2.2068668742e+00 -1.5294657225e+00  1.1867564422e+00
+    u  1.4647244787e+00  1.2775180388e+00  8.2409381920e-02
+    u -1.2349980596e-01  1.8712262460e+00 -1.3794457752e-01
+    u  2.3129743448e+00 -1.1199823753e+00 -1.2252550245e+00
+    d  3.7240397724e-01  4.9208246232e-01  2.5201259615e-02
+    d -4.1461669984e-01  7.5552618608e-01 -5.1150419999e-01
+
+  Hamiltonian h0
+  Kinetic         Kinetic energy
+  ElecElec        CoulombAA source/target e
+
+  Coulomb         CoulombAB source=atom
+
+
+=========================================================
+  Start VMCSingleOMP
+  File Root C.NO_J3.s000 append = no 
+=========================================================
+  Adding 1 walkers to 0 existing sets
+  Total number of walkers: 1.6000000000e+01
+  Total weight: 1.6000000000e+01
+  Resetting Properties of the walkers 1 x 12
+
+<vmc function="put">
+  qmc_counter=0  my_counter=0
+  time step      = 2.0000000000e-01
+  blocks         = 1000
+  steps          = 50000
+  substeps       = 1
+  current        = 0
+  target samples = 7.9200000000e+03
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 101010
+<parameter name="blocks" condition="int">1000</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">4.9500000000e+02</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">101010</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">101010</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">7.9200000000e+03</parameter>
+<parameter name="samplesperthread" condition="real">4.9500000000e+02</parameter>
+<parameter name="steps" condition="int">50000</parameter>
+<parameter name="stepsbetweensamples" condition="int">101010</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">1</parameter>
+<parameter name="substeps" condition="int">1</parameter>
+<parameter name="tau" condition="au">2.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">2.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">2.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">1000</parameter>
+<parameter name="warmupsteps" condition="int">1000</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 101010 steps.
+</vmc>
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 1
+  traces available          : 0
+
+  Initial partition of walkers 0 1 
+  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast
+
+  Total Sample Size   =7920
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 0
+    time step          = 0.2
+    reference energy   = -37.8305
+    reference variance = 0.688077
+====================================================
+  QMC Execution time = 9.0205397531e+02 secs 
+Creating DMCMP for the qmc driver
+
+=========================================================
+  Start DMCOMP
+  File Root C.NO_J3.s001 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 12
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 1
+  traces available          : 0
+
+  EstimatorManager::add replace LocalEnergy estimator.
+  DMCOMP::resetUpdateEngines
+  Cannot make clones again. Use existing 1 clones
+  Total number of walkers: 7.9200000000e+03
+  Total weight: 7.9200000000e+03
+  Creating WalkerController: target  number of walkers = 7920
+  Using WalkerControlMPI for dynamic population control.
+  START ALL OVER 
+  WalkerControlBase parameters 
+    maxCopy = 2
+   Max Walkers per node 991
+   Min Walkers per node 100
+  QMC counter      = 1
+  time step        = 1.0000000000e-02
+  effective time step = 1.0000000000e-02
+  trial energy     = -3.7830525709e+01
+  reference energy = -3.7830525709e+01
+  Feedback = 1.0000000000e+00
+  reference variance = 6.8807690562e-01
+  target walkers = 7920
+  branch cutoff = 5.0000000000e+01 7.5000000000e+01
+  Max and mimum walkers per node= 991 100
+  QMC Status (BranchMode) = 0000001101
+  Initial partition of walkers on a node: 0 495 
+  Updates by particle-by-particle moves using fast gradient version 
+  DMC moves are rejected when a node crossing is detected
+SimpleFixedNodeBranch::checkParameters 
+  Average Energy of a population  = -37.7724
+  Energy Variance = 0.802148
+
+  Fluctuating population
+  Persisent walkers are killed after 1 MC sweeps
+  BranchInterval = 1
+  Steps per block = 50
+  Number of blocks = 140
+
+  DMC Engine Initialization = 2.6269151000e-02 secs 
+
+ Warmup is completed after 4
+
+  TauEff     = 9.3261543945e-03
+ TauEff/Tau = 9.3261543945e-01
+  Etrial     = -3.7813755613e+01
+ Running average of energy = -3.7775367031e+01
+                  Variance = 6.7038460615e-01
+branch cutoff = 1.0000000000e+01 1.5000000000e+01
+====================================================
+  SimpleFixedNodeBranch::finalize after a DMC block
+    QMC counter                   = 1
+    time step                     = 0.01
+    effective time step           = 0.00931612
+    trial energy                  = -37.8207
+    reference energy              = -37.8278
+    reference variance            = 0.670385
+    target walkers                = 7920
+    branch cutoff                 = 10 15
+    Max and mimum walkers per node= 991 100
+    Feedback                      = 1
+    QMC Status (BranchMode)       = 0000001111
+====================================================
+  QMC Execution time = 6.9290285626e+01 secs 
+  Reusing DMCOMP
+BRANCH resetRun
+ SimpleFixedNodeBranch::resetRun detected changes in <parameter>'s 
+ BranchMode : 0000001111 0000001111
+  WalkerControlBase parameters 
+    maxCopy = 2
+   Max Walkers per node 991
+   Min Walkers per node 100
+ iParam (old): 0                 1                 1                 7920              991               100               1                 0                 
+ iParam (new): 20                1                 1                 7920              991               100               1                 0                 
+ vParam (old): 1.0000000000e-02  9.3161162658e-03  -3.7820671637e+01 -3.7827767460e+01 -3.7841764621e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  6.7038460615e-01  -2.6468090291e+05 6.9970000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+ vParam (new): 1.0000000000e-02  9.3161162658e-03  -3.7820671637e+01 -3.7827767460e+01 -3.7841764621e+01 1.5000000000e+01  1.0000000000e+01  2.0000000000e-01  6.7038460615e-01  -2.6468090291e+05 6.9970000000e+03  1.0000000000e+00  1.0000000000e+01  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  1.0000000000e+00  
+SimpleFixedNodeBranch::checkParameters 
+  Average Energy of a population  = -37.8414
+  Energy Variance = 0.799146
+
+
+=========================================================
+  Start DMCOMP
+  File Root C.NO_J3.s002 append = no 
+=========================================================
+Using existing walkers 
+  Resetting Properties of the walkers 1 x 12
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 1
+  traces available          : 0
+
+  EstimatorManager::add replace LocalEnergy estimator.
+  DMCOMP::resetUpdateEngines
+  Cannot make clones again. Use existing 1 clones
+SimpleFixedNodeBranch::checkParameters 
+  Average Energy of a population  = -37.8225
+  Energy Variance = 0.789
+
+  Fluctuating population
+  Persisent walkers are killed after 1 MC sweeps
+  BranchInterval = 1
+  Steps per block = 250
+  Number of blocks = 800
+
+  DMC Engine Initialization = 9.5313997008e-05 secs 
+
+ Warmup is completed after 20
+
+  TauEff     = 9.3171070153e-03
+ TauEff/Tau = 9.3171070153e-01
+  Etrial     = -3.7832843689e+01
+ Running average of energy = -3.7820501922e+01
+                  Variance = 6.2830815284e-01
+branch cutoff = 1.0000000000e+01 1.5000000000e+01
+====================================================
+  SimpleFixedNodeBranch::finalize after a DMC block
+    QMC counter                   = 2
+    time step                     = 0.01
+    effective time step           = 0.00931582
+    trial energy                  = -37.8219
+    reference energy              = -37.8282
+    reference variance            = 0.628308
+    target walkers                = 7920
+    branch cutoff                 = 10 15
+    Max and mimum walkers per node= 991 100
+    Feedback                      = 1
+    QMC Status (BranchMode)       = 0000001111
+====================================================
+  QMC Execution time = 1.9601208897e+03 secs 
+  Total Execution time = 2.9315129992e+03 secs
+
+=========================================================
+  A new xml input file : C.NO_J3.s002.cont.xml

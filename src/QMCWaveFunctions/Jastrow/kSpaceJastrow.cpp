@@ -515,7 +515,7 @@ kSpaceJastrow::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
   ComplexType eye(0.0, 1.0);
   RealType J1new(0.0), J1old(0.0), J2new(0.0), J2old(0.0);
-  PosType rnew(P.R[iat]), rold(P.getOldPos());
+  const PosType &rnew(P.activePos), &rold(P.R[iat]);
   // Compute one-body contribution
   int nOne = OneBodyGvecs.size();
   for (int i=0; i<nOne; i++)
@@ -566,7 +566,7 @@ kSpaceJastrow::ValueType
 kSpaceJastrow::ratio(ParticleSet& P, int iat)
 {
   RealType J1new(0.0), J1old(0.0), J2new(0.0), J2old(0.0);
-  PosType rnew(P.R[iat]), rold(P.getOldPos());
+  const PosType &rnew(P.activePos), &rold(P.R[iat]);
   // Compute one-body contribution
   int nOne = OneBodyGvecs.size();
   for (int i=0; i<nOne; i++)
@@ -602,10 +602,10 @@ kSpaceJastrow::ratio(ParticleSet& P, int iat)
 
 /** evaluate the ratio
 */
-inline void kSpaceJastrow::get_ratios(ParticleSet& P, std::vector<kSpaceJastrow::ValueType>& ratios)
+inline void kSpaceJastrow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<kSpaceJastrow::ValueType>& ratios)
 {
   RealType J1new(0.0);
-  PosType rnew(P.R[0]);
+  const PosType &rnew(P.activePos);
 //     Compute one-body contribution
   int nOne = OneBodyGvecs.size();
   for (int i=0; i<nOne; i++)
@@ -623,11 +623,7 @@ inline void kSpaceJastrow::get_ratios(ParticleSet& P, std::vector<kSpaceJastrow:
   for (int n=0; n<N; n++)
   {
     RealType J1old(0.0), J2Rat(0.0);
-    PosType rold;
-    if (n==0)
-      rold=P.getOldPos();
-    else
-      rold=P.R[n];
+    const PosType &rold(P.R[n]);
     for (int i=0; i<nOne; i++)
       OneBodyPhase[i] = dot(OneBodyGvecs[i], rold);
     eval_e2iphi (OneBodyPhase, OneBody_e2iGr);
@@ -666,8 +662,8 @@ kSpaceJastrow::acceptMove(ParticleSet& P, int iat)
   // d2U += offd2U;
 }
 
-kSpaceJastrow::RealType
-kSpaceJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf)
+void
+kSpaceJastrow::registerData(ParticleSet& P, WFBufferType& buf)
 {
   LogValue=evaluateLog(P,P.G,P.L);
   // eikr.resize(NumPtcls,MaxK);
@@ -680,11 +676,10 @@ kSpaceJastrow::registerData(ParticleSet& P, PooledData<RealType>& buf)
   // buf.add(d2U.first_address(), d2U.last_address());
   // buf.add(FirstAddressOfdU,LastAddressOfdU);
   // return LogValue;
-  return LogValue;
 }
 
 kSpaceJastrow::RealType
-kSpaceJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+kSpaceJastrow::updateBuffer(ParticleSet& P, WFBufferType& buf,
                             bool fromscratch)
 {
   LogValue=evaluateLog(P,P.G,P.L);
@@ -699,7 +694,7 @@ kSpaceJastrow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
 }
 
 void
-kSpaceJastrow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+kSpaceJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   for (int i=0; i<TwoBodyCoefs.size(); i++)
     TwoBody_rhoG[i] = ComplexType();

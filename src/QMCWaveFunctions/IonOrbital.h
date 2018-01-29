@@ -32,8 +32,10 @@ private:
   ParticleAttrib<RealType> U,d2U;
   ParticleAttrib<PosType> dU;
   RealType *FirstAddressOfdU, *LastAddressOfdU;
-  DistanceTableData* d_table;
-  ParticleSet &CenterRef, &PtclRef;
+  ///table index
+  int myTableID;
+  ///orbital centers
+  ParticleSet &CenterRef;
   int NumTargetPtcls, NumCenters;
   RealType curVal, curLap;
   PosType curGrad;
@@ -77,14 +79,13 @@ public:
 
   void restore(int iat);
 
-  RealType
-  registerData(ParticleSet& P, BufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
 
   RealType
-  updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch);
+  updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch);
 
   void
-  copyFromBuffer(ParticleSet& P, BufferType& buf);
+  copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   GradType evalGrad(ParticleSet& P, int iat);
 

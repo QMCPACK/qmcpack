@@ -36,7 +36,7 @@ public:
   typedef typename Container_t::iterator iterator;
   typedef Matrix<T,Alloc>  This_t;
 
-  Matrix():D1(0),D2(0) { } // Default Constructor initializes to zero.
+  Matrix():D1(0),D2(0),TotSize(0) { } // Default Constructor initializes to zero.
 
   Matrix(size_type n)
   {
@@ -61,7 +61,7 @@ public:
 
   inline size_type size() const
   {
-    return X.size();
+    return TotSize;
   }
   inline size_type rows() const
   {
@@ -125,6 +125,18 @@ public:
     D2 = m;
     TotSize=n*m;
     X.resize(n*m);
+  }
+
+  // free the matrix storage
+  inline void free()
+  {
+    X.free();
+  }
+
+  // Attach to pre-allocated memory
+  inline void attachReference(T* ref)
+  {
+    X.attachReference(ref, TotSize);
   }
 
   inline void add(size_type n)   // you can add rows: adding columns are forbidden

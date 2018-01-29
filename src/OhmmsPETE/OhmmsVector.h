@@ -43,9 +43,13 @@ public:
 
   /** constructor with size n*/
   explicit inline
-    Vector(size_t n=0): nLocal(n), nAllocated(0), X(nullptr)
+    Vector(size_t n=0, Type_t val = Type_t()): nLocal(n), nAllocated(0), X(nullptr)
   {
-    if(n) resize_impl(n);
+    if(n)
+    {
+      resize_impl(n);
+      std::fill_n(X, n, val);
+    }
   }
 
   /** constructor with an initialized ref */
@@ -97,6 +101,15 @@ public:
     }
   }
 
+  // Attach to pre-allocated memory
+  inline void attachReference(T* ref, size_t n)
+  {
+    if(nAllocated) throw std::runtime_error("Pointer attaching is not allowed on Vector with allocated memory.");
+    nLocal=n;
+    nAllocated=0;
+    X=ref;
+  }
+
   //! return the current size
   inline size_t size() const
   {
@@ -104,12 +117,20 @@ public:
   }
 
   ///resize
-  inline void resize(size_t n)
+  inline void resize(size_t n, Type_t val = Type_t())
   {
     if(nLocal>nAllocated)
       throw std::runtime_error("Resize not allowed on Vector constructed by initialized memory.");
     if(n>nAllocated)
+    {
       resize_impl(n);
+      std::fill_n(X, n, val);
+    }
+    else if(n>nLocal)
+    {
+      std::fill_n(X+nLocal, n-nLocal, val);
+      nLocal=n;
+    }
     else
       nLocal=n;
     return;
@@ -117,6 +138,18 @@ public:
 
   ///clear
   inline void clear() {nLocal=0;}
+
+  ///free
+  inline void free()
+  {
+    if(nAllocated)
+    {
+      mAllocator.deallocate(X,nAllocated);
+    }
+    nLocal=0;
+    nAllocated=0;
+    X=nullptr;
+  }
 
   // Get and Set Operations
   inline Type_t& operator[](size_t i)
@@ -183,7 +216,6 @@ private:
       mAllocator.deallocate(X,nAllocated);
     }
     X=mAllocator.allocate(n);
-    std::fill_n(X, n, T());
     nLocal=n;
     nAllocated=n;
   }

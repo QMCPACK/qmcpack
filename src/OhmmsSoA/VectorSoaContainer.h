@@ -141,16 +141,27 @@ namespace qmcplusplus
         myData=myAlloc.allocate(nAllocated);
       }
 
-      /** reset by pre-allocated data
+      /** free myData
+       */
+      __forceinline void free()
+      {
+        if(nAllocated) myAlloc.deallocate(myData,nAllocated);
+        nLocal=0;
+        nGhosts=0;
+        nAllocated=0;
+        myData=nullptr;
+      }
+
+      /** attach to pre-allocated data
        * @param n new nLocal 
        * @param n_padded new nGhosts
        * @param ptr new myData
        *
        * Free existing memory and reset the internal variables
        */
-      __forceinline void resetByRef(size_t n, size_t n_padded, T* ptr)
+      __forceinline void attachReference(size_t n, size_t n_padded, T* ptr)
       {
-        if(nAllocated) myAlloc.deallocate(myData,nAllocated);
+        if(nAllocated) throw std::runtime_error("Pointer attaching is not allowed on VectorSoaContainer with allocated memory.");
         nAllocated=0;
         nLocal=n;
         nGhosts=n_padded;

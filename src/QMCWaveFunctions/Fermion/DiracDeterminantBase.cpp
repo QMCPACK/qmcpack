@@ -44,21 +44,20 @@ DiracDeterminantBase::DiracDeterminantBase(SPOSetBasePtr const &spos, int first)
     Optimizable=true;
   OrbitalName="DiracDeterminantBase";
   registerTimers();
-
-  //BufferMode=0 will only save the inverse. Better to Buffer dpsi and d2psi for common problems.
-  //Set to 0, if memory becomes the can-do/cannot issue.
-  BufferMode=1;
 }
 
 ///default destructor
 DiracDeterminantBase::~DiracDeterminantBase() {}
 
+#if 0
 DiracDeterminantBase& DiracDeterminantBase::operator=(const DiracDeterminantBase& s)
 {
+  Bytes_in_WFBuffer=s.Bytes_in_WFBuffer;
   NP=0;
   resize(s.NumPtcls, s.NumOrbitals);
   return *this;
 }
+#endif
 
 /** set the index of the first particle in the determinant and reset the size of the determinant
  *@param first index of first particle
@@ -111,6 +110,10 @@ void DiracDeterminantBase::resize(int nel, int morb)
   NumPtcls=nel;
   NumOrbitals=norb;
 
+  dpsiV.resize(NumOrbitals);
+  d2psiV.resize(NumOrbitals);
+  FirstAddressOfdV = &(dpsiM(0,0)[0]); //(*dpsiM.begin())[0]);
+  LastAddressOfdV = FirstAddressOfdV + NumPtcls*NumOrbitals*DIM;
   // For forces
   /* Ye Luo, Apr 18th 2015
    * To save the memory used by every walker, the resizing the following giant matrices are commented.
@@ -207,33 +210,38 @@ void DiracDeterminantBase::updateAfterSweep(ParticleSet& P,
   }
 }
 
-DiracDeterminantBase::RealType
-DiracDeterminantBase::registerData(ParticleSet& P, PooledData<RealType>& buf)
+void
+DiracDeterminantBase::registerData(ParticleSet& P, WFBufferType& buf)
 {
+  // Ye: no idea about NP.
   if(NP == 0) //first time, allocate once
   {
     NP=P.getTotalNum();
-    dpsiV.resize(NumOrbitals);
-    d2psiV.resize(NumOrbitals);
-    FirstAddressOfdV = &(dpsiM(0,0)[0]); //(*dpsiM.begin())[0]);
-    LastAddressOfdV = FirstAddressOfdV + NumPtcls*NumOrbitals*DIM;
   }
-  LogValue=evaluateLog(P,P.G,P.L);
 
-  //add the data: inverse, gradient and laplacian
-  buf.add(psiM.first_address(),psiM.last_address());
-  if(BufferMode)
+  if ( Bytes_in_WFBuffer == 0 )
   {
+    //add the data: inverse, gradient and laplacian
+    Bytes_in_WFBuffer = buf.current();
+    buf.add(psiM.first_address(),psiM.last_address());
     buf.add(FirstAddressOfdV,LastAddressOfdV);
     buf.add(d2psiM.first_address(),d2psiM.last_address());
+    Bytes_in_WFBuffer = buf.current()-Bytes_in_WFBuffer;
+    // free local space
+    psiM.free();
+    dpsiM.free();
+    d2psiM.free();
+  }
+  else
+  {
+    buf.forward(Bytes_in_WFBuffer);
   }
   buf.add(LogValue);
   buf.add(PhaseValue);
-  return LogValue;
 }
 
 DiracDeterminantBase::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P,
-    PooledData<RealType>& buf, bool fromscratch)
+    WFBufferType& buf, bool fromscratch)
 {
   if(fromscratch)
   {
@@ -244,32 +252,19 @@ DiracDeterminantBase::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P
     updateAfterSweep(P,P.G,P.L);
   }
   BufferTimer.start();
-  buf.put(psiM.first_address(),psiM.last_address());
-  if(BufferMode)
-  {
-    buf.put(FirstAddressOfdV,LastAddressOfdV);
-    buf.put(d2psiM.first_address(),d2psiM.last_address());
-  }
+  buf.forward(Bytes_in_WFBuffer);
   buf.put(LogValue);
   buf.put(PhaseValue);
   BufferTimer.stop();
   return LogValue;
 }
 
-void DiracDeterminantBase::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void DiracDeterminantBase::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BufferTimer.start();
-  buf.get(psiM.first_address(),psiM.last_address());
-  if(BufferMode)
-  {
-    buf.get(FirstAddressOfdV,LastAddressOfdV);
-    buf.get(d2psiM.first_address(),d2psiM.last_address());
-  }
-  else
-  {
-    Phi->evaluate_notranspose(P,FirstIndex,LastIndex,psiM_temp,dpsiM,d2psiM);
-  }
-
+  psiM.attachReference(buf.lendReference<ValueType>(psiM.size()));
+  dpsiM.attachReference(buf.lendReference<GradType>(dpsiM.size()));
+  d2psiM.attachReference(buf.lendReference<ValueType>(d2psiM.size()));
   buf.get(LogValue);
   buf.get(PhaseValue);
   BufferTimer.stop();
@@ -300,10 +295,10 @@ void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, std::vector<Va
   MatrixOperators::product(psiT,psiM[VP.activePtcl-FirstIndex],&ratios[0]);
 }
 
-void DiracDeterminantBase::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+void DiracDeterminantBase::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   SPOVTimer.start();
-  Phi->evaluate(P, 0, psiV);
+  Phi->evaluate(P, -1, psiV);
   SPOVTimer.stop();
   MatrixOperators::product(psiM,psiV.data(),&ratios[FirstIndex]);
 }
@@ -625,7 +620,7 @@ DiracDeterminantBase* DiracDeterminantBase::makeCopy(SPOSetBasePtr spo) const
 }
 
 DiracDeterminantBase::DiracDeterminantBase(const DiracDeterminantBase& s)
-  : OrbitalBase(s), NP(0),Phi(s.Phi),FirstIndex(s.FirstIndex)
+  : OrbitalBase(s), NP(0), Phi(s.Phi), FirstIndex(s.FirstIndex)
   ,UpdateTimer(s.UpdateTimer)
   ,RatioTimer(s.RatioTimer)
   ,InverseTimer(s.InverseTimer)

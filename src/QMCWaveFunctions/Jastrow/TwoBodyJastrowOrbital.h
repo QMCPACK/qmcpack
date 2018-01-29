@@ -331,10 +331,8 @@ public:
         grad_grad_psi[j] -= hess;
       }
     }
-    
-    
-	  
   }
+
   ValueType ratio(ParticleSet& P, int iat)
   {
     const DistanceTableData* d_table=P.DistTables[0];
@@ -380,22 +378,6 @@ public:
     for(int k=0; k<ratios.size(); ++k)
       ratios[k]=std::exp(myr[k]);
   }
-
-  /** evaluate the ratio
-  */
-  inline void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
-  {
-    const DistanceTableData* d_table=P.DistTables[0];
-    for (int i=0,ij=0; i<N; ++i)
-    {
-      RealType res=0.0;
-      for(int j=0; j<N; ++j,++ij)
-        if(i!=j)
-          res+=U[ij]-F[PairID(ij)]->evaluate(d_table->Temp[j].r1);
-      ratios[i]=std::exp(res);
-    }
-  }
-
 
   GradType evalGrad(ParticleSet& P, int iat)
   {
@@ -506,17 +488,13 @@ public:
     //  Uptcl[i]=std::accumulate(&(U[nat]),&(U[nat+N]),0.0);
   }
 
-  inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
+  inline void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    // std::cerr <<"REGISTERING 2 BODY JASTROW"<< std::endl;
-    evaluateLogAndStore(P,P.G,P.L);
     DEBUG_PSIBUFFER(" TwoBodyJastrow::registerData ",buf.current());
-    U[NN]=LogValue;
     buf.add(U.begin(), U.end());
     buf.add(d2U.begin(), d2U.end());
     buf.add(FirstAddressOfdU,LastAddressOfdU);
     DEBUG_PSIBUFFER(" TwoBodyJastrow::registerData ",buf.current());
-    return LogValue;
   }
 
   inline void evaluateGL(ParticleSet& P)
@@ -524,7 +502,7 @@ public:
     RealType t=evaluateLog(P,P.G,P.L);
   }
 
-  inline RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+  inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf,
                                bool fromscratch=false)
   {
     evaluateLogAndStore(P,P.G,P.L);
@@ -537,7 +515,7 @@ public:
     return LogValue;
   }
 
-  inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     DEBUG_PSIBUFFER(" TwoBodyJastrow::copyFromBuffer ",buf.current());
     buf.get(U.begin(), U.end());

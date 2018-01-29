@@ -103,7 +103,7 @@ PWOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   //Evaluate every orbital for particle iat.
   //Evaluate the basis-set at these coordinates:
   //myBasisSet->evaluate(P,iat);
-  myBasisSet->evaluate(P.R[iat]);
+  myBasisSet->evaluate(P.activeR(iat));
   MatrixOperators::product(*C,myBasisSet->Zv,&psi[0]);
 }
 

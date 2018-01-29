@@ -49,7 +49,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
 {
   myTimers[0]->start();
   W.loadWalker(thisWalker,true);
-  Walker_t::Buffer_t& w_buffer(thisWalker.DataSet);
+  Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
   Psi.copyFromBuffer(W,w_buffer);
   myTimers[0]->stop();
 
@@ -94,7 +94,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           prob = ratio*ratio;
           logGf = mhalf*dot(deltaR[iat],deltaR[iat]);
           getScaledDrift(tauovermass,grad_new,dr);
-          dr = thisWalker.R[iat]-W.R[iat]-dr;
+          dr = W.R[iat] - W.activePos - dr;
           logGb = -oneover2tau*dot(dr,dr);
         }
         else
@@ -117,7 +117,6 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
         }
       }
     }
-    thisWalker.R=W.R;
   }
   W.donePbyP();
   myTimers[1]->stop();
