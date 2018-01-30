@@ -46,11 +46,19 @@ ENDIF()
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
                     qmc_short_kspace
                     qmc_short_kspace.in.xml
-                    4 4
+                    1 16
                     TRUE
                     0 DIAMOND_KSPACE_SCALARS # VMC
                     )
 
+  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj_kspace
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_short_kspace_4_4
+                    qmc_short_kspace_4_4.in.xml
+                    4 4
+                    TRUE
+                    0 DIAMOND_KSPACE_SCALARS # VMC
+                    )
 
 
 # Reference OPT run in qmc-ref
@@ -179,7 +187,7 @@ ENDIF()
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
                     qmc_long_kspace
                     qmc_long_kspace.in.xml
-                    4 4
+                    1 16
                     TRUE
                     0 LONG_DIAMOND_KSPACE_SCALARS # VMC
                     )
