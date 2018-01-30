@@ -221,27 +221,26 @@ Convert4qmc supports multiple codes. Some of them are actively maintained (games
 % -threshold 0.01 -TargetState 0 -prefix sample                                
 % When the input format is missing, the  extension of filename is used to determine
 % the format                                                      
-
-\begin{table}[h]
-\begin{center}
-\begin{tabularx}{\textwidth}{l l l l  l }
-\hline
-\multicolumn{5}{l}{\texttt{convert4qmc} keywords} \\
-\hline
-\multicolumn{2}{l}{parameters}  & \multicolumn{3}{l}{}\\
-   &   \bfseries keyword      & \bfseries Value & \bfseries default   & \bfseries description \\
-   &   \texttt{-nojastrow            } &  -  & - & Force no jastrow. qmc.in.wfj will not be generated  \\
-   &   \texttt{-hdf5             } &  -  & - & Force the wf to be in HDF5 format   \\
-   &   \texttt{-prefix             } &  string  & - & all created files will have the name of the string   \\
-   &   \texttt{-addCusp             } &  -  & - & Force to add orbital cusp correction (ONLY for all electrons)  \\
-   &   \texttt{-production             } &  -  & - & generates specific blocks in the input     \\
-   &   \texttt{-psi_tag             } &  string  & psi0 & name of the electrons particles inside QMCPACK   \\
-   &   \texttt{-ion_tag             } & string & ion0 & name of the ion particles inside QMCPACK      \\
+% 
+ \begin{table}[h]
+ \begin{center}
+ \begin{tabularx}{\textwidth}{l l l l l }
+ \hline
+ \multicolumn{5}{l}{\texttt{convert4qmc} Keywords} \\
+ \hline
+ \multicolumn{2}{l}{Tags}  & \multicolumn{3}{l}{}\\
+    &   \bfseries keyword      & \bfseries Value & \bfseries default   & \bfseries description \\
+    &   \texttt{-nojastrow    } &  -      &   - & Force no jastrow. qmc.in.wfj will not be generated  \\
+    &   \texttt{-hdf5         } &  -      &   - & Force the wf to be in HDF5 format   \\
+    &   \texttt{-prefix       } & string  &   - & All created files will have the name of the string   \\
+    &   \texttt{-addCusp      } &  -      &   - & Force to add orbital cusp correction (ONLY for all electrons)  \\
+    &   \texttt{-production   } &  -      &   - & Generates specific blocks in the input     \\
+    &   \texttt{-psi\_tag      } & string  & psi0& Name of the electrons particles inside \qmcpack   \\
+    &   \texttt{-ion\_tag      } & string  & ion0& Name of the ion particles inside \qmcpack      \\
     \hline
+     \end{tabularx}
+ \end{center}
+ \end{table}
 
-    \end{tabularx}
-\end{center}
-\end{table}
 
-
-\subsubsection{Gamess}
+%\subsubsection{Gamess}
