@@ -2167,11 +2167,12 @@ def comma_list(s):
 
 class QMCA(QBase):
     def __init__(self):
-        self.parser    = None
-        self.file_list = []
-        self.file_map  = obj()
-        self.data      = obj()
-        self.verbose   = False
+        self.parser      = None
+        self.file_list   = []
+        self.file_map    = obj()
+        self.prefix_list = []
+        self.data        = obj()
+        self.verbose     = False
 
         self.read_command_line()
         self.load_data()
@@ -2324,6 +2325,10 @@ QMCA examples:
                           action='store_true',default=False,
                           help='Show variance of sample data (default=%default).'
                           )
+        parser.add_option('--sort',dest='sort',
+                          action='store_true',default=False,
+                          help='Display output data sorted alphabetically by file name (default=%default).'
+                          )
         parser.add_option('-i','--image',dest='image',
                           action='store_true',default=False,
                           help='(pending) Save image files (default=%default).'
@@ -2358,7 +2363,7 @@ QMCA examples:
 
         unsupported = set('histogram image reblock report examples'.split())
 
-        units = obj(hartree='Ha',ha='Ha',ev='eV',rydberg='Ry',kelvin='K',kj_mol='kJ_mol',joules='J')
+        units = obj(hartree='Ha',ha='Ha',ev='eV',rydberg='Ry',ry='Ry',kelvin='K',kj_mol='kJ_mol',joules='J')
 
         options,files_in = parser.parse_args()
         QBase.options.transfer_from(options.__dict__)
@@ -2515,6 +2520,7 @@ QMCA examples:
                         seriesset.add(series)
                         if not prefix in data:
                             data[prefix]=obj()
+                            self.prefix_list.append(prefix)
                         #end if
                         data[prefix][series] = d
                     except:
@@ -2593,9 +2599,14 @@ QMCA examples:
         opt = self.options
         show_text  = True
         plots = opt.plot or opt.trace or opt.histogram
+        if opt.sort:
+            prefix_list = sorted(self.data.keys())
+        else:
+            prefix_list = self.prefix_list
+        #end if
         if show_text:
             first_prefix = True
-            for prefix in sorted(self.data.keys()):
+            for prefix in prefix_list:
                 pdata = self.data[prefix]
                 first_series = True
                 only_series  = len(pdata)==1
@@ -2632,7 +2643,7 @@ QMCA examples:
                 for mode in range(len(modes)):
                     if modes[mode]:
                         np = 0
-                        for prefix in sorted(self.data.keys()):
+                        for prefix in prefix_list:
                             first_prefix = np==0
                             last_prefix  = np==len(self.data)-1
                             np+=1

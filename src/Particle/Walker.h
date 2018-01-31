@@ -121,6 +121,8 @@ struct Walker
    * When Multiplicity = 0, this walker will be destroyed.
    */
   RealType Multiplicity;
+  /// mark true if this walker is being sent.
+  bool SendInProgress;
 
   /** The configuration vector (3N-dimensional vector to store
      the positions of all the particles for a single walker)*/

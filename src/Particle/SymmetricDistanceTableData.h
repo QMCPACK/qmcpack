@@ -137,6 +137,7 @@ struct SymmetricDTD
 
   inline void evaluate(ParticleSet& P, int jat)
   {
+    APP_ABORT("  No need to call SymmetricDTD::evaluate(ParticleSet& P, int jat)");
     //based on full evaluation. Only compute it if jat==0
     if(jat==0) evaluate(P);
   }
@@ -147,7 +148,6 @@ struct SymmetricDTD
     for(int iat=0; iat<N[SourceIndex]; ++iat)
     {
       PosType drij(rnew - P.R[iat]);
-      Temp[iat].dr1_nobox=drij;
       RealType sep=std::sqrt(DTD_BConds<T,D,SC>::apply_bc(drij));
       Temp[iat].r1=sep;
       Temp[iat].rinv1=1.0/sep;

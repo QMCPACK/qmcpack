@@ -206,10 +206,8 @@ void ParticleSet::resetGroups()
   IsGrouped=true;
   for(int iat=0; iat<ID.size(); ++iat)
     IsGrouped &= (IndirectID[iat]==ID[iat]);
-  if(IsGrouped)
-    app_log() << "Particles are grouped. Safe to use groups " << std::endl;
-  else
-    app_log() << "ID is not grouped. Need to use IndirectID for species-dependent operations " << std::endl;
+  if(!IsGrouped)
+    app_warning() << "  Particles are not grouped by species in the input file.  Algorithms may not be optimal. " << std::endl;
 }
 
 void
@@ -389,14 +387,14 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
     //add  this-this pair
     myDistTableMap.clear();
     myDistTableMap[myName]=0;
-    app_log() << "  ... ParticleSet::addTable Create Table #0 " << DistTables[0]->Name << std::endl;
+    app_debug() << "  ParticleSet::addTable create table #0 " << DistTables[0]->Name << std::endl;
     DistTables[0]->ID=0;
     if (psrc.getName() == myName)
       return 0;
   }
   if (psrc.getName() == myName)
   {
-    app_log() << "  ... ParticleSet::addTable Reuse Table #" << 0 << " " << DistTables[0]->Name << std::endl;
+    app_debug() << "  ParticleSet::addTable reuse table #" << 0 << " " << DistTables[0]->Name << std::endl;
     //if(!DistTables[0]->is_same_type(dt_type))
     //{//itself is special, cannot mix them: some of the users do not check the index
     //  APP_ABORT("ParticleSet::addTable for itself Cannot mix AoS and SoA distance tables.\n");
@@ -411,14 +409,14 @@ int ParticleSet::addTable(const ParticleSet& psrc, int dt_type)
     DistTables.push_back(createDistanceTable(psrc,*this,dt_type));
     myDistTableMap[psrc.getName()]=tid;
     DistTables[tid]->ID=tid;
-    app_log() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->Name << std::endl;
+    app_debug() << "  ... ParticleSet::addTable Create Table #" << tid << " " << DistTables[tid]->Name << std::endl;
   }
   else
   {
     tid = (*tit).second;
     if(dt_type == DT_SOA_PREFERRED || DistTables[tid]->is_same_type(dt_type))  //good to reuse
     {
-      app_log() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << std::endl;
+      app_debug() << "  ... ParticleSet::addTable Reuse Table #" << tid << " " << DistTables[tid]->Name << std::endl;
     }
     else
     {
@@ -506,8 +504,9 @@ ParticleSet::makeMove(Index_t iat, const SingleParticlePos_t& displ)
 void ParticleSet::setActive(int iat)
 {
   myTimers[3]->start();
-  for (size_t i=0,n=DistTables.size(); i< n; i++)
-    DistTables[i]->evaluate(*this,iat);
+  for (size_t i=0; i<DistTables.size(); i++)
+    if(DistTables[i]->DTType==DT_SOA)
+      DistTables[i]->evaluate(*this,iat);
   myTimers[3]->stop();
 }
 
@@ -744,7 +743,7 @@ void ParticleSet::acceptMove(Index_t iat)
 
     //Do not change SK: 2007-05-18
     if (SK && SK->DoUpdate)
-      SK->acceptMove(iat,GroupID[iat],activePos);
+      SK->acceptMove(iat,GroupID[iat],R[iat]);
 
     R[iat]=activePos;
     RSoA(iat)=activePos;
@@ -811,7 +810,8 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
   {
     // in certain cases, full tables must be ready
     for (int i=0; i< DistTables.size(); i++)
-      if(DistTables[i]->Need_full_table_loadWalker) DistTables[i]->evaluate(*this);
+      if(DistTables[i]->DTType==DT_AOS||DistTables[i]->Need_full_table_loadWalker)
+        DistTables[i]->evaluate(*this);
     //computed so that other objects can use them, e.g., kSpaceJastrow
     if(SK && SK->DoUpdate)
       SK->UpdateAllPart(*this);

@@ -1,0 +1,35 @@
+\chapter{External Tools}
+\label{chap:external_tools}
+This chapter provides some information on using QMCPACK with external tools.
+
+\section{VTune}
+
+Intel's VTune profiler has an API that allows program control over collection (pause/resume) and can add information to the profile data (e.g. delineating tasks).
+
+\subsection{VTune API}
+
+If the variable \texttt{USE\_VTUNE\_API} is set, QMCPACK will check that the
+include file (\texttt{ittnotify.h}) and the library (\texttt{libittnotify.a}) can
+be found.
+To provide CMake with the VTune paths, add the include path to \texttt{CMAKE\_CXX\_FLAGS} and the the library path to \texttt{CMAKE\_LIBRARY\_PATH}.
+
+An example of options to be passed to CMake
+\begin{shade}
+ -DCMAKE_CXX_FLAGS=-I/opt/intel/vtune_amplifier_xe/include \
+ -DCMAKE_LIBRARY_PATH=/opt/intel/vtune_amplifier_xe/lib64
+\end{shade}
+
+
+\subsection{Timers as Tasks}
+To aid in connecting the timers in the code to the profile data, the start/stop of
+timers will be recorded as a task if \texttt{USE\_VTUNE\_TASKS} is set.
+
+In addition to compiling with \texttt{USE\_VTUNE\_TASKS}, an option needs to be set at runtime to collect the task API data.
+In the GUI, select the checkbox labeled "Analyze user tasks" when setting up the analysis type.
+For the command line, set the \texttt{enable-user-tasks} knob to \texttt{true}. For example,
+\begin{shade}
+amplxe-cl -collect hotspots -knob enable-user-tasks=true ...
+\end{shade}
+
+Collection with the timers set at "fine" can generate too much task data in the profile.
+Collection with the timers at "medium" collects a more reasonable amount of task data.

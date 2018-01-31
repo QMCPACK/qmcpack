@@ -170,7 +170,6 @@ Communicate::Communicate(const Communicate& comm, const std::vector<int>& jobs)
 
 void Communicate::initialize(int argc, char **argv)
 {
-  qmcplusplus::qmc_common.initialize(argc,argv);
   OOMPI_COMM_WORLD.Init(argc, argv);
   myComm = OOMPI_COMM_WORLD;
   myMPI = myComm.Get_mpi();
@@ -178,6 +177,7 @@ void Communicate::initialize(int argc, char **argv)
   d_ncontexts = OOMPI_COMM_WORLD.Size();
   d_groupid=0;
   d_ngroups=1;
+  qmcplusplus::qmc_common.initialize(argc,argv);
 #ifdef __linux__
   for (int proc=0; proc<OHMMS::Controller->size(); proc++)
   {
