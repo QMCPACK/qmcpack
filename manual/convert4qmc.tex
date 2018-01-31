@@ -1,5 +1,5 @@
 \subsection{convert4qmc}
-convert4qmc allows conversion of orbitals and wavefunctions from quantum chemistry output files to QMCPACK xml input files.  It is a small C++ executable that is built alongside the qmcpack executable, and can be found in \texttt{trunk/build/bin}.
+convert4qmc allows conversion of orbitals and wavefunctions from quantum chemistry output files to \qmcpack xml input files.  It is a small C++ executable that is built alongside the \qmcpack executable, and can be found in \texttt{trunk/build/bin}.\\
 convert4qmc is a tool that evolves continuously and the number of software supported keeps growing.\\
 To this dates, convert4qmc supports the following codes and methods as  implemented in the following codes: Gamess\cite{schmidt93}, Pyscf\cite{Sun2018}, Quantum Package\cite{QP} and Gamess-FMO\cite{Fedorov2004,schmidt93}
 
@@ -53,7 +53,7 @@ If nothing is specified, the name of the generated files will be the same as the
 
 \begin{itemize}
  \item Files \textbf{.in-wfs.xml} and \textbf{.in-wfnoj.xml} \\
- These are the input files for qmcpack. Instead of containing the geometry and the wavefunction, the call 2 external files ``*.structure.xml'' and ``*.wfj.xml`` when .in-wfs.xml is used or ''*.wfnoj.xml'' when *. qmc.in-wfnoj.xml. The Hamiltonian section is also included and the presence or not of an ECP is detected during the convertion. By default, a default ECP name is added (ex: H.qmcpp.xml) and it is the respoinsability of the user to modify the ECP to match the one used in the quantum chemistry run.\\
+ These are the input files for \qmcpack. Instead of containing the geometry and the wavefunction, the call 2 external files ``*.structure.xml'' and ``*.wfj.xml`` when .in-wfs.xml is used or ''*.wfnoj.xml'' when *. qmc.in-wfnoj.xml. The Hamiltonian section is also included and the presence or not of an ECP is detected during the convertion. A default ECP name is added (ex: H.qmcpp.xml) and it is the responsability of the user to modify the ECP name to match the one used to generate the wavefunction.\\
   \begin{shade}
   <?xml version="1.0"?>
 <simulation>
@@ -170,11 +170,10 @@ wavefunction file, do not reoptimize.
 
 \end{shade}
 
- \item File \textbf{structure.xml} \\
+ \item File \textbf{.structure.xml} \\
  This file will be called by the main qmcpack input.It contains the geometry of the system, position of the atoms, number of atoms, types, chargeand number of electrons.
- \item structure.xml \\
  
- \item \textbf{.wfj.xml} and file \textbf{.wfnoj.xml}\\
+ \item Files \textbf{.wfj.xml} and \textbf{.wfnoj.xml}\\
  These file contain the basiset detail, orbital coefficients and the 1,2 3 body Jastrow in the case of (  \textbf{.wfj.xml}). If the wavefunction is multideterminant, the expansion will be at the end of the file. It is recommended to use the tag \textbf{-hdf5} when large molecules are studied to avoid writing the data in xml format and store it instead in an HDF5 file. 
  
  \item File \textbf{.orbs.h5}
@@ -191,20 +190,20 @@ Convert4qmc supports multiple codes. Some of them are actively maintained (games
 
 \begin{table}[h]
 \begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
+\begin{tabularx}{\textwidth}{l l l l }
 \hline
-\multicolumn{6}{l}{\texttt{convert4qmc} keywords} \\
+\multicolumn{4}{l}{\texttt{convert4qmc} keywords} \\
 \hline
-\multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
-   &   \bfseries keyword     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
-   &   \texttt{gamess             } &  tag  & -gamess & -   & tag to convert from the Gamess code\\
-   &   \texttt{pyscf             } &  tag  & -pyscf & -   & tag to convert from the pyscf code\\
-   &   \texttt{QP             } &  tag  & -QP & -   & tag to convert from the Quantum Package code\\
-   &   \texttt{gamesFMO             } &  tag  & -gamessFMO & -   & tag to convert from the Gamess FMO code\\
-   &   \texttt{gaussian             } &  tag  & -gaussian & -   & tag to convert from the Gaussian code (obsolete) \\
-   &   \texttt{casino             } &  tag  & -casino & -   & tag to convert from the Casino code (untested)\\
-   &   \texttt{gamesxml             } &  tag  & -gamesxml & -   & tag to convert from the Gamess xml format code\\ &&&&&  (obsolete/untested)\\
-   &   \texttt{VSVB             } &  tag  & -VSVB & -   & tag to convert from the ArgoVB code for \\ &&&&&variational valence bond  (in hold until newer\\ &&&&& version of the code)\\
+\multicolumn{2}{l}{parameters}  & \multicolumn{2}{l}{}\\
+   &   \bfseries keyword      &\bfseries description \\
+   &   \texttt{-pyscf       } &  Pyscf code & Actively maintained\\
+   &   \texttt{-QP          } &  Quantum Package code & Actively maintained\\
+   &   \texttt{-gamess      } &  Gamess code & Maintained\\
+   &   \texttt{-gamesFMO    } &  Gamess FMO & Maintained\\
+   &   \texttt{-gaussian    } &  Gaussian code & Obsolete/untested \\
+   &   \texttt{-casino      } &  Casino code & Obsolete/untested \\
+   &   \texttt{-gamesxml    } &  Gamess xml format code  & Obsolete/untested\\
+   &   \texttt{-VSVB        } &  ArgoVB code (variational valence bond) & On hold until official release\\
     \hline
 
     \end{tabularx}
@@ -213,15 +212,6 @@ Convert4qmc supports multiple codes. Some of them are actively maintained (games
 
 \subsubsection{Special tags}
 
-% [-nojastrow -hdf5 -prefix title -addCusp -production]                                                                                           
-% [-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]
-% [-size npts -ci file.out -threshold cimin -TargetState state_number
-% -NaturalOrbitals NumToRead]                                        
-% Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required 
-% -threshold 0.01 -TargetState 0 -prefix sample                                
-% When the input format is missing, the  extension of filename is used to determine
-% the format                                                      
-% 
  \begin{table}[h]
  \begin{center}
  \begin{tabularx}{\textwidth}{l l l l l }
@@ -241,6 +231,262 @@ Convert4qmc supports multiple codes. Some of them are actively maintained (games
      \end{tabularx}
  \end{center}
  \end{table}
+\begin{itemize}
+\item keyword \textbf{-nojastrow}\\
+This tag generates an input file ``*.qmc.in.wfnoj.xml'' containing no Jastrow optimization block and calls a wavefunction file ``*.wfnoj.xml'' containing no jastrow section.
+
+\item keyword \textbf{-hdf5}\\
+This tags generates the ``*.orbs.h5'' HDF5 file containing the basisset and the orbitals coefficients. If the wavefunction contains a multideterminant expansion from Quantum Package, these will also be stored in the HDF5. This will also generate a minimal size of the ``*.wfj.xml'' which will then point to the H5 file such as the following example: 
+
+\begin{shade}
+ <?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" href="test.orbs.h5">
+      <slaterdeterminant>
+        <determinant id="updet" size="39">
+          <occupation mode="ground"/>
+          <coefficient size="411" spindataset="0"/>
+        </determinant>
+        <determinant id="downdet" size="35">
+          <occupation mode="ground"/>
+          <coefficient size="411" spindataset="0"/>
+        </determinant>
+      </slaterdeterminant>
+    </determinantset>
+  </wavefunction>
+</qmcsystem>
+
+\end{shade}
+
+Jastrow function will also be included if the tag ``-nojastrow'' was not added. 
+
+\item keyword \textbf{-prefix}\\
+If the ``\textit{-prefix}'' is specified, a name will be expected as input and all files generated by convert4qmc will be named with the new prefix. \\
+If not specified convert4qmc will use the defaults for:\\
+\begin{itemize}
+ \item \textbf{Gamess}\\
+If the Gamess output file  is named ``\textbf{Name}.out'' or ``\textbf{Name}.output'', all files generated by convert4qmc will carry \textbf{Name} as a prefix (i.e \textbf{Name}.qmc.in.xml).\\ 
+\item \textbf{Pyscf}\\
+If the Pyscf output file  is named ``\textbf{Name}.H5'', all files generated by convert4qmc will carry \textbf{Name} as a prefix (i.e \textbf{Name}.qmc.in.xml).\\ 
+\item \textbf{Quantum Package}\\
+If the Quantum Package output file  is named ``\textbf{Name}.dump'', all files generated by convert4qmc will carry \textbf{Name} as a prefix (i.e \textbf{Name}.qmc.in.xml).\\ 
+
+\end{itemize}
 
 
-%\subsubsection{Gamess}
+\item keyword \textbf{-addCusp}
+This tag is very important in case of all electrons (AE) calculations. In this case, orbitals have to be corrected for the cusp in order to avoid for the electrons to move too close to the nuclei. The cusp correction scheme follows the algorithm described by Ma \textit{et. al}. \cite{Ma2005} When this keyword is added, the wavefunction file has a set of new tags:
+
+\begin{shade}
+ qmcsystem>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" cuspCorrection="yes">
+      <basisset name="LCAOBSet">
+\end{shade}
+
+The tag ``cuspCorrection'' in the wfj.xml (or wfnoj.xml) wavefunction file will force correcting the orbitals at the begining of the \qmcpack run. \\
+Always in the wavefunction file, in the orbitals section, a new tag ``cuspInfo'' will be added for orbitals spin-up and orbitals spin-down:
+
+\begin{shade}
+   <slaterdeterminant>
+        <determinant id="updet" size="2" cuspInfo="../CuspCorrection/updet.cuspInfo.xml">
+          <occupation mode="ground"/>
+          <coefficient size="135" id="updetC">
+          
+  <determinant id="downdet" size="2" cuspInfo="../CuspCorrection/downdet.cuspInfo.xml">
+          <occupation mode="ground"/>
+          <coefficient size="135" id="downdetC">
+\end{shade}
+
+This tags will point to the files ``updet.cuspInfo.xml'' and ``downdet.cuspInfo.xml``. By default, the conveter assumes that the files are located in the relative path \textbf{../CuspCorrection/}. If the directory ''../CuspCorrection`` does not exist, or if the files are not in that directory (i.e not existing) \qmcpack will run the cuspCorrection to generate both ''updet.cuspInfo.xml`` and ''downdet.cuspInfo.xml``. If the files exist the /qmcpack will apply the corrections to the orbitals. \\
+
+\textbf{Important notes:}\\
+- The CuspCorrection algorithms is now limited to the AoS version of the code. SoA implementation is under progress. \\
+- The AoS code for the CuspCorrection is unfortunately serial. Since the correction needs to be applied for every ion and then for every orbital (imbricated loop), this operation can be extremely costly for large systems. It is recommended to run the correction on a single fast processor and then transfer ''updet.cuspInfo.xml`` and ''downdet.cuspInfo.xml`` to the cluster where the runs will be ran. \\
+- In its AoS implementation, the CuspCorrection scheme generates a file for every orbital and every atom. this leads to a very large number of temporary files. It is recommended to run the CuspCorrection in a separate directory ''CuspCorrection'' as suggested by the path in the wavefunction. \\
+
+\item keyword \textbf{-psi\_tag (optional)}\\
+\qmcpack builds the wavefunction as an object. Wile in the vast majority of cases, we simulate one wavefunction at the time, we might find ourselves in a situation where we want to distinguish different parts of a wavecuntion or even use multiple ones. Therefore, the logic is that we apply a potential on a wavefunction. That wavefunction must have a tag name. With this tag, the user is giving the opportunity to change that name. 
+
+\begin{shade}
+   <wavefunction name="psi0" target="e">
+\end{shade}
+
+\item keyword \textbf{-ion\_tag}
+Similar to the \textbf{-psi\_tag} but for the type of ions. \\
+\begin{shade}
+  <particleset name="ion0" size="2">
+\end{shade}
+
+
+\item keyword \textbf{-production}\\
+
+If this tag is not added, convert4qmc generates automatically 2 standard input files with standard optimization, VMC and DMC blocks. When the ``-production'' tag is provided, an input file containing very optimal blocks for clusters and HPC centers in generated. While these blocks are optimized, they only constitute a ``good'' starting point and should be looked carefully. This tag is addressed mostly to users who are already familiar with QMC and \qmcpack.  
+
+\end{itemize}
+
+The following tags are specific to using MCSCF multideterminants from Gamess. 
+
+ \begin{table}[h]
+ \begin{center}
+ \begin{tabularx}{\textwidth}{l l l l l }
+ \hline
+ \multicolumn{5}{l}{\texttt{convert4qmc} MCSCF keywords} \\
+ \hline
+ \multicolumn{2}{l}{Tags}  & \multicolumn{3}{l}{}\\
+    &   \bfseries keyword      & \bfseries Value & \bfseries default   & \bfseries description \\
+    &   \texttt{-ci    } & String     &   none & Name of the file containing the CI expansion  \\
+    &   \texttt{-threshold         } &  double    &  none & Cutoff of the weight of the determinants  \\
+    &   \texttt{-TargetState      } & int  &  none & ?  \\
+    &   \texttt{-NaturalOrbitals      } &  int      &  none   & ?  \\
+    \hline
+     \end{tabularx}
+ \end{center}
+ \end{table}
+\begin{itemize}
+\item keyword \textbf{-ci}\\
+Path/name of the file containing the CI expansion in a gamess Format.
+\item keyword \textbf{-threshold}\\
+The CI expancion contains coeeficients (weight) for each determinant. This tag set the maximum coefficient to include in the QMC run. 
+\item keyword \textbf{-TargetState}\\
+?
+\item keyword \textbf{-NaturalOrbitals}\\
+?
+\end{itemize}
+
+Examples and more thorough description of these tags can be found in the Lab section of this manual; Chapter-\ref{chap:lab_advanced_molecules}\\
+
+\subsubsection{Grid tags}
+                                          
+% 
+These parameters control how the basisset is projected on a grid. The type of grd can be modified and the number of point can also be changed. However, the default parameters are chosen to be very efficient. Unless you have a very good reason, it is not recommended to modify them. 
+\begin{table}[h]
+ \begin{center}
+ \begin{tabularx}{\textwidth}{l l l l l }
+ \hline
+ \multicolumn{5}{l}{\texttt{convert4qmc} Grid Keywords} \\
+ \hline
+ \multicolumn{2}{l}{Tags}  & \multicolumn{3}{l}{}\\
+    &   \bfseries keyword      & \bfseries Value & \bfseries default   & \bfseries description \\
+    &   \texttt{-gridtype    } &  log|log0|linear      &  log & grid type  \\
+    &   \texttt{-first         } & double  &  1e-6 & first point of the grid   \\
+    &   \texttt{-last       } & double  & 100 & last point of the grid \\
+    &   \texttt{-size      } &  int    &  1001& number of point in the grid   \\
+     \hline
+     \end{tabularx}
+ \end{center}
+ \end{table}
+\begin{itemize}
+\item \textbf{-gridtype}\\
+Grid type can be logarithmic, logarithmic base 10 or linear \\
+\item \textbf{-first}\\
+First value of the grid\\
+\item \textbf{-last}\\
+last value of the grid\\
+\item \textbf{-size}\\
+Number of points in the grid between ``first'' and ``last''. \\
+\end{itemize}
+
+
+\subsubsection{Supported codes}
+
+\begin{itemize}
+\item \textbf{Pyscf}\\
+Pyscf\cite{Sun2018} is an all purpose powerful quantum chemistry code, allowing to run calculations from simple Hartre-Fock to DFT, MCSCF, CCSD for isolated systems and periodic boundary conditions. Pyscf can be downloaded from \url{https://github.com/sunqm/pyscf}. Many examples and tutorials can be found on PYSCF website and all types of single determinants calculations are compatible with qmcpack, thanks to a very active support from the authors of Pyscf. However, since Pyscf is a python code, a few additional steps are necessary to generate an output readable by convert4qmc. 
+
+
+In the following, we expose these steps through an example.\\
+
+In this example we show how to run and convert a DFT wavefunction for the $LiH$ dimer molecule from Pyscf;\\
+
+\begin{itemize}
+ \item \textbf{Python path}\\
+As mentionned, Pyscf is a python based code. Therefore, the user choses to print (or not) from Pyscf any data deemed useful. In order to remove the hassle from the user, a python module called \textbf{PyscfToQmcpack} containing the function \textbf{savetoqmcpack(cell,mf,title="Default",kpts=[])} is provided and located in ``qmcpack/src/QMCTools/PyscfToQmcpack.py''. To be accessible, the user needs to export the path to the file in the PYTHONPATH as follow:\\
+\begin{shade}
+ export PYTHONPATH=/PATH_TO_QMCPACK/qmcpack/src/QMCTools:\$PYTHONPATH
+\end{shade}
+
+If the Python path is not exported this will result in an error when running Pyscf.
+
+
+ \item \textbf{Pyscf Input File}\\
+ 
+Copy and past the following code in a file named LiH.py
+ \begin{shade}
+#!/usr/bin/env python
+
+
+
+from pyscf import gto, scf, df                                                                                                    
+import  numpy
+
+cell = gto.M(
+   atom ='''Li  0.0 0.0 0.0
+            H   0.0 0.0 3.0139239778''',                                                                                               
+   basis ='cc-pv5z',                                                                                                                   
+   unit="bohr",                                                                                                                        
+   spin=0,
+   verbose = 5,
+   cart=False,
+) 
+mf = scf.ROHF(cell)
+mf.kernel()
+
+###SPECIFIC TO QMCPACK###
+title='LiH'                                                                                                                            
+from PyscfToQmcpack import savetoqmcpack                                                                                               
+savetoqmcpack(cell,mf,title)    
+ 
+ \end{shade}
+More details about how to run a Pyscf calculation can be found in the many examples populating Pyscf example section. This example represents a simple Hatree-Fock calculation using ``Restricted Orbital Hartree Fock (ROHF)'' for the LiH molecule.\\
+The function \textbf{savetoqmcpack} takes for arguments:\\
+\begin{itemize}
+ \item \textbf{cell}\\
+ These are the arguments from gto.M, containing the type of atoms, geometry, basisset, spin etc.. \\
+ \item \textbf{mf}\\
+This is the pyscf level of theory; in this case ROHF. This parameter contains the orbitals coefficients of the calculations. \\
+ \item \textbf{title}\\
+ The name of the output file generated by pyscf. By default, the name of the generated file will be ``default'' if nothing is specified.\\
+ \end{itemize}
+
+By adding the three lines below the ``SPECIFIC TO QMCPACK'' comment  in the input file, Pyscf will dump all the necessary data for \qmcpack in an HDF5 file using the value of ``title'' as an output name. pyscf is run as follow:\\
+\begin{shade}
+ >python LiH.py
+\end{shade}
+
+
+The generated HDF5 can be read directly by convert4qmc to generate appropriate input files with relevant Jastrow function and parameters while the geometry is extracted and put in the ``*.structure.xml'' file to allow the user to verify the system parameters in case the original pyscf input is lost.\\
+ \item \textbf{Generating input files}\\
+ 
+ As described in the previous section, generating input files for pyscf is as follow:\\
+ \begin{shade}
+  > convert4qmc -pyscf LiH.h5 
+ \end{shade}
+
+Note that since pyscf already generates an HDF5 files that is read by \qmcpack, using the tag ``-hdf5'' in convert4qmc with pyscf is not compatible since redundant. In the case of pyscf, convert4qmc is not a converter but an input file generator since the H5 file contains all the data needed by \qmcpack. 
+\end{itemize}
+
+ An implementation of periodic boundary conditions with Gaussian orbitals from Pyscf is under development. 
+
+\item \textbf{Quantum Package}\\
+Quantum Package\cite{QP} (QP) is a Quantum Chemistry code developped by the LCPQ laboratory in Toulouse France. It can be downloaded from \url{https://github.com/LCPQ/quantum_package}, and the tutorial within is quiet extensive. The tutorial section of QP can guide you on how to install and run the code.\\
+QP is fully interfaced with QMCPACK and is a very good code for generating a Hartree fock wavefunction for \qmcpack. After any calculation with QP, one can dump the data needed for convert4qmc to generate a valid \qmcpack input files through:\\
+\begin{shade}
+ qp_run save_for_qmcpack Myrun.ezfio &> Myrun.dump
+\end{shade}
+
+Convert4qmc can read the format and generate appropriate format in xml and HDF5 format.
+
+\begin{shade}
+ convert4qmc -QP Myrun.dump
+\end{shade}
+
+
+However, the main purpose of QP is to use it's CIPSI algorithm to generate a multideterminant Wavefunction.  A Full example on how to use QP for Hartree fock and selected CI, can be found in Chapter-\ref{sec:cipsi}  of this manual. CIPSI remains the prefered choice for generating a selected CI trial wavefunction for \qmcpack and the converter of the code is actively maintained and co-developped by both \qmcpack and QP developpers.  An HDF5 output file from QP is under development that will mimic the current behavior of the Pyscf output.  
+
+
+\item \textbf{Gamess}\\
+\qmcpack is fully interfaced with Gamess\cite{schmidt93} code for any type of single determinant calculation (HF or DFT) and multideterminant (MCSCF) calculations. a full description can be found in section-\ref{chap:lab_advanced_molecules}  
+\end{itemize}
+
