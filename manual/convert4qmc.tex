@@ -420,8 +420,9 @@ from pyscf import gto, scf, df
 import numpy
 
 cell = gto.M(
-   atom ='''Li  0.0 0.0 0.0
-            H   0.0 0.0 3.0139239778''',
+   atom ='''
+Li 0.0 0.0 0.0
+H  0.0 0.0 3.0139239778''',
    basis ='cc-pv5z',
    unit="bohr",
    spin=0,
