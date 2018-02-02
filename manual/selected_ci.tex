@@ -1,16 +1,27 @@
 \chapter{Selected Configuration Interaction}
 \label{chap:sCI}
-A direct path towards improving the accuracy of a QMC calculation is through a better trial wavefunction.
-While using a multireference wavefunction can be straightforward in theory, in actual practice methods such as CASSCF or Full CI (FCI) are not intuitive and often require being an expert in either the method or the code generating the wavefunction.
-An alternative is to use a Selected Configuration of Interaction method (selected CI) such as CIPSI (Configuration Interaction using a Perturbative Selection done Iteratively).
+A direct path towards improving the accuracy of a QMC calculation is
+through a better trial wavefunction.  While using a multireference
+wavefunction can be straightforward in theory, in actual practice
+methods such as CASSCF are not always intuitive and often require
+being an expert in either the method or the code generating the
+wavefunction.  An alternative is to use a Selected Configuration of
+Interaction method (selected CI) such as CIPSI (Configuration
+Interaction using a Perturbative Selection done Iteratively). This
+provides a direct route to systematically improving the wavefunction.
+
+\section{Theoretical Background}
 
 The principle behind selected CI is rather simple and was first published in 1955 by R.K. Nesbet\cite{Nesbet1955}.
 The first calculations on atoms were performed by Diner, Malrieu and Claverie\cite{Diner1967} in 1967, and it become computationally viable for larger molecules in 2013 by Caffarel \textit{et al.}\cite{Caffarel2013}  
-% 
-% \textbf{To Paul: I do not recall who added this section (maybe me?) but it is word for word the paper by caffarel in ref \cite{Caffarel2013}. It needs either to be removed or strongly rewritten. see bellow for attempt to simplify in my own words;  }\\
-% 
+%  \textbf{To Paul: I do not recall who added this section (maybe me?)
+% but it is word for word the paper by caffarel in ref
+% \cite{Caffarel2013}. It needs either to be removed or strongly
+% rewritten. see bellow for attempt to simplify in my own words; }\\
 
- As described by Caffarel et al in Ref.~\cite{Caffarel2013}, multi-determinantal expansions of the ground-state wavefunction $\Psi_T$ are written as a linear combination of Slater determinants
+As described by Caffarel et al in Ref.~\cite{Caffarel2013},
+multi-determinantal expansions of the ground-state wavefunction
+$\Psi_T$ are written as a linear combination of Slater determinants
 \begin{equation}
 \sum_k c_k \sum_q d_{k,q}D_{k,q\uparrow } (r^{\uparrow})D_{k,q\downarrow}(r^{\downarrow}) %$\ket{D_i}$
 \end{equation}
@@ -29,12 +40,20 @@ a number that grows factorially with M and N. The best representation of the exa
 \begin{equation}
 \ket{\Psi_0}=\sum_{i} c_{i} \ket{D_i}
 \end{equation}
-where $c_i$ are the ground-state coefficients obtained by diagonalizing the matrix, $H_{ij}=\bra{D_i}H\ket{D_j}$, 
-within the full orthonormalized set $\bra{D_i}\ket{D_j}=\delta_{ij}$,
- of determinants $\ket{D_i}$.\\ 
+where $c_i$ are the ground-state coefficients obtained by
+diagonalizing the matrix, $H_{ij}=\bra{D_i}H\ket{D_j}$, within the
+full orthonormalized set $\bra{D_i}\ket{D_j}=\delta_{ij}$, of
+determinants $\ket{D_i}$. CIPSI provides a convenient method to build up to this full wavefunction with a single criteria.
 
-\section{Theoretical Background}
-A CIPSI wavefunction is built iteratively starting from a reference wavefunction, usually Hartree-Fock or CASSCF, by adding all single and double excitations and then selecting relevant determinants according to some criteria. Detailed iterative steps can be found in the reference by Caffarel \textit{et al.} and references within\cite{Caffarel2013, Scemama2016,Scemama2018,Garniron2017-2} but are summarized below; 
+
+A CIPSI wavefunction is built iteratively starting from a reference
+wavefunction, usually Hartree-Fock or CASSCF, by adding all single and
+double excitations and then iteratively selecting relevant
+determinants according to some criteria. Detailed iterative steps can
+be found in the reference by Caffarel \textit{et al.} and references
+within\cite{Caffarel2013, Scemama2016,Scemama2018,Garniron2017-2} but
+are summarized below:
+
 \begin{itemize}
 \item Step 1: Define a reference wavefunction:
 
@@ -70,12 +89,13 @@ Repeating this process leads to a multi-reference trial wavefunction of high qua
 \end{equation}
 The linear coefficients $c_k$ are then optimized with the presence of the Jastrow function. 
 
-It is important to note that:\\
-- When all determinants $\ket{\alpha}$ are selected, the full configuration interaction result is obtained.\\
-- CIPSI can be seen as the deterministic counter part of FCIQMC. \\
-- In practice, any wavefunction method can be made multireference with CIPSI. For instance, a multireference Coupled Cluster (MRCC) with CIPSI is implemented in QP and has been published recently.\cite{Garniron2017-1}\\
-- At any time, with CIPSI selection, $E_{PT_2}=\sum_\alpha \Delta E_\alpha$ estimates the distance to the FCI solution.
-
+It is important to note that:
+\begin{itemize}
+\item When all determinants $\ket{\alpha}$ are selected, the full configuration interaction result is obtained.\\
+\item CIPSI can be seen as a deterministic counter part of FCIQMC. \\
+\item In practice, any wavefunction method can be made multireference with CIPSI. For instance, a multireference Coupled Cluster (MRCC) with CIPSI is implemented in QP.\cite{Garniron2017-1}\\
+\item At any time, with CIPSI selection, $E_{PT_2}=\sum_\alpha \Delta E_\alpha$ estimates the distance to the FCI solution.
+\end{itemize}
 
 
 \subsection{CIPSI wavefunction interface}
@@ -125,7 +145,7 @@ qp_create_ezfio_from_xyz C2O2H3N.xyz -b cc-pvtz
 \end{shade}
 
  
-This means that we will be simulating the molecule in all-electrons within the cc-pVTZ basis set. Other options are of course possible such as using ECPs, different spin multiplicities etc... For more details, we refer the reader to the manual of Quantum Package in \url{https://github.com/LCPQ/quantum_package/wiki/Tutorial}.\\
+This means that we will be simulating the molecule in all-electrons within the cc-pVTZ basis set. Other options are of course possible such as using ECPs, different spin multiplicities etc. For more details, to the Quantum Package tutorial \url{https://github.com/LCPQ/quantum_package/wiki/Tutorial}.\\
 A directory called \textit{C2O2H3N.ezfio} is created and contains all the relevant data to run the SCF Hartree-Fock calculation. Note that due to the large size of molecular orbitals (220), it is preferable to run QP in parallel. QP parallelization is based on a Master/Slave process allowing a master node to manage the work load between multiple MPI processes through the LibZMQ library. In practice one submits the run to one master node, then submits as many nodes as necessary to speed up the calculations. If a "slave" node dies before the end of its task, the master node will resubmit the workload to another available node. If more nodes are added at any time during the simulation, the master node will use them to reduce the time to solution.\\
 \item Step 2: Running Hartree-Fock:\\
 To save the integrals on disk and avoid recomputing them later, edit the ezfio directory with the following command:\\
@@ -188,7 +208,7 @@ At this point, the orbitals are modified, a new AO$\rightarrow$MO transformation
 \label{fig:CIPSI}
 }
 \end{figure}
-Figure \ref{fig:CIPSI} shows the evolution of the variational energy and the energy corrected with PT2 as a function of the number of determinants up to 4M determinants. While it is clear that the raw variational energy is far from being converged, the Energy + PT2  seems to be converged around 0.4M determinants.\\
+Figure \ref{fig:CIPSI} shows the evolution of the variational energy and the energy corrected with PT2 as a function of the number of determinants up to 4M determinants. While it is clear that the raw variational energy is far from being converged, the Energy + PT2 appears converged around 0.4M determinants.\\
 
 
 
@@ -210,14 +230,29 @@ E+PT2 & 4,068,271 & -282.6805  \\ \hline \hline
 \end{table}
 
 
-\item Step 7: Truncation of the number of determinants\\
-While using all the 4M determinants from CIPSI always guarantees that all important determinants are kept in the wavefunction, practically, such a large number of determinants would make any QMC calculation prohibitively expensive, as the cost of evaluating a determinant in DMC grows as $\sqrt[]{N_{det}}$ where $N_{det}$ is the number of determinants in the trial wavefunction. To truncate the number of determinants, we follow the method described by Scemama \textit{et. al}~\cite{Scemama2018} where the wavefunction is truncated by removing independently spin-up and spin-down determinants whose contribution to the norm of the wavefunction is below a user-defined threshold, $\epsilon$. For this step, we choose to truncate the determinants whose coefficients are below, $1.10^{-3}$, $1.10^{-4}$, $1.10^{-5}$ and $1.10^{-6}$, translating to 239, 44539, 541380 and 908128 determinants, respectively.\\ 
-To truncate the determinants in QP, edit the ezfio file as follows:\\
+\item Step 7: Truncation of the number of determinants.\\ While using
+  all the 4M determinants from CIPSI always guarantees that all
+  important determinants are kept in the wavefunction, practically,
+  such a large number of determinants would make any QMC calculation
+  prohibitively expensive, as the cost of evaluating a determinant in
+  DMC grows as $\sqrt[]{N_{det}}$ where $N_{det}$ is the number of
+  determinants in the trial wavefunction. To truncate the number of
+  determinants, we follow the method described by Scemama
+  \textit{et. al}~\cite{Scemama2018} where the wavefunction is
+  truncated by removing independently spin-up and spin-down
+  determinants whose contribution to the norm of the wavefunction is
+  below a user-defined threshold, $\epsilon$. For this step, we choose
+  to truncate the determinants whose coefficients are below,
+  $1.10^{-3}$, $1.10^{-4}$, $1.10^{-5}$ and $1.10^{-6}$, translating
+  to 239, 44539, 541380 and 908128 determinants, respectively.
+
+To  truncate the determinants in QP, edit the ezfio file as follows:
+
 \begin{shade}
 qp_edit C2O2H3N.ezfio  
 \end{shade}
 
-then look for \textit{ci\_threshold} and modify the value according to the desired threshold. Use the following run to truncate the determinants:\\
+then look for \textit{ci\_threshold} and modify the value according to the desired threshold. Use the following run to truncate the determinants:
 
 \begin{shade}
 qp_run truncate_wf_spin C2O2H3N.ezfio  
@@ -232,23 +267,48 @@ qp_run save_for_qmcpack C2O2H3N.ezfio &> C2O2H3N.dump
 convert4qmc -QP C2O2H3N.dump -addCusp -production
 \end{shade}
 
-Since we are running all-electron calculations, orbitals in QMC need to be corrected for the cusp condition in order to avoid moving the electrons too close to the nuclei.
-This is done by adding the option \textit{-addCusp} to \textit{convert4qmc}, which adds a tag forcing \qmcpack to run the correction or read them from a file if pre-computed. When running multiple DMC runs with different truncation thresholds, only the number of determinants is varied and the orbitals remain unchanged from one calculation to another and the cusp correction need only be run once.
+Since we are running all-electron calculations, orbitals in QMC need
+to be corrected for the electron-nuclearcusp condition..  This is done
+by adding the option \textit{-addCusp} to \textit{convert4qmc}, which
+adds a tag forcing \qmcpack to run the correction or read them from a
+file if pre-computed. When running multiple DMC runs with different
+truncation thresholds, only the number of determinants is varied and
+the orbitals remain unchanged from one calculation to another and the
+cusp correction needs only be run once.
 
 \item Step 7: Running \qmcpack \\
 At this point, running a multideterminant DMC becomes identical to running a regular DMC with \qmcpack; 
 After correcting the orbitals for the cusp, optimize the Jastrow functions and then run the DMC. 
 It is however important to mention a few remarks;\\
 
-1) \qmcpack allows reoptimization of the coefficients of the determinants during the Jastrow optimization step. While this has proven to lower the energy significantly when the number of determinants is below 10k, a large number of determinants from CIPSI is often too large to optimize and we recommend keeping the coefficients of the determinants from CIPSI un-optimized.\\
+(1) \qmcpack allows reoptimization of the coefficients of the
+determinants during the Jastrow optimization step. While this has
+proven to lower the energy significantly when the number of
+determinants is below 10k, a large number of determinants from CIPSI
+is often too large to optimize conveniently. Keeping the coefficients
+of the determinants from CIPSI unoptimized´is an alternative strategy..\\
 
-2) The large determinant expansion and the Jastrows are both trying to recover the missing correlations from the system. When optimizing the Jastrows, one has to first optimize J1 and J2 without the J3, and then with the added J3. Trying to optimze J1, J2 and J3 at the same time may lead to numerical instabilities.\\
+(2) The large determinant expansion and the Jastrows are both trying
+to recover the missing correlations from the system. When optimizing
+the Jastrows, we recommend to first optimize J1 and J2 without the J3,
+and then with the added J3. Trying to initially optimze J1, J2 and J3
+at the same time may lead to numerical instabilities.\\
 
-3) The parameters of the Jastrow function will need to be optimized for each truncation scheme and cannot be reused from one truncation scheme to another.
+(3) The parameters of the Jastrow function will need to be optimized
+for each truncation scheme and usually cannot be reused effeciently
+from one truncation scheme to another.
 
 \item Step 8: Analyzing DMC results from \qmcpack \\
 
-From Table \ref{TAB:CIPSI-DMC}, we can see that increasing the number of determinants from 0.5M to almost 1M determinant keeps the energy within error bars and does not improve the quality of the nodal surface. We can conclude that the DMC energy is converged at 0.54M determinants. It is important to note that this number of determinants also corresponds to the convergence of E+PT2 in CIPSI calculations, confirming for this case that the convergence of the nodal surface can follow the convergence of E+PT2 instead of the more difficult variational energy.   
+From Table \ref{TAB:CIPSI-DMC}, we can see that increasing the number
+of determinants from 0.5M to almost 1M determinant keeps the energy
+within error bars and does not improve the quality of the nodal
+surface. We can conclude that the DMC energy is converged at 0.54M
+determinants. It is important to note that this number of determinants
+also corresponds to the convergence of E+PT2 in CIPSI calculations,
+confirming for this case that the convergence of the nodal surface can
+follow the convergence of E+PT2 instead of the more difficult
+variational energy.
 
 
 \begin{table}[t]
@@ -268,9 +328,27 @@ N\_det & DMC& CISPI\\
 
 \end{itemize}
 
-As mentioned in previous sections, DMC is variational relative to the exact nodal surface. A nodal surface is "better" if it lowers the DMC energy. To assess the quality of the nodal surface from CIPSI, we compare these DMC results to other single determinant calculations from multiple nodal surfaces and theories. Figure \ref{fig:CIPSI-DMC} shows the energy of the $C_2O_2H_3N$ molecule as a function of different single-determinant (SD) trial wavefunctions with an aug-cc-pVTZ basis set, including Hartree-Fock (HF), DFT-PBE and hybrid functionals B3LYP and PBE0. The last 4 points in the plot show the systematic improvement of the nodal surface as a function of the number of determinants. \\
+As mentioned in previous sections, DMC is variational relative to the
+exact nodal surface. A nodal surface is "better" if it lowers the DMC
+energy. To assess the quality of the nodal surface from CIPSI, we
+compare these DMC results to other single determinant calculations
+from multiple nodal surfaces and theories. Figure \ref{fig:CIPSI-DMC}
+shows the energy of the $C_2O_2H_3N$ molecule as a function of
+different single-determinant (SD) trial wavefunctions with an
+aug-cc-pVTZ basis set, including Hartree-Fock (HF), DFT-PBE and hybrid
+functionals B3LYP and PBE0. The last 4 points in the plot show the
+systematic improvement of the nodal surface as a function of the
+number of determinants. 
 
-When the DMC-CIPSI energy is converged with respect to the number of determinants, its nodal surface is still lower than the best SD-DMC (B3LYP) by 6(1)mHa. When compared to CCSD(T) with the same basis set, $E_{CCSD(T)}$ is 4mHa higher than DMC-CIPSI and 2mHa lower than DMC-B3LYP. While 6 (1) mHa can seem very small, it is however important to remember that CCSD(T) cannot describe correctly multireference systems and therefore it is impossible to assess the correctness of the SD-DMC result, making CIPSI-DMC calculations an ideal benchmark tool for multireference systems.  
+When the DMC-CIPSI energy is converged with respect to the number of
+determinants, its nodal surface is still lower than the best SD-DMC
+(B3LYP) by 6(1)mHa. When compared to CCSD(T) with the same basis set,
+$E_{CCSD(T)}$ is 4mHa higher than DMC-CIPSI and 2mHa lower than
+DMC-B3LYP. While 6 (1) mHa can seem very small, it is however
+important to remember that CCSD(T) cannot describe correctly
+multireference systems and therefore it is impossible to assess the
+correctness of the SD-DMC result, making CIPSI-DMC calculations an
+ideal benchmark tool for multireference systems.
 
 \begin{figure}
 \begin{center}
