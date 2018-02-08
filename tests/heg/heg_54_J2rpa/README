@@ -1,0 +1,24 @@
+This test is to be used to resurrect the two-body RPA Jastrow.
+The RPA Jastrow was used in the original test set for QMCPACK (circa 
+2008) and it has been broken in QMCPACK since at least 2010.  Recent 
+efforts were made (2016) to resurrect the RPA Jastrow, but the current 
+test case results in an unphysically high energy and variance.  The 
+current test is intended for developer use only and not as a test of 
+the correctness of the current code.  As such it should not be run 
+in the e.g. nightly tests until the issue is fixed.
+
+The test is for a 54 electron HEG in 3D at rs=5.0.  A two-body 
+Gaskell RPA Jastrow factor is used, including both short and long 
+ranged parts.  The original output data includes results for VMC 
+and RMC, though only the VMC inputs are used for the test at this 
+time.  All of the original test files are included in ./qmc-ref.
+
+The total energy used in this test was obtained from the original 
+data with qmca:
+
+>qmca -q e -e 2 qmc-ref/*s001*scalar*
+qmc-ref/HEG.rs5.rpa  series 1  LocalEnergy = -4.209725 +/- 0.012941
+  
+The original scalar files do not contain the square of the local 
+energy, precluding a test of the variance.
+
