@@ -146,9 +146,9 @@ int getwordsWithMergedNumbers(std::vector<std::string>& slist, std::istream &fp,
 	  {
 	    for (size_t i = 1; i < ftn_match.size(); ++i) {
 	      std::ssub_match sub_match = ftn_match[i];
-	      std::string piece = sub_match.str();
+	      //	      std::string piece = sub_match.str();
 	      //	      std::cout << "  submatch " << i << ": " << piece << '\n';
-	      //	      splitlist.push_back(sub_match);
+	      splitlist.push_back(sub_match);
 	    }   
 	  }
 	else
