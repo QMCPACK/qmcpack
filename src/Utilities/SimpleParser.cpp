@@ -18,12 +18,11 @@
 
 
 
+#include "Utilities/SimpleParser.h"
 #include <cstdio>
 #include <cstring>
-
-
-#include "Utilities/SimpleParser.h"
 #include <algorithm>
+#include <regex>
 
 char* readLine(char *s, int max, std::istream &fp)
 {
@@ -129,6 +128,39 @@ int getwords(std::vector<std::string>& slist, std::istream &fp, int dummy /* = 0
     return -1;
 }
 
+
+// Version of getwords that unmerges (splits) strings/numbers 123-456 that are merged due to use of fixed format
+// Uses conventional getwords machinery then splits strings via regex
+int getwordsWithMergedNumbers(std::vector<std::string>& slist, std::istream &fp, int dummy /* = 0*/,
+             const std::string &extra_tokens /* ="" */)
+{
+  int retval;
+  retval=getwords(slist,fp,dummy,extra_tokens);
+  if (retval>0)
+    {
+      std::vector<std::string> splitlist;
+      std::regex ftn_regex("(.*[0-9])(-[0-9].*)");
+      std::smatch ftn_match;
+      for (const auto &item : slist) {
+	if (std::regex_match(item, ftn_match, ftn_regex))
+	  {
+	    for (size_t i = 1; i < ftn_match.size(); ++i) {
+	      std::ssub_match sub_match = ftn_match[i];
+	      std::string piece = sub_match.str();
+	      //	      std::cout << "  submatch " << i << ": " << piece << '\n';
+	      //	      splitlist.push_back(sub_match);
+	    }   
+	  }
+	else
+	  {
+	    splitlist.push_back(item);
+	  }
+      }
+      slist=splitlist;
+      retval=slist.size();
+    }
+  return retval;
+}
 
 
 void readXmol( std::istream& fxmol,double* data,int numvar)

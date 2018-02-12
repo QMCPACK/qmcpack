@@ -13,17 +13,12 @@
 // File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
 
-
-
-
-
 #include "QMCTools/GamesAsciiParser.h"
 #include <fstream>
 #include <iterator>
 #include <algorithm>
 #include <set>
 #include <map>
-
 
 void Cartesian2Spherical(int n, double* Cart, double* Sphe);
 
@@ -828,7 +823,7 @@ void GamesAsciiParser::getMO_single_set(std::istream& is, Matrix<double> &CartMa
     getwords(currentWords,is);
     for(int k=0; k<SizeOfBasisSet; k++)
     {
-      getwords(currentWords,is);
+      getwordsWithMergedNumbers(currentWords,is);
 //cout<<"i,k,size: " <<i <<" " <<k <<" " <<currentWords.size() <<" " <<currentWords[4] << std::endl;
       if(currentWords.size() == 8)
         // G basis or higher TAG gets mixed with atom id
@@ -866,7 +861,7 @@ void GamesAsciiParser::getMO_single_set(std::istream& is, Matrix<double> &CartMa
     getwords(currentWords,is);
     for(int k=0; k<SizeOfBasisSet; k++)
     {
-      getwords(currentWords,is);
+      getwordsWithMergedNumbers(currentWords,is);
       if(currentWords.size() == 3+rem)
         // G basis or higher TAG gets mixed with atom id
       {
