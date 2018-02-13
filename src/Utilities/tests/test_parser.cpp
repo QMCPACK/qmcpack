@@ -62,7 +62,7 @@ TEST_CASE("parsewords", "[utilities]")
     {"n|o",    {"n","o"},  "|"}
   };
   for (auto &tc : tlist) {
-    SECTION(tc.input) {
+    SECTION(string("Parsing string: ") + tc.input) {
       vector<string> outlist;
       unsigned int num = parsewords(tc.input.c_str(), outlist, tc.extra_split);
       REQUIRE(num == tc.output.size());
@@ -91,7 +91,7 @@ TEST_CASE("readLine", "[utilities]")
 
 
   for (auto &tc : tlist) {
-    SECTION(tc.input) {
+    SECTION(string("Parsing string: ") + tc.input) {
       const int bufLen = 20;
       char buf[bufLen];
       std::istringstream input(tc.input);
@@ -121,7 +121,7 @@ TEST_CASE("getwords", "[utilities]")
   };
 
   for (auto &tc : tlist) {
-    SECTION(tc.input) {
+    SECTION(string("Parsing input: ") + tc.input) {
       vector<string> outlist;
       std::istringstream input(tc.input);
       int num = getwords(outlist, input, 0, tc.extra_split);
