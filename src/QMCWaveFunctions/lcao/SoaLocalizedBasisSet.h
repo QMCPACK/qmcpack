@@ -136,7 +136,9 @@ struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::value_type>
     const auto& displ= (P.activePtcl==iat)? d_table->Temp_dr: d_table->Displacements[iat];
     for(int c=0; c<NumCenters; c++)
     {
-      LOBasisSet[IonID[c]]->evaluateVGL(dist[c],displ[c],BasisOffset[c],vgl);
+      /// PBC!!! add lattice
+      //LOBasisSet[IonID[c]]->evaluateVGL(dist[c],displ[c],BasisOffset[c],vgl);
+      LOBasisSet[IonID[c]]->evaluateVGL(P.Lattice,dist[c],displ[c],BasisOffset[c],vgl);
     }
   }
 
@@ -150,7 +152,11 @@ struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::value_type>
     const value_type* restrict  dist = (P.activePtcl==iat)? d_table->Temp_r.data(): d_table->Distances[iat];
     const auto& displ= (P.activePtcl==iat)? d_table->Temp_dr: d_table->Displacements[iat];
     for(int c=0; c<NumCenters; c++)
-      LOBasisSet[IonID[c]]->evaluateV(dist[c],displ[c],vals+BasisOffset[c]);
+    {
+      /// PBC!!!: add lattice
+      //LOBasisSet[IonID[c]]->evaluateV(dist[c],displ[c],vals+BasisOffset[c]);
+      LOBasisSet[IonID[c]]->evaluateV(P.Lattice,dist[c],displ[c],vals+BasisOffset[c]);
+    }
   }
 
   /** add a new set of Centered Atomic Orbitals

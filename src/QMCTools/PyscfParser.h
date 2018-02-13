@@ -43,7 +43,8 @@ public:
   void parse(const std::string& fname);
 
   void getGeometry(const std::string& fname);
-
+  void getCell(const std::string& fname);
+  void getKpts(const std::string& fname);
 
 };
 //#endif

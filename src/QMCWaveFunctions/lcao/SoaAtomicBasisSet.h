@@ -120,9 +120,9 @@ namespace qmcplusplus
       { }
 
 
-      template<typename T, typename PosType, typename VGL>
+      template<typename LAT, typename T, typename PosType, typename VGL>
         inline void
-        evaluateVGL(const T r, const PosType& dr, const size_t offset,  VGL& vgl)
+        evaluateVGL(const LAT& lattice, const T r, const PosType& dr, const size_t offset,  VGL& vgl)
         {
           //const size_t ib_max=NL.size();
           if(r>Rmax) 
@@ -150,47 +150,72 @@ namespace qmcplusplus
           T* restrict dpsi_z=vgl.data(3)+offset; const T* restrict ylm_z=Ylm[3]; //gradZ
           T* restrict d2psi =vgl.data(4)+offset; const T* restrict ylm_l=Ylm[4]; //lap
           const T rinv=cone/r;
+
+          //std::cout<<"lattice.X"<<lattice.R(0,0)<<std::endl;
+
           for(size_t ib=0; ib<BasisSetSize; ++ib)
           {
+            
+            //do{
+            /// PBC!!add PBC
+            int i=0;
             const int nl(NL[ib]);
             const int lm(LM[ib]);
             const T drnloverr=rinv*dphi[nl];
             const T ang=ylm_v[lm];
-            const T gr_x=drnloverr*x;
-            const T gr_y=drnloverr*y;
-            const T gr_z=drnloverr*z;
+            const T gr_x=drnloverr*x;//HERE
+            const T gr_y=drnloverr*y;//HERE
+            const T gr_z=drnloverr*z;//HERE
             const T ang_x=ylm_x[lm];
             const T ang_y=ylm_y[lm];
             const T ang_z=ylm_z[lm];
             const T vr=phi[nl];
-            psi[ib]    = ang*vr;
+
+            psi[ib]    = ang*vr+ang*vr;
             dpsi_x[ib] = ang*gr_x+vr*ang_x;
             dpsi_y[ib] = ang*gr_y+vr*ang_y;
             dpsi_z[ib] = ang*gr_z+vr*ang_z;
             d2psi[ib]  = ang*(ctwo*drnloverr+d2phi[nl]) + ctwo*(gr_x*ang_x+gr_y*ang_y+gr_z*ang_z)+vr*ylm_l[lm];
+            i++;
+
+            //}
+            //while(psi[ib]<0.0000001);
+            //std::cout<<"ANOUAR:   psi["<<ib<<"]="<<psi[ib]<<std::endl;
           }
         }
 
-      template<typename T, typename PosType>
+      template<typename LAT, typename T, typename PosType>
       inline void
-        evaluateV(const T r, const PosType& dr, T* restrict psi) 
+        evaluateV(const LAT& lattice, const T r, const PosType& dr, T* restrict psi) 
         {
-          if(r>Rmax) 
-          {
-            std::fill_n(psi,BasisSetSize,T());
-            return;
-          }
 
+         
           value_type* restrict ylm_v=tempS.data(0);
           value_type* restrict phi_r=tempS.data(1);
-
-          Ylm.evaluateV(-dr[0],-dr[1],-dr[2],ylm_v);
-          MultiRnl->evaluate(r,phi_r);
-
           for(size_t ib=0; ib<BasisSetSize; ++ib)
-          {
-            psi[ib]  = ylm_v[ LM[ib] ]*phi_r[ NL[ib] ];
+              psi[ib]=0;
+        
+          for (i<1 ){ //loop over TX 
+              dr_new=dr+Tx // Tx is translation vector
+              r=std::sqrt(dot(dr_new,dr_new);
+
+             if(r>Rmax) 
+             {
+               std::fill_n(psi,BasisSetSize,T());
+               return;
+             }
+     
+             Ylm.evaluateV(-dr[0],-dr[1],-dr[2],ylm_v);
+             MultiRnl->evaluate(r,phi_r);
+             
+             for(size_t ib=0; ib<BasisSetSize; ++ib)
+             {
+               /// PBC: add PBC
+               
+               psi[ib]  += ylm_v[ LM[ib] ]*phi_r[ NL[ib] ];
           }
+          
+        }
         }
 
     };

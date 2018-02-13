@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <set>
 #include <map>
+#include <sstream>
 
 
 
@@ -51,7 +52,6 @@ PyscfParser::PyscfParser(int argc, char** argv):
 void PyscfParser::parse(const std::string& fname)
 {
 
-
   hdf_archive hin(0);
 
   if(!hin.open(fname.c_str(),H5F_ACC_RDONLY))
@@ -61,11 +61,16 @@ void PyscfParser::parse(const std::string& fname)
   }
 
 
+  hin.push("PBC");
+  hin.read(PBC,"PBC");
+  std::cout <<"Periodic Boundary Comditions: " <<(PBC?("yes"):("no")) << std::endl;
+  std::cout.flush();
+
+  hin.pop();
+
   hin.push("parameters");
 
-//  hin.read(usingECP,"ECP");
   hin.read(ECP,"ECP");
-  //std::cout <<"usingECP: " <<(usingECP?("yes"):("no")) << std::endl;
   std::cout <<"usingECP: " <<(ECP?("yes"):("no")) << std::endl;
   std::cout.flush();
 
@@ -131,15 +136,53 @@ void PyscfParser::parse(const std::string& fname)
   hin.push("atoms");
   hin.read(NumberOfAtoms,"number_of_atoms");
   std::cout <<"NUMBER OF ATOMS: " <<NumberOfAtoms << std::endl;
+
+  
   hin.close();
 
 
   IonSystem.create(NumberOfAtoms);
   GroupName.resize(NumberOfAtoms);
+  if (PBC)
+     getCell(fname);
+     getKpts(fname);
   getGeometry(fname);
+  
+
 
 }
 
+void PyscfParser::getCell(const std::string& fname)
+{
+  X.resize(3);
+  Y.resize(3);
+  Z.resize(3);
+
+  hdf_archive hin(0);
+
+  if(!hin.open(fname.c_str(),H5F_ACC_RDONLY))
+  {
+       std::cerr<<"Could not open H5 file"<<std::endl;
+       abort();
+  }
+  hin.push("Cell");
+  Matrix<double> LatticeVec(3,3);                                                                                                       
+  hin.read(LatticeVec,"LatticeVectors"); 
+  X[0]=LatticeVec[0][0];
+  X[1]=LatticeVec[0][1];
+  X[2]=LatticeVec[0][2];
+  Y[0]=LatticeVec[1][0];
+  Y[1]=LatticeVec[1][1];
+  Y[2]=LatticeVec[1][2];
+  Z[0]=LatticeVec[2][0];
+  Z[1]=LatticeVec[2][1];
+  Z[2]=LatticeVec[2][2];
+  hin.close();
+  std::cout<<"Lattice parameters in Bohr:"<<std::endl;
+  std::cout<<X[0]<<"  "<<X[1]<<"  "<<X[2]<<std::endl;
+  std::cout<<Y[0]<<"  "<<Y[1]<<"  "<<Y[2]<<std::endl;
+  std::cout<<Z[0]<<"  "<<Z[1]<<"  "<<Z[2]<<std::endl;
+}
 void PyscfParser::getGeometry(const std::string& fname)
 {
 
@@ -198,5 +241,46 @@ void PyscfParser::getGeometry(const std::string& fname)
     species(IonChargeIndex,speciesID)=q[i];
    
   }
+  hin.close();
 }
 
+void PyscfParser::getKpts(const std::string& fname)
+{
+  Matrix <double> MyVec(1,3);
+  hdf_archive hin(0);
+
+  if(!hin.open(fname.c_str(),H5F_ACC_RDONLY))
+  {
+       std::cerr<<"Could not open H5 file"<<std::endl;
+       abort();
+  }
+
+  hin.push("Nb_KPTS");
+  hin.read(NbKpts,"Nbkpts");
+  hin.pop();
+  Kpoints_Coord.resize(NbKpts);
+
+  for (int i=0; i<NbKpts;i++)
+  {
+     
+     Kpoints_Coord[i].resize(3);
+     std::stringstream ss;
+     ss << "KPTS_" << i;
+     if(!hin.push(ss.str()))
+     {
+          std::cerr<<"Could not find coordinates for Kpoint Nb"<<i<<std::endl;
+          abort();
+     }
+     hin.read(MyVec,"Coord");
+     hin.pop(); 
+     std::cout<<"MyCoord="<<MyVec[0][0]<<"  "<<MyVec[0][1]<<"  "<<MyVec[0][2]<<std::endl;
+     Kpoints_Coord[i][0]=MyVec[0][0];
+     Kpoints_Coord[i][1]=MyVec[0][1];
+     Kpoints_Coord[i][2]=MyVec[0][2];
+      
+  }
+  hin.close();
+
+
+
+}
