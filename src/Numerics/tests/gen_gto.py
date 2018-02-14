@@ -266,7 +266,7 @@ def get_ijk():
 # evaluateThirdDerivOnly   print_ggg = True, others False
 
 def compute_radial_values(p, print_value=False, print_grad=False, print_lap=False,
-                          print_hess=False, print_ggg=False):
+                          print_hess=False, print_ggg=False, using_soa=False):
 
   out = ''
   gto_s = create_gto_symbolic()
@@ -286,7 +286,10 @@ def compute_radial_values(p, print_value=False, print_grad=False, print_lap=Fals
     rlist = {Symbol('x'):p[0], Symbol('y'):p[1], Symbol('z'):p[2]}
     val =  expr.subs(slist).subs(rlist).evalf()
     if print_value:
-      out += "  REQUIRE(ct.getYlm(%d) == Approx(%.12g));\n"%(idx, val)
+      if using_soa:
+        out += "  REQUIRE(XYZ[%d] == Approx(%.12g));\n"%(idx, val)
+      else:
+        out += "  REQUIRE(ct.getYlm(%d) == Approx(%.12g));\n"%(idx, val)
     dx = diff(expr, Symbol('x'))
     dy = diff(expr, Symbol('y'))
     dz = diff(expr, Symbol('z'))
@@ -294,14 +297,22 @@ def compute_radial_values(p, print_value=False, print_grad=False, print_lap=Fals
     dy_val =  dy.subs(slist).subs(rlist).evalf()
     dz_val =  dz.subs(slist).subs(rlist).evalf()
     if print_grad:
-      out += "  REQUIRE(ct.getGradYlm(%d)[0] == Approx(%.12g));\n"%(idx, dx_val)
-      out += "  REQUIRE(ct.getGradYlm(%d)[1] == Approx(%.12g));\n"%(idx, dy_val)
-      out += "  REQUIRE(ct.getGradYlm(%d)[2] == Approx(%.12g));\n"%(idx, dz_val)
+      if using_soa:
+        out += "  REQUIRE(gr0[%d] == Approx(%.12g));\n"%(idx, dx_val)
+        out += "  REQUIRE(gr1[%d] == Approx(%.12g));\n"%(idx, dy_val)
+        out += "  REQUIRE(gr2[%d] == Approx(%.12g));\n"%(idx, dz_val)
+      else:
+        out += "  REQUIRE(ct.getGradYlm(%d)[0] == Approx(%.12g));\n"%(idx, dx_val)
+        out += "  REQUIRE(ct.getGradYlm(%d)[1] == Approx(%.12g));\n"%(idx, dy_val)
+        out += "  REQUIRE(ct.getGradYlm(%d)[2] == Approx(%.12g));\n"%(idx, dz_val)
 
     lap = diff(expr, Symbol('x'), 2) + diff(expr, Symbol('y'), 2) + diff(expr, Symbol('z'), 2)
     lap_val = lap.subs(slist).subs(rlist).evalf()
     if print_lap:
-      out += "  REQUIRE(ct.getLaplYlm(%d) == Approx(%.12g));\n"%(idx, lap_val)
+      if using_soa:
+        out += "  REQUIRE(lap[%d] == Approx(%.12g));\n"%(idx, lap_val)
+      else:
+        out += "  REQUIRE(ct.getLaplYlm(%d) == Approx(%.12g));\n"%(idx, lap_val)
 
 
     if print_hess:
@@ -315,7 +326,11 @@ def compute_radial_values(p, print_value=False, print_grad=False, print_lap=Fals
           #print ii,jj,hess_val
           #if hess_val != 0:
           #  print "  REQUIRE(ct.getHessYlm(%d)(%d,%d) == Approx(%.12g));"%(idx, ii, jj, hess_val)
-          out += "  REQUIRE(ct.getHessYlm(%d)(%d,%d) == Approx(%.12g));\n"%(idx, ii, jj, hess_val)
+          if using_soa:
+            if ii <= jj:
+              out += "  REQUIRE(h%d%d[%d] == Approx(%.12g));\n"%(ii, jj, idx, hess_val)
+          else:
+            out += "  REQUIRE(ct.getHessYlm(%d)(%d,%d) == Approx(%.12g));\n"%(idx, ii, jj, hess_val)
 
       out += '\n'
 
@@ -336,7 +351,23 @@ def compute_radial_values(p, print_value=False, print_grad=False, print_lap=Fals
 
 # A simple template replacement engine.
 # Template items to be replaced start on a line with '%'.
-def run_template():
+def run_template(fname_in, fname_out, bodies):
+  out = ''
+  with open(fname_in, 'r') as f:
+    for line in f:
+      if line.startswith('%'):
+        key = line.strip()[1:]
+        if key in bodies:
+          line = bodies[key]
+        else:
+          print 'Error, template item not found, key:',key, ' line = ',line
+      out += line
+
+  with open(fname_out, 'w') as f:
+    f.write(out)
+
+
+def create_test_full_cartesian_tensor():
   p = [1.3,1.2,-0.5]
     #compute_radial_values([1.3,1.2,-0.5])
   bodies = dict()
@@ -353,19 +384,29 @@ def run_template():
                                                                       print_ggg=True)
   bodies['test_evaluate_third_deriv_only'] = compute_radial_values(p, print_ggg=True)
 
-  out = ''
-  with open('test_full_cartesian_tensor.cpp.in', 'r') as f:
-    for line in f:
-      if line.startswith('%'):
-        key = line.strip()[1:]
-        if key in bodies:
-          line = bodies[key]
-        else:
-          print 'Error, template item not found, key:',key, ' line = ',line
-      out += line
+  fname_in = 'test_full_cartesian_tensor.cpp.in'
+  fname_out = 'test_full_cartesian_tensor.cpp'
 
-  with open('test_full_cartesian_tensor.cpp', 'w') as f:
-    f.write(out)
+  run_template(fname_in, fname_out, bodies)
+
+def create_test_full_soa_cartesian_tensor():
+  p = [1.3,1.2,-0.5]
+    #compute_radial_values([1.3,1.2,-0.5])
+  bodies = dict()
+  bodies['test_evaluateV'] = compute_radial_values(p, print_value=True, using_soa=True)
+  bodies['test_evaluateVGL'] = compute_radial_values(p, print_value=True,
+                                                         print_grad=True,
+                                                         print_lap=True,
+                                                         using_soa=True)
+  bodies['test_evaluateVGH'] = compute_radial_values(p, print_value=True,
+                                                                  print_grad=True,
+                                                                  print_hess=True,
+                                                                  using_soa=True)
+
+  fname_in = 'test_full_soa_cartesian_tensor.cpp.in'
+  fname_out = 'test_full_soa_cartesian_tensor.cpp'
+
+  run_template(fname_in, fname_out, bodies)
 
 
 
@@ -391,5 +432,7 @@ if __name__ == '__main__':
     # Data for test_cartesian_tensor
     #compute_radial_values([1.3,1.2,-0.5])
 
-    run_template()
+    # Create full test
+    create_test_full_cartesian_tensor()
+    create_test_full_soa_cartesian_tensor()
 
