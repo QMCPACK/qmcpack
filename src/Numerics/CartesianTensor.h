@@ -15,6 +15,13 @@
 
 
 
+/*
+ DO NOT MAKE PERMANENT EDITS IN THIS FILE
+ This file is generated from src/Numerics/codegen/gen_cartesian_tensor.py and CartesianTensor.h.in
+
+ Edit CartesianTensor.h.in, rerun gen_cartesian_tensor.py, and copy the generated file here.
+*/
+
 
 #ifndef QMCPLUSPLUS_CARTESIAN_TENSOR_H
 #define QMCPLUSPLUS_CARTESIAN_TENSOR_H
