@@ -1,6 +1,9 @@
 
 # Generate order of i,j,k indices from Gamess output
 
+# Also see the SETLAB routine in inputb.src for the ordering
+
+# Example notation:
 # XYZ
 # 2X
 def count_vals(s):
@@ -92,7 +95,59 @@ void CartesianTensor<T,Point_t, Tensor_t, GGG_t>::getABC(int n, int& a, int& b, 
         body_str += '    break;\n'
         idx += 1
     return out_str%body_str
-    
+
+# generate C++ used in SoaCartesianTensor.h
+def create_getABC_SoA(order_list):
+    out_str = """
+template<class T>
+void SoaCartesianTensor<T>::getABC(int n, int& a, int& b, int& c)
+{
+// following Gamess notation
+  switch(n)
+  {
+%s
+  default:
+    std::cerr <<"CartesianTensor::getABC() - Incorrect index." << std::endl;
+    APP_ABORT("");
+    break;
+  }
+}
+"""
+    shell_name = ['S', 'P', 'D', 'F', 'G', 'H', 'I']
+    idx = 0
+    body_str = ''
+    current_sum = -1
+    for x,y,z,s in order_list:
+        new_sum = x+y+z
+        if new_sum != current_sum:
+            body_str +=  '  // '+shell_name[new_sum] + '\n'
+            current_sum = new_sum
+        body_str += '  case %d: // %s\n'%(idx,s)
+        body_str += '    a = %d; b = %d; c = %d;\n'%(x,y,z)
+        body_str += '    break;\n'
+        idx += 1
+    return out_str%body_str
+
+def create_gms_order_for_pyscf(order_list):
+    pad = ' '*4
+    out_str = pad + "d_gms_order = {\n%s%s}"
+    body_str = ''
+    current_sum = -1
+    shell_list = list()
+    for x,y,z,s in order_list:
+      new_sum = x + y + z
+      if new_sum != current_sum:
+        if current_sum >= 0:
+          body_str += 2*pad + '%d:[%s],\n'%(current_sum, ','.join(shell_list))
+        shell_list = list()
+        current_sum = new_sum
+      expanded_shell_name = to_string(*count_vals(s))
+      shell_list.append('"%s"'%expanded_shell_name.lower())
+
+    body_str += 2*pad + '%d:[%s],\n'%(current_sum, ','.join(shell_list))
+
+    return out_str%(body_str,pad)
+
 
 def read_order(fname):
     order_list = []
@@ -121,5 +176,15 @@ def read_order(fname):
 if __name__ == "__main__":
     # The file 'order.txt' is taken from Gamess output
     order_list = read_order('order.txt')
+
+    # Create get_ijk for gen_cartesian_tensor.py
     #print create_get_ijk(order_list)
-    print create_getABC(order_list)
+
+    # Create getABC for CartesianTensor.h.in
+    #print create_getABC(order_list)
+
+    # Create getABC for SoaCartesianTensor.h.in
+    #print create_getABC_SoA(order_list)
+
+    # Create order dictionary for PyscfToQmcpack.py in QMCTools
+    print create_gms_order_for_pyscf(order_list)
