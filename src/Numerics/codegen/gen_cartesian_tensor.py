@@ -1,5 +1,14 @@
 
-# Generate CartesianTensor.h using symbolic expressions for the GTO's and derivatives
+# Generate angular tensors using symbolic expressions for the GTO's and derivatives
+
+# There are two steps to the code generation, and only the second is automated.
+#  1. Use read_order.py to generate:
+#      A. A python version of get_ijk, which is pasted into this file.
+#      B. A C++ version of get_ABC, which is pasted into CartesianTensor.h.in
+#      C. Repeat B for a version of get_ABC to be pasted into SoaCartesianTensor.h.in
+#  2. Run create_cartesian_tensor.py
+#      A. Copy CartesianTensor.h up on directory (to src/Numerics)
+#      B. Copy SoaCartesianTensor.h up to src/QMCWaveFunctions/lcao)
 
 
 from collections import namedtuple, defaultdict
@@ -501,19 +510,225 @@ void CartesianTensor<T,Point_t, Tensor_t, GGG_t>::evaluateThirdDerivOnly(const P
 
   return out_str%body_str
 
+def gen_soa_evaluate_bare():
+  out_str = """
+template<class T>
+void SoaCartesianTensor<T>::evaluate_bare(T x, T y, T z, T* restrict XYZ) const
+{
+  const T x2=x*x, y2=y*y, z2=z*z;
+  const T x3=x2*x, y3=y2*y, z3=z2*z;
+  const T x4=x3*x, y4=y3*y, z4=z3*z;
+  const T x5=x4*x, y5=y4*y, z5=z4*z;
+  switch(Lmax)
+  {
+%s
+  }
+}
+"""
+  gto_s = create_gto_symbolic()
+  # just the 'angular' part
+  gto_s = gto_s.subs(Symbol('alpha'),0)
+
+  ijk_with_lmax = gen_lmax(get_ijk())
+  body_str = ''
+  curr_lmax = -1
+  # put index and values in a list so it can be reversed
+  ijk_l = [(idx,c) for idx,c in enumerate(ijk_with_lmax)]
+
+  for idx, (i,j,k,s,lmax) in reversed(ijk_l):
+    if lmax != curr_lmax:
+      curr_lmax = lmax
+      body_str += "  case %d:\n"%curr_lmax
+
+    slist = {Symbol('i'):i, Symbol('j'):j, Symbol('k'):k}
+    val = replace_common_subexpressions(gto_s, slist)
+    body_str += "    XYZ[%d] = %s; // %s\n"%(idx,val,s)
+
+  return out_str%body_str
+
+
+def gen_soa_evaluate_vgl():
+  out_str = """
+template<class T>
+void SoaCartesianTensor<T>::evaluateVGL(T x, T y, T z)
+{
+
+  constexpr T czero(0);
+  cXYZ=czero;
+
+  const T x2=x*x, y2=y*y, z2=z*z;
+  const T x3=x2*x, y3=y2*y, z3=z2*z;
+  const T x4=x3*x, y4=y3*y, z4=z3*z;
+  const T x5=x4*x, y5=y4*y, z5=z4*z;
+  T* restrict XYZ=cXYZ.data(0);
+  T* restrict gr0=cXYZ.data(1);
+  T* restrict gr1=cXYZ.data(2);
+  T* restrict gr2=cXYZ.data(3);
+  T* restrict lap=cXYZ.data(4);
+
+  switch(Lmax)
+  {
+%s
+  }
+
+  const size_t ntot=NormFactor.size();
+  for (size_t i=0; i<ntot; i++)
+  {
+    XYZ[i]*= NormFactor[i];
+    gr0[i]*= NormFactor[i];
+    gr1[i]*= NormFactor[i];
+    gr2[i]*= NormFactor[i];
+    lap[i]*= NormFactor[i];
+  }
+}
+"""
+  gto_s = create_gto_symbolic()
+  # just the 'angular' part
+  gto_s = gto_s.subs(Symbol('alpha'),0)
+
+  ijk_with_lmax = gen_lmax(get_ijk())
+  body_str = ''
+  curr_lmax = -1
+  # put index and values in a list so it can be reversed
+  ijk_l = [(idx,c) for idx,c in enumerate(ijk_with_lmax)]
+
+  x,y,z = symbols('x y z')
+
+  for idx, (i,j,k,s,lmax) in reversed(ijk_l):
+    if lmax != curr_lmax:
+      curr_lmax = lmax
+      body_str += "  case %d:\n"%curr_lmax
+
+    # Compute derivatives symbolically
+    dx = diff(gto_s, x)
+    dy = diff(gto_s, y)
+    dz = diff(gto_s, z)
+    lap = diff(gto_s, x, 2) + diff(gto_s, y, 2) + diff(gto_s, z, 2)
+
+    slist = {Symbol('i'):i, Symbol('j'):j, Symbol('k'):k}
+    val = replace_common_subexpressions(gto_s, slist)
+    gx = replace_common_subexpressions(dx, slist)
+    gy = replace_common_subexpressions(dy, slist)
+    gz = replace_common_subexpressions(dz, slist)
+    lap_val = replace_common_subexpressions(lap, slist)
+
+
+    body_str += "    XYZ[%d] = %s;     // %s\n"%(idx,val,s)
+
+    if gx != 0:
+      body_str += "    gr0[%d] = %s;\n"%(idx,gx)
+    if gy != 0:
+      body_str += "    gr1[%d] = %s;\n"%(idx,gy)
+    if gz != 0:
+      body_str += "    gr2[%d] = %s;\n"%(idx,gz)
+
+    if lap_val != 0:
+      body_str += "    lap[%d] = %s;\n"%(idx,lap_val)
+
+  return out_str%body_str
+
+def gen_soa_evaluate_vgh():
+  out_str = """
+template<class T>
+void SoaCartesianTensor<T>::evaluateVGH(T x, T y, T z)
+{
+  constexpr T czero(0);
+  cXYZ=czero;
+
+  const T x2=x*x, y2=y*y, z2=z*z;
+  const T x3=x2*x, y3=y2*y, z3=z2*z;
+  const T x4=x3*x, y4=y3*y, z4=z3*z;
+  const T x5=x4*x, y5=y4*y, z5=z4*z;
+
+  T* restrict XYZ=cXYZ.data(0);
+  T* restrict gr0=cXYZ.data(1);
+  T* restrict gr1=cXYZ.data(2);
+  T* restrict gr2=cXYZ.data(3);
+  T* restrict h00=cXYZ.data(4);
+  T* restrict h01=cXYZ.data(5);
+  T* restrict h02=cXYZ.data(6);
+  T* restrict h11=cXYZ.data(7);
+  T* restrict h12=cXYZ.data(8);
+  T* restrict h22=cXYZ.data(9);
+
+
+  switch(Lmax)
+  {
+%s
+  }
+
+  const size_t ntot=cXYZ.size();
+  for(size_t i=0; i<ntot; ++i)
+  {
+    XYZ[i]*= NormFactor[i];
+    gr0[i]*= NormFactor[i];
+    gr1[i]*= NormFactor[i];
+    gr2[i]*= NormFactor[i];
+    h00[i]*= NormFactor[i];
+    h01[i]*= NormFactor[i];
+    h02[i]*= NormFactor[i];
+    h11[i]*= NormFactor[i];
+    h12[i]*= NormFactor[i];
+    h22[i]*= NormFactor[i];
+  }
+
+}
+"""
+
+  gto_s = create_gto_symbolic()
+  # just the 'angular' part
+  gto_s = gto_s.subs(Symbol('alpha'),0)
+
+  ijk_with_lmax = gen_lmax(get_ijk())
+  body_str = ''
+  curr_lmax = -1
+  ijk_l = [(idx,c) for idx,c in enumerate(ijk_with_lmax)]
+
+  x,y,z = symbols('x y z')
+
+  for idx, (i,j,k,s,lmax) in reversed(ijk_l):
+    if lmax != curr_lmax:
+      curr_lmax = lmax
+      body_str += "  case %d:\n"%curr_lmax
+
+    slist = {Symbol('i'):i, Symbol('j'):j, Symbol('k'):k}
+
+    # Compute derivatives symbolically
+    dx = diff(gto_s, x)
+    dy = diff(gto_s, y)
+    dz = diff(gto_s, z)
+
+    val = replace_common_subexpressions(gto_s, slist)
+    body_str += "    XYZ[%d] = %s;     // %s\n"%(idx,val,s)
+
+    gx = replace_common_subexpressions(dx, slist)
+    gy = replace_common_subexpressions(dy, slist)
+    gz = replace_common_subexpressions(dz, slist)
+    if gx != 0:
+      body_str += "    gr0[%d] = %s;\n"%(idx,gx)
+    if gy != 0:
+      body_str += "    gr1[%d] = %s;\n"%(idx,gy)
+    if gz != 0:
+      body_str += "    gr2[%d] = %s;\n"%(idx,gz)
+
+    axis_syms = [Symbol('x'), Symbol('y'), Symbol('z')]
+    for ii,si in enumerate(axis_syms):
+      for jj,sj in enumerate(axis_syms):
+        if ii <= jj:
+          # Compute Hessian elements symbolically
+          h_s = diff(diff(gto_s, si), sj)
+          hess_val = replace_common_subexpressions(h_s, slist)
+          if hess_val != 0 :
+            body_str += "    h%d%d[%d] = %s;\n"%(ii,jj,idx,hess_val)
+
+  return out_str%body_str
+
 
 # A simple template replacement engine.
 # Template items to be replaced start on a line with '%'.
-def run_template():
-  bodies = dict()
-  bodies['evaluate'] = gen_evaluate()
-  bodies['evaluate_all'] = gen_evaluate_all()
-  bodies['evaluate_with_hessian'] = gen_evaluate_with_hessian()
-  bodies['evaluate_with_third_deriv'] = gen_evaluate_with_third_deriv()
-  bodies['evaluate_third_deriv_only'] = gen_evaluate_third_deriv_only()
-
+def run_template(fname_in, fname_out, bodies):
   out = ''
-  with open('CartesianTensor.h.in', 'r') as f:
+  with open(fname_in, 'r') as f:
     for line in f:
       if line.startswith('%'):
         key = line.strip()[1:]
@@ -523,8 +738,43 @@ def run_template():
           print 'Error, template item not found, key:',key, ' line = ',line
       out += line
 
-  with open('CartesianTensor.h', 'w') as f:
+  with open(fname_out, 'w') as f:
     f.write(out)
+
+dire_codegen_text = """
+/*
+ DO NOT MAKE PERMANENT EDITS IN THIS FILE
+ This file is generated from src/Numerics/codegen/%(script_name)s and %(template_file_name)s
+
+ Edit %(template_file_name)s, rerun %(script_name)s, and copy the generated file here.
+*/
+"""
+
+def create_cartesian_tensor_h():
+  bodies = dict()
+  bodies['evaluate'] = gen_evaluate()
+  bodies['evaluate_all'] = gen_evaluate_all()
+  bodies['evaluate_with_hessian'] = gen_evaluate_with_hessian()
+  bodies['evaluate_with_third_deriv'] = gen_evaluate_with_third_deriv()
+  bodies['evaluate_third_deriv_only'] = gen_evaluate_third_deriv_only()
+  fname_out = 'CartesianTensor.h'
+  fname_in= 'CartesianTensor.h.in'
+
+  bodies['dire_codegen_warning'] = dire_codegen_text%({'script_name':'gen_cartesian_tensor.py', 'template_file_name':fname_in})
+
+  run_template(fname_in, fname_out, bodies)
+
+def create_soa_cartesian_tensor_h():
+  bodies = dict()
+  bodies['evaluate_bare'] = gen_soa_evaluate_bare()
+  bodies['evaluate_vgl'] = gen_soa_evaluate_vgl()
+  bodies['evaluate_vgh'] = gen_soa_evaluate_vgh()
+  fname_in= 'SoaCartesianTensor.h.in'
+  fname_out = 'SoaCartesianTensor.h'
+
+  bodies['dire_codegen_warning'] = dire_codegen_text%({'script_name':'gen_cartesian_tensor.py', 'template_file_name':fname_in})
+
+  run_template(fname_in, fname_out, bodies)
 
 
 if __name__ == '__main__':
@@ -533,5 +783,10 @@ if __name__ == '__main__':
     #print gen_evaluate_with_hessian()
     #print gen_evaluate_with_third_deriv()
     #print gen_evaluate_third_deriv_only()
-    run_template()
+
+    # Create CartesianTensor.h from CartesianTensor.h.in
+    create_cartesian_tensor_h()
+
+    # Create SoaCartesianTensor.h from SoaCartesianTensor.h.in
+    create_soa_cartesian_tensor_h()
 
