@@ -291,12 +291,10 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
           return ll_new
   
   mo_coeff = mf.mo_coeff
-  Complex=is_complex(mo_coeff)
-  if Complex:
-     mytype="c16"
+  if len(kpts)==0:
+     Complex=False
   else:
-     mytype="f8"
-
+     Complex=True
   GroupParameter.create_dataset("IsComplex",(1,),dtype="b1",data=Complex)
 
  
@@ -374,15 +372,15 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
          if not UnRestricted:
            mo_coeff_real = get_mo(mo_coeff[i].real, cell.cart) 
            mo_coeff_imag = get_mo(mo_coeff[i].imag, cell.cart) 
-           moc_pack = empty((NbMO,NbAO,2),dtype=float)
-           moc_pack[:,:,0] = mo_coeff_real
-           moc_pack[:,:,1] = mo_coeff_imag
+    #       moc_pack = empty((NbMO,NbAO,2),dtype=float)
+    #       moc_pack[:,:,0] = mo_coeff_real
+    #       moc_pack[:,:,1] = mo_coeff_imag
             
 
-           GroupDet.create_dataset("eigenset_0",(NbMO,NbAO,2),dtype="f8",data=moc_pack) 
+    #       GroupDet.create_dataset("eigenset_0",(NbMO,NbAO,2),dtype="f8",data=moc_pack) 
 
-           #GroupDet.create_dataset("eigenset_0_real",(NbMO,NbAO),dtype="f8",data=mo_coeff_real) 
-           #GroupDet.create_dataset("eigenset_0_imag",(NbMO,NbAO),dtype="f8",data=mo_coeff_imag) 
+           GroupDet.create_dataset("eigenset_0_real",(NbMO,NbAO),dtype="f8",data=mo_coeff_real) 
+           GroupDet.create_dataset("eigenset_0_imag",(NbMO,NbAO),dtype="f8",data=mo_coeff_imag) 
            GroupDet.create_dataset("eigenval_0",(1,NbMO),dtype="f8",data=mf.mo_energy[i])
  
          else:
@@ -401,7 +399,6 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
            GroupDet.create_dataset("eigenval_1",(1,NbMO),dtype="f8",data=mf.mo_energy[1][i])
 
 
-  GroupParameter.create_dataset("COMPLEX",(1,),dtype="i4",data=Complex)
   GroupParameter.create_dataset("numMO",(1,),dtype="i4",data=NbMO)
   GroupParameter.create_dataset("numAO",(1,),dtype="i4",data=NbAO)
   
