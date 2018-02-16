@@ -339,7 +339,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   ENDIF($ENV{CRAYPE_VERSION} MATCHES ".")
 
   #------------------------------------
-  # Identify the compiler
+  # Identify the compiler -- I don't get why this COMPILER variable is added --PD
   #------------------------------------
   IF ( CMAKE_C_COMPILER_WORKS OR CMAKE_C_COMPILER_WORKS )
     IF( (CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR ( CMAKE_C_COMPILER_ID MATCHES "GNU") )
@@ -433,10 +433,8 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   #-------------------------------------------------------------------
   # check lapack/blas
   #-------------------------------------------------------------------
-  # Quick search for MKL (this will need to be improved). Currently only for Intel compilers
-  IF (INTEL_COMPILER)
-   INCLUDE(CMake/FindMKL.cmake)
-  ENDIF(INTEL_COMPILER)
+  # Quick check for MKL be intel compiler or have set MKL_ROOT
+  INCLUDE(CMake/FindMKL.cmake)
   IF ( HAVE_MKL )
     # We found MKL, add the link library
     SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${MKL_FLAGS}")

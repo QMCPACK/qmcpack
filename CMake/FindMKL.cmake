@@ -2,32 +2,50 @@
 # This needs a lot of work to make it robust
 INCLUDE( CheckCXXSourceCompiles )
 
+# if MKL_ROOT is set, use that
+if ( MKL_ROOT )
+   string(CONCAT CMAKE_C_FLAGS " -I${MKL_ROOT}/include")
+   string(CONCAT CMAKE_CXX_FLAGS " -I${MKL_ROOT}/include")
+   string(CONCAT CMAKE_EXE_LINKER_FLAGS "-L-L${MKL_ROOT}/lib")
+   set(MKL_FLAGS "-I${MKL_ROOT}/include")
+   set(MKL_LINKER_FLAGS "-L${MKL_ROOT}/lib")
+   set(MKL_LIBRARIES "-lmkl_core -lmkl_sequential")
+endif ( MKL_ROOT )
+
+# this takes away build control but is what the cmake does now
+if ( ${CMAKE_CXX_COMPILER_ID} MATCHES "intel" )
+   set(MKL_LIBRARIES "-mkl")
+endif ()
+
 # Check for mkl.h
 FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl.cxx"
     "#include <iostream>\n #include <mkl.h>\n int main() { return 0; }\n" )
 try_compile(HAVE_MKL ${CMAKE_BINARY_DIR}
       ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl.cxx
-      CMAKE_FLAGS "${CMAKE_CXX_FLAGS} -mkl" )
+      CMAKE_FLAGS "${CMAKE_CXX_FLAGS} ${MKL_LIBRARIES}" )
 
 # Check for mkl_vml_functions.h
 FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_vml.cxx"
     "#include <iostream>\n #include <mkl_vml_functions.h>\n int main() { return 0; }\n" )
 try_compile(HAVE_MKL_VML ${CMAKE_BINARY_DIR}
       ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_vml.cxx
-      CMAKE_FLAGS "${CMAKE_CXX_FLAGS} -mkl" )
+      CMAKE_FLAGS "${CMAKE_CXX_FLAGS} ${MKL_LIBRARIES}" )
 
 # Check for fftw3
 FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_fftw3.cxx"
     "#include <iostream>\n #include <fftw/fftw3.h>\n int main() { return 0; }\n" )
 try_compile(HAVE_MKL_FFTW3 ${CMAKE_BINARY_DIR}
       ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_fftw3.cxx
-      CMAKE_FLAGS "${CMAKE_CXX_FLAGS} -mkl" )
+      CMAKE_FLAGS "${CMAKE_CXX_FLAGS} ${MKL_LIBRARIES}" )
+
+MESSAGE ( "${HAVE_MKL}:${HAVE_MKL_VML}:${HAVE_MKL_FFTW3}" )
 
 IF ( HAVE_MKL )
     SET( MKL_FOUND 1 )
-    SET( MKL_FLAGS -mkl )
-    SET( MKL_LIBRARIES )
-    SET( MKL_LINKER_FLAGS -mkl )
+    SET( MKL_FLAGS ${MKL_FLAGS} )
+    if ( ${CMAKE_CXX_COMPILER_ID} MATCHES "Intel" )
+       SET( MKL_LIBRARIES )
+    endif()
     IF ( HAVE_MKL_FFTW3 )
         FILE(WRITE "${CMAKE_CURRENT_BINARY_DIR}/include/fftw3.h" "#include <fftw/fftw3.h>\n" )
         INCLUDE_DIRECTORIES( "${CMAKE_CURRENT_BINARY_DIR}/include" )
