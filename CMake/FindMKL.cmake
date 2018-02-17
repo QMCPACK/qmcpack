@@ -6,10 +6,9 @@ INCLUDE( CheckCXXSourceCompiles )
 if ( MKL_ROOT )
    string(CONCAT CMAKE_C_FLAGS " -I${MKL_ROOT}/include")
    string(CONCAT CMAKE_CXX_FLAGS " -I${MKL_ROOT}/include")
-   string(CONCAT CMAKE_EXE_LINKER_FLAGS "-L-L${MKL_ROOT}/lib")
+   string(CONCAT CMAKE_EXE_LINKER_FLAGS "-L${MKL_ROOT}/lib")
    set(MKL_FLAGS "-I${MKL_ROOT}/include")
-   set(MKL_LINKER_FLAGS "-L${MKL_ROOT}/lib")
-   set(MKL_LIBRARIES "-lmkl_core -lmkl_sequential")
+   set(MKL_LIBRARIES "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core")
 endif ( MKL_ROOT )
 
 # this takes away build control but is what the cmake does now

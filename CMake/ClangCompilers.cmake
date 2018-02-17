@@ -12,24 +12,44 @@ SET(ENABLE_OPENMP 1)
 IF ( ENABLE_OPENMP )
     SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fopenmp")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+    SET(CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE} -fopenmp")
+    SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fopenmp")
+    SET(CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELWITHDEBINFO} -fopenmp")
+    SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -fopenmp")
 ENDIF()
 
 # Set clang specfic flags (which we always want)
 ADD_DEFINITIONS( -Drestrict=__restrict__ )
 
-SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fomit-frame-pointer -fstrict-aliasing")
+SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fomit-frame-pointer -fstrict-aliasing -D__forceinline=inline")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fomit-frame-pointer -fstrict-aliasing -D__forceinline=inline")
-SET( HAVE_POSIX_MEMALIGN 0 )    # Clang doesn't support -malign-double
+
+IF (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5.0 )
+  SET( HAVE_POSIX_MEMALIGN 1 )    # Clang doesn't support -malign-double it does in 5.0.1
+ELSE ()
+  SET( HAVE_POSIX_MEMALIGN 0 )
+ENDIF()
 
 # Suppress compile warnings
 SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -Wno-deprecated -Wno-unused-value")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wno-unused-value -Wno-undefined-var-template")
+SET(CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE} -Wno-deprecated -Wno-unused-value")
+SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wno-deprecated -Wno-unused-value -Wno-undefined-var-template")
+SET( CMAKE_C_FLAGS_RELWITHDEBINFO     "${CMAKE_C_FLAGS_RELWITHDEBINFO} -Wno-deprecated -Wno-unused-value" )
+SET( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -Wno-deprecated -Wno-unused-value -Wno-undefined-var-template" )
 
 # Set extra optimization specific flags
-SET( CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE} -ffast-math" )
-SET( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ffast-math" )
-SET( CMAKE_C_FLAGS_RELWITHDEBINFO     "${CMAKE_C_FLAGS_RELWITHDEBINFO} -ffast-math" )
-SET( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -ffast-math" )
+SET( CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE} -ffast-math -D__forceinline=inline" )
+SET( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ffast-math -D__forceinline=inline" )
+SET( CMAKE_C_FLAGS_RELWITHDEBINFO     "${CMAKE_C_FLAGS_RELWITHDEBINFO} -ffast-math -D__forceinline=inline" )
+SET( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -ffast-math -D__forceinline=inline" )
+
+MESSAGE ( "LLVM LLD: ${ENABLE_LLVM_LLD}"  )
+IF (ENABLE_LLVM_LLD)
+  SET ( CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=lld )
+  SET ( CMAKE_EXE_LINKER_FLAGS_RELEASE ${CMAKE_EXE_LINKER_FLAGS_RELEASE} -fuse-ld=lld )
+  SET ( CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO ${CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO} -fuse-ld=lld )
+ENDIF()
 
 #------------------------
 # Not on Cray's machine
