@@ -250,8 +250,9 @@ public:
 #endif
   template<typename T, typename IT> void gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int dest=0);
 #ifdef HAVE_MPI
-  template<typename T, typename IT> void gatherv(T* sb, T* rb, int n,IT& counts, IT& displ, int dest, MPI_Comm comm);
+  template<typename T, typename IT> void gatherv(T* sb, T* rb, int n, IT& counts, IT& displ, int dest, MPI_Comm comm);
 #endif
+  template<typename T, typename TMPI, typename IT> void gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT& displ, int dest=0);
   template<typename T> void allgather(T& sb, T& rb, int count, mpi_comm_type comm);
   template<typename T> void allgather(T* sb, T* rb, int count);
 #ifdef HAVE_MPI
