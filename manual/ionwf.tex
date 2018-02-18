@@ -1,0 +1,73 @@
+\section{Gaussian Product Wavefunction}
+\label{sec:ionwf}
+
+The Gaussian Product wavefunction implements eq.~\ref{eq:gauss_prod_wf}
+\begin{equation}
+\Psi(\vec{R}) = \prod_{i=1}^N \exp\left[ -\frac{(\vec{R}_i-\vec{R}_i^o)^2}{2\sigma_i^2} \right]
+\label{eq:gauss_prod_wf},
+\end{equation}
+where $\vec{R}_i$ is the position of the $i^{\text{th}}$ quantum particle and $\vec{R}_i^o$ is its center. $\sigma_i$ is the width of the Gaussian orbital around center $i$.
+
+This variational wavefunction enhances single-particle density at chosen spatial locations with adjustable strengths. It is useful whenever such localization is physically relevant yet not captured by other parts of the trial wavefunction. For example, in an electron-ion simulation of a solid, the ions are localized around their crystal lattice sites. This single-particle localization is not captured by the ion-ion Jastrow. Therefore the addition of this localization term will improve the wavefunction. The simplest use case of this wavefunction is perhaps the quantum harmonic oscillator (please see the ``tests/models/sho'' folder for examples).
+
+\subsubsection{Input Specification}
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{l c c c l }
+\hline
+\multicolumn{5}{l}{Gaussian Product Wavefunction (ionwf)} \\
+\hline
+\bfseries name & \bfseries datatype & \bfseries values & \bfseries defaults  & \bfseries description \\
+\hline
+name & text & ionwf & (required) & Unique name for this wavefunction \\
+width & floats & 1.0 -1 & (required) & Widths of Gaussian orbitals.\\ 
+source & text & ion0 & (required) & Name of classical particle set.\\ 
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\FloatBarrier
+
+Additional information:
+\begin{itemize}
+\item \texttt{width} There must be one width provided for each quantum particle. If a negative width is given, then its corresponding Gaussian orbital is removed. Negative width is useful if one wants to use Gaussian wavefunction for a subset of the quantum particles.
+\item \texttt{source} The Gaussian centers must be specified in the form of a classical particle set. This classical particle set is likely the ion positions ``ion0'', hence the name ``ionwf''. However, one may define arbitrary centers using a different particle set. Please refer to examples in `tests/models/sho'.
+\end{itemize}
+
+\subsection{Example Use Case}
+\begin{lstlisting}
+  <qmcsystem>
+    <simulationcell>
+      <parameter name="bconds">
+            n n n
+      </parameter>
+    </simulationcell>
+    <particleset name="e">
+      <group name="u" size="1">
+        <parameter name="mass">5.0</parameter>
+        <attrib name="position" datatype="posArray" condition="0">
+          0.0001 -0.0001 0.0002
+        </attrib>
+      </group>
+    </particleset>
+    <particleset name="ion0" size="1">
+      <group name="H">
+        <attrib name="position" datatype="posArray" condition="0">
+          0 0 0
+        </attrib>
+      </group>
+    </particleset>
+    <wavefunction target="e" id="psi0">
+      <ionwf name="iwf" source="ion0" width="0.8165"/>
+    </wavefunction>
+    <hamiltonian name="h0" type="generic" target="e">
+      <extpot type="HarmonicExt" mass="5.0" energy="0.3"/>
+      <estimator type="latticedeviation" name="latdev" 
+        target="e"    tgroup="u" 
+        source="ion0" sgroup="H"/>
+    </hamiltonian>
+  </qmcsystem>
+\end{lstlisting}
+

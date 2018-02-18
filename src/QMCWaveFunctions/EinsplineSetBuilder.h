@@ -347,7 +347,7 @@ public:
   int MyToken;
   inline void update_token(const char* f, int l, const char* msg) 
   {
-    app_log() << "TOKEN=" << MyToken << " " << msg << " " << f << " " << l << std::endl; MyToken++; 
+    app_debug() << "TOKEN=" << MyToken << " " << msg << " " << f << " " << l << std::endl; MyToken++;
   }
   //inline void update_token(const char* f, int l, const char* msg) 
   //{}

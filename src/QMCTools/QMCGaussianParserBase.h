@@ -42,10 +42,12 @@ struct QMCGaussianParserBase
   typedef ParticleSet::SingleParticlePos_t SingleParticlePos_t;
 
   bool multideterminant;
+  bool AllH5;
   bool BohrUnit;
   bool SpinRestricted;
   bool Periodicity;
   bool UseHDF5;
+  bool production;
   bool zeroCI;
   bool orderByExcitation;
   bool addJastrow;
@@ -139,6 +141,7 @@ struct QMCGaussianParserBase
   xmlNodePtr createMultiDeterminantSetQP();
   xmlNodePtr createMultiDeterminantSetQPHDF5();
   xmlNodePtr createDeterminantSetWithHDF5();
+  xmlNodePtr PrepareDeterminantSetFromHDF5();
   xmlNodePtr createJ3();
   xmlNodePtr createJ2();
   xmlNodePtr createJ1();
@@ -154,6 +157,9 @@ struct QMCGaussianParserBase
                     const std::string& ion_tag);
 
   void dumpStdInput(const std::string& psi_tag,
+                    const std::string& ion_tag);
+
+  void dumpStdInputProd(const std::string& psi_tag,
                     const std::string& ion_tag);
 
   virtual void Fmodump(const std::string& psi_tag,

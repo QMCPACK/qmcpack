@@ -26,6 +26,14 @@
 namespace qmcplusplus
 {
 
+/// Tmove options
+enum
+{
+  TMOVE_OFF=0, // no Tmove
+  TMOVE_V0,    // M. Casula, PRB 74, 161102(R) (2006)
+  TMOVE_V1,    // version 1, M. Casula et al., JCP 132, 154113 (2010)
+};
+
 struct NonLocalTOperator
 {
 
@@ -39,8 +47,11 @@ struct NonLocalTOperator
   RealType minusFactor;
 
   std::vector<NonLocalData> Txy;
+  std::vector<std::vector<NonLocalData*> > Txy_by_elec;
+  size_t Nelec;
 
-  NonLocalTOperator();
+  NonLocalTOperator(size_t N);
+
   inline int size() const
   {
     return Txy.size();
@@ -57,7 +68,7 @@ struct NonLocalTOperator
   }
 
   /** initialize the parameters */
-  bool put(xmlNodePtr cur);
+  int put(xmlNodePtr cur);
 
   /** reserve Txy for memory optimization */
   void reserve(int n);
@@ -74,6 +85,12 @@ struct NonLocalTOperator
    */
   int selectMove(RealType prob);
   int selectMove(RealType prob, std::vector<NonLocalData> &txy);
+
+  /** sort all the Txy elements by electron */
+  void group_by_elec();
+
+  /** select the move for electron iel with a given probability */
+  const NonLocalData* selectMove(RealType prob, int iel);
 };
 
 }

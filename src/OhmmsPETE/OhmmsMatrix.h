@@ -137,17 +137,17 @@ public:
   }
 
   // Attach to pre-allocated memory
-  inline void attach(T* ref)
+  inline void attachReference(T* ref)
   {
-    X.attach(ref, TotSize);
+    X.attachReference(ref, TotSize);
   }
 
-  inline void attach(T* ref, size_type n, size_type m)
+  inline void attachReference(T* ref, size_type n, size_type m)
   {
     D1 = n;
     D2 = m;
     TotSize=n*m;
-    X.attach(ref, TotSize);
+    X.attachReference(ref, TotSize);
   }
 
   inline void add(size_type n)   // you can add rows: adding columns are forbidden

@@ -37,8 +37,6 @@ struct QMCState
   bool dryrun;
   ///true, if wave functions are stored for next runs
   bool save_wfs;
-  ///true, if walker swap is done by async
-  bool async_swap;
   ///true, print out file
   bool io_node;
   ///true, use Ewald instead of optimal breakup for the Coulomb
@@ -52,8 +50,6 @@ struct QMCState
   /** size of memory allocated in byte per MPI
    */
   size_t memory_allocated;
-  ///vacuum layer for non-periodic dimension
-  OHMMS_PRECISION_FULL vacuum;
   ///supercell in full precision
   Tensor<OHMMS_PRECISION_FULL,OHMMS_DIM> theSuperCell;
 

@@ -12,7 +12,7 @@ ENDIF(COMMAND cmake_policy)
 # Version 
 ######################################################################
 SET(QMCPACK_VERSION_MAJOR 3)
-SET(QMCPACK_VERSION_MINOR 2)
+SET(QMCPACK_VERSION_MINOR 4)
 SET(QMCPACK_VERSION_PATCH 0)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
@@ -257,9 +257,8 @@ SET(QMCPACK_UNIT_TEST_DIR ${qmcpack_BINARY_DIR}/tests/bin)
 ######################################################
 FIND_PACKAGE(Git)
 
-SET(IS_GIT_PROJECT false)
-IF (EXISTS "${PROJECT_SOURCE_DIR}/.git")
-  SET(IS_GIT_PROJECT true)
+IF (GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+  SET(IS_GIT_PROJECT 1)
 ENDIF()
 
 
@@ -759,6 +758,28 @@ IF(BUILD_LMYENGINE_INTERFACE)
   SUBDIRS(src/formic/utils)
   SET(QMC_UTIL_LIBS formic_utils ${QMC_UTIL_LIBS})
 ENDIF(BUILD_LMYENGINE_INTERFACE)
+
+IF (USE_VTUNE_TASKS)
+  IF (NOT ENABLE_TIMERS)
+    MESSAGE(FATAL_ERROR "USE_VTUNE_TASKS is set, but timers are not enabled.  Set ENABLE_TIMERS=1.")
+  ENDIF()
+  SET(USE_VTUNE_API 1)
+ENDIF()
+
+IF (USE_VTUNE_API)
+  include(CheckIncludeFileCXX)
+  CHECK_INCLUDE_FILE_CXX(ittnotify.h HAVE_ITTNOTIFY_H)
+  IF (NOT HAVE_ITTNOTIFY_H)
+    MESSAGE(FATAL_ERROR "USE_VTUNE_API is defined, but the ittnotify.h include file is not found.  Check that the correct include directory is present in CMAKE_CXX_FLAGS.")
+  ENDIF()
+
+  FIND_LIBRARY(VTUNE_ITTNOTIFY_LIBRARY ittnotify)
+  IF (NOT VTUNE_ITTNOTIFY_LIBRARY)
+    MESSAGE(FATAL_ERROR "USE_VTUNE_API is defined, but the ittnotify library is not found.  Check that correct library path is present in CMAKE_LIBRARY_PATH.")
+  ENDIF()
+  LINK_LIBRARIES("${VTUNE_ITTNOTIFY_LIBRARY}")
+ENDIF()
+
 
 #include(ExternalProject)
 #  set(einspline_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/einspline")

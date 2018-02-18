@@ -515,20 +515,10 @@ void SlaterDetOpt::restore(int iat)
 /// \param[in]      P              the particle set
 /// \param[in]      buf            the buffer to add essential data to
 ///
-/// \return  the log of the determinant value
-///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-OrbitalBase::RealType SlaterDetOpt::registerData(ParticleSet& P, BufferType& buf) {
+void SlaterDetOpt::registerData(ParticleSet& P, WFBufferType& buf) {
 
-  // first time
-  if(NP == 0) {
-    NP=P.getTotalNum();
-  }
-
-  //app_log() << " EWN ENTERING SlaterDetOpt::registerData(ParticleSet& P, BufferType& buf)" << std::endl;
-
-  // evaluate the orbital matrix, its inverse, and the log of the determinant value
-  LogValue = evaluateLog(P,P.G,P.L);
+  //app_log() << " EWN ENTERING SlaterDetOpt::registerData(ParticleSet& P, WFBufferType& buf)" << std::endl;
 
   // add the log of the wave function to the buffer
   buf.add(LogValue);
@@ -548,9 +538,6 @@ OrbitalBase::RealType SlaterDetOpt::registerData(ParticleSet& P, BufferType& buf
   // add inverse matrix to the buffer
   buf.add(m_orb_inv_mat.first_address(),m_orb_inv_mat.last_address());
 
-  // return log of determinant value
-  return LogValue;
-
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -564,10 +551,10 @@ OrbitalBase::RealType SlaterDetOpt::registerData(ParticleSet& P, BufferType& buf
 /// \return  the log of the determinant value
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-OrbitalBase::RealType SlaterDetOpt::updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch) {
+OrbitalBase::RealType SlaterDetOpt::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch) {
 
   // BEGIN EWN DEBUG 
-  //app_log() << " EWN ENTERING SlaterDetOpt::updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch)" << std::endl;
+  //app_log() << " EWN ENTERING SlaterDetOpt::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)" << std::endl;
   //app_log() << "printing P.R" << std::endl;
   //for (int i = 0; i < P.R.size(); i++)
   //  app_log() << P.R[i] << std::endl;
@@ -608,7 +595,7 @@ OrbitalBase::RealType SlaterDetOpt::updateBuffer(ParticleSet& P, BufferType& buf
 /// \param[in]      buf            the buffer to read from
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void SlaterDetOpt::copyFromBuffer(ParticleSet& P, BufferType& buf) {
+void SlaterDetOpt::copyFromBuffer(ParticleSet& P, WFBufferType& buf) {
 
   // read in the log of the wave function
   buf.get(LogValue);

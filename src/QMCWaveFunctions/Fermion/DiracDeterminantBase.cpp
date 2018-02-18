@@ -103,7 +103,7 @@ void DiracDeterminantBase::resize(int nel, int morb)
   d2psiM.resize(nel,norb);
   psiV.resize(norb);
   memoryPool.resize(nel*norb);
-  psiM_temp.attach(memoryPool.data(),nel,norb);
+  psiM_temp.attachReference(memoryPool.data(),nel,norb);
 #ifdef MIXED_PRECISION
   psiM_hp.resize(nel,norb);
 #endif
@@ -263,9 +263,9 @@ DiracDeterminantBase::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P
 void DiracDeterminantBase::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BufferTimer.start();
-  psiM.attach(buf.attach<ValueType>(psiM.size()));
-  dpsiM.attach(buf.attach<GradType>(dpsiM.size()));
-  d2psiM.attach(buf.attach<ValueType>(d2psiM.size()));
+  psiM.attachReference(buf.lendReference<ValueType>(psiM.size()));
+  dpsiM.attachReference(buf.lendReference<GradType>(dpsiM.size()));
+  d2psiM.attachReference(buf.lendReference<ValueType>(d2psiM.size()));
   buf.get(LogValue);
   buf.get(PhaseValue);
   BufferTimer.stop();
@@ -310,7 +310,7 @@ void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, std::vector<Va
   else
   {
     const size_t offset = memory_needed-nVP*NumOrbitals;
-    VP.SPOMem.attach((RealType*)memoryPool.data(),offset*sizeof(ValueType)/sizeof(RealType));
+    VP.SPOMem.attachReference((RealType*)memoryPool.data(),offset*sizeof(ValueType)/sizeof(RealType));
     Matrix<ValueType> psiT(memoryPool.data()+offset, nVP, NumOrbitals);
     SPOVTimer.start();
     Phi->evaluateValues(VP, psiT);

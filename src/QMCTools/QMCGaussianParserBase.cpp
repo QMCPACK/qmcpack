@@ -38,8 +38,8 @@ std::vector<std::string> QMCGaussianParserBase::gShellType;
 std::vector<int> QMCGaussianParserBase::gShellID;
 
 QMCGaussianParserBase::QMCGaussianParserBase():
-  Title("sample"),basisType("Gaussian"),basisName("generic"),DoCusp(false),debug(false),
-  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),WFS_name("wfj")
+  Title("sample"),basisType("Gaussian"),basisName("generic"),DoCusp(false),debug(false),production(false),
+  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),WFS_name("wfj"),AllH5(false)
   ,usingCSF(false),readNO(0),readGuess(0),zeroCI(false),target_state(0),Structure(false)
   ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false),QP(false),ECP(false)
 {
@@ -48,12 +48,11 @@ QMCGaussianParserBase::QMCGaussianParserBase():
 QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
   BohrUnit(true),SpinRestricted(false),NumberOfAtoms(0),NumberOfEls(0),DoCusp(false),debug(false),
   SpinMultiplicity(0),NumberOfAlpha(0),NumberOfBeta(0),SizeOfBasisSet(0),WFS_name("wfj"),
-  Title("sample"),basisType("Gaussian"),basisName("generic"),numMO(0),numMO2print(-1),
-  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),target_state(0),
+  Title("sample"),basisType("Gaussian"),basisName("generic"),numMO(0),numMO2print(-1),production(false),
+  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),target_state(0),AllH5(false),
   angular_type("spherical"),usingCSF(false),readNO(0),readGuess(0),zeroCI(false),Structure(false)
   ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false), QP(false),ECP(false)
 {
-  //IonSystem.setName("i");
   IonChargeIndex=IonSystem.getSpeciesSet().addAttribute("charge");
   ValenceChargeIndex=IonSystem.getSpeciesSet().addAttribute("valence");
   AtomicNumberIndex=IonSystem.getSpeciesSet().addAttribute("atomicnumber");
@@ -185,8 +184,6 @@ void QMCGaussianParserBase::setOccupationNumbers()
     //UHF
   {
     std::multimap<value_type,int> e;
-    //for(int i=0; i<SizeOfBasisSet; i++) e.insert(std::pair<value_type,int>(EigVal_alpha[i],0));
-    //for(int i=0; i<SizeOfBasisSet; i++) e.insert(std::pair<value_type,int>(EigVal_beta[i],1));
     for(int i=0; i<numMO; i++)
       e.insert(std::pair<value_type,int>(EigVal_alpha[i],0));
     for(int i=0; i<numMO; i++)
@@ -197,8 +194,6 @@ void QMCGaussianParserBase::setOccupationNumbers()
     while(n<NumberOfEls && it != e.end())
     {
       LOGMSG(n << " " << (*it).first << " " << (*it).second)
-      //if((*it).second == 0) {NumberOfAlpha++;}
-      //else {NumberOfBeta++;}
       ++it;
       ++n;
     }
@@ -206,8 +201,6 @@ void QMCGaussianParserBase::setOccupationNumbers()
   //}
   LOGMSG("Number of alpha electrons " << NumberOfAlpha)
   LOGMSG("Number of beta electrons " << NumberOfBeta)
-  //Occ_alpha.resize(SizeOfBasisSet,0);
-  //Occ_beta.resize(SizeOfBasisSet,0);
   Occ_alpha.resize(numMO,0);
   Occ_beta.resize(numMO,0);
   for(int i=0; i<NumberOfAlpha; i++)
@@ -279,9 +272,11 @@ xmlNodePtr QMCGaussianParserBase::createESPSet(int iesp)
 
 xmlNodePtr QMCGaussianParserBase::createIonSet()
 {
-  const double ang_to_bohr=1.0/0.529177e0;
+  const double ang_to_bohr=1.889725989;
   if(!BohrUnit)
+  {  
     IonSystem.R *= ang_to_bohr;
+  }
   double CoreTable[] =
   {
     0, /* index zero*/
@@ -313,11 +308,6 @@ xmlNodePtr QMCGaussianParserBase::createBasisSet()
 {
   xmlNodePtr bset = xmlNewNode(NULL,(const xmlChar*)"basisset");
   xmlNewProp(bset,(const xmlChar*)"name",(const xmlChar*)"LCAOBSet");
-  /*
-  xmlNodePtr cur = xmlAddChild(bset,xmlNewNode(NULL,(const xmlChar*)"distancetable"));
-  xmlNewProp(cur,(const xmlChar*)"source",(const xmlChar*)"i");
-  xmlNewProp(cur,(const xmlChar*)"target",(const xmlChar*)"e");
-  */
   xmlNodePtr cur=NULL;
   std::map<int,int> species;
   int gtot = 0;
@@ -350,7 +340,6 @@ xmlNodePtr QMCGaussianParserBase::createBasisSet()
   }
   return bset;
 }
-
 
 
 xmlNodePtr QMCGaussianParserBase::createBasisSetWithHDF5()
@@ -470,12 +459,64 @@ QMCGaussianParserBase::createDeterminantSetWithHDF5()
   }
   cur = xmlAddSibling(cur,ddet);
     hout.close();
-  //return slaterdeterminant node
   return slaterdet;
 }
 
 
+xmlNodePtr
+QMCGaussianParserBase::PrepareDeterminantSetFromHDF5()
+{
+  setOccupationNumbers();
+  xmlNodePtr slaterdet = xmlNewNode(NULL,(const xmlChar*)"slaterdeterminant");
+  std::ostringstream up_size, down_size, b_size;
+  up_size <<NumberOfAlpha;
+  down_size << NumberOfBeta;
+  b_size<<numMO;
+  //create a determinant Up
+  xmlNodePtr udet = xmlNewNode(NULL,(const xmlChar*)"determinant");
+  xmlNewProp(udet,(const xmlChar*)"id",(const xmlChar*)"updet");
+  xmlNewProp(udet,(const xmlChar*)"size",(const xmlChar*)up_size.str().c_str());
+  if (DoCusp==true)
+     xmlNewProp(udet,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/updet.cuspInfo.xml");
 
+  //add occupation
+  xmlNodePtr occ_data = xmlNewNode(NULL,(const xmlChar*)"occupation");
+  xmlNewProp(occ_data,(const xmlChar*)"mode",(const xmlChar*)"ground");
+  xmlAddChild(udet,occ_data);
+  //add coefficients
+  xmlNodePtr coeff_data = xmlNewNode(NULL,(const xmlChar*)"coefficient");
+  xmlNewProp(coeff_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
+  xmlNewProp(coeff_data,(const xmlChar*)"spindataset",(const xmlChar*)"0");
+  xmlAddChild(udet,coeff_data);
+  //add udet to slaterdet
+  xmlNodePtr cur = xmlAddChild(slaterdet,udet);
+  
+  xmlNodePtr ddet;
+  if(SpinRestricted)
+  {
+    ddet = xmlCopyNode(udet,1);
+    xmlSetProp(ddet,(const xmlChar*)"id",(const xmlChar*)"downdet");
+    xmlSetProp(ddet,(const xmlChar*)"size",(const xmlChar*)down_size.str().c_str());
+    if (DoCusp==true)
+       xmlSetProp(ddet,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/downdet.cuspInfo.xml");
+  }
+  else
+  {
+    ddet = xmlCopyNode(udet,2);
+    xmlSetProp(ddet,(const xmlChar*)"id",(const xmlChar*)"downdet");
+    xmlSetProp(ddet,(const xmlChar*)"size",(const xmlChar*)down_size.str().c_str());
+    if (DoCusp==true)
+       xmlNewProp(ddet,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/downdet.cuspInfo.xml");
+    xmlNodePtr o= xmlAddChild(ddet,xmlCopyNode(occ_data,1));
+    xmlNodePtr c= xmlCopyNode(coeff_data,1);
+    xmlSetProp(c,(const xmlChar*)"spindataset",(const xmlChar*)"1");
+    o = xmlAddSibling(o,c);
+
+
+  }
+  cur = xmlAddSibling(cur,ddet);
+  return slaterdet;
+}
 
 xmlNodePtr
 QMCGaussianParserBase::createDeterminantSet()
@@ -483,10 +524,7 @@ QMCGaussianParserBase::createDeterminantSet()
   setOccupationNumbers();
   xmlNodePtr slaterdet = xmlNewNode(NULL,(const xmlChar*)"slaterdeterminant");
   //check spin-dependent properties
-  //int nup = NumberOfEls/2;
-  //int ndown = NumberOfEls-nup;
   std::ostringstream up_size, down_size, b_size, occ;
-  //up_size <<NumberOfAlpha; down_size << NumberOfBeta; b_size<<SizeOfBasisSet;
   up_size <<NumberOfAlpha;
   down_size << NumberOfBeta;
   b_size<<numMO;
@@ -497,21 +535,9 @@ QMCGaussianParserBase::createDeterminantSet()
   if (DoCusp==true)
      xmlNewProp(adet,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/updet.cuspInfo.xml");
 
-  //occ<<"\n";
-  //vector<int>::iterator it(Occ_alpha.begin());
-  //int i=0;
-  //while(i<SizeOfBasisSet) {
-  //  int n = (i+10<SizeOfBasisSet)? 10 : SizeOfBasisSet-i;
-  //  copy(it, it+n, std::ostream_iterator<int>(occ," "));
-  //  occ << "\n"; it += 10; i+=10;
-  //}
-  //xmlNodePtr occ_data
-  //  = xmlNewTextChild(adet,NULL,(const xmlChar*)"occupation",(const xmlChar*)occ.str().c_str());
-  //xmlNewProp(occ_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
   xmlNodePtr occ_data = xmlNewNode(NULL,(const xmlChar*)"occupation");
   xmlNewProp(occ_data,(const xmlChar*)"mode",(const xmlChar*)"ground");
   xmlAddChild(adet,occ_data);
-  //int btot=SizeOfBasisSet*SizeOfBasisSet;
   int btot=numMO*SizeOfBasisSet;
   int n=btot/4, b=0;
   int dn=btot-n*4;
@@ -543,17 +569,6 @@ QMCGaussianParserBase::createDeterminantSet()
      xmlNewProp(adet,(const xmlChar*)"cuspInfo",(const xmlChar*)"../CuspCorrection/downdet.cuspInfo.xml");
 
   {
-    //std::ostringstream occ_beta;
-    //occ_beta<<"\n";
-    //it=Occ_beta.begin();
-    //int i=0;
-    //while(i<SizeOfBasisSet) {
-    //  int n = (i+10<SizeOfBasisSet)? 10 : SizeOfBasisSet-i;
-    //  copy(it, it+n, std::ostream_iterator<int>(occ_beta," "));
-    //  occ_beta << "\n"; it += 10; i+=10;
-    //}
-    //occ_data=xmlNewTextChild(adet,NULL,(const xmlChar*)"occupation",(const xmlChar*)occ_beta.str().c_str());
-    //xmlNewProp(occ_data,(const xmlChar*)"size",(const xmlChar*)b_size.str().c_str());
     occ_data = xmlNewNode(NULL,(const xmlChar*)"occupation");
     xmlNewProp(occ_data,(const xmlChar*)"mode",(const xmlChar*)"ground");
     xmlAddChild(adet,occ_data);
@@ -593,7 +608,6 @@ QMCGaussianParserBase::createSPOSets(xmlNodePtr spoUP, xmlNodePtr spoDN)
 {
   setOccupationNumbers();
   std::ostringstream up_size, down_size, b_size, occ, nstates_alpha,nstates_beta;
-  //up_size <<NumberOfAlpha; down_size << NumberOfBeta; b_size<<SizeOfBasisSet;
   up_size <<NumberOfAlpha;
   down_size << NumberOfBeta;
   b_size<<numMO;
@@ -611,7 +625,6 @@ QMCGaussianParserBase::createSPOSets(xmlNodePtr spoUP, xmlNodePtr spoDN)
   xmlNodePtr occ_data = xmlNewNode(NULL,(const xmlChar*)"occupation");
   xmlNewProp(occ_data,(const xmlChar*)"mode",(const xmlChar*)"ground");
   xmlAddChild(spoUP,occ_data);
-  //int btot=SizeOfBasisSet*SizeOfBasisSet;
   int btot=numMO*SizeOfBasisSet;
   int n=btot/4, b=0;
   int dn=btot-n*4;
@@ -857,21 +870,6 @@ QMCGaussianParserBase::createMultiDeterminantSetQP()
         std::ostringstream qc_coeff;
         qc_coeff<<CIcoeff[i];
         coeff<<CIcoeff[i];
-       /*
-        if(zeroCI && i==0)
-        {
-          coeff<<1.0;
-        }
-        else
-          if(zeroCI && i>0)
-          {
-            coeff<<0.0;
-          }
-          else
-          {
-            coeff<<CIcoeff[i];
-          }
-       */
         std::ostringstream tag;
         tag<<"CIcoeff_" <<iv++;
         xmlNewProp(ci,(const xmlChar*)"id",(const xmlChar*) tag.str().c_str());
@@ -988,9 +986,6 @@ QMCGaussianParserBase::createMultiDeterminantSet()
     xmlNewProp(detlist,(const xmlChar*)"neb",(const xmlChar*)cineb.str().c_str());
     xmlNewProp(detlist,(const xmlChar*)"nstates",(const xmlChar*)nstates.str().c_str());
     xmlNewProp(detlist,(const xmlChar*)"cutoff",(const xmlChar*)ci_thr.str().c_str());
-    //std::vector<std::pair<int,double> >::iterator it(coeff2csf.begin());
-    //std::vector<std::string>::iterator occit(CSFocc.begin());
-    //std::vector<std::pair<int,double> >::iterator last(coeff2csf.end());
     CIexcitLVL.clear();
     for(int i=0; i<CSFocc.size(); i++)
     {
@@ -1120,19 +1115,6 @@ QMCGaussianParserBase::createMultiDeterminantSet()
       exit(102);
     }
     int iv=0;
-    /*
-    while(iv < CIcoeff.size() && std::abs(CIcoeff[iv]) < ci_threshold) iv++;
-
-    {
-      xmlNodePtr ci = xmlNewNode(NULL,(const xmlChar*)"ci");
-      std::ostringstream coeff; coeff<<CIcoeff[iv];
-      xmlNewProp(ci,(const xmlChar*)"coeff",(const xmlChar*) coeff.str().c_str());
-      xmlNewProp(ci,(const xmlChar*)"alpha",(const xmlChar*) CIalpha[iv].c_str());
-      xmlNewProp(ci,(const xmlChar*)"beta",(const xmlChar*) CIbeta[iv].c_str());
-      xmlAddChild(detlist,ci);
-      iv++;
-    }
-    */
     for(int i=0; i<CIcoeff.size(); i++)
     {
       if(std::abs(CIcoeff[i]) > ci_threshold)
@@ -1218,8 +1200,6 @@ void QMCGaussianParserBase::createCenterH5(int iat, int off_,int numelem)
 
 xmlNodePtr QMCGaussianParserBase::createCenter(int iat, int off_)
 {
-  //CurrentCenter = IonName[GroupID[iat]];
-  //CurrentCenter = IonSystem.Species.speciesName[iat];
 
   CurrentCenter=GroupName[iat];
 
@@ -1429,6 +1409,7 @@ xmlNodePtr QMCGaussianParserBase::createJ2()
   xmlNewProp(j2,(const xmlChar*)"type", (const xmlChar*)"Two-Body");
   xmlNewProp(j2,(const xmlChar*)"function", (const xmlChar*)"Bspline");
   xmlNewProp(j2,(const xmlChar*)"print", (const xmlChar*)"yes");
+  if (NumberOfAlpha>1||NumberOfBeta>1)
   {
     xmlNodePtr uu = xmlNewNode(NULL,(const xmlChar*)"correlation");
     xmlNewProp(uu,(const xmlChar*)"rcut", (const xmlChar*)"10");
@@ -1440,6 +1421,7 @@ xmlNodePtr QMCGaussianParserBase::createJ2()
     xmlNewProp(a,(const xmlChar*)"type", (const xmlChar*)"Array");
     xmlAddChild(j2,uu);
   }
+  if (NumberOfAlpha>0&&NumberOfBeta>0)
   {
     xmlNodePtr uu = xmlNewNode(NULL,(const xmlChar*)"correlation");
     xmlNewProp(uu,(const xmlChar*)"rcut", (const xmlChar*)"10");
@@ -1616,11 +1598,10 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
 
       if (DoCusp==true)
          xmlNewProp(detPtr,(const xmlChar*)"cuspCorrection",(const xmlChar*)"yes");
-      if(UseHDF5)
+      if(UseHDF5 || AllH5)
       {
          xmlNewProp(detPtr,(const xmlChar*)"href",(const xmlChar*)h5file.c_str());
       }
-
       {
         if(UseHDF5)
         {
@@ -1628,8 +1609,11 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
         }
         else
         {
-          xmlNodePtr bsetPtr = createBasisSet();
-          xmlAddChild(detPtr,bsetPtr);
+          if(!AllH5)
+          {
+            xmlNodePtr bsetPtr = createBasisSet();
+            xmlAddChild(detPtr,bsetPtr);
+          }
         }
         if(multideterminant)
         {
@@ -1678,7 +1662,11 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
           }
           else
           {
-            slaterdetPtr = createDeterminantSet();
+            if(AllH5)
+              slaterdetPtr = PrepareDeterminantSetFromHDF5();
+            else
+              slaterdetPtr = createDeterminantSet();
+
           }
           xmlAddChild(detPtr,slaterdetPtr);
         }
@@ -1687,10 +1675,16 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
       if(addJastrow)
       {
         std::cout << "Adding Two-Body and One-Body jastrows with rcut=\"10\" and size=\"10\"" << std::endl;
-        xmlAddChild(wfPtr,createJ2());
+        if (NumberOfEls>1)
+          {
+            xmlAddChild(wfPtr,createJ2());
+          }
         xmlAddChild(wfPtr,createJ1());
-        std::cout << "Adding Three-Body jastrows with rcut=\"5\"" << std::endl;
-        xmlAddChild(wfPtr,createJ3());
+        if (NumberOfEls>1)
+          {
+            std::cout << "Adding Three-Body jastrows with rcut=\"5\"" << std::endl;
+            xmlAddChild(wfPtr,createJ3());
+          }
       }
     }
     xmlAddChild(qm_root,wfPtr);
@@ -1711,27 +1705,24 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
   std::string fname = Title+".wf"+WFS_name+".xml";
   xmlSaveFormatFile(fname.c_str(),doc,1);
   xmlFreeDoc(doc);
-  if (numMO*SizeOfBasisSet>=500 && !UseHDF5)
-     std::cout<<"Consider using HDF5 via -hdf5 for higher performance and smaller wavefunction files"<<std::endl;
+  if (numMO*SizeOfBasisSet>=4000 && !UseHDF5)
+     if  (!AllH5)
+        std::cout<<"Consider using HDF5 via -hdf5 for higher performance and smaller wavefunction files"<<std::endl;
 }
 
-void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
+void QMCGaussianParserBase::dumpStdInputProd(const std::string& psi_tag,
                                  const std::string& ion_tag)
 {
-  std::cout<<"Generating Standard Input file containing standard optmization blocks followed by VMC and DMC blocks;"<<std::endl;
+  std::cout<<" Generating production input file designed for large calculations."<<std::endl;
   std::cout<<" Modify according to the accuracy you would like to achieve. "<<std::endl;
 
-  std::string fname = Title+".Input-wf"+WFS_name+".xml";
+  std::string fname = Title+".qmc.in-wf"+WFS_name+".xml";
 
   xmlDocPtr doc_input = xmlNewDoc((const xmlChar*)"1.0");
   xmlNodePtr qm_root_input = xmlNewNode(NULL, BAD_CAST "simulation");
 
   ///Adding Project id
   {
-    std::ostringstream Comment;
-    Comment<<" Name and Series number of the project.\n";
-    xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
-    xmlAddChild(qm_root_input,MyComment);
     
     xmlNodePtr project = xmlNewNode(NULL,(const xmlChar*)"project");
     xmlNewProp(project,(const xmlChar*)"id", (const xmlChar*)Title.c_str());
@@ -1741,10 +1732,6 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
 
   ///Adding Link to Partcle Set and Wave function 
   {
-    std::ostringstream Comment;
-    Comment<<" Link to the location of the Atomic Coordinates and the location of the Wavefunction.";
-    xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
-    xmlAddChild(qm_root_input,MyComment);
     std::string Ptclname = Title+".structure.xml";
     xmlNodePtr ptcl = xmlNewNode(NULL,(const xmlChar*)"include");
     xmlNewProp(ptcl,(const xmlChar*)"href", (const xmlChar*)Ptclname.c_str());
@@ -1758,32 +1745,12 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
 
   ///Adding Hamiltonian
   {
-    std::ostringstream Comment;
-    Comment<<" Hamiltonian of the system. Default ECP name is assumed. Please rename for the type of ECP you will be using.";
-    xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
-    xmlAddChild(qm_root_input,MyComment);
     xmlAddChild(qm_root_input,createHamiltonian(ion_tag,psi_tag));
   }
-  
-  ///Adding Electrons Initialization 
-  /*{
-    xmlNodePtr initE = xmlNewNode(NULL,(const xmlChar*)"init");
-    xmlNewProp(initE,(const xmlChar*)"source", (const xmlChar*)ion_tag.c_str());
-    xmlNewProp(initE,(const xmlChar*)"target", (const xmlChar*)"e");
-    xmlAddChild(qm_root_input,initE);
-  }*/
-
   ///Adding Optimization Block based on One Shift Only
+  if (addJastrow)  
   {
     ///Adding a VMC Block to help equilibrate
-    {
-    std::ostringstream Comment;
-    Comment<<" \n";
-    Comment<<" OPTIMIZATION BLOCK!!!!.\n";
-    Comment<<" First VMC Block helps with equilibration!!!.\n";
-    xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
-    xmlAddChild(qm_root_input,MyComment);
-    }
     xmlNodePtr initvmc = xmlNewNode(NULL,(const xmlChar*)"qmc");
     xmlNewProp(initvmc,(const xmlChar*)"method", (const xmlChar*)"vmc");
     xmlNewProp(initvmc,(const xmlChar*)"move", (const xmlChar*)"pbyp");
@@ -1808,15 +1775,6 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
 
 
     ///Adding First loop of Cheap optimization blocks
-    {
-    std::ostringstream Comment;
-    Comment<<" \n";
-    Comment<<" First loop to optimize the Jastrow Coefficients!!!.\n";
-    Comment<<" This First loop has a loose acceptance criterion for cases\n";
-    Comment<<" cases where the starting Jastrow parameters are too far off\n";
-    xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
-    xmlAddChild(qm_root_input,MyComment);
-    }
     xmlNodePtr loopopt1 = xmlNewNode(NULL,(const xmlChar*)"loop");
     xmlNewProp(loopopt1,(const xmlChar*)"max", (const xmlChar*)"4");
     {
@@ -1846,14 +1804,6 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
     xmlAddChild(qm_root_input,loopopt1);
    
     ///Adding loop for  optimization blocks
-    {
-    std::ostringstream Comment;
-    Comment<<" \n";
-    Comment<<" Final loops to optimize the Jastrow Coefficients!!!.\n";
-    Comment<<" This loop has a strict acceptance criterion\n";
-    xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
-    xmlAddChild(qm_root_input,MyComment);
-    }
     xmlNodePtr loopopt = xmlNewNode(NULL,(const xmlChar*)"loop");
     xmlNewProp(loopopt,(const xmlChar*)"max", (const xmlChar*)"10");
     {
@@ -1885,18 +1835,6 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
 
 
   ///Adding a VMC Block to the Input
- {
-    std::ostringstream Comment;
-    Comment<<"\n";
-    Comment<<" VMC AND DMC BLOCKS.\n";
-    Comment<<" ==================.\n";
-    Comment<<" Update JASTROW Parameters in the Wavefunction file\n";
-    Comment<<" to the one that minimize the energy before runing\n";
-    Comment<<" these blocks. Otherwise, you will be running the last\n";
-    Comment<<" set of Jastrows which are not necesseraly the best ones.\n";
-    xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
-    xmlAddChild(qm_root_input,MyComment);
-  }
   xmlNodePtr vmc = xmlNewNode(NULL,(const xmlChar*)"qmc");
   xmlNewProp(vmc,(const xmlChar*)"method", (const xmlChar*)"vmc");
   xmlNewProp(vmc,(const xmlChar*)"move", (const xmlChar*)"pbyp");
@@ -1944,6 +1882,236 @@ void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
   xmlDocSetRootElement(doc_input, qm_root_input);
   xmlSaveFormatFile(fname.c_str(),doc_input,1);
   xmlFreeDoc(doc_input);
+}
+
+void QMCGaussianParserBase::dumpStdInput(const std::string& psi_tag,
+                                 const std::string& ion_tag)
+{
+  std::cout<<" Generating Standard Input file containing VMC, standard optmization, and DMC blocks."<<std::endl;
+  std::cout<<" Modify according to the accuracy you would like to achieve. "<<std::endl;
+
+  std::string fname = Title+".qmc.in-wf"+WFS_name+".xml";
+
+  xmlDocPtr doc_input = xmlNewDoc((const xmlChar*)"1.0");
+  xmlNodePtr qm_root_input = xmlNewNode(NULL, BAD_CAST "simulation");
+
+  std::ostringstream Comment;
+  ///Adding Project id
+  {
+
+    Comment.str("");
+    Comment.clear();
+    Comment<<"\n \nExample QMCPACK input file produced by convert4qmc\n \nIt is recommend to start with only the initial VMC block and adjust\nparameters based on the measured energies, variance, and statistics.\n\n";
+    xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
+    xmlAddChild(qm_root_input,MyComment);
+    Comment.str("");
+    Comment.clear();
+    Comment<<"Name and Series number of the project.";
+    MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
+    xmlAddChild(qm_root_input,MyComment);
+    
+    xmlNodePtr project = xmlNewNode(NULL,(const xmlChar*)"project");
+    xmlNewProp(project,(const xmlChar*)"id", (const xmlChar*)Title.c_str());
+    xmlNewProp(project,(const xmlChar*)"series", (const xmlChar*)"0");
+    xmlAddChild(qm_root_input,project);
+  } 
+
+  ///Adding Link to Partcle Set and Wave function 
+  {
+    Comment.str("");
+    Comment.clear();
+    Comment<<"Link to the location of the Atomic Coordinates and the location of the Wavefunction.";
+    xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
+    xmlAddChild(qm_root_input,MyComment);
+    std::string Ptclname = Title+".structure.xml";
+    xmlNodePtr ptcl = xmlNewNode(NULL,(const xmlChar*)"include");
+    xmlNewProp(ptcl,(const xmlChar*)"href", (const xmlChar*)Ptclname.c_str());
+    xmlAddChild(qm_root_input,ptcl);
+
+    std::string Wfsname = Title+".wf"+WFS_name+".xml";
+    xmlNodePtr wfs = xmlNewNode(NULL,(const xmlChar*)"include");
+    xmlNewProp(wfs,(const xmlChar*)"href", (const xmlChar*)Wfsname.c_str());
+    xmlAddChild(qm_root_input,wfs);
+  }
+
+  ///Adding Hamiltonian
+  {
+    Comment.str("");
+    Comment.clear();
+    if (ECP==true)
+      Comment<<"Hamiltonian of the system. Default ECP filenames are assumed.";
+    else
+      Comment<<"Hamiltonian of the system.\n";
+  
+    xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
+    xmlAddChild(qm_root_input,MyComment);
+    xmlAddChild(qm_root_input,createHamiltonian(ion_tag,psi_tag));
+  }
+  
+    {
+      Comment.str("");
+      Comment.clear();
+      Comment<<"\n \nExample initial VMC to measure initial energy and variance \n\n";
+      xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
+      xmlAddChild(qm_root_input,MyComment);
+    }
+    xmlNodePtr initvmc = xmlNewNode(NULL,(const xmlChar*)"qmc");
+    xmlNewProp(initvmc,(const xmlChar*)"method", (const xmlChar*)"vmc");
+    xmlNewProp(initvmc,(const xmlChar*)"move", (const xmlChar*)"pbyp");
+    xmlNewProp(initvmc,(const xmlChar*)"checkpoint", (const xmlChar*)"-1");
+    //xmlNewProp(initvmc,(const xmlChar*)"gpu", (const xmlChar*)"no");
+    {
+      xmlNodePtr estimator = xmlNewNode(NULL,(const xmlChar*)"estimator");
+      xmlNewProp(estimator,(const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
+      xmlNewProp(estimator,(const xmlChar*)"hdf5", (const xmlChar*)"no");
+      xmlAddChild(initvmc,estimator);
+
+      xmlAddChild(initvmc,parameter(initvmc, "warmupSteps" ,"100"));
+      xmlAddChild(initvmc,parameter(initvmc, "blocks" ,"20"));
+      xmlAddChild(initvmc,parameter(initvmc, "steps" ,"50"));
+      xmlAddChild(initvmc,parameter(initvmc, "substeps" ,"8"));
+      xmlAddChild(initvmc,parameter(initvmc, "timestep" ,"0.5"));
+      xmlAddChild(initvmc,parameter(initvmc, "usedrift" ,"no"));
+    }
+    xmlAddChild(qm_root_input,initvmc);
+
+
+    if (addJastrow)  
+      {
+        ///Adding First loop of Cheap optimization blocks
+        {
+          Comment.str("");
+          Comment.clear();
+          Comment<<"\n \nExample initial VMC optimization \n \nNumber of steps required will be computed from total requested sample \ncount and total number of walkers \n\n";
+          xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
+          xmlAddChild(qm_root_input,MyComment);
+        }
+        xmlNodePtr loopopt1 = xmlNewNode(NULL,(const xmlChar*)"loop");
+        xmlNewProp(loopopt1,(const xmlChar*)"max", (const xmlChar*)"4");
+        {
+          xmlNodePtr initopt = xmlNewNode(NULL,(const xmlChar*)"qmc");
+          xmlNewProp(initopt,(const xmlChar*)"method", (const xmlChar*)"linear");
+          xmlNewProp(initopt,(const xmlChar*)"move", (const xmlChar*)"pbyp");
+          xmlNewProp(initopt,(const xmlChar*)"checkpoint", (const xmlChar*)"-1");
+          {
+            xmlNodePtr estimator = xmlNewNode(NULL,(const xmlChar*)"estimator");
+            xmlNewProp(estimator,(const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
+            xmlNewProp(estimator,(const xmlChar*)"hdf5", (const xmlChar*)"no");
+            xmlAddChild(initopt,estimator);
+            
+            xmlAddChild(initopt,parameter(initopt, "warmupSteps" ,"100"));
+            xmlAddChild(initopt,parameter(initopt, "blocks" ,"20"));
+            xmlAddChild(initopt,parameter(initopt, "timestep" ,"0.5"));
+            xmlAddChild(initopt,parameter(initopt, "walkers" ,"1"));
+            xmlAddChild(initopt,parameter(initopt, "samples" ,"16000"));
+            xmlAddChild(initopt,parameter(initopt, "substeps" ,"4"));
+            xmlAddChild(initopt,parameter(initopt, "usedrift" ,"no"));
+            xmlAddChild(initopt,parameter(initopt, "MinMethod" ,"OneShiftOnly"));
+            xmlAddChild(initopt,parameter(initopt, "minwalkers" ,"0.0001"));
+          }
+          xmlAddChild(loopopt1,initopt);
+        }
+        xmlAddChild(qm_root_input,loopopt1);
+        
+        ///Adding loop for  optimization blocks
+        {
+          Comment.str("");
+          Comment.clear();
+          Comment<<"\n \nExample follow-up VMC optimization using more samples for greater accuracy\n\n";
+          xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
+          xmlAddChild(qm_root_input,MyComment);
+        }
+        xmlNodePtr loopopt = xmlNewNode(NULL,(const xmlChar*)"loop");
+        xmlNewProp(loopopt,(const xmlChar*)"max", (const xmlChar*)"10");
+        {
+          xmlNodePtr initopt = xmlNewNode(NULL,(const xmlChar*)"qmc");
+          xmlNewProp(initopt,(const xmlChar*)"method", (const xmlChar*)"linear");
+          xmlNewProp(initopt,(const xmlChar*)"move", (const xmlChar*)"pbyp");
+          xmlNewProp(initopt,(const xmlChar*)"checkpoint", (const xmlChar*)"-1");
+          //xmlNewProp(initopt,(const xmlChar*)"gpu", (const xmlChar*)"no");
+          {
+            xmlNodePtr estimator = xmlNewNode(NULL,(const xmlChar*)"estimator");
+            xmlNewProp(estimator,(const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
+            xmlNewProp(estimator,(const xmlChar*)"hdf5", (const xmlChar*)"no");
+            xmlAddChild(initopt,estimator);
+            
+            xmlAddChild(initopt,parameter(initopt, "warmupSteps" ,"100"));
+            xmlAddChild(initopt,parameter(initopt, "blocks" ,"20"));
+            xmlAddChild(initopt,parameter(initopt, "timestep" ,"0.5"));
+            xmlAddChild(initopt,parameter(initopt, "walkers" ,"1"));
+            xmlAddChild(initopt,parameter(initopt, "samples" ,"64000"));
+            xmlAddChild(initopt,parameter(initopt, "substeps" ,"4"));
+            xmlAddChild(initopt,parameter(initopt, "usedrift" ,"no"));
+            xmlAddChild(initopt,parameter(initopt, "MinMethod" ,"OneShiftOnly"));
+            xmlAddChild(initopt,parameter(initopt, "minwalkers" ,"0.3"));
+          }
+          xmlAddChild(loopopt,initopt);
+        }
+        xmlAddChild(qm_root_input,loopopt);
+        
+    
+    ///Adding a VMC Block to the Input
+        {
+          Comment.str("");
+          Comment.clear();
+          Comment<<"\n\nProduction VMC and DMC\n\nExamine the results of the optimization before running these blocks.\ne.g. Choose the best optimized jastrow from all obtained, put in \nwavefunction file, do not reoptimize.\n\n";
+          xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
+          xmlAddChild(qm_root_input,MyComment);
+        }
+        xmlNodePtr vmc = xmlNewNode(NULL,(const xmlChar*)"qmc");
+        xmlNewProp(vmc,(const xmlChar*)"method", (const xmlChar*)"vmc");
+        xmlNewProp(vmc,(const xmlChar*)"move", (const xmlChar*)"pbyp");
+        xmlNewProp(vmc,(const xmlChar*)"checkpoint", (const xmlChar*)"-1");
+        //xmlNewProp(vmc,(const xmlChar*)"gpu", (const xmlChar*)"no");
+        {
+          std::ostringstream Comment;
+          xmlNodePtr estimator = xmlNewNode(NULL,(const xmlChar*)"estimator");
+          xmlNewProp(estimator,(const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
+          xmlNewProp(estimator,(const xmlChar*)"hdf5", (const xmlChar*)"no");
+          xmlAddChild(vmc,estimator);
+          
+          xmlAddChild(vmc,parameter(vmc, "warmupSteps" ,"100"));
+          xmlAddChild(vmc,parameter(vmc, "blocks" ,"200"));
+          xmlAddChild(vmc,parameter(vmc, "steps" ,"50"));
+          xmlAddChild(vmc,parameter(vmc, "substeps" ,"8"));
+          xmlAddChild(vmc,parameter(vmc, "timestep" ,"0.5"));
+          xmlAddChild(vmc,parameter(vmc, "usedrift" ,"no"));
+          Comment.str("");
+          Comment.clear();
+          Comment<<"Sample count should match targetwalker count for DMC. Will be obtained from all nodes.";
+          xmlNodePtr MyComment = xmlNewComment((const xmlChar*)Comment.str().c_str());
+          xmlAddChild(vmc,MyComment);
+          xmlAddChild(vmc,parameter(vmc, "samples" ,"16000"));
+          
+        }
+        xmlAddChild(qm_root_input,vmc);
+        
+        ///Adding a DMC Block to the Input
+        xmlNodePtr dmc = xmlNewNode(NULL,(const xmlChar*)"qmc");
+        xmlNewProp(dmc,(const xmlChar*)"method", (const xmlChar*)"dmc");
+        xmlNewProp(dmc,(const xmlChar*)"move", (const xmlChar*)"pbyp");
+        xmlNewProp(dmc,(const xmlChar*)"checkpoint", (const xmlChar*)"20");
+        //xmlNewProp(dmc,(const xmlChar*)"gpu", (const xmlChar*)"no");
+        {
+          xmlNodePtr estimator = xmlNewNode(NULL,(const xmlChar*)"estimator");
+          xmlNewProp(estimator,(const xmlChar*)"name", (const xmlChar*)"LocalEnergy");
+          xmlNewProp(estimator,(const xmlChar*)"hdf5", (const xmlChar*)"no");
+          xmlAddChild(dmc,estimator);
+          
+          xmlAddChild(dmc,parameter(dmc, "targetwalkers" ,"16000"));
+          xmlAddChild(dmc,parameter(dmc, "reconfiguration" ,"no"));
+          xmlAddChild(dmc,parameter(dmc, "warmupSteps" ,"100"));
+          xmlAddChild(dmc,parameter(dmc, "timestep" ,"0.005"));
+          xmlAddChild(dmc,parameter(dmc, "steps" ,"100"));
+          xmlAddChild(dmc,parameter(dmc, "blocks" ,"100"));
+          xmlAddChild(dmc,parameter(dmc, "nonlocalmoves" ,"yes"));
+        }
+        xmlAddChild(qm_root_input,dmc);
+      }
+    
+    xmlDocSetRootElement(doc_input, qm_root_input);
+    xmlSaveFormatFile(fname.c_str(),doc_input,1);
+    xmlFreeDoc(doc_input);
 }
 
 void QMCGaussianParserBase::Fmodump(const std::string& psi_tag,
@@ -2044,10 +2212,16 @@ void QMCGaussianParserBase::Fmodump(const std::string& psi_tag,
       if(addJastrow)
       {
         std::cout << "Adding Two-Body and One-Body jastrows with rcut=\"10\" and size=\"10\"" << std::endl;
-        xmlAddChild(wfPtr,createJ2());
+        if (NumberOfEls>1)
+          {
+            xmlAddChild(wfPtr,createJ2());
+          }
         xmlAddChild(wfPtr,createJ1());
-        std::cout << "Adding Three-Body jastrows with rcut=\"5\"" << std::endl;
-        xmlAddChild(wfPtr,createJ3());
+        if (NumberOfEls>1)
+          {
+            std::cout << "Adding Three-Body jastrows with rcut=\"5\"" << std::endl;
+            xmlAddChild(wfPtr,createJ3());
+          }
       }
     }
     xmlAddChild(qm_root,wfPtr);

@@ -111,14 +111,6 @@ void RandomNumberControl::make_children()
     int offset=baseoffset+ip;
     Children[ip]->init(rank,nprocs,myprimes[ip],offset);
   }
-  if(nprocs<4)
-  {
-    std::ostringstream o;
-    o << "  Random seeds Node = " << rank << ":";
-    for(int ip=0; ip<nthreads; ip++)
-      o << std::setw(12) << myprimes[ip];
-    std::cout << o.str() << std::endl;
-  }
 }
 
 xmlNodePtr
@@ -200,37 +192,31 @@ bool RandomNumberControl::put(xmlNodePtr cur)
       pid = OHMMS::Controller->rank();
       nprocs = OHMMS::Controller->size();
     }
+    app_summary() << " Random Number" << std::endl;
+    app_summary() << " -------------" << std::endl;
     if(offset_in<0)
     {
       offset_in=static_cast<int>(static_cast<uint_type>(std::time(0))%1024);
-      app_log() << "  Offset for the random number seeds based on time " << offset_in << std::endl;
+      app_summary() << "  Offset for the random number seeds based on time: " << offset_in << std::endl;
       mpi::bcast(*OHMMS::Controller,offset_in);
     }
     else
+    {
       offset_in%=1024;
+      app_summary() << "  Offset for the random number seeds from input file (mod 1024): " << offset_in << std::endl;
+    }
+    app_summary() << std::endl;
     Offset=offset_in;
     std::vector<uint_type> mySeeds;
     //allocate twice of what is required
     PrimeNumbers.get(Offset,nprocs*(omp_get_max_threads()+2), mySeeds);
     Random.init(pid,nprocs,mySeeds[pid],Offset+pid);
-    app_log() << "  Random number offset = " << Offset
-              <<  "  seeds = " << mySeeds[0] <<"-" << mySeeds[nprocs*omp_get_max_threads()] <<  std::endl;
-    if(nprocs<4)
-    {
-      int imax=8*(mySeeds.size()/8);
-      int jmax=std::min(std::size_t(8),mySeeds.size());
-      for(int i=0; i<imax;)
-      {
-        for(int j=0; j<jmax; j++, i++)
-          app_log() <<  std::setw(12) << mySeeds[i];
-        app_log() << std::endl;
-      }
-      for(int i=imax; i<mySeeds.size(); i++)
-        app_log() <<  std::setw(12) << mySeeds[i];
-      app_log() << std::endl;
-    }
+    app_log() <<  "  Range of prime numbers to use as seeds over processors and threads = " << mySeeds[0] <<"-" << mySeeds[nprocs*omp_get_max_threads()] <<  std::endl;
+    app_log() << std::endl;
+
     make_children();
     NeverBeenInitialized = false;
+    app_log() << std::endl;
   }
   else
     reset();
