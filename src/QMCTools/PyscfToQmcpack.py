@@ -301,7 +301,8 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
   GroupParameter.create_dataset("SpinUnResticted",(1,),dtype="b1",data=UnRestricted)
   GroupNbkpts=H5_qmcpack.create_group("Nb_KPTS")
   if not PBC:
-    GroupNbkpts.create_dataset("Nbkpts",(1,0),dtype="i4",data=1)
+    Nbkpts=1
+    GroupNbkpts.create_dataset("Nbkpts",(1,),dtype="i4",data=Nbkpts)
     
     GroupDet=H5_qmcpack.create_group("KPTS_0")
     if UnRestricted==False:
@@ -404,7 +405,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
   
 
   print 'Wavefunction successfuly saved to QMCPACK HDF5 Format'
-  print 'Use: "convert4qmc -Pyscf  {}.h5" to generate QMCPACK input files'.format(title)
+  print 'Use: "convert4qmc -pyscf  {}.h5" to generate QMCPACK input files'.format(title)
   # Close the file before exiting
   H5_qmcpack.close()
 

@@ -503,6 +503,7 @@ bool SPOSetBase::put(xmlNodePtr cur)
   if(H5file==false)
     success = putFromXML(coeff_ptr);
   else
+
       if(H5file!=true){
          APP_ABORT("Error in Opening HDF5");
       }
@@ -661,6 +662,7 @@ bool SPOSetBase::putPBCFromH5(const char* fname, xmlNodePtr coeff_ptr)
   int setVal=-1;
   int NbKpts;
   int KptIdx=0;
+  bool IsComplex=false;
   PosType twist(0.0);
   PosType twistH5(0.0);
   std::string setname;
@@ -672,6 +674,7 @@ bool SPOSetBase::putPBCFromH5(const char* fname, xmlNodePtr coeff_ptr)
   setIdentity(false);
   hdf_archive hin(myComm);
 
+
   xmlNodePtr curtemp=coeff_ptr->parent->parent->parent;
   aAttrib.add(twist,"twist");
   aAttrib.put(curtemp);
@@ -681,6 +684,9 @@ bool SPOSetBase::putPBCFromH5(const char* fname, xmlNodePtr coeff_ptr)
     if (!hin.open(fname)){
         APP_ABORT("SPOSetBase::putFromH5 missing or incorrect path to H5 file.");
     }
+    hin.push("parameters");
+    hin.read(IsComplex,"IsComplex"); 
+    hin.pop();
     hin.push("Nb_KPTS");
     hin.read(NbKpts,"Nbkpts"); 
     hin.pop();
@@ -697,20 +703,59 @@ bool SPOSetBase::putPBCFromH5(const char* fname, xmlNodePtr coeff_ptr)
        }
     } 
 
+    Matrix<ValueType> Ctemp(BasisSetSize,BasisSetSize);
+    Matrix<RealType> CtempReal(BasisSetSize,BasisSetSize);
+    Matrix<RealType> CtempImag(BasisSetSize,BasisSetSize);
+/*
+    TinyVector<size_t,3> dims(BasisSetSize,BasisSetSize,2);
+    std::vector<double> Ctemp_space;
+
+    Ctemp_space.resize(BasisSetSize*BasisSetSize*2);
+    hyperslab_proxy<std::vector<double>, 3> slab(Ctemp_space,dims);
+
+    hin.read(slab,"toto");
+
+    Matrix<std::complex<double> > Ctemp_cplx(BasisSetSize,BasisSetSize);
+    Ctemp_cplx.free();
+    Ctemp_cplx.attachReference(dynamic_cast<std::complex<double> *>(Ctemp_space.data()));
+*/
+
 
     char name[72];
-    sprintf(name,"%s%d%s%d","/KPTS_",KptIdx,"/eigenset_",setVal);
-    setname=name;
+    if(IsComplex){ 
+        sprintf(name,"%s%d%s%d%s","/KPTS_",KptIdx,"/eigenset_",setVal,"_real");
+        setname=name;
+        if(!hin.read(CtempReal,setname))
+        {
+           setname="SPOSetBase::putFromH5 Missing "+setname+" from HDF5 File.";
+           APP_ABORT(setname.c_str());
+        }
+        sprintf(name,"%s%d%s%d%s","/KPTS_",KptIdx,"/eigenset_",setVal,"_imag");
+        setname=name;
+        if(!hin.read(CtempImag,setname))
+        {
+           setname="SPOSetBase::putFromH5 Missing "+setname+" from HDF5 File.";
+           APP_ABORT(setname.c_str());
+        }
+
+    }
+    else{
+        sprintf(name,"%s%d%s%d","/KPTS_",KptIdx,"/eigenset_",setVal);
+        setname=name;
+        if(!hin.read(CtempReal,setname))
+        {
+           setname="SPOSetBase::putFromH5 Missing "+setname+" from HDF5 File.";
+           APP_ABORT(setname.c_str());
+        }
+    }
+
 
 #if defined (QMC_COMPLEX)
     APP_ABORT("Complex Wavefunction not implemented yet. Please contact Developers");
 #else
-    Matrix<RealType> Ctemp(BasisSetSize,BasisSetSize);
-    if(!hin.read(Ctemp,setname))
-    {
-       setname="SPOSetBase::putFromH5 Missing "+setname+" from HDF5 File.";
-       APP_ABORT(setname.c_str());
-    }
+     
+   Ctemp=CtempReal;
+
 #endif //COMPLEX
     hin.close();
 
@@ -731,5 +776,6 @@ bool SPOSetBase::putPBCFromH5(const char* fname, xmlNodePtr coeff_ptr)
 #endif
   return true;
 }
+
 
 }
