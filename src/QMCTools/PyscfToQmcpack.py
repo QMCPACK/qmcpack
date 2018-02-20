@@ -158,14 +158,16 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
     gridType=atomicBasisSetGroup.create_dataset("grid_type",(1,),dtype="S3")
     gridType[0:]="log"
      
-
-    try:
+    
+    if (len(cell.basis)<=2):
+       nameBase=atomicBasisSetGroup.create_dataset("name",(1,),dtype="S8")
+       nameBase[0:]="gaussian"
+    else:
        mylen="S"+str(len(cell.basis))
        nameBase=atomicBasisSetGroup.create_dataset("name",(1,),dtype=mylen)
        nameBase[0:]=cell.basis
-    except:
-       nameBase=atomicBasisSetGroup.create_dataset("name",(1,),dtype="S8")
-       nameBase[0:]="gaussian"
+
+
        
     Normalized=atomicBasisSetGroup.create_dataset("normalized",(1,),dtype="S2")
     Normalized[0:]="no"

@@ -1408,7 +1408,8 @@ xmlNodePtr QMCGaussianParserBase::createJ3()
     xmlNewProp(uuc,(const xmlChar*)"especies", (const xmlChar*)"u");
     xmlNewProp(uuc,(const xmlChar*)"isize", (const xmlChar*)"3");
     xmlNewProp(uuc,(const xmlChar*)"esize", (const xmlChar*)"3");
-    xmlNewProp(uuc,(const xmlChar*)"rcut", (const xmlChar*)"5");
+    if (!PBC)
+       xmlNewProp(uuc,(const xmlChar*)"rcut", (const xmlChar*)"5");
 
     xmlNodePtr a= xmlNewTextChild(uuc,NULL,(const xmlChar*)"coefficients",(const xmlChar*)"\n        ");
     std::ostringstream o1;
@@ -1424,7 +1425,8 @@ xmlNodePtr QMCGaussianParserBase::createJ3()
     xmlNewProp(udc,(const xmlChar*)"especies2", (const xmlChar*)"d");
     xmlNewProp(udc,(const xmlChar*)"isize", (const xmlChar*)"3");
     xmlNewProp(udc,(const xmlChar*)"esize", (const xmlChar*)"3");
-    xmlNewProp(udc,(const xmlChar*)"rcut", (const xmlChar*)"5");
+    if (!PBC)
+       xmlNewProp(udc,(const xmlChar*)"rcut", (const xmlChar*)"5");
 
     xmlNodePtr b= xmlNewTextChild(udc,NULL,(const xmlChar*)"coefficients",(const xmlChar*)"\n        ");
     std::ostringstream o2;
@@ -1447,7 +1449,8 @@ xmlNodePtr QMCGaussianParserBase::createJ2()
   if (NumberOfAlpha>1||NumberOfBeta>1)
   {
     xmlNodePtr uu = xmlNewNode(NULL,(const xmlChar*)"correlation");
-    xmlNewProp(uu,(const xmlChar*)"rcut", (const xmlChar*)"10");
+    if (!PBC)
+      xmlNewProp(uu,(const xmlChar*)"rcut", (const xmlChar*)"10");
     xmlNewProp(uu,(const xmlChar*)"size", (const xmlChar*)"10");
     xmlNewProp(uu,(const xmlChar*)"speciesA", (const xmlChar*)"u");
     xmlNewProp(uu,(const xmlChar*)"speciesB", (const xmlChar*)"u");
@@ -1459,7 +1462,8 @@ xmlNodePtr QMCGaussianParserBase::createJ2()
   if (NumberOfAlpha>0&&NumberOfBeta>0)
   {
     xmlNodePtr uu = xmlNewNode(NULL,(const xmlChar*)"correlation");
-    xmlNewProp(uu,(const xmlChar*)"rcut", (const xmlChar*)"10");
+    if (!PBC)
+       xmlNewProp(uu,(const xmlChar*)"rcut", (const xmlChar*)"10");
     xmlNewProp(uu,(const xmlChar*)"size", (const xmlChar*)"10");
     xmlNewProp(uu,(const xmlChar*)"speciesA", (const xmlChar*)"u");
     xmlNewProp(uu,(const xmlChar*)"speciesB", (const xmlChar*)"d");
@@ -1485,7 +1489,8 @@ xmlNodePtr QMCGaussianParserBase::createJ1()
   for(int i=0; i<ionSpecies.getTotalNum(); i++)
   {
     xmlNodePtr c = xmlNewNode(NULL,(const xmlChar*)"correlation");
-    xmlNewProp(c,(const xmlChar*)"rcut", (const xmlChar*)"10");
+    if (!PBC)
+       xmlNewProp(c,(const xmlChar*)"rcut", (const xmlChar*)"10");
     xmlNewProp(c,(const xmlChar*)"size", (const xmlChar*)"10");
     xmlNewProp(c,(const xmlChar*)"cusp", (const xmlChar*)"0");
     xmlNewProp(c,(const xmlChar*)"elementType", (const xmlChar*)ionSpecies.speciesName[i].c_str());

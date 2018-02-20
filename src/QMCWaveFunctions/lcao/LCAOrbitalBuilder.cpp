@@ -514,12 +514,20 @@ bool SPOSetBase::put(xmlNodePtr cur)
             if (!hin.open(MOhref2)){
                 APP_ABORT("SPOSetBase::putFromH5 missing or incorrect path to H5 file.");
             }
-    
-            if(!hin.push("PBC"))
-              PRE.error("Could not find PBC Group in H5",true);
-            if(!hin.read(PBC,"PBC"))
-              PRE.error("Could not find the PBC dataset in H5; Probably Corrupt H5 file",true);
+            //TO REVIEWERS:: IDEAL BEHAVIOUR SHOULD BE:
+            /*
+             if(!hin.push("PBC")
+                 PBC=false;
+             else
+                if (!hin.read(PBC,"PBC"))
+                    APP_ABORT("Could not read PBC dataset in H5 file. Probably corrupt file!!!.");
+            // However, it always succeeds to enter the if condition even if the group does not exists...
+            */             
+            hin.push("PBC");
+            PBC=false;
+            hin.read(PBC,"PBC");
             hin.close();
+
           } 
           myComm->bcast(PBC);
           if (PBC)
@@ -706,20 +714,6 @@ bool SPOSetBase::putPBCFromH5(const char* fname, xmlNodePtr coeff_ptr)
     Matrix<ValueType> Ctemp(BasisSetSize,BasisSetSize);
     Matrix<RealType> CtempReal(BasisSetSize,BasisSetSize);
     Matrix<RealType> CtempImag(BasisSetSize,BasisSetSize);
-/*
-    TinyVector<size_t,3> dims(BasisSetSize,BasisSetSize,2);
-    std::vector<double> Ctemp_space;
-
-    Ctemp_space.resize(BasisSetSize*BasisSetSize*2);
-    hyperslab_proxy<std::vector<double>, 3> slab(Ctemp_space,dims);
-
-    hin.read(slab,"toto");
-
-    Matrix<std::complex<double> > Ctemp_cplx(BasisSetSize,BasisSetSize);
-    Ctemp_cplx.free();
-    Ctemp_cplx.attachReference(dynamic_cast<std::complex<double> *>(Ctemp_space.data()));
-*/
-
 
     char name[72];
     if(IsComplex){ 
