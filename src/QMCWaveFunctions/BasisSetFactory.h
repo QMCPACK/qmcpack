@@ -56,6 +56,7 @@ public:
   BasisSetBuilder* createBasisSet(xmlNodePtr cur, xmlNodePtr rootNode=NULL);
 
   SPOSetBase* createSPOSet(xmlNodePtr cur);
+  SPOSetBase* createSPOSetH5(xmlNodePtr cur,std::string h5file);
 
   void build_sposet_collection(xmlNodePtr cur);
 

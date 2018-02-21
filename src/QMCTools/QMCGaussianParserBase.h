@@ -132,6 +132,7 @@ struct QMCGaussianParserBase
 
   void createSPOSets(xmlNodePtr,xmlNodePtr);
   void createSPOSetsH5(xmlNodePtr,xmlNodePtr);
+  void PrepareSPOSetsFromH5(xmlNodePtr,xmlNodePtr);
   xmlNodePtr createElectronSet(const std::string& ion_tag);
   xmlNodePtr createIonSet();
   xmlNodePtr createCell();
@@ -148,6 +149,7 @@ struct QMCGaussianParserBase
   xmlNodePtr createMultiDeterminantSetQP();
   xmlNodePtr createMultiDeterminantSetQPHDF5();
   xmlNodePtr createDeterminantSetWithHDF5();
+  xmlNodePtr createMultiDeterminantSetFromH5();
   xmlNodePtr PrepareDeterminantSetFromHDF5();
   xmlNodePtr createJ3();
   xmlNodePtr createJ2();

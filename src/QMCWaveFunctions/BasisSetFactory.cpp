@@ -314,7 +314,51 @@ SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur)
   }
 }
 
+SPOSetBase* BasisSetFactory::createSPOSetH5(xmlNodePtr cur,std::string h5file)
+{
+  std::string bname("");
+  std::string bsname("");
+  std::string sname("");
+  std::string type("");
+  OhmmsAttributeSet aAttrib;
+  aAttrib.add(bname,"basisset");
+  aAttrib.add(bsname,"basis_sposet");
+  aAttrib.add(sname,"name");
+  aAttrib.add(type,"type");
+  //aAttrib.put(rcur);
+  aAttrib.put(cur);
 
+  //tolower(type);
+
+  BasisSetBuilder* bb;
+  if(bname=="")
+    bname=type;
+  if(type=="")
+    bb = last_builder;
+  else if(basis_builders.find(type)!=basis_builders.end())
+    bb = basis_builders[type];
+  else
+  {
+    std::string cname("");
+    xmlNodePtr tcur=cur->children;
+    if(tcur!=NULL)
+      getNodeName(cname,cur);
+    if(cname==basisset_tag)
+      bb = createBasisSet(tcur,cur);
+    else
+      bb = createBasisSet(cur,cur);
+  }
+  if(bb)
+  {
+    app_log()<<"  Building SPOset '" << sname << "' with '" << bname << "' basis set."<< std::endl;
+    return bb->createSPOSet(cur);
+  }
+  else
+  {
+    APP_ABORT("BasisSetFactory::createSPOSet Failed to create a SPOSet. basisBuilder is empty.");
+    return 0;
+  }
+}
 void BasisSetFactory::build_sposet_collection(xmlNodePtr cur)
 {
   xmlNodePtr parent = cur;

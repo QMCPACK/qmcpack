@@ -22,6 +22,7 @@
 #include <sstream>
 
 
+char *binpad (unsigned long int  n, size_t sz);
 
 PyscfParser::PyscfParser()
 {
@@ -74,7 +75,7 @@ void PyscfParser::parse(const std::string& fname)
   std::cout <<"usingECP: " <<(ECP?("yes"):("no")) << std::endl;
   std::cout.flush();
 
-  multideterminant=false;
+//  multideterminant=false;
   std::cout <<"Multideterminant: " <<(multideterminant?("yes"):("no")) << std::endl;
   hin.read(SpinRestricted,"SpinResticted");
 
@@ -147,9 +148,87 @@ void PyscfParser::parse(const std::string& fname)
      getCell(fname);
      getKpts(fname);
   getGeometry(fname);
-  
+
+  if(multideterminant)
+  {
+     outputFile;
+     hdf_archive hin(0);
+
+     if(!hin.open(outputFile.c_str(),H5F_ACC_RDONLY))
+     {
+          std::cerr<<"Could not open H5 file"<<std::endl;
+          abort();
+     }
+     
+     if(!hin.push("MultiDet"))
+     {
+          std::cerr<<"Could not open H5 file"<<std::endl;
+          abort();
+     }
+     else
+     {
+           hin.read(ci_size,"NbDet");
+           CIcoeff.clear();
+           CIalpha.clear();
+           CIbeta.clear();
+           CIcoeff.resize(ci_size);
+           CIalpha.resize(ci_size);
+           CIbeta.resize(ci_size);
 
 
+           hin.read(ci_nstates,"nstate");
+           int N_int;
+           const int bit_kind = 64; 
+           hin.read(N_int,"Nbits");
+
+
+           Matrix<unsigned long int> tempAlpha(ci_size,N_int);
+           hin.read(tempAlpha,"CI_Alpha");
+
+           Matrix<unsigned long int> tempBeta(ci_size,N_int);
+           hin.read(tempBeta,"CI_Beta");
+            
+           std::string MyCItempAlpha,MyCItempBeta;
+           MyCItempAlpha.resize(ci_nstates+1);
+           MyCItempBeta.resize(ci_nstates+1);
+
+           for (int ni=0; ni<ci_size;ni++)
+           {
+                int j=0;
+                int jj=0;
+                for (int k=0; k<N_int; k++)
+                {
+      	 	    for(int i=0; i<bit_kind;i++) 
+                    {
+                        if ( j <ci_nstates ) 
+                        {
+                     	   MyCItempAlpha[j] = binpad(tempAlpha[ni][k],bit_kind)[i]; 
+             		   j++;
+        		}
+                        if ( jj <ci_nstates ) 
+                        {
+                     	   MyCItempBeta[jj] = binpad(tempBeta[ni][k],bit_kind)[i]; 
+             		   jj++;
+        		}
+                     }
+                }
+                CIalpha[ni]=MyCItempAlpha;
+                CIbeta[ni]=MyCItempBeta;
+           }
+
+           hin.read(CIcoeff,"Coeff");
+
+           int ds=SpinMultiplicity-1;
+           int neb= (NumberOfEls-ds)/2;
+           int nea= NumberOfEls-NumberOfBeta;
+           ci_nea= NumberOfAlpha;
+           ci_neb= NumberOfBeta;           
+           ci_nca = nea-ci_nea;
+           ci_ncb = neb-ci_neb;
+           std::cout <<" Done reading CIs!!"<< std::endl;
+           hin.close(); 
+     }     
+  }  
 }
 
 void PyscfParser::getCell(const std::string& fname)
@@ -283,4 +362,17 @@ void PyscfParser::getKpts(const std::string& fname)
 
 
 
+}
+
+
+
+char *binpad (unsigned long int n, size_t sz)
+{
+    static char s[64 + 1] = {0};
+    char *p = s + 64;
+
+    for (int i = sz; i > 0; i--)
+        *--p = ( (n>>i) & 1) ? '1' : '0';
+    
+    return p;
 }
