@@ -172,18 +172,18 @@ namespace qmcplusplus
           for (int i=0; i<=MaxCellX; i++ ) //loop Translation over X 
           {
               //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
-              TransX=pow((-1),(i%2+1)) * (i/2+i%2);
+              TransX=(( i%2 ) * 2 -1) * ( (i+1)/2 ) ;
               for (int j=0; j<=MaxCellY; j++ ) //loop Translation over Y
               {
                  //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
-                 TransY=pow((-1),(j%2+1)) * (j/2+j%2);
+                 TransY=(( j%2 ) * 2 -1) * ( (j+1)/2 ); 
                  for (int k=0; k<=MaxCellZ; k++ ) //loop Translation over Z
                  {
                     //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
-                    TransZ=pow((-1),(k%2+1)) * (k/2+k%2);
-                    dr_new[0]=dr[0]+TransX*lattice.R(0,0)+TransY*lattice.R(0,1)+TransZ*lattice.R(0,2); // Trans is translation vector
-                    dr_new[1]=dr[1]+TransX*lattice.R(1,0)+TransY*lattice.R(1,1)+TransZ*lattice.R(1,2); // Trans is translation vector
-                    dr_new[2]=dr[2]+TransX*lattice.R(2,0)+TransY*lattice.R(2,1)+TransZ*lattice.R(2,2); // Trans is translation vector
+                    TransZ=(( k%2 ) * 2 -1) * ( (k+1)/2 ); 
+                    dr_new[0]=dr[0]+TransX*lattice.R(0,0)+TransY*lattice.R(1,0)+TransZ*lattice.R(2,0);
+                    dr_new[1]=dr[1]+TransX*lattice.R(0,1)+TransY*lattice.R(1,1)+TransZ*lattice.R(2,1);
+                    dr_new[2]=dr[2]+TransX*lattice.R(0,2)+TransY*lattice.R(1,2)+TransZ*lattice.R(2,2);
                     r_new=std::sqrt(dot(dr_new,dr_new));
          
 
@@ -262,19 +262,19 @@ namespace qmcplusplus
           for (int i=0; i<=MaxCellX; i++ ) //loop Translation over X 
           {
               //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
-              TransX=pow((-1),(i%2+1)) * (i/2+i%2);
+              TransX=(( i%2 ) * 2 -1) * ( (i+1)/2 ) ;
               for (int j=0; j<=MaxCellY; j++ ) //loop Translation over Y
               {
                  //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
-                 TransY=pow((-1),(j%2+1)) * (j/2+j%2);
+                 TransY=(( j%2 ) * 2 -1) * ( (j+1)/2 ); 
                  for (int k=0; k<=MaxCellZ; k++ ) //loop Translation over Z
                  {
                     //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
-                    TransZ=pow((-1),(k%2+1)) * (k/2+k%2);
+                    TransZ=(( k%2 ) * 2 -1) * ( (k+1)/2 ); 
+                    dr_new[0]=dr[0]+TransX*lattice.R(0,0)+TransY*lattice.R(1,0)+TransZ*lattice.R(2,0);
+                    dr_new[1]=dr[1]+TransX*lattice.R(0,1)+TransY*lattice.R(1,1)+TransZ*lattice.R(2,1);
+                    dr_new[2]=dr[2]+TransX*lattice.R(0,2)+TransY*lattice.R(1,2)+TransZ*lattice.R(2,2);
 
-                    dr_new[0]=dr[0]+TransX*lattice.R(0,0)+TransY*lattice.R(0,1)+TransZ*lattice.R(0,2); // Trans is translation vector
-                    dr_new[1]=dr[1]+TransX*lattice.R(1,0)+TransY*lattice.R(1,1)+TransZ*lattice.R(1,2); // Trans is translation vector
-                    dr_new[2]=dr[2]+TransX*lattice.R(2,0)+TransY*lattice.R(2,1)+TransZ*lattice.R(2,2); // Trans is translation vector
                     r_new=std::sqrt(dot(dr_new,dr_new));
               
                     if(r_new>Rmax)   continue;
