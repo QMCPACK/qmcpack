@@ -113,6 +113,7 @@ struct QMCGaussianParserBase
   std::vector<std::vector<double> > CSFexpansion;
   std::vector<double> CIcoeff;
   std::vector<double> X,Y,Z; //LAttice vectors for PBC
+  std::vector<int> Image ;
 
   std::vector<int> CIexcitLVL;
 

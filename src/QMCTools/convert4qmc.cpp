@@ -39,7 +39,7 @@ int main(int argc, char **argv)
   if(argc<2)
   {
     std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-VSVB|-QP|-pyscf|-orbitals] filename " << std::endl;
-    std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production]" << std::endl;
+    std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]" << std::endl;
     std::cout << "[-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]" << std::endl;
     std::cout << "[-size npts -multidet multidet.h5 -ci file.out -threshold cimin -TargetState state_number -NaturalOrbitals NumToRead]" << std::endl;
     std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01 -TargetState 0 -prefix sample" << std::endl;
@@ -79,6 +79,7 @@ int main(int argc, char **argv)
   double thres=0.01;
   int readNO=0; // if > 0, read Natural Orbitals from gamess output
   int readGuess=0; // if > 0, read Initial Guess from gamess output
+  std::vector <int> Image;
   while(iargc<argc)
   {
     std::string a(argv[iargc]);
@@ -162,6 +163,19 @@ int main(int argc, char **argv)
     {
       multidet=true;
       punch_file = argv[++iargc];
+    }
+    else if(a == "-NbImages")
+    {
+      int temp;
+      temp=atoi(argv[++iargc]);
+      temp+=1-temp%2;
+      Image.push_back(temp);
+      temp=atoi(argv[++iargc]);
+      temp+=1-temp%2;
+      Image.push_back(temp);
+      temp=atoi(argv[++iargc]);
+      temp+=1-temp%2;
+      Image.push_back(temp);
     }
     else if(a == "-addCusp" )
     {
@@ -301,6 +315,7 @@ int main(int argc, char **argv)
     parser->readGuess=readGuess;
     parser->outputFile=punch_file;
     parser->VSVB=VSVB;
+    parser->Image=Image;
     parser->parse(in_file);
     if(prod)
     {

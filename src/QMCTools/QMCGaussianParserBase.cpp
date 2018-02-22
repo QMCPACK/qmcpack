@@ -59,7 +59,10 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
   AtomicNumberIndex=IonSystem.getSpeciesSet().addAttribute("atomicnumber");
   std::cout << "Index of ion charge " << IonChargeIndex << std::endl;
   std::cout << "Index of valence charge " << ValenceChargeIndex << std::endl;
-
+  Image.resize(3);
+  Image[0]=5;
+  Image[1]=5;
+  Image[2]=5;
   createGridNode(argc,argv);
 }
 
@@ -1790,6 +1793,10 @@ void QMCGaussianParserBase::dumpPBC(const std::string& psi_tag,
          xmlNewProp(detPtr,(const xmlChar*)"cuspCorrection",(const xmlChar*)"yes");
 
       xmlNewProp(detPtr,(const xmlChar*)"href",(const xmlChar*)h5file.c_str());
+
+      std::stringstream sss;
+      sss<<Image[0]<<"  "<<Image[1]<<"  "<<Image[2];
+      xmlNewProp(detPtr,(const xmlChar*)"PBCimages",(const xmlChar*)(sss.str()).c_str());
 
       {
         if(multideterminant)
