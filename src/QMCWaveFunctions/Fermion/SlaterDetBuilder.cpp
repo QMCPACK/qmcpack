@@ -103,13 +103,16 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   std::map<std::string,SPOSetBasePtr> spomap;
   bool multiDet=false;
   bool ReadFromH5=false;
+  bool H5ReadOnce=false;
 
   OhmmsAttributeSet H5attrib;
   H5attrib.add (H5File, "href");
   H5attrib.put(curRoot);
   if(H5File!="")
+  {
       ReadFromH5=true;
-  
+      H5ReadOnce=true;
+  }
   if (myBasisSetFactory == 0)
   {//always create one, using singleton and just to access the member functions
     myBasisSetFactory = new BasisSetFactory(targetPtcl, targetPsi, ptclPool);
@@ -120,9 +123,10 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   while (cur != NULL)//check the basis set
   {
     getNodeName(cname,cur);
-    if (cname == basisset_tag)
+    if (cname == basisset_tag || H5ReadOnce==true )
     {
       myBasisSetFactory->createBasisSet(cur,curRoot);
+      H5ReadOnce=false;
     }
     else if ( cname == sposet_tag )
     {
@@ -134,8 +138,6 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       spoAttrib.put(cur);
       app_log() << "spo_name = " << spo_name << std::endl;
       SPOSetBasePtr spo=NULL;
-      if(ReadFromH5)
-         myBasisSetFactory->createBasisSet(cur,curRoot);
       spo = myBasisSetFactory->createSPOSet(cur);
           
       //spo->put(cur, spomap);

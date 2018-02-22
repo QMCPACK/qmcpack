@@ -108,8 +108,8 @@ namespace qmcplusplus
     std::string keyOpt("NMO"); // Numerical Molecular Orbital
     std::string transformOpt("yes"); // Numerical Molecular Orbital
     std::string cuspC("no");  // cusp correction
+    PosType Images(0.0);
     cuspInfo="";  // file with precalculated cusp correction info
-
     OhmmsAttributeSet aAttrib;
     aAttrib.add(keyOpt,"keyword");
     aAttrib.add(keyOpt,"key");
@@ -117,6 +117,8 @@ namespace qmcplusplus
     aAttrib.add(cuspC,"cuspCorrection");
     aAttrib.add(cuspInfo,"cuspInfo");
     aAttrib.add(h5_path,"href");
+    aAttrib.add(Images,"PBCimages");
+     
     if(cur != NULL) aAttrib.put(cur);
     
     radialOrbType=-1;
@@ -449,7 +451,18 @@ bool SPOSetBase::put(xmlNodePtr cur)
 #define FunctionName printf("Calling FunctionName from %s\n",__FUNCTION__);FunctionNameReal
   //Check if HDF5 present
   ReportEngine PRE("SPOSetBase","put(xmlNodePtr)");
-  xmlNodePtr curtemp=cur->parent->parent;
+
+  //Special case for sposet hierarchy: go up only once.
+  OhmmsAttributeSet locAttrib;
+  std::string cur_name;
+  locAttrib.add (cur_name, "name");
+  locAttrib.put(cur);
+  xmlNodePtr curtemp;
+  if (cur_name=="spo-up" || cur_name=="spo-dn")
+     curtemp=cur->parent;
+  else
+     curtemp=cur->parent->parent;
+     
   std::string MOtype,MOhref;
   bool H5file=false;
   OhmmsAttributeSet H5checkAttrib;
@@ -618,7 +631,6 @@ bool SPOSetBase::putMolFromH5(const char* fname, xmlNodePtr coeff_ptr)
   aAttrib.put(coeff_ptr);
   setIdentity(false);
   hdf_archive hin(myComm);
-
   if(myComm->rank()==0){
     hin.open(fname);
     if (!hin.open(fname)){
