@@ -9,7 +9,7 @@ add_executable(ppconvert
     "${CMAKE_CURRENT_SOURCE_DIR}/ParserClass.cc"
 )
 
-target_link_libraries(ppconvert common mkl_intel_lp64 mkl_sequential mkl_core)
+target_link_libraries(ppconvert common LAPACK)
 
 target_include_directories(ppconvert PUBLIC
 #  "${CMAKE_CURRENT_SOURCE_DIR}/common"

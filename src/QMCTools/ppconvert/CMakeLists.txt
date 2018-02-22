@@ -132,9 +132,9 @@ IF(CXX11_NEEDED)
   ENDIF()
 ENDIF(CXX11_NEEDED)
 
-
 MESSAGE(STATUS "CXX compiler flags: ${CMAKE_CXX_FLAGS}")
 MESSAGE(STATUS "CC  compiler flags: ${CMAKE_C_FLAGS}")
+MESSAGE(STATUS "CXX exe linker flags: ${CMAKE_EXE_LINKER_FLAGS}")
 
 INCLUDE_DIRECTORIES( "/usr/local/opt/llvm/include" ${CMAKE_SOURCE_DIR}/src )
 ###################################################
