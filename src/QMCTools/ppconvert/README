@@ -14,4 +14,7 @@ ppconvert supports conversion of pseudopotentials between different formats
 
 ppconvert is currently not built automatically, but only requires a C++ compiler and BLAS/LAPACK
 
-Edit the Makefile to include an appropriate compiler and BLAS source. Examples using MKL are included.
+CMake works on macOS with llvm 5.0 with mkl:
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=/usr/local/opt/llvm/bin/clang -DCMAKE_CXX_COMPILER=/usr/local/opt/llvm/bin/clang++ -DCMAKE_CXX_FLAGS="-I/usr/local/opt/llvm/include --stdlib=libc++" -DCMAKE_SHARED_LINKER_FLAGS_RELEASE="-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib" -DCMAKE_EXE_LINKER_FLAGS_RELEASE="-L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib" -DMKL_ROOT="/opt/intel/compilers_and_libraries_2018/mac/mkl" ..
+
+Or Edit the Makefile to include an appropriate compiler and BLAS source. Examples using MKL are included.
