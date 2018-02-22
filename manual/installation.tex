@@ -562,6 +562,46 @@ ctest -R short
 \end{verbatim}
 \end{enumerate}
 
+\subsection{Installing on Mac OS X with rtags and llvm 5.0.1 using Homebrew (brew)}
+Homebrew is a package manager for OS X that provides a convenient
+route to install some of the QMCPACK dependencies. The
+following recipe will allow you to build with a new llvm and use its AST to build rtags.
+This was successfully tested under OS X 10.13.3 ``High Sierra'' in February 2018.
+
+\begin{enumerate}
+\item Install Homebrew from \url{http://brew.sh/}
+\begin{verbatim}
+/usr/bin/ruby -e "$(curl -fsSL
+    https://raw.githubusercontent.com/Homebrew/install/master/install)"
+\end{verbatim}
+
+\item Install the prerequisites
+\begin{verbatim}
+brew install llvm # 
+export HOMEBREW_CXX=/usr/local/opt/llvm/bin/clang++
+export HOMEBREW_CC=/usr/local/opt/llvm/bin/clang
+brew install mpich2 --build-from-source
+# Build from source required to use homebrew compiled compilers as
+# opposed to Apple CLANG. Check "mpicc -v" indicates Homebrew gcc 5.x.x
+brew install cmake
+brew install fftw
+brew install boost
+brew install homebrew/science/hdf5
+#Note: Libxml2 is not required via brew since OS X already includes it.
+\end{verbatim}
+\item Configure and build QMCPACK
+\begin{verbatim}
+cmake -DCMAKE_C_COMPILER=/usr/local/bin/mpicc \
+      -DCMAKE_CXX_COMPILER=/usr/local/bin/mpicxx ..
+make -j 12
+\end{verbatim}
+\item Run the short tests. When MPICH is used for the first time, OS
+  X will request approval of the network connection.
+\begin{verbatim}
+ctest -R short
+\end{verbatim}
+\end{enumerate}
+
 \subsection{Installing on ANL ALCF Mira/Cetus IBM Blue Gene/Q}
 \label{sec:buildbgq}
 Mira/Cetus is a Blue Gene/Q supercomputer at Argonne National Laboratory's Argonne Leadership Computing Facility (ANL ALCF).
