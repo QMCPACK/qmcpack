@@ -1,13 +1,18 @@
 # Simple file to find MKL (if availible)
 # This needs a lot of work to make it robust
 INCLUDE( CheckCXXSourceCompiles )
+CMAKE_MINIMUM_REQUIRED(VERSION 3.2.0)
+IF(COMMAND cmake_policy)
+  cmake_policy(SET CMP0056 NEW)
+ENDIF(COMMAND cmake_policy)
+
 
 # if MKL_ROOT is set, use that
 if ( MKL_ROOT )
-   string(CONCAT CMAKE_C_FLAGS " -I${MKL_ROOT}/include")
-   string(CONCAT CMAKE_CXX_FLAGS " -I${MKL_ROOT}/include")
-   string(CONCAT CMAKE_EXE_LINKER_FLAGS "-L${MKL_ROOT}/lib")
-   set(MKL_FLAGS "-I${MKL_ROOT}/include")
+   set(MKL_LINK_DIRECTORIES "${MKL_ROOT}/lib")
+   set(MKL_LINKER_FLAGS "-L${MKL_LINK_DIRECTORIES}")
+   set(MKL_INCLUDE_DIRECTORIES "${MKL_ROOT}/include")
+   set(MKL_FLAGS "-I${MKL_INCLUDE_DIRECTORIES}")
    set(MKL_LIBRARIES "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core")
 endif ( MKL_ROOT )
 
@@ -20,24 +25,33 @@ endif ()
 FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl.cxx"
     "#include <iostream>\n #include <mkl.h>\n int main() { return 0; }\n" )
 try_compile(HAVE_MKL ${CMAKE_BINARY_DIR}
-      ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl.cxx
-      CMAKE_FLAGS "${CMAKE_CXX_FLAGS} ${MKL_LIBRARIES}" )
+  ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl.cxx
+  CMAKE_FLAGS
+  "-DINCLUDE_DIRECTORIES=${MKL_INCLUDE_DIRECTORIES} "
+  "-DLINK_DIRECTORIES=${MKL_LINK_DIRECTORIES}"
+  LINK_LIBRARIES "${MKL_LIBRARIES}"
+  OUTPUT_VARIABLE MKL_OUT)
 
 # Check for mkl_vml_functions.h
 FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_vml.cxx"
     "#include <iostream>\n #include <mkl_vml_functions.h>\n int main() { return 0; }\n" )
 try_compile(HAVE_MKL_VML ${CMAKE_BINARY_DIR}
-      ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_vml.cxx
-      CMAKE_FLAGS "${CMAKE_CXX_FLAGS} ${MKL_LIBRARIES}" )
+  ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_vml.cxx
+  CMAKE_FLAGS
+  "-DINCLUDE_DIRECTORIES=${MKL_INCLUDE_DIRECTORIES} "
+  "-DLINK_DIRECTORIES=${MKL_LINK_DIRECTORIES}"
+  OUTPUT_VARIABLE MKL_OUT)
 
 # Check for fftw3
 FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_fftw3.cxx"
     "#include <iostream>\n #include <fftw/fftw3.h>\n int main() { return 0; }\n" )
 try_compile(HAVE_MKL_FFTW3 ${CMAKE_BINARY_DIR}
       ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_fftw3.cxx
-      CMAKE_FLAGS "${CMAKE_CXX_FLAGS} ${MKL_LIBRARIES}" )
-
-MESSAGE ( "${HAVE_MKL}:${HAVE_MKL_VML}:${HAVE_MKL_FFTW3}" )
+      CMAKE_FLAGS
+      "-DINCLUDE_DIRECTORIES=${MKL_INCLUDE_DIRECTORIES} "
+      "-DLINK_DIRECTORIES=${MKL_LINK_DIRECTORIES}"
+      LINK_LIBRARIES "${MKL_LIBRARIES}"
+      OUTPUT_VARIABLE MKL_OUT)
 
 IF ( HAVE_MKL )
     SET( MKL_FOUND 1 )
@@ -57,4 +71,3 @@ ELSE()
     SET( MKL_LINKER_FLAGS )
     MESSAGE(STATUS "MKL not found")
 ENDIF()
-

@@ -9,8 +9,8 @@ add_executable(ppconvert
     "${CMAKE_CURRENT_SOURCE_DIR}/ParserClass.cc"
 )
 
-target_link_libraries(ppconvert common LAPACK)
-
-target_include_directories(ppconvert PUBLIC
-#  "${CMAKE_CURRENT_SOURCE_DIR}/common"
+target_link_libraries(ppconvert common ${LAPACK_LIBRARIES})
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LAPACK_LINKER_FLAGS}")
+target_include_directories(ppconvert PUBLIC 
+  ${MKL_INCLUDE_DIRECTORIES}
   )

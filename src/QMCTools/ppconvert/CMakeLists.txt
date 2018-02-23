@@ -2,7 +2,7 @@ PROJECT(ppconvert)
 
 
 #####################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.10)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.2.0)
 IF(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
 ENDIF(COMMAND cmake_policy)
@@ -19,6 +19,7 @@ SET(CMAKE_MODULE_PATH ${QMC_CMAKE} ${CMAKE_MODULE_PATH})
 #If the automatic detection does not work, comment out everything 
 #upto COMPILER MANUAL SELECTION and use one of the customized cmake file.
 ######################################################
+
 
 INCLUDE(${CMAKE_ROOT}/Modules/CheckCCompilerFlag.cmake)
 INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXCompilerFlag.cmake)
@@ -70,6 +71,40 @@ INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXCompilerFlag.cmake)
     MESSAGE(WARNING "No default file for compiler (${COMPILER})")
   ENDIF()
 
+# Require C++11 while leaving possibility to fall back by modifying this file
+SET(CXX11_NEEDED TRUE)
+IF(CXX11_NEEDED)
+  SET(CXX11_FLAG "-std=c++11")
+
+  FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/std11.cxx"
+    "int main() { return 0; }\n" )
+  try_compile(CXX_COMPILER_SUPPORT_CXX11 ${CMAKE_BINARY_DIR}
+  ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/std11.cxx
+  CMAKE_FLAGS
+  OUTPUT_VARIABLE STD11_OUT)
+
+  #check if the CXX compiler supports -std=c++11 option
+  # Force the flag on Cray with Intel compiler, because the Cray wrapper
+  #  prints an warning that interferes with the flag detection code
+  #  with older versions of CMake.
+  IF($ENV{CRAYPE_VERSION} MATCHES ".")
+    IF( ${COMPILER} MATCHES "Intel" AND NOT CXX_COMPILER_SUPPORT_CXX11)
+      SET(CXX_COMPILER_SUPPORT_CXX11 TRUE)
+      MESSAGE(STATUS "Forcing C++11 support on Cray with Intel")
+    ENDIF()
+  ENDIF()
+
+  IF (CXX_COMPILER_SUPPORT_CXX11)
+    # avoid repeated -std=c++11 flag
+    STRING(REPLACE "++" "\\+\\+" CXX11_FLAG_MATCH ${CXX11_FLAG})
+    IF(NOT CMAKE_CXX_FLAGS MATCHES ${CXX11_FLAG_MATCH})
+      SET (CMAKE_CXX_FLAGS "${CXX11_FLAG} ${CMAKE_CXX_FLAGS}")
+    ENDIF()
+  ELSE()
+    MESSAGE("CXX_COMPILER_SUPPORT_CXX11 test failed: ${STD11_OUT}")
+    MESSAGE(FATAL_ERROR "A compiler supporting C++11 is required. Use a newer C++ compiler.")
+  ENDIF()
+ENDIF(CXX11_NEEDED)
 
   #-------------------------------------------------------------------
   # check lapack/blas
@@ -83,6 +118,7 @@ INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXCompilerFlag.cmake)
     SET(LAPACK_FOUND 1)
     SET(LAPACK_LIBRARIES "${MKL_LIBRARIES}")
     SET(LAPACK_LINKER_FLAGS "${MKL_LINKER_FLAGS}")
+    #SET(LAPACK_LINKER_FLAGS_$<CONFIG> "${MKL_LINKER_FLAGS}")
   ELSE()	 
     # Search for Blas/Lapack
     find_package(LAPACK)
@@ -102,36 +138,7 @@ INCLUDE(${CMAKE_ROOT}/Modules/CheckCXXCompilerFlag.cmake)
     MESSAGE(FATAL_ERROR "Could not find required libraries LAPACK &/or BLAS") 
   ENDIF()
 
-# Require C++11 while leaving possibility to fall back by modifying this file
-SET(CXX11_NEEDED TRUE)
-IF(CXX11_NEEDED)
-  SET(CXX11_FLAG "-std=c++11")
-  #check if the CXX compiler supports -std=c++11 option
-  include(CheckCXXCompilerFlag)
-  CHECK_CXX_COMPILER_FLAG(${CXX11_FLAG} CXX_COMPILER_SUPPORT_CXX11)
-  # Turn on C++11 for this code
-
-  # Force the flag on Cray with Intel compiler, because the Cray wrapper
-  #  prints an warning that interferes with the flag detection code
-  #  with older versions of CMake.
-  IF($ENV{CRAYPE_VERSION} MATCHES ".")
-    IF( ${COMPILER} MATCHES "Intel" AND NOT CXX_COMPILER_SUPPORT_CXX11)
-      SET(CXX_COMPILER_SUPPORT_CXX11 TRUE)
-      MESSAGE(STATUS "Forcing C++11 support on Cray with Intel")
-    ENDIF()
-  ENDIF()
-
-  IF (CXX_COMPILER_SUPPORT_CXX11)
-    # avoid repeated -std=c++11 flag
-    STRING(REPLACE "++" "\\+\\+" CXX11_FLAG_MATCH ${CXX11_FLAG})
-    IF(NOT CMAKE_CXX_FLAGS MATCHES ${CXX11_FLAG_MATCH})
-      SET (CMAKE_CXX_FLAGS "${CXX11_FLAG} ${CMAKE_CXX_FLAGS}")
-    ENDIF()
-  ELSE()
-    MESSAGE(FATAL_ERROR "A compiler supporting C++11 is required. Use a newer C++ compiler.")
-  ENDIF()
-ENDIF(CXX11_NEEDED)
-
+MESSAGE(STATUS "CXX compiler: ${CMAKE_CXX_COMPILER}")  
 MESSAGE(STATUS "CXX compiler flags: ${CMAKE_CXX_FLAGS}")
 MESSAGE(STATUS "CC  compiler flags: ${CMAKE_C_FLAGS}")
 MESSAGE(STATUS "CXX exe linker flags: ${CMAKE_EXE_LINKER_FLAGS}")
