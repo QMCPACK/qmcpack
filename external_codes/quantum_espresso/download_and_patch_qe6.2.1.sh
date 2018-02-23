@@ -38,7 +38,8 @@ if [ -e $codename/PP/src/pw2qmcpack.f90 ]; then
 echo --- SUCCESS: ${codename} patched for pw2qmcpack converter
 echo There are two ways to build
 echo "1) if your system already has HDF5 installed with Fortran, use the --with-hdf5 configuration option."
-echo "   Current hdf5 support in QE is preliminary. If it is intended to avoid, replace '-D__HDF5' with '-D__HDF5_C' in make.inc."
+echo "   Currently HDF5 support in QE itself is preliminary. To enable use of pw2qmcpack"
+echo "   but use the old non-HDF5 I/O within QE, replace '-D__HDF5' with '-D__HDF5_C' in make.inc."
 echo "2) if your system has HDF5 with C only, manually edit make.inc by adding '-D__HDF5_C -DH5_USE_16_API'"
 echo "   in 'DFLAGS' and provide include and library path in 'IFLAGS' and 'HDF5_LIB'"
 else
