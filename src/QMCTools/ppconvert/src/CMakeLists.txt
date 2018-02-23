@@ -10,6 +10,9 @@ add_executable(ppconvert
 )
 
 target_link_libraries(ppconvert common ${LAPACK_LIBRARIES})
+set_property(TARGET ppconvert PROPERTY INSTALL_RPATH "${LAPACK_LINK_DIRECTORIES}")
+set_property(TARGET ppconvert PROPERTY BUILD_WITH_INSTALL_RPATH ON)
+
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${LAPACK_LINKER_FLAGS}")
 target_include_directories(ppconvert PUBLIC 
   ${MKL_INCLUDE_DIRECTORIES}
