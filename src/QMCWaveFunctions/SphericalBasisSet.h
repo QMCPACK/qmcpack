@@ -84,7 +84,7 @@ struct SphericalBasisSet
   std::vector<QuantumNumberType> RnlID;
 
   ///the constructor
-  explicit SphericalBasisSet(int lmax, bool addsignforM=false, bool useXYZ=false):Ylm(lmax,addsignforM),XYZ(lmax),useCartesian(useXYZ) {}
+  explicit SphericalBasisSet(int lmax, bool addsignforM=false, bool useXYZ=false):Ylm(lmax,addsignforM),XYZ(useXYZ?lmax:0),useCartesian(useXYZ) {}
 
   ~SphericalBasisSet() { }
 

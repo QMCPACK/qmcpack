@@ -3,7 +3,7 @@
   <wavefunction name="psi0" target="e">
     <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes">
       <basisset name="LCAOBSet">
-        <atomicBasisSet name="Gaussian-G2" angular="cartesian" type="Gaussian" elementType="He" normalized="no">
+        <atomicBasisSet name="Gaussian" angular="cartesian" type="Gaussian" elementType="He" normalized="no">
           <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
           <!-- Possible substitution He00 by a Slater-type orbital
   <basisGroup rid="He00" n="0" l="0" type="Slater">

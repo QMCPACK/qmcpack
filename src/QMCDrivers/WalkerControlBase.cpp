@@ -513,8 +513,22 @@ bool WalkerControlBase::put(xmlNodePtr cur)
 
   bool success=params.put(cur);
 
+  // validating input
+  if(nonblocking=="yes")
+  {
+    use_nonblocking = true;
+  }
+  else if(nonblocking=="no")
+  {
+    use_nonblocking = false;
+  }
+  else
+  {
+    APP_ABORT("WalkerControlBase::put unknown use_nonblocking option " + nonblocking);
+  }
+
   setMinMax(nw_target,nw_max);
-  use_nonblocking = nonblocking=="yes";
+
   app_log() << "  WalkerControlBase parameters " << std::endl;
   //app_log() << "    energyBound = " << targetEnergyBound << std::endl;
   //app_log() << "    sigmaBound = " << targetSigma << std::endl;
