@@ -70,6 +70,8 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
 
   Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy);
 
+  void computeOneElectronTxy(ParticleSet& P, const int ref_elec, std::vector<NonLocalData>& Txy);
+
   Return_t evaluateValueAndDerivatives(ParticleSet& P,
       const opt_variables_type& optvars,
       const std::vector<RealType>& dlogpsi,
