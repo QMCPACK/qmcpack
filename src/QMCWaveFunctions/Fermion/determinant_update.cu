@@ -185,20 +185,22 @@ update_inverse_cuda(updateJob updateList[], double dummy,
    Clusters. Computing in Science & Engineering, Vol. 14, No. 1, Jan/Feb 2012,
    pp. 40-51 (section "Inverses and Updates").
 
-   Given a new row vector u to replace the k-th row of matrix A, compute a row
-   vector delta as the difference between u and the k-th row of A. Then compute
-   the row vector delta * Ainv and return it via delta_Ainv. Copy out the k-th
-   column of Ainv as a contiguous vector Ainv_colk for use by the second part
-   of the update process. The dimension of the square matrices A and Ainv is N,
-   and the stride (in elements) between consecutive rows of Ainv (and A) is
-   rowstride. All matrices are stored in row-major order.
+   Replace the Sherman-Morrison algorithm with the Fahy variant as the CPU.
+   Eq.(26) from S. Fahy, X. W. Wang, Steven G. Louie, Phys. Rev. B. 42, 3503
+
+   u is the new row replacing the k-th row of A. Compute u * Ainv (gemv) and
+   return it via u_Ainv. Copy out the k-th column of Ainv as a contiguous
+   vector Ainv_colk for use by the second part of the update process. The
+   dimension of the square matrices A and Ainv is N, and the stride
+   (in elements) between consecutive rows of Ainv (and A) is rowstride.
+   All matrices are stored in row-major order.
 */
 template<typename T, int BS>
 __device__ __forceinline__
 void update_inverse_core1 (T * __restrict__ A,
                            const T * __restrict__ Ainv,
                            const T * __restrict__ u,
-                           T * __restrict__ delta_Ainv,
+                           T * __restrict__ u_Ainv,
                            T * __restrict__ Ainv_colk,
                            int k, int N, int rowstride)
 {
@@ -231,7 +233,7 @@ void update_inverse_core1 (T * __restrict__ A,
   // Write segment of row vector delta*Ainv back to global memory
   if (col_Ainv < N)
   {
-    delta_Ainv[col_Ainv] = sum;
+    u_Ainv[col_Ainv] = sum;
     // save the column k of Ainv
     Ainv_colk[col_Ainv] = Ainv[col_Ainv*rowstride + k];
   }
@@ -243,12 +245,14 @@ void update_inverse_core1 (T * __restrict__ A,
    Clusters. Computing in Science & Engineering, Vol. 14, No. 1, Jan/Feb 2012,
    pp. 40-51 (section "Inverses and Updates").
 
+   Replace the Sherman-Morrison algorithm with the Fahy variant as the CPU.
+   Eq.(26) from S. Fahy, X. W. Wang, Steven G. Louie, Phys. Rev. B. 42, 3503
+
    Ainv * ek, the k-th column of Ainv, has been extracted in the first step,
    and is passed in as column vector Ainv_colk. Step 1 also computed the row
-   vector delta*Ainv, passed in via delta_Ainv. We need to multiply Ainv_colk
-   with delta_Ainv, scale the result by -1/(1+delta*Ainv*ek), then add this to
-   Ainv. We also need to replace the k-th row of A with the new row vector u.
-   delta*Ainv*ek is simply the k-th element of delta_Ainv. The dimension of
+   vector u*Ainv, passed in via u_Ainv. We need to multiply (ger) Ainv_colk
+   with u_Ainv, scale the result by -1/u*Ainv*ek, then add this to Ainv.
+   delta*Ainv*ek is simply the k-th element of u_Ainv. The dimension of
    the square matrices A and Ainv is N, and the stride (in elements) between
    consecutive rows of Ainv and A is rowstride. All matrices are stored in
    row-major order.
@@ -256,11 +260,11 @@ void update_inverse_core1 (T * __restrict__ A,
 template<typename T, int BS>
 __device__ __forceinline__
 void update_inverse_core2 (T * __restrict__ Ainv,
-                           const T * __restrict__ delta_Ainv,
+                           const T * __restrict__ u_Ainv,
                            const T * __restrict__ Ainv_colk,
                            int k, int N, int rowstride)
 {
-  T delta_Ainv_shared;
+  T u_Ainv_shared;
 #ifdef QMC_COMPLEX
   __shared__ uninitialized_array<T,BS> Ainv_colk_shared;
 #else
@@ -273,10 +277,10 @@ void update_inverse_core2 (T * __restrict__ Ainv,
   // Cache one segment of row vector delta*Ainv, and replace one segment of
   // the k-th row of A with the corresponding segment from row vector u
   if (col_Ainv < N)
-    delta_Ainv_shared = delta_Ainv[col_Ainv];
+    u_Ainv_shared = u_Ainv[col_Ainv];
   if ( col_Ainv == k )
-    delta_Ainv_shared = delta_Ainv[k] - T(1);
-  prefact = - T(1) / delta_Ainv[k];
+    u_Ainv_shared = u_Ainv[k] - T(1);
+  prefact = - T(1) / u_Ainv[k];
   for (int block = 0; block < numBlocks; block++)
   {
     int blockStart = block * BS;
@@ -296,7 +300,7 @@ void update_inverse_core2 (T * __restrict__ Ainv,
         row_Ainv = blockStart + i;
         // update one segment of current row of Ainv
         Ainv[row_Ainv*rowstride + col_Ainv] +=
-          delta_Ainv_shared * Ainv_colk_shared[i];
+          u_Ainv_shared * Ainv_colk_shared[i];
       }
     }
   }
@@ -305,11 +309,11 @@ void update_inverse_core2 (T * __restrict__ Ainv,
 template<typename T, int BS>
 __device__ __forceinline__
 void update_inverse_core2_subblock(T * __restrict__ Ainv,
-                                   const T * __restrict__ delta_Ainv,
+                                   const T * __restrict__ u_Ainv,
                                    const T * __restrict__ Ainv_colk,
                                    int k, int N, int rowstride)
 {
-  T delta_Ainv_shared;
+  T u_Ainv_shared;
 #ifdef QMC_COMPLEX
   __shared__ uninitialized_array<T,BS> Ainv_colk_shared;
 #else
@@ -322,10 +326,10 @@ void update_inverse_core2_subblock(T * __restrict__ Ainv,
   // Cache one segment of row vector delta*Ainv, and replace one segment of
   // the k-th row of A with the corresponding segment from row vector u
   if (col_Ainv < N)
-    delta_Ainv_shared = delta_Ainv[col_Ainv];
+    u_Ainv_shared = u_Ainv[col_Ainv];
   if ( col_Ainv == k )
-    delta_Ainv_shared = delta_Ainv[k] - T(1);
-  prefact = - T(1) / delta_Ainv[k];
+    u_Ainv_shared = u_Ainv[k] - T(1);
+  prefact = - T(1) / u_Ainv[k];
   const int blockStart = blockIdx.z * BS;
   int row_Ainv;
   row_Ainv = blockStart + tidx;
@@ -343,7 +347,7 @@ void update_inverse_core2_subblock(T * __restrict__ Ainv,
       row_Ainv = blockStart + i;
       // update one segment of current row of Ainv
       Ainv[row_Ainv*rowstride + col_Ainv] +=
-        delta_Ainv_shared * Ainv_colk_shared[i];
+        u_Ainv_shared * Ainv_colk_shared[i];
     }
   }
 }
@@ -362,10 +366,10 @@ update_inverse_kernel1 (T **data, int *iat, int A_off, int Ainv_off,
   T *A           = sdata + A_off;          // A
   const T *Ainv  = sdata + Ainv_off;       // Ainv
   const T *u     = sdata + newRow_off;     // new k-th row of A
-  T *delta_Ainv  = sdata + AinvDelta_off;  // delta * Ainv
+  T *u_Ainv      = sdata + AinvDelta_off;  // u * Ainv
   T *Ainv_colk   = sdata + AinvColk_off;   // k-th column of orig. Ainv
   int k = iat[blockIdx.y];
-  update_inverse_core1<T,BS> (A, Ainv, u, delta_Ainv, Ainv_colk, k, N,
+  update_inverse_core1<T,BS> (A, Ainv, u, u_Ainv, Ainv_colk, k, N,
                               rowstride);
 }
 
@@ -378,10 +382,10 @@ update_inverse_kernel2 (T **data, int *iat, int A_off, int Ainv_off,
 {
   T * const sdata     = data[blockIdx.y];
   T *Ainv             = sdata + Ainv_off;      // Ainv
-  const T *delta_Ainv = sdata + AinvDelta_off; // delta * Ainv
+  const T *u_Ainv     = sdata + AinvDelta_off; // u * Ainv
   const T *Ainv_colk  = sdata + AinvColk_off;  // k-th column of orig. Ainv
   int k = iat[blockIdx.y];
-  update_inverse_core2<T,BS> (Ainv, delta_Ainv, Ainv_colk, k, N,
+  update_inverse_core2<T,BS> (Ainv, u_Ainv, Ainv_colk, k, N,
                               rowstride);
 }
 
@@ -519,9 +523,9 @@ update_inverse_kernel1 (T **data, int k, int A_off, int Ainv_off,
   T *A           = sdata + A_off;          // A
   const T *Ainv  = sdata + Ainv_off;       // Ainv
   const T *u     = sdata + newRow_off;     // new k-th row of A
-  T *delta_Ainv  = sdata + AinvDelta_off;  // delta * Ainv
+  T *u_Ainv      = sdata + AinvDelta_off;  // u * Ainv
   T *Ainv_colk   = sdata + AinvColk_off;   // k-th column of orig. Ainv
-  update_inverse_core1<T,BS> (A, Ainv, u, delta_Ainv, Ainv_colk, k, N,
+  update_inverse_core1<T,BS> (A, Ainv, u, u_Ainv, Ainv_colk, k, N,
                               rowstride);
 }
 
@@ -536,9 +540,9 @@ update_inverse_kernel2 (T **data, int k, int A_off, int Ainv_off,
   T *A                = sdata + A_off;         // A
   T *Ainv             = sdata + Ainv_off;      // Ainv
   const T *u          = sdata + newRow_off;    // new k-th row of A
-  const T *delta_Ainv = sdata + AinvDelta_off; // delta * Ainv
+  const T *u_Ainv     = sdata + AinvDelta_off; // u * Ainv
   const T *Ainv_colk  = sdata + AinvColk_off;  // k-th column of orig. Ainv
-  update_inverse_core2<T,BS> (A, Ainv, u, delta_Ainv, Ainv_colk, k, N,
+  update_inverse_core2<T,BS> (A, Ainv, u, u_Ainv, Ainv_colk, k, N,
                               rowstride);
 }
 
@@ -551,9 +555,9 @@ update_inverse_kernel2_subblock (T **data, int k, int A_off, int Ainv_off,
 {
   T * const sdata     = data[blockIdx.x];
   T *Ainv             = sdata + Ainv_off;      // Ainv
-  const T *delta_Ainv = sdata + AinvDelta_off; // delta * Ainv
+  const T *u_Ainv     = sdata + AinvDelta_off; // u * Ainv
   const T *Ainv_colk  = sdata + AinvColk_off;  // k-th column of orig. Ainv
-  update_inverse_core2_subblock<T,BS> (Ainv, delta_Ainv, Ainv_colk, k, N,
+  update_inverse_core2_subblock<T,BS> (Ainv, u_Ainv, Ainv_colk, k, N,
                               rowstride);
 }
 
