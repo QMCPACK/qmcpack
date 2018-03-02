@@ -9,6 +9,7 @@ ENDIF(COMMAND cmake_policy)
 
 # if MKL_ROOT is set, use that
 if ( MKL_ROOT )
+   message( "MKL_ROOT: ${MKL_ROOT}" )
    set(MKL_LINK_DIRECTORIES "${MKL_ROOT}/lib")
    set(MKL_LINKER_FLAGS "-L${MKL_LINK_DIRECTORIES}")
    set(MKL_INCLUDE_DIRECTORIES "${MKL_ROOT}/include")
