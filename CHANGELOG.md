@@ -2,6 +2,13 @@
 
 Notable changes to QMCPACK will be documented in this file. 
 
+## [3.0.1] - 2018-03-02
+
+### Notes
+
+A fix for parallel GPU runs has been backported to this version.
+Use this version for baseline benchmarking on GPU machines.
+
 ## [3.0.0] - 2017-01-30
 
 ### Notes
