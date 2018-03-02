@@ -27,7 +27,7 @@ import os
 from generic import obj
 from developer import error
 
-from nexus_base      import NexusCore,nexus_core,nexus_noncore,nexus_core_noncore
+from nexus_base      import NexusCore,nexus_core,nexus_noncore,nexus_core_noncore,restore_nexus_core_defaults
 from machines        import Job,job,Machine,Supercomputer,get_machine
 from simulation      import generate_simulation,input_template,multi_input_template,generate_template_input,generate_multi_template_input
 from project_manager import ProjectManager
@@ -104,8 +104,8 @@ class Settings(NexusCore):
         ericfmt         mcppath
         '''.split())
     
-    pwscf_vars   = set('''                                                                              
-        vdw_table                                                                                       
+    pwscf_vars   = set('''
+        vdw_table
         '''.split())  
 
     nexus_core_vars    = core_assign_vars    | core_process_vars
@@ -133,7 +133,7 @@ class Settings(NexusCore):
         if Settings.singleton is None:
             Settings.singleton = self
         else:
-            self.error('attempted to create a second Settings object\n  please just use the original')
+            self.error('attempted to create a second Settings object\nplease just use the original')
         #end if
     #end def __init__
 
@@ -155,6 +155,9 @@ class Settings(NexusCore):
         if len(not_allowed)>0:
             self.error('unrecognized variables provided\nyou provided: {0}\nallowed variables are: {1}'.format(sorted(not_allowed),sorted(Settings.allowed_vars)))
         #end if
+
+        # restore default core default settings
+        restore_nexus_core_defaults()
 
         # assign simple variables
         for name in Settings.core_assign_vars:
@@ -204,9 +207,11 @@ class Settings(NexusCore):
 
 
         # process gamess settings
+        Gamess.restore_default_settings()
         Gamess.settings(**gamess_kw)
 
-        # process pwscf settings                                                                        
+        # process pwscf settings
+        Pwscf.restore_default_settings()
         Pwscf.settings(**pwscf_kw)   
 
         return
@@ -214,6 +219,9 @@ class Settings(NexusCore):
 
 
     def process_machine_settings(self,mset):
+        Job.restore_default_settings()
+        ProjectManager.restore_default_settings()
+        mid_set = set()
         if 'machine_info' in mset:
             machine_info = mset.machine_info
             if isinstance(machine_info,dict) or isinstance(machine_info,obj):
@@ -221,7 +229,9 @@ class Settings(NexusCore):
                     mname = machine_name.lower()
                     if Machine.exists(mname):
                         machine = Machine.get(mname)
+                        machine.restore_default_settings()
                         machine.incorporate_user_info(minfo)
+                        mid_set.add(id(machine))
                     else:
                         self.error('machine {0} is unknown\n  cannot set machine_info'.format(machine_name))
                     #end if
@@ -236,7 +246,11 @@ class Settings(NexusCore):
                 self.error('machine {0} is unknown'.format(machine_name))
             #end if
             Job.machine = machine_name
-            ProjectManager.machine = Machine.get(machine_name)
+            machine = Machine.get(machine_name)
+            ProjectManager.machine = machine
+            if machine is not None and id(machine) not in mid_set:
+                machine.restore_default_settings()
+            #end if
             if 'account' in mset:
                 account = mset.account
                 if not isinstance(account,str):

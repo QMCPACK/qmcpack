@@ -60,6 +60,12 @@ class Gamess(Simulation):
         Gamess.mcppath = mcppath
     #end def settings
 
+    @staticmethod
+    def restore_default_settings():
+        Gamess.ericfmt = None
+        Gamess.mcppath = None
+    #end def restore_default_settings
+
 
     def post_init(self):
         # gamess seems to need lots of environment variables to run properly
