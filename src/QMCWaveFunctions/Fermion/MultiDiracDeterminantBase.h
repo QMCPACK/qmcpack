@@ -135,25 +135,11 @@ public:
   ///reset the size: with the number of particles and number of orbtials
   virtual void resize(int nel, int morb);
 
-  RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
 
-  void registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf, int storageType=0);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 
-  virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only, long& orbs, long& invs, long& dets)
-  {
-    orbs_only += NumPtcls*NumOrbitals;
-    orbs += NumPtcls*NumOrbitals*5;
-    invs += NumPtcls*NumPtcls;
-    dets += NumDets*(1 + 4*NumPtcls);
-  }
-
-  void copyToDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  void copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
-
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   /** move was accepted, update the real container
    */
@@ -212,323 +198,93 @@ public:
   // this works with confgList, which shouldn't change during a simulation
   void createDetData(ci_configuration2& ref, std::vector<int>& data,
                      std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign);
-  /*
-      void testDets() {
 
-         std::vector<int> indx(16);
-         ValueMatrix_t Mat(8,8);
-         NewTimer dummy("dummy");
-         dummy.reset();
-
-         std::ifstream in("matrix.txt");
-         for(int i=0; i<8; i++)
-         for(int j=0; j<8; j++)
-            in>>Mat(i,j);
-         in.close();
-
-         std::vector<RealType> dets(9);
-         dets[2] =  -0.085167; // 2x2
-         dets[3] = 0.051971; // 3x3
-         dets[4] = 0.029865; // 4x4
-         dets[5] = -0.055246; // 5x5
-         dets[6] = -0.0087414; // 6x6
-         dets[7] = 0.025257; // 7x7
-         dets[8] = 0.067119; // 8x8
-
-         for(int q=2; q<=8; q++) {
-           int k=0;
-           for(int i=0; i<q; i++)
-            indx[k++] = i;
-           for(int i=0; i<q; i++)
-            indx[k++] = i;
-           std::cout <<"determinant of " <<q <<": " <<dets[q] <<"  -  " <<CalculateRatioFromMatrixElements(q,Mat,indx.begin()) << std::endl;
-         }
-         int k=0;
-         for(int i=0; i<4; i++)
-          indx[k++] = i;
-         for(int i=0; i<4; i++)
-          indx[k++] = i;
-
-         std::cout <<"Timing n=4 \n";
-         ValueType res;
-         dummy.start();
-         for(int i=0; i<1000; i++)
-           res=CalculateRatioFromMatrixElements(4,Mat,indx.begin());
-         dummy.stop();
-         RealType direct = dummy.get_total();
-         dummy.reset();
-         dummy.start();
-         for(int i=0; i<1000; i++)
-           res=NewCalculateRatioFromMatrixElements(4,Mat,indx.begin());
-         dummy.stop();
-         RealType func = dummy.get_total();
-         std::cout <<"Direct, function: " <<direct <<"  " <<func << std::endl << std::endl;
-
-         k=0;
-         for(int i=0; i<5; i++)
-          indx[k++] = i;
-         for(int i=0; i<5; i++)
-          indx[k++] = i;
-
-         std::cout <<"Timing n=5 \n";
-         dummy.start();
-         for(int i=0; i<1000; i++)
-           res=CalculateRatioFromMatrixElements(5,Mat,indx.begin());
-         dummy.stop();
-         direct = dummy.get_total();
-         dummy.reset();
-         dummy.start();
-         for(int i=0; i<1000; i++)
-           res=NewCalculateRatioFromMatrixElements(5,Mat,indx.begin());
-         dummy.stop();
-         func = dummy.get_total();
-         std::cout <<"Direct, function: " <<direct <<"  " <<func << std::endl << std::endl;
-
-         k=0;
-         for(int i=0; i<6; i++)
-          indx[k++] = i;
-         for(int i=0; i<6; i++)
-          indx[k++] = i;
-
-         std::cout <<"Timing n=6 \n";
-         dummy.start();
-         for(int i=0; i<1000; i++)
-           res=CalculateRatioFromMatrixElements(6,Mat,indx.begin());
-         dummy.stop();
-         direct = dummy.get_total();
-         dummy.reset();
-         dummy.start();
-         for(int i=0; i<1000; i++)
-           res=NewCalculateRatioFromMatrixElements(6,Mat,indx.begin());
-         dummy.stop();
-         func = dummy.get_total();
-         std::cout <<"Direct, function: " <<direct <<"  " <<func << std::endl << std::endl;
-
-         exit(1);
-      }
-  */
-
-  inline ValueType CalculateRatioFromMatrixElements(int n, ValueMatrix_t& dotProducts, std::vector<int>::iterator it)
+  template<typename ITER>
+  inline ValueType CalculateRatioFromMatrixElements(int n, ValueMatrix_t& dotProducts, ITER it)
   {
     switch(n)
     {
-    case 0:
-      return 1.0;
-    case 1:
-      return dotProducts(*it,*(it+1));
-      break;
-    case 2:
-    {
-      register int i=*it;
-      register int j=*(it+1);
-      register int a=*(it+2);
-      register int b=*(it+3);
-      return dotProducts(i,a)*dotProducts(j,b)-dotProducts(i,b)*dotProducts(j,a);
-      break;
-    }
-    case 3:
-    {
-      register int i1=*it;
-      register int i2=*(it+1);
-      register int i3=*(it+2);
-      register int a1=*(it+3);
-      register int a2=*(it+4);
-      register int a3=*(it+5);
-      return DetCalculator.evaluate(
-               dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),
-               dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),
-               dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3));
-      break;
-    }
-    case 4:
-    {
-      register int i1=*it;
-      register int i2=*(it+1);
-      register int i3=*(it+2);
-      register int i4=*(it+3);
-      register int a1=*(it+4);
-      register int a2=*(it+5);
-      register int a3=*(it+6);
-      register int a4=*(it+7);
-      return DetCalculator.evaluate(
-               dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),dotProducts(i1,a4),
-               dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),dotProducts(i2,a4),
-               dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3),dotProducts(i3,a4),
-               dotProducts(i4,a1),dotProducts(i4,a2),dotProducts(i4,a3),dotProducts(i4,a4));
-      break;
-    }
-    case 5:
-    {
-      register int i1=*it;
-      register int i2=*(it+1);
-      register int i3=*(it+2);
-      register int i4=*(it+3);
-      register int i5=*(it+4);
-      register int a1=*(it+5);
-      register int a2=*(it+6);
-      register int a3=*(it+7);
-      register int a4=*(it+8);
-      register int a5=*(it+9);
-      return DetCalculator.evaluate(
-               dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),dotProducts(i1,a4),dotProducts(i1,a5),
-               dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),dotProducts(i2,a4),dotProducts(i2,a5),
-               dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3),dotProducts(i3,a4),dotProducts(i3,a5),
-               dotProducts(i4,a1),dotProducts(i4,a2),dotProducts(i4,a3),dotProducts(i4,a4),dotProducts(i4,a5),
-               dotProducts(i5,a1),dotProducts(i5,a2),dotProducts(i5,a3),dotProducts(i5,a4),dotProducts(i5,a5));
-      break;
-    }
-    /*
-              case 6:
-              {
-                register int i1=*it;
-                register int i2=*(it+1);
-                register int i3=*(it+2);
-                register int i4=*(it+3);
-                register int i5=*(it+4);
-                register int i6=*(it+5);
-                register int a1=*(it+6);
-                register int a2=*(it+7);
-                register int a3=*(it+8);
-                register int a4=*(it+9);
-                register int a5=*(it+10);
-                register int a6=*(it+11);
-                return DetCalculator.evaluate(
-                        dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),dotProducts(i1,a4),dotProducts(i1,a5),dotProducts(i1,a6),
-                        dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),dotProducts(i2,a4),dotProducts(i2,a5),dotProducts(i2,a6),
-                        dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3),dotProducts(i3,a4),dotProducts(i3,a5),dotProducts(i3,a6),
-                        dotProducts(i4,a1),dotProducts(i4,a2),dotProducts(i4,a3),dotProducts(i4,a4),dotProducts(i4,a5),dotProducts(i4,a6),
-                        dotProducts(i5,a1),dotProducts(i5,a2),dotProducts(i5,a3),dotProducts(i5,a4),dotProducts(i5,a5),dotProducts(i5,a6),
-                        dotProducts(i6,a1),dotProducts(i6,a2),dotProducts(i6,a3),dotProducts(i6,a4),dotProducts(i6,a5),dotProducts(i6,a6));
-                break;
-              }
-    */
-    default:
-    {
-      return DetCalculator.evaluate(dotProducts,it,n);
-    }
+      case 0:
+        return 1.0;
+      case 1:
+        return dotProducts(*it,*(it+1));
+      case 2:
+        {
+          const int i=*it;
+          const int j=*(it+1);
+          const int a=*(it+2);
+          const int b=*(it+3);
+          return dotProducts(i,a)*dotProducts(j,b)-dotProducts(i,b)*dotProducts(j,a);
+        }
+      case 3:
+        {
+          const int i1=*it;
+          const int i2=*(it+1);
+          const int i3=*(it+2);
+          const int a1=*(it+3);
+          const int a2=*(it+4);
+          const int a3=*(it+5);
+          return DetCalculator.evaluate(
+              dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),
+              dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),
+              dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3));
+        }
+      case 4:
+        {
+          const int i1=*it;
+          const int i2=*(it+1);
+          const int i3=*(it+2);
+          const int i4=*(it+3);
+          const int a1=*(it+4);
+          const int a2=*(it+5);
+          const int a3=*(it+6);
+          const int a4=*(it+7);
+          return DetCalculator.evaluate(
+              dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),dotProducts(i1,a4),
+              dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),dotProducts(i2,a4),
+              dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3),dotProducts(i3,a4),
+              dotProducts(i4,a1),dotProducts(i4,a2),dotProducts(i4,a3),dotProducts(i4,a4));
+        }
+      case 5:
+        {
+          const int i1=*it;
+          const int i2=*(it+1);
+          const int i3=*(it+2);
+          const int i4=*(it+3);
+          const int i5=*(it+4);
+          const int a1=*(it+5);
+          const int a2=*(it+6);
+          const int a3=*(it+7);
+          const int a4=*(it+8);
+          const int a5=*(it+9);
+          return DetCalculator.evaluate(
+              dotProducts(i1,a1),dotProducts(i1,a2),dotProducts(i1,a3),dotProducts(i1,a4),dotProducts(i1,a5),
+              dotProducts(i2,a1),dotProducts(i2,a2),dotProducts(i2,a3),dotProducts(i2,a4),dotProducts(i2,a5),
+              dotProducts(i3,a1),dotProducts(i3,a2),dotProducts(i3,a3),dotProducts(i3,a4),dotProducts(i3,a5),
+              dotProducts(i4,a1),dotProducts(i4,a2),dotProducts(i4,a3),dotProducts(i4,a4),dotProducts(i4,a5),
+              dotProducts(i5,a1),dotProducts(i5,a2),dotProducts(i5,a3),dotProducts(i5,a4),dotProducts(i5,a5));
+        }
+      default:
+        return DetCalculator.evaluate(dotProducts,it,n);
     }
     return 0.0;
   }
-  /*
-      inline ValueType NewCalculateRatioFromMatrixElements(int n, ValueMatrix_t& dotProducts, std::vector<int>::iterator it)
-      {
-         switch(n)
-         {
-            case 0:
-              return 1.0;
-            case 1:
-              return dotProducts(*it,*(it+1));
-              break;
-            case 2:
-            {
-              register int i=*it;
-              register int j=*(it+1);
-              register int a=*(it+2);
-              register int b=*(it+3);
-              return dotProducts(i,a)*dotProducts(j,b)-dotProducts(i,b)*dotProducts(j,a);
-              break;
-            }
-            default:
-            {
-              return DetCalculator.evaluate(dotProducts,it,n);
-            }
-         }
-      }
-  */
 
-  inline void BuildDotProductsAndCalculateRatios(int ref, int iat, ValueVector_t& ratios, ValueMatrix_t &psiinv, ValueMatrix_t &psi, ValueMatrix_t& dotProducts, std::vector<int>& data, std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign)
-  {
-    ValueType det0 = ratios[ref];
-    buildTableTimer.start();
-    int num=psi.extent(1);
-    std::vector<std::pair<int,int> >::iterator it(pairs.begin()), last(pairs.end());
-    while(it != last)
-    {
-      dotProducts((*it).first,(*it).second) = simd::dot(psiinv[(*it).first],psi[(*it).second],num);
-      it++;
-    }
-    buildTableTimer.stop();
-    readMatTimer.start();
-    std::vector<int>::iterator it2 = data.begin();
-    //ValueVector_t::iterator itr = ratios.begin();
-    //vector<RealType>::iterator its = sign.begin();
-    int count= 0;  // number of determinants processed
-    while(it2 != data.end())
-    {
-      int n = *it2; // number of excitations
-      if(count == ref)
-      {
-        it2+=3*n+1;  // number of integers used to encode the current excitation
-        //itr++;
-        //its++;
-        count++;
-        continue;
-      }
-      ratios[count] = sign[count]*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1);
-      //*(itr++) = *(its++)*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1);
-      count++;
-      it2+=3*n+1;
-    }
-    readMatTimer.stop();
-  }
+  void BuildDotProductsAndCalculateRatios_impl(int ref, ValueType det0,
+      ValueType* restrict ratios, const ValueMatrix_t &psiinv, const ValueMatrix_t &psi, ValueMatrix_t& dotProducts, 
+      const std::vector<int>& data, const std::vector<std::pair<int,int> >& pairs,const std::vector<RealType>& sign);
 
-  inline void BuildDotProductsAndCalculateRatios(int ref, int iat, GradMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, std::vector<int>& data, std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign, int dx)
-  {
-    ValueType det0 = ratios(ref,iat)[dx];
-    buildTableGradTimer.start();
-    int num=psi.extent(1);
-    std::vector<std::pair<int,int> >::iterator it(pairs.begin()), last(pairs.end());
-    while(it != last)
-    {
-      dotProducts((*it).first,(*it).second) = simd::dot(psiinv[(*it).first],psi[(*it).second],num);
-      it++;
-    }
-    buildTableGradTimer.stop();
-    readMatGradTimer.start();
-    std::vector<int>::iterator it2 = data.begin();
-    int count= 0;  // number of determinants processed
-    while(it2 != data.end())
-    {
-      int n = *it2; // number of excitations
-      if(count == ref)
-      {
-        it2+=3*n+1;  // number of integers used to encode the current excitation
-        count++;
-        continue;
-      }
-      ratios(count,iat)[dx] = sign[count]*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1);
-      count++;
-      it2+=3*n+1;
-    }
-    readMatGradTimer.stop();
-  }
+  void BuildDotProductsAndCalculateRatios(int ref, int iat, 
+      ValueVector_t& ratios, const ValueMatrix_t &psiinv, const ValueMatrix_t &psi, ValueMatrix_t& dotProducts, 
+      const std::vector<int>& data, const std::vector<std::pair<int,int> >& pairs,const std::vector<RealType>& sign);
 
-  inline void BuildDotProductsAndCalculateRatios(int ref, int iat, ValueMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, std::vector<int>& data, std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign)
-  {
-    ValueType det0 = ratios(ref,iat);
-    int num=psi.extent(1);
-    std::vector<std::pair<int,int> >::iterator it(pairs.begin()), last(pairs.end());
-    while(it != last)
-    {
-      dotProducts((*it).first,(*it).second) = simd::dot(psiinv[(*it).first],psi[(*it).second],num);
-      it++;
-    }
-    std::vector<int>::iterator it2 = data.begin();
-    int count= 0;  // number of determinants processed
-    while(it2 != data.end())
-    {
-      int n = *it2; // number of excitations
-      if(count == ref)
-      {
-        it2+=3*n+1;  // number of integers used to encode the current excitation
-        count++;
-        continue;
-      }
-      ratios(count,iat) = sign[count]*det0*CalculateRatioFromMatrixElements(n,dotProducts,it2+1);
-      count++;
-      it2+=3*n+1;
-    }
-  }
+  void BuildDotProductsAndCalculateRatios(int ref, int iat, 
+      GradMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, 
+      std::vector<int>& data, std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign, int dx);
+
+  void BuildDotProductsAndCalculateRatios(int ref, int iat, 
+      ValueMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, 
+      std::vector<int>& data,  std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign);
 
 //   Finish this at some point
   inline void InverseUpdateByColumn_GRAD(ValueMatrix_t& Minv
@@ -557,291 +313,12 @@ public:
       }
   */
 
-  void setDetInfo(int ref, std::vector<ci_configuration2> list);
+  void setDetInfo(int ref, std::vector<ci_configuration2>* list);
 
-  inline void
-  evaluateDetsForPtclMove(ParticleSet& P, int iat)
-  {
-    UpdateMode=ORB_PBYP_RATIO;
-    RatioTimer.start();
-    evalOrbTimer.start();
-    Phi->evaluate(P,iat,psiV);
-    evalOrbTimer.stop();
-    WorkingIndex = iat-FirstIndex;
-    if(NumPtcls==1)
-    {
-      std::vector<ci_configuration2>::iterator it(confgList.begin());
-      std::vector<ci_configuration2>::iterator last(confgList.end());
-      ValueVector_t::iterator det(new_detValues.begin());
-      while(it != last)
-      {
-        int orb = (it++)->occup[0];
-        *(det++) = psiV(orb);
-      }
-    }
-    else
-    {
-      std::vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
-// mmorales: the only reason this is here is because
-// NonlocalECP do not necessarily call rejectMove after
-// calling ratio(), and even if the move is rejected
-// this matrix needs to be restored
-// If we always restore after ratio, then this is not needed
-// For efficiency reasons, I don't do this for ratioGrad or ratio(P,dG,dL)
-      ExtraStuffTimer.start();
-      psiMinv_temp = psiMinv;
-      for(int i=0; i<NumPtcls; i++)
-        psiV_temp[i] = psiV(*(it++));
-      ValueType ratioRef = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
-      new_detValues[ReferenceDeterminant] = ratioRef * detValues[ReferenceDeterminant];
-      InverseUpdateByColumn(psiMinv_temp,psiV_temp,workV1,workV2,WorkingIndex,ratioRef);
-      for(int i=0; i<NumOrbitals; i++)
-        TpsiM(i,WorkingIndex) = psiV(i);
-      ExtraStuffTimer.stop();
-      BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,new_detValues,psiMinv_temp,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
-// check comment above
-      for(int i=0; i<NumOrbitals; i++)
-        TpsiM(i,WorkingIndex) = psiM(WorkingIndex,i);
-    }
-    RatioTimer.stop();
-  }
-
-  inline void
-  evaluateDetsAndGradsForPtclMove(ParticleSet& P, int iat)
-  {
-    UpdateMode=ORB_PBYP_PARTIAL;
-    evalOrb1Timer.start();
-    Phi->evaluate(P,iat,psiV,dpsiV,d2psiV);
-    evalOrb1Timer.stop();
-    WorkingIndex = iat-FirstIndex;
-    if(NumPtcls==1)
-    {
-      std::vector<ci_configuration2>::iterator it(confgList.begin());
-      std::vector<ci_configuration2>::iterator last(confgList.end());
-      ValueVector_t::iterator det(new_detValues.begin());
-      GradMatrix_t::iterator grad(new_grads.begin());
-      while(it != last)
-      {
-        int orb = (it++)->occup[0];
-        *(det++) = psiV[orb];
-        *(grad++) = dpsiV[orb];
-      }
-    }
-    else
-    {
-      ExtraStuffTimer.start();
-//mmorales: check comment above
-      psiMinv_temp = psiMinv;
-      std::vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
-      GradType ratioGradRef;
-      for(int i=0; i<NumPtcls; i++)
-      {
-        psiV_temp[i] = psiV(*it);
-#ifdef __bgq__
-        /* This is a workaround for BGQ and BGClang.
-         * The following lines correct the wrong summation in ratioGradRef.
-         * To reproduce the issue:
-         * Remove the Jastrow factor in the C2_pp-msdj_vmc test.
-         * The VMC energy is significantly lower than it should be.
-         */
-        for(int idim=0; idim<OHMMS_DIM; idim++)
-          ratioGradRef[idim] += psiMinv_temp(i,WorkingIndex)*dpsiV[*it][idim];
-#else
-        ratioGradRef += psiMinv_temp(i,WorkingIndex)*dpsiV(*it);
-#endif
-        it++;
-      }
-      ValueType ratioRef = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
-      new_grads(ReferenceDeterminant,WorkingIndex) = ratioGradRef*detValues[ReferenceDeterminant];
-      new_detValues[ReferenceDeterminant] = ratioRef * detValues[ReferenceDeterminant];
-      InverseUpdateByColumn(psiMinv_temp,psiV_temp,workV1,workV2,WorkingIndex,ratioRef);
-      for(int i=0; i<NumOrbitals; i++)
-        TpsiM(i,WorkingIndex) = psiV[i];
-      ExtraStuffTimer.stop();
-      BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,new_detValues,psiMinv_temp,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
-      for(int idim=0; idim<OHMMS_DIM; idim++)
-      {
-        ExtraStuffTimer.start();
-        //dpsiMinv = psiMinv_temp;
-        dpsiMinv = psiMinv;
-        it = confgList[ReferenceDeterminant].occup.begin();
-        for(int i=0; i<NumPtcls; i++)
-          psiV_temp[i] = dpsiV(*(it++))[idim];
-        InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,WorkingIndex,ratioGradRef[idim]);
-        for(int i=0; i<NumOrbitals; i++)
-          TpsiM(i,WorkingIndex) = dpsiV[i][idim];
-        ExtraStuffTimer.stop();
-        BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,new_grads,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns,idim);
-      }
-// check comment above
-      for(int i=0; i<NumOrbitals; i++)
-        TpsiM(i,WorkingIndex) = psiM(WorkingIndex,i);
-    }
-  }
-
-  inline void
-  evaluateGrads(ParticleSet& P, int iat)
-  {
-    WorkingIndex = iat-FirstIndex;
-    std::vector<int>::iterator it;
-    if(NumPtcls==1)
-    {
-      std::vector<ci_configuration2>::iterator it(confgList.begin());
-      std::vector<ci_configuration2>::iterator last(confgList.end());
-      GradMatrix_t::iterator grad(grads.begin());
-      while(it != last)
-      {
-        int orb = (it++)->occup[0];
-        *(grad++) = dpsiM(0,orb);
-      }
-    }
-    else
-    {
-      for(int idim=0; idim<OHMMS_DIM; idim++)
-      {
-        //dpsiMinv = psiMinv_temp;
-        dpsiMinv = psiMinv;
-        it = confgList[ReferenceDeterminant].occup.begin();
-        ValueType ratioG = 0.0;
-        for(int i=0; i<NumPtcls; i++)
-        {
-          psiV_temp[i] = dpsiM(WorkingIndex,*it)[idim];
-          ratioG += psiMinv(i,WorkingIndex)*dpsiM(WorkingIndex,*it)[idim];
-          it++;
-        }
-        grads(ReferenceDeterminant,WorkingIndex)[idim] = ratioG*detValues[ReferenceDeterminant];
-        InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,WorkingIndex,ratioG);
-        for(int i=0; i<NumOrbitals; i++)
-          TpsiM(i,WorkingIndex) = dpsiM(WorkingIndex,i)[idim];
-        BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,grads,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns,idim);
-      }
-// check comment above
-      for(int i=0; i<NumOrbitals; i++)
-        TpsiM(i,WorkingIndex) = psiM(WorkingIndex,i);
-    }
-  }
-
-  inline void
-  evaluateAllForPtclMove(ParticleSet& P, int iat)
-  {
-    UpdateMode=ORB_PBYP_ALL;
-    Phi->evaluate(P,iat,psiV,dpsiV,d2psiV);
-    WorkingIndex = iat-FirstIndex;
-    if(NumPtcls==1)
-    {
-      std::vector<ci_configuration2>::iterator it(confgList.begin());
-      std::vector<ci_configuration2>::iterator last(confgList.end());
-      ValueVector_t::iterator det(new_detValues.begin());
-      ValueMatrix_t::iterator lap(new_lapls.begin());
-      GradMatrix_t::iterator grad(new_grads.begin());
-      while(it != last)
-      {
-        int orb = (it++)->occup[0];
-        *(det++) = psiV(orb);
-        *(lap++) = d2psiV(orb);
-        *(grad++) = dpsiV(orb);
-      }
-    }
-    else
-    {
-//mmorales: check comment above
-      psiMinv_temp = psiMinv;
-      std::vector<int>::iterator it(confgList[ReferenceDeterminant].occup.begin());
-      //GradType ratioGradRef;
-      //ValueType ratioLapl = 0.0;
-      for(int i=0; i<NumPtcls; i++)
-      {
-        psiV_temp[i] = psiV(*it);
-        //ratioGradRef += psiMinv_temp(i,WorkingIndex)*dpsiV(*it);
-        //ratioLapl += psiMinv_temp(i,WorkingIndex)*d2psiV(*it);
-        it++;
-      }
-      ValueType det0, ratioRef = DetRatioByColumn(psiMinv_temp, psiV_temp, WorkingIndex);
-      //new_lapls(ReferenceDeterminant,WorkingIndex) = ratioLapl*detValues[ReferenceDeterminant];
-      //new_grads(ReferenceDeterminant,WorkingIndex) = ratioGradRef*detValues[ReferenceDeterminant];
-      det0 = ratioRef * detValues[ReferenceDeterminant];
-      new_detValues[ReferenceDeterminant] = det0;
-      InverseUpdateByColumn(psiMinv_temp,psiV_temp,workV1,workV2,WorkingIndex,ratioRef);
-      for(int i=0; i<NumOrbitals; i++)
-        TpsiM(i,WorkingIndex) = psiV[i];
-      BuildDotProductsAndCalculateRatios(ReferenceDeterminant,WorkingIndex,new_detValues,psiMinv_temp,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
-      for(int jat=0; jat<NumPtcls; jat++)
-      {
-        it = confgList[ReferenceDeterminant].occup.begin();
-        GradType gradRatio;// = 0.0;
-        ValueType ratioLapl = 0.0;
-        if(jat==WorkingIndex)
-        {
-          for(int i=0; i<NumPtcls; i++)
-          {
-            gradRatio += psiMinv_temp(i,jat)*dpsiV(*it);
-            ratioLapl += psiMinv_temp(i,jat)*d2psiV(*it);
-            it++;
-          }
-          new_grads(ReferenceDeterminant,jat) = det0*gradRatio;
-          new_lapls(ReferenceDeterminant,jat) = det0*ratioLapl;
-          for(int idim=0; idim<OHMMS_DIM; idim++)
-          {
-            dpsiMinv = psiMinv_temp;
-            it = confgList[ReferenceDeterminant].occup.begin();
-            for(int i=0; i<NumPtcls; i++)
-              psiV_temp[i] = dpsiV(*(it++))[idim];
-            InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,jat,gradRatio[idim]);
-            for(int i=0; i<NumOrbitals; i++)
-              TpsiM(i,jat) = dpsiV[i][idim];
-            BuildDotProductsAndCalculateRatios(ReferenceDeterminant,jat,new_grads,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns,idim);
-          }
-          dpsiMinv = psiMinv_temp;
-          it = confgList[ReferenceDeterminant].occup.begin();
-          for(int i=0; i<NumPtcls; i++)
-            psiV_temp[i] = d2psiV(*(it++));
-          InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,jat,ratioLapl);
-          for(int i=0; i<NumOrbitals; i++)
-            TpsiM(i,jat) = d2psiV[i];
-          BuildDotProductsAndCalculateRatios(ReferenceDeterminant,jat,new_lapls,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
-          for(int i=0; i<NumOrbitals; i++)
-            TpsiM(i,jat) = psiV[i];
-        }
-        else
-        {
-          for(int i=0; i<NumPtcls; i++)
-          {
-            gradRatio += psiMinv_temp(i,jat)*dpsiM(jat,*it);
-            ratioLapl += psiMinv_temp(i,jat)*d2psiM(jat,*it);
-            it++;
-          }
-          new_grads(ReferenceDeterminant,jat) = det0*gradRatio;
-          new_lapls(ReferenceDeterminant,jat) = det0*ratioLapl;
-          for(int idim=0; idim<OHMMS_DIM; idim++)
-          {
-            dpsiMinv = psiMinv_temp;
-            it = confgList[ReferenceDeterminant].occup.begin();
-            for(int i=0; i<NumPtcls; i++)
-              psiV_temp[i] = dpsiM(jat,*(it++))[idim];
-            InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,jat,gradRatio[idim]);
-            for(int i=0; i<NumOrbitals; i++)
-              TpsiM(i,jat) = dpsiM(jat,i)[idim];
-            BuildDotProductsAndCalculateRatios(ReferenceDeterminant,jat,new_grads,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns,idim);
-          }
-          dpsiMinv = psiMinv_temp;
-          it = confgList[ReferenceDeterminant].occup.begin();
-          for(int i=0; i<NumPtcls; i++)
-            psiV_temp[i] = d2psiM(jat,*(it++));
-          InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,jat,ratioLapl);
-          for(int i=0; i<NumOrbitals; i++)
-            TpsiM(i,jat) = d2psiM(jat,i);
-          BuildDotProductsAndCalculateRatios(ReferenceDeterminant,jat,new_lapls,dpsiMinv,TpsiM,dotProducts,detData,uniquePairs,DetSigns);
-          for(int i=0; i<NumOrbitals; i++)
-            TpsiM(i,jat) = psiM(jat,i);
-        }
-      } // jat
-// check comment above
-      for(int i=0; i<NumOrbitals; i++)
-        TpsiM(i,WorkingIndex) = psiM(WorkingIndex,i);
-    }
-  }
-
-
+  void evaluateDetsForPtclMove(ParticleSet& P, int iat);
+  void evaluateDetsAndGradsForPtclMove(ParticleSet& P, int iat);
+  void evaluateGrads(ParticleSet& P, int iat);
+  void evaluateAllForPtclMove(ParticleSet& P, int iat);
   // full evaluation of all the structures from scratch, used in evaluateLog for example
   void evaluateForWalkerMove(ParticleSet& P, bool fromScratch=true);
 
@@ -861,8 +338,10 @@ public:
   SPOSetBasePtr Phi;
   /// number of determinants handled by this object
   int NumDets;
-  ///
-  std::vector<ci_configuration2> confgList;
+  ///bool to cleanup
+  bool IsCloned;
+  ///use shared_ptr
+  std::vector<ci_configuration2>* ciConfigList;
 // the reference determinant never changes, so there is no need to store it.
 // if its value is zero, then use a data from backup, but always use this one
 // by default
@@ -908,15 +387,9 @@ public:
    *     -i1,i2,...,in : occupied orbital to be replaced (these must be numbers from 0:Nptcl-1)
    *     -a1,a2,...,an : excited states that replace the orbitals (these can be anything)
    */
-  std::vector<int> detData;
-  std::vector<std::pair<int,int> > uniquePairs;
-  std::vector<RealType> DetSigns;
-
-  int backup_reference;
-  std::vector<int> backup_detData;
-  std::vector<std::pair<int,int> > backup_uniquePairs;
-  std::vector<RealType> backup_DetSigns;
-
+  std::vector<int>* detData;
+  std::vector<std::pair<int,int> >* uniquePairs;
+  std::vector<RealType>* DetSigns;
   MyDeterminant<ValueType> DetCalculator;
 
 };

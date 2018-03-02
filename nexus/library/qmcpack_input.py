@@ -1934,7 +1934,7 @@ class jastrow3(QIxml):
 
 class kspace_jastrow(QIxml):
     tag = 'jastrow'
-    attributes = ['type','name','source','function','optimize','symmetry']
+    attributes = ['type','name','source']
     elements   = ['correlation']
     identifier = 'name'
     write_types = obj(optimize=yesno)
@@ -2017,7 +2017,7 @@ class pseudopotential(QIxml):
 #end class pseudopotential
 
 class pseudo(QIxml):
-    attributes = ['elementtype','href','format','cutoff','lmax','nrule']
+    attributes = ['elementtype','href','format','cutoff','lmax','nrule','l-local']
     elements   = ['header','local','grid']
     identifier = 'elementtype'
 #end class pseudo
@@ -2550,6 +2550,7 @@ Names.set_expanded_names(
     exctlvl          = 'exctLvl',
     pairtype         = 'pairType',
     printeloc        = 'printEloc',
+    spindependent    = 'spinDependent',
    )
 for c in classes:
     c.init_class()
@@ -5258,7 +5259,7 @@ def generate_opt(method,
     blocks = min(blocks,samples_per_proc*decorr)
 
     opt = opt_map[method]()
-
+ 
     opt.set(
         walkers    = walkers,
         blocks     = blocks,

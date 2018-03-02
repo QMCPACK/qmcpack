@@ -139,8 +139,6 @@ public:
     GradTmpSrc.resize(N,N);
     GradTmpDest.resize(N,N);
     BasisSetSize = N;
-    ///from inherited class
-    t_logpsi.resize(N,N);
   }
 
   // Make a copy of myself

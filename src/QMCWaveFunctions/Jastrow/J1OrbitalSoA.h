@@ -45,8 +45,6 @@ struct  J1OrbitalSoA : public OrbitalBase
   int Nelec;
   ///number of groups
   int NumGroups;
-  ///task id
-  int TaskID;
   ///reference to the sources (ions)
   const ParticleSet& Ions;
 
@@ -60,12 +58,12 @@ struct  J1OrbitalSoA : public OrbitalBase
   aligned_vector<valT> U, dU, d2U;
   aligned_vector<valT> DistCompressed;
   aligned_vector<int> DistIndice;
-  ParticleAttrib<posT> Grad;
-  ParticleAttrib<valT> Lap;
+  Vector<posT> Grad;
+  Vector<valT> Lap;
   ///Container for \f$F[ig*NumGroups+jg]\f$
   std::vector<FT*> F;
 
-  J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els) : Ions(ions),TaskID(0)
+  J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els) : Ions(ions)
   {
     initalize(els);
     myTableID=els.addTable(ions,DT_SOA);
@@ -143,8 +141,8 @@ struct  J1OrbitalSoA : public OrbitalBase
     {
       for(int jg=0; jg<NumGroups; ++jg)
       {
-        if(F[jg]!=nullptr) 
-          curAt += F[jg]->evaluateV(Ions.first(jg), Ions.last(jg), dist, DistCompressed.data() );
+        if(F[jg]!=nullptr)
+          curAt += F[jg]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist, DistCompressed.data());
       }
     }
     else
@@ -164,6 +162,31 @@ struct  J1OrbitalSoA : public OrbitalBase
     }
 
     return std::exp(Vat[iat]-curAt);
+  }
+
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
+  {
+    const valT* restrict dist=P.DistTables[myTableID]->Temp_r.data();
+    curAt = valT(0);
+    if(NumGroups>0)
+    {
+      for(int jg=0; jg<NumGroups; ++jg)
+      {
+        if(F[jg]!=nullptr)
+          curAt += F[jg]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist, DistCompressed.data());
+      }
+    }
+    else
+    {
+      for(int c=0; c<Nions; ++c)
+      {
+        int gid=Ions.GroupID[c];
+        if(F[gid]!=nullptr) curAt += F[gid]->evaluate(dist[c]);
+      }
+    }
+
+    for(int i=0; i<Nelec; ++i)
+      ratios[i]=std::exp(Vat[i]-curAt);
   }
 
   inline void evaluateGL(ParticleSet& P,
@@ -217,7 +240,7 @@ struct  J1OrbitalSoA : public OrbitalBase
       for(int jg=0; jg<NumGroups; ++jg)
       {
         if(F[jg]==nullptr) continue;
-        F[jg]->evaluateVGL( Ions.first(jg), Ions.last(jg), dist, 
+        F[jg]->evaluateVGL(-1, Ions.first(jg), Ions.last(jg), dist,
             U.data(), dU.data(), d2U.data(), DistCompressed.data(), DistIndice.data());
       }
     }
@@ -284,19 +307,15 @@ struct  J1OrbitalSoA : public OrbitalBase
   }
 
 
-  inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
-  {
-    evaluateLog(P,P.G,P.L);
-    return LogValue;
-  }
+  inline void registerData(ParticleSet& P, WFBufferType& buf) { }
 
-  inline RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false)
+  inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false)
   {
     evaluateGL(P, P.G, P.L, false);
     return LogValue;
   }
 
-  inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) { }
+  inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf) { }
 
   OrbitalBasePtr makeClone(ParticleSet& tqp) const
   {

@@ -12,7 +12,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "Utilities/OhmmsInfo.h"
 #include "Numerics/LibxmlNumericIO.h"
 #include "Numerics/GaussianBasisSet.h"
 #include "Numerics/SlaterBasisSet.h"

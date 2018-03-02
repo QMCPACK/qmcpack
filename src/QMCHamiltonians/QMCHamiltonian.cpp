@@ -20,7 +20,6 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Utilities/NewTimer.h"
 #ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
@@ -535,6 +534,28 @@ void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker)
     auxH[i]->collect_scalar_traces();
 #endif
     auxH[i]->setParticlePropertyList(P.PropertyList,myIndex);
+  }
+}
+///Evaluate properties only.
+void QMCHamiltonian::auxHevaluate(ParticleSet& P, Walker_t& ThisWalker,bool do_properties, bool do_collectables)
+{
+#if !defined(REMOVE_TRACEMANAGER)
+  collect_walker_traces(ThisWalker,P.current_step);
+#endif
+  for(int i=0; i<auxH.size(); ++i)
+  {
+    bool is_property = !(auxH[i]->getMode(QMCHamiltonianBase::COLLECTABLE));
+    bool is_collectable = (auxH[i]->getMode(QMCHamiltonianBase::COLLECTABLE));
+    if ( (is_property && do_properties) || (is_collectable && do_collectables) )
+    {
+      auxH[i]->setHistories(ThisWalker);
+      RealType sink = auxH[i]->evaluate(P);
+      auxH[i]->setObservables(Observables);
+#if !defined(REMOVE_TRACEMANAGER)
+      auxH[i]->collect_scalar_traces();
+#endif
+      auxH[i]->setParticlePropertyList(P.PropertyList,myIndex);
+    }
   }
 }
 

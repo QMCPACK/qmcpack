@@ -41,6 +41,8 @@ DiracDeterminantCUDA::DiracDeterminantCUDA(SPOSetBasePtr const &spos, int first)
   newGradLaplList_d("DiracDeterminantBase::newGradLaplList_d"),
   AWorkList_d("DiracDeterminantBase::AWorkList_d"),
   AinvWorkList_d("DiracDeterminantBase::AinvWorkList_d"),
+  PivotArray_d("DiracDeterminantBase::PivotArray_d"),
+  infoArray_d("DiracDeterminantBase::infoArray_d"),
   GLList_d("DiracDeterminantBase::GLList_d"),
   ratio_d("DiracDeterminantBase::ratio_d"),
   gradLapl_d("DiracDeterminantBase::gradLapl_d"),
@@ -57,39 +59,6 @@ DiracDeterminantCUDA::DiracDeterminantCUDA(SPOSetBasePtr const &spos, int first)
   for(int i = 0; i < 2; ++i)
     NLratios_d[i] = gpu::device_vector<CudaValueType>("DiracDeterminantBase::NLratios_d");
 }
-
-DiracDeterminantCUDA::DiracDeterminantCUDA(const DiracDeterminantCUDA& s) :
-  DiracDeterminantBase(s),
-  UpdateJobList_d("DiracDeterminantBase::UpdateJobList_d"),
-  srcList_d("DiracDeterminantBase::srcList_d"),
-  destList_d("DiracDeterminantBase::destList_d"),
-  AList_d("DiracDeterminantBase::AList_d"),
-  AinvList_d("DiracDeterminantBase::AinvList_d"),
-  newRowList_d("DiracDeterminantBase::newRowList_d"),
-  AinvDeltaList_d("DiracDeterminantBase::AinvDeltaList_d"),
-  AinvColkList_d("DiracDeterminantBase::AinvColkList_d"),
-  gradLaplList_d("DiracDeterminantBase::gradLaplList_d"),
-  newGradLaplList_d("DiracDeterminantBase::newGradLaplList_d"),
-  AWorkList_d("DiracDeterminantBase::AWorkList_d"),
-  AinvWorkList_d("DiracDeterminantBase::AinvWorkList_d"),
-  GLList_d("DiracDeterminantBase::GLList_d"),
-  ratio_d("DiracDeterminantBase::ratio_d"),
-  gradLapl_d("DiracDeterminantBase::gradLapl_d"),
-  iatList_d("DiracDeterminantBase::iatList_d"),
-  NLrowBuffer_d("DiracDeterminantBase::NLrowBuffer_d"),
-  SplineRowList_d("DiracDeterminantBase::SplineRowList_d"),
-  RatioRowList_d("DiracDeterminantBase::RatioRowList_d"),
-  NLposBuffer_d("DiracDeterminantBase::NLposBuffer_d"),
-  NLAinvList_d("DiracDeterminantBase::NLAinvList_d"),
-  NLnumRatioList_d("DiracDeterminantBase::NLnumRatioList_d"),
-  NLelecList_d("DiracDeterminantBase::NLelecList_d"),
-  NLratioList_d("DiracDeterminantBase::NLratioList_d")
-{
-  for(int i = 0; i < 2; ++i)
-    NLratios_d[i] = gpu::device_vector<CudaValueType>("DiracDeterminantBase::NLratios_d");
-}
-
-
 
 /////////////////////////////////////
 // Vectorized evaluation functions //
@@ -412,8 +381,27 @@ DiracDeterminantCUDA::recompute(MCWalkerConfiguration &W, bool firstTime)
   // Invert
   bool useDoublePrecision = true;
   cublas_inverse (gpu::cublasHandle, AList_d.data(), AinvList_d.data(),
-                  AWorkList_d.data(), AinvWorkList_d.data(), 
+                  AWorkList_d.data(), AinvWorkList_d.data(),
+                  PivotArray_d.data(), infoArray_d.data(),
                   NumPtcls, RowStride, walkers.size(), useDoublePrecision);
+
+  // checking inversion status
+  infoArray_host = infoArray_d;
+  bool failed = false;
+  for(int iw=0; iw<walkers.size(); iw++)
+    if(infoArray_host[iw]!=0||infoArray_host[iw+walkers.size()]!=0)
+    {
+      failed = true;
+      fprintf(stderr, "cublas_inverse failed on walker %d, getrf error %d, getri error %d.\n",
+                       iw, infoArray_host[iw], infoArray_host[iw+walkers.size()]);
+      char name[1000];
+      gethostname(name, 1000);
+      fprintf(stderr, "Offending hostname = %s\n", name);
+      int dev;
+      cudaGetDevice(&dev);
+      fprintf(stderr, "Offending device = %d\n", dev);
+    }
+  if(failed) abort();
 
 #ifdef DEBUG_CUDA
   CudaValueType Ainv[NumPtcls][RowStride], A[NumPtcls][RowStride];
@@ -940,6 +928,7 @@ DiracDeterminantCUDA::gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
       if (std::isnan(lapl(iw,iat+FirstIndex)))
 #endif
       {
+        fprintf (stderr, "Offending walker = %d\n", iw);
         char name[1000];
         gethostname(name, 1000);
         fprintf (stderr, "Offending hostname = %s\n", name);
@@ -961,13 +950,13 @@ DiracDeterminantCUDA::gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
             fprintf (Ainv, "%14.8e+%14.8ei ", host_data[AinvOffset+i*RowStride+j].real(), host_data[AinvOffset+i*RowStride+j].imag());
             fprintf (Lmat, "%14.8e+%14.8ei ", host_data[gradLaplOffset+(4*i+3)*RowStride+j].real(), host_data[gradLaplOffset+(4*i+3)*RowStride+j].imag());
             for (int k=0; k<3; k++)
-              fprintf (Lmat, "%14.8e+%14.8ei ", host_data[gradLaplOffset+(4*i+k)*RowStride+j].real(), host_data[gradLaplOffset+(4*i+k)*RowStride+j].imag());
+              fprintf (Gmat, "%14.8e+%14.8ei ", host_data[gradLaplOffset+(4*i+k)*RowStride+j].real(), host_data[gradLaplOffset+(4*i+k)*RowStride+j].imag());
 #else
             fprintf (Amat, "%14.8e ", host_data[AOffset+i*RowStride+j]);
             fprintf (Ainv, "%14.8e ", host_data[AinvOffset+i*RowStride+j]);
             fprintf (Lmat, "%14.8e ", host_data[gradLaplOffset+(4*i+3)*RowStride+j]);
             for (int k=0; k<3; k++)
-              fprintf (Lmat, "%14.8e ", host_data[gradLaplOffset+(4*i+k)*RowStride+j]);
+              fprintf (Gmat, "%14.8e ", host_data[gradLaplOffset+(4*i+k)*RowStride+j]);
 #endif
           }
           fprintf (Amat, "\n");

@@ -103,8 +103,6 @@ public:
   }
   ///reset the wavefunction
   virtual void resetPsi(bool final_reset=false)=0;
-  ///reset Walkers before loadEnsemble
-  virtual void resetWalkers()=0;
 
   inline void getParameterTypes(std::vector<int>& types)
   {
@@ -328,14 +326,6 @@ protected:
   //*/
   //vector<std::vector<vector<Return_t> >* > DerivRecords;
   //vector<std::vector<vector<Return_t> >* > HDerivRecords;
-  // std::string that defines whether buffers are used during correlated sampling
-  // to store temporary object
-  std::string usebuffer;
-  // are we using buffers to store derivative informatin
-  bool StoreDerivInfo;
-  // storage level
-  int DerivStorageLevel;
-
 
   typedef ParticleSet::ParticleGradient_t ParticleGradient_t;
   typedef ParticleSet::ParticleLaplacian_t ParticleLaplacian_t;

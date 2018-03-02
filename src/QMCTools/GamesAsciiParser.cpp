@@ -12,8 +12,8 @@
 //
 // File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 
 
 
@@ -29,7 +29,7 @@ void Cartesian2Spherical(int n, double* Cart, double* Sphe);
 
 GamesAsciiParser::GamesAsciiParser()
 {
-  basisName = "Gaussian-G2";
+  basisName = "Gaussian";
   Normalized = "no";
   usingECP=false;
   BohrUnit=true;
@@ -37,14 +37,16 @@ GamesAsciiParser::GamesAsciiParser()
   angular_type="cartesian";
   readtype=0;
   NFZC=0;
+  ECP=false;
 }
 
 GamesAsciiParser::GamesAsciiParser(int argc, char** argv):
   QMCGaussianParserBase(argc,argv)
 {
-  basisName = "Gaussian-G2";
+  basisName = "Gaussian";
   Normalized = "no";
   usingECP=false;
+  ECP=false;
   BohrUnit=true;
   MOtype="Canonical";
   angular_type="cartesian";
@@ -119,6 +121,7 @@ void GamesAsciiParser::parse(const std::string& fname)
   if(usingECP)
   {
     std::cout <<"Using ECP." << std::endl;
+    ECP=true;
     search(fin,"NUMBER OF ELECTRONS KEPT IN THE CALCULATION IS",aline);
     parsewords(aline.c_str(),currentWords);
     NumberOfEls = atoi(currentWords[8].c_str());
@@ -364,6 +367,7 @@ void GamesAsciiParser::getGeometry(std::istream& is)
       // eureka!!!
     {
       usingECP=true;
+      ECP=true;
       core.resize(NumberOfAtoms);
       getwords(currentWords,is); // -------------
 // this only works if all atoms have an ECP, fix later
@@ -489,7 +493,7 @@ void GamesAsciiParser::getGaussianCenters(std::istream& is)
   }
 
   std::vector<std::vector<double> > expo(nUniqAt),coef(nUniqAt),coef2(nUniqAt);
-  std::vector<int> nshll(nUniqAt,0); //use this to 
+  std::vector<int> nshll(nUniqAt,0); //use this to
   std::vector<std::vector<int> > ncoeffpershell(nUniqAt);
   std::vector<std::vector<std::string> > shID(nUniqAt);
   std::map<std::string,int> gsMap;
@@ -600,15 +604,17 @@ void GamesAsciiParser::getGaussianCenters(std::istream& is)
               std::cerr <<"Can't handle H basis states or higher yet. Fix later.\n";
               abort();
             }
-            std::cout << currPos << ":" <<expo[currPos].back() << " " << coef[currPos].back() << " " 
-              << ncoeffpershell[currPos][nshll[currPos]] 
-              << " " << shID[currPos][nshll[currPos]] << std::endl;
+            if(debug){
+               std::cout << currPos << ":" <<expo[currPos].back() << " " << coef[currPos].back() << " "
+                 << ncoeffpershell[currPos][nshll[currPos]]
+                 << " " << shID[currPos][nshll[currPos]] << std::endl;
+            }
           }
         }
       }
     }
   }
-  
+
 
   /*
   getwords(currentWords,is);  // tag of first atom
@@ -796,7 +802,7 @@ void GamesAsciiParser::getMO(std::istream& is)
     getwords(currentWords,is);  // empty line
     getMO_single_set(is, CartMat, EigVal_beta);
   }
-    
+
   for(int i=0; i<numMO; i++)
     for(int k=0; k<SizeOfBasisSet; k++)
       EigVec[cnt++] = CartMat[i][k];
@@ -1003,9 +1009,9 @@ void GamesAsciiParser::getCSF(std::istream& is)
   coeff2csf.clear();
   usingCSF=true;
 
-  // set a count to check if we arrive our target state or not 
+  // set a count to check if we arrive our target state or not
   int state_num = -1;
-  
+
   std::cout << "Target State Number is " << target_state << std::endl;
 
   do
@@ -1022,7 +1028,7 @@ void GamesAsciiParser::getCSF(std::istream& is)
         currentWords[1] == "COEF" &&
         currentWords[2] == "OCCUPANCY" )
     {
-      
+
       // add the state number by one
       state_num++;
 

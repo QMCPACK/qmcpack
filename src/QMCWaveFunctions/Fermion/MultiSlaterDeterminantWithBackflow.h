@@ -72,9 +72,9 @@ public:
   void acceptMove(ParticleSet& P, int iat);
   void restore(int iat);
 
-  RealType registerData(ParticleSet& P, BufferType& buf);
-  RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
-  void copyFromBuffer(ParticleSet& P, BufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   OrbitalBasePtr makeClone(ParticleSet& tqp) const;
   void evaluateDerivatives(ParticleSet& P,

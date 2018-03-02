@@ -114,6 +114,263 @@ jastrow factor, with many similarities to the one body spline jastrow.
 
 \include{jastrow_two_body_spline}
 
+
+\subsection{Long-ranged Jastrow factors}
+While short-ranged Jastrow factors capture the majority of the benefit 
+for minimizing the total energy and the energy variance, long-ranged 
+Jastrow factors are important to accurately reproduce the short-ranged 
+(long wavelength) behavior of quantities such as the static structure 
+factor, and are therefore essential for modern accurate finite size 
+corrections in periodic systems.
+
+Below two types of long-ranged Jastrow factors are described.  The 
+first (the k-space Jastrow) is simply an expansion of the one and/or 
+two body correlation functions in plane waves, with the coefficients 
+comprising the optimizable parameters.  The second type have few 
+variational parameters and use the optimized breakup method of Natoli 
+and Ceperley\cite{Natoli1995} (the Yukawa and Gaskell RPA Jastrows).
+
+
+\subsubsection{Long-ranged Jastrow: k-space Jastrow}
+The k-space Jastrow introduces explicit long-ranged dependence commensurate with the periodic supercell.  This Jastrow is to be used in periodic boundary conditions only.  
+
+The input for the k-space Jastrow fuses both one and two-body forms into a single element and so they are discussed together here.  The one- and two-body terms in the k-Space Jastrow have the form:
+\begin{align}
+  J_1 &= \sum_{G\ne 0}b_G\rho_G^I\rho_{-G} \\
+  J_2 &= \sum_{G\ne 0}a_G\rho_G\rho_{-G}
+\end{align}
+Here $\rho_G$ is the Fourier transform of the instantaneous electron density:
+\begin{align}
+  \rho_G=\sum_{n\in electrons}e^{iG\cdot r_n}
+\end{align}
+and $\rho_G^I$ has the same form, but for the fixed ions. In both cases the coefficients are restricted to be real, though in general the coefficients for the one-body term need not be.  See section \ref{sec:feature_kspace_jastrow} for more detail.
+
+Input for the k-space Jastrow follows the familar nesting of \texttt{jastrow-correlation-coefficients} elements, with attributes unique to the k-space Jastrow at the \texttt{correlation} input level.
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{jastrow type=kSpace} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{wavefunction}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{correlation}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values          & \bfseries default  & \bfseries description \\
+   & \texttt{type}$^r$    &  text              & \textbf{kSpace}           &                    & Must be kSpace           \\
+   & \texttt{name}$^r$    &  text              & \textit{anything}         & 0                  & Unique name for Jastrow \\
+   & \texttt{source}$^r$  &  text              & \texttt{particleset.name} &                    & Ion particleset name\\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{correlation} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{jastrow type=kSpace}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{coefficients}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name           & \bfseries datatype & \bfseries values  & \bfseries default  & \bfseries description \\
+   & \texttt{type}$^r$          &  text              & \textbf{One-Body},\textbf{Two-Body}    &                     & Must be One-Body/Two-Body     \\
+   & \texttt{kc}$^r$            &  real              & kc$\ge$ 0                                & 0.0                 & k-space cutoff in a.u. \\
+   & \texttt{symmetry}$^o$      &  text              & crystal,isotropic,none                 & crystal             & Symmetry of coefficients\\
+   & \texttt{spinDependent}$^o$ &  boolean           & yes,no                                 & no                  & \textit{No current function} \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{coefficients} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{correlation}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name     & \bfseries datatype & \bfseries values  & \bfseries default   & \bfseries description \\
+   & \texttt{id}$^r$      &  text              & \textit{anything} &     cG1/cG2         & Label for coeffs     \\
+   & \texttt{type}$^r$    &  text              & \texttt{Array}    &   0                 & Must be Array \\
+\multicolumn{2}{l}{body text}  & \multicolumn{4}{l}{}\\
+   &                           & \multicolumn{4}{l}{The body text is a list of real values for the parameters.}     \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+
+Additional information:
+\begin{itemize}
+  \item{It is normal to provide no coefficients as an initial guess.  The number of coefficients will be automatically calculated according to the k-space cutoff + symmetry and set to zero. }
+  \item{Providing an incorrect number of parameters also results in all parameters being set to zero.}
+  \item{There is currently no way to turn optimization on/off for the k-space Jastrow.  The coefficients are always optimized.}
+  \item{Spin dependence is currently not implemented for this Jastrow.}
+  \item{\texttt{kc}: Parameters with G vectors magnitudes less than \texttt{kc} are included in the Jastrow.  If \texttt{kc} is zero, it is the same as excluding the k-space term.}
+  \item{\texttt{symmetry=crystal}: Impose crystal symmetry on coefficients according to the structure factor.}
+  \item{\texttt{symmetry=isotropic}: Impose spherical symmetry on coefficients according to G-vector magnitude.}
+  \item{\texttt{symmetry=none}: Impose no symmetry on the coefficients.}
+\end{itemize}
+
+
+\begin{lstlisting}[caption=k-space Jastrow with one- and two-body terms.]
+  <jastrow type="kSpace" name="Jk" source="ion0">
+     <correlation kc="4.0" type="One-Body" symmetry="cystal">
+        <coefficients id="cG1" type="Array">                  
+        </coefficients>
+     </correlation>
+     <correlation kc="4.0" type="Two-Body" symmetry="crystal">
+        <coefficients id="cG2" type="Array">                  
+        </coefficients>
+     </correlation>
+  </jastrow>
+\end{lstlisting}
+
+\begin{lstlisting}[caption=k-space Jastrow with one-body term only.]
+  <jastrow type="kSpace" name="Jk" source="ion0">
+     <correlation kc="4.0" type="One-Body" symmetry="cystal">
+        <coefficients id="cG1" type="Array">                  
+        </coefficients>
+     </correlation>
+  </jastrow>
+\end{lstlisting}
+
+\begin{lstlisting}[caption=k-space Jastrow with two-body term only.]
+  <jastrow type="kSpace" name="Jk" source="ion0">
+     <correlation kc="4.0" type="Two-Body" symmetry="crystal">
+        <coefficients id="cG2" type="Array">                  
+        </coefficients>
+     </correlation>
+  </jastrow>
+\end{lstlisting}
+
+
+
+
+\subsubsection{Long-ranged Jastrows: Gaskell RPA and Yukawa forms}
+\label{sec:twobodyjastrowlr}
+\textbf{NOTE: The Yukawa and RPA Jastrows do not work at present 
+and are currently being revived.  Please contact the developers if 
+you are interested in using them.} 
+
+The exact Jastrow correlation functions contain terms which have a 
+form similar to the Coulomb pair potential.  In periodic systems 
+the Coulomb potential is replaced by an Ewald summation of the 
+bare potential over all periodic image cells.  This sum is often 
+handled by the optimized breakup method\cite{Natoli1995} and this 
+same approach is applied to the long-ranged Jastrow factors in QMCPACK.
+
+There are two main long-ranged Jastrow factors of this type 
+implemented in QMCPACK: the Gaskell RPA\cite{Gaskell1961,Gaskell1962} 
+form and the Yukawa\cite{Ceperley1978} form.  Both of these forms 
+were used by Ceperley in early studies of the electron gas\cite{Ceperley1978}, 
+but they are also appropriate starting points for general solids. 
+
+The Yukawa form is defined in real space.  It's long-range form is 
+formally defined as
+\begin{align}
+  u_Y^{PBC}(r) = \sum_{L\ne 0}\sum_{i<j}u_Y(\abs{r_i-r_j+L})
+\end{align}
+with $u_Y(r)$ given by
+\begin{align}
+  u_Y(r) = \frac{a}{r}\left(1-e^{-r/b}\right)
+\end{align}
+In QMCPACK a slightly more restricted form is used:
+\begin{align}
+  u_Y(r) = \frac{r_s}{r}\left(1-e^{-r/\sqrt{r_s}}\right)
+\end{align}
+here ``$r_s$'' is understood to be a variational parameter.
+
+The Gaskell RPA form--which contains correct short/long range limits 
+and minimizes the total energy of the electron gas within the RPA--is 
+defined directly in k-space:
+\begin{align}
+  u_{RPA}(k) = -\frac{1}{2S_0(k)}+\frac{1}{2}\left(\frac{1}{S_0(k)^2}+\frac{4m_ev_k}{\hbar^2k^2}\right)^{1/2}
+\end{align}
+where $v_k$ is the Fourier transform of the Coulomb potential and 
+$S_0(k)$ is the static structure factor of the non-interacting 
+electron gas:
+\[
+  S_0(k) = \left.
+  \begin{cases}
+    1 &  k>2k_F \\
+    \frac{3k}{4k_F}-\frac{1}{2}\left(\frac{k}{2k_F}\right)^3 & k<2k_F
+  \end{cases}
+  \right.
+\]
+When written in atomic units, RPA Jastrow implemented in QMCPACK has the 
+form
+\begin{align}
+  u_{RPA}(k) = \frac{1}{2N_e}\left(-\frac{1}{S_0(k)}+\left(\frac{1}{S_0(k)^2}+\frac{12}{r_s^3k^4}\right)^{1/2}\right)
+\end{align}
+Here ``$r_s$'' is again a variational parameter and $k_F\equiv(\tfrac{9\pi}{4r_s^3})^{1/3}$.
+
+For both the Yukawa and Gaskell RPA Jastrows, the default value for $r_s$ is $r_s=(\tfrac{3\Omega}{4\pi N_e})^{1/3}$.
+
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{jastrow type=Two-Body function=rpa/yukawa} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{wavefunction}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\texttt{correlation}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   &   \bfseries name        & \bfseries datatype & \bfseries values             & \bfseries default  & \bfseries description   \\
+   & \texttt{type}$^r$       &  text              & \textbf{Two-Body}            &                    & Must be Two-Body   \\
+   & \texttt{function}$^r$   &  text              & \textbf{rpa}/\textbf{yukawa} &                    & Must be rpa or yukawa   \\
+   & \texttt{name}$^r$       &  text              & \textit{anything}            & RPA\_Jee            & Unique name for Jastrow \\
+   & \texttt{longrange}$^o$  &  boolean           & yes/no                       & yes                & Use long-range part     \\
+   & \texttt{shortrange}$^o$ &  boolean           & yes/no                       & yes                & Use short-range part    \\
+\multicolumn{2}{l}{parameters}  & \multicolumn{4}{l}{}\\
+   & \texttt{rs}$^o$         &  rs                & $r_s>0$                      & $\tfrac{3\Omega}{4\pi N_e}$ & Avg. elec-elec distance \\
+   & \texttt{kc}$^o$         &  kc                & $k_c>0$                      & $2\left(\tfrac{9\pi}{4}\right)^{1/3}\tfrac{4\pi N_e}{3\Omega}$ & K-space cutoff\\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+
+\begin{lstlisting}[caption=Two body RPA Jastrow with long- and short-ranged parts.]
+<jastrow name=''Jee'' type=''Two-Body'' function=''rpa''>
+</jastrow>
+\end{lstlisting}
+
+
+
+% J1 RPA (intended for electron-proton system)
+%   source = particleset.name
+%   function = RPA
+%   name = anything [Jep]
+%   rs = >0 [-1]
+%   kc = >0 [-1]
+% 
+% J2 RPA
+%   attributes
+%     function = yukawa or rpa
+%     name = anything [RPA_Jee]
+%     longrange = yes/no [yes]
+%     shortrange = yes/no [yes]
+%   parameters
+%     rs = >0 [-1]  3\Omega/4\pi N_e
+%     kc = >0 [-1]  2 (9\pi/4)^1/3 * 4\pi N_e/3\Omega
+
+
+
 \subsection{Three-body Jastrow functions}
 Explicit three body correlations can be included in the wavefunction via the three-body
 jastrow factor.
+

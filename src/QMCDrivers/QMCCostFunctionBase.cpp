@@ -36,8 +36,8 @@ QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunc
   PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(1e6),
   w_en(0.9), w_var(0.1), w_abs(0.0), w_w(0.0), w_beta(0.0), GEVType("mixed"),
   CorrelationFactor(0.0), m_wfPtr(NULL), m_doc_out(NULL), msg_stream(0), debug_stream(0),
-  SmallWeight(0),usebuffer("no"), includeNonlocalH("no"),needGrads(true), vmc_or_dmc(2.0),
-  StoreDerivInfo(true),DerivStorageLevel(-1), targetExcitedStr("no"), targetExcited(false), omega_shift(0.0)
+  SmallWeight(0), includeNonlocalH("no"),needGrads(true), vmc_or_dmc(2.0),
+  targetExcitedStr("no"), targetExcited(false), omega_shift(0.0)
 {
   GEVType="mixed";
   //paramList.resize(10);
@@ -484,8 +484,6 @@ QMCCostFunctionBase::put(xmlNodePtr q)
   m_param.add(writeXmlPerStep,"dumpXML","string");
   m_param.add(MinNumWalkers,"minwalkers","scalar");
   m_param.add(MaxWeight,"maxWeight","scalar");
-  m_param.add(usebuffer,"useBuffer","string");
-  m_param.add(usebuffer,"usebuffer","string");
   m_param.add(includeNonlocalH,"nonlocalpp","string");
   m_param.add(computeNLPPderiv,"use_nonlocalpp_deriv","string");
   m_param.add(w_beta,"beta","double");

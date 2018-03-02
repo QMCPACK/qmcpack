@@ -16,7 +16,6 @@
     
 #include "QMCWaveFunctions/LCOrbitalSet.h"
 #include "ParticleIO/XMLParticleIO.h"
-#include "Utilities/OhmmsInfo.h"
 #include "OhmmsData/Libxml2Doc.h"
 
 
@@ -167,11 +166,17 @@ void LCOrbitalSetWithCorrection<BS,false>::createLCOSets(int centr, LCOrbitalSet
   for(int i=0; i<bss; i++)
   {
     if(rmv[i])
+    {
+      auto &cref(*(Eta->C));
       for(int k=0; k<nOrbs; k++)
-        Eta->C(k,i) = 0.0;
+        cref(k,i)=0.0; //Eta->C(k,i) = 0.0;
+    }
     else
+    {
+      auto &cref(*(Phi->C));
       for(int k=0; k<nOrbs; k++)
-        Phi->C(k,i) = 0.0;
+        cref(k,i)=0.0; //Phi->C(k,i) = 0.0;
+    }
   }
 }
 
@@ -180,8 +185,8 @@ LCOrbitalSet<BS,false>* LCOrbitalSetWithCorrection<BS,false>::clone2LCOrbitalSet
 {
   BS* newBS = (BS*) myBasisSet->makeClone();
   LCOrbitalSet<BS,false>* newSPO = new LCOrbitalSet<BS,false>(newBS,ReportLevel);
+  newSPO->IsCloned=true;
   newSPO->setOrbitalSetSize(OrbitalSetSize);
-  newSPO->TotalOrbitalSize=TotalOrbitalSize;
   newSPO->setIdentity(Identity);
   newSPO->C = C;
   newSPO->Occ.resize(Occ.size());
@@ -350,13 +355,18 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
   mygrid->set(0.000001,100.0,1001);
   dummyLO1 = new LCOrbitalSet<BS,false>(myBasisSet,ReportLevel);
   dummyLO1->setOrbitalSetSize(OrbitalSetSize);
-  dummyLO1->TotalOrbitalSize=TotalOrbitalSize;
   dummyLO1->BasisSetSize = BasisSetSize;
   dummyLO1->setIdentity(Identity);
-  dummyLO1->C = C;
+  (*dummyLO1->C) = *C;
   dummyLO1->Occ.resize(Occ.size());
   dummyLO1->Occ = Occ;
-  dummyLO2 = (LCOrbitalSet<BS,false>*) dummyLO1->makeClone();
+  dummyLO2 = new LCOrbitalSet<BS,false>(myBasisSet,ReportLevel);
+  dummyLO2->setOrbitalSetSize(OrbitalSetSize);
+  dummyLO2->BasisSetSize = BasisSetSize;
+  dummyLO2->setIdentity(Identity);
+  (*dummyLO2->C) = *C;
+  dummyLO2->Occ.resize(Occ.size());
+  dummyLO2->Occ = Occ;
   Matrix<TinyVector<RealType,9> > info;
   info.resize(numCentr,OrbitalSetSize);
   info=0;
@@ -365,7 +375,6 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
     readCuspCoeff = readCuspInfo(info);
   targetPtcl->R[0]=0;
   CuspCorr<BS> myCorr(0.2,500,targetPtcl,sourcePtcl,true);
-  char buff1[10],buff2[10];
   Vector<RealType> rad_orb, xgrid;
   std::vector<bool> rmv;
   rmv.resize(myBasisSet->BasisSetSize);
@@ -381,8 +390,8 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
   for(int i=0; i<numCentr; i++ )
   {
     app_log()<<"Transforming orbitals of center " << i << std::endl;
-    dummyLO1->C = C;
-    dummyLO2->C = C;
+    (*dummyLO1->C) = *C;
+    (*dummyLO2->C) = *C;
     createLCOSets(i,dummyLO1,dummyLO2);
     COT *myCOT = new COT(0,true);  // assuming gaussian package
     myCOT->Grids.resize(1);
@@ -391,7 +400,6 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
     myCOT->NL.resize(OrbitalSetSize);
     myCOT->Rnl.resize(OrbitalSetSize);
     myCOT->RnlID.resize(OrbitalSetSize);
-    std::sprintf(buff1,"%d",i);
     xmlNodePtr ctr = xmlNewNode(NULL,(const xmlChar*)"center");
     std::ostringstream num;
     num <<i;
@@ -399,15 +407,17 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
     for(int k=0; k<OrbitalSetSize; k++ )
     {
       xmlNodePtr orb = xmlNewNode(NULL,(const xmlChar*)"orbital");
+      const std::string fileprefix("newOrbs."+objectName+".C"+std::to_string(i)+".MO"+std::to_string(k));
       std::ostringstream num0,redo,C,sg,rc,a1,a2,a3,a4,a5;
       num0<<k;
       xmlNewProp(orb,(const xmlChar*)"num",(const xmlChar*)num0.str().c_str());
       bool corrO = false;
       if(corrCenter[i])
       {
-        for(int ip=0; ip<dummyLO1->C.cols(); ip++)
+        auto& cref(*(dummyLO1->C));
+        for(int ip=0; ip<cref.cols(); ip++)
         {
-          if(std::abs(dummyLO1->C(k,ip)) > 1e-8)
+          if(std::abs(cref(k,ip)) > 1e-8)
           {
             corrO = true;
             break;
@@ -428,16 +438,14 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
             if(redo > 10)
               // recompute with rc loop
             {
-              std::sprintf(buff2,"%d",k);
-              myCorr.executeWithRCLoop(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,"newOrbs."+objectName+".C"+std::string(buff1)+".MO"+std::string(buff2),Rcut,info(i,k).data());
+              myCorr.executeWithRCLoop(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,fileprefix,Rcut,info(i,k).data());
             }
             else
               if(redo > 1)
                 // no rc loop, read rc from file
               {
                 RealType rc = info(i,k)[3];
-                std::sprintf(buff2,"%d",k);
-                myCorr.execute(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,"newOrbs."+objectName+".C"+std::string(buff1)+".MO"+std::string(buff2),rc,info(i,k).data());
+                myCorr.execute(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,fileprefix,rc,info(i,k).data());
               }
               else
                 // read from file
@@ -447,8 +455,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
         }
         else
         {
-          std::sprintf(buff2,"%d",k);
-          myCorr.executeWithRCLoop(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,"newOrbs."+objectName+".C"+std::string(buff1)+".MO"+std::string(buff2),Rcut,info(i,k).data());
+          myCorr.executeWithRCLoop(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,fileprefix,Rcut,info(i,k).data());
           info(i,k)[0]=0;
         }
       }
@@ -546,7 +553,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
     {
       app_log()<<"removing basis element i: " <<i << std::endl;
       for(int k=0; k<OrbitalSetSize; k++)
-        C(k,i) = 0.0;
+        (*C)(k,i) = 0.0;
     }
   this->checkObject();
   if(!readCuspCoeff)

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import re
 
 def check_next_particle_grad_lap(mm,rel_tot,val_thr=1e-2,header='For particle'):
   """ check if particle gradient and laplacian errors are within tolerance
@@ -36,13 +37,21 @@ Laplacian     = -93.12287222
   idx = mm.find('Gradient')
   mm.seek(idx)
   grad_line = mm.readline()
-  grad_val = map(float,grad_line.split()[-3:])
+  grad_xyz  = grad_line.split('=')[-1]
+  try: # real values
+    grad_val = map(float,grad_xyz.split())
+  except: # complex values
+    xyzl = re.split(r'[(,)]',grad_xyz.strip('\n'))
+    grad_real = map(float,xyzl[1::3])
+    grad_imag = map(float,xyzl[2::3])
+    grad_val  = [grad_real[i] + 1j*grad_imag[i] for i in range(3)]
+  # end try
   idx = mm.find('Relative Error')
   mm.seek(idx)
   grad_line = mm.readline()
   grad_re   = map(float,grad_line.split()[-3:]) # relative error
   if (sum(grad_re)>rel_tot): # check if error is significant
-    if (sum(grad_val)>val_thr): # ignore small absolute errors
+    if (abs(sum(grad_val))>val_thr): # ignore small absolute errors
       success = False
     # end if
   # end if
@@ -50,14 +59,20 @@ Laplacian     = -93.12287222
   # 2. laplacian error
   idx = mm.find('Laplacian')
   mm.seek(idx)
-  lap_val = float(mm.readline().split()[-1])
+  lap_valt= mm.readline().split('=')[-1]
+  try: # real
+    lap_val = float(lap_valt)
+  except: # complex
+    lapl = re.split(r'[(,)]',lap_valt.strip('\n'))
+    lap_val = float(lapl[1]) + 1j*float(lapl[2])
+  # end try
   idx = mm.find('Relative Error')
   mm.seek(idx)
   lap_line = mm.readline()
   tokens   = lap_line.split()
   lap_re   = float(tokens[-1]) # relative error
   if (lap_re>rel_tot):
-    if (lap_val>val_thr):
+    if (abs(lap_val)>val_thr):
       success = False
     # end if
   # end if
@@ -97,7 +112,6 @@ if __name__ == '__main__':
   with open(fname,'r+') as f:
     mm = mmap(f.fileno(),0)
   # end with
-
 
   # 1. grade finite-difference test
   plocs = all_lines_with_tag(mm,'For particle',nline_max=nline_max)

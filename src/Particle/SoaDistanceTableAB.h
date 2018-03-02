@@ -63,7 +63,7 @@ struct SoaDistanceTableAB: public DTD_BConds<T,D,SC>, public DistanceTableData
     memoryPool.resize(Nsources*BlockSize);
     Displacements.resize(Nsources); 
     for(int i=0; i<Nsources; ++i)
-      Displacements[i].resetByRef(Ntargets,Ntargets_padded,memoryPool.data()+i*BlockSize);
+      Displacements[i].attachReference(Ntargets,Ntargets_padded,memoryPool.data()+i*BlockSize);
 
     Temp_r.resize(Nsources);
     Temp_dr.resize(Nsources);
@@ -81,27 +81,24 @@ struct SoaDistanceTableAB: public DTD_BConds<T,D,SC>, public DistanceTableData
 
   inline void evaluate(ParticleSet& P, IndexType jat)
   {
-    activePtcl=jat;
     moveOnSphere(P,P.R[jat],jat);
     update(jat);
   }
 
-  inline void moveOnSphere(const ParticleSet& P, const PosType& rnew, IndexType jat) 
+  inline void moveOnSphere(const ParticleSet& P, const PosType& rnew)
   {
     DTD_BConds<T,D,SC>::computeDistances(rnew, Origin->RSoA, Temp_r.data(),Temp_dr, 0, Nsources);
   }
 
   ///evaluate the temporary pair relations
-  inline void move(const ParticleSet& P, const PosType& rnew, IndexType jat)
+  inline void move(const ParticleSet& P, const PosType& rnew)
   {
-    activePtcl=jat;
     moveOnSphere(P,rnew,jat);
   }
 
   ///update the stripe for jat-th particle
   inline void update(IndexType iat)
   {
-    if(iat!=activePtcl) return;
     CONSTEXPR bool MINUS=true;
     CONSTEXPR bool PLUS=false;
 

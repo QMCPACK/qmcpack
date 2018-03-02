@@ -18,7 +18,7 @@
 #include <OhmmsSoA/VectorSoaContainer.h>
 #include <Utilities/PrimeNumberSet.h>
 #include <random/random.hpp>
-#include <miniapps/graphite.hpp>
+#include <miniapps/input.hpp>
 #include <miniapps/pseudo.hpp>
 #include <Utilities/Timer.h>
 #include <miniapps/common.hpp>
@@ -32,7 +32,6 @@ int main(int argc, char** argv)
 {
 
   OHMMS::Controller->initialize(0, NULL);
-  OhmmsInfo("j2debuglogfile");
   Communicate* mycomm=OHMMS::Controller;
 
   typedef QMCTraits::RealType           RealType;
@@ -80,8 +79,7 @@ int main(int argc, char** argv)
   //turn off output
   if(omp_get_max_threads()>1)
   {
-    OhmmsInfo::Log->turnoff();
-    OhmmsInfo::Warn->turnoff();
+    outputManager.pause();
   }
 
   int nptcl=0;
@@ -100,11 +98,11 @@ int main(int argc, char** argv)
     //create generator within the thread
     RandomGenerator<RealType> random_th(myPrimes[ip]);
 
-    tile_graphite(ions,tmat,scale);
+    tile_cell(ions,tmat,scale);
     ions.RSoA=ions.R; //fill the SoA
 
     const int nions=ions.getTotalNum();
-    const int nels=4*nions;
+    const int nels=count_electrons(ions);
     const int nels3=3*nels;
 
 #pragma omp master

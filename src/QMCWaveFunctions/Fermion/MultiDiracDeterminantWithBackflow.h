@@ -143,25 +143,11 @@ public:
   ///reset the size: with the number of particles and number of orbtials
   virtual void resize(int nel, int morb);
 
-  RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
 
-  void registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf, int storageType=0);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 
-  virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only, long& orbs, long& invs, long& dets)
-  {
-    orbs_only += NumPtcls*NumOrbitals;
-    orbs += NumPtcls*NumOrbitals*5;
-    invs += NumPtcls*NumPtcls;
-    dets += NumDets*(1 + 4*NumPtcls);
-  }
-
-  void copyToDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  void copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
-
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   /** move was accepted, update the real container
    */

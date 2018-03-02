@@ -15,7 +15,6 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Utilities/OhmmsInfo.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "Numerics/OhmmsBlas.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
@@ -123,9 +122,9 @@ TEST_CASE("DiracMatrix_update_row", "[wavefunction][fermion]")
   // new row
   Vector<ValueType> v;
   v.resize(3);
-  v(0) = 1.9;
-  v(1) = 2.0;
-  v(2) = 3.1;
+  v[0] = 1.9;
+  v[1] = 2.0;
+  v[2] = 3.1;
 
   ValueType det_ratio1 = simd::dot(a[0],v.data(),3);
 

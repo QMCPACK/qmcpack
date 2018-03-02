@@ -116,7 +116,7 @@ namespace qmcplusplus {
         psi[ipsi]->L.resize(numPtcls);
         //Need to modify the return value of OrbitalBase::registerData
         if(require_register) {
-	  logpsi[ipsi]=psi[ipsi]->registerData(W,(*it)->DataSet);
+	  psi[ipsi]->registerData(W,(*it)->DataSet);
         } else {
 	  if(DataSetSize)logpsi[ipsi]=psi[ipsi]->updateBuffer(W,(*it)->DataSet);
           else logpsi[ipsi]=psi[ipsi]->evaluateLog(W); 		 
@@ -236,7 +236,7 @@ namespace qmcplusplus {
         psi[ipsi]->L.resize(numPtcls);
         //Need to modify the return value of OrbitalBase::registerData
         if(require_register) {
-	  logpsi[ipsi]=psi[ipsi]->registerData(*WW[ipsi],(*it)->DataSet);
+	  psi[ipsi]->registerData(*WW[ipsi],(*it)->DataSet);
         }else{
 	  if(DataSetSize)logpsi[ipsi]=psi[ipsi]->updateBuffer(*WW[ipsi],(*it)->DataSet);
 	  else logpsi[ipsi]=psi[ipsi]->evaluateLog(*WW[ipsi]); 		 

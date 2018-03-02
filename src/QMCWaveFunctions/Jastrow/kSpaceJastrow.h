@@ -182,13 +182,13 @@ public:
   void acceptMove(ParticleSet& P, int iat);
 
   // Allocate per-walker data in the PooledData buffer
-  RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
   // Walker move has been accepted -- update the buffer
-  RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf,
                         bool fromscratch=false);
   // Pull data from the walker buffer at the beginning of a block of
   // single-particle moves
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   ///process input file
   bool put(xmlNodePtr cur);
@@ -206,7 +206,7 @@ public:
 
   /** evaluate the ratio
   */
-  inline void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
+  inline void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
 private:
   void copyFrom(const kSpaceJastrow& old);

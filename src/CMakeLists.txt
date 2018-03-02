@@ -30,7 +30,7 @@ EXECUTE_PROCESS(
   COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP}
 )
 
-IF (GIT_FOUND AND IS_GIT_PROJECT)
+IF (IS_GIT_PROJECT)
   # The following custom command picks up changes to the git revision information
   # every time the project is rebuilt. Even if the repositiory is updated (git pull)
   # without re-running cmake. It also appends '-dirty' to the commit hash if there are
@@ -55,8 +55,9 @@ IF (GIT_FOUND AND IS_GIT_PROJECT)
     COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_COMMIT_LAST_CHANGED_RAW " >> ${GITREV_TMP}
     COMMAND ${GIT_EXECUTABLE} log -1 --format=%ad >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo >> ${GITREV_TMP}
-    COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_COMMIT_SUBJECT_RAW " >> ${GITREV_TMP}
-    COMMAND ${GIT_EXECUTABLE} log -1 --format="%s" >> ${GITREV_TMP}
+    COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_COMMIT_SUBJECT_RAW \"" >> ${GITREV_TMP}
+    COMMAND ${GIT_EXECUTABLE} log -1 --format=%s | sed -E "s/\"/\\\\\"/g" | tr -d '\\n' >> ${GITREV_TMP}
+    COMMAND ${CMAKE_COMMAND} -E echo_append "\"" >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${GITREV_TMP} ${GITREV_FILE}
     COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP}
@@ -93,14 +94,6 @@ IF (GIT_FOUND AND IS_GIT_PROJECT)
   )
   MESSAGE("Git branch: ${GIT_CONFIG_BRANCH}")
   MESSAGE("Git commit hash: ${GIT_CONFIG_COMMIT_HASH}")
-ELSE()
-  # Output a blank git version file
-  EXECUTE_PROCESS(
-    COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_FILE}
-    COMMAND ${CMAKE_COMMAND} -E touch ${GITREV_FILE}
-    COMMAND ${CMAKE_COMMAND} -E remove ${GITREV_TMP}
-    COMMAND ${CMAKE_COMMAND} -E touch ${GITREV_TMP}
-  )
 ENDIF()
 
 
@@ -129,8 +122,8 @@ ENDIF(HAVE_OOMPI)
     Utilities/OhmmsObject.cpp 
     Utilities/SpeciesSet.cpp 
     Utilities/SimpleParser.cpp 
-    Utilities/OhmmsInform.cpp 
-    Utilities/OhmmsInfo.cpp 
+    Utilities/InfoStream.cpp
+    Utilities/OutputManager.cpp
     Utilities/NewTimer.cpp
     Utilities/RunTimeManager.cpp
     Utilities/ProgressReportEngine.cpp
@@ -148,8 +141,10 @@ ENDIF(HAVE_OOMPI)
     spline2/einspline_allocator.c
     spline2/bspline_allocator.cpp
     spline2/MultiBspline.cpp
-    ${GITREV_TMP}
     )
+IF (IS_GIT_PROJECT)
+  SET(UTILITIES "${UTILITIES};${GITREV_TMP}")
+ENDIF()
 
   IF(QMC_ADIOS)
     SET(UTILITIES ${UTILITIES}
@@ -206,6 +201,7 @@ ENDIF(HAVE_OOMPI)
   ####################################
   SET(PARTICLE ${PARTICLE}
     Particle/ParticleSet.cpp 
+    Particle/VirtualParticleSet.cpp
     Particle/ParticleSet.BC.cpp 
     Particle/MCWalkerConfiguration.cpp 
     Particle/DistanceTableAA.cpp

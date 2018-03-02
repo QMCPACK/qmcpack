@@ -31,6 +31,7 @@ SPOSetBase* PWOrbitalSet::makeClone() const
 {
   PWOrbitalSet *myclone=new PWOrbitalSet(*this);
   myclone->myBasisSet = new PWBasis(*myBasisSet);
+  myclone->IsCloned=true;
   return myclone;
 }
 
@@ -56,9 +57,9 @@ void PWOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup)
   OrbitalSetSize=nbands;
   OwnBasisSet=cleanup;
   BasisSetSize=myBasisSet->NumPlaneWaves;
-  C.resize(OrbitalSetSize,BasisSetSize);
+  //C.resize(OrbitalSetSize,BasisSetSize);
+  setIdentity(false);
   Temp.resize(OrbitalSetSize,PW_MAXINDEX);
-  t_logpsi.resize(OrbitalSetSize, OrbitalSetSize);
   app_log() << "  PWOrbitalSet::resize OrbitalSetSize =" << OrbitalSetSize << " BasisSetSize = " << BasisSetSize << std::endl;
 }
 
@@ -75,7 +76,7 @@ void PWOrbitalSet::addVector(const std::vector<ComplexType>& coefs,int jorb)
   for(int ig=0; ig<ng; ig++)
   {
     if(inputmap[ig]>-1)
-      C[jorb][inputmap[ig]]=coefs[ig];
+      (*C)[jorb][inputmap[ig]]=coefs[ig];
   }
 }
 
@@ -92,7 +93,7 @@ void PWOrbitalSet::addVector(const std::vector<RealType>& coefs,int jorb)
   for(int ig=0; ig<ng; ig++)
   {
     if(inputmap[ig]>-1)
-      C[jorb][inputmap[ig]]=coefs[ig];
+      (*C)[jorb][inputmap[ig]]=coefs[ig];
   }
 }
 
@@ -102,8 +103,8 @@ PWOrbitalSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   //Evaluate every orbital for particle iat.
   //Evaluate the basis-set at these coordinates:
   //myBasisSet->evaluate(P,iat);
-  myBasisSet->evaluate(P.R[iat]);
-  MatrixOperators::product(C,myBasisSet->Zv,&psi[0]);
+  myBasisSet->evaluate(P.activeR(iat));
+  MatrixOperators::product(*C,myBasisSet->Zv,&psi[0]);
 }
 
 void
@@ -112,7 +113,7 @@ PWOrbitalSet::evaluate(const ParticleSet& P, int iat,
 {
   //Evaluate the orbitals and derivatives for particle iat only.
   myBasisSet->evaluateAll(P,iat);
-  MatrixOperators::product(C,myBasisSet->Z,Temp);
+  MatrixOperators::product(*C,myBasisSet->Z,Temp);
   const ValueType* restrict tptr=Temp.data();
   for(int j=0; j< OrbitalSetSize; j++, tptr+=PW_MAXINDEX)
   {
@@ -129,7 +130,7 @@ PWOrbitalSet::evaluate_notranspose(const ParticleSet& P, int first, int last,
   for(int iat=first,i=0; iat<last; iat++,i++)
   {
     myBasisSet->evaluateAll(P,iat);
-    MatrixOperators::product(C,myBasisSet->Z,Temp);
+    MatrixOperators::product(*C,myBasisSet->Z,Temp);
     const ValueType* restrict tptr=Temp.data();
     for(int j=0; j< OrbitalSetSize; j++,tptr+=PW_MAXINDEX)
     {

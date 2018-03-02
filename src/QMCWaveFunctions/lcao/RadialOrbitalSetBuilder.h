@@ -18,12 +18,7 @@
 
 #include "Configuration.h"
 #include "OhmmsData/HDFAttribIO.h"
-#include "Numerics/OneDimCubicSpline.h"
-#include "Numerics/OneDimQuinticSpline.h"
-#include "Numerics/OptimizableFunctorBase.h"
-#include "QMCWaveFunctions/SphericalBasisSet.h"
 #include <HDFVersion.h>
-#include "Utilities/OhmmsInfo.h"
 #include "OhmmsData/HDFStringAttrib.h"
 #include "Numerics/LibxmlNumericIO.h"
 #include "Numerics/HDFNumericAttrib.h"
@@ -31,10 +26,75 @@
 #include "Numerics/SlaterBasisSet.h"
 #include "Numerics/Transform2GridFunctor.h"
 #include "Numerics/OneDimCubicSpline.h"
+#include "Numerics/OneDimQuinticSpline.h"
+#include "Numerics/OptimizableFunctorBase.h"
 #include "QMCFactory/OneDimGridFactory.h"
 
 namespace qmcplusplus
 {
+
+  /** compute the safe cutoff radius of a radial functor
+   */
+  /** temporary function to compute the cutoff without constructing NGFunctor */
+  template<typename Fin, typename T>
+    inline double find_cutoff(Fin& in, T rmax)
+    {
+      LogGridLight<double> agrid;
+      agrid.set(1.e-6,100.,1001);
+      const double eps=1e-6;
+      bool too_small=true;
+      agrid.set(eps,rmax,1001);
+      int i=1000;
+      T r=rmax;
+      while(too_small && i>0)
+      {
+        r=agrid(i--);
+        T x=in.f(r);
+        too_small=(std::abs(x)<eps);
+      }
+      return static_cast<double>(r);
+    }
+
+  /** abstract class to defer generation of spline functors
+   * @tparam T precision of the final result
+  */
+  template<typename T>
+    struct TransformerBase
+    {
+      ///temporary grid in double precision
+      typedef OneDimGridBase<double> grid_type;
+      ///the multiple set 
+      typedef MultiQuinticSpline1D<T> FnOut;
+      /** convert input 1D functor to the multi set
+       * @param agrid  original grid
+       * @param multiset the object that should be populated
+       * @param ispline index of the this analytic function
+       * @param int order quintic (or cubic) only quintic is used
+       */
+      virtual void convert(grid_type* agrid, FnOut* multiset, int ispline, int order)=0;
+      virtual ~TransformerBase(){}
+    };
+
+  template<typename T, typename FnIn>
+    struct A2NTransformer: TransformerBase<T>
+  {
+    typedef typename TransformerBase<T>::grid_type grid_type;
+    typedef typename TransformerBase<T>::FnOut FnOut;
+
+    FnIn* m_ref; //candidate for unique_ptr
+    A2NTransformer(FnIn* in): m_ref(in){}
+    ~A2NTransformer() { delete m_ref; }
+
+    void convert(grid_type* agrid, FnOut* multiset, int ispline, int order)
+    {
+      typedef OneDimQuinticSpline<double> spline_type;
+      spline_type radorb(agrid);
+      Transform2GridFunctor<FnIn,spline_type> transform(*m_ref,radorb);
+      transform.generate(agrid->rmin(),agrid->rmax(),agrid->size());
+      multiset->add_spline(ispline,radorb);
+    }
+  };
+
 
 /** Build a set of radial orbitals at the origin
  *
@@ -43,11 +103,14 @@ namespace qmcplusplus
  *   - any number of radial orbitals
  */
 template<typename COT>
-class RadialOrbitalSetBuilder: public QMCTraits
+class RadialOrbitalSetBuilder //: public QMCTraits
 {
 
 public:
+  typedef QMCTraits::RealType RealType;
   typedef typename COT::RadialOrbital_t RadialOrbitalType;
+  typedef typename COT::grid_type  GridType;
+
 
   ///true, if the RadialOrbitalType is normalized
   bool Normalized;
@@ -59,14 +122,12 @@ public:
   RealType m_rcut;
   ///the quantum number of this node
   QuantumNumberType m_nlms;
-  ///the species
-  std::string m_species;
   ///type of input function
   std::string m_infunctype;
 
   ///constructor
   RadialOrbitalSetBuilder(xmlNodePtr cur=NULL);
-  ///destructor
+  ///destructor: cleanup gtoTemp, stoTemp
   ~RadialOrbitalSetBuilder();
 
   ///assign a CenteredOrbitalType to work on
@@ -74,23 +135,44 @@ public:
 
   ///add a grid
   bool addGrid(xmlNodePtr cur);
+  bool addGridH5(hdf_archive &hin);
 
   /** add a radial functor
    * @param cur xml element
    * @param nlms quantum number
    */
   bool addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms);
+  bool addRadialOrbitalH5(hdf_archive &hin, const QuantumNumberType& nlms);
 
   /** put common element
    * @param cur xml element
    */
   bool putCommon(xmlNodePtr cur);
 
+  /** This is when the radial orbitals are actually created */
+  void finalize();
+
 private:
+  //only check the cutoff
   void addGaussian(xmlNodePtr cur);
+  void addGaussianH5(hdf_archive &hin);
   void addSlater(xmlNodePtr cur);
   void addNumerical(xmlNodePtr cur, const std::string& dsname);
+
   hid_t m_fileid;
+
+  ///safe common cutoff radius
+  double m_rcut_safe;
+
+  /** radial functors to be finalized
+   */
+  std::vector<TransformerBase<RealType>*> radTemp;
+  //std::vector<std::pair<int,OptimizableFunctorBase*> > radFuncTemp;
+  ///store the temporary analytic data 
+  std::vector<GaussianCombo<RealType>*> gtoTemp;
+  std::vector<SlaterCombo<RealType>*> stoTemp;
+
+  std::tuple<int,double,double> grid_param_in;
 };
 
   template<typename COT>
@@ -148,7 +230,6 @@ private:
     RadialOrbitalSetBuilder<COT>::setOrbitalSet(COT* oset, const std::string& acenter)
     {
       m_orbitals = oset;
-      m_species = acenter;
     }
 
   template<typename COT>
@@ -164,6 +245,7 @@ private:
         GridType *agrid = OneDimGridFactory::createGrid(cur);
         m_orbitals->Grids.push_back(agrid);
       }
+#if !defined(ENABLE_SOA)
       else
       {
         app_log() << "   Grid is created by the input paremters in h5" << std::endl;
@@ -212,6 +294,76 @@ private:
         //}
         //using 0.01 for the time being
       }
+#endif
+
+      //set zero to use std::max
+      m_rcut_safe=0;
+
+      return true;
+    }
+
+  template<typename COT>
+    bool
+    RadialOrbitalSetBuilder<COT>::addGridH5(hdf_archive &hin)
+    {
+      if(!m_orbitals)
+      {
+        APP_ABORT("NGOBuilder::addGrid SphericalOrbitals<ROT,GT>*, is not initialized");
+      }
+
+      app_log() << "   Grid is created by the input paremters in h5" << std::endl;
+
+      std::string gridtype;
+      if(hin.myComm->rank()==0)
+      {
+        if(!hin.read(gridtype, "grid_type"))
+        {
+          std::cerr<<"Could not read grid_type in H5; Probably Corrupt H5 file"<<std::endl;
+          exit(0);
+        }
+      }
+      hin.myComm->bcast(gridtype);
+  
+      int npts=0;
+      RealType ri=0.0,rf=10.0,rmax_safe=10;
+      if(hin.myComm->rank()==0)
+      {
+        double tt=0;
+        hin.read(tt,"grid_ri");
+        ri=tt;
+        hin.read(tt,"grid_rf");
+        rf=tt;
+        hin.read(tt,"rmax_safe");
+        rmax_safe=tt;
+        hin.read(npts,"grid_npts");
+      }
+      hin.myComm->bcast(ri);
+      hin.myComm->bcast(rf);
+      hin.myComm->bcast(rmax_safe);
+      hin.myComm->bcast(npts);
+  
+      if(gridtype.empty())
+      {
+        APP_ABORT("Grid type is not specified.");
+      }
+      if(gridtype == "log")
+      {
+        app_log() << "    Using log grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
+        input_grid = new LogGrid<RealType>;
+        input_grid->set(ri,rf,npts);
+        m_orbitals->Grids.push_back(input_grid);
+        input_grid=0;
+      }
+      else if(gridtype == "linear")
+      {
+        app_log() << "    Using linear grid ri = " << ri << " rf = " << rf << " npts = " << npts << std::endl;
+        input_grid = new LinearGrid<RealType>;
+        input_grid->set(ri,rf,npts);
+        m_orbitals->Grids.push_back(input_grid);
+        input_grid=0;
+      }
+      //set zero to use std::max
+      m_rcut_safe=0;
       return true;
     }
 
@@ -220,11 +372,6 @@ private:
    * \param nlms a vector containing the quantum numbers \f$(n,l,m,s)\f$
    * \return true is succeeds
    *
-   This function puts the STO on a logarithmic grid and calculates the boundary
-   conditions for the 1D Cubic Spline.  The derivates at the endpoint
-   are assumed to be all zero.  Note: for the radial orbital we use
-   \f[ f(r) = \frac{R(r)}{r^l}, \f] where \f$ R(r) \f$ is the usual
-   radial orbital and \f$ l \f$ is the angular momentum.
    */
   template<typename COT>
     bool
@@ -246,7 +393,7 @@ private:
       //if(tptr) radtype = (const char*)tptr;
       //tptr = xmlGetProp(cur,(const xmlChar*)"rmax");
       //if(tptr) m_rcut = atof((const char*)tptr);
-      int lastRnl = m_orbitals->Rnl.size();
+      int lastRnl = m_orbitals->RnlID.size();
       m_nlms = nlms;
       if(radtype == "Gaussian" || radtype == "GTO")
       {
@@ -260,50 +407,123 @@ private:
       {
         addNumerical(cur,dsname);
       }
-      if(lastRnl && m_orbitals->Rnl.size()> lastRnl)
-      {
-        app_log() << "\tSetting GridManager of " << lastRnl << " radial orbital to false" << std::endl;
-        m_orbitals->Rnl[lastRnl]->setGridManager(false);
-      }
       return true;
     }
 
   template<typename COT>
-  void RadialOrbitalSetBuilder::addGaussian(xmlNodePtr cur)
+    bool
+    RadialOrbitalSetBuilder<COT>::addRadialOrbitalH5(hdf_archive &hin, const QuantumNumberType& nlms)
+    {
+      if(!m_orbitals)
+      {
+        ERRORMSG("m_orbitals, SphericalOrbitals<ROT,GT>*, is not initialized")
+          return false;
+      }
+      std::string radtype(m_infunctype);
+      std::string dsname("0");
+      OhmmsAttributeSet aAttrib;
+
+      int lastRnl = m_orbitals->RnlID.size();
+      m_nlms = nlms;
+      if(radtype == "Gaussian" || radtype == "GTO")
+      {
+        addGaussianH5(hin);
+      }
+      else if(radtype == "Slater" || radtype == "STO")
+      {
+        // addSlaterH5(hin);
+        APP_ABORT(" RadType: Slater. Any type other than Gaussian not implemented in H5 format. Please contact developers.");
+      }
+      else
+      {
+        //addNumericalH5(hin,dsname);
+        APP_ABORT(" RadType: Numerical. Any type other than Gaussian not implemented in H5 format. Please contact developers.");
+      }
+      return true;
+    }
+
+
+  template<typename COT>
+  void RadialOrbitalSetBuilder<COT>::addGaussian(xmlNodePtr cur)
   {
     int L= m_nlms[1];
-    GaussianCombo<RealType> gset(L,Normalized);
-    gset.putBasisGroup(cur);
-    GridType* agrid = m_orbitals->Grids[0];
-    RadialOrbitalType *radorb = new RadialOrbitalType(agrid);
-    if(m_rcut<0)
-      m_rcut = agrid->rmax();
-    Transform2GridFunctor<GaussianCombo<RealType>,RadialOrbitalType> transform(gset, *radorb);
-    transform.generate(agrid->rmin(),m_rcut,agrid->size());
-    m_orbitals->Rnl.push_back(radorb);
+    using gto_type=GaussianCombo<double>;
+    gto_type* gset=new gto_type(L,Normalized);
+    gset->putBasisGroup(cur);
+
+    double r0=find_cutoff(*gset,100.);
+    m_rcut_safe=std::max(m_rcut_safe,r0);
+    radTemp.push_back(new A2NTransformer<RealType,gto_type>(gset));
+    m_orbitals->RnlID.push_back(m_nlms);
+  }
+
+
+  template<typename COT>
+  void RadialOrbitalSetBuilder<COT>::addGaussianH5(hdf_archive &hin)
+  {
+    int L= m_nlms[1];
+    using gto_type=GaussianCombo<double>;
+    gto_type* gset=new gto_type(L,Normalized);
+    gset->putBasisGroupH5(hin);
+
+    double r0=find_cutoff(*gset,100.);
+    m_rcut_safe=std::max(m_rcut_safe,r0);
+    radTemp.push_back(new A2NTransformer<RealType,gto_type>(gset));
+    m_orbitals->RnlID.push_back(m_nlms);
+  }
+
+
+/* Finalize this set using the common grid
+ *
+ * This function puts the STO on a logarithmic grid and calculates the boundary
+ * conditions for the 1D Cubic Spline.  The derivates at the endpoint
+ * are assumed to be all zero.  Note: for the radial orbital we use
+ * \f[ f(r) = \frac{R(r)}{r^l}, \f] where \f$ R(r) \f$ is the usual
+ * radial orbital and \f$ l \f$ is the angular momentum.
+ */
+  template<typename COT>
+  void RadialOrbitalSetBuilder<COT>::finalize()
+  {
+    MultiQuinticSpline1D<RealType>* multiset=new MultiQuinticSpline1D<RealType>;
+    int norbs=radTemp.size();
+
+    OneDimGridBase<double>* grid_prec;
+    m_rcut_safe=100.;  //this can be estimated
+    //if(agrid->GridTag == LOG_1DGRID)
+    {
+      grid_prec=new LogGrid<double>;
+      grid_prec->set(1.e-6,m_rcut_safe,1001);
+    }
+    multiset->initialize(grid_prec,norbs);
+    
+    for(int ib=0; ib<norbs; ++ib)
+      radTemp[ib]->convert(grid_prec,multiset,ib,5);
+
+    m_orbitals->MultiRnl=multiset;
+
+    //app_log() << "  Setting cutoff radius " << m_rcut_safe << std::endl << std::endl;
+    m_orbitals->setRmax(static_cast<RealType>(m_rcut_safe));
+
+    delete grid_prec;
+  }
+
+  template<typename COT>
+  void RadialOrbitalSetBuilder<COT>::addSlater(xmlNodePtr cur)
+  {
+    using sto_type=SlaterCombo<double>;
+    sto_type* gset=new sto_type(m_nlms[1],Normalized);
+
+    gset->putBasisGroup(cur);
+
+    radTemp.push_back(new A2NTransformer<RealType,sto_type>(gset));
     m_orbitals->RnlID.push_back(m_nlms);
   }
 
   template<typename COT>
-  void RadialOrbitalSetBuilder::addSlater(xmlNodePtr cur)
+  void RadialOrbitalSetBuilder<COT>::addNumerical(xmlNodePtr cur, const std::string& dsname)
   {
-    ////pointer to the grid
-    GridType* agrid = m_orbitals->Grids[0];
-    RadialOrbitalType *radorb = new RadialOrbitalType(agrid);
-    SlaterCombo<RealType> sto(m_nlms[1],Normalized);
-    sto.putBasisGroup(cur);
-    //spline the slater type orbital
-    Transform2GridFunctor<SlaterCombo<RealType>,RadialOrbitalType> transform(sto, *radorb);
-    transform.generate(agrid->rmin(), agrid->rmax(),agrid->size());
-    //transform.generate(agrid->rmax());
-    //add the radial orbital to the list
-    m_orbitals->Rnl.push_back(radorb);
-    m_orbitals->RnlID.push_back(m_nlms);
-  }
-
-  template<typename COT>
-  void RadialOrbitalSetBuilder::addNumerical(xmlNodePtr cur, const std::string& dsname)
-  {
+    APP_ABORT("RadialOrbitalSetBuilder<COT>::addNumerical is not working with multiquintic");
+#if 0
     int imin = 0;
     OhmmsAttributeSet aAttrib;
     aAttrib.add(imin,"imin");
@@ -362,6 +582,7 @@ private:
     //}
     //cout << " Power " << rinv_p << " size=" << rad_orb.size() << std::endl;
     //APP_ABORT("NGOBuilder::addNumerical");
+#endif
   }
 }
 #endif

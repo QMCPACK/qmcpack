@@ -329,12 +329,12 @@ public:
     int numCenters=corrBasisSet->NumCenters;
     for(int j=0 ; j<OrbitalSetSize; j++)
     {
-      psi[j] = simd::dot(C[j],myBasisSet->Phi.data(),BasisSetSize);
+      psi[j] = simd::dot((*C)[j],myBasisSet->Phi.data(),BasisSetSize);
       for(int k=0 ; k<numCenters; k++)
         psi[j] += corrBasisSet->Phi[k*OrbitalSetSize+j];
     }
     //overhead of blas::gemv is big
-    //MatrixOperators::product(C,myBasisSet->Phi,psi.data());
+    //MatrixOperators::product(*C,myBasisSet->Phi,psi.data());
     //overhead of blas::dot is too big, better to use the inline function
     //for((int j=0 ; j<OrbitalSetSize; j++)
     //  psi[j] = BLAS::dot(BasisSetSize,C[j],myBasisSet->Phi.data());
@@ -360,7 +360,7 @@ public:
         Temp[4][i]=myBasisSet->dPhi[i][2];
       }
 
-      MatrixOperators::product_ABt(Temp,C,Tempv);
+      MatrixOperators::product_ABt(Temp,*C,Tempv);
 
       // Tempv stores SOA SPOset
       simd::copy(psi.data(), Tempv.data(), OrbitalSetSize);
@@ -387,7 +387,7 @@ public:
     {
       // legacy algorithm
       //optimal on tungsten
-      const ValueType* restrict cptr=C.data();
+      const ValueType* restrict cptr=C->data();
       const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
       const typename BS::ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
       const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
@@ -434,7 +434,7 @@ public:
     myBasisSet->evaluateForPtclMoveWithHessian(P,iat);
     corrBasisSet->evaluateForPtclMoveWithHessian(P,iat);
     //optimal on tungsten
-    const ValueType* restrict cptr=C.data();
+    const ValueType* restrict cptr=C->data();
     int numCenters=corrBasisSet->NumCenters;
     const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
     const typename BS::HessType* restrict d2ptr=myBasisSet->grad_grad_Phi.data();
@@ -475,7 +475,7 @@ public:
 //#pragma ivdep
 //      for(int i=0, iat=first; iat<last; i++,iat++){
 //        myBasisSet->evaluateForWalkerMove(P,iat);
-//        const ValueType* restrict cptr=C.data();
+//        const ValueType* restrict cptr=C->data();
 //        const typename BS::ValueType* restrict pptr=myBasisSet->Phi.data();
 //        const typename BS::ValueType* restrict d2ptr=myBasisSet->d2Phi.data();
 //        const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
@@ -495,7 +495,7 @@ public:
   void evaluate_notranspose(const ParticleSet& P, int first, int last,
                             ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
   {
-    const ValueType* restrict cptr=C.data();
+    const ValueType* restrict cptr=C->data();
     int numCenters=corrBasisSet->NumCenters;
     for(int i=0,ij=0, iat=first; iat<last; i++,iat++)
     {
@@ -515,7 +515,7 @@ public:
           Temp[4][k]=myBasisSet->dPhi[k][2];
         }
 
-        MatrixOperators::product_ABt(Temp,C,Tempv);
+        MatrixOperators::product_ABt(Temp,*C,Tempv);
 
         // Tempv stores SOA SPOset
         simd::copy(logdet[i], Tempv.data(), OrbitalSetSize);
@@ -541,8 +541,8 @@ public:
       else
       {
         // legacy algorithm
-        MatrixOperators::product(C,myBasisSet->Phi,logdet[i]);
-        MatrixOperators::product(C,myBasisSet->d2Phi,d2logdet[i]);
+        MatrixOperators::product(*C,myBasisSet->Phi,logdet[i]);
+        MatrixOperators::product(*C,myBasisSet->d2Phi,d2logdet[i]);
         const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
         for(int j=0,jk=0; j<OrbitalSetSize; j++)
         {
@@ -574,14 +574,14 @@ public:
   void evaluate_notranspose(const ParticleSet& P, int first, int last
                             , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
   {
-    const ValueType* restrict cptr=C.data();
+    const ValueType* restrict cptr=C->data();
     int numCenters=corrBasisSet->NumCenters;
 #pragma ivdep
     for(int i=0,ij=0, iat=first; iat<last; i++,iat++)
     {
       myBasisSet->evaluateWithHessian(P,iat);
       corrBasisSet->evaluateWithHessian(P,iat);
-      MatrixOperators::product(C,myBasisSet->Phi,logdet[i]);
+      MatrixOperators::product(*C,myBasisSet->Phi,logdet[i]);
       const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
       const typename BS::HessType* restrict d2ptr=myBasisSet->grad_grad_Phi.data();
       for(int j=0,jk=0; j<OrbitalSetSize; j++)
@@ -609,14 +609,14 @@ public:
   void evaluate_notranspose(const ParticleSet& P, int first, int last
                             , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
   {
-    const ValueType* restrict cptr=C.data();
+    const ValueType* restrict cptr=C->data();
     int numCenters=corrBasisSet->NumCenters;
 #pragma ivdep
     for(int i=0,ij=0, iat=first; iat<last; i++,iat++)
     {
       myBasisSet->evaluateWithThirdDeriv(P,iat);
       corrBasisSet->evaluateWithThirdDeriv(P,iat);
-      MatrixOperators::product(C,myBasisSet->Phi,logdet[i]);
+      MatrixOperators::product(*C,myBasisSet->Phi,logdet[i]);
       const typename BS::GradType* restrict dptr=myBasisSet->dPhi.data();
       const typename BS::HessType* restrict d2ptr=myBasisSet->grad_grad_Phi.data();
       const typename BS::GGGType* restrict gggptr=myBasisSet->grad_grad_grad_Phi.data();
@@ -653,7 +653,7 @@ public:
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last
                           , GGGMatrix_t& grad_grad_grad_logdet)
   {
-    const ValueType* restrict cptr=C.data();
+    const ValueType* restrict cptr=C->data();
     int numCenters=corrBasisSet->NumCenters;
 #pragma ivdep
     for(int i=0,ij=0, iat=first; iat<last; i++,iat++)

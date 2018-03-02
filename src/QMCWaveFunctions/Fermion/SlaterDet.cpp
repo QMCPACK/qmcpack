@@ -19,7 +19,6 @@
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
 #include "Message/Communicate.h"
-#include "Utilities/OhmmsInfo.h"
 
 namespace qmcplusplus
 {
@@ -28,14 +27,12 @@ SlaterDet::SlaterDet(ParticleSet& targetPtcl)
 {
   Optimizable = false;
   OrbitalName = "SlaterDet";
-  M.resize(targetPtcl.groups() + 1, 0);
-  for (int i = 0; i < M.size(); ++i)
-    M[i] = targetPtcl.first(i);
-  DetID.resize(targetPtcl.getTotalNum());
-  for (int i = 0; i < targetPtcl.groups(); ++i)
-    for (int j = targetPtcl.first(i); j < targetPtcl.last(i); ++j)
-      DetID[j] = i;
-  Dets.resize(targetPtcl.groups(), 0);
+
+  Last.resize(targetPtcl.groups());
+  for (int i = 0; i < Last.size(); ++i)
+    Last[i] = targetPtcl.last(i)-1;
+
+  Dets.resize(targetPtcl.groups(), nullptr);
 }
 
 ///destructor
@@ -62,17 +59,13 @@ void SlaterDet::add(SPOSetBase* sposet, const std::string& aname)
 ///add a new DiracDeterminant to the list of determinants
 void SlaterDet::add(Determinant_t* det, int ispin)
 {
-  if (Dets[ispin])
+  if (Dets[ispin]!=nullptr)
   {
     APP_ABORT("SlaterDet::add(Determinant_t* det, int ispin) is alreaded instantiated.");
   }
   else
     Dets[ispin] = det;
   Optimizable = Optimizable || det->Optimizable;
-  //int last=Dets.size();
-  //Dets.push_back(det);
-  //M[last+1]=M[last]+Dets[last]->rows();
-  //DetID.insert(DetID.end(),det->rows(),last);
 }
 
 void SlaterDet::checkInVariables(opt_variables_type& active)
@@ -124,10 +117,10 @@ void SlaterDet::resetTargetParticleSet(ParticleSet& P)
     Dets[i]->resetTargetParticleSet(P);
 }
 
-void SlaterDet::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   for (int i = 0; i < Dets.size(); ++i)
-    Dets[i]->get_ratios(P, ratios);
+    Dets[i]->evaluateRatiosAlltoOne(P, ratios);
 }
 
 SlaterDet::ValueType SlaterDet::evaluate(ParticleSet& P,
@@ -161,41 +154,6 @@ void SlaterDet::recompute(ParticleSet& P)
     Dets[i]->recompute(P);
 }
 
-void SlaterDet::registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType)
-{
-  for (int i = 0; i < Dets.size(); ++i)
-    Dets[i]->registerDataForDerivatives(P,buf,storageType);
-}
-
-SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,
-    ParticleSet::ParticleGradient_t& G,
-    ParticleSet::ParticleLaplacian_t& L,
-    PooledData<RealType>& buf,
-    bool fillBuffer )
-{
-  LogValue = 0.0;
-  PhaseValue = 0.0;
-  if(fillBuffer)
-  {
-    for (int i = 0; i < Dets.size(); ++i)
-    {
-      LogValue +=Dets[i]->evaluateLogForDerivativeBuffer(P, buf);
-      Dets[i]->copyToDerivativeBuffer(P, buf);
-      PhaseValue += Dets[i]->PhaseValue;
-    }
-  }
-  else
-  {
-    for (int i = 0; i < Dets.size(); ++i)
-    {
-      Dets[i]->copyFromDerivativeBuffer(P,buf);
-      LogValue += Dets[i]->evaluateLogFromDerivativeBuffer(P, buf);
-      PhaseValue += Dets[i]->PhaseValue;
-    }
-  }
-  return LogValue;
-}
-
 void SlaterDet::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad_psi)
 {
 	grad_grad_psi.resize(P.getTotalNum());
@@ -214,23 +172,12 @@ void SlaterDet::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad_psi)
 	
 }
 
-SlaterDet::RealType SlaterDet::registerData(ParticleSet& P,
-    PooledData<RealType>& buf)
+void SlaterDet::registerData(ParticleSet& P, WFBufferType& buf)
 {
   DEBUG_PSIBUFFER(" SlaterDet::registerData ",buf.current());
-  //ValueType psi = 1.0;
-  //for(int i=0; i<Dets.size(); i++)
-  //  psi *= Dets[i]->registerData(P,buf);
-  //return LogValue = evaluateLogAndPhase(psi,PhaseValue);
-  LogValue = 0.0;
-  PhaseValue = 0.0;
   for (int i = 0; i < Dets.size(); ++i)
-  {
-    LogValue += Dets[i]->registerData(P, buf);
-    PhaseValue += Dets[i]->PhaseValue;
-  }
+    Dets[i]->registerData(P, buf);
   DEBUG_PSIBUFFER(" SlaterDet::registerData ",buf.current());
-  return LogValue;
 }
 
 void SlaterDet::updateAfterSweep(ParticleSet& P,
@@ -243,8 +190,7 @@ void SlaterDet::updateAfterSweep(ParticleSet& P,
   }
 }
 
-SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P,
-    PooledData<RealType>& buf, bool fromscratch)
+SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   DEBUG_PSIBUFFER(" SlaterDet::updateBuffer ",buf.current());
   //ValueType psi = 1.0;
@@ -261,7 +207,7 @@ SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P,
   return LogValue;
 }
 
-void SlaterDet::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void SlaterDet::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   DEBUG_PSIBUFFER(" SlaterDet::copyFromBuffer ",buf.current());
   for (int i = 0; i < Dets.size(); i++)

@@ -42,13 +42,6 @@ QMCCostFunctionCUDA::~QMCCostFunctionCUDA()
   delete_iter(HDerivRecords.begin(),HDerivRecords.end());
 }
 
-void QMCCostFunctionCUDA::resetWalkers()
-{
-  if(W.getActiveWalkers()>nVMCWalkers) 
-    W.destroyWalkers(W.getActiveWalkers()-nVMCWalkers);
-  nVMCWalkers=0;
-}
-
 
 /**  Perform the correlated sampling algorthim.
  */
@@ -198,13 +191,9 @@ QMCCostFunctionCUDA::getConfigurations(const std::string& aroot)
     H_KE.addObservables(W);
   }
 
-  nVMCWalkers=W.getActiveWalkers();
-
-  OhmmsInfo::Log->turnoff();
-  OhmmsInfo::Warn->turnoff();
+  outputManager.pause();
   W.loadEnsemble();
-  OhmmsInfo::Log->reset();
-  OhmmsInfo::Warn->reset();
+  outputManager.resume();
   app_log() << "    number of walkers after load: "
             << W.getActiveWalkers() << std::endl;
   if(dLogPsi.size() != W.getActiveWalkers())

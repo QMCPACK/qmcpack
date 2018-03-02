@@ -101,11 +101,11 @@ public:
   ///reset the size: with the number of particles and number of orbtials
   void resize(int nel, int morb);
 
-  RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
 
-  RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   /** return the ratio only for the  iat-th partcle move
    * @param P current configuration
@@ -113,7 +113,7 @@ public:
    */
   ValueType ratio(ParticleSet& P, int iat);
 
-  void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
   ValueType alternateRatio(ParticleSet& P)
   {
@@ -142,10 +142,6 @@ public:
   /** move was rejected. copy the real container to the temporary to move on
    */
   void restore(int iat);
-
-  RealType evaluateLogForDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  RealType evaluateLogFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
 
   RealType
   evaluateLog(ParticleSet& P,
@@ -204,7 +200,6 @@ public:
   ValueType *LastAddressOfGGG;
   ValueType *FirstAddressOfFm;
   ValueType *LastAddressOfFm;
-  bool usingDerivBuffer;
 
   void testDerivFjj(ParticleSet& P, int pa);
   void testGGG(ParticleSet& P);
@@ -212,6 +207,10 @@ public:
   void testDerivLi(ParticleSet& P, int pa);
   void testL(ParticleSet& P);
   void dummyEvalLi(ValueType& L1, ValueType& L2, ValueType& L3);
+
+
+  void evaluate_SPO(ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet);
+  void evaluate_SPO(ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet);
 
 };
 

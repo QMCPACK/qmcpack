@@ -337,6 +337,8 @@ public:
   void saveEnsemble();
   ///save the position of current walkers
   void saveEnsemble(iterator first, iterator last);
+  /// load a single sample from SampleStack
+  void loadSample(ParticleSet::ParticlePos_t &Pos, size_t iw) const;
   /** load SampleStack data to current walkers
    */
   void loadEnsemble();
@@ -358,7 +360,7 @@ public:
   template<typename ForwardIter>
   inline void putConfigurations(ForwardIter target)
   {
-    int ds=OHMMS_DIM*GlobalNum;
+    int ds=OHMMS_DIM*TotalNum;
     for(iterator it=WalkerList.begin(); it!= WalkerList.end(); ++it,target+=ds)
     {
       copy(get_first_address((*it)->R),get_last_address((*it)->R),target);

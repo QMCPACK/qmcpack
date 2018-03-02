@@ -157,7 +157,8 @@ struct SplineAdoptorBase
   std::vector<TinyVector<ST,D> >  kPoints;
   ///remap band
   aligned_vector<int> BandIndexMap;
-
+  /// band offsets
+  std::vector<int> offset_real, offset_cplx;
   ///name of the adoptor
   std::string AdoptorName;
   ///keyword used to match hdf5
@@ -224,6 +225,7 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
 {
   typedef typename SplineAdoptor::SplineType SplineType;
   typedef typename SplineAdoptor::PointType  PointType;
+  typedef typename SplineAdoptor::DataType  DataType;
 
   ///** default constructor */
   //BsplineSet() { }
@@ -248,6 +250,15 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
     SplineAdoptor::set_spline(spline_r,spline_i,twist,ispline,level);
   }
 
+  inline ValueType RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
+  {
+    //this is just an example how to resuse t_logpsi
+    int ip=omp_get_thread_num()*2;
+    // YYYY: need to fix
+    //return SplineAdoptor::evaluate_dot(P,iat,arow,reinterpret_cast<DataType*>(t_logpsi[ip]));
+    return ValueType();
+  }
+
   inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
     SplineAdoptor::evaluate_v(P,iat,psi);
@@ -255,11 +266,11 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
 
   inline void evaluateValues(const ParticleSet& P, ValueMatrix_t& psiM)
   {
-    ValueVector_t psi(psiM.cols());
+    const size_t m=psiM.cols();
     for(int iat=0; iat<P.getTotalNum(); ++iat)
     {
+      ValueVector_t psi(psiM[iat],m);
       SplineAdoptor::evaluate_v(P,iat,psi);
-      copy(psi.begin(),psi.end(),psiM[iat]);
     }
   }
 
