@@ -71,7 +71,8 @@ public:
   IndexType NonLocalMoveAccepted;
   ///timestep
   RealType Tau;
-
+  ///use Drift
+  bool UseDrift;
 
   /// Constructor.
   QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
@@ -257,7 +258,7 @@ protected:
   ///update particle-by-particle
   bool UpdatePbyP;
   ///use T-moves
-  bool UseTMove;
+  int UseTMove;
   ///number of particles
   IndexType NumPtcl;
   ///Time-step factor \f$ 1/(2\tau)\f$
@@ -324,6 +325,8 @@ private:
   {
     return *this;
   }
+  ///
+  NewTimer* InitWalkersTimer;
 };
 }
 

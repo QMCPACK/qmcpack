@@ -17,7 +17,6 @@
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
 #include "Message/Communicate.h"
-#include "Utilities/OhmmsInfo.h"
 
 namespace qmcplusplus
 {
@@ -34,10 +33,10 @@ SlaterDetWithBackflow::~SlaterDetWithBackflow()
   ///clean up SPOSet
 }
 
-void SlaterDetWithBackflow::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+void SlaterDetWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   for(int i=0; i<Dets.size(); ++i)
-    Dets[i]->get_ratios(P,ratios);
+    Dets[i]->evaluateRatiosAlltoOne(P,ratios);
 }
 
 void SlaterDetWithBackflow::resetTargetParticleSet(ParticleSet& P)
@@ -81,63 +80,14 @@ SlaterDetWithBackflow::evaluateLog(ParticleSet& P,
   return LogValue;
 }
 
-SlaterDetWithBackflow::RealType
-SlaterDetWithBackflow::evaluateLog(ParticleSet& P,
-                       ParticleSet::ParticleGradient_t& G,
-                       ParticleSet::ParticleLaplacian_t& L,
-                       PooledData<RealType>& buf,
-                       bool fillBuffer)
-{
-  BFTrans->evaluate(P);
-  LogValue=0.0;
-  PhaseValue=0.0;
-  for(int i=0; i<Dets.size(); ++i)
-  {
-    LogValue+=Dets[i]->evaluateLog(P,G,L);
-    PhaseValue += Dets[i]->PhaseValue;
-  }
-  return LogValue;
-
-/*   From SlaterDet, finish implementing this later!!!
-  LogValue = 0.0;
-  PhaseValue = 0.0;
-  if(fillBuffer)
-  {
-    for (int i = 0; i < Dets.size(); ++i)
-    {
-      LogValue +=Dets[i]->evaluateLogForDerivativeBuffer(P, buf);
-      Dets[i]->copyToDerivativeBuffer(P, buf);
-      PhaseValue += Dets[i]->PhaseValue;
-    }
-  }
-  else
-  {
-    for (int i = 0; i < Dets.size(); ++i)
-    {
-      Dets[i]->copyFromDerivativeBuffer(P,buf);
-      LogValue += Dets[i]->evaluateLogFromDerivativeBuffer(P, buf);
-      PhaseValue += Dets[i]->PhaseValue;
-    }
-  }
-  return LogValue;
-*/
-}
-
-SlaterDetWithBackflow::RealType SlaterDetWithBackflow::registerData(ParticleSet& P, PooledData<RealType>& buf)
+void SlaterDetWithBackflow::registerData(ParticleSet& P, WFBufferType& buf)
 {
   BFTrans->registerData(P,buf);
-  //BFTrans->evaluate(P);
-  LogValue=0.0;
-  PhaseValue=0.0;
   for(int i=0; i<Dets.size(); ++i)
-  {
-    LogValue+=Dets[i]->registerData(P,buf);
-    PhaseValue += Dets[i]->PhaseValue;
-  }
-  return LogValue;
+    Dets[i]->registerData(P,buf);
 }
 
-SlaterDetWithBackflow::RealType SlaterDetWithBackflow::updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+SlaterDetWithBackflow::RealType SlaterDetWithBackflow::updateBuffer(ParticleSet& P, WFBufferType& buf,
     bool fromscratch)
 {
   //BFTrans->updateBuffer(P,buf,fromscratch);
@@ -153,7 +103,7 @@ SlaterDetWithBackflow::RealType SlaterDetWithBackflow::updateBuffer(ParticleSet&
   return LogValue;
 }
 
-void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BFTrans->copyFromBuffer(P,buf);
   //BFTrans->evaluate(P);

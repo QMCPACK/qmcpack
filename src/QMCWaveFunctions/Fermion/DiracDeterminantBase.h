@@ -34,7 +34,6 @@ class DiracDeterminantBase: public OrbitalBase
 {
 protected:
   ParticleSet *targetPtcl;
-  int BufferMode;
 public:
   bool Optimizable;
   void registerTimers();
@@ -143,7 +142,7 @@ public:
   }
 
   ///invert psiM or its copies
-  void invertPsiM(ValueMatrix_t& amat);
+  void invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat);
 
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& active,
@@ -158,6 +157,9 @@ public:
                                    Array<GradType,3>& dG,
                                    Matrix<RealType>& dL) {}
 
+  //virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+  //                                     std::vector<RealType>& dgradlogpsi);
+
   inline void reportStatus(std::ostream& os)
   {
   }
@@ -170,32 +172,15 @@ public:
   ///reset the size: with the number of particles and number of orbtials
   virtual void resize(int nel, int morb);
 
-  virtual RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
+  virtual void registerData(ParticleSet& P, WFBufferType& buf);
 
   virtual void updateAfterSweep(ParticleSet& P,
       ParticleSet::ParticleGradient_t& G,
       ParticleSet::ParticleLaplacian_t& L);
 
-  virtual void registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf, int storageType=0);
+  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 
-  virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only, long& orbs, long& invs, long& dets)
-  {
-    // mmorales: not sure you need to store myL,myG for nonlocal psp optimization
-    orbs_only += NumPtcls*NumOrbitals;
-    orbs += NumPtcls*NumOrbitals + NP*4 + 2;
-  }
-
-  virtual void copyToDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual void copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual RealType evaluateLogForDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual RealType evaluateLogFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
-
-  virtual void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
+  virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   /** return the ratio only for the  iat-th partcle move
    * @param P current configuration
@@ -262,7 +247,7 @@ public:
   virtual DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
 //       virtual DiracDeterminantBase* makeCopy(ParticleSet& tqp, SPOSetBase* spo) const {return makeCopy(spo); };
 
-  virtual void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
+  virtual void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
   ///total number of particles
   int NP;
   ///number of single-particle orbitals which belong to this Dirac determinant

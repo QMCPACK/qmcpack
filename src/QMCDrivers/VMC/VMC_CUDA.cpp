@@ -23,6 +23,7 @@
 #include "Message/CommOperators.h"
 #include "QMCDrivers/DriftOperators.h"
 #include "type_traits/scalar_traits.h"
+#include "Utilities/RunTimeManager.h"
 #include "qmc_common.h"
 
 namespace qmcplusplus
@@ -139,6 +140,10 @@ bool VMCcuda::run()
   Matrix<GradType>  grad(nw, nat);
   double Esum;
 
+  LoopTimer vmc_loop;
+  RunTimeControl runtimeControl(RunTimeManager, MaxCPUSecs);
+  bool enough_time_for_next_iteration = true;
+
   // First do warmup steps
   for (int step=0; step<nWarmupSteps; step++)
     advanceWalkers();
@@ -146,6 +151,7 @@ bool VMCcuda::run()
   // Then accumulate statistics
   do
   {
+    vmc_loop.start();
     IndexType step = 0;
     nAccept = nReject = 0;
     Esum = 0.0;
@@ -217,8 +223,18 @@ bool VMCcuda::run()
     nRejectTot += nReject;
     ++block;
     recordBlock(block);
+
+    vmc_loop.stop();
+    enough_time_for_next_iteration = runtimeControl.enough_time_for_next_iteration(vmc_loop);
+    // Rank 0 decides whether the time limit was reached
+    myComm->bcast(enough_time_for_next_iteration);
+    if (!enough_time_for_next_iteration)
+    {
+      app_log() << runtimeControl.time_limit_message("VMC", block);
+    }
+
   }
-  while(block<nBlocks);
+  while(block<nBlocks && enough_time_for_next_iteration);
   //Mover->stopRun();
   //finalize a qmc section
   if (!myComm->rank())
@@ -233,9 +249,7 @@ void VMCcuda::advanceWalkersWithDrift()
 {
   int nat = W.getTotalNum();
   int nw  = W.getActiveWalkers();
-  std::vector<RealType>  oldScale(nw), newScale(nw);
   std::vector<PosType>   delpos(nw);
-  std::vector<PosType>   dr(nw);
   std::vector<PosType>   newpos(nw);
   std::vector<ValueType> ratios(nw);
 #ifdef QMC_COMPLEX
@@ -255,14 +269,10 @@ void VMCcuda::advanceWalkersWithDrift()
       Psi.addGradient(W, iat, oldG);
       for(int iw=0; iw<nw; iw++)
       {
-        oldScale[iw] = getDriftScale(m_tauovermass,oldG[iw]);
-#ifdef QMC_COMPLEX
-        convert(oldScale[iw]*oldG[iw], dr[iw]);
-        dr[iw] += m_sqrttau * delpos[iw];
-#else
-        dr[iw] = (m_sqrttau*delpos[iw]) + (oldScale[iw]*oldG[iw]);
-#endif
-        newpos[iw]=W[iw]->R[iat] + dr[iw];
+        PosType dr;
+        delpos[iw] *= m_sqrttau;
+        getScaledDrift(m_tauovermass,oldG[iw],dr);
+        newpos[iw] = W[iw]->R[iat] + delpos[iw] + dr;
         ratios[iw] = 1.0;
 #ifdef QMC_COMPLEX
         ratios_real[iw] = 1.0;
@@ -278,15 +288,7 @@ void VMCcuda::advanceWalkersWithDrift()
       std::vector<RealType> rand_v(nw);
       for(int iw=0; iw<nw; ++iw)
       {
-#ifdef QMC_COMPLEX
-        PosType drOld = 0.0;
-        convert(oldScale[iw] * oldG[iw], drOld);
-        drOld = newpos[iw] - (W[iw]->R[iat] + drOld);
-#else
-        PosType drOld =
-          newpos[iw] - (W[iw]->R[iat] + oldScale[iw]*oldG[iw]);
-#endif
-        logGf_v[iw] = -m_oneover2tau * dot(drOld, drOld);
+        logGf_v[iw] = -m_oneover2tau * dot(delpos[iw], delpos[iw]);
         rand_v[iw] = Random();
       }
       Psi.addRatio(W, iat, ratios, newG, newL);
@@ -295,18 +297,12 @@ void VMCcuda::advanceWalkersWithDrift()
 #endif
       for(int iw=0; iw<nw; ++iw)
       {
-        newScale[iw]   = getDriftScale(m_tauovermass,newG[iw]);
-#ifdef QMC_COMPLEX
-        PosType drNew = 0.0;
-        convert(newScale[iw] * newG[iw], drNew);
+        PosType drNew;
+        getScaledDrift(m_tauovermass,newG[iw],drNew);
         drNew += newpos[iw] - W[iw]->R[iat];
-#else
-        PosType drNew  =
-          (newpos[iw] + newScale[iw]*newG[iw]) - W[iw]->R[iat];
-#endif
         // if (dot(drNew, drNew) > 25.0)
         //   std::cerr << "Large drift encountered!  Drift = " << drNew << std::endl;
-        RealType logGb =  -m_oneover2tau * dot(drNew, drNew);
+        RealType logGb = -m_oneover2tau * dot(drNew, drNew);
         RealType x = logGb - logGf_v[iw];
 #ifdef QMC_COMPLEX
         RealType prob = ratios_real[iw]*ratios_real[iw]*std::exp(x);

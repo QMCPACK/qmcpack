@@ -14,7 +14,6 @@
 
 #include "Message/Communicate.h"
 #include "OhmmsData/Libxml2Doc.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/LocalEnergyEstimator.h"
@@ -31,7 +30,6 @@ TEST_CASE("LocalEnergyOnly", "[estimators]")
 {
   OHMMS::Controller->initialize(0, NULL);
   Communicate *c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   LocalEnergyOnlyEstimator le_est;
 
@@ -51,7 +49,6 @@ TEST_CASE("LocalEnergy", "[estimators]")
 {
   OHMMS::Controller->initialize(0, NULL);
   Communicate *c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
 
   QMCHamiltonian H;
@@ -84,7 +81,6 @@ TEST_CASE("LocalEnergy with hdf5", "[estimators]")
 {
   OHMMS::Controller->initialize(0, NULL);
   Communicate *c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
 
   QMCHamiltonian H;

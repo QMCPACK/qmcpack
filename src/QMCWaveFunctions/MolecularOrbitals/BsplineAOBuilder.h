@@ -10,8 +10,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_BSPLINE_AO_BUILDER_H
 #define QMCPLUSPLUS_BSPLINE_AO_BUILDER_H
 

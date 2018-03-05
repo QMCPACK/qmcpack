@@ -29,7 +29,7 @@
 #include "QMCApp/HamiltonianPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Utilities/OhmmsInfo.h"
+#include "Utilities/OutputManager.h"
 #include "Utilities/Timer.h"
 #include "Utilities/NewTimer.h"
 #include "Particle/HDFWalkerIO.h"
@@ -73,7 +73,7 @@ QMCMain::QMCMain(Communicate* c)
   , traces_xml(NULL)
 #endif
 {
-  app_log()
+  app_summary()
       << "\n=====================================================\n"
       <<  "                    QMCPACK "
       << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "." << QMCPACK_VERSION_PATCH << " \n"
@@ -85,13 +85,13 @@ QMCMain::QMCMain(Communicate* c)
 #endif
       << "\n=====================================================\n";
   qmc_common.print_options(app_log());
-  app_log()
+  app_summary()
       << "\n  MPI Nodes            = " << OHMMS::Controller->size()
       << "\n  MPI Nodes per group  = " << myComm->size()
       << "\n  MPI Group ID         = " << myComm->getGroupID()
       << "\n  OMP_NUM_THREADS      = " << omp_get_max_threads()
       << std::endl;
-  app_log()
+  app_summary()
       << "\n  Precision used in this calculation, see definitions in the manual:"
       << "\n  Base precision      = " << GET_MACRO_VAL(OHMMS_PRECISION)
       << "\n  Full precision      = " << GET_MACRO_VAL(OHMMS_PRECISION_FULL)
@@ -100,8 +100,8 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  CUDA full precision = " << GET_MACRO_VAL(CUDA_PRECISION_FULL)
 #endif
       << std::endl;
-  app_log() << std::endl;
-  app_log().flush();
+  app_summary() << std::endl;
+  app_summary().flush();
 }
 
 ///destructor
@@ -200,7 +200,8 @@ bool QMCMain::execute()
   }
   //initialize all the instances of distance tables and evaluate them
   ptclPool->reset();
-  OhmmsInfo::flush();
+  infoSummary.flush();
+  infoLog.flush();
   app_log() << "  Initialization Execution time = " << std::setprecision(4) << t0.elapsed() << " secs" << std::endl;
   //write stuff
   app_log() << "=========================================================\n";
@@ -436,9 +437,9 @@ bool QMCMain::validateXML()
   {
     myProject.put(result[0]);
   }
-  app_log() << std::endl;
-  myProject.get(app_log());
-  app_log() << std::endl;
+  app_summary() << std::endl;
+  myProject.get(app_summary());
+  app_summary() << std::endl;
   OhmmsXPathObject ham("//hamiltonian",m_context);
   if(ham.empty())
   {
@@ -467,10 +468,7 @@ bool QMCMain::validateXML()
   {
     app_log() << "  hamiltonian has MPC. Will read density if it is found." << std::endl;
   }
-  else
-  {
-    app_log() << "  DO NOT READ DENSITY" << std::endl;
-  }
+
   //initialize the random number generator
   xmlNodePtr rptr = myRandomControl.initialize(m_context);
   //preserve the input order
@@ -627,7 +625,8 @@ bool QMCMain::runQMC(xmlNodePtr cur)
     qmcDriver->putTraces(traces_xml);
 #endif
     qmcDriver->process(cur);
-    OhmmsInfo::flush();
+    infoSummary.flush();
+    infoLog.flush();
     Timer qmcTimer;
     NewTimer *t1 = TimerManager.createTimer(qmcDriver->getEngineName(), timer_level_coarse);
     t1->start();
@@ -728,10 +727,4 @@ void QMCMain::postprocess(xmlNodePtr cur,int qacur)
 #endif
 }
 
-
 }
-/***********************************************************************
- * $RCSfilMCMain.cpp,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

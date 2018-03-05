@@ -21,8 +21,11 @@ namespace qmcplusplus
   template<typename T, size_t Align>
   struct Mallocator
   {
-    typedef T value_type;
-    typedef size_t size_type;
+    typedef T         value_type;
+    typedef size_t    size_type;
+    typedef T*        pointer;
+    typedef const T*  const_pointer;
+
     Mallocator() = default;
     template <class U> Mallocator(const Mallocator<U,Align>&) {}
 
@@ -39,8 +42,11 @@ namespace qmcplusplus
     }
     void deallocate(T* p, std::size_t) { free(p); }
   };
+
+  template <class T1, size_t Align1, class T2, size_t Align2>
+  bool operator==(const Mallocator<T1,Align1>&, const Mallocator<T2,Align2>&) { return Align1==Align2; }
+  template <class T1, size_t Align1, class T2, size_t Align2>
+  bool operator!=(const Mallocator<T1,Align1>&, const Mallocator<T2,Align2>&) { return Align1!=Align2; }
 }
 
-//  template<class T>
-//   using aligned_allocator=Mallocator<T,QMC_CLINE>;
 #endif

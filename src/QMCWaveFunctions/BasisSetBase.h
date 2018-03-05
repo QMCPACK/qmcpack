@@ -140,6 +140,30 @@ struct BasisSetBase: public OrbitalSetTraits<T>
   virtual void evaluateForPtclMoveWithHessian(const ParticleSet& P, int iat)=0;
 };
 
+/** Base for real basis set
+ *
+ * Equivalent to BasisSetBase with minimum requirements
+ * Used by lcao
+ */
+template<typename T>
+struct RealBasisSetBase
+{
+  typedef T value_type;
+  typedef VectorSoaContainer<T,OHMMS_DIM+2> vgl_type;
+  ///size of the basis set
+  int BasisSetSize;
+
+  inline int getBasisSetSize()
+  {
+    return BasisSetSize;
+  }
+
+  virtual RealBasisSetBase<T>* makeClone() const = 0;
+  virtual void setBasisSetSize(int nbs)=0;
+  virtual void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl)=0;
+  virtual void evaluateV(const ParticleSet& P, int iat, value_type* restrict vals)=0;
+};
+
 
 /** base class for the real BasisSet builder
  *

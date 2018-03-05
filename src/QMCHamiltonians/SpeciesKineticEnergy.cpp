@@ -30,8 +30,9 @@ SpeciesKineticEnergy::SpeciesKineticEnergy(ParticleSet& P) : tpset(P), hdf5_out(
   for (int ispec=0; ispec<num_species; ispec++)
   {
     species_names[ispec] = tspecies.speciesName[ispec];
-    vec_minus_over_2m[ispec] = -1./(2.*tspecies(massind,ispec)); 
-    app_log() << "  " << species_names[ispec] << " mass = " << vec_minus_over_2m[ispec] << std::endl;
+    RealType mass = tspecies(massind,ispec);
+    vec_minus_over_2m[ispec] = -1./(2.*mass);
+    app_log() << "  " << species_names[ispec] << " mass = " << mass << std::endl;
   }
 
 };
@@ -104,7 +105,7 @@ SpeciesKineticEnergy::Return_t SpeciesKineticEnergy::evaluate(ParticleSet& P)
 
   for (int iat=0; iat<P.getTotalNum(); iat++)
   {
-    int ispec  = P.GroupID(iat);
+    int ispec  = P.GroupID[iat];
     RealType my_kinetic = vec_minus_over_2m[ispec]*laplacian(P.G[iat],P.L[iat]);
     if (hdf5_out)
     {

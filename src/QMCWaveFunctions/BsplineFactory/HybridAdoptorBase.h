@@ -40,7 +40,7 @@ struct AtomicOrbitalSoA
   ST rmin;
   // far from core cutoff, rmin_sqrt>=rmin
   ST rmin_sqrt;
-  ST cutoff, spline_radius;
+  ST cutoff, cutoff_buffer, spline_radius;
   int spline_npoints, BaseN;
   int NumBands, Npad;
   PointType pos;
@@ -67,6 +67,11 @@ struct AtomicOrbitalSoA
     rmin_sqrt=std::max(rmin,std::sqrt(std::numeric_limits<ST>::epsilon()));
   }
 
+  ~AtomicOrbitalSoA()
+  {
+    if(MultiSpline != nullptr) delete SplineInst;
+  }
+
   inline void resizeStorage(size_t Nb)
   {
     NumBands=Nb;
@@ -88,13 +93,20 @@ struct AtomicOrbitalSoA
     chunked_reduce(comm, MultiSpline);
   }
 
+  void gather_tables(Communicate* comm, std::vector<int> &offset_cplx, std::vector<int> &offset_real)
+  {
+    if(offset_cplx.size()) gatherv(comm, MultiSpline, Npad, offset_cplx);
+    if(offset_real.size()) gatherv(comm, MultiSpline, Npad, offset_real);
+  }
+
   template<typename PT, typename VT>
-  inline void set_info(const PT& R, const VT& cutoff_in, const VT& spline_radius_in, const int& spline_npoints_in)
+  inline void set_info(const PT& R, const VT& cutoff_in, const VT& cutoff_buffer_in, const VT& spline_radius_in, const int& spline_npoints_in)
   {
     pos[0]=R[0];
     pos[1]=R[1];
     pos[2]=R[2];
     cutoff=cutoff_in;
+    cutoff_buffer=cutoff_buffer_in;
     spline_radius=spline_radius_in;
     spline_npoints=spline_npoints_in;
     BaseN=spline_npoints+2;
@@ -361,6 +373,7 @@ struct HybridAdoptorBase
 {
   static const int D=3;
   using PointType=typename AtomicOrbitalSoA<ST>::PointType;
+  using RealType=typename DistanceTableData::RealType;
 
   // atomic centers
   std::vector<AtomicOrbitalSoA<ST> > AtomicCenters;
@@ -369,12 +382,12 @@ struct HybridAdoptorBase
   //mapping supercell to primitive cell
   std::vector<int> Super2Prim;
   // r, dr for distance table
-  DistanceTableData::RealType dist_r;
+  RealType dist_r;
   DistanceTableData::PosType dist_dr;
-  // local r, dr
-  ST r;
-  PointType dr;
+  // for APBC
   PointType r_image;
+  // smooth function derivatives
+  RealType df_dr, d2f_dr2;
 
   HybridAdoptorBase() { }
 
@@ -400,6 +413,12 @@ struct HybridAdoptorBase
   {
     for(int ic=0; ic<AtomicCenters.size(); ic++)
       AtomicCenters[ic].reduce_tables(comm);
+  }
+
+  void gather_atomic_tables(Communicate* comm, std::vector<int> &offset_cplx, std::vector<int> &offset_real)
+  {
+    for(int ic=0; ic<AtomicCenters.size(); ic++)
+      AtomicCenters[ic].gather_tables(comm, offset_cplx, offset_real);
   }
 
   inline void flush_zero()
@@ -449,12 +468,14 @@ struct HybridAdoptorBase
     return success;
   }
 
-  inline int get_bc_sign(const PointType& r, TinyVector<int,D>& HalfG)
+  template<typename Cell>
+  inline int get_bc_sign(const PointType& r, const Cell& PrimLattice, TinyVector<int,D>& HalfG)
   {
     int bc_sign=0;
+    PointType shift_unit = PrimLattice.toUnit(r-r_image);
     for(int i=0; i<D; i++)
     {
-      ST img = round(r[i]-r_image[i]);
+      ST img = round(shift_unit[i]);
       bc_sign += HalfG[i] * (int)img;
     }
     return bc_sign;
@@ -462,68 +483,69 @@ struct HybridAdoptorBase
 
   //evaluate only V
   template<typename VV>
-  inline bool evaluate_v(const ParticleSet& P, const int iat, VV& myV)
+  inline RealType evaluate_v(const ParticleSet& P, const int iat, VV& myV)
   {
-    bool inAtom=false;
     const auto* ei_dist=P.DistTables[myTableID];
-    const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr);
+    const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl==iat);
     if(center_idx<0) abort();
-    r=dist_r;
-    dr[0]=-dist_dr[0];
-    dr[1]=-dist_dr[1];
-    dr[2]=-dist_dr[2];
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
-    r_image=myCenter.pos+dr;
-    if ( r < myCenter.cutoff )
+    if ( dist_r < myCenter.cutoff )
     {
-      inAtom=true;
-      myCenter.evaluate_v(r, dr, myV);
+      PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
+      r_image=myCenter.pos+dr;
+      myCenter.evaluate_v(dist_r, dr, myV);
+      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
     }
-    return inAtom;
+    return RealType(-1);
   }
 
   //evaluate only VGL
   template<typename VV, typename GV>
-  inline bool evaluate_vgl(const ParticleSet& P, const int iat, VV& myV, GV& myG, VV& myL)
+  inline RealType evaluate_vgl(const ParticleSet& P, const int iat, VV& myV, GV& myG, VV& myL)
   {
-    bool inAtom=false;
     const auto* ei_dist=P.DistTables[myTableID];
-    const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr);
+    const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl==iat);
     if(center_idx<0) abort();
-    r=dist_r;
-    dr[0]=-dist_dr[0];
-    dr[1]=-dist_dr[1];
-    dr[2]=-dist_dr[2];
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
-    r_image=myCenter.pos+dr;
-    if ( r < myCenter.cutoff )
+    if ( dist_r < myCenter.cutoff )
     {
-      inAtom=true;
-      myCenter.evaluate_vgl(r, dr, myV, myG, myL);
+      PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
+      r_image=myCenter.pos+dr;
+      myCenter.evaluate_vgl(dist_r, dr, myV, myG, myL);
+      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
     }
-    return inAtom;
+    return RealType(-1);
   }
 
   //evaluate only VGH
   template<typename VV, typename GV, typename HT>
-  inline bool evaluate_vgh(const ParticleSet& P, const int iat, VV& myV, GV& myG, HT& myH)
+  inline RealType evaluate_vgh(const ParticleSet& P, const int iat, VV& myV, GV& myG, HT& myH)
   {
-    bool inAtom=false;
     const auto* ei_dist=P.DistTables[myTableID];
-    const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr);
+    const int center_idx=ei_dist->get_first_neighbor(iat, dist_r, dist_dr, P.activePtcl==iat);
     if(center_idx<0) abort();
-    r=dist_r;
-    dr[0]=-dist_dr[0];
-    dr[1]=-dist_dr[1];
-    dr[2]=-dist_dr[2];
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
-    r_image=myCenter.pos+dr;
-    if ( r < myCenter.cutoff )
+    if ( dist_r < myCenter.cutoff )
     {
-      inAtom=true;
-      myCenter.evaluate_vgh(r, dr, myV, myG, myH);
+      PointType dr(-dist_dr[0], -dist_dr[1], -dist_dr[2]);
+      r_image=myCenter.pos+dr;
+      myCenter.evaluate_vgh(dist_r, dr, myV, myG, myH);
+      return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
     }
-    return inAtom;
+    return RealType(-1);
+  }
+
+  inline RealType smooth_function(const ST &cutoff_buffer, const ST &cutoff, RealType r)
+  {
+    const RealType cone(1), ctwo(2), chalf(0.5);
+    if (r<cutoff_buffer) return cone;
+    const RealType scale=ctwo/(cutoff-cutoff_buffer);
+    const RealType x=(r-cutoff_buffer)*scale-cone;
+    const RealType cosh_x=std::cosh(x);
+    const RealType tanh_x=std::tanh(x);
+    df_dr=-chalf/(cosh_x*cosh_x)*scale;
+    d2f_dr2=-ctwo*tanh_x*df_dr*scale;
+    return chalf*(cone-tanh_x);
   }
 };
 

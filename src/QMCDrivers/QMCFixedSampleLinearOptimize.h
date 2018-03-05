@@ -109,7 +109,11 @@ private:
   /// the previous best overlap shift
   RealType bestShift_s;
   /// current shift_i, shift_s input values
-  RealType shift_i_input,shift_s_input;
+  RealType shift_i_input, shift_s_input;
+  /// accept history, remember the last 2 iterations, value 00, 01, 10, 11
+  std::bitset<2> accept_history;
+  /// Shift_s adjustment base
+  RealType shift_s_base;
   /// number of shifts we will try
   int num_shifts;
   /// the maximum relative change in the cost function for the adaptive three-shift scheme

@@ -19,7 +19,6 @@
 #include <utility>
 #include <iostream>
 #include <fstream>
-#include "Utilities/OhmmsInfo.h"
 #include "ParticleIO/ParticleLayoutIO.h"
 #include "ParticleIO/HDFParticleIO.h"
 #include "ParticleBase/ParticleUtility.h"

@@ -138,7 +138,7 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
   int numIons = IonTypes.size();
   int numAtomicOrbitals = AtomicOrbitals.size();
   int numDensityGvecs = TargetPtcl.DensityReducedGvecs.size();
-  PooledData<RealType> abuffer;
+  PooledData<double> abuffer;
   PooledData<int>       aibuffer;
   aibuffer.add(Version.begin(),Version.end()); //myComm->bcast(Version);
   aibuffer.add(Format);
@@ -154,7 +154,7 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
   aibuffer.add(NumMuffinTins);
   aibuffer.add(numAtomicOrbitals);
   aibuffer.add(numDensityGvecs);
-  aibuffer.add((int)HaveOrbDerivs);
+  aibuffer.add(HaveOrbDerivs);
   myComm->bcast(abuffer);
   myComm->bcast(aibuffer);
   if(myComm->rank())
@@ -198,7 +198,7 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
     IonPos.resize(numIons);
   }
   //new buffer
-  PooledData<RealType> bbuffer;
+  PooledData<double> bbuffer;
   PooledData<int> bibuffer;
   for(int i=0; i<numIons; ++i)
     bibuffer.add(IonTypes[i]);
@@ -277,16 +277,18 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
     }
   }
   //buffer to bcast hybrid representation atomic orbital info
-  PooledData<RealType> cbuffer;
+  PooledData<double> cbuffer;
   PooledData<int> cibuffer;
   myComm->bcast(cbuffer);
   myComm->bcast(cibuffer);
   AtomicCentersInfo.resize(numIons);
   Super2Prim.resize(SourcePtcl->R.size());
+  cbuffer.add(AtomicCentersInfo.inner_cutoff.begin(), AtomicCentersInfo.inner_cutoff.end());
   cbuffer.add(AtomicCentersInfo.cutoff.begin(), AtomicCentersInfo.cutoff.end());
   cbuffer.add(AtomicCentersInfo.spline_radius.begin(), AtomicCentersInfo.spline_radius.end());
   cibuffer.add(Super2Prim.begin(),Super2Prim.end());
   cibuffer.add(AtomicCentersInfo.lmax.begin(), AtomicCentersInfo.lmax.end());
+  cibuffer.add(AtomicCentersInfo.GroupID.begin(), AtomicCentersInfo.GroupID.end());
   cibuffer.add(AtomicCentersInfo.spline_npoints.begin(), AtomicCentersInfo.spline_npoints.end());
   myComm->bcast(cbuffer);
   myComm->bcast(cibuffer);
@@ -294,10 +296,12 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
   {
     cbuffer.rewind();
     cibuffer.rewind();
+    cbuffer.get(AtomicCentersInfo.inner_cutoff.begin(), AtomicCentersInfo.inner_cutoff.end());
     cbuffer.get(AtomicCentersInfo.cutoff.begin(), AtomicCentersInfo.cutoff.end());
     cbuffer.get(AtomicCentersInfo.spline_radius.begin(), AtomicCentersInfo.spline_radius.end());
     cibuffer.get(Super2Prim.begin(),Super2Prim.end());
     cibuffer.get(AtomicCentersInfo.lmax.begin(), AtomicCentersInfo.lmax.end());
+    cibuffer.get(AtomicCentersInfo.GroupID.begin(), AtomicCentersInfo.GroupID.end());
     cibuffer.get(AtomicCentersInfo.spline_npoints.begin(), AtomicCentersInfo.spline_npoints.end());
     for (int i=0; i<numIons; i++)
       AtomicCentersInfo.ion_pos[i]=IonPos[i];
@@ -344,8 +348,8 @@ EinsplineSetBuilder::TileIons()
 
   IonPos.resize(SourcePtcl->getTotalNum());
   IonTypes.resize(SourcePtcl->getTotalNum());
-  copy(SourcePtcl->R.begin(),SourcePtcl->R.end(),IonPos.begin());
-  copy(SourcePtcl->GroupID.begin(),SourcePtcl->GroupID.end(),IonTypes.begin());
+  std::copy(SourcePtcl->R.begin(),SourcePtcl->R.end(),IonPos.begin());
+  std::copy(SourcePtcl->GroupID.begin(),SourcePtcl->GroupID.end(),IonTypes.begin());
 
   //app_log() << "  Primitive Cell\n";
   //SourcePtcl->PrimitiveLattice.print(app_log());

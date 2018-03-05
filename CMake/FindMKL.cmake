@@ -35,8 +35,7 @@ FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl.cxx"
     "#include <iostream>\n #include <mkl.h>\n int main() { return 0; }\n" )
 try_compile(HAVE_MKL ${CMAKE_BINARY_DIR}
   ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl.cxx
-  CMAKE_FLAGS
-  "${MKL_FLAGS}"
+  CMAKE_FLAGS ${MKL_FLAGS}
   "-DINCLUDE_DIRECTORIES=${MKL_INCLUDE_DIRECTORIES} "
   "-DLINK_DIRECTORIES=${MKL_LINK_DIRECTORIES}"
   LINK_LIBRARIES "${MKL_LIBRARIES}"
@@ -51,8 +50,7 @@ FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_vml.cx
     "#include <iostream>\n #include <mkl_vml_functions.h>\n int main() { return 0; }\n" )
 try_compile(HAVE_MKL_VML ${CMAKE_BINARY_DIR}
   ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_vml.cxx
-  CMAKE_FLAGS
-  "${MKL_FLAGS}"
+  CMAKE_FLAGS ${MKL_FLAGS}
   "-DINCLUDE_DIRECTORIES=${MKL_INCLUDE_DIRECTORIES} "
   "-DLINK_DIRECTORIES=${MKL_LINK_DIRECTORIES}"
   OUTPUT_VARIABLE MKL_OUT)
@@ -62,8 +60,7 @@ FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_fftw3.
     "#include <iostream>\n #include <fftw/fftw3.h>\n int main() { return 0; }\n" )
 try_compile(HAVE_MKL_FFTW3 ${CMAKE_BINARY_DIR}
       ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_fftw3.cxx
-      CMAKE_FLAGS
-      "${MKL_FLAGS}"
+      CMAKE_FLAGS ${MKL_FLAGS}
       "-DINCLUDE_DIRECTORIES=${MKL_INCLUDE_DIRECTORIES} "
       "-DLINK_DIRECTORIES=${MKL_LINK_DIRECTORIES}"
       LINK_LIBRARIES "${MKL_LIBRARIES}"

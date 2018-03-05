@@ -343,7 +343,7 @@ cmake                                                \
 \end{verbatim}
 
 \subsection{Using vendor optimized numerical libraries, e.g. Intel MKL}
- 
+
 Although QMC does not make extensive use of linear algebra, use of
 vendor optimized libraries is strongly recommended for highest
 performance. BLAS routines are used in the Slater determinant update, the VMC wavefunction optimizer
@@ -364,7 +364,7 @@ cmake \
 \end{verbatim}
 
 MKLROOT is the directory containing the MKL binary, examples, and lib
-directories (etc.) and is often /opt/intel/mkl 
+directories (etc.) and is often /opt/intel/mkl
 
 \subsection{Cross compiling}
 Cross-compiling is often difficult but is required on supercomputers
@@ -524,8 +524,7 @@ This recipe was verified on 1 July 2016 on a Mac running OS X 10.11.5
 Homebrew is a package manager for OS X that provides a convenient
 route to install all the QMCPACK dependencies. The
 following recipe will install the latest available versions of each
-package. This was successfully tested under OS X 10.11 ``El
-Capitain'' in February 2016. Note that it is necessary to build the MPI software from
+package. This was successfully tested under OS X 10.12 ``Sierra'' in December 2017. Note that it is necessary to build the MPI software from
 source to use the brew-provided gcc instead of Apple CLANG.
 
 \begin{enumerate}
@@ -537,12 +536,12 @@ source to use the brew-provided gcc instead of Apple CLANG.
 
 \item Install the prerequisites
 \begin{verbatim}
-brew install gcc # Builds full gcc 5 from scratch, will take 30 minutes
-export HOMEBREW_CXX=g++-5
-export HOMEBREW_CC=gcc-5
+brew install gcc # installs gcc 7.2.0 on 2017-12-19
+export HOMEBREW_CXX=g++-7
+export HOMEBREW_CC=gcc-7
 brew install mpich2 --build-from-source
 # Build from source required to use homebrew compiled compilers as
-# opposed to Apple CLANG. Check "mpicc -v" indicates Homebrew gcc 5.x.x
+# opposed to Apple CLANG. Check "mpicc -v" indicates Homebrew gcc
 brew install cmake
 brew install fftw
 brew install boost
@@ -556,7 +555,7 @@ cmake -DCMAKE_C_COMPILER=/usr/local/bin/mpicc \
 make -j 12
 \end{verbatim}
 \item Run the short tests. When MPICH is used for the first time, OS
-  X will request approval of the network connection.
+  X will request approval of the network connection for each executable.
 \begin{verbatim}
 ctest -R short
 \end{verbatim}
@@ -777,8 +776,8 @@ installed at NERSC.
 
 \begin{verbatim}
 export CRAYPE_LINK_TYPE=dynamic
-module unload cray-libsci  
-module load boost  
+module unload cray-libsci
+module load boost
 module load cray-hdf5-parallel
 module load cmake
 mkdir build_cori_hsw
@@ -816,9 +815,9 @@ generation is appropriate for the KNL nodes:
 
 \begin{verbatim}
 export CRAYPE_LINK_TYPE=dynamic
-module swap craype-haswell craype-mic-knl  
-module unload cray-libsci  
-module load boost  
+module swap craype-haswell craype-mic-knl
+module unload cray-libsci
+module load boost
 module load cray-hdf5-parallel
 module load cmake
 mkdir build_cori_knl
@@ -911,14 +910,20 @@ ctest -V -R short   # Verbose short tests
 
 The test system includes specific tests for the complex version of the code.
 
-The data files for the tests are located in the tests directory. The
-runs occur in build/tests/system/test\_name. The numerical
-comparisons and test definitions are in
-tests/system/CMakeLists.txt. If \textit{all} the QMC tests fail it is likely
+The input data files for the tests are located in the \texttt{tests} directory.
+The system-level test directories are grouped into \texttt{heg}, \texttt{molecules}, and \texttt{solids}, with particular physical systems under each (for example \texttt{molecules/H4\_ae}
+\footnote{The suffix `ae' is short for `all-electron' and `pp' is short for `pseudopotential'}).
+Under each physical system directory there may be tests for multiple QMC methods or parameter variations.
+The numerical comparisons and test definitions are in the \texttt{CMakeLists.txt} file in each physical system directory.
+
+If \textit{all} the QMC tests fail it is likely
 that the appropriate mpiexec (or aprun, srun) is not being
 called or found. If the QMC runs appear to work but all the other
 tests fail it is possible that python is not working on your system -
-we suggest checking some of the test outputs in build/test/system/test\_name.
+we suggest checking some of the test console output in \texttt{build/Testing/Temporary/LastTest.log}
+or the output files under \texttt{build/tests/}.
+%The runs occur in \texttt{build/tests/test\_dir/test\_name}.
+
 
 Note that because most of these tests are very small, consisting of only a few
 electrons, the performance is not representative of larger
@@ -1022,19 +1027,20 @@ future machines and require very large memory.
 
 \begin{table}[h]
 \begin{center}
-\begin{tabular}{|c|c|c|c|}
+\begin{tabular}{|c|c|c|c|c|}
 \hline
-\bfseries Name&  \bfseries Atoms& \bfseries Electrons&  \bfseries Electrons per spin \\
+\bfseries Performance Test Name&  \bfseries Historical name &\bfseries Atoms& \bfseries Electrons&  \bfseries Electrons/spin \\
 \hline
- S8  &  32  &    384  &   192 \\
-S16 &   64  &    768  &  384 \\
-S32  & 128  &   1536 &           768 \\
-S64  & 256  &   3072 &     1536 \\
-S128  & 512  &   6144 &      3072 \\
-S256  & 1024 & 12288 &  6144 \\
+performance-NiO-cpu-a32-e384  & S8 & 32 & 384 & 192 \\
+performance-NiO-cpu-a64-e768  & S16 & 64 & 768 & 384 \\
+performance-NiO-cpu-a128-e1536 & S32 & 128 & 1536 & 768 \\
+performance-NiO-cpu-a256-e3072 & S64 & 256 & 3072 & 1536 \\
+performance-NiO-cpu-a512-e6144 & S128 & 512 & 6144 & 3072 \\
+performance-NiO-cpu-a1024-e12288& S256 & 1024 & 12288 & 6144 \\
 \hline
 \end{tabular}
-  \caption{System sizes for NiO performance tests}
+  \caption{System sizes and names for NiO performance tests. GPU performance
+    tests are named similarly but have different walker counts.}
   \label{tab:niotests}
 \end{center}
 \end{table}

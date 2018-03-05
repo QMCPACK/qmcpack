@@ -661,9 +661,9 @@ class SemilocalPP(Pseudopotential):
             ylabel('channels')
             xlabel('r')
             legend()
-            if show:
-                show_plots()
-            #end if
+        #end if
+        if show:
+            show_plots()
         #end if
     #end def plot
 

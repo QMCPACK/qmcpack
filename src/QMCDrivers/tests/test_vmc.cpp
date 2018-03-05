@@ -16,7 +16,6 @@
 #include "Utilities/RandomGenerator.h"
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
@@ -48,7 +47,6 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   ParticleSet ions;
   MCWalkerConfiguration elec;
@@ -71,8 +69,6 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   elec.R[1][1] = 0.0;
   elec.R[1][2] = 1.0;
   elec.createWalkers(1);
-  elec.WalkerList[0]->DataSet.resize(9);
-
 
   SpeciesSet &tspecies =  elec.getSpeciesSet();
   int upIdx = tspecies.addSpecies("u");
@@ -91,6 +87,8 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   TrialWaveFunction psi = TrialWaveFunction(c);
   ConstantOrbital *orb = new ConstantOrbital;
   psi.addOrbital(orb, "Constant");
+  psi.registerData(elec, elec.WalkerList[0]->DataSet);
+  elec.WalkerList[0]->DataSet.allocate();
 
   FakeRandom rg;
 

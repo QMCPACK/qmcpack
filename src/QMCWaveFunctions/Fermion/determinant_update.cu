@@ -22,7 +22,9 @@
 #include <sys/time.h>
 #ifdef QMC_COMPLEX
 #include <thrust/complex.h>
-#include <thrust/system/cuda/detail/bulk/uninitialized.hpp>
+//Prior to CUDA9.0, bulk::uninitialized_array was included with thrust library
+//#include <thrust/system/cuda/detail/bulk/uninitialized.hpp>
+#include "../../CUDA/uninitialized_array.hpp"
 #endif
 
 #include "determinant_update.h"
@@ -231,7 +233,7 @@ void update_inverse_core1 (const T * __restrict__ A,
                            int k, int N, int rowstride)
 {
 #ifdef QMC_COMPLEX
-  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared, delta;
+  __shared__ uninitialized_array<T,BS> Ainv_colk_shared, delta;
 #else
   __shared__ T Ainv_colk_shared[BS], delta[BS];
 #endif
@@ -327,7 +329,7 @@ void update_inverse_core2 (T * __restrict__ A,
 {
   T delta_Ainv_shared;
 #ifdef QMC_COMPLEX
-  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared;
+  __shared__ uninitialized_array<T,BS> Ainv_colk_shared;
 #else
   __shared__ T Ainv_colk_shared[BS];
 #endif
@@ -380,7 +382,7 @@ void update_inverse_core2_subblock (T * __restrict__ A,
 {
   T delta_Ainv_shared;
 #ifdef QMC_COMPLEX
-  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared;
+  __shared__ uninitialized_array<T,BS> Ainv_colk_shared;
 #else
   __shared__ T Ainv_colk_shared[BS];
 #endif
@@ -1117,14 +1119,14 @@ calc_ratios (T **Ainv_list, T **new_row_list,
   }
   __syncthreads();
 #ifdef QMC_COMPLEX
-  __shared__ bulk::uninitialized_array<T,BS> new_row_shared;
+  __shared__ uninitialized_array<T,BS> new_row_shared;
 #else
   __shared__ T new_row_shared[BS];
 #endif
   if (col < N)
     new_row_shared[tid] = new_row[tid];
 #ifdef QMC_COMPLEX
-  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared;
+  __shared__ uninitialized_array<T,BS> Ainv_colk_shared;
 #else
   __shared__ T Ainv_colk_shared[BS];
 #endif
@@ -1134,7 +1136,7 @@ calc_ratios (T **Ainv_list, T **new_row_list,
     Ainv_colk_shared[tid] = Ainv[col*row_stride + elec];
   __syncthreads();
 #ifdef QMC_COMPLEX
-  __shared__ bulk::uninitialized_array<T,BS> Ainv_new_row;
+  __shared__ uninitialized_array<T,BS> Ainv_new_row;
 #else
   __shared__ T Ainv_new_row[BS];
 #endif
@@ -1278,8 +1280,8 @@ calc_ratio_grad_lapl (T **Ainv_list, T **new_row_list, T **grad_lapl_list,
   const int BS4=4*BS1;
   __syncthreads();
 #ifdef QMC_COMPLEX
-  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared;
-  __shared__ bulk::uninitialized_array<T,5*BS1> ratio_prod;
+  __shared__ uninitialized_array<T,BS> Ainv_colk_shared;
+  __shared__ uninitialized_array<T,5*BS1> ratio_prod;
 #else
   __shared__ T Ainv_colk_shared[BS];
   __shared__ T ratio_prod[5*BS1];
@@ -1360,8 +1362,8 @@ calc_ratio_grad_lapl (T **Ainv_list, T **new_row_list, T **grad_lapl_list,
   const int BS3=3*BS1;
   const int BS4=4*BS1;
 #ifdef QMC_COMPLEX
-  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared;
-  __shared__ bulk::uninitialized_array<T,5*BS1> ratio_prod;
+  __shared__ uninitialized_array<T,BS> Ainv_colk_shared;
+  __shared__ uninitialized_array<T,5*BS1> ratio_prod;
 #else
   __shared__ T Ainv_colk_shared[BS];
   __shared__ T ratio_prod[5*BS1];
@@ -1563,8 +1565,8 @@ calc_grad_kernel (T **Ainv_list, T **grad_lapl_list,
   const int BS1=BS+1;
   const int BS2=2*BS1;
 #ifdef QMC_COMPLEX
-  __shared__ bulk::uninitialized_array<T,BS> Ainv_colk_shared;
-  __shared__ bulk::uninitialized_array<T,3*BS1> ratio_prod;
+  __shared__ uninitialized_array<T,BS> Ainv_colk_shared;
+  __shared__ uninitialized_array<T,3*BS1> ratio_prod;
 #else
   __shared__ T Ainv_colk_shared[BS];
   __shared__ T ratio_prod[3*BS1];
@@ -1753,7 +1755,7 @@ calc_many_ratios_kernel (T **Ainv_list, T **new_row_list,
   __syncthreads();
   int NB = N/BS + ((N%BS) ? 1 : 0);
 #ifdef QMC_COMPLEX
-  __shared__ bulk::uninitialized_array<T,BS> Ainv_shared;
+  __shared__ uninitialized_array<T,BS> Ainv_shared;
 #else
   __shared__ T Ainv_shared[BS];
 #endif
@@ -1761,7 +1763,7 @@ calc_many_ratios_kernel (T **Ainv_list, T **new_row_list,
 //  __shared__ T row[BS];
   // We use BS+1 to avoid bank conflicts in the writing.
 #ifdef QMC_COMPLEX
-  __shared__ bulk::uninitialized_array<T,MAX_RATIO_ROWS*BS1> ratio_sum;
+  __shared__ uninitialized_array<T,MAX_RATIO_ROWS*BS1> ratio_sum;
 #else
   __shared__ T ratio_sum[MAX_RATIO_ROWS*BS1];
 #endif
@@ -1979,8 +1981,8 @@ all_ratios_grad_lapl_kernel (T **Ainv_list, T **grad_lapl_list,
   }
   __syncthreads();
 #ifdef QMC_COMPLEX
-  __shared__ bulk::uninitialized_array<T,RATIO_BS*(RATIO_BS+1)> Ainv_block;
-  __shared__ bulk::uninitialized_array<T,RATIO_BS*(RATIO_BS+1)> grad_lapl_block[4];
+  __shared__ uninitialized_array<T,RATIO_BS*(RATIO_BS+1)> Ainv_block;
+  __shared__ uninitialized_array<T,RATIO_BS*(RATIO_BS+1)> grad_lapl_block[4];
 #else
   __shared__ T Ainv_block[RATIO_BS*(RATIO_BS+1)];
   __shared__ T grad_lapl_block[4][RATIO_BS*(RATIO_BS+1)];

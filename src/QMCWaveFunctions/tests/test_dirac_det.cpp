@@ -15,7 +15,6 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Utilities/OhmmsInfo.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "Numerics/OhmmsBlas.h"
 #include "QMCWaveFunctions/SPOSetBase.h"
@@ -92,9 +91,9 @@ FakeSPO::FakeSPO()
   a(2,2) = 4.9;
 
   v.resize(3);
-  v(0) = 1.9;
-  v(1) = 2.0;
-  v(2) = 3.1;
+  v[0] = 1.9;
+  v[1] = 2.0;
+  v[2] = 3.1;
 
 
   a2.resize(4,4);
@@ -134,7 +133,6 @@ FakeSPO::FakeSPO()
 void FakeSPO::setOrbitalSetSize(int norbs)
 {
   OrbitalSetSize = norbs;
-  t_logpsi.resize(norbs, norbs);
 }
 
 void
@@ -165,7 +163,7 @@ FakeSPO::evaluate(const ParticleSet& P, int iat,
 {
   if (OrbitalSetSize == 3) {
     for (int i = 0; i < 3; i++) {
-      psi[i] = v(i);
+      psi[i] = v[i];
     }
   }
   else if (OrbitalSetSize == 4) {

@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes">
+      <basisset name="LCAOBSet">
+        <atomicBasisSet name="Gaussian" angular="cartesian" type="Gaussian" elementType="He" normalized="no">
+          <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
+          <!-- Possible substitution He00 by a Slater-type orbital
+  <basisGroup rid="He00" n="0" l="0" type="Slater">
+    <radfunc exponent="1.80302" contraction="1.0"/>
+  </basisGroup>
+-->
+          <basisGroup rid="He00" n="0" l="0" type="Gaussian">
+            <radfunc exponent="6.362421400000e+00" contraction="1.543289672950e-01"/>
+            <radfunc exponent="1.158923000000e+00" contraction="5.353281422820e-01"/>
+            <radfunc exponent="3.136498000000e-01" contraction="4.446345421850e-01"/>
+          </basisGroup>
+        </atomicBasisSet>
+      </basisset>
+      <slaterdeterminant>
+        <determinant id="updet" size="1">
+          <occupation mode="ground"/>
+          <coefficient size="1" id="updetC">
+  1.00000000000000e+00
+</coefficient>
+        </determinant>
+        <determinant id="downdet" size="1">
+          <occupation mode="ground"/>
+          <coefficient size="1" id="downdetC">
+  1.00000000000000e+00
+</coefficient>
+        </determinant>
+      </slaterdeterminant>
+    </determinantset>
+  </wavefunction>
+</qmcsystem>

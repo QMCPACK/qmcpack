@@ -22,6 +22,7 @@ hdf_archive::hdf_archive(Communicate* c, bool request_pio)
   H5Eget_auto (&err_func, &client_data);
   H5Eset_auto (NULL, NULL);
   set_access_plist(request_pio,c);
+  myComm=c;
 }
 
 hdf_archive::~hdf_archive()

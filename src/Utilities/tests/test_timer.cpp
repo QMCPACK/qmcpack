@@ -14,7 +14,6 @@
 
 #define USE_FAKE_CLOCK
 #include "Utilities/NewTimer.h"
-#include "Utilities/OhmmsInfo.h"
 #include <stdio.h>
 #include <string>
 #include <vector>
@@ -373,9 +372,6 @@ TEST_CASE("test stack exceeded message")
 
 TEST_CASE("test max exceeded message")
 {
-  // initialize app_log
-  OhmmsInfo("testlogfile");
-
   TimerManagerClass tm;
   tm.set_timer_threshold(timer_level_fine);
   std::vector<NewTimer *> timer_list;

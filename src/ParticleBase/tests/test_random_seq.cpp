@@ -14,7 +14,6 @@
 
 #include "Utilities/FakeRandom.h"
 #include "Message/Communicate.h"
-#include "Utilities/OhmmsInfo.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "OhmmsPETE/TinyVector.h"
 #include <vector>
@@ -72,7 +71,7 @@ TEST_CASE("gaussian random particle attrib array length 1", "[particle_base]")
 {
   FakeRandom rg;
   ParticleAttrib<TinyVector<double, 1> > PA;
-  PA.create(1);
+  PA.resize(1);
   makeGaussRandomWithEngine(PA, rg);
 
   // assuming RNG input is 0.5

@@ -57,6 +57,8 @@ struct  J2OrbitalSoA : public OrbitalBase
 
   ///number of particles
   size_t N;
+  ///number of particles + padded
+  size_t N_padded;
   ///number of groups of the target particleset
   size_t NumGroups;
   ///task id
@@ -68,12 +70,12 @@ struct  J2OrbitalSoA : public OrbitalBase
   ///Correction
   RealType KEcorr;
   ///\f$Uat[i] = sum_(j) u_{i,j}\f$
-  ParticleAttrib<valT> Uat;
+  Vector<valT> Uat;
   ///\f$dUat[i] = sum_(j) du_{i,j}\f$
-  ParticleAttrib<posT> dUat;
-  valT *FirstAddressOfdU, *LastAddressOfdU;
+  using gContainer_type=VectorSoaContainer<valT,OHMMS_DIM>;
+  gContainer_type dUat;
   ///\f$d2Uat[i] = sum_(j) d2u_{i,j}\f$
-  ParticleAttrib<valT> d2Uat;
+  Vector<valT> d2Uat;
   valT cur_Uat;
   aligned_vector<valT> cur_u, cur_du, cur_d2u;
   aligned_vector<valT> old_u, old_du, old_d2u;
@@ -185,6 +187,7 @@ struct  J2OrbitalSoA : public OrbitalBase
   }
 
   ValueType ratio(ParticleSet& P, int iat);
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
   GradType evalGrad(ParticleSet& P, int iat);
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   void acceptMove(ParticleSet& P, int iat);
@@ -196,34 +199,43 @@ struct  J2OrbitalSoA : public OrbitalBase
                      ParticleSet::ParticleGradient_t& G,
                      ParticleSet::ParticleLaplacian_t& L, bool fromscratch=false);
 
-  inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
+  inline void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    evaluateLog(P,P.G,P.L);
-    buf.add(Uat.begin(), Uat.end());
-    buf.add(FirstAddressOfdU,LastAddressOfdU);
-    buf.add(d2Uat.begin(), d2Uat.end());
-    return LogValue;
+    if ( Bytes_in_WFBuffer == 0 )
+    {
+      Bytes_in_WFBuffer = buf.current();
+      buf.add(Uat.begin(), Uat.end());
+      buf.add(dUat.data(), dUat.end());
+      buf.add(d2Uat.begin(), d2Uat.end());
+      Bytes_in_WFBuffer = buf.current()-Bytes_in_WFBuffer;
+      // free local space
+      Uat.free();
+      dUat.free();
+      d2Uat.free();
+    }
+    else
+    {
+      buf.forward(Bytes_in_WFBuffer);
+    }
   }
 
-  inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
-    buf.get(Uat.begin(), Uat.end());
-    buf.get(FirstAddressOfdU,LastAddressOfdU);
-    buf.get(d2Uat.begin(), d2Uat.end());
+    Uat.attachReference(buf.lendReference<valT>(N), N);
+    dUat.attachReference(N, N_padded, buf.lendReference<valT>(N_padded*OHMMS_DIM));
+    d2Uat.attachReference(buf.lendReference<valT>(N), N);
   }
 
-  RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false)
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false)
   {
     evaluateGL(P, P.G, P.L, false);
-    buf.put(Uat.begin(), Uat.end());
-    buf.put(FirstAddressOfdU,LastAddressOfdU);
-    buf.put(d2Uat.begin(), d2Uat.end());
+    buf.forward(Bytes_in_WFBuffer);
     return LogValue;
   }
 
   /*@{ internal compute engines*/
   inline void computeU3(ParticleSet& P, int iat, const RealType* restrict dist,
-      RealType* restrict u, RealType* restrict du, RealType* restrict d2u);
+      RealType* restrict u, RealType* restrict du, RealType* restrict d2u, bool triangle=false);
 
   /** compute gradient
    */
@@ -240,26 +252,6 @@ struct  J2OrbitalSoA : public OrbitalBase
       grad[idim]=s;
     }
     return grad;
-  }
-
-  /** compute gradient and lap
-   */
-  inline void accumulateGL(const valT* restrict du, const valT* restrict d2u,
-      const RowContainer& displ, posT& grad, valT& lap) const
-  {
-    constexpr valT lapfac=OHMMS_DIM-RealType(1);
-    lap=valT(0);
-//#pragma omp simd reduction(+:lap)
-    for(int jat=0; jat<N; ++jat)
-      lap+=d2u[jat]+lapfac*du[jat];
-    for(int idim=0; idim<OHMMS_DIM; ++idim)
-    {
-      const valT* restrict dX=displ.data(idim);
-      valT s=valT();
-//#pragma omp simd reduction(+:s)
-      for(int jat=0; jat<N; ++jat) s+=du[jat]*dX[jat];
-      grad[idim]=s;
-    }
   }
 
 };
@@ -288,12 +280,11 @@ template<typename FT>
 void J2OrbitalSoA<FT>::init(ParticleSet& p)
 {
   N=p.getTotalNum();
+  N_padded=getAlignedSize<valT>(N);
   NumGroups=p.groups();
 
   Uat.resize(N); 
   dUat.resize(N);
-  FirstAddressOfdU = &(dUat[0][0]);
-  LastAddressOfdU = FirstAddressOfdU + dUat.size()*OHMMS_DIM;
   d2Uat.resize(N);
   cur_u.resize(N);
   cur_du.resize(N);
@@ -382,20 +373,21 @@ OrbitalBasePtr J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
 template<typename FT>
 inline void
 J2OrbitalSoA<FT>::computeU3(ParticleSet& P, int iat, const RealType* restrict dist,
-    RealType* restrict u, RealType* restrict du, RealType* restrict d2u)
+    RealType* restrict u, RealType* restrict du, RealType* restrict d2u, bool triangle)
 {
+  const int jelmax=triangle?iat:N;
   constexpr valT czero(0);
-  std::fill_n(u,  N,czero);
-  std::fill_n(du, N,czero);
-  std::fill_n(d2u,N,czero);
+  std::fill_n(u,  jelmax,czero);
+  std::fill_n(du, jelmax,czero);
+  std::fill_n(d2u,jelmax,czero);
 
   const int igt=P.GroupID[iat]*NumGroups;
   for(int jg=0; jg<NumGroups; ++jg)
   {
     const FuncType& f2(*F[igt+jg]);
     int iStart = P.first(jg);
-    int iEnd = P.last(jg);
-    f2.evaluateVGL(iStart, iEnd, dist, u, du, d2u, DistCompressed.data(), DistIndice.data());
+    int iEnd = std::min(jelmax,P.last(jg));
+    f2.evaluateVGL(iat, iStart, iEnd, dist, u, du, d2u, DistCompressed.data(), DistIndice.data());
   }
   //u[iat]=czero;
   //du[iat]=czero;
@@ -418,10 +410,38 @@ J2OrbitalSoA<FT>::ratio(ParticleSet& P, int iat)
     const FuncType& f2(*F[igt+jg]);
     int iStart = P.first(jg);
     int iEnd = P.last(jg);
-    cur_Uat += f2.evaluateV( iStart, iEnd, dist, DistCompressed.data() );
+    cur_Uat += f2.evaluateV(iat, iStart, iEnd, dist, DistCompressed.data());
   }
 
   return std::exp(Uat[iat]-cur_Uat);
+}
+
+template<typename FT>
+inline void
+J2OrbitalSoA<FT>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
+{
+  const DistanceTableData* d_table=P.DistTables[0];
+  const auto dist=d_table->Temp_r.data();
+
+  for(int ig=0; ig<NumGroups; ++ig)
+  {
+    const int igt=ig*NumGroups;
+    valT sumU(0);
+    for(int jg=0; jg<NumGroups; ++jg)
+    {
+      const FuncType& f2(*F[igt+jg]);
+      int iStart = P.first(jg);
+      int iEnd = P.last(jg);
+      sumU += f2.evaluateV(-1, iStart, iEnd, dist, DistCompressed.data());
+    }
+
+    for(int i=P.first(ig); i<P.last(ig); ++i)
+    {
+      // remove self-interaction
+      const valT Uself = F[igt+ig]->evaluate(dist[i]);
+      ratios[i]=std::exp(Uat[i]+Uself-sumU);
+    }
+  }
 }
 
 template<typename FT>
@@ -459,25 +479,40 @@ J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
   }
 
   valT cur_d2Uat(0);
-  posT cur_dUat;
   const auto& new_dr=d_table->Temp_dr;
   const auto& old_dr=d_table->Displacements[iat];
+  constexpr valT lapfac=OHMMS_DIM-RealType(1);
+  #pragma omp simd reduction(+:cur_d2Uat)
   for(int jat=0; jat<N; jat++)
   {
-    constexpr valT lapfac=OHMMS_DIM-RealType(1);
-    valT du   = cur_u[jat] - old_u[jat];
-    posT newg = cur_du[jat] * new_dr[jat];
-    posT dg   = newg - old_du[jat]*old_dr[jat];
-    valT newl = cur_d2u[jat] + lapfac*cur_du[jat];
-    valT dl   = old_d2u[jat] + lapfac*old_du[jat] - newl;
+    const valT du   = cur_u[jat] - old_u[jat];
+    const valT newl = cur_d2u[jat] + lapfac*cur_du[jat];
+    const valT dl   = old_d2u[jat] + lapfac*old_du[jat] - newl;
     Uat[jat]   += du;
-    dUat[jat]  -= dg;
     d2Uat[jat] += dl;
-    cur_dUat   += newg;
     cur_d2Uat  -= newl;
   }
+  posT cur_dUat;
+  for(int idim=0; idim<OHMMS_DIM; ++idim)
+  {
+    const valT* restrict new_dX=new_dr.data(idim);
+    const valT* restrict old_dX=old_dr.data(idim);
+    const valT* restrict cur_du_pt=cur_du.data();
+    const valT* restrict old_du_pt=old_du.data();
+    valT* restrict save_g=dUat.data(idim);
+    valT cur_g=cur_dUat[idim];
+    #pragma omp simd reduction(+:cur_g) aligned(old_dX,new_dX,save_g,cur_du_pt,old_du_pt)
+    for(int jat=0; jat<N; jat++)
+    {
+      const valT newg = cur_du_pt[jat] * new_dX[jat];
+      const valT dg   = newg - old_du_pt[jat]*old_dX[jat];
+      save_g[jat]  -= dg;
+      cur_g += newg;
+    }
+    cur_dUat[idim] = cur_g;
+  }
   Uat[iat]   = cur_Uat;
-  dUat[iat]  = cur_dUat;
+  dUat(iat)  = cur_dUat;
   d2Uat[iat] = cur_d2Uat;
 }
 
@@ -491,13 +526,43 @@ J2OrbitalSoA<FT>::recompute(ParticleSet& P)
     const int igt=ig*NumGroups;
     for(int iat=P.first(ig),last=P.last(ig); iat<last; ++iat)
     {
-      computeU3(P,iat,d_table->Distances[iat],cur_u.data(),cur_du.data(),cur_d2u.data());
-      Uat[iat]=simd::accumulate_n(cur_u.data(),N,valT());
+      computeU3(P,iat,d_table->Distances[iat],cur_u.data(),cur_du.data(),cur_d2u.data(),true);
+      Uat[iat]=simd::accumulate_n(cur_u.data(),iat,valT());
       posT grad;
-      valT lap;
-      accumulateGL(cur_du.data(),cur_d2u.data(),d_table->Displacements[iat],grad,lap);
-      dUat[iat]=grad;
+      valT lap(0);
+      const valT* restrict    u = cur_u.data();
+      const valT* restrict   du = cur_du.data();
+      const valT* restrict  d2u = cur_d2u.data();
+      const RowContainer& displ = d_table->Displacements[iat];
+      constexpr valT lapfac=OHMMS_DIM-RealType(1);
+      #pragma omp simd reduction(+:lap) aligned(du,d2u)
+      for(int jat=0; jat<iat; ++jat)
+        lap+=d2u[jat]+lapfac*du[jat];
+      for(int idim=0; idim<OHMMS_DIM; ++idim)
+      {
+        const valT* restrict dX=displ.data(idim);
+        valT s=valT();
+        #pragma omp simd reduction(+:s) aligned(du,dX)
+        for(int jat=0; jat<iat; ++jat) s+=du[jat]*dX[jat];
+        grad[idim]=s;
+      }
+      dUat(iat)=grad;
       d2Uat[iat]=-lap;
+      // add the contribution from the upper triangle
+      #pragma omp simd aligned(u,du,d2u)
+      for(int jat=0; jat<iat; jat++)
+      {
+        Uat[jat] += u[jat];
+        d2Uat[jat] -= d2u[jat]+lapfac*du[jat];
+      }
+      for(int idim=0; idim<OHMMS_DIM; ++idim)
+      {
+        valT* restrict save_g=dUat.data(idim);
+        const valT* restrict dX=displ.data(idim);
+        #pragma omp simd aligned(save_g,du,dX)
+        for(int jat=0; jat<iat; jat++)
+          save_g[jat]-=du[jat]*dX[jat];
+      }
     }
   }
 }

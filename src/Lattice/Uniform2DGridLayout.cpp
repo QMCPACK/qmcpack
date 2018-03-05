@@ -16,9 +16,9 @@
 
 
 #include "Lattice/Uniform2DGridLayout.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Message/OpenMP.h"
 #include "Message/Communicate.h"
+#include "Utilities/OutputManager.h"
 #include <limits>
 
 namespace qmcplusplus

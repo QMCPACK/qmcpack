@@ -21,7 +21,7 @@
 #include <Particle/HDFWalkerInput_0_4.h>
 #include <OhmmsApp/RandomNumberControl.h>
 #include <random/random.hpp>
-#include <miniapps/graphite.hpp>
+#include <miniapps/input.hpp>
 #include <miniapps/pseudo.hpp>
 #include <Utilities/Timer.h>
 #include <miniapps/common.hpp>
@@ -46,7 +46,6 @@ int main(int argc, char** argv)
 {
 
   OHMMS::Controller->initialize(0, NULL);
-  OhmmsInfo("restart");
   Communicate* myComm=OHMMS::Controller;
   myComm->setName("restart");
 
@@ -111,8 +110,7 @@ int main(int argc, char** argv)
   //turn off output
   if(myComm->rank())
   {
-    OhmmsInfo::Log->turnoff();
-    OhmmsInfo::Warn->turnoff();
+    outputManager.shutOff();
   }
 
   int nptcl=0;
@@ -125,7 +123,7 @@ int main(int argc, char** argv)
 
   ParticleSet ions;
   OHMMS_PRECISION scale=1.0;
-  tile_graphite(ions,tmat,scale);
+  tile_cell(ions,tmat,scale);
 
   #pragma omp parallel reduction(+:t0)
   {
@@ -138,7 +136,7 @@ int main(int argc, char** argv)
     RandomGenerator_t& random_th=myRNG[ip];
 
     const int nions=ions.getTotalNum();
-    const int nels=4*nions;
+    const int nels=count_electrons(ions);
     const int nels3=3*nels;
 
     #pragma omp master
@@ -292,10 +290,10 @@ int main(int argc, char** argv)
   walkerWrite = timers[3]/myComm->size();
   if(myComm->rank() == 0)
   {
-    cout << "\nTotal time of writing random seeds to HDF5 file: " << setprecision(2) << h5write << "\n";
-    cout << "\nTotal time of reading random seeds in HDF5 file: " << setprecision(2) << h5read << "\n";
-    cout << "\nTotal time of writing walkers to HDF5 file: " << setprecision(2) << walkerWrite << "\n";
-    cout << "\nTotal time of reading walkers in HDF5 file: " << setprecision(2) << walkerRead << "\n";
+    cout << "\nTotal time of writing random seeds to HDF5 file: " << setprecision(6) << h5write << "\n";
+    cout << "\nTotal time of reading random seeds in HDF5 file: " << setprecision(6) << h5read << "\n";
+    cout << "\nTotal time of writing walkers to HDF5 file: " << setprecision(6) << walkerWrite << "\n";
+    cout << "\nTotal time of reading walkers in HDF5 file: " << setprecision(6) << walkerRead << "\n";
   }
 
   if(myComm->size()>1)

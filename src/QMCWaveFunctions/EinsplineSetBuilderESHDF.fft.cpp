@@ -129,7 +129,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
   HDFAttribIO<Vector<TinyVector<double,3> > > h_IonPos(IonPos);
   h_IonPos.read   (H5FileID, "/atoms/positions");
   for (int i=0; i<IonTypes.size(); i++)
-    app_log() << "Atom type(" << i << ") = " << IonTypes(i) << std::endl;
+    app_log() << "Atom type(" << i << ") = " << IonTypes[i] << std::endl;
   /////////////////////////////////////
   // Read atom orbital info from xml //
   /////////////////////////////////////
@@ -193,12 +193,12 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
       for (int j=0; j<Super2Prim.size(); j++)
         if (Super2Prim[j]==i)
         {
-          if ( (Zind<0) || (SourcePtcl->mySpecies(Zind,SourcePtcl->GroupID[j])==IonTypes(i)) )
+          if ( (Zind<0) || (SourcePtcl->mySpecies(Zind,SourcePtcl->GroupID[j])==IonTypes[i]) )
             AtomicCentersInfo.GroupID[i] = SourcePtcl->GroupID[j];
           else
           {
             app_error() << "Primitive cell ion " << i << " vs supercell ion " << j << " atomic number not matching: "
-                        << IonTypes(i) << " vs " << SourcePtcl->mySpecies(Zind,SourcePtcl->GroupID[j]) << std::endl;
+                        << IonTypes[i] << " vs " << SourcePtcl->mySpecies(Zind,SourcePtcl->GroupID[j]) << std::endl;
             abort();
           }
           continue;
@@ -207,6 +207,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
     }
 
     // load cutoff_radius, spline_radius, spline_npoints, lmax if exists.
+    const int inner_cutoff_ind=SourcePtcl->mySpecies.findAttribute("inner_cutoff");
     const int cutoff_radius_ind=SourcePtcl->mySpecies.findAttribute("cutoff_radius");
     const int spline_radius_ind=SourcePtcl->mySpecies.findAttribute("spline_radius");
     const int spline_npoints_ind=SourcePtcl->mySpecies.findAttribute("spline_npoints");
@@ -215,6 +216,8 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
     for(int center_idx=0; center_idx<AtomicCentersInfo.Ncenters; center_idx++)
     {
       const int my_GroupID = AtomicCentersInfo.GroupID[center_idx];
+      if(inner_cutoff_ind>=0)
+        AtomicCentersInfo.inner_cutoff[center_idx] = SourcePtcl->mySpecies(inner_cutoff_ind, my_GroupID);
       if(cutoff_radius_ind>=0)
         AtomicCentersInfo.cutoff[center_idx] = SourcePtcl->mySpecies(cutoff_radius_ind, my_GroupID);
       if(spline_radius_ind>=0)

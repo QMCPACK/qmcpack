@@ -26,11 +26,11 @@
 #include "Configuration.h"
 #include "OhmmsData/ParameterSet.h"
 #include "Utilities/PooledData.h"
+#include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "Estimators/EstimatorManagerBase.h"
-#include "Utilities/OhmmsInfo.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
 class Communicate;
@@ -360,9 +360,6 @@ protected:
   ///temporary storage for random displacement
   ParticleSet::ParticlePos_t deltaR;
 
-  ///stream for the log file
-  //OhmmsInform *LogOut;
-
   ///temporary buffer to accumulate data
   //ostrstream log_buffer;
 
@@ -398,6 +395,8 @@ protected:
   void adiosCheckpointFinal(int block, bool dumpwalkers);
   std::string getRotationName( std::string RootName);
   std::string getLastRotationName( std::string RootName);
+
+  NewTimer *checkpointTimer;
 
 };
 /**@}*/

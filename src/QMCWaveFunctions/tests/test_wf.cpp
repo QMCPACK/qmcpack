@@ -15,7 +15,6 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
@@ -47,14 +46,12 @@ TEST_CASE("Pade functor", "[wavefunction]")
   REQUIRE(u == Approx(2.232142857142857));
 }
 
-#ifndef ENABLE_SOA
 TEST_CASE("Pade Jastrow", "[wavefunction]")
 {
 
     Communicate *c;
     OHMMS::Controller->initialize(0, NULL);
     c = OHMMS::Controller;
-    OhmmsInfo("testlogfile");
 
     ParticleSet ions_;
     ParticleSet elec_;
@@ -82,7 +79,11 @@ TEST_CASE("Pade Jastrow", "[wavefunction]")
     tspecies(chargeIdx, upIdx) = -1;
     tspecies(chargeIdx, downIdx) = -1;
 
+#ifdef ENABLE_SOA
+    elec_.addTable(ions_,DT_SOA);
+#else
     elec_.addTable(ions_,DT_AOS);
+#endif
     elec_.update();
 
 
@@ -118,6 +119,5 @@ const char *particles = \
   REQUIRE(logpsi == Approx(-1.862821769493147));
 
 }
-#endif
 }
 

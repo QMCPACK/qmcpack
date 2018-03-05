@@ -14,7 +14,6 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Lattice/ParticleBConds.h"
 #include "Particle/ParticleSet.h"
 #include "Particle/DistanceTableData.h"
@@ -40,7 +39,6 @@ TEST_CASE("Bare Force", "[hamiltonian]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   ParticleSet ions;
   ParticleSet elec;
@@ -153,7 +151,6 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   Uniform3DGridLayout grid;
   grid.BoxBConds = true; // periodic
@@ -255,7 +252,6 @@ TEST_CASE("Ceperley Force", "[hamiltonian]")
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
-  OhmmsInfo("testlogfile");
 
   //Uniform3DGridLayout grid;
   //grid.BoxBConds = false; // periodic

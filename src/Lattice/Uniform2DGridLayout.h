@@ -22,7 +22,6 @@
 #endif
 #include <vector>
 #include <iostream>
-#include "Utilities/OhmmsInfo.h"
 #include "Lattice/CrystalLattice.h"
 #include "Lattice/UniformCartesianGrid.h"
 

@@ -35,7 +35,7 @@ namespace qmcplusplus {
 
     /** copy complex to two real containers */
     template<typename T1, typename T2>
-      inline void copy(const complex<T1>* restrict source, T2* restrict target_r, T2* restrict target_i, size_t n)
+      inline void copy(const std::complex<T1>* restrict source, T2* restrict target_r, T2* restrict target_i, size_t n)
       {
         const T1* restrict iptr=reinterpret_cast<T1*>(source);
         ASSUMED_ALIGNED(source); ASSUMED_ALIGNED(iptr);

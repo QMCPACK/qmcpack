@@ -142,7 +142,7 @@ namespace qmcplusplus
   }
 
   
-  void CompositeSPOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, 
+  void CompositeSPOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi,
                 GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     int n=0;

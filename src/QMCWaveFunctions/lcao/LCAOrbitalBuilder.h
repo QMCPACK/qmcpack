@@ -15,65 +15,56 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#ifndef QMCPLUSPLUS_LCAO_ORBITAL_BUILDER_H
-#define QMCPLUSPLUS_LCAO_ORBITAL_BUILDER_H
+#ifndef QMCPLUSPLUS_SOA_LCAO_ORBITAL_BUILDER_H
+#define QMCPLUSPLUS_SOA_LCAO_ORBITAL_BUILDER_H
 
 #include "QMCWaveFunctions/BasisSetBase.h"
-#include "QMCWaveFunctions/lcao/SoaCartesianTensor.h"
-#include "QMCWaveFunctions/lcao/SoaSphericalTensor.h"
-#include "QMCWaveFunctions/lcao/SoaSphericalBasisSet.h"
-#include "QMCWaveFunctions/lcao/SoaLocalizedBasisSet.h"
-#include "QMCWaveFunctions/lcao/NGFunctor.h"
 
 namespace qmcplusplus
 {
+
   /** BasisSetBuilder using new LCAOrbitalSet and Soa versions
    *
    * Reimplement MolecularBasisSetBuilder
    * - support both CartesianTensor and SphericalTensor
    */
-  struct LCAOrbitalBuilder: public BasisSetBuilder
+  class LCAOrbitalBuilder: public BasisSetBuilder
   {
-    //for now, use the same cubic spline: use BsplineFunctor later
-    typedef NGFunctor RadFuncT;
-    typedef SoaSphericalBasisSet<RadFuncT,SoaCartesianTensor<RealType> > XYZCOT;
-    typedef SoaSphericalBasisSet<RadFuncT,SoaSphericalTensor<RealType> > YlmCOT;
-    typedef SoaLocalizedBasisSet<XYZCOT> XYZBasisT;
-    typedef SoaLocalizedBasisSet<YlmCOT> YlmBasisT;
-
-    typedef BasisSetBase<ValueType> BasisSet_t;
+    public:
+    typedef RealBasisSetBase<RealType> BasisSet_t;
     /** constructor
      * \param els reference to the electrons
      * \param ions reference to the ions
      */
-    LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, bool cusp=false, std::string cusp_info=""):
-      targetPtcl(els), sourcePtcl(ions), thisBasisSet(0),cuspCorr(cusp),cuspInfo(cusp_info)
-      {
-        ClassName="MolecularBasisBuilder";
-      }
-
-    inline bool is_same(const xmlChar* a, const char* b)
-    {
-      return !strcmp((const char*)a,b);
-    }
-
+    LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, xmlNodePtr cur);
+    ~LCAOrbitalBuilder();
     bool put(xmlNodePtr cur);
-
+    bool putXML(xmlNodePtr cur);
+    bool putH5();
     SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
+
+    private:
 
     ///target ParticleSet
     ParticleSet& targetPtcl;
     ///source ParticleSet
     ParticleSet& sourcePtcl;
-    ///MO basis with CartesianTensor
-    XYZBasisT *xyzBasisSet;
-    ///MO basis with SphericalTensor
-    YlmBasisT *ylmBasisSet;
-    ///save AtomiBasisBuilder<RFB>*
-    std::map<std::string,BasisSetBuilder*> aoBuilders;
+    ///localized basis set
+    BasisSet_t* myBasisSet;
     ///apply cusp correction to molecular orbitals
+    int radialOrbType;
     bool cuspCorr;
     std::string cuspInfo;
+    ///Path to HDF5 Wavefunction
+    std::string h5_path;
+
+    /** create basis set
+     *
+     * Use ao_traits<T,I,J> to match (ROT)x(SH) combo
+     */
+    template<int I, int J> BasisSet_t* createBasisSet(xmlNodePtr cur);
+    template<int I, int J> BasisSet_t* createBasisSetH5();
+
   };
 }
 #endif
