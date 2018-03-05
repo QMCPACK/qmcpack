@@ -477,13 +477,27 @@ IF (ENABLE_GCOV)
   ENDIF()
 ENDIF(ENABLE_GCOV)
 
+MESSAGE(STATUS "CXX exe linker flags: ${CMAKE_EXE_LINKER_FLAGS}")
+
 # Require C++11 while leaving possibility to fall back by modifying this file
 SET(CXX11_NEEDED TRUE)
 IF(CXX11_NEEDED)
   SET(CXX11_FLAG "-std=c++11")
   #check if the CXX compiler supports -std=c++11 option
-  include(CheckCXXCompilerFlag)
-  CHECK_CXX_COMPILER_FLAG(${CXX11_FLAG} CXX_COMPILER_SUPPORT_CXX11)
+  # Old method
+  # include(CheckCXXCompilerFlag) found this problematics with clang 5.0.1
+  # CHECK_CXX_COMPILER_FLAG(${CXX11_FLAG} CXX_COMPILER_SUPPORT_CXX11)
+  
+  FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/std11.cxx"
+    "int main() { return 0; }\n" )
+  try_compile(CXX_COMPILER_SUPPORT_CXX11 ${CMAKE_BINARY_DIR}
+    ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/std11.cxx
+    CMAKE_FLAGS "-DCMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}"
+  OUTPUT_VARIABLE STD11_OUT)
+
+  if ( NOT CXX_COMPILER_SUPPORT_CXX11 )
+    MESSAGE( "CXX11 Test reports: ${STD11_OUT}" )
+  endif ( NOT CXX_COMPILER_SUPPORT_CXX11 )
   # Turn on C++11 for this code
 
   # Force the flag on Cray with Intel compiler, because the Cray wrapper
@@ -847,6 +861,7 @@ endif()
 
 EXECUTE_PROCESS(COMMAND hostname OUTPUT_VARIABLE QMC_HOSTNAME OUTPUT_STRIP_TRAILING_WHITESPACE)
 CONFIGURE_FILE(${qmcpack_SOURCE_DIR}/qmcpack.settings ${qmcpack_BINARY_DIR}/bin/qmcpack.settings)
+
 
 #########################
 # add definitions for adios profile
