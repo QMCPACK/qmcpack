@@ -1,4 +1,7 @@
-add_library(common
+add_library(common EXCLUDE_FROM_ALL "")
+
+target_sources(common
+  PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/GKIntegration.cc"
   "${CMAKE_CURRENT_SOURCE_DIR}/CoulombPot.cc"
   "${CMAKE_CURRENT_SOURCE_DIR}/NLPP.cc"
