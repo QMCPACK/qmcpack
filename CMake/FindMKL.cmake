@@ -2,9 +2,10 @@
 # This needs a lot of work to make it robust
 INCLUDE( CheckCXXSourceCompiles )
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.10)
-IF(COMMAND cmake_policy)
-  cmake_policy(SET CMP0056 NEW)
-ENDIF(COMMAND cmake_policy)
+
+# IF(COMMAND cmake_policy)
+#   cmake_policy(SET CMP0056 NEW)
+# ENDIF(COMMAND cmake_policy)
 
 # if MKL_ROOT is set, use that
 if ( MKL_ROOT )
