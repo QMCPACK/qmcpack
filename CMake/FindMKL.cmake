@@ -22,8 +22,6 @@ else ( MKL_ROOT )
    if ( ${LCASE_CMAKE_CXX_COMPILER_ID} MATCHES "intel" )
      set(MKL_FLAGS "-mkl")
      set(MKL_COMPILE_DEFINITIONS "-mkl")
-     #set(MKL_LIBRARIES "-lmkl_rt -lpthread -lm -ldl")
-     #set(MKL_INCLUDE_DIRECTORIES "${MKL_ROOT}/include")
    endif ( ${LCASE_CMAKE_CXX_COMPILER_ID} MATCHES "intel" )
 endif ( MKL_ROOT )
 
