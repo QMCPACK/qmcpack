@@ -1,10 +1,11 @@
 # Simple file to find MKL (if availible)
 # This needs a lot of work to make it robust
 INCLUDE( CheckCXXSourceCompiles )
-CMAKE_MINIMUM_REQUIRED(VERSION 3.2.0)
-IF(COMMAND cmake_policy)
-  cmake_policy(SET CMP0056 NEW)
-ENDIF(COMMAND cmake_policy)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.10)
+
+# IF(COMMAND cmake_policy)
+#   cmake_policy(SET CMP0056 NEW)
+# ENDIF(COMMAND cmake_policy)
 
 # if MKL_ROOT is set, use that
 if ( MKL_ROOT )
@@ -31,7 +32,6 @@ if ( CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_CXX_COMPILER_ID STREQUAL
   string(REPLACE "-fopenmp" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 endif ( CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
 
- 
 # Check for mkl.h
 FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl.cxx"
     "#include <iostream>\n #include <mkl.h>\n int main() { return 0; }\n" )
@@ -72,7 +72,7 @@ try_compile(HAVE_MKL_FFTW3 ${CMAKE_BINARY_DIR}
       OUTPUT_VARIABLE MKL_OUT)
 
 set( CMAKE_CXX_FLAGS "${org_CMAKE_CXX_FLAGS}" )
-    
+
 IF ( HAVE_MKL )
     SET( MKL_FOUND 1 )
     SET( MKL_FLAGS ${MKL_FLAGS} )
