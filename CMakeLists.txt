@@ -369,7 +369,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   ENDIF($ENV{CRAYPE_VERSION} MATCHES ".")
 
   #------------------------------------
-  # Identify the compiler -- I don't get why this COMPILER variable is added --PD
+  # Identify the compiler -- This serves only to deal with case where only C or CXX is set, refactor? 
   #------------------------------------
   IF ( CMAKE_C_COMPILER_WORKS OR CMAKE_C_COMPILER_WORKS )
     MESSAGE ( STATUS "CMAKE_CXX_COMPILER_ID ${CMAKE_CXX_COMPILER_ID}" )
