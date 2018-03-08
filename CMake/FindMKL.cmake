@@ -12,8 +12,8 @@ string(TOLOWER CMAKE_CXX_COMPILER_ID LCASE_CMAKE_CXX_COMPILER_ID)
 # if MKL_ROOT is set, use that
 if ( MKL_ROOT OR (${LCASE_CMAKE_CXX_COMPILER_ID} MATCHES "intel") )
   if ( MKL_ROOT )
-    message ("MKL_ROOT: ${MKL_ROOT}")
-    find_path(MKL_LINK_DIRECTORIES name "libmkl_intel_lp64.so" HINTS ${MKL_ROOT}
+    set(MKL_FIND_LIB "libmkl_intel_lp64${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    find_path(MKL_LINK_DIRECTORIES name "${MKL_FIND_LIB}" HINTS ${MKL_ROOT}
       PATH_SUFFIXES "lib" "lib/intel64")
     message("MKL_LINK_DIRECTORIES: ${MKL_LINK_DIRECTORIES}")
     find_path(MKL_INCLUDE_DIRECTORIES name "mkl.h" HINTS ${MKL_ROOT}
