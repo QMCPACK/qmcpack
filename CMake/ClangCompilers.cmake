@@ -17,14 +17,9 @@ ENDIF()
 # Set clang specfic flags (which we always want)
 ADD_DEFINITIONS( -Drestrict=__restrict__ )
 
-IF (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5.0 )
-  SET( HAVE_POSIX_MEMALIGN 1 )
-  SET( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -D__forceinline=inline" )
-  SET( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -D__forceinline=inline" )
-  SET( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D__forceinline=''" )
-ELSE ()
-  SET( HAVE_POSIX_MEMALIGN 0 )
-ENDIF()
+SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fomit-frame-pointer -fstrict-aliasing")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fomit-frame-pointer -fstrict-aliasing -D__forceinline=inline")
+SET( HAVE_POSIX_MEMALIGN 0 )    # Clang doesn't support -malign-double
 
 # Suppress compile warnings
 SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -Wno-deprecated -Wno-unused-value")
@@ -38,10 +33,6 @@ SET( CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE} -ffast-math" )
 SET( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -ffast-math" )
 SET( CMAKE_C_FLAGS_RELWITHDEBINFO     "${CMAKE_C_FLAGS_RELWITHDEBINFO} -ffast-math" )
 SET( CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -ffast-math" )
-
-IF (ENABLE_LLVM_LLD)
-  SET ( CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=lld )
-ENDIF()
 
 #------------------------
 # Not on Cray's machine
@@ -76,3 +67,4 @@ IF (ENABLE_GCOV)
   SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
   SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} --coverage")
 ENDIF(ENABLE_GCOV)
+
