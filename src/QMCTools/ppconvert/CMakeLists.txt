@@ -5,16 +5,4 @@ IF(COMMAND cmake_policy)
 ENDIF(COMMAND cmake_policy)
 ###################################################
 
-###################################################
-# Done searching libraries. Start building ppconvert
-###################################################
-
-MESSAGE(STATUS "Ready to build ppconvert")
-
 subdirs(src)
-
-# add_library(common EXCLUDE_FROM_ALL "")
-# add_executable(ppconvert EXCLUDE_FROM_ALL "")
-
-#include
-# include(src/CMakeLists.txt)

@@ -19,11 +19,21 @@ target_sources(common
   "${CMAKE_CURRENT_SOURCE_DIR}/PotentialBase.cc"
   "${CMAKE_CURRENT_SOURCE_DIR}/IOASCII.cc"
   "${CMAKE_CURRENT_SOURCE_DIR}/Functionals.cc"
-)
+  )
 
+target_compile_definitions(common
+  PRIVATE
+  "$<$<CXX_COMPILER_ID:Intel>:__ICC>"
+  "$<$<CXX_COMPILER_ID:XL>:__IBM>"
+  "$<$<CXX_COMPILER_ID:PGI>:__PGI>"
+  "$<$<CXX_COMPILER_ID:GNU>:__GNUC__>"
+  )
+
+get_property( COMMON_COMPILE_DEFS TARGET common PROPERTY COMPILE_DEFINITIONS )
+MESSAGE( "common compile defs ${COMMON_COMPILE_DEFS}" )
 target_include_directories(common PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/blitz
   ${CMAKE_CURRENT_SOURCE_DIR}/blitz/array
 )
-  
+
