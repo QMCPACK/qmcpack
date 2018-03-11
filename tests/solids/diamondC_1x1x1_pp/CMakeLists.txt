@@ -28,10 +28,10 @@ IF(ENABLE_SOA OR QMC_CUDA)
                     0 DIAMOND_SCALARS # VMC
                     )
 
-  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_hybridrep_VPpp-vmc_sdj
+  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_hybridrep_pp_batched-vmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
                     qmc_short
-                    qmc_short_hybridrep_VP.in.xml
+                    qmc_short_hybridrep_batched.in.xml
                     1 16
                     TRUE
                     0 DIAMOND_SCALARS # VMC

@@ -560,7 +560,7 @@ struct HybridAdoptorBase
       const auto &displ=VP.DistTables[myTableID]->Displacements;
       for(int ivp=0; ivp<VP.getTotalNum(); ivp++)
       {
-        r_image=myCenter.pos+displ[ivp][center_idx];
+        r_image=myCenter.pos-displ[ivp][center_idx];
         bc_signs[ivp]=get_bc_sign(VP.R[ivp], PrimLattice, HalfG);;
       }
       myCenter.evaluateValues(displ, center_idx, dist_r, multi_myV);

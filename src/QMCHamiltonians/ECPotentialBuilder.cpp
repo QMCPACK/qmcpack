@@ -55,7 +55,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   std::string forces("no");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(ecpFormat,"format");
-  pAttrib.add(NLPP_algo,"algo");
+  pAttrib.add(NLPP_algo,"algorithm");
   pAttrib.add(pbc,"pbc");
   pAttrib.add(forces,"forces");
   pAttrib.put(cur);
@@ -128,7 +128,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       new NonLocalECPotential_CUDA(IonConfig,targetPtcl,targetPsi,usePBC,doForces);
 #else
     NonLocalECPotential* apot =
-      new NonLocalECPotential(IonConfig,targetPtcl,targetPsi, doForces, NLPP_algo=="VP");
+      new NonLocalECPotential(IonConfig,targetPtcl,targetPsi, doForces, NLPP_algo=="batched");
 #endif
     int nknot_max=0;
     for(int i=0; i<nonLocalPot.size(); i++)
@@ -143,7 +143,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     app_log() << "\n  Using NonLocalECP potential \n"
               << "    Maximum grid on a sphere for NonLocalECPotential: "
               << nknot_max << std::endl;
-    if(NLPP_algo=="VP") app_log() << "    Using Virtual Particles" << std::endl;
+    if(NLPP_algo=="batched") app_log() << "    Using batched ratio computing in NonLocalECP" << std::endl;
 
     rcore_max=std::max(rc2,rcore_max);
     targetPtcl.checkBoundBox(2*rc2);
