@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "QMCWaveFunctions/LCOrbitalSet.h"
+#include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSet.h"
 #include "ParticleIO/XMLParticleIO.h"
 #include "OhmmsData/Libxml2Doc.h"
 

@@ -20,7 +20,7 @@
 #include "Numerics/OneDimCubicSpline.h"
 #include "Numerics/OneDimQuinticSpline.h"
 #include "Numerics/OptimizableFunctorBase.h"
-#include "QMCWaveFunctions/SphericalBasisSet.h"
+#include "QMCWaveFunctions/MolecularOrbitals/SphericalBasisSet.h"
 #include "io/hdf_archive.h"
 
 namespace qmcplusplus

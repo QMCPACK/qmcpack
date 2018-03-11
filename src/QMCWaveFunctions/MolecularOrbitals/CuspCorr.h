@@ -27,7 +27,7 @@
 //#include "OhmmsData/Libxml2Doc.h"
 //#include "OhmmsData/AttributeSet.h"
 //#include "QMCApp/ParticleSetPool.h"
-#include "QMCWaveFunctions/LCOrbitalSet.h"
+#include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSet.h"
 //#include "QMCWaveFunctions/LocalizedBasisSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 
@@ -275,7 +275,7 @@ public:
                - 0.5*X[1]*X[1]*RcInv2;
   }
 
-#include "QMCWaveFunctions/Experimental/CuspCorr.cpp"
+#include "QMCWaveFunctions/MolecularOrbitals/CuspCorr.cpp"
 
 private:
   ///target ParticleSet
