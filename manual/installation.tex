@@ -808,6 +808,216 @@ Currently Loaded Modulefiles:
 Install the Windows Subsystem for Linux and Bash on Windows.
 Open a bash shell and follow the install directions for Ubuntu in Section \ref{sec:buildubuntu}.
 
+\section{Installing via Spack (Beta)}
+Spack is a relatively new package manager for scientific software.
+One of goals of Spack is to reduce the barrier for the user to install scientific
+software. Spack is intended to work on everything from laptop
+computers to high-end supercomputers. More information about Spack can
+be found here \url{https://spack.readthedocs.io/en/latest}. The major
+advantage of installation with Spack is that all dependencies are
+automatically built, potentially including all the compilers and libraries, and
+different versions of QMCPACK can easily co-exist with each other. 
+The QMCPACK Spack package also knows how to build
+and patch Quantum Espresso automatically. In principle QMCPACK may be installed with
+a single Spack command, but to use vendor optimized compilers and libraries requires
+additional configuration. 
+
+\subsection{Setting up the Spack Environment}
+Begin by cloning Spack from GitHub and configuring your shell as described
+here:
+\url{https://spack.readthedocs.io/en/latest/getting_started.html}.
+
+The goal of the next several steps is to set-up the Spack environment
+for building. Firstly, it is highly recommended to limit the number of build jobs to
+a reasonable value for your machine. This can be
+accomplished by modifying your \texttt{~/.spack/config.yaml} file as follows:
+\begin{verbatim}
+config:
+  build_jobs: 16
+\end{verbatim}
+
+Next, make sure any existing compilers are properly detected. For many
+architectures, compilers are properly detected with no additional
+effort.
+\begin{verbatim}
+your-laptop> spack compilers
+==> Available compilers
+-- gcc sierra-x86_64 --------------------------------------------
+gcc@7.2.0  gcc@6.4.0  gcc@5.5.0  gcc@4.9.4  gcc@4.8.5  gcc@4.7.4  gcc@4.6.4
+\end{verbatim}
+
+However, if your compiler is not automatically detected, it is straightforward
+to add one:
+\begin{verbatim}
+your-laptop> spack compiler add <path-to-compiler>
+\end{verbatim}
+
+This last step is the most troublesome. Pre-installed packages are not
+automatically detected. If vendor optimized libraries and already installed, 
+you will need to manually add them to your
+\texttt{~/.spack/packages.yaml}. For example, this works on Mac OS X for the Intel MKL package.
+\begin{verbatim}
+your-laptop> cat ~/.spack/packages.yaml
+packages:
+    intel-mkl:
+        paths:
+            intel-mkl@2018.0.128: /opt/intel/compilers_and_libraries_2018.0.104/mac
+        buildable: False
+\end{verbatim}
+
+Some trial-and-error may be involved to get the directory correct. If
+you do not include enough of the tree path, Spack will not be able to
+register the package in its database. More information about system
+packages can be found here
+
+\url{http://spack.readthedocs.io/en/latest/getting_started.html#system-packages}
+
+\subsection{Building QMCPACK}
+The QMCPACK Spack package has a number of variants to support different compile time
+options and different versions of the application. A full list can be displayed by typing:
+\begin{verbatim}
+your laptop> spack info qmcpack
+Description:
+    QMCPACK, is a modern high-performance open-source Quantum Monte Carlo
+    (QMC) simulation code.
+
+Homepage: http://www.qmcpack.org/
+
+Tags: 
+    None
+
+Preferred version:  
+    3.4.0      [git] https://github.com/QMCPACK/qmcpack.git
+
+Safe versions:  
+    develop    [git] https://github.com/QMCPACK/qmcpack.git
+    3.4.0      [git] https://github.com/QMCPACK/qmcpack.git
+    3.3.0      [git] https://github.com/QMCPACK/qmcpack.git
+    3.2.0      [git] https://github.com/QMCPACK/qmcpack.git
+    3.1.1      [git] https://github.com/QMCPACK/qmcpack.git
+    3.1.0      [git] https://github.com/QMCPACK/qmcpack.git
+
+Variants:
+    Name [Default]                 Allowed values          Description
+
+
+    build_type [RelWithDebInfo]    Debug, Release,         CMake build type
+                                   RelWithDebInfo,         
+                                   MinSizeRel              
+    complex [off]                  True, False             Build the complex (general
+                                                           twist/k-point) version
+    cuda [off]                     True, False             Enable CUDA and GPU
+                                                           acceleration
+    da [off]                       True, False             Install with support for basic
+                                                           data analysis tools
+    debug [off]                    True, False             Build debug version
+    gui [off]                      True, False             Install with Matplotlib (long
+                                                           installation time)
+    mixed [off]                    True, False             Build the mixed precision
+                                                           (mixture of single and double
+                                                           precision) version for gpu and
+                                                           cpu
+    mpi [on]                       True, False             Build with MPI support
+    qe [on]                        True, False             Install with patched Quantum
+                                                           Espresso 5.3.0
+    soa [off]                      True, False             Build with Structure-of-Array
+                                                           instead of Array-of-Structure
+                                                           code. Only for CPU codeand
+                                                           only in mixed precision
+    timers [off]                   True, False             Build with support for timers
+
+Installation Phases:
+    cmake    build    install
+
+Build Dependencies:
+    blas  boost  cmake  cuda  espresso  fftw  hdf5  lapack  libxml2  mpi
+
+Link Dependencies:
+    blas  boost  cuda  espresso  fftw  hdf5  lapack  libxml2  mpi
+
+Run Dependencies:
+    py-matplotlib  py-numpy
+
+Virtual Packages: 
+    None
+\end{verbatim}
+
+For example, to install the complex version of QMCPACK in mixed-precision use:
+\begin{verbatim}
+your-laptop> spack install qmcpack+mixed+complex%gcc@7.2.0 ^intel-mkl
+\end{verbatim}
+where
+\begin{verbatim}
+%gcc@7.2.0
+\end{verbatim}
+specifies the compiler version to be used and
+\begin{verbatim} 
+^intel-mkl
+\end{verbatim}
+specifies the Intel MKL should be used as the BLAS and LAPACK provider.
+
+It is also possible to run the QMCPACK regression tests as part of the
+installation process, for example:
+\begin{verbatim}
+your-laptop> spack install --test=root qmcpack+mixed+complex%gcc@7.2.0 ^intel-mkl
+\end{verbatim}
+will run the unit and short tests. The current behavior of the QMCPACK
+Spack package is to completed the install as long as all the unit tests
+pass. If the short tests fail, a warning is issued at the command prompt.
+
+\subsection{Loading QMCPACK into your environment}
+Spack does not set-up an environment to find its packages
+automatically. A few additional steps are needed. First, install the
+modules package by executing:
+\begin{verbatim}
+your-laptop> spack install environment-modules 
+\end{verbatim}
+
+Then modify your\texttt{ ~/.cshrc} file with something like
+\begin{verbatim}
+source ${HOME}/spack/opt/spack/darwin-sierra-x86_64/\
+          clang-7.3.0-apple/environment-modules-3.2.10-kenvhysdws4zw26tvbrjl37fdyn7inhb/\
+          Modules/init/csh
+\end{verbatim}
+
+You should then be able to load the qmcpack binary into your path by
+invoking
+\begin{verbatim}
+your-laptop> spack load qmcpack+mixed+complex%gcc@7.2.0
+\end{verbatim}
+or more generally
+\begin{verbatim}
+your-laptop> spack load qmcpack+<spec>
+\end{verbatim}
+
+\subsection{Installing QMCPACK with Spack on Linux}
+Spack works robustly on the standard flavors of Linux (Ubuntu, CentOS,
+Ubuntu, etc.) using GCC or Intel compilers.
+
+\subsection{Installing QMCPACK with Spack on Mac OS X}
+Spack works on Mac OS X, but requires installation of a few packages
+using Homebrew. You will need to install at minimum the GCC compilers,
+CMake, and pkg-config. Intel compiler for Mac on OS X is not well
+supported by Spack packages and will most likely lead to a compile
+time failure in one of QMCPACK's dependencies.
+
+\subsection{Installing QMCPACK with Spack on IBM Blue Gene}
+Untested at this time. In principle, it should work as long as each of
+package found in
+\begin{verbatim}
+Blue Gene prompt> spack spec qmcpack
+\end{verbatim}
+can be compiled for the compute nodes.
+
+\subsection{Installing QMCPACK with Spack on Cray Supercomputers}
+There are a number of issues in the Cray module environment. Spack
+contributors are working to fix these problems. We will update this
+section once we have a recipe that works reliably.
+ 
+\subsection{Reporting Bugs}
+Bugs with the QMCPACK Spack package should be filed as a GitHub issue
+against this fork \url{https://github.com/naromero77/spack}
+
 \section{Testing and validation of QMCPACK}
 \label{sec:testing}
 We \textbf{strongly encourage} running the included tests each time

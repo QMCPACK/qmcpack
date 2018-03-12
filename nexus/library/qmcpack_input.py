@@ -1974,7 +1974,7 @@ class coefficients(QIxml):
 #end class coefficients
 
 class coefficient(QIxml):  # this is bad!!! coefficients/coefficient
-    attributes = ['id','type','size','dataset']
+    attributes = ['id','type','size','dataset','spindataset']
     text       = 'coeff'
     precision  = '16.12e'
 #end class coefficient
