@@ -22,7 +22,6 @@
 #include "Configuration.h"
 #include "type_traits/scalar_traits.h"
 #include "Optimize/VariableSet.h"
-#include "Numerics/VectorViewer.h"
 
 namespace qmcplusplus
 {
@@ -64,7 +63,6 @@ struct OrbitalSetTraits//: public OrbitalTraits<T>
   typedef Matrix<HessType>      HessMatrix_t;
   typedef Vector<GradHessType>  GradHessVector_t;
   typedef Matrix<GradHessType>  GradHessMatrix_t;
-  typedef VectorViewer<ValueType>             RefVector_t;
   typedef VectorSoaContainer<ValueType,DIM+2> VGLVector_t;
 };
 

@@ -47,7 +47,7 @@ namespace qmcplusplus
     }
     else
     {
-      VectorViewer<ValueType> vTemp(Temp.data(0),BasisSetSize);
+      Vector<ValueType> vTemp(Temp.data(0),BasisSetSize);
       myBasisSet->evaluateV(P,iat,vTemp.data());
       simd::gemv(*C,Temp.data(0),psi.data());
     }

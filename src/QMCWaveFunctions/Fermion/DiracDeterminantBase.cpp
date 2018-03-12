@@ -99,10 +99,11 @@ void DiracDeterminantBase::resize(int nel, int morb)
   if(norb <= 0)
     norb = nel; // for morb == -1 (default)
   psiM.resize(nel,norb);
-  psiM_temp.resize(nel,norb);
   dpsiM.resize(nel,norb);
   d2psiM.resize(nel,norb);
   psiV.resize(norb);
+  memoryPool.resize(nel*norb);
+  psiM_temp.attachReference(memoryPool.data(),nel,norb);
 #ifdef MIXED_PRECISION
   psiM_hp.resize(nel,norb);
 #endif
@@ -290,9 +291,34 @@ DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int 
 
 void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
-  Matrix<ValueType> psiT(ratios.size(),NumOrbitals);
-  Phi->evaluateValues(VP,psiT);
-  MatrixOperators::product(psiT,psiM[VP.activePtcl-FirstIndex],&ratios[0]);
+  const int nVP = VP.getTotalNum();
+  const size_t memory_needed = Phi->estimateMemory(nVP);
+  //std::cout << "debug " << memory_needed << " pool " << memoryPool.size() << std::endl;
+  if(memoryPool.size()<memory_needed)
+  {
+    // usually in small systems
+    for(int iat=0; iat<nVP; iat++)
+    {
+      SPOVTimer.start();
+      Phi->evaluate(VP, iat, psiV);
+      SPOVTimer.stop();
+      RatioTimer.start();
+      ratios[iat]=simd::dot(psiM[VP.refPtcl-FirstIndex],psiV.data(),NumOrbitals);
+      RatioTimer.stop();
+    }
+  }
+  else
+  {
+    const size_t offset = memory_needed-nVP*NumOrbitals;
+    VP.SPOMem.attachReference((RealType*)memoryPool.data(),offset*sizeof(ValueType)/sizeof(RealType));
+    Matrix<ValueType> psiT(memoryPool.data()+offset, nVP, NumOrbitals);
+    SPOVTimer.start();
+    Phi->evaluateValues(VP, psiT);
+    SPOVTimer.stop();
+    RatioTimer.start();
+    MatrixOperators::product(psiT, psiM[VP.refPtcl-FirstIndex], ratios.data());
+    RatioTimer.stop();
+  }
 }
 
 void DiracDeterminantBase::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)

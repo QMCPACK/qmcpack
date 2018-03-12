@@ -32,9 +32,9 @@ void NonLocalECPotential::resetTargetParticleSet(ParticleSet& P)
  *\param psi trial wavefunction
  */
 NonLocalECPotential::NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
-    TrialWaveFunction& psi, bool computeForces):
-  IonConfig(ions), Psi(psi),
-  ComputeForces(computeForces), ForceBase(ions,els),Peln(els),Pion(ions)
+    TrialWaveFunction& psi, bool computeForces, bool useVP):
+  IonConfig(ions), Psi(psi), ComputeForces(computeForces),
+  UseVP(useVP), ForceBase(ions,els), Peln(els)
 {
   set_energy_domain(potential);
   two_body_quantum_domain(ions,els);
@@ -74,7 +74,7 @@ void NonLocalECPotential::checkout_particle_quantities(TraceManager& tm)
   if( streaming_particles)
   {
     Ve_sample = tm.checkout_real<1>(myName,Peln);
-    Vi_sample = tm.checkout_real<1>(myName,Pion);
+    Vi_sample = tm.checkout_real<1>(myName,IonConfig);
     for(int iat=0; iat<NumIons; iat++)
     {
       if(PP[iat])
@@ -117,17 +117,14 @@ NonLocalECPotential::evaluate(ParticleSet& P)
     (*Vi_sample) = 0.0;
   }
 #endif
+  for(int ipp=0; ipp<PPset.size(); ipp++)
+    if(PPset[ipp]) PPset[ipp]->randomize_grid();
   //loop over all the ions
   if (ComputeForces)
   {
     for(int iat=0; iat<NumIons; iat++)
       if(PP[iat])
-      {
-        PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
-        //Value += PP[iat]->evaluate(P,iat,Psi, forces[iat]);
-        Value += PP[iat]->evaluate(P,IonConfig,iat,Psi, forces[iat],
-                                   PulayTerm[iat]);
-      }
+        Value += PP[iat]->evaluate(P,IonConfig,iat,Psi, forces[iat], PulayTerm[iat]);
   }
   else
   {
@@ -142,7 +139,7 @@ NonLocalECPotential::evaluate(ParticleSet& P)
       for(int iat=0; iat<NumIons; iat++)
       {
         if(PP[iat]==nullptr) continue;
-        PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
+        PP[iat]->randomize_grid();
         size_t nn=myTable->get_neighbors(iat,PP[iat]->Rmax, J, Dist, Displ);
         for(size_t nj=0; nj<nn; ++nj)
         {
@@ -157,7 +154,6 @@ NonLocalECPotential::evaluate(ParticleSet& P)
       for(int iat=0; iat<NumIons; iat++)
       {
         if(PP[iat]==nullptr) continue;
-        PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
         const int* restrict J=myTable->J2[iat];
         const RealType* restrict dist=myTable->r_m2[iat];
         const PosType* restrict displ=myTable->dr_m2[iat];
@@ -173,7 +169,6 @@ NonLocalECPotential::evaluate(ParticleSet& P)
       for(int iat=0; iat<NumIons; iat++)
       {
         if(PP[iat]==nullptr) continue;
-        PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
         for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
         {
           const RealType r(myTable->r(nn));
@@ -220,15 +215,14 @@ NonLocalECPotential::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
     (*Vi_sample) = 0.0;
   }
 #endif
+  for(int ipp=0; ipp<PPset.size(); ipp++)
+    if(PPset[ipp]) PPset[ipp]->randomize_grid();
   //loop over all the ions
   if (ComputeForces)
   {
     for(int iat=0; iat<NumIons; iat++)
       if(PP[iat])
-      {
-        PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
         Value += PP[iat]->evaluate(P,Psi,iat,Txy, forces[iat]);
-      }
   }
   else
   {
@@ -238,7 +232,6 @@ NonLocalECPotential::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
       for(int iat=0; iat<NumIons; iat++)
       {
         if(PP[iat]==nullptr) continue;
-        PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
         const int* restrict J=myTable->J2[iat];
         const RealType* restrict dist=myTable->r_m2[iat];
         const PosType* restrict displ=myTable->dr_m2[iat];
@@ -254,7 +247,6 @@ NonLocalECPotential::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
       for(int iat=0; iat<NumIons; iat++)
       {
         if(PP[iat]==nullptr) continue;
-        PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
         for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
         {
           const RealType r(myTable->r(nn));
@@ -306,26 +298,20 @@ NonLocalECPotential::add(int groupID, NonLocalECPComponent* ppot)
     if(IonConfig.GroupID[iat]==groupID)
       PP[iat]=ppot;
   PPset[groupID]=ppot;
+  if(UseVP && ppot->VP==0) ppot->initVirtualParticle(Peln);
 }
 
 QMCHamiltonianBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
   NonLocalECPotential* myclone=new NonLocalECPotential(IonConfig,qp,psi,
-      ComputeForces);
+      ComputeForces, UseVP);
   for(int ig=0; ig<PPset.size(); ++ig)
   {
     if(PPset[ig])
     {
-      NonLocalECPComponent* ppot=PPset[ig]->makeClone();
+      NonLocalECPComponent* ppot=PPset[ig]->makeClone(qp);
       myclone->add(ig,ppot);
     }
-  }
-  //resize sphere
-  qp.resizeSphere(IonConfig.getTotalNum());
-  for(int ic=0; ic<IonConfig.getTotalNum(); ic++)
-  {
-    if(PP[ic] && PP[ic]->nknot)
-      qp.Sphere[ic]->resize(PP[ic]->nknot);
   }
   return myclone;
 }
