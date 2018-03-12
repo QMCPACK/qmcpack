@@ -65,7 +65,7 @@ int NonLocalTOperator::put(xmlNodePtr cur)
   else if(use_tmove=="v3")
   {
     v_tmove=TMOVE_V3;
-    o << "  Using Non-local T-moves, an algorithm similar to v1, M. Casula et al., JCP 132, 154113 (2010)";
+    o << "  Using Non-local T-moves v3, an algorithm similar to v1 but much faster";
   }
   else
   {
