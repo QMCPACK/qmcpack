@@ -21,13 +21,13 @@ target_sources(common
   "${CMAKE_CURRENT_SOURCE_DIR}/Functionals.cc"
   )
 
-get_property( COMMON_COMPILE_DEFS TARGET common PROPERTY COMPILE_DEFINITIONS )
-set(COMMON_COMPILE_DEFS ${COMMON_COMPILE_DEFS} $<$<NOT:$<CXX_COMPILER_ID:Clang>>:__GNUC__=4>)
-MESSAGE( "$<CXX_COMPILER_ID>" )
+# get_property( COMMON_COMPILE_DEFS TARGET common PROPERTY COMPILE_DEFINITIONS )
+# set(COMMON_COMPILE_DEFS ${COMMON_COMPILE_DEFS} $<$<NOT:$<CXX_COMPILER_ID:Clang>>:__GNUC__=4>)
+# MESSAGE( "$<CXX_COMPILER_ID>" )
 
   target_compile_definitions(common
-  PRIVATE
-  ${COMMON_COMPILE_DEFS}
+    PRIVATE
+    $<$<CXX_COMPILER_ID:Intel>:__ICC=1>
   )
 
 # "$<$<CXX_COMPILER_ID:Intel>:__ICC>"
