@@ -12,10 +12,12 @@
 
 ppconvert supports conversion of pseudopotentials between different formats
 
-ppconvert is currently not built automatically, but can be built on limited platforms if you
+ppconvert is currently not built automatically, but can be built on limited platforms
+(Centos7 intel 17.0.0 as of now) it may work on other platforms. Clang and GCC support
+with MKL are planned.
+
 cmake -DBUILD_PPCONVERT
 and
 make ppconvert
 
-If its broken on your platform its a great chance to understand cmake and your compiler
-better.
+If its broken on your platform ask a developer or post on google groups.
