@@ -105,9 +105,9 @@ void SPOSetBase::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bo
   APP_ABORT("SPOSetBase::evaluateVGL not implemented.");
 }
 
-void SPOSetBase::evaluateValues(const ParticleSet& P, ValueMatrix_t& psiM)
+void SPOSetBase::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM)
 {
-  APP_ABORT("SPOSetBase::evaluate(P,psiM) not implemented.");
+  APP_ABORT("SPOSetBase::evaluateValues(VP,psiM) not implemented.");
 }
 
 void SPOSetBase::evaluateThirdDeriv(const ParticleSet& P, int first, int last,

@@ -456,10 +456,10 @@ public:
    * For the i-th virtual move and the j-th orbital,
    * \f$ psiM(i,j)= \sum_k phiM(i,k)*C(j,k) \f$
    */
-  void evaluateValues(const ParticleSet& P, ValueMatrix_t& psiM)
+  void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM)
   {
-    ValueMatrix_t phiM(P.getTotalNum(),BasisSetSize);
-    myBasisSet->evaluateValues(P,phiM);
+    ValueMatrix_t phiM(VP.getTotalNum(),BasisSetSize);
+    myBasisSet->evaluateValues(VP,phiM);
     MatrixOperators::product_ABt(phiM,*C,psiM);
     //for(int i=0; i<psiM.rows(); ++i)
     //  for(int j=0; j<psiM.cols(); ++j)

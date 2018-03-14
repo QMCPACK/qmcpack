@@ -52,13 +52,7 @@ NonLocalECPotential_CUDA::makeClone
     new NonLocalECPotential_CUDA(IonConfig,qp,psi,UsePBC);
   for(int ig=0; ig<PPset.size(); ++ig)
   {
-    if(PPset[ig]) myclone->add(ig,PPset[ig]->makeClone());
-  }
-  //resize sphere
-  qp.resizeSphere(IonConfig.getTotalNum());
-  for(int ic=0; ic<IonConfig.getTotalNum(); ic++)
-  {
-    if(PP[ic] && PP[ic]->nknot) qp.Sphere[ic]->resize(PP[ic]->nknot);
+    if(PPset[ig]) myclone->add(ig,PPset[ig]->makeClone(qp));
   }
   return myclone;
 }

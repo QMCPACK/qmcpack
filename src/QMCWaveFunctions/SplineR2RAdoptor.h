@@ -15,7 +15,6 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_R2RADOPTOR_H
 #define QMCPLUSPLUS_EINSPLINE_R2RADOPTOR_H
 
-#include <Numerics/VectorViewer.h>
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
 
