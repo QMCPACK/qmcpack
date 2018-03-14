@@ -678,13 +678,16 @@ void TrialWaveFunction::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 
 void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<RealType>& ratios)
 {
+  assert(VP.getTotalNum()==ratios.size());
 #if defined(QMC_COMPLEX)
   std::vector<ValueType> t(ratios.size()),r(ratios.size(),1.0);;
-  for (int i=0; i<Z.size(); ++i)
+  for (int i=0, ii=NL_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
   {
+    myTimers[ii]->start();
     Z[i]->evaluateRatios(VP,t);
     for (int j=0; j<ratios.size(); ++j)
       r[j]*=t[j];
+    myTimers[ii]->stop();
   }
   RealType pdiff;
   for(int j=0; j<ratios.size(); ++j)
@@ -696,11 +699,13 @@ void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<RealT
 #else
   std::fill(ratios.begin(),ratios.end(),1.0);
   std::vector<ValueType> t(ratios.size());
-  for (int i=0; i<Z.size(); ++i)
+  for (int i=0, ii=NL_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
   {
+    myTimers[ii]->start();
     Z[i]->evaluateRatios(VP,t);
     for (int j=0; j<ratios.size(); ++j)
       ratios[j]*=t[j];
+    myTimers[ii]->stop();
   }
 #endif
 }
