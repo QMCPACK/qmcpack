@@ -20,4 +20,4 @@ cmake -DBUILD_PPCONVERT
 and
 make ppconvert
 
-If its broken on your platform ask a developer or post on google groups.
+If it's broken on your platform ask a developer or post on google groups.
