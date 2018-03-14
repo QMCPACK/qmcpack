@@ -1,6 +1,6 @@
-SUBDIRS(common)
-
 add_executable(ppconvert EXCLUDE_FROM_ALL "")
+
+add_subdirectory(common)
 
 target_sources(ppconvert
   PRIVATE
