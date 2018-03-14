@@ -144,9 +144,16 @@ void PyscfParser::parse(const std::string& fname)
 
   IonSystem.create(NumberOfAtoms);
   GroupName.resize(NumberOfAtoms);
-  if (PBC)
+  if (PBC){
      getCell(fname);
      getKpts(fname);
+     if (debug){
+         getGaussianCenters(fname);
+         getMO(fname);
+ 
+     }
+   
+  }
   getGeometry(fname);
 
   if(multideterminant)
@@ -375,4 +382,64 @@ char *binpad (unsigned long int n, size_t sz)
         *--p = ( (n>>i) & 1) ? '1' : '0';
     
     return p;
+}
+
+
+
+void PyscfParser::getMO(const std::string & fname)
+{
+  EigVal_alpha.resize(numMO);
+  EigVal_beta.resize(numMO);
+  EigVec.resize(2*SizeOfBasisSet*numMO);
+  
+  std::string setname;
+  Matrix<double> CartMat(SizeOfBasisSet,SizeOfBasisSet);
+
+  hdf_archive hin(0);
+
+  if(!hin.open(fname.c_str(),H5F_ACC_RDONLY))
+  {
+       std::cerr<<"Could not open H5 file"<<std::endl;
+       abort();
+  }
+    char name[72];
+    sprintf(name,"%s","/KPTS_0/eigenset_0");
+    setname=name;
+    if(!hin.read(CartMat,setname))
+    {
+       setname="SPOSetBase::putFromH5 Missing "+setname+" from HDF5 File.";
+       APP_ABORT(setname.c_str());
+    }
+    hin.close();
+  //hin.push("KPTS_0");
+  //hin.read(CartMat,"eingenset_0"); 
+  int cnt=0;
+  for(int i=0; i<numMO; i++)
+    for(int k=0; k<SizeOfBasisSet; k++)
+      EigVec[cnt++] = CartMat[i][k];
+
+  int btot=numMO*SizeOfBasisSet;
+  int n=btot/4, b=0;
+  int dn=btot-n*4;
+  std::ostringstream eig;
+  eig.setf(std::ios::scientific, std::ios::floatfield);
+  eig.setf(std::ios::right,std::ios::adjustfield);
+  eig.precision(14);
+  eig << "\n";
+  for(int k=0; k<n; k++)
+  {
+    eig << std::setw(22) << EigVec[b] << std::setw(22) << EigVec[b+1] << std::setw(22) << EigVec[b+2] << std::setw(22) <<  EigVec[b+3] << "\n";
+    b += 4;
+  }
+  for(int k=0; k<dn; k++)
+  {
+    eig << std::setw(22) << EigVec[b++];
+  }
+  std::cout<<eig.str().c_str()<<std::endl;         
+  std::cout <<"Finished reading MO." << std::endl;
+  hin.close();
+}
+
+void PyscfParser::getGaussianCenters(const std::string fname)
+{
 }

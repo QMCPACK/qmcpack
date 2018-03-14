@@ -127,17 +127,17 @@ namespace qmcplusplus
 
           int TransX,TransY,TransZ, MaxCellX,MaxCellY,MaxCellZ;
           if(lattice.BoxBConds[0])
-            MaxCellX=6;
+            MaxCellX=5;
           else
             MaxCellX=0;
 
           if(lattice.BoxBConds[1])
-            MaxCellY=6;
+            MaxCellY=5;
           else
             MaxCellY=0;
 
           if(lattice.BoxBConds[2])
-            MaxCellZ=6;
+            MaxCellZ=5;
           else
             MaxCellZ=0;
 
@@ -235,17 +235,17 @@ namespace qmcplusplus
           int TransX,TransY,TransZ, MaxCellX,MaxCellY,MaxCellZ;
  
           if(lattice.BoxBConds[0])
-            MaxCellX=6;
+            MaxCellX=5;
           else
             MaxCellX=0;
 
           if(lattice.BoxBConds[1])
-            MaxCellY=6;
+            MaxCellY=5;
           else
             MaxCellY=0;
 
           if(lattice.BoxBConds[2])
-            MaxCellZ=6;
+            MaxCellZ=5;
           else
             MaxCellZ=0;
 

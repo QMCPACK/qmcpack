@@ -300,7 +300,11 @@ int main(int argc, char **argv)
       parser->UseHDF5=false;
       parser->h5file=in_file;
     }
-   
+    if (debug){
+      parser->UseHDF5=false;
+      parser->h5file="";
+      parser->AllH5=false;
+    } 
     parser->multideterminant=false;
     if(ci)
        parser->multideterminant=ci;

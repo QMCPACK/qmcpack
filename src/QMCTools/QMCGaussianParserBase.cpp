@@ -345,6 +345,7 @@ xmlNodePtr QMCGaussianParserBase::createBasisSet()
   xmlNodePtr cur=NULL;
   std::map<int,int> species;
   int gtot = 0;
+  if(!debug) 
   for(int iat=0; iat<NumberOfAtoms; iat++)
   {
     int itype = IonSystem.GroupID[iat];

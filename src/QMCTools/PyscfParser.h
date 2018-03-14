@@ -45,6 +45,8 @@ public:
   void getGeometry(const std::string& fname);
   void getCell(const std::string& fname);
   void getKpts(const std::string& fname);
+  void getMO(const std::string& fname);
+  void getGaussianCenters(const std::string fname);
 
 };
 //#endif
