@@ -16,6 +16,9 @@ SET(QMCPACK_VERSION_MINOR 4)
 SET(QMCPACK_VERSION_PATCH 0)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
+MESSAGE( "INITIAL CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}" )
+MESSAGE( "INITIAL CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE}" )
+
 ######################################################################
 # CTest 
 ######################################################################
@@ -464,7 +467,8 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   # check lapack/blas
   #-------------------------------------------------------------------
   # Quick search for MKL (this will need to be improved).
-  Currently only for Intel compilers
+  # This reproduces the old intel -mkl behavior or
+  # if ENABLE_OUTSIDE_MKL is set to 1 supports other compilers
   SET(ENABLE_OUTSIDE_MKL FALSE CACHE BOOL "ENABLE MKL for non-intel compilers (Experimental)")
   IF (INTEL_COMPILER OR ENABLE_OUTSIDE_MKL)
    INCLUDE(CMake/FindMKL.cmake)

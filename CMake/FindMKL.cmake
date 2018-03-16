@@ -5,8 +5,8 @@ INCLUDE( CheckCXXSourceCompiles )
 # This policy insures that the CMAKE_EXE_LINKER_FLAGS of the calling project
 # are used in the try_compile test cmake project.  Without this
 # clean rpath builds with mkl aren't possible. I prefer not to work in an
-# environment with lots of LD_LIBRARY_PATH and DYLD_LIBRARY_PATH polution
-# so I think this needs to be set here. -- PWD
+# environment without of LD_LIBRARY_PATH and DYLD_LIBRARY_PATH polution
+# so in my opinion this needs to be set here. -- PWD
 cmake_policy(SET CMP0056 NEW)
 
 # not sure if we can count on always getting "Intel"
@@ -18,9 +18,10 @@ if ( NOT LCASE_CXX_COMPILER_ID MATCHES "intel" )
     find_path(MKL_ROOT "mkl.h"
       HINTS "${MKLROOT} ${MKL_HOME} $ENV{MKLROOT} $ENV{MKL_ROOT} $ENV{MKL_HOME}")
     string(REPLACE "/include" "" MKL_ROOT ${MKL_ROOT})
-  else (NOT MKL_ROOT AND (NOT LCASE_CXX_COMPILER_ID MATCHES "intel"))
+  endif (NOT MKL_ROOT)
+  if (NOT MKL_ROOT)
     message (FATAL_ERROR "ENABLE_OUTSIDE_MKL is TRUE and mkl not found. Set MKL_ROOT." )
-  endif (NOT MKL_ROOT AND (NOT LCASE_CXX_COMPILER_ID MATCHES "intel"))
+  endif (NOT_MKL_ROOT)
 
   #Do we support ilp?
   set(MKL_FIND_LIB "libmkl_intel_lp64${CMAKE_SHARED_LIBRARY_SUFFIX}")
