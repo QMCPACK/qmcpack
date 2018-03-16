@@ -7,9 +7,11 @@ ENDIF()
 SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -std=c99")
 
 # Enable OpenMP
-SET(ENABLE_OPENMP 1)
-SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fopenmp")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+IF(QMC_OMP)
+  SET(ENABLE_OPENMP 1)
+  SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fopenmp")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+ENDIF(QMC_OMP)
 
 # Set gnu specfic flags (which we always want)
 ADD_DEFINITIONS( -Drestrict=__restrict__ )
