@@ -38,10 +38,10 @@ createElectronParticleSet()
   qp->create(2);
   qp->R[0][0] = 1.0;
   qp->R[0][1] = 2.0;
-  qp->R[0][3] = 3.0;
+  qp->R[0][2] = 3.0;
   qp->R[1][0] = 0.0;
   qp->R[1][1] = 1.1;
-  qp->R[1][3] = 2.2;
+  qp->R[1][2] = 2.2;
 
   SpeciesSet &tspecies = qp->getSpeciesSet();
   int upIdx = tspecies.addSpecies("u");
