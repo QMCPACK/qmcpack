@@ -44,6 +44,16 @@ IF (IS_GIT_PROJECT)
   #
   # Apparently custom commands need to be defined where the output is used.
   # If this in the main CMakeLists.txt it does not work.
+
+  # Sed flags were once an issue and some HPC have old sed's
+  set(Big_E_Systems Darwin FreeBSD NetBSD OpenBSD)
+  list (FIND Big_E_Systems "${CMAKE_SYSTEM_NAME}" index)
+  if (${index} GREATER -1)
+    set(SED_FLAG "-E")
+  else ()
+    set(SED_FLAG "-r")
+  endif ()
+
   ADD_CUSTOM_COMMAND(
     OUTPUT ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_BRANCH_RAW " > ${GITREV_TMP}
@@ -56,7 +66,7 @@ IF (IS_GIT_PROJECT)
     COMMAND ${GIT_EXECUTABLE} log -1 --format=%ad >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_COMMIT_SUBJECT_RAW \"" >> ${GITREV_TMP}
-    COMMAND ${GIT_EXECUTABLE} log -1 --format=%s | sed -E "s/\"/\\\\\"/g" | tr -d '\\n' >> ${GITREV_TMP}
+    COMMAND ${GIT_EXECUTABLE} log -1 --format=%s | sed ${SED_FLAG} "s/\"/\\\\\"/g" | tr -d '\\n' >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo_append "\"" >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${GITREV_TMP} ${GITREV_FILE}
