@@ -17,6 +17,9 @@ ENDIF(QMC_OMP)
 # Set clang specfic flags (which we always want)
 ADD_DEFINITIONS( -Drestrict=__restrict__ )
 
+SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fomit-frame-pointer -fstrict-aliasing")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fomit-frame-pointer -fstrict-aliasing -D__forceinline=inline")
+
 IF (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5.0 )
   SET( HAVE_POSIX_MEMALIGN 1 )
 ELSE ()
@@ -29,9 +32,6 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wno-unused-value")
 IF ( CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 3.8 )
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-undefined-var-template")
 ENDIF()
-
-# Clang doesn't know __forceinline
-SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__forceinline=inline" )
 
 # Set extra optimization specific flags
 SET( CMAKE_C_FLAGS_RELEASE     "${CMAKE_C_FLAGS_RELEASE} -ffast-math" )
