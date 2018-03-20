@@ -5,12 +5,14 @@ PROJECT(qmcpack)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.10)
 IF(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
-  cmake_policy(SET CMP0056 NEW)
-  # This policy insures that the CMAKE_EXE_LINKER_FLAGS of the calling project
-  # are used in the try_compile test cmake project.  Without this
-  # clean rpath builds with mkl aren't possible. I prefer not to work in an
-  # environment without of LD_LIBRARY_PATH and DYLD_LIBRARY_PATH polution
-  # so in my opinion this needs to be set here. -- PWD
+  IF(NOT($ENV{CRAYPE_VERSION} MATCHES "."))
+    MESSAGE(STATUS "Running on a Cray machine.")
+    cmake_policy(SET CMP0056 NEW)
+    # This policy insures that the CMAKE_EXE_LINKER_FLAGS of the calling project
+    # are used in the try_compile test cmake project.  Without this
+    # clean rpath builds with mkl aren't possible. While it is unknown by
+    # cmake 2.8.10.2 on titan it still breaks the iszero test there --PWD
+  endif(NOT($ENV{CRAYPE_VERSION} MATCHES "."))
 ENDIF(COMMAND cmake_policy)
 
 
