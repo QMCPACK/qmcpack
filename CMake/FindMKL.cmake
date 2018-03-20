@@ -2,10 +2,7 @@
 # This needs a lot of work to make it robust
 INCLUDE( CheckCXXSourceCompiles )
 
-# not sure if we can count on always getting "Intel"
-string(TOLOWER CMAKE_CXX_COMPILER_ID LCASE_CMAKE_CXX_COMPILER_ID)
-
-if ( NOT LCASE_CXX_COMPILER_ID MATCHES "intel" )
+if ( NOT CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
   # if not intel and MKL_ROOT not set
   if (NOT MKL_ROOT)
     find_path(MKL_ROOT "mkl.h"
@@ -14,7 +11,7 @@ if ( NOT LCASE_CXX_COMPILER_ID MATCHES "intel" )
   endif (NOT MKL_ROOT)
   if (NOT MKL_ROOT)
     message (FATAL_ERROR "ENABLE_OUTSIDE_MKL is TRUE and mkl not found. Set MKL_ROOT." )
-  endif (NOT_MKL_ROOT)
+  endif (NOT MKL_ROOT)
 
   #Do we support ilp?
   set(MKL_FIND_LIB "libmkl_intel_lp64${CMAKE_SHARED_LIBRARY_SUFFIX}")
@@ -30,18 +27,18 @@ if ( NOT LCASE_CXX_COMPILER_ID MATCHES "intel" )
   find_path(MKL_INCLUDE_DIRECTORIES name "mkl.h" HINTS ${MKL_ROOT}
     PATH_SUFFIXES ${SUFFIXES})
   if (MKL_INCLUDE_DIRECTORIES-NOTFOUND)
-    message(FATAL_ERROR "MKL_INCLUDE_DIRECTORIES not set. "mkl.h" not found in MKL_ROOT/(${SUFFIXES})")
+    message(FATAL_ERROR "MKL_INCLUDE_DIRECTORIES not set. \"mkl.h\" not found in MKL_ROOT/(${SUFFIXES})")
   endif (MKL_INCLUDE_DIRECTORIES-NOTFOUND)
   message("MKL_INCLUDE_DIRECTORIES: ${MKL_INCLUDE_DIRECTORIES}")
   set(MKL_FLAGS "-m64")
   set(MKL_LINKER_FLAGS "-L${MKL_LINK_DIRECTORIES} -Wl,-rpath,${MKL_LINK_DIRECTORIES}")
   set(MKL_FLAGS "-I${MKL_INCLUDE_DIRECTORIES}")
   set(MKL_LIBRARIES "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl")
-else ( NOT LCASE_CXX_COMPILER_ID MATCHES "intel" )
+else ( NOT CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
   # this takes away build control for intel but is convenient
   set(MKL_FLAGS "-mkl")
   set(MKL_COMPILE_DEFINITIONS "-mkl")
-endif (NOT LCASE_CXX_COMPILER_ID MATCHES "intel" )
+endif (NOT CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
 
 # Protect against clobbering the main CMAKE_CXX_FLAGS
 set( org_CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
