@@ -488,15 +488,14 @@ IF (ENABLE_GCOV)
   ENDIF()
 ENDIF(ENABLE_GCOV)
 
-# Check for the compiler C++11 flag before adding other flags that
-# cause linking problems with CheckCXXCompilerFlag.cmake
+# Check for the compiler C++11 flag, if we go to requiring >= cmake 3.1.3 we could drop this
+# and just write
+# set(CMAKE_CXX_STANDARD_REQUIRED 11 CACHE INTEGER "C++ stangard must be at least 11")
 SET(CXX11_NEEDED TRUE)
 IF(CXX11_NEEDED)
   SET(CXX11_FLAG "-std=c++11")
   #check if the CXX compiler supports -std=c++11 option
-  # Old method
-  include(CheckCXXCompilerFlag) # found this problematics with clang 5.0.1
-  set(CMAKE_REQUIRED_DEFINITIONS "-DCMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}")
+  include(CheckCXXCompilerFlag) # works with clean load paths and non system compilers with CMP0056
   CHECK_CXX_COMPILER_FLAG(${CXX11_FLAG} CXX_COMPILER_SUPPORT_CXX11)
 
   # Force the flag on Cray with Intel compiler, because the Cray wrapper
