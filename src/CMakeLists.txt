@@ -46,14 +46,24 @@ IF (IS_GIT_PROJECT)
   # If this in the main CMakeLists.txt it does not work.
 
   # Sed flags were once an issue and some HPC have old sed's
-  set(Big_E_Systems Darwin FreeBSD NetBSD OpenBSD)
-  list (FIND Big_E_Systems "${CMAKE_SYSTEM_NAME}" index)
-  if (${index} GREATER -1)
-    set(SED_FLAG "-E")
-  else ()
+  set(SED_FLAG "-E")
+  EXECUTE_PROCESS(COMMAND "sed" ${SED_FLAG} "s/\"/\\\\\"/g" "<${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt"
+    OUTPUT_QUIET
+    ERROR_VARIABLE SED_ERROR)
+  if ( SED_ERROR MATCHES ".*invalid.*" )
     set(SED_FLAG "-r")
-  endif ()
-
+    EXECUTE_PROCESS(COMMAND "sed" ${SED_FLAG} "s/\"/\\\\\"/g" "<${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt"
+      OUTPUT_QUIET ERROR_QUIET
+      ERROR_VARIABLE SED_ERROR)
+    if ( SED_ERROR MATCHES ".*invalid.*" )
+      MESSAGE(WARNING "Your system supports neither the sed -E or -r flag, git revision information will not be included in output")
+    else ( SED_ERROR MATCHES ".*invalid.*" )
+      MESSAGE("sed supports -r")
+    endif ( SED_ERROR MATCHES ".*invalid.*" )
+  else ( SED_ERROR MATCHES ".*invalid.*" )
+    MESSAGE("sed supports -E")
+  endif ( SED_ERROR MATCHES ".*invalid.*" )
+    
   ADD_CUSTOM_COMMAND(
     OUTPUT ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_BRANCH_RAW " > ${GITREV_TMP}
