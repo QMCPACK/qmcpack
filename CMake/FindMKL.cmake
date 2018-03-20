@@ -2,13 +2,6 @@
 # This needs a lot of work to make it robust
 INCLUDE( CheckCXXSourceCompiles )
 
-# This policy insures that the CMAKE_EXE_LINKER_FLAGS of the calling project
-# are used in the try_compile test cmake project.  Without this
-# clean rpath builds with mkl aren't possible. I prefer not to work in an
-# environment without of LD_LIBRARY_PATH and DYLD_LIBRARY_PATH polution
-# so in my opinion this needs to be set here. -- PWD
-cmake_policy(SET CMP0056 NEW)
-
 # not sure if we can count on always getting "Intel"
 string(TOLOWER CMAKE_CXX_COMPILER_ID LCASE_CMAKE_CXX_COMPILER_ID)
 
