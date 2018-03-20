@@ -614,7 +614,7 @@ module load cudatoolkit           # CUDA for GPU build
 module load cray-hdf5
 module load cmake
 module load fftw
-export FFTW_HOME=$(echo $FFTW_DIR | sed -e 's/\/lib//')
+export FFTW_HOME=$FFTW_DIR/..
 module load boost
 mkdir build_titan_gpu
 cd build_titan_gpu
