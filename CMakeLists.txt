@@ -5,7 +5,7 @@ PROJECT(qmcpack)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.10)
 IF(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
-  IF(NOT($ENV{CRAYPE_VERSION} MATCHES "."))
+  IF(CMAKE_VERSION VERSION_GREATER 3.1.3 AND NOT $ENV{CRAYPE_VERSION} MATCHES ".")
     cmake_policy(SET CMP0056 NEW)
     # This policy insures that the CMAKE_EXE_LINKER_FLAGS of the calling project
     # are used in the try_compile test cmake project.  Without this
