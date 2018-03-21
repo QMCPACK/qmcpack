@@ -3,7 +3,8 @@
 INCLUDE( CheckCXXSourceCompiles )
 
 if ( NOT CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
-  # if not intel and MKL_ROOT not set
+  # Extremely Basic Support of common mkl module environment variables
+  # or -DMKLROOT/-DMKL_HOME instead of prefered -DMKL_ROOT
   if (NOT MKL_ROOT)
     find_path(MKL_ROOT "mkl.h"
       HINTS ${MKLROOT} ${MKL_HOME} $ENV{MKLROOT} $ENV{MKL_ROOT} $ENV{MKL_HOME}
@@ -14,7 +15,9 @@ if ( NOT CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
     message (FATAL_ERROR "ENABLE_OUTSIDE_MKL is TRUE and mkl not found. Set MKL_ROOT." )
   endif (NOT MKL_ROOT)
 
-  #Do we support ilp?
+  # Finding and setting the MKL_LINK_DIRECTORIES
+  # the directory organization varies with platform and targets
+  # these suffixes are not exhaustive
   set(MKL_FIND_LIB "libmkl_intel_lp64${CMAKE_SHARED_LIBRARY_SUFFIX}")
   set(SUFFIXES lib lib/intel64)
   find_path(MKL_LINK_DIRECTORIES name "${MKL_FIND_LIB}" HINTS ${MKL_ROOT}
@@ -24,6 +27,8 @@ if ( NOT CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
       "not found in MKL_ROOT/(${SUFFIXES})")
   endif (MKL_LINK_DIRECTORIES-NOTFOUND)
   message("MKL_LINK_DIRECTORIES: ${MKL_LINK_DIRECTORIES}")
+
+  # Finding and setting the MKL_INCLUDE_DIRECTORIES
   set(SUFFIXES include)
   find_path(MKL_INCLUDE_DIRECTORIES name "mkl.h" HINTS ${MKL_ROOT}
     PATH_SUFFIXES ${SUFFIXES})
@@ -31,6 +36,7 @@ if ( NOT CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
     message(FATAL_ERROR "MKL_INCLUDE_DIRECTORIES not set. \"mkl.h\" not found in MKL_ROOT/(${SUFFIXES})")
   endif (MKL_INCLUDE_DIRECTORIES-NOTFOUND)
   message("MKL_INCLUDE_DIRECTORIES: ${MKL_INCLUDE_DIRECTORIES}")
+
   set(MKL_LINKER_FLAGS "-L${MKL_LINK_DIRECTORIES} -Wl,-rpath,${MKL_LINK_DIRECTORIES}")
   set(MKL_FLAGS "-I${MKL_INCLUDE_DIRECTORIES}")
   set(MKL_LIBRARIES "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl")
@@ -42,11 +48,6 @@ endif (NOT CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
 
 # Protect against clobbering the main CMAKE_CXX_FLAGS
 set( org_CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
-
-# reordering openmp check until after mkl removed the need for this
-# if ( CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
-#   string(REPLACE "-fopenmp" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-# endif ( CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
 
 # Check for mkl.h
 FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl.cxx"
@@ -102,5 +103,5 @@ ELSE( HAVE_MKL )
   SET( MKL_FLAGS )
   SET( MKL_LIBRARIES )
   SET( MKL_LINKER_FLAGS )
-  MESSAGE("MKL not found") #I think this is more important than a STATUS
+  MESSAGE("MKL not found")
 ENDIF( HAVE_MKL )

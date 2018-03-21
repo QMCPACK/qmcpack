@@ -8,10 +8,9 @@ IF(COMMAND cmake_policy)
   IF(CMAKE_VERSION VERSION_GREATER 3.1.3 AND NOT $ENV{CRAYPE_VERSION} MATCHES ".")
     cmake_policy(SET CMP0056 NEW)
     # This policy insures that the CMAKE_EXE_LINKER_FLAGS of the calling project
-    # are used in the try_compile test cmake project.  Without this
-    # clean rpath builds with mkl aren't possible. While it is unknown by
-    # cmake 2.8.10.2 on titan it still breaks the iszero test there --PWD
-  endif(NOT($ENV{CRAYPE_VERSION} MATCHES "."))
+    # are used in try_compile test cmake projects.
+    # CHECK_CXX_SOURCE_COMPILES and others depend on try_compile
+  endif(CMAKE_VERSION VERSION_GREATER 3.1.3 AND NOT $ENV{CRAYPE_VERSION} MATCHES ".")
 ENDIF(COMMAND cmake_policy)
 
 
@@ -22,9 +21,6 @@ SET(QMCPACK_VERSION_MAJOR 3)
 SET(QMCPACK_VERSION_MINOR 4)
 SET(QMCPACK_VERSION_PATCH 0)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
-
-MESSAGE( "INITIAL CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}" )
-MESSAGE( "INITIAL CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE}" )
 
 ######################################################################
 # CTest
@@ -551,9 +547,6 @@ IF ( HAVE_MPI )
 
   MESSAGE(STATUS "MPI runner is ${MPIEXEC}")
 ENDIF(HAVE_MPI)
-
-MESSAGE(STATUS "CXX compiler flags: ${CMAKE_CXX_FLAGS}")
-MESSAGE(STATUS "CC  compiler flags: ${CMAKE_C_FLAGS}")
 
 SET(HAVE_OOMPI ${HAVE_MPI})
 INCLUDE(${CMAKE_ROOT}/Modules/FindThreads.cmake)
