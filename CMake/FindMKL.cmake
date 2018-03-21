@@ -6,7 +6,8 @@ if ( NOT CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
   # if not intel and MKL_ROOT not set
   if (NOT MKL_ROOT)
     find_path(MKL_ROOT "mkl.h"
-      HINTS "${MKLROOT} ${MKL_HOME} $ENV{MKLROOT} $ENV{MKL_ROOT} $ENV{MKL_HOME}")
+      HINTS ${MKLROOT} ${MKL_HOME} $ENV{MKLROOT} $ENV{MKL_ROOT} $ENV{MKL_HOME}
+      PATH_SUFFIXES include)
     string(REPLACE "/include" "" MKL_ROOT ${MKL_ROOT})
   endif (NOT MKL_ROOT)
   if (NOT MKL_ROOT)
