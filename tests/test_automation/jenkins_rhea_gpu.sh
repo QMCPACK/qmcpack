@@ -7,14 +7,9 @@ cat > $BUILD_TAG.pbs << EOF
 
 EOF
 
-cp $BUILD_TAG.pbs $BUILD_DIR
+/home/bgl/blocking_qsub $BUILD_DIR $BUILD_TAG.pbs
 
-cd $BUILD_DIR
-
-source scl_source enable rh-python35
-which python
-
-$BUILD_DIR/../../../scripts/blocking_qsub.py $BUILD_DIR $BUILD_TAG.pbs
+cp $BUILD_DIR/$BUILD_TAG.o* ../
 
 ## this end of job logic could probably be more elegant
 ## hacks to get us going
