@@ -138,6 +138,8 @@ inline int get_device_num()
     std::cerr << out.str();
     std::cerr.flush();
   }
+  gpu::relative_rank=relative_ranknum;
+  gpu::device_group_size=num_cuda_devices[rank];
   // return CUDA device number based on how many appropriate ones exist on the current rank's node and what the relative rank number is
   return relative_ranknum % num_cuda_devices[rank];
 }
@@ -150,7 +152,7 @@ inline void set_appropriate_device_num(int num)
   int deviceCount;
   cudaGetDeviceCount(&deviceCount);
   int num_appropriate=0, device=0;
-  bool set_cuda_device=false;
+  bool set_cuda_device=true;
   for (device = 0; device < deviceCount; ++device)
   {
     cudaDeviceProp deviceProp;
@@ -158,22 +160,26 @@ inline void set_appropriate_device_num(int num)
     if (((deviceProp.major >= 1) && (deviceProp.minor >= 3)) ||
         deviceProp.major >= 2)
     {
+      if (num_appropriate<gpu::device_group_size)
+        gpu::device_group_numbers[num_appropriate] = device;
       num_appropriate++;
       if (num_appropriate == num+1)
       {
-        cudaSetDevice (device);
-        set_cuda_device=true;
-        std::ostringstream out;
-        out << "<- Rank " << OHMMS::Controller->rank() << " will use CUDA device #" << device ;
-        out << " (" << deviceProp.name << ")" << std::endl;
-        std::cerr << out.str();
-        std::cerr.flush();
-        break; // the device is set, nothing more to do here
+        if (set_cuda_device)
+        {
+          cudaSetDevice (device);
+          set_cuda_device=false;
+          std::ostringstream out;
+          out << "<- Rank " << OHMMS::Controller->rank() << " will use CUDA device #" << device ;
+          out << " (" << deviceProp.name << ")" << std::endl;
+          std::cerr << out.str();
+          std::cerr.flush();
+        }
       }
     }
   }
   // This is a fail-safe that should never be triggered
-  if(!set_cuda_device)
+  if(set_cuda_device)
   {
     APP_ABORT("Failure to obtain requested CUDA device.");
   }
@@ -181,6 +187,7 @@ inline void set_appropriate_device_num(int num)
 
 inline void Finalize_CUDA()
 {
+  delete[] gpu::device_group_numbers;
   gpu::finalizeCublas();
   gpu::finalizeCUDAEvents();
   gpu::finalizeCUDAStreams();
@@ -192,6 +199,7 @@ inline void Finalize_CUDA()
 inline void Init_CUDA()
 {
   int devNum = get_device_num();
+  gpu::device_group_numbers=new int[gpu::device_group_size];
   set_appropriate_device_num(devNum);
   cudaDeviceSetLimit(cudaLimitPrintfFifoSize, 1024 * 1024 * 50);
   gpu::rank=OHMMS::Controller->rank();
@@ -199,6 +207,14 @@ inline void Init_CUDA()
   gpu::initCUDAEvents();
   gpu::initCublas();
   gpu::MaxGPUSpineSizeMB = MAX_GPU_SPLINE_SIZE_MB;
+  std::cerr << "Rank " << gpu::rank << ": relative rank number = " << gpu::relative_rank << ", number of devices = " << gpu::device_group_size << "\n";
+  std::cerr << "Available device numbers: ";
+  for (int i=0; i<gpu::device_group_size; i++)
+  {
+    if (i>0) std::cerr << ", ";
+    std::cerr << gpu::device_group_numbers[i];
+  }
+  std::cerr << "\n";
   // Output maximum spline buffer size for first MPI rank
   if(gpu::rank==0)
     std::cerr << "Default MAX_GPU_SPLINE_SIZE_MB is " << gpu::MaxGPUSpineSizeMB << " MB." << std::endl;

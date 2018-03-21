@@ -34,6 +34,9 @@ cublasHandle_t cublasHandle;
 
 size_t MaxGPUSpineSizeMB;
 int rank;
+int relative_rank;
+int device_group_size;
+int* device_group_numbers;
 
 void
 initCUDAStreams()
