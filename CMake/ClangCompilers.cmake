@@ -8,23 +8,22 @@ ENDIF()
 SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -std=c99")
 
 # Enable OpenMP
-SET(ENABLE_OPENMP 1)
-IF ( ENABLE_OPENMP )
-    SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fopenmp")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-ENDIF()
+IF(QMC_OMP)
+  SET(ENABLE_OPENMP 1)
+  SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fopenmp")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+ENDIF(QMC_OMP)
 
 # Set clang specfic flags (which we always want)
 ADD_DEFINITIONS( -Drestrict=__restrict__ )
 
 SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fomit-frame-pointer -fstrict-aliasing")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fomit-frame-pointer -fstrict-aliasing -D__forceinline=inline")
-SET( HAVE_POSIX_MEMALIGN 0 )    # Clang doesn't support -malign-double
 
 # Suppress compile warnings
 SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -Wno-deprecated -Wno-unused-value")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated -Wno-unused-value")
-IF ( CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 3.8 )
+IF ( CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "3.8.0" )
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-undefined-var-template")
 ENDIF()
 

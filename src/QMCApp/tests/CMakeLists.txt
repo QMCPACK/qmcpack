@@ -26,7 +26,7 @@ MAYBE_SYMLINK(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
 
 
 ADD_EXECUTABLE(${UTEST_EXE} test_project_data.cpp test_rng_control.cpp test_particle_pool.cpp
-                            test_wavefunction_pool.cpp)
+                            test_wavefunction_pool.cpp test_hamiltonian_pool.cpp)
 #USE_FAKE_RNG(${UTEST_EXE})
 #TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc qmcdriver_unit qmcham qmcwfs qmcbase qmcutil qmcfakerng ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
 TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc qmcdriver_unit qmcham qmcwfs qmcbase qmcutil ${QMC_UTIL_LIBS} ${MPI_LIBRARY})

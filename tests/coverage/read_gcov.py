@@ -203,6 +203,18 @@ def read_gcov(fname):
                 else:
                     parts = line.split(':',2)
                     current_src_line = line_no
+                    line_count = 0
+                    try:
+                      line_count = int(exe_count)
+                      if line_count < 0:
+                          print 'Warning, negative exe count found'
+                          print '  ',line
+                          print '  ',fname
+                          print '   Replacing with uncovered'
+                          Uncov_norm = '#####'
+                          exe_count = Uncov_norm
+                    except:
+                      pass
                     line_info[line_no] = LineInfo(exe_count, line_no, parts[2])
             else:
                 print 'Unhandled line: ',parts

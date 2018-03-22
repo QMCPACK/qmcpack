@@ -50,6 +50,8 @@ public:
   bool get(std::ostream& os) const;
   void reset();
 
+  void output_particleset_info(Libxml2Document &doc, xmlNodePtr root);
+
   ///assign TileMatrix
   bool putTileMatrix(xmlNodePtr cur);
 
