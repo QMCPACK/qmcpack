@@ -46,9 +46,6 @@ else ( NOT CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
   set(MKL_COMPILE_DEFINITIONS "-mkl")
 endif (NOT CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
 
-# Protect against clobbering the main CMAKE_CXX_FLAGS
-set( org_CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
-
 # Check for mkl.h
 FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl.cxx"
   "#include <iostream>\n #include <mkl.h>\n int main() { return 0; }\n" )
@@ -87,8 +84,6 @@ try_compile(HAVE_MKL_FFTW3 ${CMAKE_BINARY_DIR}
   LINK_LIBRARIES "${MKL_LIBRARIES}"
   COMPILE_DEFINITIONS "${MKL_COMPILE_DEFINITIONS}"
   OUTPUT_VARIABLE MKL_OUT)
-
-set( CMAKE_CXX_FLAGS "${org_CMAKE_CXX_FLAGS}" )
 
 IF ( HAVE_MKL )
   SET( MKL_FOUND 1 )
