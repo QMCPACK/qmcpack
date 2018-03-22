@@ -57,6 +57,14 @@ CloneManager::CloneManager(HamiltonianPool& hpool): cloneEngine(hpool)
   wPerNode.resize(NumThreads+1,0);
 }
 
+void
+CloneManager::setup(int numThreads)
+{
+  NumThreads = numThreads;
+  wPerNode.resize(NumThreads+1, 0);
+}
+
+
 ///cleanup non-static data members
 CloneManager::~CloneManager()
 {
