@@ -274,10 +274,11 @@ ctest -R name-of-test-to-run
 # Documentation and support
 
 For more informaton, consult QMCPACK pages at http://www.qmcpack.org,
-the linked documentation, https://docs.qmcpack.org/qmcpack_manual.pdf .
+the manual PDF at https://docs.qmcpack.org/qmcpack_manual.pdf, 
+or its sources in the manual directory.
 
 If you have trouble using or building QMCPACK, or have questions about
-its use, please post to the Google QMCPACK group or contact a developer.
+its use, please post to the [Google QMCPACK group](https://groups.google.com/forum/#!forum/qmcpack) or contact a developer.
 
 # Contributing
 
@@ -287,7 +288,7 @@ https://docs.qmcpack.org/qmcpack_manual.pdf . We use a git flow model
 including pull request reviews. A continuous integration system runs
 on pull requests. See https://github.com/QMCPACK/qmcpack/wiki for
 details. For an extensive contribution, it can be helpful to discuss
-on the Google QMCPACK group, to create a GitHub issue, or to talk
+on the [Google QMCPACK group](https://groups.google.com/forum/#!forum/qmcpack), to create a GitHub issue, or to talk
 directly with a developer.
 
 Contributions are made under the same UIUC/NCSA open source license
