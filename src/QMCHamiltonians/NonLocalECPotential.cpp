@@ -283,6 +283,40 @@ NonLocalECPotential::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
 }
 
 void
+NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_elec, std::vector<NonLocalData>& Txy)
+{
+  const DistanceTableData* myTable = P.DistTables[myTableIndex];
+  if(myTable->DTType == DT_SOA)
+  {
+    for(int iat=0; iat<NumIons; iat++)
+    {
+      if(PP[iat]==nullptr) continue;
+      const int* restrict J=myTable->J2[iat];
+      const RealType* restrict dist=myTable->r_m2[iat];
+      const PosType* restrict displ=myTable->dr_m2[iat];
+      for(size_t nj=0; nj<myTable->M[iat]; ++nj)
+      {
+        if(dist[nj]<PP[iat]->Rmax && J[nj]==ref_elec)
+          PP[iat]->evaluateOne(P,iat,Psi,J[nj],dist[nj],displ[nj],true,Txy);
+      }
+    }
+  }
+  else
+  {
+    for(int iat=0; iat<NumIons; iat++)
+    {
+      if(PP[iat]==nullptr) continue;
+      for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
+      {
+        const RealType r(myTable->r(nn));
+        if(r<PP[iat]->Rmax && iel==ref_elec)
+          PP[iat]->evaluateOne(P,iat,Psi,iel,r,myTable->dr(nn),true,Txy);
+      }
+    }
+  }
+}
+
+void
 NonLocalECPotential::add(int groupID, NonLocalECPComponent* ppot)
 {
   //map<int,NonLocalECPComponent*>::iterator pit(PPset.find(groupID));
