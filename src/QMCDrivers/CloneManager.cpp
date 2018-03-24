@@ -50,6 +50,15 @@ std::vector<std::vector<MCWalkerConfiguration*> > CloneManager::WPoolClones;
 std::vector<std::vector<TrialWaveFunction*> > CloneManager::PsiPoolClones;
 std::vector<std::vector<QMCHamiltonian*> > CloneManager::HPoolClones;
 
+
+// Clear the static clones.  For now only clear wClones so makeClones will work.
+// Used in unit tests.
+void
+CloneManager::clear()
+{
+  wClones.clear();
+}
+
 /// Constructor.
 CloneManager::CloneManager(HamiltonianPool& hpool): cloneEngine(hpool)
 {

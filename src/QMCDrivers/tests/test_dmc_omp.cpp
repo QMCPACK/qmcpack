@@ -85,6 +85,7 @@ TEST_CASE("DMCOMP", "[drivers][dmc]")
   elec.addTable(ions,DT_AOS);
   elec.update();
 
+  CloneManager::clear();
 
   TrialWaveFunction psi = TrialWaveFunction(c);
   ConstantOrbital *orb = new ConstantOrbital;

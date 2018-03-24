@@ -85,6 +85,7 @@ TEST_CASE("VMCSingleOMP", "[drivers][vmc]")
   elec.addTable(ions,DT_AOS);
   elec.update();
 
+  CloneManager::clear();
 
   TrialWaveFunction psi = TrialWaveFunction(c);
   ConstantOrbital *orb = new ConstantOrbital;

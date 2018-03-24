@@ -43,6 +43,7 @@ public:
   virtual ~CloneManager();
 
   void setup(int numThreads);
+  static void clear();
 
   void makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
   void makeClones(MCWalkerConfiguration& w, std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& ham);
