@@ -71,3 +71,7 @@ FOREACH(p ${QTOOLS})
 
 ENDFOREACH(p ${QTOOLS})
 
+#ppconvert
+if( BUILD_PPCONVERT )
+  SUBDIRS(ppconvert)
+endif( BUILD_PPCONVERT )

@@ -1934,7 +1934,7 @@ class jastrow3(QIxml):
 
 class kspace_jastrow(QIxml):
     tag = 'jastrow'
-    attributes = ['type','name','source','function','optimize','symmetry']
+    attributes = ['type','name','source']
     elements   = ['correlation']
     identifier = 'name'
     write_types = obj(optimize=yesno)
@@ -1974,7 +1974,7 @@ class coefficients(QIxml):
 #end class coefficients
 
 class coefficient(QIxml):  # this is bad!!! coefficients/coefficient
-    attributes = ['id','type','size','dataset']
+    attributes = ['id','type','size','dataset','spindataset']
     text       = 'coeff'
     precision  = '16.12e'
 #end class coefficient
@@ -2550,6 +2550,7 @@ Names.set_expanded_names(
     exctlvl          = 'exctLvl',
     pairtype         = 'pairType',
     printeloc        = 'printEloc',
+    spindependent    = 'spinDependent',
    )
 for c in classes:
     c.init_class()
@@ -5258,7 +5259,7 @@ def generate_opt(method,
     blocks = min(blocks,samples_per_proc*decorr)
 
     opt = opt_map[method]()
-
+ 
     opt.set(
         walkers    = walkers,
         blocks     = blocks,

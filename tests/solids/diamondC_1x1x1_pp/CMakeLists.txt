@@ -27,6 +27,15 @@ IF(ENABLE_SOA OR QMC_CUDA)
                     TRUE
                     0 DIAMOND_SCALARS # VMC
                     )
+
+  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_hybridrep_pp_batched-vmc_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_short
+                    qmc_short_hybridrep_batched.in.xml
+                    1 16
+                    TRUE
+                    0 DIAMOND_SCALARS # VMC
+                    )
 ELSE()
   MESSAGE("Skipping diamondC_1x1x1_hybridrep_pp-vmc_sdj test because neiher SOA nor CUDA is enabled")
 ENDIF()
@@ -39,6 +48,27 @@ ENDIF()
                     TRUE
                     0 DIAMOND_SCALARS # VMC
                     )
+
+  LIST(APPEND DIAMOND_KSPACE_SCALARS "totenergy" "-10.500719 0.001769")
+  LIST(APPEND DIAMOND_KSPACE_SCALARS "variance"  "0.312264 0.028662")
+  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj_kspace
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_short_kspace
+                    qmc_short_kspace.in.xml
+                    1 16
+                    TRUE
+                    0 DIAMOND_KSPACE_SCALARS # VMC
+                    )
+
+  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc_sdj_kspace
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_short_kspace_4_4
+                    qmc_short_kspace_4_4.in.xml
+                    4 4
+                    TRUE
+                    0 DIAMOND_KSPACE_SCALARS # VMC
+                    )
+
 
 # Reference OPT run in qmc-ref
   LIST(APPEND DIAMOND_OPT_SCALARS "totenergy"   "-10.49370 0.0024")
@@ -158,6 +188,17 @@ ENDIF()
                     1 16
                     TRUE
                     0 LONG_DIAMOND_SCALARS # VMC
+                    )
+
+  LIST(APPEND LONG_DIAMOND_KSPACE_SCALARS "totenergy" "-10.500719 0.001769")
+  LIST(APPEND LONG_DIAMOND_KSPACE_SCALARS "variance"  "0.312264 0.028662")
+  QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-vmc_sdj_kspace
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_long_kspace
+                    qmc_long_kspace.in.xml
+                    1 16
+                    TRUE
+                    0 LONG_DIAMOND_KSPACE_SCALARS # VMC
                     )
 
 # Reference DMC run in qmc-ref "-10.531583 0.000265"

@@ -32,7 +32,6 @@
 #include "Message/CommOperators.h"
 #include "Message/OpenMP.h"
 #include <Utilities/IteratorUtility.h>
-#include <Numerics/VectorViewer.h>
 #include <Utilities/unit_conversion.h>
 #include <QMCApp/ParticleSetPool.h>
 
@@ -965,9 +964,9 @@ struct SpinDensityAnalyzer : public QuantityAnalyzer
     {
       std::string sfprefix = ofprefix+"_"+input.species_name[s];
 
-      VectorViewer<real_t> dm(&data_mean[offset],npoints);
-      VectorViewer<real_t> de(&data_error[offset],npoints);
-      VectorViewer<real_t> dwr(&dwrite[0],npoints);
+      Vector<real_t> dm(&data_mean[offset],npoints);
+      Vector<real_t> de(&data_error[offset],npoints);
+      Vector<real_t> dwr(&dwrite[0],npoints);
 
       write_densities(sfprefix,dm,de,dwr);
 
