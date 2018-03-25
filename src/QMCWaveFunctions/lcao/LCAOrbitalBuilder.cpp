@@ -732,18 +732,17 @@ bool SPOSetBase::putPBCFromH5(const char* fname, xmlNodePtr coeff_ptr)
     Matrix<RealType> Ctemp(BasisSetSize,BasisSetSize);
 
     char name[72];
-    if(IsComplex){ 
-         APP_ABORT("Complex Wavefunction not implemented yet. Please contact Developers");
-
-    }
-    else{
+    if(IsComplex)
+        sprintf(name,"%s%d%s%d%s","/KPTS_",KptIdx,"/eigenset_",setVal,"_real");
+    else
         sprintf(name,"%s%d%s%d","/KPTS_",KptIdx,"/eigenset_",setVal);
-        setname=name;
-        if(!hin.read(Ctemp,setname))
-        {
-           setname="SPOSetBase::putFromH5 Missing "+setname+" from HDF5 File.";
-           APP_ABORT(setname.c_str());
-        }
+    
+
+    setname=name;
+    if(!hin.read(Ctemp,setname))
+    {
+       setname="SPOSetBase::putFromH5 Missing "+setname+" from HDF5 File.";
+       APP_ABORT(setname.c_str());
     }
 
 
