@@ -57,6 +57,8 @@ namespace qmcplusplus
     std::string cuspInfo;
     ///Path to HDF5 Wavefunction
     std::string h5_path;
+    ///Number of periodic Images for Orbital evaluation
+    std::vector<int> PBCImages;
 
     /** create basis set
      *

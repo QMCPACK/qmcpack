@@ -119,6 +119,10 @@ namespace qmcplusplus
     aAttrib.add(h5_path,"href");
     aAttrib.add(Images,"PBCimages");
     aAttrib.put(cur);
+    PBCImages.resize(3);
+    PBCImages[0]=int(Images[0]);
+    PBCImages[1]=int(Images[1]);
+    PBCImages[2]=int(Images[2]);
      
     if(cur != NULL) aAttrib.put(cur);
     
@@ -328,6 +332,7 @@ namespace qmcplusplus
     }
 
     mBasisSet->setBasisSetSize(-1);
+    mBasisSet->setPBCImages(PBCImages);
     return mBasisSet;
   }
 
@@ -423,6 +428,7 @@ namespace qmcplusplus
     }
 
     mBasisSet->setBasisSetSize(-1);
+    mBasisSet->setPBCImages(PBCImages);
     return mBasisSet;
   }
 

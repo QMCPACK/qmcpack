@@ -134,22 +134,6 @@ namespace qmcplusplus
         {
 
           int TransX,TransY,TransZ;
-          //Temporary until fix is found
-          int MaxCellX,MaxCellY,MaxCellZ;
-          if(lattice.BoxBConds[0])
-            MaxCellX=5;
-          else
-            MaxCellX=0;
-
-          if(lattice.BoxBConds[1])
-            MaxCellY=5;
-          else
-            MaxCellY=0;
-
-          if(lattice.BoxBConds[2])
-            MaxCellZ=5;
-          else
-            MaxCellZ=0;
 
           PosType dr_new;
           T r_new;
@@ -179,18 +163,15 @@ namespace qmcplusplus
                d2psi[ib] =0; 
           }
 
-          //for (int i=0; i<=MaxCell[0]; i++ ) //loop Translation over X 
-          for (int i=0; i<=MaxCellX; i++ ) //loop Translation over X 
+          for (int i=0; i<=MaxCell[0]; i++ ) //loop Translation over X 
           {
               //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
               TransX=(( i%2 ) * 2 -1) * ( (i+1)/2 ) ;
-              //for (int j=0; j<=MaxCell[1]; j++ ) //loop Translation over Y
-              for (int j=0; j<=MaxCellY; j++ ) //loop Translation over Y
+              for (int j=0; j<=MaxCell[1]; j++ ) //loop Translation over Y
               {
                  //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
                  TransY=(( j%2 ) * 2 -1) * ( (j+1)/2 ); 
-                 //for (int k=0; k<=MaxCell[2]; k++ ) //loop Translation over Z
-                 for (int k=0; k<=MaxCellZ; k++ ) //loop Translation over Z
+                 for (int k=0; k<=MaxCell[2]; k++ ) //loop Translation over Z
                  {
                     //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
                     TransZ=(( k%2 ) * 2 -1) * ( (k+1)/2 ); 
@@ -246,24 +227,6 @@ namespace qmcplusplus
         {
          
           int TransX,TransY,TransZ;
-          //Temporary until fix is found
-          int  MaxCellX,MaxCellY,MaxCellZ;
- 
-          if(lattice.BoxBConds[0])
-            MaxCellX=5;
-          else
-            MaxCellX=0;
-
-          if(lattice.BoxBConds[1])
-            MaxCellY=5;
-          else
-            MaxCellY=0;
-
-          if(lattice.BoxBConds[2])
-            MaxCellZ=5;
-          else
-            MaxCellZ=0;
-
 
           PosType dr_new;
           T r_new;
@@ -272,20 +235,15 @@ namespace qmcplusplus
           value_type* restrict phi_r=tempS.data(1);
           for(size_t ib=0; ib<BasisSetSize; ++ib)
               psi[ib]=0;
-
-
-          //for (int i=0; i<=MaxCell[0]; i++ ) //loop Translation over X 
-          for (int i=0; i<=MaxCellX; i++ ) //loop Translation over X 
+          for (int i=0; i<=MaxCell[0]; i++ ) //loop Translation over X 
           {
               //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
               TransX=(( i%2 ) * 2 -1) * ( (i+1)/2 ) ;
-              //for (int j=0; j<=MaxCell[1]; j++ ) //loop Translation over Y
-              for (int j=0; j<=MaxCellY; j++ ) //loop Translation over Y
+              for (int j=0; j<=MaxCell[1]; j++ ) //loop Translation over Y
               {
                  //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
                  TransY=(( j%2 ) * 2 -1) * ( (j+1)/2 ); 
-                 //for (int k=0; k<=MaxCell[2]; k++ ) //loop Translation over Z
-                 for (int k=0; k<=MaxCellZ; k++ ) //loop Translation over Z
+                 for (int k=0; k<=MaxCell[2]; k++ ) //loop Translation over Z
                  {
                     //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
                     TransZ=(( k%2 ) * 2 -1) * ( (k+1)/2 ); 

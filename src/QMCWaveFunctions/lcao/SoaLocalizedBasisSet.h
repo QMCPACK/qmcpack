@@ -88,8 +88,17 @@ struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::value_type>
       myclone->LOBasisSet[i]=LOBasisSet[i]->makeClone();
     return myclone;
   }
+  /** set Number of periodic Images to evaluate the orbitals. 
+      Set to 0 for non-PBC, and set manually in the input.
+  */
+  void setPBCImages(std::vector<int> PBCImages)
+  {
+    for(int c=0; c<NumCenters; c++)
+    {
+      LOBasisSet[IonID[c]]->setPBCImages(PBCImages);
+    }
 
-
+  }
   /** set BasisSetSize and allocate mVGL container
    */
   void setBasisSetSize(int nbs)
