@@ -118,6 +118,7 @@ namespace qmcplusplus
     aAttrib.add(cuspInfo,"cuspInfo");
     aAttrib.add(h5_path,"href");
     aAttrib.add(Images,"PBCimages");
+    aAttrib.put(cur);
      
     if(cur != NULL) aAttrib.put(cur);
     

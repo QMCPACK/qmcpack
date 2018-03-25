@@ -32,6 +32,8 @@ namespace qmcplusplus
 
       ///size of the basis set
       int BasisSetSize;
+      ///Number of Cell images for the evaluation of the orbital with PBC. If No PBC, should be 0;
+      std::vector <int> MaxCell;
       ///maximum radius of this center
       value_type Rmax;
       ///spherical harmonics
@@ -88,8 +90,14 @@ namespace qmcplusplus
       {
         return BasisSetSize;
       }//=NL.size(); 
+      // Set the number of periodic image for the evaluation of the orbitals. 
+      void setPBCImages(std::vector <int> PBCImages)
+      {
+         MaxCell.resize(3);
+         for (int i=0; i<3; i++)
+            MaxCell[i]=PBCImages[i];
 
-
+      }
       /** implement a BasisSetBase virutal function
        *
        * Set Rmax and BasisSetSize
@@ -118,14 +126,16 @@ namespace qmcplusplus
       inline void setCenter(int c, int offset)
       { }
 
-
+      
 
  template<typename LAT, typename T, typename PosType, typename VGL>
         inline void
         evaluateVGL(const LAT& lattice, const T r, const PosType& dr, const size_t offset,  VGL& vgl)
         {
 
-          int TransX,TransY,TransZ, MaxCellX,MaxCellY,MaxCellZ;
+          int TransX,TransY,TransZ;
+          //Temporary until fix is found
+          int MaxCellX,MaxCellY,MaxCellZ;
           if(lattice.BoxBConds[0])
             MaxCellX=5;
           else
@@ -169,14 +179,17 @@ namespace qmcplusplus
                d2psi[ib] =0; 
           }
 
+          //for (int i=0; i<=MaxCell[0]; i++ ) //loop Translation over X 
           for (int i=0; i<=MaxCellX; i++ ) //loop Translation over X 
           {
               //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
               TransX=(( i%2 ) * 2 -1) * ( (i+1)/2 ) ;
+              //for (int j=0; j<=MaxCell[1]; j++ ) //loop Translation over Y
               for (int j=0; j<=MaxCellY; j++ ) //loop Translation over Y
               {
                  //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
                  TransY=(( j%2 ) * 2 -1) * ( (j+1)/2 ); 
+                 //for (int k=0; k<=MaxCell[2]; k++ ) //loop Translation over Z
                  for (int k=0; k<=MaxCellZ; k++ ) //loop Translation over Z
                  {
                     //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
@@ -232,7 +245,9 @@ namespace qmcplusplus
         evaluateV(const LAT& lattice, const T r, const PosType& dr, T* restrict psi) 
         {
          
-          int TransX,TransY,TransZ, MaxCellX,MaxCellY,MaxCellZ;
+          int TransX,TransY,TransZ;
+          //Temporary until fix is found
+          int  MaxCellX,MaxCellY,MaxCellZ;
  
           if(lattice.BoxBConds[0])
             MaxCellX=5;
@@ -259,14 +274,17 @@ namespace qmcplusplus
               psi[ib]=0;
 
 
+          //for (int i=0; i<=MaxCell[0]; i++ ) //loop Translation over X 
           for (int i=0; i<=MaxCellX; i++ ) //loop Translation over X 
           {
               //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
               TransX=(( i%2 ) * 2 -1) * ( (i+1)/2 ) ;
+              //for (int j=0; j<=MaxCell[1]; j++ ) //loop Translation over Y
               for (int j=0; j<=MaxCellY; j++ ) //loop Translation over Y
               {
                  //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
                  TransY=(( j%2 ) * 2 -1) * ( (j+1)/2 ); 
+                 //for (int k=0; k<=MaxCell[2]; k++ ) //loop Translation over Z
                  for (int k=0; k<=MaxCellZ; k++ ) //loop Translation over Z
                  {
                     //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
