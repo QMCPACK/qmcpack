@@ -858,20 +858,20 @@ ENDIF()
 # FLAGS at the project level
 ############################################################
 #this might be redundant but maybe not in all CMake versions.
-string(TOUPPER ${CMAKE_BUILD_TYPE} THIS_CONFIG)
+STRING(TOUPPER "${CMAKE_BUILD_TYPE}" THIS_CONFIG)
 
-foreach(lang IN ITEMS C CXX)
-  set(PROJECT_CMAKE_${lang}_FLAGS ${CMAKE_${lang}_FLAGS})
+FOREACH(lang IN ITEMS C CXX)
+  SET(PROJECT_CMAKE_${lang}_FLAGS ${CMAKE_${lang}_FLAGS})
   #pre 3.0 cmake does not have string CONCAT
-  set(TMP_PROJECT_CMAKE_${lang}_FLAGS "${PROJECT_CMAKE_${lang}_FLAGS} ${CMAKE_${lang}_FLAGS_${THIS_CONFIG}}")
+  SET(TMP_PROJECT_CMAKE_${lang}_FLAGS "${PROJECT_CMAKE_${lang}_FLAGS} ${CMAKE_${lang}_FLAGS_${THIS_CONFIG}}")
   MESSAGE("Project ${lang}_FLAGS: ${TMP_PROJECT_CMAKE_${lang}_FLAGS}")
-endforeach(lang IN ITEMS C CXX)
+ENDFOREACH(lang IN ITEMS C CXX)
 
-foreach(target_type IN ITEMS EXE SHARED)
-  set(PROJECT_CMAKE_${target_type}_LINKER_FLAGS ${CMAKE_${target_type}_LINKER_FLAGS})
-  set(TMP_PROJECT_CMAKE_${target_type}_LINKER_FLAGS "${PROJECT_CMAKE_${target_type}_LINKER_FLAGS} ${CMAKE_${target_type}_LINKER_FLAGS_${THIS_CONFIG}}")
+FOREACH(target_type IN ITEMS EXE SHARED)
+  SET(PROJECT_CMAKE_${target_type}_LINKER_FLAGS ${CMAKE_${target_type}_LINKER_FLAGS})
+  SET(TMP_PROJECT_CMAKE_${target_type}_LINKER_FLAGS "${PROJECT_CMAKE_${target_type}_LINKER_FLAGS} ${CMAKE_${target_type}_LINKER_FLAGS_${THIS_CONFIG}}")
   MESSAGE("Project ${target_type}_LINKER_FLAGS: ${TMP_PROJECT_CMAKE_${target_type}_LINKER_FLAGS}")
-endforeach(target_type IN ITEMS EXE SHARED)
+ENDFOREACH(target_type IN ITEMS EXE SHARED)
 
 
 ###################################################
