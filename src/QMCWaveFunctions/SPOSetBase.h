@@ -22,6 +22,7 @@
 
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Particle/ParticleSet.h"
+#include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "io/hdf_archive.h"
 #include "Message/CommOperators.h"
@@ -53,7 +54,6 @@ public:
   typedef OrbitalSetTraits<ValueType>::GradHessType  GGGType;
   typedef OrbitalSetTraits<ValueType>::GradHessVector_t GGGVector_t;
   typedef OrbitalSetTraits<ValueType>::GradHessMatrix_t GGGMatrix_t;
-  typedef OrbitalSetTraits<ValueType>::RefVector_t      RefVector_t;
   typedef OrbitalSetTraits<ValueType>::VGLVector_t      VGLVector_t;
   typedef ParticleSet::Walker_t                      Walker_t;
   typedef std::map<std::string,SPOSetBase*> SPOPool_t;
@@ -199,7 +199,13 @@ public:
    * @param psiM single-particle orbitals psiM(i,j) for the i-th particle and the j-th orbital
    */
   virtual void
-  evaluateValues(const ParticleSet& VP, ValueMatrix_t& psiM);
+  evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM);
+
+  /** estimate the memory needs for evaluating SPOs of particles in the size of ValueType
+   * @param nP, number of particles.
+   */
+  virtual size_t
+  estimateMemory(const int nP) { return OrbitalSetSize*nP; }
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet

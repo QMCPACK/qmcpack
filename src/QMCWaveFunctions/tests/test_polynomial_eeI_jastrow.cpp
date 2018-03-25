@@ -194,10 +194,21 @@ const char *particles = \
   std::cout << std::endl << "reporting dlogpsi and dhpsioverpsi" << std::scientific << std::endl;
   for(int iparam=0; iparam<NumOptimizables; iparam++)
     std::cout << "param=" << iparam << " : " << dlogpsi[iparam] << "  " << dhpsioverpsi[iparam] << std::endl;
+  std::cout << std::endl;
 
   REQUIRE(dlogpsi[43] == Approx(1.3358726814e+05));
   REQUIRE(dhpsioverpsi[43] == Approx(-2.3246270644e+05));
 
+  VirtualParticleSet VP(elec_,2);
+  ParticleSet::ParticlePos_t newpos2(2);
+  std::vector<ValueType> ratios2(2);
+  newpos2[0] = newpos;
+  newpos2[1] = PosType(0.2,0.5,0.3);
+  VP.makeMoves(1, newpos2);
+  j3->evaluateRatios(VP, ratios2);
+
+  REQUIRE(ratios2[0] == ComplexApprox(1.0357541137).compare_real_only());
+  REQUIRE(ratios2[1] == ComplexApprox(1.0257141422).compare_real_only());
 }
 }
 

@@ -38,21 +38,23 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
   std::vector<NonLocalECPComponent*> PPset;
   ///reference to the center ion
   ParticleSet& IonConfig;
+  ///reference to the electrons
+  ParticleSet& Peln;
   ///target TrialWaveFunction
   TrialWaveFunction& Psi;
   ///true if we should compute forces
   bool ComputeForces;
+  ///true if we should use new algorithm
+  bool UseVP;
   ParticleSet::ParticlePos_t PulayTerm;
 #if !defined(REMOVE_TRACEMANAGER)
   ///single particle trace samples
   Array<TraceReal,1>* Ve_sample;
   Array<TraceReal,1>* Vi_sample;
 #endif
-  ParticleSet& Peln;
-  ParticleSet& Pion;
 
   NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
-                      TrialWaveFunction& psi, bool computeForces=false);
+                      TrialWaveFunction& psi, bool computeForces=false, bool useVP=false);
 
   ~NonLocalECPotential();
 
@@ -67,6 +69,13 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
   Return_t evaluate(ParticleSet& P);
 
   Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy);
+
+  /** compute the T move transition probability for a given electron
+   * @param P particle set
+   * @param ref_elec reference electron id
+   * @param Txy a vector of transition probability
+   */
+  void computeOneElectronTxy(ParticleSet& P, const int ref_elec, std::vector<NonLocalData>& Txy);
 
   Return_t evaluateValueAndDerivatives(ParticleSet& P,
       const opt_variables_type& optvars,
