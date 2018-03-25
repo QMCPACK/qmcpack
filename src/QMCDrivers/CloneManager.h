@@ -42,8 +42,11 @@ public:
   ///virtual destructor
   virtual ~CloneManager();
 
+  // Set up for a specific number of threads.  Used in unit testing.
   void setup(int numThreads);
-  static void clear();
+  // Clear static array so makeClones will populate properly
+  // Only for using in unit testing.
+  static void clear_for_unit_tests();
 
   void makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
   void makeClones(MCWalkerConfiguration& w, std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& ham);
