@@ -44,7 +44,7 @@ namespace qmcplusplus
 
 /// Constructor.
 DMCOMP::DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool)
-  : QMCDriver(w,psi,h,ppool), CloneManager(hpool)
+  : QMCDriver(w,psi,h,ppool)
   , KillNodeCrossing(0) ,Reconfiguration("no"), BenchMarkRun("no")
   , BranchInterval(-1),mover_MaxAge(-1)
 {

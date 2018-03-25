@@ -487,10 +487,10 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   {
 #if defined (QMC_CUDA)
     if (useGPU == "yes")
-      optTarget = new QMCCostFunctionCUDA(W,Psi,H,hamPool);
+      optTarget = new QMCCostFunctionCUDA(W,Psi,H);
     else
 #endif
-      optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
+      optTarget = new QMCCostFunctionOMP(W,Psi,H);
     optTarget->setStream(&app_log());
     success=optTarget->put(q);
   }

@@ -60,7 +60,7 @@ CloneManager::clear()
 }
 
 /// Constructor.
-CloneManager::CloneManager(HamiltonianPool& hpool): cloneEngine(hpool)
+CloneManager::CloneManager()
 {
   NumThreads=omp_get_max_threads();
   wPerNode.resize(NumThreads+1,0);

@@ -38,7 +38,7 @@ class CloneManager: public QMCTraits
 {
 public:
   /// Constructor.
-  CloneManager(HamiltonianPool& hpool);
+  CloneManager();
   ///virtual destructor
   virtual ~CloneManager();
 
@@ -65,8 +65,6 @@ public:
   }
 
 protected:
-  ///reference to HamiltonianPool to clone everything
-  HamiltonianPool& cloneEngine;
   ///number of threads
   IndexType NumThreads;
   ///walkers
