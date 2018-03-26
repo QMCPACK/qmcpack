@@ -1,36 +1,36 @@
-  Input file(s): qmc_short.in.xml 
+  Input file(s): qmc_long.in.xml 
 
 =====================================================
                     QMCPACK 3.4.0 
 
   (c) Copyright 2003-  QMCPACK developers            
 
-  Git branch: PBC-Gaussian
-  Last git commit: 81e44e232a8cd6c5dce2fa6bb19397e3b3839a4b-dirty
-  Last commit date: Wed Mar 14 17:04:03 2018 -0500
+  Git branch: HEAD
+  Last git commit: 9eb35e50f00746e30c4c8415cb0fa66a4e89b386-dirty
+  Last commit date: Sun Mar 25 15:48:57 2018 -0500
 =====================================================
   Global options 
 
-  MPI Nodes            = 1
-  MPI Nodes per group  = 1
+  MPI Nodes            = 256
+  MPI Nodes per group  = 256
   MPI Group ID         = 0
-  OMP_NUM_THREADS      = 16
+  OMP_NUM_THREADS      = 32
 
   Precision used in this calculation, see definitions in the manual:
   Base precision      = double
   Full precision      = double
 
-  Input XML = qmc_short.in.xml
+  Input XML = qmc_long.in.xml
 
-  Project = qmc_short
-  date    = 2018-03-22 15:41:53 CDT
-  host    = abenali
+  Project = qmc_long
+  date    = 2018-03-26 00:44:38 UTC
+  host    = Q02-I3-J01.vesta.itd
 
  Random Number
  -------------
-  Offset for the random number seeds based on time: 273
+  Offset for the random number seeds based on time: 630
 
-  Range of prime numbers to use as seeds over processors and threads = 1777-1901
+  Range of prime numbers to use as seeds over processors and threads = 4673-91243
 
 
  Lattice
@@ -111,7 +111,7 @@
     Distance computations use general periodic cell in 3D with corner image checks.
     Setting Rmax = 1.9475
 
-Reading BasisSet from HDF5 file:C_Diamond.h5
+Reading BasisSet from HDF5 file:/projects/catalyst/abenali/PBC_Gaussian/APS2018/diamondC_1x1x1_pp/vtz/lda/C_Diamond.h5
 <input node="atomicBasisSet" name="bfd-vtz" Morder="pyscf" angular="spherical"  elementType="C"  normalized="no  basisType="Numerical  addSign="0" />
   AO BasisSet for C
    Spherical Harmonics contain (-1)^m factor
@@ -217,12 +217,12 @@ eC_9 -0.0229174968 1 1  ON 9
     Continuum approximation in k = [44.3527652081,3080.8800360496)
 
    LR Breakup chi^2 = 0.0000000000
-   PBCAA self-interaction term -6.2993157662
-   PBCAA total constant -6.9386825513
+   PBCAA self-interaction term -6.2993553705
+   PBCAA total constant -6.9387141578
   Maximum K shell 24
   Number of k vectors 608
   Fixed Coulomb potential for e
-    e-e Madelung Const. =-0.3298144519
+    e-e Madelung Const. =-0.3298145783
     Vtot     =0.0000000000
   QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
 QMCHamiltonian::addOperatorType added type coulomb named ElecElec
@@ -234,13 +234,13 @@ QMCHamiltonian::addOperatorType added type coulomb named ElecElec
     Setting Rmax = 1.9475
 
   Clone CoulombHandler. 
-   PBCAA self-interaction term -25.1972630646
-   PBCAA total constant -25.8366298497
+   PBCAA self-interaction term -25.1974214819
+   PBCAA total constant -25.8367802693
   Maximum K shell 24
   Number of k vectors 608
   Fixed Coulomb potential for ion0
-    e-e Madelung Const. =-0.3298144519
-    Vtot     =-12.7756675184
+    e-e Madelung Const. =-0.3298145783
+    Vtot     =-12.7756675655
   QMCHamiltonian::addOperator IonIon to H, physical Hamiltonian 
 QMCHamiltonian::addOperatorType added type coulomb named IonIon
 
@@ -275,7 +275,7 @@ QMCHamiltonian::addOperatorType added type coulomb named IonIon
             -0.4472135955      0.7236067977     -0.5257311121        0.0833333333
     Maximum cutoff radius 1.7000000000
   Clone CoulombHandler. 
-   Constant of PBCAB 1.2787335703
+   Constant of PBCAB 1.2787175747
   Rcut                1.9474954980
   Maximum K shell     24
   Number of k vectors 608
@@ -297,7 +297,7 @@ QMCHamiltonian::addOperatorType added type pseudo named PseudoPot
 ParticleSetPool::randomize 
 <init source="ion0" target="e">
 </init>
-  Initialization Execution time = 0.9441 secs
+  Initialization Execution time = 2.8938 secs
 =========================================================
  Summary of QMC systems 
 =========================================================
@@ -307,14 +307,14 @@ ParticleSetPool has:
 
     8
 
-    u  1.1328140964e+00  3.1125306276e+00  3.2540398208e+00
-    u  8.6679382678e-01  3.3043132027e+00  2.5925752423e+00
-    u  2.4696517139e+00  1.8539393387e+00  8.3559492714e-01
-    u  1.1460569206e+00  1.0191071896e+00  8.9430575142e-01
-    d  9.4669376548e-01  2.6918925247e+00  3.4440830213e+00
-    d  9.5334487875e-01  4.0149519605e+00  3.5844051675e+00
-    d  2.2520568574e+00  1.4833487315e+00  2.6887379125e+00
-    d  2.2350572069e+00  1.9626498017e+00  2.6807360475e+00
+    u  3.3736946196e+00  2.8783981950e+00  5.6877405738e+00
+    u  5.8571694021e+00  4.1313106001e+00  3.3747336549e+00
+    u  2.2462081281e+00  7.9962300709e-01  2.2018564349e+00
+    u  2.0285173928e+00  1.1199505640e+00  2.6495943758e+00
+    d  5.7787850754e-01  2.6193477058e+00  2.6925675421e+00
+    d  3.6113744142e+00  5.6234980806e+00  3.5920358866e+00
+    d  2.6370626759e+00  4.8183907624e+00  4.4243525324e+00
+    d  4.3171321689e+00  4.8570197068e+00  2.5656828260e+00
 
   ParticleSet ion0 : 0 2 
 
@@ -332,24 +332,24 @@ ParticleSetPool has:
 
 =========================================================
   Start VMCSingleOMP
-  File Root qmc_short.s000 append = no 
+  File Root qmc_long.s000 append = no 
 =========================================================
-  Adding 16 walkers to 0 existing sets
-  Total number of walkers: 1.6000000000e+01
-  Total weight: 1.6000000000e+01
+  Adding 32 walkers to 0 existing sets
+  Total number of walkers: 8.1920000000e+03
+  Total weight: 8.1920000000e+03
   Resetting Properties of the walkers 1 x 14
 
 <vmc function="put">
   qmc_counter=0  my_counter=0
-  time step      = 3.0000000000e-01
+  time step      = 1.0000000000e-02
   blocks         = 1000
-  steps          = 8
-  substeps       = 2
+  steps          = 20
+  substeps       = 10
   current        = 0
   target samples = 0.0000000000e+00
-  walkers/mpi    = 16
+  walkers/mpi    = 32
 
-  stepsbetweensamples = 8008
+  stepsbetweensamples = 20020
 <parameter name="blocks" condition="int">1000</parameter>
 <parameter name="blocks_between_recompute" condition="int">0</parameter>
 <parameter name="check_properties" condition="int">100</parameter>
@@ -358,50 +358,50 @@ ParticleSetPool has:
 <parameter name="dmcwalkersperthread" condition="real">0.0000000000e+00</parameter>
 <parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
 <parameter name="record_configs" condition="int">0</parameter>
-<parameter name="record_walkers" condition="int">8008</parameter>
+<parameter name="record_walkers" condition="int">20020</parameter>
 <parameter name="recordconfigs" condition="int">0</parameter>
-<parameter name="recordwalkers" condition="int">8008</parameter>
+<parameter name="recordwalkers" condition="int">20020</parameter>
 <parameter name="rewind" condition="int">0</parameter>
 <parameter name="samples" condition="real">0.0000000000e+00</parameter>
 <parameter name="samplesperthread" condition="real">0.0000000000e+00</parameter>
-<parameter name="steps" condition="int">8</parameter>
-<parameter name="stepsbetweensamples" condition="int">8008</parameter>
+<parameter name="steps" condition="int">20</parameter>
+<parameter name="stepsbetweensamples" condition="int">20020</parameter>
 <parameter name="store_configs" condition="int">0</parameter>
 <parameter name="storeconfigs" condition="int">0</parameter>
-<parameter name="sub_steps" condition="int">2</parameter>
-<parameter name="substeps" condition="int">2</parameter>
-<parameter name="tau" condition="au">3.0000000000e-01</parameter>
-<parameter name="time_step" condition="au">3.0000000000e-01</parameter>
-<parameter name="timestep" condition="au">3.0000000000e-01</parameter>
+<parameter name="sub_steps" condition="int">10</parameter>
+<parameter name="substeps" condition="int">10</parameter>
+<parameter name="tau" condition="au">1.0000000000e-02</parameter>
+<parameter name="time_step" condition="au">1.0000000000e-02</parameter>
+<parameter name="timestep" condition="au">1.0000000000e-02</parameter>
 <parameter name="use_drift" condition="string">yes</parameter>
 <parameter name="usedrift" condition="string">yes</parameter>
-<parameter name="walkers" condition="int">16</parameter>
+<parameter name="walkers" condition="int">32</parameter>
 <parameter name="warmup_steps" condition="int">100</parameter>
 <parameter name="warmupsteps" condition="int">100</parameter>
   DumpConfig==false Nothing (configurations, state) will be saved.
-  Walker Samples are dumped every 8008 steps.
+  Walker Samples are dumped every 20020 steps.
 </vmc>
   Adding a default LocalEnergyEstimator for the MainEstimator 
-  CloneManager::makeClones makes 16 clones for W/Psi/H.
+  CloneManager::makeClones makes 32 clones for W/Psi/H.
   Cloning methods for both Psi and H are used
 ===== Memory Usage before cloning =====
-Available memory on node 0, free + buffers : 2453 MB
-Memory footprint by rank 0 on node 0       : 38 MB
+Allocated heap: 528.00 MB, avail. heap: 15727.98 MB
+Allocated stack: 0.02 MB, avail. stack: 15727.98 MB
 ==================================================
 ===== Memory Usage after cloning =====
-Available memory on node 0, free + buffers : 2450 MB
-Memory footprint by rank 0 on node 0       : 38 MB
+Allocated heap: 528.00 MB, avail. heap: 15727.98 MB
+Allocated stack: 0.02 MB, avail. stack: 15727.98 MB
 ==================================================
-  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 
 
   Using Particle by Particle moves
   Walker moves with drift
   Total Sample Size   =0
-  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 
   Using Locality Approximation
 ===== Memory Usage after the buffer registration =====
-Available memory on node 0, free + buffers : 2448 MB
-Memory footprint by rank 0 on node 0       : 38 MB
+Allocated heap: 528.00 MB, avail. heap: 15727.98 MB
+Allocated stack: 0.02 MB, avail. stack: 15727.98 MB
 ==================================================
   Anonymous Buffer size per walker : 2272 Bytes.
 MEMORY increase 0 MB VMCSingleOMP::resetRun
