@@ -80,7 +80,7 @@ TEST_CASE("CloneManager", "[drivers]")
   Communicate *c = OHMMS::Controller;
 
   HamiltonianPool hpool(c);
-  CloneManager cm(hpool);
+  CloneManager cm;
 
   //double acc_ratio = cm.acceptRatio();
   //std::cout << "acc ratio = " << acc_ratio << std::endl;
