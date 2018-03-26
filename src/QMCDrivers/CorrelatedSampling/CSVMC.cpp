@@ -39,7 +39,7 @@ namespace qmcplusplus
 
 /// Constructor.
 CSVMC::CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
-                           HamiltonianPool& hpool, WaveFunctionPool& ppool):
+             WaveFunctionPool& ppool):
   QMCDriver(w,psi,h,ppool), multiEstimator(0), Mover(0), UseDrift("yes")
 {
   RootName = "csvmc";
