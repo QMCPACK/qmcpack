@@ -439,11 +439,15 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   #-------------------------------------------------------------------
   # Quick search for MKL (this will need to be improved).
   # This reproduces the old intel -mkl behavior or
-  # if ENABLE_OUTSIDE_MKL is set to 1 supports other compilers
-  SET(ENABLE_OUTSIDE_MKL FALSE CACHE BOOL "ENABLE MKL for non-intel compilers (Experimental)")
-  IF (INTEL_COMPILER OR ENABLE_OUTSIDE_MKL)
+  # if ENABLE_MKL is set to 1 supports other compilers
+  IF (INTEL_COMPILER)
+    SET(ENABLE_MKL TRUE CACHE BOOL "ENABLE MKL for Intel compilers")
+  ELSE (INTEL_COMPILER)
+    SET(ENABLE_MKL FALSE CACHE BOOL "ENABLE MKL for non-intel compilers (Experimental)")
+  ENDIF (INTEL_COMPILER)
+  IF (ENABLE_MKL)
    INCLUDE(CMake/FindMKL.cmake)
-  ENDIF(INTEL_COMPILER OR ENABLE_OUTSIDE_MKL)
+  ENDIF(ENABLE_MKL)
   IF ( HAVE_MKL )
     # We found MKL, add the link library
     SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${MKL_FLAGS}")
