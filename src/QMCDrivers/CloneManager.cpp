@@ -50,12 +50,31 @@ std::vector<std::vector<MCWalkerConfiguration*> > CloneManager::WPoolClones;
 std::vector<std::vector<TrialWaveFunction*> > CloneManager::PsiPoolClones;
 std::vector<std::vector<QMCHamiltonian*> > CloneManager::HPoolClones;
 
+
+// Clear the static clones so makeClones will work as expected.
+// For now only clearing wClones is strictly necessary.  The storage is not freed,
+// and this will leak memory.
+// Only for use in unit tests.
+void
+CloneManager::clear_for_unit_tests()
+{
+  wClones.clear();
+}
+
 /// Constructor.
 CloneManager::CloneManager(HamiltonianPool& hpool): cloneEngine(hpool)
 {
   NumThreads=omp_get_max_threads();
   wPerNode.resize(NumThreads+1,0);
 }
+
+void
+CloneManager::setup(int numThreads)
+{
+  NumThreads = numThreads;
+  wPerNode.resize(NumThreads+1, 0);
+}
+
 
 ///cleanup non-static data members
 CloneManager::~CloneManager()
