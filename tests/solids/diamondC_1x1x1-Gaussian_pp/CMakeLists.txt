@@ -23,9 +23,6 @@ IF(ENABLE_SOA)
                     0 DIAMOND_SCALARS # VMC
                     )
 
-qmc_long  series 0  -10.496089 +/- 0.000159   0.438408 +/- 0.000687   0.0418 
-qmc_long_vmc_dmc  series 1  -10.531770 +/- 0.000937   0.431217 +/- 0.000745   0.0409 
-
 # Reference DMC run in qmc-ref "-10.531770 0.000937"
   LIST(APPEND DIAMOND_DMC_SCALARS "totenergy" "-10.541 0.031")
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-dmc_gaussian_sdj
