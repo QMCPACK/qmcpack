@@ -51,10 +51,12 @@ std::vector<std::vector<TrialWaveFunction*> > CloneManager::PsiPoolClones;
 std::vector<std::vector<QMCHamiltonian*> > CloneManager::HPoolClones;
 
 
-// Clear the static clones.  For now only clear wClones so makeClones will work.
-// Used in unit tests.
+// Clear the static clones so makeClones will work as expected.
+// For now only clearing wClones is strictly necessary.  The storage is not freed,
+// and this will leak memory.
+// Only for use in unit tests.
 void
-CloneManager::clear()
+CloneManager::clear_for_unit_tests()
 {
   wClones.clear();
 }

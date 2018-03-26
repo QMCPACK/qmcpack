@@ -82,10 +82,14 @@ TEST_CASE("DMCOMP", "[drivers][dmc]")
   tspecies(massIdx, upIdx) = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
+#ifdef ENABLE_SOA
+  elec.addTable(ions,DT_SOA);
+#else
   elec.addTable(ions,DT_AOS);
+#endif
   elec.update();
 
-  CloneManager::clear();
+  CloneManager::clear_for_unit_tests();
 
   TrialWaveFunction psi = TrialWaveFunction(c);
   ConstantOrbital *orb = new ConstantOrbital;
