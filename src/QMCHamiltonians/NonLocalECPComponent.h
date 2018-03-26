@@ -96,7 +96,7 @@ struct NonLocalECPComponent: public QMCTraits
   ///destructor
   ~NonLocalECPComponent();
 
-  NonLocalECPComponent* makeClone();
+  NonLocalECPComponent* makeClone(const ParticleSet &qp);
 
   ///add a new Non Local component
   void add(int l, RadialPotentialType* pp);
@@ -110,7 +110,7 @@ struct NonLocalECPComponent: public QMCTraits
 
   void resize_warrays(int n,int m,int l);
 
-  void randomize_grid(ParticleSet::ParticlePos_t& sphere, bool randomize);
+  void randomize_grid();
   template<typename T> void randomize_grid(std::vector<T> &sphere);
 
   RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& Psi, 
@@ -126,10 +126,6 @@ struct NonLocalECPComponent: public QMCTraits
   evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, std::vector<NonLocalData>& Txy,
            PosType &force_iat);
 
-  /** compute with virtual moves */
-  RealType evaluateVP(const ParticleSet& W, int iat, TrialWaveFunction& Psi);
-  RealType evaluateVP(const ParticleSet& W, int iat, TrialWaveFunction& Psi,std::vector<NonLocalData>& Txy);
-
   RealType
   evaluateValueAndDerivatives(ParticleSet& P,
       int iat, TrialWaveFunction& psi,
@@ -139,7 +135,7 @@ struct NonLocalECPComponent: public QMCTraits
 
   void print(std::ostream& os);
 
-  void initVirtualParticle(ParticleSet* qp);
+  void initVirtualParticle(const ParticleSet& qp);
 
   void setRandomGenerator(RandomGenerator_t* rng)
   {

@@ -21,7 +21,6 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_C2R_ADOPTOR_H
 #define QMCPLUSPLUS_EINSPLINE_C2R_ADOPTOR_H
 
-#include <Numerics/VectorViewer.h>
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
 
@@ -212,7 +211,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 
   void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
   {
-    VectorViewer<ST> v_r(psi_r,0), v_i(psi_i,0);
+    Vector<ST> v_r(psi_r,0), v_i(psi_i,0);
 #ifdef QMC_CUDA
     // GPU code needs the old ordering.
     int iband=ispline;
@@ -289,7 +288,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV>
-  inline void assign_v(const PointType& r, VV& psi)
+  inline void assign_v(const PointType& r, const vContainer_type& myV, VV& psi)
   {
     const size_t N=kPoints.size();
     const ST x=r[0], y=r[1], z=r[2];
@@ -361,7 +360,23 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
     SplineInst->evaluate(ru,myV);
-    assign_v(r,psi);
+    assign_v(r,myV,psi);
+  }
+
+  template<typename VM>
+  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM)
+  {
+    const size_t m=psiM.cols();
+    for(int iat=0; iat<VP.getTotalNum(); ++iat)
+    {
+      Vector<TT> psi(psiM[iat],m);
+      evaluate_v(VP,iat,psi);
+    }
+  }
+
+  inline size_t estimateMemory(const int nP)
+  {
+    return (nComplexBands+kPoints.size())*nP;
   }
 
   /** assign_vgl

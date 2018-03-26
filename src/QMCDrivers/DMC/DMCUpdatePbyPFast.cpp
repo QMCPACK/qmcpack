@@ -22,6 +22,7 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCDrivers/DriftOperators.h"
+#include "QMCHamiltonians/NonLocalECPotential.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
@@ -139,8 +140,6 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
   W.donePbyP();
   myTimers[DMC_movePbyP]->stop();
 
-  if(UseTMove)
-    nonLocalOps.reset();
   bool advanced=true;
   if(nAcceptTemp>0)
   {
@@ -151,8 +150,11 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
     W.saveWalker(thisWalker);
     myTimers[DMC_buffer]->stop();
     myTimers[DMC_hamiltonian]->start();
-    if(UseTMove)
+    if( UseTMove==TMOVE_V0 || UseTMove==TMOVE_V3 )
+    {
+      nonLocalOps.reset();
       enew= H.evaluate(W,nonLocalOps.Txy);
+    }
     else
       enew= H.evaluate(W);
     myTimers[DMC_hamiltonian]->stop();
@@ -210,6 +212,41 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
     myTimers[DMC_tmoves]->stop();
   }
   else if(UseTMove==TMOVE_V1)
+  {
+    myTimers[DMC_tmoves]->start();
+    GradType grad_iat;
+    size_t NonLocalMoveAcceptedTemp = 0;
+    NonLocalECPotential *NLPP = dynamic_cast<NonLocalECPotential*>(H.getHamiltonian("NonLocalECP"));
+    //make a non-local move per particle
+    for(int ig=0; ig<W.groups(); ++ig) //loop over species
+    {
+      for (int iat=W.first(ig); iat<W.last(ig); ++iat)
+      {
+        nonLocalOps.reset();
+        NLPP->computeOneElectronTxy(W,iat,nonLocalOps.Txy);
+        int ibar = nonLocalOps.selectMove(RandomGen());
+        if(ibar)
+        {
+          W.setActive(iat);
+          if(W.makeMoveAndCheck(iat,nonLocalOps.delta(ibar)))
+          {
+            Psi.ratioGrad(W,iat,grad_iat);
+            Psi.acceptMove(W,iat);
+            W.acceptMove(iat);
+            ++NonLocalMoveAcceptedTemp;
+          }
+        }
+      }
+    }
+    if(NonLocalMoveAcceptedTemp)
+    {
+      Psi.updateBuffer(W,w_buffer,false);
+      W.saveWalker(thisWalker);
+      NonLocalMoveAccepted+=NonLocalMoveAcceptedTemp;
+    }
+    myTimers[DMC_tmoves]->stop();
+  }
+  else if(UseTMove==TMOVE_V3)
   {
     myTimers[DMC_tmoves]->start();
     nonLocalOps.group_by_elec();

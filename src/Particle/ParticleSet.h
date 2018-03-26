@@ -127,8 +127,6 @@ public:
 
   ///true, if a physical or local bounding box is used
   bool UseBoundBox;
-  ///true if fast update for sphere moves
-  bool UseSphereUpdate;
   ///true if the particles are grouped
   bool IsGrouped;
   ///true if the particles have the same mass
@@ -164,9 +162,6 @@ public:
 
   ///distance tables that need to be updated by moving this ParticleSet
   std::vector<DistanceTableData*> DistTables;
-
-  ///spherical-grids for non-local PP
-  std::vector<ParticlePos_t*> Sphere;
 
   ///Particle density in G-space for MPC interaction
   std::vector<TinyVector<int,OHMMS_DIM> > DensityReducedGvecs;
@@ -434,7 +429,6 @@ public:
   //        void addPropertyHistoryPoint(int index, RealType data);
 
   void clearDistanceTables();
-  void resizeSphere(int nc);
 
   void convert(const ParticlePos_t& pin, ParticlePos_t& pout);
   void convert2Unit(const ParticlePos_t& pin, ParticlePos_t& pout);

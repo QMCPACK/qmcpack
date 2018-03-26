@@ -428,6 +428,15 @@ public:
     return std::exp(DiffVal);
   }
 
+  void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+  {
+    for(int k=0; k<ratios.size(); ++k)
+      ratios[k]=std::exp(Uat[VP.refPtcl] -
+                         computeU(VP.refPS, VP.refPtcl, VP.refPS.GroupID[VP.refPtcl],
+                                  VP.DistTables[myTableID]->Distances[k],
+                                  VP.DistTables[0]->Distances[k]));
+  }
+
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
   {
     const DistanceTableData* d_table=P.DistTables[0];
@@ -577,8 +586,8 @@ public:
     }
   }
 
-  inline valT computeU(ParticleSet& P, int jel, int jg,
-                        const RealType* distjI, const RealType* distjk)
+  inline valT computeU(const ParticleSet& P, int jel, int jg,
+                       const RealType* distjI, const RealType* distjk)
   {
     const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
 
@@ -710,7 +719,7 @@ public:
     }
   }
 
-  inline void computeU3(ParticleSet& P, int jel,
+  inline void computeU3(const ParticleSet& P, int jel,
                         const RealType* distjI, const RowContainer& displjI,
                         const RealType* distjk, const RowContainer& displjk,
                         valT& Uj, posT& dUj, valT& d2Uj,

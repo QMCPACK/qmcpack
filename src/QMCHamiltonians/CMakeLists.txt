@@ -58,7 +58,6 @@ IF(OHMMS_DIM MATCHES 3)
     LocalCorePolPotential.cpp
     LocalECPotential.cpp
     NonLocalECPComponent.cpp
-    NonLocalECPComponent.vp.cpp
     NonLocalECPotential.deriv.cpp
     NonLocalECPotential.cpp
     ECPotentialBuilder.cpp
