@@ -2,15 +2,15 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2018 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by:  Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by:  Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //
-// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+// File created by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "Message/catch_mpi_main.hpp"
+#include "catch.hpp"
 
 
 #include "Utilities/RandomGenerator.h"
@@ -23,13 +23,15 @@
 #include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCApp/ParticleSetPool.h"
+#include "QMCApp/HamiltonianPool.h"
+#include "QMCApp/WaveFunctionPool.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/ConstantOrbital.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
 #include "Estimators/EstimatorManagerBase.h"
 #include "Estimators/TraceManager.h"
-#include "QMCDrivers/VMC/VMCUpdatePbyP.h"
+#include "QMCDrivers/DMC/DMCOMP.h"
 
 
 #include <stdio.h>
@@ -41,7 +43,7 @@ using std::string;
 namespace qmcplusplus
 {
 
-TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
+TEST_CASE("DMCOMP", "[drivers][dmc]")
 {
 
   Communicate *c;
@@ -80,9 +82,14 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   tspecies(massIdx, upIdx) = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
+#ifdef ENABLE_SOA
+  elec.addTable(ions,DT_SOA);
+#else
   elec.addTable(ions,DT_AOS);
+#endif
   elec.update();
 
+  CloneManager::clear_for_unit_tests();
 
   TrialWaveFunction psi = TrialWaveFunction(c);
   ConstantOrbital *orb = new ConstantOrbital;
@@ -94,36 +101,50 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
 
   QMCHamiltonian h;
   h.addOperator(new BareKineticEnergy<double>(elec),"Kinetic");
-  h.addObservables(elec); // get double free error on 'h.Observables' w/o this 
+  h.addObservables(elec); // get double free error on 'h.Observables' w/o this
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  VMCUpdatePbyP vmc(elec, psi, h, rg);
-  EstimatorManagerBase EM;
-  SimpleFixedNodeBranch branch(0.1, 1);
-  TraceManager TM;
-  vmc.resetRun(&branch, &EM, &TM);
-  vmc.startBlock(1);
+  HamiltonianPool hpool(c);
 
-  VMCUpdatePbyP::WalkerIter_t begin = elec.begin();
-  VMCUpdatePbyP::WalkerIter_t end = elec.end();
-  vmc.advanceWalkers(begin, end, true);
+  WaveFunctionPool wpool(c);
+
+  //EstimatorManagerBase emb(c);
+
+
+  DMCOMP dmc_omp(elec, psi, h, hpool, wpool);
+
+  const char *dmc_input= \
+  "<qmc method=\"dmc\"> \
+   <parameter name=\"steps\">1</parameter> \
+   <parameter name=\"blocks\">1</parameter> \
+   <parameter name=\"timestep\">0.1</parameter> \
+  </qmc> \
+  ";
+  Libxml2Document *doc = new Libxml2Document;
+  bool okay = doc->parseFromString(dmc_input);
+  REQUIRE(okay);
+  xmlNodePtr root = doc->getRoot();
+
+  dmc_omp.process(root); // need to call 'process' for QMCDriver, which in turn calls 'put'
+
+  dmc_omp.run();
 
   // With the constant wavefunction, no moves should be rejected
-  REQUIRE(vmc.nReject == 0);
-  REQUIRE(vmc.nAccept == 2);
+  double ar = dmc_omp.acceptRatio();
+  REQUIRE(ar == Approx(1.0));
 
   // Each electron moved sqrt(tau)*gaussian_rng()
-  //  See ParticleBase/tests/test_random_seq.cpp for the gaussian random numbers
-  //  Values from diffuse.py
-  REQUIRE(elec.R[0][0] == Approx(0.627670258894097));
+  //  See Particle>Base/tests/test_random_seq.cpp for the gaussian random numbers
+  //  Values from diffuse.py for moving two steps
+
+  REQUIRE(elec[0]->R[0][0] == Approx(0.255340517788193));
   REQUIRE(elec.R[0][1] == Approx(0.0));
-  REQUIRE(elec.R[0][2] == Approx(-0.372329741105903));
+  REQUIRE(elec.R[0][2] == Approx(-0.744659482211807));
 
   REQUIRE(elec.R[1][0] == Approx(0.0));
-  REQUIRE(elec.R[1][1] == Approx(-0.372329741105903));
+  REQUIRE(elec.R[1][1] == Approx(-0.744659482211807));
   REQUIRE(elec.R[1][2] == Approx(1.0));
-
 }
 }
 
