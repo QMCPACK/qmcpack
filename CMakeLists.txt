@@ -383,6 +383,34 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     MESSAGE(WARNING "No default file for compiler (${COMPILER})")
   ENDIF()
 
+  # Check for the compiler C++11 flag, if we go to requiring >= cmake 3.1.3 we could drop this
+  # and just write
+  # set(CMAKE_CXX_STANDARD_REQUIRED 11 CACHE INTEGER "C++ stangard must be at least 11")
+  SET(CXX11_FLAG "-std=c++11")
+  #check if the CXX compiler supports -std=c++11 option
+  include(CheckCXXCompilerFlag) # works with clean load paths and non system compilers with CMP0056
+  CHECK_CXX_COMPILER_FLAG(${CXX11_FLAG} CXX_COMPILER_SUPPORT_CXX11)
+
+  # Force the flag on Cray with Intel compiler, because the Cray wrapper
+  #  prints an warning that interferes with the flag detection code
+  #  with older versions of CMake.
+  IF($ENV{CRAYPE_VERSION} MATCHES ".")
+    IF( ${COMPILER} MATCHES "Intel" AND NOT CXX_COMPILER_SUPPORT_CXX11)
+      SET(CXX_COMPILER_SUPPORT_CXX11 TRUE)
+      MESSAGE(STATUS "Forcing C++11 support on Cray with Intel")
+    ENDIF()
+  ENDIF()
+
+  IF (CXX_COMPILER_SUPPORT_CXX11)
+    # avoid repeated -std=c++11 flag
+    STRING(REPLACE "++" "\\+\\+" CXX11_FLAG_MATCH ${CXX11_FLAG})
+    IF(NOT CMAKE_CXX_FLAGS MATCHES ${CXX11_FLAG_MATCH})
+      SET (CMAKE_CXX_FLAGS "${CXX11_FLAG} ${CMAKE_CXX_FLAGS}")
+    ENDIF()
+  ELSE()
+    MESSAGE(FATAL_ERROR "A compiler supporting C++11 is required. Use a newer C++ compiler.")
+  ENDIF()
+
   #-------------------------------------------------------------------
   #  check MPI installation
   #-------------------------------------------------------------------
@@ -484,37 +512,6 @@ IF (ENABLE_GCOV)
     MESSAGE(FATAL_ERROR "ENABLE_GCOV was specified but compiler does not support GCC coverage flag")
   ENDIF()
 ENDIF(ENABLE_GCOV)
-
-# Check for the compiler C++11 flag, if we go to requiring >= cmake 3.1.3 we could drop this
-# and just write
-# set(CMAKE_CXX_STANDARD_REQUIRED 11 CACHE INTEGER "C++ stangard must be at least 11")
-SET(CXX11_NEEDED TRUE)
-IF(CXX11_NEEDED)
-  SET(CXX11_FLAG "-std=c++11")
-  #check if the CXX compiler supports -std=c++11 option
-  include(CheckCXXCompilerFlag) # works with clean load paths and non system compilers with CMP0056
-  CHECK_CXX_COMPILER_FLAG(${CXX11_FLAG} CXX_COMPILER_SUPPORT_CXX11)
-
-  # Force the flag on Cray with Intel compiler, because the Cray wrapper
-  #  prints an warning that interferes with the flag detection code
-  #  with older versions of CMake.
-  IF($ENV{CRAYPE_VERSION} MATCHES ".")
-    IF( ${COMPILER} MATCHES "Intel" AND NOT CXX_COMPILER_SUPPORT_CXX11)
-      SET(CXX_COMPILER_SUPPORT_CXX11 TRUE)
-      MESSAGE(STATUS "Forcing C++11 support on Cray with Intel")
-    ENDIF()
-  ENDIF()
-
-  IF (CXX_COMPILER_SUPPORT_CXX11)
-    # avoid repeated -std=c++11 flag
-    STRING(REPLACE "++" "\\+\\+" CXX11_FLAG_MATCH ${CXX11_FLAG})
-    IF(NOT CMAKE_CXX_FLAGS MATCHES ${CXX11_FLAG_MATCH})
-      SET (CMAKE_CXX_FLAGS "${CXX11_FLAG} ${CMAKE_CXX_FLAGS}")
-    ENDIF()
-  ELSE()
-    MESSAGE(FATAL_ERROR "A compiler supporting C++11 is required. Use a newer C++ compiler.")
-  ENDIF()
-ENDIF(CXX11_NEEDED)
 
 # AFQMC requires MKL sparse for good performance (roughly a factor of 2x)
 IF (BUILD_AFQMC AND NOT MKL_FOUND)
