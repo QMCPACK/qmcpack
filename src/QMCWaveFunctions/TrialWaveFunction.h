@@ -25,7 +25,6 @@
 #include "Message/MPIObjectBase.h"
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
-#include "QMCWaveFunctions/FermionBase.h"
 #include "QMCWaveFunctions/DiffOrbitalBase.h"
 #include "Utilities/NewTimer.h"
 /**@defgroup MBWfs Many-body wave function group
@@ -347,11 +346,6 @@ public:
     //OneOverM = 1.0/mass;
   }
 
-  FermionBase* getFermionWF()
-  {
-    return FermionWF;
-  }
-
 private:
 
   ///control how ratio is calculated
@@ -386,9 +380,6 @@ private:
 
   ///a list of OrbitalBases constituting many-body wave functions
   std::vector<OrbitalBase*> Z;
-
-  ///fermionic wavefunction
-  FermionBase* FermionWF;
 
   ///fake particleset
   ParticleSet* tempP;

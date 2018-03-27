@@ -18,16 +18,16 @@
 #ifndef QMCPLUSPLUS_MOBASISBUILDER_H
 #define QMCPLUSPLUS_MOBASISBUILDER_H
 
-#include "QMCWaveFunctions/LocalizedBasisSet.h"
+#include "QMCWaveFunctions/MolecularOrbitals/LocalizedBasisSet.h"
 #include "QMCWaveFunctions/MolecularOrbitals/AtomicBasisBuilder.h"
-#include "QMCWaveFunctions/LCOrbitalSet.h"
-#include "QMCWaveFunctions/LCOrbitalSetOpt.h"
+#include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSet.h"
+#include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSetOpt.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "io/hdf_archive.h"
 #include "Message/CommOperators.h"
 #if QMC_BUILD_LEVEL>2
-#include "QMCWaveFunctions/Experimental/LCOrbitalSetWithCorrection.h"
+#include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSetWithCorrection.h"
 #endif
 namespace qmcplusplus
 {
