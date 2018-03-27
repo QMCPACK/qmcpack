@@ -38,7 +38,7 @@ class CloneManager: public QMCTraits
 {
 public:
   /// Constructor.
-  CloneManager(HamiltonianPool& hpool);
+  CloneManager();
   ///virtual destructor
   virtual ~CloneManager();
 
@@ -50,8 +50,6 @@ public:
 
   void makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
   void makeClones(MCWalkerConfiguration& w, std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& ham);
-  void makeClones(std::vector<MCWalkerConfiguration*>& w, std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& ham);
-  void makeClones_new(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
   void makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guide);
   void makeClones(TrialWaveFunction& guide);
 
@@ -68,8 +66,6 @@ public:
   }
 
 protected:
-  ///reference to HamiltonianPool to clone everything
-  HamiltonianPool& cloneEngine;
   ///number of threads
   IndexType NumThreads;
   ///walkers
@@ -96,8 +92,6 @@ protected:
   static std::vector<std::vector<QMCHamiltonian*> > HPoolClones;
   std::vector<CSUpdateBase*> CSMovers;
 
-  
-  
   ///Walkers per node
   std::vector<int> wPerNode;
 };
