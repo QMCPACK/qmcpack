@@ -30,8 +30,8 @@ namespace qmcplusplus
 {
 
 QMCCostFunctionOMP::QMCCostFunctionOMP(MCWalkerConfiguration& w,
-                                       TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool):
-  QMCCostFunctionBase(w,psi,h), CloneManager(hpool)
+                                       TrialWaveFunction& psi, QMCHamiltonian& h):
+  QMCCostFunctionBase(w,psi,h)
 {
   CSWeight=1.0;
   app_log()<<" Using QMCCostFunctionOMP::QMCCostFunctionOMP"<< std::endl;
