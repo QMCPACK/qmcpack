@@ -74,7 +74,7 @@ IF (EXISTS ${H5_FULL_PATH})
                     )
 
   LIST(APPEND LONG_NIO_A4_E48_J3_SCALARS "totenergy" "-370.88498 0.0066")
-  LIST(APPEND LONG_NIO_A4_E48_J3_SCALARS "samples" "32000 0.0")
+  LIST(APPEND LONG_NIO_A4_E48_J3_SCALARS "samples" "320000 0.0")
 
   QMC_RUN_AND_CHECK(long-NiO_a4_e48_pp-vmc_sdj3
                     "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
