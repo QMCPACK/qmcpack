@@ -18,11 +18,8 @@ SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME unit_test_${SRC_DIR})
 #SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/hamiltonians)
 
-SET(SRCS test_accumulator.cpp test_local_energy_est.cpp test_manager.cpp)
+SET(SRCS test_accumulator.cpp test_local_energy_est.cpp test_manager.cpp test_trace_manager.cpp)
 
-IF (NOT REMOVE_TRACEMANAGE)
-  SET(SRCS "${SRCS}" test_trace_manager.cpp)
-ENDIF()
 
 #EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 #EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/simple.txt" ${UTEST_DIR})
