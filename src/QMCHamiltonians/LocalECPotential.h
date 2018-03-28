@@ -77,11 +77,6 @@ struct LocalECPotential: public QMCHamiltonianBase
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   Return_t evaluate_orig(ParticleSet& P);
 
   bool put(xmlNodePtr cur)

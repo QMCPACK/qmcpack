@@ -40,11 +40,6 @@ public:
   /* evaluate the pair correlation functions */
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   void addObservables(PropertySetType& plist)
   {
     myIndex=plist.size();

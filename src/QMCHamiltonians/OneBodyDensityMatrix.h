@@ -30,11 +30,6 @@ public:
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   void addObservables(PropertySetType& plist);
   void setObservables(PropertySetType& plist);
   void setParticlePropertyList(PropertySetType& plist, int offset);

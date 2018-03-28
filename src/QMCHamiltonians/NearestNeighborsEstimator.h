@@ -285,11 +285,6 @@ public:
     return 0.0;
   }
 
-  virtual Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   // does not produce a scalar value
   virtual void contribute_scalar_quantities()               { }
   virtual void checkout_scalar_quantities(TraceManager& tm) { }
