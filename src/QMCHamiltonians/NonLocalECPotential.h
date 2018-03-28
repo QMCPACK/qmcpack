@@ -99,7 +99,7 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
    * @param P particle set
    * @return the number of accepted moves
    */
-  int makeNonLocalMovesAll(ParticleSet& P){}
+  int makeNonLocalMovesAll(ParticleSet& P){ return 0; }
 
   Return_t evaluateValueAndDerivatives(ParticleSet& P,
       const opt_variables_type& optvars,
