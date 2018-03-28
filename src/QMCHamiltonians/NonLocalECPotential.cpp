@@ -33,7 +33,8 @@ void NonLocalECPotential::resetTargetParticleSet(ParticleSet& P)
  */
 NonLocalECPotential::NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
     TrialWaveFunction& psi, bool computeForces, bool useVP):
-  IonConfig(ions), Psi(psi), ComputeForces(computeForces),
+  IonConfig(ions), Psi(psi), UseTMove(TMOVE_OFF), myRNG(&Random),
+  nonLocalOps(els.getTotalNum()), ComputeForces(computeForces),
   UseVP(useVP), ForceBase(ions,els), Peln(els)
 {
   set_energy_domain(potential);
@@ -107,103 +108,25 @@ void NonLocalECPotential::delete_particle_quantities()
 NonLocalECPotential::Return_t
 NonLocalECPotential::evaluate(ParticleSet& P)
 {
-  Value=0.0;
-#if !defined(REMOVE_TRACEMANAGER)
-  if( streaming_particles)
-  {
-    (*Ve_sample) = 0.0;
-    (*Vi_sample) = 0.0;
-  }
-#endif
-  for(int ipp=0; ipp<PPset.size(); ipp++)
-    if(PPset[ipp]) PPset[ipp]->randomize_grid();
-  //loop over all the ions
-  if (ComputeForces)
-  {
-    for(int iat=0; iat<NumIons; iat++)
-      if(PP[iat])
-        Value += PP[iat]->evaluate(P,IonConfig,iat,Psi, forces[iat], PulayTerm[iat]);
-  }
-  else
-  {
-    std::vector<NonLocalData> Txy;
-    const DistanceTableData* myTable = P.DistTables[myTableIndex];
-#if 0
-    if(myTable->DTType == DT_SOA)
-    {
-      int J[16];
-      RealType Dist[16];
-      PosType Displ[16];
-      for(int iat=0; iat<NumIons; iat++)
-      {
-        if(PP[iat]==nullptr) continue;
-        PP[iat]->randomize_grid();
-        size_t nn=myTable->get_neighbors(iat,PP[iat]->Rmax, J, Dist, Displ);
-        for(size_t nj=0; nj<nn; ++nj)
-        {
-          Value += PP[iat]->evaluateOne(P,iat,Psi,J[nj],Dist[nj],Displ[nj],false,Txy);
-        }
-      }
-    }
-    else
-#endif
-    if(myTable->DTType == DT_SOA)
-    {
-      for(int iat=0; iat<NumIons; iat++)
-      {
-        if(PP[iat]==nullptr) continue;
-        const int* restrict J=myTable->J2[iat];
-        const RealType* restrict dist=myTable->r_m2[iat];
-        const PosType* restrict displ=myTable->dr_m2[iat];
-        for(size_t nj=0; nj<myTable->M[iat]; ++nj)
-        {
-          if(dist[nj]<PP[iat]->Rmax)
-            Value += PP[iat]->evaluateOne(P,iat,Psi,J[nj],dist[nj],displ[nj],false,Txy);
-        }
-      }
-    }
-    else
-    {
-      for(int iat=0; iat<NumIons; iat++)
-      {
-        if(PP[iat]==nullptr) continue;
-        for(int nn=myTable->M[iat],iel=0; nn<myTable->M[iat+1]; nn++,iel++)
-        {
-          const RealType r(myTable->r(nn));
-          if(r>PP[iat]->Rmax) continue;
-          Value += PP[iat]->evaluateOne(P,iat,Psi,iel,r,myTable->dr(nn),false,Txy);
-        }
-      }
-    }
-  }
-#if defined(TRACE_CHECK)
-  if( streaming_particles)
-  {
-    Return_t Vnow = Value;
-    RealType Visum = Vi_sample->sum();
-    RealType Vesum = Ve_sample->sum();
-    RealType Vsum  = Vesum+Visum;
-    if(std::abs(Vsum-Vnow)>TraceManager::trace_tol)
-    {
-      app_log()<<"accumtest: NonLocalECPotential::evaluate()"<< std::endl;
-      app_log()<<"accumtest:   tot:"<< Vnow << std::endl;
-      app_log()<<"accumtest:   sum:"<< Vsum << std::endl;
-      APP_ABORT("Trace check failed");
-    }
-    if(std::abs(Vesum-Visum)>TraceManager::trace_tol)
-    {
-      app_log()<<"sharetest: NonLocalECPotential::evaluate()"<< std::endl;
-      app_log()<<"sharetest:   e share:"<< Vesum << std::endl;
-      app_log()<<"sharetest:   i share:"<< Visum << std::endl;
-      APP_ABORT("Trace check failed");
-    }
-  }
-#endif
+  evaluate(P, false, nonLocalOps.Txy);
   return Value;
 }
 
 NonLocalECPotential::Return_t
-NonLocalECPotential::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
+NonLocalECPotential::evaluateWithToperator(ParticleSet& P)
+{
+  if( UseTMove==TMOVE_V0 || UseTMove==TMOVE_V3 )
+  {
+    nonLocalOps.reset();
+    evaluate(P, true, nonLocalOps.Txy);
+  }
+  else
+    evaluate(P, false, nonLocalOps.Txy);
+  return Value;
+}
+
+void
+NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove, std::vector<NonLocalData>& Txy)
 {
   Value=0.0;
 #if !defined(REMOVE_TRACEMANAGER)
@@ -214,13 +137,18 @@ NonLocalECPotential::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
   }
 #endif
   for(int ipp=0; ipp<PPset.size(); ipp++)
-    if(PPset[ipp]) PPset[ipp]->randomize_grid();
+    if(PPset[ipp]) PPset[ipp]->randomize_grid(*myRNG);
   //loop over all the ions
   if (ComputeForces)
   {
     for(int iat=0; iat<NumIons; iat++)
       if(PP[iat])
-        Value += PP[iat]->evaluate(P,Psi,iat,Txy, forces[iat]);
+      {
+        if(Tmove)
+          Value += PP[iat]->evaluate(P,Psi,iat, Txy, forces[iat]);
+        else
+          Value += PP[iat]->evaluate(P,IonConfig,iat,Psi, forces[iat], PulayTerm[iat]);
+      }
   }
   else
   {
@@ -236,7 +164,7 @@ NonLocalECPotential::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
         for(size_t nj=0; nj<myTable->M[iat]; ++nj)
         {
           if(dist[nj]<PP[iat]->Rmax)
-            Value += PP[iat]->evaluateOne(P,iat,Psi,J[nj],dist[nj],displ[nj],true,Txy);
+            Value += PP[iat]->evaluateOne(P,iat,Psi,J[nj],dist[nj],displ[nj],Tmove,Txy);
         }
       }
     }
@@ -249,7 +177,7 @@ NonLocalECPotential::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
         {
           const RealType r(myTable->r(nn));
           if(r>PP[iat]->Rmax) continue;
-          Value += PP[iat]->evaluateOne(P,iat,Psi,iel,r,myTable->dr(nn),true,Txy);
+          Value += PP[iat]->evaluateOne(P,iat,Psi,iel,r,myTable->dr(nn),Tmove,Txy);
         }
       }
     }
@@ -277,7 +205,6 @@ NonLocalECPotential::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
     }
   }
 #endif
-  return Value;
 }
 
 void
@@ -314,6 +241,82 @@ NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_elec, s
   }
 }
 
+int
+NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
+{
+  int NonLocalMoveAccepted = 0;
+  RandomGenerator_t& RandomGen(*myRNG);
+  if(UseTMove==TMOVE_V0)
+  {
+    int ibar = nonLocalOps.selectMove(RandomGen());
+    //make a non-local move
+    if(ibar)
+    {
+      int iat=nonLocalOps.id(ibar);
+      P.setActive(iat);
+      if(P.makeMoveAndCheck(iat,nonLocalOps.delta(ibar)))
+      {
+        GradType grad_iat;
+        Psi.ratioGrad(P,iat,grad_iat);
+        Psi.acceptMove(P,iat);
+        P.acceptMove(iat);
+        NonLocalMoveAccepted++;
+      }
+    }
+  }
+  else if(UseTMove==TMOVE_V1)
+  {
+    GradType grad_iat;
+    //make a non-local move per particle
+    for(int ig=0; ig<P.groups(); ++ig) //loop over species
+    {
+      for (int iat=P.first(ig); iat<P.last(ig); ++iat)
+      {
+        nonLocalOps.reset();
+        computeOneElectronTxy(P,iat,nonLocalOps.Txy);
+        int ibar = nonLocalOps.selectMove(RandomGen());
+        if(ibar)
+        {
+          P.setActive(iat);
+          if(P.makeMoveAndCheck(iat,nonLocalOps.delta(ibar)))
+          {
+            Psi.ratioGrad(P,iat,grad_iat);
+            Psi.acceptMove(P,iat);
+            P.acceptMove(iat);
+            NonLocalMoveAccepted++;
+          }
+        }
+      }
+    }
+  }
+  else if(UseTMove==TMOVE_V3)
+  {
+    nonLocalOps.group_by_elec();
+    GradType grad_iat;
+    size_t NonLocalMoveAcceptedTemp = 0;
+    //make a non-local move per particle
+    for(int ig=0; ig<P.groups(); ++ig) //loop over species
+    {
+      for (int iat=P.first(ig); iat<P.last(ig); ++iat)
+      {
+        const NonLocalData *oneTMove = nonLocalOps.selectMove(RandomGen(), iat);
+        if(oneTMove)
+        {
+          P.setActive(iat);
+          if(P.makeMoveAndCheck(iat,oneTMove->Delta))
+          {
+            Psi.ratioGrad(P,iat,grad_iat);
+            Psi.acceptMove(P,iat);
+            P.acceptMove(iat);
+            NonLocalMoveAccepted++;
+          }
+        }
+      }
+    }
+  }
+  return NonLocalMoveAccepted;
+}
+
 void
 NonLocalECPotential::add(int groupID, NonLocalECPComponent* ppot)
 {
@@ -346,19 +349,6 @@ QMCHamiltonianBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFun
     }
   }
   return myclone;
-}
-
-
-void NonLocalECPotential::setRandomGenerator(RandomGenerator_t* rng)
-{
-  for(int ig=0; ig<PPset.size(); ++ig)
-    if(PPset[ig])
-      PPset[ig]->setRandomGenerator(rng);
-  //map<int,NonLocalECPComponent*>::iterator pit(PPset.begin()), pit_end(PPset.end());
-  //while(pit != pit_end) {
-  //  (*pit).second->setRandomGenerator(rng);
-  //  ++pit;
-  //}
 }
 
 

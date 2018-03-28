@@ -106,6 +106,15 @@ QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const std::string& aname, boo
     h->myName=aname;
     auxH.push_back(h);
   }
+
+  //assign save NLPP if found
+  if(aname=="NonLocalECP")
+  {
+    if(nlpp_ptr==nullptr)
+      nlpp_ptr = dynamic_cast<NonLocalECPotential*>(h);
+    else
+      APP_ABORT("QMCHamiltonian::addOperator nlpp_ptr is supposed to be null. Something went wrong!");
+  }
 }
 
 
@@ -574,13 +583,13 @@ void QMCHamiltonian::rejectedMove(ParticleSet& P, Walker_t& ThisWalker )
 }
 
 QMCHamiltonian::Return_t
-QMCHamiltonian::evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
+QMCHamiltonian::evaluateWithToperator(ParticleSet& P)
 {
   LocalEnergy = 0.0;
   for(int i=0; i<H.size(); ++i)
   {
     myTimers[i]->start();
-    LocalEnergy += H[i]->evaluate(P,Txy);
+    LocalEnergy += H[i]->evaluateWithToperator(P);
     H[i]->setObservables(Observables);
 #if !defined(REMOVE_TRACEMANAGER)
     H[i]->collect_scalar_traces();

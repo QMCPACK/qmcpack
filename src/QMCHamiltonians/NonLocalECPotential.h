@@ -16,6 +16,7 @@
     
 #ifndef QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
 #define QMCPLUSPLUS_NONLOCAL_ECPOTENTIAL_H
+#include "QMCHamiltonians/NonLocalTOperator.h"
 #include "QMCHamiltonians/NonLocalECPComponent.h"
 #include "QMCHamiltonians/ForceBase.h"
 
@@ -42,6 +43,12 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
   ParticleSet& Peln;
   ///target TrialWaveFunction
   TrialWaveFunction& Psi;
+  ///use T-moves
+  int UseTMove;
+  ///non local operator
+  NonLocalTOperator nonLocalOps;
+  ///random number generator
+  RandomGenerator_t* myRNG;
   ///true if we should compute forces
   bool ComputeForces;
   ///true if we should use new algorithm
@@ -68,7 +75,7 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
 
   Return_t evaluate(ParticleSet& P);
 
-  Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy);
+  Return_t evaluateWithToperator(ParticleSet& P);
 
   /** compute the T move transition probability for a given electron
    * @param P particle set
@@ -76,6 +83,23 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
    * @param Txy a vector of transition probability
    */
   void computeOneElectronTxy(ParticleSet& P, const int ref_elec, std::vector<NonLocalData>& Txy);
+
+  /** set non local moves options
+   * @param cur the xml input
+   */
+  void setNonLocalMoves(xmlNodePtr cur) { UseTMove = nonLocalOps.put(cur); }
+
+  /** make non local moves with particle-by-particle moves
+   * @param P particle set
+   * @return the number of accepted moves
+   */
+  int makeNonLocalMovesPbyP(ParticleSet& P);
+
+  /** make non local moves with all-particle moves
+   * @param P particle set
+   * @return the number of accepted moves
+   */
+  int makeNonLocalMovesAll(ParticleSet& P){}
 
   Return_t evaluateValueAndDerivatives(ParticleSet& P,
       const opt_variables_type& optvars,
@@ -98,7 +122,7 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
 
   void add(int groupID, NonLocalECPComponent* pp);
 
-  void setRandomGenerator(RandomGenerator_t* rng);
+  void setRandomGenerator(RandomGenerator_t* rng) { myRNG = rng; }
 
   void addObservables(PropertySetType& plist, BufferType& collectables);
 
@@ -108,6 +132,9 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
 
   void registerObservables(std::vector<observable_helper*>& h5list,
                            hid_t gid) const;
+
+  private:
+  void evaluate(ParticleSet& P, bool Tmove, std::vector<NonLocalData>& Txy);
 };
 }
 #endif

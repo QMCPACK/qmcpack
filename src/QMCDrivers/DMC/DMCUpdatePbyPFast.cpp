@@ -22,7 +22,6 @@
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
 #include "QMCDrivers/DriftOperators.h"
-#include "QMCHamiltonians/NonLocalECPotential.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "Estimators/TraceManager.h"
 #else
@@ -150,13 +149,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
     W.saveWalker(thisWalker);
     myTimers[DMC_buffer]->stop();
     myTimers[DMC_hamiltonian]->start();
-    if( UseTMove==TMOVE_V0 || UseTMove==TMOVE_V3 )
-    {
-      nonLocalOps.reset();
-      enew= H.evaluate(W,nonLocalOps.Txy);
-    }
-    else
-      enew= H.evaluate(W);
+    enew = H.evaluateWithToperator(W);
     myTimers[DMC_hamiltonian]->stop();
     thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,1.0 );
     thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
@@ -185,100 +178,19 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->buffer_sample(W.current_step);
 #endif
-  if(UseTMove==TMOVE_V0)
+  myTimers[DMC_tmoves]->start();
+  int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W, true);
+  if(NonLocalMoveAcceptedTemp>0)
   {
-    myTimers[DMC_tmoves]->start();
-    int ibar = nonLocalOps.selectMove(RandomGen());
-    //make a non-local move
-    if(ibar)
-    {
-      int iat=nonLocalOps.id(ibar);
-      W.setActive(iat);
-      if(W.makeMoveAndCheck(iat,nonLocalOps.delta(ibar)))
-      {
-        GradType grad_iat;
-        Psi.ratioGrad(W,iat,grad_iat);
-        Psi.acceptMove(W,iat);
-        W.acceptMove(iat);
-        RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
-        // debugging lines
-        //W.update(true);
-        //RealType logpsi2 = Psi.evaluateLog(W);
-        //if(logpsi!=logpsi2) std::cout << " logpsi " << logpsi << " logps2i " << logpsi2 << " diff " << logpsi2-logpsi << std::endl;
-        W.saveWalker(thisWalker);
-        ++NonLocalMoveAccepted;
-      }
-    }
-    myTimers[DMC_tmoves]->stop();
+    RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
+    // debugging lines
+    //W.update(true);
+    //RealType logpsi2 = Psi.evaluateLog(W);
+    //if(logpsi!=logpsi2) std::cout << " logpsi " << logpsi << " logps2i " << logpsi2 << " diff " << logpsi2-logpsi << std::endl;
+    W.saveWalker(thisWalker);
+    NonLocalMoveAccepted+=NonLocalMoveAcceptedTemp;
   }
-  else if(UseTMove==TMOVE_V1)
-  {
-    myTimers[DMC_tmoves]->start();
-    GradType grad_iat;
-    size_t NonLocalMoveAcceptedTemp = 0;
-    NonLocalECPotential *NLPP = dynamic_cast<NonLocalECPotential*>(H.getHamiltonian("NonLocalECP"));
-    //make a non-local move per particle
-    for(int ig=0; ig<W.groups(); ++ig) //loop over species
-    {
-      for (int iat=W.first(ig); iat<W.last(ig); ++iat)
-      {
-        nonLocalOps.reset();
-        NLPP->computeOneElectronTxy(W,iat,nonLocalOps.Txy);
-        int ibar = nonLocalOps.selectMove(RandomGen());
-        if(ibar)
-        {
-          W.setActive(iat);
-          if(W.makeMoveAndCheck(iat,nonLocalOps.delta(ibar)))
-          {
-            Psi.ratioGrad(W,iat,grad_iat);
-            Psi.acceptMove(W,iat);
-            W.acceptMove(iat);
-            ++NonLocalMoveAcceptedTemp;
-          }
-        }
-      }
-    }
-    if(NonLocalMoveAcceptedTemp)
-    {
-      Psi.updateBuffer(W,w_buffer,false);
-      W.saveWalker(thisWalker);
-      NonLocalMoveAccepted+=NonLocalMoveAcceptedTemp;
-    }
-    myTimers[DMC_tmoves]->stop();
-  }
-  else if(UseTMove==TMOVE_V3)
-  {
-    myTimers[DMC_tmoves]->start();
-    nonLocalOps.group_by_elec();
-    GradType grad_iat;
-    size_t NonLocalMoveAcceptedTemp = 0;
-    //make a non-local move per particle
-    for(int ig=0; ig<W.groups(); ++ig) //loop over species
-    {
-      for (int iat=W.first(ig); iat<W.last(ig); ++iat)
-      {
-        const NonLocalData *oneTMove = nonLocalOps.selectMove(RandomGen(), iat);
-        if(oneTMove)
-        {
-          W.setActive(iat);
-          if(W.makeMoveAndCheck(iat,oneTMove->Delta))
-          {
-            Psi.ratioGrad(W,iat,grad_iat);
-            Psi.acceptMove(W,iat);
-            W.acceptMove(iat);
-            ++NonLocalMoveAcceptedTemp;
-          }
-        }
-      }
-    }
-    if(NonLocalMoveAcceptedTemp)
-    {
-      Psi.updateBuffer(W,w_buffer,false);
-      W.saveWalker(thisWalker);
-      NonLocalMoveAccepted+=NonLocalMoveAcceptedTemp;
-    }
-    myTimers[DMC_tmoves]->stop();
-  }
+  myTimers[DMC_tmoves]->stop();
   nAccept += nAcceptTemp;
   nReject += nRejectTemp;
 

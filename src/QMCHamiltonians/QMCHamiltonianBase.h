@@ -283,7 +283,7 @@ struct QMCHamiltonianBase: public QMCTraits
   {
     return 0;
   }
-  virtual Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy) = 0;
+  virtual Return_t evaluateWithToperator(ParticleSet& P) { evaluate(P); }
   
   /** evaluate value and derivatives wrt the optimizables
    *

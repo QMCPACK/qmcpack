@@ -21,7 +21,7 @@ namespace qmcplusplus
 {
 
 NonLocalECPComponent::NonLocalECPComponent():
-  lmax(0), nchannel(0), nknot(0), Rmax(-1), myRNG(&Random), VP(0)
+  lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(0)
 {
 #if !defined(REMOVE_TRACEMANAGER)
   streaming_particles = false;
@@ -679,9 +679,9 @@ NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat,
 }
 
 ///Randomly rotate sgrid_m
-void NonLocalECPComponent::randomize_grid()
+void NonLocalECPComponent::randomize_grid(RandomGenerator_t& myRNG)
 {
-  RealType phi(TWOPI*((*myRNG)())), psi(TWOPI*((*myRNG)())), cth(((*myRNG)())-0.5);
+  RealType phi(TWOPI*myRNG()), psi(TWOPI*myRNG()), cth(myRNG()-0.5);
   RealType sph(std::sin(phi)),cph(std::cos(phi)),
            sth(std::sqrt(1.0-cth*cth)),sps(std::sin(psi)),
            cps(std::cos(psi));
@@ -693,9 +693,9 @@ void NonLocalECPComponent::randomize_grid()
 }
 
 template<typename T>
-void NonLocalECPComponent::randomize_grid(std::vector<T> &sphere)
+void NonLocalECPComponent::randomize_grid(std::vector<T> &sphere, RandomGenerator_t& myRNG)
 {
-  RealType phi(TWOPI*((*myRNG)())), psi(TWOPI*((*myRNG)())), cth(((*myRNG)())-0.5);
+  RealType phi(TWOPI*myRNG()), psi(TWOPI*myRNG()), cth(myRNG()-0.5);
   RealType sph(std::sin(phi)),cph(std::cos(phi)),
            sth(std::sqrt(1.0-cth*cth)),sps(std::sin(psi)),
            cps(std::cos(psi));
@@ -717,8 +717,8 @@ void NonLocalECPComponent::randomize_grid(std::vector<T> &sphere)
       sphere[OHMMS_DIM*i+j] = rrotsgrid_m[i][j];
 }
 
-template void NonLocalECPComponent::randomize_grid(std::vector<float> &sphere);
-template void NonLocalECPComponent::randomize_grid(std::vector<double> &sphere);
+template void NonLocalECPComponent::randomize_grid(std::vector<float> &sphere, RandomGenerator_t& myRNG);
+template void NonLocalECPComponent::randomize_grid(std::vector<double> &sphere, RandomGenerator_t& myRNG);
 
 
 }

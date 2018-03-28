@@ -64,8 +64,6 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
     RealType enew  = eold;
     //evaluate wave functior
     RealType logpsi(Psi.evaluateLog(W));
-    if(UseTMove)
-      nonLocalOps.reset();
     bool accepted=false;
     RealType rr_accepted = 0.0;
     nodecorr=0.0;
@@ -76,11 +74,7 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
     }
     else
     {
-      if(UseTMove)
-        enew=H.evaluate(W,nonLocalOps.Txy);
-      else
-        enew=H.evaluate(W);
-
+      enew = H.evaluateWithToperator(W);
       RealType logGf = -0.5*Dot(deltaR,deltaR);
       //RealType nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
       RealType nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
@@ -110,6 +104,7 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
     }
     H.auxHevaluate(W,thisWalker);
     H.saveProperty(thisWalker.getPropertyBase());
+#ifdef DISABLE_TMOVE
     if(UseTMove)
     {
       int ibar=nonLocalOps.selectMove(RandomGen());
@@ -125,6 +120,7 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
         ++NonLocalMoveAccepted;
       }
     }
+#endif
     thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
     //branchEngine->accumulate(eold,1);
     if(accepted)
