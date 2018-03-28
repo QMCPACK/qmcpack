@@ -31,7 +31,7 @@ namespace qmcplusplus
 /** constructor
 */
 QMCHamiltonian::QMCHamiltonian()
-  :myIndex(0),numCollectables(0),EnableVirtualMoves(false)
+  :myIndex(0),numCollectables(0),nlpp_ptr(nullptr)
 #if !defined(REMOVE_TRACEMANAGER)
   , id_sample(0),pid_sample(0),step_sample(0),gen_sample(0),age_sample(0),mult_sample(0),weight_sample(0),position_sample(0)
 {
@@ -106,8 +106,6 @@ QMCHamiltonian::addOperator(QMCHamiltonianBase* h, const std::string& aname, boo
     h->myName=aname;
     auxH.push_back(h);
   }
-  
-  EnableVirtualMoves|= h->getMode(QMCHamiltonianBase::VIRTUALMOVES);
 }
 
 

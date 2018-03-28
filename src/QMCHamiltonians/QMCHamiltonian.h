@@ -20,6 +20,7 @@
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
 #include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include "QMCHamiltonians/NonLocalECPotential.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include <Estimators/TraceManager.h>
 #endif
@@ -324,8 +325,6 @@ private:
   int myIndex;
   ///starting index
   int numCollectables;
-  ///enable virtual moves 
-  bool EnableVirtualMoves;
   ///Current Local Energy
   Return_t LocalEnergy;
   ///Current Kinetic Energy
@@ -336,6 +335,8 @@ private:
   std::string myName;
   ///vector of Hamiltonians
   std::vector<QMCHamiltonianBase*> H;
+  ///pointer to NonLocalECP
+  NonLocalECPotential* nlpp_ptr;
   ///vector of Hamiltonians
   std::vector<QMCHamiltonianBase*> auxH;
   ///timers

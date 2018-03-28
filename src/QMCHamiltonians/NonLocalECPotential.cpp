@@ -47,8 +47,6 @@ NonLocalECPotential::NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
   PulayTerm.resize(NumIons);
   
   UpdateMode.set(NONLOCAL,1);
-  
-  //UpdateMode.set(VIRTUALMOVES,1);
 }
 
 ///destructor
