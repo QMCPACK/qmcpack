@@ -8,6 +8,6 @@ QMC_RUN_AND_CHECK(short-afqmc-N2_vdz
                   N2
                   n2.xml
                   4 1
-                  AFQMC_N2_SCALARS
-                  0 # VMC
-                  TRUE)
+                  TRUE
+                  0 AFQMC_N2_SCALARS
+                  )

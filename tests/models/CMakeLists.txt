@@ -9,7 +9,7 @@
     vmc_sho.xml
     1 16
     TRUE
-    0 BCC_H_SCALARS # VMC
+    0 SHO_SCALARS # VMC
   )
   
   SIMPLE_RUN_AND_CHECK(short-sho-grad_lap
