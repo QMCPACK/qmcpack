@@ -13,3 +13,8 @@ SUBDIRS("diamondC_2x1x1_pp")
 SUBDIRS("hcpBe_1x1x1_pp")
 SUBDIRS("monoO_1x1x1_pp")
 SUBDIRS("NiO_a4_e48_pp")
+IF (BUILD_AFQMC AND NOT QMC_COMPLEX)
+   SUBDIRS("diamondC_afqmc")
+   SUBDIRS("NiO_afqmc")
+ENDIF()
+
