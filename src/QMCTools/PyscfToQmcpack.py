@@ -13,7 +13,7 @@
 
 
 def savetoqmcpack(cell,mf,title="Default",kpts=[]):
-  import h5py, re
+  import h5py, re, sys
   from collections import defaultdict
   from pyscf.pbc import gto, scf, df, dft
   from numpy import empty
@@ -219,14 +219,18 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
 
 
   if cell.cart==True:
-    d_gms_order ={ 0:["s"],
-       1:[ "x", "y", "z" ],
-       2:[ "xx", "yy", "zz", "xy", "xz", "yz" ],
-       3:[ "xxx", "yyy", "zzz", "xxy", "xxz", "yyx", "yyz", "zzx", "zzy", "xyz"],
-       4: ["xxxx", "yyyy", "zzzz", "xxxy", "xxxz", "yyyx", "yyyz", "zzzx", "zzzy", "xxyy", "xxzz", "yyzz", "xxyz", "yyxz", "zzxy", "xxxx", "yyyy", "zzzz", "xxxy", "xxxz", "yyyx", "yyyz", "zzzx", "zzzy", "xxyy", "xxzz", "yyzz", "xxyz", "yyxz","zzxy"] }
-  
+    # Generated from read_order.py in Numerics/codegen
+    d_gms_order = {
+        0:[""],
+        1:["x","y","z"],
+        2:["xx","yy","zz","xy","xz","yz"],
+        3:["xxx","yyy","zzz","xxy","xxz","yyx","yyz","zzx","zzy","xyz"],
+        4:["xxxx","yyyy","zzzz","xxxy","xxxz","yyyx","yyyz","zzzx","zzzy","xxyy","xxzz","yyzz","xxyz","yyxz","zzxy"],
+        5:["xxxxx","yyyyy","zzzzz","xxxxy","xxxxz","yyyyx","yyyyz","zzzzx","zzzzy","xxxyy","xxxzz","yyyxx","yyyzz","zzzxx","zzzyy","xxxyz","yyyxz","zzzxy","xxyyz","xxzzy","yyzzx"],
+        6:["xxxxxx","yyyyyy","zzzzzz","xxxxxy","xxxxxz","yyyyyx","yyyyyz","zzzzzx","zzzzzy","xxxxyy","xxxxzz","yyyyxx","yyyyzz","zzzzxx","zzzzyy","xxxxyz","yyyyxz","zzzzxy","xxxyyy","xxxzzz","yyyzzz","xxxyyz","xxxzzy","yyyxxz","yyyzzx","zzzxxy","zzzyyx","xxyyzz"],
+    }
     
-    d_l = {'s':0,'p':1, 'd':2, 'f':3,'g':4}
+    d_l = {'s':0, 'p':1, 'd':2, 'f':3, 'g':4, 'h':5, 'i':6}
   
     def n_orbital(n):
       if n==0:
