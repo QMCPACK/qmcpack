@@ -67,6 +67,9 @@ struct QMCState
    * @param before memory_allocated before calling print
    */
   void print_memory_change(const std::string& who, size_t before);
+
+  /// Print git info (commit hash, etc) if project was build from git repository
+  void print_git_info_if_present(std::ostream& os);
 };
 
 ///a unique QMCState during a run
