@@ -31,7 +31,7 @@ typedef enum { V_TIMER, VGL_TIMER, ACCEPT_REJECT_TIMER, NL_TIMER,
 TrialWaveFunction::TrialWaveFunction(Communicate* c)
   : MPIObjectBase(c)
   , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0), BufferCursor_scalar(0)
-  , PhaseValue(0.0),LogValue(0.0),OneOverM(1.0), PhaseDiff(0.0), FermionWF(0)
+  , PhaseValue(0.0),LogValue(0.0),OneOverM(1.0), PhaseDiff(0.0)
 {
   ClassName="TrialWaveFunction";
   myName="psi0";
@@ -92,10 +92,7 @@ TrialWaveFunction::addOrbital(OrbitalBase* aterm, const std::string& aname, bool
   Z.push_back(aterm);
   aterm->IsFermionWF=fermion;
   if(fermion) 
-  {
-    app_log() << "  FermionWF=" << aname << std::endl;
-    FermionWF=dynamic_cast<FermionBase*>(aterm);
-  }
+    app_log() << "  FermionWF = " << aname << std::endl;
 
   std::vector<std::string> suffixes(7);
   suffixes[0] = "_V";
@@ -678,13 +675,16 @@ void TrialWaveFunction::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 
 void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<RealType>& ratios)
 {
+  assert(VP.getTotalNum()==ratios.size());
 #if defined(QMC_COMPLEX)
   std::vector<ValueType> t(ratios.size()),r(ratios.size(),1.0);;
-  for (int i=0; i<Z.size(); ++i)
+  for (int i=0, ii=NL_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
   {
+    myTimers[ii]->start();
     Z[i]->evaluateRatios(VP,t);
     for (int j=0; j<ratios.size(); ++j)
       r[j]*=t[j];
+    myTimers[ii]->stop();
   }
   RealType pdiff;
   for(int j=0; j<ratios.size(); ++j)
@@ -696,11 +696,13 @@ void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<RealT
 #else
   std::fill(ratios.begin(),ratios.end(),1.0);
   std::vector<ValueType> t(ratios.size());
-  for (int i=0; i<Z.size(); ++i)
+  for (int i=0, ii=NL_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
   {
+    myTimers[ii]->start();
     Z[i]->evaluateRatios(VP,t);
     for (int j=0; j<ratios.size(); ++j)
       ratios[j]*=t[j];
+    myTimers[ii]->stop();
   }
 #endif
 }

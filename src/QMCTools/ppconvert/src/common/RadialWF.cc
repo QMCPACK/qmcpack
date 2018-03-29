@@ -289,7 +289,7 @@ RadialWF::Solve(double tolerance)
       Elow = Etrial;
     else if (CuspValue > 0.0)
       Ehigh = Etrial;
-    else if (isnan(CuspValue))
+    else if (std::isnan(CuspValue))
       Elow = Etrial;
     
     Normalize();

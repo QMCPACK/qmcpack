@@ -165,8 +165,8 @@ CartesianTensor<T, Point_t, Tensor_t, GGG_t>::CartesianTensor(const int l_max) :
 //           coming from the Spherical Harmonics
 //           NormL = pow(2,L+1)*sqrt(2.0/static_cast<real_type>(DFactorial(2*l+1)))*pow(2.0/pi,0.25)
       double L = static_cast<double>(l);
-      double NormL = pow(2,L+1)*sqrt(2.0/static_cast<double>(DFactorial(2*l+1)))*pow(2.0/pi,0.25);
-      NormFactor[p++] = pow(2.0/pi,0.75)*pow(4.0,0.5*(a+b+c))*std::sqrt(1.0/static_cast<double>((DFactorial(2*a-1)*DFactorial(2*b-1)*DFactorial(2*c-1))))/NormL;
+      double NormL = std::pow(2,L+1)*sqrt(2.0/static_cast<double>(DFactorial(2*l+1)))*std::pow(2.0/pi,0.25);
+      NormFactor[p++] = std::pow(2.0/pi,0.75)*std::pow(4.0,0.5*(a+b+c))*std::sqrt(1.0/static_cast<double>((DFactorial(2*a-1)*DFactorial(2*b-1)*DFactorial(2*c-1))))/NormL;
     }
   }
 }

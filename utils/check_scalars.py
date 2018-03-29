@@ -187,7 +187,9 @@ def read_command_line():
             dii_AB = "dIonIon_0_1",
             ee_A = "ElecElec_0",
             ee_B = "ElecElec_1",
-            dee_AB = "dElecElec_0_1"
+            dee_AB = "dElecElec_0_1",
+# AFQMC
+            eloc = "Eloc"
             )
 
         for qshort in sorted(quantities.keys()):
