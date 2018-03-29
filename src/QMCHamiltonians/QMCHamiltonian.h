@@ -279,14 +279,12 @@ public:
    * @param P particle set
    * @return the number of accepted moves
    */
-  int makeNonLocalMoves(ParticleSet& P, bool pbyp)
+  int makeNonLocalMoves(ParticleSet& P)
   {
     if(nlpp_ptr==nullptr)
       return 0;
-    else if(pbyp)
-      return nlpp_ptr->makeNonLocalMovesPbyP(P);
     else
-      return nlpp_ptr->makeNonLocalMovesAll(P);
+      return nlpp_ptr->makeNonLocalMovesPbyP(P);
   }
 
   /** evaluate energy 

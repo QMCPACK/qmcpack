@@ -104,23 +104,16 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
     }
     H.auxHevaluate(W,thisWalker);
     H.saveProperty(thisWalker.getPropertyBase());
-#ifdef DISABLE_TMOVE
-    if(UseTMove)
+    const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);
+    if(NonLocalMoveAcceptedTemp>0)
     {
-      int ibar=nonLocalOps.selectMove(RandomGen());
-      //make a non-local move
-      if(ibar)
-      {
-        int iat=nonLocalOps.id(ibar);
-        W.R[iat] += nonLocalOps.delta(ibar);
-        W.update();
-        logpsi=Psi.evaluateLog(W);
-        thisWalker.resetProperty(logpsi,Psi.getPhase(),eold);
-        thisWalker.R[iat] = W.R[iat];
-        ++NonLocalMoveAccepted;
-      }
+      //the following update and evaluateLog may not be necessary or have better alternatives.
+      W.update();
+      logpsi=Psi.evaluateLog(W);
+      thisWalker.resetProperty(logpsi,Psi.getPhase(),eold);
+      thisWalker.R = W.R;
+      NonLocalMoveAccepted += NonLocalMoveAcceptedTemp;
     }
-#endif
     thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
     //branchEngine->accumulate(eold,1);
     if(accepted)

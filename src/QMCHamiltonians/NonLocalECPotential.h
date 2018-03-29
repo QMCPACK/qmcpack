@@ -95,12 +95,6 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
    */
   int makeNonLocalMovesPbyP(ParticleSet& P);
 
-  /** make non local moves with all-particle moves
-   * @param P particle set
-   * @return the number of accepted moves
-   */
-  int makeNonLocalMovesAll(ParticleSet& P){ return 0; }
-
   Return_t evaluateValueAndDerivatives(ParticleSet& P,
       const opt_variables_type& optvars,
       const std::vector<RealType>& dlogpsi,

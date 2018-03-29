@@ -179,7 +179,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
   Traces->buffer_sample(W.current_step);
 #endif
   myTimers[DMC_tmoves]->start();
-  int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W, true);
+  const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);
   if(NonLocalMoveAcceptedTemp>0)
   {
     RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
