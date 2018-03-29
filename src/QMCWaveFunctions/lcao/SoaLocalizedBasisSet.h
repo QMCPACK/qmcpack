@@ -91,7 +91,7 @@ struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::value_type>
   /** set Number of periodic Images to evaluate the orbitals. 
       Set to 0 for non-PBC, and set manually in the input.
   */
-  void setPBCImages(TinyVector<int,3> PBCImages)
+  void setPBCImages(const TinyVector<int,3>& PBCImages)
   {
     for(int i=0; i<LOBasisSet.size(); ++i)
       LOBasisSet[i]->setPBCImages(PBCImages);
