@@ -11,6 +11,16 @@ necessary to have for some test casts.  For information on how to download
 these files and appropriately configure your installation, see 
 tests/performance/NiO/README for more detail.
 
+Three files should be present at the following locations if QMC_DATA is 
+set correctly:
+
+$QMC_DATA/NiO/NiO_afm_fcidump.h5
+$QMC_DATA/NiO/NiO_afm_wfn.dat	  
+$QMC_DATA/NiO/NiO_nm_choldump.h5
+
+When this test executes, symbolic links pointing to these files will be 
+created automatically.
+
 Reference data from the data in ./qmc-ref AFQMC is found below:
 
 qmca -e 10 qmc-ref/*scalar*
