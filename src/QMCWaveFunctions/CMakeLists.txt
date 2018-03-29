@@ -27,7 +27,6 @@ SET(WFBASE_SRCS
   SPOSetInfo.cpp
   SPOSetInputInfo.cpp
   SPOSetBase.cpp
-  FermionBase.cpp
   OptimizableSPOSet.cpp
   AFMSPOSet.cpp
   CompositeSPOSet.cpp

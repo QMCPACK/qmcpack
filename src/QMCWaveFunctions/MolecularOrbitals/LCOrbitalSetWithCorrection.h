@@ -23,13 +23,13 @@
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/MatrixOperators.h"
 #include "Message/Communicate.h"
-#include "QMCWaveFunctions/Experimental/CorrectingOrbitalBasisSet.h"
+#include "QMCWaveFunctions/MolecularOrbitals/CorrectingOrbitalBasisSet.h"
 #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
-#include "QMCWaveFunctions/LCOrbitalSet.h"
-#include "QMCWaveFunctions/Experimental/CuspCorr.h"
+#include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSet.h"
+#include "QMCWaveFunctions/MolecularOrbitals/CuspCorr.h"
 #include "Numerics/OptimizableFunctorBase.h"
 #include "Numerics/OneDimQuinticSpline.h"
-#include "QMCWaveFunctions/SphericalBasisSet.h"
+#include "QMCWaveFunctions/MolecularOrbitals/SphericalBasisSet.h"
 
 namespace qmcplusplus
 {
@@ -703,7 +703,7 @@ private:
 
 }
 
-#include "QMCWaveFunctions/Experimental/LCOrbitalSetWithCorrection.cpp"
+#include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSetWithCorrection.cpp"
 
 #endif
 

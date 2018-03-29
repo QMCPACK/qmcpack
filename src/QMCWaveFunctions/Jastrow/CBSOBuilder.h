@@ -16,7 +16,7 @@
 
 #include "Configuration.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
-#include "QMCWaveFunctions/SphericalBasisSet.h"
+#include "QMCWaveFunctions/MolecularOrbitals/SphericalBasisSet.h"
 
 namespace qmcplusplus
 {

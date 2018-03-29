@@ -43,8 +43,8 @@ namespace qmcplusplus
 {
 
 /// Constructor.
-DMCOMP::DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool)
-  : QMCDriver(w,psi,h,ppool), CloneManager(hpool)
+DMCOMP::DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool)
+  : QMCDriver(w,psi,h,ppool)
   , KillNodeCrossing(0) ,Reconfiguration("no"), BenchMarkRun("no")
   , BranchInterval(-1),mover_MaxAge(-1)
 {
@@ -165,8 +165,12 @@ void DMCOMP::resetUpdateEngines()
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
+#ifdef USE_FAKE_RNG
+      Rng[ip] = new FakeRandom();
+#else
       Rng[ip]=new RandomGenerator_t(*RandomNumberControl::Children[ip]);
       hClones[ip]->setRandomGenerator(Rng[ip]);
+#endif
       branchClones[ip] = new BranchEngineType(*branchEngine);
       if(QMCDriverMode[QMC_UPDATE_MODE])
       {
@@ -328,8 +332,10 @@ bool DMCOMP::run()
     block++;
     if(DumpConfig &&block%Period4CheckPoint == 0)
     {
+#ifndef USE_FAKE_RNG
       for(int ip=0; ip<NumThreads; ip++)
         *(RandomNumberControl::Children[ip])=*(Rng[ip]);
+#endif
     }
     recordBlock(block);
     dmc_loop.stop();
@@ -346,8 +352,10 @@ bool DMCOMP::run()
   prof.pop(); //close loop
 
   //for(int ip=0; ip<NumThreads; ip++) Movers[ip]->stopRun();
+#ifndef USE_FAKE_RNG
   for(int ip=0; ip<NumThreads; ip++)
     *(RandomNumberControl::Children[ip])=*(Rng[ip]);
+#endif
   Estimators->stop();
   for (int ip=0; ip<NumThreads; ++ip)
     Movers[ip]->stopRun2();

@@ -474,7 +474,7 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
       vmcEngine = new VMCcuda(W,Psi,H,psiPool);
     else
 #endif
-      vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
+      vmcEngine = new VMCSingleOMP(W,Psi,H,psiPool);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
     vmcEngine->initCommunicator(myComm);
   }
@@ -487,10 +487,10 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   {
 #if defined (QMC_CUDA)
     if (useGPU == "yes")
-      optTarget = new QMCCostFunctionCUDA(W,Psi,H,hamPool);
+      optTarget = new QMCCostFunctionCUDA(W,Psi,H);
     else
 #endif
-      optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
+      optTarget = new QMCCostFunctionOMP(W,Psi,H);
     optTarget->setStream(&app_log());
     success=optTarget->put(q);
   }
