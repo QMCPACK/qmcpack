@@ -1,14 +1,15 @@
 
 
+# Reference VMC run in qmc-ref "-21.70152 +/- 0.00042"
 IF(ENABLE_SOA)
-  LIST(APPEND DIAMOND_SCALARS "totenergy" "-21.702829 0.017")
-  LIST(APPEND DIAMOND_SCALARS "kinetic" "20.706 0.067")
-  LIST(APPEND DIAMOND_SCALARS "potential" "-42.409 0.067")
-  LIST(APPEND DIAMOND_SCALARS "eeenergy" "-5.361 0.021")
-  LIST(APPEND DIAMOND_SCALARS "ionion" "-25.55 0.00")
-  LIST(APPEND DIAMOND_SCALARS "localecp" "-13.244 0.079")
-  LIST(APPEND DIAMOND_SCALARS "nonlocalecp" "1.748 0.045")
-  LIST(APPEND DIAMOND_SCALARS "samples" "6880 0.0")
+  LIST(APPEND DIAMOND_SCALARS "totenergy" "-21.70152 0.015")
+  LIST(APPEND DIAMOND_SCALARS "kinetic" "20.6385 0.16 ")
+  LIST(APPEND DIAMOND_SCALARS "potential" "-42.3400 0.19")
+  LIST(APPEND DIAMOND_SCALARS "eeenergy" "-5.33913 0.034")
+  LIST(APPEND DIAMOND_SCALARS "ionion" "-25.551326 0.0001")
+  LIST(APPEND DIAMOND_SCALARS "localecp" "-13.1852 0.20")
+  LIST(APPEND DIAMOND_SCALARS "nonlocalecp" "1.7356 0.05")
+  LIST(APPEND DIAMOND_SCALARS "samples" "8000 0.0")
 #  LIST(APPEND DIAMOND_SCALARS "flux" "0.0 0.4")
 
   QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-vmc_gaussian_sdj
@@ -20,24 +21,13 @@ IF(ENABLE_SOA)
                     0 DIAMOND_SCALARS # VMC
                     )
 
-# Reference DMC run in qmc-ref "-21.845935 +/- 0.003098"
-  LIST(APPEND DIAMOND_DMC_SCALARS "totenergy" "-21.807657 0.095185")
-  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_pp-dmc_gaussian_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp"
-                    qmc_short_vmc_dmc
-                    qmc_short_vmc_dmc.in.xml
-                    1 16
-                    TRUE
-                    1 DIAMOND_DMC_SCALARS # DMC
-                    )
-
-
 #
 # Long tests
 #
-# Reference DMC run in qmc-ref "-21.701104 +/- 0.000468 "
-  LIST(APPEND LONG_DIAMOND_SCALARS "totenergy" "-21.701104  0.000468 ")
-  LIST(APPEND LONG_DIAMOND_SCALARS "samples" "49600 0.0")
+
+# Reference VMC run in qmc-ref "-21.70152 +/- 0.00042"
+  LIST(APPEND LONG_DIAMOND_SCALARS "totenergy" "-21.70152   0.008351")
+  LIST(APPEND LONG_DIAMOND_SCALARS "samples" "32000 0.0")
 
   QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-vmc_gaussian_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp"
@@ -49,8 +39,8 @@ IF(ENABLE_SOA)
                     )
 
 
-# Reference DMC run in qmc-ref "-21.845935 +/- 0.003098"
-  LIST(APPEND LONG_DIAMOND_DMC_SCALARS "totenergy" "-21.845935  0.003098")
+# Reference DMC run in qmc-ref "-21.84712 +/-  0.00068"
+  LIST(APPEND LONG_DIAMOND_DMC_SCALARS "totenergy" "-21.84712 0.009024")
   QMC_RUN_AND_CHECK(long-diamondC_2x1x1_pp-dmc_gaussian_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1-Gaussian_pp"
                     qmc_long_vmc_dmc

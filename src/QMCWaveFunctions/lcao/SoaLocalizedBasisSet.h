@@ -93,10 +93,8 @@ struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::value_type>
   */
   void setPBCImages(std::vector<int> PBCImages)
   {
-    for(int c=0; c<NumCenters; c++)
-    {
-      LOBasisSet[IonID[c]]->setPBCImages(PBCImages);
-    }
+    for(int i=0; i<LOBasisSet.size(); ++i)
+      LOBasisSet[i]->setPBCImages(PBCImages);
 
   }
   /** set BasisSetSize and allocate mVGL container

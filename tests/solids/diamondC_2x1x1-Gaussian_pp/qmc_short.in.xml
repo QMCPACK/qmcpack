@@ -11,11 +11,12 @@
     </pairpot>
   </hamiltonian>
    <qmc method="vmc" move="pbyp">
-      <parameter name="walkers"             >    2              </parameter>
-      <parameter name="blocks"              >    100            </parameter>
-      <parameter name="steps"               >    5.0             </parameter>
-      <parameter name="subSteps"            >    5               </parameter>
-      <parameter name="timestep"            >    0.3             </parameter>
+      <parameter name="walkers"             >    16             </parameter>
+      <parameter name="blocks"              >    50             </parameter>
+      <parameter name="steps"               >    10             </parameter>
+      <parameter name="subSteps"            >    1              </parameter>
+      <parameter name="timestep"            >    0.3            </parameter>
       <parameter name="warmupSteps"         >    20            </parameter>
    </qmc>
 </simulation>
+
