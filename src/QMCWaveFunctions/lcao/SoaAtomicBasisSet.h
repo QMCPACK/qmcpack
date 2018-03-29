@@ -33,7 +33,7 @@ namespace qmcplusplus
       ///size of the basis set
       int BasisSetSize;
       ///Number of Cell images for the evaluation of the orbital with PBC. If No PBC, should be 0;
-      std::vector <int> MaxCell;
+      TinyVector<int,3>  PBCImages; 
       ///maximum radius of this center
       value_type Rmax;
       ///spherical harmonics
@@ -91,11 +91,10 @@ namespace qmcplusplus
         return BasisSetSize;
       }//=NL.size(); 
       // Set the number of periodic image for the evaluation of the orbitals. 
-      void setPBCImages(std::vector <int> PBCImages)
+      void setPBCImages(TinyVector<int,3>  pbc_images)
       {
-         MaxCell.resize(3);
          for (int i=0; i<3; i++)
-            MaxCell[i]=PBCImages[i];
+            PBCImages[i]=pbc_images[i];
 
       }
       /** implement a BasisSetBase virutal function
@@ -163,15 +162,15 @@ namespace qmcplusplus
                d2psi[ib] =0; 
           }
 
-          for (int i=0; i<=MaxCell[0]; i++ ) //loop Translation over X 
+          for (int i=0; i<=PBCImages[0]; i++ ) //loop Translation over X 
           {
               //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
               TransX=(( i%2 ) * 2 -1) * ( (i+1)/2 ) ;
-              for (int j=0; j<=MaxCell[1]; j++ ) //loop Translation over Y
+              for (int j=0; j<=PBCImages[1]; j++ ) //loop Translation over Y
               {
                  //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
                  TransY=(( j%2 ) * 2 -1) * ( (j+1)/2 ); 
-                 for (int k=0; k<=MaxCell[2]; k++ ) //loop Translation over Z
+                 for (int k=0; k<=PBCImages[2]; k++ ) //loop Translation over Z
                  {
                     //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
                     TransZ=(( k%2 ) * 2 -1) * ( (k+1)/2 ); 
@@ -235,15 +234,15 @@ namespace qmcplusplus
           value_type* restrict phi_r=tempS.data(1);
           for(size_t ib=0; ib<BasisSetSize; ++ib)
               psi[ib]=0;
-          for (int i=0; i<=MaxCell[0]; i++ ) //loop Translation over X 
+          for (int i=0; i<=PBCImages[0]; i++ ) //loop Translation over X 
           {
               //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
               TransX=(( i%2 ) * 2 -1) * ( (i+1)/2 ) ;
-              for (int j=0; j<=MaxCell[1]; j++ ) //loop Translation over Y
+              for (int j=0; j<=PBCImages[1]; j++ ) //loop Translation over Y
               {
                  //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
                  TransY=(( j%2 ) * 2 -1) * ( (j+1)/2 ); 
-                 for (int k=0; k<=MaxCell[2]; k++ ) //loop Translation over Z
+                 for (int k=0; k<=PBCImages[2]; k++ ) //loop Translation over Z
                  {
                     //Allows to increment cells from 0,1,-1,2,-2,3,-3 etc...
                     TransZ=(( k%2 ) * 2 -1) * ( (k+1)/2 ); 

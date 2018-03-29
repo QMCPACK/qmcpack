@@ -108,7 +108,6 @@ namespace qmcplusplus
     std::string keyOpt("NMO"); // Numerical Molecular Orbital
     std::string transformOpt("yes"); // Numerical Molecular Orbital
     std::string cuspC("no");  // cusp correction
-    PosType Images(0.0);
     cuspInfo="";  // file with precalculated cusp correction info
     OhmmsAttributeSet aAttrib;
     aAttrib.add(keyOpt,"keyword");
@@ -117,12 +116,8 @@ namespace qmcplusplus
     aAttrib.add(cuspC,"cuspCorrection");
     aAttrib.add(cuspInfo,"cuspInfo");
     aAttrib.add(h5_path,"href");
-    aAttrib.add(Images,"PBCimages");
+    aAttrib.add(PBCImages,"PBCimages");
     aAttrib.put(cur);
-    PBCImages.resize(3);
-    PBCImages[0]=int(Images[0]);
-    PBCImages[1]=int(Images[1]);
-    PBCImages[2]=int(Images[2]);
      
     if(cur != NULL) aAttrib.put(cur);
     
