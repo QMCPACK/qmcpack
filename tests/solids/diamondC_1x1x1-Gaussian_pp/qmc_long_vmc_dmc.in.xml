@@ -12,9 +12,9 @@
   </hamiltonian>
    <qmc method="vmc" move="pbyp">
      <estimator name="LocalEnergy" hdf5="no"/>
-     <parameter name="walkers">    2  </parameter>
+     <parameter name="walkers">    256 </parameter>
      <parameter name="substeps">  1 </parameter>
-     <parameter name="warmupSteps">  100 </parameter>
+     <parameter name="warmupSteps">  20 </parameter>
      <parameter name="steps">  1 </parameter>
      <parameter name="blocks">  1 </parameter>
      <parameter name="timestep">  1.0 </parameter>
@@ -22,12 +22,12 @@
    </qmc>
    <qmc method="dmc" move="pbyp" checkpoint="-1" gpu="yes">
      <estimator name="LocalEnergy" hdf5="no"/>
-     <parameter name="targetwalkers"> 32 </parameter>
+     <parameter name="targetwalkers"> 256 </parameter>
      <parameter name="reconfiguration">   no </parameter>
-     <parameter name="warmupSteps">  100 </parameter>
+     <parameter name="warmupSteps">  20 </parameter>
      <parameter name="timestep">  0.005 </parameter>
      <parameter name="steps">   10 </parameter>
-     <parameter name="blocks">  1000 </parameter>
+     <parameter name="blocks">  100 </parameter>
      <parameter name="nonlocalmoves">  no </parameter>
    </qmc>
 
