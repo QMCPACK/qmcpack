@@ -88,15 +88,13 @@ namespace qmcplusplus
       */
       inline int getBasisSetSize() const
       {
+        //=NL.size();
         return BasisSetSize;
-      }//=NL.size(); 
-      // Set the number of periodic image for the evaluation of the orbitals. 
-      void setPBCImages(TinyVector<int,3>  pbc_images)
-      {
-         for (int i=0; i<3; i++)
-            PBCImages[i]=pbc_images[i];
-
       }
+
+      // Set the number of periodic image for the evaluation of the orbitals. 
+      void setPBCImages(const TinyVector<int,3>& pbc_images) { PBCImages = pbc_images; }
+
       /** implement a BasisSetBase virutal function
        *
        * Set Rmax and BasisSetSize
