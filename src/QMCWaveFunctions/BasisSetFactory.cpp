@@ -314,7 +314,6 @@ SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur)
   }
 }
 
-
 void BasisSetFactory::build_sposet_collection(xmlNodePtr cur)
 {
   xmlNodePtr parent = cur;

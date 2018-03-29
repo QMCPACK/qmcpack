@@ -110,9 +110,9 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
   else if(Morder == "pyscf")
   {
     expandlm = MOD_NATURAL_EXPAND; 
-    addsignforM=tmp_addsignforM;
+    addsignforM=1;
     if(sph != "spherical") {
-      APP_ABORT(" Error: expandYlm='pwscf' only compatible with angular='spherical'. Aborting.\n");
+      APP_ABORT(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
   if(sph == "cartesian" || Morder == "Gamess")
@@ -154,6 +154,7 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive &hin)
             << "\"  elementType=\"" << CenterID
             << "\"  normalized=\"" << Normalized
             << "  basisType=\"" << basisType
+            << "  addSign=\"" <<addsignforM 
             << "\" />" << std::endl;
   bool tmp_addsignforM=addsignforM;
   if(sph == "spherical")
@@ -173,9 +174,9 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive &hin)
   else if(Morder == "pyscf")
   {
     expandlm = MOD_NATURAL_EXPAND;
-    addsignforM=tmp_addsignforM;
+    addsignforM=1;
     if(sph != "spherical") {
-      APP_ABORT(" Error: expandYlm='pwscf' only compatible with angular='spherical'. Aborting.\n");
+      APP_ABORT(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
   if(sph == "cartesian" || Morder == "Gamess")
