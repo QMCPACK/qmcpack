@@ -349,12 +349,8 @@ public:
 protected:
   bool putOccupation(xmlNodePtr occ_ptr);
   bool putFromXML(xmlNodePtr coeff_ptr);
-#if defined(ENABLE_SOA)
-  bool putMolFromH5(const char* fname, xmlNodePtr coeff_ptr);
-  bool putPBCFromH5(const char* fname, xmlNodePtr coeff_ptr);
-#else
   bool putFromH5(const char* fname, xmlNodePtr coeff_ptr);
-#endif
+  bool putPBCFromH5(const char* fname, xmlNodePtr coeff_ptr);
 };
 
 #if defined(ENABLE_SMARTPOINTER)
