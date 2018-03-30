@@ -19,12 +19,13 @@
 namespace qmcplusplus
 {
 
-TEST_CASE("SplineBound double","[spline2]")
+// Values from gen_prefactors.py
+template<typename T>
+void test_spline_bounds()
 {
-
-  SplineBound<double> sb;
-  double x = 2.2;
-  double dx;
+  SplineBound<T> sb;
+  T x = 2.2;
+  T dx;
   int ind;
   int ng=10;
   sb.get(x, dx, ind, ng);
@@ -42,31 +43,18 @@ TEST_CASE("SplineBound double","[spline2]")
   sb.get(x, dx, ind, ng);
   REQUIRE(dx == Approx(-0.3));
   REQUIRE(ind == 0);
+
+}
+
+TEST_CASE("SplineBound double","[spline2]")
+{
+  test_spline_bounds<double>();
 }
 
 
 TEST_CASE("SplineBound float","[spline2]")
 {
-  SplineBound<float> sb;
-  float x = 2.2;
-  float dx;
-  int ind;
-  int ng=10;
-  sb.get(x, dx, ind, ng);
-  REQUIRE(dx == Approx(0.2));
-  REQUIRE(ind == 2);
-
-  // check clamping to a maximum index value
-  x = 11.5;
-  sb.get(x, dx, ind, ng);
-  REQUIRE(dx == Approx(0.5));
-  REQUIRE(ind == 10);
-
-  // check clamping to a zero index value
-  x = -1.3;
-  sb.get(x, dx, ind, ng);
-  REQUIRE(dx == Approx(-0.3));
-  REQUIRE(ind == 0);
+  test_spline_bounds<float>();
 }
 
 
@@ -87,12 +75,12 @@ TEST_CASE("SymTrace","[spline2]")
 }
 
 // Values from gen_prefactors.py
-
-TEST_CASE("double prefactors","[spline2]")
+template<typename T>
+void test_prefactors()
 {
-  MultiBsplineData<double> bd;
-  double a[4];
-  double tx = 0.1;
+  MultiBsplineData<T> bd;
+  T a[4];
+  T tx = 0.1;
   bd.compute_prefactors(a, tx);
 
   REQUIRE(a[0] == Approx(0.1215));
@@ -100,8 +88,8 @@ TEST_CASE("double prefactors","[spline2]")
   REQUIRE(a[2] == Approx(0.221167));
   REQUIRE(a[3] == Approx(0.000166667));
 
-  double da[4];
-  double d2a[4];
+  T da[4];
+  T d2a[4];
   tx = 0.8;
 
   bd.compute_prefactors(a, da, d2a, tx);
@@ -119,34 +107,14 @@ TEST_CASE("double prefactors","[spline2]")
   REQUIRE(d2a[3] == Approx(0.8));
 }
 
+TEST_CASE("double prefactors","[spline2]")
+{
+  test_prefactors<double>();
+}
+
 TEST_CASE("float prefactors","[spline2]")
 {
-  MultiBsplineData<float> bd;
-  float a[4];
-  float tx = 0.9;
-  bd.compute_prefactors(a, tx);
-
-  REQUIRE(a[0] == Approx(0.000166667));
-  REQUIRE(a[1] == Approx(0.221167));
-  REQUIRE(a[2] == Approx(0.657167));
-  REQUIRE(a[3] == Approx(0.1215));
-
-  tx = 0.3;
-  float da[4];
-  float d2a[4];
-  bd.compute_prefactors(a, da, d2a, tx);
-  REQUIRE(a[0] == Approx(0.0571667));
-  REQUIRE(da[0] == Approx(-0.245));
-  REQUIRE(d2a[0] == Approx(0.7));
-  REQUIRE(a[1] == Approx(0.590167));
-  REQUIRE(da[1] == Approx(-0.465));
-  REQUIRE(d2a[1] == Approx(-1.1));
-  REQUIRE(a[2] == Approx(0.348167));
-  REQUIRE(da[2] == Approx(0.665));
-  REQUIRE(d2a[2] == Approx(0.1));
-  REQUIRE(a[3] == Approx(0.0045));
-  REQUIRE(da[3] == Approx(0.045));
-  REQUIRE(d2a[3] == Approx(0.3));
+  test_prefactors<float>();
 }
 
 
