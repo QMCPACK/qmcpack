@@ -3,6 +3,11 @@ from sympy import *
 
 # Verify SymTrace in MultiBspline.hpp
 
+# The first part of this script verifies the expression for the trace of the product of a
+# symmetric matrix (H) and a general matrix (G).
+
+# The second part creates body of the SymTrace test in test_multi_spline.cpp.
+
 G = MatrixSymbol('G', 3, 3)
 H = MatrixSymbol('H', 3, 3)
 
@@ -54,9 +59,13 @@ vG = Matrix([[0.1, 0.2, 0.3],
              [1.4, 2.3, 8.0],
              [0.9, 1.4, 2.3]])
 
+tr = Trace(vH*vG).doit()
+print 'Trace = ',tr
+
 
 print
 print 'Concrete values for unit test'
+print '// Code from here to the end of the function generate by gen_trace.py'
 print
 print '  double h00 = %g;'%vH[0,0]
 print '  double h01 = %g;'%vH[0,1]
@@ -66,6 +75,7 @@ print '  double h12 = %g;'%vH[1,2]
 print '  double h22 = %g;'%vH[2,2]
 print
 print '  double gg[6] = {%g, %g, %g, %g, %g, %g};'%(vG[0,0], vG[0,1] + vG[1,0], vG[0,2] + vG[2,0], vG[1,1], vG[1,2] + vG[2,1], vG[2,2])
-
 print
-print 'Trace = ',Trace(vH*vG).doit()
+print '  double tr = SymTrace(h00, h01, h02, h11, h12, h22, gg);'
+print '  REQUIRE(tr == Approx(%g));'%tr
+print
