@@ -75,8 +75,11 @@ QMCMain::QMCMain(Communicate* c)
   app_summary()
       << "\n=====================================================\n"
       <<  "                    QMCPACK "
-      << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "." << QMCPACK_VERSION_PATCH << " \n"
-      << "\n  (c) Copyright 2003-  QMCPACK developers            \n\n";
+      << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "." << QMCPACK_VERSION_PATCH << " \n\n"
+      << "       (c) Copyright 2003-  QMCPACK developers\n\n"
+      << "                    Please cite:\n"
+      << "      J. Kim et al. J. Phys. Cond. Mat. (2018)\n"
+      << "      https://doi.org/10.1088/1361-648X/aab9c3\n";
   qmc_common.print_git_info_if_present(app_summary());
   app_summary()  << "=====================================================\n";
   qmc_common.print_options(app_log());
