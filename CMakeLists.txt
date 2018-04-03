@@ -225,7 +225,6 @@ SET(HAVE_LIBSPRNG 0)
 SET(HAVE_LIBBLITZ 0)
 SET(HAVE_LIBGSL 0)
 SET(MAC_VECLIB 0)
-SET(ENABLE_GTK_GUI 0)
 set(ENABLE_TAU_PROFILE 0 CACHE BOOL "Enable tau for profiling")
 set(TAU_HOME $ENV{TAU_HOME})
 
@@ -801,27 +800,7 @@ ENDIF()
 #    )
 #  find_package(einspline REQUIRED)
 #  set(HAVE_EINSPLINE 1)
-#######################################################################
-## Manage GTK+ and GTKMM packages for GUI
-## search headers and libraries
-##   1) -lXYZ-${XYZ_VERSION}
-##   2) -lXYZ
-## example: -lgtk-${GTK_VERSION} | -lgtk
-#######################################################################
-#SET(GTK_VERSION 2.0)
-#SET(PANGO_VERSION 1.0)
-#
-#SET(GTKMM_VERSION 2.4)
-#SET(PANGOMM_VERSION 1.4)
-#SET(SIGCPP_VERSION 2.0)
-#IF(ENABLE_GTK_GUI)
-#  INCLUDE(${PROJECT_CMAKE}/FindGTK.cmake)
-#  #THIS SHOULD GO TO the directory where GUI is built
-#  IF(GTKMM_FOUND)
-#   INCLUDE_DIRECTORIES(${GTKMM_INCLUDE_DIR})
-#   LINK_LIBRARIES(${GTKMM_LIBRARIES})
-#  ENDIF(GTKMM_FOUND)
-#ENDIF(ENABLE_GTK_GUI)
+
 
 ###############################################################
 # for specific linker in the case of profiling like hpctoolkit.
