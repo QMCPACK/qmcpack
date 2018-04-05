@@ -107,7 +107,7 @@ EinsplineSetBuilder::ReadOrbitalInfo()
             SuperLattice(0,0), SuperLattice(0,1), SuperLattice(0,2),
             SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2),
             SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
-  CheckLattice();
+  if (!CheckLattice()) APP_ABORT("CheckLattice failed");
   app_log() << buff;
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
