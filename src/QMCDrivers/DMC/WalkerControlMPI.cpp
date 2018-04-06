@@ -62,11 +62,13 @@ WalkerControlMPI::WalkerControlMPI(Communicate* c): WalkerControlBase(c)
 
 /** Perform branch and swap walkers as required
  *
- *  It takes 4 steps:
+ *  It takes 5 steps:
  *    1. sortWalkers marks good and bad walkers.
- *    2. allreduce and make the decision of load balancing.
- *    3. send/recv walkers. Receiving side recycles bad walkers' memory first.
- *    4. copyWalkers generates copies of good walkers.
+ *    2. allreduce collects the number of good walkers + copies on every rank.
+ *    3. applyNmaxNmin avoids too large or too small global population.
+ *    4. swapWalkersSimple makes a decision of load balancing and send/recv walkers.
+ *       Receiving side recycles bad walkers' memory first.
+ *    5. copyWalkers generates copies of good walkers.
  *  In order to minimize the memory footprint fluctuation
  *  the walker copying is placed as the last step.
  *  In order to reduce the time for allocating walker memory,
