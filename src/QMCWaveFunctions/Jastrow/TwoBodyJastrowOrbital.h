@@ -356,7 +356,7 @@ public:
 
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
-    const int iat=VP.activePtcl;
+    const int iat=VP.refPtcl;
 
     int nat=iat*N;
     RealType x= std::accumulate(&(U[nat]),&(U[nat+N]),0.0);

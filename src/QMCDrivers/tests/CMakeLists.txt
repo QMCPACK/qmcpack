@@ -17,7 +17,12 @@ SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME unit_test_${SRC_DIR})
 
 
-SET(DRIVER_TEST_SRC test_vmc.cpp test_dmc.cpp test_drift.cpp)
+SET(DRIVER_TEST_SRC test_vmc.cpp test_dmc.cpp test_drift.cpp test_clone_manager.cpp test_fixed_node_branch.cpp)
+
+IF (NOT QMC_CUDA)
+  SET(DRIVER_TEST_SRC ${DRIVER_TEST_SRC} test_vmc_omp.cpp test_dmc_omp.cpp)
+ENDIF()
+
 IF(HAVE_MPI)
   SET(DRIVER_TEST_SRC ${DRIVER_TEST_SRC} test_walker_control.cpp)
 ENDIF()

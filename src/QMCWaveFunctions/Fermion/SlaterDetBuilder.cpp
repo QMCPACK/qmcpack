@@ -37,8 +37,8 @@
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
 //Cannot use complex with SlaterDetOpt
 #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
-#include "QMCWaveFunctions/LocalizedBasisSet.h"
-#include "QMCWaveFunctions/LCOrbitalSetOpt.h"
+#include "QMCWaveFunctions/MolecularOrbitals/LocalizedBasisSet.h"
+#include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSetOpt.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetOpt.h"
 #endif
 #ifdef QMC_CUDA
@@ -1212,7 +1212,10 @@ bool SlaterDetBuilder::readDetList(xmlNodePtr cur, std::vector<ci_configuration>
         
        //Will always loop through the whole determinant set as no assumption on the order of the determinant is made 
         if(std::abs(ci) < cutoff)
+        {
+          cur = cur->next;
           continue;
+        }
 
         for(size_t i=0; i<nstates; i++){
           if(alpha[i] != '0' && alpha[i] != '1')

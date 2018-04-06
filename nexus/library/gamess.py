@@ -130,11 +130,16 @@ class Gamess(Simulation):
             if not 'guess' in input:
                 input.guess = GuessGroup()
             #end if
+            if 'norb' in input.guess: # user provided norb
+                norb = input.guess.norb
+            else:
+                norb = result.norbitals
+            #end if
             input.guess.clear()
             input.guess.set(
                 guess = 'moread',
-                norb  = result.norbitals,
-                prtmo = True
+                norb  = norb,
+                prtmo = True,
                 )
             input.vec = FormattedGroup(result.vec)
         else:

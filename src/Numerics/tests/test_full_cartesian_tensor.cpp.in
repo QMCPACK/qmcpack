@@ -1,0 +1,80 @@
+//////////////////////////////////////////////////////////////////////////////////////
+// This file is distributed under the University of Illinois/NCSA Open Source License.
+// See LICENSE file in top directory for details.
+//
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+//
+// File developed by:  Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+//
+// File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+//////////////////////////////////////////////////////////////////////////////////////
+
+
+#include "catch.hpp"
+#include "Numerics/CartesianTensor.h"
+
+#include <stdio.h>
+#include <string>
+
+using std::string;
+
+namespace qmcplusplus
+{
+
+typedef OHMMS_PRECISION real_type;
+
+
+// Use gen_gto.py to generate the checks
+
+TEST_CASE("Cartesian Tensor evaluate full", "[numerics]") {
+  CartesianTensor<double, TinyVector<double, 3>> ct(6);
+
+  TinyVector<double, 3> pt(1.3, 1.2, -0.5);
+
+  ct.evaluate(pt);
+
+%test_evaluate
+
+}
+
+TEST_CASE("Cartesian Tensor evaluateAll full", "[numerics]") {
+  CartesianTensor<double, TinyVector<double, 3>> ct(6);
+
+  TinyVector<double, 3> pt(1.3, 1.2, -0.5);
+  ct.evaluateAll(pt);
+
+%test_evaluate_all
+
+}
+
+TEST_CASE("Cartesian Tensor evaluateWithHessian full", "[numerics]") {
+  CartesianTensor<double, TinyVector<double, 3>> ct(6);
+
+  TinyVector<double, 3> pt(1.3, 1.2, -0.5);
+  ct.evaluateWithHessian(pt);
+
+%test_evaluate_with_hessian
+
+}
+
+TEST_CASE("Cartesian Tensor evaluateWithThirdDeriv full", "[numerics]") {
+  CartesianTensor<double, TinyVector<double, 3>> ct(6);
+
+  TinyVector<double, 3> pt(1.3, 1.2, -0.5);
+  ct.evaluateWithThirdDeriv(pt);
+
+%test_evaluate_with_third_deriv
+
+}
+
+
+TEST_CASE("Cartesian Tensor evaluateThirdDerivOnly full", "[numerics]") {
+  CartesianTensor<double, TinyVector<double, 3>> ct(6);
+
+  TinyVector<double, 3> pt(1.3, 1.2, -0.5);
+  ct.evaluateThirdDerivOnly(pt);
+
+%test_evaluate_third_deriv_only
+
+}
+}

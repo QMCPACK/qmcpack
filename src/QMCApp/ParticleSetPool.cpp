@@ -226,6 +226,19 @@ bool ParticleSetPool::get(std::ostream& os) const
   return true;
 }
 
+void ParticleSetPool::output_particleset_info(Libxml2Document &doc, xmlNodePtr root)
+{
+  xmlNodePtr particles_info = doc.addChild(root, "particles");
+  PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
+  while(it != it_end)
+  {
+    xmlNodePtr particle = doc.addChild(particles_info, "particle");
+    doc.addChild(particle,"name",(*it).second->getName());
+    doc.addChild(particle,"size",(*it).second->getTotalNum());
+    ++it;
+  }
+}
+
 /** reset is used to initialize and evaluate the distance tables
  */
 void ParticleSetPool::reset()

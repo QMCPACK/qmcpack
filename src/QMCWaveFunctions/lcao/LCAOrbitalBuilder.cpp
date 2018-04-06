@@ -27,6 +27,8 @@
 #include "QMCWaveFunctions/lcao/AOBasisBuilder.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
 #include "QMCWaveFunctions/lcao/MultiFunctorBuilder.h"
+#include "io/hdf_archive.h"
+#include "Message/CommOperators.h"
 #include "Utilities/ProgressReportEngine.h"
 
 namespace qmcplusplus
@@ -98,7 +100,7 @@ namespace qmcplusplus
 
 
   LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, xmlNodePtr cur) 
-    : targetPtcl(els), sourcePtcl(ions), myBasisSet(nullptr)
+    : targetPtcl(els), sourcePtcl(ions), myBasisSet(nullptr), h5_path("")
   {
     ClassName="LCAOrbitalBuilder";
     ReportEngine PRE(ClassName,"createBasisSet");
@@ -106,14 +108,17 @@ namespace qmcplusplus
     std::string keyOpt("NMO"); // Numerical Molecular Orbital
     std::string transformOpt("yes"); // Numerical Molecular Orbital
     std::string cuspC("no");  // cusp correction
-    cuspInfo="";
-    //std::string cuspInfo("");  // file with precalculated cusp correction info
+    cuspInfo="";  // file with precalculated cusp correction info
     OhmmsAttributeSet aAttrib;
     aAttrib.add(keyOpt,"keyword");
     aAttrib.add(keyOpt,"key");
     aAttrib.add(transformOpt,"transform");
     aAttrib.add(cuspC,"cuspCorrection");
     aAttrib.add(cuspInfo,"cuspInfo");
+    aAttrib.add(h5_path,"href");
+    aAttrib.add(PBCImages,"PBCimages");
+    aAttrib.put(cur);
+     
     if(cur != NULL) aAttrib.put(cur);
     
     radialOrbType=-1;
@@ -137,9 +142,17 @@ namespace qmcplusplus
   bool LCAOrbitalBuilder::put(xmlNodePtr cur)
   {
     if(myBasisSet != nullptr) return true;
+    if(h5_path=="")
+      putXML(cur);
+    else
+      putH5();
+    return true;
+  }
 
-    ReportEngine PRE(ClassName,"put(xmlNodePtr)");
 
+  bool LCAOrbitalBuilder::putXML(xmlNodePtr cur)
+  {
+    ReportEngine PRE(ClassName,"putXML(xmlNodePtr)");
     if(!is_same(cur->name,"basisset"))
     {//heck to handle things like <sposet_builder>
       xmlNodePtr cur1= cur->xmlChildrenNode;
@@ -170,26 +183,25 @@ namespace qmcplusplus
     if(ylm<0)
       PRE.error("Missing angular attribute of atomicBasisSet.",true);
 
-
     /** process atomicBasisSet per ion species */
     switch(radialOrbType)
     {
       case(0): //numerical
-        app_log() << "  LCAO: SoaAtomicBasisSet<MultiQuintic,"<<ylm<<">" << std::endl;;
+        app_log() << "  LCAO: SoaAtomicBasisSet<MultiQuintic,"<<ylm<<">" << std::endl;
         if(ylm) 
           myBasisSet=createBasisSet<0,1>(cur);
         else
           myBasisSet=createBasisSet<0,0>(cur);
         break;
       case(1): //gto
-        app_log() << "  LCAO: SoaAtomicBasisSet<MultiGTO,"<<ylm<<">" << std::endl;;
+        app_log() << "  LCAO: SoaAtomicBasisSet<MultiGTO,"<<ylm<<">" << std::endl;
         if(ylm) 
           myBasisSet=createBasisSet<1,1>(cur);
         else
           myBasisSet=createBasisSet<1,0>(cur);
         break;
       case(2): //sto
-        app_log() << "  LCAO: SoaAtomicBasisSet<MultiSTO,"<<ylm<<">" << std::endl;;
+        app_log() << "  LCAO: SoaAtomicBasisSet<MultiSTO,"<<ylm<<">" << std::endl;
         myBasisSet=createBasisSet<2,1>(cur);
         break;
       default:
@@ -198,6 +210,61 @@ namespace qmcplusplus
     }
     return true;
   }
+
+  bool LCAOrbitalBuilder::putH5()
+  {
+    ReportEngine PRE(ClassName,"putH5()");
+    hdf_archive hin(myComm);
+    int ylm=-1;
+    if(myComm->rank()==0)
+    {
+      if(!hin.open(h5_path.c_str(),H5F_ACC_RDONLY))
+        PRE.error("Could not open H5 file",true);
+      if(!hin.push("basisset"))
+        PRE.error("Could not open basisset group in H5; Probably Corrupt H5 file",true);
+
+      std::string sph;
+      std::string ElemID0="atomicBasisSet0";
+      if(!hin.push(ElemID0.c_str()))
+        PRE.error("Could not open  group Containing atomic Basis set in H5; Probably Corrupt H5 file",true);
+      if(!hin.read(sph,"angular"))
+        PRE.error("Could not find name of  basisset group in H5; Probably Corrupt H5 file",true);
+      ylm=(sph=="cartesian")?0:1;
+      hin.close();
+    }
+
+    myComm->bcast(ylm);
+    if(ylm<0)
+      PRE.error("Missing angular attribute of atomicBasisSet.",true);
+
+    /** process atomicBasisSet per ion species */
+    switch(radialOrbType)
+    {
+      case(0): //numerical
+        app_log() << "  LCAO: SoaAtomicBasisSet<MultiQuintic,"<<ylm<<">" << std::endl;
+        if(ylm) 
+          myBasisSet=createBasisSetH5<0,1>();
+        else
+          myBasisSet=createBasisSetH5<0,0>();
+        break;
+      case(1): //gto
+        app_log() << "  LCAO: SoaAtomicBasisSet<MultiGTO,"<<ylm<<">" << std::endl;
+        if(ylm) 
+          myBasisSet=createBasisSetH5<1,1>();
+        else
+          myBasisSet=createBasisSetH5<1,0>();
+        break;
+      case(2): //sto
+        app_log() << "  LCAO: SoaAtomicBasisSet<MultiSTO,"<<ylm<<">" << std::endl;
+        myBasisSet=createBasisSetH5<2,1>();
+        break;
+      default:
+        PRE.error("Cannot construct SoaAtomicBasisSet<ROT,YLM>.",true);
+        break;
+    }
+    return true;
+  }
+
 
   template<int I, int J>
    LCAOrbitalBuilder::BasisSet_t*
@@ -260,8 +327,106 @@ namespace qmcplusplus
     }
 
     mBasisSet->setBasisSetSize(-1);
+    mBasisSet->setPBCImages(PBCImages);
     return mBasisSet;
   }
+
+
+  template<int I, int J>
+   LCAOrbitalBuilder::BasisSet_t*
+   LCAOrbitalBuilder::createBasisSetH5()
+  {
+
+    ReportEngine PRE(ClassName,"createBasisSetH5(xmlNodePtr)");
+
+    typedef typename ao_traits<RealType,I,J>::ao_type    ao_type;
+    typedef typename ao_traits<RealType,I,J>::basis_type basis_type;
+
+    basis_type* mBasisSet=new basis_type(sourcePtcl,targetPtcl);
+
+    //keep the builder local
+    std::map<std::string,BasisSetBuilder*> aoBuilders;
+    
+    int Nb_Elements(0);
+    std::string basiset_name;
+
+    /** process atomicBasisSet per ion species */
+    app_log() << "Reading BasisSet from HDF5 file:" << h5_path << std::endl;
+
+    hdf_archive hin(myComm);
+    if(myComm->rank()==0)
+    {
+      if(!hin.open(h5_path.c_str(),H5F_ACC_RDONLY))
+        PRE.error("Could not open H5 file",true);
+      if(!hin.push("basisset"))
+        PRE.error("Could not open basisset group in H5; Probably Corrupt H5 file",true);
+      hin.read(Nb_Elements,"NbElements");
+    }
+
+    myComm->bcast(Nb_Elements);
+    if(Nb_Elements<1)
+      PRE.error("Missing elementType attribute of atomicBasisSet.",true);
+
+    for (int i=0;i<Nb_Elements;i++)
+    {
+      std::string elementType,dataset;
+      std::stringstream tempElem;
+      std::string ElemID0="atomicBasisSet",ElemType;
+      tempElem<<ElemID0<<i;
+      ElemType=tempElem.str();
+
+      if(myComm->rank()==0)
+      {
+        if(!hin.push(ElemType.c_str()))
+          PRE.error("Could not open  group Containing atomic Basis set in H5; Probably Corrupt H5 file",true);
+        if(!hin.read(basiset_name,"name"))
+          PRE.error("Could not find name of  basisset group in H5; Probably Corrupt H5 file",true);
+        if(!hin.read(elementType,"elementType"))
+          PRE.error("Could not read elementType in H5; Probably Corrupt H5 file",true);
+      }
+      myComm->bcast(basiset_name);
+      myComm->bcast(elementType);
+
+      std::map<std::string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType);
+      if(it == aoBuilders.end())
+      {
+        AOBasisBuilder<ao_type>* any = new AOBasisBuilder<ao_type>(elementType);
+        any->setReportLevel(ReportLevel);
+        any->putH5(hin);
+        ao_type* aoBasis= any->createAOSetH5(hin);
+        if(aoBasis)
+        {
+          //add the new atomic basis to the basis set
+          int activeCenter =sourcePtcl.getSpeciesSet().findSpecies(elementType);
+          mBasisSet->add(activeCenter, aoBasis);
+        }
+        aoBuilders[elementType]=any;
+      }
+
+      if(myComm->rank()==0)
+        hin.pop();
+    }
+
+    if(myComm->rank()==0)
+    {
+      hin.pop();
+      hin.close();
+    }
+
+    { //cleanup basisset builder
+      std::map<std::string,BasisSetBuilder*>::iterator itX=aoBuilders.begin();
+      while(itX!=aoBuilders.end())
+      {
+        delete (*itX).second;
+        ++itX;
+      }
+    }
+
+    mBasisSet->setBasisSetSize(-1);
+    mBasisSet->setPBCImages(PBCImages);
+    return mBasisSet;
+  }
+
 
   SPOSetBase* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
@@ -274,10 +439,11 @@ namespace qmcplusplus
     spoAttrib.put(cur);
 
     SPOSetBase *lcos=new LCAOrbitalSet(myBasisSet,ReportLevel);
+    lcos->myComm=myComm;
 
     //@TODO: add cusp condition
     
     return lcos;
   }
-}
 
+}

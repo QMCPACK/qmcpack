@@ -90,6 +90,14 @@ TEST_CASE("periodic_bulk_bconds", "[lattice]")
   r2 = bcond->apply_bc(v2);
   REQUIRE(r2 == Approx(0.01));
 
+  vec_t v3(0.6, 1.2, -1.7);
+  REQUIRE(cl->isValid(v3) == false);
+  REQUIRE(cl->outOfBound(v3) == true);
+
+  vec_t v4(0.45, 0.2, 0.1);
+  REQUIRE(cl->isValid(v4) == true);
+  REQUIRE(cl->outOfBound(v4) == false);
+
 }
 
 TEST_CASE("uniform 3D grid layout", "[lattice]")

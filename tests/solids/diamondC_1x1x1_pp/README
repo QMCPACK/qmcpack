@@ -1,0 +1,79 @@
+
+
+============================
+k-space Jastrow test details
+============================
+The tests include short and long VMC runs for a primitive cell of 
+diamond with a k-space Jastrow factor added to the short-ranged 
+B-spline one used in other tests of this system.  The general form 
+for the k-space Jastrow XML input was inferred by reading the source.
+Starting with the optimized form of a J1 and J2 B-spline Jastrow, 
+empty one- and two-body k-space Jastrow terms with a k-space cutoff of 
+4.0 a.u. (resulting in 8 and 6 one- and two-body coefficients 
+respectively) were added and optimized with version 3.1.1 of QMCPACK.  
+Earlier versions, e.g. SVN revision 6259, produced only higher 
+variances during optimization.  With correct optimization, a lowering 
+in the energy and variance is observed over B-splines alone:
+
+  VMC         Energy                  Variance               ratio
+J12 B-spline -10.491929 +/- 0.001857  0.379176 +/- 0.006023  0.0361 
+J12 k-space  -10.500884 +/- 0.001790  0.326804 +/- 0.015445  0.0311 
+
+Reference data was generated with runs the same overall length 
+(blocks x steps) as those included in ./qmc-ref, but using more blocks 
+and fewer steps.  Using more blocks reduced the statistical error of 
+the error bars, but resulted in output data files that were too large 
+to include in the QMCPACK distribution.  The reference values and error 
+bars were therefore computed from the higher block count runs.  The 
+included reference runs were confirmed to be consistent with the original 
+higher block count runs.  All reference data was generated with the SVN 
+revision 6259 version of the code.
+
+Reference data from the high block count VMC runs is found below:
+
+             Energy                  Variance               ratio
+qmc_kspace  -10.500719 +/- 0.000176  0.312264 +/- 0.002852  0.0297
+
+For comparison, corresponding data for the lower block count VMC 
+reference data found in ./qmc-ref is:
+
+>qmca -e 2 -q ev qmc_kspace.s000.scalar.dat
+             Energy                  Variance               ratio
+qmc_kspace  -10.500721 +/- 0.000170  0.314640 +/- 0.001312  0.0300
+
+Test input files were created by reducing the number of steps from the 
+included reference by a factor of 10 for the "long" tests and by a 
+further factor of 10 for the "short" tests.
+
+Reference values for the mean local energy and variance were taken 
+from the high block count reference runs.  Expected error bars were 
+derived from the high block count data by multiplying the reference 
+error bars by a factor of sqrt(10+1) and sqrt(100+1) for the long 
+and short tests, respectively.  The factor of +1 accounts for the 
+error bar intrinsic to the high block count runs.  
+
+The target means and error bars for long and short tests are:
+
+                 refmean     referr    longerr   shorterr
+VMC J2 energy   -10.500719   0.000176  0.000584  0.001769
+       variance   0.312264   0.002852  0.009459  0.028662
+
+Error bars from typical long and short runs are shown below:
+
+Typical long run results:
+
+        Energy                  Variance               ratio
+long   -10.500184 +/- 0.000530  0.319563 +/- 0.008351  0.0304
+
+Typical short run results:
+
+        Energy                  Variance               ratio
+short  -10.500601 +/- 0.001779  0.308348 +/- 0.005698  0.0294
+
+Rough timings for the tests on an old (circa 2013) AMD system are:
+
+>grep 'Total Exe' *long*/*.out
+long_test/qmc.out:  Total Execution time = 7.2162347854e+01 secs
+
+>grep 'Total Exe' *short*/*.out
+short_test/qmc.out:  Total Execution time = 1.4235623075e+01 secs

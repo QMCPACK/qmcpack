@@ -125,7 +125,8 @@ EinsplineSetBuilder::CheckLattice()
     o << SuperLattice-TargetPtcl.Lattice.R << std::endl;
     o << " Max relative error = "<< diff << std::endl;
     o << " Tolerance      = "<< MatchingTol << std::endl;
-    APP_ABORT(o.str());
+    app_error() << o.str();
+    return false;
   }
   return true;
 }
@@ -283,10 +284,12 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
   myComm->bcast(cibuffer);
   AtomicCentersInfo.resize(numIons);
   Super2Prim.resize(SourcePtcl->R.size());
+  cbuffer.add(AtomicCentersInfo.inner_cutoff.begin(), AtomicCentersInfo.inner_cutoff.end());
   cbuffer.add(AtomicCentersInfo.cutoff.begin(), AtomicCentersInfo.cutoff.end());
   cbuffer.add(AtomicCentersInfo.spline_radius.begin(), AtomicCentersInfo.spline_radius.end());
   cibuffer.add(Super2Prim.begin(),Super2Prim.end());
   cibuffer.add(AtomicCentersInfo.lmax.begin(), AtomicCentersInfo.lmax.end());
+  cibuffer.add(AtomicCentersInfo.GroupID.begin(), AtomicCentersInfo.GroupID.end());
   cibuffer.add(AtomicCentersInfo.spline_npoints.begin(), AtomicCentersInfo.spline_npoints.end());
   myComm->bcast(cbuffer);
   myComm->bcast(cibuffer);
@@ -294,10 +297,12 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
   {
     cbuffer.rewind();
     cibuffer.rewind();
+    cbuffer.get(AtomicCentersInfo.inner_cutoff.begin(), AtomicCentersInfo.inner_cutoff.end());
     cbuffer.get(AtomicCentersInfo.cutoff.begin(), AtomicCentersInfo.cutoff.end());
     cbuffer.get(AtomicCentersInfo.spline_radius.begin(), AtomicCentersInfo.spline_radius.end());
     cibuffer.get(Super2Prim.begin(),Super2Prim.end());
     cibuffer.get(AtomicCentersInfo.lmax.begin(), AtomicCentersInfo.lmax.end());
+    cibuffer.get(AtomicCentersInfo.GroupID.begin(), AtomicCentersInfo.GroupID.end());
     cibuffer.get(AtomicCentersInfo.spline_npoints.begin(), AtomicCentersInfo.spline_npoints.end());
     for (int i=0; i<numIons; i++)
       AtomicCentersInfo.ion_pos[i]=IonPos[i];
