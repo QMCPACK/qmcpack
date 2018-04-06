@@ -2208,7 +2208,7 @@ class flux(QIxml):
 
 class momentum(QIxml):
     tag = 'estimator'
-    attributes = ['type','name','grid','samples','hdf5','wavefunction']
+    attributes = ['type','name','grid','samples','hdf5','wavefunction','kmax','kmax0','kmax1','kmax2']
     identifier = 'name'
     write_types = obj(hdf5=yesno)
 #end class momentum
