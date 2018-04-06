@@ -7,7 +7,7 @@ Assume that the mixed precision is sufficient to evaluate the algorithms, implem
 
 
 # checkpoint/restart miniapp
-Its source and binary file are src/miniapps/restart.cpp and bin/restart.
+Its source and binary file are src/Sandbox/restart.cpp and bin/restart.
 It dumps walker configurations and random number seeds to the HDF5 files and then reads them in and check the correctness.
 Pass or Fail will be printed at the end of the standard output.
 

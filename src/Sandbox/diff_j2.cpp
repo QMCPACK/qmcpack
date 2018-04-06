@@ -4,10 +4,9 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
-//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+// File developed by: 
 //
-// File created by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 /** @file j2debug.cpp
@@ -20,13 +19,13 @@
 #include <OhmmsSoA/VectorSoaContainer.h>
 #include <Utilities/PrimeNumberSet.h>
 #include <random/random.hpp>
-#include <miniapps/input.hpp>
-#include <miniapps/pseudo.hpp>
+#include <Sandbox/input.hpp>
+#include <Sandbox/pseudo.hpp>
 #include <Utilities/Timer.h>
-#include <miniapps/common.hpp>
-#include <QMCWaveFunctions/Jastrow/PolynomialFunctor3D.h>
-#include <QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h>
-#include <QMCWaveFunctions/Jastrow/JeeIOrbitalSoA.h>
+#include <Sandbox/common.hpp>
+#include <QMCWaveFunctions/Jastrow/BsplineFunctor.h>
+#include <QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h>
+#include <QMCWaveFunctions/Jastrow/J2OrbitalSoA.h>
 #include <getopt.h>
 
 using namespace std;
@@ -106,7 +105,6 @@ int main(int argc, char** argv)
     RandomGenerator<RealType> random_th(myPrimes[ip]);
 
     tile_cell(ions,tmat,scale);
-    ions.RSoA=ions.R; //fill the SoA
 
     const int nions=ions.getTotalNum();
     const int nels=count_electrons(ions);
@@ -139,14 +137,14 @@ int main(int argc, char** argv)
     vector<RealType> ur(nels);
     random_th.generate_uniform(ur.data(),nels);
 
-    JeeIOrbitalSoA<PolynomialFunctor3D> J(ions,els);
-    eeI_JastrowOrbital<PolynomialFunctor3D> J_aos(ions,els_aos,ip);
+    J2OrbitalSoA<BsplineFunctor<RealType> > J(els,ip);
+    TwoBodyJastrowOrbital<BsplineFunctor<RealType> > J_aos(els_aos,ip);
 
-    RealType r_cut=std::min(RealType(6.0),els.Lattice.WignerSeitzRadius);
-    buildJeeI(J,r_cut);
-    cout << "Done with the JeeI " << endl;
-    buildJeeI(J_aos,r_cut);
-    cout << "Done with the JeeI_aos " << endl;
+    RealType r2_cut=std::min(RealType(6.4),els.Lattice.WignerSeitzRadius);
+    buildJ2(J,r2_cut);
+    cout << "Done with the J2 " << endl;
+    buildJ2(J_aos,r2_cut);
+    cout << "Done with the J2_aos " << endl;
 
     constexpr RealType czero(0);
 
@@ -166,8 +164,7 @@ int main(int argc, char** argv)
       els_aos.L=czero;
       J_aos.evaluateLogAndStore(els_aos,els_aos.G,els_aos.L);
 
-      cout << "Check values " << J.LogValue << " " << els.G[12] << " " << els.L[12] << endl;
-      cout << "Check values aos " << J_aos.LogValue << " " << els_aos.G[12] << " " << els_aos.L[12] << endl;
+      cout << "Check values " << J.LogValue << " " << els.G[0] << " " << els.L[0] << endl;
       cout << "evaluateLog::V Error = " << (J.LogValue-J_aos.LogValue)/nels<< endl;
       {
         double g_err=0.0;
@@ -255,7 +252,7 @@ int main(int argc, char** argv)
 
       els_aos.G=czero;
       els_aos.L=czero;
-      J_aos.evaluateLog(els_aos,els_aos.G,els_aos.L);
+      J_aos.evaluateGL(els_aos);
 
       {
         double g_err=0.0;

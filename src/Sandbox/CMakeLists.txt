@@ -1,4 +1,4 @@
-PROJECT(miniapps)
+PROJECT(Sandbox)
 
 if(QMC_BUILD_LEVEL GREATER 4)
 # add apps XYZ.cpp, e.g., qmc_particles.cpp
