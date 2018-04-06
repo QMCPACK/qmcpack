@@ -164,7 +164,7 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   std::vector<int> minus, plus;
   determineNewWalkerPopulation(Cur_pop, NumContexts, MyContext, NumPerNode, FairOffSet, minus, plus);
 
-  Walker_t& wRef(*good_w[0]);
+  Walker_t& wRef(*(good_w.empty()?bad_w[0]:good_w[0]));
   std::vector<Walker_t*> newW;
   std::vector<int> ncopy_newW;
 #ifdef MCWALKERSET_MPI_DEBUG

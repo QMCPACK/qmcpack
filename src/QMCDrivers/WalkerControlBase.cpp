@@ -385,11 +385,23 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
   //W.EnsembleProperty.Variance=(e2sum*wsum-esum*esum)/(wsum*wsum-w2sum);
   if (!WriteRN)
   {
-    if(good_w.empty())
+    // single rank run, need at least one good walker
+    if( NumContexts==1 && good_w.empty() )
     {
-      app_error() << "All the walkers have died. Abort. " << std::endl;
+      app_error() << "It should never happen that all the walkers died. "
+                  << "Please report to developers. " << std::endl;
       APP_ABORT("WalkerControlBase::sortWalkers");
     }
+
+    // more than one rank, allow no good walkers left
+    if( NumContexts>1 && good_w.empty() && bad_w.empty() )
+    {
+      app_error() << "It should never happen that no walkers, "
+                  << "neither good nor bad, exist on a node. "
+                  << "Please report to developers. " << std::endl;
+      APP_ABORT("WalkerControlBase::sortWalkers");
+    }
+
     int sizeofgood = good_w.size();
     //check if the projected number of walkers is too small or too large
     if(NumWalkers>Nmax)
