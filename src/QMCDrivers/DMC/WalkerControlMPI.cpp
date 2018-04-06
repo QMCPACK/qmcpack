@@ -91,11 +91,9 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigge
   myTimers[DMC_MPI_allreduce]->stop();
   measureProperties(iter);
   W.EnsembleProperty=EnsembleProperty;
-  Cur_pop=0;
-  for(int i=0, j=LE_MAX; i<NumContexts; i++,j++)
-  {
-    Cur_pop+= NumPerNode[i]=static_cast<int>(curData[j]);
-  }
+  for(int i=0, j=LE_MAX; i<NumContexts; i++, j++)
+    NumPerNode[i] = static_cast<int>(curData[j]);
+  Cur_pop = applyNmaxNmin();
   myTimers[DMC_MPI_prebalance]->stop();
   myTimers[DMC_MPI_loadbalance]->start();
   swapWalkersSimple(W);
@@ -163,6 +161,14 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
 {
   std::vector<int> minus, plus;
   determineNewWalkerPopulation(Cur_pop, NumContexts, MyContext, NumPerNode, FairOffSet, minus, plus);
+
+  if( good_w.empty() && bad_w.empty() )
+  {
+    app_error() << "It should never happen that no walkers, "
+                << "neither good nor bad, exist on a node. "
+                << "Please report to developers. " << std::endl;
+    APP_ABORT("WalkerControlMPI::swapWalkersSimple no existing walker");
+  }
 
   Walker_t& wRef(*(good_w.empty()?bad_w[0]:good_w[0]));
   std::vector<Walker_t*> newW;

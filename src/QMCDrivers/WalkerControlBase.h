@@ -194,6 +194,11 @@ public:
   /** sort Walkers between good and bad and prepare branching
    */
   int sortWalkers(MCWalkerConfiguration& W);
+
+  /** apply per node limit Nmax and Nmin
+   */
+  int applyNmaxNmin();
+
   /** copy good walkers to W
    */
   int copyWalkers(MCWalkerConfiguration& W);
