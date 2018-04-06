@@ -127,6 +127,7 @@ make -j 8
                          systems. For large systems (100+ electrons) there is no risk.
      ENABLE_SOA          (Experimental) Enable CPU optimization based on Structure-
                          of-Array (SoA) datatypes (1:yes, 0:no (default)). ```
+```
 
  * Additional QMC options
 
