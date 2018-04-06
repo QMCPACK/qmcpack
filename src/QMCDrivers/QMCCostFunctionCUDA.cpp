@@ -28,8 +28,8 @@ namespace qmcplusplus
 
 QMCCostFunctionCUDA::QMCCostFunctionCUDA
 ( MCWalkerConfiguration& w, TrialWaveFunction& psi,
-  QMCHamiltonian& h, HamiltonianPool& hpool):
-  QMCCostFunctionBase(w,psi,h), CloneManager(hpool)
+  QMCHamiltonian& h):
+  QMCCostFunctionBase(w,psi,h)
 {
 }
 

@@ -23,6 +23,9 @@
 /* define the git last commit date */
 // #cmakedefine QMCPLUSPLUS_LAST_CHANGED_DATE  "@QMCPLUSPLUS_LAST_CHANGED_DATE@"
 
+/* building from Git repository or not */
+#cmakedefine IS_GIT_PROJECT  @IS_GIT_PROJECT@
+
 /* define QMC_BUILD_LEVEL */
 #cmakedefine QMC_BUILD_LEVEL @QMC_BUILD_LEVEL@
 
@@ -235,6 +238,12 @@
 
 /* Internal timers */
 #cmakedefine ENABLE_TIMERS @ENABLE_TIMERS@
+
+/* Use VTune API */
+#cmakedefine USE_VTUNE_API @USE_VTUNE_API@
+
+/* Use VTune Task API with timers */
+#cmakedefine USE_VTUNE_TASKS @USE_VTUNE_TASKS@
 
 #endif // QMCPLUSPLUS_CONFIGURATION_H
 

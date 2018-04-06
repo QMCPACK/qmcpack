@@ -15,7 +15,7 @@
 #define QMCPLUSPLUS_SLATERTYPEORBITAL_BUILDER_H
 
 #include "Configuration.h"
-#include "QMCWaveFunctions/SphericalBasisSet.h"
+#include "QMCWaveFunctions/MolecularOrbitals/SphericalBasisSet.h"
 #include "Numerics/SlaterBasisSet.h"
 #include "io/hdf_archive.h"
 namespace qmcplusplus

@@ -12,7 +12,7 @@
 
 #include <QMCWaveFunctions/Fermion/SlaterDetOpt.h>
 #include <QMCWaveFunctions/TrialWaveFunction.h>
-#include <QMCWaveFunctions/LCOrbitalSetOpt.h>
+#include <QMCWaveFunctions/MolecularOrbitals/LCOrbitalSetOpt.h>
 #include <Numerics/DeterminantOperators.h>
 #include <Numerics/MatrixOperators.h>
 

@@ -15,7 +15,6 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_R2RSOA_ADOPTOR_H
 #define QMCPLUSPLUS_EINSPLINE_R2RSOA_ADOPTOR_H
 
-#include <Numerics/VectorViewer.h>
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
 
@@ -49,6 +48,9 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   using SplineAdoptorBase<ST,D>::HalfG;
   using BaseType::GGt;
   using BaseType::PrimLattice;
+  using BaseType::kPoints;
+  using BaseType::offset_cplx;
+  using BaseType::offset_real;
 
   ///number of points of the original grid
   int BaseN[3];
@@ -114,6 +116,16 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     chunked_reduce(comm, MultiSpline);
   }
 
+  void gather_tables(Communicate* comm)
+  {
+    if(comm->size()==1) return;
+    const int Nbands = kPoints.size();
+    const int Nbandgroups = comm->size();
+    offset_real.resize(Nbandgroups+1,0);
+    FairDivideLow(Nbands,Nbandgroups,offset_real);
+    gatherv(comm, MultiSpline, MultiSpline->z_stride, offset_real);
+  }
+
   template<typename GT, typename BCT>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
@@ -156,13 +168,13 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
 
   inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
   {
-    SplineInst->copy_spline(spline_r,ispline  ,BaseOffset, BaseN);
+    SplineInst->copy_spline(spline_r, ispline, BaseOffset, BaseN);
   }
 
   void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
   {
-    VectorViewer<ST> v_r(psi_r,0);
-    SplineInst->set(ispline  ,v_r);
+    Vector<ST> v_r(psi_r,0);
+    SplineInst->set(ispline, v_r);
   }
 
   inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i,
@@ -204,7 +216,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV>
-  inline void assign_v(int bc_sign, VV& psi)
+  inline void assign_v(int bc_sign, const vContainer_type& myV, VV& psi)
   {
     if (bc_sign & 1)
       for(size_t psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
@@ -240,7 +252,23 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     PointType ru;
     int bc_sign=convertPos(r,ru);
     SplineInst->evaluate(ru,myV);
-    assign_v(bc_sign,psi);
+    assign_v(bc_sign,myV,psi);
+  }
+
+  template<typename VM>
+  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM)
+  {
+    const size_t m=psiM.cols();
+    for(int iat=0; iat<VP.getTotalNum(); ++iat)
+    {
+      Vector<TT> psi(psiM[iat],m);
+      evaluate_v(VP,iat,psi);
+    }
+  }
+
+  inline size_t estimateMemory(const int nP)
+  {
+    return (last_spo-first_spo)*nP;
   }
 
   template<typename VV, typename GV>
