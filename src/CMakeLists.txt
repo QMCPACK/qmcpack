@@ -289,8 +289,8 @@ ENDIF()
 
   if(QMC_BUILD_LEVEL GREATER 4)
 
-    MESSAGE(STATUS "Minimal build: only miniapps")
-    SUBDIRS(miniapps)
+    MESSAGE(STATUS "Minimal build: only Sandbox")
+    SUBDIRS(Sandbox)
 
   else() #{{{
 
@@ -328,10 +328,6 @@ ENDIF()
   #IF(BUILD_QMCTOOLS)
   SUBDIRS(QMCTools)
   #ENDIF(BUILD_QMCTOOLS)
-
-  IF(BUILD_SANDBOX)
-    SUBDIRS(SandBox)
-  ENDIF(BUILD_SANDBOX)
 
   IF(BUILD_SQD)
     SUBDIRS(SQD)

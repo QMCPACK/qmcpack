@@ -14,8 +14,8 @@
 #define QMCPLUSPLUS_MINIAPPS_INPUT_H
 #include <ParticleIO/ParticleIOUtility.h>
 #if defined(USE_NIO)
-#include <miniapps/input/nio.hpp>
+#include <Sandbox/input/nio.hpp>
 #else
-#include <miniapps/input/graphite.hpp>
+#include <Sandbox/input/graphite.hpp>
 #endif
 #endif

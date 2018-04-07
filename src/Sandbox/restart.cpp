@@ -21,10 +21,10 @@
 #include <Particle/HDFWalkerInput_0_4.h>
 #include <OhmmsApp/RandomNumberControl.h>
 #include <random/random.hpp>
-#include <miniapps/input.hpp>
-#include <miniapps/pseudo.hpp>
+#include <Sandbox/input.hpp>
+#include <Sandbox/pseudo.hpp>
 #include <Utilities/Timer.h>
-#include <miniapps/common.hpp>
+#include <Sandbox/common.hpp>
 #include <getopt.h>
 #include <mpi/collectives.h>
 

@@ -10,8 +10,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
 #include <omp.h>
-#include <miniapps/FakeWaveFunction.h>
-#include <miniapps/input.hpp>
+#include <Sandbox/FakeWaveFunction.h>
+#include <Sandbox/input.hpp>
 
 namespace qmcplusplus
 {

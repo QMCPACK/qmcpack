@@ -22,11 +22,11 @@
 #include <Utilities/Timer.h>
 #include <random/random.hpp>
 #include <mpi/collectives.h>
-#include <miniapps/input.hpp>
-#include <miniapps/pseudo.hpp>
-#include <miniapps/common.hpp>
-#include <miniapps/einspline_spo.hpp>
-#include <miniapps/FakeWaveFunction.h>
+#include <Sandbox/input.hpp>
+#include <Sandbox/pseudo.hpp>
+#include <Sandbox/common.hpp>
+#include <Sandbox/einspline_spo.hpp>
+#include <Sandbox/FakeWaveFunction.h>
 #include <getopt.h>
 
 using namespace std;

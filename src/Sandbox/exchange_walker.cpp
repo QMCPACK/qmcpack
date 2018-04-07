@@ -17,9 +17,9 @@
 #include <Particle/MCWalkerConfiguration.h>
 #include <Utilities/PrimeNumberSet.h>
 #include <random/random.hpp>
-#include <miniapps/graphite.hpp>
+#include <Sandbox/graphite.hpp>
 #include <Utilities/Timer.h>
-#include <miniapps/common.hpp>
+#include <Sandbox/common.hpp>
 #include <boost/mpi.hpp>
 #include <getopt.h>
 

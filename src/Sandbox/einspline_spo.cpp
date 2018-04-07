@@ -17,11 +17,11 @@
 #include <Particle/ParticleSet.h>
 #include <random/random.hpp>
 #include <mpi/collectives.h>
-#include <miniapps/input.hpp>
-#include <miniapps/pseudo.hpp>
+#include <Sandbox/input.hpp>
+#include <Sandbox/pseudo.hpp>
 #include <Utilities/Timer.h>
-#include <miniapps/common.hpp>
-#include <miniapps/einspline_spo.hpp>
+#include <Sandbox/common.hpp>
+#include <Sandbox/einspline_spo.hpp>
 #include <getopt.h>
 
 using namespace std;
