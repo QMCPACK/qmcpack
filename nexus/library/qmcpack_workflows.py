@@ -538,6 +538,7 @@ dmc_sections_keys = [
     'J0_warmupsteps','J0_blocks','J0_steps','J0_checkpoint',
     'test_warmupsteps','test_blocks','test_steps',
     'ntimesteps','timestep_factor','nlmove',
+    'dmc_calcs'
     ]
 dmc_sections_defaults = obj(
     v1 = obj(
@@ -570,6 +571,7 @@ dmc_sections_defaults = obj(
         ntimesteps           = 1,
         timestep_factor      = 0.5,    
         nlmove               = None,
+        dmc_calcs = missing,
         ),
     )
 
@@ -819,6 +821,7 @@ dmc_workflow_keys = [
     'job','test_job',
     'tmoves','locality',
     'prior_opt',
+    'prior_dir',
     ]
 fixed_defaults = obj(
     J0_run     = False,
@@ -836,6 +839,7 @@ fixed_defaults = obj(
     tmoves     = False,
     locality   = False,
     prior_opt  = True,
+    prior_dir  = '',
     )
 dmc_input_defaults = obj(
     minimal = obj(
@@ -2094,7 +2098,7 @@ def gen_dmc(simlabel,ch,depset,J,nlmove=None,test=0,loc=''):
         other_inputs.calculations = dmc_sections(nlmove=nlmove,test=test,J0=J=='J0',**task.sec_inputs)
     #end if
     qmc = generate_qmcpack(
-        path         = os.path.join(wf.basepath,simlabel),
+        path         = os.path.join(wf.basepath,wf.prior_dir,simlabel),
         job          = qmcjob,
         jastrows     = jastrows,
         dependencies = deps,
