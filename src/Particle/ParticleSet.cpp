@@ -456,7 +456,6 @@ void ParticleSet::update(bool skipSK)
   if (!skipSK && SK)
     SK->UpdateAllPart(*this);
 
-  Ready4Measure=true;
   activePtcl=-1;
 }
 
@@ -471,7 +470,6 @@ void ParticleSet::update(const ParticlePos_t& pos)
   if (SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);
 
-  Ready4Measure=true;
   activePtcl=-1;
 }
 
@@ -590,7 +588,6 @@ bool ParticleSet::makeMove(const Walker_t& awalker
 bool ParticleSet::makeMove(const Walker_t& awalker
                            , const ParticlePos_t& deltaR, const std::vector<RealType>& dt)
 {
-  Ready4Measure=false;
   activePtcl=-1;
   if (UseBoundBox)
   {
@@ -632,7 +629,6 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
                                     , const ParticlePos_t& drift , const ParticlePos_t& deltaR
                                     , RealType dt)
 {
-  Ready4Measure=false;
   activePtcl=-1;
   if (UseBoundBox)
   {
@@ -669,7 +665,6 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
                                     , const ParticlePos_t& drift , const ParticlePos_t& deltaR
                                     , const std::vector<RealType>& dt)
 {
-  Ready4Measure=false;
   activePtcl=-1;
   if (UseBoundBox)
   {
@@ -765,7 +760,6 @@ void ParticleSet::donePbyP(bool skipSK)
     DistTables[i]->donePbyP();
   if (!skipSK && SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);
-  Ready4Measure=true;
   activePtcl=-1;
   myTimers[2]->stop();
 }
@@ -799,7 +793,6 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
       SK->UpdateAllPart(*this);
   }
 
-  Ready4Measure=false;
   activePtcl=-1;
 }
 
