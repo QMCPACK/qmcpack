@@ -385,49 +385,7 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
   //W.EnsembleProperty.Energy=(esum/=wsum);
   //W.EnsembleProperty.Variance=(e2sum/wsum-esum*esum);
   //W.EnsembleProperty.Variance=(e2sum*wsum-esum*esum)/(wsum*wsum-w2sum);
-  if (!WriteRN)
-  {
-#if 0
-    /// Ye: Since I have no idea about release node code, the old code is only commented out.
-    int sizeofgood = good_w.size();
-    //check if the projected number of walkers is too small or too large
-    if(NumWalkers>Nmax)
-    {
-      int nsub=0;
-      int nsub_target=(NumWalkers-nrn)-static_cast<int>(0.9*Nmax);
-      int i=0;
-      while(i< sizeofgood && nsub<nsub_target)
-      {
-        if(ncopy_w[i])
-        {
-          ncopy_w[i]--;
-          nsub++;
-        }
-        ++i;
-      }
-      NumWalkers -= nsub;
-    }
-    else if(NumWalkers < Nmin)
-    {
-      int nadd=0;
-      int nadd_target = static_cast<int>(Nmin*1.1)-(NumWalkers-nrn);
-      if(nadd_target> sizeofgood)
-      {
-        app_warning() << "The number of walkers is running low. Requested walkers "
-                      << nadd_target << " good walkers = " << sizeofgood << std::endl;
-      }
-      int i=0;
-      while(i< sizeofgood && nadd<nadd_target)
-      {
-        ncopy_w[i]++;
-        ++nadd;
-        ++i;
-      }
-      NumWalkers +=  nadd;
-    }
-#endif
-  }
-  else
+  if (WriteRN)
   {
     it=good_rn.begin();
     it_end=good_rn.end();
