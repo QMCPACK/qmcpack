@@ -77,13 +77,6 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
 
   Return_t evaluateWithToperator(ParticleSet& P);
 
-  /** compute the T move transition probability for a given electron
-   * @param P particle set
-   * @param ref_elec reference electron id
-   * @param Txy a vector of transition probability
-   */
-  void computeOneElectronTxy(ParticleSet& P, const int ref_elec, std::vector<NonLocalData>& Txy);
-
   /** set non local moves options
    * @param cur the xml input
    */
@@ -128,7 +121,18 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
                            hid_t gid) const;
 
   private:
-  void evaluate(ParticleSet& P, bool Tmove, std::vector<NonLocalData>& Txy);
+  /** the actual implementation of evaluate
+   * @param P particle set
+   * @param Tmove whether Txy for Tmove is updated
+   */
+  void evaluate(ParticleSet& P, bool Tmove);
+
+  /** compute the T move transition probability for a given electron
+   * @param P particle set
+   * @param ref_elec reference electron id
+   */
+  void computeOneElectronTxy(ParticleSet& P, const int ref_elec);
+
 };
 }
 #endif

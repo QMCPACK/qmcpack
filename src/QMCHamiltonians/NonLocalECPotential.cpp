@@ -108,7 +108,7 @@ void NonLocalECPotential::delete_particle_quantities()
 NonLocalECPotential::Return_t
 NonLocalECPotential::evaluate(ParticleSet& P)
 {
-  evaluate(P, false, nonLocalOps.Txy);
+  evaluate(P, false);
   return Value;
 }
 
@@ -118,16 +118,17 @@ NonLocalECPotential::evaluateWithToperator(ParticleSet& P)
   if( UseTMove==TMOVE_V0 || UseTMove==TMOVE_V3 )
   {
     nonLocalOps.reset();
-    evaluate(P, true, nonLocalOps.Txy);
+    evaluate(P, true);
   }
   else
-    evaluate(P, false, nonLocalOps.Txy);
+    evaluate(P, false);
   return Value;
 }
 
 void
-NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove, std::vector<NonLocalData>& Txy)
+NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
 {
+  std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
   Value=0.0;
 #if !defined(REMOVE_TRACEMANAGER)
   if( streaming_particles)
@@ -208,8 +209,9 @@ NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove, std::vector<NonLocalDa
 }
 
 void
-NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_elec, std::vector<NonLocalData>& Txy)
+NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_elec)
 {
+  std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
   const DistanceTableData* myTable = P.DistTables[myTableIndex];
   if(myTable->DTType == DT_SOA)
   {
@@ -273,7 +275,7 @@ NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
       for (int iat=P.first(ig); iat<P.last(ig); ++iat)
       {
         nonLocalOps.reset();
-        computeOneElectronTxy(P,iat,nonLocalOps.Txy);
+        computeOneElectronTxy(P,iat);
         int ibar = nonLocalOps.selectMove(RandomGen());
         if(ibar)
         {
