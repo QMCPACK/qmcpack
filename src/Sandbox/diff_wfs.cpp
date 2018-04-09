@@ -90,6 +90,8 @@ int main(int argc, char** argv)
 
   {
     ParticleSet ions, els;
+    ions.setName("ion");
+    els.setName("e");
     OHMMS_PRECISION scale=1.0;
 
     int np=omp_get_num_threads();
@@ -176,8 +178,6 @@ int main(int argc, char** argv)
       double g_eval=0.0;
       double r_ratio=0.0;
       double g_ratio=0.0;
-
-      els.Ready4Measure=false;
 
       int naccepted=0;
       for(int iel=0; iel<nels; ++iel)
