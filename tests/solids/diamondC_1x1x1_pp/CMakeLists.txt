@@ -103,7 +103,7 @@ ENDIF()
                     1 DIAMOND_DMC_SCALARS # DMC
                     )
 
-  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-dmc-allp_sdj
+  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
                     qmc_short_vmc_dmc_allp
                     qmc_short_vmc_dmc_allp.in.xml
