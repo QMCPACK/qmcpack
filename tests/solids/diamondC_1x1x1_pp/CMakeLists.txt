@@ -109,8 +109,9 @@ ENDIF()
                     qmc_short_vmc_dmc_allp.in.xml
                     1 16
                     TRUE
-                    0 DIAMOND_SCALARS # VMC
-                    1 DIAMOND_DMC_SCALARS # DMC
+                    0 DIAMOND_SCALARS # VMC without drift
+                    1 DIAMOND_SCALARS # VMC with drift
+                    2 DIAMOND_DMC_SCALARS # DMC
                     )
 
 # Coverage test - shorter version of dmc test
