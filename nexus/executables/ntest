@@ -45,7 +45,7 @@ generic_settings.raise_error = True
 #   simulation analyzers
 
 
-
+# determine if two values differ
 def value_diff(v1,v2,tol=1e-6):
     diff = False
     if not isinstance(v1,type(v2)):
@@ -79,6 +79,7 @@ def value_diff(v1,v2,tol=1e-6):
 #end def value_diff
 
 
+# determine if two objects differ
 def object_diff(o1,o2,tol=1e-6,full=False):
     diff1 = dict()
     diff2 = dict()
@@ -112,6 +113,7 @@ def object_diff(o1,o2,tol=1e-6,full=False):
 #end def object_diff
 
 
+# print the difference between two objects
 def print_diff(o1,o2): # used in debugging, not actual tests
     from nexus import obj
     print 20*'='
@@ -129,6 +131,7 @@ def print_diff(o1,o2): # used in debugging, not actual tests
 
 
 
+# additional convenience functions to use value_diff and object_diff
 value_neq = value_diff
 def value_eq(*args,**kwargs):
     return not value_neq(*args,**kwargs)
@@ -141,14 +144,17 @@ def object_eq(*args,**kwargs):
 
 
 
+# exception indicating test failure
 class NexusTestFail(Exception):
     None
 #end class NexusTestFail
 
+# exception indicating that developer constructed test incorrectly
 class NexusTestMisconstructed(Exception):
     None
 #end class NexusTestMisconstructed
 
+# exception used during detailed developer checks of the testing system
 class NexusTestTripped(Exception):
     None
 #end class NexusTestTripped
@@ -167,7 +173,10 @@ class NexusTestBase(object):
     current_assert =  0   # current assert count
 
     assert_trip    = -1   # developer tool to trip assert's one by one
+                          # if set to n, an exception will be raised for the
+                          # n-th assert call
 
+    # keep a running count of assert calls
     @staticmethod
     def assert_called():
         NexusTestBase.current_assert+=1
@@ -177,6 +186,7 @@ class NexusTestBase(object):
         #end if
     #end def assert_called
 
+    # provide a directory path to place test ouput data in
     @staticmethod
     def test_path():
         test   = NexusTestBase.current_test
@@ -200,7 +210,7 @@ class NexusTestBase(object):
 
 
 
-
+# class used to divert log output when desired
 class FakeLog:
     def __init__(self):
         self.reset()
@@ -220,9 +230,13 @@ class FakeLog:
 #end class FakeLog
 
 
+# dict to temporarily store logger when log output is diverted
 logging_storage = dict()
 
 
+# developer function interface for test creation below
+
+# label a section of tests
 def nlabel(label):
     os.chdir(NexusTestBase.launch_path)
     NexusTestBase.current_label = label
@@ -230,6 +244,7 @@ def nlabel(label):
 #end def nlabel
 
 
+# divert nexus log output
 def nlog_divert():
     logging_storage['devlog'] = generic_settings.devlog
     logging_storage['objlog'] = object_interface._logfile 
@@ -239,12 +254,14 @@ def nlog_divert():
 #end def nlog_divert
 
 
+# restore nexus log output
 def nlog_restore():
     generic_settings.devlog   = logging_storage['devlog']
     object_interface._logfile = logging_storage['devlog']
 #end def nlog_restore
 
 
+# enter the current testing directory
 def nenter(path=''):
     testpath = NexusTestBase.test_path()
     if not os.path.exists(testpath):
@@ -255,12 +272,14 @@ def nenter(path=''):
 #end def nenter
 
 
+# leave the current testing directory
 def nleave():
     os.chdir(NexusTestBase.launch_path)
     NexusTestBase.entered = False
 #end def nleave
 
 
+# create multiple directories in the local test directory
 def ncreate_dirs(*dirs):
     if not NexusTestBase.entered:
         raise NexusTestMisconstructed
@@ -273,6 +292,7 @@ def ncreate_dirs(*dirs):
 #end def ncreate_dirs
 
 
+# create a single directory, optionally filled with files
 def ncreate_dir(dir,files):
     ncreate_dirs(dir)
     filepaths = [os.path.join(dir,file) for file in files]
@@ -280,6 +300,7 @@ def ncreate_dir(dir,files):
 #end def ncreate_dir
 
 
+# create a set of empty files in the local test directory
 def ncreate_files(*files):
     if not NexusTestBase.entered:
         raise NexusTestMisconstructed
@@ -292,16 +313,19 @@ def ncreate_files(*files):
 #end def ncreate_files
 
 
+# declare that a test has passed
 def npass():
     None
 #end def npass
 
 
+# declare that a test has failed
 def nfail(exception=NexusTestFail('Nexus test failed.')):
     raise exception
 #end def nfail
 
 
+# check an assertion
 def nassert(result):
     if not isinstance(result,bool):
         raise NexusTestMisconstructed
@@ -316,6 +340,10 @@ def nassert(result):
 
 
 
+# class to represent a test
+#   a test is created by writing a single function 
+#   each test function contains subtests labeled with nlabel
+#   each subtest has a collection of assert statements, etc
 class NexusTest(NexusTestBase):
 
     status_options = dict(
@@ -333,6 +361,8 @@ class NexusTest(NexusTestBase):
     test_dict = {}
 
 
+    # capture launch path and clear out any old test data
+    #   to be called once at user launch
     @staticmethod
     def setup():
         NexusTestBase.launch_path = os.getcwd()
@@ -343,6 +373,7 @@ class NexusTest(NexusTestBase):
     #end def setup
 
 
+    # register the current test object in the global test list
     def __init__(self,name,operation):
         if not isinstance(name,str):
             raise NexusTestMisconstructed
@@ -372,6 +403,7 @@ class NexusTest(NexusTestBase):
     #end def failed
 
 
+    # run the current test
     def run(self):
         nleave()
         NexusTestBase.current_test  = self.name
@@ -389,6 +421,7 @@ class NexusTest(NexusTestBase):
     #end def run
 
 
+    # generate a message describing the outcome of the test
     def message(self):
         s = ''
         s+='test name    : {0}\n'.format(self.name)
@@ -437,6 +470,7 @@ def generic_logging():
     generic_settings.devlog = logfile
 
     # test log
+    nlabel('log')
     #   simple message
     s = 'simple message'
     logfile.reset()
@@ -477,6 +511,7 @@ def generic_logging():
     
 
     # test warn
+    nlabel('warn')
     logfile.reset()
     s = 'this is a warning'
     warn(s)
@@ -495,6 +530,7 @@ def generic_logging():
     nassert(logfile.s==so)
 
     # test error
+    nlabel('error')
     #   in testing environment, should raise an error
     try:
         error('testing environment')
@@ -533,6 +569,7 @@ def generic_intrinsics():
     from generic import object_interface
     from numpy import array,bool_
 
+    nlabel('object_set_get')
     # make a simple object
     o = obj()
     o.a = 1
@@ -580,6 +617,7 @@ def generic_intrinsics():
         npass()
     #end try
 
+    nlabel('iterability')
     # test list-like iterability
     l = list()
     for v in o:
@@ -602,6 +640,7 @@ def generic_intrinsics():
     nassert(sorted(o.items())==sorted(d.items()))
 
     # test repr
+    nlabel('repr')
     ro = '''
   b                     str                 
   c                     tuple               
@@ -611,7 +650,7 @@ def generic_intrinsics():
     o2 = obj(
         a = obj(a1=1,a2=2,a3=3),
         b = obj(b1='b1',b2='b2'),
-        c = obj(c1=4.5,c2=('a',3,3.14)),
+        c = obj(c1=5,c2=('a',3,4)),
         d = array([3,4,5],dtype=int),
         )
     ro2 = '''
@@ -623,6 +662,7 @@ def generic_intrinsics():
     nassert(repr(o2)==ro2[1:])
 
     # test str
+    nlabel('str')
     so = '''
   b               = b
   c               = (1, 1, 1)
@@ -641,14 +681,15 @@ def generic_intrinsics():
     b2              = b2
   end b
   c
-    c1              = 4.5
-    c2              = ('a', 3, 3.14)
+    c1              = 5
+    c2              = ('a', 3, 4)
   end c
 '''
     nassert(str(o2)==so2[1:])
     o3 = o2
 
     # test tree
+    nlabel('tree')
     #   not committed to output, only check execution
     nassert(isinstance(o2.tree(),str))
     nassert(isinstance(o2.tree(depth=1),str))
@@ -657,6 +698,7 @@ def generic_intrinsics():
     nassert(isinstance(o2.tree(nindent=2),str))
 
     # test deepcopy
+    nlabel('deepcopy')
     o2 = o.copy()
     nassert(id(o)!=id(o2))
     nassert(object_eq(o,o2))
@@ -664,6 +706,7 @@ def generic_intrinsics():
     nassert(object_neq(o,o2))
     
     # test eq
+    nlabel('equality')
     nassert(o==o2)
     o4 = o3.copy()
     v = o3==o4
@@ -672,6 +715,7 @@ def generic_intrinsics():
     nassert(object_eq(o3,o4))
 
     # test clear
+    nlabel('clear')
     o2.clear()
     nassert(len(o2)==0)
     nassert('a' not in o2)
@@ -685,6 +729,7 @@ def generic_intrinsics():
     nassert(object_eq(o,o2))
 
     # test class-level set/get methods
+    nlabel('class_set_get')
     class objint(object_interface):
         a = 1
         b = 'b'
@@ -732,6 +777,7 @@ def generic_intrinsics():
     
 
     # test logging functions
+    nlabel('logging')
 
     # test open log, write, close log
     o = obj()
@@ -876,6 +922,7 @@ def generic_extensions():
     nassert(len(o)==4)
 
     # test list interface
+    nlabel('list_interface')
     vals = [3,'t',6.4,(4,3,2)]
     l = list()
     lo = obj()
@@ -890,7 +937,7 @@ def generic_extensions():
 
 
     # test representations
-
+    nlabel('representations')
     # test list representation
     l2 = lo.list()
     nassert(isinstance(l2,list))
@@ -930,7 +977,7 @@ def generic_extensions():
 
     
     # test list extensions
-    
+    nlabel('list_extensions')
     # test first
     nassert(lo.first()==lo[0])
 
@@ -943,7 +990,7 @@ def generic_extensions():
 
 
     # test dict extensions
-    
+    nlabel('dict_extensions')
     # test random_key
     k = o.random_key()
     nassert(k in o)
@@ -1070,6 +1117,7 @@ def generic_extensions():
 
 
     # test transfer/copy/move functions
+    nlabel('transfer_copy_move')
     dref = dict(
         a = 1,
         b = 'b',
@@ -1256,6 +1304,7 @@ def generic_extensions():
 
     
     # test shallow_copy
+    nlabel('shallow_copy')
     class DerivedObj(obj):
         None
     #end class DerivedObj
@@ -1271,6 +1320,7 @@ def generic_extensions():
     nassert(id(do2.c)==id(do.c))
 
     # test inverse
+    nlabel('inverse')
     oi = do.inverse()
     nassert(sorted(oi.keys())==sorted(do.values()))
     nassert(sorted(oi.values())==sorted(do.keys()))
@@ -1279,6 +1329,8 @@ def generic_extensions():
     nassert(oi[1,1,1]=='c')
     nassert(oi[5,6,7]==(3,4,5))
 
+    # test path operations
+    nlabel('path_operations')
     # test path exists
     o2 = obj()
     o2.this = obj()
@@ -1306,6 +1358,7 @@ def generic_extensions():
     nassert(o2.get_path(path2)=='here')
 
     # test serial
+    nlabel('serialization')
     o = obj(
         a = obj(
             a0 = 0,
@@ -1413,18 +1466,27 @@ def generic_extensions():
 
 
 
+def nexus_imports():
+    import nexus
+
+    import qmcpack_workflows
+#end def nexus_imports
+
+
+
+
 def settings_operation():
     # divert logging function
     nlog_divert()
 
     nlabel('imports')
-    from nexus import settings,obj
+    from nexus import settings,Settings,obj
     from nexus_base import nexus_core,nexus_core_defaults
     from nexus_base import nexus_noncore,nexus_noncore_defaults
     from nexus_base import nexus_core_noncore,nexus_core_noncore_defaults
     from pseudopotential import Pseudopotentials
     from basisset import BasisSets
-    from machines import Job
+    from machines import Job,Workstation
     from project_manager import ProjectManager
     from gamess import Gamess
     from pwscf import Pwscf
@@ -1439,6 +1501,79 @@ def settings_operation():
         nassert(Gamess.mcppath is None)
         nassert(Pwscf.vdw_table is None)
     #end def aux_defaults
+
+    def check_settings_core_noncore():
+        nckeys_check = set([
+                'debug', 'dependent_modes', 'emulate', 'file_locations', 
+                'generate_only', 'indent', 'load_images', 'local_directory', 
+                'mode', 'modes', 'monitor', 'primary_modes', 'progress_tty', 
+                'pseudo_dir', 'pseudopotentials', 'remote_directory', 'results', 
+                'runs', 'skip_submit', 'sleep', 'stages', 'stages_set', 'status', 
+                'status_modes', 'status_only', 'trace', 'verbose'
+                ])
+        nnckeys_check = set([
+                'basis_dir', 'basissets', 'pseudo_dir', 'pseudopotentials'
+                ])
+        setkeys_check = set([
+                'basis_dir', 'basissets', 'debug', 'dependent_modes', 'emulate', 
+                'file_locations', 'generate_only', 'indent', 'load_images', 
+                'local_directory', 'mode', 'modes', 'monitor', 'primary_modes', 
+                'progress_tty', 'pseudo_dir', 'pseudopotentials', 
+                'remote_directory', 'results', 'runs', 'skip_submit', 'sleep', 
+                'stages', 'stages_set', 'status', 'status_modes', 'status_only', 
+                'trace', 'verbose'
+                ])
+        setkeys_allowed = setkeys_check | Settings.allowed_vars
+
+        nckeys  = set(nexus_core.keys())
+        nnckeys = set(nexus_noncore.keys())
+        setkeys = set(settings.keys())
+        
+        nassert(nckeys==nckeys_check)
+        nassert(nnckeys==nnckeys_check)
+        nassert(setkeys>=setkeys_check)
+        nassert(setkeys<=setkeys_allowed)
+
+        pairs = [(settings,nexus_core),
+                 (settings,nexus_noncore),
+                 (nexus_core,nexus_noncore)
+                 ]
+        for o1,o2 in pairs:
+            shared_keys = set(o1.keys()) & set(o2.keys())
+            for k in shared_keys:
+                v1 = o1[k]
+                v2 = o2[k]
+                if isinstance(v1,obj):
+                    nassert(object_eq(v1,v2))
+                else:
+                    nassert(value_eq(v1,v2))
+                #end if
+            #end for
+        #end for
+    #end check_settings_core_noncore
+
+    def check_empty_settings():
+        settings()
+        check_settings_core_noncore()
+        # nexus core sets basic run stages and Pseudopotentials object
+        nassert(nexus_core.stages_set==set(nexus_core_defaults.primary_modes))
+        nassert(isinstance(nexus_core.pseudopotentials,Pseudopotentials))
+        nassert(len(nexus_core.pseudopotentials)==0)
+        nexus_core.stages_set       = set()
+        nexus_core.pseudopotentials = None
+        nassert(object_eq(nexus_core,nexus_core_defaults))
+        # nexus noncore sets Pseudopotentials and BasisSets objects
+        nassert(isinstance(nexus_noncore.pseudopotentials,Pseudopotentials))
+        nassert(len(nexus_noncore.pseudopotentials)==0)
+        nassert(isinstance(nexus_noncore.basissets,BasisSets))
+        nassert(len(nexus_noncore.basissets)==0)
+        nnc_defaults = obj(nexus_noncore_defaults,nexus_core_noncore_defaults)
+        nexus_noncore.pseudopotentials = None
+        nexus_noncore.basissets        = None
+        nassert(object_eq(nexus_noncore,nnc_defaults))
+        # other settings objects should be at default also
+        aux_defaults()
+    #end def_check_empty_settings
     
     
     # check that core settings are at default values
@@ -1450,26 +1585,9 @@ def settings_operation():
 
     # core settings remain almost at default with empty settings
     nlabel('empty_settings')
-    settings()
-    #   nexus core sets basic run stages and Pseudopotentials object
-    nassert(nexus_core.stages_set==set(nexus_core_defaults.primary_modes))
-    nassert(isinstance(nexus_core.pseudopotentials,Pseudopotentials))
-    nassert(len(nexus_core.pseudopotentials)==0)
-    nexus_core.stages_set       = set()
-    nexus_core.pseudopotentials = None
-    nassert(object_eq(nexus_core,nexus_core_defaults))
-    #   nexus noncore sets Pseudopotentials and BasisSets objects
-    nassert(isinstance(nexus_noncore.pseudopotentials,Pseudopotentials))
-    nassert(len(nexus_noncore.pseudopotentials)==0)
-    nassert(isinstance(nexus_noncore.basissets,BasisSets))
-    nassert(len(nexus_noncore.basissets)==0)
-    nnc_defaults = obj(nexus_noncore_defaults,nexus_core_noncore_defaults)
-    nexus_noncore.pseudopotentials = None
-    nexus_noncore.basissets        = None
-    nassert(object_eq(nexus_noncore,nnc_defaults))
-    #   other settings objects should be at default also
-    aux_defaults()
+    check_empty_settings()
 
+    # check that a few basic user settings are applied appropriately
     nlabel('basic_settings')
     nenter()
     dft_pseudos = ['Ni.opt.upf','O.opt.upf']
@@ -1482,8 +1600,20 @@ def settings_operation():
         generate_only = 1,
         machine       = 'ws16',
         )
-    print nexus_noncore.pseudopotentials
-    exit()
+    check_settings_core_noncore()
+    nassert(nexus_core.status_only==0)
+    nassert(nexus_core.generate_only==1)
+    nassert(nexus_core.pseudo_dir=='./pseudopotentials')
+    nassert(len(nexus_core.pseudopotentials)==4)
+    nassert(set(nexus_core.pseudopotentials.keys())==set(pseudos))
+    nassert(settings.machine=='ws16')
+    nassert(Job.machine=='ws16')
+    nassert(isinstance(ProjectManager.machine,Workstation))
+    nassert(ProjectManager.machine.name=='ws16')
+
+    # check that a new empty settings works following basic
+    nlabel('repeat_empty_settings')
+    check_empty_settings()
 
     # restore logging function
     nlog_restore()
@@ -1492,14 +1622,7 @@ def settings_operation():
 
 
 
-def nexus_imports():
-    import nexus
-
-    import qmcpack_workflows
-#end def nexus_imports
-
-
-
+# create labeled tests from simple functions above
 
 NexusTest(
     name      = 'generic_logging',
@@ -1514,21 +1637,25 @@ NexusTest(
     operation =  generic_extensions,
     )
 NexusTest(
+    name      = 'nexus_imports',
+    operation =  nexus_imports,
+    )
+NexusTest(
     name      = 'settings',
     operation =  settings_operation,
     )
-#NexusTest(
-#    name      = 'nexus_imports',
-#    operation =  nexus_imports,
-#    )
 
 
 
+# launch the actual testing framework
 
+# clear out old test data
 NexusTest.setup()
 
+# get the list of tests
 tests = NexusTest.test_list
 
+# run each test and print the test outcome
 print
 for test in tests:
     print test.name
