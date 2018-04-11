@@ -239,29 +239,18 @@ URL = { http://dx.doi.org/10.1063/1.3665391 },
 eprint = { http://dx.doi.org/10.1063/1.3665391 }
 }
 
-% (dev) esler qmcpack gpu
-@article{esler2011,
-  title={Fully accelerating quantum Monte Carlo simulations of real materials on GPU clusters},
-  author={Esler, Kenneth P and Kim, Jeongnim and Schulenburger, L and Ceperley, DM},
-  journal={Computing in Science and Eng},
-  volume={13},
-  number={5},
-  year={2011}
-}
-
-% (dev) esler qmcpack gpu
-@ARTICLE{esler2012, 
-author={K. Esler and J. Kim and D. Ceperley and L. Shulenburger}, 
-journal={Computing in Science Engineering}, 
-title={Accelerating Quantum Monte Carlo Simulations of Real Materials on GPU Clusters}, 
-year={2012}, 
-volume={14}, 
-number={1}, 
-pages={40-51}, 
-keywords={Monte Carlo methods;graphics processing units;multiprocessing systems;parallel processing;quantum computing;GPU cluster;QMC algorithm;continuum quantum Monte Carlo simulation;many core paradigm;Computational modeling;Graphics processing unit;Mathematical model;Monte Carlo methods;Quantum methods;Wave functions;Component;Monte Carlo;graphics processors;physics;scientific computing}, 
-doi={10.1109/MCSE.2010.122}, 
-ISSN={1521-9615}, 
-month={Jan},
+@Article{Esler2012,
+  author        = {Kenneth Esler and Jeongnim Kim and David Ceperley and Luke Shulenburger},
+  title         = {Accelerating Quantum Monte Carlo Simulations of Real Materials on {GPU} Clusters},
+  journal       = {Computing in Science {\&} Engineering},
+  year          = {2012},
+  volume        = {14},
+  number        = {1},
+  pages         = {40--51},
+  month         = {jan},
+  __markedentry = {[pk7:6]},
+  doi           = {10.1109/mcse.2010.122},
+  publisher     = {Institute of Electrical and Electronics Engineers ({IEEE})},
 }
 
 % (hpc) baue cray user group
@@ -1062,24 +1051,6 @@ url="http://dx.doi.org/10.1007/978-3-319-46079-6_38"
   year={2016},
 }
 
-% (dev) mathuriya parallel bspline evaluation (arxiv)
-@article{mathuriya2016,
-  author    = {Amrita Mathuriya and
-               Ye Luo and
-               Anouar Benali and
-               Luke Shulenburger and
-               Jeongnim Kim},
-  title     = {Optimization and parallelization of B-spline based orbital evaluations
-               in {QMC} on multi/many-core shared memory processors},
-  journal   = {CoRR},
-  volume    = {abs/1611.02665},
-  year      = {2016},
-  url       = {http://arxiv.org/abs/1611.02665},
-  timestamp = {Thu, 01 Dec 2016 19:32:08 +0100},
-  biburl    = {http://dblp.uni-trier.de/rec/bib/journals/corr/MathuriyaLBSK16},
-  bibsource = {dblp computer science bibliography, http://dblp.org}
-}
-
 % (compsci) mcdaniel delayed update gpu
 @inproceedings{mcdaniel2016,
  author = {McDaniel, Tyler and D'Azevedo, Ed and Li, Ying Wai and Kent, Paul and Wong, Ming and Wong, Kwai},
@@ -1182,6 +1153,29 @@ URL = { http://dx.doi.org/10.1021/acs.jctc.6b00508 },
 eprint = { http://dx.doi.org/10.1021/acs.jctc.6b00508 }
 }
 
+@Article{Goetz2017,
+  author    = {Brett Van Der Goetz and Eric Neuscamman},
+  title     = {Suppressing Ionic Terms with Number-Counting Jastrow Factors in Real Space},
+  journal   = {Journal of Chemical Theory and Computation},
+  year      = {2017},
+  volume    = {13},
+  number    = {5},
+  pages     = {2035--2042},
+  month     = {apr},
+  doi       = {10.1021/acs.jctc.7b00158},
+  publisher = {American Chemical Society ({ACS})},
+}
+
+@InProceedings{Mathuriya2017a,
+  author    = {Amrita Mathuriya and Ye Luo and Anouar Benali and Luke Shulenburger and Jeongnim Kim},
+  title     = {Optimization and Parallelization of B-Spline Based Orbital Evaluations in {QMC} on Multi/Many-Core Shared Memory Processors},
+  booktitle = {2017 {IEEE} International Parallel and Distributed Processing Symposium ({IPDPS})},
+  year      = {2017},
+  month     = {may},
+  publisher = {{IEEE}},
+  doi       = {10.1109/ipdps.2017.33},
+}
+
 @Article{Krogel2017,
   author    = {Jaron T. Krogel and P. R. C. Kent},
   title     = {Magnitude of pseudopotential localization errors in fixed node diffusion quantum Monte Carlo},
@@ -1208,6 +1202,19 @@ eprint = { http://dx.doi.org/10.1021/acs.jctc.6b00508 }
   publisher = {American Chemical Society ({ACS})},
 }
 
+@Article{Dzubak2017,
+  author    = {Allison L. Dzubak and Jaron T. Krogel and Fernando A. Reboredo},
+  title     = {Quantitative estimation of localization errors of 3d transition metal pseudopotentials in diffusion Monte Carlo},
+  journal   = {The Journal of Chemical Physics},
+  year      = {2017},
+  volume    = {147},
+  number    = {2},
+  pages     = {024102},
+  month     = {jul},
+  doi       = {10.1063/1.4991414},
+  publisher = {{AIP} Publishing},
+}
+
 @Article{Santana2017a,
   author    = {Juan A. Santana and Jaron T. Krogel and Paul R. C. Kent and Fernando A. Reboredo},
   title     = {Diffusion quantum Monte Carlo calculations of {SrFeO}3 and {LaFeO}3},
@@ -1218,6 +1225,19 @@ eprint = { http://dx.doi.org/10.1021/acs.jctc.6b00508 }
   pages     = {034701},
   month     = {jul},
   doi       = {10.1063/1.4994083},
+  publisher = {{AIP} Publishing},
+}
+
+@Article{Gasperich2017,
+  author    = {Kevin Gasperich and Michael Deible and Kenneth D. Jordan},
+  title     = {H4: A model system for assessing the performance of diffusion Monte Carlo calculations using a single Slater determinant trial function},
+  journal   = {The Journal of Chemical Physics},
+  year      = {2017},
+  volume    = {147},
+  number    = {7},
+  pages     = {074106},
+  month     = {aug},
+  doi       = {10.1063/1.4986216},
   publisher = {{AIP} Publishing},
 }
 
@@ -1245,6 +1265,19 @@ eprint = { http://dx.doi.org/10.1021/acs.jctc.6b00508 }
   month     = {oct},
   doi       = {10.1021/acs.jctc.7b00747},
   publisher = {American Chemical Society ({ACS})},
+}
+
+@Article{Dzubak2017a,
+  author    = {Allison L. Dzubak and Chandrima Mitra and Michael Chance and Stephen Kuhn and Gerald E. Jellison and Athena S. Sefat and Jaron T. Krogel and Fernando A. Reboredo},
+  title     = {{MnNiO}3 revisited with modern theoretical and experimental methods},
+  journal   = {The Journal of Chemical Physics},
+  year      = {2017},
+  volume    = {147},
+  number    = {17},
+  pages     = {174703},
+  month     = {nov},
+  doi       = {10.1063/1.5000847},
+  publisher = {{AIP} Publishing},
 }
 
 @Article{Kylaenpaeae2017,
@@ -1319,6 +1352,39 @@ eprint = { http://dx.doi.org/10.1021/acs.jctc.6b00508 }
   author    = {Benali, Anouar and Ceperley, David and M. D’Azevedo, Ed and Dewing, Mark and Kent, Paul R. C. and Kim, Jeongnim and Krogel, Jaron T. and Li, Ying Wai and Luo, Ye and McDaniel, Tyler and Morales, Miguel A. and Mathuriya, Amrita and Shulenburger, Luke and Tubman, Norm M.},
   editor    = {T. P. Straatsma, K. B. Antypas, T. J. Williams},
   isbn      = {1-138-19754-8},
+}
+
+@Article{Liu2017,
+  author    = {Qing Liu and Norbert Podhorszki and Jong Choi and Jeremy Logan and Matt Wolf and Scott Klasky and Tahsin Kurc and Xubin He},
+  title     = {{StoreRush}: An Application-Level Approach to Harvesting Idle Storage in a Best Effort Environment},
+  journal   = {Procedia Computer Science},
+  year      = {2017},
+  volume    = {108},
+  pages     = {475--484},
+  doi       = {10.1016/j.procs.2017.05.005},
+  publisher = {Elsevier {BV}},
+}
+
+@InProceedings{Mathuriya2017,
+  author    = {Amrita Mathuriya and Ye Luo and Raymond C. Clay and Anouar Benali and Luke Shulenburger and Jeongnim Kim},
+  title     = {Embracing a new era of highly efficient and productive quantum Monte Carlo simulations},
+  booktitle = {Proceedings of the International Conference for High Performance Computing, Networking, Storage and Analysis on - {SC} {\textquotesingle}17},
+  year      = {2017},
+  publisher = {{ACM} Press},
+  doi       = {10.1145/3126908.3126952},
+}
+
+@Article{Krogel2018,
+  author    = {Jaron T. Krogel and Fernando A. Reboredo},
+  title     = {Kinetic energy classification and smoothing for compact B-spline basis sets in quantum Monte Carlo},
+  journal   = {The Journal of Chemical Physics},
+  year      = {2018},
+  volume    = {148},
+  number    = {4},
+  pages     = {044110},
+  month     = {jan},
+  doi       = {10.1063/1.4994817},
+  publisher = {{AIP} Publishing},
 }
 
 @Article{Kim2018,
