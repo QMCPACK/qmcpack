@@ -4,6 +4,7 @@ import os
 import sys
 import shutil
 import traceback
+from optparse import OptionParser
 from numpy import ndarray,array,abs
 
 from generic import generic_settings,object_interface,NexusError
@@ -424,12 +425,11 @@ class NexusTest(NexusTestBase):
     # generate a message describing the outcome of the test
     def message(self):
         s = ''
-        s+='test name    : {0}\n'.format(self.name)
+        s+='Test name     : {0}\n'.format(self.name)
         status = NexusTest.status_map[self.status]
-        s+='test status  : {0}\n'.format(status)
         if self.failed and self.exception is not None:# and not isinstance(self.exception,NexusTestFail):
             if len(NexusTestBase.current_label)>0:
-                s+='test sublabel: {0}\n'.format(NexusTestBase.current_label)
+                s+='Test sublabel : {0}\n'.format(NexusTestBase.current_label)
             #end if
             e = self.exception
             btrace = traceback.format_tb(self.traceback)
@@ -437,11 +437,11 @@ class NexusTest(NexusTestBase):
                 btrace = btrace[:-1]
             elif isinstance(e,NexusTestMisconstructed):
                 btrace = btrace[:-1]
-                s+='exception    : Nexus test is misconstructed.  Please contact developers.\n'
+                s+='Test exception: Nexus test is misconstructed.  Please contact developers.\n'
             else:
-                s+='exception    : "{0}"\n'.format(e.__class__.__name__+': '+str(e).replace('\n','\n              '))
+                s+='Test exception: "{0}"\n'.format(e.__class__.__name__+': '+str(e).replace('\n','\n              '))
             #end if
-            s+='backtrace    :\n'
+            s+='Test backtrace:\n'
             for s2 in btrace: 
                 s+=s2
             #end for
@@ -1649,16 +1649,151 @@ NexusTest(
 
 # launch the actual testing framework
 
-# clear out old test data
-NexusTest.setup()
+# Returns failure error code to OS.
+# Explicitly prints 'fail' after an optional message.
+def exit_fail(msg=None):
+    if msg!=None:
+        print(msg)
+    #end if
+    print('Test status: fail')
+    exit(1)
+#end def exit_fail
 
-# get the list of tests
-tests = NexusTest.test_list
+# Returns success error code to OS.
+# Explicitly prints 'pass' after an optional message.
+def exit_pass(msg=None):
+    if msg!=None:
+        print(msg)
+    #end if
+    print('Test status: pass')
+    exit(0)
+#end def exit_pass
 
-# run each test and print the test outcome
-print
-for test in tests:
-    print test.name
-    test.run()
-    print test.message()
-#end for
+
+if __name__=='__main__':
+    import re
+    from time import clock
+
+    tstart_all = clock()
+
+
+    # read command line input
+    regex = None
+    ctest = False
+
+    parser = OptionParser(
+        usage='usage: %prog [options]',
+        add_help_option=False,
+        version='%prog 0.1'
+        )
+
+    parser.add_option('-h','--help',dest='help',
+                      action='store_true',default=False,
+                      help='Print help information and exit (default=%default).'
+                      )
+    parser.add_option('-R','--regex',dest='regex',
+                      default='none',
+                      help='Tests with names matching the regular expression (regex) will be run.  The default behavior is to run all tests (default=%default).'
+                      )
+    parser.add_option('--ctest',dest='ctest',
+                      action='store_true',default=False,
+                      help='Compatibility mode for calls from the CTest framework (default=%default).'
+                      )
+    parser.add_option('--trip',dest='trip',
+                      default='none',
+                      help='Cause the "trip"-th assertion statement to fail.  Useful when to ensure that the CMake script is working properly when interfacing with CTest (default=%default).'
+                      )
+
+    options,files_in = parser.parse_args()
+
+    if options.help:
+        print('\n'+parser.format_help().strip())
+        exit()
+    #end if
+
+    if options.regex!='none':
+        regex = options.regex
+    #end if
+    ctest = options.ctest
+    if options.trip!='none':
+        try:
+            NexusTestBase.assert_trip = int(options.trip)
+        except:
+            msg='command line option "--trip" must be an integer, received {0}'.format(options.trip)
+            exit_fail(msg)
+        #end try
+    #end if
+
+    # clear out old test data
+    NexusTest.setup()
+
+    # identify test list to run
+    tests = []
+    for test in NexusTest.test_list:
+        if regex is None:
+            tests.append(test)
+        elif re.match(regex,test.name):
+            tests.append(test)
+        #end if
+    #end for
+    if len(tests)!=1 and ctest:
+        exit_fail('Exactly one test should be selected when using ctest\n  tests requested: {0}'.format([test.name for test in tests]))
+    #end if
+
+    # run each test and print the test outcome
+    if not ctest:
+        print
+    #end if
+    n=0
+    npassed = 0
+    nfailed = 0
+    for test in tests:
+        n+=1
+        t1 = clock()
+
+        # run the test
+        test.run()
+
+        # print the pass/fail line
+        if len(test.name)<35:
+            title = test.name+(35-len(test.name))*'.'
+        else:
+            title = test.name
+        #end if
+        if test.passed:
+            status = 'Passed'
+            npassed+=1
+        elif test.failed:
+            status = 'Failed'
+            nfailed+=1
+        else:
+            status = 'Unknown'
+        #end if
+        t2 = clock()
+        if not ctest:
+            print ' {0}/{1} {2}   {3}  {4:3.2f} sec'.format(n,len(tests),title,status,t2-t1)
+        #end if
+        
+        # print more information if failed
+        msg = test.message()
+        if test.failed:
+            if not ctest:
+                print msg
+            else:
+                exit_fail(msg)
+            #end if
+        elif test.passed and ctest:
+            exit_pass(msg)
+        #end if
+    #end for
+
+    tstop_all = clock()
+
+    # print pass/fail and timing summary
+    if not ctest:
+        print
+        print '{0}% tests passed, {1} tests failed out of {2}'.format(int(100*float(npassed)/(1e-16+len(tests))),nfailed,len(tests))
+        print
+        print 'Total test time = {0:3.2f} sec'.format(tstop_all-tstart_all)
+    #end if
+#end if
