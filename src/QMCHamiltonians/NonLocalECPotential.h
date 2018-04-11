@@ -43,12 +43,6 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
   ParticleSet& Peln;
   ///target TrialWaveFunction
   TrialWaveFunction& Psi;
-  ///use T-moves
-  int UseTMove;
-  ///non local operator
-  NonLocalTOperator nonLocalOps;
-  ///random number generator
-  RandomGenerator_t* myRNG;
   ///true if we should compute forces
   bool ComputeForces;
   ///true if we should use new algorithm
@@ -109,6 +103,9 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
 
   void add(int groupID, NonLocalECPComponent* pp);
 
+  /** set the internal RNG pointer as the given pointer
+   * @param rng input RNG pointer
+   */
   void setRandomGenerator(RandomGenerator_t* rng) { myRNG = rng; }
 
   void addObservables(PropertySetType& plist, BufferType& collectables);
@@ -121,13 +118,21 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
                            hid_t gid) const;
 
   private:
-  /** the actual implementation of evaluate
+  ///use T-moves
+  int UseTMove;
+  ///non local operator
+  NonLocalTOperator nonLocalOps;
+  ///random number generator
+  RandomGenerator_t* myRNG;
+
+  /** the actual implementation, used by evaluate and evaluateWithToperator
    * @param P particle set
    * @param Tmove whether Txy for Tmove is updated
    */
   void evaluate(ParticleSet& P, bool Tmove);
 
   /** compute the T move transition probability for a given electron
+   * member variable nonLocalOps.Txy is updated
    * @param P particle set
    * @param ref_elec reference electron id
    */
