@@ -29,31 +29,6 @@ namespace qmcplusplus
 class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
 {
   public:
-  ///number of ions
-  int NumIons;
-  ///index of distance table for the ion-el pair
-  int myTableIndex;
-  ///the set of local-potentials (one for each ion)
-  std::vector<NonLocalECPComponent*> PP;
-  ///unique NonLocalECPComponent to remove
-  std::vector<NonLocalECPComponent*> PPset;
-  ///reference to the center ion
-  ParticleSet& IonConfig;
-  ///reference to the electrons
-  ParticleSet& Peln;
-  ///target TrialWaveFunction
-  TrialWaveFunction& Psi;
-  ///true if we should compute forces
-  bool ComputeForces;
-  ///true if we should use new algorithm
-  bool UseVP;
-  ParticleSet::ParticlePos_t PulayTerm;
-#if !defined(REMOVE_TRACEMANAGER)
-  ///single particle trace samples
-  Array<TraceReal,1>* Ve_sample;
-  Array<TraceReal,1>* Vi_sample;
-#endif
-
   NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
                       TrialWaveFunction& psi, bool computeForces=false, bool useVP=false);
 
@@ -117,13 +92,40 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
   void registerObservables(std::vector<observable_helper*>& h5list,
                            hid_t gid) const;
 
+  protected:
+  ///random number generator
+  RandomGenerator_t* myRNG;
+  ///the set of local-potentials (one for each ion)
+  std::vector<NonLocalECPComponent*> PP;
+  ///unique NonLocalECPComponent to remove
+  std::vector<NonLocalECPComponent*> PPset;
+  ///reference to the center ion
+  ParticleSet& IonConfig;
+  ///target TrialWaveFunction
+  TrialWaveFunction& Psi;
+
   private:
+  ///number of ions
+  int NumIons;
+  ///index of distance table for the ion-el pair
+  int myTableIndex;
+  ///reference to the electrons
+  ParticleSet& Peln;
   ///use T-moves
   int UseTMove;
   ///non local operator
   NonLocalTOperator nonLocalOps;
-  ///random number generator
-  RandomGenerator_t* myRNG;
+  ///true if we should compute forces
+  bool ComputeForces;
+  ///true if we should use new algorithm
+  bool UseVP;
+  ///Pulay force vector
+  ParticleSet::ParticlePos_t PulayTerm;
+#if !defined(REMOVE_TRACEMANAGER)
+  ///single particle trace samples
+  Array<TraceReal,1>* Ve_sample;
+  Array<TraceReal,1>* Vi_sample;
+#endif
 
   /** the actual implementation, used by evaluate and evaluateWithToperator
    * @param P particle set
