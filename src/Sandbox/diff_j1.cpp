@@ -195,8 +195,6 @@ int main(int argc, char** argv)
       double r_ratio=0.0;
       double g_ratio=0.0;
 
-      els.Ready4Measure=false;
-
       int naccepted=0;
       for(int iel=0; iel<nels; ++iel)
       {

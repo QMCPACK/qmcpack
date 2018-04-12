@@ -165,6 +165,8 @@ int main(int argc, char** argv)
     clock.restart();
 
     ParticleSet ions, els;
+    ions.setName("ion");
+    els.setName("e");
     const OHMMS_PRECISION scale=1.0;
 
     const int np=omp_get_num_threads();
