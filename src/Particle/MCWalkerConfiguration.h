@@ -394,15 +394,20 @@ public:
   {
     klinear=false;
     kDelay=k;
+    if (kDelay<0)
+    {
+      app_log() << "  Warning: Specified negative delayed updates k = " << k << ", setting to zero." << std::endl;
+      kDelay=0;
+    }
     kblocksize=1;
     kblock=0;
     kcurr=0;
     kstart=0;
     kupdate=1;
-    if(k)
+    if(kDelay)
     {
       app_log() << "  Using delayed updates (k = " << kDelay << ") for all walkers" << std::endl;
-      kblocksize=k;
+      kblocksize=kDelay;
     }
   }
 
