@@ -114,7 +114,14 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
     if(NonLocalMoveAcceptedTemp>0)
     {
       W.saveWalker(thisWalker);
-      thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
+      thisWalker.resetProperty(Psi.getLogPsi(),Psi.getPhase(),enew);
+      // debugging lines
+      //logpsi = Psi.getLogPsi();
+      //W.update(true);
+      //RealType logpsi2 = Psi.evaluateLog(W);
+      //if(logpsi!=logpsi2) std::cout << " logpsi " << logpsi << " logpsi2 " << logpsi2
+      //                              << " diff " << logpsi2-logpsi << std::endl;
+
       NonLocalMoveAccepted += NonLocalMoveAcceptedTemp;
     }
 
