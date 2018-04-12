@@ -1015,7 +1015,7 @@ void DiracDeterminantCUDA::calcRatio (MCWalkerConfiguration &W, int iat,
     }
     if (kd && (k==0))
     {
-      AList[iw]         =  &(data.data()[AOffset+kstart*RowStride]);
+//      AList[iw]         =  &(data.data()[AOffset+kstart*RowStride]);
       AinvDeltaList[iw] =  &(data.data()[AinvOffset+kstart]); // for delayed update need to only multiply with k x N sub matrix of A^-1, address needs to start at current k block
       AinvUList[iw]     =  &(data.data()[AinvUOffset]);
       AWorkList[iw]     =  &(data.data()[AWorkOffset]);
@@ -1035,7 +1035,6 @@ void DiracDeterminantCUDA::calcRatio (MCWalkerConfiguration &W, int iat,
   }
   if(kd && (k==0))
   {
-    AList_d.asyncCopy(AList);
     AinvDeltaList_d.asyncCopy(AinvDeltaList);
     AinvUList_d.asyncCopy(AinvUList);
     AWorkList_d.asyncCopy(AWorkList);
@@ -1045,7 +1044,7 @@ void DiracDeterminantCUDA::calcRatio (MCWalkerConfiguration &W, int iat,
   }
   Phi->evaluate (walkers, W.Rnew, newRowList_d, newGradLaplList_d, RowStride, k, W.getklinear());
   if(kd && W.getklinear())
-    calc_lemma_column (AList_d.data(), AinvList_d.data(), newRowList_d.data(),
+    calc_lemma_column (AinvList_d.data(), newRowList_d.data(),
                        LemmaList_d.data(), AinvUList_d.data(),
                        k, kd, W.getkstart(), NumPtcls, RowStride, nw);
 #ifdef CUDA_DEBUG2

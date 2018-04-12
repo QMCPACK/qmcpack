@@ -187,10 +187,10 @@ void
 multi_row_copy (double *dest[], double *src[], int len, int offset, int rows, int stride, int num);
 
 void
-calc_lemma_column (float *a[], float *ainv[], float *newrow[], float *lemma[], float *ainvu[], int k, int kd, int kstart, int N, int stride, int num);
+calc_lemma_column (float *ainv[], float *newrow[], float *lemma[], float *ainvu[], int k, int kd, int kstart, int N, int stride, int num);
 
 void
-calc_lemma_column (double *a[], double *ainv[], double *newrow[], double *lemma[], double *ainvu[], int k, int kd, int kstart, int N, int stride, int num);
+calc_lemma_column (double *ainv[], double *newrow[], double *lemma[], double *ainvu[], int k, int kd, int kstart, int N, int stride, int num);
 
 void
 copy_update_block (float *lemma_lu[], float *lemma[], float *ainv_work[], float *ainv_kblock[], int k, int kd, int stride, int num);

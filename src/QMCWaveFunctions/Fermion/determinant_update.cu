@@ -2250,53 +2250,52 @@ multi_row_copy (double *dest[], double *src[], int len, int offset, int rows, in
 
 template<typename T>
 __global__ void
-calc_lemma_column (T **a, T **ainv, T **newrow, T **lemma, T** ainvu, int k, int kd, int kstart, int N, int stride)
+calc_lemma_column (T **ainv, T **newrow, T **lemma, T** ainvu, int k, int kd, int kstart, int N, int stride)
 {
-  __shared__ T *mya_col, *myainv, *mynewrow, *mylemma_col, *myainvu_col;
+  __shared__ T *myainv, *mynewrow, *mylemma_col, *myainvu_col;
   int tid = threadIdx.x;
   if (tid ==0)
-  {
-    mya_col     = a[blockIdx.y]+k*stride; // (kstart+k)-th column of a (the kstart is in the list definition in calcRatio)
+  { // inputs
     myainv      = ainv[blockIdx.y];
     mynewrow    = newrow[blockIdx.y]+k*stride;
+    // outputs
     mylemma_col = lemma[blockIdx.y]+k*kd;
     myainvu_col = ainvu[blockIdx.y]+k*stride;
   }
   __syncthreads();
   int i = blockIdx.x * COPY_BS + tid;
-  int ki = kstart + i;
+  int l = i-kstart;
   T prod = 0.0;
-  if (i < kd)
-  {
-    for (int j=0; j<N; j++) // multiply (kstart+i)-th row of ainv with new column of phi's
-      prod += mynewrow[j] * myainv[ki+j*stride];
-    mylemma_col[i] = prod;
-  }
-  prod = 0.0;
   if (i < N)
   {
-    for (int j=0; j<N; j++) // multiply i-th row of ainv with -dU
-      prod += (mya_col[j] - mynewrow[j]) * myainv[i+j*stride];
-    myainvu_col[i] = prod;
+    for (int j=0; j<N; j++) // multiply i-th row of ainv with U
+      prod += mynewrow[j] * myainv[i+j*stride];
+    // now we can calculate -A^-1 * dU
+    // dU = A_k-U_k => A^-1*dU = A^-1*A_k - A^-1*U_k
+    // A^-1*A_k is only different from zero when we multiply same row of A^-1 with the respective column from A
+    myainvu_col[i] = 1.0*(i==k+kstart)-prod;
   }
+  // Use the portions needed for the lemma matrix
+  if ((l >= 0) && (l<kd))
+    mylemma_col[l] = prod;
 }
 
 void
-calc_lemma_column (float *a[], float *ainv[], float *newrow[], float *lemma[], float *ainvu[], int k, int kd, int kstart, int N, int stride, int num)
+calc_lemma_column (float *ainv[], float *newrow[], float *lemma[], float *ainvu[], int k, int kd, int kstart, int N, int stride, int num)
 {
   int len = stride;
   dim3 dimBlock(COPY_BS);
   dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
-  calc_lemma_column<float><<<dimGrid,dimBlock>>>(a, ainv, newrow, lemma, ainvu, k, kd, kstart, N, stride);
+  calc_lemma_column<float><<<dimGrid,dimBlock>>>(ainv, newrow, lemma, ainvu, k, kd, kstart, N, stride);
 }
 
 void
-calc_lemma_column (double *a[], double *ainv[], double *newrow[], double *lemma[], double *ainvu[], int k, int kd, int kstart, int N, int stride, int num)
+calc_lemma_column (double *ainv[], double *newrow[], double *lemma[], double *ainvu[], int k, int kd, int kstart, int N, int stride, int num)
 {
   int len = stride;
   dim3 dimBlock(COPY_BS);
   dim3 dimGrid ((len+COPY_BS-1)/COPY_BS, num);
-  calc_lemma_column<double><<<dimGrid,dimBlock>>>(a, ainv, newrow, lemma, ainvu, k, kd, kstart, N, stride);
+  calc_lemma_column<double><<<dimGrid,dimBlock>>>(ainv, newrow, lemma, ainvu, k, kd, kstart, N, stride);
 }
 
 
