@@ -54,7 +54,7 @@ struct  J1OrbitalSoA : public OrbitalBase
   posT curGrad;
 
   ///\f$Vat[i] = sum_(j) u_{i,j}\f$
-  aligned_vector<RealType> Vat;
+  Vector<valT> Vat;
   aligned_vector<valT> U, dU, d2U;
   aligned_vector<valT> DistCompressed;
   aligned_vector<int> DistIndice;
@@ -136,14 +136,6 @@ struct  J1OrbitalSoA : public OrbitalBase
   {
     UpdateMode=ORB_PBYP_RATIO;
     curAt = computeU(P.DistTables[myTableID]->Temp_r.data());
-
-    if(!P.Ready4Measure)
-    {//need to compute per atom
-      computeU3(P,iat,P.DistTables[myTableID]->Distances[iat]);
-      Lap[iat]=accumulateGL(dU.data(),d2U.data(),P.DistTables[myTableID]->Displacements[iat],Grad[iat]);
-      Vat[iat]=simd::accumulate_n(U.data(),Nions,valT());
-    }
-
     return std::exp(Vat[iat]-curAt);
   }
 
@@ -276,9 +268,6 @@ struct  J1OrbitalSoA : public OrbitalBase
    */
   GradType evalGrad(ParticleSet& P, int iat)
   {
-    computeU3(P,iat,P.DistTables[myTableID]->Distances[iat]);
-    Lap[iat]=accumulateGL(dU.data(),d2U.data(),P.DistTables[myTableID]->Displacements[iat],Grad[iat]);
-    Vat[iat]=simd::accumulate_n(U.data(),Nions,valT());
     return GradType(Grad[iat]);
   }
 
@@ -319,15 +308,39 @@ struct  J1OrbitalSoA : public OrbitalBase
   }
 
 
-  inline void registerData(ParticleSet& P, WFBufferType& buf) { }
+  inline void registerData(ParticleSet& P, WFBufferType& buf)
+  {
+    if ( Bytes_in_WFBuffer == 0 )
+    {
+      Bytes_in_WFBuffer = buf.current();
+      buf.add(Vat.begin(), Vat.end());
+      buf.add(Grad.begin(), Grad.end());
+      buf.add(Lap.begin(), Lap.end());
+      Bytes_in_WFBuffer = buf.current()-Bytes_in_WFBuffer;
+      // free local space
+      Vat.free();
+      Grad.free();
+      Lap.free();
+    }
+    else
+    {
+      buf.forward(Bytes_in_WFBuffer);
+    }
+  }
 
   inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false)
   {
     evaluateGL(P, P.G, P.L, false);
+    buf.forward(Bytes_in_WFBuffer);
     return LogValue;
   }
 
-  inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf) { }
+  inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
+  {
+    Vat.attachReference(buf.lendReference<valT>(Nelec), Nelec);
+    Grad.attachReference(buf.lendReference<posT>(Nelec), Nelec);
+    Lap.attachReference(buf.lendReference<valT>(Nelec), Nelec);
+  }
 
   OrbitalBasePtr makeClone(ParticleSet& tqp) const
   {

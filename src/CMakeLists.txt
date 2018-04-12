@@ -289,8 +289,8 @@ ENDIF()
 
   if(QMC_BUILD_LEVEL GREATER 4)
 
-    MESSAGE(STATUS "Minimal build: only miniapps")
-    SUBDIRS(miniapps)
+    MESSAGE(STATUS "Minimal build: only Sandbox")
+    SUBDIRS(Sandbox)
 
   else() #{{{
 
@@ -329,10 +329,6 @@ ENDIF()
   SUBDIRS(QMCTools)
   #ENDIF(BUILD_QMCTOOLS)
 
-  IF(BUILD_SANDBOX)
-    SUBDIRS(SandBox)
-  ENDIF(BUILD_SANDBOX)
-
   IF(BUILD_SQD)
     SUBDIRS(SQD)
   ENDIF(BUILD_SQD)
@@ -350,6 +346,7 @@ ENDIF()
     SUBDIRS(Numerics/tests)
     SUBDIRS(Utilities/tests)
     SUBDIRS(einspline/tests)
+    SUBDIRS(spline2/tests)
     SUBDIRS(OhmmsData/tests)
     SUBDIRS(io/tests)
     SUBDIRS(Lattice/tests)

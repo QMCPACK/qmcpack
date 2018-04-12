@@ -49,71 +49,75 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
 {
     W.loadWalker(thisWalker,false);
     //create a 3N-Dimensional Gaussian with variance=1
-    RealType nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
+    RealType nodecorr = setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
     //RealType nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
     makeGaussRandomWithEngine(deltaR,RandomGen);
-    //if(!W.makeMoveWithDrift(thisWalker,drift,deltaR, m_sqrttau))
-    if (!W.makeMoveWithDrift(thisWalker,drift ,deltaR,SqrtTauOverMass))
-    {
-      H.rejectedMove(W,thisWalker);
-      return;
-    }
     //save old local energy
-    RealType eold    = thisWalker.Properties(LOCALENERGY);
-    RealType signold = thisWalker.Properties(SIGN);
-    RealType enew  = eold;
-    //evaluate wave functior
-    RealType logpsi(Psi.evaluateLog(W));
-    bool accepted=false;
+    RealType eold = thisWalker.Properties(LOCALENERGY);
+    RealType enew = eold;
+    bool accepted = false;
     RealType rr_accepted = 0.0;
-    nodecorr=0.0;
-    if(branchEngine->phaseChanged(Psi.getPhaseDiff()))
+    RealType rr_proposed = 0.0;
+    RealType logpsi;
+
+    if (W.makeMoveWithDrift(thisWalker, drift, deltaR, SqrtTauOverMass))
     {
-      thisWalker.Age++;
-      H.rejectedMove(W,thisWalker);
+      //evaluate the new wave function
+      logpsi = Psi.evaluateLog(W);
+      //fixed node
+      if(!branchEngine->phaseChanged(Psi.getPhaseDiff()))
+      {
+        RealType logGf = -0.5*Dot(deltaR,deltaR);
+        nodecorr = setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
+        deltaR = thisWalker.R - W.R - drift;
+        RealType logGb=logBackwardGF(deltaR);
+        //RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
+        RealType prob = std::min(std::exp(logGb-logGf+2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
+        //calculate rr_proposed here
+        deltaR = W.R-thisWalker.R;
+        rr_proposed = Dot(deltaR,deltaR);
+        if(RandomGen() <= prob)
+        {
+          accepted=true;
+          rr_accepted = rr_proposed;
+        }
+      }
+    }
+
+    // recompute Psi if the move is rejected
+    if(!accepted)
+    {
+      W.update(thisWalker.R);
+      W.donePbyP(true);
+      logpsi = Psi.evaluateLog(W);
+    }
+
+    // evaluate Hamiltonian
+    enew = H.evaluateWithToperator(W);
+    H.auxHevaluate(W,thisWalker);
+    H.saveProperty(thisWalker.getPropertyBase());
+
+    // operate on thisWalker.
+    if(accepted)
+    {
+      W.saveWalker(thisWalker);
+      thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
     }
     else
     {
-      enew = H.evaluateWithToperator(W);
-      RealType logGf = -0.5*Dot(deltaR,deltaR);
-      //RealType nodecorr = setScaledDriftPbyPandNodeCorr(m_tauovermass,W.G,drift);
-      RealType nodecorr=setScaledDriftPbyPandNodeCorr(Tau,MassInvP,W.G,drift);
-      deltaR = thisWalker.R - W.R - drift;
-      RealType logGb=logBackwardGF(deltaR);
-      //RealType logGb = -m_oneover2tau*Dot(deltaR,deltaR);
-      RealType prob= std::min(std::exp(logGb-logGf +2.0*(logpsi-thisWalker.Properties(LOGPSI))),1.0);
-      //calculate rr_proposed here
-      deltaR = W.R-thisWalker.R;
-      RealType rr_proposed = Dot(deltaR,deltaR);
-      if(RandomGen() > prob)
-      {
-        thisWalker.Age++;
-        enew=eold;
-        thisWalker.Properties(R2ACCEPTED)=0.0;
-        thisWalker.Properties(R2PROPOSED)=rr_proposed;
-        H.rejectedMove(W,thisWalker);
-      }
-      else
-      {
-        accepted=true;
-        thisWalker.Age=0;
-        W.saveWalker(thisWalker);
-        rr_accepted = rr_proposed;
-        thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,nodecorr);
-      }
+      thisWalker.Age++;
+      thisWalker.Properties(R2ACCEPTED)=0.0;
+      thisWalker.Properties(R2PROPOSED)=rr_proposed;
     }
-    H.auxHevaluate(W,thisWalker);
-    H.saveProperty(thisWalker.getPropertyBase());
+
     const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);
     if(NonLocalMoveAcceptedTemp>0)
     {
-      //the following update and evaluateLog may not be necessary or have better alternatives.
-      W.update();
-      logpsi=Psi.evaluateLog(W);
-      thisWalker.resetProperty(logpsi,Psi.getPhase(),eold);
-      thisWalker.R = W.R;
+      W.saveWalker(thisWalker);
+      thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
       NonLocalMoveAccepted += NonLocalMoveAcceptedTemp;
     }
+
     thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
     //branchEngine->accumulate(eold,1);
     if(accepted)
@@ -155,7 +159,6 @@ void DMCUpdateAllWithKill::advanceWalker(Walker_t& thisWalker, bool recompute)
     //save old local energy
     RealType eold = thisWalker.Properties(LOCALENERGY);
     RealType enew = eold;
-    RealType signold = thisWalker.Properties(SIGN);
     RealType logpsi(Psi.evaluateLog(W));
     bool accepted=false;
     RealType rr_accepted = 0.0;

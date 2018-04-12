@@ -137,7 +137,7 @@ import inspect
 import keyword
 from numpy import fromstring,empty,array,float64,\
     loadtxt,ndarray,dtype,sqrt,pi,arange,exp,eye,\
-    ceil,mod,dot,abs,identity
+    ceil,mod,dot,abs,identity,floor
 from StringIO import StringIO
 from superstring import string2val
 from generic import obj,hidden
@@ -1734,7 +1734,8 @@ class particleset(QIxml):
 
 class group(QIxml):
     attributes = ['name','size','mass'] # mass attr and param, bad bad bad!!!
-    parameters = ['charge','valence','atomicnumber','mass'] 
+    parameters = ['charge','valence','atomicnumber','mass','lmax',
+                  'cutoff_radius','spline_radius','spline_npoints'] 
     attribs    = ['position']
     identifier = 'name'
 #end class group
@@ -1758,9 +1759,9 @@ class bspline_builder(QIxml):
     identifier  = 'type'
     attributes  = ['type','href','sort','tilematrix','twistnum','twist','source',
                    'version','meshfactor','gpu','transform','precision','truncate',
-                   'lr_dim_cutoff','shell','randomize','key','buffer','rmax_core','dilation','tag']
+                   'lr_dim_cutoff','shell','randomize','key','buffer','rmax_core','dilation','tag','hybridrep']
     elements    = ['sposet']
-    write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse)
+    write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,hybridrep=yesno)
 #end class bspline_builder
 
 class heg_builder(QIxml):
@@ -1803,7 +1804,7 @@ class wavefunction(QIxml):
 #end class wavefunction
 
 class determinantset(QIxml):
-    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name','cuspcorrection','tiling','usegrid','meshspacing','shell2','src','buffer','bconds','keyword']
+    attributes = ['type','href','sort','tilematrix','twistnum','twist','source','version','meshfactor','gpu','transform','precision','truncate','lr_dim_cutoff','shell','randomize','key','rmax_core','dilation','name','cuspcorrection','tiling','usegrid','meshspacing','shell2','src','buffer','bconds','keyword','hybridrep']
     elements   = ['basisset','sposet','slaterdeterminant','multideterminant','spline','backflow','cubicgrid']
     h5tags     = ['twistindex','twistangle','rcut']
     write_types = obj(gpu=yesno,sort=onezero,transform=yesno,truncate=yesno,randomize=truefalse,cuspcorrection=yesno,usegrid=yesno)
@@ -2208,7 +2209,7 @@ class flux(QIxml):
 
 class momentum(QIxml):
     tag = 'estimator'
-    attributes = ['type','name','grid','samples','hdf5','wavefunction']
+    attributes = ['type','name','grid','samples','hdf5','wavefunction','kmax','kmax0','kmax1','kmax2']
     identifier = 'name'
     write_types = obj(hdf5=yesno)
 #end class momentum
@@ -4052,12 +4053,14 @@ def generate_simulationcell(bconds='ppp',lr_dim_cutoff=15,system=None):
 #end def generate_simulationcell
 
 
-def generate_particlesets(electrons = 'e',
-                          ions      = 'ion0',
-                          up        = 'u',
-                          down      = 'd',
-                          system    = None,
-                          randomsrc = False
+def generate_particlesets(electrons   = 'e',
+                          ions        = 'ion0',
+                          up          = 'u',
+                          down        = 'd',
+                          system      = None,
+                          randomsrc   = False,
+                          hybrid_rcut = None,
+                          hybrid_lmax = None,
                           ):
     if system is None:
         QmcpackInput.class_error('generate_particlesets argument system must not be None')
@@ -4105,6 +4108,23 @@ def generate_particlesets(electrons = 'e',
             eps.randomsrc = iname
         #end if
         ips = particleset(name=iname)
+        # handle hybrid rep
+        hybridrep = hybrid_rcut is not None or hybrid_lmax is not None
+        if hybridrep:
+            hybrid_vars = (
+                ('hybrid_rcut',hybrid_rcut),
+                ('hybrid_lmax',hybrid_lmax),                
+                )
+            for hvar,hval in hybrid_vars:
+                if not isinstance(hval,obj):
+                    QmcpackInput.class_error('generate_particlesets argument "{0}" must be of type obj\nyou provided type: {1}\nwith value: {2}'.format(hvar,hval.__class__.__name__,hval))
+                #end if
+                if set(hval.keys())!=set(ion_species):
+                    QmcpackInput.class_error('generate_particsets argument "{0}" is incorrect\none entry must be present for each atomic species\natomic species present in the simulation: {1}\nvalues provided for the following species: {2}'.format(hvar,sorted(ion_species),sorted(hval.keys())))
+                #end if
+            #end for
+        #end if
+        # make groups
         groups = []
         for ion_spec in ion_species:
             ion = ions[ion_spec]
@@ -4118,6 +4138,19 @@ def generate_particlesets(electrons = 'e',
                 position     = gpos,
                 size         = len(gpos)
                 )
+            if hybridrep:
+                rcut = hybrid_rcut[ion_spec]
+                lmax = hybrid_lmax[ion_spec]
+                # this code should be in qmcpack 
+                # it should not be required of the user
+                dr = 0.02
+                rspline = rcut + 2*dr
+                nspline = int(floor(rspline/dr)) + 1
+                g.lmax           = lmax
+                g.cutoff_radius  = rcut
+                g.spline_radius  = rspline
+                g.spline_npoints = nspline
+            #end if
             groups.append(g)
         #end for
         ips.groups = make_collection(groups)
@@ -4199,6 +4232,7 @@ def generate_bspline_builder(type           = 'bspline',
                              truncate       = False,
                              buffer         = None,
                              spin_polarized = False,
+                             hybridrep      = None,
                              href           = 'MISSING.h5',
                              ions           = 'ion0',
                              spo_up         = 'spo_u',
@@ -4233,6 +4267,9 @@ def generate_bspline_builder(type           = 'bspline',
     #end if
     if truncate and buffer!=None:
         bsb.buffer = buffer
+    #end if
+    if hybridrep is not None:
+        bsb.hybridrep = hybridrep
     #end if
     if twist!=None:
         bsb.twistnum = system.structure.select_twist(twist)
@@ -5339,6 +5376,9 @@ def generate_basic_input(id             = 'qmc',
                          spin_polarized = None,
                          partition      = None,
                          partition_mf   = None,
+                         hybridrep      = None,
+                         hybrid_rcut    = None,
+                         hybrid_lmax    = None,
                          orbitals_h5    = 'MISSING.h5',
                          system         = 'missing',
                          pseudos        = None,
@@ -5398,6 +5438,9 @@ def generate_basic_input(id             = 'qmc',
     if partition!=None:
         det_format = 'new'
     #end if
+    if hybrid_rcut is not None or hybrid_lmax is not None:
+        hybridrep = True
+    #end if
 
     metadata = QmcpackInput.default_metadata.copy()
 
@@ -5416,8 +5459,10 @@ def generate_basic_input(id             = 'qmc',
     if system!=None:
         system.structure.set_bconds(bconds)
         particlesets = generate_particlesets(
-            system    = system,
-            randomsrc = randomsrc or tuple(bconds)!=('p','p','p')
+            system      = system,
+            randomsrc   = randomsrc or tuple(bconds)!=('p','p','p'),
+            hybrid_rcut = hybrid_rcut,
+            hybrid_lmax = hybrid_lmax,
             )
     #end if
 
@@ -5442,6 +5487,7 @@ def generate_basic_input(id             = 'qmc',
                 precision      = precision,
                 truncate       = truncate,
                 buffer         = buffer,
+                hybridrep      = hybridrep,
                 href           = orbitals_h5,
                 spin_polarized = spin_polarized,
                 system         = system

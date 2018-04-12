@@ -87,7 +87,13 @@ ENDIF()
                     )
 
 # Reference DMC run in qmc-ref "-10.531583 0.000265"
-  LIST(APPEND DIAMOND_DMC_SCALARS "totenergy" "-10.531583 0.0024")
+  LIST(APPEND DIAMOND_DMC_SCALARS "totenergy"   "-10.5316 0.0024")
+  LIST(APPEND DIAMOND_DMC_SCALARS "kinetic"      "11.4857 0.0231")
+  LIST(APPEND DIAMOND_DMC_SCALARS "potential"   "-22.0170 0.0239")
+  LIST(APPEND DIAMOND_DMC_SCALARS "localecp"     "-7.1518 0.0323")
+  LIST(APPEND DIAMOND_DMC_SCALARS "nonlocalecp"  "0.62688 0.0080")
+  LIST(APPEND DIAMOND_DMC_SCALARS "eeenergy"    "-2.71641 0.0073")
+
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-dmc_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
                     qmc_short_vmc_dmc
@@ -95,6 +101,17 @@ ENDIF()
                     1 16
                     TRUE
                     1 DIAMOND_DMC_SCALARS # DMC
+                    )
+
+  QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_short_vmc_dmc_allp
+                    qmc_short_vmc_dmc_allp.in.xml
+                    1 16
+                    TRUE
+                    0 DIAMOND_SCALARS # VMC without drift
+                    1 DIAMOND_SCALARS # VMC with drift
+                    2 DIAMOND_DMC_SCALARS # DMC
                     )
 
 # Coverage test - shorter version of dmc test

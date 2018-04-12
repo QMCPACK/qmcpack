@@ -13,3 +13,5 @@ pdflatex qmcpack_manual.tex
 pdflatex qmcpack_manual.tex
 ```
 
+A script, build_manual.sh, is provided.
+
