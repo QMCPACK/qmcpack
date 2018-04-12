@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-   <project id="qmc_short" series="0">
+   <project id="qmc_short_vmc_dmc_allp" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
    <qmcsystem>
@@ -31,10 +31,6 @@
             <parameter name="valence"             >    4                     </parameter>
             <parameter name="atomicnumber"        >    6                     </parameter>
             <parameter name="mass"                >    21894.7135906            </parameter>
-            <parameter name="cutoff_radius"       >    1.1                   </parameter>
-            <parameter name="spline_radius"       >    1.2                   </parameter>
-            <parameter name="spline_npoints"      >    121                   </parameter>
-            <parameter name="lmax"                >    3                     </parameter>
             <attrib name="position" datatype="posArray" condition="0">
                      0.00000000        0.00000000        0.00000000
                      1.68658058        1.68658058        1.68658058
@@ -42,7 +38,7 @@
          </group>
       </particleset>
       <wavefunction name="psi0" target="e">
-         <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float" hybridrep="yes">
+         <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float">
             <slaterdeterminant>
                <determinant id="updet" size="4">
                   <occupation mode="ground" spindataset="0"/>
@@ -81,16 +77,39 @@
          <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
             <pseudo elementType="C" href="C.BFD.xml"/>
          </pairpot>
-         <estimator type="flux" name="Flux"/>
+         <!-- <estimator type="flux" name="Flux"/> -->
       </hamiltonian>
    </qmcsystem>
-   <qmc method="vmc" move="pbyp">
-      <estimator name="LocalEnergy" hdf5="no"/>
-      <parameter name="walkers"             >    16              </parameter>
-      <parameter name="blocks"              >    1000            </parameter>
-      <parameter name="steps"               >    8.0             </parameter>
-      <parameter name="subSteps"            >    2               </parameter>
-      <parameter name="timestep"            >    0.3             </parameter>
-      <parameter name="warmupSteps"         >    100             </parameter>
+
+   <qmc method="vmc" move="allp">
+     <estimator name="LocalEnergy" hdf5="no"/>
+     <parameter name="walkers"     > 256 </parameter>
+     <parameter name="blocks"      > 125 </parameter>
+     <parameter name="steps"       > 4   </parameter>
+     <parameter name="subSteps"    > 4   </parameter>
+     <parameter name="timestep"    > 1.0 </parameter>
+     <parameter name="warmupSteps" > 10  </parameter>
+     <parameter name="usedrift"    > no  </parameter>
    </qmc>
+   <qmc method="vmc" move="allp">
+     <estimator name="LocalEnergy" hdf5="no"/>
+     <parameter name="walkers"     > 256 </parameter>
+     <parameter name="blocks"      > 125 </parameter>
+     <parameter name="steps"       > 4   </parameter>
+     <parameter name="subSteps"    > 4   </parameter>
+     <parameter name="timestep"    > 1.0 </parameter>
+     <parameter name="warmupSteps" > 10  </parameter>
+     <parameter name="usedrift"    > yes </parameter>
+   </qmc>
+   <qmc method="dmc" move="allp" checkpoint="-1">
+     <estimator name="LocalEnergy" hdf5="no"/>
+     <parameter name="targetwalkers"> 256 </parameter>
+     <parameter name="reconfiguration">   no </parameter>
+     <parameter name="warmupSteps">  100 </parameter>
+     <parameter name="timestep">  0.005 </parameter>
+     <parameter name="steps">   100 </parameter>
+     <parameter name="blocks">  100 </parameter>
+     <parameter name="nonlocalmoves">  no </parameter>
+   </qmc>
+
 </simulation>

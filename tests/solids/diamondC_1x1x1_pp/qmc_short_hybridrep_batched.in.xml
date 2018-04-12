@@ -85,6 +85,7 @@
       </hamiltonian>
    </qmcsystem>
    <qmc method="vmc" move="pbyp">
+      <estimator name="LocalEnergy" hdf5="no"/>
       <parameter name="walkers"             >    16              </parameter>
       <parameter name="blocks"              >    1000            </parameter>
       <parameter name="steps"               >    8.0             </parameter>
