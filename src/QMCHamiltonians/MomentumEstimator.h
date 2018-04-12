@@ -27,11 +27,6 @@ public:
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   void addObservables(PropertySetType& plist) { }
   void addObservables(PropertySetType& plist,BufferType& olist);
   void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const ;

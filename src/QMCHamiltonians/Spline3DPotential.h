@@ -64,11 +64,6 @@ struct Spline3DPotential: public QMCHamiltonianBase
     return e;
   }
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   inline Return_t evaluate(ParticleSet& P, RealType& x)
   {
     return x=evaluate(P);

@@ -93,13 +93,7 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
     }
 
     // evaluate Hamiltonian
-    if(UseTMove)
-    {
-      nonLocalOps.reset();
-      enew = H.evaluate(W,nonLocalOps.Txy);
-    }
-    else
-      enew = H.evaluate(W);
+    enew = H.evaluateWithToperator(W);
     H.auxHevaluate(W,thisWalker);
     H.saveProperty(thisWalker.getPropertyBase());
 
@@ -116,21 +110,14 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
       thisWalker.Properties(R2PROPOSED)=rr_proposed;
     }
 
-    if(UseTMove)
+    const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);
+    if(NonLocalMoveAcceptedTemp>0)
     {
-      int ibar=nonLocalOps.selectMove(RandomGen());
-      //make a non-local move
-      if(ibar)
-      {
-        int iat=nonLocalOps.id(ibar);
-        W.R[iat] += nonLocalOps.delta(ibar);
-        W.update();
-        logpsi=Psi.evaluateLog(W);
-        thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
-        W.saveWalker(thisWalker);
-        ++NonLocalMoveAccepted;
-      }
+      W.saveWalker(thisWalker);
+      thisWalker.resetProperty(logpsi,Psi.getPhase(),enew);
+      NonLocalMoveAccepted += NonLocalMoveAcceptedTemp;
     }
+
     thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
     //branchEngine->accumulate(eold,1);
     if(accepted)

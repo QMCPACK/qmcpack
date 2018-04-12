@@ -43,10 +43,6 @@ class StaticStructureFactor : public QMCHamiltonianBase
   QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
   bool put(xmlNodePtr cur);
   Return_t evaluate(ParticleSet& P);
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P); 
-  }
 
   //required for Collectables interface
   void addObservables(PropertySetType& plist,BufferType& olist);

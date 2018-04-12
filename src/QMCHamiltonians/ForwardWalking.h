@@ -90,11 +90,6 @@ struct ForwardWalking: public QMCHamiltonianBase
     return 0.0;
   }
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   bool put(xmlNodePtr cur)
   {
     return true;

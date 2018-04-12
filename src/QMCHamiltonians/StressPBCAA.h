@@ -78,11 +78,6 @@ struct StressPBCAA:  public QMCHamiltonianBase, public ForceBase
 
   void update_source(ParticleSet& s);
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
 //  Return_t spevaluate(ParticleSet& P);
 
   /** Do nothing */

@@ -42,11 +42,6 @@ struct PolarizationPotential: public QMCHamiltonianBase
     return Value=Efield * sum;
   }
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   /** Do nothing */
   bool put(xmlNodePtr cur)
   {

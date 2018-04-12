@@ -212,11 +212,6 @@ class OrbitalImages : public QMCHamiltonianBase
   ///hijack estimator evaluate to evaluate and write all orbitals
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P); 
-  }
-
   //optional standard interface
   //void get_required_traces(TraceManager& tm);
   //void setRandomGenerator(RandomGenerator_t* rng);
