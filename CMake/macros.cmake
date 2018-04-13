@@ -247,7 +247,7 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
   set(work_dir "${CMAKE_CURRENT_BINARY_DIR}/${full_name}")
   #message(${work_dir})
   add_test(NAME "${test_name}"
-    COMMAND "${check_cmd}"
+    COMMAND "${check_cmd}" ${ARGN}
     WORKING_DIRECTORY "${work_dir}"
   )
 

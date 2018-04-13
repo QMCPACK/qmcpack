@@ -62,7 +62,7 @@ def show_scalar_trace(data, seriesl):
 
 if __name__ == '__main__':
 
-  prefix = 'dat-h5_allp'
+  prefix = sys.argv[1]
   seriesl= [0,1]  # a list of series IDs to check
 
   # check Properties v.s. Collectables

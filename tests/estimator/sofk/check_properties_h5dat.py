@@ -71,7 +71,7 @@ def compare_columns_dat_h5(fdat, fh5):
 
 if __name__ == '__main__':
 
-  prefix = 'dat-h5_allp'
+  prefix = sys.argv[1]
   seriesl= [0,1]
 
   # check Properties

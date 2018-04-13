@@ -55,24 +55,24 @@ if (add_test)
     "${CMAKE_SOURCE_DIR}/tests/estimator/sofk"
     pbyp_dat-h5.xml
     1 16
-    check_properties_h5dat-pbyp.py
+    check_properties_h5dat.py dat-h5_pbyp
   )
   SIMPLE_RUN_AND_CHECK(estimator-sofk_pbyp-collectables
     "${CMAKE_SOURCE_DIR}/tests/estimator/sofk"
     pbyp_dat-h5.xml
     1 16
-    check_collectables_h5dat-pbyp.py
+    check_collectables_h5dat.py dat-h5_pbyp
   )
   SIMPLE_RUN_AND_CHECK(estimator-sofk_allp-properties
     "${CMAKE_SOURCE_DIR}/tests/estimator/sofk"
     allp_dat-h5.xml
     1 16
-    check_properties_h5dat-allp.py
+    check_properties_h5dat.py dat-h5_allp
   )
   SIMPLE_RUN_AND_CHECK(estimator-sofk_allp-collectables
     "${CMAKE_SOURCE_DIR}/tests/estimator/sofk"
     allp_dat-h5.xml
     1 16
-    check_collectables_h5dat-allp.py
+    check_collectables_h5dat.py dat-h5_allp
   )
 endif()
