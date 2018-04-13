@@ -133,23 +133,24 @@ public:
   bool SameMass;
   ///threa id
   Index_t ThreadID;
-  ///the index of the active particle for particle-by-particle moves
+  /** the index of the active particle during particle-by-particle moves
+   *
+   * when a single particle move is proposed, the particle id is assigned to activePtcl
+   * No matter the move is accepted or rejected, activePtcl is marked back to -1.
+   * This state flag is used for picking coordinates and distances for SPO evaluation.
+   */
   Index_t activePtcl;
-  ///the group of the active particle for particle-by-particle moves
+  ///the group of the active particle during particle-by-particle moves
   Index_t activeGroup;
   ///the index of the active bead for particle-by-particle moves
   Index_t activeBead;
   ///the direction reptile traveling
   Index_t direction;
 
-  /** the position of the active particle for particle-by-particle moves
-   *
-   * Saves the position before making a move to handle rejectMove
-   */
+  ///the proposed position of activePtcl during particle-by-particle moves
   SingleParticlePos_t activePos;
 
-  /** the proposed position in the Lattice unit
-   */
+  ///the proposed position in the Lattice unit
   SingleParticlePos_t newRedPos;
 
   ///SpeciesSet of particles
@@ -452,7 +453,15 @@ public:
    */
   void saveWalker(Walker_t& awalker);
 
-  /** update neighbor list and unmark activePtcl
+  /** update neighbor list, structure factor and unmark activePtcl
+   *
+   * Currently the trial wave function depends only on distances and
+   * doesn't use any neightbor lists from ParticleSet. However, the
+   * evaluation of non-local pseudopotential relies on the neighbor
+   * list of electron-ion and the Coulomb interaction needs the
+   * structure factor. For these reason, donePbyP after the loop of
+   * single electron moves before evaluating the Hamiltonian.
+   * unmark activePtcl is more of a safety measure probably not needed.
    */
   void donePbyP();
 
