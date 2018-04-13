@@ -521,6 +521,7 @@ J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
     }
     cur_dUat[idim] = cur_g;
   }
+  LogValue  += Uat[iat]-cur_Uat;
   Uat[iat]   = cur_Uat;
   dUat(iat)  = cur_dUat;
   d2Uat[iat] = cur_d2Uat;

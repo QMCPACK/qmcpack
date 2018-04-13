@@ -394,9 +394,10 @@ public:
 
   void acceptMove(ParticleSet& P, int iat)
   {
-    U[iat] = curVal;
-    dU[iat]=curGrad;
-    d2U[iat]=curLap;
+    LogValue += U[iat]-curVal;
+    U[iat]    = curVal;
+    dU[iat]   = curGrad;
+    d2U[iat]  = curLap;
   }
 
   void evaluateLogAndStore(ParticleSet& P,
