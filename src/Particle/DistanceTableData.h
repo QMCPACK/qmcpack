@@ -347,16 +347,13 @@ struct DistanceTableData
     return -1;
   }
 
-  ///prepare particle-by-particle moves
-  virtual void setPbyP() { }
-
   ///update internal data after completing particle-by-particle moves
   virtual void donePbyP() { }
 
-  ///evaluate the Distance Table using only with position array
-  virtual void evaluate(ParticleSet& P) = 0;
+  ///evaluate the full Distance Table and neighbor_list if requested
+  virtual void evaluate(ParticleSet& P, bool update_neighbor_list=true) = 0;
 
-  /// evaluate the Distance Table
+  /// evaluate the Distance Table for a given electron
   virtual void evaluate(ParticleSet& P, int jat)=0;
 
   ///evaluate the temporary pair relations

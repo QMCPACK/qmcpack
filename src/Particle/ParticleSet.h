@@ -452,18 +452,17 @@ public:
    */
   void saveWalker(Walker_t& awalker);
 
-  /** update the buffer
-   *@param skip SK update if skipSK is true
+  /** update neighbor list and unmark activePtcl
    */
-  void donePbyP(bool skipSK=false);
+  void donePbyP();
 
-  //return the address of the values of Hamiltonian terms
+  ///return the address of the values of Hamiltonian terms
   inline EstimatorRealType* restrict getPropertyBase()
   {
     return Properties.data();
   }
 
-  //return the address of the values of Hamiltonian terms
+  ///return the address of the values of Hamiltonian terms
   inline const EstimatorRealType* restrict getPropertyBase() const
   {
     return Properties.data();

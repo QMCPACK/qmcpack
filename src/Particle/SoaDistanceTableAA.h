@@ -61,7 +61,7 @@ struct SoaDistanceTableAA: public DTD_BConds<T,D,SC>, public DistanceTableData
     Temp_dr.resize(Ntargets);
   }
 
-  inline void evaluate(ParticleSet& P)
+  inline void evaluate(ParticleSet& P, bool update_neighbor_list)
   {
     CONSTEXPR T BigR= std::numeric_limits<T>::max();
     //P.RSoA.copyIn(P.R); 
