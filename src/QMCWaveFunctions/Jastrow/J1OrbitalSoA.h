@@ -48,7 +48,6 @@ struct  J1OrbitalSoA : public OrbitalBase
   ///reference to the sources (ions)
   const ParticleSet& Ions;
 
-  valT LogValue;
   valT curAt;
   valT curLap;
   posT curGrad;
