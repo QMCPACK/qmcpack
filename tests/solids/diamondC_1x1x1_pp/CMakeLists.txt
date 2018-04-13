@@ -106,7 +106,7 @@ ENDIF()
 IF(NOT QMC_CUDA)
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
-                    qmc_short_vmc_dmc_allp
+                    qmc_vmc_dmc_allp
                     qmc_short_vmc_dmc_allp.in.xml
                     1 16
                     TRUE
@@ -210,6 +210,36 @@ ENDIF()
                     TRUE
                     0 LONG_DIAMOND_SCALARS # VMC
                     )
+
+IF(NOT QMC_CUDA)
+  # VMC ref
+  LIST(APPEND LONG_DIAMOND_ALLP_SCALARS "totenergy" "-10.491445 0.0065")
+  LIST(APPEND LONG_DIAMOND_ALLP_SCALARS "kinetic" "11.434392 0.006")
+  LIST(APPEND LONG_DIAMOND_ALLP_SCALARS "potential" "-21.925822 0.006")
+  LIST(APPEND LONG_DIAMOND_ALLP_SCALARS "eeenergy" "-2.700534 0.0015")
+  LIST(APPEND LONG_DIAMOND_ALLP_SCALARS "ionion" "-12.77566752 0.0004")
+  LIST(APPEND LONG_DIAMOND_ALLP_SCALARS "localecp" "-7.046740 0.0065")
+  LIST(APPEND LONG_DIAMOND_ALLP_SCALARS "nonlocalecp" "0.597119 0.0019")
+  LIST(APPEND LONG_DIAMOND_ALLP_SCALARS "samples" "1280000 0.0")
+  #DMC ref
+  LIST(APPEND LONG_DIAMOND_DMC_ALLP_SCALARS "totenergy"   "-10.5316 0.0008")
+  LIST(APPEND LONG_DIAMOND_DMC_ALLP_SCALARS "kinetic"      "11.4857 0.0077")
+  LIST(APPEND LONG_DIAMOND_DMC_ALLP_SCALARS "potential"   "-22.0170 0.0080")
+  LIST(APPEND LONG_DIAMOND_DMC_ALLP_SCALARS "localecp"     "-7.1518 0.0108")
+  LIST(APPEND LONG_DIAMOND_DMC_ALLP_SCALARS "nonlocalecp"  "0.62688 0.0027")
+  LIST(APPEND LONG_DIAMOND_DMC_ALLP_SCALARS "eeenergy"    "-2.71641 0.0028")
+
+  QMC_RUN_AND_CHECK(long-diamondC_1x1x1_pp-vmc-dmc-allp_sdj
+                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+                    qmc_vmc_dmc_allp
+                    qmc_long_vmc_dmc_allp.in.xml
+                    1 16
+                    TRUE
+                    0 LONG_DIAMOND_ALLP_SCALARS # VMC without drift
+                    1 LONG_DIAMOND_ALLP_SCALARS # VMC with drift
+                    2 LONG_DIAMOND_DMC_ALLP_SCALARS # DMC
+                    )
+ENDIF()
 
   LIST(APPEND LONG_DIAMOND_KSPACE_SCALARS "totenergy" "-10.500719 0.001769")
   LIST(APPEND LONG_DIAMOND_KSPACE_SCALARS "variance"  "0.312264 0.028662")
