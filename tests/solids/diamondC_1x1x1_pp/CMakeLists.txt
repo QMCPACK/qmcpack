@@ -103,6 +103,7 @@ ENDIF()
                     1 DIAMOND_DMC_SCALARS # DMC
                     )
 
+IF(NOT QMC_CUDA)
   QMC_RUN_AND_CHECK(short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj
                     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
                     qmc_short_vmc_dmc_allp
@@ -113,6 +114,9 @@ ENDIF()
                     1 DIAMOND_SCALARS # VMC with drift
                     2 DIAMOND_DMC_SCALARS # DMC
                     )
+ELSE()
+  MESSAGE("Skipping diamondC_1x1x1_pp all particle move VMC/DMC tests because they are not supported by CUDA build (QMC_CUDA=1)")
+ENDIF()
 
 # Coverage test - shorter version of dmc test
   SET(FULL_NAME "coverage-diamondC_1x1x1_pp-vmc_sdj-1-1")
