@@ -88,7 +88,6 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
     if(!accepted)
     {
       W.update(thisWalker.R);
-      W.donePbyP(true);
       logpsi = Psi.evaluateLog(W);
     }
 

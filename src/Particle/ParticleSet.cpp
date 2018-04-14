@@ -578,10 +578,7 @@ bool ParticleSet::makeMove(const Walker_t& awalker
   RSoA.copyIn(R); 
 #endif
   for (int i=0; i<DistTables.size(); i++)
-  {
     DistTables[i]->evaluate(*this);
-    DistTables[i]->donePbyP();
-  }
   if (SK)
     SK->UpdateAllPart(*this);
   //every move is valid
@@ -614,10 +611,7 @@ bool ParticleSet::makeMove(const Walker_t& awalker
   RSoA.copyIn(R); 
 #endif
   for (int i=0; i<DistTables.size(); i++)
-  {
     DistTables[i]->evaluate(*this);
-    DistTables[i]->donePbyP();
-  }
   if (SK)
     SK->UpdateAllPart(*this);
   //every move is valid
@@ -658,10 +652,7 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
   RSoA.copyIn(R); 
 #endif
   for (int i=0; i<DistTables.size(); i++)
-  {
     DistTables[i]->evaluate(*this);
-    DistTables[i]->donePbyP();
-  }
   if (SK)
     SK->UpdateAllPart(*this);
   //every move is valid
@@ -697,10 +688,7 @@ bool ParticleSet::makeMoveWithDrift(const Walker_t& awalker
 #endif
 
   for (int i=0; i<DistTables.size(); i++)
-  {
     DistTables[i]->evaluate(*this);
-    DistTables[i]->donePbyP();
-  }
   if (SK)
     SK->UpdateAllPart(*this);
   //every move is valid
@@ -761,12 +749,12 @@ void ParticleSet::rejectMove(Index_t iat)
   activePtcl=-1;
 }
 
-void ParticleSet::donePbyP(bool skipSK)
+void ParticleSet::donePbyP()
 {
   myTimers[2]->start();
   for (size_t i=0; i<DistTables.size(); i++)
     DistTables[i]->donePbyP();
-  if (!skipSK && SK && !SK->DoUpdate)
+  if (SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);
   activePtcl=-1;
   myTimers[2]->stop();
@@ -795,7 +783,7 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
     // in certain cases, full tables must be ready
     for (int i=0; i< DistTables.size(); i++)
       if(DistTables[i]->DTType==DT_AOS||DistTables[i]->Need_full_table_loadWalker)
-        DistTables[i]->evaluate(*this);
+        DistTables[i]->evaluate(*this,false);
     //computed so that other objects can use them, e.g., kSpaceJastrow
     if(SK && SK->DoUpdate)
       SK->UpdateAllPart(*this);

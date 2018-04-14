@@ -73,7 +73,7 @@ struct SoaDistanceTableAB: public DTD_BConds<T,D,SC>, public DistanceTableData
   SoaDistanceTableAB(const SoaDistanceTableAB&)=delete;
   ~SoaDistanceTableAB() {}
 
-  inline void evaluate(ParticleSet& P)
+  inline void evaluate(ParticleSet& P, bool update_neighbor_list)
   {
     for(int iat=0; iat<Nsources; ++iat)
       DTD_BConds<T,D,SC>::computeDistances(Origin->R[iat], P.RSoA, Distances[iat], Displacements[iat], 0, Ntargets);
