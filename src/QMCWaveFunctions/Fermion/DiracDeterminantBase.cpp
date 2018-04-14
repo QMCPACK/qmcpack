@@ -76,7 +76,6 @@ void DiracDeterminantBase::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_
 #ifdef MIXED_PRECISION
   simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(), 
       psiM_hp.data(), NumOrbitals, psiM_hp.cols());
-  ParticleSet::Scalar_t PhaseValue_hp;
   detEng_hp.invert(psiM_hp,true);
   LogValue = static_cast<RealType>(detEng_hp.LogDet);
   PhaseValue = static_cast<RealType>(detEng_hp.Phase);

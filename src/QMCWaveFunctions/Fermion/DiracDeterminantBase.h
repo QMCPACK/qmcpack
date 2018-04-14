@@ -302,7 +302,6 @@ public:
 #ifdef MIXED_PRECISION
   /// temporal matrix and workspace in higher precision for the accurate inversion.
   ValueMatrix_hp_t psiM_hp;
-  Vector<ParticleSet::ParticleValue_t> WorkSpace_hp;
   DiracMatrix<mValueType> detEng_hp;
 #endif
   DiracMatrix<ValueType> detEng;

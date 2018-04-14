@@ -280,7 +280,7 @@ NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
         if(ibar)
         {
           P.setActive(iat);
-          Psi.evalGrad(W,iat);
+          Psi.evalGrad(P,iat);
           if(P.makeMoveAndCheck(iat,nonLocalOps.delta(ibar)))
           {
             Psi.ratioGrad(P,iat,grad_iat);
@@ -305,7 +305,7 @@ NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
         if(oneTMove)
         {
           P.setActive(iat);
-          Psi.evalGrad(W,iat);
+          Psi.evalGrad(P,iat);
           if(P.makeMoveAndCheck(iat,oneTMove->Delta))
           {
             Psi.ratioGrad(P,iat,grad_iat);
@@ -319,7 +319,7 @@ NonLocalECPotential::makeNonLocalMovesPbyP(ParticleSet& P)
   }
 
   if(NonLocalMoveAccepted>0)
-    Psi.completeUpdates(W);
+    Psi.completeUpdates(P);
 
   return NonLocalMoveAccepted;
 }
