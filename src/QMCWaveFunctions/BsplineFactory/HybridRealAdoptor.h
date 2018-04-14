@@ -108,18 +108,75 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     {
       const PointType& r=P.activeR(iat);
       int bc_sign=HybridBase::get_bc_sign(r, PrimLattice, HalfG);
-      BaseAdoptor::assign_v(bc_sign,psi);
+      BaseAdoptor::assign_v(bc_sign,myV,psi);
     }
     else
     {
       const PointType& r=P.activeR(iat);
       psi_AO.resize(psi.size());
       int bc_sign=HybridBase::get_bc_sign(r, PrimLattice, HalfG);
-      BaseAdoptor::assign_v(bc_sign,psi_AO);
+      BaseAdoptor::assign_v(bc_sign,myV,psi_AO);
       BaseAdoptor::evaluate_v(P,iat,psi);
       for(size_t i=0; i<psi.size(); i++)
         psi[i] = psi_AO[i]*smooth_factor + psi[i]*(cone-smooth_factor);
     }
+  }
+
+  template<typename VM>
+  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM)
+  {
+    const size_t m=psiM.cols();
+    if(VP.isOnSphere())
+    {
+      Matrix<ST,aligned_allocator<ST> > multi_myV((ST*)VP.SPOMem.data(),VP.getTotalNum(),myV.size());
+      std::vector<int> bc_signs(VP.getTotalNum());
+      const RealType smooth_factor=HybridBase::evaluateValuesR2R(VP, PrimLattice, HalfG, multi_myV, bc_signs);
+      const RealType cone(1);
+      if(smooth_factor<0)
+      {
+        for(int iat=0; iat<VP.getTotalNum(); ++iat)
+        {
+          Vector<SPOSetBase::ValueType> psi(psiM[iat],m);
+          BaseAdoptor::evaluate_v(VP,iat,psi);
+        }
+      }
+      else if (smooth_factor==cone)
+      {
+        for(int iat=0; iat<VP.getTotalNum(); ++iat)
+        {
+          const PointType& r=VP.R[iat];
+          Vector<SPOSetBase::ValueType> psi(psiM[iat],m);
+          Vector<ST,aligned_allocator<ST> > myV_one(multi_myV[iat],myV.size());
+          BaseAdoptor::assign_v(bc_signs[iat],myV_one,psi);
+        }
+      }
+      else
+      {
+        psi_AO.resize(m);
+        for(int iat=0; iat<VP.getTotalNum(); ++iat)
+        {
+          Vector<SPOSetBase::ValueType> psi(psiM[iat],m);
+          Vector<ST,aligned_allocator<ST> > myV_one(multi_myV[iat],myV.size());
+          BaseAdoptor::assign_v(bc_signs[iat],myV_one,psi_AO);
+          BaseAdoptor::evaluate_v(VP,iat,psi);
+          for(size_t i=0; i<psi.size(); i++)
+            psi[i] = psi_AO[i]*smooth_factor + psi[i]*(cone-smooth_factor);
+        }
+      }
+    }
+    else
+    {
+      for(int iat=0; iat<VP.getTotalNum(); ++iat)
+      {
+        Vector<SPOSetBase::ValueType> psi(psiM[iat],m);
+        evaluate_v(VP,iat,psi);
+      }
+    }
+  }
+
+  inline size_t estimateMemory(const int nP)
+  {
+    return BaseAdoptor::estimateMemory(nP)+myV.size()*sizeof(ST)/sizeof(ValueType)*nP;
   }
 
   template<typename T1>

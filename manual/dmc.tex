@@ -37,7 +37,7 @@
    &   \texttt{reconfiguration     } &  string  & yes/pure/other & no   & fixed population technique  \\
    &   \texttt{branchInterval      } &  integer  & $\ge 0$ & 1   & branching interval \\
    &   \texttt{substeps            } &  integer  & $\ge 0$ & 1   & branching interval \\
-   &   \texttt{nonlocalmoves       } &  string  & yes/v0/v1/no & no   & run with tmoves  \\
+   &   \texttt{nonlocalmoves       } &  string  & yes,no,v0,v1,v3 & no   & run with T-moves  \\
    &   \texttt{scaleweight         } &  string  & yes/other & yes   & scale weights (CUDA only)  \\
    &   \texttt{MaxAge              } &  double  & $\ge 0$ & 10   & kill persistent walkers  \\
     &   \texttt{MaxCopy             } &  double  & $\ge 0$ &2   & limit population growth \\
@@ -99,8 +99,15 @@ where $N$ is the current population.
 \item \texttt{substeps}.  Same as BranchInterval.
 
 
-\item \texttt{nonlocalmoves}. Evaluate pseudopotentials using one of the nonlocal move algorithms such as t-moves.  Setting nonlocalmoves to `no' will impose the locality approximation. `yes/v0' implements the algorithm in the 2006 Casula paper~\cite{Casula2006} and `v1' implements the v1 algorithm in the 2010 Casula paper~\cite{Casula2010}.
-The v1 algorithm is size-consistent and an important advance over the previous v0 non-size-consistent algorithm. Investigating the importance of size consistency is highly recommended.
+\item \texttt{nonlocalmoves}. Evaluate pseudopotentials using one of the nonlocal move algorithms such as T-moves.
+\begin{itemize}
+\item no(default): imposes the locality approximation.
+\item yes/v0: implements the algorithm in the 2006 Casula paper~\cite{Casula2006}
+\item v1: implements the v1 algorithm in the 2010 Casula paper~\cite{Casula2010}.
+\item v2: is \textbf{not implemented} and \textbf{skipped} due to the existence of the v2 algorithm in the 2010 Casula paper~\cite{Casula2010}.
+\item v3: implements an algorithm similar to v1 but is much faster. v1 computes the transition probability before each single electron T-move selection due to the acceptance of previous T-moves. v3 reuses the transition probability computed in non-local pseudopotentials, namely before accepting any T-moves. This is an approximation to v1, and results in a different time step error, but significantly reduces the computational cost. v1 and v3 agrees at zero time step.
+\end{itemize}
+The v1 and v3 algorithms are size-consistent and important advances over the previous v0 non-size-consistent algorithm. Investigating the importance of size consistency is highly recommended.
 
 \item \texttt{scaleweight}. Scaling weight per Umrigar/Nightengale.  CUDA only.
 

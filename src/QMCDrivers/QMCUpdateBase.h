@@ -257,8 +257,6 @@ public:
 protected:
   ///update particle-by-particle
   bool UpdatePbyP;
-  ///use T-moves
-  int UseTMove;
   ///number of particles
   IndexType NumPtcl;
   ///Time-step factor \f$ 1/(2\tau)\f$
@@ -291,8 +289,6 @@ protected:
   std::vector<RealType> MassInvP;
   ///sqrt(tau/Mass) per particle
   std::vector<RealType> SqrtTauOverMass;
-  ///non local operator
-  NonLocalTOperator nonLocalOps;
   ///temporary storage for drift
   ParticleSet::ParticlePos_t drift;
   ///temporary storage for random displacement

@@ -46,8 +46,6 @@ struct NonLocalECPComponent: public QMCTraits
   int nknot;
   ///Maximum cutoff the non-local pseudopotential
   RealType Rmax;
-  ///random number generator
-  RandomGenerator_t* myRNG;
   ///Angular momentum map
   aligned_vector<int> angpp_m;
   ///Weight of the angular momentum
@@ -96,7 +94,7 @@ struct NonLocalECPComponent: public QMCTraits
   ///destructor
   ~NonLocalECPComponent();
 
-  NonLocalECPComponent* makeClone();
+  NonLocalECPComponent* makeClone(const ParticleSet &qp);
 
   ///add a new Non Local component
   void add(int l, RadialPotentialType* pp);
@@ -110,8 +108,8 @@ struct NonLocalECPComponent: public QMCTraits
 
   void resize_warrays(int n,int m,int l);
 
-  void randomize_grid(ParticleSet::ParticlePos_t& sphere, bool randomize);
-  template<typename T> void randomize_grid(std::vector<T> &sphere);
+  void randomize_grid(RandomGenerator_t& myRNG);
+  template<typename T> void randomize_grid(std::vector<T> &sphere, RandomGenerator_t& myRNG);
 
   RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& Psi, 
       int iel, RealType r, const PosType& dr, bool Tmove, std::vector<NonLocalData>& Txy) const;
@@ -126,10 +124,6 @@ struct NonLocalECPComponent: public QMCTraits
   evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, std::vector<NonLocalData>& Txy,
            PosType &force_iat);
 
-  /** compute with virtual moves */
-  RealType evaluateVP(const ParticleSet& W, int iat, TrialWaveFunction& Psi);
-  RealType evaluateVP(const ParticleSet& W, int iat, TrialWaveFunction& Psi,std::vector<NonLocalData>& Txy);
-
   RealType
   evaluateValueAndDerivatives(ParticleSet& P,
       int iat, TrialWaveFunction& psi,
@@ -139,12 +133,7 @@ struct NonLocalECPComponent: public QMCTraits
 
   void print(std::ostream& os);
 
-  void initVirtualParticle(ParticleSet* qp);
-
-  void setRandomGenerator(RandomGenerator_t* rng)
-  {
-    myRNG=rng;
-  }
+  void initVirtualParticle(const ParticleSet& qp);
 
   // For space-warp transformation used in Pulay correction
   inline RealType WarpFunction (RealType r)

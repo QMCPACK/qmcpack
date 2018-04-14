@@ -16,7 +16,6 @@
 #ifndef QMCPLUSPLUS_MULTISLATERDETERMINANTWITHBACKFLOW_ORBITAL_H
 #define QMCPLUSPLUS_MULTISLATERDETERMINANTWITHBACKFLOW_ORBITAL_H
 #include <Configuration.h>
-#include <QMCWaveFunctions/FermionBase.h>
 #include <QMCWaveFunctions/Fermion/DiracDeterminantBase.h>
 #include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"

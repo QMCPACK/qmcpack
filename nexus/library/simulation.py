@@ -574,11 +574,11 @@ class Simulation(NexusCore):
         return ready
     #end def ready
 
-    def check_result(self,result_name):
+    def check_result(self,result_name,sim):
         self.not_implemented()
     #end def check_result
 
-    def get_result(self,result_name):
+    def get_result(self,result_name,sim):
         self.not_implemented()
     #end def get_result
 

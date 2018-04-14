@@ -125,7 +125,8 @@ EinsplineSetBuilder::CheckLattice()
     o << SuperLattice-TargetPtcl.Lattice.R << std::endl;
     o << " Max relative error = "<< diff << std::endl;
     o << " Tolerance      = "<< MatchingTol << std::endl;
-    APP_ABORT(o.str());
+    app_error() << o.str();
+    return false;
   }
   return true;
 }

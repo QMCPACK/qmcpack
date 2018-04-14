@@ -812,15 +812,6 @@ HamiltonianFactory::clone(ParticleSet* qp, TrialWaveFunction* psi,
 bool HamiltonianFactory::put(xmlNodePtr cur)
 {
   bool success=build(cur,false);
-  
-  //if(targetH->EnableVirtualMoves)
-  //{
-  //  app_log() << "  Hamiltonian enables VirtualMoves" << std::endl;
-  //  targetPtcl->enableVirtualMoves();
-  //}
-  //else
-  //  app_log() << "  Hamiltonian disables VirtualMoves" << std::endl;
-  
   return success;
 }
 

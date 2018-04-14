@@ -16,7 +16,7 @@
 #define QMCPLUSPLUS_BSPLINE_AO_BUILDER_H
 
 #include "Configuration.h"
-#include "QMCWaveFunctions/SphericalBasisSet.h"
+#include "QMCWaveFunctions/MolecularOrbitals/SphericalBasisSet.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 
 namespace qmcplusplus

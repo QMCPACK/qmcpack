@@ -1,0 +1,46 @@
+
+These tests include only long AFQMC runs for a four atom primitive cell of 
+NiO in both antiferromagnetic and spin unpolarized (non-magnetic) 
+configurations.  Reference data was produced on a larger machine at LLNL 
+and so the error bars of the tests may have to be revised in the future. 
+
+In order to run these tests, QMC_DATA must be set when configuring with 
+CMake.  QMC_DATA is a directory containing wavefunction and hamiltonian 
+inputs that are too large to include in the GitHub repository, but are 
+necessary to have for some test casts.  For information on how to download 
+these files and appropriately configure your installation, see 
+tests/performance/NiO/README for more detail.
+
+Three files should be present at the following locations if QMC_DATA is 
+set correctly:
+
+$QMC_DATA/NiO/NiO_afm_fcidump.h5
+$QMC_DATA/NiO/NiO_afm_wfn.dat	  
+$QMC_DATA/NiO/NiO_nm_choldump.h5
+
+When this test executes, symbolic links pointing to these files will be 
+created automatically.
+
+Reference data from the data in ./qmc-ref AFQMC is found below:
+
+qmca -e 10 qmc-ref/*scalar*
+
+          Eloc
+qmc_afm  -379.2037 +/- 0.0085 
+qmc_nm   -379.2024 +/- 0.0058 
+
+Test input files were created by reducing the number of steps from the   
+included reference by a factor of 10 for the "long" tests.  Expected 
+error bars were derived from the reference data by multiplying the 
+reference error bars by a factor of sqrt(10+1) for the long tests.  
+The factor of +1 accounts for the error bar intrinsic to the reference 
+runs. 
+
+The target means and error bars for long tests are: 
+
+         reference  referr  longerr
+qmc_afm  -379.2037  0.0085  0.0282
+qmc_nm   -379.2024  0.0058  0.0192
+
+
+

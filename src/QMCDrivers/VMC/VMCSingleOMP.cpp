@@ -40,9 +40,8 @@ namespace qmcplusplus
 
 /// Constructor.
 VMCSingleOMP::VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-                           HamiltonianPool& hpool, WaveFunctionPool& ppool):
-  QMCDriver(w,psi,h,ppool),  CloneManager(hpool),
-  UseDrift("yes") //, logoffset(2.0), logepsilon(0)
+                           WaveFunctionPool& ppool):
+  QMCDriver(w,psi,h,ppool), UseDrift("yes")
 {
   RootName = "vmc";
   QMCType ="VMCSingleOMP";
@@ -127,8 +126,10 @@ bool VMCSingleOMP::run()
   Traces->stopRun();
 #endif
   //copy back the random states
+#ifndef USE_FAKE_RNG
   for (int ip=0; ip<NumThreads; ++ip)
     *(RandomNumberControl::Children[ip])=*(Rng[ip]);
+#endif
   ///write samples to a file
   bool wrotesamples=DumpConfig;
   if(DumpConfig)
@@ -171,8 +172,12 @@ void VMCSingleOMP::resetRun()
 #if !defined(REMOVE_TRACEMANAGER)
       traceClones[ip] = Traces->makeClone();
 #endif
+#ifdef USE_FAKE_RNG
+      Rng[ip] = new FakeRandom();
+#else
       Rng[ip]=new RandomGenerator_t(*(RandomNumberControl::Children[ip]));
       hClones[ip]->setRandomGenerator(Rng[ip]);
+#endif
       branchClones[ip] = new BranchEngineType(*branchEngine);
       if (QMCDriverMode[QMC_UPDATE_MODE])
       {

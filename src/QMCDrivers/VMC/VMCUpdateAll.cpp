@@ -96,11 +96,12 @@ void VMCUpdateAll::advanceWalker(Walker_t& thisWalker, bool recompute)
   if(!updated)
   { // W.G and W.L have to be computed because the last move was rejected
     W.update(thisWalker.R); // move W back to last accepted configuration; W.DistTables, SK are updated
+    W.donePbyP(true); // update neighbour list for NLPP
     logpsi_old=Psi.evaluateLog(W); // update W.G,L
   } // W and logpsi_old are up-to-date at this point
 
   RealType eloc = H.evaluate(W); // calculate local energy; W.SK must be up-to-date if Coulomb interaction is used with periodic boundary. W.SK is used to calculate the long-range part of the Coulomb potential.
-  thisWalker.R = W.R;
+  W.saveWalker(thisWalker);
   thisWalker.resetProperty(logpsi_old,Psi.getPhase(),eloc); // update thisWalker::Properties[LOGPSI,SIGN,LOCALENERGY]
   H.auxHevaluate(W,thisWalker); // update auxiliary observables, i.e. fill H::Observables
   H.saveProperty(thisWalker.getPropertyBase()); // copy H::Observables to thisWalker::Properties

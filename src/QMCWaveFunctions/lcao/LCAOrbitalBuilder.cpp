@@ -109,7 +109,6 @@ namespace qmcplusplus
     std::string transformOpt("yes"); // Numerical Molecular Orbital
     std::string cuspC("no");  // cusp correction
     cuspInfo="";  // file with precalculated cusp correction info
-
     OhmmsAttributeSet aAttrib;
     aAttrib.add(keyOpt,"keyword");
     aAttrib.add(keyOpt,"key");
@@ -117,6 +116,9 @@ namespace qmcplusplus
     aAttrib.add(cuspC,"cuspCorrection");
     aAttrib.add(cuspInfo,"cuspInfo");
     aAttrib.add(h5_path,"href");
+    aAttrib.add(PBCImages,"PBCimages");
+    aAttrib.put(cur);
+     
     if(cur != NULL) aAttrib.put(cur);
     
     radialOrbType=-1;
@@ -325,6 +327,7 @@ namespace qmcplusplus
     }
 
     mBasisSet->setBasisSetSize(-1);
+    mBasisSet->setPBCImages(PBCImages);
     return mBasisSet;
   }
 
@@ -420,6 +423,7 @@ namespace qmcplusplus
     }
 
     mBasisSet->setBasisSetSize(-1);
+    mBasisSet->setPBCImages(PBCImages);
     return mBasisSet;
   }
 
@@ -441,5 +445,5 @@ namespace qmcplusplus
     
     return lcos;
   }
-}
 
+}
