@@ -111,10 +111,7 @@ struct AtomicOrbitalSoA
     cutoff_buffer=cutoff_buffer_in;
     spline_radius=spline_radius_in;
     spline_npoints=spline_npoints_in;
-    if(non_overlapping_radius_in<cutoff)
-      non_overlapping_radius=non_overlapping_radius_in;
-    else
-      non_overlapping_radius=cutoff;
+    non_overlapping_radius=non_overlapping_radius_in;
     BaseN=spline_npoints+2;
   }
 
@@ -539,11 +536,10 @@ struct HybridAdoptorBase
   template<typename VM>
   inline RealType evaluateValuesC2X(const VirtualParticleSet& VP, VM& multi_myV)
   {
-    const auto* ei_0=VP.refPS.DistTables[myTableID];
-    const int center_idx=ei_0->get_first_neighbor(VP.refPtcl, dist_r, dist_dr, false);
-    if(center_idx<0) abort();
+    const int center_idx=VP.refSourcePtcl;
+    dist_r = VP.refPS.DistTables[myTableID]->Distances[VP.refPtcl][center_idx];
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
-    if ( dist_r < myCenter.cutoff )
+    if ( dist_r < myCenter.cutoff && dist_r < myCenter.non_overlapping_radius)
     {
       myCenter.evaluateValues(VP.DistTables[myTableID]->Displacements, center_idx, dist_r, multi_myV);
       return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
@@ -557,11 +553,10 @@ struct HybridAdoptorBase
                                     const Cell& PrimLattice, TinyVector<int,D>& HalfG,
                                     VM& multi_myV, SV& bc_signs)
   {
-    const auto* ei_0=VP.refPS.DistTables[myTableID];
-    const int center_idx=ei_0->get_first_neighbor(VP.refPtcl, dist_r, dist_dr, false);
-    if(center_idx<0) abort();
+    const int center_idx=VP.refSourcePtcl;
+    dist_r = VP.refPS.DistTables[myTableID]->Distances[VP.refPtcl][center_idx];
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
-    if ( dist_r < myCenter.cutoff )
+    if ( dist_r < myCenter.cutoff && dist_r < myCenter.non_overlapping_radius)
     {
       const auto &displ=VP.DistTables[myTableID]->Displacements;
       for(int ivp=0; ivp<VP.getTotalNum(); ivp++)
