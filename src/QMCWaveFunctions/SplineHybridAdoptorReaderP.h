@@ -477,8 +477,9 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       for(int center_idx=0; center_idx<ACInfo.Ncenters; center_idx++)
       {
         AtomicOrbitalSoA<DataType> oneCenter(ACInfo.lmax[center_idx]);
-        oneCenter.set_info(ACInfo.ion_pos[center_idx], ACInfo.cutoff[center_idx], ACInfo.inner_cutoff[center_idx],
-                           ACInfo.spline_radius[center_idx], ACInfo.spline_npoints[center_idx]);
+        oneCenter.set_info(ACInfo.ion_pos[center_idx], ACInfo.cutoff[center_idx],
+                           ACInfo.inner_cutoff[center_idx], ACInfo.spline_radius[center_idx],
+                           ACInfo.non_overlapping_radius[center_idx], ACInfo.spline_npoints[center_idx]);
         centers.push_back(oneCenter);
       }
     }

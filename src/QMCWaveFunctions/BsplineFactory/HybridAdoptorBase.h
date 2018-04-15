@@ -40,7 +40,7 @@ struct AtomicOrbitalSoA
   ST rmin;
   // far from core cutoff, rmin_sqrt>=rmin
   ST rmin_sqrt;
-  ST cutoff, cutoff_buffer, spline_radius;
+  ST cutoff, cutoff_buffer, spline_radius, non_overlapping_radius;
   int spline_npoints, BaseN;
   int NumBands, Npad;
   PointType pos;
@@ -100,7 +100,9 @@ struct AtomicOrbitalSoA
   }
 
   template<typename PT, typename VT>
-  inline void set_info(const PT& R, const VT& cutoff_in, const VT& cutoff_buffer_in, const VT& spline_radius_in, const int& spline_npoints_in)
+  inline void set_info(const PT& R, const VT& cutoff_in,
+                       const VT& cutoff_buffer_in, const VT& spline_radius_in,
+                       const VT& non_overlapping_radius_in, const int& spline_npoints_in)
   {
     pos[0]=R[0];
     pos[1]=R[1];
@@ -109,6 +111,10 @@ struct AtomicOrbitalSoA
     cutoff_buffer=cutoff_buffer_in;
     spline_radius=spline_radius_in;
     spline_npoints=spline_npoints_in;
+    if(non_overlapping_radius_in<cutoff)
+      non_overlapping_radius=non_overlapping_radius_in;
+    else
+      non_overlapping_radius=cutoff;
     BaseN=spline_npoints+2;
   }
 
