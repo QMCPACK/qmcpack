@@ -188,8 +188,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
       AtomicCentersInfo.ion_pos[i]=IonPos[i];
     int Zind=SourcePtcl->mySpecies.findAttribute("atomicnumber");
     // set GroupID for each ion
-    for (int i=0; i<SourcePtcl->R.size(); i++)
-    {
+    for (int i=0; i<IonPos.size(); i++)
       for (int j=0; j<Super2Prim.size(); j++)
         if (Super2Prim[j]==i)
         {
@@ -203,8 +202,6 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
           }
           continue;
         }
-      //app_log() << "debug atomic number " << PrimSourcePtcl.mySpecies(Zind,PrimSourcePtcl.GroupID[i]) << std::endl;
-    }
 
     // load cutoff_radius, spline_radius, spline_npoints, lmax if exists.
     const int inner_cutoff_ind=SourcePtcl->mySpecies.findAttribute("inner_cutoff");
