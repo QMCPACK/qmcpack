@@ -187,11 +187,11 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
     for (int i=0; i<IonPos.size(); i++)
       AtomicCentersInfo.ion_pos[i]=IonPos[i];
     int Zind=SourcePtcl->mySpecies.findAttribute("atomicnumber");
-    // set GroupID for each ion
     for (int i=0; i<IonPos.size(); i++)
       for (int j=0; j<Super2Prim.size(); j++)
         if (Super2Prim[j]==i)
         {
+          // set GroupID for each ion in primitive cell
           if ( (Zind<0) || (SourcePtcl->mySpecies(Zind,SourcePtcl->GroupID[j])==IonTypes[i]) )
             AtomicCentersInfo.GroupID[i] = SourcePtcl->GroupID[j];
           else
@@ -200,7 +200,13 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
                         << IonTypes[i] << " vs " << SourcePtcl->mySpecies(Zind,SourcePtcl->GroupID[j]) << std::endl;
             abort();
           }
-          continue;
+          // set non_overlapping_radius for each ion in primitive cell
+          RealType r(0);
+          PosType dr;
+          SourcePtcl->DistTables[0]->get_first_neighbor(j, r, dr, false);
+          if(r<1e-3) APP_ABORT("EinsplineSetBuilder::ReadOrbitalInfo_ESHDF too close ions <1e-3 bohr!");
+          AtomicCentersInfo.non_overlapping_radius[i] = 0.5*r;
+          break;
         }
 
     // load cutoff_radius, spline_radius, spline_npoints, lmax if exists.

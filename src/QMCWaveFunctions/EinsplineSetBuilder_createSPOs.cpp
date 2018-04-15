@@ -196,6 +196,8 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #else
     myTableIndex=TargetPtcl.addTable(*SourcePtcl,DT_AOS);
 #endif
+    SourcePtcl->addTable(*SourcePtcl,DT_SOA);
+    SourcePtcl->update(true);
   }
 
   ///////////////////////////////////////////////
