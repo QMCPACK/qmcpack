@@ -30,6 +30,8 @@
 #include "Numerics/HDFNumericAttrib.h"
 #include <map>
 
+#define PW_COEFF_NORM_TOLERANCE 1e-6
+
 class Communicate;
 
 namespace qmcplusplus
