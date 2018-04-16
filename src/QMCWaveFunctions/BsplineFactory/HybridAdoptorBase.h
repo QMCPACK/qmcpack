@@ -285,6 +285,7 @@ struct AtomicOrbitalSoA
         const ST& l_val=l_vals[lm];
         const ST& r_power=r_power_minus_l[lm];
         const ST Ylm_rescale=Ylm_v[lm]*r_power;
+        const ST rhat_dot_G = ( rhatx*Ylm_gx[lm] + rhaty*Ylm_gy[lm] + rhatz*Ylm_gz[lm] ) * r_power;
         #pragma omp simd aligned(val,g0,g1,g2,lapl,local_val,local_grad,local_lapl)
         for(size_t ib=0; ib<myV.size(); ib++)
         {
@@ -296,13 +297,15 @@ struct AtomicOrbitalSoA
           val[ib] += Ylm_rescale*local_v;
 
           // grad
-          g0[ib] += local_g * rhatx * Ylm_rescale + local_v * Ylm_gx[lm] * r_power - Vpart * rhatx * Ylm_rescale;
-          g1[ib] += local_g * rhaty * Ylm_rescale + local_v * Ylm_gy[lm] * r_power - Vpart * rhaty * Ylm_rescale;
-          g2[ib] += local_g * rhatz * Ylm_rescale + local_v * Ylm_gz[lm] * r_power - Vpart * rhatz * Ylm_rescale;
+          const ST factor1 = local_g*Ylm_rescale;
+          const ST factor2 = local_v*r_power;
+          const ST factor3 = -Vpart*Ylm_rescale;
+          g0[ib] += factor1 * rhatx + factor2 * Ylm_gx[lm] + factor3 * rhatx;
+          g1[ib] += factor1 * rhaty + factor2 * Ylm_gy[lm] + factor3 * rhaty;
+          g2[ib] += factor1 * rhatz + factor2 * Ylm_gz[lm] + factor3 * rhatz;
 
           // laplacian
-          ST rhat_dot_G = ( rhatx*Ylm_gx[lm] + rhaty*Ylm_gy[lm] + rhatz*Ylm_gz[lm] ) * r_power;
-          lapl[ib] += (local_l + ( local_g * (static_cast<ST>(2)-l_val) - Vpart ) * rinv) * Ylm_rescale
+          lapl[ib] += (local_l + ( local_g * ( 2 - l_val ) - Vpart ) * rinv) * Ylm_rescale
                     + (local_g - Vpart ) * rhat_dot_G;
         }
         local_val+=Npad;
@@ -329,6 +332,7 @@ struct AtomicOrbitalSoA
         const ST& l_val=l_vals[lm];
         const ST& r_power=r_power_minus_l[lm];
         const ST Ylm_rescale=Ylm_v[lm]*r_power;
+        const ST rhat_dot_G = (Ylm_gx[lm] * rhatx + Ylm_gy[lm] * rhaty + Ylm_gz[lm] * rhatz ) * r_power * r;
         #pragma omp simd aligned(val,g0,g1,g2,lapl,local_val,local_grad,local_lapl)
         for(size_t ib=0; ib<myV.size(); ib++)
         {
@@ -340,13 +344,15 @@ struct AtomicOrbitalSoA
           val[ib] += Vpart;
 
           // grad
-          g0[ib] += local_g * rhatx * Ylm_rescale + local_v * Ylm_gx[lm] * r_power - l_val * rhatx * Vpart * rinv;
-          g1[ib] += local_g * rhaty * Ylm_rescale + local_v * Ylm_gy[lm] * r_power - l_val * rhaty * Vpart * rinv;
-          g2[ib] += local_g * rhatz * Ylm_rescale + local_v * Ylm_gz[lm] * r_power - l_val * rhatz * Vpart * rinv;
+          const ST factor1 = local_g*Ylm_rescale;
+          const ST factor2 = local_v*r_power;
+          const ST factor3 = -l_val*Vpart*rinv;
+          g0[ib] += factor1 * rhatx + factor2 * Ylm_gx[lm] + factor3 * rhatx;
+          g1[ib] += factor1 * rhaty + factor2 * Ylm_gy[lm] + factor3 * rhaty;
+          g2[ib] += factor1 * rhatz + factor2 * Ylm_gz[lm] + factor3 * rhatz;
 
           // laplacian
-          ST rhat_dot_G = (Ylm_gx[lm] * rhatx + Ylm_gy[lm] * rhaty + Ylm_gz[lm] * rhatz ) * r_power * r;
-          lapl[ib] += local_l * (cone - chalf *l_val) * ( static_cast<ST>(3) * Ylm_rescale + rhat_dot_G );
+          lapl[ib] += local_l * (cone - chalf *l_val) * ( 3 * Ylm_rescale + rhat_dot_G );
         }
         local_val+=Npad;
         local_grad+=Npad;
