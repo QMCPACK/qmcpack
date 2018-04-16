@@ -532,6 +532,14 @@ struct HybridAdoptorBase
     return RealType(-1);
   }
 
+  // check if the batched algorithm is safe to operate
+  bool is_batched_safe(const VirtualParticleSet& VP)
+  {
+    const int center_idx=VP.refSourcePtcl;
+    auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
+    return VP.refPS.DistTables[myTableID]->Distances[VP.refPtcl][center_idx] < myCenter.non_overlapping_radius;
+  }
+
   // C2C, C2R cases
   template<typename VM>
   inline RealType evaluateValuesC2X(const VirtualParticleSet& VP, VM& multi_myV)
@@ -539,7 +547,7 @@ struct HybridAdoptorBase
     const int center_idx=VP.refSourcePtcl;
     dist_r = VP.refPS.DistTables[myTableID]->Distances[VP.refPtcl][center_idx];
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
-    if ( dist_r < myCenter.cutoff && dist_r < myCenter.non_overlapping_radius)
+    if ( dist_r < myCenter.cutoff )
     {
       myCenter.evaluateValues(VP.DistTables[myTableID]->Displacements, center_idx, dist_r, multi_myV);
       return smooth_function(myCenter.cutoff_buffer, myCenter.cutoff, dist_r);
@@ -556,7 +564,7 @@ struct HybridAdoptorBase
     const int center_idx=VP.refSourcePtcl;
     dist_r = VP.refPS.DistTables[myTableID]->Distances[VP.refPtcl][center_idx];
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
-    if ( dist_r < myCenter.cutoff && dist_r < myCenter.non_overlapping_radius)
+    if ( dist_r < myCenter.cutoff )
     {
       const auto &displ=VP.DistTables[myTableID]->Displacements;
       for(int ivp=0; ivp<VP.getTotalNum(); ivp++)
