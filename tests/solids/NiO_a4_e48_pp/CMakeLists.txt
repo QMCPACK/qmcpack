@@ -56,6 +56,33 @@ IF (EXISTS ${H5_FULL_PATH})
                     1 NIO_A4_E48_J3_SCALARS # VMC
                     )
 
+  QMC_RUN_AND_CHECK(short-NiO_a4_e48-batched_pp-vmc_sdj3
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-fcc-S1-vmc
+                    NiO-j3-batched-vmc-short.in.xml
+                    1 16
+                    TRUE
+                    1 NIO_A4_E48_J3_SCALARS # VMC
+                    )
+
+  QMC_RUN_AND_CHECK(short-NiO_a4_e48-hybridrep-pp-vmc_sdj3
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-fcc-S1-vmc
+                    NiO-hybridrep-j3-vmc-short.in.xml
+                    1 16
+                    TRUE
+                    1 NIO_A4_E48_J3_SCALARS # VMC
+                    )
+
+  QMC_RUN_AND_CHECK(short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3
+                    "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
+                    NiO-fcc-S1-vmc
+                    NiO-hybridrep-j3-batched-vmc-short.in.xml
+                    1 16
+                    TRUE
+                    1 NIO_A4_E48_J3_SCALARS # VMC
+                    )
+
 #
 # Long test
 #
