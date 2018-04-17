@@ -211,8 +211,41 @@ cublas_lemma_mats (cublasHandle_t handle,
 //  cudaDeviceSynchronize();
 }
 
+void
+cublas_ainv_row (cublasHandle_t handle,
+                 float *AinvkList_d[], float *AWorkList_d[], float *AinvList_d[],
+                 int k, int N, int nw, int RowStride)
+{
+  float one=1.0;
+  // A^-1 - { A^-1 * dU  * Lemma^-1 } * { V' * A^(-1) }
+  // per walker: [1 x N] - [1 x k] * [k x N] = [1 x N]
+  callAndCheckError( cublasSgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, 1, N, k,
+                                         &one,
+                                         (const float**)AWorkList_d, 1,
+                                         (const float**)AinvkList_d, RowStride, &one,
+                                         AinvList_d, 1,
+                                         nw), __LINE__ );
+}
+
+void
+cublas_ainv_row (cublasHandle_t handle,
+                 double *AinvkList_d[], double *AWorkList_d[], double *AinvList_d[],
+                 int k, int N, int nw, int RowStride)
+{
+  double one=1.0;
+  // A^-1 - { A^-1 * dU  * Lemma^-1 } * { V' * A^(-1) }
+  // per walker: [1 x N] - [1 x k] * [k x N] = [1 x N]
+  callAndCheckError( cublasDgemmBatched( handle, CUBLAS_OP_N, CUBLAS_OP_N, 1, N, k,
+                                         &one,
+                                         (const double**)AWorkList_d, 1,
+                                         (const double**)AinvkList_d, RowStride, &one,
+                                         AinvList_d, 1,
+                                         nw), __LINE__ );
+}
+
+
 // #define DEBUG_DELAYED
-#define USE_TRSM
+// #define USE_TRSM
 
 void
 cublas_smw_update (cublasHandle_t handle,

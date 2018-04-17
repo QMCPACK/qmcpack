@@ -110,7 +110,7 @@ void CheckAlign (void *p, std::string var)
 }
 
 // #define DEBUG_DELAYED
-#define USE_TRSM
+// #define USE_TRSM
 
 void
 DiracDeterminantCUDA::det_lookahead (MCWalkerConfiguration &W,
@@ -216,20 +216,15 @@ DiracDeterminantCUDA::update (MCWalkerConfiguration *W, std::vector<Walker_t*> &
           UpdateList[ws++] = allwalkers[iw]->cuda_DataSet.data();
     }
     UpdateList_d.asyncCopy(UpdateList);
+    if (W->getklinear() && (k<kdelay)) // special attention for "linear" (aka w/ drift) case
+    { // need to update A^-1*dU * lemma^-1 (currently in AWorkList_d from previous smw_update run by det_lookahead) for next round's gradient
+    }
     // kernel containing behavior for acceptance and rejection, side benefit: no memory copying needed anymore
-#ifndef AINVU_TRANSPOSE
     update_onemove (UpdateList_d.data(),
                     newRowOffset+k*RowStride, AOffset+(kstart+k)*RowStride,
                     newGradLaplOffset+4*k*RowStride, gradLaplOffset+4*(kstart+k)*RowStride,
-                    AinvUOffset+k*RowStride, LemmaOffset+k*kdelay,
-                    accepted, k, kdelay, RowStride, ws);
-#else
-    update_onemove (UpdateList_d.data(),
-                    newRowOffset+k*RowStride, AOffset+(kstart+k)*RowStride,
-                    newGradLaplOffset+4*k*RowStride, gradLaplOffset+4*(kstart+k)*RowStride,
-                    AinvUOffset+k, LemmaOffset+k*kdelay,
-                    accepted, k, kdelay, RowStride, ws);
-#endif
+                    AinvUOffset, LemmaOffset+k*kdelay, LemmaInvOffset, (W->getklinear() && (k<kdelay))*AWorkOffset,
+                    accepted, k, kstart, kdelay, RowStride, ws);
     if (k+1 == kdelay) // time to update the inverse
     {
 #ifndef USE_TRSM
@@ -733,9 +728,14 @@ DiracDeterminantCUDA::calcGradient(MCWalkerConfiguration &W, int iat, int k,
       multi_row_copy (AinvColkList_d.data(), AinvList_d.data(), RowStride, kstk, 1, RowStride, nw);
     } else // k>0, calculate k-th row of updated A^-1
     {
+      // just copy the k-th row of the (just updated) A inverse matrix into Ainvcolk (apart from the name that's the place to put it)
+      multi_row_copy (AinvColkList_d.data(), AinvList_d.data(), RowStride, kstk, 1, RowStride, nw);
+      cublas_ainv_row (gpu::cublasHandle,
+                       AinvDeltaList_d.data(), AWorkList_d.data(), AinvColkList_d.data(),
+                       k, NumPtcls, nw, RowStride);
       // copy lemma matrix to lemma_lu (for an updated LU decomposition)
       // and copy the k-th row of the A inverse matrix into Ainvcolk (apart from the name that's the place to put it)
-      copy_delayed (LemmaLUList_d.data(), LemmaList_d.data(),
+/*      copy_delayed (LemmaLUList_d.data(), LemmaList_d.data(),
                     AinvColkList_d.data(), AinvDeltaList_d.data(), // AinvDeltaList gets initialized in calc_ratio and will be present for k>0
                     k,kd,RowStride,nw);
 #ifdef USE_TRSM
@@ -755,7 +755,7 @@ DiracDeterminantCUDA::calcGradient(MCWalkerConfiguration &W, int iat, int k,
                          AinvDeltaList_d.data(), AinvColkList_d.data(),
                          AinvWorkList_d.data(), AWorkList_d.data(), // <- AinvWork takes the place of A^-1*dU (in the USE_TRSM case it's unused)
                          LemmaInvList_d.data(), LemmaLUList_d.data(),
-                         k, kd, 1, NumPtcls, nw, RowStride);
+                         k, kd, 1, NumPtcls, nw, RowStride);*/
     }
     // calculate and collect gradients only
     calc_gradient_delayed (AinvColkList_d.data(), GLList_d.data(), ratio_d.data(), NumPtcls, RowStride, nw);

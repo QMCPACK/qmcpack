@@ -2143,10 +2143,12 @@ __global__ void
 update_onemove (T **buff,
                 int newrow_off, int row_off,
                 int newgl_off, int gl_off,
-                int ainvu_off, int lemma_off,
-                int accepted, int k, int kdelay, int rowstride)
+                int ainvu_off, int lemma_off, int lemmainv_off, int awork_off,
+                int accepted, int k, int kstart, int kdelay, int rowstride)
 {
-  __shared__ T *my_row, *my_gl, *my_newrow, *my_newgl, *my_ainvu, *my_lemma;
+  __shared__ T *my_row, *my_gl, *my_newrow, *my_newgl, *my_ainvu, *my_lemma, *my_lemmainv, *my_awork;
+  int i = blockIdx.x * COPY_BS + threadIdx.x;
+  int i4 = 4*i;
   if (threadIdx.x ==0)
   {
     T* ptr    = buff[blockIdx.y];
@@ -2154,13 +2156,42 @@ update_onemove (T **buff,
     my_gl     = ptr + gl_off;
     my_newrow = ptr + newrow_off;
     my_newgl  = ptr + newgl_off;
+    // needed for updating A^-1*dU*Lemma^-1 for drift cases
+    my_awork = ptr + awork_off;
+    my_lemmainv = ptr + lemmainv_off;
     // these are only needed for rejected moves
     my_ainvu  = ptr + ainvu_off;
     my_lemma  = ptr + lemma_off;
   }
   __syncthreads();
-  int i = blockIdx.x * COPY_BS + threadIdx.x;
-  int i4 = 4*i;
+  // update A^-1*dU*Lemma^-1 for drift calculations (if needed)
+  if (awork_off && (i <= k))
+  {
+    T value=0.0;
+    T rejval=0.0;
+    int k1=k+1;
+    int ik1=i*k1;
+    int kk1=k*k1;
+#ifdef AINVU_TRANSPOSE
+    int ainv_off=(kstart+k1)*kdelay;
+#else
+    int ainv_off=kstart+k1;
+#endif
+#pragma unroll
+    for (int j=0; j<=k; j++)
+    {
+      T ainvu_val=my_ainvu[ainv_off+j];
+      value += my_lemmainv[ik1+j] * ainvu_val;
+#ifdef AINVU_TRANSPOSE
+      // ainvu matrix is kxN
+      rejval += my_lemmainv[kk1+j] * ainvu_val;
+#else
+      // ainvu matrix is Nxk
+      rejval += my_lemmainv[kk1+j] * ainvu_val;
+#endif
+    }
+    my_awork[i] = value - (blockIdx.y >= accepted)*rejval*my_lemmainv[i*(k+1)+k]/my_lemmainv[k*(k+2)]; // scale factor lemmainv_ki/lemmainv_kk (remember that lemmainv pitch is k+1, not kdelay)
+  }
   if (i < rowstride)
   {
     if (blockIdx.y < accepted) // accepted moves
@@ -2173,10 +2204,11 @@ update_onemove (T **buff,
     } else // rejected moves
     {
       my_newrow[i]   = my_row[i];
+      // kth column needs to be set to zero
 #ifdef AINVU_TRANSPOSE
-      my_ainvu[i*kdelay]    = 0.0;
+      my_ainvu[k+i*kdelay]    = 0.0;
 #else
-      my_ainvu[i]    = 0.0;
+      my_ainvu[k*rowstride+i]    = 0.0;
 #endif
       my_newgl[i4]   = my_gl[i4];
       my_newgl[i4+1] = my_gl[i4+1];
@@ -2192,20 +2224,20 @@ update_onemove (T **buff,
 
 
 void
-update_onemove (float *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int accepted, int k, int kdelay, int rowstride, int num)
+update_onemove (float *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int lemmainv_off, int awork_off, int accepted, int k, int kstart, int kdelay, int rowstride, int num)
 {
   dim3 dimBlock(COPY_BS);
   dim3 dimGrid ((rowstride+COPY_BS-1)/COPY_BS, num);
-  update_onemove<float><<<dimGrid,dimBlock>>>(buff, newrow_off, row_off, newgl_off, gl_off, ainvu_off, lemma_off, accepted, k, kdelay, rowstride);
+  update_onemove<float><<<dimGrid,dimBlock>>>(buff, newrow_off, row_off, newgl_off, gl_off, ainvu_off, lemma_off, lemmainv_off, awork_off, accepted, k, kstart, kdelay, rowstride);
 }
 
 
 void
-update_onemove (double *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int accepted, int k, int kdelay, int rowstride, int num)
+update_onemove (double *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int lemmainv_off, int awork_off, int accepted, int k, int kstart, int kdelay, int rowstride, int num)
 {
   dim3 dimBlock(COPY_BS);
   dim3 dimGrid ((rowstride+COPY_BS-1)/COPY_BS, num);
-  update_onemove<double><<<dimGrid,dimBlock>>>(buff, newrow_off, row_off, newgl_off, gl_off, ainvu_off, lemma_off, accepted, k, kdelay, rowstride);
+  update_onemove<double><<<dimGrid,dimBlock>>>(buff, newrow_off, row_off, newgl_off, gl_off, ainvu_off, lemma_off, lemmainv_off, awork_off, accepted, k, kstart, kdelay, rowstride);
 }
 
 

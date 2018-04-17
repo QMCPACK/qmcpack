@@ -304,6 +304,7 @@ void VMCcuda::advanceWalkersWithDrift()
   std::vector<GradType>  oldG(nw), newG(nw);
   std::vector<ValueType> oldL(nw), newL(nw);
   std::vector<Walker_t*> accepted(nw);
+  std::vector<bool> acc(nw, true);
 
   for (int isub=0; isub<nSubSteps; isub++)
   {
@@ -322,6 +323,7 @@ void VMCcuda::advanceWalkersWithDrift()
         getScaledDrift(m_tauovermass,oldG[iw],dr);
         newpos[iw]=W[iw]->R[iat] + delpos[iw] + dr;
         ratios[iw] = 1.0;
+        acc[iw] = true;
 #ifdef QMC_COMPLEX
         ratios_real[iw] = 1.0;
 #endif
@@ -334,7 +336,6 @@ void VMCcuda::advanceWalkersWithDrift()
       } else kd=W.getkblocksize();
       Psi.calcRatio(W,iat,ratios,newG, newL);
       accepted.clear();
-      std::vector<bool> acc(nw, true);
       if (W.UseBoundBox)
         checkBounds (newpos, acc);
       if (kDelay)

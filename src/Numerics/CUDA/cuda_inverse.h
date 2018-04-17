@@ -36,6 +36,11 @@ cublas_lemma_mats (cublasHandle_t handle,
                    int k, int N, int nw, int RowStride);
 
 void
+cublas_ainv_row (cublasHandle_t handle,
+                 float *AinvkList_d[], float *AWorkList_d[], float *AinvList_d[],
+                 int k, int N, int nw, int RowStride);
+
+void
 cublas_smw_update (cublasHandle_t handle,
                    float *AinvkList_d[], float *AinvList_d[], 
                    float *AinvUList_d[], float *AWorkList_d[],
@@ -58,6 +63,11 @@ cublas_lemma_mats (cublasHandle_t handle,
                    double *AinvList_d[], double *AinvkList_d[], double *U_d[],
                    double *lemma_d[], double *AinvUList_d[],
                    int k, int N, int nw, int RowStride);
+
+void
+cublas_ainv_row (cublasHandle_t handle,
+                 double *AinvkList_d[], double *AWorkList_d[], double *AinvList_d[],
+                 int k, int N, int nw, int RowStride);
 
 void
 cublas_smw_update (cublasHandle_t handle,

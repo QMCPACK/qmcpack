@@ -175,10 +175,10 @@ calc_grad_lapl (std::complex<double> *Ainv_list[], std::complex<double> *grad_la
 #endif
 
 void
-update_onemove (float *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int accepted, int k, int kdelay, int rowstride, int num);
+update_onemove (float *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int lemmainv_off, int awork_off, int accepted, int k, int kstart, int kdelay, int rowstride, int num);
 
 void
-update_onemove (double *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int accepted, int k, int kdelay, int rowstride, int num);
+update_onemove (double *buff[], int newrow_off, int row_off, int newgl_off, int gl_off, int ainvu_off, int lemma_off, int lemmainv_off, int awork_off, int accepted, int k, int kstart, int kdelay, int rowstride, int num);
 
 void
 multi_row_copy (float *dest[], float *src[], int len, int offset, int rows, int stride, int num);
