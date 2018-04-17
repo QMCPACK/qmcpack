@@ -51,6 +51,7 @@ int main(int argc, char **argv)
   using namespace qmcplusplus;
   //qmc_common  and MPI is initialized
   OHMMS::Controller->initialize(argc,argv);
+  qmcplusplus::qmc_common.initialize(argc,argv);
   int clones=1;
   bool useGPU=(qmc_common.compute_device == 1);
   std::vector<std::string> fgroup1,fgroup2;
