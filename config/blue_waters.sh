@@ -1,8 +1,8 @@
 #!/bin/bash
 
 ################################################################
-## * This script builds available configurations of QMCPACK   ##
-##   on Blue Waters, University of Illinois Urbana-Champaign ##
+##   This script builds available configurations of QMCPACK   ##
+##   on Blue Waters, University of Illinois Urbana-Champaign  ##
 ##   highly similar to OLCF Titan build script                ##
 ##                                                            ##
 ## Last modified: Apr 18, 2018                                ##
