@@ -76,7 +76,7 @@ To achieve better performance, mixed precision version (experimental) has been i
 \subsubsection{Memory consideration}
 When using threads, some memory objects shared by all the threads. Usually these memory are read-only when the walkers are evolving, for instance the ionic distance table and wavefunction coefficients.
 If a wavefunction is represented by B-splines, the whole table is shared by all the threads. It usually takes a large chunk of memory when a large primitive cell was used in the simulation. Its actual size is reported as ``MEMORY increase XXX MB BsplineSetReader'' in the output file.
-See details about how to reduce it in section~\ref{sec:splinebasis}.
+See details about how to reduce it in section~\ref{sec:spo_spline}.
 
 The other memory objects which are distinct for each walker during random walk need to be associated with individual walkers and can not be shared. This part of memory grows linearly as the number of walkers per MPI rank. Those objects include wavefunction values (Slater determinants) at given electronic configurations and electron related distance tables (electron-electron distance table). Those matrices dominate the $N^2$ scaling of the memory usage per walker.
 
