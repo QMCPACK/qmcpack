@@ -107,7 +107,11 @@ void SPOSetBase::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bo
 
 void SPOSetBase::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM)
 {
-  APP_ABORT("SPOSetBase::evaluateValues(VP,psiM) not implemented.");
+  for(int iat=0; iat<VP.getTotalNum(); ++iat)
+  {
+    ValueVector_t psi(psiM[iat],OrbitalSetSize);
+    evaluate(VP,iat,psi);
+  }
 }
 
 void SPOSetBase::evaluateThirdDeriv(const ParticleSet& P, int first, int last,
