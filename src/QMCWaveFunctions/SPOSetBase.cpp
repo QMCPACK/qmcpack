@@ -105,7 +105,7 @@ void SPOSetBase::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bo
   APP_ABORT("SPOSetBase::evaluateVGL not implemented.");
 }
 
-void SPOSetBase::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM)
+void SPOSetBase::evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM)
 {
   for(int iat=0; iat<VP.getTotalNum(); ++iat)
   {

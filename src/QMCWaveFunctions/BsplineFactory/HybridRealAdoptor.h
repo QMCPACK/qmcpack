@@ -123,7 +123,7 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   }
 
   template<typename VM>
-  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM)
+  inline void evaluateValues(VirtualParticleSet& VP, VM& psiM)
   {
     const size_t m=psiM.cols();
     if(VP.isOnSphere())

@@ -199,7 +199,7 @@ public:
    * @param psiM single-particle orbitals psiM(i,j) for the i-th particle and the j-th orbital
    */
   virtual void
-  evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM);
+  evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM);
 
   /** estimate the memory needs for evaluating SPOs of particles in the size of ValueType
    * @param nP, number of particles.

@@ -86,6 +86,10 @@ namespace qmcplusplus
 
     void evaluateVGL(const ParticleSet& P, int iat, VGLVector_t vgl);
 
+    void evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM);
+
+    size_t estimateMemory(const int nP);
+
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi);
 
     void evaluate_notranspose(const ParticleSet& P, int first, int last,
