@@ -307,10 +307,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     }
   }
 
-  inline size_t estimateMemory(const int nP)
-  {
-    return kPoints.size()*nP;
-  }
+  inline size_t estimateMemory(const int nP) { return 0; }
 
   /** assign_vgl
    */

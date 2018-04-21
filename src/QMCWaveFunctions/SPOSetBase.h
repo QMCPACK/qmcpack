@@ -205,7 +205,7 @@ public:
    * @param nP, number of particles.
    */
   virtual size_t
-  estimateMemory(const int nP) { return OrbitalSetSize*nP; }
+  estimateMemory(const int nP) { return 0; }
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet
