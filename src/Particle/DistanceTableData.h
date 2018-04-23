@@ -388,7 +388,7 @@ struct DistanceTableData
    */
   virtual int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const
   {
-    return -1;
+    APP_ABORT("DistanceTableData::get_first_neighbor is not implemented in calling base class");
   }
 
   /** build a compact list of a neighbor for the iat source
