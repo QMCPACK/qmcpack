@@ -538,7 +538,15 @@ struct HybridAdoptorBase
     return RealType(-1);
   }
 
-  // check if the batched algorithm is safe to operate
+  /* check if the batched algorithm is safe to operate
+   * @param VP virtual particle set
+   * @return true if it is safe
+   *
+   * When the reference electron in the NLPP evaluation has a distance larger than the non overlapping radius of the reference center.
+   * Some qudrature points may get its SPOs evaluated from the nearest center which is not the reference center.
+   * The batched algorthm forces the evaluation on the reference center and introduce some error.
+   * In this case, the non-batched algorithm should be used.
+   */
   bool is_batched_safe(const VirtualParticleSet& VP)
   {
     const int center_idx=VP.refSourcePtcl;
