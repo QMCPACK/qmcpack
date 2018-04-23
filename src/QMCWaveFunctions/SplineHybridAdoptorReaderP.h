@@ -814,6 +814,13 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         int ti=cur_bands[iorb].TwistIndex;
         std::string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
         if(!h5f.read(cG,s)) APP_ABORT("SplineHybridAdoptorReader Failed to read band(s) from h5!\n");
+        double total_norm = compute_norm(cG);
+        if(std::abs(total_norm-1.0)>PW_COEFF_NORM_TOLERANCE)
+        {
+          app_error() << "The orbital " << iorb << " has a wrong norm " << total_norm
+                      << ", computed from plane wave coefficients!" << std::endl;
+          APP_ABORT("SplineHybridAdoptorReader Wrong orbital norm!");
+        }
         fft_spline(cG,ti);
         bspline->set_spline(spline_r,spline_i,cur_bands[iorb].TwistIndex,iorb,0);
       }

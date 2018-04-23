@@ -20,7 +20,6 @@
 
 
 #include <Configuration.h>
-#include "qmc_common.h"
 #include "Message/Communicate.h"
 #include "Message/TagMaker.h"
 #include <iostream>
@@ -29,7 +28,6 @@
 #include <tau/profiler.h>
 #include <Utilities/UtilityFunctions.h>
 #include <fstream>
-#include <qmc_common.h>
 
 #ifdef HAVE_ADIOS
 #include <adios.h>
@@ -177,7 +175,6 @@ void Communicate::initialize(int argc, char **argv)
   d_ncontexts = OOMPI_COMM_WORLD.Size();
   d_groupid=0;
   d_ngroups=1;
-  qmcplusplus::qmc_common.initialize(argc,argv);
 #ifdef __linux__
   for (int proc=0; proc<OHMMS::Controller->size(); proc++)
   {
@@ -234,7 +231,6 @@ void Communicate::abort(const char* msg)
 
 void Communicate::initialize(int argc, char **argv)
 {
-  qmcplusplus::qmc_common.initialize(argc,argv);
   std::string when="qmc."+getDateAndTime("%Y%m%d_%H%M");
 }
 
