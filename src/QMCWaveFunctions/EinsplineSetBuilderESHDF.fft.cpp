@@ -73,7 +73,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
             SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2),
             SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
   app_log() << buff;
-  CheckLattice();
+  if (!CheckLattice()) APP_ABORT("CheckLattice failed");
   PrimCell.set(Lattice);
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
@@ -207,6 +207,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
     }
 
     // load cutoff_radius, spline_radius, spline_npoints, lmax if exists.
+    const int inner_cutoff_ind=SourcePtcl->mySpecies.findAttribute("inner_cutoff");
     const int cutoff_radius_ind=SourcePtcl->mySpecies.findAttribute("cutoff_radius");
     const int spline_radius_ind=SourcePtcl->mySpecies.findAttribute("spline_radius");
     const int spline_npoints_ind=SourcePtcl->mySpecies.findAttribute("spline_npoints");
@@ -215,6 +216,8 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
     for(int center_idx=0; center_idx<AtomicCentersInfo.Ncenters; center_idx++)
     {
       const int my_GroupID = AtomicCentersInfo.GroupID[center_idx];
+      if(inner_cutoff_ind>=0)
+        AtomicCentersInfo.inner_cutoff[center_idx] = SourcePtcl->mySpecies(inner_cutoff_ind, my_GroupID);
       if(cutoff_radius_ind>=0)
         AtomicCentersInfo.cutoff[center_idx] = SourcePtcl->mySpecies(cutoff_radius_ind, my_GroupID);
       if(spline_radius_ind>=0)

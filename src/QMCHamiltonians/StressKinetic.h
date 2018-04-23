@@ -54,11 +54,6 @@ struct StressKinetic: public QMCHamiltonianBase, public ForceBase
   
   Return_t evaluate(ParticleSet& P);
   
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-  
   SymTensor<RealType, OHMMS_DIM> evaluateKineticSymTensor(ParticleSet& P);
 
 

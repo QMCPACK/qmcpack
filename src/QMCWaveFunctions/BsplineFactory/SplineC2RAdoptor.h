@@ -21,7 +21,6 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_C2R_ADOPTOR_H
 #define QMCPLUSPLUS_EINSPLINE_C2R_ADOPTOR_H
 
-#include <Numerics/VectorViewer.h>
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
 
@@ -56,6 +55,8 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   using BaseType::PrimLattice;
   using BaseType::kPoints;
   using BaseType::MakeTwoCopies;
+  using BaseType::offset_cplx;
+  using BaseType::offset_real;
 
   ///number of complex bands
   int nComplexBands;
@@ -125,6 +126,42 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     chunked_reduce(comm, MultiSpline);
   }
 
+  void gather_tables(Communicate* comm)
+  {
+    if(comm->size()==1) return;
+    const int Nbands = kPoints.size();
+    const int Nbandgroups = comm->size();
+    std::vector<int> offset(Nbandgroups+1,0);
+    FairDivideLow(Nbands,Nbandgroups,offset);
+
+    // complex bands
+    int gid=1;
+    offset_cplx.resize(Nbandgroups+1,0);
+    for(int ib=0; ib<Nbands; ++ib)
+    {
+      if(ib==offset[gid]) gid++;
+      if(MakeTwoCopies[ib])
+        offset_cplx[gid]++;
+    }
+    for(int bg=0; bg<Nbandgroups; ++bg)
+      offset_cplx[bg+1] = offset_cplx[bg+1]*2+offset_cplx[bg];
+    gatherv(comm, MultiSpline, MultiSpline->z_stride, offset_cplx);
+
+    // real bands
+    gid=1;
+    offset_real.resize(Nbandgroups+1,0);
+    for(int ib=0; ib<Nbands; ++ib)
+    {
+      if(ib==offset[gid]) gid++;
+      if(!MakeTwoCopies[ib])
+        offset_real[gid]++;
+    }
+    offset_real[0]=nComplexBands*2;
+    for(int bg=0; bg<Nbandgroups; ++bg)
+      offset_real[bg+1] = offset_real[bg+1]*2+offset_real[bg];
+    gatherv(comm, MultiSpline, MultiSpline->z_stride, offset_real);
+  }
+
   template<typename GT, typename BCT>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
@@ -174,7 +211,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 
   void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
   {
-    VectorViewer<ST> v_r(psi_r,0), v_i(psi_i,0);
+    Vector<ST> v_r(psi_r,0), v_i(psi_i,0);
 #ifdef QMC_CUDA
     // GPU code needs the old ordering.
     int iband=ispline;
@@ -251,7 +288,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV>
-  inline void assign_v(const PointType& r, VV& psi)
+  inline void assign_v(const PointType& r, const vContainer_type& myV, VV& psi)
   {
     const size_t N=kPoints.size();
     const ST x=r[0], y=r[1], z=r[2];
@@ -323,8 +360,21 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
     SplineInst->evaluate(ru,myV);
-    assign_v(r,psi);
+    assign_v(r,myV,psi);
   }
+
+  template<typename VM>
+  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM)
+  {
+    const size_t m=psiM.cols();
+    for(int iat=0; iat<VP.getTotalNum(); ++iat)
+    {
+      Vector<TT> psi(psiM[iat],m);
+      evaluate_v(VP,iat,psi);
+    }
+  }
+
+  inline size_t estimateMemory(const int nP) { return 0; }
 
   /** assign_vgl
    */

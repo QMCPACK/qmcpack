@@ -36,7 +36,7 @@ public:
 
   ///Constructor.
   QMCCSLinearOptimizeWFmanagerOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                                  QMCHamiltonian& h, HamiltonianPool& hpool);
+                                  QMCHamiltonian& h);
 
   ///Destructor
   ~QMCCSLinearOptimizeWFmanagerOMP();

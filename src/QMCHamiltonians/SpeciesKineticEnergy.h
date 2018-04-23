@@ -35,10 +35,6 @@ public:
   bool get(std::ostream& os) const; // class description, required
 
   Return_t evaluate(ParticleSet& P);
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  { // delegate responsity inline for speed
-    return evaluate(P);
-  }
 
   // pure virtual functions require overrider
   void resetTargetParticleSet(ParticleSet& P) { }                         // required

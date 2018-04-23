@@ -1852,7 +1852,7 @@ PseudoClass::HaveProjectors()
 
 
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
   // Create list of acceptable command-line parameters
   list<ParamClass> argList;

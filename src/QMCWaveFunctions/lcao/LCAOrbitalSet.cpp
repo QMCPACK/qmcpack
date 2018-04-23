@@ -47,7 +47,7 @@ namespace qmcplusplus
     }
     else
     {
-      VectorViewer<ValueType> vTemp(Temp.data(0),BasisSetSize);
+      Vector<ValueType> vTemp(Temp.data(0),BasisSetSize);
       myBasisSet->evaluateV(P,iat,vTemp.data());
       simd::gemv(*C,Temp.data(0),psi.data());
     }
@@ -107,6 +107,20 @@ namespace qmcplusplus
       Product_ABt(Temp,*C,vgl);
     }
   }
+
+  void LCAOrbitalSet::evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM)
+  {
+    const int nVP = VP.getTotalNum();
+    Matrix<RealType> basisM(VP.SPOMem.data(), nVP, BasisSetSize);
+    for(size_t j=0; j<nVP; j++)
+    {
+      Vector<RealType> vTemp(basisM[j],BasisSetSize);
+      myBasisSet->evaluateV(VP,j,vTemp.data());
+    }
+    MatrixOperators::product_ABt(basisM,*C,psiM);
+  }
+
+  size_t LCAOrbitalSet::estimateMemory(const int nP) { return BasisSetSize*nP; }
 
   void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat,
         ValueVector_t& psi, GradVector_t& dpsi,

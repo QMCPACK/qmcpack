@@ -129,7 +129,6 @@
     </pairpot>
     <constant name="IonIon" type="coulomb" source="i" target="i"/>
     <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
-    <estimator name="KEcorr" type="chiesa" source="e" psi="psi0"/>
   </hamiltonian>
 
 

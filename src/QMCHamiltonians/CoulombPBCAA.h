@@ -82,11 +82,6 @@ struct CoulombPBCAA: public QMCHamiltonianBase, public ForceBase
 
   void update_source(ParticleSet& s);
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   /** Do nothing */
   bool put(xmlNodePtr cur)
   {

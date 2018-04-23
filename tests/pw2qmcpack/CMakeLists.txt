@@ -40,9 +40,9 @@ else()
                     hf_vmc_LiH-gamma
                     hf_vmc_LiH-gamma.xml
                     1 16
-                    LIH_GAMMA_SCALARS
-                    0 # VMC
-                    TRUE)
+                    TRUE
+                    0 LIH_GAMMA_SCALARS # VMC
+                    )
 
   SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 
                         PROPERTIES DEPENDS ${LAST_TEST_NAME} )
@@ -61,9 +61,9 @@ else()
                     hf_vmc_LiH-x
                     hf_vmc_LiH-x.xml
                     1 16
-                    LIH_X_SCALARS
-                    0 # VMC
-                    TRUE)
+                    TRUE
+                    0 LIH_X_SCALARS # VMC
+                    )
 
   SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 
                         PROPERTIES DEPENDS ${LAST_TEST_NAME} )
@@ -78,9 +78,9 @@ else()
                     hf_vmc_LiH-gamma
                     hf_vmc_LiH-gamma.xml
                     1 16
-                    LIH_GAMMA_SCALARS
-                    0 # VMC
-                    TRUE)
+                    TRUE
+                    0 LIH_GAMMA_SCALARS # VMC
+                    )
 
   SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 
                         PROPERTIES DEPENDS ${LAST_TEST_NAME} )
@@ -92,9 +92,9 @@ else()
                     hf_vmc_LiH-x
                     hf_vmc_LiH-x.xml
                     1 16
-                    LIH_X_SCALARS
-                    0 # VMC
-                    TRUE)
+                    TRUE
+                    0 LIH_X_SCALARS # VMC
+                    )
 
   SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 
                         PROPERTIES DEPENDS ${LAST_TEST_NAME} )
@@ -110,9 +110,9 @@ else()
                     hf_vmc_LiH-gamma
                     hf_vmc_LiH-gamma.xml
                     1 16
-                    LIH_GAMMA_SCALARS
-                    0 # VMC
-                    TRUE)
+                    TRUE
+                    0 LIH_GAMMA_SCALARS # VMC
+                    )
 
   SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 
                         PROPERTIES DEPENDS ${LAST_TEST_NAME} )
@@ -124,9 +124,9 @@ else()
                     hf_vmc_LiH-x
                     hf_vmc_LiH-x.xml
                     1 16
-                    LIH_X_SCALARS
-                    0 # VMC
-                    TRUE)
+                    TRUE
+                    0 LIH_X_SCALARS # VMC
+                    )
 
   SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 
                         PROPERTIES DEPENDS ${LAST_TEST_NAME} )
@@ -141,9 +141,9 @@ else()
                     hf_vmc_LiH-gamma
                     hf_vmc_LiH-gamma.xml
                     1 16
-                    LIH_GAMMA_SCALARS
-                    0 # VMC
-                    TRUE)
+                    TRUE
+                    0 LIH_GAMMA_SCALARS # VMC
+                    )
 
   SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 
                         PROPERTIES DEPENDS ${LAST_TEST_NAME} )
@@ -155,9 +155,9 @@ else()
                     hf_vmc_LiH-x
                     hf_vmc_LiH-x.xml
                     1 16
-                    LIH_X_SCALARS
-                    0 # VMC
-                    TRUE)
+                    TRUE
+                    0 LIH_X_SCALARS # VMC
+                    )
 
   SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 
                         PROPERTIES DEPENDS ${LAST_TEST_NAME} )
@@ -173,9 +173,9 @@ else()
                     hf_vmc_LiH-gamma
                     hf_vmc_LiH-gamma.xml
                     1 16
-                    LIH_GAMMA_SCALARS
-                    0 # VMC
-                    TRUE)
+                    TRUE
+                    0 LIH_GAMMA_SCALARS # VMC
+                    )
 
   SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 
                         PROPERTIES DEPENDS ${LAST_TEST_NAME} )
@@ -187,9 +187,9 @@ else()
                     hf_vmc_LiH-x
                     hf_vmc_LiH-x.xml
                     1 16
-                    LIH_X_SCALARS
-                    0 # VMC
-                    TRUE)
+                    TRUE
+                    0 LIH_X_SCALARS # VMC
+                    )
 
   SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 
                         PROPERTIES DEPENDS ${LAST_TEST_NAME} )
@@ -205,9 +205,9 @@ else()
                     hf_vmc_LiH-gamma
                     hf_vmc_LiH-gamma.xml
                     1 16
-                    LIH_GAMMA_SCALARS
-                    0 # VMC
-                    TRUE)
+                    TRUE
+                    0 LIH_GAMMA_SCALARS # VMC
+                    )
 
   SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-gamma-vmc_hf_noj-1-16 
                         PROPERTIES DEPENDS ${LAST_TEST_NAME} )
@@ -219,9 +219,9 @@ else()
                     hf_vmc_LiH-x
                     hf_vmc_LiH-x.xml
                     1 16
-                    LIH_X_SCALARS
-                    0 # VMC
-                    TRUE)
+                    TRUE
+                    0 LIH_X_SCALARS # VMC
+                    )
 
   SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-LiH_solid_1x1x1_pp-x-vmc_hf_noj-1-16 
                         PROPERTIES DEPENDS ${LAST_TEST_NAME} )
@@ -254,9 +254,9 @@ else()
                     qmc_short
                     qmc_short.in.xml
                     1 16
-                    O_ATOM_SCALARS
-                    0 # VMC
-                    TRUE)
+                    TRUE
+                    0 O_ATOM_SCALARS # VMC
+                    )
 
   SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-atomO_pp-vmc_sdj-1-16 
                         PROPERTIES DEPENDS ${LAST_TEST_NAME} )
@@ -273,9 +273,9 @@ else()
                     qmc_short_noj
                     qmc_short_noj.in.xml
                     1 16
-                    O_ATOM_NOJ_SCALARS
-                    0 # VMC
-                    TRUE)
+                    TRUE
+                    0 O_ATOM_NOJ_SCALARS # VMC
+                    )
 
   SET_TESTS_PROPERTIES( ${QE_TEST_NAME}-atomO_pp-vmc_noj-1-16 
                         PROPERTIES DEPENDS ${LAST_TEST_NAME} )

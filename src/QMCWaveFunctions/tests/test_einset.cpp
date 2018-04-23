@@ -163,5 +163,48 @@ const char *particles =
 #endif
 
 }
+
+TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
+{
+
+  Communicate *c;
+  OHMMS::Controller->initialize(0, NULL);
+  c = OHMMS::Controller;
+
+  ParticleSet *elec = new ParticleSet;
+
+  elec->setName("elec");
+  std::vector<int> agroup(2);
+  agroup[0] = 1;
+  agroup[1] = 1;
+  elec->create(agroup);
+  elec->R[0][0] = 0.00;
+  elec->R[0][1] = 0.0;
+  elec->R[0][2] = 0.0;
+  elec->R[1][0] = 0.0;
+  elec->R[1][1] = 1.0;
+  elec->R[1][2] = 0.0;
+
+  elec->Lattice.R = 0.0;
+  elec->Lattice.R(0,0) = 1.0;
+  elec->Lattice.R(1,1) = 1.0;
+  elec->Lattice.R(2,2) = 1.0;
+
+  EinsplineSetBuilder::PtclPoolType ptcl_map;
+  ptcl_map["e"] = elec;
+
+  xmlNodePtr cur = NULL;
+  EinsplineSetBuilder esb(*elec, ptcl_map, cur);
+
+  esb.SuperLattice = 0.0;
+  esb.SuperLattice(0,0) = 1.0;
+  esb.SuperLattice(1,1) = 1.0;
+  esb.SuperLattice(2,2) = 1.0;
+
+  REQUIRE(esb.CheckLattice());
+
+  esb.SuperLattice(0,0) = 1.1;
+  REQUIRE_FALSE(esb.CheckLattice());
+}
 }
 

@@ -294,11 +294,6 @@ struct NumberFluctuations: public QMCHamiltonianBase
     return 0.0;
   }
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   /** Do nothing */
   bool put(xmlNodePtr cur)
   {

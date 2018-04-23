@@ -30,6 +30,8 @@
 #include "Numerics/HDFNumericAttrib.h"
 #include <map>
 
+#define PW_COEFF_NORM_TOLERANCE 1e-6
+
 class Communicate;
 
 namespace qmcplusplus
@@ -295,7 +297,7 @@ public:
   struct CenterInfo
   {
     std::vector<int> lmax, spline_npoints, GroupID;
-    std::vector<double> spline_radius, cutoff;
+    std::vector<double> spline_radius, cutoff, inner_cutoff;
     std::vector<TinyVector<double,OHMMS_DIM> > ion_pos;
     int Ncenters;
 
@@ -306,8 +308,9 @@ public:
       Ncenters=ncenters;
       lmax.resize(ncenters, -1);
       spline_npoints.resize(ncenters, -1);
-      GroupID.resize(ncenters);
+      GroupID.resize(ncenters, 0);
       spline_radius.resize(ncenters, -1.0);
+      inner_cutoff.resize(ncenters, -1.0);
       cutoff.resize(ncenters, -1.0);
       ion_pos.resize(ncenters);
     }
@@ -346,7 +349,7 @@ public:
   int MyToken;
   inline void update_token(const char* f, int l, const char* msg) 
   {
-    app_log() << "TOKEN=" << MyToken << " " << msg << " " << f << " " << l << std::endl; MyToken++; 
+    app_debug() << "TOKEN=" << MyToken << " " << msg << " " << f << " " << l << std::endl; MyToken++;
   }
   //inline void update_token(const char* f, int l, const char* msg) 
   //{}

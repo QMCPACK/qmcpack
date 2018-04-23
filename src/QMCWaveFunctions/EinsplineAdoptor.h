@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/** @file EsinplineAdoptor.h
+/** @file EinsplineAdoptor.h
  *
  * Adoptor classes and BsplineSet<SplineAdoptor>
  * BsplineSet<SplineAdoptor> is a SPOSetBase class to work with determinant classes
@@ -37,7 +37,6 @@
 #include <spline/einspline_engine.hpp>
 #include <spline/einspline_util.hpp>
 #include <simd/allocator.hpp>
-#include <Numerics/VectorViewer.h>
 
 namespace qmcplusplus
 {
@@ -157,7 +156,8 @@ struct SplineAdoptorBase
   std::vector<TinyVector<ST,D> >  kPoints;
   ///remap band
   aligned_vector<int> BandIndexMap;
-
+  /// band offsets
+  std::vector<int> offset_real, offset_cplx;
   ///name of the adoptor
   std::string AdoptorName;
   ///keyword used to match hdf5
@@ -263,14 +263,14 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
     SplineAdoptor::evaluate_v(P,iat,psi);
   }
 
-  inline void evaluateValues(const ParticleSet& P, ValueMatrix_t& psiM)
+  inline void evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM)
   {
-    const size_t m=psiM.cols();
-    for(int iat=0; iat<P.getTotalNum(); ++iat)
-    {
-      ValueVector_t psi(psiM[iat],m);
-      SplineAdoptor::evaluate_v(P,iat,psi);
-    }
+    SplineAdoptor::evaluateValues(VP, psiM);
+  }
+
+  inline size_t estimateMemory(const int nP)
+  {
+    return SplineAdoptor::estimateMemory(nP);
   }
 
   inline void evaluate(const ParticleSet& P, int iat,
@@ -330,9 +330,9 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
     typedef GradMatrix_t::value_type grad_type;
     for(int iat=first, i=0; iat<last; ++iat,++i)
     {
-      VectorViewer<value_type> v(logdet[i],OrbitalSetSize);
-      VectorViewer<grad_type> g(dlogdet[i],OrbitalSetSize);
-      VectorViewer<value_type> l(d2logdet[i],OrbitalSetSize);
+      ValueVector_t v(logdet[i],OrbitalSetSize);
+      GradVector_t  g(dlogdet[i],OrbitalSetSize);
+      ValueVector_t l(d2logdet[i],OrbitalSetSize);
       SplineAdoptor::evaluate_vgl(P,iat,v,g,l);
     }
   }
@@ -345,9 +345,9 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
     typedef HessMatrix_t::value_type hess_type;
     for(int iat=first, i=0; iat<last; ++iat,++i)
     {
-      VectorViewer<value_type> v(logdet[i],OrbitalSetSize);
-      VectorViewer<grad_type> g(dlogdet[i],OrbitalSetSize);
-      VectorViewer<hess_type> h(grad_grad_logdet[i],OrbitalSetSize);
+      ValueVector_t v(logdet[i],OrbitalSetSize);
+      GradVector_t  g(dlogdet[i],OrbitalSetSize);
+      HessVector_t  h(grad_grad_logdet[i],OrbitalSetSize);
       SplineAdoptor::evaluate_vgh(P,iat,v,g,h);
     }
   }

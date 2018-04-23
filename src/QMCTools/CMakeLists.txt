@@ -43,6 +43,7 @@ SET(MOSRCS
   GamesFMOParser.cpp
   VSVBParser.cpp
   QPParser.cpp
+  PyscfParser.cpp
 )
 
 # create libmocommon 
@@ -70,3 +71,7 @@ FOREACH(p ${QTOOLS})
 
 ENDFOREACH(p ${QTOOLS})
 
+#ppconvert
+if( BUILD_PPCONVERT )
+  SUBDIRS(ppconvert)
+endif( BUILD_PPCONVERT )

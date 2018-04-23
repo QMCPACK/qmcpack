@@ -37,7 +37,6 @@ TEST_CASE("symmetric_distance_table", "[particle]")
 
   OHMMS::Controller->initialize(0, NULL);
 
-  typedef SymmetricDTD<ParticleSet::RealType, 3, SUPERCELL_OPEN> sym_dtd_t;
   ParticleSet source;
 
   source.setName("electrons");
@@ -50,10 +49,7 @@ TEST_CASE("symmetric_distance_table", "[particle]")
   source.R[1][1] = 1.0;
   source.R[1][2] = 3.2;
 
-  sym_dtd_t dist(source, source);
-
-  dist.evaluate(source);
-  source.addTable(source,DT_AOS);
+  source.addTable(source,DT_SOA_PREFERRED);
   source.update();
 
   DistanceTableData *dist2 = createDistanceTable(source,DT_AOS);

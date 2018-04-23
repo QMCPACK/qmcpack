@@ -25,8 +25,8 @@ namespace qmcplusplus
 {
 
 QMCCSLinearOptimizeWFmanagerOMP::QMCCSLinearOptimizeWFmanagerOMP(MCWalkerConfiguration& w,
-    TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool):
-  QMCCostFunctionBase(w,psi,h), CloneManager(hpool)
+    TrialWaveFunction& psi, QMCHamiltonian& h):
+  QMCCostFunctionBase(w,psi,h)
 {
   app_log()<<" Using QMCCSLinearOptimizeWFmanagerOMP::QMCCSLinearOptimizeWFmanagerOMP"<< std::endl;
 }

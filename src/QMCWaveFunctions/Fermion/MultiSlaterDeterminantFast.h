@@ -50,7 +50,7 @@ namespace qmcplusplus
  (\nabla_i^2S^{ij}_n({\bf r_i}))(S^{-1})^{ji}_n}{\sum_{n=1}^M c_n S_n}
  \f]
  */
-class MultiSlaterDeterminantFast: public OrbitalBase, public FermionBase
+class MultiSlaterDeterminantFast: public OrbitalBase
 {
 
 public:

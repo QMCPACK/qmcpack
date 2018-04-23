@@ -44,13 +44,13 @@ namespace qmcplusplus {
         return res;
       }
 
-  ///inner product
-  template<typename T1, typename T2, typename T3>
-    inline T3 inner_product_n(const T1* restrict a, const T2* restrict b, int n, T3 res)
-    {
-      for(int i=0; i<n; ++i) res += a[i]*b[i];
-      return res;
-    }
+    ///inner product
+    template<typename T1, typename T2, typename T3>
+      inline T3 inner_product_n(const T1* restrict a, const T2* restrict b, int n, T3 res)
+      {
+        for(int i=0; i<n; ++i) res += a[i]*b[i];
+        return res;
+      }
 
   } //simd namepsace
 }
