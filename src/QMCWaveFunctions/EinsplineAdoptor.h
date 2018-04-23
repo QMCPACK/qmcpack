@@ -263,7 +263,7 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
     SplineAdoptor::evaluate_v(P,iat,psi);
   }
 
-  inline void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM)
+  inline void evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM)
   {
     SplineAdoptor::evaluateValues(VP, psiM);
   }

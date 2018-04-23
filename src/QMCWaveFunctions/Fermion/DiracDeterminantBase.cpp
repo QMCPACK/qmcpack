@@ -292,7 +292,7 @@ DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int 
 void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
   const int nVP = VP.getTotalNum();
-  const size_t memory_needed = Phi->estimateMemory(nVP);
+  const size_t memory_needed = nVP*NumOrbitals+Phi->estimateMemory(nVP);
   //std::cout << "debug " << memory_needed << " pool " << memoryPool.size() << std::endl;
   if(memoryPool.size()<memory_needed)
   {

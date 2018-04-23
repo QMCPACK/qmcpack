@@ -26,16 +26,6 @@
 namespace qmcplusplus
 {
 
-#if 0
-template<typename T>
-inline void transpose(const T* restrict in, T* restrict out, int m)
-{
-  for(int i=0,ii=0; i<m; ++i)
-    for(int j=0,jj=i; j<m; ++j,jj+=m)
-      out[ii++]=in[jj];
-}
-#endif
-
 SPOSetBase::SPOSetBase()
 :Identity(false),OrbitalSetSize(0),BasisSetSize(0),
   ActivePtcl(-1),Optimizable(false),ionDerivs(false),builder_index(-1),C(nullptr)
@@ -69,45 +59,18 @@ SPOSetBase::RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
   return ValueType();
 }
 
-
-#if 0
-void SPOSetBase::evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi,
-                          ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
-{
-  evaluate_notranspose(P,first,last,t_logpsi,dlogdet,d2logdet);
-  simd::transpose(t_logpsi.data(), OrbitalSetSize, t_logpsi.cols(),
-      logdet.data(), OrbitalSetSize, logdet.cols());
-  //transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
-}
-
-void SPOSetBase::evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi,
-                          ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
-{
-  evaluate_notranspose(P,first,last,t_logpsi,dlogdet,grad_grad_logdet);
-  simd::transpose(t_logpsi.data(), OrbitalSetSize, t_logpsi.cols(),
-      logdet.data(), OrbitalSetSize, logdet.cols());
-  //transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
-}
-
-void SPOSetBase::evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi,
-                          ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
-{
-  logdet=0;
-  evaluate_notranspose(P,first,last,t_logpsi,dlogdet,grad_grad_logdet,grad_grad_grad_logdet);
-  simd::transpose(t_logpsi.data(), OrbitalSetSize, t_logpsi.cols(),
-      logdet.data(), OrbitalSetSize, logdet.cols());
-  //transpose(t_logpsi.data(),logdet.data(),OrbitalSetSize);
-}
-#endif
-
 void SPOSetBase::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bool newp)
 {
   APP_ABORT("SPOSetBase::evaluateVGL not implemented.");
 }
 
-void SPOSetBase::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM)
+void SPOSetBase::evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM)
 {
-  APP_ABORT("SPOSetBase::evaluateValues(VP,psiM) not implemented.");
+  for(int iat=0; iat<VP.getTotalNum(); ++iat)
+  {
+    ValueVector_t psi(psiM[iat],OrbitalSetSize);
+    evaluate(VP,iat,psi);
+  }
 }
 
 void SPOSetBase::evaluateThirdDeriv(const ParticleSet& P, int first, int last,

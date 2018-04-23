@@ -266,10 +266,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     }
   }
 
-  inline size_t estimateMemory(const int nP)
-  {
-    return (last_spo-first_spo)*nP;
-  }
+  inline size_t estimateMemory(const int nP) { return 0; }
 
   template<typename VV, typename GV>
   inline void assign_vgl(int bc_sign, VV& psi, GV& dpsi, VV& d2psi)
