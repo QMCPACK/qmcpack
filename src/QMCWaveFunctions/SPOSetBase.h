@@ -225,30 +225,6 @@ public:
   evaluate(const ParticleSet& P, int iat,
            ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)=0;
 
-  /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last)particles
-   * @param P current ParticleSet
-   * @param first starting index of the particles
-   * @param last ending index of the particles
-   * @param logdet determinant matrix to be inverted
-   * @param dlogdet gradients
-   * @param d2logdet laplacians
-   *
-   * Call evaluate_notranspose to build logdet
-   */
-#if 0
-  virtual void
-  evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi
-           , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
-
-  virtual void
-  evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi
-           , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet);
-
-  virtual void
-  evaluate(const ParticleSet& P, int first, int last, ValueMatrix_t &t_logpsi
-           , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet);
-#endif
-
   virtual void
   evaluateThirdDeriv(const ParticleSet& P, int first, int last
                      , GGGMatrix_t& grad_grad_grad_logdet);
@@ -259,6 +235,15 @@ public:
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   virtual bool is_of_type_LCOrbitalSetOpt() const { return false; }
 
+  /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles
+   * @param P current ParticleSet
+   * @param first starting index of the particles
+   * @param last ending index of the particles
+   * @param logdet determinant matrix to be inverted
+   * @param dlogdet gradients
+   * @param d2logdet laplacians
+   *
+   */
   virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
                                     , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)=0;
 
