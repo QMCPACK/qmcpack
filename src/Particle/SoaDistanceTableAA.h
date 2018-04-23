@@ -97,31 +97,24 @@ struct SoaDistanceTableAA: public DTD_BConds<T,D,SC>, public DistanceTableData
     if(newpos)
     {
       for(int jat=0; jat<Ntargets; ++jat)
-        if(Temp_r[jat]<min_dist)
+        if(Temp_r[jat]<min_dist && jat!=iat)
         {
           min_dist = Temp_r[jat];
           index    = jat;
         }
-      if(index>=0)
-      {
-        r=min_dist;
-        dr=Temp_dr[index];
-      }
+      if(index>=0) dr=Temp_dr[index];
     }
     else
     {
       for(int jat=0; jat<Ntargets; ++jat)
-        if(Distances[iat][jat]<min_dist)
+        if(Distances[iat][jat]<min_dist && jat!=iat)
         {
           min_dist = Distances[iat][jat];
           index    = jat;
         }
-      if(index>=0)
-      {
-        r=min_dist;
-        dr=Displacements[iat][index];
-      }
+      if(index>=0) dr=Displacements[iat][index];
     }
+    r=min_dist;
     return index;
   }
 
