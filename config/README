@@ -1,8 +1,9 @@
-Toolchains for systems not fully supported by the CMake build system
-automatically. It is preferred to expand the capabilities of the
-automatic system instead of adding custom machine specific
-workarounds, but this may not be possible.
+This directory contains example build scripts for QMCPACK. We
+recommend writing a similar script that records all the settings used
+for any machine you build on.
 
-Old toolchains are stored in attic directory. These need to be updated
-and simplified for the current build system. They may also give ideas
-for what may be needed on specific systems.
+It is highly preferred to configure cmake via command
+options. Previous versions of QMCPACK shipped with toolchain files for
+many systems, but we found them to be brittle and difficult to
+maintain. Today, cmake has much better support. Use of old toolchains
+is not recommended and is not supported.
