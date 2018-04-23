@@ -56,6 +56,8 @@ IF (EXISTS ${H5_FULL_PATH})
                     1 NIO_A4_E48_J3_SCALARS # VMC
                     )
 
+  # Testing batched algorithm in NLPP.
+  # Hitting all the routines using VirtualParticleSet.
   QMC_RUN_AND_CHECK(short-NiO_a4_e48-batched_pp-vmc_sdj3
                     "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                     NiO-fcc-S1-vmc
@@ -74,6 +76,8 @@ IF (EXISTS ${H5_FULL_PATH})
                     1 NIO_A4_E48_J3_SCALARS # VMC
                     )
 
+  # Testing batched algorithm in NLPP.
+  # Hitting all the routines using VirtualParticleSet.
   QMC_RUN_AND_CHECK(short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3
                     "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                     NiO-fcc-S1-vmc
