@@ -448,7 +448,9 @@ int ParticleSet::getTable(const ParticleSet& psrc)
 
 void ParticleSet::update(bool skipSK)
 {
+#if !defined(ENABLE_SOA)
   if(DistTables.size() && DistTables[0]->DTType==DT_SOA)
+#endif
     RSoA.copyIn(R);
   for (int i=0; i<DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
@@ -461,9 +463,11 @@ void ParticleSet::update(bool skipSK)
 void ParticleSet::update(const ParticlePos_t& pos)
 {
   R = pos;
+#if !defined(ENABLE_SOA)
   if(DistTables.size() && DistTables[0]->DTType==DT_SOA)
+#endif
     RSoA.copyIn(R);
-  for (int i=0; i< DistTables.size(); i++)
+  for (int i=0; i<DistTables.size(); i++)
     DistTables[i]->evaluate(*this);
   if (SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);
