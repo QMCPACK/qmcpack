@@ -90,6 +90,34 @@ struct SoaDistanceTableAA: public DTD_BConds<T,D,SC>, public DistanceTableData
     moveOnSphere(P,rnew);
   }
 
+  int get_first_neighbor(IndexType iat,  RealType& r, PosType& dr, bool newpos) const
+  {
+    RealType min_dist = std::numeric_limits<RealType>::max();
+    int index=-1;
+    if(newpos)
+    {
+      for(int jat=0; jat<Ntargets; ++jat)
+        if(Temp_r[jat]<min_dist && jat!=iat)
+        {
+          min_dist = Temp_r[jat];
+          index    = jat;
+        }
+      if(index>=0) dr=Temp_dr[index];
+    }
+    else
+    {
+      for(int jat=0; jat<Ntargets; ++jat)
+        if(Distances[iat][jat]<min_dist && jat!=iat)
+        {
+          min_dist = Distances[iat][jat];
+          index    = jat;
+        }
+      if(index>=0) dr=Displacements[iat][index];
+    }
+    r=min_dist;
+    return index;
+  }
+
   ///update the iat-th row for iat=[0,iat-1)
   inline void update(IndexType iat)
   {

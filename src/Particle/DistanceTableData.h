@@ -378,13 +378,17 @@ struct DistanceTableData
     return 0;
   }
 
-  /** find the nearest neighbor
+  /** find the first nearest neighbor
    * @param iat source particle id
+   * @param r distance
+   * @param dr displacement
+   * @param newpos if true, use the data in Temp_r and Temp_dr for the proposed move.
+   *        if false, use the data in Distance[iat] and Displacements[iat]
    * @return the id of the nearest particle, -1 not found
    */
   virtual int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const
   {
-    return -1;
+    APP_ABORT("DistanceTableData::get_first_neighbor is not implemented in calling base class");
   }
 
   /** build a compact list of a neighbor for the iat source
