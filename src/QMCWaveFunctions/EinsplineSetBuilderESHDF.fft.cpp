@@ -186,6 +186,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
     AtomicCentersInfo.resize(IonPos.size());
     for (int i=0; i<IonPos.size(); i++)
       AtomicCentersInfo.ion_pos[i]=IonPos[i];
+    SourcePtcl->update(true);
     int Zind=SourcePtcl->mySpecies.findAttribute("atomicnumber");
     for (int i=0; i<IonPos.size(); i++)
       for (int j=0; j<Super2Prim.size(); j++)
