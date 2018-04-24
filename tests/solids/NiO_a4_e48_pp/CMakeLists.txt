@@ -67,6 +67,7 @@ IF (EXISTS ${H5_FULL_PATH})
                     1 NIO_A4_E48_J3_SCALARS # VMC
                     )
 
+IF(ENABLE_SOA OR QMC_CUDA)
   QMC_RUN_AND_CHECK(short-NiO_a4_e48-hybridrep-pp-vmc_sdj3
                     "${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp"
                     NiO-fcc-S1-vmc
@@ -86,7 +87,9 @@ IF (EXISTS ${H5_FULL_PATH})
                     TRUE
                     1 NIO_A4_E48_J3_SCALARS # VMC
                     )
-
+ELSE()
+  MESSAGE("Skipping NiO_a4_e48-hybridrep tests because neither SOA nor CUDA is enabled")
+ENDIF()
 #
 # Long test
 #
