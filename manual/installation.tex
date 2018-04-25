@@ -1355,7 +1355,8 @@ cd espresso-6.2.1
 ./configure --with-hdf5=/opt/local   # Specify HDF5 base directory
 \end{verbatim}
    {\bf check} the end of configure output if HDF5 libraries are found properly.
-   If not, either install a complete library or use the other scheme.
+   If not, either install a complete library or use the other scheme. If using a parallel HDF5 library, be sure to use
+   the same MPI with QE as used to build the parallel HDF5 library.
 
    Currently HDF5 support in QE itself is preliminary. To enable use of pw2qmcpack
    but use the old non-HDF5 I/O within QE, replace \texttt{-D\_\_HDF5} with \texttt{-D\_\_HDF5\_C} in make.inc.
