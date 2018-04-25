@@ -239,12 +239,6 @@ public:
     return LogValue;
   }
 
-  ValueType evaluate(ParticleSet& P
-                     , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-
   /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$
    * @param P active particle set
    * @param iat particle that has been moved.

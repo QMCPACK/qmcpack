@@ -85,11 +85,6 @@ public:
   virtual void resetTargetParticleSet(ParticleSet& P);
 
   virtual
-  ValueType evaluate(ParticleSet& P
-                     ,ParticleSet::ParticleGradient_t& G
-                     ,ParticleSet::ParticleLaplacian_t& L);
-
-  virtual
   RealType evaluateLog(ParticleSet& P
                        ,ParticleSet::ParticleGradient_t& G
                        ,ParticleSet::ParticleLaplacian_t& L);

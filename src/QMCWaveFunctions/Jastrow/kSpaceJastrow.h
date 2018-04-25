@@ -165,14 +165,6 @@ public:
                        ParticleSet::ParticleGradient_t& G,
                        ParticleSet::ParticleLaplacian_t& L);
 
-  inline ValueType evaluate(ParticleSet& P,
-                            ParticleSet::ParticleGradient_t& G,
-                            ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-
-
   ValueType ratio(ParticleSet& P, int iat);
 
   GradType evalGrad(ParticleSet& P, int iat);

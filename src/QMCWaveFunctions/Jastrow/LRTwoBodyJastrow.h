@@ -160,14 +160,6 @@ public:
     Fk_0=Fk;
   }
 
-  inline ValueType evaluate(ParticleSet& P,
-                            ParticleSet::ParticleGradient_t& G,
-                            ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-
-
   ValueType ratio(ParticleSet& P, int iat);
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType & g);
