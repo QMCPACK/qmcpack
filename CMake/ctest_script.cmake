@@ -83,7 +83,8 @@ ELSEIF( ${HOSTNAME} MATCHES "ryzen-box" )
     SET( QMC_OPTIONS "${QMC_OPTIONS};-DCMAKE_PREFIX_PATH=/opt/OpenBLAS" )
     SET( N_PROCS 16)
 ELSE()
-    MESSAGE( FATAL_ERROR "Unknown host: ${HOSTNAME}" )
+    MESSAGE( MESSAGE "Unknown host: ${HOSTNAME}. Using generic setting." )
+    SET( CTEST_CMAKE_GENERATOR "Unix Makefiles")
 ENDIF()
 
 # Get the source directory based on the current directory
