@@ -217,16 +217,6 @@ public:
   /** recursively change the ParticleSet whose G and L are evaluated */
   void resetTargetParticleSet(ParticleSet& P);
 
-  /////Check if aname-ed Single-Particle-Orbital set exists
-  //bool hasSPOSet(const std::string& aname);
-  /////add a Single-Particle-Orbital set
-  //void addSPOSet(OhmmsElementBase* spo);
-  /////return the aname-ed Single-Particle-Orbital set.
-  //OhmmsElementBase* getSPOSet(const std::string& aname);
-
-  /** evalaute the values of the wavefunction, gradient and laplacian  for a walkers */
-  ValueType evaluate(ParticleSet& P);
-
   /** evalaute the values of the wavefunction, gradient and laplacian  for a walkers */
   RealType evaluateLogOnly(ParticleSet& P);
 
