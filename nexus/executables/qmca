@@ -2591,6 +2591,7 @@ QMCA examples:
             self.file_list = file_list
             self.file_map  = file_map
             self.data = obj(avg=adata)
+            self.prefix_list = ['avg']
         #end if
     #end def load_data
 
