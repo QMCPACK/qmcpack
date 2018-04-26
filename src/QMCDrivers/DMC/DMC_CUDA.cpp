@@ -355,7 +355,6 @@ void DMCcuda::resetUpdateEngine()
 
   branchEngine->checkParameters(W);
 
-  //    Mover->updateWalkers(W.begin(),W.end());
   Mover->MaxAge=1;
   app_log() << "  Steps per block = " << nSteps << std::endl;
   app_log() << "  Number of blocks = " << nBlocks << std::endl;

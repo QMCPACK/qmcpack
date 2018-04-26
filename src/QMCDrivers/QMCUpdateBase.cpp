@@ -328,20 +328,6 @@ QMCUpdateBase::getNodeCorrection(const ParticleSet::ParticleGradient_t& g, Parti
   return  setScaledDriftPbyPandNodeCorr(Tau,MassInvP,g,gscaled);
 }
 
-void QMCUpdateBase::updateWalkers(WalkerIter_t it, WalkerIter_t it_end)
-{
-  for (; it != it_end; ++it)
-  {
-    Walker_t& thisWalker(**it);
-    W.loadWalker(thisWalker,UpdatePbyP);
-    //recompute distance tables
-    W.update();
-    Walker_t::WFBuffer_t& w_buffer((*it)->DataSet);
-    RealType logpsi=Psi.updateBuffer(W,w_buffer,true);
-    W.saveWalker(thisWalker);
-  }
-}
-
 void QMCUpdateBase::setReleasedNodeMultiplicity(WalkerIter_t it, WalkerIter_t it_end)
 {
   for (; it != it_end; ++it)
