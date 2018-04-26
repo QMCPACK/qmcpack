@@ -2116,7 +2116,6 @@ class DatAnalyzer(QBase):
         plot(xlims,[smean,smean],'r-')
         plot(xlims,[smean+sstd,smean+sstd],'r-.')
         plot(xlims,[smean-sstd,smean-sstd],'r-.')
-        ylims = qmin,qmax
         return xlims,ylims,s,q
     #end def plot_trace
 
@@ -2701,7 +2700,7 @@ QMCA examples:
                                 dx = max(.1*abs(xminp-xmaxp),1)
                                 xminp -= dx
                                 xmaxp += dx
-                                dy = max(.1*abs(yminp-ymaxp),1)
+                                dy = .1*abs(yminp-ymaxp)
                                 yminp -= dy
                                 ymaxp += dy
                                 xlim([xminp,xmaxp])
