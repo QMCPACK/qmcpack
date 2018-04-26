@@ -178,14 +178,6 @@ struct  J2OrbitalSoA : public OrbitalBase
   /** recompute internal data assuming distance table is fully ready */
   void recompute(ParticleSet& P);
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    evaluateLog(P,G,L);
-    return std::exp(LogValue);
-  }
-
   ValueType ratio(ParticleSet& P, int iat);
   void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {

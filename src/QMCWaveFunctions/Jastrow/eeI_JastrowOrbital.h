@@ -493,13 +493,6 @@ public:
     // }
   }
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-
   inline GradType evalGradSourceFD(ParticleSet& P,
                                    ParticleSet& source, int isrc)
   {

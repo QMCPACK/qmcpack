@@ -52,18 +52,6 @@ void SlaterDetWithBackflow::resetTargetParticleSet(ParticleSet& P)
   }
 }
 
-SlaterDetWithBackflow::ValueType
-SlaterDetWithBackflow::evaluate(ParticleSet& P,
-                                ParticleSet::ParticleGradient_t& G,
-                                ParticleSet::ParticleLaplacian_t& L)
-{
-  BFTrans->evaluate(P);
-  ValueType psi = 1.0;
-  for(int i=0; i<Dets.size(); i++)
-    psi *= Dets[i]->evaluate(P,G,L);
-  return psi;
-}
-
 SlaterDetWithBackflow::RealType
 SlaterDetWithBackflow::evaluateLog(ParticleSet& P,
                                    ParticleSet::ParticleGradient_t& G,
