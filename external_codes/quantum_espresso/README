@@ -18,10 +18,8 @@ from within the top level quantum espresso directory.
 Notes for maintainers:
 
 1. Update the new version of QE. Hopefully the old patch
-works. Typically there are small makefile updates and minor updates to
-Module interfaces in read_file_lite. If install/configure.ac is
-updated, be sure to run autoconf to generate a new
-install/configure.
+works. Typically there are small makefile updates. If install/configure.ac is
+updated, be sure to run autoconf to generate a new install/configure.
 
 2. Create a new patch.
 

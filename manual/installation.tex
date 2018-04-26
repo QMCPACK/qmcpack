@@ -1341,17 +1341,28 @@ Quantum ESPRESSO distribution.
 To simplify the process of patching Quantum ESPRESSO we have developed
 a script that will automatically download and patch the source
 code. The patches are specific to each version. e.g. To download and
-patch QE v5.3.0:
+patch QE v6.2.1:
 \begin{verbatim}
 cd external_codes/quantum_espresso
-./download_and_patch_qe5.3.0.sh
+./download_and_patch_qe6.2.1.sh
 \end{verbatim}
 After running the patch, you must configure Quantum ESPRESSO with
-the HDF5 capability enabled, i.e.
+the HDF5 capability enabled in either way:
+\begin{itemize}
+\item if your system already has HDF5 installed with Fortran, use the -{}-with-hdf5 configuration option.
 \begin{verbatim}
-cd espresso-5.3.0
-./configure --with-hdf5 HDF5_DIR=/opt/local   # Specify HDF5 base directory
+cd espresso-6.2.1
+./configure --with-hdf5=/opt/local   # Specify HDF5 base directory
 \end{verbatim}
+   {\bf check} the end of configure output if HDF5 libraries are found properly.
+   If not, either install a complete library or use the other scheme. If using a parallel HDF5 library, be sure to use
+   the same MPI with QE as used to build the parallel HDF5 library.
+
+   Currently HDF5 support in QE itself is preliminary. To enable use of pw2qmcpack
+   but use the old non-HDF5 I/O within QE, replace \texttt{-D\_\_HDF5} with \texttt{-D\_\_HDF5\_C} in make.inc.
+\item if your system has HDF5 with C only, manually edit make.inc by adding \texttt{-D\_\_HDF5\_C} and \texttt{-DH5\_USE\_16\_API}
+   in \texttt{DFLAGS} and provide include and library path in \texttt{IFLAGS} and \texttt{HDF5\_LIB}
+\end{itemize}
 
 The complete process is described in external\_codes/quantum\_espresso/README.
 
