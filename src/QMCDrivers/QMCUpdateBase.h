@@ -304,10 +304,6 @@ protected:
   ///copy constructor
   QMCUpdateBase(const QMCUpdateBase& a);
 
-  /** a VMC step to randomize awalker
-   */
-  void randomize(Walker_t& awalker);
-
 private:
 
   ///set default parameters
