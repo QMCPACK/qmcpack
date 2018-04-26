@@ -359,8 +359,10 @@ struct SplineAdoptorReader: public BsplineReaderBase
       double total_norm = compute_norm(cG);
       if(std::abs(total_norm-1.0)>PW_COEFF_NORM_TOLERANCE)
       {
-        app_error() << "The orbital " << iorb << " has a wrong norm " << total_norm
-                    << ", computed from plane wave coefficients!" << std::endl;
+        std::cerr << "The orbital " << iorb << " has a wrong norm " << total_norm
+                  << ", computed from plane wave coefficients!" << std::endl
+                  << "This may indicate a problem with the HDF5 library versions used "
+                  << "during wavefunction conversion or read." << std::endl;
         APP_ABORT("SplineAdoptorReader Wrong orbital norm!");
       }
       fft_spline(cG,ti,0);
@@ -421,8 +423,10 @@ struct SplineAdoptorReader: public BsplineReaderBase
         double total_norm = compute_norm(cG);
         if(std::abs(total_norm-1.0)>PW_COEFF_NORM_TOLERANCE)
         {
-          app_error() << "The orbital " << iorb << " has a wrong norm " << total_norm
-                      << ", computed from plane wave coefficients!" << std::endl;
+          std::cerr << "The orbital " << iorb << " has a wrong norm " << total_norm
+                    << ", computed from plane wave coefficients!" << std::endl
+                    << "This may indicate a problem with the HDF5 library versions used "
+                    << "during wavefunction conversion or read." << std::endl;
           APP_ABORT("SplineAdoptorReader Wrong orbital norm!");
         }
         fft_spline(cG,ti,ib);
