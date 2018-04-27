@@ -311,29 +311,6 @@ void TrialWaveFunction::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad
  // app_log()<<" TrialWavefunction::Hessian = "<<grad_grad_psi<< std::endl;
 }
 
-
-/** evaluate the value of a many-body wave function
-*@param P input configuration containing N particles
-*@return the value of many-body wave function
-*
-*Upon return, the gradient and laplacian operators are added by the components.
-*/
-TrialWaveFunction::ValueType TrialWaveFunction::evaluate(ParticleSet& P)
-{
-  //TAU_PROFILE("TrialWaveFunction::evaluate","ParticleSet& P", TAU_USER);
-  P.G = 0.0;
-  P.L = 0.0;
-  ValueType psi(1.0);
-  for(size_t i=0,n=Z.size(); i<n; ++i)
-  {
-    psi *= Z[i]->evaluate(P, P.G, P.L);
-  }
-  //for(int iat=0; iat<P.getTotalNum(); iat++)
-  // std::cout << P.G[iat] << " " << P.L[iat] << std::endl;
-  LogValue = evaluateLogAndPhase(psi,PhaseValue);
-  return psi;
-}
-
 TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P,int iat)
 {
   //TAU_PROFILE("TrialWaveFunction::ratio","(ParticleSet& P,int iat)", TAU_USER);

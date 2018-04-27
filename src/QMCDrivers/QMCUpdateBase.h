@@ -177,10 +177,6 @@ public:
    */
   virtual void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
 
-  /** update Walker buffers for PbyP update
-   */
-  void updateWalkers(WalkerIter_t it, WalkerIter_t it_end);
-
   /** simple routine to test the performance
    */
   void benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip);
@@ -257,8 +253,6 @@ public:
 protected:
   ///update particle-by-particle
   bool UpdatePbyP;
-  ///use T-moves
-  int UseTMove;
   ///number of particles
   IndexType NumPtcl;
   ///Time-step factor \f$ 1/(2\tau)\f$
@@ -291,8 +285,6 @@ protected:
   std::vector<RealType> MassInvP;
   ///sqrt(tau/Mass) per particle
   std::vector<RealType> SqrtTauOverMass;
-  ///non local operator
-  NonLocalTOperator nonLocalOps;
   ///temporary storage for drift
   ParticleSet::ParticlePos_t drift;
   ///temporary storage for random displacement
@@ -311,10 +303,6 @@ protected:
 
   ///copy constructor
   QMCUpdateBase(const QMCUpdateBase& a);
-
-  /** a VMC step to randomize awalker
-   */
-  void randomize(Walker_t& awalker);
 
 private:
 

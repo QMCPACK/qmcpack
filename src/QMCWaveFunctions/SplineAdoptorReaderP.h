@@ -356,6 +356,15 @@ struct SplineAdoptorReader: public BsplineReaderBase
       std::string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
       foundit &= h5f.read(cG,s);
       get_psi_g(ti,spin,cur_bands[iorb].BandIndex,cG);//bcast cG
+      double total_norm = compute_norm(cG);
+      if(std::abs(total_norm-1.0)>PW_COEFF_NORM_TOLERANCE)
+      {
+        std::cerr << "The orbital " << iorb << " has a wrong norm " << total_norm
+                  << ", computed from plane wave coefficients!" << std::endl
+                  << "This may indicate a problem with the HDF5 library versions used "
+                  << "during wavefunction conversion or read." << std::endl;
+        APP_ABORT("SplineAdoptorReader Wrong orbital norm!");
+      }
       fft_spline(cG,ti,0);
       bspline->set_spline(spline_r[0],spline_i[0],cur_bands[iorb].TwistIndex,iorb,0);
     }
@@ -411,6 +420,15 @@ struct SplineAdoptorReader: public BsplineReaderBase
         int ti=cur_bands[iorb].TwistIndex;
         std::string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
         foundit &= h5f.read(cG,s);
+        double total_norm = compute_norm(cG);
+        if(std::abs(total_norm-1.0)>PW_COEFF_NORM_TOLERANCE)
+        {
+          std::cerr << "The orbital " << iorb << " has a wrong norm " << total_norm
+                    << ", computed from plane wave coefficients!" << std::endl
+                    << "This may indicate a problem with the HDF5 library versions used "
+                    << "during wavefunction conversion or read." << std::endl;
+          APP_ABORT("SplineAdoptorReader Wrong orbital norm!");
+        }
         fft_spline(cG,ti,ib);
       }
       if(root)

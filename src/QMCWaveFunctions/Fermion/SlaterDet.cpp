@@ -123,15 +123,6 @@ void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& r
     Dets[i]->evaluateRatiosAlltoOne(P, ratios);
 }
 
-SlaterDet::ValueType SlaterDet::evaluate(ParticleSet& P,
-    ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
-{
-  ValueType psi = 1.0;
-  for (int i = 0; i < Dets.size(); i++)
-    psi *= Dets[i]->evaluate(P, G, L);
-  return psi;
-}
-
 SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,
     ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
 {

@@ -1503,6 +1503,9 @@ class Supercomputer(Machine):
                 verbose = '--verbose=INFO',
                 envs    = envs
                 )
+            if job.processes_per_node is None:
+                self.error('please specify processes_per_node in each job to launched with runjob')
+            #end if
         elif launcher=='srun':  # Amos contribution from Ryan McAvoy
             None # anything needed here?
         elif launcher=='ibrun': # Lonestar contribution from Paul Young
@@ -2550,14 +2553,14 @@ class ALCF_Machine(Supercomputer):
             env  = '--env BG_SHAREDMEMSIZE=32',
             mode = '--mode script'
             )
-        #if job.nodes<self.base_partition:
-        #    self.warn('!!! ATTENTION !!!\n  number of nodes on {0} should not be less than {1}\n  you requested: {2}'.format(self.name,self.base_partition,job.nodes))
-        #else:
-        #    partition = log(float(job.nodes)/self.base_partition)/log(2.)
-        #    if abs(partition-int(partition))>1e-6:
-        #        self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be {1} times a power of two\n  you requested: {2}\n  nearby valid node count: {3}'.format(self.name,self.base_partition,job.nodes,self.base_partition*2**int(round(partition))))
-        #    #end if
-        ##end if
+        if job.nodes<self.base_partition:
+            self.warn('!!! ATTENTION !!!\n  number of nodes on {0} should not be less than {1}\n  you requested: {2}'.format(self.name,self.base_partition,job.nodes))
+        else:
+            partition = log(float(job.nodes)/self.base_partition)/log(2.)
+            if abs(partition-int(partition))>1e-6:
+                self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be {1} times a power of two\n  you requested: {2}\n  nearby valid node count: {3}'.format(self.name,self.base_partition,job.nodes,self.base_partition*2**int(round(partition))))
+            #end if
+        #end if
     #end def process_job_extra
 
     def write_job_header(self,job):

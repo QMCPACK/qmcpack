@@ -46,8 +46,6 @@ struct NonLocalECPComponent: public QMCTraits
   int nknot;
   ///Maximum cutoff the non-local pseudopotential
   RealType Rmax;
-  ///random number generator
-  RandomGenerator_t* myRNG;
   ///Angular momentum map
   aligned_vector<int> angpp_m;
   ///Weight of the angular momentum
@@ -110,8 +108,8 @@ struct NonLocalECPComponent: public QMCTraits
 
   void resize_warrays(int n,int m,int l);
 
-  void randomize_grid();
-  template<typename T> void randomize_grid(std::vector<T> &sphere);
+  void randomize_grid(RandomGenerator_t& myRNG);
+  template<typename T> void randomize_grid(std::vector<T> &sphere, RandomGenerator_t& myRNG);
 
   RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& Psi, 
       int iel, RealType r, const PosType& dr, bool Tmove, std::vector<NonLocalData>& Txy) const;
@@ -136,11 +134,6 @@ struct NonLocalECPComponent: public QMCTraits
   void print(std::ostream& os);
 
   void initVirtualParticle(const ParticleSet& qp);
-
-  void setRandomGenerator(RandomGenerator_t* rng)
-  {
-    myRNG=rng;
-  }
 
   // For space-warp transformation used in Pulay correction
   inline RealType WarpFunction (RealType r)

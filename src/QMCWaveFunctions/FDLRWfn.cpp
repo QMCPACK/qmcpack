@@ -317,11 +317,6 @@ namespace qmcplusplus {
     throw std::runtime_error("FDLRWfn::resetTargetParticleSet not yet implemented");
   }
 
-  FDLRWfn::ValueType FDLRWfn::evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) {
-    throw std::runtime_error("FDLRWfn::evaluate not yet implemented");
-    return 0.0;
-  }
-
   ///////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Evaluates the log of the FDLR wave function, and adds the gradient and laplacian
   ///         of the log of the FDLR wave function to the running total gradient and laplacian.

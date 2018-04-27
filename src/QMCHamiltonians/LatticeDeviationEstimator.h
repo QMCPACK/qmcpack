@@ -50,10 +50,6 @@ public:
   bool get(std::ostream& os) const; // class description, required
 
   Return_t evaluate(ParticleSet& P); // main function that calculates the observable
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  { // delegate responsity inline for speed
-    return evaluate(P);
-  }
 
   // allow multiple scalars to be registered in scalar.dat
   void addObservables(PropertySetType& plist, BufferType& collectables);

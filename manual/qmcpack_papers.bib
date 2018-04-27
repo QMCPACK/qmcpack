@@ -65,9 +65,6 @@ URL = { http://dx.doi.org/10.1063/1.2987716 },
 eprint = { http://dx.doi.org/10.1063/1.2987716 }
 }
 
-
-
-
 % (qmchpc) endstation project
 @article{esler2008,
   author={K P Esler and J Kim and D M Ceperley and W Purwanto and E J Walter and H Krakauer and S Zhang and P R C Kent and R G Hennig and C Umrigar and M Bajdich and J Kolorenč and L Mitas and A Srinivasan},
@@ -239,29 +236,18 @@ URL = { http://dx.doi.org/10.1063/1.3665391 },
 eprint = { http://dx.doi.org/10.1063/1.3665391 }
 }
 
-% (dev) esler qmcpack gpu
-@article{esler2011,
-  title={Fully accelerating quantum Monte Carlo simulations of real materials on GPU clusters},
-  author={Esler, Kenneth P and Kim, Jeongnim and Schulenburger, L and Ceperley, DM},
-  journal={Computing in Science and Eng},
-  volume={13},
-  number={5},
-  year={2011}
-}
-
-% (dev) esler qmcpack gpu
-@ARTICLE{esler2012, 
-author={K. Esler and J. Kim and D. Ceperley and L. Shulenburger}, 
-journal={Computing in Science Engineering}, 
-title={Accelerating Quantum Monte Carlo Simulations of Real Materials on GPU Clusters}, 
-year={2012}, 
-volume={14}, 
-number={1}, 
-pages={40-51}, 
-keywords={Monte Carlo methods;graphics processing units;multiprocessing systems;parallel processing;quantum computing;GPU cluster;QMC algorithm;continuum quantum Monte Carlo simulation;many core paradigm;Computational modeling;Graphics processing unit;Mathematical model;Monte Carlo methods;Quantum methods;Wave functions;Component;Monte Carlo;graphics processors;physics;scientific computing}, 
-doi={10.1109/MCSE.2010.122}, 
-ISSN={1521-9615}, 
-month={Jan},
+@Article{Esler2012,
+  author        = {Kenneth Esler and Jeongnim Kim and David Ceperley and Luke Shulenburger},
+  title         = {Accelerating Quantum Monte Carlo Simulations of Real Materials on {GPU} Clusters},
+  journal       = {Computing in Science {\&} Engineering},
+  year          = {2012},
+  volume        = {14},
+  number        = {1},
+  pages         = {40--51},
+  month         = {jan},
+  __markedentry = {[pk7:6]},
+  doi           = {10.1109/mcse.2010.122},
+  publisher     = {Institute of Electrical and Electronics Engineers ({IEEE})},
 }
 
 % (hpc) baue cray user group
@@ -326,6 +312,19 @@ month={Jan},
   publisher = {American Physical Society},
   doi = {10.1103/PhysRevB.87.081108},
   url = {http://link.aps.org/doi/10.1103/PhysRevB.87.081108}
+}
+
+@Article{Sudheer2013,
+  author    = {C.D. Sudheer and S. Krishnan and A. Srinivasan and P.R.C. Kent},
+  title     = {Dynamic load balancing for petascale quantum Monte Carlo applications: The Alias method},
+  journal   = {Computer Physics Communications},
+  year      = {2013},
+  volume    = {184},
+  number    = {2},
+  pages     = {284--292},
+  month     = {feb},
+  doi       = {10.1016/j.cpc.2012.09.008},
+  publisher = {Elsevier {BV}},
 }
 
 % (app) swingle fermi gas/liquid entanglement (swap operator in qmcpack?)
@@ -422,20 +421,16 @@ month={Dec},
   url = {http://link.aps.org/doi/10.1103/PhysRevB.89.184106}
 }
 
-% (app) foyevtsova cuprate
-@article{foyevtsova2014,
-  title = {Ab initio},
-  author = {Foyevtsova, Kateryna and Krogel, Jaron T. and Kim, Jeongnim and Kent, P. R. C. and Dagotto, Elbio and Reboredo, Fernando A.},
-  journal = {Phys. Rev. X},
-  volume = {4},
-  issue = {3},
-  pages = {031003},
-  numpages = {7},
-  year = {2014},
-  month = {Jul},
-  publisher = {American Physical Society},
-  doi = {10.1103/PhysRevX.4.031003},
-  url = {http://link.aps.org/doi/10.1103/PhysRevX.4.031003}
+@Article{Foyevtsova2014,
+  author    = {Kateryna Foyevtsova and Jaron T. Krogel and Jeongnim Kim and P.{\hspace{0.167em}}R.{\hspace{0.167em}}C. Kent and Elbio Dagotto and Fernando A. Reboredo},
+  title     = {Ab {initioQuantum} Monte~Carlo Calculations of Spin Superexchange in Cuprates: The Benchmarking Case {ofCa}2CuO3},
+  journal   = {Physical Review X},
+  year      = {2014},
+  volume    = {4},
+  number    = {3},
+  month     = {jul},
+  doi       = {10.1103/physrevx.4.031003},
+  publisher = {American Physical Society ({APS})},
 }
 
 % (method/dev) krogel energy density matrix
@@ -872,7 +867,7 @@ eprint = { http://dx.doi.org/10.1021/acs.nanolett.5b03615 }
 
 % (method/app) yang non-adiabatic atoms/dimers
 @article{yang2015,
-author = {Yubo Yang and Ilkka Kylänpää and Norm M. Tubman and Jaron T. Krogel and Sharon Hammes-Schiffer and David M. Ceperley},
+author = {Yubo Yang and Ilkka Kyl\"anp\"a\"a and Norm M. Tubman and Jaron T. Krogel and Sharon Hammes-Schiffer and David M. Ceperley},
 title = {How large are nonadiabatic effects in atomic and diatomic systems?},
 journal = {The Journal of Chemical Physics},
 volume = {143},
@@ -1053,24 +1048,6 @@ url="http://dx.doi.org/10.1007/978-3-319-46079-6_38"
   year={2016},
 }
 
-% (dev) mathuriya parallel bspline evaluation (arxiv)
-@article{mathuriya2016,
-  author    = {Amrita Mathuriya and
-               Ye Luo and
-               Anouar Benali and
-               Luke Shulenburger and
-               Jeongnim Kim},
-  title     = {Optimization and parallelization of B-spline based orbital evaluations
-               in {QMC} on multi/many-core shared memory processors},
-  journal   = {CoRR},
-  volume    = {abs/1611.02665},
-  year      = {2016},
-  url       = {http://arxiv.org/abs/1611.02665},
-  timestamp = {Thu, 01 Dec 2016 19:32:08 +0100},
-  biburl    = {http://dblp.uni-trier.de/rec/bib/journals/corr/MathuriyaLBSK16},
-  bibsource = {dblp computer science bibliography, http://dblp.org}
-}
-
 % (compsci) mcdaniel delayed update gpu
 @inproceedings{mcdaniel2016,
  author = {McDaniel, Tyler and D'Azevedo, Ed and Li, Ying Wai and Kent, Paul and Wong, Ming and Wong, Kwai},
@@ -1173,19 +1150,284 @@ URL = { http://dx.doi.org/10.1021/acs.jctc.6b00508 },
 eprint = { http://dx.doi.org/10.1021/acs.jctc.6b00508 }
 }
 
+@Article{Goetz2017,
+  author    = {Brett Van Der Goetz and Eric Neuscamman},
+  title     = {Suppressing Ionic Terms with Number-Counting Jastrow Factors in Real Space},
+  journal   = {Journal of Chemical Theory and Computation},
+  year      = {2017},
+  volume    = {13},
+  number    = {5},
+  pages     = {2035--2042},
+  month     = {apr},
+  doi       = {10.1021/acs.jctc.7b00158},
+  publisher = {American Chemical Society ({ACS})},
+}
 
+@InProceedings{Mathuriya2017a,
+  author    = {Amrita Mathuriya and Ye Luo and Anouar Benali and Luke Shulenburger and Jeongnim Kim},
+  title     = {Optimization and Parallelization of B-Spline Based Orbital Evaluations in {QMC} on Multi/Many-Core Shared Memory Processors},
+  booktitle = {2017 {IEEE} International Parallel and Distributed Processing Symposium ({IPDPS})},
+  year      = {2017},
+  month     = {may},
+  publisher = {{IEEE}},
+  doi       = {10.1109/ipdps.2017.33},
+}
 
+@Article{Krogel2017,
+  author    = {Jaron T. Krogel and P. R. C. Kent},
+  title     = {Magnitude of pseudopotential localization errors in fixed node diffusion quantum Monte Carlo},
+  journal   = {The Journal of Chemical Physics},
+  year      = {2017},
+  volume    = {146},
+  number    = {24},
+  pages     = {244101},
+  month     = {jun},
+  doi       = {10.1063/1.4986951},
+  publisher = {{AIP} Publishing},
+}
 
+@Article{Zhao2017,
+  author    = {Luning Zhao and Eric Neuscamman},
+  title     = {A Blocked Linear Method for Optimizing Large Parameter Sets in Variational Monte Carlo},
+  journal   = {Journal of Chemical Theory and Computation},
+  year      = {2017},
+  volume    = {13},
+  number    = {6},
+  pages     = {2604--2611},
+  month     = {jun},
+  doi       = {10.1021/acs.jctc.7b00119},
+  publisher = {American Chemical Society ({ACS})},
+}
 
+@Article{Dzubak2017,
+  author    = {Allison L. Dzubak and Jaron T. Krogel and Fernando A. Reboredo},
+  title     = {Quantitative estimation of localization errors of 3d transition metal pseudopotentials in diffusion Monte Carlo},
+  journal   = {The Journal of Chemical Physics},
+  year      = {2017},
+  volume    = {147},
+  number    = {2},
+  pages     = {024102},
+  month     = {jul},
+  doi       = {10.1063/1.4991414},
+  publisher = {{AIP} Publishing},
+}
 
-%2017
-% (method) zhao blocked linear method (arxiv)
-@article{zhao2017,
-  title={A Blocked Linear Method for Optimizing Large Parameter Sets in Variational Monte Carlo},
-  author={Zhao, Luning and Neuscamman, Eric},
-  journal={arXiv preprint arXiv:1702.01481},
-  year={2017},
-  url={https://arxiv.org/abs/1702.01481},
+@Article{Santana2017a,
+  author    = {Juan A. Santana and Jaron T. Krogel and Paul R. C. Kent and Fernando A. Reboredo},
+  title     = {Diffusion quantum Monte Carlo calculations of {SrFeO}3 and {LaFeO}3},
+  journal   = {The Journal of Chemical Physics},
+  year      = {2017},
+  volume    = {147},
+  number    = {3},
+  pages     = {034701},
+  month     = {jul},
+  doi       = {10.1063/1.4994083},
+  publisher = {{AIP} Publishing},
+}
+
+@Article{Gasperich2017,
+  author    = {Kevin Gasperich and Michael Deible and Kenneth D. Jordan},
+  title     = {H4: A model system for assessing the performance of diffusion Monte Carlo calculations using a single Slater determinant trial function},
+  journal   = {The Journal of Chemical Physics},
+  year      = {2017},
+  volume    = {147},
+  number    = {7},
+  pages     = {074106},
+  month     = {aug},
+  doi       = {10.1063/1.4986216},
+  publisher = {{AIP} Publishing},
+}
+
+@Article{Robinson2017,
+  author    = {Paul J. Robinson and Sergio D. Pineda Flores and Eric Neuscamman},
+  title     = {Excitation variance matching with limited configuration interaction expansions in variational Monte Carlo},
+  journal   = {The Journal of Chemical Physics},
+  year      = {2017},
+  volume    = {147},
+  number    = {16},
+  pages     = {164114},
+  month     = {oct},
+  doi       = {10.1063/1.5008743},
+  publisher = {{AIP} Publishing},
+}
+
+@Article{Santana2017,
+  author    = {Juan A. Santana and Rohan Mishra and Jaron T. Krogel and Albina Y. Borisevich and Paul R. C. Kent and Sokrates T. Pantelides and Fernando A. Reboredo},
+  title     = {Quantum Many-Body Effects in Defective Transition-Metal-Oxide Superlattices},
+  journal   = {Journal of Chemical Theory and Computation},
+  year      = {2017},
+  volume    = {13},
+  number    = {11},
+  pages     = {5604--5609},
+  month     = {oct},
+  doi       = {10.1021/acs.jctc.7b00483},
+  publisher = {American Chemical Society ({ACS})},
+}
+
+@Article{Shin2017,
+  author    = {Hyeondeok Shin and Jeongnim Kim and Hoonkyung Lee and Olle Heinonen and Anouar Benali and Yongkyung Kwon},
+  title     = {Nature of Interlayer Binding and Stacking of sp{\textendash}sp2 Hybridized Carbon Layers: A Quantum Monte Carlo Study},
+  journal   = {Journal of Chemical Theory and Computation},
+  year      = {2017},
+  volume    = {13},
+  number    = {11},
+  pages     = {5639--5646},
+  month     = {oct},
+  doi       = {10.1021/acs.jctc.7b00747},
+  publisher = {American Chemical Society ({ACS})},
+}
+
+@Article{Blunt2017,
+  author    = {N. S. Blunt and Eric Neuscamman},
+  title     = {Charge-transfer excited states: Seeking a balanced and efficient wave function ansatz in variational Monte Carlo},
+  journal   = {The Journal of Chemical Physics},
+  year      = {2017},
+  volume    = {147},
+  number    = {19},
+  pages     = {194101},
+  month     = {nov},
+  doi       = {10.1063/1.4998197},
+  publisher = {{AIP} Publishing},
+}
+
+@Article{Dzubak2017a,
+  author    = {Allison L. Dzubak and Chandrima Mitra and Michael Chance and Stephen Kuhn and Gerald E. Jellison and Athena S. Sefat and Jaron T. Krogel and Fernando A. Reboredo},
+  title     = {{MnNiO}3 revisited with modern theoretical and experimental methods},
+  journal   = {The Journal of Chemical Physics},
+  year      = {2017},
+  volume    = {147},
+  number    = {17},
+  pages     = {174703},
+  month     = {nov},
+  doi       = {10.1063/1.5000847},
+  publisher = {{AIP} Publishing},
+}
+
+@Article{Kylaenpaeae2017,
+  author    = {Ilkka Kyl\"anp\"a\"a and Janakiraman Balachandran and Panchapakesan Ganesh and Olle Heinonen and Paul R. C. Kent and Jaron T. Krogel},
+  title     = {Accuracy of ab initio electron correlation and electron densities in vanadium dioxide},
+  journal   = {Physical Review Materials},
+  year      = {2017},
+  volume    = {1},
+  number    = {6},
+  month     = {nov},
+  doi       = {10.1103/physrevmaterials.1.065408},
+  publisher = {American Physical Society ({APS})},
+}
+
+@Article{McDaniel2017,
+  author    = {T. McDaniel and E. F. D'Azevedo and Y. W. Li and K. Wong and P. R. C. Kent},
+  title     = {Delayed Slater determinant update algorithms for high efficiency quantum Monte Carlo},
+  journal   = {The Journal of Chemical Physics},
+  year      = {2017},
+  volume    = {147},
+  number    = {17},
+  pages     = {174107},
+  month     = {nov},
+  doi       = {10.1063/1.4998616},
+  publisher = {{AIP} Publishing},
+}
+
+@Article{Shea2017,
+  author    = {Jacqueline A. R. Shea and Eric Neuscamman},
+  title     = {Size Consistent Excited States via Algorithmic Transformations between Variational Principles},
+  journal   = {Journal of Chemical Theory and Computation},
+  year      = {2017},
+  volume    = {13},
+  number    = {12},
+  pages     = {6078--6088},
+  month     = {nov},
+  doi       = {10.1021/acs.jctc.7b00923},
+  publisher = {American Chemical Society ({ACS})},
+}
+
+@Article{Bennett2017,
+  author    = {M. Chandler Bennett and Cody A. Melton and Abdulgani Annaberdiyev and Guangming Wang and Luke Shulenburger and Lubos Mitas},
+  title     = {A new generation of effective core potentials for correlated calculations},
+  journal   = {The Journal of Chemical Physics},
+  year      = {2017},
+  volume    = {147},
+  number    = {22},
+  pages     = {224106},
+  month     = {dec},
+  doi       = {10.1063/1.4995643},
+  publisher = {{AIP} Publishing},
+}
+
+@Article{Shin2017a,
+  author    = {Hyeondeok Shin and Ye Luo and Panchapakesan Ganesh and Janakiraman Balachandran and Jaron T. Krogel and Paul R. C. Kent and Anouar Benali and Olle Heinonen},
+  title     = {Electronic properties of doped and defective {NiO}: A quantum Monte Carlo study},
+  journal   = {Physical Review Materials},
+  year      = {2017},
+  volume    = {1},
+  number    = {7},
+  month     = {dec},
+  doi       = {10.1103/physrevmaterials.1.073603},
+  publisher = {American Physical Society ({APS})},
+}
+
+@InBook{BenaliExascaleBook2017,
+  chapter   = {Exascale Scientific Applications: Scalability and Performance Portability},
+  pages     = {461-480},
+  title     = {Development of QMCPACK for Exascale Scientific Computing},
+  publisher = {CRC Press},
+  year      = {2017},
+  author    = {Benali, Anouar and Ceperley, David and M. D’Azevedo, Ed and Dewing, Mark and Kent, Paul R. C. and Kim, Jeongnim and Krogel, Jaron T. and Li, Ying Wai and Luo, Ye and McDaniel, Tyler and Morales, Miguel A. and Mathuriya, Amrita and Shulenburger, Luke and Tubman, Norm M.},
+  editor    = {T. P. Straatsma, K. B. Antypas, T. J. Williams},
+  isbn      = {1-138-19754-8},
+}
+
+@Article{Liu2017,
+  author    = {Qing Liu and Norbert Podhorszki and Jong Choi and Jeremy Logan and Matt Wolf and Scott Klasky and Tahsin Kurc and Xubin He},
+  title     = {{StoreRush}: An Application-Level Approach to Harvesting Idle Storage in a Best Effort Environment},
+  journal   = {Procedia Computer Science},
+  year      = {2017},
+  volume    = {108},
+  pages     = {475--484},
+  doi       = {10.1016/j.procs.2017.05.005},
+  publisher = {Elsevier {BV}},
+}
+
+@InProceedings{Mathuriya2017,
+  author    = {Amrita Mathuriya and Ye Luo and Raymond C. Clay and Anouar Benali and Luke Shulenburger and Jeongnim Kim},
+  title     = {Embracing a new era of highly efficient and productive quantum Monte Carlo simulations},
+  booktitle = {Proceedings of the International Conference for High Performance Computing, Networking, Storage and Analysis on - {SC} {\textquotesingle}17},
+  year      = {2017},
+  publisher = {{ACM} Press},
+  doi       = {10.1145/3126908.3126952},
+}
+
+@Article{Krogel2018,
+  author    = {Jaron T. Krogel and Fernando A. Reboredo},
+  title     = {Kinetic energy classification and smoothing for compact B-spline basis sets in quantum Monte Carlo},
+  journal   = {The Journal of Chemical Physics},
+  year      = {2018},
+  volume    = {148},
+  number    = {4},
+  pages     = {044110},
+  month     = {jan},
+  doi       = {10.1063/1.4994817},
+  publisher = {{AIP} Publishing},
+}
+
+@Article{Kim2018,
+  author    = {Jeongnim Kim and Andrew Baczewski and Todd Beaudet and Anouar Benali and Chandler Bennett and Mark Berrill and Nick Blunt and Edgar Josue Landinez Borda and Michele Casula and David Ceperley and Simone Chiesa and bryan K clark and Raymond Clay and Kris Delaney and Mark Dewing and Ken Esler and Hongxia Hao and Olle Heinonen and Paul R C Kent and Jaron T. Krogel and Ilkka Kyl\"anp\"a\"a and Ying Wai Li and M. Graham Lopez and Ye Luo and Fionn Malone and Richard Martin and Amrita Mathuriya and Jeremy McMinis and Cody Melton and Lubos Mitas and Miguel A. Morales and Eric Neuscamman and William Parker and Sergio Flores and Nichols A Romero and Brenda Rubenstein and Jacqueline Shea and Hyeondeok Shin and Luke Shulenburger and Andreas Tillack and Joshua Townsend and Norman Tubman and Brett van der Goetz and Jordan Vincent and D. ChangMo Yang and Yubo Yang and Shuai Zhang and Luning Zhao},
+  title     = {{QMCPACK} : An open source ab initio Quantum Monte Carlo package for the electronic structure of atoms, molecules, and solids},
+  journal   = {Journal of Physics: Condensed Matter},
+  year      = {2018},
+  month     = {mar},
+  doi       = {10.1088/1361-648x/aab9c3},
+  publisher = {{IOP} Publishing},
+}
+
+@article{Luo2018hyb,
+  author={Ye Luo and Kenneth P. Esler and Paul R. C. Kent and Luke Shulenburger},
+  title={An efficient hybrid orbital representation for quantum Monte Carlo calculations},
+  journal={submitted to The Journal of Chemical Physics},
+  volume={},
+  number={},
+  pages={},
+  year={2018},
 }
 
 @Comment{jabref-meta: databaseType:bibtex;}

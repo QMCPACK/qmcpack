@@ -46,11 +46,13 @@ namespace qmcplusplus
   }
 
   /// move virtual particles to new postions and update distance tables
-  void VirtualParticleSet::makeMoves(int iat, const ParticlePos_t& vitualPos, bool sphere)
+  void VirtualParticleSet::makeMoves(int jel, const ParticlePos_t& vitualPos, bool sphere, int iat)
   {
+    if(sphere && iat<0) APP_ABORT("VirtualParticleSet::makeMoves is invoked incorrectly, the flag sphere=true requires iat specified!");
     onSphere=sphere;
     myTimers[1]->start();
-    refPtcl=iat;
+    refPtcl=jel;
+    refSourcePtcl=iat;
     R=vitualPos;
     RSoA.copyIn(R);
     for (int i=0; i<DistTables.size(); i++)

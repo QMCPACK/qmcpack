@@ -249,29 +249,6 @@ void SlaterDetOpt::resetTargetParticleSet(ParticleSet& P) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  Evaluates the determinant value and adds the gradient and laplacian of the
-///         log of the determinant to the total gradient and laplacian
-///
-/// \param[in]      P              the particle set
-/// \param[in,out]  G              gradient to add to
-/// \param[in,out]  L              laplacian to add to
-///
-/// \return  the determinant value
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////
-OrbitalBase::ValueType SlaterDetOpt::evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) {
-  RealType logval = evaluateLog(P, G, L);
-  // Note that this class probably isn't implemented with complex wave
-  // functions yet, but I'll leave this here anyway...
-#if defined(QMC_COMPLEX)
-  RealType magnitude = std::exp(logval);
-  return std::complex<OHMMS_PRECISION>(std::cos(PhaseValue)*magnitude, std::sin(PhaseValue)*magnitude);
-#else
-  return std::cos(PhaseValue)*std::exp(logval);
-#endif
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  Evaluates the Slater determinant's matrix, its inverse, its first derivatives w.r.t.
 ///         particle positions, and its summed second derivatives w.r.t. particle positions.
 ///         Returns the log of the determinant value.

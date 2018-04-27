@@ -347,16 +347,13 @@ struct DistanceTableData
     return -1;
   }
 
-  ///prepare particle-by-particle moves
-  virtual void setPbyP() { }
-
   ///update internal data after completing particle-by-particle moves
   virtual void donePbyP() { }
 
-  ///evaluate the Distance Table using only with position array
-  virtual void evaluate(ParticleSet& P) = 0;
+  ///evaluate the full Distance Table and neighbor_list if requested
+  virtual void evaluate(ParticleSet& P, bool update_neighbor_list=true) = 0;
 
-  /// evaluate the Distance Table
+  /// evaluate the Distance Table for a given electron
   virtual void evaluate(ParticleSet& P, int jat)=0;
 
   ///evaluate the temporary pair relations
@@ -381,13 +378,18 @@ struct DistanceTableData
     return 0;
   }
 
-  /** find the nearest neighbor
+  /** find the first nearest neighbor
    * @param iat source particle id
+   * @param r distance
+   * @param dr displacement
+   * @param newpos if true, use the data in Temp_r and Temp_dr for the proposed move.
+   *        if false, use the data in Distance[iat] and Displacements[iat]
    * @return the id of the nearest particle, -1 not found
    */
   virtual int get_first_neighbor(IndexType iat, RealType& r, PosType& dr, bool newpos) const
   {
-    return -1;
+    APP_ABORT("DistanceTableData::get_first_neighbor is not implemented in calling base class");
+    return 0;
   }
 
   /** build a compact list of a neighbor for the iat source

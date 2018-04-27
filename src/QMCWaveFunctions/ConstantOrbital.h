@@ -32,16 +32,6 @@ public:
 
   ConstantOrbital() : FakeGradRatio(1.0) {}
 
-  virtual ValueType
-  evaluate(ParticleSet& P,
-           ParticleSet::ParticleGradient_t& G,
-           ParticleSet::ParticleLaplacian_t& L) override
-  {
-    G = 0.0;
-    L = 0.0;
-    return 1.0;
-  }
-
   virtual RealType
   evaluateLog(ParticleSet& P,
               ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) override

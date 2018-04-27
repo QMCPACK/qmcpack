@@ -118,11 +118,6 @@ struct LocalPPotential: public QMCHamiltonianBase
     return Value;
   }
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   /** Do nothing */
   bool put(xmlNodePtr cur)
   {

@@ -65,11 +65,12 @@ struct SoaDistanceTableBA: public DTD_BConds<T,D,SC>, public DistanceTableData
   ~SoaDistanceTableBA() {}
 
   /** evaluate the full table */
-  inline void evaluate(ParticleSet& P)
+  inline void evaluate(ParticleSet& P, bool update_neighbor_list)
   {
     //be aware of the sign of Displacement
     for(int iat=0; iat<Ntargets; ++iat)
       DTD_BConds<T,D,SC>::computeDistances(P.R[iat],Origin->RSoA, Distances[iat], Displacements[iat], 0, Nsources);
+    if(update_neighbor_list) donePbyP();
   }
 
   /** evaluate the iat-row with the current position

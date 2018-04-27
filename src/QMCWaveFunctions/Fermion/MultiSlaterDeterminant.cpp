@@ -164,7 +164,8 @@ OrbitalBase::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P
     spo_up->prepareFor(i);
     grads_up[i]=0.0;
     lapls_up[i]=0.0;
-    detValues_up[i]=dets_up[i]->evaluate(P,grads_up[i],lapls_up[i]);
+    dets_up[i]->evaluateLog(P,grads_up[i],lapls_up[i]);
+    detValues_up[i]=dets_up[i]->getValue();
     // need \nabla^2 Det / Det
     for(int k=FirstIndex_up; k<LastIndex_up; k++)
       lapls_up[i][k] += dot(grads_up[i][k],grads_up[i][k]);
@@ -174,7 +175,8 @@ OrbitalBase::ValueType MultiSlaterDeterminant::evaluate(ParticleSet& P
     spo_dn->prepareFor(i);
     grads_dn[i]=0.0;
     lapls_dn[i]=0.0;
-    detValues_dn[i]=dets_dn[i]->evaluate(P,grads_dn[i],lapls_dn[i]);
+    dets_dn[i]->evaluateLog(P,grads_dn[i],lapls_dn[i]);
+    detValues_dn[i]=dets_dn[i]->getValue();
     // need \nabla^2 Det / Det
     for(int k=FirstIndex_dn; k<LastIndex_dn; k++)
       lapls_dn[i][k] += dot(grads_dn[i][k],grads_dn[i][k]);

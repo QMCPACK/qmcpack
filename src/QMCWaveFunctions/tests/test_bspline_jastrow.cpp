@@ -236,12 +236,7 @@ const char *particles = \
   ValueType ratio_0 = j2->ratio(elec_,0);
   elec_.rejectMove(0);
 
-  elec_.makeMove(1, newpos-elec_.R[1]);
-  ValueType ratio_1 = j2->ratio(elec_,1);
-  elec_.rejectMove(1);
-
   REQUIRE(ratio_0 == ComplexApprox(0.9522052017).compare_real_only());
-  REQUIRE(ratio_1 == ComplexApprox(0.9871985577).compare_real_only());
 
   VirtualParticleSet VP(elec_,2);
   ParticleSet::ParticlePos_t newpos2(2);
@@ -252,6 +247,16 @@ const char *particles = \
 
   REQUIRE(ratios[0] == ComplexApprox(0.9871985577).compare_real_only());
   REQUIRE(ratios[1] == ComplexApprox(0.9989268241).compare_real_only());
+
+  //test acceptMove
+  elec_.makeMove(1, newpos-elec_.R[1]);
+  ValueType ratio_1 = j2->ratio(elec_,1);
+  j2->acceptMove(elec_,1);
+  elec_.acceptMove(1);
+
+  REQUIRE(ratio_1 == ComplexApprox(0.9871985577).compare_real_only());
+  REQUIRE(j2->LogValue == Approx(0.0883791773));
+
 }
 
 TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
@@ -434,12 +439,16 @@ const char *particles = \
   ValueType ratio_0 = j1->ratio(elec_,0);
   elec_.rejectMove(0);
 
+  REQUIRE(ratio_0 == ComplexApprox(0.9819208747).compare_real_only());
+
+  // test acceptMove results
   elec_.makeMove(1, newpos-elec_.R[1]);
   ValueType ratio_1 = j1->ratio(elec_,1);
-  elec_.rejectMove(1);
+  j1->acceptMove(elec_,1);
+  elec_.acceptMove(1);
 
-  REQUIRE(ratio_0 == ComplexApprox(0.9819208747).compare_real_only());
   REQUIRE(ratio_1 == ComplexApprox(1.0040884258).compare_real_only());
+  REQUIRE(j1->LogValue == Approx(0.32013531536));
 
 }
 }

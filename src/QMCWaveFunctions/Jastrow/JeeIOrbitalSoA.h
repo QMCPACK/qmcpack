@@ -410,13 +410,6 @@ public:
     return LogValue;
   }
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-
   ValueType ratio(ParticleSet& P, int iat)
   {
     UpdateMode=ORB_PBYP_RATIO;
@@ -515,6 +508,7 @@ public:
         save_g[jel]+=new_g[jel]-old_g[jel];
     }
 
+    LogValue  += Uat[iat]-cur_Uat;
     Uat[iat]   = cur_Uat;
     dUat(iat)  = cur_dUat;
     d2Uat[iat] = cur_d2Uat;

@@ -394,53 +394,82 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       for(int center_idx=0; center_idx<ACInfo.Ncenters; center_idx++)
       {
         const int my_GroupID = ACInfo.GroupID[center_idx];
-        if(ACInfo.lmax[center_idx]<0)
-        {
-          app_error() << "Hybrid representation needs parameter 'lmax' for atom " << center_idx << std::endl;
-          success=false;
-        }
-
         if(ACInfo.cutoff[center_idx]<0)
         {
-          app_error() << "Hybrid representation needs parameter 'cutoff_radius' for atom " << center_idx << std::endl;
+          app_error() << "Hybrid orbital representation needs parameter 'cutoff_radius' for atom " << center_idx << std::endl;
           success=false;
         }
 
         if(ACInfo.inner_cutoff[center_idx]<0)
         {
-          ACInfo.inner_cutoff[center_idx]=ACInfo.cutoff[center_idx]-0.3;
-          if(ACInfo.inner_cutoff[center_idx]<0) ACInfo.inner_cutoff[center_idx] = 0.0;
-          app_log() << "Hybrid representation setting inner_cutoff = "
-                    << ACInfo.inner_cutoff[center_idx] << " for group " << my_GroupID << " as atom " << center_idx << std::endl;
+          const double inner_cutoff = std::max(ACInfo.cutoff[center_idx]-0.3, 0.0);
+          app_log() << "Hybrid orbital representation setting 'inner_cutoff' to "
+                    << inner_cutoff << " for group " << my_GroupID << " as atom " << center_idx << std::endl;
           // overwrite the inner_cutoff of all the atoms of the same species
           for(int id=0; id<ACInfo.Ncenters; id++)
             if(my_GroupID==ACInfo.GroupID[id])
-              ACInfo.inner_cutoff[id] = ACInfo.inner_cutoff[center_idx];
+              ACInfo.inner_cutoff[id] = inner_cutoff;
         }
         else if(ACInfo.inner_cutoff[center_idx]>ACInfo.cutoff[center_idx])
         {
-          app_error() << "Hybrid representation 'inner_cutoff' must be smaller than 'spline_radius' for atom " << center_idx << std::endl;
+          app_error() << "Hybrid orbital representation 'inner_cutoff' must be smaller than 'spline_radius' for atom " << center_idx << std::endl;
           success=false;
         }
 
-        if(ACInfo.spline_radius[center_idx]<0)
+        if(ACInfo.cutoff[center_idx]>0)
         {
-          app_error() << "Hybrid representation needs parameter 'spline_radius' for atom " << center_idx << std::endl;
-          success=false;
-        }
+          if(ACInfo.lmax[center_idx]<0)
+          {
+            app_error() << "Hybrid orbital representation needs parameter 'lmax' for atom " << center_idx << std::endl;
+            success=false;
+          }
 
-        if(ACInfo.spline_npoints[center_idx]<0)
-        {
-          app_error() << "Hybrid representation needs parameter 'spline_npoints' for atom " << center_idx << std::endl;
-          success=false;
-        }
+          if(ACInfo.spline_radius[center_idx]<0 && ACInfo.spline_npoints[center_idx]<0)
+          {
+            app_log() << "Parameters 'spline_radius' and 'spline_npoints' for group " << my_GroupID
+                      << " as atom " << center_idx << " are not specified." << std::endl;
+            const double delta = std::min(0.02, ACInfo.cutoff[center_idx]/4.0);
+            const int n_grid_point = std::ceil((ACInfo.cutoff[center_idx] + 1e-4) / delta) + 3;
+            for(int id=0; id<ACInfo.Ncenters; id++)
+              if(my_GroupID==ACInfo.GroupID[id])
+              {
+                ACInfo.spline_npoints[id] = n_grid_point;
+                ACInfo.spline_radius[id] = (n_grid_point-1) * delta;
+              }
+            app_log() << "  Based on default grid point distance " << delta << std::endl;
+            app_log() << "  Setting 'spline_npoints' to " << ACInfo.spline_npoints[center_idx] << std::endl;
+            app_log() << "  Setting 'spline_radius' to " << ACInfo.spline_radius[center_idx] << std::endl;
+          }
+          else
+          {
+            if(ACInfo.spline_radius[center_idx]<0)
+            {
+              app_error() << "Hybrid orbital representation needs parameter 'spline_radius' for atom " << center_idx << std::endl;
+              success=false;
+            }
 
-        double max_allowed_cutoff=ACInfo.spline_radius[center_idx]-2.0*ACInfo.spline_radius[center_idx]/(ACInfo.spline_npoints[center_idx]-1);
-        if(success && ACInfo.cutoff[center_idx]>max_allowed_cutoff)
+            if(ACInfo.spline_npoints[center_idx]<0)
+            {
+              app_error() << "Hybrid orbital representation needs parameter 'spline_npoints' for atom " << center_idx << std::endl;
+              success=false;
+            }
+          }
+
+          // check maximally allowed cutoff_radius
+          double max_allowed_cutoff=ACInfo.spline_radius[center_idx]-2.0*ACInfo.spline_radius[center_idx]/(ACInfo.spline_npoints[center_idx]-1);
+          if(success && ACInfo.cutoff[center_idx]>max_allowed_cutoff)
+          {
+            app_error() << "Hybrid orbital representation requires cutoff_radius<=" << max_allowed_cutoff
+                        << " calculated by spline_radius-2*spline_radius/(spline_npoints-1) for atom " << center_idx << std::endl;
+            success=false;
+          }
+        }
+        else
         {
-          app_error() << "Hybrid representation requires cutoff_radius<=" << max_allowed_cutoff
-                      << " calculated by spline_radius-2*spline_radius/(spline_npoints-1) for atom " << center_idx << std::endl;
-          success=false;
+          // no atomic regions for this atom type
+          ACInfo.spline_radius[center_idx] = 0.0;
+          ACInfo.spline_npoints[center_idx] = 0;
+          ACInfo.lmax[center_idx] = 0;
         }
       }
       if(!success) abort();
@@ -448,8 +477,9 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
       for(int center_idx=0; center_idx<ACInfo.Ncenters; center_idx++)
       {
         AtomicOrbitalSoA<DataType> oneCenter(ACInfo.lmax[center_idx]);
-        oneCenter.set_info(ACInfo.ion_pos[center_idx], ACInfo.cutoff[center_idx], ACInfo.inner_cutoff[center_idx],
-                           ACInfo.spline_radius[center_idx], ACInfo.spline_npoints[center_idx]);
+        oneCenter.set_info(ACInfo.ion_pos[center_idx], ACInfo.cutoff[center_idx],
+                           ACInfo.inner_cutoff[center_idx], ACInfo.spline_radius[center_idx],
+                           ACInfo.non_overlapping_radius[center_idx], ACInfo.spline_npoints[center_idx]);
         centers.push_back(oneCenter);
       }
     }
@@ -784,6 +814,15 @@ struct SplineHybridAdoptorReader: public BsplineReaderBase
         int ti=cur_bands[iorb].TwistIndex;
         std::string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
         if(!h5f.read(cG,s)) APP_ABORT("SplineHybridAdoptorReader Failed to read band(s) from h5!\n");
+        double total_norm = compute_norm(cG);
+        if(std::abs(total_norm-1.0)>PW_COEFF_NORM_TOLERANCE)
+        {
+          std::cerr << "The orbital " << iorb << " has a wrong norm " << total_norm
+                    << ", computed from plane wave coefficients!" << std::endl
+                    << "This may indicate a problem with the HDF5 library versions used "
+                    << "during wavefunction conversion or read." << std::endl;
+          APP_ABORT("SplineHybridAdoptorReader Wrong orbital norm!");
+        }
         fft_spline(cG,ti);
         bspline->set_spline(spline_r,spline_i,cur_bands[iorb].TwistIndex,iorb,0);
       }

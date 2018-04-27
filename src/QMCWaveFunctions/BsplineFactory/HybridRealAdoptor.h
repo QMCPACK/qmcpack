@@ -123,10 +123,10 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   }
 
   template<typename VM>
-  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM)
+  inline void evaluateValues(VirtualParticleSet& VP, VM& psiM)
   {
     const size_t m=psiM.cols();
-    if(VP.isOnSphere())
+    if(VP.isOnSphere() && HybridBase::is_batched_safe(VP))
     {
       Matrix<ST,aligned_allocator<ST> > multi_myV((ST*)VP.SPOMem.data(),VP.getTotalNum(),myV.size());
       std::vector<int> bc_signs(VP.getTotalNum());

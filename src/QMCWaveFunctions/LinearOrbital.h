@@ -35,12 +35,11 @@ public:
 
   LinearOrbital() {coeff[0]=1.0; coeff[1]= 2.0; coeff[2]=3.0;}
 
-  virtual ValueType
-  evaluate(ParticleSet& P,
-           ParticleSet::ParticleGradient_t& G,
-           ParticleSet::ParticleLaplacian_t& L)
+  virtual RealType
+  evaluateLog(ParticleSet& P,
+              ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
-    APP_ABORT("LinearOrbital. evaluate");
+    APP_ABORT("LinearOrbital. evaluateLog");
     ValueType v = 0.0;
     for (int i = 0; i < P.R.size(); i++) {
       for (int d = 0; d < OHMMS_DIM; d++) {
@@ -49,17 +48,8 @@ public:
       G[i] = coeff;
     }
     L = 0.0;
-    return v;
-  }
-
-  virtual RealType
-  evaluateLog(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
-  {
-    APP_ABORT("LinearOrbital. evaluateLog");
-    G = 0.0;
-    L = 0.0;
-    return 0.0;
+    LogValue = evaluateLogAndPhase(v,PhaseValue);
+    return LogValue;
   }
 
   virtual void acceptMove(ParticleSet& P, int iat) {}

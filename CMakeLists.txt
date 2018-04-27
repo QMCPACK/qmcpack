@@ -167,13 +167,12 @@ CHECK_INCLUDE_FILE(unistd.h HAVE_UNISTD_H)
 # Build options
 # QMC_BUILD_STATIC build static/dynamic  libraries
 # BUILD_QMCTOOLS   build utility programs
-# BUILD_SANDBOX    build test programs
-# BUILD_MINIAPPS   build miniapps (Incomplete)
+# BUILD_SANDBOX    build test programs and miniapps
 # MPIP_PROFILE     profile mpi performance
 ######################################################################
 SET(QMC_ADIOS 0 CACHE BOOL "Build with ADIOS")
 SET(BUILD_UNIT_TESTS 1 CACHE BOOL "Build unit tests")
-SET(BUILD_MINIAPPS 1 CACHE BOOL "Build miniapps")
+SET(BUILD_SANDBOX 1 CACHE BOOL "Build sandbox tests and miniapps")
 SET(BUILD_LMYENGINE_INTERFACE 1 CACHE BOOL "Build LMY engine")
 IF (QMC_CUDA AND BUILD_LMYENGINE_INTERFACE)
   MESSAGE(STATUS "LMY engine is not compatiable with CUDA build! Disabling LMY engine")
@@ -186,10 +185,8 @@ ENDIF()
 SET(BUILD_AFQMC 0 CACHE BOOL "Build with AFQMC")
 SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 #SET(BUILD_QMCTOOLS 1 CACHE BOOL "Build tools for QMCPACK")
-#SET(BUILD_SANDBOX 0 CACHE BOOL "Build snadbox for testing")
 #SET(MPIP_PROFILE 0 CACHE BOOL "Build with mpip for mpi profile")
 #SET(BUILD_QMCTOOLS 1)
-#SET(BUILD_SANDBOX 0)
 #SET(MPIP_PROFILE 0)
 SET(QMC_BUILD_STATIC 0 CACHE BOOL "Link to static libraries")
 SET(ENABLE_TIMERS 0 CACHE BOOL "Enable internal timers")

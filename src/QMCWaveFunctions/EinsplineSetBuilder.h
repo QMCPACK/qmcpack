@@ -30,6 +30,8 @@
 #include "Numerics/HDFNumericAttrib.h"
 #include <map>
 
+#define PW_COEFF_NORM_TOLERANCE 1e-6
+
 class Communicate;
 
 namespace qmcplusplus
@@ -295,7 +297,7 @@ public:
   struct CenterInfo
   {
     std::vector<int> lmax, spline_npoints, GroupID;
-    std::vector<double> spline_radius, cutoff, inner_cutoff;
+    std::vector<double> spline_radius, cutoff, inner_cutoff, non_overlapping_radius;
     std::vector<TinyVector<double,OHMMS_DIM> > ion_pos;
     int Ncenters;
 
@@ -309,6 +311,7 @@ public:
       GroupID.resize(ncenters, 0);
       spline_radius.resize(ncenters, -1.0);
       inner_cutoff.resize(ncenters, -1.0);
+      non_overlapping_radius.resize(ncenters, -1.0);
       cutoff.resize(ncenters, -1.0);
       ion_pos.resize(ncenters);
     }

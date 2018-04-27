@@ -206,9 +206,11 @@ QMC_MIXED_PRECISION Build the mixed precision (mixing double/float) version
                     The GPU support is quite mature.
                     Use always double for host side base and full precision
                     and use float and double for CUDA base and full precision.
+ENABLE_TIMERS       Enable fine-grained timers (1:yes, 0:no (default)).
+                    Timers are off by default to avoid potential slowdown in small
+                    systems. For large systems (100+ electrons) there is no risk.
 ENABLE_SOA          (Experimental) Enable CPU optimization based on Structure-
-                    of-Array (SoA) datatypes (1:yes, 0:no (default)).
-
+                    of-Array (SoA) datatypes (1:yes, 0:no (default)). 
 \end{verbatim}
   \item General build options
 \begin{verbatim}
@@ -236,8 +238,8 @@ CMAKE_CXX_FLAGS    Set the C++ flags.  Note: to prevent default
 QMC_INCLUDE         Add extra include paths
 QMC_EXTRA_LIBS      Add extra link libraries
 QMC_BUILD_STATIC    Add -static flags to build
-QMC_DATA            Specify data directory for QMCPACK (currently
-                    unused, but likely to be used for future performance tests)
+QMC_DATA            Specify data directory for QMCPACK performance and integration tests
+QE_BIN              Location of Quantum Espresso binaries including pw2qmcpack.x
 \end{verbatim}
 \item libxml2 related
 \begin{verbatim}
@@ -260,6 +262,40 @@ MPIEXEC_NUMPROC_FLAG   Specify the number of mpi processes flag, e.g. "-n", "-np
 
 \end{verbatim}
 \end{itemize}
+
+\subsection{Role of QMC\_DATA}
+QMCPACK includes a variety of optional performance and integration
+tests that use research quality wavefunctions to obtain meaningful
+performance and to more thoroughly test the code. The necessarily
+large input files are stored in the location pointed to by QMC\_DATA,
+e.g. scratch or long-lived project space on a supercomputer. These
+files are not included in the source code distribution to minimize
+size. The tests are activated if cmake detects the files when
+configured. See tests/performance/NiO/README,
+tests/solids/NiO\_afqmc/README and tests/performance/C-graphite/README
+for details of the current tests, input files, and downloading them.
+
+Currently the files must be downloaded via\\
+\url{https://anl.box.com/s/pveyyzrc2wuvg5tmxjzzwxeo561vh3r0} and \\
+\url{https://anl.box.com/s/j5d6jeazpgx5441s04ajtv77iogoyjsh}.
+
+A complete set of files is currently:
+\begin{verbatim}
+QMC_DATA/C-graphite/lda.pwscf.h5  
+QMC_DATA/NiO/NiO-fcc-supertwist111-supershift000-S1.h5
+QMC_DATA/NiO/NiO-fcc-supertwist111-supershift000-S2.h5
+QMC_DATA/NiO/NiO-fcc-supertwist111-supershift000-S4.h5
+QMC_DATA/NiO/NiO-fcc-supertwist111-supershift000-S8.h5
+QMC_DATA/NiO/NiO-fcc-supertwist111-supershift000-S16.h5
+QMC_DATA/NiO/NiO-fcc-supertwist111-supershift000-S32.h5
+QMC_DATA/NiO/NiO-fcc-supertwist111-supershift000-S64.h5
+QMC_DATA/NiO/NiO-fcc-supertwist111-supershift000-S128.h5
+QMC_DATA/NiO/NiO-fcc-supertwist111-supershift000-S256.h5
+QMC_DATA/NiO/NiO_afm_fcidump.h5
+QMC_DATA/NiO/NiO_afm_wfn.dat 
+QMC_DATA/NiO/NiO_nm_choldump.h5   
+\end{verbatim}
+
 
 \subsection{Configure and build using cmake and make}
 To configure and build QMCPACK, move to build directory, run cmake and make
@@ -1305,17 +1341,28 @@ Quantum ESPRESSO distribution.
 To simplify the process of patching Quantum ESPRESSO we have developed
 a script that will automatically download and patch the source
 code. The patches are specific to each version. e.g. To download and
-patch QE v5.3.0:
+patch QE v6.2.1:
 \begin{verbatim}
 cd external_codes/quantum_espresso
-./download_and_patch_qe5.3.0.sh
+./download_and_patch_qe6.2.1.sh
 \end{verbatim}
 After running the patch, you must configure Quantum ESPRESSO with
-the HDF5 capability enabled, i.e.
+the HDF5 capability enabled in either way:
+\begin{itemize}
+\item if your system already has HDF5 installed with Fortran, use the -{}-with-hdf5 configuration option.
 \begin{verbatim}
-cd espresso-5.3.0
-./configure --with-hdf5 HDF5_DIR=/opt/local   # Specify HDF5 base directory
+cd espresso-6.2.1
+./configure --with-hdf5=/opt/local   # Specify HDF5 base directory
 \end{verbatim}
+   {\bf check} the end of configure output if HDF5 libraries are found properly.
+   If not, either install a complete library or use the other scheme. If using a parallel HDF5 library, be sure to use
+   the same MPI with QE as used to build the parallel HDF5 library.
+
+   Currently HDF5 support in QE itself is preliminary. To enable use of pw2qmcpack
+   but use the old non-HDF5 I/O within QE, replace \texttt{-D\_\_HDF5} with \texttt{-D\_\_HDF5\_C} in make.inc.
+\item if your system has HDF5 with C only, manually edit make.inc by adding \texttt{-D\_\_HDF5\_C} and \texttt{-DH5\_USE\_16\_API}
+   in \texttt{DFLAGS} and provide include and library path in \texttt{IFLAGS} and \texttt{HDF5\_LIB}
+\end{itemize}
 
 The complete process is described in external\_codes/quantum\_espresso/README.
 

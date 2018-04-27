@@ -224,13 +224,6 @@ public:
     return LogValue;
   }
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-  
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
   {
     LogValue=0.0;
@@ -394,9 +387,10 @@ public:
 
   void acceptMove(ParticleSet& P, int iat)
   {
-    U[iat] = curVal;
-    dU[iat]=curGrad;
-    d2U[iat]=curLap;
+    LogValue += U[iat]-curVal;
+    U[iat]    = curVal;
+    dU[iat]   = curGrad;
+    d2U[iat]  = curLap;
   }
 
   void evaluateLogAndStore(ParticleSet& P,

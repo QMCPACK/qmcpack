@@ -125,7 +125,8 @@ OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::evaluate(ParticleSet&
     spo_up->prepareFor(i);
     grads_up[i]=0.0;
     lapls_up[i]=0.0;
-    detValues_up[i]=dets_up[i]->evaluate(BFTrans->QP,grads_up[i],lapls_up[i]);
+    dets_up[i]->evaluateLog(BFTrans->QP,grads_up[i],lapls_up[i]);
+    detValues_up[i]=dets_up[i]->getValue();
     // need \nabla^2 Det / Det
     for(int k=0; k<numP; k++)
       lapls_up[i][k] += dot(grads_up[i][k],grads_up[i][k]);
@@ -135,7 +136,8 @@ OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::evaluate(ParticleSet&
     spo_dn->prepareFor(i);
     grads_dn[i]=0.0;
     lapls_dn[i]=0.0;
-    detValues_dn[i]=dets_dn[i]->evaluate(BFTrans->QP,grads_dn[i],lapls_dn[i]);
+    dets_dn[i]->evaluateLog(BFTrans->QP,grads_dn[i],lapls_dn[i]);
+    detValues_dn[i]=dets_dn[i]->getValue();
     // need \nabla^2 Det / Det
     for(int k=0; k<numP; k++)
       lapls_dn[i][k] += dot(grads_dn[i][k],grads_dn[i][k]);

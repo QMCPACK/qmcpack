@@ -130,10 +130,6 @@ class DensityMatrices1B : public QMCHamiltonianBase
   QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
   bool put(xmlNodePtr cur);
   Return_t evaluate(ParticleSet& P);
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P); 
-  }
 
   //optional standard interface
   void get_required_traces(TraceManager& tm);

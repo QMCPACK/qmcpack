@@ -1061,9 +1061,9 @@ def unavailable(module,*items):
 #end def unavailable
 
 try:
-    from numpy import array,zeros,dot,loadtxt,floor,empty,sqrt,trace,savetxt,concatenate,real,imag,diag,arange,ones,identity,exp,log,log10,sign
+    from numpy import array,zeros,dot,loadtxt,floor,empty,sqrt,trace,savetxt,concatenate,real,imag,diag,arange,ones,identity,exp,log,log10,sign,concatenate
 except (ImportError,RuntimeError):
-    array,zeros,dot,loadtxt,floor,empty,sqrt,trace,savetxt,concatenate,real,imag,diag,arange,ones,identity,exp,log,log10,sign = unavailable('numpy','array','zeros','dot','loadtxt','floor','empty','sqrt','trace','savetxt','concatenate','real','imag','diag','arange','ones','identity','exp','log','log10','sign')
+    array,zeros,dot,loadtxt,floor,empty,sqrt,trace,savetxt,concatenate,real,imag,diag,arange,ones,identity,exp,log,log10,sign,concatenate = unavailable('numpy','array','zeros','dot','loadtxt','floor','empty','sqrt','trace','savetxt','concatenate','real','imag','diag','arange','ones','identity','exp','log','log10','sign','concatenate')
 #end try
 try:
     import numpy.random as random
@@ -1722,7 +1722,6 @@ class DatAnalyzer(QBase):
         self.data  = obj()
         self.stats = obj()
         self.load_data(filepath)
-        self.analyze()
     #end def __init__
 
 
@@ -1760,7 +1759,7 @@ class DatAnalyzer(QBase):
         elif isinstance(eq,int):
             nbe = eq
         elif not self.info.series in eq:
-            self.error('equilibration length was not provided for series {0}\nplease use the -e option to provide an equilibration length','QMCA')
+            self.error('equilibration length was not provided for series {0}\nplease use the -e option to provide an equilibration length'.format(self.info.series),'QMCA')
         else:
             nbe = eq[self.info.series]
         #end if
@@ -1860,16 +1859,15 @@ class DatAnalyzer(QBase):
             data.TotalTime = 0*data.LocalEnergy
 
             # total samples
-            stats.TotalSamples = obj(mean=ts,var=0.0,error=0.0,kappa=1.0) ###
+            stats.TotalSamples = obj(mean=ts,var=0.0,error=0.0,kappa=1.0)
             data.TotalSamples = 0*data.LocalEnergy
-
         #end if
         if 'LocalEnergy' in data and 'NumOfWalkers' in data:
             ts = data.NumOfWalkers.sum()
 
-            stats.TotalSamples = obj(mean=ts,var=0.0,error=0.0,kappa=1.0) ###
+            stats.TotalSamples = obj(mean=ts,var=0.0,error=0.0,kappa=1.0)
             data.TotalSamples = 0*data.LocalEnergy
-
+        #end if
     #end def analyze
 
 
@@ -1896,13 +1894,6 @@ class DatAnalyzer(QBase):
             minlen = min(len(d),len(v))
             self.data[q] = d[0:minlen] + weight*v[0:minlen]
         #end for
-        for q,v in other.stats.iteritems():
-            s = self.stats[q]
-            s.mean  += weight*v.mean
-            s.error += weight**2*v.error**2
-            s.kappa += weight*v.kappa
-            s.var   += weight*v.var
-        #end for
     #end def accumulate
 
 
@@ -1911,14 +1902,26 @@ class DatAnalyzer(QBase):
         for d in self.data:
             d[:] /= w
         #end for
-        for s in self.stats:
-            s.mean  /= w
-            s.error  = sqrt(s.error)/w
-            s.kappa /= w
-            s.var   /= w*w
-        #end for
     #end def normalize
 
+
+    def join(self,others):
+        eq = self.options.equilibration
+        quantities = self.data.keys()
+        for q in quantities:
+            qlist = [self.data[q]]
+            for other in others:
+                if eq=='auto':
+                    nbe = 0
+                else:
+                    nbe = other.get_equilibration()
+                #end if
+                qlist.append(other.data[q][nbe:])
+            #end for
+            self.data[q] = concatenate(qlist)
+        #end for
+    #end def join
+            
     
     def write_stats(self,quantities,first_prefix=False,first_series=False,only_series=False):
         opt   = self.options
@@ -2116,7 +2119,6 @@ class DatAnalyzer(QBase):
         plot(xlims,[smean,smean],'r-')
         plot(xlims,[smean+sstd,smean+sstd],'r-.')
         plot(xlims,[smean-sstd,smean-sstd],'r-.')
-        ylims = qmin,qmax
         return xlims,ylims,s,q
     #end def plot_trace
 
@@ -2152,16 +2154,7 @@ def comma_list(s):
     if ',' in s:
         s = s.replace(',',' ')
     #end if
-    s = s.strip()
-    if ' ' in s:
-        tokens = s.split()
-        s = ''
-        for t in tokens:
-            s+=t+','
-        #end for
-        s=s[:-1]
-    #end if
-    return s
+    return s.split()
 #end def comma_list
 
 
@@ -2285,6 +2278,10 @@ QMCA examples:
                           default='None',
                           help='List of weights for averaging (default=%default).'
                           )
+        parser.add_option('-j','--join',dest='join',
+                          default='None',
+                          help='Join data for a range of series (default=%default).'
+                          )
         parser.add_option('-b','--reblock',dest='reblock',
                           action='store_true',default=False,
                           help='(pending) Use reblocking to calculate statistics (default=%default).'
@@ -2361,7 +2358,7 @@ QMCA examples:
                                )
                          )
 
-        unsupported = set('histogram image reblock report examples'.split())
+        unsupported = set('histogram image reblock report'.split())
 
         units = obj(hartree='Ha',ha='Ha',ev='eV',rydberg='Ry',ry='Ry',kelvin='K',kj_mol='kJ_mol',joules='J')
 
@@ -2392,33 +2389,20 @@ QMCA examples:
             opt.units = units[u]
         #end if
         if opt.equilibration!='auto':
-            opt.equilibration = comma_list(opt.equilibration)
-            equil_failed = False
             try:
-                opt.equilibration = int(opt.equilibration)
-            except:
-                try:
-                    ei = eval(opt.equilibration)
+                eq = comma_list(opt.equilibration)
+                eq = array(eq,dtype=int)
+                if len(eq)==1:
+                    e = eq[0]
+                else:
                     e = obj()
-                    if isinstance(ei,int):
-                        e = ei
-                    elif isinstance(ei,(list,tuple)):
-                        ei = array(ei,dtype=int)
-                        for s in range(len(ei)):
-                            e[s] = ei[s]
-                        #end for
-                    elif isinstance(ei,dict):
-                        e.transfer_from(ei)
-                    else:
-                        equil_failed = True
-                    #end if
-                    opt.equilibration = e
-                except:
-                    equil_failed = True
-                #end try
-            #end try
-            if equil_failed:
-                self.error('cannot process equilibration option\nvalue must be an integer, list, or dict\nyou provided: '+str(opt.equilibration))
+                    for s,ev in enumerate(eq):
+                        e[s] = ev
+                    #end for
+                #end if
+                opt.equilibration = e
+            except:
+                self.error('cannot process equilibration option\nvalue must be an integer or list of integers\nyou provided: '+str(opt.equilibration))
             #end if
         #end if
         if opt.average:
@@ -2426,19 +2410,30 @@ QMCA examples:
             if ws=='None':
                 opt.weights = None
             else:
-                weight_failed = False
                 try:
                     w = comma_list(ws)
-                    w = array(eval(w),dtype=float)
+                    w = array(w,dtype=float)
                     opt.weights = w
                     weight_failed = len(w.shape)!=1
                 except:
-                    weight_failed = True
+                    self.error('cannot process weights option\nweights must be a list of real values\nyou provided: {0}'.format(ws))
                 #end try
-                if weight_failed:
-                    self.error('weights must be a list of values\nyou provided: {0}'.format(ws))
-                #end if
             #end if
+        #end if
+        if opt.join=='None':
+            opt.join=None
+        else:
+            join_failed = False
+            try:
+                j = comma_list(opt.join)
+                j = array(j,dtype=int)
+            except:
+                join_failed = True
+            #end try
+            if join_failed or len(j)!=2:
+                self.error('cannot process join option\njoin must be a pair of integers\nyou provided: {0}'.format(ws))
+            #end if
+            opt.join = j
         #end if
         if opt.image=='None':
             opt.image=None
@@ -2591,11 +2586,68 @@ QMCA examples:
             self.file_list = file_list
             self.file_map  = file_map
             self.data = obj(avg=adata)
+            self.prefix_list = ['avg']
+        #end if
+        if opt.join is not None:
+            series_join = range(opt.join[0],opt.join[1]+1)
+            if len(series_join)>1:
+                sjmin = series_join[0]
+                sjmax = series_join[-1]
+                ds    = sjmax-sjmin
+                for prefix,pdata in self.data.iteritems():
+                    for s in series_join:
+                        if s not in pdata:
+                            self.error('cannot join series {0}\ndata for this series is missing for {1}'.format(s,prefix))
+                        #end if
+                    #end for
+                    d = pdata[series_join[0]]
+                    others = []
+                    for s in series_join[1:]:
+                        others.append(pdata[s])
+                        del pdata[s]
+                    #end for
+                    d.join(others)
+                    for s in sorted(pdata.keys()):
+                        if s>sjmax:
+                            pdata[s-ds] = pdata[s]
+                            del pdata[s]
+                        #end if
+                    #end for
+                #end for
+                eq = opt.equilibration
+                if isinstance(eq,obj):
+                    for s in series_join[1:]:
+                        del eq[s]
+                    #end for
+                    for s in sorted(eq.keys()):
+                        if s>sjmax:
+                            eq[s-ds] = eq[s]
+                            del eq[s]
+                        #end if
+                    #end for
+                #end if
+            #end if
         #end if
     #end def load_data
 
 
     def analyze_data(self):
+        for prefix in sorted(self.data.keys()):
+            pdata = self.data[prefix]
+            for series in sorted(pdata.keys()):
+                d = pdata[series]
+                fail = False
+                try:
+                    d.analyze()
+                except:
+                    self.log('problem encountered for {0}, results unavailable '.format(d.info.filepath))
+                    fail = True
+                #end try
+                if fail:
+                    del pdata[series]
+                #end if
+            #end for
+        #end for
         opt = self.options
         show_text  = True
         plots = opt.plot or opt.trace or opt.histogram
@@ -2700,7 +2752,7 @@ QMCA examples:
                                 dx = max(.1*abs(xminp-xmaxp),1)
                                 xminp -= dx
                                 xmaxp += dx
-                                dy = max(.1*abs(yminp-ymaxp),1)
+                                dy = .1*abs(yminp-ymaxp)
                                 yminp -= dy
                                 ymaxp += dy
                                 xlim([xminp,xmaxp])

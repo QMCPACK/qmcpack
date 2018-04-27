@@ -220,7 +220,7 @@ Additional information
 
 
 \subsection{Pseudopotentials}
-
+\label{sec:nlpp}
 \qmcpack supports pseudopotentials in semilocal form, which is local in the radial coordinate and non-local in angular coordinates.  When all angular momentum channels above a certain threshold ($\ell_{max}$) are well approximated by the same potential ($V_{\bar{\ell}}\equiv V_{loc}$), the pseudpotential separates into a fully local channel and an angularly-nonlocal component:
 \begin{align}
   V^{PP} = \sum_{ij}\Big(V_{\bar{\ell}}(\abs{r_i-\tilde{r}_j}) + \sum_{\ell\ne\bar{\ell}}^{\ell_{max}}\sum_{m=-\ell}^\ell \operator{Y_{\ell m}}{\big[V_\ell(\abs{r_i-\tilde{r}_j}) - V_{\bar{\ell}}(\abs{r_i-\tilde{r}_j}) \big]}{Y_{\ell m}} \Big)
@@ -273,6 +273,7 @@ Evaluation of the localized pseudopotential energy $\Psi_T^{-1}V^{PP}\Psi_T$ req
    & \texttt{forces}      &  boolean           & yes/no           & no                  & \textit{Deprecated}             \\
    &\texttt{wavefunction}$^r$ &  text          & \texttt{wavefunction.name}& invalid    & Identify wavefunction \\
    &   \texttt{format}$^r$    &  text          & xml/table        & table               & Select file format   \\
+   & \texttt{algorithm}$^o$   &  text          & batched/default  & default             & Choose NLPP algorithm \\
   \hline
 \end{tabularx}
 \end{center}
@@ -285,6 +286,7 @@ Additional information:
   \item{\textbf{name:} Ignored.  Instead default names will be present in \texttt{*scalar.dat} output files when pseudopotentials are used.  The field \texttt{LocalECP} refers to the local part of the pseudopotential.  If non-local channels are present, a \texttt{NonLocalECP} field will be added that contains the non-local energy summed over all angular momentum channels.}
   \item{\textbf{pbc:} Ewald summation will not be performed if \texttt{simulationcell.bconds== n n n}, regardless of the value of \texttt{pbc}.  Similarly, the \texttt{pbc} attribute can only be used to turn off Ewald summation if \texttt{simulationcell.bconds!= n n n}.}
   \item{\textbf{format:}  If \texttt{format}==table, QMCPACK looks for \texttt{*.psf} files containing pseudopotential data in a tabular format.  The files must be named after the ionic species provided in \texttt{particleset} (\emph{e.g.} \texttt{Li.psf} and \texttt{H.psf}). If \texttt{format}==xml, additional \texttt{pseudo} child XML elements must be provided (see below).  These elements specify individual file names and formats (both the FSAtom XML and CASINO tabular data formats are supported). }
+  \item{\textbf{algorithm} The default algorithm evaluates the ratios of wavefunction components together for each qudarature point and then one point after another. The batched algorithm evaluates the ratios of qudarature points together for each wavefunction component and then one component after another. Internally, it uses VirtualParticleSet for quadrature points. Hybrid orbital representation has an extra optimization enabled when using the batched algorithm.}
 \end{itemize}
 
 

@@ -285,6 +285,7 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
   AtomicCentersInfo.resize(numIons);
   Super2Prim.resize(SourcePtcl->R.size());
   cbuffer.add(AtomicCentersInfo.inner_cutoff.begin(), AtomicCentersInfo.inner_cutoff.end());
+  cbuffer.add(AtomicCentersInfo.non_overlapping_radius.begin(), AtomicCentersInfo.non_overlapping_radius.end());
   cbuffer.add(AtomicCentersInfo.cutoff.begin(), AtomicCentersInfo.cutoff.end());
   cbuffer.add(AtomicCentersInfo.spline_radius.begin(), AtomicCentersInfo.spline_radius.end());
   cibuffer.add(Super2Prim.begin(),Super2Prim.end());
@@ -298,6 +299,7 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
     cbuffer.rewind();
     cibuffer.rewind();
     cbuffer.get(AtomicCentersInfo.inner_cutoff.begin(), AtomicCentersInfo.inner_cutoff.end());
+    cbuffer.get(AtomicCentersInfo.non_overlapping_radius.begin(), AtomicCentersInfo.non_overlapping_radius.end());
     cbuffer.get(AtomicCentersInfo.cutoff.begin(), AtomicCentersInfo.cutoff.end());
     cbuffer.get(AtomicCentersInfo.spline_radius.begin(), AtomicCentersInfo.spline_radius.end());
     cibuffer.get(Super2Prim.begin(),Super2Prim.end());

@@ -162,7 +162,7 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration &W,
     if (PPset[sp])
     {
       NonLocalECPComponent &pp = *PPset[sp];
-      PPset[sp]->randomize_grid(QuadPoints_host[sp]);
+      PPset[sp]->randomize_grid(QuadPoints_host[sp], *myRNG);
       QuadPoints_GPU[sp] = QuadPoints_host[sp];
       // First, we need to determine which ratios need to be updated
       if (UsePBC)
@@ -347,7 +347,7 @@ void NonLocalECPotential_CUDA::addEnergy
     if (PPset[sp])
     {
       NonLocalECPComponent &pp = *PPset[sp];
-      PPset[sp]->randomize_grid(QuadPoints_host[sp]);
+      PPset[sp]->randomize_grid(QuadPoints_host[sp], *myRNG);
       QuadPoints_GPU[sp] = QuadPoints_host[sp];
       // First, we need to determine which ratios need to be updated
       if (UsePBC)

@@ -95,7 +95,6 @@ bool VMCSingleOMP::run()
           wClones[ip]->Collectables *= cnorm;
         Movers[ip]->accumulate(wit,wit_end);
         ++now_loc;
-        //if (updatePeriod&& now_loc%updatePeriod==0) Movers[ip]->updateWalkers(wit,wit_end);
         if (Period4WalkerDump&& now_loc%Period4WalkerDump==0)
           wClones[ip]->saveEnsemble(wit,wit_end);
 //           if(storeConfigs && (now_loc%storeConfigs == 0))
@@ -245,8 +244,6 @@ void VMCSingleOMP::resetRun()
 //       {
     for (int prestep=0; prestep<nWarmupSteps; ++prestep)
       Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],false);
-    //if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
-    //  Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
 //       }
   }
 
@@ -298,10 +295,7 @@ void VMCSingleOMP::resetRun()
 //           }
 //
 //         for (int prestep=0; prestep<nWarmupSteps; ++prestep)
-//           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-//
-//         if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
-//           Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+//           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],false);
 //       }
 //     }
   for(int ip=0; ip<NumThreads; ++ip)

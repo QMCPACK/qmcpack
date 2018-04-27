@@ -217,16 +217,6 @@ public:
   /** recursively change the ParticleSet whose G and L are evaluated */
   void resetTargetParticleSet(ParticleSet& P);
 
-  /////Check if aname-ed Single-Particle-Orbital set exists
-  //bool hasSPOSet(const std::string& aname);
-  /////add a Single-Particle-Orbital set
-  //void addSPOSet(OhmmsElementBase* spo);
-  /////return the aname-ed Single-Particle-Orbital set.
-  //OhmmsElementBase* getSPOSet(const std::string& aname);
-
-  /** evalaute the values of the wavefunction, gradient and laplacian  for a walkers */
-  ValueType evaluate(ParticleSet& P);
-
   /** evalaute the values of the wavefunction, gradient and laplacian  for a walkers */
   RealType evaluateLogOnly(ParticleSet& P);
 
@@ -303,8 +293,6 @@ public:
   void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
                                std::vector<RealType>& dgradlogpsi);
 
-  /** evalaute the values of the wavefunction, gradient and laplacian  for all the walkers */
-  //void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);
   /** evaluate the hessian w.r.t. electronic coordinates of particle iat **/
  // void evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi);
   /** evaluate the hessian hessian w.r.t. electronic coordinates of particle iat **/

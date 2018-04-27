@@ -97,7 +97,7 @@ void AGPDeterminant::resetTargetParticleSet(ParticleSet& P)
   GeminalBasis->resetTargetParticleSet(P);
 }
 
-/** Calculate the value of the Dirac determinant for particles
+/** Calculate the log value of the Dirac determinant for particles
  *@param P input configuration containing N particles
  *@param G a vector containing N gradients
  *@param L a vector containing N laplacians
@@ -107,73 +107,6 @@ void AGPDeterminant::resetTargetParticleSet(ParticleSet& P)
  *contribution of the determinant to G(radient) and L(aplacian)
  *for local energy calculations.
  */
-AGPDeterminant::ValueType
-AGPDeterminant::evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
-{
-  APP_ABORT("WHO's calling AGPDeterminant::evaluate!!");
-  return std::exp(LogValue);
-  ////GeminalBasis->evaluate(P);
-  //GeminalBasis->evaluateForWalkerMove(P);//@@
-  ///* evaluate psi_up(iat)= \sum_{j} C_{ij} \phi_j^{u}(r_{iat})
-  // * psi_down(iat-Nup) =  \sum_{j} C_{ij} \phi_j^{d}(r_{iat})
-  // */
-  //MatrixOperators::product(GeminalBasis->Y, Lambda, phiT);
-  //for(int u=0; u<Nup; u++)
-  //{
-  //  for(int d=0, jat=Nup; d<Ndown; d++,jat++) //paired block
-  //  {
-  //    //psiM(d,u) = BLAS::dot(BasisSize,phiT[u],GeminalBasis->y(jat));
-  //    psiM(d,u) = BLAS::dot(BasisSize,phiT[u],GeminalBasis->Y[jat]);//@@
-  //  }
-  //  for(int d=Ndown,unpaired=0; d<Nup; d++,unpaired++)//unpaired block Ndown x unpaired
-  //  {
-  //    //psiM(d,u) = BLAS::dot(BasisSize,LambdaUP[unpaired],GeminalBasis->y(u));
-  //    psiM(d,u) = BLAS::dot(BasisSize,LambdaUP[unpaired],GeminalBasis->Y[u]);//@@
-  //  }
-  //}
-  //CurrentDet = Invert(psiM.data(),Nup,Nup,WorkSpace.data(),Pivot.data());
-  //for(int iat=0; iat<Nup; iat++)
-  //{
-  //  GradType rv;
-  //  ValueType lap=0;
-  //  int jat=Nup;
-  //  for(int d=0; d<Ndown; d++,jat++)
-  //  {
-  //    ValueType dfac=psiM(iat,d);
-  //    //rv += dfac*dot(phiT[jat],GeminalBasis->dy(iat),BasisSize);
-  //    //lap += dfac*dot(phiT[jat],GeminalBasis->d2y(iat),BasisSize);
-  //    rv += dfac*dot(phiT[jat],GeminalBasis->dY[iat],BasisSize);//@@
-  //    lap += dfac*dot(phiT[jat],GeminalBasis->d2Y[iat],BasisSize);//@@
-  //  }
-  //  for(int d=Ndown,unpaired=0; d<Nup; d++,unpaired++)
-  //  {
-  //    ValueType dfac=psiM(iat,d);
-  //    //rv += dfac*dot(LambdaUP[unpaired],GeminalBasis->dy(iat),BasisSize);
-  //    //lap += dfac*dot(LambdaUP[unpaired],GeminalBasis->d2y(iat),BasisSize);
-  //    rv += dfac*dot(LambdaUP[unpaired],GeminalBasis->dY[iat],BasisSize);//@@
-  //    lap += dfac*dot(LambdaUP[unpaired],GeminalBasis->d2Y[iat],BasisSize);//@@
-  //  }
-  //  G(iat) += rv;
-  //  L(iat) += lap-dot(rv,rv);
-  //}
-  //for(int jat=Nup,d=0; jat<NumPtcls; jat++,d++)
-  //{
-  //  GradType rv;
-  //  ValueType lap=0;
-  //  for(int u=0; u<Nup; u++)
-  //  {
-  //    ValueType dfac=psiM(u,d);
-  //    //rv += dfac*dot(phiT[u],GeminalBasis->dy(jat),BasisSize);
-  //    //lap += dfac*dot(phiT[u],GeminalBasis->d2y(jat),BasisSize);
-  //    rv += dfac*dot(phiT[u],GeminalBasis->dY[jat],BasisSize);//@@
-  //    lap += dfac*dot(phiT[u],GeminalBasis->d2Y[jat],BasisSize);//@@
-  //  }
-  //  G(jat) += rv;
-  //  L(jat) += lap-dot(rv,rv);
-  //}
-  //return CurrentDet;
-}
-
 AGPDeterminant::ValueType
 AGPDeterminant::evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
 {

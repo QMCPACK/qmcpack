@@ -27,7 +27,7 @@ namespace qmcplusplus
     {
       Value=0.0;
       for(int ipp=0; ipp<PPset.size(); ipp++)
-        if(PPset[ipp]) PPset[ipp]->randomize_grid();
+        if(PPset[ipp]) PPset[ipp]->randomize_grid(*myRNG);
       for(int iat=0; iat<NumIons; iat++)
         if(PP[iat])
           Value+=PP[iat]->evaluateValueAndDerivatives(P,iat,Psi,optvars,dlogpsi,dhpsioverpsi);
