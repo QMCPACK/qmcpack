@@ -7,6 +7,11 @@ import traceback
 from optparse import OptionParser
 from numpy import ndarray,array,abs
 
+# enforce association between executable and library
+scriptpath=os.path.realpath(__file__)
+parent_dir=os.path.dirname(os.path.dirname(scriptpath))
+sys.path.insert(0,os.path.join(parent_dir,'library'))
+
 from generic import generic_settings,object_interface,NexusError
 
 generic_settings.raise_error = True
@@ -1695,6 +1700,10 @@ if __name__=='__main__':
                       default='none',
                       help='Tests with names matching the regular expression (regex) will be run.  The default behavior is to run all tests (default=%default).'
                       )
+    parser.add_option('--ctestlist',dest='ctestlist',
+                      action='store_true',default=False,
+                      help='List tests in CMake format. Intended for use within CTest (default=%default).'
+                      )
     parser.add_option('--ctest',dest='ctest',
                       action='store_true',default=False,
                       help='Compatibility mode for calls from the CTest framework (default=%default).'
@@ -1738,6 +1747,14 @@ if __name__=='__main__':
     #end for
     if len(tests)!=1 and ctest:
         exit_fail('Exactly one test should be selected when using ctest\n  tests requested: {0}'.format([test.name for test in tests]))
+    #end if
+    if options.ctestlist:
+        c = ''
+        for test in tests:
+            c+=test.name+';'
+        #end for
+        sys.stdout.write(c[:-1])
+        exit()
     #end if
 
     # run each test and print the test outcome
