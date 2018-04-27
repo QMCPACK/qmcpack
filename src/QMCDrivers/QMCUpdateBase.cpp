@@ -215,6 +215,15 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
   UpdatePbyP=true;
   BadState = false;
   InitWalkersTimer->start();
+  if(it==it_end)
+  {
+    // a particular case, no walker enters in this call.
+    // but need to free the memory of Psi.
+    Walker_t dummy_walker(W.getTotalNum());
+    dummy_walker.Properties = W.Properties;
+    dummy_walker.registerData();
+    Psi.registerData(W,dummy_walker.DataSet);
+  }
   for (; it != it_end; ++it)
   {
     Walker_t& awalker(**it);
