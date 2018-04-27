@@ -240,11 +240,7 @@ void QMCUpdateBase::initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end)
     RealType logpsi=Psi.updateBuffer(W,awalker.DataSet,false);
     W.saveWalker(awalker);
     RealType eloc=H.evaluate(W);
-#if (__cplusplus >= 201103L)
     BadState |= std::isnan(eloc);
-#else
-    BadState |= isnan(eloc);
-#endif
     awalker.resetProperty(logpsi,Psi.getPhase(), eloc);
     H.auxHevaluate(W,awalker);
     H.saveProperty(awalker.getPropertyBase());
