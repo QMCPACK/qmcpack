@@ -282,17 +282,6 @@ bool DMCOMP::run()
         int now=CurrentStep;
         Movers[ip]->set_step(sample);
         bool recompute=( step+1 == nSteps && nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 && QMCDriverMode[QMC_UPDATE_MODE] );
-#if 0
-        MCWalkerConfiguration::iterator
-        wit(W.begin()+wPerNode[ip]), wit_end(W.begin()+wPerNode[ip+1]);
-        for(int interval = 0; interval<BranchInterval-1; ++interval,++now)
-          Movers[ip]->advanceWalkers(wit,wit_end,false);
-        wClones[ip]->resetCollectables();
-        Movers[ip]->advanceWalkers(wit,wit_end,false);
-        Movers[ip]->setMultiplicity(wit,wit_end);
-        if(QMCDriverMode[QMC_UPDATE_MODE] && now%updatePeriod == 0)
-          Movers[ip]->updateWalkers(wit, wit_end);
-#endif
         wClones[ip]->resetCollectables();
         const size_t nw=W.getActiveWalkers();
 #pragma omp for nowait
@@ -300,7 +289,6 @@ bool DMCOMP::run()
         {
           Walker_t& thisWalker(*W[iw]);
           Movers[ip]->advanceWalker(thisWalker,recompute);
-          //Movers[ip]->setMultiplicity(thisWalker);
         }
       }
 

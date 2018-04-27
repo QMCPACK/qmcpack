@@ -33,12 +33,6 @@ DMCUpdateAllWithRejection::DMCUpdateAllWithRejection(MCWalkerConfiguration& w,
 /// destructor
 DMCUpdateAllWithRejection::~DMCUpdateAllWithRejection() { }
 
-//void DMCUpdateAllWithRejection::initWalkers(WalkerIter_t it, WalkerIter_t it_end){
-//}
-
-//void DMCUpdateAllWithRejection::updateWalkers(WalkerIter_t it, WalkerIter_t it_end){
-//}
-
 /** advance all the walkers with killnode==no
  * @param nat number of particles to move
  *

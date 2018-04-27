@@ -579,9 +579,7 @@ void VMCLinearOptOMP::resetRun()
 //       if (UseDrift != "rn")
 //       {
     for (int prestep=0; prestep<nWarmupSteps; ++prestep)
-      Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-    if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
-      Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+      Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],false);
     #pragma omp critical
     {
       wClones[ip]->clearEnsemble();
@@ -629,10 +627,7 @@ void VMCLinearOptOMP::resetRun()
 //         }
 //
 //         for (int prestep=0; prestep<nWarmupSteps; ++prestep)
-//           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],true);
-//
-//         if (nWarmupSteps && QMCDriverMode[QMC_UPDATE_MODE])
-//           Movers[ip]->updateWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
+//           Movers[ip]->advanceWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],false);
 //
 // #pragma omp critical
 //         {

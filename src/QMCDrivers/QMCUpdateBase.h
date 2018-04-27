@@ -177,10 +177,6 @@ public:
    */
   virtual void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
 
-  /** update Walker buffers for PbyP update
-   */
-  void updateWalkers(WalkerIter_t it, WalkerIter_t it_end);
-
   /** simple routine to test the performance
    */
   void benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip);
@@ -307,10 +303,6 @@ protected:
 
   ///copy constructor
   QMCUpdateBase(const QMCUpdateBase& a);
-
-  /** a VMC step to randomize awalker
-   */
-  void randomize(Walker_t& awalker);
 
 private:
 

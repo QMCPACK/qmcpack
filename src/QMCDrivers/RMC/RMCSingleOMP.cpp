@@ -318,9 +318,6 @@ namespace qmcplusplus
 					W.begin () + wPerNode[ip + 1], false);
 	    branchEngine->collect (CurrentStep, W, branchClones);
 	  }
-	Movers[ip]->updateWalkers (W.begin () + wPerNode[ip],
-				   W.begin () + wPerNode[ip + 1]);
-
       }
 
     fromScratch = false;
