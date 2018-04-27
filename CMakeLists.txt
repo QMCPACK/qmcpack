@@ -890,6 +890,7 @@ IF(NOT(QMC_BUILD_LEVEL GREATER 4))
   SUBDIRS(examples)
   IF(IS_DIRECTORY nexus)
     SUBDIRS(nexus/examples)
+    SUBDIRS(nexus/tests/executables)
   ENDIF()
 ENDIF()
 
