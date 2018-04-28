@@ -156,6 +156,12 @@ class Job(NexusCore):
 
 
     @staticmethod
+    def restore_default_settings():
+        Job.machine = None
+    #end def restore_default_settings
+
+
+    @staticmethod
     def generate_jobid():
         Job.job_count += 1
         return Job.job_count
@@ -923,6 +929,14 @@ class Machine(NexusCore):
 
         Machine.add(self)
     #end def __init__
+
+    
+    def restore_default_settings(self):
+        self.account         = None
+        self.local_directory = None
+        self.app_directory   = None
+        self.app_directories = None
+    #end def restore_default_settings
 
 
     def add_job(self,job):
