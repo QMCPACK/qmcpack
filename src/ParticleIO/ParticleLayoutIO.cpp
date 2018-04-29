@@ -200,8 +200,6 @@ bool LatticeParser::put(xmlNodePtr cur)
   app_log() << "  Wigner-Seitz cell radius = " << ref_.WignerSeitzRadius    << " " << unit_name << std::endl;
   app_log() << std::endl;
 
-  //initialize the global cell
-  //qmc_common.theSuperCell=lattice_in;
   return lattice_defined;
 }
 

@@ -39,7 +39,6 @@ QMCState::QMCState()
 #else
   compute_device=0;
 #endif
-  master_eshd_name="none";
 }
 
 void QMCState::initialize(int argc, char **argv)
