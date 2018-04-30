@@ -63,6 +63,14 @@ namespace qmcplusplus
     }
 
   template<typename T>
+    T v_m_v(T h00, T h01, T h02, T h11, T h12, T h22, T g1x, T g1y, T g1z, T g2x, T g2y, T g2z)
+    {
+      return g1x*g2x*h00+g1x*g2y*h01+g1x*g2z*h02
+            +g1y*g2x*h01+g1y*g2y*h11+g1y*g2z*h12
+            +g1z*g2x*h02+g1z*g2y*h12+g1z*g2z*h22;
+    }
+
+  template<typename T>
     struct MultiBsplineData
     {
       static const T   A44[16];
