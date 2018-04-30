@@ -226,8 +226,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
          */
       else if (potType == "MPC" || potType == "mpc")
         addMPCPotential(cur);
-      else if (potType == "VHXC" || potType == "vhxc")
-        addVHXCPotential(cur);
       else if(potType == "pseudo")
         addPseudoPotential(cur);
 #if !defined(QMC_CUDA) && QMC_BUILD_LEVEL>2
