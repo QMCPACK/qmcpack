@@ -61,7 +61,7 @@ StepPotential::evaluate(const BasisSetType& psi,
     for(int o=0; o < norb; o++)
     {
       V[o](ig) += v;
-      sum += pow(psi(o,ig),2);
+      sum += std::pow(psi(o,ig),2);
     }
     (*integrand)(ig) = v*sum;
   }

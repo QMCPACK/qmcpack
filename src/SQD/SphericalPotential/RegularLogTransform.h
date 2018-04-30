@@ -110,9 +110,9 @@ struct RegularLogTransform
   {
     value_type r0 = V.r(i);
     value_type dr = V.dr(i);
-    z0 = pow(r0,L+0.5);
-    z1 = z0 + (L+0.5)*pow(r0,L-0.5)*dr;
-    return static_cast<value_type>(L+1)*pow(r0,L);
+    z0 = std::pow(r0,L+0.5);
+    z1 = z0 + (L+0.5)*std::pow(r0,L-0.5)*dr;
+    return static_cast<value_type>(L+1)*std::pow(r0,L);
   }
 
   ///returns the number of nodes
@@ -126,7 +126,7 @@ struct RegularLogTransform
   */
   inline value_type k2(int i)
   {
-    value_type rsq = pow(V.r(i),2.0);
+    value_type rsq = std::pow(V.r(i),2.0);
     return 2.0*(rsq*(E-V(i))-LL); //2.0*rsq*(E-LL/rsq-V(i));
   }
 

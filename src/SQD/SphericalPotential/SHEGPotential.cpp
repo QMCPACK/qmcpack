@@ -66,7 +66,7 @@ SHEGPotential::evaluate(const BasisSetType& psi,
     {
       V[o](ig) += t;
       sum += psi(o,ig)*psi(o,ig);
-      //sum += pow(psi(o,ig),2);
+      //sum += std::pow(psi(o,ig),2);
     }
     (*integrand)(ig) = t*sum;
   }
