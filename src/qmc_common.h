@@ -47,14 +47,8 @@ struct QMCState
   int qmc_counter;
   ///number of mpi groups
   int mpi_groups;
-  /** size of memory allocated in byte per MPI
-   */
+  ///size of memory allocated in byte per MPI
   size_t memory_allocated;
-  ///supercell in full precision
-  Tensor<OHMMS_PRECISION_FULL,OHMMS_DIM> theSuperCell;
-
-  ///store the name of the main eshd file name
-  std::string master_eshd_name;
 
   ///constructor
   QMCState();
