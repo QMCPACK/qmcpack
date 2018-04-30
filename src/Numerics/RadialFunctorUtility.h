@@ -101,7 +101,7 @@ Ykofr(GF& g, const GF& a, const GF& b, int k)
   for(int i=0; i < n; ++i)
   {
     value_type r0 = g.r(i)+1e-12;
-    value_type t = pow(r0,k); // r0^k
+    value_type t = std::pow(r0,k); // r0^k
     r_to_k[i] = t;
     r_to_minus_k_plus_one[i] = 1.0/(t*r0); // 1/r0^(k+1)
     value_type ab = a(i)*b(i);

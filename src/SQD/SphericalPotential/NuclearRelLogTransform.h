@@ -189,8 +189,8 @@ struct NuclearRelLogTransform
     value_type deriv;
     if(L)
     {
-      z0 = pow(r0,L+0.5);
-      deriv = (L+0.5)*pow(r0,L-0.5);
+      z0 = std::pow(r0,L+0.5);
+      deriv = (L+0.5)*std::pow(r0,L-0.5);
     }
     else
     {
@@ -224,7 +224,7 @@ struct NuclearRelLogTransform
   {
     value_type r0 = V.r(i);
     value_type rinv = 1.0/r0;
-    value_type rsq = pow(r0,2.0);
+    value_type rsq = std::pow(r0,2.0);
     //    V.setgrid(r0);
     V.evaluate(r0,rinv);
     value_type M = 1.0 + 0.5*alpha2*(E-V.Y);

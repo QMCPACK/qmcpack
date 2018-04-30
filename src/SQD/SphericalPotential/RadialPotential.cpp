@@ -196,7 +196,7 @@ HartreePotential::evaluate(const BasisSetType& psi,
                 static_cast<value_type>(two_k_plus_one)/static_cast<value_type>(two_k_plus_one)
                 * CG_coeff->cg(li,li,k,0,0) * CG_coeff->cg(lj,lj,k,0,0)
                 * CG_coeff->cg(li,li,k,mi,-mi) * CG_coeff->cg(lj,lj,k,mj,-mj)
-                * pow(-1.0, mi+mj);
+                * std::pow(-1.0, mi+mj);
         if(i == j)
           coeff /= 2.0; //double counting
         ith_orb_coeff = psi.Occ[i] * coeff;
