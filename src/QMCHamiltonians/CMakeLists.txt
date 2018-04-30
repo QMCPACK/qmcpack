@@ -23,7 +23,6 @@ SET(HAMSRCS
   CoulombPBCAA.cpp
   CoulombPBCAB.cpp
   NonLocalTOperator.cpp
-  NumericalRadialPotential.cpp
   ForwardWalking.cpp
   PairCorrEstimator.cpp
   LocalMomentEstimator.cpp
