@@ -198,7 +198,7 @@ bool YlmRnlSet<GT>::print_HDF5(const std::string& RootName,
     std::cout << "Safe cutoff " << (*m_grid)[max_rad] << std::endl;
     int l_plus_one= 1+L[orbindex];
     for(int i=1; i<m_grid->size(); ++i)
-      uofr[i] = uofr[i]/pow((*m_grid)[i],l_plus_one);
+      uofr[i] = uofr[i]/std::pow((*m_grid)[i],l_plus_one);
     uofr[0]=uofr[1];
     if(L[orbindex]==0)
       uofr[0] += CuspParam*((*m_grid)[1]-(*m_grid)[0]);

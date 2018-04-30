@@ -115,8 +115,8 @@ struct NuclearLogTransform
     value_type deriv;
     if(L)
     {
-      z0 = pow(r0,L+0.5);
-      deriv = (L+0.5)*pow(r0,L-0.5);
+      z0 = std::pow(r0,L+0.5);
+      deriv = (L+0.5)*std::pow(r0,L-0.5);
     }
     else
     {
@@ -139,7 +139,7 @@ struct NuclearLogTransform
   */
   inline value_type k2(int i)
   {
-    value_type rsq = pow(V.r(i),2.0);
+    value_type rsq = std::pow(V.r(i),2.0);
     return 2.0*(rsq*(E-V(i))-LL); //2.0*rsq*(E-LL/rsq-V(i));
   }
 
