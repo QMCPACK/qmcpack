@@ -45,15 +45,6 @@ namespace qmcplusplus
   BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, bool hybrid_rep);
   ///create C2C or C2R, complex wavefunction in single
   BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybrid_rep);
-  ///disable truncated orbitals for now
-  BsplineReaderBase* createTruncatedSingle(EinsplineSetBuilder* e, int celltype)
-  {
-    return nullptr;
-  }
-  BsplineReaderBase* createTruncatedDouble(EinsplineSetBuilder* e, int celltype)
-  {
-    return nullptr;
-  }
 
 void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
 {
@@ -319,26 +310,19 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 
   bool use_single= (spo_prec == "single" || spo_prec == "float");
 
+  // safeguard for a removed feature
+  if(truncate=="yes") APP_ABORT("The 'truncate' feature of spline SPO has been removed. Please use hybrid orbtial representation.");
+
 #if !defined(QMC_COMPLEX)
   if (UseRealOrbitals)
   {
     //if(TargetPtcl.Lattice.SuperCellEnum != SUPERCELL_BULK && truncate=="yes")
     if(MixedSplineReader==0)
     {
-      if(truncate=="yes")
-      {
-        if(use_single)
-          MixedSplineReader=createTruncatedSingle(this,TargetPtcl.Lattice.SuperCellEnum);
-        else
-          MixedSplineReader=createTruncatedDouble(this,TargetPtcl.Lattice.SuperCellEnum);
-      }
+      if(use_single)
+        MixedSplineReader= createBsplineRealSingle(this, hybrid_rep=="yes");
       else
-      {
-        if(use_single)
-          MixedSplineReader= createBsplineRealSingle(this, hybrid_rep=="yes");
-        else
-          MixedSplineReader= createBsplineRealDouble(this, hybrid_rep=="yes");
-      }
+        MixedSplineReader= createBsplineRealDouble(this, hybrid_rep=="yes");
     }
   }
   else
@@ -346,10 +330,6 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     if(MixedSplineReader==0)
     {
-      if(truncate == "yes")
-      {
-        app_log() << "  Truncated orbitals with multiple kpoints are not supported yet!" << std::endl;
-      }
       if(use_single)
         MixedSplineReader= createBsplineComplexSingle(this, hybrid_rep=="yes");
       else
