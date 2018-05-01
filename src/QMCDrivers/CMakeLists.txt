@@ -29,7 +29,6 @@ SET(QMCDRIVERS
   QMCLinearOptimize.cpp
   QMCCorrelatedSamplingLinearOptimize.cpp
   QMCFixedSampleLinearOptimize.cpp
-  QMCCSLinearOptimizeWFmanagerOMP.cpp
   QMCCostFunctionBase.cpp
   WaveFunctionTester.cpp
   WalkerControlBase.cpp
@@ -56,7 +55,6 @@ SET(QMCDRIVERS
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/RMCLocalEnergyEstimator.cpp
   ../Estimators/EstimatorManagerBase.cpp
-  ../Estimators/MultipleEnergyEstimator.cpp
   ../Estimators/CollectablesEstimator.cpp
 )
 
