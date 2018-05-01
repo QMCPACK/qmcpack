@@ -196,9 +196,8 @@ bool SPOSetBase::put(xmlNodePtr cur)
     hdf_archive hin(myComm);
 
     if(myComm->rank()==0){
-      if (!hin.open(MOhref2)){
-          APP_ABORT("SPOSetBase::putFromH5 missing or incorrect path to H5 file.");
-      }
+      if(!hin.open(MOhref2,H5F_ACC_RDONLY))
+        APP_ABORT("SPOSetBase::putFromH5 missing or incorrect path to H5 file.");
       //TO REVIEWERS:: IDEAL BEHAVIOUR SHOULD BE:
       /*
        if(!hin.push("PBC")
@@ -302,11 +301,10 @@ bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
   aAttrib.put(coeff_ptr);
   setIdentity(false);
   hdf_archive hin(myComm);
-  if(myComm->rank()==0){
-    hin.open(fname);
-    if (!hin.open(fname)){
-        APP_ABORT("SPOSetBase::putFromH5 missing or incorrect path to H5 file.");
-    }
+  if(myComm->rank()==0)
+  {
+    if(!hin.open(fname,H5F_ACC_RDONLY))
+      APP_ABORT("SPOSetBase::putFromH5 missing or incorrect path to H5 file.");
 
     Matrix<RealType> Ctemp(BasisSetSize,BasisSetSize);
     char name[72];
@@ -329,8 +327,8 @@ bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
       }
       n++;
     }
- }
- myComm->bcast(C->data(),C->size());
+  }
+  myComm->bcast(C->data(),C->size());
 #else
   APP_ABORT("SPOSetBase::putFromH5 HDF5 is disabled.")
 #endif
@@ -369,10 +367,8 @@ bool SPOSetBase::putPBCFromH5(const char* fname, xmlNodePtr coeff_ptr)
   aAttrib.put(curtemp);
 
   if(myComm->rank()==0){
-    hin.open(fname);
-    if (!hin.open(fname)){
-        APP_ABORT("SPOSetBase::putFromH5 missing or incorrect path to H5 file.");
-    }
+    if(!hin.open(fname,H5F_ACC_RDONLY))
+      APP_ABORT("SPOSetBase::putFromH5 missing or incorrect path to H5 file.");
     hin.push("parameters");
     hin.read(IsComplex,"IsComplex");
     hin.pop();
@@ -408,7 +404,6 @@ bool SPOSetBase::putPBCFromH5(const char* fname, xmlNodePtr coeff_ptr)
        APP_ABORT(setname.c_str());
     }
 
-
 #if defined (QMC_COMPLEX)
     APP_ABORT("Complex Wavefunction not implemented yet. Please contact Developers");
 #endif //COMPLEX
@@ -424,8 +419,8 @@ bool SPOSetBase::putPBCFromH5(const char* fname, xmlNodePtr coeff_ptr)
       }
       n++;
     }
- }
- myComm->bcast(C->data(),C->size());
+  }
+  myComm->bcast(C->data(),C->size());
 #else
   APP_ABORT("SPOSetBase::putFromH5 HDF5 is disabled.")
 #endif
