@@ -374,7 +374,13 @@ class NexusTest(NexusTestBase):
         NexusTestBase.launch_path = os.getcwd()
         nexus_test_dir = './'+NexusTestBase.nexus_test_dir
         if 'nexus_test' in nexus_test_dir and os.path.exists(nexus_test_dir):
-            shutil.rmtree(nexus_test_dir)
+            try:
+                shutil.rmtree(nexus_test_dir)
+            except Exception as e:
+                if os.path.exists(nexus_test_dir):
+                    raise e
+                #end if
+            #end try
         #end if
     #end def setup
 

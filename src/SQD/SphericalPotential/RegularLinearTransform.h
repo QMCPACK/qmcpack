@@ -112,9 +112,9 @@ struct RegularLinearTransform
     value_type deriv;
     value_type r0 = V.r(i);
     value_type dr = V.dr(i);
-    z0 = pow(r0,L+1);
+    z0 = std::pow(r0,L+1);
     if(L)
-      deriv = static_cast<value_type>(L+1)*pow(r0,L);
+      deriv = static_cast<value_type>(L+1)*std::pow(r0,L);
     else
       deriv = 1.0;
     z1 = z0 + deriv*dr;

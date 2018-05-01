@@ -17,7 +17,6 @@
 #include "Numerics/OneDimCubicSpline.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/SimpleParser.h"
-//#include "QMCHamiltonians/FSAtomPseudoPot.h"
 //#include "Utilities/IteratorUtility.h"
 #ifdef QMC_CUDA
 #include <cuda_runtime_api.h>
