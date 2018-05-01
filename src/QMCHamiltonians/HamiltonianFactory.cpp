@@ -28,11 +28,9 @@
 #include "QMCHamiltonians/ConservedEnergy.h"
 #include "QMCHamiltonians/SpeciesKineticEnergy.h"
 #include "QMCHamiltonians/LatticeDeviationEstimator.h"
-#include "QMCHamiltonians/NumericalRadialPotential.h"
 #include "QMCHamiltonians/MomentumEstimator.h"
 #include "QMCHamiltonians/Pressure.h"
 #include "QMCHamiltonians/ForwardWalking.h"
-#include "QMCHamiltonians/NumberFluctuations.h"
 #include "QMCHamiltonians/PairCorrEstimator.h"
 #include "QMCHamiltonians/LocalMomentEstimator.h"
 #include "QMCHamiltonians/DensityEstimator.h"
@@ -43,7 +41,6 @@
 #include "QMCHamiltonians/OrbitalImages.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include "QMCHamiltonians/EnergyDensityEstimator.h"
-#include "QMCHamiltonians/NearestNeighborsEstimator.h"
 #include "QMCHamiltonians/DensityMatrices1B.h"
 #endif
 #if OHMMS_DIM == 3
@@ -288,15 +285,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       }
 #endif
 #endif
-      else if(potType.find("num") < potType.size())
-      {
-        if(sourceInp == targetInp)//only accept the pair-potential for now
-        {
-          NumericalRadialPotential* apot=new NumericalRadialPotential(*targetPtcl);
-          apot->put(cur);
-          targetH->addOperator(apot,potName);
-        }
-      }
     }
     else if(cname == "constant")
     {
@@ -381,13 +369,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         apot->put(cur);
         targetH->addOperator(apot,potName,false);
       }
-      else if(potType == "numberfluctuations")
-      {
-        app_log()<<" Adding Number Fluctuation estimator"<< std::endl;
-        NumberFluctuations* apot=new NumberFluctuations(*targetPtcl);
-        apot->put(cur);
-        targetH->addOperator(apot,potName,false);
-      }
       else if(potType == "density")
       {
         //          if(PBCType)//only if perioidic
@@ -425,13 +406,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         EnergyDensityEstimator* apot=new EnergyDensityEstimator(ptclPool,defaultKE);
         apot->put(cur);
         targetH->addOperator(apot,potName,false);
-      }
-      else if(potType == "nearestneighbors" || potType == "NearestNeighbors")
-      {
-        app_log()<<"  Adding NearestNeighborsEstimator"<< std::endl;
-        NearestNeighborsEstimator* apot=new NearestNeighborsEstimator(ptclPool);
-        apot->put(cur);
-        targetH->addOperator(apot,"nearest_neighbors",false);
       }
       else if(potType == "dm1b")
       {
