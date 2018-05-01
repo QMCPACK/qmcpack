@@ -25,7 +25,6 @@
 #include "Utilities/RandomGenerator.h"
 #include "QMCDrivers/WalkerControlBase.h"
 #include "Estimators/EstimatorManagerBase.h"
-//#include "Estimators/DMCEnergyEstimator.h"
 #include "QMCDrivers/BranchIO.h"
 #include "Particle/Reptile.h"
 #ifdef HAVE_ADIOS
