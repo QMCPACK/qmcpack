@@ -108,7 +108,7 @@ def simstats(x,exclude=None):
     #end if
     error=math.sqrt(var/Neff)
 
-    return (mean,var,error,kappa)
+    return (mean,var,error,kappa,N)
 #end def simstats
 
 
@@ -298,13 +298,14 @@ def process_scalar_files(options,quants_check):
 
                 if 'BlockWeight' in data:
                     ts = sum(data['BlockWeight'])
-                    stats['TotalSamples'] = (ts,0.0,0.0,1.0) # mean, var, error, kappa
+                    N = len(data['BlockWeight'])
+                    stats['TotalSamples'] = (ts,0.0,0.0,1.0,N) # mean, var, error, kappa
                 #end if
 
                 for q in quants_check:
                     if q in stats:
-                        mean,var,error,kappa = stats[q]
-                        svals[q] = mean,error
+                        mean,var,error,kappa,N = stats[q]
+                        svals[q] = mean,error,N
                     else:
                         exit_fail('{0} is not present in file {1}'.format(q,scalar_file))
                     #end if
@@ -341,25 +342,31 @@ def check_values(options,quants_check,values):
                 ref = options.__dict__[q]
                 mean_ref  = ref[2*ns]
                 error_ref = ref[2*ns+1]
-                mean_comp,error_comp = values[s][q]
+                mean_comp,error_comp,N_values = values[s][q]
 
-                quant_success = abs(mean_comp-mean_ref) <= options.nsigma*error_ref
+                # If the reference value has no error, increase it by a bit in case the
+                # computed value is also constant and the averaging introduces some
+                # some roundoff error (see the SHO results for an example)
+                if error_ref == 0.0:
+                  error_ref = N_values*sys.float_info.epsilon
+                delta = mean_comp-mean_ref
+                delta_err = math.sqrt(error_comp**2+error_ref**2)
+
+                quant_success = abs(mean_comp-mean_ref) <= options.nsigma*delta_err
 
                 success &= quant_success
 
-                delta = mean_comp-mean_ref
-                delta_err = math.sqrt(error_comp**2+error_ref**2)
 
                 msg+='    reference mean value     : {0: 12.8f}\n'.format(mean_ref)
                 msg+='    reference error bar      : {0: 12.8f}\n'.format(error_ref)
                 msg+='    computed  mean value     : {0: 12.8f}\n'.format(mean_comp)
                 msg+='    computed  error bar      : {0: 12.8f}\n'.format(error_comp)
-                msg+='    pass tolerance           : {0: 12.8f}  ({1: 12.8f} sigma)\n'.format(options.nsigma*error_ref,options.nsigma)
-                if error_ref > 0.0:
-                    msg+='    deviation from reference : {0: 12.8f}  ({1: 12.8f} sigma)\n'.format(delta,delta/error_ref)
+                msg+='    pass tolerance           : {0: 12.8f}  ({1: 12.8f} sigma)\n'.format(options.nsigma*delta_err,options.nsigma)
+                if delta_err > 0.0:
+                    msg+='    deviation from reference : {0: 12.8f}  ({1: 12.8f} sigma)\n'.format(delta,delta/delta_err)
                 msg+='    error bar of deviation   : {0: 12.8f}\n'.format(delta_err)
-                if error_ref > 0.0:
-                    msg+='    significance probability : {0: 12.8f}  (gaussian statistics)\n'.format(erf(abs(delta/error_ref)/math.sqrt(2.0)))
+                if delta_err > 0.0:
+                    msg+='    significance probability : {0: 12.8f}  (gaussian statistics)\n'.format(erf(abs(delta/delta_err)/math.sqrt(2.0)))
                 msg+='    status of this test      :   {0}\n'.format(passfail[quant_success])
             #end for
             ns+=1
