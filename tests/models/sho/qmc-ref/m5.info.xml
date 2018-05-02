@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<resources>
+  <hardware>
+    <mpi>false</mpi>
+    <openmp_threads>16</openmp_threads>
+    <openmp>true</openmp>
+    <gpu>false</gpu>
+  </hardware>
+  <particles>
+    <particle>
+      <name>e</name>
+      <size>1</size>
+    </particle>
+    <particle>
+      <name>trap_center</name>
+      <size>1</size>
+    </particle>
+  </particles>
+</resources>
