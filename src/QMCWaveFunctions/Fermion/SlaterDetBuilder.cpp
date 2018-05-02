@@ -25,12 +25,6 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminantSoA.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
-//this is only for Bryan
-#if defined(BRYAN_MULTIDET_TRIAL)
-#include "QMCWaveFunctions/Fermion/DiracDeterminantIterative.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantTruncation.h"
-#include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h"
-#endif
 #if !defined(QMC_COMPLEX)
 //Cannot use complex with released node
 #include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
@@ -518,43 +512,6 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
   int lastIndex=targetPtcl.last(spin_group);
   if(firstIndex==lastIndex)
     return true;
-//    app_log() << "  Creating DiracDeterminant " << detname << " group=" << spin_group << " First Index = " << firstIndex << std::endl;
-//    app_log() <<"   My det method is "<<detMethod<< std::endl;
-//#if defined(BRYAN_MULTIDET_TRIAL)
-//    if (detMethod=="Iterative")
-//    {
-//      //   std::string s_cutoff("0.0");
-//      //   aAttrib.add(s_cutoff,"Cutoff");
-//      app_log()<<"My cutoff is "<<s_cutoff<< std::endl;
-//
-//      double cutoff=std::atof(s_cutoff.c_str());
-//      DiracDeterminantIterative *adet= new DiracDeterminantIterative(psi,firstIndex);
-//      adet->set_iterative(firstIndex,psi->getOrbitalSetSize(),cutoff);
-//      slaterdet_0->add(adet,spin_group);
-//    }
-//    else if (detMethod=="Truncation")
-//    {
-//      //   std::string s_cutoff("0.0");
-//      //   aAttrib.add(s_cutoff,"Cutoff");
-//      DiracDeterminantTruncation *adet= new DiracDeterminantTruncation(psi,firstIndex);
-//      double cutoff=std::atof(s_cutoff.c_str());
-//      double radius=std::atof(s_radius.c_str());
-//      //   adet->set(firstIndex,psi->getOrbitalSetSize());
-//      adet->set_truncation(firstIndex,psi->getOrbitalSetSize(),cutoff,radius);
-//      slaterdet_0->add(adet,spin_group);
-//    }
-//    else if (detMethod=="Multi")
-//    {
-//      app_log()<<"BUILDING DIRAC DETERM "<<firstIndex<< std::endl;
-//      MultiDiracDeterminantBase *adet = new MultiDiracDeterminantBase(psi,firstIndex);
-//      int detSize=std::atof(s_detSize.c_str());
-//      adet-> set_Multi(firstIndex,detSize,psi->getOrbitalSetSize());
-//      slaterdet_0->add(adet,spin_group);
-//    }
-//    else
-//      slaterdet_0->add(new Det_t(psi,firstIndex),spin_group);
-//    }
-//#else
   std::string dname;
   getNodeName(dname,cur);
   DiracDeterminantBase* adet=0;
