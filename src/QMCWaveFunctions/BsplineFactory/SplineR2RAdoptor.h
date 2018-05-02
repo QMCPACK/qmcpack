@@ -433,12 +433,9 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   void assign_vgh(int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
     const ST cone = (bc_sign &1)? -1:1;
-    const ST g00=cone*PrimLattice.G(0), g01=cone*PrimLattice.G(1), g02=cone*PrimLattice.G(2),
-             g10=cone*PrimLattice.G(3), g11=cone*PrimLattice.G(4), g12=cone*PrimLattice.G(5),
-             g20=cone*PrimLattice.G(6), g21=cone*PrimLattice.G(7), g22=cone*PrimLattice.G(8);
-    const ST gg00=cone*GGt(0), gg01=cone*GGt(1), gg02=cone*GGt(2),
-             gg10=cone*GGt(3), gg11=cone*GGt(4), gg12=cone*GGt(5),
-             gg20=cone*GGt(6), gg21=cone*GGt(7), gg22=cone*GGt(8);
+    const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
+             g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
+             g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
 
     const ST* restrict g0=myG.data(0);
     const ST* restrict g1=myG.data(1);
@@ -450,26 +447,41 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict h12=myH.data(4);
     const ST* restrict h22=myH.data(5);
 
-    const size_t nsplines=myL.size();
     const size_t N=last_spo-first_spo;
-#pragma omp simd
-    for(size_t j=0; j<N; ++j)
+
+    #pragma omp simd
+    for (size_t j=0; j<N; ++j)
     {
-      size_t psiIndex=first_spo+j;
-      psi[psiIndex]=cone*myV[j];
-      dpsi[psiIndex][0]=(g00*g0[j]+g01*g1[j]+g02*g2[j]);
-      dpsi[psiIndex][1]=(g10*g0[j]+g11*g1[j]+g12*g2[j]);
-      dpsi[psiIndex][2]=(g20*g0[j]+g21*g1[j]+g22*g2[j]);
-      //grad_grad_psi[psiIndex]=dot(myH,GGt)
-      grad_grad_psi[psiIndex][0]=h00[j]*gg00+h01[j]*gg10+h02[j]*gg20;
-      grad_grad_psi[psiIndex][1]=h00[j]*gg01+h01[j]*gg11+h02[j]*gg21;
-      grad_grad_psi[psiIndex][2]=h00[j]*gg02+h01[j]*gg12+h02[j]*gg22;
-      grad_grad_psi[psiIndex][3]=h01[j]*gg00+h11[j]*gg10+h12[j]*gg20;
-      grad_grad_psi[psiIndex][4]=h01[j]*gg01+h11[j]*gg11+h12[j]*gg21;
-      grad_grad_psi[psiIndex][5]=h01[j]*gg02+h11[j]*gg12+h12[j]*gg22;
-      grad_grad_psi[psiIndex][6]=h02[j]*gg00+h12[j]*gg10+h22[j]*gg20;
-      grad_grad_psi[psiIndex][7]=h02[j]*gg01+h12[j]*gg11+h22[j]*gg21;
-      grad_grad_psi[psiIndex][8]=h02[j]*gg02+h12[j]*gg12+h22[j]*gg22;
+      //dot(PrimLattice.G,myG[j])
+      const ST dX_r = g00*g0[j]+g01*g1[j]+g02*g2[j];
+      const ST dY_r = g10*g0[j]+g11*g1[j]+g12*g2[j];
+      const ST dZ_r = g20*g0[j]+g21*g1[j]+g22*g2[j];
+
+      const size_t psiIndex=j+first_spo;
+      psi[psiIndex]    =cone*myV[j];
+      dpsi[psiIndex][0]=cone*dX_r;
+      dpsi[psiIndex][1]=cone*dY_r;
+      dpsi[psiIndex][2]=cone*dZ_r;
+
+      const ST h_xx_r=v_m_v(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],g00,g01,g02,g00,g01,g02);
+      const ST h_xy_r=v_m_v(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],g00,g01,g02,g10,g11,g12);
+      const ST h_xz_r=v_m_v(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],g00,g01,g02,g20,g21,g22);
+      const ST h_yx_r=v_m_v(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],g10,g11,g12,g00,g01,g02);
+      const ST h_yy_r=v_m_v(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],g10,g11,g12,g10,g11,g12);
+      const ST h_yz_r=v_m_v(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],g10,g11,g12,g20,g21,g22);
+      const ST h_zx_r=v_m_v(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],g20,g21,g22,g00,g01,g02);
+      const ST h_zy_r=v_m_v(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],g20,g21,g22,g10,g11,g12);
+      const ST h_zz_r=v_m_v(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],g20,g21,g22,g20,g21,g22);
+
+      grad_grad_psi[psiIndex][0]=cone*h_xx_r;
+      grad_grad_psi[psiIndex][1]=cone*h_xy_r;
+      grad_grad_psi[psiIndex][2]=cone*h_xz_r;
+      grad_grad_psi[psiIndex][3]=cone*h_yx_r;
+      grad_grad_psi[psiIndex][4]=cone*h_yy_r;
+      grad_grad_psi[psiIndex][5]=cone*h_yz_r;
+      grad_grad_psi[psiIndex][6]=cone*h_zx_r;
+      grad_grad_psi[psiIndex][7]=cone*h_zy_r;
+      grad_grad_psi[psiIndex][8]=cone*h_zz_r;
     }
   }
 

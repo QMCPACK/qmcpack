@@ -578,13 +578,10 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   void assign_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
     typedef std::complex<TT> ComplexT;
-    CONSTEXPR ST zero(0);
-    CONSTEXPR ST two(2);
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
              g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
              g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
     const ST x=r[0], y=r[1], z=r[2];
-    const ST symGG[6]={GGt[0],GGt[1]+GGt[3],GGt[2]+GGt[6],GGt[4],GGt[5]+GGt[7],GGt[8]};
 
     const ST* restrict k0=myKcart.data(0);
     const ST* restrict k1=myKcart.data(1);
