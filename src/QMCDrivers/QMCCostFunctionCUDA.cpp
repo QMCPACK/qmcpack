@@ -20,7 +20,6 @@
 #include "QMCDrivers/QMCCostFunctionCUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "Particle/HDFWalkerInputCollect.h"
 #include "Message/CommOperators.h"
 
 namespace qmcplusplus
