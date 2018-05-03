@@ -1,7 +1,7 @@
   LIST(APPEND SHO_SCALARS "totenergy" "0.45  0")
-  LIST(APPEND SHO_SCALARS "kinetic"   "0.225 0")
-  LIST(APPEND SHO_SCALARS "potential" "0.225 0")
-  LIST(APPEND SHO_SCALARS "latdev"    "1.0   0")
+  LIST(APPEND SHO_SCALARS "kinetic"   "0.225 0.0028")
+  LIST(APPEND SHO_SCALARS "potential" "0.225 0.0028")
+  LIST(APPEND SHO_SCALARS "latdev"    "1.0   0.013")
 
   QMC_RUN_AND_CHECK(short-sho-vmc
     "${CMAKE_SOURCE_DIR}/tests/models/sho"

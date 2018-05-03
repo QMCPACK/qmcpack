@@ -20,7 +20,6 @@
 #include "Numerics/Transform2GridFunctor.h"
 #include "Numerics/OneDimCubicSpline.h"
 #include "Numerics/GaussianBasisSet.h"
-#include "QMCTools/GridMolecularOrbitals.h"
 #include "QMCTools/GTO2GridBuilder.h"
 #include "QMCFactory/OneDimGridFactory.h"
 
