@@ -108,7 +108,7 @@ def simstats(x,exclude=None):
     #end if
     error=math.sqrt(var/Neff)
 
-    return (mean,var,error,kappa)
+    return (mean,var,error,kappa,N)
 #end def simstats
 
 
@@ -173,6 +173,7 @@ def read_command_line():
             bw   = 'BlockWeight',
             ts   = 'TotalSamples',
             fl   = 'Flux',
+            latdev = 'latdev',
 #now for some RMC estimators
             ke_m = "Kinetic_m",
             ke_p = "Kinetic_p",
@@ -303,8 +304,8 @@ def process_scalar_files(options,quants_check):
 
                 for q in quants_check:
                     if q in stats:
-                        mean,var,error,kappa = stats[q]
-                        svals[q] = mean,error
+                        mean,var,error,kappa,N = stats[q]
+                        svals[q] = mean,error,N
                     else:
                         exit_fail('{0} is not present in file {1}'.format(q,scalar_file))
                     #end if
@@ -341,7 +342,13 @@ def check_values(options,quants_check,values):
                 ref = options.__dict__[q]
                 mean_ref  = ref[2*ns]
                 error_ref = ref[2*ns+1]
-                mean_comp,error_comp = values[s][q]
+                mean_comp,error_comp,N_values = values[s][q]
+
+                # If the reference value has no error, increase it by a bit in case the
+                # computed value is also constant and the averaging introduces some
+                # some roundoff error (see the SHO results for an example)
+                if error_ref == 0.0:
+                  error_ref = N_values*sys.float_info.epsilon
 
                 quant_success = abs(mean_comp-mean_ref) <= options.nsigma*error_ref
 
