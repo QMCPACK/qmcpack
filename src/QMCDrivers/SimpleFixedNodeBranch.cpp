@@ -121,7 +121,6 @@ void SimpleFixedNodeBranch::start(const std::string& froot, bool append)
   MyEstimator->reset();
 }
 
-//void SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, RealType tau, bool fixW, bool killwalker)
 int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, bool fixW, bool killwalker)
 {
   BranchMode.set(B_DMC,1);//set DMC
@@ -180,7 +179,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   //update the simulation parameters
   WalkerController->put(myNode);
   //assign current Eref and a large number for variance
-  WalkerController->setEnergyAndVariance(vParam[B_EREF],vParam[B_SIGMA2]);
+  WalkerController->setTrialEnergy(vParam[B_ETRIAL]);
   this->reset();
   if(fromscratch)
   {
@@ -605,7 +604,6 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   WalkerController->put(myNode);
   ToDoSteps=iParam[B_WARMUPSTEPS]=(iParam[B_WARMUPSTEPS])?iParam[B_WARMUPSTEPS]:10;
   setBranchCutoff(vParam[B_SIGMA2],WalkerController->targetSigma,10);
-  WalkerController->setEnergyAndVariance(vParam[B_EREF],vParam[B_SIGMA2]);
   WalkerController->reset();
 #ifdef QMC_CUDA
   reset(); // needed. Ye
