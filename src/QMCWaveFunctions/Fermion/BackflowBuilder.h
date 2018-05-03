@@ -23,7 +23,6 @@
 #include "QMCWaveFunctions/Fermion/Backflow_ee.h"
 #include "QMCWaveFunctions/Fermion/Backflow_ee_kSpace.h"
 #include "QMCWaveFunctions/Fermion/Backflow_eI.h"
-#include "QMCWaveFunctions/Fermion/GaussianFunctor.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "LongRange/LRHandlerBase.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
