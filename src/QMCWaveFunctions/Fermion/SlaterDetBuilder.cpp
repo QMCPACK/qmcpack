@@ -26,9 +26,6 @@
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
 #if !defined(QMC_COMPLEX)
-//Cannot use complex with released node
-#include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
-#include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
 //Cannot use complex with SlaterDetOpt
 #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/LocalizedBasisSet.h"
@@ -49,7 +46,6 @@
 #include "QMCWaveFunctions/Fermion/SPOSetProxy.h"
 #include "QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantOpt.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantAFM.h"
 
 #include <bitset>
 #include <unordered_map>
@@ -426,7 +422,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
  * - id unique name
  * - sposet reference to the pre-defined sposet; when missing, use id
  * - group electron species name, u or d
- * - type variantion of a determinant, type="AFM" uses a specialized determinant builder for Anti-Ferromagnetic system
+magnetic system
  * Extra attributes to handled the original released-node case
  */
 bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slater_det_opt)
@@ -440,7 +436,6 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
   std::string basisName("invalid");
   std::string detname("0"), refname("0");
   std::string s_detSize("0");
-  std::string afm("no");
   std::string usesoa("no");
 
   OhmmsAttributeSet aAttrib;
@@ -448,7 +443,6 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
   aAttrib.add(detname,"id"); 
   aAttrib.add(sposet,"sposet");
   aAttrib.add(refname,"ref");
-  aAttrib.add(afm,"type");
   aAttrib.add(s_detSize,"DetSize");
   aAttrib.add(usesoa,"soa");
 
@@ -515,30 +509,12 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
   std::string dname;
   getNodeName(dname,cur);
   DiracDeterminantBase* adet=0;
-#if !defined(QMC_COMPLEX)
-  if (rn_tag == dname)
-  {
-    double bosonicEpsilon=s_smallnumber;
-    app_log()<<"  BUILDING Released Node Determinant logepsilon="<<bosonicEpsilon<< std::endl;
-    if (rntype==0)
-      adet = new RNDiracDeterminantBase(psi,firstIndex);
-    else
-      adet = new RNDiracDeterminantBaseAlternate(psi,firstIndex);
-    adet->setLogEpsilon(bosonicEpsilon);
-  }
-  else
-#endif
   {
 #ifdef QMC_CUDA
     adet = new DiracDeterminantCUDA(psi,firstIndex);
 #else
     if(UseBackflow)
       adet = new DiracDeterminantWithBackflow(targetPtcl,psi,BFTrans,firstIndex);
-    else if (afm=="AFM")
-    {
-      app_log()<<"Using the AFM determinant"<< std::endl;
-      adet = new DiracDeterminantAFM(targetPtcl, psi, firstIndex);
-    }
     else if (slater_det_opt)
     {
 #ifdef QMC_COMPLEX

@@ -53,17 +53,8 @@ TEST_CASE("Fixed node branch", "[drivers][walker_control]")
 
   REQUIRE(fnb.getTau() == Approx(tau));
 
-
   fnb.advanceQMCCounter();
   REQUIRE(fnb.iParam[SimpleFixedNodeBranch::B_COUNTER] == 0);
-
-
-  fnb.setTrialEnergy(-4.0);
-
-  REQUIRE(fnb.getEtrial() == Approx(-4.0));
-  REQUIRE(fnb.getEref() == Approx(-4.0));
-
-
 
   // default is classic cutoff scheme
   //fnb.setBranchCutoff();

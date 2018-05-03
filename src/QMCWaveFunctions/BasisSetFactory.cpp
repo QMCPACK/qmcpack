@@ -37,7 +37,6 @@
 #endif
 #include "QMCWaveFunctions/CompositeSPOSet.h"
 #include "QMCWaveFunctions/OptimizableSPOBuilder.h"
-#include "QMCWaveFunctions/AFMSPOBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
 #include "OhmmsData/AttributeSet.h"
@@ -190,11 +189,6 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
   {
     //app_log()<<"Optimizable SPO set"<< std::endl;
     bb = new OptimizableSPOBuilder(targetPtcl,ptclPool,rootNode);
-  }
-  else if (type == "afm")
-  {
-    //       app_log()<<"AFM SPO set"<< std::endl;
-    bb = new AFMSPOBuilder(targetPtcl,ptclPool,rootNode);
   }
 #if OHMMS_DIM ==3
   else if(type.find("spline")<type.size())

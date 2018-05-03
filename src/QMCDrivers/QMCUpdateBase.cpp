@@ -86,8 +86,6 @@ bool QMCUpdateBase::put(xmlNodePtr cur)
 {
   H.setNonLocalMoves(cur);
   bool s=myParams.put(cur);
-  if (branchEngine)
-    branchEngine->put(cur);
   return s;
 }
 
@@ -95,7 +93,6 @@ void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManagerBase* e
 {
   Estimators=est;
   branchEngine=brancher;
-  branchEngine->setEstimatorManager(est);
   NumPtcl = W.getTotalNum();
   deltaR.resize(NumPtcl);
   drift.resize(NumPtcl);
@@ -126,14 +123,6 @@ void QMCUpdateBase::resetRun(BranchEngineType* brancher, EstimatorManagerBase* e
 {
   resetRun(brancher,est);
   Traces = traces;
-}
-
-
-void QMCUpdateBase::resetEtrial(RealType et)
-{
-  //branchEngine->E_T=et;
-  branchEngine->setTrialEnergy(et,1.0);
-  branchEngine->flush(0);
 }
 
 void QMCUpdateBase::startRun(int blocks, bool record)

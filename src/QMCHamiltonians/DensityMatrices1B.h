@@ -187,9 +187,6 @@ class DensityMatrices1B : public QMCHamiltonianBase
   //  matrix implementation
   Return_t evaluate_check(ParticleSet& P);
   Return_t evaluate_matrix(ParticleSet& P);
-  //  postprocessing
-  void postprocess_density(const std::string& infile,const std::string& species,
-                           pts_t& points,dens_t& density,dens_t& density_err);
 
 
   bool match(Value_t e1, Value_t e2, RealType tol=1e-12);
