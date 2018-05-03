@@ -34,7 +34,7 @@ SET(HAMSRCS
   ForceBase.cpp
   HamiltonianFactory.cpp
   CoulombPotentialFactory.cpp
-  model/HarmonicExternalPotential.cpp
+  HarmonicExternalPotential.cpp
   StaticStructureFactor.cpp
   OrbitalImages.cpp
   SpinDensity.cpp
@@ -95,14 +95,6 @@ IF(OHMMS_DIM MATCHES 3)
       )
   ENDIF(QMC_CUDA)
 
-  # Add research-related sources here
-  IF(QMC_BUILD_LEVEL GREATER 1)
-    SET(HAMSRCS ${HAMSRCS}
-      model/LennardJones_smoothed.cpp
-      model/HFDHE2_Moroni1995.cpp
-      model/HeSAPT_smoothed.cpp
-     )
-  ENDIF(QMC_BUILD_LEVEL GREATER 1)
 ENDIF(OHMMS_DIM MATCHES 3)
 
 IF(QMC_CUDA)
