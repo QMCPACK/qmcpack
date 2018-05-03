@@ -137,8 +137,6 @@ public:
   /** stop a run */
   void stopRun();
   void stopRun2();
-  /** reset the trial energy */
-  void resetEtrial(RealType et);
 
   /** prepare to start a block
    * @param steps number of steps within the block
@@ -272,7 +270,7 @@ protected:
   ///random number generator
   RandomGenerator_t& RandomGen;
   ///branch engine
-  BranchEngineType* branchEngine;
+  const BranchEngineType* branchEngine;
   ///estimator
   EstimatorManagerBase* Estimators;
   ///parameters

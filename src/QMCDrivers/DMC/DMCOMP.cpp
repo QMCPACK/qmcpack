@@ -85,10 +85,8 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
   {
     delete Movers[ip];
     delete estimatorClones[ip];
-    delete branchClones[ip];
     estimatorClones[ip]= new EstimatorManagerBase(*Estimators);
     estimatorClones[ip]->setCollectionMode(false);
-    branchClones[ip] = new BranchEngineType(*branchEngine);
 #if !defined(REMOVE_TRACEMANAGER)
     delete traceClones[ip];
     traceClones[ip] = Traces->makeClone();
@@ -101,7 +99,7 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
     {
       Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
       Movers[ip]->put(cur);
-      Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
+      Movers[ip]->resetRun(branchEngine,estimatorClones[ip],traceClones[ip]);
       Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     }
     else
@@ -111,7 +109,7 @@ void DMCOMP::resetComponents(xmlNodePtr cur)
       else
         Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
       Movers[ip]->put(cur);
-      Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
+      Movers[ip]->resetRun(branchEngine,estimatorClones[ip],traceClones[ip]);
       Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
     }
   }
@@ -136,7 +134,6 @@ void DMCOMP::resetUpdateEngines()
     }
     //if(QMCDriverMode[QMC_UPDATE_MODE]) W.clearAuxDataSet();
     Movers.resize(NumThreads,0);
-    branchClones.resize(NumThreads,0);
     Rng.resize(NumThreads,0);
     estimatorClones.resize(NumThreads,0);
     traceClones.resize(NumThreads,0);
@@ -171,12 +168,11 @@ void DMCOMP::resetUpdateEngines()
       Rng[ip]=new RandomGenerator_t(*RandomNumberControl::Children[ip]);
       hClones[ip]->setRandomGenerator(Rng[ip]);
 #endif
-      branchClones[ip] = new BranchEngineType(*branchEngine);
       if(QMCDriverMode[QMC_UPDATE_MODE])
       {
         Movers[ip] = new DMCUpdatePbyPWithRejectionFast(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
         Movers[ip]->put(qmcNode);
-        Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
+        Movers[ip]->resetRun(branchEngine,estimatorClones[ip],traceClones[ip]);
         Movers[ip]->initWalkersForPbyP(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
       }
       else
@@ -186,7 +182,7 @@ void DMCOMP::resetUpdateEngines()
         else
           Movers[ip] = new DMCUpdateAllWithRejection(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
         Movers[ip]->put(qmcNode);
-        Movers[ip]->resetRun(branchClones[ip],estimatorClones[ip],traceClones[ip]);
+        Movers[ip]->resetRun(branchEngine,estimatorClones[ip],traceClones[ip]);
         Movers[ip]->initWalkers(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1]);
       }
     }
@@ -302,7 +298,7 @@ bool DMCOMP::run()
         for(int ip=1; ip<NumThreads; ++ip)
           W.Collectables += wClones[ip]->Collectables;
       }
-      branchEngine->branch(CurrentStep, W, branchClones);
+      branchEngine->branch(CurrentStep, W);
       //         if(storeConfigs && (CurrentStep%storeConfigs == 0)) {
       //           ForwardWalkingHistory.storeConfigsForForwardWalking(W);
       //           W.resetWalkerParents();

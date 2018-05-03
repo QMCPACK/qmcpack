@@ -35,7 +35,7 @@
 #include "QMCHamiltonians/LocalMomentEstimator.h"
 #include "QMCHamiltonians/DensityEstimator.h"
 #include "QMCHamiltonians/SkEstimator.h"
-#include "QMCHamiltonians/model/HarmonicExternalPotential.h"
+#include "QMCHamiltonians/HarmonicExternalPotential.h"
 #include "QMCHamiltonians/StaticStructureFactor.h"
 #include "QMCHamiltonians/SpinDensity.h"
 #include "QMCHamiltonians/OrbitalImages.h"
@@ -50,21 +50,6 @@
 // #include "QMCHamiltonians/ZeroVarObs.h"
 #if !defined(QMC_CUDA) && QMC_BUILD_LEVEL>2
 #include "QMCHamiltonians/SkPot.h"
-#include "QMCHamiltonians/model/HardSphere.h"
-#include "QMCHamiltonians/model/GaussianPot.h"
-#include "QMCHamiltonians/model/HusePot.h"
-#include "QMCHamiltonians/model/OscillatoryPot.h"
-#include "QMCHamiltonians/model/ModPosTelPot.h"
-#include "QMCHamiltonians/model/HFDHE2Potential_tail.h"
-#include "QMCHamiltonians/model/HePressure.h"
-#include "QMCHamiltonians/model/JelliumPotential.h"
-#include "QMCHamiltonians/model/HFDHE2Potential.h"
-#include "QMCHamiltonians/model/HeEPotential.h"
-#include "QMCHamiltonians/model/HeEPotential_tail.h"
-#include "QMCHamiltonians/model/LennardJones_smoothed.h"
-#include "QMCHamiltonians/model/HFDHE2_Moroni1995.h"
-//#include "QMCHamiltonians/HFDBHE_smoothed.h"
-#include "QMCHamiltonians/model/HeSAPT_smoothed.h"
 #endif
 #include "OhmmsData/AttributeSet.h"
 #ifdef QMC_CUDA
@@ -171,36 +156,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         addCoulombPotential(cur);
       }
 #if !defined(QMC_CUDA) && QMC_BUILD_LEVEL>2
-      else if (potType == "hardsphere")
-      {
-        HardSphere* hs = new HardSphere(*targetPtcl);
-        hs->put(cur);
-        targetH->addOperator(hs,"HardSphere",true);
-      }
-      else if (potType == "gaussian")
-      {
-        GaussianPot* hs = new GaussianPot(*targetPtcl);
-        hs->put(cur);
-        targetH->addOperator(hs,"GaussianPot",true);
-      }
-      else if (potType == "huse")
-      {
-        HusePot* hs = new HusePot(*targetPtcl);
-        hs->put(cur);
-        targetH->addOperator(hs,"HusePot",true);
-      }
-      else if (potType == "modpostel")
-      {
-        ModPoschlTeller* hs = new ModPoschlTeller(*targetPtcl);
-        hs->put(cur);
-        targetH->addOperator(hs,"ModPoschlTeller",true);
-      }
-      else if (potType == "oscillatory")
-      {
-        OscillatoryPotential* hs = new OscillatoryPotential(*targetPtcl);
-        hs->put(cur);
-        targetH->addOperator(hs,"OscillatoryPotential",true);
-      }
       else if (potType == "skpot")
       {
         SkPot* hs = new SkPot(*targetPtcl);
@@ -209,13 +164,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       }
 #endif
 #if OHMMS_DIM==3
-      /*
-         else if (potType == "HFDBHE_smoothed") {
-         HFDBHE_smoothed_phy* HFD = new HFDBHE_smoothed_phy(*targetPtcl);
-         targetH->addOperator(HFD,"HFD-B(He)",true);
-         HFD->addCorrection(*targetH);
-         }
-         */
       else if (potType == "MPC" || potType == "mpc")
         addMPCPotential(cur);
       else if(potType == "pseudo")
@@ -224,64 +172,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       else if(potType == "cpp")
       {
         addCorePolPotential(cur);
-      }
-      else if (potType == "LJP_smoothed")
-      {
-        LennardJones_smoothed_phy* LJP = new LennardJones_smoothed_phy(*targetPtcl);
-        targetH->addOperator(LJP,"LJP",true);
-        LJP->addCorrection(*targetH);
-      }
-      else if (potType == "HeSAPT_smoothed")
-      {
-        HeSAPT_smoothed_phy* SAPT = new HeSAPT_smoothed_phy(*targetPtcl);
-        targetH->addOperator(SAPT,"HeSAPT",true);
-        SAPT->addCorrection(*targetH);
-      }
-      else if (potType == "HFDHE2_Moroni1995")
-      {
-        HFDHE2_Moroni1995_phy* HFD = new HFDHE2_Moroni1995_phy(*targetPtcl);
-        targetH->addOperator(HFD,"HFD-HE2",true);
-        HFD->addCorrection(*targetH);
-      }
-      else if(potType == "eHe")
-      {
-        std::string SourceName = "e";
-        OhmmsAttributeSet hAttrib;
-        hAttrib.add(SourceName, "source");
-        hAttrib.put(cur);
-        PtclPoolType::iterator pit(ptclPool.find(SourceName));
-        if(pit == ptclPool.end())
-        {
-          APP_ABORT("Unknown source \"" + SourceName + "\" for e-He Potential.");
-        }
-        ParticleSet* source = (*pit).second;
-        HeePotential* eHetype = new HeePotential(*targetPtcl, *source);
-        targetH->addOperator(eHetype,potName,true);
-        // 	  targetH->addOperator(eHetype->makeDependants(*targetPtcl),potName,false);
-      }
-      else if(potType == "jellium")
-      {
-        std::string SourceName = "e";
-        OhmmsAttributeSet hAttrib;
-        hAttrib.add(SourceName, "source");
-        hAttrib.put(cur);
-        PtclPoolType::iterator pit(ptclPool.find(SourceName));
-        if(pit == ptclPool.end())
-        {
-          APP_ABORT("Unknown source \"" + SourceName + "\" for e-He Potential.");
-        }
-        ParticleSet* source = (*pit).second;
-        JelliumPotential* JP = new JelliumPotential(*source, *targetPtcl);
-        targetH->addOperator(JP,potName,true);
-        //    targetH->addOperator(eHetype->makeDependants(*targetPtcl),potName,false);
-      }
-      else if(potType == "HFDHE2")
-      {
-        HFDHE2Potential* HFD = new HFDHE2Potential(*targetPtcl);
-        targetH->addOperator(HFD,"HFDHE2",true);
-        //HFD->addCorrection(*targetPtcl,*targetH);
-        targetH->addOperator(HFD->makeDependants(*targetPtcl),HFD->depName,false);
-        app_log() << "  Adding HFDHE2Potential(Au) " << std::endl;
       }
 #endif
 #endif
@@ -513,14 +403,6 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
           //             DMCPressureCorr* DMCP = new DMCPressureCorr(*targetPtcl,nlen);
           //             targetH->addOperator(DMCP,"PressureSum",false);
         }
-#if defined(QMC_BUILD_COMPLETE)
-        else if (estType=="HFDHE2")
-        {
-          HePressure* BP = new HePressure(*targetPtcl);
-          BP-> put(cur);
-          targetH->addOperator(BP,"HePress",false);
-        }
-#endif
       }
       else if(potType=="momentum")
       {

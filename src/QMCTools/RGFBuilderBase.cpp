@@ -20,7 +20,6 @@
 #if defined(HAVE_LIBHDF5)
 #include "Numerics/HDFNumericAttrib.h"
 #endif
-#include "QMCTools/GridMolecularOrbitals.h"
 #include "QMCTools/RGFBuilderBase.h"
 #include "QMCFactory/OneDimGridFactory.h"
 namespace qmcplusplus
