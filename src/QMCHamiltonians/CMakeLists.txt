@@ -72,8 +72,6 @@ IF(OHMMS_DIM MATCHES 3)
       SpaceGrid.cpp
       EnergyDensityEstimator.cpp
       DensityMatrices1B.cpp
-      ../Estimators/PostProcessor.cpp
-      ../Estimators/SpinDensityPostProcessor.cpp
       )
   ENDIF()
 
