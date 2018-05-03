@@ -26,9 +26,6 @@
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
 #if !defined(QMC_COMPLEX)
-//Cannot use complex with released node
-#include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
-#include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
 //Cannot use complex with SlaterDetOpt
 #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/LocalizedBasisSet.h"
@@ -515,19 +512,6 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
   std::string dname;
   getNodeName(dname,cur);
   DiracDeterminantBase* adet=0;
-#if !defined(QMC_COMPLEX)
-  if (rn_tag == dname)
-  {
-    double bosonicEpsilon=s_smallnumber;
-    app_log()<<"  BUILDING Released Node Determinant logepsilon="<<bosonicEpsilon<< std::endl;
-    if (rntype==0)
-      adet = new RNDiracDeterminantBase(psi,firstIndex);
-    else
-      adet = new RNDiracDeterminantBaseAlternate(psi,firstIndex);
-    adet->setLogEpsilon(bosonicEpsilon);
-  }
-  else
-#endif
   {
 #ifdef QMC_CUDA
     adet = new DiracDeterminantCUDA(psi,firstIndex);
