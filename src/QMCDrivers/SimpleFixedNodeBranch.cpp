@@ -371,24 +371,9 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
   MyEstimator->accumulate(walkers);
 }
 
-/** perform branching
- *
- * Set the trial energy of clones
- */
-void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers, std::vector<ThisType*>& clones)
-{
-  branch(iter,walkers);
-  //synchronize it
-  for(int i=0; i<clones.size(); i++)
-    clones[i]->vParam=vParam;
-  if((BranchMode[B_DMCSTAGE])&&(ToDoSteps==0))
-    for(int i=0; i<clones.size(); i++)
-      clones[i]->BranchMode=BranchMode;
-}
 /**
  *
  */
-
 void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
 {
   //Update the current energy and accumulate.
@@ -476,23 +461,9 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
   MyEstimator->accumulate(W);
 }
 
-//Ray Clay:  Have to come up with a better way to collect and sync up reptile copies.  This is taken from DMC.  See RMCSingleOMP
-
-void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W, std::vector<ThisType*>& clones)
-{
-  collect(iter,W);
-  //synchronize it
-  for(int i=0; i<clones.size(); i++)
-    clones[i]->vParam=vParam;
-  if((BranchMode[B_RMCSTAGE])&&(ToDoSteps==0))
-    for(int i=0; i<clones.size(); i++)
-      clones[i]->BranchMode=BranchMode;
-}
 /** Calculates and saves various action components, also does necessary updates for running averages.
  *
  */
-
-
 void SimpleFixedNodeBranch::reset()
 {
   //use effective time step of BranchInterval*Tau
