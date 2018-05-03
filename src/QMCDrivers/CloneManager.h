@@ -83,8 +83,6 @@ protected:
   std::vector<EstimatorManagerBase*> estimatorClones;
   ///trace managers
   std::vector<TraceManager*> traceClones;
-  ///Branch engines
-  std::vector<SimpleFixedNodeBranch*> branchClones;
   
   //for correlated sampling.
   static std::vector<std::vector<MCWalkerConfiguration*> > WPoolClones; 

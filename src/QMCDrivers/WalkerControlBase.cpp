@@ -27,8 +27,7 @@ namespace qmcplusplus
 WalkerControlBase::WalkerControlBase(Communicate* c, bool rn)
   : MPIObjectBase(c), SwapMode(0), Nmin(1), Nmax(10)
   , MaxCopy(2), NumWalkersCreated(0), NumWalkersSent(0)
-  , targetEnergyBound(10), targetVar(2), targetSigma(10)
-  , dmcStream(0), WriteRN(rn)
+  , targetSigma(10), dmcStream(0), WriteRN(rn)
 {
   MyMethod=-1; //assign invalid method
   NumContexts=myComm->size();
@@ -560,7 +559,6 @@ bool WalkerControlBase::put(xmlNodePtr cur)
   int nw_target=0, nw_max=0;
   std::string nonblocking="yes";
   ParameterSet params;
-  params.add(targetEnergyBound,"energyBound","double");
   params.add(targetSigma,"sigmaBound","double");
   params.add(MaxCopy,"maxCopy","int");
   params.add(nw_target,"targetwalkers","int");
