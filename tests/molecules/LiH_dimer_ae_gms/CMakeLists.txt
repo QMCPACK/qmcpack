@@ -8,6 +8,7 @@ IF (NOT QMC_CUDA)
 #
   LIST(APPEND LIH_SCALARS "kinetic" "7.9914014383 0.03") # kinetic energy
   LIST(APPEND LIH_SCALARS "totenergy" "-7.9873236457 0.003") # total energy
+  LIST(APPEND LIH_SCALARS "variance" "1.752 0.076") # variance of total energy
   LIST(APPEND LIH_SCALARS "eeenergy" "3.4888166386 0.0024") # e-e energy
   LIST(APPEND LIH_SCALARS "samples" "1600000 0.0") # samples
 
