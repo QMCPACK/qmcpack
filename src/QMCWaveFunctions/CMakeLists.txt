@@ -28,7 +28,6 @@ SET(WFBASE_SRCS
   SPOSetInputInfo.cpp
   SPOSetBase.cpp
   OptimizableSPOSet.cpp
-  AFMSPOSet.cpp
   CompositeSPOSet.cpp
   HarmonicOscillator/SHOSet.cpp
   HarmonicOscillator/SHOSetBuilder.cpp
@@ -59,7 +58,6 @@ SET(JASTROW_SRCS
   IonOrbital.cpp
   IonOrbitalBuilder.cpp
   OptimizableSPOBuilder.cpp
-  AFMSPOBuilder.cpp
   Fermion/SPOSetProxy.cpp
   Fermion/SPOSetProxyForMSD.cpp
   )
@@ -180,7 +178,6 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/DiracDeterminantBase.cpp
   Fermion/DiracDeterminantSoA.cpp
   Fermion/DiracDeterminantOpt.cpp
-  Fermion/DiracDeterminantAFM.cpp
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp
   Fermion/MultiSlaterDeterminant.cpp
