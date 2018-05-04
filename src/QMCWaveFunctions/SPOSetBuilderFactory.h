@@ -23,7 +23,7 @@ namespace qmcplusplus
 {
 
   ///writes info about contained sposets to stdout
-  void write_basis_builders(const std::string& pad="");
+  void write_spo_builders(const std::string& pad="");
 
   /**returns a named sposet from the global pool
    *  only use in serial portion of execution
@@ -41,7 +41,7 @@ class SPOSetBuilderFactory: public OrbitalBuilderBase
 public:
 
   ///set of basis set builders resolved by type
-  static std::map<std::string,SPOSetBuilder*> basis_builders;
+  static std::map<std::string,SPOSetBuilder*> spo_builders;
 
   /** constructor
    * \param els reference to the electrons

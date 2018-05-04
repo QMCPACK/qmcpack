@@ -47,7 +47,7 @@ namespace qmcplusplus
 {
 
   //initialization of the static data of SPOSetBuilderFactory 
-  std::map<std::string,SPOSetBuilder*> SPOSetBuilderFactory::basis_builders;
+  std::map<std::string,SPOSetBuilder*> SPOSetBuilderFactory::spo_builders;
   SPOSetBuilder* SPOSetBuilderFactory::last_builder=0;
 
   SPOSetBase* get_sposet(const std::string& name)
@@ -55,8 +55,8 @@ namespace qmcplusplus
     int nfound = 0;
     SPOSetBase* spo = 0;
     std::map<std::string,SPOSetBuilder*>::iterator it;
-    for(it=SPOSetBuilderFactory::basis_builders.begin();
-        it!=SPOSetBuilderFactory::basis_builders.end();++it)
+    for(it=SPOSetBuilderFactory::spo_builders.begin();
+        it!=SPOSetBuilderFactory::spo_builders.end();++it)
     {
       std::vector<SPOSetBase*>& sposets = it->second->sposets;
       for(int i=0;i<sposets.size();++i)
@@ -71,23 +71,23 @@ namespace qmcplusplus
     }
     if(nfound>1)
     {
-      write_basis_builders();
+      write_spo_builders();
       APP_ABORT_TRACE(__FILE__, __LINE__, "get_sposet: requested sposet "+name+" is not unique");
     }
     //else if(spo==NULL)
     //{
-    //  write_basis_builders();
+    //  write_spo_builders();
     //  APP_ABORT("get_sposet: requested sposet "+name+" does not exist");
     //}
     return spo;
   }
 
 
-  void write_basis_builders(const std::string& pad)
+  void write_spo_builders(const std::string& pad)
   {
     std::string pad2 = pad+"  ";
     std::map<std::string,SPOSetBuilder*>::iterator it;
-    for(it=SPOSetBuilderFactory::basis_builders.begin();it!=SPOSetBuilderFactory::basis_builders.end();++it)
+    for(it=SPOSetBuilderFactory::spo_builders.begin();it!=SPOSetBuilderFactory::spo_builders.end();++it)
     {
       const std::string& type = it->first;
       std::vector<SPOSetBase*>& sposets = it->second->sposets;
@@ -156,8 +156,8 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr cur,xmlNodeP
   SPOSetBuilder* bb=0;
 
   //check if builder can be reused
-  std::map<std::string,SPOSetBuilder*>::iterator bbit=basis_builders.find(name);
-  if(bbit!= basis_builders.end())
+  std::map<std::string,SPOSetBuilder*>::iterator bbit=spo_builders.find(name);
+  if(bbit!= spo_builders.end())
   {
     app_log() << "Reuse SPOSetBuilder \""<<name << "\" type " << type_in << std::endl;
     app_log().flush();
@@ -253,8 +253,8 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr cur,xmlNodeP
     bb->setReportLevel(ReportLevel);
     bb->initCommunicator(myComm);
     bb->put(cur);
-    app_log()<<"  Created basis set builder named '"<< name<< "' of type "<< type << std::endl;
-    basis_builders[name]=bb; //use name, if missing type is used
+    app_log()<<"  Created SPOSet builder named '"<< name<< "' of type "<< type << std::endl;
+    spo_builders[name]=bb; //use name, if missing type is used
   }
   last_builder = bb;
 
@@ -283,8 +283,8 @@ SPOSetBase* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
     bname=type;
   if(type=="")
     bb = last_builder;
-  else if(basis_builders.find(type)!=basis_builders.end())
-    bb = basis_builders[type];
+  else if(spo_builders.find(type)!=spo_builders.end())
+    bb = spo_builders[type];
   else
   {
     std::string cname("");
@@ -303,7 +303,7 @@ SPOSetBase* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
   }
   else
   {
-    APP_ABORT("SPOSetBuilderFactory::createSPOSet Failed to create a SPOSet. basisBuilder is empty.");
+    APP_ABORT("SPOSetBuilderFactory::createSPOSet Failed to create a SPOSet. SPOSetBuilder is empty.");
     return 0;
   }
 }
