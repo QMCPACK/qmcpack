@@ -21,7 +21,6 @@
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimCubicSpline.h"
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
-#include "QMCTools/MolecularOrbitalBasis.h"
 #include "QMCTools/RGFBuilderBase.h"
 
 namespace qmcplusplus
