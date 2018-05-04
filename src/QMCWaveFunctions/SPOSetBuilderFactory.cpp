@@ -122,9 +122,9 @@ bool SPOSetBuilderFactory::put(xmlNodePtr cur)
   return true;
 }
 
-BasisSetBuilder* SPOSetBuilderFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  rootNode)
+BasisSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr cur,xmlNodePtr  rootNode)
 {
-  ReportEngine PRE(ClassName,"createBasisSet");
+  ReportEngine PRE(ClassName,"createSPOSetBuilder");
   std::string sourceOpt("ion0");
   std::string type("");
   std::string name("");
@@ -244,7 +244,7 @@ BasisSetBuilder* SPOSetBuilderFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr 
   PRE.flush();
 
   if(bb==0)
-    APP_ABORT_TRACE(__FILE__, __LINE__, "SPOSetBuilderFactory::createBasisSet\n  BasisSetBuilder creation failed.");
+    APP_ABORT_TRACE(__FILE__, __LINE__, "SPOSetBuilderFactory::createSPOSetBuilder\n  BasisSetBuilder creation failed.");
 
   if(bb == last_builder)
     app_log() << " Missing both \"@name\" and \"@type\". Use the last BasisSetBuilder." << std::endl;
@@ -292,13 +292,13 @@ SPOSetBase* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
     if(tcur!=NULL)
       getNodeName(cname,cur);
     if(cname==basisset_tag)
-      bb = createBasisSet(tcur,cur);
+      bb = createSPOSetBuilder(tcur,cur);
     else
-      bb = createBasisSet(cur,cur);
+      bb = createSPOSetBuilder(cur,cur);
   }
   if(bb)
   {
-    app_log()<<"  Building SPOset '" << sname << "' with '" << bname << "' basis set."<< std::endl;
+    app_log()<<"  Building SPOSet '" << sname << "' with '" << bname << "' basis set."<< std::endl;
     return bb->createSPOSet(cur);
   }
   else
@@ -319,7 +319,7 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
 
   app_log()<<"building sposet collection of type "<<type<< std::endl;
 
-  BasisSetBuilder* bb = createBasisSet(cur,cur);
+  BasisSetBuilder* bb = createSPOSetBuilder(cur,cur);
   xmlNodePtr element = parent->children;
   int nsposets = 0;
   while(element!=NULL)

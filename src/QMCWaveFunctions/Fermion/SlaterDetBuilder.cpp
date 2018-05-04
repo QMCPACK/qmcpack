@@ -106,7 +106,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
     getNodeName(cname,cur);
     if (cname == basisset_tag)
     {
-      mySPOSetBuilderFactory->createBasisSet(cur,curRoot);
+      mySPOSetBuilderFactory->createSPOSetBuilder(cur,curRoot);
     }
     else if ( cname == sposet_tag )
     {
@@ -155,7 +155,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   //{
   //  mySPOSetBuilderFactory = new SPOSetBuilderFactory(targetPtcl,targetPsi, ptclPool);
   //  mySPOSetBuilderFactory->setReportLevel(ReportLevel);
-  //  mySPOSetBuilderFactory->createBasisSet(curRoot,curRoot);
+  //  mySPOSetBuilderFactory->createSPOSetBuilder(curRoot,curRoot);
   //}
 
   //sposet_builder is defined outside <determinantset/>
@@ -185,7 +185,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
               spomap[aspo]=aset;
             else
             {
-              mySPOSetBuilderFactory->createBasisSet(cur1,curRoot);
+              mySPOSetBuilderFactory->createSPOSetBuilder(cur1,curRoot);
               aset = mySPOSetBuilderFactory->createSPOSet(cur1);
               if(aset) spomap[aspo]=aset;
             }

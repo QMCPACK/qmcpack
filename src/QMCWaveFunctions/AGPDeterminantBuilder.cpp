@@ -149,7 +149,7 @@ bool AGPDeterminantBuilder::put(xmlNodePtr cur)
   if(mySPOSetBuilderFactory == 0)
   {
     mySPOSetBuilderFactory = new SPOSetBuilderFactory(targetPtcl,targetPsi,ptclPool);
-    mySPOSetBuilderFactory->createBasisSet(bPtr,curRoot);
+    mySPOSetBuilderFactory->createSPOSetBuilder(bPtr,curRoot);
   }
 // mmorales: this needs to be fixed after changes to BasisSetfactory
 //    BasisSetBase<RealType>* myBasisSet=mySPOSetBuilderFactory->getBasisSet();
