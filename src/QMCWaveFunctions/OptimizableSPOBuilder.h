@@ -23,7 +23,7 @@
 
 namespace qmcplusplus
 {
-class OptimizableSPOBuilder : public BasisSetBuilder
+class OptimizableSPOBuilder : public SPOSetBuilder
 {
 protected:
   typedef std::map<std::string,ParticleSet*> PtclPoolType;

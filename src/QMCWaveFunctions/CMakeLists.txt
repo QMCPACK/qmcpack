@@ -22,7 +22,7 @@ SET(WFBASE_SRCS
   OrbitalBase.cpp
   DiffOrbitalBase.cpp
   OrbitalBuilderBase.cpp
-  BasisSetBuilder.cpp
+  SPOSetBuilder.cpp
   SPOInfo.cpp
   SPOSetInfo.cpp
   SPOSetInputInfo.cpp

@@ -41,7 +41,7 @@ class SPOSetBuilderFactory: public OrbitalBuilderBase
 public:
 
   ///set of basis set builders resolved by type
-  static std::map<std::string,BasisSetBuilder*> basis_builders;
+  static std::map<std::string,SPOSetBuilder*> basis_builders;
 
   /** constructor
    * \param els reference to the electrons
@@ -53,7 +53,7 @@ public:
   ~SPOSetBuilderFactory();
   bool put(xmlNodePtr cur);
 
-  BasisSetBuilder* createSPOSetBuilder(xmlNodePtr cur, xmlNodePtr rootNode=NULL);
+  SPOSetBuilder* createSPOSetBuilder(xmlNodePtr cur, xmlNodePtr rootNode=NULL);
 
   SPOSetBase* createSPOSet(xmlNodePtr cur);
 
@@ -62,7 +62,7 @@ public:
 private:
 
   ///store the last builder, use if type not provided
-  static BasisSetBuilder* last_builder;
+  static SPOSetBuilder* last_builder;
 
   ///reference to the particle pool
   PtclPoolType& ptclPool;

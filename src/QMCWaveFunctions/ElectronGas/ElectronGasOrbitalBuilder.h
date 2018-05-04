@@ -319,7 +319,7 @@ public:
 
 /** OrbitalBuilder for Slater determinants of electron-gas
 */
-class ElectronGasBasisBuilder: public BasisSetBuilder
+class ElectronGasBasisBuilder: public SPOSetBuilder
 {
 protected:
   HEGGrid<RealType,OHMMS_DIM> egGrid;

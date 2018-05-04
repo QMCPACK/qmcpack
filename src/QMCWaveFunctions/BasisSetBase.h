@@ -177,7 +177,7 @@ struct RealBasisSetBase
  * the user classes {\bf KNOW} what they need to use.
  * }
  */
-struct BasisSetBuilder: public QMCTraits, public MPIObjectBase
+struct SPOSetBuilder: public QMCTraits, public MPIObjectBase
 {
   typedef std::map<std::string,SPOSetBase*> SPOPool_t;
   typedef std::vector<int> indices_t;
@@ -193,8 +193,8 @@ struct BasisSetBuilder: public QMCTraits, public MPIObjectBase
   /// list of all sposets created by this builder
   std::vector<SPOSetBase*> sposets;
 
-  BasisSetBuilder();
-  virtual ~BasisSetBuilder() {}
+  SPOSetBuilder();
+  virtual ~SPOSetBuilder() {}
   virtual bool put(xmlNodePtr cur)=0;
 
   /// reserve space for states (usually only one set, multiple for e.g. spin dependent einspline)

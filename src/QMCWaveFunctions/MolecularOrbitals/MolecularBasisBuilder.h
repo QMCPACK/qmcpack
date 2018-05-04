@@ -32,13 +32,13 @@
 namespace qmcplusplus
 {
 
-/** derived class from BasisSetBuilder
+/** derived class from SPOSetBuilder
  *
  * Create a basis set of molecular orbital types as defined in MolecularOrbitalBasis
  * with radial wave functions on the radial grids.
  */
 template<class RFB>
-class MolecularBasisBuilder: public BasisSetBuilder
+class MolecularBasisBuilder: public SPOSetBuilder
 {
 
 public:
@@ -99,7 +99,7 @@ public:
           att.put(cur);
           if(elementType.empty())
             PRE.error("Missing elementType attribute of atomicBasisSet.",true);
-          std::map<std::string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType);
+          std::map<std::string,SPOSetBuilder*>::iterator it = aoBuilders.find(elementType);
           if(it == aoBuilders.end())
           {
             AtomicBasisBuilder<RFB>* any = new AtomicBasisBuilder<RFB>(elementType);
@@ -175,7 +175,7 @@ public:
           myComm->bcast(basiset_name);
           myComm->bcast(elementType);
 
-          std::map<std::string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType);
+          std::map<std::string,SPOSetBuilder*>::iterator it = aoBuilders.find(elementType);
           if(it == aoBuilders.end())
           {
             AtomicBasisBuilder<RFB>* any = new AtomicBasisBuilder<RFB>(elementType);
@@ -280,7 +280,7 @@ private:
   ///BasisSet
   ThisBasisSetType* thisBasisSet;
   ///save AtomiBasisBuilder<RFB>*
-  std::map<std::string,BasisSetBuilder*> aoBuilders;
+  std::map<std::string,SPOSetBuilder*> aoBuilders;
   ///apply cusp correction to molecular orbitals
   bool cuspCorr;
   std::string cuspInfo;

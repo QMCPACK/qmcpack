@@ -23,12 +23,12 @@
 namespace qmcplusplus
 {
 
-  /** BasisSetBuilder using new LCAOrbitalSet and Soa versions
+  /** SPOSetBuilder using new LCAOrbitalSet and Soa versions
    *
-   * Reimplement MolecularBasisSetBuilder
+   * Reimplement MolecularSPOSetBuilder
    * - support both CartesianTensor and SphericalTensor
    */
-  class LCAOrbitalBuilder: public BasisSetBuilder
+  class LCAOrbitalBuilder: public SPOSetBuilder
   {
     public:
     typedef RealBasisSetBase<RealType> BasisSet_t;

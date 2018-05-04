@@ -22,7 +22,7 @@
 namespace qmcplusplus
 {
 
-  struct SHOSetBuilder : public BasisSetBuilder
+  struct SHOSetBuilder : public SPOSetBuilder
   {
 
     //enum{DIM=OHMMS_DIM}
@@ -48,12 +48,12 @@ namespace qmcplusplus
     //reset parameters
     void reset();
 
-    //BasisSetBuilder interface
+    //SPOSetBuilder interface
     SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
 
     SPOSetBase* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input);
     
-    //unneeded BasisSetBuilder interface functions
+    //unneeded SPOSetBuilder interface functions
     bool put(xmlNodePtr cur)
     { 
       return true; 

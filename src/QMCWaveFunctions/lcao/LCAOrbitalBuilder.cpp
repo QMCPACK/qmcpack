@@ -279,7 +279,7 @@ namespace qmcplusplus
     basis_type* mBasisSet=new basis_type(sourcePtcl,targetPtcl);
 
     //keep the builder local
-    std::map<std::string,BasisSetBuilder*> aoBuilders;
+    std::map<std::string,SPOSetBuilder*> aoBuilders;
 
     /** process atomicBasisSet per ion species */
     cur = cur->xmlChildrenNode;
@@ -298,7 +298,7 @@ namespace qmcplusplus
         if(elementType.empty())
           PRE.error("Missing elementType attribute of atomicBasisSet.",true);
 
-        std::map<std::string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType);
+        std::map<std::string,SPOSetBuilder*>::iterator it = aoBuilders.find(elementType);
         if(it == aoBuilders.end())
         {
           AOBasisBuilder<ao_type>* any = new AOBasisBuilder<ao_type>(elementType);
@@ -318,7 +318,7 @@ namespace qmcplusplus
     } // done with basis set
 
     { //cleanup basisset builder
-      std::map<std::string,BasisSetBuilder*>::iterator itX=aoBuilders.begin();
+      std::map<std::string,SPOSetBuilder*>::iterator itX=aoBuilders.begin();
       while(itX!=aoBuilders.end())
       {
         delete (*itX).second;
@@ -345,7 +345,7 @@ namespace qmcplusplus
     basis_type* mBasisSet=new basis_type(sourcePtcl,targetPtcl);
 
     //keep the builder local
-    std::map<std::string,BasisSetBuilder*> aoBuilders;
+    std::map<std::string,SPOSetBuilder*> aoBuilders;
     
     int Nb_Elements(0);
     std::string basiset_name;
@@ -387,7 +387,7 @@ namespace qmcplusplus
       myComm->bcast(basiset_name);
       myComm->bcast(elementType);
 
-      std::map<std::string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType);
+      std::map<std::string,SPOSetBuilder*>::iterator it = aoBuilders.find(elementType);
       if(it == aoBuilders.end())
       {
         AOBasisBuilder<ao_type>* any = new AOBasisBuilder<ao_type>(elementType);
@@ -414,7 +414,7 @@ namespace qmcplusplus
     }
 
     { //cleanup basisset builder
-      std::map<std::string,BasisSetBuilder*>::iterator itX=aoBuilders.begin();
+      std::map<std::string,SPOSetBuilder*>::iterator itX=aoBuilders.begin();
       while(itX!=aoBuilders.end())
       {
         delete (*itX).second;

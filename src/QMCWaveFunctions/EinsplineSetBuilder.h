@@ -121,7 +121,7 @@ struct H5OrbSet
 
 /** EinsplineSet builder
  */
-class EinsplineSetBuilder : public BasisSetBuilder
+class EinsplineSetBuilder : public SPOSetBuilder
 {
 public:
 

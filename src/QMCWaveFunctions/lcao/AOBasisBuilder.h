@@ -27,10 +27,10 @@ namespace qmcplusplus
   /** atomic basisset builder
    * @tparam COT, CenteredOrbitalType = SoaAtomicBasisSet<RF,SH>
    *
-   * Reimplement AtomiBasisSetBuilder.h
+   * Reimplement AtomiSPOSetBuilder.h
    */
 template<typename COT>
-struct AOBasisBuilder: public BasisSetBuilder
+struct AOBasisBuilder: public SPOSetBuilder
 {
   enum {DONOT_EXPAND=0, GAUSSIAN_EXPAND=1, NATURAL_EXPAND, CARTESIAN_EXPAND, MOD_NATURAL_EXPAND};
 

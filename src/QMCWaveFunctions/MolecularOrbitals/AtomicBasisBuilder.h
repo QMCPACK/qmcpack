@@ -26,7 +26,7 @@ namespace qmcplusplus
 {
 
 template<class RFB>
-struct AtomicBasisBuilder: public BasisSetBuilder
+struct AtomicBasisBuilder: public SPOSetBuilder
 {
 
   typedef typename RFB::CenteredOrbitalType COT;

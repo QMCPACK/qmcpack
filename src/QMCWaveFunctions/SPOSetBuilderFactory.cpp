@@ -47,14 +47,14 @@ namespace qmcplusplus
 {
 
   //initialization of the static data of SPOSetBuilderFactory 
-  std::map<std::string,BasisSetBuilder*> SPOSetBuilderFactory::basis_builders;
-  BasisSetBuilder* SPOSetBuilderFactory::last_builder=0;
+  std::map<std::string,SPOSetBuilder*> SPOSetBuilderFactory::basis_builders;
+  SPOSetBuilder* SPOSetBuilderFactory::last_builder=0;
 
   SPOSetBase* get_sposet(const std::string& name)
   {
     int nfound = 0;
     SPOSetBase* spo = 0;
-    std::map<std::string,BasisSetBuilder*>::iterator it;
+    std::map<std::string,SPOSetBuilder*>::iterator it;
     for(it=SPOSetBuilderFactory::basis_builders.begin();
         it!=SPOSetBuilderFactory::basis_builders.end();++it)
     {
@@ -86,12 +86,12 @@ namespace qmcplusplus
   void write_basis_builders(const std::string& pad)
   {
     std::string pad2 = pad+"  ";
-    std::map<std::string,BasisSetBuilder*>::iterator it;
+    std::map<std::string,SPOSetBuilder*>::iterator it;
     for(it=SPOSetBuilderFactory::basis_builders.begin();it!=SPOSetBuilderFactory::basis_builders.end();++it)
     {
       const std::string& type = it->first;
       std::vector<SPOSetBase*>& sposets = it->second->sposets;
-      app_log()<<pad<<"sposets for BasisSetBuilder of type "<<type<< std::endl;
+      app_log()<<pad<<"sposets for SPOSetBuilder of type "<<type<< std::endl;
       for(int i=0;i<sposets.size();++i)
       {
         app_log()<<pad2<<"sposet "<<sposets[i]->objectName<< std::endl;
@@ -122,7 +122,7 @@ bool SPOSetBuilderFactory::put(xmlNodePtr cur)
   return true;
 }
 
-BasisSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr cur,xmlNodePtr  rootNode)
+SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr cur,xmlNodePtr  rootNode)
 {
   ReportEngine PRE(ClassName,"createSPOSetBuilder");
   std::string sourceOpt("ion0");
@@ -153,13 +153,13 @@ BasisSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr cur,xmlNod
   //when name is missing, type becomes the input
   if(name.empty()) name=type_in;
 
-  BasisSetBuilder* bb=0;
+  SPOSetBuilder* bb=0;
 
   //check if builder can be reused
-  std::map<std::string,BasisSetBuilder*>::iterator bbit=basis_builders.find(name);
+  std::map<std::string,SPOSetBuilder*>::iterator bbit=basis_builders.find(name);
   if(bbit!= basis_builders.end())
   {
-    app_log() << "Reuse BasisSetBuilder \""<<name << "\" type " << type_in << std::endl;
+    app_log() << "Reuse SPOSetBuilder \""<<name << "\" type " << type_in << std::endl;
     app_log().flush();
     bb=(*bbit).second;
     bb->put(rootNode);
@@ -244,10 +244,10 @@ BasisSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr cur,xmlNod
   PRE.flush();
 
   if(bb==0)
-    APP_ABORT_TRACE(__FILE__, __LINE__, "SPOSetBuilderFactory::createSPOSetBuilder\n  BasisSetBuilder creation failed.");
+    APP_ABORT_TRACE(__FILE__, __LINE__, "SPOSetBuilderFactory::createSPOSetBuilder\n  SPOSetBuilder creation failed.");
 
   if(bb == last_builder)
-    app_log() << " Missing both \"@name\" and \"@type\". Use the last BasisSetBuilder." << std::endl;
+    app_log() << " Missing both \"@name\" and \"@type\". Use the last SPOSetBuilder." << std::endl;
   else
   {
     bb->setReportLevel(ReportLevel);
@@ -278,7 +278,7 @@ SPOSetBase* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
 
   //tolower(type);
 
-  BasisSetBuilder* bb;
+  SPOSetBuilder* bb;
   if(bname=="")
     bname=type;
   if(type=="")
@@ -319,7 +319,7 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
 
   app_log()<<"building sposet collection of type "<<type<< std::endl;
 
-  BasisSetBuilder* bb = createSPOSetBuilder(cur,cur);
+  SPOSetBuilder* bb = createSPOSetBuilder(cur,cur);
   xmlNodePtr element = parent->children;
   int nsposets = 0;
   while(element!=NULL)
@@ -332,7 +332,7 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
       attrib.add(name,"name");
       attrib.put(element);
 
-      app_log()<<"  Building SPOSet \""<<name<<"\" with "<<type<<" BasisSetBuilder"<< std::endl;
+      app_log()<<"  Building SPOSet \""<<name<<"\" with "<<type<<" SPOSetBuilder"<< std::endl;
       SPOSetBase* spo = bb->createSPOSet(element);
       spo->objectName = name;
       nsposets++;
