@@ -35,7 +35,7 @@ namespace qmcplusplus
 
 /** derived class from OrbitalBuilderBase
  */
-class BasisSetFactory: public OrbitalBuilderBase
+class SPOSetBuilderFactory: public OrbitalBuilderBase
 {
 
 public:
@@ -48,9 +48,9 @@ public:
    * \param psi reference to the wavefunction
    * \param ions reference to the ions
    */
-  BasisSetFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets);
+  SPOSetBuilderFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets);
 
-  ~BasisSetFactory();
+  ~SPOSetBuilderFactory();
   bool put(xmlNodePtr cur);
 
   BasisSetBuilder* createBasisSet(xmlNodePtr cur, xmlNodePtr rootNode=NULL);

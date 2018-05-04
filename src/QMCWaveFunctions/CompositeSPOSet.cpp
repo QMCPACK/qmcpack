@@ -17,7 +17,7 @@
 #include <Utilities/IteratorUtility.h>
 #include <algorithm>
 #include <OhmmsData/AttributeSet.h>
-#include <QMCWaveFunctions/BasisSetFactory.h>
+#include <QMCWaveFunctions/SPOSetBuilderFactory.h>
 
 namespace qmcplusplus
 {

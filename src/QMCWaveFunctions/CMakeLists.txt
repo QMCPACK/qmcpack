@@ -182,7 +182,7 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/DiracDeterminantWithBackflow.cpp
   Fermion/SlaterDetWithBackflow.cpp
   Fermion/MultiSlaterDeterminantWithBackflow.cpp
-  BasisSetFactory.cpp
+  SPOSetBuilderFactory.cpp
   TrialWaveFunction.cpp
   WaveFunctionFactory.cpp
   )

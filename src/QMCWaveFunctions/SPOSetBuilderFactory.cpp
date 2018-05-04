@@ -16,7 +16,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "QMCWaveFunctions/BasisSetFactory.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/HarmonicOscillator/SHOSetBuilder.h"
 #if OHMMS_DIM == 3
@@ -46,17 +46,17 @@
 namespace qmcplusplus
 {
 
-  //initialization of the static data of BasisSetFactory 
-  std::map<std::string,BasisSetBuilder*> BasisSetFactory::basis_builders;
-  BasisSetBuilder* BasisSetFactory::last_builder=0;
+  //initialization of the static data of SPOSetBuilderFactory 
+  std::map<std::string,BasisSetBuilder*> SPOSetBuilderFactory::basis_builders;
+  BasisSetBuilder* SPOSetBuilderFactory::last_builder=0;
 
   SPOSetBase* get_sposet(const std::string& name)
   {
     int nfound = 0;
     SPOSetBase* spo = 0;
     std::map<std::string,BasisSetBuilder*>::iterator it;
-    for(it=BasisSetFactory::basis_builders.begin();
-        it!=BasisSetFactory::basis_builders.end();++it)
+    for(it=SPOSetBuilderFactory::basis_builders.begin();
+        it!=SPOSetBuilderFactory::basis_builders.end();++it)
     {
       std::vector<SPOSetBase*>& sposets = it->second->sposets;
       for(int i=0;i<sposets.size();++i)
@@ -87,7 +87,7 @@ namespace qmcplusplus
   {
     std::string pad2 = pad+"  ";
     std::map<std::string,BasisSetBuilder*>::iterator it;
-    for(it=BasisSetFactory::basis_builders.begin();it!=BasisSetFactory::basis_builders.end();++it)
+    for(it=SPOSetBuilderFactory::basis_builders.begin();it!=SPOSetBuilderFactory::basis_builders.end();++it)
     {
       const std::string& type = it->first;
       std::vector<SPOSetBase*>& sposets = it->second->sposets;
@@ -106,23 +106,23 @@ namespace qmcplusplus
  * \param psi reference to the wavefunction
  * \param ions reference to the ions
  */
-BasisSetFactory::BasisSetFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets):
+SPOSetBuilderFactory::SPOSetBuilderFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets):
   OrbitalBuilderBase(els,psi), ptclPool(psets)
 {
-  ClassName="BasisSetFactory";
+  ClassName="SPOSetBuilderFactory";
 }
 
-BasisSetFactory::~BasisSetFactory()
+SPOSetBuilderFactory::~SPOSetBuilderFactory()
 {
-  DEBUG_MEMORY("BasisSetFactory::~BasisSetFactory");
+  DEBUG_MEMORY("SPOSetBuilderFactory::~SPOSetBuilderFactory");
 }
 
-bool BasisSetFactory::put(xmlNodePtr cur)
+bool SPOSetBuilderFactory::put(xmlNodePtr cur)
 {
   return true;
 }
 
-BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  rootNode)
+BasisSetBuilder* SPOSetBuilderFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  rootNode)
 {
   ReportEngine PRE(ClassName,"createBasisSet");
   std::string sourceOpt("ion0");
@@ -244,7 +244,7 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
   PRE.flush();
 
   if(bb==0)
-    APP_ABORT_TRACE(__FILE__, __LINE__, "BasisSetFactory::createBasisSet\n  BasisSetBuilder creation failed.");
+    APP_ABORT_TRACE(__FILE__, __LINE__, "SPOSetBuilderFactory::createBasisSet\n  BasisSetBuilder creation failed.");
 
   if(bb == last_builder)
     app_log() << " Missing both \"@name\" and \"@type\". Use the last BasisSetBuilder." << std::endl;
@@ -262,7 +262,7 @@ BasisSetBuilder* BasisSetFactory::createBasisSet(xmlNodePtr cur,xmlNodePtr  root
 }
 
 
-SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur)
+SPOSetBase* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
 {
   std::string bname("");
   std::string bsname("");
@@ -303,12 +303,12 @@ SPOSetBase* BasisSetFactory::createSPOSet(xmlNodePtr cur)
   }
   else
   {
-    APP_ABORT("BasisSetFactory::createSPOSet Failed to create a SPOSet. basisBuilder is empty.");
+    APP_ABORT("SPOSetBuilderFactory::createSPOSet Failed to create a SPOSet. basisBuilder is empty.");
     return 0;
   }
 }
 
-void BasisSetFactory::build_sposet_collection(xmlNodePtr cur)
+void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
 {
   xmlNodePtr parent = cur;
   std::string type("");
@@ -340,7 +340,7 @@ void BasisSetFactory::build_sposet_collection(xmlNodePtr cur)
     element = element->next;
   }
   if(nsposets==0)
-    APP_ABORT("BasisSetFactory::build_sposet_collection  no <sposet/> elements found");
+    APP_ABORT("SPOSetBuilderFactory::build_sposet_collection  no <sposet/> elements found");
 }
 
 

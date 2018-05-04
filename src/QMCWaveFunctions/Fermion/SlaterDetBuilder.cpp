@@ -16,7 +16,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "QMCWaveFunctions/BasisSetFactory.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "QMCWaveFunctions/SPOSetScanner.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
@@ -56,7 +56,7 @@ namespace qmcplusplus
 SlaterDetBuilder::SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi,
                                    PtclPoolType& psets)
   : OrbitalBuilderBase(els,psi), ptclPool(psets)
-  , myBasisSetFactory(0), slaterdet_0(0), multislaterdet_0(0)
+  , mySPOSetBuilderFactory(0), slaterdet_0(0), multislaterdet_0(0)
   , multislaterdetfast_0(0)
 {
   ClassName="SlaterDetBuilder";
@@ -67,9 +67,9 @@ SlaterDetBuilder::SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi,
 SlaterDetBuilder::~SlaterDetBuilder()
 {
   DEBUG_MEMORY("SlaterDetBuilder::~SlaterDetBuilder");
-  if (myBasisSetFactory)
+  if (mySPOSetBuilderFactory)
   {
-    delete myBasisSetFactory;
+    delete mySPOSetBuilderFactory;
   }
 }
 
@@ -93,10 +93,10 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   std::map<std::string,SPOSetBasePtr> spomap;
   bool multiDet=false;
 
-  if (myBasisSetFactory == 0)
+  if (mySPOSetBuilderFactory == 0)
   {//always create one, using singleton and just to access the member functions
-    myBasisSetFactory = new BasisSetFactory(targetPtcl, targetPsi, ptclPool);
-    myBasisSetFactory->setReportLevel(ReportLevel);
+    mySPOSetBuilderFactory = new SPOSetBuilderFactory(targetPtcl, targetPsi, ptclPool);
+    mySPOSetBuilderFactory->setReportLevel(ReportLevel);
   }
 
   //check the basis set
@@ -106,7 +106,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
     getNodeName(cname,cur);
     if (cname == basisset_tag)
     {
-      myBasisSetFactory->createBasisSet(cur,curRoot);
+      mySPOSetBuilderFactory->createBasisSet(cur,curRoot);
     }
     else if ( cname == sposet_tag )
     {
@@ -116,7 +116,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       spoAttrib.add (spo_name, "name");
       spoAttrib.put(cur);
       app_log() << "spo_name = " << spo_name << std::endl;
-      SPOSetBasePtr spo = myBasisSetFactory->createSPOSet(cur);
+      SPOSetBasePtr spo = mySPOSetBuilderFactory->createSPOSet(cur);
       //spo->put(cur, spomap);
       if (spomap.find(spo_name) != spomap.end())
       {
@@ -151,11 +151,11 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
 
   //missing basiset, e.g. einspline
   // mmorales: this should not be allowed now, either basisset or sposet must exist
-  //if (myBasisSetFactory == 0)
+  //if (mySPOSetBuilderFactory == 0)
   //{
-  //  myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi, ptclPool);
-  //  myBasisSetFactory->setReportLevel(ReportLevel);
-  //  myBasisSetFactory->createBasisSet(curRoot,curRoot);
+  //  mySPOSetBuilderFactory = new SPOSetBuilderFactory(targetPtcl,targetPsi, ptclPool);
+  //  mySPOSetBuilderFactory->setReportLevel(ReportLevel);
+  //  mySPOSetBuilderFactory->createBasisSet(curRoot,curRoot);
   //}
 
   //sposet_builder is defined outside <determinantset/>
@@ -185,8 +185,8 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
               spomap[aspo]=aset;
             else
             {
-              myBasisSetFactory->createBasisSet(cur1,curRoot);
-              aset = myBasisSetFactory->createSPOSet(cur1);
+              mySPOSetBuilderFactory->createBasisSet(cur1,curRoot);
+              aset = mySPOSetBuilderFactory->createSPOSet(cur1);
               if(aset) spomap[aspo]=aset;
             }
           }
@@ -410,8 +410,8 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   } else {
     targetPsi.addOrbital(slaterdet_0,"SlaterDet",true);
   }
-  delete myBasisSetFactory;
-  myBasisSetFactory=0;
+  delete mySPOSetBuilderFactory;
+  mySPOSetBuilderFactory=0;
   return success;
 }
 
@@ -487,9 +487,9 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
       //SPOSet[detname]=psi;
       app_log() << "  Create a new SPO set " << sposet << std::endl;
 #if defined(ENABLE_SMARTPOINTER)
-      psi.reset(myBasisSetFactory->createSPOSet(cur));
+      psi.reset(mySPOSetBuilderFactory->createSPOSet(cur));
 #else
-      psi = myBasisSetFactory->createSPOSet(cur);
+      psi = mySPOSetBuilderFactory->createSPOSet(cur);
 #endif
     }
     //psi->put(cur); 
