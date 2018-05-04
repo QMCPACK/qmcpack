@@ -19,11 +19,7 @@
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
 #if QMC_BUILD_LEVEL>2
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowBuilder.h"
-#include "QMCWaveFunctions/Jastrow/GaussianFunctor.h"
-#include "QMCWaveFunctions/Jastrow/ModPadeFunctor.h"
-#include "QMCWaveFunctions/Jastrow/BesselZeroFunctor.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
-#include "QMCWaveFunctions/Jastrow/OpenGaussianSlaterFunctor.h"
 #endif
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
@@ -121,48 +117,20 @@ bool JABBuilder::put(xmlNodePtr cur)
   {
     success = createJAB<PadeFunctor<RealType> >(cur,jastfunction);
   }
-  else
-    if (jastfunction == "pade2")
-    {
-      success = createJAB<Pade2ndOrderFunctor<RealType> >(cur,jastfunction);
-    }
+  else if (jastfunction == "pade2")
+  {
+    success = createJAB<Pade2ndOrderFunctor<RealType> >(cur,jastfunction);
+  }
 #if QMC_BUILD_LEVEL>2
-    else
-      if (jastfunction == "short")
-      {
-        success = createJAB<ModPadeFunctor<RealType> >(cur,jastfunction);
-      }
-      else
-        if (jastfunction == "gaussian")
-        {
-          success = createJAB<GaussianFunctor<RealType> >(cur,jastfunction);
-        }
-        else
-          if (jastfunction == "opengaussianslater")
-          {
-            app_log()<<jastfunction<< std::endl;
-            success = createJAB<OpenGaussianSlaterFunctor<RealType> >(cur,jastfunction);
-          }
-          else
-            if (jastfunction == "besselzero")
-            {
-              success = createJAB<BesselZero<RealType> >(cur,jastfunction);
-            }
-            else
-              if (jastfunction == "shiftedgaussian")
-              {
-                success = createJAB<TruncatedShiftedGaussianFunctor<RealType> >(cur,jastfunction);
-              }
-              else
-                if (jastfunction == "bspline")
-                {
-                  success = createJAB<BsplineFunctor<RealType> >(cur,jastfunction);
-                }
+  else if (jastfunction == "bspline")
+  {
+    success = createJAB<BsplineFunctor<RealType> >(cur,jastfunction);
+  }
 #endif
-                else
-                {
-                  app_error() << "Unknown one body function: " << jastfunction << ".\n";
-                }
+  else
+  {
+    app_error() << "Unknown one body function: " << jastfunction << ".\n";
+  }
   return success;
 }
 }

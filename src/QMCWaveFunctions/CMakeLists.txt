@@ -53,7 +53,6 @@ SET(JASTROW_SRCS
   Jastrow/kSpaceJastrowBuilder.cpp
   Jastrow/RPAJastrow.cpp
   Jastrow/singleRPAJastrowBuilder.cpp
-  Jastrow/JAABuilder.cpp
   Jastrow/JABBuilder.cpp
   IonOrbital.cpp
   IonOrbitalBuilder.cpp
@@ -79,17 +78,12 @@ IF(OHMMS_DIM MATCHES 3)
 
   SET(JASTROW_SRCS ${JASTROW_SRCS}
     Jastrow/eeI_JastrowBuilder.cpp
-    Jastrow/ThreeBodyGeminal.cpp
-    Jastrow/ThreeBodyBlockSparse.cpp
-    Jastrow/JastrowBasisBuilder.cpp
-    Jastrow/CBSOBuilder.cpp
     )
 
   SET(FERMION_SRCS ${FERMION_SRCS}
     MolecularOrbitals/STOBuilder.cpp
     MolecularOrbitals/GTOBuilder.cpp
     MolecularOrbitals/NGOBuilder.cpp
-    MolecularOrbitals/BsplineAOBuilder.cpp
     )
 
   IF(NOT QMC_COMPLEX AND ENABLE_SOA)
