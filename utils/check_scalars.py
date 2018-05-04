@@ -299,7 +299,7 @@ def process_scalar_files(options,quants_check):
 
                 if 'BlockWeight' in data:
                     ts = sum(data['BlockWeight'])
-                    stats['TotalSamples'] = (ts,0.0,0.0,1.0) # mean, var, error, kappa
+                    stats['TotalSamples'] = (ts,0.0,0.0,1.0,1) # mean, var, error, kappa, N
                 #end if
 
                 for q in quants_check:
