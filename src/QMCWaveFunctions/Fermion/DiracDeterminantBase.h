@@ -306,11 +306,6 @@ public:
   ParticleSet::ParticleValue_t *LastAddressOfG;
   ValueType *FirstAddressOfdV;
   ValueType *LastAddressOfdV;
-  //    double ComputeExtraTerms(int ptcl_gradient, int elDim,int ionDim);
-  ParticleSet::ParticleGradient_t myG, myG_temp;
-  ParticleSet::ParticleLaplacian_t myL, myL_temp;
-//
-  virtual inline void setLogEpsilon(ValueType x) { }
 
 #ifdef QMC_CUDA
   /////////////////////////////////////////////////////

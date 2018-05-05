@@ -528,7 +528,7 @@ void MultiSlaterDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
   }
   P.G = myG;
   P.L = myL;
-  logpsi = evaluateLog(P,P.G,P.L);
+  //logpsi = evaluateLog(P,P.G,P.L);
   int TotalDim = PosType::Size*P.getTotalNum();
   //buf.add(detValues_up.begin(),detValues_up.end());
   //buf.add(detValues_dn.begin(),detValues_dn.end());
@@ -563,6 +563,8 @@ OrbitalBase::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet& P, WFBuf
   PhaseValue=0.0;
   for (int i=0; i<dets_up.size(); i++)
   {
+    P.G = 0.0;
+    P.L = 0.0;
     spo_up->prepareFor(i);
     logpsi = dets_up[i]->updateBuffer(P,buf,fromscratch);
 #if defined(QMC_COMPLEX)
@@ -571,13 +573,15 @@ OrbitalBase::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet& P, WFBuf
 #else
     detValues_up[i]=std::cos(dets_up[i]->PhaseValue)*std::exp(logpsi);
 #endif
-    grads_up[i]=dets_up[i]->myG;
-    lapls_up[i]=dets_up[i]->myL;
+    grads_up[i]=P.G;
+    lapls_up[i]=P.L;
     for(int k=FirstIndex_up; k<LastIndex_up; k++)
       lapls_up[i][k] += dot(grads_up[i][k],grads_up[i][k]);
   }
   for (int i=0; i<dets_dn.size(); i++)
   {
+    P.G = 0.0;
+    P.L = 0.0;
     spo_dn->prepareFor(i);
     logpsi = dets_dn[i]->updateBuffer(P,buf,fromscratch);
 #if defined(QMC_COMPLEX)
@@ -586,8 +590,8 @@ OrbitalBase::RealType MultiSlaterDeterminant::updateBuffer(ParticleSet& P, WFBuf
 #else
     detValues_dn[i]=std::cos(dets_dn[i]->PhaseValue)*std::exp(logpsi);
 #endif
-    grads_dn[i]=dets_dn[i]->myG;
-    lapls_dn[i]=dets_dn[i]->myL;
+    grads_dn[i]=P.G;
+    lapls_dn[i]=P.L;
     for(int k=FirstIndex_dn; k<LastIndex_dn; k++)
       lapls_dn[i][k] += dot(grads_dn[i][k],grads_dn[i][k]);
   }
