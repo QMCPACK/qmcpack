@@ -280,8 +280,8 @@ namespace qmcplusplus
 
     basis_type* mBasisSet=new basis_type(sourcePtcl,targetPtcl);
 
-    //keep the builder local
-    std::map<std::string,SPOSetBuilder*> aoBuilders;
+    //list of built centers
+    std::vector<std::string> ao_built_centers;
 
     /** process atomicBasisSet per ion species */
     cur = cur->xmlChildrenNode;
@@ -300,33 +300,25 @@ namespace qmcplusplus
         if(elementType.empty())
           PRE.error("Missing elementType attribute of atomicBasisSet.",true);
 
-        std::map<std::string,SPOSetBuilder*>::iterator it = aoBuilders.find(elementType);
-        if(it == aoBuilders.end())
+        auto it = std::find(ao_built_centers.begin(), ao_built_centers.end(), elementType);
+        if(it == ao_built_centers.end())
         {
-          AOBasisBuilder<ao_type>* any = new AOBasisBuilder<ao_type>(elementType);
-          any->setReportLevel(ReportLevel);
-          any->put(cur);
-          ao_type* aoBasis= any->createAOSet(cur);
+          AOBasisBuilder<ao_type> any(elementType);
+          any.setReportLevel(ReportLevel);
+          any.initCommunicator(myComm);
+          any.put(cur);
+          ao_type* aoBasis = any.createAOSet(cur);
           if(aoBasis)
           {
             //add the new atomic basis to the basis set
             int activeCenter =sourcePtcl.getSpeciesSet().findSpecies(elementType);
             mBasisSet->add(activeCenter, aoBasis);
           }
-          aoBuilders[elementType]=any;
+          ao_built_centers.push_back(elementType);
         }
       }
       cur = cur->next;
     } // done with basis set
-
-    { //cleanup basisset builder
-      std::map<std::string,SPOSetBuilder*>::iterator itX=aoBuilders.begin();
-      while(itX!=aoBuilders.end())
-      {
-        delete (*itX).second;
-        ++itX;
-      }
-    }
 
     mBasisSet->setBasisSetSize(-1);
     mBasisSet->setPBCImages(PBCImages);
@@ -346,8 +338,8 @@ namespace qmcplusplus
 
     basis_type* mBasisSet=new basis_type(sourcePtcl,targetPtcl);
 
-    //keep the builder local
-    std::map<std::string,SPOSetBuilder*> aoBuilders;
+    //list of built centers
+    std::vector<std::string> ao_built_centers;
     
     int Nb_Elements(0);
     std::string basiset_name;
@@ -389,20 +381,21 @@ namespace qmcplusplus
       myComm->bcast(basiset_name);
       myComm->bcast(elementType);
 
-      std::map<std::string,SPOSetBuilder*>::iterator it = aoBuilders.find(elementType);
-      if(it == aoBuilders.end())
+      auto it = std::find(ao_built_centers.begin(), ao_built_centers.end(), elementType);
+      if(it == ao_built_centers.end())
       {
-        AOBasisBuilder<ao_type>* any = new AOBasisBuilder<ao_type>(elementType);
-        any->setReportLevel(ReportLevel);
-        any->putH5(hin);
-        ao_type* aoBasis= any->createAOSetH5(hin);
+        AOBasisBuilder<ao_type> any(elementType);
+        any.setReportLevel(ReportLevel);
+        any.initCommunicator(myComm);
+        any.putH5(hin);
+        ao_type* aoBasis = any.createAOSetH5(hin);
         if(aoBasis)
         {
           //add the new atomic basis to the basis set
           int activeCenter =sourcePtcl.getSpeciesSet().findSpecies(elementType);
           mBasisSet->add(activeCenter, aoBasis);
         }
-        aoBuilders[elementType]=any;
+        ao_built_centers.push_back(elementType);
       }
 
       if(myComm->rank()==0)
@@ -413,15 +406,6 @@ namespace qmcplusplus
     {
       hin.pop();
       hin.close();
-    }
-
-    { //cleanup basisset builder
-      std::map<std::string,SPOSetBuilder*>::iterator itX=aoBuilders.begin();
-      while(itX!=aoBuilders.end())
-      {
-        delete (*itX).second;
-        ++itX;
-      }
     }
 
     mBasisSet->setBasisSetSize(-1);

@@ -21,7 +21,7 @@
 #include <QMCWaveFunctions/SPOSetBase.h>
 #include <config/stdlib/math.h>
 
-#include "QMCWaveFunctions/BasisSetBase.h"
+#include "QMCWaveFunctions/SPOSetBuilderBase.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 
 #if defined(QMC_COMPLEX)

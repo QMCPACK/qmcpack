@@ -18,6 +18,7 @@
 
 #include <QMCWaveFunctions/SPOSetBase.h>
 #include <QMCWaveFunctions/BasisSetBase.h>
+#include <QMCWaveFunctions/SPOSetBuilderBase.h>
 
 namespace qmcplusplus
 {

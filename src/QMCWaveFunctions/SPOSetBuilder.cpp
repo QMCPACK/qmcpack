@@ -10,11 +10,9 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
-#include <QMCWaveFunctions/BasisSetBase.h>
 
+#include <QMCWaveFunctions/SPOSetBuilderBase.h>
 
 namespace qmcplusplus
 {

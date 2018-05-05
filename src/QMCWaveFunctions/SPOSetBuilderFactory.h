@@ -17,7 +17,7 @@
 #define QMCPLUSPLUS_BASISSETFACTORY_H
 
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
-#include "QMCWaveFunctions/BasisSetBase.h"
+#include "QMCWaveFunctions/SPOSetBuilderBase.h"
 
 namespace qmcplusplus
 {
