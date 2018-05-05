@@ -18,7 +18,7 @@
  */
 #include "QMCWaveFunctions/AGPDeterminant.h"
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
+#include "QMCWaveFunctions/MolecularOrbitals/MolecularSPOBuilder.h"
 //#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
 //#include "QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.h"
 //#include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"

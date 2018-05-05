@@ -38,7 +38,7 @@ namespace qmcplusplus
  * with radial wave functions on the radial grids.
  */
 template<class RFB>
-class MolecularBasisBuilder: public SPOSetBuilder
+class MolecularSPOBuilder: public SPOSetBuilder
 {
 
 public:
@@ -51,10 +51,10 @@ public:
    * \param els reference to the electrons
    * \param ions reference to the ions
    */
-  MolecularBasisBuilder(ParticleSet& els, ParticleSet& ions, bool cusp=false, std::string cusp_info="",std::string MOH5Ref=""):
+  MolecularSPOBuilder(ParticleSet& els, ParticleSet& ions, bool cusp=false, std::string cusp_info="",std::string MOH5Ref=""):
     targetPtcl(els), sourcePtcl(ions), thisBasisSet(0), cuspCorr(cusp), cuspInfo(cusp_info), h5_path(MOH5Ref)
   {
-    ClassName="MolecularBasisBuilder";
+    ClassName="MolecularSPOBuilder";
   }
 
   inline bool is_same(const xmlChar* a, const char* b)

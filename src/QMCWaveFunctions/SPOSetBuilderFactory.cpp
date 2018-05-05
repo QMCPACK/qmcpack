@@ -27,7 +27,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/STOBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
+#include "QMCWaveFunctions/MolecularOrbitals/MolecularSPOBuilder.h"
 #endif
 #endif
 
@@ -219,11 +219,11 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr cur,xmlNodeP
 #else
     if(transformOpt == "yes")
     {
-      app_log() << "Using MolecularBasisBuilder<NGOBuilder>" << std::endl;
+      app_log() << "Using MolecularSPOBuilder<NGOBuilder>" << std::endl;
 #if QMC_BUILD_LEVEL>2
-      bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,cuspC=="yes",cuspInfo,MOH5Ref);
+      bb = new MolecularSPOBuilder<NGOBuilder>(targetPtcl,*ions,cuspC=="yes",cuspInfo,MOH5Ref);
 #else
-      bb = new MolecularBasisBuilder<NGOBuilder>(targetPtcl,*ions,false);
+      bb = new MolecularSPOBuilder<NGOBuilder>(targetPtcl,*ions,false);
 #endif
     }
     else
@@ -233,9 +233,9 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr cur,xmlNodeP
         app_log() <<" ****** Cusp Correction algorithm is only implemented in combination with numerical radial orbitals. Use transform=yes to enable this option. \n";
 #endif
       if(keyOpt == "GTO")
-        bb = new MolecularBasisBuilder<GTOBuilder>(targetPtcl,*ions);
+        bb = new MolecularSPOBuilder<GTOBuilder>(targetPtcl,*ions);
       else if(keyOpt == "STO")
-        bb = new MolecularBasisBuilder<STOBuilder>(targetPtcl,*ions);
+        bb = new MolecularSPOBuilder<STOBuilder>(targetPtcl,*ions);
     }
 #endif
   }
