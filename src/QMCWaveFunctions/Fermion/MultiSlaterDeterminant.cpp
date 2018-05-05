@@ -509,42 +509,23 @@ void MultiSlaterDeterminant::restore(int iat)
 
 void MultiSlaterDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 {
-// move resize of pbyp structures to here
-  spo_up->evaluateForWalkerMove(P,FirstIndex_up,LastIndex_up);
-  spo_dn->evaluateForWalkerMove(P,FirstIndex_dn,LastIndex_dn);
-  myG = P.G;
-  myL = P.L;
-  RealType logpsi(0.0);
-  PhaseValue=0.0;
   for (int i=0; i<dets_up.size(); i++)
-  {
-    spo_up->prepareFor(i);
     dets_up[i]->registerData(P,buf);
-  }
   for (int i=0; i<dets_dn.size(); i++)
-  {
-    spo_dn->prepareFor(i);
     dets_dn[i]->registerData(P,buf);
-  }
-  P.G = myG;
-  P.L = myL;
-  //logpsi = evaluateLog(P,P.G,P.L);
-  int TotalDim = PosType::Size*P.getTotalNum();
-  //buf.add(detValues_up.begin(),detValues_up.end());
-  //buf.add(detValues_dn.begin(),detValues_dn.end());
-  buf.add(detValues_up.first_address(),detValues_up.last_address());
-  buf.add(detValues_dn.first_address(),detValues_dn.last_address());
+
+  buf.add(detValues_up.data(),detValues_up.end());
+  buf.add(detValues_dn.data(),detValues_dn.end());
+
   for(int i=0; i<NumUniqueDets_up; i++)
   {
-    buf.add(&(grads_up[i][0][0]), &(grads_up[i][0][0])+TotalDim);
-//      buf.add(&(lapls_up[i][0]), &(lapls_up[i][P.getTotalNum()]));
-    buf.add(lapls_up[i].first_address(),lapls_up[i].last_address());
+    buf.add(grads_up[i].data(), grads_up[i].end());
+    buf.add(lapls_up[i].data(), lapls_up[i].end());
   }
   for(int i=0; i<NumUniqueDets_dn; i++)
   {
-    buf.add(&(grads_dn[i][0][0]), &(grads_dn[i][0][0])+TotalDim);
-//      buf.add(&(lapls_dn[i][0]), &(lapls_dn[i][P.getTotalNum()]));
-    buf.add(lapls_dn[i].first_address(),lapls_dn[i].last_address());
+    buf.add(grads_dn[i].data(), grads_dn[i].end());
+    buf.add(lapls_dn[i].data(), lapls_dn[i].end());
   }
 }
 

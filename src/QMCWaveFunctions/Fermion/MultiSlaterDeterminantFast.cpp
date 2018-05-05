@@ -412,7 +412,6 @@ void MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
 
   Dets[0]->registerData(P,buf);
   Dets[1]->registerData(P,buf);
-  LogValue = evaluateLog(P,P.G,P.L);
 
   buf.add(psiCurrent);
 }
