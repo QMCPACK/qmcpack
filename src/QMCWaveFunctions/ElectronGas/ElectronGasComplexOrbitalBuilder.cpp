@@ -98,12 +98,12 @@ bool ElectronGasComplexOrbitalBuilder::put(xmlNodePtr cur)
   return true;
 }
 
-ElectronGasBasisBuilder::ElectronGasBasisBuilder(ParticleSet& p, xmlNodePtr cur)
+ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur)
   :egGrid(p.Lattice),unique_twist(-1.0),has_twist(false)
 {
 }
 
-bool ElectronGasBasisBuilder::put(xmlNodePtr cur)
+bool ElectronGasSPOBuilder::put(xmlNodePtr cur)
 {
   OhmmsAttributeSet aAttrib;
   aAttrib.add(unique_twist,"twist");
@@ -116,9 +116,9 @@ bool ElectronGasBasisBuilder::put(xmlNodePtr cur)
   return true;
 }
 
-SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromXML(xmlNodePtr cur)
+SPOSetBase* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
-  app_log() << "ElectronGasBasisBuilder::createSPOSet " << std::endl;
+  app_log() << "ElectronGasSPOBuilder::createSPOSet " << std::endl;
   int nc=0;
   int ns=0;
   PosType twist(0.0);
@@ -136,7 +136,7 @@ SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (nc<0)
   {
     app_error() << "  HEG Invalid Shell." << std::endl;
-    APP_ABORT("ElectronGasBasisBuilder::put");
+    APP_ABORT("ElectronGasSPOBuilder::put");
   }
   egGrid.createGrid(nc,ns,twist);
   EGOSet* spo = new EGOSet(egGrid.kpt,egGrid.mk2,egGrid.deg);
@@ -144,7 +144,7 @@ SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromXML(xmlNodePtr cur)
 }
 
 
-SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromIndices(indices_t& indices)
+SPOSetBase* ElectronGasSPOBuilder::createSPOSetFromIndices(indices_t& indices)
 {
   egGrid.createGrid(indices);
   EGOSet* spo = new EGOSet(egGrid.kpt,egGrid.mk2,egGrid.deg);

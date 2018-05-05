@@ -178,7 +178,7 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr cur,xmlNodeP
   else if (type == "jellium" || type == "heg")
   {
     app_log()<<"Electron gas SPO set"<< std::endl;
-    bb = new ElectronGasBasisBuilder(targetPtcl,rootNode);
+    bb = new ElectronGasSPOBuilder(targetPtcl,rootNode);
   }
   else if (type == "sho")
   {

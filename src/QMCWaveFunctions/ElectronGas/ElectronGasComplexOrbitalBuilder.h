@@ -120,7 +120,7 @@ public:
 
 /** OrbitalBuilder for Slater determinants of electron-gas
 */
-class ElectronGasBasisBuilder: public SPOSetBuilder
+class ElectronGasSPOBuilder: public SPOSetBuilder
 {
 protected:
   bool has_twist;
@@ -129,7 +129,7 @@ protected:
   xmlNodePtr spo_node;
 public:
   ///constructor
-  ElectronGasBasisBuilder(ParticleSet& p, xmlNodePtr cur);
+  ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur);
 
   ///implement virtual function
   bool put(xmlNodePtr cur);
