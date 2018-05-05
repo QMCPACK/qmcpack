@@ -132,6 +132,9 @@ namespace qmcplusplus
 
     if(radialOrbType<0)
       PRE.error("Unknown radial function for LCAO orbitals. Specify keyword=\"NMO/GTO/STO\" .",true);
+
+    // no need to wait but load the basis set
+    if(h5_path!="") loadBasisSetFromH5();
   }
 
   LCAOrbitalBuilder::~LCAOrbitalBuilder()
@@ -139,20 +142,15 @@ namespace qmcplusplus
     //properly cleanup
   }
 
-  bool LCAOrbitalBuilder::put(xmlNodePtr cur)
+  void LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cur)
   {
-    if(myBasisSet != nullptr) return true;
-    if(h5_path=="")
-      putXML(cur);
-    else
-      putH5();
-    return true;
-  }
+    ReportEngine PRE(ClassName,"loadBasisSetFromXML(xmlNodePtr)");
+    if(myBasisSet)
+    {
+      app_log() << "Reusing previously loaded BasisSet." << std::endl;
+      return;
+    }
 
-
-  bool LCAOrbitalBuilder::putXML(xmlNodePtr cur)
-  {
-    ReportEngine PRE(ClassName,"putXML(xmlNodePtr)");
     if(!is_same(cur->name,"basisset"))
     {//heck to handle things like <sposet_builder>
       xmlNodePtr cur1= cur->xmlChildrenNode;
@@ -208,12 +206,17 @@ namespace qmcplusplus
         PRE.error("Cannot construct SoaAtomicBasisSet<ROT,YLM>.",true);
         break;
     }
-    return true;
   }
 
-  bool LCAOrbitalBuilder::putH5()
+  void LCAOrbitalBuilder::loadBasisSetFromH5()
   {
-    ReportEngine PRE(ClassName,"putH5()");
+    ReportEngine PRE(ClassName,"loadBasisSetFromH5()");
+    if(myBasisSet)
+    {
+      app_log() << "Reusing previously loaded BasisSet." << std::endl;
+      return;
+    }
+
     hdf_archive hin(myComm);
     int ylm=-1;
     if(myComm->rank()==0)
@@ -262,7 +265,6 @@ namespace qmcplusplus
         PRE.error("Cannot construct SoaAtomicBasisSet<ROT,YLM>.",true);
         break;
     }
-    return true;
   }
 
 
@@ -438,6 +440,7 @@ namespace qmcplusplus
     spoAttrib.add (cusp_file, "cuspInfo");
     spoAttrib.put(cur);
 
+    if(myBasisSet==nullptr) PRE.error("Missing basisset.",true);
     SPOSetBase *lcos=new LCAOrbitalSet(myBasisSet,ReportLevel);
     lcos->myComm=myComm;
 

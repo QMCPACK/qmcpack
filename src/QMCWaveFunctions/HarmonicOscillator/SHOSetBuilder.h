@@ -53,12 +53,6 @@ namespace qmcplusplus
 
     SPOSetBase* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input);
     
-    //unneeded SPOSetBuilder interface functions
-    bool put(xmlNodePtr cur)
-    { 
-      return true; 
-    }
-
     //local functions
     void update_basis_states(int smax);
     void report(const std::string& pad="");

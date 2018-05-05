@@ -38,9 +38,7 @@ namespace qmcplusplus
      */
     LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, xmlNodePtr cur);
     ~LCAOrbitalBuilder();
-    bool put(xmlNodePtr cur);
-    bool putXML(xmlNodePtr cur);
-    bool putH5();
+    void loadBasisSetFromXML(xmlNodePtr cur);
     SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
 
     private:
@@ -60,6 +58,8 @@ namespace qmcplusplus
     ///Number of periodic Images for Orbital evaluation
     TinyVector<int,3> PBCImages;
 
+    ///load basis set from hdf5 file
+    void loadBasisSetFromH5();
     /** create basis set
      *
      * Use ao_traits<T,I,J> to match (ROT)x(SH) combo

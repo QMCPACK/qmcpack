@@ -53,7 +53,12 @@ public:
   ~SPOSetBuilderFactory();
   bool put(xmlNodePtr cur);
 
-  SPOSetBuilder* createSPOSetBuilder(xmlNodePtr cur, xmlNodePtr rootNode=NULL);
+  SPOSetBuilder* createSPOSetBuilder(xmlNodePtr rootNode);
+
+  void loadBasisSetFromXML(xmlNodePtr cur)
+  {
+    last_builder->loadBasisSetFromXML(cur);
+  }
 
   SPOSetBase* createSPOSet(xmlNodePtr cur);
 

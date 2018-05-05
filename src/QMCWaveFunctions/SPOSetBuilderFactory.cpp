@@ -122,7 +122,7 @@ bool SPOSetBuilderFactory::put(xmlNodePtr cur)
   return true;
 }
 
-SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr cur,xmlNodePtr  rootNode)
+SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
 {
   ReportEngine PRE(ClassName,"createSPOSetBuilder");
   std::string sourceOpt("ion0");
@@ -162,8 +162,6 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr cur,xmlNodeP
     app_log() << "Reuse SPOSetBuilder \""<<name << "\" type " << type_in << std::endl;
     app_log().flush();
     bb=(*bbit).second;
-    bb->put(rootNode);
-   
     return last_builder=bb;
   }
 
@@ -252,7 +250,6 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr cur,xmlNodeP
   {
     bb->setReportLevel(ReportLevel);
     bb->initCommunicator(myComm);
-    bb->put(cur);
     app_log()<<"  Created SPOSet builder named '"<< name<< "' of type "<< type << std::endl;
     spo_builders[name]=bb; //use name, if missing type is used
   }
@@ -265,12 +262,10 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr cur,xmlNodeP
 SPOSetBase* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
 {
   std::string bname("");
-  std::string bsname("");
   std::string sname("");
   std::string type("");
   OhmmsAttributeSet aAttrib;
   aAttrib.add(bname,"basisset");
-  aAttrib.add(bsname,"basis_sposet");
   aAttrib.add(sname,"name");
   aAttrib.add(type,"type");
   //aAttrib.put(rcur);
@@ -290,11 +285,14 @@ SPOSetBase* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
     std::string cname("");
     xmlNodePtr tcur=cur->children;
     if(tcur!=NULL)
-      getNodeName(cname,cur);
+      getNodeName(cname,tcur);
     if(cname==basisset_tag)
-      bb = createSPOSetBuilder(tcur,cur);
+    {
+      bb = createSPOSetBuilder(cur);
+      bb->loadBasisSetFromXML(tcur);
+    }
     else
-      bb = createSPOSetBuilder(cur,cur);
+      bb = createSPOSetBuilder(cur);
   }
   if(bb)
   {
@@ -319,7 +317,7 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
 
   app_log()<<"building sposet collection of type "<<type<< std::endl;
 
-  SPOSetBuilder* bb = createSPOSetBuilder(cur,cur);
+  SPOSetBuilder* bb = createSPOSetBuilder(cur);
   xmlNodePtr element = parent->children;
   int nsposets = 0;
   while(element!=NULL)

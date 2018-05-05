@@ -33,8 +33,6 @@ public:
   OptimizableSPOBuilder(ParticleSet& p, PtclPoolType& psets,
                         xmlNodePtr cur);
 
-  bool put (xmlNodePtr cur);
-
   /** initialize the Antisymmetric wave function for electrons
    *@param cur the current xml node
    */

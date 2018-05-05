@@ -248,8 +248,4 @@ namespace qmcplusplus
     return createSPOSetFromXML(cur);
   }
 
-  bool CompositeSPOSetBuilder::put(xmlNodePtr cur)
-  {
-    return true;
-  }
 }

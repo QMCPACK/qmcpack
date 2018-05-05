@@ -103,19 +103,6 @@ ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur)
 {
 }
 
-bool ElectronGasSPOBuilder::put(xmlNodePtr cur)
-{
-  OhmmsAttributeSet aAttrib;
-  aAttrib.add(unique_twist,"twist");
-  aAttrib.put(cur);
-
-  has_twist = true;
-  for(int d=0;d<OHMMS_DIM;++d)
-    has_twist &= (unique_twist[d]+1.0)>1e-6;
-
-  return true;
-}
-
 SPOSetBase* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   app_log() << "ElectronGasSPOBuilder::createSPOSet " << std::endl;
@@ -131,6 +118,13 @@ SPOSetBase* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
   aAttrib.put(cur);
   if(has_twist)
     twist = unique_twist;
+  else
+  {
+    unique_twist = twist;
+    has_twist = true;
+    for(int d=0;d<OHMMS_DIM;++d)
+      has_twist &= (unique_twist[d]+1.0)>1e-6;
+  }
   if(ns>0)
     nc = egGrid.getShellIndex(ns);
   if (nc<0)

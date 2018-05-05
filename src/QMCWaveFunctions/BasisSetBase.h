@@ -195,7 +195,8 @@ struct SPOSetBuilder: public QMCTraits, public MPIObjectBase
 
   SPOSetBuilder();
   virtual ~SPOSetBuilder() {}
-  virtual bool put(xmlNodePtr cur)=0;
+  /// load from XML if there is a basisset
+  virtual void loadBasisSetFromXML(xmlNodePtr cur) {}
 
   /// reserve space for states (usually only one set, multiple for e.g. spin dependent einspline)
   void reserve_states(int nsets=1);

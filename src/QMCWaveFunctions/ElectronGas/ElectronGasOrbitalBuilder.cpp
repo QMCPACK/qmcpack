@@ -208,11 +208,6 @@ ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur)
 {
 }
 
-bool ElectronGasSPOBuilder::put(xmlNodePtr cur)
-{
-  return true;
-}
-  
 SPOSetBase* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   app_log() << "ElectronGasSPOBuilder::createSPOSet " << std::endl;

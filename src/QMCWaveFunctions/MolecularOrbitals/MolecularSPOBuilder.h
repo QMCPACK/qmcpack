@@ -55,6 +55,7 @@ public:
     targetPtcl(els), sourcePtcl(ions), thisBasisSet(0), cuspCorr(cusp), cuspInfo(cusp_info), h5_path(MOH5Ref)
   {
     ClassName="MolecularSPOBuilder";
+    if(h5_path!="")loadBasisSetFromH5();
   }
 
   inline bool is_same(const xmlChar* a, const char* b)
@@ -62,16 +63,15 @@ public:
     return !strcmp((const char*)a,b);
   }
 
-  bool put(xmlNodePtr cur)
+  //Reading from XML
+  void loadBasisSetFromXML(xmlNodePtr cur)
   {
-    if(thisBasisSet)
-      return true;
-
-
-    //Reading from XML
-    if(h5_path=="")
-    {
-      ReportEngine PRE(ClassName,"put(xmlNodePtr)");
+      ReportEngine PRE(ClassName,"loadBasisSetFromXML(xmlNodePtr)");
+      if(thisBasisSet)
+      {
+        app_log() << "Reusing previously loaded BasisSet." << std::endl;
+        return;
+      }
       PRE.echo(cur);
       //create the BasisSetType
       thisBasisSet = new ThisBasisSetType(sourcePtcl,targetPtcl);
@@ -121,11 +121,19 @@ public:
         }
         cur = cur->next;
       }
-    }
-    //Reading from H5
-    else
-    {
-      ReportEngine PRE(ClassName,"put(xmlNodePtr)");
+      //resize the basis set
+      thisBasisSet->setBasisSetSize(-1);
+  }
+
+  ///Reading from H5
+  void loadBasisSetFromH5()
+  {
+      ReportEngine PRE(ClassName,"loadBasisSetFromH5()");
+      if(thisBasisSet)
+      {
+        app_log() << "Reusing previously loaded BasisSet." << std::endl;
+        return;
+      }
       //create the BasisSetType
       thisBasisSet = new ThisBasisSetType(sourcePtcl,targetPtcl);
 
@@ -150,8 +158,6 @@ public:
 
       if(Nb_Elements<1)
           PRE.error("Missing elementType attribute of atomicBasisSet.",true);
-
-
 
       for (int i=0;i<Nb_Elements;i++)
       {
@@ -201,16 +207,15 @@ public:
         hin.pop();
         hin.close();
       }
-    }
-    //resize the basis set
-    thisBasisSet->setBasisSetSize(-1);
-    return true;
+      //resize the basis set
+      thisBasisSet->setBasisSetSize(-1);
   }
-
 
   SPOSetBase* createSPOSetFromXML(xmlNodePtr cur)
   {
     ReportEngine PRE(ClassName,"createSPO(xmlNodePtr)");
+    if(thisBasisSet==nullptr) PRE.error("Missing basisset.",true);
+
     std::string spo_name(""), id, cusp_file("");
     std::string use_new_opt_class("no");
     OhmmsAttributeSet spoAttrib;

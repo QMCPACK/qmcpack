@@ -97,6 +97,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   {//always create one, using singleton and just to access the member functions
     mySPOSetBuilderFactory = new SPOSetBuilderFactory(targetPtcl, targetPsi, ptclPool);
     mySPOSetBuilderFactory->setReportLevel(ReportLevel);
+    mySPOSetBuilderFactory->createSPOSetBuilder(curRoot);
   }
 
   //check the basis set
@@ -106,7 +107,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
     getNodeName(cname,cur);
     if (cname == basisset_tag)
     {
-      mySPOSetBuilderFactory->createSPOSetBuilder(cur,curRoot);
+      mySPOSetBuilderFactory->loadBasisSetFromXML(cur);
     }
     else if ( cname == sposet_tag )
     {
@@ -149,15 +150,6 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
     cur = cur->next;
   }
 
-  //missing basiset, e.g. einspline
-  // mmorales: this should not be allowed now, either basisset or sposet must exist
-  //if (mySPOSetBuilderFactory == 0)
-  //{
-  //  mySPOSetBuilderFactory = new SPOSetBuilderFactory(targetPtcl,targetPsi, ptclPool);
-  //  mySPOSetBuilderFactory->setReportLevel(ReportLevel);
-  //  mySPOSetBuilderFactory->createSPOSetBuilder(curRoot,curRoot);
-  //}
-
   //sposet_builder is defined outside <determinantset/>
   if(spomap.empty())
   {
@@ -185,7 +177,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
               spomap[aspo]=aset;
             else
             {
-              mySPOSetBuilderFactory->createSPOSetBuilder(cur1,curRoot);
+              mySPOSetBuilderFactory->createSPOSetBuilder(curRoot);
               aset = mySPOSetBuilderFactory->createSPOSet(cur1);
               if(aset) spomap[aspo]=aset;
             }

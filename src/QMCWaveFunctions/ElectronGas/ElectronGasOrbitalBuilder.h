@@ -328,8 +328,6 @@ public:
   ///constructor
   ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur);
 
-  ///implement vritual function
-  bool put(xmlNodePtr cur);
   /** initialize the Antisymmetric wave function for electrons
   *@param cur the current xml node
   */

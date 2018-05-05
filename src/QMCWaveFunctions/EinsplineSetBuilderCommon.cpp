@@ -88,15 +88,6 @@ EinsplineSetBuilder::~EinsplineSetBuilder()
 
 
 bool
-EinsplineSetBuilder::put(xmlNodePtr cur)
-{
-  std::string hdfName;
-  OhmmsAttributeSet attribs;
-  attribs.add (hdfName, "href");
-  return attribs.put(XMLRoot);
-}
-
-bool
 EinsplineSetBuilder::CheckLattice()
 {
   update_token(__FILE__,__LINE__,"CheckLattice");

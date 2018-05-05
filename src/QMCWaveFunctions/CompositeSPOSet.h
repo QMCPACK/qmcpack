@@ -95,7 +95,6 @@ namespace qmcplusplus
 
     SPOSetBase* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input);
     
-    bool put(xmlNodePtr cur);
   };
 }
 

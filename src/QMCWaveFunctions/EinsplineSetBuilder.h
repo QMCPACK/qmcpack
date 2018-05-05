@@ -162,9 +162,6 @@ public:
   ///destructor
   ~EinsplineSetBuilder();
 
-  /** process xml node to initialize the builder */
-  bool put (xmlNodePtr cur);
-
   /** initialize the Antisymmetric wave function for electrons
    * @param cur the current xml node
    */
