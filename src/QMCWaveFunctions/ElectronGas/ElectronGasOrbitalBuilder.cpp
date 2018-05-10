@@ -203,19 +203,14 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
   return true;
 }
 
-ElectronGasBasisBuilder::ElectronGasBasisBuilder(ParticleSet& p, xmlNodePtr cur)
+ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur)
   :egGrid(p.Lattice)
 {
 }
 
-bool ElectronGasBasisBuilder::put(xmlNodePtr cur)
+SPOSetBase* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
-  return true;
-}
-  
-SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromXML(xmlNodePtr cur)
-{
-  app_log() << "ElectronGasBasisBuilder::createSPOSet " << std::endl;
+  app_log() << "ElectronGasSPOBuilder::createSPOSet " << std::endl;
   int nc=0;
   int ns=0;
   PosType twist(0.0);

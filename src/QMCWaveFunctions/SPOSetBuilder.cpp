@@ -10,23 +10,21 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
-#include <QMCWaveFunctions/BasisSetBase.h>
 
+#include <QMCWaveFunctions/SPOSetBuilder.h>
 
 namespace qmcplusplus
 {
 
-  BasisSetBuilder::BasisSetBuilder()
+  SPOSetBuilder::SPOSetBuilder()
     : MPIObjectBase(0), legacy(true) 
   {
     reserve_states();
   }
 
 
-  void BasisSetBuilder::reserve_states(int nsets)
+  void SPOSetBuilder::reserve_states(int nsets)
   {
     int sets_needed = nsets - states.size();
     if(sets_needed>0)
@@ -35,14 +33,14 @@ namespace qmcplusplus
   }
 
 
-  SPOSetBase* BasisSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info)
+  SPOSetBase* SPOSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info)
   { 
     APP_ABORT("BasisSetBase::createSPOSet(cur,input_info) has not been implemented");
     return 0;
   }
 
 
-  SPOSetBase* BasisSetBuilder::createSPOSet(xmlNodePtr cur)
+  SPOSetBase* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   {
     // read specialized sposet construction requests
     //   and translate them into a set of orbital indices
@@ -64,7 +62,7 @@ namespace qmcplusplus
       sposets.push_back(sposet);
     }
     else
-      APP_ABORT("BasisSetBuilder::createSPOSet  sposet creation failed");
+      APP_ABORT("SPOSetBuilder::createSPOSet  sposet creation failed");
 
     return sposet;
   }

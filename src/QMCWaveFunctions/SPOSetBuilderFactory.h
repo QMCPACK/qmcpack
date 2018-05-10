@@ -17,13 +17,13 @@
 #define QMCPLUSPLUS_BASISSETFACTORY_H
 
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
-#include "QMCWaveFunctions/BasisSetBase.h"
+#include "QMCWaveFunctions/SPOSetBuilder.h"
 
 namespace qmcplusplus
 {
 
   ///writes info about contained sposets to stdout
-  void write_basis_builders(const std::string& pad="");
+  void write_spo_builders(const std::string& pad="");
 
   /**returns a named sposet from the global pool
    *  only use in serial portion of execution
@@ -35,25 +35,30 @@ namespace qmcplusplus
 
 /** derived class from OrbitalBuilderBase
  */
-class BasisSetFactory: public OrbitalBuilderBase
+class SPOSetBuilderFactory: public OrbitalBuilderBase
 {
 
 public:
 
   ///set of basis set builders resolved by type
-  static std::map<std::string,BasisSetBuilder*> basis_builders;
+  static std::map<std::string,SPOSetBuilder*> spo_builders;
 
   /** constructor
    * \param els reference to the electrons
    * \param psi reference to the wavefunction
    * \param ions reference to the ions
    */
-  BasisSetFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets);
+  SPOSetBuilderFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets);
 
-  ~BasisSetFactory();
+  ~SPOSetBuilderFactory();
   bool put(xmlNodePtr cur);
 
-  BasisSetBuilder* createBasisSet(xmlNodePtr cur, xmlNodePtr rootNode=NULL);
+  SPOSetBuilder* createSPOSetBuilder(xmlNodePtr rootNode);
+
+  void loadBasisSetFromXML(xmlNodePtr cur)
+  {
+    last_builder->loadBasisSetFromXML(cur);
+  }
 
   SPOSetBase* createSPOSet(xmlNodePtr cur);
 
@@ -62,7 +67,7 @@ public:
 private:
 
   ///store the last builder, use if type not provided
-  static BasisSetBuilder* last_builder;
+  static SPOSetBuilder* last_builder;
 
   ///reference to the particle pool
   PtclPoolType& ptclPool;

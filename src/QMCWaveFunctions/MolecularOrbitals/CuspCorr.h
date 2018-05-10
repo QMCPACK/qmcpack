@@ -19,7 +19,7 @@
 #include<cmath>
 #include <iostream>
 #include "Configuration.h"
-//#include "QMCWaveFunctions/BasisSetFactory.h"
+//#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 //#include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Particle/ParticleSet.h"

@@ -22,7 +22,7 @@ SET(WFBASE_SRCS
   OrbitalBase.cpp
   DiffOrbitalBase.cpp
   OrbitalBuilderBase.cpp
-  BasisSetBuilder.cpp
+  SPOSetBuilder.cpp
   SPOInfo.cpp
   SPOSetInfo.cpp
   SPOSetInputInfo.cpp
@@ -182,7 +182,7 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/DiracDeterminantWithBackflow.cpp
   Fermion/SlaterDetWithBackflow.cpp
   Fermion/MultiSlaterDeterminantWithBackflow.cpp
-  BasisSetFactory.cpp
+  SPOSetBuilderFactory.cpp
   TrialWaveFunction.cpp
   WaveFunctionFactory.cpp
   )
