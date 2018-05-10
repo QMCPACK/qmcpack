@@ -15,11 +15,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/** @file SPOSetBuilderBase.h
- * @brief Declaration of a base class of SPOSetBuilder
+/** @file SPOSetBuilder.h
+ * @brief Declaration of a base class of SPOSet Builders
  */
-#ifndef QMCPLUSPLUS_SPOSET_BUILDER_BASE_H
-#define QMCPLUSPLUS_SPOSET_BUILDER_BASE_H
+#ifndef QMCPLUSPLUS_SPOSET_BUILDER_H
+#define QMCPLUSPLUS_SPOSET_BUILDER_H
 
 #include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/SPOSetInfo.h"

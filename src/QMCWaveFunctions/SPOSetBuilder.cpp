@@ -12,7 +12,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include <QMCWaveFunctions/SPOSetBuilderBase.h>
+#include <QMCWaveFunctions/SPOSetBuilder.h>
 
 namespace qmcplusplus
 {
