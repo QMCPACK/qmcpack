@@ -417,13 +417,15 @@ namespace qmcplusplus
   SPOSetBase* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     ReportEngine PRE(ClassName,"createSPO(xmlNodePtr)");
-    std::string spo_name(""), id, cusp_file("");
+    std::string spo_name(""), id, cusp_file(""), optimize("no");
     OhmmsAttributeSet spoAttrib;
     spoAttrib.add (spo_name, "name");
     spoAttrib.add (id, "id");
     spoAttrib.add (cusp_file, "cuspInfo");
+    spoAttrib.add (optimize, "optimize");
     spoAttrib.put(cur);
 
+    if(optimize=="yes") PRE.error("Optimizable SPO has not been supported by SoA LCAO yet!.",true);
     if(myBasisSet==nullptr) PRE.error("Missing basisset.",true);
     SPOSetBase *lcos=new LCAOrbitalSet(myBasisSet,ReportLevel);
     lcos->myComm=myComm;
