@@ -80,11 +80,13 @@ IF(OHMMS_DIM MATCHES 3)
     Jastrow/eeI_JastrowBuilder.cpp
     )
 
-  SET(FERMION_SRCS ${FERMION_SRCS}
-    MolecularOrbitals/STOBuilder.cpp
-    MolecularOrbitals/GTOBuilder.cpp
-    MolecularOrbitals/NGOBuilder.cpp
-    )
+  IF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
+    SET(FERMION_SRCS ${FERMION_SRCS}
+      MolecularOrbitals/STOBuilder.cpp
+      MolecularOrbitals/GTOBuilder.cpp
+      MolecularOrbitals/NGOBuilder.cpp
+      )
+  ENDIF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
 
   IF(NOT QMC_COMPLEX AND ENABLE_SOA)
     #lcao is deigned for localized orbitals in bulk and complex
@@ -187,11 +189,11 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   WaveFunctionFactory.cpp
   )
 
-IF(NOT QMC_COMPLEX)
+IF(NOT QMC_COMPLEX AND ENABLE_ORBROT)
   SET(FERMION_SRCS ${FERMION_SRCS}
     Fermion/SlaterDetOpt.cpp
     )
-ENDIF(NOT QMC_COMPLEX)
+ENDIF(NOT QMC_COMPLEX AND ENABLE_ORBROT)
 
 ####################################
 # create libqmcwfs

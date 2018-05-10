@@ -25,7 +25,7 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminantSoA.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
-#if !defined(QMC_COMPLEX)
+#if !defined(QMC_COMPLEX) && ENABLE_ORBROT
 //Cannot use complex with SlaterDetOpt
 #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/LocalizedBasisSet.h"
@@ -507,6 +507,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
 #else
     if(UseBackflow)
       adet = new DiracDeterminantWithBackflow(targetPtcl,psi,BFTrans,firstIndex);
+#ifdef ENABLE_ORBROT
     else if (slater_det_opt)
     {
 #ifdef QMC_COMPLEX
@@ -554,6 +555,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
       adet->Optimizable = true;
 #endif
     }
+#endif
     else if (psi->Optimizable)
       adet = new DiracDeterminantOpt(targetPtcl, psi, firstIndex);
     else

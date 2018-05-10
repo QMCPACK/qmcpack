@@ -21,7 +21,9 @@
 #include "QMCWaveFunctions/MolecularOrbitals/LocalizedBasisSet.h"
 #include "QMCWaveFunctions/MolecularOrbitals/AtomicBasisBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSet.h"
+#ifdef ENABLE_ORBROT
 #include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSetOpt.h"
+#endif
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "io/hdf_archive.h"
@@ -255,12 +257,16 @@ public:
 #endif
         {
           if ( use_new_opt_class == "yes" ) {
+#ifdef ENABLE_ORBROT
             app_log() << "Creating LCOrbitalSetOpt with the input coefficients" << std::endl;
             lcos= new LCOrbitalSetOpt<ThisBasisSetType>(thisBasisSet,ReportLevel);
             if(spo_name != "")
               lcos->objectName=spo_name;
             else
               throw std::runtime_error("LCOrbitalSetOpt spo set must have a name");
+#else
+            throw std::runtime_error("ENABLE_ORBROT is disabled in the build!");
+#endif
           } else {
             app_log() << "Creating LCOrbitalSet with the input coefficients" << std::endl;
             lcos= new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet,ReportLevel,algorithm);
