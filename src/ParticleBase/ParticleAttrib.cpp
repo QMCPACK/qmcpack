@@ -1142,7 +1142,7 @@ inline void evaluate(ParticleAttrib<T> &lhs,
   }
   else
   {
-    throw std::runtime_error("Error: LHS and RHS don't conform in ParticleAttrib.");
+    throw std::runtime_error("Error in evaluate: LHS and RHS don't conform in ParticleAttrib.");
   }
 }
 
