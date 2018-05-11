@@ -45,6 +45,8 @@ struct BsplineReaderBase
   int myFirstSPO;
   ///number of orbitals to be created
   int myNumOrbs;
+  ///check the norm of orbitals
+  bool checkNorm;
   /**@addtogroup multigrid
    * @{
    * Currently only one level of coarsening is implemented but easy to generalize to multi levels.

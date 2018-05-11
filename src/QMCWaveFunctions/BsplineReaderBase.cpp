@@ -26,6 +26,7 @@ namespace qmcplusplus
 {
   BsplineReaderBase::BsplineReaderBase(EinsplineSetBuilder* e)
     : mybuilder(e), MeshSize(0), myFirstSPO(0),myNumOrbs(0),GridFactor(1),Rcut(0)
+     , checkNorm(true)
   {
     myComm=mybuilder->getCommunicator();
   }
@@ -82,10 +83,20 @@ namespace qmcplusplus
 
   void BsplineReaderBase::setCommon(xmlNodePtr cur)
   {
+    // check orbital normalization by default
+    std::string check_orb_norm("yes");
     OhmmsAttributeSet a;
     a.add(Rcut,"rmax_core");
     a.add(GridFactor,"dilation");
+    a.add(check_orb_norm,"check_orb_norm");
     a.put(cur);
+
+    // allow user to turn off norm check with a warning
+    if (check_orb_norm == "no")
+    {
+      app_log() << "WARNING: disable orbital normalization check!" << std::endl;
+      checkNorm = false;
+    }
 
     app_log() << "Rcut = " << Rcut << std::endl;
     app_log() << "dilation = " << GridFactor << std::endl;
