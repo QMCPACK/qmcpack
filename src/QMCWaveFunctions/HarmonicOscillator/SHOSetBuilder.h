@@ -16,13 +16,13 @@
 #define QMCPLUSPLUS_SHO_BASIS_BUILDER_H
 
 #include <QMCWaveFunctions/HarmonicOscillator/SHOSet.h>
-#include <QMCWaveFunctions/BasisSetBase.h>
+#include <QMCWaveFunctions/SPOSetBuilder.h>
 #include <QMCWaveFunctions/SPOSetInfo.h>
 
 namespace qmcplusplus
 {
 
-  struct SHOSetBuilder : public BasisSetBuilder
+  struct SHOSetBuilder : public SPOSetBuilder
   {
 
     //enum{DIM=OHMMS_DIM}
@@ -48,17 +48,11 @@ namespace qmcplusplus
     //reset parameters
     void reset();
 
-    //BasisSetBuilder interface
+    //SPOSetBuilder interface
     SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
 
     SPOSetBase* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input);
     
-    //unneeded BasisSetBuilder interface functions
-    bool put(xmlNodePtr cur)
-    { 
-      return true; 
-    }
-
     //local functions
     void update_basis_states(int smax);
     void report(const std::string& pad="");

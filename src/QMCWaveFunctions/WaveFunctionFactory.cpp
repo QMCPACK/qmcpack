@@ -89,7 +89,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     std::string cname((const char*)(cur->name));
     if(cname =="sposet_builder")
     {
-      BasisSetFactory basisFactory(*targetPtcl,*targetPsi,ptclPool);
+      SPOSetBuilderFactory basisFactory(*targetPtcl,*targetPsi,ptclPool);
       basisFactory.build_sposet_collection(cur);
     }
     else if (cname == OrbitalBuilderBase::detset_tag)

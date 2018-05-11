@@ -132,6 +132,9 @@ namespace qmcplusplus
 
     if(radialOrbType<0)
       PRE.error("Unknown radial function for LCAO orbitals. Specify keyword=\"NMO/GTO/STO\" .",true);
+
+    // no need to wait but load the basis set
+    if(h5_path!="") loadBasisSetFromH5();
   }
 
   LCAOrbitalBuilder::~LCAOrbitalBuilder()
@@ -139,20 +142,15 @@ namespace qmcplusplus
     //properly cleanup
   }
 
-  bool LCAOrbitalBuilder::put(xmlNodePtr cur)
+  void LCAOrbitalBuilder::loadBasisSetFromXML(xmlNodePtr cur)
   {
-    if(myBasisSet != nullptr) return true;
-    if(h5_path=="")
-      putXML(cur);
-    else
-      putH5();
-    return true;
-  }
+    ReportEngine PRE(ClassName,"loadBasisSetFromXML(xmlNodePtr)");
+    if(myBasisSet)
+    {
+      app_log() << "Reusing previously loaded BasisSet." << std::endl;
+      return;
+    }
 
-
-  bool LCAOrbitalBuilder::putXML(xmlNodePtr cur)
-  {
-    ReportEngine PRE(ClassName,"putXML(xmlNodePtr)");
     if(!is_same(cur->name,"basisset"))
     {//heck to handle things like <sposet_builder>
       xmlNodePtr cur1= cur->xmlChildrenNode;
@@ -208,12 +206,17 @@ namespace qmcplusplus
         PRE.error("Cannot construct SoaAtomicBasisSet<ROT,YLM>.",true);
         break;
     }
-    return true;
   }
 
-  bool LCAOrbitalBuilder::putH5()
+  void LCAOrbitalBuilder::loadBasisSetFromH5()
   {
-    ReportEngine PRE(ClassName,"putH5()");
+    ReportEngine PRE(ClassName,"loadBasisSetFromH5()");
+    if(myBasisSet)
+    {
+      app_log() << "Reusing previously loaded BasisSet." << std::endl;
+      return;
+    }
+
     hdf_archive hin(myComm);
     int ylm=-1;
     if(myComm->rank()==0)
@@ -262,7 +265,6 @@ namespace qmcplusplus
         PRE.error("Cannot construct SoaAtomicBasisSet<ROT,YLM>.",true);
         break;
     }
-    return true;
   }
 
 
@@ -278,8 +280,8 @@ namespace qmcplusplus
 
     basis_type* mBasisSet=new basis_type(sourcePtcl,targetPtcl);
 
-    //keep the builder local
-    std::map<std::string,BasisSetBuilder*> aoBuilders;
+    //list of built centers
+    std::vector<std::string> ao_built_centers;
 
     /** process atomicBasisSet per ion species */
     cur = cur->xmlChildrenNode;
@@ -298,33 +300,25 @@ namespace qmcplusplus
         if(elementType.empty())
           PRE.error("Missing elementType attribute of atomicBasisSet.",true);
 
-        std::map<std::string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType);
-        if(it == aoBuilders.end())
+        auto it = std::find(ao_built_centers.begin(), ao_built_centers.end(), elementType);
+        if(it == ao_built_centers.end())
         {
-          AOBasisBuilder<ao_type>* any = new AOBasisBuilder<ao_type>(elementType);
-          any->setReportLevel(ReportLevel);
-          any->put(cur);
-          ao_type* aoBasis= any->createAOSet(cur);
+          AOBasisBuilder<ao_type> any(elementType);
+          any.setReportLevel(ReportLevel);
+          any.initCommunicator(myComm);
+          any.put(cur);
+          ao_type* aoBasis = any.createAOSet(cur);
           if(aoBasis)
           {
             //add the new atomic basis to the basis set
             int activeCenter =sourcePtcl.getSpeciesSet().findSpecies(elementType);
             mBasisSet->add(activeCenter, aoBasis);
           }
-          aoBuilders[elementType]=any;
+          ao_built_centers.push_back(elementType);
         }
       }
       cur = cur->next;
     } // done with basis set
-
-    { //cleanup basisset builder
-      std::map<std::string,BasisSetBuilder*>::iterator itX=aoBuilders.begin();
-      while(itX!=aoBuilders.end())
-      {
-        delete (*itX).second;
-        ++itX;
-      }
-    }
 
     mBasisSet->setBasisSetSize(-1);
     mBasisSet->setPBCImages(PBCImages);
@@ -344,8 +338,8 @@ namespace qmcplusplus
 
     basis_type* mBasisSet=new basis_type(sourcePtcl,targetPtcl);
 
-    //keep the builder local
-    std::map<std::string,BasisSetBuilder*> aoBuilders;
+    //list of built centers
+    std::vector<std::string> ao_built_centers;
     
     int Nb_Elements(0);
     std::string basiset_name;
@@ -387,20 +381,21 @@ namespace qmcplusplus
       myComm->bcast(basiset_name);
       myComm->bcast(elementType);
 
-      std::map<std::string,BasisSetBuilder*>::iterator it = aoBuilders.find(elementType);
-      if(it == aoBuilders.end())
+      auto it = std::find(ao_built_centers.begin(), ao_built_centers.end(), elementType);
+      if(it == ao_built_centers.end())
       {
-        AOBasisBuilder<ao_type>* any = new AOBasisBuilder<ao_type>(elementType);
-        any->setReportLevel(ReportLevel);
-        any->putH5(hin);
-        ao_type* aoBasis= any->createAOSetH5(hin);
+        AOBasisBuilder<ao_type> any(elementType);
+        any.setReportLevel(ReportLevel);
+        any.initCommunicator(myComm);
+        any.putH5(hin);
+        ao_type* aoBasis = any.createAOSetH5(hin);
         if(aoBasis)
         {
           //add the new atomic basis to the basis set
           int activeCenter =sourcePtcl.getSpeciesSet().findSpecies(elementType);
           mBasisSet->add(activeCenter, aoBasis);
         }
-        aoBuilders[elementType]=any;
+        ao_built_centers.push_back(elementType);
       }
 
       if(myComm->rank()==0)
@@ -411,15 +406,6 @@ namespace qmcplusplus
     {
       hin.pop();
       hin.close();
-    }
-
-    { //cleanup basisset builder
-      std::map<std::string,BasisSetBuilder*>::iterator itX=aoBuilders.begin();
-      while(itX!=aoBuilders.end())
-      {
-        delete (*itX).second;
-        ++itX;
-      }
     }
 
     mBasisSet->setBasisSetSize(-1);
@@ -438,6 +424,7 @@ namespace qmcplusplus
     spoAttrib.add (cusp_file, "cuspInfo");
     spoAttrib.put(cur);
 
+    if(myBasisSet==nullptr) PRE.error("Missing basisset.",true);
     SPOSetBase *lcos=new LCAOrbitalSet(myBasisSet,ReportLevel);
     lcos->myComm=myComm;
 

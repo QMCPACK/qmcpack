@@ -22,12 +22,7 @@
 #define QMCPLUSPLUS_BASISSETBASE_H
 
 #include "Particle/ParticleSet.h"
-#include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
-#include "QMCWaveFunctions/SPOSetInfo.h"
-#include <QMCWaveFunctions/SPOSetInputInfo.h>
-#include "QMCWaveFunctions/SPOSetBase.h"
-
 
 namespace qmcplusplus
 {
@@ -162,66 +157,6 @@ struct RealBasisSetBase
   virtual void setBasisSetSize(int nbs)=0;
   virtual void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl)=0;
   virtual void evaluateV(const ParticleSet& P, int iat, value_type* restrict vals)=0;
-};
-
-
-/** base class for the real BasisSet builder
- *
- * \warning {
- * We have not quite figured out how to use real/complex efficiently.
- * There are three cases we have to deal with
- * - real basis functions and real coefficients
- * - real basis functions and complex coefficients
- * - complex basis functions and complex coefficients
- * For now, we decide to keep both real and complex basis sets and expect
- * the user classes {\bf KNOW} what they need to use.
- * }
- */
-struct BasisSetBuilder: public QMCTraits, public MPIObjectBase
-{
-  typedef std::map<std::string,SPOSetBase*> SPOPool_t;
-  typedef std::vector<int> indices_t;
-  typedef std::vector<RealType> energies_t;
-
-
-  /// whether implementation conforms only to legacy standard
-  bool legacy;
-
-  /// state info of all possible states available in the basis
-  std::vector<SPOSetInfo*> states;
-
-  /// list of all sposets created by this builder
-  std::vector<SPOSetBase*> sposets;
-
-  BasisSetBuilder();
-  virtual ~BasisSetBuilder() {}
-  virtual bool put(xmlNodePtr cur)=0;
-
-  /// reserve space for states (usually only one set, multiple for e.g. spin dependent einspline)
-  void reserve_states(int nsets=1);
-
-  /// allow modification of state information
-  inline void modify_states(int index=0)
-  {
-    states[index]->modify();
-  }
-
-  /// clear state information
-  inline void clear_states(int index=0)
-  {
-    states[index]->clear();
-  }
-
-  /// create an sposet from xml (legacy)
-  virtual SPOSetBase* createSPOSetFromXML(xmlNodePtr cur)=0;
-
-  /// create an sposet from a general xml request
-  virtual SPOSetBase* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info);
-
-  /// create an sposet from xml and save the resulting SPOSet
-  SPOSetBase* createSPOSet(xmlNodePtr cur);
-
-
 };
 
 }

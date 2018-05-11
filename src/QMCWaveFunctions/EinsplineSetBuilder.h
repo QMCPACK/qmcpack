@@ -23,7 +23,7 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_SET_BUILDER_H
 #define QMCPLUSPLUS_EINSPLINE_SET_BUILDER_H
 
-#include "QMCWaveFunctions/BasisSetBase.h"
+#include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/BandInfo.h"
 #include "QMCWaveFunctions/AtomicOrbital.h"
 #include "QMCWaveFunctions/EinsplineSet.h"
@@ -121,7 +121,7 @@ struct H5OrbSet
 
 /** EinsplineSet builder
  */
-class EinsplineSetBuilder : public BasisSetBuilder
+class EinsplineSetBuilder : public SPOSetBuilder
 {
 public:
 
@@ -161,9 +161,6 @@ public:
 
   ///destructor
   ~EinsplineSetBuilder();
-
-  /** process xml node to initialize the builder */
-  bool put (xmlNodePtr cur);
 
   /** initialize the Antisymmetric wave function for electrons
    * @param cur the current xml node

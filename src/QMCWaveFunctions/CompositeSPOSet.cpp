@@ -17,7 +17,7 @@
 #include <Utilities/IteratorUtility.h>
 #include <algorithm>
 #include <OhmmsData/AttributeSet.h>
-#include <QMCWaveFunctions/BasisSetFactory.h>
+#include <QMCWaveFunctions/SPOSetBuilderFactory.h>
 
 namespace qmcplusplus
 {
@@ -248,8 +248,4 @@ namespace qmcplusplus
     return createSPOSetFromXML(cur);
   }
 
-  bool CompositeSPOSetBuilder::put(xmlNodePtr cur)
-  {
-    return true;
-  }
 }

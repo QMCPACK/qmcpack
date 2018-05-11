@@ -153,7 +153,7 @@ class OrbitalImages : public QMCHamiltonianBase
   ///indices of orbitals within each sposet to evaluate
   std::vector<std::vector<int>*> sposet_indices;
 
-  ///sposets obtained by name from BasisSetFactory
+  ///sposets obtained by name from SPOSetBuilderFactory
   std::vector<SPOSetBase*> sposets;
 
   ///evaluate points at grid cell centers instead of edges
