@@ -72,11 +72,11 @@ namespace qmcplusplus
     // The following items were previously in SPOSetBase
     ///occupation number
     Vector<RealType> Occ;
-    bool put(LCAOrbitalSet &spo, xmlNodePtr cur);
+    bool loadMO(LCAOrbitalSet &spo, xmlNodePtr cur);
     bool putOccupation(LCAOrbitalSet &spo, xmlNodePtr occ_ptr);
     bool putFromXML(LCAOrbitalSet &spo, xmlNodePtr coeff_ptr);
-    bool putFromH5(LCAOrbitalSet &spo, const char* fname, xmlNodePtr coeff_ptr);
-    bool putPBCFromH5(LCAOrbitalSet &spo, const char* fname, xmlNodePtr coeff_ptr);
+    bool putFromH5(LCAOrbitalSet &spo, xmlNodePtr coeff_ptr);
+    bool putPBCFromH5(LCAOrbitalSet &spo, xmlNodePtr coeff_ptr);
   };
 }
 #endif

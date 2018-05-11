@@ -226,7 +226,7 @@ namespace qmcplusplus
     int ylm=-1;
     if(myComm->rank()==0)
     {
-      if(!hin.open(h5_path.c_str(),H5F_ACC_RDONLY))
+      if(!hin.open(h5_path,H5F_ACC_RDONLY))
         PRE.error("Could not open H5 file",true);
       if(!hin.push("basisset"))
         PRE.error("Could not open basisset group in H5; Probably Corrupt H5 file",true);
@@ -355,7 +355,7 @@ namespace qmcplusplus
     hdf_archive hin(myComm);
     if(myComm->rank()==0)
     {
-      if(!hin.open(h5_path.c_str(),H5F_ACC_RDONLY))
+      if(!hin.open(h5_path,H5F_ACC_RDONLY))
         PRE.error("Could not open H5 file",true);
       if(!hin.push("basisset"))
         PRE.error("Could not open basisset group in H5; Probably Corrupt H5 file",true);
@@ -433,7 +433,7 @@ namespace qmcplusplus
     if(optimize=="yes") PRE.error("Optimizable SPO has not been supported by SoA LCAO yet!.",true);
     if(myBasisSet==nullptr) PRE.error("Missing basisset.",true);
     LCAOrbitalSet *lcos=new LCAOrbitalSet(myBasisSet,ReportLevel);
-    put(*lcos, cur);
+    loadMO(*lcos, cur);
 
     //@TODO: add cusp condition
 
@@ -444,39 +444,12 @@ namespace qmcplusplus
   /** Parse the xml file for information on the Dirac determinants.
    *@param cur the current xmlNode
    */
-  bool LCAOrbitalBuilder::put(LCAOrbitalSet &spo, xmlNodePtr cur)
+  bool LCAOrbitalBuilder::loadMO(LCAOrbitalSet &spo, xmlNodePtr cur)
   {
     #undef FunctionName
   #define FunctionName printf("Calling FunctionName from %s\n",__FUNCTION__);FunctionNameReal
     //Check if HDF5 present
     ReportEngine PRE("LCAOrbitalBuilder","put(xmlNodePtr)");
-
-    //Special case for sposet hierarchy: go up only once.
-    OhmmsAttributeSet locAttrib;
-    std::string cur_name;
-    locAttrib.add (cur_name, "name");
-    locAttrib.put(cur);
-    xmlNodePtr curtemp;
-    if (cur_name=="spo-up" || cur_name=="spo-dn")
-       curtemp=cur->parent;
-    else
-       curtemp=cur->parent->parent;
-
-    std::string MOtype,MOhref;
-    bool H5file=false;
-    OhmmsAttributeSet H5checkAttrib;
-    H5checkAttrib.add(MOtype,"type");
-    H5checkAttrib.add(MOhref,"href");
-    H5checkAttrib.put(curtemp);
-    xmlChar* MOhreftemp;
-    if(MOtype=="MolecularOrbital" && MOhref!="")
-    {
-       MOhreftemp=xmlGetProp(curtemp, (xmlChar*)"href");
-       H5file=true;
-       PRE.echo(curtemp);
-    }
-
-    const char* MOhref2((const char*)MOhreftemp);
 
     //initialize the number of orbital by the basis set size
     int norb=spo.getBasisSetSize();
@@ -512,14 +485,14 @@ namespace qmcplusplus
       return spo.setIdentity(true);
     }
     bool success=putOccupation(spo, occ_ptr);
-    if(H5file==false)
+    if(h5_path=="")
       success = putFromXML(spo, coeff_ptr);
     else
     {
       hdf_archive hin(myComm);
 
       if(myComm->rank()==0){
-        if(!hin.open(MOhref2,H5F_ACC_RDONLY))
+        if(!hin.open(h5_path,H5F_ACC_RDONLY))
           APP_ABORT("LCAOrbitalBuilder::putFromH5 missing or incorrect path to H5 file.");
         //TO REVIEWERS:: IDEAL BEHAVIOUR SHOULD BE:
         /*
@@ -538,9 +511,9 @@ namespace qmcplusplus
       }
       myComm->bcast(PBC);
       if (PBC)
-         success = putPBCFromH5(spo, MOhref2, coeff_ptr);
+         success = putPBCFromH5(spo, coeff_ptr);
       else
-         success = putFromH5(spo, MOhref2, coeff_ptr);
+         success = putFromH5(spo, coeff_ptr);
     }
 
     // Ye: used to construct cusp correction
@@ -595,10 +568,9 @@ namespace qmcplusplus
 
   /** read data from a hdf5 file
    * @param norb number of orbitals to be initialized
-   * @param fname hdf5 file name
    * @param coeff_ptr xmlnode for coefficients
    */
-  bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet &spo, const char* fname, xmlNodePtr coeff_ptr)
+  bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet &spo, xmlNodePtr coeff_ptr)
   {
 #if defined(HAVE_LIBHDF5)
     int norbs=spo.getOrbitalSetSize();
@@ -614,7 +586,7 @@ namespace qmcplusplus
     hdf_archive hin(myComm);
     if(myComm->rank()==0)
     {
-      if(!hin.open(fname,H5F_ACC_RDONLY))
+      if(!hin.open(h5_path,H5F_ACC_RDONLY))
         APP_ABORT("LCAOrbitalBuilder::putFromH5 missing or incorrect path to H5 file.");
 
       Matrix<RealType> Ctemp(neigs,spo.getBasisSetSize());
@@ -649,10 +621,9 @@ namespace qmcplusplus
 
   /** read data from a hdf5 file
    * @param norb number of orbitals to be initialized
-   * @param fname hdf5 file name
    * @param coeff_ptr xmlnode for coefficients
    */
-  bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet &spo, const char* fname, xmlNodePtr coeff_ptr)
+  bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet &spo, xmlNodePtr coeff_ptr)
   {
 #if defined(HAVE_LIBHDF5)
     ReportEngine PRE("LCAOrbitalBuilder","LCAOrbitalBuilder::putPBCFromH5");
@@ -678,7 +649,7 @@ namespace qmcplusplus
     aAttrib.put(curtemp);
 
     if(myComm->rank()==0){
-      if(!hin.open(fname,H5F_ACC_RDONLY))
+      if(!hin.open(h5_path,H5F_ACC_RDONLY))
         APP_ABORT("LCAOrbitalBuilder::putFromH5 missing or incorrect path to H5 file.");
       hin.push("parameters");
       hin.read(IsComplex,"IsComplex");
