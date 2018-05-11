@@ -318,7 +318,6 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
   void setOrbitalSetSize(int norbs)
   {
     OrbitalSetSize = norbs;
-    BasisSetSize=norbs;
     //SplineAdoptor::first_spo=0;
     //SplineAdoptor::last_spo=norbs;
   }

@@ -14,6 +14,11 @@
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
 
+#include "OhmmsPETE/OhmmsArray.h"
+#include "OhmmsData/AttributeSet.h"
+#include "Numerics/MatrixOperators.h"
+#include "OhmmsData/AttributeSet.h"
+
 #include "OhmmsData/AttributeSet.h"
 #include <QMCWaveFunctions/SPOSetBase.h>
 #include <QMCWaveFunctions/lcao/NGFunctor.h>
@@ -35,7 +40,7 @@ namespace qmcplusplus
 {
   /** traits for a localized basis set; used by createBasisSet
    *
-   * ROT {0=numuerica;, 1=gto; 2=sto} 
+   * ROT {0=numuerica;, 1=gto; 2=sto}
    * SH {0=cartesian, 1=spherical}
    * If too confusing, inroduce enumeration.
    */
@@ -99,7 +104,7 @@ namespace qmcplusplus
   }
 
 
-  LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, xmlNodePtr cur) 
+  LCAOrbitalBuilder::LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, xmlNodePtr cur)
     : targetPtcl(els), sourcePtcl(ions), myBasisSet(nullptr), h5_path("")
   {
     ClassName="LCAOrbitalBuilder";
@@ -118,9 +123,9 @@ namespace qmcplusplus
     aAttrib.add(h5_path,"href");
     aAttrib.add(PBCImages,"PBCimages");
     aAttrib.put(cur);
-     
+
     if(cur != NULL) aAttrib.put(cur);
-    
+
     radialOrbType=-1;
     if (transformOpt == "yes")
       radialOrbType=0;
@@ -186,14 +191,14 @@ namespace qmcplusplus
     {
       case(0): //numerical
         app_log() << "  LCAO: SoaAtomicBasisSet<MultiQuintic,"<<ylm<<">" << std::endl;
-        if(ylm) 
+        if(ylm)
           myBasisSet=createBasisSet<0,1>(cur);
         else
           myBasisSet=createBasisSet<0,0>(cur);
         break;
       case(1): //gto
         app_log() << "  LCAO: SoaAtomicBasisSet<MultiGTO,"<<ylm<<">" << std::endl;
-        if(ylm) 
+        if(ylm)
           myBasisSet=createBasisSet<1,1>(cur);
         else
           myBasisSet=createBasisSet<1,0>(cur);
@@ -245,14 +250,14 @@ namespace qmcplusplus
     {
       case(0): //numerical
         app_log() << "  LCAO: SoaAtomicBasisSet<MultiQuintic,"<<ylm<<">" << std::endl;
-        if(ylm) 
+        if(ylm)
           myBasisSet=createBasisSetH5<0,1>();
         else
           myBasisSet=createBasisSetH5<0,0>();
         break;
       case(1): //gto
         app_log() << "  LCAO: SoaAtomicBasisSet<MultiGTO,"<<ylm<<">" << std::endl;
-        if(ylm) 
+        if(ylm)
           myBasisSet=createBasisSetH5<1,1>();
         else
           myBasisSet=createBasisSetH5<1,0>();
@@ -340,7 +345,7 @@ namespace qmcplusplus
 
     //list of built centers
     std::vector<std::string> ao_built_centers;
-    
+
     int Nb_Elements(0);
     std::string basiset_name;
 
@@ -427,12 +432,353 @@ namespace qmcplusplus
 
     if(optimize=="yes") PRE.error("Optimizable SPO has not been supported by SoA LCAO yet!.",true);
     if(myBasisSet==nullptr) PRE.error("Missing basisset.",true);
-    SPOSetBase *lcos=new LCAOrbitalSet(myBasisSet,ReportLevel);
-    lcos->myComm=myComm;
+    LCAOrbitalSet *lcos=new LCAOrbitalSet(myBasisSet,ReportLevel);
+    put(*lcos, cur);
 
     //@TODO: add cusp condition
-    
+
     return lcos;
   }
 
+
+  /** Parse the xml file for information on the Dirac determinants.
+   *@param cur the current xmlNode
+   */
+  bool LCAOrbitalBuilder::put(LCAOrbitalSet &spo, xmlNodePtr cur)
+  {
+    #undef FunctionName
+  #define FunctionName printf("Calling FunctionName from %s\n",__FUNCTION__);FunctionNameReal
+    //Check if HDF5 present
+    ReportEngine PRE("LCAOrbitalBuilder","put(xmlNodePtr)");
+
+    //Special case for sposet hierarchy: go up only once.
+    OhmmsAttributeSet locAttrib;
+    std::string cur_name;
+    locAttrib.add (cur_name, "name");
+    locAttrib.put(cur);
+    xmlNodePtr curtemp;
+    if (cur_name=="spo-up" || cur_name=="spo-dn")
+       curtemp=cur->parent;
+    else
+       curtemp=cur->parent->parent;
+
+    std::string MOtype,MOhref;
+    bool H5file=false;
+    OhmmsAttributeSet H5checkAttrib;
+    H5checkAttrib.add(MOtype,"type");
+    H5checkAttrib.add(MOhref,"href");
+    H5checkAttrib.put(curtemp);
+    xmlChar* MOhreftemp;
+    if(MOtype=="MolecularOrbital" && MOhref!="")
+    {
+       MOhreftemp=xmlGetProp(curtemp, (xmlChar*)"href");
+       H5file=true;
+       PRE.echo(curtemp);
+    }
+
+    const char* MOhref2((const char*)MOhreftemp);
+
+    //initialize the number of orbital by the basis set size
+    int norb=spo.getBasisSetSize();
+    std::string debugc("no");
+    double orbital_mix_magnitude = 0.0;
+    bool PBC=false;
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(norb,"orbitals");
+    aAttrib.add(norb,"size");
+    aAttrib.add(debugc,"debug");
+    aAttrib.add(orbital_mix_magnitude, "orbital_mix_magnitude");
+    aAttrib.put(cur);
+    spo.setOrbitalSetSize(norb);
+    xmlNodePtr occ_ptr=NULL;
+    xmlNodePtr coeff_ptr=NULL;
+    cur = cur->xmlChildrenNode;
+    while(cur != NULL)
+    {
+      std::string cname((const char*)(cur->name));
+      if(cname == "occupation")
+      {
+        occ_ptr=cur;
+      }
+      else if(cname.find("coeff") < cname.size() || cname == "parameter" || cname == "Var")
+      {
+        coeff_ptr=cur;
+      }
+      cur=cur->next;
+    }
+    if(coeff_ptr == NULL)
+    {
+      app_log() << "   Using Identity for the LCOrbitalSet " << std::endl;
+      return spo.setIdentity(true);
+    }
+    bool success=putOccupation(spo, occ_ptr);
+    if(H5file==false)
+      success = putFromXML(spo, coeff_ptr);
+    else
+    {
+      hdf_archive hin(myComm);
+
+      if(myComm->rank()==0){
+        if(!hin.open(MOhref2,H5F_ACC_RDONLY))
+          APP_ABORT("LCAOrbitalBuilder::putFromH5 missing or incorrect path to H5 file.");
+        //TO REVIEWERS:: IDEAL BEHAVIOUR SHOULD BE:
+        /*
+         if(!hin.push("PBC")
+             PBC=false;
+         else
+            if (!hin.read(PBC,"PBC"))
+                APP_ABORT("Could not read PBC dataset in H5 file. Probably corrupt file!!!.");
+        // However, it always succeeds to enter the if condition even if the group does not exists...
+        */
+        hin.push("PBC");
+        PBC=false;
+        hin.read(PBC,"PBC");
+        hin.close();
+
+      }
+      myComm->bcast(PBC);
+      if (PBC)
+         success = putPBCFromH5(spo, MOhref2, coeff_ptr);
+      else
+         success = putFromH5(spo, MOhref2, coeff_ptr);
+    }
+
+    // Ye: used to construct cusp correction
+    //bool success2 = transformSPOSet();
+    if(debugc=="yes")
+    {
+      app_log() << "   Single-particle orbital coefficients dims="
+        << spo.C->rows() << " x " << spo.C->cols() << std::endl;
+      app_log() << *spo.C << std::endl;
+    }
+
+    //init_LCOrbitalSetOpt(orbital_mix_magnitude);
+
+    return success;
+  }
+
+  bool LCAOrbitalBuilder::putFromXML(LCAOrbitalSet &spo, xmlNodePtr coeff_ptr)
+  {
+    spo.Identity=true;
+    int norbs=0;
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(norbs,"size");
+    aAttrib.add(norbs,"orbitals");
+    aAttrib.put(coeff_ptr);
+    if(norbs < spo.getOrbitalSetSize())
+    {
+      return false;
+      APP_ABORT("LCAOrbitalBuilder::putFromXML missing or incorrect size");
+    }
+    if(norbs)
+    {
+      std::vector<ValueType> Ctemp;
+      int BasisSetSize = spo.getBasisSetSize();
+      Ctemp.resize(norbs*BasisSetSize);
+      spo.setIdentity(false);
+      putContent(Ctemp,coeff_ptr);
+      int n=0,i=0;
+      std::vector<ValueType>::iterator cit(Ctemp.begin());
+      while(i<spo.getOrbitalSetSize())
+      {
+        if(Occ[n]>std::numeric_limits<RealType>::epsilon())
+        {
+          std::copy(cit,cit+BasisSetSize,(*spo.C)[i]);
+          i++;
+        }
+        n++;
+        cit+=BasisSetSize;
+      }
+    }
+    return true;
+  }
+
+  /** read data from a hdf5 file
+   * @param norb number of orbitals to be initialized
+   * @param fname hdf5 file name
+   * @param coeff_ptr xmlnode for coefficients
+   */
+  bool LCAOrbitalBuilder::putFromH5(LCAOrbitalSet &spo, const char* fname, xmlNodePtr coeff_ptr)
+  {
+#if defined(HAVE_LIBHDF5)
+    int norbs=spo.getOrbitalSetSize();
+    int neigs=spo.getBasisSetSize();
+    int setVal=-1;
+    std::string setname;
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(setVal,"spindataset");
+    aAttrib.add(neigs,"size");
+    aAttrib.add(neigs,"orbitals");
+    aAttrib.put(coeff_ptr);
+    spo.setIdentity(false);
+    hdf_archive hin(myComm);
+    if(myComm->rank()==0)
+    {
+      if(!hin.open(fname,H5F_ACC_RDONLY))
+        APP_ABORT("LCAOrbitalBuilder::putFromH5 missing or incorrect path to H5 file.");
+
+      Matrix<RealType> Ctemp(neigs,spo.getBasisSetSize());
+      char name[72];
+      sprintf(name,"%s%d","/KPTS_0/eigenset_",setVal);
+      setname=name;
+      if(!hin.read(Ctemp,setname))
+      {
+         setname="LCAOrbitalBuilder::putFromH5 Missing "+setname+" from HDF5 File.";
+         APP_ABORT(setname.c_str());
+      }
+      hin.close();
+
+      int n=0,i=0;
+      while(i<norbs)
+      {
+        if(Occ[n]>0.0)
+        {
+          std::copy(Ctemp[n],Ctemp[n+1],(*spo.C)[i]);
+          i++;
+        }
+        n++;
+      }
+    }
+    myComm->bcast(spo.C->data(),spo.C->size());
+#else
+    APP_ABORT("LCAOrbitalBuilder::putFromH5 HDF5 is disabled.")
+#endif
+    return true;
+  }
+
+
+  /** read data from a hdf5 file
+   * @param norb number of orbitals to be initialized
+   * @param fname hdf5 file name
+   * @param coeff_ptr xmlnode for coefficients
+   */
+  bool LCAOrbitalBuilder::putPBCFromH5(LCAOrbitalSet &spo, const char* fname, xmlNodePtr coeff_ptr)
+  {
+#if defined(HAVE_LIBHDF5)
+    ReportEngine PRE("LCAOrbitalBuilder","LCAOrbitalBuilder::putPBCFromH5");
+    int norbs=spo.getOrbitalSetSize();
+    int neigs=spo.getBasisSetSize();
+    int setVal=-1;
+    int NbKpts;
+    int KptIdx=0;
+    bool IsComplex=false;
+    PosType twist(0.0);
+    PosType twistH5(0.0);
+    std::string setname;
+    OhmmsAttributeSet aAttrib;
+    aAttrib.add(setVal,"spindataset");
+    aAttrib.add(neigs,"size");
+    aAttrib.add(neigs,"orbitals");
+    aAttrib.put(coeff_ptr);
+    spo.setIdentity(false);
+    hdf_archive hin(myComm);
+
+    xmlNodePtr curtemp=coeff_ptr->parent->parent->parent;
+    aAttrib.add(twist,"twist");
+    aAttrib.put(curtemp);
+
+    if(myComm->rank()==0){
+      if(!hin.open(fname,H5F_ACC_RDONLY))
+        APP_ABORT("LCAOrbitalBuilder::putFromH5 missing or incorrect path to H5 file.");
+      hin.push("parameters");
+      hin.read(IsComplex,"IsComplex");
+      hin.pop();
+      hin.push("Nb_KPTS");
+      hin.read(NbKpts,"Nbkpts");
+      hin.pop();
+      for (int i=0;i<NbKpts;i++)
+      {
+         char name[72];
+         sprintf(name,"%s%d%s","/KPTS_",i,"/Coord");
+         setname=name;
+         hin.read(twistH5,setname);
+         if(std::abs(twistH5[0]-twist[0])<1e-6 &&  std::abs(twistH5[1]-twist[1])<1e-6 && std::abs(twistH5[2]-twist[2])<1e-6)
+         {
+            KptIdx=i;
+            break;
+         }
+      }
+
+      Matrix<RealType> Ctemp(neigs,spo.getBasisSetSize());
+
+      char name[72];
+      if(IsComplex)
+          sprintf(name,"%s%d%s%d%s","/KPTS_",KptIdx,"/eigenset_",setVal,"_real");
+      else
+          sprintf(name,"%s%d%s%d","/KPTS_",KptIdx,"/eigenset_",setVal);
+
+
+      setname=name;
+      if(!hin.read(Ctemp,setname))
+      {
+         setname="LCAOrbitalBuilder::putFromH5 Missing "+setname+" from HDF5 File.";
+         APP_ABORT(setname.c_str());
+      }
+
+#if defined (QMC_COMPLEX)
+      APP_ABORT("Complex Wavefunction not implemented yet. Please contact Developers");
+#endif //COMPLEX
+      hin.close();
+
+      int n=0,i=0;
+      while(i<norbs)
+      {
+        if(Occ[n]>0.0)
+        {
+          std::copy(Ctemp[n],Ctemp[n+1],(*spo.C)[i]);
+          i++;
+        }
+        n++;
+      }
+    }
+    myComm->bcast(spo.C->data(),spo.C->size());
+#else
+    APP_ABORT("LCAOrbitalBuilder::putFromH5 HDF5 is disabled.")
+#endif
+    return true;
+  }
+
+
+  bool LCAOrbitalBuilder::putOccupation(LCAOrbitalSet &spo, xmlNodePtr occ_ptr)
+  {
+    //die??
+    if(spo.getBasisSetSize() ==0)
+    {
+      APP_ABORT("LCAOrbitalBuilder::putOccupation detected ZERO BasisSetSize");
+      return false;
+    }
+    Occ.resize(std::max(spo.getBasisSetSize(),spo.getOrbitalSetSize()));
+    Occ=0.0;
+    for(int i=0; i<spo.getOrbitalSetSize(); i++)
+      Occ[i]=1.0;
+    std::vector<int> occ_in;
+    std::string occ_mode("table");
+    if(occ_ptr == NULL)
+    {
+      occ_mode="ground";
+    }
+    else
+    {
+      const xmlChar* o=xmlGetProp(occ_ptr,(const xmlChar*)"mode");
+      if(o)
+        occ_mode = (const char*)o;
+    }
+    //Do nothing if mode == ground
+    if(occ_mode == "excited")
+    {
+      putContent(occ_in,occ_ptr);
+      for(int k=0; k<occ_in.size(); k++)
+      {
+        if(occ_in[k]<0) //remove this, -1 is to adjust the base
+          Occ[-occ_in[k]-1]=0.0;
+        else
+          Occ[occ_in[k]-1]=1.0;
+      }
+    }
+    else if(occ_mode == "table")
+    {
+      putContent(Occ,occ_ptr);
+    }
+    return true;
+  }
 }

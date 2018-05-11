@@ -32,7 +32,6 @@ namespace qmcplusplus
 EGOSet::EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2): K(k), mK2(k2)
 {
   KptMax=k.size();
-  Identity=true;
   OrbitalSetSize=k.size();
   BasisSetSize=k.size();
   className="EGOSet";
@@ -43,7 +42,6 @@ EGOSet::EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2, c
   : K(k), mK2(k2)
 {
   KptMax=k.size();
-  Identity=true;
   OrbitalSetSize=k.size();
   BasisSetSize=k.size();
   className="EGOSet";

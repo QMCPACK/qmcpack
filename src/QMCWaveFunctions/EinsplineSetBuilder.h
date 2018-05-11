@@ -211,7 +211,6 @@ public:
     //oset->GGt=dot(transpose(oset->PrimLattice.G), oset->PrimLattice.G);
     oset->GGt=GGt;
     oset->setOrbitalSetSize (numOrbs);
-    oset->BasisSetSize   = numOrbs;
   }
 
 

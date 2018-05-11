@@ -78,7 +78,6 @@ namespace qmcplusplus
     component_laplacians.push_back(laplacians);
 
     OrbitalSetSize += norbs;
-    BasisSetSize = OrbitalSetSize;
 
     component_offsets.push_back(OrbitalSetSize);
   }

@@ -25,7 +25,6 @@
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "io/hdf_archive.h"
-#include "Message/CommOperators.h"
 
 #if defined(ENABLE_SMARTPOINTER)
 #include <boost/shared_ptr.hpp>
@@ -60,31 +59,16 @@ public:
   
   ///index in the builder list of sposets
   int builder_index;
-  ///true if C is an identity matrix
-  bool Identity;
   ///true if SPO is optimizable
   bool Optimizable;
   ///flag to calculate ionic derivatives
   bool ionDerivs;
   ///if true, can use GL type, default=false
   bool CanUseGLCombo;
-  ///if true, need distance tables
-  bool NeedDistanceTables;
-  ///if true, do not clean up
-  bool IsCloned;
   ///number of Single-particle orbitals
   IndexType OrbitalSetSize;
-  ///number of Single-particle orbitals
-  IndexType BasisSetSize;
   ///index of the particle
   IndexType ActivePtcl;
-  /** pointer matrix containing the coefficients
-   *
-   * makeClone makes a shallow copy
-   */
-  ValueMatrix_t* C;
-  ///occupation number
-  Vector<RealType> Occ;
   /// Optimizable variables
   opt_variables_type myVars;
   ///name of the basis set
@@ -95,14 +79,11 @@ public:
    */
   std::string objectName;
   
-  ///Pass Communicator
-  Communicate *myComm;
-  
   /** constructor */
   SPOSetBase();
 
   /** destructor */
-  virtual ~SPOSetBase();
+  virtual ~SPOSetBase() {};
 
   /** return the size of the orbital set
    */
@@ -130,22 +111,19 @@ public:
     return OrbitalSetSize;
   }
 
-  inline int getBasisSetSize() const
-  {
-    return BasisSetSize;
-  }
+  virtual int getBasisSetSize() const { return 0; }
 
-  bool setIdentity(bool useIdentity);
+  //bool setIdentity(bool useIdentity);
 
-  void checkObject();
+  virtual void checkObject() const {}
 
   ///get C and Occ
-  bool put(xmlNodePtr cur);
+  //bool put(xmlNodePtr cur);
 
-  virtual bool put(xmlNodePtr cur, SPOPool_t &spo_pool)
-  {
-    return put(cur);
-  }
+  //virtual bool put(xmlNodePtr cur, SPOPool_t &spo_pool)
+  //{
+  //  return put(cur);
+  //}
 
   ///reset
   virtual void resetParameters(const opt_variables_type& optVariables)=0;
@@ -332,10 +310,10 @@ public:
 
 
 protected:
-  bool putOccupation(xmlNodePtr occ_ptr);
-  bool putFromXML(xmlNodePtr coeff_ptr);
-  bool putFromH5(const char* fname, xmlNodePtr coeff_ptr);
-  bool putPBCFromH5(const char* fname, xmlNodePtr coeff_ptr);
+  //bool putOccupation(xmlNodePtr occ_ptr);
+  //bool putFromXML(xmlNodePtr coeff_ptr);
+  //bool putFromH5(const char* fname, xmlNodePtr coeff_ptr);
+  //bool putPBCFromH5(const char* fname, xmlNodePtr coeff_ptr);
 };
 
 #if defined(ENABLE_SMARTPOINTER)

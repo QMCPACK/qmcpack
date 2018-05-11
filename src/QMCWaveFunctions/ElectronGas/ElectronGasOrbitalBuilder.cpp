@@ -36,9 +36,7 @@ namespace qmcplusplus
 RealEGOSet::RealEGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2): K(k),mK2(k2)
 {
   KptMax=k.size();
-  Identity=true;
   OrbitalSetSize=2*k.size()+1;
-  BasisSetSize=2*k.size()+1;
   className="EGOSet";
 }
 

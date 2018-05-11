@@ -27,22 +27,10 @@ namespace qmcplusplus
 {
 
 SPOSetBase::SPOSetBase()
-:Identity(false),OrbitalSetSize(0),BasisSetSize(0),
-  ActivePtcl(-1),Optimizable(false),ionDerivs(false),builder_index(-1),C(nullptr)
+  :OrbitalSetSize(0), ActivePtcl(-1), Optimizable(false), ionDerivs(false), builder_index(-1)
 {
   CanUseGLCombo=false;
   className="invalid";
-  IsCloned=false;
-  //default is false: LCOrbitalSet.h needs to set this true and recompute needs to check
-  NeedDistanceTables=false;
-  myComm=nullptr;
-}
-
-/** clean up for shared data with clones
- */
-SPOSetBase::~SPOSetBase()
-{
-  if(!IsCloned && C!= nullptr) delete C;
 }
 
 /** default implementation */
@@ -98,6 +86,7 @@ SPOSetBase* SPOSetBase::makeClone() const
   return 0;
 }
 
+#if 0
 bool SPOSetBase::setIdentity(bool useIdentity)
 {
   Identity = useIdentity;
@@ -306,7 +295,7 @@ bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
     if(!hin.open(fname,H5F_ACC_RDONLY))
       APP_ABORT("SPOSetBase::putFromH5 missing or incorrect path to H5 file.");
 
-    Matrix<RealType> Ctemp(BasisSetSize,BasisSetSize);
+    Matrix<RealType> Ctemp(neigs,BasisSetSize);
     char name[72];
     sprintf(name,"%s%d","/KPTS_0/eigenset_",setVal);
     setname=name;
@@ -322,7 +311,7 @@ bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
     {
       if(Occ[n]>0.0)
       {
-        std::copy(Ctemp[n],Ctemp[n+1],(*C)[i]);
+        std::copy(Ctemp[n],Ctemp[n+1],(*spo.C)[i]);
         i++;
       }
       n++;
@@ -388,7 +377,7 @@ bool SPOSetBase::putPBCFromH5(const char* fname, xmlNodePtr coeff_ptr)
        }
     }
 
-    Matrix<RealType> Ctemp(BasisSetSize,BasisSetSize);
+    Matrix<RealType> Ctemp(neigs,BasisSetSize);
 
     char name[72];
     if(IsComplex)
@@ -471,7 +460,7 @@ bool SPOSetBase::putOccupation(xmlNodePtr occ_ptr)
     }
   return true;
 }
-
+#endif
 
 void SPOSetBase::basic_report(const std::string& pad)
 {
