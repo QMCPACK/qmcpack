@@ -37,7 +37,7 @@ class QmcpackVariations(DevBase):
     def settings(cls,
                  machine       = None,
                  build_path    = None,
-                 app_loc       = 'bin/qmcapp',
+                 app_loc       = 'bin/qmcpack',
                  generate_only = False):
         cls.machine       = machine
         cls.build_path    = build_path
@@ -271,7 +271,7 @@ class QmcpackVariations(DevBase):
             # check that the build exists
             app_loc = os.path.join(self.build_path,build_dir,self.app_loc)
             if not os.path.exists(app_loc) and not nexus_core.generate_only:
-                print '    Error: no qmcapp at '+app_loc
+                print '    Error: no qmcpack at '+app_loc
                 error = True
             #end if
             job.app_name = app_loc

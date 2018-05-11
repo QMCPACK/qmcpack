@@ -89,7 +89,7 @@ opt = generate_qmcpack(
     # nexus inputs
     identifier   = 'opt',           # identifier/file prefix
     path         = 'c20/opt',       # directory for opt run
-    job          = Job(cores=16,app='qmcapp'),
+    job          = Job(cores=16,app='qmcpack'),
     pseudos      = ['C.BFD.xml'],   # qmcpack PP file
     system       = c20,             # run c20
     # input format selector   
@@ -126,7 +126,7 @@ qmc = generate_qmcpack(
     # nexus inputs
     identifier   = 'qmc',           # identifier/file prefix       
     path         = 'c20/qmc',  # directory for dmc run       
-    job          = Job(cores=16,app='qmcapp'),
+    job          = Job(cores=16,app='qmcpack'),
     pseudos      = ['C.BFD.xml'],   # qmcpack PP file
     system       = c20,             # run c20
     # input format selector                                      

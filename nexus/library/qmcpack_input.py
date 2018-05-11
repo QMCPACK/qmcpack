@@ -2596,7 +2596,7 @@ project.defaults.set(
     application = application
     )
 application.defaults.set(
-    name='qmcapp',role='molecu',class_='serial',version='1.0'
+    name='qmcpack',role='molecu',class_='serial',version='1.0'
     )
 #simulationcell.defaults.set(
 #    bconds = 'p p p',lr_dim_cutoff=15
@@ -5904,7 +5904,7 @@ if __name__=='__main__':
                     id='C16B',
                     series = 0,
                     application = section(
-                        name = 'qmcapp',
+                        name = 'qmcpack',
                         role = 'molecu',
                         class_ = 'serial',
                         version = .2
@@ -6225,7 +6225,7 @@ if __name__=='__main__':
             simulation = section(
                 project = section(
                     id='C16B',series = 0,
-                    application = section(name='qmcapp',role='molecu',class_='serial',version=.2),
+                    application = section(name='qmcpack',role='molecu',class_='serial',version=.2),
                     host='kraken',date='3 May 2012',user='jtkrogel'
                     ),
                 random = section(seed=13),
@@ -6419,7 +6419,7 @@ if __name__=='__main__':
         q=QmcpackInput()
         q.simulation = section(
             project = section('C16B',0,
-                application = section('qmcapp','molecu','serial',.2),
+                application = section('qmcpack','molecu','serial',.2),
                 host = 'kraken',
                 date = '3 May 2012',
                 user = 'jtkrogel'
