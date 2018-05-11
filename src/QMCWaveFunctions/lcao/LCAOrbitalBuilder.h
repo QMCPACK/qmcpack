@@ -20,7 +20,7 @@
 
 #include "QMCWaveFunctions/BasisSetBase.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
-#include "QMCWaveFunctions/SPOSetBuilderBase.h"
+#include "QMCWaveFunctions/SPOSetBuilder.h"
 
 namespace qmcplusplus
 {

@@ -18,7 +18,7 @@
 
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/SPOSetBase.h"
-#include "QMCWaveFunctions/SPOSetBuilderBase.h"
+#include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 
 

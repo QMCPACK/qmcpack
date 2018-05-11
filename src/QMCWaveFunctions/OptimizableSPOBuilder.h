@@ -17,7 +17,7 @@
 #ifndef OPTIMIZABLE_SPO_BUILDER_H
 #define OPTIMIZABLE_SPO_BUILDER_H
 
-#include "QMCWaveFunctions/SPOSetBuilderBase.h"
+#include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/OptimizableSPOSet.h"
 
 
