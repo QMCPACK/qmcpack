@@ -14,10 +14,6 @@
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "OhmmsPETE/OhmmsArray.h"
-#include "OhmmsData/AttributeSet.h"
-#include "Numerics/MatrixOperators.h"
-#include "OhmmsData/AttributeSet.h"
 
 #include "OhmmsData/AttributeSet.h"
 #include <QMCWaveFunctions/SPOSetBase.h>

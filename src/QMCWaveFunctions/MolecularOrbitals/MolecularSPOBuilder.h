@@ -264,9 +264,9 @@ public:
             if(spo_name != "")
               lcos->objectName=spo_name;
             else
-              throw std::runtime_error("LCOrbitalSetOpt spo set must have a name");
+              APP_ABORT("LCOrbitalSetOpt spo set must have a name");
 #else
-            throw std::runtime_error("Orbital Rotation is not supported by SoA builds yet!");
+            APP_ABORT("Orbital Rotation is not supported by SoA builds yet!");
 #endif
           } else {
             app_log() << "Creating LCOrbitalSet with the input coefficients" << std::endl;

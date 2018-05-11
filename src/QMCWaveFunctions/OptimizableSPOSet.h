@@ -34,6 +34,7 @@ protected:
 
   // Number of occupied states, number of basis states
   int N, M;
+  ///number of basis
   IndexType BasisSetSize;
   /** pointer to matrix containing the coefficients
    *
