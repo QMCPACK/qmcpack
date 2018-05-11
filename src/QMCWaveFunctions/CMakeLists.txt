@@ -189,11 +189,11 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   WaveFunctionFactory.cpp
   )
 
-IF(NOT QMC_COMPLEX AND ENABLE_ORBROT)
+IF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
   SET(FERMION_SRCS ${FERMION_SRCS}
     Fermion/SlaterDetOpt.cpp
     )
-ENDIF(NOT QMC_COMPLEX AND ENABLE_ORBROT)
+ENDIF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
 
 ####################################
 # create libqmcwfs

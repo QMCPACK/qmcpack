@@ -183,9 +183,6 @@
 /* For FCIQMC compilation  */
 #cmakedefine BUILD_FCIQMC @BUILD_FCIQMC@
 
-/* Enables preliminary orbital rotation support */
-#cmakedefine ENABLE_ORBROT @ENABLE_ORBROT@
-
 #cmakedefine DEBUG_PSIBUFFER_ON @DEBUG_PSIBUFFER_ON@
 
 /* Disable trace manager and associated features */
