@@ -1143,7 +1143,7 @@ def twist_averaged_qmc(identifier = '',
             job        = qmcjob,
             block      = block_qmc,
             force_write= force_write,
-            app_name   = 'qmcapp_complex',
+            app_name   = 'qmcpack_complex',
             sims       = qmcs,
             system     = system
         )        
