@@ -1666,7 +1666,7 @@ if __name__=='__main__':
                     system    = link('system'),
                     job       = job(nodes=20, threads=8,
                                     hours=2,  minutes=30,
-                                    app_name='qmcapp'),
+                                    app_name='qmcpack'),
                     qmc_calcs = [
                         loop(max = 4,
                              qmc = linear(
