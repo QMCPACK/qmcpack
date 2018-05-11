@@ -285,42 +285,58 @@ class collection(hidden):
     #end def __init__
 
     def __setitem__(self,name,value):
-        self.error('elements can only be set via the add function')
-        #self.add(value)
+        #self.error('elements can only be set via the add function')
+        self.add(value,key=name)
     #end def __setitem__
 
+    def __delitem__(self,name):
+        #self.error('elements can only be deleted via the remove function')
+        self.remove(name)
+    #end def __delitem__
+
+    def __setattr__(self,name,value):
+        #self.error('elements can only be set via the add function')
+        self.add(value,key=name)
+    #end def __setattr__
+
+    def __delattr__(self,name):
+        #self.error('elements can only be deleted via the remove function')
+        self.remove(name)
+    #end def __delattr__
+
     def add(self,element,strict=True,key=None):
-        if key is None:
-            identifier = element.identifier
-            public = self.public()
-            missing_identifier = False
-            if not element.tag in plurals_inv and element.collection_id is None:
-                self.error('collection cannot be formed\n  encountered non-plural element\n  element class: {0}\n  element tag: {1}\n  tags allowed in a collection: {2}'.format(element.__class__.__name__,element.tag,sorted(plurals_inv.keys())))
-            elif identifier is None:
-                key = len(public)
-            elif isinstance(identifier,str):
-                if identifier in element:
-                    key = element[identifier]
-                else:
-                    missing_identifier = True
-                #end if
+        if not isinstance(element,QIxml):
+            self.error('collection cannot be formed\nadd attempted for non QIxml element\ntype received: {0}'.format(element.__class__.__name__))
+        #end if
+        keyin = key
+        key   = None
+        public = self.public()
+        identifier = element.identifier
+        missing_identifier = False
+        if not element.tag in plurals_inv and element.collection_id is None:
+            self.error('collection cannot be formed\n  encountered non-plural element\n  element class: {0}\n  element tag: {1}\n  tags allowed in a collection: {2}'.format(element.__class__.__name__,element.tag,sorted(plurals_inv.keys())))
+        elif identifier is None:
+            key = len(public)
+        elif isinstance(identifier,str):
+            if identifier in element:
+                key = element[identifier]
             else:
-                key = ''
-                for ident in identifier:
-                    if ident in element:
-                        key+=element[ident]
-                    #end if
-                #end for
-                missing_identifier = key==''
+                missing_identifier = True
             #end if
-            if missing_identifier:
-                key = len(public)
-                #if strict:
-                #    self.error('collection cannot be formed\n  element is missing an identifier\n  element class: {0}\n  element tag: {1}\n  identifier looked for: {2}\n  element contents:\n{3}'.format(element.__class__.__name__,element.tag,identifier,str(element)))
-                #else:
-                #    return False
-                ##end if
-            #end if
+        else:
+            key = ''
+            for ident in identifier:
+                if ident in element:
+                    key+=element[ident]
+                #end if
+            #end for
+            missing_identifier = key==''
+        #end if
+        if missing_identifier:
+            key = len(public)
+        #end if
+        if keyin is not None and not isinstance(key,int) and keyin.lower()!=key.lower():
+            self.error('attempted to add key with incorrect name\nrequested key: {0}\ncorrect key: {1}'.format(keyin,key))
         #end if
         #if key in public:
         #    self.error('attempted to add duplicate key to collection: {0}\n keys present: {1}'.format(key,sorted(public.keys())))
@@ -329,6 +345,16 @@ class collection(hidden):
         self.hidden().order.append(key)
         return True
     #end def add
+
+    def remove(self,key):
+        public = self.public()
+        if key in public:
+            del public[key]
+            self.hidden().order.remove(key)
+        else:
+            raise KeyError
+        #end if
+    #end def remove
 
     def get_single(self,preference=None):
         if len(self)>0:
@@ -4706,20 +4732,15 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
     if isinstance(jastrows,str):
         jorders = set(jastrows.replace('generate',''))
         if '1' in jorders and have_ions:
-            jin.append(
-                generate_jastrow('J1','bspline',8,system=system)
-                )
+            jterm = generate_jastrow('J1','bspline',8,system=system)
         #end if
         if '2' in jorders:
-            jin.append(
-                generate_jastrow('J2','bspline',8,system=system)
-                )
+            jterm = generate_jastrow('J2','bspline',8,system=system)
         #end if
         if '3' in jorders and have_ions:
-            jin.append(
-                generate_jastrow('J3','polynomial',3,3,4.0,system=system)
-                )
+            jterm = generate_jastrow('J3','polynomial',3,3,4.0,system=system)
         #end if
+        jin.append(jterm)
         if len(jin)==0:
             QmcpackInput.class_error('jastrow generation requested but no orders specified (1,2,and/or 3)')
         #end if
@@ -4744,7 +4765,10 @@ def generate_jastrows(jastrows,system=None,return_list=False,check_ions=False):
                 else:
                     jsys = system
                 #end if
-                jin.append(generate_jastrow(jtype,system=jsys,**jdict))
+                jterm = generate_jastrow(jtype,system=jsys,**jdict)
+                if jterm is not None:
+                    jin.append(jterm)
+                #end if
                 del jtype
                 del jsys
             elif jastrow[0] in jset:
@@ -5035,6 +5059,18 @@ def generate_jastrow2(function='bspline',*args,**kwargs):
         j2 = generate_pade_jastrow2(*args,**kwargs)
     else:
         QmcpackInput.class_error('function is invalid\n  you provided: {0}\n  valid options are: bspline or pade'.format(function),'generate_jastrow2')
+    #end if
+    if 'system' in kwargs and kwargs['system'] is not None:
+        nup,ndn = kwargs['system'].particles.electron_counts()
+        if nup<2:
+            del j2.correlations.uu
+        #end if
+        if nup<1 or ndn<1:
+            del j2.correlations.ud
+        #end if
+        if len(j2.correlations)==0:
+            j2=None
+        #end if
     #end if
     return j2
 #end def generate_jastrow2
