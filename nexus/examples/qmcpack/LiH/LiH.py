@@ -49,8 +49,8 @@ rocksalt_LiH = generate_physical_system(
     basis_vectors   = 'conventional',
     constants       = 7.1,
     units           = 'B',
-    kgrid           = (7,7,7),
-    kshift          = (1,1,1),
+    kgrid           = (1,1,1),
+    kshift          = (0,0,0),
     net_charge      = 0,
     net_spin        = 0,
     Li              = 1,
@@ -71,6 +71,8 @@ scf = generate_pwscf(
     ecutrho         = 1800,
     conv_thr        = 1.0e-10,
     mixing_beta     = 0.7,
+    kgrid           = (7,7,7),
+    kshift          = (1,1,1),
     )
 sims.append(scf)
 
@@ -86,8 +88,6 @@ nscf = generate_pwscf(
     ecutrho         = 1800,
     conv_thr        = 1.0e-10,
     mixing_beta     = 0.7,
-    kgrid           = (1,1,1),
-    kshift          = (0,0,0),
     dependencies    = (scf,'charge-density')
     )
 sims.append(nscf)
