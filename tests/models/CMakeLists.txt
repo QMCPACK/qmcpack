@@ -1,4 +1,10 @@
-  LIST(APPEND SHO_SCALARS "totenergy" "0.45  0")
+
+# The errors on the total energy are numerical noise, not statistical errors
+IF(QMC_MIXED_PRECISION)
+  LIST(APPEND SHO_SCALARS "totenergy" "0.45  0.00000002")
+ELSE()
+  LIST(APPEND SHO_SCALARS "totenergy" "0.45  4.0e-14")
+ENDIF()
   LIST(APPEND SHO_SCALARS "kinetic"   "0.225 0.0028")
   LIST(APPEND SHO_SCALARS "potential" "0.225 0.0028")
   LIST(APPEND SHO_SCALARS "latdev"    "1.0   0.013")
