@@ -375,9 +375,6 @@ public:
     }
   }
 
-  ///overwrite make_clones function
-  void make_clones(int n);
-
 protected:
 
   ///boolean for cleanup
