@@ -200,9 +200,6 @@ public:
   {
     return 0.0;
   };
-//       virtual RealType advanceWalkerForCSEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios, std::vector<RealType>& weights, std::vector<RealType>& logs ) {return 0.0;};
-  virtual void setLogEpsilon(RealType eps) {};
-//       virtual void advanceCSWalkers(std::vector<TrialWaveFunction*>& pclone, std::vector<MCWalkerConfiguration*>& wclone, std::vector<QMCHamiltonian*>& hclone, std::vector<RandomGenerator_t*>& rng, std::vector<RealType>& c_i){};
 
   ///normalization offset for cs type runs.
   RealType csoffset;

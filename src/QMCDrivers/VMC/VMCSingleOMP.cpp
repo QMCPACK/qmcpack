@@ -288,8 +288,6 @@ void VMCSingleOMP::resetRun()
 //              if (std::abs(w_m)>0.01)
 //                logepsilon += w_m;
 //            }
-//            #pragma omp barrier
-//            Movers[ip]->setLogEpsilon(logepsilon);
 //           }
 //
 //         for (int prestep=0; prestep<nWarmupSteps; ++prestep)

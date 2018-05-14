@@ -507,7 +507,6 @@ void VMCLinearOptOMP::resetRun()
 //           {
 //             os <<"  PbyP moves with RN, using VMCUpdatePbyPSampleRN"<< std::endl;
 //             Movers[ip]=new VMCUpdatePbyPSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
-//             Movers[ip]->setLogEpsilon(logepsilon);
 //
 //             CSMovers[ip]=new VMCUpdatePbyP(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
 //             //               Movers[ip]=new VMCUpdatePbyPWithDrift(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
@@ -532,7 +531,6 @@ void VMCLinearOptOMP::resetRun()
 //           {
 //             os <<"  walker moves with RN, using VMCUpdateAllSampleRN"<< std::endl;
 //             Movers[ip] =new VMCUpdateAllSampleRN(*wClones[ip],*psiClones[ip],*guideClones[ip],*hClones[ip],*Rng[ip]);
-//             Movers[ip]->setLogEpsilon(logepsilon);
 //
 //             CSMovers[ip]=new VMCUpdateAll(*wClones[ip],*psiClones[ip],*hClones[ip],*Rng[ip]);
 //           }
@@ -620,8 +618,6 @@ void VMCLinearOptOMP::resetRun()
 //             if (std::abs(w_m)>0.01)
 //               logepsilon += w_m;
 //           }
-// #pragma omp barrier
-//           Movers[ip]->setLogEpsilon(logepsilon);
 //         }
 //
 //         for (int prestep=0; prestep<nWarmupSteps; ++prestep)
