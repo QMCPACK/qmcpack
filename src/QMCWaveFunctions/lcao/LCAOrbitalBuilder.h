@@ -19,6 +19,7 @@
 #define QMCPLUSPLUS_SOA_LCAO_ORBITAL_BUILDER_H
 
 #include "QMCWaveFunctions/BasisSetBase.h"
+#include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 
 namespace qmcplusplus
@@ -68,6 +69,14 @@ namespace qmcplusplus
     template<int I, int J> BasisSet_t* createBasisSet(xmlNodePtr cur);
     template<int I, int J> BasisSet_t* createBasisSetH5();
 
+    // The following items were previously in SPOSetBase
+    ///occupation number
+    Vector<RealType> Occ;
+    bool loadMO(LCAOrbitalSet &spo, xmlNodePtr cur);
+    bool putOccupation(LCAOrbitalSet &spo, xmlNodePtr occ_ptr);
+    bool putFromXML(LCAOrbitalSet &spo, xmlNodePtr coeff_ptr);
+    bool putFromH5(LCAOrbitalSet &spo, xmlNodePtr coeff_ptr);
+    bool putPBCFromH5(LCAOrbitalSet &spo, xmlNodePtr coeff_ptr);
   };
 }
 #endif

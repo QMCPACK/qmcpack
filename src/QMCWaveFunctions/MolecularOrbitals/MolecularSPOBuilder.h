@@ -21,7 +21,9 @@
 #include "QMCWaveFunctions/MolecularOrbitals/LocalizedBasisSet.h"
 #include "QMCWaveFunctions/MolecularOrbitals/AtomicBasisBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSet.h"
+#ifndef ENABLE_SOA
 #include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSetOpt.h"
+#endif
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "io/hdf_archive.h"
@@ -225,6 +227,7 @@ public:
     spoAttrib.add (use_new_opt_class, "optimize");
     spoAttrib.put(cur);
     SPOSetBase *lcos=0;
+    xmlNodePtr cur_saved = cur;
     cur = cur->xmlChildrenNode;
     while(cur!=NULL)
     {
@@ -255,12 +258,16 @@ public:
 #endif
         {
           if ( use_new_opt_class == "yes" ) {
+#ifndef ENABLE_SOA
             app_log() << "Creating LCOrbitalSetOpt with the input coefficients" << std::endl;
             lcos= new LCOrbitalSetOpt<ThisBasisSetType>(thisBasisSet,ReportLevel);
             if(spo_name != "")
               lcos->objectName=spo_name;
             else
-              throw std::runtime_error("LCOrbitalSetOpt spo set must have a name");
+              APP_ABORT("LCOrbitalSetOpt spo set must have a name");
+#else
+            APP_ABORT("Orbital Rotation is not supported by SoA builds yet!");
+#endif
           } else {
             app_log() << "Creating LCOrbitalSet with the input coefficients" << std::endl;
             lcos= new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet,ReportLevel,algorithm);
@@ -275,6 +282,7 @@ public:
       lcos = new LCOrbitalSet<ThisBasisSetType,true>(thisBasisSet,ReportLevel);
     }
     lcos->myComm=myComm;
+    lcos->put(cur_saved);
     return lcos;
   }
 private:

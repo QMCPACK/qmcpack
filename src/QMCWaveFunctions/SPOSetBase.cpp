@@ -27,22 +27,18 @@ namespace qmcplusplus
 {
 
 SPOSetBase::SPOSetBase()
-:Identity(false),OrbitalSetSize(0),BasisSetSize(0),
-  ActivePtcl(-1),Optimizable(false),ionDerivs(false),builder_index(-1),C(nullptr)
+  :OrbitalSetSize(0),Optimizable(false),ionDerivs(false),builder_index(-1)
+#if !defined(ENABLE_SOA)
+  ,Identity(false),BasisSetSize(0),C(nullptr)
+#endif
 {
   CanUseGLCombo=false;
   className="invalid";
+#if !defined(ENABLE_SOA)
   IsCloned=false;
   //default is false: LCOrbitalSet.h needs to set this true and recompute needs to check
-  NeedDistanceTables=false;
   myComm=nullptr;
-}
-
-/** clean up for shared data with clones
- */
-SPOSetBase::~SPOSetBase()
-{
-  if(!IsCloned && C!= nullptr) delete C;
+#endif
 }
 
 /** default implementation */
@@ -98,6 +94,7 @@ SPOSetBase* SPOSetBase::makeClone() const
   return 0;
 }
 
+#if !defined(ENABLE_SOA)
 bool SPOSetBase::setIdentity(bool useIdentity)
 {
   Identity = useIdentity;
@@ -211,13 +208,11 @@ bool SPOSetBase::put(xmlNodePtr cur)
       PBC=false;
       hin.read(PBC,"PBC");
       hin.close();
-
+      if (PBC)
+        APP_ABORT("SPOSetBase::putFromH5 PBC is not supported by AoS builds");
     }
     myComm->bcast(PBC);
-    if (PBC)
-       success = putPBCFromH5(MOhref2, coeff_ptr);
-    else
-       success = putFromH5(MOhref2, coeff_ptr);
+    success = putFromH5(MOhref2, coeff_ptr);
   }
 
   bool success2 = transformSPOSet();
@@ -306,7 +301,7 @@ bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
     if(!hin.open(fname,H5F_ACC_RDONLY))
       APP_ABORT("SPOSetBase::putFromH5 missing or incorrect path to H5 file.");
 
-    Matrix<RealType> Ctemp(BasisSetSize,BasisSetSize);
+    Matrix<RealType> Ctemp(neigs,BasisSetSize);
     char name[72];
     sprintf(name,"%s%d","/KPTS_0/eigenset_",setVal);
     setname=name;
@@ -315,98 +310,6 @@ bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
        setname="SPOSetBase::putFromH5 Missing "+setname+" from HDF5 File.";
        APP_ABORT(setname.c_str());
     }
-    hin.close();
-
-    int n=0,i=0;
-    while(i<norbs)
-    {
-      if(Occ[n]>0.0)
-      {
-        std::copy(Ctemp[n],Ctemp[n+1],(*C)[i]);
-        i++;
-      }
-      n++;
-    }
-  }
-  myComm->bcast(C->data(),C->size());
-#else
-  APP_ABORT("SPOSetBase::putFromH5 HDF5 is disabled.")
-#endif
-  return true;
-}
-
-
-/** read data from a hdf5 file
- * @param norb number of orbitals to be initialized
- * @param fname hdf5 file name
- * @param coeff_ptr xmlnode for coefficients
- */
-bool SPOSetBase::putPBCFromH5(const char* fname, xmlNodePtr coeff_ptr)
-{
-#if defined(HAVE_LIBHDF5)
-  ReportEngine PRE("SPOSetBase","SPOSetBase::putPBCFromH5");
-  int norbs=OrbitalSetSize;
-  int neigs=BasisSetSize;
-  int setVal=-1;
-  int NbKpts;
-  int KptIdx=0;
-  bool IsComplex=false;
-  PosType twist(0.0);
-  PosType twistH5(0.0);
-  std::string setname;
-  OhmmsAttributeSet aAttrib;
-  aAttrib.add(setVal,"spindataset");
-  aAttrib.add(neigs,"size");
-  aAttrib.add(neigs,"orbitals");
-  aAttrib.put(coeff_ptr);
-  setIdentity(false);
-  hdf_archive hin(myComm);
-
-  xmlNodePtr curtemp=coeff_ptr->parent->parent->parent;
-  aAttrib.add(twist,"twist");
-  aAttrib.put(curtemp);
-
-  if(myComm->rank()==0){
-    if(!hin.open(fname,H5F_ACC_RDONLY))
-      APP_ABORT("SPOSetBase::putFromH5 missing or incorrect path to H5 file.");
-    hin.push("parameters");
-    hin.read(IsComplex,"IsComplex");
-    hin.pop();
-    hin.push("Nb_KPTS");
-    hin.read(NbKpts,"Nbkpts");
-    hin.pop();
-    for (int i=0;i<NbKpts;i++)
-    {
-       char name[72];
-       sprintf(name,"%s%d%s","/KPTS_",i,"/Coord");
-       setname=name;
-       hin.read(twistH5,setname);
-       if(std::abs(twistH5[0]-twist[0])<1e-6 &&  std::abs(twistH5[1]-twist[1])<1e-6 && std::abs(twistH5[2]-twist[2])<1e-6)
-       {
-          KptIdx=i;
-          break;
-       }
-    }
-
-    Matrix<RealType> Ctemp(BasisSetSize,BasisSetSize);
-
-    char name[72];
-    if(IsComplex)
-        sprintf(name,"%s%d%s%d%s","/KPTS_",KptIdx,"/eigenset_",setVal,"_real");
-    else
-        sprintf(name,"%s%d%s%d","/KPTS_",KptIdx,"/eigenset_",setVal);
-
-
-    setname=name;
-    if(!hin.read(Ctemp,setname))
-    {
-       setname="SPOSetBase::putFromH5 Missing "+setname+" from HDF5 File.";
-       APP_ABORT(setname.c_str());
-    }
-
-#if defined (QMC_COMPLEX)
-    APP_ABORT("Complex Wavefunction not implemented yet. Please contact Developers");
-#endif //COMPLEX
     hin.close();
 
     int n=0,i=0;
@@ -471,7 +374,7 @@ bool SPOSetBase::putOccupation(xmlNodePtr occ_ptr)
     }
   return true;
 }
-
+#endif
 
 void SPOSetBase::basic_report(const std::string& pad)
 {
