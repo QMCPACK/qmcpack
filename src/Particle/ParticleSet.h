@@ -503,11 +503,6 @@ public:
    */
   void randomizeFromSource (ParticleSet &src);
 
-  /** make clones
-   * @param n number of clones including itself
-   */
-  virtual void make_clones(int n);
-
   /** return the ip-th clone
    * @param ip thread number
    *

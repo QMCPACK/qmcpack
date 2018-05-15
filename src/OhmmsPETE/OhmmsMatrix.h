@@ -528,7 +528,7 @@ inline void evaluate(Matrix<T,Alloc> &lhs, const Op &op,
   }
   else
   {
-    throw std::runtime_error("Error: LHS and RHS don't conform in OhmmsMatrix.");
+    throw std::runtime_error("Error in evaluate: LHS and RHS don't conform in OhmmsMatrix.");
   }
 }
 }

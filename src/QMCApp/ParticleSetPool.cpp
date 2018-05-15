@@ -44,16 +44,6 @@ ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
   myName=aname;
 }
 
-void ParticleSetPool::make_clones(int n)
-{
-  PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
-  while(it != it_end)
-  {
-    (*it).second->make_clones(n);
-    ++it;
-  }
-}
-
 ParticleSet* ParticleSetPool::getParticleSet(const std::string& pname)
 {
   std::map<std::string,ParticleSet*>::iterator pit(myPool.find(pname));

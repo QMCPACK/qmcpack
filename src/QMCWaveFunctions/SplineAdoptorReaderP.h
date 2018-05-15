@@ -357,7 +357,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
       foundit &= h5f.read(cG,s);
       get_psi_g(ti,spin,cur_bands[iorb].BandIndex,cG);//bcast cG
       double total_norm = compute_norm(cG);
-      if(std::abs(total_norm-1.0)>PW_COEFF_NORM_TOLERANCE)
+      if((checkNorm)&&(std::abs(total_norm-1.0)>PW_COEFF_NORM_TOLERANCE))
       {
         std::cerr << "The orbital " << iorb << " has a wrong norm " << total_norm
                   << ", computed from plane wave coefficients!" << std::endl
@@ -421,7 +421,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
         std::string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
         foundit &= h5f.read(cG,s);
         double total_norm = compute_norm(cG);
-        if(std::abs(total_norm-1.0)>PW_COEFF_NORM_TOLERANCE)
+        if((checkNorm)&&(std::abs(total_norm-1.0)>PW_COEFF_NORM_TOLERANCE))
         {
           std::cerr << "The orbital " << iorb << " has a wrong norm " << total_norm
                     << ", computed from plane wave coefficients!" << std::endl
