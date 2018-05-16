@@ -1,7 +1,7 @@
 
 # The errors on the total energy are numerical noise, not statistical errors
 IF(QMC_MIXED_PRECISION)
-  LIST(APPEND SHO_SCALARS "totenergy" "0.45  0.00000002")
+  LIST(APPEND SHO_SCALARS "totenergy" "0.45  0.00000004")
 ELSE()
   LIST(APPEND SHO_SCALARS "totenergy" "0.45  4.0e-14")
 ENDIF()
@@ -19,12 +19,16 @@ IF(NOT QMC_CUDA)
     0 SHO_SCALARS # VMC
   )
   
-  SIMPLE_RUN_AND_CHECK(short-sho-grad_lap
-    "${CMAKE_SOURCE_DIR}/tests/models/sho"
-    grad_lap.xml
-    1 1
-    ../../solids/bccH_3x3x3_ae/short-bccH_3x3x3_ae-deriv-1-1/check_grad_lap.py
-  )
+  IF (NOT MIXED_PRECISION)
+    SIMPLE_RUN_AND_CHECK(short-sho-grad_lap
+      "${CMAKE_SOURCE_DIR}/tests/models/sho"
+      grad_lap.xml
+      1 1
+      ../../solids/bccH_3x3x3_ae/short-bccH_3x3x3_ae-deriv-1-1/check_grad_lap.py
+    )
+  ELSE()
+    MESSAGE("Skipping SHO model potential derivative tests in mixed precision (QMC_MIXED_PRECISION=1)")
+  ENDIF()
 ELSE()
   MESSAGE("Skipping SHO model potential tests because they are not supported by CUDA build (QMC_CUDA=1)")
 ENDIF()
