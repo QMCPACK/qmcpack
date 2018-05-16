@@ -1342,7 +1342,8 @@ class Supercomputer(Machine):
                                  PD = 'waiting',
                                  R = 'running',
                                  S = 'suspended',
-                                 CD = 'complete'
+                                 CD = 'complete',
+				 RD = 'held'
                                  )
         elif self.queue_querier=='sacct':
             self.job_states=dict(CANCELLED = 'failed',  #long form
@@ -1588,8 +1589,10 @@ class Supercomputer(Machine):
                         status = None
                         if len(tokens)==8:
                             jid,loc,name,uname,status,wtime,nodes,reason = tokens
-                        elif len(tokens)==11: # nersc squeue output
+                        elif len(tokens)==11 and self.name != 'stampede2': # nersc squeue output
                             jid,uname,acc,jname,part,qos,nodes,tlimit,wtime,status,start_time = tokens
+                        elif len(tokens)==11 and self.name == 'stampede2': # nersc squeue output
+                            jid,loc,name,uname,status,wtime,nodes,reason,tmp1,tmp2,tmp3 = tokens
                         #end if
                         if status is not None:
                             if status in self.job_states:
@@ -2857,6 +2860,45 @@ class SuperMUC(Supercomputer):
     #end def write_job_header
 #end class SuperMUC
 
+#
+class Stampede2(Supercomputer):
+    name = 'stampede2'
+
+    requires_account   = True
+    batch_capable      = True
+    #executable_subfile = True
+
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='normal'
+
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > 48:   # warn if job will take more than 96 hrs.
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes =0
+            job.seconds =0
+        #end if
+
+        c='#!/bin/bash\n'
+        c+='#SBATCH --job-name '+str(job.name)+'\n'
+        c+='#SBATCH --account='+str(job.account)+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+	c+='#SBATCH -p {0}\n'.format(job.queue)
+        c+='\n'
+        return c
+    #end def write_job_header
+#end class Stampede2
+
 
 
 #Known machines
@@ -2892,6 +2934,7 @@ Skybridge(    1848,   2,    16,   64, 1000,   'srun',   'sbatch',  'squeue', 'sc
 Redsky(       2302,   2,     8,   12, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Solo(          187,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 SuperMUC(      205,   4,    10,  256,    8,'mpiexec', 'llsubmit',     'llq','llcancel')
+Stampede2(    4200,   1,    68,   96,    50, 'ibrun',   'sbatch',  'squeue', 'scancel')
 
 
 #machine accessor functions
