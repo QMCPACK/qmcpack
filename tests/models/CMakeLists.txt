@@ -19,16 +19,12 @@ IF(NOT QMC_CUDA)
     0 SHO_SCALARS # VMC
   )
   
-  IF (NOT MIXED_PRECISION)
-    SIMPLE_RUN_AND_CHECK(short-sho-grad_lap
-      "${CMAKE_SOURCE_DIR}/tests/models/sho"
-      grad_lap.xml
-      1 1
-      ../../solids/bccH_3x3x3_ae/short-bccH_3x3x3_ae-deriv-1-1/check_grad_lap.py
-    )
-  ELSE()
-    MESSAGE("Skipping SHO model potential derivative tests in mixed precision (QMC_MIXED_PRECISION=1)")
-  ENDIF()
+  SIMPLE_RUN_AND_CHECK(short-sho-grad_lap
+    "${CMAKE_SOURCE_DIR}/tests/models/sho"
+    grad_lap.xml
+    1 1
+    check_grad_lap.py
+  )
 ELSE()
   MESSAGE("Skipping SHO model potential tests because they are not supported by CUDA build (QMC_CUDA=1)")
 ENDIF()

@@ -239,7 +239,13 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
   endif()
 
   # set up command to run check, assume check_script is in the same folder as input
-  set(check_cmd ${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script})
+  if (EXISTS "${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script}")
+    set(check_cmd "${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script}")
+  elseif(EXISTS "${CMAKE_SOURCE_DIR}/tests/scripts/${check_script}")
+    set(check_cmd "${CMAKE_SOURCE_DIR}/tests/scripts/${check_script}")
+  else()
+    message(FATAL_ERROR "Check script not found: ${check_script}")
+  endif()
   #message(${check_cmd})
 
   # add test (task 2)
