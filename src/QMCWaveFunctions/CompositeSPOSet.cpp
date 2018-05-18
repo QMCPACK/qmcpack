@@ -17,7 +17,7 @@
 #include <Utilities/IteratorUtility.h>
 #include <algorithm>
 #include <OhmmsData/AttributeSet.h>
-#include <QMCWaveFunctions/BasisSetFactory.h>
+#include <QMCWaveFunctions/SPOSetBuilderFactory.h>
 
 namespace qmcplusplus
 {
@@ -78,7 +78,6 @@ namespace qmcplusplus
     component_laplacians.push_back(laplacians);
 
     OrbitalSetSize += norbs;
-    BasisSetSize = OrbitalSetSize;
 
     component_offsets.push_back(OrbitalSetSize);
   }
@@ -248,8 +247,4 @@ namespace qmcplusplus
     return createSPOSetFromXML(cur);
   }
 
-  bool CompositeSPOSetBuilder::put(xmlNodePtr cur)
-  {
-    return true;
-  }
 }

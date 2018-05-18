@@ -38,9 +38,6 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
-#if !defined(REMOVE_TRACEMANAGER)
-#include "Estimators/PostProcessor.h"
-#endif
 #include <queue>
 #include <cstring>
 #include "HDFVersion.h"
@@ -221,14 +218,7 @@ bool QMCMain::execute()
   {
     xmlNodePtr cur=m_qmcaction[qa].first;
     std::string cname((const char*)cur->name);
-    if(cname == "postprocess")
-    {
-#if !defined(REMOVE_TRACEMANAGER)
-      postprocess(cur,qa);
-#endif
-      break;
-    }
-    else if(cname == "qmc" || cname == "optimize")
+    if(cname == "qmc" || cname == "optimize")
     {
       executeQMCSection(cur);
       qmc_common.qmc_counter++; // increase the counter
@@ -666,63 +656,5 @@ bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
 }
 
 
-void QMCMain::postprocess(xmlNodePtr cur,int qacur)
-{
-#if !defined(REMOVE_TRACEMANAGER)
-  app_log()<<"\nQMCMain::postprocess"<< std::endl;
-
-  int qanext = qacur+1;
-  if(qanext>=m_qmcaction.size())
-  {
-    APP_ABORT("QMCMain::postprocess  no qmc method elements to postprocess");
-  }
-  else
-  {
-    app_log()<<"  Assuming same target particleset for all qmc methods"<< std::endl;
-    xmlNodePtr next=m_qmcaction[qanext].first;
-    std::string target("e");
-    OhmmsAttributeSet a;
-    a.add(target,"target");
-    a.put(next);
-    if(qmcSystem ==0)
-      qmcSystem = ptclPool->getWalkerSet(target);
-  }
-
-  int series_start=myProject.m_series;
-  int series_end=series_start;
-  for(int qa=qanext;qa<m_qmcaction.size();++qa)
-  {
-    xmlNodePtr meth=m_qmcaction[qa].first;
-    std::string cname((const char*)meth->name);
-    if(cname=="qmc"||cname=="optimize"||cname=="cmc")
-      series_end++;
-    else if(cname=="loop")
-    {
-      int niter=1;
-      OhmmsAttributeSet a;
-      a.add(niter,"max");
-      a.put(meth);
-      series_end+=niter;
-    }
-  }
-  app_log()<<"  Found series";
-  for(int s=series_start;s<series_end;++s)
-    app_log()<<" "<<s;
-  app_log()<< std::endl;
-
-  std::string id = myProject.m_title;
-
-  if(hamPool==0)
-    APP_ABORT("QMCMain::postprocess  hamPool is null");
-  if(psiPool==0)
-    APP_ABORT("QMCMain::postprocess  psiPool is null");
-  if(ptclPool==0)
-    APP_ABORT("QMCMain::postprocess  ptclPool is null");
-
-  PostProcessor PP(id,series_start,series_end);
-  PP.put(cur,*ptclPool,*psiPool,*hamPool);
-  PP.postprocess();
-#endif
-}
 
 }

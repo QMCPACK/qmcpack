@@ -56,8 +56,6 @@ private:
   bool addOneBody(xmlNodePtr cur);
   ///add two-body term
   bool addTwoBody(xmlNodePtr cur);
-  ///add three-body term
-  bool addThreeBody(xmlNodePtr cur);
   /// add electron-electron ion term
   bool add_eeI (xmlNodePtr cur);
   ///add k-Space term

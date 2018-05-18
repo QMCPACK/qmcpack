@@ -107,7 +107,7 @@ opt = generate_qmcpack(
     # nexus inputs
     identifier   = 'opt',           # identifier/file prefix
     path         = 'graphene/opt',  # directory for opt run
-    job          = Job(cores=16,app='qmcapp'),
+    job          = Job(cores=16,app='qmcpack'),
     pseudos      = ['C.BFD.xml'],   # qmcpack PP file
     system       = graphene,        # run graphene
     # input format selector   
@@ -180,7 +180,7 @@ qmc = generate_qmcpack(
     # nexus inputs
     identifier   = 'qmc',           # identifier/file prefix       
     path         = 'graphene/qmc',  # directory for dmc run       
-    job          = Job(cores=16,app='qmcapp'),
+    job          = Job(cores=16,app='qmcpack'),
     pseudos      = ['C.BFD.xml'],   # qmcpack PP file
     system       = graphene,        # run graphene
     # input format selector                                      

@@ -34,6 +34,15 @@ protected:
 
   // Number of occupied states, number of basis states
   int N, M;
+  ///number of basis
+  IndexType BasisSetSize;
+  /** pointer to matrix containing the coefficients
+   *
+   * makeClone makes a shallow copy
+   */
+  ValueMatrix_t* C;
+  ///if true, do not clean up
+  bool IsCloned;
 
   RealType derivScale;
   RealType thr;

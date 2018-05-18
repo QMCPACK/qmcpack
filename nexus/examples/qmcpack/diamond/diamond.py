@@ -57,7 +57,7 @@ conv = generate_pw2qmcpack(
 qmc = generate_qmcpack(
     identifier   = 'vmc',
     path         = 'diamond/vmc',
-    job          = Job(cores=16,threads=4,app='qmcapp'),
+    job          = Job(cores=16,threads=4,app='qmcpack'),
     input_type   = 'basic',
     system       = dia16,
     pseudos      = ['C.BFD.xml'],

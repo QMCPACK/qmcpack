@@ -227,7 +227,6 @@ ENDIF()
     Particle/DistanceTableAB.cpp
     Particle/DistanceTable.cpp
     Particle/HDFWalkerInputManager.cpp
-    Particle/make_clones.cpp
     LongRange/KContainer.cpp
     LongRange/StructFact.cpp
     LongRange/LPQHIBasis.cpp
@@ -326,10 +325,6 @@ ENDIF()
   #IF(BUILD_QMCTOOLS)
   SUBDIRS(QMCTools)
   #ENDIF(BUILD_QMCTOOLS)
-
-  IF(BUILD_SQD)
-    SUBDIRS(SQD)
-  ENDIF(BUILD_SQD)
 
   if (BUILD_UNIT_TESTS) #{
     SET(HAS_TARGET_COMPILE_DEFINITIONS 1)

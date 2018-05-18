@@ -37,7 +37,7 @@ putContent(qmcplusplus::Vector<T>& a, xmlNodePtr cur)
   int n(a.size());
   while(!stream.eof() && i<n )
   {
-    stream >> a(i++);
+    stream >> a[i++];
   }
   return true;
 }

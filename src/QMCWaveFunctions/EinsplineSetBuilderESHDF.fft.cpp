@@ -506,68 +506,6 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
       }
     }
   }
-//    if(qafm!=0)
-//    {
-//      app_log()<<"Finding AFM pair for first "<<ntoshift<<" orbitals."<< std::endl;
-//
-//      for (int ti=0; ti<ntoshift; ti++)
-//      {
-//        bool found(false);
-//        PosType ku = TwistAngles[SortBands[ti].TwistIndex];
-//        PosType k1 = OrbitalSet->PrimLattice.k_cart(ku);
-//        for (int tj=0; tj<TwistAngles.size(); tj++)
-//        {
-//          if(tj!=SortBands[ti].TwistIndex)
-//          {
-//            ku=TwistAngles[tj];
-//            PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
-//            double dkx = std::abs(k1[0] - k2[0]);
-//            double dky = std::abs(k1[1] - k2[1]);
-//            double dkz = std::abs(k1[2] - k2[2]);
-//            bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
-//            if(rightK)
-//            {
-//              SortBands[ti].TwistIndex = tj;
-//              //               app_log()<<"swapping: "<<ti<<" "<<tj<< std::endl;
-//              found=true;
-//              break;
-//            }
-//          }
-//        }
-//        if(!found)
-//        {
-//          if((std::abs(k1[1])<qafm+0.0001)&&(std::abs(k1[1])>qafm-0.0001)) k1[1]*=-1;
-//          else if((std::abs(k1[2])<qafm+0.0001)&&(std::abs(k1[2])>qafm-0.0001)) k1[2]*=-1;
-//
-//          for (int tj=0; tj<TwistAngles.size(); tj++)
-//          {
-//            if(tj!=SortBands[ti].TwistIndex)
-//            {
-//              ku=TwistAngles[tj];
-//              PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
-//              double dkx = std::abs(k1[0] - k2[0]);
-//              double dky = std::abs(k1[1] - k2[1]);
-//              double dkz = std::abs(k1[2] - k2[2]);
-//              bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
-//              if(rightK)
-//              {
-//                SortBands[ti].TwistIndex = tj;
-//                //               app_log()<<"swapping: "<<ti<<" "<<tj<< std::endl;
-//                found=true;
-//                break;
-//              }
-//            }
-//          }
-//        }
-//
-//        if(!found)
-//        {
-//          app_log()<<"Need twist: ("<<k1[0]+qafm<<","<<k1[1]<<","<<k1[2]<<")"<< std::endl;
-//          app_log()<<"Did not find afm pair for orbital: "<<ti<<", twist index: "<<SortBands[ti].TwistIndex<< std::endl;
-//          APP_ABORT("EinsplineSetBuilder::OccupyBands_ESHDF");
-//        }
-//      }
-//    }
   if (occ_format=="energy")
   {
     // To get the occupations right.

@@ -65,8 +65,6 @@ class StaticStructureFactor : public QMCHamiltonianBase
   //local functions
   void reset();
   void report(const std::string& pad);
-  void postprocess_density(const std::string& infile,const std::string& species,
-                           pts_t& points,dens_t& density,dens_t& density_err);
 
 };
 

@@ -32,6 +32,17 @@ namespace qmcplusplus
     int ReportLevel;
     ///pointer to the basis set
     basis_type* myBasisSet;
+    ///number of Single-particle orbitals
+    IndexType BasisSetSize;
+    /** pointer to matrix containing the coefficients
+     *
+     * makeClone makes a shallow copy
+     */
+    ValueMatrix_t* C;
+    ///true if C is an identity matrix
+    bool Identity;
+    ///if true, do not clean up
+    bool IsCloned;
     ///Temp(BasisSetSize) : Row index=V,Gx,Gy,Gz,L
     vgl_type Temp; 
     ///Tempv(OrbitalSetSize) Tempv=C*Temp
@@ -75,9 +86,17 @@ namespace qmcplusplus
 
     /** return the size of the basis set
     */
-    inline int getBasisSetSize() const
+    int getBasisSetSize() const
     {
       return (myBasisSet==nullptr)? 0: myBasisSet->getBasisSetSize();
+    }
+
+    bool setIdentity(bool useIdentity);
+
+    void checkObject() const
+    {
+      if(!(OrbitalSetSize == C->rows() && BasisSetSize == C->cols()))
+        APP_ABORT("   LCAOrbitalSet::checkObject Linear coeffient for LCAOrbitalSet is not consistent with the input.");
     }
 
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
@@ -108,6 +127,7 @@ namespace qmcplusplus
         ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi) const;
     void evaluate_vgl_impl(const vgl_type& temp, int i,
         ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet) const;
+
   };
 }
 #endif
