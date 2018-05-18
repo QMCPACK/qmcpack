@@ -297,8 +297,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     kid = kid->next; 
   }
 
-  if (has_backflow && UseRealOrbitals) APP_ABORT("backflow optimization is broken with UseRealOrbitals");
-  if (has_backflow && use_einspline_set_extended!="yes") APP_ABORT("backflow optimization does not yet function with EinsplinAdoptor, please add use_old_spline=\"yes\" to <determinantset> or <sposet_builder>.");
+  if (has_backflow && use_einspline_set_extended=="yes" && UseRealOrbitals) APP_ABORT("backflow optimization is broken with UseRealOrbitals");
 
   //////////////////////////////////
   // Create the OrbitalSet object
