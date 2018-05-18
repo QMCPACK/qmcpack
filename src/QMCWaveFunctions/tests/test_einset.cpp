@@ -132,6 +132,8 @@ const char *particles =
   SPOSetBase *spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo != NULL);
 
+#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
+  // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
   // for vgl
   SPOSetBase::ValueMatrix_t psiM(elec_.R.size(),spo->getOrbitalSetSize());
@@ -169,6 +171,7 @@ const char *particles =
   REQUIRE(ddpsiV[1](2,0) == ComplexApprox(0.5608575749).compare_real_only());
   REQUIRE(ddpsiV[1](2,1) == ComplexApprox(0.5237969314).compare_real_only());
   REQUIRE(ddpsiV[1](2,2) == ComplexApprox(-2.316497764).compare_real_only());
+#endif
 
 #if 0
   // Dump values of the orbitals
