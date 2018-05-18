@@ -18,8 +18,8 @@
  *
  * The most general reader class for SplineAdoptor using the full single grid for the supercell
  * - SplineR2RAdoptor
- * - SplineC2CPackedAdoptor
- * - SplineC2RPackedAdoptor
+ * - SplineC2CAdoptor
+ * - SplineC2RAdoptor
  * Each band is initialized with UBspline_3d_d and both real and imaginary parts are passed to the adoptor object
  * which will convert the data type to their internal precision. 
  */
