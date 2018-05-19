@@ -121,7 +121,6 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   update_token(__FILE__,__LINE__,"createSPOSetFromXML");
   //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
-  BufferLayer=2.0;
   SPOSetBase *OrbitalSet;
   int numOrbs = 0;
   int sortBands(1);
@@ -156,7 +155,6 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add (useGPU,     "gpu");
     a.add (spo_prec,   "precision");
     a.add (truncate,   "truncate");
-    a.add (BufferLayer, "buffer");
     a.add (use_einspline_set_extended,"use_old_spline");
     a.add (myName, "tag");
 #if defined(QMC_CUDA)

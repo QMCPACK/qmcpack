@@ -219,7 +219,6 @@ public:
   int NumBands, NumElectrons, NumSpins, NumTwists, NumCoreStates;
   int MaxNumGvecs;
   double MeshFactor;
-  RealType BufferLayer;
   RealType MatchingTol;
   TinyVector<int,3> MeshSize;
   std::vector<std::vector<TinyVector<int,3> > > Gvecs;
