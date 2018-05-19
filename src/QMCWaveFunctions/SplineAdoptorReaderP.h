@@ -66,6 +66,11 @@ struct SplineAdoptorReader: public BsplineReaderBase
     FFTplan=NULL;
   }
 
+  // set info for Hybrid
+  virtual void initialize_hybridrep_atomic_centers() {}
+  // transform cG to radial functions
+  virtual void create_atomic_centers_Gspace(Vector<std::complex<double> >& cG, Communicate& band_group_comm, int iorb) {}
+
   void export_MultiSpline(multi_UBspline_3d_z** target)
   {
     *target = new multi_UBspline_3d_z;
@@ -136,6 +141,9 @@ struct SplineAdoptorReader: public BsplineReaderBase
       app_log() << "  Using real einspline table" << std::endl;
     if(bspline->is_soa_ready)
       app_log() << "  Can use SoA implementation for mGL" << std::endl;
+
+    // set info for Hybrid
+    this->initialize_hybridrep_atomic_centers();
 
     //baseclass handles twists
     check_twists(bspline,bandgroup);
@@ -306,9 +314,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
         fft_spline(cG,ti);
         bspline->set_spline(spline_r,spline_i,cur_bands[iorb].TwistIndex,iorb,0);
       }
-      band_group_comm.bcast(rotate_phase_r);
-      band_group_comm.bcast(rotate_phase_i);
-      band_group_comm.bcast(cG);
+      this->create_atomic_centers_Gspace(cG, band_group_comm, iorb);
     }
 
     myComm->barrier();
