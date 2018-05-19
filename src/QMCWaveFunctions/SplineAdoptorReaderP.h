@@ -287,7 +287,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
     int iorb_first=band_groups[band_group_comm.getGroupID()];
     int iorb_last =band_groups[band_group_comm.getGroupID()+1];
 
-    app_log() << "Start transforming 3D B-Splines and atomic orbitals for hybrid representation." << std::endl;
+    app_log() << "Start transforming plane waves to 3D B-Splines." << std::endl;
     hdf_archive h5f(&band_group_comm,false);
     Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());
     const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
