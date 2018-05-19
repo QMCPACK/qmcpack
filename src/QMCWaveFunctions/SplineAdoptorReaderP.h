@@ -23,8 +23,8 @@
  * Each band is initialized with UBspline_3d_d and both real and imaginary parts are passed to the adoptor object
  * which will convert the data type to their internal precision. 
  */
-#ifndef QMCPLUSPLUS_EINSPLINE_BASE_ADOPTOR_READERP_H
-#define QMCPLUSPLUS_EINSPLINE_BASE_ADOPTOR_READERP_H
+#ifndef QMCPLUSPLUS_EINSPLINE_ADOPTOR_READERP_H
+#define QMCPLUSPLUS_EINSPLINE_ADOPTOR_READERP_H
 #include <mpi/collectives.h>
 #include <mpi/point2point.h>
 
@@ -222,8 +222,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
           spline_i=einspline::create(spline_i,start,end,MeshSize,bspline->HalfG);
 
         now.restart();
-        //initialize_spline_pio(spin,bandgroup);
-        initialize_spline_pio_reduce(spin,bandgroup);
+        initialize_spline_pio_gather(spin,bandgroup);
         app_log() << "  SplineAdoptorReader initialize_spline_pio " << now.elapsed() << " sec" << std::endl;
 
         fftw_destroy_plan(FFTplan);
@@ -276,7 +275,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
 
   /** initialize the splines
    */
-  void initialize_spline_pio_reduce(int spin, const BandInfoGroup& bandgroup)
+  void initialize_spline_pio_gather(int spin, const BandInfoGroup& bandgroup)
   {
     //distribute bands over processor groups
     int Nbands=bandgroup.getNumDistinctOrbitals();
