@@ -194,7 +194,6 @@ struct SplineAdoptorReader: public BsplineReaderBase
     {
       app_log() << "Use existing bspline tables in " << splinefile << std::endl;
       now.restart();
-      //chunked_bcast(myComm, bspline->MultiSpline);
       bspline->bcast_tables(myComm);
       app_log() << "  SplineAdoptorReader bcast the full table " << now.elapsed() << " sec" << std::endl;
       app_log().flush();
