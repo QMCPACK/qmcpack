@@ -124,7 +124,6 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   BufferLayer=2.0;
   SPOSetBase *OrbitalSet;
   int numOrbs = 0;
-  qafm=0;
   int sortBands(1);
   int spinSet = 0;
   int TwistNum_inp=0;
@@ -148,7 +147,6 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add (H5FileName, "href");
     a.add (TileFactor, "tile");
     a.add (sortBands,  "sort");
-    a.add (qafm,  "afmshift");
     a.add (TileMatrix, "tilematrix");
     a.add (TwistNum_inp,   "twistnum");
     a.add (givenTwist,   "twist");
@@ -251,9 +249,8 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   H5OrbSet aset(H5FileName, spinSet, numOrbs);
   std::map<H5OrbSet,SPOSetBase*,H5OrbSet>::iterator iter;
   iter = SPOSetMap.find (aset);
-  if ((iter != SPOSetMap.end() ) && (!NewOcc) && (qafm==0))
+  if ((iter != SPOSetMap.end() ) && (!NewOcc))
   {
-    qafm=0;
     app_log() << "SPOSet parameters match in EinsplineSetBuilder:  "
               << "cloning EinsplineSet object.\n";
     return iter->second->makeClone();

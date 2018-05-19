@@ -326,7 +326,6 @@ public:
   int LastSpinSet, NumOrbitalsRead;
 
   std::string occ_format;
-  RealType qafm;
   int particle_hole_pairs;
   bool makeRotations;
 #if 0
