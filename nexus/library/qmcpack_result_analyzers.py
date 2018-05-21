@@ -50,7 +50,7 @@ class OptimizationAnalyzer(ResultAnalyzer):
 
 
         ew,vw = energy_weight,variance_weight
-        if ew==None or vw==None:
+        if ew is None or vw is None:
             opts_in = []            
             for qmc in input.simulation.calculations:
                 if qmc.method in self.opt_methods:
@@ -59,19 +59,23 @@ class OptimizationAnalyzer(ResultAnalyzer):
             #end for
             optin = opts_in[-1] #take cost info from the last optimization section
             curv,crv,ce = optin.get(['unreweightedvariance','reweightedvariance','energy'])
-            tol=1e-4
-            if crv>tol:
-                cv = crv
-            elif curv>tol:
-                cv = curv
-            else:
-                cv = 0
+            if curv is None and crv is None and ce is None:
+                ce  = 0.9 # qmcpack defaults
+                crv = 0.1
             #end if
-            if ew==None:
-                ew = ce
+            if vw is None:
+                vw = 0
+                if crv is not None:
+                    vw += crv
+                elif curv is not None:
+                    vw += curv
+                #end if
             #end if
-            if vw==None:
-                vw = cv
+            if ew is None:
+                ew = 0
+                if ce is not None:
+                    ew = ce
+                #end if
             #end if
         #end if
 
