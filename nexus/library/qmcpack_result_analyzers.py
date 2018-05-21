@@ -77,6 +77,10 @@ class OptimizationAnalyzer(ResultAnalyzer):
                 vw = cv
             #end if
         #end if
+        if abs(ew)<tol and abs(vw)<tol:
+            ew = 0.9 # qmcpack defaults
+            vw = 0.1
+        #end if
 
         if self.optimize=='lastcost':
             self.optimize = ew,vw
