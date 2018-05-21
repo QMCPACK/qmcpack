@@ -67,6 +67,9 @@ class OptimizationAnalyzer(ResultAnalyzer):
             else:
                 cv = 0
             #end if
+            if ce is None:
+                ce = 0
+            #end if
             if ew==None:
                 ew = ce
             #end if
