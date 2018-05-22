@@ -452,7 +452,7 @@ namespace qmcplusplus
 
     /** spline destroy */
     template<typename SplineType>
-    inline void destroy(SplineType *restrict spline)
+    inline void destroy(SplineType *restrict &spline)
     {
       if(spline!=NULL)
       {
