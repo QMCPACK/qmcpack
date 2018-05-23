@@ -46,7 +46,6 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xm
   myTableIndex=1;
 
   MatchingTol=10*std::numeric_limits<float>::epsilon();
-//     for (int i=0; i<3; i++) afm_vector[i]=0;
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
       TileMatrix(i,j) = 0;
@@ -899,30 +898,6 @@ EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs)
   app_log() << "We will read " << NumDistinctOrbitals << " distinct orbitals.\n";
   app_log() << "There are " << NumCoreOrbs << " core states and "
             << NumValenceOrbs << " valence states.\n";
-//     if(qafm!=0) //afm_vector[0]=qafm;
-//     {afm_vector
-//       bool found(false);
-//       for (int tj=0; tj<TwistAngles.size(); tj++)
-//       {
-//         PosType ku=TwistAngles[tj];
-//         PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
-//         double dkx = std::abs(afm_vector[0] - k2[0]);
-//         double dky = std::abs(afm_vector[1] - k2[1]);
-//         double dkz = std::abs(afm_vector[2] - k2[2]);
-//         bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
-//         if(rightK)
-//         {
-//           afm_vector=k2;
-//           found=true;
-//           break;
-//         }
-//       }
-//       if(!found)
-//       {
-//         app_log()<<"Need twist: ("<<qafm<<",0,0)"<< std::endl;
-//         APP_ABORT("EinsplineSetBuilder::OccupyBands_ESHDF");
-//       }
-//     }
 }
 
 }

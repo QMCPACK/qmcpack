@@ -111,11 +111,6 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     chunked_bcast(comm, MultiSpline);
   }
 
-  void reduce_tables(Communicate* comm)
-  {
-    chunked_reduce(comm, MultiSpline);
-  }
-
   void gather_tables(Communicate* comm)
   {
     if(comm->size()==1) return;
