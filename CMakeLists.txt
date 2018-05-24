@@ -11,6 +11,11 @@ IF(COMMAND cmake_policy)
     # are used in try_compile test cmake projects.
     # CHECK_CXX_SOURCE_COMPILES and others depend on try_compile
   endif(CMAKE_VERSION VERSION_GREATER 3.1.3 AND NOT $ENV{CRAYPE_VERSION} MATCHES ".")
+  IF(CMAKE_GENERATOR MATCHES "Ninja")
+    cmake_policy(SET CMP0058 NEW)
+    # Ninja requires this for maximum efficiency
+    # Try it, its faster than make
+  ENDIF(CMAKE_GENERATOR MATCHES "Ninja")
 ENDIF(COMMAND cmake_policy)
 
 
