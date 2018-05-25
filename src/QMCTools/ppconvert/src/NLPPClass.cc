@@ -1930,7 +1930,7 @@ int main(int argc, char **argv)
   else {
     cerr << "Need to specify a potential file with --casino_pot "
 	 << "or --bfd_pot or --fhi_pot or --upf_pot.\n";
-    abort();
+    exit(1);
   }
 
   // Now check how the projectors are specified
