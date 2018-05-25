@@ -1881,6 +1881,7 @@ int main(int argc, char **argv)
   argList.push_back(ParamClass("casino", true));
   argList.push_back(ParamClass("log_grid", false));
   argList.push_back(ParamClass("local_channel", true));
+  argList.push_back(ParamClass("density_mix", true));
 
   CommandLineParserClass parser(argList);
   bool success = parser.Parse(argc, argv);
@@ -1902,7 +1903,8 @@ int main(int argc, char **argv)
 	 << "   --fpmd  fname.xml  \n"
 	 << "   --casino fname.xml \n"
 	 << "   --log_grid         \n"
-	 << "   --local_channel l  \n";
+	 << "   --local_channel l (l=0(s),1(p),2(d),3(f),..., default largest possible) \n"
+	 << "   --density_mix beta (0 <= beta < 1.0, default 0.75) \n";
     exit(1);
   }
 
@@ -1916,6 +1918,9 @@ int main(int argc, char **argv)
 
   if (parser.Found("local_channel"))
     nlpp.SetLocalChannel(atoi(parser.GetArg("local_channel").c_str()));
+
+  if (parser.Found("density_mix"))
+    nlpp.SetDensityMix(atof(parser.GetArg("density_mix").c_str()));
 
   if (parser.Found("casino_pot"))
     nlpp.ReadCASINO_PP(parser.GetArg("casino_pot"));
@@ -2120,7 +2125,7 @@ PseudoClass::CalcProjector(string refstate, int lchannel)
   // Set the potential
   atom.SetBarePot (this);
   // Solve atom
-  atom.NewMix = 0.75;
+  atom.NewMix = DensityMix;
   cerr << "Solving atom for reference state " << saveState << ":\n";
   atom.Solve();
   
