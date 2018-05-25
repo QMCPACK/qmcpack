@@ -1887,24 +1887,27 @@ int main(int argc, char **argv)
   bool success = parser.Parse(argc, argv);
   if (!success || parser.NumFiles()!=0) {
     cerr << "Usage:  ppconvert  options\n"
-	 << "  Options include:    \n"
-	 << "   --casino_pot fname \n"
-	 << "   --fhi_pot    fname \n"
+         << "  Options include:    \n"
+         << "     Input formats:    \n"
+         << "   --casino_pot fname \n"
+         << "   --fhi_pot    fname \n"
          << "   --upf_pot    fname \n"
-	 << "   --bfd_pot    fname \n"
+         << "   --bfd_pot    fname \n"
          << "   --gamess_pot fname \n"
-	 << "   --casino_us fname  \n"
-	 << "   --casino_up fname  \n"
-	 << "   --casino_ud fname  \n"
-	 << "   --xml  fname.xml   \n"
-	 << "   --tm   fname.tm    \n"
-	 << "   --upf  fname.upf   \n"
-	 << "   --fhi  fname.fhi   \n"
-	 << "   --fpmd  fname.xml  \n"
-	 << "   --casino fname.xml \n"
-	 << "   --log_grid         \n"
-	 << "   --local_channel l (l=0(s),1(p),2(d),3(f),..., default largest possible) \n"
-	 << "   --density_mix beta (0 <= beta < 1.0, default 0.75) \n";
+         << "     Output formats:    \n"
+         << "   --casino_us fname  \n"
+         << "   --casino_up fname  \n"
+         << "   --casino_ud fname  \n"
+         << "   --xml  fname.xml   \n"
+         << "   --tm   fname.tm    \n"
+         << "   --upf  fname.upf   \n"
+         << "   --fhi  fname.fhi   \n"
+         << "   --fpmd  fname.xml  \n"
+         << "   --casino fname.xml \n"
+         << "     Other options:    \n"
+         << "   --log_grid         \n"
+         << "   --local_channel l (l=0(s),1(p),2(d),3(f),..., default largest possible) \n"
+         << "   --density_mix beta (0 <= beta < 1.0, default 0.75) \n";
     exit(1);
   }
 
@@ -1934,7 +1937,7 @@ int main(int argc, char **argv)
     nlpp.ReadGAMESS_PP (parser.GetArg("gamess_pot"));
   else {
     cerr << "Need to specify a potential file with --casino_pot "
-	 << "or --bfd_pot or --fhi_pot or --upf_pot.\n";
+	 << "or --bfd_pot or --fhi_pot or --upf_pot or --gamess_pot.\n";
     exit(1);
   }
 
