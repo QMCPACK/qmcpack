@@ -12,7 +12,7 @@
 // File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
     
-    
+#include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"    
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
@@ -20,7 +20,7 @@
 namespace qmcplusplus
 {
 
-MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl, MultiDiracDeterminantBase* up, MultiDiracDeterminantBase* dn):
+MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl, MultiDiracDeterminantBase* up, MultiDiracDeterminantBase* dn, bool OrbOpt):
   C2node_up(nullptr),C2node_dn(nullptr),C(nullptr),
   CSFcoeff(nullptr),DetsPerCSF(nullptr),CSFexpansion(nullptr),
   IsCloned(false),
@@ -42,6 +42,10 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl, 
   NP = targetPtcl.getTotalNum();
   nels_up = targetPtcl.last(0)-targetPtcl.first(0);
   nels_dn = targetPtcl.last(1)-targetPtcl.first(1);
+  m_nb_up = static_cast<qmcplusplus::LCAOrbitalSet*>(up->Phi)->BasisSetSize; 
+  m_nb_dn = static_cast<qmcplusplus::LCAOrbitalSet*>(dn->Phi)->BasisSetSize; 
+  m_nmo_up= up->Phi->OrbitalSetSize;
+  m_nmo_dn= dn->Phi->OrbitalSetSize;
   FirstIndex_up=targetPtcl.first(0);
   FirstIndex_dn=targetPtcl.first(1);
   Dets.resize(2);
@@ -51,9 +55,222 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl, 
   myL.resize(NP);
   myG_temp.resize(NP);
   myL_temp.resize(NP);
+  myG_J.resize(NP);
+  myL_J.resize(NP);
+
 
   usingBF=false;
   BFTrans=0;
+
+  m_old_B_up  = *(static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C); 
+  m_init_B_up = *(static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C); 
+
+  Orbopt = OrbOpt;
+
+// NEED TO INCLUDE AN INTERNAL CHECK TO MAKE SURE CSF AND ORBOPT AREN'T USED SIMULATANEOUSLY
+//  if(usingCSF && Orbopt){
+//    APP_ABORT("Orbital Optimization Does not work with CSFS only DETS")
+//    app_log() << "Orbital Optimization Does not work with CSFS only DETS" << std::endl;
+//  }
+
+  if(m_nmo_up != m_nmo_dn || m_nb_up != m_nb_dn){
+    APP_ABORT("OrbitalSetSize or BasisSetSize is not equal for spin up/dn Molecular orbitals. ")
+    app_log() << "OrbitalSetSize or BasisSetSize is not equal for spin up/dn Molecular orbitals." << std::endl;
+  }
+
+
+
+}
+
+
+void MultiSlaterDeterminantFast::buildOptVariables(std::vector<RealType>& input_params_up,
+                                                   bool params_supplied_up,
+                                                   std::vector<RealType>& input_params_dn,
+                                                   bool params_supplied_dn)
+{
+  //a vector in which the element's index value correspond to Molecular Orbitals.
+  //The element value at a index indicates how many times an electron is excited from or to that orbital in the Multi-Slater expansion i.e the indices with non-zero elements are active space orbitals
+  std::vector<int> occupancy_vector_up (m_nmo_up,0);
+  std::vector<int> occupancy_vector_dn (m_nmo_dn,0);
+
+  // Function to fill occupancy_vectors, fill excitation_vectors and also return how many unique up/dn determinants are contained in the wavefunction 
+  unique_ups =  this->build_occ_vec(Dets[0]->detData,
+                                    nels_up,
+                                    m_nmo_up,
+                                    &occupancy_vector_up);
+
+  unique_dns =  this->build_occ_vec(Dets[1]->detData,
+                                    nels_dn,
+                                    m_nmo_dn,
+                                    &occupancy_vector_dn);
+
+  // When calculating the parameter derivative of the Multi-Slater component of the wavefunction, each unique deterimant can contribute multiple times. 
+  // The lookup_tbls are used so that a parameter derivative of a unique determinant is only done once and then scaled according to how many times it appears in the Multi-Slater expansion 
+  lookup_tbls.resize(2);
+  lookup_tbls[0].resize(unique_ups);
+  lookup_tbls[1].resize(unique_dns);
+
+  //construct lookup table for up spin
+  for (int i(0); i < C2node_up->size(); i++)
+  {
+    lookup_tbls[0][(*C2node_up)[i]].push_back(i);
+  } 
+  //construct lookup table for dn spin
+  for (int i(0); i < C2node_dn->size(); i++)
+  {
+    lookup_tbls[1][(*C2node_dn)[i]].push_back(i);
+  } 
+
+  // summing occupancy vectors to find all set of active rotations later on.
+  for (int i=0; i<occupancy_vector_up.size(); i++){
+    occupancy_vector_up[i] += occupancy_vector_dn[i];}
+ 
+  if(Optimizable)
+  {
+    if(usingCSF){
+      // the -1 is because if there are n CI coefficients only n-1 of them are free variables
+      m_first_var_pos = CSFcoeff->size() - 1;
+    }
+    else{
+       m_first_var_pos = C->size() - 1;
+    }  
+  }
+  else{
+    m_first_var_pos = 0;
+  }
+  // create active rotations
+  m_act_rot_inds_up.clear(); 
+
+  int min_nel (nels_up < nels_dn ? nels_up : nels_dn);
+  int max_nel (nels_up < nels_dn ? nels_dn : nels_up);
+
+for(int i=0;i<m_nmo_up;i++)
+  for(int j=i+1;j<m_nmo_up;j++)
+   { 
+    bool core_i(!occupancy_vector_up[i] and i <= min_nel-1); // true if orbital i is a 'core' orbital
+    bool core_j(!occupancy_vector_up[j] and j <= min_nel-1); // true if orbital j is a 'core' orbital
+    bool virt_i(!occupancy_vector_up[i] and i >  max_nel-1); // true if orbital i is a 'virtual' orbital
+    bool virt_j(!occupancy_vector_up[j] and j >  max_nel-1); // true if orbital j is a 'virtual' orbital
+      if( !( 
+            ( core_i and core_j  ) 
+                       or
+            ( virt_i and virt_j ) 
+           )    
+        )
+      {
+        m_act_rot_inds_up.push_back(std::pair<int,int>(i,j)); // orbital rotation parameter accepted as long as rotation isn't core-core or virtual-virtual
+      }
+   }
+ 
+    // This will add the orbital rotation parameters to myVars 
+    // and will also read in initial parameter values supplied in input file     
+    int p_up, q_up; 
+    int nparams_active_up = m_act_rot_inds_up.size();
+
+    for (int i=0; i< nparams_active_up; i++)
+    {
+      p_up = m_act_rot_inds_up[i].first;
+      q_up = m_act_rot_inds_up[i].second;
+      std::stringstream sstr_up;
+      sstr_up << "SPO_UP"
+              << "_orb_rot_"
+              << ( p_up <   10 ? "0": "")
+              << ( p_up <  100 ? "0": "")
+              << ( p_up < 1000 ? "0": "")
+              << p_up
+              << "_"
+              << ( q_up <   10 ? "0": "")
+              << ( q_up <  100 ? "0": "")
+              << ( q_up < 1000 ? "0": "")
+              << q_up;
+
+      // If the user input parameteres, use those. Otherwise, initialize the parameters to zero
+      if (params_supplied_up) {
+        myVars->insert(sstr_up.str(), input_params_up[i]);
+      } else {
+        myVars->insert(sstr_up.str(), 0.0);
+      }
+    }
+
+    //Printing the parameters
+    if(true){
+      app_log() << std::string(16,' ') << "Parameter name" << std::string(15,' ') << "Value\n";
+      myVars->print(app_log());
+    }
+ 
+    //the below code is very similar to  "Reset parameters function"
+    // reading out the parameters that define the rotation into an antisymmetric matrix
+    std::vector<RealType> rot_mat_up(m_nmo_up*m_nmo_up, 0.0);
+    for (int i = 0; i < m_act_rot_inds_up.size(); i++) 
+    {
+      const int p = m_act_rot_inds_up[i].first;
+      const int q = m_act_rot_inds_up[i].second;
+      // m_first_var_pos is the index to the first parameter of the spin up electrons...
+      rot_mat_up[p+q*m_nmo_up] =  (*myVars)[i + m_first_var_pos]; 
+      rot_mat_up[q+p*m_nmo_up] = -(*myVars)[i + m_first_var_pos]; 
+
+    }
+    //exponentiate matrices and do BLAS command to perform rotation on m_b
+
+    // exponentiate antisymmetric matrix to get the unitary rotation
+    this->exponentiate_matrix(m_nmo_up, &rot_mat_up[0]);
+
+
+    if(false)
+    {
+      app_log() << "I'm trying to print the Phi->C matrix\n" << *(static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C) << "END OF PRINT";
+
+      app_log()<< "PRINT ALL ORBITALS FOR USE IN CONTINUED INPUT\n";
+      app_log() << "value of m_nb_up: "<< m_nb_up << " m_nmo_up: " << m_nmo_up << std::endl;
+      for (int j = 0; j < m_nmo_up; j++)
+      {
+        for (int i = 0; i < m_nb_up; i++)
+        {
+          app_log() << " " << std::right << std::fixed << std::setprecision(16) << std::setw(23) << std::scientific << *(static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C->data() +j*m_nb_up + i);
+
+          if((j*m_nb_up + i + 1)%4==0){ app_log() << std::endl;}
+        }
+      }
+      app_log() << "\n done printing molecular orbital coefficients\n";
+      app_log() << std::endl;
+    }
+
+    BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C->data() , m_nb_up);
+    BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[1]->Phi)->C->data() , m_nb_up);
+    
+    m_old_B_up = *(static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C);
+
+    if(false)
+    {
+      app_log()<< "PRINT ALL ORBITALS FOR USE IN CONTINUED INPUT\n";
+      app_log() << "value of m_nb_up: "<< m_nb_up << " m_nmo_up: " << m_nmo_up << std::endl;
+      for (int j = 0; j < m_nmo_up; j++)
+      {
+        for (int i = 0; i < m_nb_up; i++)
+        {
+          app_log() << " " << std::right << std::fixed << std::setprecision(16) << std::setw(23) << std::scientific << *(static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C->data() +j*m_nb_up + i);
+
+          if((j*m_nb_up + i + 1)%4==0){ app_log() << std::endl;}
+        }
+      }
+      app_log() << "\n done printing molecular orbital coefficients\n";
+      app_log() << std::endl;
+    }
+
+    T_up.resize(nels_up,m_nmo_up);
+    T_dn.resize(nels_dn,m_nmo_dn);
+
+    if (!Orbopt)
+    {
+//      THIS ALLOWS FOR ORBITAL PARAMETERS TO BE READ IN EVEN WHEN THOSE PARAMETERS ARE NOT BEING OPTIMIZED
+      // this assumes there are only CI coefficients ahead of the M_orb_coefficients 
+      myVars->Index.erase(myVars->Index.begin()+m_first_var_pos,myVars->Index.end());
+      myVars->NameAndValue.erase(myVars->NameAndValue.begin()+m_first_var_pos,myVars->NameAndValue.end());
+      myVars->ParameterType.erase(myVars->ParameterType.begin()+m_first_var_pos,myVars->ParameterType.end());
+      myVars->Recompute.erase(myVars->Recompute.begin()+m_first_var_pos,myVars->Recompute.end());
+    }
+
+
 }
 
 void MultiSlaterDeterminantFast::initialize()
@@ -452,10 +669,12 @@ void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& bu
 
 void MultiSlaterDeterminantFast::checkInVariables(opt_variables_type& active)
 {
-  if(Optimizable && !IsCloned)
+  if( (Optimizable || Orbopt ) && !IsCloned)
   {
-    if(myVars->size())
+    if(myVars->size()){
       active.insertFrom(*myVars);
+      m_first_var_pos = -1;
+    }
     else
       Optimizable=false;
   }
@@ -463,8 +682,27 @@ void MultiSlaterDeterminantFast::checkInVariables(opt_variables_type& active)
 
 void MultiSlaterDeterminantFast::checkOutVariables(const opt_variables_type& active)
 {
-  if(Optimizable && !IsCloned)
+  if( (Optimizable || Orbopt) && !IsCloned)
     myVars->getIndex(active);
+
+  if(Orbopt)
+  {
+    if(Optimizable)
+    {
+      if(usingCSF)
+      {
+       APP_ABORT("MSJ orbital optimization not compatible with usingCSF"); 
+      }
+      else
+      {
+        m_first_var_pos = myVars->where( C->size() - 1 );
+      }
+    }
+    else
+    {
+      m_first_var_pos = myVars->where(0);
+    }
+  }
 }
 
 /** resetParameters with optVariables
@@ -513,6 +751,31 @@ void MultiSlaterDeterminantFast::resetParameters(const opt_variables_type& activ
       //for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
     }
   }
+  if(Orbopt)
+  {
+    // read out the parameters for spin up electrons that define the rotation into an antisymmetric matrix
+    std::vector<RealType> rot_mat_up(m_nmo_up*m_nmo_up, 0.0);
+    for (int j=0, i = m_first_var_pos; i < m_first_var_pos + m_act_rot_inds_up.size(); j++, i++) 
+    {
+      int loc=myVars->where(i);
+
+      const int p = m_act_rot_inds_up[j].first;
+      const int q = m_act_rot_inds_up[j].second;
+      // m_first_var_pos is the index to the first parameter of the spin up electrons...
+      const RealType x = (*myVars)[i] = active[loc];
+//      app_log() <<"active ["<< loc << "] = "<< x<< "\n";
+      rot_mat_up[p+q*m_nmo_up] =  x;
+      rot_mat_up[q+p*m_nmo_up] = -x;
+    }
+
+    this->exponentiate_matrix(m_nmo_up, &rot_mat_up[0]);
+
+    BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C->data() , m_nb_up);
+    BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[1]->Phi)->C->data() , m_nb_up);
+    
+    m_old_B_up = *(static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C);
+
+  }
 }
 void MultiSlaterDeterminantFast::reportStatus(std::ostream& os)
 {
@@ -536,197 +799,310 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
 // need to modify for CSF later on, right now assume Slater Det basis
   if (recalculate)
   {
-    if(usingCSF)
+    if(Optimizable)
     {
-      if(laplSum_up.size() == 0)
-        laplSum_up.resize(Dets[0]->detValues.size());
-      if(laplSum_dn.size() == 0)
-        laplSum_dn.resize(Dets[1]->detValues.size());
-      // assume that evaluateLog has been called in opt routine before
-      //   Dets[0]->evaluateForWalkerMove(P);
-      //   Dets[1]->evaluateForWalkerMove(P);
-      ValueVector_t& detValues_up = Dets[0]->detValues;
-      ValueVector_t& detValues_dn = Dets[1]->detValues;
-      GradMatrix_t& grads_up = Dets[0]->grads;
-      GradMatrix_t& grads_dn = Dets[1]->grads;
-      ValueMatrix_t& lapls_up = Dets[0]->lapls;
-      ValueMatrix_t& lapls_dn = Dets[1]->lapls;
+      if(usingCSF)
+      {
+        if(laplSum_up.size() == 0)
+          laplSum_up.resize(Dets[0]->detValues.size());
+        if(laplSum_dn.size() == 0)
+          laplSum_dn.resize(Dets[1]->detValues.size());
+        // assume that evaluateLog has been called in opt routine before
+        //   Dets[0]->evaluateForWalkerMove(P);
+        //   Dets[1]->evaluateForWalkerMove(P);
+        ValueVector_t& detValues_up = Dets[0]->detValues;
+        ValueVector_t& detValues_dn = Dets[1]->detValues;
+        GradMatrix_t& grads_up = Dets[0]->grads;
+        GradMatrix_t& grads_dn = Dets[1]->grads;
+        ValueMatrix_t& lapls_up = Dets[0]->lapls;
+        ValueMatrix_t& lapls_dn = Dets[1]->lapls;
+        const size_t N1 = Dets[0]->FirstIndex;
+        const size_t N2 = Dets[1]->FirstIndex;
+        const size_t NP1 = Dets[0]->NumPtcls;
+        const size_t NP2 = Dets[1]->NumPtcls;
+  // myG,myL should already be calculated
+        const size_t n = P.getTotalNum();
+
+        ValueType psiinv = (RealType)1.0/psiCurrent;
+        ValueType lapl_sum=0.0;
+        ValueType gg=0.0, ggP=0.0;
+        myG_temp=0.0;
+        int num=laplSum_up.size();
+        ValueVector_t::iterator it(laplSum_up.begin());
+        ValueVector_t::iterator last(laplSum_up.end());
+        ValueType* ptr0 = lapls_up[0];
+        while(it != last)
+        {
+          (*it)=0.0;
+          for(int k=0; k<nels_up; k++,ptr0++)
+            (*it) += *ptr0;
+          it++;
+        }
+        it=laplSum_dn.begin();
+        last=laplSum_dn.end();
+        ptr0 = lapls_dn[0];
+        while(it != last)
+        {
+          (*it)=0.0;
+          for(int k=0; k<nels_dn; k++,ptr0++)
+            (*it) += *ptr0;
+          it++;
+        }
+
+        const RealType *restrict C_p=C->data();
+        for(size_t i=0; i<C->size(); i++)
+        {
+          size_t upC = (*C2node_up)[i];
+          size_t dnC = (*C2node_dn)[i];
+          ValueType tmp1 = C_p[i]*detValues_dn[dnC]*psiinv;
+          ValueType tmp2 = C_p[i]*detValues_up[upC]*psiinv;
+          lapl_sum += tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC];
+          for(size_t k=0,j=N1; k<NP1; k++,j++)
+            myG_temp[j] += tmp1*grads_up(upC,k);
+          for(size_t k=0,j=N2; k<NP2; k++,j++)
+            myG_temp[j] += tmp2*grads_dn(dnC,k);
+        }
+        gg=ggP=0.0;
+        for(size_t i=0; i<n; i++)
+        {
+          gg += dot(myG_temp[i],myG_temp[i])-dot(P.G[i],myG_temp[i]);
+        }
+  //       for(int i=0; i<C.size(); i++)
+        num=CSFcoeff->size()-1;
+        int cnt=0;
+  //        this one is not optable
+        cnt+=(*DetsPerCSF)[0];
+        int ip(1);
+        for(int i=0; i<num; i++,ip++)
+        {
+          int kk=myVars->where(i);
+          if (kk<0)
+          {
+            cnt+=(*DetsPerCSF)[ip];
+            continue;
+          }
+          ValueType cdet=0.0,q0=0.0,v1=0.0,v2=0.0;
+          const RealType *restrict CSFexpansion_p=CSFexpansion->data();
+          for(int k=0; k<(*DetsPerCSF)[ip]; k++)
+          {
+            size_t upC = (*C2node_up)[cnt];
+            size_t dnC = (*C2node_dn)[cnt];
+            ValueType tmp1=CSFexpansion_p[cnt]*detValues_dn[dnC]*psiinv;
+            ValueType tmp2=CSFexpansion_p[cnt]*detValues_up[upC]*psiinv;
+            cdet+=CSFexpansion_p[cnt]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
+            q0 += (tmp1*laplSum_up[upC] + tmp2*laplSum_dn[dnC]);
+            for(size_t l=0,j=N1; l<NP1; l++,j++)
+              v1 += tmp1*static_cast<ValueType>(dot(P.G[j],grads_up(upC,l))-dot(myG_temp[j],grads_up(upC,l)));
+            for(size_t l=0,j=N2; l<NP2; l++,j++)
+              v2 += tmp2*static_cast<ValueType>(dot(P.G[j],grads_dn(dnC,l))-dot(myG_temp[j],grads_dn(dnC,l)));
+            cnt++;
+          }
+          convert(cdet,dlogpsi[kk]);
+          ValueType dhpsi =  (RealType)-0.5*(q0-cdet*lapl_sum)
+                             -cdet*gg-v1-v2;
+          //ValueType dhpsi =  -0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
+          //                         -cdet*lapl_sum)
+          //                   -cdet*gg-(tmp1*v1+tmp2*v2);
+          convert(dhpsi,dhpsioverpsi[kk]);
+        }
+      }
+      else
+        //usingCSF
+      {
+        if(laplSum_up.size() == 0)
+          laplSum_up.resize(Dets[0]->detValues.size());
+        if(laplSum_dn.size() == 0)
+          laplSum_dn.resize(Dets[1]->detValues.size());
+        // assume that evaluateLog has been called in opt routine before
+        //   Dets[0]->evaluateForWalkerMove(P);
+        //   Dets[1]->evaluateForWalkerMove(P);
+        ValueVector_t& detValues_up = Dets[0]->detValues;
+        ValueVector_t& detValues_dn = Dets[1]->detValues;
+        GradMatrix_t& grads_up = Dets[0]->grads;
+        GradMatrix_t& grads_dn = Dets[1]->grads;
+        ValueMatrix_t& lapls_up = Dets[0]->lapls;
+        ValueMatrix_t& lapls_dn = Dets[1]->lapls;
+        int N1 = Dets[0]->FirstIndex;
+        int N2 = Dets[1]->FirstIndex;
+        int NP1 = Dets[0]->NumPtcls;
+        int NP2 = Dets[1]->NumPtcls;
+        int n = P.getTotalNum();
+        ValueType psiinv = (RealType)1.0/psiCurrent;
+        ValueType lapl_sum=0.0;
+        ValueType gg=0.0, ggP=0.0;
+        myG_temp=0.0;
+        int num=laplSum_up.size();
+        ValueVector_t::iterator it(laplSum_up.begin());
+        ValueVector_t::iterator last(laplSum_up.end());
+        ValueType* ptr0 = lapls_up[0];
+        while(it != last)
+        {
+          (*it)=0.0;
+          for(int k=0; k<nels_up; k++,ptr0++)
+            (*it) += *ptr0;
+          it++;
+        }
+        it=laplSum_dn.begin();
+        last=laplSum_dn.end();
+        ptr0 = lapls_dn[0];
+        while(it != last)
+        {
+          (*it)=0.0;
+          for(size_t k=0; k<nels_dn; k++,ptr0++)
+            (*it) += *ptr0;
+          it++;
+        }
+        const RealType *restrict C_p=C->data();
+        for(size_t i=0; i<C->size(); i++)
+        {
+          size_t upC = (*C2node_up)[i];
+          size_t dnC = (*C2node_dn)[i];
+          ValueType tmp1 = C_p[i]*detValues_dn[dnC]*psiinv;
+          ValueType tmp2 = C_p[i]*detValues_up[upC]*psiinv;
+          lapl_sum += tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC];
+          for(size_t k=0,j=N1; k<NP1; k++,j++)
+            myG_temp[j] += tmp1*grads_up(upC,k);
+          for(size_t k=0,j=N2; k<NP2; k++,j++)
+            myG_temp[j] += tmp2*grads_dn(dnC,k);
+        }
+        gg=ggP=0.0;
+        for(size_t i=0; i<n; i++)
+        {
+          gg += dot(myG_temp[i],myG_temp[i])-dot(P.G[i],myG_temp[i]);
+        }
+        for(size_t i=1; i<C->size(); i++)
+        {
+          int kk=myVars->where(i-1);
+          if (kk<0)
+            continue;
+          const size_t upC = (*C2node_up)[i];
+          const size_t dnC = (*C2node_dn)[i];
+          ValueType cdet=detValues_up[upC]*detValues_dn[dnC]*psiinv;
+          ValueType tmp1=detValues_dn[dnC]*psiinv;
+          ValueType tmp2=detValues_up[upC]*psiinv;
+          convert(cdet,dlogpsi[kk]);
+          ValueType v1=0.0,v2=0.0;
+          for(size_t k=0,j=N1; k<NP1; k++,j++)
+            v1 += (dot(P.G[j],grads_up(upC,k))-dot(myG_temp[j],grads_up(upC,k)) );
+          for(size_t k=0,j=N2; k<NP2; k++,j++)
+            v2 += (dot(P.G[j],grads_dn(dnC,k))-dot(myG_temp[j],grads_dn(dnC,k)));
+          ValueType dhpsi =  (RealType)-0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
+                                   -cdet*lapl_sum)
+                             -cdet*gg-(tmp1*v1+tmp2*v2);
+          convert(dhpsi,dhpsioverpsi[kk]);
+        }
+      } // usingCSF
+    }
+    if(Orbopt)
+    {
+      const ValueVector_t& detValues_up = Dets[0]->detValues;
+      const ValueVector_t& detValues_dn = Dets[1]->detValues;
+      const GradMatrix_t& grads_up = Dets[0]->grads;
+      const GradMatrix_t& grads_dn = Dets[1]->grads;
+      const ValueMatrix_t& lapls_up = Dets[0]->lapls;
+      const ValueMatrix_t& lapls_dn = Dets[1]->lapls;
+
       const size_t N1 = Dets[0]->FirstIndex;
       const size_t N2 = Dets[1]->FirstIndex;
       const size_t NP1 = Dets[0]->NumPtcls;
       const size_t NP2 = Dets[1]->NumPtcls;
-// myG,myL should already be calculated
-      const size_t n = P.getTotalNum();
-
-      ValueType psiinv = (RealType)1.0/psiCurrent;
-      ValueType lapl_sum=0.0;
-      ValueType gg=0.0, ggP=0.0;
+//      psiCurrent=0.0;
       myG_temp=0.0;
-      int num=laplSum_up.size();
-      ValueVector_t::iterator it(laplSum_up.begin());
-      ValueVector_t::iterator last(laplSum_up.end());
-      ValueType* ptr0 = lapls_up[0];
-      while(it != last)
-      {
-        (*it)=0.0;
-        for(int k=0; k<nels_up; k++,ptr0++)
-          (*it) += *ptr0;
-        it++;
-      }
-      it=laplSum_dn.begin();
-      last=laplSum_dn.end();
-      ptr0 = lapls_dn[0];
-      while(it != last)
-      {
-        (*it)=0.0;
-        for(int k=0; k<nels_dn; k++,ptr0++)
-          (*it) += *ptr0;
-        it++;
-      }
+      myL_temp=0.0;
+      myG_J=0.0;
+      myL_J=0.0;
 
       const RealType *restrict C_p=C->data();
-      for(size_t i=0; i<C->size(); i++)
+      for(int i=0; i<C->size(); i++)
       {
-        size_t upC = (*C2node_up)[i];
-        size_t dnC = (*C2node_dn)[i];
-        ValueType tmp1 = C_p[i]*detValues_dn[dnC]*psiinv;
-        ValueType tmp2 = C_p[i]*detValues_up[upC]*psiinv;
-        lapl_sum += tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC];
-        for(size_t k=0,j=N1; k<NP1; k++,j++)
-          myG_temp[j] += tmp1*grads_up(upC,k);
-        for(size_t k=0,j=N2; k<NP2; k++,j++)
-          myG_temp[j] += tmp2*grads_dn(dnC,k);
+          const size_t upC = (*C2node_up)[i];
+          const size_t dnC = (*C2node_dn)[i];
+          const ValueType tmp1 = C_p[i]*detValues_dn[dnC];
+          const ValueType tmp2 = C_p[i]*detValues_up[upC];
+//          psiCurrent+= (C[i]*detValues_up[upC]*detValues_dn[dnC]);
+          for(size_t k=0,j=N1; k<NP1; k++,j++)
+          {
+            myG_temp[j] += tmp1*grads_up(upC,k);
+            myL_temp[j] += tmp1*lapls_up(upC,k);
+          }
+          for(size_t k=0,j=N2; k<NP2; k++,j++)
+          {
+            myG_temp[j] += tmp2*grads_dn(dnC,k);
+            myL_temp[j] += tmp2*lapls_dn(dnC,k);
+          }
       }
-      gg=ggP=0.0;
-      for(size_t i=0; i<n; i++)
+
+      myG_temp *= (1/psiCurrent);
+      myL_temp *= (1/psiCurrent);
+
+      // calculation of myG_J which will be used to represent \frac{\nabla\psi_{J}}{\psi_{J}} 
+      // calculation of myL_J will be used to represent \frac{\nabla^2\psi_{J}}{\psi_{J}}
+      // IMPORTANT NOTE:  The value of P.L holds \nabla^2 ln[\psi] but we need  \frac{\nabla^2 \psi}{\psi} and this is what myL_J will hold 
+      for(int iat=0; iat<(myL_temp.size()); iat++)
       {
-        gg += dot(myG_temp[i],myG_temp[i])-dot(P.G[i],myG_temp[i]);
+        myG_J[iat] = (P.G[iat] - myG_temp[iat]);
+        myL_J[iat] = (P.L[iat] + dot(P.G[iat],P.G[iat]) - myL_temp[iat]);
       }
-//       for(int i=0; i<C.size(); i++){
-      num=CSFcoeff->size()-1;
-      int cnt=0;
-//        this one is not optable
-      cnt+=(*DetsPerCSF)[0];
-      int ip(1);
-      for(int i=0; i<num; i++,ip++)
-      {
-        int kk=myVars->where(i);
-        if (kk<0)
-        {
-          cnt+=(*DetsPerCSF)[ip];
-          continue;
-        }
-        ValueType cdet=0.0,q0=0.0,v1=0.0,v2=0.0;
-        const RealType *restrict CSFexpansion_p=CSFexpansion->data();
-        for(int k=0; k<(*DetsPerCSF)[ip]; k++)
-        {
-          size_t upC = (*C2node_up)[cnt];
-          size_t dnC = (*C2node_dn)[cnt];
-          ValueType tmp1=CSFexpansion_p[cnt]*detValues_dn[dnC]*psiinv;
-          ValueType tmp2=CSFexpansion_p[cnt]*detValues_up[upC]*psiinv;
-          cdet+=CSFexpansion_p[cnt]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
-          q0 += (tmp1*laplSum_up[upC] + tmp2*laplSum_dn[dnC]);
-          for(size_t l=0,j=N1; l<NP1; l++,j++)
-            v1 += tmp1*static_cast<ValueType>(dot(P.G[j],grads_up(upC,l))-dot(myG_temp[j],grads_up(upC,l)));
-          for(size_t l=0,j=N2; l<NP2; l++,j++)
-            v2 += tmp2*static_cast<ValueType>(dot(P.G[j],grads_dn(dnC,l))-dot(myG_temp[j],grads_dn(dnC,l)));
-          cnt++;
-        }
-        convert(cdet,dlogpsi[kk]);
-        ValueType dhpsi =  (RealType)-0.5*(q0-cdet*lapl_sum)
-                           -cdet*gg-v1-v2;
-        //ValueType dhpsi =  -0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
-        //                         -cdet*lapl_sum)
-        //                   -cdet*gg-(tmp1*v1+tmp2*v2);
-        convert(dhpsi,dhpsioverpsi[kk]);
-      }
-    }
-    else
-      //usingCSF
-    {
-      if(laplSum_up.size() == 0)
-        laplSum_up.resize(Dets[0]->detValues.size());
-      if(laplSum_dn.size() == 0)
-        laplSum_dn.resize(Dets[1]->detValues.size());
-      // assume that evaluateLog has been called in opt routine before
-      //   Dets[0]->evaluateForWalkerMove(P);
-      //   Dets[1]->evaluateForWalkerMove(P);
-      ValueVector_t& detValues_up = Dets[0]->detValues;
-      ValueVector_t& detValues_dn = Dets[1]->detValues;
-      GradMatrix_t& grads_up = Dets[0]->grads;
-      GradMatrix_t& grads_dn = Dets[1]->grads;
-      ValueMatrix_t& lapls_up = Dets[0]->lapls;
-      ValueMatrix_t& lapls_dn = Dets[1]->lapls;
-      int N1 = Dets[0]->FirstIndex;
-      int N2 = Dets[1]->FirstIndex;
-      int NP1 = Dets[0]->NumPtcls;
-      int NP2 = Dets[1]->NumPtcls;
-      int n = P.getTotalNum();
-      ValueType psiinv = (RealType)1.0/psiCurrent;
-      ValueType lapl_sum=0.0;
-      ValueType gg=0.0, ggP=0.0;
-      myG_temp=0.0;
-      int num=laplSum_up.size();
-      ValueVector_t::iterator it(laplSum_up.begin());
-      ValueVector_t::iterator last(laplSum_up.end());
-      ValueType* ptr0 = lapls_up[0];
-      while(it != last)
-      {
-        (*it)=0.0;
-        for(int k=0; k<nels_up; k++,ptr0++)
-          (*it) += *ptr0;
-        it++;
-      }
-      it=laplSum_dn.begin();
-      last=laplSum_dn.end();
-      ptr0 = lapls_dn[0];
-      while(it != last)
-      {
-        (*it)=0.0;
-        for(size_t k=0; k<nels_dn; k++,ptr0++)
-          (*it) += *ptr0;
-        it++;
-      }
-      const RealType *restrict C_p=C->data();
-      for(size_t i=0; i<C->size(); i++)
-      {
-        size_t upC = (*C2node_up)[i];
-        size_t dnC = (*C2node_dn)[i];
-        ValueType tmp1 = C_p[i]*detValues_dn[dnC]*psiinv;
-        ValueType tmp2 = C_p[i]*detValues_up[upC]*psiinv;
-        lapl_sum += tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC];
-        for(size_t k=0,j=N1; k<NP1; k++,j++)
-          myG_temp[j] += tmp1*grads_up(upC,k);
-        for(size_t k=0,j=N2; k<NP2; k++,j++)
-          myG_temp[j] += tmp2*grads_dn(dnC,k);
-      }
-      gg=ggP=0.0;
-      for(size_t i=0; i<n; i++)
-      {
-        gg += dot(myG_temp[i],myG_temp[i])-dot(P.G[i],myG_temp[i]);
-      }
-      for(size_t i=1; i<C->size(); i++)
-      {
-        int kk=myVars->where(i-1);
-        if (kk<0)
-          continue;
-        const size_t upC = (*C2node_up)[i];
-        const size_t dnC = (*C2node_dn)[i];
-        ValueType cdet=detValues_up[upC]*detValues_dn[dnC]*psiinv;
-        ValueType tmp1=detValues_dn[dnC]*psiinv;
-        ValueType tmp2=detValues_up[upC]*psiinv;
-        convert(cdet,dlogpsi[kk]);
-        ValueType v1=0.0,v2=0.0;
-        for(size_t k=0,j=N1; k<NP1; k++,j++)
-          v1 += (dot(P.G[j],grads_up(upC,k))-dot(myG_temp[j],grads_up(upC,k)) );
-        for(size_t k=0,j=N2; k<NP2; k++,j++)
-          v2 += (dot(P.G[j],grads_dn(dnC,k))-dot(myG_temp[j],grads_dn(dnC,k)));
-        ValueType dhpsi =  (RealType)-0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
-                                 -cdet*lapl_sum)
-                           -cdet*gg-(tmp1*v1+tmp2*v2);
-        convert(dhpsi,dhpsioverpsi[kk]);
-      }
-    } // usingCSF
+
+      // The T matrix should be calculated and stored for use      
+      // T = A^{-1} \widetilde A
+      //REMINDER: that the ValueMatrix_t "matrix" stores data in a row major order and that BLAS commands assume column major
+      BLAS::gemm('N','N',m_nmo_up, nels_up, nels_up, RealType(1.0), Dets[0]->psiM.data(), m_nmo_up, Dets[0]->psiMinv.data(), nels_up, RealType(0.0), T_up.data(), m_nmo_up);
+      BLAS::gemm('N','N',m_nmo_dn, nels_dn, nels_dn, RealType(1.0), Dets[1]->psiM.data(), m_nmo_dn, Dets[1]->psiMinv.data(), nels_dn, RealType(0.0), T_dn.data(), m_nmo_dn);
+
+      table_method_eval(myL_J,
+                        myG_J,
+                        nels_up,
+                        m_nmo_up,
+                        T_up.data(),
+                        Dets[0]->psiM.data(),
+                        Dets[0]->psiMinv.data(),
+                        dlogpsi,
+                        dhpsioverpsi,
+                        m_first_var_pos,
+                        m_act_rot_inds_up.size(),
+                        &m_act_rot_inds_up,
+                        0,
+                        T_up,
+                        Dets[0]->psiM);
+
+      table_method_eval(myL_J,
+                        myG_J,
+                        nels_dn,
+                        m_nmo_dn,
+                        T_dn.data(),
+                        Dets[1]->psiM.data(),
+                        Dets[1]->psiMinv.data(),
+                        dlogpsi,
+                        dhpsioverpsi,
+                        m_first_var_pos,
+                        m_act_rot_inds_up.size(),
+                        &m_act_rot_inds_up,
+                        1,
+                        T_dn,
+                        Dets[1]->psiM );
+
+       for (int i=0; i<m_act_rot_inds_up.size(); i++){
+        int kk= i+m_first_var_pos;
+        if (false)
+          {
+            const int p = m_act_rot_inds_up[i].first;
+            const int q = m_act_rot_inds_up[i].second;
+            std::vector<char> buff(1000, ' ');
+            const int len = std::sprintf(&buff[0], " p = %4i   q = %4i     dlogpsi = %20.12f     dhpsioverpsi = %20.12f   kk = %4i", p, q,dlogpsi[kk], dhpsioverpsi[kk], kk);
+            for (int k = 0; k < len; k++)
+              app_log() << buff[k];
+            app_log() << std::endl;
+          }
+
+       }
+
+
+
+//      app_log() << "value of psiM \n" << Dets[0]->psiM << "\n value of psiMinv\n" << Dets[0]->psiMinv << "\n the resultant matrix multiplication \n" << T_up << std::endl;
+//      APP_ABORT(" FORCE STOP FOR DEBUGGING.");
+
+    } 
   }
 }
 
@@ -752,5 +1128,425 @@ void MultiSlaterDeterminantFast::registerTimers()
   TimerManager.addTimer (&AccRejTimer);
 }
 
+
+void MultiSlaterDeterminantFast::exponentiate_matrix(const int n, RealType * const mat)
+{
+  // save initial matrix and get some workspace
+  std::vector<RealType> mat_a(mat, mat + n*n);
+  std::vector<RealType> mat_b(mat, mat + n*n);
+  std::vector<RealType> mat_c(mat, mat + n*n);
+  RealType * ptr_a = &mat_a[0];
+  RealType * ptr_b = &mat_b[0];
+  RealType * ptr_c = &mat_c[0];
+
+  // initialize output to identity matrix
+  for (int j = 0; j < n; j++)
+  for (int i = 0; i < n; i++)
+    mat[i+n*j] = ( i == j ? 1.0 : 0.0 );
+
+  // compute exponential of matrix
+  for (int q = 1; q < 20; q++) {
+    BLAS::axpy(n*n, RealType(1.0), ptr_b, mat);
+    BLAS::gemm('N', 'N', n, n, n, RealType(1.0) / (q+1), ptr_a, n, ptr_b, n, RealType(0.0), ptr_c, n);
+    std::swap(ptr_b, ptr_c);
+    RealType max_elem = 0.0;
+    for (int i = 0; i < n*n; i++)
+      if ( std::abs(ptr_b[i]) > max_elem )
+        max_elem = std::abs(ptr_b[i]);
+    if ( max_elem < 1.0e-15 )
+      break;
+  }
+}
+
+
+int MultiSlaterDeterminantFast::build_occ_vec(std::vector<int> * data,
+                                              const size_t& nel,
+                                              const size_t& nmo,
+                                              std::vector<int>* occ_vec)
+{
+  std::vector<int>::iterator it = (*data).begin();
+  int count = 0; //number of determinants
+  while(it != (*data).end())
+  {
+    int k = *it; // number of excitations with respect to the reference matrix  
+    if(count == 0)
+    {
+      it += 3*k+1;
+      count ++;
+    }
+    else
+    {
+      for (int i = 0; i<k; i++)
+      {
+      //for determining active orbitals
+        (*occ_vec)[*(it+1+i)]++;
+        (*occ_vec)[*(it+1+k+i)]++;
+      }
+      it += 3*k+1;
+      count ++;
+    }
+  }
+  return count;
+}
+
+void MultiSlaterDeterminantFast::table_method_eval(const ParticleSet::ParticleLaplacian_t& myL_J,
+                                                   const ParticleSet::ParticleGradient_t& myG_J,
+                                                   const size_t nel,
+                                                   const size_t nmo,
+                                                   double* T,
+                                                   double* A,
+                                                   double* Ainv,
+                                                   std::vector<RealType>& dlogpsi , 
+                                                   std::vector<RealType>& dhpsioverpsi, 
+                                                   const int parameter_start_index,
+                                                   const int parameters_size ,
+                                                   const std::vector<std::pair<int,int>>* const m_act_rot_inds,
+                                                   const int active_spin,
+                                                   const SPOSetBase::ValueMatrix_t& Tr,
+                                                   const SPOSetBase::ValueMatrix_t& Ar)
+/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+GUIDE TO THE MATICES BEING BUILT
+----------------------------------------------
+The idea here is that there is a loop over all unique determinants. For each determiant the table method is employed to calculate the contributions to the parameter derivatives (dhpsioverpsi/dlogpsi)
+
+  loop through unquie determinants 
+    loop through parameters
+      evaluate contributaion to dlogpsi and dhpsioverpsi
+\noindent 
+
+  BLAS GUIDE  for matrix multiplication of  [  alpha * A.B + beta * C = C ]
+  Matrix A is of dimensions a1,a2 and Matrix B is b1,b2   in which a2=b1
+  The BLAS command is as follows...
+
+ BLAS::gemm('N','N', b2, a1, a2 ,alpha, B, b2, A, a2, beta, C, b2);
+
+Below is a human readable format for the matrix multiplications performed below...
+$
+  TYPE UP WHAT EACH MATRIX REPRESENTS HERE IN HUMAN READABLE FORM...
+
+      Y1 = 
+      Y2 = 
+$
+
+In addition I will be using a special generalization of the kinetic operator which I will denote as O. Our Slater matrix with the special O operator applied to each element will be called B_bar
+
+$
+``Bbar"_{i,j} =\nabla^2 \phi_{j}(r_i) + \frac{\nabla_{i}J}{J} \cdot \nabla \phi_{j}(r_{i})  + \frac{\nabla^2_i J}{J} \phi_{j}(r_{i})
+$
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+{
+  const size_t num_unique_up_dets       (active_spin==0 ? unique_ups         : unique_dns);
+  const size_t num_unique_dn_dets       (active_spin==0 ? unique_dns         : unique_ups);
+  const ValueVector_t& detValues_up     (active_spin==0 ? Dets[0]->detValues : Dets[1]->detValues );
+  const ValueVector_t& detValues_dn     (active_spin==0 ? Dets[1]->detValues : Dets[0]->detValues );
+  const ValueMatrix_t& lapls_dn         (active_spin==0 ? Dets[1]->lapls     : Dets[0]->lapls );
+  const GradMatrix_t& grads_dn          (active_spin==0 ? Dets[1]->grads     : Dets[0]->grads );
+  const RealType* restrict cptr = C->data();
+  const size_t nc = C->size();
+  const size_t* restrict upC            (active_spin==0 ? C2node_up->data() : C2node_dn->data() );
+  const size_t* restrict dnC            (active_spin==0 ? C2node_dn->data() : C2node_up->data() );
+  //B_grad holds the gardient operator
+  const SPOSetBase::GradMatrix_t& B_grad     (active_spin==0 ? Dets[0]->dpsiM : Dets[1]->dpsiM );
+  //B_til holds the laplacian operator
+  const SPOSetBase::ValueMatrix_t& B_til     (active_spin==0 ? Dets[0]->d2psiM : Dets[1]->d2psiM );
+  //B_bar will hold our special O operator
+  SPOSetBase::ValueMatrix_t Bbar;
+  Bbar.resize(nel,nmo);
+
+  const size_t N1  = Dets[0]->FirstIndex;
+  const size_t N2  = Dets[1]->FirstIndex;  
+  const size_t NP1 = Dets[0]->NumPtcls;
+  const size_t NP2 = Dets[1]->NumPtcls;
+
+  const int offset1 (active_spin==0 ? N1  : N2);
+  const int offset2 (active_spin==0 ? N2  : N1);   
+  const int NPother (active_spin==0 ? NP2 : NP1);
+
+// possibly replace wit BLAS calls 
+  for(int i=0; i<nel; i++)
+    for(int j=0; j<nmo; j++)
+      Bbar(i,j) = B_til(i,j) + 2*dot(myG_J[i+offset1], B_grad(i,j)) + myL_J[i+offset1]*Ar(i,j);
+
+  const double* restrict B(Bbar.data());
+
+  //Need to create the constants: (Oi, const0, const1, const2)to take advantage of minimal BLAS commands; 
+  //Oi is the special operator applied to the slater matrix "A subscript i" from the total CI expansion
+  //\hat{O_{i}} = \hat{O}D_{i} with D_{i}=det(A_{i}) and Multi-Slater component defined as \sum_{i=0} C_{i} D_{i\uparrow}D_{i\downarrow}
+  std::vector<RealType> Oi(num_unique_dn_dets); 
+
+  for (int index=0; index < num_unique_dn_dets; index++)
+    for (int iat=0; iat < NPother; iat++)
+      Oi[index]+= lapls_dn(index,iat) + 2*dot(grads_dn(index,iat),myG_J[offset2 + iat]) + myL_J[offset2 + iat]*detValues_dn[index];
+
+  //const0 = C_{0}*det(A_{0\downarrow})+\sum_{i=1} C_{i}*det(A_{i\downarrow})* det(\alpha_{i\uparrow})
+  //const1 = C_{0}*\hat{O} det(A_{0\downarrow})+\sum_{i=1} C_{i}*\hat{O}det(A_{i\downarrow})* det(\alpha_{i\uparrow})
+  //const2 = \sum_{i=1} C_{i}*det(A_{i\downarrow})* Tr[\alpha_{i}^{-1}M_{i}]*det(\alpha_{i})
+  RealType const0(0.0),const1(0.0), const2(0.0);
+  for(size_t i=0; i<nc; ++i)
+  {
+    const RealType c=cptr[i];
+    const size_t up=upC[i];
+    const size_t down=dnC[i];
+
+    const0 += c * detValues_dn[down] * (detValues_up[up] / detValues_up[0]);
+    const1 += c * Oi[down] * (detValues_up[up] / detValues_up[0]);
+  }
+
+
+  SPOSetBase::ValueMatrix_t Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y11,Y23,Y24,Y25,Y26;
+  Y1.resize(nel,nel);
+  Y2.resize(nel,nmo);
+  Y3.resize(nel,nmo);
+  Y4.resize(nel,nmo);
+
+  SPOSetBase::ValueMatrix_t pK1,K1T,TK1T, pK2,K2AiB,TK2AiB,K2XA,TK2XA,K2T,TK2T,MK2T, pK3,K3T,TK3T, pK4,K4T,TK4T, pK5,K5T,TK5T;
+  pK1.resize(nmo,nel);
+  K1T.resize(nmo,nmo);
+  TK1T.resize(nel,nmo);
+
+  pK2.resize(nmo,nel);
+  K2AiB.resize(nmo,nmo);
+  TK2AiB.resize(nel,nmo);
+  K2XA.resize(nmo,nmo);
+  TK2XA.resize(nel,nmo);
+  K2T.resize(nmo,nmo);
+  TK2T.resize(nel,nmo);
+  MK2T.resize(nel,nmo);
+
+  pK3.resize(nmo,nel);
+  K3T.resize(nmo,nmo);
+  TK3T.resize(nel,nmo);
+
+  pK4.resize(nmo,nel);
+  K4T.resize(nmo,nmo);
+  TK4T.resize(nel,nmo);
+
+  pK5.resize(nmo,nel);
+  K5T.resize(nmo,nmo);
+  TK5T.resize(nel,nmo);
+
+  BLAS::gemm('N','N', nel, nel, nel, RealType(1.0),    B, nmo,       Ainv, nel, RealType(0.0),  Y1.data(), nel);
+  BLAS::gemm('N','N', nmo, nel, nel, RealType(1.0),    T, nmo,  Y1.data(), nel, RealType(0.0),  Y2.data(), nmo);
+  BLAS::gemm('N','N', nmo, nel, nel, RealType(1.0),    B, nmo,       Ainv, nel, RealType(0.0),  Y3.data(), nmo);
+
+
+  //possibly replace with BLAS call
+  Y4 = Y3 - Y2;
+
+  //Now we are going to loop through all unique determinants.
+  //The few lines above are for the reference matrix contribution.
+  //Although I start the loop below from index 0, the loop only performs actions when the index is => 1
+  //the detData object contains all the information about the P^T and Q matrices (projection matrices) needed in the table method
+  std::vector<int>::iterator data_it = Dets[active_spin]->detData->begin();
+  for(int index=0; index < num_unique_up_dets; index++)
+  {
+    const int  k = *data_it;
+
+    if (k==0)
+    {
+      data_it += 3*k+1;
+    }
+
+    else
+    {
+      //Number of rows and cols of P^T
+      const int prows=k;
+      const int pcols=nel;
+      //Number of rows and cols of Q
+      const int qrows=nmo;
+      const int qcols=k;
+      
+      Y5.resize(nel,k);
+      Y6.resize(k,k);
+
+      //Any matrix multiplication of P^T or Q is simply a projection
+      //Explicit matrix multiplication can be avoided; instead column or row copying can be done
+      //BlAS::copy(size of col/row being copied,
+      //           Matrix pointer + place to begin copying,
+      //           storage spacing (number of elements btw next row/col element),
+      //           Pointer to resultant matrix + place to begin pasting,
+      //           storage spacing of resultant matrix)
+      //For example the next 4 lines is the matrix multiplication of T*Q = Y5      
+      std::fill(Y5.begin(),Y5.end(),0.0);
+      for ( int i=0; i<k; i++)
+      {
+        BLAS::copy(nel, T + *(data_it+1+k+i), nmo, Y5.data()+i, k);   
+      }
+
+      std::fill(Y6.begin(),Y6.end(),0.0);
+      for ( int i=0; i<k; i++)
+      { 
+        BLAS::copy(k, Y5.data() + (*(data_it+1+i))*k, 1, (Y6.data() + i*k), 1);   
+      }
+
+//      app_log() << "priting Y5 \n " << Y5 << std::endl;
+//      app_log() << "priting Y6 \n " << Y6 << std::endl;
+
+      Vector<ValueType> WS;
+      Vector<IndexType> Piv;
+      WS.resize(k);
+      Piv.resize(k);
+      // not sure if i need the following 2 lines
+  //     std::fill(WS.begin(),WS.end(),0.0);
+  //     std::fill(Piv.begin(),Piv.end(),0);
+      RealType PhaseR=0.0;
+      InvertWithLog(Y6.data(),k,k,WS.data(),Piv.data(),PhaseR);
+//      app_log() << "priting inv Y6 \n " << Y6 << std::endl;
+
+      Y11.resize(nel,  k);  
+      Y23.resize(  k,  k);    
+      Y24.resize(  k,  k);    
+      Y25.resize(  k,  k);
+      Y26.resize(  k,nel);
+
+      std::fill(Y11.begin(),Y11.end(),0.0);
+      for ( int i=0; i<k; i++)
+      {
+        BLAS::copy(nel, Y4.data() + *(data_it+1+k+i), nmo, Y11.data()+i, k);   
+      }
+//      app_log() << "priting Y11 \n " << Y11 << std::endl;
+
+      std::fill(Y23.begin(),Y23.end(),0.0);
+      for ( int i=0; i<k; i++)
+      { 
+        BLAS::copy(k, Y11.data() + (*(data_it+1+i))*k, 1, (Y23.data() + i*k), 1);   
+      }
+//      app_log() << "priting Y23 \n " << Y23 << std::endl;
+
+      BLAS::gemm('N','N',   k,   k,   k, RealType(1.0), Y23.data(),   k,  Y6.data(),   k, RealType(0.0), Y24.data(),   k);
+      BLAS::gemm('N','N',   k,   k,   k, RealType(1.0),  Y6.data(),   k, Y24.data(),   k, RealType(0.0), Y25.data(),   k);
+
+
+      Y26.resize(  k,nel);
+
+      std::fill(Y26.begin(),Y26.end(),0.0);
+      for ( int i=0; i<k; i++)
+      {
+        BLAS::copy(k, Y25.data() + i, k, Y26.data() + *(data_it+1+i), nel);   
+      }
+
+
+      Y7.resize(  k,nel);
+
+      std::fill(Y7.begin(),Y7.end(),0.0);
+      for ( int i=0; i<k; i++)
+      {
+        BLAS::copy(k, Y6.data() + i, k, Y7.data() + *(data_it+1+i), nel);   
+      }
+
+//      app_log() << "priting Y7 \n " << Y7 << std::endl;
+      
+      // c_Tr_AlphaI_MI is a constant contributing to constant const2
+      // c_Tr_AlphaI_MI = Tr[\alpha_{I}^{-1}(P^{T}\widetilde{M} Q)]
+      RealType c_Tr_AlphaI_MI = 0.0;
+      for(int i=0; i<k;i++){
+        c_Tr_AlphaI_MI+=Y24(i,i); }  
+
+      for(int p=0; p<lookup_tbls[active_spin][index].size(); p++)
+      {
+        //el_p is the element position that contains information about the CI coefficient, and det up/dn values associated with the current unique determinant
+        const int el_p (lookup_tbls[active_spin][index][p]);
+        const RealType c=cptr[el_p];
+        const size_t up=upC[el_p];
+        const size_t down=dnC[el_p];
+
+        const RealType alpha_1  (  c * detValues_dn[ down ] * detValues_up[ up ]/detValues_up[0] * c_Tr_AlphaI_MI  ); 
+        const RealType alpha_2  (  c * detValues_dn[ down ] * detValues_up[ up ]/detValues_up[0]                   );
+        const RealType alpha_3  (  c * Oi[ down ]           * detValues_up[ up ]/detValues_up[0]                   );
+        const RealType alpha_4  (  c * detValues_dn[ down ] * detValues_up[ up ]                 * (1/psiCurrent)  );
+
+        const2 += alpha_1;
+
+        for ( int i=0; i<k; i++)
+        {
+          BLAS::axpy(nel, alpha_1, Y7.data() + i*nel,1, pK1.data() + (*(data_it+1+k+i))*nel,1);   
+          BLAS::axpy(nel, alpha_2, Y7.data() + i*nel,1, pK2.data() + (*(data_it+1+k+i))*nel,1);   
+          BLAS::axpy(nel, alpha_3, Y7.data() + i*nel,1, pK3.data() + (*(data_it+1+k+i))*nel,1);   
+          BLAS::axpy(nel, alpha_4, Y7.data() + i*nel,1, pK4.data() + (*(data_it+1+k+i))*nel,1);   
+          BLAS::axpy(nel, alpha_2,Y26.data() + i*nel,1, pK5.data() + (*(data_it+1+k+i))*nel,1);   
+        }
+      }
+      data_it += 3*k+1;
+    }
+
+  }
+
+
+  BLAS::gemm('N','N', nmo, nmo, nel, 1.0/const0               , T           , nmo, pK1.data(), nel, RealType(0.0), K1T.data()   ,  nmo);
+  BLAS::gemm('N','N', nmo, nel, nmo, RealType(1.0)            , K1T.data()  , nmo, T         , nmo, RealType(0.0), TK1T.data()  ,  nmo);
+
+  BLAS::gemm('N','N', nmo, nmo, nel, 1.0/const0               , Y3.data()   , nmo, pK2.data(), nel, RealType(0.0), K2AiB.data() ,  nmo);
+  BLAS::gemm('N','N', nmo, nel, nmo, RealType(1.0)            , K2AiB.data(), nmo, T         , nmo, RealType(0.0), TK2AiB.data(),  nmo);
+  BLAS::gemm('N','N', nmo, nmo, nel, 1.0/const0               , Y2.data()   , nmo, pK2.data(), nel, RealType(0.0), K2XA.data()  ,  nmo);
+  BLAS::gemm('N','N', nmo, nel, nmo, RealType(1.0)            , K2XA.data() , nmo, T         , nmo, RealType(0.0), TK2XA.data() ,  nmo);
+
+  BLAS::gemm('N','N', nmo, nmo, nel, const1/(const0*const0)   , T           , nmo, pK2.data(), nel, RealType(0.0), K2T.data()   ,  nmo);
+  BLAS::gemm('N','N', nmo, nel, nmo, RealType(1.0)            , K2T.data()  , nmo, T         , nmo, RealType(0.0), TK2T.data()  ,  nmo);
+  BLAS::gemm('N','N', nmo, nel, nmo, const0/const1            , K2T.data()  , nmo, Y4.data() , nmo, RealType(0.0), MK2T.data()  ,  nmo);
+ 
+  BLAS::gemm('N','N', nmo, nmo, nel, 1.0/const0               , T           , nmo, pK3.data(), nel, RealType(0.0), K3T.data()   ,  nmo);
+  BLAS::gemm('N','N', nmo, nel, nmo, RealType(1.0)            , K3T.data()  , nmo, T         , nmo, RealType(0.0), TK3T.data()  ,  nmo);
+
+  BLAS::gemm('N','N', nmo, nmo, nel, RealType(1.0)            , T           , nmo, pK4.data(), nel, RealType(0.0), K4T.data()   ,  nmo);
+  BLAS::gemm('N','N', nmo, nel, nmo, RealType(1.0)            , K4T.data()  , nmo, T         , nmo, RealType(0.0), TK4T.data()  ,  nmo);
+
+  BLAS::gemm('N','N', nmo, nmo, nel, 1.0/const0               , T           , nmo, pK5.data(), nel, RealType(0.0), K5T.data()   ,  nmo);
+  BLAS::gemm('N','N', nmo, nel, nmo, RealType(1.0)            , K5T.data()  , nmo, T         , nmo, RealType(0.0), TK5T.data()  ,  nmo);
+
+ 
+
+  for (int mu=0, kk=parameter_start_index; kk < (parameter_start_index + parameters_size) ; kk++, mu++)
+  {
+    const int i((*m_act_rot_inds)[mu].first), j((*m_act_rot_inds)[mu].second);
+    if (i<=nel-1 && j>nel-1)
+      { dlogpsi[kk] += detValues_up[0]*( Tr(i,j) )*const0*(1/psiCurrent)\
+                       + ( K4T(i,j)-K4T(j,i)-TK4T(i,j)) ;
+
+        dhpsioverpsi[kk] += -0.5 * Y4(i,j)\
+                            -0.5*( -   K5T(i,j) +   K5T(j,i)    +   TK5T(i,j)  \
+                                   + K2AiB(i,j) - K2AiB(j,i)    - TK2AiB(i,j)  \
+                                   -  K2XA(i,j) +  K2XA(j,i)    +  TK2XA(i,j)  \
+                                                                -   MK2T(i,j)  \
+                                   +   K1T(i,j) -   K1T(j,i)    -   TK1T(i,j)  \
+                                   -  const2/const1 * K2T(i,j) +  const2/const1 * K2T(j,i)    +   const2/const1 * TK2T(i,j)  \
+                                   +   K3T(i,j) -   K3T(j,i)    -   TK3T(i,j)  \
+                                   -   K2T(i,j) +     K2T(j,i)    +   TK2T(i,j) \
+                                 );
+      }
+    else if (i<=nel-1 && j<=nel-1)
+      { dlogpsi[kk] += detValues_up[0]* ( Tr(i,j) - Tr(j,i) )*const0*(1/psiCurrent)\
+                       + (K4T(i,j)-TK4T(i,j)-K4T(j,i)+TK4T(j,i) );
+
+        dhpsioverpsi[kk] += -0.5 *( Y4(i,j)-Y4(j,i) )\
+                            -0.5*( -   K5T(i,j) +   K5T(j,i)    +   TK5T(i,j) -    TK5T(j,i) \
+                                   + K2AiB(i,j) - K2AiB(j,i)    - TK2AiB(i,j) +  TK2AiB(j,i) \
+                                   -  K2XA(i,j) +  K2XA(j,i)    +  TK2XA(i,j) -   TK2XA(j,i) \
+                                                                -   MK2T(i,j) +    MK2T(j,i) \
+                                   +   K1T(i,j) -   K1T(j,i)    -   TK1T(i,j) +    TK1T(j,i) \
+                                   -   const2/const1 * K2T(i,j) +   const2/const1 * K2T(j,i)    +   const2/const1 * TK2T(i,j) -    const2/const1 * TK2T(j,i) \
+                                   +   K3T(i,j) -   K3T(j,i)    -   TK3T(i,j) +    TK3T(j,i) \
+                                   -   K2T(i,j) +   K2T(j,i)    +   TK2T(i,j) -    TK2T(j,i) \
+                                 );
+
+
+      }
+    else  
+      { dlogpsi[kk] +=  ( K4T(i,j)-K4T(j,i) );
+
+        dhpsioverpsi[kk] += \
+                            -0.5*( -   K5T(i,j) +   K5T(j,i)    \
+                                   + K2AiB(i,j) - K2AiB(j,i)    \
+                                   -  K2XA(i,j) +  K2XA(j,i)    \
+                                                                \
+                                   +   K1T(i,j) -   K1T(j,i)    \
+                                   -   const2/const1 * K2T(i,j) +   const2/const1 * K2T(j,i)    \
+                                   +   K3T(i,j) -   K3T(j,i)    \
+                                   -   K2T(i,j) +   K2T(j,i)  \
+                                 );
+
+      }
+  }
+
+}
 
 }

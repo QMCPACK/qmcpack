@@ -278,7 +278,10 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       std::string spo_alpha;
       std::string spo_beta;
       std::string fastAlg("yes");
+      std::string orbopt("no");
+      bool OrbOpt(false);
       OhmmsAttributeSet spoAttrib;
+      spoAttrib.add (orbopt,"OrbOpt");
       spoAttrib.add (spo_alpha, "spo_up");
       spoAttrib.add (spo_beta, "spo_dn");
       spoAttrib.add (fastAlg, "Fast");
@@ -308,11 +311,13 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         app_log() <<"Using Bryan's algorithm for MultiSlaterDeterminant expansion. \n";
         MultiDiracDeterminantBase* up_det=0;
         MultiDiracDeterminantBase* dn_det=0;
+        app_log() <<"OrbOptimize set to "<< orbopt <<"\n";
+        if(orbopt=="yes") {OrbOpt=true;}
         app_log() <<"Creating base determinant (up) for MSD expansion. \n";
         up_det = new MultiDiracDeterminantBase((SPOSetBasePtr) spomap.find(spo_alpha)->second,0);
         app_log() <<"Creating base determinant (down) for MSD expansion. \n";
         dn_det = new MultiDiracDeterminantBase((SPOSetBasePtr) spomap.find(spo_beta)->second,1);
-        multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl,up_det,dn_det);
+        multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl,up_det,dn_det,OrbOpt);
         //          up_det->usingBF = UseBackflow;
         //          dn_det->usingBF = UseBackflow;
         //          multislaterdetfast_0->usingBF = UseBackflow;
@@ -325,6 +330,33 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         //
         //          multislaterdetfast_0->msd = new MultiSlaterDeterminant(targetPtcl,spo_up,spo_dn);
         //          success = createMSD(multislaterdetfast_0->msd,cur);
+
+        // read in orbital rotation coefficients to apply a unitary roation before beginning calculation...
+        std::vector<RealType> params_a, params_b;
+        std::string subdet_name;
+        bool params_supplied_a = false;
+        bool params_supplied_b = false;
+        
+        for (xmlNodePtr subcur = cur->children; subcur != NULL; subcur = subcur->next) 
+        {
+          std::string opt_vars;
+          getNodeName(subdet_name,subcur);
+          if (subdet_name == "orb_rot_coeff_up" )
+          {
+            params_supplied_a = true;
+            putContent(params_a, subcur);
+          }
+          if (subdet_name == "orb_rot_coeff_dn" )
+          {
+            params_supplied_b = true;
+            putContent(params_b, subcur);
+          }
+        }
+
+        // The primary purupose of this function is to create all the optimizable orbital rotation parameters.
+        // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
+        //and then remove the orbital rotation parameters
+        multislaterdetfast_0->buildOptVariables(params_a,params_supplied_a,params_b,params_supplied_b);
       }
       else
       {
