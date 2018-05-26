@@ -42,8 +42,13 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl, 
   NP = targetPtcl.getTotalNum();
   nels_up = targetPtcl.last(0)-targetPtcl.first(0);
   nels_dn = targetPtcl.last(1)-targetPtcl.first(1);
+#if defined(ENABLE_SOA)
   m_nb_up = static_cast<qmcplusplus::LCAOrbitalSet*>(up->Phi)->BasisSetSize; 
   m_nb_dn = static_cast<qmcplusplus::LCAOrbitalSet*>(dn->Phi)->BasisSetSize; 
+#else
+  m_nb_up = (up->Phi)->BasisSetSize; 
+  m_nb_dn = (dn->Phi)->BasisSetSize; 
+#endif
   m_nmo_up= up->Phi->OrbitalSetSize;
   m_nmo_dn= dn->Phi->OrbitalSetSize;
   FirstIndex_up=targetPtcl.first(0);
@@ -62,9 +67,11 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl, 
   usingBF=false;
   BFTrans=0;
 
-  m_old_B_up  = *(static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C); 
+#if defined(ENABLE_SOA)
   m_init_B_up = *(static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C); 
-
+#else
+  m_init_B_up = *((Dets[0]->Phi)->C); 
+#endif
   Orbopt = false;
   CIopt  = false; 
 // NEED TO INCLUDE AN INTERNAL CHECK TO MAKE SURE CSF AND ORBOPT AREN'T USED SIMULATANEOUSLY
@@ -216,47 +223,13 @@ for(int i=0;i<m_nmo_up;i++)
     // exponentiate antisymmetric matrix to get the unitary rotation
     this->exponentiate_matrix(m_nmo_up, &rot_mat_up[0]);
 
-
-    if(false)
-    {
-      app_log() << "I'm trying to print the Phi->C matrix\n" << *(static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C) << "END OF PRINT";
-
-      app_log()<< "PRINT ALL ORBITALS FOR USE IN CONTINUED INPUT\n";
-      app_log() << "value of m_nb_up: "<< m_nb_up << " m_nmo_up: " << m_nmo_up << std::endl;
-      for (int j = 0; j < m_nmo_up; j++)
-      {
-        for (int i = 0; i < m_nb_up; i++)
-        {
-          app_log() << " " << std::right << std::fixed << std::setprecision(16) << std::setw(23) << std::scientific << *(static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C->data() +j*m_nb_up + i);
-
-          if((j*m_nb_up + i + 1)%4==0){ app_log() << std::endl;}
-        }
-      }
-      app_log() << "\n done printing molecular orbital coefficients\n";
-      app_log() << std::endl;
-    }
-
+#if defined(ENABLE_SOA)
     BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C->data() , m_nb_up);
     BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[1]->Phi)->C->data() , m_nb_up);
-    
-    m_old_B_up = *(static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C);
-
-    if(false)
-    {
-      app_log()<< "PRINT ALL ORBITALS FOR USE IN CONTINUED INPUT\n";
-      app_log() << "value of m_nb_up: "<< m_nb_up << " m_nmo_up: " << m_nmo_up << std::endl;
-      for (int j = 0; j < m_nmo_up; j++)
-      {
-        for (int i = 0; i < m_nb_up; i++)
-        {
-          app_log() << " " << std::right << std::fixed << std::setprecision(16) << std::setw(23) << std::scientific << *(static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C->data() +j*m_nb_up + i);
-
-          if((j*m_nb_up + i + 1)%4==0){ app_log() << std::endl;}
-        }
-      }
-      app_log() << "\n done printing molecular orbital coefficients\n";
-      app_log() << std::endl;
-    }
+#else
+    BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), (Dets[0]->Phi)->C->data() , m_nb_up);
+    BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), (Dets[1]->Phi)->C->data() , m_nb_up);
+#endif    
 
     T_up.resize(nels_up,m_nmo_up);
     T_dn.resize(nels_dn,m_nmo_dn);
@@ -753,10 +726,13 @@ void MultiSlaterDeterminantFast::resetParameters(const opt_variables_type& activ
 
       this->exponentiate_matrix(m_nmo_up, &rot_mat_up[0]);
 
+#if defined(ENABLE_SOA)
       BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C->data() , m_nb_up);
       BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[1]->Phi)->C->data() , m_nb_up);
-      
-      m_old_B_up = *(static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C);
+#else
+      BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), (Dets[0]->Phi)->C->data() , m_nb_up);
+      BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), (Dets[1]->Phi)->C->data() , m_nb_up);
+#endif      
 
     }
   }
