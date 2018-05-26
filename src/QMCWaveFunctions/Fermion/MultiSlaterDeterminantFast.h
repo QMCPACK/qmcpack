@@ -54,8 +54,10 @@ class MultiSlaterDeterminantFast: public OrbitalBase
 {
 
 public:
-  //Boolean Which determnies whether to run orbital optimization
+  //Boolean which determnies whether to run orbital optimization
   bool Orbopt;
+  //Boolean which determines wheter to run CI optimization
+  bool CIopt;  
 
   // The initial coefficents at the start of the simulation
   SPOSetBase::ValueMatrix_t m_init_B_up;
@@ -144,7 +146,7 @@ public:
 
 
   ///constructor
-  MultiSlaterDeterminantFast(ParticleSet& targetPtcl,MultiDiracDeterminantBase* up, MultiDiracDeterminantBase* dn, bool OrbOpt=false);
+  MultiSlaterDeterminantFast(ParticleSet& targetPtcl,MultiDiracDeterminantBase* up, MultiDiracDeterminantBase* dn);
 
   ///destructor
   ~MultiSlaterDeterminantFast();

@@ -311,13 +311,14 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         app_log() <<"Using Bryan's algorithm for MultiSlaterDeterminant expansion. \n";
         MultiDiracDeterminantBase* up_det=0;
         MultiDiracDeterminantBase* dn_det=0;
-        app_log() <<"OrbOptimize set to "<< orbopt <<"\n";
         if(orbopt=="yes") {OrbOpt=true;}
+        app_log() <<"Multi-Slater Jastrow Orbital Optimization is set to "<< (OrbOpt ? "True" : "False") <<"\n";
         app_log() <<"Creating base determinant (up) for MSD expansion. \n";
         up_det = new MultiDiracDeterminantBase((SPOSetBasePtr) spomap.find(spo_alpha)->second,0);
         app_log() <<"Creating base determinant (down) for MSD expansion. \n";
         dn_det = new MultiDiracDeterminantBase((SPOSetBasePtr) spomap.find(spo_beta)->second,1);
-        multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl,up_det,dn_det,OrbOpt);
+        multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl,up_det,dn_det);
+        (OrbOpt) ? (multislaterdetfast_0->Orbopt=true): (multislaterdetfast_0->Orbopt=false);
         //          up_det->usingBF = UseBackflow;
         //          dn_det->usingBF = UseBackflow;
         //          multislaterdetfast_0->usingBF = UseBackflow;
@@ -332,6 +333,8 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         //          success = createMSD(multislaterdetfast_0->msd,cur);
 
         // read in orbital rotation coefficients to apply a unitary roation before beginning calculation...
+        if (multislaterdetfast_0->CIopt || multislaterdetfast_0->Orbopt)
+          multislaterdetfast_0->Optimizable=true;
         std::vector<RealType> params_a, params_b;
         std::string subdet_name;
         bool params_supplied_a = false;
@@ -705,11 +708,13 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
         multiSD->myVars->insert(CItags[i],(*(multiSD->C))[i],true,optimize::LINEAR_P);
       }
     }
+    multiSD->CIopt=true;
   }
   else
   {
     app_log() <<"CI coefficients are not optimizable. \n";
     multiSD->Optimizable=false;
+    multiSD->CIopt=false;
   }
   return success;
 }

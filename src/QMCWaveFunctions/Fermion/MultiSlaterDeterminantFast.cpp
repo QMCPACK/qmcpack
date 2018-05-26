@@ -20,7 +20,7 @@
 namespace qmcplusplus
 {
 
-MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl, MultiDiracDeterminantBase* up, MultiDiracDeterminantBase* dn, bool OrbOpt):
+MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl, MultiDiracDeterminantBase* up, MultiDiracDeterminantBase* dn):
   C2node_up(nullptr),C2node_dn(nullptr),C(nullptr),
   CSFcoeff(nullptr),DetsPerCSF(nullptr),CSFexpansion(nullptr),
   IsCloned(false),
@@ -65,8 +65,8 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl, 
   m_old_B_up  = *(static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C); 
   m_init_B_up = *(static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C); 
 
-  Orbopt = OrbOpt;
-
+  Orbopt = false;
+  CIopt  = false; 
 // NEED TO INCLUDE AN INTERNAL CHECK TO MAKE SURE CSF AND ORBOPT AREN'T USED SIMULATANEOUSLY
 //  if(usingCSF && Orbopt){
 //    APP_ABORT("Orbital Optimization Does not work with CSFS only DETS")
@@ -88,6 +88,7 @@ void MultiSlaterDeterminantFast::buildOptVariables(std::vector<RealType>& input_
                                                    std::vector<RealType>& input_params_dn,
                                                    bool params_supplied_dn)
 {
+  app_log() << "Multi-Slater class has CIopt set to "<< (CIopt ? "TRUE":"FALSE") <<" and Orbopt set to "<< (Orbopt ? "TRUE":"FALSE") << " which causes Optimizable to be set to "<< (Optimizable ? "TRUE":"FALSE") << std::endl;
   //a vector in which the element's index value correspond to Molecular Orbitals.
   //The element value at a index indicates how many times an electron is excited from or to that orbital in the Multi-Slater expansion i.e the indices with non-zero elements are active space orbitals
   std::vector<int> occupancy_vector_up (m_nmo_up,0);
@@ -124,14 +125,14 @@ void MultiSlaterDeterminantFast::buildOptVariables(std::vector<RealType>& input_
   // summing occupancy vectors to find all set of active rotations later on.
   for (int i=0; i<occupancy_vector_up.size(); i++){
     occupancy_vector_up[i] += occupancy_vector_dn[i];}
- 
-  if(Optimizable)
+
+  if(CIopt)
   {
     if(usingCSF){
-      // the -1 is because if there are n CI coefficients only n-1 of them are free variables
       m_first_var_pos = CSFcoeff->size() - 1;
     }
     else{
+      // the -1 is because if there are n CI coefficients only n-1 of them are free variables
        m_first_var_pos = C->size() - 1;
     }  
   }
@@ -193,7 +194,7 @@ for(int i=0;i<m_nmo_up;i++)
     }
 
     //Printing the parameters
-    if(true){
+    if(false){
       app_log() << std::string(16,' ') << "Parameter name" << std::string(15,' ') << "Value\n";
       myVars->print(app_log());
     }
@@ -669,12 +670,10 @@ void MultiSlaterDeterminantFast::copyFromBuffer(ParticleSet& P, WFBufferType& bu
 
 void MultiSlaterDeterminantFast::checkInVariables(opt_variables_type& active)
 {
-  if( (Optimizable || Orbopt ) && !IsCloned)
+  if(Optimizable && !IsCloned)
   {
-    if(myVars->size()){
+    if(myVars->size())
       active.insertFrom(*myVars);
-      m_first_var_pos = -1;
-    }
     else
       Optimizable=false;
   }
@@ -682,27 +681,8 @@ void MultiSlaterDeterminantFast::checkInVariables(opt_variables_type& active)
 
 void MultiSlaterDeterminantFast::checkOutVariables(const opt_variables_type& active)
 {
-  if( (Optimizable || Orbopt) && !IsCloned)
+  if(Optimizable && !IsCloned)
     myVars->getIndex(active);
-
-  if(Orbopt)
-  {
-    if(Optimizable)
-    {
-      if(usingCSF)
-      {
-       APP_ABORT("MSJ orbital optimization not compatible with usingCSF"); 
-      }
-      else
-      {
-        m_first_var_pos = myVars->where( C->size() - 1 );
-      }
-    }
-    else
-    {
-      m_first_var_pos = myVars->where(0);
-    }
-  }
 }
 
 /** resetParameters with optVariables
@@ -713,68 +693,72 @@ void MultiSlaterDeterminantFast::resetParameters(const opt_variables_type& activ
 {
   if(Optimizable && !IsCloned)
   {
-    if(usingCSF)
+    if(CIopt)
     {
-      RealType *restrict CSFcoeff_p=CSFcoeff->data();
-      for(int i=0; i<CSFcoeff->size()-1; i++)
+      if(usingCSF)
+      {
+        RealType *restrict CSFcoeff_p=CSFcoeff->data();
+        for(int i=0; i<CSFcoeff->size()-1; i++)
+        {
+          int loc=myVars->where(i);
+          if(loc>=0)
+          {
+            CSFcoeff_p[i+1]= (*myVars)[i]=active[loc];
+          }
+        }
+        int cnt=0;
+        RealType *restrict C_p=C->data();
+        const RealType *restrict CSFexpansion_p=CSFexpansion->data();
+        for(int i=0; i<DetsPerCSF->size(); i++)
+        {
+          for(int k=0; k<(*DetsPerCSF)[i]; k++)
+          {
+            C_p[cnt] = CSFcoeff_p[i]*CSFexpansion_p[cnt];
+            cnt++;
+          }
+        }
+        //for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
+      }
+      else
+      {
+        RealType *restrict C_p=C->data();
+        for(int i=0; i<C->size()-1; i++)
+        {
+          int loc=myVars->where(i);
+          if(loc>=0)
+          {
+            C_p[i+1]=(*myVars)[i]=active[loc];
+          }
+        }
+        //for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
+      }
+    }
+
+    if(Orbopt)
+    {
+      // read out the parameters for spin up electrons that define the rotation into an antisymmetric matrix
+      std::vector<RealType> rot_mat_up(m_nmo_up*m_nmo_up, 0.0);
+      for (int j=0, i = m_first_var_pos; i < m_first_var_pos + m_act_rot_inds_up.size(); j++, i++) 
       {
         int loc=myVars->where(i);
-        if(loc>=0)
-        {
-          CSFcoeff_p[i+1]= (*myVars)[i]=active[loc];
-        }
+
+        const int p = m_act_rot_inds_up[j].first;
+        const int q = m_act_rot_inds_up[j].second;
+        // m_first_var_pos is the index to the first parameter of the spin up electrons...
+        const RealType x = (*myVars)[i] = active[loc];
+  //      app_log() <<"active ["<< loc << "] = "<< x<< "\n";
+        rot_mat_up[p+q*m_nmo_up] =  x;
+        rot_mat_up[q+p*m_nmo_up] = -x;
       }
-      int cnt=0;
-      RealType *restrict C_p=C->data();
-      const RealType *restrict CSFexpansion_p=CSFexpansion->data();
-      for(int i=0; i<DetsPerCSF->size(); i++)
-      {
-        for(int k=0; k<(*DetsPerCSF)[i]; k++)
-        {
-          C_p[cnt] = CSFcoeff_p[i]*CSFexpansion_p[cnt];
-          cnt++;
-        }
-      }
-      //for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
+
+      this->exponentiate_matrix(m_nmo_up, &rot_mat_up[0]);
+
+      BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C->data() , m_nb_up);
+      BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[1]->Phi)->C->data() , m_nb_up);
+      
+      m_old_B_up = *(static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C);
+
     }
-    else
-    {
-      RealType *restrict C_p=C->data();
-      for(int i=0; i<C->size()-1; i++)
-      {
-        int loc=myVars->where(i);
-        if(loc>=0)
-        {
-          C_p[i+1]=(*myVars)[i]=active[loc];
-        }
-      }
-      //for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
-    }
-  }
-  if(Orbopt)
-  {
-    // read out the parameters for spin up electrons that define the rotation into an antisymmetric matrix
-    std::vector<RealType> rot_mat_up(m_nmo_up*m_nmo_up, 0.0);
-    for (int j=0, i = m_first_var_pos; i < m_first_var_pos + m_act_rot_inds_up.size(); j++, i++) 
-    {
-      int loc=myVars->where(i);
-
-      const int p = m_act_rot_inds_up[j].first;
-      const int q = m_act_rot_inds_up[j].second;
-      // m_first_var_pos is the index to the first parameter of the spin up electrons...
-      const RealType x = (*myVars)[i] = active[loc];
-//      app_log() <<"active ["<< loc << "] = "<< x<< "\n";
-      rot_mat_up[p+q*m_nmo_up] =  x;
-      rot_mat_up[q+p*m_nmo_up] = -x;
-    }
-
-    this->exponentiate_matrix(m_nmo_up, &rot_mat_up[0]);
-
-    BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C->data() , m_nb_up);
-    BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[1]->Phi)->C->data() , m_nb_up);
-    
-    m_old_B_up = *(static_cast<qmcplusplus::LCAOrbitalSet*>(Dets[0]->Phi)->C);
-
   }
 }
 void MultiSlaterDeterminantFast::reportStatus(std::ostream& os)
@@ -787,6 +771,7 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
     std::vector<RealType>& dlogpsi,
     std::vector<RealType>& dhpsioverpsi)
 {
+//app_log() << "optimizable is set to " << (Optimizable ? "true":"false");
   bool recalculate(false);
   for (int k=0; k<myVars->size(); ++k)
   {
@@ -1066,6 +1051,21 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
                         T_up,
                         Dets[0]->psiM);
 
+      if (false)
+      {
+        for (int i=0; i<m_act_rot_inds_up.size(); i++){
+         int kk= i+m_first_var_pos;
+             const int p = m_act_rot_inds_up[i].first;
+             const int q = m_act_rot_inds_up[i].second;
+             std::vector<char> buff(1000, ' ');
+             const int len = std::sprintf(&buff[0], " p = %4i   q = %4i     dlogpsi = %20.12f     dhpsioverpsi = %20.12f   kk = %4i", p, q,dlogpsi[kk], dhpsioverpsi[kk], kk);
+             for (int k = 0; k < len; k++)
+               app_log() << buff[k];
+             app_log() << std::endl;
+        }
+      }
+
+
       table_method_eval(myL_J,
                         myG_J,
                         nels_dn,
@@ -1082,25 +1082,22 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
                         T_dn,
                         Dets[1]->psiM );
 
-       for (int i=0; i<m_act_rot_inds_up.size(); i++){
-        int kk= i+m_first_var_pos;
-        if (false)
-          {
-            const int p = m_act_rot_inds_up[i].first;
-            const int q = m_act_rot_inds_up[i].second;
-            std::vector<char> buff(1000, ' ');
-            const int len = std::sprintf(&buff[0], " p = %4i   q = %4i     dlogpsi = %20.12f     dhpsioverpsi = %20.12f   kk = %4i", p, q,dlogpsi[kk], dhpsioverpsi[kk], kk);
-            for (int k = 0; k < len; k++)
-              app_log() << buff[k];
-            app_log() << std::endl;
-          }
-
-       }
-
+      if (false)
+      {
+        for (int i=0; i<m_act_rot_inds_up.size(); i++){
+         int kk= i+m_first_var_pos;
+             const int p = m_act_rot_inds_up[i].first;
+             const int q = m_act_rot_inds_up[i].second;
+             std::vector<char> buff(1000, ' ');
+             const int len = std::sprintf(&buff[0], " p = %4i   q = %4i     dlogpsi = %20.12f     dhpsioverpsi = %20.12f   kk = %4i", p, q,dlogpsi[kk], dhpsioverpsi[kk], kk);
+             for (int k = 0; k < len; k++)
+               app_log() << buff[k];
+             app_log() << std::endl;
+        }
+      }
 
 
-//      app_log() << "value of psiM \n" << Dets[0]->psiM << "\n value of psiMinv\n" << Dets[0]->psiMinv << "\n the resultant matrix multiplication \n" << T_up << std::endl;
-//      APP_ABORT(" FORCE STOP FOR DEBUGGING.");
+
 
     } 
   }
@@ -1337,14 +1334,17 @@ $
   //The few lines above are for the reference matrix contribution.
   //Although I start the loop below from index 0, the loop only performs actions when the index is => 1
   //the detData object contains all the information about the P^T and Q matrices (projection matrices) needed in the table method
-  std::vector<int>::iterator data_it = Dets[active_spin]->detData->begin();
-  for(int index=0; index < num_unique_up_dets; index++)
+  const int* restrict data_it = Dets[active_spin]->detData->data();
+//  std::vector<int>::iterator data_it = Dets[active_spin]->detData->begin();
+  for(int index=0, datum=0; index < num_unique_up_dets; index++)
   {
-    const int  k = *data_it;
+//    const int  k = *data_it;
+    const int  k = data_it[datum];
 
     if (k==0)
     {
-      data_it += 3*k+1;
+//      data_it += 3*k+1;
+      datum += 3*k+1;
     }
 
     else
@@ -1370,13 +1370,15 @@ $
       std::fill(Y5.begin(),Y5.end(),0.0);
       for ( int i=0; i<k; i++)
       {
-        BLAS::copy(nel, T + *(data_it+1+k+i), nmo, Y5.data()+i, k);   
+//        BLAS::copy(nel, T + *(data_it+1+k+i), nmo, Y5.data()+i, k);   
+        BLAS::copy(nel, T + data_it[datum+1+k+i], nmo, Y5.data()+i, k);   
       }
 
       std::fill(Y6.begin(),Y6.end(),0.0);
       for ( int i=0; i<k; i++)
       { 
-        BLAS::copy(k, Y5.data() + (*(data_it+1+i))*k, 1, (Y6.data() + i*k), 1);   
+//        BLAS::copy(k, Y5.data() + (*(data_it+1+i))*k, 1, (Y6.data() + i*k), 1);   
+        BLAS::copy(k, Y5.data() + (data_it[datum+1+i])*k, 1, (Y6.data() + i*k), 1);   
       }
 
 //      app_log() << "priting Y5 \n " << Y5 << std::endl;
@@ -1402,14 +1404,16 @@ $
       std::fill(Y11.begin(),Y11.end(),0.0);
       for ( int i=0; i<k; i++)
       {
-        BLAS::copy(nel, Y4.data() + *(data_it+1+k+i), nmo, Y11.data()+i, k);   
+//        BLAS::copy(nel, Y4.data() + *(data_it+1+k+i), nmo, Y11.data()+i, k);   
+        BLAS::copy(nel, Y4.data() + (data_it[datum+1+k+i]), nmo, Y11.data()+i, k);   
       }
 //      app_log() << "priting Y11 \n " << Y11 << std::endl;
 
       std::fill(Y23.begin(),Y23.end(),0.0);
       for ( int i=0; i<k; i++)
       { 
-        BLAS::copy(k, Y11.data() + (*(data_it+1+i))*k, 1, (Y23.data() + i*k), 1);   
+//        BLAS::copy(k, Y11.data() + (*(data_it+1+i))*k, 1, (Y23.data() + i*k), 1);   
+        BLAS::copy(k, Y11.data() + (data_it[datum+1+i])*k, 1, (Y23.data() + i*k), 1);   
       }
 //      app_log() << "priting Y23 \n " << Y23 << std::endl;
 
@@ -1422,7 +1426,8 @@ $
       std::fill(Y26.begin(),Y26.end(),0.0);
       for ( int i=0; i<k; i++)
       {
-        BLAS::copy(k, Y25.data() + i, k, Y26.data() + *(data_it+1+i), nel);   
+//        BLAS::copy(k, Y25.data() + i, k, Y26.data() + *(data_it+1+i), nel);   
+        BLAS::copy(k, Y25.data() + i, k, Y26.data() + (data_it[datum+1+i]), nel);   
       }
 
 
@@ -1431,7 +1436,8 @@ $
       std::fill(Y7.begin(),Y7.end(),0.0);
       for ( int i=0; i<k; i++)
       {
-        BLAS::copy(k, Y6.data() + i, k, Y7.data() + *(data_it+1+i), nel);   
+//        BLAS::copy(k, Y6.data() + i, k, Y7.data() + *(data_it+1+i), nel);   
+        BLAS::copy(k, Y6.data() + i, k, Y7.data() + (data_it[datum+1+i]), nel);   
       }
 
 //      app_log() << "priting Y7 \n " << Y7 << std::endl;
@@ -1459,14 +1465,20 @@ $
 
         for ( int i=0; i<k; i++)
         {
-          BLAS::axpy(nel, alpha_1, Y7.data() + i*nel,1, pK1.data() + (*(data_it+1+k+i))*nel,1);   
-          BLAS::axpy(nel, alpha_2, Y7.data() + i*nel,1, pK2.data() + (*(data_it+1+k+i))*nel,1);   
-          BLAS::axpy(nel, alpha_3, Y7.data() + i*nel,1, pK3.data() + (*(data_it+1+k+i))*nel,1);   
-          BLAS::axpy(nel, alpha_4, Y7.data() + i*nel,1, pK4.data() + (*(data_it+1+k+i))*nel,1);   
-          BLAS::axpy(nel, alpha_2,Y26.data() + i*nel,1, pK5.data() + (*(data_it+1+k+i))*nel,1);   
+//          BLAS::axpy(nel, alpha_1, Y7.data() + i*nel,1, pK1.data() + (*(data_it+1+k+i))*nel,1);   
+//          BLAS::axpy(nel, alpha_2, Y7.data() + i*nel,1, pK2.data() + (*(data_it+1+k+i))*nel,1);   
+//          BLAS::axpy(nel, alpha_3, Y7.data() + i*nel,1, pK3.data() + (*(data_it+1+k+i))*nel,1);   
+//          BLAS::axpy(nel, alpha_4, Y7.data() + i*nel,1, pK4.data() + (*(data_it+1+k+i))*nel,1);   
+//          BLAS::axpy(nel, alpha_2,Y26.data() + i*nel,1, pK5.data() + (*(data_it+1+k+i))*nel,1);   
+          BLAS::axpy(nel, alpha_1, Y7.data() + i*nel,1, pK1.data() + (data_it[datum+1+k+i])*nel,1);   
+          BLAS::axpy(nel, alpha_2, Y7.data() + i*nel,1, pK2.data() + (data_it[datum+1+k+i])*nel,1);   
+          BLAS::axpy(nel, alpha_3, Y7.data() + i*nel,1, pK3.data() + (data_it[datum+1+k+i])*nel,1);   
+          BLAS::axpy(nel, alpha_4, Y7.data() + i*nel,1, pK4.data() + (data_it[datum+1+k+i])*nel,1);   
+          BLAS::axpy(nel, alpha_2,Y26.data() + i*nel,1, pK5.data() + (data_it[datum+1+k+i])*nel,1);   
         }
       }
-      data_it += 3*k+1;
+//      data_it += 3*k+1;
+      datum += 3*k+1;
     }
 
   }
@@ -1501,6 +1513,7 @@ $
     if (i<=nel-1 && j>nel-1)
       { dlogpsi[kk] += detValues_up[0]*( Tr(i,j) )*const0*(1/psiCurrent)\
                        + ( K4T(i,j)-K4T(j,i)-TK4T(i,j)) ;
+//       app_log() <<"this should be nonzero \n" << detValues_up[0] << std::endl << ( Tr(i,j) ) << std::endl << const0 << std::endl << (1/psiCurrent) << std::endl  <<  K4T(i,j) << std::endl << -K4T(j,i) << std::endl << -TK4T(i,j) << std::endl ;
 
         dhpsioverpsi[kk] += -0.5 * Y4(i,j)\
                             -0.5*( -   K5T(i,j) +   K5T(j,i)    +   TK5T(i,j)  \
