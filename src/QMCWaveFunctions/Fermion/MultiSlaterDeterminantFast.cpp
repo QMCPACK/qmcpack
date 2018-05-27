@@ -73,7 +73,8 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl, 
   m_init_B_up = *((Dets[0]->Phi)->C); 
 #endif
   Orbopt = false;
-  CIopt  = false; 
+  CIopt  = false;
+
 // NEED TO INCLUDE AN INTERNAL CHECK TO MAKE SURE CSF AND ORBOPT AREN'T USED SIMULATANEOUSLY
 //  if(usingCSF && Orbopt){
 //    APP_ABORT("Orbital Optimization Does not work with CSFS only DETS")
@@ -84,8 +85,6 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl, 
     APP_ABORT("OrbitalSetSize or BasisSetSize is not equal for spin up/dn Molecular orbitals. ")
     app_log() << "OrbitalSetSize or BasisSetSize is not equal for spin up/dn Molecular orbitals." << std::endl;
   }
-
-
 
 }
 
@@ -140,7 +139,7 @@ void MultiSlaterDeterminantFast::buildOptVariables(std::vector<RealType>& input_
     }
     else{
       // the -1 is because if there are n CI coefficients only n-1 of them are free variables
-       m_first_var_pos = C->size() - 1;
+      m_first_var_pos = C->size() - 1;
     }  
   }
   else{
@@ -161,7 +160,7 @@ for(int i=0;i<m_nmo_up;i++)
     bool virt_j(!occupancy_vector_up[j] and j >  max_nel-1); // true if orbital j is a 'virtual' orbital
       if( !( 
             ( core_i and core_j  ) 
-                       or
+                      or
             ( virt_i and virt_j ) 
            )    
         )
@@ -230,14 +229,15 @@ for(int i=0;i<m_nmo_up;i++)
     BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), (Dets[0]->Phi)->C->data() , m_nb_up);
     BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), (Dets[1]->Phi)->C->data() , m_nb_up);
 #endif    
-
-    T_up.resize(nels_up,m_nmo_up);
-    T_dn.resize(nels_dn,m_nmo_dn);
-
+    if(Orbopt)
+    {
+      T_up.resize(nels_up,m_nmo_up);
+      T_dn.resize(nels_dn,m_nmo_dn);
+    }
     if (!Orbopt)
     {
-//      THIS ALLOWS FOR ORBITAL PARAMETERS TO BE READ IN EVEN WHEN THOSE PARAMETERS ARE NOT BEING OPTIMIZED
-      // this assumes there are only CI coefficients ahead of the M_orb_coefficients 
+      //THIS ALLOWS FOR ORBITAL PARAMETERS TO BE READ IN EVEN WHEN THOSE PARAMETERS ARE NOT BEING OPTIMIZED
+      //this assumes there are only CI coefficients ahead of the M_orb_coefficients 
       myVars->Index.erase(myVars->Index.begin()+m_first_var_pos,myVars->Index.end());
       myVars->NameAndValue.erase(myVars->NameAndValue.begin()+m_first_var_pos,myVars->NameAndValue.end());
       myVars->ParameterType.erase(myVars->ParameterType.begin()+m_first_var_pos,myVars->ParameterType.end());
@@ -706,7 +706,6 @@ void MultiSlaterDeterminantFast::resetParameters(const opt_variables_type& activ
         //for(int i=0; i<Dets.size(); i++) Dets[i]->resetParameters(active);
       }
     }
-
     if(Orbopt)
     {
       // read out the parameters for spin up electrons that define the rotation into an antisymmetric matrix
@@ -719,7 +718,7 @@ void MultiSlaterDeterminantFast::resetParameters(const opt_variables_type& activ
         const int q = m_act_rot_inds_up[j].second;
         // m_first_var_pos is the index to the first parameter of the spin up electrons...
         const RealType x = (*myVars)[i] = active[loc];
-  //      app_log() <<"active ["<< loc << "] = "<< x<< "\n";
+        //app_log() <<"active ["<< loc << "] = "<< x<< "\n";
         rot_mat_up[p+q*m_nmo_up] =  x;
         rot_mat_up[q+p*m_nmo_up] = -x;
       }
@@ -733,7 +732,6 @@ void MultiSlaterDeterminantFast::resetParameters(const opt_variables_type& activ
       BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), (Dets[0]->Phi)->C->data() , m_nb_up);
       BLAS::gemm('N','T', m_nb_up, m_nmo_up, m_nmo_up, RealType(1.0), m_init_B_up.data(), m_nb_up, &rot_mat_up[0],m_nmo_up, RealType(0.0), (Dets[1]->Phi)->C->data() , m_nb_up);
 #endif      
-
     }
   }
 }
@@ -747,7 +745,6 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
     std::vector<RealType>& dlogpsi,
     std::vector<RealType>& dhpsioverpsi)
 {
-//app_log() << "optimizable is set to " << (Optimizable ? "true":"false");
   bool recalculate(false);
   for (int k=0; k<myVars->size(); ++k)
   {
@@ -762,320 +759,318 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
   {
     if(Optimizable)
     {
-      if(usingCSF)
+      if(CIopt)
       {
-        if(laplSum_up.size() == 0)
-          laplSum_up.resize(Dets[0]->detValues.size());
-        if(laplSum_dn.size() == 0)
-          laplSum_dn.resize(Dets[1]->detValues.size());
-        // assume that evaluateLog has been called in opt routine before
-        //   Dets[0]->evaluateForWalkerMove(P);
-        //   Dets[1]->evaluateForWalkerMove(P);
-        ValueVector_t& detValues_up = Dets[0]->detValues;
-        ValueVector_t& detValues_dn = Dets[1]->detValues;
-        GradMatrix_t& grads_up = Dets[0]->grads;
-        GradMatrix_t& grads_dn = Dets[1]->grads;
-        ValueMatrix_t& lapls_up = Dets[0]->lapls;
-        ValueMatrix_t& lapls_dn = Dets[1]->lapls;
+        if(usingCSF)
+        {
+          if(laplSum_up.size() == 0)
+            laplSum_up.resize(Dets[0]->detValues.size());
+          if(laplSum_dn.size() == 0)
+            laplSum_dn.resize(Dets[1]->detValues.size());
+          // assume that evaluateLog has been called in opt routine before
+          //   Dets[0]->evaluateForWalkerMove(P);
+          //   Dets[1]->evaluateForWalkerMove(P);
+          ValueVector_t& detValues_up = Dets[0]->detValues;
+          ValueVector_t& detValues_dn = Dets[1]->detValues;
+          GradMatrix_t& grads_up = Dets[0]->grads;
+          GradMatrix_t& grads_dn = Dets[1]->grads;
+          ValueMatrix_t& lapls_up = Dets[0]->lapls;
+          ValueMatrix_t& lapls_dn = Dets[1]->lapls;
+          const size_t N1 = Dets[0]->FirstIndex;
+          const size_t N2 = Dets[1]->FirstIndex;
+          const size_t NP1 = Dets[0]->NumPtcls;
+          const size_t NP2 = Dets[1]->NumPtcls;
+    // myG,myL should already be calculated
+          const size_t n = P.getTotalNum();
+
+          ValueType psiinv = (RealType)1.0/psiCurrent;
+          ValueType lapl_sum=0.0;
+          ValueType gg=0.0, ggP=0.0;
+          myG_temp=0.0;
+          int num=laplSum_up.size();
+          ValueVector_t::iterator it(laplSum_up.begin());
+          ValueVector_t::iterator last(laplSum_up.end());
+          ValueType* ptr0 = lapls_up[0];
+          while(it != last)
+          {
+            (*it)=0.0;
+            for(int k=0; k<nels_up; k++,ptr0++)
+              (*it) += *ptr0;
+            it++;
+          }
+          it=laplSum_dn.begin();
+          last=laplSum_dn.end();
+          ptr0 = lapls_dn[0];
+          while(it != last)
+          {
+            (*it)=0.0;
+            for(int k=0; k<nels_dn; k++,ptr0++)
+              (*it) += *ptr0;
+            it++;
+          }
+
+          const RealType *restrict C_p=C->data();
+          for(size_t i=0; i<C->size(); i++)
+          {
+            size_t upC = (*C2node_up)[i];
+            size_t dnC = (*C2node_dn)[i];
+            ValueType tmp1 = C_p[i]*detValues_dn[dnC]*psiinv;
+            ValueType tmp2 = C_p[i]*detValues_up[upC]*psiinv;
+            lapl_sum += tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC];
+            for(size_t k=0,j=N1; k<NP1; k++,j++)
+              myG_temp[j] += tmp1*grads_up(upC,k);
+            for(size_t k=0,j=N2; k<NP2; k++,j++)
+              myG_temp[j] += tmp2*grads_dn(dnC,k);
+          }
+          gg=ggP=0.0;
+          for(size_t i=0; i<n; i++)
+          {
+            gg += dot(myG_temp[i],myG_temp[i])-dot(P.G[i],myG_temp[i]);
+          }
+    //       for(int i=0; i<C.size(); i++)
+          num=CSFcoeff->size()-1;
+          int cnt=0;
+    //        this one is not optable
+          cnt+=(*DetsPerCSF)[0];
+          int ip(1);
+          for(int i=0; i<num; i++,ip++)
+          {
+            int kk=myVars->where(i);
+            if (kk<0)
+            {
+              cnt+=(*DetsPerCSF)[ip];
+              continue;
+            }
+            ValueType cdet=0.0,q0=0.0,v1=0.0,v2=0.0;
+            const RealType *restrict CSFexpansion_p=CSFexpansion->data();
+            for(int k=0; k<(*DetsPerCSF)[ip]; k++)
+            {
+              size_t upC = (*C2node_up)[cnt];
+              size_t dnC = (*C2node_dn)[cnt];
+              ValueType tmp1=CSFexpansion_p[cnt]*detValues_dn[dnC]*psiinv;
+              ValueType tmp2=CSFexpansion_p[cnt]*detValues_up[upC]*psiinv;
+              cdet+=CSFexpansion_p[cnt]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
+              q0 += (tmp1*laplSum_up[upC] + tmp2*laplSum_dn[dnC]);
+              for(size_t l=0,j=N1; l<NP1; l++,j++)
+                v1 += tmp1*static_cast<ValueType>(dot(P.G[j],grads_up(upC,l))-dot(myG_temp[j],grads_up(upC,l)));
+              for(size_t l=0,j=N2; l<NP2; l++,j++)
+                v2 += tmp2*static_cast<ValueType>(dot(P.G[j],grads_dn(dnC,l))-dot(myG_temp[j],grads_dn(dnC,l)));
+              cnt++;
+            }
+            convert(cdet,dlogpsi[kk]);
+            ValueType dhpsi =  (RealType)-0.5*(q0-cdet*lapl_sum)
+                               -cdet*gg-v1-v2;
+            //ValueType dhpsi =  -0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
+            //                         -cdet*lapl_sum)
+            //                   -cdet*gg-(tmp1*v1+tmp2*v2);
+            convert(dhpsi,dhpsioverpsi[kk]);
+          }
+        }
+        else
+          //usingCSF
+        {
+          if(laplSum_up.size() == 0)
+            laplSum_up.resize(Dets[0]->detValues.size());
+          if(laplSum_dn.size() == 0)
+            laplSum_dn.resize(Dets[1]->detValues.size());
+          // assume that evaluateLog has been called in opt routine before
+          //   Dets[0]->evaluateForWalkerMove(P);
+          //   Dets[1]->evaluateForWalkerMove(P);
+          ValueVector_t& detValues_up = Dets[0]->detValues;
+          ValueVector_t& detValues_dn = Dets[1]->detValues;
+          GradMatrix_t& grads_up = Dets[0]->grads;
+          GradMatrix_t& grads_dn = Dets[1]->grads;
+          ValueMatrix_t& lapls_up = Dets[0]->lapls;
+          ValueMatrix_t& lapls_dn = Dets[1]->lapls;
+          int N1 = Dets[0]->FirstIndex;
+          int N2 = Dets[1]->FirstIndex;
+          int NP1 = Dets[0]->NumPtcls;
+          int NP2 = Dets[1]->NumPtcls;
+          int n = P.getTotalNum();
+          ValueType psiinv = (RealType)1.0/psiCurrent;
+          ValueType lapl_sum=0.0;
+          ValueType gg=0.0, ggP=0.0;
+          myG_temp=0.0;
+          int num=laplSum_up.size();
+          ValueVector_t::iterator it(laplSum_up.begin());
+          ValueVector_t::iterator last(laplSum_up.end());
+          ValueType* ptr0 = lapls_up[0];
+          while(it != last)
+          {
+            (*it)=0.0;
+            for(int k=0; k<nels_up; k++,ptr0++)
+              (*it) += *ptr0;
+            it++;
+          }
+          it=laplSum_dn.begin();
+          last=laplSum_dn.end();
+          ptr0 = lapls_dn[0];
+          while(it != last)
+          {
+            (*it)=0.0;
+            for(size_t k=0; k<nels_dn; k++,ptr0++)
+              (*it) += *ptr0;
+            it++;
+          }
+          const RealType *restrict C_p=C->data();
+          for(size_t i=0; i<C->size(); i++)
+          {
+            size_t upC = (*C2node_up)[i];
+            size_t dnC = (*C2node_dn)[i];
+            ValueType tmp1 = C_p[i]*detValues_dn[dnC]*psiinv;
+            ValueType tmp2 = C_p[i]*detValues_up[upC]*psiinv;
+            lapl_sum += tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC];
+            for(size_t k=0,j=N1; k<NP1; k++,j++)
+              myG_temp[j] += tmp1*grads_up(upC,k);
+            for(size_t k=0,j=N2; k<NP2; k++,j++)
+              myG_temp[j] += tmp2*grads_dn(dnC,k);
+          }
+          gg=ggP=0.0;
+          for(size_t i=0; i<n; i++)
+          {
+            gg += dot(myG_temp[i],myG_temp[i])-dot(P.G[i],myG_temp[i]);
+          }
+          for(size_t i=1; i<C->size(); i++)
+          {
+            int kk=myVars->where(i-1);
+            if (kk<0)
+              continue;
+            const size_t upC = (*C2node_up)[i];
+            const size_t dnC = (*C2node_dn)[i];
+            ValueType cdet=detValues_up[upC]*detValues_dn[dnC]*psiinv;
+            ValueType tmp1=detValues_dn[dnC]*psiinv;
+            ValueType tmp2=detValues_up[upC]*psiinv;
+            convert(cdet,dlogpsi[kk]);
+            ValueType v1=0.0,v2=0.0;
+            for(size_t k=0,j=N1; k<NP1; k++,j++)
+              v1 += (dot(P.G[j],grads_up(upC,k))-dot(myG_temp[j],grads_up(upC,k)) );
+            for(size_t k=0,j=N2; k<NP2; k++,j++)
+              v2 += (dot(P.G[j],grads_dn(dnC,k))-dot(myG_temp[j],grads_dn(dnC,k)));
+            ValueType dhpsi =  (RealType)-0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
+                                     -cdet*lapl_sum)
+                               -cdet*gg-(tmp1*v1+tmp2*v2);
+            convert(dhpsi,dhpsioverpsi[kk]);
+          }
+        } // usingCSF
+      }
+      if(Orbopt)
+      {
+        const ValueVector_t& detValues_up = Dets[0]->detValues;
+        const ValueVector_t& detValues_dn = Dets[1]->detValues;
+        const GradMatrix_t& grads_up = Dets[0]->grads;
+        const GradMatrix_t& grads_dn = Dets[1]->grads;
+        const ValueMatrix_t& lapls_up = Dets[0]->lapls;
+        const ValueMatrix_t& lapls_dn = Dets[1]->lapls;
+
         const size_t N1 = Dets[0]->FirstIndex;
         const size_t N2 = Dets[1]->FirstIndex;
         const size_t NP1 = Dets[0]->NumPtcls;
         const size_t NP2 = Dets[1]->NumPtcls;
-  // myG,myL should already be calculated
-        const size_t n = P.getTotalNum();
-
-        ValueType psiinv = (RealType)1.0/psiCurrent;
-        ValueType lapl_sum=0.0;
-        ValueType gg=0.0, ggP=0.0;
+  //      psiCurrent=0.0;
         myG_temp=0.0;
-        int num=laplSum_up.size();
-        ValueVector_t::iterator it(laplSum_up.begin());
-        ValueVector_t::iterator last(laplSum_up.end());
-        ValueType* ptr0 = lapls_up[0];
-        while(it != last)
-        {
-          (*it)=0.0;
-          for(int k=0; k<nels_up; k++,ptr0++)
-            (*it) += *ptr0;
-          it++;
-        }
-        it=laplSum_dn.begin();
-        last=laplSum_dn.end();
-        ptr0 = lapls_dn[0];
-        while(it != last)
-        {
-          (*it)=0.0;
-          for(int k=0; k<nels_dn; k++,ptr0++)
-            (*it) += *ptr0;
-          it++;
-        }
+        myL_temp=0.0;
+        myG_J=0.0;
+        myL_J=0.0;
 
         const RealType *restrict C_p=C->data();
-        for(size_t i=0; i<C->size(); i++)
+        for(int i=0; i<C->size(); i++)
         {
-          size_t upC = (*C2node_up)[i];
-          size_t dnC = (*C2node_dn)[i];
-          ValueType tmp1 = C_p[i]*detValues_dn[dnC]*psiinv;
-          ValueType tmp2 = C_p[i]*detValues_up[upC]*psiinv;
-          lapl_sum += tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC];
-          for(size_t k=0,j=N1; k<NP1; k++,j++)
-            myG_temp[j] += tmp1*grads_up(upC,k);
-          for(size_t k=0,j=N2; k<NP2; k++,j++)
-            myG_temp[j] += tmp2*grads_dn(dnC,k);
+            const size_t upC = (*C2node_up)[i];
+            const size_t dnC = (*C2node_dn)[i];
+            const ValueType tmp1 = C_p[i]*detValues_dn[dnC];
+            const ValueType tmp2 = C_p[i]*detValues_up[upC];
+  //          psiCurrent+= (C[i]*detValues_up[upC]*detValues_dn[dnC]);
+            for(size_t k=0,j=N1; k<NP1; k++,j++)
+            {
+              myG_temp[j] += tmp1*grads_up(upC,k);
+              myL_temp[j] += tmp1*lapls_up(upC,k);
+            }
+            for(size_t k=0,j=N2; k<NP2; k++,j++)
+            {
+              myG_temp[j] += tmp2*grads_dn(dnC,k);
+              myL_temp[j] += tmp2*lapls_dn(dnC,k);
+            }
         }
-        gg=ggP=0.0;
-        for(size_t i=0; i<n; i++)
+
+        myG_temp *= (1/psiCurrent);
+        myL_temp *= (1/psiCurrent);
+
+        // calculation of myG_J which will be used to represent \frac{\nabla\psi_{J}}{\psi_{J}} 
+        // calculation of myL_J will be used to represent \frac{\nabla^2\psi_{J}}{\psi_{J}}
+        // IMPORTANT NOTE:  The value of P.L holds \nabla^2 ln[\psi] but we need  \frac{\nabla^2 \psi}{\psi} and this is what myL_J will hold 
+        for(int iat=0; iat<(myL_temp.size()); iat++)
         {
-          gg += dot(myG_temp[i],myG_temp[i])-dot(P.G[i],myG_temp[i]);
+          myG_J[iat] = (P.G[iat] - myG_temp[iat]);
+          myL_J[iat] = (P.L[iat] + dot(P.G[iat],P.G[iat]) - myL_temp[iat]);
         }
-  //       for(int i=0; i<C.size(); i++)
-        num=CSFcoeff->size()-1;
-        int cnt=0;
-  //        this one is not optable
-        cnt+=(*DetsPerCSF)[0];
-        int ip(1);
-        for(int i=0; i<num; i++,ip++)
+
+//IMPORTANT NOTE: THE Dets[0]->psiMinv OBJECT DOES NOT HOLD THE INVERSE IF THE MULTIDIRACDETERMINANTBASE ONLY CONTAINES ONE ELECTRON. NEED A FIX FOR THIS CASE
+        // The T matrix should be calculated and stored for use      
+        // T = A^{-1} \widetilde A
+        //REMINDER: that the ValueMatrix_t "matrix" stores data in a row major order and that BLAS commands assume column major
+        BLAS::gemm('N','N',m_nmo_up, nels_up, nels_up, RealType(1.0), Dets[0]->psiM.data(), m_nmo_up, Dets[0]->psiMinv.data(), nels_up, RealType(0.0), T_up.data(), m_nmo_up);
+        BLAS::gemm('N','N',m_nmo_dn, nels_dn, nels_dn, RealType(1.0), Dets[1]->psiM.data(), m_nmo_dn, Dets[1]->psiMinv.data(), nels_dn, RealType(0.0), T_dn.data(), m_nmo_dn);
+
+        table_method_eval(myL_J,
+                          myG_J,
+                          nels_up,
+                          m_nmo_up,
+                          T_up.data(),
+                          Dets[0]->psiM.data(),
+                          Dets[0]->psiMinv.data(),
+                          dlogpsi,
+                          dhpsioverpsi,
+                          m_first_var_pos,
+                          m_act_rot_inds_up.size(),
+                          &m_act_rot_inds_up,
+                          0,
+                          T_up,
+                          Dets[0]->psiM);
+
+        if (false)
         {
-          int kk=myVars->where(i);
-          if (kk<0)
-          {
-            cnt+=(*DetsPerCSF)[ip];
-            continue;
+          for (int i=0; i<m_act_rot_inds_up.size(); i++){
+           int kk= i+m_first_var_pos;
+               const int p = m_act_rot_inds_up[i].first;
+               const int q = m_act_rot_inds_up[i].second;
+               std::vector<char> buff(1000, ' ');
+               const int len = std::sprintf(&buff[0], " p = %4i   q = %4i     dlogpsi = %20.12f     dhpsioverpsi = %20.12f   kk = %4i", p, q,dlogpsi[kk], dhpsioverpsi[kk], kk);
+               for (int k = 0; k < len; k++)
+                 app_log() << buff[k];
+               app_log() << std::endl;
           }
-          ValueType cdet=0.0,q0=0.0,v1=0.0,v2=0.0;
-          const RealType *restrict CSFexpansion_p=CSFexpansion->data();
-          for(int k=0; k<(*DetsPerCSF)[ip]; k++)
-          {
-            size_t upC = (*C2node_up)[cnt];
-            size_t dnC = (*C2node_dn)[cnt];
-            ValueType tmp1=CSFexpansion_p[cnt]*detValues_dn[dnC]*psiinv;
-            ValueType tmp2=CSFexpansion_p[cnt]*detValues_up[upC]*psiinv;
-            cdet+=CSFexpansion_p[cnt]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
-            q0 += (tmp1*laplSum_up[upC] + tmp2*laplSum_dn[dnC]);
-            for(size_t l=0,j=N1; l<NP1; l++,j++)
-              v1 += tmp1*static_cast<ValueType>(dot(P.G[j],grads_up(upC,l))-dot(myG_temp[j],grads_up(upC,l)));
-            for(size_t l=0,j=N2; l<NP2; l++,j++)
-              v2 += tmp2*static_cast<ValueType>(dot(P.G[j],grads_dn(dnC,l))-dot(myG_temp[j],grads_dn(dnC,l)));
-            cnt++;
+        }
+
+        table_method_eval(myL_J,
+                          myG_J,
+                          nels_dn,
+                          m_nmo_dn,
+                          T_dn.data(),
+                          Dets[1]->psiM.data(),
+                          Dets[1]->psiMinv.data(),
+                          dlogpsi,
+                          dhpsioverpsi,
+                          m_first_var_pos,
+                          m_act_rot_inds_up.size(),
+                          &m_act_rot_inds_up,
+                          1,
+                          T_dn,
+                          Dets[1]->psiM);
+        if (false)
+        {
+          for (int i=0; i<m_act_rot_inds_up.size(); i++){
+           int kk= i+m_first_var_pos;
+               const int p = m_act_rot_inds_up[i].first;
+               const int q = m_act_rot_inds_up[i].second;
+               std::vector<char> buff(1000, ' ');
+               const int len = std::sprintf(&buff[0], " p = %4i   q = %4i     dlogpsi = %20.12f     dhpsioverpsi = %20.12f   kk = %4i", p, q,dlogpsi[kk], dhpsioverpsi[kk], kk);
+               for (int k = 0; k < len; k++)
+                 app_log() << buff[k];
+               app_log() << std::endl;
           }
-          convert(cdet,dlogpsi[kk]);
-          ValueType dhpsi =  (RealType)-0.5*(q0-cdet*lapl_sum)
-                             -cdet*gg-v1-v2;
-          //ValueType dhpsi =  -0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
-          //                         -cdet*lapl_sum)
-          //                   -cdet*gg-(tmp1*v1+tmp2*v2);
-          convert(dhpsi,dhpsioverpsi[kk]);
         }
       }
-      else
-        //usingCSF
-      {
-        if(laplSum_up.size() == 0)
-          laplSum_up.resize(Dets[0]->detValues.size());
-        if(laplSum_dn.size() == 0)
-          laplSum_dn.resize(Dets[1]->detValues.size());
-        // assume that evaluateLog has been called in opt routine before
-        //   Dets[0]->evaluateForWalkerMove(P);
-        //   Dets[1]->evaluateForWalkerMove(P);
-        ValueVector_t& detValues_up = Dets[0]->detValues;
-        ValueVector_t& detValues_dn = Dets[1]->detValues;
-        GradMatrix_t& grads_up = Dets[0]->grads;
-        GradMatrix_t& grads_dn = Dets[1]->grads;
-        ValueMatrix_t& lapls_up = Dets[0]->lapls;
-        ValueMatrix_t& lapls_dn = Dets[1]->lapls;
-        int N1 = Dets[0]->FirstIndex;
-        int N2 = Dets[1]->FirstIndex;
-        int NP1 = Dets[0]->NumPtcls;
-        int NP2 = Dets[1]->NumPtcls;
-        int n = P.getTotalNum();
-        ValueType psiinv = (RealType)1.0/psiCurrent;
-        ValueType lapl_sum=0.0;
-        ValueType gg=0.0, ggP=0.0;
-        myG_temp=0.0;
-        int num=laplSum_up.size();
-        ValueVector_t::iterator it(laplSum_up.begin());
-        ValueVector_t::iterator last(laplSum_up.end());
-        ValueType* ptr0 = lapls_up[0];
-        while(it != last)
-        {
-          (*it)=0.0;
-          for(int k=0; k<nels_up; k++,ptr0++)
-            (*it) += *ptr0;
-          it++;
-        }
-        it=laplSum_dn.begin();
-        last=laplSum_dn.end();
-        ptr0 = lapls_dn[0];
-        while(it != last)
-        {
-          (*it)=0.0;
-          for(size_t k=0; k<nels_dn; k++,ptr0++)
-            (*it) += *ptr0;
-          it++;
-        }
-        const RealType *restrict C_p=C->data();
-        for(size_t i=0; i<C->size(); i++)
-        {
-          size_t upC = (*C2node_up)[i];
-          size_t dnC = (*C2node_dn)[i];
-          ValueType tmp1 = C_p[i]*detValues_dn[dnC]*psiinv;
-          ValueType tmp2 = C_p[i]*detValues_up[upC]*psiinv;
-          lapl_sum += tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC];
-          for(size_t k=0,j=N1; k<NP1; k++,j++)
-            myG_temp[j] += tmp1*grads_up(upC,k);
-          for(size_t k=0,j=N2; k<NP2; k++,j++)
-            myG_temp[j] += tmp2*grads_dn(dnC,k);
-        }
-        gg=ggP=0.0;
-        for(size_t i=0; i<n; i++)
-        {
-          gg += dot(myG_temp[i],myG_temp[i])-dot(P.G[i],myG_temp[i]);
-        }
-        for(size_t i=1; i<C->size(); i++)
-        {
-          int kk=myVars->where(i-1);
-          if (kk<0)
-            continue;
-          const size_t upC = (*C2node_up)[i];
-          const size_t dnC = (*C2node_dn)[i];
-          ValueType cdet=detValues_up[upC]*detValues_dn[dnC]*psiinv;
-          ValueType tmp1=detValues_dn[dnC]*psiinv;
-          ValueType tmp2=detValues_up[upC]*psiinv;
-          convert(cdet,dlogpsi[kk]);
-          ValueType v1=0.0,v2=0.0;
-          for(size_t k=0,j=N1; k<NP1; k++,j++)
-            v1 += (dot(P.G[j],grads_up(upC,k))-dot(myG_temp[j],grads_up(upC,k)) );
-          for(size_t k=0,j=N2; k<NP2; k++,j++)
-            v2 += (dot(P.G[j],grads_dn(dnC,k))-dot(myG_temp[j],grads_dn(dnC,k)));
-          ValueType dhpsi =  (RealType)-0.5*(tmp1*laplSum_up[upC]+tmp2*laplSum_dn[dnC]
-                                   -cdet*lapl_sum)
-                             -cdet*gg-(tmp1*v1+tmp2*v2);
-          convert(dhpsi,dhpsioverpsi[kk]);
-        }
-      } // usingCSF
     }
-    if(Orbopt)
-    {
-      const ValueVector_t& detValues_up = Dets[0]->detValues;
-      const ValueVector_t& detValues_dn = Dets[1]->detValues;
-      const GradMatrix_t& grads_up = Dets[0]->grads;
-      const GradMatrix_t& grads_dn = Dets[1]->grads;
-      const ValueMatrix_t& lapls_up = Dets[0]->lapls;
-      const ValueMatrix_t& lapls_dn = Dets[1]->lapls;
-
-      const size_t N1 = Dets[0]->FirstIndex;
-      const size_t N2 = Dets[1]->FirstIndex;
-      const size_t NP1 = Dets[0]->NumPtcls;
-      const size_t NP2 = Dets[1]->NumPtcls;
-//      psiCurrent=0.0;
-      myG_temp=0.0;
-      myL_temp=0.0;
-      myG_J=0.0;
-      myL_J=0.0;
-
-      const RealType *restrict C_p=C->data();
-      for(int i=0; i<C->size(); i++)
-      {
-          const size_t upC = (*C2node_up)[i];
-          const size_t dnC = (*C2node_dn)[i];
-          const ValueType tmp1 = C_p[i]*detValues_dn[dnC];
-          const ValueType tmp2 = C_p[i]*detValues_up[upC];
-//          psiCurrent+= (C[i]*detValues_up[upC]*detValues_dn[dnC]);
-          for(size_t k=0,j=N1; k<NP1; k++,j++)
-          {
-            myG_temp[j] += tmp1*grads_up(upC,k);
-            myL_temp[j] += tmp1*lapls_up(upC,k);
-          }
-          for(size_t k=0,j=N2; k<NP2; k++,j++)
-          {
-            myG_temp[j] += tmp2*grads_dn(dnC,k);
-            myL_temp[j] += tmp2*lapls_dn(dnC,k);
-          }
-      }
-
-      myG_temp *= (1/psiCurrent);
-      myL_temp *= (1/psiCurrent);
-
-      // calculation of myG_J which will be used to represent \frac{\nabla\psi_{J}}{\psi_{J}} 
-      // calculation of myL_J will be used to represent \frac{\nabla^2\psi_{J}}{\psi_{J}}
-      // IMPORTANT NOTE:  The value of P.L holds \nabla^2 ln[\psi] but we need  \frac{\nabla^2 \psi}{\psi} and this is what myL_J will hold 
-      for(int iat=0; iat<(myL_temp.size()); iat++)
-      {
-        myG_J[iat] = (P.G[iat] - myG_temp[iat]);
-        myL_J[iat] = (P.L[iat] + dot(P.G[iat],P.G[iat]) - myL_temp[iat]);
-      }
-
-      // The T matrix should be calculated and stored for use      
-      // T = A^{-1} \widetilde A
-      //REMINDER: that the ValueMatrix_t "matrix" stores data in a row major order and that BLAS commands assume column major
-      BLAS::gemm('N','N',m_nmo_up, nels_up, nels_up, RealType(1.0), Dets[0]->psiM.data(), m_nmo_up, Dets[0]->psiMinv.data(), nels_up, RealType(0.0), T_up.data(), m_nmo_up);
-      BLAS::gemm('N','N',m_nmo_dn, nels_dn, nels_dn, RealType(1.0), Dets[1]->psiM.data(), m_nmo_dn, Dets[1]->psiMinv.data(), nels_dn, RealType(0.0), T_dn.data(), m_nmo_dn);
-
-      table_method_eval(myL_J,
-                        myG_J,
-                        nels_up,
-                        m_nmo_up,
-                        T_up.data(),
-                        Dets[0]->psiM.data(),
-                        Dets[0]->psiMinv.data(),
-                        dlogpsi,
-                        dhpsioverpsi,
-                        m_first_var_pos,
-                        m_act_rot_inds_up.size(),
-                        &m_act_rot_inds_up,
-                        0,
-                        T_up,
-                        Dets[0]->psiM);
-
-      if (false)
-      {
-        for (int i=0; i<m_act_rot_inds_up.size(); i++){
-         int kk= i+m_first_var_pos;
-             const int p = m_act_rot_inds_up[i].first;
-             const int q = m_act_rot_inds_up[i].second;
-             std::vector<char> buff(1000, ' ');
-             const int len = std::sprintf(&buff[0], " p = %4i   q = %4i     dlogpsi = %20.12f     dhpsioverpsi = %20.12f   kk = %4i", p, q,dlogpsi[kk], dhpsioverpsi[kk], kk);
-             for (int k = 0; k < len; k++)
-               app_log() << buff[k];
-             app_log() << std::endl;
-        }
-      }
-
-
-      table_method_eval(myL_J,
-                        myG_J,
-                        nels_dn,
-                        m_nmo_dn,
-                        T_dn.data(),
-                        Dets[1]->psiM.data(),
-                        Dets[1]->psiMinv.data(),
-                        dlogpsi,
-                        dhpsioverpsi,
-                        m_first_var_pos,
-                        m_act_rot_inds_up.size(),
-                        &m_act_rot_inds_up,
-                        1,
-                        T_dn,
-                        Dets[1]->psiM );
-
-      if (false)
-      {
-        for (int i=0; i<m_act_rot_inds_up.size(); i++){
-         int kk= i+m_first_var_pos;
-             const int p = m_act_rot_inds_up[i].first;
-             const int q = m_act_rot_inds_up[i].second;
-             std::vector<char> buff(1000, ' ');
-             const int len = std::sprintf(&buff[0], " p = %4i   q = %4i     dlogpsi = %20.12f     dhpsioverpsi = %20.12f   kk = %4i", p, q,dlogpsi[kk], dhpsioverpsi[kk], kk);
-             for (int k = 0; k < len; k++)
-               app_log() << buff[k];
-             app_log() << std::endl;
-        }
-      }
-
-
-
-
-    } 
   }
 }
 
@@ -1130,7 +1125,6 @@ void MultiSlaterDeterminantFast::exponentiate_matrix(const int n, RealType * con
       break;
   }
 }
-
 
 int MultiSlaterDeterminantFast::build_occ_vec(std::vector<int> * data,
                                               const size_t& nel,
@@ -1301,7 +1295,6 @@ $
   BLAS::gemm('N','N', nel, nel, nel, RealType(1.0),    B, nmo,       Ainv, nel, RealType(0.0),  Y1.data(), nel);
   BLAS::gemm('N','N', nmo, nel, nel, RealType(1.0),    T, nmo,  Y1.data(), nel, RealType(0.0),  Y2.data(), nmo);
   BLAS::gemm('N','N', nmo, nel, nel, RealType(1.0),    B, nmo,       Ainv, nel, RealType(0.0),  Y3.data(), nmo);
-
 
   //possibly replace with BLAS call
   Y4 = Y3 - Y2;
@@ -1489,7 +1482,6 @@ $
     if (i<=nel-1 && j>nel-1)
       { dlogpsi[kk] += detValues_up[0]*( Tr(i,j) )*const0*(1/psiCurrent)\
                        + ( K4T(i,j)-K4T(j,i)-TK4T(i,j)) ;
-//       app_log() <<"this should be nonzero \n" << detValues_up[0] << std::endl << ( Tr(i,j) ) << std::endl << const0 << std::endl << (1/psiCurrent) << std::endl  <<  K4T(i,j) << std::endl << -K4T(j,i) << std::endl << -TK4T(i,j) << std::endl ;
 
         dhpsioverpsi[kk] += -0.5 * Y4(i,j)\
                             -0.5*( -   K5T(i,j) +   K5T(j,i)    +   TK5T(i,j)  \

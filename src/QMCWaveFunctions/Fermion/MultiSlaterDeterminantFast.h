@@ -62,9 +62,6 @@ public:
   // The initial coefficents at the start of the simulation
   SPOSetBase::ValueMatrix_t m_init_B_up;
 
-  //coefficients after previous application of unitary transformation
-  SPOSetBase::ValueMatrix_t m_old_B_up;
-
   //vector containing lookup tables mapping the unique up/dn determinants to their element position in C2_node_up/dn vectors
   std::vector<std::vector< std::vector<int> > > lookup_tbls;
 
