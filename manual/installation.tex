@@ -1320,12 +1320,9 @@ atomic orbitals to recomputed via a numerical density functional
 calculation if they need to be reconstructed for use in an
 electronic structure calculation.
 
-To build ppconvert follow the instructions in
-src/QMCTools/ppconvert/README. Currently ppconvert is not built
-automatically although we expect to automate it soon. The makefile
-must be updated to refer to suitable C++ compiler and link in
-BLAS. Due to the small size of the calculations, optimal settings are
-not essential.
+It is a stand alone C++ executable that is not built by default but accessible via adding
+\texttt{-DBUILD\_PPCONVERT=1} to cmake and then typing \texttt{make ppconvert}.
+Userguide is provided in section~\ref{sec:ppconvert}.
 
 \section{Installing and patching Quantum ESPRESSO}
 \label{sec:buildqe}
