@@ -88,6 +88,7 @@ try_compile(HAVE_MKL_FFTW3 ${CMAKE_BINARY_DIR}
 IF ( HAVE_MKL )
   SET( MKL_FOUND 1 )
   SET( MKL_FLAGS ${MKL_COMPILE_DEFINITIONS} )
+  include_directories( ${MKL_INCLUDE_DIRECTORIES} )
   IF ( HAVE_MKL_FFTW3 )
     FILE(WRITE "${CMAKE_CURRENT_BINARY_DIR}/include/fftw3.h" "#include <fftw/fftw3.h>\n" )
     INCLUDE_DIRECTORIES( "${CMAKE_CURRENT_BINARY_DIR}/include" )
