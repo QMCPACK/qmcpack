@@ -182,10 +182,10 @@ ENDIF()
   ENDIF(QMC_CUDA)
 
   IF(QMC_CUDA)
-    CUDA_ADD_LIBRARY(qmcutil ${UTILITIES})
+    CUDA_ADD_LIBRARY(qmcutil ${UTILITIES} ${HDF5_LIBRARIES})
     CUDA_ADD_CUBLAS_TO_TARGET(qmcutil)
   ELSE(QMC_CUDA)
-    ADD_LIBRARY(qmcutil ${UTILITIES} ${ADIOS})
+    ADD_LIBRARY(qmcutil ${UTILITIES} ${ADIOS} ${HDF5_LIBRARIES})
   ENDIF(QMC_CUDA)
   
   # For unit tests, enable use for the fake RNG

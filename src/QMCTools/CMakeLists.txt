@@ -55,7 +55,7 @@ ADD_EXECUTABLE(getSupercell getSupercell.cpp)
 FOREACH(p ${QTOOLS})
 
   ADD_EXECUTABLE(${p} ${p}.cpp)
-  TARGET_LINK_LIBRARIES(${p} mocommon qmcbase qmcutil)
+  TARGET_LINK_LIBRARIES(${p} mocommon qmcbase qmcutil ${HDF5_LIBRARIES})
 
   FOREACH(l ${QMC_UTIL_LIBS})
     TARGET_LINK_LIBRARIES(${p} ${l})
