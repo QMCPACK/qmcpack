@@ -655,7 +655,7 @@ ENDIF()
 
 SET(HAVE_CUDA 0)
 IF(QMC_CUDA)
-  set(CUDA_PROPAGATE_HOST_FLAGS OFF)
+  set(CUDA_PROPAGATE_HOST_FLAGS ON)
   FIND_PACKAGE(CUDA REQUIRED)
   #set(CUDA_NVCC_FLAGS
   #  "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")
