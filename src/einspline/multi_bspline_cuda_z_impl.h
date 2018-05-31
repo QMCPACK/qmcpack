@@ -22,10 +22,10 @@ eval_multi_multi_UBspline_3d_z_kernel
 (double *pos, double3 drInv, const double *coefs, double *vals[],
  uint3 dim, uint3 strides, int N)
 {
-  int block = blockIdx.x;
-  int thr   = threadIdx.x;
-  int ir    = blockIdx.y;
-  int off   = block*SPLINE_BLOCK_SIZE+thr;
+  int block = blockIdx.x; // block nr out 2*numsplines/SPLINE_BLOCK_SIZE blocks
+  int thr   = threadIdx.x; // thread idx
+  int ir    = blockIdx.y; // walker number
+  int off   = block*SPLINE_BLOCK_SIZE+thr; // +offset depending on which part of the spline memory is there
   __shared__ double *myval;
   __shared__ double abc[64];
   __shared__ double3 r;
@@ -82,7 +82,7 @@ eval_multi_multi_UBspline_3d_z_kernel
   if (thr < 64)
     abc[thr] = a[i]*b[j]*c[k];
   __syncthreads();
-  if (off < 2*N)
+  if (off < 2*N) // N is either number of splines or in case of split splines is num_splines/nr_devices (+leftovers for last device)
   {
     double val = 0.0;
     for (int i=0; i<4; i++)

@@ -24,13 +24,19 @@ namespace gpu
 cuda_memory_manager_type cuda_memory_manager;
 
 void*
-cuda_memory_manager_type::allocate(size_t bytes, std::string name)
+cuda_memory_manager_type::allocate(size_t bytes, std::string name, bool managed)
 {
   //    fprintf (stderr, "Allocating %ld bytes for %s\n", bytes, name.c_str());
   // Make sure size is a multiple of 16
   bytes = (((bytes+15)/16)*16);
   void *p;
-  cudaMalloc ((void**)&p, bytes);
+  if (managed)
+  {
+    cudaMallocManaged ((void**)&p, bytes, cudaMemAttachGlobal);
+  } else
+  {
+    cudaMalloc ((void**)&p, bytes);
+  }
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess)
   {

@@ -55,7 +55,7 @@ private:
   std::map<void*,std::pair<std::string,size_t> > gpu_pointer_map;
 
 public:
-  void *allocate (size_t bytes, std::string name="");
+  void *allocate (size_t bytes, std::string name="", bool manage=false);
 
   void deallocate (void *p);
 
@@ -140,7 +140,7 @@ public:
 
 
   inline void
-  resize(size_t size, double reserve_factor=1.0)
+  resize(size_t size, double reserve_factor=1.0, bool managed=false)
   {
     if (!size)
     {
@@ -151,7 +151,7 @@ public:
     size_t byte_size = sizeof(T)*reserve_size;
     if (alloc_size == 0)
     {
-      data_pointer = (T*)cuda_memory_manager.allocate(byte_size, name);
+      data_pointer = (T*)cuda_memory_manager.allocate(byte_size, name, managed);
       current_size = size;
       alloc_size = reserve_size;
       own_data = true;
@@ -160,7 +160,7 @@ public:
     {
       if (own_data)
         cuda_memory_manager.deallocate (data_pointer);
-      data_pointer = (T*)cuda_memory_manager.allocate(byte_size, name);
+      data_pointer = (T*)cuda_memory_manager.allocate(byte_size, name, managed);
       current_size = size;
       alloc_size = reserve_size;
       own_data = true;

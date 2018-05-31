@@ -96,8 +96,12 @@ void VMCcuda::advanceWalkers()
       std::vector<bool> acc(nw, true);
       if (W.UseBoundBox)
         checkBounds (newpos, acc);
+      if (gpu::rank==0)
+        std::cerr << "iat = " << iat << "\n";
       for(int iw=0; iw<nw; ++iw)
       {
+        if (gpu::rank==0)
+          std::cerr << iw << ": " << ratios[iw] << "\n";
 #ifdef QMC_COMPLEX
         if(acc[iw] && ratios_real[iw]*ratios_real[iw] > Random())
 #else
@@ -119,6 +123,7 @@ void VMCcuda::advanceWalkers()
       if (accepted.size())
         Psi.update(accepted,iat);
     }
+    abort();
   }
 }
 

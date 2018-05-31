@@ -37,6 +37,7 @@ int rank;
 int relative_rank;
 int device_group_size;
 int* device_group_numbers;
+int* device_rank_numbers;
 
 void
 initCUDAStreams()

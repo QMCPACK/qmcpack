@@ -21,6 +21,8 @@
 #ifndef BSPLINE_BASE_H
 #define BSPLINE_BASE_H
 
+#define COALLESCED_SIZE 16
+
 #include "config.h"
 
 #ifdef __cplusplus

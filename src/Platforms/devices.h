@@ -140,6 +140,19 @@ inline int get_device_num()
   }
   gpu::relative_rank=relative_ranknum;
   gpu::device_group_size=num_cuda_devices[rank];
+  gpu::device_group_numbers=new int[gpu::device_group_size];
+  gpu::device_rank_numbers=new int[gpu::device_group_size];
+  int device_rank = 0;
+  for (int i=rank-relative_ranknum; i<rank-relative_ranknum+gpu::device_group_size; i++) // although the indexing looks strange, i is between the actual rank numbers on this rank's node
+  {
+    if (hostnames[i] == myhostname)
+    {
+      gpu::device_rank_numbers[device_rank]=i;
+      device_rank++;
+    }
+    if (device_rank>gpu::device_group_size) // should not happen but better to be safe
+      APP_ABORT("Wrong number of ranks in device group.");
+  }
   // return CUDA device number based on how many appropriate ones exist on the current rank's node and what the relative rank number is
   return relative_ranknum % num_cuda_devices[rank];
 }
@@ -188,6 +201,7 @@ inline void set_appropriate_device_num(int num)
 inline void Finalize_CUDA()
 {
   delete[] gpu::device_group_numbers;
+  delete[] gpu::device_rank_numbers;
   gpu::finalizeCublas();
   gpu::finalizeCUDAEvents();
   gpu::finalizeCUDAStreams();
@@ -199,7 +213,6 @@ inline void Finalize_CUDA()
 inline void Init_CUDA()
 {
   int devNum = get_device_num();
-  gpu::device_group_numbers=new int[gpu::device_group_size];
   set_appropriate_device_num(devNum);
   cudaDeviceSetLimit(cudaLimitPrintfFifoSize, 1024 * 1024 * 50);
   gpu::rank=OHMMS::Controller->rank();

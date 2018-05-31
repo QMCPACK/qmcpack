@@ -26,8 +26,6 @@ __constant__ float  Acuda[48];
 
 #include <CUDA/gpu_vector.h>
 
-#define COALLESCED_SIZE 16
-
 #define UnifiedVirtualAddressing
 
 extern "C" multi_UBspline_1d_s_cuda*
@@ -359,11 +357,20 @@ create_multi_UBspline_3d_c_cuda_conv (multi_UBspline_3d_z* spline)
 		         0.0,      0.0,     -3.0,     1.0,
 		         0.0,      0.0,      1.0,     0.0 };
 
-  cudaMemcpyToSymbol(Acuda, A_h, 48*sizeof(float), 0, cudaMemcpyHostToDevice);
+  if (gpu::device_group_size>1)
+  {
+    for(unsigned int i=0; i<gpu::device_group_size; i++)
+    {
+      cudaSetDevice(gpu::device_group_numbers[i]);
+      cudaMemcpyToSymbol(Acuda, A_h, 48*sizeof(float), 0, cudaMemcpyHostToDevice);
+    }
+    cudaSetDevice(gpu::device_group_numbers[gpu::relative_rank]);
+  } else
+    cudaMemcpyToSymbol(Acuda, A_h, 48*sizeof(float), 0, cudaMemcpyHostToDevice);
 
   multi_UBspline_3d_c_cuda *cuda_spline =
     (multi_UBspline_3d_c_cuda*) malloc (sizeof (multi_UBspline_3d_c_cuda));
-  
+
   cuda_spline->num_splines = spline->num_splines;
 
   int Nx = spline->x_grid.num+3;
@@ -371,7 +378,22 @@ create_multi_UBspline_3d_c_cuda_conv (multi_UBspline_3d_z* spline)
   int Nz = spline->z_grid.num+3;
 
   int N = spline->num_splines;
-  fprintf (stderr, "splines N = %i\n",N);
+  int spline_start = 0;
+  if (gpu::device_group_size>1)
+  {
+    spline_start = spline->num_splines * gpu::relative_rank / gpu::device_group_size;
+    if (gpu::relative_rank+1<gpu::device_group_size) // +1 to exclude last one which needs to use numbers above (also takes care of sizes not dividing evenly)
+      N /= gpu::device_group_size;
+    else
+      N -= spline_start;
+#ifdef SPLIT_SPLINE_DEBUG
+    fprintf (stderr, "splines %i - %i of %i\n",spline_start,spline_start+N,spline->num_splines);
+#endif
+  }
+#ifdef SPLIT_SPLINE_DEBUG
+  else
+    fprintf (stderr, "splines N = %i\n",N);
+#endif
   if ((N%COALLESCED_SIZE) != 0)
     N += COALLESCED_SIZE - (N%COALLESCED_SIZE);
   cuda_spline->stride.x = Ny*Nz*N;
@@ -412,19 +434,14 @@ create_multi_UBspline_3d_c_cuda_conv (multi_UBspline_3d_z* spline)
 
   gpu::MaxGPUSpineSizeMB = gpu::MaxGPUSpineSizeMB - ((size_t)Nx_GPU)*cuda_spline->stride.x*sizeof(std::complex<float>)/1024/1024;
 
+
   if (Nx_GPU)
   {
-    int spline_start = N * gpu::relative_rank / gpu::device_group_size;
-    size_t split_size_GPU = size_GPU - size_GPU * gpu::relative_rank / gpu::device_group_size;
-    int split_N = N - spline_start;
-    if (gpu::relative_rank<gpu::device_group_size)
-    {
-      split_size_GPU = size_GPU / gpu::device_group_size;
-      split_N = N / gpu::device_group_size;
-    }
-    fprintf (stderr, "Rank %i: Allocating splines %i - %i of %i splines (%lu/%lu Bytes on GPU #%i of %i).\n",gpu::rank,spline_start,split_N + spline_start,N,split_size_GPU,size_GPU,gpu::relative_rank+1,gpu::device_group_size);
-    cuda_spline->coefs = (complex_float *) gpu::cuda_memory_manager.allocate(split_size_GPU, "SPO_multi_UBspline_3d_c_cuda");
-    std::complex<float> *spline_buff = (std::complex<float>*)malloc(split_size_GPU);
+    cuda_spline->coefs = (complex_float *) gpu::cuda_memory_manager.allocate(size_GPU, "SPO_multi_UBspline_3d_c_cuda");
+#ifdef SPLIT_SPLINE_DEBUG
+    fprintf (stderr, "Rank %i: Allocating memory for splines (%lu of %lu Bytes on GPU #%i of %i, %p).\n",gpu::rank,size_GPU,Nx*Ny*Nz*spline->num_splines*sizeof(std::complex<float>),gpu::relative_rank+1,gpu::device_group_size,cuda_spline->coefs);
+#endif
+    std::complex<float> *spline_buff = (std::complex<float>*)malloc(size_GPU);
     if (!spline_buff) {
       fprintf (stderr, "Failed to allocate memory for temporary spline buffer.\n");
       abort();
@@ -438,22 +455,22 @@ create_multi_UBspline_3d_c_cuda_conv (multi_UBspline_3d_z* spline)
 //            spline_buff[ix*cuda_spline->stride.x + iy*cuda_spline->stride.y + iz*cuda_spline->stride.z + isp] 
 //              = std::complex<float>(z.real(), z.imag());
 //          }
-          for (int isp=0; isp < split_N; isp++)
+          for (int isp=0; isp < N; isp++)
           {
             int curr_sp=isp+spline_start;
             if (curr_sp<spline->num_splines)
             {
               std::complex<double> z = spline->coefs[ix*spline->x_stride + iy*spline->y_stride + iz*spline->z_stride + curr_sp];
-              spline_buff[ix*cuda_spline->stride.x + iy*cuda_spline->stride.y + iz*cuda_spline->stride.z + curr_sp] 
+              spline_buff[ix*cuda_spline->stride.x + iy*cuda_spline->stride.y + iz*cuda_spline->stride.z + isp]
                 = std::complex<float>(z.real(), z.imag());
             } else
-              spline_buff[ix*cuda_spline->stride.x + iy*cuda_spline->stride.y + iz*cuda_spline->stride.z + curr_sp] = 0.0;
+              spline_buff[ix*cuda_spline->stride.x + iy*cuda_spline->stride.y + iz*cuda_spline->stride.z + isp] = 0.0;
           }
 //          for (int isp=spline->num_splines; isp < N; isp++) 
 //            spline_buff[ix*cuda_spline->stride.x + iy*cuda_spline->stride.y + iz*cuda_spline->stride.z + isp] = 0.0;
         }
 
-    cudaMemcpy(cuda_spline->coefs, spline_buff, split_size_GPU, cudaMemcpyHostToDevice);
+    cudaMemcpy(cuda_spline->coefs, spline_buff, size_GPU, cudaMemcpyHostToDevice);
     cudaThreadSynchronize();
     cudaError_t err = cudaGetLastError();
     if (err != cudaSuccess) {
@@ -496,7 +513,7 @@ create_multi_UBspline_3d_c_cuda_conv (multi_UBspline_3d_z* spline)
     abort();
   }*/
   //fprintf (stdout, "Succeeded to allocate %ld bytes memory for GPU spline coefficients.\n", size);
- 
+
   std::complex<float> *spline_buff = (std::complex<float>*)malloc(size);
   if (!spline_buff) {
     fprintf (stderr, "Failed to allocate memory for temporary spline buffer.\n");
