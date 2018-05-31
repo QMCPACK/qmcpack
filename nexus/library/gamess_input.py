@@ -159,8 +159,7 @@ class KeywordGroup(Group):
                 var,index = var.replace('(',' ').replace(')','').split()
                 index = int(index)
                 if not var in self:
-                    arr = GIarray()
-                    arr[index] = val
+                    arr = GIarray({index:val})
                     self[var] = arr
                 else:
                     self[var][index]=val
