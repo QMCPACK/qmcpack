@@ -1734,7 +1734,11 @@ def user_examples():
     test_dir = nenter()
 
     # copy over nexus user examples into reference generation directory
-    execute('rsync -av {0}/* {1}/'.format(example_dir,test_dir))
+    command = 'rsync -av {0}/* {1}/'.format(example_dir,test_dir)
+    out,err,rc = execute(command)
+    if rc>0:
+        nfail('copying example directory failed\nattempted command:\n'+command)
+    #end if
 
     # execute all example scripts in generate_only mode
     for script_path in example_scripts:
@@ -1842,9 +1846,10 @@ def execute(command,verbose=False,skip=False):
         if verbose:
             print 'Executing:\n  '+command
         #end if
-        out,err = Popen(command,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
+        process = Popen(command,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True)
+        out,err = process.communicate()
     #end if
-    return out,err
+    return out,err,process.returncode
 #end def execute
 
 
@@ -1866,11 +1871,15 @@ def regenerate_reference(update=False,overwrite=True):
     #end if
 
     # copy over nexus user examples into reference generation directory
-    execute('rsync -av {0}/* {1}/'.format(example_dir,refgen_example_dir))
+    out,err,rc = execute('rsync -av {0}/* {1}/'.format(example_dir,refgen_example_dir))
+    if rc>0:
+        print '  rsync of example directory failed, exiting'
+        exit(1)
+    #end if
 
     # execute all example scripts in generate_only mode
     for script_path in example_scripts:
-        print 'generating reference data for '+script_path
+        print '  generating reference data for '+script_path
         path,script = os.path.split(script_path)
         path = os.path.join(refgen_example_dir,path)
         cwd = os.getcwd()
