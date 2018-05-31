@@ -7,10 +7,29 @@ import traceback
 from optparse import OptionParser
 from numpy import ndarray,array,abs
 
-# enforce association between executable and library
+# find the path to the ntest executable and its parent directory
 scriptpath=os.path.realpath(__file__)
 parent_dir=os.path.dirname(os.path.dirname(scriptpath))
-sys.path.insert(0,os.path.join(parent_dir,'library'))
+
+# save nexus directories
+library_dir   = os.path.join(parent_dir,'library')
+test_dir      = os.path.join(parent_dir,'tests')
+reference_dir = os.path.join(parent_dir,'tests/reference')
+example_dir   = os.path.join(parent_dir,'examples')
+
+# ensure that ntest executable is resident in a nexus directory tree
+dirs_check = ['examples','executables','library','tests','tests/reference']
+for d in dirs_check:
+    pd = os.path.join(parent_dir,d)
+    if not os.path.exists(pd):
+        print('ntest executable is not run within a Nexus directory tree\nthe following directories must be present: {0}\nthe following directories are present: {1}\nexecutable launched from path: {2}'.format(dirs_check,os.listdir(parent_dir),parent_dir))
+        exit(1)
+    #end if
+#end for
+
+# enforce association between ntest executable and Nexus library
+sys.path.insert(0,library_dir)
+
 
 from generic import generic_settings,object_interface,NexusError
 
@@ -275,6 +294,7 @@ def nenter(path=''):
     #end if
     os.chdir(testpath)
     NexusTestBase.entered = True
+    return testpath
 #end def nenter
 
 
@@ -326,7 +346,8 @@ def npass():
 
 
 # declare that a test has failed
-def nfail(exception=NexusTestFail('Nexus test failed.')):
+def nfail(msg=''):
+    exception = NexusTestFail(msg)
     raise exception
 #end def nfail
 
@@ -386,8 +407,13 @@ class NexusTest(NexusTestBase):
 
 
     # register the current test object in the global test list
-    def __init__(self,name,operation):
-        if not isinstance(name,str):
+    def __init__(self,operation,name=None):
+        if not callable(operation):
+            raise NexusTestMisconstructed
+        #end if
+        if name is None:
+            name = operation.__name__ 
+        elif not isinstance(name,str):
             raise NexusTestMisconstructed
         #end if
         self.name         = name
@@ -446,6 +472,10 @@ class NexusTest(NexusTestBase):
             btrace = traceback.format_tb(self.traceback)
             if isinstance(e,NexusTestFail):
                 btrace = btrace[:-1]
+                msg = str(e)
+                if len(msg)>0:
+                    s+='Test exception: {0}\n'.format('\n  '+msg.replace('\n','\n  '))
+                #end if
             elif isinstance(e,NexusTestMisconstructed):
                 btrace = btrace[:-1]
                 s+='Test exception: Nexus test is misconstructed.  Please contact developers.\n'
@@ -1520,7 +1550,7 @@ def settings_operation():
                 'mode', 'modes', 'monitor', 'primary_modes', 'progress_tty', 
                 'pseudo_dir', 'pseudopotentials', 'remote_directory', 'results', 
                 'runs', 'skip_submit', 'sleep', 'stages', 'stages_set', 'status', 
-                'status_modes', 'status_only', 'trace', 'verbose'
+                'status_modes', 'status_only', 'trace', 'verbose', 'command_line'
                 ])
         nnckeys_check = set([
                 'basis_dir', 'basissets', 'pseudo_dir', 'pseudopotentials'
@@ -1633,28 +1663,148 @@ def settings_operation():
 
 
 
+example_scripts = [
+    'quantum_espresso/relax_Ge_T_vs_kpoints/relax_vs_kpoints_example.py',
+    'qmcpack/H2O/H2O.py',
+    'qmcpack/LiH/LiH.py',
+    'qmcpack/c20/c20.py',
+    'qmcpack/diamond/diamond.py',
+    'qmcpack/diamond/diamond_vacancy.py',
+    'qmcpack/graphene/graphene.py',
+    'qmcpack/oxygen_dimer/oxygen_dimer.py',
+    ]
+
+example_files = dict(
+    pwscf_relax_Ge_T = [
+        ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_111/relax.in'),
+        ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_222/relax.in'),
+        ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_444/relax.in'),
+        ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_666/relax.in'),
+        ],
+    qmcpack_H2O = [
+        ('pwscf'     ,'input','qmcpack/H2O/runs/scf.in'),
+        ('pw2qmcpack','input','qmcpack/H2O/runs/p2q.in'),
+        ('qmcpack'   ,'input','qmcpack/H2O/runs/opt.in.xml'),
+        ('qmcpack'   ,'input','qmcpack/H2O/runs/dmc.in.xml'),
+        ],
+    qmcpack_LiH = [
+        ('pwscf'     ,'input','qmcpack/LiH/runs/scf.in'),
+        ('pwscf'     ,'input','qmcpack/LiH/runs/nscf.in'),
+        ('pw2qmcpack','input','qmcpack/LiH/runs/p2q.in'),
+        ('qmcpack'   ,'input','qmcpack/LiH/runs/opt.in.xml'),
+        ('qmcpack'   ,'input','qmcpack/LiH/runs/dmc.in.xml'),
+        ],
+    qmcpack_c20 = [
+        ('pwscf'     ,'input','qmcpack/c20/runs/c20/scf/scf.in'),
+        ('pw2qmcpack','input','qmcpack/c20/runs/c20/nscf/p2q.in'),
+        ('qmcpack'   ,'input','qmcpack/c20/runs/c20/opt/opt.in.xml'),
+        ('qmcpack'   ,'input','qmcpack/c20/runs/c20/qmc/qmc.in.xml'),
+        ],
+    qmcpack_diamond = [
+        ('pwscf'     ,'input','qmcpack/diamond/runs/diamond/scf/scf.in'),
+        ('pw2qmcpack','input','qmcpack/diamond/runs/diamond/scf/conv.in'),
+        ('qmcpack'   ,'input','qmcpack/diamond/runs/diamond/vmc/vmc.in.xml'),
+        ('pwscf'     ,'input','qmcpack/diamond/runs/diamond_vacancy/relax/relax.in'),
+        ('pwscf'     ,'input','qmcpack/diamond/runs/diamond_vacancy/scf/scf.in'),
+        ],
+    qmcpack_graphene = [
+        ('pwscf'     ,'input','qmcpack/graphene/runs/graphene/scf/scf.in'),
+        ('pwscf'     ,'input','qmcpack/graphene/runs/graphene/nscf/nscf.in'),
+        ('pw2qmcpack','input','qmcpack/graphene/runs/graphene/nscf/p2q.in'),
+        ('pwscf'     ,'input','qmcpack/graphene/runs/graphene/nscf_opt/nscf.in'),
+        ('pw2qmcpack','input','qmcpack/graphene/runs/graphene/nscf_opt/p2q.in'),
+        ('qmcpack'   ,'input','qmcpack/graphene/runs/graphene/opt/opt.in.xml'),
+        ('qmcpack'   ,'input','qmcpack/graphene/runs/graphene/qmc/qmc.in.xml'),
+        ],
+    qmcpack_oxygen_dimer = [
+        ('pwscf'     ,'input','qmcpack/oxygen_dimer/scale_1.0/scf.in'),
+        ('pw2qmcpack','input','qmcpack/oxygen_dimer/scale_1.0/p2q.in'),
+        ('qmcpack'   ,'input','qmcpack/oxygen_dimer/scale_1.0/opt.in.xml'),
+        ('qmcpack'   ,'input','qmcpack/oxygen_dimer/scale_1.0/qmc.in.xml'),
+        ],
+    )
+
+def user_examples():
+
+    from pwscf_input import PwscfInput
+    from qmcpack_converters import Pw2qmcpackInput
+    from qmcpack_input import QmcpackInput
+
+    # create local directory for these tests
+    test_dir = nenter()
+
+    # copy over nexus user examples into reference generation directory
+    execute('rsync -av {0}/* {1}/'.format(example_dir,test_dir))
+
+    # execute all example scripts in generate_only mode
+    for script_path in example_scripts:
+        path,script = os.path.split(script_path)
+        path = os.path.join(test_dir,path)
+        cwd = os.getcwd()
+        os.chdir(path)
+        execute('./'+script+' --generate_only --sleep=0.01')
+        os.chdir(cwd)
+    #end for
+
+    # check that generated files match reference files
+    ref_example_dir = os.path.join(reference_dir,'user_examples')
+    input_classes = dict(
+        pwscf      = PwscfInput,
+        pw2qmcpack = Pw2qmcpackInput,
+        qmcpack    = QmcpackInput,
+        )
+    for label,filelist in example_files.iteritems():
+        # label the subtest afer the example directory
+        nlabel(label)
+        # check all generated files against the reference files
+        for code,filetype,filepath in filelist:
+            ref_filepath = os.path.join(ref_example_dir,filepath)
+            gen_filepath = os.path.join(test_dir,filepath)
+            # check that the reference file exists
+            if not os.path.exists(ref_filepath):
+                nfail('reference file is missing\nfile should be located at: {0}'.format(ref_filepath))
+            #end if
+            # check that the generated file exists
+            if not os.path.exists(gen_filepath):
+                nfail('input file was not generated: {0}'.format(gen_filepath))
+            #end if
+            # check that the generated file matches the reference file
+            #   read the files into Nexus' object representation
+            #   use object_diff to compare object represenations
+            #   this is needed to compare floats within a tolerance
+            if filetype=='input':
+                input_class = input_classes[code]
+                ref_input = input_class(ref_filepath)
+                gen_input = input_class(gen_filepath)
+                diff,dgen,dref = object_diff(gen_input,ref_input,full=True)
+                #if diff:
+                #    from generic import obj
+                #    dgen = obj(dgen)
+                #    dref = obj(dref)
+                #    print filepath
+                #    print 20*'='
+                #    print dref
+                #    print 20*'='
+                #    print dgen
+                ##end if
+                nassert(not diff)
+            else:
+                raise NexusTestMisconstructed
+            #end if
+        #end for
+    #end for
+#end def user_examples
+
+
+
 # create labeled tests from simple functions above
 
-NexusTest(
-    name      = 'generic_logging',
-    operation =  generic_logging,
-    )
-NexusTest(
-    name      = 'generic_intrinsics',
-    operation =  generic_intrinsics,
-    )
-NexusTest(
-    name      = 'generic_extensions',
-    operation =  generic_extensions,
-    )
-NexusTest(
-    name      = 'nexus_imports',
-    operation =  nexus_imports,
-    )
-NexusTest(
-    name      = 'settings',
-    operation =  settings_operation,
-    )
+NexusTest( generic_logging    )
+NexusTest( generic_intrinsics )
+NexusTest( generic_extensions )
+NexusTest( nexus_imports      )
+NexusTest( settings_operation , 'settings' )
+NexusTest( user_examples      )
 
 
 
@@ -1680,13 +1830,82 @@ def exit_pass(msg=None):
     exit(0)
 #end def exit_pass
 
+# execute function
+from subprocess import Popen,PIPE
+def execute(command,verbose=False,skip=False):
+    out,err = '',''
+    if skip:
+        if verbose:
+            print 'Would have executed:\n  '+command
+        #end if
+    else:
+        if verbose:
+            print 'Executing:\n  '+command
+        #end if
+        out,err = Popen(command,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
+    #end if
+    return out,err
+#end def execute
+
+
+
+def regenerate_reference(update=False,overwrite=True):
+    # create directory for reference file generation
+    refgen_dir = './reference_regen'
+    if os.path.exists(refgen_dir):
+        shutil.rmtree(refgen_dir)
+    #end if
+    os.makedirs(refgen_dir)
+
+    print 'generating reference data in {0}'.format(refgen_dir)
+
+    # create directory for example reference generation
+    refgen_example_dir = os.path.join(refgen_dir,'user_examples')
+    if not os.path.exists(refgen_example_dir):
+        os.makedirs(refgen_example_dir)
+    #end if
+
+    # copy over nexus user examples into reference generation directory
+    execute('rsync -av {0}/* {1}/'.format(example_dir,refgen_example_dir))
+
+    # execute all example scripts in generate_only mode
+    for script_path in example_scripts:
+        print 'generating reference data for '+script_path
+        path,script = os.path.split(script_path)
+        path = os.path.join(refgen_example_dir,path)
+        cwd = os.getcwd()
+        os.chdir(path)
+        execute('./'+script+' --generate_only --sleep=0.1')
+        os.chdir(cwd)
+    #end for
+
+    # update the reference set of example files
+    if update:
+        ref_example_dir = os.path.join(reference_dir,'user_examples')
+        for label,filelist in example_files.iteritems():
+            for code,filetype,filepath in filelist:
+                ref_filepath = os.path.join(ref_example_dir,filepath)
+                gen_filepath = os.path.join(refgen_example_dir,filepath)
+                if overwrite or not os.path.exists(ref_filepath):
+                    path,file = os.path.split(ref_filepath)
+                    if not os.path.exists(path):
+                        os.makedirs(path)
+                    #end if
+                    shutil.copy2(gen_filepath,path)
+                #end if
+            #end for
+        #end for
+    #end if
+
+#end def regenerate_reference
+
+
 
 if __name__=='__main__':
     import re
-    from time import clock
+    from time import time # used to get user wall clock rather than cpu time
 
-    tstart_all = clock()
-
+    tstart_all = time()
 
     # read command line input
     regex = None
@@ -1718,11 +1937,30 @@ if __name__=='__main__':
                       default='none',
                       help='Cause the "trip"-th assertion statement to fail.  Useful when to ensure that the CMake script is working properly when interfacing with CTest (default=%default).'
                       )
+    parser.add_option('--generate_reference',dest='generate_reference',
+                      action='store_true',default=False,
+                      help='Regenerate reference data, but do not overwrite existing reference files.  Intended for developer use (default=%default).'
+                      )
+    parser.add_option('--update_reference',dest='update_reference',
+                      action='store_true',default=False,
+                      help='Regenerate reference data and overwrite existing reference files.  Intended for developer use (default=%default).'
+                      )
 
     options,files_in = parser.parse_args()
 
     if options.help:
         print('\n'+parser.format_help().strip())
+        exit()
+    #end if
+
+    # Regenerate reference data and exit
+    if options.generate_reference:
+        regenerate_reference(update=False)
+        exit()
+    #end if
+    if options.update_reference:
+        #exit_fail('Automatic update of reference data is not yet supported.')
+        regenerate_reference(update=True)
         exit()
     #end if
 
@@ -1772,7 +2010,7 @@ if __name__=='__main__':
     nfailed = 0
     for test in tests:
         n+=1
-        t1 = clock()
+        t1 = time()
 
         # run the test
         test.run()
@@ -1792,7 +2030,7 @@ if __name__=='__main__':
         else:
             status = 'Unknown'
         #end if
-        t2 = clock()
+        t2 = time()
         if not ctest:
             print ' {0}/{1} {2}   {3}  {4:3.2f} sec'.format(n,len(tests),title,status,t2-t1)
         #end if
@@ -1810,7 +2048,7 @@ if __name__=='__main__':
         #end if
     #end for
 
-    tstop_all = clock()
+    tstop_all = time()
 
     # print pass/fail and timing summary
     if not ctest:
