@@ -1369,7 +1369,9 @@ class VaspInput(SimulationInput,Vobj):
 
         return species
     #end def incorporate_system
-    def return_system(self,**valency):
+
+
+    def return_system(self,structure_only=False,**valency):
         axes=self.poscar.axes
         scale=self.poscar.scale
         axes=scale*axes
@@ -1419,6 +1421,10 @@ class VaspInput(SimulationInput,Vobj):
          
         structure.zero_corner()
         structure.recenter()
+
+        if structure_only:
+            return structure
+        #end if
 
         ion_charge = 0
         atoms   = list(elem)

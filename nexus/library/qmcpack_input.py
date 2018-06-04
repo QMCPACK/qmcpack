@@ -3605,7 +3605,7 @@ class QmcpackInput(SimulationInput,Names):
     #end def incorporate_system
         
 
-    def return_system(self):
+    def return_system(self,structure_only=False):
         input = self.copy()
         input.pluralize()
         axes,ps,H = input.get('lattice','particlesets','hamiltonian')
@@ -3751,7 +3751,11 @@ class QmcpackInput(SimulationInput,Names):
 
         system = PhysicalSystem(structure,net_charge,net_spin,**valency) 
         
-        return system
+        if structure_only:
+            return structure
+        else:
+            return system
+        #end if
     #end def return_system
 
 
