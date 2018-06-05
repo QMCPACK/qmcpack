@@ -746,10 +746,10 @@ class Structure(Sobj):
                       magnetic_prim  = magnetic_prim
                       )
         #end if
-        if kpoints!=None:
+        if kpoints is not None:
             self.add_kpoints(kpoints,kweights)
         #end if
-        if kgrid!=None:
+        if kgrid is not None:
             self.add_kmesh(kgrid,kshift)
         #end if        
         if rescale:

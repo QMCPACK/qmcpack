@@ -1495,7 +1495,7 @@ class PwscfInput(SimulationInput):
     #end def incorporate_system_old
 
         
-    def return_system(self,**valency):
+    def return_system(self,structure_only=False,**valency):
         ibrav = self.system.ibrav
         if ibrav!=0:
             self.error('ability to handle non-zero ibrav not yet implemented')
@@ -1525,6 +1525,10 @@ class PwscfInput(SimulationInput):
             )
         structure.zero_corner()
         structure.recenter()
+
+        if structure_only:
+            return structure
+        #end if
   
         ion_charge = 0
         atoms   = list(self.atomic_positions.atoms)
