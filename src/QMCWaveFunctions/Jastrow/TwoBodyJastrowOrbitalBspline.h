@@ -62,14 +62,14 @@ public:
   typedef BsplineFunctor<OrbitalBase::RealType> FT;
   typedef ParticleSet::Walker_t     Walker_t;
 
-  void freeGPUmem();
-  void checkInVariables(opt_variables_type& active);
+  void freeGPUmem() __attribute__((xray_always_instrument));
+  void checkInVariables(opt_variables_type& active)  __attribute__((xray_always_instrument));
   //void addFunc(const std::string& aname, int ia, int ib, FT* j);
-  void addFunc(int ia, int ib, FT* j);
-  void recompute(MCWalkerConfiguration &W, bool firstTime);
-  void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool);
-  void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi);
-  void update (std::vector<Walker_t*> &walkers, int iat);
+  void addFunc(int ia, int ib, FT* j) __attribute__((xray_always_instrument));
+  void recompute(MCWalkerConfiguration &W, bool firstTime) __attribute__((xray_always_instrument));
+  void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool) __attribute__((xray_always_instrument));
+  void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi) __attribute__((xray_always_instrument));
+  void update (std::vector<Walker_t*> &walkers, int iat) __attribute__((xray_always_instrument));
   void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList)
   {
     /* This function doesn't really need to return the ratio */
@@ -77,14 +77,13 @@ public:
 
   void ratio (MCWalkerConfiguration &W, int iat,
               std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-              std::vector<ValueType> &lapl);
-
+              std::vector<ValueType> &lapl) __attribute__((xray_always_instrument));
   void calcRatio (MCWalkerConfiguration &W, int iat,
                   std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-                  std::vector<ValueType> &lapl);
+                  std::vector<ValueType> &lapl) __attribute__((xray_always_instrument));
   void addRatio (MCWalkerConfiguration &W, int iat,
                  std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-                 std::vector<ValueType> &lapl);
+                 std::vector<ValueType> &lapl) __attribute__((xray_always_instrument));
   void ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
               std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
               std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
@@ -93,15 +92,15 @@ public:
   }
 
   void calcGradient(MCWalkerConfiguration &W, int iat,
-                    std::vector<GradType> &grad);
+                    std::vector<GradType> &grad) __attribute__((xray_always_instrument));
   void addGradient(MCWalkerConfiguration &W, int iat,
-                   std::vector<GradType> &grad);
+                   std::vector<GradType> &grad) __attribute__((xray_always_instrument));
   void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
-                 ValueMatrix_t &lapl);
+                 ValueMatrix_t &lapl) __attribute__((xray_always_instrument));
   void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
-                 std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
+                 std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios) __attribute__((xray_always_instrument));
 
-  void resetParameters(const opt_variables_type& active);
+  void resetParameters(const opt_variables_type& active) __attribute__((xray_always_instrument));
 
   // Evaluates the derivatives of log psi and laplacian log psi w.r.t.
   // the parameters for optimization.  First index of the ValueMatrix is
@@ -110,7 +109,7 @@ public:
   evaluateDerivatives (MCWalkerConfiguration &W,
                        const opt_variables_type& optvars,
                        RealMatrix_t &dlogpsi,
-                       RealMatrix_t &dlapl_over_psi);
+                       RealMatrix_t &dlapl_over_psi) __attribute__((xray_always_instrument));
 
   //TwoBodyJastrowOrbitalBspline(ParticleSet& pset, bool is_master) :
   //  TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > (pset, is_master),
@@ -173,7 +172,7 @@ public:
       Linv = LinvHost;
     }
   }
-};
+} __attribute__((xray_always_instrument));
 }
 
 

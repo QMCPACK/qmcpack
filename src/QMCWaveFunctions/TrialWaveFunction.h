@@ -387,46 +387,46 @@ private:
   gpu::device_host_vector<CudaValueType>   GPUlapls;
 
 public:
-  void freeGPUmem();
+  void freeGPUmem() __attribute__((xray_always_instrument));
 
-  void recompute (MCWalkerConfiguration &W, bool firstTime=true);
+  void recompute (MCWalkerConfiguration &W, bool firstTime=true) __attribute__((xray_always_instrument));
 
   void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool,
-                bool onlyOptimizable=false);
+                bool onlyOptimizable=false) __attribute__((xray_always_instrument));
   void getGradient (MCWalkerConfiguration &W, int iat,
-                    std::vector<GradType> &grad);
+                    std::vector<GradType> &grad) __attribute__((xray_always_instrument));
   void calcGradient (MCWalkerConfiguration &W, int iat,
-                     std::vector<GradType> &grad);
+                     std::vector<GradType> &grad) __attribute__((xray_always_instrument));
   void addGradient (MCWalkerConfiguration &W, int iat,
-                    std::vector<GradType> &grad);
+                    std::vector<GradType> &grad) __attribute__((xray_always_instrument));
   void evaluateLog (MCWalkerConfiguration &W,
-                    std::vector<RealType> &logPsi);
+                    std::vector<RealType> &logPsi) __attribute__((xray_always_instrument));
   void ratio (MCWalkerConfiguration &W, int iat,
-              std::vector<ValueType> &psi_ratios);
+              std::vector<ValueType> &psi_ratios) __attribute__((xray_always_instrument));
   void ratio (MCWalkerConfiguration &W, int iat,
               std::vector<ValueType> &psi_ratios,
-              std::vector<GradType> &newG);
+              std::vector<GradType> &newG) __attribute__((xray_always_instrument));
   void ratio (MCWalkerConfiguration &W, int iat,
               std::vector<ValueType> &psi_ratios,
               std::vector<GradType> &newG,
-              std::vector<ValueType> &newL);
+              std::vector<ValueType> &newL) __attribute__((xray_always_instrument));
   void calcRatio (MCWalkerConfiguration &W, int iat,
                   std::vector<ValueType> &psi_ratios,
                   std::vector<GradType> &newG,
-                  std::vector<ValueType> &newL);
+                  std::vector<ValueType> &newL) __attribute__((xray_always_instrument));
   void addRatio (MCWalkerConfiguration &W, int iat,
                  std::vector<ValueType> &psi_ratios,
                  std::vector<GradType> &newG,
-                 std::vector<ValueType> &newL);
+                 std::vector<ValueType> &newL) __attribute__((xray_always_instrument));
 #ifdef QMC_COMPLEX
   void convertRatiosFromComplexToReal (std::vector<ValueType> &psi_ratios,
-                                       std::vector<RealType> &psi_ratios_real);
+                                       std::vector<RealType> &psi_ratios_real) __attribute__((xray_always_instrument));
 #endif
   void ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iatList,
               std::vector<PosType> &rNew,
               std::vector<ValueType> &psi_ratios,
               std::vector<GradType> &newG,
-              std::vector<ValueType> &newL);
+              std::vector<ValueType> &newL) __attribute__((xray_always_instrument));
 
   void NLratios (MCWalkerConfiguration &W,
                  gpu::device_vector<CUDA_PRECISION*> &Rlist,
@@ -434,37 +434,37 @@ public:
                  gpu::device_vector<int>             &NumCoreElecs,
                  gpu::device_vector<CUDA_PRECISION*> &QuadPosList,
                  gpu::device_vector<CUDA_PRECISION*> &RatioList,
-                 int numQuadPoints);
+                 int numQuadPoints) __attribute__((xray_always_instrument));
 
   void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
-                 std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
+                 std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios) __attribute__((xray_always_instrument));
 
-  void update (std::vector<Walker_t*> &walkers, int iat);
+  void update (std::vector<Walker_t*> &walkers, int iat) __attribute__((xray_always_instrument));
   void update (const std::vector<Walker_t*> &walkers,
-               const std::vector<int> &iatList);
+               const std::vector<int> &iatList) __attribute__((xray_always_instrument));
 
   void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
-                 ValueMatrix_t &lapl);
+                 ValueMatrix_t &lapl) __attribute__((xray_always_instrument));
 
 
   void evaluateDeltaLog(MCWalkerConfiguration &W,
-                        std::vector<RealType>& logpsi_opt);
+                        std::vector<RealType>& logpsi_opt) __attribute__((xray_always_instrument));
 
   void evaluateDeltaLog(MCWalkerConfiguration &W,
                         std::vector<RealType>& logpsi_fixed,
                         std::vector<RealType>& logpsi_opt,
                         GradMatrix_t&  fixedG,
-                        ValueMatrix_t& fixedL);
+                        ValueMatrix_t& fixedL) __attribute__((xray_always_instrument));
 
   void evaluateOptimizableLog (MCWalkerConfiguration &W,
                                std::vector<RealType>& logpsi_opt,
                                GradMatrix_t&  optG,
-                               ValueMatrix_t& optL);
+                               ValueMatrix_t& optL) __attribute__((xray_always_instrument));
 
   void evaluateDerivatives (MCWalkerConfiguration &W,
                             const opt_variables_type& optvars,
                             RealMatrix_t &dlogpsi,
-                            RealMatrix_t &dhpsioverpsi);
+                            RealMatrix_t &dhpsioverpsi) __attribute__((xray_always_instrument));
 
 #endif
 

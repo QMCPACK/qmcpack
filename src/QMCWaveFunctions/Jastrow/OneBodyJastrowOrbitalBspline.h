@@ -75,7 +75,7 @@ public:
   void addFunc(int ig, FT* j, int jg);
   void recompute(MCWalkerConfiguration &W, bool firstTime);
   void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool);
-  void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi);
+  void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi) __attribute__((xray_always_instrument));
   void update (std::vector<Walker_t*> &walkers, int iat);
   void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList)
   {
@@ -83,13 +83,13 @@ public:
   }
   void ratio (MCWalkerConfiguration &W, int iat,
               std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-              std::vector<ValueType> &lapl);
+              std::vector<ValueType> &lapl) __attribute__((xray_always_instrument));
   void calcRatio (MCWalkerConfiguration &W, int iat,
                   std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-                  std::vector<ValueType> &lapl);
+                  std::vector<ValueType> &lapl) __attribute__((xray_always_instrument));
   void addRatio (MCWalkerConfiguration &W, int iat,
                  std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-                 std::vector<ValueType> &lapl);
+                 std::vector<ValueType> &lapl) __attribute__((xray_always_instrument));
   void ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
               std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
               std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
@@ -99,17 +99,17 @@ public:
 
 
   void calcGradient(MCWalkerConfiguration &W, int iat,
-                    std::vector<GradType> &grad);
+                    std::vector<GradType> &grad) __attribute__((xray_always_instrument));
   void addGradient(MCWalkerConfiguration &W, int iat,
-                   std::vector<GradType> &grad);
+                   std::vector<GradType> &grad) __attribute__((xray_always_instrument));
   void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
-                 ValueMatrix_t &lapl);
+                 ValueMatrix_t &lapl) __attribute__((xray_always_instrument));
   void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
-                 std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
+                 std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios) __attribute__((xray_always_instrument));
   void evaluateDerivatives (MCWalkerConfiguration &W,
                             const opt_variables_type& optvars,
                             RealMatrix_t &dlogpsi,
-                            RealMatrix_t &dlapl_over_psi);
+                            RealMatrix_t &dlapl_over_psi) __attribute__((xray_always_instrument)) __attribute__((xray_always_instrument));
   OneBodyJastrowOrbitalBspline(ParticleSet &centers, ParticleSet& elecs) :
     OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > (centers,elecs),
     ElecRef(elecs),
@@ -174,7 +174,7 @@ public:
     // 	  C_host[OHMMS_DIM*i+dim] = centers.R[i][dim];
     C = C_host;
   }
-};
+}
 }
 
 

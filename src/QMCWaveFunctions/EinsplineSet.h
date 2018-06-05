@@ -391,27 +391,27 @@ public:
                             ComplexHessMatrix_t& grad_grad_psi,
                             ComplexGGGMatrix_t& grad_grad_grad_logdet);
 #ifdef QMC_CUDA
-  void initGPU();
+  void initGPU() __attribute__((xray_always_instrument));
 
   // Vectorized evaluation functions
   void evaluate (std::vector<Walker_t*> &walkers, int iat,
-                 gpu::device_vector<CudaRealType*> &phi);
+                 gpu::device_vector<CudaRealType*> &phi) __attribute__((xray_always_instrument));
   void evaluate (std::vector<Walker_t*> &walkers, int iat,
-                 gpu::device_vector<CudaComplexType*> &phi);
+                 gpu::device_vector<CudaComplexType*> &phi) __attribute__((xray_always_instrument));
   void evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-                 gpu::device_vector<CudaRealType*> &phi);
+                 gpu::device_vector<CudaRealType*> &phi) __attribute__((xray_always_instrument));
   void evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-                 gpu::device_vector<CudaComplexType*> &phi);
+                 gpu::device_vector<CudaComplexType*> &phi) __attribute__((xray_always_instrument));
   void evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
                  gpu::device_vector<CudaRealType*> &phi,
                  gpu::device_vector<CudaRealType*> &grad_lapl,
-                 int row_stride);
+                 int row_stride) __attribute__((xray_always_instrument));
   void evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
                  gpu::device_vector<CudaComplexType*> &phi,
                  gpu::device_vector<CudaComplexType*> &grad_lapl,
-                 int row_stride);
-  void evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi);
-  void evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi);
+                 int row_stride) __attribute__((xray_always_instrument));
+  void evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi) __attribute__((xray_always_instrument));
+  void evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi) __attribute__((xray_always_instrument));
 #endif
 
   void resetParameters(const opt_variables_type& active);
@@ -546,40 +546,40 @@ protected:
   ////////////
   // Data for vectorized evaluations
 
-  void sort_electrons(std::vector<PosType> &pos);
+  void sort_electrons(std::vector<PosType> &pos) __attribute__((xray_always_instrument));
 
 public:
-  void initGPU();
+  void initGPU() __attribute__((xray_always_instrument));
   //    void registerTimers();
 
   // Resize cuda objects
-  void resize_cuda(int numwalkers);
+  void resize_cuda(int numwalkers) __attribute__((xray_always_instrument));
 
   // Vectorized evaluation functions
   void evaluate (std::vector<Walker_t*> &walkers, int iat,
-                 gpu::device_vector<CudaRealType*> &phi);
+                 gpu::device_vector<CudaRealType*> &phi) __attribute__((xray_always_instrument));
   void evaluate (std::vector<Walker_t*> &walkers, int iat,
-                 gpu::device_vector<CudaComplexType*> &phi);
+                 gpu::device_vector<CudaComplexType*> &phi) __attribute__((xray_always_instrument));
   void evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-                 gpu::device_vector<CudaRealType*> &phi);
+                 gpu::device_vector<CudaRealType*> &phi) __attribute__((xray_always_instrument));
   void evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-                 gpu::device_vector<CudaComplexType*> &phi);
+                 gpu::device_vector<CudaComplexType*> &phi) __attribute__((xray_always_instrument));
   void evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
                  gpu::device_vector<CudaRealType*> &phi,
                  gpu::device_vector<CudaRealType*> &grad_lapl,
-                 int row_stride);
+                 int row_stride) __attribute__((xray_always_instrument));
   void evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
                  gpu::device_vector<CudaComplexType*> &phi,
                  gpu::device_vector<CudaComplexType*> &grad_lapl,
-                 int row_stride);
-  void evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi);
-  void evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi);
+                 int row_stride) __attribute__((xray_always_instrument));
+  void evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi) __attribute__((xray_always_instrument));
+  void evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi) __attribute__((xray_always_instrument));
 
   std::string Type();
 
-  SPOSetBase* makeClone() const;
+  SPOSetBase* makeClone() const __attribute__((xray_always_instrument));
 
-  EinsplineSetHybrid();
+  EinsplineSetHybrid() __attribute__((xray_always_instrument));
 };
 
 #endif
