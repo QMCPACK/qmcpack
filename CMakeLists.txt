@@ -684,6 +684,16 @@ ELSE(QMC_CUDA)
   MESSAGE(STATUS "Disabling CUDA")
 ENDIF(QMC_CUDA)
 
+SET(XRAY_PROFILE FALSE CACHE BOOL "Use llvm xray profiling")
+SET(XRAY_INSTRUCTION_THRESHOLD 20 CACHE INT "Instruction threshold for xray instrumentation")
+IF(XRAY_PROFILE)
+  set(XRAY_FLAGS "-fxray-instrument -fxray-instruction-threshold=${XRAY_INSTRUCTION_THRESHOLD}")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${XRAY_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${XRAY_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${XRAY_FLAGS}")
+ENDIF(XRAY_PROFILE)
+
+
 #INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
 ##################################################################
 # TODO:use profile tools
