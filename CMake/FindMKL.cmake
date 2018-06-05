@@ -72,7 +72,7 @@ try_compile(HAVE_MKL_VML ${CMAKE_BINARY_DIR}
 
 # Check for fftw3
 FILE( WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src_mkl_fftw3.cxx"
-  "#include <iostream>\n #include <fftw/fftw3.h>\n int main() { return 0; }\n" )
+  "#include <iostream>\n #include <fftw3.h>\n int main() { return 0; }\n" )
 if(MKL_INCLUDE_DIRECTORIES)
   list(APPEND MKL_INCLUDE_DIRECTORIES ${MKL_INCLUDE_DIRECTORIES}/fftw)
 endif(MKL_INCLUDE_DIRECTORIES)
