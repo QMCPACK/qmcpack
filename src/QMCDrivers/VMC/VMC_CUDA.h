@@ -33,16 +33,16 @@ public:
   /// Constructor.
   VMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,WaveFunctionPool& ppool);
 
-  bool run();
-  bool runWithDrift();
+  bool run() GPU_XRAY_TRACE;
+  bool runWithDrift() GPU_XRAY_TRACE;
 
   /// advance walkers without drift
-  void advanceWalkers();
+  void advanceWalkers() GPU_XRAY_TRACE;
   /// advance walkers with drift
-  void advanceWalkersWithDrift();
+  void advanceWalkersWithDrift() GPU_XRAY_TRACE;
 
-  bool put(xmlNodePtr cur);
-  RealType fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM);
+  bool put(xmlNodePtr cur) GPU_XRAY_TRACE;
+  RealType fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM) GPU_XRAY_TRACE;
   inline void setOpt(bool o)
   {
     forOpt=o;
@@ -69,7 +69,7 @@ private:
   ///hide initialization from the main function
   bool checkBounds (std::vector<PosType> &newpos, std::vector<bool> &valid);
 
-  void resetRun();
+  void resetRun() GPU_XRAY_TRACE;
 
   opt_variables_type dummy;
   int numParams;
@@ -84,7 +84,7 @@ private:
   std::vector<RealType> D_E, HD2, HD, D;
   RealType sE,sE2,sE4,sW,sN;
 
-  inline void clearComponentMatrices()
+  inline void GPU_XRAY_TRACE clearComponentMatrices()
   {
     Olp=0.0;
     Ham=0.0;
@@ -103,7 +103,7 @@ private:
     sN=0;
   }
 
-  void resizeForOpt(int n)
+  void GPU_XRAY_TRACE resizeForOpt(int n)
   {
     Olp.resize(n,n);
     Ham.resize(n,n);

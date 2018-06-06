@@ -387,46 +387,46 @@ private:
   gpu::device_host_vector<CudaValueType>   GPUlapls;
 
 public:
-  void freeGPUmem() __attribute__((xray_always_instrument));
+  void freeGPUmem() GPU_XRAY_TRACE;
 
-  void recompute (MCWalkerConfiguration &W, bool firstTime=true) __attribute__((xray_always_instrument));
+  void recompute (MCWalkerConfiguration &W, bool firstTime=true) GPU_XRAY_TRACE;
 
   void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool,
-                bool onlyOptimizable=false) __attribute__((xray_always_instrument));
+                bool onlyOptimizable=false) GPU_XRAY_TRACE;
   void getGradient (MCWalkerConfiguration &W, int iat,
-                    std::vector<GradType> &grad) __attribute__((xray_always_instrument));
+                    std::vector<GradType> &grad) GPU_XRAY_TRACE;
   void calcGradient (MCWalkerConfiguration &W, int iat,
-                     std::vector<GradType> &grad) __attribute__((xray_always_instrument));
+                     std::vector<GradType> &grad) GPU_XRAY_TRACE;
   void addGradient (MCWalkerConfiguration &W, int iat,
-                    std::vector<GradType> &grad) __attribute__((xray_always_instrument));
+                    std::vector<GradType> &grad) GPU_XRAY_TRACE;
   void evaluateLog (MCWalkerConfiguration &W,
-                    std::vector<RealType> &logPsi) __attribute__((xray_always_instrument));
+                    std::vector<RealType> &logPsi) GPU_XRAY_TRACE;
   void ratio (MCWalkerConfiguration &W, int iat,
-              std::vector<ValueType> &psi_ratios) __attribute__((xray_always_instrument));
+              std::vector<ValueType> &psi_ratios) GPU_XRAY_TRACE;
   void ratio (MCWalkerConfiguration &W, int iat,
               std::vector<ValueType> &psi_ratios,
-              std::vector<GradType> &newG) __attribute__((xray_always_instrument));
+              std::vector<GradType> &newG) GPU_XRAY_TRACE;
   void ratio (MCWalkerConfiguration &W, int iat,
               std::vector<ValueType> &psi_ratios,
               std::vector<GradType> &newG,
-              std::vector<ValueType> &newL) __attribute__((xray_always_instrument));
+              std::vector<ValueType> &newL) GPU_XRAY_TRACE;
   void calcRatio (MCWalkerConfiguration &W, int iat,
                   std::vector<ValueType> &psi_ratios,
                   std::vector<GradType> &newG,
-                  std::vector<ValueType> &newL) __attribute__((xray_always_instrument));
+                  std::vector<ValueType> &newL) GPU_XRAY_TRACE;
   void addRatio (MCWalkerConfiguration &W, int iat,
                  std::vector<ValueType> &psi_ratios,
                  std::vector<GradType> &newG,
-                 std::vector<ValueType> &newL) __attribute__((xray_always_instrument));
+                 std::vector<ValueType> &newL) GPU_XRAY_TRACE;
 #ifdef QMC_COMPLEX
   void convertRatiosFromComplexToReal (std::vector<ValueType> &psi_ratios,
-                                       std::vector<RealType> &psi_ratios_real) __attribute__((xray_always_instrument));
+                                       std::vector<RealType> &psi_ratios_real) GPU_XRAY_TRACE;
 #endif
   void ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iatList,
               std::vector<PosType> &rNew,
               std::vector<ValueType> &psi_ratios,
               std::vector<GradType> &newG,
-              std::vector<ValueType> &newL) __attribute__((xray_always_instrument));
+              std::vector<ValueType> &newL) GPU_XRAY_TRACE;
 
   void NLratios (MCWalkerConfiguration &W,
                  gpu::device_vector<CUDA_PRECISION*> &Rlist,
@@ -434,37 +434,37 @@ public:
                  gpu::device_vector<int>             &NumCoreElecs,
                  gpu::device_vector<CUDA_PRECISION*> &QuadPosList,
                  gpu::device_vector<CUDA_PRECISION*> &RatioList,
-                 int numQuadPoints) __attribute__((xray_always_instrument));
+                 int numQuadPoints) GPU_XRAY_TRACE;
 
   void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
-                 std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios) __attribute__((xray_always_instrument));
+                 std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios) GPU_XRAY_TRACE;
 
-  void update (std::vector<Walker_t*> &walkers, int iat) __attribute__((xray_always_instrument));
+  void update (std::vector<Walker_t*> &walkers, int iat) GPU_XRAY_TRACE;
   void update (const std::vector<Walker_t*> &walkers,
-               const std::vector<int> &iatList) __attribute__((xray_always_instrument));
+               const std::vector<int> &iatList) GPU_XRAY_TRACE;
 
   void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
-                 ValueMatrix_t &lapl) __attribute__((xray_always_instrument));
+                 ValueMatrix_t &lapl) GPU_XRAY_TRACE;
 
 
   void evaluateDeltaLog(MCWalkerConfiguration &W,
-                        std::vector<RealType>& logpsi_opt) __attribute__((xray_always_instrument));
+                        std::vector<RealType>& logpsi_opt) GPU_XRAY_TRACE;
 
   void evaluateDeltaLog(MCWalkerConfiguration &W,
                         std::vector<RealType>& logpsi_fixed,
                         std::vector<RealType>& logpsi_opt,
                         GradMatrix_t&  fixedG,
-                        ValueMatrix_t& fixedL) __attribute__((xray_always_instrument));
+                        ValueMatrix_t& fixedL) GPU_XRAY_TRACE;
 
   void evaluateOptimizableLog (MCWalkerConfiguration &W,
                                std::vector<RealType>& logpsi_opt,
                                GradMatrix_t&  optG,
-                               ValueMatrix_t& optL) __attribute__((xray_always_instrument));
+                               ValueMatrix_t& optL) GPU_XRAY_TRACE;
 
   void evaluateDerivatives (MCWalkerConfiguration &W,
                             const opt_variables_type& optvars,
                             RealMatrix_t &dlogpsi,
-                            RealMatrix_t &dhpsioverpsi) __attribute__((xray_always_instrument));
+                            RealMatrix_t &dhpsioverpsi) GPU_XRAY_TRACE;
 
 #endif
 

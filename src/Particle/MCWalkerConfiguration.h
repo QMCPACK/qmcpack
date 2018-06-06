@@ -112,17 +112,17 @@ public:
   gpu::device_vector<int> AcceptList_GPU;
   gpu::host_vector<int> AcceptList_host;
 
-  void allocateGPU(size_t buffersize)  __attribute__((xray_always_instrument));
-  void copyWalkersToGPU(bool copyGrad=false)  __attribute__((xray_always_instrument));
-  void copyWalkerGradToGPU()  __attribute__((xray_always_instrument));
-  void updateLists_GPU()  __attribute__((xray_always_instrument));
+  void allocateGPU(size_t buffersize)  GPU_XRAY_TRACE;
+  void copyWalkersToGPU(bool copyGrad=false)  GPU_XRAY_TRACE;
+  void copyWalkerGradToGPU()  GPU_XRAY_TRACE;
+  void updateLists_GPU()  GPU_XRAY_TRACE;
   int CurrentParticle;
   void proposeMove_GPU
-  (std::vector<PosType> &newPos, int iat)  __attribute__((xray_always_instrument));
-  void acceptMove_GPU(std::vector<bool> &toAccept)  __attribute__((xray_always_instrument));
+  (std::vector<PosType> &newPos, int iat)  GPU_XRAY_TRACE;
+  void acceptMove_GPU(std::vector<bool> &toAccept)  GPU_XRAY_TRACE;
   void NLMove_GPU (std::vector<Walker_t*> &walkers,
                    std::vector<PosType> &Rnew,
-                   std::vector<int> &iat)  __attribute__((xray_always_instrument));
+                   std::vector<int> &iat)  GPU_XRAY_TRACE;
 #endif
 
   ///default constructor
@@ -138,12 +138,12 @@ public:
    *
    * Append Walkers to WalkerList.
    */
-  void createWalkers(int numWalkers)  __attribute__((xray_always_instrument));
+  void createWalkers(int numWalkers)  GPU_XRAY_TRACE;
   /** create walkers
    * @param first walker iterator
    * @param last walker iterator
    */
-  void createWalkers(iterator first, iterator last)  __attribute__((xray_always_instrument));
+  void createWalkers(iterator first, iterator last)  GPU_XRAY_TRACE;
   /** copy walkers
    * @param first input walker iterator
    * @param last input walker iterator
@@ -151,7 +151,7 @@ public:
    *
    * No memory allocation is allowed.
    */
-  void copyWalkers(iterator first, iterator last, iterator start)  __attribute__((xray_always_instrument));
+  void copyWalkers(iterator first, iterator last, iterator start)  GPU_XRAY_TRACE;
 
   /** destroy Walkers from itstart to itend
    *@param first starting iterator of the walkers
@@ -172,15 +172,15 @@ public:
    * Clear the current WalkerList and add two walkers, head and tail.
    * OwnWalkers are set to false.
    */
-  void copyWalkerRefs(Walker_t* head, Walker_t* tail)  __attribute__((xray_always_instrument));
+  void copyWalkerRefs(Walker_t* head, Walker_t* tail)  GPU_XRAY_TRACE;
 
   ///clean up the walker list and make a new list
-  void resize(int numWalkers, int numPtcls)  __attribute__((xray_always_instrument));
+  void resize(int numWalkers, int numPtcls)  GPU_XRAY_TRACE;
 
   ///make random moves for all the walkers
   //void sample(iterator first, iterator last, value_type tauinv);
   ///make a random move for a walker
-  void sample(iterator it, RealType tauinv)  __attribute__((xray_always_instrument));
+  void sample(iterator it, RealType tauinv)  GPU_XRAY_TRACE;
 
   ///return the number of active walkers
   inline int getActiveWalkers() const
@@ -334,25 +334,25 @@ public:
   ///set the number of max samples
   void setNumSamples(int n);
   ///save the position of current walkers to SampleStack
-  void saveEnsemble()  __attribute__((xray_always_instrument));
+  void saveEnsemble()  GPU_XRAY_TRACE;
   ///save the position of current walkers
-  void saveEnsemble(iterator first, iterator last)  __attribute__((xray_always_instrument));
+  void saveEnsemble(iterator first, iterator last)  GPU_XRAY_TRACE;
   /// load a single sample from SampleStack
-  void loadSample(ParticleSet::ParticlePos_t &Pos, size_t iw) const  __attribute__((xray_always_instrument));
+  void loadSample(ParticleSet::ParticlePos_t &Pos, size_t iw) const  GPU_XRAY_TRACE;
   /** load SampleStack data to current walkers
    */
-  void loadEnsemble()  __attribute__((xray_always_instrument));
+  void loadEnsemble()  GPU_XRAY_TRACE;
   //void loadEnsemble(const Walker_t& wcopy);
   /** load SampleStack from others
     */
-  void loadEnsemble(std::vector<MCWalkerConfiguration*>& others, bool doclean=true)  __attribute__((xray_always_instrument));
+  void loadEnsemble(std::vector<MCWalkerConfiguration*>& others, bool doclean=true)  GPU_XRAY_TRACE;
   /** dump Samples to a file
    * @param others MCWalkerConfigurations whose samples will be collected
    * @param out engine to write the samples to state_0/walkers
    * @param np number of processors
    * @return true with non-zero samples
    */
-  bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock)  __attribute__((xray_always_instrument));
+  bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock)  GPU_XRAY_TRACE;
   ///clear the ensemble
   void clearEnsemble();
   //@}

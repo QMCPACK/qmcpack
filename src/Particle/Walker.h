@@ -156,7 +156,7 @@ struct Walker
   gpu::device_vector<CudaLapType> Lap_GPU;
   gpu::device_vector<CUDA_PRECISION_FULL> Rhok_GPU;
   int k_species_stride;
-  inline void resizeCuda(int size, int num_species, int num_k)
+  inline GPU_XRAY_TRACE void resizeCuda(int size, int num_species, int num_k)
   {
     cuda_DataSize = size;
     cuda_DataSet.resize(size);
@@ -169,11 +169,11 @@ struct Walker
     if (num_k)
       Rhok_GPU.resize (num_species * k_species_stride);
   }
-  inline CUDA_PRECISION_FULL* get_rhok_ptr ()
+  inline GPU_XRAY_TRACE CUDA_PRECISION_FULL* get_rhok_ptr ()
   {
     return Rhok_GPU.data();
   }
-  inline CUDA_PRECISION_FULL* get_rhok_ptr (int isp)
+  inline GPU_XRAY_TRACE CUDA_PRECISION_FULL* get_rhok_ptr (int isp)
   {
     return Rhok_GPU.data() + k_species_stride * isp;
   }
@@ -181,7 +181,7 @@ struct Walker
 #endif
 
   ///create a walker for n-particles
-  inline explicit Walker(int nptcl=0)
+  inline explicit GPU_XRAY_TRACE Walker(int nptcl=0)
 #ifdef QMC_CUDA
     :cuda_DataSet("Walker::walker_buffer"), R_GPU("Walker::R_GPU"),
      Grad_GPU("Walker::Grad_GPU"), Lap_GPU("Walker::Lap_GPU"),
@@ -268,7 +268,7 @@ struct Walker
   }
 
   ///resize for n particles
-  inline void resize(int nptcl)
+  inline void GPU_XRAY_TRACE resize(int nptcl)
   {
     R.resize(nptcl);
     G.resize(nptcl);
@@ -282,7 +282,7 @@ struct Walker
   }
 
   ///copy the content of a walker
-  inline void makeCopy(const Walker& a)
+  inline void GPU_XRAY_TRACE makeCopy(const Walker& a)
   {
     ID=a.ID;
     ParentID=a.ParentID;
@@ -428,7 +428,7 @@ struct Walker
     return DataSet.byteSize();
   }
 
-  void registerData()
+  void GPU_XRAY_TRACE registerData()
   {
     // walker data must be placed at the beginning
     assert(DataSet.size()==0);
@@ -465,7 +465,7 @@ struct Walker
     scalar_end = DataSet.current_scalar();
   }
 
-  void copyFromBuffer()
+  void GPU_XRAY_TRACE copyFromBuffer()
   {
     DataSet.rewind();
     DataSet >> ID >> ParentID >> Generation >> Age >> ReleasedNodeAge >> ReleasedNodeWeight;
@@ -512,7 +512,7 @@ struct Walker
     assert(scalar_end == DataSet.current_scalar());
   }
 
-  void updateBuffer()
+  void GPU_XRAY_TRACE updateBuffer()
   {
     DataSet.rewind();
     DataSet << ID << ParentID << Generation << Age << ReleasedNodeAge << ReleasedNodeWeight;
