@@ -893,7 +893,6 @@ IF(NOT(QMC_BUILD_LEVEL GREATER 4))
   SUBDIRS(examples)
   IF(IS_DIRECTORY "${PROJECT_SOURCE_DIR}/nexus")
     SUBDIRS(nexus/tests)
-    SUBDIRS(nexus/examples)
   ENDIF()
 ENDIF()
 
