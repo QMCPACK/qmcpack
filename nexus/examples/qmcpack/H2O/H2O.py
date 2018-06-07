@@ -1,8 +1,9 @@
 #! /usr/bin/env python
 # H2O molecule with Quantum ESPRESSO orbitals
 
-from nexus import settings,Job,run_project
-from nexus import Structure,PhysicalSystem
+from nexus import settings,job,run_project
+from nexus import read_structure
+from nexus import generate_physical_system
 from nexus import generate_pwscf
 from nexus import generate_pw2qmcpack
 from nexus import generate_qmcpack,vmc,loop,linear,dmc
@@ -11,12 +12,9 @@ from nexus import generate_qmcpack,vmc,loop,linear,dmc
 settings(
     pseudo_dir      = '../pseudopotentials',
     runs            = 'runs',
-    results         = 'results',
+    results         = '',
     sleep           = 3,
-    #generate_only   = False,
-    # Complicated setting only so examples can be run in test harness.
-    # For real runs, use the plain setting of 'generate_only' above.
-    generate_only   = globals().get('override_generate_only_setting',False),
+    generate_only   = 0,
     status_only     = 0,
     machine         = 'ws1',
     )
@@ -30,24 +28,23 @@ qmcpack             = 'qmcpack'
 dft_pps             = ['O.BFD.upf','H.BFD.upf']
 qmc_pps             = ['O.BFD.xml','H.BFD.xml']
 
-# Job Definitions (MPI Tasks, MP Threading, PBS Queue, Time, etc.)
-scf_job             = Job(app=pwscf,serial=True)
-p2q_job             = Job(app=pw2qmcpack,serial=True)
-opt_job             = Job(threads=4,app=qmcpack,serial=True)
-dmc_job             = Job(threads=4,app=qmcpack,serial=True)
+# job Definitions (MPI Tasks, MP Threading, PBS Queue, Time, etc.)
+scf_job             = job(app=pwscf,serial=True)
+p2q_job             = job(app=pw2qmcpack,serial=True)
+opt_job             = job(threads=4,app=qmcpack,serial=True)
+dmc_job             = job(threads=4,app=qmcpack,serial=True)
 
 # System To Be Simulated
-structure = Structure()
-structure.read_xyz('H2O.xyz')
+structure = read_structure('H2O.xyz')
 structure.bounding_box(
     box             = 'cubic',
     scale           = 1.5
     )
 structure.add_kmesh(
     kgrid           = (1,1,1),
-    kshift          = (0,0,0)
-)
-H2O_molecule = PhysicalSystem(
+    kshift          = (0,0,0),
+    )
+H2O_molecule = generate_physical_system(
     structure       = structure,
     net_charge      = 0,
     net_spin        = 0,
@@ -70,7 +67,7 @@ scf = generate_pwscf(
     conv_thr        = 1.0e-5,
     mixing_beta     = 0.7,
     mixing_mode     = 'local-TF',
-    degauss         = 0.001
+    degauss         = 0.001,
     )
 sims.append(scf)
 
@@ -80,7 +77,7 @@ p2q = generate_pw2qmcpack(
     path            = '.',
     job             = p2q_job,
     write_psir      = False,
-    dependencies    = (scf,'orbitals')
+    dependencies    = (scf,'orbitals'),
     )
 sims.append(p2q)
 
@@ -107,7 +104,7 @@ linopt1 = linear(
     alloweddifference    = 1e-4,
     stepsize             = 0.2,
     stabilizerscale      = 1.0,
-    nstabilizers         = 3
+    nstabilizers         = 3,
     )
 
 # QMC Optimization Parameters - Finer Sampling Set
@@ -128,7 +125,7 @@ opt = generate_qmcpack(
                        ('J2','bspline',8,4)],
     calculations    = [loop(max=4,qmc=linopt1),
                        loop(max=4,qmc=linopt2)],
-    dependencies    = (p2q,'orbitals')
+    dependencies    = (p2q,'orbitals'),
     )
 sims.append(opt)
 
@@ -151,7 +148,7 @@ qmc = generate_qmcpack(
             warmupsteps          = 100,
             blocks               = 1,
             timestep             = 1.0,
-            usedrift             = False
+            usedrift             = False,
            ),
         dmc(
             minimumtargetwalkers = 128,
@@ -160,10 +157,10 @@ qmc = generate_qmcpack(
             timestep             = 0.005,
             steps                = 10,
             blocks               = 200,
-            nonlocalmoves        = True
+            nonlocalmoves        = True,
            )
         ],
-    dependencies   = [(p2q,'orbitals'),(opt,'jastrow')]
+    dependencies   = [(p2q,'orbitals'),(opt,'jastrow')],
     )
 sims.append(qmc)
 

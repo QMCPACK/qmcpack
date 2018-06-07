@@ -219,7 +219,6 @@ public:
   int NumBands, NumElectrons, NumSpins, NumTwists, NumCoreStates;
   int MaxNumGvecs;
   double MeshFactor;
-  RealType BufferLayer;
   RealType MatchingTol;
   TinyVector<int,3> MeshSize;
   std::vector<std::vector<TinyVector<int,3> > > Gvecs;
@@ -326,7 +325,6 @@ public:
   int LastSpinSet, NumOrbitalsRead;
 
   std::string occ_format;
-  RealType qafm;
   int particle_hole_pairs;
   bool makeRotations;
 #if 0

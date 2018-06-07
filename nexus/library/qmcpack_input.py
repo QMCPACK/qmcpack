@@ -2044,7 +2044,7 @@ class pseudopotential(QIxml):
 #end class pseudopotential
 
 class pseudo(QIxml):
-    attributes = ['elementtype','href','format','cutoff','lmax','nrule','l-local']
+    attributes = ['elementtype','href','format','cutoff','lmax','nrule','l_local']
     elements   = ['header','local','grid']
     identifier = 'elementtype'
 #end class pseudo
@@ -2578,6 +2578,7 @@ Names.set_expanded_names(
     pairtype         = 'pairType',
     printeloc        = 'printEloc',
     spindependent    = 'spinDependent',
+    l_local          = 'l-local',
    )
 for c in classes:
     c.init_class()
@@ -3605,7 +3606,7 @@ class QmcpackInput(SimulationInput,Names):
     #end def incorporate_system
         
 
-    def return_system(self):
+    def return_system(self,structure_only=False):
         input = self.copy()
         input.pluralize()
         axes,ps,H = input.get('lattice','particlesets','hamiltonian')
@@ -3751,7 +3752,11 @@ class QmcpackInput(SimulationInput,Names):
 
         system = PhysicalSystem(structure,net_charge,net_spin,**valency) 
         
-        return system
+        if structure_only:
+            return structure
+        else:
+            return system
+        #end if
     #end def return_system
 
 

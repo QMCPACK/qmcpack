@@ -7,10 +7,29 @@ import traceback
 from optparse import OptionParser
 from numpy import ndarray,array,abs
 
-# enforce association between executable and library
+# find the path to the ntest executable and its parent directory
 scriptpath=os.path.realpath(__file__)
 parent_dir=os.path.dirname(os.path.dirname(scriptpath))
-sys.path.insert(0,os.path.join(parent_dir,'library'))
+
+# save nexus directories
+library_dir   = os.path.join(parent_dir,'library')
+test_dir      = os.path.join(parent_dir,'tests')
+reference_dir = os.path.join(parent_dir,'tests/reference')
+example_dir   = os.path.join(parent_dir,'examples')
+
+# ensure that ntest executable is resident in a nexus directory tree
+dirs_check = ['examples','executables','library','tests','tests/reference']
+for d in dirs_check:
+    pd = os.path.join(parent_dir,d)
+    if not os.path.exists(pd):
+        print('ntest executable is not run within a Nexus directory tree\nthe following directories must be present: {0}\nthe following directories are present: {1}\nexecutable launched from path: {2}'.format(dirs_check,os.listdir(parent_dir),parent_dir))
+        exit(1)
+    #end if
+#end for
+
+# enforce association between ntest executable and Nexus library
+sys.path.insert(0,library_dir)
+
 
 from generic import generic_settings,object_interface,NexusError
 
@@ -172,7 +191,7 @@ class NexusTestBase(object):
     nexus_test_dir = '.nexus_test' # ntest directory
 
     launch_path    = None # path from which ntest exe was launched
-    current_test   = ''   # current NexusTest.name
+    current_test   = None # current NexusTest
     current_label  = ''   # current nlabel()
     test_count     =  0   # current test count
     label_count    =  0   # current label count in NexusTest.operation()
@@ -200,7 +219,11 @@ class NexusTestBase(object):
         label  = label.replace(' ','_').replace('-','_')
         tcount = str(NexusTestBase.test_count).zfill(2)
         lcount = str(NexusTestBase.label_count).zfill(2)
-        test_dir  = '{0}_{1}'.format(tcount,test)
+        if test.test_dir is None:
+            test_dir  = '{0}_{1}'.format(tcount,test.name)
+        else:
+            test_dir = test.test_dir
+        #end if
         label_dir = '{0}_{1}'.format(lcount,label)
         ntdir  = NexusTestBase.nexus_test_dir
         nlpath = NexusTestBase.launch_path
@@ -275,6 +298,7 @@ def nenter(path=''):
     #end if
     os.chdir(testpath)
     NexusTestBase.entered = True
+    return testpath
 #end def nenter
 
 
@@ -326,7 +350,8 @@ def npass():
 
 
 # declare that a test has failed
-def nfail(exception=NexusTestFail('Nexus test failed.')):
+def nfail(msg=''):
+    exception = NexusTestFail(msg)
     raise exception
 #end def nfail
 
@@ -386,12 +411,25 @@ class NexusTest(NexusTestBase):
 
 
     # register the current test object in the global test list
-    def __init__(self,name,operation):
-        if not isinstance(name,str):
+    def __init__(self,operation,name=None,op_inputs=None,test_dir=None):
+        if not callable(operation):
+            raise NexusTestMisconstructed
+        #end if
+        if name is None:
+            name = operation.__name__ 
+        elif not isinstance(name,str):
+            raise NexusTestMisconstructed
+        #end if
+        if op_inputs is not None and not isinstance(op_inputs,(tuple,dict)):
+            raise NexusTestMisconstructed
+        #end if
+        if test_dir is not None and not isinstance(test_dir,str):
             raise NexusTestMisconstructed
         #end if
         self.name         = name
         self.operation    = operation
+        self.op_inputs    = op_inputs
+        self.test_dir     = test_dir
         self.exception    = None
         self.status  = NexusTest.status_options['unused']
         NexusTest.test_list.append(self)
@@ -418,12 +456,20 @@ class NexusTest(NexusTestBase):
     # run the current test
     def run(self):
         nleave()
-        NexusTestBase.current_test  = self.name
+        NexusTestBase.current_test  = self
         NexusTestBase.current_label = ''
         NexusTestBase.test_count   += 1
         NexusTestBase.label_count   = 0
         try:
-            self.operation()
+            if self.op_inputs is None:
+                self.operation()
+            elif isinstance(self.op_inputs,tuple):
+                self.operation(*self.op_inputs)
+            elif isinstance(self.op_inputs,dict):
+                self.operation(**self.op_inputs)
+            else:
+                raise NexusTestMisconstructed
+            #end if
             self.status=NexusTest.status_options['passed']
         except Exception,e:
             self.exception = e
@@ -446,6 +492,10 @@ class NexusTest(NexusTestBase):
             btrace = traceback.format_tb(self.traceback)
             if isinstance(e,NexusTestFail):
                 btrace = btrace[:-1]
+                msg = str(e)
+                if len(msg)>0:
+                    s+='Test exception: {0}\n'.format('\n  '+msg.replace('\n','\n  '))
+                #end if
             elif isinstance(e,NexusTestMisconstructed):
                 btrace = btrace[:-1]
                 s+='Test exception: Nexus test is misconstructed.  Please contact developers.\n'
@@ -1520,7 +1570,7 @@ def settings_operation():
                 'mode', 'modes', 'monitor', 'primary_modes', 'progress_tty', 
                 'pseudo_dir', 'pseudopotentials', 'remote_directory', 'results', 
                 'runs', 'skip_submit', 'sleep', 'stages', 'stages_set', 'status', 
-                'status_modes', 'status_only', 'trace', 'verbose'
+                'status_modes', 'status_only', 'trace', 'verbose', 'command_line'
                 ])
         nnckeys_check = set([
                 'basis_dir', 'basissets', 'pseudo_dir', 'pseudopotentials'
@@ -1564,7 +1614,11 @@ def settings_operation():
     #end check_settings_core_noncore
 
     def check_empty_settings():
-        settings()
+        settings(
+            command_line = False,
+            )
+        settings.command_line   = True
+        nexus_core.command_line = True
         check_settings_core_noncore()
         # nexus core sets basic run stages and Pseudopotentials object
         nassert(nexus_core.stages_set==set(nexus_core_defaults.primary_modes))
@@ -1610,6 +1664,7 @@ def settings_operation():
         status_only   = 0,
         generate_only = 1,
         machine       = 'ws16',
+        command_line  = False,
         )
     check_settings_core_noncore()
     nassert(nexus_core.status_only==0)
@@ -1632,29 +1687,221 @@ def settings_operation():
 
 
 
+example_information = dict(
+    pwscf_relax_Ge_T = dict(
+        scripts = [
+            'quantum_espresso/relax_Ge_T_vs_kpoints/relax_vs_kpoints_example.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_111/relax.in'),
+            ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_222/relax.in'),
+            ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_444/relax.in'),
+            ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_666/relax.in'),
+            ],
+        ),
+    qmcpack_H2O = dict(
+        scripts = [
+            'qmcpack/H2O/H2O.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','qmcpack/H2O/runs/scf.in'),
+            ('pw2qmcpack','input','qmcpack/H2O/runs/p2q.in'),
+            ('qmcpack'   ,'input','qmcpack/H2O/runs/opt.in.xml'),
+            ('qmcpack'   ,'input','qmcpack/H2O/runs/dmc.in.xml'),
+            ],
+        ),
+    qmcpack_LiH = dict(
+        scripts = [
+            'qmcpack/LiH/LiH.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','qmcpack/LiH/runs/scf.in'),
+            ('pwscf'     ,'input','qmcpack/LiH/runs/nscf.in'),
+            ('pw2qmcpack','input','qmcpack/LiH/runs/p2q.in'),
+            ('qmcpack'   ,'input','qmcpack/LiH/runs/opt.in.xml'),
+            ('qmcpack'   ,'input','qmcpack/LiH/runs/dmc.in.xml'),
+            ],
+        ),
+    qmcpack_c20 = dict(
+        scripts = [
+            'qmcpack/c20/c20.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','qmcpack/c20/runs/c20/scf/scf.in'),
+            ('pw2qmcpack','input','qmcpack/c20/runs/c20/nscf/p2q.in'),
+            ('qmcpack'   ,'input','qmcpack/c20/runs/c20/opt/opt.in.xml'),
+            ('qmcpack'   ,'input','qmcpack/c20/runs/c20/qmc/qmc.in.xml'),
+            ],
+        ),
+    qmcpack_diamond = dict(
+        scripts = [
+            'qmcpack/diamond/diamond.py',
+            'qmcpack/diamond/diamond_vacancy.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','qmcpack/diamond/runs/diamond/scf/scf.in'),
+            ('pw2qmcpack','input','qmcpack/diamond/runs/diamond/scf/conv.in'),
+            ('qmcpack'   ,'input','qmcpack/diamond/runs/diamond/vmc/vmc.in.xml'),
+            ('pwscf'     ,'input','qmcpack/diamond/runs/diamond_vacancy/relax/relax.in'),
+            ('pwscf'     ,'input','qmcpack/diamond/runs/diamond_vacancy/scf/scf.in'),
+            ],
+        ),
+    qmcpack_graphene = dict(
+        scripts = [
+            'qmcpack/graphene/graphene.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','qmcpack/graphene/runs/graphene/scf/scf.in'),
+            ('pwscf'     ,'input','qmcpack/graphene/runs/graphene/nscf/nscf.in'),
+            ('pw2qmcpack','input','qmcpack/graphene/runs/graphene/nscf/p2q.in'),
+            ('pwscf'     ,'input','qmcpack/graphene/runs/graphene/nscf_opt/nscf.in'),
+            ('pw2qmcpack','input','qmcpack/graphene/runs/graphene/nscf_opt/p2q.in'),
+            ('qmcpack'   ,'input','qmcpack/graphene/runs/graphene/opt/opt.in.xml'),
+            ('qmcpack'   ,'input','qmcpack/graphene/runs/graphene/qmc/qmc.in.xml'),
+            ],
+        ),
+    qmcpack_oxygen_dimer = dict(
+        scripts = [
+            'qmcpack/oxygen_dimer/oxygen_dimer.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','qmcpack/oxygen_dimer/scale_1.0/scf.in'),
+            ('pw2qmcpack','input','qmcpack/oxygen_dimer/scale_1.0/p2q.in'),
+            ('qmcpack'   ,'input','qmcpack/oxygen_dimer/scale_1.0/opt.in.xml'),
+            ('qmcpack'   ,'input','qmcpack/oxygen_dimer/scale_1.0/qmc.in.xml'),
+            ],
+        ),
+    )
+
+def user_examples(label):
+
+    from pwscf_input import PwscfInput
+    from qmcpack_converters import Pw2qmcpackInput
+    from gamess_input import GamessInput
+    from qmcpack_input import QmcpackInput
+
+    # load information for a single user example
+    if label not in example_information:
+        raise NexusTestMisconstructed
+    #end if
+    einfo = example_information[label]
+
+    # create local directory for these tests
+    test_dir = nenter()
+
+    # copy over nexus user examples into reference generation directory
+    #   only do this the first time as all user example tests share a test directory
+    if not os.path.exists(os.path.join(test_dir,'qmcpack')):
+        command = 'rsync -av {0}/* {1}/'.format(example_dir,test_dir)
+        out,err,rc = execute(command)
+        if rc>0:
+            nfail('copying example directory failed\nattempted command:\n'+command)
+        #end if
+    #end if
+
+    # execute all example scripts in generate_only mode
+    for script_path in einfo['scripts']:
+        path,script = os.path.split(script_path)
+        path = os.path.join(test_dir,path)
+        cwd = os.getcwd()
+        os.chdir(path)
+        command = './'+script+' --generate_only --sleep=0.01'
+        out,err,rc = execute(command)
+        if rc>0:
+            nfail('example script failed to run\nattempted command: {0}\nlocation: {1}'.format(command,path))
+        #end if
+        os.chdir(cwd)
+    #end for
+
+    # check that generated files match reference files
+    ref_example_dir = os.path.join(reference_dir,'user_examples')
+    input_classes = dict(
+        pwscf      = PwscfInput,
+        pw2qmcpack = Pw2qmcpackInput,
+        gamess     = GamessInput,
+        qmcpack    = QmcpackInput,
+        )
+    for code,filetype,filepath in einfo['files']:
+        ref_filepath = os.path.join(ref_example_dir,filepath)
+        gen_filepath = os.path.join(test_dir,filepath)
+        # check that the reference file exists
+        if not os.path.exists(ref_filepath):
+            nfail('reference file is missing\nfile should be located at: {0}'.format(ref_filepath))
+        #end if
+        # check that the generated file exists
+        if not os.path.exists(gen_filepath):
+            nfail('input file was not generated: {0}'.format(gen_filepath))
+        #end if
+        # check that the generated file matches the reference file
+        #   read the files into Nexus' object representation
+        #   use object_diff to compare object represenations
+        #   this is needed to compare floats within a tolerance
+        if filetype=='input':
+            input_class = input_classes[code]
+            ref_input = input_class(ref_filepath)
+            gen_input = input_class(gen_filepath)
+            diff,dgen,dref = object_diff(gen_input,ref_input,full=True)
+            if diff:
+                # assume failure
+                failed = True
+                # if difference due to periodically equivalent points
+                # then it is not a failure
+                check_pbc = code=='qmcpack' and len(dgen)==1 and len(dref)==1 and dgen.keys()[0].endswith('/position') and dref.keys()[0].endswith('/position')
+                check_pbc |= code=='pwscf' and len(dgen)==1 and len(dref)==1 and dgen.keys()[0].endswith('/positions') and dref.keys()[0].endswith('/positions')
+                if check_pbc:
+                    try:
+                        # extract Structure objects from SimulationInput objects
+                        rs = ref_input.return_structure()
+                        gs = gen_input.return_structure()
+                        # compare minimum image distances of all atomic coordinates
+                        d = rs.min_image_distances(gs.pos,pairs=False)
+                        # allow for small deviation due to precision of ascii floats in the text input files 
+                        if d.min()<1e-6:
+                            failed = False
+                        #end if
+                    except:
+                        None
+                    #end try
+                #end if
+                if failed:
+                    from generic import obj
+                    dgen = obj(dgen)
+                    dref = obj(dref)
+                    msg = 'reference and generated input files differ\n'
+                    msg += 'reference file: '+filepath+'\n'
+                    msg += 'reference file difference\n'
+                    msg += 40*'='+'\n'
+                    msg += str(dref)
+                    msg += 'generated file difference\n'
+                    msg += 40*'='+'\n'
+                    msg += str(dgen)
+                    nfail(msg)
+                #end if
+            #end if
+        else:
+            raise NexusTestMisconstructed
+        #end if
+    #end for
+#end def user_examples
+
+
 
 # create labeled tests from simple functions above
 
-NexusTest(
-    name      = 'generic_logging',
-    operation =  generic_logging,
-    )
-NexusTest(
-    name      = 'generic_intrinsics',
-    operation =  generic_intrinsics,
-    )
-NexusTest(
-    name      = 'generic_extensions',
-    operation =  generic_extensions,
-    )
-NexusTest(
-    name      = 'nexus_imports',
-    operation =  nexus_imports,
-    )
-NexusTest(
-    name      = 'settings',
-    operation =  settings_operation,
-    )
+NexusTest( generic_logging    )
+NexusTest( generic_intrinsics )
+NexusTest( generic_extensions )
+NexusTest( nexus_imports      )
+NexusTest( settings_operation , 'settings' )
+
+for label in example_information.keys():
+    NexusTest(
+        name      = 'example_'+label,  # individually label tests
+        operation = user_examples,     # all tests call the same test function
+        op_inputs = dict(label=label), #   but with different inputs
+        test_dir  = 'user_examples',   # all tests are run in the same base directory 
+        )
+#end for
 
 
 
@@ -1680,13 +1927,94 @@ def exit_pass(msg=None):
     exit(0)
 #end def exit_pass
 
+# execute function
+from subprocess import Popen,PIPE
+def execute(command,verbose=False,skip=False):
+    out,err = '',''
+    if skip:
+        if verbose:
+            print 'Would have executed:\n  '+command
+        #end if
+    else:
+        if verbose:
+            print 'Executing:\n  '+command
+        #end if
+        process = Popen(command,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True)
+        out,err = process.communicate()
+    #end if
+    return out,err,process.returncode
+#end def execute
+
+
+
+def regenerate_reference(update=False,overwrite=True):
+    # create directory for reference file generation
+    refgen_dir = './reference_regen'
+    if os.path.exists(refgen_dir):
+        shutil.rmtree(refgen_dir)
+    #end if
+    os.makedirs(refgen_dir)
+
+    print 'generating reference data in {0}'.format(refgen_dir)
+
+    # create directory for example reference generation
+    refgen_example_dir = os.path.join(refgen_dir,'user_examples')
+    if not os.path.exists(refgen_example_dir):
+        os.makedirs(refgen_example_dir)
+    #end if
+
+    # copy over nexus user examples into reference generation directory
+    out,err,rc = execute('rsync -av {0}/* {1}/'.format(example_dir,refgen_example_dir))
+    if rc>0:
+        print '  rsync of example directory failed, exiting'
+        exit(1)
+    #end if
+
+    # execute all example scripts in generate_only mode
+    for label,einfo in example_information.iteritems():
+        for script_path in einfo.scripts:
+            print '  generating reference data for '+script_path
+            path,script = os.path.split(script_path)
+            path = os.path.join(refgen_example_dir,path)
+            cwd = os.getcwd()
+            os.chdir(path)
+            command = './'+script+' --generate_only --sleep=0.1'
+            out,err,rc = execute(command)
+            if rc>0:
+                print('example script failed to run\nattempted command: {0}\nlocation: {1}'.format(command,script_path))
+                exit(1)
+            #end if
+            os.chdir(cwd)
+        #end for
+    #end for
+
+    # update the reference set of example files
+    if update:
+        ref_example_dir = os.path.join(reference_dir,'user_examples')
+        for label,filelist in example_files.iteritems():
+            for code,filetype,filepath in filelist:
+                ref_filepath = os.path.join(ref_example_dir,filepath)
+                gen_filepath = os.path.join(refgen_example_dir,filepath)
+                if overwrite or not os.path.exists(ref_filepath):
+                    path,file = os.path.split(ref_filepath)
+                    if not os.path.exists(path):
+                        os.makedirs(path)
+                    #end if
+                    shutil.copy2(gen_filepath,path)
+                #end if
+            #end for
+        #end for
+    #end if
+
+#end def regenerate_reference
+
+
 
 if __name__=='__main__':
     import re
-    from time import clock
+    from time import time # used to get user wall clock rather than cpu time
 
-    tstart_all = clock()
-
+    tstart_all = time()
 
     # read command line input
     regex = None
@@ -1706,6 +2034,10 @@ if __name__=='__main__':
                       default='none',
                       help='Tests with names matching the regular expression (regex) will be run.  The default behavior is to run all tests (default=%default).'
                       )
+    parser.add_option('--list',dest='list',
+                      action='store_true',default=False,
+                      help='List tests in human readable format. (default=%default).'
+                      )
     parser.add_option('--ctestlist',dest='ctestlist',
                       action='store_true',default=False,
                       help='List tests in CMake format. Intended for use within CTest (default=%default).'
@@ -1718,11 +2050,30 @@ if __name__=='__main__':
                       default='none',
                       help='Cause the "trip"-th assertion statement to fail.  Useful when to ensure that the CMake script is working properly when interfacing with CTest (default=%default).'
                       )
+    parser.add_option('--generate_reference',dest='generate_reference',
+                      action='store_true',default=False,
+                      help='Regenerate reference data, but do not overwrite existing reference files.  Intended for developer use (default=%default).'
+                      )
+    parser.add_option('--update_reference',dest='update_reference',
+                      action='store_true',default=False,
+                      help='Regenerate reference data and overwrite existing reference files.  Intended for developer use (default=%default).'
+                      )
 
     options,files_in = parser.parse_args()
 
     if options.help:
         print('\n'+parser.format_help().strip())
+        exit()
+    #end if
+
+    # Regenerate reference data and exit
+    if options.generate_reference:
+        regenerate_reference(update=False)
+        exit()
+    #end if
+    if options.update_reference:
+        #exit_fail('Automatic update of reference data is not yet supported.')
+        regenerate_reference(update=True)
         exit()
     #end if
 
@@ -1751,6 +2102,13 @@ if __name__=='__main__':
             tests.append(test)
         #end if
     #end for
+    if options.list:
+        print 'Test list:'
+        for test in tests:
+            print ' ',test.name
+        #end for
+        exit()
+    #end if
     if len(tests)!=1 and ctest:
         exit_fail('Exactly one test should be selected when using ctest\n  tests requested: {0}'.format([test.name for test in tests]))
     #end if
@@ -1772,14 +2130,14 @@ if __name__=='__main__':
     nfailed = 0
     for test in tests:
         n+=1
-        t1 = clock()
+        t1 = time()
 
         # run the test
         test.run()
 
         # print the pass/fail line
-        if len(test.name)<35:
-            title = test.name+(35-len(test.name))*'.'
+        if len(test.name)<40:
+            title = test.name+(40-len(test.name))*'.'
         else:
             title = test.name
         #end if
@@ -1792,9 +2150,14 @@ if __name__=='__main__':
         else:
             status = 'Unknown'
         #end if
-        t2 = clock()
+        t2 = time()
         if not ctest:
-            print ' {0}/{1} {2}   {3}  {4:3.2f} sec'.format(n,len(tests),title,status,t2-t1)
+            slt = str(len(tests))
+            sn  = str(n)
+            if len(sn)<len(slt):
+                sn = (len(slt)-len(sn))*' '+sn
+            #end if
+            print ' {0}/{1} {2}   {3}  {4:3.2f} sec'.format(sn,slt,title,status,t2-t1)
         #end if
         
         # print more information if failed
@@ -1810,7 +2173,7 @@ if __name__=='__main__':
         #end if
     #end for
 
-    tstop_all = clock()
+    tstop_all = time()
 
     # print pass/fail and timing summary
     if not ctest:

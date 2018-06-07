@@ -65,12 +65,6 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     HybridBase::bcast_tables(comm);
   }
 
-  void reduce_tables(Communicate* comm)
-  {
-    BaseAdoptor::reduce_tables(comm);
-    HybridBase::reduce_atomic_tables(comm);
-  }
-
   void gather_tables(Communicate* comm)
   {
     BaseAdoptor::gather_tables(comm);

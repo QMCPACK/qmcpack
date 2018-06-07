@@ -120,6 +120,10 @@ class SimulationInput(NexusCore):
         return text
     #end def write
 
+    def return_structure(self):
+        return self.return_system(structure_only=True)
+    #end def return_structure
+
     def read_text(self,text,filepath=None):
         self.not_implemented()
     #end def read_text
@@ -133,7 +137,7 @@ class SimulationInput(NexusCore):
         self.not_implemented()
     #end def incorporate_system
 
-    def return_system(self):
+    def return_system(self,structure_only=False):
         #create a physical system object from input file information
         self.not_implemented()
     #end def return_system
