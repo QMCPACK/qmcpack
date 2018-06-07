@@ -1591,7 +1591,7 @@ class Supercomputer(Machine):
                             jid,loc,name,uname,status,wtime,nodes,reason = tokens
                         elif len(tokens)==11 and self.name != 'stampede2': # nersc squeue output
                             jid,uname,acc,jname,part,qos,nodes,tlimit,wtime,status,start_time = tokens
-                        elif len(tokens)==11 and self.name == 'stampede2': # nersc squeue output
+                        elif len(tokens)==11 and self.name == 'stampede2': # stampede squeue output
                             jid,loc,name,uname,status,wtime,nodes,reason,tmp1,tmp2,tmp3 = tokens
                         #end if
                         if status is not None:
@@ -2875,14 +2875,56 @@ class Stampede2(Supercomputer):
     def write_job_header(self,job):
         if job.queue is None:
             job.queue='normal'
+	#end if
 
+	if job.queue == 'development':
+	    max_nodes = 16
+	    max_time = 2
+	elif job.queue == 'normal':
+	    max_nodes = 256
+	    max_time = 48
+	elif job.queue == 'large':
+	    max_nodes = 2048
+	    max_time = 48
+	elif job.queue == 'long':
+	    max_nodes = 32
+	    max_time = 96
+	elif job.queue == 'flat_quadrant':
+	    max_nodes = 24
+	    max_time = 48
+	elif job.queue == 'skx-dev':
+	    max_nodes = 4
+	    max_time = 2
+	elif job.queue == 'skx-normal':
+	    max_nodes = 128
+	    max_time = 48
+	elif job.queue == 'skx-large':
+	    max_nodes = 868
+	    max_time = 48
+	#end if
+
+	if 'skx' in job.queue:
+	    max_processes_per_node = 48
+	else:
+	    max_processes_per_node = 68
+	
         job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
-        if job.total_hours > 48:   # warn if job will take more than 96 hrs.
+        if job.total_hours > max_time:   
             self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
             job.hours   = max_time
             job.minutes =0
             job.seconds =0
         #end if
+
+	if job.nodes > max_nodes:
+	    self.warn('!!! ATTENTION !!!\n  the maximum nodes on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_nodes,job.nodes))
+	    job.nodes = max_nodes
+	#end if
+
+	if job.processes_per_node > max_processes_per_node:
+	    self.warn('!!! ATTENTION !!!\n  the maximum number of processes per node on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_processes_per_node,job.processes_per_node))
+	    job.processes_per_node = max_processes_per_node
+	#end if
 
         c='#!/bin/bash\n'
         c+='#SBATCH --job-name '+str(job.name)+'\n'
