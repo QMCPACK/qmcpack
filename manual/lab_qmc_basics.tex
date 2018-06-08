@@ -43,25 +43,25 @@ This lab focuses on the basics of performing quality QMC calculations.  As an ex
 
 \begin{shade}
 labs/lab2_qmc_basics/
-│
-├── oxygen_atom           - oxygen atom calculations 
-│   ├── O.q0.dft.in          - Quantum ESPRESSO input for DFT run
-│   ├── O.q0.p2q.in          - pw2qmcpack.x input for orbital conversion run
-│   ├── O.q0.opt.in.xml      - QMCPACK input for Jastrow optimization run
-│   ├── O.q0.dmc.in.xml      - QMCPACK input file for neutral O DMC
-│   ├── ip_conv.py           - tool to fit oxygen IP vs timestep
-│   └── reference            - directory w/ completed runs
-│
-├── oxygen_dimer          - oxygen dimer calculations
-│   ├── dimer_fit.py         - tool to fit dimer binding curve
-│   ├── O_dimer.py           - automation script for dimer calculations
-│   ├── pseudopotentials     - directory for pseudopotentials
-│   └── reference            - directory w/ completed runs
-│
-└── your_system           - performing calculations for an arbitrary system (yours)
-    ├── example.py           - example nexus file for periodic diamond
-    ├── pseudopotentials     - directory containing C pseudopotentials
-    └── reference            - directory w/ completed runs
+
+   oxygen_atom/             - oxygen atom calculations 
+       O.q0.dft.in          - Quantum ESPRESSO input for DFT run
+       O.q0.p2q.in          - pw2qmcpack.x input for orbital conversion run
+       O.q0.opt.in.xml      - QMCPACK input for Jastrow optimization run
+       O.q0.dmc.in.xml      - QMCPACK input file for neutral O DMC
+       ip_conv.py           - tool to fit oxygen IP vs timestep
+       reference            - directory w/ completed runs
+   
+   oxygen_dimer/            - oxygen dimer calculations
+       dimer_fit.py         - tool to fit dimer binding curve
+       O_dimer.py           - automation script for dimer calculations
+       pseudopotentials     - directory for pseudopotentials
+       reference            - directory w/ completed runs
+   
+   your_system/             - performing calculations for an arbitrary system (yours)
+       example.py           - example nexus file for periodic diamond
+       pseudopotentials     - directory containing C pseudopotentials
+       reference            - directory w/ completed runs
 
 \end{shade}
 
@@ -1293,60 +1293,60 @@ Nexus polls the simulation status every 3 seconds and sleeps in between.  The ``
 \ifws
 \begin{shade}
 scale_1.0
-├── dft.in
-├── O.BFD.upf
-├── O.BFD.xml
-├── opt.in.xml
-├── p2q.in
-├── pwscf_output
-├── qmc.in.xml
-├── sim_dft
-│   ├── analyzer.p
-│   ├── input.p
-│   └── sim.p
-├── sim_opt
-│   ├── analyzer.p
-│   ├── input.p
-│   └── sim.p
-├── sim_p2q
-│   ├── analyzer.p
-│   ├── input.p
-│   └── sim.p
-└── sim_qmc
-    ├── analyzer.p
-    ├── input.p
-    └── sim.p
+   dft.in
+   O.BFD.upf
+   O.BFD.xml
+   opt.in.xml
+   p2q.in
+   pwscf_output
+   qmc.in.xml
+   sim_dft/
+       analyzer.p
+       input.p
+       sim.p
+   sim_opt/
+       analyzer.p
+       input.p
+       sim.p
+   sim_p2q/
+       analyzer.p
+       input.p
+       sim.p
+   sim_qmc/
+       analyzer.p
+       input.p
+       sim.p
 \end{shade}
 \else
 \begin{shade}
 scale_1.0
-├── dft.in
-├── dft.qsub.in
-├── O.BFD.upf
-├── O.BFD.xml
-├── opt.in.xml
-├── opt.qsub.in
-├── p2q.in
-├── p2q.qsub.in
-├── pwscf_output
-├── qmc.in.xml
-├── qmc.qsub.in
-├── sim_dft
-│   ├── analyzer.p
-│   ├── input.p
-│   └── sim.p
-├── sim_opt
-│   ├── analyzer.p
-│   ├── input.p
-│   └── sim.p
-├── sim_p2q
-│   ├── analyzer.p
-│   ├── input.p
-│   └── sim.p
-└── sim_qmc
-    ├── analyzer.p
-    ├── input.p
-    └── sim.p
+   dft.in
+   dft.qsub.in
+   O.BFD.upf
+   O.BFD.xml
+   opt.in.xml
+   opt.qsub.in
+   p2q.in
+   p2q.qsub.in
+   pwscf_output
+   qmc.in.xml
+   qmc.qsub.in
+   sim_dft/
+       analyzer.p
+       input.p
+       sim.p
+   sim_opt/
+       analyzer.p
+       input.p
+       sim.p
+   sim_p2q/
+       analyzer.p
+       input.p
+       sim.p
+   sim_qmc/
+       analyzer.p
+       input.p
+       sim.p
 \end{shade}
 \fi
 \noindent
