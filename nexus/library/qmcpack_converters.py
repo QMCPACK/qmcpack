@@ -855,7 +855,11 @@ class Convert4qmc(Simulation):
         wfn_file  = prefix+'.Gaussian-G2.xml'
         ptcl_file = prefix+'.Gaussian-G2.ptcl.xml'
         if not os.path.exists(os.path.join(self.locdir,ptcl_file)):
-            wfn_file  = prefix+'.wfnoj.xml'
+            if self.input.no_jastrow:
+                wfn_file  = prefix+'.wfnoj.xml'
+            else:
+                wfn_file  = prefix+'.wfj.xml'
+            #end if
             ptcl_file = prefix+'.structure.xml'
         #end if
         return wfn_file,ptcl_file
