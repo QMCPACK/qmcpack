@@ -21,7 +21,16 @@
 \usepackage{epsfig}
 \usepackage[utf8]{inputenc}
 \usepackage{fontspec}
-\setmonofont{DejaVu Sans Mono} %% default lacks unicode box characters
+%% We need to pick a font the system has.
+%% default on linux and osx lacks unicode box characters
+%% The empty bracket below is false condition of the Courier New Check
+\IfFontExistsTF {DejaVu Sans Mono}% 
+  {\setmonofont{DejaVu Sans Mono}}%
+  {\IfFontExistsTF {Courier New}%
+    {\setmonofont{Courier New}}%
+    {}%
+  }
+
 % making listing behave properly
 %   with setting below, listings now render correctly
 %   copy/paste from pdf is still messed up (is this even possible to fix?)
