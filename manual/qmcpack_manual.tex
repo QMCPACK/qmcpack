@@ -19,7 +19,9 @@
 \usepackage{subcaption}
 \usepackage{graphicx}
 \usepackage{epsfig}
-
+\usepackage[utf8]{inputenc}
+\usepackage{fontspec}
+\setmonofont{Courier New}
 % making listing behave properly
 %   with setting below, listings now render correctly
 %   copy/paste from pdf is still messed up (is this even possible to fix?)
@@ -61,10 +63,17 @@
 \pagecolor{white}
 \definecolor{shadecolor}{rgb}{.9, .9, .9}
 
-\newenvironment{shade}%
-   {\snugshade\verbatim}%
-   {\endverbatim\endsnugshade}
 
+\newenvironment{shade}%
+               {\snugshade\verbatim}%
+               {\endverbatim\endsnugshade}
+
+%% \newenvironment{shade}{
+%%   \begin{snugshade}[\hsize=\textwidth,\FrameRestore]%
+%% \small%
+%% }{%
+%%   \end{snugshade}&
+%%   }
 
 \else
 
