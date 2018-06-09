@@ -116,7 +116,11 @@ by plotting the trace for each QMC run.
 
 \begin{figure}
 \begin{center}
+\ifpdf
 \includegraphics[trim = 0mm 0mm 0mm 0mm,clip,width=0.75\columnwidth]{figures/qmca_mean_error_trace.pdf}
+\else
+\includegraphics[trim = 0mm 0mm 0mm 0mm,clip,width=0.75\columnwidth]{figures/qmca_mean_error_trace-.png}
+\fi
 \caption{Trace of the VMC local energy for an 8 atom cell of diamond generated with \texttt{qmca}.  The x-axis (``samples'') refers to the VMC block index in this case.}
 \label{fig:qmca_mean_error_trace}
 \end{center}
@@ -202,7 +206,11 @@ proceed without using the ``\texttt{-e}'' option with \texttt{qmca}.
 
 \begin{figure}
 \begin{center}
+\ifpdf
 \includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.9\columnwidth]{figures/qmca_judge_opt.pdf}
+\else
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.9\columnwidth]{figures/qmca_judge_opt-.png}
+\fi
 \end{center}
 \caption{Trace of the local energy during one- and two-body Jastrow optimization for an 8 atom cell of diamond generated with \texttt{qmca}.  Data for each optimization cycle (QMCPACK series) is separated by a vertical black line.
 }
@@ -274,7 +282,11 @@ cycles.
 \begin{figure}
   \centering
   \parbox{0.47\textwidth}{%
-    \includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=\linewidth]{figures/qmca_opt_energy.pdf}%
+    \ifpdf
+\includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=\linewidth]{figures/qmca_opt_energy.pdf}
+\else
+\includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=\linewidth]{figures/qmca_opt_energy-.png}
+\fi%
   }%
   \qquad
   \begin{minipage}{0.47\textwidth}%
@@ -304,7 +316,11 @@ wavefunctions with larger than necessary variance.
 
 \begin{figure}
 \begin{center}
+\ifpdf
 \includegraphics[trim = 0mm 0mm 0mm 0mm,clip,width=0.75\columnwidth]{figures/qmca_short_dmc.pdf}
+\else
+\includegraphics[trim = 0mm 0mm 0mm 0mm,clip,width=0.75\columnwidth]{figures/qmca_short_dmc-.png}
+\fi
 \end{center}
 \caption{Trace of the local energy for VMC followed by DMC with a small timestep ($0.002$ Ha$^{-1}$) for an 8 atom cell of diamond generated with \texttt{qmca}.}
 \label{fig:qmca_short_dmc}
@@ -371,7 +387,11 @@ timestep--\emph{e.g.} $0.002$ Ha$^{-1}$--for a particular problem.
 
 \begin{figure}
 \begin{center}
+\ifpdf
 \includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/qmca_accel_dmc.pdf}
+\else
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/qmca_accel_dmc-.png}
+\fi
 \end{center}
 \caption{Trace of the local energy for VMC followed by a short intermediate DMC with a large timestep ($0.02$ Ha$^{-1}$) and finally a production DMC run with a timestep of $0.01$ Ha$^{-1}$.  Calculations were performed in an 8 atom cell of diamond.} 
 \label{fig:qmca_accel_dmc}
@@ -424,7 +444,11 @@ Our final DMC total energy is estimated to be $-46.0329(2)$ Ha.
 
 \begin{figure}
 \begin{center}
+\ifpdf
 \includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/qmca_pop_trace.pdf}
+\else
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/qmca_pop_trace-.png}
+\fi
 \end{center}
 \caption{Trace of the DMC walker population for an 8 atom cell of diamond obtained with \texttt{qmca}.}
 \label{fig:qmca_pop_trace}
@@ -677,7 +701,11 @@ Fig. \ref{fig:qmca_twist_overlap}
 
 \begin{figure}
 \begin{center}
+\ifpdf
 \includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.9\columnwidth]{figures/qmca_twist_trace_overlap.pdf}
+\else
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.9\columnwidth]{figures/qmca_twist_trace_overlap-.png}
+\fi
 \end{center}
 \caption{Overlapped energy traces from VMC to DMC for an 8 supercell of diamond obtained with \texttt{qmca}.  Data for each twist appears in a different color.}
 \label{fig:qmca_twist_overlap}
@@ -712,7 +740,11 @@ yielding a twist averaged total energy of $-45.8733(8)$ Ha.
 
 \begin{figure}
 \begin{center}
+\ifpdf
 \includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/qmca_twist_average_trace.pdf}
+\else
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/qmca_twist_average_trace-.png}
+\fi
 \end{center}
 \caption{Twist averaged energy trace from VMC to DMC for an 8 supercell of diamond obtained with \texttt{qmca}.}
 \label{fig:qmca_twist_average}
@@ -1115,11 +1147,19 @@ panel of Fig.~\ref{fig:qfit_timestep}.
 \begin{figure}
   \centering
   \parbox{0.47\textwidth}{%
-    \includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=\linewidth]{figures/qfit_timestep_linear.pdf}%
+    \ifpdf%
+\includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=\linewidth]{figures/qfit_timestep_linear.pdf}%
+\else%
+\includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=\linewidth]{figures/qfit_timestep_linear-.png}%
+\fi%
   }%
-  \qquad
+  \qquad%
   \begin{minipage}{0.47\textwidth}%
-        \includegraphics[trim=2mm 0mm 4mm 0mm,clip,width=\linewidth]{figures/qfit_timestep_quadratic.pdf}%
+        \ifpdf%
+\includegraphics[trim=2mm 0mm 4mm 0mm,clip,width=\linewidth]{figures/qfit_timestep_quadratic.pdf}%
+\else%
+\includegraphics[trim=2mm 0mm 4mm 0mm,clip,width=\linewidth]{figures/qfit_timestep_quadratic-.png}%
+\fi%
   \end{minipage}%
   \caption{Linear (left) and quadratic (right) timestep fits to DMC data for a 32 atom supercell of MnO obtained with \texttt{qfit}.  Zero timestep estimates are indicated by the red data point on the left side of either panel.}
   \label{fig:qfit_timestep}
