@@ -33,7 +33,7 @@
 
 
 \lstset{language=xml, 
-  basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
+  basicstyle=\small\ttfamily,  % copy/paste from pdf w/o mangled quotes
   keywordstyle=\color{black}\bfseries, 
   frame=single,
   breaklines=true,
@@ -54,25 +54,25 @@
 
 
 
-\ifpdf
-\usepackage{framed}
-\usepackage{xcolor}
-\pagecolor{white}
-\definecolor{shadecolor}{rgb}{.9, .9, .9}
+%% \ifxetex
+%% \usepackage{framed}
+%% \usepackage{xcolor}
+%% \pagecolor{white}
+%% \definecolor{shadecolor}{rgb}{.9, .9, .9}
 
 
-\newenvironment{shade}%
-               {\snugshade\verbatim}%
-               {\endverbatim\endsnugshade}
+%% \newenvironment{shade}%
+%%                {\snugshade\verbatim}%
+%%                {\endverbatim\endsnugshade}
 
-%% \newenvironment{shade}{
-%%   \begin{snugshade}[\hsize=\textwidth,\FrameRestore]%
-%% \small%
-%% }{%
-%%   \end{snugshade}&
-%%   }
+%% %% \newenvironment{shade}{
+%% %%   \begin{snugshade}[\hsize=\textwidth,\FrameRestore]%
+%% %% \small%
+%% %% }{%
+%% %%   \end{snugshade}&
+%% %%   }
 
-\else
+%% \else
 
 \usepackage{xcolor}
 \definecolor{verbgray}{gray}{0.9}
@@ -84,11 +84,11 @@
   basicstyle=\ttfamily,
   columns=fullflexible}}{}
 
-%\newenvironment{shade}
-%    {\HCode{<div class='code'>}\verbatim}
-%    {\endverbatim\HCode{</div>}}
+%% \newenvironment{shade}
+%%    {\HCode{<div class='code'>}\verbatim}
+%%    {\endverbatim\HCode{</div>}}
 
-\fi
+%% \fi
 
 
 % set margins for whole document, lots of wasted space at top and bottom originally
