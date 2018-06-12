@@ -18,6 +18,10 @@
 %\usepackage{subcaption}
 \usepackage{graphicx}
 \usepackage{epsfig}
+\usepackage{upquote}  % render ' properly
+\usepackage{listings}
+\usepackage{qmcpack_manual}
+
 % making listing behave properly
 %   with setting below, listings now render correctly
 %   copy/paste from pdf is still messed up (is this even possible to fix?)
@@ -25,12 +29,8 @@
 %     -copy/paste can result in mangled text
 %     -mangling depends on pdf viewer (it is different for acroread and evince)
 %     -verbatim suffers from this also
-\usepackage{upquote}  % render ' properly
-\usepackage{listings}
-\usepackage{qmcpack_manual}
-
+%% \fi
 \lstloadlanguages{C++,XML,Python}
-
 
 \lstset{language=xml, 
   basicstyle=\small\ttfamily,  % copy/paste from pdf w/o mangled quotes
@@ -45,14 +45,12 @@
 
 \lstset{language=C++,
   basicstyle=\ttfamily \scriptsize,
-  keywordstyle=\color{blue}\ttfamily,
+  keywordstyle=\color{blue}\ttfamily,//
   stringstyle=\color{red}\ttfamily,
   commentstyle=\color{gray}\ttfamily,
   morecomment=[l][\color{magenta}]{\#},
   frame=single
 }
-
-
 
 %% \ifxetex
 %% \usepackage{framed}
@@ -98,7 +96,7 @@
 
 
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
-\newcommand{\courier}[1]{{\fontfamily{pcr}\selectfont #1}}
+%% \newcommand{\courier}[1]{{\fontfamily{pcr}\selectfont #1}}
 
 % for markup, as needed
 \newcommand{\red}[1]{{\color{red} #1}}
