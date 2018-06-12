@@ -1,4 +1,5 @@
 \documentclass[11pt,usletter]{report}
+\usepackage{qmcpack_manual}
 \usepackage{bibtopic}
 \bibliographystyle{ieeetr}
 \usepackage{amsmath}
@@ -18,9 +19,6 @@
 %\usepackage{subcaption}
 \usepackage{graphicx}
 \usepackage{epsfig}
-\usepackage{upquote}  % render ' properly
-\usepackage{listings}
-\usepackage{qmcpack_manual}
 
 % making listing behave properly
 %   with setting below, listings now render correctly
@@ -29,7 +27,10 @@
 %     -copy/paste can result in mangled text
 %     -mangling depends on pdf viewer (it is different for acroread and evince)
 %     -verbatim suffers from this also
-%% \fi
+
+\usepackage{upquote}  % render ' properly
+\usepackage{listings}
+
 \lstloadlanguages{C++,XML,Python}
 
 \lstset{language=xml, 
