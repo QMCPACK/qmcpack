@@ -1,0 +1,15 @@
+\usepackage{fontspec}
+\usepackage{mathpazo}
+\setmainfont{Times New Roman}
+%% We need to pick a font the system has..
+%% default on linux and osx lacks unicode box characters
+%% The empty bracket below is false condition of the Courier New Check
+\@ifpackageloaded{fontspec}%
+                 {%
+\IfFontExistsTF {DejaVu Sans Mono}% 
+{\setmonofont{DejaVu Sans Mono}}%
+{\IfFontExistsTF {Courier New}%
+{\setmonofont{Courier New}}%
+{}%
+}%
+}{}
