@@ -7,7 +7,6 @@
 \usepackage{algorithmic}
 \usepackage{algorithm}
 \usepackage{makeidx}
-\usepackage{ifpdf}
 \usepackage{fancyhdr}
 \usepackage{hyperref} %for urls
 %\usepackage{url}
@@ -29,6 +28,7 @@
 %     -verbatim suffers from this also
 \usepackage{upquote}  % render ' properly
 \usepackage{listings}
+\usepackage{qmcpack_manual}
 
 \lstloadlanguages{C++,XML,Python}
 
@@ -61,10 +61,17 @@
 \pagecolor{white}
 \definecolor{shadecolor}{rgb}{.9, .9, .9}
 
-\newenvironment{shade}%
-   {\snugshade\verbatim}%
-   {\endverbatim\endsnugshade}
 
+\newenvironment{shade}%
+               {\snugshade\verbatim}%
+               {\endverbatim\endsnugshade}
+
+%% \newenvironment{shade}{
+%%   \begin{snugshade}[\hsize=\textwidth,\FrameRestore]%
+%% \small%
+%% }{%
+%%   \end{snugshade}&
+%%   }
 
 \else
 

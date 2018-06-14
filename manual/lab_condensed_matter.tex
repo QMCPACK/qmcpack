@@ -30,22 +30,23 @@ DE-AC04-94AL85000.}
 
 \section{Lab directories and files}
 
-\begin{shade}
+\footnotesize
+\begin{verbatim}
 labs/lab4_condensed_matter/
-   Be-2at-setup.py           - DFT only for prim to conv cell
-   Be-2at-qmc.py             - QMC only for prim to conv cell
-   Be-16at-qmc.py            - DFT and QMC for prim to 16 atom cell
-   graphene-setup.py         - DFT and OPT for graphene
-   graphene-loop-mesh.py     - VMC scan over orbital bspline mesh factors
-   graphene-loop-buffer.py   - VMC scan over orbital bspline buffer region size
-   graphene-final.py         - DMC for final meshfactor and buffer region
-   pseudopotentials/         - pseudopotential directory
-      Be.ncpp                - Be PP for Quantum ESPRESSO
-      Be.xml                 - Be PP for QMCPACK
-      C.BFD.upf              - C  PP for Quantum ESPRESSO
-      C.BFD.xml              - C  PP for QMCPACK
-\end{shade}
-
+├── Be-2at-setup.py           - DFT only for prim to conv cell
+├── Be-2at-qmc.py             - QMC only for prim to conv cell
+├── Be-16at-qmc.py            - DFT and QMC for prim to 16 atom cell
+├── graphene-setup.py         - DFT and OPT for graphene
+├── graphene-loop-mesh.py     - VMC scan over orbital bspline mesh factors
+├── graphene-loop-buffer.py   - VMC scan over orbital bspline buffer region size
+├── graphene-final.py         - DMC for final meshfactor and buffer region
+└── pseudopotentials          - pseudopotential directory
+    ├── Be.ncpp                 - Be PP for Quantum ESPRESSO
+    ├── Be.xml                  - Be PP for QMCPACK
+    ├── C.BFD.upf               - C  PP for Quantum ESPRESSO
+    └── C.BFD.xml               - C  PP for QMCPACK
+\end{verbatim}
+\normalsize
 
 The goal of this lab will be to introduce you to the somewhat specialized problems involved in performing diffusion Monte Carlo calculations on condensed matter as opposed to the atoms and molecules that were the focus of earlier labs.   Calculations will be performed on two different systems.  Firstly, we will perform a series of calculations on BCC beryllium focusing on the necessary methodology to limit finite size effects.  Secondly, we will perform calculations on graphene as an example of a system where qmcpack’s ability to handle cases with mixed periodic and open boundary conditions is useful.  This example will also focus on strategies to limit memory usage for such systems.
 All of the calculations performed in this lab will utilize the Nexus workflow management system that vastly simplifies the process by automating the steps of generating trial wavefunctions and performing DMC calculations.

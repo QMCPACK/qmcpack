@@ -41,33 +41,30 @@ This lab focuses on the basics of performing quality QMC calculations.  As an ex
 %├── docs                  - documentation 
 %│   └── Lab_2_Slides.pdf     - slides presented during the lab
 
-\begin{shade}
+\footnotesize
+\begin{verbatim}
 labs/lab2_qmc_basics/
-
-   oxygen_atom/             - oxygen atom calculations 
-       O.q0.dft.in          - Quantum ESPRESSO input for DFT run
-       O.q0.p2q.in          - pw2qmcpack.x input for orbital conversion run
-       O.q0.opt.in.xml      - QMCPACK input for Jastrow optimization run
-       O.q0.dmc.in.xml      - QMCPACK input file for neutral O DMC
-       ip_conv.py           - tool to fit oxygen IP vs timestep
-       reference            - directory w/ completed runs
-   
-   oxygen_dimer/            - oxygen dimer calculations
-       dimer_fit.py         - tool to fit dimer binding curve
-       O_dimer.py           - automation script for dimer calculations
-       pseudopotentials     - directory for pseudopotentials
-       reference            - directory w/ completed runs
-   
-   your_system/             - performing calculations for an arbitrary system (yours)
-       example.py           - example nexus file for periodic diamond
-       pseudopotentials     - directory containing C pseudopotentials
-       reference            - directory w/ completed runs
-
-\end{shade}
-
-
-
-
+│
+├── oxygen_atom           - oxygen atom calculations 
+│   ├── O.q0.dft.in          - Quantum ESPRESSO input for DFT run
+│   ├── O.q0.p2q.in          - pw2qmcpack.x input for orbital conversion run
+│   ├── O.q0.opt.in.xml      - QMCPACK input for Jastrow optimization run
+│   ├── O.q0.dmc.in.xml      - QMCPACK input file for neutral O DMC
+│   ├── ip_conv.py           - tool to fit oxygen IP vs timestep
+│   └── reference            - directory w/ completed runs
+│
+├── oxygen_dimer          - oxygen dimer calculations
+│   ├── dimer_fit.py         - tool to fit dimer binding curve
+│   ├── O_dimer.py           - automation script for dimer calculations
+│   ├── pseudopotentials     - directory for pseudopotentials
+│   └── reference            - directory w/ completed runs
+│
+└── your_system           - performing calculations for an arbitrary system (yours)
+    ├── example.py           - example nexus file for periodic diamond
+    ├── pseudopotentials     - directory containing C pseudopotentials
+    └── reference            - directory w/ completed runs
+\end{verbatim}
+\normalsize
 
 \section{Obtaining and converting a pseudopotential for oxygen}
 \label{sec:lqb_pseudo}
