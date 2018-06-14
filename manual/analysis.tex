@@ -281,20 +281,17 @@ cycles.
 
 \begin{figure}
   \centering
-  \parbox{0.47\linewidth}{%
-    \ifdefined\HCode
-\includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=\linewidth]{./figures/qmca_opt_energy.png}
-\else
-\includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=\linewidth]{./figures/qmca_opt_energy.pdf}
+  \ifdefined\HCode%
+  \begin{xltabular}[l]{1024pt}{X X}
+    \includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=512pt]{./figures/qmca_opt_energy.png}&
+    \includegraphics[trim=2mm 0mm 4mm 0mm,clip,width=512pt]{./figures/qmca_opt_variance.png}\\
+  \end{xltabular}
+\else%
+  \begin{xltabular}[l]{\textwidth}{X X}
+    \includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=0.47\textwidth]{./figures/qmca_opt_energy.pdf}&
+    \includegraphics[trim=2mm 0mm 4mm 0mm,clip,width=0.47\textwidth]{./figures/qmca_opt_variance.png}\\
+    \end{xltabular}
 \fi%
-  }%
-  \qquad\begin{minipage}{0.47\linewidth}%
-   \ifdefined\HCode
-   \includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=\linewidth]{./figures/qmca_opt_variance.png}
-    \else
-    \includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=\linewidth]{./figures/qmca_opt_variance.png}
-\fi%
-  \end{minipage}%
   \caption{Energy and variance vs. optimization series for an 8 atom cell of diamond as plotted by \texttt{qmca}.}%
   \label{fig:qmca_opt_ev}%
 \end{figure}
@@ -1149,22 +1146,18 @@ panel of Fig.~\ref{fig:qfit_timestep}.
 
 \begin{figure}
   \centering
-  \parbox{0.47\linewidth}{%
-    \ifdefined\HCode%
-\includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=\linewidth]{./figures/qfit_timestep_linear.png}%
+\ifdefined\HCode%
+  \begin{xltabular}[l]{1024pt}{X X}
+    \includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=512pt]{./figures/qfit_timestep_linear.png}&
+    \includegraphics[trim=2mm 0mm 4mm 0mm,clip,width=512pt]{./figures/qfit_timestep_quadratic.png}\\
+  \end{xltabular}
 \else%
-\includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=\linewidth]{./figures/qfit_timestep_linear.pdf}%
+  \begin{xltabular}[l]{\textwidth}{X X}
+    \includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=0.47\textwidth]{./figures/qfit_timestep_linear.pdf}&
+    \includegraphics[trim=2mm 0mm 4mm 0mm,clip,width=0.47\textwidth]{./figures/qfit_timestep_quadratic.pdf}\\
+    \end{xltabular}
 \fi%
-  }%
-  \qquad%
-  \begin{minipage}{0.47\linewidth}%
-    \ifdefined\HCode%
-    \includegraphics[trim=2mm 0mm 4mm 0mm,clip,width=\linewidth]{./figures/qfit_timestep_quadratic.png}%
-\else%
-\includegraphics[trim=2mm 0mm 4mm 0mm,clip,width=\linewidth]{./figures/qfit_timestep_quadratic.pdf}%
-\fi%
-  \end{minipage}%
-  \caption{Linear (left) and quadratic (right) timestep fits to DMC data for a 32 atom supercell of MnO obtained with \texttt{qfit}.  Zero timestep estimates are indicated by the red data point on the left side of either panel.}
+\caption{Linear (left) and quadratic (right) timestep fits to DMC data for a 32 atom supercell of MnO obtained with \texttt{qfit}.  Zero timestep estimates are indicated by the red data point on the left side of either panel.}
   \label{fig:qfit_timestep}
 \end{figure}
 
