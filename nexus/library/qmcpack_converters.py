@@ -608,6 +608,7 @@ class Convert4qmcInput(SimulationInput):
         target_state       
         natural_orbitals   
         threshold          
+        opt_dets
         zero_ci            
         add_3body_J        
         '''.split()
@@ -634,6 +635,7 @@ class Convert4qmcInput(SimulationInput):
         target_state       = 'TargetState',
         natural_orbitals   = 'NaturalOrbitals',
         threshold          = 'threshold',
+        opt_dets           = 'optDetCoeffs',
         zero_ci            = 'zeroCi',
         add_3body_J        = 'add3BodyJ',
         )
@@ -661,6 +663,7 @@ class Convert4qmcInput(SimulationInput):
         target_state       = int,
         natural_orbitals   = int,
         threshold          = float,
+        opt_dets           = bool,
         zero_ci            = bool,
         add_3body_J        = bool,
         )
@@ -688,6 +691,7 @@ class Convert4qmcInput(SimulationInput):
         target_state       = None,
         natural_orbitals   = None,
         threshold          = None,
+        opt_dets           = False,
         zero_ci            = False,
         add_3body_J        = False,# deprecated
         )
