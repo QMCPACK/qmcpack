@@ -17,6 +17,8 @@
 #include <type_traits/scalar_traits.h>
 #if defined(HAVE_MPI)
 #include <mpi.h>
+#else
+typedef int MPI_Datatype;
 #endif
 
 namespace qmcplusplus
@@ -69,23 +71,48 @@ BOOSTSUB_MPI_DATATYPE(std::complex<double>, MPI_DOUBLE);
 
 BOOSTSUB_MPI_DATATYPE(std::complex<float>, MPI_FLOAT);
 
+template <typename T>
+void free_column_type(T& datatype)
+{
+  MPI_Type_free(&datatype);
+}
+
+template <typename T>
+MPI_Datatype construct_column_type(const T *element, int nrow, int ncol)
+{
+  MPI_Datatype column_type;
+  MPI_Datatype column_type1;
+  MPI_Type_vector(nrow, 1, ncol, get_mpi_datatype(*element), &column_type);
+  MPI_Type_commit(&column_type);
+  MPI_Type_create_resized(column_type, 0, sizeof(T), &column_type1);
+  MPI_Type_commit(&column_type1);
+  free_column_type(column_type);
+  return column_type1;
+}
+
 #else
 typedef int  status;
 typedef int  request;
 typedef int MPI_Datatype;
+
 //return a non-sense integer
 template <typename T>
 inline MPI_Datatype get_mpi_datatype(const T&)
 {
   return 0;
 }
+
+template <typename T>
+void free_column_type(T& datatype) { }
+
+template <typename T>
+MPI_Datatype construct_column_type(const T *element, int nrow, int ncol)
+{
+  return 0;
+}
+
 #endif
 }
 }//end of mpi
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 894 $   $Date: 2006-02-03 10:52:38 -0600 (Fri, 03 Feb 2006) $
- * $Id: hdf_datatype.h 894 2006-02-03 16:52:38Z jnkim $
- ***************************************************************************/
 

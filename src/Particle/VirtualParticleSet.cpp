@@ -4,92 +4,60 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+// File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
+//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
+/** @file VirtualParticleSet.cpp
+ * A proxy class to the quantum ParticleSet
+ */
 
+#include <Configuration.h>
 #include <Particle/VirtualParticleSet.h>
 #include <Particle/DistanceTableData.h>
 #include <Particle/DistanceTable.h>
-#include <Utilities/IteratorUtility.h>
 
 namespace qmcplusplus
 {
 
-  VirtualParticleSet::VirtualParticleSet(ParticleSet* p, int nptcl)
-    :myPtcl(p)
+  VirtualParticleSet::VirtualParticleSet(const ParticleSet& p, int nptcl): refPS(p)
   {
-    setName("vp");
-    init_minimum(nptcl);
-  }
+    setName("virtual");
 
-  VirtualParticleSet::~VirtualParticleSet()
-  {
-    //delete_iter(DistTables.begin(),DistTables.end());
-  }
+    //initialize local data structure
+    Lattice = p.Lattice;
+    TotalNum = nptcl;
+    R.resize(nptcl);
+    RSoA.resize(nptcl);
 
-  void VirtualParticleSet::init_minimum(int nptcl)
-  {
-    //make R, ID and GroupID available
-    initBase();
-    Lattice = myPtcl->Lattice;
-    PrimitiveLattice = myPtcl->PrimitiveLattice;
-    create(nptcl);
-
-    ratios.resize(nptcl);
-
-    if(myPtcl->DistTables.size())
+    //create distancetables
+    if(refPS.DistTables.size())
     {
-      DistTables.resize(myPtcl->DistTables.size());
-      DistTables[0]=createDistanceTable(*myPtcl,*this);
-      for(int i=1; i<myPtcl->DistTables.size(); ++i)
-        DistTables[i]=createDistanceTable(myPtcl->DistTables[i]->origin(),*this);
+      DistTables.resize(refPS.DistTables.size());
       for(int i=0; i<DistTables.size(); ++i)
-        DistTables[i]->ID=i;
-    }
-  }
-
-  void VirtualParticleSet::reset(const ParticleSet* p)
-  {
-    if(p->getTotalNum() != myPtcl->getTotalNum())
-      APP_ABORT("VirtualParticleSet::reset Inconsistent ParticleSet size");
-    myPtcl=p;
-  }
-
-  void VirtualParticleSet::makeMoves(int iat, const ParticlePos_t& displ)
-  {
-    activePtcl=iat;
-    activeGroup=myPtcl->GroupID[iat];
-    activePos=myPtcl->R[iat];
-    for(int i=0; i<R.size(); ++i)
-      R[i]=activePos+displ[i];
-    for (int i=0; i< DistTables.size(); i++)
-      DistTables[i]->evaluate(*this);
-  }
-
-  void VirtualParticleSet::validate(int iel, int k)
-  {
-    for (int i=0; i< DistTables.size(); i++)
-    {
-      const DistanceTableData& dt(*(myPtcl->DistTables[i]));
-      const DistanceTableData& dt2(*DistTables[i]);
-      for(int j=0; j<dt2.centers(); ++j)
       {
-        int kv=j*GlobalNum+k;
-        if(std::abs(dt.Temp[j].r1-dt2.r(kv)) > 1e-12)
-          std::cout << "WRONG " << j << " " << dt.Temp[j].r1 << " " << dt2.r(kv) << std::endl;
-        SingleParticlePos_t d=dt.Temp[j].dr1-dt2.dr(kv);
-        if(std::abs(dot(d,d))>1e-12)
-          std::cout << "WRONG " << j << " " << dt.Temp[j].dr1 << " " << dt2.dr(kv) << std::endl;
+        DistTables[i]=createDistanceTable(refPS.DistTables[i]->origin(),*this, refPS.DistTables[0]->DTType);
+        DistTables[i]->ID=i;
       }
     }
   }
 
-}
+  /// move virtual particles to new postions and update distance tables
+  void VirtualParticleSet::makeMoves(int jel, const ParticlePos_t& vitualPos, bool sphere, int iat)
+  {
+    if(sphere && iat<0) APP_ABORT("VirtualParticleSet::makeMoves is invoked incorrectly, the flag sphere=true requires iat specified!");
+    onSphere=sphere;
+    myTimers[1]->start();
+    refPtcl=jel;
+    refSourcePtcl=iat;
+    R=vitualPos;
+    RSoA.copyIn(R);
+    for (int i=0; i<DistTables.size(); i++)
+      DistTables[i]->evaluate(*this);
+    myTimers[1]->stop();
+  }
 
+}

@@ -54,6 +54,7 @@ from generic import obj
 from developer import DevBase
 from nexus_base import NexusCore,nexus_core
 from debug import *
+from imp import load_source
 
 
 import re,subprocess
@@ -155,6 +156,12 @@ class Job(NexusCore):
 
 
     @staticmethod
+    def restore_default_settings():
+        Job.machine = None
+    #end def restore_default_settings
+
+
+    @staticmethod
     def generate_jobid():
         Job.job_count += 1
         return Job.job_count
@@ -170,6 +177,7 @@ class Job(NexusCore):
 
     def __init__(self,
                  name         = 'jobname',
+                 type         = None,
                  directory    = None,
                  sub_dir      = None,
                  app_name     = None, # name of/path to application
@@ -211,6 +219,8 @@ class Job(NexusCore):
                  processes    = None,
                  processes_per_proc = None,
                  processes_per_node = None,
+                 email        = None,
+                 constraint   = None, # slurm specific, Cori
                  fake         = False,
                  ):
 
@@ -225,6 +235,7 @@ class Job(NexusCore):
         self.presub      = presub
         self.postsub     = postsub
         self.name        = name
+        self.type        = type
         self.queue       = queue
         self.bundled_jobs= bundled_jobs
         self.relative    = relative
@@ -250,6 +261,8 @@ class Job(NexusCore):
         self.processes_per_proc = processes_per_proc
         self.processes_per_node = processes_per_node        
         self.account     = account
+        self.email       = email
+        self.constraint  = constraint
         self.internal_id = None
         self.system_id   = None
         self.tot_cores   = None
@@ -557,6 +570,15 @@ class Job(NexusCore):
         return walltime
     #end def sbatch_walltime
 
+
+    def ll_walltime(self):
+        walltime=\
+            str(int(24*self.days+self.hours)).zfill(2)+':'\
+            +str(int(self.minutes)).zfill(2)+':'\
+            +str(int(self.seconds)).zfill(2)
+        return walltime
+    #end def ll_walltime
+        
 
     def normalize_time(self):
         t = self.total_seconds()
@@ -907,6 +929,14 @@ class Machine(NexusCore):
 
         Machine.add(self)
     #end def __init__
+
+    
+    def restore_default_settings(self):
+        self.account         = None
+        self.local_directory = None
+        self.app_directory   = None
+        self.app_directories = None
+    #end def restore_default_settings
 
 
     def add_job(self,job):
@@ -1262,8 +1292,8 @@ class Supercomputer(Machine):
         Machine.__init__(self,name)
         self.nodes          = nodes          #  # of nodes
         self.procs_per_node = procs_per_node #  # of processors/sockets on a node
-        self.cores_per_proc = cores_per_proc #  # of cores on a node
-        self.ram_per_node   = ram_per_node
+        self.cores_per_proc = cores_per_proc #  # of cores on a processor/socket
+        self.ram_per_node   = ram_per_node   
         self.queue_size     = queue_size
         self.app_launcher   = app_launcher
         self.sub_launcher   = sub_launcher
@@ -1282,6 +1312,12 @@ class Supercomputer(Machine):
         self.procs = self.procs_per_node*self.nodes
         self.cores = self.cores_per_proc*self.procs
         self.ram   = self.ram_per_node*self.nodes
+
+        # 'complete' is the only actively used status so far
+        #   At least one queue state should correspond to 'complete',
+        #   though even this is not strictly necessary.
+        #   In general if a pid is missing from the queue, 
+        #   that job is assumed to be complete.
 
         self.system_queue = obj()
         if self.queue_querier=='qstat':
@@ -1306,9 +1342,10 @@ class Supercomputer(Machine):
                                  PD = 'waiting',
                                  R = 'running',
                                  S = 'suspended',
-                                 CD = 'complete'
+                                 CD = 'complete',
+				 RD = 'held'
                                  )
-        elif  self.queue_querier=='sacct':
+        elif self.queue_querier=='sacct':
             self.job_states=dict(CANCELLED = 'failed',  #long form
                                  COMPLETED = 'complete',
                                  COMPLETING = 'exiting',
@@ -1333,6 +1370,22 @@ class Supercomputer(Machine):
                                  R = 'running',
                                  S = 'suspended',
                                  TO = 'failed'
+                                 )
+        elif self.queue_querier=='llq':
+            self.job_states=dict(I  = 'idle',
+                                 NQ = 'not_queued',
+                                 H  = 'user_hold',
+                                 S  = 'system_hold',
+                                 HS = 'user_system_hold',
+                                 D  = 'deferred',
+                                 R  = 'running',
+                                 P  = 'pending',
+                                 ST = 'starting',
+                                 C  = 'complete',
+                                 CA = 'canceled',
+                                 E  = 'preempted',
+                                 EP = 'preempt_pending',
+                                 MP = 'resume_pending',
                                  )
         else:
             self.error('ability to query queue with '+self.queue_querier+' has not yet been implemented')
@@ -1422,6 +1475,8 @@ class Supercomputer(Machine):
         launcher = self.app_launcher
         if launcher=='mpirun':
             job.run_options.add(np='-np '+str(job.processes))
+        elif launcher=='mpiexec':
+            job.run_options.add(n='-n '+str(job.processes))
         elif launcher=='aprun':
             if 'n' in self.aprun_options:
                 job.run_options.add(n='-n '+str(job.processes))
@@ -1449,6 +1504,9 @@ class Supercomputer(Machine):
                 verbose = '--verbose=INFO',
                 envs    = envs
                 )
+            if job.processes_per_node is None:
+                self.error('please specify processes_per_node in each job to launched with runjob')
+            #end if
         elif launcher=='srun':  # Amos contribution from Ryan McAvoy
             None # anything needed here?
         elif launcher=='ibrun': # Lonestar contribution from Paul Young
@@ -1467,10 +1525,12 @@ class Supercomputer(Machine):
     #end def process_job_extra
 
 
-    def query_queue(self):
+    def query_queue(self,out=None):
         self.system_queue.clear()
         if self.queue_querier=='qstat':
-            out,err = Popen('qstat -a',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()            
+            if out is None:
+                out,err = Popen('qstat -a',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()            
+            #end if
             lines = out.splitlines()
             for line in lines:
                 tokens=line.split()
@@ -1492,7 +1552,9 @@ class Supercomputer(Machine):
                 #end if
             #end for
         elif self.queue_querier=='qstata':
-            out,err = Popen('qstat',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()            
+            if out is None:
+                out,err = Popen('qstat',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()   
+            #end if
             lines = out.splitlines()
             for line in lines:
                 tokens=line.split()
@@ -1510,7 +1572,9 @@ class Supercomputer(Machine):
                 #end if
             #end for
         elif self.queue_querier=='squeue': # contributed by Ryan McAvoy
-            out,err = Popen('squeue',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
+            if out is None:
+                out,err = Popen('squeue',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
+            #end if
             lines = out.splitlines()
             for line in lines:
                 tokens=line.split()
@@ -1525,8 +1589,10 @@ class Supercomputer(Machine):
                         status = None
                         if len(tokens)==8:
                             jid,loc,name,uname,status,wtime,nodes,reason = tokens
-                        elif len(tokens)==11: # nersc squeue output
+                        elif len(tokens)==11 and self.name != 'stampede2': # nersc squeue output
                             jid,uname,acc,jname,part,qos,nodes,tlimit,wtime,status,start_time = tokens
+                        elif len(tokens)==11 and self.name == 'stampede2': # stampede squeue output
+                            jid,loc,name,uname,status,wtime,nodes,reason,tmp1,tmp2,tmp3 = tokens
                         #end if
                         if status is not None:
                             if status in self.job_states:
@@ -1539,7 +1605,9 @@ class Supercomputer(Machine):
                 #end if
             #end for
         elif self.queue_querier=='sacct': # contributed by Ryan McAvoy
-            out,err = Popen('sacct',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
+            if out is None:
+                out,err = Popen('sacct',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
+            #end if
             lines = out.splitlines()
             for line in lines:
                 tokens=line.split()
@@ -1558,11 +1626,40 @@ class Supercomputer(Machine):
                             self.system_queue[pid] = self.job_states[status]
                         else:
                             self.error('job state '+status+' is unrecognized')
+                        #end if
                     elif spid.isdigit() and len(tokens)==7:
 
                         pid = int(spid)
                         jid,name,loc,uname,cores,status,exit_code = tokens
                         status = status.split('+')[0]  ## get rid of '+' in the end
+                        if status in self.job_states:
+                            self.system_queue[pid] = self.job_states[status]
+                        else:
+                            self.error('job state '+status+' is unrecognized')
+                        #end if
+                    #end if
+                #end if
+            #end for
+        elif self.queue_querier=='llq':
+            if out is None:
+                out,err = Popen('sacct',shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
+            #end if
+            lines = out.splitlines()
+            for line in lines:
+                tokens=line.split()
+                if len(tokens)>0:
+                    if '.' in tokens[0]:
+                        spid = tokens[0].split('.')[1]
+                    else:
+                        spid = tokens[0]
+                    #endif
+                    if spid.isdigit() and (len(tokens)==7 or len(tokens)==8):
+                        pid = int(spid)
+                        if len(tokens)==7:
+                            jid,owner,subdate,subtime,status,pri,class_ = tokens
+                        elif len(tokens)==8:
+                            jid,owner,subdate,subtime,status,pri,class_,running_on = tokens
+                        #end if
                         if status in self.job_states:
                             self.system_queue[pid] = self.job_states[status]
                         else:
@@ -1589,6 +1686,7 @@ class Supercomputer(Machine):
         for pid in done:
             del self.processes[pid]
         #end for
+        return self.system_queue
     #end def query_queue
 
 
@@ -1620,7 +1718,7 @@ class Supercomputer(Machine):
         elif not os.path.exists(job.subfile):
             self.error('job submission file was not written prior to submission\n  submission file: '+os.path.join(job.directory,job.subfile))
         #end if
-        command = self.sub_launcher+job.sub_options.write()+' '+job.subfile
+        command = self.sub_command(job)
         if nexus_core.generate_only:
             self.log(pad+'Would have executed:  '+command)
             job.status = job.states.running
@@ -1646,7 +1744,12 @@ class Supercomputer(Machine):
         #end if
         self.leave()
     #end def submit_job
-            
+
+
+    def sub_command(self,job):
+        return self.sub_launcher+job.sub_options.write()+' '+job.subfile
+    #end def sub_command
+
 
     def remove_job(self,job):
         if self.job_remover=='qdel':
@@ -1706,32 +1809,75 @@ class Supercomputer(Machine):
     def read_process_id(self,output):
         pid = None
         lines = output.splitlines()
-        for line in lines:
-            ls = line.strip()
-            if ls.isdigit():
-                pid = int(ls)
-                break
-            elif '.' in line:
-                spid = line.split('.')[0]
-                if spid.isdigit():
-                    pid = int(spid)
-                    break
+        if self.sub_launcher=='llsubmit': # specialization for load leveler (SuperMUC)
+            for line in lines:
+                if 'llsubmit: The job' in line and '"' in line:
+                    spid = line.split('"')[1].split('.')[1].strip()
+                    if spid.isdigit():
+                        pid = int(spid)
+                        break
+                    #end if
                 #end if
-            elif ' ' in line: # specialized for Amos?
-                spid = line.split(' ')[-1]
-                if spid.isdigit():
-                    pid = int(spid)
+            #end for
+        else:  # most other machines follow the pattern below
+            for line in lines:
+                ls = line.strip()
+                if ls.isdigit():
+                    pid = int(ls)
                     break
-                #end if    
-            #end if
-        #end for
+                elif '.' in line:
+                    spid = line.split('.')[0]
+                    if spid.isdigit():
+                        pid = int(spid)
+                        break
+                    #end if
+                elif ' ' in line: # specialized for Amos?
+                    spid = line.split(' ')[-1]
+                    if spid.isdigit():
+                        pid = int(spid)
+                        break
+                    #end if    
+                #end if
+            #end for
+        #end if
         return pid
     #end def read_process_id
 
 #end class Supercomputer
 
+# Load local class for local cluster's setting from ~/.nexus/local.py
+# The following is an example of this file (see machines.py for more examples):
+'''
+from machines import Supercomputer
+class Clustername(Supercomputer):
+    name = 'clustername'
+    requires_account = False
+    batch_capable    = True
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='batch'
+        c= '#!/bin/bash\n'
+        c+='#PBS -l nodes={0}:ppn={1}\n'.format(job.nodes,job.ppn)
+        c+='#PBS -l walltime='+job.pbs_walltime()+'\n'
+        c+='#PBS -N '+job.name +'\n'
+        c+='#PBS -o '+job.outfile+'\n'
+        c+='#PBS -e '+job.errfile+'\n'
+        c+='#PBS -V\n'
+        c+='#PBS -q '+job.queue+'\n'
 
-
+        #end if
+        c+=' \n '
+        return c
+#end class Clustername
+#            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus   qdelete
+Clustername(      4,   1,    16,   24,    4, 'mpirun',     'qsub',   'qstat',    'qdel')
+'''
+try:
+    load_source('*',os.path.expanduser('~/.nexus/local_machines.py'))
+except IOError:
+    pass
+except:
+    raise
 
 class Kraken(Supercomputer):
 
@@ -1784,7 +1930,7 @@ class Chama(Supercomputer):
     def write_job_header(self,job):
         if job.queue is None:
             job.queue='batch'
-
+        #end if
         job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
         if job.total_hours > 96:   # warn if job will take more than 96 hrs.
             self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
@@ -1811,23 +1957,7 @@ class Chama(Supercomputer):
         c+='module add mvapich2-intel-psm/1.7\n'
         return c
     #end def write_job_header
-
-    '''# jpt - It seems that chama is not compatible with this function, and it seems to be superfluous. *shrug*
-    def read_process_id(self,output):
-        pid = None
-        lines = output.splitlines()
-        for line in lines:
-            if 'oic.ornl.gov' in line:
-                spid = line.split('.')[0]
-                if spid.isdigit():
-                    pid = int(spid)
-                #end if
-            #end if
-        #end for
-        return pid
-    '''
-    #end def read_process_id
-#end class Jaguar
+#end class Chama
 ##### SANDIA test
 
 
@@ -1874,23 +2004,7 @@ class Uno(Supercomputer):
         c+='module add mvapich2-intel-psm/1.7\n'
         return c
     #end def write_job_header
-
-    '''# jpt - It seems that chama is not compatible with this function, and it seems to be superfluous. *shrug*
-    def read_process_id(self,output):
-        pid = None
-        lines = output.splitlines()
-        for line in lines:
-            if 'oic.ornl.gov' in line:
-                spid = line.split('.')[0]
-                if spid.isdigit():
-                    pid = int(spid)
-                #end if
-            #end if
-        #end for
-        return pid
-    '''
-    #end def read_process_id
-#end class Jaguar
+#end class Uno
 ##### SANDIA test
 
 
@@ -1939,24 +2053,7 @@ class Serrano(Supercomputer):
         c+='module add mvapich2-intel-psm2/2.2rc1\n'
         return c
     #end def write_job_header
-
-    # jpt - It seems that slurm is not compatible with this function, and it seems not to matter. *shrug*
-    '''
-    def read_process_id(self,output):
-        pid = None
-        lines = output.splitlines()
-        for line in lines:
-            if 'oic.ornl.gov' in line:
-                spid = line.split('.')[0]
-                if spid.isdigit():
-                    pid = int(spid)
-                #end if
-            #end if
-        #end for
-        return pid
-    '''
-    #end def read_process_id
-#end class Jaguar
+#end class Serrano
 ##### SANDIA test
 
 
@@ -2005,24 +2102,7 @@ class Skybridge(Supercomputer):
         c+='module add mvapich2-intel-psm/1.7\n'
         return c
     #end def write_job_header
-
-    # jpt - It seems that slurm is not compatible with this function, and it seems not to matter. *shrug*
-    '''
-    def read_process_id(self,output):
-        pid = None
-        lines = output.splitlines()
-        for line in lines:
-            if 'oic.ornl.gov' in line:
-                spid = line.split('.')[0]
-                if spid.isdigit():
-                    pid = int(spid)
-                #end if
-            #end if
-        #end for
-        return pid
-    '''
-    #end def read_process_id
-#end class Jaguar
+#end class Skybridge
 ##### SANDIA test
 
 
@@ -2071,24 +2151,7 @@ class Redsky(Supercomputer):
         c+='module add mvapich2-intel-psm/1.7\n'
         return c
     #end def write_job_header
-
-    # jpt - It seems that slurm is not compatible with this function, and it seems not to matter. *shrug*
-    '''
-    def read_process_id(self,output):
-        pid = None
-        lines = output.splitlines()
-        for line in lines:
-            if 'oic.ornl.gov' in line:
-                spid = line.split('.')[0]
-                if spid.isdigit():
-                    pid = int(spid)
-                #end if
-            #end if
-        #end for
-        return pid
-    '''
-    #end def read_process_id
-#end class Jaguar
+#end class Redsky
 ##### SANDIA test
 
 
@@ -2137,24 +2200,7 @@ class Solo(Supercomputer):
         c+='module add mvapich2-intel-psm2/2.2rc1\n'
         return c
     #end def write_job_header
-
-    # jpt - It seems that slurm is not compatible with this function, and it seems not to matter. *shrug*
-    '''
-    def read_process_id(self,output):
-        pid = None
-        lines = output.splitlines()
-        for line in lines:
-            if 'oic.ornl.gov' in line:
-                spid = line.split('.')[0]
-                if spid.isdigit():
-                    pid = int(spid)
-                #end if
-            #end if
-        #end for
-        return pid
-    '''
-    #end def read_process_id
-#end class Jaguar
+#end class Solo
 ##### SANDIA test
 
 
@@ -2293,7 +2339,6 @@ class NerscMachine(Supercomputer):
         if job.queue is None:
             job.queue = 'regular'
         #end if
-
         c='#!/bin/bash\n'
         c+='#SBATCH -p '+job.queue+'\n'
         c+='#SBATCH -J '+str(job.name)+'\n'
@@ -2305,6 +2350,8 @@ class NerscMachine(Supercomputer):
         c+='#SBATCH -e '+job.errfile+'\n'
         if job.user_env:
             c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
+        else:
+            c+='#SBATCH --export=NONE\n'   
         #end if
         c+='''
 echo $SLURM_SUBMIT_DIR
@@ -2318,6 +2365,49 @@ cd $SLURM_SUBMIT_DIR
 class Edison(NerscMachine):
     name = 'edison'
 #end class Edison
+
+
+class Cori(NerscMachine):
+    name = 'cori'
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'regular'
+        #end if
+        if job.constraint is None:
+            job.constraint = 'knl,quad,cache'
+        #end if
+        if 'knl' in job.constraint:
+            cores_per_node = 68
+            hyperthreads   = 4
+        elif 'haswell' in job.constraint:
+            cores_per_node = 32
+            hyperthreads   = 2
+        else:
+            self.error('SLURM input "constraint" must contain either "knl" or "haswell"\nyou provided: {0}'.format(job.constraint))
+        #end if
+        c='#!/bin/bash\n'
+        c+='#SBATCH -p '+job.queue+'\n'
+        c+='#SBATCH -C '+str(job.constraint)+'\n'
+        c+='#SBATCH -J '+str(job.name)+'\n'
+        c+='#SBATCH -t '+job.sbatch_walltime()+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(int(floor(float(cores_per_node)/job.processes_per_node))*hyperthreads)
+        c+='#SBATCH -o '+job.outfile+'\n'
+        c+='#SBATCH -e '+job.errfile+'\n'
+        if job.user_env:
+            c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
+        else:
+            c+='#SBATCH --export=NONE\n'   
+        #end if
+        c+='''
+echo $SLURM_SUBMIT_DIR
+cd $SLURM_SUBMIT_DIR
+'''
+        return c
+    #end def write_job_header
+#end class Cori
 
 
 
@@ -2466,14 +2556,14 @@ class ALCF_Machine(Supercomputer):
             env  = '--env BG_SHAREDMEMSIZE=32',
             mode = '--mode script'
             )
-        #if job.nodes<self.base_partition:
-        #    self.warn('!!! ATTENTION !!!\n  number of nodes on {0} should not be less than {1}\n  you requested: {2}'.format(self.name,self.base_partition,job.nodes))
-        #else:
-        #    partition = log(float(job.nodes)/self.base_partition)/log(2.)
-        #    if abs(partition-int(partition))>1e-6:
-        #        self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be {1} times a power of two\n  you requested: {2}\n  nearby valid node count: {3}'.format(self.name,self.base_partition,job.nodes,self.base_partition*2**int(round(partition))))
-        #    #end if
-        ##end if
+        if job.nodes<self.base_partition:
+            self.warn('!!! ATTENTION !!!\n  number of nodes on {0} should not be less than {1}\n  you requested: {2}'.format(self.name,self.base_partition,job.nodes))
+        else:
+            partition = log(float(job.nodes)/self.base_partition)/log(2.)
+            if abs(partition-int(partition))>1e-6:
+                self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be {1} times a power of two\n  you requested: {2}\n  nearby valid node count: {3}'.format(self.name,self.base_partition,job.nodes,self.base_partition*2**int(round(partition))))
+            #end if
+        #end if
     #end def process_job_extra
 
     def write_job_header(self,job):
@@ -2700,6 +2790,158 @@ class Amos(Supercomputer):
 #end class Amos
 
 
+# machines at LRZ  https://www.lrz.de/english/
+class SuperMUC(Supercomputer):
+    name = 'supermuc'
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'general'
+        #end if
+        if job.type is None:
+            job.type = 'parallel'
+        else:
+            job.type = job.type.lower()
+            if job.type=='mpich':
+                job.type=job.type.upper()
+            #end if
+        #end if
+        ibm   = job.type=='parallel'
+        intel = job.type=='MPICH'
+        omp   = isinstance(job.threads,int) and job.threads>1
+        if not ibm and not intel:
+            self.error('the only types of MPI supported are "parallel" and "MPICH"\nreceived MPI with type: {0}'.format(job.type))
+        #end if
+        c ='#!/bin/bash\n'
+        c+='#@ job_name         = {0}\n'.format(job.name)
+        c+='#@ job_type         = {0}\n'.format(job.type)
+        c+='#@ class            = {0}\n'.format(job.queue)
+        c+='#@ node             = {0}\n'.format(job.nodes)
+        if job.nodes<400:
+            icmin = 1
+            icmax = 1
+        else:
+            icmin = int(job.nodes/512)+1
+            icmax = icmin+1
+        #end if
+        c+='#@ island_count     = {0},{1}\n'.format(icmin,icmax)
+        if intel and omp:
+            c+='#@ tasks_per_node   = {0}\n'.format(job.processes_per_node)
+        else:
+            c+='#@ total_tasks      = {0}\n'.format(job.processes)
+        #end if
+        c+='#@ wall_clock_limit = {0}\n'.format(job.ll_walltime())
+        c+='#@ network.MPI      = sn_all,not_shared,us\n'
+        c+='#@ initialdir       = {0}\n'.format(job.abs_dir)
+        c+='#@ output           = {0}\n'.format(job.outfile)
+        c+='#@ error            = {0}\n'.format(job.errfile)
+        if job.email is None:
+            c+='#@ notification     = never\n'
+        else:
+            c+='#@ notification     = always\n'
+            c+='#@ notify_user      = {0}\n'.format(job.email)
+        #end if
+        c+='#@ queue\n'
+        c+='. /etc/profile\n'
+        c+='. /etc/profile.d/modules.sh\n'
+        if ibm and omp:
+            c+='export MP_SINGLE_THREAD=no\n'
+            c+='export MP_TASK_AFFINITY=core:{0}\n'.format(job.threads)
+        elif intel and not omp:
+            c+='module unload mpi.ibm\n'
+            c+='module load mpi.intel\n'
+        elif intel and omp:
+            c+='module unload mpi.ibm\n'
+            c+='module load mpi.intel\n'
+            #c+='export OMP_NUM_THREADS={0}\n'.format(job.threads)
+            #c+='module load mpi_pinning/hybrid_blocked\n'
+        #end if
+        return c
+    #end def write_job_header
+#end class SuperMUC
+
+#
+class Stampede2(Supercomputer):
+    name = 'stampede2'
+
+    requires_account   = True
+    batch_capable      = True
+    #executable_subfile = True
+
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='normal'
+	#end if
+
+	if job.queue == 'development':
+	    max_nodes = 16
+	    max_time = 2
+	elif job.queue == 'normal':
+	    max_nodes = 256
+	    max_time = 48
+	elif job.queue == 'large':
+	    max_nodes = 2048
+	    max_time = 48
+	elif job.queue == 'long':
+	    max_nodes = 32
+	    max_time = 96
+	elif job.queue == 'flat_quadrant':
+	    max_nodes = 24
+	    max_time = 48
+	elif job.queue == 'skx-dev':
+	    max_nodes = 4
+	    max_time = 2
+	elif job.queue == 'skx-normal':
+	    max_nodes = 128
+	    max_time = 48
+	elif job.queue == 'skx-large':
+	    max_nodes = 868
+	    max_time = 48
+	#end if
+
+	if 'skx' in job.queue:
+	    max_processes_per_node = 48
+	else:
+	    max_processes_per_node = 68
+	
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > max_time:   
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes =0
+            job.seconds =0
+        #end if
+
+	if job.nodes > max_nodes:
+	    self.warn('!!! ATTENTION !!!\n  the maximum nodes on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_nodes,job.nodes))
+	    job.nodes = max_nodes
+	#end if
+
+	if job.processes_per_node > max_processes_per_node:
+	    self.warn('!!! ATTENTION !!!\n  the maximum number of processes per node on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_processes_per_node,job.processes_per_node))
+	    job.processes_per_node = max_processes_per_node
+	#end if
+
+        c='#!/bin/bash\n'
+        c+='#SBATCH --job-name '+str(job.name)+'\n'
+        c+='#SBATCH --account='+str(job.account)+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+	c+='#SBATCH -p {0}\n'.format(job.queue)
+        c+='\n'
+        return c
+    #end def write_job_header
+#end class Stampede2
+
+
 
 #Known machines
 #  workstations
@@ -2709,29 +2951,32 @@ for cores in range(1,128+1):
 #end for
 #  supercomputers and clusters
 #            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus   qdelete
-Jaguar(      18688,   2,     8,   32,  100,  'aprun',   'qsub',   'qstat',    'qdel')
-Kraken(       9408,   2,     6,   16,  100,  'aprun',   'qsub',   'qstat',    'qdel')
-Taub(          400,   2,     6,   24,   50, 'mpirun',   'qsub',   'qstat',    'qdel')
-OIC5(           28,   2,    16,  128, 1000, 'mpirun',   'qsub',   'qstat',    'qdel')
-Edison(        664,   2,    12,   64,  100,   'srun', 'sbatch',  'squeue', 'scancel')
-BlueWatersXK( 3072,   1,    16,   32,  100,  'aprun',   'qsub',   'qstat',    'qdel')
-BlueWatersXE(22640,   2,    16,   64,  100,  'aprun',   'qsub',   'qstat',    'qdel')
-Titan(       18688,   1,    16,   32,  100,  'aprun',   'qsub',   'qstat',    'qdel')
-EOS(           744,   2,     8,   64, 1000,  'aprun',   'qsub',   'qstat',    'qdel')
-Vesta(        2048,   1,    16,   16,   10, 'runjob',   'qsub',  'qstata',    'qdel')
-Cetus(        1024,   1,    16,   16,   10, 'runjob',   'qsub',  'qstata',    'qdel')
-Mira(        49152,   1,    16,   16,   10, 'runjob',   'qsub',  'qstata',    'qdel')
-Cooley(        126,   2,     6,  384,   10, 'mpirun',   'qsub',  'qstata',    'qdel')
-Lonestar(    22656,   2,     6,   12,  128,  'ibrun',   'qsub',   'qstat',    'qdel')
-Matisse(        20,   2,     8,   64,    2, 'mpirun', 'sbatch',   'sacct', 'scancel')
-Komodo(         24,   2,     6,   48,    2, 'mpirun', 'sbatch',   'sacct', 'scancel')
-Amos(         5120,   1,    16,   16,  128,   'srun', 'sbatch',   'sacct', 'scancel')
-Chama(        1220,   2,    16,   64, 1000,   'srun', 'sbatch',  'squeue', 'scancel')
-Uno(             4,   4,    32,  128, 1000,   'srun', 'sbatch',  'squeue', 'scancel')
-Serrano(      1122,   2,    18,  128, 1000,   'srun', 'sbatch',  'squeue', 'scancel')
-Skybridge(    1848,   2,    16,   64, 1000,   'srun', 'sbatch',  'squeue', 'scancel')
-Redsky(       2302,   2,     8,   12, 1000,   'srun', 'sbatch',  'squeue', 'scancel')
-Solo(          187,   2,    18,  128, 1000,   'srun', 'sbatch',  'squeue', 'scancel')
+Jaguar(      18688,   2,     8,   32,  100,  'aprun',     'qsub',   'qstat',    'qdel')
+Kraken(       9408,   2,     6,   16,  100,  'aprun',     'qsub',   'qstat',    'qdel')
+Taub(          400,   2,     6,   24,   50, 'mpirun',     'qsub',   'qstat',    'qdel')
+OIC5(           28,   2,    16,  128, 1000, 'mpirun',     'qsub',   'qstat',    'qdel')
+Edison(        664,   2,    12,   64,  100,   'srun',   'sbatch',  'squeue', 'scancel')
+Cori(         9688,   1,    68,   96,  100,   'srun',   'sbatch',  'squeue', 'scancel')
+BlueWatersXK( 3072,   1,    16,   32,  100,  'aprun',     'qsub',   'qstat',    'qdel')
+BlueWatersXE(22640,   2,    16,   64,  100,  'aprun',     'qsub',   'qstat',    'qdel')
+Titan(       18688,   1,    16,   32,  100,  'aprun',     'qsub',   'qstat',    'qdel')
+EOS(           744,   2,     8,   64, 1000,  'aprun',     'qsub',   'qstat',    'qdel')
+Vesta(        2048,   1,    16,   16,   10, 'runjob',     'qsub',  'qstata',    'qdel')
+Cetus(        1024,   1,    16,   16,   10, 'runjob',     'qsub',  'qstata',    'qdel')
+Mira(        49152,   1,    16,   16,   10, 'runjob',     'qsub',  'qstata',    'qdel')
+Cooley(        126,   2,     6,  384,   10, 'mpirun',     'qsub',  'qstata',    'qdel')
+Lonestar(    22656,   2,     6,   12,  128,  'ibrun',     'qsub',   'qstat',    'qdel')
+Matisse(        20,   2,     8,   64,    2, 'mpirun',   'sbatch',   'sacct', 'scancel')
+Komodo(         24,   2,     6,   48,    2, 'mpirun',   'sbatch',   'sacct', 'scancel')
+Amos(         5120,   1,    16,   16,  128,   'srun',   'sbatch',   'sacct', 'scancel')
+Chama(        1220,   2,    16,   64, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Uno(             4,   4,    32,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Serrano(      1122,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Skybridge(    1848,   2,    16,   64, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Redsky(       2302,   2,     8,   12, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+Solo(          187,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
+SuperMUC(      205,   4,    10,  256,    8,'mpiexec', 'llsubmit',     'llq','llcancel')
+Stampede2(    4200,   1,    68,   96,    50, 'ibrun',   'sbatch',  'squeue', 'scancel')
 
 
 #machine accessor functions

@@ -123,8 +123,6 @@ template<> struct h5data_proxy<std::string>
       }
       ref.resize(dim_out);
       herr_t ret = H5Dread(dataset, datatype, H5S_ALL, H5S_ALL, xfer_plist,&(ref[0]));
-      // Erase trailing null character
-      ref.erase (dim_out-1, 1);
       H5Tclose(datatype);
       H5Dclose(dataset);
       return ret != -1;
@@ -189,8 +187,3 @@ struct h5data_proxy<std::ostringstream>
 //  };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 894 $   $Date: 2006-02-03 10:52:38 -0600 (Fri, 03 Feb 2006) $
- * $Id: hdf_stl.h 894 2006-02-03 16:52:38Z jnkim $
- ***************************************************************************/

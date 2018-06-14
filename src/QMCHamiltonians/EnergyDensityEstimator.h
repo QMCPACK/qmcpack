@@ -35,10 +35,6 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P);
   Return_t evaluate(ParticleSet& P);
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
   void addObservables(PropertySetType& plist) { }
   void addObservables(PropertySetType& plist,BufferType& olist);
   void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const ;
@@ -108,8 +104,3 @@ private:
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author: jtkrogel $
- * $Revision: 1 $   $Date: 2011-02-02 16:21:33 -0500 (Wed, 02 Feb 2011) $
- * $Id: EnergyDensityEstimator.h 1 2011-02-02 16:21:33Z jtkrogel $
- ***************************************************************************/

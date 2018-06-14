@@ -25,6 +25,7 @@
 #include "QMCWaveFunctions/SPOSetBase.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
+#include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 
 namespace qmcplusplus
 {
@@ -140,6 +141,9 @@ public:
     }
   }
 
+  ///invert psiM or its copies
+  void invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat);
+
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& active,
                                    std::vector<RealType>& dlogpsi,
@@ -153,6 +157,9 @@ public:
                                    Array<GradType,3>& dG,
                                    Matrix<RealType>& dL) {}
 
+  //virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+  //                                     std::vector<RealType>& dgradlogpsi);
+
   inline void reportStatus(std::ostream& os)
   {
   }
@@ -165,36 +172,15 @@ public:
   ///reset the size: with the number of particles and number of orbtials
   virtual void resize(int nel, int morb);
 
-  virtual RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
+  virtual void registerData(ParticleSet& P, WFBufferType& buf);
 
-  virtual void registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf, int storageType=0);
+  virtual void updateAfterSweep(ParticleSet& P,
+      ParticleSet::ParticleGradient_t& G,
+      ParticleSet::ParticleLaplacian_t& L);
 
-  virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only, long& orbs, long& invs, long& dets)
-  {
-    // mmorales: not sure you need to store myL,myG for nonlocal psp optimization
-    orbs_only += NumPtcls*NumOrbitals;
-    orbs += NumPtcls*NumOrbitals + NP*4 + 2;
-  }
+  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 
-  virtual void copyToDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual void copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual RealType evaluateLogForDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual RealType evaluateLogFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  virtual RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
-
-  virtual void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  /** dump the inverse to the buffer
-   */
-  void dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  /** copy the inverse from the buffer
-   */
-  void dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
+  virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   /** return the ratio only for the  iat-th partcle move
    * @param P current configuration
@@ -210,19 +196,6 @@ public:
   {
     return 1.0;
   }
-  /** return the ratio
-   * @param P current configuration
-   * @param iat particle whose position is moved
-   * @param dG differential Gradients
-   * @param dL differential Laplacians
-   *
-   * Data member *_temp contain the data assuming that the move is accepted
-   * and are used to evaluate differential Gradients and Laplacians.
-   */
-  virtual ValueType ratio(ParticleSet& P, int iat,
-                          ParticleSet::ParticleGradient_t& dG,
-                          ParticleSet::ParticleLaplacian_t& dL);
-
 
   virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   virtual GradType evalGrad(ParticleSet& P, int iat);
@@ -239,10 +212,6 @@ public:
    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
 
-  virtual ValueType logRatio(ParticleSet& P, int iat,
-                             ParticleSet::ParticleGradient_t& dG,
-                             ParticleSet::ParticleLaplacian_t& dL);
-
   /** move was accepted, update the real container
    */
   virtual void acceptMove(ParticleSet& P, int iat);
@@ -250,14 +219,6 @@ public:
   /** move was rejected. copy the real container to the temporary to move on
    */
   virtual void restore(int iat);
-
-  virtual void update(ParticleSet& P,
-                      ParticleSet::ParticleGradient_t& dG,
-                      ParticleSet::ParticleLaplacian_t& dL,
-                      int iat);
-
-  virtual RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
-
 
   ///evaluate log of determinant for a particle set: should not be called
   virtual RealType
@@ -267,11 +228,6 @@ public:
 
   virtual void recompute(ParticleSet& P);
 
-  virtual ValueType
-  evaluate(ParticleSet& P,
-           ParticleSet::ParticleGradient_t& G,
-           ParticleSet::ParticleLaplacian_t& L);
-           
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
 
   virtual OrbitalBasePtr makeClone(ParticleSet& tqp) const;
@@ -286,7 +242,7 @@ public:
   virtual DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
 //       virtual DiracDeterminantBase* makeCopy(ParticleSet& tqp, SPOSetBase* spo) const {return makeCopy(spo); };
 
-  virtual void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
+  virtual void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
   ///total number of particles
   int NP;
   ///number of single-particle orbitals which belong to this Dirac determinant
@@ -306,6 +262,9 @@ public:
   //ValueType CurrentDet;
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   ValueMatrix_t psiM, psiM_temp;
+
+  /// memory pool for temporal data
+  aligned_vector<ValueType> memoryPool;
 
   /// temporary container for testing
   ValueMatrix_t psiMinv;
@@ -335,7 +294,9 @@ public:
   /// temporal matrix and workspace in higher precision for the accurate inversion.
   ValueMatrix_hp_t psiM_hp;
   Vector<ParticleSet::ParticleValue_t> WorkSpace_hp;
+  DiracMatrix<mValueType> detEng_hp;
 #endif
+  DiracMatrix<ValueType> detEng;
 
   Vector<ValueType> WorkSpace;
   Vector<IndexType> Pivot;
@@ -345,11 +306,6 @@ public:
   ParticleSet::ParticleValue_t *LastAddressOfG;
   ValueType *FirstAddressOfdV;
   ValueType *LastAddressOfdV;
-  //    double ComputeExtraTerms(int ptcl_gradient, int elDim,int ionDim);
-  ParticleSet::ParticleGradient_t myG, myG_temp;
-  ParticleSet::ParticleLaplacian_t myL, myL_temp;
-//
-  virtual inline void setLogEpsilon(ValueType x) { }
 
 #ifdef QMC_CUDA
   /////////////////////////////////////////////////////
@@ -362,7 +318,7 @@ public:
   }
 
   virtual void
-  reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool)
+  reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool)
   {
     std::cerr << "Need specialization of DiracDetermiantBase::reserve.\n";
     abort();
@@ -463,8 +419,3 @@ public:
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

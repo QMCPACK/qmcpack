@@ -22,13 +22,15 @@
 namespace qmcplusplus
 {
 OrbitalBase::OrbitalBase():
-  IsOptimizing(false),Optimizable(true), UpdateMode(ORB_WALKER), //UseBuffer(true), //Counter(0),
-  LogValue(1.0),PhaseValue(0.0),OrbitalName("OrbitalBase"), derivsDone(false), parameterType(0)
+  IsOptimizing(false), Optimizable(true), UpdateMode(ORB_WALKER),
+  LogValue(1.0),PhaseValue(0.0),OrbitalName("OrbitalBase"),
+  derivsDone(false), parameterType(0), Bytes_in_WFBuffer(0)
 #if !defined(ENABLE_SMARTPOINTER)
   ,dPsi(0), ionDerivs(false)
 #endif
 { 
-  HaveRatiosForVP=false;
+  ///store instead of computing
+  Need2Compute4PbyP=false;
 }
 
 // OrbitalBase::OrbitalBase(const OrbitalBase& old):
@@ -108,14 +110,14 @@ OrbitalBasePtr OrbitalBase::makeProxy(ParticleSet& tpq)
 
 OrbitalBase::RealType OrbitalBase::KECorrection()
 {
-  return 0.0;
+  return 0;
 }
 
-void OrbitalBase::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+void OrbitalBase::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
-  std::ostringstream o;
-  o << "OrbitalBase::get_ratios is not implemented by " << OrbitalName;
-  APP_ABORT(o.str());
+  assert(P.getTotalNum()==ratios.size());
+  for (int i=0; i<P.getTotalNum(); ++i)
+    ratios[i]=ratio(P,i);
 }
 
 void OrbitalBase::evaluateRatios(VirtualParticleSet& P, std::vector<ValueType>& ratios)
@@ -131,10 +133,6 @@ void OrbitalBase::evaluateDerivRatios(VirtualParticleSet& VP, const opt_variable
   //default is only ratios and zero derivatives
   evaluateRatios(VP,ratios);
 }
+
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1770 $   $Date: 2007-02-17 17:45:38 -0600 (Sat, 17 Feb 2007) $
- * $Id: OrbitalBase.h 1770 2007-02-17 23:45:38Z jnkim $
- ***************************************************************************/
 

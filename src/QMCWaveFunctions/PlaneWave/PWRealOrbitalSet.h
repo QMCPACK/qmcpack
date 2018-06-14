@@ -52,7 +52,7 @@ public:
 
   /** default constructor
   */
-  PWRealOrbitalSet(): OwnBasisSet(false)
+  PWRealOrbitalSet(): OwnBasisSet(false), BasisSetSize(0), myBasisSet(nullptr)
   {
   }
 
@@ -126,6 +126,8 @@ public:
   PosType TwistAngle;
   ///My basis set
   PWBasisPtr myBasisSet;
+  ///number of basis
+  IndexType BasisSetSize;
   ///Plane-wave coefficients of complex: (iband,g-vector)
   Matrix<ComplexType> CC;
   /// temporary array to perform gemm operation
@@ -135,8 +137,3 @@ public:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1769 $   $Date: 2007-02-17 17:38:34 -0600 (Sat, 17 Feb 2007) $
- * $Id: PWRealOrbitalSet.h 1769 2007-02-17 23:38:34Z jnkim $
- ***************************************************************************/

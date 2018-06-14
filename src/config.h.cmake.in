@@ -9,25 +9,22 @@
 #define QMCPLUSPLUS_CONFIGURATION_H
 
 /* define the major version */
-#define QMCPLUSPLUS_VERSION_MAJOR  @QMCPLUSPLUS_VERSION_MAJOR@
+#define QMCPACK_VERSION_MAJOR  @QMCPACK_VERSION_MAJOR@
 
 /* define the minor version */
-#define QMCPLUSPLUS_VERSION_MINOR  @QMCPLUSPLUS_VERSION_MINOR@
+#define QMCPACK_VERSION_MINOR  @QMCPACK_VERSION_MINOR@
 
 /* define the patch version */
-#define QMCPLUSPLUS_VERSION_PATCH  @QMCPLUSPLUS_VERSION_PATCH@
+#define QMCPACK_VERSION_PATCH  @QMCPACK_VERSION_PATCH@
 
 /* define the release version */
-#cmakedefine QMCPLUSPLUS_RELEASE  @QMCPLUSPLUS_RELEASE@
+#cmakedefine QMCPACK_RELEASE  @QMCAPCK_RELEASE@
 
-/* define the linearscale version */
-#cmakedefine QMCPLUSPLUS_LINEARSCALE  @QMCPLUSPLUS_LINEARSCALE@
+/* define the git last commit date */
+// #cmakedefine QMCPLUSPLUS_LAST_CHANGED_DATE  "@QMCPLUSPLUS_LAST_CHANGED_DATE@"
 
-/* define the subversion branch */
-#cmakedefine QMCPLUSPLUS_BRANCH  @QMCPLUSPLUS_BRANCH@
-
-/* define the subversion last changed date */
-#cmakedefine QMCPLUSPLUS_LAST_CHANGED_DATE  "@QMCPLUSPLUS_LAST_CHANGED_DATE@"
+/* building from Git repository or not */
+#cmakedefine IS_GIT_PROJECT  @IS_GIT_PROJECT@
 
 /* define QMC_BUILD_LEVEL */
 #cmakedefine QMC_BUILD_LEVEL @QMC_BUILD_LEVEL@
@@ -86,11 +83,11 @@
 /* Define to 1 if precision is mixed, only for the CPU code */
 #cmakedefine MIXED_PRECISION @MIXED_PRECISION@
 
+/* Use prefetching in Einspline routines */
+#cmakedefine QMC_ES_PREFETCH  @QMC_ES_PREFETCH@
+
 /* Define to 1 if complex wavefunctions are used */
 #cmakedefine QMC_COMPLEX @QMC_COMPLEX@
-
-/* Define to 1 if using AYSNC comm for estimator */
-#cmakedefine QMC_ASYNC_COLLECT @QMC_ASYNC_COLLECT@
 
 /* Define to 1 if using recursive SK evaluation */
 #cmakedefine QMC_SK_USE_RECURSIVE @QMC_SK_USE_RECURSIVE@
@@ -104,11 +101,8 @@
 /* Define if sincos function exists */
 #cmakedefine HAVE_SINCOS @HAVE_SINCOS@
 
-/* Define if std::round function exists */
-#cmakedefine HAVE_STD_ROUND @HAVE_STD_ROUND@
-
-/* Define if floor function exists */
-#cmakedefine HAVE_FLOOR @HAVE_FLOOR@
+/* Define if iszero function exists */
+#cmakedefine HAVE_ISZERO @HAVE_ISZERO@
 
 /* Define if einspline lib exists */
 #cmakedefine HAVE_EINSPLINE @HAVE_EINSPLINE@
@@ -120,12 +114,6 @@
 
 /* Define if posix_memalign function exists */
 #cmakedefine HAVE_POSIX_MEMALIGN @HAVE_POSIX_MEMALIGN@
-
-/* Define if pow function exists */
-#cmakedefine HAVE_POW @HAVE_POW@
-
-/* Define if sqrt function exists */
-#cmakedefine HAVE_SQRT @HAVE_SQRT@
 
 /* Define if dlfcn.h exists */
 #cmakedefine HAVE_DLFCN_H @HAVE_DLFCN_H@
@@ -154,24 +142,6 @@
 /* Define if unistd.h exists */
 #cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@
 
-/* Define if mmx support exists */
-#cmakedefine HAVE_MMX @HAVE_MMX@
-
-/* Define if sse support exists */
-#cmakedefine HAVE_SSE @HAVE_SSE@
-
-/* Define if sse2 support exists */
-#cmakedefine HAVE_SSE2 @HAVE_SSE2@
-
-/* Define if sse3 support exists */
-#cmakedefine HAVE_SSE3 @HAVE_SSE3@
-
-/* Define if sse41 support exists */
-#cmakedefine HAVE_SSE41 @HAVE_SSE41@
-
-/* Define if ssse3 support exists */
-#cmakedefine HAVE_SSSE3 @HAVE_SSSE3@
-
 /* Define if c variable array support exists */
 #cmakedefine HAVE_C_VARARRAYS @HAVE_C_VARARRAYS@
 
@@ -183,9 +153,6 @@
 
 /* Define the alignment of SIMD in byte*/
 #cmakedefine SIMD_ALIGNMENT @SIMD_ALIGNMENT@
-
-/* Define if FMA4 on x86 is supported */
-#cmakedefine HAVE_FMA4 @HAVE_FMA4@
 
 #endif /* HAVE_EINSPLINE_EXT */
 
@@ -224,8 +191,59 @@
 /* Fully remove trace manager and associated features */
 #cmakedefine REMOVE_TRACEMANAGER @REMOVE_TRACEMANAGER@
 
+/* Use SOA version of AA distance table */
+#cmakedefine ENABLE_SOA  @ENABLE_SOA@
+
+#if (__cplusplus >= 201103L)
+  #if defined(__INTEL_COMPILER)
+    #if defined(__KNC__) || defined(__AVX512F__)
+      #define QMC_CLINE 64
+      #define QMC_ALIGNAS alignas(64)
+      #define ASSUME_ALIGNED(x) __assume_aligned(x,64)
+    #else
+      #define QMC_CLINE 32
+      #define QMC_ALIGNAS alignas(32)
+      #define ASSUME_ALIGNED(x) __assume_aligned(x,32)
+    #endif
+  #elif defined(__GNUC__) && !defined(__ibmxl__)
+    #if defined(__AVX512F__)
+      #define QMC_CLINE 64
+      #define QMC_ALIGNAS alignas(64)
+      #define ASSUME_ALIGNED(x) (x) = (__typeof__(x)) __builtin_assume_aligned(x,64)
+    #else
+      #define QMC_CLINE 32
+      #define QMC_ALIGNAS alignas(32)
+      #define ASSUME_ALIGNED(x) (x) = (__typeof__(x)) __builtin_assume_aligned(x,32)
+    #endif
+  #else
+   #define QMC_CLINE 32
+   #define QMC_ALIGNAS
+   #define ASSUME_ALIGNED(x)
+  #endif
+
+  #define CONSTEXPR constexpr
+#else //capture both C or non-c++11
+  #if defined(__KNC__) || defined(__AVX512F__)
+    #define QMC_CLINE 64
+  #else
+    #define QMC_CLINE 32
+  #endif
+  #define QMC_ALIGNAS
+  #define ASSUME_ALIGNED(x)
+  #define CONSTEXPR const
+  #ifndef nullptr
+  #define nullptr NULL
+  #endif
+#endif
+
 /* Internal timers */
 #cmakedefine ENABLE_TIMERS @ENABLE_TIMERS@
+
+/* Use VTune API */
+#cmakedefine USE_VTUNE_API @USE_VTUNE_API@
+
+/* Use VTune Task API with timers */
+#cmakedefine USE_VTUNE_TASKS @USE_VTUNE_TASKS@
 
 #endif // QMCPLUSPLUS_CONFIGURATION_H
 

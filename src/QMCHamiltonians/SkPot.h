@@ -35,10 +35,6 @@ public:
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
@@ -87,8 +83,3 @@ protected:
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2945 $   $Date: 2008-08-05 10:21:33 -0500 (Tue, 05 Aug 2008) $
- * $Id: ForceBase.h 2945 2008-08-05 15:21:33Z jnkim $
- ***************************************************************************/

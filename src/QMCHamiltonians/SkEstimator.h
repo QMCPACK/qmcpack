@@ -36,11 +36,6 @@ public:
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   void addObservables(PropertySetType& plist);
   void addObservables(PropertySetType& plist, BufferType& collectables);
   void registerCollectables(std::vector<observable_helper*>& h5desc, hid_t gid) const ;
@@ -85,8 +80,3 @@ protected:
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 2945 $   $Date: 2008-08-05 10:21:33 -0500 (Tue, 05 Aug 2008) $
- * $Id: ForceBase.h 2945 2008-08-05 15:21:33Z jnkim $
- ***************************************************************************/

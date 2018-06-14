@@ -54,8 +54,8 @@ struct SPOSetProxy: public SPOSetBase
   void resetTargetParticleSet(ParticleSet& P);
   void setOrbitalSetSize(int norbs);
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
-  void evaluate(const ParticleSet& P, int iat
-                , ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
+  void evaluate(const ParticleSet& P, int iat,
+                ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
   inline void
   evaluate(const ParticleSet& P, int iat,
            ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& d2psi)
@@ -81,8 +81,3 @@ struct SPOSetProxy: public SPOSetBase
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: kesler $
- * $Revision: 3535 $   $Date: 2009-02-10 13:04:12 -0600 (Tue, 10 Feb 2009) $
- * $Id: SPOSetProxy.h 3535 2009-02-10 19:04:12Z kesler $
- ***************************************************************************/

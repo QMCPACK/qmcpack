@@ -55,7 +55,7 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
   ///number of particles of B
   int NptclB;
   ///const energy after breakup
-  RealType myConst;
+  Return_t myConst;
   ///cutoff radius of the short-range part
   RealType myRcut;
   ///radial grid
@@ -129,18 +129,6 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
-  Return_t registerData(ParticleSet& P, BufferType& buffer);
-  Return_t updateBuffer(ParticleSet& P, BufferType& buffer);
-  void copyFromBuffer(ParticleSet& P, BufferType& buf);
-  void copyToBuffer(ParticleSet& P, BufferType& buf);
-  Return_t evaluatePbyP(ParticleSet& P, int iat);
-  void acceptMove(int iat);
-
   /** Do nothing */
   bool put(xmlNodePtr cur)
   {
@@ -168,7 +156,6 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
   Return_t evalSRwithForces(ParticleSet& P);
   Return_t evalLRwithForces(ParticleSet& P);
   Return_t evalConsts(bool report=true);
-  Return_t evaluateForPyP(ParticleSet& P);
   void add(int groupID, RadFunctorType* ppot);
 
   void addObservables(PropertySetType& plist, BufferType& collectables);
@@ -192,9 +179,4 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

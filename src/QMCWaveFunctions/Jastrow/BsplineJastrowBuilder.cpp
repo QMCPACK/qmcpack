@@ -23,6 +23,8 @@
 #include "QMCWaveFunctions/Jastrow/OneBodySpinJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodySpinJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
+#include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 #ifdef QMC_CUDA
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBspline.h"
@@ -31,7 +33,6 @@
 #include "LongRange/LRRPAHandlerTemp.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "Utilities/ProgressReportEngine.h"
-#include "LongRange/LRJastrowSingleton.h"
 
 namespace qmcplusplus
 {
@@ -73,7 +74,7 @@ bool BsplineJastrowBuilder::createOneBodyJastrow(xmlNodePtr cur)
       BsplineFunctor<RealType> *functor = new BsplineFunctor<RealType>(cusp);
       functor->elementType = speciesA;
       int ig = sSet.findSpecies (speciesA);
-      functor->periodic = sourcePtcl->Lattice.SuperCellEnum == SUPERCELL_BULK;
+      functor->periodic = sourcePtcl->Lattice.SuperCellEnum != SUPERCELL_OPEN;
       functor->cutoff_radius = sourcePtcl->Lattice.WignerSeitzRadius;
       int jg=-1;
       if(speciesB.size())
@@ -82,21 +83,6 @@ bool BsplineJastrowBuilder::createOneBodyJastrow(xmlNodePtr cur)
       {
         //ignore
         functor->put (kids);
-        if (functor->cutoff_radius < 1.0e-6)
-        {
-          if(sourcePtcl->Lattice.SuperCellEnum == SUPERCELL_BULK)
-          {
-            app_log()  << "  BsplineFunction rcut is currently zero.\n"
-                       << "  Setting to Wigner-Seitz radius = "
-                       << sourcePtcl->Lattice.WignerSeitzRadius << std::endl;
-            functor->cutoff_radius = sourcePtcl->Lattice.WignerSeitzRadius;
-            functor->reset();
-          }
-          else
-          {
-            APP_ABORT("BsplineJastrowBuilder::put  rcut must be provided for one body jastrow since boundary conditions are not periodic");
-          }
-        }
         J1->addFunc (ig,functor,jg);
         success = true;
         dJ1->addFunc(ig,functor,jg);
@@ -214,7 +200,12 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
     if(j1spin=="yes")
       return createOneBodyJastrow<OneBodySpinJastrowOrbital<RadFuncType>,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
     else
+#if defined(ENABLE_SOA)
+      return createOneBodyJastrow<J1OrbitalSoA<RadFuncType>,DiffOneBodyJastrowOrbital<RadFuncType> >(cur);
+#else
       return createOneBodyJastrow<OneBodyJastrowOrbital<RadFuncType>,DiffOneBodyJastrowOrbital<RadFuncType> >(cur);
+#endif
+
 #endif
   }
   else // Create a two-body Jastrow
@@ -230,7 +221,13 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
 #ifdef QMC_CUDA
     typedef TwoBodyJastrowOrbitalBspline J2Type;
 #else
+
+#if defined(ENABLE_SOA)
+    typedef J2OrbitalSoA<BsplineFunctor<RealType> > J2Type;
+#else
     typedef TwoBodyJastrowOrbital<BsplineFunctor<RealType> > J2Type;
+#endif
+
 #endif
     typedef DiffTwoBodyJastrowOrbital<BsplineFunctor<RealType> > dJ2Type;
     int taskid=(targetPsi.is_manager())?targetPsi.getGroupID():-1;
@@ -272,6 +269,9 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
         {
           PRE.error("Failed. Species are incorrect.",true);
         }
+        // prevent adding uu/dd correlation if there is only 1 u/d electron.
+        if(ia==ib && (targetPtcl.last(ia)-targetPtcl.first(ia)==1))
+          PRE.error("Failed to add "+spA+spB+" correlation for only 1 "+spA+" particle. Please remove it from two-body Jastrow.",true);
         if(cusp<-1e6)
         {
           RealType qq=species(chargeInd,ia)*species(chargeInd,ib);
@@ -279,25 +279,10 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
         }
         app_log() << "  BsplineJastrowBuilder adds a functor with cusp = " << cusp << std::endl;
         RadFuncType *functor = new RadFuncType(cusp);
-        functor->periodic      = targetPtcl.Lattice.SuperCellEnum == SUPERCELL_BULK;
+        functor->periodic      = targetPtcl.Lattice.SuperCellEnum != SUPERCELL_OPEN;
         functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
         bool initialized_p=functor->put(kids);
         functor->elementType=pairType;
-        if (functor->cutoff_radius < 1.0e-6)
-        {
-          if(targetPtcl.Lattice.SuperCellEnum == SUPERCELL_BULK)
-          {
-            app_log()  << "  BsplineFunction rcut is currently zero.\n"
-                       << "  Setting to Wigner-Seitz radius = "
-                       << targetPtcl.Lattice.WignerSeitzRadius << std::endl;
-            functor->cutoff_radius = targetPtcl.Lattice.WignerSeitzRadius;
-            functor->reset();
-          }
-          else
-          {
-            APP_ABORT("BsplineJastrowBuilder::put  rcut must be provided for two body jastrow since boundary conditions are not periodic");
-          }
-        }
         //RPA INIT
         if(!initialized_p && init_mode =="rpa")
         {
@@ -325,13 +310,9 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
     J2->dPsi=dJ2;
     targetPsi.addOrbital(J2,"J2_bspline");
     J2->setOptimizable(Opt);
+
   }
   return true;
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1691 $   $Date: 2007-02-01 15:51:50 -0600 (Thu, 01 Feb 2007) $
- * $Id: BsplineConstraints.h 1691 2007-02-01 21:51:50Z jnkim $
- ***************************************************************************/

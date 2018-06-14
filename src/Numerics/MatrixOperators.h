@@ -73,7 +73,7 @@ namespace MatrixOperators
 
   template<typename T>
   inline void product_AtB(const Matrix<T>& A,
-      const Matrix<T >& B, Matrix<T >& C)
+      const Matrix<T>& B, Matrix<T>& C)
   {
     const char transa = 'n';
     const char transb = 't';
@@ -92,7 +92,7 @@ namespace MatrixOperators
   {
     for (int i=0; i<C.rows(); i++)
       for (int j=0; j<C.cols(); j++)
-        C(iat,i)+=M(i,j)*B(j);
+        C(iat,i)+=M(i,j)*B[j];
     //for (int i=0; i<C.rows(); i++)
     //  C(iat,i)+=simd::dot(M[i],B.data(),C.cols());
   }
@@ -104,17 +104,17 @@ namespace MatrixOperators
   {
     for (int i=0; i<C.rows(); i++)
       for (int j=0; j<C.cols(); j++)
-        C(i,iat)+=M(i,j)*B(j);
+        C(i,iat)+=M(i,j)*B[j];
     //for (int i=0; i<C.rows(); i++)
     //  C(i,iat)+=simd::dot(M[i],B.data(),C.cols());
   }
 
   inline double  innerProduct(const Vector<double> &A,
-                              const Vector<double > &B)
+                              const Vector<double> &B)
   {
     double tot=0.0;
     for (int i=0; i<A.size(); i++)
-      tot+=A(i)*B(i);
+      tot+=A[i]*B[i];
     return tot;
     //return simd::dot(A.data(),B.data(),A.size());
   }
@@ -132,7 +132,7 @@ namespace MatrixOperators
   template<typename T>
     inline void transpose(const Matrix<T>& A, Matrix<T>& B)
   {
-    simd::transpose(A.data(),B.data(),A.rows(),A.cols());
+    simd::transpose(A.data(), A.rows(), A.cols(), B.data(), B.rows(), B.cols());
   }
 
 
@@ -144,7 +144,7 @@ namespace MatrixOperators
   {
     for (int i=0; i<C.rows(); ++i)
       for (int j=0; j<C.cols(); ++j)
-        C(i,j)=A(i,j)*B(j);
+        C(i,j)=A(i,j)*B[j];
     //works?
     //const int ccols = C.cols();
     //const int ijmax = C.size();
@@ -162,7 +162,7 @@ namespace MatrixOperators
 
     for (int i=0; i<C.rows(); ++i)
       for (int j=0; j<C.cols(); ++j)
-        C(i,j)=A(i)*B(i,j);
+        C(i,j)=A[i]*B(i,j);
 
 
     //const int crows = C.rows();
@@ -377,8 +377,3 @@ namespace simd
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

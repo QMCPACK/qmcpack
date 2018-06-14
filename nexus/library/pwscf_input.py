@@ -55,6 +55,7 @@ from generic import obj
 from structure import Structure,kmesh
 from physical_system import PhysicalSystem
 from developer import DevBase,warn
+from pseudopotential import pp_elem_label
 from simulation import SimulationInput
 from debug import *
 
@@ -336,6 +337,7 @@ class Section(Element):
     #end def read
 
     def write(self,parent):
+        cls = self.__class__
         c='&'+self.name.upper()+'\n'
         vars = list(self.keys())
         vars.sort()
@@ -363,6 +365,9 @@ class Section(Element):
                 vname = self.section_aliases[var]
             else:
                 vname = var
+            #end if
+            if vname in cls.case_map:
+                vname = cls.case_map[vname]
             #end if
             #c+='   '+vname+' = '+sval+'\n'
             c+='   '+'{0:<15} = {1}\n'.format(vname,sval)
@@ -509,7 +514,9 @@ class system(Section):
     atomic_variables = obj(
         hubbard_u = 'Hubbard_U',
         start_mag = 'starting_magnetization',
-        hubbard_j = 'Hubbard_J'
+        hubbard_j = 'Hubbard_J',
+        angle1    = 'angle1',
+        angle2    = 'angle2',
         )
 
     # specialized read for partial array variables (hubbard U, starting mag, etc)
@@ -552,6 +559,7 @@ class system(Section):
 
     # specialized write for odd handling of hubbard U
     def write(self,parent):
+        cls = self.__class__
         c='&'+self.name.upper()+'\n'
         vars = list(self.keys())
         vars.sort()
@@ -591,6 +599,8 @@ class system(Section):
                     vtype = bool
                 elif isinstance(val,int):
                     vtype = int
+                else:
+                    self.error('Type "{0}" is not known as a value of variable "{1}".\nThis may reflect a need for added developer attention to support this type.  Please contact a developer.'.format(vtype.__class__.__name__,var))
                 #end if
                 sval = writeval[vtype](val)
 
@@ -598,6 +608,9 @@ class system(Section):
                     vname = self.section_aliases[var]
                 else:
                     vname = var
+                #end if
+                if vname in cls.case_map:
+                    vname = cls.case_map[vname]
                 #end if
                 #c+='   '+vname+' = '+sval+'\n'
                 c+='   '+'{0:<15} = {1}\n'.format(vname,sval)
@@ -1358,7 +1371,7 @@ class PwscfInput(SimulationInput):
         for name,a in atoms.iteritems():
             masses[name] = convert(a.mass,'me','amu')
         #end for
-        self.atomic_species.atoms  = list(atoms.keys())
+        self.atomic_species.atoms  = list(sorted(atoms.keys()))
         self.atomic_species.masses = masses
         # set pseudopotentials for renamed atoms (e.g. Cu3 is same as Cu)
         pp = self.atomic_species.pseudopotentials
@@ -1482,7 +1495,7 @@ class PwscfInput(SimulationInput):
     #end def incorporate_system_old
 
         
-    def return_system(self,**valency):
+    def return_system(self,structure_only=False,**valency):
         ibrav = self.system.ibrav
         if ibrav!=0:
             self.error('ability to handle non-zero ibrav not yet implemented')
@@ -1512,6 +1525,10 @@ class PwscfInput(SimulationInput):
             )
         structure.zero_corner()
         structure.recenter()
+
+        if structure_only:
+            return structure
+        #end if
   
         ion_charge = 0
         atoms   = list(self.atomic_positions.atoms)
@@ -1655,7 +1672,13 @@ generate_any_defaults = obj(
 
 def generate_any_pwscf_input(**kwargs):
     #move values into a more convenient representation
-    kwargs = obj(**kwargs)
+    #kwargs = obj(**kwargs)
+    # enforce lowercase internally, but remain case insensitive to user input
+    kw_in = kwargs
+    kwargs = obj()
+    for name,value in kw_in.iteritems():
+        kwargs[name.lower()] = value
+    #end for
 
     # setup for k-point symmetry run
     #   ecutwfc is set to 1 so that pwscf will crash after initialization
@@ -1733,7 +1756,8 @@ def generate_any_pwscf_input(**kwargs):
     pseudopotentials = obj()
     atoms = []
     for ppname in pseudos:
-        element = ppname[0:2].strip('.')
+        #element = ppname[0:2].strip('.')
+        label,element = pp_elem_label(ppname,guard=True)
         atoms.append(element)
         pseudopotentials[element] = ppname
     #end for

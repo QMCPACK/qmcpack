@@ -21,7 +21,7 @@
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
-#include "QMCWaveFunctions/BasisSetFactory.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "Message/MPIObjectBase.h"
 namespace qmcplusplus
 {
@@ -67,6 +67,9 @@ struct WaveFunctionFactory: public MPIObjectBase
   /** add Fermion wavefunction term */
   bool addFermionTerm(xmlNodePtr cur);
 
+  /** add finite-difference linear response wavefunction term */
+  bool addFDLRTerm(xmlNodePtr cur);
+
   /** add an OrbitalBuilder and the matching xml node
    * @param b OrbitalBuilderBase*
    * @oaram cur xmlNode for b
@@ -83,8 +86,3 @@ struct WaveFunctionFactory: public MPIObjectBase
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

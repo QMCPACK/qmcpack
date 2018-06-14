@@ -18,7 +18,7 @@
 
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
 #include "QMCWaveFunctions/SPOSetBase.h"
-#include "QMCWaveFunctions/BasisSetBase.h"
+#include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 
 
@@ -47,23 +47,27 @@ struct EGOSet: public SPOSetBase
   inline void
   evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
+    const PosType &r=P.activeR(iat);
     RealType sinkr,coskr;
     for(int ik=0; ik<KptMax; ik++)
     {
-      sincos(dot(K[ik],P.R[iat]),&sinkr,&coskr);
+      sincos(dot(K[ik],r),&sinkr,&coskr);
       psi[ik]=ValueType(coskr,sinkr);
     }
   }
 
   /** generic inline function to handle a row
-   * @param r position of the particle
+   * @param P current ParticleSet
+   * @param iat active particle
    * @param psi value row
    * @param dpsi gradient row
    * @param d2psi laplacian row
    */
-  void evaluate_p(const PosType& r, ValueType* restrict psi, GradType* restrict dpsi
-                  , ValueType* restrict d2psi)
+  inline void
+  evaluate(const ParticleSet& P, int iat,
+           ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
+    const PosType &r=P.activeR(iat);
     RealType sinkr,coskr;
     for(int ik=0; ik<KptMax; ik++)
     {
@@ -74,23 +78,22 @@ struct EGOSet: public SPOSetBase
     }
   }
 
-  inline void
-  evaluate(const ParticleSet& P, int iat,
-           ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
-  {
-    evaluate_p(P.R[iat],psi.data(),dpsi.data(),d2psi.data());
-  }
-
   void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi
                 , HessVector_t& grad_grad_psi)
   {
     APP_ABORT("Incomplete implementation EGOSet::evaluate(P,iat,psi,dpsi,grad_grad_psi)");
   }
+
   void evaluate_notranspose(const ParticleSet& P, int first, int last,
                             ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
   {
-    for(int i=0,iat=first; iat<last; i++,iat++)
-      evaluate_p(P.R[iat],logdet[i],dlogdet[i],d2logdet[i]);
+    for(int iat=first, i=0; iat<last; ++iat,++i)
+    {
+      ValueVector_t v(logdet[i],OrbitalSetSize);
+      GradVector_t g(dlogdet[i],OrbitalSetSize);
+      ValueVector_t l(d2logdet[i],OrbitalSetSize);
+      evaluate(P,iat,v,g,l);
+    }
   }
   void evaluate_notranspose(const ParticleSet& P, int first, int last
                             , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
@@ -117,7 +120,7 @@ public:
 
 /** OrbitalBuilder for Slater determinants of electron-gas
 */
-class ElectronGasBasisBuilder: public BasisSetBuilder
+class ElectronGasSPOBuilder: public SPOSetBuilder
 {
 protected:
   bool has_twist;
@@ -126,10 +129,8 @@ protected:
   xmlNodePtr spo_node;
 public:
   ///constructor
-  ElectronGasBasisBuilder(ParticleSet& p, xmlNodePtr cur);
+  ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur);
 
-  ///implement virtual function
-  bool put(xmlNodePtr cur);
   /** initialize the Antisymmetric wave function for electrons
   *@param cur the current xml node
   */
@@ -139,8 +140,3 @@ public:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

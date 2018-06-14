@@ -80,6 +80,19 @@ struct BLAS
   }
 
   inline static
+  void axpy(int n, float x, const float* a, float* b)
+  {
+    saxpy(n, x, a, INCX, b, INCY);
+  }
+
+  inline static
+  void axpy(int n, const std::complex<float> x, const std::complex<float>* a, int incx,
+            std::complex<float>* b, int incy)
+  {
+    caxpy(n, x, a, incx, b, incy);
+  }
+
+  inline static
   void axpy(int n, const std::complex<double> x, const std::complex<double>* a, int incx,
             std::complex<double>* b, int incy)
   {
@@ -108,6 +121,12 @@ struct BLAS
   void scal(int n, double alpha, double* x)
   {
     dscal(n,alpha,x,INCX);
+  }
+
+  inline static
+  void scal(int n, float alpha, float* x)
+  {
+    sscal(n,alpha,x,INCX);
   }
 
   //inline static
@@ -196,6 +215,26 @@ struct BLAS
   {
     cgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
   }
+
+#if defined(HAVE_MKL)
+  inline static
+  void gemv(char trans_in, int n, int m
+            , const std::complex<double>& alpha, const double* restrict amat, int lda
+            , const std::complex<double>* restrict x, int incx, const std::complex<double>& beta
+            , std::complex<double>* y, int incy)
+  {
+    dzgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
+  }
+
+  inline static
+  void gemv(char trans_in, int n, int m
+            , const std::complex<float>& alpha, const float* restrict amat, int lda
+            , const std::complex<float>* restrict x, int incx, const std::complex<float>& beta
+            , std::complex<float>* y, int incy)
+  {
+    scgemv(trans_in, n, m, alpha, amat, lda, x, incx, beta, y, incy);
+  }
+#endif
 
   inline static
   void gemm (char Atrans, char Btrans, int M, int N, int K, double alpha,
@@ -300,24 +339,11 @@ struct BLAS
 //     csymv(&UPLO,&n,&cone,a,&n,x,&INCX,&czero,y,&INCY);
 //   }
 
-  //template<typename T>
-  inline static
-  double dot(int n, const double* restrict a, const int incx, const double* restrict b, const int incy )
-  {
-    return ddot(n,a,incx,b,incy);
-  }
-
-  inline static
-  std::complex<double> dot(int n, const std::complex<double>* restrict a, const int incx, const std::complex<double>* restrict b, const int incy )
-  {
-    return zdotu(n,a,incx,b,incy);
-  }
-
   template<typename T>
   inline static
   T dot(int n, const T* restrict a, const T* restrict b)
   {
-    T res=0.0;
+    T res=T(0);
     for(int i=0; i<n; ++i)
       res += a[i]*b[i];
     return res;
@@ -327,7 +353,7 @@ struct BLAS
   inline static
   std::complex<T> dot(int n, const std::complex<T>* restrict a, const T* restrict b)
   {
-    std::complex<T> res=0.0;
+    std::complex<T> res=T(0);
     for(int i=0; i<n; ++i)
       res += a[i]*b[i];
     return res;
@@ -504,10 +530,6 @@ struct LAPACK
   }
 
 };
-#endif // OHMMS_BLAS_H
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 
+
+#endif // OHMMS_BLAS_H

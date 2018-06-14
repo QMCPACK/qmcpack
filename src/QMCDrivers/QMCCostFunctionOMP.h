@@ -36,7 +36,7 @@ public:
 
   ///Constructor.
   QMCCostFunctionOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                     QMCHamiltonian& h, HamiltonianPool& hpool);
+                     QMCHamiltonian& h);
 
   ///Destructor
   ~QMCCostFunctionOMP();
@@ -47,10 +47,8 @@ public:
   void engine_checkConfigurations(cqmc::engine::LMYEngine * EngineObj);
 #endif
   void resetPsi(bool final_reset=false);
-  void resetWalkers();   
   void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff=0);
-  Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& H2, Matrix<Return_t>& Hamiltonian, Matrix<Return_t>& Variance, Matrix<Return_t>& Overlap);
-  Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right, Matrix<Return_t>& Overlap);
+  Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right);
 
 protected:
   std::vector<QMCHamiltonian*> H_KE_Node;
@@ -62,11 +60,9 @@ protected:
   std::vector<Matrix<Return_t>* > HDerivRecords;
   Return_t CSWeight;
 
-  ///vmc walkers to clean up
-  std::vector<int> nVMCWalkers;
   Return_t correlatedSampling(bool needGrad=true);
 
-    #ifdef HAVE_LMY_ENGINE
+  #ifdef HAVE_LMY_ENGINE
   int total_samples();
   Return_t LMYEngineCost_detail(cqmc::engine::LMYEngine * EngineObj);
   #endif
@@ -74,8 +70,3 @@ protected:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1804 $   $Date: 2007-02-24 14:49:09 -0600 (Sat, 24 Feb 2007) $
- * $Id: QMCCostFunctionOMP.h 1804 2007-02-24 20:49:09Z jnkim $
- ***************************************************************************/

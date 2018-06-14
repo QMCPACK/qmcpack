@@ -37,7 +37,7 @@ putContent(qmcplusplus::Vector<T>& a, xmlNodePtr cur)
   int n(a.size());
   while(!stream.eof() && i<n )
   {
-    stream >> a(i++);
+    stream >> a[i++];
   }
   return true;
 }
@@ -58,8 +58,3 @@ putContent(qmcplusplus::Matrix<T>& a, xmlNodePtr cur)
 }
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

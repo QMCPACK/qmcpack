@@ -20,7 +20,6 @@
 #define QMCPLUSPLUS_CORRELATEDLOCALENERGYESTIMATOR_H
 
 #include "Estimators/ScalarEstimatorBase.h"
-#include "QMCDrivers/SpaceWarp.h"
 
 namespace qmcplusplus
 {
@@ -81,8 +80,3 @@ struct CSEnergyEstimator: public ScalarEstimatorBase
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1926 $   $Date: 2007-04-20 12:30:26 -0500 (Fri, 20 Apr 2007) $
- * $Id: CSEnergyEstimator.h 1926 2007-04-20 17:30:26Z jnkim $
- ***************************************************************************/

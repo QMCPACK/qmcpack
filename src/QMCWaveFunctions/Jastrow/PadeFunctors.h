@@ -97,13 +97,13 @@ struct PadeFunctor:public OptimizableFunctorBase
     AoverB=A/B;
   }
 
-  inline real_type evaluate(real_type r)
+  inline real_type evaluate(real_type r) const
   {
     return A*r/(1.0+B*r)-AoverB;
   }
 
   inline real_type
-  evaluate(real_type r, real_type& dudr, real_type& d2udr2)
+  evaluate(real_type r, real_type& dudr, real_type& d2udr2) const
   {
     real_type u = 1.0/(1.0+B*r);
     dudr = A*u*u;
@@ -112,7 +112,7 @@ struct PadeFunctor:public OptimizableFunctorBase
   }
 
   inline real_type
-  evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type& d3udr3)
+  evaluate(real_type r, real_type& dudr, real_type& d2udr2, real_type& d3udr3) const
   {
     real_type u = 1.0/(1.0+B*r);
     dudr = A*u*u;
@@ -121,6 +121,28 @@ struct PadeFunctor:public OptimizableFunctorBase
     return A*u*r-AoverB;
   }
 
+  inline real_type evaluateV(const int iat, const int iStart, const int iEnd,
+    const T* restrict _distArray, T* restrict distArrayCompressed ) const
+  {
+    real_type sum(0);
+    for(int idx=iStart; idx<iEnd; idx++)
+      if (idx!=iat) sum += evaluate(_distArray[idx]);
+    return sum;
+  }
+
+  inline void evaluateVGL(const int iat, const int iStart, const int iEnd,
+    const T* distArray,  T* restrict valArray,
+    T* restrict gradArray, T* restrict laplArray,
+    T* restrict distArrayCompressed, int* restrict distIndices ) const
+  {
+    for(int idx=iStart; idx<iEnd; idx++)
+    {
+      valArray[idx] = evaluate(distArray[idx], gradArray[idx], laplArray[idx]);
+      gradArray[idx] /= distArray[idx];
+    }
+    if ( iat>=iStart && iat<iEnd )
+      valArray[iat] = gradArray[iat] = laplArray[iat] = T(0);
+  }
 
   inline real_type f(real_type r)
   {
@@ -888,9 +910,4 @@ struct ScaledPadeFunctor:public OptimizableFunctorBase
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

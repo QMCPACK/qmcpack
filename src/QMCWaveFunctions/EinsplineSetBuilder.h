@@ -23,14 +23,14 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_SET_BUILDER_H
 #define QMCPLUSPLUS_EINSPLINE_SET_BUILDER_H
 
-#include "QMCWaveFunctions/BasisSetBase.h"
+#include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/BandInfo.h"
 #include "QMCWaveFunctions/AtomicOrbital.h"
-#ifdef QMC_CUDA
 #include "QMCWaveFunctions/EinsplineSet.h"
-#endif
 #include "Numerics/HDFNumericAttrib.h"
 #include <map>
+
+#define PW_COEFF_NORM_TOLERANCE 1e-6
 
 class Communicate;
 
@@ -121,7 +121,7 @@ struct H5OrbSet
 
 /** EinsplineSet builder
  */
-class EinsplineSetBuilder : public BasisSetBuilder
+class EinsplineSetBuilder : public SPOSetBuilder
 {
 public:
 
@@ -162,13 +162,15 @@ public:
   ///destructor
   ~EinsplineSetBuilder();
 
-  /** process xml node to initialize the builder */
-  bool put (xmlNodePtr cur);
-
   /** initialize the Antisymmetric wave function for electrons
    * @param cur the current xml node
    */
   SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
+
+  /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
+   * @param cur the current xml node
+   */
+  void set_metadata(int numOrbs, int TwistNum_inp);
 
   /** initialize with the existing SPOSet */
   SPOSetBase* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info);
@@ -209,7 +211,6 @@ public:
     //oset->GGt=dot(transpose(oset->PrimLattice.G), oset->PrimLattice.G);
     oset->GGt=GGt;
     oset->setOrbitalSetSize (numOrbs);
-    oset->BasisSetSize   = numOrbs;
   }
 
 
@@ -217,8 +218,7 @@ public:
   UnitCellType SuperCell, PrimCell, PrimCellInv;
   int NumBands, NumElectrons, NumSpins, NumTwists, NumCoreStates;
   int MaxNumGvecs;
-  RealType MeshFactor;
-  RealType BufferLayer;
+  double MeshFactor;
   RealType MatchingTol;
   TinyVector<int,3> MeshSize;
   std::vector<std::vector<TinyVector<int,3> > > Gvecs;
@@ -228,6 +228,9 @@ public:
 
   Vector<int> IonTypes;
   Vector<TinyVector<double,OHMMS_DIM> > IonPos;
+  // mapping the ions in the supercell to the primitive cell
+  std::vector<int> Super2Prim;
+
   /////////////////////////////
   // Twist angle information //
   /////////////////////////////
@@ -262,7 +265,7 @@ public:
   void OccupyBands(int spin, int sortBands, int numOrbs);
   void OccupyBands_ESHDF(int spin, int sortBands, int numOrbs);
 
-#ifdef QMC_CUDA
+#if 0
   void ReadBands      (int spin, EinsplineSetExtended<std::complex<double> >* orbitalSet);
   void ReadBands_ESHDF(int spin, EinsplineSetExtended<std::complex<double> >* orbitalSet);
   void ReadBands      (int spin, EinsplineSetExtended<        double  >* orbitalSet);
@@ -286,6 +289,28 @@ public:
   ////////////////////////////////
   std::vector<AtomicOrbital<std::complex<double> > > AtomicOrbitals;
 
+  struct CenterInfo
+  {
+    std::vector<int> lmax, spline_npoints, GroupID;
+    std::vector<double> spline_radius, cutoff, inner_cutoff, non_overlapping_radius;
+    std::vector<TinyVector<double,OHMMS_DIM> > ion_pos;
+    int Ncenters;
+
+    CenterInfo(): Ncenters(0) {};
+
+    void resize(int ncenters)
+    {
+      Ncenters=ncenters;
+      lmax.resize(ncenters, -1);
+      spline_npoints.resize(ncenters, -1);
+      GroupID.resize(ncenters, 0);
+      spline_radius.resize(ncenters, -1.0);
+      inner_cutoff.resize(ncenters, -1.0);
+      non_overlapping_radius.resize(ncenters, -1.0);
+      cutoff.resize(ncenters, -1.0);
+      ion_pos.resize(ncenters);
+    }
+  } AtomicCentersInfo;
 
   // This returns the path in the HDF5 file to the group for orbital
   // with twist ti and band bi
@@ -300,12 +325,11 @@ public:
   int LastSpinSet, NumOrbitalsRead;
 
   std::string occ_format;
-  RealType qafm;
   int particle_hole_pairs;
   bool makeRotations;
+#if 0
   std::vector<RealType> rotationMatrix;
   std::vector<int> rotatedOrbitals;
-#ifdef QMC_CUDA
   void RotateBands_ESHDF(int spin, EinsplineSetExtended<std::complex<double > >* orbitalSet);
   void RotateBands_ESHDF(int spin, EinsplineSetExtended<double>* orbitalSet);
 #endif
@@ -320,7 +344,7 @@ public:
   int MyToken;
   inline void update_token(const char* f, int l, const char* msg) 
   {
-    app_log() << "TOKEN=" << MyToken << " " << msg << " " << f << " " << l << std::endl; MyToken++; 
+    app_debug() << "TOKEN=" << MyToken << " " << msg << " " << f << " " << l << std::endl; MyToken++;
   }
   //inline void update_token(const char* f, int l, const char* msg) 
   //{}

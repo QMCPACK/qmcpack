@@ -17,6 +17,7 @@
 #define QMCPLUSPLUS_VECTOROPERATORS_3D_HPP
 
 #include <OhmmsPETE/TinyVector.h>
+#include <OhmmsPETE/OhmmsMatrix.h>
 
 namespace qmcplusplus {
   namespace simd {
@@ -115,8 +116,3 @@ namespace qmcplusplus {
   }
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author: jmcminis $
- * $Revision: 5077 $   $Date: 2010-12-09 03:14:51 -0600 (Thu, 09 Dec 2010) $
- * $Id: trace.hpp 5077 2010-12-09 09:14:51Z jmcminis $ 
- ***************************************************************************/

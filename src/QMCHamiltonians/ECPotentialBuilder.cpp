@@ -50,10 +50,12 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     nonLocalPot.resize(ng,0);
   }
   std::string ecpFormat("table");
+  std::string NLPP_algo("default");
   std::string pbc("yes");
   std::string forces("no");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(ecpFormat,"format");
+  pAttrib.add(NLPP_algo,"algorithm");
   pAttrib.add(pbc,"pbc");
   pAttrib.add(forces,"forces");
   pAttrib.put(cur);
@@ -70,9 +72,14 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   {
     useSimpleTableFormat();
   }
+
+  RealType rcore_max=0;
+
   ///create LocalECPotential
   bool usePBC =
     !(IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc =="no");
+
+
   if(hasLocalPot)
   {
     if(IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc =="no")
@@ -86,7 +93,10 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       for(int i=0; i<localPot.size(); i++)
       {
         if(localPot[i])
+        {
           apot->add(i,localPot[i],localZeff[i]);
+          rcore_max=std::max(rcore_max,localPot[i]->r_max);
+        }
       }
       targetH.addOperator(apot,"LocalECP");
     }
@@ -108,31 +118,17 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       }
       targetH.addOperator(apot,"LocalECP");
     }
-    //if(IonConfig.Lattice.BoxBConds[0]) {
-    //  CoulombPBCAB* apot=new CoulombPBCAB(IonConfig,targetPtcl);
-    //  for(int i=0; i<localPot.size(); i++) {
-    //    if(localPot[i]) apot->add(i,localPot[i]);
-    //  }
-    //  targetH.addOperator(apot,"LocalECP");
-    //} else {
-    //  LocalECPotential* apot = new LocalECPotential(IonConfig,targetPtcl);
-    //  for(int i=0; i<localPot.size(); i++) {
-    //    if(localPot[i]) apot->add(i,localPot[i],localZeff[i]);
-    //  }
-    //  targetH.addOperator(apot,"LocalECP");
-    //}
   }
   if(hasNonLocalPot)
   {
     //resize the sphere
-    targetPtcl.resizeSphere(IonConfig.getTotalNum());
     RealType rc2=0.0;
 #ifdef QMC_CUDA
     NonLocalECPotential_CUDA* apot =
       new NonLocalECPotential_CUDA(IonConfig,targetPtcl,targetPsi,usePBC,doForces);
 #else
     NonLocalECPotential* apot =
-      new NonLocalECPotential(IonConfig,targetPtcl,targetPsi, doForces);
+      new NonLocalECPotential(IonConfig,targetPtcl,targetPsi, doForces, NLPP_algo=="batched");
 #endif
     int nknot_max=0;
     for(int i=0; i<nonLocalPot.size(); i++)
@@ -147,23 +143,20 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     app_log() << "\n  Using NonLocalECP potential \n"
               << "    Maximum grid on a sphere for NonLocalECPotential: "
               << nknot_max << std::endl;
+    if(NLPP_algo=="batched") app_log() << "    Using batched ratio computing in NonLocalECP" << std::endl;
+
+    rcore_max=std::max(rc2,rcore_max);
     targetPtcl.checkBoundBox(2*rc2);
+
     targetH.addOperator(apot,"NonLocalECP");
-    for(int ic=0; ic<IonConfig.getTotalNum(); ic++)
-    {
-      int ig=IonConfig.GroupID[ic];
-      if(nonLocalPot[ig])
-      {
-        if(nonLocalPot[ig]->nknot)
-        {
-          targetPtcl.Sphere[ic]->resize(nknot_max);
-          //targetPsi.resizeSphere(nknot_max);
-          //targetPtcl.Sphere[ic]->resize(nonLocalPot[ig]->nknot);
-          //targetPsi.resizeSphere(nonLocalPot[ig]->nknot);
-        }
-      }
-    }
   }
+
+  //app_log() << "Checking THIS " << std::endl;
+  //DEV::OPTIMIZE_SOA
+  int tid=targetPtcl.addTable(IonConfig,DT_SOA_PREFERRED);
+  targetPtcl.DistTables[tid]->setRmax(rcore_max); //For the optimization only
+  app_log() << "  ECPotential::Rmax " << targetPtcl.DistTables[tid]->Rmax << std::endl;
+
   app_log().flush();
   return true;
 }
@@ -189,13 +182,16 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
       hAttrib.put(cur);
       SpeciesSet& ion_species(IonConfig.getSpeciesSet());
       int speciesIndex=ion_species.findSpecies(ionName);
+      int chargeIndex=ion_species.findAttribute("charge");
+      int AtomicNumberIndex=ion_species.findAttribute("atomicnumber");
+      if(AtomicNumberIndex==-1) AtomicNumberIndex=ion_species.findAttribute("atomic_number");
+      bool success=false;
       if(speciesIndex < ion_species.getTotalNum())
       {
         app_log() << std::endl << "  Adding pseudopotential for " << ionName << std::endl;
         RealType rmax=0.0;
 
         ECPComponentBuilder ecp(ionName,myComm);
-        bool success=false;
         if(format == "xml")
         {
           if(href == "none")
@@ -229,11 +225,46 @@ void ECPotentialBuilder::useXmlFormat(xmlNodePtr cur)
           }
           int rcutIndex=ion_species.addAttribute("rmax_core");
           ion_species(rcutIndex,speciesIndex)=rmax;
+          if(chargeIndex == -1)
+          {
+            app_error() << "  Ion species " << ionName << " needs parameter \'charge\'" << std::endl;
+            success=false;
+          }
+          else
+          {
+            RealType ion_charge = ion_species(chargeIndex,speciesIndex);
+            if( std::fabs(ion_charge - ecp.Zeff) > 1e-4 )
+            {
+              app_error() << "  Ion species " << ionName << " charge " << ion_charge
+                          << " pseudopotential charge " << ecp.Zeff << " mismatch!" << std::endl;
+              success=false;
+            }
+          }
+          if(AtomicNumberIndex == -1)
+          {
+            app_error() << "  Ion species " << ionName << " needs parameter \'atomicnumber\'" << std::endl;
+            success=false;
+          }
+          else
+          {
+            int atomic_number = ion_species(AtomicNumberIndex,speciesIndex);
+            if(atomic_number != ecp.AtomicNumber)
+            {
+              app_error() << "  Ion species " << ionName << " atomicnumber " << atomic_number
+                          << " pseudopotential atomic-number " << ecp.AtomicNumber << " mismatch!" << std::endl;
+              success=false;
+            }
+          }
         }
       }
       else
       {
         app_error() << "  Ion species " << ionName << " is not found." << std::endl;
+      }
+      if(!success)
+      {
+        app_error() << " Failed to add pseudopotential for element " << ionName << std::endl;
+        APP_ABORT("ECPotentialBuilder::useXmlFormat failed!");
       }
     }
     cur=cur->next;
@@ -355,8 +386,3 @@ void ECPotentialBuilder::useSimpleTableFormat()
   }//species
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -22,7 +22,6 @@
 #include "QMCWaveFunctions/Fermion/Backflow_ee_kSpace.h"
 #include "QMCWaveFunctions/Fermion/Backflow_eI.h"
 #include "QMCWaveFunctions/Fermion/Backflow_eI_spin.h"
-#include "QMCWaveFunctions/Fermion/GaussianFunctor.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
@@ -312,11 +311,6 @@ void BackflowBuilder::addTwoBody(xmlNodePtr cur)
   Backflow_ee<BsplineFunctor<RealType> > *tbf = new Backflow_ee<BsplineFunctor<RealType> >(targetPtcl,targetPtcl);
   SpeciesSet& species(targetPtcl.getSpeciesSet());
   std::vector<int> offsets;
-  if(funct == "Gaussian")
-  {
-    APP_ABORT("Disabled GaussianFunctor for now, \n");
-  }
-  else
     if(funct == "Bspline")
     {
       app_log() <<"Using BsplineFunctor type. \n";

@@ -1,0 +1,136 @@
+\chapter{Derivation of twist averaging efficiency}
+\label{sec:app_ta_efficiency}
+In this appendix we derive the relative statistical efficiency of 
+twist averaging with an irreducible (weighted) set of k-points 
+versus using uniform weights over an unreduced set of k-points 
+(\emph{e.g.} a full Monkhorst-Pack mesh).
+
+Consider the weighted average of a set of statistical variables 
+$\{x_m\}$ with weights $\{w_m\}$:
+\begin{align}
+  x_{TA} = \frac{\sum_mw_mx_m}{\sum_mw_m}
+\end{align} 
+If produced by a finite quantum Monte Carlo run at a set of 
+twist angles/k-points $\{k_m\}$, each variable mean $\mean{x_m}$ 
+has a statistical error bar $\sigma_m$ and we can also obtain 
+the statistical error bar of the mean of the twist averaged 
+quantity $\mean{x_{TA}}$:
+\begin{align}
+  \sigma_{TA} = \frac{\left(\sum_mw_m^2\sigma_m^2\right)^{1/2}}{\sum_mw_m}
+\end{align}
+The error bar of each individual twist $\sigma_m$, is related to the 
+autocorrelation time $\kappa_m$,  intrinsic variance $v_m$, and number 
+of post-equilibration Monte Carlo steps $N_{step}$ in the following way:
+\begin{align}
+  \sigma_m^2=\frac{\kappa_mv_m}{N_{step}}
+\end{align}
+In the setting of twist averaging, the autocorrelation time and 
+variance for different twist angles are often very similar across 
+twists and we have
+\begin{align}
+  \sigma_m^2=\sigma^2=\frac{\kappa v}{N_{step}}
+\end{align} 
+If we define the total weight as $W$, \emph{i.e.} $W\equiv\sum_{m=1}^Mw_m$, 
+for the weighted case with $M$ irreducible twists the error bar is
+\begin{align}
+  \sigma_{TA}^{weighted}=\frac{\left(\sum_{m=1}^Mw_m^2\right)^{1/2}}{W}\sigma
+\end{align}
+For uniform weighting with $w_m=1$ the number of twists is $W$ and 
+we have
+\begin{align}
+  \sigma_{TA}^{uniform}=\frac{1}{\sqrt{W}}\sigma
+\end{align}
+We are interested in comparing the efficiency of choosing weights 
+uniformly or based on the irreducible multiplicity of each twist angle 
+for a given target error bar $\sigma_{target}$.  The number of Monte Carlo  
+steps required to reach this target for uniform weighting is
+\begin{align}
+  N_{step}^{uniform} = \frac{1}{W}\frac{\kappa v}{\sigma_{target}^2}
+\end{align}
+while for non-uniform weighting we have
+\begin{align}\label{eq:weighted_step}
+  N_{step}^{weighted} &= \frac{\sum_{m=1}^Mw_m^2}{W^2}\frac{\kappa v}{\sigma_{target}^2} \nonumber\\
+                  &=\frac{\sum_{m=1}^Mw_m^2}{W}N_{step}^{uniform}
+\end{align}
+The Monte Carlo efficiency is defined as 
+\begin{align}
+  \xi = \frac{1}{\sigma^2t}
+\end{align}
+where $\sigma$ is the error bar and $t$ is the total cpu time required 
+for the Monte Carlo run.  
+
+The main advantage made possible by irreducible twist weighting is to 
+reduce the equilibration time overhead by having fewer twists, and 
+hence fewer Monte Carlo runs to equilibrate.  In the context of twist 
+averaging, the total cpu time for a run can be considered to be
+\begin{align}
+  t=N_{twist}(N_{eq}+N_{step})t_{step}
+\end{align}
+where $N_{twist}$ is the number of twists, $N_{eq}$ is the number of Monte 
+Carlo steps required to reach equilibrium, $N_{step}$ is the number 
+of Monte Carlo steps included in the statisical averaging as before, 
+and $t_{step}$ is the wall clock time required to complete a single 
+Monte Carlo step. For uniform weighting $N_{twist}=W$ while for irreducible 
+weighting $N_{twist}=M$.
+
+We can now calculate the relative efficiency ($\eta$) of irreducible vs. 
+uniform twist weighting with the aim of obtaining a target error bar 
+$\sigma_{target}$:
+\begin{align}
+  \eta &= \frac{\xi_{TA}^{weighted}}{\xi_{TA}^{uniform}} \nonumber \\
+       &= \frac{\sigma_{target}^2t_{TA}^{uniform}}{\sigma_{target}^2t_{TA}^{weighted}} \nonumber \\
+       &= \frac{W(N_{eq}+N_{step}^{uniform})}{M(N_{eq}+N_{step}^{weighted})} \nonumber \\
+       &= \frac{W(N_{eq}+N_{step}^{uniform})}{M(N_{eq}+\frac{\sum_{m=1}^Mw_m^2}{W}N_{step}^{uniform})} \nonumber \\
+       &= \frac{W}{M}\frac{1+f}{1+\frac{\sum_{m=1}^Mw_m^2}{W}f}
+\end{align}
+In this last expression, $f$ is the ratio of the number of usable 
+Monte Carlo steps to the number that must be discarded during equilibration 
+($f=N_{step}^{uniform}/N_{eq}$) and as before $W=\sum_mw_m$, which is the number of 
+twist angles in the uniform weighting case.  It is important to recall 
+that $N_{step}^{uniform}$ in $f$ is defined relative to uniform weighting; it is 
+the number of Monte Carlo steps required to reach a target accuracy in the 
+case of uniform twist weights.
+
+The formula for $\eta$ above can be easily changed with the help of 
+Eq. \ref{eq:weighted_step} to reflect the 
+number of Monte Carlo steps obtained in an irreducibly weighted run 
+instead.  A good exercise is to consider runs one has already completed 
+with either uniform or irreducible weighting and calculate the 
+expected efficiency change had the opposite type of weighting been used.
+
+The break even point $(\eta=1)$ can be found at a usable step fraction of 
+\begin{align}
+  f=\frac{W-M}{M\frac{\sum_{m=1}^Mw_m^2}{W}-W}
+\end{align}
+
+The relative efficiency $(\eta)$ above is useful to consider in view of certain 
+scenarios.  An important case is where the number of required sampling 
+steps is no larger than the number of equilibration steps, \emph{i.e.} 
+$f\approx 1$.  For a very simple case with 8 uniform twists with 
+irreducible multiplicities of $w_m\in\{1,3,3,1\}$ ($W=8$, $M=4$), the 
+relative efficiency of irreducible vs. uniform weighting is 
+$\eta=\frac{8}{4}\frac{2}{1+20/8}\approx 1.14$.  In this case, 
+irreducible weighting is about $14$\% more efficient than uniform weighting.
+
+Another interesting case is where the number of sampling steps you can 
+reach with uniform twists before wall clock time runs out is small 
+relative to the number of equilibration steps ($f\rightarrow 0$). 
+In this limit $\eta\approx W/M$.  For our 8 uniform twist example, this would 
+result in a relative efficiency of $\eta=8/4=2$ making irreducible 
+weighting twice as efficient.
+
+A final case of interest is where the equilibration time is short 
+relative to the available sampling time $(f\rightarrow\infty)$, 
+giving $\eta\approx W^2/(M\sum_{m=1}^Mw_m^2)$.  Again for our simple example 
+we find $\eta=8^2/(4\times 20)\approx 0.8$, with uniform weighting being 
+$25$\% more efficient than irreducible.  
+
+For this simple example, the crossover point for irreducible weighting being 
+more efficient than uniform weighting is $f<2$, \emph{i.e.} when the 
+available sampling period is less than twice the length of the equilibration 
+period.  The expected efficiency ratio and crossover point should be checked 
+for the particular case under consideration to inform the choice between   
+twist averaging methods.
+
+
+

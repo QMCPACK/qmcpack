@@ -20,9 +20,7 @@
 #include "Numerics/OneDimGridBase.h"
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimCubicSpline.h"
-#include "QMCWaveFunctions/SphericalOrbitalSet.h"
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
-#include "QMCTools/MolecularOrbitalBasis.h"
 #include "QMCTools/RGFBuilderBase.h"
 
 namespace qmcplusplus
@@ -48,8 +46,3 @@ struct GTO2GridBuilder: public RGFBuilderBase
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

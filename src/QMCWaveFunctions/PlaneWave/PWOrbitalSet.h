@@ -48,7 +48,7 @@ public:
 
   /** default constructor
   */
-  PWOrbitalSet(): OwnBasisSet(false)
+  PWOrbitalSet(): OwnBasisSet(false), BasisSetSize(0), IsCloned(false), myBasisSet(nullptr), C(nullptr)
   {
   }
 
@@ -80,7 +80,7 @@ public:
   inline ValueType evaluate(int ib, const PosType& pos)
   {
     myBasisSet->evaluate(pos);
-    return BLAS::dot(BasisSetSize,C[ib],myBasisSet->Zv.data());
+    return BLAS::dot(BasisSetSize,(*C)[ib],myBasisSet->Zv.data());
   }
 
   void
@@ -108,6 +108,15 @@ public:
   PosType TwistAngle;
   ///My basis set
   PWBasisPtr myBasisSet;
+  ///number of basis
+  IndexType BasisSetSize;
+  /** pointer to matrix containing the coefficients
+   *
+   * makeClone makes a shallow copy and flag IsCloned
+   */
+  ValueMatrix_t* C;
+  ///if true, do not clean up
+  bool IsCloned;
   /////Plane-wave coefficients: (iband,g-vector)
   //Matrix<ValueType> Coefs;
   /** temporary array to perform gemm operation */
@@ -115,8 +124,3 @@ public:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

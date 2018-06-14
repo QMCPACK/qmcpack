@@ -22,7 +22,13 @@
 
 #include "OhmmsPETE/OhmmsArray.h"
 #include "Particle/ParticleSet.h"
+#include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "io/hdf_archive.h"
+#if !defined(EANBLE_SOA)
+#include "Message/CommOperators.h"
+#endif
+
 #if defined(ENABLE_SMARTPOINTER)
 #include <boost/shared_ptr.hpp>
 #endif
@@ -50,31 +56,20 @@ public:
   typedef OrbitalSetTraits<ValueType>::GradHessType  GGGType;
   typedef OrbitalSetTraits<ValueType>::GradHessVector_t GGGVector_t;
   typedef OrbitalSetTraits<ValueType>::GradHessMatrix_t GGGMatrix_t;
+  typedef OrbitalSetTraits<ValueType>::VGLVector_t      VGLVector_t;
   typedef ParticleSet::Walker_t                      Walker_t;
   typedef std::map<std::string,SPOSetBase*> SPOPool_t;
-
+  
   ///index in the builder list of sposets
   int builder_index;
-  ///true if C is an identity matrix
-  bool Identity;
-  ///true if C is an identity matrix
+  ///true if SPO is optimizable
   bool Optimizable;
   ///flag to calculate ionic derivatives
   bool ionDerivs;
-  ///total number of orbitals
-  IndexType TotalOrbitalSize;
+  ///if true, can use GL type, default=false
+  bool CanUseGLCombo;
   ///number of Single-particle orbitals
   IndexType OrbitalSetSize;
-  ///number of Single-particle orbitals
-  IndexType BasisSetSize;
-  ///index of the particle
-  IndexType ActivePtcl;
-  ///matrix to store temporary value before transpose
-  ValueMatrix_t t_logpsi;
-  ///matrix containing the coefficients
-  ValueMatrix_t C;
-  ///occupation number
-  Vector<RealType> Occ;
   /// Optimizable variables
   opt_variables_type myVars;
   ///name of the basis set
@@ -84,19 +79,34 @@ public:
    * Several user classes can own SPOSetBase and use objectName as counter
    */
   std::string objectName;
-
-  /** constructor
+#if !defined(EANBLE_SOA)
+  ///true if C is an identity matrix
+  bool Identity;
+  ///if true, do not clean up
+  bool IsCloned;
+  ///number of Single-particle orbitals
+  IndexType BasisSetSize;
+  /** pointer matrix containing the coefficients
+   *
+   * makeClone makes a shallow copy
    */
-  SPOSetBase()
-    :Identity(false),TotalOrbitalSize(0),OrbitalSetSize(0),BasisSetSize(0),
-    ActivePtcl(-1),Optimizable(false),ionDerivs(false),builder_index(-1)
+  ValueMatrix_t* C;
+  ///occupation number
+  Vector<RealType> Occ;
+  ///Pass Communicator
+  Communicate *myComm;
+#endif
+  
+  /** constructor */
+  SPOSetBase();
+
+  /** destructor */
+  virtual ~SPOSetBase()
   {
-    className="invalid";
+#if !defined(EANBLE_SOA)
+    if(!IsCloned && C!= nullptr) delete C;
+#endif
   }
-
-  /** destructor
-   */
-  virtual ~SPOSetBase() {}
 
   /** return the size of the orbital set
    */
@@ -124,46 +134,21 @@ public:
     return OrbitalSetSize;
   }
 
-  inline int getBasisSetSize() const
-  {
-    return BasisSetSize;
-  }
 
+#if !defined(ENABLE_SOA)
+  int getBasisSetSize() const { return BasisSetSize; }
 
-  bool setIdentity(bool useIdentity)
-  {
-    Identity = useIdentity;
-
-    if ( (OrbitalSetSize > 0) && (BasisSetSize > 0) )
-      C.resize(OrbitalSetSize,BasisSetSize);
-    else {
-      app_error() << "either OrbitalSetSize or BasisSetSize has an invalid value !!\n";
-      app_error() << "OrbitalSetSize = " << OrbitalSetSize << std::endl;
-      app_error() << "BasisSetSize = " << BasisSetSize << std::endl;
-      abort();
-    }
-
-    if (OrbitalSetSize <= BasisSetSize) {
-      for (int i=0; i<OrbitalSetSize; i++)
-        C(i,i) = 1.0;
-    }
-    else {
-      for (int i=0; i<BasisSetSize; i++)
-        C(i,i) = 1.0;
-    }
-
-    return true;
-  }
+  bool setIdentity(bool useIdentity);
 
   void checkObject();
 
   ///get C and Occ
   bool put(xmlNodePtr cur);
+#else
+  virtual int getBasisSetSize() const { return 0; }
 
-  virtual bool put(xmlNodePtr cur, SPOPool_t &spo_pool)
-  {
-    return put(cur);
-  }
+  virtual void checkObject() const {}
+#endif
 
   ///reset
   virtual void resetParameters(const opt_variables_type& optVariables)=0;
@@ -201,12 +186,29 @@ public:
   virtual void
   evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)=0;
 
+  /** compute dot_product of new row and old row */
+  virtual ValueType RATIO(const ParticleSet& P, int iat, const ValueType*
+      restrict arow);
+
+  /** evaluate VGL using SoA container for gl
+   *
+   * If newp is true, use particle set data for the proposed move
+   */
+  virtual void
+    evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bool newp);
+
   /** evaluate values for the virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
    * @param psiM single-particle orbitals psiM(i,j) for the i-th particle and the j-th orbital
    */
   virtual void
-  evaluateValues(const ParticleSet& VP, ValueMatrix_t& psiM);
+  evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM);
+
+  /** estimate the memory needs for evaluating SPOs of particles in the size of ValueType
+   * @param nP, number of particles.
+   */
+  virtual size_t
+  estimateMemory(const int nP) { return 0; }
 
   /** evaluate the values, gradients and laplacians of this single-particle orbital set
    * @param P current ParticleSet
@@ -226,7 +228,17 @@ public:
   evaluate(const ParticleSet& P, int iat,
            ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)=0;
 
-  /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last)particles
+  virtual void
+  evaluateThirdDeriv(const ParticleSet& P, int first, int last
+                     , GGGMatrix_t& grad_grad_grad_logdet);
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  /// \brief  returns whether this is an LCOrbitalSetOpt object
+  ///
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  virtual bool is_of_type_LCOrbitalSetOpt() const { return false; }
+
+  /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles
    * @param P current ParticleSet
    * @param first starting index of the particles
    * @param last ending index of the particles
@@ -234,24 +246,7 @@ public:
    * @param dlogdet gradients
    * @param d2logdet laplacians
    *
-   * Call evaluate_notranspose to build logdet
    */
-  virtual void
-  evaluate(const ParticleSet& P, int first, int last
-           , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet);
-
-  virtual void
-  evaluate(const ParticleSet& P, int first, int last
-           , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet);
-
-  virtual void
-  evaluate(const ParticleSet& P, int first, int last
-           , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet);
-
-  virtual void
-  evaluateThirdDeriv(const ParticleSet& P, int first, int last
-                     , GGGMatrix_t& grad_grad_grad_logdet);
-
   virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
                                     , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)=0;
 
@@ -293,6 +288,13 @@ public:
     return true;
   }
 
+  // Routine to set up data for the LCOrbitalSetOpt child class specifically
+  // Should be left empty for other derived classes
+  virtual void init_LCOrbitalSetOpt(const double mix_factor=0.0) { };
+
+  // Routine to update internal data for the LCOrbitalSetOpt child class specifically
+  // Should be left empty for other derived classes
+  virtual void rotate_B(const std::vector<RealType> &rot_mat) { };
 
 #ifdef QMC_CUDA
 
@@ -310,7 +312,7 @@ public:
   // Walker-parallel vectorized functions //
   //////////////////////////////////////////
   virtual void
-  reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool) { }
+  reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool) { }
 
   virtual void
   evaluate (std::vector<Walker_t*> &walkers, int iat, gpu::device_vector<CudaValueType*> &phi);
@@ -331,10 +333,13 @@ public:
   evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi);
 #endif
 
+#if !defined(ENABLE_SOA)
 protected:
   bool putOccupation(xmlNodePtr occ_ptr);
   bool putFromXML(xmlNodePtr coeff_ptr);
   bool putFromH5(const char* fname, xmlNodePtr coeff_ptr);
+#endif
+
 };
 
 #if defined(ENABLE_SMARTPOINTER)
@@ -346,9 +351,4 @@ typedef SPOSetBase*                   SPOSetBasePtr;
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

@@ -101,11 +101,11 @@ public:
   ///reset the size: with the number of particles and number of orbtials
   void resize(int nel, int morb);
 
-  RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
 
-  RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   /** return the ratio only for the  iat-th partcle move
    * @param P current configuration
@@ -113,24 +113,12 @@ public:
    */
   ValueType ratio(ParticleSet& P, int iat);
 
-  void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
   ValueType alternateRatio(ParticleSet& P)
   {
     return 1.0;
   }
-  /** return the ratio
-   * @param P current configuration
-   * @param iat particle whose position is moved
-   * @param dG differential Gradients
-   * @param dL differential Laplacians
-   *
-   * Data member *_temp contain the data assuming that the move is accepted
-   * and are used to evaluate differential Gradients and Laplacians.
-   */
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL);
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   GradType evalGrad(ParticleSet& P, int iat);
@@ -147,10 +135,6 @@ public:
    TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
 
-  ValueType logRatio(ParticleSet& P, int iat,
-                     ParticleSet::ParticleGradient_t& dG,
-                     ParticleSet::ParticleLaplacian_t& dL);
-
   /** move was accepted, update the real container
    */
   void acceptMove(ParticleSet& P, int iat);
@@ -159,26 +143,10 @@ public:
    */
   void restore(int iat);
 
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL,
-              int iat);
-
-  RealType evaluateLog(ParticleSet& P, PooledData<RealType>& buf);
-
-  RealType evaluateLogForDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
-  RealType evaluateLogFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf);
-
   RealType
   evaluateLog(ParticleSet& P,
               ParticleSet::ParticleGradient_t& G,
               ParticleSet::ParticleLaplacian_t& L) ;
-
-  ValueType
-  evaluate(ParticleSet& P,
-           ParticleSet::ParticleGradient_t& G,
-           ParticleSet::ParticleLaplacian_t& L);
 
   OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
@@ -191,7 +159,6 @@ public:
    */
   DiracDeterminantWithBackflow* makeCopy(SPOSetBase* spo) const;
 
-  inline void setLogEpsilon(ValueType x) { }
   inline ValueType rcdot(TinyVector<RealType,OHMMS_DIM>& lhs, TinyVector<ValueType,OHMMS_DIM>& rhs)
   {
     ValueType ret(0);
@@ -227,7 +194,9 @@ public:
   ValueType *LastAddressOfGGG;
   ValueType *FirstAddressOfFm;
   ValueType *LastAddressOfFm;
-  bool usingDerivBuffer;
+
+  ParticleSet::ParticleGradient_t myG, myG_temp;
+  ParticleSet::ParticleLaplacian_t myL, myL_temp;
 
   void testDerivFjj(ParticleSet& P, int pa);
   void testGGG(ParticleSet& P);
@@ -235,6 +204,10 @@ public:
   void testDerivLi(ParticleSet& P, int pa);
   void testL(ParticleSet& P);
   void dummyEvalLi(ValueType& L1, ValueType& L2, ValueType& L3);
+
+
+  void evaluate_SPO(ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet);
+  void evaluate_SPO(ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet);
 
 };
 

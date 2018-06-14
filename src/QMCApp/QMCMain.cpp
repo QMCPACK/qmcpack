@@ -29,7 +29,7 @@
 #include "QMCApp/HamiltonianPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/QMCHamiltonian.h"
-#include "Utilities/OhmmsInfo.h"
+#include "Utilities/OutputManager.h"
 #include "Utilities/Timer.h"
 #include "Utilities/NewTimer.h"
 #include "Particle/HDFWalkerIO.h"
@@ -38,9 +38,6 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
-#if !defined(REMOVE_TRACEMANAGER)
-#include "Estimators/PostProcessor.h"
-#endif
 #include <queue>
 #include <cstring>
 #include "HDFVersion.h"
@@ -72,24 +69,24 @@ QMCMain::QMCMain(Communicate* c)
   , traces_xml(NULL)
 #endif
 {
-  app_log()
+  app_summary()
       << "\n=====================================================\n"
       <<  "                    QMCPACK "
-      << QMCPLUSPLUS_VERSION_MAJOR << "." << QMCPLUSPLUS_VERSION_MINOR << "." << QMCPLUSPLUS_VERSION_PATCH << " \n"
-      << "\n  (c) Copyright 2003-  QMCPACK developers            \n"
-#if defined(QMCPLUSPLUS_BRANCH)
-      << "\n  Subversion branch " << QMCPLUSPLUS_BRANCH
-      << "\n  Last modified     " << QMCPLUSPLUS_LAST_CHANGED_DATE
-#endif
-      << "\n=====================================================\n";
+      << QMCPACK_VERSION_MAJOR << "." << QMCPACK_VERSION_MINOR << "." << QMCPACK_VERSION_PATCH << " \n\n"
+      << "       (c) Copyright 2003-  QMCPACK developers\n\n"
+      << "                    Please cite:\n"
+      << " J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)\n"
+      << "      https://doi.org/10.1088/1361-648X/aab9c3\n";
+  qmc_common.print_git_info_if_present(app_summary());
+  app_summary()  << "=====================================================\n";
   qmc_common.print_options(app_log());
-  app_log()
+  app_summary()
       << "\n  MPI Nodes            = " << OHMMS::Controller->size()
       << "\n  MPI Nodes per group  = " << myComm->size()
       << "\n  MPI Group ID         = " << myComm->getGroupID()
       << "\n  OMP_NUM_THREADS      = " << omp_get_max_threads()
       << std::endl;
-  app_log()
+  app_summary()
       << "\n  Precision used in this calculation, see definitions in the manual:"
       << "\n  Base precision      = " << GET_MACRO_VAL(OHMMS_PRECISION)
       << "\n  Full precision      = " << GET_MACRO_VAL(OHMMS_PRECISION_FULL)
@@ -98,8 +95,8 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  CUDA full precision = " << GET_MACRO_VAL(CUDA_PRECISION_FULL)
 #endif
       << std::endl;
-  app_log() << std::endl;
-  app_log().flush();
+  app_summary() << std::endl;
+  app_summary().flush();
 }
 
 ///destructor
@@ -110,6 +107,7 @@ QMCMain::~QMCMain()
 
 bool QMCMain::execute()
 {
+  Timer t0;
   if(XmlDocStack.empty())
   {
     ERRORMSG("No valid input file exists! Aborting QMCMain::execute")
@@ -128,6 +126,8 @@ bool QMCMain::execute()
 
 #ifdef BUILD_AFQMC
   if(simulationType == "afqmc") {
+    NewTimer *t2 = TimerManager.createTimer("Total", timer_level_coarse);
+    ScopedTimer t2_scope(t2);
     app_log() << std::endl << "/*************************************************\n"
                       << " ********  This is an AFQMC calculation   ********\n"
                       << " *************************************************" <<std::endl;
@@ -180,6 +180,11 @@ bool QMCMain::execute()
   }
 #endif
 
+  NewTimer *t2 = TimerManager.createTimer("Total", timer_level_coarse);
+  t2->start();
+
+  NewTimer *t3 = TimerManager.createTimer("Startup", timer_level_coarse);
+  t3->start();
 
   //validate the input file
   bool success = validateXML();
@@ -190,7 +195,9 @@ bool QMCMain::execute()
   }
   //initialize all the instances of distance tables and evaluate them
   ptclPool->reset();
-  OhmmsInfo::flush();
+  infoSummary.flush();
+  infoLog.flush();
+  app_log() << "  Initialization Execution time = " << std::setprecision(4) << t0.elapsed() << " secs" << std::endl;
   //write stuff
   app_log() << "=========================================================\n";
   app_log() << " Summary of QMC systems \n";
@@ -203,24 +210,15 @@ bool QMCMain::execute()
     app_log() << "  dryrun == 1 Ignore qmc/loop elements " << std::endl;
     APP_ABORT("QMCMain::execute");
   }
+  t3->stop();
   Timer t1;
-  NewTimer *t2 = new NewTimer("Total", timer_level_coarse);
-  TimerManager.addTimer(t2);
-  t2->start();
   curMethod = std::string("invalid");
   qmc_common.qmc_counter=0;
   for(int qa=0; qa<m_qmcaction.size(); qa++)
   {
     xmlNodePtr cur=m_qmcaction[qa].first;
     std::string cname((const char*)cur->name);
-    if(cname == "postprocess")
-    {
-#if !defined(REMOVE_TRACEMANAGER)
-      postprocess(cur,qa);
-#endif
-      break;
-    }
-    else if(cname == "qmc" || cname == "optimize")
+    if(cname == "qmc" || cname == "optimize")
     {
       executeQMCSection(cur);
       qmc_common.qmc_counter++; // increase the counter
@@ -427,9 +425,9 @@ bool QMCMain::validateXML()
   {
     myProject.put(result[0]);
   }
-  app_log() << std::endl;
-  myProject.get(app_log());
-  app_log() << std::endl;
+  app_summary() << std::endl;
+  myProject.get(app_summary());
+  app_summary() << std::endl;
   OhmmsXPathObject ham("//hamiltonian",m_context);
   if(ham.empty())
   {
@@ -458,14 +456,12 @@ bool QMCMain::validateXML()
   {
     app_log() << "  hamiltonian has MPC. Will read density if it is found." << std::endl;
   }
-  else
-  {
-    app_log() << "  DO NOT READ DENSITY" << std::endl;
-  }
+
   //initialize the random number generator
   xmlNodePtr rptr = myRandomControl.initialize(m_context);
   //preserve the input order
   xmlNodePtr cur=XmlDocStack.top()->getRoot()->children;
+  lastInputNode = NULL;
   while(cur != NULL)
   {
     std::string cname((const char*)cur->name);
@@ -558,7 +554,7 @@ bool QMCMain::processPWH(xmlNodePtr cur)
   //return true and will be ignored
   if(cur == NULL)
     return true;
-  bool inputnode=true;
+  bool inputnode=false;
   //save the root to grep @tilematrix
   xmlNodePtr cur_root=cur;
   cur=cur->children;
@@ -567,25 +563,28 @@ bool QMCMain::processPWH(xmlNodePtr cur)
     std::string cname((const char*)cur->name);
     if(cname == "simulationcell")
     {
+      inputnode=true;
       ptclPool->putLattice(cur);
     }
     else if(cname == "particleset")
     {
+      inputnode=true;
       ptclPool->putTileMatrix(cur_root);
       ptclPool->put(cur);
     }
     else if(cname == "wavefunction")
     {
+      inputnode=true;
       psiPool->put(cur);
     }
     else if(cname == "hamiltonian")
     {
+      inputnode=true;
       hamPool->put(cur);
     }
     else
       //add to m_qmcaction
     {
-      inputnode=false;
       m_qmcaction.push_back(std::pair<xmlNodePtr,bool>(xmlCopyNode(cur,1),false));
     }
     cur=cur->next;
@@ -614,10 +613,10 @@ bool QMCMain::runQMC(xmlNodePtr cur)
     qmcDriver->putTraces(traces_xml);
 #endif
     qmcDriver->process(cur);
-    OhmmsInfo::flush();
+    infoSummary.flush();
+    infoLog.flush();
     Timer qmcTimer;
-    NewTimer *t1 = new NewTimer(qmcDriver->getEngineName(), timer_level_coarse);
-    TimerManager.addTimer(t1);
+    NewTimer *t1 = TimerManager.createTimer(qmcDriver->getEngineName(), timer_level_coarse);
     t1->start();
     qmcDriver->run();
     t1->stop();
@@ -657,69 +656,5 @@ bool QMCMain::setMCWalkers(xmlXPathContextPtr context_)
 }
 
 
-void QMCMain::postprocess(xmlNodePtr cur,int qacur)
-{
-#if !defined(REMOVE_TRACEMANAGER)
-  app_log()<<"\nQMCMain::postprocess"<< std::endl;
-
-  int qanext = qacur+1;
-  if(qanext>=m_qmcaction.size())
-  {
-    APP_ABORT("QMCMain::postprocess  no qmc method elements to postprocess");
-  }
-  else
-  {
-    app_log()<<"  Assuming same target particleset for all qmc methods"<< std::endl;
-    xmlNodePtr next=m_qmcaction[qanext].first;
-    std::string target("e");
-    OhmmsAttributeSet a;
-    a.add(target,"target");
-    a.put(next);
-    if(qmcSystem ==0)
-      qmcSystem = ptclPool->getWalkerSet(target);
-  }
-
-  int series_start=myProject.m_series;
-  int series_end=series_start;
-  for(int qa=qanext;qa<m_qmcaction.size();++qa)
-  {
-    xmlNodePtr meth=m_qmcaction[qa].first;
-    std::string cname((const char*)meth->name);
-    if(cname=="qmc"||cname=="optimize"||cname=="cmc")
-      series_end++;
-    else if(cname=="loop")
-    {
-      int niter=1;
-      OhmmsAttributeSet a;
-      a.add(niter,"max");
-      a.put(meth);
-      series_end+=niter;
-    }
-  }
-  app_log()<<"  Found series";
-  for(int s=series_start;s<series_end;++s)
-    app_log()<<" "<<s;
-  app_log()<< std::endl;
-
-  std::string id = myProject.m_title;
-
-  if(hamPool==0)
-    APP_ABORT("QMCMain::postprocess  hamPool is null");
-  if(psiPool==0)
-    APP_ABORT("QMCMain::postprocess  psiPool is null");
-  if(ptclPool==0)
-    APP_ABORT("QMCMain::postprocess  ptclPool is null");
-
-  PostProcessor PP(id,series_start,series_end);
-  PP.put(cur,*ptclPool,*psiPool,*hamPool);
-  PP.postprocess();
-#endif
-}
-
 
 }
-/***********************************************************************
- * $RCSfilMCMain.cpp,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

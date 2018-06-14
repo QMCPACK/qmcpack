@@ -1,5 +1,3 @@
-//////////////////////////////////////////////////////////////////////////////////////
-// This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
@@ -12,6 +10,7 @@
 //                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -50,12 +49,15 @@ DiracDeterminantBase::DiracDeterminantBase(SPOSetBasePtr const &spos, int first)
 ///default destructor
 DiracDeterminantBase::~DiracDeterminantBase() {}
 
+#if 0
 DiracDeterminantBase& DiracDeterminantBase::operator=(const DiracDeterminantBase& s)
 {
+  Bytes_in_WFBuffer=s.Bytes_in_WFBuffer;
   NP=0;
   resize(s.NumPtcls, s.NumOrbitals);
   return *this;
 }
+#endif
 
 /** set the index of the first particle in the determinant and reset the size of the determinant
  *@param first index of first particle
@@ -67,6 +69,28 @@ void DiracDeterminantBase::set(int first, int nel)
   resize(nel,nel);
 }
 
+void DiracDeterminantBase::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
+{
+  InverseTimer.start();
+#ifdef MIXED_PRECISION
+  simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(), 
+      psiM_hp.data(), NumOrbitals, psiM_hp.cols());
+  ParticleSet::Scalar_t PhaseValue_hp;
+  detEng_hp.invert(psiM_hp,true);
+  LogValue = static_cast<RealType>(detEng_hp.LogDet);
+  PhaseValue = static_cast<RealType>(detEng_hp.Phase);
+  invMat = psiM_hp;
+#else
+  simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(), 
+      invMat.data(), NumOrbitals, invMat.cols());
+  detEng.invert(invMat,true);
+  LogValue = detEng.LogDet;
+  PhaseValue = detEng.Phase;
+#endif
+  InverseTimer.stop();
+}
+
+
 
 ///reset the size: with the number of particles and number of orbtials
 void DiracDeterminantBase::resize(int nel, int morb)
@@ -77,21 +101,20 @@ void DiracDeterminantBase::resize(int nel, int morb)
   psiM.resize(nel,norb);
   dpsiM.resize(nel,norb);
   d2psiM.resize(nel,norb);
-  psiM_temp.resize(nel,norb);
-  dpsiM_temp.resize(nel,norb);
-  d2psiM_temp.resize(nel,norb);
-  psiMinv.resize(nel,norb);
   psiV.resize(norb);
+  memoryPool.resize(nel*norb);
+  psiM_temp.attachReference(memoryPool.data(),nel,norb);
 #ifdef MIXED_PRECISION
   psiM_hp.resize(nel,norb);
-  WorkSpace_hp.resize(nel);
 #endif
-  WorkSpace.resize(nel);
-  Pivot.resize(nel);
   LastIndex = FirstIndex + nel;
   NumPtcls=nel;
   NumOrbitals=norb;
 
+  dpsiV.resize(NumOrbitals);
+  d2psiV.resize(NumOrbitals);
+  FirstAddressOfdV = &(dpsiM(0,0)[0]); //(*dpsiM.begin())[0]);
+  LastAddressOfdV = FirstAddressOfdV + NumPtcls*NumOrbitals*DIM;
   // For forces
   /* Ye Luo, Apr 18th 2015
    * To save the memory used by every walker, the resizing the following giant matrices are commented.
@@ -108,147 +131,144 @@ void DiracDeterminantBase::resize(int nel, int morb)
   */
 }
 
-DiracDeterminantBase::RealType
-DiracDeterminantBase::registerData(ParticleSet& P, PooledData<RealType>& buf)
+DiracDeterminantBase::GradType
+DiracDeterminantBase::evalGrad(ParticleSet& P, int iat)
 {
-  if(NP == 0)
-    //first time, allocate once
-  {
-    //int norb = cols();
-    dpsiV.resize(NumOrbitals);
-    d2psiV.resize(NumOrbitals);
-    workV1.resize(NumOrbitals);
-    workV2.resize(NumOrbitals);
-    NP=P.getTotalNum();
-    myG.resize(NP);
-    myL.resize(NP);
-    myG_temp.resize(NP);
-    myL_temp.resize(NP);
-    FirstAddressOfG = &myG[0][0];
-    LastAddressOfG = FirstAddressOfG + NP*DIM;
-    FirstAddressOfdV = &(dpsiM(0,0)[0]); //(*dpsiM.begin())[0]);
-    LastAddressOfdV = FirstAddressOfdV + NumPtcls*NumOrbitals*DIM;
-  }
-  myG=0.0;
-  myL=0.0;
-  //ValueType x=evaluate(P,myG,myL);
-  LogValue=evaluateLog(P,myG,myL);
-  P.G += myG;
-  P.L += myL;
-  //add the data: determinant, inverse, gradient and laplacians
-  buf.add(psiM.first_address(),psiM.last_address());
-  buf.add(FirstAddressOfdV,LastAddressOfdV);
-  buf.add(d2psiM.first_address(),d2psiM.last_address());
-  buf.add(myL.first_address(), myL.last_address());
-  buf.add(FirstAddressOfG,LastAddressOfG);
-  buf.add(LogValue);
-  buf.add(PhaseValue);
-  return LogValue;
+  WorkingIndex = iat-FirstIndex;
+  RatioTimer.start();
+  DiracDeterminantBase::GradType g = simd::dot(psiM[WorkingIndex],dpsiM[WorkingIndex],NumOrbitals);
+  RatioTimer.stop();
+  return g;
 }
 
-DiracDeterminantBase::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P,
-    PooledData<RealType>& buf, bool fromscratch)
+DiracDeterminantBase::ValueType
+DiracDeterminantBase::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
 {
-  if(fromscratch)
+  SPOVGLTimer.start();
+  Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
+  SPOVGLTimer.stop();
+  RatioTimer.start();
+  WorkingIndex = iat-FirstIndex;
+  UpdateMode=ORB_PBYP_PARTIAL;
+  curRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
+  GradType rv=simd::dot(psiM[WorkingIndex],dpsiV.data(),NumOrbitals);
+  grad_iat += ((RealType)1.0/curRatio) * rv;
+  RatioTimer.stop();
+  return curRatio;
+}
+
+/** move was accepted, update the real container
+*/
+void DiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
+{
+  PhaseValue += evaluatePhase(curRatio);
+  LogValue +=std::log(std::abs(curRatio));
+  UpdateTimer.start();
+  detEng.updateRow(psiM,psiV.data(),WorkingIndex,curRatio);
+  if(UpdateMode == ORB_PBYP_PARTIAL)
   {
-    myG=0.0;
-    myL=0.0;
-    LogValue=evaluateLog(P,myG,myL);
-    UpdateTimer.start();
+    simd::copy(dpsiM[WorkingIndex],  dpsiV.data(),  NumOrbitals);
+    simd::copy(d2psiM[WorkingIndex], d2psiV.data(), NumOrbitals);
+  }
+  UpdateTimer.stop();
+  curRatio=1.0;
+}
+
+/** move was rejected. copy the real container to the temporary to move on
+*/
+void DiracDeterminantBase::restore(int iat)
+{
+  curRatio=1.0;
+}
+
+void DiracDeterminantBase::updateAfterSweep(ParticleSet& P,
+      ParticleSet::ParticleGradient_t& G,
+      ParticleSet::ParticleLaplacian_t& L)
+{
+  if(UpdateMode == ORB_PBYP_RATIO)
+  { //need to compute dpsiM and d2psim. Use Phi->t_logpsi. Do not touch psiM!
+    SPOVGLTimer.start();
+    Phi->evaluate_notranspose(P,FirstIndex,LastIndex,psiM_temp,dpsiM,d2psiM);
+    SPOVGLTimer.stop();
+  }
+
+  if(NumPtcls==1)
+  {
+    ValueType y = psiM(0,0);
+    GradType rv = y*dpsiM(0,0);
+    G[FirstIndex]+=rv;
+    L[FirstIndex]+=y*d2psiM(0,0)-dot(rv,rv);
   }
   else
   {
-    if(UpdateMode == ORB_PBYP_RATIO)
+    for(size_t i=0,iat=FirstIndex; i<NumPtcls; ++i,++iat)
     {
-      SPOVGLTimer.start();
-      Phi->evaluate(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
-      SPOVGLTimer.stop();
-    }
-    UpdateTimer.start();
-    if(NumPtcls==1)
-    {
-      // ValueType y=1.0/psiM_temp(0,0);
-      // psiM(0,0)=y;
-      // GradType rv = y*dpsiM(0,0);
-      // myG(FirstIndex) += rv;
-      // myL(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
-      ValueType y = psiM(0,0);
-      GradType rv = y*dpsiM(0,0);
-      P.G[FirstIndex]+=(myG[FirstIndex]=rv);
-      P.L[FirstIndex]+=(myL[FirstIndex]=y*d2psiM(0,0)-dot(rv,rv));
-      //myG(FirstIndex) += rv;
-      //myL(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
-      //P.G += myG;
-      //P.L += myL;
-    }
-    else
-    {
-      for(int i=0,iat=FirstIndex; i<NumPtcls; ++i,++iat)
-      {
-        myG[iat]=simd::dot(psiM[i],dpsiM[i],NumOrbitals);
-        mValueType dot_temp=simd::dot(psiM[i],d2psiM[i],NumOrbitals);
-        myL[iat]=dot_temp-dot(myG[iat],myG[iat]);
-      }
-      for(int iat=FirstIndex; iat<LastIndex; ++iat)
-      {
-        P.G[iat] += myG[iat];
-        P.L[iat] += myL[iat];
-      }
+      mValueType dot_temp=simd::dot(psiM[i],d2psiM[i],NumOrbitals);
+      mGradType rv=simd::dot(psiM[i],dpsiM[i],NumOrbitals);
+      G[iat]+=rv;
+      L[iat]+=dot_temp-dot(rv,rv);
     }
   }
-  UpdateTimer.stop();
+}
+
+void
+DiracDeterminantBase::registerData(ParticleSet& P, WFBufferType& buf)
+{
+  // Ye: no idea about NP.
+  if(NP == 0) //first time, allocate once
+  {
+    NP=P.getTotalNum();
+  }
+
+  if ( Bytes_in_WFBuffer == 0 )
+  {
+    //add the data: inverse, gradient and laplacian
+    Bytes_in_WFBuffer = buf.current();
+    buf.add(psiM.first_address(),psiM.last_address());
+    buf.add(FirstAddressOfdV,LastAddressOfdV);
+    buf.add(d2psiM.first_address(),d2psiM.last_address());
+    Bytes_in_WFBuffer = buf.current()-Bytes_in_WFBuffer;
+    // free local space
+    psiM.free();
+    dpsiM.free();
+    d2psiM.free();
+  }
+  else
+  {
+    buf.forward(Bytes_in_WFBuffer);
+  }
+  buf.add(LogValue);
+  buf.add(PhaseValue);
+}
+
+DiracDeterminantBase::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P,
+    WFBufferType& buf, bool fromscratch)
+{
+  if(fromscratch)
+  {
+    LogValue=evaluateLog(P,P.G,P.L);
+  }
+  else
+  {
+    updateAfterSweep(P,P.G,P.L);
+  }
   BufferTimer.start();
-  //copy psiM to psiM_temp
-  //psiM_temp=psiM;
-  simd::copy(psiM_temp.data(),psiM.data(),psiM.size());
-  buf.put(psiM.first_address(),psiM.last_address());
-  buf.put(FirstAddressOfdV,LastAddressOfdV);
-  buf.put(d2psiM.first_address(),d2psiM.last_address());
-  buf.put(myL.first_address(), myL.last_address());
-  buf.put(FirstAddressOfG,LastAddressOfG);
+  buf.forward(Bytes_in_WFBuffer);
   buf.put(LogValue);
   buf.put(PhaseValue);
   BufferTimer.stop();
   return LogValue;
 }
 
-void DiracDeterminantBase::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void DiracDeterminantBase::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BufferTimer.start();
-  buf.get(psiM.first_address(),psiM.last_address());
-  buf.get(FirstAddressOfdV,LastAddressOfdV);
-  buf.get(d2psiM.first_address(),d2psiM.last_address());
-  buf.get(myL.first_address(), myL.last_address());
-  buf.get(FirstAddressOfG,LastAddressOfG);
+  psiM.attachReference(buf.lendReference<ValueType>(psiM.size()));
+  dpsiM.attachReference(buf.lendReference<GradType>(dpsiM.size()));
+  d2psiM.attachReference(buf.lendReference<ValueType>(d2psiM.size()));
   buf.get(LogValue);
   buf.get(PhaseValue);
-  //re-evaluate it for testing
-  //Phi.evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
-  //CurrentDet = Invert(psiM.data(),NumPtcls,NumOrbitals);
-  //need extra copy for gradient/laplacian calculations without updating it
-  //psiM_temp = psiM;
-  //dpsiM_temp = dpsiM;
-  //d2psiM_temp = d2psiM;
-  simd::copy(psiM_temp.data(),  psiM.data(),  psiM.size());
-  simd::copy(dpsiM_temp.data(), dpsiM.data(), dpsiM.size());
-  simd::copy(d2psiM_temp.data(),d2psiM.data(),d2psiM.size());
   BufferTimer.stop();
-}
-
-/** dump the inverse to the buffer
-*/
-void DiracDeterminantBase::dumpToBuffer(ParticleSet& P, PooledData<RealType>& buf)
-{
-  APP_ABORT("DiracDeterminantBase::dumpToBuffer");
-  buf.add(psiM.first_address(),psiM.last_address());
-}
-
-/** copy the inverse from the buffer
-*/
-void DiracDeterminantBase::dumpFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
-{
-  APP_ABORT("DiracDeterminantBase::dumpFromBuffer");
-  buf.get(psiM.first_address(),psiM.last_address());
 }
 
 /** return the ratio only for the  iat-th partcle move
@@ -263,35 +283,50 @@ DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int 
   Phi->evaluate(P, iat, psiV);
   SPOVTimer.stop();
   RatioTimer.start();
-  curRatio = DetRatioByRow(psiM, psiV,WorkingIndex);
+  curRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
+  //curRatio = DetRatioByRow(psiM, psiV,WorkingIndex);
   RatioTimer.stop();
   return curRatio;
 }
 
 void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
-  Matrix<ValueType> psiT(ratios.size(),NumOrbitals);
-  Phi->evaluateValues(VP,psiT);
-  MatrixOperators::product(psiT,psiM[VP.activePtcl-FirstIndex],&ratios[0]);
+  const int nVP = VP.getTotalNum();
+  const size_t memory_needed = nVP*NumOrbitals+Phi->estimateMemory(nVP);
+  //std::cout << "debug " << memory_needed << " pool " << memoryPool.size() << std::endl;
+  if(memoryPool.size()<memory_needed)
+  {
+    // usually in small systems
+    for(int iat=0; iat<nVP; iat++)
+    {
+      SPOVTimer.start();
+      Phi->evaluate(VP, iat, psiV);
+      SPOVTimer.stop();
+      RatioTimer.start();
+      ratios[iat]=simd::dot(psiM[VP.refPtcl-FirstIndex],psiV.data(),NumOrbitals);
+      RatioTimer.stop();
+    }
+  }
+  else
+  {
+    const size_t offset = memory_needed-nVP*NumOrbitals;
+    VP.SPOMem.attachReference((RealType*)memoryPool.data(),offset*sizeof(ValueType)/sizeof(RealType));
+    Matrix<ValueType> psiT(memoryPool.data()+offset, nVP, NumOrbitals);
+    SPOVTimer.start();
+    Phi->evaluateValues(VP, psiT);
+    SPOVTimer.stop();
+    RatioTimer.start();
+    MatrixOperators::product(psiT, psiM[VP.refPtcl-FirstIndex], ratios.data());
+    RatioTimer.stop();
+  }
 }
 
-void DiracDeterminantBase::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+void DiracDeterminantBase::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   SPOVTimer.start();
-  Phi->evaluate(P, 0, psiV);
+  Phi->evaluate(P, -1, psiV);
   SPOVTimer.stop();
   MatrixOperators::product(psiM,psiV.data(),&ratios[FirstIndex]);
-}
-
-
-DiracDeterminantBase::GradType
-DiracDeterminantBase::evalGrad(ParticleSet& P, int iat)
-{
-  WorkingIndex = iat-FirstIndex;
-  RatioTimer.start();
-  DiracDeterminantBase::GradType g = simd::dot(psiM[WorkingIndex],dpsiM[WorkingIndex],NumOrbitals);
-  RatioTimer.stop();
-  return g;
 }
 
 DiracDeterminantBase::GradType
@@ -299,18 +334,7 @@ DiracDeterminantBase::evalGradSource(ParticleSet& P, ParticleSet& source,
                                      int iat)
 {
   Phi->evaluateGradSource (P, FirstIndex, LastIndex, source, iat, grad_source_psiM);
-//     Phi->evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
-//     LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue);
   return simd::dot(psiM.data(),grad_source_psiM.data(),psiM.size());
-  //const ValueType* restrict yptr=psiM[0];
-  //const GradType* restrict dyptr=grad_source_psiM[0];
-  //for (int i=0; i<NumPtcls; i++)
-  //  for(int j=0; j<NumOrbitals; j++)
-  //    //rv += (*yptr++) *(*dyptr++);
-  //    rv += grad_source_psiM(i,j) * psiM(i,j);
-  //// HACK HACK
-  ////return (grad_source_psiM(1,3));
-  //return rv;
 }
 
 DiracDeterminantBase::GradType
@@ -322,18 +346,15 @@ DiracDeterminantBase::evalGradSourcep
   Phi->evaluateGradSource (P, FirstIndex, LastIndex, source, iat,
                            grad_source_psiM, grad_grad_source_psiM,
                            grad_lapl_source_psiM);
-  Phi->evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
-  InverseTimer.start();
-  LogValue=InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,
-                         WorkSpace.data(),Pivot.data(),PhaseValue);
-  InverseTimer.stop();
+  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
+
+  invertPsiM(psiM_temp,psiM);
+
   GradMatrix_t &Phi_alpha(grad_source_psiM);
   GradMatrix_t &Grad_phi(dpsiM);
   ValueMatrix_t &Grad2_phi(d2psiM);
   HessMatrix_t &Grad_phi_alpha(grad_grad_source_psiM);
   GradMatrix_t &Grad2_phi_alpha(grad_lapl_source_psiM);
-  //    std::vector<ValueType> grad_psi_over_psi_vector;
-  //    std::vector<ValueType> grad_psi_alpha_over_psi_vector;
   GradType Psi_alpha_over_psi;
   Psi_alpha_over_psi = evalGradSource(P, source, iat);
   std::ofstream outfile;
@@ -355,7 +376,7 @@ DiracDeterminantBase::evalGradSourcep
     {
       for (int orbital=0; orbital<NumOrbitals; orbital++)
       {
-        Grad_psi_over_psi(el_dim)+=Grad_phi(ptcl,orbital)(el_dim)*psiM(ptcl,orbital);
+        Grad_psi_over_psi[el_dim]+=Grad_phi(ptcl,orbital)[el_dim]*psiM(ptcl,orbital);
         if (el_dim==0)
           Grad2_psi_over_psi+=Grad2_phi(ptcl,orbital)*psiM(ptcl,orbital);
       }
@@ -366,7 +387,7 @@ DiracDeterminantBase::evalGradSourcep
         {
           one_row_change(dim,el_dim)+=Grad_phi_alpha(ptcl,orbital)(dim,el_dim)*psiM(ptcl,orbital);
           if (el_dim==0)
-            one_row_change_l(dim)+=Grad2_phi_alpha(ptcl,orbital)(dim)*psiM(ptcl,orbital);
+            one_row_change_l[dim]+=Grad2_phi_alpha(ptcl,orbital)[dim]*psiM(ptcl,orbital);
         }
         for (int ptcl2=0; ptcl2<NumPtcls; ptcl2++)
         {
@@ -376,34 +397,34 @@ DiracDeterminantBase::evalGradSourcep
             toDet_l=0.0;
             for (int orbital=0; orbital<NumOrbitals; orbital++)
             {
-              toDet(0,0)+=Grad_phi(ptcl,orbital)(el_dim)*psiM(ptcl,orbital);
+              toDet(0,0)+=Grad_phi(ptcl,orbital)[el_dim]*psiM(ptcl,orbital);
               toDet_l(0,0)+=Grad2_phi(ptcl,orbital)*psiM(ptcl,orbital);
-              toDet(0,1)+=Grad_phi(ptcl,orbital)(el_dim)*psiM(ptcl2,orbital);
+              toDet(0,1)+=Grad_phi(ptcl,orbital)[el_dim]*psiM(ptcl2,orbital);
               toDet_l(0,1)+=Grad2_phi(ptcl,orbital)*psiM(ptcl2,orbital);
-              toDet(1,0)+=Phi_alpha(ptcl2,orbital)(dim)*psiM(ptcl,orbital);
-              toDet_l(1,0)+=Phi_alpha(ptcl2,orbital)(dim)*psiM(ptcl,orbital);
-              toDet(1,1)+=Phi_alpha(ptcl2,orbital)(dim)*psiM(ptcl2,orbital);
-              toDet_l(1,1)+=Phi_alpha(ptcl2,orbital)(dim)*psiM(ptcl2,orbital);
+              toDet(1,0)+=Phi_alpha(ptcl2,orbital)[dim]*psiM(ptcl,orbital);
+              toDet_l(1,0)+=Phi_alpha(ptcl2,orbital)[dim]*psiM(ptcl,orbital);
+              toDet(1,1)+=Phi_alpha(ptcl2,orbital)[dim]*psiM(ptcl2,orbital);
+              toDet_l(1,1)+=Phi_alpha(ptcl2,orbital)[dim]*psiM(ptcl2,orbital);
             }
             two_row_change(dim,el_dim)+=toDet(0,0)*toDet(1,1)-toDet(1,0)*toDet(0,1);
             if (el_dim==0)
-              two_row_change_l(dim)+=toDet_l(0,0)*toDet_l(1,1)-toDet_l(1,0)*toDet_l(0,1);
+              two_row_change_l[dim]+=toDet_l(0,0)*toDet_l(1,1)-toDet_l(1,0)*toDet_l(0,1);
           }
         }
         Grad_psi_alpha_over_psi(dim,el_dim)=one_row_change(dim,el_dim)+two_row_change(dim,el_dim);
         outfile<<Grad_psi_alpha_over_psi(dim,el_dim)<< std::endl;
-        grad_grad(dim)(ptcl)(el_dim)=one_row_change(dim,el_dim)+two_row_change(dim,el_dim)-
-                                     Grad_psi_over_psi(el_dim)*Psi_alpha_over_psi(dim);
+        grad_grad[dim][ptcl][el_dim]=one_row_change(dim,el_dim)+two_row_change(dim,el_dim)-
+                                     Grad_psi_over_psi[el_dim]*Psi_alpha_over_psi[dim];
       }
     }
     for (int dim=0; dim<OHMMS_DIM; dim++)
     {
-      lapl_grad(dim)(ptcl)=0.0;
-      lapl_grad(dim)(ptcl)+=one_row_change_l(dim)+two_row_change_l(dim)- Psi_alpha_over_psi(dim)*Grad2_psi_over_psi;
+      lapl_grad[dim][ptcl]=0.0;
+      lapl_grad[dim][ptcl]+=one_row_change_l[dim]+two_row_change_l[dim]- Psi_alpha_over_psi[dim]*Grad2_psi_over_psi;
       for (int el_dim=0; el_dim<OHMMS_DIM; el_dim++)
       {
-        lapl_grad(dim)(ptcl)-= (RealType)2.0*Grad_psi_alpha_over_psi(dim,el_dim)*Grad_psi_over_psi(el_dim);
-        lapl_grad(dim)(ptcl)+= (RealType)2.0*Psi_alpha_over_psi(dim)*(Grad_psi_over_psi(el_dim)*Grad_psi_over_psi(el_dim));
+        lapl_grad[dim][ptcl]-= (RealType)2.0*Grad_psi_alpha_over_psi(dim,el_dim)*Grad_psi_over_psi[el_dim];
+        lapl_grad[dim][ptcl]+= (RealType)2.0*Psi_alpha_over_psi[dim]*(Grad_psi_over_psi[el_dim]*Grad_psi_over_psi[el_dim]);
       }
     }
   }
@@ -413,50 +434,25 @@ DiracDeterminantBase::evalGradSourcep
 
 void DiracDeterminantBase::evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
 {
-	//IM A HACK.  Assumes evaluateLog has already been executed.
-	Phi->evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, grad_grad_source_psiM);
-	phi_alpha_Minv = 0.0;
-    grad_phi_Minv = 0.0;
-    lapl_phi_Minv = 0.0;
-    grad_phi_alpha_Minv = 0.0;
-    //grad_grad_psi.resize(NumPtcls);
+  //IM A HACK.  Assumes evaluateLog has already been executed.
+  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, grad_grad_source_psiM);
+  invertPsiM(psiM_temp,psiM);
 
-	InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue);
-   // InverseTimer.stop();
- //   RatioTimer.start();
- //   for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++)
- //   {
- //     GradType rv=simd::dot(psiM[i],dpsiM[i],NumOrbitals);
- //     ValueType lap=simd::dot(psiM[i],d2psiM[i],NumOrbitals);
-  //    G(iat) += rv;
-  //    L(iat) += lap - dot(rv,rv);
- //   }
- //   RatioTimer.stop();
+  phi_alpha_Minv = 0.0;
+  grad_phi_Minv = 0.0;
+  lapl_phi_Minv = 0.0;
+  grad_phi_alpha_Minv = 0.0;
+  //grad_grad_psi.resize(NumPtcls);
 
- 
-
-    for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++)
-    {
-      GradType rv=simd::dot(psiM[i],dpsiM[i],NumOrbitals);
-      
+  for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++)
+  {
+    GradType rv=simd::dot(psiM[i],dpsiM[i],NumOrbitals);
     //  HessType hess_tmp=simd::dot(psiM[i],grad_grad_source_psiM[i],NumOrbitals);
-      HessType hess_tmp;
-      hess_tmp=0.0;
-      hess_tmp=simd::dot(psiM[i],grad_grad_source_psiM[i],NumOrbitals);
-      
-   //   for (int orb=0; orb<NumOrbitals; orb++)
-  //    {
-//		hess_tmp+=psiM(i,orb)*grad_grad_source_psiM(i,orb);
- //     }
-     // G(iat) += rv;
-     // L(iat) += lap - dot(rv,rv);
-  //    app_log()<<"rv = "<<rv<< std::endl;
-   //   app_log()<<"outer = "<<outerProduct(rv,rv)<< std::endl;
-   //   app_log()<<"hess_tmp = "<<hess_tmp<< std::endl;
-      grad_grad_psi[iat]=hess_tmp-outerProduct(rv,rv);
-    }
-	 psiM_temp = psiM;
-	
+    HessType hess_tmp;
+    hess_tmp=0.0;
+    hess_tmp=simd::dot(psiM[i],grad_grad_source_psiM[i],NumOrbitals);
+    grad_grad_psi[iat]=hess_tmp-outerProduct(rv,rv);
+  }
 }
 
 DiracDeterminantBase::GradType
@@ -556,288 +552,8 @@ DiracDeterminantBase::evalGradSource
   return gradPsi;
 }
 
-DiracDeterminantBase::ValueType
-DiracDeterminantBase::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
-{
-  SPOVGLTimer.start();
-  Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
-  SPOVGLTimer.stop();
-  RatioTimer.start();
-  WorkingIndex = iat-FirstIndex;
-  UpdateMode=ORB_PBYP_PARTIAL;
-  curRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
-  GradType rv=simd::dot(psiM[WorkingIndex],dpsiV.data(),NumOrbitals);
-  grad_iat += ((RealType)1.0/curRatio) * rv;
-  RatioTimer.stop();
-  return curRatio;
-  ////////////////////////////////////////
-  ////THIS WILL BE REMOVED. ONLY FOR DEBUG DUE TO WAVEFUNCTIONTEST
-  //{
-  //  int kat=FirstIndex;
-  //  for(int j=0; j<NumOrbitals; j++) {
-  //    dpsiM_temp(WorkingIndex,j)=dpsiV[j];
-  //    d2psiM_temp(WorkingIndex,j)=d2psiV[j];
-  //  }
-  //  const ValueType* restrict yptr=psiM_temp.data();
-  //  const ValueType* restrict d2yptr=d2psiM_temp.data();
-  //  const GradType* restrict dyptr=dpsiM_temp.data();
-  //  for(int i=0; i<NumPtcls; i++,kat++) {
-  //    //This mimics gemm with loop optimization
-  //    GradType rv;
-  //    ValueType lap=0.0;
-  //    for(int j=0; j<NumOrbitals; j++,yptr++) {
-  //      rv += *yptr * *dyptr++;
-  //      lap += *yptr * *d2yptr++;
-  //    }
-  //    lap -= dot(rv,rv);
-  //    myG_temp[kat]=rv;
-  //    myL_temp[kat]=lap;
-  //  }
-  //}
-  ////////////////////////////////////////
-}
 
-/** return the ratio
- * @param P current configuration
- * @param iat particle whose position is moved
- * @param dG differential Gradients
- * @param dL differential Laplacians
- *
- * Data member *_temp contain the data assuming that the move is accepted
- * and are used to evaluate differential Gradients and Laplacians.
- */
-DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int iat,
-    ParticleSet::ParticleGradient_t& dG,
-    ParticleSet::ParticleLaplacian_t& dL)
-{
-  UpdateMode=ORB_PBYP_ALL;
-  SPOVGLTimer.start();
-  Phi->evaluate(P, iat, psiV, dpsiV, d2psiV);
-  SPOVGLTimer.stop();
-  RatioTimer.start();
-  WorkingIndex = iat-FirstIndex;
-  //psiM_temp = psiM;
-  curRatio= DetRatioByRow(psiM_temp, psiV, WorkingIndex);
-  RatioTimer.stop();
-  if(std::abs(curRatio)<std::numeric_limits<RealType>::epsilon())
-  {
-    UpdateMode=ORB_PBYP_RATIO; //singularity! do not update inverse
-    return 0.0;
-  }
-  UpdateTimer.start();
-  //update psiM_temp with the row substituted
-  InverseUpdateByRow(psiM_temp,psiV,workV1,workV2,WorkingIndex,curRatio);
-  //update dpsiM_temp and d2psiM_temp
-  //std::copy(dpsiV.begin(),dpsiV.end(),dpsiM_temp[WorkingIndex]);
-  //std::copy(d2psiV.begin(),d2psiV.end(),d2psiM_temp[WorkingIndex]);
-  simd::copy(dpsiM_temp[WorkingIndex],dpsiV.data(),NumOrbitals);
-  simd::copy(d2psiM_temp[WorkingIndex],d2psiV.data(),NumOrbitals);
-  UpdateTimer.stop();
-  RatioTimer.start();
-  for(int i=0,kat=FirstIndex; i<NumPtcls; i++,kat++)
-  {
-    //using inline dot functions
-    mGradType rv=simd::dot(psiM_temp[i],dpsiM_temp[i],NumOrbitals);
-    mValueType lap=simd::dot(psiM_temp[i],d2psiM_temp[i],NumOrbitals);
-    lap -= dot(rv,rv);
-    myG_temp[kat]=rv;
-    dG[kat] += myG_temp[kat] - myG[kat];
-    myL_temp[kat]=lap;
-    dL[kat] += myL_temp[kat] - myL[kat];
-  }
-  RatioTimer.stop();
-  return curRatio;
-}
-
-DiracDeterminantBase::ValueType DiracDeterminantBase::logRatio(ParticleSet& P, int iat,
-    ParticleSet::ParticleGradient_t& dG,
-    ParticleSet::ParticleLaplacian_t& dL)
-{
-  APP_ABORT("  logRatio is not allowed");
-  //THIS SHOULD NOT BE CALLED
-  ValueType r=ratio(P,iat,dG,dL);
-  return LogValue = evaluateLogAndPhase(r,PhaseValue);
-}
-
-
-/** move was accepted, update the real container
-*/
-void DiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
-{
-  PhaseValue += evaluatePhase(curRatio);
-  LogValue +=std::log(std::abs(curRatio));
-  UpdateTimer.start();
-  switch(UpdateMode)
-  {
-  case ORB_PBYP_RATIO:
-    InverseUpdateByRow(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
-    break;
-  case ORB_PBYP_PARTIAL:
-    InverseUpdateByRow(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
-    //std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
-    //std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
-    simd::copy(dpsiM[WorkingIndex],  dpsiV.data(),  NumOrbitals);
-    simd::copy(d2psiM[WorkingIndex], d2psiV.data(), NumOrbitals);
-    //////////////////////////////////////
-    ////THIS WILL BE REMOVED. ONLY FOR DEBUG DUE TO WAVEFUNCTIONTEST
-    //myG = myG_temp;
-    //myL = myL_temp;
-    ///////////////////////
-    break;
-  default:
-    myG = myG_temp;
-    myL = myL_temp;
-    //psiM = psiM_temp;
-    //std::copy(dpsiV.begin(),dpsiV.end(),dpsiM[WorkingIndex]);
-    //std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[WorkingIndex]);
-    simd::copy(psiM.data(),     psiM_temp.data(),   psiM.size());
-    simd::copy(dpsiM[WorkingIndex],  dpsiV.data(),  NumOrbitals);
-    simd::copy(d2psiM[WorkingIndex], d2psiV.data(), NumOrbitals);
-    break;
-  }
-  UpdateTimer.stop();
-  curRatio=1.0;
-}
-
-/** move was rejected. copy the real container to the temporary to move on
-*/
-void DiracDeterminantBase::restore(int iat)
-{
-  if(UpdateMode == ORB_PBYP_ALL)
-  {
-    //psiM_temp = psiM;
-    //std::copy(dpsiM[WorkingIndex],dpsiM[WorkingIndex+1],dpsiM_temp[WorkingIndex]);
-    //std::copy(d2psiM[WorkingIndex],d2psiM[WorkingIndex+1],d2psiM_temp[WorkingIndex]);
-    simd::copy(psiM_temp.data(),     psiM.data(),   psiM.size());
-    simd::copy(dpsiM_temp[WorkingIndex],  dpsiM[WorkingIndex],  NumOrbitals);
-    simd::copy(d2psiM_temp[WorkingIndex], d2psiM[WorkingIndex], NumOrbitals);
-  }
-  curRatio=1.0;
-}
-
-void DiracDeterminantBase::update(ParticleSet& P,
-                                  ParticleSet::ParticleGradient_t& dG,
-                                  ParticleSet::ParticleLaplacian_t& dL,
-                                  int iat)
-{
-  UpdateTimer.start();
-  InverseUpdateByRow(psiM,psiV,workV1,workV2,WorkingIndex,curRatio);
-  //for(int j=0; j<NumOrbitals; j++) {
-  //  dpsiM(WorkingIndex,j)=dpsiV[j];
-  //  d2psiM(WorkingIndex,j)=d2psiV[j];
-  //}
-  simd::copy(dpsiM[WorkingIndex],  dpsiV.data(),  NumOrbitals);
-  simd::copy(d2psiM[WorkingIndex], d2psiV.data(), NumOrbitals);
-  UpdateTimer.stop();
-  RatioTimer.start();
-  int kat=FirstIndex;
-  for(int i=0; i<NumPtcls; i++,kat++)
-  {
-    mGradType rv=simd::dot(psiM[i],dpsiM[i],NumOrbitals);
-    mValueType lap=simd::dot(psiM[i],d2psiM[i],NumOrbitals);
-    lap -= dot(rv,rv);
-    dG[kat] += rv - myG[kat];
-    myG[kat]=rv;
-    dL[kat] += lap - myL[kat];
-    myL[kat]=lap;
-  }
-  RatioTimer.stop();
-  PhaseValue += evaluatePhase(curRatio);
-  LogValue +=std::log(std::abs(curRatio));
-  curRatio=1.0;
-}
-
-DiracDeterminantBase::RealType
-DiracDeterminantBase::evaluateLog(ParticleSet& P, PooledData<RealType>& buf)
-{
-  buf.put(psiM.first_address(),psiM.last_address());
-  buf.put(FirstAddressOfdV,LastAddressOfdV);
-  buf.put(d2psiM.first_address(),d2psiM.last_address());
-  buf.put(myL.first_address(), myL.last_address());
-  buf.put(FirstAddressOfG,LastAddressOfG);
-  buf.put(LogValue);
-  buf.put(PhaseValue);
-  return LogValue;
-}
-
-void DiracDeterminantBase::registerDataForDerivatives(ParticleSet& P, PooledData<RealType>& buf, int storageType)
-{
-  DerivStorageType=storageType;
-  if(storageType == 0)
-    // store everything
-  {
-    buf.add(psiM.first_address(),psiM.last_address());
-//       buf.add(FirstAddressOfdV,LastAddressOfdV);
-//       buf.add(d2psiM.first_address(),d2psiM.last_address());
-    buf.add(myL.first_address(), myL.last_address());
-    buf.add(FirstAddressOfG,LastAddressOfG);
-    buf.add(LogValue);
-    buf.add(PhaseValue);
-  }
-  else
-    // only store the inverse
-  {
-    buf.add(psiM.first_address(),psiM.last_address());
-  }
-}
-
-void DiracDeterminantBase::copyToDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf)
-{
-  if(DerivStorageType==0)
-  {
-    buf.put(psiM.first_address(),psiM.last_address());
-//     buf.put(FirstAddressOfdV,LastAddressOfdV);
-//     buf.put(d2psiM.first_address(),d2psiM.last_address());
-    buf.put(myL.first_address(), myL.last_address());
-    buf.put(FirstAddressOfG,LastAddressOfG);
-    buf.put(LogValue);
-    buf.put(PhaseValue);
-  }
-  else
-  {
-    buf.put(psiM.first_address(),psiM.last_address());
-  }
-}
-
-void DiracDeterminantBase::copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf)
-{
-  if(DerivStorageType==0)
-  {
-    buf.get(psiM.first_address(),psiM.last_address());
-//     buf.get(FirstAddressOfdV,LastAddressOfdV);
-//     buf.get(d2psiM.first_address(),d2psiM.last_address());
-    buf.get(myL.first_address(), myL.last_address());
-    buf.get(FirstAddressOfG,LastAddressOfG);
-    buf.get(LogValue);
-    buf.get(PhaseValue);
-  }
-  else
-  {
-    buf.get(psiM.first_address(),psiM.last_address());
-  }
-  P.G += myG;
-  P.L += myL;
-}
-
-DiracDeterminantBase::RealType DiracDeterminantBase::evaluateLogForDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf)
-{
-  myG=0.0;
-  myL=0.0;
-  //ValueType x=evaluate(P,myG,myL);
-  LogValue=evaluateLog(P,myG,myL);
-  P.G += myG;
-  P.L += myL;
-  return LogValue;
-}
-
-DiracDeterminantBase::RealType DiracDeterminantBase::evaluateLogFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf)
-{
-//    P.G += myG;
-//    P.L += myL;
-  return LogValue;
-}
-
-/** Calculate the value of the Dirac determinant for particles
+/** Calculate the log value of the Dirac determinant for particles
  *@param P input configuration containing N particles
  *@param G a vector containing N gradients
  *@param L a vector containing N laplacians
@@ -847,75 +563,50 @@ DiracDeterminantBase::RealType DiracDeterminantBase::evaluateLogFromDerivativeBu
  *contribution of the determinant to G(radient) and L(aplacian)
  *for local energy calculations.
  */
-DiracDeterminantBase::ValueType
-DiracDeterminantBase::evaluate(ParticleSet& P,
-                               ParticleSet::ParticleGradient_t& G,
-                               ParticleSet::ParticleLaplacian_t& L)
-{
-//       APP_ABORT("  DiracDeterminantBase::evaluate is disabled");
-  RealType logval = evaluateLog(P, G, L);
-#if defined(QMC_COMPLEX)
-  RealType ratioMag = std::exp(logval);
-  return std::complex<OHMMS_PRECISION>(std::cos(PhaseValue)*ratioMag,std::sin(PhaseValue)*ratioMag);
-#else
-  return std::cos(PhaseValue)*std::exp(logval);
-#endif
-}
-
-
 DiracDeterminantBase::RealType
 DiracDeterminantBase::evaluateLog(ParticleSet& P,
                                   ParticleSet::ParticleGradient_t& G,
                                   ParticleSet::ParticleLaplacian_t& L)
 {
-  //      std::cerr <<"I'm calling evaluate log"<< std::endl;
-  SPOVGLTimer.start();
-  Phi->evaluate(P, FirstIndex, LastIndex, psiM, dpsiM, d2psiM);
-  SPOVGLTimer.stop();
+  recompute(P);
+
   if(NumPtcls==1)
   {
-    //CurrentDet=psiM(0,0);
-    ValueType det=psiM(0,0);
-    ValueType y=(RealType)1.0/det;
-    psiM(0,0)=y;
+    ValueType y=psiM(0,0);
     GradType rv = y*dpsiM(0,0);
-    G(FirstIndex) += rv;
-    L(FirstIndex) += y*d2psiM(0,0) - dot(rv,rv);
-    LogValue = evaluateLogAndPhase(det,PhaseValue);
+    G[FirstIndex] += rv;
+    L[FirstIndex] += y*d2psiM(0,0) - dot(rv,rv);
   }
   else
   {
-    InverseTimer.start();
-#ifdef MIXED_PRECISION
-    psiM_hp = psiM;
-    ParticleSet::Scalar_t PhaseValue_hp;
-    LogValue = InvertWithLog(psiM_hp.data(),NumPtcls,NumOrbitals,WorkSpace_hp.data(),Pivot.data(),PhaseValue_hp);
-    psiM = psiM_hp;
-    PhaseValue = PhaseValue_hp;
-#else
-    LogValue = InvertWithLog(psiM.data(),NumPtcls,NumOrbitals,WorkSpace.data(),Pivot.data(),PhaseValue);
-#endif
-    InverseTimer.stop();
-    RatioTimer.start();
     for(int i=0, iat=FirstIndex; i<NumPtcls; i++, iat++)
     {
       mGradType rv=simd::dot(psiM[i],dpsiM[i],NumOrbitals);
       mValueType lap=simd::dot(psiM[i],d2psiM[i],NumOrbitals);
-      G(iat) += rv;
-      L(iat) += lap - dot(rv,rv);
+      G[iat] += rv;
+      L[iat] += lap - dot(rv,rv);
     }
-    RatioTimer.stop();
   }
-  psiM_temp = psiM;
   return LogValue;
 }
 
 void
 DiracDeterminantBase::recompute(ParticleSet& P)
 {
-  myG=0.0;
-  myL=0.0;
-  LogValue=evaluateLog(P,myG,myL);
+  SPOVGLTimer.start();
+  Phi->evaluate_notranspose(P, FirstIndex, LastIndex, psiM_temp, dpsiM, d2psiM);
+  SPOVGLTimer.stop();
+  if(NumPtcls==1)
+  {
+    //CurrentDet=psiM(0,0);
+    ValueType det=psiM_temp(0,0);
+    psiM(0,0)=RealType(1)/det;
+    LogValue = evaluateLogAndPhase(det,PhaseValue);
+  }
+  else
+  {
+    invertPsiM(psiM_temp,psiM);
+  }
 }
 
 void
@@ -940,7 +631,7 @@ DiracDeterminantBase* DiracDeterminantBase::makeCopy(SPOSetBasePtr spo) const
 }
 
 DiracDeterminantBase::DiracDeterminantBase(const DiracDeterminantBase& s)
-  : OrbitalBase(s), NP(0),Phi(s.Phi),FirstIndex(s.FirstIndex)
+  : OrbitalBase(s), NP(0), Phi(s.Phi), FirstIndex(s.FirstIndex)
   ,UpdateTimer(s.UpdateTimer)
   ,RatioTimer(s.RatioTimer)
   ,InverseTimer(s.InverseTimer)
@@ -970,8 +661,3 @@ void DiracDeterminantBase::registerTimers()
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

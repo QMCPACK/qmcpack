@@ -451,7 +451,7 @@ PseudoClass::WriteCASINO(string fname)
     fprintf (fout, "  %22.16e\n", r);
   }
   
-  for (int l=0; l<3; l++) {
+  for (int l=0; l<ChannelPotentials.size(); l++) {
     ChannelPotentialClass &pot = (l < ChannelPotentials.size()) ?
       ChannelPotentials[l] : ChannelPotentials[LocalChannel];
     if (l < ChannelPotentials.size() && l != pot.l) {
@@ -615,7 +615,7 @@ PseudoClass::WriteUPF (string fileName)
 	   date.str().c_str());
 
 	   
-  fprintf (fout, "<PP_INFO/>\n");
+  fprintf (fout, "</PP_INFO>\n");
 
   // Write PP_HEADER section
   fprintf (fout, "<PP_HEADER>\n");
@@ -636,11 +636,11 @@ PseudoClass::WriteUPF (string fileName)
   fprintf (fout, "  %1.10f       Total energy\n", TotalEnergy);
   fprintf (fout, "  %3.6f  %3.6f  Suggested cutoff for wfc and rho\n",
 	   0.0, 0.0);
-  fprintf (fout, "  %d                   Max angular momentum component\n",
+  fprintf (fout, "  %ld                   Max angular momentum component\n",
 	   ChannelPotentials.size()-1);
   fprintf (fout, "  %4d                Number of points in mesh\n",
 	   N);
-  fprintf (fout, "  %d   %d               Number of Wavefunctions, Number of Projectors\n", ChannelPotentials.size(), ChannelPotentials.size()-1);
+  fprintf (fout, "  %ld   %ld               Number of Wavefunctions, Number of Projectors\n", ChannelPotentials.size(), ChannelPotentials.size()-1);
   fprintf (fout, " WaveFunctions      nl   l   occ    \n");
   for (int l=0; l<ChannelPotentials.size(); l++) 
     fprintf (fout, "                    %d%s   %d   %1.4f\n",
@@ -649,13 +649,13 @@ PseudoClass::WriteUPF (string fileName)
 	     ChannelPotentials[l].l,
 	     ChannelPotentials[l].Occupation);
     
-  fprintf (fout, "<PP_HEADER/>\n");
+  fprintf (fout, "</PP_HEADER>\n");
 
   // Write PP_MESH section
   fprintf (fout, "<PP_MESH>\n");
   fprintf (fout, "  <PP_R>\n");
   Write4Block (fout, PotentialGrid.Points());
-  fprintf (fout, "  <PP_R/>\n");
+  fprintf (fout, "  </PP_R>\n");
   fprintf (fout, "  <PP_RAB>\n");
   vector<double> dr(N);
   for (int i=1; i<(N-1); i++)
@@ -664,8 +664,8 @@ PseudoClass::WriteUPF (string fileName)
   dr[N-1] = 2.0*dr[N-2]-dr[N-3];
   
   Write4Block (fout, dr);
-  fprintf (fout, "  <PP_RAB/>\n");
-  fprintf (fout, "<PP_MESH/>\n");
+  fprintf (fout, "  </PP_RAB>\n");
+  fprintf (fout, "</PP_MESH>\n");
 
   // Write PP_LOCAL section
   fprintf (fout, "<PP_LOCAL>\n");
@@ -674,7 +674,7 @@ PseudoClass::WriteUPF (string fileName)
     vloc[i] = 2.0*ChannelPotentials[LocalChannel].Vl(i); // /PotentialGrid[i];
   //vloc[0] = 2.0*ChannelPotentials[LocalChannel].Vl(1.0e-7)/1.0e-7;
   Write4Block (fout, vloc);
-  fprintf (fout, "<PP_LOCAL/>\n");
+  fprintf (fout, "</PP_LOCAL>\n");
   
   // Write the nonlocal section
   fprintf (fout, "<PP_NONLOCAL>\n");
@@ -699,12 +699,12 @@ PseudoClass::WriteUPF (string fileName)
       fprintf (fout, "    %d %d             Beta L\n", betaNum, l);
       fprintf (fout, "    %d  \n", N);
       Write4Block (fout, beta, 4);
-      fprintf (fout, "  <PP_BETA/>\n");
+      fprintf (fout, "  </PP_BETA>\n");
       betaNum++;
     }
   // Write D_ij matrix
   fprintf (fout, "  <PP_DIJ>\n");
-  fprintf (fout, "    %d         Number of nonzero Dij\n",
+  fprintf (fout, "    %ld         Number of nonzero Dij\n",
 	   ChannelPotentials.size()-1);
   betaNum = 1;
   // Compute D_ij matrix.  In our case, with single projectors, D_ij
@@ -741,8 +741,8 @@ PseudoClass::WriteUPF (string fileName)
 	       l, betaNum, norm, Dij);
       betaNum++;
     }
-  fprintf (fout, "  <PP_DIJ/>\n");
-  fprintf (fout, "<PP_NONLOCAL/>\n");
+  fprintf (fout, "  </PP_DIJ>\n");
+  fprintf (fout, "</PP_NONLOCAL>\n");
   
   // Write PP_PSWFC section
   fprintf (fout, "<PP_PSWFC>\n");
@@ -755,7 +755,7 @@ PseudoClass::WriteUPF (string fileName)
       u[i] = pot.ul(i);
     Write4Block (fout, u);
   }
-  fprintf (fout, "<PP_PSWFC/>\n");
+  fprintf (fout, "</PP_PSWFC>\n");
 
   // Write PP_RHOATOM section
   fprintf (fout, "<PP_RHOATOM>\n");
@@ -774,7 +774,7 @@ PseudoClass::WriteUPF (string fileName)
   }
   Write4Block (fout, rho_at);
   
-  fprintf (fout, "<PP_RHOATOM/>\n");
+  fprintf (fout, "</PP_RHOATOM>\n");
 
   // Close the file
   fclose (fout);
@@ -807,7 +807,7 @@ PseudoClass::WriteFHI (string fileName)
 	   "                    zatom, zion, pspdat\n", (double)AtomicNumber,
 	   PseudoCharge, date.str().c_str());
 
-  fprintf (fout, "    6   7  %d  %d  %d  0.0000     "
+  fprintf (fout, "    6   7  %ld  %d  %d  0.0000     "
 	   "pspcod,pspxc,lmax,lloc,mmax,r2well\n",
 	   ChannelPotentials.size()-1, LocalChannel, numPoints);
   fprintf (fout, "   0.00000   0.00000   0.00000                  "
@@ -817,7 +817,7 @@ PseudoClass::WriteFHI (string fileName)
 	   "7 --- Here follows the cpi file in the fhi98pp format -\n");
 
   // Write FHI file proper
-  fprintf (fout, "%d %d\n", (int)round(PseudoCharge), 
+  fprintf (fout, "%d %ld\n", (int)round(PseudoCharge),
 	   ChannelPotentials.size());
   for (int i=0; i<10; i++)
     fprintf (fout, "0.0 0.0 0.0\n");
@@ -1852,7 +1852,7 @@ PseudoClass::HaveProjectors()
 
 
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
   // Create list of acceptable command-line parameters
   list<ParamClass> argList;
@@ -1881,28 +1881,41 @@ main(int argc, char **argv)
   argList.push_back(ParamClass("casino", true));
   argList.push_back(ParamClass("log_grid", false));
   argList.push_back(ParamClass("local_channel", true));
+  argList.push_back(ParamClass("density_mix", true));
 
   CommandLineParserClass parser(argList);
   bool success = parser.Parse(argc, argv);
   if (!success || parser.NumFiles()!=0) {
     cerr << "Usage:  ppconvert  options\n"
-	 << "  Options include:    \n"
-	 << "   --casino_pot fname \n"
-	 << "   --fhi_pot    fname \n"
+         << "  Options include:    \n"
+         << "     Input formats:   \n"
+         << "   --casino_pot fname \n"
+         << "   --fhi_pot    fname \n"
          << "   --upf_pot    fname \n"
-	 << "   --bfd_pot    fname \n"
+         << "   --bfd_pot    fname \n"
          << "   --gamess_pot fname \n"
-	 << "   --casino_us fname  \n"
-	 << "   --casino_up fname  \n"
-	 << "   --casino_ud fname  \n"
-	 << "   --xml  fname.xml   \n"
-	 << "   --tm   fname.tm    \n"
-	 << "   --upf  fname.upf   \n"
-	 << "   --fhi  fname.fhi   \n"
-	 << "   --fpmd  fname.xml  \n"
-	 << "   --casino fname.xml \n"
-	 << "   --log_grid         \n"
-	 << "   --local_channel l  \n";
+         << "     Output formats:  \n"
+         << "   --xml  fname.xml   \n"
+         << "   --tm   fname.tm    \n"
+         << "   --upf  fname.upf   \n"
+         << "   --fhi  fname.fhi   \n"
+         << "   --fpmd  fname.xml  \n"
+         << "   --casino fname.xml \n"
+         << "     Reference states:\n"
+         << "   --casino_us fname  \n"
+         << "   --casino_up fname  \n"
+         << "   --casino_ud fname  \n"
+         << "   --casino_uf fname  \n"
+         << "   --casino_ug fname  \n"
+         << "   --s_ref state      \n"
+         << "   --p_ref state      \n"
+         << "   --d_ref state      \n"
+         << "   --f_ref state      \n"
+         << "   --g_ref state      \n"
+         << "     Other options:   \n"
+         << "   --log_grid         \n"
+         << "   --local_channel l (l=0(s),1(p),2(d),3(f),..., default largest possible) \n"
+         << "   --density_mix beta (0 <= beta < 1.0, default 0.75) \n";
     exit(1);
   }
 
@@ -1917,6 +1930,9 @@ main(int argc, char **argv)
   if (parser.Found("local_channel"))
     nlpp.SetLocalChannel(atoi(parser.GetArg("local_channel").c_str()));
 
+  if (parser.Found("density_mix"))
+    nlpp.SetDensityMix(atof(parser.GetArg("density_mix").c_str()));
+
   if (parser.Found("casino_pot"))
     nlpp.ReadCASINO_PP(parser.GetArg("casino_pot"));
   else if (parser.Found ("bfd_pot"))
@@ -1929,8 +1945,8 @@ main(int argc, char **argv)
     nlpp.ReadGAMESS_PP (parser.GetArg("gamess_pot"));
   else {
     cerr << "Need to specify a potential file with --casino_pot "
-	 << "or --bfd_pot or --fhi_pot or --upf_pot.\n";
-    abort();
+	 << "or --bfd_pot or --fhi_pot or --upf_pot or --gamess_pot.\n";
+    exit(1);
   }
 
   // Now check how the projectors are specified
@@ -2120,7 +2136,7 @@ PseudoClass::CalcProjector(string refstate, int lchannel)
   // Set the potential
   atom.SetBarePot (this);
   // Solve atom
-  atom.NewMix = 0.75;
+  atom.NewMix = DensityMix;
   cerr << "Solving atom for reference state " << saveState << ":\n";
   atom.Solve();
   

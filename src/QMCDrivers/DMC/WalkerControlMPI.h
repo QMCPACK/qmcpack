@@ -34,7 +34,7 @@ struct WalkerControlMPI: public WalkerControlBase
   int Cur_pop;
   int Cur_max;
   int Cur_min;
-  std::vector<NewTimer*> myTimers;
+  TimerList_t myTimers;
   /** default constructor
    *
    * Set the SwapMode to zero so that instantiation can be done
@@ -44,18 +44,10 @@ struct WalkerControlMPI: public WalkerControlBase
   /** perform branch and swap walkers as required */
   int branch(int iter, MCWalkerConfiguration& W, RealType trigger);
 
+  //current implementations
   void swapWalkersSimple(MCWalkerConfiguration& W);
 
-  //old implementations
-  void swapWalkersAsync(MCWalkerConfiguration& W);
-  void swapWalkersBlocked(MCWalkerConfiguration& W);
-  void swapWalkersMap(MCWalkerConfiguration& W);
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile: WalkerControlMPI.h,v $   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

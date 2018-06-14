@@ -34,8 +34,7 @@
 #error "Only 2D and 3D are implemented.\n"
 #endif
 #include <ParticleBase/ParticleAttrib.h>
-#include <ParticleBase/ParticleBase.h>
-#include <Utilities/OhmmsInfo.h>
+#include <Utilities/OutputManager.h>
 #include <Message/Communicate.h>
 
 //define empty DEBUG_MEMORY
@@ -138,33 +137,17 @@ struct PtclOnLatticeTraits
 #endif
 };
 
-inline std::ostream& app_log()
-{
-  return  OhmmsInfo::Log->getStream();
-}
 
-inline std::ostream& app_error()
-{
-  OhmmsInfo::Log->getStream() << "ERROR ";
-  return OhmmsInfo::Error->getStream();
-}
-
-inline std::ostream& app_warning()
-{
-  OhmmsInfo::Log->getStream() << "WARNING ";
-  return OhmmsInfo::Warn->getStream();
-}
-
-inline std::ostream& app_debug()
-{
-  return OhmmsInfo::Debug->getStream();
-}
+// For unit tests
+//  Check if we are compiling with Catch defined.  Could use other symbols if needed.
+#ifdef TEST_CASE
+#ifdef QMC_COMPLEX
+typedef ComplexApprox ValueApprox;
+#else
+typedef Approx ValueApprox;
+#endif
+#endif
 
 }
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

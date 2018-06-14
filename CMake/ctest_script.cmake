@@ -1,6 +1,6 @@
 # ctest script for building, running, and submitting the test results 
 # Usage:  ctest -s script,build
-#   build = debug / optimized / valgrind
+#   build = debug / optimized / valgrind / coverage
 # Note: this test will use use the number of processors defined in the variable N_PROCS,
 #   the enviornmental variable N_PROCS, or the number of processors availible (if not specified)
 
@@ -30,7 +30,7 @@ ELSEIF( ${HOSTNAME} MATCHES "hyperion" )
     SET( CXX ${CMAKE_CXX_COMPILER} )
     SET( CTEST_CMAKE_GENERATOR "Unix Makefiles")
     SET( CTEST_SITE "hyperion.alcf.anl.gov" )
-    SET( N_PROCS 32)
+    SET( N_PROCS 64)
 ELSEIF( ${HOSTNAME} MATCHES "cori" )
 # Setup for cori.nersc.gov phase 1
     SET( CC ${CMAKE_C_COMPILER} )
@@ -40,18 +40,20 @@ ELSEIF( ${HOSTNAME} MATCHES "cori" )
     SET( N_PROCS 32)
 ELSEIF( ${HOSTNAME} MATCHES "eos" )
 # Setup for eos.ccs.ornl.gov Cray XC30 Intel E5-2670 Aries interconnect.
+# N_NPROCS and N_PROCS_BUILD should be set to respect current OLCF limits
     SET( CC ${CMAKE_C_COMPILER} )
     SET( CXX ${CMAKE_CXX_COMPILER} )
     SET( CTEST_CMAKE_GENERATOR "Unix Makefiles")
     SET( CTEST_SITE "eos.ccs.ornl.gov" )
-    SET( N_PROCS 16)
+    SET( N_PROCS_BUILD 8 )
 ELSEIF( ${HOSTNAME} MATCHES "titan" )
 # Setup for titan.ccs.ornl.gov Cray XK7
+# N_NPROCS and N_PROCS_BUILD should be set to respect current OLCF limits
     SET( CC ${CMAKE_C_COMPILER} )
     SET( CXX ${CMAKE_CXX_COMPILER} )
     SET( CTEST_CMAKE_GENERATOR "Unix Makefiles")
     SET( CTEST_SITE "titan.ccs.ornl.gov" )
-    SET( N_PROCS 16)
+    SET( N_PROCS_BUILD 8 )
 ELSEIF( ${HOSTNAME} MATCHES "cetus" )
 # Setup for cetus.alcf.anl.gov BlueGene/Q
     SET( CTEST_CMAKE_GENERATOR "Unix Makefiles")
@@ -74,8 +76,15 @@ ELSEIF( ${HOSTNAME} MATCHES "billmp1" )
     ELSE()
         SET( CTEST_BUILD_NAME Clang-Release-Mac )
     ENDIF()
+ELSEIF( ${HOSTNAME} MATCHES "ryzen-box" )
+    SET( CC mpicc )
+    SET( CXX mpicxx )
+    SET( CTEST_CMAKE_GENERATOR "Unix Makefiles")
+    SET( QMC_OPTIONS "${QMC_OPTIONS};-DCMAKE_PREFIX_PATH=/opt/OpenBLAS" )
+    SET( N_PROCS 16)
 ELSE()
-    MESSAGE( FATAL_ERROR "Unknown host: ${HOSTNAME}" )
+    MESSAGE( MESSAGE "Unknown host: ${HOSTNAME}. Using generic setting." )
+    SET( CTEST_CMAKE_GENERATOR "Unix Makefiles")
 ENDIF()
 
 # Get the source directory based on the current directory
@@ -99,8 +108,6 @@ IF( NOT CTEST_SCRIPT_ARG )
     MESSAGE(FATAL_ERROR "No build specified: ctest -S /path/to/script,build (debug/optimized/valgrind")
 ELSEIF( ${CTEST_SCRIPT_ARG} STREQUAL "debug" )
     SET( CMAKE_BUILD_TYPE "Debug" )
-    SET( CTEST_COVERAGE_COMMAND ${COVERAGE_COMMAND} )
-    SET( ENABLE_GCOV "true" )
     SET( USE_VALGRIND FALSE )
     SET( USE_VALGRIND_MATLAB FALSE )
 ELSEIF( (${CTEST_SCRIPT_ARG} STREQUAL "optimized") OR (${CTEST_SCRIPT_ARG} STREQUAL "opt") OR (${CTEST_SCRIPT_ARG} STREQUAL "release") )
@@ -116,11 +123,13 @@ ELSEIF( ${CTEST_SCRIPT_ARG} STREQUAL "valgrind" )
     SET( USE_VALGRIND TRUE )
     SET( USE_VALGRIND_MATLAB FALSE )
     SET( USE_MATLAB 0 )
+ELSEIF( ${CTEST_SCRIPT_ARG} STREQUAL "coverage" )
+    SET( CMAKE_BUILD_TYPE "Debug" )
+    SET( CTEST_COVERAGE_COMMAND "gcov" )
+    SET( ENABLE_GCOV "true" )
+    SET( CTEST_BUILD_NAME "${CTEST_BUILD_NAME}-coverage" )
 ELSE()
     MESSAGE(FATAL_ERROR "Invalid build (${CTEST_SCRIPT_ARG}): ctest -S /path/to/script,build (debug/opt/valgrind")
-ENDIF()
-IF ( NOT COVERAGE_COMMAND )
-    SET( ENABLE_GCOV "false" )
 ENDIF()
 
 
@@ -150,6 +159,12 @@ IF( NOT DEFINED N_PROCS )
     ENDIF()
 ENDIF()
 
+# Set the number of processors
+IF( NOT DEFINED N_PROCS_BUILD )
+     IF ( DEFINED $ENV{N_PROCS_BUILD} )
+        SET( N_PROCS_BUILD $ENV{N_PROCS_BUILD} )
+     ENDIF()
+ENDIF()	
 
 # Set basic variables
 SET( CTEST_PROJECT_NAME "QMCPACK" )
@@ -166,10 +181,14 @@ SET( CTEST_NIGHTLY_START_TIME "22:00:00 EST" )
 SET( CTEST_COMMAND "\"${CTEST_EXECUTABLE_NAME}\" -D ${CTEST_DASHBOARD}" )
 IF ( BUILD_SERIAL )
     SET( CTEST_BUILD_COMMAND "${MAKE_CMD} -i" )
+ELSEIF ( DEFINED N_PROCS_BUILD )
+    SET( CTEST_BUILD_COMMAND "${MAKE_CMD} -i -j ${N_PROCS_BUILD}" )
 ELSE()
     SET( CTEST_BUILD_COMMAND "${MAKE_CMD} -i -j ${N_PROCS}" )
 ENDIF()
 
+MESSAGE("Building with ${N_PROCS_BUILD} processors")
+MESSAGE("Testing with ${N_PROCS} processors")
 
 # Set valgrind options
 SET( VALGRIND_COMMAND_OPTIONS  "--tool=memcheck --leak-check=yes --track-fds=yes --num-callers=50 --show-reachable=yes --suppressions=${QMC_SOURCE_DIR}/src/ValgrindSuppresionFile" )
@@ -197,6 +216,7 @@ IF ( NOT DEFINED CMAKE_TOOLCHAIN_FILE )
   SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}" )
   SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DQMC_DATA='${QMC_DATA}'" )
   SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DQMC_CUDA='${QMC_CUDA}'" )
+  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DQE_BIN='${QE_BIN}'" )
 ELSE()
   SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DCMAKE_TOOLCHAIN_FILE='${CMAKE_TOOLCHAIN_FILE}'" )
 ENDIF()
@@ -205,12 +225,32 @@ IF ( QMC_COMPLEX )
   SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DQMC_COMPLEX='${QMC_COMPLEX}'" )
 ENDIF()
 
+IF ( DEFINED QMC_MPI )
+  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DQMC_MPI='${QMC_MPI}'" )
+ENDIF()
+
 IF ( QMC_MIXED_PRECISION )
   SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DQMC_MIXED_PRECISION='${QMC_MIXED_PRECISION}'" )
 ENDIF()
 
+IF ( ENABLE_SOA )
+  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DENABLE_SOA='${ENABLE_SOA}'" )
+ENDIF()
+
+IF ( CUDA_ARCH )
+  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DCUDA_ARCH='${CUDA_ARCH}'" )
+ENDIF()
+
+IF ( BUILD_AFQMC )
+  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DBUILD_AFQMC='${BUILD_AFQMC}'" )
+ENDIF()
+
 IF ( BLA_VENDOR )
   SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DBLA_VENDOR=${BLA_VENDOR}" )
+ENDIF()
+
+IF ( ENABLE_TIMERS )
+  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DENABLE_TIMERS=${ENABLE_TIMERS}" )
 ENDIF()
 
 IF ( CMAKE_PREFIX_PATH )
@@ -220,9 +260,15 @@ ENDIF()
 IF ( QMC_EXTRA_LIBS )
     SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DQMC_EXTRA_LIBS:STRING='${QMC_EXTRA_LIBS}'" )
 ENDIF()
+
 IF ( QMC_OPTIONS )
     SET( CTEST_OPTIONS "${CTEST_OPTIONS};${QMC_OPTIONS}" )
 ENDIF()
+
+IF ( HDF5_ROOT )
+    SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DHDF5_ROOT=${HDF5_ROOT}" )
+ENDIF()
+
 MESSAGE("Configure options:")
 MESSAGE("   ${CTEST_OPTIONS}")
 
@@ -239,6 +285,7 @@ CTEST_CONFIGURE(
     OPTIONS "${CTEST_OPTIONS}"
 )
 
+
 IF ( DEFINED CMAKE_TOOLCHAIN_FILE )
 #need to trigger the cmake configuration twice
 CTEST_CONFIGURE(
@@ -252,6 +299,8 @@ ENDIF()
 CTEST_BUILD()
 IF ( USE_VALGRIND )
     CTEST_MEMCHECK( EXCLUDE procs   PARALLEL_LEVEL ${N_PROCS} )
+ELSEIF (CTEST_COVERAGE_COMMAND)
+  # Skip the normal tests when doing coverage
 ELSE()
 #    CTEST_TEST( INCLUDE short PARALLEL_LEVEL ${N_PROCS} )
     IF( DEFINED TEST_PARALLEL_LEVEL )
@@ -260,19 +309,91 @@ ELSE()
          CTEST_TEST( PARALLEL_LEVEL ${N_PROCS} )
     ENDIF()
 ENDIF()
-IF( CTEST_COVERAGE_COMMAND )
-    CTEST_COVERAGE()
-ENDIF()
 
 
 # Submit the results to oblivion
-SET( CTEST_DROP_METHOD "http" )
+SET( CTEST_DROP_METHOD "https" )
 SET( CTEST_DROP_SITE "cdash.qmcpack.org" )
 SET( CTEST_DROP_LOCATION "/CDash/submit.php?project=QMCPACK" )
 SET( CTEST_DROP_SITE_CDASH TRUE )
 SET( DROP_SITE_CDASH TRUE )
 CTEST_SUBMIT()
 
+IF( CTEST_COVERAGE_COMMAND )
+
+  # Path prefix to remove to shorten some file names.  The final SRC_ROOT Should not contain '..'
+  GET_FILENAME_COMPONENT(SRC_ROOT2 ${QMC_SOURCE_DIR} DIRECTORY)
+  GET_FILENAME_COMPONENT(SRC_ROOT ${SRC_ROOT2} DIRECTORY)
+
+  EXECUTE_PROCESS(COMMAND "pwd" OUTPUT_VARIABLE CURRENT_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+  #MESSAGE("Using new code coverage path in ${CTEST_SOURCE_DIRECTORY}")
+  #MESSAGE("Using new code coverage path bin: ${CTEST_BINARY_DIRECTORY}")
+  INCLUDE("${CTEST_SOURCE_DIRECTORY}/CMake/compareGCOV.cmake")
+  # Base test
+  CLEAR_GCDA(${CTEST_BINARY_DIRECTORY})
+  CTEST_TEST(INCLUDE_LABEL coverage)
+  FILE(REMOVE_RECURSE ${CTEST_BINARY_DIRECTORY}/tgcov_base_raw)
+  GENERATE_GCOV(${CTEST_BINARY_DIRECTORY} ${CTEST_BINARY_DIRECTORY}/tgcov_base_raw "USE_LONG_FILE_NAMES" ${SRC_ROOT})
+  FILTER_GCOV(${CTEST_BINARY_DIRECTORY}/tgcov_base_raw)
+
+  FILE(REMOVE_RECURSE ${CTEST_BINARY_DIRECTORY}/tgcov_base)
+  MERGE_GCOV(${CTEST_BINARY_DIRECTORY}/tgcov_base_raw ${CTEST_BINARY_DIRECTORY}/tgcov_base ${SRC_ROOT})
+
+  # Generate gcov
+  CLEAR_GCDA(${CTEST_BINARY_DIRECTORY})
+  # Remove gcda files
+  CTEST_TEST(INCLUDE_LABEL unit)
+  # Generate gcov
+  FILE(REMOVE_RECURSE ${CTEST_BINARY_DIRECTORY}/tgcov_unit_raw)
+  GENERATE_GCOV(${CTEST_BINARY_DIRECTORY} ${CTEST_BINARY_DIRECTORY}/tgcov_unit_raw "USE_LONG_FILE_NAMES" ${SRC_ROOT})
+  FILTER_GCOV(${CTEST_BINARY_DIRECTORY}/tgcov_unit_raw)
+
+  FILE(REMOVE_RECURSE ${CTEST_BINARY_DIRECTORY}/tgcov_unit)
+  MERGE_GCOV(${CTEST_BINARY_DIRECTORY}/tgcov_unit_raw ${CTEST_BINARY_DIRECTORY}/tgcov_unit ${SRC_ROOT})
+
+  # Generate diff
+  FILE(REMOVE_RECURSE ${CTEST_BINARY_DIRECTORY}/tgcov_diff)
+  COMPARE_GCOV(${CTEST_BINARY_DIRECTORY}/tgcov_base
+               ${CTEST_BINARY_DIRECTORY}/tgcov_unit
+               ${CTEST_BINARY_DIRECTORY}/tgcov_diff
+               tgcov_diff)
+
+  # create tar file
+  CREATE_GCOV_TAR(${CTEST_BINARY_DIRECTORY} tgcov_unit)
+  CREATE_GCOV_TAR(${CTEST_BINARY_DIRECTORY} tgcov_base)
+
+  FILE(GLOB DIFF_GCOV_FILES ${CTEST_BINARY_DIRECTORY}/tgcov_diff/*.gcov)
+
+
+  SET( CTEST_BUILD_NAME_ORIGINAL "${CTEST_BUILD_NAME}")
+  SET( CTEST_BUILD_NAME "${CTEST_BUILD_NAME_ORIGINAL}-diff" )
+  CTEST_START(${CTEST_DASHBOARD})
+  IF(EXISTS "${CTEST_BINARY_DIRECTORY}/gcov.tar")
+    MESSAGE("submitting ${CTEST_BINARY_DIRECTORY}/gcov.tar")
+    CTEST_SUBMIT(CDASH_UPLOAD "${CTEST_BINARY_DIRECTORY}/gcov.tar"
+      CDASH_UPLOAD_TYPE GcovTar)
+  ENDIF()
+
+  SET( CTEST_BUILD_NAME "${CTEST_BUILD_NAME_ORIGINAL}-base" )
+  CTEST_START(${CTEST_DASHBOARD})
+
+  IF(EXISTS "${CTEST_BINARY_DIRECTORY}/gcov_tgcov_base.tar")
+    MESSAGE("submitting ${CTEST_BINARY_DIRECTORY}/gcov_tgcov_base.tar")
+    CTEST_SUBMIT(CDASH_UPLOAD "${CTEST_BINARY_DIRECTORY}/gcov_tgcov_base.tar"
+      CDASH_UPLOAD_TYPE GcovTar)
+  ENDIF()
+
+  SET( CTEST_BUILD_NAME "${CTEST_BUILD_NAME_ORIGINAL}-unit" )
+  CTEST_START(${CTEST_DASHBOARD})
+
+
+  IF(EXISTS "${CTEST_BINARY_DIRECTORY}/gcov_tgcov_unit.tar")
+    MESSAGE("submitting ${CTEST_BINARY_DIRECTORY}/gcov_tgcov_unit.tar")
+    CTEST_SUBMIT(CDASH_UPLOAD "${CTEST_BINARY_DIRECTORY}/gcov_tgcov_unit.tar"
+      CDASH_UPLOAD_TYPE GcovTar)
+  ENDIF()
+
+ENDIF()
 
 # Clean up
 # exec_program("make distclean")

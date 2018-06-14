@@ -617,6 +617,10 @@ bool selectedCI::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
   myComm->split_comm(key,MPI_COMM_TG_LOCAL);
   TG.setTGCommLocal(MPI_COMM_TG_LOCAL);
 
+  key = TG.getCoreID();
+  myComm->split_comm(key,MPI_COMM_HEAD_OF_NODES);
+  TG.setHeadOfNodesComm(MPI_COMM_HEAD_OF_NODES);
+
   CommBuffer.setup(TG.getCoreRank()==0,std::string("COMMBuffer_")+std::to_string(myComm->rank()),MPI_COMM_TG_LOCAL);
   TG.setBuffer(&CommBuffer);
 
@@ -626,12 +630,12 @@ bool selectedCI::setup(HamPtr h0, WSetPtr w0, PropPtr p0, WfnPtr wf0)
            <<std::endl;
 
   // hamiltonian
-  if(!ham0->init(TGdata,&CommBuffer,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL)) {
+  if(!ham0->init(TGdata,&CommBuffer,MPI_COMM_TG_LOCAL,MPI_COMM_NODE_LOCAL,MPI_COMM_HEAD_OF_NODES)) {
     app_error()<<"Error initializing Hamiltonian in selectedCI::setup" <<std::endl; 
     return false; 
   }   
 
-  NuclearCoulombEnergy = toComplex(sHam->NuclearCoulombEnergy).real();
+  NuclearCoulombEnergy = static_cast<ValueType>(sHam->NuclearCoulombEnergy); 
 
   app_log()<<"\n****************************************************\n"   
            <<"****************************************************\n"   

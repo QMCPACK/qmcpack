@@ -32,7 +32,7 @@ ForceBase::ForceBase(ParticleSet& ions, ParticleSet& elns)
   : FirstForceIndex(-1),tries(0), Ions(ions), addionion(true)
 {
   ReportEngine PRE("ForceBase","ForceBase");
-  myTableIndex=elns.addTable(ions);
+  myTableIndex=elns.addTable(ions,DT_SOA_PREFERRED);
   FirstTime = true;
   Nnuc = ions.getTotalNum();
   Nel = elns.getTotalNum();
@@ -94,7 +94,7 @@ void ForceBase::setObservablesF(QMCTraits::PropertySetType& plist)
   {
     FirstTime = false;
     forces_IonIon = 0.0;
-    DistanceTableData* d_aa=DistanceTable::add(Ions);
+    DistanceTableData* d_aa=DistanceTable::add(Ions,DT_AOS);
     if(addionion==true)
     {
       const ParticleSet::Scalar_t* restrict Zat=Ions.Z.first_address();
@@ -260,9 +260,4 @@ ForceBase::InitVarReduction (real_type rcut, int _m, int numFuncs)
 
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 3015 $   $Date: 2008-08-18 16:08:06 -0500 (Mon, 18 Aug 2008) $
- * $Id: ForceBase.cpp 3015 2008-08-18 21:08:06Z jnkim $
- ***************************************************************************/
 

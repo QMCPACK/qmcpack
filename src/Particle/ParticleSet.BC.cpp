@@ -20,10 +20,8 @@
  */
 #include "Particle/ParticleSet.h"
 #include "Particle/FastParticleOperators.h"
-#include "Utilities/OhmmsInfo.h"
 #include "Message/OpenMP.h"
 #include "LongRange/StructFact.h"
-#include "qmc_common.h"
 
 namespace qmcplusplus
 {
@@ -71,28 +69,41 @@ void ParticleSet::createSK()
   //int membersize= mySpecies.addAttribute("membersize");
   //for(int ig=0; ig<mySpecies.size(); ++ig)
   //  SubPtcl[ig+1]=SubPtcl[ig]+mySpecies(membersize,ig);
-  
-  convert2Cart(R); //make sure that R is in Cartesian coordinates
+
+  if(UseBoundBox) convert2Cart(R); //make sure that R is in Cartesian coordinates
 
   if(Lattice.SuperCellEnum != SUPERCELL_OPEN)
   {
     Lattice.SetLRCutoffs();
     LRBox=Lattice;
-    if(Lattice.SuperCellEnum == SUPERCELL_SLAB)
+    bool changed = false;
+    if(Lattice.SuperCellEnum == SUPERCELL_SLAB && Lattice.VacuumScale != 1.0)
     {
-      LRBox.R(2,2)*=qmc_common.vacuum;
+      LRBox.R(2,0)*=Lattice.VacuumScale;
+      LRBox.R(2,1)*=Lattice.VacuumScale;
+      LRBox.R(2,2)*=Lattice.VacuumScale;
+      changed = true;
     }
-    else if(Lattice.SuperCellEnum == SUPERCELL_WIRE)
+    else if(Lattice.SuperCellEnum == SUPERCELL_WIRE && Lattice.VacuumScale != 1.0)
     {
-      LRBox.R(1,1)*=qmc_common.vacuum;
-      LRBox.R(2,2)*=qmc_common.vacuum;
+      LRBox.R(1,0)*=Lattice.VacuumScale;
+      LRBox.R(1,1)*=Lattice.VacuumScale;
+      LRBox.R(1,2)*=Lattice.VacuumScale;
+      LRBox.R(2,0)*=Lattice.VacuumScale;
+      LRBox.R(2,1)*=Lattice.VacuumScale;
+      LRBox.R(2,2)*=Lattice.VacuumScale;
+      changed = true;
     }
     LRBox.reset();
     LRBox.SetLRCutoffs();
+    LRBox.printCutoffs();
 
-    app_log() << "--------------------------------------- " << std::endl;
-    LRBox.print(app_log());
-    app_log() << "--------------------------------------- " << std::endl;
+    if (changed) {
+      app_summary() << "  Simulation box changed by vacuum supercell conditions" << std::endl;
+      app_log() << "--------------------------------------- " << std::endl;
+      LRBox.print(app_log());
+      app_log() << "--------------------------------------- " << std::endl;
+    }
 
     if(SK)
     {
@@ -120,6 +131,15 @@ void ParticleSet::createSK()
   for(int iat=0; iat<GroupID.size(); iat++)
     Mass[iat]=mySpecies(massind,GroupID[iat]);
 
+  RSoA=R;
+}
+
+void ParticleSet::turnOnPerParticleSK()
+{
+  if(SK)
+    SK->turnOnStorePerParticle(*this);
+  else
+    APP_ABORT("ParticleSet::turnOnPerParticleSK trying to turn on per particle storage in SK but SK has not been created.");
 }
 
 void ParticleSet::convert(const ParticlePos_t& pin, ParticlePos_t& pout)
@@ -212,11 +232,11 @@ void ParticleSet::applyBC(ParticlePos_t& pos)
   const bool orthogonal = ParticleLayout_t::IsOrthogonal;
   if(pos.getUnit()==PosUnit::LatticeUnit)
   {
-    ApplyBConds<ParticlePos_t,Tensor_t,DIM,orthogonal>::Unit2Unit(pos,0,LocalNum);
+    ApplyBConds<ParticlePos_t,Tensor_t,DIM,orthogonal>::Unit2Unit(pos,0,TotalNum);
   }
   else
   {
-    ApplyBConds<ParticlePos_t,Tensor_t,DIM,orthogonal>::Cart2Cart(pos,Lattice.G,Lattice.R,0,LocalNum);
+    ApplyBConds<ParticlePos_t,Tensor_t,DIM,orthogonal>::Cart2Cart(pos,Lattice.G,Lattice.R,0,TotalNum);
   }
 }
 
@@ -241,9 +261,4 @@ void ParticleSet::convert2CartInBox(const ParticlePos_t& pin, ParticlePos_t& pou
   convert2Cart(pout);
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

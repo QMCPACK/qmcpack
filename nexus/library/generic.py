@@ -36,17 +36,30 @@ from copy import deepcopy
 import cPickle
 from random import randint
 
+
+class generic_settings:
+    devlog      = sys.stdout
+    raise_error = False
+#end class generic_settings
+
+
+class NexusError(Exception):
+    None
+#end class NexusError
+
+
 exit_call = sys.exit
-devlog    = sys.stdout
+
 
 def nocopy(value):
     return value
 #end def nocopy
 
 
+
 def log(*items,**kwargs):
     indent=None
-    logfile=devlog
+    logfile=generic_settings.devlog
     if len(kwargs)>0:
         n=0
         if 'indent' in kwargs:
@@ -81,24 +94,36 @@ def log(*items,**kwargs):
 #end def log
 
 
-def message(msg,header=None,post_header=' message:',indent='    ',logfile=devlog):
+def message(msg,header=None,post_header=' message:',indent='    ',logfile=None):
+    if logfile is None:
+        logfile = generic_settings.devlog
+    #end if
     if header is None:
         header = post_header.lstrip()
     else:
         header += post_header
     #end if
-    log('\n  '+header)
+    log('\n  '+header,logfile=logfile)
     log(msg.rstrip(),indent=indent,logfile=logfile)
 #end def message
 
 
-def warn(msg,header=None,indent='    ',logfile=devlog):
+def warn(msg,header=None,indent='    ',logfile=None):
+    if logfile is None:
+        logfile = generic_settings.devlog
+    #end if
     post_header=' warning:'
     message(msg,header,post_header,indent,logfile)
 #end def warn
 
 
-def error(msg,header=None,exit=True,trace=True,indent='    ',logfile=devlog):
+def error(msg,header=None,exit=True,trace=True,indent='    ',logfile=None):
+    if generic_settings.raise_error:
+        raise NexusError(msg)
+    #end if
+    if logfile is None:
+        logfile = generic_settings.devlog
+    #end if
     post_header=' error:'
     message(msg,header,post_header,indent,logfile)
     if exit:
@@ -569,9 +594,9 @@ class obj(object_interface):
 
     def to_dict(self):
         d = dict()
-        for k,v in self:
+        for k,v in self._iteritems():
             if isinstance(v,obj):
-                d[k] = v.to_dict()
+                d[k] = v._to_dict()
             else:
                 d[k] = v
             #end if
@@ -609,6 +634,16 @@ class obj(object_interface):
 
 
     # dict extensions
+    def random_key(self):
+        key = None
+        nkeys = len(self)
+        if nkeys>0:
+            key = self._keys()[randint(0,nkeys-1)]
+        #end if
+        return key
+    #end def random_key
+
+
     def set(self,*objs,**kwargs):
         for key,value in kwargs.iteritems():
             self[key]=value
@@ -640,54 +675,6 @@ class obj(object_interface):
         #end if
         return self
     #end def set_optional
-
-    def set_path(self,path,value=None):
-        o = self
-        cls = self.__class__
-        if isinstance(path,str):
-            path = path.split('/')
-        #end if
-        for p in path[0:-1]:
-            if not p in o:
-                o[p] = cls()
-            #end if
-            o = o[p]
-        #end for
-        o[path[-1]] = value
-    #end def set_path
-
-    def get_path(self,path,value=None):
-        o = self
-        if isinstance(path,str):
-            path = path.split('/')
-        #end if
-        for p in path[0:-1]:
-            if not p in o:
-                return value
-            #end if
-            o = o[p]
-        #end for
-        lp = path[-1]
-        if lp not in o:
-            return value
-        else:
-            return o[lp]
-        #end if
-    #end def get_path
-
-    def path_exists(self,path):
-        o = self
-        if isinstance(path,str):
-            path = path.split('/')
-        #end if
-        for p in path:
-            if not p in o:
-                return False
-            #end if
-            o = o[p]
-        #end for
-        return True
-    #end def path_exists
 
     def get(self,key,value=None): # follow dict interface, no plural
         if key in self:
@@ -845,7 +832,7 @@ class obj(object_interface):
     def shallow_copy(self):
         new = self.__class__()
         for k,v in self._iteritems():
-            self[k] = v
+            new[k] = v
         #end for
         return new
     #end def shallow_copy
@@ -857,6 +844,77 @@ class obj(object_interface):
         #end for
         return new
     #end def inverse
+
+    def path_exists(self,path):
+        o = self
+        if isinstance(path,str):
+            path = path.split('/')
+        #end if
+        for p in path:
+            if not p in o:
+                return False
+            #end if
+            o = o[p]
+        #end for
+        return True
+    #end def path_exists
+
+    def set_path(self,path,value=None):
+        o = self
+        cls = self.__class__
+        if isinstance(path,str):
+            path = path.split('/')
+        #end if
+        for p in path[0:-1]:
+            if not p in o:
+                o[p] = cls()
+            #end if
+            o = o[p]
+        #end for
+        o[path[-1]] = value
+    #end def set_path
+
+    def get_path(self,path,value=None):
+        o = self
+        if isinstance(path,str):
+            path = path.split('/')
+        #end if
+        for p in path[0:-1]:
+            if not p in o:
+                return value
+            #end if
+            o = o[p]
+        #end for
+        lp = path[-1]
+        if lp not in o:
+            return value
+        else:
+            return o[lp]
+        #end if
+    #end def get_path
+
+    def serial(self,s=None,path=None):
+        first = s is None
+        if first:
+            s = obj()
+            path = ''
+        #end if
+        for k,v in self._iteritems():
+            p = path+str(k)
+            if isinstance(v,obj):
+                if len(v)==0:
+                    s[p]=v
+                else:
+                    v._serial(s,p+'/')
+                #end if
+            else:
+                s[p]=v
+            #end if
+        #end for
+        if first:
+            return s
+        #end if
+    #end def serial
 
 
 
@@ -885,12 +943,12 @@ class obj(object_interface):
     def _select_random(self,*args,**kwargs):
         return obj.select_random(self,*args,**kwargs)
     #  dict extensions
+    def _random_key(self,*args,**kwargs):
+        obj.random_key(self,*args,**kwargs)
     def _set(self,*args,**kwargs):
         obj.set(self,*args,**kwargs)
     def _set_optional(self,*args,**kwargs):
         obj.set_optional(self,*args,**kwargs)
-    def _set_path(self,*args,**kwargs):
-        obj.set_path(self,*args,**kwargs)
     def _get(self,*args,**kwargs):
         obj.get(self,*args,**kwargs)
     def _get_optional(self,*args,**kwargs):
@@ -923,6 +981,14 @@ class obj(object_interface):
         obj.shallow_copy(self,*args,**kwargs)
     def _inverse(self,*args,**kwargs):
         return obj.inverse(self,*args,**kwargs)
+    def _path_exists(self,*args,**kwargs):
+        obj.path_exists(self,*args,**kwargs)
+    def _set_path(self,*args,**kwargs):
+        obj.set_path(self,*args,**kwargs)
+    def _get_path(self,*args,**kwargs):
+        obj.get_path(self,*args,**kwargs)
+    def _serial(self,*args,**kwargs):
+        return obj.serial(self,*args,**kwargs)
 
 #end class obj
 
@@ -938,12 +1004,12 @@ class hobj(obj):
     @property
     def _dict(self):
         return self.__dict__
-    #end def __get_dict
+    #end def _dict
 
     @property
     def _alt(self):
         return self.__dict__
-    #end def __alt
+    #end def _alt
 
     def __len__(self):
         return len(self._dict)

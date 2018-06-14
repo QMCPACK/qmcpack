@@ -35,6 +35,8 @@ std::string OrbitalBuilderBase::dtable_tag="distancetable";
 
 std::string OrbitalBuilderBase::jastrow_tag="jastrow";
 
+std::string OrbitalBuilderBase::fdlrwfn_tag="fdlrwfn";
+
 std::string OrbitalBuilderBase::detset_tag="determinantset";
 
 std::string OrbitalBuilderBase::sd_tag="slaterdeterminant";
@@ -71,8 +73,3 @@ OrbitalBuilderBase::~OrbitalBuilderBase()
 {
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

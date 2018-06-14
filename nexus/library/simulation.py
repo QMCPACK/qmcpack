@@ -66,6 +66,7 @@
 
 
 import os
+import sys
 import shutil
 import string
 from subprocess import Popen,PIPE
@@ -119,6 +120,10 @@ class SimulationInput(NexusCore):
         return text
     #end def write
 
+    def return_structure(self):
+        return self.return_system(structure_only=True)
+    #end def return_structure
+
     def read_text(self,text,filepath=None):
         self.not_implemented()
     #end def read_text
@@ -132,7 +137,7 @@ class SimulationInput(NexusCore):
         self.not_implemented()
     #end def incorporate_system
 
-    def return_system(self):
+    def return_system(self,structure_only=False):
         #create a physical system object from input file information
         self.not_implemented()
     #end def return_system
@@ -258,11 +263,13 @@ class Simulation(NexusCore):
     allowed_inputs = set(['identifier','path','infile','outfile','errfile','imagefile',
                           'input','job','files','dependencies','analysis_request',
                           'block','block_subcascade','app_name','app_props','system',
-                          'skip_submit','force_write','simlabel','fake_sim'])
+                          'skip_submit','force_write','simlabel','fake_sim',
+                          'restartable','force_restart'])
     sim_imagefile      = 'sim.p'
     input_imagefile    = 'input.p'
     analyzer_imagefile = 'analyzer.p'
     image_directory    = 'sim'
+    supports_restarts  = False
 
     is_bundle = False
 
@@ -290,6 +297,16 @@ class Simulation(NexusCore):
         inp_args = obj()
         sim_args.transfer_from(kwargs,sim_kw)
         inp_args.transfer_from(kwargs,inp_kw)
+        if 'system' in inp_args:
+            system = inp_args.system
+            if not isinstance(system,PhysicalSystem):
+                extra=''
+                if not isinstance(extra,obj):
+                    extra = '\nwith value: {0}'.format(system)
+                #end if
+                cls.class_error('invalid input for variable "system"\nsystem object must be of type PhysicalSystem\nyou provided type: {0}'.format(system.__class__.__name__)+extra)
+            #end if
+        #end if
         if 'pseudos' in inp_args and inp_args.pseudos!=None:
             pseudos = inp_args.pseudos
             # support ppset labels
@@ -318,9 +335,6 @@ class Simulation(NexusCore):
             #end if
             if 'system' in inp_args:
                 system = inp_args.system
-                if not isinstance(system,PhysicalSystem):
-                    cls.class_error('system object must be of type PhysicalSystem')
-                #end if
                 species_labels,species = system.structure.species(symbol=True)
                 pseudopotentials = nexus_core.pseudopotentials
                 for ppfile in pseudos:
@@ -344,9 +358,11 @@ class Simulation(NexusCore):
 
     def __init__(self,**kwargs):
         #user specified variables
-        self.path         = None   #directory where sim will be run
-        self.job          = None   #Job object for machine
-        self.dependencies = obj()  #Simulation results on which sim serially depends
+        self.path          = None   #directory where sim will be run
+        self.job           = None   #Job object for machine
+        self.dependencies  = obj()  #Simulation results on which sim serially depends
+        self.restartable   = False  #if True, job can be automatically restarted as deemed appropriate
+        self.force_restart = False  #force a restart of the run
 
         #variables determined by self
         self.identifier     = self.generic_identifier
@@ -413,6 +429,8 @@ class Simulation(NexusCore):
     def init_job(self):
         if self.job==None:
             self.error('job not provided.  Input field job must be set to a Job object.')
+        elif not isinstance(self.job,Job):
+            self.error('Input field job must be set to a Job object\nyou provided an object of type: {0}\nwith value: {1}'.format(self.job.__class__.__name__,self.job))
         #end if
         self.job = self.job.copy()
         self.job.initialize(self)
@@ -425,6 +443,7 @@ class Simulation(NexusCore):
 
 
     def set(self,**kw):
+        cls = self.__class__
         if 'dependencies' in kw:
             self.depends(*kw['dependencies'])
             del kw['dependencies']
@@ -460,8 +479,18 @@ class Simulation(NexusCore):
         #end if
         if isinstance(self.system,PhysicalSystem):
             self.system = self.system.copy()
+            consistent,msg = self.system.check_consistent(exit=False,message=True)
+            if not consistent:
+                locdir = os.path.join(nexus_core.local_directory,nexus_core.runs,self.path)
+                self.error('user provided physical system is not internally consistent\nsimulation identifier: {0}\nlocal directory: {1}\nmore details on the user error are given below\n\n{2}'.format(self.identifier,locdir,msg))
+            #end if
         elif self.system!=None:
             self.error('system must be a PhysicalSystem object\nyou provided an object of type: {0}'.format(self.system.__class__.__name__))
+        #end if
+        if self.restartable or self.force_restart:
+            if not cls.supports_restarts:
+                self.warn('restarts are not supported by {0}, request ignored'.format(cls.__name__))
+            #end if
         #end if
     #end def set
 
@@ -507,7 +536,8 @@ class Simulation(NexusCore):
 
 
     def reset_indicators(self):
-        self.error('remove this error call if you really want to use reset_indicators')
+        #this is now needed to enable restart support
+        #self.error('remove this error call if you really want to use reset_indicators')
         self.got_dependencies = False
         self.setup          = False
         self.sent_files     = False
@@ -548,11 +578,11 @@ class Simulation(NexusCore):
         return ready
     #end def ready
 
-    def check_result(self,result_name):
+    def check_result(self,result_name,sim):
         self.not_implemented()
     #end def check_result
 
-    def get_result(self,result_name):
+    def get_result(self,result_name,sim):
         self.not_implemented()
     #end def get_result
 
@@ -808,6 +838,18 @@ class Simulation(NexusCore):
     #end def get_dependencies
         
 
+    def downstream_simids(self,simids=None):
+        if simids is None:
+            simids = set()
+        #end if
+        for sim in self.dependents:
+            simids.add(sim.simid)
+            sim.downstream_simids(simids)
+        #end for
+        return simids
+    #end def downstream_simids
+
+
     def copy_file(self,sourcefile,dest):
         src = os.path.dirname(os.path.abspath(sourcefile))
         dst = os.path.abspath(dest)
@@ -857,6 +899,39 @@ class Simulation(NexusCore):
         analyzer.load(imagepath)
         return analyzer
     #end def load_analyzer_image
+
+
+    def save_attempt(self):
+        local = [self.infile,self.outfile,self.errfile]
+        filepaths = []
+        for file in local:
+            filepath = os.path.join(self.locdir,file)
+            if os.path.exists(filepath):
+                filepaths.append(filepath)
+            #end if
+        #end for
+        if len(filepaths)>0:
+            prefix = self.identifier+'_attempt'
+            n=0
+            for dir in os.listdir(self.locdir):
+                if dir.startswith(prefix):
+                    n=max(n,int(dir.replace(prefix,'')))
+                #end if
+            #end for
+            n+=1
+            attempt_dir = os.path.join(self.locdir,prefix+str(n))
+            os.makedirs(attempt_dir)
+            for filepath in filepaths:
+                os.system('mv {0} {1}'.format(filepath,attempt_dir))
+            #end for
+            #print self.locdir
+            #os.system('ls '+self.locdir)
+            #print attempt_dir
+            #os.system('ls '+attempt_dir)
+            #exit()
+        #end if
+        #self.error('save_attempt')
+    #end def save_attempt
 
 
     def idstr(self):
@@ -1623,7 +1698,7 @@ except:
     Image = unavailable('Image')
 #end try
 import tempfile
-exit_call = exit
+exit_call = sys.exit
 def graph_sims(sims,useid=False,exit=True,quants=True):
     graph = Dot(graph_type='digraph')
     graph.set_label('simulation workflows')

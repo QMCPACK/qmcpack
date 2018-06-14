@@ -91,23 +91,27 @@ public:
   // laplacians for each walker.  These vectors .data() is often
   // passed to GPU kernels.
 #ifdef QMC_CUDA
-  gpu::device_vector<CUDA_PRECISION*> RList_GPU, GradList_GPU, LapList_GPU;
+
+  gpu::device_vector<CudaRealType*>  RList_GPU;
+  gpu::device_vector<CudaValueType*> GradList_GPU, LapList_GPU;
   // First index is the species.  The second index is the walker
   std::vector<gpu::device_vector<CUDA_PRECISION_FULL*> > RhokLists_GPU;
-  gpu::device_vector<CUDA_PRECISION*> DataList_GPU;
-  gpu::device_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > Rnew_GPU;
-  gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > Rnew_host;
+  gpu::device_vector<CudaValueType*>  DataList_GPU;
+  gpu::device_vector<CudaPosType>    Rnew_GPU;
+  gpu::host_vector<CudaPosType>      Rnew_host;
+  std::vector<PosType>                    Rnew;
+  gpu::device_vector<CudaRealType*>  NLlist_GPU;
+  gpu::host_vector<CudaRealType*>    NLlist_host;
+  gpu::host_vector<CudaRealType*>    hostlist;
+  gpu::host_vector<CudaValueType*>   hostlist_valueType;
+  gpu::host_vector<CUDA_PRECISION_FULL*> hostlist_AA; 
+  gpu::host_vector<CudaPosType>      R_host;
+  gpu::host_vector<CudaGradType>     Grad_host;
   gpu::device_vector<int> iatList_GPU;
   gpu::host_vector<int> iatList_host;
-  gpu::device_vector<CUDA_PRECISION*> NLlist_GPU;
-  gpu::host_vector<CUDA_PRECISION*> NLlist_host;
-  std::vector<PosType>                                    Rnew;
   gpu::device_vector<int> AcceptList_GPU;
   gpu::host_vector<int> AcceptList_host;
-  gpu::host_vector<CUDA_PRECISION*> hostlist;
-  gpu::host_vector<CUDA_PRECISION_FULL*> hostlist_AA;
-  gpu::host_vector<TinyVector<CUDA_PRECISION, OHMMS_DIM> > R_host;
-  gpu::host_vector<TinyVector<CudaValueType, OHMMS_DIM> > Grad_host;
+
   void allocateGPU(size_t buffersize);
   void copyWalkersToGPU(bool copyGrad=false);
   void copyWalkerGradToGPU();
@@ -280,6 +284,7 @@ public:
   {
     return WalkerList[i];
   }
+
   inline const Walker_t* operator[](int i) const
   {
     return WalkerList[i];
@@ -332,6 +337,8 @@ public:
   void saveEnsemble();
   ///save the position of current walkers
   void saveEnsemble(iterator first, iterator last);
+  /// load a single sample from SampleStack
+  void loadSample(ParticleSet::ParticlePos_t &Pos, size_t iw) const;
   /** load SampleStack data to current walkers
    */
   void loadEnsemble();
@@ -353,7 +360,7 @@ public:
   template<typename ForwardIter>
   inline void putConfigurations(ForwardIter target)
   {
-    int ds=OHMMS_DIM*GlobalNum;
+    int ds=OHMMS_DIM*TotalNum;
     for(iterator it=WalkerList.begin(); it!= WalkerList.end(); ++it,target+=ds)
     {
       copy(get_first_address((*it)->R),get_last_address((*it)->R),target);
@@ -367,9 +374,6 @@ public:
       (*it)->ParentID = (*it)->ID;
     }
   }
-
-  ///overwrite make_clones function
-  void make_clones(int n);
 
 protected:
 
@@ -410,8 +414,3 @@ private:
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- st***************************************************************************/

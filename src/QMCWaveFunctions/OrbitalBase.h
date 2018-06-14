@@ -93,10 +93,12 @@ struct OrbitalBase: public QMCTraits
 
   typedef ParticleAttrib<ValueType> ValueVectorType;
   typedef ParticleAttrib<GradType>  GradVectorType;
-  typedef PooledData<RealType>      BufferType;
   typedef ParticleSet::Walker_t     Walker_t;
-  typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
-  typedef OrbitalSetTraits<ValueType>::GradMatrix_t  GradMatrix_t;
+  typedef Walker_t::WFBuffer_t      WFBufferType;
+  typedef Walker_t::Buffer_t        BufferType;
+  typedef OrbitalSetTraits<RealType>::ValueMatrix_t       RealMatrix_t;
+  typedef OrbitalSetTraits<ValueType>::ValueMatrix_t      ValueMatrix_t;
+  typedef OrbitalSetTraits<ValueType>::GradMatrix_t       GradMatrix_t;
   typedef OrbitalSetTraits<ValueType>::HessType           HessType;
   typedef OrbitalSetTraits<ValueType>::HessVector_t       HessVector_t;
 
@@ -111,8 +113,8 @@ struct OrbitalBase: public QMCTraits
   bool IsFermionWF;
   /** true, if it is done with derivatives */
   bool derivsDone;
-  /** true, if evaluateRatios using virtual particle is implemented */
-  bool HaveRatiosForVP;
+  /** true, if compute for the ratio instead of buffering */
+  bool Need2Compute4PbyP;
   /** define the level of storage in derivative buffer **/
   int DerivStorageType;
 
@@ -144,6 +146,8 @@ struct OrbitalBase: public QMCTraits
   std::string OrbitalName;
   ///list of variables this orbital handles
   opt_variables_type myVars;
+  ///Bytes in WFBuffer
+  size_t Bytes_in_WFBuffer;
 
   /// default constructor
   OrbitalBase();
@@ -171,8 +175,21 @@ struct OrbitalBase: public QMCTraits
     return 0.0;
   }
 
+  virtual void resetPhaseDiff() {}
+
   ///assign a differential orbital
   virtual void setDiffOrbital(DiffOrbitalBasePtr d);
+
+  ///assembles the full value from LogValue and PhaseValue
+  ValueType getValue() const
+  {
+#if defined(QMC_COMPLEX)
+    RealType ratioMag = std::exp(LogValue);
+    return ValueType(std::cos(PhaseValue)*ratioMag,std::sin(PhaseValue)*ratioMag);
+#else
+    return std::exp(LogValue);
+#endif
+  }
 
   /** check in optimizable parameters
    * @param active a super set of optimizable variables
@@ -200,24 +217,13 @@ struct OrbitalBase: public QMCTraits
   virtual void resetTargetParticleSet(ParticleSet& P)=0;
 
   /** evaluate the value of the orbital for a configuration P.R
-   *@param P  active ParticleSet
-   *@param G  Gradients
-   *@param L  Laplacians
-   *@return the value
+   * @param P  active ParticleSet
+   * @param G Gradients, \f$\nabla\ln\Psi\f$
+   * @param L Laplacians, \f$\nabla^2\ln\Psi\f$
+   * @return the log value
    *
    *Mainly for walker-by-walker move. The initial stage of particle-by-particle
    *move also uses this.
-   */
-  virtual ValueType
-  evaluate(ParticleSet& P,
-           ParticleSet::ParticleGradient_t& G,
-           ParticleSet::ParticleLaplacian_t& L) = 0;
-
-  /** evaluate the value of the orbital
-   * @param P active ParticleSet
-   * @param G Gradients, \f$\nabla\ln\Psi\f$
-   * @param L Laplacians, \f$\nabla^2\ln\Psi\f$
-   *
    */
   virtual RealType
   evaluateLog(ParticleSet& P,
@@ -228,23 +234,6 @@ struct OrbitalBase: public QMCTraits
    */
   virtual void recompute(ParticleSet& P) {};
 
-  /** evaluate the value of the orbital
-   * @param P active ParticleSet
-   * @param G Gradients, \f$\nabla\ln\Psi\f$
-   * @param L Laplacians, \f$\nabla^2\ln\Psi\f$
-   * @param buf Buffer, data for analytical derivative calculation
-   *
-   */
-  virtual RealType
-  evaluateLog(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& G,
-              ParticleSet::ParticleLaplacian_t& L,
-              PooledData<RealType>& buf,
-              bool fillBuffer )
-  {
-    return evaluateLog(P,G,L);
-  }
-  
  // virtual void evaluateHessian(ParticleSet& P, IndexType iat, HessType& grad_grad_psi)
  // {
  //   APP_ABORT("OrbitalBase::evaluateHessian is not implemented");  
@@ -323,19 +312,6 @@ struct OrbitalBase: public QMCTraits
 
   virtual void alternateGrad(ParticleSet::ParticleGradient_t& G) {}
 
-  /** evaluate the ratio of the new to old orbital value
-   *@param P the active ParticleSet
-   *@param iat the index of a particle
-   *@param dG the differential gradient
-   *@param dL the differential laplacian
-   *@return \f$ \psi( \{ {\bf R}^{'} \} )/ \psi( \{ {\bf R}^{'} \}) \f$
-   *
-   *Paired with acceptMove(ParticleSet& P, int iat).
-   */
-  virtual ValueType ratio(ParticleSet& P, int iat,
-                          ParticleSet::ParticleGradient_t& dG,
-                          ParticleSet::ParticleLaplacian_t& dL) = 0;
-
   /** a move for iat-th particle is accepted. Update the content for the next moves
    * @param P target ParticleSet
    * @param iat index of the particle whose new position was proposed
@@ -361,67 +337,31 @@ struct OrbitalBase: public QMCTraits
     return 1.0;
   };
 
-  /** update the gradient and laplacian values by accepting a move
-   *@param P the active ParticleSet
-   *@param dG the differential gradients
-   *@param dL the differential laplacians
-   *@param iat the index of a particle
-   *
-   *Specialized for particle-by-particle move. Each Hamiltonian
-   *updates its data for next update and evaluates differential gradients
-   *and laplacians.
-   */
-  virtual void update(ParticleSet& P,
-                      ParticleSet::ParticleGradient_t& dG,
-                      ParticleSet::ParticleLaplacian_t& dL,
-                      int iat) =0;
-
-
-  /** equivalent to evaluateLog(P,G,L) with write-back function */
-  virtual RealType evaluateLog(ParticleSet& P,BufferType& buf)=0;
-
-  /** add temporary data reserved for particle-by-particle move.
-   *
-   * Return the log|psi|  like evalaute evaluateLog
-   */
-  virtual RealType registerData(ParticleSet& P, BufferType& buf) =0;
-
-  /** add temporary (constant) data used to calculate analytical
-   *  derivatives during linear optimization of parameters
-   */
-  virtual void registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0)
-  {
-  }
-
-  virtual void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only ,long& orbs, long& invs, long& dets)
-  {
-  }
-
-  /** re-evaluate the content and buffer data
+  /** For particle-by-particle move. Requests space in the buffer
+   *  based on the data type sizes of the objects in this class.
    * @param P particle set
    * @param buf Anonymous storage
-   *
-   * This function is introduced to update the data periodically for particle-by-particle move.
    */
-  virtual RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false) =0;
+  virtual void registerData(ParticleSet& P, WFBufferType& buf) =0;
 
-  /** copy the internal data saved for particle-by-particle move.*/
-  virtual void copyFromBuffer(ParticleSet& P, BufferType& buf)=0;
-
-  /** copy the internal data saved for optimization.*/
-  virtual void copyFromDerivativeBuffer(ParticleSet& P, PooledData<RealType>& buf) {};
-
-  /** dump the internal data to buf for optimizations
-   *
-   * Implments the default function that does nothing
+  /** For particle-by-particle move. Put the objects of this class
+   *  in the walker buffer or forward the memory cursor.
+   * @param P particle set
+   * @param buf Anonymous storage
+   * @param fromscratch request recomputing the precision critical
+   *        pieces of wavefunction from scratch
+   * @return log value of the wavefunction.
    */
-  virtual void dumpToBuffer(ParticleSet& P, BufferType& buf) {}
+  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false) =0;
 
-  /** copy the internal data from buf for optimizations
-   *
-   * Implments the default function that does nothing
+  /** For particle-by-particle move. Copy data or attach memory
+   *  from a walker buffer to the objects of this class.
+   *  The log value, P.G and P.L contribution from the objects
+   *  of this class are also added.
+   * @param P particle set
+   * @param buf Anonymous storage
    */
-  virtual void dumpFromBuffer(ParticleSet& P, BufferType& buf) {}
+  virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf)=0;
 
   /** return a proxy orbital of itself
    */
@@ -452,32 +392,34 @@ struct OrbitalBase: public QMCTraits
     }
   };
 
-//      virtual void evaluateDerivatives(ParticleSet& P,
-//                                       const opt_variables_type& optvars,
-//                                       std::vector<RealType>& dlogpsi,
-//                                       std::vector<RealType>& dhpsioverpsi,
-//                                       PooledData<RealType>& buf)
-//      {
-//         evaluateDerivatives(P,optvars,dlogpsi,dhpsioverpsi);
-//      }
+  /** Calculates the derivatives of \grad(\textrm{log}(\psi)) with respect to
+      the optimizable parameters, and the dot product of this is then
+      performed with the passed-in G_in gradient vector. This object is then
+      returned as dgradlogpsi.
+   */
+  virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                                       std::vector<RealType>& dgradlogpsi) {
+    app_error() << "Need specialization of OrbitalBase::evaluateGradDerivatives.\n";
+    abort();
+  }
 
   virtual void finalizeOptimization() { }
 
-  /** evaluate ratios to evaluate the momentum distribution
+  /** evaluate the ratios of one virtual move with respect to all the particles
    * @param P reference particleset
    * @param ratios \f$ ratios[i]=\{{\bf R}\}\rightarrow {r_0,\cdots,r_i^p=pos,\cdots,r_{N-1}}\f$
    */
-  virtual void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
+  virtual void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
   /** evaluate ratios to evaluate the non-local PP
    * @param VP VirtualParticleSet
-   * @param ratios ratios with new positions VP.R[k] the VP.activePtcl
+   * @param ratios ratios with new positions VP.R[k] the VP.refPtcl
    */
   virtual void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios);
 
   /** evaluate ratios to evaluate the non-local PP
    * @param VP VirtualParticleSet
-   * @param ratios ratios with new positions VP.R[k] the VP.activePtcl
+   * @param ratios ratios with new positions VP.R[k] the VP.refPtcl
    * @param dratios \f$\partial_{\alpha}(\ln \Psi ({\bf R}^{\prime}) - \ln \Psi ({\bf R})) \f$
    */
   virtual void evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
@@ -500,7 +442,7 @@ struct OrbitalBase: public QMCTraits
   virtual void recompute(MCWalkerConfiguration &W, bool firstTime)
   { }
 
-  virtual void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool)
+  virtual void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool)
   { }
 
   /** Evaluate the log of the WF for all walkers
@@ -513,6 +455,7 @@ struct OrbitalBase: public QMCTraits
   {
     app_error() << "Need specialization of OrbitalBase::addLog for "
                 << OrbitalName << ".\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -527,6 +470,7 @@ struct OrbitalBase: public QMCTraits
          std::vector<ValueType> &psi_ratios)
   {
     app_error() << "Need specialization of OrbitalBase::ratio.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -537,6 +481,7 @@ struct OrbitalBase: public QMCTraits
          std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad)
   {
     app_error() << "Need specialization of OrbitalBase::ratio.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -546,6 +491,7 @@ struct OrbitalBase: public QMCTraits
          std::vector<ValueType> &lapl)
   {
     app_error() << "Need specialization of OrbitalBase::ratio.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -555,6 +501,7 @@ struct OrbitalBase: public QMCTraits
              std::vector<ValueType> &lapl)
   {
     app_error() << "Need specialization of OrbitalBase::calcRatio.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -564,6 +511,7 @@ struct OrbitalBase: public QMCTraits
             std::vector<ValueType> &lapl)
   {
     app_error() << "Need specialization of OrbitalBase::addRatio.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -573,6 +521,7 @@ struct OrbitalBase: public QMCTraits
          std::vector<GradType>  &grad,  std::vector<ValueType> &lapl)
   {
     app_error() << "Need specialization of OrbitalBase::ratio.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -583,6 +532,7 @@ struct OrbitalBase: public QMCTraits
   {
     app_error() << "Need specialization of OrbitalBase::addGradient for "
                 << OrbitalName << ".\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -592,6 +542,7 @@ struct OrbitalBase: public QMCTraits
   {
     app_error() << "Need specialization of OrbitalBase::calcGradient for "
                 << OrbitalName << ".\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -601,6 +552,7 @@ struct OrbitalBase: public QMCTraits
   {
     app_error() << "Need specialization of OrbitalBase::gradLapl for "
                 << OrbitalName << ".\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -609,6 +561,7 @@ struct OrbitalBase: public QMCTraits
   update (std::vector<Walker_t*> &walkers, int iat)
   {
     app_error() << "Need specialization of OrbitalBase::update.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -617,6 +570,7 @@ struct OrbitalBase: public QMCTraits
           const std::vector<int> &iatList)
   {
     app_error() << "Need specialization of OrbitalBase::update.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -626,6 +580,7 @@ struct OrbitalBase: public QMCTraits
             std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios)
   {
     app_error() << "Need specialization of OrbitalBase::NLRatios.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
@@ -637,25 +592,22 @@ struct OrbitalBase: public QMCTraits
             int numQuadPoints)
   {
     app_error() << "Need specialization of OrbitalBase::NLRatios.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
   virtual void
   evaluateDerivatives (MCWalkerConfiguration &W,
                        const opt_variables_type& optvars,
-                       ValueMatrix_t &dgrad_logpsi,
-                       ValueMatrix_t &dhpsi_over_psi)
+                       RealMatrix_t &dgrad_logpsi,
+                       RealMatrix_t &dhpsi_over_psi)
   {
     app_error() << "Need specialization of OrbitalBase::evaluateDerivatives.\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 #endif
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

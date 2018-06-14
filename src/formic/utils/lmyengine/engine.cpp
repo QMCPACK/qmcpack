@@ -8,12 +8,13 @@
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 #include<vector>
-//#include<mpi.h>
 #include<string>
 #include<algorithm>
 #include<utility>
 
 #include<boost/shared_ptr.hpp>
+
+#include<formic/utils/openmp.h>
 
 #include <formic/utils/lmyengine/engine.h>
 #include <formic/utils/lmyengine/updater.h>
@@ -48,6 +49,7 @@ cqmc::engine::LMYEngine::LMYEngine(const formic::VarDeps * dep_ptr,
                                    const bool jas_fixed,
                                    const bool block_lm,
                                    const int num_samp,
+                                   const int num_params,
                                    const int lm_krylov_iter,
                                    const int lm_spam_inner_iter,
                                    const int appro_degree,
@@ -66,7 +68,7 @@ cqmc::engine::LMYEngine::LMYEngine(const formic::VarDeps * dep_ptr,
                                    const double lm_max_update_abs,
                                    std::vector<double> shift_scale,
                                    std::ostream & output)
-:_mbuilder(_der_rat, _le_der, _spin_der, _vg, _weight, hd_lm_shift, appro_degree, spam, ground, variance_correction, build_lm_matrix, eom, matrix_print),
+:_mbuilder(_der_rat, _le_der, _spin_der, _vg[0], _weight[0], hd_lm_shift, num_params, appro_degree, spam, ground, variance_correction, build_lm_matrix, eom, matrix_print),
 _dep_ptr(dep_ptr),
 _exact_sampling(exact_sampling),
 _ground(ground),
@@ -84,6 +86,7 @@ _pm_ortho_first(pm_ortho_first),
 _jas_fixed(jas_fixed),
 _block_lm(block_lm),
 _num_samp(num_samp),
+_num_params(num_params),
 _lm_krylov_iter(lm_krylov_iter),
 _lm_spam_inner_iter(lm_spam_inner_iter),
 _appro_degree(appro_degree),
@@ -103,6 +106,17 @@ _lm_max_update_abs(lm_max_update_abs),
 _shift_scale(shift_scale),
 output(output)
 {
+  // get the number of threads being used 
+  int NumThreads = omp_get_max_threads();
+
+  // check the size of lists, resize it if not correct
+  if ( _le_list.size() != NumThreads ) 
+    _le_list.resize(NumThreads);
+  if ( _vg.size() != NumThreads ) 
+    _vg.resize(NumThreads);
+  if ( _weight.size() != NumThreads ) 
+    _weight.resize(NumThreads);
+
   // initialize the output quantities
   _wfn_update = false;
 
@@ -148,6 +162,7 @@ void cqmc::engine::LMYEngine::get_param(const formic::VarDeps * dep_ptr,
             const bool ssquare,
             const bool block_lm,
             const int num_samp,
+            const int num_params,
             const double hd_lm_shift,
             const double lm_max_e_change,
             const double lm_ham_shift_i,
@@ -181,7 +196,7 @@ void cqmc::engine::LMYEngine::get_param(const formic::VarDeps * dep_ptr,
   _sample_initialized=false, _block_lm=block_lm, _store_der_vec=false, _num_samp=num_samp, _samp_count=0, _lm_krylov_iter=lm_krylov_iter, _lm_spam_inner_iter=lm_spam_inner_iter;
   _appro_degree=appro_degree, _n_sites=n_sites, _n_pm=n_pm, _n_jas=n_jas, _hd_lm_shift=hd_lm_shift, _var_weight=var_weight, _lm_eigen_thresh=lm_eigen_thresh, _lm_min_S_eval=lm_min_S_eval;
   _init_cost=init_cost, _init_var=init_var, _lm_max_e_change=lm_max_e_change, _lm_ham_shift_i=lm_ham_shift_i, _lm_ham_shift_s=lm_ham_shift_s, _lm_max_update_abs=lm_max_update_abs;
-  _wfn_update=false, _nblocks=1, _energy=0.0, _esdev=0.0, _eserr=0.0, _target=0.0, _tserr=0.0, _shift_scale=shift_scale, _dep_ptr=dep_ptr;
+  _wfn_update=false, _nblocks=1, _energy=0.0, _esdev=0.0, _eserr=0.0, _target=0.0, _tserr=0.0, _shift_scale=shift_scale, _dep_ptr=dep_ptr, _num_params=num_params;
 
   // solve results
   _good_solve.resize(_shift_scale.size());
@@ -189,7 +204,7 @@ void cqmc::engine::LMYEngine::get_param(const formic::VarDeps * dep_ptr,
   std::fill(_good_solve.begin(), _good_solve.end(), false);
   std::fill(_solved_shifts.begin(), _solved_shifts.end(), false);
 
-  _mbuilder.get_param(hd_lm_shift, appro_degree, spam, ground, variance_correction, build_lm_matrix, eom, matrix_print);
+  _mbuilder.get_param(hd_lm_shift, num_params, appro_degree, spam, ground, variance_correction, build_lm_matrix, eom, matrix_print);
 
   _fully_initialized = true;
 
@@ -310,6 +325,14 @@ void cqmc::engine::LMYEngine::take_sample(std::vector<double> & der_rat_samp,
                                           double weight_samp) {
 
     
+  // get the number of threads being used
+  int NumThreads = omp_get_num_threads();
+
+  //output << boost::format("entering take_sample function") << std::endl;
+
+  // get the thread number 
+  int myThread = omp_get_thread_num();
+
   // if we are doing non-block stochastic sampling, make sure that the length of input vector is the same of derivative matrix column number
   if ( ! _exact_sampling && !_block_lm && _store_der_vec ) {
     bool good_size = (der_rat_samp.size() == _der_rat.cols() && le_der_samp.size() == _le_der.cols());
@@ -320,13 +343,15 @@ void cqmc::engine::LMYEngine::take_sample(std::vector<double> & der_rat_samp,
   }
 
   // local energy
-  _le_list.push_back(le_der_samp.at(0));
+  _le_list[myThread].push_back(le_der_samp.at(0));
     
   // |value/guiding|^2
-  _vg.push_back(vgs_samp);
+  _vg[myThread].push_back(vgs_samp);
 
   // weight
-  _weight.push_back(weight_samp);
+  _weight[myThread].push_back(weight_samp);
+
+  //output << boost::format("entering take_sample function2") << std::endl;
 
   // if we want to do wfn update
   if ( _wfn_update ) {
@@ -343,6 +368,8 @@ void cqmc::engine::LMYEngine::take_sample(std::vector<double> & der_rat_samp,
                               ls_der_samp,
                               vgs_samp,
                               weight_samp);
+
+        //output << boost::format("entering take_sample function3") << std::endl;
         return;
       }
 
@@ -430,26 +457,26 @@ void cqmc::engine::LMYEngine::take_sample(std::vector<double> & der_rat_samp,
 
         // get compact der rat and der eng for the current wavefunction
         if ( _ground ) {
-          drat_cmpct.at(0) = der_rat_samp.at(0);
-          deng_cmpct.at(0) = le_der_samp.at(0);
+          drat_cmpct[myThread].at(0) = der_rat_samp.at(0);
+          deng_cmpct[myThread].at(0) = le_der_samp.at(0);
         }
         else {
-          drat_cmpct.at(0) = der_rat_samp.at(0);
-          deng_cmpct.at(0) = _hd_lm_shift * der_rat_samp.at(0) - le_der_samp.at(0);
+          drat_cmpct[myThread].at(0) = der_rat_samp.at(0);
+          deng_cmpct[myThread].at(0) = _hd_lm_shift * der_rat_samp.at(0) - le_der_samp.at(0);
         }
 
         // get compact der rat and der eng for old updates
         for (int k = 0; k < _lmb.ou_mat().cols(); k++) {
-          drat_cmpct.at(1+k) = 0.0;
-          deng_cmpct.at(1+k) = 0.0;
+          drat_cmpct[myThread].at(1+k) = 0.0;
+          deng_cmpct[myThread].at(1+k) = 0.0;
           for (int i = 0; i < _dep_ptr->n_ind(); i++) {
             if ( _ground ) {
-              drat_cmpct.at(1+k) += _lmb.ou_mat().at(i, k) * der_rat_samp.at(1+i);
-              deng_cmpct.at(1+k) += _lmb.ou_mat().at(i, k) * le_der_samp.at(1+i);
+              drat_cmpct[myThread].at(1+k) += _lmb.ou_mat().at(i, k) * der_rat_samp.at(1+i);
+              deng_cmpct[myThread].at(1+k) += _lmb.ou_mat().at(i, k) * le_der_samp.at(1+i);
             }
             else {
-              drat_cmpct.at(1+k) += _lmb.ou_mat().at(i, k) * der_rat_samp.at(1+i);
-              deng_cmpct.at(1+k) += _lmb.ou_mat().at(i, k) * (_hd_lm_shift * der_rat_samp.at(1+i) - le_der_samp.at(1+i));
+              drat_cmpct[myThread].at(1+k) += _lmb.ou_mat().at(i, k) * der_rat_samp.at(1+i);
+              deng_cmpct[myThread].at(1+k) += _lmb.ou_mat().at(i, k) * (_hd_lm_shift * der_rat_samp.at(1+i) - le_der_samp.at(1+i));
             }
           }
         }
@@ -461,20 +488,20 @@ void cqmc::engine::LMYEngine::take_sample(std::vector<double> & der_rat_samp,
           for (int s = 0; s < _block_ups.at(b).size(); s++) {
             // loop over directions for this block and shift
             for (int n = 0; n < _block_ups.at(b).at(s).cols(); n++, q++) {
-              drat_cmpct.at(nsv+q) = 0.0;
+              drat_cmpct[myThread].at(nsv+q) = 0.0;
               // loop over the variables within this block
               for (int i = 0; i < _lmb.bl(b); i++) {
                 if ( _ground ) 
-                  drat_cmpct.at(nsv+q) += _block_ups.at(b).at(s).at(i, n) * der_rat_samp.at(1+(_lmb.bb(b)+i));
+                  drat_cmpct[myThread].at(nsv+q) += _block_ups.at(b).at(s).at(i, n) * der_rat_samp.at(1+(_lmb.bb(b)+i));
                 else 
-                  drat_cmpct.at(nsv+q) += _block_ups.at(b).at(s).at(i, n) * der_rat_samp.at(1+(_lmb.bb(b)+i));
+                  drat_cmpct[myThread].at(nsv+q) += _block_ups.at(b).at(s).at(i, n) * der_rat_samp.at(1+(_lmb.bb(b)+i));
               }
-              deng_cmpct.at(nsv+q) = 0.0;
+              deng_cmpct[myThread].at(nsv+q) = 0.0;
               for (int i = 0; i < _lmb.bl(b); i++) {
                 if ( _ground ) 
-                  deng_cmpct.at(nsv+q) += _block_ups.at(b).at(s).at(i, n) * le_der_samp.at(1+(_lmb.bb(b)+i));
+                  deng_cmpct[myThread].at(nsv+q) += _block_ups.at(b).at(s).at(i, n) * le_der_samp.at(1+(_lmb.bb(b)+i));
                 else 
-                  deng_cmpct.at(nsv+q) += _block_ups.at(b).at(s).at(i, n) * (_hd_lm_shift * der_rat_samp.at(1+(_lmb.bb(b)+i)) - le_der_samp.at(1+(_lmb.bb(b)+i)));
+                  deng_cmpct[myThread].at(nsv+q) += _block_ups.at(b).at(s).at(i, n) * (_hd_lm_shift * der_rat_samp.at(1+(_lmb.bb(b)+i)) - le_der_samp.at(1+(_lmb.bb(b)+i)));
               }
             }
           }
@@ -482,13 +509,13 @@ void cqmc::engine::LMYEngine::take_sample(std::vector<double> & der_rat_samp,
 
         // get contributions to hamiltonian and overlap matrices
         const double d = vgs_samp * weight_samp;
-        for (int j = 0; j < hh_block.cols(); j++) {
-          for (int i = 0; i < hh_block.rows(); i++) {
-            hh_block.at(i,j) += d * drat_cmpct.at(i) * deng_cmpct.at(j);
+        for (int j = 0; j < hh_block[myThread].cols(); j++) {
+          for (int i = 0; i < hh_block[myThread].rows(); i++) {
+            hh_block[myThread].at(i,j) += d * drat_cmpct[myThread].at(i) * deng_cmpct[myThread].at(j);
             if ( _ground ) 
-              ss_block.at(i,j) += d * drat_cmpct.at(i) * drat_cmpct.at(j);
+              ss_block[myThread].at(i,j) += d * drat_cmpct[myThread].at(i) * drat_cmpct[myThread].at(j);
             else 
-              ss_block.at(i,j) += d * deng_cmpct.at(i) * deng_cmpct.at(j);
+              ss_block[myThread].at(i,j) += d * deng_cmpct[myThread].at(i) * deng_cmpct[myThread].at(j);
           }
         }
       }
@@ -496,6 +523,7 @@ void cqmc::engine::LMYEngine::take_sample(std::vector<double> & der_rat_samp,
   }
   
   // increase sample count by 1
+  # pragma omp critical
   _samp_count++; 
 
 }
@@ -513,16 +541,20 @@ void cqmc::engine::LMYEngine::take_sample(double local_en,
                                           double weight_samp) 
 {
 
+  // get thread number 
+  int myThread = omp_get_thread_num();
+
   // local energy 
-  _le_list.push_back(local_en);
+  _le_list[myThread].push_back(local_en);
 
   // |value/guiding|^2
-  _vg.push_back(vgs_samp);
+  _vg[myThread].push_back(vgs_samp);
 
   // weight 
-  _weight.push_back(weight_samp);
+  _weight[myThread].push_back(weight_samp);
   
   // increase sample count by 1 
+  # pragma omp critical
   _samp_count++;
 
 }
@@ -537,16 +569,20 @@ void cqmc::engine::LMYEngine::sample_finish() {
   // get rank number and number of ranks
   int my_rank = formic::mpi::rank();
   int num_rank = formic::mpi::size();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
+
+  // get total number of threads
+  int NumThreads = omp_get_max_threads();
 
   // evaluate total weight 
   double _tw = 0.0;
-  for (int i = 0; i < _weight.size(); i++) 
-    _tw += _weight.at(i) * _vg.at(i);
+  for (int ip = 0; ip < NumThreads; ip++) {
+    for (int i = 0; i < _weight[ip].size(); i++) {
+      _tw += _weight[ip].at(i) * _vg[ip].at(i);
+    }
+  }
 
   double total_weight = 0.0;
-  formic::mpi::allreduce(&_tw, &total_weight, 1, MPI::SUM);
+  formic::mpi::allreduce(&_tw, &total_weight, 1, MPI_SUM);
 
   // for energy evaluation only calculation, do nothing
   if ( !_wfn_update )
@@ -605,7 +641,7 @@ void cqmc::engine::LMYEngine::sample_finish() {
       double all_samp_weight = 0.0;
 
       // mpi all reduce
-      formic::mpi::allreduce(&total_weight, &all_samp_weight, 1, MPI::SUM);
+      formic::mpi::allreduce(&total_weight, &all_samp_weight, 1, MPI_SUM);
 
       // call the finalize function for the block algorithm object
       _lmb.mpi_finalize(all_samp_weight);
@@ -614,35 +650,44 @@ void cqmc::engine::LMYEngine::sample_finish() {
       _block_first_sample_finished = true;
     }
 
-    else { 
+    else {
 
       // the total weight on this sample 
       double tot_weight = 0.0;
 
-      for (int i = 0; i < _weight.size(); i++) 
-        tot_weight += _vg.at(i) * _weight.at(i);
+      for (int ip = 0; ip < NumThreads; ip++) {
+        for (int i = 0; i < _weight[ip].size(); i++) {
+          tot_weight += _vg[ip].at(i) * _weight[ip].at(i);
+        }
+      }
 
       // the total weight through all samples
       double all_samp_weight = 0.0;
 
       // mpi all reduce
-      formic::mpi::allreduce(&tot_weight, &all_samp_weight, 1, MPI::SUM);
+      formic::mpi::allreduce(&tot_weight, &all_samp_weight, 1, MPI_SUM);
+      
+      // sum over threads for block matrices 
+      for (int ip = 1; ip < NumThreads; ip++) {
+        hh_block[0] += hh_block[ip];
+        ss_block[0] += ss_block[ip];
+      }
 
       // get space for mpi reduce
-      formic::Matrix<double> hh_block_tot(hh_block.rows(), hh_block.cols());
-      formic::Matrix<double> ss_block_tot(ss_block.rows(), ss_block.cols());
+      formic::Matrix<double> hh_block_tot(hh_block[0].rows(), hh_block[0].cols());
+      formic::Matrix<double> ss_block_tot(ss_block[0].rows(), ss_block[0].cols());
 
       // compute average of matrices
-      formic::mpi::reduce(&hh_block.at(0,0), &hh_block_tot.at(0,0), hh_block.size(), MPI::SUM);
-      formic::mpi::reduce(&ss_block.at(0,0), &ss_block_tot.at(0,0), ss_block.size(), MPI::SUM); 
+      formic::mpi::reduce(&hh_block[0].at(0,0), &hh_block_tot.at(0,0), hh_block[0].size(), MPI_SUM);
+      formic::mpi::reduce(&ss_block[0].at(0,0), &ss_block_tot.at(0,0), ss_block[0].size(), MPI_SUM);
 
       // compute average on root process
       if ( my_rank == 0 ) {
-        hh_block = hh_block_tot / all_samp_weight;
-        ss_block = ss_block_tot / all_samp_weight;
+        hh_block[0] = hh_block_tot / all_samp_weight;
+        ss_block[0] = ss_block_tot / all_samp_weight;
       }
-      //output << hh_block.print("%12.6f", "hh_block");
-      //output << ss_block.print("%12.6f", "ss_block");
+      //output << hh_block[0].print("%12.6f", "hh_block");
+      //output << ss_block[0].print("%12.6f", "ss_block");
 
       // say that we need to redo the sample
       _block_first_sample_finished = false;
@@ -670,6 +715,16 @@ void cqmc::engine::LMYEngine::var_deps_ptr_update(const formic::VarDeps * new_de
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 void cqmc::engine::LMYEngine::energy_target_compute() { 
 
+  // get the number of threads 
+  int NumThreads = omp_get_max_threads();
+
+  for (int ip = 1; ip < NumThreads; ip++) {
+    for (int i = 0; i < _le_list[ip].size(); i++) {
+      _le_list[0].push_back(_le_list[ip].at(i));
+      _vg[0].push_back(_vg[ip].at(i));
+      _weight[0].push_back(_weight[ip].at(i));
+    }
+  }
   // call the corresponding "call engine" function
   this->call_engine(_exact_sampling,
                     _ground,
@@ -677,9 +732,9 @@ void cqmc::engine::LMYEngine::energy_target_compute() {
                     _energy_print,
                     _hd_lm_shift,
                     _var_weight,
-                    _le_list,
-                    _vg,
-                    _weight,
+                    _le_list[0],
+                    _vg[0],
+                    _weight[0],
                     _energy,
                     _esdev,
                     _eserr,
@@ -688,9 +743,9 @@ void cqmc::engine::LMYEngine::energy_target_compute() {
                     output);
   
   // set initial energy and variance
-  if ( _ground ) 
+  if ( _ground )
     _init_cost = _energy;
-  else 
+  else
     _init_cost = _target;
 
   _init_var    = _esdev * _esdev;
@@ -738,7 +793,7 @@ void cqmc::engine::LMYEngine::wfn_update_compute() {
                       _lm_min_S_eval, _spam, _var_deps_use, _chase_lowest, _chase_closest,
                       _init_cost, _init_var, _lm_max_e_change, _lm_ham_shift_i, 
                       _lm_ham_shift_s, _hd_lm_shift, _var_weight, _lm_max_update_abs,
-                      _der_rat, _le_der, _vg, _weight, _vf_var, _good_solve, _solved_shifts, 
+                      _der_rat, _le_der, _vg[0], _weight[0], _vf_var, _good_solve, _solved_shifts, 
                       _shift_scale, output);
   }
 
@@ -781,8 +836,8 @@ void cqmc::engine::LMYEngine::eom_compute() {
                     _spin_der,
                     _evecs,
                     _energy_index,
-                    _vg,
-                    _weight,
+                    _vg[0],
+                    _weight[0],
                     output);
 }
 
@@ -798,6 +853,9 @@ void cqmc::engine::LMYEngine::reset() {
   //_eserr  = 0.0;
   //_target = 0.0;
   //_tserr  = 0.0;
+  
+  // number of threads 
+  int NumThreads = omp_get_max_threads();
 
   // clear wavefunction update vector
   _vf_var.clear();
@@ -814,9 +872,11 @@ void cqmc::engine::LMYEngine::reset() {
   _samp_count = 0;
 
   // clear local energy, vgs and weight list
-  _le_list.clear();
-  _vg.clear();
-  _weight.clear();
+  for (int ip = 0; ip < NumThreads; ip++) {
+    _le_list[ip].clear();
+    _vg[ip].clear();
+    _weight[ip].clear();
+  }
 
   // reset the block algorithm object
   if ( _block_lm && _wfn_update ) 
@@ -1125,6 +1185,7 @@ void cqmc::engine::LMYEngine::call_engine(const bool print_matrix,
                                                                                                    vg, 
                                                                                                    weight, 
                                                                                                    0.0, 
+                                                                                                   _num_params,
                                                                                                    100, 
                                                                                                    false, 
                                                                                                    true, 
@@ -1192,9 +1253,9 @@ void cqmc::engine::LMYEngine::get_brlm_update_alg_part_one(const formic::VarDeps
   // get rank number of number of ranks
   int my_rank = formic::mpi::rank();
   int num_rank = formic::mpi::size();
-  //MPI_Comm_rank(MPI_COMM_WORLD, & my_rank);
-  //MPI_Comm_size(MPI_COMM_WORLD, & num_rank);
 
+  // get the number of threads
+  int NumThreads = omp_get_max_threads();
 
   // prepare vectors telling which shifts are solved healthily
   while ( good_solve.size() < shift_scale.size() )
@@ -1223,10 +1284,16 @@ void cqmc::engine::LMYEngine::get_brlm_update_alg_part_one(const formic::VarDeps
 
   // build Hamiltonian and overlap matrix in the basis of good update directions
   // first size the matrices and vectors correctly
-  hh_block.reset(n_dir, n_dir, 0.0);
-  ss_block.reset(n_dir, n_dir, 0.0);
-  drat_cmpct.reset(n_dir, 0.0);
-  deng_cmpct.reset(n_dir, 0.0);
+  hh_block.resize(NumThreads);
+  ss_block.resize(NumThreads);
+  drat_cmpct.resize(NumThreads);
+  deng_cmpct.resize(NumThreads);
+  for (int ip = 0; ip < NumThreads; ip++) {
+    hh_block[ip].reset(n_dir, n_dir, 0.0);
+    ss_block[ip].reset(n_dir, n_dir, 0.0);
+    drat_cmpct[ip].reset(n_dir, 0.0);
+    deng_cmpct[ip].reset(n_dir, 0.0);
+  }
  
 }
 
@@ -1274,7 +1341,7 @@ void cqmc::engine::LMYEngine::get_brlm_update_alg_part_two(const formic::VarDeps
   if ( my_rank == 0 ) {
     
     // get the matrix for the identity shift in this basis 
-    formic::Matrix<double> dd(hh_block.rows(), hh_block.cols(), 0.0);
+    formic::Matrix<double> dd(hh_block[0].rows(), hh_block[0].cols(), 0.0);
     for (int bl = 0, ql = 0; bl < _nblocks; bl++) { // loop over blocks for left vector
       for (int sl = 0; sl < _block_ups.at(bl).size(); sl++) { // loop over shifts within a block for left vector
         for (int nl = 0; nl < _block_ups.at(bl).at(sl).cols(); nl++, ql++) { // loop over updates within a shift for left vector
@@ -1328,8 +1395,8 @@ void cqmc::engine::LMYEngine::get_brlm_update_alg_part_two(const formic::VarDeps
                                                            shift_i * shift_scale.at(shift_p),
                                                            shift_s * shift_scale.at(shift_p),
                                                            1.0e-4,
-                                                           hh_block,
-                                                           ss_block,
+                                                           hh_block[0],
+                                                           ss_block[0],
                                                            dd,
                                                            output);
       else 
@@ -1340,8 +1407,8 @@ void cqmc::engine::LMYEngine::get_brlm_update_alg_part_two(const formic::VarDeps
                                                                     shift_i * shift_scale.at(shift_p),
                                                                     shift_s * shift_scale.at(shift_p),
                                                                     1.0e-6,
-                                                                    hh_block,
-                                                                    ss_block,
+                                                                    hh_block[0],
+                                                                    ss_block[0],
                                                                     dd,
                                                                     output);
 

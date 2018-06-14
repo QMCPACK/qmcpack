@@ -26,12 +26,11 @@ namespace qmcplusplus
         std::vector<RealType>& dhpsioverpsi)
     {
       Value=0.0;
+      for(int ipp=0; ipp<PPset.size(); ipp++)
+        if(PPset[ipp]) PPset[ipp]->randomize_grid(*myRNG);
       for(int iat=0; iat<NumIons; iat++)
         if(PP[iat])
-        {
-          PP[iat]->randomize_grid(*(P.Sphere[iat]),UpdateMode[PRIMARY]);
           Value+=PP[iat]->evaluateValueAndDerivatives(P,iat,Psi,optvars,dlogpsi,dhpsioverpsi);
-        }
       return Value;
 
       //int Nvars=optvars.size();
@@ -201,8 +200,3 @@ namespace qmcplusplus
     }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 6014 $   $Date: 2013-10-22 17:14:43 -0400 (Tue, 22 Oct 2013) $
- * $Id: NonLocalECPComponent.cpp 6014 2013-10-22 21:14:43Z jnkim $
- ***************************************************************************/

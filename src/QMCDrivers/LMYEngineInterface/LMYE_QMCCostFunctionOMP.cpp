@@ -13,7 +13,6 @@
 #include "QMCDrivers/QMCCostFunctionOMP.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "Particle/HDFWalkerInputCollect.h"
 #include "Message/CommOperators.h"
 
 //#include "Eigen/Dense"
@@ -25,7 +24,7 @@ namespace qmcplusplus {
 int QMCCostFunctionOMP::total_samples() {
 
   // for the unfamiliar, the [] starts a lambda function
-  return std::accumulate(wClones.begin(), wClones.begin()+NumThreads, 0, [] (int x, const MCWalkerConfiguration * p) { return x + p->getActiveWalkers(); });
+  return std::accumulate(wClones.begin(), wClones.begin()+NumThreads, 0, [] (int x, const MCWalkerConfiguration * p) { return x + p->numSamples(); });
 
 }
 
@@ -44,18 +43,13 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::LMYEngineCost_detail(cqmc::engi
   // turn off wavefunction update mode 
   EngineObj->turn_off_update();
 
-  // set the vector of value-to-guiding square ratios to be all ones, as qmcpack incorperates these directly into the weights
-  //std::vector<Return_t> vgs_vec(m, 1.0);
-
-  // loop over each threads' samples to get vectors of weights and local energies
-  //std::vector<Return_t> wgt_vec(m, 0.0);
-  //std::vector<Return_t> lce_vec(m, 0.0);
-
-  for (int ip = 0, j = 0; ip < NumThreads; ip++) {
-
+  //for (int ip = 0, j = 0; ip < NumThreads; ip++) {
+# pragma omp parallel
+  {
+    int ip = omp_get_thread_num();     
     // for each thread, loop over samples
-    const int nw = wClones[ip]->getActiveWalkers();
-    for (int iw = 0; iw < nw; iw++, j++) {
+    const int nw = wClones[ip]->numSamples();
+    for (int iw = 0; iw < nw; iw++) {
 
       // get a pointer to the record for this sample
       const Return_t* restrict saved = (*RecordsOnNode[ip])[iw];
@@ -71,6 +65,7 @@ QMCCostFunctionOMP::Return_t QMCCostFunctionOMP::LMYEngineCost_detail(cqmc::engi
 
     }
   }
+  //}
   // finish taking sample 
   EngineObj->sample_finish();
 

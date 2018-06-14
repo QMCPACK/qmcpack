@@ -19,7 +19,7 @@
 
 #include "Configuration.h"
 #include "Numerics/OneDimGridFunctor.h"
-#include "QMCWaveFunctions/SphericalOrbitalSet.h"
+#include "QMCWaveFunctions/MolecularOrbitals/SphericalBasisSet.h"
 #include "OhmmsData/HDFAttribIO.h"
 
 namespace qmcplusplus
@@ -33,14 +33,15 @@ struct RGFBuilderBase: public QMCTraits
 
   typedef OneDimGridBase<RealType>                        GridType;
   typedef OneDimGridFunctor<RealType>                     RadialOrbitalType;
-  typedef SphericalOrbitalSet<RadialOrbitalType,GridType> CenteredOrbitalType;
+  typedef SphericalBasisSet<RadialOrbitalType,GridType>   CenteredOrbitalType;
+  bool debug;
 
   ///the species
   std::string m_species;
   ///the radial orbitals
   CenteredOrbitalType* m_orbitals;
 
-  RGFBuilderBase(): m_orbitals(NULL), Counter(0), m_file_id(-1), m_group_id(-1) { }
+  RGFBuilderBase(): m_orbitals(NULL), Counter(0), m_file_id(-1), m_group_id(-1),debug(false) { }
 
   virtual ~RGFBuilderBase();
 
@@ -60,7 +61,7 @@ struct RGFBuilderBase: public QMCTraits
   ///add common parameters
   virtual bool putCommon(xmlNodePtr cur) = 0;
 
-  void print(const std::string& aroot, int omode);
+  void print(const std::string& aroot, int omode, bool debug);
 
   ///keeps track of number of times HDF5 file has been accessed
   int Counter;
@@ -71,8 +72,3 @@ struct RGFBuilderBase: public QMCTraits
 };
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -46,16 +46,14 @@ struct NonLocalECPComponent: public QMCTraits
   int nknot;
   ///Maximum cutoff the non-local pseudopotential
   RealType Rmax;
-  ///random number generator
-  RandomGenerator_t* myRNG;
   ///Angular momentum map
-  std::vector<int> angpp_m;
+  aligned_vector<int> angpp_m;
   ///Weight of the angular momentum
-  std::vector<RealType> wgt_angpp_m;
+  aligned_vector<RealType> wgt_angpp_m;
   /// Lfactor1[l]=(2*l+1)/(l+1)
-  std::vector<RealType> Lfactor1;
+  RealType Lfactor1[8];
   /// Lfactor1[l]=(l)/(l+1)
-  std::vector<RealType> Lfactor2;
+  RealType Lfactor2[8];
   ///Non-Local part of the pseudo-potential
   std::vector<RadialPotentialType*> nlpp_m;
   ///fixed Spherical Grid for species
@@ -96,7 +94,7 @@ struct NonLocalECPComponent: public QMCTraits
   ///destructor
   ~NonLocalECPComponent();
 
-  NonLocalECPComponent* makeClone();
+  NonLocalECPComponent* makeClone(const ParticleSet &qp);
 
   ///add a new Non Local component
   void add(int l, RadialPotentialType* pp);
@@ -110,10 +108,11 @@ struct NonLocalECPComponent: public QMCTraits
 
   void resize_warrays(int n,int m,int l);
 
-  void randomize_grid(ParticleSet::ParticlePos_t& sphere, bool randomize);
-  template<typename T> void randomize_grid(std::vector<T> &sphere);
+  void randomize_grid(RandomGenerator_t& myRNG);
+  template<typename T> void randomize_grid(std::vector<T> &sphere, RandomGenerator_t& myRNG);
 
-  RealType evaluate(ParticleSet& W, int iat, TrialWaveFunction& Psi);
+  RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& Psi, 
+      int iel, RealType r, const PosType& dr, bool Tmove, std::vector<NonLocalData>& Txy) const;
 
   RealType evaluate(ParticleSet& W, int iat, TrialWaveFunction& Psi,
                     PosType &force_iat);
@@ -121,17 +120,9 @@ struct NonLocalECPComponent: public QMCTraits
   RealType evaluate(ParticleSet& W, ParticleSet &ions, int iat, TrialWaveFunction& Psi,
                     PosType &force_iat, PosType &pulay_iat);
 
-
-  RealType
-  evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, std::vector<NonLocalData>& Txy);
-
   RealType
   evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, std::vector<NonLocalData>& Txy,
            PosType &force_iat);
-
-  /** compute with virtual moves */
-  RealType evaluateVP(const ParticleSet& W, int iat, TrialWaveFunction& Psi);
-  RealType evaluateVP(const ParticleSet& W, int iat, TrialWaveFunction& Psi,std::vector<NonLocalData>& Txy);
 
   RealType
   evaluateValueAndDerivatives(ParticleSet& P,
@@ -142,12 +133,7 @@ struct NonLocalECPComponent: public QMCTraits
 
   void print(std::ostream& os);
 
-  void initVirtualParticle(ParticleSet* qp);
-
-  void setRandomGenerator(RandomGenerator_t* rng)
-  {
-    myRNG=rng;
-  }
+  void initVirtualParticle(const ParticleSet& qp);
 
   // For space-warp transformation used in Pulay correction
   inline RealType WarpFunction (RealType r)
@@ -161,9 +147,4 @@ struct NonLocalECPComponent: public QMCTraits
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

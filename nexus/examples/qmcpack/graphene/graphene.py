@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from nexus import settings,Job,run_project
+from nexus import settings,job,run_project
 from nexus import generate_physical_system
 from nexus import generate_pwscf
 from nexus import generate_pw2qmcpack
@@ -16,7 +16,6 @@ settings(
     status_only   = 0,                    # only show status of runs
     machine       = 'ws16',               # local machine is 16 core workstation
     )
-
 
 
 # generate the graphene physical system
@@ -44,7 +43,7 @@ scf = generate_pwscf(
     # nexus inputs
     identifier   = 'scf',           # identifier/file prefix
     path         = 'graphene/scf',  # directory for scf run
-    job          = Job(cores=16),   # run on 16 cores
+    job          = job(cores=16),   # run on 16 cores
     pseudos      = ['C.BFD.upf'],   # pwscf PP file
     system       = graphene,        # run graphene
     # input format selector
@@ -57,7 +56,7 @@ scf = generate_pwscf(
     kgrid        = (8,8,8),         # MP grid of primitive cell
     kshift       = (1,1,1),         #  to converge charge density
     wf_collect   = False,           # don't collect orbitals
-    use_folded   = True             # use primitive rep of graphene
+    use_folded   = True,            # use primitive rep of graphene
     )
 sims.append(scf)  
 
@@ -66,7 +65,7 @@ nscf_opt = generate_pwscf(
     # nexus inputs
     identifier   = 'nscf',          # identifier/file prefix      
     path         = 'graphene/nscf_opt', # directory for nscf run       
-    job          = Job(cores=16),   # run on 16 cores             
+    job          = job(cores=16),   # run on 16 cores             
     pseudos      = ['C.BFD.upf'],   # pwscf PP file               
     system       = graphene,        # run graphene                
     # input format selector                                      
@@ -82,7 +81,7 @@ nscf_opt = generate_pwscf(
     kgrid        = (1,1,1),         # single k-point for opt
     kshift       = (0,0,0),         # gamma point
     # workflow dependencies
-    dependencies = (scf,'charge_density')
+    dependencies = (scf,'charge_density'),
     )
 sims.append(nscf_opt)
 
@@ -91,11 +90,11 @@ p2q_opt = generate_pw2qmcpack(
     # nexus inputs
     identifier   = 'p2q',
     path         = 'graphene/nscf_opt',
-    job          = Job(cores=1),
+    job          = job(cores=1),
     # pw2qmcpack input parameters
     write_psir   = False,
     # workflow dependencies
-    dependencies = (nscf_opt,'orbitals')
+    dependencies = (nscf_opt,'orbitals'),
     )
 sims.append(p2q_opt)
 
@@ -104,7 +103,7 @@ opt = generate_qmcpack(
     # nexus inputs
     identifier   = 'opt',           # identifier/file prefix
     path         = 'graphene/opt',  # directory for opt run
-    job          = Job(cores=16,app='qmcapp'),
+    job          = job(cores=16,app='qmcpack'),
     pseudos      = ['C.BFD.xml'],   # qmcpack PP file
     system       = graphene,        # run graphene
     # input format selector   
@@ -131,7 +130,7 @@ opt = generate_qmcpack(
              )        
         ],
     # workflow dependencies
-    dependencies = (p2q_opt,'orbitals')        
+    dependencies = (p2q_opt,'orbitals'),
     )
 sims.append(opt)
 
@@ -141,7 +140,7 @@ nscf = generate_pwscf(
     # nexus inputs
     identifier   = 'nscf',          # identifier/file prefix      
     path         = 'graphene/nscf', # directory for nscf run       
-    job          = Job(cores=16),   # run on 16 cores             
+    job          = job(cores=16),   # run on 16 cores             
     pseudos      = ['C.BFD.upf'],   # pwscf PP file               
     system       = graphene,        # run graphene                
     # input format selector                                      
@@ -155,7 +154,7 @@ nscf = generate_pwscf(
     use_folded   = True,            # use primitive rep of graphene
     wf_collect   = True,            # write out orbitals
     # workflow dependencies
-    dependencies = (scf,'charge_density')
+    dependencies = (scf,'charge_density'),
     )
 sims.append(nscf)
 
@@ -164,11 +163,11 @@ p2q = generate_pw2qmcpack(
     # nexus inputs
     identifier   = 'p2q',
     path         = 'graphene/nscf',
-    job          = Job(cores=1),
+    job          = job(cores=1),
     # pw2qmcpack input parameters
     write_psir   = False,
     # workflow dependencies
-    dependencies = (nscf,'orbitals')
+    dependencies = (nscf,'orbitals'),
     )
 sims.append(p2q)
     
@@ -177,7 +176,7 @@ qmc = generate_qmcpack(
     # nexus inputs
     identifier   = 'qmc',           # identifier/file prefix       
     path         = 'graphene/qmc',  # directory for dmc run       
-    job          = Job(cores=16,app='qmcapp'),
+    job          = job(cores=16,app='qmcpack'),
     pseudos      = ['C.BFD.xml'],   # qmcpack PP file
     system       = graphene,        # run graphene
     # input format selector                                      
@@ -204,14 +203,12 @@ qmc = generate_qmcpack(
         ],
     # workflow dependencies
     dependencies = [(p2q,'orbitals'),
-                    (opt,'jastrow')]
+                    (opt,'jastrow')],
     )
-
 
 
 # nexus monitors all runs
 run_project(sims)
-
 
 
 # print out the total energy
@@ -226,6 +223,4 @@ if performed_runs:
     print 'The DMC ground state energy for graphene is:'
     print '    {0} +/- {1} Ha'.format(le.mean,le.error)
 #end if
-
-
 

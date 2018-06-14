@@ -91,11 +91,6 @@ struct ConservedEnergy: public QMCHamiltonianBase
     return 0.0;
   }
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   /** Do nothing */
   bool put(xmlNodePtr cur)
   {
@@ -126,9 +121,15 @@ struct ConservedEnergy: public QMCHamiltonianBase
     for (int iw=0; iw<walkers.size(); iw++)
     {
       Walker_t &w = *(walkers[iw]);
-      RealType flux = 0.0;
-      for (int ptcl=0; ptcl<w.G.size(); ptcl++)
-        flux +=2.0 * dot(w.G[ptcl],w.G[ptcl]) + w.L[ptcl];
+      RealType flux;
+      RealType gradsq = Dot(w.G,w.G);
+      RealType lap = Sum(w.L);
+#ifdef QMC_COMPLEX
+      RealType gradsq_cc = Dot_CC(w.G,w.G);
+      flux = lap + gradsq + gradsq_cc;
+#else
+      flux = lap + 2*gradsq;
+#endif
       w.getPropertyBase()[NUMPROPERTIES+myIndex] = flux;
     }
   }
@@ -138,9 +139,4 @@ struct ConservedEnergy: public QMCHamiltonianBase
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

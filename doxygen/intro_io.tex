@@ -1,0 +1,168 @@
+\section{Main input file}\label{input.intro}
+
+A valid input file for QMCPACK should look like
+
+\begin{lstlisting}[language=xml,escapeinside={<:}{:>},
+emph={simulation},emphstyle=\bfseries\color{blue}]
+  <?xml version="1.0"?>
+  <simulation>
+    <project id="mysimulation" series="0"/><:\coref{1}{project.qr}:>
+    <random parallel="1" seed="-1"/><:\coref{2}{random.qr}:>
+    <particleset/> <:\coref{3}{particleset.qr}:>
+    <wavefunction/> <:\coref{4}{wavefunction.qr}:>
+    <hamiltonian/> <:\coref{5}{hamiltonian.qr}:>
+    <qmc/> <:\coref{6}{qmc.qr}:>
+  </simulation> 
+\end{lstlisting}
+
+\textbf{The order of the xml elements in an input file is important, e.g., {\tt
+<qmc>} cannot come before other elements.} The alllowed multiplicity of each
+xml element is given in [ ]s. 
+
+\begin{description}
+%[leftmargin=1cm,style=sameline]
+\item[{\hyperref[project.qr]{\conum{1}}}]
+sets the title and sequence number of a simulation. [0..1]
+\item[{\hyperref[random.qr]{\conum{2}}}]
+assigns the seed of the random number generator (using Singleton pattern). [0..1] 
+\item[{\hyperref[particleset.qr]{\conum{3}}}]
+creates a set of Particles. [1..*]
+\item[{\hyperref[wavefunction.qr]{\conum{4}}}]
+creates a many-{}body wavefunction for a target particleset.  [1..*]
+\item[{\hyperref[hamiltonian.qr]{\conum{5}}}]
+creates a many-{}body Hamiltonian for a target particleset. [1..*]
+\item[{\hyperref[qmc.qr]{\conum{6}}}]
+executes a QMC algorithm defined by the {\tt method} attribute. [1..*]
+\end{description}
+
+When the document is not well formed, e.g., it has mismatched tags, the xml
+parser will issue errors and stop execution of QMCPACK. A common tool like {\tt
+xmllint} can be used to check if your input file is well formed.  
+
+%This section covers the key input parameters to perform a QMC simulation. 
+%At the minimum, QMC simulation requires i) a set of \emph{particles}, e.g.,
+%electrons, whose configuration will be updated according to a QMC method, ii) a
+%many-{}body wave function for the quantum particle set, and iii) many-{}body
+%Hamiltonian to evaluate the local energy.i
+
+\subsection{General simulation parameters}
+
+QMCPACK and other related programs process the elements in this section to set
+the simulation parameters, such as the root of the output files and random
+number generators. 
+
+%\subsubsection{project} \label{project.sec}
+\begin{description}
+\item[\textbf{project}{}]\label{project.sec}
+In order to maintain multiple QMC runs for a system,
+\hyperlink{project.element}{project} is used to specify the title of the
+simulation and the sequence index. The \texttt{title} and \texttt{id} are used
+for the root name of the output files. 
+ 
+Each recording engines will add a postfix. The postfix typically tells you what
+data the output contains and its format.  For example, a simulation with the
+project as
+\begin{lstlisting}[language=XML,emph={project},emphstyle=\bfseries\color{blue}]
+  <project id="H2.STO.mo" series="0"/>
+\end{lstlisting} 
+will produce \nolinkurl{H2.STO.mos000.scalar.dat} and several file names. Any
+file whose postfix is \nolinkurl{dat} can be plotted with any graphic package
+that accepts multiple column data, e.g., gnuplot, xmgrace. See
+\hyperlink{output.sec}{output} for the standard output of QMCPACK.  Although it
+is an optional element, specifying the \textbf{project} is strongly
+recommended.
+
+%\item[\textbf{application}{}]
+%This \emph{optional} element \hyperlink{application.element}{application} is
+%intended to record the version of the code, related publications and other
+%information that can be used for data mining. 
+
+\item[\textbf{random}{}]
+This \emph{optional} element \hyperlink{random.element}{random} sets the
+properties of the global random number generator using Singleton pattern. The
+default setting is
+  
+\begin{lstlisting}[language=XML,emph={random},emphstyle=\bfseries\color{blue}]
+  <random parallel="1" seed="-1"/>
+\end{lstlisting}
+ to assign independent random seeds based on the hardware clock of the
+ execution. The state of the random number generator is stored in a hdf5 for
+ checkpoint and is used for the subsequent run.  Specifically, we use
+ \href{http://www.boost.org/boost/random/mersenne_twister.hpp}{
+ mersenne-{}twister} random number generator.
+\end{description}
+   
+\subsection{Definition of a QMC system}
+
+%A QMC system is a collection of physical objects, such as Particle sets
+%(\hyperref[particleset.sec]{particleset}), trial many-{}body wavefunctions
+%(\hyperref[wavefunction.sec]{wavefunction}), and Hamiltonian operators
+%(\hyperref[hamiltonian.sec]{hamiltonian}).
+
+Before performing any QMC simulation, we need to define and create the physical
+objects. At the minimum, QMCPACK requires a Quantum Particle Set (denoted as
+\emph{target particleset}), a trial wavefunction for the \emph{target
+particleset}, and a Hamiltonian operator which defines a local energy operator
+for the \emph{target particleset}.  Since the most common application  of
+QMCPACK deals with the electronic structure of solids and molecules,  we use
+\emph{electrons} and \emph{target particleset} interchangeably to denote the
+Quantum Particle Set for a QMCPACK run.
+ 
+\begin{description}
+\item[\textbf{particleset}{}]
+defines a set of Particles which are grouped together.  For example, a
+\hyperlink{particleset.element}{particleset} defines an \emph{N-{}}electron
+system for the electronic structure calculations.
+ 
+\begin{lstlisting}[language=XML,emph={particleset},emphstyle=\bfseries\color{blue}]
+  <particleset name="e">
+    <group name="u" size="3">
+      <parameter name="charge">-1</parameter>
+    </group>
+    <group name="d" size="3">
+      <parameter name="charge">-1</parameter>
+    </group>
+  </particleset> 
+\end{lstlisting}
+A molecular system or crystalline system in a unit cell will comprise another
+\texttt{particleset}.  The attribute \texttt{name} is used to name each
+\texttt{particleset}.
+ 
+\item[\textbf{wavefunction}{}]\label{wavefuncion.intro}
+defines a trial wavefunction for a \emph{target particleset}.  The \emph{target
+particleset} should be defined before used by the wavefunction.
+ 
+\begin{lstlisting}[language=XML,emph={wavefunction},emphstyle=\bfseries\color{blue}]
+  <wavefunction name="psi0" target="e">
+    <jastrow name="Jee" type="Two-Body" spin="yes" function="pade">
+      <parameter id="juu_b" name="B">0.821683</parameter>
+    </jastrow>
+  </wavefunction> 
+\end{lstlisting}
+
+\item[\textbf{hamiltonian}{}]
+defines a total Hamiltonian for a \emph{target particleset}. The \emph{target
+particleset}  and \emph{wavefunction} should be defined before used by the
+\texttt{hamiltonian}.
+ 
+\begin{lstlisting}[language=XML,emph={hamiltonian},emphstyle=\bfseries\color{blue}]
+  <hamiltonian name="h0" target="e" wavefunction="psi0">
+    <pairpot name="ElecElec" type="coulomb" source="e"/>
+    <pairpot name="Coulomb" type="coulomb" source="i"/>
+    <pairpot name="IonIon" type="coulomb" source="i" target="i"/>
+  </hamiltonian> 
+\end{lstlisting}
+\end{description}
+
+\subsection{Running  QMC}
+
+\begin{description}
+\item[\textbf{qmc}{}]
+defines the actions on a QMC system, i.e., performing one of several QMC algorithms
+to calculate the properties of the \emph{target particleset}.
+ 
+\begin{lstlisting}[language=XML,emph={qmc},emphstyle=\bfseries\color{blue}]
+  <qmc method="dmc" move="pbyp" target="e">
+    <parameter name="time_step">0.05</parameter>
+  </qmc> \end{lstlisting}
+\end{description}

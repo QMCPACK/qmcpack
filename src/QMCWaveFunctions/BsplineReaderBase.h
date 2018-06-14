@@ -45,16 +45,8 @@ struct BsplineReaderBase
   int myFirstSPO;
   ///number of orbitals to be created
   int myNumOrbs;
-  /**@addtogroup multigrid
-   * @{
-   * Currently only one level of coarsening is implemented but easy to generalize to multi levels.
-   */
-  /** dilation factor dense/corase only use one for all the directions
-   */
-  int GridFactor;
-  ///cutoff radius for multigrid or other things
-  double Rcut;
-  /** @}*/
+  ///check the norm of orbitals
+  bool checkNorm;
   ///map from spo index to band index
   std::vector<std::vector<int> > spo2band;
 

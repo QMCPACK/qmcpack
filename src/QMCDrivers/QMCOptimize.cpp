@@ -199,7 +199,7 @@ QMCOptimize::put(xmlNodePtr q)
       vmcEngine = new VMCcuda(W,Psi,H, psiPool);
     else
 #endif
-      vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
+      vmcEngine = new VMCSingleOMP(W,Psi,H,psiPool);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
     vmcEngine->initCommunicator(myComm);
   }
@@ -244,10 +244,10 @@ QMCOptimize::put(xmlNodePtr q)
   {
 #if defined (QMC_CUDA)
     if (useGPU == "yes")
-      optTarget = new QMCCostFunctionCUDA(W,Psi,H,hamPool);
+      optTarget = new QMCCostFunctionCUDA(W,Psi,H);
     else
 #endif
-      optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
+      optTarget = new QMCCostFunctionOMP(W,Psi,H);
 //#if defined(ENABLE_OPENMP)
 //	if(true /*omp_get_max_threads()>1*/)
 //      {
@@ -262,8 +262,3 @@ QMCOptimize::put(xmlNodePtr q)
   return success;
 }
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 1286 $   $Date: 2006-08-17 12:33:18 -0500 (Thu, 17 Aug 2006) $
- * $Id: QMCOptimize.cpp 1286 2006-08-17 17:33:18Z jnkim $
- ***************************************************************************/

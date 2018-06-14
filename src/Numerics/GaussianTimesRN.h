@@ -272,8 +272,3 @@ bool GaussianTimesRN<T>::putBasisGroup(xmlNodePtr cur, int baseOff)
 }
 
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

@@ -1,0 +1,75 @@
+\chapter{Output overview}
+\label{chap:output_overview}
+
+%% Detail contents of output files.
+QMCPACK writes several output files which report information about the simulation (e.g. the physical properties such as the energy), as well as information about the computational aspects of the simulation, checkpoints, and restarts.
+The types of output files generated depend on the details of a calculation. The list below is not meant to be exhaustive, but rather to highlight some salient features of the more common filetypes. Further detail can be found in the description of the estimator one is interested in computing.
+
+
+\section{The .scalar.dat file}
+\label{sec:scalardat_file}
+The most important output file is the \texttt{.scalar.dat} file. This file contains the output of block averaged properties of the system such as the local energy and other estimators.
+Each line corresponds to an average over $N_{walkers}*N_{steps}$ samples.
+By default, the quantities reported in the \texttt{.scalar.dat} file include:
+
+\begin{description}
+\item[LocalEnergy] The local energy.
+\item[LocalEnergy\_sq] The local energy squared.
+\item[LocalPotential] The local potential energy.
+\item[Kinetic] The kinetic energy.
+\item[ElecElec] The electron-electron potential energy.
+\item[IonIon] The ion-ion potential energy.
+\item[LocalECP] The energy due to the pseudopotential/effective core potential.
+\item[NonLocalECP] The non-local energy due to the pseudopotential/effective core potential.
+\item[MPC] The modified periodic coulomb potential energy.
+\item[BlockWeight] The number of MC samples in the block.
+\item[BlockCPU] The number of seconds to compute the block.
+\item[AcceptRatio] The acceptance ratio.
+\end{description}
+
+QMCPACK includes a python utility, \texttt{qmca}, which can be used to process these files. Details and examples are given in chapter~\ref{chap:analyzing}.
+\section{The .opt.xml file}
+\label{sec:optxml_file}
+This file is generated after a VMC wave function optimization, and contains the part of the input file which lists the optimized optimized jastrow factors.
+Conveniently, this file is already formatted such it can easily be incorporated into a DMC input file.
+
+\section{The .qmc.xml file}
+\label{sec:qmc_file}
+This file contains information about the computational aspects of the simulation, for example, which parts of the code are being executed when. This file is only generated in an ensemble run in which qmcpack runs multiple input files.
+
+\section{The .dmc.dat file}
+\label{sec:dmc_file}
+This file contains information similar to the \texttt{.scalar.dat} file, but also includes extra information about the details of a DMC calculation. For example, information about the walker population.
+
+\begin{description}
+\item[Index] The block number.
+\item[LocalEnergy] The local energy.
+\item[Variance] The variance.
+\item[Weight] The number of samples in the block.
+\item[NumOfWalkers] The number of walkers times the number of steps.
+\item[AvgSentWalkers] The average number of walkers sent. During a DMC simulation walkers may be created or destroyed. At every step, QMCPACK will do some load balancing to ensure that the walkers are evenly distributed across nodes.
+\item[TrialEnergy] The trial energy. See \ref{sec:dmc} for an explanation of the trial energy.
+\item[DiffEff] The diffusion efficiency.
+\item[LivingFraction] The fraction of the walker population from the previous step that survived to the current step.
+\end{description}
+
+
+\section{The .bandinfo.dat file}
+\label{sec:bandinfo_file}
+This file contains information from the trial wavefunction about the band structure of the system,
+including the available $k$-points. This can
+be helpful in constructing trial wavefunctions.
+
+
+\section{Checkpoint and restart files}
+\label{sec:checkpoint_files}
+\subsection{The .cont.xml file}
+This file enables continuation of the run.  It is mostly a copy of the input XML file with the series number incremented, and the \texttt{mcwalkerset} element added to read the walkers from a config file.   The \texttt{.cont.xml} file is always created, but other files it depends on are only present if checkpointing is enabled.
+
+\subsection{The .config.h5 file}
+This file contains stored walker configurations.
+
+\subsection{The .random.h5 file}
+This file contains the state of the random number generator to allow restarts.
+(Older versions used an XML file with a suffix of \texttt{.random.xml}).
+

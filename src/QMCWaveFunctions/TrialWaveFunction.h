@@ -25,7 +25,6 @@
 #include "Message/MPIObjectBase.h"
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/OrbitalBase.h"
-#include "QMCWaveFunctions/FermionBase.h"
 #include "QMCWaveFunctions/DiffOrbitalBase.h"
 #include "Utilities/NewTimer.h"
 /**@defgroup MBWfs Many-body wave function group
@@ -107,12 +106,14 @@ public:
   typedef OrbitalBase::PosType            PosType;
   typedef OrbitalBase::GradType           GradType;
   typedef OrbitalBase::BufferType         BufferType;
+  typedef OrbitalBase::WFBufferType       WFBufferType;
   typedef OrbitalBase::HessType           HessType;
   typedef OrbitalBase::HessVector_t       HessVector_t;
 #ifdef QMC_CUDA
   typedef OrbitalBase::CudaValueType   CudaValueType;
   typedef OrbitalBase::CudaGradType    CudaGradType;
   typedef OrbitalBase::CudaRealType    CudaRealType;
+  typedef OrbitalBase::RealMatrix_t    RealMatrix_t;
   typedef OrbitalBase::ValueMatrix_t   ValueMatrix_t;
   typedef OrbitalBase::GradMatrix_t    GradMatrix_t;
   typedef ParticleSet::Walker_t        Walker_t;
@@ -134,6 +135,11 @@ public:
   inline RealType getPhase() const
   {
     return PhaseValue;
+  }
+
+  inline void setPhase(RealType PhaseValue_new)
+  {
+    PhaseValue = PhaseValue_new;
   }
   void getLogs(std::vector<RealType>& lvals);
   void getPhases(std::vector<RealType>& pvals);
@@ -169,10 +175,16 @@ public:
   inline void resetPhaseDiff()
   {
     PhaseDiff=0.0;
+    for (int i=0; i<Z.size(); i++)
+      Z[i]->resetPhaseDiff();
   }
   inline RealType getLogPsi() const
   {
     return LogValue;
+  }
+  inline void setLogPsi(RealType LogPsi_new)
+  {
+    LogValue = LogPsi_new;
   }
 
   ///Add an OrbitalBase
@@ -205,16 +217,6 @@ public:
   /** recursively change the ParticleSet whose G and L are evaluated */
   void resetTargetParticleSet(ParticleSet& P);
 
-  /////Check if aname-ed Single-Particle-Orbital set exists
-  //bool hasSPOSet(const std::string& aname);
-  /////add a Single-Particle-Orbital set
-  //void addSPOSet(OhmmsElementBase* spo);
-  /////return the aname-ed Single-Particle-Orbital set.
-  //OhmmsElementBase* getSPOSet(const std::string& aname);
-
-  /** evalaute the values of the wavefunction, gradient and laplacian  for a walkers */
-  ValueType evaluate(ParticleSet& P);
-
   /** evalaute the values of the wavefunction, gradient and laplacian  for a walkers */
   RealType evaluateLogOnly(ParticleSet& P);
 
@@ -232,15 +234,6 @@ public:
                         ParticleSet::ParticleGradient_t& fixedG,
                         ParticleSet::ParticleLaplacian_t& fixedL);
 
-  RealType evaluateDeltaLog(ParticleSet& P,BufferType& buf);
-
-  void evaluateDeltaLog(ParticleSet& P,
-                        RealType& logpsi_fixed,
-                        RealType& logpsi_opt,
-                        ParticleSet::ParticleGradient_t& fixedG,
-                        ParticleSet::ParticleLaplacian_t& fixedL,
-                        BufferType& buf);
-
   /** functions to handle particle-by-particle update */
   RealType ratio(ParticleSet& P, int iat);
   /** evaluate ratios for EE */
@@ -255,12 +248,6 @@ public:
   /** compute both ratios and deriatives of ratio with respect to the optimizables*/
   void evaluateDerivRatios(VirtualParticleSet& P, const opt_variables_type& optvars,
       std::vector<RealType>& ratios, Matrix<RealType>& dratio);
-
-  void update(ParticleSet& P, int iat);
-
-  RealType ratio(ParticleSet& P, int iat,
-                 ParticleSet::ParticleGradient_t& dG,
-                 ParticleSet::ParticleLaplacian_t& dL);
 
   void printGL(ParticleSet::ParticleGradient_t& G,
                ParticleSet::ParticleLaplacian_t& L, std::string tag = "GL");
@@ -285,15 +272,15 @@ public:
   void rejectMove(int iat);
   void acceptMove(ParticleSet& P, int iat);
 
-  RealType registerData(ParticleSet& P, BufferType& buf);
-  RealType registerDataForDerivatives(ParticleSet& P, BufferType& buf, int storageType=0);
-  void memoryUsage_DataForDerivatives(ParticleSet& P,long& orbs_only,long& orbs, long& invs, long& dets);
-  RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
-  void copyFromBuffer(ParticleSet& P, BufferType& buf);
-  RealType evaluateLog(ParticleSet& P, BufferType& buf);
-
-  void dumpToBuffer(ParticleSet& P, BufferType& buf);
-  void dumpFromBuffer(ParticleSet& P, BufferType& buf);
+  /** register all the wavefunction components in buffer.
+   *  See OrbitalBase::registerData for more detail */
+  void registerData(ParticleSet& P, WFBufferType& buf);
+  /** update all the wavefunction components in buffer.
+   *  See OrbitalBase::updateBuffer for more detail */
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  /** copy all the wavefunction components from buffer.
+   *  See OrbitalBase::updateBuffer for more detail */
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   RealType KECorrection() const;
 
@@ -303,14 +290,9 @@ public:
                            std::vector<RealType>& dhpsioverpsi,
                            bool project=false);
 
-  void evaluateDerivatives(ParticleSet& P,
-                           const opt_variables_type& optvars,
-                           std::vector<RealType>& dlogpsi,
-                           std::vector<RealType>& dhpsioverpsi,
-                           BufferType& buf);
+  void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+                               std::vector<RealType>& dgradlogpsi);
 
-  /** evalaute the values of the wavefunction, gradient and laplacian  for all the walkers */
-  //void evaluate(WalkerSetRef& W, OrbitalBase::ValueVectorType& psi);
   /** evaluate the hessian w.r.t. electronic coordinates of particle iat **/
  // void evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi);
   /** evaluate the hessian hessian w.r.t. electronic coordinates of particle iat **/
@@ -330,7 +312,8 @@ public:
     return Z;
   }
 
-  void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
+
   void setTwist(std::vector<RealType> t)
   {
     myTwist=t;
@@ -351,15 +334,11 @@ public:
     //OneOverM = 1.0/mass;
   }
 
-  FermionBase* getFermionWF()
-  {
-    return FermionWF;
-  }
-
 private:
 
   ///control how ratio is calculated
   bool Ordered;
+
   ///the size of ParticleSet
   int NumPtcls;
 
@@ -372,8 +351,8 @@ private:
   ///starting index of the buffer
   size_t BufferCursor;
 
-  ///starting index of the buffer DP
-  size_t BufferCursor_DP;
+  ///starting index of the scalar buffer
+  size_t BufferCursor_scalar;
 
   ///sign of the trial wave function
   RealType PhaseValue;
@@ -389,15 +368,6 @@ private:
 
   ///a list of OrbitalBases constituting many-body wave functions
   std::vector<OrbitalBase*> Z;
-
-  ///fermionic wavefunction
-  FermionBase* FermionWF;
-
-  ///differential gradients
-  ParticleSet::ParticleGradient_t delta_G;
-
-  ///differential laplacians
-  ParticleSet::ParticleLaplacian_t delta_L;
 
   ///fake particleset
   ParticleSet* tempP;
@@ -421,9 +391,8 @@ public:
 
   void recompute (MCWalkerConfiguration &W, bool firstTime=true);
 
-  void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool,
+  void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool,
                 bool onlyOptimizable=false);
-
   void getGradient (MCWalkerConfiguration &W, int iat,
                     std::vector<GradType> &grad);
   void calcGradient (MCWalkerConfiguration &W, int iat,
@@ -449,12 +418,16 @@ public:
                  std::vector<ValueType> &psi_ratios,
                  std::vector<GradType> &newG,
                  std::vector<ValueType> &newL);
-
+#ifdef QMC_COMPLEX
+  void convertRatiosFromComplexToReal (std::vector<ValueType> &psi_ratios,
+                                       std::vector<RealType> &psi_ratios_real);
+#endif
   void ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iatList,
               std::vector<PosType> &rNew,
               std::vector<ValueType> &psi_ratios,
               std::vector<GradType> &newG,
               std::vector<ValueType> &newL);
+
   void NLratios (MCWalkerConfiguration &W,
                  gpu::device_vector<CUDA_PRECISION*> &Rlist,
                  gpu::device_vector<int*>            &ElecList,
@@ -462,6 +435,7 @@ public:
                  gpu::device_vector<CUDA_PRECISION*> &QuadPosList,
                  gpu::device_vector<CUDA_PRECISION*> &RatioList,
                  int numQuadPoints);
+
   void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
                  std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
 
@@ -487,11 +461,10 @@ public:
                                GradMatrix_t&  optG,
                                ValueMatrix_t& optL);
 
-
   void evaluateDerivatives (MCWalkerConfiguration &W,
                             const opt_variables_type& optvars,
-                            ValueMatrix_t &dlogpsi,
-                            ValueMatrix_t &dhpsioverpsi);
+                            RealMatrix_t &dlogpsi,
+                            RealMatrix_t &dhpsioverpsi);
 
 #endif
 
@@ -500,8 +473,3 @@ public:
 /**@}*/
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

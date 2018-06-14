@@ -73,7 +73,7 @@ private:
 
   opt_variables_type dummy;
   int numParams;
-  Matrix<ValueType> d_logpsi_dalpha, d_hpsioverpsi_dalpha;
+  Matrix<RealType> d_logpsi_dalpha, d_hpsioverpsi_dalpha;
   RealType w_beta,w_alpha;
   RealType E_avg, V_avg;
   std::string GEVtype;
@@ -118,8 +118,3 @@ private:
 }
 
 #endif
-/***************************************************************************
- * $RCSfile: VMCcuda.h,v $   $Author: jnkim $
- * $Revision: 1.5 $   $Date: 2006/07/17 14:29:40 $
- * $Id: VMCcuda.h,v 1.5 2006/07/17 14:29:40 jnkim Exp $
- ***************************************************************************/

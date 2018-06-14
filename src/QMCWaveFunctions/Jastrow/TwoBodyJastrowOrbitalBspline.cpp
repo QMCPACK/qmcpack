@@ -78,11 +78,25 @@ TwoBodyJastrowOrbitalBspline::addFunc(int ia, int ib, FT* j)
         for(int jg=0; jg<NumGroups; ++jg, ++ij)
           if(GPUSplines[ij]==0) GPUSplines[ij]=newSpline;
     }
+    else
+      GPUSplines[ia*NumGroups+ib]=newSpline;
   }
   else
   {
-    GPUSplines[ia*NumGroups+ib]=newSpline;
-    GPUSplines[ib*NumGroups+ia]=newSpline;
+    if(PtclRef.R.size()==2)
+    {
+      // a very special case, 1 up + 1 down
+      // uu/dd was prevented by the builder
+      for(int ig=0; ig<NumGroups; ++ig)
+        for(int jg=0; jg<NumGroups; ++jg)
+          GPUSplines[ig*NumGroups+jg]=newSpline;
+    }
+    else
+    {
+      // generic case
+      GPUSplines[ia*NumGroups+ib]=newSpline;
+      GPUSplines[ib*NumGroups+ia]=newSpline;
+    }
   }
 }
 
@@ -568,7 +582,7 @@ TwoBodyJastrowOrbitalBspline::resetParameters(const opt_variables_type& active)
 void
 TwoBodyJastrowOrbitalBspline::evaluateDerivatives
 (MCWalkerConfiguration &W, const opt_variables_type& optvars,
- ValueMatrix_t &d_logpsi, ValueMatrix_t &dlapl_over_psi)
+ RealMatrix_t &d_logpsi, RealMatrix_t &dlapl_over_psi)
 {
   CudaReal sim_cell_radius = W.Lattice.SimulationCellRadius;
   std::vector<Walker_t*> &walkers = W.WalkerList;

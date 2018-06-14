@@ -22,8 +22,13 @@
 //
 // 1. Make sure libcublas.so is in the search path
 // 2. cd to build/ directory
-// 3. nvcc -o cuda_inverse -arch=sm_35 -lcublas -DCUDA_TEST_MAIN
+// 3. For real numbers, compile with
+//    nvcc -o cuda_inverse -arch=sm_35 -lcublas -DCUDA_TEST_MAIN
 //         ../src/Numerics/CUDA/cuda_inverse.cu
+// 
+//    For complex numbers, compile with
+//    nvcc -o cuda_inverse -arch=sm_35 -lcublas -DCUDA_TEST_MAIN
+//         -DQMC_COMPLEX=1 ../src/Numerics/CUDA/cuda_inverse.cu
 //
 // =============================================================== //
 
@@ -32,8 +37,10 @@
 #include <sstream>
 #include <vector>
 #include <iostream>
+#include <complex>
 #include <cuda.h>
 #include <cublas_v2.h>
+#include <cuComplex.h>
 
 #define CONVERT_BS 256
 #define INVERSE_BS 16
@@ -117,14 +124,36 @@ convert (Tdest **dest_list, Tsrc **src_list, int len)
     mydest[i] = (Tdest) mysrc[i];
 }
 
-// Two matrix inversion functions
+// Convert for complex numbers
+template <typename Tdest, typename Tdest2, typename Tsrc>
+__global__ void
+convert_complex (Tdest **dest_list, Tsrc **src_list, int len)
+{
+  __shared__ Tsrc *mysrc;
+  __shared__ Tdest *mydest;
+  if (threadIdx.x == 0)
+  {
+    mysrc = src_list[blockIdx.y];
+    mydest = dest_list[blockIdx.y];
+  }
+  __syncthreads();
+  int i = blockIdx.x * CONVERT_BS + threadIdx.x;
+  if (i < len) {
+    mydest[i].x = (Tdest2) mysrc[i].x;
+    mydest[i].y = (Tdest2) mysrc[i].y;
+  }
+}
+
+
+// Four matrix inversion functions
 // 1. for float matrices
 //    useHigherPrecision = false --> single precision operations
-//    useHigherPrecision = true  --> double precision operations
+//    useHigherPrecision = true  --> double precision operations  (default)
 void
 cublas_inverse (cublasHandle_t handle, 
                 float *Alist_d[], float *Ainvlist_d[],
                 float *AWorklist_d[], float *AinvWorklist_d[],
+                int *PivotArray, int *infoArray,
                 int N, int rowStride, int numMats,
                 bool useHigherPrecision)
 {
@@ -132,8 +161,6 @@ cublas_inverse (cublasHandle_t handle,
   // Info array tells if a matrix inversion is successful
   // = 0 : successful
   // = k : U(k,k) = 0; inversion failed 
-  int *infoArray;
-  callAndCheckError( cudaMalloc((void**) &infoArray, numMats * sizeof(int)), __LINE__ ); 
 
   // If double precision operations are desired...
   if (useHigherPrecision)
@@ -146,16 +173,16 @@ cublas_inverse (cublasHandle_t handle,
 
     // (ii)  call cublas to do matrix inversion
     //       LU decomposition
-    callAndCheckError( cublasDgetrfBatched( handle, N, (double**)AWorklist_d, rowStride, NULL, 
+    callAndCheckError( cublasDgetrfBatched( handle, N, (double**)AWorklist_d, rowStride, PivotArray,
                                             infoArray, numMats), __LINE__ );
-  
+
     //       Inversion
 #if (CUDA_VERSION >= 6050)
-    callAndCheckError( cublasDgetriBatched( handle, N, (const double**)AWorklist_d, rowStride, NULL, 
-                                            (double**)AinvWorklist_d, rowStride, infoArray, numMats), __LINE__ );
+    callAndCheckError( cublasDgetriBatched( handle, N, (const double**)AWorklist_d, rowStride, PivotArray,
+                                            (double**)AinvWorklist_d, rowStride, infoArray+numMats, numMats), __LINE__ );
 #else
-    callAndCheckError( cublasDgetriBatched( handle, N, (double**)AWorklist_d, rowStride, NULL, 
-                                            (double**)AinvWorklist_d, rowStride, infoArray, numMats), __LINE__ );
+    callAndCheckError( cublasDgetriBatched( handle, N, (double**)AWorklist_d, rowStride, PivotArray,
+                                            (double**)AinvWorklist_d, rowStride, infoArray+numMats, numMats), __LINE__ );
 #endif
 
     // (iii) convert results back to single precision
@@ -167,24 +194,20 @@ cublas_inverse (cublasHandle_t handle,
   {
     // Call cublas to do matrix inversion
     // LU decomposition
-    callAndCheckError( cublasSgetrfBatched( handle, N, Alist_d, rowStride, NULL, 
+    callAndCheckError( cublasSgetrfBatched( handle, N, Alist_d, rowStride, PivotArray,
                                             infoArray, numMats), __LINE__ );
   
     // Inversion
 #if (CUDA_VERSION >= 6050)
-    callAndCheckError( cublasSgetriBatched( handle, N, (const float**) Alist_d, rowStride, NULL, 
-                                            Ainvlist_d, rowStride, infoArray, numMats), __LINE__ );
+    callAndCheckError( cublasSgetriBatched( handle, N, (const float**) Alist_d, rowStride, PivotArray,
+                                            Ainvlist_d, rowStride, infoArray+numMats, numMats), __LINE__ );
 #else
-    callAndCheckError( cublasSgetriBatched( handle, N, Alist_d, rowStride, NULL, 
-                                            Ainvlist_d, rowStride, infoArray, numMats), __LINE__ );
+    callAndCheckError( cublasSgetriBatched( handle, N, Alist_d, rowStride, PivotArray,
+                                            Ainvlist_d, rowStride, infoArray+numMats, numMats), __LINE__ );
 #endif
   }
 
   cudaDeviceSynchronize();
-
-  // Free resources
-  cudaFree(infoArray);
-
 }
 
 // 2. for double matrices
@@ -192,6 +215,7 @@ void
 cublas_inverse (cublasHandle_t handle, 
                 double *Alist_d[], double *Ainvlist_d[],
                 double *AWorklist_d[], double *AinvWorklist_d[],
+                int *PivotArray, int *infoArray,
                 int N, int rowStride, int numMats,
                 bool useHigherPrecision)
 {
@@ -199,8 +223,6 @@ cublas_inverse (cublasHandle_t handle,
   // Info array tells if a matrix inversion is successful
   // = 0 : successful
   // = k : U(k,k) = 0; inversion failed 
-  int *infoArray;
-  callAndCheckError( cudaMalloc((void**) &infoArray, numMats * sizeof(int)), __LINE__ );
 
   // (i)   copy all the elements of Alist to AWorklist
   dim3 dimBlockConvert (CONVERT_BS);
@@ -209,23 +231,112 @@ cublas_inverse (cublasHandle_t handle,
   
   // (ii)  call cublas functions to do inversion
   //       LU decomposition
-  callAndCheckError( cublasDgetrfBatched( handle, N, AWorklist_d, rowStride, NULL, 
+  callAndCheckError( cublasDgetrfBatched( handle, N, AWorklist_d, rowStride, PivotArray,
                                           infoArray, numMats), __LINE__ );
 
   //       Inversion
 #if (CUDA_VERSION >= 6050)
-  callAndCheckError( cublasDgetriBatched( handle, N, (const double**) AWorklist_d, rowStride, NULL, 
-                                          Ainvlist_d, rowStride, infoArray, numMats), __LINE__ );
+  callAndCheckError( cublasDgetriBatched( handle, N, (const double**) AWorklist_d, rowStride, PivotArray,
+                                          Ainvlist_d, rowStride, infoArray+numMats, numMats), __LINE__ );
 #else
-  callAndCheckError( cublasDgetriBatched( handle, N, AWorklist_d, rowStride, NULL, 
-                                          Ainvlist_d, rowStride, infoArray, numMats), __LINE__ );
+  callAndCheckError( cublasDgetriBatched( handle, N, AWorklist_d, rowStride, PivotArray,
+                                          Ainvlist_d, rowStride, infoArray+numMats, numMats), __LINE__ );
 #endif
 
   cudaDeviceSynchronize();
-
-  cudaFree(infoArray);
-
 }
+
+
+// 3. for complex float matrices
+//    useHigherPrecision = false --> single precision operations
+//    useHigherPrecision = true  --> double precision operations  (default)
+void
+cublas_inverse (cublasHandle_t handle, 
+                std::complex<float> *Alist_d[], std::complex<float> *Ainvlist_d[],
+                std::complex<float> *AWorklist_d[], std::complex<float> *AinvWorklist_d[],
+                int *PivotArray, int *infoArray,
+                int N, int rowStride, int numMats,
+                bool useHigherPrecision)
+{
+
+  // Info array tells if a matrix inversion is successful
+  // = 0 : successful
+  // = k : U(k,k) = 0; inversion failed 
+
+  // If double precision operations are desired...
+  if (useHigherPrecision)
+  {
+
+    // (i)   convert elements in Alist from float to double, put them in AWorklist
+    dim3 dimBlockConvert (CONVERT_BS);
+    dim3 dimGridConvert ((N*rowStride + (CONVERT_BS-1)) / CONVERT_BS, numMats);
+    convert_complex<cuDoubleComplex, double, cuComplex> <<< dimGridConvert, dimBlockConvert >>> ((cuDoubleComplex**)AWorklist_d, (cuComplex**)Alist_d, N*rowStride);
+
+    // (ii)  call cublas to do matrix inversion
+    //       LU decomposition
+    callAndCheckError( cublasZgetrfBatched( handle, N, (cuDoubleComplex**)AWorklist_d, rowStride, PivotArray, infoArray, numMats), __LINE__ );
+    //       Inversion
+#if (CUDA_VERSION >= 6050)
+    callAndCheckError( cublasZgetriBatched( handle, N, (const cuDoubleComplex**)AWorklist_d, rowStride, PivotArray, (cuDoubleComplex**)AinvWorklist_d, rowStride, infoArray+numMats, numMats), __LINE__ );
+#else
+    callAndCheckError( cublasZgetriBatched( handle, N, (cuDoubleComplex**)AWorklist_d, rowStride, PivotArray, (cuDoubleComplex**)AinvWorklist_d, rowStride, infoArray+numMats, numMats), __LINE__ );
+#endif
+
+    // (iii) convert results back to single precision
+    convert_complex<cuComplex, float, cuDoubleComplex> <<< dimGridConvert, dimBlockConvert >>> ((cuComplex**)Ainvlist_d, (cuDoubleComplex**)AinvWorklist_d, N*rowStride);
+
+  }
+  // else, carry out single precision operations
+  else
+  {
+    // Call cublas to do matrix inversion
+    // LU decomposition
+    callAndCheckError( cublasCgetrfBatched( handle, N, (cuComplex**)Alist_d, rowStride, PivotArray,
+                                            infoArray, numMats), __LINE__ );
+  
+    // Inversion
+#if (CUDA_VERSION >= 6050)
+    callAndCheckError( cublasCgetriBatched( handle, N, (const cuComplex**)Alist_d, rowStride, PivotArray, (cuComplex**)Ainvlist_d, rowStride, infoArray+numMats, numMats), __LINE__ );
+#else
+    callAndCheckError( cublasCgetriBatched( handle, N, (cuComplex**)Alist_d, rowStride, PivotArray, (cuComplex**)Ainvlist_d, rowStride, infoArray+numMats, numMats), __LINE__ );
+#endif
+  }
+
+  cudaDeviceSynchronize();
+}
+
+// 4. for complex double matrices
+void
+cublas_inverse (cublasHandle_t handle, 
+                std::complex<double> *Alist_d[], std::complex<double> *Ainvlist_d[],
+                std::complex<double> *AWorklist_d[], std::complex<double> *AinvWorklist_d[],
+                int *PivotArray, int *infoArray,
+                int N, int rowStride, int numMats,
+                bool useHigherPrecision)
+{
+
+  // Info array tells if a matrix inversion is successful
+  // = 0 : successful
+  // = k : U(k,k) = 0; inversion failed 
+
+  // (i)   copy all the elements of Alist to AWorklist
+  dim3 dimBlockConvert (CONVERT_BS);
+  dim3 dimGridConvert ((N*rowStride + (CONVERT_BS-1)) / CONVERT_BS, numMats);
+  convert_complex<cuDoubleComplex, double, cuDoubleComplex> <<< dimGridConvert, dimBlockConvert >>> ((cuDoubleComplex**)AWorklist_d, (cuDoubleComplex**)Alist_d, N*rowStride);
+
+  // (ii)  call cublas to do matrix inversion
+  //       LU decomposition
+  callAndCheckError( cublasZgetrfBatched( handle, N, (cuDoubleComplex**)AWorklist_d, rowStride, PivotArray, infoArray, numMats), __LINE__ );
+  //       Inversion
+#if (CUDA_VERSION >= 6050)
+  callAndCheckError( cublasZgetriBatched( handle, N, (const cuDoubleComplex**)AWorklist_d, rowStride, PivotArray, (cuDoubleComplex**)Ainvlist_d, rowStride, infoArray+numMats, numMats), __LINE__ );
+#else
+  callAndCheckError( cublasZgetriBatched( handle, N, (cuDoubleComplex**)AWorklist_d, rowStride, PivotArray, (cuDoubleComplex**)Ainvlist_d, rowStride, infoArray+numMats, numMats), __LINE__ );
+#endif
+
+  cudaDeviceSynchronize();
+}
+
 
 
 //////////////////////////////////////////////////////
@@ -270,8 +381,13 @@ test_cublas_inverse(int matSize, int numMats)
   T* A = (T*) malloc(sizeof(T) * numMats * N * row_stride);
 
   for (int j=0; j<numMats; j++)
-    for (int i=0; i<N*row_stride; i++)
-      A[j*N*row_stride+i] = 1.0 * (drand48() - 0.5);
+    for (int i=0; i<N*row_stride; i++) {
+#ifndef QMC_COMPLEX
+        A[j*N*row_stride+i] = 1.0 * (drand48() - 0.5);
+#else
+        A[j*N*row_stride+i] = T(1.0 * (drand48() - 0.5), 1.0 * (drand48() - 0.5));
+#endif
+    }
 
   // Allocate memory on device for each matrix
   for (int mat=0; mat<numMats; mat++)
@@ -328,10 +444,10 @@ test_cublas_inverse(int matSize, int numMats)
     for (int i=0; i<N; i++)
       for (int j=0; j<N; j++)
       {
-        double val = 0.0;
+        T val = 0.0;
         for (int k=0; k<N; k++)
           val += Ainv[i*row_stride+k] * A[mat*N*row_stride+k*row_stride+j];
-        double diff = (i==j) ? (1.0f - val) : val;
+        double diff = (i==j) ? (1.0f - std::real(val)) : std::real(val);
         error += diff * diff;
       }
     fprintf (stderr, "error = %1.8e\n", sqrt(error/(double)(N*N)));
@@ -378,8 +494,13 @@ int main(int argc, char** argv)
     exit(1);
   }
 
+#ifndef QMC_COMPLEX
   test_cublas_inverse<double>(matSize, numMats);
   test_cublas_inverse<float>(matSize, numMats);
+#else
+  test_cublas_inverse<std::complex<double> >(matSize, numMats);
+  test_cublas_inverse<std::complex<float> >(matSize, numMats);
+#endif
 
   return 0;
 }

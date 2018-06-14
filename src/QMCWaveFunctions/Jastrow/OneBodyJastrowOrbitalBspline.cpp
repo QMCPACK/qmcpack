@@ -495,7 +495,7 @@ OneBodyJastrowOrbitalBspline::resetParameters(const opt_variables_type& active)
 void
 OneBodyJastrowOrbitalBspline::evaluateDerivatives
 (MCWalkerConfiguration &W, const opt_variables_type& optvars,
- ValueMatrix_t &d_logpsi, ValueMatrix_t &dlapl_over_psi)
+ RealMatrix_t &d_logpsi, RealMatrix_t &dlapl_over_psi)
 {
   CudaReal sim_cell_radius = W.Lattice.SimulationCellRadius;
   std::vector<Walker_t*> &walkers = W.WalkerList;

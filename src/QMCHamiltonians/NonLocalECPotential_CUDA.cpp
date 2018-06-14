@@ -52,13 +52,7 @@ NonLocalECPotential_CUDA::makeClone
     new NonLocalECPotential_CUDA(IonConfig,qp,psi,UsePBC);
   for(int ig=0; ig<PPset.size(); ++ig)
   {
-    if(PPset[ig]) myclone->add(ig,PPset[ig]->makeClone());
-  }
-  //resize sphere
-  qp.resizeSphere(IonConfig.getTotalNum());
-  for(int ic=0; ic<IonConfig.getTotalNum(); ic++)
-  {
-    if(PP[ic] && PP[ic]->nknot) qp.Sphere[ic]->resize(PP[ic]->nknot);
+    if(PPset[ig]) myclone->add(ig,PPset[ig]->makeClone(qp));
   }
   return myclone;
 }
@@ -168,7 +162,7 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration &W,
     if (PPset[sp])
     {
       NonLocalECPComponent &pp = *PPset[sp];
-      PPset[sp]->randomize_grid(QuadPoints_host[sp]);
+      PPset[sp]->randomize_grid(QuadPoints_host[sp], *myRNG);
       QuadPoints_GPU[sp] = QuadPoints_host[sp];
       // First, we need to determine which ratios need to be updated
       if (UsePBC)
@@ -303,7 +297,11 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration &W,
           for (int iq=0; iq<numQuad; iq++)
           {
             RealType costheta = *(cos_ptr++);
+#ifdef QMC_COMPLEX
+            RealType ratio  = RatioList[ratioIndex++].real() * pp.sgridweight_m[iq]; // Abs(complex number)*cosine(phase of complex number) = Real part of said complex number
+#else
             RealType ratio  = RatioList[ratioIndex++] * pp.sgridweight_m[iq];
+#endif
             // if (std::isnan(ratio)) {
             // 	std::cerr << "NAN from ratio number " << ratioIndex-1 << "\n";
             // 	std::cerr << "RatioList.size() = " << RatioList.size() << std::endl;
@@ -349,7 +347,7 @@ void NonLocalECPotential_CUDA::addEnergy
     if (PPset[sp])
     {
       NonLocalECPComponent &pp = *PPset[sp];
-      PPset[sp]->randomize_grid(QuadPoints_host[sp]);
+      PPset[sp]->randomize_grid(QuadPoints_host[sp], *myRNG);
       QuadPoints_GPU[sp] = QuadPoints_host[sp];
       // First, we need to determine which ratios need to be updated
       if (UsePBC)
@@ -422,7 +420,11 @@ void NonLocalECPotential_CUDA::addEnergy
           for (int iq=0; iq<numQuad; iq++)
           {
             RealType costheta = *(cos_ptr++);
+#ifdef QMC_COMPLEX
+            RealType ratio  = RatioList[ratioIndex++].real() * pp.sgridweight_m[iq]; // Abs(complex number)*cosine(phase of complex number) = Real part of said complex number
+#else
             RealType ratio  = RatioList[ratioIndex++] * pp.sgridweight_m[iq];
+#endif
             RealType lpolprev=0.0;
             lpol[0] = 1.0;
             for (int l=0 ; l< pp.lmax ; l++)

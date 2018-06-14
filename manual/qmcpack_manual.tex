@@ -1,5 +1,11 @@
 \documentclass[11pt,usletter]{report}
+\usepackage{bibtopic}
+\bibliographystyle{ieeetr}
 \usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{delarray}
+\usepackage{algorithmic}
+\usepackage{algorithm}
 \usepackage{makeidx}
 \usepackage{ifpdf}
 \usepackage{fancyhdr}
@@ -9,7 +15,10 @@
 \usepackage{placeins}
 % environment for shaded verbatim
 \usepackage{verbatim}
+\usepackage{caption}
+\usepackage{subcaption}
 \usepackage{graphicx}
+\usepackage{epsfig}
 
 % making listing behave properly
 %   with setting below, listings now render correctly
@@ -23,17 +32,27 @@
 
 \lstloadlanguages{C++,XML,Python}
 
-\lstset{
+
+\lstset{language=xml, 
   basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
-  keywordstyle=\color{black}\bfseries,
+  keywordstyle=\color{black}\bfseries, 
   frame=single,
   breaklines=true,
-  language=xml,
   escapeinside={<:}{:>},
   columns=fullflexible,   % copy/paste from pdf w/o added spaces
   keepspaces=true,        % but do keep the spaces that are already there
   showstringspaces=false, % avoid showing underbrackets in quoted text
 }
+
+\lstset{language=C++,
+  basicstyle=\ttfamily \scriptsize,
+  keywordstyle=\color{blue}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  commentstyle=\color{gray}\ttfamily,
+  morecomment=[l][\color{magenta}]{\#},
+  frame=single
+}
+
 
 
 \ifpdf
@@ -130,7 +149,11 @@
 \tableofcontents
 \newpage
 
+\begin{btUnit}
+\begin{btSect}{bibliography}
+
 \input{introduction}
+\input{features}
 \input{installation}
 \input{running}
 
@@ -148,6 +171,8 @@
 \input{jastrow}
 \input{multideterminants}
 \input{backflow}
+\input{fdlr}
+\input{ionwf}
 
 \input{hamiltonianobservable}
 
@@ -157,7 +182,13 @@
 \input{dmc}
 \input{reptation}
 
+\input{output_overview}
 \input{analysis}
+
+\input{selected_ci}
+
+\input{afqmc}
+\input{integrals_for_afqmc}
 
 \input{examples}
 
@@ -168,16 +199,28 @@
 \input{lab_condensed_matter}
 
 
-
-\input{unit_testing}
+\input{additional_tools}
+\input{external_tools}
 \input{contributing}
+\input{unit_testing}
 
-\newpage
+\input{design_features}
+\input{developing}
+
 \chapter{References}
 %\begingroup  % Avoid "References" section title
 %\renewcommand{\section}[2]{}%
-\bibliographystyle{ieeetr}
-\bibliography{bibliography}
+%\bibliographystyle{ieeetr}
+%\bibliography{bibliography}
 %\endgroup
 
+\btPrintCited
+\end{btSect}
+\end{btUnit}
+
+\appendix
+\input{appendices}
+\begin{btUnit}
+\input{qmcpack_papers}
+\end{btUnit}
 \end{document}

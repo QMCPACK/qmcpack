@@ -355,9 +355,9 @@ QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
   if (optTarget == 0)
   {
 #if defined (QMC_CUDA)
-    optTarget = new QMCCostFunctionCUDA(W,Psi,H,hamPool);
+    optTarget = new QMCCostFunctionCUDA(W,Psi,H);
 #else
-    optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
+    optTarget = new QMCCostFunctionOMP(W,Psi,H);
 #endif
     optTarget->setneedGrads(false);
     optTarget->setStream(&app_log());
@@ -367,8 +367,3 @@ QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
 }
 
 }
-/***************************************************************************
-* $RCSfile$   $Author: jnkim $
-* $Revision: 1286 $   $Date: 2006-08-17 12:33:18 -0500 (Thu, 17 Aug 2006) $
-* $Id: QMCCorrelatedSamplingLinearOptimize.cpp 1286 2006-08-17 17:33:18Z jnkim $
-***************************************************************************/

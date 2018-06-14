@@ -31,6 +31,8 @@ namespace qmcplusplus
  * of ParticleSet to add a distance table
  * int ParticleSet::addTable(const ParticleSet& source)
  *
+ * dt_type is the type of distance table defined as DistTableType in DistanceTableData.h
+ *
  * \deprecated There is only one instance of the data memebers of
  * DistanceTable in an application and the data are shared by many objects.
  * Note that static data members and functions are used
@@ -44,23 +46,18 @@ namespace qmcplusplus
 namespace DistanceTable
 {
   ///add a named DistanceTableData_t of Symmectric type
-  DistanceTableData* add(ParticleSet& s);//, const char* aname = NULL);
+  DistanceTableData* add(ParticleSet& s, int dt_type);
 
   ///add a named DistanceTableData_t of Asymmectric type
-  DistanceTableData* add(const ParticleSet& s, ParticleSet& t);//, const char* aname = NULL);
+  DistanceTableData* add(const ParticleSet& s, ParticleSet& t, int dt_type);
 
 }
 
 ///free function to create a distable table of s-s
-DistanceTableData* createDistanceTable(ParticleSet& s);
+DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type);
 
 ///free function create a distable table of s-t
-DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t);
+DistanceTableData* createDistanceTable(const ParticleSet& s, ParticleSet& t, int dt_type);
 
 }
 #endif
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

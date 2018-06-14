@@ -115,6 +115,14 @@ struct ci_configuration
     return res;
   }
 
+  void add_occupation(std::string &str) {
+    int str_size=str.size();
+    occup.resize(str_size);
+    for (int i=0; i<str_size;i++)
+      occup[i]=str[i]-'0';
+  }
+
+
 };
 
 inline std::ostream& operator<<(std::ostream& out, const ci_configuration& c)
@@ -125,6 +133,5 @@ inline std::ostream& operator<<(std::ostream& out, const ci_configuration& c)
   out<< std::endl;
   return out;
 };
-
 }
 #endif

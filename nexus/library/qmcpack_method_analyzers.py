@@ -34,17 +34,6 @@ class MethodAnalyzer(QAanalyzer):
             self.init_sub_analyzers(series,calc,input)
         #end if
     #end def __init__
-        
-
-    
-
-    #def init_sub_analyzers(self,series,calc,input):
-    #    try:
-    #        self.init_sub_analyzers_direct(series,calc,input)
-    #    except:
-    #        self.info.failed = True
-    #    #end if
-    ##end def init_sub_analyzers
 
 
     def init_sub_analyzers(self,series,calc,input):

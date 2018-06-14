@@ -1,0 +1,1535 @@
+#! /usr/bin/env python
+
+import os
+from numpy import array,loadtxt,polyfit,polyval,ndarray,sqrt,floor,sign,linspace
+from numpy import log as nlog
+import numpy.random as random
+from optparse import OptionParser
+import inspect
+try:
+    from scipy.optimize import fmin
+except ImportError:
+    print 'qfit error: scipy is not present on your machine\n  please install scipy and retry'
+#end try
+try:
+    import matplotlib
+    gui_envs = ['GTKAgg','TKAgg','Qt4Agg','WXAgg']
+    for gui in gui_envs:
+        try:
+            matplotlib.use(gui,warn=False, force=True)
+            from matplotlib import pyplot
+            break
+        except:
+            continue
+        #end try
+    #end for
+    from matplotlib.pyplot import figure,plot,xlabel,ylabel,title,show,ylim,legend,xlim,rcParams,savefig,bar,xticks,subplot,grid,setp,errorbar,loglog,semilogx,semilogy,text
+
+    params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
+          'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
+    rcParams.update(params)
+    plots_available = True
+except (ImportError,RuntimeError):
+    plots_available = False
+#end try
+
+
+import sys
+import traceback
+from copy import deepcopy
+import cPickle
+from random import randint
+
+exit_call = sys.exit
+devlog    = sys.stdout
+
+def nocopy(value):
+    return value
+#end def nocopy
+
+
+def log(*items,**kwargs):
+    indent=None
+    logfile=devlog
+    if len(kwargs)>0:
+        n=0
+        if 'indent' in kwargs:
+            indent = kwargs['indent']
+            n+=1
+        #end if
+        if 'logfile' in kwargs:
+            logfile = kwargs['logfile']
+            n+=1
+        #end if
+        if n!=len(kwargs):
+            valid = 'indent logfile'.split()
+            invalid = set(kwargs.keys())-set(valid)
+            error('invalid keyword arguments provided\ninvalid keywords: {0}\nvalid options are: {1}'.format(sorted(invalid),valid))
+        #end if
+    #end if
+    if len(items)==1 and isinstance(items[0],str):
+        s = items[0]
+    else:
+        s=''
+        for item in items:
+            s+=str(item)+' '
+        #end for
+    #end if
+    if len(s)>0:
+        if isinstance(indent,str):
+            s=indent+s.replace('\n','\n'+indent)
+        #end if
+        s += '\n'
+    #end if
+    logfile.write(s)
+#end def log
+
+
+def message(msg,header=None,post_header=' message:',indent='    ',logfile=devlog):
+    if header is None:
+        header = post_header.lstrip()
+    else:
+        header += post_header
+    #end if
+    log('\n  '+header)
+    log(msg.rstrip(),indent=indent,logfile=logfile)
+#end def message
+
+
+def warn(msg,header='qfit',indent='    ',logfile=devlog):
+    post_header=' warning:'
+    message(msg,header,post_header,indent,logfile)
+#end def warn
+
+
+def error(msg,header='qfit',exit=True,trace=False,indent='    ',logfile=devlog):
+    post_header=' error:'
+    message(msg,header,post_header,indent,logfile)
+    if exit:
+        log('  exiting.\n')
+        if trace:
+            traceback.print_stack()
+        #end if
+        exit_call()
+    #end if
+#end def error
+
+
+
+class object_interface(object):
+    _logfile = sys.stdout
+
+    def __len__(self):
+        return len(self.__dict__)
+    #end def __len__
+
+    def __contains__(self,name):
+        return name in self.__dict__
+    #end def
+
+    def __getitem__(self,name):
+        return self.__dict__[name]
+    #end def __getitem__
+
+    def __setitem__(self,name,value):
+        self.__dict__[name]=value
+    #end def __setitem__
+
+    def __delitem__(self,name):
+        del self.__dict__[name]
+    #end def __delitem__
+
+    def __iter__(self):
+        for item in self.__dict__:
+            yield self.__dict__[item]
+        #end for
+    #end def __iter__
+
+    def __repr__(self):
+        s=''
+        for k in sorted(self._keys()):
+            if not isinstance(k,str) or k[0]!='_':
+                v=self.__dict__[k]
+                if hasattr(v,'__class__'):
+                    s+='  {0:<20}  {1:<20}\n'.format(k,v.__class__.__name__)
+                else:
+                    s+='  {0:<20}  {1:<20}\n'.format(k,type(v))
+                #end if
+            #end if
+        #end for
+        return s
+    #end def __repr__
+
+    def __str__(self,nindent=1):
+        pad = '  '
+        npad = nindent*pad
+        s=''
+        normal = []
+        qable  = []
+        for k,v in self._iteritems():
+            if not isinstance(k,str) or k[0]!='_':
+                if isinstance(v,object_interface):
+                    qable.append(k)
+                else:
+                    normal.append(k)
+                #end if
+            #end if
+        #end for
+        normal.sort()
+        qable.sort()
+        indent = npad+18*' '
+        for k in normal:
+            v = self[k]
+            vstr = str(v).replace('\n','\n'+indent)
+            s+=npad+'{0:<15} = '.format(k)+vstr+'\n'
+        #end for
+        for k in qable:
+            v = self[k]
+            s+=npad+str(k)+'\n'
+            s+=v.__str__(nindent+1)
+            if isinstance(k,str):
+                s+=npad+'end '+k+'\n'
+            #end if
+        #end for
+        return s
+    #end def __str__
+
+    def __eq__(self,other): 
+        if not hasattr(other,'__dict__'):
+            return False
+        #end if
+        eq = True
+        for sname in self.__dict__:
+            if sname not in other.__dict__:
+                return False
+            #end if
+            svar  =  self.__dict__[sname]
+            ovar  = other.__dict__[sname]
+            stype = type(svar)
+            otype = type(ovar)
+            if stype!=otype:
+                return False
+            #end if
+            eqval = svar==ovar
+            if isinstance(eqval,bool):
+                eq &= eqval
+            else:
+                try: # accomodate numpy arrays implicitly
+                    eq &= eqval.all()
+                except:
+                    return False
+                #end try
+            #end if
+        #end for
+        return eq
+    #end def __eq__
+
+
+    # dict interface
+    def keys(self):
+        return self.__dict__.keys()
+    #end def keys
+
+    def values(self):
+        return self.__dict__.values()
+    #end def values
+
+    def items(self):
+        return self.__dict__.items()
+    #end def items
+
+    def iterkeys(self):
+        return self.__dict__.iterkeys()
+    #end def iterkeys
+
+    def itervalues(self):
+        return self.__dict__.itervalues()
+    #end def itervalues
+
+    def iteritems(self):
+        return self.__dict__.iteritems()
+    #end def iteritems
+
+    def copy(self):
+        return deepcopy(self)
+    #end def copy
+
+    def clear(self):
+        self.__dict__.clear()
+    #end def clear
+
+
+    # save/load
+    def save(self,fpath=None):
+        if fpath==None:
+            fpath='./'+self.__class__.__name__+'.p'
+        #end if
+        fobj = open(fpath,'w')
+        binary = cPickle.HIGHEST_PROTOCOL
+        cPickle.dump(self,fobj,binary)
+        fobj.close()
+        del fobj
+        del binary
+        return
+    #end def save
+
+    def load(self,fpath=None):
+        if fpath==None:
+            fpath='./'+self.__class__.__name__+'.p'
+        #end if
+        fobj = open(fpath,'r')
+        tmp = cPickle.load(fobj)
+        fobj.close()
+        d = self.__dict__
+        d.clear()
+        for k,v in tmp.__dict__.iteritems():
+            d[k] = v
+        #end for
+        del fobj
+        del tmp
+        return
+    #end def load
+
+
+
+    # log, warning, and error messages
+    def open_log(self,filepath):
+        self._logfile = open(filepath,'w')
+    #end def open_log
+
+    def close_log(self):
+        self._logfile.close()
+    #end def close_log
+
+    def write(self,s):
+        self._logfile.write(s)
+    #end def write
+
+    def log(self,*items,**kwargs):
+        if 'logfile' not in kwargs:
+            kwargs['logfile'] = self._logfile
+        #end if
+        log(*items,**kwargs)
+    #end def log
+
+    def warn(self,message,header=None):
+        if header is None:
+            header=self.__class__.__name__
+        #end if
+        warn(message,header,logfile=self._logfile)
+    #end def warn
+
+    def error(self,message,header=None,exit=True,trace=True):
+        if header==None:
+            header = self.__class__.__name__
+        #end if
+        error(message,header,exit,trace,logfile=self._logfile)
+    #end def error
+
+    @classmethod
+    def class_log(cls,message):
+        log(message,logfile=cls._logfile)
+    #end def class_log
+
+    @classmethod
+    def class_warn(cls,message,header=None,post_header=' Warning:'):
+        if header==None:
+            header=cls.__name__
+        #end if
+        warn(message,header,logfile=cls._logfile)
+    #end def class_warn
+
+    @classmethod
+    def class_error(cls,message,header=None,exit=True,trace=True,post_header=' Error:'):
+        if header==None:
+            header = cls.__name__
+        #end if
+        error(message,header,exit,trace,logfile=cls._logfile)
+    #end def class_error
+
+    @classmethod
+    def class_has(cls,k):
+        return hasattr(cls,k)
+    #end def classmethod
+
+    @classmethod
+    def class_keys(cls):
+        return cls.__dict__.keys()
+    #end def class_keys
+
+    @classmethod
+    def class_iteritems(cls):
+        return cls.__dict__.iteritems()
+    #end def class_iteritems
+
+    @classmethod
+    def class_get(cls,k):
+        return getattr(cls,k)
+    #end def class_set
+
+    @classmethod
+    def class_set(cls,**kwargs):
+        for k,v in kwargs.iteritems():
+            setattr(cls,k,v)
+        #end for
+    #end def class_set
+
+    @classmethod
+    def class_set_single(cls,k,v):
+        setattr(cls,k,v)
+    #end def class_set_single
+
+    @classmethod
+    def class_set_optional(cls,**kwargs):
+        for k,v in kwargs.iteritems():
+            if not hasattr(cls,k):
+                setattr(cls,k,v)
+            #end if
+        #end for
+    #end def class_set_optional
+
+
+    # access preserving functions
+    #  dict interface
+    def _keys(self,*args,**kwargs):
+        return object_interface.keys(self,*args,**kwargs)
+    def _values(self,*args,**kwargs):
+        object_interface.values(self,*args,**kwargs)
+    def _items(self,*args,**kwargs):         
+        return object_interface.items(self,*args,**kwargs)         
+    def _iterkeys(self,*args,**kwargs):
+        return object_interface.iterkeys(self,*args,**kwargs)
+    def _itervalues(self,*args,**kwargs):
+        object_interface.itervalues(self,*args,**kwargs)
+    def _iteritems(self,*args,**kwargs):         
+        return object_interface.iteritems(self,*args,**kwargs)         
+    def _copy(self,*args,**kwargs):              
+        return object_interface.copy(self,*args,**kwargs)
+    def _clear(self,*args,**kwargs):
+        object_interface.clear(self,*args,**kwargs)
+    #  save/load
+    def _save(self,*args,**kwargs):
+        object_interface.save(self,*args,**kwargs)
+    def _load(self,*args,**kwargs):
+        object_interface.load(self,*args,**kwargs)
+    #  log, warning, and error messages
+    def _open_log(self,*args,**kwargs):
+        object_interface.open_log(self,*args,**kwargs)
+    def _close_log(self,*args,**kwargs):
+        object_interface.close_log(self,*args,**kwargs)
+    def _write(self,*args,**kwargs):
+        object_interface.write(self,*args,**kwargs)
+    def _log(self,*args,**kwargs):
+        object_interface.log(self,*args,**kwargs)
+    def _error(self,*args,**kwargs):
+        object_interface.error(self,*args,**kwargs)
+    def _warn(self,*args,**kwargs):
+        object_interface.warn(self,*args,**kwargs)
+
+#end class object_interface
+
+
+
+class obj(object_interface):
+
+    def __init__(self,*vars,**kwargs):
+        for var in vars:
+            if isinstance(var,(dict,object_interface)):
+                for k,v in var.iteritems():
+                    self[k] = v
+                #end for
+            else:
+                self[var] = None
+            #end if
+        #end for
+        for k,v in kwargs.iteritems():
+            self[k] = v
+        #end for
+    #end def __init__
+
+
+    # list interface
+    def append(self,value):
+        self[len(self)] = value
+    #end def append
+
+
+    # return representations
+    def list(self,*keys):
+        nkeys = len(keys)
+        if nkeys==0:
+            keys = sorted(self._keys())
+        elif nkeys==1 and isinstance(keys[0],(list,tuple)):
+            keys = keys[0]
+        #end if
+        values = []
+        for key in keys:
+            values.append(self[key])
+        #end if
+        return values
+    #end def list
+
+    def list_optional(self,*keys):
+        nkeys = len(keys)
+        if nkeys==0:
+            keys = sorted(self._keys())
+        elif nkeys==1 and isinstance(keys[0],(list,tuple)):
+            keys = keys[0]
+        #end if
+        values = []
+        for key in keys:
+            if key in self:
+                values.append(self[key])
+            else:
+                values.append(None)
+            #end if
+        #end if
+        return values
+    #end def list_optional
+
+    def tuple(self,*keys):
+        return tuple(obj.list(self,*keys))
+    #end def tuple
+
+    def dict(self,*keys):
+        nkeys = len(keys)
+        if nkeys==0:
+            keys = sorted(self._keys())
+        elif nkeys==1 and isinstance(keys[0],(list,tuple)):
+            keys = keys[0]
+        #end if
+        d = dict()
+        for k in keys:
+            d[k] = self[k]
+        #end for
+        return d
+    #end def dict
+
+    def to_dict(self):
+        d = dict()
+        for k,v in self:
+            if isinstance(v,obj):
+                d[k] = v.to_dict()
+            else:
+                d[k] = v
+            #end if
+        #end for
+        return d
+    #end def to_dict
+
+    def obj(self,*keys):
+        nkeys = len(keys)
+        if nkeys==0:
+            keys = sorted(self._keys())
+        elif nkeys==1 and isinstance(keys[0],(list,tuple)):
+            keys = keys[0]
+        #end if
+        o = obj()
+        for k in keys:
+            o[k] = self[k]
+        #end for
+        return o
+    #end def obj
+
+
+    # list extensions
+    def first(self):
+        return self[min(self._keys())]
+    #end def first
+
+    def last(self):
+        return self[max(self._keys())]
+    #end def last
+
+    def select_random(self): 
+        return self[randint(0,len(self)-1)]
+    #end def select_random
+
+
+    # dict extensions
+    def set(self,*objs,**kwargs):
+        for key,value in kwargs.iteritems():
+            self[key]=value
+        #end for
+        if len(objs)>0:
+            for o in objs:
+                for k,v in o.iteritems():
+                    self[k] = v
+                #end for
+            #end for
+        #end if
+        return self
+    #end def set
+
+    def set_optional(self,*objs,**kwargs):
+        for key,value in kwargs.iteritems():
+            if key not in self:
+                self[key]=value
+            #end if
+        #end for
+        if len(objs)>0:
+            for o in objs:
+                for k,v in o.iteritems():
+                    if k not in self:
+                        self[k] = v
+                    #end if
+                #end for
+            #end for
+        #end if
+        return self
+    #end def set_optional
+
+    def set_path(self,path,value=None):
+        o = self
+        cls = self.__class__
+        if isinstance(path,str):
+            path = path.split('/')
+        #end if
+        for p in path[0:-1]:
+            if not p in o:
+                o[p] = cls()
+            #end if
+            o = o[p]
+        #end for
+        o[path[-1]] = value
+    #end def set_path
+
+    def get(self,key,value=None): # follow dict interface, no plural
+        if key in self:
+            value = self[key]
+        #end if
+        return value
+    #end def get
+
+    def get_optional(self,key,value=None):
+        if key in self:
+            value = self[key]
+        #end if
+        return value
+    #end def get_optional
+
+    def get_required(self,key):
+        if key in self:
+            value = self[key]
+        else:
+            obj.error(self,'a required key is not present\nkey required: {0}\nkey present: {1}'.format(key,sorted(self._keys())))
+        #end if
+        return value
+    #end def get_required
+
+    def delete(self,*keys):
+        nkeys = len(keys)
+        if nkeys==0:
+            keys = sorted(self._keys())
+        elif nkeys==1 and isinstance(keys[0],(list,tuple)):
+            keys = keys[0]
+        #end if
+        values = []
+        for key in keys:
+            values.append(self[key])
+            del self[key]
+        #end for
+        return values
+    #end def delete
+
+    def delete_optional(self,key,value=None):
+        if key in self:
+            value = self[key]
+            del self[key]
+        #end if
+        return value
+    #end def delete_optional
+
+    def delete_required(self,key):
+        if key in self:
+            value = self[key]
+            del self[key]
+        else:
+            obj.error(self,'a required key is not present\nkey required: {0}\nkeys present: {1}'.format(key,sorted(self._keys())))
+        #end if
+        return value
+    #end def delete_required
+
+    def transfer_from(self,other,keys=None,copy=False,overwrite=True):
+        if keys==None:
+            if isinstance(other,object_interface):
+                keys = other._keys()
+            else:
+                keys = other.keys()
+            #end if
+        #end if
+        if copy:
+            copier = deepcopy
+        else:
+            copier = nocopy
+        #end if
+        if overwrite:
+            for k in keys:
+                self[k]=copier(other[k])
+            #end for
+        else:
+            for k in keys:
+                if k not in self:
+                    self[k]=copier(other[k])
+                #end if
+            #end for            
+        #end if
+    #end def transfer_from
+
+    def transfer_to(self,other,keys=None,copy=False,overwrite=True):
+        if keys==None:
+            keys = self._keys()
+        #end if
+        if copy:
+            copier = deepcopy
+        else:
+            copier = nocopy
+        #end if
+        if overwrite:
+            for k in keys:
+                other[k]=copier(self[k])
+            #end for
+        else:
+            for k in keys:
+                if k not in self:
+                    other[k]=copier(self[k])
+                #end if
+            #end for            
+        #end if
+    #end def transfer_to
+
+    def move_from(self,other,keys=None):
+        if keys==None:
+            if isinstance(other,object_interface):
+                keys = other._keys()
+            else:
+                keys = other.keys()
+            #end if
+        #end if
+        for k in keys:
+            self[k]=other[k]
+            del other[k]
+        #end for
+    #end def move_from
+
+    def move_to(self,other,keys=None):
+        if keys==None:
+            keys = self._keys()
+        #end if
+        for k in keys:
+            other[k]=self[k]
+            del self[k]
+        #end for
+    #end def move_to
+
+    def copy_from(self,other,keys=None,deep=True):
+        obj.transfer_from(self,other,keys,copy=deep)
+    #end def copy_from
+
+    def copy_to(self,other,keys=None,deep=True):
+        obj.transfer_to(self,other,keys,copy=deep)
+    #end def copy_to
+
+    def shallow_copy(self):
+        new = self.__class__()
+        for k,v in self._iteritems():
+            self[k] = v
+        #end for
+        return new
+    #end def shallow_copy
+
+    def inverse(self):
+        new = self.__class__()
+        for k,v in self._iteritems():
+            new[v] = k
+        #end for
+        return new
+    #end def inverse
+
+
+
+    # access preserving functions
+    #  list interface
+    def _append(self,*args,**kwargs):
+        obj.append(self,*args,**kwargs)
+    #  return representations
+    def _list(self,*args,**kwargs):
+        return obj.list(self,*args,**kwargs)
+    def _list_optional(self,*args,**kwargs):
+        return obj.list_optional(self,*args,**kwargs)
+    def _tuple(self,*args,**kwargs):
+        return obj.tuple(self,*args,**kwargs)
+    def _dict(self,*args,**kwargs):
+        return obj.dict(self,*args,**kwargs)
+    def _to_dict(self,*args,**kwargs):
+        return obj.to_dict(self,*args,**kwargs)
+    def _obj(self,*args,**kwargs):
+        return obj.obj(self,*args,**kwargs)
+    #  list extensions
+    def _first(self,*args,**kwargs):
+        return obj.first(self,*args,**kwargs)
+    def _last(self,*args,**kwargs):
+        return obj.last(self,*args,**kwargs)
+    def _select_random(self,*args,**kwargs):
+        return obj.select_random(self,*args,**kwargs)
+    #  dict extensions
+    def _set(self,*args,**kwargs):
+        obj.set(self,*args,**kwargs)
+    def _set_optional(self,*args,**kwargs):
+        obj.set_optional(self,*args,**kwargs)
+    def _set_path(self,*args,**kwargs):
+        obj.set_path(self,*args,**kwargs)
+    def _get(self,*args,**kwargs):
+        obj.get(self,*args,**kwargs)
+    def _get_optional(self,*args,**kwargs):
+        obj.get_optional(self,*args,**kwargs)
+    def _get_required(self,*args,**kwargs):
+        obj.get_required(self,*args,**kwargs)
+    def _delete(self,*args,**kwargs):
+        obj.delete(self,*args,**kwargs)
+    def _delete_optional(self,*args,**kwargs):
+        obj.delete_optional(self,*args,**kwargs)
+    def _delete_required(self,*args,**kwargs):
+        obj.delete_required(self,*args,**kwargs)
+    def _transfer_from(self,*args,**kwargs):
+        obj.transfer_from(self,*args,**kwargs)
+    def _transfer_to(self,*args,**kwargs):
+        obj.transfer_to(self,*args,**kwargs)
+    def _move_from(self,*args,**kwargs):
+        obj.move_from(self,*args,**kwargs)
+    def _move_to(self,*args,**kwargs):
+        obj.move_to(self,*args,**kwargs)
+    def _copy_from(self,*args,**kwargs):
+        obj.copy_from(self,*args,**kwargs)
+    def _copy_to(self,*args,**kwargs):
+        obj.copy_to(self,*args,**kwargs)
+    def _shallow_copy(self,*args,**kwargs):
+        obj.shallow_copy(self,*args,**kwargs)
+    def _inverse(self,*args,**kwargs):
+        return obj.inverse(self,*args,**kwargs)
+
+#end class obj
+
+
+
+class DevBase(obj):
+    None
+#end class DevBase
+
+
+
+
+
+
+
+# minimizers
+least_squares = lambda p,x,y,f: ((f(p,x)-y)**2).sum()
+absmin        = lambda p,x,y,f: abs(f(p,x)-y).sum()
+madmin        = lambda p,x,y,f: abs(f(p,x)-y).max()
+
+
+# curve fit based on fmin from scipy
+def curve_fit(x,y,f,p0,minimizer=least_squares,optimizer='fmin'):
+    if optimizer=='fmin':
+        p = fmin(minimizer,p0,args=(x,y,f),maxiter=10000,maxfun=10000,disp=0)
+    else:
+        error('optimizers other than fmin are not supported yet')
+    return p
+#end def curve_fit
+
+
+
+
+# jackknife
+#   data: a multi-dimensional array with blocks as the first dimension
+#         nblocks = data.shape[0]
+#   function: a function that takes an array for one block (e.g. data[0])
+#             and returns an array or a tuple/list of scalars and arrays
+#             ret = function(*args,**kwargs)
+#   args: a list-like object of positional input arguments
+#   kwargs: a dict-like object of keyword input arguments
+#   position: location to place input_array in input arguments
+#             if integer, will be placed in args:   args[position] = input_array
+#             if string , will be placed in kwargs: kwargs[position] = input_array
+#   capture: an object that will contain most jackknife info upon exit
+def jackknife(data,function,args=None,kwargs=None,position=None,capture=None):
+    capture_results = capture!=None
+    if capture_results:
+        capture.data         = data
+        capture.function     = function
+        capture.args         = args
+        capture.kwargs       = kwargs
+        capture.position     = position
+        capture.jdata        = []
+        capture.jsamples     = []
+    #end if
+    # check the requested argument position
+    argpos,kwargpos,args,kwargs,position = check_jackknife_inputs(args,kwargs,position)
+
+    # obtain sums of the jackknife samples
+    nblocks = data.shape[0]
+    nb = float(nblocks)
+    jnorm   = 1./(nb-1.)
+    data_sum = data.sum(axis=0)
+    array_return = False
+    for b in xrange(nblocks):
+        jdata = jnorm*(data_sum-data[b])
+        if argpos:
+            args[position] = jdata
+        elif kwargpos:
+            kwargs[position] = jdata
+        #end if
+        jsample = function(*args,**kwargs)
+        if b==0:
+            # determine the return type from the first sample
+            # and initialize the jackknife sums
+            array_return = isinstance(jsample,ndarray)
+            if array_return:
+                jsum  = jsample.copy()
+                jsum2 = jsum**2
+            else:
+                jsum  = []
+                jsum2 = []
+                for jval in jsample:
+                    jsum.append(jval)
+                    jsum2.append(jval**2)
+                #end for
+            #end if
+        else:
+            # accumulate the jackknife sums
+            if array_return:
+                jsum  += jsample
+                jsum2 += jsample**2
+            else:
+                for c in xrange(len(jsample)):
+                    jsum[c]  += jsample[c]
+                    jsum2[c] += jsample[c]**2
+                #end for
+            #end if
+        #end if
+        if capture_results:
+            capture.jdata.append(jdata)
+            capture.jsamples.append(jsample)
+        #end if
+    #end for
+    # get the jackknife mean and error
+    if array_return:
+        jmean = jsum/nb
+        jerror = sqrt( (nb-1.)/nb*(jsum2-jsum**2/nb) )
+    else:
+        jmean  = []
+        jerror = []
+        for c in xrange(len(jsum)):
+            jval  = jsum[c]
+            jval2 = jsum2[c]
+            jm = jval/nb
+            je = sqrt( (nb-1.)/nb*(jval2-jval**2/nb) )
+            jmean.append(jm)
+            jerror.append(je)
+        #end for
+    #end if
+    if capture_results:
+        capture.data_sum     = data_sum
+        capture.nblocks      = nblocks
+        capture.array_return = array_return
+        capture.jsum         = jsum
+        capture.jsum2        = jsum2
+        capture.jmean        = jmean
+        capture.jerror       = jerror
+    #end if
+    return jmean,jerror
+#end def jackknife
+
+
+# get jackknife estimate of auxiliary quantities
+#   jsamples is a subset of jsamples data computed by jackknife above
+#   auxfunc is an additional function to get a jackknife sample of a derived quantity
+def jackknife_aux(jsamples,auxfunc,args=None,kwargs=None,position=None,capture=None):
+    # unpack the argument list if compressed
+    if not inspect.isfunction(auxfunc):
+        if len(auxfunc)==1:
+            auxfunc = auxfunc[0]
+        elif len(auxfunc)==2:
+            auxfunc,args = auxfunc
+        elif len(auxfunc)==3:
+            auxfunc,args,kwargs = auxfunc
+        elif len(auxfunc)==4:
+            auxfunc,args,kwargs,position = auxfunc
+        else:
+            numerics_error('between 1 and 4 fields (auxfunc,args,kwargs,position) can be packed into original auxfunc input, received {0}'.format(len(auxfunc)))
+        #end if
+    #end if
+
+    # check the requested argument position
+    argpos,kwargpos,args,kwargs,position = check_jackknife_inputs(args,kwargs,position)
+
+    capture_results = capture!=None
+    if capture_results:
+        capture.auxfunc  = auxfunc 
+        capture.args     = args    
+        capture.kwargs   = kwargs  
+        capture.position = position
+        capture.jdata    = []
+        capture.jsamples = []
+    #end if
+
+    nblocks = len(jsamples)
+    nb      = float(nblocks)
+    for b in xrange(nblocks):
+        jdata = jsamples[b]
+        if argpos:
+            args[position] = jdata
+        elif kwargpos:
+            kwargs[position] = jdata
+        #end if
+        jsample = auxfunc(*args,**kwargs)
+        if b==0:
+            jsum  = jsample.copy()
+            jsum2 = jsum**2
+        else:
+            jsum  += jsample
+            jsum2 += jsample**2
+        #end if
+        if capture_results:
+            capture.jdata.append(jdata)
+            capture.jsamples.append(jsample)
+        #end if
+    #end for
+    jmean = jsum/nb
+    jerror = sqrt( (nb-1.)/nb*(jsum2-jsum**2/nb) )
+
+    if capture_results:
+        capture.nblocks = nblocks
+        capture.jsum    = jsum
+        capture.jsum2   = jsum2
+        capture.jmean   = jmean
+        capture.jerror  = jerror
+    #end if
+
+    return jmean,jerror
+#end def jackknife_aux
+
+
+def check_jackknife_inputs(args,kwargs,position):
+    argpos   = False
+    kwargpos = False
+    if position!=None:
+        if isinstance(position,int):
+            argpos = True
+        elif isinstance(position,str):
+            kwargpos = True
+        else:
+            numerics_error('position must be an integer or keyword, received: {0}'.format(position),'jackknife')
+        #end if
+    elif args is None and kwargs is None:
+        args     = [None]
+        argpos   = True
+        position = 0
+    elif kwargs is None and position is None:
+        argpos   = True
+        position = 0
+    else:
+        numerics_error('function argument position for input data must be provided','jackknife')
+    #end if
+    if args is None:
+        args = []
+    #end if
+    if kwargs is None:
+        kwargs = dict()
+    #end if
+    return argpos,kwargpos,args,kwargs,position
+#end def check_jackknife_inputs
+
+
+
+
+all_fit_functions = obj(
+    ts = obj(
+        linear = obj(
+            nparam   = 2,
+            function = lambda p,t: p[0]+p[1]*t,
+            format   = '{0} + {1}*t',
+            params   = [('intercept',lambda p: p[0])],
+            ),
+        quadratic = obj(
+            nparam   = 3,
+            function = lambda p,t: p[0]+p[1]*t+p[2]*t*t,
+            format   = '{0} + {1}*t + {2}*t^2',
+            params   = [('intercept',lambda p: p[0])],
+            ),
+        sqrt = obj(
+            nparam   = 3,
+            function = lambda p,t: p[0]+p[1]*sqrt(t)+p[2]*t,
+            format   = '{0} + {1}*sqrt(t) + {2}*t',
+            params   = [('intercept',lambda p: p[0])],
+            ),
+        ),
+    )
+
+fit_functions = obj()
+
+
+
+def qmcfit(q,E,fname='linear',minimizer=least_squares):
+    # ensure data is in proper array format
+    if isinstance(E,(list,tuple)):
+        E = array(E,dtype=float)
+    #end if
+    Edata = None
+    if len(E)!=E.size and len(E.shape)==2:
+        E = E.T
+        Edata = E
+        E     = Edata.mean(axis=0)
+    #end if
+
+    # unpack fitting function information
+    finfo = fit_functions[fname]
+    fitfunc  = finfo.function
+    auxfuncs = obj()
+    auxres   = obj()
+    for name,func in finfo.params:
+        auxfuncs[name]=func
+    #end for
+
+    # setup initial guess parameters
+    if fname=='quadratic':
+        pp = polyfit(q,E,2)
+    else:
+        pp = polyfit(q,E,1)
+    #end if
+    p0 = tuple(list(reversed(pp))+(finfo.nparam-len(pp))*[0])
+
+    # get an optimized fit of the means
+    pf = curve_fit(q,E,fitfunc,p0,minimizer)
+
+    # obtain jackknife mean+error estimates of fitted parameters
+    jcapture = obj()
+    pmean,perror = jackknife(data     = Edata,
+                             function = curve_fit,
+                             args     = [q,None,fitfunc,pf,minimizer],
+                             position = 1,
+                             capture  = jcapture,
+                             )
+    
+    # obtain jackknife estimates of derived parameters
+    if len(auxfuncs)>0:
+        psamples = jcapture.jsamples
+        for auxname,auxfunc in auxfuncs.iteritems():
+            auxres[auxname] = jackknife_aux(psamples,auxfunc)
+        #end for
+    #end if
+
+    return pf,pmean,perror,auxres
+#end def qmcfit
+
+
+
+# Reads scalar.dat files and extracts energy series
+def process_scalar_files(scalar_files,equils=None,reblock_factors=None,series_start=None):
+    if len(scalar_files)==0:
+        error('must provide at least one scalar file')
+    #end if
+    for scalar_file in scalar_files:
+        if not os.path.exists(scalar_file):
+            error('scalar file does not exist: {0}'.format(scalar_file))
+        #end if
+        if not scalar_file.endswith('.scalar.dat'):
+            error('file must be of type scalar.dat: {0}'.format(scalar_file))
+        #end if
+    #end for
+    if series_start!=None:
+        n=0
+        for scalar_file in scalar_files:
+            filename = os.path.split(scalar_file)[1]
+            series = int(filename.split('.')[-3][1:])
+            if series==series_start:
+                scalar_files = scalar_files[n:]
+                break
+            #end if
+            n+=1
+        #end for
+    #end if
+
+    if isinstance(equils,int):
+        equils = len(scalar_files)*[equils]
+    elif equils is not None and len(equils)!=len(scalar_files):
+        error('must provide one equilibration length per scalar file\nnumber of equils provided: {0}\nnumber of scalar files provided: {1}\nequils provided: {2}\nscalar files provided: {3}'.format(len(equils),len(scalar_files),equils,scalar_files))
+    #end if
+
+    if isinstance(reblock_factors,int):
+        reblock_factors = len(scalar_files)*[reblock_factors]
+    elif reblock_factors is not None and len(reblock_factors)!=len(scalar_files):
+        error('must provide one reblocking factor per scalar file\nnumber of reblock_factors provided: {0}\nnumber of scalar files provided: {1}\nreblock_factors provided: {2}\nscalar files provided: {3}'.format(len(reblock_factors),len(scalar_files),reblock_factors,scalar_files))
+    #end if
+
+    # extract energy data from scalar files
+    Edata = []
+    Emean = []
+    Eerr  = []
+    Ekap  = []
+    n = 0
+    for scalar_file in scalar_files:
+        fobj = open(scalar_file,'r')
+        quantities = fobj.readline().split()[2:]
+        fobj.close()
+        rawdata = loadtxt(scalar_file)[:,1:].transpose()
+        qdata = obj()
+        for i in range(len(quantities)):
+            q = quantities[i]
+            d = rawdata[i,:]
+            qdata[q]  = d
+        #end for
+        E = qdata.LocalEnergy
+
+        # exclude blocks marked as equilibration
+        if equils is not None:
+            nbe = equils[n]
+        else:
+            nbe = equilibration_length(E)
+        #end if
+        if nbe>len(E):
+            error('equilibration cannot be applied\nequilibration length given is greater than the number of blocks in the file\nfile name: {0}\n# blocks present: {1}\nequilibration length given: {2}'.format(scalar_file,len(E),nbe))
+        #end if
+        E = E[nbe:]
+
+        mean,var,err,kap = simstats(E)
+        Emean.append(mean)
+        Eerr.append(err)
+        Ekap.append(kap)
+
+        Edata.append(E)
+        n+=1
+    #end for
+    Emean = array(Emean)
+    Eerr  = array(Eerr)
+    Ekap  = array(Ekap)
+
+    # reblock data into target length
+    block_targets = []
+    if reblock_factors is None:
+        # find block targets based on autocorrelation time, if needed
+        for n in range(len(Edata)):
+            block_targets.append(len(Edata[n])/Ekap[n])
+        #end if
+    else:
+        for n in range(len(Edata)):
+            block_targets.append(len(Edata[n])/reblock_factors[n])
+        #end if        
+    #end if
+
+    bt = array(block_targets,dtype=int).min()
+    for n in range(len(Edata)):
+        E = Edata[n]
+        nbe = len(E)%bt
+        E = E[nbe:]
+        reblock = len(E)/bt
+        E.shape = (bt,reblock)
+        if reblock>1:
+            E = E.sum(1)/reblock
+        #end if
+        E.shape = (bt,)
+        Edata[n] = E
+    #end for
+    Edata = array(Edata,dtype=float)
+
+    return Edata,Emean,Eerr,scalar_files
+#end def process_scalar_files
+
+
+
+def simstats(x,dim=None):
+    shape = x.shape
+    ndim  = len(shape)
+    if dim==None:
+        dim=ndim-1
+    #end if
+    permute = dim!=ndim-1
+    reshape = ndim>2
+    nblocks = shape[dim]
+    if permute:
+        r = range(ndim)
+        r.pop(dim)
+        r.append(dim)
+        permutation = tuple(r)
+        r = range(ndim)
+        r.pop(ndim-1)
+        r.insert(dim,ndim-1)
+        invperm     = tuple(r)
+        x=x.transpose(permutation)
+        shape = tuple(array(shape)[array(permutation)])
+        dim = ndim-1
+    #end if
+    if reshape:        
+        nvars = prod(shape[0:dim])
+        x=x.reshape(nvars,nblocks)
+        rdim=dim
+        dim=1
+    else:
+        nvars = shape[0]
+    #end if
+
+    mean  = x.mean(dim)
+    var   = x.var(dim)
+
+    N=nblocks
+
+    if ndim==1:
+        i=0          
+        tempC=0.5
+        kappa=0.0
+        mtmp=mean
+        if abs(var)<1e-15:
+            kappa = 1.0
+        else:
+            ovar=1.0/var
+            while (tempC>0 and i<(N-1)):
+                kappa=kappa+2.0*tempC
+                i=i+1
+                tempC = ovar/(N-i)*sum((x[0:N-i]-mtmp)*(x[i:N]-mtmp))
+            #end while
+            if kappa == 0.0:
+                kappa = 1.0
+            #end if
+        #end if
+        Neff=(N+0.0)/(kappa+0.0)
+        if (Neff == 0.0):
+            Neff = 1.0
+        #end if
+        error=sqrt(var/Neff)
+    else:
+        error = zeros(mean.shape)
+        kappa = zeros(mean.shape)
+        for v in xrange(nvars):
+            i=0          
+            tempC=0.5
+            kap=0.0
+            vtmp = var[v]
+            mtmp = mean[v]
+            if abs(vtmp)<1e-15:
+                kap = 1.0
+            else:
+                ovar   = 1.0/vtmp
+                while (tempC>0 and i<(N-1)):
+                    i += 1
+                    kap += 2.0*tempC
+                    tempC = ovar/(N-i)*sum((x[v,0:N-i]-mtmp)*(x[v,i:N]-mtmp))
+                #end while
+                if kap == 0.0:
+                    kap = 1.0
+                #end if
+            #end if
+            Neff=(N+0.0)/(kap+0.0)
+            if (Neff == 0.0):
+                Neff = 1.0
+            #end if
+            kappa[v]=kap
+            error[v]=sqrt(vtmp/Neff)
+        #end for    
+    #end if
+
+    if reshape:
+        x     =     x.reshape(shape)
+        mean  =  mean.reshape(shape[0:rdim])
+        var   =   var.reshape(shape[0:rdim])
+        error = error.reshape(shape[0:rdim])
+        kappa = kappa.reshape(shape[0:rdim])
+    #end if
+    if permute:
+        x=x.transpose(invperm)
+    #end if
+
+    return (mean,var,error,kappa)
+#end def simstats
+
+
+
+def simplestats(x,dim=None):
+    if dim==None:
+        dim=len(x.shape)-1
+    #end if
+    osqrtN = 1.0/sqrt(1.0*x.shape[dim])
+    mean   = x.mean(dim)
+    var    = x.var(dim)
+    error  = var*osqrtN
+    return (mean,var,error,1.0)
+#end def simplestats
+
+
+
+def equilibration_length(x,tail=.5,plot=False,xlim=None,bounces=2):
+    bounces = max(1,bounces)
+    eqlen = 0
+    nx = len(x)
+    xt = x[int((1.-tail)*nx+.5):]
+    nxt = len(xt)
+    if nxt<10:
+        return eqlen
+    #end if
+    xs = array(xt)
+    xs.sort()
+    mean  = xs[int(.5*(nxt-1)+.5)]
+    sigma = (abs(xs[int((.5-.341)*nxt+.5)]-mean)+abs(xs[int((.5+.341)*nxt+.5)]-mean))/2
+    crossings = bounces*[0,0]
+    if abs(x[0]-mean)>sigma:
+        s = -sign(x[0]-mean)
+        ncrossings = 0
+        for i in range(nx):
+            dist = s*(x[i]-mean) 
+            if dist>sigma and dist<5*sigma:
+                crossings[ncrossings]=i
+                s*=-1
+                ncrossings+=1
+                if ncrossings==2*bounces:
+                    break
+                #end if
+            #end if
+        #end for
+        bounce = crossings[-2:]
+        bounce[1] = max(bounce[1],bounce[0])
+        eqlen = bounce[0]+random.randint(bounce[1]-bounce[0]+1)
+    #end if
+    return eqlen
+#end def equilibration_length
+
+
+
+def stat_strings(mean,error):
+    d = int(max(2,1-floor(nlog(error)/nlog(10.))))
+    fmt = '{0:16.'+str(d)+'f}'
+    mstr = fmt.format(mean).strip()
+    estr = fmt.format(error).strip()
+    return mstr,estr
+#end def stat_strings
+
+
+def parse_list(opt,name,dtype,len1=False):
+    try:
+        if opt[name]!=None:
+            opt[name] = array(opt[name].split(),dtype=dtype)
+            if len1 and len(opt[name])==1:
+                opt[name] = opt[name][0]
+            #end if
+        #end if
+    except:
+        error('{0} list misformatted: {1}'.format(name,opt[name]))
+    #end try
+#end def parse_list
+
+
+def timestep_fit():
+    # read command line inputs
+    usage = '''usage: %prog ts [options] [scalar files]'''
+    parser = OptionParser(usage=usage,add_help_option=False,version='%prog 0.1')
+
+    parser.add_option('-f','--fit',dest='fit_function',
+                          default='linear',
+                          help='Fitting function, options are {0} (default=%default).'.format(sorted(fit_functions.keys()))
+                      )
+    parser.add_option('-s', '--series_start',dest='series_start',
+                      type="int", default=None,
+                      help='Series number for first DMC run.  Use to exclude prior VMC scalar files if they have been provided (default=%default).'
+                      )
+    parser.add_option('-t','--timesteps',dest='timesteps',
+                          default=None,
+                          help='Timesteps corresponding to scalar files, excluding any prior to --series_start (default=%default).'
+                      )
+    parser.add_option('-e','--equils',dest='equils',
+                          default=None,
+                          help='Equilibration lengths corresponding to scalar files, excluding any prior to --series_start.  Can be a single value for all files.  If not provided, equilibration periods will be estimated.'
+                      )
+    parser.add_option('-b','--reblock_factors',dest='reblock_factors',
+                          default=None,
+                          help='Reblocking factors corresponding to scalar files, excluding any prior to --series_start.  Can be a single value for all files.  If not provided, reblocking factors will be estimated.'
+                      )
+
+    options,args = parser.parse_args()
+    scalar_files = list(sorted(args[1:]))
+    opt = obj(**options.__dict__)
+
+    if len(scalar_files)==0:
+        log('\n'+parser.format_help().strip()+'\n')
+        exit()
+    #end if
+
+    if opt.fit_function not in fit_functions:
+        error('invalid fitting function: {0}\nvalid options are: {1}'.format(opt.fit_function,sorted(fit_functions.keys())))
+    #end if
+
+    if opt.timesteps is None:
+        opt.timesteps = ''
+    #end if
+    parse_list(opt,'timesteps',float)
+    parse_list(opt,'equils',int,len1=True)
+    parse_list(opt,'reblock_factors',int,len1=True)
+    
+    # read in scalar energy data
+    Edata,Emean,Eerror,scalar_files = process_scalar_files(
+        scalar_files    = scalar_files,
+        series_start    = opt.series_start,
+        equils          = opt.equils,
+        reblock_factors = opt.reblock_factors,
+        )
+
+    if len(Edata)!=len(opt.timesteps):
+        error('must provide one timestep per scalar file\nnumber of timesteps provided: {0}\nnumber of scalar files provided: {1}\ntimeteps provided: {2}\nscalar files provided: {3}'.format(len(opt.timesteps),len(scalar_files),opt.timesteps,scalar_files))
+    #end if
+
+    # perform jackknife analysis of the fit
+    pf,pmean,perror,auxres = qmcfit(opt.timesteps,Edata,opt.fit_function)
+
+    # print text info about the fit results
+    func_info = fit_functions[opt.fit_function]
+    pvals = []
+    for n in range(len(pmean)):
+        pvals.append('({0} +/- {1})'.format(*stat_strings(pmean[n],perror[n])))
+    #end for
+
+    log('\nfit function  : '+opt.fit_function)
+    log('fitted formula: '+func_info.format.format(*pvals))
+    for pname,pfunc in func_info.params:
+        pm,pe = stat_strings(*auxres[pname])
+        log('{0:<14}: {1} +/- {2}  Ha\n'.format(pname,pm,pe))
+    #end for
+
+    # plot the fit (if available)
+    if plots_available:
+        lw = 2
+        ms = 10
+
+        ts = opt.timesteps
+        tsmax = ts.max()
+        E0,E0err = auxres.intercept
+        tsfit = linspace(0,1.1*tsmax,400)
+        Efit  = func_info.function(pmean,tsfit)
+        figure()
+        plot(tsfit,Efit,'k-',lw=lw)
+        errorbar(ts,Emean,Eerror,fmt='b.',ms=ms)
+        errorbar([0],[E0],[E0err],fmt='r.',ms=ms)
+        xlim([-0.1*tsmax,1.1*tsmax])
+        xlabel('DMC Timestep (1/Ha)')
+        ylabel('DMC Energy (Ha)')
+        show()
+    #end if
+#end def timestep_fit
+
+
+
+if __name__=='__main__':
+    fit_types = sorted(all_fit_functions.keys())
+    if len(sys.argv)<2:
+        error('first argument must be type of fit\ne.g. for a timestep fit, type "qfit ts ..."\nvalid fit types are: {0}'.format(fit_types))
+    #end if
+    fit_type = sys.argv[1]
+    if fit_type in fit_types:
+        fit_functions.clear()
+        fit_functions.transfer_from(all_fit_functions[fit_type])
+    else:
+        error('unknown fit type: {0}\nvalid options are: {1}'.format(fit_type,fit_types))
+    #end if
+        
+    if fit_type=='ts':
+        timestep_fit()
+    else:
+        error('unsupported fit type: {0}'.format(fit_type))
+    #end if
+#end if

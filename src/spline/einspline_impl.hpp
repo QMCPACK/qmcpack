@@ -423,6 +423,69 @@ namespace qmcplusplus
       return res;
     }
 
+    // 1D spline
+    /** create a single spline for double */
+    template<typename VT>
+    UBspline_1d_d* create(UBspline_1d_d* s, const VT& start, const VT& end, const int spline_npoints, double* indata, bool lFlat)
+    {
+      BCtype_d bc;
+      if(lFlat)
+        bc.lCode = FLAT;
+      else
+        bc.lCode = NATURAL;
+      bc.rCode = NATURAL;
+      Ugrid grid;
+      grid.start = start;
+      grid.end   = end;
+      grid.num   = spline_npoints;
+      return create_UBspline_1d_d(grid, bc, indata);
+    }
+
+    /** spline evaluation */
+    template<typename PT>
+    inline double evaluate(UBspline_1d_d *restrict spline, const PT& r)
+    {
+      double res;
+      eval_UBspline_3d_d(spline,r,&res);
+      return res;
+    }
+
+    /** spline destroy */
+    template<typename SplineType>
+    inline void destroy(SplineType *restrict &spline)
+    {
+      if(spline!=NULL)
+      {
+        if(spline->coefs!=NULL) free(spline->coefs);
+        free(spline);
+        spline=NULL;
+      }
+    }
+
+    /** evaluate values only using multi_UBspline_1d_d
+    */
+    template<typename PT, typename VT>
+      inline void evaluate(multi_UBspline_1d_d *restrict spline, const PT& r, VT &psi)
+      { eval_multi_UBspline_1d_d (spline, r, psi.data()); }
+
+    /** evaluate values only using multi_UBspline_1d_s
+    */
+    template<typename PT, typename VT>
+      inline void evaluate(multi_UBspline_1d_s *restrict spline, const PT& r, VT &psi)
+      { eval_multi_UBspline_1d_s (spline, r, psi.data()); }
+
+    /** evaluate values only using multi_UBspline_1d_d
+    */
+    template<typename PT, typename VT>
+      inline void evaluate(multi_UBspline_1d_d *restrict spline, const PT& r, VT &psi, VT &dpsi, VT &d2psi)
+      { eval_multi_UBspline_1d_d_vgl (spline, r, psi.data(), dpsi.data(), d2psi.data()); }
+
+    /** evaluate values only using multi_UBspline_1d_s
+    */
+    template<typename PT, typename VT>
+      inline void evaluate(multi_UBspline_1d_s *restrict spline, const PT& r, VT &psi, VT &dpsi, VT &d2psi)
+      { eval_multi_UBspline_1d_s_vgl (spline, r, psi.data(), dpsi.data(), d2psi.data()); }
+
   }
 }
 #endif

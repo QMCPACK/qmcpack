@@ -127,9 +127,4 @@ SpeciesSet& SpeciesSet::operator=(const SpeciesSet& species)
   return *this;
 }
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

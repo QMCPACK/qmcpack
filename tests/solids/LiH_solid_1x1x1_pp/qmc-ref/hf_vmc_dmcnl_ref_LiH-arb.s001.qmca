@@ -1,0 +1,17 @@
+
+hf_vmc_dmcnl_ref_LiH-arb  series 1 
+  LocalEnergy           =          -8.45207 +/-          0.00068 
+  Variance              =            1.3982 +/-           0.0064 
+  Kinetic               =            7.4968 +/-           0.0069 
+  LocalPotential        =          -15.9489 +/-           0.0070 
+  ElecElec              =           -0.5526 +/-           0.0012 
+  LocalECP              =          -11.7071 +/-           0.0079 
+  IonIon                =             -3.69 +/-             0.00 
+  Flux                  =            -0.166 +/-            0.014 
+  LocalEnergy_sq        =            72.838 +/-            0.011 
+  BlockWeight           =          25605.48 +/-            39.27 
+  BlockCPU              =           0.10617 +/-          0.00041 
+  AcceptRatio           =        0.99975147 +/-       0.00000050 
+  Efficiency            =            286.50 +/-             0.00 
+  TotalTime             =           1061.73 +/-             0.00 
+  TotalSamples          =         256054796 +/-                0 

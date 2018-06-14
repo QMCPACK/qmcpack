@@ -11,8 +11,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #include "QMCWaveFunctions/MolecularOrbitals/GTOBuilder.h"
 namespace qmcplusplus
 {
@@ -52,8 +52,3 @@ GTOBuilder::addRadialOrbital(xmlNodePtr cur, const QuantumNumberType& nlms)
 }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/

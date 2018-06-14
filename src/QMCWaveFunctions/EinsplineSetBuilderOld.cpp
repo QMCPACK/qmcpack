@@ -35,14 +35,21 @@ bool
 EinsplineSetBuilder::ReadOrbitalInfo()
 {
   update_token(__FILE__,__LINE__,"ReadOrbitalInfo");
-  H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
-//     H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
+  // Handle failed file open gracefully by temporarily replacing error handler
+  H5E_auto_t old_efunc;
+  void *old_efunc_data;
+  H5Eget_auto(&old_efunc, &old_efunc_data);
+  H5Eset_auto(NULL, NULL);
+  H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDONLY,H5P_DEFAULT);
+  //  H5FileID = H5Fopen(H5FileName.c_str(),H5F_ACC_RDWR,H5P_DEFAULT);
   if (H5FileID < 0)
   {
     app_error() << "Could not open HDF5 file \"" << H5FileName
-                << "\" in EinsplineSetBuilder::createSPOSet.  Aborting.\n";
+                << "\" in EinsplineSetBuilder::ReadOrbitalInfo.  Aborting.\n";
     APP_ABORT("EinsplineSetBuilder::ReadOrbitalInfo");
   }
+  H5Eset_auto(old_efunc,old_efunc_data);
+  
   // Read format
   std::string format;
   HDFAttribIO<std::string> h_format(format);
@@ -100,7 +107,7 @@ EinsplineSetBuilder::ReadOrbitalInfo()
             SuperLattice(0,0), SuperLattice(0,1), SuperLattice(0,2),
             SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2),
             SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
-  CheckLattice();
+  if (!CheckLattice()) APP_ABORT("CheckLattice failed");
   app_log() << buff;
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
@@ -268,7 +275,7 @@ EinsplineSetBuilder::MuffinTinPath(int ti, int bi, int tin)
   return groupPath.str();
 }
 
-#ifdef QMC_CUDA
+#if 0
 void
 EinsplineSetBuilder::ReadBands
 (int spin, EinsplineSetExtended<std::complex<double> >* orbitalSet)
@@ -445,7 +452,7 @@ EinsplineSetBuilder::ReadBands
       }
       myComm->bcast (g);
       myComm->bcast (r);
-      double Z = (double)IonTypes(atom);
+      double Z = (double)IonTypes[atom];
       orbitalSet->MuffinTins[atom].addCore (l, m, r, g, k, Z);
       icore++;
     }
@@ -509,7 +516,7 @@ EinsplineSetBuilder::ReadBands
         myComm->bcast(u_lm_r);
         myComm->bcast(du_lm_dr);
         myComm->bcast(k);
-        double Z = (double)IonTypes(tin);
+        double Z = (double)IonTypes[tin];
         orbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r, du_lm_dr, Z);
       }
       ival++;
@@ -732,7 +739,7 @@ EinsplineSetBuilder::ReadBands
       }
       myComm->bcast (g);
       myComm->bcast (r);
-      double Z = (double)IonTypes(atom);
+      double Z = (double)IonTypes[atom];
       orbitalSet->MuffinTins[atom].addCore (l, m, r, g, k, Z);
       icore++;
     }
@@ -808,7 +815,7 @@ EinsplineSetBuilder::ReadBands
         myComm->bcast(u_lm_r);
         myComm->bcast(du_lm_dr);
         myComm->bcast(k);
-        double Z = (double)IonTypes(tin);
+        double Z = (double)IonTypes[tin];
         orbitalSet->MuffinTins[tin].set_APW (ival, k, u_lm_r, du_lm_dr, Z);
       }
       ival++;

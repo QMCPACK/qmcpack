@@ -20,6 +20,7 @@
 #ifndef QMCPLUSPLUS_HAMILTONIAN_H
 #define QMCPLUSPLUS_HAMILTONIAN_H
 #include <QMCHamiltonians/QMCHamiltonianBase.h>
+#include "QMCHamiltonians/NonLocalECPotential.h"
 #if !defined(REMOVE_TRACEMANAGER)
 #include <Estimators/TraceManager.h>
 #endif
@@ -202,6 +203,7 @@ public:
   }
   void auxHevaluate(ParticleSet& P);
   void auxHevaluate(ParticleSet& P, Walker_t& ThisWalker);
+  void auxHevaluate(ParticleSet& P, Walker_t& ThisWalker, bool do_properties, bool do_collectables);
   void rejectedMove(ParticleSet& P, Walker_t& ThisWalker);
   ///** set Tau for each Hamiltonian
   // */
@@ -245,12 +247,11 @@ public:
    */
   Return_t evaluate(ParticleSet& P);
 
-  /** evaluate Local and NonLocal energies
+  /** evaluate Local energy with Toperators updated.
    * @param P ParticleSEt
-   * @param Txy transition matrix of nonlocal Hamiltonians
    * @return Local energy
    */
-  Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy);
+  Return_t evaluateWithToperator(ParticleSet& P);
   
   /** evaluate energy and derivatives wrt to the variables
    * @param P ParticleSet
@@ -264,25 +265,34 @@ public:
       std::vector<RealType>& dlogpsi,
       std::vector<RealType>& dhpsioverpsi,
       bool compute_deriv);
-  
+
+  /** set non local moves options
+   * @param cur the xml input
+   */
+  void setNonLocalMoves(xmlNodePtr cur)
+  {
+    if(nlpp_ptr!=nullptr)
+      nlpp_ptr->setNonLocalMoves(cur);
+  }
+
+  /** make non local moves
+   * @param P particle set
+   * @return the number of accepted moves
+   */
+  int makeNonLocalMoves(ParticleSet& P)
+  {
+    if(nlpp_ptr==nullptr)
+      return 0;
+    else
+      return nlpp_ptr->makeNonLocalMovesPbyP(P);
+  }
+
   /** evaluate energy 
    * @param P quantum particleset
    * @param free_nlpp if true, non-local PP is a variable
    * @return KE + NonLocal potential
    */
   RealType evaluateVariableEnergy(ParticleSet& P, bool free_nlpp);
-
-  /*@{*/
-  /** @brief functions to handle particle-by-particle move
-  */
-  Return_t registerData(ParticleSet& P, BufferType& buffer);
-  Return_t updateBuffer(ParticleSet& P, BufferType& buf);
-  void copyFromBuffer(ParticleSet& P, BufferType& buf);
-  Return_t evaluate(ParticleSet& P, BufferType& buf);
-  Return_t evaluatePbyP(ParticleSet& P, int active);
-  void acceptMove(int active);
-  void rejectMove(int active);
-  /*@}*/
 
   /** return an average value of the LocalEnergy
    *
@@ -335,8 +345,6 @@ private:
   int myIndex;
   ///starting index
   int numCollectables;
-  ///enable virtual moves 
-  bool EnableVirtualMoves;
   ///Current Local Energy
   Return_t LocalEnergy;
   ///Current Kinetic Energy
@@ -347,6 +355,8 @@ private:
   std::string myName;
   ///vector of Hamiltonians
   std::vector<QMCHamiltonianBase*> H;
+  ///pointer to NonLocalECP
+  NonLocalECPotential* nlpp_ptr;
   ///vector of Hamiltonians
   std::vector<QMCHamiltonianBase*> auxH;
   ///timers
@@ -379,9 +389,4 @@ private:
 }
 #endif
 
-/***************************************************************************
- * $RCSfile$   $Author$
- * $Revision$   $Date$
- * $Id$
- ***************************************************************************/
 

@@ -18,6 +18,7 @@
 
 #include <QMCWaveFunctions/SPOSetBase.h>
 #include <QMCWaveFunctions/BasisSetBase.h>
+#include <QMCWaveFunctions/SPOSetBuilder.h>
 
 namespace qmcplusplus
 {
@@ -60,7 +61,7 @@ namespace qmcplusplus
 
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
 
-    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, 
+    void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi,
                   GradVector_t& dpsi, ValueVector_t& d2psi);
 
     ///unimplemented functions call this to abort
@@ -87,15 +88,14 @@ namespace qmcplusplus
 
   };
 
-  struct CompositeSPOSetBuilder : public BasisSetBuilder
+  struct CompositeSPOSetBuilder : public SPOSetBuilder
   {
 
-    //BasisSetBuilder interface
+    //SPOSetBuilder interface
     SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
 
     SPOSetBase* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input);
     
-    bool put(xmlNodePtr cur);
   };
 }
 

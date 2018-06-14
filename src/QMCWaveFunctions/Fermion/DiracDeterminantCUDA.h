@@ -40,7 +40,7 @@ public:
   typedef ParticleSet::Walker_t     Walker_t;
 
   DiracDeterminantCUDA(SPOSetBasePtr const &spos, int first=0);
-  DiracDeterminantCUDA(const DiracDeterminantCUDA& s);
+  DiracDeterminantCUDA(const DiracDeterminantCUDA& s) = delete;
 
 protected:
   /////////////////////////////////////////////////////
@@ -50,44 +50,47 @@ protected:
   size_t AOffset, AinvOffset, newRowOffset, AinvDeltaOffset,
          AinvColkOffset, gradLaplOffset, newGradLaplOffset, 
          AWorkOffset, AinvWorkOffset;
-  gpu::host_vector<CudaRealType*> UpdateList;
-  gpu::device_vector<CudaRealType*> UpdateList_d;
+  gpu::host_vector<CudaValueType*> UpdateList;
+  gpu::device_vector<CudaValueType*> UpdateList_d;
   gpu::host_vector<updateJob> UpdateJobList;
   gpu::device_vector<updateJob> UpdateJobList_d;
-  std::vector<CudaRealType*> srcList, destList, AList, AinvList, newRowList,
-                        AinvDeltaList, AinvColkList, gradLaplList, newGradLaplList, 
-                        AWorkList, AinvWorkList, GLList;
-  gpu::device_vector<CudaRealType*> srcList_d, destList_d, AList_d, AinvList_d, newRowList_d, 
+  std::vector<CudaValueType*> srcList, destList, AList, AinvList, newRowList,
+                              AinvDeltaList, AinvColkList, gradLaplList, newGradLaplList, 
+                              AWorkList, AinvWorkList, GLList;
+  gpu::device_vector<CudaValueType*> srcList_d, destList_d, AList_d, AinvList_d, newRowList_d, 
                                     AinvDeltaList_d, AinvColkList_d, gradLaplList_d, 
                                     newGradLaplList_d, AWorkList_d, AinvWorkList_d, GLList_d;
-  gpu::device_vector<CudaRealType> ratio_d;
-  gpu::host_vector<CudaRealType> ratio_host;
-  gpu::device_vector<CudaRealType> gradLapl_d;
-  gpu::host_vector<CudaRealType> gradLapl_host;
+  gpu::device_vector<int> PivotArray_d;
+  gpu::device_vector<int> infoArray_d;
+  gpu::host_vector<int> infoArray_host;
+  gpu::device_vector<CudaValueType> ratio_d;
+  gpu::host_vector<CudaValueType> ratio_host;
+  gpu::device_vector<CudaValueType> gradLapl_d;
+  gpu::host_vector<CudaValueType> gradLapl_host;
   gpu::device_vector<int> iatList_d;
   gpu::host_vector<int> iatList;
 
   // Data members for nonlocal psuedopotential ratio evaluation
   static const int NLrowBufferRows = 4800;
-  gpu::device_vector<CudaRealType> NLrowBuffer_d;
-  gpu::host_vector<CudaRealType> NLrowBuffer_host;
 
-  gpu::device_vector<CudaRealType*> SplineRowList_d;
-  gpu::host_vector<CudaRealType*> SplineRowList_host;
-  gpu::device_vector<CudaRealType*> RatioRowList_d;
-  gpu::host_vector<CudaRealType*> RatioRowList_host[2];
+  gpu::device_vector<CudaValueType> NLrowBuffer_d;
+  gpu::host_vector<CudaValueType> NLrowBuffer_host;
+  gpu::device_vector<CudaValueType*> SplineRowList_d;
+  gpu::host_vector<CudaValueType*> SplineRowList_host;
+  gpu::device_vector<CudaValueType*> RatioRowList_d;
+  gpu::host_vector<CudaValueType*> RatioRowList_host[2];
   gpu::device_vector<CudaRealType> NLposBuffer_d;
   gpu::host_vector<CudaRealType> NLposBuffer_host;
-  gpu::device_vector<CudaRealType*> NLAinvList_d;
-  gpu::host_vector<CudaRealType*> NLAinvList_host[2];
+  gpu::device_vector<CudaValueType*> NLAinvList_d;
+  gpu::host_vector<CudaValueType*> NLAinvList_host[2];
   gpu::device_vector<int> NLnumRatioList_d;
   gpu::host_vector<int> NLnumRatioList_host[2];
   gpu::device_vector<int> NLelecList_d;
   gpu::host_vector<int> NLelecList_host[2];
-  gpu::device_vector<CudaRealType> NLratios_d[2];
-  gpu::host_vector<CudaRealType> NLratios_host;
-  gpu::device_vector<CudaRealType*> NLratioList_d;
-  gpu::host_vector<CudaRealType*> NLratioList_host[2];
+  gpu::device_vector<CudaValueType> NLratios_d[2];
+  gpu::host_vector<CudaValueType> NLratios_host;
+  gpu::device_vector<CudaValueType*> NLratioList_d;
+  gpu::host_vector<CudaValueType*> NLratioList_host[2];
 
   void resizeLists(int numWalkers)
   {
@@ -118,6 +121,9 @@ protected:
     // HACK HACK HACK
     // gradLapl_d.resize   (numWalkers*NumOrbitals*4);
     // gradLapl_host.resize(numWalkers*NumOrbitals*4);
+    infoArray_d.resize(numWalkers*2);
+    infoArray_host.resize(numWalkers*2);
+    PivotArray_d.resize(numWalkers*NumOrbitals);
     gradLapl_d.resize   (numWalkers*RowStride*4);
     gradLapl_host.resize(numWalkers*RowStride*4);
     NLrowBuffer_d.resize(NLrowBufferRows*RowStride);
@@ -140,29 +146,10 @@ public:
     return DiracDeterminantBase::ratio (P, iat);
   }
 
-  ValueType ratio(ParticleSet& P, int iat,
-                  ParticleSet::ParticleGradient_t& dG,
-                  ParticleSet::ParticleLaplacian_t& dL)
-  {
-    return DiracDeterminantBase::ratio (P, iat, dG, dL);
-  }
-
-  void update(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& dG,
-              ParticleSet::ParticleLaplacian_t& dL, int iat)
-  {
-    DiracDeterminantBase::update (P, dG, dL, iat);
-  }
-
-
-
-
-
   void update (std::vector<Walker_t*> &walkers, int iat);
   void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList);
 
-  void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool)
-  {
+  void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool) {
     RowStride = ((NumOrbitals + 31)/32) * 32;
     AOffset           = pool.reserve((size_t)    NumPtcls * RowStride);
     AinvOffset        = pool.reserve((size_t)    NumPtcls * RowStride);

@@ -43,37 +43,37 @@ class LMBlockerMatData {
     std::vector<int> m_block_len;
 
     // matrix elemnets of <wfn|wfn>
-    double m_ww;
+    std::vector<double> m_ww;
 
     // matrix elements of <wfn|var>
-    std::vector<formic::ColVec<double> > m_wv;
+    std::vector<std::vector<formic::ColVec<double> > > m_wv;
 
     // matrix elements of <var|wfn>
-    std::vector<formic::ColVec<double> > m_vw;
+    std::vector<std::vector<formic::ColVec<double> > > m_vw;
 
     // matrix elements of <wfn|old_update>
-    std::vector<formic::ColVec<double> > m_wo;
+    std::vector<std::vector<formic::ColVec<double> > > m_wo;
 
     // matrix elements of <old_update|wfn>
-    std::vector<formic::ColVec<double> > m_ow;
+    std::vector<std::vector<formic::ColVec<double> > > m_ow;
 
     // matrix elements of <var|var>
-    std::vector<formic::Matrix<double> > m_vv;
+    std::vector<std::vector<formic::Matrix<double> > > m_vv;
 
     // matrix elements of <var|old_update>
-    std::vector<formic::Matrix<double> > m_vo;
+    std::vector<std::vector<formic::Matrix<double> > > m_vo;
 
     // matrix elements of <old_update|var>
-    std::vector<formic::Matrix<double> > m_ov;
+    std::vector<std::vector<formic::Matrix<double> > > m_ov;
 
     // matrix elements of <old_update|old_update>
-    std::vector<formic::Matrix<double> > m_oo;
+    std::vector<std::vector<formic::Matrix<double> > > m_oo;
 
     // used to hold contractions of each block's component of old updates with derivative ratios
-    std::vector<formic::ColVec<double> > m_boulr;
+    std::vector<std::vector<formic::ColVec<double> > > m_boulr;
 
     // used to hold contractions of each block's component of old updates with derivative ratios
-    std::vector<formic::ColVec<double> > m_bourr;
+    std::vector<std::vector<formic::ColVec<double> > > m_bourr;
     
   protected:
 
@@ -99,7 +99,7 @@ class LMBlockerMatData {
     int bl(const int i) const { return m_block_len.at(i); }
 
     // function that returns <wfn|wfn>
-    double ww_element() const { return m_ww; }
+    double ww_element() const { return m_ww[0]; }
 
     // function that reset the object by clear all data arrays
     void reset(const int nv, const int nblock, const int nou);

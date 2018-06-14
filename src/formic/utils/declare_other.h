@@ -7,7 +7,7 @@
 
 // Clang issues a warning if the C return type is std::complex<double>
 // Use the C return type instead
-#define complex_ret double _Complex
+// #define complex_ret double _Complex
 
 extern "C" {
 
@@ -19,8 +19,8 @@ extern "C" {
   void FC_GLOBAL(daxpy,DAXPY)(int *n, double *a, const double *x, int *incx, double *y, int *incy);
   void FC_GLOBAL(zaxpy,ZAXPY)(int *n, std::complex<double> *a, const std::complex<double> *x, int *incx, std::complex<double> *y, int *incy);
   double FC_GLOBAL(ddot,DDOT)(int *n, const double *x, int *incx, const double *y, int *incy);
-  complex_ret FC_GLOBAL(zdotu,ZDOTU)(int *n, const std::complex<double> *x, int *incx, const std::complex<double> *y, int *incy);
-  complex_ret FC_GLOBAL(zdotc,ZDOTC)(int *n, const std::complex<double> *x, int *incx, const std::complex<double> *y, int *incy);
+  // complex_ret FC_GLOBAL(zdotu,ZDOTU)(int *n, const std::complex<double> *x, int *incx, const std::complex<double> *y, int *incy);
+  // complex_ret FC_GLOBAL(zdotc,ZDOTC)(int *n, const std::complex<double> *x, int *incx, const std::complex<double> *y, int *incy);
   void FC_GLOBAL(dgemv,DGEMV)(const char *trans, const int *m, const int *n,
                               const double *alpha, const double *a, const int *lda,
                               const double *x, const int *incx,

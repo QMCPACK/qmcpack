@@ -36,7 +36,6 @@
 
 #if defined(HAVE_LIBFFTW)
 #include "QMCHamiltonians/MPC.h"
-#include "QMCHamiltonians/VHXC.h"
 #endif
 #endif
 #include "OhmmsData/AttributeSet.h"
@@ -76,32 +75,12 @@ HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool isphysical)
 #endif // defined(HAVE_LIBFFTW)
 }
 
-void
-HamiltonianFactory::addVHXCPotential(xmlNodePtr cur)
-{
-#if OHMMS_DIM==3 && defined(HAVE_LIBFFTW)
-  std::string a("e"), title("VHXC");
-  OhmmsAttributeSet hAttrib;
-  bool physical = true;
-  hAttrib.add(title,"id");
-  hAttrib.add(title,"name");
-  hAttrib.add(physical,"physical");
-  hAttrib.put(cur);
-  renameProperty(a);
-  VHXC *vhxc = new VHXC (*targetPtcl);
-  app_log() << "physical = " << physical << std::endl;
-  targetH->addOperator(vhxc, "VHXC", physical);
-#else
-  APP_ABORT("HamiltonianFactory::addVHXCPotential VHXC is disabled because FFTW3 was not found during the build process.");
-#endif // defined(HAVE_LIBFFTW)
-}
-
 
 
 void
 HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
 {
-  typedef QMCTraits::RealType RealType;
+  typedef QMCHamiltonian::Return_t Return_t;
   std::string targetInp(targetPtcl->getName());
   std::string sourceInp(targetPtcl->getName());
   std::string title("ElecElec"),pbc("yes");
@@ -148,14 +127,14 @@ HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
       if(quantum)
         targetH->addOperator(new CoulombPotentialAA_CUDA(ptclA,true), title, physical);
       else
-        targetH->addOperator(new CoulombPotential<RealType>(ptclA,0,quantum), title, physical);
+        targetH->addOperator(new CoulombPotential<Return_t>(ptclA,0,quantum), title, physical);
     }
 #else
     if(applyPBC)
       targetH->addOperator(new CoulombPBCAA(*ptclA,quantum,doForces),title,physical);
     else
     {
-      targetH->addOperator(new CoulombPotential<RealType>(ptclA,0,quantum), title, physical);
+      targetH->addOperator(new CoulombPotential<Return_t>(ptclA,0,quantum), title, physical);
     }
 #endif
   }
@@ -170,7 +149,7 @@ HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
     if(applyPBC)
       targetH->addOperator(new CoulombPBCAB(*ptclA,*targetPtcl),title);
     else
-      targetH->addOperator(new CoulombPotential<RealType>(ptclA,targetPtcl,true),title);
+      targetH->addOperator(new CoulombPotential<Return_t>(ptclA,targetPtcl,true),title);
 #endif
   }
 }
@@ -426,15 +405,10 @@ HamiltonianFactory::addCorePolPotential(xmlNodePtr cur)
 //#endif
 //      } else {
 //        if(ion->getTotalNum()>1)
-//          targetH->addOperator(new CoulombPotential<RealType>(ion),hname);
+//          targetH->addOperator(new CoulombPotential<Return_t>(ion),hname);
 //          //targetH->addOperator(new IonIonPotential(*ion),hname);
 //      }
 //    }
 //  }
 
 }
-/***************************************************************************
- * $RCSfile$   $Author: jnkim $
- * $Revision: 5831 $   $Date: 2013-05-10 08:38:08 -0400 (Fri, 10 May 2013) $
- * $Id: HamiltonianFactory.cpp 5831 2013-05-10 12:38:08Z jnkim $
- ***************************************************************************/

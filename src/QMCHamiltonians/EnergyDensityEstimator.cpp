@@ -499,8 +499,3 @@ QMCHamiltonianBase* EnergyDensityEstimator::makeClone(ParticleSet& qp
 
 }
 
-/***************************************************************************
- * $RCSfile$   $Author: jtkrogel $
- * $Revision: 1 $   $Date: 2011-02-02 16:21:33 -0500 (Tue, 02 Feb 2011) $
- * $Id: EnergyDensityEstimator.cpp 1 2011-02-02 16:21:33Z jtkrogel $
- ***************************************************************************/

@@ -34,7 +34,7 @@ PulayForce::PulayForce(ParticleSet& ions, ParticleSet& elns,
 void
 PulayForce::resetTargetParticleSet(ParticleSet& P)
 {
-  int tid=P.addTable(Ions);
+  int tid=P.addTable(Ions,DT_AOS);
   if(tid != myTableIndex)
     APP_ABORT("PulayForce::resetTargetParticleSet found inconsistent table index");
 }
