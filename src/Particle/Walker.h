@@ -156,7 +156,7 @@ struct Walker
   gpu::device_vector<CudaLapType> Lap_GPU;
   gpu::device_vector<CUDA_PRECISION_FULL> Rhok_GPU;
   int k_species_stride;
-  inline GPU_XRAY_TRACE void resizeCuda(int size, int num_species, int num_k)
+  inline void resizeCuda(int size, int num_species, int num_k)
   {
     cuda_DataSize = size;
     cuda_DataSet.resize(size);
@@ -168,20 +168,20 @@ struct Walker
     k_species_stride = ((2*num_k + 15)/16) * 16;
     if (num_k)
       Rhok_GPU.resize (num_species * k_species_stride);
-  }
-  inline GPU_XRAY_TRACE CUDA_PRECISION_FULL* get_rhok_ptr ()
+  } GPU_XRAY_TRACE
+  inline CUDA_PRECISION_FULL* get_rhok_ptr ()
   {
     return Rhok_GPU.data();
-  }
-  inline GPU_XRAY_TRACE CUDA_PRECISION_FULL* get_rhok_ptr (int isp)
+  } GPU_XRAY_TRACE
+  inline CUDA_PRECISION_FULL* get_rhok_ptr (int isp)
   {
     return Rhok_GPU.data() + k_species_stride * isp;
-  }
+  } GPU_XRAY_TRACE
 
 #endif
 
   ///create a walker for n-particles
-  inline explicit GPU_XRAY_TRACE Walker(int nptcl=0)
+  inline explicit Walker(int nptcl=0)
 #ifdef QMC_CUDA
     :cuda_DataSet("Walker::walker_buffer"), R_GPU("Walker::R_GPU"),
      Grad_GPU("Walker::Grad_GPU"), Lap_GPU("Walker::Lap_GPU"),
@@ -200,7 +200,7 @@ struct Walker
     if(nptcl>0)
       resize(nptcl);
     Properties=0.0;
-  }
+  } GPU_XRAY_TRACE
 
   inline int addPropertyHistory(int leng)
   {
@@ -268,7 +268,7 @@ struct Walker
   }
 
   ///resize for n particles
-  inline void GPU_XRAY_TRACE resize(int nptcl)
+  inline void resize(int nptcl)
   {
     R.resize(nptcl);
     G.resize(nptcl);
@@ -279,10 +279,10 @@ struct Walker
     Lap_GPU.resize(nptcl);
 #endif
     //Drift.resize(nptcl);
-  }
+  } GPU_XRAY_TRACE
 
   ///copy the content of a walker
-  inline void GPU_XRAY_TRACE makeCopy(const Walker& a)
+  inline void makeCopy(const Walker& a)
   {
     ID=a.ID;
     ParentID=a.ParentID;
@@ -313,7 +313,7 @@ struct Walker
     Grad_GPU = a.Grad_GPU;
     Lap_GPU = a.Lap_GPU;
 #endif
-  }
+  } GPU_XRAY_TRACE 
 
   //return the address of the values of Hamiltonian terms
   inline EstimatorRealType* restrict getPropertyBase()
@@ -428,7 +428,7 @@ struct Walker
     return DataSet.byteSize();
   }
 
-  void GPU_XRAY_TRACE registerData()
+  void registerData()
   {
     // walker data must be placed at the beginning
     assert(DataSet.size()==0);
@@ -463,9 +463,9 @@ struct Walker
 #endif
     block_end = DataSet.current();
     scalar_end = DataSet.current_scalar();
-  }
+  } GPU_XRAY_TRACE
 
-  void GPU_XRAY_TRACE copyFromBuffer()
+  void copyFromBuffer()
   {
     DataSet.rewind();
     DataSet >> ID >> ParentID >> Generation >> Age >> ReleasedNodeAge >> ReleasedNodeWeight;
@@ -510,9 +510,11 @@ struct Walker
 #endif
     assert(block_end == DataSet.current());
     assert(scalar_end == DataSet.current_scalar());
-  }
+  } GPU_XRAY_TRACE
 
-  void GPU_XRAY_TRACE updateBuffer()
+  // In Clang 4.0.1 it is unclear why but attibute list cannot go at the end
+  // when a template declaration follows
+  GPU_XRAY_TRACE void updateBuffer()
   {
     DataSet.rewind();
     DataSet << ID << ParentID << Generation << Age << ReleasedNodeAge << ReleasedNodeWeight;
@@ -553,7 +555,7 @@ struct Walker
     assert(block_end == DataSet.current());
     assert(scalar_end == DataSet.current_scalar());
   }
-
+  
   template<class Msg>
   inline Msg& putMessage(Msg& m)
   {

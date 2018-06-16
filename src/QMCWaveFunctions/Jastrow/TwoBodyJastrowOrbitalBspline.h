@@ -62,28 +62,28 @@ public:
   typedef BsplineFunctor<OrbitalBase::RealType> FT;
   typedef ParticleSet::Walker_t     Walker_t;
 
-  void freeGPUmem() GPU_XRAY_TRACE;
-  void checkInVariables(opt_variables_type& active)  GPU_XRAY_TRACE;
+  GPU_XRAY_TRACE void freeGPUmem();
+  GPU_XRAY_TRACE void checkInVariables(opt_variables_type& active);
   //void addFunc(const std::string& aname, int ia, int ib, FT* j);
-  void addFunc(int ia, int ib, FT* j) GPU_XRAY_TRACE;
-  void recompute(MCWalkerConfiguration &W, bool firstTime) GPU_XRAY_TRACE;
-  void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool) GPU_XRAY_TRACE;
-  void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi) GPU_XRAY_TRACE;
-  void update (std::vector<Walker_t*> &walkers, int iat) GPU_XRAY_TRACE;
+  GPU_XRAY_TRACE void addFunc(int ia, int ib, FT* j);
+  GPU_XRAY_TRACE void recompute(MCWalkerConfiguration &W, bool firstTime);
+  GPU_XRAY_TRACE void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool);
+  GPU_XRAY_TRACE void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi);
+  GPU_XRAY_TRACE void update (std::vector<Walker_t*> &walkers, int iat);
   void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList)
   {
     /* This function doesn't really need to return the ratio */
   }
 
-  void ratio (MCWalkerConfiguration &W, int iat,
+  GPU_XRAY_TRACE void ratio (MCWalkerConfiguration &W, int iat,
               std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-              std::vector<ValueType> &lapl) GPU_XRAY_TRACE;
-  void calcRatio (MCWalkerConfiguration &W, int iat,
+              std::vector<ValueType> &lapl);
+  GPU_XRAY_TRACE void calcRatio (MCWalkerConfiguration &W, int iat,
                   std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-                  std::vector<ValueType> &lapl) GPU_XRAY_TRACE;
-  void addRatio (MCWalkerConfiguration &W, int iat,
+                  std::vector<ValueType> &lapl);
+  GPU_XRAY_TRACE void addRatio (MCWalkerConfiguration &W, int iat,
                  std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-                 std::vector<ValueType> &lapl) GPU_XRAY_TRACE;
+                 std::vector<ValueType> &lapl);
   void ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
               std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
               std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
@@ -91,25 +91,25 @@ public:
     /* This function doesn't really need to return the ratio */
   }
 
-  void calcGradient(MCWalkerConfiguration &W, int iat,
-                    std::vector<GradType> &grad) GPU_XRAY_TRACE;
-  void addGradient(MCWalkerConfiguration &W, int iat,
-                   std::vector<GradType> &grad) GPU_XRAY_TRACE;
-  void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
-                 ValueMatrix_t &lapl) GPU_XRAY_TRACE;
-  void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
-                 std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios) GPU_XRAY_TRACE;
+  GPU_XRAY_TRACE void calcGradient(MCWalkerConfiguration &W, int iat,
+                    std::vector<GradType> &grad);
+  GPU_XRAY_TRACE void addGradient(MCWalkerConfiguration &W, int iat,
+                   std::vector<GradType> &grad);
+  GPU_XRAY_TRACE void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
+                 ValueMatrix_t &lapl);
+  GPU_XRAY_TRACE void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
+                 std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
 
-  void resetParameters(const opt_variables_type& active) GPU_XRAY_TRACE;
+  GPU_XRAY_TRACE void resetParameters(const opt_variables_type& active);
 
   // Evaluates the derivatives of log psi and laplacian log psi w.r.t.
   // the parameters for optimization.  First index of the ValueMatrix is
   // the parameter.  The second is the walker.
-  void
+  GPU_XRAY_TRACE void
   evaluateDerivatives (MCWalkerConfiguration &W,
                        const opt_variables_type& optvars,
                        RealMatrix_t &dlogpsi,
-                       RealMatrix_t &dlapl_over_psi) GPU_XRAY_TRACE;
+                       RealMatrix_t &dlapl_over_psi);
 
   //TwoBodyJastrowOrbitalBspline(ParticleSet& pset, bool is_master) :
   //  TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > (pset, is_master),
