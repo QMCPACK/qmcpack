@@ -693,6 +693,9 @@ SET(XRAY_INSTRUCTION_THRESHOLD 200 CACHE INT "Instruction threshold for xray ins
 SET(XRAY_GPU_MOST FALSE CACHE BOOL "Manually instrument almost all of the CUDA implementations calls on the CPU")
 
 IF(XRAY_PROFILE)
+  IF(NOT (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+     MESSAGE( FATAL_ERROR "Xray profiling can only be used with the llvm toolchain." )
+  ENDIF(NOT (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
   set(XRAY_FLAGS "-fxray-instrument -fxray-instruction-threshold=${XRAY_INSTRUCTION_THRESHOLD}")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${XRAY_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${XRAY_FLAGS}")
