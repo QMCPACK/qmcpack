@@ -129,6 +129,11 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     std::vector<int> offset(Nbandgroups+1,0);
     FairDivideLow(Nbands,Nbandgroups,offset);
 
+#ifdef QMC_CUDA
+    for(size_t ib=0; ib<offset.size(); ib++)
+      offset[ib] = offset[ib]*2;
+    gatherv(comm, MultiSpline, MultiSpline->z_stride, offset);
+#else
     // complex bands
     int gid=1;
     offset_cplx.resize(Nbandgroups+1,0);
@@ -155,6 +160,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     for(int bg=0; bg<Nbandgroups; ++bg)
       offset_real[bg+1] = offset_real[bg+1]*2+offset_real[bg];
     gatherv(comm, MultiSpline, MultiSpline->z_stride, offset_real);
+#endif
   }
 
   template<typename GT, typename BCT>
