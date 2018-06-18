@@ -688,24 +688,6 @@ ELSE(QMC_CUDA)
   MESSAGE(STATUS "Disabling CUDA")
 ENDIF(QMC_CUDA)
 
-SET(XRAY_PROFILE FALSE CACHE BOOL "Use llvm xray profiling")
-SET(XRAY_INSTRUCTION_THRESHOLD 200 CACHE INT "Instruction threshold for xray instrumentation")
-SET(XRAY_GPU_MOST FALSE CACHE BOOL "Manually instrument almost all of the CUDA implementations calls on the CPU")
-
-IF(XRAY_PROFILE)
-  IF(NOT (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-     MESSAGE( FATAL_ERROR "Xray profiling can only be used with the llvm toolchain." )
-  ENDIF(NOT (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-  set(XRAY_FLAGS "-fxray-instrument -fxray-instruction-threshold=${XRAY_INSTRUCTION_THRESHOLD}")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${XRAY_FLAGS}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${XRAY_FLAGS}")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${XRAY_FLAGS}")
-  if(XRAY_GPU_MOST)
-    set_property(DIRECTORY ${CMAKE_SOURCE_DIR} APPEND PROPERTY COMPILE_DEFINITIONS GPU_XRAY_TRACE_ON)
-  endif(XRAY_GPU_MOST)
-ENDIF(XRAY_PROFILE)
-
-
 #INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
 ##################################################################
 # TODO:use profile tools
