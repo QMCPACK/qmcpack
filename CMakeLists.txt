@@ -308,6 +308,7 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   #------------------------
   IF($ENV{CRAYPE_VERSION} MATCHES ".")
     MESSAGE(STATUS "Running on a Cray machine.")
+    CMAKE_MINIMUM_REQUIRED(VERSION 3.6.1)
     SET(CMAKE_SKIP_RPATH TRUE)
 
     # Flags for ctest

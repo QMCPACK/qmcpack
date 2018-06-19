@@ -645,15 +645,18 @@ used. The build system checks for these and does not (should not) use
 the compilers directly.
 
 \begin{verbatim}
+export CRAYPE_LINK_TYPE=dynamic
 module swap PrgEnv-pgi PrgEnv-gnu # Use gnu compilers
 module load cudatoolkit           # CUDA for GPU build
-module load cray-hdf5
-module load cmake
+module load cray-hdf5-parallel
+module load cmake3
 module load fftw
 export FFTW_HOME=$FFTW_DIR/..
 module load boost
 mkdir build_titan_gpu
 cd build_titan_gpu
+export CC=cc
+export CXX=CC
 cmake -DQMC_CUDA=1 ..             # Must enable CUDA capabilities
 make -j 8
 ls -l bin/qmcpack
@@ -667,13 +670,15 @@ Crays requires only loading the appropriate library modules.
 export CRAYPE_LINK_TYPE=dynamic
 module swap PrgEnv-pgi PrgEnv-gnu # Use gnu compilers
 module unload cudatoolkit         # No CUDA for CPU build
-module load cray-hdf5
-module load cmake
+module load cray-hdf5-parallel
+module load cmake3
 module load fftw
 export FFTW_HOME=$FFTW_DIR/..
 module load boost
 mkdir build_titan_cpu
 cd build_titan_cpu
+export CC=cc
+export CXX=CC
 cmake ..
 make -j 8
 ls -l bin/qmcpack
