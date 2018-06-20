@@ -282,15 +282,15 @@ cycles.
 \begin{figure}
   \centering
   \ifdefined\HCode%
-  \begin{xltabular}[l]{1024pt}{X X}
+  \begin{tabularx}{1024pt}{X X}
     \includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=512pt]{./figures/qmca_opt_energy.dmn}&
     \includegraphics[trim=2mm 0mm 4mm 0mm,clip,width=512pt]{./figures/qmca_opt_variance.png}\\
-  \end{xltabular}
+  \end{tabularx}
 \else%
-  \begin{xltabular}[l]{\textwidth}{X X}
+  \begin{tabularx}{\textwidth}{X X}
     \includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=0.47\textwidth]{./figures/qmca_opt_energy.pdf}&
     \includegraphics[trim=2mm 0mm 4mm 0mm,clip,width=0.47\textwidth]{./figures/qmca_opt_variance.png}\\
-    \end{xltabular}
+    \end{tabularx}
 \fi%
   \caption{Energy and variance vs. optimization series for an 8 atom cell of diamond as plotted by \texttt{qmca}.}%
   \label{fig:qmca_opt_ev}%
@@ -1147,15 +1147,15 @@ panel of Fig.~\ref{fig:qfit_timestep}.
 \begin{figure}
   \centering
 \ifdefined\HCode%
-  \begin{xltabular}[l]{1024pt}{X X}
+  \begin{tabularx}{1024pt}{X X}
     \includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=512pt]{./figures/qfit_timestep_linear.dmn}&
     \includegraphics[trim=2mm 0mm 4mm 0mm,clip,width=512pt]{./figures/qfit_timestep_quadratic.dmn}\\
-  \end{xltabular}
+  \end{tabularx}
 \else%
-  \begin{xltabular}[l]{\textwidth}{X X}
+  \begin{tabularx}{\textwidth}{X X}
     \includegraphics[trim=0mm 0mm 4mm 0mm,clip,width=0.47\textwidth]{./figures/qfit_timestep_linear.pdf}&
     \includegraphics[trim=2mm 0mm 4mm 0mm,clip,width=0.47\textwidth]{./figures/qfit_timestep_quadratic.pdf}\\
-    \end{xltabular}
+    \end{tabularx}
 \fi%
 \caption{Linear (left) and quadratic (right) timestep fits to DMC data for a 32 atom supercell of MnO obtained with \texttt{qfit}.  Zero timestep estimates are indicated by the red data point on the left side of either panel.}
   \label{fig:qfit_timestep}
