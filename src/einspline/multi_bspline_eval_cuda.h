@@ -131,6 +131,11 @@ eval_multi_multi_UBspline_3d_c_cuda
  float *pos_d, complex_float *vals_d[], int num);
 
 extern "C" void
+eval_multi_multi_UBspline_3d_c_cudasplit
+(const multi_UBspline_3d_c_cuda *spline,
+ float *pos_d, complex_float *vals_d[], int num, int device_nr);
+
+extern "C" void
 eval_multi_multi_UBspline_3d_c_vgh_cuda
 (const multi_UBspline_3d_c_cuda *spline, float *pos_d,
  complex_float *vals_d[], complex_float *grads_d[],

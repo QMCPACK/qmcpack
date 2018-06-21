@@ -193,12 +193,12 @@ void update_dot (const T a, const T b, const T sum, const T corr, T *new_sum, T 
 
 __global__
 static void
-eval_multi_multi_UBspline_3d_c_kernel (float const * __restrict__ pos,
-                                       float const * __restrict__ coefs_GPU,
-                                       float * const * __restrict__ vals,
+eval_multi_multi_UBspline_3d_c_kernel (float const * pos,
+                                       float const * coefs_GPU,
+                                       float * const * vals,
                                        const float3 drInv, const uint3 dim,
                                        const uint3 strides, int N,
-                                       float const * __restrict__ coefs_host,
+                                       float const * coefs_host,
                                        int host_Nx_offset,
                                        int spline_start)
 
@@ -232,7 +232,7 @@ eval_multi_multi_UBspline_3d_c_kernel (float const * __restrict__ pos,
   int indy = ind[1];
   int indz = ind[2];
 
-  float const * __restrict__ coefs = indx < host_Nx_offset ? coefs_GPU:coefs_host;
+  float const * coefs = indx < host_Nx_offset ? coefs_GPU:coefs_host;
   if ( indx >= host_Nx_offset ) indx -= host_Nx_offset;
 
   if (tid < 64)
@@ -246,7 +246,7 @@ eval_multi_multi_UBspline_3d_c_kernel (float const * __restrict__ pos,
   int off = blockIdx.x * blockDim.x + tid;
   if (off < 2*N)
   {
-    float * __restrict__ myval = vals[blockIdx.y];
+    float * myval = vals[blockIdx.y];
     int stride_z = strides.z;
     int stride_y = strides.y - 4*stride_z;
     int stride_x = strides.x - 4*strides.y;
@@ -439,14 +439,14 @@ eval_multi_multi_UBspline_3d_c_vgh_kernel
 #define VGL_OPTION1 0
 #define VGL_OPTION2 0
 __global__ static void
-eval_multi_multi_UBspline_3d_c_vgl_kernel(float const * __restrict__ pos,
-    float const * __restrict__ coefs_GPU,
-    float const * __restrict__ Linv,
+eval_multi_multi_UBspline_3d_c_vgl_kernel(float const * pos,
+    float const * coefs_GPU,
+    float const * Linv,
     float* const * vals,
     float* const * grd_lapl,
     float3 drInv, uint3 dim,
     uint3 strides, int N, int row_stride,
-    float const * __restrict__ coefs_host,
+    float const * coefs_host,
     int host_Nx_offset,
     int spline_start)
 {
@@ -471,7 +471,7 @@ eval_multi_multi_UBspline_3d_c_vgl_kernel(float const * __restrict__ pos,
   int indz = min(max(0,(int)sf), dim.z-1);
   float tz = s - sf;
 
-  float const * __restrict__ coefs = indx < host_Nx_offset ? coefs_GPU:coefs_host;
+  float const * coefs = indx < host_Nx_offset ? coefs_GPU:coefs_host;
   if ( indx >= host_Nx_offset ) indx -= host_Nx_offset;
 
   int tid = threadIdx.x;
@@ -590,8 +590,8 @@ eval_multi_multi_UBspline_3d_c_vgl_kernel(float const * __restrict__ pos,
   if (off < 2*N)
   {
     int out_off=off+2*spline_start;
-    float * __restrict__ myval = vals[ir];
-    float * __restrict__ mygrad_lapl = grd_lapl[ir];
+    float * myval = vals[ir];
+    float * mygrad_lapl = grd_lapl[ir];
     // Store gradients back to global memory
     myval[out_off] = v;
     mygrad_lapl[out_off+0*row_stride] = G[0][0]*g0 + G[0][1]*g1 + G[0][2]*g2;
@@ -656,14 +656,13 @@ eval_multi_multi_UBspline_3d_c_cudasplit (multi_UBspline_3d_c_cuda *spline,
     else
       num_splines -= spline_start;
   }
-  if ((num_splines%COALLESCED_SIZE) != 0)
-    num_splines += COALLESCED_SIZE - (num_splines%COALLESCED_SIZE);
   int threadsPerBlock = max(64,min(32*((2*num_splines+31)/32),256));
   dim3 dimBlock(threadsPerBlock);
   dim3 dimGrid((2 * num_splines + dimBlock.x - 1) / dimBlock.x, num);
   eval_multi_multi_UBspline_3d_c_kernel<<<dimGrid,dimBlock>>>
   (pos_d, (float*)spline->coefs, (float**)vals_d, spline->gridInv,
    spline->dim, spline->stride, num_splines, (float*)spline->coefs_host, spline->host_Nx_offset, spline_start);
+  cudaDeviceSynchronize();
 }
 
 extern "C" void
@@ -706,13 +705,13 @@ eval_multi_multi_UBspline_3d_c_vgl_cuda (multi_UBspline_3d_c_cuda *spline,
 
 __global__ static void
 cuda_uva_test_kernel(float * coefs_GPU,
-                     float* const * __restrict__ vals,
+                     float* const * vals,
                      int N, int spline_start)
 {
   int off = blockIdx.x * blockDim.x + threadIdx.x;
   if (off < 2*N)
   {
-    float * __restrict__ myval = vals[blockIdx.y];
+    float * myval = vals[blockIdx.y];
     myval[off+spline_start] = coefs_GPU[0];
   }
 }
@@ -744,17 +743,20 @@ eval_multi_multi_UBspline_3d_c_vgl_cudasplit (multi_UBspline_3d_c_cuda *spline,
   int threadsPerBlock = max(64,min(32*((2*num_splines+31)/32),256));
   dim3 dimBlock(threadsPerBlock);
   dim3 dimGrid((2 * num_splines + dimBlock.x - 1) / dimBlock.x, num);
-//  fprintf(stderr,"Starting eval_multi_multi_UBspline_3d_c_vgl_kernel with parameters:\n%p, %p, %p, %p, %p, (%f, %f, %f), (%i, %i, %i), (%i, %i, %i), %i, %i, %p, %i, %i\n",
-//                  pos_d, (float*)spline->coefs, Linv_d, (float**)vals_d,(float**)grad_lapl_d,
-//                  spline->gridInv.x, spline->gridInv.y, spline->gridInv.z, spline->dim.x, spline->dim.y, spline->dim.z, spline->stride.x, spline->stride.y, spline->stride.z,
-//                  num_splines, row_stride,
-//                  (float*)spline->coefs_host,
-//                  spline->host_Nx_offset, spline_start);
-  eval_multi_multi_UBspline_3d_c_vgl_kernel<<<dimGrid,dimBlock>>>
+  eval_multi_multi_UBspline_3d_c_vgl_kernel<<<dimGrid,dimBlock,0,0>>>
     (pos_d, (float*)spline->coefs, Linv_d, (float**)vals_d,
     (float**)grad_lapl_d, spline->gridInv, spline->dim,
     spline->stride, num_splines, row_stride, (float*)spline->coefs_host, spline->host_Nx_offset, spline_start);
-  cudaDeviceSynchronize();
+//    spline->stride, num_splines, num_splines, (float*)spline->coefs_host, spline->host_Nx_offset, 0);
+//  cudaDeviceSynchronize();
+  cudaError_t err = cudaPeekAtLastError();
+  if (err != cudaSuccess)
+    fprintf(stderr,"Error in eval_multi_multi_UBspline_3d_c_vgl_kernel with parameters:\n%p, %p, %p, %p, %p, (%f, %f, %f), (%i, %i, %i), (%i, %i, %i), %i, %i, %p, %i, %i\n",
+                    pos_d, (float*)spline->coefs, Linv_d, (float**)vals_d,(float**)grad_lapl_d,
+                    spline->gridInv.x, spline->gridInv.y, spline->gridInv.z, spline->dim.x, spline->dim.y, spline->dim.z, spline->stride.x, spline->stride.y, spline->stride.z,
+                    num_splines, row_stride,
+                    (float*)spline->coefs_host,
+                    spline->host_Nx_offset, spline_start);
 //  if (device_nr==0)
 //    cuda_uva_test_kernel<<<dimGrid,dimBlock>>>
 //    ((float*)spline->coefs, (float**)vals_d, num_splines, spline_start);

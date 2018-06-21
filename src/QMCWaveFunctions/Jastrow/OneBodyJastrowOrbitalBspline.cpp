@@ -539,7 +539,7 @@ OneBodyJastrowOrbitalBspline::evaluateDerivatives
     SplineDerivsHost = SplineDerivsGPU;
 //       std::cerr << "SplineDerivsHost = " << std::endl;
 //       for (int i=0; i<SplineDerivsHost.size(); i++)
-// 	cerr << SplineDerivsHost[i] << std::endl;
+//         std::cerr << SplineDerivsHost[i] << std::endl;
     opt_variables_type splineVars = Funique[cgroup]->myVars;
     for (int iv=0; iv<splineVars.size(); iv++)
     {

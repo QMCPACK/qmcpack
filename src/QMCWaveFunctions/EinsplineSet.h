@@ -289,8 +289,12 @@ protected:
   CudaSplineType *CudaMultiSpline;
   gpu::device_vector<CudaStorageType> CudaValueVector, CudaGradLaplVector;
   gpu::device_vector<CudaStorageType*> CudaValuePointers, CudaGradLaplPointers;
+  std::vector<gpu::device_vector<CudaStorageType>> CudaSplitValueVector, CudaSplitGradLaplVector;
+  std::vector<gpu::device_vector<CudaStorageType*>> CudaSplitValuePointers, CudaSplitGradLaplPointers;
   std::vector<cudaIpcMemHandle_t> spline_rank_handles;
   std::vector<CudaStorageType*> spline_rank_pointers;
+  std::vector<cudaEvent_t> spline_events;
+  int abort_counter=0;
   void resize_cuda(int numWalkers);
   void get_split_spline_pointers();
   // Cuda equivalent

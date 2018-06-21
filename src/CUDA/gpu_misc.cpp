@@ -30,6 +30,7 @@ cudaEvent_t gradientSyncTwoBodyEvent;
 cudaEvent_t ratioSyncDiracEvent;
 cudaEvent_t ratioSyncOneBodyEvent;
 cudaEvent_t ratioSyncTwoBodyEvent;
+
 cublasHandle_t cublasHandle;
 
 size_t MaxGPUSpineSizeMB;
