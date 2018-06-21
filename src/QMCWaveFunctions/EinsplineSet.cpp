@@ -2321,7 +2321,7 @@ template class EinsplineSetExtended<std::complex<double> >;
 template class EinsplineSetExtended<        double  >;
 
 
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
 ///////////////////////////////
 // Real StorageType versions //
 ///////////////////////////////

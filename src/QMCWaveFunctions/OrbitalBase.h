@@ -34,7 +34,7 @@
 namespace qmcplusplus
 {
 
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
 struct NLjob
 {
   int walker;
@@ -44,7 +44,7 @@ struct NLjob
     walker(w), elec(e), numQuadPoints(n)
   { }
 };
-#endif
+#endif // defined(QMC_CUDA) && !defined(ENABLE_SOA)
 
 ///forward declaration of OrbitalBase
 class OrbitalBase;
@@ -435,7 +435,7 @@ struct OrbitalBase: public QMCTraits
   /////////////////////////////////////////////////////
   // Functions for vectorized evaluation and updates //
   /////////////////////////////////////////////////////
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
   virtual void freeGPUmem()
   { }
 
@@ -606,7 +606,7 @@ struct OrbitalBase: public QMCTraits
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
-#endif
+#endif //defined(QMC_CUDA) && !defined(ENABLE_SOA)
 };
 }
 #endif

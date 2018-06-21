@@ -84,22 +84,29 @@ struct QMCTraits
   typedef OHMMS_PRECISION_FULL           EstimatorRealType;
 #if defined(QMC_COMPLEX)
   typedef std::complex<OHMMS_PRECISION>  ValueType;
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
   typedef std::complex<CUDA_PRECISION>   CudaValueType;
 #endif
-#else
+#else // defined(QMC_COMPLEX)
   typedef OHMMS_PRECISION                ValueType;
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && defined(ENABLE_SOA)
+  typedef CUDA_PRECISION                 CudaValueType;
+#elif defined(QMC_CUDA) && !defined(ENABLE_SOA)
   typedef CUDA_PRECISION                 CudaValueType;
 #endif
-#endif
+#endif // defined(QMC_COMPLEX)
   typedef std::complex<RealType>         ComplexType;
   typedef TinyVector<RealType,DIM>       PosType;
   typedef TinyVector<ValueType,DIM>      GradType;
   typedef Tensor<RealType,DIM>           TensorType;
   ///define PropertyList_t
   typedef RecordNamedProperty<EstimatorRealType>    PropertySetType;
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && defined(ENABLE_SOA)
+  typedef CUDA_PRECISION                 CudaRealType;
+  typedef TinyVector<CudaValueType,DIM>  CudaGradType;
+  typedef TinyVector<CudaRealType,DIM>   CudaPosType;
+  typedef std::complex<CUDA_PRECISION>   CudaComplexType;
+#elif defined(QMC_CUDA) && !defined(ENABLE_SOA)
   typedef CUDA_PRECISION                 CudaRealType;
   typedef TinyVector<CudaValueType,DIM>  CudaGradType;
   typedef TinyVector<CudaRealType,DIM>   CudaPosType;

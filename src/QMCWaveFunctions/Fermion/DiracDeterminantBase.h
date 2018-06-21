@@ -307,7 +307,7 @@ public:
   ValueType *FirstAddressOfdV;
   ValueType *LastAddressOfdV;
 
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
   /////////////////////////////////////////////////////
   // Functions for vectorized evaluation and updates //
   /////////////////////////////////////////////////////

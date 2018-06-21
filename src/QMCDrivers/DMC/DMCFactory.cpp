@@ -19,7 +19,7 @@
 #include "QMCDrivers/DMC/DMCOMP.h"
 #include "Message/OpenMP.h"
 
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
 #include "QMCDrivers/DMC/DMC_CUDA.h"
 #endif
 
@@ -30,7 +30,7 @@ namespace qmcplusplus
 QMCDriver* DMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi
                               , QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool)
 {
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
   if (GPU)
     return new DMCcuda (w, psi, h,ppool);
 #endif

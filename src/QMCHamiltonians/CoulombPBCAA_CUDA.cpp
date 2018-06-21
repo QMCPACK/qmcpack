@@ -33,7 +33,7 @@ CoulombPBCAA_CUDA::CoulombPBCAA_CUDA
   L("CoulombPBCAATemp::L"),
   Linv("CoulombPBCAATemp::Linv")
 {
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
   gpu::host_vector<CUDA_PRECISION_FULL> LHost(9), LinvHost(9);
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
@@ -49,7 +49,7 @@ CoulombPBCAA_CUDA::CoulombPBCAA_CUDA
 
 void CoulombPBCAA_CUDA::initBreakup(ParticleSet& P, bool cloning)
 {
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
   if (!cloning)
   {
     SRSpline = new TextureSpline;

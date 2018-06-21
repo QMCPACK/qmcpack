@@ -28,7 +28,7 @@
 #endif
 #include "Message/OpenMP.h"
 
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
 #include "QMCDrivers/VMC/VMC_CUDA.h"
 #endif
 
@@ -41,7 +41,7 @@ QMCDriver* VMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi,
   int np=omp_get_max_threads();
   //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
   QMCDriver* qmc=0;
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
   if (VMCMode & 16)
     qmc = new VMCcuda(w,psi,h,ppool);
   else

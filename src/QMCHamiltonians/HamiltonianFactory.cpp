@@ -52,7 +52,7 @@
 #include "QMCHamiltonians/SkPot.h"
 #endif
 #include "OhmmsData/AttributeSet.h"
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
 #include "QMCHamiltonians/SkEstimator_CUDA.h"
 #endif
 
@@ -323,7 +323,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       {
         if(PBCType)//only if perioidic
         {
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
           SkEstimator_CUDA* apot=new SkEstimator_CUDA(*targetPtcl);
 #else
           SkEstimator* apot=new SkEstimator(*targetPtcl);

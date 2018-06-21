@@ -90,7 +90,7 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  Precision used in this calculation, see definitions in the manual:"
       << "\n  Base precision      = " << GET_MACRO_VAL(OHMMS_PRECISION)
       << "\n  Full precision      = " << GET_MACRO_VAL(OHMMS_PRECISION_FULL)
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
       << "\n  CUDA base precision = " << GET_MACRO_VAL(CUDA_PRECISION) 
       << "\n  CUDA full precision = " << GET_MACRO_VAL(CUDA_PRECISION_FULL)
 #endif

@@ -423,7 +423,7 @@ void MPC::addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy
 //only used for debugging
 //  const int nw=W.getActiveWalkers();
 //  const int indx=NUMPROPERTIES+myIndex;
-//#ifdef QMC_CUDA
+//#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
 //#pragma omp parallel for
 //  for(int iw=0; iw<nw; ++iw)
 //  {

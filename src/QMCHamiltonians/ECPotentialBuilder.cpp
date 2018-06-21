@@ -19,7 +19,7 @@
 #include "QMCHamiltonians/CoulombPBCAB.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Numerics/OneDimNumGridFunctor.h"
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
 #include "QMCHamiltonians/CoulombPBCAB_CUDA.h"
 #include "QMCHamiltonians/LocalECPotential_CUDA.h"
 #include "QMCHamiltonians/NonLocalECPotential_CUDA.h"
@@ -84,7 +84,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   {
     if(IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc =="no")
     {
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
       LocalECPotential_CUDA* apot =
         new LocalECPotential_CUDA(IonConfig,targetPtcl);
 #else
@@ -104,7 +104,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     {
       if (doForces)
         app_log() << "  Will compute forces in CoulombPBCAB.\n" << std::endl;
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
       CoulombPBCAB_CUDA* apot=
         new CoulombPBCAB_CUDA(IonConfig,targetPtcl, doForces);
 #else
@@ -123,7 +123,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   {
     //resize the sphere
     RealType rc2=0.0;
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
     NonLocalECPotential_CUDA* apot =
       new NonLocalECPotential_CUDA(IonConfig,targetPtcl,targetPsi,usePBC,doForces);
 #else

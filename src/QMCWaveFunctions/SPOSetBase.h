@@ -25,7 +25,7 @@
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "io/hdf_archive.h"
-#if !defined(EANBLE_SOA)
+#if !defined(ENABLE_SOA)
 #include "Message/CommOperators.h"
 #endif
 
@@ -296,7 +296,7 @@ public:
   // Should be left empty for other derived classes
   virtual void rotate_B(const std::vector<RealType> &rot_mat) { };
 
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
 
   /** evaluate the values of this single-particle orbital set
    * @param P current ParticleSet
@@ -333,6 +333,43 @@ public:
   evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi);
 #endif
 
+#if defined(QMC_CUDA) && defined(ENABLE_SOA)
+
+  /** evaluate the values of this single-particle orbital set
+   * @param P current ParticleSet
+   * @param r is the position of the particle
+   * @param psi values of the SPO
+   */
+  virtual void
+  evaluate (const ParticleSet& P, const PosType& r, std::vector<RealType> &psi);
+
+  virtual void initGPU() {  }
+
+  //////////////////////////////////////////
+  // Walker-parallel vectorized functions //
+  //////////////////////////////////////////
+  virtual void
+  reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool) { }
+
+  virtual void
+  evaluate (std::vector<Walker_t*> &walkers, int iat, gpu::device_vector<CudaValueType*> &phi);
+
+  virtual void evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &new_pos
+                         , gpu::device_vector<CudaValueType*> &phi);
+
+  virtual void
+  evaluate (std::vector<Walker_t*> &walkers,
+            std::vector<PosType> &new_pos,
+            gpu::device_vector<CudaValueType*> &phi,
+            gpu::device_vector<CudaValueType*> &grad_lapl_list,
+            int row_stride);
+
+  virtual void
+  evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi);
+  virtual void
+  evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi);
+#endif
+  
 #if !defined(ENABLE_SOA)
 protected:
   bool putOccupation(xmlNodePtr occ_ptr);

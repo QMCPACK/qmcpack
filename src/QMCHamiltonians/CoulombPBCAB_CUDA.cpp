@@ -41,7 +41,7 @@ CoulombPBCAB_CUDA::CoulombPBCAB_CUDA
   NumIonSpecies = sSet.getTotalNum();
   NumIons  = ions.getTotalNum();
   NumElecs = elns.getTotalNum();
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
   gpu::host_vector<CUDA_PRECISION_FULL> LHost(9), LinvHost(9);
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
@@ -79,7 +79,7 @@ void
 CoulombPBCAB_CUDA::initBreakup(ParticleSet& P)
 {
   CoulombPBCAB::initBreakup(P);
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
   V0Spline = new TextureSpline;
   V0Spline->set(V0->data(), V0->size(), V0->grid().rmin(),
                 V0->grid().rmax());

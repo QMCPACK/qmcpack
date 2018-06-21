@@ -27,7 +27,10 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "Utilities/PooledData.h"
 #include "Utilities/PooledMemory.h"
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && defined(ENABLE_SOA)
+#include "Utilities/PointerPool.h"
+#include "CUDA/gpu_vector.h"
+#elif defined(QMC_CUDA) && !defined(ENABLE_SOA)
 #include "Utilities/PointerPool.h"
 #include "CUDA/gpu_vector.h"
 #endif
@@ -76,7 +79,7 @@ struct Walker
   typedef typename t_traits::EstimatorRealType EstimatorRealType;
   /** typedef for value data type. */
   typedef typename t_traits::ValueType ValueType;
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
   /** typedef for CUDA real data type */
   typedef typename t_traits::CudaRealType CudaRealType;
   /** typedef for CUDA value data type. */
@@ -145,7 +148,7 @@ struct Walker
   size_t block_end, scalar_end;
 
   /// Data for GPU-vectorized versions
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
   static int cuda_DataSize;
   typedef gpu::device_vector<CudaValueType> cuda_Buffer_t;
   cuda_Buffer_t cuda_DataSet;
@@ -182,7 +185,7 @@ struct Walker
 
   ///create a walker for n-particles
   inline explicit Walker(int nptcl=0)
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
     :cuda_DataSet("Walker::walker_buffer"), R_GPU("Walker::R_GPU"),
      Grad_GPU("Walker::Grad_GPU"), Lap_GPU("Walker::Lap_GPU"),
      Rhok_GPU("Walker::Rhok_GPU")
@@ -273,7 +276,7 @@ struct Walker
     R.resize(nptcl);
     G.resize(nptcl);
     L.resize(nptcl);
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
     R_GPU.resize(nptcl);
     Grad_GPU.resize(nptcl);
     Lap_GPU.resize(nptcl);
@@ -307,7 +310,7 @@ struct Walker
     for (int i=0; i<PropertyHistory.size(); i++)
       PropertyHistory[i]=a.PropertyHistory[i];
     PHindex=a.PHindex;
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
     cuda_DataSet = a.cuda_DataSet;
     R_GPU = a.R_GPU;
     Grad_GPU = a.Grad_GPU;
@@ -449,7 +452,7 @@ struct Walker
     for (int iat=0; iat<PropertyHistory.size(); iat++)
       DataSet.add(PropertyHistory[iat].data(), PropertyHistory[iat].data()+PropertyHistory[iat].size());
     DataSet.add(PHindex.data(), PHindex.data()+PHindex.size());
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
     size_t size = cuda_DataSet.size();
     size_t N = R_GPU.size();
     size_t M = Rhok_GPU.size();
@@ -479,7 +482,7 @@ struct Walker
     for (int iat=0; iat<PropertyHistory.size(); iat++)
       DataSet.get(PropertyHistory[iat].data(), PropertyHistory[iat].data()+PropertyHistory[iat].size());
     DataSet.get(PHindex.data(), PHindex.data()+PHindex.size());
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
     // Unpack GPU data
     std::vector<CudaValueType> host_data;
     std::vector<CUDA_PRECISION_FULL> host_rhok;
@@ -528,7 +531,7 @@ struct Walker
     for (int iat=0; iat<PropertyHistory.size(); iat++)
       DataSet.put(PropertyHistory[iat].data(), PropertyHistory[iat].data()+PropertyHistory[iat].size());
     DataSet.put(PHindex.data(), PHindex.data()+PHindex.size());
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
     // Pack GPU data
     std::vector<CudaValueType> host_data;
     std::vector<CUDA_PRECISION_FULL> host_rhok;

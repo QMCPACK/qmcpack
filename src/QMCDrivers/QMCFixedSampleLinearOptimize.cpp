@@ -1075,7 +1075,7 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
   parameterDirections.assign(N, 0.0);
 
   // compute the initial cost
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
   // Ye : can't call computedCost directly, internal data was not correct for ham,ovl matrices.
   // more investiation is needed.
   const RealType initCost = optTarget->Cost(true);

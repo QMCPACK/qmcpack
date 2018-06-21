@@ -455,7 +455,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   //    TargetPtcl.createSK();
   //  }
   //}
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
   if (useGPU == "yes" || useGPU == "1")
   {
     app_log() << "Initializing GPU data structures.\n";
