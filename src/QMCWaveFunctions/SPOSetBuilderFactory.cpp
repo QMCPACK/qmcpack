@@ -50,6 +50,12 @@ namespace qmcplusplus
   std::map<std::string,SPOSetBuilder*> SPOSetBuilderFactory::spo_builders;
   SPOSetBuilder* SPOSetBuilderFactory::last_builder=0;
 
+  void SPOSetBuilderFactory::clear()
+  {
+    spo_builders.clear();
+    last_builder = nullptr;
+  }
+
   SPOSetBase* get_sposet(const std::string& name)
   {
     int nfound = 0;
