@@ -1614,7 +1614,11 @@ def settings_operation():
     #end check_settings_core_noncore
 
     def check_empty_settings():
-        settings()
+        settings(
+            command_line = False,
+            )
+        settings.command_line   = True
+        nexus_core.command_line = True
         check_settings_core_noncore()
         # nexus core sets basic run stages and Pseudopotentials object
         nassert(nexus_core.stages_set==set(nexus_core_defaults.primary_modes))
@@ -1660,6 +1664,7 @@ def settings_operation():
         status_only   = 0,
         generate_only = 1,
         machine       = 'ws16',
+        command_line  = False,
         )
     check_settings_core_noncore()
     nassert(nexus_core.status_only==0)

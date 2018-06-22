@@ -608,6 +608,7 @@ class Convert4qmcInput(SimulationInput):
         target_state       
         natural_orbitals   
         threshold          
+        opt_det_coeffs
         zero_ci            
         add_3body_J        
         '''.split()
@@ -634,6 +635,7 @@ class Convert4qmcInput(SimulationInput):
         target_state       = 'TargetState',
         natural_orbitals   = 'NaturalOrbitals',
         threshold          = 'threshold',
+        opt_det_coeffs     = 'optDetCoeffs',
         zero_ci            = 'zeroCi',
         add_3body_J        = 'add3BodyJ',
         )
@@ -661,6 +663,7 @@ class Convert4qmcInput(SimulationInput):
         target_state       = int,
         natural_orbitals   = int,
         threshold          = float,
+        opt_det_coeffs     = bool,
         zero_ci            = bool,
         add_3body_J        = bool,
         )
@@ -688,6 +691,7 @@ class Convert4qmcInput(SimulationInput):
         target_state       = None,
         natural_orbitals   = None,
         threshold          = None,
+        opt_det_coeffs     = False,
         zero_ci            = False,
         add_3body_J        = False,# deprecated
         )
@@ -855,7 +859,11 @@ class Convert4qmc(Simulation):
         wfn_file  = prefix+'.Gaussian-G2.xml'
         ptcl_file = prefix+'.Gaussian-G2.ptcl.xml'
         if not os.path.exists(os.path.join(self.locdir,ptcl_file)):
-            wfn_file  = prefix+'.wfnoj.xml'
+            if self.input.no_jastrow:
+                wfn_file  = prefix+'.wfnoj.xml'
+            else:
+                wfn_file  = prefix+'.wfj.xml'
+            #end if
             ptcl_file = prefix+'.structure.xml'
         #end if
         return wfn_file,ptcl_file

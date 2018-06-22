@@ -83,7 +83,7 @@
  -5.05840000000000e-02  0.00000000000000e+00  0.00000000000000e+00  2.02675400000000e+00
 </coefficient>
       </sposet>
-      <multideterminant optimize="yes" spo_up="spo-up" spo_dn="spo-dn">
+      <multideterminant optimize="no" spo_up="spo-up" spo_dn="spo-dn">
         <detlist size="1" type="DETS" nca="0" ncb="0" nea="1" neb="1" nstates="1" cutoff="0.01">
           <ci id="CIcoeff_0" coeff="1" qc_coeff="1" alpha="1" beta="1"/>
         </detlist>

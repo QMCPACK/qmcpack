@@ -674,10 +674,14 @@ def generate_physical_system(**kwargs):
         if is_str:
             if os.path.exists(s):
                 if 'elem' in kwargs:
-                    kwargs['structure'] = read_structure(s,elem=kwargs['elem'])
+                    s = read_structure(s,elem=kwargs['elem'])
                 else:
-                    kwargs['structure'] = read_structure(s)
+                    s = read_structure(s)
                 #end if
+                if 'axes' in kwargs:
+                    s.reset_axes(kwargs['axes'])
+                #end if
+                kwargs['structure'] = s
             else:
                 slow = s.lower()
                 format = None
