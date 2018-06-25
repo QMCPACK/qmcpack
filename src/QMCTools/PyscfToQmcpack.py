@@ -36,7 +36,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
            PBC=True
 
   if PBC and len(kpts) == 0:
-	#sys.exit("You need to specify explicit the list of K-point (including gamma)")
+        #sys.exit("You need to specify explicit the list of K-point (including gamma)")
         Gamma=True
 
 
@@ -46,7 +46,8 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
 
   H5_qmcpack=h5py.File(title+'.h5','w')
   groupApp=H5_qmcpack.create_group("application")
-  CodeData  = groupApp.create_dataset("code",(1,),dtype="S5")
+  dt = h5py.special_dtype(vlen=str)
+  CodeData  = groupApp.create_dataset("code",(1,),dtype=dt)
   CodeData[0:] = "PySCF"
   CodeVer  = groupApp.create_dataset("version",(3,),dtype="i4")
   CodeVer[0:] = 1
@@ -71,19 +72,19 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
 
   d = defaultdict(list)
   for i,t in enumerate(l_atoms):
-	d[t].append(i)
+        d[t].append(i)
 
 
   idxSpeciestoAtoms = dict()
   uniq_atoms= dict()
   for i, (k,v) in enumerate(d.items()):
-  	idxSpeciestoAtoms[i] = v
-	uniq_atoms[i] = k
+        idxSpeciestoAtoms[i] = v
+        uniq_atoms[i] = k
 
   idxAtomstoSpecies = dict()
   for k, l_v in idxSpeciestoAtoms.items():
-	for v in l_v:
-		idxAtomstoSpecies[v] = k
+        for v in l_v:
+            idxAtomstoSpecies[v] = k
  
   NbSpecies=len(idxSpeciestoAtoms.keys())
 
@@ -99,15 +100,16 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
     atmname=str(uniq_atoms[x][0])
     groupSpecies=groupAtom.create_group("species_"+str(x))
     groupSpecies.create_dataset("atomic_number",(1,),dtype="i4",data=uniq_atoms[x][1])
-    mylen="S"+str(len(atmname))
-    AtmName=groupSpecies.create_dataset("name",(1,),dtype=mylen)
+    #mylen="S"+str(len(atmname))
+    dt = h5py.special_dtype(vlen=str)
+    AtmName=groupSpecies.create_dataset("name",(1,),dtype=dt)
     AtmName[0:]=atmname
     groupSpecies.create_dataset("charge",(1,),dtype="f8",data=uniq_atoms[x][2])
     groupSpecies.create_dataset("core",(1,),dtype="f8",data=uniq_atoms[x][3])
   SpeciesID=groupAtom.create_dataset("species_ids",(natom,),dtype="i4")
 
   for x in range(natom):
-  	SpeciesID[x:]  = idxAtomstoSpecies[x]
+      SpeciesID[x:]  = idxAtomstoSpecies[x]
 
 
 
@@ -129,7 +131,8 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
   #Dataset Number Of Atoms
   GroupBasisSet.create_dataset("NbElements",(1,),dtype="i4",data=NbSpecies)
 
-  LCAOName=GroupBasisSet.create_dataset("name",(1,),dtype="S8")
+  dt = h5py.special_dtype(vlen=str)
+  LCAOName=GroupBasisSet.create_dataset("name",(1,),dtype=dt)
   LCAOName[0:]="LCAOBSet"
 
   #atomicBasisSets Group
@@ -138,16 +141,17 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
     MyIdx=idxAtomstoSpecies[x]
     atomicBasisSetGroup=GroupBasisSet.create_group("atomicBasisSet"+str(x))
     mylen="S"+str(len(uniq_atoms[x][0]))
-    elemtype=atomicBasisSetGroup.create_dataset("elementType",(1,),dtype=mylen)
+    dt = h5py.special_dtype(vlen=str)
+    elemtype=atomicBasisSetGroup.create_dataset("elementType",(1,),dtype=dt)
     elemtype[0:]=uniq_atoms[x][0]
     if cell.cart==True:
-      Angular=atomicBasisSetGroup.create_dataset("angular",(1,),dtype="S9")
-      ExpandYLM=atomicBasisSetGroup.create_dataset("expandYlm",(1,),dtype="S6")
+      Angular=atomicBasisSetGroup.create_dataset("angular",(1,),dtype=dt)
+      ExpandYLM=atomicBasisSetGroup.create_dataset("expandYlm",(1,),dtype=dt)
       Angular[0:]="cartesian"
       ExpandYLM[0:]="Gamess"
     else:
-      Angular=atomicBasisSetGroup.create_dataset("angular",(1,),dtype="S9")
-      ExpandYLM=atomicBasisSetGroup.create_dataset("expandYlm",(1,),dtype="S5")
+      Angular=atomicBasisSetGroup.create_dataset("angular",(1,),dtype=dt)
+      ExpandYLM=atomicBasisSetGroup.create_dataset("expandYlm",(1,),dtype=dt)
       Angular[0:]="spherical"
       ExpandYLM[0:]="pyscf"
 
@@ -155,38 +159,38 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
     atomicBasisSetGroup.create_dataset("grid_npts",(1,),dtype="i4",data=1001)
     atomicBasisSetGroup.create_dataset("grid_rf",(1,),dtype="i4",data=100)
     atomicBasisSetGroup.create_dataset("grid_ri",(1,),dtype="f8",data=1e-06)
-    gridType=atomicBasisSetGroup.create_dataset("grid_type",(1,),dtype="S3")
+    gridType=atomicBasisSetGroup.create_dataset("grid_type",(1,),dtype=dt)
     gridType[0:]="log"
      
     
     if (len(cell.basis)<=2):
-       nameBase=atomicBasisSetGroup.create_dataset("name",(1,),dtype="S8")
+       nameBase=atomicBasisSetGroup.create_dataset("name",(1,),dtype=dt)
        nameBase[0:]="gaussian"
     else:
        mylen="S"+str(len(cell.basis))
-       nameBase=atomicBasisSetGroup.create_dataset("name",(1,),dtype=mylen)
+       nameBase=atomicBasisSetGroup.create_dataset("name",(1,),dtype=dt)
        nameBase[0:]=cell.basis
 
 
        
-    Normalized=atomicBasisSetGroup.create_dataset("normalized",(1,),dtype="S2")
+    Normalized=atomicBasisSetGroup.create_dataset("normalized",(1,),dtype=dt)
     Normalized[0:]="no"
  
 
     nshell = cell.atom_shell_ids(MyIdx)
     n = 0
     for i in nshell:
-	l = cell.bas_angular(i)   
+        l = cell.bas_angular(i)   
         contracted_coeffs = cell.bas_ctr_coeff(i)
         contracted_exp =cell.bas_exp(i)
         for line in zip(*contracted_coeffs):
           BasisGroup=atomicBasisSetGroup.create_group("basisGroup"+str(n))
-          basisType=BasisGroup.create_dataset("type",(1,),dtype="S8")
+          basisType=BasisGroup.create_dataset("type",(1,),dtype=dt)
           basisType[0:]="Gaussian"
 
 
           mylen="S"+str(len((uniq_atoms[x][0]+str(n)+str(l))))
-          RID=BasisGroup.create_dataset("rid",(1,),dtype=mylen)
+          RID=BasisGroup.create_dataset("rid",(1,),dtype=dt)
           RID[0:]=(uniq_atoms[x][0]+str(n)+str(l))
 
 
@@ -204,7 +208,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
               DataRadGrp.create_dataset("contraction",(1,),dtype="f8",data=c)
           #    print  "<radfunc exponent=",e," contraction=",c, "DataRad=",n,"IdRad=",IdRad,"/>"
               IdRad+=1
-	  n+=1
+          n+=1
 
     atomicBasisSetGroup.create_dataset("NbBasisGroups",(1,),dtype="i4",data=n)
 
@@ -253,8 +257,11 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
       else:
           a = l.index(item1)
           b = l.index(item2)
-          return cmp( a, b )
-  
+          return ((a>b) - (a<b)) #cmp( a, b )
+ 
+    def compare_python3(item1, item2):
+         return compare_gamess_style(item1[0],item2[0])
+ 
     ao_label = cell.ao_labels(False)
   
   
@@ -277,11 +284,12 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
           if n != 1:
                   n-=1
           else:
+                  from functools import cmp_to_key
                   n = n_orbital(r)
                   unordered_l = l_l[i:i+n]
                   unordered = l_order[i:i+n]
                   #print i,n,unordered 
-                  ordered = [x for _,x in sorted(zip(unordered_l,unordered),key=lambda p: p[0], cmp=compare_gamess_style)]
+                  ordered = [x for _,x in sorted(zip(unordered_l,unordered),key=cmp_to_key(compare_python3))]
                   l_order_new.extend(ordered)
   
     
@@ -293,7 +301,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
   
           ll_new= []
           for l in zip(*ll):
-          	ll_new.append([l[i] for i in l_order_new])
+              ll_new.append([l[i] for i in l_order_new])
           return ll_new
   
   mo_coeff = mf.mo_coeff
@@ -317,7 +325,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
       if cell.cart==True:
         eigenset=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=order_mo_coef(mo_coeff))
       else:
-        eigenset=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=zip(*mo_coeff))
+        eigenset=GroupDet.create_dataset("eigenset_0",(NbMO,NbAO),dtype="f8",data=list(zip(*mo_coeff)))
     else:
       NbMO=len(mo_coeff[0])
       NbAO=len(mo_coeff[0][0])
@@ -347,7 +355,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
 
 
     def get_mo(mo_coeff, cart):
-	return order_mo_coef(mo_coeff) if cart else zip(*mo_coeff)
+        return order_mo_coef(mo_coeff) if cart else zip(*mo_coeff)
     if Gamma:
       Nbkpts=1
     else:
@@ -409,9 +417,10 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
   GroupParameter.create_dataset("numMO",(1,),dtype="i4",data=NbMO)
   GroupParameter.create_dataset("numAO",(1,),dtype="i4",data=NbAO)
   
-
-  print 'Wavefunction successfuly saved to QMCPACK HDF5 Format'
-  print 'Use: "convert4qmc -pyscf  {}.h5" to generate QMCPACK input files'.format(title)
-  # Close the file before exiting
   H5_qmcpack.close()
+
+  print ('Wavefunction successfuly saved to QMCPACK HDF5 Format')
+  print ('Use: "convert4qmc -pyscf  {}.h5" to generate QMCPACK input files'.format(title))
+  # Close the file before exiting
+
 
