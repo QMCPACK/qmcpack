@@ -484,7 +484,7 @@ void apply_phase_factors(float kPoints[], int makeTwoCopies[],
   const int BS = 32;
   dim3 dimBlock(BS);
   dim3 dimGrid ((num_walkers+BS-1)/BS);
-  phase_factor_kernel<float,BS><<<dimGrid,dimBlock>>>
+  phase_factor_kernel<float,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (kPoints, makeTwoCopies, pos, phi_in, phi_out, num_splines, num_walkers);
   // dim3 dimGrid (num_walkers);
   // phase_factor_kernel_new<float,BS><<<dimGrid,dimBlock>>>
@@ -533,7 +533,7 @@ void apply_phase_factors(double kPoints[], int makeTwoCopies[],
   const int BS = 32;
   dim3 dimBlock(BS);
   dim3 dimGrid ((num_walkers+BS-1)/BS);
-  phase_factor_kernel<double,BS><<<dimGrid,dimBlock>>>
+  phase_factor_kernel<double,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (kPoints, makeTwoCopies, pos, phi_in, phi_out, num_splines, num_walkers);
 }
 
@@ -714,7 +714,7 @@ void apply_phase_factors(float kPoints[], float pos[],
   dim3 dimBlock(BS);
   dim3 dimGrid (num_walkers);
 
-  phase_factor_kernel<float,thrust::complex<float>,BS><<<dimGrid,dimBlock>>>
+  phase_factor_kernel<float,thrust::complex<float>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (kPoints, pos, (thrust::complex<float>**)phi_in, (thrust::complex<float>**)phi_out, num_splines);
 }
 
@@ -726,7 +726,7 @@ void apply_phase_factors(double kPoints[], double pos[],
   dim3 dimBlock(BS);
   dim3 dimGrid (num_walkers);
 
-  phase_factor_kernel<double,thrust::complex<double>,BS><<<dimGrid,dimBlock>>>
+  phase_factor_kernel<double,thrust::complex<double>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (kPoints, pos, (thrust::complex<double>**)phi_in, (thrust::complex<double>**)phi_out, num_splines);
 }
 

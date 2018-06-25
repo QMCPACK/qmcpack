@@ -340,6 +340,7 @@ create_multi_UBspline_3d_c_cuda (multi_UBspline_3d_c* spline)
   return cuda_spline;
 }
 
+// #define SPLIT_SPLINE_DEBUG
 
 extern "C" multi_UBspline_3d_c_cuda*
 create_multi_UBspline_3d_c_cuda_conv (multi_UBspline_3d_z* spline)
@@ -381,11 +382,10 @@ create_multi_UBspline_3d_c_cuda_conv (multi_UBspline_3d_z* spline)
   int spline_start = 0;
   if (gpu::device_group_size>1)
   {
-    spline_start = spline->num_splines * gpu::relative_rank / gpu::device_group_size;
-    if (gpu::relative_rank+1<gpu::device_group_size) // +1 to exclude last one which needs to use numbers above (also takes care of sizes not dividing evenly)
-      N /= gpu::device_group_size;
-    else
-      N -= spline_start;
+    N /= gpu::device_group_size;
+    if (N % gpu::device_group_size)
+      N += 1;
+    spline_start = N * gpu::relative_rank;
 #ifdef SPLIT_SPLINE_DEBUG
     fprintf (stderr, "splines %i - %i of %i\n",spline_start,spline_start+N,spline->num_splines);
 #endif
@@ -394,6 +394,7 @@ create_multi_UBspline_3d_c_cuda_conv (multi_UBspline_3d_z* spline)
   else
     fprintf (stderr, "splines N = %i\n",N);
 #endif
+  int num_splines = N;
   if ((N%COALLESCED_SIZE) != 0)
     N += COALLESCED_SIZE - (N%COALLESCED_SIZE);
   cuda_spline->stride.x = Ny*Nz*N;
@@ -458,7 +459,7 @@ create_multi_UBspline_3d_c_cuda_conv (multi_UBspline_3d_z* spline)
           for (int isp=0; isp < N; isp++)
           {
             int curr_sp=isp+spline_start;
-            if (curr_sp<spline->num_splines)
+            if ((curr_sp<spline->num_splines) && (isp<num_splines))
             {
               std::complex<double> z = spline->coefs[ix*spline->x_stride + iy*spline->y_stride + iz*spline->z_stride + curr_sp];
               spline_buff[ix*cuda_spline->stride.x + iy*cuda_spline->stride.y + iz*cuda_spline->stride.z + isp]

@@ -77,7 +77,7 @@ void VMCcuda::advanceWalkers()
   for (int isub=0; isub<nSubSteps; isub++)
   {
 #ifdef SPLIT_SPLINE_DEBUG
-    if (gpu::rank==0)
+    if (gpu::rank==1)
       std::cerr << "sub step: " << isub << "\n";
 #endif
     for(int iat=0; iat<nat; ++iat)
@@ -103,13 +103,13 @@ void VMCcuda::advanceWalkers()
       if (W.UseBoundBox)
         checkBounds (newpos, acc);
 #ifdef SPLIT_SPLINE_DEBUG
-      if (gpu::rank==0)
+      if (gpu::rank==1)
         std::cerr << "iat = " << iat << "\n";
 #endif
       for(int iw=0; iw<nw; ++iw)
       {
 #ifdef SPLIT_SPLINE_DEBUG
-        if (gpu::rank==0)
+        if (gpu::rank==1)
           std::cerr << iw << ": " << ratios[iw] << "\n";
 #endif
 #ifdef QMC_COMPLEX
@@ -133,7 +133,7 @@ void VMCcuda::advanceWalkers()
       if (accepted.size())
         Psi.update(accepted,iat);
 #ifdef SPLIT_SPLINE_DEBUG
-      abort();
+      _exit(0);
 #endif
     }
   }
@@ -164,7 +164,7 @@ bool VMCcuda::run()
   // First do warmup steps
   for (int step=0; step<nWarmupSteps; step++)
   {
-    if (gpu::rank==0)
+    if (gpu::rank==1)
       std::cerr << "Before advanceWalkers(), step " << step << "\n";
     advanceWalkers();
   }
@@ -183,14 +183,14 @@ bool VMCcuda::run()
       ++CurrentStep;
       W.resetCollectables();
 #ifdef SPLIT_SPLINE_DEBUG
-      if (gpu::rank==0)
+      if (gpu::rank==1)
         std::cerr << "Before advanceWalkers(), step " << step << "\n";
 #endif
       advanceWalkers();
       Psi.gradLapl(W, grad, lapl);
       H.evaluate (W, LocalEnergy);
 #ifdef SPLIT_SPLINE_DEBUG
-      if(gpu::rank==0)
+      if(gpu::rank==1)
         for(int ip=0; ip<nw; ip++)
           fprintf(stderr,"walker #%i energy = %f\n",ip,LocalEnergy[ip]);
 #endif
@@ -200,7 +200,7 @@ bool VMCcuda::run()
     }
     while(step<nSteps);
 #ifdef SPLIT_SPLINE_DEBUG
-    abort();
+    _exit(0);
 #endif
     if ( nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 ) Psi.recompute(W);
     if(forOpt)

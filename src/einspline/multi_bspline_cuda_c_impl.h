@@ -650,19 +650,20 @@ eval_multi_multi_UBspline_3d_c_cudasplit (multi_UBspline_3d_c_cuda *spline,
   int spline_start=0;
   if (gpu::device_group_size>1)
   {
-    spline_start = spline->num_splines * device_nr / gpu::device_group_size;
-    if (device_nr+1<gpu::device_group_size) // +1 to exclude last one which needs to use numbers above (also takes care of sizes not dividing evenly)
-      num_splines /= gpu::device_group_size;
-    else
-      num_splines -= spline_start;
+    num_splines /= gpu::device_group_size;
+    if (num_splines % gpu::device_group_size)
+      num_splines += 1;
+    spline_start = num_splines * device_nr;
+    if (device_nr+1==gpu::device_group_size)
+      num_splines = spline->num_splines - spline_start;
   }
   int threadsPerBlock = max(64,min(32*((2*num_splines+31)/32),256));
   dim3 dimBlock(threadsPerBlock);
   dim3 dimGrid((2 * num_splines + dimBlock.x - 1) / dimBlock.x, num);
-  eval_multi_multi_UBspline_3d_c_kernel<<<dimGrid,dimBlock>>>
+  eval_multi_multi_UBspline_3d_c_kernel<<<dimGrid,dimBlock,0,0>>>
   (pos_d, (float*)spline->coefs, (float**)vals_d, spline->gridInv,
    spline->dim, spline->stride, num_splines, (float*)spline->coefs_host, spline->host_Nx_offset, spline_start);
-  cudaDeviceSynchronize();
+//  cudaDeviceSynchronize();
 }
 
 extern "C" void
@@ -734,11 +735,12 @@ eval_multi_multi_UBspline_3d_c_vgl_cudasplit (multi_UBspline_3d_c_cuda *spline,
   int spline_start=0;
   if (gpu::device_group_size>1)
   {
-    spline_start = spline->num_splines * device_nr / gpu::device_group_size;
-    if (device_nr+1<gpu::device_group_size) // +1 to exclude last one which needs to use numbers above (also takes care of sizes not dividing evenly)
-      num_splines /= gpu::device_group_size;
-    else
-      num_splines -= spline_start;
+    num_splines /= gpu::device_group_size;
+    if (num_splines % gpu::device_group_size)
+      num_splines += 1;
+    spline_start = num_splines * device_nr;
+    if (device_nr+1==gpu::device_group_size)
+      num_splines = spline->num_splines - spline_start;
   }
   int threadsPerBlock = max(64,min(32*((2*num_splines+31)/32),256));
   dim3 dimBlock(threadsPerBlock);
