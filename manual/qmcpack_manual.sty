@@ -19,7 +19,8 @@
 %% The empty bracket below is false condition of the Courier New Check
 \@ifpackageloaded{fontspec}%
                  {%
-\setmainfont{XCharter Roman}%
+%XCharter Roman is a new font, not available by default
+%\setmainfont{XCharter Roman}%
 \@ifpackagelater{fontspec}{2017/01/20}% when fontspec 2.5c was included in texlive
 {%
 \IfFontExistsTF {DejaVu Sans Mono}%
