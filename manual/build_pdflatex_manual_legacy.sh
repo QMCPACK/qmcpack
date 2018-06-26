@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# Legacy script to build PDF version of manual using pdflatex
+# For use when xetex is not installed
+# Using build_manual.sh with a modern TeX Live installation is the preferred route
+
 if [ $# -eq 1 ]; then
   QMCPACK_VER="$1"
   cp -p version.tex version.save.tex
