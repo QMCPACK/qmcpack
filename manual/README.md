@@ -12,7 +12,7 @@ ATTENTION:
 If you have a texlive installation predating the 1/20/2017 release or not including the xetex collection
 use the build for legacy tex installs.
 ``` shell
-build_pdflatex_manual.sh
+build_pdflatex_manual_legacy.sh
 ```
 The content is the same but various formatting issues exist. The manual can be built with only the files in the manual directory, consider building it somewhere with a current tex distribution.
 ---
