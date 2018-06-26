@@ -167,5 +167,34 @@ def get_ijk_by_type():
   return by_type
 
 
+# Collection of atoms with different types and positions
+class GTO_centers:
+  def __init__(self, pos_list, elements, basis_sets):
+    self.gto_list = []
+    for pos, element in zip(pos_list, elements):
+      gto = GTO(basis_sets[element], pos)
+      self.gto_list.append(gto)
+
+  def eval_v(self, x, y, z):
+    vs = []
+    for gto in self.gto_list:
+      v = gto.eval_v(x, y, z)
+      vs.extend(v)
+    return vs
+
+  def eval_vgl(self, x, y, z):
+    vs = []
+    grads = []
+    laps = []
+    for gto in self.gto_list:
+      v,g,l = gto.eval_vgl(x,y,z)
+      vs.extend(v)
+      grads.extend(g)
+      laps.extend(l)
+
+    return vs, grads, laps
+
+
+
 if __name__ == '__main__':
   gto = GTO()
