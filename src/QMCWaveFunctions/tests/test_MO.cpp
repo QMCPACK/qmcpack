@@ -61,6 +61,7 @@ void test_He(bool transform)
     ions.R[0] = 0.0;
     SpeciesSet &ispecies = ions.getSpeciesSet();
     int heIdx = ispecies.addSpecies("He");
+    ions.update();
 
 
   #ifdef ENABLE_SOA
