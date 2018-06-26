@@ -87,5 +87,37 @@ def parse_qmc_wf(fname):
     return basis_sets, MO_matrix
 
 
+# Read the ion positions and types
+
+def parse_structure(node):
+    particleset = node.find("particleset[@name='ion0']")
+    npos = int(particleset.attrib['size'])
+    pos_node = particleset.find("attrib[@name='position']")
+    pos_values = [float(a) for a in pos_node.text.split()]
+    pos = np.array(pos_values).reshape( (3, npos) )
+
+    elements_node = particleset.find("attrib[@name='ionid']")
+    elements = elements_node.text.split()
+    return pos, elements
+
+
+def read_structure_file(fname):
+  tree = ET.parse(fname)
+  return parse_structure(tree)
+
+
+
 if __name__ == '__main__':
+    # For He
     basis_set, MO_matrix = parse_qmc_wf('he_sto3g.wfj.xml')
+
+
+    # For HCN - need ion positions as well
+    basis_sets, MO_matrix = parse_qmc_wf('hcn.wfnoj.xml')
+
+    pos_list, elements = read_structure_file("hcn.structure.xml")
+
+    gtos = gaussian_orbitals.GTO_centers(pos_list, elements, basis_sets)
+    atomic_orbs =  gtos.eval_v(1.0, 0.0, 0.0)
+    #print np.dot(MO_matrix, atomic_orbs)
+
