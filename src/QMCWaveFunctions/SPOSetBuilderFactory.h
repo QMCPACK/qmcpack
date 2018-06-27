@@ -43,6 +43,9 @@ public:
   ///set of basis set builders resolved by type
   static std::map<std::string,SPOSetBuilder*> spo_builders;
 
+  /// Reset the map and last_builder pointers.  Mostly for unit tests.
+  static void clear();
+
   /** constructor
    * \param els reference to the electrons
    * \param psi reference to the wavefunction
