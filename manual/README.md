@@ -23,7 +23,7 @@ build_pdflatex_manual_legacy.sh
 
 
 ## OS X
-For OS X, MacTex of a vintage equivalent equivalent to TeX Live(1/20/2017) release or later is required. You will also need to symlink the TeX Live truetype fonts in so xetex can find them:
+For OS X, MacTex equivalent to TeX Live(1/20/2017) release or later is suggested. You should also symlink the TeX Live truetype fonts in so xetex can find them:
 ```
 ln -s /usr/local/TeX Live/2018/texmf-dist/fonts/truetype/ ~/Library/Fonts/texlive-truetype
 ```
@@ -31,11 +31,22 @@ ln -s /usr/local/TeX Live/2018/texmf-dist/fonts/truetype/ ~/Library/Fonts/texliv
 # QMCPACK HTML Manual
 
 In addition to the suggestion of up-to-date TeX Live (do not assume
-anything is broken unless you have it). `pdf2svg` is required, if it
-is not available to you via a package on clean Centos7 this is a path
-to fufilling this requirement:
+anything is broken unless you have it). `pdf2svg` is required, your system package manager may supply it, homebrew on OSX, and spack on linux are also options.
 
-## Recipe for pdf2svg on clean Centos7 VM
+## Recipes for pdf2svg and other tools
+
+### OSX
+Assuming don't have an up to date texlive and for some reason haven't installed homebrew.  If you are still using macports I strongly suggest moving your install tree and giving [homebrew](https://brew.sh) a try.
+```shell
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+brew cask (re)install mactex
+brew install pdf2svg
+tlmgr update -all
+```
+
+### Centos7
+It is assumed you have [spack](https://github.com/spack/spack) to assist in dealing with package management. Yum is used to install packages that should (or must _poppler-glib-devel_) be available at the system level.
+
 ``` shell
     yum install gcc-c++
     yum install environment-modules
@@ -48,5 +59,5 @@ to fufilling this requirement:
     sudo yum install cairo-devel.x86_64
     sudo yum install poppler-glib-devel.x86_64
     spack install pdf2svg%gcc@7.3.0
+    tlmgr update make4ht
 ```
-It is assumed you have [spack](https://github.com/spack/spack) to assist in dealing with package management. Yum is used to install packages that should (or must _poppler-glib-devel_) be available at the system level.
