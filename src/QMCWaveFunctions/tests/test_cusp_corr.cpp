@@ -125,6 +125,7 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
   cusp.setPhiAndEta(&bs_phi, &bs_eta);
 
   cusp.curCenter = 0;
+  cusp.curOrb = 0;
   cusp.Z = 2.0;
   cusp.computeValAtZero();
 
