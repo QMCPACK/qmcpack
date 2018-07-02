@@ -125,6 +125,7 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
   cusp.setPhiAndEta(&bs_phi, &bs_eta);
 
   cusp.curCenter = 0;
+  cusp.curOrb = 0;
   cusp.Z = 2.0;
   cusp.computeValAtZero();
 
@@ -226,6 +227,9 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
   rad_orb.resize(1);
 
   cusp.execute(0, 0, 2.0, &bs_phi, &bs_eta, xgrid, rad_orb, "none", rc, data);
+
+  SPOSetBuilderFactory::clear();
+
 }
 
 }
