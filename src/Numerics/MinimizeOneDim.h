@@ -38,7 +38,7 @@ struct Bracket_min_t {
 // there is no need to call 'find_minimum' (nor should it be called).
 
 
-template <class F, typename T> Bracket_min_t<T> bracket_minimum(F f, T initial_value, T bound_max = -1.0)
+template <class F, typename T> Bracket_min_t<T> bracket_minimum(const F &f, T initial_value, T bound_max = -1.0)
 {
   T xa = initial_value;
   T fa = f(xa);
@@ -95,7 +95,7 @@ template <class F, typename T> Bracket_min_t<T> bracket_minimum(F f, T initial_v
 
 // Returns a pair with the location of the minimum and the value of the function.
 
-template <class F, typename T> std::pair<T, T> find_minimum(F f, Bracket_min_t<T> &bracket)
+template <class F, typename T> std::pair<T, T> find_minimum(const F &f, Bracket_min_t<T> &bracket)
 {
   // assert(bracket.success == true);
   T xa = bracket.a;
