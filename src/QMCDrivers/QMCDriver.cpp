@@ -119,7 +119,7 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamilt
   MaxCPUSecs=360000; //100 hours
   m_param.add(MaxCPUSecs,"maxcpusecs","real");
   // by default call recompute at the end of each block in the mixed precision case.
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   if (typeid(CudaRealType) == typeid(float))
   {
     // gpu mixed precision

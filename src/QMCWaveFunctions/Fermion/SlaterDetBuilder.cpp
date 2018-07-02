@@ -32,7 +32,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSetOpt.h"
 #include "QMCWaveFunctions/Fermion/SlaterDetOpt.h"
 #endif
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
 #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
 #endif
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
@@ -502,7 +502,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
   getNodeName(dname,cur);
   DiracDeterminantBase* adet=0;
   {
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
     adet = new DiracDeterminantCUDA(psi,firstIndex);
 #else
     if(UseBackflow)

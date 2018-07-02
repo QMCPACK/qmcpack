@@ -331,7 +331,7 @@ public:
   void evaluate(MCWalkerConfiguration &W, std::vector<RealType> &energyVector,
                 std::vector<std::vector<NonLocalData> > &Txy);
 
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
 private:
   /////////////////////
   // Vectorized data //

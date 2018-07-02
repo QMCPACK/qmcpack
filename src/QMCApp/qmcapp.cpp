@@ -254,7 +254,7 @@ void output_hardware_info(Communicate *comm, Libxml2Document &doc, xmlNodePtr ro
   doc.addChild(hardware, "openmp", using_openmp);
 
   bool using_gpu = false;
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#if defined(QMC_CUDA)
   using_gpu = true;
 #endif
   doc.addChild(hardware, "gpu", using_gpu);

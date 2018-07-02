@@ -37,7 +37,7 @@ namespace qmcplusplus
 
 //using namespace particle_info;
 
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
 template<> int ParticleSet::Walker_t::cuda_DataSize = 0;
 #endif
 

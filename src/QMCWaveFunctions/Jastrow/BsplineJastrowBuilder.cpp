@@ -26,12 +26,12 @@
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#if defined(QMC_CUDA) and defined(ENABLE_SOA)
+#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBsplineSoA.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBsplineSoA.h"
+#elif defined(QMC_CUDA) and !defined(ENABLE_SOA)
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBspline.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBspline.h"
-#elif defined(QMC_CUDA) && defined(ENABLE_SOA)
-#include "QMCWaveFunctions/Jastrow/J1OrbitalCUDASoA.h"
-#include "QMCWaveFunctions/Jastrow/J2OrbitalCUDASoA.h"
 #endif
 
 #include "LongRange/LRRPAHandlerTemp.h"
@@ -208,7 +208,7 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
       return createOneBodyJastrow<OneBodySpinJastrowOrbital<RadFuncType>,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
     else
 #if defined(ENABLE_SOA) && defined(QMC_CUDA)
-      return createOneBodyJastrow<J1OrbitalCUDASoA<RadFuncType>,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
+      return createOneBodyJastrow<OneBodyJastrowOrbitalBsplineSoA<RadFuncType>,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
     //return createOneBodyJastrow<OneBodyJastrowOrbitalBspline,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
 #elif defined(ENABLE_SOA)
       return createOneBodyJastrow<J1OrbitalSoA<RadFuncType>,DiffOneBodyJastrowOrbital<RadFuncType> >(cur);
@@ -233,9 +233,9 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
 #else // defined(QMC_CUDA) && !defined(ENABLE_SOA)
 
 #if defined(QMC_CUDA) && defined(ENABLE_SOA)
-    typedef J2OrbitalCUDASoA<BsplineFunctor<RealType> > J2Type;
+    typedef TwoBodyJastrowOrbitalBsplineSoA<BsplineFunctor<RealType>> J2Type;
 #elif defined(ENABLE_SOA)
-    typedef ;
+    typedef J2OrbitalSoA<BsplineFunctor<RealType> > J2Type;
 #else
     typedef TwoBodyJastrowOrbital<BsplineFunctor<RealType> > J2Type;
 #endif

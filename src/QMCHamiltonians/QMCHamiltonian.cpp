@@ -21,7 +21,7 @@
 #include "Particle/WalkerSetRef.h"
 #include "Particle/DistanceTableData.h"
 #include "Utilities/NewTimer.h"
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
 #endif
 
@@ -666,7 +666,7 @@ QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& ps
   return myclone;
 }
 
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
 void
 QMCHamiltonian::evaluate(MCWalkerConfiguration &W,
                          std::vector<RealType> &energyVector)

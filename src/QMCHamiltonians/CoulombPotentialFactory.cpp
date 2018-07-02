@@ -40,7 +40,7 @@
 #endif
 #include "OhmmsData/AttributeSet.h"
 
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
 #include "QMCHamiltonians/CoulombPBCAA_CUDA.h"
 #include "QMCHamiltonians/CoulombPBCAB_CUDA.h"
 #include "QMCHamiltonians/CoulombPotential_CUDA.h"
@@ -64,7 +64,7 @@ HamiltonianFactory::addMPCPotential(xmlNodePtr cur, bool isphysical)
   hAttrib.put(cur);
   renameProperty(a);
   isphysical = (physical=="yes" || physical == "true");
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   MPC_CUDA *mpc = new MPC_CUDA (*targetPtcl, cutoff);
 #else
   MPC *mpc = new MPC (*targetPtcl, cutoff);
@@ -119,7 +119,7 @@ HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
       return;
     }
     bool quantum = (sourceInp==targetPtcl->getName());
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
     if(applyPBC)
       targetH->addOperator(new CoulombPBCAA_CUDA(*ptclA,quantum,doForces),title,physical);
     else
@@ -140,7 +140,7 @@ HamiltonianFactory::addCoulombPotential(xmlNodePtr cur)
   }
   else //X-e type, for X=some other source
   {
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
     if(applyPBC)
       targetH->addOperator(new CoulombPBCAB_CUDA(*ptclA,*targetPtcl),title);
     else
@@ -398,7 +398,7 @@ HamiltonianFactory::addCorePolPotential(xmlNodePtr cur)
 //      ParticleSet* ion=(*pit).second;
 //      if(PBCType)
 //      {
-//#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+//#ifdef QMC_CUDA
 //	targetH->addOperator(new CoulombPBCAA_CUDA(*ion,false,doForces),hname);
 //#else
 //	targetH->addOperator(new CoulombPBCAATemp(*ion,false,doForces),hname);

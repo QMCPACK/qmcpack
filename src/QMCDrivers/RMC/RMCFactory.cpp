@@ -30,7 +30,7 @@ namespace qmcplusplus
     int np = omp_get_max_threads ();
     //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
     QMCDriver *qmc = 0;
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
     APP_ABORT("RMCFactory::create. RMC is not supported on GPU.\n");
 #endif
 

@@ -30,7 +30,7 @@ LocalECPotential_CUDA::LocalECPotential_CUDA
   NumIonSpecies = sSet.getTotalNum();
   NumIons  = ions.getTotalNum();
   NumElecs = elns.getTotalNum();
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   // Copy center positions to GPU, sorting by GroupID
   gpu::host_vector<CUDA_PRECISION> I_host(OHMMS_DIM*NumIons);
   int index=0;

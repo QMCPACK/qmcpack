@@ -20,7 +20,7 @@
 #include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
 #endif
 
@@ -108,7 +108,7 @@ struct ConservedEnergy: public QMCHamiltonianBase
     return new ConservedEnergy;
   }
 
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   ////////////////////////////////
   // Vectorized version for GPU //
   ////////////////////////////////

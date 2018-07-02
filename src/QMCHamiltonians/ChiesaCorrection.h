@@ -36,7 +36,7 @@ public:
 
   Return_t evaluate(ParticleSet& P);
 
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy);
 #endif
 

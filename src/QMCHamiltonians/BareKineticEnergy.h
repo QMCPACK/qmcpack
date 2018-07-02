@@ -20,7 +20,7 @@
 #include "Particle/WalkerSetRef.h"
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "ParticleBase/ParticleAttribOps.h"
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
 #include "Particle/MCWalkerConfiguration.h"
 #endif
 #include "type_traits/scalar_traits.h"
@@ -312,7 +312,7 @@ struct BareKineticEnergy: public QMCHamiltonianBase
     return new BareKineticEnergy(*this);
   }
 
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   ////////////////////////////////
   // Vectorized version for GPU //
   ////////////////////////////////

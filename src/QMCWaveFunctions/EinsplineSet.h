@@ -25,7 +25,7 @@
 #include "QMCWaveFunctions/MuffinTin.h"
 #include "Utilities/NewTimer.h"
 #include <spline/einspline_engine.hpp>
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
 #include <einspline/multi_bspline_create_cuda.h>
 #include "QMCWaveFunctions/AtomicOrbitalCuda.h"
 #endif
@@ -101,7 +101,7 @@ template<typename StorageType, int dim>  struct MultiOrbitalTraits {};
 template<> struct MultiOrbitalTraits<double,2>
 {
   typedef multi_UBspline_2d_d SplineType;
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   typedef multi_UBspline_2d_d_cuda CudaSplineType;
 #endif
 };
@@ -109,7 +109,7 @@ template<> struct MultiOrbitalTraits<double,2>
 template<> struct MultiOrbitalTraits<std::complex<double>,2>
 {
   typedef multi_UBspline_2d_z SplineType;
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   typedef multi_UBspline_2d_z_cuda CudaSplineType;
 #endif
 };
@@ -117,7 +117,7 @@ template<> struct MultiOrbitalTraits<std::complex<double>,2>
 template<> struct MultiOrbitalTraits<float,2>
 {
   typedef multi_UBspline_2d_s SplineType;
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   typedef multi_UBspline_2d_s_cuda CudaSplineType;
 #endif
 };
@@ -125,7 +125,7 @@ template<> struct MultiOrbitalTraits<float,2>
 template<> struct MultiOrbitalTraits<std::complex<float>,2>
 {
   typedef multi_UBspline_2d_c SplineType;
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   typedef multi_UBspline_2d_c_cuda CudaSplineType;
 #endif
 };
@@ -135,7 +135,7 @@ template<> struct MultiOrbitalTraits<double,3>
   typedef multi_UBspline_3d_d SplineType;
   typedef BCtype_d BCType;
   typedef double DataType;
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   typedef multi_UBspline_3d_d_cuda CudaSplineType;
 #endif
 };
@@ -145,7 +145,7 @@ template<> struct MultiOrbitalTraits<std::complex<double>,3>
   typedef multi_UBspline_3d_z SplineType;
   typedef BCtype_z BCType;
   typedef std::complex<double> DataType;
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   typedef multi_UBspline_3d_z_cuda CudaSplineType;
 #endif
 };
@@ -156,7 +156,7 @@ template<> struct MultiOrbitalTraits<float,3>
   typedef multi_UBspline_3d_s SplineType;
   typedef BCtype_s BCType;
   typedef float DataType;
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   typedef multi_UBspline_3d_s_cuda CudaSplineType;
 #endif
 };
@@ -166,13 +166,13 @@ template<> struct MultiOrbitalTraits<std::complex<float>,3>
   typedef multi_UBspline_3d_c SplineType;
   typedef BCtype_c BCType;
   typedef std::complex<float> DataType;
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   typedef multi_UBspline_3d_c_cuda CudaSplineType;
 #endif
 };
 
 
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
 template<typename StoreType, typename CudaPrec> struct StorageTypeConverter;
 template<> struct StorageTypeConverter<double,double>
 {
@@ -281,7 +281,7 @@ protected:
   NewTimer ValueTimer, VGLTimer, VGLMatTimer;
   NewTimer EinsplineTimer;
 
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   // Cuda equivalents of the above
   typedef typename StorageTypeConverter<StorageType,CUDA_PRECISION>::CudaStorageType CudaStorageType;
   typedef typename MultiOrbitalTraits<CudaStorageType,OHMMS_DIM>::CudaSplineType CudaSplineType;
@@ -390,7 +390,7 @@ public:
                             ComplexValueMatrix_t& psi, ComplexGradMatrix_t& dpsi,
                             ComplexHessMatrix_t& grad_grad_psi,
                             ComplexGGGMatrix_t& grad_grad_grad_logdet);
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   GPU_XRAY_TRACE void  initGPU();
 
   // Vectorized evaluation functions
@@ -434,7 +434,7 @@ public:
     VGLMatTimer ("EinsplineSetExtended::VGLMatrix"),
     EinsplineTimer("libeinspline"),
     MultiSpline(NULL)
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
     , CudaMultiSpline(NULL),
     cudapos("EinsplineSetExtended::cudapos"),
     NLcudapos("EinsplineSetExtended::NLcudapos"),
@@ -462,7 +462,7 @@ public:
   }
 };
 
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
 template<typename T>
 struct AtomicSplineJob
 {

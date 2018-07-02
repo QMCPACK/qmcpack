@@ -605,7 +605,7 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   ToDoSteps=iParam[B_WARMUPSTEPS]=(iParam[B_WARMUPSTEPS])?iParam[B_WARMUPSTEPS]:10;
   setBranchCutoff(vParam[B_SIGMA2],WalkerController->targetSigma,10);
   WalkerController->reset();
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   reset(); // needed. Ye
 #endif
   if(BackupWalkerController)

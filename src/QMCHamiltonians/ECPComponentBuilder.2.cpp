@@ -18,7 +18,7 @@
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/SimpleParser.h"
 //#include "Utilities/IteratorUtility.h"
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
 #include <cuda_runtime_api.h>
 #endif
 
@@ -253,7 +253,7 @@ ECPComponentBuilder::doBreakUp(const std::vector<int>& angList,
                                const Matrix<mRealType>& vnn,
                                RealType rmax, mRealType Vprefactor)
 {
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   int device;
   cudaGetDevice(&device);
   cudaDeviceProp deviceProp;

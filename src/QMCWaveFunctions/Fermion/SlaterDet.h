@@ -17,7 +17,7 @@
     
 #ifndef QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 #define QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
 #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
 #else
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
@@ -260,7 +260,7 @@ public:
       Dets[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
   }
 
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   /////////////////////////////////////////////////////
   // Functions for vectorized evaluation and updates //
   /////////////////////////////////////////////////////

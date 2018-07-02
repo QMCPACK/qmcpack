@@ -39,7 +39,7 @@ ChiesaCorrection::evaluate(ParticleSet& P)
 {
   return Value = psi_ref.KECorrection();
 }
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
 void
 ChiesaCorrection::addEnergy(MCWalkerConfiguration &W,
                             std::vector<RealType> &LocalEnergy)

@@ -90,7 +90,7 @@ public:
   // These hold a list of pointers to the positions, gradients, and
   // laplacians for each walker.  These vectors .data() is often
   // passed to GPU kernels.
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
 
   gpu::device_vector<CudaRealType*>  RList_GPU;
   gpu::device_vector<CudaValueType*> GradList_GPU, LapList_GPU;

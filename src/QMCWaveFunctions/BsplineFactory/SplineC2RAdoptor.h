@@ -129,7 +129,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     std::vector<int> offset(Nbandgroups+1,0);
     FairDivideLow(Nbands,Nbandgroups,offset);
 
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
     for(size_t ib=0; ib<offset.size(); ib++)
       offset[ib] = offset[ib]*2;
     gatherv(comm, MultiSpline, MultiSpline->z_stride, offset);
@@ -200,7 +200,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 
   inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
   {
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
     // GPU code needs the old ordering.
     int iband=ispline;
 #else
@@ -213,7 +213,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
   {
     Vector<ST> v_r(psi_r,0), v_i(psi_i,0);
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
     // GPU code needs the old ordering.
     int iband=ispline;
 #else

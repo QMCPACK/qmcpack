@@ -34,7 +34,7 @@
 #include "HDFVersion.h"
 #include <map>
 
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
 #include "Particle/accept_kernel.h"
 #endif
 
@@ -95,7 +95,7 @@ MCWalkerConfiguration::MCWalkerConfiguration():
   OwnWalkers(true),ReadyForPbyP(false),UpdateMode(Update_Walker),Polymer(0),
 
   MaxSamples(10),CurSampleCount(0),GlobalNumWalkers(0),reptile(0)
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
   ,RList_GPU("MCWalkerConfiguration::RList_GPU"),
   GradList_GPU("MCWalkerConfiguration::GradList_GPU"),
   LapList_GPU("MCWalkerConfiguration::LapList_GPU"),
@@ -113,7 +113,7 @@ MCWalkerConfiguration::MCWalkerConfiguration(const MCWalkerConfiguration& mcw)
   : ParticleSet(mcw), OwnWalkers(true), GlobalNumWalkers(mcw.GlobalNumWalkers),
     UpdateMode(Update_Walker), ReadyForPbyP(false), Polymer(0),
     MaxSamples(mcw.MaxSamples), CurSampleCount(0)
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
     ,RList_GPU("MCWalkerConfiguration::RList_GPU"),
     GradList_GPU("MCWalkerConfiguration::GradList_GPU"),
     LapList_GPU("MCWalkerConfiguration::LapList_GPU"),
@@ -550,7 +550,7 @@ void MCWalkerConfiguration::clearEnsemble()
 }
 
 
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#ifdef QMC_CUDA
 void MCWalkerConfiguration::updateLists_GPU()
 {
   int nw = WalkerList.size();
