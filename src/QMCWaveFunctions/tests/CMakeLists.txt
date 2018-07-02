@@ -36,8 +36,8 @@ FOREACH(fname ${FILES_TO_COPY})
   EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/${fname}" ${UTEST_DIR})
 ENDFOREACH()
 
-IF ((NOT QMC_COMPLEX) AND (NOT QMC_MIXED_PRECISION))
-  SET(MO_SRCS test_MO.cpp)
+IF ((NOT QMC_COMPLEX) AND (NOT QMC_MIXED_PRECISION) AND (NOT QMC_CUDA))
+  SET(MO_SRCS test_MO.cpp test_cusp_corr.cpp)
 ENDIF()
 
 ADD_EXECUTABLE(${UTEST_EXE} test_wf.cpp test_bspline_jastrow.cpp test_einset.cpp test_pw.cpp

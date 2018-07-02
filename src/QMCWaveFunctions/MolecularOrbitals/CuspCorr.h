@@ -66,6 +66,36 @@ public:
     nElms=nIntPnts;
   }
 
+  void setPhiAndEta(SPOSetBasePtr Phi, SPOSetBasePtr Eta)
+  {
+      Psi1 = Phi;
+      Psi2 = Eta;
+      int norb = Psi1->OrbitalSetSize;
+
+      val1.resize(norb);
+      grad1.resize(norb);
+      lapl1.resize(norb);
+
+      val2.resize(norb);
+      grad2.resize(norb);
+      lapl2.resize(norb);
+  }
+
+  void allocateELspace()
+  {
+    ELideal.resize(nElms);
+    ELorig.resize(nElms);
+    ELcurr.resize(nElms);
+    pos.resize(nElms);
+  }
+
+  void computeValAtZero()
+  {
+    TinyVector<RealType,3> ddr=0;
+    evaluate(Psi1,ddr,val1,grad1,lapl1);
+    valAtZero = val1[0];
+  }
+
   ~CuspCorr() {}
 
 /* 
@@ -285,6 +315,7 @@ private:
 
   SPOSetBasePtr Psi1,Psi2;
 
+public:
   // cutoff
   RealType beta0,DX,eta0, ELorigAtRc;
   RealType Rc_init,Rc,C,sg,Z,valAtZero,valAtRc,Rc_max;
