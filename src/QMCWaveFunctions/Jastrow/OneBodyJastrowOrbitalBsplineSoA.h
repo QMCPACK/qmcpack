@@ -34,17 +34,20 @@ class OneBodyJastrowOrbitalBsplineSoA :
 {
 private:
   bool UsePBC;
-  using QMCT = QMCTraits;
-  using CudaRealType = typename J1OrbitalSoA<FT>::CudaRealType;
-  // Duplication that shouold be removed
+  // The following is so we can refer to type aliases(defs) below the
+  // templated base class in the object hierarchy
+  // Mostly QMCTraits here
+  using JBase = J1OrbitalSoA<FT>;
+  using CudaRealType = typename JBase::CudaRealType;
+  // Duplication that should be removed
   using CudaReal = CudaRealType;
-  using RealType = QMCT::RealType;
-  using ValueType = QMCT::ValueType;
-  using GradType = QMCT::GradType;
-  using PosType = QMCT::PosType;
-  using GradMatrix_t = typename J1OrbitalSoA<FT>::GradMatrix_t;
-  using ValueMatrix_t = typename J1OrbitalSoA<FT>::ValueMatrix_t;
-  using RealMatrix_t = typename J1OrbitalSoA<FT>::RealMatrix_t;
+  using RealType = typename JBase::RealType;
+  using ValueType = typename JBase::ValueType;
+  using GradType = typename JBase::GradType;
+  using PosType = typename JBase::PosType;
+  using GradMatrix_t = typename JBase::GradMatrix_t;
+  using ValueMatrix_t = typename JBase::ValueMatrix_t;
+  using RealMatrix_t = typename JBase::RealMatrix_t;
 
   std::vector<CudaSpline<CudaReal>*> GPUSplines, UniqueSplines;
   int MaxCoefs;

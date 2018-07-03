@@ -60,16 +60,16 @@ struct  J1OrbitalCUDASoA : public OrbitalBase
   ///Container for \f$F[ig*NumGroups+jg]\f$
   std::vector<FT*> F;
 
-  J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els) : Ions(ions)
+  J1OrbitalCUDASoA(const ParticleSet& ions, ParticleSet& els) : Ions(ions)
   {
     initalize(els);
     myTableID=els.addTable(ions,DT_SOA);
     OrbitalName = "J1OrbitalSoA";
   }
 
-  J1OrbitalSoA(const J1OrbitalSoA& rhs)=delete;
+  J1OrbitalCUDASoA(const J1OrbitalCUDASoA& rhs)=delete;
 
-  ~J1OrbitalSoA() 
+  ~J1OrbitalCUDASoA() 
   { 
     for(int i=0; i<F.size(); ++i)
       if(F[i] != nullptr) delete F[i];

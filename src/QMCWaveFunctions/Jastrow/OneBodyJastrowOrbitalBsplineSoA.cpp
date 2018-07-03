@@ -144,9 +144,9 @@ template<class FT>
 void
 OneBodyJastrowOrbitalBsplineSoA<FT>::ratio
 (MCWalkerConfiguration &W, int iat,
- std::vector<QMCTraits::ValueType> &psi_ratios,
- std::vector<QMCTraits::GradType>  &grad,
- std::vector<QMCTraits::ValueType> &lapl)
+ std::vector<ValueType> &psi_ratios,
+ std::vector<GradType>  &grad,
+ std::vector<ValueType> &lapl)
 {
   std::vector<Walker_t*> &walkers = W.WalkerList;
   bool zero = true;
