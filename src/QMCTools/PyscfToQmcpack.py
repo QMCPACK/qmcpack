@@ -23,7 +23,16 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
   Gamma=False
   UnRestricted=False
   Complex=False
-  
+  Python3=False
+  Python2=False
+
+  if sys.version_info >= (3, 0):
+     sys.stdout.write("Using Python 3.x\n") 
+     Python3=True
+  else:
+     sys.stdout.write("Using Python 2.x\n") 
+     Python2=True
+ 
 
   val=str(mf)
   ComputeMode= re.split('[. ]',val)
@@ -44,11 +53,18 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
   IonName=dict([('H',1),  ('He',2),  ('Li',3),('Be',4),  ('B', 5),  ('C', 6),  ('N', 7),('O', 8),  ('F', 9),   ('Ne',10),   ('Na',11),('Mg',12),   ('Al',13),   ('Si',14),   ('P', 15),   ('S', 16),('Cl',17),   ('Ar',18),   ('K', 19),   ('Ca',20),   ('Sc',21),   ('Ti',22),   ('V', 23),   ('Cr',24),   ('Mn',25),   ('Fe',26),   ('Co',27),   ('Ni',28),   ('Cu',29),   ('Zn',30),   ('Ga',31),   ('Ge',32),   ('As',33),   ('Se',34),   ('Br',35),   ('Kr',36),   ('Rb',37),   ('Sr',38),   ('Y', 39),  ('Zr',40),   ('Nb',41),   ('Mo',42),   ('Tc',43),   ('Ru',44),   ('Rh',45),   ('Pd',46),   ('Ag',47),   ('Cd',48),   ('In',49),   ('Sn',50),   ('Sb',51),   ('Te',52),   ('I', 53),   ('Xe',54),   ('Cs',55),   ('Ba',56),   ('La',57),   ('Ce',58), ('Pr',59),   ('Nd',60),   ('Pm',61),   ('Sm',62),   ('Eu',63),   ('Gd',64),   ('Tb',65),   ('Dy',66),   ('Ho',67),  ('Er',68),   ('Tm',69),   ('Yb',70),   ('Lu',71),   ('Hf',72),   ('Ta',73),   ('W', 74),   ('Re',75),   ('Os',76),   ('Ir',77),   ('Pt',78),   ('Au',79),   ('Hg',80), ('Tl',81),   ('Pb',82),  ('Bi',83),   ('Po',84),   ('At',85),   ('Rn',86),   ('Fr',87),   ('Ra',88),   ('Ac',89),   ('Th',90),   ('Pa',91),   ('U', 92),   ('Np',93)]) 
 
 
+
   H5_qmcpack=h5py.File(title+'.h5','w')
   groupApp=H5_qmcpack.create_group("application")
-  dt = h5py.special_dtype(vlen=str)
-  CodeData  = groupApp.create_dataset("code",(1,),dtype=dt)
-  CodeData[0:] = "PySCF"
+  if Python3: 
+     strList=['PySCF']
+     asciiList = [n.encode("ascii", "ignore") for n in strList]
+     groupApp.create_dataset('code', (1,),'S5', asciiList)
+  else:
+     dt = h5py.special_dtype(vlen=str)
+     CodeData  = groupApp.create_dataset("code",(1,),dtype=dt)
+     CodeData[0:] = "PySCF"
+
   CodeVer  = groupApp.create_dataset("version",(3,),dtype="i4")
   CodeVer[0:] = 1
   CodeVer[1:] = 4
@@ -100,10 +116,16 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
     atmname=str(uniq_atoms[x][0])
     groupSpecies=groupAtom.create_group("species_"+str(x))
     groupSpecies.create_dataset("atomic_number",(1,),dtype="i4",data=uniq_atoms[x][1])
-    #mylen="S"+str(len(atmname))
-    dt = h5py.special_dtype(vlen=str)
-    AtmName=groupSpecies.create_dataset("name",(1,),dtype=dt)
-    AtmName[0:]=atmname
+    if Python3:
+       mylen="S"+str(len(atmname))
+       strList=[atmname]
+       asciiList = [n.encode("ascii", "ignore") for n in strList]
+       groupSpecies.create_dataset('name', (1,),mylen, asciiList)
+    else:
+       dt = h5py.special_dtype(vlen=str)
+       AtmName=groupSpecies.create_dataset("name",(1,),dtype=dt)
+       AtmName[0:]=atmname
+
     groupSpecies.create_dataset("charge",(1,),dtype="f8",data=uniq_atoms[x][2])
     groupSpecies.create_dataset("core",(1,),dtype="f8",data=uniq_atoms[x][3])
   SpeciesID=groupAtom.create_dataset("species_ids",(natom,),dtype="i4")
@@ -130,68 +152,124 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
   GroupBasisSet=H5_qmcpack.create_group("basisset")
   #Dataset Number Of Atoms
   GroupBasisSet.create_dataset("NbElements",(1,),dtype="i4",data=NbSpecies)
-
-  dt = h5py.special_dtype(vlen=str)
-  LCAOName=GroupBasisSet.create_dataset("name",(1,),dtype=dt)
-  LCAOName[0:]="LCAOBSet"
+  if Python3:
+     strList=['LCAOBSet']
+     asciiList = [n.encode("ascii", "ignore") for n in strList]
+     GroupBasisSet.create_dataset('name', (1,),'S8', asciiList)
+  else:
+     dt = h5py.special_dtype(vlen=str)
+     LCAOName=GroupBasisSet.create_dataset("name",(1,),dtype=dt)
+     LCAOName[0:]="LCAOBSet"
 
   #atomicBasisSets Group
   for x in range(NbSpecies):
 
     MyIdx=idxAtomstoSpecies[x]
     atomicBasisSetGroup=GroupBasisSet.create_group("atomicBasisSet"+str(x))
-    mylen="S"+str(len(uniq_atoms[x][0]))
-    dt = h5py.special_dtype(vlen=str)
-    elemtype=atomicBasisSetGroup.create_dataset("elementType",(1,),dtype=dt)
-    elemtype[0:]=uniq_atoms[x][0]
-    if cell.cart==True:
-      Angular=atomicBasisSetGroup.create_dataset("angular",(1,),dtype=dt)
-      ExpandYLM=atomicBasisSetGroup.create_dataset("expandYlm",(1,),dtype=dt)
-      Angular[0:]="cartesian"
-      ExpandYLM[0:]="Gamess"
+
+    if Python3:
+       mylen="S"+str(len(uniq_atoms[x][0]))
+       strList=[uniq_atoms[x][0]]
+       asciiList = [n.encode("ascii", "ignore") for n in strList]
+       atomicBasisSetGroup.create_dataset('elementType', (1,),mylen, asciiList)
+       if cell.cart==True:
+          strList=['cartesian']
+          asciiList = [n.encode("ascii", "ignore") for n in strList]
+          atomicBasisSetGroup.create_dataset('angular', (1,),'S9', asciiList)
+
+          strList=['Gamess']
+          asciiList = [n.encode("ascii", "ignore") for n in strList]
+          atomicBasisSetGroup.create_dataset('expandYlm', (1,),'S6', asciiList)
+
+       else:
+          strList=['spherical']
+          asciiList = [n.encode("ascii", "ignore") for n in strList]
+          atomicBasisSetGroup.create_dataset('angular', (1,),'S9', asciiList)
+
+          strList=['pyscf']
+          asciiList = [n.encode("ascii", "ignore") for n in strList]
+          atomicBasisSetGroup.create_dataset('expandYlm', (1,),'S5', asciiList)
     else:
-      Angular=atomicBasisSetGroup.create_dataset("angular",(1,),dtype=dt)
-      ExpandYLM=atomicBasisSetGroup.create_dataset("expandYlm",(1,),dtype=dt)
-      Angular[0:]="spherical"
-      ExpandYLM[0:]="pyscf"
+       dt = h5py.special_dtype(vlen=str)
+       elemtype=atomicBasisSetGroup.create_dataset("elementType",(1,),dtype=dt)
+       elemtype[0:]=uniq_atoms[x][0]
+       if cell.cart==True:
+          Angular=atomicBasisSetGroup.create_dataset("angular",(1,),dtype=dt)
+          ExpandYLM=atomicBasisSetGroup.create_dataset("expandYlm",(1,),dtype=dt)
+          Angular[0:]="cartesian"
+          ExpandYLM[0:]="Gamess"
+       else:
+          Angular=atomicBasisSetGroup.create_dataset("angular",(1,),dtype=dt)
+          Angular[0:]="spherical"
+          ExpandYLM=atomicBasisSetGroup.create_dataset("expandYlm",(1,),dtype=dt)
+          ExpandYLM[0:]="pyscf"
+
 
 
     atomicBasisSetGroup.create_dataset("grid_npts",(1,),dtype="i4",data=1001)
     atomicBasisSetGroup.create_dataset("grid_rf",(1,),dtype="i4",data=100)
     atomicBasisSetGroup.create_dataset("grid_ri",(1,),dtype="f8",data=1e-06)
-    gridType=atomicBasisSetGroup.create_dataset("grid_type",(1,),dtype=dt)
-    gridType[0:]="log"
-     
-    
-    if (len(cell.basis)<=2):
-       nameBase=atomicBasisSetGroup.create_dataset("name",(1,),dtype=dt)
-       nameBase[0:]="gaussian"
+
+    if Python3:
+      strList=['log']
+      asciiList = [n.encode("ascii", "ignore") for n in strList]
+      atomicBasisSetGroup.create_dataset('grid_type', (1,),'S3', asciiList)
+      if (len(cell.basis)<=2):
+         strList=['gaussian']
+         asciiList = [n.encode("ascii", "ignore") for n in strList]
+         atomicBasisSetGroup.create_dataset('name', (1,),'S8', asciiList)
+      else:
+         mylen="S"+str(len(cell.basis))
+         strList=[cell.basis]
+         asciiList = [n.encode("ascii", "ignore") for n in strList]
+         atomicBasisSetGroup.create_dataset('name', (1,),mylen, asciiList)
+      strList=['no']
+      asciiList = [n.encode("ascii", "ignore") for n in strList]
+      atomicBasisSetGroup.create_dataset('normalized', (1,),'S2', asciiList)
     else:
-       mylen="S"+str(len(cell.basis))
-       nameBase=atomicBasisSetGroup.create_dataset("name",(1,),dtype=dt)
-       nameBase[0:]=cell.basis
+      gridType=atomicBasisSetGroup.create_dataset("grid_type",(1,),dtype=dt)
+      gridType[0:]="log"
+      if (len(cell.basis)<=2):
+        nameBase=atomicBasisSetGroup.create_dataset("name",(1,),dtype=dt)
+        nameBase[0:]="gaussian"
+      else:
+        nameBase=atomicBasisSetGroup.create_dataset("name",(1,),dtype=dt)
+        nameBase[0:]=cell.basis
+
+      Normalized=atomicBasisSetGroup.create_dataset("normalized",(1,),dtype=dt)
+      Normalized[0:]="no"
 
 
        
-    Normalized=atomicBasisSetGroup.create_dataset("normalized",(1,),dtype=dt)
-    Normalized[0:]="no"
+
+
  
 
     nshell = cell.atom_shell_ids(MyIdx)
-    n = 0
+    n=0
     for i in nshell:
         l = cell.bas_angular(i)   
         contracted_coeffs = cell.bas_ctr_coeff(i)
         contracted_exp =cell.bas_exp(i)
         for line in zip(*contracted_coeffs):
           BasisGroup=atomicBasisSetGroup.create_group("basisGroup"+str(n))
-          basisType=BasisGroup.create_dataset("type",(1,),dtype=dt)
-          basisType[0:]="Gaussian"
 
 
-          mylen="S"+str(len((uniq_atoms[x][0]+str(n)+str(l))))
-          RID=BasisGroup.create_dataset("rid",(1,),dtype=dt)
-          RID[0:]=(uniq_atoms[x][0]+str(n)+str(l))
+
+          if Python3:
+            strList=['Gaussian'] 
+            asciiList = [n.encode("ascii", "ignore") for n in strList]
+            BasisGroup.create_dataset('type',(1,),'S8',asciiList)
+
+            mylen="S"+str(len((uniq_atoms[x][0]+str(n)+str(l))))
+            strList=[uniq_atoms[x][0]+str(n)+str(l)] 
+            asciiList = [n.encode("ascii", "ignore") for n in strList]
+            BasisGroup.create_dataset('rid', (1,),mylen, asciiList)
+          else:
+            basisType=BasisGroup.create_dataset("type",(1,),dtype=dt)
+            basisType[0:]="Gaussian"
+            RID=BasisGroup.create_dataset("rid",(1,),dtype=dt)
+            RID[0:]=(uniq_atoms[x][0]+str(n)+str(l))
 
 
           BasisGroup.create_dataset("Shell_coord",(3,),dtype="f8",data=cell.bas_coord(i))
@@ -199,14 +277,14 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
           Val_l=BasisGroup.create_dataset("l",(1,),dtype="i4",data=l)
           Val_n=BasisGroup.create_dataset("n",(1,),dtype="i4",data=n)
           RadGroup=BasisGroup.create_group("radfunctions")
-         # print "<basisGroup",n," rid=",uniq_atoms[x][0]+str(n)+str(l)," n=",n,"  l=",l ,"NbRadFunc=",cell.bas_nprim(i),"type=Gaussian>"
+          #print "<basisGroup",n," rid=",uniq_atoms[x][0]+str(n)+str(l)," n=",n,"  l=",l ,"NbRadFunc=",cell.bas_nprim(i),"type=Gaussian>"
           IdRad=0
 
           for e,c in zip(contracted_exp,line):
               DataRadGrp=RadGroup.create_group("DataRad"+str(IdRad))
               DataRadGrp.create_dataset("exponent",(1,),dtype="f8",data=e)
               DataRadGrp.create_dataset("contraction",(1,),dtype="f8",data=c)
-          #    print  "<radfunc exponent=",e," contraction=",c, "DataRad=",n,"IdRad=",IdRad,"/>"
+              #print  "<radfunc exponent=",e," contraction=",c, "DataRad=",n,"IdRad=",IdRad,"/>"
               IdRad+=1
           n+=1
 
