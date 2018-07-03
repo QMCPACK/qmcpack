@@ -149,7 +149,7 @@ eval_multi_multi_UBspline_3d_c_vgl_cuda
 extern "C" void
 eval_multi_multi_UBspline_3d_c_vgl_cudasplit
 (const multi_UBspline_3d_c_cuda *spline, float *pos_d, float *Linv_d,
- complex_float *vals_d[], complex_float *grad_lapl_d[], int num, int row_stride, int device_nr);
+ complex_float *vals_d[], complex_float *grad_lapl_d[], int num, int row_stride, float *coefs, int device_nr);
 
 
 // Double-precision complex

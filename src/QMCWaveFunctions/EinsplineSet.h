@@ -308,7 +308,7 @@ protected:
   // Data for vectorized evaluations
   std::vector<CudaPosType> hostPos;
   gpu::host_vector<CudaPosType> NLhostPos;
-  gpu::device_vector<CudaPosType> cudapos, NLcudapos;
+  gpu::device_vector<CudaPosType> cudapos, cudapos2, NLcudapos;
   gpu::host_vector<CudaRealType> hostSign, NLhostSign;
   gpu::device_vector<CudaRealType> cudaSign, NLcudaSign;
   // This stores the inverse of the lattice vector matrix in

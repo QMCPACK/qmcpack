@@ -439,14 +439,14 @@ eval_multi_multi_UBspline_3d_c_vgh_kernel
 #define VGL_OPTION1 0
 #define VGL_OPTION2 0
 __global__ static void
-eval_multi_multi_UBspline_3d_c_vgl_kernel(float const * pos,
-    float const * coefs_GPU,
-    float const * Linv,
+eval_multi_multi_UBspline_3d_c_vgl_kernel(float const * __restrict__ pos,
+    float const * __restrict__ coefs_GPU,
+    float const * __restrict__ Linv,
     float* const * vals,
     float* const * grd_lapl,
-    float3 drInv, uint3 dim,
+    float3 drInv, __restrict__ uint3 dim,
     uint3 strides, int N, int row_stride,
-    float const * coefs_host,
+    float const * __restrict__ coefs_host,
     int host_Nx_offset,
     int spline_start)
 {
@@ -471,7 +471,7 @@ eval_multi_multi_UBspline_3d_c_vgl_kernel(float const * pos,
   int indz = min(max(0,(int)sf), dim.z-1);
   float tz = s - sf;
 
-  float const * coefs = indx < host_Nx_offset ? coefs_GPU:coefs_host;
+  float const * __restrict__ coefs = indx < host_Nx_offset ? coefs_GPU:coefs_host;
   if ( indx >= host_Nx_offset ) indx -= host_Nx_offset;
 
   int tid = threadIdx.x;
@@ -721,7 +721,7 @@ extern "C" void
 eval_multi_multi_UBspline_3d_c_vgl_cudasplit (multi_UBspline_3d_c_cuda *spline,
     float *pos_d, float *Linv_d,
     float *vals_d[], float *grad_lapl_d[],
-    int num, int row_stride, int device_nr)
+    int num, int row_stride, float *coefs, int device_nr)
 {
   /* The way the kernel is written it requires at least 64 threads to work
      correctly. The maximum number of threads that can be utilized appears
@@ -746,19 +746,19 @@ eval_multi_multi_UBspline_3d_c_vgl_cudasplit (multi_UBspline_3d_c_cuda *spline,
   dim3 dimBlock(threadsPerBlock);
   dim3 dimGrid((2 * num_splines + dimBlock.x - 1) / dimBlock.x, num);
   eval_multi_multi_UBspline_3d_c_vgl_kernel<<<dimGrid,dimBlock,0,0>>>
-    (pos_d, (float*)spline->coefs, Linv_d, (float**)vals_d,
+    (pos_d, coefs, Linv_d, (float**)vals_d,
     (float**)grad_lapl_d, spline->gridInv, spline->dim,
     spline->stride, num_splines, row_stride, (float*)spline->coefs_host, spline->host_Nx_offset, spline_start);
-//    spline->stride, num_splines, num_splines, (float*)spline->coefs_host, spline->host_Nx_offset, 0);
+//    spline->stride, num_splines, row_stride, (float*)spline->coefs_host, spline->host_Nx_offset, 0);
 //  cudaDeviceSynchronize();
   cudaError_t err = cudaPeekAtLastError();
   if (err != cudaSuccess)
-    fprintf(stderr,"Error in eval_multi_multi_UBspline_3d_c_vgl_kernel with parameters:\n%p, %p, %p, %p, %p, (%f, %f, %f), (%i, %i, %i), (%i, %i, %i), %i, %i, %p, %i, %i\n",
-                    pos_d, (float*)spline->coefs, Linv_d, (float**)vals_d,(float**)grad_lapl_d,
+    fprintf(stderr,"Error in eval_multi_multi_UBspline_3d_c_vgl_kernel with parameters:\n%p, %p, %p, %p, %p, (%f, %f, %f), (%i, %i, %i), (%i, %i, %i), %i, %i, %p, %i, %p, %i\n",
+                    pos_d, coefs, Linv_d, (float**)vals_d,(float**)grad_lapl_d,
                     spline->gridInv.x, spline->gridInv.y, spline->gridInv.z, spline->dim.x, spline->dim.y, spline->dim.z, spline->stride.x, spline->stride.y, spline->stride.z,
                     num_splines, row_stride,
                     (float*)spline->coefs_host,
-                    spline->host_Nx_offset, spline_start);
+                    spline->host_Nx_offset, coefs, spline_start);
 //  if (device_nr==0)
 //    cuda_uva_test_kernel<<<dimGrid,dimBlock>>>
 //    ((float*)spline->coefs, (float**)vals_d, num_splines, spline_start);
