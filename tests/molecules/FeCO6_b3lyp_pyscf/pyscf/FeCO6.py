@@ -44,10 +44,14 @@ cell = gto.M(
 
 
 mf = dft.RKS(cell).density_fit()
+#mf = dft.RKS(cell)
 mf.xc = 'b3lyp'
+#mf.chkfile = 'FeCO6.chk'
+#dm = mf.from_chk('FeCO6.chk')
 mf.chkfile = 'FeCO6-spherical.chk'
 dm = mf.from_chk('FeCO6-spherical.chk')
 mf.kernel(dm)
+#mf.kernel()
 
 title='FeCO6'
 kpts=[]

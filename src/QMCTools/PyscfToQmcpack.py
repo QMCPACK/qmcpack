@@ -61,8 +61,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
      asciiList = [n.encode("ascii", "ignore") for n in strList]
      groupApp.create_dataset('code', (1,),'S5', asciiList)
   else:
-     dt = h5py.special_dtype(vlen=str)
-     CodeData  = groupApp.create_dataset("code",(1,),dtype=dt)
+     CodeData  = groupApp.create_dataset("code",(1,),dtype="S5")
      CodeData[0:] = "PySCF"
 
   CodeVer  = groupApp.create_dataset("version",(3,),dtype="i4")
@@ -116,14 +115,13 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
     atmname=str(uniq_atoms[x][0])
     groupSpecies=groupAtom.create_group("species_"+str(x))
     groupSpecies.create_dataset("atomic_number",(1,),dtype="i4",data=uniq_atoms[x][1])
+    mylen="S"+str(len(atmname))
     if Python3:
-       mylen="S"+str(len(atmname))
        strList=[atmname]
        asciiList = [n.encode("ascii", "ignore") for n in strList]
        groupSpecies.create_dataset('name', (1,),mylen, asciiList)
     else:
-       dt = h5py.special_dtype(vlen=str)
-       AtmName=groupSpecies.create_dataset("name",(1,),dtype=dt)
+       AtmName=groupSpecies.create_dataset("name",(1,),dtype=mylen)
        AtmName[0:]=atmname
 
     groupSpecies.create_dataset("charge",(1,),dtype="f8",data=uniq_atoms[x][2])
@@ -157,8 +155,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
      asciiList = [n.encode("ascii", "ignore") for n in strList]
      GroupBasisSet.create_dataset('name', (1,),'S8', asciiList)
   else:
-     dt = h5py.special_dtype(vlen=str)
-     LCAOName=GroupBasisSet.create_dataset("name",(1,),dtype=dt)
+     LCAOName=GroupBasisSet.create_dataset("name",(1,),dtype="S8")
      LCAOName[0:]="LCAOBSet"
 
   #atomicBasisSets Group
@@ -166,9 +163,9 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
 
     MyIdx=idxAtomstoSpecies[x]
     atomicBasisSetGroup=GroupBasisSet.create_group("atomicBasisSet"+str(x))
+    mylen="S"+str(len(uniq_atoms[x][0]))
 
     if Python3:
-       mylen="S"+str(len(uniq_atoms[x][0]))
        strList=[uniq_atoms[x][0]]
        asciiList = [n.encode("ascii", "ignore") for n in strList]
        atomicBasisSetGroup.create_dataset('elementType', (1,),mylen, asciiList)
@@ -190,18 +187,17 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
           asciiList = [n.encode("ascii", "ignore") for n in strList]
           atomicBasisSetGroup.create_dataset('expandYlm', (1,),'S5', asciiList)
     else:
-       dt = h5py.special_dtype(vlen=str)
-       elemtype=atomicBasisSetGroup.create_dataset("elementType",(1,),dtype=dt)
+       elemtype=atomicBasisSetGroup.create_dataset("elementType",(1,),dtype=mylen)
        elemtype[0:]=uniq_atoms[x][0]
        if cell.cart==True:
-          Angular=atomicBasisSetGroup.create_dataset("angular",(1,),dtype=dt)
-          ExpandYLM=atomicBasisSetGroup.create_dataset("expandYlm",(1,),dtype=dt)
+          Angular=atomicBasisSetGroup.create_dataset("angular",(1,),dtype="S9")
+          ExpandYLM=atomicBasisSetGroup.create_dataset("expandYlm",(1,),dtype="S6")
           Angular[0:]="cartesian"
           ExpandYLM[0:]="Gamess"
        else:
-          Angular=atomicBasisSetGroup.create_dataset("angular",(1,),dtype=dt)
+          Angular=atomicBasisSetGroup.create_dataset("angular",(1,),dtype="S9")
           Angular[0:]="spherical"
-          ExpandYLM=atomicBasisSetGroup.create_dataset("expandYlm",(1,),dtype=dt)
+          ExpandYLM=atomicBasisSetGroup.create_dataset("expandYlm",(1,),dtype="S5")
           ExpandYLM[0:]="pyscf"
 
 
@@ -210,6 +206,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
     atomicBasisSetGroup.create_dataset("grid_rf",(1,),dtype="i4",data=100)
     atomicBasisSetGroup.create_dataset("grid_ri",(1,),dtype="f8",data=1e-06)
 
+    mylen="S"+str(len(cell.basis))
     if Python3:
       strList=['log']
       asciiList = [n.encode("ascii", "ignore") for n in strList]
@@ -219,7 +216,6 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
          asciiList = [n.encode("ascii", "ignore") for n in strList]
          atomicBasisSetGroup.create_dataset('name', (1,),'S8', asciiList)
       else:
-         mylen="S"+str(len(cell.basis))
          strList=[cell.basis]
          asciiList = [n.encode("ascii", "ignore") for n in strList]
          atomicBasisSetGroup.create_dataset('name', (1,),mylen, asciiList)
@@ -227,16 +223,16 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
       asciiList = [n.encode("ascii", "ignore") for n in strList]
       atomicBasisSetGroup.create_dataset('normalized', (1,),'S2', asciiList)
     else:
-      gridType=atomicBasisSetGroup.create_dataset("grid_type",(1,),dtype=dt)
+      gridType=atomicBasisSetGroup.create_dataset("grid_type",(1,),dtype="S3")
       gridType[0:]="log"
       if (len(cell.basis)<=2):
-        nameBase=atomicBasisSetGroup.create_dataset("name",(1,),dtype=dt)
+        nameBase=atomicBasisSetGroup.create_dataset("name",(1,),dtype="S8")
         nameBase[0:]="gaussian"
       else:
-        nameBase=atomicBasisSetGroup.create_dataset("name",(1,),dtype=dt)
+        nameBase=atomicBasisSetGroup.create_dataset("name",(1,),dtype=mylen)
         nameBase[0:]=cell.basis
 
-      Normalized=atomicBasisSetGroup.create_dataset("normalized",(1,),dtype=dt)
+      Normalized=atomicBasisSetGroup.create_dataset("normalized",(1,),dtype="S2")
       Normalized[0:]="no"
 
 
@@ -255,20 +251,20 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[]):
           BasisGroup=atomicBasisSetGroup.create_group("basisGroup"+str(n))
 
 
-
+          mylen="S"+str(len((uniq_atoms[x][0]+str(n)+str(l))))
           if Python3:
             strList=['Gaussian'] 
             asciiList = [n.encode("ascii", "ignore") for n in strList]
             BasisGroup.create_dataset('type',(1,),'S8',asciiList)
 
-            mylen="S"+str(len((uniq_atoms[x][0]+str(n)+str(l))))
+
             strList=[uniq_atoms[x][0]+str(n)+str(l)] 
             asciiList = [n.encode("ascii", "ignore") for n in strList]
             BasisGroup.create_dataset('rid', (1,),mylen, asciiList)
           else:
-            basisType=BasisGroup.create_dataset("type",(1,),dtype=dt)
+            basisType=BasisGroup.create_dataset("type",(1,),dtype="S8")
             basisType[0:]="Gaussian"
-            RID=BasisGroup.create_dataset("rid",(1,),dtype=dt)
+            RID=BasisGroup.create_dataset("rid",(1,),dtype=mylen)
             RID[0:]=(uniq_atoms[x][0]+str(n)+str(l))
 
 
