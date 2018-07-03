@@ -15,12 +15,18 @@
 #ifndef QMCPLUSPLUS_BSPLINE_JASTROW_BUILDER_H
 #define QMCPLUSPLUS_BSPLINE_JASTROW_BUILDER_H
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#if defined(QMC_CUDA) and defined(ENABLE_SOA)
+#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBsplineSoA.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBsplineSoA.h"
+#endif
 
 namespace qmcplusplus
 {
-//forward declaration
+//forward declarations
 class ParticleSet;
-
+extern template class OneBodyJastrowOrbitalBsplineSoA<BsplineFunctor<double>>;
+extern template class TwoBodyJastrowOrbitalBsplineSoA<BsplineFunctor<double>>;
+  
 struct BsplineJastrowBuilder: public OrbitalBuilderBase
 {
   ParticleSet *sourcePtcl;

@@ -34,7 +34,7 @@
 namespace qmcplusplus
 {
 
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#if defined(QMC_CUDA)
 struct NLjob
 {
   int walker;
@@ -435,7 +435,7 @@ struct OrbitalBase: public QMCTraits
   /////////////////////////////////////////////////////
   // Functions for vectorized evaluation and updates //
   /////////////////////////////////////////////////////
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#if defined(QMC_CUDA)
   virtual void freeGPUmem()
   { }
 

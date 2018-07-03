@@ -109,7 +109,7 @@ public:
   typedef OrbitalBase::WFBufferType       WFBufferType;
   typedef OrbitalBase::HessType           HessType;
   typedef OrbitalBase::HessVector_t       HessVector_t;
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#if defined(QMC_CUDA)
   typedef OrbitalBase::CudaValueType   CudaValueType;
   typedef OrbitalBase::CudaGradType    CudaGradType;
   typedef OrbitalBase::CudaRealType    CudaRealType;
@@ -380,7 +380,7 @@ private:
   ///////////////////////////////////////////
   // Vectorized version for GPU evaluation //
   ///////////////////////////////////////////
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#if defined(QMC_CUDA)
 private:
   gpu::device_host_vector<CudaValueType>   GPUratios;
   gpu::device_host_vector<CudaGradType>    GPUgrads;

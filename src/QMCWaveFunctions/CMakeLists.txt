@@ -94,7 +94,7 @@ IF(OHMMS_DIM MATCHES 3)
   ENDIF(NOT QMC_COMPLEX AND ENABLE_SOA)
 
 
-  IF(QMC_CUDA and ENABLE_SOA)
+  IF(QMC_CUDA AND ENABLE_SOA)
     SET(FERMION_SRCS ${FERMION_SRCS}
       Fermion/determinant_update.cu 
       Fermion/DiracDeterminantCUDA.cpp
@@ -104,6 +104,9 @@ IF(OHMMS_DIM MATCHES 3)
     SET(JASTROW_SRCS ${JASTROW_SRCS}
       Jastrow/BsplineJastrowCuda.cu
       Jastrow/BsplineJastrowCudaPBC.cu
+      #Just in build to get rtags
+      Jastrow/OneBodyJastrowOrbitalBspline.cpp
+      Jastrow/TwoBodyJastrowOrbitalBspline.cpp
       Jastrow/OneBodyJastrowOrbitalBsplineSoA.cpp
       Jastrow/TwoBodyJastrowOrbitalBsplineSoA.cpp
       )
@@ -116,7 +119,7 @@ IF(OHMMS_DIM MATCHES 3)
     ENDIF(HAVE_EINSPLINE)
   ENDIF(QMC_CUDA)
 
-  IF(QMC_CUDA and NOT ENABLE_SOA)
+  IF(QMC_CUDA AND NOT ENABLE_SOA)
     SET(FERMION_SRCS ${FERMION_SRCS}
       Fermion/determinant_update.cu 
       Fermion/DiracDeterminantCUDA.cpp

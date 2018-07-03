@@ -13,8 +13,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#ifndef ONE_BODY_JASTROW_ORBITAL_BSPLINE_H
-#define ONE_BODY_JASTROW_ORBITAL_BSPLINE_H
+#ifndef ONE_BODY_JASTROW_ORBITAL_BSPLINE_SOA_H
+#define ONE_BODY_JASTROW_ORBITAL_BSPLINE_SOA_H
 
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
@@ -34,8 +34,17 @@ class OneBodyJastrowOrbitalBsplineSoA :
 {
 private:
   bool UsePBC;
-  typedef CUDA_PRECISION CudaReal;
-  //typedef double CudaReal;
+  using QMCT = QMCTraits;
+  using CudaRealType = typename J1OrbitalSoA<FT>::CudaRealType;
+  // Duplication that shouold be removed
+  using CudaReal = CudaRealType;
+  using RealType = QMCT::RealType;
+  using ValueType = QMCT::ValueType;
+  using GradType = QMCT::GradType;
+  using PosType = QMCT::PosType;
+  using GradMatrix_t = typename J1OrbitalSoA<FT>::GradMatrix_t;
+  using ValueMatrix_t = typename J1OrbitalSoA<FT>::ValueMatrix_t;
+  using RealMatrix_t = typename J1OrbitalSoA<FT>::RealMatrix_t;
 
   std::vector<CudaSpline<CudaReal>*> GPUSplines, UniqueSplines;
   int MaxCoefs;
@@ -68,12 +77,11 @@ private:
 
   int N;
 public:
-  typedef BsplineFunctor<OrbitalBase::RealType> FT;
   typedef ParticleSet::Walker_t     Walker_t;
 
   GPU_XRAY_TRACE void resetParameters(const opt_variables_type& active);
   GPU_XRAY_TRACE void checkInVariables(opt_variables_type& active);
-  GPU_XRAY_TRACE void addFunc(int ig, FT* j, int jg);
+  GPU_XRAY_TRACE void addFunc(int ig, FT* j, int jg=-1);
   GPU_XRAY_TRACE void recompute(MCWalkerConfiguration &W, bool firstTime);
   GPU_XRAY_TRACE void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool);
   GPU_XRAY_TRACE void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi);
@@ -111,25 +119,25 @@ public:
                             const opt_variables_type& optvars,
                             RealMatrix_t &dlogpsi,
                             RealMatrix_t &dlapl_over_psi);
-  OneBodyJastrowOrbitalBspline(ParticleSet &centers, ParticleSet& elecs) :
+  OneBodyJastrowOrbitalBsplineSoA(ParticleSet &centers, ParticleSet& elecs) :
     J1OrbitalSoA<FT>(centers,elecs),
     ElecRef(elecs),
-    L("OneBodyJastrowOrbitalBspline::L"),
-    Linv("OneBodyJastrowOrbitalBspline::Linv"),
-    C("OneBodyJastrowOrbitalBspline::C"),
-    UpdateListGPU("OneBodyJastrowOrbitalBspline::UpdateListGPU"),
-    SumGPU("OneBodyJastrowOrbitalBspline::SumGPU"),
-    GradLaplGPU("OneBodyJastrowOrbitalBspline::GradLaplGPU"),
-    OneGradGPU("OneBodyJastrowOrbitalBspline::OneGradGPU"),
-    SplineDerivsGPU("OneBodyJastrowOrbitalBspline::SplineDerivsGPU"),
-    DerivListGPU("OneBodyJastrowOrbitalBspline::DerivListGPU"),
-    NL_SplineCoefsListGPU("OneBodyJastrowOrbitalBspline::NL_SplineCoefsListGPU"),
-    NL_JobListGPU("OneBodyJastrowOrbitalBspline::NL_JobListGPU"),
-    NL_NumCoefsGPU("OneBodyJastrowOrbitalBspline::NL_NumCoefsGPU"),
-    NL_NumQuadPointsGPU("OneBodyJastrowOrbitalBspline::NL_NumQuadPointsGPU"),
-    NL_rMaxGPU("OneBodyJastrowOrbitalBspline::NL_rMaxGPU"),
-    NL_QuadPointsGPU("OneBodyJastrowOrbitalBspline::NL_QuadPointsGPU"),
-    NL_RatiosGPU("OneBodyJastrowOrbitalBspline::NL_RatiosGPU")
+    L("OneBodyJastrowOrbitalBsplineSoA::L"),
+    Linv("OneBodyJastrowOrbitalBsplineSoA::Linv"),
+    C("OneBodyJastrowOrbitalBsplineSoA::C"),
+    UpdateListGPU("OneBodyJastrowOrbitalBsplineSoA::UpdateListGPU"),
+    SumGPU("OneBodyJastrowOrbitalBsplineSoA::SumGPU"),
+    GradLaplGPU("OneBodyJastrowOrbitalBsplineSoA::GradLaplGPU"),
+    OneGradGPU("OneBodyJastrowOrbitalBsplineSoA::OneGradGPU"),
+    SplineDerivsGPU("OneBodyJastrowOrbitalBsplineSoA::SplineDerivsGPU"),
+    DerivListGPU("OneBodyJastrowOrbitalBsplineSoA::DerivListGPU"),
+    NL_SplineCoefsListGPU("OneBodyJastrowOrbitalBsplineSoA::NL_SplineCoefsListGPU"),
+    NL_JobListGPU("OneBodyJastrowOrbitalBsplineSoA::NL_JobListGPU"),
+    NL_NumCoefsGPU("OneBodyJastrowOrbitalBsplineSoA::NL_NumCoefsGPU"),
+    NL_NumQuadPointsGPU("OneBodyJastrowOrbitalBsplineSoA::NL_NumQuadPointsGPU"),
+    NL_rMaxGPU("OneBodyJastrowOrbitalBsplineSoA::NL_rMaxGPU"),
+    NL_QuadPointsGPU("OneBodyJastrowOrbitalBsplineSoA::NL_QuadPointsGPU"),
+    NL_RatiosGPU("OneBodyJastrowOrbitalBsplineSoA::NL_RatiosGPU")
   {
     UsePBC = elecs.Lattice.SuperCellEnum;
     NumElecGroups = elecs.groups();

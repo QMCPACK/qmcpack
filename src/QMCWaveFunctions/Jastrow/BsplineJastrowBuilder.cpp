@@ -26,10 +26,7 @@
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
-#if defined(QMC_CUDA) and defined(ENABLE_SOA)
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBsplineSoA.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBsplineSoA.h"
-#elif defined(QMC_CUDA) and !defined(ENABLE_SOA)
+#if defined(QMC_CUDA) and !defined(ENABLE_SOA)
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBspline.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBspline.h"
 #endif

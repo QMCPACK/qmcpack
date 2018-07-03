@@ -421,7 +421,7 @@ void SPOSetBase::evaluateGradSource (const ParticleSet &P, int first, int last,
   APP_ABORT("SPOSetlBase::evalGradSource is not implemented");
 }
 
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#if defined(QMC_CUDA)
 
 void SPOSetBase::evaluate(const ParticleSet& P, const PosType& r, std::vector<RealType> &psi)
 {
