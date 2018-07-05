@@ -37,7 +37,10 @@ FOREACH(fname ${FILES_TO_COPY})
 ENDFOREACH()
 
 IF ((NOT QMC_COMPLEX) AND (NOT QMC_MIXED_PRECISION) AND (NOT QMC_CUDA))
-  SET(MO_SRCS test_MO.cpp test_cusp_corr.cpp)
+  SET(MO_SRCS test_MO.cpp)
+  IF (NOT ENABLE_SOA)
+    SET(MO_SRCS ${MO_SRCS} test_cusp_corr.cpp)
+  ENDIF()
 ENDIF()
 
 ADD_EXECUTABLE(${UTEST_EXE} test_wf.cpp test_bspline_jastrow.cpp test_einset.cpp test_pw.cpp
