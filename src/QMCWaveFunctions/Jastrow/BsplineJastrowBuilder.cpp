@@ -211,7 +211,7 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
       return createOneBodyJastrow<J1OrbitalSoA<RadFuncType>,DiffOneBodyJastrowOrbital<RadFuncType> >(cur);
 #else
       return createOneBodyJastrow<OneBodyJastrowOrbital<RadFuncType>,DiffOneBodyJastrowOrbital<RadFuncType> >(cur);
-#endif
+#endif // defined(ENABLE_SOA) && defined(QMC_CUDA)
 
 #endif // defined(QMC_CUDA) && !defined(ENABLE_SOA)
   }
@@ -233,9 +233,9 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
     typedef TwoBodyJastrowOrbitalBsplineSoA<BsplineFunctor<RealType>> J2Type;
 #elif defined(ENABLE_SOA)
     typedef J2OrbitalSoA<BsplineFunctor<RealType> > J2Type;
-#else
+#else // defined(QMC_CUDA) && defined(ENABLE_SOA)
     typedef TwoBodyJastrowOrbital<BsplineFunctor<RealType> > J2Type;
-#endif
+#endif // defined(QMC_CUDA) && defined(ENABLE_SOA)
 
 #endif //defined(QMC_CUDA) && !defined(ENABLE_SOA)
     typedef DiffTwoBodyJastrowOrbital<BsplineFunctor<RealType> > dJ2Type;

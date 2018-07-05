@@ -44,7 +44,7 @@ struct NLjob
     walker(w), elec(e), numQuadPoints(n)
   { }
 };
-#endif // defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#endif // defined(QMC_CUDA)
 
 ///forward declaration of OrbitalBase
 class OrbitalBase;
@@ -236,12 +236,12 @@ struct OrbitalBase: public QMCTraits
 
  // virtual void evaluateHessian(ParticleSet& P, IndexType iat, HessType& grad_grad_psi)
  // {
- //   APP_ABORT("OrbitalBase::evaluateHessian is not implemented");  
+ //   APP_ABORT("OrbitalBase::evaluateHessian is not implemented");
  // }
-  
+
   virtual void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi_all)
   {
-    APP_ABORT("OrbitalBase::evaluateHessian is not implemented");  
+    APP_ABORT("OrbitalBase::evaluateHessian is not implemented");
   }
 
   /** return the current gradient for the iat-th particle
@@ -606,7 +606,7 @@ struct OrbitalBase: public QMCTraits
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
-#endif //defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#endif //defined(QMC_CUDA)
 };
 }
 #endif
