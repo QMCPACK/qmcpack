@@ -9,9 +9,9 @@ IF (NOT QMC_CUDA)
 #  "eeenergy"  "568.6009 0.0016") # e-e energy
 #  "samples"   "625868800 0.0") # samples
 
-  LIST(APPEND FeCO6_GMS_SHORT "kinetic" "163.8407 0.090") # kinetic energy
-  LIST(APPEND FeCO6_GMS_SHORT "eeenergy" "568.6009 0.052") # e-e energy
-  LIST(APPEND FeCO6_GMS_SHORT "totenergy" "-250.43439 0.0122") # total energy
+  LIST(APPEND FeCO6_GMS_SHORT "kinetic" "163.8407 0.23") # kinetic energy
+  LIST(APPEND FeCO6_GMS_SHORT "eeenergy" "568.6009 0.18") # e-e energy
+  LIST(APPEND FeCO6_GMS_SHORT "totenergy" "-250.43439 0.035") # total energy
   LIST(APPEND FeCO6_GMS_SHORT "samples" "48000 0.0") # samples
   QMC_RUN_AND_CHECK(short-FeCO6_gms-vmc_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_gms"
@@ -22,9 +22,9 @@ IF (NOT QMC_CUDA)
                     0 FeCO6_GMS_SHORT # VMC
                     )
 
-  LIST(APPEND FeCO6_GMS_LONG "kinetic" "163.8407 0.045") # kinetic energy
-  LIST(APPEND FeCO6_GMS_LONG "eeenergy" "568.6009 0.025") # e-e energy
-  LIST(APPEND FeCO6_GMS_LONG "totenergy" "-250.43439 0.006") # total energy
+  LIST(APPEND FeCO6_GMS_LONG "kinetic" "163.8407 0.088") # kinetic energy
+  LIST(APPEND FeCO6_GMS_LONG "eeenergy" "568.6009 0.067") # e-e energy
+  LIST(APPEND FeCO6_GMS_LONG "totenergy" "-250.43439 0.012") # total energy
   LIST(APPEND FeCO6_GMS_LONG "samples" "480000 0.0") # samples
   QMC_RUN_AND_CHECK(long-FeCO6_gms-vmc_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_gms"

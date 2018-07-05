@@ -11,9 +11,9 @@ IF (NOT QMC_CUDA)
 #   "eeenergy" "3.488827 0.000010") # e-e energy
 #   "samples" "80117760000 0.0") # samples
 
-  LIST(APPEND LIH_SHORT "kinetic" "7.991344 0.006") # kinetic energy
-  LIST(APPEND LIH_SHORT "totenergy" "-7.9873125 0.0005") # total energy
-  LIST(APPEND LIH_SHORT "eeenergy" "3.488827 0.0005") # e-e energy
+  LIST(APPEND LIH_SHORT "kinetic" "7.991344 0.007") # kinetic energy
+  LIST(APPEND LIH_SHORT "totenergy" "-7.9873125 0.0006") # total energy
+  LIST(APPEND LIH_SHORT "eeenergy" "3.488827 0.00085") # e-e energy
   LIST(APPEND LIH_SHORT "samples" "9600000 0.0") # samples
   QMC_RUN_AND_CHECK(short-LiH_dimer_ae_pyscf-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae_pyscf"
@@ -24,9 +24,9 @@ IF (NOT QMC_CUDA)
                     0 LIH_SHORT # VMC
                     )
 
-  LIST(APPEND LIH_LONG "kinetic" "7.991344 0.002") # kinetic energy
-  LIST(APPEND LIH_LONG "totenergy" "-7.9873125 0.0002") # total energy
-  LIST(APPEND LIH_LONG "eeenergy" "3.488827 0.0002") # e-e energy
+  LIST(APPEND LIH_LONG "kinetic" "7.991344 0.0022") # kinetic energy
+  LIST(APPEND LIH_LONG "totenergy" "-7.9873125 0.00024") # total energy
+  LIST(APPEND LIH_LONG "eeenergy" "3.488827 0.00029") # e-e energy
   LIST(APPEND LIH_LONG "samples" "96000000 0.0") # samples
   QMC_RUN_AND_CHECK(long-LiH_dimer_ae_pyscf-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae_pyscf"
