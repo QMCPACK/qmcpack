@@ -78,7 +78,7 @@ void DMCcuda::checkBounds (std::vector<PosType> &newpos,
 
 bool DMCcuda::run()
 {
-#if USE_NVTX
+#ifdef USE_NVTX
   nvtxRangePushA("DMC:run");
 #endif
   bool scaleweight = ScaleWeight == "yes";

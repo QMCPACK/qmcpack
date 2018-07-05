@@ -194,6 +194,9 @@
 /* Use SOA version of AA distance table */
 #cmakedefine ENABLE_SOA  @ENABLE_SOA@
 
+/* Enable NVTX regions in CUDA code. */
+#cmakedefine USE_NVTX @USE_NVTX@
+
 #if (__cplusplus >= 201103L)
   #if defined(__INTEL_COMPILER)
     #if defined(__KNC__) || defined(__AVX512F__)
