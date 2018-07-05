@@ -25,7 +25,7 @@
 #include "type_traits/scalar_traits.h"
 #include "Utilities/RunTimeManager.h"
 #include "qmc_common.h"
-#ifdef USE_NVTX
+#ifdef USE_NVTX_API
 #include <nvToolsExt.h>
 #endif
 
@@ -129,7 +129,7 @@ bool VMCcuda::run()
 {
   if (UseDrift == "yes")
     return runWithDrift();
-#ifdef USE_NVTX
+#ifdef USE_NVTX_API
   nvtxRangePushA("VMC:run");
 #endif
   resetRun();
@@ -248,7 +248,7 @@ bool VMCcuda::run()
     std::cerr << "At the end of VMC" << std::endl;
     gpu::cuda_memory_manager.report();
   }
-#ifdef USE_NVTX
+#ifdef USE_NVTX_API
   nvtxRangePop();
 #endif
   return finalize(block);
@@ -340,7 +340,7 @@ void VMCcuda::advanceWalkersWithDrift()
 
 bool VMCcuda::runWithDrift()
 {
-#ifdef USE_NVTX
+#ifdef USE_NVTX_API
   nvtxRangePushA("VMC:runWithDrift");
 #endif
   resetRun();
@@ -439,7 +439,7 @@ bool VMCcuda::runWithDrift()
     std::cerr << "At the end of VMC with drift" << std::endl;
     gpu::cuda_memory_manager.report();
   }
-#ifdef USE_NVTX
+#ifdef USE_NVTX_API
   nvtxRangePop();
 #endif
   return finalize(block);

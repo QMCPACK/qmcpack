@@ -678,15 +678,6 @@ ELSE(QMC_CUDA)
   MESSAGE(STATUS "Disabling CUDA")
 ENDIF(QMC_CUDA)
 
-SET(USE_NVTX 0 CACHE BOOL "Enable/disable NVTX regions in CUDA code.")
-IF(USE_NVTX)
-  IF(HAVE_CUDA)
-    ADD_DEFINITIONS(-DUSE_NVTX)
-    LINK_DIRECTORIES("${CUDA_TOOLKIT_ROOT_DIR}/lib64")
-    LINK_LIBRARIES("nvToolsExt")
-  ENDIF(HAVE_CUDA)
-ENDIF(USE_NVTX)
-
 
 #INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
 ##################################################################
@@ -789,6 +780,14 @@ IF (USE_VTUNE_API)
   ENDIF()
   LINK_LIBRARIES("${VTUNE_ITTNOTIFY_LIBRARY}")
 ENDIF()
+
+SET(USE_NVTX 0 CACHE BOOL "Enable/disable NVTX regions in CUDA code.")
+IF(USE_NVTX_API)
+  IF(HAVE_CUDA)
+    LINK_DIRECTORIES("${CUDA_TOOLKIT_ROOT_DIR}/lib64")
+    LINK_LIBRARIES("nvToolsExt")
+  ENDIF(HAVE_CUDA)
+ENDIF(USE_NVTX_API)
 
 
 #include(ExternalProject)
