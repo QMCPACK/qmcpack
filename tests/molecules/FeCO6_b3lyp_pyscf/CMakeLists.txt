@@ -7,28 +7,35 @@ IF (NOT QMC_CUDA)
 # Also check results for different number of mpi tasks and threads keeping total constant
 
 # Ref for long VMC test
-  LIST(APPEND FeCO6_GMS_SCALARS "kinetic" "163.8420 0.0022") # kinetic energy
-  LIST(APPEND FeCO6_GMS_SCALARS "totenergy" "-250.43499 0.00034") # total energy
-  LIST(APPEND FeCO6_GMS_SCALARS "eeenergy" "568.6012 0.0017") # e-e energy
-  LIST(APPEND FeCO6_GMS_SCALARS "samples" "16000 0.0") # samples
-#  LIST(APPEND LIH_SCALARS "flux" "0.0 0.1") # sampling check, should be zero
+  LIST(APPEND FeCO6_PYSCF_SCALARS "kinetic" "163.8420 0.0022") # kinetic energy
+  LIST(APPEND FeCO6_PYSCF_SCALARS "totenergy" "-250.43499 0.00034") # total energy
+  LIST(APPEND FeCO6_PYSCF_SCALARS "eeenergy" "568.6012 0.0017") # e-e energy
+  LIST(APPEND FeCO6_PYSCF_SCALARS "samples" "16000 0.0") # samples
 
+  LIST(APPEND FeCO6_PYSCF_SHORT "kinetic" "163.8420 0.090") # kinetic energy
+  LIST(APPEND FeCO6_PYSCF_SHORT "eeenergy" "568.6012 0.052") # e-e energy
+  LIST(APPEND FeCO6_PYSCF_SHORT "totenergy" "-250.43499 0.0122") # total energy
+  LIST(APPEND FeCO6_PYSCF_SHORT "samples" "48000 0.0") # samples
   QMC_RUN_AND_CHECK(short-FeCO6_pyscf-vmc_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_pyscf"
-                    qmc_short_noj
-                    qmc_short_noj.in.xml
+                    vmc_short_noj
+                    vmc_short_noj.in.xml
                     1 16
                     TRUE
-                    0 FeCO6_GMS_SCALARS # VMC
+                    0 FeCO6_PYSCF_SHORT # VMC
                     )
 
+  LIST(APPEND FeCO6_PYSCF_LONG "kinetic" "163.8420 0.040") # kinetic energy
+  LIST(APPEND FeCO6_PYSCF_LONG "eeenergy" "568.6012 0.025") # e-e energy
+  LIST(APPEND FeCO6_PYSCF_LONG "totenergy" "-250.43499 0.006") # total energy
+  LIST(APPEND FeCO6_PYSCF_LONG "samples" "480000 0.0") # samples
   QMC_RUN_AND_CHECK(long-FeCO6_pyscf-vmc_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_pyscf"
-                    qmc_long_noj
-                    qmc_long_noj.in.xml
+                    vmc_long_noj
+                    vmc_long_noj.in.xml
                     1 16
                     TRUE
-                    0 FeCO6_GMS_SCALARS # VMC
+                    0 FeCO6_PYSCF_LONG # VMC
                     )
 
   ELSE()

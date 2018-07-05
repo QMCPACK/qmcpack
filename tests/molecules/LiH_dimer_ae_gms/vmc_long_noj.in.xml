@@ -23,7 +23,7 @@ PROPERTY VALUES FOR THE ROHF  SELF-CONSISTENT FIELD WAVEFUNCTION
 
 -->
 <simulation>
-   <project id="vmc_hf_noj" series="0">
+  <project id="vmc_long_noj" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
    <qmcsystem>
@@ -12037,11 +12037,10 @@ PROPERTY VALUES FOR THE ROHF  SELF-CONSISTENT FIELD WAVEFUNCTION
    </qmcsystem>
    <qmc method="vmc" move="pbyp">
       <parameter name="walkers"             >    1               </parameter>
-      <parameter name="blocks"              >    100             </parameter>
-      <parameter name="steps"               >    1000            </parameter>
+      <parameter name="blocks"              >    200             </parameter>
+      <parameter name="steps"               >    30000            </parameter>
       <parameter name="subSteps"            >    3               </parameter>
       <parameter name="timestep"            >    0.4             </parameter>
       <parameter name="warmupSteps"         >    50              </parameter>
-      <parameter name="samples"             >    1600000         </parameter>
    </qmc>
 </simulation>

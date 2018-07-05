@@ -491,4 +491,4 @@ Extra cycle  E= -7.9873236457148  delta_E= -3.1e-12  |g|= 5.04e-07  |ddm|= 4.16e
     CPU time for SCF     23.44 sec, wall time      7.64 sec
 converged SCF energy = -7.9873236457148
 Wavefunction successfuly saved to QMCPACK HDF5 Format
-Use: "convert4qmc -Pyscf  LiH.h5" to generate QMCPACK input files
+Use: "convert4qmc -pyscf  LiH.h5" to generate QMCPACK input files

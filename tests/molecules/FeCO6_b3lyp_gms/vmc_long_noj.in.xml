@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-  <project id="vmc_b3lyp_noj" series="0"/>
+  <project id="vmc_long_noj" series="0"/>
   <include href="FeCO6.structure.xml"/>
   <include href="FeCO6.wfnoj.xml"/>
   <hamiltonian name="h0" type="generic" target="e">
@@ -14,11 +14,10 @@
   </hamiltonian>
   <qmc method="vmc" move="pbyp">
       <parameter name="walkers"             >    1               </parameter>
-      <parameter name="blocks"              >    100             </parameter>
-      <parameter name="steps"               >    1000            </parameter>
+      <parameter name="blocks"              >    200             </parameter>
+      <parameter name="steps"               >    150             </parameter>
       <parameter name="subSteps"            >    3               </parameter>
-      <parameter name="timestep"            >    0.4             </parameter>
+      <parameter name="timestep"            >    0.1             </parameter>
       <parameter name="warmupSteps"         >    50              </parameter>
-      <parameter name="samples"             >    160000         </parameter>
    </qmc>
 </simulation>
