@@ -10,22 +10,19 @@ different file formats and QMCPACK (e.g. ppconvert and convert4qmc),
 
 \section{Post-Processing}
   \subsection{qmca}
-    qmca is a versatile tool to analyze and plot the raw data from QMCPACK *.scalar.dat files.
+    \texttt{qmca} is a versatile tool to analyze and plot the raw data from QMCPACK *.scalar.dat files.
     It is a python executable and part of the Nexus suite of tools.  It can be found in 
-    \texttt{trunk/nexus/executables}. 
-  \subsection{qmcfit}
+    \texttt{trunk/nexus/executables}. For more detail, see section \ref{sec:qmca}.
+  \subsection{qfit}
+    \texttt{qfit} is a curve fitting tool to obtain statistical error bars on fitted parameters.
+    It is useful for DMC timestep extrapolation.  For more details, see section \ref{sec:qfit}.
   \subsection{qmcfinitesize}
-    qmcfinitesize is a utility to compute many-body finite-size corrections to the energy.  It
+    \texttt{qmcfinitesize} is a utility to compute many-body finite-size corrections to the energy.  It
     is a C++ executable that is built alongside the qmcpack executable.  It can be found in 
     \texttt{trunk/build/bin}
-  \subsection{trace-density}
 
 \section{Converters} 
 \input{convert4qmc}    
-  \subsection{wfconvert}
-    wfconvert allows the conversion of wavefunction from another code into a format supported by QMCPACK.
-    Currently most its important features are available within QMCPACK and there is no need to use it anymore.
-    Converting wavefunctions from LAPW, nonuniform b-splines, wannier functions has not been transferred.
   \subsection{pw2qmcpack.x}
     pw2qmcpack.x is an executable that converts PWSCF wavefunctions to QMCPACK readable 
     HDF5 format.  This utility is built alongside the Quantum Espresso post-processing utilities.
@@ -60,7 +57,7 @@ different file formats and QMCPACK (e.g. ppconvert and convert4qmc),
     Unfortunately, if the generated UPF file is used in Quantum ESPRESSO, the calculation may be incorrect due to the presence of ``ghost'' states. Potentially these can be removed by adjusting the local chanel, e.g. by setting \texttt{--local\_channel 1} which chooses the p channel as the local channel instead of d.
     For this reason, validation of UPF pseudopotentials is always required from the third row and strongly encouraged in general. For example, check that the expected ionization potential and electron affinities are obtained for the atom and check that dimer properties are consistent with those obtained by a Quantum Chemistry code or a plane-wave code that does not use the Kleinman-Bylander projectors.
 \input{pseudopotentials}
-\section{Miscellaneous}
-  \subsection{extract-eshdf-kvectors}
+%\section{Miscellaneous}
+%  \subsection{extract-eshdf-kvectors}
     
 
