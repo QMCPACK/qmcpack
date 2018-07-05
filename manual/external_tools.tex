@@ -19,6 +19,16 @@ An example of options to be passed to CMake
  -DCMAKE_LIBRARY_PATH=/opt/intel/vtune_amplifier_xe/lib64
 \end{shade}
 
+\section{NVIDIA Tools Extensions (NVTX)}
+
+NVIDIA's Tools Extensions (NVTX) API enables programmers to annotate their source code when used with the NVIDIA profilers.
+
+\subsection{NVTX API}
+
+If the variable \texttt{USE\_NVTX\_API} is set, QMCPACK will add the library (\texttt{libnvToolsExt.so}) to the qmcpack target. To add NVTX annotations
+to a function, it is necessary to include the \texttt{nvToolsExt.h} header file and then make the appropriate calls into the NVTX API. For more information
+about the NVTX API, see \url{https://docs.nvidia.com/cuda/profiler-users-guide/index.html#nvtx}. Any additional calls to the NVTX API should be guarded by
+the \texttt{USE\_NVTX\_API} compiler define.
 
 \subsection{Timers as Tasks}
 To aid in connecting the timers in the code to the profile data, the start/stop of
