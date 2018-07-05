@@ -218,7 +218,7 @@ precisely.  Therefore, we define
 \tilde{v}^{\alpha \beta}_{k=0} = \frac{4 \pi}{\Omega} 
 \int_0^{r_\text{end}} dr\ r^2 v_l^{\alpha \beta}(r),
 \end{equation}
-where $r_\text{end}$ is some cutoff value after which the potential
+where $r_{\text{end}}$ is some cutoff value after which the potential
 tails precisely cancel.
 
 \subsubsection{Neutralizing Background Terms}
@@ -281,7 +281,7 @@ v^{\alpha \beta}_l(r).
 For the case of the Coulomb potential, the above integral is not
 formally convergent if we do the integral naively. We may remedy the
 situation by including a convergence factor, $e^{-k_0 r}$.  For a
-potential of the form $v^\text{coul}(r) = q_1 q_2/r$, this yields
+potential of the form $v^{\text{coul}}(r) = q_1 q_2/r$, this yields
 \begin{eqnarray}
 v^{\text{screened coul}}_k & = & \frac{4\pi q_1 q_2}{\Omega k} \int_0^\infty dr\ \sin(kr)
 e^{-k_0r} \\ 
@@ -336,7 +336,7 @@ m_3)$ indices.
     \FOR{$j \in [1\cdots3]$}
       \STATE Compute $C^{i \alpha}_j \equiv e^{i \vb_j \cdot
         \vr^{\alpha}_i}$
-       \FOR{$m \in [-m_{\text{max}}\dots m_\text{max}]$}
+       \FOR{$m \in [-m_{\text{max}}\dots m_{\text{max}}]$}
          \STATE Compute $[C^{i \alpha}_j]^m$ and store in array
        \ENDFOR
     \ENDFOR
@@ -558,8 +558,8 @@ to enforce a boundary condition, for example.  To do this, we define
 \begin{equation}
 \bb' \equiv \vb - t_n \bA_{(n)}.
 \end{equation}
-We then define $\bA^*$ as $\bA$ with the $n^\text{th}$ row and column
-removed, and $\bb^*$ as $\vb'$ with the $n^\text{th}$ element removed.  Then
+We then define $\bA^*$ as $\bA$ with the $n^{\text{th}}$ row and column
+removed, and $\bb^*$ as $\vb'$ with the $n^{\text{th}}$ element removed.  Then
 we solve the reduced equation $\bA^* \mathbf{t}^* = \bb^*$, and
 finally insert $t_n$ back into the appropriate place in $\mathbf{t}^*$
 to recover the complete, constrained vector $\mathbf{t}$.  This may be
@@ -604,12 +604,17 @@ S =
 \end{equation}
 \begin{figure}
 \begin{center}
-\epsfig{figure=./figures/LPQHI.eps,width=3.5in}
+  \ifdefined\HCode
+  \includegraphics[width=3.5in]{./figures/LPQHI.dmn}
+  \else
+  \includegraphics[width=3.5in]{./figures/LPQHI.pdf}
+  \fi
 \caption{Basis functions $h_{j0}$, $h_{j1}$, and $h_{j2}$ are shown.
 We note at the left and right extremes, the values and first two
 derivatives of the functions are zero, while at the center, $h_{j0}$
 has a value of 1, $h_{j1}$ has a first derivative of 1, and $h_{j2}$
-has a second derivative of 1. \label{fig:LPQHI} }
+has a second derivative of 1. }
+\label{fig:LPQHI} 
 \end{center}
 \end{figure}
 Figure~\ref{fig:LPQHI} shows plots of these function shapes.
@@ -679,8 +684,8 @@ Note that these equations correct typographical errors present in \cite{Natoli19
 We note that the summations over $k$ which have been ubiquitous in
 this paper requires enumeration of the $k$-vectors.  In particular, we
 should sum over all $|\vk| > k_c$.  In practice, we must limit our
-summation to some finite cutoff value $k_c < |\vk| < k_\text{max}$,
-where $k_\text{max}$ should be of order $3000/L$, where $L$ is the
+summation to some finite cutoff value $k_c < |\vk| < k_{\text{max}}$,
+where $k_{\text{max}}$ should be of order $3000/L$, where $L$ is the
 minimum box dimension.  Enumerating these vectors in a naive fashion
 even for this finite cutoff would prove quite prohibitive, as it
 requires $\sim 10^9$ vectors.
@@ -698,11 +703,11 @@ so typically saves a factor of $\sim 200$ in storage and computation.
 
 This reduction is still not sufficient for large $k_max$, since it
 requires that we still look over $10^9$ entries.  To further reduce
-cost, we may pick an intermediate cutoff, $k_\text{cont}$, above which
+cost, we may pick an intermediate cutoff, $k_{\text{cont}}$, above which
 we will approximate the degeneracy assuming a continuum of
-$k$-points.  We stop our exact enumeration at $k_\text{cont}$, and
-then add $\sim 1000$ points, $k_i$, uniformly spaced between $k_\text{cont}$
-and $k_\text{max}$. We then approximate the degeneracy by
+$k$-points.  We stop our exact enumeration at $k_{\text{cont}}$, and
+then add $\sim 1000$ points, $k_i$, uniformly spaced between $k_{\text{cont}}$
+and $k_{\text{max}}$. We then approximate the degeneracy by
 \begin{equation}
 N_i = \frac{4 \pi}{3} \frac{\left( k_b^3 -k_a^3\right)}{(2\pi)^3/\Omega},
 \end{equation}
@@ -1152,8 +1157,8 @@ x_k^{1/r^4} = -\frac{4 \pi}{\Omega k}
 \newcommand{\tW}{\widetilde{W}}
 \newcommand{\tc}{\widetilde{c}}
 \newcommand{\tY}{\widetilde{Y}}
-\newcommand{\Nk}{N_\text{knot}}
-\newcommand{\wk}{w_\text{knot}}
+\newcommand{\Nk}{N_{\text{knot}}}
+\newcommand{\wk}{w_{\text{knot}}}
 
 Given a lattice of vectors $\Lv$, its associated reciprocal
 lattice of vectors $\kv$ and a function $\psi(\rv)$ periodic
@@ -1340,9 +1345,9 @@ E^\pm_{i0}(k)=\frac{1}{ik}e^{ikr_i}\left(e^{\pm ik\Delta}-1\right)
 \vskip 3mm
 \subsubsection{$k\ne 0$, coulomb case.}
 To efficiently treat the coulomb divergence at the origin it is convenient to use
-a basis set $c_{i\alpha}^\text{coul}$ of the form 
+a basis set $c_{i\alpha}^{\text{coul}}$ of the form 
 \begin{equation}
-c_{i\alpha}^\text{coul}=\frac{c_{i\alpha}}{r}
+c_{i\alpha}^{\text{coul}}=\frac{c_{i\alpha}}{r}
 \end{equation}
 An equation identical to Eq.\ref{D+-} holds but with the modified definition
 \begin{equation}
@@ -1838,10 +1843,10 @@ through use of the MPC interaction or the {\em a postiori} correction
 of Chiesa et. al.  
 
 The satisfaction of the leakage requirement is controlled by whether
-the minimum distance, $L_\text{min}$ from one supercell image to the
+the minimum distance, $L_{\text{min}}$ from one supercell image to the
 next is greater than the width of the XC hole.  Therefore, given a
 choice, it is best to use a cell which is as nearly cubic as possible,
-since this choice maximizes $L_\text{min}$ for a given number of
+since this choice maximizes $L_{\text{min}}$ for a given number of
 atoms.  Most often, however, the primitive cell is not cubic.  In
 these cases, if we wish to choose the optimal supercell to reduce
 finite size effects, we cannot utilize the simple primitive tiling
@@ -1851,8 +1856,8 @@ errors), while retaining the storage efficiency of the original tiling
 scheme.
 
 \subsection{The mathematics}
-\renewcommand{\vp}{\mathbf{a}^\text{p}}
-\renewcommand{\vs}{\mathbf{a}^\text{s}} 
+\renewcommand{\vp}{\mathbf{a}^{\text{p}}}
+\renewcommand{\vs}{\mathbf{a}^{\text{s}}} 
 \renewcommand{\Smat}{\mathbf{S}}
 Consider the set of primitive lattice vectors, $\{\vp_1, \vp_2,
 \vp_3\}$.  We may write these vectors in a matrix, $\mathbf{L}_p$, whose
