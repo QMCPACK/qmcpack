@@ -3,14 +3,13 @@ IF (NOT QMC_CUDA)
  IF (NOT QMC_COMPLEX)
   IF (ENABLE_SOA)
 #
-# [Fe(CO)6]2+ molecule gaussian tests, with BFD ECP
-# Also check results for different number of mpi tasks and threads keeping total constant
+# [Fe(CO)6]2+ molecule gaussian tests, with BFD ECP using pyscf
 
-# Ref for long VMC test
-  LIST(APPEND FeCO6_PYSCF_SCALARS "kinetic" "163.8420 0.0022") # kinetic energy
-  LIST(APPEND FeCO6_PYSCF_SCALARS "totenergy" "-250.43499 0.00034") # total energy
-  LIST(APPEND FeCO6_PYSCF_SCALARS "eeenergy" "568.6012 0.0017") # e-e energy
-  LIST(APPEND FeCO6_PYSCF_SCALARS "samples" "16000 0.0") # samples
+# Ref for ref VMC test
+#   "kinetic" "163.8420 0.0022") # kinetic energy
+#   "totenergy" "-250.43499 0.00034") # total energy
+#   "eeenergy" "568.6012 0.0017") # e-e energy
+#   "samples" "655360000 0.0") # samples
 
   LIST(APPEND FeCO6_PYSCF_SHORT "kinetic" "163.8420 0.090") # kinetic energy
   LIST(APPEND FeCO6_PYSCF_SHORT "eeenergy" "568.6012 0.052") # e-e energy

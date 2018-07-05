@@ -2,15 +2,12 @@
 IF (NOT QMC_CUDA)
  IF (NOT QMC_COMPLEX)
 #
-# [Fe(CO)6]2+ molecule gaussian tests, with BFD ECP
-# Also check results for different number of mpi tasks and threads keeping total constant
-
+# [Fe(CO)6]2+ molecule gaussian tests, with BFD ECP using Gamess
 # Ref for ref  VMC test
-  LIST(APPEND FeCO6_GMS_SCALARS "kinetic" "163.8407 0.0020") # kinetic energy
-  LIST(APPEND FeCO6_GMS_SCALARS "totenergy" "-250.43439 0.00032") # total energy
-  LIST(APPEND FeCO6_GMS_SCALARS "eeenergy" "568.6009 0.0016") # e-e energy
-  LIST(APPEND FeCO6_GMS_SCALARS "samples" "625868800 0.0") # samples
-#  LIST(APPEND LIH_SCALARS "flux" "0.0 0.1") # sampling check, should be zero
+#  "kinetic"   "163.8407 0.0020") # kinetic energy
+#  "totenergy" "-250.43439 0.00032") # total energy
+#  "eeenergy"  "568.6009 0.0016") # e-e energy
+#  "samples"   "625868800 0.0") # samples
 
   LIST(APPEND FeCO6_GMS_SHORT "kinetic" "163.8407 0.090") # kinetic energy
   LIST(APPEND FeCO6_GMS_SHORT "eeenergy" "568.6009 0.052") # e-e energy

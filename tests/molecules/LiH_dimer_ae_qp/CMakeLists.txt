@@ -2,15 +2,15 @@
 IF (NOT QMC_CUDA)
  IF (NOT QMC_COMPLEX)
 #
-# LiH molecular dimer gaussian tests, all electron
+# LiH molecular dimer gaussian tests, all electron using QP
 # Also check results for different number of mpi tasks and threads keeping total constant
 # Energy from Quantum Package: E=-7.987323645629950
 #
-  LIST(APPEND LIH_SCALARS "kinetic" "7.991334  0.000065") # kinetic energy
-  LIST(APPEND LIH_SCALARS "totenergy" "-7.9873140 0.0000086 ") # total energy
-  LIST(APPEND LIH_SCALARS "eeenergy" "3.488827 0.000011") # e-e energy
-  LIST(APPEND LIH_SCALARS "samples" "79626240000 0.0") # samples
-#  LIST(APPEND LIH_SCALARS "flux" "0.0 0.1") # sampling check, should be zero
+#   "kinetic" "7.991334  0.000065") # kinetic energy
+#   "totenergy" "-7.9873140 0.0000086 ") # total energy
+#   "eeenergy" "3.488827 0.000011") # e-e energy
+#   "samples" "79626240000 0.0") # samples
+
 
   LIST(APPEND LIH_SHORT "kinetic" "7.991334 0.006") # kinetic energy
   LIST(APPEND LIH_SHORT "totenergy" "-7.9873140 0.0008") # total energy
