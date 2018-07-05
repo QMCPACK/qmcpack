@@ -384,11 +384,11 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
 
   # Check for the compiler C++11 flag, if we go to requiring >= cmake 3.1.3 we could drop this
   # and just write
-  # set(CMAKE_CXX_STANDARD_REQUIRED 11 CACHE INTEGER "C++ stangard must be at least 11")
-  SET(CXX11_FLAG "-std=c++11")
+  set(CMAKE_CXX_STANDARD_REQUIRED 11 CACHE INTEGER "C++ stangard must be at least 11")
+  #SET(CXX11_FLAG "-std=c++11")
   #check if the CXX compiler supports -std=c++11 option
-  include(CheckCXXCompilerFlag) # works with clean load paths and non system compilers with CMP0056
-  CHECK_CXX_COMPILER_FLAG(${CXX11_FLAG} CXX_COMPILER_SUPPORT_CXX11)
+  #include(CheckCXXCompilerFlag) # works with clean load paths and non system compilers with CMP0056
+  #CHECK_CXX_COMPILER_FLAG(${CXX11_FLAG} CXX_COMPILER_SUPPORT_CXX11)
 
   # Force the flag on Cray with Intel compiler, because the Cray wrapper
   #  prints an warning that interferes with the flag detection code
@@ -400,15 +400,15 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     ENDIF()
   ENDIF()
 
-  IF (CXX_COMPILER_SUPPORT_CXX11)
-    # avoid repeated -std=c++11 flag
-    STRING(REPLACE "++" "\\+\\+" CXX11_FLAG_MATCH ${CXX11_FLAG})
-    IF(NOT CMAKE_CXX_FLAGS MATCHES ${CXX11_FLAG_MATCH})
-      SET (CMAKE_CXX_FLAGS "${CXX11_FLAG} ${CMAKE_CXX_FLAGS}")
-    ENDIF()
-  ELSE()
-    MESSAGE(FATAL_ERROR "A compiler supporting C++11 is required. Use a newer C++ compiler.")
-  ENDIF()
+  # IF (CXX_COMPILER_SUPPORT_CXX11)
+  #   # avoid repeated -std=c++11 flag
+  #   STRING(REPLACE "++" "\\+\\+" CXX11_FLAG_MATCH ${CXX11_FLAG})
+  #   IF(NOT CMAKE_CXX_FLAGS MATCHES ${CXX11_FLAG_MATCH})
+  #     SET (CMAKE_CXX_FLAGS "${CXX11_FLAG} ${CMAKE_CXX_FLAGS}")
+  #   ENDIF()
+  # ELSE()
+  #   MESSAGE(FATAL_ERROR "A compiler supporting C++11 is required. Use a newer C++ compiler.")
+  # ENDIF()
 
   #-------------------------------------------------------------------
   #  check MPI installation
@@ -688,6 +688,21 @@ ELSE(QMC_CUDA)
   MESSAGE(STATUS "Disabling CUDA")
 ENDIF(QMC_CUDA)
 
+SET(USE_NVTX_API 0 CACHE BOOL "Enable/disable NVTX regions in CUDA code.")
+IF(USE_NVTX_API)
+  IF(HAVE_CUDA)
+    FIND_LIBRARY(NVTX_API_LIB
+      NAME nvToolsExt
+      HINTS ${CUDA_TOOLKIT_ROOT_DIR}
+      PATH_SUFFIXES lib lib64)
+    IF(NOT NVTX_API_LIB)
+      MESSAGE(FATAL_ERROR "USE_NVTX_API set but NVTX_API_LIB not found")
+    ENDIF(NOT NVTX_API_LIB)
+    MESSAGE("CUDA nvToolsExt library: ${NVTX_API_LIB}")
+    #LINK_LIBRARIES("${NVTX_API_LIB}")
+  ENDIF(HAVE_CUDA)
+ENDIF(USE_NVTX_API)
+
 
 #INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
 ##################################################################
@@ -790,15 +805,6 @@ IF (USE_VTUNE_API)
   ENDIF()
   LINK_LIBRARIES("${VTUNE_ITTNOTIFY_LIBRARY}")
 ENDIF()
-
-SET(USE_NVTX_API 0 CACHE BOOL "Enable/disable NVTX regions in CUDA code.")
-IF(USE_NVTX_API)
-  IF(HAVE_CUDA)
-    LINK_DIRECTORIES("${CUDA_TOOLKIT_ROOT_DIR}/lib64")
-    LINK_LIBRARIES("nvToolsExt")
-  ENDIF(HAVE_CUDA)
-ENDIF(USE_NVTX_API)
-
 
 #include(ExternalProject)
 #  set(einspline_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/einspline")
