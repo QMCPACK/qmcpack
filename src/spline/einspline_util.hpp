@@ -20,6 +20,7 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_UTILITIES_H
 #define QMCPLUSPLUS_EINSPLINE_UTILITIES_H
 
+#include <mpi/mpi_datatype.h>
 #include <Message/CommOperators.h>
 #include <OhmmsData/FileUtility.h>
 #include <io/hdf_archive.h>
@@ -54,31 +55,29 @@ namespace qmcplusplus
     chunked_bcast(comm,buffer->coefs, buffer->coefs_size);
   }
 
-  ///handles reduce
-  template<typename T>
-  inline void chunked_reduce(Communicate* comm, T* buffer, size_t ntot)
-  {
-    if(comm->size()==1) return;
-
-    size_t chunk_size=(1<<30)/sizeof(T); //256 MB
-    int n=static_cast<int>(ntot/chunk_size);
-
-    size_t offset=0;
-    for(int i=0; i<n; ++i, offset+=chunk_size)
-    {
-      comm->reduce_in_place(buffer+offset,static_cast<int>(chunk_size));
-    }
-
-    if(offset<ntot)
-    {
-      comm->reduce_in_place(buffer+offset,static_cast<int>(ntot-offset));
-    }
-  }
-
   template<typename ENGT>
-  inline void chunked_reduce(Communicate* comm, ENGT* buffer)
+  inline void gatherv(Communicate* comm, ENGT* buffer, const int ncol, std::vector<int> &offset)
   {
-    chunked_reduce(comm,buffer->coefs, buffer->coefs_size);
+    std::vector<int> counts(offset.size()-1,0);
+    for(size_t ib=0; ib<counts.size(); ib++)
+      counts[ib] = offset[ib+1] - offset[ib];
+    if( buffer->coefs_size / ncol > (1<<20) )
+    {
+      const size_t xs = buffer->x_stride;
+      const size_t nx = buffer->coefs_size / xs;
+      const int nrow = buffer->coefs_size / (ncol*nx);
+      MPI_Datatype columntype = mpi::construct_column_type(buffer->coefs, nrow, ncol);
+      for(size_t iz=0; iz<nx; iz++)
+        comm->gatherv_in_place(buffer->coefs+xs*iz, columntype, counts, offset);
+      mpi::free_column_type(columntype);
+    }
+    else
+    {
+      const int nrow = buffer->coefs_size / ncol;
+      MPI_Datatype columntype = mpi::construct_column_type(buffer->coefs, nrow, ncol);
+      comm->gatherv_in_place(buffer->coefs, columntype, counts, offset);
+      mpi::free_column_type(columntype);
+    }
   }
 
   template<unsigned DIM>

@@ -39,7 +39,6 @@ QMCState::QMCState()
 #else
   compute_device=0;
 #endif
-  master_eshd_name="none";
 }
 
 void QMCState::initialize(int argc, char **argv)
@@ -88,12 +87,7 @@ void QMCState::initialize(int argc, char **argv)
   {
     std::cerr << std::endl << "QMCPACK version "<< QMCPACK_VERSION_MAJOR <<"." << QMCPACK_VERSION_MINOR << "." << QMCPACK_VERSION_PATCH
         << " built on " << __DATE__ << std::endl;
-#ifdef QMCPACK_GIT_BRANCH
-    std::cerr << "  git branch: " << QMCPACK_GIT_BRANCH << std::endl;
-    std::cerr << "  git last commit: " << QMCPACK_GIT_HASH << std::endl;
-    std::cerr << "  git last commit date: " << QMCPACK_GIT_COMMIT_LAST_CHANGED << std::endl;
-    std::cerr << "  git last commit subject: " << QMCPACK_GIT_COMMIT_SUBJECT << std::endl;
-#endif
+    print_git_info_if_present(std::cerr);
     std::cerr << std::endl << "Usage: qmcpack input [--dryrun --save_wfs[=no] --gpu]" << std::endl << std::endl;
   }
   if(stopit)
@@ -117,6 +111,18 @@ void QMCState::print_memory_change(const std::string& who, size_t before)
   before=memory_allocated-before;
   app_log() << "MEMORY increase " << (before>>20) << " MB " << who << std::endl;
 }
+
+void QMCState::print_git_info_if_present(std::ostream& os)
+{
+#ifdef QMCPACK_GIT_BRANCH
+    os << std::endl;
+    os << "  Git branch: " << QMCPACK_GIT_BRANCH << std::endl;
+    os << "  Last git commit: " << QMCPACK_GIT_HASH << std::endl;
+    os << "  Last git commit date: " << QMCPACK_GIT_COMMIT_LAST_CHANGED << std::endl;
+    os << "  Last git commit subject: " << QMCPACK_GIT_COMMIT_SUBJECT << std::endl;
+#endif
+}
+
 
 QMCState qmc_common;
 

@@ -148,11 +148,6 @@ public:
               ParticleSet::ParticleGradient_t& G,
               ParticleSet::ParticleLaplacian_t& L) ;
 
-  ValueType
-  evaluate(ParticleSet& P,
-           ParticleSet::ParticleGradient_t& G,
-           ParticleSet::ParticleLaplacian_t& L);
-
   OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
   /** cloning function
@@ -164,7 +159,6 @@ public:
    */
   DiracDeterminantWithBackflow* makeCopy(SPOSetBase* spo) const;
 
-  inline void setLogEpsilon(ValueType x) { }
   inline ValueType rcdot(TinyVector<RealType,OHMMS_DIM>& lhs, TinyVector<ValueType,OHMMS_DIM>& rhs)
   {
     ValueType ret(0);
@@ -200,6 +194,9 @@ public:
   ValueType *LastAddressOfGGG;
   ValueType *FirstAddressOfFm;
   ValueType *LastAddressOfFm;
+
+  ParticleSet::ParticleGradient_t myG, myG_temp;
+  ParticleSet::ParticleLaplacian_t myL, myL_temp;
 
   void testDerivFjj(ParticleSet& P, int pa);
   void testGGG(ParticleSet& P);

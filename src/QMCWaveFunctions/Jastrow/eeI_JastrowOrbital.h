@@ -493,13 +493,6 @@ public:
     // }
   }
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-
   inline GradType evalGradSourceFD(ParticleSet& P,
                                    ParticleSet& source, int isrc)
   {
@@ -711,14 +704,14 @@ public:
 
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
-    const int iat=VP.activePtcl;
+    const int iat=VP.refPtcl;
     const int nk=ratios.size();
     int nat=iat*Nelec;
     RealType x=std::accumulate(&(U[nat]),&(U[nat+Nelec]),0.0);
     std::vector<RealType> newval(nk,x);
     const DistanceTableData* ee_table=VP.DistTables[0];
     const DistanceTableData* eI_table=VP.DistTables[myTableIndex];
-    const DistanceTableData* eI_0=VP.refPtcl.DistTables[myTableIndex];
+    const DistanceTableData* eI_0=VP.refPS.DistTables[myTableIndex];
 
     for (int i=0,nn=0; i<Nion; i++)
     {

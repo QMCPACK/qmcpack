@@ -13,7 +13,6 @@
 
 
 #include <QMCDrivers/DMC/WalkerControlMPI.h>
-#include <qmc_common.h>
 #include <Utilities/IteratorUtility.h>
 #include <Utilities/UtilityFunctions.h>
 #include <Utilities/NewTimer.h>
@@ -62,11 +61,13 @@ WalkerControlMPI::WalkerControlMPI(Communicate* c): WalkerControlBase(c)
 
 /** Perform branch and swap walkers as required
  *
- *  It takes 4 steps:
+ *  It takes 5 steps:
  *    1. sortWalkers marks good and bad walkers.
- *    2. allreduce and make the decision of load balancing.
- *    3. send/recv walkers. Receiving side recycles bad walkers' memory first.
- *    4. copyWalkers generates copies of good walkers.
+ *    2. allreduce collects the number of good walkers + copies on every rank.
+ *    3. applyNmaxNmin avoids too large or too small global population.
+ *    4. swapWalkersSimple makes a decision of load balancing and send/recv walkers.
+ *       Receiving side recycles bad walkers' memory first.
+ *    5. copyWalkers generates copies of good walkers.
  *  In order to minimize the memory footprint fluctuation
  *  the walker copying is placed as the last step.
  *  In order to reduce the time for allocating walker memory,
@@ -91,11 +92,9 @@ int WalkerControlMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigge
   myTimers[DMC_MPI_allreduce]->stop();
   measureProperties(iter);
   W.EnsembleProperty=EnsembleProperty;
-  Cur_pop=0;
-  for(int i=0, j=LE_MAX; i<NumContexts; i++,j++)
-  {
-    Cur_pop+= NumPerNode[i]=static_cast<int>(curData[j]);
-  }
+  for(int i=0, j=LE_MAX; i<NumContexts; i++, j++)
+    NumPerNode[i] = static_cast<int>(curData[j]);
+  Cur_pop = applyNmaxNmin();
   myTimers[DMC_MPI_prebalance]->stop();
   myTimers[DMC_MPI_loadbalance]->start();
   swapWalkersSimple(W);
@@ -164,7 +163,15 @@ void WalkerControlMPI::swapWalkersSimple(MCWalkerConfiguration& W)
   std::vector<int> minus, plus;
   determineNewWalkerPopulation(Cur_pop, NumContexts, MyContext, NumPerNode, FairOffSet, minus, plus);
 
-  Walker_t& wRef(*good_w[0]);
+  if( good_w.empty() && bad_w.empty() )
+  {
+    app_error() << "It should never happen that no walkers, "
+                << "neither good nor bad, exist on a node. "
+                << "Please report to developers. " << std::endl;
+    APP_ABORT("WalkerControlMPI::swapWalkersSimple no existing walker");
+  }
+
+  Walker_t& wRef(*(good_w.empty()?bad_w[0]:good_w[0]));
   std::vector<Walker_t*> newW;
   std::vector<int> ncopy_newW;
 #ifdef MCWALKERSET_MPI_DEBUG

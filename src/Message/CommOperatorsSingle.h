@@ -117,6 +117,12 @@ void gatherv(T* sb, T* rb, int n,IT& counts, IT& displ, int dest, MPI_Comm comm)
 { }
 #endif
 
+
+template<typename T, typename TMPI, typename IT>
+inline void Communicate::gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT& displ, int dest)
+{ }
+
+
 template<typename T> 
 void allgather(T& sb, T& rb, int count, Communicate::mpi_comm_type comm)
 { }

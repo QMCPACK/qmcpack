@@ -24,6 +24,8 @@ PWOrbitalSet::~PWOrbitalSet()
 #if !defined(ENABLE_SMARTPOINTER)
   if(OwnBasisSet&&myBasisSet)
     delete myBasisSet;
+  if(!IsCloned && C!= nullptr)
+    delete C;
 #endif
 }
 
@@ -57,8 +59,7 @@ void PWOrbitalSet::resize(PWBasisPtr bset, int nbands, bool cleanup)
   OrbitalSetSize=nbands;
   OwnBasisSet=cleanup;
   BasisSetSize=myBasisSet->NumPlaneWaves;
-  //C.resize(OrbitalSetSize,BasisSetSize);
-  setIdentity(false);
+  C = new ValueMatrix_t(OrbitalSetSize,BasisSetSize);
   Temp.resize(OrbitalSetSize,PW_MAXINDEX);
   app_log() << "  PWOrbitalSet::resize OrbitalSetSize =" << OrbitalSetSize << " BasisSetSize = " << BasisSetSize << std::endl;
 }

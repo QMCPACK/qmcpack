@@ -25,6 +25,8 @@
 #include "Message/MPIObjectBase.h"
 #include <map>
 
+class Libxml2Document;
+
 namespace qmcplusplus
 {
 
@@ -32,7 +34,6 @@ class ParticleSet;
 class MCWalkerConfiguration;
 class ParticleSetPool;
 class WaveFunctionPool;
-class Libxml2Document;
 
 /** @ingroup qmcapp
  * @brief Manage a collection of QMCHamiltonian objects

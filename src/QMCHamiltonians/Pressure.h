@@ -62,12 +62,6 @@ struct Pressure: public QMCHamiltonianBase
     return 0.0;
   }
 
-  inline Return_t
-  evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   /** implements the virtual function.
    *
    * Nothing is done but should check the mass

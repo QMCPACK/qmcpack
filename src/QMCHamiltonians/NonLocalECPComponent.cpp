@@ -21,7 +21,7 @@ namespace qmcplusplus
 {
 
 NonLocalECPComponent::NonLocalECPComponent():
-  lmax(0), nchannel(0), nknot(0), Rmax(-1), myRNG(&Random), VP(0)
+  lmax(0), nchannel(0), nknot(0), Rmax(-1), VP(0)
 {
 #if !defined(REMOVE_TRACEMANAGER)
   streaming_particles = false;
@@ -35,21 +35,19 @@ NonLocalECPComponent::~NonLocalECPComponent()
   if(VP) delete VP;
 }
 
-NonLocalECPComponent* NonLocalECPComponent::makeClone()
+NonLocalECPComponent* NonLocalECPComponent::makeClone(const ParticleSet &qp)
 {
   NonLocalECPComponent* myclone=new NonLocalECPComponent(*this);
   for(int i=0; i<nlpp_m.size(); ++i)
     myclone->nlpp_m[i]=nlpp_m[i]->makeClone();
-  myclone->VP=0; 
+  if(VP) myclone->VP=new VirtualParticleSet(qp,nknot);
   return myclone;
 }
 
-void NonLocalECPComponent::initVirtualParticle(ParticleSet* qp)
+void NonLocalECPComponent::initVirtualParticle(const ParticleSet &qp)
 {
-  //if(VP) 
-  //  VP->reset(qp);
-  //else
-  //  VP=new VirtualParticleSet(qp,nknot);
+  assert(VP==0);
+  VP=new VirtualParticleSet(qp,nknot);
 }
 
 void NonLocalECPComponent::add(int l, RadialPotentialType* pp)
@@ -114,23 +112,41 @@ NonLocalECPComponent::evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& ps
 
   RealType lpol_[lmax+1];
   RealType vrad_[nchannel];
-  RealType psiratio_[nknot];
-  PosType deltaV[16];
+  std::vector<RealType> psiratio_(nknot);
+  PosType deltaV[nknot];
 
-  // Compute ratio of wave functions
-  for (int j=0; j < nknot ; j++)
+  if(VP)
   {
-    deltaV[j]=r*rrotsgrid_m[j]-dr;
-    W.makeMoveOnSphere(iel,deltaV[j]);
-#if defined(QMC_COMPLEX)
-    psiratio_[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getPhaseDiff());
-#else
-    psiratio_[j]=psi.ratio(W,iel)*sgridweight_m[j];
-#endif
-    W.rejectMove(iel);
-    psi.resetPhaseDiff();
-    //psi.rejectMove(iel);
+    // Compute ratios with VP
+    ParticleSet::ParticlePos_t VPos(nknot);
+    for (int j=0; j<nknot; j++)
+    {
+      deltaV[j]=r*rrotsgrid_m[j]-dr;
+      VPos[j]=deltaV[j]+W.R[iel];
+    }
+    VP->makeMoves(iel,VPos,true,iat);
+    psi.evaluateRatios(*VP,psiratio_);
+    for (int j=0; j<nknot; j++)
+      psiratio_[j]*=sgridweight_m[j];
   }
+  else
+  {
+    // Compute ratio of wave functions
+    for (int j=0; j<nknot; j++)
+    {
+      deltaV[j]=r*rrotsgrid_m[j]-dr;
+      W.makeMoveOnSphere(iel,deltaV[j]);
+#if defined(QMC_COMPLEX)
+      psiratio_[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getPhaseDiff());
+#else
+      psiratio_[j]=psi.ratio(W,iel)*sgridweight_m[j];
+#endif
+      W.rejectMove(iel);
+      psi.resetPhaseDiff();
+      //psi.rejectMove(iel);
+    }
+  }
+
   // Compute radial potential
   for(int ip=0; ip< nchannel; ip++)
     vrad_[ip]=nlpp_m[ip]->splint(r)*wgt_angpp_m[ip];
@@ -662,45 +678,24 @@ NonLocalECPComponent::evaluate(ParticleSet& W, TrialWaveFunction& psi,int iat,
 #endif
 }
 
-
 ///Randomly rotate sgrid_m
-void NonLocalECPComponent::randomize_grid(ParticleSet::ParticlePos_t& sphere, bool randomize)
+void NonLocalECPComponent::randomize_grid(RandomGenerator_t& myRNG)
 {
-  if(randomize)
-  {
-    //const RealType twopi(6.28318530718);
-    //RealType phi(twopi*Random()),psi(twopi*Random()),cth(Random()-0.5),
-    RealType phi(TWOPI*((*myRNG)())), psi(TWOPI*((*myRNG)())), cth(((*myRNG)())-0.5);
-    RealType sph(std::sin(phi)),cph(std::cos(phi)),
-             sth(std::sqrt(1.0-cth*cth)),sps(std::sin(psi)),
-             cps(std::cos(psi));
-    TensorType rmat( cph*cth*cps-sph*sps, sph*cth*cps+cph*sps,-sth*cps,
-                     -cph*cth*sps-sph*cps,-sph*cth*sps+cph*cps, sth*sps,
-                     cph*sth,             sph*sth,             cth     );
-    SpherGridType::iterator it(sgridxyz_m.begin());
-    SpherGridType::iterator it_end(sgridxyz_m.end());
-    SpherGridType::iterator jt(rrotsgrid_m.begin());
-    int ic=0;
-    while(it != it_end)
-    {
-      *jt = dot(rmat,*it);
-      ++it;
-      ++jt;
-    }
-    //copy the radomized grid to sphere
-    copy(rrotsgrid_m.begin(), rrotsgrid_m.end(), sphere.begin());
-  }
-  else
-  {
-    //copy sphere to the radomized grid
-    copy(sphere.begin(), sphere.end(), rrotsgrid_m.begin());
-  }
+  RealType phi(TWOPI*myRNG()), psi(TWOPI*myRNG()), cth(myRNG()-0.5);
+  RealType sph(std::sin(phi)),cph(std::cos(phi)),
+           sth(std::sqrt(1.0-cth*cth)),sps(std::sin(psi)),
+           cps(std::cos(psi));
+  TensorType rmat( cph*cth*cps-sph*sps, sph*cth*cps+cph*sps,-sth*cps,
+                   -cph*cth*sps-sph*cps,-sph*cth*sps+cph*cps, sth*sps,
+                   cph*sth,             sph*sth,             cth     );
+  for(int i=0; i<sgridxyz_m.size(); i++)
+    rrotsgrid_m[i] = dot(rmat,sgridxyz_m[i]);
 }
 
 template<typename T>
-void NonLocalECPComponent::randomize_grid(std::vector<T> &sphere)
+void NonLocalECPComponent::randomize_grid(std::vector<T> &sphere, RandomGenerator_t& myRNG)
 {
-  RealType phi(TWOPI*((*myRNG)())), psi(TWOPI*((*myRNG)())), cth(((*myRNG)())-0.5);
+  RealType phi(TWOPI*myRNG()), psi(TWOPI*myRNG()), cth(myRNG()-0.5);
   RealType sph(std::sin(phi)),cph(std::cos(phi)),
            sth(std::sqrt(1.0-cth*cth)),sps(std::sin(psi)),
            cps(std::cos(psi));
@@ -710,7 +705,6 @@ void NonLocalECPComponent::randomize_grid(std::vector<T> &sphere)
   SpherGridType::iterator it(sgridxyz_m.begin());
   SpherGridType::iterator it_end(sgridxyz_m.end());
   SpherGridType::iterator jt(rrotsgrid_m.begin());
-  int ic=0;
   while(it != it_end)
   {
     *jt = dot(rmat,*it);
@@ -723,8 +717,8 @@ void NonLocalECPComponent::randomize_grid(std::vector<T> &sphere)
       sphere[OHMMS_DIM*i+j] = rrotsgrid_m[i][j];
 }
 
-template void NonLocalECPComponent::randomize_grid(std::vector<float> &sphere);
-template void NonLocalECPComponent::randomize_grid(std::vector<double> &sphere);
+template void NonLocalECPComponent::randomize_grid(std::vector<float> &sphere, RandomGenerator_t& myRNG);
+template void NonLocalECPComponent::randomize_grid(std::vector<double> &sphere, RandomGenerator_t& myRNG);
 
 
 }

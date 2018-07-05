@@ -292,13 +292,6 @@ public:
     return LogValue;
   }
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-  
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
   {
     LogValue=0.0;
@@ -356,7 +349,7 @@ public:
 
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
-    const int iat=VP.activePtcl;
+    const int iat=VP.refPtcl;
 
     int nat=iat*N;
     RealType x= std::accumulate(&(U[nat]),&(U[nat+N]),0.0);

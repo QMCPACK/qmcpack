@@ -62,6 +62,11 @@ int NonLocalTOperator::put(xmlNodePtr cur)
     v_tmove=TMOVE_V1;
     o << "  Using Non-local T-moves v1, M. Casula et al., JCP 132, 154113 (2010)";
   }
+  else if(use_tmove=="v3")
+  {
+    v_tmove=TMOVE_V3;
+    o << "  Using Non-local T-moves v3, an approximation to v1";
+  }
   else
   {
     APP_ABORT("NonLocalTOperator::put unknown nonlocalmove option " + use_tmove);

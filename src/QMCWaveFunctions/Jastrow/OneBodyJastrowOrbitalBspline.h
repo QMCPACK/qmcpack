@@ -70,27 +70,27 @@ public:
   typedef BsplineFunctor<OrbitalBase::RealType> FT;
   typedef ParticleSet::Walker_t     Walker_t;
 
-  void resetParameters(const opt_variables_type& active);
-  void checkInVariables(opt_variables_type& active);
-  void addFunc(int ig, FT* j, int jg);
-  void recompute(MCWalkerConfiguration &W, bool firstTime);
-  void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool);
-  void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi);
-  void update (std::vector<Walker_t*> &walkers, int iat);
+  GPU_XRAY_TRACE void resetParameters(const opt_variables_type& active);
+  GPU_XRAY_TRACE void checkInVariables(opt_variables_type& active);
+  GPU_XRAY_TRACE void addFunc(int ig, FT* j, int jg);
+  GPU_XRAY_TRACE void recompute(MCWalkerConfiguration &W, bool firstTime);
+  GPU_XRAY_TRACE void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool);
+  GPU_XRAY_TRACE void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi);
+  GPU_XRAY_TRACE void update (std::vector<Walker_t*> &walkers, int iat);
   void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList)
   {
     /* This function doesn't really need to return the ratio */
   }
-  void ratio (MCWalkerConfiguration &W, int iat,
+  GPU_XRAY_TRACE void ratio (MCWalkerConfiguration &W, int iat,
               std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
               std::vector<ValueType> &lapl);
-  void calcRatio (MCWalkerConfiguration &W, int iat,
+  GPU_XRAY_TRACE void calcRatio (MCWalkerConfiguration &W, int iat,
                   std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
                   std::vector<ValueType> &lapl);
-  void addRatio (MCWalkerConfiguration &W, int iat,
+  GPU_XRAY_TRACE void addRatio (MCWalkerConfiguration &W, int iat,
                  std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
                  std::vector<ValueType> &lapl);
-  void ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
+  GPU_XRAY_TRACE void ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
               std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
               std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
   {
@@ -98,15 +98,15 @@ public:
   }
 
 
-  void calcGradient(MCWalkerConfiguration &W, int iat,
+  GPU_XRAY_TRACE void calcGradient(MCWalkerConfiguration &W, int iat,
                     std::vector<GradType> &grad);
-  void addGradient(MCWalkerConfiguration &W, int iat,
+  GPU_XRAY_TRACE void addGradient(MCWalkerConfiguration &W, int iat,
                    std::vector<GradType> &grad);
-  void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
+  GPU_XRAY_TRACE void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
                  ValueMatrix_t &lapl);
-  void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
+  GPU_XRAY_TRACE void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
                  std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
-  void evaluateDerivatives (MCWalkerConfiguration &W,
+  GPU_XRAY_TRACE void evaluateDerivatives (MCWalkerConfiguration &W,
                             const opt_variables_type& optvars,
                             RealMatrix_t &dlogpsi,
                             RealMatrix_t &dlapl_over_psi);

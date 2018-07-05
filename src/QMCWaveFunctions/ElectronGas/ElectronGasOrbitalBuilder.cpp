@@ -17,8 +17,6 @@
     
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
-#include "QMCWaveFunctions/Fermion/RNDiracDeterminantBase.h"
-#include "QMCWaveFunctions/Fermion/RNDiracDeterminantBaseAlternate.h"
 #include "OhmmsData/AttributeSet.h"
 #if QMC_BUILD_LEVEL>2
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
@@ -38,9 +36,7 @@ namespace qmcplusplus
 RealEGOSet::RealEGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2): K(k),mK2(k2)
 {
   KptMax=k.size();
-  Identity=true;
   OrbitalSetSize=2*k.size()+1;
-  BasisSetSize=2*k.size()+1;
   className="EGOSet";
 }
 
@@ -150,39 +146,6 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
   sdet->add(psiu,"u");
   if(ndn>0)
     sdet->add(psid,"d");
-  if (rntype>0)
-  {
-#if QMC_BUILD_LEVEL>2
-    if(UseBackflow)
-      APP_ABORT("RN with Backflow not implemented. \n");
-#endif
-    if (rntype==1)
-      app_log()<<" Using determinant with eps="<<bosonic_eps<< std::endl;
-    else
-      app_log()<<" Using alternate determinant with eps="<<bosonic_eps<< std::endl;
-    //create up determinant
-    Det_t *updet;
-    if (rntype==1)
-      updet = new RNDiracDeterminantBase(psiu);
-    else
-      updet = new RNDiracDeterminantBaseAlternate(psiu);
-    updet->setLogEpsilon(bosonic_eps);
-    updet->set(0,nup);
-    sdet->add(updet,0);
-    if(ndn>0)
-    {
-      //create down determinant
-      Det_t *downdet;
-      if (rntype==1)
-        downdet = new RNDiracDeterminantBase(psiu);
-      else
-        downdet = new RNDiracDeterminantBaseAlternate(psiu);
-      downdet->set(nup,ndn);
-      downdet->setLogEpsilon(bosonic_eps);
-      sdet->add(downdet,1);
-    }
-  }
-  else
   {
     Det_t *updet, *downdet;
 #if QMC_BUILD_LEVEL>2
@@ -238,19 +201,14 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
   return true;
 }
 
-ElectronGasBasisBuilder::ElectronGasBasisBuilder(ParticleSet& p, xmlNodePtr cur)
+ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur)
   :egGrid(p.Lattice)
 {
 }
 
-bool ElectronGasBasisBuilder::put(xmlNodePtr cur)
+SPOSetBase* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
-  return true;
-}
-  
-SPOSetBase* ElectronGasBasisBuilder::createSPOSetFromXML(xmlNodePtr cur)
-{
-  app_log() << "ElectronGasBasisBuilder::createSPOSet " << std::endl;
+  app_log() << "ElectronGasSPOBuilder::createSPOSet " << std::endl;
   int nc=0;
   int ns=0;
   PosType twist(0.0);

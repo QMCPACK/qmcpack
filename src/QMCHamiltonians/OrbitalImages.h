@@ -153,7 +153,7 @@ class OrbitalImages : public QMCHamiltonianBase
   ///indices of orbitals within each sposet to evaluate
   std::vector<std::vector<int>*> sposet_indices;
 
-  ///sposets obtained by name from BasisSetFactory
+  ///sposets obtained by name from SPOSetBuilderFactory
   std::vector<SPOSetBase*> sposets;
 
   ///evaluate points at grid cell centers instead of edges
@@ -211,11 +211,6 @@ class OrbitalImages : public QMCHamiltonianBase
 
   ///hijack estimator evaluate to evaluate and write all orbitals
   Return_t evaluate(ParticleSet& P);
-
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P); 
-  }
 
   //optional standard interface
   //void get_required_traces(TraceManager& tm);

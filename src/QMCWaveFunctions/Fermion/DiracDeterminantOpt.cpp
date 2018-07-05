@@ -27,7 +27,7 @@ DiracDeterminantOpt::DiracDeterminantOpt
 {
   targetPtcl = &ptcl;
   NumOrbitals = gs_spos->OrbitalSetSize;
-  NumBasis    = gs_spos->BasisSetSize;
+  NumBasis    = gs_spos->getBasisSetSize();
   BasisVals.resize(NumOrbitals,NumBasis);
   BasisGrad.resize(NumOrbitals,NumBasis);
   BasisLapl.resize(NumOrbitals,NumBasis);

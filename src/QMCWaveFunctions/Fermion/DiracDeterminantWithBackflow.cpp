@@ -495,6 +495,16 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
   APP_ABORT("Finished testL: Aborting \n");
 }
 
+/** Calculate the log value of the Dirac determinant for particles
+ *@param P input configuration containing N particles
+ *@param G a vector containing N gradients
+ *@param L a vector containing N laplacians
+ *@return the value of the determinant
+ *
+ *\f$ (first,first+nel). \f$  Add the gradient and laplacian
+ *contribution of the determinant to G(radient) and L(aplacian)
+ *for local energy calculations.
+ */
 DiracDeterminantWithBackflow::RealType
 DiracDeterminantWithBackflow::evaluateLog(ParticleSet& P,
     ParticleSet::ParticleGradient_t& G,
@@ -612,31 +622,6 @@ void DiracDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat)
 void DiracDeterminantWithBackflow::restore(int iat)
 {
   curRatio=1.0;
-}
-
-
-/** Calculate the value of the Dirac determinant for particles
- *@param P input configuration containing N particles
- *@param G a vector containing N gradients
- *@param L a vector containing N laplacians
- *@return the value of the determinant
- *
- *\f$ (first,first+nel). \f$  Add the gradient and laplacian
- *contribution of the determinant to G(radient) and L(aplacian)
- *for local energy calculations.
- */
-DiracDeterminantWithBackflow::ValueType
-DiracDeterminantWithBackflow::evaluate(ParticleSet& P,
-                                       ParticleSet::ParticleGradient_t& G,
-                                       ParticleSet::ParticleLaplacian_t& L)
-{
-  RealType logval = evaluateLog(P, G, L);
-#if defined(QMC_COMPLEX)
-  RealType ratioMag = std::exp(logval);
-  return std::complex<OHMMS_PRECISION>(std::cos(PhaseValue)*ratioMag,std::sin(PhaseValue)*ratioMag);
-#else
-  return std::cos(PhaseValue)*std::exp(logval);
-#endif
 }
 
 void

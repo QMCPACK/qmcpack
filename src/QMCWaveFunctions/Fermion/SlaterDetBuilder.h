@@ -18,7 +18,7 @@
 
 #include <vector>
 #include "QMCWaveFunctions/OrbitalBuilderBase.h"
-#include "QMCWaveFunctions/BasisSetFactory.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
@@ -61,7 +61,7 @@ private:
 
   ///reference to a PtclPoolType
   PtclPoolType& ptclPool;
-  BasisSetFactory* myBasisSetFactory;
+  SPOSetBuilderFactory* mySPOSetBuilderFactory;
   SlaterDeterminant_t* slaterdet_0;
   MultiSlaterDeterminant_t* multislaterdet_0;
   MultiSlaterDeterminantFast* multislaterdetfast_0;

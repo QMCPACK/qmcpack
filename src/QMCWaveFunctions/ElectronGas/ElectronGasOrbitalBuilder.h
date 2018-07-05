@@ -21,7 +21,7 @@
 #include <QMCWaveFunctions/SPOSetBase.h>
 #include <config/stdlib/math.h>
 
-#include "QMCWaveFunctions/BasisSetBase.h"
+#include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 
 #if defined(QMC_COMPLEX)
@@ -319,17 +319,15 @@ public:
 
 /** OrbitalBuilder for Slater determinants of electron-gas
 */
-class ElectronGasBasisBuilder: public BasisSetBuilder
+class ElectronGasSPOBuilder: public SPOSetBuilder
 {
 protected:
   HEGGrid<RealType,OHMMS_DIM> egGrid;
   xmlNodePtr spo_node;
 public:
   ///constructor
-  ElectronGasBasisBuilder(ParticleSet& p, xmlNodePtr cur);
+  ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur);
 
-  ///implement vritual function
-  bool put(xmlNodePtr cur);
   /** initialize the Antisymmetric wave function for electrons
   *@param cur the current xml node
   */

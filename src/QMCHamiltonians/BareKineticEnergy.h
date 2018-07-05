@@ -207,13 +207,6 @@ struct BareKineticEnergy: public QMCHamiltonianBase
   }
 
 
-  inline Return_t
-  evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
-
 #if !defined(REMOVE_TRACEMANAGER)
   inline Return_t evaluate_sp(ParticleSet& P)
   {

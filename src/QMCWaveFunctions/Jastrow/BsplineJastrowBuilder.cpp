@@ -33,7 +33,6 @@
 #include "LongRange/LRRPAHandlerTemp.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "Utilities/ProgressReportEngine.h"
-#include "LongRange/LRJastrowSingleton.h"
 
 namespace qmcplusplus
 {

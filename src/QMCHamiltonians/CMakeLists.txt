@@ -23,7 +23,6 @@ SET(HAMSRCS
   CoulombPBCAA.cpp
   CoulombPBCAB.cpp
   NonLocalTOperator.cpp
-  NumericalRadialPotential.cpp
   ForwardWalking.cpp
   PairCorrEstimator.cpp
   LocalMomentEstimator.cpp
@@ -35,14 +34,13 @@ SET(HAMSRCS
   ForceBase.cpp
   HamiltonianFactory.cpp
   CoulombPotentialFactory.cpp
-  model/HarmonicExternalPotential.cpp
+  HarmonicExternalPotential.cpp
   StaticStructureFactor.cpp
   OrbitalImages.cpp
   SpinDensity.cpp
   SpeciesKineticEnergy.cpp
   LatticeDeviationEstimator.cpp
   )
-#  FSAtomPseudoPot.cpp
 
 IF(OHMMS_DIM MATCHES 3)
   SET(HAMSRCS ${HAMSRCS}
@@ -58,7 +56,6 @@ IF(OHMMS_DIM MATCHES 3)
     LocalCorePolPotential.cpp
     LocalECPotential.cpp
     NonLocalECPComponent.cpp
-    NonLocalECPComponent.vp.cpp
     NonLocalECPotential.deriv.cpp
     NonLocalECPotential.cpp
     ECPotentialBuilder.cpp
@@ -75,13 +72,11 @@ IF(OHMMS_DIM MATCHES 3)
       SpaceGrid.cpp
       EnergyDensityEstimator.cpp
       DensityMatrices1B.cpp
-      ../Estimators/PostProcessor.cpp
-      ../Estimators/SpinDensityPostProcessor.cpp
       )
   ENDIF()
 
   IF(HAVE_LIBFFTW)
-    SET(HAMSRCS ${HAMSRCS} MPC.cpp VHXC.cpp)
+    SET(HAMSRCS ${HAMSRCS} MPC.cpp)
   ENDIF(HAVE_LIBFFTW)
 
   IF(QMC_CUDA)
@@ -98,22 +93,7 @@ IF(OHMMS_DIM MATCHES 3)
       )
   ENDIF(QMC_CUDA)
 
-  # Add research-related sources here
-  IF(QMC_BUILD_LEVEL GREATER 1)
-    SET(HAMSRCS ${HAMSRCS}
-      model/LennardJones_smoothed.cpp
-      model/HFDHE2_Moroni1995.cpp
-      model/HeSAPT_smoothed.cpp
-     )
-  ENDIF(QMC_BUILD_LEVEL GREATER 1)
 ENDIF(OHMMS_DIM MATCHES 3)
-
-#IF(HAVE_LIBFFTW)
-#  SET(HAMSRCS ${HAMSRCS}
-#    DispersionRelation.cpp
-#    MomentumDistribution.cpp
-#)
-#ENDIF(HAVE_LIBFFTW)
 
 IF(QMC_CUDA)
   CUDA_ADD_LIBRARY(qmcham ${HAMSRCS})

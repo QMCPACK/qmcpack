@@ -674,12 +674,30 @@ class Structure(Sobj):
     #end def set_operations
 
 
-    def __init__(self,axes=None,scale=1.,elem=None,pos=None,mag=None,
-                 center=None,kpoints=None,kweights=None,kgrid=None,kshift=None,
-                 permute=None,units=None,tiling=None,rescale=True,dim=3,
-                 magnetization=None,magnetic_order=None,magnetic_prim=True,
-                 operations=None,background_charge=0,frozen=None,bconds=None,
-                 posu=None):
+    def __init__(self,
+                 axes              = None,
+                 scale             = 1.,
+                 elem              = None,
+                 pos               = None,
+                 mag               = None,
+                 center            = None,
+                 kpoints           = None,
+                 kweights          = None,
+                 kgrid             = None,
+                 kshift            = None,
+                 permute           = None,
+                 units             = None,
+                 tiling            = None,
+                 rescale           = True,
+                 dim               = 3,
+                 magnetization     = None,
+                 magnetic_order    = None,
+                 magnetic_prim     = True,
+                 operations        = None,
+                 background_charge = 0,
+                 frozen            = None,
+                 bconds            = None,
+                 posu              = None):
 
         if center is None:
             if axes is not None:
@@ -746,10 +764,10 @@ class Structure(Sobj):
                       magnetic_prim  = magnetic_prim
                       )
         #end if
-        if kpoints!=None:
+        if kpoints is not None:
             self.add_kpoints(kpoints,kweights)
         #end if
-        if kgrid!=None:
+        if kgrid is not None:
             self.add_kmesh(kgrid,kshift)
         #end if        
         if rescale:
@@ -820,12 +838,22 @@ class Structure(Sobj):
     def operate(self,operations):
         for op in operations:
             if not op in self.operations:
-                self.error('{0} is not a known operation\n  valid options are:\n    {1}'.format(op,list(self.operations.keys())))
+                self.error('{0} is not a known operation\nvalid options are:\n  {1}'.format(op,list(self.operations.keys())))
             else:
                 self.operations[op](self)
             #end if
         #end for
     #end def operate
+
+
+    def has_tmatrix(self):
+        return 'tmatrix' in self and self.tmatrix is not None
+    #end def has_tmatrix
+
+
+    def is_tiled(self):
+        return self.has_folded() and self.has_tmatrix()
+    #end def is_tiled
 
 
     def set_folded(self,folded):
@@ -844,19 +872,26 @@ class Structure(Sobj):
 
 
     def set_folded_structure(self,folded):
+        if not isinstance(folded,Structure):
+            self.error('cannot set folded structure\nfolded structure must be an object with type Structure\nreceived type: {0}'.format(folded.__class__.__name__))
+        #end if
         self.folded_structure = folded
-        self.tmatrix = self.tilematrix(folded)
+        if self.has_axes():
+            self.tmatrix = self.tilematrix(folded)
+        #end if
     #end def set_folded_structure
 
 
     def remove_folded_structure(self):
         self.folded_structure = None
-        self.tmatrix = None
+        if 'tmatrix' in self:
+            del self.tmatrix
+        #end if
     #end def remove_folded_structure
 
         
     def has_folded_structure(self):
-        return self.folded_structure!=None
+        return self.folded_structure is not None
     #end def has_folded_structure
 
             
@@ -2932,7 +2967,7 @@ class Structure(Sobj):
 
         ts.recenter()
         ts.unique_kpoints()
-        if self.folded_structure!=None:
+        if self.is_tiled():
             ts.tmatrix = dot(tilematrix,self.tmatrix)
             ts.folded_structure = self.folded_structure.copy()
         else:
@@ -3180,7 +3215,7 @@ class Structure(Sobj):
             self.unique_kpoints()
         #end if
         self.recenter_k() #added because qmcpack cannot handle kpoints outside the box
-        if self.folded_structure!=None:
+        if self.is_tiled():
             kp,kw = self.kfold(self.tmatrix,kpoints,kweights)
             self.folded_structure.add_kpoints(kp,kw,unique=unique)
         #end if
@@ -5261,7 +5296,17 @@ def generate_structure(type='crystal',*args,**kwargs):
 
 
 
-def generate_atom_structure(atom=None,units='A',Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),bconds=tuple('nnn'),struct_type=Structure):
+def generate_atom_structure(
+    atom        = None,
+    units       = 'A',
+    Lbox        = None,
+    skew        = 0,
+    axes        = None,
+    kgrid       = (1,1,1),
+    kshift      = (0,0,0),
+    bconds      = tuple('nnn'),
+    struct_type = Structure
+    ):
     if atom is None:
         Structure.class_error('atom must be provided','generate_atom_structure')
     #end if
@@ -5279,7 +5324,19 @@ def generate_atom_structure(atom=None,units='A',Lbox=None,skew=0,axes=None,kgrid
 #end def generate_atom_structure
 
 
-def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),bconds=tuple('nnn'),struct_type=Structure,axis='x'):
+def generate_dimer_structure(
+    dimer       = None,
+    units       = 'A',
+    separation  = None,
+    Lbox        = None,
+    skew        = 0,
+    axes        = None,
+    kgrid       = (1,1,1),
+    kshift      = (0,0,0),
+    bconds      = tuple('nnn'),
+    struct_type = Structure,
+    axis        = 'x'
+    ):
     if dimer is None:
         Structure.class_error('dimer atoms must be provided to construct dimer','generate_dimer_structure')
     #end if
@@ -5308,7 +5365,22 @@ def generate_dimer_structure(dimer=None,units='A',separation=None,Lbox=None,skew
 #end def generate_dimer_structure
 
 
-def generate_trimer_structure(trimer=None,units='A',separation=None,angle=None,Lbox=None,skew=0,axes=None,kgrid=(1,1,1),kshift=(0,0,0),struct_type=Structure,axis='x',axis2='y',angular_units='degrees',plane_rot=None):
+def generate_trimer_structure(
+    trimer        = None,
+    units         = 'A',
+    separation    = None,
+    angle         = None,
+    Lbox          = None,
+    skew          = 0,
+    axes          = None,
+    kgrid         = (1,1,1),
+    kshift        = (0,0,0),
+    struct_type   = Structure,
+    axis          = 'x',
+    axis2         = 'y',
+    angular_units = 'degrees',
+    plane_rot     = None
+    ):
     if trimer is None:
         Structure.class_error('trimer atoms must be provided to construct trimer','generate_trimer_structure')
     #end if
@@ -5381,34 +5453,61 @@ def generate_jellium_structure(*args,**kwargs):
 
 
 
-def generate_crystal_structure(lattice=None,cell=None,centering=None,
-                               constants=None,atoms=None,basis=None,
-                               basis_vectors=None,tiling=None,cscale=None,
-                               axes=None,units=None,angular_units='degrees',
-                               magnetization=None,magnetic_order=None,magnetic_prim=True,
-                               kpoints=None,kweights=None,kgrid=None,kshift=(0,0,0),permute=None,
-                               structure=None,shape=None,element=None,scale=None, #legacy inputs
-                               operations=None,
-                               struct_type=Crystal,elem=None,pos=None,frozen=None,
-                               posu=None):    
+def generate_crystal_structure(
+    lattice        = None,
+    cell           = None,
+    centering      = None,
+    constants      = None,
+    atoms          = None,
+    basis          = None,
+    basis_vectors  = None,
+    tiling         = None,
+    cscale         = None,
+    axes           = None,
+    units          = None,
+    angular_units  = 'degrees',
+    magnetization  = None,
+    magnetic_order = None,
+    magnetic_prim  = True,
+    kpoints        = None,
+    kweights       = None,
+    kgrid          = None,
+    kshift         = (0,0,0),
+    permute        = None,
+    operations     = None,
+    struct_type    = Crystal,
+    elem           = None,
+    pos            = None,
+    frozen         = None,
+    posu           = None,
+    folded_elem    = None,
+    folded_pos     = None,
+    folded_units   = None,
+    #legacy inputs
+    structure      = None,
+    shape          = None,
+    element        = None,
+    scale          = None,
+    ):
 
-    if structure!=None:
+    if structure is not None:
         lattice = structure
     #end if
-    if shape!=None:
+    if shape is not None:
         cell = shape
     #end if
-    if element!=None:
+    if element is not None:
         atoms = element
     #end if
-    if scale!=None:
+    if scale is not None:
         constants = scale
     #end if
 
     #interface for total manual specification
     # this is only here because 'crystal' is default and must handle other cases
+    s = None
     if elem is not None and (pos is not None or posu is not None):  
-        return Structure(
+        s = Structure(
             axes           = axes,
             elem           = elem,
             pos            = pos,
@@ -5426,18 +5525,33 @@ def generate_crystal_structure(lattice=None,cell=None,centering=None,
             operations     = operations,
             posu           = posu)
     elif isinstance(structure,Structure):
-        if tiling!=None:
-            structure = structure.tile(tiling)
+        s = structure
+        if tiling is not None:
+            s = s.tile(tiling)
         #end if
-        if kpoints!=None:
-            structure.add_kpoints(kpoints,kweights)
+        if kpoints is not None:
+            s.add_kpoints(kpoints,kweights)
         #end if
-        if kgrid!=None:
-            structure.add_kmesh(kgrid,kshift)
+        if kgrid is not None:
+            s.add_kmesh(kgrid,kshift)
         #end if        
-        return structure
     #end if
-
+    if s is not None:
+        # add point group folded molecular system if present
+        if folded_elem is not None and folded_pos is not None:
+            if folded_units is None:
+                folded_units = units
+            #end if
+            fs = Structure(
+                elem    = folded_elem,
+                pos     = folded_pos,
+                units   = folded_units,
+                rescale = False,
+                )
+            s.set_folded(fs)
+        #end if
+        return s
+    #end if
 
     s=Crystal(
         lattice        = lattice       ,  

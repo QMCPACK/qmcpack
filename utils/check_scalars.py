@@ -8,6 +8,7 @@ from __future__ import print_function
 # be used (that is, no numpy)
 
 import os
+import sys
 from optparse import OptionParser
 import math
 
@@ -172,6 +173,7 @@ def read_command_line():
             bw   = 'BlockWeight',
             ts   = 'TotalSamples',
             fl   = 'Flux',
+            latdev = 'latdev',
 #now for some RMC estimators
             ke_m = "Kinetic_m",
             ke_p = "Kinetic_p",
@@ -187,7 +189,10 @@ def read_command_line():
             dii_AB = "dIonIon_0_1",
             ee_A = "ElecElec_0",
             ee_B = "ElecElec_1",
-            dee_AB = "dElecElec_0_1"
+            dee_AB = "dElecElec_0_1",
+#AFQMC quantities
+            eloc    = 'Eloc',
+            elocest = 'ElocEstim',
             )
 
         for qshort in sorted(quantities.keys()):
@@ -227,6 +232,14 @@ def read_command_line():
     except Exception as e:
         exit_fail('error during command line read:\n'+str(e))
     #end try
+
+    if len(quants_check)==0:
+        cmd = ''
+        for arg in sys.argv:
+            cmd += arg+' '
+        #end for
+        exit_fail('no quantities requested to check\nfull command: '+cmd)
+    #end if
 
     return options,quants_check
 #end def read_command_line

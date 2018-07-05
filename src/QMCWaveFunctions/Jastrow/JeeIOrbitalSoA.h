@@ -410,13 +410,6 @@ public:
     return LogValue;
   }
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-
   ValueType ratio(ParticleSet& P, int iat)
   {
     UpdateMode=ORB_PBYP_RATIO;
@@ -426,6 +419,15 @@ public:
     cur_Uat=computeU(P, iat, P.GroupID[iat], eI_table.Temp_r.data(), ee_table.Temp_r.data());
     DiffVal=Uat[iat]-cur_Uat;
     return std::exp(DiffVal);
+  }
+
+  void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+  {
+    for(int k=0; k<ratios.size(); ++k)
+      ratios[k]=std::exp(Uat[VP.refPtcl] -
+                         computeU(VP.refPS, VP.refPtcl, VP.refPS.GroupID[VP.refPtcl],
+                                  VP.DistTables[myTableID]->Distances[k],
+                                  VP.DistTables[0]->Distances[k]));
   }
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
@@ -506,6 +508,7 @@ public:
         save_g[jel]+=new_g[jel]-old_g[jel];
     }
 
+    LogValue  += Uat[iat]-cur_Uat;
     Uat[iat]   = cur_Uat;
     dUat(iat)  = cur_dUat;
     d2Uat[iat] = cur_d2Uat;
@@ -577,8 +580,8 @@ public:
     }
   }
 
-  inline valT computeU(ParticleSet& P, int jel, int jg,
-                        const RealType* distjI, const RealType* distjk)
+  inline valT computeU(const ParticleSet& P, int jel, int jg,
+                       const RealType* distjI, const RealType* distjk)
   {
     const DistanceTableData& eI_table=(*P.DistTables[myTableID]);
 
@@ -710,7 +713,7 @@ public:
     }
   }
 
-  inline void computeU3(ParticleSet& P, int jel,
+  inline void computeU3(const ParticleSet& P, int jel,
                         const RealType* distjI, const RowContainer& displjI,
                         const RealType* distjk, const RowContainer& displjk,
                         valT& Uj, posT& dUj, valT& d2Uj,

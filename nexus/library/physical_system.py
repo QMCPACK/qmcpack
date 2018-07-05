@@ -270,25 +270,37 @@ class PhysicalSystem(Matter):
         #end if
 
         self.folded_system = None
-        if self.structure.folded_structure!=None:
-            vratio = structure.volume()/structure.folded_structure.volume()
-            ncells = int(round(vratio))
-            if abs(vratio-ncells)>1e-4:
-                self.error('volume of system does not divide evenly into folded system')
-            #end if
-            if net_charge%ncells!=0:
-                self.error('net charge of system does not divide evenly into folded system')
-            #end if
-            if isinstance(net_spin,str):
-                net_spin_fold = net_spin
-            elif net_spin%ncells!=0:
-                self.error('net_spin of system does not divide evenly into folded system')
+        if self.structure.has_folded():
+            if self.structure.is_tiled():
+                vratio = structure.volume()/structure.folded_structure.volume()
+                ncells = int(round(vratio))
+                if abs(vratio-ncells)>1e-4:
+                    self.error('volume of system does not divide evenly into folded system')
+                #end if
+                if net_charge%ncells!=0:
+                    self.error('net charge of system does not divide evenly into folded system')
+                #end if
+                if isinstance(net_spin,str):
+                    net_spin_fold = net_spin
+                elif net_spin%ncells!=0:
+                    self.error('net_spin of system does not divide evenly into folded system')
+                else:
+                    net_spin_fold = net_spin/ncells 
+                #end if
+                net_charge_fold = net_charge/ncells
+            elif not self.structure.has_axes(): # folded molecule
+                # net charge/spin are not physically meaningful
+                # for a point group folded molecule
+                # set them to safe values; they will not be used later
+                net_charge_fold = 0
+                net_spin_fold   = 'low'
             else:
-                net_spin_fold = net_spin/ncells 
+                self.error('folded structure is not correctly integrated with full structure\nfolded physical system cannot be constructed')
             #end if
+                
             self.folded_system = PhysicalSystem(
                 structure  = structure.folded_structure,
-                net_charge = net_charge/ncells,
+                net_charge = net_charge_fold,
                 net_spin   = net_spin_fold,
                 particles  = particles,
                 **valency
@@ -662,10 +674,14 @@ def generate_physical_system(**kwargs):
         if is_str:
             if os.path.exists(s):
                 if 'elem' in kwargs:
-                    kwargs['structure'] = read_structure(s,elem=kwargs['elem'])
+                    s = read_structure(s,elem=kwargs['elem'])
                 else:
-                    kwargs['structure'] = read_structure(s)
+                    s = read_structure(s)
                 #end if
+                if 'axes' in kwargs:
+                    s.reset_axes(kwargs['axes'])
+                #end if
+                kwargs['structure'] = s
             else:
                 slow = s.lower()
                 format = None

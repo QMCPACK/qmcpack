@@ -224,13 +224,6 @@ public:
     return LogValue;
   }
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-  
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
   {
     LogValue=0.0;
@@ -278,10 +271,10 @@ public:
     //  if (Fs[i])
     //    for (int nn=d_table->M[i],j=0; nn<d_table->M[i+1]; ++nn,++j)
     //      myr[j]+=Fs[i]->evaluate(d_table->r(nn));
-    //RealType x=U[VP.activePtcl];
+    //RealType x=U[VP.refPtcl];
     //for(int k=0; k<ratios.size(); ++k)
     //  ratios[k]=std::exp(x-myr[k]);
-    std::vector<RealType> myr(ratios.size(),U[VP.activePtcl]);
+    std::vector<RealType> myr(ratios.size(),U[VP.refPtcl]);
     const DistanceTableData* d_table=VP.DistTables[myTableIndex];
     for (int i=0; i<d_table->size(SourceIndex); ++i)
       if (Fs[i]!=nullptr)
@@ -394,9 +387,10 @@ public:
 
   void acceptMove(ParticleSet& P, int iat)
   {
-    U[iat] = curVal;
-    dU[iat]=curGrad;
-    d2U[iat]=curLap;
+    LogValue += U[iat]-curVal;
+    U[iat]    = curVal;
+    dU[iat]   = curGrad;
+    d2U[iat]  = curLap;
   }
 
   void evaluateLogAndStore(ParticleSet& P,
