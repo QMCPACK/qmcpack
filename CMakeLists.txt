@@ -699,10 +699,9 @@ IF(USE_NVTX_API)
       MESSAGE(FATAL_ERROR "USE_NVTX_API set but NVTX_API_LIB not found")
     ENDIF(NOT NVTX_API_LIB)
     MESSAGE("CUDA nvToolsExt library: ${NVTX_API_LIB}")
-    #LINK_LIBRARIES("${NVTX_API_LIB}")
+    LINK_LIBRARIES(${NVTX_API_LIB})
   ENDIF(HAVE_CUDA)
 ENDIF(USE_NVTX_API)
-
 
 #INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
 ##################################################################

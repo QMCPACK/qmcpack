@@ -40,7 +40,6 @@ if(HAVE_CUDA)
     bspline_create_cuda.cu
     )
   CUDA_ADD_LIBRARY(einspline ${SRCS})
-  target_link_libraries(einspline ${NVTX_API_LIB})
 else()
   ADD_LIBRARY(einspline ${SRCS})
 endif()

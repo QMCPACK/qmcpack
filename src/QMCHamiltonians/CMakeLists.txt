@@ -97,7 +97,6 @@ ENDIF(OHMMS_DIM MATCHES 3)
 
 IF(QMC_CUDA)
   CUDA_ADD_LIBRARY(qmcham ${HAMSRCS})
-  target_link_libraries(qmcham ${NVTX_API_LIB})
 ELSE(QMC_CUDA)
   ADD_LIBRARY(qmcham ${HAMSRCS})
 ENDIF(QMC_CUDA)

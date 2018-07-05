@@ -21,7 +21,6 @@ IF(HAVE_CUDA)
   SET(SRCS ${SRCS}
       test_cuda.cu)
   CUDA_ADD_LIBRARY(cudatests test_cuda.cu)
-  target_link_libraries(cudatests ${NVTX_API_LIB})
   SET(CUDATESTLIB cudatests)
 ENDIF()
 
