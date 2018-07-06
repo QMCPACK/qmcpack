@@ -18,7 +18,7 @@ IF (NOT QMC_CUDA)
   LIST(APPEND LIH_SHORT "samples" "9600000 0.0") # samples
   QMC_RUN_AND_CHECK(short-LiH_dimer_ae_qp-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae_qp"
-                    vmc_short_noj 
+                    vmc_short_noj
                     vmc_short_noj.in.xml
                     1 16
                     TRUE
@@ -31,8 +31,8 @@ IF (NOT QMC_CUDA)
   LIST(APPEND LIH_LONG "samples" "96000000 0.0") # samples
   QMC_RUN_AND_CHECK(long-LiH_dimer_ae_qp-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae_qp"
-                    vmc_long_noj 
-                    vmc_long_noj.in.xml 
+                    vmc_long_noj
+                    vmc_long_noj.in.xml
                     1 16
                     TRUE
                     0 LIH_LONG # VMC

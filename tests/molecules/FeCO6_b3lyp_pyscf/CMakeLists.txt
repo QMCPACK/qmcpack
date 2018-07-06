@@ -1,7 +1,6 @@
 
 IF (NOT QMC_CUDA)
- IF (NOT QMC_COMPLEX)
-  IF (ENABLE_SOA)
+  IF (NOT QMC_COMPLEX)
 #
 # [Fe(CO)6]2+ molecule gaussian tests, with BFD ECP using pyscf
 
@@ -20,7 +19,7 @@ IF (NOT QMC_CUDA)
                     vmc_short_noj
                     vmc_short_noj.in.xml
                     1 16
-                    TRUE
+                    ${SOA_SUCCESS}
                     0 FeCO6_PYSCF_SHORT # VMC
                     )
 
@@ -33,16 +32,13 @@ IF (NOT QMC_CUDA)
                     vmc_long_noj
                     vmc_long_noj.in.xml
                     1 16
-                    TRUE
+                    ${SOA_SUCCESS}
                     0 FeCO6_PYSCF_LONG # VMC
                     )
 
   ELSE()
-    MESSAGE("Skipping  FeCO6_b3lyp_pyscf tests because Spherical representaion not supported by AoS (ENABLE_SOA=0)")
-  ENDIF()
- ELSE()
     MESSAGE("Skipping  FeCO6_b3lyp_gms tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
- ENDIF()
+  ENDIF()
 ELSE()
     MESSAGE("Skipping FeCO6_b3lyp_gms tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
 ENDIF()
