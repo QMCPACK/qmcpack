@@ -688,6 +688,21 @@ ELSE(QMC_CUDA)
   MESSAGE(STATUS "Disabling CUDA")
 ENDIF(QMC_CUDA)
 
+SET(USE_NVTX_API 0 CACHE BOOL "Enable/disable NVTX regions in CUDA code.")
+IF(USE_NVTX_API)
+  IF(HAVE_CUDA)
+    FIND_LIBRARY(NVTX_API_LIB
+      NAME nvToolsExt
+      HINTS ${CUDA_TOOLKIT_ROOT_DIR}
+      PATH_SUFFIXES lib lib64)
+    IF(NOT NVTX_API_LIB)
+      MESSAGE(FATAL_ERROR "USE_NVTX_API set but NVTX_API_LIB not found")
+    ENDIF(NOT NVTX_API_LIB)
+    MESSAGE("CUDA nvToolsExt library: ${NVTX_API_LIB}")
+    LINK_LIBRARIES(${NVTX_API_LIB})
+  ENDIF(HAVE_CUDA)
+ENDIF(USE_NVTX_API)
+
 #INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
 ##################################################################
 # TODO:use profile tools
@@ -789,7 +804,6 @@ IF (USE_VTUNE_API)
   ENDIF()
   LINK_LIBRARIES("${VTUNE_ITTNOTIFY_LIBRARY}")
 ENDIF()
-
 
 #include(ExternalProject)
 #  set(einspline_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/einspline")
