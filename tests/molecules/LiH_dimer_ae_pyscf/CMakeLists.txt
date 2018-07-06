@@ -4,7 +4,7 @@ IF (NOT QMC_CUDA)
 #
 # LiH molecular dimer gaussian tests, all electron using pyscf
 # Also check results for different number of mpi tasks and threads keeping total constant
-# Energy from Pyscf: E=-7.9873236457148  
+# Energy from Pyscf: E=-7.9873236457148
 #
 #   "kinetic" "7.991344  0.000065") # kinetic energy
 #   "totenergy" "-7.9873125  0.0000086 ") # total energy
@@ -17,10 +17,10 @@ IF (NOT QMC_CUDA)
   LIST(APPEND LIH_SHORT "samples" "9600000 0.0") # samples
   QMC_RUN_AND_CHECK(short-LiH_dimer_ae_pyscf-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae_pyscf"
-                    vmc_short_noj 
+                    vmc_short_noj
                     vmc_short_noj.in.xml
                     1 16
-                    TRUE
+                    ${SOA_SUCCESS}
                     0 LIH_SHORT # VMC
                     )
 
@@ -30,10 +30,10 @@ IF (NOT QMC_CUDA)
   LIST(APPEND LIH_LONG "samples" "96000000 0.0") # samples
   QMC_RUN_AND_CHECK(long-LiH_dimer_ae_pyscf-vmc_hf_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae_pyscf"
-                    vmc_long_noj 
-                    vmc_long_noj.in.xml 
+                    vmc_long_noj
+                    vmc_long_noj.in.xml
                     1 16
-                    TRUE
+                    ${SOA_SUCCESS}
                     0 LIH_LONG # VMC
                     )
 
