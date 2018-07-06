@@ -6,6 +6,7 @@
     pseudo_dir = './',
     outdir='out'
     disk_io='low'
+    wf_collect=.false.
  /
  &system
     ibrav=2, celldm(1) =7.100, nat=  2, ntyp= 2,

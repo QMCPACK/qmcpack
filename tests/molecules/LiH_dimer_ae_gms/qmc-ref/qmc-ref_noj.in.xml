@@ -23,7 +23,7 @@ PROPERTY VALUES FOR THE ROHF  SELF-CONSISTENT FIELD WAVEFUNCTION
 
 -->
 <simulation>
-   <project id="vmc_hf_noj_nodrift" series="0">
+   <project id="qmc-ref_noj" series="0">
       <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
    </project>
    <qmcsystem>
@@ -12032,16 +12032,15 @@ PROPERTY VALUES FOR THE ROHF  SELF-CONSISTENT FIELD WAVEFUNCTION
          <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
          <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
          <pairpot type="coulomb" name="ElecIon" source="ion0" target="e"/>
-         <estimator type="flux" name="flux"/>
+         <estimator type="flux" name="Flux"/>
       </hamiltonian>
    </qmcsystem>
    <qmc method="vmc" move="pbyp">
       <parameter name="walkers"             >    1               </parameter>
-      <parameter name="blocks"              >    100             </parameter>
-      <parameter name="steps"               >    1000            </parameter>
+      <parameter name="blocks"              >    200             </parameter>
+      <parameter name="steps"               >    30000           </parameter>
       <parameter name="subSteps"            >    3               </parameter>
-      <parameter name="timestep"            >    0.4             </parameter>
+      <parameter name="timestep"            >    0.1             </parameter>
       <parameter name="warmupSteps"         >    50              </parameter>
-      <parameter name="use_drift"           >    no              </parameter>  
    </qmc>
 </simulation>
