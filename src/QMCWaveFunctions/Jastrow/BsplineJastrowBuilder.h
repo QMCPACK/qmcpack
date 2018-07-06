@@ -24,9 +24,12 @@ namespace qmcplusplus
 {
 //forward declarations
 class ParticleSet;
-extern template class OneBodyJastrowOrbitalBsplineSoA<BsplineFunctor<double>>;
-extern template class TwoBodyJastrowOrbitalBsplineSoA<BsplineFunctor<double>>;
-  
+
+#if defined(QMC_CUDA) and defined(ENABLE_SOA)
+extern template class OneBodyJastrowOrbitalBsplineSoA<typename BsplineFunctor<double>>;
+extern template class TwoBodyJastrowOrbitalBsplineSoA<typename BsplineFunctor<double>>;
+#endif
+
 struct BsplineJastrowBuilder: public OrbitalBuilderBase
 {
   ParticleSet *sourcePtcl;
