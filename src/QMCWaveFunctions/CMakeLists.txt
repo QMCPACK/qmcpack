@@ -117,11 +117,11 @@ IF(OHMMS_DIM MATCHES 3)
         AtomicOrbitalCuda.cu
         )
     ENDIF(HAVE_EINSPLINE)
-  ENDIF(QMC_CUDA)
+  ENDIF(QMC_CUDA AND ENABLE_SOA)
 
   IF(QMC_CUDA AND NOT ENABLE_SOA)
     SET(FERMION_SRCS ${FERMION_SRCS}
-      Fermion/determinant_update.cu 
+      Fermion/determinant_update.cu
       Fermion/DiracDeterminantCUDA.cpp
       Fermion/SlaterDetCUDA.cpp
       TrialWaveFunction_CUDA.cpp
@@ -139,8 +139,7 @@ IF(OHMMS_DIM MATCHES 3)
         AtomicOrbitalCuda.cu
         )
     ENDIF(HAVE_EINSPLINE)
-  ENDIF(QMC_CUDA and NOT ENABLE_SOA)
-
+  ENDIF(QMC_CUDA AND NOT ENABLE_SOA)
 
   IF(HAVE_EINSPLINE)
     IF(NOT MIXED_PRECISION)

@@ -26,8 +26,8 @@ namespace qmcplusplus
 class ParticleSet;
 
 #if defined(QMC_CUDA) and defined(ENABLE_SOA)
-extern template class OneBodyJastrowOrbitalBsplineSoA<typename BsplineFunctor<double>>;
-extern template class TwoBodyJastrowOrbitalBsplineSoA<typename BsplineFunctor<double>>;
+extern template class OneBodyJastrowOrbitalBsplineSoA<BsplineFunctor<double>>;
+extern template class TwoBodyJastrowOrbitalBsplineSoA<BsplineFunctor<double>>;
 #endif
 
 struct BsplineJastrowBuilder: public OrbitalBuilderBase
