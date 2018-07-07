@@ -79,7 +79,7 @@ TEST_CASE("double_1d_multi", "[einspline]")
   REQUIRE(val == Approx(2.0));
 }
 
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
 // If code from the .cu file is not called, the tests there don't get run.
 // Call a simple function to force the link.
 int force_cuda_link();

@@ -324,9 +324,9 @@ bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
     }
   }
   myComm->bcast(C->data(),C->size());
-#else
+#else // defined(HAVE_LIBHDF5)
   APP_ABORT("SPOSetBase::putFromH5 HDF5 is disabled.")
-#endif
+#endif // defined(HAVE_LIBHDF5)
   return true;
 }
 
@@ -374,7 +374,7 @@ bool SPOSetBase::putOccupation(xmlNodePtr occ_ptr)
     }
   return true;
 }
-#endif
+#endif // !defined(ENABLE_SOA)
 
 void SPOSetBase::basic_report(const std::string& pad)
 {
@@ -421,7 +421,7 @@ void SPOSetBase::evaluateGradSource (const ParticleSet &P, int first, int last,
   APP_ABORT("SPOSetlBase::evalGradSource is not implemented");
 }
 
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA)
 
 void SPOSetBase::evaluate(const ParticleSet& P, const PosType& r, std::vector<RealType> &psi)
 {

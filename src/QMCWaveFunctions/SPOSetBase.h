@@ -25,7 +25,7 @@
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "io/hdf_archive.h"
-#if !defined(EANBLE_SOA)
+#if !defined(ENABLE_SOA)
 #include "Message/CommOperators.h"
 #endif
 
@@ -296,7 +296,7 @@ public:
   // Should be left empty for other derived classes
   virtual void rotate_B(const std::vector<RealType> &rot_mat) { };
 
-#ifdef QMC_CUDA
+#if defined(QMC_CUDA)
 
   /** evaluate the values of this single-particle orbital set
    * @param P current ParticleSet
@@ -332,7 +332,7 @@ public:
   virtual void
   evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi);
 #endif
-
+  
 #if !defined(ENABLE_SOA)
 protected:
   bool putOccupation(xmlNodePtr occ_ptr);
