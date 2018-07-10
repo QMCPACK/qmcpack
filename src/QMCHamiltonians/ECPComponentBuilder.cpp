@@ -169,6 +169,10 @@ bool ECPComponentBuilder::put(xmlNodePtr cur)
       //capture the global grid
       grid_global = createGrid(cur);
     }
+    else if(cname == "L2")
+    {
+      buildL2(cur);
+    }
     else if(cname == "semilocal")
     {
       semiPtr.push_back(cur);//save the pointer

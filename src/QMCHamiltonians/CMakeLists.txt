@@ -62,6 +62,7 @@ IF(OHMMS_DIM MATCHES 3)
     ECPComponentBuilder.cpp
     ECPComponentBuilder.1.cpp
     ECPComponentBuilder.2.cpp
+    ECPComponentBuilder.3.cpp
     )
 
 

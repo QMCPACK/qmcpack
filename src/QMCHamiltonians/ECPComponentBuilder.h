@@ -42,6 +42,7 @@ struct ECPComponentBuilder: public MPIObjectBase, public QMCTraits
   std::map<std::string,mGridType*> grid_inp;
   RadialPotentialType* pp_loc;
   NonLocalECPComponent* pp_nonloc;
+  RadialPotentialType* pp_L2;
   std::map<std::string,int> angMon;
 
   ECPComponentBuilder(const std::string& aname, Communicate* c);
@@ -51,6 +52,7 @@ struct ECPComponentBuilder: public MPIObjectBase, public QMCTraits
   void addSemiLocal(xmlNodePtr cur);
   void buildLocal(xmlNodePtr cur);
   void buildSemiLocalAndLocal(std::vector<xmlNodePtr>& semiPtr);
+  void buildL2(xmlNodePtr cur);
 
   bool parseCasino(const std::string& fname, xmlNodePtr cur); //std::string& fname, RealType rc);
   //bool parseCasino(std::string& fname, RealType rc);
