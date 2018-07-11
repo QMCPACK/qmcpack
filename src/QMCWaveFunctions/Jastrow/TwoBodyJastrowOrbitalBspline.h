@@ -18,7 +18,7 @@
 
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "Configuration.h"
 #include "QMCWaveFunctions/Jastrow/CudaSpline.h"
@@ -26,14 +26,26 @@
 
 namespace qmcplusplus
 {
-
+template<class FT>
 class TwoBodyJastrowOrbitalBspline :
-  public TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >
+  public J2OrbitalSoA<FT>
 {
 private:
   bool UsePBC;
-  typedef CUDA_PRECISION CudaReal;
-  //typedef double CudaReal;
+  // The following is so we can refer to type aliases(defs) below the
+  // templated base class in the object hierarchy
+  // Mostly QMCTraits here
+  using JBase = J2OrbitalSoA<FT>;
+  using CudaRealType = typename JBase::CudaRealType;
+  // Duplication that should be removed
+  using CudaReal = CudaRealType;
+  using RealType = typename JBase::RealType;
+  using ValueType = typename JBase::ValueType;
+  using GradType = typename JBase::GradType;
+  using PosType = typename JBase::PosType;
+  using GradMatrix_t = typename JBase::GradMatrix_t;
+  using ValueMatrix_t = typename JBase::ValueMatrix_t;
+  using RealMatrix_t = typename JBase::RealMatrix_t;
 
   std::vector<CudaSpline<CudaReal>*> GPUSplines, UniqueSplines;
   int MaxCoefs;
@@ -59,7 +71,6 @@ private:
   gpu::host_vector<CudaReal> NL_rMaxHost, NL_QuadPointsHost, NL_RatiosHost;
   gpu::device_vector<CudaReal> NL_rMaxGPU,  NL_QuadPointsGPU,  NL_RatiosGPU;
 public:
-  typedef BsplineFunctor<OrbitalBase::RealType> FT;
   typedef ParticleSet::Walker_t     Walker_t;
 
   GPU_XRAY_TRACE void freeGPUmem();
@@ -114,7 +125,7 @@ public:
   //TwoBodyJastrowOrbitalBspline(ParticleSet& pset, bool is_master) :
   //  TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > (pset, is_master),
   TwoBodyJastrowOrbitalBspline(ParticleSet& pset, int tid) :
-    TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > (pset, tid),
+    J2OrbitalSoA<FT> (pset, tid),
     PtclRef(pset),
     UpdateListGPU        ("TwoBodyJastrowOrbitalBspline::UpdateListGPU"),
     L                    ("TwoBodyJastrowOrbitalBspline::L"),
@@ -134,7 +145,7 @@ public:
   {
     UsePBC = pset.Lattice.SuperCellEnum;
     app_log() << "UsePBC = " << UsePBC << std::endl;
-    int nsp = NumGroups = pset.groups();
+    int nsp = this->NumGroups = pset.groups();
     GPUSplines.resize(nsp*nsp,0);
     if (UsePBC)
     {

@@ -18,7 +18,7 @@
 
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
+#include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/CudaSpline.h"
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowCuda.h"
@@ -28,13 +28,26 @@
 namespace qmcplusplus
 {
 
+template<class FT>
 class OneBodyJastrowOrbitalBspline :
-  public OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >
+  public J1OrbitalSoA<FT>
 {
 private:
   bool UsePBC;
-  typedef CUDA_PRECISION CudaReal;
-  //typedef double CudaReal;
+  // The following is so we can refer to type aliases(defs) below the
+  // templated base class in the object hierarchy
+  // Mostly QMCTraits here
+  using JBase = J1OrbitalSoA<FT>;
+  using CudaRealType = typename JBase::CudaRealType;
+  // Duplication that should be removed
+  using CudaReal = CudaRealType;
+  using RealType = typename JBase::RealType;
+  using ValueType = typename JBase::ValueType;
+  using GradType = typename JBase::GradType;
+  using PosType = typename JBase::PosType;
+  using GradMatrix_t = typename JBase::GradMatrix_t;
+  using ValueMatrix_t = typename JBase::ValueMatrix_t;
+  using RealMatrix_t = typename JBase::RealMatrix_t;
 
   std::vector<CudaSpline<CudaReal>*> GPUSplines, UniqueSplines;
   int MaxCoefs;
@@ -67,12 +80,11 @@ private:
 
   int N;
 public:
-  typedef BsplineFunctor<OrbitalBase::RealType> FT;
   typedef ParticleSet::Walker_t     Walker_t;
 
   GPU_XRAY_TRACE void resetParameters(const opt_variables_type& active);
   GPU_XRAY_TRACE void checkInVariables(opt_variables_type& active);
-  GPU_XRAY_TRACE void addFunc(int ig, FT* j, int jg);
+  GPU_XRAY_TRACE void addFunc(int ig, FT* j, int jg=-1);
   GPU_XRAY_TRACE void recompute(MCWalkerConfiguration &W, bool firstTime);
   GPU_XRAY_TRACE void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool);
   GPU_XRAY_TRACE void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi);
@@ -111,7 +123,7 @@ public:
                             RealMatrix_t &dlogpsi,
                             RealMatrix_t &dlapl_over_psi);
   OneBodyJastrowOrbitalBspline(ParticleSet &centers, ParticleSet& elecs) :
-    OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > (centers,elecs),
+    J1OrbitalSoA<FT>(centers,elecs),
     ElecRef(elecs),
     L("OneBodyJastrowOrbitalBspline::L"),
     Linv("OneBodyJastrowOrbitalBspline::Linv"),

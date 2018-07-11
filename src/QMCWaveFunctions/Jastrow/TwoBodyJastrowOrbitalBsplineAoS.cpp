@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "TwoBodyJastrowOrbitalBspline.h"
+#include "TwoBodyJastrowOrbitalBsplineAoS.h"
 #include "CudaSpline.h"
 #include "Lattice/ParticleBConds.h"
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowCuda.h"
@@ -25,7 +25,7 @@
 namespace qmcplusplus
 {
 void
-TwoBodyJastrowOrbitalBspline::freeGPUmem()
+TwoBodyJastrowOrbitalBsplineAoS::freeGPUmem()
 {
   UpdateListGPU.clear();
   SumGPU.clear();
@@ -44,19 +44,19 @@ TwoBodyJastrowOrbitalBspline::freeGPUmem()
 
 
 void
-TwoBodyJastrowOrbitalBspline::recompute(MCWalkerConfiguration &W,
+TwoBodyJastrowOrbitalBsplineAoS::recompute(MCWalkerConfiguration &W,
                                         bool firstTime)
 {
 }
 
 void
-TwoBodyJastrowOrbitalBspline::reserve
+TwoBodyJastrowOrbitalBsplineAoS::reserve
 (PointerPool<gpu::device_vector<CudaRealType> > &pool)
 {
 }
 
 void
-TwoBodyJastrowOrbitalBspline::checkInVariables(opt_variables_type& active)
+TwoBodyJastrowOrbitalBsplineAoS::checkInVariables(opt_variables_type& active)
 {
   TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >::checkInVariables(active);
   for (int i=0; i<NumGroups*NumGroups; i++)
@@ -64,7 +64,7 @@ TwoBodyJastrowOrbitalBspline::checkInVariables(opt_variables_type& active)
 }
 
 void
-TwoBodyJastrowOrbitalBspline::addFunc(int ia, int ib, FT* j)
+TwoBodyJastrowOrbitalBsplineAoS::addFunc(int ia, int ib, FT* j)
 {
   TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >::addFunc(ia, ib, j);
   CudaSpline<CudaReal> *newSpline = new CudaSpline<CudaReal>(*j);
@@ -102,7 +102,7 @@ TwoBodyJastrowOrbitalBspline::addFunc(int ia, int ib, FT* j)
 
 
 void
-TwoBodyJastrowOrbitalBspline::addLog (MCWalkerConfiguration &W,
+TwoBodyJastrowOrbitalBsplineAoS::addLog (MCWalkerConfiguration &W,
                                       std::vector<RealType> &logPsi)
 {
   std::vector<Walker_t*> &walkers = W.WalkerList;
@@ -167,7 +167,7 @@ TwoBodyJastrowOrbitalBspline::addLog (MCWalkerConfiguration &W,
 }
 
 void
-TwoBodyJastrowOrbitalBspline::update (std::vector<Walker_t*> &walkers, int iat)
+TwoBodyJastrowOrbitalBsplineAoS::update (std::vector<Walker_t*> &walkers, int iat)
 {
   // for (int iw=0; iw<walkers.size(); iw++)
   //   UpdateListHost[iw] = (CudaReal*)walkers[iw]->R_GPU.data();
@@ -179,7 +179,7 @@ TwoBodyJastrowOrbitalBspline::update (std::vector<Walker_t*> &walkers, int iat)
 
 // This currently does not actually compute the gradient or laplacian
 void
-TwoBodyJastrowOrbitalBspline::ratio
+TwoBodyJastrowOrbitalBsplineAoS::ratio
 (MCWalkerConfiguration &W, int iat,
  std::vector<ValueType> &psi_ratios, std::vector<GradType>  &grad,
  std::vector<ValueType> &lapl)
@@ -257,7 +257,7 @@ TwoBodyJastrowOrbitalBspline::ratio
 
 // This currently does not actually compute the gradient or laplacian
 void
-TwoBodyJastrowOrbitalBspline::calcRatio
+TwoBodyJastrowOrbitalBsplineAoS::calcRatio
 (MCWalkerConfiguration &W, int iat,
  std::vector<ValueType> &psi_ratios, std::vector<GradType>  &grad,
  std::vector<ValueType> &lapl)
@@ -323,7 +323,7 @@ TwoBodyJastrowOrbitalBspline::calcRatio
 #endif
 }
 void
-TwoBodyJastrowOrbitalBspline::addRatio
+TwoBodyJastrowOrbitalBsplineAoS::addRatio
 (MCWalkerConfiguration &W, int iat,
  std::vector<ValueType> &psi_ratios, std::vector<GradType>  &grad,
  std::vector<ValueType> &lapl)
@@ -345,7 +345,7 @@ TwoBodyJastrowOrbitalBspline::addRatio
 
 
 void
-TwoBodyJastrowOrbitalBspline::NLratios
+TwoBodyJastrowOrbitalBsplineAoS::NLratios
 (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
  std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios)
 {
@@ -421,7 +421,7 @@ TwoBodyJastrowOrbitalBspline::NLratios
 }
 
 
-void TwoBodyJastrowOrbitalBspline::calcGradient(MCWalkerConfiguration &W, int iat,
+void TwoBodyJastrowOrbitalBsplineAoS::calcGradient(MCWalkerConfiguration &W, int iat,
     std::vector<GradType> &grad)
 {
   CudaReal sim_cell_radius = W.Lattice.SimulationCellRadius;
@@ -453,7 +453,7 @@ void TwoBodyJastrowOrbitalBspline::calcGradient(MCWalkerConfiguration &W, int ia
   cudaEventRecord(gpu::gradientSyncTwoBodyEvent, gpu::memoryStream);
 }
 
-void TwoBodyJastrowOrbitalBspline::addGradient(MCWalkerConfiguration &W, int iat,
+void TwoBodyJastrowOrbitalBsplineAoS::addGradient(MCWalkerConfiguration &W, int iat,
     std::vector<GradType> &grad)
 {
   std::vector<Walker_t*> &walkers = W.WalkerList;
@@ -464,7 +464,7 @@ void TwoBodyJastrowOrbitalBspline::addGradient(MCWalkerConfiguration &W, int iat
 }
 
 void
-TwoBodyJastrowOrbitalBspline::gradLapl (MCWalkerConfiguration &W,
+TwoBodyJastrowOrbitalBsplineAoS::gradLapl (MCWalkerConfiguration &W,
                                         GradMatrix_t &grad,
                                         ValueMatrix_t &lapl)
 {
@@ -562,7 +562,7 @@ TwoBodyJastrowOrbitalBspline::gradLapl (MCWalkerConfiguration &W,
       {
         char buff[500];
         gethostname(buff, 500);
-        fprintf (stderr, "NAN in TwoBodyJastrowOrbitalBspline laplacian.  Host=%s\n", buff);
+        fprintf (stderr, "NAN in TwoBodyJastrowOrbitalBsplineAoS laplacian.  Host=%s\n", buff);
         abort();
       }
       lapl(iw,ptcl) += GradLaplHost[4*N*iw+ + 4*ptcl +3];
@@ -572,7 +572,7 @@ TwoBodyJastrowOrbitalBspline::gradLapl (MCWalkerConfiguration &W,
 
 
 void
-TwoBodyJastrowOrbitalBspline::resetParameters(const opt_variables_type& active)
+TwoBodyJastrowOrbitalBsplineAoS::resetParameters(const opt_variables_type& active)
 {
   TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >::resetParameters(active);
   for (int i=0; i<NumGroups*NumGroups; i++)
@@ -580,7 +580,7 @@ TwoBodyJastrowOrbitalBspline::resetParameters(const opt_variables_type& active)
 }
 
 void
-TwoBodyJastrowOrbitalBspline::evaluateDerivatives
+TwoBodyJastrowOrbitalBsplineAoS::evaluateDerivatives
 (MCWalkerConfiguration &W, const opt_variables_type& optvars,
  RealMatrix_t &d_logpsi, RealMatrix_t &dlapl_over_psi)
 {

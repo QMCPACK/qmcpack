@@ -13,8 +13,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#ifndef TWO_BODY_JASTROW_ORBITAL_BSPLINE_H
-#define TWO_BODY_JASTROW_ORBITAL_BSPLINE_H
+#ifndef TWO_BODY_JASTROW_ORBITAL_BSPLINE_AOS_H
+#define TWO_BODY_JASTROW_ORBITAL_BSPLINE_AOS_H
 
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
@@ -27,7 +27,7 @@
 namespace qmcplusplus
 {
 
-class TwoBodyJastrowOrbitalBspline :
+class TwoBodyJastrowOrbitalBsplineAoS :
   public TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >
 {
 private:
@@ -111,26 +111,26 @@ public:
                        RealMatrix_t &dlogpsi,
                        RealMatrix_t &dlapl_over_psi);
 
-  //TwoBodyJastrowOrbitalBspline(ParticleSet& pset, bool is_master) :
+  //TwoBodyJastrowOrbitalBsplineAoS(ParticleSet& pset, bool is_master) :
   //  TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > (pset, is_master),
-  TwoBodyJastrowOrbitalBspline(ParticleSet& pset, int tid) :
+  TwoBodyJastrowOrbitalBsplineAoS(ParticleSet& pset, int tid) :
     TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > (pset, tid),
     PtclRef(pset),
-    UpdateListGPU        ("TwoBodyJastrowOrbitalBspline::UpdateListGPU"),
-    L                    ("TwoBodyJastrowOrbitalBspline::L"),
-    Linv                 ("TwoBodyJastrowOrbitalBspline::Linv"),
-    SumGPU               ("TwoBodyJastrowOrbitalBspline::SumGPU"),
-    GradLaplGPU          ("TwoBodyJastrowOrbitalBspline::GradLaplGPU"),
-    OneGradGPU           ("TwoBodyJastrowOrbitalBspline::OneGradGPU"),
-    SplineDerivsGPU      ("TwoBodyJastrowOrbitalBspline::SplineDerivsGPU"),
-    DerivListGPU         ("TwoBodyJastrowOrbitalBspline::DerivListGPU"),
-    NL_SplineCoefsListGPU("TwoBodyJastrowOrbitalBspline::NL_SplineCoefsListGPU"),
-    NL_JobListGPU        ("TwoBodyJastrowOrbitalBspline::NL_JobListGPU"),
-    NL_NumCoefsGPU       ("TwoBodyJastrowOrbitalBspline::NL_NumCoefsGPU"),
-    NL_NumQuadPointsGPU  ("TwoBodyJastrowOrbitalBspline::NL_NumQuadPointsGPU"),
-    NL_rMaxGPU           ("TwoBodyJastrowOrbitalBspline::NL_rMaxGPU"),
-    NL_QuadPointsGPU     ("TwoBodyJastrowOrbitalBspline::NL_QuadPointsGPU"),
-    NL_RatiosGPU         ("TwoBodyJastrowOrbitalBspline::NL_RatiosGPU")
+    UpdateListGPU        ("TwoBodyJastrowOrbitalBsplineAoS::UpdateListGPU"),
+    L                    ("TwoBodyJastrowOrbitalBsplineAoS::L"),
+    Linv                 ("TwoBodyJastrowOrbitalBsplineAoS::Linv"),
+    SumGPU               ("TwoBodyJastrowOrbitalBsplineAoS::SumGPU"),
+    GradLaplGPU          ("TwoBodyJastrowOrbitalBsplineAoS::GradLaplGPU"),
+    OneGradGPU           ("TwoBodyJastrowOrbitalBsplineAoS::OneGradGPU"),
+    SplineDerivsGPU      ("TwoBodyJastrowOrbitalBsplineAoS::SplineDerivsGPU"),
+    DerivListGPU         ("TwoBodyJastrowOrbitalBsplineAoS::DerivListGPU"),
+    NL_SplineCoefsListGPU("TwoBodyJastrowOrbitalBsplineAoS::NL_SplineCoefsListGPU"),
+    NL_JobListGPU        ("TwoBodyJastrowOrbitalBsplineAoS::NL_JobListGPU"),
+    NL_NumCoefsGPU       ("TwoBodyJastrowOrbitalBsplineAoS::NL_NumCoefsGPU"),
+    NL_NumQuadPointsGPU  ("TwoBodyJastrowOrbitalBsplineAoS::NL_NumQuadPointsGPU"),
+    NL_rMaxGPU           ("TwoBodyJastrowOrbitalBsplineAoS::NL_rMaxGPU"),
+    NL_QuadPointsGPU     ("TwoBodyJastrowOrbitalBsplineAoS::NL_QuadPointsGPU"),
+    NL_RatiosGPU         ("TwoBodyJastrowOrbitalBsplineAoS::NL_RatiosGPU")
   {
     UsePBC = pset.Lattice.SuperCellEnum;
     app_log() << "UsePBC = " << UsePBC << std::endl;

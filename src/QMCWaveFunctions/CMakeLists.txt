@@ -93,7 +93,8 @@ IF(OHMMS_DIM MATCHES 3)
     SET(FERMION_SRCS ${FERMION_SRCS}  lcao/LCAOrbitalSet.cpp lcao/LCAOrbitalBuilder.cpp)
   ENDIF(NOT QMC_COMPLEX AND ENABLE_SOA)
 
-  IF(QMC_CUDA)
+
+  IF(QMC_CUDA AND ENABLE_SOA)
     SET(FERMION_SRCS ${FERMION_SRCS}
       Fermion/determinant_update.cu 
       Fermion/DiracDeterminantCUDA.cpp
@@ -113,8 +114,30 @@ IF(OHMMS_DIM MATCHES 3)
         AtomicOrbitalCuda.cu
         )
     ENDIF(HAVE_EINSPLINE)
-  ENDIF(QMC_CUDA)
+  ENDIF(QMC_CUDA AND ENABLE_SOA)
 
+  # These differences will grow as gpu SoA port continues
+  IF(QMC_CUDA AND NOT ENABLE_SOA)
+    SET(FERMION_SRCS ${FERMION_SRCS}
+      Fermion/determinant_update.cu
+      Fermion/DiracDeterminantCUDA.cpp
+      Fermion/SlaterDetCUDA.cpp
+      TrialWaveFunction_CUDA.cpp
+      )
+    SET(JASTROW_SRCS ${JASTROW_SRCS}
+      Jastrow/BsplineJastrowCuda.cu
+      Jastrow/BsplineJastrowCudaPBC.cu
+      Jastrow/OneBodyJastrowOrbitalBsplineAoS.cpp
+      Jastrow/TwoBodyJastrowOrbitalBsplineAoS.cpp
+      )
+    IF(HAVE_EINSPLINE)
+      SET(FERMION_SRCS ${FERMION_SRCS}
+        EinsplineSetCuda.cpp
+        PhaseFactors.cu
+        AtomicOrbitalCuda.cu
+        )
+    ENDIF(HAVE_EINSPLINE)
+  ENDIF(QMC_CUDA AND NOT ENABLE_SOA)
 
   IF(HAVE_EINSPLINE)
     IF(NOT MIXED_PRECISION)

@@ -28,7 +28,7 @@
 namespace qmcplusplus
 {
 
-class OneBodyJastrowOrbitalBspline :
+class OneBodyJastrowOrbitalBsplineAoS :
   public OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >
 {
 private:
@@ -110,25 +110,25 @@ public:
                             const opt_variables_type& optvars,
                             RealMatrix_t &dlogpsi,
                             RealMatrix_t &dlapl_over_psi);
-  OneBodyJastrowOrbitalBspline(ParticleSet &centers, ParticleSet& elecs) :
+  OneBodyJastrowOrbitalBsplineAoS(ParticleSet &centers, ParticleSet& elecs) :
     OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > (centers,elecs),
     ElecRef(elecs),
-    L("OneBodyJastrowOrbitalBspline::L"),
-    Linv("OneBodyJastrowOrbitalBspline::Linv"),
-    C("OneBodyJastrowOrbitalBspline::C"),
-    UpdateListGPU("OneBodyJastrowOrbitalBspline::UpdateListGPU"),
-    SumGPU("OneBodyJastrowOrbitalBspline::SumGPU"),
-    GradLaplGPU("OneBodyJastrowOrbitalBspline::GradLaplGPU"),
-    OneGradGPU("OneBodyJastrowOrbitalBspline::OneGradGPU"),
-    SplineDerivsGPU("OneBodyJastrowOrbitalBspline::SplineDerivsGPU"),
-    DerivListGPU("OneBodyJastrowOrbitalBspline::DerivListGPU"),
-    NL_SplineCoefsListGPU("OneBodyJastrowOrbitalBspline::NL_SplineCoefsListGPU"),
-    NL_JobListGPU("OneBodyJastrowOrbitalBspline::NL_JobListGPU"),
-    NL_NumCoefsGPU("OneBodyJastrowOrbitalBspline::NL_NumCoefsGPU"),
-    NL_NumQuadPointsGPU("OneBodyJastrowOrbitalBspline::NL_NumQuadPointsGPU"),
-    NL_rMaxGPU("OneBodyJastrowOrbitalBspline::NL_rMaxGPU"),
-    NL_QuadPointsGPU("OneBodyJastrowOrbitalBspline::NL_QuadPointsGPU"),
-    NL_RatiosGPU("OneBodyJastrowOrbitalBspline::NL_RatiosGPU")
+    L("OneBodyJastrowOrbitalBsplineAoS::L"),
+    Linv("OneBodyJastrowOrbitalBsplineAoS::Linv"),
+    C("OneBodyJastrowOrbitalBsplineAoS::C"),
+    UpdateListGPU("OneBodyJastrowOrbitalBsplineAoS::UpdateListGPU"),
+    SumGPU("OneBodyJastrowOrbitalBsplineAoS::SumGPU"),
+    GradLaplGPU("OneBodyJastrowOrbitalBsplineAoS::GradLaplGPU"),
+    OneGradGPU("OneBodyJastrowOrbitalBsplineAoS::OneGradGPU"),
+    SplineDerivsGPU("OneBodyJastrowOrbitalBsplineAoS::SplineDerivsGPU"),
+    DerivListGPU("OneBodyJastrowOrbitalBsplineAoS::DerivListGPU"),
+    NL_SplineCoefsListGPU("OneBodyJastrowOrbitalBsplineAoS::NL_SplineCoefsListGPU"),
+    NL_JobListGPU("OneBodyJastrowOrbitalBsplineAoS::NL_JobListGPU"),
+    NL_NumCoefsGPU("OneBodyJastrowOrbitalBsplineAoS::NL_NumCoefsGPU"),
+    NL_NumQuadPointsGPU("OneBodyJastrowOrbitalBsplineAoS::NL_NumQuadPointsGPU"),
+    NL_rMaxGPU("OneBodyJastrowOrbitalBsplineAoS::NL_rMaxGPU"),
+    NL_QuadPointsGPU("OneBodyJastrowOrbitalBsplineAoS::NL_QuadPointsGPU"),
+    NL_RatiosGPU("OneBodyJastrowOrbitalBsplineAoS::NL_RatiosGPU")
   {
     UsePBC = elecs.Lattice.SuperCellEnum;
     NumElecGroups = elecs.groups();
