@@ -152,7 +152,6 @@
 \newpage
 
 \begin{btUnit}
-\begin{btSect}{bibliography}
 
 \input{introduction}
 \input{features}
@@ -209,13 +208,11 @@
 \input{design_features}
 \input{developing}
 
-\chapter{References}
-\begingroup  % Avoid "References" section title
-\renewcommand{\section}[2]{}%
-\bibliographystyle{ieeetr}
-\bibliography{bibliography}
-\endgroup
-
+%% \renewcommand{\chaptername}{}
+%% \renewcommand{\thechapter}{}
+\chapter*{References}
+\addcontentsline{toc}{chapter}{References}
+\begin{btSect}{bibliography}
 \btPrintCited
 \end{btSect}
 \end{btUnit}
