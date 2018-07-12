@@ -32,7 +32,7 @@
 #include <Utilities/ProgressReportEngine.h>
 #include <QMCWaveFunctions/einspline_helper.hpp>
 #include "QMCWaveFunctions/BsplineReaderBase.h"
-#include "QMCWaveFunctions/EinsplineAdoptor.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
 
 namespace qmcplusplus
 {

@@ -19,6 +19,8 @@
 
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
+#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
+
 //#define USE_VECTOR_ML 1
 
 namespace qmcplusplus

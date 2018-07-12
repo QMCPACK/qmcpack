@@ -23,7 +23,7 @@
 
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
-
+#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
 namespace qmcplusplus
 {
 
