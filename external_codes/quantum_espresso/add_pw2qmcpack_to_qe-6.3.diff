@@ -1,6 +1,6 @@
 diff -W 205 -urN qe-6.3_original/clib/esh5_interfaces.c qe-6.3_updated/clib/esh5_interfaces.c
 --- qe-6.3_original/clib/esh5_interfaces.c	1969-12-31 18:00:00.000000000 -0600
-+++ qe-6.3_updated/clib/esh5_interfaces.c	2018-07-04 08:52:41.000000000 -0500
++++ qe-6.3_updated/clib/esh5_interfaces.c	2018-07-09 19:05:46.489517789 -0500
 @@ -0,0 +1,962 @@
 +/*
 + * Copyright (C) 2004 PWSCF group 
@@ -966,7 +966,7 @@ diff -W 205 -urN qe-6.3_original/clib/esh5_interfaces.c qe-6.3_updated/clib/esh5
 +#endif
 diff -W 205 -urN qe-6.3_original/clib/make.depend qe-6.3_updated/clib/make.depend
 --- qe-6.3_original/clib/make.depend	2018-07-04 04:14:20.000000000 -0500
-+++ qe-6.3_updated/clib/make.depend	2018-07-04 08:52:41.000000000 -0500
++++ qe-6.3_updated/clib/make.depend	2018-07-09 19:05:46.489517789 -0500
 @@ -1,3 +1,4 @@
  md5.o : 
  md5_from_file.o : 
@@ -974,7 +974,7 @@ diff -W 205 -urN qe-6.3_original/clib/make.depend qe-6.3_updated/clib/make.depen
 +esh5_interfaces.o : ../include/c_defs.h
 diff -W 205 -urN qe-6.3_original/clib/Makefile qe-6.3_updated/clib/Makefile
 --- qe-6.3_original/clib/Makefile	2018-07-04 04:14:20.000000000 -0500
-+++ qe-6.3_updated/clib/Makefile	2018-07-04 08:52:41.000000000 -0500
++++ qe-6.3_updated/clib/Makefile	2018-07-09 19:05:46.489517789 -0500
 @@ -16,14 +16,18 @@
  ptrace.o \
  sockets.o \
@@ -998,7 +998,7 @@ diff -W 205 -urN qe-6.3_original/clib/Makefile qe-6.3_updated/clib/Makefile
  
 diff -W 205 -urN qe-6.3_original/install/configure qe-6.3_updated/install/configure
 --- qe-6.3_original/install/configure	2018-07-04 04:14:20.000000000 -0500
-+++ qe-6.3_updated/install/configure	2018-07-04 08:52:41.000000000 -0500
++++ qe-6.3_updated/install/configure	2018-07-09 19:05:46.493517799 -0500
 @@ -9935,10 +9935,10 @@
           elif test -e $with_hdf5_path/bin/h5fc; then
               hdf5_libs=`$with_hdf5_path/bin/h5fc -show | awk -F'-L' '{$1="";$2="-L"$2; print $0}'`
@@ -1014,7 +1014,7 @@ diff -W 205 -urN qe-6.3_original/install/configure qe-6.3_updated/install/config
        hdf5_line="HDF5_LIBS=$hdf5_libs"
 diff -W 205 -urN qe-6.3_original/PP/src/Makefile qe-6.3_updated/PP/src/Makefile
 --- qe-6.3_original/PP/src/Makefile	2018-07-04 04:14:20.000000000 -0500
-+++ qe-6.3_updated/PP/src/Makefile	2018-07-04 08:52:41.000000000 -0500
++++ qe-6.3_updated/PP/src/Makefile	2018-07-09 19:05:46.493517799 -0500
 @@ -63,7 +63,7 @@
        pawplot.x sumpdos.x pw2wannier90.x pw_export.x pw2gw.x \
        wannier_ham.x wannier_plot.x molecularpdos.x \
@@ -1038,8 +1038,8 @@ diff -W 205 -urN qe-6.3_original/PP/src/Makefile qe-6.3_updated/PP/src/Makefile
  	( cd ../.. ; $(MAKE) $(TLDEPS) || exit 1 ) ; fi
 diff -W 205 -urN qe-6.3_original/PP/src/pw2qmcpack.f90 qe-6.3_updated/PP/src/pw2qmcpack.f90
 --- qe-6.3_original/PP/src/pw2qmcpack.f90	1969-12-31 18:00:00.000000000 -0600
-+++ qe-6.3_updated/PP/src/pw2qmcpack.f90	2018-07-04 08:52:41.000000000 -0500
-@@ -0,0 +1,1343 @@
++++ qe-6.3_updated/PP/src/pw2qmcpack.f90	2018-07-12 18:54:47.418356212 -0500
+@@ -0,0 +1,1344 @@
 +!
 +! Copyright (C) 2004 PWSCF group 
 +! This file is distributed under the terms of the
@@ -1148,6 +1148,7 @@ diff -W 205 -urN qe-6.3_original/PP/src/pw2qmcpack.f90 qe-6.3_updated/PP/src/pw2
 +    CALL print_clock ( 'glue_h5' )
 +  ENDIF
 +#else
++#error HDF5 flag neither enabled during configure nor added manually in make.inc
 +  CALL errore('pw2qmcpack', ' HDF5 flag not enabled during configure',1)
 +#endif
 +  CALL environment_end ( 'pw2qmcpack' )
