@@ -13,22 +13,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/** @file EinsplineAdoptor.h
+/** @file BsplineSet.h
  *
- * Adoptor classes and BsplineSet<SplineAdoptor>
  * BsplineSet<SplineAdoptor> is a SPOSetBase class to work with determinant classes
- * SplineAdoptor provides these functions
- * - evaluate_v    value only
- * - evaluate_vgl  vgl
- * - evaluate_vgh  vgh
- * Specializations are implemented  in Spline*Adoptor.h and include
- * - SplineC2RAdoptor<ST,TT,D> : real wavefunction using complex einspline, tiling
- * - SplineC2CAdoptor<ST,TT,D> : complex wavefunction using complex einspline, tiling
- * - SplineR2RAdoptor<ST,TT,D> : real wavefunction using real einspline, a single twist
- * where ST (TT) is the precision of the einspline (SPOSetBase).
- *
- * typedefs and data members are duplicated for each adoptor class.
- * @todo Specalization and optimization for orthorhombic cells to use vgl not vgh
  */
 #ifndef QMCPLUSPLUS_EINSPLINE_ADOPTOR_H
 #define QMCPLUSPLUS_EINSPLINE_ADOPTOR_H

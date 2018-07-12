@@ -12,7 +12,7 @@
 #include "qmc_common.h"
 #include <Utilities/ProgressReportEngine.h>
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
-#include "QMCWaveFunctions/EinsplineAdoptor.h"
+#include "QMCWaveFunctions/BsplineSet.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineR2RAdoptor.h"
 #include "QMCWaveFunctions/BsplineFactory/HybridRealAdoptor.h"
 #include <fftw3.h>
