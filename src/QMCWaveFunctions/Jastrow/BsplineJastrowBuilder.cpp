@@ -26,9 +26,14 @@
 #include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
-#if defined(QMC_CUDA) and !defined(ENABLE_SOA)
+#if defined(QMC_CUDA)
+#if defined(ENABLE_SOA)
+#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBspline.h"
+#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBspline.h"
+#else
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBsplineAoS.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBsplineAoS.h"
+#endif
 #endif
 
 #include "LongRange/LRRPAHandlerTemp.h"
@@ -37,6 +42,11 @@
 
 namespace qmcplusplus
 {
+
+#if defined(QMC_CUDA) and defined(ENABLE_SOA)
+extern template class OneBodyJastrowOrbitalBspline<BsplineFunctor<OrbitalBase::RealType>>;
+extern template class TwoBodyJastrowOrbitalBspline<BsplineFunctor<OrbitalBase::RealType>>;
+#endif
 
 template<typename OBJT, typename DOBJT>
 bool BsplineJastrowBuilder::createOneBodyJastrow(xmlNodePtr cur)
@@ -185,35 +195,22 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
     OhmmsAttributeSet jAttrib;
     jAttrib.add(j1spin,"spin");
     jAttrib.put(cur);
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#if defined(QMC_CUDA)
+#if defined(ENABLE_SOA)
+    return createOneBodyJastrow<OneBodyJastrowOrbitalBspline<RadFuncType>,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
+#else
     return createOneBodyJastrow<OneBodyJastrowOrbitalBsplineAoS,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
-#else // defined(QMC_CUDA) && !defined(ENABLE_SOA)
-
-    // Good candidate for deletion?
-    //if(sourcePtcl->IsGrouped)
-    //{
-    //  app_log() << "Creating OneBodySpinJastrowOrbital<T> " << std::endl;
-    //  return createOneBodyJastrow<OneBodySpinJastrowOrbital<RadFuncType>,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
-    //}
-    //else
-    //{
-    //  app_log() << "Creating OneBodyJastrowOrbital<T> " << std::endl;
-    //  return createOneBodyJastrow<OneBodyJastrowOrbital<RadFuncType>,DiffOneBodyJastrowOrbital<RadFuncType> >(cur);
-    //}
-    
+#endif
+#else // defined(QMC_CUDA)
     if(j1spin=="yes") //Can this handle SOA? you'd end up with this SOA or not
       return createOneBodyJastrow<OneBodySpinJastrowOrbital<RadFuncType>,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
     else
-#if defined(ENABLE_SOA) && defined(QMC_CUDA)
-      return createOneBodyJastrow<OneBodyJastrowOrbitalBspline<RadFuncType>,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
-    //return createOneBodyJastrow<OneBodyJastrowOrbitalBspline,DiffOneBodySpinJastrowOrbital<RadFuncType> >(cur);
-#elif defined(ENABLE_SOA)
+#if defined(ENABLE_SOA)
       return createOneBodyJastrow<J1OrbitalSoA<RadFuncType>,DiffOneBodyJastrowOrbital<RadFuncType> >(cur);
 #else
       return createOneBodyJastrow<OneBodyJastrowOrbital<RadFuncType>,DiffOneBodyJastrowOrbital<RadFuncType> >(cur);
-#endif // defined(ENABLE_SOA) && defined(QMC_CUDA)
-
-#endif // defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#endif
+#endif // defined(QMC_CUDA)
   }
   else // Create a two-body Jastrow
   {
@@ -225,19 +222,19 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
     }
     BsplineInitializer<RealType> j2Initializer;
     xmlNodePtr kids = cur->xmlChildrenNode;
-#if defined(QMC_CUDA) && !defined(ENABLE_SOA)
-    typedef TwoBodyJastrowOrbitalBsplineAoS J2Type;
-#else // defined(QMC_CUDA) && !defined(ENABLE_SOA)
-
-#if defined(QMC_CUDA) && defined(ENABLE_SOA)
+#if defined(QMC_CUDA)
+#if defined(ENABLE_SOA)
     typedef TwoBodyJastrowOrbitalBspline<BsplineFunctor<RealType>> J2Type;
-#elif defined(ENABLE_SOA)
+#else
+    typedef TwoBodyJastrowOrbitalBsplineAoS J2Type;
+#endif
+#else // defined(QMC_CUDA)
+#if defined(ENABLE_SOA)
     typedef J2OrbitalSoA<BsplineFunctor<RealType> > J2Type;
 #else // defined(QMC_CUDA) && defined(ENABLE_SOA)
     typedef TwoBodyJastrowOrbital<BsplineFunctor<RealType> > J2Type;
-#endif // defined(QMC_CUDA) && defined(ENABLE_SOA)
-
-#endif //defined(QMC_CUDA) && !defined(ENABLE_SOA)
+#endif
+#endif //defined(QMC_CUDA)
     typedef DiffTwoBodyJastrowOrbital<BsplineFunctor<RealType> > dJ2Type;
     int taskid=(targetPsi.is_manager())?targetPsi.getGroupID():-1;
     J2Type *J2 = new J2Type(targetPtcl,taskid);

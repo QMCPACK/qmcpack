@@ -580,6 +580,6 @@ OneBodyJastrowOrbitalBspline<FT>::evaluateDerivatives
 }
 
 // explicit instantiations of templates
-template class OneBodyJastrowOrbitalBspline<BsplineFunctor<double>>;
+template class OneBodyJastrowOrbitalBspline<BsplineFunctor<OrbitalBase::RealType>>;
 
 }
