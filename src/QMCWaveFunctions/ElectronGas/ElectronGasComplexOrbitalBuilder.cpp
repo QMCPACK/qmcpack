@@ -33,7 +33,6 @@ EGOSet::EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2): 
 {
   KptMax=k.size();
   OrbitalSetSize=k.size();
-  BasisSetSize=k.size();
   className="EGOSet";
   //assign_energies();
 }
@@ -43,7 +42,6 @@ EGOSet::EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2, c
 {
   KptMax=k.size();
   OrbitalSetSize=k.size();
-  BasisSetSize=k.size();
   className="EGOSet";
   //assign_energies();
   //assign_degeneracies(d);
