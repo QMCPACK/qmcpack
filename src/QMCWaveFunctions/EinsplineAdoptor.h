@@ -41,56 +41,6 @@
 namespace qmcplusplus
 {
 
-/** einspline trait class equivalent to  MultiOrbitalTraits
- * @tparam ST spline datatype
- * @tparam D dimension
- * @tparam TT target datatype
- */
-template<typename ST, unsigned D>
-struct einspline_traits { };
-
-/** specialization for 3D double */
-template<>
-struct einspline_traits<double,3>
-{
-  typedef multi_UBspline_3d_d SplineType;
-  typedef UBspline_3d_d       SingleSplineType;
-  typedef BCtype_d            BCType;
-  typedef double              DataType;
-};
-
-/** specialization for 3D float */
-template<>
-struct einspline_traits<float,3>
-{
-  typedef multi_UBspline_3d_s SplineType;
-  typedef UBspline_3d_s       SingleSplineType;
-  typedef BCtype_s            BCType;
-  typedef float               DataType;
-};
-
-#if 0
-/** specialization for 3D std::complex<double> */
-template<>
-struct einspline_traits<std::complex<double>,3>
-{
-  typedef multi_UBspline_3d_z SplineType;
-  typedef UBspline_3d_z       SingleSplineType;
-  typedef BCtype_z            BCType;
-  typedef std::complex<double>     DataType;
-};
-
-/** specialization for 3D std::complex<float> */
-template<>
-struct einspline_traits<std::complex<float>,3>
-{
-  typedef multi_UBspline_3d_c SplineType;
-  typedef UBspline_3d_c       SingleSplineType;
-  typedef BCtype_c            BCType;
-  typedef std::complex<float>      DataType;
-};
-#endif
-
 /** symmetric outer product
  * @param v a vector
  * @param w a vector
