@@ -25,7 +25,7 @@
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "io/hdf_archive.h"
-#if !defined(EANBLE_SOA)
+#if !defined(ENABLE_SOA)
 #include "Message/CommOperators.h"
 #endif
 
@@ -79,7 +79,7 @@ public:
    * Several user classes can own SPOSetBase and use objectName as counter
    */
   std::string objectName;
-#if !defined(EANBLE_SOA)
+#if !defined(ENABLE_SOA)
   ///true if C is an identity matrix
   bool Identity;
   ///if true, do not clean up
@@ -103,7 +103,7 @@ public:
   /** destructor */
   virtual ~SPOSetBase()
   {
-#if !defined(EANBLE_SOA)
+#if !defined(ENABLE_SOA)
     if(!IsCloned && C!= nullptr) delete C;
 #endif
   }
