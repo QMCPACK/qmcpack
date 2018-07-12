@@ -41,29 +41,6 @@
 namespace qmcplusplus
 {
 
-/** symmetric outer product
- * @param v a vector
- * @param w a vector
- * @return \f$v^w+w^v\f$
- *
- * Used for the gradient coming from the phase and gradient
- */
-template<typename T, unsigned D>
-inline Tensor<T,D> outerProductSymm(const TinyVector<T,D>& v, const TinyVector<T,D>& w)
-{
-  Tensor<T,D> res;
-  for(int i=0; i<D; ++i)
-    for(int j=0; j<D; ++j)
-      res(i,j)=v(i)*w(j)+v(j)*w(i);
-  return res;
-}
-
-//inline void computePhases(const PointType& r)
-//{
-//  for (int i=0; i<kPoints.size(); i++) phase[i] = -dot(r, kPoints[i]);
-//  eval_e2iphi(kPoints.size(),phase.data(),eikr.data());
-//}
-
 /** BsplineSet<SplineAdoptor>, a SPOSetBase
  * @tparam SplineAdoptor implements evaluation functions that matched the storage requirements.
  *
