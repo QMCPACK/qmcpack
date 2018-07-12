@@ -1,0 +1,316 @@
+  Input file(s): vmc_short_noj.in.xml 
+
+=====================================================
+                    QMCPACK 3.4.0 
+
+       (c) Copyright 2003-  QMCPACK developers
+
+                    Please cite:
+ J. Kim et al. J. Phys. Cond. Mat. 30 195901 (2018)
+      https://doi.org/10.1088/1361-648X/aab9c3
+
+  Git branch: HEAD
+  Last git commit: ea23ca60d73178e72bd4639677282e070a3be112-dirty
+  Last git commit date: Tue Jun 26 14:08:17 2018 -0500
+  Last git commit subject: New Converged Pyscf references for FeCO6
+=====================================================
+  Global options 
+
+  MPI Nodes            = 1
+  MPI Nodes per group  = 1
+  MPI Group ID         = 0
+  OMP_NUM_THREADS      = 16
+
+  Precision used in this calculation, see definitions in the manual:
+  Base precision      = double
+  Full precision      = double
+
+  Input XML = vmc_short_noj.in.xml
+
+  Project = vmc_short_noj
+  date    = 2018-07-05 12:53:53 CDT
+  host    = beboplogin2
+
+ Random Number
+ -------------
+  Offset for the random number seeds based on time: 817
+
+  Range of prime numbers to use as seeds over processors and threads = 6299-6421
+
+
+ Lattice
+ -------
+  Lattice is not specified for the Open BC. Add a huge box.
+  Simulation cell radius   = 50000.000000 bohr
+  Wigner-Seitz cell radius = 50000.000000 bohr
+
+ Particle Set 
+ ------------
+  Name: e
+  Initializing the lattice by the global supercell
+  All the species have the same mass 1.000000
+  Particle set size: 4
+
+ Particle Set 
+ ------------
+  Name: ion0
+  Initializing the lattice by the global supercell
+  Distinctive masses for each species 
+  Particle set size: 2
+
+ Wavefunction setup: 
+ ------------------- 
+  Name: psi0
+  Created SPOSet builder named 'LCAOBSet' of type molecularorbital
+  LCAO: SoaAtomicBasisSet<MultiQuintic,0>
+
+  Distance table for similar particles (A-A):
+    source/target: e
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+
+  Distance table for dissimilar particles (A-B):
+    source: ion0  target: e
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+  AO BasisSet for Li
+   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess
+Using log grid with default values: ri = 0.000001 rf = 100.000000 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+   R(n,l,m,s) 1 0 0 0
+   R(n,l,m,s) 2 0 0 0
+   R(n,l,m,s) 3 0 0 0
+   R(n,l,m,s) 4 0 0 0
+   R(n,l,m,s) 5 0 0 0
+   R(n,l,m,s) 6 1 0 0
+   R(n,l,m,s) 7 1 0 0
+   R(n,l,m,s) 8 1 0 0
+   R(n,l,m,s) 9 1 0 0
+   R(n,l,m,s) 10 1 0 0
+   R(n,l,m,s) 11 2 0 0
+   R(n,l,m,s) 12 2 0 0
+   R(n,l,m,s) 13 2 0 0
+   R(n,l,m,s) 14 2 0 0
+   R(n,l,m,s) 15 3 0 0
+   R(n,l,m,s) 16 3 0 0
+   R(n,l,m,s) 17 3 0 0
+   R(n,l,m,s) 18 4 0 0
+   R(n,l,m,s) 19 4 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 6 cartesian gaussian orbitals for l= 2
+Adding 6 cartesian gaussian orbitals for l= 2
+Adding 6 cartesian gaussian orbitals for l= 2
+Adding 6 cartesian gaussian orbitals for l= 2
+Adding 10 cartesian gaussian orbitals for l= 3
+Adding 10 cartesian gaussian orbitals for l= 3
+Adding 10 cartesian gaussian orbitals for l= 3
+Adding 15 cartesian gaussian orbitals for l= 4
+Adding 15 cartesian gaussian orbitals for l= 4
+   Maximum Angular Momentum  = 4
+   Number of Radial functors = 20
+   Basis size                = 105
+
+  AO BasisSet for H
+   Angular momentum expanded in cartesian functions x^lx y^ly z^lz according to Gamess
+Using log grid with default values: ri = 0.000001 rf = 100.000000 npts = 1001
+   R(n,l,m,s) 0 0 0 0
+   R(n,l,m,s) 1 0 0 0
+   R(n,l,m,s) 2 0 0 0
+   R(n,l,m,s) 3 0 0 0
+   R(n,l,m,s) 4 0 0 0
+   R(n,l,m,s) 5 1 0 0
+   R(n,l,m,s) 6 1 0 0
+   R(n,l,m,s) 7 1 0 0
+   R(n,l,m,s) 8 1 0 0
+   R(n,l,m,s) 9 2 0 0
+   R(n,l,m,s) 10 2 0 0
+   R(n,l,m,s) 11 2 0 0
+   R(n,l,m,s) 12 3 0 0
+   R(n,l,m,s) 13 3 0 0
+   R(n,l,m,s) 14 4 0 0
+Expanding Ylm (angular function) according to Gamess using cartesian gaussians
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 1 cartesian gaussian orbitals for l= 0
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 3 cartesian gaussian orbitals for l= 1
+Adding 6 cartesian gaussian orbitals for l= 2
+Adding 6 cartesian gaussian orbitals for l= 2
+Adding 6 cartesian gaussian orbitals for l= 2
+Adding 10 cartesian gaussian orbitals for l= 3
+Adding 10 cartesian gaussian orbitals for l= 3
+Adding 15 cartesian gaussian orbitals for l= 4
+   Maximum Angular Momentum  = 4
+   Number of Radial functors = 15
+   Basis size                = 70
+
+Reuse SPOSetBuilder "LCAOBSet" type MolecularOrbital
+  Building SPOSet '' with '' basis set.
+Reuse SPOSetBuilder "LCAOBSet" type MolecularOrbital
+  Building SPOSet '' with '' basis set.
+  Creating a determinant updet group=0 sposet=updet
+  Reusing a SPO set updet
+Using DiracDeterminantBase 
+
+  Creating a determinant downdet group=1 sposet=downdet
+  Reusing a SPO set downdet
+Using DiracDeterminantBase 
+
+  FermionWF = SlaterDet
+  QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named ElecElec
+
+  Distance table for similar particles (A-A):
+    source/target: ion0
+    Using structure-of-arrays (SoA) data layout
+    Distance computations use open boundary conditions in 3D.
+
+  QMCHamiltonian::addOperator IonIon to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named IonIon
+  QMCHamiltonian::addOperator ElecIon to H, physical Hamiltonian 
+QMCHamiltonian::addOperatorType added type coulomb named ElecIon
+  QMCHamiltonian::addOperator Flux to auxH 
+QMCHamiltonian::addOperatorType added type flux named Flux
+
+  QMCHamiltonian::add2WalkerProperty added
+    5 to P::PropertyList 
+    0 to P::Collectables 
+    starting Index of the observables in P::PropertyList = 9
+ParticleSetPool::randomize 
+<init source="ion0" target="e">
+</init>
+  Initialization Execution time = 0.0529 secs
+=========================================================
+ Summary of QMC systems 
+=========================================================
+ParticleSetPool has: 
+
+  ParticleSet e : 0 2 4 
+
+    4
+
+    u  5.4098984122e-01  6.3012910309e-01  8.7387960733e-01
+    u -9.0202735148e-01 -2.4684403270e-01  7.6079757077e-01
+    d -2.0771250704e-01  8.9385270044e-01  7.8184469514e-01
+    d  6.0185826639e-01 -1.0111945602e+00  3.2759365218e+00
+
+  ParticleSet ion0 : 0 1 2 
+
+    2
+
+    Li  0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+    H  0.0000000000e+00  0.0000000000e+00  3.0139242100e+00
+
+  Hamiltonian h0
+  Kinetic         Kinetic energy
+  ElecElec        CoulombAA source/target e
+
+  IonIon          CoulombAA source/target ion0
+
+  ElecIon         CoulombAB source=ion0
+
+
+=========================================================
+  Start VMCSingleOMP
+  File Root vmc_short_noj.s000 append = no 
+=========================================================
+  Adding 16 walkers to 0 existing sets
+  Total number of walkers: 1.6000000000e+01
+  Total weight: 1.6000000000e+01
+  Resetting Properties of the walkers 1 x 14
+
+<vmc function="put">
+  qmc_counter=0  my_counter=0
+  time step      = 4.0000000000e-01
+  blocks         = 200
+  steps          = 3000
+  substeps       = 3
+  current        = 0
+  target samples = 0.0000000000e+00
+  walkers/mpi    = 16
+
+  stepsbetweensamples = 603000
+<parameter name="blocks" condition="int">200</parameter>
+<parameter name="blocks_between_recompute" condition="int">0</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">0.0000000000e+00</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">603000</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">603000</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">0.0000000000e+00</parameter>
+<parameter name="samplesperthread" condition="real">0.0000000000e+00</parameter>
+<parameter name="steps" condition="int">3000</parameter>
+<parameter name="stepsbetweensamples" condition="int">603000</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">3</parameter>
+<parameter name="substeps" condition="int">3</parameter>
+<parameter name="tau" condition="au">4.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">4.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">4.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">16</parameter>
+<parameter name="warmup_steps" condition="int">50</parameter>
+<parameter name="warmupsteps" condition="int">50</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 603000 steps.
+</vmc>
+  Adding a default LocalEnergyEstimator for the MainEstimator 
+  CloneManager::makeClones makes 16 clones for W/Psi/H.
+  Cloning methods for both Psi and H are used
+===== Memory Usage before cloning =====
+Available memory on node 0, free + buffers : 119469 MB
+Memory footprint by rank 0 on node 0       : 62 MB
+==================================================
+===== Memory Usage after cloning =====
+Available memory on node 0, free + buffers : 119464 MB
+Memory footprint by rank 0 on node 0       : 66 MB
+==================================================
+  Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+
+  Using Particle by Particle moves
+  Walker moves with drift
+  Total Sample Size   =0
+  Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+===== Memory Usage after the buffer registration =====
+Available memory on node 0, free + buffers : 119444 MB
+Memory footprint by rank 0 on node 0       : 89 MB
+==================================================
+  Anonymous Buffer size per walker : 768 Bytes.
+MEMORY increase 0 MB VMCSingleOMP::resetRun
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 0
+    time step          = 0.4
+    reference energy   = -8.16964
+    reference variance = 0.34541
+====================================================
+  QMC Execution time = 3.1742e+01 secs 
+  Total Execution time = 3.1760e+01 secs
+
+=========================================================
+  A new xml input file : vmc_short_noj.s000.cont.xml

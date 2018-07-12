@@ -4,7 +4,7 @@
 Jastrow factors are among the simplest and most effective ways of including
 dynamical correlation in the trial many body wavefunction.  The resulting many body
 wavefunction is expressed as the product of an antisymmetric (in the case
-of Fermions) or symmetric (for Bosons) part and a correlating jastrow factor
+of Fermions) or symmetric (for Bosons) part and a correlating Jastrow factor
 like so:
 \begin{equation}
 \Psi(\vec{R}) = \mathcal{A}(\vec{R}) \exp\left[J(\vec{R})\right]
@@ -12,9 +12,9 @@ like so:
 
 In this section we will detail the types and forms of Jastrow factor used 
 in QMCPACK.  Note that each type of Jastrow factor needs to be specified using
-its own individual jastrow XML element.  For this reason, we have repeated the
-specification of the jastrow tag in each section, with specialization for the
-options available for that given type of jastrow.
+its own individual \texttt{jastrow} XML element.  For this reason, we have repeated the
+specification of the \texttt{jastrow} tag in each section, with specialization for the
+options available for that given type of Jastrow.
 
 \subsection{One-body Jastrow functions}
 \label{sec:onebodyjastrow}
@@ -23,7 +23,7 @@ of correlations between particles that are included in the wavefunction with
 particles that are not explicitly part of it.  The most common example of
 this are correlations between electrons and ions.  
 
-The jastrow function is specified within a \texttt{wavefunction} element
+The Jastrow function is specified within a \texttt{wavefunction} element
 and must contain one or more \texttt{correlation} elements specifying
 additional parameters as well as the actual coefficients. Section
 \ref{sec:1bjsplineexamples} gives examples of the typical nesting of
@@ -44,8 +44,8 @@ type & text & One-body & (required) & Define a one-body function \\
 function & text & Bspline & (required) & BSpline Jastrow \\
              & text & pade2 & & Pade form \\
              & text & \ldots & & \ldots \\
-source & text & name & (required) & name of attribute of classical particle set \\ 
-print & text & yes / no & yes & jastrow factor printed in external file?\\
+source & text & name & (required) & Name of attribute of classical particle set \\ 
+print & text & yes / no & yes & Jastrow factor printed in external file?\\
   \hline
 \multicolumn{5}{l}{elements}\\ \hline
 & Correlation & & & \\ \hline
@@ -56,7 +56,7 @@ print & text & yes / no & yes & jastrow factor printed in external file?\\
 \end{center}
 \end{table}
 
-To be more concrete, the one-body jastrow factors used to describe correlations
+To be more concrete, the one-body Jastrow factors used to describe correlations
 between electrons and ions take the form below
 \begin{equation}
 J1=\sum_I^{ion0}\sum_i^e u_{ab}(|r_i-R_I|)
@@ -74,7 +74,7 @@ of dynamic correlation between two particles included in the wavefunction.  It
 is almost always given in a spin dependent form so as to satisfy the Kato cusp
 condition between electrons of different spins\cite{kato}.
 
- The two body jastrow function is specified within a \texttt{wavefunction} element
+ The two body Jastrow function is specified within a \texttt{wavefunction} element
 and must contain one or more correlation elements specifying additional parameters
 as well as the actual coefficients.  Section \ref{sec:2bjsplineexamples} gives 
 examples of the typical nesting of \texttt{jastrow}, \texttt{correlation} and
@@ -93,7 +93,7 @@ examples of the typical nesting of \texttt{jastrow}, \texttt{correlation} and
 name & text &    & (required) & Unique name for this Jastrow function \\
 type & text & Two-body & (required) & Define a one-body function \\ 
 function & text & Bspline & (required) & BSpline Jastrow \\
-print & text & yes / no & yes & jastrow factor printed in external file?\\
+print & text & yes / no & yes & Jastrow factor printed in external file?\\
   \hline
 \multicolumn{5}{l}{elements}\\ \hline
 & Correlation & & & \\ \hline
@@ -104,13 +104,13 @@ print & text & yes / no & yes & jastrow factor printed in external file?\\
 \end{center}
 \end{table}
 
-The two-body jastrow factors used to describe correlations between electrons take the form
+The two-body Jastrow factors used to describe correlations between electrons take the form
 \begin{equation}
 J2=\sum_i^{e}\sum_{j>i}^{e} u_{ab}(|r_i-r_j|)
 \end{equation}
 
-The most commonly used form of two body jastrow factor supported by the code is a splined
-jastrow factor, with many similarities to the one body spline jastrow.
+The most commonly used form of two body Jastrow factor supported by the code is a splined
+Jastrow factor, with many similarities to the one body spline Jastrow.
 
 \include{jastrow_two_body_spline}
 
@@ -371,6 +371,46 @@ For both the Yukawa and Gaskell RPA Jastrows, the default value for $r_s$ is $r_
 
 
 \subsection{Three-body Jastrow functions}
-Explicit three body correlations can be included in the wavefunction via the three-body
-jastrow factor.
+Explicit three-body correlations can be included in the wavefunction via the three-body Jastrow factor.
+The three-body electron-electron-ion correlation function ($u_{\sigma\sigma'I}$) currently used in \qmcpack is identical to the one proposed in \cite{Drummond2004}:
+\begin{eqnarray}
+u_{\sigma\sigma'I}(r_{\sigma I},r_{\sigma'I},r_{\sigma\sigma'}) &= \sum_{\ell=0}^{M_{eI}}\sum_{m=0}^{M_{eI}}\sum_{n=0}^{M_{ee}}\gamma_{\ell mn} r_{\sigma I}^\ell r_{\sigma'I}^m r_{\sigma\sigma'}^n \\
+   &\times \left(r_{\sigma I}-\frac{r_c}{2}\right)^3 \Theta\left(r_{\sigma I}-\frac{r_c}{2}\right) \nonumber \\
+   &\times \left(r_{\sigma' I}-\frac{r_c}{2}\right)^3 \Theta\left(r_{\sigma' I}-\frac{r_c}{2}\right) \nonumber
+\end{eqnarray}
+Here $M_{eI}$ and $M_{ee}$ are the maximum polynomial orders of the
+electron-ion and electron-electron distances, respectively,
+$\{\gamma_{\ell mn}\}$ are the optimizable parameters (modulo
+constraints), $r_c$ is a cutoff radius, and $r_{ab}$ are the distances
+between electrons or ions $a$ and $b$. i.e. The correlation function
+is only a function of the interparticle distances and not a more
+complex function of the particle positions, $\mathbf{r}$. As indicated by the
+$\Theta$ functions, correlations are set to zero beyond a distance of
+$r_c/2$ in either of the electron-ion distances and the largest
+meaningful electron-electron distance is $r_c$.  This is the
+highest-order Jastrow correlation function currently implemented.
 
+
+Today, solid state applications of \qmcpack usually utilize one and
+two-body B-spline Jastrow functions, with calculations on heavier
+elements often also using the three-body term described above.
+
+\paragraph{Example use case}
+Here is an example of H2O molecule. After optimizing one and two body Jastrow factors, add the following block in the wavefunction.
+The coefficients will be filled zero automatically if not given.
+\begin{lstlisting}[language=xml]
+<jastrow name="J3" type="eeI" function="polynomial" source="ion0" print="yes">
+  <correlation ispecies="O" especies="u" isize="3" esize="3" rcut="10">
+    <coefficients id="uuO" type="Array" optimize="yes"> </coefficients>
+  </correlation>
+  <correlation ispecies="O" especies1="u" especies2="d" isize="3" esize="3" rcut="10">
+    <coefficients id="udO" type="Array" optimize="yes"> </coefficients>
+  </correlation>
+  <correlation ispecies="H" especies="u" isize="3" esize="3" rcut="10">
+    <coefficients id="uuH" type="Array" optimize="yes"> </coefficients>
+  </correlation>
+  <correlation ispecies="H" especies1="u" especies2="d" isize="3" esize="3" rcut="10">
+    <coefficients id="udH" type="Array" optimize="yes"> </coefficients>
+  </correlation>
+</jastrow>
+\end{lstlisting}
