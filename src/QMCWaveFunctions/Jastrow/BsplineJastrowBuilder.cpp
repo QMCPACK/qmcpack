@@ -231,7 +231,7 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
 #else // defined(QMC_CUDA)
 #if defined(ENABLE_SOA)
     typedef J2OrbitalSoA<BsplineFunctor<RealType> > J2Type;
-#else // defined(QMC_CUDA) && defined(ENABLE_SOA)
+#else
     typedef TwoBodyJastrowOrbital<BsplineFunctor<RealType> > J2Type;
 #endif
 #endif //defined(QMC_CUDA)
