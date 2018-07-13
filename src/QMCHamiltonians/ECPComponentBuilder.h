@@ -20,6 +20,7 @@
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/LocalECPotential.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
+#include "QMCHamiltonians/L2Potential.h"
 
 namespace qmcplusplus
 {
@@ -42,7 +43,7 @@ struct ECPComponentBuilder: public MPIObjectBase, public QMCTraits
   std::map<std::string,mGridType*> grid_inp;
   RadialPotentialType* pp_loc;
   NonLocalECPComponent* pp_nonloc;
-  RadialPotentialType* pp_L2;
+  L2RadialPotential* pp_L2;
   std::map<std::string,int> angMon;
 
   ECPComponentBuilder(const std::string& aname, Communicate* c);

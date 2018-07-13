@@ -136,7 +136,16 @@ namespace qmcplusplus
     vL2->spline();
   
     // save the splined L2 potential
-    pp_L2 = vL2;
+    pp_L2 = new L2RadialPotential();
+    pp_L2->vL2 = vL2;
+    pp_L2->rcut = rcut;
+
+    //app_log()<<std::endl;
+    //for(int i=0;i<ng;i++)
+    //  app_log()<<d*i<<" "<<pp_L2->vL2->splint(d*i)*d*i<<std::endl;
+    //app_log()<<std::endl;
+    //app_log()<<pp_L2->rcut;
+    //APP_ABORT("here");
 
   }
 
