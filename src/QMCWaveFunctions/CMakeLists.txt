@@ -100,12 +100,21 @@ IF(OHMMS_DIM MATCHES 3)
       Fermion/SlaterDetCUDA.cpp
       TrialWaveFunction_CUDA.cpp
       )
-    SET(JASTROW_SRCS ${JASTROW_SRCS}
-      Jastrow/BsplineJastrowCuda.cu
-      Jastrow/BsplineJastrowCudaPBC.cu
-      Jastrow/OneBodyJastrowOrbitalBspline.cpp
-      Jastrow/TwoBodyJastrowOrbitalBspline.cpp
-      )
+    IF(ENABLE_SOA)
+      SET(JASTROW_SRCS ${JASTROW_SRCS}
+        Jastrow/BsplineJastrowCuda.cu
+        Jastrow/BsplineJastrowCudaPBC.cu
+        Jastrow/OneBodyJastrowOrbitalBspline.cpp
+        Jastrow/TwoBodyJastrowOrbitalBspline.cpp
+        )
+    ELSE(ENABLE_SOA)
+      SET(JASTROW_SRCS ${JASTROW_SRCS}
+        Jastrow/BsplineJastrowCuda.cu
+        Jastrow/BsplineJastrowCudaPBC.cu
+        Jastrow/OneBodyJastrowOrbitalBsplineAoS.cpp
+        Jastrow/TwoBodyJastrowOrbitalBsplineAoS.cpp
+        )
+    ENDIF(ENABLE_SOA)
     IF(HAVE_EINSPLINE)
       SET(FERMION_SRCS ${FERMION_SRCS}
         EinsplineSetCuda.cpp
