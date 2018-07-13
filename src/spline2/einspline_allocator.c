@@ -43,21 +43,7 @@ void find_coefs_1d_s (Ugrid grid, BCtype_s bc, float *data,  intptr_t dstride,
     float *coefs, intptr_t cstride);
 
 
-#if defined(__INTEL_COMPILER)
-
-inline void *
-einspline_alloc (size_t size, size_t alignment)
-{
-  return _mm_malloc(size,alignment);
-}
-
-inline void
-einspline_free (void *ptr)
-{
-  _mm_free(ptr);
-}
-
-#elif defined(HAVE_POSIX_MEMALIGN)
+#if defined(HAVE_POSIX_MEMALIGN)
 
 int posix_memalign(void **memptr, size_t alignment, size_t size);
 

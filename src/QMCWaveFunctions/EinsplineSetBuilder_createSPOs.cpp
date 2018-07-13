@@ -236,6 +236,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   else
     NewOcc=false;
 #if defined(QMC_CUDA)
+  if(hybrid_rep=="yes") APP_ABORT("The 'hybridrep' feature of spline SPO has not been enabled on GPU. Stay tuned.");
   app_log() << "\t  QMC_CUDA=1 Overwriting the einspline storage on the host to double precision.\n";
   spo_prec="double"; //overwrite
   truncate="no"; //overwrite

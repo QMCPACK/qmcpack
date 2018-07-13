@@ -14,41 +14,37 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "OneBodyJastrowOrbitalBspline.h"
+#include "OneBodyJastrowOrbitalBsplineAoS.h"
 #include "CudaSpline.h"
 #include "Lattice/ParticleBConds.h"
-#include "Configuration.h"
 
 namespace qmcplusplus
 {
-template<class FT>
+
 void
-OneBodyJastrowOrbitalBspline<FT>::recompute(MCWalkerConfiguration &W,
+OneBodyJastrowOrbitalBsplineAoS::recompute(MCWalkerConfiguration &W,
                                         bool firstTime)
 {
 }
 
-template<class FT>
 void
-OneBodyJastrowOrbitalBspline<FT>::reserve
+OneBodyJastrowOrbitalBsplineAoS::reserve
 (PointerPool<gpu::device_vector<CudaRealType> > &pool)
 {
 }
 
-template<class FT>
 void
-OneBodyJastrowOrbitalBspline<FT>::checkInVariables(opt_variables_type& active)
+OneBodyJastrowOrbitalBsplineAoS::checkInVariables(opt_variables_type& active)
 {
-  J1OrbitalSoA<BsplineFunctor<OrbitalBase::RealType> >::checkInVariables(active);
+  OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >::checkInVariables(active);
   for (int i=0; i<NumCenterGroups; i++)
-    GPUSplines[i]->set(*this->F[i]);
+    GPUSplines[i]->set(*Funique[i]);
 }
 
-template<class FT>
 void
-OneBodyJastrowOrbitalBspline<FT>::addFunc(int ig, FT* j, int jg)
+OneBodyJastrowOrbitalBsplineAoS::addFunc(int ig, FT* j, int jg=-1)
 {
-  J1OrbitalSoA<BsplineFunctor<OrbitalBase::RealType> >::addFunc(ig, j, jg);
+  OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >::addFunc(ig, j);
   CudaSpline<CudaReal> *newSpline = new CudaSpline<CudaReal>(*j);
   UniqueSplines.push_back(newSpline);
   // if(i==0) { //first time, assign everything
@@ -59,9 +55,9 @@ OneBodyJastrowOrbitalBspline<FT>::addFunc(int ig, FT* j, int jg)
   GPUSplines[ig]=newSpline;
 }
 
-template<class FT>
+
 void
-OneBodyJastrowOrbitalBspline<FT>::addLog (MCWalkerConfiguration &W,
+OneBodyJastrowOrbitalBsplineAoS::addLog (MCWalkerConfiguration &W,
                                       std::vector<RealType> &logPsi)
 {
   std::vector<Walker_t*> &walkers = W.WalkerList;
@@ -73,10 +69,10 @@ OneBodyJastrowOrbitalBspline<FT>::addLog (MCWalkerConfiguration &W,
     UpdateListGPU.resize(walkers.size());
   }
   int numGL = 4*N*walkers.size();
-  if (this->GradLaplGPU.size()  < numGL)
+  if (GradLaplGPU.size()  < numGL)
   {
-    this->GradLaplGPU.resize(numGL);
-    this->GradLaplHost.resize(numGL);
+    GradLaplGPU.resize(numGL);
+    GradLaplHost.resize(numGL);
   }
   CudaReal RHost[OHMMS_DIM*N*walkers.size()];
   for (int iw=0; iw<walkers.size(); iw++)
@@ -130,9 +126,8 @@ OneBodyJastrowOrbitalBspline<FT>::addLog (MCWalkerConfiguration &W,
 #endif
 }
 
-template<class FT>
 void
-OneBodyJastrowOrbitalBspline<FT>::update (std::vector<Walker_t*> &walkers, int iat)
+OneBodyJastrowOrbitalBsplineAoS::update (std::vector<Walker_t*> &walkers, int iat)
 {
   // for (int iw=0; iw<walkers.size(); iw++)
   //   UpdateListHost[iw] = (CudaReal*)walkers[iw]->R_GPU.data();
@@ -140,12 +135,10 @@ OneBodyJastrowOrbitalBspline<FT>::update (std::vector<Walker_t*> &walkers, int i
   // one_body_update(UpdateListGPU.data(), N, iat, walkers.size());
 }
 
-template<class FT>
 void
-OneBodyJastrowOrbitalBspline<FT>::ratio
+OneBodyJastrowOrbitalBsplineAoS::ratio
 (MCWalkerConfiguration &W, int iat,
- std::vector<ValueType> &psi_ratios,
- std::vector<GradType>  &grad,
+ std::vector<ValueType> &psi_ratios, std::vector<GradType>  &grad,
  std::vector<ValueType> &lapl)
 {
   std::vector<Walker_t*> &walkers = W.WalkerList;
@@ -210,12 +203,10 @@ OneBodyJastrowOrbitalBspline<FT>::ratio
 #endif
 }
 
-template<class FT>
 void
-OneBodyJastrowOrbitalBspline<FT>::calcRatio
+OneBodyJastrowOrbitalBsplineAoS::calcRatio
 (MCWalkerConfiguration &W, int iat,
- std::vector<ValueType> &psi_ratios,
- std::vector<GradType>  &grad,
+ std::vector<ValueType> &psi_ratios, std::vector<GradType>  &grad,
  std::vector<ValueType> &lapl)
 {
   std::vector<Walker_t*> &walkers = W.WalkerList;
@@ -252,9 +243,8 @@ OneBodyJastrowOrbitalBspline<FT>::calcRatio
   cudaEventRecord(gpu::ratioSyncOneBodyEvent, gpu::memoryStream);
 }
 
-template<class FT>
 void
-OneBodyJastrowOrbitalBspline<FT>::addRatio
+OneBodyJastrowOrbitalBsplineAoS::addRatio
 (MCWalkerConfiguration &W, int iat,
  std::vector<ValueType> &psi_ratios, std::vector<GradType>  &grad,
  std::vector<ValueType> &lapl)
@@ -288,9 +278,9 @@ OneBodyJastrowOrbitalBspline<FT>::addRatio
 #endif
 }
 
-template<class FT>
+
 void
-OneBodyJastrowOrbitalBspline<FT>::NLratios
+OneBodyJastrowOrbitalBsplineAoS::NLratios
 (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
  std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios)
 {
@@ -358,16 +348,16 @@ OneBodyJastrowOrbitalBspline<FT>::NLratios
     psi_ratios[i] *= NL_RatiosHost[i];
 }
 
-template<class FT>
-void OneBodyJastrowOrbitalBspline<FT>::calcGradient
+
+void OneBodyJastrowOrbitalBsplineAoS::calcGradient
 (MCWalkerConfiguration &W, int iat, std::vector<GradType> &grad)
 {
   CudaReal sim_cell_radius = W.Lattice.SimulationCellRadius;
   std::vector<Walker_t*> &walkers = W.WalkerList;
-  if (this->OneGradHost.size() < OHMMS_DIM*walkers.size())
+  if (OneGradHost.size() < OHMMS_DIM*walkers.size())
   {
-    this->OneGradHost.resize (walkers.size()*OHMMS_DIM);
-    this->OneGradGPU.resize (walkers.size()*OHMMS_DIM, 1.25);
+    OneGradHost.resize (walkers.size()*OHMMS_DIM);
+    OneGradGPU.resize (walkers.size()*OHMMS_DIM, 1.25);
   }
   bool zero = true;
   for (int group=0; group<NumCenterGroups; group++)
@@ -381,47 +371,46 @@ void OneBodyJastrowOrbitalBspline<FT>::calcGradient
         one_body_gradient_PBC (W.RList_GPU.data(), iat, C.data(), first, last,
                                spline.coefs.data(), spline.coefs.size(),
                                spline.rMax, L.data(), Linv.data(),
-                               zero, this->OneGradGPU.data(), walkers.size());
+                               zero, OneGradGPU.data(), walkers.size());
       else
         one_body_gradient (W.RList_GPU.data(), iat, C.data(), first, last,
                            spline.coefs.data(), spline.coefs.size(),
-                           spline.rMax, zero, this->OneGradGPU.data(), walkers.size());
+                           spline.rMax, zero, OneGradGPU.data(), walkers.size());
       zero = false;
     }
   }
   // Copy data back to CPU memory
   gpu::streamsSynchronize();
-  this->OneGradHost.asyncCopy(this->OneGradGPU);
+  OneGradHost.asyncCopy(OneGradGPU);
   cudaEventRecord(gpu::gradientSyncOneBodyEvent, gpu::memoryStream);
 }
 
-template<class FT>
-void OneBodyJastrowOrbitalBspline<FT>::addGradient
+void OneBodyJastrowOrbitalBsplineAoS::addGradient
 (MCWalkerConfiguration &W, int iat, std::vector<GradType> &grad)
 {
   std::vector<Walker_t*> &walkers = W.WalkerList;
   cudaEventSynchronize(gpu::gradientSyncOneBodyEvent);
   for (int iw=0; iw<walkers.size(); iw++)
     for (int dim=0; dim<OHMMS_DIM; dim++)
-      grad[iw][dim] -= this->OneGradHost[OHMMS_DIM*iw+dim];
+      grad[iw][dim] -= OneGradHost[OHMMS_DIM*iw+dim];
 }
 
-template<class FT>
+
 void
-OneBodyJastrowOrbitalBspline<FT>::gradLapl (MCWalkerConfiguration &W,
+OneBodyJastrowOrbitalBsplineAoS::gradLapl (MCWalkerConfiguration &W,
                                         GradMatrix_t &grad,
                                         ValueMatrix_t &lapl)
 {
   std::vector<Walker_t*> &walkers = W.WalkerList;
   int numGL = 4*N*walkers.size();
-  if (this->GradLaplGPU.size()  < numGL)
+  if (GradLaplGPU.size()  < numGL)
   {
-    this->GradLaplGPU.resize(numGL, 1.25);
-    this->GradLaplHost.resize(numGL);
+    GradLaplGPU.resize(numGL, 1.25);
+    GradLaplHost.resize(numGL);
   }
-  for (int i=0; i<walkers.size()*4*this->N; i++)
-    this->GradLaplHost[i] = 0.0;
-  this->GradLaplGPU = this->GradLaplHost;
+  for (int i=0; i<walkers.size()*4*N; i++)
+    GradLaplHost[i] = 0.0;
+  GradLaplGPU = GradLaplHost;
 #ifdef CUDA_DEBUG
   std::vector<CudaReal> CPU_GradLapl(4*N);
   DTD_BConds<double,3,SUPERCELL_BULK> bconds;
@@ -462,17 +451,17 @@ OneBodyJastrowOrbitalBspline<FT>::gradLapl (MCWalkerConfiguration &W,
                                 cfirst, clast, efirst, elast,
                                 spline.coefs.data(), spline.coefs.size(),
                                 spline.rMax, L.data(), Linv.data(),
-                                this->GradLaplGPU.data(), 4*this->N, walkers.size());
+                                GradLaplGPU.data(), 4*N, walkers.size());
       else
         one_body_grad_lapl (C.data(), W.RList_GPU.data(),
                             cfirst, clast, efirst, elast,
                             spline.coefs.data(), spline.coefs.size(),
-                            spline.rMax, this->GradLaplGPU.data(),
-                            4*this->N, walkers.size());
+                            spline.rMax, GradLaplGPU.data(),
+                            4*N, walkers.size());
     }
   }
   // Copy data back to CPU memory
-  this->GradLaplHost = this->GradLaplGPU;
+  GradLaplHost = GradLaplGPU;
 #ifdef CUDA_DEBUG
   fprintf (stderr, "GPU  grad = %12.5e %12.5e %12.5e   Lapl = %12.5e\n",
            GradLaplHost[0],  GradLaplHost[1], GradLaplHost[2], GradLaplHost[3]);
@@ -484,29 +473,27 @@ OneBodyJastrowOrbitalBspline<FT>::gradLapl (MCWalkerConfiguration &W,
     for (int ptcl=0; ptcl<N; ptcl++)
     {
       for (int i=0; i<OHMMS_DIM; i++)
-        grad(iw,ptcl)[i] += this->GradLaplHost[4*this->N*iw + 4*ptcl + i];
-      if (std::isnan(this->GradLaplHost[4*this->N*iw+ + 4*ptcl +3]))
+        grad(iw,ptcl)[i] += GradLaplHost[4*N*iw + 4*ptcl + i];
+      if (std::isnan(GradLaplHost[4*N*iw+ + 4*ptcl +3]))
       {
-        fprintf (stderr, "NAN in OneBodyJastrowOrbitalBspline<FT> laplacian.\n");
+        fprintf (stderr, "NAN in OneBodyJastrowOrbitalBsplineAoS laplacian.\n");
         abort();
       }
-      lapl(iw,ptcl) += this->GradLaplHost[4*this->N*iw+ + 4*ptcl +3];
+      lapl(iw,ptcl) += GradLaplHost[4*N*iw+ + 4*ptcl +3];
     }
   }
 }
 
-template<class FT>
 void
-OneBodyJastrowOrbitalBspline<FT>::resetParameters(const opt_variables_type& active)
+OneBodyJastrowOrbitalBsplineAoS::resetParameters(const opt_variables_type& active)
 {
-  J1OrbitalSoA<BsplineFunctor<OrbitalBase::RealType> >::resetParameters(active);
+  OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >::resetParameters(active);
   for (int i=0; i<NumCenterGroups; i++)
-    GPUSplines[i]->set(*this->F[i]);
+    GPUSplines[i]->set(*Funique[i]);
 }
 
-template<class FT>
 void
-OneBodyJastrowOrbitalBspline<FT>::evaluateDerivatives
+OneBodyJastrowOrbitalBsplineAoS::evaluateDerivatives
 (MCWalkerConfiguration &W, const opt_variables_type& optvars,
  RealMatrix_t &d_logpsi, RealMatrix_t &dlapl_over_psi)
 {
@@ -553,7 +540,7 @@ OneBodyJastrowOrbitalBspline<FT>::evaluateDerivatives
 //       std::cerr << "SplineDerivsHost = " << std::endl;
 //       for (int i=0; i<SplineDerivsHost.size(); i++)
 // 	cerr << SplineDerivsHost[i] << std::endl;
-    opt_variables_type splineVars = this->F[cgroup]->myVars;
+    opt_variables_type splineVars = Funique[cgroup]->myVars;
     for (int iv=0; iv<splineVars.size(); iv++)
     {
       int varIndex = splineVars.Index[iv];
@@ -578,8 +565,4 @@ OneBodyJastrowOrbitalBspline<FT>::evaluateDerivatives
     }
   }
 }
-
-// explicit instantiations of templates
-template class OneBodyJastrowOrbitalBspline<BsplineFunctor<OrbitalBase::RealType>>;
-
 }
