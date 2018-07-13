@@ -30,7 +30,7 @@ namespace qmcplusplus
  * Requires temporage storage and multiplication of phase vectors
  */
 template<typename ST, typename TT>
-struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
+struct SplineR2RAdoptorCUDA: public SplineAdoptorBase<ST,3>
 {
   static const int D=3;
   bool IsGamma;
@@ -67,12 +67,12 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   gContainer_type myG;
   hContainer_type myH;
 
-  SplineR2RSoA(): BaseType(),SplineInst(nullptr), MultiSpline(nullptr)
+  SplineR2RAdoptorCUDA(): BaseType(),SplineInst(nullptr), MultiSpline(nullptr)
   {
     this->is_complex=false;
     this->is_soa_ready=true;
-    this->AdoptorName="SplineR2RSoAAdoptor";
-    this->KeyWord="SplineR2RSoA";
+    this->AdoptorName="SplineR2RAdoptorCUDA";
+    this->KeyWord="SplineR2RAdoptor";
   }
 
   ///** copy the base property */
@@ -83,14 +83,14 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   //  this->KeyWord="C2RSoA";
   //}
 
-  SplineR2RSoA(const SplineR2RSoA& a):
+  SplineR2RAdoptorCUDA(const SplineR2RAdoptorCUDA& a):
     SplineAdoptorBase<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr)
   {
     const size_t n=a.myV.size();
     myV.resize(n); myG.resize(n); myL.resize(n); myH.resize(n);
   }
 
-  ~SplineR2RSoA()
+  ~SplineR2RAdoptorCUDA()
   {
     if(MultiSpline != nullptr) delete SplineInst;
   }

@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-/** @file SplineC2CSoA.h
+/** @file SplineC2CAdoptor.h
  *
  * Adoptor classes to handle complex-to-(real,complex) with arbitrary precision
  */
@@ -34,7 +34,7 @@ namespace qmcplusplus
  * Requires temporage storage and multiplication of phase vectors
  */
 template<typename ST, typename TT>
-struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
+struct SplineC2CAdoptor: public SplineAdoptorBase<ST,3>
 {
   static const int D=3;
   using BaseType=SplineAdoptorBase<ST,3>;
@@ -82,12 +82,12 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   gContainer_type myG;
   hContainer_type myH;
 
-  SplineC2CSoA(): BaseType(),SplineInst(nullptr), MultiSpline(nullptr)
+  SplineC2CAdoptor(): BaseType(),SplineInst(nullptr), MultiSpline(nullptr)
   {
     this->is_complex=true;
     this->is_soa_ready=true;
-    this->AdoptorName="SplineC2CSoAAdoptor";
-    this->KeyWord="SplineC2CSoA";
+    this->AdoptorName="SplineC2CAdoptor";
+    this->KeyWord="SplineC2CAdoptor";
   }
 
   ///** copy the base property */
@@ -98,7 +98,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   //  this->KeyWord="C2RSoA";
   //}
 
-  SplineC2CSoA(const SplineC2CSoA& a):
+  SplineC2CAdoptor(const SplineC2CAdoptor& a):
     SplineAdoptorBase<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr),
     mKK(a.mKK), myKcart(a.myKcart)
   {
@@ -106,7 +106,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     myV.resize(n); myG.resize(n); myL.resize(n); myH.resize(n);
   }
 
-  ~SplineC2CSoA()
+  ~SplineC2CAdoptor()
   {
     if(MultiSpline != nullptr) delete SplineInst;
   }
