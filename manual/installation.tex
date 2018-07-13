@@ -1342,17 +1342,17 @@ Quantum ESPRESSO distribution.
 To simplify the process of patching Quantum ESPRESSO we have developed
 a script that will automatically download and patch the source
 code. The patches are specific to each version. e.g. To download and
-patch QE v6.2.1:
+patch QE v6.3:
 \begin{verbatim}
 cd external_codes/quantum_espresso
-./download_and_patch_qe6.2.1.sh
+./download_and_patch_qe6.3.sh
 \end{verbatim}
 After running the patch, you must configure Quantum ESPRESSO with
 the HDF5 capability enabled in either way:
 \begin{itemize}
 \item if your system already has HDF5 installed with Fortran, use the -{}-with-hdf5 configuration option.
 \begin{verbatim}
-cd espresso-6.2.1
+cd qe-6.3
 ./configure --with-hdf5=/opt/local   # Specify HDF5 base directory
 \end{verbatim}
    {\bf check} the end of configure output if HDF5 libraries are found properly.
