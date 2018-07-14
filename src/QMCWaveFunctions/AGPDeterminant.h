@@ -171,9 +171,9 @@ public:
   ///address of FirstAddressOfdVD+OHMMS_DIM*Ndown*Nup
   BasisSetType::ValueType *LastAddressOfdVD;
   ///address of myG[0][0]
-  ParticleSet::ParticleValue_t *FirstAddressOfG;
+  ParticleSet::SingleParticleValue_t *FirstAddressOfG;
   ///address of FirstAddressOfG+OHMMS_DIM*NumPtcls
-  ParticleSet::ParticleValue_t *LastAddressOfG;
+  ParticleSet::SingleParticleValue_t *LastAddressOfG;
   ///address of dY[0][0]
   BasisSetType::ValueType *FirstAddressOfdY;
   ///address of FirstAddressOfdY+NumPtcls*BasisSize

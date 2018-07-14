@@ -757,10 +757,10 @@ DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     int kk = BFTrans->optIndexMap[pa];
 #if defined(QMC_COMPLEX)
     dlogpsi[kk]+=real(dpsia);
-    dhpsioverpsi[kk] -= real(0.5*static_cast<ParticleSet::ParticleValue_t>(dLa)+Dot(P.G,Gtemp));
+    dhpsioverpsi[kk] -= real(0.5*static_cast<ParticleSet::SingleParticleValue_t>(dLa)+Dot(P.G,Gtemp));
 #else
     dlogpsi[kk]+=dpsia;
-    dhpsioverpsi[kk] -= (0.5*static_cast<ParticleSet::ParticleValue_t>(dLa)+Dot(P.G,Gtemp));
+    dhpsioverpsi[kk] -= (0.5*static_cast<ParticleSet::SingleParticleValue_t>(dLa)+Dot(P.G,Gtemp));
 #endif
   }
 }
@@ -899,7 +899,7 @@ DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
 #endif
     // \sum_i (\nabla_pa  \nabla2_i D) / D
     for(int k=0; k<num; k++)
-      dG(offset,pa,k) = Gtemp[k] + myG[k]*static_cast<ParticleSet::ParticleValue_t>(dpsia);  // (\nabla_pa \nabla_i D) / D
+      dG(offset,pa,k) = Gtemp[k] + myG[k]*static_cast<ParticleSet::SingleParticleValue_t>(dpsia);  // (\nabla_pa \nabla_i D) / D
   }
 }
 
@@ -1013,10 +1013,10 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     int kk = pa; //BFTrans->optIndexMap[pa];
 #if defined(QMC_COMPLEX)
     dlogpsi[kk]+=real(dpsia);
-    dhpsioverpsi[kk] -= real(0.5*static_cast<ParticleSet::ParticleValue_t>(La1+La2+La3)+Dot(P.G,Gtemp));
+    dhpsioverpsi[kk] -= real(0.5*static_cast<ParticleSet::SingleParticleValue_t>(La1+La2+La3)+Dot(P.G,Gtemp));
 #else
     dlogpsi[kk]+=dpsia;
-    dhpsioverpsi[kk] -= (0.5*static_cast<ParticleSet::ParticleValue_t>(La1+La2+La3)+Dot(P.G,Gtemp));
+    dhpsioverpsi[kk] -= (0.5*static_cast<ParticleSet::SingleParticleValue_t>(La1+La2+La3)+Dot(P.G,Gtemp));
 #endif
     *G0 += Gtemp;
     (*L0)[0] += La1+La2+La3;

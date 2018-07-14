@@ -95,7 +95,7 @@ struct Walker
   /** array of laplacians */
   typedef typename p_traits::ParticleLaplacian_t ParticleLaplacian_t;
   /** typedef for value data type. */
-  typedef typename p_traits::ParticleValue_t ParticleValue_t;
+  typedef typename p_traits::SingleParticleValue_t SingleParticleValue_t;
 
   ///typedef for the property container, fixed size
   typedef Matrix<EstimatorRealType>           PropertyContainer_t;

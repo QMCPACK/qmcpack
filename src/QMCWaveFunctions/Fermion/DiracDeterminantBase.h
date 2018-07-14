@@ -52,7 +52,7 @@ public:
   typedef SPOSetBase::HessType      HessType;
 
 #ifdef MIXED_PRECISION
-  typedef ParticleSet::ParticleValue_t mValueType;
+  typedef ParticleSet::SingleParticleValue_t mValueType;
   typedef OrbitalSetTraits<mValueType>::ValueMatrix_t ValueMatrix_hp_t;
 #else
   typedef ValueType mValueType;
@@ -293,7 +293,7 @@ public:
 #ifdef MIXED_PRECISION
   /// temporal matrix and workspace in higher precision for the accurate inversion.
   ValueMatrix_hp_t psiM_hp;
-  Vector<ParticleSet::ParticleValue_t> WorkSpace_hp;
+  Vector<ParticleSet::SingleParticleValue_t> WorkSpace_hp;
   DiracMatrix<mValueType> detEng_hp;
 #endif
   DiracMatrix<ValueType> detEng;
@@ -302,8 +302,8 @@ public:
   Vector<IndexType> Pivot;
 
   ValueType curRatio,cumRatio;
-  ParticleSet::ParticleValue_t *FirstAddressOfG;
-  ParticleSet::ParticleValue_t *LastAddressOfG;
+  ParticleSet::SingleParticleValue_t *FirstAddressOfG;
+  ParticleSet::SingleParticleValue_t *LastAddressOfG;
   ValueType *FirstAddressOfdV;
   ValueType *LastAddressOfdV;
 
