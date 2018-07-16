@@ -220,7 +220,7 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
     BFTrans->evaluate(P);
     for(int k=0; k<Dets.size(); k++)
       psi2 += Dets[k]->evaluateLog(P,G2,L2);
-    ParticleSet::ParticleValue_t tmp=0.0;
+    ParticleSet::SingleParticleValue_t tmp=0.0;
     for(int q=0; q<P.getTotalNum(); q++)
       tmp+=(L1[q]-L2[q])/(2.0*dh);
     app_log() <<i <<"\n"

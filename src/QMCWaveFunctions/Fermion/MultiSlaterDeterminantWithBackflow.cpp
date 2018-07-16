@@ -149,14 +149,14 @@ OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::evaluate(ParticleSet&
   {
     int upC = C2node_up[i];
     int dnC = C2node_dn[i];
-    ParticleSet::ParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
+    ParticleSet::SingleParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
     psi += tmp;
     myG += grads_up[upC]*tmp;
     myG += grads_dn[dnC]*tmp;
     myL += lapls_up[upC]*tmp;
     myL += lapls_dn[dnC]*tmp;
     for(int k=0; k<numP; k++)
-      myL[k] += 2.0*static_cast<ParticleSet::ParticleValue_t>(tmp)*dot(grads_up[upC][k],grads_dn[dnC][k]);
+      myL[k] += 2.0*static_cast<ParticleSet::SingleParticleValue_t>(tmp)*dot(grads_up[upC][k],grads_dn[dnC][k]);
   }
   ValueType psiinv = (RealType)1.0/psi;
   myG *= psiinv;
@@ -191,7 +191,7 @@ OrbitalBase::GradType MultiSlaterDeterminantWithBackflow::evalGrad(ParticleSet& 
     {
       int upC = C2node_up[i];
       int dnC = C2node_dn[i];
-      ParticleSet::ParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
+      ParticleSet::SingleParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
       psi += tmp;
       grad_iat += grads_up[upC][iat]*tmp;
     }
@@ -210,7 +210,7 @@ OrbitalBase::GradType MultiSlaterDeterminantWithBackflow::evalGrad(ParticleSet& 
     {
       int upC = C2node_up[i];
       int dnC = C2node_dn[i];
-      ParticleSet::ParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
+      ParticleSet::SingleParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
       psi += tmp;
       grad_iat += grads_dn[dnC][iat]*tmp;
     }
@@ -577,7 +577,7 @@ OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::updateBuffer(ParticleS
   {
     int upC = C2node_up[i];
     int dnC = C2node_dn[i];
-    ParticleSet::ParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
+    ParticleSet::SingleParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
     psi += tmp;
     myG += grads_up[upC]*tmp; // other spin sector should be zero
     myG += grads_dn[dnC]*tmp; // other spin sector should be zero
@@ -735,8 +735,8 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
         ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
         lapl_sum += tmp*(tempstorage_up[upC]+tempstorage_dn[dnC]
                          +static_cast<ValueType>(2.0*Dot(grads_up[upC],grads_dn[dnC])));
-        g += grads_up[upC]*static_cast<ParticleSet::ParticleValue_t>(tmp);
-        g += grads_dn[dnC]*static_cast<ParticleSet::ParticleValue_t>(tmp);
+        g += grads_up[upC]*static_cast<ParticleSet::SingleParticleValue_t>(tmp);
+        g += grads_dn[dnC]*static_cast<ParticleSet::SingleParticleValue_t>(tmp);
       }
       gmP=g-P.G;
       gg=Dot(gmP,g);
@@ -799,8 +799,8 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
         int dnC = C2node_dn[i];
         ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
         lapl_sum += tmp*(tempstorage_up[upC]+tempstorage_dn[dnC]+static_cast<ValueType>(2.0*Dot(grads_up[upC],grads_dn[dnC])));
-        g += grads_up[upC]*static_cast<ParticleSet::ParticleValue_t>(tmp);
-        g += grads_dn[dnC]*static_cast<ParticleSet::ParticleValue_t>(tmp);
+        g += grads_up[upC]*static_cast<ParticleSet::SingleParticleValue_t>(tmp);
+        g += grads_dn[dnC]*static_cast<ParticleSet::SingleParticleValue_t>(tmp);
       }
       gmP=g-P.G;
       ggP=Dot(gmP,g);
@@ -867,7 +867,7 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
             int upC = C2node_up[i];
             int dnC = C2node_dn[i];
             ValueType cdet=C[i]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
-            ParticleSet::ParticleValue_t dot1=0.0;
+            ParticleSet::SingleParticleValue_t dot1=0.0;
             ValueType dpsi1=dpsia_up(upC,pa);
             ValueType dpsi2=dpsia_dn(dnC,pa);
             ParticleSet::ParticleGradient_t& g1 = grads_up[upC];
@@ -875,8 +875,8 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
             for(int k=0; k<n; k++)
               dot1 += dot((g2[k]-gmP[k]),dGa_up(upC,pa,k))
                       + dot((g1[k]-gmP[k]),dGa_dn(dnC,pa,k))
-                      - static_cast<ParticleSet::ParticleValue_t>(dpsi1)*(dot(gmP[k],g2[k]))
-                      - static_cast<ParticleSet::ParticleValue_t>(dpsi2)*(dot(gmP[k],g1[k]));
+                      - static_cast<ParticleSet::SingleParticleValue_t>(dpsi1)*(dot(gmP[k],g2[k]))
+                      - static_cast<ParticleSet::SingleParticleValue_t>(dpsi2)*(dot(gmP[k],g1[k]));
             dlog += cdet*(dpsi1+dpsi2);
             dhpsi += cdet*( dLa_up(upC,pa) + dLa_dn(dnC,pa)
                             + dpsi2*tempstorage_up[upC] + dpsi1*tempstorage_dn[dnC]

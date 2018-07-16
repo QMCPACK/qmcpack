@@ -1296,7 +1296,7 @@ void WaveFunctionTester::runRatioTest2()
       RealType ratio_accum(1.0);
       for (int iat=0; iat<nat; iat++)
       {
-        TinyVector<ParticleSet::ParticleValue_t,OHMMS_DIM> grad_now=Psi.evalGrad(W,iat);
+        TinyVector<ParticleSet::SingleParticleValue_t,OHMMS_DIM> grad_now=Psi.evalGrad(W,iat);
         GradType grad_new;
         for(int sds=0; sds<3; sds++)
           fout<< realGrad[iat][sds]-grad_now[sds]<<" ";

@@ -135,11 +135,11 @@ struct PtclOnLatticeTraits
 #if defined(QMC_COMPLEX)
   typedef ParticleAttrib<TinyVector<Complex_t,OHMMS_DIM> > ParticleGradient_t;
   typedef ParticleAttrib<Complex_t>                      ParticleLaplacian_t;
-  typedef Complex_t                                      ParticleValue_t;
+  typedef Complex_t                                      SingleParticleValue_t;
 #else
   typedef ParticleAttrib<TinyVector<Scalar_t,OHMMS_DIM> > ParticleGradient_t;
   typedef ParticleAttrib<Scalar_t>                       ParticleLaplacian_t;
-  typedef Scalar_t                                       ParticleValue_t;
+  typedef Scalar_t                                       SingleParticleValue_t;
 #endif
 };
 

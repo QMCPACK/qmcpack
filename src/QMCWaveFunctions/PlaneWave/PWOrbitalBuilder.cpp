@@ -399,7 +399,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
   RealType dy=1.0/static_cast<RealType>(nG[1]-1);
   RealType dz=1.0/static_cast<RealType>(nG[2]-1);
 #if defined(VERYTINYMEMORY)
-  typedef Array<ParticleSet::ParticleValue_t,3> StorageType;
+  typedef Array<ParticleSet::SingleParticleValue_t,3> StorageType;
   StorageType inData(nG[0],nG[1],nG[2]);
   int ib=0;
   while(ib<myParam->numBands)
@@ -451,7 +451,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
     ++ib;
   }
 #else
-  typedef Array<ParticleSet::ParticleValue_t,3> StorageType;
+  typedef Array<ParticleSet::SingleParticleValue_t,3> StorageType;
   std::vector<StorageType*> inData;
   int nb=myParam->numBands;
   for(int ib=0; ib<nb; ib++)
