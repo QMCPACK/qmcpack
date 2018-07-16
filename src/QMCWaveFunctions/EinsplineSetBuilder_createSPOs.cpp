@@ -31,7 +31,7 @@
 #include <fftw3.h>
 #include <Utilities/ProgressReportEngine.h>
 #include <QMCWaveFunctions/einspline_helper.hpp>
-#include "QMCWaveFunctions/BsplineReaderBase.h"
+#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
 
 namespace qmcplusplus

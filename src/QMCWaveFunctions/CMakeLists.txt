@@ -140,7 +140,7 @@ IF(OHMMS_DIM MATCHES 3)
       BsplineFactory/createComplexDouble.cpp
       BsplineFactory/createComplexSingle.cpp
       BandInfo.cpp
-      BsplineReaderBase.cpp
+      BsplineFactory/BsplineReaderBase.cpp
       )
 
     IF(NOT QMC_COMPLEX)
