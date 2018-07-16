@@ -18,7 +18,7 @@
  * Implement super function
  */
 #include <QMCWaveFunctions/EinsplineSetBuilder.h>
-#include <QMCWaveFunctions/BsplineReaderBase.h>
+#include <QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h>
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
 #include "qmc_common.h"

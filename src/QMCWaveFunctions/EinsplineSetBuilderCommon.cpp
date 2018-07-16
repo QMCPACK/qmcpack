@@ -24,7 +24,7 @@
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
-#include "QMCWaveFunctions/BsplineReaderBase.h"
+#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus
