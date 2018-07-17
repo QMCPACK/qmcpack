@@ -243,7 +243,7 @@ struct MultiQuinticSpline1D
         u[i]  = a[i]+cL*(b[i]+cL*(c[i]+cL*(d[i]+cL*(e[i]+cL*f[i]))));
         du[i] = b[i]+cL*(ctwo*c[i]+cL*(cthree*d[i]+cL*(cfour*e[i]+cL*f[i]*cfive)));
         d2u[i]= ctwo*c[i]+cL*(csix*d[i]+cL*(c12*e[i]+cL*f[i]*c20));
-        d3u[i] = csix*d+cL*(c24*e+cL*f*c60);
+        d3u[i] = csix*d[i]+cL*(c24*e[i]+cL*f[i]*c60);
       }
     }
   }
