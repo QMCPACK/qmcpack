@@ -34,15 +34,19 @@ struct SplineR2RAdoptorCUDA: public SplineAdoptorBase<ST,3>
 {
   static const int D=3;
   bool IsGamma;
-  using BaseType=SplineAdoptorBase<ST,3>;
-  using SplineType=typename bspline_traits<ST,3>::SplineType;
-  using BCType=typename bspline_traits<ST,3>::BCType;
-  using PointType=typename BaseType::PointType;
-  using SingleSplineType=typename BaseType::SingleSplineType;
+  using BaseType = SplineAdoptorBase<ST,3>;
+  using SplineType = typename bspline_traits<ST,3>::SplineType;
+  using BCType = typename bspline_traits<ST,3>::BCType;
+  using PointType = typename BaseType::PointType;
+  using SingleSplineType = typename BaseType::SingleSplineType;
 
-  using vContainer_type=Vector<ST,aligned_allocator<ST> >;
-  using gContainer_type=VectorSoaContainer<ST,3>;
-  using hContainer_type=VectorSoaContainer<ST,6>;
+  using CudaStorageType = typename StorageTypeConverter<StorageType,CUDA_PRECISION>::CudaStorageType;
+  using CudaSplineType = typename MultiOrbitalTraits<CudaStorageType,OHMMS_DIM>::CudaSplineType;
+
+  using vContainer_type=gpu::device_vector<CudaStorageType>;
+  //Currently CUDA doesn't seem to deal with gradient or hessian
+  //using gContainer_type=VectorSoaContainer<ST,3>;
+  //using hContainer_type=VectorSoaContainer<ST,6>;
 
   using BaseType::first_spo;
   using BaseType::last_spo;
@@ -74,14 +78,6 @@ struct SplineR2RAdoptorCUDA: public SplineAdoptorBase<ST,3>
     this->AdoptorName="SplineR2RAdoptorCUDA";
     this->KeyWord="SplineR2RAdoptor";
   }
-
-  ///** copy the base property */
-  //SplineC2CSoA(BaseType& rhs): BaseType(rhs)
-  //{
-  //  this->is_complex=true;
-  //  this->AdoptorName="SplineC2CSoA";
-  //  this->KeyWord="C2RSoA";
-  //}
 
   SplineR2RAdoptorCUDA(const SplineR2RAdoptorCUDA& a):
     SplineAdoptorBase<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr)
