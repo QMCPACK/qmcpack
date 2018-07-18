@@ -196,6 +196,7 @@ the path to the source directory.
 
 \begin{itemize}
 \item  Key QMCPACK build options
+\footnotesize
 \begin{verbatim}
 QMC_CUDA            Enable CUDA and GPU acceleration (1:yes, 0:no)
 QMC_COMPLEX         Build the complex (general twist/k-point) version (1:yes, 0:no)
@@ -206,13 +207,19 @@ QMC_MIXED_PRECISION Build the mixed precision (mixing double/float) version
                     The GPU support is quite mature.
                     Use always double for host side base and full precision
                     and use float and double for CUDA base and full precision.
+ENABLE_MKL          Enable Intel MKL libraries.
+MKL_ROOT            Path to MKL libraries (only necessary for non intel compilers
+                    or intel without standard environment variables.)
 ENABLE_TIMERS       Enable fine-grained timers (1:yes, 0:no (default)).
                     Timers are off by default to avoid potential slowdown in small
                     systems. For large systems (100+ electrons) there is no risk.
 ENABLE_SOA          (Experimental) Enable CPU optimization based on Structure-
-                    of-Array (SoA) datatypes (1:yes, 0:no (default)). 
+                    of-Array (SoA) datatypes (1:yes, 0:no (default)).
+
 \end{verbatim}
-  \item General build options
+\normalsize
+\item General build options
+\footnotesize
 \begin{verbatim}
 CMAKE_BUILD_TYPE   A variable which controls the type of build
                    (defaults to Release). Possible values are:
@@ -233,7 +240,9 @@ CMAKE_CXX_FLAGS    Set the C++ flags.  Note: to prevent default
                    Also supported: CMAKE_CXX_FLAGS_DEBUG,
                    CMAKE_CXX_FLAGS_RELEASE, and CMAKE_CXX_FLAGS_RELWITHDEBINFO
 \end{verbatim}
+\normalsize
 \item Additional QMCPACK build options
+\footnotesize
 \begin{verbatim}
 QMC_INCLUDE         Add extra include paths
 QMC_EXTRA_LIBS      Add extra link libraries
@@ -241,26 +250,35 @@ QMC_BUILD_STATIC    Add -static flags to build
 QMC_DATA            Specify data directory for QMCPACK performance and integration tests
 QE_BIN              Location of Quantum Espresso binaries including pw2qmcpack.x
 \end{verbatim}
+\normalsize
 \item libxml2 related
+\footnotesize
 \begin{verbatim}
 Libxml2_INCLUDE_DIRS  Specify include directories for libxml2
 Libxml2_LIBRARY_DIRS  Specify library directories for libxml2
 \end{verbatim}
- \item HDF5 related
+\normalsize
+\item HDF5 related
+  \footnotesize
 \begin{verbatim}
 ENABLE_PHDF5    1(default)/0, enables/disable parallel collective IO.
 \end{verbatim}
- \item FFTW related
+\normalsize
+\item FFTW related
+  \footnotesize
 \begin{verbatim}
 FFTW_INCLUDE_DIRS   Specify include directories for FFTW
 FFTW_LIBRARY_DIRS   Specify library directories for FFTW
 \end{verbatim}
- \item CTest related
+\normalsize
+\item CTest related
+  \footnotesize
 \begin{verbatim}
 MPIEXEC   Specify the mpi wrapper, e.g. srun, aprun, mpirun, etc.
 MPIEXEC_NUMPROC_FLAG   Specify the number of mpi processes flag, e.g. "-n", "-np", etc.
 
 \end{verbatim}
+\normalsize
 \end{itemize}
 
 \subsection{Role of QMC\_DATA}
@@ -280,6 +298,7 @@ Currently the files must be downloaded via\\
 \url{https://anl.box.com/s/j5d6jeazpgx5441s04ajtv77iogoyjsh}.
 
 A complete set of files is currently:
+\footnotesize
 \begin{verbatim}
 QMC_DATA/C-graphite/lda.pwscf.h5  
 QMC_DATA/NiO/NiO-fcc-supertwist111-supershift000-S1.h5
@@ -295,7 +314,7 @@ QMC_DATA/NiO/NiO_afm_fcidump.h5
 QMC_DATA/NiO/NiO_afm_wfn.dat 
 QMC_DATA/NiO/NiO_nm_choldump.h5   
 \end{verbatim}
-
+\normalsize
 
 \subsection{Configure and build using cmake and make}
 To configure and build QMCPACK, move to build directory, run cmake and make
