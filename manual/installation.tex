@@ -183,7 +183,7 @@ compilers, etc.  The list of environmental variables is given below:
 \begin{verbatim}
 CXX              C++ compiler
 CC               C Compiler
-MKL_HOME         Path for MKL
+MKL_ROOT         Path for MKL
 LIBXML2_HOME     Path for libxml2
 HDF5_ROOT        Path for HDF5
 BOOST_ROOT       Path for Boost
@@ -252,6 +252,16 @@ QMC_DATA            Specify data directory for QMCPACK performance and integrati
 QE_BIN              Location of Quantum Espresso binaries including pw2qmcpack.x
 \end{verbatim}
 
+\item Intel MKL related
+\verbatimfont{\footnotesize}%
+\begin{verbatim}
+ENABLE_MKL          Enable Intel MKL libraries (1:yes (default for intel compiler),
+                                                0:no (default otherwise)).
+MKL_ROOT            Path to MKL libraries (only necessary for non intel compilers
+                    or intel without standard environment variables.)
+                    One of the above environment variables can be used.
+\end{verbatim}
+
 \item libxml2 related
 \verbatimfont{\footnotesize}%
 \begin{verbatim}
@@ -270,16 +280,6 @@ ENABLE_PHDF5    1(default)/0, enables/disable parallel collective IO.
 \begin{verbatim}
 FFTW_INCLUDE_DIRS   Specify include directories for FFTW
 FFTW_LIBRARY_DIRS   Specify library directories for FFTW
-\end{verbatim}
-
-\item Intel MKL related
-\verbatimfont{\footnotesize}%
-\begin{verbatim}
-ENABLE_MKL          Enable Intel MKL libraries (1:yes (default for intel compiler),
-                                                0:no (default otherwise)).
-MKL_ROOT            Path to MKL libraries (only necessary for non intel compilers
-                    or intel without standard environment variables.)
-                    One of the above environment variables can be used.
 \end{verbatim}
 
 \item CTest related
