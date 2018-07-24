@@ -7,6 +7,7 @@ Keep reformatting, feature, and bug commits separate whenever possible.
 
 \section{Files}
 Each file should start with the header
+\lstset{language=C++,style=C++}
 \begin{lstlisting}
 //////////////////////////////////////////////////////////////////////////////////////
 // This file is distributed under the University of Illinois/NCSA Open Source License.
@@ -23,7 +24,7 @@ If you make significant changes to an existing file, add yourself to the list of
 
 \subsection{File organization}
 Header files should be placed in the same directory as their implementations. 
-Unit tests should be written for all new functionality. These tests should be placed in a \includecodes{tests} subdirectory below the implementations.
+Unit tests should be written for all new functionality. These tests should be placed in a \inlinecode{tests} subdirectory below the implementations.
 
 \subsection{File Names}
 Each class should be defined in a separate file whose name is the same as the class name. Use separate \inlinecode{.cpp} implementation files whenever possible to aid in incremental compilation. 
@@ -32,9 +33,10 @@ The filenames of tests are composed by the filename of the object tested and the
 The filenames of \emph{fake} and \emph{mock} objects used in tests are composed by the prefixes \inlinecode{fake_} and \inlinecode{mock_}, respectively, and the filename of the object that is imitated.
 
 \subsection{Header files}
-All header files should be self-contained i.e. it is not dependent on following any other header when it is included. There are many header files that violate this currently.
-Each header must use \inlinecode{\#define} guards to prevent multiple inclusion.
+All header files should be self-contained i.e. it is not dependent on following any other header when it is included. Nor should they include files that are not necessary for their use, i.e. headers only needed by the implementation. Implementation files should not include files only for the benefit of files they include.
 
+There are many header files that violate this currently.
+Each header must use \inlinecode{\#define} guards to prevent multiple inclusion.
 The symbol name of the \inlinecode{\#define} guards should be \inlinecode{NAMESPACE(s)_CLASSNAME_H}.
 
 \subsection{Includes}
@@ -62,23 +64,18 @@ The balance between description and ease of implementation should be balanced su
 \subsection{Type and Class Names}
 
 Type and class names should start with a capital letter and have a capital letter for each new word.
-Underscores (\inlinecode{_}) are not allowed.
-
-The \inlinecode{using} syntax is preferred to \inlinecode{typedef} for type definitions.
-
+Underscores \inlinecode{_} are not allowed. 
 \subsection{Namespace Names}
 
 Namespace names should be one word, lowercase.
 
 \subsection{Variable Names}
 
-\subsubsection{Variable Names}
-
 Variable names should not begin with a capital letter this is reserved for type and class names. Mixed caps or underscores to separate words are both permitable but only one convention should be used in a file.
 
-\subsubsection{Class Data Members}
+\subsection{Class Data Members}
 
-Class private/protected data members names should follow the convention of variable names with a trailing underscore (\inlinecode{_}).
+Class private/protected data members names should follow the convention of variable names with a trailing underscore \inlinecode{_}.
 
 \subsection{Function Names}
 
@@ -89,7 +86,7 @@ Function names should start with a lowercase character and have a capital letter
 Named lambda expressions follow the naming convention for variables:
 
 \begin{lstlisting}[showspaces=false]
-auto myLambda = [](int i) { return i + 4; };
+auto myWhatever = [](int i) { return i + 4; };
 \end{lstlisting}
 
 \subsection{Macro Names}
@@ -103,13 +100,30 @@ The underscore is not allowed as first or last character.
 
 \subsection{Comment Style}
 
-Use the \inlinecode{// Comment} syntax.
-The \inlinecode{/* ... */} syntax is allowed only for unused variables in function declarations.
+Use the \inlinecode{// Comment} syntax for actual comments.
+Use:
+\begin{lstlisting}
+/** base class for Single-particle orbital sets
+ *
+ * SPOSetBase stands for S(ingle)P(article)O(rbital)SetBase which contains
+ * a number of single-particle orbitals with capabilities of
+ * evaluating \f$ \psi_j({\bf r}_i)\f$
+ */
+\end{lstlisting}
+or
+\begin{lstlisting}
+///index in the builder list of sposets
+int builder_index;
+\end{lstlisting}
+for documentation. See Doxygen for more info on in source documentation.
 
-\subsection{Function Comments}
+\subsection{Documentation}
+\subsubsection{Class Docs}
+Every class should have a short description (in the header of the file) of what it is and what is does.
+Comments for public class member functions follow the same rules as general function comments.
+Comments for private members are allowed, but not mandatory.
 
-Each function whose name does not fully describe the operations performed should have a comment block that describes what the function does.
-
+\subsubsection{Function Docs}
 For function parameters whose type is non-const reference or pointer to non-const memory,
 it should be specified if they are input (In:), output (Out:) or input-output parameters (InOut:).
 
@@ -119,97 +133,50 @@ Example:
 // In: in_3, in_5
 // In/Out: foo
 // Out: bar
-void computeFooBar(Type in_1, const Type& in_2, Type& in_3,
+void computeFooBar(Type in_1,const Type& in_2, Type& in_3,
                    const Type* in_4, Type* in_5, Type& foo,
                    Type& bar);
 \end{lstlisting}
 
-\subsection{Variable Comments}
+\subsubsection{Variable Documentation}
+Name should be self-descriptive.  If you need documentation consider renaming first.
 
-No comments, since the name should be self-descriptive.
-
-\subsection{Class Comments}
-
-Every class should have a short description (in the header of the file) of what it is and what is does.
-Comments for public class member functions follow the same rules as general function comments.
-Comments for private members are allowed, but not mandatory.
-
-\subsection{Implementation Comments}
-
-Tricky, complicated or important code blocks should have comments before them.
-Line comments should be separated from the code by 2 spaces.
-If multiple subsequent lines have a comment they should be aligned.
-
-Example:
-\begin{lstlisting}
-statement;        // Comment here so the comments line up.
-longerstatement;  // Two spaces between code and comment.
-\end{lstlisting}
-
+\subsubsection{Golden Rule of Comments}
 If you modify a piece of code, also adapt the comments that belong to it if necessary.
 
-\subsection{Comments excluded in releases}
-[TODO: Review this section.]\\
-Comments formatted as \inlinecode{// TODO: Comment}, \inlinecode{// INTERNAL: Comment} and \inlinecode{// REVIEW: Comment} are removed in the releases.
-
-\subsection{Punctuation, Spelling and Grammar}
-
-Pay attention to correct punctuation, spelling, and grammar. This will improve the clarity and readability of the comments.
-
 \section{Formatting}
+Use the provided clang-format style in \inlinecode{config/.clang-format} to format \verb|.h|, \verb|.hpp|, \verb|.cu| and \verb|.cpp| files. In general you should run clang-format on every file you modify, however if it hasn't been run on the file before, you should make a separate reformat PR and rebase your changes onto that.  We do not want reformatting and change commits mixed.
 
-Use the provided clang-format style to format \verb|.hpp| and \verb|.cpp| files.
-
+The following should cover the formats specified.
 \subsection{Line Length}
-
-The length of each line of your code should, in principle, be at most \emph{100} characters.
-This limit can be exceeded by few characters in special cases.
-
-\subsection{Scopes}
-
-Do not use scopes for formatting reason.
+The length of each line of your code should, in principle, be at most \emph{120} characters.
 
 \subsection{Horizontal Spacing}
-
 No trailing whitespaces should be added to any line.
 Use no space before a comma (\inlinecode{,}) and a semicolon (\inlinecode{;}) and add a space after them if they are not at the end of a line.
 
-\subsubsection{Parenthesis}
-
-Parenthesis should have no internal padding, and one space external padding.
-The one space external padding is not allowed in the following cases:
-\begin{itemize} \itemsep -3pt
- \vspace{-2ex}
- \item between two opening of two closing parenthesis,
- \item between the function name and its arguments,
- \item between a closing parenthesis and a comma (\inlinecode{,}) or a semicolon (\inlinecode{;}).
-\end{itemize}
-
 \subsubsection{Binary Operators}
-
 The assignment operator should always have spaces around it.
 Other operators may have spaces around them, but it is not mandatory.
 
 \subsubsection{Unary Operators}
-
 Do not put any space between an unary operator and their argument.
 
 \subsubsection{Types}
+The \inlinecode{using} syntax is preferred to \inlinecode{typedef} for type aliases.
+If the actual type is not excessively long or complex simple just use it.
 
-The angle brackets of the templates should not have any external and internal padding.
-(However, for \texttt{C++03} codes the space between two closing angle brackets is mandatory.)
-
+The angle brackets of templates should not have any external and internal padding.
+Pointer or Reference operators should go with the type.
 Examples:
 \begin{lstlisting}
 Type* var;
 Type& var;
 
-Class1<Class2<type1>> object;  // OK with C++11, does not
-                               // compile with C++03.
+Class1<Class2<type1>> object;
 \end{lstlisting}
 
 \subsection{Vertical Spacing}
-
 Use empty lines when it helps to improve the readability of the code, but do not use too many.
 Do not use empty lines after a brace which opens a scope,
 or before a brace which closes a scope.
@@ -217,14 +184,12 @@ Each file should contain an empty line at the end of the file.
 Some editors add an empty line automatically, some do not.
 
 \subsection{Indentation}
-
 Indentation consists of 2 spaces.
 Do not use tabs in the code.
 
 \subsection{Variable Declarations and Definitions}
 
 \begin{itemize}
-
 \item Avoid declaring multiple variables in the same declaration, especially if they are not fundamental types:
 
 \begin{lstlisting}[showspaces=false]
@@ -263,63 +228,15 @@ constexpr unsigned long l(42);
 
 The return type should be on the same line as the function name.
 Parameters should be on the same line, too, unless they do not fit on it.
-Include the parameter names also in the declaration of a function, i.e. avoid
+Include the parameter names also in the declaration of a function, i.e.
+\begin{lstlisting}
+/** calculates a*b+c
+ */
+double function(double a, double b, double c);
+\end{lstlisting}
+avoid
 \begin{lstlisting}
 Type function(Type1, Type2, Type3);
-\end{lstlisting}
-In function declarations comment the unused parameter names,\\
-\inlinecode{Type /* unused_parameter_name */}
-
-Examples:
-\begin{lstlisting}
-Type Class::function(Type1 par1, Type2 par2) {
-  statement;
-  ...
-}
-
-Type LongNameClass::longNameFunction(Type1 par1, Type2 par2
-                                     Type3 par3) {
-  statement;
-  ...
-}
-\end{lstlisting}
-
-% For formatting purpose, can be removed.
-\vspace{3em}
-
-In case of a long list of parameters prefer
-\begin{lstlisting}
-Type LongNameClass::longNameFunction(
-    Type1 long_name_par1, Type2 long_name_par2,Type3 par3) {
-  statement;
-  ...
-}
-\end{lstlisting}
-to
-\begin{lstlisting}
-Type LongNameClass::longNameFunction(Type1 long_name_par1,
-                                     Type2 long_name_par2,
-                                     Type3 par3) {
-  statement;
-  ...
-}
-\end{lstlisting}
-
-\subsection{Function Calls}
-
-Write the call on a single line if the length of the line does not exceed the maximum limit.
-If it does, wrap the arguments at the parenthesis or start the arguments on a new line using 4 spaces indent.
-Use the method which uses the smaller amount of lines.
-
-Examples:
-\begin{lstlisting}
-function(par1, par2, par3);
-
-function(par1, par2,
-         par3);
-
-function(
-    par1, par2, par3);
 \end{lstlisting}
 
 \subsection{Conditionals}
@@ -392,14 +309,14 @@ while (condition);
 \end{lstlisting}
 
 \subsection{Preprocessor Directives}
-
 The preprocessor directives are not indented.
 The hash is the first character of the line.
 
 \subsection{Class Format}
 \label{subsec:class_format}
-
 \inlinecode{public}, \inlinecode{protected} and \inlinecode{private} keywords are not indented.
+Do not to use \inlinecode{struct} as a way to avoid controlling access to the class. In rare cases where
+a class is a fully public data structure \inlinecode{struct} is appropriate.
 
 Example:
 \begin{lstlisting}
@@ -527,7 +444,7 @@ int computeFoo(const int bar, const Matrix& m) {
 
   // Compute foo without changing bar or m.
   // ...
-	
+
   return foo;
 }
 \end{lstlisting}

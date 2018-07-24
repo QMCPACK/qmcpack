@@ -30,8 +30,8 @@
 
 \lstloadlanguages{C++,XML,Python}
 
-\lstset{language=C++,
-  basicstyle=\ttfamily \scriptsize,
+\lstdefinestyle{C++}{language=C++,
+  basicstyle=\ttfamily\footnotesize,
   keywordstyle=\color{blue}\ttfamily,
   stringstyle=\color{red}\ttfamily,
   commentstyle=\color{gray}\ttfamily,
@@ -39,9 +39,10 @@
   frame=single
 }
 
-\lstset{language=xml, 
-  basicstyle=\small\ttfamily,  % copy/paste from pdf w/o mangled quotes
-  keywordstyle=\color{black}\bfseries, 
+\lstdefinestyle{XML}{language=xml, 
+  basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
+  keywordstyle=\color{black}\bfseries,
+  backgroundcolor=\color{gray},
   frame=single,
   breaklines=true,
   escapeinside={<:}{:>},
