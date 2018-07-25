@@ -1,9 +1,8 @@
 \section{QMCPACK Coding Standards}
 
-The following document presents best practices for the code at the current time. New development should follow these guidelines and contributors are expected to adhere to them for the sake of consistency in the code base. A well prepared PR should follow these standards before inclusion in the mainline. A clang format file can be found in ? that should be run to fix and check the code style whenever possible.
+The following document presents best practices for the code at the current time. New development should follow these guidelines and contributors are expected to adhere to them for the sake of consistency in the code base. A well prepared PR should follow these standards before inclusion in the mainline. A Clang format file can be found in ? that should be run to fix and check the code style whenever possible.
 
 Keep reformatting, feature, and bug commits separate whenever possible.  
-
 
 \section{Files}
 Each file should start with the header
@@ -13,7 +12,7 @@ Each file should start with the header
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2018 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2018 QMCPACK developers
 //
 // File developed by: Name, email, affiliation
 //
@@ -59,7 +58,7 @@ For readability it is suggested to use the standard order of includes:
 In each section the included files should be sorted in alphabetical order.
 
 \section{Naming}
-The balance between description and ease of implementation should be balanced such that the code remains self documenting within a single terminal window.  If an extermely short variable name is used its scope must be shorter than ~40lines. An exception is made for template parameters.
+The balance between description and ease of implementation should be balanced such that the code remains self documenting within a single terminal window.  If an extremely short variable name is used its scope must be shorter than $\sim 40$ lines. An exception is made for template parameters.
 
 \subsection{Type and Class Names}
 
