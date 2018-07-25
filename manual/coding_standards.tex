@@ -115,9 +115,10 @@ or
 ///index in the builder list of sposets
 int builder_index;
 \end{lstlisting}
-for documentation. See Doxygen for more info on in source documentation.
 
 \subsection{Documentation}
+Doxygen will be used for source documentation.
+
 \subsubsection{Class Docs}
 Every class should have a short description (in the header of the file) of what it is and what is does.
 Comments for public class member functions follow the same rules as general function comments.
@@ -412,11 +413,15 @@ void foo();
 \subsection{Pre-increment and pre-decrement}
 
 Use the pre-increment (pre-decrement) operator when a variable is incremented (decremented) and the value of the expression is not used.
-In particular, use the pre-increment (pre-decrement) operator for loop counters:
+In particular, use the pre-increment (pre-decrement) operator for loop counters where i is not used:
 
 \begin{lstlisting}[showspaces=false]
 for (int i = 0; i < N; ++i) {
   doSomething();
+}
+
+for (int i = 0; i < N; i++) {
+  doSomething(i);
 }
 \end{lstlisting}
 
