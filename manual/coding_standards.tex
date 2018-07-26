@@ -58,7 +58,7 @@ For readability it is suggested to use the standard order of includes:
 In each section the included files should be sorted in alphabetical order.
 
 \section{Naming}
-The balance between description and ease of implementation should be balanced such that the code remains self documenting within a single terminal window.  If an extremely short variable name is used its scope must be shorter than $\sim 40$ lines. An exception is made for template parameters.
+The balance between description and ease of implementation should be balanced such that the code remains self documenting within a single terminal window.  If an extremely short variable name is used its scope must be shorter than $\sim 40$ lines. An exception is made for template parameters which must be in all CAPS.
 
 \subsection{Type and Class Names}
 
@@ -116,7 +116,15 @@ int builder_index;
 \end{lstlisting}
 
 \subsection{Documentation}
-Doxygen will be used for source documentation.
+Doxygen will be used for source documentation. Doxygen commands should be used when appropriate guidance on this TBD.
+
+\subsubsection{File Docs}
+Do not put the file name after the \verb|\file| doxygen command. Doxygen will fill it in for the file the tag appears in.
+\begin{lstlisting}
+/** \file
+ *  File level documentation 
+ */
+\end{lstlisting}
 
 \subsubsection{Class Docs}
 Every class should have a short description (in the header of the file) of what it is and what is does.
@@ -129,11 +137,15 @@ it should be specified if they are input (In:), output (Out:) or input-output pa
 
 Example:
 \begin{lstlisting}
-// Updates foo and computes bar using in_1 .. in_5.
-// In: in_3, in_5
-// In/Out: foo
-// Out: bar
-void computeFooBar(Type in_1,const Type& in_2, Type& in_3,
+/** Updates foo and computes bar using in_1 .. in_5.
+ * \param[in] in_3
+ * \param[in] in_5
+ * \param[in,out] foo
+ * \param[out] bar
+ */
+
+//This is probably not what our clang-format would do
+void computeFooBar(Type in_1, const Type& in_2, Type& in_3,
                    const Type* in_4, Type* in_5, Type& foo,
                    Type& bar);
 \end{lstlisting}
