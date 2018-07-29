@@ -87,9 +87,7 @@ ParticleSet::ParticleSet(const ParticleSet& p)
       addTable(p.DistTables[i]->origin(),p.DistTables[i]->DTType);
   }
   for(int i=0; i<p.DistTables.size(); ++i)
-  {
     DistTables[i]->Need_full_table_loadWalker = p.DistTables[i]->Need_full_table_loadWalker;
-  }
   if(p.SK)
   {
     LRBox=p.LRBox; //copy LRBox
