@@ -142,12 +142,6 @@ struct DistanceTableData
   int DTType;
   ///size of indicies
   TinyVector<IndexType,4> N;
-  ///true, if ratio computations need displacement, e.g. LCAO type
-  bool NeedDisplacement;
-  ///Maximum radius set by a Hamiltonian
-  RealType Rmax;
-  ///** Maximum square */
-  //RealType Rmax2;
 
   /** @brief M.size() = N[SourceIndex]+1
    *
@@ -206,11 +200,8 @@ struct DistanceTableData
   std::string Name;
   ///constructor using source and target ParticleSet
   DistanceTableData(const ParticleSet& source, const ParticleSet& target)
-    : Origin(&source), N(0), NeedDisplacement(false), Need_full_table_loadWalker(false)
-  {  
-    Rmax=0; //set 0
-    //Rmax=source.Lattice.WignerSeitzRadius;   
-  }
+    : Origin(&source), N(0), Need_full_table_loadWalker(false)
+  { }
 
   ///virutal destructor
   virtual ~DistanceTableData() { }
@@ -225,8 +216,6 @@ struct DistanceTableData
   {
     Name = tname;
   }
-  ///set the maximum radius
-  inline void setRmax(RealType rc) { Rmax=std::max(Rmax,rc);}
 
   ///returns the reference the origin particleset
   const ParticleSet& origin() const
@@ -285,24 +274,24 @@ struct DistanceTableData
   /// return the distance |R[iadj(i,nj)]-R[i]|
   inline RealType distance(int i, int nj) const
   {
-    return (DTType)? r_m2(i,nj): r_m[M[i]+nj];
+    return r_m[M[i]+nj];
   }
 
   /// return the displacement R[iadj(i,nj)]-R[i]
   inline PosType displacement(int i, int nj) const
   {
-    return (DTType)? dr_m2(i,nj): dr_m[M[i]+nj];
+    return dr_m[M[i]+nj];
   }
 
   //!< Returns a number of neighbors of the i-th ptcl.
   inline IndexType nadj(int i) const
   {
-    return (DTType)? M[i]:M[i+1]-M[i];
+    return M[i+1]-M[i];
   }
   //!< Returns the id of nj-th neighbor for i-th ptcl
   inline IndexType iadj(int i, int nj) const
   {
-    return (DTType)? J2(i,nj):J[M[i] +nj];
+    return J[M[i] +nj];
   }
   //!< Returns the id of j-th neighbor for i-th ptcl
   inline IndexType loc(int i, int j) const
@@ -347,11 +336,8 @@ struct DistanceTableData
     return -1;
   }
 
-  ///update internal data after completing particle-by-particle moves
-  virtual void donePbyP() { }
-
-  ///evaluate the full Distance Table and neighbor_list if requested
-  virtual void evaluate(ParticleSet& P, bool update_neighbor_list=true) = 0;
+  ///evaluate the full Distance Table
+  virtual void evaluate(ParticleSet& P) = 0;
 
   /// evaluate the Distance Table for a given electron
   virtual void evaluate(ParticleSet& P, int jat)=0;
@@ -454,12 +440,6 @@ struct DistanceTableData
   std::vector<RealType> rinv_m;
   /** displacement vectors \f$dr(i,j) = R(j)-R(i)\f$  */
   std::vector<PosType> dr_m;
-  /** full distance AB or AA  return r2_m(iat,jat) */
-  Matrix<RealType,aligned_allocator<RealType> > r_m2;
-  /** full displacement  AB or AA  */
-  Matrix<PosType> dr_m2;
-  /** J2 for compact neighbors */
-  Matrix<int,aligned_allocator<int> > J2;
   /*@}*/
 
   /**resize the storage

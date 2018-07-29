@@ -89,7 +89,6 @@ ParticleSet::ParticleSet(const ParticleSet& p)
   for(int i=0; i<p.DistTables.size(); ++i)
   {
     DistTables[i]->Need_full_table_loadWalker = p.DistTables[i]->Need_full_table_loadWalker;
-    DistTables[i]->Rmax = p.DistTables[i]->Rmax;
   }
   if(p.SK)
   {
@@ -754,8 +753,6 @@ void ParticleSet::rejectMove(Index_t iat)
 void ParticleSet::donePbyP()
 {
   myTimers[2]->start();
-  for (size_t i=0; i<DistTables.size(); i++)
-    DistTables[i]->donePbyP();
   if (SK && !SK->DoUpdate)
     SK->UpdateAllPart(*this);
   activePtcl=-1;
@@ -785,7 +782,7 @@ void ParticleSet::loadWalker(Walker_t& awalker, bool pbyp)
     // in certain cases, full tables must be ready
     for (int i=0; i< DistTables.size(); i++)
       if(DistTables[i]->DTType==DT_AOS||DistTables[i]->Need_full_table_loadWalker)
-        DistTables[i]->evaluate(*this,false);
+        DistTables[i]->evaluate(*this);
     //computed so that other objects can use them, e.g., kSpaceJastrow
     if(SK && SK->DoUpdate)
       SK->UpdateAllPart(*this);
