@@ -153,7 +153,7 @@ NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
   }
   else
   {
-    const auto &myTable = P.DistTables[myTableIndex];
+    const auto myTable = P.DistTables[myTableIndex];
     if(myTable->DTType == DT_SOA)
     {
       for(int jel=0; jel<P.getTotalNum(); jel++)
@@ -208,7 +208,7 @@ void
 NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_elec)
 {
   std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
-  const auto &myTable = P.DistTables[myTableIndex];
+  const auto myTable = P.DistTables[myTableIndex];
   if(myTable->DTType == DT_SOA)
   {
     const auto &dist  = myTable->Distances[ref_elec];
