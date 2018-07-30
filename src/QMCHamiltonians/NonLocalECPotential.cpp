@@ -153,20 +153,16 @@ NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
   }
   else
   {
-    const DistanceTableData* myTable = P.DistTables[myTableIndex];
+    const auto myTable = P.DistTables[myTableIndex];
     if(myTable->DTType == DT_SOA)
     {
-      for(int iat=0; iat<NumIons; iat++)
+      for(int jel=0; jel<P.getTotalNum(); jel++)
       {
-        if(PP[iat]==nullptr) continue;
-        const int* restrict J=myTable->J2[iat];
-        const RealType* restrict dist=myTable->r_m2[iat];
-        const PosType* restrict displ=myTable->dr_m2[iat];
-        for(size_t nj=0; nj<myTable->M[iat]; ++nj)
-        {
-          if(dist[nj]<PP[iat]->Rmax)
-            Value += PP[iat]->evaluateOne(P,iat,Psi,J[nj],dist[nj],displ[nj],Tmove,Txy);
-        }
+        const auto &dist  = myTable->Distances[jel];
+        const auto &displ = myTable->Displacements[jel];
+        for(int iat=0; iat<NumIons; iat++)
+          if(PP[iat]!=nullptr && dist[iat]<PP[iat]->Rmax)
+            Value += PP[iat]->evaluateOne(P,iat,Psi,jel,dist[iat],RealType(-1)*displ[iat],Tmove,Txy);
       }
     }
     else
@@ -212,21 +208,14 @@ void
 NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_elec)
 {
   std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
-  const DistanceTableData* myTable = P.DistTables[myTableIndex];
+  const auto myTable = P.DistTables[myTableIndex];
   if(myTable->DTType == DT_SOA)
   {
+    const auto &dist  = myTable->Distances[ref_elec];
+    const auto &displ = myTable->Displacements[ref_elec];
     for(int iat=0; iat<NumIons; iat++)
-    {
-      if(PP[iat]==nullptr) continue;
-      const int* restrict J=myTable->J2[iat];
-      const RealType* restrict dist=myTable->r_m2[iat];
-      const PosType* restrict displ=myTable->dr_m2[iat];
-      for(size_t nj=0; nj<myTable->M[iat]; ++nj)
-      {
-        if(dist[nj]<PP[iat]->Rmax && J[nj]==ref_elec)
-          PP[iat]->evaluateOne(P,iat,Psi,J[nj],dist[nj],displ[nj],true,Txy);
-      }
-    }
+      if(PP[iat]!=nullptr && dist[iat]<PP[iat]->Rmax)
+        PP[iat]->evaluateOne(P,iat,Psi,ref_elec,dist[iat],RealType(-1)*displ[iat],true,Txy);
   }
   else
   {
