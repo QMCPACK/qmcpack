@@ -31,43 +31,6 @@
 namespace qmcplusplus
 {
 
-/** container for the pair data
- */
-template<class T, unsigned D>
-struct PairDataType
-{
-  ///distance-related data
-  T   r, rr, rinv;
-  ///displacement vector
-  TinyVector<T,D> dr;
-  ///default constructor
-  inline PairDataType() {}
-  ///copy constructor
-  inline PairDataType(const PairDataType<T,D>& p):r(p.r),rr(p.rr),rinv(p.rinv),dr(p.dr) {}
-  ///copy operator
-  inline PairDataType<T,D>& operator=(const PairDataType<T,D>& p)
-  {
-    r=p.r;
-    rr=p.rr;
-    rinv=p.rinv;
-    dr=p.dr;
-    return *this;
-  }
-  ///set the values
-  inline void set(const TinyVector<T,D>& displ, T sep2)
-  {
-    r=sqrt(sep2);
-    rr=sep2;
-    rinv=1.0/r;
-    dr=displ;
-  }
-  ///clear the value
-  inline void reset()
-  {
-    r=0.0;
-  }
-};
-
 /** @defgroup nnlist Distance-table group
  * @brief class to manage a set of data for distance relations between ParticleSet objects.
  */
