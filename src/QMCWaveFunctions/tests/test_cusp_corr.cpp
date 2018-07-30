@@ -25,6 +25,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/SphericalBasisSet.h"
 #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/CuspCorr.h"
+#include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSetWithCorrection.h"
 
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
@@ -229,6 +230,47 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
   cusp.execute(0, 0, 2.0, &bs_phi, &bs_eta, xgrid, rad_orb, "none", rc, data);
 
   SPOSetBuilderFactory::clear();
+
+}
+
+TEST_CASE("readCuspInfo", "[wavefunction]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  Communicate *c = OHMMS::Controller;
+
+  typedef OneDimGridBase<double> GridType;
+  typedef LCOrbitalSetWithCorrection<LocalizedBasisSet<SphericalBasisSet<NGOrbital, GridType>>, false> OrbType;
+
+  OrbType orb;
+
+  Matrix<TinyVector<double, 9>> info;
+  int num_center = 3;
+  int orbital_set_size = 7;
+  info.resize(num_center, orbital_set_size);
+  orb.cuspInfoFile = "hcn_downdet.cuspInfo.xml";
+  orb.objectName = "downdet";
+  orb.setOrbitalSetSize(orbital_set_size);
+  bool okay = orb.readCuspInfo(info);
+  REQUIRE(okay);
+
+  // N
+  REQUIRE(info(0,0)[0] == Approx(0.0)); // redo
+  REQUIRE(info(0,0)[1] == Approx(0.0)); // C
+  REQUIRE(info(0,0)[2] == Approx(1.0)); // sg
+  REQUIRE(info(0,0)[3] == Approx(0.0769130700800000)); // rc
+  REQUIRE(info(0,0)[4] == Approx(2.29508580995773)); // a1
+  REQUIRE(info(0,0)[5] == Approx(-7.00028778782666)); // a2
+  REQUIRE(info(0,0)[6] == Approx(0.834942828252775)); // a3
+  REQUIRE(info(0,0)[7] == Approx(-4.61597420905980)); // a4
+  REQUIRE(info(0,0)[8] == Approx(31.6558091872316)); // a5
+
+  // Spot check a few values from these centers
+  // C
+  REQUIRE(info(0,6)[1] == Approx(0.0)); // C
+  REQUIRE(info(0,6)[5] == Approx(0.0)); // a5
+
+  // H
+  REQUIRE(info(2,4)[8] == Approx(-404.733151049101)); // a5
 
 }
 
