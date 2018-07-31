@@ -26,7 +26,7 @@ namespace qmcplusplus
 
 
 
-/**@defgroup OrbitalComponent Orbital group
+/**@defgroup WaveFunctionComponent group
  * @brief Base base class for derivatives of WaveFunctionComponent
  *
  * Derived classes implement the differentiate function which evaluates

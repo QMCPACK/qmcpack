@@ -59,7 +59,7 @@ typedef WaveFunctionComponent*                       WaveFunctionComponentPtr;
 typedef DiffWaveFunctionComponent*                   DiffWaveFunctionComponentPtr;
 #endif
 
-/**@defgroup OrbitalComponent Orbital group
+/**@defgroup WaveFunctionComponent group
  * @brief Classes which constitute a many-body trial wave function
  *
  * A many-body trial wave function is
@@ -69,7 +69,7 @@ typedef DiffWaveFunctionComponent*                   DiffWaveFunctionComponentPt
  * where \f$\Psi\f$s are represented by
  * the derived classes from OrbtialBase.
  */
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  * @brief An abstract class for a component of a many-body trial wave function
  */
 struct WaveFunctionComponent: public QMCTraits

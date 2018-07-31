@@ -26,7 +26,7 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  *  @brief An AntiSymmetric WaveFunctionComponent composed of a linear combination of SlaterDeterminants.
  *
  *\f[

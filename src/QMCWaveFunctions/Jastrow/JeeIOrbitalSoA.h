@@ -25,7 +25,7 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  *  @brief Specialization for three-body Jastrow function using multiple functors
  *
  *Each pair-type can have distinct function \f$u(r_{ij})\f$.

@@ -26,7 +26,7 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  *  @brief MultiSlaterDeterminantWithBackflow
  */
 class MultiSlaterDeterminantWithBackflow: public MultiSlaterDeterminant

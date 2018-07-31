@@ -91,7 +91,7 @@ struct CoefficientHolder
  *A many-body trial wave function is represented by
  *\f$\Psi({\bf R}) = \prod_i \psi_i({\bf R})\f$,
  *where each function \f$\psi_i({\bf R})\f$ is an WaveFunctionComponent
- (see OrbitalComponent).
+ (see WaveFunctionComponent).
  *A Composite Pattern is used to handle \f$\prod\f$ operations.
  *Each WaveFunctionComponent should provide proper evaluate functions
  *for the value, gradient and laplacian values.

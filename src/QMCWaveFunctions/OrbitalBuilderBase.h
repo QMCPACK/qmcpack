@@ -24,7 +24,7 @@
 #include <map>
 
 /**@defgroup WFSBuilder Orbital builder group
- * @brief Builder classes to add OrbitalComponent to a TrialWaveFunction
+ * @brief Builder classes to add WaveFunctionComponent to a TrialWaveFunction
  */
 namespace qmcplusplus
 {

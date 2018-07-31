@@ -27,7 +27,7 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  * @brief generic implementation of one-body Jastrow function.
  *
  *The One-Body Jastrow has the form
