@@ -228,7 +228,7 @@ void test_splines()
   REQUIRE(hess(0, 5) == Approx(    34.53786329));
 
 
-  Array<T, 1> lap(1);
+  Array<T, 2> lap(1,3);
   bs.evaluate_vgl(pos, v, dv, lap);
   // Value
   REQUIRE(v(0) == Approx(  -0.9476393279));

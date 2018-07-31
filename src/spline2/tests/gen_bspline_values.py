@@ -290,7 +290,7 @@ def evaluate_spline_3D():
 
   print
   print
-  print '  Array<T, 1> lap(1);'
+  print '  Array<T, 2> lap(1,3);'
   print '  bs.evaluate_vgl(pos, v, dv, lap);'
 
   lap = diff(e,xs,2) + diff(e,ys,2) + diff(e,zs,2)
