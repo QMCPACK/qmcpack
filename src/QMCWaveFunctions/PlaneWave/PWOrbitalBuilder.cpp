@@ -30,7 +30,7 @@ namespace qmcplusplus
 {
 
 PWOrbitalBuilder::PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets)
-  : OrbitalBuilderBase(els,psi), ptclPool(psets), hfileID(-1), rootNode(NULL)
+  : WaveFunctionComponentBuilder(els,psi), ptclPool(psets), hfileID(-1), rootNode(NULL)
 #if !defined(ENABLE_SMARTPOINTER)
   ,myBasisSet(0)
 #endif

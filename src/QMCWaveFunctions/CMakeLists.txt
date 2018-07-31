@@ -21,7 +21,7 @@
 SET(WFBASE_SRCS
   WaveFunctionComponent.cpp
   DiffWaveFunctionComponent.cpp
-  OrbitalBuilderBase.cpp
+  WaveFunctionComponentBuilder.cpp
   SPOSetBuilder.cpp
   SPOInfo.cpp
   SPOSetInfo.cpp

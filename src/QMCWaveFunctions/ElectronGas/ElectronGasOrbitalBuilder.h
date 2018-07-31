@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_ELECTRONGAS_ORBITALS_H
 #define QMCPLUSPLUS_ELECTRONGAS_ORBITALS_H
 
-#include <QMCWaveFunctions/OrbitalBuilderBase.h>
+#include <QMCWaveFunctions/WaveFunctionComponentBuilder.h>
 #include <QMCWaveFunctions/SPOSet.h>
 #include <config/stdlib/math.h>
 
@@ -303,7 +303,7 @@ struct RealEGOSet: public SPOSet
 
 /** OrbitalBuilder for Slater determinants of electron-gas
 */
-class ElectronGasOrbitalBuilder: public OrbitalBuilderBase
+class ElectronGasOrbitalBuilder: public WaveFunctionComponentBuilder
 {
 public:
 

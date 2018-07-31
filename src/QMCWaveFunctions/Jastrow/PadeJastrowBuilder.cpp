@@ -29,7 +29,7 @@ namespace qmcplusplus
 
 PadeJastrowBuilder::PadeJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi,
                                        PtclPoolType& psets):
-  OrbitalBuilderBase(target,psi),ptclPool(psets)
+  WaveFunctionComponentBuilder(target,psi),ptclPool(psets)
 {
   ClassName="PadeJastrowBuilder";
 }

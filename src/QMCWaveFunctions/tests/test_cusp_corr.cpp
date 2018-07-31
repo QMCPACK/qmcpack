@@ -75,7 +75,7 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
 
   TrialWaveFunction psi(c);
 
-  OrbitalBuilderBase::PtclPoolType particle_set_map;
+  WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
   particle_set_map["e"] = &elec;
   particle_set_map["ion0"] = &ions;
 

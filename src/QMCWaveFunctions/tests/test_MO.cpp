@@ -78,7 +78,7 @@ void test_He(bool transform)
 
     TrialWaveFunction psi(c);
 
-    OrbitalBuilderBase::PtclPoolType particle_set_map;
+    WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
     particle_set_map["e"] = &elec;
     particle_set_map["ion0"] = &ions;
 
@@ -205,7 +205,7 @@ void test_Ne(bool transform)
 
     TrialWaveFunction psi(c);
 
-    OrbitalBuilderBase::PtclPoolType particle_set_map;
+    WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
     particle_set_map["e"] = &elec;
     particle_set_map["ion0"] = &ions;
 
@@ -347,7 +347,7 @@ void test_HCN(bool transform)
 
     TrialWaveFunction psi(c);
 
-    OrbitalBuilderBase::PtclPoolType particle_set_map;
+    WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
     particle_set_map["e"] = &elec;
     particle_set_map["ion0"] = &ions;
 

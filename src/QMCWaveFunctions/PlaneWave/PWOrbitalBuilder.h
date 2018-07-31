@@ -17,7 +17,7 @@
  */
 #ifndef QMCPLUSPLUS_PLANEWAVE_ORBITALBUILD_V0_H
 #define QMCPLUSPLUS_PLANEWAVE_ORBITALBUILD_V0_H
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #if defined(QMC_COMPLEX)
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalSet.h"
 #else
@@ -31,7 +31,7 @@ class SlaterDet;
 
 /** OrbitalBuilder for Slater determinants in PW basis
 */
-class PWOrbitalBuilder: public OrbitalBuilderBase
+class PWOrbitalBuilder: public WaveFunctionComponentBuilder
 {
 
 private:

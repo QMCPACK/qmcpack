@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_BASISSETFACTORY_H
 #define QMCPLUSPLUS_BASISSETFACTORY_H
 
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 
 namespace qmcplusplus
@@ -33,9 +33,9 @@ namespace qmcplusplus
 
 
 
-/** derived class from OrbitalBuilderBase
+/** derived class from WaveFunctionComponentBuilder
  */
-class SPOSetBuilderFactory: public OrbitalBuilderBase
+class SPOSetBuilderFactory: public WaveFunctionComponentBuilder
 {
 
 public:

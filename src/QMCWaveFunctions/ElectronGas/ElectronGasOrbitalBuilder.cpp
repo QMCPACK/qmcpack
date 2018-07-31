@@ -42,9 +42,9 @@ RealEGOSet::RealEGOSet(const std::vector<PosType>& k, const std::vector<RealType
 
 ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi):
 #if QMC_BUILD_LEVEL>2
-  OrbitalBuilderBase(els,psi),UseBackflow(false),BFTrans(0)
+  WaveFunctionComponentBuilder(els,psi),UseBackflow(false),BFTrans(0)
 #else
-  OrbitalBuilderBase(els,psi),UseBackflow(false)
+  WaveFunctionComponentBuilder(els,psi),UseBackflow(false)
 #endif
 {
 }

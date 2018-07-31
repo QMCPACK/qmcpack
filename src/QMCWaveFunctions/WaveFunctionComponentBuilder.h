@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/**@file OrbitalBuilderBase.h
+/**@file WaveFunctionComponentBuilder.h
  *@brief declaration of the base class for many-body wavefunction.
  */
 #ifndef QMCPLUSPLUS_TRIALORBITALBUILDERBASE_H
@@ -32,7 +32,7 @@ namespace qmcplusplus
 /**@ingroup WFSBuilder
  * @brief An abstract class for wave function builders
  */
-class OrbitalBuilderBase: public MPIObjectBase
+class WaveFunctionComponentBuilder: public MPIObjectBase
 {
 
 public:
@@ -97,9 +97,9 @@ public:
    * targetPsi. The position of targetPtcl is related to targetPsi's
    * capability to return a value and derivatives \f$\Psi[\{R\}]\f$ .
    */
-  OrbitalBuilderBase(ParticleSet& p, TrialWaveFunction& psi);
+  WaveFunctionComponentBuilder(ParticleSet& p, TrialWaveFunction& psi);
 
-  virtual ~OrbitalBuilderBase();
+  virtual ~WaveFunctionComponentBuilder();
   /// process a xml node at cur
   virtual bool put(xmlNodePtr cur) = 0;
 
@@ -114,7 +114,7 @@ protected:
   xmlNodePtr myNode;
 
   /// child builder
-  std::vector<OrbitalBuilderBase*> Children;
+  std::vector<WaveFunctionComponentBuilder*> Children;
 };
 
 }

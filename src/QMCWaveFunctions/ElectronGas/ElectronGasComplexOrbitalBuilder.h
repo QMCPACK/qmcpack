@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_ELECTRONGAS_COMPLEXORBITALS_H
 #define QMCPLUSPLUS_ELECTRONGAS_COMPLEXORBITALS_H
 
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
@@ -105,7 +105,7 @@ struct EGOSet: public SPOSet
 
 /** OrbitalBuilder for Slater determinants of electron-gas
 */
-class ElectronGasComplexOrbitalBuilder: public OrbitalBuilderBase
+class ElectronGasComplexOrbitalBuilder: public WaveFunctionComponentBuilder
 {
 public:
 
