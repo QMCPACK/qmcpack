@@ -16,7 +16,7 @@
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/DiffOrbitalBase.h"
+#include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"

@@ -25,7 +25,7 @@ MultiSlaterDeterminantWithBackflow::MultiSlaterDeterminantWithBackflow(ParticleS
   OrbitalName="MultiSlaterDeterminantWithBackflow";
 }
 
-OrbitalBasePtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
 {
   // mmorales: the proxy classes read from the particle set inside BFTrans
   BackflowTransformation *tr = BFTrans->makeClone(tqp);
@@ -108,7 +108,7 @@ void MultiSlaterDeterminantWithBackflow::resize(int n1, int n2)
   }
 }
 
-OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::evaluate(ParticleSet& P
+WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::evaluate(ParticleSet& P
     , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
 {
   EvaluateTimer.start();
@@ -168,14 +168,14 @@ OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::evaluate(ParticleSet&
   return psi;
 }
 
-OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::evaluateLog(ParticleSet& P
+WaveFunctionComponent::RealType MultiSlaterDeterminantWithBackflow::evaluateLog(ParticleSet& P
     , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
 {
   ValueType psi = evaluate(P,G,L);
   return LogValue = evaluateLogAndPhase(psi,PhaseValue);
 }
 
-OrbitalBase::GradType MultiSlaterDeterminantWithBackflow::evalGrad(ParticleSet& P, int iat)
+WaveFunctionComponent::GradType MultiSlaterDeterminantWithBackflow::evalGrad(ParticleSet& P, int iat)
 {
   APP_ABORT("MultiSlaterDeterminantWithBackflow:: pbyp routines not implemented ");
   GradType grad_iat;
@@ -219,7 +219,7 @@ OrbitalBase::GradType MultiSlaterDeterminantWithBackflow::evalGrad(ParticleSet& 
   }
 }
 
-OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::ratioGrad(ParticleSet& P
+WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::ratioGrad(ParticleSet& P
     , int iat, GradType& grad_iat)
 {
   APP_ABORT("MultiSlaterDeterminantWithBackflow:: pbyp routines not implemented ");
@@ -289,7 +289,7 @@ OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::ratioGrad(ParticleSet
 }
 
 // use ci_node for this routine only
-OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::ratio(ParticleSet& P, int iat)
+WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::ratio(ParticleSet& P, int iat)
 {
   APP_ABORT("MultiSlaterDeterminantWithBackflow:: pbyp routines not implemented ");
   UpdateMode=ORB_PBYP_RATIO;
@@ -508,7 +508,7 @@ void MultiSlaterDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferTy
 }
 
 // FIX FIX FIX
-OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+WaveFunctionComponent::RealType MultiSlaterDeterminantWithBackflow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   UpdateTimer.start();
   if(fromscratch || UpdateMode == ORB_PBYP_RATIO)
@@ -685,9 +685,9 @@ void MultiSlaterDeterminantWithBackflow::checkOutVariables(const opt_variables_t
   }
 }
 
-//   OrbitalBasePtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
+//   WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
 //   {
-//      APP_ABORT("IMPLEMENT OrbitalBase::makeClone");
+//      APP_ABORT("IMPLEMENT WaveFunctionComponent::makeClone");
 //      return 0;
 //   }
 

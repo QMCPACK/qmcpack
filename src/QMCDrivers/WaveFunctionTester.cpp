@@ -759,7 +759,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
   for (int iorb = 0; iorb < Psi.getOrbitals().size(); iorb++)
   {
-    OrbitalBase *orb = Psi.getOrbitals()[iorb];
+    WaveFunctionComponent *orb = Psi.getOrbitals()[iorb];
 
     ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
     ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
@@ -1968,7 +1968,7 @@ void WaveFunctionTester::runDerivCloneTest()
 }
 void WaveFunctionTester::runwftricks()
 {
-  std::vector<OrbitalBase*>& Orbitals=Psi.getOrbitals();
+  std::vector<WaveFunctionComponent*>& Orbitals=Psi.getOrbitals();
   app_log()<<" Total of "<<Orbitals.size()<<" orbitals."<< std::endl;
   int SDindex(0);
   for (int i=0; i<Orbitals.size(); i++)

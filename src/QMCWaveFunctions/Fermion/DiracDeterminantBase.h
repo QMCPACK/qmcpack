@@ -21,7 +21,7 @@
  */
 #ifndef QMCPLUSPLUS_DIRACDETERMINANTWITHBASE_H
 #define QMCPLUSPLUS_DIRACDETERMINANTWITHBASE_H
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
@@ -30,7 +30,7 @@
 namespace qmcplusplus
 {
 
-class DiracDeterminantBase: public OrbitalBase
+class DiracDeterminantBase: public WaveFunctionComponent
 {
 protected:
   ParticleSet *targetPtcl;
@@ -230,7 +230,7 @@ public:
 
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
 
-  virtual OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  virtual WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   /** cloning function
    * @param tqp target particleset

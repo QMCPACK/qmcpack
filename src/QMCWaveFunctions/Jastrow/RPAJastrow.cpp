@@ -292,7 +292,7 @@ RPAJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
     Psi[i]->copyFromBuffer(P,buf);
 }
 
-OrbitalBase* RPAJastrow::makeClone(ParticleSet& tpq) const
+WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
 {
   HandlerType* tempHandler;
   if (rpafunc=="yukawa" || rpafunc=="breakup")

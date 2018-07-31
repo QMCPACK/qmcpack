@@ -19,8 +19,8 @@
     
     
 SET(WFBASE_SRCS
-  OrbitalBase.cpp
-  DiffOrbitalBase.cpp
+  WaveFunctionComponent.cpp
+  DiffWaveFunctionComponent.cpp
   OrbitalBuilderBase.cpp
   SPOSetBuilder.cpp
   SPOInfo.cpp

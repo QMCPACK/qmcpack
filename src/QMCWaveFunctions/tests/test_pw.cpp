@@ -21,7 +21,7 @@
 #include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "QMCApp/ParticleSetPool.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
@@ -129,7 +129,7 @@ const char *particles =
   pw_builder.put(pw1);
 
   REQUIRE(psi.getOrbitals().size() == 1);
-  OrbitalBase *orb = psi.getOrbitals()[0];
+  WaveFunctionComponent *orb = psi.getOrbitals()[0];
   SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
@@ -283,7 +283,7 @@ const char *particles =
   pw_builder.put(pw1);
 
   REQUIRE(psi.getOrbitals().size() == 1);
-  OrbitalBase *orb = psi.getOrbitals()[0];
+  WaveFunctionComponent *orb = psi.getOrbitals()[0];
   SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);

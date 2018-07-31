@@ -617,7 +617,7 @@ DiracDeterminantBase::evaluateDerivatives(ParticleSet& P,
 {
 }
 
-OrbitalBasePtr DiracDeterminantBase::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr DiracDeterminantBase::makeClone(ParticleSet& tqp) const
 {
   APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::makeClone");
   return 0;
@@ -631,7 +631,7 @@ DiracDeterminantBase* DiracDeterminantBase::makeCopy(SPOSetPtr spo) const
 }
 
 DiracDeterminantBase::DiracDeterminantBase(const DiracDeterminantBase& s)
-  : OrbitalBase(s), NP(0), Phi(s.Phi), FirstIndex(s.FirstIndex)
+  : WaveFunctionComponent(s), NP(0), Phi(s.Phi), FirstIndex(s.FirstIndex)
   ,UpdateTimer(s.UpdateTimer)
   ,RatioTimer(s.RatioTimer)
   ,InverseTimer(s.InverseTimer)

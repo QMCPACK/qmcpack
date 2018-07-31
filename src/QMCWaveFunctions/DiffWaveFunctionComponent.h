@@ -15,11 +15,11 @@
 #ifndef QMCPLUSPLUS_DIFFERENTIAL_ORBITAL_BASE_H
 #define QMCPLUSPLUS_DIFFERENTIAL_ORBITAL_BASE_H
 #include "Configuration.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 
-/**@file DiffOrbitalBase.h
- *@brief Declaration of DiffOrbitalBase, NumericalDiffOrbital and AnalyticDiffOrbital
+/**@file DiffWaveFunctionComponent.h
+ *@brief Declaration of DiffWaveFunctionComponent, NumericalDiffOrbital and AnalyticDiffOrbital
  */
 namespace qmcplusplus
 {
@@ -27,45 +27,45 @@ namespace qmcplusplus
 
 
 /**@defgroup OrbitalComponent Orbital group
- * @brief Base base class for derivatives of OrbitalBase
+ * @brief Base base class for derivatives of WaveFunctionComponent
  *
  * Derived classes implement the differentiate function which evaluates
  * - \f$\fraction{\partial \log\Psi}{\partial \alpha}\$
  * - \f$\nabla \fraction{\partial \log\Psi}{\partial \alpha}\$
  * - \f$\nabla^2 \fraction{\partial \log\Psi}{\partial \alpha}\$
  * Each object handles one or more parameters during the optimiation.
- * The data type of refOrbital, std::vector<OrbitalBase*> is intended for the cases
- * when a common variable is used by several OrbitalBase class, e.g.,
+ * The data type of refOrbital, std::vector<WaveFunctionComponent*> is intended for the cases
+ * when a common variable is used by several WaveFunctionComponent class, e.g.,
  * TwoBodyJastrowOrbital<PadeFunctor> and OneBodyJastrowOrbital<PadeFunctor>
  * with one scaling parameter.
  */
-struct DiffOrbitalBase
+struct DiffWaveFunctionComponent
 {
-  enum {SourceIndex  = OrbitalBase::SourceIndex,
-        VisitorIndex = OrbitalBase::VisitorIndex,
-        WalkerIndex  = OrbitalBase::WalkerIndex
+  enum {SourceIndex  = WaveFunctionComponent::SourceIndex,
+        VisitorIndex = WaveFunctionComponent::VisitorIndex,
+        WalkerIndex  = WaveFunctionComponent::WalkerIndex
        };
 
-  //@{typedefs inherited from OrbitalBase
-  typedef OrbitalBase::RealType             RealType;
-  typedef OrbitalBase::ValueType            ValueType;
-  typedef OrbitalBase::PosType              PosType;
+  //@{typedefs inherited from WaveFunctionComponent
+  typedef WaveFunctionComponent::RealType             RealType;
+  typedef WaveFunctionComponent::ValueType            ValueType;
+  typedef WaveFunctionComponent::PosType              PosType;
   typedef ParticleSet::ParticleGradient_t   GradVectorType;
   typedef ParticleSet::ParticleLaplacian_t  ValueVectorType;
   //@}
   /** list of reference orbitals which contribute to the derivatives
    */
-  std::vector<OrbitalBase*> refOrbital;
+  std::vector<WaveFunctionComponent*> refOrbital;
 
   /// default constructor
-  DiffOrbitalBase(OrbitalBase* orb=0);
+  DiffWaveFunctionComponent(WaveFunctionComponent* orb=0);
 
   ///default destructor
-  virtual ~DiffOrbitalBase() { }
+  virtual ~DiffWaveFunctionComponent() { }
 
-  /** add an OrbitalBase*
+  /** add an WaveFunctionComponent*
    */
-  inline void addOrbital(OrbitalBase* psi)
+  inline void addOrbital(WaveFunctionComponent* psi)
   {
     refOrbital.push_back(psi);
   }
@@ -114,19 +114,19 @@ struct DiffOrbitalBase
   /** make clone
     * @param tqp target Quantum ParticleSet
     */
-  virtual DiffOrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  virtual DiffWaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
 
 };
 
-/** a generic DiffOrbitalBase using a finite-difference method for a single optimizable parameter.
+/** a generic DiffWaveFunctionComponent using a finite-difference method for a single optimizable parameter.
  *
  * This class handles any orbital whose analytic derivatives are not implemented nor easily available.
  */
-struct NumericalDiffOrbital: public DiffOrbitalBase
+struct NumericalDiffOrbital: public DiffWaveFunctionComponent
 {
 
-  NumericalDiffOrbital(OrbitalBase* orb=0): DiffOrbitalBase(orb) {}
+  NumericalDiffOrbital(WaveFunctionComponent* orb=0): DiffWaveFunctionComponent(orb) {}
 
   void resetTargetParticleSet(ParticleSet& P);
   void evaluateDerivatives(ParticleSet& P,
@@ -142,12 +142,12 @@ struct NumericalDiffOrbital: public DiffOrbitalBase
   ValueVectorType lapLogPsi, dl_p, dl_m;
 };
 
-/** a generic DiffOrbitalBase using analytic derivates for a single optimizable parameter
+/** a generic DiffWaveFunctionComponent using analytic derivates for a single optimizable parameter
  */
-struct AnalyticDiffOrbital: public DiffOrbitalBase
+struct AnalyticDiffOrbital: public DiffWaveFunctionComponent
 {
 
-  AnalyticDiffOrbital(OrbitalBase* orb=0): DiffOrbitalBase(orb)  { }
+  AnalyticDiffOrbital(WaveFunctionComponent* orb=0): DiffWaveFunctionComponent(orb)  { }
 
   void resetTargetParticleSet(ParticleSet& P);
   void evaluateDerivatives(ParticleSet& P,

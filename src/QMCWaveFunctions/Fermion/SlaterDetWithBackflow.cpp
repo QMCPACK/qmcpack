@@ -97,7 +97,7 @@ void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
     Dets[i]->copyFromBuffer(P,buf);
 }
 
-OrbitalBasePtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
 {
   BackflowTransformation *tr = BFTrans->makeClone(tqp);
 //    tr->resetTargetParticleSet(tqp);

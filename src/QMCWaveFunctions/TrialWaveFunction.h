@@ -24,8 +24,8 @@
 
 #include "Message/MPIObjectBase.h"
 #include "Particle/VirtualParticleSet.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
-#include "QMCWaveFunctions/DiffOrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
+#include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 #include "Utilities/NewTimer.h"
 /**@defgroup MBWfs Many-body wave function group
  * @brief Classes to handle many-body trial wave functions
@@ -36,7 +36,7 @@ namespace qmcplusplus
 
 struct CoefficientHolder
 {
-  typedef OrbitalBase::RealType           RealType;
+  typedef WaveFunctionComponent::RealType           RealType;
 
   std::vector<opt_variables_type> oldVars;
   std::vector<RealType> energies;
@@ -90,10 +90,10 @@ struct CoefficientHolder
  *
  *A many-body trial wave function is represented by
  *\f$\Psi({\bf R}) = \prod_i \psi_i({\bf R})\f$,
- *where each function \f$\psi_i({\bf R})\f$ is an OrbitalBase
+ *where each function \f$\psi_i({\bf R})\f$ is an WaveFunctionComponent
  (see OrbitalComponent).
  *A Composite Pattern is used to handle \f$\prod\f$ operations.
- *Each OrbitalBase should provide proper evaluate functions
+ *Each WaveFunctionComponent should provide proper evaluate functions
  *for the value, gradient and laplacian values.
  */
 class TrialWaveFunction: public MPIObjectBase
@@ -101,21 +101,21 @@ class TrialWaveFunction: public MPIObjectBase
 
 public:
 
-  typedef OrbitalBase::RealType           RealType;
-  typedef OrbitalBase::ValueType          ValueType;
-  typedef OrbitalBase::PosType            PosType;
-  typedef OrbitalBase::GradType           GradType;
-  typedef OrbitalBase::BufferType         BufferType;
-  typedef OrbitalBase::WFBufferType       WFBufferType;
-  typedef OrbitalBase::HessType           HessType;
-  typedef OrbitalBase::HessVector_t       HessVector_t;
+  typedef WaveFunctionComponent::RealType           RealType;
+  typedef WaveFunctionComponent::ValueType          ValueType;
+  typedef WaveFunctionComponent::PosType            PosType;
+  typedef WaveFunctionComponent::GradType           GradType;
+  typedef WaveFunctionComponent::BufferType         BufferType;
+  typedef WaveFunctionComponent::WFBufferType       WFBufferType;
+  typedef WaveFunctionComponent::HessType           HessType;
+  typedef WaveFunctionComponent::HessVector_t       HessVector_t;
 #ifdef QMC_CUDA
-  typedef OrbitalBase::CudaValueType   CudaValueType;
-  typedef OrbitalBase::CudaGradType    CudaGradType;
-  typedef OrbitalBase::CudaRealType    CudaRealType;
-  typedef OrbitalBase::RealMatrix_t    RealMatrix_t;
-  typedef OrbitalBase::ValueMatrix_t   ValueMatrix_t;
-  typedef OrbitalBase::GradMatrix_t    GradMatrix_t;
+  typedef WaveFunctionComponent::CudaValueType   CudaValueType;
+  typedef WaveFunctionComponent::CudaGradType    CudaGradType;
+  typedef WaveFunctionComponent::CudaRealType    CudaRealType;
+  typedef WaveFunctionComponent::RealMatrix_t    RealMatrix_t;
+  typedef WaveFunctionComponent::ValueMatrix_t   ValueMatrix_t;
+  typedef WaveFunctionComponent::GradMatrix_t    GradMatrix_t;
   typedef ParticleSet::Walker_t        Walker_t;
 #endif
 
@@ -187,17 +187,17 @@ public:
     LogValue = LogPsi_new;
   }
 
-  ///Add an OrbitalBase
-  //void addOrbital(OrbitalBase* aterm);
-  void addOrbital(OrbitalBase* aterm, const std::string& aname, bool fermion=false);
+  ///Add an WaveFunctionComponent
+  //void addOrbital(WaveFunctionComponent* aterm);
+  void addOrbital(WaveFunctionComponent* aterm, const std::string& aname, bool fermion=false);
 
   ///read from xmlNode
   bool put(xmlNodePtr cur);
   ///implement the virtual function
   void reset();
-  /** set OrbitalBase::IsOptimizing to true */
+  /** set WaveFunctionComponent::IsOptimizing to true */
   void startOptimization();
-  /** set OrbitalBase::IsOptimizing to flase */
+  /** set WaveFunctionComponent::IsOptimizing to flase */
   void stopOptimization();
   /** check in an optimizable parameter
    * * @param o a super set of optimizable variables
@@ -273,13 +273,13 @@ public:
   void acceptMove(ParticleSet& P, int iat);
 
   /** register all the wavefunction components in buffer.
-   *  See OrbitalBase::registerData for more detail */
+   *  See WaveFunctionComponent::registerData for more detail */
   void registerData(ParticleSet& P, WFBufferType& buf);
   /** update all the wavefunction components in buffer.
-   *  See OrbitalBase::updateBuffer for more detail */
+   *  See WaveFunctionComponent::updateBuffer for more detail */
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
   /** copy all the wavefunction components from buffer.
-   *  See OrbitalBase::updateBuffer for more detail */
+   *  See WaveFunctionComponent::updateBuffer for more detail */
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   RealType KECorrection() const;
@@ -307,7 +307,7 @@ public:
 
   TrialWaveFunction* makeClone(ParticleSet& tqp) const;
 
-  std::vector<OrbitalBase*>& getOrbitals()
+  std::vector<WaveFunctionComponent*>& getOrbitals()
   {
     return Z;
   }
@@ -366,8 +366,8 @@ private:
   ///One over mass of target particleset, needed for Local Energy Derivatives
   RealType OneOverM;
 
-  ///a list of OrbitalBases constituting many-body wave functions
-  std::vector<OrbitalBase*> Z;
+  ///a list of WaveFunctionComponents constituting many-body wave functions
+  std::vector<WaveFunctionComponent*> Z;
 
   ///fake particleset
   ParticleSet* tempP;

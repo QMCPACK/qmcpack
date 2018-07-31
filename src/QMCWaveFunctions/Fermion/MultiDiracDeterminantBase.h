@@ -19,7 +19,7 @@
  */
 #ifndef QMCPLUSPLUS_MULTIDIRACDETERMINANTWITHBASE_H
 #define QMCPLUSPLUS_MULTIDIRACDETERMINANTWITHBASE_H
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
@@ -31,7 +31,7 @@
 namespace qmcplusplus
 {
 
-class MultiDiracDeterminantBase: public OrbitalBase
+class MultiDiracDeterminantBase: public WaveFunctionComponent
 {
 
 public:
@@ -149,7 +149,7 @@ public:
    */
   void restore(int iat);
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   /****************************************************************************
    * These functions should not be called.

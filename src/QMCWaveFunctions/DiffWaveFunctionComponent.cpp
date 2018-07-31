@@ -12,30 +12,30 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "QMCWaveFunctions/DiffOrbitalBase.h"
+#include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
-/**@file DiffOrbitalBase.cpp
+/**@file DiffWaveFunctionComponent.cpp
  *@brief Definition of NumericalDiffOrbital
  */
 namespace qmcplusplus
 {
-DiffOrbitalBase::DiffOrbitalBase(OrbitalBase* orb)
+DiffWaveFunctionComponent::DiffWaveFunctionComponent(WaveFunctionComponent* orb)
 {
   if (orb)
     refOrbital.push_back(orb);
 }
 
-DiffOrbitalBasePtr DiffOrbitalBase::makeClone(ParticleSet& tpq) const
+DiffWaveFunctionComponentPtr DiffWaveFunctionComponent::makeClone(ParticleSet& tpq) const
 {
-  APP_ABORT("Implement DiffOrbitalBase::makeClone for this orbital");
+  APP_ABORT("Implement DiffWaveFunctionComponent::makeClone for this orbital");
   return 0;
 }
 
-void DiffOrbitalBase::evaluateDerivRatios(ParticleSet& VP, const opt_variables_type& optvars,
+void DiffWaveFunctionComponent::evaluateDerivRatios(ParticleSet& VP, const opt_variables_type& optvars,
     Matrix<ValueType>& dratios)
 {
-  APP_ABORT("Implement DiffOrbitalBase::evaluateDerivRatios for this orbital");
+  APP_ABORT("Implement DiffWaveFunctionComponent::evaluateDerivRatios for this orbital");
 }
 
 void NumericalDiffOrbital::resetTargetParticleSet(ParticleSet& P)

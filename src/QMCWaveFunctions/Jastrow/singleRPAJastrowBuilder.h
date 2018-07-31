@@ -62,7 +62,7 @@ struct singleRPAJastrowBuilder: public OrbitalBuilderBase
     ng=source.getSpeciesSet().getTotalNum();
 //         J1s = new JneType (source,target);
   }
-  OrbitalBase* getOrbital();
+  WaveFunctionComponent* getOrbital();
   bool put(xmlNodePtr cur);
   bool put(xmlNodePtr cur, int addOrbital);
 

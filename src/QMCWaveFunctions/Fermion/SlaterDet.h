@@ -29,12 +29,12 @@ namespace qmcplusplus
 {
 // NOTE NOTE NOTE
 // template<bool backflow>
-//  class SlaterDet: public OrbitalBase {}
+//  class SlaterDet: public WaveFunctionComponent {}
 //     then change SlaterDet to SlaterDet<false>
 //     and SlaterDeterminantWithBackflow to SlaterDet<true>
 //     and remove all virtuals and inline them
 
-class SlaterDet: public OrbitalBase
+class SlaterDet: public WaveFunctionComponent
 {
 public:
   typedef DiracDeterminantBase Determinant_t;
@@ -223,7 +223,7 @@ public:
   }
 
   virtual
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   virtual
   SPOSetPtr getPhi(int i=0)

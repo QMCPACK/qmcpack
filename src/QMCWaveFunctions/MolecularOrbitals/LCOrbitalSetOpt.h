@@ -23,7 +23,7 @@
 #include <sstream>
 
 #include <QMCWaveFunctions/SPOSet.h>
-#include <QMCWaveFunctions/OrbitalBase.h>
+#include <QMCWaveFunctions/WaveFunctionComponent.h>
 #include <Numerics/MatrixOperators.h>
 #include <Utilities/RandomGenerator.h>
 

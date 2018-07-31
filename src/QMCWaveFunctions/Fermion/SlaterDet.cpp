@@ -204,7 +204,7 @@ void SlaterDet::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   DEBUG_PSIBUFFER(" SlaterDet::copyFromBuffer ",buf.current());
 }
 
-OrbitalBasePtr SlaterDet::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr SlaterDet::makeClone(ParticleSet& tqp) const
 {
   SlaterDet* myclone = new SlaterDet(tqp);
   myclone->Optimizable=Optimizable;

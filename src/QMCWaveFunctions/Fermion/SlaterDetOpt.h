@@ -122,7 +122,7 @@ class SlaterDetOpt : public DiracDeterminantBase {
   // private member functions
   private:
 
-    OrbitalBase::RealType evaluate_matrices_from_scratch(ParticleSet& P, const bool all);
+    WaveFunctionComponent::RealType evaluate_matrices_from_scratch(ParticleSet& P, const bool all);
 
   // public type definitions
   public:
@@ -185,7 +185,7 @@ class SlaterDetOpt : public DiracDeterminantBase {
 
     void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-    OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+    WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
     DiracDeterminantBase* makeCopy(SPOSet* spo) const;
 

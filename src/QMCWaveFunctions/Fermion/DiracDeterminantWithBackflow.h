@@ -17,7 +17,7 @@
  */
 #ifndef QMCPLUSPLUS_DIRACDETERMINANTWITHBACKFLOW_H
 #define QMCPLUSPLUS_DIRACDETERMINANTWITHBACKFLOW_H
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
@@ -148,7 +148,7 @@ public:
               ParticleSet::ParticleGradient_t& G,
               ParticleSet::ParticleLaplacian_t& L) ;
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   /** cloning function
    * @param tqp target particleset

@@ -28,8 +28,8 @@
 #include <boost/shared_ptr.hpp>
 #endif
 
-/**@file OrbitalBase.h
- *@brief Declaration of OrbitalBase
+/**@file WaveFunctionComponent.h
+ *@brief Declaration of WaveFunctionComponent
  */
 namespace qmcplusplus
 {
@@ -46,17 +46,17 @@ struct NLjob
 };
 #endif
 
-///forward declaration of OrbitalBase
-class OrbitalBase;
-///forward declaration of DiffOrbitalBase
-class DiffOrbitalBase;
+///forward declaration of WaveFunctionComponent
+class WaveFunctionComponent;
+///forward declaration of DiffWaveFunctionComponent
+class DiffWaveFunctionComponent;
 
 #if defined(ENABLE_SMARTPOINTER)
-typedef boost::shared_ptr<OrbitalBase>     OrbitalBasePtr;
-typedef boost::shared_ptr<DiffOrbitalBase> DiffOrbitalBasePtr;
+typedef boost::shared_ptr<WaveFunctionComponent>     WaveFunctionComponentPtr;
+typedef boost::shared_ptr<DiffWaveFunctionComponent> DiffWaveFunctionComponentPtr;
 #else
-typedef OrbitalBase*                       OrbitalBasePtr;
-typedef DiffOrbitalBase*                   DiffOrbitalBasePtr;
+typedef WaveFunctionComponent*                       WaveFunctionComponentPtr;
+typedef DiffWaveFunctionComponent*                   DiffWaveFunctionComponentPtr;
 #endif
 
 /**@defgroup OrbitalComponent Orbital group
@@ -72,7 +72,7 @@ typedef DiffOrbitalBase*                   DiffOrbitalBasePtr;
 /** @ingroup OrbitalComponent
  * @brief An abstract class for a component of a many-body trial wave function
  */
-struct OrbitalBase: public QMCTraits
+struct WaveFunctionComponent: public QMCTraits
 {
 
   ///recasting enum of DistanceTableData to maintain consistency
@@ -134,7 +134,7 @@ struct OrbitalBase: public QMCTraits
    *
    * If dPsi=0, this orbital is constant with respect to the optimizable variables
    */
-  DiffOrbitalBasePtr dPsi;
+  DiffWaveFunctionComponentPtr dPsi;
   /** A vector for \f$ \frac{\partial \nabla \log\phi}{\partial \alpha} \f$
    */
   GradVectorType dLogPsi;
@@ -150,11 +150,11 @@ struct OrbitalBase: public QMCTraits
   size_t Bytes_in_WFBuffer;
 
   /// default constructor
-  OrbitalBase();
-  //OrbitalBase(const OrbitalBase& old);
+  WaveFunctionComponent();
+  //WaveFunctionComponent(const WaveFunctionComponent& old);
 
   ///default destructor
-  virtual ~OrbitalBase() { }
+  virtual ~WaveFunctionComponent() { }
 
   inline void setOptimizable(bool optimizeit)
   {
@@ -178,7 +178,7 @@ struct OrbitalBase: public QMCTraits
   virtual void resetPhaseDiff() {}
 
   ///assign a differential orbital
-  virtual void setDiffOrbital(DiffOrbitalBasePtr d);
+  virtual void setDiffOrbital(DiffWaveFunctionComponentPtr d);
 
   ///assembles the full value from LogValue and PhaseValue
   ValueType getValue() const
@@ -236,12 +236,12 @@ struct OrbitalBase: public QMCTraits
 
  // virtual void evaluateHessian(ParticleSet& P, IndexType iat, HessType& grad_grad_psi)
  // {
- //   APP_ABORT("OrbitalBase::evaluateHessian is not implemented");  
+ //   APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented");  
  // }
   
   virtual void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi_all)
   {
-    APP_ABORT("OrbitalBase::evaluateHessian is not implemented");  
+    APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented");  
   }
 
   /** return the current gradient for the iat-th particle
@@ -251,7 +251,7 @@ struct OrbitalBase: public QMCTraits
    */
   virtual GradType evalGrad(ParticleSet& P, int iat)
   {
-    APP_ABORT("OrbitalBase::evalGradient is not implemented");
+    APP_ABORT("WaveFunctionComponent::evalGradient is not implemented");
     return GradType();
   }
 
@@ -270,7 +270,7 @@ struct OrbitalBase: public QMCTraits
                                   ParticleSet& source,
                                   int iat)
   {
-    // APP_ABORT("OrbitalBase::evalGradSource is not implemented");
+    // APP_ABORT("WaveFunctionComponent::evalGradSource is not implemented");
     return GradType();
   }
 
@@ -301,7 +301,7 @@ struct OrbitalBase: public QMCTraits
    */
   virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
-    APP_ABORT("OrbitalBase::ratioGrad is not implemented");
+    APP_ABORT("WaveFunctionComponent::ratioGrad is not implemented");
     return ValueType();
   }
 
@@ -365,14 +365,14 @@ struct OrbitalBase: public QMCTraits
 
   /** return a proxy orbital of itself
    */
-  OrbitalBasePtr makeProxy(ParticleSet& tqp);
+  WaveFunctionComponentPtr makeProxy(ParticleSet& tqp);
   /** make clone
    * @param tqp target Quantum ParticleSet
    * @param deepcopy if true, make a decopy
    *
    * If not true, return a proxy class
    */
-  virtual OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  virtual WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   /** Return the Chiesa kinetic energy correction
    */
@@ -399,7 +399,7 @@ struct OrbitalBase: public QMCTraits
    */
   virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
                                        std::vector<RealType>& dgradlogpsi) {
-    app_error() << "Need specialization of OrbitalBase::evaluateGradDerivatives.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::evaluateGradDerivatives.\n";
     abort();
   }
 
@@ -426,11 +426,11 @@ struct OrbitalBase: public QMCTraits
       std::vector<ValueType>& ratios, Matrix<ValueType>& dratios);
 
   ///** copy data members from old
-  // * @param old existing OrbitalBase from which all the data members are copied.
+  // * @param old existing WaveFunctionComponent from which all the data members are copied.
   // *
   // * It is up to the derived classes to determine to use deep, shallow and mixed copy methods.
   // */
-  //virtual void copyFrom(const OrbitalBase& old);
+  //virtual void copyFrom(const WaveFunctionComponent& old);
 
   /////////////////////////////////////////////////////
   // Functions for vectorized evaluation and updates //
@@ -453,7 +453,7 @@ struct OrbitalBase: public QMCTraits
   addLog (MCWalkerConfiguration &W,
           std::vector<RealType> &logPsi)
   {
-    app_error() << "Need specialization of OrbitalBase::addLog for "
+    app_error() << "Need specialization of WaveFunctionComponent::addLog for "
                 << OrbitalName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
@@ -469,7 +469,7 @@ struct OrbitalBase: public QMCTraits
   ratio (MCWalkerConfiguration &W, int iat,
          std::vector<ValueType> &psi_ratios)
   {
-    app_error() << "Need specialization of OrbitalBase::ratio.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::ratio.\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -480,7 +480,7 @@ struct OrbitalBase: public QMCTraits
   ratio (MCWalkerConfiguration &W, int iat,
          std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad)
   {
-    app_error() << "Need specialization of OrbitalBase::ratio.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::ratio.\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -490,7 +490,7 @@ struct OrbitalBase: public QMCTraits
          std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
          std::vector<ValueType> &lapl)
   {
-    app_error() << "Need specialization of OrbitalBase::ratio.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::ratio.\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -500,7 +500,7 @@ struct OrbitalBase: public QMCTraits
              std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
              std::vector<ValueType> &lapl)
   {
-    app_error() << "Need specialization of OrbitalBase::calcRatio.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::calcRatio.\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -510,7 +510,7 @@ struct OrbitalBase: public QMCTraits
             std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
             std::vector<ValueType> &lapl)
   {
-    app_error() << "Need specialization of OrbitalBase::addRatio.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::addRatio.\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -520,7 +520,7 @@ struct OrbitalBase: public QMCTraits
          std::vector<PosType> &rNew,  std::vector<ValueType> &psi_ratios,
          std::vector<GradType>  &grad,  std::vector<ValueType> &lapl)
   {
-    app_error() << "Need specialization of OrbitalBase::ratio.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::ratio.\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -530,7 +530,7 @@ struct OrbitalBase: public QMCTraits
   addGradient(MCWalkerConfiguration &W, int iat,
               std::vector<GradType> &grad)
   {
-    app_error() << "Need specialization of OrbitalBase::addGradient for "
+    app_error() << "Need specialization of WaveFunctionComponent::addGradient for "
                 << OrbitalName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
@@ -540,7 +540,7 @@ struct OrbitalBase: public QMCTraits
   calcGradient(MCWalkerConfiguration &W, int iat,
                std::vector<GradType> &grad)
   {
-    app_error() << "Need specialization of OrbitalBase::calcGradient for "
+    app_error() << "Need specialization of WaveFunctionComponent::calcGradient for "
                 << OrbitalName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
@@ -550,7 +550,7 @@ struct OrbitalBase: public QMCTraits
   gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
             ValueMatrix_t &lapl)
   {
-    app_error() << "Need specialization of OrbitalBase::gradLapl for "
+    app_error() << "Need specialization of WaveFunctionComponent::gradLapl for "
                 << OrbitalName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
@@ -560,7 +560,7 @@ struct OrbitalBase: public QMCTraits
   virtual void
   update (std::vector<Walker_t*> &walkers, int iat)
   {
-    app_error() << "Need specialization of OrbitalBase::update.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::update.\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -569,7 +569,7 @@ struct OrbitalBase: public QMCTraits
   update (const std::vector<Walker_t*> &walkers,
           const std::vector<int> &iatList)
   {
-    app_error() << "Need specialization of OrbitalBase::update.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::update.\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -579,7 +579,7 @@ struct OrbitalBase: public QMCTraits
   NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
             std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios)
   {
-    app_error() << "Need specialization of OrbitalBase::NLRatios.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::NLRatios.\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -591,7 +591,7 @@ struct OrbitalBase: public QMCTraits
             gpu::device_vector<CUDA_PRECISION*> &RatioList,
             int numQuadPoints)
   {
-    app_error() << "Need specialization of OrbitalBase::NLRatios.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::NLRatios.\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -602,7 +602,7 @@ struct OrbitalBase: public QMCTraits
                        RealMatrix_t &dgrad_logpsi,
                        RealMatrix_t &dhpsi_over_psi)
   {
-    app_error() << "Need specialization of OrbitalBase::evaluateDerivatives.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::evaluateDerivatives.\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }

@@ -1023,7 +1023,7 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
   }
 }
 
-OrbitalBasePtr DiracDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr DiracDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
 {
   APP_ABORT(" Illegal action. Cannot use DiracDeterminantWithBackflow::makeClone");
   return 0;

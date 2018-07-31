@@ -309,7 +309,7 @@ void MultiDiracDeterminantBase::restore(int iat)
 
 // this has been fixed
 MultiDiracDeterminantBase::MultiDiracDeterminantBase(const MultiDiracDeterminantBase& s):
-  OrbitalBase(s), NP(0), FirstIndex(s.FirstIndex),ciConfigList(nullptr),
+  WaveFunctionComponent(s), NP(0), FirstIndex(s.FirstIndex),ciConfigList(nullptr),
   UpdateTimer("MultiDiracDeterminantBase::update"),
   RatioTimer("MultiDiracDeterminantBase::ratio"),
   InverseTimer("MultiDiracDeterminantBase::inverse"),
@@ -342,7 +342,7 @@ SPOSetPtr  MultiDiracDeterminantBase::clonePhi() const
   return Phi->makeClone();
 }
 
-OrbitalBasePtr MultiDiracDeterminantBase::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr MultiDiracDeterminantBase::makeClone(ParticleSet& tqp) const
 {
   APP_ABORT(" Illegal action. Cannot use MultiDiracDeterminantBase::makeClone");
   return 0;

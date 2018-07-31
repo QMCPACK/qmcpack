@@ -168,7 +168,7 @@ public:
     APP_ABORT("Need to implement SlaterDetWithBackflow::alternateRatio() \n");
   }
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   SPOSetPtr getPhi(int i=0)
   {
