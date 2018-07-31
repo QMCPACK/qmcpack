@@ -170,7 +170,7 @@ public:
 
   OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
-  SPOSetBasePtr getPhi(int i=0)
+  SPOSetPtr getPhi(int i=0)
   {
     return Dets[i]->getPhi();
   }

@@ -30,7 +30,7 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-DiracDeterminantBase::DiracDeterminantBase(SPOSetBasePtr const &spos, int first):
+DiracDeterminantBase::DiracDeterminantBase(SPOSetPtr const &spos, int first):
   NP(0), Phi(spos), FirstIndex(first)
   ,UpdateTimer("DiracDeterminantBase::update",timer_level_fine)
   ,RatioTimer("DiracDeterminantBase::ratio",timer_level_fine)
@@ -623,7 +623,7 @@ OrbitalBasePtr DiracDeterminantBase::makeClone(ParticleSet& tqp) const
   return 0;
 }
 
-DiracDeterminantBase* DiracDeterminantBase::makeCopy(SPOSetBasePtr spo) const
+DiracDeterminantBase* DiracDeterminantBase::makeCopy(SPOSetPtr spo) const
 {
   DiracDeterminantBase* dclone= new DiracDeterminantBase(spo);
   dclone->set(FirstIndex,LastIndex-FirstIndex);
@@ -643,7 +643,7 @@ DiracDeterminantBase::DiracDeterminantBase(const DiracDeterminantBase& s)
   this->resize(s.NumPtcls,s.NumOrbitals);
 }
 
-//SPOSetBasePtr  DiracDeterminantBase::clonePhi() const
+//SPOSetPtr  DiracDeterminantBase::clonePhi() const
 //{
 //  return Phi->makeClone();
 //}

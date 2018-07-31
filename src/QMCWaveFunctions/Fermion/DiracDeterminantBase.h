@@ -22,7 +22,7 @@
 #ifndef QMCPLUSPLUS_DIRACDETERMINANTWITHBASE_H
 #define QMCPLUSPLUS_DIRACDETERMINANTWITHBASE_H
 #include "QMCWaveFunctions/OrbitalBase.h"
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
@@ -42,14 +42,14 @@ public:
   opt_variables_type myVars;
 
 
-  typedef SPOSetBase::IndexVector_t IndexVector_t;
-  typedef SPOSetBase::ValueVector_t ValueVector_t;
-  typedef SPOSetBase::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSetBase::GradVector_t  GradVector_t;
-  typedef SPOSetBase::GradMatrix_t  GradMatrix_t;
-  typedef SPOSetBase::HessMatrix_t  HessMatrix_t;
-  typedef SPOSetBase::HessVector_t  HessVector_t;
-  typedef SPOSetBase::HessType      HessType;
+  typedef SPOSet::IndexVector_t IndexVector_t;
+  typedef SPOSet::ValueVector_t ValueVector_t;
+  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
+  typedef SPOSet::GradVector_t  GradVector_t;
+  typedef SPOSet::GradMatrix_t  GradMatrix_t;
+  typedef SPOSet::HessMatrix_t  HessMatrix_t;
+  typedef SPOSet::HessVector_t  HessVector_t;
+  typedef SPOSet::HessType      HessType;
 
 #ifdef MIXED_PRECISION
   typedef ParticleSet::SingleParticleValue_t mValueType;
@@ -63,7 +63,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantBase(SPOSetBasePtr const &spos, int first=0);
+  DiracDeterminantBase(SPOSetPtr const &spos, int first=0);
 
   ///default destructor
   virtual ~DiracDeterminantBase();
@@ -80,9 +80,9 @@ public:
 
   ///** return a clone of Phi
   // */
-  //SPOSetBasePtr clonePhi() const;
+  //SPOSetPtr clonePhi() const;
 
-  SPOSetBasePtr getPhi()
+  SPOSetPtr getPhi()
   {
     return Phi;
   };
@@ -239,8 +239,8 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  virtual DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
-//       virtual DiracDeterminantBase* makeCopy(ParticleSet& tqp, SPOSetBase* spo) const {return makeCopy(spo); };
+  virtual DiracDeterminantBase* makeCopy(SPOSet* spo) const;
+//       virtual DiracDeterminantBase* makeCopy(ParticleSet& tqp, SPOSet* spo) const {return makeCopy(spo); };
 
   virtual void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
   ///total number of particles
@@ -256,7 +256,7 @@ public:
   ///index of the particle (or row)
   int WorkingIndex;
   ///a set of single-particle orbitals used to fill in the  values of the matrix
-  SPOSetBasePtr Phi;
+  SPOSetPtr Phi;
 
   /////Current determinant value
   //ValueType CurrentDet;

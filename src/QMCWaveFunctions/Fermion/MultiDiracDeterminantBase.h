@@ -20,7 +20,7 @@
 #ifndef QMCPLUSPLUS_MULTIDIRACDETERMINANTWITHBASE_H
 #define QMCPLUSPLUS_MULTIDIRACDETERMINANTWITHBASE_H
 #include "QMCWaveFunctions/OrbitalBase.h"
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase_help.h"
@@ -42,19 +42,19 @@ public:
   // Optimizable parameters
   opt_variables_type myVars;
 
-  typedef SPOSetBase::IndexVector_t IndexVector_t;
-  typedef SPOSetBase::ValueVector_t ValueVector_t;
-  typedef SPOSetBase::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSetBase::GradVector_t  GradVector_t;
-  typedef SPOSetBase::GradMatrix_t  GradMatrix_t;
-  typedef SPOSetBase::HessMatrix_t  HessMatrix_t;
-  typedef SPOSetBase::HessType      HessType;
+  typedef SPOSet::IndexVector_t IndexVector_t;
+  typedef SPOSet::ValueVector_t ValueVector_t;
+  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
+  typedef SPOSet::GradVector_t  GradVector_t;
+  typedef SPOSet::GradMatrix_t  GradMatrix_t;
+  typedef SPOSet::HessMatrix_t  HessMatrix_t;
+  typedef SPOSet::HessType      HessType;
 
   /** constructor
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  MultiDiracDeterminantBase(SPOSetBasePtr const &spos, int first=0);
+  MultiDiracDeterminantBase(SPOSetPtr const &spos, int first=0);
 
   ///default destructor
   ~MultiDiracDeterminantBase();
@@ -71,9 +71,9 @@ public:
 
   /** return a clone of Phi
    */
-  SPOSetBasePtr clonePhi() const;
+  SPOSetPtr clonePhi() const;
 
-  SPOSetBasePtr getPhi()
+  SPOSetPtr getPhi()
   {
     return Phi;
   };
@@ -335,7 +335,7 @@ public:
   ///index of the particle (or row)
   int WorkingIndex;
   ///a set of single-particle orbitals used to fill in the  values of the matrix
-  SPOSetBasePtr Phi;
+  SPOSetPtr Phi;
   /// number of determinants handled by this object
   int NumDets;
   ///bool to cleanup

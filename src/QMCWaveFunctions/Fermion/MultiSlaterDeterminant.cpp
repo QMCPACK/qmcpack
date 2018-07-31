@@ -77,7 +77,7 @@ OrbitalBasePtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 //           spo->occup(i,nq++) = k;
 //         }
 //       }
-    DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo_up,0);
+    DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetPtr) clone->spo_up,0);
     adet->set(clone->FirstIndex_up,clone->nels_up);
     adet->resetTargetParticleSet(tqp);
     clone->dets_up.push_back(adet);
@@ -93,7 +93,7 @@ OrbitalBasePtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 //           spo->occup(i,nq++) = k;
 //         }
 //       }
-    DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) clone->spo_dn,0);
+    DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetPtr) clone->spo_dn,0);
     adet->set(clone->FirstIndex_dn,clone->nels_dn);
     adet->resetTargetParticleSet(tqp);
     clone->dets_dn.push_back(adet);

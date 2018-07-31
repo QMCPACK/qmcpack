@@ -133,14 +133,14 @@ const char *particles =
   SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
-  SPOSetBasePtr spo = sd->mySPOSet.begin()->second;
+  SPOSetPtr spo = sd->mySPOSet.begin()->second;
   REQUIRE(spo != NULL);
-  //SPOSetBase *spo = einSet.createSPOSetFromXML(ein1);
+  //SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   //REQUIRE(spo != NULL);
 
   int orbSize= spo->getOrbitalSetSize();
   elec.update();
-  SPOSetBase::ValueVector_t orbs(orbSize);
+  SPOSet::ValueVector_t orbs(orbSize);
   spo->evaluate(elec, 0, orbs);
 
   REQUIRE(orbs[0] == ComplexApprox(-1.2473558998).compare_real_only());
@@ -163,7 +163,7 @@ const char *particles =
         elec.R[0][1] = y;
         elec.R[0][2] = z;
         elec.update();
-        SPOSetBase::ValueVector_t orbs(orbSize);
+        SPOSet::ValueVector_t orbs(orbSize);
         spo->evaluate(elec, 0, orbs);
         fprintf(fspo, "%g %g %g",x,y,z);
         for (int j = 0; j < orbSize; j++) {
@@ -287,14 +287,14 @@ const char *particles =
   SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
-  SPOSetBasePtr spo = sd->mySPOSet.begin()->second;
+  SPOSetPtr spo = sd->mySPOSet.begin()->second;
   REQUIRE(spo != NULL);
-  //SPOSetBase *spo = einSet.createSPOSetFromXML(ein1);
+  //SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   //REQUIRE(spo != NULL);
 
   int orbSize= spo->getOrbitalSetSize();
   elec.update();
-  SPOSetBase::ValueVector_t orbs(orbSize);
+  SPOSet::ValueVector_t orbs(orbSize);
   spo->evaluate(elec, 0, orbs);
 
   REQUIRE(orbs[0] == ComplexApprox(-14.3744302974).compare_real_only());
@@ -317,7 +317,7 @@ const char *particles =
         elec.R[0][1] = y;
         elec.R[0][2] = z;
         elec.update();
-        SPOSetBase::ValueVector_t orbs(orbSize);
+        SPOSet::ValueVector_t orbs(orbSize);
         spo->evaluate(elec, 0, orbs);
         fprintf(fspo, "%g %g %g",x,y,z);
         for (int j = 0; j < orbSize; j++) {

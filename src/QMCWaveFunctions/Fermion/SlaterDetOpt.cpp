@@ -27,7 +27,7 @@ namespace qmcplusplus {
 /// \param[in]      nmo            number of optimizable molecular orbitals
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-SlaterDetOpt::SlaterDetOpt(ParticleSet & ptcl, SPOSetBase * spo_ptr, const int up_or_down)
+SlaterDetOpt::SlaterDetOpt(ParticleSet & ptcl, SPOSet * spo_ptr, const int up_or_down)
   : DiracDeterminantBase(spo_ptr, ptcl.first(up_or_down))
   , m_up_or_down(up_or_down)
   , m_nmo(spo_ptr->size())
@@ -134,7 +134,7 @@ OrbitalBasePtr SlaterDetOpt::makeClone(ParticleSet& tqp) const {
 /// \param[in]      spo       the single particle orbital set the copy should use
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-DiracDeterminantBase* SlaterDetOpt::makeCopy(SPOSetBasePtr spo) const
+DiracDeterminantBase* SlaterDetOpt::makeCopy(SPOSetPtr spo) const
 {
   SlaterDetOpt* copy = new SlaterDetOpt(*targetPtcl, spo, m_up_or_down);
 

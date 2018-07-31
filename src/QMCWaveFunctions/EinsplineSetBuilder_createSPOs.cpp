@@ -116,12 +116,12 @@ void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
   AnalyzeTwists2();
 }
 
-SPOSetBase*
+SPOSet*
 EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   update_token(__FILE__,__LINE__,"createSPOSetFromXML");
   //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
-  SPOSetBase *OrbitalSet;
+  SPOSet *OrbitalSet;
   int numOrbs = 0;
   int sortBands(1);
   int spinSet = 0;
@@ -246,7 +246,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   spo_prec="single"; //overwrite
 #endif
   H5OrbSet aset(H5FileName, spinSet, numOrbs);
-  std::map<H5OrbSet,SPOSetBase*,H5OrbSet>::iterator iter;
+  std::map<H5OrbSet,SPOSet*,H5OrbSet>::iterator iter;
   iter = SPOSetMap.find (aset);
   if ((iter != SPOSetMap.end() ) && (!NewOcc))
   {
@@ -337,9 +337,9 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   // temporary disable the following function call, Ye Luo
   // RotateBands_ESHDF(spinSet, dynamic_cast<EinsplineSetExtended<std::complex<double> >*>(OrbitalSet));
   HasCoreOrbs=bcastSortBands(spinSet,NumDistinctOrbitals,myComm->rank()==0);
-  SPOSetBase* bspline_zd=MixedSplineReader->create_spline_set(spinSet,spo_cur);
+  SPOSet* bspline_zd=MixedSplineReader->create_spline_set(spinSet,spo_cur);
   if(!bspline_zd)
-    APP_ABORT_TRACE(__FILE__,__LINE__,"Failed to create SPOSetBase*");
+    APP_ABORT_TRACE(__FILE__,__LINE__,"Failed to create SPOSet*");
   delta_mem=qmc_common.memory_allocated-delta_mem;
   app_log() <<"  MEMORY allocated SplineAdoptorReader " << (delta_mem>>20) << " MB" << std::endl;
   OrbitalSet = bspline_zd;
@@ -467,7 +467,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   return OrbitalSet;
 }
 
-SPOSetBase* EinsplineSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info)
+SPOSet* EinsplineSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info)
 {
   update_token(__FILE__,__LINE__,"createSPOSet(cur,input_info)");
 
@@ -493,7 +493,7 @@ SPOSetBase* EinsplineSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& in
   int norb=input_info.max_index();
   H5OrbSet aset(H5FileName, spinSet, norb);
 
-  SPOSetBase* bspline_zd=MixedSplineReader->create_spline_set(spinSet,cur,input_info);
+  SPOSet* bspline_zd=MixedSplineReader->create_spline_set(spinSet,cur,input_info);
   //APP_ABORT_TRACE(__FILE__,__LINE__,"DONE");
   if(bspline_zd)
     SPOSetMap[aset] = bspline_zd;

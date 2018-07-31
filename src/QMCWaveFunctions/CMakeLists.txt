@@ -26,7 +26,7 @@ SET(WFBASE_SRCS
   SPOInfo.cpp
   SPOSetInfo.cpp
   SPOSetInputInfo.cpp
-  SPOSetBase.cpp
+  SPOSet.cpp
   OptimizableSPOSet.cpp
   CompositeSPOSet.cpp
   HarmonicOscillator/SHOSet.cpp
