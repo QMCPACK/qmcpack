@@ -28,7 +28,7 @@ GitHub closely to avoid difficult merges.
   wavefunctions. Initial version is limited to Gamma-point.
 * Improved hybrid representation of single particle orbitals
   (APW-like) for significantly reduced memory usage and possible
-  accuracy increase compared to conventional spline representation.
+  accuracy increase compared to conventional spline representation. https://arxiv.org/abs/1805.07406
 * Norms of orbitals are checked inside QMCPACK to catch conversion errors.
 * Added verbosity setting to QMCPACK output.
 * CUDA can now be enabled with SoA builds.
