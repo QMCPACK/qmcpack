@@ -40,7 +40,7 @@ GitHub closely to avoid difficult merges.
 
 ### Known bugs
 
-* Weight of first block of DMC density is incorrect in CU
+* Weight of first block of DMC density is incorrect in CPU
   code. DMC densities in CUDA GPU code are incorrect for all
   blocks. [\#934](https://github.com/QMCPACK/qmcpack/issues/934) and [\#925](https://github.com/QMCPACK/qmcpack/issues/925)
 * Runs with only a single electron may crash. [\#945](https://github.com/QMCPACK/qmcpack/issues/945)
@@ -49,6 +49,7 @@ GitHub closely to avoid difficult merges.
 
 * Support for GAMESS HDF5 workflows.
 * Nexus accepts command line inputs.
+* Nexus testing via ntest executable.
 * Added GAMESS-NEXUS examples for RHF, CISD, and CASSCF wavefunction.
 * Added support for -nojastrow workflows.
 * Added support for Stampede supercomputer.
