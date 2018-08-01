@@ -167,8 +167,6 @@ class SlaterDetOpt : public DiracDeterminantBase {
 
     void resetTargetParticleSet(ParticleSet& P);
 
-    ValueType evaluate(ParticleSet& P ,ParticleSet::ParticleGradient_t& G ,ParticleSet::ParticleLaplacian_t& L);
-
     RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
     GradType evalGrad(ParticleSet& P, int iat);

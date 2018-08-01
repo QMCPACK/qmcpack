@@ -31,6 +31,14 @@ def trivial(sim,*args,**kwargs):
 
 
 class ProjectManager(NexusCore):
+
+    machine = None
+
+    @staticmethod
+    def restore_default_settings():
+        ProjectManager.machine = None
+    #end def restore_default_settings
+
     def __init__(self):
         modes = nexus_core.modes
         self.persistent_modes = set([modes.submit,modes.all])

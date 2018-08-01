@@ -26,7 +26,7 @@ namespace qmcplusplus
 {
 
 template<class RFB>
-struct AtomicBasisBuilder: public BasisSetBuilder
+struct AtomicBasisBuilder: public SPOSetBuilder
 {
 
   typedef typename RFB::CenteredOrbitalType COT;
@@ -113,7 +113,7 @@ bool AtomicBasisBuilder<RFB>::put(xmlNodePtr cur)
     expandlm = MOD_NATURAL_EXPAND;
     addsignforM=tmp_addsignforM;
     if(sph != "spherical") {
-      APP_ABORT(" Error: expandYlm='pwscf' only compatible with angular='spherical'. Aborting.\n");
+      APP_ABORT(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
   if(sph == "cartesian" || Morder == "Gamess")
@@ -165,7 +165,7 @@ bool AtomicBasisBuilder<RFB>::putH5(hdf_archive &hin)
     expandlm = MOD_NATURAL_EXPAND;
     addsignforM=tmp_addsignforM;
     if(sph != "spherical") {
-      APP_ABORT(" Error: expandYlm='pwscf' only compatible with angular='spherical'. Aborting.\n");
+      APP_ABORT(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
   if(sph == "cartesian" || Morder == "Gamess")
@@ -603,7 +603,7 @@ int AtomicBasisBuilder<RFB>::expandYlmH5(const std::string& rnl, const QuantumNu
        // }
        // //increment number of basis functions
        // num++;
-      APP_ABORT(" Error: expandYlm='pwscf'  with angular='spherical' And HDF5 not implemented in AOS version of the code. Aborting.\n");
+      APP_ABORT(" Error: expandYlm='pyscf'  with angular='spherical' And HDF5 not implemented in AOS version of the code. Aborting.\n");
        
 
   }

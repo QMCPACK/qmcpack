@@ -20,7 +20,6 @@
 #include "QMCDrivers/QMCCostFunctionCUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "Particle/HDFWalkerInputCollect.h"
 #include "Message/CommOperators.h"
 
 namespace qmcplusplus
@@ -28,8 +27,8 @@ namespace qmcplusplus
 
 QMCCostFunctionCUDA::QMCCostFunctionCUDA
 ( MCWalkerConfiguration& w, TrialWaveFunction& psi,
-  QMCHamiltonian& h, HamiltonianPool& hpool):
-  QMCCostFunctionBase(w,psi,h), CloneManager(hpool)
+  QMCHamiltonian& h):
+  QMCCostFunctionBase(w,psi,h)
 {
 }
 

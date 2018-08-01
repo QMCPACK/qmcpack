@@ -21,8 +21,8 @@ namespace qmcplusplus
 class SkEstimator_CUDA : public SkEstimator
 {
 public:
-  SkEstimator_CUDA(ParticleSet& elns) : SkEstimator(elns) {}
-  void addEnergy(MCWalkerConfiguration &W,  std::vector<RealType> &LocalEnergy);
+  GPU_XRAY_TRACE SkEstimator_CUDA(ParticleSet& elns) : SkEstimator(elns) {}
+  GPU_XRAY_TRACE void addEnergy(MCWalkerConfiguration &W,  std::vector<RealType> &LocalEnergy);
 };
 }
 

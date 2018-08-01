@@ -152,8 +152,9 @@ ENDFUNCTION()
 
 FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SHOULD_SUCCEED)
     # Map from name of check to appropriate flag for check_scalars.py
-    LIST(APPEND SCALAR_CHECK_TYPE "kinetic" "totenergy" "variance" "eeenergy" "samples" "potential" "ionion" "localecp" "nonlocalecp" "flux" "kinetic_mixed" "kinetic_pure" "eeenergy_mixed" "eeenergy_pure" "potential_pure" "totenergy_A" "totenergy_B" "dtotenergy_AB" "ionion_A" "ionion_B" "dionion_AB" "eeenergy_A" "eeenergy_B" "deeenergy_AB")
-    LIST(APPEND CHECK_SCALAR_FLAG "--ke"    "--le"    "--va"    "--ee"     "--ts"    "--lp"      "--ii"       "--lpp"    "--nlpp" "--fl" "--ke_m" "--ke_p" "--ee_m" "--ee_p" "--lp_p" "--le_A" "--le_B" "--dle_AB" "--ii_A" "--ii_B" "--dii_AB" "--ee_A" "--ee_B" "--dee_AB")
+    LIST(APPEND SCALAR_CHECK_TYPE "kinetic" "totenergy" "variance" "eeenergy" "samples" "potential" "ionion" "localecp" "nonlocalecp" "flux" "kinetic_mixed" "kinetic_pure" "eeenergy_mixed" "eeenergy_pure" "potential_pure" "totenergy_A" "totenergy_B" "dtotenergy_AB" "ionion_A" "ionion_B" "dionion_AB" "eeenergy_A" "eeenergy_B" "deeenergy_AB" "Eloc" "ElocEstim" "latdev")
+    LIST(APPEND CHECK_SCALAR_FLAG "--ke"    "--le"    "--va"    "--ee"     "--ts"    "--lp"      "--ii"       "--lpp"    "--nlpp" "--fl" "--ke_m" "--ke_p" "--ee_m" "--ee_p" "--lp_p" "--le_A" "--le_B" "--dle_AB" "--ii_A" "--ii_B" "--dii_AB" "--ee_A" "--ee_B" "--dee_AB" "--eloc" "--elocest" "--latdev")
+
 
     SET( TEST_ADDED FALSE )
     SET( FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}" )
@@ -180,9 +181,14 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
             IF(MOD_IDX0 EQUAL 1)
                 #MESSAGE("   CHECKLIST: ${V}")
                 SET(SCALAR_VALUES ${V})
+                SET(SCALAR_VALUE_FOUND FALSE)
+                IF (NOT ${SCALAR_VALUES})
+                    MESSAGE(FATAL_ERROR "Scalar values not found in variable ${SCALAR_VALUES}")
+                ENDIF()
                 FOREACH(SCALAR_CHECK IN LISTS SCALAR_CHECK_TYPE)
                     LIST(FIND ${SCALAR_VALUES} ${SCALAR_CHECK} IDX1)
                     IF (IDX1 GREATER -1)
+                        SET(SCALAR_VALUE_FOUND TRUE)
                         LIST(FIND SCALAR_CHECK_TYPE ${SCALAR_CHECK} IDX)
                         LIST(GET CHECK_SCALAR_FLAG ${IDX} FLAG)
                 
@@ -205,6 +211,9 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
                         SET_PROPERTY( TEST ${TEST_NAME} APPEND PROPERTY LABELS "QMCPACK-checking-results" )
                     ENDIF()
                 ENDFOREACH(SCALAR_CHECK)
+                IF (NOT SCALAR_VALUE_FOUND)
+                    MESSAGE(FATAL_ERROR "Unknown scalar value to check in ${${SCALAR_VALUES}}")
+                ENDIF()
             ENDIF()
             MATH(EXPR IDX0 "${IDX0}+1")
         ENDFOREACH(V)
@@ -230,7 +239,13 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
   endif()
 
   # set up command to run check, assume check_script is in the same folder as input
-  set(check_cmd ${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script})
+  if (EXISTS "${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script}")
+    set(check_cmd "${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script}")
+  elseif(EXISTS "${CMAKE_SOURCE_DIR}/tests/scripts/${check_script}")
+    set(check_cmd "${CMAKE_SOURCE_DIR}/tests/scripts/${check_script}")
+  else()
+    message(FATAL_ERROR "Check script not found: ${check_script}")
+  endif()
   #message(${check_cmd})
 
   # add test (task 2)

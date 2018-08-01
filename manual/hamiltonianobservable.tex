@@ -106,21 +106,7 @@ Many pair potentials are supported.  Though only the most commonly used pair pot
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{pseudo            } & \multicolumn{2}{l}{Semilocal pseudopotential}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{mpc               } & \multicolumn{2}{l}{Modified Periodic Coulomb interaction/correction}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{cpp               } & \multicolumn{2}{l}{Core polarization potential}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{numerical/*num*   } & \multicolumn{2}{l}{Numerical radial potential}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{skpot             } & \multicolumn{2}{l}{\textit{Unknown}}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{vhxc              } & \multicolumn{2}{l}{Exchange correlation potential (external)}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{jellium           } & \multicolumn{2}{l}{Atom-centered spherical jellium potential}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{hardsphere        } & \multicolumn{2}{l}{Hard sphere potential}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{gaussian          } & \multicolumn{2}{l}{Gaussian potential}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{modpostel         } & \multicolumn{2}{l}{Modified Poschl-Teller potential}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{huse              } & \multicolumn{2}{l}{Huse quintic potential}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{modInsKE          } & \multicolumn{2}{l}{Model insulator kinetic energy}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{oscillatory       } & \multicolumn{2}{l}{\textit{Unknown}}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{LJP\_smoothed     } & \multicolumn{2}{l}{Helium pair potential}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{HeSAPT\_smoothed  } & \multicolumn{2}{l}{Helium pair potential}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{HFDHE2\_Moroni1995} & \multicolumn{2}{l}{Helium pair potential}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{HFDHE2            } & \multicolumn{2}{l}{Helium pair potential}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{eHe               } & \multicolumn{2}{l}{Helium-electron pair potential}\\
 \multicolumn{2}{l}{shared attributes:} & \multicolumn{4}{l}{}\\
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
    &   \texttt{type}$^r$      &  text              & \textit{See above}        & 0                   & Select pairpot type         \\
@@ -139,11 +125,11 @@ Additional information:
   \item{\textbf{type:} Used to select the desired pair potential.  Must be selected from the list of type options above.}
   \item{\textbf{name:} A unique name used to identify this pair potential.  Block averaged output data will appear under this name in \texttt{scalar.dat} and/or \texttt{stat.h5} files.}
   \item{\textbf{source/target:}  These specify the particles involved in a pair interaction.  If an interaction is between classical (e.g. ions) and quantum (e.g. electrons), \texttt{source}/\texttt{target} should be the name of the classical/quantum particleset.}
-  \item{Only \texttt{coulomb, pseudo, mpc} are described in detail below.  The older or less used types (\texttt{cpp, numerical, jellium, hardsphere, gaussian, huse, modpostel, oscillatory, skpot, vhxc, modInsKE, LJP\_smoothed, HeSAPT\_smoothed, HFDHE2\_Moroni1995, eHe, HFDHE2}) are not covered.}
+  \item{Only \texttt{coulomb, pseudo, mpc} are described in detail below.  The older or less used types (\texttt{cpp, skpot}) are not covered.}
   \dev{
-  \item{Available only if \texttt{QMC\_BUILD\_LEVEL>2} and \texttt{QMC\_CUDA} is not defined: \texttt{hardsphere, gaussian, huse, modpostel, oscillatory, skpot}.}
+  \item{Available only if \texttt{QMC\_BUILD\_LEVEL>2} and \texttt{QMC\_CUDA} is not defined: \texttt{skpot}.}
   \item{Available only if \texttt{OHMMS\_DIM==3}: \texttt{mpc, vhxc, pseudo}.}
-  \item{Available only if \texttt{OHMMS\_DIM==3} and \texttt{QMC\_BUILD\_LEVEL>2} and \texttt{QMC\_CUDA} is not defined: \texttt{cpp, LJP\_smoothed, HeSAPT\_smoothed, HFDHE2\_Moroni1995, eHe, jellium, HFDHE2, modInsKE}.}
+  \item{Available only if \texttt{OHMMS\_DIM==3} and \texttt{QMC\_BUILD\_LEVEL>2} and \texttt{QMC\_CUDA} is not defined: \texttt{cpp}.}
   }
 \end{itemize}
 
@@ -220,7 +206,7 @@ Additional information
 
 
 \subsection{Pseudopotentials}
-
+\label{sec:nlpp}
 \qmcpack supports pseudopotentials in semilocal form, which is local in the radial coordinate and non-local in angular coordinates.  When all angular momentum channels above a certain threshold ($\ell_{max}$) are well approximated by the same potential ($V_{\bar{\ell}}\equiv V_{loc}$), the pseudpotential separates into a fully local channel and an angularly-nonlocal component:
 \begin{align}
   V^{PP} = \sum_{ij}\Big(V_{\bar{\ell}}(\abs{r_i-\tilde{r}_j}) + \sum_{\ell\ne\bar{\ell}}^{\ell_{max}}\sum_{m=-\ell}^\ell \operator{Y_{\ell m}}{\big[V_\ell(\abs{r_i-\tilde{r}_j}) - V_{\bar{\ell}}(\abs{r_i-\tilde{r}_j}) \big]}{Y_{\ell m}} \Big)
@@ -273,6 +259,7 @@ Evaluation of the localized pseudopotential energy $\Psi_T^{-1}V^{PP}\Psi_T$ req
    & \texttt{forces}      &  boolean           & yes/no           & no                  & \textit{Deprecated}             \\
    &\texttt{wavefunction}$^r$ &  text          & \texttt{wavefunction.name}& invalid    & Identify wavefunction \\
    &   \texttt{format}$^r$    &  text          & xml/table        & table               & Select file format   \\
+   & \texttt{algorithm}$^o$   &  text          & batched/default  & default             & Choose NLPP algorithm \\
   \hline
 \end{tabularx}
 \end{center}
@@ -285,6 +272,7 @@ Additional information:
   \item{\textbf{name:} Ignored.  Instead default names will be present in \texttt{*scalar.dat} output files when pseudopotentials are used.  The field \texttt{LocalECP} refers to the local part of the pseudopotential.  If non-local channels are present, a \texttt{NonLocalECP} field will be added that contains the non-local energy summed over all angular momentum channels.}
   \item{\textbf{pbc:} Ewald summation will not be performed if \texttt{simulationcell.bconds== n n n}, regardless of the value of \texttt{pbc}.  Similarly, the \texttt{pbc} attribute can only be used to turn off Ewald summation if \texttt{simulationcell.bconds!= n n n}.}
   \item{\textbf{format:}  If \texttt{format}==table, QMCPACK looks for \texttt{*.psf} files containing pseudopotential data in a tabular format.  The files must be named after the ionic species provided in \texttt{particleset} (\emph{e.g.} \texttt{Li.psf} and \texttt{H.psf}). If \texttt{format}==xml, additional \texttt{pseudo} child XML elements must be provided (see below).  These elements specify individual file names and formats (both the FSAtom XML and CASINO tabular data formats are supported). }
+  \item{\textbf{algorithm} The default algorithm evaluates the ratios of wavefunction components together for each qudarature point and then one point after another. The batched algorithm evaluates the ratios of qudarature points together for each wavefunction component and then one component after another. Internally, it uses VirtualParticleSet for quadrature points. Hybrid orbital representation has an extra optimization enabled when using the batched algorithm.}
 \end{itemize}
 
 
@@ -433,6 +421,8 @@ When an \texttt{<estimator/>} element appears in \texttt{<hamiltonian/>}, it is 
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{gofr              } & \multicolumn{2}{l}{Pair correlation function (quantum species)}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{sk                } & \multicolumn{2}{l}{Static structure factor}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{structurefactor   } & \multicolumn{2}{l}{Species resolved structure factor}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{specieskinetic    } & \multicolumn{2}{l}{Species resolved kinetic energy}\\
+\multicolumn{2}{l}{                } & \multicolumn{2}{l}{latticedeviation  } & \multicolumn{2}{l}{Spatial deviation between two particlesets}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{momentum          } & \multicolumn{2}{l}{Momentum distribution}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{energydensity     } & \multicolumn{2}{l}{Energy density on uniform or Voronoi grid}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{dm1b              } & \multicolumn{2}{l}{One body density matrix in arbitrary basis}\\
@@ -442,14 +432,8 @@ When an \texttt{<estimator/>} element appears in \texttt{<hamiltonian/>}, it is 
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{orbitalimages     } & \multicolumn{2}{l}{Create image files for orbitals, then exit}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{flux              } & \multicolumn{2}{l}{Checks sampling of kinetic energy}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{localmoment       } & \multicolumn{2}{l}{Atomic spin polarization within cutoff radius}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{numberfluctuations} & \multicolumn{2}{l}{Spatial number fluctuations}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{HFDHE2            } & \multicolumn{2}{l}{Helium pressure}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{NearestNeighbors  } & \multicolumn{2}{l}{Trace nearest neighbor indices}\\
 \dev{
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{Kinetic           } & \multicolumn{2}{l}{\textit{No current function}}\\
 \multicolumn{2}{l}{                } & \multicolumn{2}{l}{Pressure          } & \multicolumn{2}{l}{\textit{No current function}}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{ZeroVarObs        } & \multicolumn{2}{l}{\textit{No current function}}\\
-\multicolumn{2}{l}{                } & \multicolumn{2}{l}{DMCCorrection     } & \multicolumn{2}{l}{\textit{No current function}}\\
 \multicolumn{2}{l}{shared attributes:} & \multicolumn{4}{l}{}\\
 }
    &   \bfseries name     & \bfseries datatype & \bfseries values & \bfseries default   & \bfseries description \\
@@ -580,68 +564,6 @@ Additional information:
    <estimator name="Density" type="density" delta="0.05 0.05 0.05"/>
 \end{lstlisting}
 
-\subsection{Lattice deviation estimator}
-Record deviation of a group of particles in one particle set (target) from a group of particles in another particle set (source).
-
-\FloatBarrier
-\begin{table}[h]
-\begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
-\hline
-\multicolumn{6}{l}{\texttt{estimator type=sk} element} \\
-\hline
-\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
-\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
-\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
-   & \bfseries name       & \bfseries datatype & \bfseries values  & \bfseries default   & \bfseries description \\
-   & \texttt{type}$^r$    &  text              & latticedeviation      &                     & Must be latticedeviation       \\
-   & \texttt{name}$^r$    &  text              & \textit{anything} & any                 & Unique name for estimator \\
-   & \texttt{hdf5}$^o$    &  boolean           & yes/no            & no                  & Output to \texttt{stat.h5} (yes) \\
-   & \texttt{per\_xyz}$^o$    &  boolean           & yes/no            & no                  & Directional-resolved (yes) \\
-   & \texttt{source}$^r$    &  text           & e/ion0/\dots         & no                  & source particle set \\
-   & \texttt{sgroup}$^r$    &  text           & u/d/\dots         & no                  & source particle group \\
-   & \texttt{target}$^r$    &  text           & e/ion0/\dots         & no                  & target particle set \\
-   & \texttt{tgroup}$^r$    &  text           & u/d/\dots         & no                  & target particle group \\
-  \hline
-\end{tabularx}
-\end{center}
-\end{table}
-\FloatBarrier
-
-Additional information:
-\begin{itemize}
-  \item{\texttt{source}: The ``reference'' particle set to measure distances from, actual reference points are determined together with \verb|sgroup|.}
-  \item{\texttt{sgroup}: The ``reference'' particle group to measure distances from.} 
-  \item{\texttt{source}: The ``target'' particle set to measure distances to.}
-  \item{\texttt{sgroup}: The ``target'' particle group to measure distances to. For example, in Listing~\ref{lst:latdev}, the distance from the up electron (``u'') to the origin of the coordinate system is recorded.}
-  \item{\texttt{per\_xyz}: Record direction-resolved distance. In Listing~\ref{lst:latdev}, the x,y,z coordinates of the up electron will be recorded separately if \texttt{per\_xyz=yes}.}
-  \item{\texttt{hdf5}: Record particle-resolved distances in the h5 file if \texttt{gdf5=yes}.}.
-\end{itemize}
-
-\begin{lstlisting}[caption={Lattice deviation estimator element.},label={lst:latdev}]
-  <particleset name="e" random="yes">
-    <group name="u" size="1" mass="1.0">
-       <parameter name="charge"              >    -1                    </parameter>
-       <parameter name="mass"                >    1.0                   </parameter>
-    </group>
-    <group name="d" size="1" mass="1.0">
-       <parameter name="charge"              >    -1                    </parameter>
-       <parameter name="mass"                >    1.0                   </parameter>
-    </group>
-  </particleset>
-  
-  <particleset name="wf_center">
-    <group name="origin" size="1">
-      <attrib name="position" datatype="posArray" condition="0">
-               0.00000000        0.00000000        0.00000000
-      </attrib>
-    </group>
-  </particleset>
-  
-  <estimator type="latticedeviation" name="latdev" hdf5="yes" per_xyz="yes"
-    source="wf_center" sgroup="origin" target="e" tgroup="u"/>
-\end{lstlisting}
-
 \subsection{Spin density estimator}
 
 The spin density is similar to the total density described above.  In this case, the sum over particles is performed independently for each spin component.
@@ -765,33 +687,6 @@ Additional information:
   <estimator type="gofr" name="gofr" num_bin="200" rmax="3.0" source="ion0" />
 \end{lstlisting}
 
-\subsection{Species kinetic energy}
-Record species-resolved kinetic energy instead of the total kinetic energy in the \verb|Kinetic| column of scalar.dat. \verb|SpeciesKineticEnergy| is arguable the simplest estimator in QMCPACK. The implementation of this estimator is detailed in \verb|manual/estimator/estimator_implementation.pdf|.
-
-\FloatBarrier
-\begin{table}[h]
-\begin{center}
-\begin{tabularx}{\textwidth}{l l l l l l }
-\hline
-\multicolumn{6}{l}{\texttt{estimator type=sk} element} \\
-\hline
-\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
-\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
-\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
-   & \bfseries name       & \bfseries datatype & \bfseries values  & \bfseries default   & \bfseries description \\
-   & \texttt{type}$^r$    &  text              & specieskinetic      &                     & Must be specieskinetic       \\
-   & \texttt{name}$^r$    &  text              & \textit{anything} & any                 & Unique name for estimator \\
-   & \texttt{hdf5}$^o$    &  boolean           & yes/no            & no                  & Output to \texttt{stat.h5} (yes) \\
-  \hline
-\end{tabularx}
-\end{center}
-\end{table}
-\FloatBarrier
-
-
-\begin{lstlisting}[caption=Species kinetic energy estimator element.]
-  <estimator type="specieskinetic" name="skinetic" hdf5="no"/>
-\end{lstlisting}
 
 \subsection{Static structure factor, $S(k)$}
 
@@ -835,6 +730,101 @@ Additional information:
 \begin{lstlisting}[caption=Static structure factor estimator element.]
   <estimator type="sk" name="sk" hdf5="yes"/>
 \end{lstlisting}
+
+
+
+\subsection{Species kinetic energy}
+Record species-resolved kinetic energy instead of the total kinetic energy in the \verb|Kinetic| column of scalar.dat. \verb|SpeciesKineticEnergy| is arguable the simplest estimator in QMCPACK. The implementation of this estimator is detailed in \verb|manual/estimator/estimator_implementation.pdf|.
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{estimator type=specieskinetic} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   & \bfseries name       & \bfseries datatype & \bfseries values  & \bfseries default   & \bfseries description \\
+   & \texttt{type}$^r$    &  text              & specieskinetic      &                     & Must be specieskinetic       \\
+   & \texttt{name}$^r$    &  text              & \textit{anything} & any                 & Unique name for estimator \\
+   & \texttt{hdf5}$^o$    &  boolean           & yes/no            & no                  & Output to \texttt{stat.h5} (yes) \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+
+\begin{lstlisting}[caption=Species kinetic energy estimator element.]
+  <estimator type="specieskinetic" name="skinetic" hdf5="no"/>
+\end{lstlisting}
+
+
+
+\subsection{Lattice deviation estimator}
+Record deviation of a group of particles in one particle set (target) from a group of particles in another particle set (source).
+
+\FloatBarrier
+\begin{table}[h]
+\begin{center}
+\begin{tabularx}{\textwidth}{l l l l l l }
+\hline
+\multicolumn{6}{l}{\texttt{estimator type=latticedeviation} element} \\
+\hline
+\multicolumn{2}{l}{parent elements:} & \multicolumn{4}{l}{\texttt{hamiltonian, qmc}}\\
+\multicolumn{2}{l}{child  elements:} & \multicolumn{4}{l}{\textit{None}}\\
+\multicolumn{2}{l}{attributes}  & \multicolumn{4}{l}{}\\
+   & \bfseries name       & \bfseries datatype & \bfseries values  & \bfseries default   & \bfseries description \\
+   & \texttt{type}$^r$    &  text              & latticedeviation      &                     & Must be latticedeviation       \\
+   & \texttt{name}$^r$    &  text              & \textit{anything} & any                 & Unique name for estimator \\
+   & \texttt{hdf5}$^o$    &  boolean           & yes/no            & no                  & Output to \texttt{stat.h5} (yes) \\
+   & \texttt{per\_xyz}$^o$    &  boolean           & yes/no            & no                  & Directional-resolved (yes) \\
+   & \texttt{source}$^r$    &  text           & e/ion0/\dots         & no                  & source particle set \\
+   & \texttt{sgroup}$^r$    &  text           & u/d/\dots         & no                  & source particle group \\
+   & \texttt{target}$^r$    &  text           & e/ion0/\dots         & no                  & target particle set \\
+   & \texttt{tgroup}$^r$    &  text           & u/d/\dots         & no                  & target particle group \\
+  \hline
+\end{tabularx}
+\end{center}
+\end{table}
+\FloatBarrier
+
+Additional information:
+\begin{itemize}
+  \item{\texttt{source}: The ``reference'' particle set to measure distances from, actual reference points are determined together with \verb|sgroup|.}
+  \item{\texttt{sgroup}: The ``reference'' particle group to measure distances from.} 
+  \item{\texttt{source}: The ``target'' particle set to measure distances to.}
+  \item{\texttt{sgroup}: The ``target'' particle group to measure distances to. For example, in Listing~\ref{lst:latdev}, the distance from the up electron (``u'') to the origin of the coordinate system is recorded.}
+  \item{\texttt{per\_xyz}: Record direction-resolved distance. In Listing~\ref{lst:latdev}, the x,y,z coordinates of the up electron will be recorded separately if \texttt{per\_xyz=yes}.}
+  \item{\texttt{hdf5}: Record particle-resolved distances in the h5 file if \texttt{gdf5=yes}.}.
+\end{itemize}
+
+\begin{lstlisting}[caption={Lattice deviation estimator element.},label={lst:latdev}]
+  <particleset name="e" random="yes">
+    <group name="u" size="1" mass="1.0">
+       <parameter name="charge"              >    -1                    </parameter>
+       <parameter name="mass"                >    1.0                   </parameter>
+    </group>
+    <group name="d" size="1" mass="1.0">
+       <parameter name="charge"              >    -1                    </parameter>
+       <parameter name="mass"                >    1.0                   </parameter>
+    </group>
+  </particleset>
+  
+  <particleset name="wf_center">
+    <group name="origin" size="1">
+      <attrib name="position" datatype="posArray" condition="0">
+               0.00000000        0.00000000        0.00000000
+      </attrib>
+    </group>
+  </particleset>
+  
+  <estimator type="latticedeviation" name="latdev" hdf5="yes" per_xyz="yes"
+    source="wf_center" sgroup="origin" target="e" tgroup="u"/>
+\end{lstlisting}
+
 
 
 
@@ -987,7 +977,8 @@ Additional information
 \hline
 \end{tabular}
 \end{center}
-\caption{Reference points available by default.  The vectors $a_1$, $a_2$, and $a_3$ refer to the simulation cell axes.  The representation of the cell is centered around \texttt{zero}.  \label{tab:ref_points}}
+\caption{Reference points available by default.  The vectors $a_1$, $a_2$, and $a_3$ refer to the simulation cell axes.  The representation of the cell is centered around \texttt{zero}.}
+\protect{\label{tab:ref_points}}
 \end{table}
 \FloatBarrier
 

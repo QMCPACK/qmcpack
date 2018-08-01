@@ -19,7 +19,7 @@
 
 #include "Configuration.h"
 #include "Numerics/OneDimGridFunctor.h"
-#include "QMCWaveFunctions/SphericalOrbitalSet.h"
+#include "QMCWaveFunctions/MolecularOrbitals/SphericalBasisSet.h"
 #include "OhmmsData/HDFAttribIO.h"
 
 namespace qmcplusplus
@@ -33,7 +33,7 @@ struct RGFBuilderBase: public QMCTraits
 
   typedef OneDimGridBase<RealType>                        GridType;
   typedef OneDimGridFunctor<RealType>                     RadialOrbitalType;
-  typedef SphericalOrbitalSet<RadialOrbitalType,GridType> CenteredOrbitalType;
+  typedef SphericalBasisSet<RadialOrbitalType,GridType>   CenteredOrbitalType;
   bool debug;
 
   ///the species

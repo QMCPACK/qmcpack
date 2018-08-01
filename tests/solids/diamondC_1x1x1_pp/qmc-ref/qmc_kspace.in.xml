@@ -1,0 +1,105 @@
+<?xml version="1.0"?>
+<simulation>
+   <project id="qmc_kspace" series="0">
+      <application name="qmcapp" role="molecu" class="serial" version="1.0"/>
+   </project>
+   <qmcsystem>
+      <simulationcell>
+         <parameter name="lattice" units="bohr">
+                  3.37316115        3.37316115        0.00000000
+                  0.00000000        3.37316115        3.37316115
+                  3.37316115        0.00000000        3.37316115
+         </parameter>
+         <parameter name="bconds">
+            p p p
+         </parameter>
+         <parameter name="LR_dim_cutoff"       >    15                 </parameter>
+      </simulationcell>
+      <particleset name="e" random="yes">
+         <group name="u" size="4" mass="1.0">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+         <group name="d" size="4" mass="1.0">
+            <parameter name="charge"              >    -1                    </parameter>
+            <parameter name="mass"                >    1.0                   </parameter>
+         </group>
+      </particleset>
+      <particleset name="ion0">
+         <group name="C" size="2" mass="21894.7135906">
+            <parameter name="charge"              >    4                     </parameter>
+            <parameter name="valence"             >    4                     </parameter>
+            <parameter name="atomicnumber"        >    6                     </parameter>
+            <parameter name="mass"                >    21894.7135906            </parameter>
+            <attrib name="position" datatype="posArray" condition="0">
+                     0.00000000        0.00000000        0.00000000
+                     1.68658058        1.68658058        1.68658058
+            </attrib>
+         </group>
+      </particleset>
+      <wavefunction name="psi0" target="e">
+         <determinantset type="einspline" href="pwscf.pwscf.h5" tilematrix="1 0 0 0 1 0 0 0 1" twistnum="0" source="ion0" meshfactor="1.0" precision="float">
+            <slaterdeterminant>
+               <determinant id="updet" size="4">
+                  <occupation mode="ground" spindataset="0"/>
+               </determinant>
+               <determinant id="downdet" size="4">
+                  <occupation mode="ground" spindataset="0"/>
+               </determinant>
+            </slaterdeterminant>
+         </determinantset>
+         <jastrow type="One-Body" name="J1" function="bspline" source="ion0" print="yes">
+            <correlation elementType="C" size="8" cusp="0.0">
+               <coefficients id="eC" type="Array">                  
+-0.3172516203 -0.2714551466 -0.2368308755 -0.1959509965 -0.149673524 -0.1006788799 
+-0.05799436967 -0.02665568718
+               </coefficients>
+            </correlation>
+         </jastrow>
+         <jastrow type="Two-Body" name="J2" function="bspline" print="yes">
+            <correlation speciesA="u" speciesB="u" size="8">
+               <coefficients id="uu" type="Array">                  
+0.1565069657 0.09355554336 0.05545579912 0.03036465466 0.01435568497 0.006079234192 
+0.002239268468 0.0004061168885
+               </coefficients>
+            </correlation>
+            <correlation speciesA="u" speciesB="d" size="8">
+               <coefficients id="ud" type="Array">                  
+0.3471853819 0.2358509257 0.1524282487 0.09492328518 0.05658982415 0.03179902398 
+0.01573872491 0.006318590212
+               </coefficients>
+            </correlation>
+         </jastrow>
+         <jastrow type="kSpace" name="Jk" source="ion0">
+            <correlation kc="4.0" type="One-Body" symmetry="cystal">
+               <coefficients id="cG1" type="Array">                  
+0.1677864259 0.07820325644 -0.6566847458 -0.02628407681 -0.07400038353 
+0.01567881686 0.03340956598 -0.02233451109
+               </coefficients>
+            </correlation>
+            <correlation kc="4.0" type="Two-Body" symmetry="crystal">
+               <coefficients id="cG2" type="Array">                  
+-0.7187512443 -0.4334973599 -0.04630107772 -0.01242607163 0.00287093506 
+-0.003361327138
+               </coefficients>
+            </correlation>
+         </jastrow>
+      </wavefunction>
+      <hamiltonian name="h0" type="generic" target="e">
+         <pairpot type="coulomb" name="ElecElec" source="e" target="e"/>
+         <pairpot type="coulomb" name="IonIon" source="ion0" target="ion0"/>
+         <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
+            <pseudo elementType="C" href="C.BFD.xml"/>
+         </pairpot>
+         <estimator type="flux" name="Flux"/>
+      </hamiltonian>
+   </qmcsystem>
+   <qmc method="vmc" move="pbyp">
+      <parameter name="walkers"             >    16              </parameter>
+      <parameter name="blocks"              >    1000            </parameter>
+      <parameter name="steps"               >    800             </parameter>
+      <parameter name="subSteps"            >    2               </parameter>
+      <parameter name="timestep"            >    0.3             </parameter>
+      <parameter name="warmupSteps"         >    100             </parameter>
+   </qmc>
+</simulation>

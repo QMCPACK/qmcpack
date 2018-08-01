@@ -303,7 +303,7 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
     }
     xmlCoefs = xmlCoefs->next;
   }
-  return SPOSetBase::put(node);
+  return true;
 }
 
 

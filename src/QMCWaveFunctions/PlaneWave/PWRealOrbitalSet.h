@@ -52,7 +52,7 @@ public:
 
   /** default constructor
   */
-  PWRealOrbitalSet(): OwnBasisSet(false)
+  PWRealOrbitalSet(): OwnBasisSet(false), BasisSetSize(0), myBasisSet(nullptr)
   {
   }
 
@@ -126,6 +126,8 @@ public:
   PosType TwistAngle;
   ///My basis set
   PWBasisPtr myBasisSet;
+  ///number of basis
+  IndexType BasisSetSize;
   ///Plane-wave coefficients of complex: (iband,g-vector)
   Matrix<ComplexType> CC;
   /// temporary array to perform gemm operation

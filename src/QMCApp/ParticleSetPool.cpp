@@ -44,16 +44,6 @@ ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
   myName=aname;
 }
 
-void ParticleSetPool::make_clones(int n)
-{
-  PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
-  while(it != it_end)
-  {
-    (*it).second->make_clones(n);
-    ++it;
-  }
-}
-
 ParticleSet* ParticleSetPool::getParticleSet(const std::string& pname)
 {
   std::map<std::string,ParticleSet*>::iterator pit(myPool.find(pname));
@@ -224,6 +214,19 @@ bool ParticleSetPool::get(std::ostream& os) const
     ++it;
   }
   return true;
+}
+
+void ParticleSetPool::output_particleset_info(Libxml2Document &doc, xmlNodePtr root)
+{
+  xmlNodePtr particles_info = doc.addChild(root, "particles");
+  PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
+  while(it != it_end)
+  {
+    xmlNodePtr particle = doc.addChild(particles_info, "particle");
+    doc.addChild(particle,"name",(*it).second->getName());
+    doc.addChild(particle,"size",(*it).second->getTotalNum());
+    ++it;
+  }
 }
 
 /** reset is used to initialize and evaluate the distance tables

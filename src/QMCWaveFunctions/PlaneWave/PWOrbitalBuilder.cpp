@@ -19,7 +19,6 @@
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
-#include "QMCWaveFunctions/DummyBasisSet.h"
 #include "QMCWaveFunctions/SPOSetScanner.h"
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/AttributeSet.h"
@@ -32,7 +31,7 @@ namespace qmcplusplus
 
 PWOrbitalBuilder::PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets)
   : OrbitalBuilderBase(els,psi), ptclPool(psets), hfileID(-1), rootNode(NULL)
-#if !defined(EANBLE_SMARTPOINTER)
+#if !defined(ENABLE_SMARTPOINTER)
   ,myBasisSet(0)
 #endif
 {
@@ -400,7 +399,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
   RealType dy=1.0/static_cast<RealType>(nG[1]-1);
   RealType dz=1.0/static_cast<RealType>(nG[2]-1);
 #if defined(VERYTINYMEMORY)
-  typedef Array<ParticleSet::ParticleValue_t,3> StorageType;
+  typedef Array<ParticleSet::SingleParticleValue_t,3> StorageType;
   StorageType inData(nG[0],nG[1],nG[2]);
   int ib=0;
   while(ib<myParam->numBands)
@@ -452,7 +451,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
     ++ib;
   }
 #else
-  typedef Array<ParticleSet::ParticleValue_t,3> StorageType;
+  typedef Array<ParticleSet::SingleParticleValue_t,3> StorageType;
   std::vector<StorageType*> inData;
   int nb=myParam->numBands;
   for(int ib=0; ib<nb; ib++)

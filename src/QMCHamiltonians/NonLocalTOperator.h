@@ -32,6 +32,7 @@ enum
   TMOVE_OFF=0, // no Tmove
   TMOVE_V0,    // M. Casula, PRB 74, 161102(R) (2006)
   TMOVE_V1,    // version 1, M. Casula et al., JCP 132, 154113 (2010)
+  TMOVE_V3,    // an approximation to version 1 but much faster.
 };
 
 struct NonLocalTOperator

@@ -47,6 +47,7 @@ struct QMCGaussianParserBase
   bool SpinRestricted;
   bool Periodicity;
   bool UseHDF5;
+  bool PBC;
   bool production;
   bool zeroCI;
   bool orderByExcitation;
@@ -80,6 +81,8 @@ struct QMCGaussianParserBase
   int FMOIndexI,FMOIndexJ,FMOIndexK;
   bool FMO, FMO1,FMO2,FMO3,DoCusp,FixValence,QP;
   
+  std::vector< std::vector <double> > Kpoints_Coord; //Kpoints Coordinates
+  int NbKpts;
 
   std::string Title;
   std::string basisType;
@@ -109,9 +112,14 @@ struct QMCGaussianParserBase
   std::vector<std::vector<std::string> > CSFalpha,CSFbeta;
   std::vector<std::vector<double> > CSFexpansion;
   std::vector<double> CIcoeff;
+  std::vector<double> X,Y,Z; //LAttice vectors for PBC
+  std::vector<int> Image ;
+
   std::vector<int> CIexcitLVL;
+
   int ci_size,ci_nca,ci_ncb,ci_nea,ci_neb,ci_nstates;
   double ci_threshold;
+  bool optDetCoeffs;
   bool usingCSF;
   bool VSVB;
 
@@ -126,8 +134,10 @@ struct QMCGaussianParserBase
 
   void createSPOSets(xmlNodePtr,xmlNodePtr);
   void createSPOSetsH5(xmlNodePtr,xmlNodePtr);
+  void PrepareSPOSetsFromH5(xmlNodePtr,xmlNodePtr);
   xmlNodePtr createElectronSet(const std::string& ion_tag);
   xmlNodePtr createIonSet();
+  xmlNodePtr createCell();
   xmlNodePtr createHamiltonian(const std::string& ion_tag, const std::string& psi_tag);
   xmlNodePtr createBasisSet();
   xmlNodePtr createBasisSetWithHDF5();
@@ -141,6 +151,7 @@ struct QMCGaussianParserBase
   xmlNodePtr createMultiDeterminantSetQP();
   xmlNodePtr createMultiDeterminantSetQPHDF5();
   xmlNodePtr createDeterminantSetWithHDF5();
+  xmlNodePtr createMultiDeterminantSetFromH5();
   xmlNodePtr PrepareDeterminantSetFromHDF5();
   xmlNodePtr createJ3();
   xmlNodePtr createJ2();
@@ -152,6 +163,9 @@ struct QMCGaussianParserBase
 
   void map2GridFunctors(xmlNodePtr cur);
   virtual void parse(const std::string& fname) = 0;
+
+  virtual void dumpPBC(const std::string& psi_tag,
+                    const std::string& ion_tag, const int KptsNum);
 
   virtual void dump(const std::string& psi_tag,
                     const std::string& ion_tag);

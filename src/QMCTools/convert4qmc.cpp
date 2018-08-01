@@ -32,15 +32,16 @@
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/RandomGenerator.h"
 #include "Utilities/OutputManager.h"
+#include <sstream>
 
 int main(int argc, char **argv)
 {
   if(argc<2)
   {
-    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-VSVB|-QP|-pyscf] filename " << std::endl;
-    std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production]" << std::endl;
+    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-VSVB|-QP|-pyscf|-orbitals] filename " << std::endl;
+    std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]" << std::endl;
     std::cout << "[-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]" << std::endl;
-    std::cout << "[-size npts -ci file.out -threshold cimin -TargetState state_number -NaturalOrbitals NumToRead]" << std::endl;
+    std::cout << "[-size npts -multidet multidet.h5 -ci file.out -threshold cimin -TargetState state_number -NaturalOrbitals NumToRead -optDetCoeffs]" << std::endl;
     std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01 -TargetState 0 -prefix sample" << std::endl;
     std::cout << "When the input format is missing, the  extension of filename is used to determine the format " << std::endl;
     std::cout << " *.Fchk -> gaussian; *.out -> gamess; *.data -> casino; *.xml -> gamesxml" << std::endl;
@@ -74,10 +75,11 @@ int main(int argc, char **argv)
   bool useprefix=false;
   bool debug = false;
   bool prod=false;
-  bool ci=false,zeroCI=false,orderByExcitation=false,VSVB=false, fmo=false,addCusp=false;
+  bool ci=false,zeroCI=false,orderByExcitation=false,VSVB=false, fmo=false,addCusp=false,multidet=false,optDetCoeffs=false;
   double thres=0.01;
   int readNO=0; // if > 0, read Natural Orbitals from gamess output
   int readGuess=0; // if > 0, read Initial Guess from gamess output
+  std::vector <int> Image;
   while(iargc<argc)
   {
     std::string a(argv[iargc]);
@@ -103,7 +105,7 @@ int main(int argc, char **argv)
       parser = new QPParser(argc,argv);
       in_file =argv[++iargc];
     }
-    else if(a == "-pyscf")
+    else if(a == "-pyscf" || a=="-orbitals")
     {
       parser = new PyscfParser(argc,argv);
       in_file =argv[++iargc];
@@ -157,6 +159,24 @@ int main(int argc, char **argv)
       ci=true;
       punch_file = argv[++iargc];
     }
+    else if(a == "-multidet")
+    {
+      multidet=true;
+      punch_file = argv[++iargc];
+    }
+    else if(a == "-NbImages")
+    {
+      int temp;
+      temp=atoi(argv[++iargc]);
+      temp+=1-temp%2;
+      Image.push_back(temp);
+      temp=atoi(argv[++iargc]);
+      temp+=1-temp%2;
+      Image.push_back(temp);
+      temp=atoi(argv[++iargc]);
+      temp+=1-temp%2;
+      Image.push_back(temp);
+    }
     else if(a == "-addCusp" )
     {
       addCusp = true;
@@ -164,6 +184,10 @@ int main(int argc, char **argv)
     else if(a == "-threshold" )
     {
       thres = atof(argv[++iargc]);
+    }
+    else if(a == "-optDetCoeffs" )
+    {
+      optDetCoeffs = true;
     }
     else if(a == "-TargetState" )
     {
@@ -280,9 +304,19 @@ int main(int argc, char **argv)
       parser->UseHDF5=false;
       parser->h5file=in_file;
     }
-    parser->multideterminant=ci;
+    if (debug){
+      parser->UseHDF5=false;
+      parser->h5file="";
+      parser->AllH5=false;
+    } 
+    parser->multideterminant=false;
+    if(ci)
+       parser->multideterminant=ci;
+    if(multidet)
+      parser->multideterminant=multidet;
     parser->production=prod;
     parser->ci_threshold=thres;
+    parser->optDetCoeffs=optDetCoeffs;
     parser->target_state=TargetState;
     parser->readNO=readNO;
     parser->orderByExcitation=orderByExcitation;
@@ -290,26 +324,64 @@ int main(int argc, char **argv)
     parser->readGuess=readGuess;
     parser->outputFile=punch_file;
     parser->VSVB=VSVB;
+    parser->Image=Image;
     parser->parse(in_file);
     if(prod)
     {
        parser->addJastrow=addJastrow;
-       parser->WFS_name=jastrow;
-       parser->dump(psi_tag, ion_tag);
-       parser->dumpStdInputProd(psi_tag, ion_tag);
+       if (parser->PBC){
+          for (int i=0; i<parser->NbKpts;i++)
+          {
+             std::cout<<"Generating Inputs for twist Nb:"<<i<<" with coordinate:"<<parser->Kpoints_Coord[i][0]<<"  "<<parser->Kpoints_Coord[i][1]<<"  "<<parser->Kpoints_Coord[i][2]<<std::endl;
+             std::stringstream ss;
+             ss<<jastrow<<"-Twist"<<i;
+             parser->WFS_name=ss.str();
+             parser->dumpPBC(psi_tag, ion_tag,i);
+             parser->dumpStdInputProd(psi_tag, ion_tag);
+          }
+
+       }
+       else{
+          parser->WFS_name=jastrow;
+          parser->dump(psi_tag, ion_tag);
+          parser->dumpStdInputProd(psi_tag, ion_tag);
+       }
     }
     else{
        parser->addJastrow=false;
-       jastrow="noj";
-       parser->WFS_name=jastrow;
-       parser->dump(psi_tag, ion_tag);
-       parser->dumpStdInput(psi_tag, ion_tag);
+       if (parser->PBC){   
+          for (int i=0; i<parser->NbKpts;i++)
+          {
+             std::cout<<"Generating Inputs for twist Nb:"<<i<<" with coordinate:"<<parser->Kpoints_Coord[i][0]<<"  "<<parser->Kpoints_Coord[i][1]<<"  "<<parser->Kpoints_Coord[i][2]<<std::endl;
+             jastrow="noj";
+             std::stringstream ss;
+             ss<<jastrow<<"-Twist"<<i;
+             parser->WFS_name=ss.str();
+             parser->dumpPBC(psi_tag, ion_tag,i);
+             parser->dumpStdInput(psi_tag, ion_tag);
+         
+             std::stringstream sss;
+             parser->addJastrow=true;
+             jastrow="j";
+             sss<<jastrow<<"-Twist"<<i;
+             parser->WFS_name=sss.str();
+             parser->dumpPBC(psi_tag, ion_tag,i);
+             parser->dumpStdInput(psi_tag, ion_tag);
+          }
+       }
+       else{   
+           jastrow="noj";
+           parser->WFS_name=jastrow;
+           parser->dump(psi_tag, ion_tag);
+           parser->dumpStdInput(psi_tag, ion_tag);
+        
+           parser->addJastrow=true;
+           jastrow="j";
+           parser->WFS_name=jastrow;
+           parser->dump(psi_tag, ion_tag);
+           parser->dumpStdInput(psi_tag, ion_tag);
+       }
 
-       parser->addJastrow=true;
-       jastrow="j";
-       parser->WFS_name=jastrow;
-       parser->dump(psi_tag, ion_tag);
-       parser->dumpStdInput(psi_tag, ion_tag);
     }
     
 

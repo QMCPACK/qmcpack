@@ -328,8 +328,7 @@ inline void evaluate(Vector<T, C> &lhs, const Op &op, const Expression<RHS> &rhs
   }
   else
   {
-    std::cerr << "Error: LHS and RHS don't conform in OhmmsVector." << std::endl;
-    abort();
+    throw std::runtime_error("Error in evaluate: LHS and RHS don't conform in OhmmsVector.");
   }
 }
 // I/O

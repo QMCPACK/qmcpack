@@ -60,7 +60,7 @@ rm -rf ./build
 mkdir -p build
 cd build
 
-cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_gnu4.8.2/include" .. 2>&1 | tee cmake.out
+cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_gnu4.8.2/include" .. 2>&1 | tee cmake.out
 
 make -j 24
 ctest -L unit
@@ -92,21 +92,16 @@ rm -rf ./build
 mkdir -p build
 cd build
 
-cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_gnu4.8.2/include" .. 2>&1 | tee cmake.out
+cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_gnu4.8.2/include" .. 2>&1 | tee cmake.out
 
 make -j 24
 ctest -L unit
 
 EOF
 
-cp $BUILD_TAG.pbs $BUILD_DIR
+/home/bgl/blocking_qsub $BUILD_DIR $BUILD_TAG.pbs
 
-cd $BUILD_DIR
-
-source scl_source enable rh-python35
-which python
-
-$BUILD_DIR/../../../scripts/blocking_qsub.py $BUILD_DIR $BUILD_TAG.pbs
+cp $BUILD_DIR/$BUILD_TAG.o* ../
 
 ## this end of job logic could probably be more elegant
 ## hacks to get us going

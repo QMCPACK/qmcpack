@@ -9,15 +9,14 @@
 //
 // File created by: Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 
 #ifndef QMCPLUSPLUS_SHOSET_H
 #define QMCPLUSPLUS_SHOSET_H
 
 #include <QMCWaveFunctions/SPOSetBase.h>
 #include <QMCWaveFunctions/SPOInfo.h>
-#include <Numerics/VectorViewer.h>
 
 
 namespace qmcplusplus
@@ -53,10 +52,8 @@ namespace qmcplusplus
   {
     typedef ValueMatrix_t::value_type value_type;
     typedef GradMatrix_t::value_type grad_type;
-    typedef VectorViewer<value_type> ValueViewer_t;
-    typedef VectorViewer<grad_type>  GradViewer_t;
 
-    RealType length; 
+    RealType length;
     PosType  center;
 
     int nmax;
@@ -85,33 +82,33 @@ namespace qmcplusplus
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi,
                   GradVector_t& dpsi, ValueVector_t& d2psi);
 
-    void evaluate_notranspose(const ParticleSet& P, int first, int last, 
-                              ValueMatrix_t& logdet, GradMatrix_t& dlogdet, 
+    void evaluate_notranspose(const ParticleSet& P, int first, int last,
+                              ValueMatrix_t& logdet, GradMatrix_t& dlogdet,
                               ValueMatrix_t& d2logdet);
 
 
     //local functions
-    void evaluate_v(PosType r, ValueViewer_t& psi);
-    void evaluate_vgl(PosType r, ValueViewer_t& psi, 
-                      GradViewer_t& dpsi, ValueViewer_t& d2psi);
+    void evaluate_v(PosType r, ValueVector_t& psi);
+    void evaluate_vgl(PosType r, ValueVector_t& psi,
+                      GradVector_t& dpsi, ValueVector_t& d2psi);
     void evaluate_hermite(const PosType& xpos);
-    void evaluate_d0(const PosType& xpos, ValueViewer_t& psi);
-    void evaluate_d1(const PosType& xpos, ValueViewer_t& psi, GradViewer_t& dpsi);
-    void evaluate_d2(const PosType& xpos, ValueViewer_t& psi, ValueViewer_t& d2psi);
+    void evaluate_d0(const PosType& xpos, ValueVector_t& psi);
+    void evaluate_d1(const PosType& xpos, ValueVector_t& psi, GradVector_t& dpsi);
+    void evaluate_d2(const PosType& xpos, ValueVector_t& psi, ValueVector_t& d2psi);
     void report(const std::string& pad="");
     void test_derivatives();
     void test_overlap();
-    void evaluate_check(PosType r, ValueViewer_t& psi, 
-                        GradViewer_t& dpsi, ValueViewer_t& d2psi);
+    void evaluate_check(PosType r, ValueVector_t& psi,
+                        GradVector_t& dpsi, ValueVector_t& d2psi);
 
-    //empty methods 
+    //empty methods
     /// number of orbitals is determined only by initial request
     inline void setOrbitalSetSize(int norbs)                     { }
 
     /// does not affect ParticleSet information
     inline void resetTargetParticleSet(ParticleSet& P)           { }
 
-    
+
     ///unimplemented functions call this to abort
     inline void not_implemented(const std::string& method)
     {
@@ -122,31 +119,31 @@ namespace qmcplusplus
     //methods to be implemented in the future (possibly)
     void resetParameters(const opt_variables_type& optVariables);
     void evaluate(const ParticleSet& P, PosType &r, ValueVector_t &psi);
-    void evaluate(const ParticleSet& P, int iat,ValueVector_t& psi, 
+    void evaluate(const ParticleSet& P, int iat,ValueVector_t& psi,
                   GradVector_t& dpsi, HessVector_t& ddpsi);
     void evaluateThirdDeriv(const ParticleSet& P,int first,int last,
                             GGGMatrix_t& dddlogdet);
-    void evaluate_notranspose(const ParticleSet& P, int first, int last, 
-                              ValueMatrix_t& logdet, GradMatrix_t& dlogdet, 
+    void evaluate_notranspose(const ParticleSet& P, int first, int last,
+                              ValueMatrix_t& logdet, GradMatrix_t& dlogdet,
                               HessMatrix_t& ddlogdet);
-    void evaluate_notranspose(const ParticleSet& P, int first, int last, 
-                              ValueMatrix_t& logdet, GradMatrix_t& dlogdet, 
+    void evaluate_notranspose(const ParticleSet& P, int first, int last,
+                              ValueMatrix_t& logdet, GradMatrix_t& dlogdet,
                               HessMatrix_t& ddlogdet, GGGMatrix_t& dddlogdet);
-    void evaluateGradSource(const ParticleSet &P, int first, int last, 
-                            const ParticleSet &source, int iat_src, 
+    void evaluateGradSource(const ParticleSet &P, int first, int last,
+                            const ParticleSet &source, int iat_src,
                             GradMatrix_t &gradphi);
-    void evaluateGradSource(const ParticleSet &P, int first, int last, 
-                            const ParticleSet &source, int iat_src, 
-                            GradMatrix_t &dphi, HessMatrix_t &ddphi, 
+    void evaluateGradSource(const ParticleSet &P, int first, int last,
+                            const ParticleSet &source, int iat_src,
+                            GradMatrix_t &dphi, HessMatrix_t &ddphi,
                             GradMatrix_t &dlapl_phi);
-    void evaluateBasis(const ParticleSet &P, int first, int last, 
-                       ValueMatrix_t &basis_val, GradMatrix_t &basis_grad, 
+    void evaluateBasis(const ParticleSet &P, int first, int last,
+                       ValueMatrix_t &basis_val, GradMatrix_t &basis_grad,
                        ValueMatrix_t &basis_lapl);
-    void evaluateForDeriv(const ParticleSet &P, int first, int last, 
-                          ValueMatrix_t &basis_val, GradMatrix_t &basis_grad, 
+    void evaluateForDeriv(const ParticleSet &P, int first, int last,
+                          ValueMatrix_t &basis_val, GradMatrix_t &basis_grad,
                           ValueMatrix_t &basis_lapl);
-    void copyParamsFromMatrix(const opt_variables_type& active, 
-                              const ValueMatrix_t &mat, 
+    void copyParamsFromMatrix(const opt_variables_type& active,
+                              const ValueMatrix_t &mat,
                               std::vector<RealType> &destVec);
   };
 

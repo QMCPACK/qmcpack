@@ -16,18 +16,42 @@
 namespace qmcplusplus
 {
   LCAOrbitalSet::LCAOrbitalSet(basis_type* bs,int rl): 
-    myBasisSet(nullptr),ReportLevel(rl)
+    myBasisSet(nullptr), C(nullptr), ReportLevel(rl),
+    BasisSetSize(0), Identity(true), IsCloned(false)
   {
     if(bs != nullptr) setBasisSet(bs);
   }
 
-  LCAOrbitalSet::~LCAOrbitalSet() {}
+  LCAOrbitalSet::~LCAOrbitalSet()
+  {
+    if(!IsCloned && C!= nullptr) delete C;
+  }
 
   void LCAOrbitalSet::setBasisSet(basis_type* bs)
   {
     myBasisSet=bs;
     BasisSetSize=myBasisSet->getBasisSetSize();
     Temp.resize(BasisSetSize);
+  }
+
+  bool LCAOrbitalSet::setIdentity(bool useIdentity)
+  {
+    Identity = useIdentity;
+    if(Identity) return true;
+
+    if ( C== nullptr && (OrbitalSetSize > 0) && (BasisSetSize > 0) )
+    {
+      C = new ValueMatrix_t(OrbitalSetSize, BasisSetSize);
+    }
+    else
+    {
+      app_error() << "either OrbitalSetSize or BasisSetSize has an invalid value !!\n";
+      app_error() << "OrbitalSetSize = " << OrbitalSetSize << std::endl;
+      app_error() << "BasisSetSize = " << BasisSetSize << std::endl;
+      APP_ABORT("LCAOrbitalBuilder::setIdentiy ");
+    }
+
+    return true;
   }
 
   SPOSetBase* LCAOrbitalSet::makeClone() const
@@ -47,7 +71,7 @@ namespace qmcplusplus
     }
     else
     {
-      VectorViewer<ValueType> vTemp(Temp.data(0),BasisSetSize);
+      Vector<ValueType> vTemp(Temp.data(0),BasisSetSize);
       myBasisSet->evaluateV(P,iat,vTemp.data());
       simd::gemv(*C,Temp.data(0),psi.data());
     }
@@ -107,6 +131,20 @@ namespace qmcplusplus
       Product_ABt(Temp,*C,vgl);
     }
   }
+
+  void LCAOrbitalSet::evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM)
+  {
+    const int nVP = VP.getTotalNum();
+    Matrix<RealType> basisM(VP.SPOMem.data(), nVP, BasisSetSize);
+    for(size_t j=0; j<nVP; j++)
+    {
+      Vector<RealType> vTemp(basisM[j],BasisSetSize);
+      myBasisSet->evaluateV(VP,j,vTemp.data());
+    }
+    MatrixOperators::product_ABt(basisM,*C,psiM);
+  }
+
+  size_t LCAOrbitalSet::estimateMemory(const int nP) { return BasisSetSize*nP; }
 
   void LCAOrbitalSet::evaluate(const ParticleSet& P, int iat,
         ValueVector_t& psi, GradVector_t& dpsi,

@@ -29,9 +29,8 @@ namespace qmcplusplus {
     template<typename T1, typename T2>
       inline void copy_n(const T1* restrict first, size_t count, T2* restrict result)
       {
-        ASSUME_ALIGNED(first); ASSUME_ALIGNED(result);
 //#pragma omp simd 
-        for(size_t i=0; i<count;  ++i) 
+        for(size_t i=0; i<count; ++i)
           result[i]=static_cast<T2>(first[i]);
       }
 
@@ -44,13 +43,13 @@ namespace qmcplusplus {
         return res;
       }
 
-  ///inner product
-  template<typename T1, typename T2, typename T3>
-    inline T3 inner_product_n(const T1* restrict a, const T2* restrict b, int n, T3 res)
-    {
-      for(int i=0; i<n; ++i) res += a[i]*b[i];
-      return res;
-    }
+    ///inner product
+    template<typename T1, typename T2, typename T3>
+      inline T3 inner_product_n(const T1* restrict a, const T2* restrict b, int n, T3 res)
+      {
+        for(int i=0; i<n; ++i) res += a[i]*b[i];
+        return res;
+      }
 
   } //simd namepsace
 }

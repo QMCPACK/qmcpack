@@ -19,6 +19,7 @@
 #include "QMCDrivers/WalkerControlBase.h"
 #include "Particle/HDFWalkerIO.h"
 #include "OhmmsData/ParameterSet.h"
+#include <numeric>
 
 namespace qmcplusplus
 {
@@ -26,8 +27,7 @@ namespace qmcplusplus
 WalkerControlBase::WalkerControlBase(Communicate* c, bool rn)
   : MPIObjectBase(c), SwapMode(0), Nmin(1), Nmax(10)
   , MaxCopy(2), NumWalkersCreated(0), NumWalkersSent(0)
-  , targetEnergyBound(10), targetVar(2), targetSigma(10)
-  , dmcStream(0), WriteRN(rn)
+  , targetSigma(10), dmcStream(0), WriteRN(rn)
 {
   MyMethod=-1; //assign invalid method
   NumContexts=myComm->size();
@@ -236,7 +236,7 @@ int WalkerControlBase::doNotBranch(int iter, MCWalkerConfiguration& W)
 
 int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
 {
-  int prefill_numwalkers = sortWalkers(W);
+  NumPerNode[0] = sortWalkers(W);
   measureProperties(iter);
   W.EnsembleProperty=EnsembleProperty;
   //un-biased variance but we use the saimple one
@@ -246,6 +246,7 @@ int WalkerControlBase::branch(int iter, MCWalkerConfiguration& W, RealType trigg
   //accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
   //accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
   //accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
+  applyNmaxNmin();
   int nw_tot = copyWalkers(W);
   //set Weight and Multiplicity to default values
   MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
@@ -383,52 +384,7 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
   //W.EnsembleProperty.Energy=(esum/=wsum);
   //W.EnsembleProperty.Variance=(e2sum/wsum-esum*esum);
   //W.EnsembleProperty.Variance=(e2sum*wsum-esum*esum)/(wsum*wsum-w2sum);
-  if (!WriteRN)
-  {
-    if(good_w.empty())
-    {
-      app_error() << "All the walkers have died. Abort. " << std::endl;
-      APP_ABORT("WalkerControlBase::sortWalkers");
-    }
-    int sizeofgood = good_w.size();
-    //check if the projected number of walkers is too small or too large
-    if(NumWalkers>Nmax)
-    {
-      int nsub=0;
-      int nsub_target=(NumWalkers-nrn)-static_cast<int>(0.9*Nmax);
-      int i=0;
-      while(i< sizeofgood && nsub<nsub_target)
-      {
-        if(ncopy_w[i])
-        {
-          ncopy_w[i]--;
-          nsub++;
-        }
-        ++i;
-      }
-      NumWalkers -= nsub;
-    }
-    else
-      if(NumWalkers < Nmin)
-      {
-        int nadd=0;
-        int nadd_target = static_cast<int>(Nmin*1.1)-(NumWalkers-nrn);
-        if(nadd_target> sizeofgood)
-        {
-          app_warning() << "The number of walkers is running low. Requested walkers "
-                        << nadd_target << " good walkers = " << sizeofgood << std::endl;
-        }
-        int i=0;
-        while(i< sizeofgood && nadd<nadd_target)
-        {
-          ncopy_w[i]++;
-          ++nadd;
-          ++i;
-        }
-        NumWalkers +=  nadd;
-      }
-  }
-  else
+  if (WriteRN)
   {
     it=good_rn.begin();
     it_end=good_rn.end();
@@ -441,6 +397,105 @@ int WalkerControlBase::sortWalkers(MCWalkerConfiguration& W)
     }
   }
   return NumWalkers;
+}
+
+int WalkerControlBase::applyNmaxNmin()
+{
+  int current_population = std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
+
+  // limit Nmax
+  int current_max = (current_population + NumContexts - 1) / NumContexts;
+  if(current_max>Nmax)
+  {
+    app_warning() << "Exceeding Max Walkers per MPI rank : "
+                  << Nmax << ". Ceiling is applied" << std::endl;
+    int nsub = current_population - Nmax * NumContexts;
+    for(int inode=0; inode<NumContexts; inode++)
+      if(NumPerNode[inode]>Nmax)
+      {
+        int n_remove = std::min(nsub, NumPerNode[inode]-Nmax);
+        NumPerNode[inode] -= n_remove;
+        nsub -= n_remove;
+
+        if(inode==MyContext)
+        {
+          for(int iw=0; iw<ncopy_w.size(); iw++)
+          {
+            int n_remove_walker = std::min(ncopy_w[iw], n_remove);
+            ncopy_w[iw] -= n_remove_walker;
+            n_remove -= n_remove_walker;
+            if(n_remove==0) break;
+          }
+
+          if(n_remove>0)
+          {
+            app_warning() << "Removing copies of good walkers is not enough. "
+                          << "Removing good walkers." << std::endl;
+            do
+            {
+              bad_w.push_back(good_w.back());
+              good_w.pop_back();
+              ncopy_w.pop_back();
+              --n_remove;
+            } while(n_remove>0 && !good_w.empty());
+          }
+
+          if(n_remove)
+            APP_ABORT("WalkerControlBase::applyNmax not able to remove sufficient walkers on a node!");
+          if(std::accumulate(ncopy_w.begin(), ncopy_w.end(), ncopy_w.size())!=NumPerNode[inode])
+            APP_ABORT("WalkerControlBase::applyNmax walker removal mismatch!");
+        }
+
+        if(nsub==0) break;
+      }
+
+    if(nsub) APP_ABORT("WalkerControlBase::applyNmax not able to remove sufficient walkers overall!");
+  }
+
+  // at least one walker after load-balancing
+  int current_min = current_population / NumContexts;
+  if(current_min==0)
+  {
+    app_error() << "Some MPI ranks have no walkers after load balancing. This should not happen."
+                << "Improve the trial wavefunction or adjust the simulation parameters." << std::endl;
+    APP_ABORT("WalkerControlBase::sortWalkers");
+  }
+
+  // limit Nmin
+  if(current_min<Nmin)
+  {
+    app_warning() << "The number of walkers is running lower than Min Walkers per MPI rank : "
+                  << Nmin << ". Floor is applied" << std::endl;
+    int nadd = Nmin * NumContexts - current_population;
+    for(int inode=0; inode<NumContexts; inode++)
+      if(NumPerNode[inode]<Nmin)
+      {
+        int n_insert = std::min(nadd, Nmin-NumPerNode[inode]);
+        NumPerNode[inode] += n_insert;
+        nadd -= n_insert;
+
+        if(inode==MyContext)
+        {
+          int n_avg_insert_per_walker = ( n_insert + ncopy_w.size() - 1 ) / ncopy_w.size();
+          for(int iw=0; iw<ncopy_w.size(); iw++)
+          {
+            int n_insert_walker = std::min(n_avg_insert_per_walker, n_insert);
+            ncopy_w[iw] += n_insert_walker;
+            n_insert -= n_insert_walker;
+            if(n_insert==0) break;
+          }
+
+          if(std::accumulate(ncopy_w.begin(), ncopy_w.end(), ncopy_w.size())!=NumPerNode[inode])
+            APP_ABORT("WalkerControlBase::applyNmax walker insertion mismatch!");
+        }
+
+        if(nadd==0) break;
+      }
+
+    if(nadd) APP_ABORT("WalkerControlBase::applyNmax not able to add sufficient walkers overall!");
+  }
+
+  return std::accumulate(NumPerNode.begin(), NumPerNode.end(), 0);
 }
 
 /** copy good walkers to W
@@ -504,7 +559,6 @@ bool WalkerControlBase::put(xmlNodePtr cur)
   int nw_target=0, nw_max=0;
   std::string nonblocking="yes";
   ParameterSet params;
-  params.add(targetEnergyBound,"energyBound","double");
   params.add(targetSigma,"sigmaBound","double");
   params.add(MaxCopy,"maxCopy","int");
   params.add(nw_target,"targetwalkers","int");
@@ -533,8 +587,8 @@ bool WalkerControlBase::put(xmlNodePtr cur)
   //app_log() << "    energyBound = " << targetEnergyBound << std::endl;
   //app_log() << "    sigmaBound = " << targetSigma << std::endl;
   app_log() << "    maxCopy = " << MaxCopy << std::endl;
-  app_log() << "    Max Walkers per node " << Nmax << std::endl;
-  app_log() << "    Min Walkers per node " << Nmin << std::endl;
+  app_log() << "    Max Walkers per MPI rank " << Nmax << std::endl;
+  app_log() << "    Min Walkers per MPI rank " << Nmin << std::endl;
   app_log() << "    Using " << (use_nonblocking?"non-":"") << "blocking send/recv" << std::endl;
   return true;
 }

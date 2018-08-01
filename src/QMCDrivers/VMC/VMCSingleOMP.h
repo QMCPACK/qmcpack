@@ -29,7 +29,7 @@ class VMCSingleOMP: public QMCDriver, public CloneManager
 public:
   /// Constructor.
   VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-               HamiltonianPool& hpool, WaveFunctionPool& ppool);
+               WaveFunctionPool& ppool);
   bool run();
   bool put(xmlNodePtr cur);
   //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}

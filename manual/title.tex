@@ -1,4 +1,4 @@
-
+\include{version}
 \begin{titlepage}
 \vspace*{\fill}
 \begin{center}
@@ -6,12 +6,15 @@
 %{\huge \bfseries QMCPACK \\[0.5cm]}
 %{\large User's Guide and Developer's Manual\\[1cm]}
 %\HRule
-%\includegraphics[width=10cm]{figures/QMCPACK_logo.pdf} \\
 
-\includegraphics[width=0.8\textwidth]{figures/QMCPACK_logo.png} \\
-{\huge User's Guide and Developer's Manual \\}
-{
-\huge %v1.0\\ 
+\ifdefined\HCode
+\includegraphics[width=0.8\textwidth]{./figures/QMCPACK_logo.dmn} \\
+\else
+\includegraphics[width=10cm]{./figures/QMCPACK_logo.pdf} \\
+\fi
+{\huge User's Guide and Developer's Manual\\}
+{\huge \QMCPACKver \\}
+{\huge %v1.0\\ 
 \today}\\
 \vspace{2.5cm}
 {\small QMCPACK website: \url{http://www.qmcpack.org}}\\

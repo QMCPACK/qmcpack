@@ -1,46 +1,45 @@
 
 IF (NOT QMC_CUDA)
- IF (NOT QMC_COMPLEX)
+  IF (NOT QMC_COMPLEX)
 #
-# LiH molecular dimer gaussian tests, all electron
-# Also check results for different number of mpi tasks and threads keeping total constant
-#
-  LIST(APPEND LIH_SCALARS "kinetic" "165.48 0.36") # kinetic energy
-  LIST(APPEND LIH_SCALARS "totenergy" "-250.8138 0.0015") # total energy
-  LIST(APPEND LIH_SCALARS "eeenergy" "595.54 0.11") # e-e energy
-  LIST(APPEND LIH_SCALARS "samples" "32000 0.0") # samples
-#  LIST(APPEND LIH_SCALARS "flux" "0.0 0.1") # sampling check, should be zero
+# [Fe(CO)6]2+ molecule gaussian tests, with BFD ECP using pyscf
 
-  QMC_RUN_AND_CHECK(long-FeCO6_pyscf-vmc_b3lyp_noj
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_pyscf"
-                    vmc_b3lyp_noj
-                    vmc_b3lyp_noj.in.xml
-                    16 1
-                    TRUE
-                    0 FeCO6_PYSCF_SCALARS # VMC
-                    )
+# Ref for ref VMC test
+#   "kinetic" "163.8420 0.0022") # kinetic energy
+#   "totenergy" "-250.43499 0.00034") # total energy
+#   "eeenergy" "568.6012 0.0017") # e-e energy
+#   "samples" "655360000 0.0") # samples
 
-  QMC_RUN_AND_CHECK(long-FeCO6_pyscf-vmc_b3lyp_noj
+  LIST(APPEND FeCO6_PYSCF_SHORT "kinetic" "163.8420 0.27") # kinetic energy
+  LIST(APPEND FeCO6_PYSCF_SHORT "eeenergy" "568.6012 0.22") # e-e energy
+  LIST(APPEND FeCO6_PYSCF_SHORT "totenergy" "-250.43499 0.035") # total energy
+  LIST(APPEND FeCO6_PYSCF_SHORT "samples" "48000 0.0") # samples
+  QMC_RUN_AND_CHECK(short-FeCO6_pyscf-vmc_noj
                     "${CMAKE_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_pyscf"
-                    vmc_b3lyp_noj
-                    vmc_b3lyp_noj.in.xml
-                    4 4
-                    TRUE
-                    0 FeCO6_PYSCF_SCALARS # VMC
-                    )
-
-  QMC_RUN_AND_CHECK(long-FeCO6_pyscf-vmc_b3lyp_noj
-                    "${CMAKE_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_pyscf"
-                    vmc_b3lyp_noj
-                    vmc_b3lyp_noj.in.xml
+                    vmc_short_noj
+                    vmc_short_noj.in.xml
                     1 16
-                    TRUE
-                    0 FeCO6_PYSCF_SCALARS # VMC
+                    ${SOA_SUCCESS}
+                    0 FeCO6_PYSCF_SHORT # VMC
                     )
- ELSE()
-    MESSAGE("Skipping  FeCO6_b3lyp_pyscf tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
- ENDIF()
+
+  LIST(APPEND FeCO6_PYSCF_LONG "kinetic" "163.8420 0.076") # kinetic energy
+  LIST(APPEND FeCO6_PYSCF_LONG "eeenergy" "568.6012 0.063") # e-e energy
+  LIST(APPEND FeCO6_PYSCF_LONG "totenergy" "-250.43499 0.011") # total energy
+  LIST(APPEND FeCO6_PYSCF_LONG "samples" "480000 0.0") # samples
+  QMC_RUN_AND_CHECK(long-FeCO6_pyscf-vmc_noj
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/FeCO6_b3lyp_pyscf"
+                    vmc_long_noj
+                    vmc_long_noj.in.xml
+                    1 16
+                    ${SOA_SUCCESS}
+                    0 FeCO6_PYSCF_LONG # VMC
+                    )
+
+  ELSE()
+    MESSAGE("Skipping  FeCO6_b3lyp_gms tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")
+  ENDIF()
 ELSE()
-    MESSAGE("Skipping FeCO6_b3lyp_pyscf tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
+    MESSAGE("Skipping FeCO6_b3lyp_gms tests because gaussian basis sets are not supported by CUDA build (QMC_CUDA=1)")
 ENDIF()
 

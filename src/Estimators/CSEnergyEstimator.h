@@ -20,7 +20,6 @@
 #define QMCPLUSPLUS_CORRELATEDLOCALENERGYESTIMATOR_H
 
 #include "Estimators/ScalarEstimatorBase.h"
-#include "QMCDrivers/SpaceWarp.h"
 
 namespace qmcplusplus
 {

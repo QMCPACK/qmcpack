@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # LiH crystal with Quantum ESPRESSO orbitals
 
-from nexus import settings,Job,run_project
+from nexus import settings,job,run_project
 from nexus import generate_physical_system
 from nexus import generate_pwscf
 from nexus import generate_pw2qmcpack
@@ -13,11 +13,7 @@ settings(
     runs            = 'runs',
     results         = 'results',
     sleep           = 3,
-    #generate_only   = False,
-    # Complicated setting only so examples can be run in test harness.
-    # For real runs, use the plain setting of 'generate_only' above.
-    generate_only   = globals().get('override_generate_only_setting',False),
-
+    generate_only   = 0,
     status_only     = 0,
     machine         = 'ws1',
     )
@@ -31,12 +27,12 @@ qmcpack             = 'qmcpack'
 dft_pps             = ['Li.TN-DF.upf','H.TN-DF.upf']
 qmc_pps             = ['Li.pp.data','H.pp.data']
 
-# Job Definitions (MPI Tasks, MP Threading, PBS Queue, Time, etc.)
-scf_job             = Job(app=pwscf,serial=True)
-nscf_job            = Job(app=pwscf,serial=True)
-p2q_job             = Job(app=pw2qmcpack,serial=True)
-opt_job             = Job(threads=4,app=qmcpack,serial=True)
-dmc_job             = Job(threads=4,app=qmcpack,serial=True)
+# job Definitions (MPI Tasks, MP Threading, PBS Queue, Time, etc.)
+scf_job             = job(app=pwscf,serial=True)
+nscf_job            = job(app=pwscf,serial=True)
+p2q_job             = job(app=pw2qmcpack,serial=True)
+opt_job             = job(threads=4,app=qmcpack,serial=True)
+dmc_job             = job(threads=4,app=qmcpack,serial=True)
 
 # System To Be Simulated
 rocksalt_LiH = generate_physical_system(
@@ -49,8 +45,8 @@ rocksalt_LiH = generate_physical_system(
     basis_vectors   = 'conventional',
     constants       = 7.1,
     units           = 'B',
-    kgrid           = (7,7,7),
-    kshift          = (1,1,1),
+    kgrid           = (1,1,1),
+    kshift          = (0,0,0),
     net_charge      = 0,
     net_spin        = 0,
     Li              = 1,
@@ -71,6 +67,8 @@ scf = generate_pwscf(
     ecutrho         = 1800,
     conv_thr        = 1.0e-10,
     mixing_beta     = 0.7,
+    kgrid           = (7,7,7),
+    kshift          = (1,1,1),
     )
 sims.append(scf)
 
@@ -86,9 +84,7 @@ nscf = generate_pwscf(
     ecutrho         = 1800,
     conv_thr        = 1.0e-10,
     mixing_beta     = 0.7,
-    kgrid           = (1,1,1),
-    kshift          = (0,0,0),
-    dependencies    = (scf,'charge-density')
+    dependencies    = (scf,'charge-density'),
     )
 sims.append(nscf)
 
@@ -98,7 +94,7 @@ p2q = generate_pw2qmcpack(
     path            = '.',
     job             = p2q_job,
     write_psir      = False,
-    dependencies    = (nscf,'orbitals')
+    dependencies    = (nscf,'orbitals'),
     )
 sims.append(p2q)
 
@@ -125,8 +121,8 @@ linopt1 = linear(
     alloweddifference    = 1e-4,
     stepsize             = 0.2,
     stabilizerscale      = 1.0,
-    nstabilizers         = 3
-)
+    nstabilizers         = 3,
+    )
 
 # QMC Optimization Parameters - Finer Sampling Set
 linopt2 = linopt1.copy()
@@ -146,19 +142,23 @@ opt = generate_qmcpack(
                        ('J2','bspline',8)],
     calculations    = [loop(max=4,qmc=linopt1),
                        loop(max=4,qmc=linopt2)],
-    dependencies    = (p2q,'orbitals')
+    dependencies    = (p2q,'orbitals'),
     )
 pp = opt.input.get('pseudos')
-pp.Li.format='casino'
-pp.Li['l-local']='s'
-pp.Li.nrule=2
-pp.Li.lmax=2
-pp.Li.cutoff=2.19
-pp.H.format='casino'
-pp.H['l-local']='s'
-pp.H.nrule=2
-pp.H.lmax=2
-pp.H.cutoff=0.50
+pp.Li.set(
+    format  = 'casino',
+    l_local = 's',
+    nrule   = 2,
+    lmax    = 2,
+    cutoff  = 2.19,
+    )
+pp.H.set(
+    format  = 'casino',
+    l_local = 's',
+    nrule   = 2,
+    lmax    = 2,
+    cutoff  = 0.50,
+    )
 sims.append(opt)
 
 # QMC VMC/DMC With Optimized Jastrow Parameters
@@ -180,7 +180,7 @@ qmc = generate_qmcpack(
             warmupsteps          = 100,
             blocks               = 1,
             timestep             = 1.0,
-            usedrift             = False
+            usedrift             = False,
            ),
         dmc(
             minimumtargetwalkers = 128,
@@ -189,22 +189,26 @@ qmc = generate_qmcpack(
             timestep             = 0.005,
             steps                = 10,
             blocks               = 200,
-            nonlocalmoves        = True
+            nonlocalmoves        = True,
            )
         ],
-    dependencies   = [(p2q,'orbitals'),(opt,'jastrow')]
+    dependencies   = [(p2q,'orbitals'),(opt,'jastrow')],
     )
 pp = qmc.input.get('pseudos')
-pp.Li.format='casino'
-pp.Li['l-local']='s'
-pp.Li.nrule=2
-pp.Li.lmax=2
-pp.Li.cutoff=2.37
-pp.H.format='casino'
-pp.H['l-local']='s'
-pp.H.nrule=2
-pp.H.lmax=2
-pp.H.cutoff=0.50
+pp.Li.set(
+    format  = 'casino',
+    l_local = 's',
+    nrule   = 2,
+    lmax    = 2,
+    cutoff  = 2.37,
+    )
+pp.H.set(
+    format  = 'casino',
+    l_local = 's',
+    nrule   = 2,
+    lmax    = 2,
+    cutoff  = 0.50,
+    )
 sims.append(qmc)
 
 run_project(sims)

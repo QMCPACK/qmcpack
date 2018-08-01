@@ -50,6 +50,9 @@ public:
     //assign(*this, T());
   }
 
+  /** constructor with an initialized ref */
+  inline Matrix(T* ref, size_type n, size_type m) : D1(n), D2(m), TotSize(n*m), X(ref,n*m) {}
+
   // Copy Constructor
   Matrix(const Matrix<T,Alloc> &rhs)
   {
@@ -136,6 +139,14 @@ public:
   // Attach to pre-allocated memory
   inline void attachReference(T* ref)
   {
+    X.attachReference(ref, TotSize);
+  }
+
+  inline void attachReference(T* ref, size_type n, size_type m)
+  {
+    D1 = n;
+    D2 = m;
+    TotSize=n*m;
     X.attachReference(ref, TotSize);
   }
 
@@ -246,7 +257,7 @@ public:
   }
 
   // returns val(i,j)
-  inline Type_t operator()( size_type i, size_type j) const
+  inline const Type_t& operator()( size_type i, size_type j) const
   {
     return X[i*D2+j];
   }
@@ -517,8 +528,7 @@ inline void evaluate(Matrix<T,Alloc> &lhs, const Op &op,
   }
   else
   {
-    std::cerr << "Error: LHS and RHS don't conform in OhmmsMatrix." << std::endl;
-    abort();
+    throw std::runtime_error("Error in evaluate: LHS and RHS don't conform in OhmmsMatrix.");
   }
 }
 }

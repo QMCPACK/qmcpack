@@ -73,7 +73,7 @@ make -j 8
 |----------------------|-------------|
 |   CXX          |    C++ compiler |
 |   CC           |    C Compiler |
-|   MKL_HOME     |    Path for MKL |
+|   MKL_ROOT     |    Path for MKL |
 |   LIBXML2_HOME |    Path for libxml2 |
 |   HDF5_ROOT    |    Path for HDF5 |
 |   BOOST_ROOT   |    Path for Boost |
@@ -115,64 +115,68 @@ make -j 8
 ```
      QMC_CUDA            Enable CUDA and GPU acceleration (1:yes, 0:no)
      QMC_COMPLEX         Build the complex (general twist/k-point) version (1:yes, 0:no)
+     QMC_MIXED_PRECISION Build the mixed precision (mixing double/float) version
+                         (1:yes (GPU default), 0:no (CPU default)).
+                         The CPU support is experimental.
+                         Use float and double for base and full precision.
+                         The GPU support is quite mature.
+                         Use always double for host side base and full precision
+                         and use float and double for CUDA base and full precision.
+     ENABLE_TIMERS       Enable fine-grained timers (1:yes, 0:no (default)).
+                         Timers are off by default to avoid potential slowdown in small
+                         systems. For large systems (100+ electrons) there is no risk.
+     ENABLE_SOA          (Experimental) Enable CPU optimization based on Structure-
+                         of-Array (SoA) datatypes (1:yes, 0:no (default)). ```
 ```
 
  * Additional QMC options
 
 ```
-     QMC_DATA            Specify data directory for QMCPACK (currently unused, but
-                         likely to be used for performance tests)
      QMC_INCLUDE         Add extra include paths
      QMC_EXTRA_LIBS      Add extra link libraries
      QMC_BUILD_STATIC    Add -static flags to build
+     QMC_DATA            Specify data directory for QMCPACK performance and integration tests
+     QE_BIN              Location of Quantum Espresso binaries including pw2qmcpack.x
 ```
 
-  * libxml
+  * libxml2 related
 
 ```
      Libxml2_INCLUDE_DIRS  Specify include directories for libxml2
      Libxml2_LIBRARY_DIRS  Specify library directories for libxml2
 ```
 
-  * FFTW
+* HDF5 related
+```
+     ENABLE_PHDF5        1(default)/0, enables/disable parallel collective IO.
+
+```
+
+  * FFTW related
 ```
      FFTW_INCLUDE_DIRS   Specify include directories for FFTW
      FFTW_LIBRARY_DIRS   Specify library directories for FFTW
 ```
 
-## Configure and build
-
-Move to build directory, run cmake and make
-```
-cd build
-cmake ..
-make -j 8
-```
-
 ## Example configure and build
 
-* Set the environments (the examples below assume bash, Intel compilers and MKL library)
-```
-export CXX=icpc
-export CC=icc
-export MKL_HOME=/usr/local/intel/mkl/10.0.3.020
-export LIBXML2_HOME=/usr/local
-export HDF5_ROOT=/usr/local
-export BOOST_ROOT=/usr/local/boost
-export FFTW_HOME=/usr/local/fftw
-```
-* Move to build directory, run cmake and make
+In the build directory, run cmake with appropriate options, then
+make.
+
+* Using Intel compilers and their MPI wrappers. Assumes HDF5 and
+libxml2 will be automatically detected.
+
 ```
 cd build
-cmake -D CMAKE_BUILD_TYPE=Release ..
+cmake -DCMAKE_C_COMPILER=mpiicc -DCMAKE_CXX_COMPILER=mpiicpc ..
 make -j 8
 ```
 
 ##  Special notes
 
 It is recommended to create a helper script that contains the
-configure line for CMake.  This is particularly useful when avoiding
-enviornmental variables, packages are installed in custom locations,
+configure line for CMake.  This is particularly useful when using
+environmental variables, packages are installed in custom locations,
 or the configure line may be long or complex.  In this case it is
 recommended to add "rm -rf CMake*" before the configure line to remove
 existing CMake configure files to ensure a fresh configure each time
@@ -274,8 +278,22 @@ ctest -R name-of-test-to-run
 # Documentation and support
 
 For more informaton, consult QMCPACK pages at http://www.qmcpack.org,
-the linked documentation, and the local copy of the manual in
-manual/qmcpack_manual.pdf
+the manual PDF at https://docs.qmcpack.org/qmcpack_manual.pdf, 
+or its sources in the manual directory.
 
 If you have trouble using or building QMCPACK, or have questions about
-its use, please post to the Google QMCPACK group or contact a developer.
+its use, please post to the [Google QMCPACK group](https://groups.google.com/forum/#!forum/qmcpack) or contact a developer.
+
+# Contributing
+
+Contributions of any size are very welcome. Guidance for contributing
+to QMCPACK is included in Chapter 1 of the manual
+https://docs.qmcpack.org/qmcpack_manual.pdf . We use a git flow model
+including pull request reviews. A continuous integration system runs
+on pull requests. See https://github.com/QMCPACK/qmcpack/wiki for
+details. For an extensive contribution, it can be helpful to discuss
+on the [Google QMCPACK group](https://groups.google.com/forum/#!forum/qmcpack), to create a GitHub issue, or to talk
+directly with a developer.
+
+Contributions are made under the same UIUC/NCSA open source license
+that covers QMCPACK. Please contact us if this is problematic.

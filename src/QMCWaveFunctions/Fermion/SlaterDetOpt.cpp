@@ -12,7 +12,7 @@
 
 #include <QMCWaveFunctions/Fermion/SlaterDetOpt.h>
 #include <QMCWaveFunctions/TrialWaveFunction.h>
-#include <QMCWaveFunctions/LCOrbitalSetOpt.h>
+#include <QMCWaveFunctions/MolecularOrbitals/LCOrbitalSetOpt.h>
 #include <Numerics/DeterminantOperators.h>
 #include <Numerics/MatrixOperators.h>
 
@@ -246,29 +246,6 @@ void SlaterDetOpt::resetTargetParticleSet(ParticleSet& P) {
   std::fill(m_dh2.begin(), m_dh2.end(), 0.0);
   std::fill(m_work.begin(), m_work.end(), 0.0);
 
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-/// \brief  Evaluates the determinant value and adds the gradient and laplacian of the
-///         log of the determinant to the total gradient and laplacian
-///
-/// \param[in]      P              the particle set
-/// \param[in,out]  G              gradient to add to
-/// \param[in,out]  L              laplacian to add to
-///
-/// \return  the determinant value
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////
-OrbitalBase::ValueType SlaterDetOpt::evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) {
-  RealType logval = evaluateLog(P, G, L);
-  // Note that this class probably isn't implemented with complex wave
-  // functions yet, but I'll leave this here anyway...
-#if defined(QMC_COMPLEX)
-  RealType magnitude = std::exp(logval);
-  return std::complex<OHMMS_PRECISION>(std::cos(PhaseValue)*magnitude, std::sin(PhaseValue)*magnitude);
-#else
-  return std::cos(PhaseValue)*std::exp(logval);
-#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

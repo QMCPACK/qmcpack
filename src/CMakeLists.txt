@@ -44,6 +44,26 @@ IF (IS_GIT_PROJECT)
   #
   # Apparently custom commands need to be defined where the output is used.
   # If this in the main CMakeLists.txt it does not work.
+
+  # Sed flags were once an issue and some HPC have old sed's
+  set(SED_FLAG "-E")
+  EXECUTE_PROCESS(COMMAND "sed" ${SED_FLAG} "s/\"/\\\\\"/g" "<${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt"
+    OUTPUT_QUIET
+    ERROR_VARIABLE SED_ERROR)
+  if ( SED_ERROR MATCHES ".*invalid.*" )
+    set(SED_FLAG "-r")
+    EXECUTE_PROCESS(COMMAND "sed" ${SED_FLAG} "s/\"/\\\\\"/g" "<${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt"
+      OUTPUT_QUIET ERROR_QUIET
+      ERROR_VARIABLE SED_ERROR)
+    if ( SED_ERROR MATCHES ".*invalid.*" )
+      MESSAGE(WARNING "Your system supports neither the sed -E or -r flag, git revision information will not be included in output")
+    else ( SED_ERROR MATCHES ".*invalid.*" )
+      MESSAGE("sed supports -r")
+    endif ( SED_ERROR MATCHES ".*invalid.*" )
+  else ( SED_ERROR MATCHES ".*invalid.*" )
+    MESSAGE("sed supports -E")
+  endif ( SED_ERROR MATCHES ".*invalid.*" )
+    
   ADD_CUSTOM_COMMAND(
     OUTPUT ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_BRANCH_RAW " > ${GITREV_TMP}
@@ -56,7 +76,7 @@ IF (IS_GIT_PROJECT)
     COMMAND ${GIT_EXECUTABLE} log -1 --format=%ad >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo_append "#define GIT_COMMIT_SUBJECT_RAW \"" >> ${GITREV_TMP}
-    COMMAND ${GIT_EXECUTABLE} log -1 --format=%s | sed -E "s/\"/\\\\\"/g" | tr -d '\\n' >> ${GITREV_TMP}
+    COMMAND ${GIT_EXECUTABLE} log -1 --format=%s | sed ${SED_FLAG} "s/\"/\\\\\"/g" | tr -d '\\n' >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo_append "\"" >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E echo >> ${GITREV_TMP}
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${GITREV_TMP} ${GITREV_FILE}
@@ -117,7 +137,6 @@ ENDIF(HAVE_OOMPI)
   ####################################
   SET(UTILITIES
     qmc_common.cpp
-    Utilities/RandRandom.cpp 
     Utilities/RandomGenerator.cpp 
     Utilities/OhmmsObject.cpp 
     Utilities/SpeciesSet.cpp 
@@ -208,7 +227,6 @@ ENDIF()
     Particle/DistanceTableAB.cpp
     Particle/DistanceTable.cpp
     Particle/HDFWalkerInputManager.cpp
-    Particle/make_clones.cpp
     LongRange/KContainer.cpp
     LongRange/StructFact.cpp
     LongRange/LPQHIBasis.cpp
@@ -236,7 +254,6 @@ ENDIF()
 
   IF(HAVE_LIBHDF5 OR HAVE_ADIOS)
     SET(PARTICLEIO ${PARTICLEIO}
-      Particle/HDFWalkerIOEngine.cpp 
       Particle/HDFWalkerOutput.cpp
       Particle/HDFWalkerInput_0_0.cpp
       Particle/HDFWalkerInput_0_4.cpp
@@ -269,8 +286,8 @@ ENDIF()
 
   if(QMC_BUILD_LEVEL GREATER 4)
 
-    MESSAGE(STATUS "Minimal build: only miniapps")
-    SUBDIRS(miniapps)
+    MESSAGE(STATUS "Minimal build: only Sandbox")
+    SUBDIRS(Sandbox)
 
   else() #{{{
 
@@ -309,14 +326,6 @@ ENDIF()
   SUBDIRS(QMCTools)
   #ENDIF(BUILD_QMCTOOLS)
 
-  IF(BUILD_SANDBOX)
-    SUBDIRS(SandBox)
-  ENDIF(BUILD_SANDBOX)
-
-  IF(BUILD_SQD)
-    SUBDIRS(SQD)
-  ENDIF(BUILD_SQD)
-
   if (BUILD_UNIT_TESTS) #{
     SET(HAS_TARGET_COMPILE_DEFINITIONS 1)
     IF (CMAKE_VERSION VERSION_LESS "2.8.11")
@@ -330,6 +339,7 @@ ENDIF()
     SUBDIRS(Numerics/tests)
     SUBDIRS(Utilities/tests)
     SUBDIRS(einspline/tests)
+    SUBDIRS(spline2/tests)
     SUBDIRS(OhmmsData/tests)
     SUBDIRS(io/tests)
     SUBDIRS(Lattice/tests)

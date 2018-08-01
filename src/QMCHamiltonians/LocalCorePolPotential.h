@@ -117,11 +117,6 @@ struct LocalCorePolPotential: public QMCHamiltonianBase
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   bool put(xmlNodePtr cur);
 
   bool get(std::ostream& os) const

@@ -178,16 +178,15 @@ struct  J2OrbitalSoA : public OrbitalBase
   /** recompute internal data assuming distance table is fully ready */
   void recompute(ParticleSet& P);
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    evaluateLog(P,G,L);
-    return std::exp(LogValue);
-  }
-
   ValueType ratio(ParticleSet& P, int iat);
+  void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+  {
+    for(int k=0; k<ratios.size(); ++k)
+      ratios[k]=std::exp(Uat[VP.refPtcl] -
+                         computeU(VP.refPS, VP.refPtcl, VP.DistTables[0]->Distances[k]));
+  }
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
+
   GradType evalGrad(ParticleSet& P, int iat);
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   void acceptMove(ParticleSet& P, int iat);
@@ -234,7 +233,21 @@ struct  J2OrbitalSoA : public OrbitalBase
   }
 
   /*@{ internal compute engines*/
-  inline void computeU3(ParticleSet& P, int iat, const RealType* restrict dist,
+  inline valT computeU(const ParticleSet& P, int iat, const RealType* restrict dist)
+  {
+    valT curUat(0);
+    const int igt=P.GroupID[iat]*NumGroups;
+    for(int jg=0; jg<NumGroups; ++jg)
+    {
+      const FuncType& f2(*F[igt+jg]);
+      int iStart = P.first(jg);
+      int iEnd = P.last(jg);
+      curUat += f2.evaluateV(iat, iStart, iEnd, dist, DistCompressed.data());
+    }
+    return curUat;
+  }
+
+  inline void computeU3(const ParticleSet& P, int iat, const RealType* restrict dist,
       RealType* restrict u, RealType* restrict du, RealType* restrict d2u, bool triangle=false);
 
   /** compute gradient
@@ -253,6 +266,7 @@ struct  J2OrbitalSoA : public OrbitalBase
     }
     return grad;
   }
+  /**@} */
 
 };
 
@@ -372,7 +386,7 @@ OrbitalBasePtr J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
  */
 template<typename FT>
 inline void
-J2OrbitalSoA<FT>::computeU3(ParticleSet& P, int iat, const RealType* restrict dist,
+J2OrbitalSoA<FT>::computeU3(const ParticleSet& P, int iat, const RealType* restrict dist,
     RealType* restrict u, RealType* restrict du, RealType* restrict d2u, bool triangle)
 {
   const int jelmax=triangle?iat:N;
@@ -400,19 +414,7 @@ J2OrbitalSoA<FT>::ratio(ParticleSet& P, int iat)
 {
   //only ratio, ready to compute it again
   UpdateMode=ORB_PBYP_RATIO;
-
-  const DistanceTableData* d_table=P.DistTables[0];
-  const auto dist=d_table->Temp_r.data();
-  cur_Uat=valT(0);
-  const int igt=P.GroupID[iat]*NumGroups;
-  for(int jg=0; jg<NumGroups; ++jg)
-  {
-    const FuncType& f2(*F[igt+jg]);
-    int iStart = P.first(jg);
-    int iEnd = P.last(jg);
-    cur_Uat += f2.evaluateV(iat, iStart, iEnd, dist, DistCompressed.data());
-  }
-
+  cur_Uat=computeU(P, iat, P.DistTables[0]->Temp_r.data());
   return std::exp(Uat[iat]-cur_Uat);
 }
 
@@ -511,6 +513,7 @@ J2OrbitalSoA<FT>::acceptMove(ParticleSet& P, int iat)
     }
     cur_dUat[idim] = cur_g;
   }
+  LogValue  += Uat[iat]-cur_Uat;
   Uat[iat]   = cur_Uat;
   dUat(iat)  = cur_dUat;
   d2Uat[iat] = cur_d2Uat;

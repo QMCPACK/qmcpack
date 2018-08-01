@@ -18,7 +18,7 @@
 
 namespace qmcplusplus
 {
-//forward declaration
+//forward declarations
 class ParticleSet;
 
 struct BsplineJastrowBuilder: public OrbitalBuilderBase

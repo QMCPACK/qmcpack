@@ -38,14 +38,18 @@ class CloneManager: public QMCTraits
 {
 public:
   /// Constructor.
-  CloneManager(HamiltonianPool& hpool);
+  CloneManager();
   ///virtual destructor
   virtual ~CloneManager();
 
+  // Set up for a specific number of threads.  Used in unit testing.
+  void setup(int numThreads);
+  // Clear static array so makeClones will populate properly
+  // Only for using in unit testing.
+  static void clear_for_unit_tests();
+
   void makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
   void makeClones(MCWalkerConfiguration& w, std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& ham);
-  void makeClones(std::vector<MCWalkerConfiguration*>& w, std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& ham);
-  void makeClones_new(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
   void makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guide);
   void makeClones(TrialWaveFunction& guide);
 
@@ -62,8 +66,6 @@ public:
   }
 
 protected:
-  ///reference to HamiltonianPool to clone everything
-  HamiltonianPool& cloneEngine;
   ///number of threads
   IndexType NumThreads;
   ///walkers
@@ -81,8 +83,6 @@ protected:
   std::vector<EstimatorManagerBase*> estimatorClones;
   ///trace managers
   std::vector<TraceManager*> traceClones;
-  ///Branch engines
-  std::vector<SimpleFixedNodeBranch*> branchClones;
   
   //for correlated sampling.
   static std::vector<std::vector<MCWalkerConfiguration*> > WPoolClones; 
@@ -90,8 +90,6 @@ protected:
   static std::vector<std::vector<QMCHamiltonian*> > HPoolClones;
   std::vector<CSUpdateBase*> CSMovers;
 
-  
-  
   ///Walkers per node
   std::vector<int> wPerNode;
 };

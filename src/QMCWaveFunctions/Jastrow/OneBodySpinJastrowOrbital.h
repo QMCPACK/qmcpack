@@ -239,12 +239,6 @@ public:
     return LogValue;
   }
 
-  ValueType evaluate(ParticleSet& P
-                     , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-
   /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$
    * @param P active particle set
    * @param iat particle that has been moved.
@@ -267,9 +261,9 @@ public:
 
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
-    std::vector<RealType> myr(ratios.size(),U[VP.activePtcl]);
+    std::vector<RealType> myr(ratios.size(),U[VP.refPtcl]);
     const DistanceTableData* d_table=VP.DistTables[myTableIndex];
-    int tg=VP.GroupID[VP.activePtcl];
+    int tg=VP.GroupID[VP.refPtcl];
     for(int sg=0; sg<F.rows(); ++sg)
     {
       FT* func=F(sg,tg);
@@ -281,7 +275,7 @@ public:
       }
     }
     for(int k=0; k<ratios.size(); ++k) ratios[k]=std::exp(myr[k]);
-    //RealType x=U[VP.activePtcl];
+    //RealType x=U[VP.refPtcl];
     //for(int k=0; k<ratios.size(); ++k)
     //  ratios[k]=std::exp(x-myr[k]);
   }

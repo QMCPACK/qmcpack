@@ -27,12 +27,26 @@ namespace qmcplusplus
    */
   class VirtualParticleSet: public ParticleSet
   {
+    private:
+    /// true, if virtual particles are on a sphere for NLPP
+    bool onSphere;
+
     public:
-    ///reference particle ID
-    Index_t refID;
+    /// Reference particle
+    int refPtcl;
+    /// Reference source particle, used when onSphere=true
+    int refSourcePtcl;
 
     /// ParticleSet this object refers to
-    const ParticleSet& refPtcl;
+    const ParticleSet& refPS;
+
+    /// SPO scratch memory. Always use existing memory
+    Vector<RealType,aligned_allocator<RealType> > SPOMem;
+
+    inline bool isOnSphere() const
+    {
+      return onSphere;
+    }
 
     /** constructor 
      * @param p ParticleSet whose virtual moves are handled by this object
@@ -40,8 +54,13 @@ namespace qmcplusplus
      */
     VirtualParticleSet(const ParticleSet& p, int nptcl);
 
-    /// move virtual particles to new postions and update distance tables
-    void makeMoves(int iat, const ParticlePos_t& vitualPos);
+    /** move virtual particles to new postions and update distance tables
+     * @param jel reference particle that all the VP moves from
+     * @param vitualPos new positions
+     * @param sphere set true if VP are on a sphere around the reference source particle
+     * @param iat reference source particle
+     */
+    void makeMoves(int jel, const ParticlePos_t& vitualPos, bool sphere=false, int iat=-1);
   };
 }
 #endif

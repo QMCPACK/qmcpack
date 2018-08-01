@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from nexus import settings,Job,run_project
+from nexus import settings,job,run_project
 from nexus import generate_physical_system
 from nexus import generate_pwscf
 from nexus import generate_pw2qmcpack
@@ -9,10 +9,7 @@ from nexus import generate_qmcpack,vmc
 settings(
     pseudo_dir    = '../pseudopotentials',
     status_only   = 0,
-    #generate_only   = False,
-    # Complicated setting only so examples can be run in test harness.
-    # For real runs, use the plain setting of 'generate_only' above.
-    generate_only   = globals().get('override_generate_only_setting',False),
+    generate_only = 0,
     sleep         = 3,
     machine       = 'ws16'
     )
@@ -34,7 +31,7 @@ dia16 = generate_physical_system(
 scf = generate_pwscf(
     identifier   = 'scf',
     path         = 'diamond/scf',
-    job          = Job(cores=16,app='pw.x'),
+    job          = job(cores=16,app='pw.x'),
     input_type   = 'generic',
     calculation  = 'scf',
     input_dft    = 'lda', 
@@ -49,15 +46,15 @@ scf = generate_pwscf(
 conv = generate_pw2qmcpack(
     identifier   = 'conv',
     path         = 'diamond/scf',
-    job          = Job(cores=1,app='pw2qmcpack.x'),
+    job          = job(cores=1,app='pw2qmcpack.x'),
     write_psir   = False,
-    dependencies = (scf,'orbitals')
+    dependencies = (scf,'orbitals'),
     )
 
 qmc = generate_qmcpack(
     identifier   = 'vmc',
     path         = 'diamond/vmc',
-    job          = Job(cores=16,threads=4,app='qmcapp'),
+    job          = job(cores=16,threads=4,app='qmcpack'),
     input_type   = 'basic',
     system       = dia16,
     pseudos      = ['C.BFD.xml'],
@@ -72,7 +69,7 @@ qmc = generate_qmcpack(
             timestep    =  .4
             )
         ],
-    dependencies = (conv,'orbitals')
+    dependencies = (conv,'orbitals'),
     )
 
 run_project(scf,conv,qmc)

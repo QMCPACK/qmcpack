@@ -17,6 +17,8 @@
 #ifndef QMCPLUSPLUS_ATOMICORBITALBUILDER_H
 #define QMCPLUSPLUS_ATOMICORBITALBUILDER_H
 
+
+#include "Message/MPIObjectBase.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/lcao/RadialOrbitalSetBuilder.h"
@@ -27,10 +29,10 @@ namespace qmcplusplus
   /** atomic basisset builder
    * @tparam COT, CenteredOrbitalType = SoaAtomicBasisSet<RF,SH>
    *
-   * Reimplement AtomiBasisSetBuilder.h
+   * Reimplement AtomiSPOSetBuilder.h
    */
 template<typename COT>
-struct AOBasisBuilder: public BasisSetBuilder
+struct AOBasisBuilder: public MPIObjectBase
 {
   enum {DONOT_EXPAND=0, GAUSSIAN_EXPAND=1, NATURAL_EXPAND, CARTESIAN_EXPAND, MOD_NATURAL_EXPAND};
 
@@ -110,9 +112,9 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
   else if(Morder == "pyscf")
   {
     expandlm = MOD_NATURAL_EXPAND; 
-    addsignforM=tmp_addsignforM;
+    addsignforM=1;
     if(sph != "spherical") {
-      APP_ABORT(" Error: expandYlm='pwscf' only compatible with angular='spherical'. Aborting.\n");
+      APP_ABORT(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
   if(sph == "cartesian" || Morder == "Gamess")
@@ -151,9 +153,10 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive &hin)
   app_log() << "<input node=\"atomicBasisSet\" name=\"" << basisName
             << "\" Morder=\"" << Morder
             << "\" angular=\"" << sph
-            << "\"  elementType=\"" << CenterID
-            << "\"  normalized=\"" << Normalized
-            << "  basisType=\"" << basisType
+            << "\" elementType=\"" << CenterID
+            << "\" normalized=\"" << Normalized
+            << "\" basisType=\"" << basisType
+            << "\" addSign=\"" <<addsignforM
             << "\" />" << std::endl;
   bool tmp_addsignforM=addsignforM;
   if(sph == "spherical")
@@ -173,9 +176,9 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive &hin)
   else if(Morder == "pyscf")
   {
     expandlm = MOD_NATURAL_EXPAND;
-    addsignforM=tmp_addsignforM;
+    addsignforM=1;
     if(sph != "spherical") {
-      APP_ABORT(" Error: expandYlm='pwscf' only compatible with angular='spherical'. Aborting.\n");
+      APP_ABORT(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
   if(sph == "cartesian" || Morder == "Gamess")

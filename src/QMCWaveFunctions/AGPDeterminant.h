@@ -85,17 +85,7 @@ public:
 
   void resizeByWalkers(int nwalkers);
 
-  ///evaluate log of determinant for a particle set: should not be called
-  ValueType
-  evaluateLog(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& G,
-              ParticleSet::ParticleLaplacian_t& L);
-  //{
-  //  ValueType psi=evaluate(P,G,L);
-  //  return LogValue = evaluateLogAndPhase(psi,PhaseValue);
-  //}
-
-  /** Calculate the value of the Dirac determinant for particles
+  /** Calculate the log value of the Dirac determinant for particles
    *@param P input configuration containing N particles
    *@param G a vector containing N gradients
    *@param L a vector containing N laplacians
@@ -106,9 +96,9 @@ public:
    *for local energy calculations.
    */
   ValueType
-  evaluate(ParticleSet& P,
-           ParticleSet::ParticleGradient_t& G,
-           ParticleSet::ParticleLaplacian_t& L);
+  evaluateLog(ParticleSet& P,
+              ParticleSet::ParticleGradient_t& G,
+              ParticleSet::ParticleLaplacian_t& L);
 
   OrbitalBasePtr makeClone(ParticleSet& tqp) const;
 
@@ -181,9 +171,9 @@ public:
   ///address of FirstAddressOfdVD+OHMMS_DIM*Ndown*Nup
   BasisSetType::ValueType *LastAddressOfdVD;
   ///address of myG[0][0]
-  ParticleSet::ParticleValue_t *FirstAddressOfG;
+  ParticleSet::SingleParticleValue_t *FirstAddressOfG;
   ///address of FirstAddressOfG+OHMMS_DIM*NumPtcls
-  ParticleSet::ParticleValue_t *LastAddressOfG;
+  ParticleSet::SingleParticleValue_t *LastAddressOfG;
   ///address of dY[0][0]
   BasisSetType::ValueType *FirstAddressOfdY;
   ///address of FirstAddressOfdY+NumPtcls*BasisSize

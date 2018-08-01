@@ -16,7 +16,6 @@
 #ifndef QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
 #define QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
 #include <Configuration.h>
-#include <QMCWaveFunctions/FermionBase.h>
 #include <QMCWaveFunctions/Fermion/DiracDeterminantBase.h>
 #include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
 #include "Utilities/NewTimer.h"
@@ -49,7 +48,7 @@ namespace qmcplusplus
  (\nabla_i^2S^{ij}_n({\bf r_i}))(S^{-1})^{ji}_n}{\sum_{n=1}^M c_n S_n}
  \f]
  */
-class MultiSlaterDeterminant: public OrbitalBase, public FermionBase
+class MultiSlaterDeterminant: public OrbitalBase
 {
 
 public:
@@ -150,18 +149,18 @@ public:
 
 // UGLY, how do I get around this? I want to use GradMatrix instead...
   // grads(#uniqueDet,part#)
-  Vector<ParticleSet::ParticleGradient_t> grads_up;
-  Vector<ParticleSet::ParticleGradient_t> grads_dn;
+  std::vector<ParticleSet::ParticleGradient_t> grads_up;
+  std::vector<ParticleSet::ParticleGradient_t> grads_dn;
 
   // lap(#uniqueDet,part#)
-  Vector<ParticleSet::ParticleLaplacian_t> lapls_up;
-  Vector<ParticleSet::ParticleLaplacian_t> lapls_dn;
+  std::vector<ParticleSet::ParticleLaplacian_t> lapls_up;
+  std::vector<ParticleSet::ParticleLaplacian_t> lapls_dn;
 
   // grads(#uniqueDet,part#)
-  Vector<ParticleSet::ParticleGradient_t> tempgrad;
+  std::vector<ParticleSet::ParticleGradient_t> tempgrad;
 
   // lap(#uniqueDet,part#)
-  Vector<ParticleSet::ParticleLaplacian_t> templapl;
+  std::vector<ParticleSet::ParticleLaplacian_t> templapl;
 
   ValueType curRatio;
   ValueType psiCurrent;

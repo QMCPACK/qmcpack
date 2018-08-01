@@ -599,9 +599,9 @@ void GamesAsciiParser::getGaussianCenters(std::istream& is)
               std::cerr <<"Can't handle SP basis states yet. Fix later.\n";
               abort();
             }
-            if(gsMap[currentWords[1]] >= 7)
+            if(gsMap[currentWords[1]] >= 9)
             {
-              std::cerr <<"Can't handle H basis states or higher yet. Fix later.\n";
+              std::cerr <<"Can't handle J basis states or higher yet. Fix later.\n";
               abort();
             }
             if(debug){
@@ -838,6 +838,14 @@ void GamesAsciiParser::getMO_single_set(std::istream& is, Matrix<double> &CartMa
         CartMat[cnt+2][k] = atof(currentWords[5].c_str()) ;
         CartMat[cnt+3][k] = atof(currentWords[6].c_str()) ;
         CartMat[cnt+4][k] = atof(currentWords[7].c_str()) ;
+      } else if(currentWords.size() == 7)
+        // I basis TAG gets mixed with atom name
+      {
+        CartMat[cnt][k] = atof(currentWords[2].c_str()) ;
+        CartMat[cnt+1][k] = atof(currentWords[3].c_str()) ;
+        CartMat[cnt+2][k] = atof(currentWords[4].c_str()) ;
+        CartMat[cnt+3][k] = atof(currentWords[5].c_str()) ;
+        CartMat[cnt+4][k] = atof(currentWords[6].c_str()) ;
       }
       else
       {
@@ -873,6 +881,13 @@ void GamesAsciiParser::getMO_single_set(std::istream& is, Matrix<double> &CartMa
         for(int i=0; i<rem; i++)
         {
           CartMat[cnt+i][k] = atof(currentWords[3+i].c_str()) ;
+        }
+      } else if(currentWords.size() == 2+rem)
+        // I basis TAG gets mixed with atom name
+      {
+        for(int i=0; i<rem; i++)
+        {
+          CartMat[cnt+i][k] = atof(currentWords[2+i].c_str()) ;
         }
       }
       else

@@ -44,11 +44,6 @@ struct ForceCeperley: public QMCHamiltonianBase, public ForceBase
 
   void InitMatrix();
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
   {
     registerObservablesF(h5list,gid);

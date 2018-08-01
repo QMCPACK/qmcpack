@@ -49,7 +49,7 @@ SET(MOSRCS
 # create libmocommon 
 ADD_LIBRARY(mocommon ${MOSRCS})
 
-set(QTOOLS convert4qmc MSDgenerator extract-eshdf-kvectors trace_density)
+set(QTOOLS convert4qmc extract-eshdf-kvectors)
 ADD_EXECUTABLE(getSupercell getSupercell.cpp)
 
 FOREACH(p ${QTOOLS})
@@ -71,3 +71,7 @@ FOREACH(p ${QTOOLS})
 
 ENDFOREACH(p ${QTOOLS})
 
+#ppconvert
+if( BUILD_PPCONVERT )
+  SUBDIRS(ppconvert)
+endif( BUILD_PPCONVERT )

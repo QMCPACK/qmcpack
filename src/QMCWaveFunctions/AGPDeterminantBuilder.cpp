@@ -18,16 +18,15 @@
  */
 #include "QMCWaveFunctions/AGPDeterminant.h"
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
-#include "QMCWaveFunctions/MolecularOrbitals/MolecularBasisBuilder.h"
-//#include "QMCWaveFunctions/MolecularOrbitals/GridMolecularOrbitals.h"
-//#include "QMCWaveFunctions/MolecularOrbitals/STOMolecularOrbitals.h"
-//#include "QMCWaveFunctions/MolecularOrbitals/GTOMolecularOrbitals.h"
+#include "OhmmsData/AttributeSet.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
+
 namespace qmcplusplus
 {
 
 AGPDeterminantBuilder::AGPDeterminantBuilder(ParticleSet& els, TrialWaveFunction& wfs,
     PtclPoolType& pset):
-  OrbitalBuilderBase(els,wfs), ptclPool(pset), myBasisSetFactory(0), agpDet(0)
+  OrbitalBuilderBase(els,wfs), ptclPool(pset), mySPOSetBuilderFactory(0), agpDet(0)
 {
 }
 
@@ -146,14 +145,15 @@ bool AGPDeterminantBuilder::put(xmlNodePtr cur)
     app_error() << "    Missing <basisset/> or <coefficients/>" << std::endl;
     return false;
   }
-  if(myBasisSetFactory == 0)
+  if(mySPOSetBuilderFactory == 0)
   {
-    myBasisSetFactory = new BasisSetFactory(targetPtcl,targetPsi,ptclPool);
-    myBasisSetFactory->createBasisSet(bPtr,curRoot);
+    mySPOSetBuilderFactory = new SPOSetBuilderFactory(targetPtcl,targetPsi,ptclPool);
+    mySPOSetBuilderFactory->createSPOSetBuilder(curRoot);
+    mySPOSetBuilderFactory->loadBasisSetFromXML(bPtr);
   }
 // mmorales: this needs to be fixed after changes to BasisSetfactory
-//    BasisSetBase<RealType>* myBasisSet=myBasisSetFactory->getBasisSet();
-  BasisSetBase<RealType>* myBasisSet=0; //=myBasisSetFactory->getBasisSet();
+//    BasisSetBase<RealType>* myBasisSet=mySPOSetBuilderFactory->getBasisSet();
+  BasisSetBase<RealType>* myBasisSet=0; //=mySPOSetBuilderFactory->getBasisSet();
   int nup=targetPtcl.first(1), ndown=0;
   if(targetPtcl.groups()>1)
     ndown = targetPtcl.first(2)-nup;

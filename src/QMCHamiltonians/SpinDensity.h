@@ -49,10 +49,6 @@ class SpinDensity : public QMCHamiltonianBase
   QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
   bool put(xmlNodePtr cur);
   Return_t evaluate(ParticleSet& P);
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P); 
-  }
 
   //required for Collectables interface
   void addObservables(PropertySetType& plist,BufferType& olist);
@@ -76,8 +72,6 @@ class SpinDensity : public QMCHamiltonianBase
   void report(const std::string& pad);
   void test(int moves,ParticleSet& P);
   Return_t test_evaluate(ParticleSet& P,int& pmin,int& pmax);
-  void postprocess_density(const std::string& infile,const std::string& species,
-                           pts_t& points,dens_t& density,dens_t& density_err);
   void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy);
 
 };

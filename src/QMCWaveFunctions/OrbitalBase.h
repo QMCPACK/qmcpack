@@ -180,6 +180,17 @@ struct OrbitalBase: public QMCTraits
   ///assign a differential orbital
   virtual void setDiffOrbital(DiffOrbitalBasePtr d);
 
+  ///assembles the full value from LogValue and PhaseValue
+  ValueType getValue() const
+  {
+#if defined(QMC_COMPLEX)
+    RealType ratioMag = std::exp(LogValue);
+    return ValueType(std::cos(PhaseValue)*ratioMag,std::sin(PhaseValue)*ratioMag);
+#else
+    return std::exp(LogValue);
+#endif
+  }
+
   /** check in optimizable parameters
    * @param active a super set of optimizable variables
    *
@@ -206,24 +217,13 @@ struct OrbitalBase: public QMCTraits
   virtual void resetTargetParticleSet(ParticleSet& P)=0;
 
   /** evaluate the value of the orbital for a configuration P.R
-   *@param P  active ParticleSet
-   *@param G  Gradients
-   *@param L  Laplacians
-   *@return the value
+   * @param P  active ParticleSet
+   * @param G Gradients, \f$\nabla\ln\Psi\f$
+   * @param L Laplacians, \f$\nabla^2\ln\Psi\f$
+   * @return the log value
    *
    *Mainly for walker-by-walker move. The initial stage of particle-by-particle
    *move also uses this.
-   */
-  virtual ValueType
-  evaluate(ParticleSet& P,
-           ParticleSet::ParticleGradient_t& G,
-           ParticleSet::ParticleLaplacian_t& L) = 0;
-
-  /** evaluate the value of the orbital
-   * @param P active ParticleSet
-   * @param G Gradients, \f$\nabla\ln\Psi\f$
-   * @param L Laplacians, \f$\nabla^2\ln\Psi\f$
-   *
    */
   virtual RealType
   evaluateLog(ParticleSet& P,
@@ -413,13 +413,13 @@ struct OrbitalBase: public QMCTraits
 
   /** evaluate ratios to evaluate the non-local PP
    * @param VP VirtualParticleSet
-   * @param ratios ratios with new positions VP.R[k] the VP.activePtcl
+   * @param ratios ratios with new positions VP.R[k] the VP.refPtcl
    */
   virtual void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios);
 
   /** evaluate ratios to evaluate the non-local PP
    * @param VP VirtualParticleSet
-   * @param ratios ratios with new positions VP.R[k] the VP.activePtcl
+   * @param ratios ratios with new positions VP.R[k] the VP.refPtcl
    * @param dratios \f$\partial_{\alpha}(\ln \Psi ({\bf R}^{\prime}) - \ln \Psi ({\bf R})) \f$
    */
   virtual void evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,

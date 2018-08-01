@@ -17,7 +17,6 @@
 #include "Numerics/GaussianTimesRN.h"
 #include "Numerics/Quadrature.h"
 #include "Numerics/Transform2GridFunctor.h"
-#include "QMCHamiltonians/FSAtomPseudoPot.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/SimpleParser.h"
 #include "Message/CommOperators.h"

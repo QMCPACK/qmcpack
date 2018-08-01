@@ -50,6 +50,8 @@ public:
   bool get(std::ostream& os) const;
   void reset();
 
+  void output_particleset_info(Libxml2Document &doc, xmlNodePtr root);
+
   ///assign TileMatrix
   bool putTileMatrix(xmlNodePtr cur);
 
@@ -98,10 +100,6 @@ public:
   /** randomize a particleset particleset/@random='yes' && particleset@random_source exists
    */
   void randomize();
-
-  /** make clones for the ParticleSets of this pool
-   *    */
-  void make_clones(int n);
 
   /**  Access to TileMatrix for testing
    */

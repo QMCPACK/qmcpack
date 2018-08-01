@@ -5,16 +5,13 @@ from nexus import *
 settings(
     pseudo_dir    = '../pseudopotentials',
     status_only   = 0,
-    #generate_only   = False,
-    # Complicated setting only so examples can be run in test harness.
-    # For real runs, use the plain setting of 'generate_only' above.
-    generate_only   = globals().get('override_generate_only_setting',False),
+    generate_only = 0,
     sleep         = 3,
     machine       = 'ws16'
     )
 
-relax_job = Job(cores=16,app='pw.x')
-scf_job   = Job(cores=16,app='pw.x')
+relax_job = job(cores=16,app='pw.x')
+scf_job   = job(cores=16,app='pw.x')
 
 dia16 = generate_physical_system(
     structure = './d16vac.POSCAR',

@@ -23,12 +23,14 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_SET_BUILDER_H
 #define QMCPLUSPLUS_EINSPLINE_SET_BUILDER_H
 
-#include "QMCWaveFunctions/BasisSetBase.h"
+#include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/BandInfo.h"
 #include "QMCWaveFunctions/AtomicOrbital.h"
 #include "QMCWaveFunctions/EinsplineSet.h"
 #include "Numerics/HDFNumericAttrib.h"
 #include <map>
+
+#define PW_COEFF_NORM_TOLERANCE 1e-6
 
 class Communicate;
 
@@ -119,7 +121,7 @@ struct H5OrbSet
 
 /** EinsplineSet builder
  */
-class EinsplineSetBuilder : public BasisSetBuilder
+class EinsplineSetBuilder : public SPOSetBuilder
 {
 public:
 
@@ -159,9 +161,6 @@ public:
 
   ///destructor
   ~EinsplineSetBuilder();
-
-  /** process xml node to initialize the builder */
-  bool put (xmlNodePtr cur);
 
   /** initialize the Antisymmetric wave function for electrons
    * @param cur the current xml node
@@ -212,7 +211,6 @@ public:
     //oset->GGt=dot(transpose(oset->PrimLattice.G), oset->PrimLattice.G);
     oset->GGt=GGt;
     oset->setOrbitalSetSize (numOrbs);
-    oset->BasisSetSize   = numOrbs;
   }
 
 
@@ -221,7 +219,6 @@ public:
   int NumBands, NumElectrons, NumSpins, NumTwists, NumCoreStates;
   int MaxNumGvecs;
   double MeshFactor;
-  RealType BufferLayer;
   RealType MatchingTol;
   TinyVector<int,3> MeshSize;
   std::vector<std::vector<TinyVector<int,3> > > Gvecs;
@@ -295,7 +292,7 @@ public:
   struct CenterInfo
   {
     std::vector<int> lmax, spline_npoints, GroupID;
-    std::vector<double> spline_radius, cutoff;
+    std::vector<double> spline_radius, cutoff, inner_cutoff, non_overlapping_radius;
     std::vector<TinyVector<double,OHMMS_DIM> > ion_pos;
     int Ncenters;
 
@@ -306,8 +303,10 @@ public:
       Ncenters=ncenters;
       lmax.resize(ncenters, -1);
       spline_npoints.resize(ncenters, -1);
-      GroupID.resize(ncenters);
+      GroupID.resize(ncenters, 0);
       spline_radius.resize(ncenters, -1.0);
+      inner_cutoff.resize(ncenters, -1.0);
+      non_overlapping_radius.resize(ncenters, -1.0);
       cutoff.resize(ncenters, -1.0);
       ion_pos.resize(ncenters);
     }
@@ -326,7 +325,6 @@ public:
   int LastSpinSet, NumOrbitalsRead;
 
   std::string occ_format;
-  RealType qafm;
   int particle_hole_pairs;
   bool makeRotations;
 #if 0

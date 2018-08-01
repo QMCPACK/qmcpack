@@ -30,8 +30,22 @@ MAYBE_SYMLINK(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
 MAYBE_SYMLINK(${UTEST_HDF_INPUT2} ${UTEST_DIR}/bccH.pwscf.h5)
 MAYBE_SYMLINK(${UTEST_HDF_INPUT3} ${UTEST_DIR}/LiH-arb.pwscf.h5)
 
+SET(FILES_TO_COPY he_sto3g.wfj.xml  ne_def2_svp.wfnoj.xml hcn.structure.xml hcn.wfnoj.xml)
+
+FOREACH(fname ${FILES_TO_COPY})
+  EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/${fname}" ${UTEST_DIR})
+ENDFOREACH()
+
+IF ((NOT QMC_COMPLEX) AND (NOT QMC_MIXED_PRECISION) AND (NOT QMC_CUDA))
+  SET(MO_SRCS test_MO.cpp test_multiquintic_spline.cpp)
+  IF (NOT ENABLE_SOA)
+    SET(MO_SRCS ${MO_SRCS} test_cusp_corr.cpp)
+  ENDIF()
+ENDIF()
+
 ADD_EXECUTABLE(${UTEST_EXE} test_wf.cpp test_bspline_jastrow.cpp test_einset.cpp test_pw.cpp
-               test_polynomial_eeI_jastrow.cpp test_dirac_det.cpp test_dirac_matrix.cpp)
+               test_polynomial_eeI_jastrow.cpp test_dirac_det.cpp test_dirac_matrix.cpp
+               test_wavefunction_factory.cpp ${MO_SRCS})
 TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc qmcwfs qmcbase qmcutil ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
 
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
