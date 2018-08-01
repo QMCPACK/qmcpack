@@ -42,7 +42,7 @@ GitHub closely to avoid difficult merges.
 
 * Weight of first block of DMC density is incorrect in CU
   code. DMC densities in CUDA GPU code are incorrect for all
-  blocks. [\#934](https://github.com/QMCPACK/qmcpack/issues/934) and [\#935](https://github.com/QMCPACK/qmcpack/issues/935)
+  blocks. [\#934](https://github.com/QMCPACK/qmcpack/issues/934) and [\#925](https://github.com/QMCPACK/qmcpack/issues/925)
 * Runs with only a single electron may crash. [\#945](https://github.com/QMCPACK/qmcpack/issues/945)
 
 ### NEXUS
