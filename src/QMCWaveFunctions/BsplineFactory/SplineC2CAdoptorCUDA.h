@@ -2,18 +2,15 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2018 QMCPACK developers
 //
-// File developed by:
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
-// File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
+// File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
 
-
-/** @file SplineC2CAdoptorCUDA.h
- *
- * Adoptor classes to handle complex-to-(real,complex) with arbitrary precision
- */
+// This seems like a waste of effort
+///\file SplineC2CAdoptorCUDA.h
 #ifndef QMCPLUSPLUS_EINSPLINE_C2C_SOA_ADOPTOR_H
 #define QMCPLUSPLUS_EINSPLINE_C2C_SOA_ADOPTOR_H
 
@@ -26,7 +23,9 @@
 namespace qmcplusplus
 {
 
-/** adoptor class to match std::complex<ST> spline with TT real SPOs
+/** adoptor class to match std::complex<ST> spline with TT Complex SPOs
+ * when using a cuda device
+ *
  * @tparam ST precision of spline
  * @tparam TT precision of SPOs
  * @tparam D dimension

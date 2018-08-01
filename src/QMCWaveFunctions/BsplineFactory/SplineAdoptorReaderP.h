@@ -25,8 +25,14 @@
  */
 #ifndef QMCPLUSPLUS_EINSPLINE_ADOPTOR_READERP_H
 #define QMCPLUSPLUS_EINSPLINE_ADOPTOR_READERP_H
+#include <fftw3.h>
 #include <mpi/collectives.h>
 #include <mpi/point2point.h>
+#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
+#include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
+#include "QMCWaveFunctions/einspline_helper.hpp"
+#include "Utilities/ProgressReportEngine.h"
+#include "qmc_common.h"
 
 namespace qmcplusplus
 {

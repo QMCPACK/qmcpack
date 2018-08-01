@@ -15,8 +15,9 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_R2RSOA_ADOPTOR_H
 #define QMCPLUSPLUS_EINSPLINE_R2RSOA_ADOPTOR_H
 
-#include <OhmmsSoA/Container.h>
-#include <spline2/MultiBspline.hpp>
+#include "Configuration.h"
+#include "OhmmsSoA/Container.h"
+#include "spline2/MultiBspline.hpp"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
 
 namespace qmcplusplus
@@ -30,19 +31,22 @@ namespace qmcplusplus
  * Requires temporage storage and multiplication of phase vectors
  */
 template<typename ST, typename TT>
-struct SplineR2RAdoptor: public SplineAdoptorBase<ST,3>
+class SplineR2RAdoptor: public SplineAdoptorBase<ST,3>
 {
-  static const int D=3;
-  bool IsGamma;
-  using BaseType=SplineAdoptorBase<ST,3>;
-  using SplineType=typename bspline_traits<ST,3>::SplineType;
-  using BCType=typename bspline_traits<ST,3>::BCType;
-  using PointType=typename BaseType::PointType;
-  using SingleSplineType=typename BaseType::SingleSplineType;
+public:
+  //Dimensionality
+  static constexpr int D = OHMMS_DIM;
 
-  using vContainer_type=Vector<ST,aligned_allocator<ST> >;
-  using gContainer_type=VectorSoaContainer<ST,3>;
-  using hContainer_type=VectorSoaContainer<ST,6>;
+  using PosType = PtclOnLatticeTraits::SingleParticlePos_t;
+  using BaseType = SplineAdoptorBase<ST,3>;
+  using SplineType = typename bspline_traits<ST,3>::SplineType;
+  using BCType = typename bspline_traits<ST,3>::BCType;
+  using PointType = typename BaseType::PointType;
+  using SingleSplineType = typename BaseType::SingleSplineType;
+
+  using vContainer_type = Vector<ST,aligned_allocator<ST> >;
+  using gContainer_type = VectorSoaContainer<ST,3>;
+  using hContainer_type = VectorSoaContainer<ST,6>;
 
   using BaseType::first_spo;
   using BaseType::last_spo;
@@ -53,6 +57,7 @@ struct SplineR2RAdoptor: public SplineAdoptorBase<ST,3>
   using BaseType::offset_cplx;
   using BaseType::offset_real;
 
+  bool IsGamma;
   ///number of points of the original grid
   int BaseN[3];
   ///offset of the original grid, always 0

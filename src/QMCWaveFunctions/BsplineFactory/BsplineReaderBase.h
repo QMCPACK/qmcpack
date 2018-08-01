@@ -21,6 +21,8 @@
 #define QMCPLUSPLUS_BSPLINE_READER_BASE_H
 #include <mpi/collectives.h>
 #include <mpi/point2point.h>
+#include "QMCWaveFunctions/EinsplineSetBuilder.h"
+
 namespace qmcplusplus
 {
 
