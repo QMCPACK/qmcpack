@@ -1,0 +1,2205 @@
+#! /usr/bin/env python
+
+import os
+import sys
+import shutil
+import traceback
+from optparse import OptionParser
+from numpy import ndarray,array,abs
+
+# find the path to the ntest executable and its parent directory
+scriptpath=os.path.realpath(__file__)
+parent_dir=os.path.dirname(os.path.dirname(scriptpath))
+
+# save nexus directories
+library_dir   = os.path.join(parent_dir,'library')
+test_dir      = os.path.join(parent_dir,'tests')
+reference_dir = os.path.join(parent_dir,'tests/reference')
+example_dir   = os.path.join(parent_dir,'examples')
+
+# ensure that ntest executable is resident in a nexus directory tree
+dirs_check = ['examples','executables','library','tests','tests/reference']
+for d in dirs_check:
+    pd = os.path.join(parent_dir,d)
+    if not os.path.exists(pd):
+        print('ntest executable is not run within a Nexus directory tree\nthe following directories must be present: {0}\nthe following directories are present: {1}\nexecutable launched from path: {2}'.format(dirs_check,os.listdir(parent_dir),parent_dir))
+        exit(1)
+    #end if
+#end for
+
+# enforce association between ntest executable and Nexus library
+sys.path.insert(0,library_dir)
+
+
+from generic import generic_settings,object_interface,NexusError
+
+generic_settings.raise_error = True
+
+
+# tests
+#   generic logging
+#   generic intrinsics
+#   generic extensions
+#   structure class
+#   physical system class
+#   simulation input base class
+#   simulation analyzer base class
+#   simulation base class
+#   job class
+#   machine base class
+#   workstation class
+#   supercomputer base class
+#   generic simulation
+#   
+#   settings operations
+#   job write correctness
+#   simulation input correctness
+#   simulation workflow generate only
+#   structure read/write, operations
+#   physical system functions
+#   simulation bundling
+#   project manager
+#   machines
+#   basisset operations
+#   pseudopotential operations
+#   fileio operations
+#   xmlreader
+#   hdfreader
+#   numerical operations (select)
+#   periodic table integrity
+#   simulation analyzers
+
+
+# determine if two values differ
+def value_diff(v1,v2,tol=1e-6):
+    diff = False
+    if not isinstance(v1,type(v2)):
+        diff = True
+    elif isinstance(v1,(bool,int,str)):
+        diff = v1!=v2
+    elif isinstance(v1,float):
+        diff = abs(v1-v2)>tol
+    elif isinstance(v1,(list,tuple)):
+        v1 = array(v1,dtype=object).ravel()
+        v2 = array(v2,dtype=object).ravel()
+        for vv1,vv2 in zip(v1,v2):
+            diff |= value_diff(vv1,vv2)
+        #end for
+    elif isinstance(v1,ndarray):
+        v1 = v1.ravel()
+        v2 = v2.ravel()
+        for vv1,vv2 in zip(v1,v2):
+            diff |= value_diff(vv1,vv2)
+        #end for
+    elif isinstance(v1,dict):
+        diff = v1!=v2
+    elif isinstance(v1,set):
+        diff = v1!=v2
+    elif v1 is None and v2 is None:
+        diff = False
+    else:
+        diff = True # unsupported types
+    #end if
+    return diff
+#end def value_diff
+
+
+# determine if two objects differ
+def object_diff(o1,o2,tol=1e-6,full=False):
+    diff1 = dict()
+    diff2 = dict()
+    o1    = o1._serial()
+    o2    = o2._serial()
+    keys1 = set(o1._keys())
+    keys2 = set(o2._keys())
+    ku1   = keys1 - keys2
+    ku2   = keys2 - keys1
+    km    = keys1 & keys2
+    for k in ku1:
+        diff1[k] = o1[k]
+    #end for
+    for k in ku2:
+        diff2[k] = o2[k]
+    #end for
+    for k in km:
+        v1 = o1[k]
+        v2 = o2[k]
+        if value_diff(v1,v2,tol):
+            diff1[k] = v1
+            diff2[k] = v2
+        #end if
+    #end for
+    diff = len(diff1)!=0 or len(diff2)!=0
+    if not full:
+        return diff
+    else:
+        return diff,diff1,diff2
+    #end if
+#end def object_diff
+
+
+# print the difference between two objects
+def print_diff(o1,o2): # used in debugging, not actual tests
+    from nexus import obj
+    print 20*'='
+    print o1
+    print 20*'='
+    print o2
+    diff,diff1,diff2 = object_diff(o1,o2,full=True)
+    d1 = obj(diff1)
+    d2 = obj(diff2)
+    print 20*'='
+    print d1
+    print 20*'='
+    print d2
+#end def print_diff
+
+
+
+# additional convenience functions to use value_diff and object_diff
+value_neq = value_diff
+def value_eq(*args,**kwargs):
+    return not value_neq(*args,**kwargs)
+#end def value_eq
+
+object_neq = object_diff
+def object_eq(*args,**kwargs):
+    return not object_neq(*args,**kwargs)
+#end def object_eq
+
+
+
+# exception indicating test failure
+class NexusTestFail(Exception):
+    None
+#end class NexusTestFail
+
+# exception indicating that developer constructed test incorrectly
+class NexusTestMisconstructed(Exception):
+    None
+#end class NexusTestMisconstructed
+
+# exception used during detailed developer checks of the testing system
+class NexusTestTripped(Exception):
+    None
+#end class NexusTestTripped
+
+
+
+
+class NexusTestBase(object):
+    nexus_test_dir = '.nexus_test' # ntest directory
+
+    launch_path    = None # path from which ntest exe was launched
+    current_test   = None # current NexusTest
+    current_label  = ''   # current nlabel()
+    test_count     =  0   # current test count
+    label_count    =  0   # current label count in NexusTest.operation()
+    current_assert =  0   # current assert count
+
+    assert_trip    = -1   # developer tool to trip assert's one by one
+                          # if set to n, an exception will be raised for the
+                          # n-th assert call
+
+    # keep a running count of assert calls
+    @staticmethod
+    def assert_called():
+        NexusTestBase.current_assert+=1
+        ca = NexusTestBase.current_assert
+        if ca==NexusTestBase.assert_trip:
+            raise NexusTestTripped
+        #end if
+    #end def assert_called
+
+    # provide a directory path to place test ouput data in
+    @staticmethod
+    def test_path():
+        test   = NexusTestBase.current_test
+        label  = NexusTestBase.current_label
+        label  = label.replace(' ','_').replace('-','_')
+        tcount = str(NexusTestBase.test_count).zfill(2)
+        lcount = str(NexusTestBase.label_count).zfill(2)
+        if test.test_dir is None:
+            test_dir  = '{0}_{1}'.format(tcount,test.name)
+        else:
+            test_dir = test.test_dir
+        #end if
+        label_dir = '{0}_{1}'.format(lcount,label)
+        ntdir  = NexusTestBase.nexus_test_dir
+        nlpath = NexusTestBase.launch_path
+        if len(label)==0:
+            testpath = os.path.join(nlpath,ntdir,test_dir)
+        else:
+            testpath = os.path.join(nlpath,ntdir,test_dir,label_dir)
+        #end if
+        return testpath
+    #end def test_path
+        
+#end class NexusTestBase
+
+
+
+# class used to divert log output when desired
+class FakeLog:
+    def __init__(self):
+        self.reset()
+    #end def __init__
+
+    def reset(self):
+        self.s = ''
+    #end def reset
+
+    def write(self,s):
+        self.s+=s
+    #end def write
+
+    def close(self):
+        None
+    #end def close
+#end class FakeLog
+
+
+# dict to temporarily store logger when log output is diverted
+logging_storage = dict()
+
+
+# developer function interface for test creation below
+
+# label a section of tests
+def nlabel(label):
+    os.chdir(NexusTestBase.launch_path)
+    NexusTestBase.current_label = label
+    NexusTestBase.label_count  += 1
+#end def nlabel
+
+
+# divert nexus log output
+def nlog_divert():
+    logging_storage['devlog'] = generic_settings.devlog
+    logging_storage['objlog'] = object_interface._logfile 
+    logfile = FakeLog()
+    generic_settings.devlog   = logfile
+    object_interface._logfile = logfile
+#end def nlog_divert
+
+
+# restore nexus log output
+def nlog_restore():
+    generic_settings.devlog   = logging_storage['devlog']
+    object_interface._logfile = logging_storage['devlog']
+#end def nlog_restore
+
+
+# enter the current testing directory
+def nenter(path=''):
+    testpath = NexusTestBase.test_path()
+    if not os.path.exists(testpath):
+        os.makedirs(os.path.join(testpath,path))
+    #end if
+    os.chdir(testpath)
+    NexusTestBase.entered = True
+    return testpath
+#end def nenter
+
+
+# leave the current testing directory
+def nleave():
+    os.chdir(NexusTestBase.launch_path)
+    NexusTestBase.entered = False
+#end def nleave
+
+
+# create multiple directories in the local test directory
+def ncreate_dirs(*dirs):
+    if not NexusTestBase.entered:
+        raise NexusTestMisconstructed
+    #end if
+    for dir in dirs:
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+        #end if
+    #end for
+#end def ncreate_dirs
+
+
+# create a single directory, optionally filled with files
+def ncreate_dir(dir,files):
+    ncreate_dirs(dir)
+    filepaths = [os.path.join(dir,file) for file in files]
+    ncreate_files(*filepaths)
+#end def ncreate_dir
+
+
+# create a set of empty files in the local test directory
+def ncreate_files(*files):
+    if not NexusTestBase.entered:
+        raise NexusTestMisconstructed
+    #end if
+    for file in files:
+        if not os.path.exists(file):
+            open(file,'w').close()
+        #end if
+    #end for
+#end def ncreate_files
+
+
+# declare that a test has passed
+def npass():
+    None
+#end def npass
+
+
+# declare that a test has failed
+def nfail(msg=''):
+    exception = NexusTestFail(msg)
+    raise exception
+#end def nfail
+
+
+# check an assertion
+def nassert(result):
+    if not isinstance(result,bool):
+        raise NexusTestMisconstructed
+    elif not result:
+        nfail()
+    else:
+        npass()
+    #end if
+    NexusTestBase.assert_called()
+#end def nassert
+
+
+
+
+# class to represent a test
+#   a test is created by writing a single function 
+#   each test function contains subtests labeled with nlabel
+#   each subtest has a collection of assert statements, etc
+class NexusTest(NexusTestBase):
+
+    status_options = dict(
+        unused = 0,
+        passed = 1,
+        failed = 2,
+        )
+
+    status_map = dict()
+    for k,v in status_options.iteritems():
+        status_map[v] = k
+    #end for
+
+    test_list = []
+    test_dict = {}
+
+
+    # capture launch path and clear out any old test data
+    #   to be called once at user launch
+    @staticmethod
+    def setup():
+        NexusTestBase.launch_path = os.getcwd()
+        nexus_test_dir = './'+NexusTestBase.nexus_test_dir
+        if 'nexus_test' in nexus_test_dir and os.path.exists(nexus_test_dir):
+            try:
+                shutil.rmtree(nexus_test_dir)
+            except Exception as e:
+                if os.path.exists(nexus_test_dir):
+                    raise e
+                #end if
+            #end try
+        #end if
+    #end def setup
+
+
+    # register the current test object in the global test list
+    def __init__(self,operation,name=None,op_inputs=None,test_dir=None):
+        if not callable(operation):
+            raise NexusTestMisconstructed
+        #end if
+        if name is None:
+            name = operation.__name__ 
+        elif not isinstance(name,str):
+            raise NexusTestMisconstructed
+        #end if
+        if op_inputs is not None and not isinstance(op_inputs,(tuple,dict)):
+            raise NexusTestMisconstructed
+        #end if
+        if test_dir is not None and not isinstance(test_dir,str):
+            raise NexusTestMisconstructed
+        #end if
+        self.name         = name
+        self.operation    = operation
+        self.op_inputs    = op_inputs
+        self.test_dir     = test_dir
+        self.exception    = None
+        self.status  = NexusTest.status_options['unused']
+        NexusTest.test_list.append(self)
+        NexusTest.test_dict[self.name] = self
+    #end def __init__
+
+
+    @property
+    def unused(self):
+        return self.status==NexusTest.status_options['unused']
+    #end def unused
+
+    @property
+    def passed(self):
+        return self.status==NexusTest.status_options['passed']
+    #end def passed
+
+    @property
+    def failed(self):
+        return self.status==NexusTest.status_options['failed']
+    #end def failed
+
+
+    # run the current test
+    def run(self):
+        nleave()
+        NexusTestBase.current_test  = self
+        NexusTestBase.current_label = ''
+        NexusTestBase.test_count   += 1
+        NexusTestBase.label_count   = 0
+        try:
+            if self.op_inputs is None:
+                self.operation()
+            elif isinstance(self.op_inputs,tuple):
+                self.operation(*self.op_inputs)
+            elif isinstance(self.op_inputs,dict):
+                self.operation(**self.op_inputs)
+            else:
+                raise NexusTestMisconstructed
+            #end if
+            self.status=NexusTest.status_options['passed']
+        except Exception,e:
+            self.exception = e
+            self.traceback = sys.exc_info()[2]
+            self.status=NexusTest.status_options['failed']
+        #end try
+    #end def run
+
+
+    # generate a message describing the outcome of the test
+    def message(self):
+        s = ''
+        s+='Test name     : {0}\n'.format(self.name)
+        status = NexusTest.status_map[self.status]
+        if self.failed and self.exception is not None:# and not isinstance(self.exception,NexusTestFail):
+            if len(NexusTestBase.current_label)>0:
+                s+='Test sublabel : {0}\n'.format(NexusTestBase.current_label)
+            #end if
+            e = self.exception
+            btrace = traceback.format_tb(self.traceback)
+            if isinstance(e,NexusTestFail):
+                btrace = btrace[:-1]
+                msg = str(e)
+                if len(msg)>0:
+                    s+='Test exception: {0}\n'.format('\n  '+msg.replace('\n','\n  '))
+                #end if
+            elif isinstance(e,NexusTestMisconstructed):
+                btrace = btrace[:-1]
+                s+='Test exception: Nexus test is misconstructed.  Please contact developers.\n'
+            else:
+                s+='Test exception: "{0}"\n'.format(e.__class__.__name__+': '+str(e).replace('\n','\n              '))
+            #end if
+            s+='Test backtrace:\n'
+            for s2 in btrace: 
+                s+=s2
+            #end for
+        #end if
+        return s
+    #end def message
+#end class NexusTest
+
+
+
+
+#===============================================#
+#   testing infrastructure above, tests below   #
+#===============================================#
+
+
+
+
+        
+def generic_logging():
+    from generic import log,message,warn,error
+
+    # send messages to object rather than stdout
+    devlog  = generic_settings.devlog
+    logfile = FakeLog()
+    generic_settings.devlog = logfile
+
+    # test log
+    nlabel('log')
+    #   simple message
+    s = 'simple message'
+    logfile.reset()
+    log(s)
+    nassert(logfile.s==s+'\n')
+
+    #   list of items
+    items = ['a','b','c',1,2,3]
+    logfile.reset()
+    log(*items)
+    nassert(logfile.s=='a b c 1 2 3 \n')
+
+    #   message with indentation
+    s = 'a message\nwith indentation'
+    logfile.reset()
+    log(s,indent='  ')
+    nassert(logfile.s=='  a message\n  with indentation\n')
+
+    logfile.reset()
+    log(s,indent='msg: ')
+    nassert(logfile.s=='msg: a message\nmsg: with indentation\n')
+    
+    #   writing to separate log files
+    logfile2 = FakeLog()
+    s1 = 'message to log 1'
+    s2 = 'message to log 2'
+    logfile.reset()
+    logfile2.reset()
+    log(s1)
+    nassert(logfile.s==s1+'\n')
+    nassert(logfile2.s=='')
+
+    logfile.reset()
+    logfile2.reset()
+    log(s2,logfile=logfile2)
+    nassert(logfile.s=='')
+    nassert(logfile2.s==s2+'\n')
+    
+
+    # test warn
+    nlabel('warn')
+    logfile.reset()
+    s = 'this is a warning'
+    warn(s)
+    so = '''
+  warning:
+    this is a warning
+'''
+    nassert(logfile.s==so)
+    logfile.reset()
+    s = 'this is a warning'
+    warn(s,header='Special')
+    so = '''
+  Special warning:
+    this is a warning
+'''
+    nassert(logfile.s==so)
+
+    # test error
+    nlabel('error')
+    #   in testing environment, should raise an error
+    try:
+        error('testing environment')
+        nfail()
+    except NexusError:
+        npass()
+    #end try
+    #   in standard/user environment, should print message
+    generic_settings.raise_error = False
+    logfile.reset()
+    error('this is an error',header='User',exit=False)
+    so = '''
+  User error:
+    this is an error
+'''
+    nassert(logfile.s==so)
+    generic_settings.raise_error = True
+    #   in testing environment, should raise an error
+    try:
+        error('testing environment')
+        nfail()
+    except NexusError:
+        npass()
+    #end try
+
+
+    # restore logging function
+    generic_settings.devlog = devlog
+#end def generic_logging
+
+
+
+def generic_intrinsics():
+    # test object_interface functions
+    from generic import obj
+    from generic import object_interface
+    from numpy import array,bool_
+
+    nlabel('object_set_get')
+    # make a simple object
+    o = obj()
+    o.a = 1
+    o.b = 'b'
+    o['c'] = (1,1,1)
+    o[3,4,5] = (5,6,7)
+
+    # test member values
+    nassert(o.a==1)
+    nassert(o.b=='b')
+    nassert(o.c==(1,1,1))
+    nassert(o[3,4,5]==(5,6,7))
+
+    # test member presence and length
+    nassert('a' in o)
+    nassert(2 not in o)
+    nassert(len(o)==4)
+    del o.a
+    nassert('a' not in o)
+    nassert(len(o)==3)
+    try:
+        del o.d
+        nfail()
+    except AttributeError:
+        npass()
+    #end try
+
+    # test add/access failures
+    try: # add unhashable type
+        o[{1:2,3:4}] = 5
+        nfail()
+    except TypeError:
+        npass()
+    #end try
+    try: # access missing member
+        v = o.d
+        nfail()
+    except AttributeError:
+        npass()
+    #end try
+    try: # access missing member
+        v = o['d']
+        nfail()
+    except KeyError:
+        npass()
+    #end try
+
+    nlabel('iterability')
+    # test list-like iterability
+    l = list()
+    for v in o:
+        l.append(v)
+    #end for
+    l = sorted(l)
+    l2 = ['b', (1, 1, 1), (5, 6, 7)]
+    nassert(l2==l)
+
+    # test dict-like iterability
+    d = dict()
+    for k,v in o.iteritems():
+        d[k] = v
+    #end for
+    o2 = obj()
+    o2.__dict__ = d
+    nassert(object_eq(o,o2))
+    nassert(sorted(o.keys())==sorted(d.keys()))
+    nassert(sorted(o.values())==sorted(d.values()))
+    nassert(sorted(o.items())==sorted(d.items()))
+
+    # test repr
+    nlabel('repr')
+    ro = '''
+  b                     str                 
+  c                     tuple               
+  (3, 4, 5)             tuple               
+'''
+    nassert(repr(o)==ro[1:])
+    o2 = obj(
+        a = obj(a1=1,a2=2,a3=3),
+        b = obj(b1='b1',b2='b2'),
+        c = obj(c1=5,c2=('a',3,4)),
+        d = array([3,4,5],dtype=int),
+        )
+    ro2 = '''
+  a                     obj                 
+  b                     obj                 
+  c                     obj                 
+  d                     ndarray             
+'''
+    nassert(repr(o2)==ro2[1:])
+
+    # test str
+    nlabel('str')
+    so = '''
+  b               = b
+  c               = (1, 1, 1)
+  (3, 4, 5)       = (5, 6, 7)
+'''
+    nassert(str(o)==so[1:])
+    so2 = '''
+  d               = [3 4 5]
+  a
+    a1              = 1
+    a2              = 2
+    a3              = 3
+  end a
+  b
+    b1              = b1
+    b2              = b2
+  end b
+  c
+    c1              = 5
+    c2              = ('a', 3, 4)
+  end c
+'''
+    nassert(str(o2)==so2[1:])
+    o3 = o2
+
+    # test tree
+    nlabel('tree')
+    #   not committed to output, only check execution
+    nassert(isinstance(o2.tree(),str))
+    nassert(isinstance(o2.tree(depth=1),str))
+    nassert(isinstance(o2.tree(types=True),str))
+    nassert(isinstance(o2.tree(all=True),str))
+    nassert(isinstance(o2.tree(nindent=2),str))
+
+    # test deepcopy
+    nlabel('deepcopy')
+    o2 = o.copy()
+    nassert(id(o)!=id(o2))
+    nassert(object_eq(o,o2))
+    o2.a=1
+    nassert(object_neq(o,o2))
+    
+    # test eq
+    nlabel('equality')
+    nassert(o==o2)
+    o4 = o3.copy()
+    v = o3==o4
+    nassert(isinstance(v,bool_))
+    nassert(bool(v))
+    nassert(object_eq(o3,o4))
+
+    # test clear
+    nlabel('clear')
+    o2.clear()
+    nassert(len(o2)==0)
+    nassert('a' not in o2)
+
+    # test save/load
+    nlabel('save_load')
+    nenter()
+    o.save('o.p')
+    o2 = obj()
+    o2.load('o.p')
+    nassert(object_eq(o,o2))
+
+    # test class-level set/get methods
+    nlabel('class_set_get')
+    class objint(object_interface):
+        a = 1
+        b = 'b'
+        c = (1,1,1)
+    #end class objint
+
+    # test class_has
+    nassert(objint.class_has('c'))
+
+    # test class_get
+    nassert(objint.class_get('c')==(1,1,1))
+    try:
+        val = objint.class_get('d')
+        nfail()
+    except AttributeError:
+        npass()
+    #end try
+
+    # test class_keys
+    ck = objint.class_keys()
+    for v in 'abc':
+        nassert(v in ck)
+    #end for
+
+    # test class_set_single
+    objint.class_set_single('d',1.34)
+    nassert(objint.class_has('d'))
+
+    # test class_set
+    objint.class_set(
+        e = 45,
+        f = 'a phrase',
+        g = {4:6,'a':2}
+        )
+    for v in 'efg':
+        nassert(objint.class_has(v))
+    #end for
+
+    # test class_set_optional
+    objint.class_set_optional(h=2)
+    nassert(objint.class_has('h'))
+    nassert(objint.class_get('h')==2)
+    objint.class_set_optional(a=6)
+    nassert(objint.class_get('a')==1)
+    
+
+    # test logging functions
+    nlabel('logging')
+
+    # test open log, write, close log
+    o = obj()
+    o.open_log('log.out')
+    s = 'log output'
+    o.write(s)
+    o.close_log()
+    f = open('log.out','r')
+    so = f.read()
+    f.close()
+    os.remove('log.out')
+    nassert(so==s)
+
+    # send messages to object rather than stdout
+    devlog  = object_interface._logfile
+    logfile = FakeLog()
+    object_interface._logfile = logfile
+
+    #   simple message
+    class DerivedObj(obj):
+        None
+    #end class DerivedObj
+    o = DerivedObj()
+    s = 'simple message'
+    logfile.reset()
+    o.log(s)
+    nassert(logfile.s==s+'\n')
+
+    #   list of items
+    items = ['a','b','c',1,2,3]
+    logfile.reset()
+    o.log(*items)
+    nassert(logfile.s=='a b c 1 2 3 \n')
+
+    #   message with indentation
+    s = 'a message\nwith indentation'
+    logfile.reset()
+    o.log(s,indent='  ')
+    nassert(logfile.s=='  a message\n  with indentation\n')
+
+    logfile.reset()
+    o.log(s,indent='msg: ')
+    nassert(logfile.s=='msg: a message\nmsg: with indentation\n')
+    
+    #   writing to separate log files
+    logfile2 = FakeLog()
+    s1 = 'message to log 1'
+    s2 = 'message to log 2'
+    logfile.reset()
+    logfile2.reset()
+    o.log(s1)
+    nassert(logfile.s==s1+'\n')
+    nassert(logfile2.s=='')
+
+    logfile.reset()
+    logfile2.reset()
+    o.log(s2,logfile=logfile2)
+    nassert(logfile.s=='')
+    nassert(logfile2.s==s2+'\n')
+    
+
+    # test warn
+    logfile.reset()
+    s = 'this is a warning'
+    o.warn(s)
+    so = '''
+  DerivedObj warning:
+    this is a warning
+'''
+    nassert(logfile.s==so)
+    logfile.reset()
+    s = 'this is a warning'
+    o.warn(s,header='Special')
+    so = '''
+  Special warning:
+    this is a warning
+'''
+    nassert(logfile.s==so)
+
+    # test error
+    #   in testing environment, should raise an error
+    try:
+        o.error('testing environment')
+        nfail()
+    except NexusError:
+        npass()
+    #end try
+    #   in standard/user environment, should print message
+    generic_settings.raise_error = False
+    logfile.reset()
+    o.error('this is an error',exit=False)
+    so = '''
+  DerivedObj error:
+    this is an error
+'''
+    nassert(logfile.s==so)
+    logfile.reset()
+    o.error('this is an error',header='User',exit=False)
+    so = '''
+  User error:
+    this is an error
+'''
+    nassert(logfile.s==so)
+    generic_settings.raise_error = True
+    #   in testing environment, should raise an error
+    try:
+        o.error('testing environment')
+        nfail()
+    except NexusError:
+        npass()
+    #end try
+
+
+    # restore logging function
+    object_interface._logfile = devlog
+
+#end def generic_intrinsics
+
+
+
+def generic_extensions():
+    # test obj functions
+    from generic import obj
+
+    # make a simple object
+    o = obj(
+        a = 1,
+        b = 'b',
+        c = (1,1,1),
+        )
+    o[3,4,5] = (5,6,7)
+
+    # test member values
+    nassert(o.a==1)
+    nassert(o.b=='b')
+    nassert(o.c==(1,1,1))
+    nassert(o[3,4,5]==(5,6,7))
+
+    # test member presence and length
+    nassert('a' in o)
+    nassert(2 not in o)
+    nassert(len(o)==4)
+
+    # test list interface
+    nlabel('list_interface')
+    vals = [3,'t',6.4,(4,3,2)]
+    l = list()
+    lo = obj()
+    for v in vals:
+        l.append(v)
+        lo.append(v)
+    #end for
+    nassert(len(l)==len(lo))
+    for i in range(len(l)):
+        nassert(l[i]==lo[i])
+    #end for
+
+
+    # test representations
+    nlabel('representations')
+    # test list representation
+    l2 = lo.list()
+    nassert(isinstance(l2,list))
+    nassert(l==l2)
+    l2 = lo.list_optional(1,3)
+    nassert(l2==['t',(4,3,2)])
+    l2 = o.list_optional('b',(3,4,5))
+    nassert(l2==['b',(5,6,7)])
+
+    # test tuple representation
+    t = lo.tuple()
+    nassert(isinstance(t,tuple))
+    nassert(t==tuple(l))
+    d = dict(
+        a = 1,
+        b = 'b',
+        c = (1,1,1),
+        )
+    d[3,4,5] = (5,6,7)
+
+    # test dict representation
+    do = o.dict()
+    nassert(isinstance(do,dict))
+    nassert(do==d)
+    d2 = d.copy()
+    d2['d'] = d
+    o2 = o.copy()
+    o2.d = o
+    d2o = o2.to_dict()
+    nassert(d2o==d2)
+
+    # test obj representation
+    o2 = o.obj()
+    nassert(isinstance(o2,obj))
+    nassert(id(o2)!=id(o))
+    nassert(object_eq(o2,o))
+
+    
+    # test list extensions
+    nlabel('list_extensions')
+    # test first
+    nassert(lo.first()==lo[0])
+
+    # test last
+    nassert(lo.last()==lo[3])
+
+    # test select_random
+    v = lo.select_random()
+    nassert(v in lo.list())
+
+
+    # test dict extensions
+    nlabel('dict_extensions')
+    # test random_key
+    k = o.random_key()
+    nassert(k in o)
+    o2 = obj()
+    nassert(o2.random_key() is None)
+
+    # test set
+    o2 = o.copy()
+    o2.set(
+        b = 'b2',
+        d = ('a','b','c'),
+        )
+    nassert(o2.b=='b2')
+    nassert(o2.d==tuple('abc'))
+    o1 = obj(a=1,b=2)
+    o2 = obj(c=3,d=4)
+    o3 = obj(e=5,f=6)
+    o4 = obj()
+    o4.set(o1,o2,o3)
+    for on in (o1,o2,o3):
+        for k,v in on.iteritems():
+            nassert(o4[k]==v)
+        #end for
+    #end for
+
+    # test set optional
+    o2 = o.copy()
+    o2.set_optional(
+        b = 'b2',
+        d = ('a','b','c'),
+        )
+    nassert(o2.b=='b')
+    nassert(o2.d==tuple('abc'))
+    o1 = obj(a=1,b=2)
+    o2 = obj(c=3,d=4)
+    o3 = obj(e=5,f=6)
+    o4 = obj()
+    o4.set_optional(o1,o2,o3)
+    for on in (o1,o2,o3):
+        for k,v in on.iteritems():
+            nassert(o4[k]==v)
+        #end for
+    #end for
+
+    # test get
+    nassert(o.get('c')==(1,1,1))
+    nassert('d' not in o)
+    nassert(o.get('d') is None)
+
+    # test get optional (identical to get)
+    nassert(o.get_optional('c')==(1,1,1))
+    nassert(o.get_optional('d') is None)
+
+    # test get required
+    nassert(o.get_required('c')==(1,1,1))
+    try:
+        val = o.get_required('d')
+        nfail()
+    except NexusError:
+        npass()
+    #end try
+
+    # test delete
+    o2 = o.copy()
+    nassert(o2.delete('c')==(1,1,1))
+    nassert('c' not in o2)
+    keys = 'a','b','c',(3,4,5)
+    vals = [1,'b',(1,1,1),(5,6,7)]
+    o2 = o.copy()
+    nassert(o2.delete(*keys)==vals)
+    nassert(len(o2)==0)
+    for k in keys:
+        nassert(k not in o2)
+    #end for
+    o2 = o.copy()
+    nassert(o2.delete(keys)==vals)
+    nassert(len(o2)==0)
+    for k in keys:
+        nassert(k not in o2)
+    #end for
+    o2 = o.copy()
+    try:
+        o2.delete('a','d')
+        nfail()
+    except KeyError:
+        npass()
+    #end try
+
+    # test delete optional
+    o2 = o.copy()
+    o2.delete_optional('c')
+    nassert('c' not in o2)
+    nassert('d' not in o2)
+    o2.delete_optional('d')
+    nassert('d' not in o2)
+
+    # test delete required
+    o2 = o.copy()
+    o2.delete_required('c')
+    nassert('c' not in o2)
+    try:
+        o2.delete_required('d')
+        nfail()
+    except NexusError:
+        npass()
+    #end try
+
+    # test add
+    o2 = obj()
+    o2.add('a',1)
+    try: # add unhashable type
+        o2.add([3,4,5],6)
+        nfail()
+    except TypeError:
+        npass()
+    #end if
+    
+    # test add optional
+    o2 = obj(a=1)
+    o2.add_optional('a',2)
+    o2.add_optional('b',3)
+    nassert(o2.a==1)
+    nassert(o2.b==3)
+
+
+    # test transfer/copy/move functions
+    nlabel('transfer_copy_move')
+    dref = dict(
+        a = 1,
+        b = 'b',
+        c = (1,1,1),
+        d = dict(
+            e = 5.4,
+            f = [3.3,4.5],
+            ),
+        )
+    dref[3,4,5] = (5,6,7)
+
+    # test transfer from
+    o = obj()
+    o.transfer_from(dref)
+    nassert(o.to_dict()==dref)
+    nassert(id(o.d)==id(dref['d']))
+
+    o = obj()
+    o.transfer_from(dref,copy=True)
+    nassert(o.to_dict()==dref)
+    nassert(id(o.d)!=id(dref['d']))
+
+    osmall = obj(b='b',c=(1,1,1))
+    osmall[3,4,5] = (5,6,7)
+    o = obj()
+    oref = obj(dref)
+    nassert(oref.to_dict()==dref)
+    o.transfer_from(oref,keys=['b','c',(3,4,5)])
+    nassert(object_eq(o,osmall))
+
+    o = obj(a=6,b=7)
+    o.transfer_from(oref,overwrite=False)
+    nassert(object_neq(o,oref))
+    o.transfer_from(oref,overwrite=True)
+    nassert(object_eq(o,oref))
+    nassert(o.to_dict()==dref)
+
+    o = obj()
+    try:
+        o.transfer_from(oref,keys=['a','x'])
+        nfail()
+    except KeyError:
+        npass()
+    #end try
+
+    # test transfer to
+    o = obj()
+    oref.transfer_to(o)
+    nassert(object_eq(o,oref))
+    nassert(id(o.d)==id(oref.d))
+
+    o = obj()
+    oref.transfer_to(o,copy=True)
+    nassert(object_eq(o,oref))
+    nassert(id(o.d)!=id(oref.d))
+
+    o = obj()
+    oref.transfer_to(o,keys=['b','c',(3,4,5)])
+    nassert(object_eq(o,osmall))
+
+    o = obj(a=6,b=7)
+    oref.transfer_to(o,overwrite=False)
+    nassert(object_neq(o,oref))
+    oref.transfer_to(o,overwrite=True)
+    nassert(object_eq(o,oref))
+
+    o = obj()
+    try:
+        oref.transfer_to(o,keys=['a','x'])
+        nfail()
+    except KeyError:
+        npass()
+    #end try
+
+    # test move from
+    d2 = dref.copy()
+    o = obj()
+    o.move_from(d2)
+    nassert(len(d2)==0)
+    nassert(object_eq(o,oref))
+
+    o2 = oref.copy()
+    o = obj()
+    o.move_from(o2)
+    nassert(len(o2)==0)
+    nassert(object_eq(o,oref))
+
+    osmall2 = oref.copy()
+    del osmall2.b
+    del osmall2.c
+    del osmall2[3,4,5]
+    o2 = oref.copy()
+    o = obj()
+    o.move_from(o2,keys=['b','c',(3,4,5)])
+    nassert(object_eq(o,osmall))
+    nassert(object_eq(o2,osmall2))
+
+    o2 = oref.copy()
+    o = obj()
+    try:
+        o.move_from(o2,keys=['a','x'])
+        nfail()
+    except KeyError:
+        npass()
+    #end try
+
+    # test move to
+    o2 = oref.copy()
+    d = dict()
+    o2.move_to(d)
+    nassert(len(o2)==0)
+    nassert(d==dref)
+
+    o2 = oref.copy()
+    o = obj()
+    o2.move_to(o)
+    nassert(len(o2)==0)
+    nassert(object_eq(o,oref))
+
+    o2 = oref.copy()
+    o = obj()
+    o2.move_to(o,keys=['b','c',(3,4,5)])
+    nassert(object_eq(o,osmall))
+    nassert(object_eq(o2,osmall2))
+
+    o2 = oref.copy()
+    o = obj()
+    try:
+        o2.move_to(o,keys=['a','x'])
+        nfail()
+    except KeyError:
+        npass()
+    #end try
+
+    # test copy from
+    o = obj()
+    o.copy_from(dref)
+    nassert(o.to_dict()==dref)
+    nassert(id(o.d)!=id(dref['d']))
+
+    o = obj()
+    o.copy_from(dref,deep=False)
+    nassert(o.to_dict()==dref)
+    nassert(id(o.d)==id(dref['d']))
+
+    osmall = obj(b='b',c=(1,1,1))
+    osmall[3,4,5] = (5,6,7)
+    o = obj()
+    oref = obj(dref)
+    nassert(oref.to_dict()==dref)
+    o.copy_from(oref,keys=['b','c',(3,4,5)])
+    nassert(object_eq(o,osmall))
+
+    o = obj()
+    try:
+        o.copy_from(oref,keys=['a','x'])
+        nfail()
+    except KeyError:
+        npass()
+    #end try
+
+    # test copy to
+    o = obj()
+    oref.copy_to(o)
+    nassert(object_eq(o,oref))
+    nassert(id(o.d)!=id(oref.d))
+
+    o = obj()
+    oref.copy_to(o,deep=False)
+    nassert(object_eq(o,oref))
+    nassert(id(o.d)==id(oref.d))
+
+    o = obj()
+    oref.copy_to(o,keys=['b','c',(3,4,5)])
+    nassert(object_eq(o,osmall))
+
+    o = obj()
+    try:
+        oref.copy_to(o,keys=['a','x'])
+        nfail()
+    except KeyError:
+        npass()
+    #end try
+
+    
+    # test shallow_copy
+    nlabel('shallow_copy')
+    class DerivedObj(obj):
+        None
+    #end class DerivedObj
+    do = DerivedObj(
+        a = 1,
+        b = 'b',
+        c = (1,1,1),
+        )
+    do[3,4,5] = (5,6,7)
+    do2 = do.shallow_copy()
+    nassert(isinstance(do2,DerivedObj))
+    nassert(object_eq(do2,do))
+    nassert(id(do2.c)==id(do.c))
+
+    # test inverse
+    nlabel('inverse')
+    oi = do.inverse()
+    nassert(sorted(oi.keys())==sorted(do.values()))
+    nassert(sorted(oi.values())==sorted(do.keys()))
+    nassert(oi[1]=='a')
+    nassert(oi.b=='b')
+    nassert(oi[1,1,1]=='c')
+    nassert(oi[5,6,7]==(3,4,5))
+
+    # test path operations
+    nlabel('path_operations')
+    # test path exists
+    o2 = obj()
+    o2.this = obj()
+    o2.this.new = obj()
+    o2.this.new.variable = 'here'
+    path1 = ['this','new','variable']
+    path2 = 'this/new/variable'
+    nassert(o2.path_exists(path1))
+    nassert(o2.path_exists(path2))
+
+    # test set path
+    o3 = obj()
+    o3.set_path(path1,'here')
+    nassert(o3.path_exists(path1))
+    nassert(o3.path_exists(path2))
+    nassert(object_eq(o2,o3))
+    o4 = obj()
+    o4.set_path(path2,'here')
+    nassert(o4.path_exists(path1))
+    nassert(o4.path_exists(path2))
+    nassert(object_eq(o3,o4))
+    
+    # test get path
+    nassert(o2.get_path(path1)=='here')
+    nassert(o2.get_path(path2)=='here')
+
+    # test serial
+    nlabel('serialization')
+    o = obj(
+        a = obj(
+            a0 = 0,
+            a1 = obj(
+                a10 = 1,
+                ),
+            ),
+        b = obj(
+            b0 = 0,
+            b1 = obj(
+                b10 = 1,
+                ),
+            b2 = obj(
+                b20 = obj(
+                    b200 = 2,
+                    ),
+                b21 = obj(
+                    b210 = obj(
+                        b2100 = 3,
+                        ),
+                    ),
+                ),
+            ),
+        c = obj(
+            c0 = 0,
+            c1 = obj(
+                c10 = 1,
+                ),
+            c2 = obj(
+                c20 = obj(
+                    c200 = 2,
+                    ),
+                c21 = obj(
+                    c210 = obj(
+                        c2100 = 3,
+                        ),
+                    ),
+                ),
+            c3 = obj(
+                c30 = obj(
+                    c300 = obj(
+                        c3000 = obj(
+                            c30000 = 4,
+                            ),
+                        ),
+                    c301 = obj(
+                        c3010 = obj(
+                            c30100 = obj(
+                                c301000 = 5,
+                                ),
+                            ),
+                        ),
+                    ),
+                c31 = obj(
+                    c310 = obj(
+                        c3100 = obj(
+                            c31000 = obj(
+                                c310000 = obj(
+                                    c3100000 = 6,
+                                    ),
+                                ),
+                            ),
+                        ),
+                    c311 = obj(
+                        c3110 = obj(
+                            c31100 = obj(
+                                c311000 = obj(
+                                    c3110000 = obj(
+                                        c3110000 = 7,
+                                        )
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+    oref = obj({
+        'a/a0':0,
+        'a/a1/a10':1,
+        'b/b0':0,
+        'b/b1/b10':1,
+        'b/b2/b20/b200':2,
+        'b/b2/b21/b210/b2100':3,
+        'c/c0':0,
+        'c/c1/c10':1,
+        'c/c2/c20/c200':2,
+        'c/c2/c21/c210/c2100':3,
+        'c/c3/c30/c300/c3000/c30000':4,
+        'c/c3/c30/c301/c3010/c30100/c301000':5,
+        'c/c3/c31/c310/c3100/c31000/c310000/c3100000':6,
+        'c/c3/c31/c311/c3110/c31100/c311000/c3110000/c3110000':7,
+        })
+
+    for k,v in oref.iteritems():
+        nassert(o.get_path(k)==v)
+    #end for
+    o2 = o.serial()
+    nassert(object_eq(o2,oref))
+
+#end def generic_extensions
+
+
+
+
+def nexus_imports():
+    import nexus
+
+    import qmcpack_workflows
+#end def nexus_imports
+
+
+
+
+def settings_operation():
+    # divert logging function
+    nlog_divert()
+
+    nlabel('imports')
+    from nexus import settings,Settings,obj
+    from nexus_base import nexus_core,nexus_core_defaults
+    from nexus_base import nexus_noncore,nexus_noncore_defaults
+    from nexus_base import nexus_core_noncore,nexus_core_noncore_defaults
+    from pseudopotential import Pseudopotentials
+    from basisset import BasisSets
+    from machines import Job,Workstation
+    from project_manager import ProjectManager
+    from gamess import Gamess
+    from pwscf import Pwscf
+
+    def aux_defaults():
+        # check that Job and ProjectManager settings are at default values
+        nassert(Job.machine is None)
+        nassert(ProjectManager.machine is None)
+
+        # check that Gamess and Pwscf settings are at default values
+        nassert(Gamess.ericfmt is None)
+        nassert(Gamess.mcppath is None)
+        nassert(Pwscf.vdw_table is None)
+    #end def aux_defaults
+
+    def check_settings_core_noncore():
+        nckeys_check = set([
+                'debug', 'dependent_modes', 'emulate', 'file_locations', 
+                'generate_only', 'indent', 'load_images', 'local_directory', 
+                'mode', 'modes', 'monitor', 'primary_modes', 'progress_tty', 
+                'pseudo_dir', 'pseudopotentials', 'remote_directory', 'results', 
+                'runs', 'skip_submit', 'sleep', 'stages', 'stages_set', 'status', 
+                'status_modes', 'status_only', 'trace', 'verbose', 'command_line'
+                ])
+        nnckeys_check = set([
+                'basis_dir', 'basissets', 'pseudo_dir', 'pseudopotentials'
+                ])
+        setkeys_check = set([
+                'basis_dir', 'basissets', 'debug', 'dependent_modes', 'emulate', 
+                'file_locations', 'generate_only', 'indent', 'load_images', 
+                'local_directory', 'mode', 'modes', 'monitor', 'primary_modes', 
+                'progress_tty', 'pseudo_dir', 'pseudopotentials', 
+                'remote_directory', 'results', 'runs', 'skip_submit', 'sleep', 
+                'stages', 'stages_set', 'status', 'status_modes', 'status_only', 
+                'trace', 'verbose'
+                ])
+        setkeys_allowed = setkeys_check | Settings.allowed_vars
+
+        nckeys  = set(nexus_core.keys())
+        nnckeys = set(nexus_noncore.keys())
+        setkeys = set(settings.keys())
+        
+        nassert(nckeys==nckeys_check)
+        nassert(nnckeys==nnckeys_check)
+        nassert(setkeys>=setkeys_check)
+        nassert(setkeys<=setkeys_allowed)
+
+        pairs = [(settings,nexus_core),
+                 (settings,nexus_noncore),
+                 (nexus_core,nexus_noncore)
+                 ]
+        for o1,o2 in pairs:
+            shared_keys = set(o1.keys()) & set(o2.keys())
+            for k in shared_keys:
+                v1 = o1[k]
+                v2 = o2[k]
+                if isinstance(v1,obj):
+                    nassert(object_eq(v1,v2))
+                else:
+                    nassert(value_eq(v1,v2))
+                #end if
+            #end for
+        #end for
+    #end check_settings_core_noncore
+
+    def check_empty_settings():
+        settings(
+            command_line = False,
+            )
+        settings.command_line   = True
+        nexus_core.command_line = True
+        check_settings_core_noncore()
+        # nexus core sets basic run stages and Pseudopotentials object
+        nassert(nexus_core.stages_set==set(nexus_core_defaults.primary_modes))
+        nassert(isinstance(nexus_core.pseudopotentials,Pseudopotentials))
+        nassert(len(nexus_core.pseudopotentials)==0)
+        nexus_core.stages_set       = set()
+        nexus_core.pseudopotentials = None
+        nassert(object_eq(nexus_core,nexus_core_defaults))
+        # nexus noncore sets Pseudopotentials and BasisSets objects
+        nassert(isinstance(nexus_noncore.pseudopotentials,Pseudopotentials))
+        nassert(len(nexus_noncore.pseudopotentials)==0)
+        nassert(isinstance(nexus_noncore.basissets,BasisSets))
+        nassert(len(nexus_noncore.basissets)==0)
+        nnc_defaults = obj(nexus_noncore_defaults,nexus_core_noncore_defaults)
+        nexus_noncore.pseudopotentials = None
+        nexus_noncore.basissets        = None
+        nassert(object_eq(nexus_noncore,nnc_defaults))
+        # other settings objects should be at default also
+        aux_defaults()
+    #end def_check_empty_settings
+    
+    
+    # check that core settings are at default values
+    nlabel('pre_settings')
+    nassert(object_eq(nexus_core,nexus_core_defaults))
+    nassert(object_eq(nexus_noncore,nexus_noncore_defaults))
+    nassert(object_eq(nexus_core_noncore,nexus_core_noncore_defaults))
+    aux_defaults()
+
+    # core settings remain almost at default with empty settings
+    nlabel('empty_settings')
+    check_empty_settings()
+
+    # check that a few basic user settings are applied appropriately
+    nlabel('basic_settings')
+    nenter()
+    dft_pseudos = ['Ni.opt.upf','O.opt.upf']
+    qmc_pseudos = ['Ni.opt.xml','O.opt.xml']
+    pseudos = dft_pseudos+qmc_pseudos
+    ncreate_dir('pseudopotentials',pseudos)
+    settings(
+        pseudo_dir    = './pseudopotentials',
+        status_only   = 0,
+        generate_only = 1,
+        machine       = 'ws16',
+        command_line  = False,
+        )
+    check_settings_core_noncore()
+    nassert(nexus_core.status_only==0)
+    nassert(nexus_core.generate_only==1)
+    nassert(nexus_core.pseudo_dir=='./pseudopotentials')
+    nassert(len(nexus_core.pseudopotentials)==4)
+    nassert(set(nexus_core.pseudopotentials.keys())==set(pseudos))
+    nassert(settings.machine=='ws16')
+    nassert(Job.machine=='ws16')
+    nassert(isinstance(ProjectManager.machine,Workstation))
+    nassert(ProjectManager.machine.name=='ws16')
+
+    # check that a new empty settings works following basic
+    nlabel('repeat_empty_settings')
+    check_empty_settings()
+
+    # restore logging function
+    nlog_restore()
+#end def settings_operation
+
+
+
+example_information = dict(
+    pwscf_relax_Ge_T = dict(
+        scripts = [
+            'quantum_espresso/relax_Ge_T_vs_kpoints/relax_vs_kpoints_example.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_111/relax.in'),
+            ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_222/relax.in'),
+            ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_444/relax.in'),
+            ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_666/relax.in'),
+            ],
+        ),
+    gamess_H2O = dict(
+        scripts = [
+            'gamess/H2O/h2o_pp_hf.py',
+            'gamess/H2O/h2o_pp_cisd.py',
+            'gamess/H2O/h2o_pp_casscf.py',
+            ],
+        files = [
+            ('gamess'    ,'input','gamess/H2O/runs/pp_hf/rhf.inp'),
+            ('gamess'    ,'input','gamess/H2O/runs/pp_cisd/rhf.inp'),
+            ('gamess'    ,'input','gamess/H2O/runs/pp_cisd/cisd.inp'),
+            ('gamess'    ,'input','gamess/H2O/runs/pp_casscf/rhf.inp'),
+            ('gamess'    ,'input','gamess/H2O/runs/pp_casscf/cas.inp'),
+            ],
+        ),
+    qmcpack_H2O = dict(
+        scripts = [
+            'qmcpack/H2O/H2O.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','qmcpack/H2O/runs/scf.in'),
+            ('pw2qmcpack','input','qmcpack/H2O/runs/p2q.in'),
+            ('qmcpack'   ,'input','qmcpack/H2O/runs/opt.in.xml'),
+            ('qmcpack'   ,'input','qmcpack/H2O/runs/dmc.in.xml'),
+            ],
+        ),
+    qmcpack_LiH = dict(
+        scripts = [
+            'qmcpack/LiH/LiH.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','qmcpack/LiH/runs/scf.in'),
+            ('pwscf'     ,'input','qmcpack/LiH/runs/nscf.in'),
+            ('pw2qmcpack','input','qmcpack/LiH/runs/p2q.in'),
+            ('qmcpack'   ,'input','qmcpack/LiH/runs/opt.in.xml'),
+            ('qmcpack'   ,'input','qmcpack/LiH/runs/dmc.in.xml'),
+            ],
+        ),
+    qmcpack_c20 = dict(
+        scripts = [
+            'qmcpack/c20/c20.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','qmcpack/c20/runs/c20/scf/scf.in'),
+            ('pw2qmcpack','input','qmcpack/c20/runs/c20/nscf/p2q.in'),
+            ('qmcpack'   ,'input','qmcpack/c20/runs/c20/opt/opt.in.xml'),
+            ('qmcpack'   ,'input','qmcpack/c20/runs/c20/qmc/qmc.in.xml'),
+            ],
+        ),
+    qmcpack_diamond = dict(
+        scripts = [
+            'qmcpack/diamond/diamond.py',
+            'qmcpack/diamond/diamond_vacancy.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','qmcpack/diamond/runs/diamond/scf/scf.in'),
+            ('pw2qmcpack','input','qmcpack/diamond/runs/diamond/scf/conv.in'),
+            ('qmcpack'   ,'input','qmcpack/diamond/runs/diamond/vmc/vmc.in.xml'),
+            ('pwscf'     ,'input','qmcpack/diamond/runs/diamond_vacancy/relax/relax.in'),
+            ('pwscf'     ,'input','qmcpack/diamond/runs/diamond_vacancy/scf/scf.in'),
+            ],
+        ),
+    qmcpack_graphene = dict(
+        scripts = [
+            'qmcpack/graphene/graphene.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','qmcpack/graphene/runs/graphene/scf/scf.in'),
+            ('pwscf'     ,'input','qmcpack/graphene/runs/graphene/nscf/nscf.in'),
+            ('pw2qmcpack','input','qmcpack/graphene/runs/graphene/nscf/p2q.in'),
+            ('pwscf'     ,'input','qmcpack/graphene/runs/graphene/nscf_opt/nscf.in'),
+            ('pw2qmcpack','input','qmcpack/graphene/runs/graphene/nscf_opt/p2q.in'),
+            ('qmcpack'   ,'input','qmcpack/graphene/runs/graphene/opt/opt.in.xml'),
+            ('qmcpack'   ,'input','qmcpack/graphene/runs/graphene/qmc/qmc.in.xml'),
+            ],
+        ),
+    qmcpack_oxygen_dimer = dict(
+        scripts = [
+            'qmcpack/oxygen_dimer/oxygen_dimer.py',
+            ],
+        files = [
+            ('pwscf'     ,'input','qmcpack/oxygen_dimer/scale_1.0/scf.in'),
+            ('pw2qmcpack','input','qmcpack/oxygen_dimer/scale_1.0/p2q.in'),
+            ('qmcpack'   ,'input','qmcpack/oxygen_dimer/scale_1.0/opt.in.xml'),
+            ('qmcpack'   ,'input','qmcpack/oxygen_dimer/scale_1.0/qmc.in.xml'),
+            ],
+        ),
+    )
+
+def user_examples(label):
+
+    from pwscf_input import PwscfInput
+    from qmcpack_converters import Pw2qmcpackInput
+    from gamess_input import GamessInput
+    from qmcpack_input import QmcpackInput
+
+    # load information for a single user example
+    if label not in example_information:
+        raise NexusTestMisconstructed
+    #end if
+    einfo = example_information[label]
+
+    # create local directory for these tests
+    test_dir = nenter()
+
+    # copy over nexus user examples into reference generation directory
+    #   only do this the first time as all user example tests share a test directory
+    if not os.path.exists(os.path.join(test_dir,'qmcpack')):
+        command = 'rsync -av {0}/* {1}/'.format(example_dir,test_dir)
+        out,err,rc = execute(command)
+        if rc>0:
+            nfail('copying example directory failed\nattempted command:\n'+command)
+        #end if
+    #end if
+
+    # execute all example scripts in generate_only mode
+    for script_path in einfo['scripts']:
+        path,script = os.path.split(script_path)
+        path = os.path.join(test_dir,path)
+        cwd = os.getcwd()
+        os.chdir(path)
+        command = './'+script+' --generate_only --sleep=0.01'
+        out,err,rc = execute(command)
+        if rc>0:
+            nfail('example script failed to run\nattempted command: {0}\nlocation: {1}'.format(command,path))
+        #end if
+        os.chdir(cwd)
+    #end for
+
+    # check that generated files match reference files
+    ref_example_dir = os.path.join(reference_dir,'user_examples')
+    input_classes = dict(
+        pwscf      = PwscfInput,
+        pw2qmcpack = Pw2qmcpackInput,
+        gamess     = GamessInput,
+        qmcpack    = QmcpackInput,
+        )
+    for code,filetype,filepath in einfo['files']:
+        ref_filepath = os.path.join(ref_example_dir,filepath)
+        gen_filepath = os.path.join(test_dir,filepath)
+        # check that the reference file exists
+        if not os.path.exists(ref_filepath):
+            nfail('reference file is missing\nfile should be located at: {0}'.format(ref_filepath))
+        #end if
+        # check that the generated file exists
+        if not os.path.exists(gen_filepath):
+            nfail('input file was not generated: {0}'.format(gen_filepath))
+        #end if
+        # check that the generated file matches the reference file
+        #   read the files into Nexus' object representation
+        #   use object_diff to compare object represenations
+        #   this is needed to compare floats within a tolerance
+        if filetype=='input':
+            input_class = input_classes[code]
+            ref_input = input_class(ref_filepath)
+            gen_input = input_class(gen_filepath)
+            diff,dgen,dref = object_diff(gen_input,ref_input,full=True)
+            if diff:
+                # assume failure
+                failed = True
+                # if difference due to periodically equivalent points
+                # then it is not a failure
+                check_pbc = False
+                if len(dgen)==1 and len(dref)==1:
+                    kgen = dgen.keys()[0].rsplit('/',1)[1]
+                    kref = dref.keys()[0].rsplit('/',1)[1]
+                    check_pbc |= code=='qmcpack' and kgen==kref=='position'
+                    check_pbc |= code=='pwscf'   and kgen==kref=='positions'
+                #end if
+                if check_pbc:
+                    try:
+                        # extract Structure objects from SimulationInput objects
+                        rs = ref_input.return_structure()
+                        gs = gen_input.return_structure()
+                        # compare minimum image distances of all atomic coordinates
+                        d = rs.min_image_distances(gs.pos,pairs=False)
+                        # allow for small deviation due to precision of ascii floats in the text input files 
+                        if d.min()<1e-6:
+                            failed = False
+                        #end if
+                    except:
+                        None
+                    #end try
+                #end if
+                if failed:
+                    from generic import obj
+                    dgen = obj(dgen)
+                    dref = obj(dref)
+                    msg = 'reference and generated input files differ\n'
+                    msg += 'reference file: '+filepath+'\n'
+                    msg += 'reference file difference\n'
+                    msg += 40*'='+'\n'
+                    msg += str(dref)
+                    msg += 'generated file difference\n'
+                    msg += 40*'='+'\n'
+                    msg += str(dgen)
+                    nfail(msg)
+                #end if
+            #end if
+        else:
+            raise NexusTestMisconstructed
+        #end if
+    #end for
+#end def user_examples
+
+
+
+# create labeled tests from simple functions above
+
+NexusTest( generic_logging    )
+NexusTest( generic_intrinsics )
+NexusTest( generic_extensions )
+NexusTest( nexus_imports      )
+NexusTest( settings_operation , 'settings' )
+
+for label in example_information.keys():
+    NexusTest(
+        name      = 'example_'+label,  # individually label tests
+        operation = user_examples,     # all tests call the same test function
+        op_inputs = dict(label=label), #   but with different inputs
+        test_dir  = 'user_examples',   # all tests are run in the same base directory 
+        )
+#end for
+
+
+
+# launch the actual testing framework
+
+# Returns failure error code to OS.
+# Explicitly prints 'fail' after an optional message.
+def exit_fail(msg=None):
+    if msg!=None:
+        print(msg)
+    #end if
+    print('Test status: fail')
+    exit(1)
+#end def exit_fail
+
+# Returns success error code to OS.
+# Explicitly prints 'pass' after an optional message.
+def exit_pass(msg=None):
+    if msg!=None:
+        print(msg)
+    #end if
+    print('Test status: pass')
+    exit(0)
+#end def exit_pass
+
+# execute function
+from subprocess import Popen,PIPE
+def execute(command,verbose=False,skip=False):
+    out,err = '',''
+    if skip:
+        if verbose:
+            print 'Would have executed:\n  '+command
+        #end if
+    else:
+        if verbose:
+            print 'Executing:\n  '+command
+        #end if
+        process = Popen(command,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True)
+        out,err = process.communicate()
+    #end if
+    return out,err,process.returncode
+#end def execute
+
+
+
+def regenerate_reference(update=False,overwrite=True):
+    # create directory for reference file generation
+    refgen_dir = './reference_regen'
+    if os.path.exists(refgen_dir):
+        shutil.rmtree(refgen_dir)
+    #end if
+    os.makedirs(refgen_dir)
+
+    print 'generating reference data in {0}'.format(refgen_dir)
+
+    # create directory for example reference generation
+    refgen_example_dir = os.path.join(refgen_dir,'user_examples')
+    if not os.path.exists(refgen_example_dir):
+        os.makedirs(refgen_example_dir)
+    #end if
+
+    # copy over nexus user examples into reference generation directory
+    out,err,rc = execute('rsync -av {0}/* {1}/'.format(example_dir,refgen_example_dir))
+    if rc>0:
+        print '  rsync of example directory failed, exiting'
+        exit(1)
+    #end if
+
+    # execute all example scripts in generate_only mode
+    for label,einfo in example_information.iteritems():
+        for script_path in einfo['scripts']:
+            print '  generating reference data for '+script_path
+            path,script = os.path.split(script_path)
+            path = os.path.join(refgen_example_dir,path)
+            cwd = os.getcwd()
+            os.chdir(path)
+            command = './'+script+' --generate_only --sleep=0.1'
+            out,err,rc = execute(command)
+            if rc>0:
+                print('example script failed to run\nattempted command: {0}\nlocation: {1}'.format(command,script_path))
+                exit(1)
+            #end if
+            os.chdir(cwd)
+        #end for
+    #end for
+
+    # update the reference set of example files
+    if update:
+        overwrite = False
+        ref_example_dir = os.path.join(reference_dir,'user_examples')
+        for label,einfo in example_information.iteritems():
+            for code,filetype,filepath in einfo['files']:
+                ref_filepath = os.path.join(ref_example_dir,filepath)
+                gen_filepath = os.path.join(refgen_example_dir,filepath)
+                if overwrite or not os.path.exists(ref_filepath):
+                    path,file = os.path.split(ref_filepath)
+                    if not os.path.exists(path):
+                        os.makedirs(path)
+                    #end if
+                    shutil.copy2(gen_filepath,path)
+                #end if
+            #end for
+        #end for
+    #end if
+
+#end def regenerate_reference
+
+
+
+if __name__=='__main__':
+    import re
+    from time import time # used to get user wall clock rather than cpu time
+
+    tstart_all = time()
+
+    # read command line input
+    regex = None
+    ctest = False
+
+    parser = OptionParser(
+        usage='usage: %prog [options]',
+        add_help_option=False,
+        version='%prog 0.1'
+        )
+
+    parser.add_option('-h','--help',dest='help',
+                      action='store_true',default=False,
+                      help='Print help information and exit (default=%default).'
+                      )
+    parser.add_option('-R','--regex',dest='regex',
+                      default='none',
+                      help='Tests with names matching the regular expression (regex) will be run.  The default behavior is to run all tests (default=%default).'
+                      )
+    parser.add_option('--list',dest='list',
+                      action='store_true',default=False,
+                      help='List tests in human readable format. (default=%default).'
+                      )
+    parser.add_option('--ctestlist',dest='ctestlist',
+                      action='store_true',default=False,
+                      help='List tests in CMake format. Intended for use within CTest (default=%default).'
+                      )
+    parser.add_option('--ctest',dest='ctest',
+                      action='store_true',default=False,
+                      help='Compatibility mode for calls from the CTest framework (default=%default).'
+                      )
+    parser.add_option('--trip',dest='trip',
+                      default='none',
+                      help='Cause the "trip"-th assertion statement to fail.  Useful when to ensure that the CMake script is working properly when interfacing with CTest (default=%default).'
+                      )
+    parser.add_option('--generate_reference',dest='generate_reference',
+                      action='store_true',default=False,
+                      help='Regenerate reference data, but do not overwrite existing reference files.  Intended for developer use (default=%default).'
+                      )
+    parser.add_option('--update_reference',dest='update_reference',
+                      action='store_true',default=False,
+                      help='Regenerate reference data and overwrite existing reference files.  Intended for developer use (default=%default).'
+                      )
+
+    options,files_in = parser.parse_args()
+
+    if options.help:
+        print('\n'+parser.format_help().strip())
+        exit()
+    #end if
+
+    # Regenerate reference data and exit
+    if options.generate_reference:
+        regenerate_reference(update=False)
+        exit()
+    #end if
+    if options.update_reference:
+        #exit_fail('Automatic update of reference data is not yet supported.')
+        regenerate_reference(update=True)
+        exit()
+    #end if
+
+    if options.regex!='none':
+        regex = options.regex
+    #end if
+    ctest = options.ctest
+    if options.trip!='none':
+        try:
+            NexusTestBase.assert_trip = int(options.trip)
+        except:
+            msg='command line option "--trip" must be an integer, received {0}'.format(options.trip)
+            exit_fail(msg)
+        #end try
+    #end if
+
+    # clear out old test data
+    NexusTest.setup()
+
+    # identify test list to run
+    tests = []
+    for test in NexusTest.test_list:
+        if regex is None:
+            tests.append(test)
+        elif re.search(regex,test.name):
+            tests.append(test)
+        #end if
+    #end for
+    if options.list:
+        print 'Test list:'
+        for test in tests:
+            print ' ',test.name
+        #end for
+        exit()
+    #end if
+    if len(tests)!=1 and ctest:
+        exit_fail('Exactly one test should be selected when using ctest\n  tests requested: {0}'.format([test.name for test in tests]))
+    #end if
+    if options.ctestlist:
+        c = ''
+        for test in tests:
+            c+=test.name+';'
+        #end for
+        sys.stdout.write(c[:-1])
+        exit()
+    #end if
+
+    # run each test and print the test outcome
+    if not ctest:
+        print
+    #end if
+    n=0
+    npassed = 0
+    nfailed = 0
+    for test in tests:
+        n+=1
+        t1 = time()
+
+        # run the test
+        test.run()
+
+        # print the pass/fail line
+        if len(test.name)<40:
+            title = test.name+(40-len(test.name))*'.'
+        else:
+            title = test.name
+        #end if
+        if test.passed:
+            status = 'Passed'
+            npassed+=1
+        elif test.failed:
+            status = 'Failed'
+            nfailed+=1
+        else:
+            status = 'Unknown'
+        #end if
+        t2 = time()
+        if not ctest:
+            slt = str(len(tests))
+            sn  = str(n)
+            if len(sn)<len(slt):
+                sn = (len(slt)-len(sn))*' '+sn
+            #end if
+            print ' {0}/{1} {2}   {3}  {4:3.2f} sec'.format(sn,slt,title,status,t2-t1)
+        #end if
+        
+        # print more information if failed
+        msg = test.message()
+        if test.failed:
+            if not ctest:
+                print msg
+            else:
+                exit_fail(msg)
+            #end if
+        elif test.passed and ctest:
+            exit_pass(msg)
+        #end if
+    #end for
+
+    tstop_all = time()
+
+    # print pass/fail and timing summary
+    if not ctest:
+        print
+        print '{0}% tests passed, {1} tests failed out of {2}'.format(int(100*float(npassed)/(1e-16+len(tests))),nfailed,len(tests))
+        print
+        print 'Total test time = {0:3.2f} sec'.format(tstop_all-tstart_all)
+    #end if
+#end if

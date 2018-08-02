@@ -169,11 +169,11 @@ namespace qmcplusplus {
   /// \param[in]      P  Reference to the particle set to be used by the clone.
   ///
   ///////////////////////////////////////////////////////////////////////////////////////////////
-  OrbitalBasePtr FDLRWfn::makeClone(ParticleSet& P) const {
+  WaveFunctionComponentPtr FDLRWfn::makeClone(ParticleSet& P) const {
     TrialWaveFunction* wfn_xpd_clone = m_wfn_xpd->makeClone(P);
     TrialWaveFunction* wfn_xmd_clone = m_wfn_xmd->makeClone(P);
     FDLRWfn* fdlr_clone = new FDLRWfn( wfn_xpd_clone, wfn_xmd_clone, P );
-    return OrbitalBasePtr( fdlr_clone );
+    return WaveFunctionComponentPtr( fdlr_clone );
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -315,11 +315,6 @@ namespace qmcplusplus {
 
   void FDLRWfn::resetTargetParticleSet(ParticleSet& P) {
     throw std::runtime_error("FDLRWfn::resetTargetParticleSet not yet implemented");
-  }
-
-  FDLRWfn::ValueType FDLRWfn::evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) {
-    throw std::runtime_error("FDLRWfn::evaluate not yet implemented");
-    return 0.0;
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -598,7 +593,7 @@ namespace qmcplusplus {
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   /// \brief  Copy data that was stored in the internal buffer into the FDLR object and into the
-  ///         OrbitalBase objects within the TrialWaveFunction objects.
+  ///         WaveFunctionComponent objects within the TrialWaveFunction objects.
   ///
   /// \param[in]    P         the particle set
   /// \param[in]    buf       the buffer to read from
@@ -654,7 +649,7 @@ namespace qmcplusplus {
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
-  /// \brief  Updates data for the FDLR object and its internal OrbitalBase objects, to account
+  /// \brief  Updates data for the FDLR object and its internal WaveFunctionComponent objects, to account
   ///         for an accepted move of a single particle.
   ///
   ///         Recalculate and store the log of the FDLR wave function.

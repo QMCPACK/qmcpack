@@ -18,18 +18,18 @@ settings(
             local_directory = '/your/path/to/local_directory/on/oic5',
             app_directory   = '/where/you/keep/apps/on/oic5',
             app_directories = {
-                'qmcapp'  :'/path/to/qmcapp/on/oic5',
-                'pw.x'    :'/path/to/pw.x/on/oic5',
-                'myqmcapp':'/path/to/myqmcapp/on/oic5'
+                'qmcpack'  :'/path/to/qmcpack/on/oic5',
+                'pw.x'     :'/path/to/pw.x/on/oic5',
+                'myqmcpack':'/path/to/myqmcpack/on/oic5'
                 }
             ),
         edison = dict(
             local_directory = '/your/path/to/local_directory/on/edison',
             app_directory   = '/where/you/keep/apps/on/edison',
             app_directories = {
-                'qmcapp'  :'/path/to/qmcapp/on/edison',
-                'pw.x'    :'/path/to/pw.x/on/edison',
-                'myqmcapp':'/path/to/myqmcapp/on/edison'
+                'qmcpack'  :'/path/to/qmcpack/on/edison',
+                'pw.x'     :'/path/to/pw.x/on/edison',
+                'myqmcpack':'/path/to/myqmcpack/on/edison'
                 }
             )
         )

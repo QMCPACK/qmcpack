@@ -40,7 +40,7 @@ std::vector<int> QMCGaussianParserBase::gShellID;
 
 QMCGaussianParserBase::QMCGaussianParserBase():
   Title("sample"),basisType("Gaussian"),basisName("generic"),DoCusp(false),debug(false),production(false),
-  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),WFS_name("wfj"),AllH5(false),NbKpts(0)
+  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),optDetCoeffs(false),WFS_name("wfj"),AllH5(false),NbKpts(0)
   ,usingCSF(false),readNO(0),readGuess(0),zeroCI(false),target_state(0),Structure(false),PBC(false)
   ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false),QP(false),ECP(false),X(0),Y(0),Z(0)
 {
@@ -50,7 +50,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
   BohrUnit(true),SpinRestricted(false),NumberOfAtoms(0),NumberOfEls(0),DoCusp(false),debug(false),
   SpinMultiplicity(0),NumberOfAlpha(0),NumberOfBeta(0),SizeOfBasisSet(0),WFS_name("wfj"),PBC(false),
   Title("sample"),basisType("Gaussian"),basisName("generic"),numMO(0),numMO2print(-1),production(false),
-  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),target_state(0),AllH5(false),
+  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),optDetCoeffs(false),target_state(0),AllH5(false),
   angular_type("spherical"),usingCSF(false),readNO(0),readGuess(0),zeroCI(false),Structure(false),NbKpts(0)
   ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false), QP(false),ECP(false),X(0),Y(0),Z(0)
 {
@@ -806,7 +806,10 @@ xmlNodePtr
 QMCGaussianParserBase::createMultiDeterminantSetQPHDF5()
 {
   xmlNodePtr multislaterdet = xmlNewNode(NULL,(const xmlChar*)"multideterminant");
-  xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+  if(optDetCoeffs)
+    xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+  else
+    xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"no");
   xmlNewProp(multislaterdet,(const xmlChar*)"spo_up",(const xmlChar*)"spo-up");
   xmlNewProp(multislaterdet,(const xmlChar*)"spo_dn",(const xmlChar*)"spo-dn");
   xmlNodePtr detlist = xmlNewNode(NULL,(const xmlChar*)"detlist");
@@ -869,7 +872,10 @@ xmlNodePtr
 QMCGaussianParserBase::createMultiDeterminantSetQP()
 {
     xmlNodePtr multislaterdet = xmlNewNode(NULL,(const xmlChar*)"multideterminant");
-    xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+    if(optDetCoeffs)
+      xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+    else
+      xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"no");
     xmlNewProp(multislaterdet,(const xmlChar*)"spo_up",(const xmlChar*)"spo-up");
     xmlNewProp(multislaterdet,(const xmlChar*)"spo_dn",(const xmlChar*)"spo-dn");
     xmlNodePtr detlist = xmlNewNode(NULL,(const xmlChar*)"detlist");
@@ -924,7 +930,10 @@ xmlNodePtr
 QMCGaussianParserBase::createMultiDeterminantSetVSVB()
 {
   xmlNodePtr multislaterdet = xmlNewNode(NULL,(const xmlChar*)"multideterminant");
-  xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+  if(optDetCoeffs)
+    xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+  else
+    xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"no");
   xmlNewProp(multislaterdet,(const xmlChar*)"spo_up",(const xmlChar*)"spo-up");
   xmlNewProp(multislaterdet,(const xmlChar*)"spo_dn",(const xmlChar*)"spo-dn");
   xmlNodePtr detlist = xmlNewNode(NULL,(const xmlChar*)"detlist");
@@ -1001,7 +1010,10 @@ xmlNodePtr
 QMCGaussianParserBase::createMultiDeterminantSet()
 {
   xmlNodePtr multislaterdet = xmlNewNode(NULL,(const xmlChar*)"multideterminant");
-  xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+  if(optDetCoeffs)
+    xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+  else
+    xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"no");
   xmlNewProp(multislaterdet,(const xmlChar*)"spo_up",(const xmlChar*)"spo-up");
   xmlNewProp(multislaterdet,(const xmlChar*)"spo_dn",(const xmlChar*)"spo-dn");
   if(usingCSF)
@@ -2633,7 +2645,10 @@ QMCGaussianParserBase::createMultiDeterminantSetFromH5()
 {
 
     xmlNodePtr multislaterdet = xmlNewNode(NULL,(const xmlChar*)"multideterminant");
-    xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+    if(optDetCoeffs)
+      xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+    else
+      xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"no");
     xmlNewProp(multislaterdet,(const xmlChar*)"spo_up",(const xmlChar*)"spo-up");
     xmlNewProp(multislaterdet,(const xmlChar*)"spo_dn",(const xmlChar*)"spo-dn");
     xmlNodePtr detlist = xmlNewNode(NULL,(const xmlChar*)"detlist");

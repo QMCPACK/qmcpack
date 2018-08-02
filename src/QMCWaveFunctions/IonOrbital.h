@@ -17,7 +17,7 @@
  */
 #ifndef QMCPLUSPLUS_ION_ORBITAL
 #define QMCPLUSPLUS_ION_ORBITAL
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 
@@ -26,7 +26,7 @@ namespace qmcplusplus
 
 /** A composite Orbital
  */
-struct IonOrbital : public OrbitalBase
+struct IonOrbital : public WaveFunctionComponent
 {
 private:
   ParticleAttrib<RealType> U,d2U;
@@ -65,11 +65,6 @@ public:
 
   void resetTargetParticleSet(ParticleSet& P);
 
-  ValueType
-  evaluate(ParticleSet& P,
-           ParticleSet::ParticleGradient_t& G,
-           ParticleSet::ParticleLaplacian_t& L);
-
   RealType evaluateLog(ParticleSet& P,
                        ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
@@ -92,7 +87,7 @@ public:
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
 
-  OrbitalBase* makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponent* makeClone(ParticleSet& tqp) const;
 
   void evaluateLogAndStore(ParticleSet& P,
                            ParticleSet::ParticleGradient_t& dG,

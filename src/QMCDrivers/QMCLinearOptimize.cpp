@@ -36,7 +36,6 @@
 #include "QMCDrivers/QMCCostFunctionCUDA.h"
 #endif
 #include "Numerics/LinearFit.h"
-#include "qmc_common.h"
 #include <iostream>
 #include <fstream>
 
@@ -822,7 +821,6 @@ void QMCLinearOptimize::resetComponents(xmlNodePtr cur)
   optTarget->setStream(&app_log());
   optTarget->put(cur);
 
-  //if(qmc_common.qmc_counter ==0) vmcEngine->put(cur);
   //vmcEngine->resetComponents(cur);
 }
 bool QMCLinearOptimize::fitMappedStabilizers(std::vector<std::pair<RealType,RealType> >&

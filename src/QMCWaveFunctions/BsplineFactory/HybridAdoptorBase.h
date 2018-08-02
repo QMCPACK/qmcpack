@@ -40,7 +40,7 @@ struct AtomicOrbitalSoA
   ST rmin;
   // far from core cutoff, rmin_sqrt>=rmin
   ST rmin_sqrt;
-  ST cutoff, cutoff_buffer, spline_radius;
+  ST cutoff, cutoff_buffer, spline_radius, non_overlapping_radius;
   int spline_npoints, BaseN;
   int NumBands, Npad;
   PointType pos;
@@ -88,11 +88,6 @@ struct AtomicOrbitalSoA
     chunked_bcast(comm, MultiSpline);
   }
 
-  void reduce_tables(Communicate* comm)
-  {
-    chunked_reduce(comm, MultiSpline);
-  }
-
   void gather_tables(Communicate* comm, std::vector<int> &offset_cplx, std::vector<int> &offset_real)
   {
     if(offset_cplx.size()) gatherv(comm, MultiSpline, Npad, offset_cplx);
@@ -100,7 +95,9 @@ struct AtomicOrbitalSoA
   }
 
   template<typename PT, typename VT>
-  inline void set_info(const PT& R, const VT& cutoff_in, const VT& cutoff_buffer_in, const VT& spline_radius_in, const int& spline_npoints_in)
+  inline void set_info(const PT& R, const VT& cutoff_in,
+                       const VT& cutoff_buffer_in, const VT& spline_radius_in,
+                       const VT& non_overlapping_radius_in, const int& spline_npoints_in)
   {
     pos[0]=R[0];
     pos[1]=R[1];
@@ -109,6 +106,7 @@ struct AtomicOrbitalSoA
     cutoff_buffer=cutoff_buffer_in;
     spline_radius=spline_radius_in;
     spline_npoints=spline_npoints_in;
+    non_overlapping_radius=non_overlapping_radius_in;
     BaseN=spline_npoints+2;
   }
 
@@ -282,6 +280,7 @@ struct AtomicOrbitalSoA
         const ST& l_val=l_vals[lm];
         const ST& r_power=r_power_minus_l[lm];
         const ST Ylm_rescale=Ylm_v[lm]*r_power;
+        const ST rhat_dot_G = ( rhatx*Ylm_gx[lm] + rhaty*Ylm_gy[lm] + rhatz*Ylm_gz[lm] ) * r_power;
         #pragma omp simd aligned(val,g0,g1,g2,lapl,local_val,local_grad,local_lapl)
         for(size_t ib=0; ib<myV.size(); ib++)
         {
@@ -293,13 +292,15 @@ struct AtomicOrbitalSoA
           val[ib] += Ylm_rescale*local_v;
 
           // grad
-          g0[ib] += local_g * rhatx * Ylm_rescale + local_v * Ylm_gx[lm] * r_power - Vpart * rhatx * Ylm_rescale;
-          g1[ib] += local_g * rhaty * Ylm_rescale + local_v * Ylm_gy[lm] * r_power - Vpart * rhaty * Ylm_rescale;
-          g2[ib] += local_g * rhatz * Ylm_rescale + local_v * Ylm_gz[lm] * r_power - Vpart * rhatz * Ylm_rescale;
+          const ST factor1 = local_g*Ylm_rescale;
+          const ST factor2 = local_v*r_power;
+          const ST factor3 = -Vpart*Ylm_rescale;
+          g0[ib] += factor1 * rhatx + factor2 * Ylm_gx[lm] + factor3 * rhatx;
+          g1[ib] += factor1 * rhaty + factor2 * Ylm_gy[lm] + factor3 * rhaty;
+          g2[ib] += factor1 * rhatz + factor2 * Ylm_gz[lm] + factor3 * rhatz;
 
           // laplacian
-          ST rhat_dot_G = ( rhatx*Ylm_gx[lm] + rhaty*Ylm_gy[lm] + rhatz*Ylm_gz[lm] ) * r_power;
-          lapl[ib] += (local_l + ( local_g * (static_cast<ST>(2)-l_val) - Vpart ) * rinv) * Ylm_rescale
+          lapl[ib] += (local_l + ( local_g * ( 2 - l_val ) - Vpart ) * rinv) * Ylm_rescale
                     + (local_g - Vpart ) * rhat_dot_G;
         }
         local_val+=Npad;
@@ -326,6 +327,7 @@ struct AtomicOrbitalSoA
         const ST& l_val=l_vals[lm];
         const ST& r_power=r_power_minus_l[lm];
         const ST Ylm_rescale=Ylm_v[lm]*r_power;
+        const ST rhat_dot_G = (Ylm_gx[lm] * rhatx + Ylm_gy[lm] * rhaty + Ylm_gz[lm] * rhatz ) * r_power * r;
         #pragma omp simd aligned(val,g0,g1,g2,lapl,local_val,local_grad,local_lapl)
         for(size_t ib=0; ib<myV.size(); ib++)
         {
@@ -337,13 +339,15 @@ struct AtomicOrbitalSoA
           val[ib] += Vpart;
 
           // grad
-          g0[ib] += local_g * rhatx * Ylm_rescale + local_v * Ylm_gx[lm] * r_power - l_val * rhatx * Vpart * rinv;
-          g1[ib] += local_g * rhaty * Ylm_rescale + local_v * Ylm_gy[lm] * r_power - l_val * rhaty * Vpart * rinv;
-          g2[ib] += local_g * rhatz * Ylm_rescale + local_v * Ylm_gz[lm] * r_power - l_val * rhatz * Vpart * rinv;
+          const ST factor1 = local_g*Ylm_rescale;
+          const ST factor2 = local_v*r_power;
+          const ST factor3 = -l_val*Vpart*rinv;
+          g0[ib] += factor1 * rhatx + factor2 * Ylm_gx[lm] + factor3 * rhatx;
+          g1[ib] += factor1 * rhaty + factor2 * Ylm_gy[lm] + factor3 * rhaty;
+          g2[ib] += factor1 * rhatz + factor2 * Ylm_gz[lm] + factor3 * rhatz;
 
           // laplacian
-          ST rhat_dot_G = (Ylm_gx[lm] * rhatx + Ylm_gy[lm] * rhaty + Ylm_gz[lm] * rhatz ) * r_power * r;
-          lapl[ib] += local_l * (cone - chalf *l_val) * ( static_cast<ST>(3) * Ylm_rescale + rhat_dot_G );
+          lapl[ib] += local_l * (cone - chalf *l_val) * ( 3 * Ylm_rescale + rhat_dot_G );
         }
         local_val+=Npad;
         local_grad+=Npad;
@@ -439,12 +443,6 @@ struct HybridAdoptorBase
       AtomicCenters[ic].bcast_tables(comm);
   }
 
-  void reduce_atomic_tables(Communicate* comm)
-  {
-    for(int ic=0; ic<AtomicCenters.size(); ic++)
-      AtomicCenters[ic].reduce_tables(comm);
-  }
-
   void gather_atomic_tables(Communicate* comm, std::vector<int> &offset_cplx, std::vector<int> &offset_real)
   {
     for(int ic=0; ic<AtomicCenters.size(); ic++)
@@ -529,13 +527,28 @@ struct HybridAdoptorBase
     return RealType(-1);
   }
 
+  /* check if the batched algorithm is safe to operate
+   * @param VP virtual particle set
+   * @return true if it is safe
+   *
+   * When the reference electron in the NLPP evaluation has a distance larger than the non overlapping radius of the reference center.
+   * Some qudrature points may get its SPOs evaluated from the nearest center which is not the reference center.
+   * The batched algorthm forces the evaluation on the reference center and introduce some error.
+   * In this case, the non-batched algorithm should be used.
+   */
+  bool is_batched_safe(const VirtualParticleSet& VP)
+  {
+    const int center_idx=VP.refSourcePtcl;
+    auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
+    return VP.refPS.DistTables[myTableID]->Distances[VP.refPtcl][center_idx] < myCenter.non_overlapping_radius;
+  }
+
   // C2C, C2R cases
   template<typename VM>
   inline RealType evaluateValuesC2X(const VirtualParticleSet& VP, VM& multi_myV)
   {
-    const auto* ei_0=VP.refPS.DistTables[myTableID];
-    const int center_idx=ei_0->get_first_neighbor(VP.refPtcl, dist_r, dist_dr, false);
-    if(center_idx<0) abort();
+    const int center_idx=VP.refSourcePtcl;
+    dist_r = VP.refPS.DistTables[myTableID]->Distances[VP.refPtcl][center_idx];
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
     if ( dist_r < myCenter.cutoff )
     {
@@ -551,9 +564,8 @@ struct HybridAdoptorBase
                                     const Cell& PrimLattice, TinyVector<int,D>& HalfG,
                                     VM& multi_myV, SV& bc_signs)
   {
-    const auto* ei_0=VP.refPS.DistTables[myTableID];
-    const int center_idx=ei_0->get_first_neighbor(VP.refPtcl, dist_r, dist_dr, false);
-    if(center_idx<0) abort();
+    const int center_idx=VP.refSourcePtcl;
+    dist_r = VP.refPS.DistTables[myTableID]->Distances[VP.refPtcl][center_idx];
     auto& myCenter=AtomicCenters[Super2Prim[center_idx]];
     if ( dist_r < myCenter.cutoff )
     {

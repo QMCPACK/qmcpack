@@ -30,7 +30,7 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-DiracDeterminantBase::DiracDeterminantBase(SPOSetBasePtr const &spos, int first):
+DiracDeterminantBase::DiracDeterminantBase(SPOSetPtr const &spos, int first):
   NP(0), Phi(spos), FirstIndex(first), ndelay(0)
   ,UpdateTimer("DiracDeterminantBase::update",timer_level_fine)
   ,RatioTimer("DiracDeterminantBase::ratio",timer_level_fine)
@@ -336,7 +336,7 @@ DiracDeterminantBase::ValueType DiracDeterminantBase::ratio(ParticleSet& P, int 
 void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
 {
   const int nVP = VP.getTotalNum();
-  const size_t memory_needed = Phi->estimateMemory(nVP);
+  const size_t memory_needed = nVP*NumOrbitals+Phi->estimateMemory(nVP);
   //std::cout << "debug " << memory_needed << " pool " << memoryPool.size() << std::endl;
   if(memoryPool.size()<memory_needed)
   {
@@ -597,7 +597,7 @@ DiracDeterminantBase::evalGradSource
 }
 
 
-/** Calculate the value of the Dirac determinant for particles
+/** Calculate the log value of the Dirac determinant for particles
  *@param P input configuration containing N particles
  *@param G a vector containing N gradients
  *@param L a vector containing N laplacians
@@ -607,21 +607,6 @@ DiracDeterminantBase::evalGradSource
  *contribution of the determinant to G(radient) and L(aplacian)
  *for local energy calculations.
  */
-DiracDeterminantBase::ValueType
-DiracDeterminantBase::evaluate(ParticleSet& P,
-                               ParticleSet::ParticleGradient_t& G,
-                               ParticleSet::ParticleLaplacian_t& L)
-{
-  RealType logval = evaluateLog(P, G, L);
-#if defined(QMC_COMPLEX)
-  RealType ratioMag = std::exp(logval);
-  return std::complex<OHMMS_PRECISION>(std::cos(PhaseValue)*ratioMag,std::sin(PhaseValue)*ratioMag);
-#else
-  return std::cos(PhaseValue)*std::exp(logval);
-#endif
-}
-
-
 DiracDeterminantBase::RealType
 DiracDeterminantBase::evaluateLog(ParticleSet& P,
                                   ParticleSet::ParticleGradient_t& G,
@@ -676,13 +661,13 @@ DiracDeterminantBase::evaluateDerivatives(ParticleSet& P,
 {
 }
 
-OrbitalBasePtr DiracDeterminantBase::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr DiracDeterminantBase::makeClone(ParticleSet& tqp) const
 {
   APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::makeClone");
   return 0;
 }
 
-DiracDeterminantBase* DiracDeterminantBase::makeCopy(SPOSetBasePtr spo) const
+DiracDeterminantBase* DiracDeterminantBase::makeCopy(SPOSetPtr spo) const
 {
   DiracDeterminantBase* dclone= new DiracDeterminantBase(spo);
   dclone->set(FirstIndex,LastIndex-FirstIndex,ndelay);
@@ -690,7 +675,7 @@ DiracDeterminantBase* DiracDeterminantBase::makeCopy(SPOSetBasePtr spo) const
 }
 
 DiracDeterminantBase::DiracDeterminantBase(const DiracDeterminantBase& s)
-  : OrbitalBase(s), NP(0), Phi(s.Phi), FirstIndex(s.FirstIndex), ndelay(s.ndelay)
+  : WaveFunctionComponent(s), NP(0), Phi(s.Phi), FirstIndex(s.FirstIndex), ndelay(s.ndelay)
   ,UpdateTimer(s.UpdateTimer)
   ,RatioTimer(s.RatioTimer)
   ,InverseTimer(s.InverseTimer)
@@ -702,7 +687,7 @@ DiracDeterminantBase::DiracDeterminantBase(const DiracDeterminantBase& s)
   this->resize(s.NumPtcls,s.NumOrbitals);
 }
 
-//SPOSetBasePtr  DiracDeterminantBase::clonePhi() const
+//SPOSetPtr  DiracDeterminantBase::clonePhi() const
 //{
 //  return Phi->makeClone();
 //}

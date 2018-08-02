@@ -29,12 +29,12 @@ namespace qmcplusplus
 {
 // NOTE NOTE NOTE
 // template<bool backflow>
-//  class SlaterDet: public OrbitalBase {}
+//  class SlaterDet: public WaveFunctionComponent {}
 //     then change SlaterDet to SlaterDet<false>
 //     and SlaterDeterminantWithBackflow to SlaterDet<true>
 //     and remove all virtuals and inline them
 
-class SlaterDet: public OrbitalBase
+class SlaterDet: public WaveFunctionComponent
 {
 public:
   typedef DiracDeterminantBase Determinant_t;
@@ -42,7 +42,7 @@ public:
   std::vector<Determinant_t*>  Dets;
   ///the last particle of each group
   std::vector<int> Last;
-  std::map<std::string,SPOSetBasePtr> mySPOSet;
+  std::map<std::string,SPOSetPtr> mySPOSet;
 
   /**  constructor
    * @param targetPtcl target Particleset
@@ -63,7 +63,7 @@ public:
   }
 
   ///add a SPOSet
-  void add(SPOSetBasePtr sposet, const std::string& aname);
+  void add(SPOSetPtr sposet, const std::string& aname);
 
   ///add a new DiracDeterminant to the list of determinants
   virtual
@@ -83,11 +83,6 @@ public:
   void reportStatus(std::ostream& os);
 
   virtual void resetTargetParticleSet(ParticleSet& P);
-
-  virtual
-  ValueType evaluate(ParticleSet& P
-                     ,ParticleSet::ParticleGradient_t& G
-                     ,ParticleSet::ParticleLaplacian_t& L);
 
   virtual
   RealType evaluateLog(ParticleSet& P
@@ -235,10 +230,10 @@ public:
   }
 
   virtual
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   virtual
-  SPOSetBasePtr getPhi(int i=0)
+  SPOSetPtr getPhi(int i=0)
   {
     return Dets[i]->getPhi();
   }
@@ -276,66 +271,62 @@ public:
   /////////////////////////////////////////////////////
   // Functions for vectorized evaluation and updates //
   /////////////////////////////////////////////////////
-  void recompute(MCWalkerConfiguration &W, bool firstTime)
+  GPU_XRAY_TRACE void  recompute(MCWalkerConfiguration &W, bool firstTime)
   {
     for (int id=0; id<Dets.size(); id++)
       Dets[id]->recompute(W, firstTime);
   }
 
-  void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool)
+  GPU_XRAY_TRACE void  reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool)
   {
     for (int id=0; id<Dets.size(); id++)
       Dets[id]->reserve(pool);
   }
 
-  void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi)
+  GPU_XRAY_TRACE void  addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi)
   {
     for (int id=0; id<Dets.size(); id++)
       Dets[id]->addLog(W, logPsi);
   }
 
-  void
-  ratio (MCWalkerConfiguration &W, int iat
+  GPU_XRAY_TRACE void ratio (MCWalkerConfiguration &W, int iat
          , std::vector<ValueType> &psi_ratios,std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
   {
     Dets[getDetID(iat)]->ratio(W, iat, psi_ratios, grad, lapl);
   }
 
-  void
-  calcRatio (MCWalkerConfiguration &W, int iat
+  GPU_XRAY_TRACE void calcRatio (MCWalkerConfiguration &W, int iat
              , std::vector<ValueType> &psi_ratios,std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
   {
     Dets[getDetID(iat)]->calcRatio(W, iat, psi_ratios, grad, lapl);
   }
 
-  void
-  addRatio (MCWalkerConfiguration &W, int iat
+  GPU_XRAY_TRACE void addRatio (MCWalkerConfiguration &W, int iat
             , std::vector<ValueType> &psi_ratios,std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
   {
     Dets[getDetID(iat)]->addRatio(W, iat, psi_ratios, grad, lapl);
   }
 
-
-  void ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
+  GPU_XRAY_TRACE void  ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
               std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
               std::vector<GradType>  &grad, std::vector<ValueType> &lapl);
 
-  void calcGradient(MCWalkerConfiguration &W, int iat, std::vector<GradType> &grad)
+  GPU_XRAY_TRACE void  calcGradient(MCWalkerConfiguration &W, int iat, std::vector<GradType> &grad)
   {
     Dets[getDetID(iat)]->calcGradient(W, iat, grad);
   }
 
-  void addGradient(MCWalkerConfiguration &W, int iat, std::vector<GradType> &grad)
+  GPU_XRAY_TRACE void  addGradient(MCWalkerConfiguration &W, int iat, std::vector<GradType> &grad)
   {
     Dets[getDetID(iat)]->addGradient(W, iat, grad);
   }
 
-  void update (std::vector<Walker_t*> &walkers, int iat)
+  GPU_XRAY_TRACE void  update (std::vector<Walker_t*> &walkers, int iat)
   {
     Dets[getDetID(iat)]->update(walkers, iat);
   }
 
-  void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList);
+  GPU_XRAY_TRACE void  update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList);
 
   void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads, ValueMatrix_t &lapl)
   {
@@ -343,7 +334,7 @@ public:
       Dets[id]->gradLapl(W, grads, lapl);
   }
 
-  void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList
+  GPU_XRAY_TRACE void  NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList
                  , std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios)
   {
     for (int id=0; id<Dets.size(); id++)

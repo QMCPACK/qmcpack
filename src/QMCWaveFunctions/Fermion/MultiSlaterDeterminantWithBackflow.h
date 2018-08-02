@@ -26,7 +26,7 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  *  @brief MultiSlaterDeterminantWithBackflow
  */
 class MultiSlaterDeterminantWithBackflow: public MultiSlaterDeterminant
@@ -75,7 +75,7 @@ public:
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<RealType>& dlogpsi,

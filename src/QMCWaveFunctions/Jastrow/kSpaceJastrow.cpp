@@ -802,7 +802,7 @@ kSpaceJastrow::put(xmlNodePtr cur)
   return true;
 }
 
-OrbitalBasePtr kSpaceJastrow::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr kSpaceJastrow::makeClone(ParticleSet& tqp) const
 {
   kSpaceJastrow *kj =new kSpaceJastrow(Ions,tqp);
   kj->copyFrom(*this);

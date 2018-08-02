@@ -27,15 +27,6 @@ IF(ENABLE_SOA OR QMC_CUDA)
                     TRUE
                     0 DIAMOND2_SCALARS # VMC
                     )
-
-  QMC_RUN_AND_CHECK(short-diamondC_2x1x1_hybridrep_pp_batched-vmc_sdj
-                    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_2x1x1_pp"
-                    qmc_short
-                    qmc_short_hybridrep_batched.in.xml
-                    1 16
-                    TRUE
-                    0 DIAMOND2_SCALARS # VMC
-                    )
 ELSE()
   MESSAGE("Skipping diamondC_2x1x1_hybridrep_pp-vmc_sdj test because neither SOA nor CUDA is enabled")
 ENDIF()

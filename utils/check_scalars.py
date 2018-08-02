@@ -173,6 +173,7 @@ def read_command_line():
             bw   = 'BlockWeight',
             ts   = 'TotalSamples',
             fl   = 'Flux',
+            latdev = 'latdev',
 #now for some RMC estimators
             ke_m = "Kinetic_m",
             ke_p = "Kinetic_p",

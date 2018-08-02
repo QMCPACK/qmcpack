@@ -14,7 +14,7 @@
 #define QMCPLUSPLUS_EEIJASTROW_OPTIMIZED_SOA_H
 #include "Configuration.h"
 #if QMC_BUILD_LEVEL<5
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #endif
 #include "Particle/DistanceTableData.h"
 #include <simd/allocator.hpp>
@@ -25,7 +25,7 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  *  @brief Specialization for three-body Jastrow function using multiple functors
  *
  *Each pair-type can have distinct function \f$u(r_{ij})\f$.
@@ -33,7 +33,7 @@ namespace qmcplusplus
  *for spins up-up/down-down and up-down/down-up.
  */
 template<class FT>
-class JeeIOrbitalSoA: public OrbitalBase
+class JeeIOrbitalSoA: public WaveFunctionComponent
 {
   ///type of each component U, dU, d2U;
   using valT=typename FT::real_type;
@@ -120,7 +120,7 @@ public:
 
   ~JeeIOrbitalSoA() { }
 
-  OrbitalBasePtr makeClone(ParticleSet& elecs) const
+  WaveFunctionComponentPtr makeClone(ParticleSet& elecs) const
   {
     JeeIOrbitalSoA<FT>* eeIcopy= new JeeIOrbitalSoA<FT>(Ions, elecs, false);
     std::map<const FT*,FT*> fcmap;
@@ -408,13 +408,6 @@ public:
   {
     evaluateGL(P,G,L,true);
     return LogValue;
-  }
-
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
   }
 
   ValueType ratio(ParticleSet& P, int iat)

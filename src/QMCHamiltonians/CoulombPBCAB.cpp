@@ -37,7 +37,6 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns,
   //AB = new LRHandlerType(ions);
   myTableIndex=elns.addTable(ions,DT_SOA_PREFERRED);
   initBreakup(elns);
-  elns.DistTables[myTableIndex]->setRmax(myRcut);
   prefix="Flocal";
   app_log() << "  Rcut                " << myRcut << std::endl;
   app_log() << "  Maximum K shell     " << AB->MaxKshell << std::endl;

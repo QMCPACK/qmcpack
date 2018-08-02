@@ -17,8 +17,8 @@
 #define QMCPLUSPLUS_LCORBITALSETBUILDER_H
 
 #include <vector>
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
-#include "QMCWaveFunctions/BasisSetFactory.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
+#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
@@ -29,11 +29,11 @@
 namespace qmcplusplus
 {
 
-/** derived class from OrbitalBuilderBase
+/** derived class from WaveFunctionComponentBuilder
  *
  * Builder SlaterDeterminant with LCOrbitalSet
  */
-class SlaterDetBuilder: public OrbitalBuilderBase
+class SlaterDetBuilder: public WaveFunctionComponentBuilder
 {
 
 public:
@@ -61,7 +61,7 @@ private:
 
   ///reference to a PtclPoolType
   PtclPoolType& ptclPool;
-  BasisSetFactory* myBasisSetFactory;
+  SPOSetBuilderFactory* mySPOSetBuilderFactory;
   SlaterDeterminant_t* slaterdet_0;
   MultiSlaterDeterminant_t* multislaterdet_0;
   MultiSlaterDeterminantFast* multislaterdetfast_0;

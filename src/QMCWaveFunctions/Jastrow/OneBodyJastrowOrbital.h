@@ -19,7 +19,7 @@
 #ifndef QMCPLUSPLUS_GENERIC_ONEBODYJASTROW_H
 #define QMCPLUSPLUS_GENERIC_ONEBODYJASTROW_H
 #include "Configuration.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
@@ -27,7 +27,7 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  * @brief generic implementation of one-body Jastrow function.
  *
  *The One-Body Jastrow has the form
@@ -75,7 +75,7 @@ namespace qmcplusplus
  *by MC methods.
  */
 template<class FT>
-class OneBodyJastrowOrbital: public OrbitalBase
+class OneBodyJastrowOrbital: public WaveFunctionComponent
 {
 protected:
   int myTableIndex;
@@ -224,13 +224,6 @@ public:
     return LogValue;
   }
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-  
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi)
   {
     LogValue=0.0;
@@ -497,7 +490,7 @@ public:
     DEBUG_PSIBUFFER(" OneBodyJastrow::copyFromBuffer ",buf.current());
   }
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
     OneBodyJastrowOrbital<FT>* j1copy=new OneBodyJastrowOrbital<FT>(CenterRef,tqp);
     j1copy->Optimizable=Optimizable;
@@ -514,7 +507,7 @@ public:
     return j1copy;
   }
 
-  void copyFrom(const OrbitalBase& old)
+  void copyFrom(const WaveFunctionComponent& old)
   {
     //nothing to do
   }

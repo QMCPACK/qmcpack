@@ -36,7 +36,6 @@ namespace qmcplusplus
     className = "SHOSet";
 
     OrbitalSetSize = state_info.size();
-    BasisSetSize = OrbitalSetSize;
 
     qn_max = -1;
     for(int s=0;s<state_info.size();++s)
@@ -71,7 +70,7 @@ namespace qmcplusplus
   }
 
 
-  SPOSetBase* SHOSet::makeClone() const
+  SPOSet* SHOSet::makeClone() const
   {
     return new SHOSet(*this);
   }

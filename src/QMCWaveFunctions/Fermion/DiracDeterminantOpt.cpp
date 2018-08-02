@@ -22,12 +22,12 @@ namespace qmcplusplus
 {
 
 DiracDeterminantOpt::DiracDeterminantOpt
-(ParticleSet &ptcl, SPOSetBasePtr const &gs_spos, int first) :
+(ParticleSet &ptcl, SPOSetPtr const &gs_spos, int first) :
   DiracDeterminantBase(gs_spos, first)
 {
   targetPtcl = &ptcl;
   NumOrbitals = gs_spos->OrbitalSetSize;
-  NumBasis    = gs_spos->BasisSetSize;
+  NumBasis    = gs_spos->getBasisSetSize();
   BasisVals.resize(NumOrbitals,NumBasis);
   BasisGrad.resize(NumOrbitals,NumBasis);
   BasisLapl.resize(NumOrbitals,NumBasis);
@@ -42,7 +42,7 @@ DiracDeterminantOpt::DiracDeterminantOpt
 }
 
 DiracDeterminantBase*
-DiracDeterminantOpt::makeCopy(SPOSetBasePtr spo) const
+DiracDeterminantOpt::makeCopy(SPOSetPtr spo) const
 {
   DiracDeterminantBase* dclone= new DiracDeterminantOpt(*targetPtcl, spo, FirstIndex);
   dclone->set(FirstIndex,LastIndex-FirstIndex);

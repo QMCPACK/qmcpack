@@ -17,7 +17,7 @@
 
 namespace qmcplusplus
 {
-  DiracDeterminantSoA::DiracDeterminantSoA(SPOSetBasePtr const &spos, int first): 
+  DiracDeterminantSoA::DiracDeterminantSoA(SPOSetPtr const &spos, int first): 
     DiracDeterminantBase(spos,first)
   { 
     Need2Compute4PbyP=false; 
@@ -28,7 +28,7 @@ namespace qmcplusplus
   DiracDeterminantSoA::DiracDeterminantSoA(const DiracDeterminantSoA& s):DiracDeterminantBase(s){}
 
   DiracDeterminantBase* 
-    DiracDeterminantSoA::makeCopy(SPOSetBasePtr spo) const
+    DiracDeterminantSoA::makeCopy(SPOSetPtr spo) const
     {
       DiracDeterminantSoA* dclone= new DiracDeterminantSoA(spo,FirstIndex);
       dclone->resize(NumPtcls,NumOrbitals);

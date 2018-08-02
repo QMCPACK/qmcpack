@@ -2,6 +2,60 @@
 
 Notable changes to QMCPACK will be documented in this file.
 
+## [3.5.0] - 2018-08-02
+
+### Notes
+
+This release includes support for the latest Quantum Espresso version 6.3,
+an initial implementation of periodic Gaussian support via PySCF, and a new
+version of the hybrid or "APW" representation of orbitals. Many minor
+bugs have been fixed, configuration and documentation improved. 
+
+Note that the PDF manuals are no longer included with the source. Versions
+are available online via https://qmcpack.org . The PDFs can be built
+using manual/build_manual.sh and
+nexus/documentation/user_guide_source/build_nexus_user_guide.sh
+
+Attention developers: This version contains substantially fewer source
+lines than previous versions due to clean out of old code and unused
+execution paths. Refactoring to improve the internal structure of
+QMCPACK is ongoing. Track the develop branch and follow discussion on
+GitHub closely to avoid difficult merges.
+
+* Support for Quantum Espresso 6.3 and 6.2.1. Check documentation to
+  ensure compiled with required HDF5 support.
+* Support for periodic gaussians and PySCF generated
+  wavefunctions. Initial version is limited to Gamma-point.
+* Improved hybrid representation of single particle orbitals
+  (APW-like) for significantly reduced memory usage and possible
+  accuracy increase compared to conventional spline representation. https://arxiv.org/abs/1805.07406
+* Norms of orbitals are checked inside QMCPACK to catch conversion errors.
+* Added verbosity setting to QMCPACK output.
+* CUDA can now be enabled with SoA builds.
+* Many improvements to QMCPACK manual, including all new features, CIPSI, 3-body
+  jastrow factor description, spack package, and enabling HTML generation.
+* CMake configuration improvements, particularly around MKL handling.
+* Extensive cleanup of unused source files and unused code paths
+  removed, reducing the number of source lines by over 30 percent.
+
+### Known bugs
+
+* Weight of first block of DMC density is incorrect in CPU
+  code. DMC densities in CUDA GPU code are incorrect for all
+  blocks. [\#934](https://github.com/QMCPACK/qmcpack/issues/934) and [\#925](https://github.com/QMCPACK/qmcpack/issues/925)
+* Runs with only a single electron may crash. [\#945](https://github.com/QMCPACK/qmcpack/issues/945)
+
+### NEXUS
+
+* Support for GAMESS HDF5 workflows.
+* Nexus accepts command line inputs.
+* Nexus testing via ntest executable.
+* Added GAMESS-NEXUS examples for RHF, CISD, and CASSCF wavefunction.
+* Added support for -nojastrow workflows.
+* Added support for Stampede supercomputer.
+* Added script to build NEXUS user guide.
+* Various bugfixes including to GAMESS input parsing.
+
 ## [3.4.0] - 2018-01-29
 
 ### Notes

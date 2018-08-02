@@ -137,7 +137,6 @@ ENDIF(HAVE_OOMPI)
   ####################################
   SET(UTILITIES
     qmc_common.cpp
-    Utilities/RandRandom.cpp 
     Utilities/RandomGenerator.cpp 
     Utilities/OhmmsObject.cpp 
     Utilities/SpeciesSet.cpp 
@@ -228,7 +227,6 @@ ENDIF()
     Particle/DistanceTableAB.cpp
     Particle/DistanceTable.cpp
     Particle/HDFWalkerInputManager.cpp
-    Particle/make_clones.cpp
     LongRange/KContainer.cpp
     LongRange/StructFact.cpp
     LongRange/LPQHIBasis.cpp
@@ -256,7 +254,6 @@ ENDIF()
 
   IF(HAVE_LIBHDF5 OR HAVE_ADIOS)
     SET(PARTICLEIO ${PARTICLEIO}
-      Particle/HDFWalkerIOEngine.cpp 
       Particle/HDFWalkerOutput.cpp
       Particle/HDFWalkerInput_0_0.cpp
       Particle/HDFWalkerInput_0_4.cpp
@@ -275,7 +272,7 @@ ENDIF()
 
   #Need to add this if nothing else but miniapps is compiled
   if(QMC_BUILD_LEVEL GREATER 4)
-    set(PARTICLE  ${PARTICLE} QMCWaveFunctions/OrbitalBase.cpp)
+    set(PARTICLE  ${PARTICLE} QMCWaveFunctions/WaveFunctionComponent.cpp)
   endif()
 
   ADD_LIBRARY(qmcbase ${PARTICLE}  ${PARTICLEIO}) 
@@ -328,10 +325,6 @@ ENDIF()
   #IF(BUILD_QMCTOOLS)
   SUBDIRS(QMCTools)
   #ENDIF(BUILD_QMCTOOLS)
-
-  IF(BUILD_SQD)
-    SUBDIRS(SQD)
-  ENDIF(BUILD_SQD)
 
   if (BUILD_UNIT_TESTS) #{
     SET(HAS_TARGET_COMPILE_DEFINITIONS 1)

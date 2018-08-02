@@ -124,7 +124,7 @@ NonLocalECPComponent::evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& ps
       deltaV[j]=r*rrotsgrid_m[j]-dr;
       VPos[j]=deltaV[j]+W.R[iel];
     }
-    VP->makeMoves(iel,VPos,true);
+    VP->makeMoves(iel,VPos,true,iat);
     psi.evaluateRatios(*VP,psiratio_);
     for (int j=0; j<nknot; j++)
       psiratio_[j]*=sgridweight_m[j];

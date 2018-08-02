@@ -15,60 +15,61 @@ This lab covers molecular QMC calculations with wavefunctions of increasing soph
 \end{itemize}
 
 \section{Lab directories and files}
-\begin{shade}
+\footnotesize
+\begin{verbatim}
 labs/lab3_advanced_molecules/exercises
-
-ex1_first-run-hartree-fock    - basic work flow from Hatree-Fock to DMC
-├── gms                        - Hatree-Fock calculation using GAMESS
-│   ├── h2o.hf.inp               - GAMESS input
-│   ├── h2o.hf.dat               - GAMESS punch file containing orbitals
-│   └── h2o.hf.out               - GAMESS output with orbitals and other info
-├── convert                    - Convert GAMESS wavefunction to QMCPACK format
-│   ├── h2o.hf.out               - GAMESS output
-│   ├── h2o.ptcl.xml             - converted particle positions
-│   └── h2o.wfs.xml              - converted wave function
-├── opt                        - VMC optimization
-│   └── optm.xml                 - QMCPACK VMC optimization input
-├── dmc_timestep               - Check DMC timestep bias
-│   └── dmc_ts.xml               - QMCPACK DMC input
-└── dmc_walkers                - Check DMC population control bias
-    └── dmc_wk.xml               - QMCPACK DMC input template
-
-ex2_slater-jastrow-wf-options - explore jastrow and orbital options
-├── jastrow                    - Jastrow options
-│   ├── 12j                      - no 3-body Jastrow
-│   ├── 1j                       - only 1-body Jastrow
-│   └── 2j                       - only 2-body Jastrow
-└── orbitals                   - Orbital options
-    ├── pbe                      - PBE orbitals
-    │   └── gms                    - DFT calculation using GAMESS
-    │       └── h2o.pbe.inp          - GAMESS DFT input
-    ├── pbe0                     - PBE0  orbitals
-    ├── blyp                     - BLYP  orbitals
-    └── b3lyp                    - B3LYP orbitals
-    
-ex3_multi-slater-jastrow
-├── cisd                      - CISD wave function
-│   ├── gms                     - CISD calculation using GAMESS
-│   │   ├── h2o.cisd.inp           - GAMESS input
-│   │   ├── h2o.cisd.dat           - GAMESS punch file containing orbitals
-│   │   └── h2o.cisd.out           - GAMESS output with orbitals and other info
-│   └── convert                 - Convert GAMESS wavefunction to QMCPACK format
-│       └── h2o.hf.out             - GAMESS output
-├── casci                     - CASCI wave function
-│   └── gms                     - CASCI calculation using GAMESS
-└── soci                      - SOCI wave function
-    ├── gms                     - SOCI calculation using GAMESS
-    ├── thres0.01               - VMC optimization with few determinants
-    └── thres0.0075             - VMC optimization with more determinants
-
-pseudo
-├── H.BFD.gamess             - BFD pseudopotential for H in GAMESS format
-├── O.BFD.CCT.gamess         - BFD pseudopotential for O in GAMESS format
-├── H.xml                    - BFD pseudopotential for H in QMCPACK format
-└── O.xml                    - BFD pseudopotential for H in QMCPACK format
-\end{shade}
-
+│    
+├── ex1_first-run-hartree-fock    - basic work flow from Hatree-Fock to DMC
+│   ├── gms                        - Hatree-Fock calculation using GAMESS
+│   │   ├── h2o.hf.inp               - GAMESS input
+│   │   ├── h2o.hf.dat               - GAMESS punch file containing orbitals
+│   │   └── h2o.hf.out               - GAMESS output with orbitals and other info
+│   ├── convert                    - Convert GAMESS wavefunction to QMCPACK format
+│   │   ├── h2o.hf.out               - GAMESS output
+│   │   ├── h2o.ptcl.xml             - converted particle positions
+│   │   └── h2o.wfs.xml              - converted wave function
+│   ├── opt                        - VMC optimization
+│   │   └── optm.xml                 - QMCPACK VMC optimization input
+│   ├── dmc_timestep               - Check DMC timestep bias
+│   │   └── dmc_ts.xml               - QMCPACK DMC input
+│   └── dmc_walkers                - Check DMC population control bias
+│       └── dmc_wk.xml               - QMCPACK DMC input template
+│   
+├── ex2_slater-jastrow-wf-options - explore jastrow and orbital options
+│   ├── jastrow                    - Jastrow options
+│   │   ├── 12j                      - no 3-body Jastrow
+│   │   ├── 1j                       - only 1-body Jastrow
+│   │   └── 2j                       - only 2-body Jastrow
+│   └── orbitals                   - Orbital options
+│       ├── pbe                      - PBE orbitals
+│       │   └── gms                    - DFT calculation using GAMESS
+│       │      └── h2o.pbe.inp          - GAMESS DFT input
+│       ├── pbe0                     - PBE0  orbitals
+│       ├── blyp                     - BLYP  orbitals
+│       └── b3lyp                    - B3LYP orbitals
+│       
+├── ex3_multi-slater-jastrow
+│   ├── cisd                      - CISD wave function
+│   │   ├── gms                     - CISD calculation using GAMESS
+│   │   │   ├── h2o.cisd.inp           - GAMESS input
+│   │   │   ├── h2o.cisd.dat           - GAMESS punch file containing orbitals
+│   │   │   └── h2o.cisd.out           - GAMESS output with orbitals and other info
+│   │   └── convert                 - Convert GAMESS wavefunction to QMCPACK format
+│   │      └── h2o.hf.out             - GAMESS output
+│   ├── casci                     - CASCI wave function
+│   │   └── gms                     - CASCI calculation using GAMESS
+│   └── soci                      - SOCI wave function
+│       ├── gms                     - SOCI calculation using GAMESS
+│       ├── thres0.01               - VMC optimization with few determinants
+│       └── thres0.0075             - VMC optimization with more determinants
+│   
+└── pseudo
+    ├── H.BFD.gamess             - BFD pseudopotential for H in GAMESS format
+    ├── O.BFD.CCT.gamess         - BFD pseudopotential for O in GAMESS format
+    ├── H.xml                    - BFD pseudopotential for H in QMCPACK format
+    └── O.xml                    - BFD pseudopotential for H in QMCPACK format
+\end{verbatim}
+\normalsize
 
 \section{Exercise \#1: Basics}
 
@@ -164,11 +165,10 @@ qmca -q e *scalar.dat -p
 
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_advanced_molecules_opt_conv.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_advanced_molecules_opt_conv.png}
 \end{center}
-\caption{VMC energy as a function of optimization step.
+\caption{VMC energy as a function of optimization step.}
 \label{fig:lam_opt_conv}
-}
 \end{figure}
 
 The resulting energy as a function of optimization step should look qualitatively similar to figure \ref{fig:lam_opt_conv}.
@@ -216,11 +216,10 @@ limit.
 
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_advanced_molecules_dmc_timestep.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_advanced_molecules_dmc_timestep.png}
 \end{center}
-\caption{DMC energy as a function of timestep.
+\caption{DMC energy as a function of timestep.}
 \label{fig:lam_dmc_timestep}
-}
 \end{figure}
 
 
@@ -264,11 +263,10 @@ jobrun_vesta qmcpack dmc_wk.xml
 
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_advanced_molecules_dmc_popcont.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_advanced_molecules_dmc_popcont.png}
 \end{center}
-\caption{DMC energy as a function of the average number of walkers.
+\caption{DMC energy as a function of the average number of walkers.}
 \label{fig:lam_dmc_popcont}
-}
 \end{figure}
 
 Repeat the same procedure in the other folders by setting (targetWalkers=240,
@@ -330,11 +328,10 @@ input, just leave the VMC step. In all three cases, modify the submission script
 
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_advanced_molecules_vmc_jastrow.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_advanced_molecules_vmc_jastrow.png}
 \end{center}
-\caption{VMC energy as a function of Jastrow type.
+\caption{VMC energy as a function of Jastrow type.}
 \label{fig:lam_vmc_jastrow}
-}
 \end{figure}
 
 These simulations will take several minutes to complete. This is an excellent opportunity
@@ -434,11 +431,10 @@ After the wave-function is generated, we are ready to optimize. Instead of start
 
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_advanced_molecules_dmc_ci_cisd.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_advanced_molecules_dmc_ci_cisd.png}
 \end{center}
-\caption{DMC energy as a function of the sum of the square of CI coefficients from CISD.
+\caption{DMC energy as a function of the sum of the square of CI coefficients from CISD.}
 \label{fig:lam_dmc_ci_cisd}
-}
 \end{figure}
 
 When you are done, use qmca to analyze the results. Compare the energies at these two
@@ -743,11 +739,10 @@ symmetry rotation, the resulting output will always be consistent.}
 %\FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.70\columnwidth]{figures/lab_advanced_molecules_xml_opt.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.70\columnwidth]{./figures/lab_advanced_molecules_xml_opt.png}
 \end{center}
-\caption{Sample XML optimization block.
+\caption{Sample XML optimization block.}
 \label{fig:lam_xml_opt}
-}
 \end{figure}
 %\FloatBarrier
 
@@ -791,18 +786,17 @@ to 0 and do a single inner iteration (max its=1) per sample of configurations.}
 %\FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_advanced_molecules_xml_vmc_dmc.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_advanced_molecules_xml_vmc_dmc.png}
 \end{center}
-\caption{Sample XML blocks for VMC and DMC calculations.
+\caption{Sample XML blocks for VMC and DMC calculations.}
 \label{fig:lam_xml_vmc_dmc}
-}
 \end{figure}
 %\FloatBarrier
 
 General Options:
 \begin{itemize}
 \item{\textbf{move}: (default ”walker”) Type of electron move. Options: ”pbyp” and ”walker”.}
-\item{\textbf{checkpoint}: (default ”-1”) (If ¿ 0) Generate checkpoint files with given frequency.
+\item{\textbf{checkpoint}: (default ”-1”) (If > 0) Generate checkpoint files with given frequency.
 The calculations can be restarted/continued with the produced checkpoint files.}
 \item{\textbf{useDrift}: (default ”yes”) Defines the sampling mode. useDrift = ”yes” will
 use Langevin acceleration to sample the VMC and DMC distributions, while
@@ -838,11 +832,10 @@ given node, the walkers are split across all the threads in the system.}
 %\FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=1.0\columnwidth]{figures/lab_advanced_molecules_xml_determinantset.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=1.0\columnwidth]{./figures/lab_advanced_molecules_xml_determinantset.png}
 \end{center}
-\caption{Basic framework for a single determinant determinantset XML block.
+\caption{Basic framework for a single determinant determinantset XML block.}
 \label{fig:lam_xml_determinantset}
-}
 \end{figure}
 %\FloatBarrier
 
@@ -856,11 +849,10 @@ functions) since changes can lead to unexpected results.
 %\FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=1.0\columnwidth]{figures/lab_advanced_molecules_xml_basisset.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=1.0\columnwidth]{./figures/lab_advanced_molecules_xml_basisset.png}
 \end{center}
-\caption{Sample XML block for an atomic orbital basis set.
+\caption{Sample XML block for an atomic orbital basis set.}
 \label{fig:lam_xml_basisset}
-}
 \end{figure}
 %\FloatBarrier
 
@@ -884,11 +876,10 @@ basis functions per single particle orbital.
 %\FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=1.0\columnwidth]{figures/lab_advanced_molecules_xml_slaterdeterminant.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=1.0\columnwidth]{./figures/lab_advanced_molecules_xml_slaterdeterminant.png}
 \end{center}
-\caption{Sample XML block for the single slater determinant case.
+\caption{Sample XML block for the single slater determinant case.}
 \label{fig:lam_xml_slaterdeterminant}
-}
 \end{figure}
 %\FloatBarrier
 
@@ -905,11 +896,10 @@ terms of occupation numbers based on these orbitals.
 %\FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=1.0\columnwidth]{figures/lab_advanced_molecules_xml_multideterminant.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=1.0\columnwidth]{./figures/lab_advanced_molecules_xml_multideterminant.png}
 \end{center}
-\caption{Basic framework for a multi-determinant determinantset XML block.
+\caption{Basic framework for a multi-determinant determinantset XML block.}
 \label{fig:lam_xml_multideterminant}
-}
 \end{figure}
 %\FloatBarrier
 
@@ -941,11 +931,10 @@ present in the J1 and J2 blocks.
 %\FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=1.0\columnwidth]{figures/lab_advanced_molecules_xml_jastrow.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=1.0\columnwidth]{./figures/lab_advanced_molecules_xml_jastrow.png}
 \end{center}
-\caption{Sample Jastrow XML block.
+\caption{Sample Jastrow XML block.}
 \label{fig:lam_xml_jastrow}
-}
 \end{figure}
 %\FloatBarrier
 

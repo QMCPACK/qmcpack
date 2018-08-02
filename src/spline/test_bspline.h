@@ -87,14 +87,14 @@ template<typename SPE1, typename SPE2>
 void test_bspline(ParticleSet& TargetPtcl, SPE1& a, SPE2& b)
 {
   int N=a.OrbitalSetSize;
-  SPOSetBase::RealType eps=static_cast<SPOSetBase::RealType>(numeric_limits<float>::epsilon( ));
-  //SPOSetBase::RealType eps=1e-6;
-  SPOSetBase::ValueVector_t psi_0(N);
-  SPOSetBase::ValueVector_t psi_1(N);
-  SPOSetBase::GradVector_t  dpsi_0(N);
-  SPOSetBase::GradVector_t  dpsi_1(N);
-  SPOSetBase::ValueVector_t d2psi_0(N);
-  SPOSetBase::ValueVector_t d2psi_1(N);
+  SPOSet::RealType eps=static_cast<SPOSet::RealType>(numeric_limits<float>::epsilon( ));
+  //SPOSet::RealType eps=1e-6;
+  SPOSet::ValueVector_t psi_0(N);
+  SPOSet::ValueVector_t psi_1(N);
+  SPOSet::GradVector_t  dpsi_0(N);
+  SPOSet::GradVector_t  dpsi_1(N);
+  SPOSet::ValueVector_t d2psi_0(N);
+  SPOSet::ValueVector_t d2psi_1(N);
   a.evaluate(TargetPtcl,0,psi_0);
   b.evaluate(TargetPtcl,0,psi_1);
   std::cout << "Check values " << std::endl;
@@ -117,12 +117,12 @@ void test_bspline(ParticleSet& TargetPtcl, SPE1& a, SPE2& b)
     std::cout << "VGL Lap evaluation Success" << std::endl;
   else
     std::cout << "VGL Lap evaluation Failed" << std::endl;
-  SPOSetBase::ValueMatrix_t psiM_0(N,N);
-  SPOSetBase::ValueMatrix_t psiM_1(N,N);
-  SPOSetBase::GradMatrix_t  dpsiM_0(N,N);
-  SPOSetBase::GradMatrix_t  dpsiM_1(N,N);
-  SPOSetBase::ValueMatrix_t d2psiM_0(N,N);
-  SPOSetBase::ValueMatrix_t d2psiM_1(N,N);
+  SPOSet::ValueMatrix_t psiM_0(N,N);
+  SPOSet::ValueMatrix_t psiM_1(N,N);
+  SPOSet::GradMatrix_t  dpsiM_0(N,N);
+  SPOSet::GradMatrix_t  dpsiM_1(N,N);
+  SPOSet::ValueMatrix_t d2psiM_0(N,N);
+  SPOSet::ValueMatrix_t d2psiM_1(N,N);
   std::cout << std::endl << " evaluate_notranspose " << std::endl;
   a.evaluate_notranspose(TargetPtcl,0,N,psiM_0,dpsiM_0,d2psiM_0);
   b.evaluate_notranspose(TargetPtcl,0,N,psiM_1,dpsiM_1,d2psiM_1);
