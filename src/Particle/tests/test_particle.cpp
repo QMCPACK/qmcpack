@@ -66,8 +66,18 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
   Uniform3DGridLayout grid;
   // PPP case
   grid.BoxBConds = true;
-  for(int i=0; i<9; i++)
-    grid.R(i) = i+1;
+  grid.R(0) = 1.0;
+  grid.R(1) = 2.0;
+  grid.R(2) = 3.0;
+
+  grid.R(3) = 0.0;
+  grid.R(4) = 1.0;
+  grid.R(5) = 0.0;
+
+  grid.R(6) = 0.0;
+  grid.R(7) = 0.0;
+  grid.R(8) = 1.0;
+
   grid.VacuumScale=2.0;
   grid.reset();
 
@@ -85,9 +95,9 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
   source.Lattice.copy(grid);
   source.createSK();
 
-  REQUIRE( source.LRBox.R(2,0) == 14.0 );
-  REQUIRE( source.LRBox.R(2,1) == 16.0 );
-  REQUIRE( source.LRBox.R(2,2) == 18.0 );
+  REQUIRE( source.LRBox.R(2,0) == 0.0 );
+  REQUIRE( source.LRBox.R(2,1) == 0.0 );
+  REQUIRE( source.LRBox.R(2,2) == 2.0 );
 
   // PNN case
   grid.BoxBConds[1] = false;
@@ -98,12 +108,12 @@ TEST_CASE("particle set lattice with vacuum", "[particle]")
   REQUIRE( source.LRBox.R(0,0) ==  1.0 );
   REQUIRE( source.LRBox.R(0,1) ==  2.0 );
   REQUIRE( source.LRBox.R(0,2) ==  3.0 );
-  REQUIRE( source.LRBox.R(1,0) ==  8.0 );
-  REQUIRE( source.LRBox.R(1,1) == 10.0 );
-  REQUIRE( source.LRBox.R(1,2) == 12.0 );
-  REQUIRE( source.LRBox.R(2,0) == 14.0 );
-  REQUIRE( source.LRBox.R(2,1) == 16.0 );
-  REQUIRE( source.LRBox.R(2,2) == 18.0 );
+  REQUIRE( source.LRBox.R(1,0) ==  0.0 );
+  REQUIRE( source.LRBox.R(1,1) ==  2.0 );
+  REQUIRE( source.LRBox.R(1,2) ==  0.0 );
+  REQUIRE( source.LRBox.R(2,0) ==  0.0 );
+  REQUIRE( source.LRBox.R(2,1) ==  0.0 );
+  REQUIRE( source.LRBox.R(2,2) ==  2.0 );
 }
 
 }
