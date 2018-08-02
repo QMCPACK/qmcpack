@@ -154,7 +154,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   }
   if(hasL2Pot)
   {
-    L2Potential* apot = new L2Potential(IonConfig,targetPtcl);
+    L2Potential* apot = new L2Potential(IonConfig,targetPtcl,targetPsi);
     for(int i=0;i<L2Pot.size();i++)
       if(L2Pot[i])
         apot->add(i,L2Pot[i]);

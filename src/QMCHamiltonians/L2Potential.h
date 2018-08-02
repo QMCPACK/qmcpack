@@ -18,6 +18,7 @@
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimLinearSpline.h"
 #include "Numerics/OneDimCubicSpline.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 
 namespace qmcplusplus
 {
@@ -69,8 +70,10 @@ struct L2Potential: public QMCHamiltonianBase
   std::vector<L2RadialPotential*> PPset;
   ///PP[iat] is the L2 potential for the iat-th particle
   std::vector<L2RadialPotential*> PP;
+  ///Associated trial wavefunction
+  TrialWaveFunction* psi_ref;
 
-  L2Potential(const ParticleSet& ions, ParticleSet& els);
+  L2Potential(const ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi);
 
   ~L2Potential();
 

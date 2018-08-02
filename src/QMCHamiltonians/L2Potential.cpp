@@ -15,11 +15,16 @@
 #include "QMCHamiltonians/QMCHamiltonianBase.h"
 #include "QMCHamiltonians/L2Potential.h"
 #include "Utilities/IteratorUtility.h"
+#include "QMCWaveFunctions/OrbitalBase.h"
 
 namespace qmcplusplus
 {
 
-L2Potential::L2Potential(const ParticleSet& ions, ParticleSet& els):
+typedef OrbitalBase::ValueType ValueType;
+typedef OrbitalBase::HessVector_t HessVector_t;
+
+
+L2Potential::L2Potential(const ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi):
   IonConfig(ions)
 {
   set_energy_domain(potential);
@@ -29,6 +34,7 @@ L2Potential::L2Potential(const ParticleSet& ions, ParticleSet& els):
   size_t ns = ions.getSpeciesSet().getTotalNum();
   PPset.resize(ns,0);
   PP.resize(NumIons,nullptr);
+  psi_ref = &psi;
 }
 
 
@@ -61,6 +67,21 @@ void L2Potential::add(int groupID, L2RadialPotential* ppot)
 L2Potential::Return_t
 L2Potential::evaluate(ParticleSet& P)
 {
+  // compute the Hessian
+  HessVector_t D2;
+  // evaluateHessian gives the Hessian of log(Psi)
+  psi_ref->evaluateHessian(P,D2);
+  // add gradient terms to get (Hessian(Psi))/Psi instead
+  size_t N = P.getTotalNum();
+  for(size_t n=0;n<N;n++)
+    for(size_t i=0;i<DIM;i++)
+      for(size_t j=0;j<DIM;j++)
+        D2[n](i,j) += P.G[n][i]*P.G[n][j];
+  // zero out diagonal elements for efficient L2 use
+  for(int n=0;n<N;n++)
+    for(int d=0;d<DIM;d++)
+      D2[n](d,d)=0.0;
+
   const DistanceTableData& d_table(*P.DistTables[myTableIndex]);
   Value=0.0;
   if(d_table.DTType==DT_SOA)
@@ -93,7 +114,7 @@ L2Potential::evaluate(ParticleSet& P)
 
 QMCHamiltonianBase* L2Potential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
 {
-  L2Potential* myclone=new L2Potential(IonConfig,qp);
+  L2Potential* myclone=new L2Potential(IonConfig,qp,psi);
   for(int ig=0; ig<PPset.size(); ++ig)
     if(PPset[ig])
     {
