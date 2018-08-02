@@ -24,7 +24,7 @@
 #include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/SPOSetInfo.h"
 #include <QMCWaveFunctions/SPOSetInputInfo.h>
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/SPOSet.h"
 
 
 namespace qmcplusplus
@@ -44,7 +44,7 @@ namespace qmcplusplus
  */
 struct SPOSetBuilder: public QMCTraits, public MPIObjectBase
 {
-  typedef std::map<std::string,SPOSetBase*> SPOPool_t;
+  typedef std::map<std::string,SPOSet*> SPOPool_t;
   typedef std::vector<int> indices_t;
   typedef std::vector<RealType> energies_t;
 
@@ -56,7 +56,7 @@ struct SPOSetBuilder: public QMCTraits, public MPIObjectBase
   std::vector<SPOSetInfo*> states;
 
   /// list of all sposets created by this builder
-  std::vector<SPOSetBase*> sposets;
+  std::vector<SPOSet*> sposets;
 
   SPOSetBuilder();
   virtual ~SPOSetBuilder() {}
@@ -79,13 +79,13 @@ struct SPOSetBuilder: public QMCTraits, public MPIObjectBase
   }
 
   /// create an sposet from xml (legacy)
-  virtual SPOSetBase* createSPOSetFromXML(xmlNodePtr cur)=0;
+  virtual SPOSet* createSPOSetFromXML(xmlNodePtr cur)=0;
 
   /// create an sposet from a general xml request
-  virtual SPOSetBase* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info);
+  virtual SPOSet* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info);
 
   /// create an sposet from xml and save the resulting SPOSet
-  SPOSetBase* createSPOSet(xmlNodePtr cur);
+  SPOSet* createSPOSet(xmlNodePtr cur);
 
 
 };

@@ -16,8 +16,8 @@
 #ifndef QMCPLUSPLUS_ELECTRONGAS_COMPLEXORBITALS_H
 #define QMCPLUSPLUS_ELECTRONGAS_COMPLEXORBITALS_H
 
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/ElectronGas/HEGGrid.h"
 
@@ -25,7 +25,7 @@
 namespace qmcplusplus
 {
 
-struct EGOSet: public SPOSetBase
+struct EGOSet: public SPOSet
 {
 
   int KptMax;
@@ -35,7 +35,7 @@ struct EGOSet: public SPOSetBase
   EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2);
   EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2, const std::vector<int>& d);
 
-  SPOSetBase* makeClone() const
+  SPOSet* makeClone() const
   {
     return new EGOSet(*this);
   }
@@ -105,7 +105,7 @@ struct EGOSet: public SPOSetBase
 
 /** OrbitalBuilder for Slater determinants of electron-gas
 */
-class ElectronGasComplexOrbitalBuilder: public OrbitalBuilderBase
+class ElectronGasComplexOrbitalBuilder: public WaveFunctionComponentBuilder
 {
 public:
 
@@ -134,8 +134,8 @@ public:
   /** initialize the Antisymmetric wave function for electrons
   *@param cur the current xml node
   */
-  SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
-  SPOSetBase* createSPOSetFromIndices(indices_t& indices);
+  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
+  SPOSet* createSPOSetFromIndices(indices_t& indices);
 
 };
 }

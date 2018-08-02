@@ -62,7 +62,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
     while(tcur != NULL)
     { //check <determinantset/> or <sposet_builder/> to extract the ionic and electronic structure
       std::string cname((const char*)tcur->name);
-      if(cname == OrbitalBuilderBase::detset_tag || cname =="sposet_builder")
+      if(cname == WaveFunctionComponentBuilder::detset_tag || cname =="sposet_builder")
       { 
         qp=ptclPool->createESParticleSet(tcur,target,qp);
       }

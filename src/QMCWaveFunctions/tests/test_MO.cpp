@@ -78,7 +78,7 @@ void test_He(bool transform)
 
     TrialWaveFunction psi(c);
 
-    OrbitalBuilderBase::PtclPoolType particle_set_map;
+    WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
     particle_set_map["e"] = &elec;
     particle_set_map["ion0"] = &ions;
 
@@ -100,13 +100,13 @@ void test_He(bool transform)
 
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
     bb->loadBasisSetFromXML(MO_base[0]);
-    SPOSetBase *sposet = bb->createSPOSet(slater_base[0]);
+    SPOSet *sposet = bb->createSPOSet(slater_base[0]);
 
     //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
 
-    SPOSetBase::ValueVector_t values;
-    SPOSetBase::GradVector_t dpsi;
-    SPOSetBase::ValueVector_t d2psi;
+    SPOSet::ValueVector_t values;
+    SPOSet::GradVector_t dpsi;
+    SPOSet::ValueVector_t d2psi;
     values.resize(1);
     dpsi.resize(1);
     d2psi.resize(1);
@@ -205,7 +205,7 @@ void test_Ne(bool transform)
 
     TrialWaveFunction psi(c);
 
-    OrbitalBuilderBase::PtclPoolType particle_set_map;
+    WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
     particle_set_map["e"] = &elec;
     particle_set_map["ion0"] = &ions;
 
@@ -228,13 +228,13 @@ void test_Ne(bool transform)
 
     OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
     bb->loadBasisSetFromXML(MO_base[0]);
-    SPOSetBase *sposet = bb->createSPOSet(slater_base[0]);
+    SPOSet *sposet = bb->createSPOSet(slater_base[0]);
 
     //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
 
-    SPOSetBase::ValueVector_t values;
-    SPOSetBase::GradVector_t dpsi;
-    SPOSetBase::ValueVector_t d2psi;
+    SPOSet::ValueVector_t values;
+    SPOSet::GradVector_t dpsi;
+    SPOSet::ValueVector_t d2psi;
     values.resize(5);
     dpsi.resize(5);
     d2psi.resize(5);
@@ -347,7 +347,7 @@ void test_HCN(bool transform)
 
     TrialWaveFunction psi(c);
 
-    OrbitalBuilderBase::PtclPoolType particle_set_map;
+    WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
     particle_set_map["e"] = &elec;
     particle_set_map["ion0"] = &ions;
 
@@ -370,13 +370,13 @@ void test_HCN(bool transform)
 
     OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
     bb->loadBasisSetFromXML(MO_base[0]);
-    SPOSetBase *sposet = bb->createSPOSet(slater_base[0]);
+    SPOSet *sposet = bb->createSPOSet(slater_base[0]);
 
     //std::cout << "basis set size = " << sposet->getBasisSetSize() << std::endl;
 
-    SPOSetBase::ValueVector_t values;
-    SPOSetBase::GradVector_t dpsi;
-    SPOSetBase::ValueVector_t d2psi;
+    SPOSet::ValueVector_t values;
+    SPOSet::GradVector_t dpsi;
+    SPOSet::ValueVector_t d2psi;
     values.resize(7);
     dpsi.resize(7);
     d2psi.resize(7);

@@ -73,7 +73,7 @@ TEST_CASE("WaveFunctionFactory","[wavefunction]")
   REQUIRE(wff.targetPsi != NULL);
   REQUIRE(wff.targetPsi->size() == 1);
 
-  OrbitalBase *j2_base = wff.targetPsi->getOrbitals()[0];
+  WaveFunctionComponent *j2_base = wff.targetPsi->getOrbitals()[0];
   REQUIRE(j2_base != NULL);
 }
 }

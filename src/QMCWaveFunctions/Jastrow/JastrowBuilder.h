@@ -15,7 +15,7 @@
     
 #ifndef QMCPLUSPLUS_GENERALIZED_JASTROWBUILDER_H
 #define QMCPLUSPLUS_GENERALIZED_JASTROWBUILDER_H
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 
 namespace qmcplusplus
 {
@@ -24,7 +24,7 @@ class OrbitalConstraintsBase;
 
 /** Jastrow Jastrow Builder with constraints
  */
-class JastrowBuilder: public OrbitalBuilderBase
+class JastrowBuilder: public WaveFunctionComponentBuilder
 {
 
 public:

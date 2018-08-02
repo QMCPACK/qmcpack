@@ -38,10 +38,10 @@ namespace qmcplusplus
 
 /** base class for Single-particle orbital sets
  *
- * SPOSetBase stands for S(ingle)P(article)O(rbital)SetBase which contains
+ * SPOSet stands for S(ingle)P(article)O(rbital)SetBase which contains
  * a number of single-particle orbitals with capabilities of evaluating \f$ \psi_j({\bf r}_i)\f$
  */
-class SPOSetBase: public QMCTraits
+class SPOSet: public QMCTraits
 {
 public:
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
@@ -58,7 +58,7 @@ public:
   typedef OrbitalSetTraits<ValueType>::GradHessMatrix_t GGGMatrix_t;
   typedef OrbitalSetTraits<ValueType>::VGLVector_t      VGLVector_t;
   typedef ParticleSet::Walker_t                      Walker_t;
-  typedef std::map<std::string,SPOSetBase*> SPOPool_t;
+  typedef std::map<std::string,SPOSet*> SPOPool_t;
   
   ///index in the builder list of sposets
   int builder_index;
@@ -76,7 +76,7 @@ public:
   std::string className;
   /** name of the object
    *
-   * Several user classes can own SPOSetBase and use objectName as counter
+   * Several user classes can own SPOSet and use objectName as counter
    */
   std::string objectName;
 #if !defined(ENABLE_SOA)
@@ -98,10 +98,10 @@ public:
 #endif
   
   /** constructor */
-  SPOSetBase();
+  SPOSet();
 
   /** destructor */
-  virtual ~SPOSetBase()
+  virtual ~SPOSet()
   {
 #if !defined(ENABLE_SOA)
     if(!IsCloned && C!= nullptr) delete C;
@@ -173,7 +173,7 @@ public:
   virtual void
   evaluate (const ParticleSet& P, PosType &r, ValueVector_t &psi)
   {
-    app_error() << "Need specialization for SPOSetBase::evaluate "
+    app_error() << "Need specialization for SPOSet::evaluate "
                 << "(const ParticleSet& P, PosType &r).\n";
     abort();
   }
@@ -281,7 +281,7 @@ public:
 
   /** make a clone of itself
    */
-  virtual SPOSetBase* makeClone() const;
+  virtual SPOSet* makeClone() const;
 
   virtual bool transformSPOSet()
   {
@@ -343,9 +343,9 @@ protected:
 };
 
 #if defined(ENABLE_SMARTPOINTER)
-typedef boost::shared_ptr<SPOSetBase> SPOSetBasePtr;
+typedef boost::shared_ptr<SPOSet> SPOSetPtr;
 #else
-typedef SPOSetBase*                   SPOSetBasePtr;
+typedef SPOSet*                   SPOSetPtr;
 #endif
 
 }
