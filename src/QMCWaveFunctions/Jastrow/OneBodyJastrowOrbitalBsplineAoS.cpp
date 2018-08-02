@@ -36,7 +36,7 @@ OneBodyJastrowOrbitalBsplineAoS::reserve
 void
 OneBodyJastrowOrbitalBsplineAoS::checkInVariables(opt_variables_type& active)
 {
-  OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >::checkInVariables(active);
+  OneBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> >::checkInVariables(active);
   for (int i=0; i<NumCenterGroups; i++)
     GPUSplines[i]->set(*Funique[i]);
 }
@@ -44,7 +44,7 @@ OneBodyJastrowOrbitalBsplineAoS::checkInVariables(opt_variables_type& active)
 void
 OneBodyJastrowOrbitalBsplineAoS::addFunc(int ig, FT* j, int jg=-1)
 {
-  OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >::addFunc(ig, j);
+  OneBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> >::addFunc(ig, j);
   CudaSpline<CudaReal> *newSpline = new CudaSpline<CudaReal>(*j);
   UniqueSplines.push_back(newSpline);
   // if(i==0) { //first time, assign everything
@@ -487,7 +487,7 @@ OneBodyJastrowOrbitalBsplineAoS::gradLapl (MCWalkerConfiguration &W,
 void
 OneBodyJastrowOrbitalBsplineAoS::resetParameters(const opt_variables_type& active)
 {
-  OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >::resetParameters(active);
+  OneBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> >::resetParameters(active);
   for (int i=0; i<NumCenterGroups; i++)
     GPUSplines[i]->set(*Funique[i]);
 }

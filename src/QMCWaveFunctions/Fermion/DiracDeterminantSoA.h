@@ -48,7 +48,7 @@ class DiracDeterminantSoA: public DiracDeterminantBase
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantSoA(SPOSetBasePtr const &spos, int first=0);
+  DiracDeterminantSoA(SPOSetPtr const &spos, int first=0);
 
   ///final destructure
   ~DiracDeterminantSoA();
@@ -64,7 +64,7 @@ class DiracDeterminantSoA: public DiracDeterminantBase
   ///reset the size: with the number of particles and number of orbtials
   void resize(int nel, int morb);
   ///cloning with spo
-  DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
+  DiracDeterminantBase* makeCopy(SPOSet* spo) const;
 
   RealType evaluateLog(ParticleSet& P,
               ParticleSet::ParticleGradient_t& G,

@@ -14,7 +14,7 @@
 #ifndef QMCPLUSPLUS_PADE_JASTROW_BUILDER_H
 #define QMCPLUSPLUS_PADE_JASTROW_BUILDER_H
 #include "QMCWaveFunctions/Jastrow/PadeFunctors.h"
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 
 namespace qmcplusplus
 {
@@ -23,7 +23,7 @@ namespace qmcplusplus
  *
  * To replace PadeConstraints
  */
-struct PadeJastrowBuilder: public OrbitalBuilderBase
+struct PadeJastrowBuilder: public WaveFunctionComponentBuilder
 {
 
   PadeJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi, PtclPoolType& psets);

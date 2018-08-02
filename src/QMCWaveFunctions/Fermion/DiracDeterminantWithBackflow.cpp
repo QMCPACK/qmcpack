@@ -29,7 +29,7 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetBasePtr const &spos, BackflowTransformation * BF, int first): DiracDeterminantBase(spos,first)
+DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetPtr const &spos, BackflowTransformation * BF, int first): DiracDeterminantBase(spos,first)
 {
   Optimizable=true;
   OrbitalName="DiracDeterminantWithBackflow";
@@ -89,7 +89,7 @@ void DiracDeterminantWithBackflow::resize(int nel, int morb)
   */
 }
 
-/** replace of SPOSetBase::evaluate function with the removal of t_logpsi */
+/** replace of SPOSet::evaluate function with the removal of t_logpsi */
 void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
 {
   Phi->evaluate_notranspose(BFTrans->QP, FirstIndex, LastIndex, psiM_temp, dlogdet, grad_grad_logdet);
@@ -1023,13 +1023,13 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
   }
 }
 
-OrbitalBasePtr DiracDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr DiracDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
 {
   APP_ABORT(" Illegal action. Cannot use DiracDeterminantWithBackflow::makeClone");
   return 0;
 }
 
-DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetBasePtr spo) const
+DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetPtr spo) const
 {
 //    BackflowTransformation *BF = BFTrans->makeClone();
   // mmorales: particle set is only needed to get number of particles, so using QP set here
@@ -1048,7 +1048,7 @@ DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(const DiracDeterminan
   this->resize(s.NumPtcls,s.NumOrbitals);
 }
 
-//SPOSetBasePtr  DiracDeterminantWithBackflow::clonePhi() const
+//SPOSetPtr  DiracDeterminantWithBackflow::clonePhi() const
 //{
 //  return Phi->makelone();
 //}

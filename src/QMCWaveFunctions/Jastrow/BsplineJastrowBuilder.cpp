@@ -44,8 +44,8 @@ namespace qmcplusplus
 {
 
 #if defined(QMC_CUDA) and defined(ENABLE_SOA)
-extern template class OneBodyJastrowOrbitalBspline<BsplineFunctor<OrbitalBase::RealType>>;
-extern template class TwoBodyJastrowOrbitalBspline<BsplineFunctor<OrbitalBase::RealType>>;
+extern template class OneBodyJastrowOrbitalBspline<BsplineFunctor<WaveFunctionComponent::RealType>>;
+extern template class TwoBodyJastrowOrbitalBspline<BsplineFunctor<WaveFunctionComponent::RealType>>;
 #endif
 
 template<typename OBJT, typename DOBJT>

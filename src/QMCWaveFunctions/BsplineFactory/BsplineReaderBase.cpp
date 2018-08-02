@@ -96,7 +96,7 @@ namespace qmcplusplus
     }
   }
 
-  SPOSetBase* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
+  SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
   {
     int ns(0);
     OhmmsAttributeSet a;
@@ -126,7 +126,7 @@ namespace qmcplusplus
     vals.selectBands(fullband,0, ns, false);
 
     size_t mem_now=qmc_common.memory_allocated;
-    SPOSetBase* newspo=create_spline_set(spin,vals);       
+    SPOSet* newspo=create_spline_set(spin,vals);       
     qmc_common.print_memory_change("BsplineSetReader", mem_now);
     return newspo;
 
@@ -136,7 +136,7 @@ namespace qmcplusplus
     //BandInfoGroup cores0;
     //cores0.selectBands(mybuilder->SortBands,-1000.0,-3.0);
     //cores0.GroupID=0;
-    //SPOSetBase* bandone=create_spline_set(spin,orbitalset,cores0);
+    //SPOSet* bandone=create_spline_set(spin,orbitalset,cores0);
     //
     ////create SPOSet for the rest with a coarse grid
     //TinyVector<int,3> mesh_saved=MeshSize;
@@ -144,7 +144,7 @@ namespace qmcplusplus
     //BandInfoGroup cores1;
     //cores1.selectBands(mybuilder->SortBands,cores0.getNumDistinctOrbitals(),mybuilder->NumDistinctOrbitals);
     //cores1.GroupID=1;
-    //SPOSetBase* bandtwo=create_spline_set(spin,orbitalset,cores1);
+    //SPOSet* bandtwo=create_spline_set(spin,orbitalset,cores1);
     //
     ////add them to bb
     //bb->add(bandone);
@@ -153,7 +153,7 @@ namespace qmcplusplus
     //return bb;
   }
 
-  SPOSetBase* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info)
+  SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info)
   {
     if(spo2band.empty()) 
       spo2band.resize(mybuilder->states.size());
@@ -179,7 +179,7 @@ namespace qmcplusplus
     //vals.FirstSPO=0;
     //vals.NumSPOs=input_info.max_index()-input_info.min_index();
     size_t mem_now=qmc_common.memory_allocated;
-    SPOSetBase* newspo=create_spline_set(spin,vals);       
+    SPOSet* newspo=create_spline_set(spin,vals);       
     qmc_common.print_memory_change("BsplineSetReader", mem_now);
     return newspo;
   }

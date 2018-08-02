@@ -29,12 +29,12 @@ namespace qmcplusplus
 {
 // NOTE NOTE NOTE
 // template<bool backflow>
-//  class SlaterDet: public OrbitalBase {}
+//  class SlaterDet: public WaveFunctionComponent {}
 //     then change SlaterDet to SlaterDet<false>
 //     and SlaterDeterminantWithBackflow to SlaterDet<true>
 //     and remove all virtuals and inline them
 
-class SlaterDet: public OrbitalBase
+class SlaterDet: public WaveFunctionComponent
 {
 public:
   typedef DiracDeterminantBase Determinant_t;
@@ -42,7 +42,7 @@ public:
   std::vector<Determinant_t*>  Dets;
   ///the last particle of each group
   std::vector<int> Last;
-  std::map<std::string,SPOSetBasePtr> mySPOSet;
+  std::map<std::string,SPOSetPtr> mySPOSet;
 
   /**  constructor
    * @param targetPtcl target Particleset
@@ -63,7 +63,7 @@ public:
   }
 
   ///add a SPOSet
-  void add(SPOSetBasePtr sposet, const std::string& aname);
+  void add(SPOSetPtr sposet, const std::string& aname);
 
   ///add a new DiracDeterminant to the list of determinants
   virtual
@@ -223,10 +223,10 @@ public:
   }
 
   virtual
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   virtual
-  SPOSetBasePtr getPhi(int i=0)
+  SPOSetPtr getPhi(int i=0)
   {
     return Dets[i]->getPhi();
   }

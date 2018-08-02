@@ -19,14 +19,14 @@
     
     
 SET(WFBASE_SRCS
-  OrbitalBase.cpp
-  DiffOrbitalBase.cpp
-  OrbitalBuilderBase.cpp
+  WaveFunctionComponent.cpp
+  DiffWaveFunctionComponent.cpp
+  WaveFunctionComponentBuilder.cpp
   SPOSetBuilder.cpp
   SPOInfo.cpp
   SPOSetInfo.cpp
   SPOSetInputInfo.cpp
-  SPOSetBase.cpp
+  SPOSet.cpp
   OptimizableSPOSet.cpp
   CompositeSPOSet.cpp
   HarmonicOscillator/SHOSet.cpp

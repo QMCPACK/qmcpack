@@ -407,7 +407,7 @@ void PyscfParser::getMO(const std::string & fname)
     setname=name;
     if(!hin.read(CartMat,setname))
     {
-       setname="SPOSetBase::putFromH5 Missing "+setname+" from HDF5 File.";
+       setname="SPOSet::putFromH5 Missing "+setname+" from HDF5 File.";
        APP_ABORT(setname.c_str());
     }
     hin.close();
