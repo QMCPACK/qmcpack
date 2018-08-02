@@ -44,6 +44,7 @@ SET(MOSRCS
   VSVBParser.cpp
   QPParser.cpp
   PyscfParser.cpp
+  CrystalAsciiParser.cpp
 )
 
 # create libmocommon 

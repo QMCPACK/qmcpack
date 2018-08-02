@@ -28,6 +28,7 @@
 #include "QMCTools/GamesFMOParser.h"
 #include "QMCTools/PyscfParser.h"
 #include "QMCTools/BParser.h"
+#include "QMCTools/CrystalAsciiParser.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/FileUtility.h"
 #include "Utilities/RandomGenerator.h"
@@ -38,7 +39,7 @@ int main(int argc, char **argv)
 {
   if(argc<2)
   {
-    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-VSVB|-QP|-pyscf|-orbitals] filename " << std::endl;
+    std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-VSVB|-QP|-pyscf|-orbitals|-crystal] filename " << std::endl;
     std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]" << std::endl;
     std::cout << "[-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]" << std::endl;
     std::cout << "[-size npts -multidet multidet.h5 -ci file.out -threshold cimin -TargetState state_number -NaturalOrbitals NumToRead -optDetCoeffs]" << std::endl;
@@ -110,6 +111,11 @@ int main(int argc, char **argv)
       parser = new PyscfParser(argc,argv);
       in_file =argv[++iargc];
       allH5=true;
+    }
+    else if (a == "-crystal")
+    {
+      parser = new CrystalAsciiParser(argc,argv);
+      in_file =argv[++iargc];
     }
     else if(a == "-VSVB")
     {
