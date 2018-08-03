@@ -31,7 +31,7 @@
 #====================================================================#
 
 
-from generic import obj,object_interface,log,error,warn,devlog
+from generic import obj,object_interface,log,error,warn
 from debug import ci,interact
 
 

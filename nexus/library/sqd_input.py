@@ -1682,14 +1682,18 @@ class SqdInput(SimulationInput,Names):
     #end def incorporate_system
         
 
-    def return_system(self):
+    def return_system(self,structure_only=False):
         system = PhysicalSystem(
             structure = Structure(
                 elem = [self.simulation.atom.name],
                 pos  = [[0,0,0]]
                 )
             )
-        return system
+        if structure_only:
+            return system.structure
+        else:
+            return system
+        #end if
     #end def return_system
 #end class SqdInput
 

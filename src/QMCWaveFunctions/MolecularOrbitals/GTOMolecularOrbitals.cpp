@@ -23,7 +23,7 @@ namespace qmcplusplus
 
 GTOMolecularOrbitals::GTOMolecularOrbitals(ParticleSet& els, TrialWaveFunction& psi,
     ParticleSet& ions):
-  OrbitalBuilderBase(els,psi), IonSys(ions), Normalized(false),BasisSet(0), d_table(0)
+  WaveFunctionComponentBuilder(els,psi), IonSys(ions), Normalized(false),BasisSet(0), d_table(0)
 {
   //int d_ie = DistanceTable::add(ions,els);
   d_table = DistanceTable::add(ions,els);

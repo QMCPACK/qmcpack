@@ -245,5 +245,8 @@
 /* Use VTune Task API with timers */
 #cmakedefine USE_VTUNE_TASKS @USE_VTUNE_TASKS@
 
+/* Enable NVTX regions in CUDA code. */
+#cmakedefine USE_NVTX_API @USE_NVTX_API@
+
 #endif // QMCPLUSPLUS_CONFIGURATION_H
 

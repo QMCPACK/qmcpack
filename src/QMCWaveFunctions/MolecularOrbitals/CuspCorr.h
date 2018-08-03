@@ -19,7 +19,7 @@
 #include<cmath>
 #include <iostream>
 #include "Configuration.h"
-//#include "QMCWaveFunctions/BasisSetFactory.h"
+//#include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 //#include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Particle/ParticleSet.h"
@@ -42,7 +42,7 @@ class CuspCorr : public QMCTraits
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
-  typedef SPOSetBase*        SPOSetBasePtr;
+  typedef SPOSet*        SPOSetPtr;
 
 public:
 
@@ -64,6 +64,36 @@ public:
     C=0.0;
     sg=1.0;
     nElms=nIntPnts;
+  }
+
+  void setPhiAndEta(SPOSetPtr Phi, SPOSetPtr Eta)
+  {
+      Psi1 = Phi;
+      Psi2 = Eta;
+      int norb = Psi1->OrbitalSetSize;
+
+      val1.resize(norb);
+      grad1.resize(norb);
+      lapl1.resize(norb);
+
+      val2.resize(norb);
+      grad2.resize(norb);
+      lapl2.resize(norb);
+  }
+
+  void allocateELspace()
+  {
+    ELideal.resize(nElms);
+    ELorig.resize(nElms);
+    ELcurr.resize(nElms);
+    pos.resize(nElms);
+  }
+
+  void computeValAtZero()
+  {
+    TinyVector<RealType,3> ddr=0;
+    evaluate(Psi1,ddr,val1,grad1,lapl1);
+    valAtZero = val1[0];
   }
 
   ~CuspCorr() {}
@@ -91,7 +121,7 @@ public:
   }
 
 
-  void evaluate(SPOSetBasePtr Psi,TinyVector<RealType,3> r, ValueVector_t& val, GradVector_t  &grad, ValueVector_t &lapl)
+  void evaluate(SPOSetPtr Psi,TinyVector<RealType,3> r, ValueVector_t& val, GradVector_t  &grad, ValueVector_t &lapl)
   {
     targetPtcl->R[0] = sourcePtcl->R[curCenter];
     TinyVector<RealType,3> ddr2=targetPtcl->makeMove(0,r);
@@ -283,8 +313,9 @@ private:
   ///source ParticleSet
   ParticleSet *sourcePtcl;
 
-  SPOSetBasePtr Psi1,Psi2;
+  SPOSetPtr Psi1,Psi2;
 
+public:
   // cutoff
   RealType beta0,DX,eta0, ELorigAtRc;
   RealType Rc_init,Rc,C,sg,Z,valAtZero,valAtRc,Rc_max;

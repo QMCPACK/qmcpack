@@ -26,8 +26,6 @@
 #include "QMCHamiltonians/QMCHamiltonian.h"
 #include "QMCHamiltonians/NonLocalTOperator.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
-//#define ENABLE_COMPOSITE_ESTIMATOR
-//#include "Estimators/CompositeEstimators.h"
 #include "Estimators/EstimatorManagerBase.h"
 namespace qmcplusplus
 {
@@ -139,8 +137,6 @@ public:
   /** stop a run */
   void stopRun();
   void stopRun2();
-  /** reset the trial energy */
-  void resetEtrial(RealType et);
 
   /** prepare to start a block
    * @param steps number of steps within the block
@@ -177,10 +173,6 @@ public:
    */
   virtual void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
 
-  /** update Walker buffers for PbyP update
-   */
-  void updateWalkers(WalkerIter_t it, WalkerIter_t it_end);
-
   /** simple routine to test the performance
    */
   void benchMark(WalkerIter_t it, WalkerIter_t it_end, int ip);
@@ -208,9 +200,6 @@ public:
   {
     return 0.0;
   };
-//       virtual RealType advanceWalkerForCSEE(Walker_t& w1, std::vector<PosType>& dR, std::vector<int>& iats, std::vector<int>& rs, std::vector<RealType>& ratios, std::vector<RealType>& weights, std::vector<RealType>& logs ) {return 0.0;};
-  virtual void setLogEpsilon(RealType eps) {};
-//       virtual void advanceCSWalkers(std::vector<TrialWaveFunction*>& pclone, std::vector<MCWalkerConfiguration*>& wclone, std::vector<QMCHamiltonian*>& hclone, std::vector<RandomGenerator_t*>& rng, std::vector<RealType>& c_i){};
 
   ///normalization offset for cs type runs.
   RealType csoffset;
@@ -278,7 +267,7 @@ protected:
   ///random number generator
   RandomGenerator_t& RandomGen;
   ///branch engine
-  BranchEngineType* branchEngine;
+  const BranchEngineType* branchEngine;
   ///estimator
   EstimatorManagerBase* Estimators;
   ///parameters
@@ -307,10 +296,6 @@ protected:
 
   ///copy constructor
   QMCUpdateBase(const QMCUpdateBase& a);
-
-  /** a VMC step to randomize awalker
-   */
-  void randomize(Walker_t& awalker);
 
 private:
 

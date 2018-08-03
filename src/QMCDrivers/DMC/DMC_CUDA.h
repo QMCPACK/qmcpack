@@ -33,10 +33,11 @@ class DMCcuda: public QMCDriver
 {
 public:
   /// Constructor.
-  DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,WaveFunctionPool& ppool);
-  bool run();
-  bool put(xmlNodePtr cur);
-  void resetUpdateEngine();
+  GPU_XRAY_TRACE DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+			 QMCHamiltonian& h,WaveFunctionPool& ppool);
+  GPU_XRAY_TRACE bool run();
+  GPU_XRAY_TRACE bool put(xmlNodePtr cur);
+  GPU_XRAY_TRACE void resetUpdateEngine();
 
 private:
   std::string ScaleWeight;
@@ -62,7 +63,7 @@ private:
     return *this;
   }
   ///hide initialization from the main function
-  void resetRun();
+  GPU_XRAY_TRACE void resetRun();
   NonLocalTOperator NLop;
   ///use T-moves
   int UseTMove;

@@ -104,11 +104,10 @@ It is important to note that:
 
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.3\columnwidth]{figures/Reactant.jpg}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.3\columnwidth]{./figures/Reactant.jpg}
 \end{center}
-\caption{$C_2O_2H_3N$ molecule.
-\label{fig:C2O2H3N}
-}
+\caption{$C_2O_2H_3N$ molecule.}
+\protect{\label{fig:C2O2H3N}}
 \end{figure}
 The CIPSI method
 %\cite{XXXrecentCIPSIpaper}
@@ -202,11 +201,10 @@ At this point, the orbitals are modified, a new AO$\rightarrow$MO transformation
 \item Step 6: Analysis of the CIPSI results\\
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 2mm 2mm 2mm 2mm, clip,width=0.95\columnwidth]{figures/CIPSI.jpg}
+\includegraphics[trim = 2mm 2mm 2mm 2mm, clip,width=0.95\columnwidth]{./figures/CIPSI.jpg}
 \end{center}
-\caption{Evolution of the variational energy and the Energy + PT2 as a function of the number of determinants for the $C_2O_2H_3N$ molecule. 
-\label{fig:CIPSI}
-}
+\caption{Evolution of the variational energy and the Energy + PT2 as a function of the number of determinants for the $C_2O_2H_3N$ molecule.}
+\protect{\label{fig:CIPSI}}
 \end{figure}
 Figure \ref{fig:CIPSI} shows the evolution of the variational energy and the energy corrected with PT2 as a function of the number of determinants up to 4M determinants. While it is clear that the raw variational energy is far from being converged, the Energy + PT2 appears converged around 0.4M determinants.\\
 
@@ -286,7 +284,7 @@ determinants during the Jastrow optimization step. While this has
 proven to lower the energy significantly when the number of
 determinants is below 10k, a large number of determinants from CIPSI
 is often too large to optimize conveniently. Keeping the coefficients
-of the determinants from CIPSI unoptimized´is an alternative strategy..\\
+of the determinants from CIPSI unoptimized is an alternative strategy.\\
 
 (2) The large determinant expansion and the Jastrows are both trying
 to recover the missing correlations from the system. When optimizing
@@ -353,9 +351,9 @@ ideal benchmark tool for multireference systems.
 \begin{figure}
 \begin{center}
 \includegraphics[trim = 2mm 2mm 2mm 2mm, clip,width=0.9
-\columnwidth]{figures/DMC-Multidet.jpg}
+\columnwidth]{./figures/DMC-Multidet.jpg}
 \end{center}
-\caption{DMC energy of $C_2O_2H_3N$ molecule as a function of different single determinant trial wavefunctions with aug-ccp-VTZ basis set using nodal surfaces from Hartree-Fock (HF), DFT-PBE and DFT with hybrid functionals PBE0 and P3LYP. The CIPSI trial wavefunction contains as indicated 239, 44539, 514380 and 908128 determinants (D). 
-\label{fig:CIPSI-DMC}
-}
+\caption{DMC energy of $C_2O_2H_3N$ molecule as a function of different single determinant trial wavefunctions with aug-ccp-VTZ basis set using nodal surfaces from Hartree-Fock (HF), DFT-PBE and DFT with hybrid functionals PBE0 and P3LYP. The CIPSI trial wavefunction contains as indicated 239, 44539, 514380 and 908128 determinants (D). }
+\protect{\label{fig:CIPSI-DMC}}
+
 \end{figure}

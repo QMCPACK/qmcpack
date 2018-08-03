@@ -3,7 +3,8 @@ import os
 import itertools
 from time import clock
 from numpy import ndarray,ceil
-from developer import obj,ci,error as dev_error,devlog,DevBase
+from generic import generic_settings
+from developer import obj,ci,error as dev_error,DevBase
 from physical_system import generate_physical_system
 from simulation import Simulation,GenericSimulation,graph_sims
 from bundle import bundle as bundle_function
@@ -60,8 +61,7 @@ from qmcpack import generate_qmcpack
 #       should probably make temp simlist at qmcpack_workflow start
 
 
-
-def error(msg,loc=None,exit=True,trace=True,indent='    ',logfile=devlog):
+def error(msg,loc=None,exit=True,trace=True,indent='    ',logfile=generic_settings.devlog):
     header = 'qmcpack_workflows'
     if loc!=None:
         msg+='\nfunction location: {0}'.format(loc)

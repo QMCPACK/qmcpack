@@ -119,6 +119,7 @@ struct QMCGaussianParserBase
 
   int ci_size,ci_nca,ci_ncb,ci_nea,ci_neb,ci_nstates;
   double ci_threshold;
+  bool optDetCoeffs;
   bool usingCSF;
   bool VSVB;
 

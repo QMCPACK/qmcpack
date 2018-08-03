@@ -101,7 +101,7 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
   if (same_k)
   {
     int off         = BasisOrbitals ? 0 : N;
-    SPOSetBase* basOrbs = BasisOrbitals ? BasisOrbitals : GSOrbitals;
+    SPOSet* basOrbs = BasisOrbitals ? BasisOrbitals : GSOrbitals;
     for (int igs=0; igs<N; igs++)
     {
       PosType k_gs = GSOrbitals->get_k(igs);
@@ -303,7 +303,7 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
     }
     xmlCoefs = xmlCoefs->next;
   }
-  return SPOSetBase::put(node);
+  return true;
 }
 
 
@@ -607,10 +607,10 @@ OptimizableSPOSet::evaluate_notranspose
   }
 }
 
-SPOSetBase*
+SPOSet*
 OptimizableSPOSet::makeClone() const
 {
-  SPOSetBase *gs, *basis(0);
+  SPOSet *gs, *basis(0);
   OptimizableSPOSet *clone;
   gs = GSOrbitals->makeClone();
   if (BasisOrbitals)

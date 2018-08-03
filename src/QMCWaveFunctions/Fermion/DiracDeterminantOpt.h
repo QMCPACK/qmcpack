@@ -28,13 +28,13 @@ protected:
   opt_variables_type myVars;
 
   // Basis for optimization
-//     SPOSetBasePtr Basis;
+//     SPOSetPtr Basis;
 
   // First index is basis element
   // Second index is the orbital number being optimized
 //     Array<ValueType,2> ExcitedCoefs;
   int NumOrbitals, NumBasis;
-//     SPOSetBasePtr ExcitedStates;
+//     SPOSetPtr ExcitedStates;
 
   // Inverse of Aopt -- not transposed as in DiracDeterminantBase
   ValueMatrix_t AoptInv;
@@ -55,9 +55,9 @@ protected:
   std::vector<PosType> MyG;
 
 public:
-  DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
+  DiracDeterminantBase* makeCopy(SPOSet* spo) const;
 
-  DiracDeterminantOpt(ParticleSet &ptcl, SPOSetBasePtr const &gs_spos, int first=0);
+  DiracDeterminantOpt(ParticleSet &ptcl, SPOSetPtr const &gs_spos, int first=0);
   // This stores new orbital coefficients and updates the
   // inverse matrices.
   void resetParameters(const opt_variables_type& optvars);

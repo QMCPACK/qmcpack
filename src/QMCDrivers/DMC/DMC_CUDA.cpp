@@ -26,6 +26,9 @@
 #include "Utilities/RunTimeManager.h"
 #include "Message/CommOperators.h"
 #include "type_traits/scalar_traits.h"
+#ifdef USE_NVTX_API
+#include <nvToolsExt.h>
+#endif
 
 
 namespace qmcplusplus
@@ -75,6 +78,9 @@ void DMCcuda::checkBounds (std::vector<PosType> &newpos,
 
 bool DMCcuda::run()
 {
+#ifdef USE_NVTX_API
+  nvtxRangePushA("DMC:run");
+#endif
   bool scaleweight = ScaleWeight == "yes";
   if (scaleweight)
     app_log() << "  Scaling weight per Umrigar/Nightingale.\n";
@@ -324,6 +330,9 @@ bool DMCcuda::run()
     }
   }
   while(block<nBlocks && enough_time_for_next_iteration);
+#ifdef USE_NVTX_API
+  nvtxRangePop();
+#endif
   //finalize a qmc section
   return finalize(block);
 }
@@ -355,7 +364,6 @@ void DMCcuda::resetUpdateEngine()
 
   branchEngine->checkParameters(W);
 
-  //    Mover->updateWalkers(W.begin(),W.end());
   Mover->MaxAge=1;
   app_log() << "  Steps per block = " << nSteps << std::endl;
   app_log() << "  Number of blocks = " << nBlocks << std::endl;

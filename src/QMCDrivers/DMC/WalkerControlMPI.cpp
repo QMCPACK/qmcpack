@@ -13,7 +13,6 @@
 
 
 #include <QMCDrivers/DMC/WalkerControlMPI.h>
-#include <qmc_common.h>
 #include <Utilities/IteratorUtility.h>
 #include <Utilities/UtilityFunctions.h>
 #include <Utilities/NewTimer.h>

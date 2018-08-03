@@ -11,6 +11,9 @@ IF(COMMAND cmake_policy)
     # are used in try_compile test cmake projects.
     # CHECK_CXX_SOURCE_COMPILES and others depend on try_compile
   endif(CMAKE_VERSION VERSION_GREATER 3.1.3 AND NOT $ENV{CRAYPE_VERSION} MATCHES ".")
+  IF(CMAKE_GENERATOR MATCHES "Ninja")
+    cmake_policy(SET CMP0058 NEW)
+  ENDIF(CMAKE_GENERATOR MATCHES "Ninja")
 ENDIF(COMMAND cmake_policy)
 
 
@@ -18,7 +21,7 @@ ENDIF(COMMAND cmake_policy)
 # Version
 ######################################################################
 SET(QMCPACK_VERSION_MAJOR 3)
-SET(QMCPACK_VERSION_MINOR 4)
+SET(QMCPACK_VERSION_MINOR 5)
 SET(QMCPACK_VERSION_PATCH 0)
 SET(QMCPACK_VERSION "${QMCPACK_VERSION_MAJOR}.${QMCPACK_VERSION_MINOR}.${QMCPACK_VERSION_PATCH}")
 
@@ -652,7 +655,11 @@ ENDIF()
 
 SET(HAVE_CUDA 0)
 IF(QMC_CUDA)
-  set(CUDA_PROPAGATE_HOST_FLAGS OFF)
+  IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(CUDA_PROPAGATE_HOST_FLAGS ON)
+  ELSE(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(CUDA_PROPAGATE_HOST_FLAGS OFF)
+  ENDIF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   FIND_PACKAGE(CUDA REQUIRED)
   #set(CUDA_NVCC_FLAGS
   #  "-arch=sm_20;-Drestrict=__restrict__;-DNO_CUDA_MAIN;-O3;-use_fast_math")
@@ -680,6 +687,21 @@ IF(QMC_CUDA)
 ELSE(QMC_CUDA)
   MESSAGE(STATUS "Disabling CUDA")
 ENDIF(QMC_CUDA)
+
+SET(USE_NVTX_API 0 CACHE BOOL "Enable/disable NVTX regions in CUDA code.")
+IF(USE_NVTX_API)
+  IF(HAVE_CUDA)
+    FIND_LIBRARY(NVTX_API_LIB
+      NAME nvToolsExt
+      HINTS ${CUDA_TOOLKIT_ROOT_DIR}
+      PATH_SUFFIXES lib lib64)
+    IF(NOT NVTX_API_LIB)
+      MESSAGE(FATAL_ERROR "USE_NVTX_API set but NVTX_API_LIB not found")
+    ENDIF(NOT NVTX_API_LIB)
+    MESSAGE("CUDA nvToolsExt library: ${NVTX_API_LIB}")
+    LINK_LIBRARIES(${NVTX_API_LIB})
+  ENDIF(HAVE_CUDA)
+ENDIF(USE_NVTX_API)
 
 #INCLUDE(${PROJECT_CMAKE}/FindPkgConfig.cmake)
 ##################################################################
@@ -783,7 +805,6 @@ IF (USE_VTUNE_API)
   LINK_LIBRARIES("${VTUNE_ITTNOTIFY_LIBRARY}")
 ENDIF()
 
-
 #include(ExternalProject)
 #  set(einspline_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/einspline")
 #  set(einspline_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/einspline")
@@ -844,6 +865,9 @@ FOREACH(lang IN ITEMS C CXX)
   MESSAGE("Project ${lang}_FLAGS: ${TMP_PROJECT_CMAKE_${lang}_FLAGS}")
 ENDFOREACH(lang IN ITEMS C CXX)
 
+get_directory_property(TMP_PROJECT_INCLUDE_DIRECTORIES INCLUDE_DIRECTORIES)
+MESSAGE("Project INCLUDE_DIRECTORIES: ${TMP_PROJECT_INCLUDE_DIRECTORIES}")
+
 FOREACH(target_type IN ITEMS EXE SHARED)
   SET(PROJECT_CMAKE_${target_type}_LINKER_FLAGS ${CMAKE_${target_type}_LINKER_FLAGS})
   SET(TMP_PROJECT_CMAKE_${target_type}_LINKER_FLAGS "${PROJECT_CMAKE_${target_type}_LINKER_FLAGS} ${CMAKE_${target_type}_LINKER_FLAGS_${THIS_CONFIG}}")
@@ -888,8 +912,8 @@ SUBDIRS(src)
 IF(NOT(QMC_BUILD_LEVEL GREATER 4))
   SUBDIRS(tests)
   SUBDIRS(examples)
-  IF(IS_DIRECTORY nexus)
-    SUBDIRS(nexus/examples)
+  IF(IS_DIRECTORY "${PROJECT_SOURCE_DIR}/nexus")
+    SUBDIRS(nexus/tests)
   ENDIF()
 ENDIF()
 

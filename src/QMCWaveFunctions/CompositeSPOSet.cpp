@@ -17,7 +17,7 @@
 #include <Utilities/IteratorUtility.h>
 #include <algorithm>
 #include <OhmmsData/AttributeSet.h>
-#include <QMCWaveFunctions/BasisSetFactory.h>
+#include <QMCWaveFunctions/SPOSetBuilderFactory.h>
 
 namespace qmcplusplus
 {
@@ -56,7 +56,7 @@ namespace qmcplusplus
   }
 
 
-  void CompositeSPOSet::add(SPOSetBase* component)
+  void CompositeSPOSet::add(SPOSet* component)
   {
     if(components.empty())
     {
@@ -78,7 +78,6 @@ namespace qmcplusplus
     component_laplacians.push_back(laplacians);
 
     OrbitalSetSize += norbs;
-    BasisSetSize = OrbitalSetSize;
 
     component_offsets.push_back(OrbitalSetSize);
   }
@@ -91,7 +90,7 @@ namespace qmcplusplus
     app_log()<<"  components"<< std::endl;
     for(int i=0;i<components.size();++i)
     {
-      SPOSetBase& c = *components[i];
+      SPOSet& c = *components[i];
       app_log()<<"    "<<i<< std::endl;
       components[i]->basic_report("      ");
     }
@@ -105,7 +104,7 @@ namespace qmcplusplus
   }
 
 
-  SPOSetBase* CompositeSPOSet::makeClone() const
+  SPOSet* CompositeSPOSet::makeClone() const
   {
     // base class and shallow copy
     CompositeSPOSet* clone = new CompositeSPOSet(*this);
@@ -133,7 +132,7 @@ namespace qmcplusplus
     int n=0;
     for(int c=0;c<components.size();++c)
     {
-      SPOSetBase&    component = *components[c];
+      SPOSet&    component = *components[c];
       ValueVector_t& values    = *component_values[c];
       component.evaluate(P,iat,values);
       std::copy(values.begin(),values.end(),psi.begin()+n);
@@ -148,7 +147,7 @@ namespace qmcplusplus
     int n=0;
     for(int c=0;c<components.size();++c)
     {
-      SPOSetBase&    component  = *components[c];
+      SPOSet&    component  = *components[c];
       ValueVector_t& values     = *component_values[c];
       GradVector_t&  gradients  = *component_gradients[c];
       ValueVector_t& laplacians = *component_laplacians[c];
@@ -226,7 +225,7 @@ namespace qmcplusplus
   }
 
 
-  SPOSetBase* CompositeSPOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
+  SPOSet* CompositeSPOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     std::vector<std::string> spolist;
     putContent(spolist,cur);
@@ -237,19 +236,15 @@ namespace qmcplusplus
     CompositeSPOSet* spo_now=new CompositeSPOSet;
     for(int i=0; i<spolist.size(); ++i)
     {
-      SPOSetBase* spo=get_sposet(spolist[i]);
+      SPOSet* spo=get_sposet(spolist[i]);
       if(spo) spo_now->add(spo);
     }
     return (spo_now->size())? spo_now:0;
   }
 
-  SPOSetBase* CompositeSPOSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input)
+  SPOSet* CompositeSPOSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input)
   {
     return createSPOSetFromXML(cur);
   }
 
-  bool CompositeSPOSetBuilder::put(xmlNodePtr cur)
-  {
-    return true;
-  }
 }

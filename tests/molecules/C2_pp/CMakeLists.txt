@@ -16,6 +16,15 @@ IF (NOT QMC_CUDA)
                     1 C2MSDJS_VMC_SCALARS # VMC
                     )
 
+  QMC_RUN_AND_CHECK(short-C2_pp-msdj-traditional_vmc
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
+                    C2_TZ_PP_MSDJ
+                    qmc_short_pp_msdj-traditional.xml
+                    1 16
+                    ${MP_SUCCESS}
+                    1 C2MSDJS_VMC_SCALARS # VMC
+                    )
+
   LIST(APPEND C2MSDJL_VMC_SCALARS "totenergy" "-11.064964  0.000274") # total energy
   LIST(APPEND C2MSDJL_VMC_SCALARS "variance"  "  0.149682  0.001242") # energy variance
 
@@ -23,6 +32,15 @@ IF (NOT QMC_CUDA)
                     "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
                     C2_TZ_PP_MSDJ
                     qmc_long_pp_msdj.xml
+                    1 16
+                    ${MP_SUCCESS}
+                    1 C2MSDJL_VMC_SCALARS # VMC
+                    )
+
+  QMC_RUN_AND_CHECK(long-C2_pp-msdj-traditional_vmc
+                    "${CMAKE_SOURCE_DIR}/tests/molecules/C2_pp"
+                    C2_TZ_PP_MSDJ
+                    qmc_long_pp_msdj-traditional.xml
                     1 16
                     ${MP_SUCCESS}
                     1 C2MSDJL_VMC_SCALARS # VMC
