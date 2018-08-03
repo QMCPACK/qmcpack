@@ -62,7 +62,7 @@ struct L2Potential: public QMCHamiltonianBase
 {
   ///reference to the ionic configuration
   const ParticleSet& IonConfig;
-  ///the number of ioncs
+  ///the number of ions
   int NumIons;
   ///distance table index
   int myTableIndex;

@@ -694,6 +694,29 @@ class SemilocalPP(Pseudopotential):
     #end def set_channel
 
 
+    def expand_L2(self,lmax):
+        self.assert_numeric('expand_L2')
+        if lmax not in self.channel_indices:
+            self.error('cannot expand L2 up to angular momentum "{0}"\nvalid options for lmax are: {1}'.format(lmax,self.l_channels))
+        #end if
+        limax = self.channel_indices[lmax]
+        vps = obj()
+        for li in range(limax+1):
+            l = self.l_channels[li]
+            vps[l] = self.evaluate_channel(l=l,rpow=1)
+        #end for
+        if self.has_L2():
+            self.remove_L2()
+        #end if
+        self.components[self.local] = vps[self.local]
+        for l,v in vps.iteritems():
+            if l!=self.local:
+                self.set_channel(l,v)
+            #end if
+        #end for
+    #end def expand_L2
+
+
     def angular_channels(self):
         channels = []
         for l in self.l_channels:

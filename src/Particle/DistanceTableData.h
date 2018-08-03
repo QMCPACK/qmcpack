@@ -186,7 +186,11 @@ struct DistanceTableData
   /** Distances[i][j] , [Nsources][Ntargets] */
   Matrix<RealType, aligned_allocator<RealType> > Distances;
 
-  /** Displacements[Nsources]x[3][Ntargets] */
+  /** Displacements[Nsources]x[3][Ntargets]
+   *  Note: Displacements[i][j] = r_A2[j] - r_A1[i], the opposite sign of AoS dr
+   *        For derived AA, A1=A2=A
+   *        For derived BA, A1=A, A2=B
+   */
   std::vector<RowContainer> Displacements;
 
   ///actual memory for Displacements
