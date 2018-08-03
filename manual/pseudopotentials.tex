@@ -1,5 +1,15 @@
 \section{Obtaining pseudopotentials}
 
+\subsection{Pseudopotentiallibrary.org}
+
+An open website collecting community developed and tested
+pseudopotentials for QMC and other many-body calculations is being
+developed at \url{https://pseudopotentiallibrary.org}. This site
+includes potentials in QMCPACK format and an increasing range of
+electronic structure and quantum chemistry codes. We recommend using
+potentials from this site if available and suitable for your science
+application.
+
 \subsection{Opium}
 \label{subsec:opium}
 
@@ -40,7 +50,7 @@ The QMC code CASINO also makes available its pseudopotentials available at the w
 \begin{lstlisting}[caption=Convert CASINO-formatted pseudopotential to Quantum ESPRESSO UPF format]
 ppconvert --casino_pot pp.data --casino_us awfn.data_s1_2S --casino_up awfn.data_p1_2P --casino_ud awfn.data_d1_2D --upf Li.TN-DF.upf
 \end{lstlisting}
-QMCPACK can directly read in the CASINO-formated pseudopotential (\texttt{pp.data}), but four parameters found in the pseudopotential summary file must be specified in the pseudo element (\texttt{l-local}, \texttt{lmax}, \texttt{nrule}, \texttt{cutoff})[see Section~\ref{subsec:pseudopotentials} for details]:
+QMCPACK can directly read in the CASINO-formated pseudopotential (\texttt{pp.data}), but four parameters found in the pseudopotential summary file must be specified in the pseudo element (\texttt{l-local}, \texttt{lmax}, \texttt{nrule}, \texttt{cutoff})[see Section~\ref{sec:nlpp} for details]:
 \begin{lstlisting}[caption=XML syntax to use CASINO-formatted pseudopotentials in QMCPACK]
 <pairpot type="pseudo" name="PseudoPot" source="ion0" wavefunction="psi0" format="xml">
    <pseudo elementType="Li" href="Li.pp.data" format="casino" l-local="s" lmax="2" nrule="2" cutoff="2.19"/>

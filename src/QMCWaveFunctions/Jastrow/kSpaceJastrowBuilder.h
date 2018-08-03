@@ -14,7 +14,7 @@
     
 #ifndef QMCPLUSPLUS_KSPACE_JASTROW_BUILDER_H
 #define QMCPLUSPLUS_KSPACE_JASTROW_BUILDER_H
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/Jastrow/kSpaceJastrow.h"
 
 namespace qmcplusplus
@@ -22,14 +22,14 @@ namespace qmcplusplus
 //forward declaration
 class ParticleSet;
 
-struct kSpaceJastrowBuilder: public OrbitalBuilderBase
+struct kSpaceJastrowBuilder: public WaveFunctionComponentBuilder
 {
   ParticleSet sourcePtcl;
   std::map<std::string,kSpaceJastrow::SymmetryType> SymmMap;
   // One-body constructor
   kSpaceJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi,
                        ParticleSet& source) :
-    OrbitalBuilderBase(target,psi), sourcePtcl(source)
+    WaveFunctionComponentBuilder(target,psi), sourcePtcl(source)
   {
     // nothing for now
     SymmMap["crystal"]   = kSpaceJastrow::CRYSTAL;

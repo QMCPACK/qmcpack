@@ -20,7 +20,7 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/PolynomialFunctor3D.h"
 #include "QMCWaveFunctions/Jastrow/eeI_JastrowOrbital.h"
@@ -127,7 +127,7 @@ const char *particles = \
   bool build_okay = jastrow.put(jas_eeI);
   REQUIRE(build_okay);
 
-  OrbitalBase *orb = psi.getOrbitals()[0];
+  WaveFunctionComponent *orb = psi.getOrbitals()[0];
 
 #ifdef ENABLE_SOA
   typedef JeeIOrbitalSoA<PolynomialFunctor3D> J3Type;
@@ -180,8 +180,8 @@ const char *particles = \
   REQUIRE(ratio_3 == ComplexApprox(0.7987703724).compare_real_only());
 
   opt_variables_type optvars;
-  std::vector<OrbitalBase::RealType> dlogpsi;
-  std::vector<OrbitalBase::RealType> dhpsioverpsi;
+  std::vector<WaveFunctionComponent::RealType> dlogpsi;
+  std::vector<WaveFunctionComponent::RealType> dhpsioverpsi;
 
   psi.checkInVariables(optvars);
   optvars.resetIndex();

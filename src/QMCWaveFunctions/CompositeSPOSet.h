@@ -16,18 +16,18 @@
 #ifndef QMCPLUSPLUS_COMPOSITE_SPOSET_H
 #define QMCPLUSPLUS_COMPOSITE_SPOSET_H
 
-#include <QMCWaveFunctions/SPOSetBase.h>
+#include <QMCWaveFunctions/SPOSet.h>
 #include <QMCWaveFunctions/BasisSetBase.h>
 #include <QMCWaveFunctions/SPOSetBuilder.h>
 
 namespace qmcplusplus
 {
 
-  class CompositeSPOSet : public SPOSetBase
+  class CompositeSPOSet : public SPOSet
   {
   public:
     ///component SPOSets
-    std::vector<SPOSetBase*>    components;
+    std::vector<SPOSet*>    components;
     ///temporary storage for values
     std::vector<ValueVector_t*> component_values;
     ///temporary storage for gradients
@@ -41,18 +41,18 @@ namespace qmcplusplus
     ~CompositeSPOSet();
 
     ///add a sposet component to this composite sposet
-    void add(SPOSetBase* component);
+    void add(SPOSet* component);
 
     ///print out component info
     void report();
 
-    //SPOSetBase interface methods
+    //SPOSet interface methods
     ///size is determined by component sposets and nothing else
     inline void setOrbitalSetSize(int norbs) { }
 
     void resetTargetParticleSet(ParticleSet& P);
 
-    SPOSetBase* makeClone() const;
+    SPOSet* makeClone() const;
 
     /** add sposet clones from another Composite SPOSet
      *   should only be used in makeClone functions following shallow copy
@@ -92,9 +92,9 @@ namespace qmcplusplus
   {
 
     //SPOSetBuilder interface
-    SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
+    SPOSet* createSPOSetFromXML(xmlNodePtr cur);
 
-    SPOSetBase* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input);
+    SPOSet* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input);
     
   };
 }

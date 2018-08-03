@@ -15,7 +15,7 @@
     
 /** @file BsplineSet.h
  *
- * BsplineSet<SplineAdoptor> is a SPOSetBase class to work with determinant classes
+ * BsplineSet<SplineAdoptor> is a SPOSet class to work with determinant classes
  */
 #ifndef QMCPLUSPLUS_EINSPLINE_ADOPTOR_H
 #define QMCPLUSPLUS_EINSPLINE_ADOPTOR_H
@@ -28,7 +28,7 @@
 namespace qmcplusplus
 {
 
-/** BsplineSet<SplineAdoptor>, a SPOSetBase
+/** BsplineSet<SplineAdoptor>, a SPOSet
  * @tparam SplineAdoptor implements evaluation functions that matched the storage requirements.
  *
  * Equivalent to EinsplineSetExtended<Storage>
@@ -38,7 +38,7 @@ namespace qmcplusplus
  * cases.
  */
 template<typename SplineAdoptor>
-struct BsplineSet: public SPOSetBase, public SplineAdoptor
+struct BsplineSet: public SPOSet, public SplineAdoptor
 {
   typedef typename SplineAdoptor::SplineType SplineType;
   typedef typename SplineAdoptor::PointType  PointType;
@@ -47,7 +47,7 @@ struct BsplineSet: public SPOSetBase, public SplineAdoptor
   ///** default constructor */
   //BsplineSet() { }
 
-  SPOSetBase* makeClone() const
+  SPOSet* makeClone() const
   {
     return new BsplineSet<SplineAdoptor>(*this);
   }

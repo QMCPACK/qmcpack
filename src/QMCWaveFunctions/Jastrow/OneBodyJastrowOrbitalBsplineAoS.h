@@ -29,7 +29,7 @@ namespace qmcplusplus
 {
 
 class OneBodyJastrowOrbitalBsplineAoS :
-  public OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >
+  public OneBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> >
 {
 private:
   bool UsePBC;
@@ -67,7 +67,7 @@ private:
 
   int N;
 public:
-  typedef BsplineFunctor<OrbitalBase::RealType> FT;
+  typedef BsplineFunctor<WaveFunctionComponent::RealType> FT;
   typedef ParticleSet::Walker_t     Walker_t;
 
   GPU_XRAY_TRACE void resetParameters(const opt_variables_type& active);
@@ -111,7 +111,7 @@ public:
                             RealMatrix_t &dlogpsi,
                             RealMatrix_t &dlapl_over_psi);
   OneBodyJastrowOrbitalBsplineAoS(ParticleSet &centers, ParticleSet& elecs) :
-    OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > (centers,elecs),
+    OneBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> > (centers,elecs),
     ElecRef(elecs),
     L("OneBodyJastrowOrbitalBsplineAoS::L"),
     Linv("OneBodyJastrowOrbitalBsplineAoS::Linv"),

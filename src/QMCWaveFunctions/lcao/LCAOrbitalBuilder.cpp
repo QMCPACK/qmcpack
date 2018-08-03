@@ -16,7 +16,7 @@
 
 
 #include "OhmmsData/AttributeSet.h"
-#include <QMCWaveFunctions/SPOSetBase.h>
+#include <QMCWaveFunctions/SPOSet.h>
 #include <QMCWaveFunctions/lcao/NGFunctor.h>
 #include <QMCWaveFunctions/lcao/MultiQuinticSpline1D.h>
 #include "QMCWaveFunctions/lcao/SoaCartesianTensor.h"
@@ -415,7 +415,7 @@ namespace qmcplusplus
   }
 
 
-  SPOSetBase* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
+  SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     ReportEngine PRE(ClassName,"createSPO(xmlNodePtr)");
     std::string spo_name(""), id, cusp_file(""), optimize("no");

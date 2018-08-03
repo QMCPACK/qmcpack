@@ -13,7 +13,7 @@
 #ifndef QMCPLUSPLUS_LINEARORBITAL_H
 #define QMCPLUSPLUS_LINEARORBITAL_H
 
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 
 namespace qmcplusplus
 {
@@ -22,7 +22,7 @@ namespace qmcplusplus
 // phi = coeff[0]*x + coeff[1]*y + coeff[2]*z
 
 
-class LinearOrbital: public OrbitalBase
+class LinearOrbital: public WaveFunctionComponent
 {
 public:
   virtual void checkInVariables(opt_variables_type &active) {}
