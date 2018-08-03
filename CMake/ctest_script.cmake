@@ -286,15 +286,6 @@ CTEST_CONFIGURE(
 )
 
 
-IF ( DEFINED CMAKE_TOOLCHAIN_FILE )
-#need to trigger the cmake configuration twice
-CTEST_CONFIGURE(
-    BUILD   ${CTEST_BINARY_DIRECTORY}
-    SOURCE  ${CTEST_SOURCE_DIRECTORY}
-    OPTIONS "${CTEST_OPTIONS}"
-)
-ENDIF()
-
 # Run the configure, build and tests
 CTEST_BUILD()
 IF ( USE_VALGRIND )
