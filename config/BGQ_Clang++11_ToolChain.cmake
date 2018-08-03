@@ -5,7 +5,7 @@ set(GNU_OPTS "-O3 -g -ffast-math -fopenmp -fstrict-aliasing -Wno-deprecated -Wno
 set(GNU_FLAGS "-Drestrict=__restrict__ -DADD_ -DHAVE_MASS -DHAVE_MASSV -DSPLINEFLOAT -DBGQPX -D__forceinline=inline")
 set(CMAKE_CXX_FLAGS "${GNU_FLAGS} ${GNU_OPTS} -ftemplate-depth-60" CACHE STRING "" FORCE)
 set(CMAKE_C_FLAGS "${GNU_FLAGS} ${GNU_OPTS} -std=c99"  CACHE STRING "" FORCE)
-SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,--allow-multiple-definition" CACHE STRING "" FORCE)
+SET(CMAKE_EXE_LINKER_FLAGS  "-Wl,--allow-multiple-definition" CACHE STRING "" FORCE)
 
 SET(QMC_CUDA 0)
 #SET(QMC_COMPLEX 0)
