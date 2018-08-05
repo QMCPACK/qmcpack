@@ -384,21 +384,6 @@ void SPOSet::basic_report(const std::string& pad)
   app_log().flush();
 }
 
-
-void SPOSet::evaluateBasis (const ParticleSet &P, int first, int last,
-                                ValueMatrix_t &basis_val,  GradMatrix_t  &basis_grad,
-                                ValueMatrix_t &basis_lapl)
-{
-  APP_ABORT("Need specialization of SPOSet::evaluateBasis.\n");
-}
-
-void SPOSet::evaluateForDeriv (const ParticleSet &P, int first, int last,
-                                   ValueMatrix_t &basis_val,  GradMatrix_t  &basis_grad,
-                                   ValueMatrix_t &basis_lapl)
-{
-  APP_ABORT("Need specialization of SPOSet::evaluateBasis.\n");
-}
-
 void SPOSet::copyParamsFromMatrix (const opt_variables_type& active,
                                        const ValueMatrix_t &mat, std::vector<RealType> &destVec)
 {

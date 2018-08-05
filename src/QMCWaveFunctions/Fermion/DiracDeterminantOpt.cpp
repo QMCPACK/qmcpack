@@ -83,7 +83,8 @@ DiracDeterminantOpt::evaluateDerivatives(ParticleSet& P,
   // fprintf (stderr, "FirstIndex = %d  LastIndex=%d\n", FirstIndex,
   // LastIndex);
   resetParameters(active);
-  Phi->evaluateBasis (P, FirstIndex, LastIndex, BasisVals, BasisGrad, BasisLapl);
+  // Ye: comment out the following operation on Phi, to be revisited
+  //Phi->evaluateBasis (P, FirstIndex, LastIndex, BasisVals, BasisGrad, BasisLapl);
   BLAS::gemm ('N', 'T', NumBasis, NumOrbitals, NumOrbitals, 1.0,
               BasisVals.data(), NumBasis, psiM.data(), NumOrbitals,
               0.0, dlogdet_dC.data(), NumBasis);
