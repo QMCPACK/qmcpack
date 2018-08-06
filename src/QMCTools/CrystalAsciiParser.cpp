@@ -106,95 +106,6 @@ void CrystalAsciiParser::parse(const std::string &fname)
 
 }
 
-struct atzeff {
-    int atomicNum;
-    int zeff;
-    atzeff() {
-	atomicNum=0;
-	zeff=0;
-    }
-    atzeff(int a, int b) {
-	atomicNum = a;
-	zeff = b;
-    }
-};
-
-void CrystalAsciiParser::getGeometry(std::istream & is)
-{
-
-    const double ang_to_bohr = 1.0/0.529177e0;
-    tags.clear();
-    is.seekg(pivot_begin);
-    std::string aline;
-    search(is,"NUMBER OF IRREDUCIBLE ATOMS IN THE CONVENTIONAL CELL",aline);
-    parsewords(aline.c_str(),currentWords);
-    int num_irr_ats = atoi(currentWords[8].c_str());
-    search(is,"ATOM AT. N.",aline);
-    std::map<int,atzeff> convAtNum;
-    for (int i=0; i<num_irr_ats; i++)
-    {
-	getwords(currentWords,is);
-	int at = atoi(currentWords[1].c_str());
-	atzeff x(at,at);
-	convAtNum.insert(std::pair<int,atzeff>(at,x));
-    }
-
-    std::vector<int> atomic_number;
-    std::vector<int> idx(NumberOfAtoms);
-    std::map<int,int> AtomIndexmap;
-    Matrix<double> IonPos(NumberOfAtoms,3);
-    search(is,"CARTESIAN COORDINATES - PRIMITIVE CELL",aline);
-    getwords(currentWords,is);
-    getwords(currentWords,is);
-    getwords(currentWords,is);
-    for (int i=0; i<NumberOfAtoms; i++)
-    {
-	getwords(currentWords,is);
-	idx[i] = atoi(currentWords[1].c_str());
-	tags.push_back(currentWords[2]);
-	for (int d=0; d<3; d++)
-	{
-	    IonPos[i][d] = atof(currentWords[3+d].c_str())*ang_to_bohr;
-	}
-
-    }
-    for (int i=0; i<NumberOfAtoms; i++)
-    {
-	AtomIndexmap.insert(std::pair<int,int>(i,idx[i]));
-    }
-
-    //Find which of the unique atoms have ECPs to determine the Zeff and atomic number
-    if(lookFor(is,"PSEUDOPOTENTIAL INFORMATION",aline))
-    {
-	ECP=true;
-	for (int i=0; i < num_irr_ats; i++)
-	{
-	    if(lookFor(is,"ATOMIC NUMBER",aline))
-	    {
-		parsewords(aline.c_str(),currentWords);
-		int atnum = atoi(currentWords[2].c_str());
-		int zeff = atoi(currentWords[5].c_str());
-		convAtNum.at(atnum+200).atomicNum = atnum;
-		convAtNum.at(atnum+200).zeff = zeff;
-	    }
-	}
-    }
-
-    SpeciesSet & species(IonSystem.getSpeciesSet());
-    for (int i=0; i<NumberOfAtoms; i++)
-    {
-	for (int d=0; d<3; d++)
-	{
-	    IonSystem.R[i][d] = IonPos[i][d];
-	}
-	GroupName[i] = IonName[convAtNum.at(AtomIndexmap.at(i)).atomicNum];
-	int speciesID = species.addSpecies(GroupName[i]);
-	IonSystem.GroupID[i] = speciesID;
-	species(AtomicNumberIndex,speciesID)=convAtNum.at(AtomIndexmap.at(i)).atomicNum;
-	species(IonChargeIndex,speciesID)=convAtNum.at(AtomIndexmap.at(i)).zeff;
-    }
-}
-
 void CrystalAsciiParser::getCell(std::istream & is)
 {
     X.resize(3);
@@ -261,9 +172,96 @@ void CrystalAsciiParser::getKpts(std::istream& is)
     }
 }
 
-void CrystalAsciiParser::getMO(std::istream& is)
+void CrystalAsciiParser::getGeometry(std::istream & is)
 {
+
+    const double ang_to_bohr = 1.0/0.529177e0;
+    tags.clear();
+    is.seekg(pivot_begin);
+    std::string aline;
+    search(is,"NUMBER OF IRREDUCIBLE ATOMS IN THE CONVENTIONAL CELL",aline);
+    parsewords(aline.c_str(),currentWords);
+    int num_irr_ats = atoi(currentWords[8].c_str());
+    search(is,"ATOM AT. N.",aline);
+
+    struct atzeff {
+        int atomicNum;
+        int zeff;
+        atzeff() {
+    	atomicNum=0;
+    	zeff=0;
+        }
+        atzeff(int a, int b) {
+    	atomicNum = a;
+    	zeff = b;
+        }
+    };
+    
+    std::map<int,atzeff> convAtNum;
+    for (int i=0; i<num_irr_ats; i++)
+    {
+	getwords(currentWords,is);
+	int at = atoi(currentWords[1].c_str());
+	atzeff x(at,at);
+	convAtNum.insert(std::pair<int,atzeff>(at,x));
+    }
+
+    std::vector<int> atomic_number;
+    std::vector<int> idx(NumberOfAtoms);
+    std::map<int,int> AtomIndexmap;
+    Matrix<double> IonPos(NumberOfAtoms,3);
+    search(is,"CARTESIAN COORDINATES - PRIMITIVE CELL",aline);
+    getwords(currentWords,is);
+    getwords(currentWords,is);
+    getwords(currentWords,is);
+    for (int i=0; i<NumberOfAtoms; i++)
+    {
+	getwords(currentWords,is);
+	idx[i] = atoi(currentWords[1].c_str());
+	tags.push_back(currentWords[2]);
+	for (int d=0; d<3; d++)
+	{
+	    IonPos[i][d] = atof(currentWords[3+d].c_str())*ang_to_bohr;
+	}
+
+    }
+    for (int i=0; i<NumberOfAtoms; i++)
+    {
+	AtomIndexmap.insert(std::pair<int,int>(i,idx[i]));
+    }
+
+    //Find which of the unique atoms have ECPs to determine the Zeff and atomic number
+    if(lookFor(is,"PSEUDOPOTENTIAL INFORMATION",aline))
+    {
+	ECP=true;
+	for (int i=0; i < num_irr_ats; i++)
+	{
+	    if(lookFor(is,"ATOMIC NUMBER",aline))
+	    {
+		parsewords(aline.c_str(),currentWords);
+		int atnum = atoi(currentWords[2].c_str());
+		int zeff = atoi(currentWords[5].c_str());
+		convAtNum.at(atnum+200).atomicNum = atnum;
+		convAtNum.at(atnum+200).zeff = zeff;
+	    }
+	}
+    }
+
+    SpeciesSet & species(IonSystem.getSpeciesSet());
+    for (int i=0; i<NumberOfAtoms; i++)
+    {
+	for (int d=0; d<3; d++)
+	{
+	    IonSystem.R[i][d] = IonPos[i][d];
+	}
+	GroupName[i] = IonName[convAtNum.at(AtomIndexmap.at(i)).atomicNum];
+	int speciesID = species.addSpecies(GroupName[i]);
+	IonSystem.GroupID[i] = speciesID;
+	species(AtomicNumberIndex,speciesID)=convAtNum.at(AtomIndexmap.at(i)).atomicNum;
+	species(IonChargeIndex,speciesID)=convAtNum.at(AtomIndexmap.at(i)).zeff;
+    }
 }
+
 
 void CrystalAsciiParser::getGaussianCenters(std::istream& is)
 {
@@ -476,4 +474,169 @@ void CrystalAsciiParser::getGaussianCenters(std::istream& is)
     }
     gBound[NumberOfAtoms] = gtot;
 
+}
+
+void CrystalAsciiParser::getKMO(std::istream& is, std::vector< std::vector< double > > & Mat)
+{
+    int currTot = Mat.size();
+    getwords(currentWords,is);
+    getwords(currentWords,is);
+
+    std::vector<double> tmp;
+
+    while(true)
+    {
+	getwords(currentWords,is);
+	if (currentWords.size() == 0)
+	{
+	    continue;
+	}
+	else if (Mat.size() == numMO)
+	{
+	    break;
+	}
+	else
+	{
+	    int nmo = currentWords.size();
+	    getwords(currentWords,is); //empty line
+	    for (int i = 0; i < nmo; i++)
+	    {
+		Mat.push_back(tmp);
+	    }
+	    for (int i = 0; i < SizeOfBasisSet; i++)
+	    {
+		getwords(currentWords,is);
+		for (int j = 0; j < nmo; j++)
+		{
+		    Mat[currTot+j].push_back(atof(currentWords[j+1].c_str()));
+		}
+	    }
+	    currTot += nmo;
+	}
+    }
+
+}
+
+void CrystalAsciiParser::getKMO(std::istream& is, std::vector< std::vector< std::complex<double> > > & CMat)
+{
+
+    int currTot = CMat.size();
+    getwords(currentWords,is);
+    getwords(currentWords,is);
+
+    std::vector<std::complex<double> > tmp;
+
+    while(true)
+    {
+	getwords(currentWords,is);
+	if (currentWords.size() == 0)
+	{
+	    continue;
+	}
+	else if (CMat.size() == numMO)
+	{
+	    break;
+	}
+	else 
+	{
+	    int nmo = currentWords.size()/2;
+	    getwords(currentWords,is);
+	    for (int i = 0; i < nmo; i++)
+	    {
+		CMat.push_back(tmp);
+	    }
+	    for (int i = 0; i < SizeOfBasisSet; i++)
+	    {
+		getwords(currentWords,is);
+		for (int j = 0; j < nmo; j++)
+		{
+		    std::complex<double> c(atof(currentWords[2*j+1].c_str()),atof(currentWords[2*j+2].c_str()));
+		    CMat[currTot+j].push_back(c);
+		}
+	    }
+	    currTot += nmo;
+	}
+    }
+}
+
+void CrystalAsciiParser::getMO(std::istream& is)
+{
+    is.clear();
+    is.seekg(pivot_begin);
+    std::string aline;
+    std::vector<std::streampos> pivots;
+
+    search(is,"FINAL EIGENVECTORS",aline);
+    getwords(currentWords,is);
+    std::vector<bool> complexKpt;
+    while(true)
+    {
+	getwords(currentWords,is);
+	if (currentWords[0] == "EIGENVECTORS" &&
+	    currentWords[1] == "IN" &&
+	    currentWords[2] == "FORTRAN" &&
+	    currentWords[3] == "UNIT" && 
+	    currentWords[4] == "10")
+	{
+	    break;
+	}
+	else if (currentWords.size() == 5) 
+	{
+	    pivots.push_back(is.tellg());
+	    getwords(currentWords,is);
+	    getwords(currentWords,is);
+
+	    getwords(currentWords,is);
+	    if (currentWords[0] == currentWords[1])
+	    {
+	        complexKpt.push_back(true);
+	    }
+	    else
+	    {
+	        complexKpt.push_back(false);
+	    }
+	}
+    }
+
+    if (pivots.size() != NbKpts && SpinRestricted)
+    {
+	std::cerr << "Wrong number of Kpoints for SpinRestricted calculations\n";
+	abort();
+    }
+    else if (pivots.size()/2 != NbKpts && !SpinRestricted)
+    {
+	std::cerr << "Wrong number of Kpoints for SpinUnrestricted calculation\n";
+	abort();
+    }
+
+    for (int k=0; k<NbKpts; k++)
+    {
+	std::cout << "Getting Orbitals for kpt: " << k << std::endl;
+	is.seekg(pivots[k]);
+	std::vector< std::vector< double > > Mat;
+	std::vector< std::vector< std::complex<double> > > CMat;
+	if (complexKpt[k])
+	{
+	    getKMO(is,CMat);
+	}
+	else
+	{
+	    getKMO(is,Mat);
+	}
+
+	if(!SpinRestricted)
+	{
+	    std::vector< std::vector< double > > MatD;
+	    std::vector< std::vector< std::complex<double> > > CMatD;
+	    is.seekg(pivots[k+NbKpts]);
+	    if (complexKpt[k])
+	    {
+		getKMO(is,CMatD);
+	    }
+	    else
+	    {
+		getKMO(is,MatD);
+	    }
+	}
+    }
 }

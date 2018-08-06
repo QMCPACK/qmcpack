@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iomanip>
 #include <vector>
+#include <complex>
 
 class CrystalAsciiParser: public QMCGaussianParserBase,
     public OhmmsAsciiParser
@@ -29,6 +30,11 @@ public:
     void getKpts(std::istream& is);
     void getMO(std::istream& is);
     void getGaussianCenters(std::istream& is);
+
+private:
+
+    void getKMO(std::istream & is, std::vector< std::vector< double > > & Mat);
+    void getKMO(std::istream & is, std::vector< std::vector< std::complex<double> > > & CMat);
 };
 
 #endif
