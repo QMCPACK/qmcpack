@@ -232,6 +232,7 @@ ENDIF()
     LongRange/LPQHIBasis.cpp
     LongRange/LPQHISRCoulombBasis.cpp
     LongRange/EwaldHandler.cpp
+    #LongRange/EwaldHandler3D.cpp
     LongRange/LRCoulombSingleton.cpp
     )
 
