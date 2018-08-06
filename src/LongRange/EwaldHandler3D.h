@@ -127,7 +127,7 @@ public:
 
     for (int ki=0; ki<dFk_dstrain.size(); ki++)
     {
-	  dFk_dstrain[ki] = evaluateLR_dstrain(KList.kpts_cart[ki], std::sqrt(KList.ksq[ki]));
+      dFk_dstrain[ki] = evaluateLR_dstrain(KList.kpts_cart[ki], std::sqrt(KList.ksq[ki]));
     }
 
   }
@@ -186,7 +186,7 @@ public:
   inline SymTensor<mRealType, OHMMS_DIM> evaluateLR_r0_dstrain()
   {
     SymTensor<mRealType, OHMMS_DIM> stress;
-	return stress;
+    return stress;
   }
 
 private:
