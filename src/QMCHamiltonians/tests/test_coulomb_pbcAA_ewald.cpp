@@ -36,8 +36,6 @@ namespace qmcplusplus
 TEST_CASE("Coulomb PBC A-A Ewald3D", "[hamiltonian]")
 {
 
-  LRCoulombSingleton::CoulombHandler = 0;
-
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
@@ -67,24 +65,25 @@ TEST_CASE("Coulomb PBC A-A Ewald3D", "[hamiltonian]")
   ions.Lattice.copy(grid);
   ions.createSK();
 
+  LRCoulombSingleton::CoulombHandler = new EwaldHandler3D(ions);
+  LRCoulombSingleton::CoulombHandler->initBreakup(ions);
+
 
   CoulombPBCAA caa = CoulombPBCAA(ions, false);
-
   // Background charge term 
   double consts = caa.evalConsts();
-  REQUIRE(consts == Approx(-3.1151210154));
+  REQUIRE(consts == Approx(-3.142553)); // not validated
 
   double val = caa.evaluate(ions);
-  //cout << "val = " << val << std::endl;
-  REQUIRE(val == Approx(-1.418648723)); // not validated
+  REQUIRE(val == Approx(-1.418927)); // not validated
 
+  printf("!!!!!!!!!! PBC_AA EWALD TEST !!!!!!!!!!!!!!!!!!!!!!!!\n !!! const = %f val = %f\n !!!!!!!!!!!!!!!!!!!!!\n",consts,val);
 
 }
 
 TEST_CASE("Coulomb PBC A-A BCC H Ewald3D", "[hamiltonian]")
 {
 
-  LRCoulombSingleton::CoulombHandler = 0;
 
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
@@ -118,16 +117,19 @@ TEST_CASE("Coulomb PBC A-A BCC H Ewald3D", "[hamiltonian]")
   ions.Lattice.copy(grid);
   ions.createSK();
 
+  LRCoulombSingleton::CoulombHandler = new EwaldHandler3D(ions);
+  LRCoulombSingleton::CoulombHandler->initBreakup(ions);
 
   CoulombPBCAA caa = CoulombPBCAA(ions, false);
 
   // Background charge term 
   double consts = caa.evalConsts();
-  REQUIRE(consts == Approx(-1.675229452)); // not validated
+  REQUIRE(consts == Approx(-1.690675)); // not validated
 
   double val = caa.evaluate(elec);
-  //cout << "BCC H val = " << val << std::endl;
-  REQUIRE(val == Approx(-0.9628996199)); // not validated
+  REQUIRE(val == Approx(-0.963074)); // not validated
+//  REQUIRE(1== Approx(1));
+  printf("!!!!!!!!!! PBC_AA BCC-H EWALD TEST !!!!!!!!!!!!!!!!!!!!!!!!\n !!! const = %f val = %f\n !!!!!!!!!!!!!!!!!!!!!\n",consts,val);
 
 
 }
@@ -135,7 +137,6 @@ TEST_CASE("Coulomb PBC A-A BCC H Ewald3D", "[hamiltonian]")
 TEST_CASE("Coulomb PBC A-A elec Ewald3D", "[hamiltonian]")
 {
 
-  LRCoulombSingleton::CoulombHandler = 0;
 
   Communicate *c;
   OHMMS::Controller->initialize(0, NULL);
@@ -168,18 +169,19 @@ TEST_CASE("Coulomb PBC A-A elec Ewald3D", "[hamiltonian]")
   elec.createSK();
   elec.update();
 
-
+  LRCoulombSingleton::CoulombHandler = new EwaldHandler3D(elec);
+  LRCoulombSingleton::CoulombHandler->initBreakup(elec);
 
   CoulombPBCAA caa = CoulombPBCAA(elec, false);
 
   // Self-energy correction, no background charge for e-e interaction
   double consts = caa.evalConsts();
-  REQUIRE(consts == Approx(-3.064495247));
+  REQUIRE(consts == Approx(-3.090194));
 
   double val = caa.evaluate(elec);
-  //cout << "val = " << val << std::endl;
-  REQUIRE(val == Approx(-1.3680247006)); // not validated
-
+  REQUIRE(val == Approx(-1.366567)); // not validated
+//  REQUIRE(1== Approx(1));
+  printf("!!!!!!!!!! PBC_AA elec EWALD TEST !!!!!!!!!!!!!!!!!!!!!!!!\n !!! const = %f val = %f\n !!!!!!!!!!!!!!!!!!!!!\n",consts,val);
 
 }
 
