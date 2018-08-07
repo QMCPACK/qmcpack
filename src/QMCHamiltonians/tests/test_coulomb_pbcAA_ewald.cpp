@@ -77,7 +77,6 @@ TEST_CASE("Coulomb PBC A-A Ewald3D", "[hamiltonian]")
   double val = caa.evaluate(ions);
   REQUIRE(val == Approx(-1.418927)); // not validated
 
-  printf("!!!!!!!!!! PBC_AA EWALD TEST !!!!!!!!!!!!!!!!!!!!!!!!\n !!! const = %f val = %f\n !!!!!!!!!!!!!!!!!!!!!\n",consts,val);
 
 }
 
@@ -128,8 +127,6 @@ TEST_CASE("Coulomb PBC A-A BCC H Ewald3D", "[hamiltonian]")
 
   double val = caa.evaluate(elec);
   REQUIRE(val == Approx(-0.963074)); // not validated
-//  REQUIRE(1== Approx(1));
-  printf("!!!!!!!!!! PBC_AA BCC-H EWALD TEST !!!!!!!!!!!!!!!!!!!!!!!!\n !!! const = %f val = %f\n !!!!!!!!!!!!!!!!!!!!!\n",consts,val);
 
 
 }
@@ -180,8 +177,6 @@ TEST_CASE("Coulomb PBC A-A elec Ewald3D", "[hamiltonian]")
 
   double val = caa.evaluate(elec);
   REQUIRE(val == Approx(-1.366567)); // not validated
-//  REQUIRE(1== Approx(1));
-  printf("!!!!!!!!!! PBC_AA elec EWALD TEST !!!!!!!!!!!!!!!!!!!!!!!!\n !!! const = %f val = %f\n !!!!!!!!!!!!!!!!!!!!!\n",consts,val);
 
 }
 
