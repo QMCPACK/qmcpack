@@ -23,7 +23,7 @@
 #include "QMCHamiltonians/ForceChiesaPBCAA.h"
 #include "QMCHamiltonians/ForceCeperley.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-
+#include "LongRange/EwaldHandler3D.h"
 
 #include <stdio.h>
 #include <string>
@@ -34,7 +34,7 @@ namespace qmcplusplus
 {
 
 // PBC case
-TEST_CASE("Chiesa Force Ewald3D", "[hamiltonian]")
+TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
 {
 
   Communicate *c;
@@ -43,7 +43,8 @@ TEST_CASE("Chiesa Force Ewald3D", "[hamiltonian]")
 
   Uniform3DGridLayout grid;
   grid.BoxBConds = true; // periodic
-  grid.R.diagonal(5.0);
+  grid.R.diagonal(3.77945227);
+  grid.LR_dim_cutoff=40;
   grid.reset();
 
 
@@ -51,44 +52,47 @@ TEST_CASE("Chiesa Force Ewald3D", "[hamiltonian]")
   ParticleSet elec;
 
   ions.setName("ion");
-  ions.create(1);
+  ions.create(2);
   ions.R[0][0] = 0.0;
   ions.R[0][1] = 0.0;
   ions.R[0][2] = 0.0;
+  ions.R[1][0] = 1.6;
+  ions.R[1][1] = 1.6;
+  ions.R[1][2] = 1.88972614;
 
-  elec.setName("elec");
-  elec.create(2);
-  elec.R[0][0] = 0.0;
-  elec.R[0][1] = 1.0;
-  elec.R[0][2] = 0.0;
-  elec.R[1][0] = 0.4;
-  elec.R[1][1] = 0.3;
-  elec.R[1][2] = 0.0;
-
-  SpeciesSet &tspecies =  elec.getSpeciesSet();
-  int upIdx = tspecies.addSpecies("u");
-  int downIdx = tspecies.addSpecies("d");
-  //int chargeIdx = tspecies.addAttribute("charge");
-  int massIdx = tspecies.addAttribute("mass");
-  int eChargeIdx = tspecies.addAttribute("charge");
-  tspecies(eChargeIdx, upIdx) = -1.0;
-  tspecies(eChargeIdx, downIdx) = -1.0;
-  //tspecies(chargeIdx, upIdx) = -1;
-  //tspecies(chargeIdx, downIdx) = -1;
-  tspecies(massIdx, upIdx) = 1.0;
-  tspecies(massIdx, downIdx) = 1.0;
-
-  elec.Lattice.copy(grid);
-  elec.createSK();
 
   SpeciesSet &ion_species =  ions.getSpeciesSet();
   int pIdx = ion_species.addSpecies("H");
   int pChargeIdx = ion_species.addAttribute("charge");
-  int pMembersizeIdx = ion_species.addAttribute("membersize");
   ion_species(pChargeIdx, pIdx) = 1;
-  ion_species(pMembersizeIdx, pIdx) = 1;
   ions.Lattice.copy(grid);
   ions.createSK();
+
+
+  elec.Lattice.copy(grid);
+  elec.setName("elec");
+  elec.create(2);
+  elec.R[0][0] = 0.5;
+  elec.R[0][1] = 0.0;
+  elec.R[0][2] = 0.0;
+  elec.R[1][0] = 0.0;
+  elec.R[1][1] = 0.5;
+  elec.R[1][2] = 0.0;
+
+
+  SpeciesSet &tspecies =  elec.getSpeciesSet();
+  int upIdx = tspecies.addSpecies("u");
+  int downIdx = tspecies.addSpecies("d");
+  int chargeIdx = tspecies.addAttribute("charge");
+  int massIdx = tspecies.addAttribute("mass");
+  tspecies(chargeIdx, upIdx) = -1;
+  tspecies(chargeIdx, downIdx) = -1;
+  tspecies(massIdx, upIdx) = 1.0;
+  tspecies(massIdx, downIdx) = 1.0;
+
+  elec.createSK();
+
+  ParticleSetPool ptcl = ParticleSetPool(c);
 
   ions.resetGroups();
 
@@ -107,18 +111,32 @@ TEST_CASE("Chiesa Force Ewald3D", "[hamiltonian]")
   elec.update();
   ions.update();
 
+  LRCoulombSingleton::CoulombHandler = new EwaldHandler3D(ions);
+  LRCoulombSingleton::CoulombHandler->initBreakup(ions);
+  LRCoulombSingleton::CoulombDerivHandler = new EwaldHandler3D(ions);
+  LRCoulombSingleton::CoulombDerivHandler->initBreakup(ions);
+
   ForceChiesaPBCAA force(ions, elec);
   force.addionion = false;
   force.InitMatrix();
 
   force.evaluate(elec);
-  std::cout << " Force = " << force.forces << std::endl;
 
-  // Unvalidated externally
-  REQUIRE(force.forces[0][0] == Approx(3.186559306));
-  REQUIRE(force.forces[0][1] == Approx(3.352572459));
-  REQUIRE(force.forces[0][2] == Approx(0.0));
-
+  //Ion-Ion forces are validated against Quantum Espresso's ewald method:
+  REQUIRE( force.forces_IonIon[0][0] == Approx(-0.0228366 ));  
+  REQUIRE( force.forces_IonIon[0][1] == Approx(-0.0228366 ));
+  REQUIRE( force.forces_IonIon[0][2] == Approx( 0.0000000 ));
+  REQUIRE( force.forces_IonIon[1][0] == Approx( 0.0228366 ));
+  REQUIRE( force.forces_IonIon[1][1] == Approx( 0.0228366 ));
+  REQUIRE( force.forces_IonIon[1][2] == Approx( 0.0000000 ));
+  
+  //Electron-Ion forces are unvalidated externally: 
+  REQUIRE( force.forces[0][0] == Approx( 3.959178977 ));  
+  REQUIRE( force.forces[0][1] == Approx( 3.959178977 ));
+  REQUIRE( force.forces[0][2] == Approx( 0.000000000 ));
+  REQUIRE( force.forces[1][0] == Approx(-0.078308730 ));
+  REQUIRE( force.forces[1][1] == Approx(-0.078308730 ));
+  REQUIRE( force.forces[1][2] == Approx( 0.000000000 ));
 }
 
 }
