@@ -6,6 +6,20 @@
 #include <iomanip>
 #include <vector>
 #include <complex>
+#include <map>
+
+struct atzeff {
+    int atomicNum;
+    int zeff;
+    atzeff() {
+	atomicNum=0;
+	zeff=0;
+    }
+    atzeff(int a, int b) {
+	atomicNum = a;
+	zeff = b;
+    }
+};
 
 class CrystalAsciiParser: public QMCGaussianParserBase,
     public OhmmsAsciiParser
@@ -35,6 +49,12 @@ private:
 
     void getKMO(std::istream & is, std::vector< std::vector< double > > & Mat);
     void getKMO(std::istream & is, std::vector< std::vector< std::complex<double> > > & CMat);
+    void dumpHDF5();
+    std::string version;
+    int NumberOfSpecies;
+    std::map<int,atzeff> convAtNum;
+    std::map<int,int> AtomIndexmap;
+    bool IsComplex;
 };
 
 #endif

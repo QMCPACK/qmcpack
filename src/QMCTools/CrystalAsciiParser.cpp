@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 #include "QMCTools/CrystalAsciiParser.h"
-#include <map>
+#include "io/hdf_archive.h"
 
 CrystalAsciiParser::CrystalAsciiParser()
 {
@@ -19,6 +19,7 @@ CrystalAsciiParser::CrystalAsciiParser()
     BohrUnit=true;
     FixValence=true;
     SpinRestricted=true;
+    IsComplex=false;
 }
 
 CrystalAsciiParser::CrystalAsciiParser(int argc, char** argv):
@@ -29,6 +30,7 @@ CrystalAsciiParser::CrystalAsciiParser(int argc, char** argv):
     BohrUnit=true;
     FixValence=true;
     SpinRestricted=true;
+    IsComplex=false;
 }
 
 void CrystalAsciiParser::parse(const std::string &fname) 
@@ -41,8 +43,12 @@ void CrystalAsciiParser::parse(const std::string &fname)
     }
     pivot_begin=fin.tellg();
 
-
     std::string aline;
+    search(fin,"*******************************************************************************",aline);
+    getwords(currentWords,fin);
+    getwords(currentWords,fin);
+    version = currentWords[1];
+
     search(fin,"CALCULATION",aline);
     parsewords(aline.c_str(),currentWords);
     if (currentWords[0] != "CRYSTAL")
@@ -103,6 +109,8 @@ void CrystalAsciiParser::parse(const std::string &fname)
     getGaussianCenters(fin);
 
     getMO(fin);
+
+    dumpHDF5();
 
 }
 
@@ -184,20 +192,6 @@ void CrystalAsciiParser::getGeometry(std::istream & is)
     int num_irr_ats = atoi(currentWords[8].c_str());
     search(is,"ATOM AT. N.",aline);
 
-    struct atzeff {
-        int atomicNum;
-        int zeff;
-        atzeff() {
-    	atomicNum=0;
-    	zeff=0;
-        }
-        atzeff(int a, int b) {
-    	atomicNum = a;
-    	zeff = b;
-        }
-    };
-    
-    std::map<int,atzeff> convAtNum;
     for (int i=0; i<num_irr_ats; i++)
     {
 	getwords(currentWords,is);
@@ -208,7 +202,6 @@ void CrystalAsciiParser::getGeometry(std::istream & is)
 
     std::vector<int> atomic_number;
     std::vector<int> idx(NumberOfAtoms);
-    std::map<int,int> AtomIndexmap;
     Matrix<double> IonPos(NumberOfAtoms,3);
     search(is,"CARTESIAN COORDINATES - PRIMITIVE CELL",aline);
     getwords(currentWords,is);
@@ -229,6 +222,7 @@ void CrystalAsciiParser::getGeometry(std::istream & is)
     {
 	AtomIndexmap.insert(std::pair<int,int>(i,idx[i]));
     }
+
 
     //Find which of the unique atoms have ECPs to determine the Zeff and atomic number
     if(lookFor(is,"PSEUDOPOTENTIAL INFORMATION",aline))
@@ -280,6 +274,7 @@ void CrystalAsciiParser::getGaussianCenters(std::istream& is)
 	    basisDataMap[tags[i]]=nUniqAt++;
 	}
     }
+    NumberOfSpecies = basisDataMap.size();
 
     std::vector<std::vector<double> > expo(nUniqAt),coef(nUniqAt),coef2(nUniqAt);
     std::vector<int> nshll(nUniqAt,0);
@@ -569,6 +564,8 @@ void CrystalAsciiParser::getMO(std::istream& is)
     search(is,"FINAL EIGENVECTORS",aline);
     getwords(currentWords,is);
     std::vector<bool> complexKpt;
+
+    IsComplex = false;
     while(true)
     {
 	getwords(currentWords,is);
@@ -590,6 +587,7 @@ void CrystalAsciiParser::getMO(std::istream& is)
 	    if (currentWords[0] == currentWords[1])
 	    {
 	        complexKpt.push_back(true);
+		IsComplex=true;
 	    }
 	    else
 	    {
@@ -639,4 +637,85 @@ void CrystalAsciiParser::getMO(std::istream& is)
 	    }
 	}
     }
+}
+
+void CrystalAsciiParser::dumpHDF5() 
+{
+    h5file+=".h5";
+    hdf_archive hout(0);
+    hout.create(h5file.c_str(),H5F_ACC_TRUNC);
+
+    hout.push("application",true);
+    std::string code = "crystal";
+    hout.write(code,"code");
+    hout.write(version,"version");
+    hout.pop();
+
+
+    hout.push("PBC",true);
+    hout.write(PBC,"PBC");
+    hout.pop();
+
+    hout.push("atoms",true);
+    hout.write(NumberOfAtoms,"number_of_atoms");
+    hout.write(NumberOfSpecies,"number_of_species");
+
+    Matrix<double> Pos(NumberOfAtoms,3);
+    for (int i=0; i<NumberOfAtoms; i++)
+    {
+	for (int d=0; d<3; d++)
+	{
+	    Pos[i][d] = IonSystem.R[i][d];
+	}
+    }
+    hout.write(Pos,"positions");
+    for (int i=0; i < NumberOfSpecies; i++)
+    {
+	int j = 0;
+	while(j<NumberOfAtoms)
+	{
+	    if (i != IonSystem.GroupID[j])
+	    {
+		j++;
+	    }
+	    else
+	    {
+		std::string name = "species_"+std::to_string(i);
+		hout.push(name,true);
+		int at,zeff,core;
+		at = convAtNum.at(AtomIndexmap.at(j)).atomicNum;
+		zeff = convAtNum.at(AtomIndexmap.at(j)).zeff;
+		core = at-zeff;
+		hout.write(at,"atomic_number");
+		hout.write(zeff,"charge");
+		hout.write(core,"core");
+		hout.write(GroupName[j],"name");
+		hout.pop();
+		break;
+	    }
+	}
+    }
+    std::vector<int> ids(NumberOfAtoms);
+    for (int i=0; i< NumberOfAtoms; i++)
+    {
+	ids[i] = IonSystem.GroupID[i];
+    }
+    hout.write(ids,"species_ids");
+    hout.pop();
+
+    hout.push("parameters",true);
+    hout.write(ECP,"ECP");
+    hout.write(IsComplex,"IsComplex");  //THIS NEEDS TO BE CHANGED
+    hout.write(NumberOfAlpha,"NbAlpha");
+    hout.write(NumberOfBeta,"NbBeta");
+    hout.write(NumberOfEls,"NbTotElec");
+    hout.write(SpinMultiplicity,"spin");
+    bool SpinUnRestricted  = !SpinRestricted;
+    hout.write(SpinUnRestricted,"SpinUnRestricted");
+    hout.write(numMO,"numMO");
+    hout.write(numAO,"numAO");
+    hout.pop();
+
+
+    hout.close();
 }

@@ -116,6 +116,7 @@ int main(int argc, char **argv)
     {
       parser = new CrystalAsciiParser(argc,argv);
       in_file =argv[++iargc];
+      allH5=true;
     }
     else if(a == "-VSVB")
     {
