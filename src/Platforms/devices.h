@@ -140,6 +140,8 @@ inline int get_device_num()
   }
   gpu::relative_rank=relative_ranknum;
   gpu::device_group_size=num_cuda_devices[rank];
+  if (ranks_per_node[rank]<num_cuda_devices[rank]) // sanity check (can't use more GPUs than ranks per node)
+    gpu::device_group_size=ranks_per_node[rank];
   gpu::device_group_numbers=new int[gpu::device_group_size];
   gpu::device_rank_numbers=new int[gpu::device_group_size];
   int device_rank = 0;

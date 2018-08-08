@@ -24,6 +24,7 @@ cudaStream_t memoryStream;
 
 cudaEvent_t syncEvent;
 
+cudaEvent_t updateinverseSyncDiracEvent;
 cudaEvent_t gradientSyncDiracEvent;
 cudaEvent_t gradientSyncOneBodyEvent;
 cudaEvent_t gradientSyncTwoBodyEvent;

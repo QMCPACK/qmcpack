@@ -365,7 +365,7 @@ create_multi_UBspline_3d_c_cuda_conv (multi_UBspline_3d_z* spline)
       cudaSetDevice(gpu::device_group_numbers[i]);
       cudaMemcpyToSymbol(Acuda, A_h, 48*sizeof(float), 0, cudaMemcpyHostToDevice);
     }
-    cudaSetDevice(gpu::device_group_numbers[gpu::relative_rank]);
+    cudaSetDevice(gpu::device_group_numbers[gpu::relative_rank%gpu::device_group_size]);
   } else
     cudaMemcpyToSymbol(Acuda, A_h, 48*sizeof(float), 0, cudaMemcpyHostToDevice);
 
@@ -385,11 +385,12 @@ create_multi_UBspline_3d_c_cuda_conv (multi_UBspline_3d_z* spline)
     N /= gpu::device_group_size;
     if (N % gpu::device_group_size)
       N += 1;
-    spline_start = N * gpu::relative_rank;
+    spline_start = N * (gpu::relative_rank%gpu::device_group_size);
 #ifdef SPLIT_SPLINE_DEBUG
     fprintf (stderr, "splines %i - %i of %i\n",spline_start,spline_start+N,spline->num_splines);
 #endif
   }
+  cuda_spline->num_split_splines = N;
 #ifdef SPLIT_SPLINE_DEBUG
   else
     fprintf (stderr, "splines N = %i\n",N);
@@ -440,7 +441,7 @@ create_multi_UBspline_3d_c_cuda_conv (multi_UBspline_3d_z* spline)
   {
     cuda_spline->coefs = (complex_float *) gpu::cuda_memory_manager.allocate(size_GPU, "SPO_multi_UBspline_3d_c_cuda");
 #ifdef SPLIT_SPLINE_DEBUG
-    fprintf (stderr, "Rank %i: Allocating memory for splines (%lu of %lu Bytes on GPU #%i of %i, %p).\n",gpu::rank,size_GPU,Nx*Ny*Nz*spline->num_splines*sizeof(std::complex<float>),gpu::relative_rank+1,gpu::device_group_size,cuda_spline->coefs);
+    fprintf (stderr, "Rank %i: Allocating memory for splines (%lu of %lu Bytes on GPU #%i of %i, %p).\n",gpu::rank,size_GPU,Nx*Ny*Nz*spline->num_splines*sizeof(std::complex<float>),gpu::relative_rank%gpu::device_group_size+1,gpu::device_group_size,cuda_spline->coefs);
 #endif
     std::complex<float> *spline_buff = (std::complex<float>*)malloc(size_GPU);
     if (!spline_buff) {
@@ -741,7 +742,7 @@ create_multi_UBspline_3d_d_cuda (multi_UBspline_3d_d* spline)
       cudaSetDevice(gpu::device_group_numbers[i]);
       cudaMemcpyToSymbol(Bcuda, B_h, 48*sizeof(float), 0, cudaMemcpyHostToDevice);
     }
-    cudaSetDevice(gpu::device_group_numbers[gpu::relative_rank]);
+    cudaSetDevice(gpu::device_group_numbers[gpu::relative_rank%gpu::device_group_size]);
   } else
     cudaMemcpyToSymbol(Bcuda, B_h, 48*sizeof(float), 0, cudaMemcpyHostToDevice);
 
@@ -821,7 +822,7 @@ create_multi_UBspline_3d_z_cuda (multi_UBspline_3d_z* spline)
       cudaSetDevice(gpu::device_group_numbers[i]);
       cudaMemcpyToSymbol(Bcuda, B_h, 48*sizeof(float), 0, cudaMemcpyHostToDevice);
     }
-    cudaSetDevice(gpu::device_group_numbers[gpu::relative_rank]);
+    cudaSetDevice(gpu::device_group_numbers[gpu::relative_rank%gpu::device_group_size]);
   } else
     cudaMemcpyToSymbol(Bcuda, B_h, 48*sizeof(float), 0, cudaMemcpyHostToDevice);
 

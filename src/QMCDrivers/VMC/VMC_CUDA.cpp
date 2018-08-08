@@ -164,8 +164,10 @@ bool VMCcuda::run()
   // First do warmup steps
   for (int step=0; step<nWarmupSteps; step++)
   {
+#ifdef SPLIT_SPLINE_DEBUG
     if (gpu::rank==1)
       std::cerr << "Before advanceWalkers(), step " << step << "\n";
+#endif
     advanceWalkers();
   }
 

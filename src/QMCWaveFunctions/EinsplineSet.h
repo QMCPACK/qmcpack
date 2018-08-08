@@ -289,11 +289,10 @@ protected:
   CudaSplineType *CudaMultiSpline;
   gpu::device_vector<CudaStorageType> CudaValueVector, CudaGradLaplVector;
   gpu::device_vector<CudaStorageType*> CudaValuePointers, CudaGradLaplPointers;
-  std::vector<gpu::device_vector<CudaStorageType>> CudaSplitValueVector, CudaSplitGradLaplVector;
-  std::vector<gpu::device_vector<CudaStorageType*>> CudaSplitValuePointers, CudaSplitGradLaplPointers;
   std::vector<cudaIpcMemHandle_t> spline_rank_handles;
   std::vector<CudaStorageType*> spline_rank_pointers;
   std::vector<cudaEvent_t> spline_events;
+  std::vector<cudaStream_t> spline_streams;
   int abort_counter=0;
   void resize_cuda(int numWalkers);
   void get_split_spline_pointers();
@@ -306,8 +305,8 @@ protected:
   void applyPhaseFactors (gpu::device_vector<CudaStorageType*> &storageVector,
                           gpu::device_vector<CudaRealType*> &phi);
   // Data for vectorized evaluations
-  std::vector<CudaPosType> hostPos;
-  gpu::host_vector<CudaPosType> NLhostPos;
+//  std::vector<CudaPosType> hostPos;
+  gpu::host_vector<CudaPosType> hostPos, NLhostPos;
   gpu::device_vector<CudaPosType> cudapos, cudapos2, NLcudapos;
   gpu::host_vector<CudaRealType> hostSign, NLhostSign;
   gpu::device_vector<CudaRealType> cudaSign, NLcudaSign;
