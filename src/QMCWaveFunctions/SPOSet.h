@@ -190,12 +190,10 @@ public:
   virtual ValueType RATIO(const ParticleSet& P, int iat, const ValueType*
       restrict arow);
 
-  /** evaluate VGL using SoA container for gl
-   *
-   * If newp is true, use particle set data for the proposed move
+  /** evaluate VGL of SPOs using SoA container for gl
    */
   virtual void
-    evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bool newp);
+    evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl);
 
   /** evaluate values for the virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set

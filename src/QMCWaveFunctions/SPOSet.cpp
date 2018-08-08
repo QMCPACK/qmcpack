@@ -55,7 +55,7 @@ SPOSet::RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
   return ValueType();
 }
 
-void SPOSet::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bool newp)
+void SPOSet::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
 {
   APP_ABORT("SPOSet::evaluateVGL not implemented.");
 }
