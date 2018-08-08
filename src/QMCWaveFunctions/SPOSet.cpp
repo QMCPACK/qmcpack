@@ -408,12 +408,6 @@ void SPOSet::evaluateGradSource (const ParticleSet &P, int first, int last,
 
 #ifdef QMC_CUDA
 
-void SPOSet::evaluate(const ParticleSet& P, const PosType& r, std::vector<RealType> &psi)
-{
-  APP_ABORT("Not implemented.\n");
-}
-
-
 void SPOSet::evaluate (std::vector<Walker_t*> &walkers, int iat,
                            gpu::device_vector<CudaValueType*> &phi)
 {

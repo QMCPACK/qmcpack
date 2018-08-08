@@ -290,14 +290,6 @@ public:
 
 #ifdef QMC_CUDA
 
-  /** evaluate the values of this single-particle orbital set
-   * @param P current ParticleSet
-   * @param r is the position of the particle
-   * @param psi values of the SPO
-   */
-  virtual void
-  evaluate (const ParticleSet& P, const PosType& r, std::vector<RealType> &psi);
-
   virtual void initGPU() {  }
 
   //////////////////////////////////////////
