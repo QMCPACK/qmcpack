@@ -49,7 +49,7 @@ fi
 # because Andreas tells me (and I observe) that GPU builds are unstable with Cmake
 make -j 1
 make -j 24
-ctest -VV -L unit
+ctest -L unit
 
 
 echo ""
@@ -67,7 +67,7 @@ cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE
 
 make -j 1
 make -j 24
-ctest -VV -L unit
+ctest -L unit
 
 
 echo ""
@@ -85,7 +85,7 @@ cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER="mpicc" -DCMAKE
 
 make -j 1
 make -j 24
-ctest -VV -L unit
+ctest -L unit
 
 echo ""
 echo ""
@@ -102,7 +102,7 @@ cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE
 
 make -j 1
 make -j 24
-ctest -VV -L unit
+ctest -L unit
 
 EOF
 
