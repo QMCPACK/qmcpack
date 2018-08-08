@@ -384,12 +384,6 @@ void SPOSet::basic_report(const std::string& pad)
   app_log().flush();
 }
 
-void SPOSet::copyParamsFromMatrix (const opt_variables_type& active,
-                                       const ValueMatrix_t &mat, std::vector<RealType> &destVec)
-{
-  APP_ABORT("Need specialization of SPOSet::copyParamsFromMatrix.");
-}
-
 void SPOSet::evaluateGradSource (const ParticleSet &P
                                      , int first, int last, const ParticleSet &source
                                      , int iat_src, GradMatrix_t &gradphi)

@@ -261,9 +261,6 @@ public:
                                    , const ParticleSet &source, int iat_src
                                    , GradMatrix_t &grad_phi, HessMatrix_t &grad_grad_phi, GradMatrix_t &grad_lapl_phi);
 
-  virtual void copyParamsFromMatrix (const opt_variables_type& active
-                                     , const ValueMatrix_t &mat, std::vector<RealType> &destVec);
-
   virtual PosType get_k(int orb)
   {
     return PosType();
