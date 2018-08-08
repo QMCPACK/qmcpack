@@ -77,6 +77,9 @@ TEST_CASE("Coulomb PBC A-A Ewald3D", "[hamiltonian]")
   double val = caa.evaluate(ions);
   REQUIRE(val == Approx(-1.418927)); // not validated
 
+  delete LRCoulombSingleton::CoulombHandler;
+  LRCoulombSingleton::CoulombHandler=0;
+
 
 }
 
@@ -128,6 +131,8 @@ TEST_CASE("Coulomb PBC A-A BCC H Ewald3D", "[hamiltonian]")
   double val = caa.evaluate(elec);
   REQUIRE(val == Approx(-0.963074)); // not validated
 
+  delete LRCoulombSingleton::CoulombHandler;
+  LRCoulombSingleton::CoulombHandler=0;
 
 }
 
@@ -178,6 +183,8 @@ TEST_CASE("Coulomb PBC A-A elec Ewald3D", "[hamiltonian]")
   double val = caa.evaluate(elec);
   REQUIRE(val == Approx(-1.366567)); // not validated
 
+  delete LRCoulombSingleton::CoulombHandler;
+  LRCoulombSingleton::CoulombHandler=0;
 }
 
 

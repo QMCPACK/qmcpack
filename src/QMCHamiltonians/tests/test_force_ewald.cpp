@@ -137,6 +137,15 @@ TEST_CASE("Chiesa Force BCC H Ewald3D", "[hamiltonian]")
   REQUIRE( force.forces[1][0] == Approx(-0.078308730 ));
   REQUIRE( force.forces[1][1] == Approx(-0.078308730 ));
   REQUIRE( force.forces[1][2] == Approx( 0.000000000 ));
+
+  
+  delete LRCoulombSingleton::CoulombHandler;
+  LRCoulombSingleton::CoulombHandler=0;
+ 
+  delete LRCoulombSingleton::CoulombDerivHandler;
+  LRCoulombSingleton::CoulombDerivHandler=0;
+ 
+  
 }
 
 }

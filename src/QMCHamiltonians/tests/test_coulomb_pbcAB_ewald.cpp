@@ -117,8 +117,8 @@ TEST_CASE("Coulomb PBC A-B Ewald3D", "[hamiltonian]")
   REQUIRE(sum == Approx(-2.741436)); // Can be validated via Ewald summation elsewhere
                                         // -2.74136517454081
 
-//  REQUIRE(1==Approx(1));
-//  printf(" !!!!!! PBC AB : val_ee = %f val_ii = %f v_ei = %f  sum = %f\n",val_ee, val_ii, val_ei, sum);
+  delete LRCoulombSingleton::CoulombHandler;
+  LRCoulombSingleton::CoulombHandler=0;
 }
 
 TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
@@ -208,8 +208,9 @@ TEST_CASE("Coulomb PBC A-B BCC H Ewald3D", "[hamiltonian]")
   REQUIRE(val_ii == Approx(-0.907659));
   REQUIRE(   sum == Approx(-3.143880));  // Can be validated via Ewald summation elsewhere
                                         // -3.14349127313640
-//  REQUIRE(1==Approx(1));
-//  printf(" !!!!!! PBC AB BCC H: val_ee = %f val_ii = %f v_ei = %f  sum = %f\n",val_ee, val_ii, val_ei, sum);
+
+  delete LRCoulombSingleton::CoulombHandler;
+  LRCoulombSingleton::CoulombHandler=0;
 }
 
 }
