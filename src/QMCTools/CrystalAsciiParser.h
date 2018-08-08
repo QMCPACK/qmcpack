@@ -55,6 +55,12 @@ private:
     std::map<int,atzeff> convAtNum;
     std::map<int,int> AtomIndexmap;
     bool IsComplex;
+    std::map<std::string,int> basisDataMap;
+    std::vector<std::vector<double> > expo,coef;
+    std::vector<int> nshll;
+    std::vector<std::vector<int> > ncoeffpershell;
+    std::vector<std::vector<std::string> > shID;
+    std::map<std::string,int> gsMap;
 };
 
 #endif

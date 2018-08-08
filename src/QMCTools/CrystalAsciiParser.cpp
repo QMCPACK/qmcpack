@@ -276,11 +276,12 @@ void CrystalAsciiParser::getGaussianCenters(std::istream& is)
     }
     NumberOfSpecies = basisDataMap.size();
 
-    std::vector<std::vector<double> > expo(nUniqAt),coef(nUniqAt),coef2(nUniqAt);
-    std::vector<int> nshll(nUniqAt,0);
-    std::vector<std::vector<int> > ncoeffpershell(nUniqAt);
-    std::vector<std::vector<std::string> > shID(nUniqAt);
-    std::map<std::string,int> gsMap;
+    expo.resize(nUniqAt);
+    coef.resize(nUniqAt);
+    nshll.resize(nUniqAt,0);
+    ncoeffpershell.resize(nUniqAt);
+    shID.resize(nUniqAt);
+
     gsMap[std::string("S")]=1;
     gsMap[std::string("SP")]=2;
     gsMap[std::string("P")]=3;
@@ -429,12 +430,6 @@ void CrystalAsciiParser::getGaussianCenters(std::istream& is)
 			}
 			ncoeffpershell[currPos][nshll[currPos]-1]++;
 			shID[currPos][nshll[currPos]-1] = type;
-		    }
-		    if (debug)
-		    {
-		        std::cout << currPos<< ":"<< expo[currPos].back() << " " << coef[currPos].back() << " " 
-		    	          << ncoeffpershell[currPos][nshll[currPos]]
-		    	          << " " << shID[currPos][nshll[currPos]] << std::endl;
 		    }
 		}
 	    }
@@ -703,6 +698,17 @@ void CrystalAsciiParser::dumpHDF5()
     hout.write(ids,"species_ids");
     hout.pop();
 
+    hout.push("Cell",true);
+    Matrix<double> cell(3,3);
+    for (int d = 0; d<3; d++)
+    {
+	cell[0][d] = X[d];
+	cell[1][d] = Y[d];
+	cell[2][d] = Z[d];
+    }
+    hout.write(cell,"LatticeVectors");
+    hout.pop();
+
     hout.push("parameters",true);
     hout.write(ECP,"ECP");
     hout.write(IsComplex,"IsComplex");  //THIS NEEDS TO BE CHANGED
@@ -716,6 +722,69 @@ void CrystalAsciiParser::dumpHDF5()
     hout.write(numAO,"numAO");
     hout.pop();
 
+    hout.push("basisset",true);
+    int NbElements = shID.size();
+    hout.write(NbElements,"NbElements");
+    std::map<std::string,int> str_to_l;
+    str_to_l.insert(std::pair<std::string,int>("S",0));
+    str_to_l.insert(std::pair<std::string,int>("P",1));
+    str_to_l.insert(std::pair<std::string,int>("D",2));
+    str_to_l.insert(std::pair<std::string,int>("F",3));
+    str_to_l.insert(std::pair<std::string,int>("G",4));
+
+    for (int i=0; i<shID.size(); i++)
+    {
+	std::string basis = "atomicBasisSet"+std::to_string(i);
+	hout.push(basis,true);
+	int NbBasisGroups = shID[i].size()-1; 
+	hout.write(NbBasisGroups,"NbBasisGroups");
+	std::string angular = "spherical";
+	hout.write(angular,"angular");
+
+	int count = 0;
+	for (int j = 0; j < NbBasisGroups; j++)
+	{
+	    std::string basisGroup = "basisGroup"+std::to_string(j);
+	    hout.push(basisGroup,true);
+	    int NbRadFunc = ncoeffpershell[i][j];
+	    hout.write(NbRadFunc,"NbRadFunc");
+	    std::vector<int> shell(3,0);
+	    hout.write(shell,"Shell_coord");
+	    int l = str_to_l.at(shID[i][j]);
+	    hout.write(l,"l");
+	    hout.write(j,"n");
+	    hout.push("radfunctions",true);
+	    for (int k = 0; k < NbRadFunc; k++)
+	    {
+		std::string DataRad = "DataRad"+std::to_string(k);
+		hout.push(DataRad,true);
+		hout.write(coef[i][count],"contraction");
+		hout.write(expo[i][count],"exponent");
+		hout.pop(); //end DataRad
+		count++;
+	    }
+	    hout.pop(); //end radfunctions
+	    std::string cnl = "C"+std::to_string(j)+std::to_string(l);
+	    hout.write(cnl,"rid");
+	    std::string type = "Gaussian";
+	    hout.write(type,"type");
+	    hout.pop(); //end  basisGroup
+	}
+        hout.pop(); //end atomicBasisSet
+    }
+    hout.pop(); //end basisset
+
+    hout.push("Nb_KPTS",true);
+    hout.write(NbKpts,"Nbkpts");
+    hout.pop();
+
+    for (int k=0; k< NbKpts; k++)
+    {
+	std::string kpt = "KPTS_"+std::to_string(k);
+	hout.push(kpt,true);
+
+	hout.pop();
+    }
 
     hout.close();
 }
