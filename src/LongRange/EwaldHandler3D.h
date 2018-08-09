@@ -112,8 +112,7 @@ public:
   {
     Fkgstrain.resize(KList.kpts_cart.size());
     const std::vector<int>& kshell(KList.kshell);
-    if(MaxKshell >= kshell.size())
-      MaxKshell=kshell.size()-1;
+    MaxKshell=kshell.size()-1;
     for(int ks=0,ki=0; ks<MaxKshell; ks++)
     {
       mRealType uk=evalYkgstrain(std::sqrt(KList.ksq[ki]));
