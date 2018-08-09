@@ -45,7 +45,7 @@ template<typename ST, unsigned D>
 class BsplineDeviceCPU : BsplineDevice<BsplineDeviceCPU<ST,D>, ST, D>
 {
 public:
-  using SingpleBsplineType=UBspline_3d_d;
+  using SingleBsplineType=UBspline_3d_d;
   void implementation()
   {
     std::cout<< "implemented for CUDA\n";

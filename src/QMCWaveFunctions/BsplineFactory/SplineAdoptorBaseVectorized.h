@@ -50,7 +50,7 @@ class SplineAdoptorBaseVectorized
 public:
   //static_assert(std::is_base_of<BsplineDevice<DEVICE, ST, D>, DEVICE>, "DEVICE must inherit from BsplineDevice");
   using PointType=TinyVector<ST,D>;
-  using SingleSplineType=DEVICE::SingleBsplineType;
+  using SingleSplineType = typename DEVICE<ST,D>::SingleBsplineType;
   using DataType=ST; 
 
   DEVICE<ST,D> bspline_dev;

@@ -28,7 +28,7 @@ class BsplineDeviceCUDA : BsplineDevice<BsplineDeviceCUDA<ST,D>, ST, D>
 {
 public:
   //So on the host side we still use
-  using SingpleBsplineType=UBspline_3d_d;
+  using SingleBsplineType=UBspline_3d_d;
   
   void implementation()
   {

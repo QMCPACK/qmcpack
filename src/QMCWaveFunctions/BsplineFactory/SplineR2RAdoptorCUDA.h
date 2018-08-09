@@ -32,7 +32,7 @@ namespace qmcplusplus
  * Requires temporage storage and multiplication of phase vectors
  */
 template<typename ST, typename TT>
-class SplineR2RAdoptorCUDA: public SplineAdoptorBaseVectorized<BsplineDeviceCUDA, ST,3 >
+class SplineR2RAdoptorCUDA: public SplineAdoptorBaseVectorized<BsplineDeviceCUDA, ST,3>
 {
 public:
   //Dimensionality
@@ -47,7 +47,7 @@ public:
 
   using BaseType::first_spo;
   using BaseType::last_spo;
-  using SplineAdoptorBase<ST,D>::HalfG;
+  using SplineAdoptorBaseVectorized<BsplineDeviceCUDA, ST, D>::HalfG;
   using BaseType::GGt;
   using BaseType::PrimLattice;
   using BaseType::kPoints;
