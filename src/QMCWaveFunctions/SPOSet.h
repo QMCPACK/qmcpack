@@ -38,10 +38,10 @@ namespace qmcplusplus
 
 /** base class for Single-particle orbital sets
  *
- * SPOSetBase stands for S(ingle)P(article)O(rbital)SetBase which contains
+ * SPOSet stands for S(ingle)P(article)O(rbital)SetBase which contains
  * a number of single-particle orbitals with capabilities of evaluating \f$ \psi_j({\bf r}_i)\f$
  */
-class SPOSetBase: public QMCTraits
+class SPOSet: public QMCTraits
 {
 public:
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
@@ -58,7 +58,7 @@ public:
   typedef OrbitalSetTraits<ValueType>::GradHessMatrix_t GGGMatrix_t;
   typedef OrbitalSetTraits<ValueType>::VGLVector_t      VGLVector_t;
   typedef ParticleSet::Walker_t                      Walker_t;
-  typedef std::map<std::string,SPOSetBase*> SPOPool_t;
+  typedef std::map<std::string,SPOSet*> SPOPool_t;
   
   ///index in the builder list of sposets
   int builder_index;
@@ -76,7 +76,7 @@ public:
   std::string className;
   /** name of the object
    *
-   * Several user classes can own SPOSetBase and use objectName as counter
+   * Several user classes can own SPOSet and use objectName as counter
    */
   std::string objectName;
 #if !defined(ENABLE_SOA)
@@ -98,10 +98,10 @@ public:
 #endif
   
   /** constructor */
-  SPOSetBase();
+  SPOSet();
 
   /** destructor */
-  virtual ~SPOSetBase()
+  virtual ~SPOSet()
   {
 #if !defined(ENABLE_SOA)
     if(!IsCloned && C!= nullptr) delete C;
@@ -173,7 +173,7 @@ public:
   virtual void
   evaluate (const ParticleSet& P, PosType &r, ValueVector_t &psi)
   {
-    app_error() << "Need specialization for SPOSetBase::evaluate "
+    app_error() << "Need specialization for SPOSet::evaluate "
                 << "(const ParticleSet& P, PosType &r).\n";
     abort();
   }
@@ -190,12 +190,10 @@ public:
   virtual ValueType RATIO(const ParticleSet& P, int iat, const ValueType*
       restrict arow);
 
-  /** evaluate VGL using SoA container for gl
-   *
-   * If newp is true, use particle set data for the proposed move
+  /** evaluate VGL of SPOs using SoA container for gl
    */
   virtual void
-    evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bool newp);
+    evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl);
 
   /** evaluate values for the virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
@@ -263,17 +261,6 @@ public:
                                    , const ParticleSet &source, int iat_src
                                    , GradMatrix_t &grad_phi, HessMatrix_t &grad_grad_phi, GradMatrix_t &grad_lapl_phi);
 
-  virtual void evaluateBasis (const ParticleSet &P, int first, int last
-                              , ValueMatrix_t &basis_val,  GradMatrix_t  &basis_grad, ValueMatrix_t &basis_lapl);
-
-  virtual void evaluateForDeriv (const ParticleSet &P, int first, int last
-                                 , ValueMatrix_t &basis_val,  GradMatrix_t  &basis_grad, ValueMatrix_t &basis_lapl);
-
-  virtual inline void setpm(int x) {};
-
-  virtual void copyParamsFromMatrix (const opt_variables_type& active
-                                     , const ValueMatrix_t &mat, std::vector<RealType> &destVec);
-
   virtual PosType get_k(int orb)
   {
     return PosType();
@@ -281,7 +268,7 @@ public:
 
   /** make a clone of itself
    */
-  virtual SPOSetBase* makeClone() const;
+  virtual SPOSet* makeClone() const;
 
   virtual bool transformSPOSet()
   {
@@ -297,14 +284,6 @@ public:
   virtual void rotate_B(const std::vector<RealType> &rot_mat) { };
 
 #ifdef QMC_CUDA
-
-  /** evaluate the values of this single-particle orbital set
-   * @param P current ParticleSet
-   * @param r is the position of the particle
-   * @param psi values of the SPO
-   */
-  virtual void
-  evaluate (const ParticleSet& P, const PosType& r, std::vector<RealType> &psi);
 
   virtual void initGPU() {  }
 
@@ -343,9 +322,9 @@ protected:
 };
 
 #if defined(ENABLE_SMARTPOINTER)
-typedef boost::shared_ptr<SPOSetBase> SPOSetBasePtr;
+typedef boost::shared_ptr<SPOSet> SPOSetPtr;
 #else
-typedef SPOSetBase*                   SPOSetBasePtr;
+typedef SPOSet*                   SPOSetPtr;
 #endif
 
 }

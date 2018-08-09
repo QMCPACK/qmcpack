@@ -20,7 +20,7 @@
 
 #include "Configuration.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/AtomicOrbital.h"
 #include "QMCWaveFunctions/MuffinTin.h"
 #include "Utilities/NewTimer.h"
@@ -35,7 +35,7 @@ namespace qmcplusplus
 
 class EinsplineSetBuilder;
 
-class EinsplineSet : public SPOSetBase
+class EinsplineSet : public SPOSet
 {
   friend class EinsplineSetBuilder;
 public:
@@ -426,7 +426,7 @@ public:
   }
 
 
-  SPOSetBase* makeClone() const;
+  SPOSet* makeClone() const;
 
   EinsplineSetExtended() :
     ValueTimer  ("EinsplineSetExtended::ValueOnly"),
@@ -577,7 +577,7 @@ public:
 
   std::string Type();
 
-  GPU_XRAY_TRACE SPOSetBase* makeClone() const;
+  GPU_XRAY_TRACE SPOSet* makeClone() const;
 
   GPU_XRAY_TRACE EinsplineSetHybrid();
 };

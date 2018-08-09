@@ -80,6 +80,12 @@
   basicstyle=\ttfamily,
   columns=fullflexible}}{}
 
+%% Default verbatim uses a rather large
+\makeatletter
+\newcommand{\verbatimfont}[1]{\renewcommand{\verbatim@font}{\ttfamily#1}}
+\makeatother
+
+
 %% \newenvironment{shade}
 %%    {\HCode{<div class='code'>}\verbatim}
 %%    {\endverbatim\HCode{</div>}}
@@ -185,11 +191,13 @@
 
 \input{output_overview}
 \input{analysis}
-
+\input{gaussian_orbitals_solids}
 \input{selected_ci}
 
 \input{afqmc}
 \input{integrals_for_afqmc}
+
+
 
 \input{examples}
 

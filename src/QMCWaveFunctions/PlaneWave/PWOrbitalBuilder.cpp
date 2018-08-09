@@ -30,7 +30,7 @@ namespace qmcplusplus
 {
 
 PWOrbitalBuilder::PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets)
-  : OrbitalBuilderBase(els,psi), ptclPool(psets), hfileID(-1), rootNode(NULL)
+  : WaveFunctionComponentBuilder(els,psi), ptclPool(psets), hfileID(-1), rootNode(NULL)
 #if !defined(ENABLE_SMARTPOINTER)
   ,myBasisSet(0)
 #endif
@@ -127,13 +127,13 @@ bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
       if(ref == "0")
         ref=id;
       int firstIndex=targetPtcl.first(spin_group);
-      std::map<std::string,SPOSetBasePtr>::iterator lit(spomap.find(ref));
+      std::map<std::string,SPOSetPtr>::iterator lit(spomap.find(ref));
       Det_t* adet=0;
       //int spin_group=0;
       if(lit == spomap.end())
       {
         app_log() << "  Create a PWOrbitalSet" << std::endl;;
-        SPOSetBasePtr psi(createPW(cur,spin_group));
+        SPOSetPtr psi(createPW(cur,spin_group));
         sdet->add(psi,ref);
         spomap[ref] = psi;
         adet = new Det_t(psi,firstIndex);
@@ -235,7 +235,7 @@ bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
   return true;
 }
 
-SPOSetBase*
+SPOSet*
 PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
 {
   int nb=targetPtcl.last(spinIndex)-targetPtcl.first(spinIndex);

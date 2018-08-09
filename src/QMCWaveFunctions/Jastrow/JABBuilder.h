@@ -14,7 +14,7 @@
     
 #ifndef QMCPLUSPLUS_ORIGINAL_JASTROW_AB_BUILDER_H
 #define QMCPLUSPLUS_ORIGINAL_JASTROW_AB_BUILDER_H
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 
 namespace qmcplusplus
 {
@@ -26,11 +26,11 @@ class ParticleSet;
  *
  * Replacement of JastrowBuilder::createTwoBodySpin and JastrowBuilder::createTwoBodyNoSpin
  */
-struct JABBuilder: public OrbitalBuilderBase
+struct JABBuilder: public WaveFunctionComponentBuilder
 {
 
   JABBuilder(ParticleSet& p, TrialWaveFunction& psi,
-             PtclPoolType& psets):OrbitalBuilderBase(p,psi), ptclPool(psets) {}
+             PtclPoolType& psets):WaveFunctionComponentBuilder(p,psi), ptclPool(psets) {}
 
   bool put(xmlNodePtr cur);
 

@@ -24,7 +24,7 @@
  * - SplineC2RAdoptor<ST,TT,D> : real wavefunction using complex einspline, tiling
  * - SplineC2CAdoptor<ST,TT,D> : complex wavefunction using complex einspline, tiling
  * - SplineR2RAdoptor<ST,TT,D> : real wavefunction using real einspline, a single twist
- * where ST (TT) is the precision of the einspline (SPOSetBase).
+ * where ST (TT) is the precision of the einspline (SPOSet).
  *
  * typedefs and data members are duplicated for each adoptor class.
  * @todo Specalization and optimization for orthorhombic cells to use vgl not vgh

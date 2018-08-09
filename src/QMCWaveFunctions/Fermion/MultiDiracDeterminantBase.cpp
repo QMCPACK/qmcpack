@@ -309,7 +309,7 @@ void MultiDiracDeterminantBase::restore(int iat)
 
 // this has been fixed
 MultiDiracDeterminantBase::MultiDiracDeterminantBase(const MultiDiracDeterminantBase& s):
-  OrbitalBase(s), NP(0), FirstIndex(s.FirstIndex),ciConfigList(nullptr),
+  WaveFunctionComponent(s), NP(0), FirstIndex(s.FirstIndex),ciConfigList(nullptr),
   UpdateTimer("MultiDiracDeterminantBase::update"),
   RatioTimer("MultiDiracDeterminantBase::ratio"),
   InverseTimer("MultiDiracDeterminantBase::inverse"),
@@ -337,12 +337,12 @@ MultiDiracDeterminantBase::MultiDiracDeterminantBase(const MultiDiracDeterminant
   this->DetCalculator.resize(s.NumPtcls);
 }
 
-SPOSetBasePtr  MultiDiracDeterminantBase::clonePhi() const
+SPOSetPtr  MultiDiracDeterminantBase::clonePhi() const
 {
   return Phi->makeClone();
 }
 
-OrbitalBasePtr MultiDiracDeterminantBase::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr MultiDiracDeterminantBase::makeClone(ParticleSet& tqp) const
 {
   APP_ABORT(" Illegal action. Cannot use MultiDiracDeterminantBase::makeClone");
   return 0;
@@ -352,7 +352,7 @@ OrbitalBasePtr MultiDiracDeterminantBase::makeClone(ParticleSet& tqp) const
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-MultiDiracDeterminantBase::MultiDiracDeterminantBase(SPOSetBasePtr const &spos, int first):
+MultiDiracDeterminantBase::MultiDiracDeterminantBase(SPOSetPtr const &spos, int first):
   NP(0),Phi(spos),FirstIndex(first),ReferenceDeterminant(0), ciConfigList(nullptr),
   UpdateTimer("MultiDiracDeterminantBase::update"),
   RatioTimer("MultiDiracDeterminantBase::ratio"),

@@ -55,7 +55,7 @@ namespace qmcplusplus
 
 SlaterDetBuilder::SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi,
                                    PtclPoolType& psets)
-  : OrbitalBuilderBase(els,psi), ptclPool(psets)
+  : WaveFunctionComponentBuilder(els,psi), ptclPool(psets)
   , mySPOSetBuilderFactory(0), slaterdet_0(0), multislaterdet_0(0)
   , multislaterdetfast_0(0)
 {
@@ -90,7 +90,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   xmlNodePtr BFnode;
   bool success=true, FastMSD=true;
   std::string cname, tname;
-  std::map<std::string,SPOSetBasePtr> spomap;
+  std::map<std::string,SPOSetPtr> spomap;
   bool multiDet=false;
 
   if (mySPOSetBuilderFactory == 0)
@@ -117,7 +117,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       spoAttrib.add (spo_name, "name");
       spoAttrib.put(cur);
       app_log() << "spo_name = " << spo_name << std::endl;
-      SPOSetBasePtr spo = mySPOSetBuilderFactory->createSPOSet(cur);
+      SPOSetPtr spo = mySPOSetBuilderFactory->createSPOSet(cur);
       //spo->put(cur, spomap);
       if (spomap.find(spo_name) != spomap.end())
       {
@@ -172,7 +172,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
             a.add(aspo,"sposet");
             a.put(cur1);
             if(aspo.empty()) aspo=did;
-            SPOSetBase* aset=get_sposet(aspo);
+            SPOSet* aset=get_sposet(aspo);
             if(aset) 
               spomap[aspo]=aset;
             else
@@ -193,8 +193,8 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         a.add (spo_alpha, "spo_up");
         a.add (spo_beta, "spo_dn");
         a.put(cur);
-        SPOSetBase* alpha=get_sposet(spo_alpha);
-        SPOSetBase* beta=get_sposet(spo_beta);
+        SPOSet* alpha=get_sposet(spo_alpha);
+        SPOSet* beta=get_sposet(spo_beta);
         if(alpha && beta)
         { 
           spomap[spo_alpha]=alpha;
@@ -243,7 +243,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         slaterdet_0 = new SlaterDeterminant_t(targetPtcl);
 
       // Copy any entries in sposetmap into slaterdet_0
-      std::map<std::string,SPOSetBasePtr>::iterator iter;
+      std::map<std::string,SPOSetPtr>::iterator iter;
       for (iter=spomap.begin(); iter!=spomap.end(); iter++)
       {
         slaterdet_0->add(iter->second,iter->first);
@@ -309,9 +309,9 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         MultiDiracDeterminantBase* up_det=0;
         MultiDiracDeterminantBase* dn_det=0;
         app_log() <<"Creating base determinant (up) for MSD expansion. \n";
-        up_det = new MultiDiracDeterminantBase((SPOSetBasePtr) spomap.find(spo_alpha)->second,0);
+        up_det = new MultiDiracDeterminantBase((SPOSetPtr) spomap.find(spo_alpha)->second,0);
         app_log() <<"Creating base determinant (down) for MSD expansion. \n";
-        dn_det = new MultiDiracDeterminantBase((SPOSetBasePtr) spomap.find(spo_beta)->second,1);
+        dn_det = new MultiDiracDeterminantBase((SPOSetPtr) spomap.find(spo_beta)->second,1);
         multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl,up_det,dn_det);
         //          up_det->usingBF = UseBackflow;
         //          dn_det->usingBF = UseBackflow;
@@ -468,9 +468,9 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
 
   app_log() << "  Creating a determinant " << detname << " group=" << spin_group << " sposet=" << sposet << std::endl;
 
-  std::map<std::string,SPOSetBasePtr>& spo_ref(slaterdet_0->mySPOSet);
-  std::map<std::string,SPOSetBasePtr>::iterator lit(spo_ref.find(sposet));
-  SPOSetBasePtr psi=0;
+  std::map<std::string,SPOSetPtr>& spo_ref(slaterdet_0->mySPOSet);
+  std::map<std::string,SPOSetPtr>::iterator lit(spo_ref.find(sposet));
+  SPOSetPtr psi=0;
   if (lit == spo_ref.end()) 
   {
     psi=get_sposet(sposet); //check if the named sposet exists 
@@ -532,7 +532,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
       // get a pointer to the single particle orbital set and make sure it is of the correct type
       if ( ! psi->is_of_type_LCOrbitalSetOpt() ) {
         std::string newname = "LCOrbitalSetOpt_" + psi->objectName;
-        SPOSetBasePtr newpsi = get_sposet(newname);
+        SPOSetPtr newpsi = get_sposet(newname);
         if(newpsi == nullptr)
         {
           app_log() << "using an existing SPO object " << psi->objectName << " (not a clone) for the basis of an optimizable SPO set.\n";
@@ -705,7 +705,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
            spo->occup(i,nq++) = k;
          }
        }
-       DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) spo,0);
+       DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetPtr) spo,0);
        adet->set(multiSD->FirstIndex_up,multiSD->nels_up);
        multiSD->dets_up.push_back(adet);
      }
@@ -720,7 +720,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
            spo->occup(i,nq++) = k;
          }
        }
-       DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetBasePtr) spo,0);
+       DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetPtr) spo,0);
        adet->set(multiSD->FirstIndex_dn,multiSD->nels_dn);
        multiSD->dets_dn.push_back(adet);
      }
@@ -767,11 +767,11 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
     DiracDeterminantBase* adet;
     if(UseBackflow)
     {
-      adet = new DiracDeterminantWithBackflow(targetPtcl,(SPOSetBasePtr) spo,0,0);
+      adet = new DiracDeterminantWithBackflow(targetPtcl,(SPOSetPtr) spo,0,0);
     }
     else
     {
-      adet = new DiracDeterminantBase((SPOSetBasePtr) spo,0);
+      adet = new DiracDeterminantBase((SPOSetPtr) spo,0);
     }
     adet->set(multiSD->FirstIndex_up,multiSD->nels_up);
     multiSD->dets_up.push_back(adet);
@@ -792,11 +792,11 @@ bool SlaterDetBuilder::createMSD(MultiSlaterDeterminant* multiSD, xmlNodePtr cur
     DiracDeterminantBase* adet;
     if(UseBackflow)
     {
-      adet = new DiracDeterminantWithBackflow(targetPtcl,(SPOSetBasePtr) spo,0,0);
+      adet = new DiracDeterminantWithBackflow(targetPtcl,(SPOSetPtr) spo,0,0);
     }
     else
     {
-      adet = new DiracDeterminantBase((SPOSetBasePtr) spo,0);
+      adet = new DiracDeterminantBase((SPOSetPtr) spo,0);
     }
     adet->set(multiSD->FirstIndex_dn,multiSD->nels_dn);
     multiSD->dets_dn.push_back(adet);

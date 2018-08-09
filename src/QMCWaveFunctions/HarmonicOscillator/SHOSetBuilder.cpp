@@ -46,7 +46,7 @@ namespace qmcplusplus
   }
   
 
-  SPOSetBase* SHOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
+  SPOSet* SHOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     APP_ABORT("SHOSetBuilder::createSPOSetFromXML  SHOSetBuilder should not use legacy interface");
 
@@ -58,7 +58,7 @@ namespace qmcplusplus
   }
 
 
-  SPOSetBase* SHOSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input)
+  SPOSet* SHOSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input)
   {
     app_log() << "SHOSetBuilder::createSHOSet(indices) " << std::endl;
 

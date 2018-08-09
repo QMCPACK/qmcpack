@@ -39,7 +39,7 @@ template<class FT>
 void
 OneBodyJastrowOrbitalBspline<FT>::checkInVariables(opt_variables_type& active)
 {
-  J1OrbitalSoA<BsplineFunctor<OrbitalBase::RealType> >::checkInVariables(active);
+  J1OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType> >::checkInVariables(active);
   for (int i=0; i<NumCenterGroups; i++)
     GPUSplines[i]->set(*this->F[i]);
 }
@@ -48,7 +48,7 @@ template<class FT>
 void
 OneBodyJastrowOrbitalBspline<FT>::addFunc(int ig, FT* j, int jg)
 {
-  J1OrbitalSoA<BsplineFunctor<OrbitalBase::RealType> >::addFunc(ig, j, jg);
+  J1OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType> >::addFunc(ig, j, jg);
   CudaSpline<CudaReal> *newSpline = new CudaSpline<CudaReal>(*j);
   UniqueSplines.push_back(newSpline);
   // if(i==0) { //first time, assign everything
@@ -499,7 +499,7 @@ template<class FT>
 void
 OneBodyJastrowOrbitalBspline<FT>::resetParameters(const opt_variables_type& active)
 {
-  J1OrbitalSoA<BsplineFunctor<OrbitalBase::RealType> >::resetParameters(active);
+  J1OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType> >::resetParameters(active);
   for (int i=0; i<NumCenterGroups; i++)
     GPUSplines[i]->set(*this->F[i]);
 }
@@ -580,6 +580,6 @@ OneBodyJastrowOrbitalBspline<FT>::evaluateDerivatives
 }
 
 // explicit instantiations of templates
-template class OneBodyJastrowOrbitalBspline<BsplineFunctor<OrbitalBase::RealType>>;
+template class OneBodyJastrowOrbitalBspline<BsplineFunctor<WaveFunctionComponent::RealType>>;
 
 }

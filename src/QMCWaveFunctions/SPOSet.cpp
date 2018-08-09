@@ -15,7 +15,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsData/AttributeSet.h"
 #include <simd/simd.hpp>
@@ -26,7 +26,7 @@
 namespace qmcplusplus
 {
 
-SPOSetBase::SPOSetBase()
+SPOSet::SPOSet()
   :OrbitalSetSize(0),Optimizable(false),ionDerivs(false),builder_index(-1)
 #if !defined(ENABLE_SOA)
   ,Identity(false),BasisSetSize(0),C(nullptr)
@@ -42,8 +42,8 @@ SPOSetBase::SPOSetBase()
 }
 
 /** default implementation */
-SPOSetBase::ValueType
-SPOSetBase::RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
+SPOSet::ValueType
+SPOSet::RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
 {
   int ip=omp_get_thread_num();
   // YYYY to fix
@@ -55,12 +55,12 @@ SPOSetBase::RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
   return ValueType();
 }
 
-void SPOSetBase::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bool newp)
+void SPOSet::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
 {
-  APP_ABORT("SPOSetBase::evaluateVGL not implemented.");
+  APP_ABORT("SPOSet::evaluateVGL not implemented.");
 }
 
-void SPOSetBase::evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM)
+void SPOSet::evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM)
 {
   for(int iat=0; iat<VP.getTotalNum(); ++iat)
   {
@@ -69,33 +69,33 @@ void SPOSetBase::evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM)
   }
 }
 
-void SPOSetBase::evaluateThirdDeriv(const ParticleSet& P, int first, int last,
+void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last,
                                     GGGMatrix_t& grad_grad_grad_logdet)
 {
-  APP_ABORT("Need specialization of SPOSetBase::evaluateThirdDeriv(). \n");
+  APP_ABORT("Need specialization of SPOSet::evaluateThirdDeriv(). \n");
 }
 
-void SPOSetBase::evaluate_notranspose(const ParticleSet& P, int first, int last
+void SPOSet::evaluate_notranspose(const ParticleSet& P, int first, int last
                                       , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
 {
-  APP_ABORT("Need specialization of SPOSetBase::evaluate_notranspose() for grad_grad_logdet. \n");
+  APP_ABORT("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_logdet. \n");
 }
 
-void SPOSetBase::evaluate_notranspose(const ParticleSet& P, int first, int last,
+void SPOSet::evaluate_notranspose(const ParticleSet& P, int first, int last,
                                       ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
 {
-  APP_ABORT("Need specialization of SPOSetBase::evaluate_notranspose() for grad_grad_grad_logdet. \n");
+  APP_ABORT("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_grad_logdet. \n");
 }
 
 
-SPOSetBase* SPOSetBase::makeClone() const
+SPOSet* SPOSet::makeClone() const
 {
-  APP_ABORT("Missing  SPOSetBase::makeClone for "+className);
+  APP_ABORT("Missing  SPOSet::makeClone for "+className);
   return 0;
 }
 
 #if !defined(ENABLE_SOA)
-bool SPOSetBase::setIdentity(bool useIdentity)
+bool SPOSet::setIdentity(bool useIdentity)
 {
   Identity = useIdentity;
   if(Identity) return true;
@@ -109,7 +109,7 @@ bool SPOSetBase::setIdentity(bool useIdentity)
     app_error() << "either OrbitalSetSize or BasisSetSize has an invalid value !!\n";
     app_error() << "OrbitalSetSize = " << OrbitalSetSize << std::endl;
     app_error() << "BasisSetSize = " << BasisSetSize << std::endl;
-    APP_ABORT("SPOSetBase::setIdentiy ");
+    APP_ABORT("SPOSet::setIdentiy ");
   }
 
   return true;
@@ -118,12 +118,12 @@ bool SPOSetBase::setIdentity(bool useIdentity)
 /** Parse the xml file for information on the Dirac determinants.
  *@param cur the current xmlNode
  */
-bool SPOSetBase::put(xmlNodePtr cur)
+bool SPOSet::put(xmlNodePtr cur)
 {
   #undef FunctionName
 #define FunctionName printf("Calling FunctionName from %s\n",__FUNCTION__);FunctionNameReal
   //Check if HDF5 present
-  ReportEngine PRE("SPOSetBase","put(xmlNodePtr)");
+  ReportEngine PRE("SPOSet","put(xmlNodePtr)");
 
   //Special case for sposet hierarchy: go up only once.
   OhmmsAttributeSet locAttrib;
@@ -194,7 +194,7 @@ bool SPOSetBase::put(xmlNodePtr cur)
 
     if(myComm->rank()==0){
       if(!hin.open(MOhref2,H5F_ACC_RDONLY))
-        APP_ABORT("SPOSetBase::putFromH5 missing or incorrect path to H5 file.");
+        APP_ABORT("SPOSet::putFromH5 missing or incorrect path to H5 file.");
       //TO REVIEWERS:: IDEAL BEHAVIOUR SHOULD BE:
       /*
        if(!hin.push("PBC")
@@ -209,7 +209,7 @@ bool SPOSetBase::put(xmlNodePtr cur)
       hin.read(PBC,"PBC");
       hin.close();
       if (PBC)
-        APP_ABORT("SPOSetBase::putFromH5 PBC is not supported by AoS builds");
+        APP_ABORT("SPOSet::putFromH5 PBC is not supported by AoS builds");
     }
     myComm->bcast(PBC);
     success = putFromH5(MOhref2, coeff_ptr);
@@ -230,18 +230,18 @@ bool SPOSetBase::put(xmlNodePtr cur)
  return true;
 }
 
-void SPOSetBase::checkObject()
+void SPOSet::checkObject()
 {
   if(!(OrbitalSetSize == C->rows() && BasisSetSize == C->cols()))
   {
-    app_error() << "   SPOSetBase::checkObject Linear coeffient for SPOSet is not consistent with the input." << std::endl;
+    app_error() << "   SPOSet::checkObject Linear coeffient for SPOSet is not consistent with the input." << std::endl;
     OHMMS::Controller->abort();
   }
 }
 
 
 
-bool SPOSetBase::putFromXML(xmlNodePtr coeff_ptr)
+bool SPOSet::putFromXML(xmlNodePtr coeff_ptr)
 {
   Identity=true;
   int norbs=0;
@@ -252,7 +252,7 @@ bool SPOSetBase::putFromXML(xmlNodePtr coeff_ptr)
   if(norbs < OrbitalSetSize)
   {
     return false;
-    APP_ABORT("SPOSetBase::putFromXML missing or incorrect size");
+    APP_ABORT("SPOSet::putFromXML missing or incorrect size");
   }
   if(norbs)
   {
@@ -282,7 +282,7 @@ bool SPOSetBase::putFromXML(xmlNodePtr coeff_ptr)
  * @param fname hdf5 file name
  * @param coeff_ptr xmlnode for coefficients
  */
-bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
+bool SPOSet::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
 {
 #if defined(HAVE_LIBHDF5)
   int norbs=OrbitalSetSize;
@@ -299,7 +299,7 @@ bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
   if(myComm->rank()==0)
   {
     if(!hin.open(fname,H5F_ACC_RDONLY))
-      APP_ABORT("SPOSetBase::putFromH5 missing or incorrect path to H5 file.");
+      APP_ABORT("SPOSet::putFromH5 missing or incorrect path to H5 file.");
 
     Matrix<RealType> Ctemp(neigs,BasisSetSize);
     char name[72];
@@ -307,7 +307,7 @@ bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
     setname=name;
     if(!hin.read(Ctemp,setname))
     {
-       setname="SPOSetBase::putFromH5 Missing "+setname+" from HDF5 File.";
+       setname="SPOSet::putFromH5 Missing "+setname+" from HDF5 File.";
        APP_ABORT(setname.c_str());
     }
     hin.close();
@@ -325,18 +325,18 @@ bool SPOSetBase::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
   }
   myComm->bcast(C->data(),C->size());
 #else
-  APP_ABORT("SPOSetBase::putFromH5 HDF5 is disabled.")
+  APP_ABORT("SPOSet::putFromH5 HDF5 is disabled.")
 #endif
   return true;
 }
 
 
-bool SPOSetBase::putOccupation(xmlNodePtr occ_ptr)
+bool SPOSet::putOccupation(xmlNodePtr occ_ptr)
 {
   //die??
   if(BasisSetSize ==0)
   {
-    APP_ABORT("SPOSetBase::putOccupation detected ZERO BasisSetSize");
+    APP_ABORT("SPOSet::putOccupation detected ZERO BasisSetSize");
     return false;
   }
   Occ.resize(std::max(BasisSetSize,OrbitalSetSize));
@@ -376,7 +376,7 @@ bool SPOSetBase::putOccupation(xmlNodePtr occ_ptr)
 }
 #endif
 
-void SPOSetBase::basic_report(const std::string& pad)
+void SPOSet::basic_report(const std::string& pad)
 {
   app_log()<<pad<<"size = "<<size()<< std::endl;
   app_log()<<pad<<"state info:"<< std::endl;
@@ -384,35 +384,14 @@ void SPOSetBase::basic_report(const std::string& pad)
   app_log().flush();
 }
 
-
-void SPOSetBase::evaluateBasis (const ParticleSet &P, int first, int last,
-                                ValueMatrix_t &basis_val,  GradMatrix_t  &basis_grad,
-                                ValueMatrix_t &basis_lapl)
-{
-  APP_ABORT("Need specialization of SPOSetBase::evaluateBasis.\n");
-}
-
-void SPOSetBase::evaluateForDeriv (const ParticleSet &P, int first, int last,
-                                   ValueMatrix_t &basis_val,  GradMatrix_t  &basis_grad,
-                                   ValueMatrix_t &basis_lapl)
-{
-  APP_ABORT("Need specialization of SPOSetBase::evaluateBasis.\n");
-}
-
-void SPOSetBase::copyParamsFromMatrix (const opt_variables_type& active,
-                                       const ValueMatrix_t &mat, std::vector<RealType> &destVec)
-{
-  APP_ABORT("Need specialization of SPOSetBase::copyParamsFromMatrix.");
-}
-
-void SPOSetBase::evaluateGradSource (const ParticleSet &P
+void SPOSet::evaluateGradSource (const ParticleSet &P
                                      , int first, int last, const ParticleSet &source
                                      , int iat_src, GradMatrix_t &gradphi)
 {
   APP_ABORT("SPOSetlBase::evalGradSource is not implemented");
 }
 
-void SPOSetBase::evaluateGradSource (const ParticleSet &P, int first, int last,
+void SPOSet::evaluateGradSource (const ParticleSet &P, int first, int last,
                                      const ParticleSet &source, int iat_src,
                                      GradMatrix_t &grad_phi,
                                      HessMatrix_t &grad_grad_phi,
@@ -423,51 +402,45 @@ void SPOSetBase::evaluateGradSource (const ParticleSet &P, int first, int last,
 
 #ifdef QMC_CUDA
 
-void SPOSetBase::evaluate(const ParticleSet& P, const PosType& r, std::vector<RealType> &psi)
-{
-  APP_ABORT("Not implemented.\n");
-}
-
-
-void SPOSetBase::evaluate (std::vector<Walker_t*> &walkers, int iat,
+void SPOSet::evaluate (std::vector<Walker_t*> &walkers, int iat,
                            gpu::device_vector<CudaValueType*> &phi)
 {
-  app_error() << "Need specialization of vectorized evaluate in SPOSetBase.\n";
+  app_error() << "Need specialization of vectorized evaluate in SPOSet.\n";
   app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
   abort();
 }
 
-void SPOSetBase::evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &new_pos,
+void SPOSet::evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &new_pos,
                            gpu::device_vector<CudaValueType*> &phi)
 {
-  app_error() << "Need specialization of vectorized evaluate in SPOSetBase.\n";
+  app_error() << "Need specialization of vectorized evaluate in SPOSet.\n";
   app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
   abort();
 }
 
-void SPOSetBase::evaluate (std::vector<Walker_t*> &walkers,
+void SPOSet::evaluate (std::vector<Walker_t*> &walkers,
                            std::vector<PosType> &new_pos,
                            gpu::device_vector<CudaValueType*> &phi,
                            gpu::device_vector<CudaValueType*> &grad_lapl_list,
                            int row_stride)
 {
-  app_error() << "Need specialization of vectorized eval_grad_lapl in SPOSetBase.\n";
+  app_error() << "Need specialization of vectorized eval_grad_lapl in SPOSet.\n";
   app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
   abort();
 }
 
-void SPOSetBase::evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi)
+void SPOSet::evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi)
 {
   app_error() << "Need specialization of vectorized evaluate "
-              << "in SPOSetBase.\n";
+              << "in SPOSet.\n";
   app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
   abort();
 }
 
-void SPOSetBase::evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi)
+void SPOSet::evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi)
 {
   app_error() << "Need specialization of vectorized evaluate "
-              << "in SPOSetBase.\n";
+              << "in SPOSet.\n";
   app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
   abort();
 }

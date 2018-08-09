@@ -37,7 +37,6 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns,
   //AB = new LRHandlerType(ions);
   myTableIndex=elns.addTable(ions,DT_SOA_PREFERRED);
   initBreakup(elns);
-  elns.DistTables[myTableIndex]->setRmax(myRcut);
   prefix="Flocal";
   app_log() << "  Rcut                " << myRcut << std::endl;
   app_log() << "  Maximum K shell     " << AB->MaxKshell << std::endl;
@@ -595,7 +594,7 @@ void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
     {
       RealType r=(*myGrid)[ig];
       //need to multiply r for the LR
-      v[ig]=r*AB->evaluateLR(r)+ppot->splint(r);
+      v[ig]= -r*AB->evaluateLR(r)+ppot->splint(r);
     }
     v[0] = 2.0*v[1] - v[2];
     //by construction, v has to go to zero at the boundary

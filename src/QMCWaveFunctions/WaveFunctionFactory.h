@@ -20,7 +20,7 @@
 #define QMCPLUSPLUS_TRIALWAVEFUNCTION_FACTORY_H
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "Message/MPIObjectBase.h"
 namespace qmcplusplus
@@ -41,7 +41,7 @@ struct WaveFunctionFactory: public MPIObjectBase
   ///input node for a many-body wavefunction
   xmlNodePtr myNode;
   ///builder tree
-  std::vector<OrbitalBuilderBase*> psiBuilder;
+  std::vector<WaveFunctionComponentBuilder*> psiBuilder;
 
   /** constructor
    * @param qp quantum particleset
@@ -71,11 +71,11 @@ struct WaveFunctionFactory: public MPIObjectBase
   bool addFDLRTerm(xmlNodePtr cur);
 
   /** add an OrbitalBuilder and the matching xml node
-   * @param b OrbitalBuilderBase*
+   * @param b WaveFunctionComponentBuilder*
    * @oaram cur xmlNode for b
    * @return true if successful
    */
-  bool addNode(OrbitalBuilderBase* b, xmlNodePtr cur);
+  bool addNode(WaveFunctionComponentBuilder* b, xmlNodePtr cur);
 
   void setCloneSize(int np);
 

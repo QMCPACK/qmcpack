@@ -22,7 +22,7 @@
 #define QMCPLUSPLUS_DIRAC_DETERMINANT_CUDA_H
 #include <typeinfo>
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/determinant_update.h"
 #include "Numerics/CUDA/cuda_inverse.h"
 #include "Utilities/NewTimer.h"
@@ -32,14 +32,14 @@ namespace qmcplusplus
 class DiracDeterminantCUDA: public DiracDeterminantBase
 {
 public:
-  typedef SPOSetBase::IndexVector_t IndexVector_t;
-  typedef SPOSetBase::ValueVector_t ValueVector_t;
-  typedef SPOSetBase::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSetBase::GradVector_t  GradVector_t;
-  typedef SPOSetBase::GradMatrix_t  GradMatrix_t;
+  typedef SPOSet::IndexVector_t IndexVector_t;
+  typedef SPOSet::ValueVector_t ValueVector_t;
+  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
+  typedef SPOSet::GradVector_t  GradVector_t;
+  typedef SPOSet::GradMatrix_t  GradMatrix_t;
   typedef ParticleSet::Walker_t     Walker_t;
 
-  DiracDeterminantCUDA(SPOSetBasePtr const &spos, int first=0);
+  DiracDeterminantCUDA(SPOSetPtr const &spos, int first=0);
   DiracDeterminantCUDA(const DiracDeterminantCUDA& s) = delete;
 
 protected:

@@ -42,7 +42,7 @@ class CuspCorr : public QMCTraits
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
-  typedef SPOSetBase*        SPOSetBasePtr;
+  typedef SPOSet*        SPOSetPtr;
 
 public:
 
@@ -66,7 +66,7 @@ public:
     nElms=nIntPnts;
   }
 
-  void setPhiAndEta(SPOSetBasePtr Phi, SPOSetBasePtr Eta)
+  void setPhiAndEta(SPOSetPtr Phi, SPOSetPtr Eta)
   {
       Psi1 = Phi;
       Psi2 = Eta;
@@ -121,7 +121,7 @@ public:
   }
 
 
-  void evaluate(SPOSetBasePtr Psi,TinyVector<RealType,3> r, ValueVector_t& val, GradVector_t  &grad, ValueVector_t &lapl)
+  void evaluate(SPOSetPtr Psi,TinyVector<RealType,3> r, ValueVector_t& val, GradVector_t  &grad, ValueVector_t &lapl)
   {
     targetPtcl->R[0] = sourcePtcl->R[curCenter];
     TinyVector<RealType,3> ddr2=targetPtcl->makeMove(0,r);
@@ -313,7 +313,7 @@ private:
   ///source ParticleSet
   ParticleSet *sourcePtcl;
 
-  SPOSetBasePtr Psi1,Psi2;
+  SPOSetPtr Psi1,Psi2;
 
 public:
   // cutoff

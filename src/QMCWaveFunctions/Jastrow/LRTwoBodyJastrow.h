@@ -24,7 +24,7 @@
 #ifndef QMCPLUSPLUS_LR_RPAJASTROW_H
 #define QMCPLUSPLUS_LR_RPAJASTROW_H
 
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Optimize/VarList.h"
 #include "OhmmsData/libxmldefs.h"
 #include "OhmmsPETE/OhmmsVector.h"
@@ -34,7 +34,7 @@
 namespace qmcplusplus
 {
 
-class LRTwoBodyJastrow: public OrbitalBase
+class LRTwoBodyJastrow: public WaveFunctionComponent
 {
   bool NeedToRestore;
   IndexType NumPtcls;
@@ -176,7 +176,7 @@ public:
   ///process input file
   bool put(xmlNodePtr cur);
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 };
 }
 #endif
