@@ -77,6 +77,7 @@ DiracDeterminantOpt::evaluateDerivatives(ParticleSet& P,
     std::vector<RealType>& dlogpsi,
     std::vector<RealType>& dhpsioverpsi)
 {
+  APP_ABORT("DiracDeterminantOpt::evaluateDerivatives is currently disabled.\n");
   // The dlogpsi part is simple -- just ratios
   // First, evaluate the basis functions
   // std::cerr << "GEMM 1:\n";
