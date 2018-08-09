@@ -397,14 +397,6 @@ OptimizableSPOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 }
 
 void
-OptimizableSPOSet::evaluate(const ParticleSet& P, const PosType& r,
-                            std::vector<RealType> &psi)
-{
-  app_error() << "OptimizableSPOSet::evaluate(const ParticleSet& P, const PosType& r, std::vector<RealType> &psi)\n  should not be called.  Abort.\n";
-  abort();
-}
-
-void
 OptimizableSPOSet::evaluate(const ParticleSet& P, int iat,
                             ValueVector_t& psi, GradVector_t& dpsi,
                             ValueVector_t& d2psi)
