@@ -2110,167 +2110,171 @@ def check_values(options,values):
     success = True
     msg     = ''
 
-    msg += '\nTests for series {0} quantity "{1}"\n'.format(options.series,options.quantity)
+    try:
+        msg += '\nTests for series {0} quantity "{1}"\n'.format(options.series,options.quantity)
 
-    # find nsigma for each partial sum
-    #   overall probability of partial sum failure is according to original nsigma
-    vlog('adjusting nsigma to account for partial sum count',n=1)
-    x = longdouble(options.nsigma/sqrt(2.))
-    N = options.npartial_sums
-    nsigma_partial = sqrt(2.)*erfinv(erf(x)**(1./N))
-    vlog('overall full/partial test nsigma: {0}'.format(options.nsigma),n=2)
-    vlog('adjusted per partial sum nsigma : {0}'.format(nsigma_partial),n=2)
+        # find nsigma for each partial sum
+        #   overall probability of partial sum failure is according to original nsigma
+        vlog('adjusting nsigma to account for partial sum count',n=1)
+        x = longdouble(options.nsigma/sqrt(2.))
+        N = options.npartial_sums
+        nsigma_partial = sqrt(2.)*erfinv(erf(x)**(1./N))
+        vlog('overall full/partial test nsigma: {0}'.format(options.nsigma),n=2)
+        vlog('adjusted per partial sum nsigma : {0}'.format(nsigma_partial),n=2)
 
-    # read in the reference file
-    vlog('reading reference file',n=1)
-    vlog('reference file location: {0}'.format(options.reference_file),n=2)
-    f = open(options.reference_file,'r')
-    dnames = f.readline().split()[1::2]
-    vlog('sub-quantities found: {0}'.format(dnames),n=2)
-    if set(dnames)!=set(values.keys()):
-        missing = set(values.keys())-set(dnames)
-        extra   = set(dnames)-set(values.keys())
-        if missing>0:
-            exit_fail('some sub-quantities are missing\npresent in test files: {0}\npresent in reference files: {1}\nmissing: {2}'.format(sorted(values.keys()),sorted(dnames),sorted(missing)))
-        elif extra>0:
-            exit_fail('some sub-quantities are extra\npresent in test files: {0}\npresent in reference files: {1}\nextra: {2}'.format(sorted(values.keys()),sorted(dnames),sorted(extra)))
-        else:
-            exit_fail('developer error, this point should be impossible to reach')
-        #end if
-    #end if
-    ref = array(f.read().split(),dtype=float)
-    ref.shape = len(ref)/(2*len(dnames)),2*len(dnames)
-    full    = ref[0,:].ravel()
-    partial = ref[1:,:].T
-    if len(ref)-1!=options.npartial_sums:
-        exit_fail('test and reference partial sum counts do not match\ntest partial sum count: {0}\nreference partial sum count: {1}'.format(options.npartial_sums,len(ref)-1))
-    #end if
-    vlog('partial sum count found: {0}'.format(len(ref)-1),n=2)
-    ref_values = obj()
-    for dname in dnames:
-        ref_values[dname] = obj()
-    #end for
-    n=0
-    for dname in dnames:
-        ref_values[dname].set(
-            full_mean     = full[n],
-            full_error    = full[n+1],
-            partial_mean  = partial[n,:].ravel(),
-            partial_error = partial[n+1,:].ravel(),
-            )
-        n+=2
-    #end for
-    npartial = len(ref)-1
-    f.close()
-    dnames = sorted(dnames)
-    vlog('reference file read successfully',n=2)
-
-    # for cases with fixed full sum, check the per block sum
-    if options.fixed_sum:
-        vlog('checking per block fixed sums',n=1)
-        msg+='\n  Fixed sum per block tests:\n'
-        fixed_sum_success = True
-        ftol = 1e-8
-        for dname in dnames:
-            ref_vals  = ref_values[dname]
-            ref_mean  = ref_vals.full_mean
-            ref_error = ref_vals.full_error
-            if abs(ref_error/ref_mean)>ftol:
-                exit_fail('reference fixed sum is not fixed as asserted\ncannot check per block fixed sums\nplease check reference data')
+        # read in the reference file
+        vlog('reading reference file',n=1)
+        vlog('reference file location: {0}'.format(options.reference_file),n=2)
+        f = open(options.reference_file,'r')
+        dnames = f.readline().split()[1::2]
+        vlog('sub-quantities found: {0}'.format(dnames),n=2)
+        if set(dnames)!=set(values.keys()):
+            missing = set(values.keys())-set(dnames)
+            extra   = set(dnames)-set(values.keys())
+            if missing>0:
+                exit_fail('some sub-quantities are missing\npresent in test files: {0}\npresent in reference files: {1}\nmissing: {2}'.format(sorted(values.keys()),sorted(dnames),sorted(missing)))
+            elif extra>0:
+                exit_fail('some sub-quantities are extra\npresent in test files: {0}\npresent in reference files: {1}\nextra: {2}'.format(sorted(values.keys()),sorted(dnames),sorted(extra)))
+            else:
+                exit_fail('developer error, this point should be impossible to reach')
             #end if
-            test_vals = values[dname].data.full_sum
-            for i,v in enumerate(test_vals):
-                if abs((v-ref_mean)/ref_mean)>ftol:
-                    fixed_sum_success = False
-                    msg += '    {0} {1} {2}!={3}\n'.format(dname,i,v,ref_mean)
-                #end if
-            #end for
+        #end if
+        ref = array(f.read().split(),dtype=float)
+        ref.shape = len(ref)/(2*len(dnames)),2*len(dnames)
+        full    = ref[0,:].ravel()
+        partial = ref[1:,:].T
+        if len(ref)-1!=options.npartial_sums:
+            exit_fail('test and reference partial sum counts do not match\ntest partial sum count: {0}\nreference partial sum count: {1}'.format(options.npartial_sums,len(ref)-1))
+        #end if
+        vlog('partial sum count found: {0}'.format(len(ref)-1),n=2)
+        ref_values = obj()
+        for dname in dnames:
+            ref_values[dname] = obj()
         #end for
-        if fixed_sum_success:
-            fmsg = 'all per block sums match the reference'
-        else:
-            fmsg = 'some per block sums do not match the reference'
-        #end if
-        vlog(fmsg,n=2)
-        msg += '    '+fmsg+'\n'
-        msg += '    status of this test: {0}\n'.format(passfail[fixed_sum_success])
-        success &= fixed_sum_success
-    #end if
-
-    # for the energy density, check per block sums
-    if options.quantity=='energydensity':
-        vlog('checking energy density terms per block',n=1)
-        exit_fail('energy density block check not implemented')
-    #end if
-
-
-    # function used immediately below to test a mean value vs reference
-    def check_mean(label,mean_comp,error_comp,mean_ref,error_ref,nsigma):
-        msg='\n  Testing quantity: {0}\n'.format(label)
-
-        # ensure error_ref is large enough for non-statistical quantities
-        ctol = 1e-12
-        if abs(error_ref/mean_ref)<ctol:
-            error_ref = ctol*mean_ref
-        #end if
-
-        quant_success = abs(mean_comp-mean_ref) <= nsigma*error_ref
-
-        delta = mean_comp-mean_ref
-        delta_err = sqrt(error_comp**2+error_ref**2)
-
-        msg+='    reference mean value     : {0: 12.8f}\n'.format(mean_ref)
-        msg+='    reference error bar      : {0: 12.8f}\n'.format(error_ref)
-        msg+='    computed  mean value     : {0: 12.8f}\n'.format(mean_comp)
-        msg+='    computed  error bar      : {0: 12.8f}\n'.format(error_comp)
-        msg+='    pass tolerance           : {0: 12.8f}  ({1: 12.8f} sigma)\n'.format(nsigma*error_ref,nsigma)
-        if error_ref > 0.0:
-            msg+='    deviation from reference : {0: 12.8f}  ({1: 12.8f} sigma)\n'.format(delta,delta/error_ref)
-        #end if
-        msg+='    error bar of deviation   : {0: 12.8f}\n'.format(delta_err)
-        if error_ref > 0.0:
-            msg+='    significance probability : {0: 12.8f}  (gaussian statistics)\n'.format(erf(abs(delta/error_ref)/math.sqrt(2.0)))
-        #end if
-        msg+='    status of this test      :   {0}\n'.format(passfail[quant_success])
-
-        return quant_success,msg
-    #end def check_mean
-
-
-    # check full and partial sums vs the reference
-    vlog('checking full and partial sums',n=1)
-    for dname in dnames:
-        vals = values[dname]
-        ref_vals = ref_values[dname]
-        # check full sum
-        vlog('checking full sum mean for "{0}"'.format(dname),n=2)
-        qsuccess,qmsg = check_mean(
-            label      = '{0} full sum'.format(dname),
-            mean_comp  = vals.full_mean,
-            error_comp = vals.full_error,
-            mean_ref   = ref_vals.full_mean,
-            error_ref  = ref_vals.full_error,
-            nsigma     = options.nsigma,
-            )
-        vlog('status for full sum: {0}'.format(passfail[qsuccess]),n=3)
-        msg     += qmsg
-        success &= qsuccess
-        # check partial sums
-        vlog('checking partial sum means for "{0}"'.format(dname),n=2)
-        for p in xrange(len(ref_vals.partial_mean)):
-            qsuccess,qmsg = check_mean(
-                label      = '{0} partial sum {1}'.format(dname,p),
-                mean_comp  = vals.partial_mean[p],
-                error_comp = vals.partial_error[p],
-                mean_ref   = ref_vals.partial_mean[p],
-                error_ref  = ref_vals.partial_error[p],
-                nsigma     = nsigma_partial,
+        n=0
+        for dname in dnames:
+            ref_values[dname].set(
+                full_mean     = full[n],
+                full_error    = full[n+1],
+                partial_mean  = partial[n,:].ravel(),
+                partial_error = partial[n+1,:].ravel(),
                 )
-            vlog('status for partial sum {0}: {1}'.format(p,passfail[qsuccess]),n=3)
+            n+=2
+        #end for
+        npartial = len(ref)-1
+        f.close()
+        dnames = sorted(dnames)
+        vlog('reference file read successfully',n=2)
+
+        # for cases with fixed full sum, check the per block sum
+        if options.fixed_sum:
+            vlog('checking per block fixed sums',n=1)
+            msg+='\n  Fixed sum per block tests:\n'
+            fixed_sum_success = True
+            ftol = 1e-8
+            for dname in dnames:
+                ref_vals  = ref_values[dname]
+                ref_mean  = ref_vals.full_mean
+                ref_error = ref_vals.full_error
+                if abs(ref_error/ref_mean)>ftol:
+                    exit_fail('reference fixed sum is not fixed as asserted\ncannot check per block fixed sums\nplease check reference data')
+                #end if
+                test_vals = values[dname].data.full_sum
+                for i,v in enumerate(test_vals):
+                    if abs((v-ref_mean)/ref_mean)>ftol:
+                        fixed_sum_success = False
+                        msg += '    {0} {1} {2}!={3}\n'.format(dname,i,v,ref_mean)
+                    #end if
+                #end for
+            #end for
+            if fixed_sum_success:
+                fmsg = 'all per block sums match the reference'
+            else:
+                fmsg = 'some per block sums do not match the reference'
+            #end if
+            vlog(fmsg,n=2)
+            msg += '    '+fmsg+'\n'
+            msg += '    status of this test: {0}\n'.format(passfail[fixed_sum_success])
+            success &= fixed_sum_success
+        #end if
+
+        # for the energy density, check per block sums
+        if options.quantity=='energydensity':
+            vlog('checking energy density terms per block',n=1)
+            exit_fail('energy density block check not implemented')
+        #end if
+
+
+        # function used immediately below to test a mean value vs reference
+        def check_mean(label,mean_comp,error_comp,mean_ref,error_ref,nsigma):
+            msg='\n  Testing quantity: {0}\n'.format(label)
+
+            # ensure error_ref is large enough for non-statistical quantities
+            ctol = 1e-12
+            if abs(error_ref/mean_ref)<ctol:
+                error_ref = ctol*mean_ref
+            #end if
+
+            quant_success = abs(mean_comp-mean_ref) <= nsigma*error_ref
+
+            delta = mean_comp-mean_ref
+            delta_err = sqrt(error_comp**2+error_ref**2)
+
+            msg+='    reference mean value     : {0: 12.8f}\n'.format(mean_ref)
+            msg+='    reference error bar      : {0: 12.8f}\n'.format(error_ref)
+            msg+='    computed  mean value     : {0: 12.8f}\n'.format(mean_comp)
+            msg+='    computed  error bar      : {0: 12.8f}\n'.format(error_comp)
+            msg+='    pass tolerance           : {0: 12.8f}  ({1: 12.8f} sigma)\n'.format(nsigma*error_ref,nsigma)
+            if error_ref > 0.0:
+                msg+='    deviation from reference : {0: 12.8f}  ({1: 12.8f} sigma)\n'.format(delta,delta/error_ref)
+            #end if
+            msg+='    error bar of deviation   : {0: 12.8f}\n'.format(delta_err)
+            if error_ref > 0.0:
+                msg+='    significance probability : {0: 12.8f}  (gaussian statistics)\n'.format(erf(abs(delta/error_ref)/math.sqrt(2.0)))
+            #end if
+            msg+='    status of this test      :   {0}\n'.format(passfail[quant_success])
+
+            return quant_success,msg
+        #end def check_mean
+
+
+        # check full and partial sums vs the reference
+        vlog('checking full and partial sums',n=1)
+        for dname in dnames:
+            vals = values[dname]
+            ref_vals = ref_values[dname]
+            # check full sum
+            vlog('checking full sum mean for "{0}"'.format(dname),n=2)
+            qsuccess,qmsg = check_mean(
+                label      = '{0} full sum'.format(dname),
+                mean_comp  = vals.full_mean,
+                error_comp = vals.full_error,
+                mean_ref   = ref_vals.full_mean,
+                error_ref  = ref_vals.full_error,
+                nsigma     = options.nsigma,
+                )
+            vlog('status for full sum: {0}'.format(passfail[qsuccess]),n=3)
             msg     += qmsg
             success &= qsuccess
+            # check partial sums
+            vlog('checking partial sum means for "{0}"'.format(dname),n=2)
+            for p in xrange(len(ref_vals.partial_mean)):
+                qsuccess,qmsg = check_mean(
+                    label      = '{0} partial sum {1}'.format(dname,p),
+                    mean_comp  = vals.partial_mean[p],
+                    error_comp = vals.partial_error[p],
+                    mean_ref   = ref_vals.partial_mean[p],
+                    error_ref  = ref_vals.partial_error[p],
+                    nsigma     = nsigma_partial,
+                    )
+                vlog('status for partial sum {0}: {1}'.format(p,passfail[qsuccess]),n=3)
+                msg     += qmsg
+                success &= qsuccess
+            #end for
         #end for
-    #end for
+    except Exception as e:
+        exit_fail('error during value check:\n'+str(e))
+    #end try
 
     return success,msg
 #end def check_values
