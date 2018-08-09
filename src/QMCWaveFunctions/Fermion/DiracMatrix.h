@@ -172,7 +172,7 @@ namespace qmcplusplus {
   template<typename T, typename T_hp>
     struct DelayedUpdate
     {
-      Matrix<T> Ainv_U, V, Binv, tempMat;
+      Matrix<T> Ainv_U, V, B, Binv, tempMat;
       Matrix<T_hp> Binv_hp;
       DiracMatrix<T_hp> deteng;
       std::vector<int> delay_list;
@@ -185,6 +185,7 @@ namespace qmcplusplus {
         Ainv_U.resize(delay, norb);
         V.resize(delay, norb);
         tempMat.resize(norb, delay);
+        B.resize(delay, delay);
         Binv.resize(delay, delay);
 #ifdef MIXED_PRECISION
         Binv_hp.resize(delay, delay);
@@ -211,6 +212,8 @@ namespace qmcplusplus {
         T temp[lda_Binv];
         // multiply Ainv_U (NxK) Binv(KxK) V(KxN) AinvRow right to the left
         BLAS::gemv('T', norb, delay_count, cone, V.data(), norb, AinvRow, 1, czero, new_AinvRow, 1);
+        // save new_AinvRow to B[delay_count]
+        simd::copy_n(new_AinvRow, delay_count, B[delay_count]);
         BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, new_AinvRow, 1, czero, temp, 1);
         BLAS::gemv('N', norb, delay_count, -cone, Ainv_U.data(), norb, temp, 1, czero, new_AinvRow, 1);
         // AinvRow - new_AinvRow
@@ -227,22 +230,26 @@ namespace qmcplusplus {
         simd::copy_n(arow, norb, V[delay_count]);
         delay_list[delay_count] = rowchanged;
         delay_count++;
-        BLAS::gemm('T', 'N', delay_count, delay_count, norb, cone, V.data(), norb, Ainv_U.data(), norb, czero, Binv.data(), lda_Binv);
+        // the new row in B has been computed, now compute the new column
+        BLAS::gemv('T', norb, delay_count, cone, Ainv_U.data(), norb, arow, 1, czero, B.data()+delay_count-1, lda_Binv);
         if(delay_count==1)
         {
-          Binv[0][0]=1.0/T_hp(Binv[0][0]);
+          Binv[0][0]=1.0/T_hp(B[0][0]);
         }
         else
         {
 #ifdef MIXED_PRECISION
           for(int i=0; i<delay_count; i++)
             for(int j=0; j<delay_count; j++)
-              Binv_hp[i][j] = Binv[i][j];
+              Binv_hp[i][j] = B[i][j];
           deteng.invert(Binv_hp,false,delay_count);
           for(int i=0; i<delay_count; i++)
             for(int j=0; j<delay_count; j++)
               Binv[i][j] = Binv_hp[i][j];
 #else
+          for(int i=0; i<delay_count; i++)
+            for(int j=0; j<delay_count; j++)
+              Binv[i][j] = B[i][j];
           deteng.invert(Binv,false,delay_count);
 #endif
         }
