@@ -141,7 +141,7 @@ public:
   {
     mRealType v=0.0;
     for(int n=0; n<coefs.size(); n++)
-      v -= coefs[n]*Basis.h(n,r);
+      v += coefs[n]*Basis.h(n,r);
     return v;
   }
 
