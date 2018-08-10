@@ -190,12 +190,10 @@ public:
   virtual ValueType RATIO(const ParticleSet& P, int iat, const ValueType*
       restrict arow);
 
-  /** evaluate VGL using SoA container for gl
-   *
-   * If newp is true, use particle set data for the proposed move
+  /** evaluate VGL of SPOs using SoA container for gl
    */
   virtual void
-    evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bool newp);
+    evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl);
 
   /** evaluate values for the virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
@@ -263,17 +261,6 @@ public:
                                    , const ParticleSet &source, int iat_src
                                    , GradMatrix_t &grad_phi, HessMatrix_t &grad_grad_phi, GradMatrix_t &grad_lapl_phi);
 
-  virtual void evaluateBasis (const ParticleSet &P, int first, int last
-                              , ValueMatrix_t &basis_val,  GradMatrix_t  &basis_grad, ValueMatrix_t &basis_lapl);
-
-  virtual void evaluateForDeriv (const ParticleSet &P, int first, int last
-                                 , ValueMatrix_t &basis_val,  GradMatrix_t  &basis_grad, ValueMatrix_t &basis_lapl);
-
-  virtual inline void setpm(int x) {};
-
-  virtual void copyParamsFromMatrix (const opt_variables_type& active
-                                     , const ValueMatrix_t &mat, std::vector<RealType> &destVec);
-
   virtual PosType get_k(int orb)
   {
     return PosType();
@@ -297,14 +284,6 @@ public:
   virtual void rotate_B(const std::vector<RealType> &rot_mat) { };
 
 #ifdef QMC_CUDA
-
-  /** evaluate the values of this single-particle orbital set
-   * @param P current ParticleSet
-   * @param r is the position of the particle
-   * @param psi values of the SPO
-   */
-  virtual void
-  evaluate (const ParticleSet& P, const PosType& r, std::vector<RealType> &psi);
 
   virtual void initGPU() {  }
 

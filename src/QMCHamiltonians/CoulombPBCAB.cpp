@@ -594,7 +594,7 @@ void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
     {
       RealType r=(*myGrid)[ig];
       //need to multiply r for the LR
-      v[ig]=r*AB->evaluateLR(r)+ppot->splint(r);
+      v[ig]= -r*AB->evaluateLR(r)+ppot->splint(r);
     }
     v[0] = 2.0*v[1] - v[2];
     //by construction, v has to go to zero at the boundary
