@@ -848,8 +848,8 @@ def simstats(x,dim=None):
         #end if
         error=sqrt(var/Neff)
     else:
-        error = zeros(mean.shape)
-        kappa = zeros(mean.shape)
+        error = zeros(mean.shape,dtype=mean.dtype)
+        kappa = zeros(mean.shape,dtype=mean.dtype)
         for v in xrange(nvars):
             i=0          
             tempC=0.5
