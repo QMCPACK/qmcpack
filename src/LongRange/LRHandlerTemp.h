@@ -144,6 +144,22 @@ public:
       v += coefs[n]*Basis.h(n,r);
     return v;
   }
+  /** evaluate the contribution from the long-range part for for spline
+   */
+  inline mRealType lrDf(mRealType r)
+  {
+    mRealType dv=0.0;
+    if(r<LR_rc)
+    {
+      for(int n=0; n<coefs.size(); n++)
+        dv += coefs[n]*Basis.df(n,r);
+    }
+    else
+      dv=myFunc.df(r);
+
+    return dv;
+  }
+
 
   inline mRealType evaluateSR_k0()
   {

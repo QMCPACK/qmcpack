@@ -278,6 +278,12 @@ public:
     return drV_force->splint(r)/mRealType(r*r) ; 
   }
 
+  inline mRealType lrDf(mRealType r)
+  {
+    APP_ABORT("Error. lrDf(r) in LRHandlerSRCoulomb not implemented\n");  
+    return 0.0 ; 
+  }
+
   inline mRealType srDf_strain(mRealType r, mRealType rinv)
   {
   //  mRealType df = Basis.df_dr(r, gstraincoefs);

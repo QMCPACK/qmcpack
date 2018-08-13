@@ -118,6 +118,15 @@ public:
   {
     return 0.0;
   }
+  /**  evaluate the first derivative of the long-range part in real space at r
+   *
+   * @param r  radius
+   */
+  inline mRealType lrDf(mRealType r)
+  {
+    APP_ABORT("Error.  lrDf(r) in EwaldHandler not implemented\n");
+    return 0.0;
+  }
 
   void fillFk(KContainer& KList);
 

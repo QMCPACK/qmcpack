@@ -105,6 +105,16 @@ public:
   {
     return -2.0*Sigma*std::exp(-Sigma*Sigma*r*r)/(std::sqrt(M_PI)*r) - erfc(Sigma*r)*rinv*rinv;
   }
+  /**  evaluate the first derivative of the long range part (in real space) at r
+   *
+   * @param r  radius
+   */
+  inline mRealType lrDf(mRealType r)
+  {
+    mRealType rinv=1.0/r;
+    return 2.0*Sigma*std::exp(-Sigma*Sigma*r*r)/(std::sqrt(M_PI)*r) - erf(Sigma*r)*rinv*rinv;
+  }
+
 
   void fillFk(KContainer& KList);
 

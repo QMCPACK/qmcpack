@@ -135,6 +135,11 @@ struct LRRPAHandlerTemp: public LRHandlerBase
     return df;
   }
 
+  inline mRealType lrDf(mRealType r)
+  {
+    APP_ABORT("Error.  lrDf(r) in LRRPAHandlerTemp not imlemented\n");
+    return 0.0;
+  }
 
   /** evaluate the contribution from the long-range part for for spline
    */

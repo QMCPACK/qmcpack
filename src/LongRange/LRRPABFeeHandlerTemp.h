@@ -131,6 +131,16 @@ struct LRRPABFeeHandlerTemp: public LRHandlerBase
       df += coefs[n]*Basis.df(n,r);
     return df;
   }
+  /**  evaluate the first derivative of the long range part (in real space) at r
+   *
+   * @param r  radius
+   */
+  inline mRealType lrDf(mRealType r)
+  {
+    APP_ABORT("Error.  lrDf(r) in LRRPABFeeHandlerTemp not implemented\n");
+    return 0.0;
+  }
+
 
 
   /** evaluate the contribution from the long-range part for for spline
