@@ -527,8 +527,8 @@ void CrystalAsciiParser::getKMO(std::istream& is, std::vector< std::vector< std:
 	{
 	    break;
 	}
-	else 
-	{
+	else if (currentWords[0] == currentWords[1])
+	{ //actual complex kpoint
 	    int nmo = currentWords.size()/2;
 	    getwords(currentWords,is);
 	    for (int i = 0; i < nmo; i++)
@@ -541,6 +541,25 @@ void CrystalAsciiParser::getKMO(std::istream& is, std::vector< std::vector< std:
 		for (int j = 0; j < nmo; j++)
 		{
 		    std::complex<double> c(atof(currentWords[2*j+1].c_str()),atof(currentWords[2*j+2].c_str()));
+		    CMat[currTot+j].push_back(c);
+		}
+	    }
+	    currTot += nmo;
+	}
+	else
+	{ //real kpoint, but storing in complex MO matrix
+	    int nmo = currentWords.size();
+	    getwords(currentWords,is);
+	    for (int i = 0; i < nmo; i++)
+	    {
+		CMat.push_back(tmp);
+	    }
+	    for (int i = 0; i < SizeOfBasisSet; i++)
+	    {
+		getwords(currentWords,is);
+		for (int j = 0; j < nmo; j++)
+		{
+		    std::complex<double> c(atof(currentWords[j+1].c_str()),0.0);
 		    CMat[currTot+j].push_back(c);
 		}
 	    }
@@ -581,12 +600,7 @@ void CrystalAsciiParser::getMO(std::istream& is)
 	    getwords(currentWords,is);
 	    if (currentWords[0] == currentWords[1])
 	    {
-	        complexKpt.push_back(true);
 		IsComplex=true;
-	    }
-	    else
-	    {
-	        complexKpt.push_back(false);
 	    }
 	}
     }
@@ -608,30 +622,35 @@ void CrystalAsciiParser::getMO(std::istream& is)
 	is.seekg(pivots[k]);
 	std::vector< std::vector< double > > Mat;
 	std::vector< std::vector< std::complex<double> > > CMat;
-	if (complexKpt[k])
+	if (IsComplex)
 	{
 	    getKMO(is,CMat);
+	    complex_kmos.push_back(CMat);
 	}
 	else
 	{
 	    getKMO(is,Mat);
+	    real_kmos.push_back(Mat);
 	}
 
 	if(!SpinRestricted)
 	{
-	    std::vector< std::vector< double > > MatD;
-	    std::vector< std::vector< std::complex<double> > > CMatD;
+	    Mat.clear();
+	    CMat.clear();
 	    is.seekg(pivots[k+NbKpts]);
-	    if (complexKpt[k])
+	    if (IsComplex)
 	    {
-		getKMO(is,CMatD);
+		getKMO(is,CMat);
+		complex_kmos.push_back(CMat);
 	    }
 	    else
 	    {
-		getKMO(is,MatD);
+		getKMO(is,Mat);
+		real_kmos.push_back(Mat);
 	    }
 	}
     }
+
 }
 
 void CrystalAsciiParser::dumpHDF5() 
@@ -782,7 +801,48 @@ void CrystalAsciiParser::dumpHDF5()
     {
 	std::string kpt = "KPTS_"+std::to_string(k);
 	hout.push(kpt,true);
-
+	hout.write(Kpoints_Coord[k],"Coord");
+	if (IsComplex)
+	{
+	    Matrix<double> real(SizeOfBasisSet,SizeOfBasisSet);
+	    Matrix<double> imaj(SizeOfBasisSet,SizeOfBasisSet);
+	    for (int i = 0; i < SizeOfBasisSet; i++)
+	    {
+	        for (int j = 0; j < SizeOfBasisSet; j++)
+	        {
+	    	  real[i][j]=std::real(complex_kmos[k][i][j]);
+	    	  imaj[i][j]=std::imag(complex_kmos[k][i][j]);
+	        }
+	    }
+	    hout.write(real,"eigenset_0_real");
+	    hout.write(imaj,"eigenset_0_imag");
+	    if (!SpinRestricted)
+	    {
+		k++;
+	        for (int i = 0; i < SizeOfBasisSet; i++)
+	        {
+	            for (int j = 0; j < SizeOfBasisSet; j++)
+	            {
+	        	real[i][j]=std::real(complex_kmos[k][i][j]);
+	        	imaj[i][j]=std::imag(complex_kmos[k][i][j]);
+	            }
+	        }
+	        hout.write(real,"eigenset_1_real");
+	        hout.write(imaj,"eigenset_1_imag");
+	    }
+	}
+	else 
+	{
+	    Matrix<double> real(SizeOfBasisSet,SizeOfBasisSet);
+	    for (int i = 0; i < SizeOfBasisSet; i++)
+	    {
+		for (int j = 0; j < SizeOfBasisSet; j++)
+		{
+		    real[i][j] = real_kmos[k][i][j];
+		}
+	    }
+	    hout.write(real,"eigenset_0");
+	}
 	hout.pop();
     }
 
