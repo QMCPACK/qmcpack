@@ -77,7 +77,7 @@ class JeeIOrbitalSoA: public WaveFunctionComponent
   Array<std::vector<int>,2> elecs_inside;
   Array<std::vector<valT>,2> elecs_inside_dist;
   Array<std::vector<posT>,2> elecs_inside_displ;
-  /// the ions around
+  /// the ids of ions within the cutoff radius of an electron on which a move is proposed
   std::vector<int> ions_nearby_old, ions_nearby_new;
 
   /// work buffer size
@@ -516,13 +516,14 @@ public:
 
     const int ig = P.GroupID[iat];
     // update compact list elecs_inside
+    // if the old position exists in elecs_inside
     for (int iind=0; iind<ions_nearby_old.size(); iind++)
     {
       int jat=ions_nearby_old[iind];
       auto iter = find(elecs_inside(ig,jat).begin(), elecs_inside(ig,jat).end(), iat);
       auto iter_dist = elecs_inside_dist(ig,jat).begin()+std::distance(elecs_inside(ig,jat).begin(),iter);
       auto iter_displ = elecs_inside_displ(ig,jat).begin()+std::distance(elecs_inside(ig,jat).begin(),iter);
-      if(eI_table.Temp_r[jat] < Ion_cutoff[jat]) // still inside
+      if(eI_table.Temp_r[jat] < Ion_cutoff[jat]) // the new position is still inside
       {
         *iter_dist = eI_table.Temp_r[jat];
         *iter_displ = eI_table.Temp_dr[jat];
@@ -539,6 +540,7 @@ public:
       }
     }
 
+    // if the old position doesn't exist in elecs_inside but the new position do
     for (int iind=0; iind<ions_nearby_new.size(); iind++)
     {
       int jat=ions_nearby_new[iind];
