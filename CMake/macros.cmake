@@ -243,6 +243,8 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
     set(check_cmd "${CMAKE_CURRENT_BINARY_DIR}/${full_name}/${check_script}")
   elseif(EXISTS "${CMAKE_SOURCE_DIR}/tests/scripts/${check_script}")
     set(check_cmd "${CMAKE_SOURCE_DIR}/tests/scripts/${check_script}")
+  elseif(EXISTS "${CMAKE_SOURCE_DIR}/utils/${check_script}")
+    set(check_cmd "${CMAKE_SOURCE_DIR}/utils/${check_script}")
   else()
     message(FATAL_ERROR "Check script not found: ${check_script}")
   endif()
@@ -252,10 +254,12 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
   set(test_name "${full_name}-check") # hard-code for single test
   set(work_dir "${CMAKE_CURRENT_BINARY_DIR}/${full_name}")
   #message(${work_dir})
-  add_test(NAME "${test_name}"
-    COMMAND "${check_cmd}"
+
+  add_test(
+    NAME "${test_name}"
+    COMMAND ${check_cmd} ${ARGN}
     WORKING_DIRECTORY "${work_dir}"
-  )
+    )
 
   # make test depend on the run
   set_property(TEST ${test_name} APPEND PROPERTY DEPENDS ${full_name})
