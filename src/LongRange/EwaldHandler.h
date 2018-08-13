@@ -61,6 +61,7 @@ public:
   EwaldHandler(ParticleSet& ref, mRealType kc_in=-1.0)
     : LRHandlerBase(kc_in)
   {
+    LRHandlerBase::ClassName="EwaldHandler";
     Sigma=LR_kc=ref.Lattice.LR_kc;
   }
 
@@ -116,15 +117,6 @@ public:
    */
   inline mRealType srDf(mRealType r, mRealType rinv)
   {
-    return 0.0;
-  }
-  /**  evaluate the first derivative of the long-range part in real space at r
-   *
-   * @param r  radius
-   */
-  inline mRealType lrDf(mRealType r)
-  {
-    APP_ABORT("Error.  lrDf(r) in EwaldHandler not implemented\n");
     return 0.0;
   }
 

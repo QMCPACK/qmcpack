@@ -54,10 +54,12 @@ public:
   BreakupBasisType Basis; //This needs a Lattice for the constructor...
   Func myFunc;
 
+
   //Constructor
   LRHandlerTemp(ParticleSet& ref, mRealType kc_in=-1.0):
     LRHandlerBase(kc_in),FirstTime(true), Basis(ref.LRBox)
   {
+    LRHandlerBase::ClassName="LRHandlerTemp";
     myFunc.reset(ref);
   }
 
@@ -276,6 +278,7 @@ private:
     //  Fk[ki] = evalFk(k); //Call derived fn.
     //}
   }
+
 };
 }
 #endif

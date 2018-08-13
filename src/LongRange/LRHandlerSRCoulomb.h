@@ -76,6 +76,7 @@ public:
     rV_force(0), rV_energy(0), drV_force(0), rV_stress(0), drV_stress(0)
 
   {
+    LRHandlerBase::ClassName="LRHandlerSRCoulomb";
     myFunc.reset(ref);
   }
    
@@ -276,12 +277,6 @@ public:
 //    wee<<"srDf() #"<<omp_get_thread_num()<<" dspl= "<<rinv*rinv*du-df<<" ref= "<<df<<" r= "<<r<< std::endl;
 //   app_log()<<wee.str();  
     return drV_force->splint(r)/mRealType(r*r) ; 
-  }
-
-  inline mRealType lrDf(mRealType r)
-  {
-    APP_ABORT("Error. lrDf(r) in LRHandlerSRCoulomb not implemented\n");  
-    return 0.0 ; 
   }
 
   inline mRealType srDf_strain(mRealType r, mRealType rinv)
