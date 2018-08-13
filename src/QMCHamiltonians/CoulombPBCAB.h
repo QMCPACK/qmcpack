@@ -44,6 +44,8 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
   ParticleSet& PtclA;
   ///long-range Handler
   LRHandlerType* AB;
+  ///long-range derivative handler
+  LRHandlerType* dAB;
   ///locator of the distance table
   int myTableIndex;
   ///number of species of A particle set
@@ -82,6 +84,10 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
   std::vector<RadFunctorType*> Vat;
   ///Short-range potential for each species
   std::vector<RadFunctorType*> Vspec;
+  ///Short-range potential derivative for each ion
+  std::vector<RadFunctorType*> dVat;
+  ///Short-range potential derivative for each species
+  std::vector<RadFunctorType*> dVspec;
   /*@{
    * @brief temporary data for pbyp evaluation
    */
