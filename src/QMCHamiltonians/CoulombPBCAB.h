@@ -86,10 +86,13 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
   std::vector<RadFunctorType*> Vat;
   ///Short-range potential for each species
   std::vector<RadFunctorType*> Vspec;
-  ///Short-range potential derivative for each ion
-  std::vector<RadFunctorType*> dVat;
-  ///Short-range potential derivative for each species
-  std::vector<RadFunctorType*> dVspec;
+  ///Short-range potential (r*V) and potential derivative d/dr(rV) derivative for each ion
+  ///Required for force evaluations.
+  std::vector<RadFunctorType*> fVat;
+  std::vector<RadFunctorType*> fdVat;
+  ////Short-range potential (r*V) and potential derivative d/dr(rV) derivative for each species
+  std::vector<RadFunctorType*> fVspec;
+  std::vector<RadFunctorType*> fdVspec;
   /*@{
    * @brief temporary data for pbyp evaluation
    */
