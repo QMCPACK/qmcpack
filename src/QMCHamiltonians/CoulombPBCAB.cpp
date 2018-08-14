@@ -62,6 +62,27 @@ QMCHamiltonianBase* CoulombPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction& 
       }
     }
   }
+  //If forces exist, force arrays will have been allocated.  Iterate over one 
+  //such array to clone.
+  for(int ig=0; ig<fVspec.size(); ig++)
+  {
+    if(fVspec[ig])
+    {
+      RadFunctorType* apot=fVspec[ig]->makeClone();
+      RadFunctorType* dapot=fdVspec[ig]->makeClone();
+      myclone->fVspec[ig]=apot;
+      myclone->fdVspec[ig]=dapot;
+
+      for(int iat=0; iat<PtclA.getTotalNum(); iat++)
+      {
+        if(PtclA.GroupID[iat]=ig)
+        {
+          myclone->fVat[iat]=apot;
+          myclone->fdVat[iat]=dapot;
+        }
+      }
+    }
+  }
   return myclone;
 }
 
@@ -569,6 +590,24 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
     Vat.resize(NptclA,V0);
     Vspec.resize(NumSpeciesA,0);//prepare for PP to overwrite it
   }
+  
+  //If ComputeForces is true, then we allocate space for the radial derivative functors.
+  if(ComputeForces)
+  {
+    dAB = LRCoulombSingleton::getDerivHandler(P);
+    //For now, we resize everything, regardless of what's been already computed.  This needs to be fixed.
+    //Need perhaps an if (dV0==0) or something.
+    if(fVat.size())
+    {
+      app_log() << "  fVat is not empty.  Something is wrong" << std::endl;
+      OHMMS::Controller->abort();
+    }
+    fVat.resize(NptclA,0);
+    fdVat.resize(NptclA,0);
+    fVspec.resize(NumSpeciesA,0);
+    fdVspec.resize(NumSpeciesA,0);
+  }
+
 }
 
 /** add a local pseudo potential
@@ -610,6 +649,7 @@ void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
         Vat[iat]=rfunc;
     }
   }
+
   if (ComputeForces)
   {
     if(OHMMS::Controller->rank()==0)
