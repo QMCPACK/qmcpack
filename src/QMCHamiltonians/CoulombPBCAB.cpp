@@ -650,6 +650,57 @@ void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
     }
   }
 
+  if(ComputeForces && fVspec[groupID]==0)
+  {
+    app_log() << "    Creating the short-range pseudopotential derivatives for species " << groupID << std::endl;
+    int ng=myGrid->size();
+    //This is the value coming from optimized breakup for FORCES, not for energy.
+    //Also.  Goal of this section is to create and store d/dr(rV), not d/dr(V)!!!
+    std::vector<RealType> v(ng);
+    std::vector<RealType> dv(ng);
+    
+    RealType ppot_val(0), ppot_deriv(0), ppot_2deriv(0);
+    RealType lr_val(0),lr_deriv(0);
+    for(int ig=1;ig<ng-2;ig++) 
+    {
+      RealType r=(*myGrid)[ig];
+      ppot_val=ppot->splint(r,ppot_deriv,ppot_2deriv);
+      lr_val=dAB->evaluateLR(r);
+      lr_deriv=dAB->lrDf(r);   
+   
+      v[ig] = ppot_val - r*lr_val;
+      dv[ig] = ppot_deriv - (lr_val+lr_deriv*r);
+    }
+    //This is a linear interpolation from v[2] and v[1] to v[0], assuming linear behavior.
+    v[0]=2.0*v[1] - v[2];
+    v[ng-2]=0.0;
+    v[ng-1]=0.0;
+    
+    dv[0]=2.0*dv[1]-dv[2];
+    dv[ng-2]=0;
+    dv[ng-1]=0;
+    
+    RadFunctorType* ffunc = new RadFunctorType(myGrid,v);
+    RadFunctorType* fdfunc = new RadFunctorType(myGrid,dv);
+
+    RealType fderiv=(dv[1]-dv[0])/((*myGrid)[1]-(*myGrid)[0]);
+   
+    ffunc->spline(0,dv[0],ng-1,0.0);
+    fdfunc->spline(0,fderiv,ng-1,0.0);
+    
+    fVspec[groupID]=ffunc;
+    fdVspec[groupID]=fdfunc;
+    for(int iat=0; iat<NptclA; iat++)
+    {
+      if(PtclA.GroupID[iat]==groupID)
+      {
+        fVat[iat]=ffunc;
+        fdVat[iat]=fdfunc;
+      }
+    }
+    //Done   
+  }
+
   if (ComputeForces)
   {
     if(OHMMS::Controller->rank()==0)
