@@ -591,7 +591,7 @@ void CrystalAsciiParser::getMO(std::istream& is)
 	{
 	    break;
 	}
-	else if (currentWords.size() == 5) 
+	else if (currentWords.size() == 5 && currentWords[1] == "(") 
 	{
 	    pivots.push_back(is.tellg());
 	    getwords(currentWords,is);
