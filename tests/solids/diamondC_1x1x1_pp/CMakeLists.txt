@@ -272,7 +272,7 @@ endif()
 if (add_tests)
   # density tests
   SIMPLE_RUN_AND_CHECK(
-    short-diamondC_1x1x1_pp-vmc-density
+    short-diamondC_1x1x1_pp-vmc-estimator-density
     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
     qmc_dens_short${IFEXT}.in.xml
     ${NMPI} ${NOMP}
@@ -280,7 +280,7 @@ if (add_tests)
     )
 
   SIMPLE_RUN_AND_CHECK(
-    short-diamondC_1x1x1_pp-dmc-density
+    short-diamondC_1x1x1_pp-dmc-estimator-density
     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
     qmc_dens_dmc_short.in.xml
     ${NMPI} ${NOMP}
@@ -288,7 +288,7 @@ if (add_tests)
     )
 
   SIMPLE_RUN_AND_CHECK(
-    long-diamondC_1x1x1_pp-vmc-density
+    long-diamondC_1x1x1_pp-vmc-estimator-density
     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
     qmc_dens_long${IFEXT}.in.xml
     ${NMPI} ${NOMP}
@@ -296,7 +296,7 @@ if (add_tests)
     )
 
   SIMPLE_RUN_AND_CHECK(
-    long-diamondC_1x1x1_pp-dmc-density
+    long-diamondC_1x1x1_pp-dmc-estimator-density
     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
     qmc_dens_dmc_long.in.xml
     ${NMPI} ${NOMP}
@@ -306,7 +306,7 @@ if (add_tests)
 
   # spindensity tests
   SIMPLE_RUN_AND_CHECK(
-    short-diamondC_1x1x1_pp-vmc-spindensity
+    short-diamondC_1x1x1_pp-vmc-estimator-spindensity
     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
     qmc_spindens_short${IFEXT}.in.xml
     ${NMPI} ${NOMP}
@@ -314,7 +314,7 @@ if (add_tests)
     )
 
   SIMPLE_RUN_AND_CHECK(
-    short-diamondC_1x1x1_pp-dmc-spindensity
+    short-diamondC_1x1x1_pp-dmc-estimator-spindensity
     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
     qmc_spindens_dmc_short.in.xml
     ${NMPI} ${NOMP}
@@ -322,7 +322,7 @@ if (add_tests)
     )
 
   SIMPLE_RUN_AND_CHECK(
-    long-diamondC_1x1x1_pp-vmc-spindensity
+    long-diamondC_1x1x1_pp-vmc-estimator-spindensity
     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
     qmc_spindens_long${IFEXT}.in.xml
     ${NMPI} ${NOMP}
@@ -330,7 +330,7 @@ if (add_tests)
     )
 
   SIMPLE_RUN_AND_CHECK(
-    long-diamondC_1x1x1_pp-dmc-spindensity
+    long-diamondC_1x1x1_pp-dmc-estimator-spindensity
     "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
     qmc_spindens_dmc_long.in.xml
     ${NMPI} ${NOMP}
