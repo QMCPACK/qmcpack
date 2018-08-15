@@ -201,7 +201,7 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
                             SET( TEST_NAME "${FULL_NAME}-${SERIES}-${SCALAR_CHECK}" )
                         ENDIF()
                         #MESSAGE("Adding scalar check ${TEST_NAME}")
-                        SET(CHECK_CMD ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e 2 ${FLAG} ${VALUE})
+                        SET(CHECK_CMD ${CMAKE_SOURCE_DIR}/tests/scripts/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e 2 ${FLAG} ${VALUE})
                         #MESSAGE("check command = ${CHECK_CMD}")
                         ADD_TEST( NAME ${TEST_NAME}
                             COMMAND ${CHECK_CMD}
