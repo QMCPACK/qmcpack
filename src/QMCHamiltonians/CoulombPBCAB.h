@@ -66,8 +66,10 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
   GridType* myGrid;
   ///Always mave a radial functor for the bare coulomb
   RadFunctorType* V0;
-  ///Radial functor for the derivative of bare coulomb
-  RadFunctorType* dV0;
+  ///Radial functor for bare coulomb, optimized for forces
+  RadFunctorType* fV0;
+  ///Radial functor for derivative of bare coulomb, optimized for forces
+  RadFunctorType* dfV0;
   /// Flag for whether to compute forces or not
   bool ComputeForces;
   int MaxGridPoints;

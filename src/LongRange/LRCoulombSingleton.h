@@ -57,6 +57,8 @@ struct LRCoulombSingleton
    */
   static RadFunctorType* createSpline4RbyVs(LRHandlerType* aLR, mRealType rcut,
       GridType* agrid=0);
+  static RadFunctorType* createSpline4RbyVsDeriv(LRHandlerType* aLR, mRealType rcut,
+      GridType* agrid=0);
 };
 
 }

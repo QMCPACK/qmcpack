@@ -25,7 +25,7 @@ namespace qmcplusplus
 
 CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns,
                            bool computeForces):
-  PtclA(ions), myConst(0.0), myGrid(0),V0(0),ComputeForces(computeForces),
+  PtclA(ions), myConst(0.0), myGrid(0),V0(0),fV0(0),dfV0(0),ComputeForces(computeForces),
   ForceBase (ions, elns), MaxGridPoints(10000),Pion(ions),Peln(elns)
 {
   // if (ComputeForces)
@@ -36,6 +36,8 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns,
   //Use singleton pattern
   //AB = new LRHandlerType(ions);
   myTableIndex=elns.addTable(ions,DT_SOA_PREFERRED);
+  if(ComputeForces)
+    PtclA.turnOnPerParticleSK();
   initBreakup(elns);
   prefix="Flocal";
   app_log() << "  Rcut                " << myRcut << std::endl;
@@ -72,17 +74,16 @@ QMCHamiltonianBase* CoulombPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction& 
       RadFunctorType* dapot=fdVspec[ig]->makeClone();
       myclone->fVspec[ig]=apot;
       myclone->fdVspec[ig]=dapot;
-
-      for(int iat=0; iat<PtclA.getTotalNum(); iat++)
+      for(int iat=0; iat<PtclA.getTotalNum(); ++iat)
       {
-        if(PtclA.GroupID[iat]=ig)
+        if(PtclA.GroupID[iat]==ig)
         {
           myclone->fVat[iat]=apot;
           myclone->fdVat[iat]=dapot;
         }
       }
     }
-  }
+  } 
   return myclone;
 }
 
@@ -595,15 +596,17 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
   if(ComputeForces)
   {
     dAB = LRCoulombSingleton::getDerivHandler(P);
-    //For now, we resize everything, regardless of what's been already computed.  This needs to be fixed.
-    //Need perhaps an if (dV0==0) or something.
+    if(fV0==0)
+      fV0=LRCoulombSingleton::createSpline4RbyVs(dAB,myRcut,myGrid);
+    if(dfV0==0)
+      dfV0=LRCoulombSingleton::createSpline4RbyVsDeriv(dAB,myRcut,myGrid);
     if(fVat.size())
     {
       app_log() << "  fVat is not empty.  Something is wrong" << std::endl;
       OHMMS::Controller->abort();
     }
-    fVat.resize(NptclA,0);
-    fdVat.resize(NptclA,0);
+    fVat.resize(NptclA,fV0);
+    fdVat.resize(NptclA,dfV0);
     fVspec.resize(NumSpeciesA,0);
     fdVspec.resize(NumSpeciesA,0);
   }
@@ -724,13 +727,13 @@ CoulombPBCAB::evalLRwithForces(ParticleSet& P)
   const StructFact& RhoKA(*(PtclA.SK));
   const StructFact& RhoKB(*(P.SK));
   std::vector<TinyVector<RealType,DIM> > grad(PtclA.getTotalNum());
-  for(int j=0; j<NumSpeciesB; j++)
+ for(int j=0; j<NumSpeciesB; j++)
   {
     for (int iat=0; iat<grad.size(); iat++)
       grad[iat] = TinyVector<RealType,DIM>(0.0, 0.0, 0.0);
-    AB->evaluateGrad(PtclA, P, j, Zat, grad);
+    dAB->evaluateGrad(PtclA, P, j, Zat, grad);
     for (int iat=0; iat<grad.size(); iat++)
-      forces[iat] += Qspec[j]*grad[iat];
+      forces[iat] += Qspec[j]*Zat[iat]*grad[iat];
   } // electron species
   return evalLR(P);
 }
@@ -738,25 +741,43 @@ CoulombPBCAB::evalLRwithForces(ParticleSet& P)
 CoulombPBCAB::Return_t
 CoulombPBCAB::evalSRwithForces(ParticleSet& P)
 {
+  CONSTEXPR mRealType czero(0);
   const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
-  mRealType res=0.0;
-  //Loop over distinct eln-ion pairs
-  for(int iat=0; iat<NptclA; iat++)
+  mRealType res=czero;
+  //Temporary variables for computing energy and forces.
+  mRealType rV(0);
+  mRealType frV(0),fdrV(0);
+  mRealType rinv(1.0);
+  //Magnitude of force.
+  mRealType dvdr(0.0);
+  if(d_ab.DTType == DT_SOA)
   {
-    mRealType esum = 0.0;
-    RadFunctorType* rVs=Vat[iat];
-    for(int nn=d_ab.M[iat], jat=0; nn<d_ab.M[iat+1]; ++nn,++jat)
+    for(size_t b=0; b<NptclB; ++b)
     {
-      RealType rV, d_rV_dr, d2_rV_dr2, V;
-      rV = rVs->splint(d_ab.r(nn), d_rV_dr, d2_rV_dr2);
-      V = rV *d_ab.rinv(nn);
-      PosType drhat = d_ab.rinv(nn) * d_ab.dr(nn);
-      esum += Qat[jat]*d_ab.rinv(nn)*rV;
-      forces[iat] += Zat[iat]*Qat[jat] * //g(d_ab.r(nn)) *
-                     (d_rV_dr - V)*d_ab.rinv(nn) *drhat;
+      const RealType* restrict dist=d_ab.Distances[b];
+      RowContainerType dr = d_ab.Displacements[b];
+      mRealType esum=czero;
+      for(size_t a=0; a<NptclA; ++a)
+      {
+        //Low hanging SIMD fruit here.  See J1/J2 grad computation.
+        //Too lazy for now.  
+        rinv=1.0/dist[a];
+        rV=Vat[a]->splint(dist[a]);
+        frV=fVat[a]->splint(dist[a]);
+        fdrV=fdVat[a]->splint(dist[a]);
+        dvdr=Qat[b]*Zat[a]*(fdrV-frV)*rinv;
+        forces[a][0]-=dvdr*dr[a][0]*rinv;
+        forces[a][1]-=dvdr*dr[a][1]*rinv;
+        forces[a][2]-=dvdr*dr[a][2]*rinv;
+        esum += Zat[a]*rV*rinv; //Total energy accumulation
+        
+      }
+      res += esum*Qat[b];
     }
-    //Accumulate pair sums...species charge for atom i.
-    res += Zat[iat]*esum;
+  }
+  else
+  {
+    APP_ABORT("LocalECP Forces are only supported with SoA version of QMCPACK");
   }
   return res;
 }
