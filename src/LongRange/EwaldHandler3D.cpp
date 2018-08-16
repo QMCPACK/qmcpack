@@ -61,8 +61,7 @@ void EwaldHandler3D::fillFk(KContainer& KList)
   Fkg.resize(KList.kpts_cart.size());
   const std::vector<int>& kshell(KList.kshell);
   
-  if(MaxKshell >= kshell.size())
-    MaxKshell=kshell.size()-1;
+  MaxKshell=kshell.size()-1;
   
   Fk_symm.resize(MaxKshell);
   kMag.resize(MaxKshell);
