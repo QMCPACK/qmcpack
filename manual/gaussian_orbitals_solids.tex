@@ -105,14 +105,15 @@ factor and numerical screening in future.
 
 Similar to any QMC calculation, using periodic GTOs requires the
 generation of a periodic trial wavefunction. QMCPACK is currently
-interfaced to PySCF which is a
-multipurpose electronic structure written mainly in Python with key
-numerical functionality implemented via optimized C and C++
-libraries\cite{Sun2018}. Such a wavefunction can be generated
-following the example
-for a 2x1x1 supercell, below. Note that the current
-implementation and examples cover only the use of k-points with real coefficients. This means that only high symmetry k-points can be computed. k-points with real coefficients can be viewd as performing a calculation at the Gamma point ($\Gamma$) for a the equivalent supercell. 
-More general k-points (complex) will be supported in future releases.
+interfaced to PySCF which is a multipurpose electronic structure
+written mainly in Python with key numerical functionality implemented
+via optimized C and C++ libraries\cite{Sun2018}. Such a wavefunction
+can be generated following the example for a 2x1x1 supercell,
+below. Note that the current implementation and examples cover only
+the use of k-points where symmetry allows real coefficients to be
+used.  This allows calculation at $\Gamma$) and, e.g., some high
+symmetry k-points at the Brillouin zone edges.  More general k-points
+requiring complex coefficients will be supported in future releases.
 
 \begin{lstlisting}[caption=Example PySCF input for single k-point calculation for a 2x1x1 Carbon supercell.]
 #!/usr/bin/env python
@@ -270,9 +271,13 @@ In order to generate QMCPACK input files, you will need to run for both cases \t
 convert4qmc -pyscf C_Diamond.h5
 \end{lstlisting}
 
-This tool can be used with any option described in convert4qmc. Since the HDF5 contains all the information needed for a QMC run, there is no need to specify any other specific tag for periodicity and will work for both a supercell at $\Gamma$-point or using multiple k-points. 
+This tool can be used with any option described in convert4qmc. Since
+the HDF5 contains all the information needed, there is no need to
+specify any other specific tag for periodicity.A supercell at
+$\Gamma$-point or using multiple k-points will work without further
+modification..
 
-Running such a command will generate 3 input files;\\
+Running convert4qmv will generate 3 input files;\\
 \begin{lstlisting}[caption=CDiamond.structure.xml. This file contains the geometry of the system.]
 <?xml version="1.0"?>
 <qmcsystem>
@@ -312,7 +317,7 @@ Running such a command will generate 3 input files;\\
 </qmcsystem>
   \end{lstlisting}
 
-  As one can see, that for both examples the cell has been extended to contain 4 atoms in a 2x1x1 Carbon Cell.
+  As one can see, that for both examples the 2 atom primitive cell has been expanded to contain 4 atoms in a 2x1x1 carbon cell.
 \begin{lstlisting}[caption=CDiamond.wfj-Twist0.xml. This file contains the trial wavefunction.]
 <?xml version="1.0"?>
 <qmcsystem>
