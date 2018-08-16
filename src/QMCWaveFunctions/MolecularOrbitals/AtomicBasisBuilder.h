@@ -156,7 +156,7 @@ bool AtomicBasisBuilder<RFB>::putH5(hdf_archive &hin)
   {
     expandlm = NATURAL_EXPAND;
   }
-  else if(Morder == "no")
+  else if(Morder == "no" || Morder == "Numerical")
   {
     expandlm = DONOT_EXPAND;
   }
