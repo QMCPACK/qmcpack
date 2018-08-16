@@ -90,6 +90,40 @@ QMCHamiltonianBase* CoulombPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction& 
 CoulombPBCAB:: ~CoulombPBCAB()
 {
   //probably need to clean up
+  //Yes we do.
+ 
+  if(V0)
+  {
+    //V0 is the same object stored in Vat.  Deleting this pointer should take care
+    //of everything all electron.
+    delete V0;
+    V0=0;
+  }
+
+  for(int ig=0; ig<Vspec.size(); ig++)
+  {
+    if(Vspec[ig]) //verbose, but don't want to delete a null pointer.
+    {
+      delete Vspec[ig];
+      Vspec[ig]=0;
+    }
+  }
+  if(ComputeForces)
+  {
+    for(int ig=0; ig<fVspec.size(); ig++)
+    {
+      if(fVspec[ig])
+      {
+        delete fVspec[ig];
+        fVspec[ig]=0;
+      }
+      if(fdVspec[ig])
+      {
+        delete fdVspec[ig];
+      }
+    }
+  
+  }
 }
 
 void CoulombPBCAB::resetTargetParticleSet(ParticleSet& P)
@@ -629,6 +663,12 @@ void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
   }
   if(Vspec[groupID]==0)
   {
+    if(V0) //means that V0 has already been set and initialized to bare coulomb.
+    {
+      delete V0;
+      V0=0;
+    }
+
     app_log() << "    Creating the short-range pseudopotential for species " << groupID << std::endl;
     int ng=myGrid->size();
     std::vector<RealType> v(ng);
