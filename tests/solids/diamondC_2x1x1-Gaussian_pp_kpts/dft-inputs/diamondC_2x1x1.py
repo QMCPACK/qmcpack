@@ -38,20 +38,11 @@ kpts -= kpts[0]
 supcell=cell
 mydf = df.GDF(supcell,kpts)
 mydf.auxbasis = 'weigend'
-#mydf._cderi_to_save = 'df_ints.h5'
-#mydf.build()
 mf = scf.KRHF(supcell,kpts).density_fit()
-
-
-
 
 mf.exxdiv = 'ewald'
 mf.with_df = mydf
-mf.chkfile ='diamond-scf.chk'
-dm = mf.from_chk('diamond-scf.chk')
-mf.with_df._cderi = 'df_ints.h5'
-e_scf=mf.kernel(dm)
-#e_scf=mf.kernel()
+e_scf=mf.kernel()
 
 
 title="C_Diamond-211"
