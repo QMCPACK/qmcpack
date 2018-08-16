@@ -728,9 +728,11 @@ void CrystalAsciiParser::dumpHDF5()
     hdf_archive hout(0);
     hout.create(h5file.c_str(),H5F_ACC_TRUNC);
 
+    std::string str;
+
     hout.push("application",true);
-    std::string code = "crystal";
-    hout.write(code,"code");
+    str = "crystal";
+    hout.write(str,"code");
     hout.write(version,"version");
     hout.pop();
 
@@ -763,8 +765,8 @@ void CrystalAsciiParser::dumpHDF5()
 	    }
 	    else
 	    {
-		std::string name = "species_"+std::to_string(i);
-		hout.push(name,true);
+		str = "species_"+std::to_string(i);
+		hout.push(str,true);
 		int at,zeff,core;
 		at = convAtNum.at(AtomIndexmap.at(j)).atomicNum;
 		zeff = convAtNum.at(AtomIndexmap.at(j)).zeff;
@@ -814,7 +816,8 @@ void CrystalAsciiParser::dumpHDF5()
     hout.push("basisset",true);
     int NbElements = shID.size();
     hout.write(NbElements,"NbElements");
-    hout.write("LCAOBSet","name");
+    str = "LCAOBSet";
+    hout.write(str,"name");
     std::map<std::string,int> str_to_l;
     str_to_l.insert(std::pair<std::string,int>("S",0));
     str_to_l.insert(std::pair<std::string,int>("P",1));
@@ -824,27 +827,41 @@ void CrystalAsciiParser::dumpHDF5()
 
     for (int i=0; i<shID.size(); i++)
     {
-	std::string basis = "atomicBasisSet"+std::to_string(i);
-	hout.push(basis,true);
+	str = "atomicBasisSet"+std::to_string(i);
+	hout.push(str,true);
 	int NbBasisGroups = shID[i].size()-1; 
 	hout.write(NbBasisGroups,"NbBasisGroups");
-	hout.write("spherical","angular");
-	hout.write("gaussian","expandYlm");
+	str = "spherical";
+	hout.write(str,"angular");
+	str = "gaussian";
+	hout.write(str,"expandYlm");
 	int grid_npts = 1001;
 	double grid_rf= 100.0;
 	double grid_ri = 1e-06;
 	hout.write(grid_npts,"grid_npts");
 	hout.write(grid_rf,"grid_rf");
 	hout.write(grid_ri,"grid_ri");
-	hout.write("log","grid_type");
-	hout.write("input","name");
-	hout.write("no","normalized");
+	str = "log";
+	hout.write(str,"grid_type");
+	str = "input";
+	hout.write(str,"name");
+	str = "no";
+	hout.write(str,"normalized");
+
+	for (std::map<std::string,int>::iterator it=basisDataMap.begin(); it!= basisDataMap.end(); it++)
+	{
+	    if (it->second == i)
+	    {
+		str=it->first;
+	    }
+	}
+	hout.write(str,"elementType");
 
 	int count = 0;
 	for (int j = 0; j < NbBasisGroups; j++)
 	{
-	    std::string basisGroup = "basisGroup"+std::to_string(j);
-	    hout.push(basisGroup,true);
+	    str = "basisGroup"+std::to_string(j);
+	    hout.push(str,true);
 	    int NbRadFunc = ncoeffpershell[i][j];
 	    hout.write(NbRadFunc,"NbRadFunc");
 	    std::vector<int> shell(3,0);
@@ -855,18 +872,18 @@ void CrystalAsciiParser::dumpHDF5()
 	    hout.push("radfunctions",true);
 	    for (int k = 0; k < NbRadFunc; k++)
 	    {
-		std::string DataRad = "DataRad"+std::to_string(k);
-		hout.push(DataRad,true);
+		str = "DataRad"+std::to_string(k);
+		hout.push(str,true);
 		hout.write(coef[i][count],"contraction");
 		hout.write(expo[i][count],"exponent");
 		hout.pop(); //end DataRad
 		count++;
 	    }
 	    hout.pop(); //end radfunctions
-	    std::string cnl = "C"+std::to_string(j)+std::to_string(l);
-	    hout.write(cnl,"rid");
-	    std::string type = "Gaussian";
-	    hout.write(type,"type");
+	    str = "C"+std::to_string(j)+std::to_string(l);
+	    hout.write(str,"rid");
+	    str = "Gaussian";
+	    hout.write(str,"type");
 	    hout.pop(); //end  basisGroup
 	}
         hout.pop(); //end atomicBasisSet
@@ -879,8 +896,8 @@ void CrystalAsciiParser::dumpHDF5()
 
     for (int k=0; k< NbKpts; k++)
     {
-	std::string kpt = "KPTS_"+std::to_string(k);
-	hout.push(kpt,true);
+	str = "KPTS_"+std::to_string(k);
+	hout.push(str,true);
 	hout.write(Kpoints_Coord[k],"Coord");
 	if (IsComplex)
 	{
