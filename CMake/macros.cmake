@@ -201,7 +201,7 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
                             SET( TEST_NAME "${FULL_NAME}-${SERIES}-${SCALAR_CHECK}" )
                         ENDIF()
                         #MESSAGE("Adding scalar check ${TEST_NAME}")
-                        SET(CHECK_CMD ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e 2 ${FLAG} ${VALUE})
+                        SET(CHECK_CMD ${CMAKE_SOURCE_DIR}/tests/scripts/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e 2 ${FLAG} ${VALUE})
                         #MESSAGE("check command = ${CHECK_CMD}")
                         ADD_TEST( NAME ${TEST_NAME}
                             COMMAND ${CHECK_CMD}
@@ -252,10 +252,12 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
   set(test_name "${full_name}-check") # hard-code for single test
   set(work_dir "${CMAKE_CURRENT_BINARY_DIR}/${full_name}")
   #message(${work_dir})
-  add_test(NAME "${test_name}"
-    COMMAND "${check_cmd}"
+
+  add_test(
+    NAME "${test_name}"
+    COMMAND ${check_cmd} ${ARGN}
     WORKING_DIRECTORY "${work_dir}"
-  )
+    )
 
   # make test depend on the run
   set_property(TEST ${test_name} APPEND PROPERTY DEPENDS ${full_name})
