@@ -63,6 +63,7 @@ private:
     std::map<std::string,int> gsMap;
     std::vector< std::vector< std::vector< double> > > real_kmos;
     std::vector< std::vector< std::vector< std::complex<double> > > > complex_kmos;
+    std::vector< std::vector< double > > eigvals;
 };
 
 #endif

@@ -264,7 +264,6 @@ void CrystalAsciiParser::getGaussianCenters(std::istream& is)
     gBound.resize(NumberOfAtoms+1);
     int ng,nx;
     std::string aline;
-    std::map<std::string,int> basisDataMap;
     int nUniqAt=0;
     for(int i=0; i<NumberOfAtoms;i++)
     {
@@ -275,6 +274,7 @@ void CrystalAsciiParser::getGaussianCenters(std::istream& is)
 	}
     }
     NumberOfSpecies = basisDataMap.size();
+
 
     expo.resize(nUniqAt);
     coef.resize(nUniqAt);
@@ -572,22 +572,108 @@ void CrystalAsciiParser::getMO(std::istream& is)
 {
     is.clear();
     is.seekg(pivot_begin);
+
     std::string aline;
+    if(!lookFor(is,"HAMILTONIAN EIGENVALUES",aline))
+    {
+	std::cerr << "Calculation was not run with eigenvalue printing\n";
+	std::cerr << "Rerun with the following input in the computational control section: \n";
+	std::cerr << "PRINTOUT\n";
+	std::cerr << "EIGENALL\n";
+	std::cerr << "EIGENVEC\n";
+	std::cerr << "-999\n";
+	std::cerr << "END\n";
+	abort();
+    }
+    is.clear();
+    is.seekg(pivot_begin);
+    std::streampos pivot;
+    search(is,"CYC   0 ETOT(AU)",aline);
+    while(!is.eof())
+    {
+	getwords(currentWords,is);
+	if (currentWords[0] == "HAMILTONIAN" && currentWords[1] == "EIGENVALUES")
+	{
+	    pivot = is.tellg();
+	}
+	else if (currentWords[0] == "SCF" && currentWords[1] == "ENDED")
+	{
+	    break;
+	}
+    }
+    if (is.eof())
+    {
+	std::cerr << "SCF Convergence not found\n";
+	abort();
+    }
+    is.seekg(pivot);
+    bool finished = false;
+    while(!finished)
+    {
+	getwords(currentWords,is);
+	if (currentWords.size() == 4 && currentWords[0].back() == '(')
+	{
+	    std::vector<double> tmp;
+	    eigvals.push_back(tmp);
+	    while(true)
+	    {
+		getwords(currentWords,is);
+		if (currentWords.size() == 0)
+		{
+		    break;
+		}
+		else if (currentWords[0] == "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT")
+		{
+		    finished=true;
+		    break;
+		}
+		else
+		{
+		    for (int i = 0; i < currentWords.size(); i++)
+		    {
+			eigvals.back().push_back(atof(currentWords[i].c_str()));
+		    }
+		}
+	    }
+	}
+    }
+
+    if (eigvals.size() != NbKpts && SpinRestricted)
+    {
+	std::cerr << "Did not read correct number of eigenvalues" << std::endl;
+	std::cerr << "#Eigvals: " << eigvals.size() << "  NbKpts: " << NbKpts << std::endl;
+	abort();
+    }
+    else if (eigvals.size()/2 != NbKpts && !SpinRestricted)
+    {
+	std::cerr << "Did not read correct number of eigenvalues" << std::endl;
+	std::cerr << "#Eigvals Alpha+Beta: " << eigvals.size() << "  NbKpts: " << NbKpts << std::endl;
+	abort();
+    }
+
+    is.clear();
+    is.seekg(pivot_begin);
     std::vector<std::streampos> pivots;
-
-    search(is,"FINAL EIGENVECTORS",aline);
-    getwords(currentWords,is);
-    std::vector<bool> complexKpt;
-
     IsComplex = false;
+    if(!lookFor(is,"FINAL EIGENVECTORS",aline))
+    {
+	std::cerr << "Calculation was not run with eigenvector printing\n";
+	std::cerr << "Rerun with the following input in the computational control section: \n";
+	std::cerr << "PRINTOUT\n";
+	std::cerr << "EIGENALL\n";
+	std::cerr << "EIGENVEC\n";
+	std::cerr << "-999\n";
+	std::cerr << "END\n";
+	abort();
+    }
+    getwords(currentWords,is);
     while(true)
     {
 	getwords(currentWords,is);
 	if (currentWords[0] == "EIGENVECTORS" &&
 	    currentWords[1] == "IN" &&
 	    currentWords[2] == "FORTRAN" &&
-	    currentWords[3] == "UNIT" && 
-	    currentWords[4] == "10")
+	    currentWords[3] == "UNIT")
 	{
 	    break;
 	}
@@ -616,7 +702,7 @@ void CrystalAsciiParser::getMO(std::istream& is)
 	abort();
     }
 
-    for (int k=0; k<NbKpts; k++)
+    for (int k=0; k<pivots.size(); k++)
     {
 	std::cout << "Getting Orbitals for kpt: " << k << std::endl;
 	is.seekg(pivots[k]);
@@ -631,23 +717,6 @@ void CrystalAsciiParser::getMO(std::istream& is)
 	{
 	    getKMO(is,Mat);
 	    real_kmos.push_back(Mat);
-	}
-
-	if(!SpinRestricted)
-	{
-	    Mat.clear();
-	    CMat.clear();
-	    is.seekg(pivots[k+NbKpts]);
-	    if (IsComplex)
-	    {
-		getKMO(is,CMat);
-		complex_kmos.push_back(CMat);
-	    }
-	    else
-	    {
-		getKMO(is,Mat);
-		real_kmos.push_back(Mat);
-	    }
 	}
     }
 
@@ -737,6 +806,7 @@ void CrystalAsciiParser::dumpHDF5()
     hout.write(SpinMultiplicity,"spin");
     bool SpinUnRestricted  = !SpinRestricted;
     hout.write(SpinUnRestricted,"SpinUnRestricted");
+    hout.write(BohrUnit,"Unit");
     hout.write(numMO,"numMO");
     hout.write(numAO,"numAO");
     hout.pop();
@@ -744,6 +814,7 @@ void CrystalAsciiParser::dumpHDF5()
     hout.push("basisset",true);
     int NbElements = shID.size();
     hout.write(NbElements,"NbElements");
+    hout.write("LCAOBSet","name");
     std::map<std::string,int> str_to_l;
     str_to_l.insert(std::pair<std::string,int>("S",0));
     str_to_l.insert(std::pair<std::string,int>("P",1));
@@ -757,8 +828,17 @@ void CrystalAsciiParser::dumpHDF5()
 	hout.push(basis,true);
 	int NbBasisGroups = shID[i].size()-1; 
 	hout.write(NbBasisGroups,"NbBasisGroups");
-	std::string angular = "spherical";
-	hout.write(angular,"angular");
+	hout.write("spherical","angular");
+	hout.write("gaussian","expandYlm");
+	int grid_npts = 1001;
+	double grid_rf= 100.0;
+	double grid_ri = 1e-06;
+	hout.write(grid_npts,"grid_npts");
+	hout.write(grid_rf,"grid_rf");
+	hout.write(grid_ri,"grid_ri");
+	hout.write("log","grid_type");
+	hout.write("input","name");
+	hout.write("no","normalized");
 
 	int count = 0;
 	for (int j = 0; j < NbBasisGroups; j++)
@@ -818,13 +898,12 @@ void CrystalAsciiParser::dumpHDF5()
 	    hout.write(imaj,"eigenset_0_imag");
 	    if (!SpinRestricted)
 	    {
-		k++;
 	        for (int i = 0; i < SizeOfBasisSet; i++)
 	        {
 	            for (int j = 0; j < SizeOfBasisSet; j++)
 	            {
-	        	real[i][j]=std::real(complex_kmos[k][i][j]);
-	        	imaj[i][j]=std::imag(complex_kmos[k][i][j]);
+	        	real[i][j]=std::real(complex_kmos[k+NbKpts][i][j]);
+	        	imaj[i][j]=std::imag(complex_kmos[k+NbKpts][i][j]);
 	            }
 	        }
 	        hout.write(real,"eigenset_1_real");
@@ -842,6 +921,11 @@ void CrystalAsciiParser::dumpHDF5()
 		}
 	    }
 	    hout.write(real,"eigenset_0");
+	}
+	hout.write(eigvals[k],"eigenval_0");
+	if (!SpinRestricted)
+	{
+	    hout.write(eigvals[k+NbKpts],"eigenval_1");
 	}
 	hout.pop();
     }
