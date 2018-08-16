@@ -23,6 +23,7 @@
 #include "LongRange/LRCoulombSingleton.h"
 #if OHMMS_DIM==3
 #include "LongRange/EwaldHandler.h"
+//#include "LongRange/EwaldHandler3D.h"
 #elif OHMMS_DIM==2
 #include "LongRange/TwoDEwaldHandler.h"
 #endif

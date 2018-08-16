@@ -75,7 +75,7 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
 
   TrialWaveFunction psi(c);
 
-  OrbitalBuilderBase::PtclPoolType particle_set_map;
+  WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
   particle_set_map["e"] = &elec;
   particle_set_map["ion0"] = &ions;
 
@@ -90,7 +90,7 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
 
   OhmmsXPathObject slater_base("//determinant", doc.getXPathContext());
   bb->loadBasisSetFromXML(MO_base[0]);
-  SPOSetBase *sposet = bb->createSPOSet(slater_base[0]);
+  SPOSet *sposet = bb->createSPOSet(slater_base[0]);
 
 
   typedef OneDimGridBase<double> GridType;

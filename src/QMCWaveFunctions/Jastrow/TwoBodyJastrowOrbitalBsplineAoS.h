@@ -28,7 +28,7 @@ namespace qmcplusplus
 {
 
 class TwoBodyJastrowOrbitalBsplineAoS :
-  public TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >
+  public TwoBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> >
 {
 private:
   bool UsePBC;
@@ -59,7 +59,7 @@ private:
   gpu::host_vector<CudaReal> NL_rMaxHost, NL_QuadPointsHost, NL_RatiosHost;
   gpu::device_vector<CudaReal> NL_rMaxGPU,  NL_QuadPointsGPU,  NL_RatiosGPU;
 public:
-  typedef BsplineFunctor<OrbitalBase::RealType> FT;
+  typedef BsplineFunctor<WaveFunctionComponent::RealType> FT;
   typedef ParticleSet::Walker_t     Walker_t;
 
   GPU_XRAY_TRACE void freeGPUmem();
@@ -112,9 +112,9 @@ public:
                        RealMatrix_t &dlapl_over_psi);
 
   //TwoBodyJastrowOrbitalBsplineAoS(ParticleSet& pset, bool is_master) :
-  //  TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > (pset, is_master),
+  //  TwoBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> > (pset, is_master),
   TwoBodyJastrowOrbitalBsplineAoS(ParticleSet& pset, int tid) :
-    TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > (pset, tid),
+    TwoBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> > (pset, tid),
     PtclRef(pset),
     UpdateListGPU        ("TwoBodyJastrowOrbitalBsplineAoS::UpdateListGPU"),
     L                    ("TwoBodyJastrowOrbitalBsplineAoS::L"),

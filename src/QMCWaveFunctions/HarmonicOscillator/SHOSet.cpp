@@ -70,7 +70,7 @@ namespace qmcplusplus
   }
 
 
-  SPOSetBase* SHOSet::makeClone() const
+  SPOSet* SHOSet::makeClone() const
   {
     return new SHOSet(*this);
   }
@@ -594,27 +594,5 @@ namespace qmcplusplus
   {
     not_implemented("evaluateGradSource(P,first,last,source,iat,dphi,ddphi,dd2phi)");
   }
-
-  void SHOSet::evaluateBasis(
-    const ParticleSet &P, int first, int last, ValueMatrix_t &basis_val,
-    GradMatrix_t  &basis_grad, ValueMatrix_t &basis_lapl)
-  {
-    not_implemented("evaluateBasis");
-  }
-
-  void SHOSet::evaluateForDeriv(
-    const ParticleSet &P, int first, int last, ValueMatrix_t &basis_val,
-    GradMatrix_t  &basis_grad, ValueMatrix_t &basis_lapl)
-  {
-    not_implemented("evaluateForDeriv");
-  }
-
-  void SHOSet::copyParamsFromMatrix(
-    const opt_variables_type& active, const ValueMatrix_t &mat,
-    std::vector<RealType> &destVec)
-  {
-    not_implemented("copyParamsFromMatrix");
-  }
-
 
 }

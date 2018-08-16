@@ -17,7 +17,7 @@
 //#include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/Fermion/BackflowFunctionBase.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/Backflow_ee.h"
@@ -37,7 +37,7 @@
 namespace qmcplusplus
 {
 
-class BackflowBuilder: public OrbitalBuilderBase
+class BackflowBuilder: public WaveFunctionComponentBuilder
 {
 
   typedef LRHandlerBase HandlerType;

@@ -22,13 +22,13 @@
 PROJECT(qmctools)
 
 SET(QMCTOOLS
-  ../QMCWaveFunctions/OrbitalBuilderBase.cpp
+  ../QMCWaveFunctions/WaveFunctionComponentBuilder.cpp
   RGFBuilderBase.cpp
   GTO2GridBuilder.cpp
 )
 
 SET(MOSRCS
-  ../QMCWaveFunctions/OrbitalBuilderBase.cpp
+  ../QMCWaveFunctions/WaveFunctionComponentBuilder.cpp
   ../QMCApp/InitMolecularSystem.cpp
   ../QMCApp/ParticleSetPool.cpp
   RGFBuilderBase.cpp

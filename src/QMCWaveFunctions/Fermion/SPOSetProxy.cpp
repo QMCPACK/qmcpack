@@ -19,7 +19,7 @@
 namespace qmcplusplus
 {
 
-SPOSetProxy::SPOSetProxy(SPOSetBasePtr const& spos, int first, int last)
+SPOSetProxy::SPOSetProxy(SPOSetPtr const& spos, int first, int last)
   : refPhi(spos)
 {
   className="SPOSetProxy";

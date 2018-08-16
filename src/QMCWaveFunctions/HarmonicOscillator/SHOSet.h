@@ -15,7 +15,7 @@
 #ifndef QMCPLUSPLUS_SHOSET_H
 #define QMCPLUSPLUS_SHOSET_H
 
-#include <QMCWaveFunctions/SPOSetBase.h>
+#include <QMCWaveFunctions/SPOSet.h>
 #include <QMCWaveFunctions/SPOInfo.h>
 
 
@@ -48,7 +48,7 @@ namespace qmcplusplus
   };
 
 
-  struct SHOSet : public SPOSetBase
+  struct SHOSet : public SPOSet
   {
     typedef ValueMatrix_t::value_type value_type;
     typedef GradMatrix_t::value_type grad_type;
@@ -74,8 +74,8 @@ namespace qmcplusplus
     void initialize();
 
 
-    //SPOSetBase interface methods
-    SPOSetBase* makeClone() const;
+    //SPOSet interface methods
+    SPOSet* makeClone() const;
 
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
 
@@ -136,15 +136,6 @@ namespace qmcplusplus
                             const ParticleSet &source, int iat_src,
                             GradMatrix_t &dphi, HessMatrix_t &ddphi,
                             GradMatrix_t &dlapl_phi);
-    void evaluateBasis(const ParticleSet &P, int first, int last,
-                       ValueMatrix_t &basis_val, GradMatrix_t &basis_grad,
-                       ValueMatrix_t &basis_lapl);
-    void evaluateForDeriv(const ParticleSet &P, int first, int last,
-                          ValueMatrix_t &basis_val, GradMatrix_t &basis_grad,
-                          ValueMatrix_t &basis_lapl);
-    void copyParamsFromMatrix(const opt_variables_type& active,
-                              const ValueMatrix_t &mat,
-                              std::vector<RealType> &destVec);
   };
 
 }
