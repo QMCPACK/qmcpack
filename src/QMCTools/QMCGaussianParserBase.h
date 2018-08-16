@@ -93,6 +93,7 @@ struct QMCGaussianParserBase
   std::string angular_type;
   std::string h5file;
   std::string WFS_name;
+  std::string CodeName;
   ParticleSet IonSystem;
 
 
