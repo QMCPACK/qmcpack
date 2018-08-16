@@ -47,6 +47,7 @@ public:
   EwaldHandler3D(ParticleSet& ref, mRealType kc_in=-1.0)
     : LRHandlerBase(kc_in)
   {
+    LRHandlerBase::ClassName="EwaldHandler3D";
     Sigma=LR_kc=ref.Lattice.LR_kc;
   }
 
@@ -105,6 +106,16 @@ public:
   {
     return -2.0*Sigma*std::exp(-Sigma*Sigma*r*r)/(std::sqrt(M_PI)*r) - erfc(Sigma*r)*rinv*rinv;
   }
+  /**  evaluate the first derivative of the long range part (in real space) at r
+   *
+   * @param r  radius
+   */
+  inline mRealType lrDf(mRealType r)
+  {
+    mRealType rinv=1.0/r;
+    return 2.0*Sigma*std::exp(-Sigma*Sigma*r*r)/(std::sqrt(M_PI)*r) - erf(Sigma*r)*rinv*rinv;
+  }
+
 
   void fillFk(KContainer& KList);
 
@@ -112,8 +123,7 @@ public:
   {
     Fkgstrain.resize(KList.kpts_cart.size());
     const std::vector<int>& kshell(KList.kshell);
-    if(MaxKshell >= kshell.size())
-      MaxKshell=kshell.size()-1;
+    MaxKshell=kshell.size()-1;
     for(int ks=0,ki=0; ks<MaxKshell; ks++)
     {
       mRealType uk=evalYkgstrain(std::sqrt(KList.ksq[ki]));

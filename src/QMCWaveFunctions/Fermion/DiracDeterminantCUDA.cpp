@@ -1029,6 +1029,8 @@ DiracDeterminantCUDA::NLratios_CPU
 (MCWalkerConfiguration &W,     std::vector<NLjob> &jobList,
  std::vector<PosType> &quadPoints,   std::vector<ValueType> &psi_ratios)
 {
+  // Phi->evaluate needs to be replaced
+  APP_ABORT("DiracDeterminantCUDA::NLratios_CPU is currently disabled.\n");
   std::vector<Walker_t*> &walkers = W.WalkerList;
   std::vector<ValueMatrix_t> Ainv_host;
   int nw = walkers.size();
@@ -1056,7 +1058,8 @@ DiracDeterminantCUDA::NLratios_CPU
     {
       for (int iq=0; iq<numQuad; iq++)
       {
-        Phi->evaluate(W, quadPoints[index], phi);
+        //The following line should be replaced with Phi->evaluateValues
+        //Phi->evaluate(W, quadPoints[index], phi);
         ValueType ratio = 0.0;
         for (int i=0; i<NumOrbitals; i++)
           ratio += Ainv_host[iw](i,elec-FirstIndex) * phi[i];
