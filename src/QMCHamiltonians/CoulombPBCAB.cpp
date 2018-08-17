@@ -28,13 +28,9 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns,
   PtclA(ions), myConst(0.0), myGrid(nullptr),V0(nullptr),fV0(nullptr),dfV0(nullptr),ComputeForces(computeForces),
   ForceBase (ions, elns), MaxGridPoints(10000),Pion(ions),Peln(elns)
 {
-  // if (ComputeForces)
-  // 	InitVarReduction (0.5, 0, 3);
   ReportEngine PRE("CoulombPBCAB","CoulombPBCAB");
   set_energy_domain(potential);
   two_body_quantum_domain(ions,elns);
-  //Use singleton pattern
-  //AB = new LRHandlerType(ions);
   myTableIndex=elns.addTable(ions,DT_SOA_PREFERRED);
   if(ComputeForces)
     PtclA.turnOnPerParticleSK();
@@ -89,9 +85,6 @@ QMCHamiltonianBase* CoulombPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction& 
 
 CoulombPBCAB:: ~CoulombPBCAB()
 {
-  //probably need to clean up
-  //Yes we do.
- 
   delete V0;
   delete fV0;
   delete dfV0;
@@ -785,7 +778,6 @@ CoulombPBCAB::evalSRwithForces(ParticleSet& P)
       for(size_t a=0; a<NptclA; ++a)
       {
         //Low hanging SIMD fruit here.  See J1/J2 grad computation.
-        //Too lazy for now.  
         rinv=1.0/dist[a];
         rV=Vat[a]->splint(dist[a]);
         frV=fVat[a]->splint(dist[a]);
