@@ -793,7 +793,7 @@ CoulombPBCAB::evalSRwithForces(ParticleSet& P)
     for(size_t b=0; b<NptclB; ++b)
     {
       const RealType* restrict dist=d_ab.Distances[b];
-      RowContainerType dr = d_ab.Displacements[b];
+      const RowContainerType dr = d_ab.Displacements[b];
       mRealType esum=czero;
       for(size_t a=0; a<NptclA; ++a)
       {

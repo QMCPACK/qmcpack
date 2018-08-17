@@ -23,6 +23,7 @@
 #include "Numerics/OneDimGridFunctor.h"
 #include "Numerics/OneDimCubicSpline.h"
 #include "OhmmsSoA/VectorSoaContainer.h"
+#include "Particle/DistanceTableData.h"
 namespace qmcplusplus
 {
 
@@ -40,7 +41,7 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
   typedef LRCoulombSingleton::RadFunctorType RadFunctorType;
   typedef LRHandlerType::mRealType           mRealType;
 
-  typedef VectorSoaContainer<mRealType,OHMMS_DIM> RowContainerType;
+  typedef DistanceTableData::RowContainer RowContainerType;
 
   ///source particle set
   ParticleSet& PtclA;
