@@ -25,7 +25,7 @@ namespace qmcplusplus
 
 CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns,
                            bool computeForces):
-  PtclA(ions), myConst(0.0), myGrid(0),V0(0),fV0(0),dfV0(0),ComputeForces(computeForces),
+  PtclA(ions), myConst(0.0), myGrid(0),V0(nullptr),fV0(nullptr),dfV0(nullptr),ComputeForces(computeForces),
   ForceBase (ions, elns), MaxGridPoints(10000),Pion(ions),Peln(elns)
 {
   // if (ComputeForces)
@@ -92,37 +92,27 @@ CoulombPBCAB:: ~CoulombPBCAB()
   //probably need to clean up
   //Yes we do.
  
-  if(V0)
-  {
-    //V0 is the same object stored in Vat.  Deleting this pointer should take care
-    //of everything all electron.
-    delete V0;
-    V0=0;
-  }
+  delete V0;
+  delete fV0;
+  delete dfV0;
+  
+  V0=nullptr;
+  fV0=nullptr;
+  dfV0=nullptr;
 
+  //This takes care of species dependent terms.
   for(int ig=0; ig<Vspec.size(); ig++)
   {
-    if(Vspec[ig]) //verbose, but don't want to delete a null pointer.
-    {
-      delete Vspec[ig];
-      Vspec[ig]=0;
-    }
+    delete Vspec[ig];
+    Vspec[ig]=nullptr;
   }
-  if(ComputeForces)
+  //If forces were initialized, fVspec.size()!=0.  This cleans up.
+  for(int ig=0; ig<fVspec.size(); ig++)
   {
-    for(int ig=0; ig<fVspec.size(); ig++)
-    {
-      if(fVspec[ig])
-      {
-        delete fVspec[ig];
-        fVspec[ig]=0;
-      }
-      if(fdVspec[ig])
-      {
-        delete fdVspec[ig];
-      }
-    }
-  
+    delete fVspec[ig];
+    delete fdVspec[ig];
+    fVspec[ig]=nullptr;
+    fdVspec[ig]=nullptr;
   }
 }
 
@@ -614,7 +604,7 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
   myConst=evalConsts();
   myRcut=AB->get_rc();//Basis.get_rc();
   // create the spline function for the short-range part assuming pure potential
-  if(V0==0)
+  if(V0==nullptr)
   {
     V0 = LRCoulombSingleton::createSpline4RbyVs(AB,myRcut,myGrid);
     if(Vat.size())
@@ -622,16 +612,16 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
       APP_ABORT("CoulombPBCAB::initBreakup.  Vat is not empty\n");
     }
     Vat.resize(NptclA,V0);
-    Vspec.resize(NumSpeciesA,0);//prepare for PP to overwrite it
+    Vspec.resize(NumSpeciesA,nullptr);//prepare for PP to overwrite it
   }
   
   //If ComputeForces is true, then we allocate space for the radial derivative functors.
   if(ComputeForces)
   {
     dAB = LRCoulombSingleton::getDerivHandler(P);
-    if(fV0==0)
+    if(fV0==nullptr)
       fV0=LRCoulombSingleton::createSpline4RbyVs(dAB,myRcut,myGrid);
-    if(dfV0==0)
+    if(dfV0==nullptr)
       dfV0=LRCoulombSingleton::createSpline4RbyVsDeriv(dAB,myRcut,myGrid);
     if(fVat.size())
     {
@@ -639,8 +629,8 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
     }
     fVat.resize(NptclA,fV0);
     fdVat.resize(NptclA,dfV0);
-    fVspec.resize(NumSpeciesA,0);
-    fdVspec.resize(NumSpeciesA,0);
+    fVspec.resize(NumSpeciesA,nullptr);
+    fdVspec.resize(NumSpeciesA,nullptr);
   }
 
 }
@@ -651,7 +641,7 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
  */
 void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
 {
-  if(myGrid ==0)
+  if(myGrid ==nullptr)
   {
     myGrid = new LinearGrid<RealType>;
     int ng = std::min(MaxGridPoints, static_cast<int>(myRcut/1e-3)+1);
@@ -659,13 +649,10 @@ void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
               << myRcut << ") number of grid =" << ng << std::endl;
     myGrid->set(0,myRcut,ng);
   }
-  if(Vspec[groupID]==0)
+  if(Vspec[groupID]==nullptr)
   {
-    if(V0) //means that V0 has already been set and initialized to bare coulomb.
-    {
-      delete V0;
-      V0=0;
-    }
+    delete V0;
+    V0=nullptr;
 
     app_log() << "    Creating the short-range pseudopotential for species " << groupID << std::endl;
     int ng=myGrid->size();
@@ -691,7 +678,7 @@ void CoulombPBCAB::add(int groupID, RadFunctorType* ppot)
     }
   }
 
-  if(ComputeForces && fVspec[groupID]==0)
+  if(ComputeForces && fVspec[groupID]==nullptr)
   {
     app_log() << "    Creating the short-range pseudopotential derivatives for species " << groupID << std::endl;
     int ng=myGrid->size();

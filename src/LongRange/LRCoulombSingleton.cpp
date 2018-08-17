@@ -252,7 +252,7 @@ OneDimCubicSpline<T>*
 createSpline4RbyVs_temp(LRHandlerBase* aLR, T rcut, LinearGrid<T>* agrid)
 {
   typedef OneDimCubicSpline<T> func_type;
-  if(agrid==0)
+  if(agrid==nullptr)
   {
     agrid = new LinearGrid<T>;
     agrid->set(0.0,rcut,1001);
@@ -280,7 +280,7 @@ OneDimCubicSpline<T>*
 createSpline4RbyVsDeriv_temp(LRHandlerBase* aLR, T rcut, LinearGrid<T>* agrid)
 {
   typedef OneDimCubicSpline<T> func_type;
-  if(agrid==0)
+  if(agrid==nullptr)
   {
     agrid = new LinearGrid<T>;
     agrid->set(0.0,rcut,1001);
