@@ -730,6 +730,14 @@ void CrystalAsciiParser::dumpHDF5()
 
     std::string str;
 
+    if (IsComplex)
+    {
+	std::cerr << "Currently only real gaussians are implemented\n";
+	std::cerr << "Therefore, only real kpoints can be used\n";
+	std::cerr << "This will be removed once complex periodic gaussians is implemented\n";
+	abort();
+    }
+
     hout.push("application",true);
     str = "crystal";
     hout.write(str,"code");
