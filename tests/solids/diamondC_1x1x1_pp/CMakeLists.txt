@@ -269,6 +269,11 @@ else()
   set(NOMP 16)
   set(IFEXT "_gpu")
 endif()
+if (NOT QMC_COMPLEX)
+  set(OFEXT "_real")
+else()
+  set(OFEXT "_comp")
+endif()
 if (add_tests)
   # density tests
   SIMPLE_RUN_AND_CHECK(
@@ -336,4 +341,44 @@ if (add_tests)
     ${NMPI} ${NOMP}
     check_stats.py -s 1 -q spindensity -e 20 -c 8 -p qmc_spindens_dmc_long -r qmc-ref/qmc_spindens_dmc_long.s001.stat_ref_spindensity.dat
     )
+
+  # 1rdm tests
+  if (NOT QMC_CUDA)
+    # no Jastrow tests
+    SIMPLE_RUN_AND_CHECK(
+      short-diamondC_1x1x1_pp-vmc-noJ-estimator-1rdm
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_1rdm_noJ_short.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 0 -q 1rdm -e 2 -c 8 -p qmc_1rdm_noJ_short -r qmc-ref/qmc_1rdm_noJ_short${OFEXT}.s000.stat_ref_1rdm.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      long-diamondC_1x1x1_pp-vmc-noJ-estimator-1rdm
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_1rdm_noJ_long.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 0 -q 1rdm -e 20 -c 8 -p qmc_1rdm_noJ_long -r qmc-ref/qmc_1rdm_noJ_long${OFEXT}.s000.stat_ref_1rdm.dat
+      )
+
+    # two body Jastrow tests
+    SIMPLE_RUN_AND_CHECK(
+      short-diamondC_1x1x1_pp-vmc-J2-estimator-1rdm
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_1rdm_J2_short.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 0 -q 1rdm -e 2 -c 8 -p qmc_1rdm_J2_short -r qmc-ref/qmc_1rdm_J2_short${OFEXT}.s000.stat_ref_1rdm.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      long-diamondC_1x1x1_pp-vmc-J2-estimator-1rdm
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_1rdm_J2_long.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 0 -q 1rdm -e 20 -c 8 -p qmc_1rdm_J2_long -r qmc-ref/qmc_1rdm_J2_long${OFEXT}.s000.stat_ref_1rdm.dat
+      )
+  else()
+    message("Skipping diamond 1rdm test because CUDA is not supported")
+  endif()
+
 endif()
