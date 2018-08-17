@@ -3,9 +3,9 @@ set(CMAKE_CXX_COMPILER mpiclang++11)
 
 set(GNU_OPTS "-O3 -g -ffast-math -fopenmp -fstrict-aliasing -Wno-deprecated -Wno-unused-value -Wno-type-safety -Wno-undefined-var-template")
 set(GNU_FLAGS "-Drestrict=__restrict__ -DADD_ -DHAVE_MASS -DHAVE_MASSV -DSPLINEFLOAT -DBGQPX -D__forceinline=inline")
-set(CMAKE_CXX_FLAGS "${GNU_FLAGS} ${GNU_OPTS} -ftemplate-depth-60")
-set(CMAKE_C_FLAGS "${GNU_FLAGS} ${GNU_OPTS} -std=c99" )
-SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,--allow-multiple-definition")
+set(CMAKE_CXX_FLAGS "${GNU_FLAGS} ${GNU_OPTS} -ftemplate-depth-60" CACHE STRING "" FORCE)
+set(CMAKE_C_FLAGS "${GNU_FLAGS} ${GNU_OPTS} -std=c99"  CACHE STRING "" FORCE)
+SET(CMAKE_EXE_LINKER_FLAGS  "-Wl,--allow-multiple-definition" CACHE STRING "" FORCE)
 
 SET(QMC_CUDA 0)
 #SET(QMC_COMPLEX 0)
@@ -54,9 +54,9 @@ $ENV{IBM_FCMP_DIR}/bglib64/libxl.a
 #)
 
 FOREACH(type SHARED_LIBRARY SHARED_MODULE EXE)
-  SET(CMAKE_${type}_LINK_STATIC_C_FLAGS "-Wl,-Bstatic")
-  SET(CMAKE_${type}_LINK_DYNAMIC_C_FLAGS "-Wl,-Bstatic")
-  SET(CMAKE_${type}_LINK_STATIC_CXX_FLAGS "-Wl,-Bstatic")
-  SET(CMAKE_${type}_LINK_DYNAMIC_CXX_FLAGS "-Wl,-Bstatic")
+  SET(CMAKE_${type}_LINK_STATIC_C_FLAGS "-Wl,-Bstatic" CACHE STRING "" FORCE)
+  SET(CMAKE_${type}_LINK_DYNAMIC_C_FLAGS "-Wl,-Bstatic" CACHE STRING "" FORCE)
+  SET(CMAKE_${type}_LINK_STATIC_CXX_FLAGS "-Wl,-Bstatic" CACHE STRING "" FORCE)
+  SET(CMAKE_${type}_LINK_DYNAMIC_CXX_FLAGS "-Wl,-Bstatic" CACHE STRING "" FORCE)
 ENDFOREACH(type)
 

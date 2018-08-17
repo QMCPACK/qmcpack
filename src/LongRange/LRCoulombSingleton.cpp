@@ -23,6 +23,7 @@
 #include "LongRange/LRCoulombSingleton.h"
 #if OHMMS_DIM==3
 #include "LongRange/EwaldHandler.h"
+#include "LongRange/EwaldHandler3D.h"
 #elif OHMMS_DIM==2
 #include "LongRange/TwoDEwaldHandler.h"
 #endif
@@ -198,6 +199,8 @@ LRCoulombSingleton::getHandler(ParticleSet& ref)
     {
       app_log() << "\n  Creating CoulombHandler with the optimal breakup. " << std::endl;
       CoulombHandler= new LRHandlerTemp<CoulombFunctor<mRealType>,LPQHIBasis>(ref);
+    //  app_log() << "\n  Creating CoulombHandler with the Ewald3D breakup. " << std::endl;
+    //  CoulombHandler= new EwaldHandler3D(ref);
     //  CoulombHandler = new LRHandlerSRCoulomb<CoulombFunctor<mRealType>, LPQHISRCoulombBasis>(ref);
       
     }
@@ -227,6 +230,8 @@ LRCoulombSingleton::getDerivHandler(ParticleSet& ref)
   {
     app_log() << "\n  Creating CoulombHandler with the optimal breakup of SR piece. " << std::endl;
     CoulombDerivHandler= new LRHandlerSRCoulomb<CoulombFunctor<mRealType>,LPQHISRCoulombBasis>(ref);
+    //app_log() << "\n  Creating CoulombDerivHandler with the Ewald3D breakup. " << std::endl;
+    //CoulombDerivHandler= new EwaldHandler3D(ref);
    // CoulombDerivHandler = new LRDerivHandler<CoulombFunctor<mRealType>, LPQHIBasis> (ref);
     //CoulombDerivHandler= new EwaldHandler(ref);
     CoulombDerivHandler->initBreakup(ref);
@@ -247,7 +252,7 @@ OneDimCubicSpline<T>*
 createSpline4RbyVs_temp(LRHandlerBase* aLR, T rcut, LinearGrid<T>* agrid)
 {
   typedef OneDimCubicSpline<T> func_type;
-  if(agrid==0)
+  if(agrid==nullptr)
   {
     agrid = new LinearGrid<T>;
     agrid->set(0.0,rcut,1001);
@@ -270,11 +275,54 @@ createSpline4RbyVs_temp(LRHandlerBase* aLR, T rcut, LinearGrid<T>* agrid)
   return V0;
 }
 
+template<typename T>
+OneDimCubicSpline<T>*  
+createSpline4RbyVsDeriv_temp(LRHandlerBase* aLR, T rcut, LinearGrid<T>* agrid)
+{
+  typedef OneDimCubicSpline<T> func_type;
+  if(agrid==nullptr)
+  {
+    agrid = new LinearGrid<T>;
+    agrid->set(0.0,rcut,1001);
+  }
+  int ng=agrid->size();
+  std::vector<T> v(ng);
+  T r=(*agrid)[0];
+  //check if the first point is not zero
+  v[0]=(r>std::numeric_limits<T>::epsilon())? r*aLR->evaluate(r,1.0/r):0.0;
+  T v_val(0.0);
+  T v_deriv(0.0);
+
+  for(int ig=1; ig<ng-1; ig++)
+  {
+    r=(*agrid)[ig];
+    v_val=aLR->evaluate(r,1.0/r);
+    v_deriv=aLR->srDf(r,1/r);
+  
+    v[ig]=v_val+v_deriv*r;
+  }
+  v[0] = 2.0*v[1] - v[2];
+  v[ng-1]=0.0;
+  func_type* dV0=new func_type(agrid,v);
+  T deriv=(v[1]-v[0])/((*agrid)[1]-(*agrid)[0]);
+  dV0->spline(0,deriv,ng-1,0.0);
+  return dV0;
+}
+
+
 LRCoulombSingleton::RadFunctorType*
 LRCoulombSingleton::createSpline4RbyVs(LRHandlerType* aLR, mRealType rcut,
                                        GridType* agrid)
 {
   return createSpline4RbyVs_temp(aLR,static_cast<pRealType>(rcut),agrid);
 }
+
+LRCoulombSingleton::RadFunctorType*
+LRCoulombSingleton::createSpline4RbyVsDeriv(LRHandlerType* aLR, mRealType rcut,
+                                       GridType* agrid)
+{
+  return createSpline4RbyVsDeriv_temp(aLR,static_cast<pRealType>(rcut),agrid);
+}
+
 
 }

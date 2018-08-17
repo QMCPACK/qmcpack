@@ -123,7 +123,7 @@ public:
                        RealMatrix_t &dlapl_over_psi);
 
   //TwoBodyJastrowOrbitalBspline(ParticleSet& pset, bool is_master) :
-  //  TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > (pset, is_master),
+  //  TwoBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> > (pset, is_master),
   TwoBodyJastrowOrbitalBspline(ParticleSet& pset, int tid) :
     J2OrbitalSoA<FT> (pset, tid),
     PtclRef(pset),

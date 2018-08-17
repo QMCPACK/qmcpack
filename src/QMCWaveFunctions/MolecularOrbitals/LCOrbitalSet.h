@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_LINEARCOMIBINATIONORBITALSET_TEMP_H
 #define QMCPLUSPLUS_LINEARCOMIBINATIONORBITALSET_TEMP_H
 
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include <Numerics/MatrixOperators.h>
 
 namespace qmcplusplus
@@ -25,12 +25,12 @@ namespace qmcplusplus
 
 /** decalaration of generic class to handle a linear-combination of basis function*/
 template<class BS, bool IDENTITY>
-class LCOrbitalSet: public SPOSetBase
+class LCOrbitalSet: public SPOSet
 {
 };
 
 template<class BS>
-class LCOrbitalSet<BS,true>: public SPOSetBase
+class LCOrbitalSet<BS,true>: public SPOSet
 {
 
 public:
@@ -58,7 +58,7 @@ public:
    */
   ~LCOrbitalSet() {}
 
-  SPOSetBase* makeClone() const
+  SPOSet* makeClone() const
   {
     LCOrbitalSet<BS,true>* myclone = new LCOrbitalSet<BS,true>(*this);
     myclone->myBasisSet = myBasisSet->makeClone();
@@ -173,7 +173,7 @@ public:
  * A templated version is LCOrbitals.
  */
 template<class BS>
-class LCOrbitalSet<BS,false>: public SPOSetBase
+class LCOrbitalSet<BS,false>: public SPOSet
 {
 
 public:
@@ -217,7 +217,7 @@ public:
    */
   ~LCOrbitalSet() {}
 
-  SPOSetBase* makeClone() const
+  SPOSet* makeClone() const
   {
     LCOrbitalSet<BS,false>* myclone = new LCOrbitalSet<BS,false>(*this);
     myclone->myBasisSet = myBasisSet->makeClone();

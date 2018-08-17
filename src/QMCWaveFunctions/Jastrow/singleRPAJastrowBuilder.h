@@ -14,7 +14,7 @@
     
 #ifndef QMCPLUSPLUS_SINGLE_RPA_JASTROW_H
 #define QMCPLUSPLUS_SINGLE_RPA_JASTROW_H
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "LongRange/LRHandlerBase.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
@@ -27,7 +27,7 @@ namespace qmcplusplus
 {
 class ParticleSet;
 
-struct singleRPAJastrowBuilder: public OrbitalBuilderBase
+struct singleRPAJastrowBuilder: public WaveFunctionComponentBuilder
 {
   typedef LRHandlerBase HandlerType;
   typedef CubicBspline<RealType,LINEAR_1DGRID,FIRSTDERIV_CONSTRAINTS> SplineEngineType;
@@ -51,7 +51,7 @@ struct singleRPAJastrowBuilder: public OrbitalBuilderBase
 
   singleRPAJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi,
                           ParticleSet& source) :
-    OrbitalBuilderBase(target,psi), sourcePtcl(&source), myHandler(0),J1s(0)
+    WaveFunctionComponentBuilder(target,psi), sourcePtcl(&source), myHandler(0),J1s(0)
   {
     tlen = std::pow(3.0/4.0/M_PI*target.Lattice.Volume/ static_cast<RealType>(target.getTotalNum()) ,1.0/3.0);
 //         indx = target.SK->KLists.ksq.size()-1;
@@ -62,7 +62,7 @@ struct singleRPAJastrowBuilder: public OrbitalBuilderBase
     ng=source.getSpeciesSet().getTotalNum();
 //         J1s = new JneType (source,target);
   }
-  OrbitalBase* getOrbital();
+  WaveFunctionComponent* getOrbital();
   bool put(xmlNodePtr cur);
   bool put(xmlNodePtr cur, int addOrbital);
 

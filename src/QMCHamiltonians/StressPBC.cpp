@@ -20,7 +20,7 @@
 #include "Numerics/MatrixOperators.h"
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/AttributeSet.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 
 namespace qmcplusplus
@@ -407,7 +407,7 @@ StressPBC::evaluate(ParticleSet& P)
 
 SymTensor<StressPBC::RealType,OHMMS_DIM> StressPBC::evaluateKineticSymTensor(ParticleSet& P)
 {
-  OrbitalBase::HessVector_t grad_grad_psi;
+  WaveFunctionComponent::HessVector_t grad_grad_psi;
   Psi.evaluateHessian(P,grad_grad_psi);
   SymTensor<RealType,OHMMS_DIM> kinetic_tensor;
   Tensor<ComplexType, OHMMS_DIM> complex_ktensor;

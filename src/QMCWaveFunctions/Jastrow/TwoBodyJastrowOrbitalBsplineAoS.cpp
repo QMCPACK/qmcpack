@@ -58,7 +58,7 @@ TwoBodyJastrowOrbitalBsplineAoS::reserve
 void
 TwoBodyJastrowOrbitalBsplineAoS::checkInVariables(opt_variables_type& active)
 {
-  TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >::checkInVariables(active);
+  TwoBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> >::checkInVariables(active);
   for (int i=0; i<NumGroups*NumGroups; i++)
     GPUSplines[i]->set(*F[i]);
 }
@@ -66,7 +66,7 @@ TwoBodyJastrowOrbitalBsplineAoS::checkInVariables(opt_variables_type& active)
 void
 TwoBodyJastrowOrbitalBsplineAoS::addFunc(int ia, int ib, FT* j)
 {
-  TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >::addFunc(ia, ib, j);
+  TwoBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> >::addFunc(ia, ib, j);
   CudaSpline<CudaReal> *newSpline = new CudaSpline<CudaReal>(*j);
   UniqueSplines.push_back(newSpline);
   if(ia==ib)
@@ -574,7 +574,7 @@ TwoBodyJastrowOrbitalBsplineAoS::gradLapl (MCWalkerConfiguration &W,
 void
 TwoBodyJastrowOrbitalBsplineAoS::resetParameters(const opt_variables_type& active)
 {
-  TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> >::resetParameters(active);
+  TwoBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> >::resetParameters(active);
   for (int i=0; i<NumGroups*NumGroups; i++)
     GPUSplines[i]->set(*F[i]);
 }

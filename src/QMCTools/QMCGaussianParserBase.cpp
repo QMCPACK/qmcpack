@@ -41,7 +41,7 @@ std::vector<int> QMCGaussianParserBase::gShellID;
 QMCGaussianParserBase::QMCGaussianParserBase():
   Title("sample"),basisType("Gaussian"),basisName("generic"),DoCusp(false),debug(false),production(false),
   Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),optDetCoeffs(false),WFS_name("wfj"),AllH5(false),NbKpts(0)
-  ,usingCSF(false),readNO(0),readGuess(0),zeroCI(false),target_state(0),Structure(false),PBC(false)
+  ,usingCSF(false),readNO(0),readGuess(0),zeroCI(false),target_state(0),Structure(false),PBC(false),CodeName("")
   ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false),QP(false),ECP(false),X(0),Y(0),Z(0)
 {
 }
@@ -1662,6 +1662,15 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
         if(UseHDF5)
         {
           xmlNodePtr bsetPtr = createBasisSetWithHDF5();
+          //Adding generic code name to the H5 file.
+          std::string CodeName("generic");
+          hdf_archive hout(0); 
+          hout.open(h5file.c_str(),H5F_ACC_RDWR);
+          hout.push("application",true);
+          hout.write(CodeName,"code");
+          hout.pop(); 
+          hout.close();
+           
         }
         else
         {

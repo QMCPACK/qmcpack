@@ -30,7 +30,7 @@ namespace qmcplusplus
 {
 
 JastrowBuilder::JastrowBuilder(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& psets):
-  OrbitalBuilderBase(p,psi), ptclPool(psets)
+  WaveFunctionComponentBuilder(p,psi), ptclPool(psets)
 {
   resetOptions();
   ClassName="JastrowBuilder";
@@ -87,7 +87,7 @@ bool JastrowBuilder::addkSpace(xmlNodePtr cur)
   }
   ParticleSet* sourcePtcl= (*pa_it).second;
   app_log() << "\n  Using kSpaceJastrowBuilder for reciprocal-space Jastrows" << std::endl;
-  OrbitalBuilderBase* sBuilder = new kSpaceJastrowBuilder (targetPtcl, targetPsi, *sourcePtcl);
+  WaveFunctionComponentBuilder* sBuilder = new kSpaceJastrowBuilder (targetPtcl, targetPsi, *sourcePtcl);
   Children.push_back(sBuilder);
   return sBuilder->put(cur);
 }

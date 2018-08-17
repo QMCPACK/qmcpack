@@ -17,7 +17,7 @@
  */
 #ifndef QMCPLUSPLUS_AGPDETERMINANT_GEMINALBUILDER_H
 #define QMCPLUSPLUS_AGPDETERMINANT_GEMINALBUILDER_H
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 namespace qmcplusplus
 {
@@ -27,7 +27,7 @@ class AGPDeterminant;
 /**@ingroup WFSBuilder
  * @brief An abstract class for wave function builders
  */
-class AGPDeterminantBuilder: public OrbitalBuilderBase
+class AGPDeterminantBuilder: public WaveFunctionComponentBuilder
 {
 
 public:
