@@ -43,7 +43,7 @@ SET(MOSRCS
   GamesFMOParser.cpp
   VSVBParser.cpp
   QPParser.cpp
-  PyscfParser.cpp
+  LCAOH5Parser.cpp
 )
 
 # create libmocommon 

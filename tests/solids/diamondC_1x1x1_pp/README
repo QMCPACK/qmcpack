@@ -160,3 +160,54 @@ qmc_spindens_dmc_ref.s000.stat_trace_spindensity.dat  # reference per block data
 qmc_spindens_dmc_long.s000.stat_ref_spindensity.dat   # reference mean/error bar for long runs (-m 10)
 qmc_spindens_dmc_short.s000.stat_ref_spindensity.dat  # reference mean/error bar for short runs (-m 100)
 
+
+
+=================
+1RDM test details
+=================
+The code version and process for generating these tests was identical 
+to what was used for density and spin density (see above).
+
+One unique feature is that correct reference results depend on whether 
+the real or complex build is used.  This is because in the real build 
+the B-spline orbitals are not guaranteed to be orthogonal.
+
+------------------------------------------
+Reference files for VMC 1RDM w/o a Jastrow
+------------------------------------------
+# reference input file
+qmc_1rdm_noJ.in.xml
+
+# command run (run separately for real and complex)
+check_stats.py -v -q 1rdm -e 20 -c 8 -m '0 10 100' -p qmc_1rdm_noJ
+
+# files produced
+qmc_1rdm_noJ_ref_real.s000.stat_ref_1rdm.dat
+qmc_1rdm_noJ_ref_real.s000.stat_trace_1rdm.dat
+qmc_1rdm_noJ_long_real.s000.stat_ref_1rdm.dat
+qmc_1rdm_noJ_short_real.s000.stat_ref_1rdm.dat
+
+qmc_1rdm_noJ_long_comp.s000.stat_ref_1rdm.dat
+qmc_1rdm_noJ_ref_comp.s000.stat_ref_1rdm.dat
+qmc_1rdm_noJ_ref_comp.s000.stat_trace_1rdm.dat
+qmc_1rdm_noJ_short_comp.s000.stat_ref_1rdm.dat
+
+----------------------------------------
+Reference files for VMC 1RDM w a Jastrow
+----------------------------------------
+# reference input file
+qmc_1rdm_J2.in.xml
+
+# command run (run separately for real and complex)
+check_stats.py -v -q 1rdm -e 20 -c 8 -m '0 10 100' -p qmc_1rdm_J2
+
+# files produced
+qmc_1rdm_J2_ref_real.s000.stat_ref_1rdm.dat
+qmc_1rdm_J2_ref_real.s000.stat_trace_1rdm.dat
+qmc_1rdm_J2_long_real.s000.stat_ref_1rdm.dat
+qmc_1rdm_J2_short_real.s000.stat_ref_1rdm.dat
+
+qmc_1rdm_J2_long_comp.s000.stat_ref_1rdm.dat
+qmc_1rdm_J2_ref_comp.s000.stat_ref_1rdm.dat
+qmc_1rdm_J2_ref_comp.s000.stat_trace_1rdm.dat
+qmc_1rdm_J2_short_comp.s000.stat_ref_1rdm.dat
