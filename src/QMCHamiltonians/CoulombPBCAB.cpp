@@ -25,7 +25,7 @@ namespace qmcplusplus
 
 CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns,
                            bool computeForces):
-  PtclA(ions), myConst(0.0), myGrid(0),V0(nullptr),fV0(nullptr),dfV0(nullptr),ComputeForces(computeForces),
+  PtclA(ions), myConst(0.0), myGrid(nullptr),V0(nullptr),fV0(nullptr),dfV0(nullptr),ComputeForces(computeForces),
   ForceBase (ions, elns), MaxGridPoints(10000),Pion(ions),Peln(elns)
 {
   // if (ComputeForces)
