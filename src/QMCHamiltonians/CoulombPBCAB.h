@@ -157,20 +157,28 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
   }
 
   QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
-
+  
+  ///Creates the long-range handlers, then splines and stores it by particle and species for quick evaluation.
   void initBreakup(ParticleSet& P);
 
+  //Do these functions need to be kept?
   Return_t evalConsts_orig(bool report=true);
   Return_t evalSR_old(ParticleSet& P);
   Return_t evalLR_old(ParticleSet& P);
   Return_t evalConsts_old(bool report=true);
+  //
 
-
+  ///Computes the short-range contribution to the coulomb energy.
   Return_t evalSR(ParticleSet& P);
+  ///Computes the long-range contribution to the coulomb energy.
   Return_t evalLR(ParticleSet& P);
+  ///Computes the short-range contribution to the coulomb energy and forces.
   Return_t evalSRwithForces(ParticleSet& P);
+  ///Computes the long-range contribution to the coulomb energy and forces.
   Return_t evalLRwithForces(ParticleSet& P);
+  ///Evaluates madelung and background contributions to total energy.
   Return_t evalConsts(bool report=true);
+  ///Adds a local pseudopotential channel "ppot" to all source species of type "groupID".
   void add(int groupID, RadFunctorType* ppot);
 
   void addObservables(PropertySetType& plist, BufferType& collectables);

@@ -42,9 +42,13 @@ struct LRCoulombSingleton
   typedef LinearGrid<pRealType>        GridType;
   typedef OneDimCubicSpline<pRealType> RadFunctorType;
 
+  ///Stores the energ optimized LR handler.
   static LRHandlerType* CoulombHandler;
+  ///Stores the force/stress optimized LR handler.
   static LRHandlerType* CoulombDerivHandler;
+  ///This returns an energy optimized LR handler.  If non existent, it creates one.
   static LRHandlerType* getHandler(ParticleSet& ref);
+  ///This returns a force/stress optimized LR handler.  If non existent, it creates one.
   static LRHandlerType* getDerivHandler(ParticleSet& ref);
   /** create a linear spline function
    * @param aLR LRHandler
@@ -57,6 +61,15 @@ struct LRCoulombSingleton
    */
   static RadFunctorType* createSpline4RbyVs(LRHandlerType* aLR, mRealType rcut,
       GridType* agrid=0);
+  /** create a linear spline of the derivative of short-range potential
+   * @param aLR LRHandler
+   * @param rcut cutoff radius
+   * @param agrid pointer to a grid
+   * @return a RadFunctorType
+   *
+   * The spline function is the short-range term after breaking up
+   * \f$r \frac{d}{dr} V_{S} = \frac{d}{dr}\left(r \times (V(r)-V_{L})\right)\f$
+   */
   static RadFunctorType* createSpline4RbyVsDeriv(LRHandlerType* aLR, mRealType rcut,
       GridType* agrid=0);
 };

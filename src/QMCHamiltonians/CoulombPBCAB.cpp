@@ -619,8 +619,7 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
     V0 = LRCoulombSingleton::createSpline4RbyVs(AB,myRcut,myGrid);
     if(Vat.size())
     {
-      app_log() << "  Vat is not empty. Something is wrong" << std::endl;
-      OHMMS::Controller->abort();
+      APP_ABORT("CoulombPBCAB::initBreakup.  Vat is not empty\n");
     }
     Vat.resize(NptclA,V0);
     Vspec.resize(NumSpeciesA,0);//prepare for PP to overwrite it
@@ -636,8 +635,7 @@ void CoulombPBCAB::initBreakup(ParticleSet& P)
       dfV0=LRCoulombSingleton::createSpline4RbyVsDeriv(dAB,myRcut,myGrid);
     if(fVat.size())
     {
-      app_log() << "  fVat is not empty.  Something is wrong" << std::endl;
-      OHMMS::Controller->abort();
+      APP_ABORT("CoulombPBCAB::initBreakup.  Vat is not empty\n");
     }
     fVat.resize(NptclA,fV0);
     fdVat.resize(NptclA,dfV0);
