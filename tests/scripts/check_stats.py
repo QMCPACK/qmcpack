@@ -1797,6 +1797,8 @@ def read_command_line():
             'density',
             'spindensity',
             'energydensity',
+            '1rdm',
+            '1redm',
             ]
 
         opt,files_in = parser.parse_args()
@@ -1845,11 +1847,13 @@ def read_command_line():
             options.quantity,options.qlabel = qlist
         #end if
         if options.qlabel is None:
-            default_label = obj(
-                density       = 'Density',
-                spindensity   = 'SpinDensity',
-                energydensity = 'EnergyDensity',
-                )
+            default_label = obj({
+                'density'       : 'Density'        ,
+                'spindensity'   : 'SpinDensity'    ,
+                'energydensity' : 'EnergyDensity'  ,
+                '1rdm'          : 'DensityMatrices',
+                '1redm'         : 'DensityMatrices',
+                })
             options.qlabel = default_label[options.quantity]
         #end if
         if options.quantity=='none':
@@ -1883,7 +1887,8 @@ def read_command_line():
             exit_fail('must provide either reference_file or make_reference')
         #end if
 
-        if options.quantity in ('density','spindensity'):
+        fixed_sum_quants = set(['density','spindensity'])
+        if options.quantity in fixed_sum_quants:
             options.fixed_sum = True
         #end if
 
@@ -1940,10 +1945,15 @@ def process_stat_file(options):
         else:
             exit_fail('could not find {0} data with label {1}'.format(options.quantity,options.qlabel))
         #end if
-        quantity_paths = obj(
-            density     = obj(tot='value'),
-            spindensity = obj(u='u/value',d='d/value'),
-            )
+        quantity_paths = obj({
+            'density'     : obj(tot='value'),
+            'spindensity' : obj(u='u/value',
+                                d='d/value'),
+            '1rdm'        : obj(u='number_matrix/u/value',
+                                d='number_matrix/d/value'),
+            '1redm'       : obj(u='energy_matrix/u/value',
+                                d='energy_matrix/d/value'),
+            })
         qpaths = quantity_paths[options.quantity]
         vlog('search paths:\n{0}'.format(str(qpaths).rstrip()),n=2)
         qdata = obj()

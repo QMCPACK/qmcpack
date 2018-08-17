@@ -26,7 +26,7 @@
 #include "QMCTools/VSVBParser.h"
 #include "QMCTools/QPParser.h"
 #include "QMCTools/GamesFMOParser.h"
-#include "QMCTools/PyscfParser.h"
+#include "QMCTools/LCAOH5Parser.h"
 #include "QMCTools/BParser.h"
 #include "QMCTools/CrystalAsciiParser.h"
 #include "Message/Communicate.h"
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
     }
     else if(a == "-pyscf" || a=="-orbitals")
     {
-      parser = new PyscfParser(argc,argv);
+      parser = new LCAOParser(argc,argv);
       in_file =argv[++iargc];
       allH5=true;
     }
