@@ -98,13 +98,9 @@ bool NGOBuilder::addGridH5(hdf_archive &hin)
   {
     APP_ABORT("NGOBuilder::addGrid SphericalOrbitals<ROT,GT>*, is not initialized");
   }
-
   app_log() << "   Grid is created by the input paremters in h5" << std::endl;
 
-
-
   std::string gridtype;
-
   if(hin.myComm->rank()==0){
      if(!hin.read(gridtype, "grid_type")){
          std::cerr<<"Could not read grid_type in H5; Probably Corrupt H5 file"<<std::endl;
@@ -288,7 +284,14 @@ NGOBuilder::addRadialOrbitalH5(hdf_archive & hin, const QuantumNumberType& nlms)
     ERRORMSG("m_orbitals, SphericalOrbitals<ROT,GT>*, is not initialized")
     return false;
   }
-  std::string radtype(m_infunctype);
+  std::string radtype;
+  if(hin.myComm->rank()==0){
+      hin.read(radtype,"grid_name");
+      if(radtype!="numerical")
+         radtype=m_infunctype;
+  }
+  hin.myComm->bcast(radtype);
+
   std::string dsname("0");
   int lastRnl = m_orbitals->Rnl.size();
   m_nlms = nlms;
@@ -296,9 +299,14 @@ NGOBuilder::addRadialOrbitalH5(hdf_archive & hin, const QuantumNumberType& nlms)
   {
     addGaussianH5(hin);
   }
+  else if(radtype=="numerical")
+  {
+    app_log()<<" Adding Numerical Orbital in grid form from HDF5 " << std::endl;
+    addNumericalH5(hin);
+  }
   else
   {
-    app_log()<<" RadType other than Gaussian not implemented to be read from H5 format"<<std::endl;
+    app_log()<<" RadType other than Gaussian or Numerical not implemented to be read from H5 format"<<std::endl;
     exit(0);
   }
   if(lastRnl && m_orbitals->Rnl.size()> lastRnl)
@@ -325,6 +333,37 @@ void NGOBuilder::addGaussian(xmlNodePtr cur)
   m_orbitals->RnlID.push_back(m_nlms);
 }
 
+void NGOBuilder::addNumericalH5(hdf_archive &hin)
+{
+  int L= m_nlms[1];
+  int npts=0;
+
+  if(hin.myComm->rank()==0){
+      hin.read(npts,"grid_npts");
+  }
+  hin.myComm->bcast(npts);
+
+  Matrix<RealType> numGrid(npts,2);
+  if(hin.myComm->rank()==0){
+     hin.read(numGrid,"basis_grid_xy");
+  }
+
+  hin.myComm->bcast(numGrid.data(),numGrid.size());
+
+  GridType* agrid = m_orbitals->Grids[0];
+  RadialOrbitalType *radorb = new RadialOrbitalType(agrid);
+  radorb->resize(npts);
+  if(m_rcut<0)
+    m_rcut = agrid->rmax();
+  
+  for (int i=0;i<npts;i++)
+      (*radorb)(i)=numGrid[i][1];
+
+  radorb->spline(0,0,npts-1,0.0);
+  m_orbitals->Rnl.push_back(radorb);
+  m_orbitals->RnlID.push_back(m_nlms);
+
+}
 void NGOBuilder::addGaussianH5(hdf_archive &hin)
 {
   int L= m_nlms[1];

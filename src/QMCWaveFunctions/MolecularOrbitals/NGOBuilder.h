@@ -162,6 +162,7 @@ public:
 private:
   void addGaussian(xmlNodePtr cur);
   void addGaussianH5(hdf_archive &hin);
+  void addNumericalH5(hdf_archive &hin);
   void addSlater(xmlNodePtr cur);
   void addNumerical(xmlNodePtr cur, const std::string& dsname);
   void addPade(xmlNodePtr cur);

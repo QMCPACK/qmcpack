@@ -111,10 +111,10 @@ bool AtomicBasisBuilder<RFB>::put(xmlNodePtr cur)
   else if(Morder == "pyscf")
   {
     expandlm = MOD_NATURAL_EXPAND;
-    addsignforM=tmp_addsignforM;
-    if(sph != "spherical") {
-      APP_ABORT(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
-    }
+    addsignforM=1;
+    //if(sph != "spherical") 
+    //  APP_ABORT(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
+    
   }
   if(sph == "cartesian" || Morder == "Gamess")
   {
@@ -156,11 +156,11 @@ bool AtomicBasisBuilder<RFB>::putH5(hdf_archive &hin)
   {
     expandlm = NATURAL_EXPAND;
   }
-  else if(Morder == "no" || Morder == "Numerical")
+  else if(Morder == "no")
   {
     expandlm = DONOT_EXPAND;
   }
-  else if(Morder == "pyscf")
+  else if(Morder == "pyscf" || Morder == "Numerical")
   {
     expandlm = MOD_NATURAL_EXPAND;
     addsignforM=tmp_addsignforM;
@@ -582,28 +582,29 @@ int AtomicBasisBuilder<RFB>::expandYlmH5(const std::string& rnl, const QuantumNu
   }
   else
   {
+       
        //assign the index for real Spherical Harmonic with (l,m)
-       // aos->LM[num] = aos->Ylm.index(nlms[q_l],nlms[q_m]);
-        //radial orbitals: add only distinct orbitals
-       // std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
-       // if(rnl_it == RnlID.end())
-       // {
-       //   int nl = aos->Rnl.size();
-       //   if(radFuncBuilder.addRadialOrbitalH5(hin,nlms))
-       //     //assign the index for radial orbital with (n,l)
-       //   {
-       //     aos->NL[num] = nl;
-       //     RnlID[rnl] = nl;
-       //   }
-       // }
-       // else
-       // {
-       //   //assign the index for radial orbital with (n,l) if repeated
-       //   aos->NL[num] = (*rnl_it).second;
-       // }
-       // //increment number of basis functions
-       // num++;
-      APP_ABORT(" Error: expandYlm='pyscf'  with angular='spherical' And HDF5 not implemented in AOS version of the code. Aborting.\n");
+        aos->LM[num] = aos->Ylm.index(nlms[q_l],nlms[q_m]);
+       // //radial orbitals: add only distinct orbitals
+        std::map<std::string,int>::iterator rnl_it = RnlID.find(rnl);
+        if(rnl_it == RnlID.end())
+        {
+          int nl = aos->Rnl.size();
+          if(radFuncBuilder.addRadialOrbitalH5(hin,nlms))
+            //assign the index for radial orbital with (n,l)
+          {
+            aos->NL[num] = nl;
+            RnlID[rnl] = nl;
+          }
+        }
+        else
+        {
+          //assign the index for radial orbital with (n,l) if repeated
+          aos->NL[num] = (*rnl_it).second;
+        }
+        //increment number of basis functions
+        num++;
+      //APP_ABORT(" Error: expandYlm='pyscf'  with angular='spherical' And HDF5 not implemented in AOS version of the code. Aborting.\n");
        
 
   }
