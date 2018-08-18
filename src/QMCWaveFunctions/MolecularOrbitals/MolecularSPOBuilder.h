@@ -179,7 +179,6 @@ public:
 
              if(!hin.read(elementType,"elementType"))
                  PRE.error("Could not read elementType in H5; Probably Corrupt H5 file",true);
-             std::cout<<"elementType="<<elementType<<" basiset_name="<<basiset_name<<std::endl;
           }
           myComm->bcast(basiset_name);
           myComm->bcast(elementType);
