@@ -137,7 +137,7 @@ template<class COT>
 bool AOBasisBuilder<COT>::putH5(hdf_archive &hin)
 {
   ReportEngine PRE("AtomicBasisBuilder","putH5(hin)");
-  std::string CenterID;
+  std::string CenterID, basisName;
 
   if(myComm->rank()==0)
   {
@@ -145,6 +145,7 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive &hin)
     hin.read(CenterID,"elementType");
     hin.read(Normalized,"normalized");
     hin.read(Morder,"expandYlm");
+    hin.read(basisName,"name");
     hin.read(basisType,"type");
     hin.read(addsignforM,"expM");
   }
@@ -153,10 +154,11 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive &hin)
   myComm->bcast(Morder);
   myComm->bcast(CenterID);
   myComm->bcast(Normalized);
+  myComm->bcast(basisName);
   myComm->bcast(basisType);
   myComm->bcast(addsignforM);
 
-  app_log() << "<input node=\"atomicBasisSet\""
+  app_log() << "<input node=\"atomicBasisSet\" name=\"" << basisName
             << "\" Morder=\"" << Morder
             << "\" angular=\"" << sph
             << "\" elementType=\"" << CenterID
