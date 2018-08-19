@@ -45,6 +45,7 @@ struct AOBasisBuilder: public MPIObjectBase
   std::string sph;
   std::string basisType;
   std::string elementType;
+  std::string Normalized;
 
   ///map for the radial orbitals
   std::map<std::string,int>  RnlID;
@@ -52,7 +53,7 @@ struct AOBasisBuilder: public MPIObjectBase
   ///map for (n,l,m,s) to its quantum number index
   std::map<std::string,int> nlms_id;
 
-  AOBasisBuilder(const std::string& eName);
+  AOBasisBuilder(const std::string& eName, Communicate* comm);
 
   bool put(xmlNodePtr cur);
   bool putH5(hdf_archive &hin);
@@ -69,9 +70,10 @@ struct AOBasisBuilder: public MPIObjectBase
 };
 
 template<typename COT>
-AOBasisBuilder<COT>::AOBasisBuilder(const std::string& eName):
+AOBasisBuilder<COT>::AOBasisBuilder(const std::string& eName, Communicate* comm):
   addsignforM(false), expandlm(GAUSSIAN_EXPAND), Morder("gaussian"),
-  sph("default"), basisType("Numerical"), elementType(eName)
+  sph("default"), basisType("Numerical"), elementType(eName),
+  radFuncBuilder(comm), MPIObjectBase(comm)
 {
 // mmorales: for "Cartesian Gaussian", m is an integer that maps
 //           the component to Gamess notation, see Numerics/CartesianTensor.h
@@ -117,19 +119,26 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
       APP_ABORT(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
+
   if(sph == "cartesian" || Morder == "Gamess")
   {
     expandlm = CARTESIAN_EXPAND;
     addsignforM=0;
   }
-  return radFuncBuilder.putCommon(cur);
+
+  radFuncBuilder.Normalized = (Normalized=="yes");
+
+  // Numerical basis is a special case
+  if(basisType == "Numerical") radFuncBuilder.openNumericalBasisH5(cur);
+  //return radFuncBuilder.putCommon(cur);
+  return true;
 }
 
 template<class COT>
 bool AOBasisBuilder<COT>::putH5(hdf_archive &hin)
 {
   ReportEngine PRE("AtomicBasisBuilder","putH5(hin)");
-  std::string CenterID, Normalized, basisName;
+  std::string CenterID, basisName;
 
   if(myComm->rank()==0)
   {
@@ -181,16 +190,14 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive &hin)
       APP_ABORT(" Error: expandYlm='pyscf' only compatible with angular='spherical'. Aborting.\n");
     }
   }
+
   if(sph == "cartesian" || Morder == "Gamess")
   {
     expandlm = CARTESIAN_EXPAND;
     addsignforM=0;
   }
 
-  if(Normalized=="yes")
-     radFuncBuilder.Normalized=true;
-  else
-     radFuncBuilder.Normalized=false;
+  radFuncBuilder.Normalized = (Normalized=="yes");
 
   return true; 
 }
@@ -262,7 +269,7 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
   aos->NL.resize(num);
   //Now, add distinct Radial Orbitals and (l,m) channels
   radFuncBuilder.setOrbitalSet(aos,elementType); //assign radial orbitals for the new center
-  radFuncBuilder.addGrid(gptr); //assign a radial grid for the new center
+  radFuncBuilder.addGrid(gptr,basisType); //assign a radial grid for the new center
   std::vector<xmlNodePtr>::iterator it(radGroup.begin());
   std::vector<xmlNodePtr>::iterator it_end(radGroup.end());
   std::vector<int> all_nl;
@@ -295,7 +302,7 @@ COT* AOBasisBuilder<COT>::createAOSet(xmlNodePtr cur)
     if(rnl_it == RnlID.end())
     {
       int nl = aos->RnlID.size();
-      if(radFuncBuilder.addRadialOrbital(cur1, nlms))
+      if(radFuncBuilder.addRadialOrbital(cur1, basisType, nlms))
         RnlID[rnl] = nl;
       all_nl.push_back(nl);
     }
@@ -413,7 +420,7 @@ COT* AOBasisBuilder<COT>::createAOSetH5(hdf_archive &hin)
     if(rnl_it == RnlID.end())
     {
       int nl = aos->RnlID.size();
-      if(radFuncBuilder.addRadialOrbitalH5(hin, nlms))
+      if(radFuncBuilder.addRadialOrbitalH5(hin, basisType, nlms))
         RnlID[rnl] = nl;
       all_nl.push_back(nl);
     }
