@@ -45,7 +45,6 @@ struct AOBasisBuilder: public MPIObjectBase
   std::string sph;
   std::string basisType;
   std::string elementType;
-  std::string Normalized;
 
   ///map for the radial orbitals
   std::map<std::string,int>  RnlID;
@@ -87,13 +86,14 @@ template<class COT>
 bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
 {
   ReportEngine PRE("AtomicBasisBuilder","put(xmlNodePtr)");
+  std::string Normalized("yes");
   //Register valid attributes attributes
   OhmmsAttributeSet aAttrib;
-  //aAttrib.add(elementType,"elementType"); aAttrib.add(elementType,"species");
   aAttrib.add(basisType,"type");
   aAttrib.add(sph,"angular");
   aAttrib.add(addsignforM,"expM");
   aAttrib.add(Morder,"expandYlm");
+  aAttrib.add(Normalized,"normalized");
   aAttrib.put(cur);
   PRE.echo(cur);
   bool tmp_addsignforM=addsignforM;
@@ -137,7 +137,7 @@ template<class COT>
 bool AOBasisBuilder<COT>::putH5(hdf_archive &hin)
 {
   ReportEngine PRE("AtomicBasisBuilder","putH5(hin)");
-  std::string CenterID, basisName;
+  std::string CenterID, basisName, Normalized("yes");
 
   if(myComm->rank()==0)
   {
