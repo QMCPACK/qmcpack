@@ -159,12 +159,12 @@ bool AOBasisBuilder<COT>::putH5(hdf_archive &hin)
   myComm->bcast(addsignforM);
 
   app_log() << "<input node=\"atomicBasisSet\" name=\"" << basisName
-            << "\" Morder=\"" << Morder
+            << "\" expandYlm=\"" << Morder
             << "\" angular=\"" << sph
             << "\" elementType=\"" << CenterID
             << "\" normalized=\"" << Normalized
-            << "\" basisType=\"" << basisType
-            << "\" addSign=\"" <<addsignforM
+            << "\" type=\"" << basisType
+            << "\" expM=\"" << addsignforM
             << "\" />" << std::endl;
   bool tmp_addsignforM=addsignforM;
   if(sph == "spherical")
