@@ -130,7 +130,6 @@ bool AOBasisBuilder<COT>::put(xmlNodePtr cur)
 
   // Numerical basis is a special case
   if(basisType == "Numerical") radFuncBuilder.openNumericalBasisH5(cur);
-  //return radFuncBuilder.putCommon(cur);
   return true;
 }
 
