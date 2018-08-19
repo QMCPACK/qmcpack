@@ -363,7 +363,9 @@ private:
 
   template<typename COT>
     bool
-    RadialOrbitalSetBuilder<COT>::addRadialOrbitalH5(hdf_archive &hin, const std::string& radtype, const QuantumNumberType& nlms)
+    RadialOrbitalSetBuilder<COT>::addRadialOrbitalH5(hdf_archive& hin,
+                                                     const std::string& radtype_atomicBasisSet,
+                                                     const QuantumNumberType& nlms)
     {
       if(!m_orbitals)
       {
@@ -371,7 +373,9 @@ private:
           return false;
       }
       std::string dsname("0");
-      OhmmsAttributeSet aAttrib;
+      std::string radtype(radtype_atomicBasisSet);
+      if(myComm->rank()==0) hin.read(radtype,"type");
+      myComm->bcast(radtype);
 
       int lastRnl = m_orbitals->RnlID.size();
       m_nlms = nlms;
