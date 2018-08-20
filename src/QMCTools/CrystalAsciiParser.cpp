@@ -144,8 +144,6 @@ void CrystalAsciiParser::getCell(std::istream & is)
 
 void CrystalAsciiParser::getKpts(std::istream& is)
 {
-
-    std::cout << "getKpts needs to be checked" << std::endl;
     is.seekg(pivot_begin);
     std::string aline;
     search(is,"NUMBER OF K POINTS IN THE IBZ",aline);
