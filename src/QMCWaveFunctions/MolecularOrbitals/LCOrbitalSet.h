@@ -466,7 +466,7 @@ public:
     //    psiM(i,j)=simd::dot(C[j],phiM[i],BasisSetSize);
   }
 
-  size_t LCAOrbitalSet::estimateMemory(const int nP) { return BasisSetSize*nP; }
+  size_t estimateMemory(const int nP) { return BasisSetSize*nP; }
 
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last
                           , GGGMatrix_t& grad_grad_grad_logdet)
