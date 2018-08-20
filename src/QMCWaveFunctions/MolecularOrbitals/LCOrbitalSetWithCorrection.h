@@ -687,6 +687,7 @@ public:
 
   bool transformSPOSet();
 
+  std::string cuspInfoFile;
   bool readCuspInfo(Matrix<TinyVector<RealType,9> > &);
 
 private:
@@ -695,7 +696,6 @@ private:
   LCOrbitalSet<BS,false>* originalSPOSet;
   RealType Rcut;
   std::vector<RealType> Z;
-  std::string cuspInfoFile;
 
   void createLCOSets(int centr, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta);
 
