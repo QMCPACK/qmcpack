@@ -1138,12 +1138,6 @@ public:
     return eeIcopy;
   }
 
-  void copyFrom(const WaveFunctionComponent& old)
-  {
-    //nothing to do
-  }
-
-
   void
   finalizeOptimization()
   {
