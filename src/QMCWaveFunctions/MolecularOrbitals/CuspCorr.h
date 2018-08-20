@@ -34,6 +34,18 @@
 namespace qmcplusplus
 {
 
+struct CuspCorrectionParameters
+{
+  typedef QMCTraits::ValueType ValueType;
+  typedef QMCTraits::RealType RealType;
+  RealType Rc, C, sg;
+  TinyVector<ValueType, 5> alpha;
+  int redo;
+  CuspCorrectionParameters(): Rc(0.0), C(0.0), sg(0.0), redo(0), alpha(0.0) {
+  }
+};
+
+
 template<class BS>
 class CuspCorr : public QMCTraits
 {
