@@ -287,7 +287,7 @@ NGOBuilder::addRadialOrbitalH5(hdf_archive & hin, const QuantumNumberType& nlms)
   std::string radtype;
   if(hin.myComm->rank()==0){
       hin.read(radtype,"grid_name");
-      if(radtype!="numerical")
+      if(radtype!="Numerical")
          radtype=m_infunctype;
   }
   hin.myComm->bcast(radtype);
@@ -299,7 +299,7 @@ NGOBuilder::addRadialOrbitalH5(hdf_archive & hin, const QuantumNumberType& nlms)
   {
     addGaussianH5(hin);
   }
-  else if(radtype=="numerical")
+  else if(radtype=="Numerical")
   {
     app_log()<<" Adding Numerical Orbital in grid form from HDF5 " << std::endl;
     addNumericalH5(hin);
@@ -337,11 +337,16 @@ void NGOBuilder::addNumericalH5(hdf_archive &hin)
 {
   int L= m_nlms[1];
   int npts=0;
+  double r;
+  const double eps=1e-6;
+  bool too_small=true;
+
 
   if(hin.myComm->rank()==0){
       hin.read(npts,"grid_npts");
   }
   hin.myComm->bcast(npts);
+  int i=npts;
 
   Matrix<RealType> numGrid(npts,2);
   if(hin.myComm->rank()==0){
@@ -353,8 +358,16 @@ void NGOBuilder::addNumericalH5(hdf_archive &hin)
   GridType* agrid = m_orbitals->Grids[0];
   RadialOrbitalType *radorb = new RadialOrbitalType(agrid);
   radorb->resize(npts);
-  if(m_rcut<0)
-    m_rcut = agrid->rmax();
+ 
+  while(too_small && i>0)
+  {
+    r=numGrid[i][0];
+    double x=numGrid[i][1];
+    too_small=(std::abs(x)<eps);
+    i--;
+  }
+  m_rcut=std::max(m_rcut,r);
+
   
   for (int i=0;i<npts;i++)
       (*radorb)(i)=numGrid[i][1];
