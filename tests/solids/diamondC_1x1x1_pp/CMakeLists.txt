@@ -350,7 +350,7 @@ if (add_tests)
       "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
       qmc_1rdm_noJ_short.in.xml
       ${NMPI} ${NOMP}
-      check_stats.py -s 0 -q 1rdm -e 2 -c 8 -p qmc_1rdm_noJ_short -r qmc-ref/qmc_1rdm_noJ_short${OFEXT}.s000.stat_ref_1rdm.dat
+      check_stats.py -s 0 -q 1rdm -e 20 -c 8 -p qmc_1rdm_noJ_short -r qmc-ref/qmc_1rdm_noJ_short${OFEXT}.s000.stat_ref_1rdm.dat
       )
 
     SIMPLE_RUN_AND_CHECK(
@@ -367,7 +367,7 @@ if (add_tests)
       "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
       qmc_1rdm_J2_short.in.xml
       ${NMPI} ${NOMP}
-      check_stats.py -s 0 -q 1rdm -e 2 -c 8 -p qmc_1rdm_J2_short -r qmc-ref/qmc_1rdm_J2_short${OFEXT}.s000.stat_ref_1rdm.dat
+      check_stats.py -s 0 -q 1rdm -e 20 -c 8 -p qmc_1rdm_J2_short -r qmc-ref/qmc_1rdm_J2_short${OFEXT}.s000.stat_ref_1rdm.dat
       )
 
     SIMPLE_RUN_AND_CHECK(
@@ -380,5 +380,60 @@ if (add_tests)
   else()
     message("Skipping diamond 1rdm test because CUDA is not supported")
   endif()
+
+  if (NOT QMC_CUDA)
+    # energydensity tests
+    SIMPLE_RUN_AND_CHECK(
+      short-diamondC_1x1x1_pp-vmc-estimator-energydensity-cell
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_edens_cell_short${IFEXT}.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 0 -q 'energydensity,EDcell' -e 20 -c 8 -p qmc_edens_cell_short -r qmc-ref/qmc_edens_cell_short.s000.stat_ref_energydensity.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      short-diamondC_1x1x1_pp-vmc-estimator-energydensity-voronoi
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_edens_vor_short${IFEXT}.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 0 -q 'energydensity,EDvoronoi' -e 20 -c 2 -p qmc_edens_vor_short -r qmc-ref/qmc_edens_vor_short.s000.stat_ref_energydensity.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      short-diamondC_1x1x1_pp-dmc-estimator-energydensity-cell
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_edens_cell_dmc_short${IFEXT}.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 1 -q 'energydensity,EDcell' -e 2 -c 8 -p qmc_edens_cell_dmc_short -r qmc-ref/qmc_edens_cell_dmc_short.s001.stat_ref_energydensity.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      long-diamondC_1x1x1_pp-vmc-estimator-energydensity-cell
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_edens_cell_long${IFEXT}.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 0 -q 'energydensity,EDcell' -e 20 -c 8 -p qmc_edens_cell_long -r qmc-ref/qmc_edens_cell_long.s000.stat_ref_energydensity.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      long-diamondC_1x1x1_pp-vmc-estimator-energydensity-voronoi
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_edens_vor_long${IFEXT}.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 0 -q 'energydensity,EDvoronoi' -e 20 -c 2 -p qmc_edens_vor_long -r qmc-ref/qmc_edens_vor_long.s000.stat_ref_energydensity.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      long-diamondC_1x1x1_pp-dmc-estimator-energydensity-cell
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_edens_cell_dmc_long${IFEXT}.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 1 -q 'energydensity,EDcell' -e 2 -c 8 -p qmc_edens_cell_dmc_long -r qmc-ref/qmc_edens_cell_dmc_long.s001.stat_ref_energydensity.dat
+      )
+
+  else()
+    message("Skipping diamond 1rdm test because CUDA is not supported")
+  endif()
+
 
 endif()
