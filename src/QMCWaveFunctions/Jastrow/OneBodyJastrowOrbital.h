@@ -507,10 +507,6 @@ public:
     return j1copy;
   }
 
-  void copyFrom(const WaveFunctionComponent& old)
-  {
-    //nothing to do
-  }
 };
 
 }
