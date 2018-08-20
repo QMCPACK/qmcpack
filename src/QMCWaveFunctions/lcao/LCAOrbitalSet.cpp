@@ -132,10 +132,10 @@ namespace qmcplusplus
     }
   }
 
-  void LCAOrbitalSet::evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM)
+  void LCAOrbitalSet::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem)
   {
     const int nVP = VP.getTotalNum();
-    Matrix<RealType> basisM(VP.SPOMem.data(), nVP, BasisSetSize);
+    Matrix<ValueType> basisM(SPOMem.data(), nVP, BasisSetSize);
     for(size_t j=0; j<nVP; j++)
     {
       Vector<RealType> vTemp(basisM[j],BasisSetSize);

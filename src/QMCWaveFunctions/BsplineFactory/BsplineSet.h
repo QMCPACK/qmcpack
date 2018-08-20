@@ -81,9 +81,9 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
     SplineAdoptor::evaluate_v(P,iat,psi);
   }
 
-  inline void evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM)
+  inline void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem)
   {
-    SplineAdoptor::evaluateValues(VP, psiM);
+    SplineAdoptor::evaluateValues(VP, psiM, SPOMem);
   }
 
   inline size_t estimateMemory(const int nP)
