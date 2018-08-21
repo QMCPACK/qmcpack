@@ -687,9 +687,9 @@ public:
 
   bool transformSPOSet();
 
-  std::string cuspInfoFile;
-  bool readCuspInfo(Matrix<TinyVector<RealType,9> > &);
+  bool readCuspInfo(Matrix<CuspCorrectionParameters > &);
 
+  std::string cuspInfoFile;
 private:
 
   BS* extractHighYLM(std::vector<bool> &rmv);
