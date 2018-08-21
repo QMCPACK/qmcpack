@@ -1,4 +1,4 @@
-  Input file(s): qmc_long.in.xml 
+  Input file(s): qmc_ref_long.in.xml 
 
 =====================================================
                     QMCPACK 3.5.0 
@@ -16,8 +16,8 @@
 =====================================================
   Global options 
 
-  MPI Nodes            = 68
-  MPI Nodes per group  = 68
+  MPI Nodes            = 4
+  MPI Nodes per group  = 4
   MPI Group ID         = 0
   OMP_NUM_THREADS      = 48
 
@@ -25,17 +25,17 @@
   Base precision      = double
   Full precision      = double
 
-  Input XML = qmc_long.in.xml
+  Input XML = qmc_ref_long.in.xml
 
-  Project = qmc_long
-  date    = 2018-08-20 10:33:25 CDT
-  host    = c506-041.stampede2.tacc.utexas.edu
+  Project = qmc_ref_long
+  date    = 2018-08-20 12:56:33 CDT
+  host    = c506-042.stampede2.tacc.utexas.edu
 
  Random Number
  -------------
-  Offset for the random number seeds based on time: 837
+  Offset for the random number seeds based on time: 209
 
-  Range of prime numbers to use as seeds over processors and threads = 6469-38953
+  Range of prime numbers to use as seeds over processors and threads = 1297-2767
 
 
  Lattice
@@ -352,7 +352,7 @@ QMCHamiltonian::addOperatorType added type pseudo named PseudoPot
 ParticleSetPool::randomize 
 <init source="ion0" target="e">
 </init>
-  Initialization Execution time = 0.9533 secs
+  Initialization Execution time = 0.2345 secs
 =========================================================
  Summary of QMC systems 
 =========================================================
@@ -362,14 +362,14 @@ ParticleSetPool has:
 
     8
 
-    u  3.7704291478e+00  3.5927983963e+00  5.6664668547e+00
-    u  3.8318872592e+00  6.0266073365e+00  4.1703987369e+00
-    u  1.1983118847e+00  8.0501115152e-01  1.0922164244e+00
-    u  4.6189188146e+00  2.6330973668e+00  4.5319464409e+00
-    d  3.5908021948e+00  2.7138369543e+00  9.3995412497e-01
-    d  3.4182943949e+00  4.1975979000e+00  5.9181385442e+00
-    d  2.0183466744e+00  2.5725433582e+00  1.0036790290e+00
-    d  7.6793885216e-01  1.0466093836e+00  1.3472070765e+00
+    u  5.6983129634e+00  2.8775984967e+00  3.1843274918e+00
+    u  5.8335175219e+00  3.3007314210e+00  2.6381628025e+00
+    u  2.4545666768e+00  1.8137427667e+00  8.1657542863e-01
+    u  2.0800225788e+00  2.6251912744e+00  2.2535715868e+00
+    d  3.2635578778e+00  1.0525794929e+00  3.8637983112e+00
+    d  3.3256266317e+00  2.9609257713e+00  1.0924745248e+00
+    d  1.0416910153e+00  2.2690727846e+00  2.4648019884e+00
+    d  6.5047051089e-01  1.1806154937e+00  1.4900161735e+00
 
   ParticleSet ion0 : 0 2 
 
@@ -387,25 +387,25 @@ ParticleSetPool has:
 
 =========================================================
   Start VMCSingleOMP
-  File Root qmc_long.s000 append = no 
+  File Root qmc_ref_long.s000 append = no 
 =========================================================
   Adding 48 walkers to 0 existing sets
-  Total number of walkers: 3.2640000000e+03
-  Total weight: 3.2640000000e+03
+  Total number of walkers: 1.9200000000e+02
+  Total weight: 1.9200000000e+02
   Resetting Properties of the walkers 1 x 14
 
 <vmc function="put">
   qmc_counter=0  my_counter=0
-  time step      = 3.0000000000e-01
-  blocks         = 100
-  steps          = 100
-  substeps       = 2
+  time step      = 1.0000000000e-02
+  blocks         = 200
+  steps          = 500
+  substeps       = 1
   current        = 0
   target samples = 0.0000000000e+00
   walkers/mpi    = 48
 
-  stepsbetweensamples = 10100
-<parameter name="blocks" condition="int">100</parameter>
+  stepsbetweensamples = 100500
+<parameter name="blocks" condition="int">200</parameter>
 <parameter name="blocks_between_recompute" condition="int">0</parameter>
 <parameter name="check_properties" condition="int">100</parameter>
 <parameter name="checkproperties" condition="int">100</parameter>
@@ -413,39 +413,39 @@ ParticleSetPool has:
 <parameter name="dmcwalkersperthread" condition="real">0.0000000000e+00</parameter>
 <parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
 <parameter name="record_configs" condition="int">0</parameter>
-<parameter name="record_walkers" condition="int">10100</parameter>
+<parameter name="record_walkers" condition="int">100500</parameter>
 <parameter name="recordconfigs" condition="int">0</parameter>
-<parameter name="recordwalkers" condition="int">10100</parameter>
+<parameter name="recordwalkers" condition="int">100500</parameter>
 <parameter name="rewind" condition="int">0</parameter>
 <parameter name="samples" condition="real">0.0000000000e+00</parameter>
 <parameter name="samplesperthread" condition="real">0.0000000000e+00</parameter>
-<parameter name="steps" condition="int">100</parameter>
-<parameter name="stepsbetweensamples" condition="int">10100</parameter>
+<parameter name="steps" condition="int">500</parameter>
+<parameter name="stepsbetweensamples" condition="int">100500</parameter>
 <parameter name="store_configs" condition="int">0</parameter>
 <parameter name="storeconfigs" condition="int">0</parameter>
-<parameter name="sub_steps" condition="int">2</parameter>
-<parameter name="substeps" condition="int">2</parameter>
-<parameter name="tau" condition="au">3.0000000000e-01</parameter>
-<parameter name="time_step" condition="au">3.0000000000e-01</parameter>
-<parameter name="timestep" condition="au">3.0000000000e-01</parameter>
+<parameter name="sub_steps" condition="int">1</parameter>
+<parameter name="substeps" condition="int">1</parameter>
+<parameter name="tau" condition="au">1.0000000000e-02</parameter>
+<parameter name="time_step" condition="au">1.0000000000e-02</parameter>
+<parameter name="timestep" condition="au">1.0000000000e-02</parameter>
 <parameter name="use_drift" condition="string">yes</parameter>
 <parameter name="usedrift" condition="string">yes</parameter>
 <parameter name="walkers" condition="int">48</parameter>
 <parameter name="warmup_steps" condition="int">100</parameter>
 <parameter name="warmupsteps" condition="int">100</parameter>
   DumpConfig==false Nothing (configurations, state) will be saved.
-  Walker Samples are dumped every 10100 steps.
+  Walker Samples are dumped every 100500 steps.
 </vmc>
   Adding a default LocalEnergyEstimator for the MainEstimator 
   CloneManager::makeClones makes 48 clones for W/Psi/H.
   Cloning methods for both Psi and H are used
 ===== Memory Usage before cloning =====
-Available memory on node 0, free + buffers : 183488 MB
-Memory footprint by rank 0 on node 0       : 80 MB
+Available memory on node 0, free + buffers : 184469 MB
+Memory footprint by rank 0 on node 0       : 91 MB
 ==================================================
 ===== Memory Usage after cloning =====
-Available memory on node 0, free + buffers : 183094 MB
-Memory footprint by rank 0 on node 0       : 94 MB
+Available memory on node 0, free + buffers : 184469 MB
+Memory footprint by rank 0 on node 0       : 100 MB
 ==================================================
   Initial partition of walkers 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 
 
@@ -455,20 +455,20 @@ Memory footprint by rank 0 on node 0       : 94 MB
   Walker distribution on root = 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 
   Using Locality Approximation
 ===== Memory Usage after the buffer registration =====
-Available memory on node 0, free + buffers : 182850 MB
-Memory footprint by rank 0 on node 0       : 128 MB
+Available memory on node 0, free + buffers : 184434 MB
+Memory footprint by rank 0 on node 0       : 144 MB
 ==================================================
   Anonymous Buffer size per walker : 2912 Bytes.
 MEMORY increase 0 MB VMCSingleOMP::resetRun
 ====================================================
   SimpleFixedNodeBranch::finalize after a VMC block
     QMC counter        = 0
-    time step          = 0.3
-    reference energy   = -10.4755
-    reference variance = 0.544386
+    time step          = 0.01
+    reference energy   = -10.4927
+    reference variance = 0.485003
 ====================================================
-  QMC Execution time = 2.0081e+03 secs 
-  Total Execution time = 2.0081e+03 secs
+  QMC Execution time = 9.0176e+02 secs 
+  Total Execution time = 9.0176e+02 secs
 
 =========================================================
-  A new xml input file : qmc_long.s000.cont.xml
+  A new xml input file : qmc_ref_long.s000.cont.xml
