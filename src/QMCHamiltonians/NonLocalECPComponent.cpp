@@ -189,6 +189,92 @@ NonLocalECPComponent::evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& ps
 }
 
 NonLocalECPComponent::RealType
+NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFunction& psi, 
+    int iel, RealType r, const PosType& dr, 
+    bool Tmove, std::vector<NonLocalData>& Txy) const
+{
+  CONSTEXPR RealType czero(0);
+  CONSTEXPR RealType cone(1);
+
+  RealType lpol_[lmax+1];
+  RealType vrad_[nchannel];
+  std::vector<RealType> psiratio_(nknot);
+  PosType deltaV[nknot];
+
+  if(VP)
+  {
+    // Compute ratios with VP
+    ParticleSet::ParticlePos_t VPos(nknot);
+    for (int j=0; j<nknot; j++)
+    {
+      deltaV[j]=r*rrotsgrid_m[j]-dr;
+      VPos[j]=deltaV[j]+W.R[iel];
+    }
+    VP->makeMoves(iel,VPos,true,iat);
+    psi.evaluateRatios(*VP,psiratio_);
+    for (int j=0; j<nknot; j++)
+      psiratio_[j]*=sgridweight_m[j];
+  }
+  else
+  {
+    // Compute ratio of wave functions
+    for (int j=0; j<nknot; j++)
+    {
+      deltaV[j]=r*rrotsgrid_m[j]-dr;
+      W.makeMoveOnSphere(iel,deltaV[j]);
+#if defined(QMC_COMPLEX)
+      psiratio_[j]=psi.ratio(W,iel)*sgridweight_m[j]*std::cos(psi.getPhaseDiff());
+#else
+      psiratio_[j]=psi.ratio(W,iel)*sgridweight_m[j];
+#endif
+      W.rejectMove(iel);
+      psi.resetPhaseDiff();
+      //psi.rejectMove(iel);
+    }
+  }
+
+  // Compute radial potential
+  for(int ip=0; ip< nchannel; ip++)
+    vrad_[ip]=nlpp_m[ip]->splint(r)*wgt_angpp_m[ip];
+
+  const RealType rinv=cone/r;
+  RealType pairpot=0; 
+  // Compute spherical harmonics on grid
+  for (int j=0, jl=0; j<nknot ; j++)
+  {
+    RealType zz=dot(dr,rrotsgrid_m[j])*rinv;
+    // Forming the Legendre polynomials
+    lpol_[0]=cone;
+    RealType lpolprev=czero;
+    for (int l=0 ; l< lmax ; l++)
+    {
+      //Not a big difference
+      //lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
+      //lpol[l+1]/=(l+1);
+      lpol_[l+1]=Lfactor1[l]*zz*lpol_[l]-l*lpolprev;
+      lpol_[l+1]*=Lfactor2[l];
+      lpolprev=lpol_[l];
+    }
+
+    RealType lsum=czero;
+    for(int l=0; l <nchannel; l++)
+      lsum += vrad_[l]*lpol_[ angpp_m[l] ];
+    lsum *= psiratio_[j];
+    if(Tmove) Txy.push_back(NonLocalData(iel,lsum,deltaV[j]));
+    pairpot+=lsum;
+  }
+
+#if !defined(REMOVE_TRACEMANAGER)
+  if( streaming_particles)
+  {
+    (*Vi_sample)(iat) += .5*pairpot;
+    (*Ve_sample)(iel) += .5*pairpot;
+  }
+#endif
+  return pairpot;
+}
+
+NonLocalECPComponent::RealType
 NonLocalECPComponent::evaluate(ParticleSet& W, int iat,
                                TrialWaveFunction& psi,
                                PosType &force_iat)

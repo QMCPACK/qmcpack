@@ -140,20 +140,28 @@ NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
   for(int ipp=0; ipp<PPset.size(); ipp++)
     if(PPset[ipp]) PPset[ipp]->randomize_grid(*myRNG);
   //loop over all the ions
+  const auto myTable = P.DistTables[myTableIndex];
+  
   if (ComputeForces)
   {
-    for(int iat=0; iat<NumIons; iat++)
-      if(PP[iat])
+    if(myTable->DTType == DT_SOA)
+    {
+      for(int jel=0; jel<P.getTotalNum(); jel++)
       {
-        if(Tmove)
-          Value += PP[iat]->evaluate(P,Psi,iat, Txy, forces[iat]);
-        else
-          Value += PP[iat]->evaluate(P,IonConfig,iat,Psi, forces[iat], PulayTerm[iat]);
+        const auto &dist  = myTable->Distances[jel];
+        const auto &displ = myTable->Displacements[jel];
+        for(int iat=0; iat<NumIons; iat++)
+          if(PP[iat]!=nullptr && dist[iat]<PP[iat]->Rmax)
+            Value += PP[iat]->evaluateOne(P,iat,Psi,jel,dist[iat],RealType(-1)*displ[iat],Tmove,Txy);
       }
+    }
+    else
+    {
+      APP_ABORT("NonLocalECPotential::evaluate():  Forces not imlpemented for AoS build\n");
+    }
   }
   else
   {
-    const auto myTable = P.DistTables[myTableIndex];
     if(myTable->DTType == DT_SOA)
     {
       for(int jel=0; jel<P.getTotalNum(); jel++)
