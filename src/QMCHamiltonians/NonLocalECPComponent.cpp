@@ -147,7 +147,7 @@ NonLocalECPComponent::evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& ps
     }
   }
 
-  // Compute radial potential
+  // Compute radial potential, multiplied by (2l+1) factor.
   for(int ip=0; ip< nchannel; ip++)
     vrad_[ip]=nlpp_m[ip]->splint(r)*wgt_angpp_m[ip];
 
@@ -196,8 +196,16 @@ NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFu
   CONSTEXPR RealType czero(0);
   CONSTEXPR RealType cone(1);
 
+  //Array for P_l[cos(theta)].
   RealType lpol_[lmax+1];
+  //Array for P'_l[cos(theta)]
+  RealType dlpol_[lmax+1];
+
+  //Array for v_l(r).
   RealType vrad_[nchannel];
+  //Array for v'_l(r)
+  RealType dvrad_[nchannel];
+
   std::vector<RealType> psiratio_(nknot);
   PosType deltaV[nknot];
 
@@ -233,9 +241,15 @@ NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFu
     }
   }
 
-  // Compute radial potential
+  // This is just a temporary variable to dump d2/dr2 into for spline evaluation.
+  RealType secondderiv(0);
+
+  // Compute radial potential and its derivative times (2l+1)
   for(int ip=0; ip< nchannel; ip++)
-    vrad_[ip]=nlpp_m[ip]->splint(r)*wgt_angpp_m[ip];
+  {
+    vrad_[ip]=nlpp_m[ip]->splint(r,dvrad_[ip],secondderiv)*wgt_angpp_m[ip];
+    dvrad_[ip]*=wgt_angpp_m[ip];
+  }
 
   const RealType rinv=cone/r;
   RealType pairpot=0; 
@@ -243,17 +257,27 @@ NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFu
   for (int j=0, jl=0; j<nknot ; j++)
   {
     RealType zz=dot(dr,rrotsgrid_m[j])*rinv;
+    PosType uminusrvec=rrotsgrid_m[j]-zz*dr*rinv;
     // Forming the Legendre polynomials
+    //P_0(x)=1; P'_0(x)=0.
     lpol_[0]=cone;
+    dlpol_[0]=czero;
+
     RealType lpolprev=czero;
+    RealType dlpolprev=czero;
+
     for (int l=0 ; l< lmax ; l++)
     {
-      //Not a big difference
-      //lpol[l+1]=(2*l+1)*zz*lpol[l]-l*lpolprev;
-      //lpol[l+1]/=(l+1);
+      //Legendre polynomial recursion formula.
       lpol_[l+1]=Lfactor1[l]*zz*lpol_[l]-l*lpolprev;
       lpol_[l+1]*=Lfactor2[l];
+       
+      //and for the derivative...
+      dlpol_[l+1]=Lfactor1[l]*(zz*dlpol_[l]+lpol_[l])-l*dlpolprev;
+      dlpol_[l+1]*=Lfactor2[l];
+
       lpolprev=lpol_[l];
+      dlpolprev=dlpol[l];
     }
 
     RealType lsum=czero;
