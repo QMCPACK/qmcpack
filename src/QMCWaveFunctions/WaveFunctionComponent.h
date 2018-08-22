@@ -363,9 +363,6 @@ struct WaveFunctionComponent: public QMCTraits
    */
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf)=0;
 
-  /** return a proxy orbital of itself
-   */
-  WaveFunctionComponentPtr makeProxy(ParticleSet& tqp);
   /** make clone
    * @param tqp target Quantum ParticleSet
    * @param deepcopy if true, make a decopy
@@ -424,13 +421,6 @@ struct WaveFunctionComponent: public QMCTraits
    */
   virtual void evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
       std::vector<ValueType>& ratios, Matrix<ValueType>& dratios);
-
-  ///** copy data members from old
-  // * @param old existing WaveFunctionComponent from which all the data members are copied.
-  // *
-  // * It is up to the derived classes to determine to use deep, shallow and mixed copy methods.
-  // */
-  //virtual void copyFrom(const WaveFunctionComponent& old);
 
   /////////////////////////////////////////////////////
   // Functions for vectorized evaluation and updates //

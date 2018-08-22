@@ -256,8 +256,8 @@ public:
     assign_v(bc_sign,myV,psi);
   }
 
-  template<typename VM>
-  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM)
+  template<typename VM, typename VAV>
+  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM, VAV& SPOMem)
   {
     const size_t m=psiM.cols();
     for(int iat=0; iat<VP.getTotalNum(); ++iat)

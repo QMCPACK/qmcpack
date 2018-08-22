@@ -14,21 +14,20 @@
     
 #include<iostream>
 
-void fillRadFunWithPhiBar(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<RealType>& xgrid, Vector<RealType>& rad_orb, RealType* data)
+void fillRadFunWithPhiBar(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<RealType>& xgrid, Vector<RealType>& rad_orb, CuspCorrectionParameters& data)
 {
   Psi1=Phi;
   Psi2=Eta;
   int norb=Psi1->OrbitalSetSize;
   curOrb=curOrb_;
   curCenter=curCenter_;
-  C=data[1];
-  sg=data[2];
-  Rc=data[3];
-  alpha[0]=data[4];
-  alpha[1]=data[5];
-  alpha[2]=data[6];
-  alpha[3]=data[7];
-  alpha[4]=data[8];
+
+  C = data.C;
+  sg = data.sg;
+  Rc = data.Rc;
+  for (int i = 0; i < 5; i++) {
+    alpha[i] = data.alpha[i];
+  }
   Z=Zion;
   val1.resize(norb);
   grad1.resize(norb);
@@ -56,7 +55,7 @@ void fillRadFunWithPhi(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<
   }
 }
 
-void executeWithRCLoop(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<RealType>& xgrid, Vector<RealType>& rad_orb, std::string file, RealType cutoff, RealType* data)
+void executeWithRCLoop(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<RealType>& xgrid, Vector<RealType>& rad_orb, std::string file, RealType cutoff, CuspCorrectionParameters& data)
 {
   RealType bestRc = cutoff, smallX2;
   RealType xa, xb, xc, xd;
@@ -141,7 +140,7 @@ void executeWithRCLoop(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<
   }
 }
 
-RealType execute(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<RealType>& xgrid, Vector<RealType>& rad_orb, std::string thisFile, RealType cutoff, RealType* data)
+RealType execute(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta, Vector<RealType>& xgrid, Vector<RealType>& rad_orb, std::string thisFile, RealType cutoff, CuspCorrectionParameters& data)
 {
   bool writeout=(thisFile!="NULL");
   Psi1=Phi;
@@ -299,6 +298,7 @@ RealType execute(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<BS,fal
   if(writeout && printOrbs)
   {
     std::ofstream out(thisFile.c_str());
+    out << "# r  EL_ideal(r) EL_orig(r)  EL_curr(r)  phi(r)  phiBar(r) pr(r)" << std::endl;
     for(int i=0; i<nElms; i++)
     {
       out<<pos[i] <<"  "
@@ -314,6 +314,7 @@ RealType execute(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<BS,fal
     std::string full;
     full = thisFile + ".full.dat";
     out.open(full.c_str());
+    out << "# r   phi(r)" << std::endl;
     int nx = 500;
     for(int i=0; i<nx; i++)
     {
@@ -323,14 +324,12 @@ RealType execute(int curOrb_, int curCenter_, RealType Zion, LCOrbitalSet<BS,fal
     }
     out.close();
   }
-  data[1]=C;
-  data[2]=sg;
-  data[3]=Rc;
-  data[4]=alpha[0];
-  data[5]=alpha[1];
-  data[6]=alpha[2];
-  data[7]=alpha[3];
-  data[8]=alpha[4];
+  data.C = C;
+  data.sg = sg;
+  data.Rc = Rc;
+  for (int i = 0; i < 5; i++) {
+    data.alpha[i] = alpha[i];
+  }
   return chi2;
 }
 

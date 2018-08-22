@@ -46,6 +46,7 @@ class SPOSet: public QMCTraits
 public:
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
+  typedef OrbitalSetTraits<ValueType>::ValueAlignedVector_t ValueAlignedVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
   typedef OrbitalSetTraits<ValueType>::GradMatrix_t  GradMatrix_t;
@@ -198,9 +199,10 @@ public:
   /** evaluate values for the virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
    * @param psiM single-particle orbitals psiM(i,j) for the i-th particle and the j-th orbital
+   * @param SPOMem scratch space for SPO value evaluation, alignment is required.
    */
   virtual void
-  evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM);
+  evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem);
 
   /** estimate the memory needs for evaluating SPOs of particles in the size of ValueType
    * @param nP, number of particles.

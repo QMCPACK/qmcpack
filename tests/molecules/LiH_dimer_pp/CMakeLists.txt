@@ -109,6 +109,22 @@ IF (NOT QMC_CUDA)
       4 4
       check_stats.py -s 0 -q spindensity -e 20 -c 8 -p vmc_hf_sdj_spindens_long -r qmc_ref/vmc_hf_sdj_spindens_long.s000.stat_ref_spindensity.dat
       )
+
+    SIMPLE_RUN_AND_CHECK(
+      short-LiH_dimer_pp-vmc_hf_sdj_estimator_energydensity_voronoi
+      "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_pp"
+      vmc_hf_sdj_edens_vor_short.in.xml
+      4 4
+      check_stats.py -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_hf_sdj_edens_vor_short -r qmc_ref/vmc_hf_sdj_edens_vor_short.s000.stat_ref_energydensity.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      long-LiH_dimer_pp-vmc_hf_sdj_estimator_energydensity_voronoi
+      "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_pp"
+      vmc_hf_sdj_edens_vor_long.in.xml
+      4 4
+      check_stats.py -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_hf_sdj_edens_vor_long -r qmc_ref/vmc_hf_sdj_edens_vor_long.s000.stat_ref_energydensity.dat
+      )
   endif()
 
  ELSE()

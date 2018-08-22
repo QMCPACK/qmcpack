@@ -24,15 +24,15 @@
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsData/OhmmsElementBase.h"
 
-class PyscfParser: public QMCGaussianParserBase,
+class LCAOParser: public QMCGaussianParserBase,
   public OhmmsAsciiParser
 {
 
 public:
 
-  PyscfParser();
+  LCAOParser();
 
-  PyscfParser(int argc, char** argv);
+  LCAOParser(int argc, char** argv);
 
   std::streampos pivot_begin;
   std::vector<std::string> tags;

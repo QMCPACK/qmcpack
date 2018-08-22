@@ -1324,7 +1324,7 @@ def read_hdf(fpath,verbose=False,view=False):
 import os
 import sys
 from optparse import OptionParser
-from numpy import zeros,sqrt,longdouble
+from numpy import zeros,sqrt,longdouble,loadtxt
 can_plot = False
 try:
     import matplotlib
@@ -1734,6 +1734,43 @@ def simstats(x,dim=None,exclude=None):
 
 
 
+def load_scalar_file(options,selector):
+    output_files = options.output_files
+    if selector=='auto':
+        if 'dmc' in output_files:
+            selector = 'dmc'
+        elif 'scalar' in output_files:
+            selector = 'scalar'
+        else:
+            exit_fail('could not load scalar file, no files present')
+        #end if
+    elif selector not in ('scalar','dmc'):
+        exit_fail('could not load scalar file, invalid selector\ninvalid selector: {0}\nvalid options: scalar, dmc'.format(selector))
+    #end if
+    if selector not in output_files:
+        exit_fail('could not load scalar file, file is not present\nfile type requested: {0}'.format(selector))
+    #end if
+    filepath = os.path.join(options.path,output_files[selector])
+    lt = loadtxt(filepath)
+    if len(lt.shape)==1:
+        lt.shape = (1,len(lt))
+    #end if
+    data = lt[:,1:].transpose()
+    fobj = open(filepath,'r')
+    variables = fobj.readline().split()[2:]
+    fobj.close()
+    scalars = obj(
+        file_type = selector,
+        data      = obj(),
+        )
+    for i,var in enumerate(variables):
+        scalars.data[var] = data[i,:]
+    #end for
+    return scalars
+#end def load_scalar_file
+
+
+
 # Reads command line options.
 def read_command_line():
     try:
@@ -1797,6 +1834,8 @@ def read_command_line():
             'density',
             'spindensity',
             'energydensity',
+            '1rdm',
+            '1redm',
             ]
 
         opt,files_in = parser.parse_args()
@@ -1815,7 +1854,7 @@ def read_command_line():
         #end if
 
         if len(files_in)>0:
-            exit_fail('check_stats does not accept file as input, only command line arguments')
+            exit_fail('check_stats does not accept file as input, only command line arguments\nfiles provided: {0}'.format(files_in))
         #end if
 
         checkstats_settings.verbose = options.verbose
@@ -1837,19 +1876,21 @@ def read_command_line():
         #end if
 
         options.qlabel = None
-        if ' ' in options.quantity:
-            qlist = options.quantity.split()
+        if ' ' in options.quantity or ',' in options.quantity:
+            qlist = options.quantity.strip('"').strip("'").replace(',',' ').split()
             if len(qlist)!=2:
                 exit_fail('quantity can accept only one or two values\nyou provided {0}: {1}'.format(len(qlist),qlist))
             #end if
             options.quantity,options.qlabel = qlist
         #end if
         if options.qlabel is None:
-            default_label = obj(
-                density       = 'Density',
-                spindensity   = 'SpinDensity',
-                energydensity = 'EnergyDensity',
-                )
+            default_label = obj({
+                'density'       : 'Density'        ,
+                'spindensity'   : 'SpinDensity'    ,
+                'energydensity' : 'EnergyDensity'  ,
+                '1rdm'          : 'DensityMatrices',
+                '1redm'         : 'DensityMatrices',
+                })
             options.qlabel = default_label[options.quantity]
         #end if
         if options.quantity=='none':
@@ -1872,7 +1913,7 @@ def read_command_line():
             try:
                 mr = array(options.make_reference.split(),dtype=int)
             except:
-                exit_fail('make_refernce must be a list of integers\nyou provided: {0}'.format(options.make_reference))
+                exit_fail('make_reference must be a list of integers\nyou provided: {0}'.format(options.make_reference))
             #end try
             if len(mr)<1:
                 exit_fail('make_reference must contain at least one MC length factor')
@@ -1883,7 +1924,8 @@ def read_command_line():
             exit_fail('must provide either reference_file or make_reference')
         #end if
 
-        if options.quantity in ('density','spindensity'):
+        fixed_sum_quants = set(['density','spindensity','energydensity'])
+        if options.quantity in fixed_sum_quants:
             options.fixed_sum = True
         #end if
 
@@ -1940,18 +1982,40 @@ def process_stat_file(options):
         else:
             exit_fail('could not find {0} data with label {1}'.format(options.quantity,options.qlabel))
         #end if
-        quantity_paths = obj(
-            density     = obj(tot='value'),
-            spindensity = obj(u='u/value',d='d/value'),
-            )
+        quantity_paths = obj({
+            'density'       : obj(tot='value'),
+            'spindensity'   : obj(u='u/value',
+                                  d='d/value'),
+            '1rdm'          : obj(u='number_matrix/u/value',
+                                  d='number_matrix/d/value'),
+            '1redm'         : obj(u='energy_matrix/u/value',
+                                  d='energy_matrix/d/value'),
+            'energydensity' : obj(W=('spacegrid1/value',0,3),
+                                  T=('spacegrid1/value',1,3),
+                                  V=('spacegrid1/value',2,3)),
+            })
         qpaths = quantity_paths[options.quantity]
         vlog('search paths:\n{0}'.format(str(qpaths).rstrip()),n=2)
         qdata = obj()
+        dfull = None
         for dname,dpath in qpaths.iteritems():
+            packed = isinstance(dpath,tuple)
+            if packed:
+                dpath,dindex,dcount = dpath
+            #end if
             if not qstat.path_exists(dpath):
                 exit_fail('{0} data not found in file {1}\npath searched: {2}'.format(options.quantity,output_files.stat,dpath))
             #end if
-            d = array(qstat.get_path(dpath),dtype=float)
+            if not packed:
+                d = array(qstat.get_path(dpath),dtype=float)
+            else:
+                if dfull is None:
+                    dfull = array(qstat.get_path(dpath),dtype=float)
+                    dfull.shape = dfull.shape[0],dfull.shape[1]/dcount,dcount
+                #end if
+                d = dfull[:,:,dindex]
+                d.shape = dfull.shape[0],dfull.shape[1]
+            #end if
             qdata[dname] = d
             vlog('{0} data found with shape {1}'.format(dname,d.shape),n=2)
             if len(d.shape)>2:
@@ -2170,9 +2234,13 @@ def check_values(options,values):
         if options.fixed_sum:
             vlog('checking per block fixed sums',n=1)
             msg+='\n  Fixed sum per block tests:\n'
+            dnames_fixed = dnames
+            if options.quantity=='energydensity':
+                dnames_fixed = ['W']
+            #end if
             fixed_sum_success = True
             ftol = 1e-8
-            for dname in dnames:
+            for dname in dnames_fixed:
                 ref_vals  = ref_values[dname]
                 ref_mean  = ref_vals.full_mean
                 ref_error = ref_vals.full_error
@@ -2198,10 +2266,58 @@ def check_values(options,values):
             success &= fixed_sum_success
         #end if
 
-        # for the energy density, check per block sums
+        # for the energy density, check per block sums against the scalar file
         if options.quantity=='energydensity':
             vlog('checking energy density terms per block',n=1)
-            exit_fail('energy density block check not implemented')
+            msg+='\n  Energy density sums vs. scalar file per block tests:\n'
+            scalars = load_scalar_file(options,'auto')
+            ed_success = True
+            ftol = 1e-8
+            ed_values = obj(
+                T = values.T.data.full_sum,
+                V = values.V.data.full_sum,
+                )
+            ed_values.E = ed_values.T + ed_values.V
+            if scalars.file_type=='scalar':
+                comparisons = obj(
+                    E='LocalEnergy',
+                    T='Kinetic',
+                    V='LocalPotential',
+                    )
+            elif scalars.file_type=='dmc':
+                comparisons = obj(E='LocalEnergy')
+            else:
+                exit_fail('unrecognized scalar file type: {0}'.format(scalars.file_type))
+            #end if
+            for k in sorted(comparisons.keys()):
+                ed_vals = ed_values[k]
+                sc_vals = scalars.data[comparisons[k]]
+                if scalars.file_type=='dmc':
+                    if len(sc_vals)%len(ed_vals)==0 and len(sc_vals)>len(ed_vals):
+                        steps = len(sc_vals)/len(ed_vals)
+                        sc_vals.shape = len(sc_vals)/steps,steps
+                        sc_vals = sc_vals.mean(1)
+                    #end if
+                #end if
+                if len(ed_vals)!=len(sc_vals):
+                    exit_fail('energy density per block test cannot be completed\nnumber of energy density and scalar blocks do not match\nenergy density blocks: {0}\nscalar file blocks: {1}'.format(len(ed_vals),len(sc_vals)))
+                #end if
+                for i,(edv,scv) in enumerate(zip(ed_vals,sc_vals)):
+                    if abs((edv-scv)/scv)>ftol:
+                        ed_success = False
+                        msg += '    {0} {1} {2}!={3}\n'.format(k,i,edv,scv)
+                    #end if
+                #end for
+            #end for
+            if ed_success:
+                fmsg = 'all per block sums match the scalar file'
+            else:
+                fmsg = 'some per block sums do not match the scalar file'
+            #end if
+            vlog(fmsg,n=2)
+            msg += '    '+fmsg+'\n'
+            msg += '    status of this test: {0}\n'.format(passfail[ed_success])
+            success &= ed_success
         #end if
 
 

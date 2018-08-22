@@ -13,7 +13,7 @@
 
 
 
-#include "QMCTools/PyscfParser.h"
+#include "QMCTools/LCAOH5Parser.h"
 #include <fstream>
 #include <iterator>
 #include <algorithm>
@@ -24,7 +24,7 @@
 
 char *binpad (unsigned long int  n, size_t sz);
 
-PyscfParser::PyscfParser()
+LCAOParser::LCAOParser()
 {
   basisName = "Gaussian";
   Normalized = "no";
@@ -36,7 +36,7 @@ PyscfParser::PyscfParser()
   NFZC=0;
 }
 
-PyscfParser::PyscfParser(int argc, char** argv):
+LCAOParser::LCAOParser(int argc, char** argv):
   QMCGaussianParserBase(argc,argv)
 {
   basisName = "Gaussian";
@@ -50,7 +50,7 @@ PyscfParser::PyscfParser(int argc, char** argv):
   NFZC=0;
 }
 
-void PyscfParser::parse(const std::string& fname)
+void LCAOParser::parse(const std::string& fname)
 {
 
   hdf_archive hin(0);
@@ -61,16 +61,20 @@ void PyscfParser::parse(const std::string& fname)
        abort();
   }
 
+  hin.push("application");
+  hin.read(CodeName,"code");
+  hin.pop();
+  std::cout<<"Converting Wavefunction from the "<<CodeName<<" Code"<<std::endl;
 
   hin.push("PBC");
   hin.read(PBC,"PBC");
+  hin.pop();
+
   std::cout <<"Periodic Boundary Comditions: " <<(PBC?("yes"):("no")) << std::endl;
   std::cout.flush();
 
-  hin.pop();
 
   hin.push("parameters");
-
   hin.read(ECP,"ECP");
   std::cout <<"usingECP: " <<(ECP?("yes"):("no")) << std::endl;
   std::cout.flush();
@@ -98,7 +102,8 @@ void PyscfParser::parse(const std::string& fname)
      else
      {
            std::cout<<"numAO_up="<<numAO_up<<"  numAO_dn="<<numAO_dn<<std::endl;
-           std::cerr<<"The number of AO for the up Orbitals are different than the number of AOs for down orbitals. This is probably an error in your Pyscf input. Please contact QMCPACK developers"<<std::endl;     
+  
+           std::cerr<<"The number of AO for the up Orbitals are different than the number of AOs for down orbitals. This is probably an error in your "<<CodeName<<" input. Please contact QMCPACK developers"<<std::endl;     
            abort();
      }
      if (numMO_up==numMO_dn)
@@ -106,7 +111,8 @@ void PyscfParser::parse(const std::string& fname)
      else
      {
            std::cout<<"numMO_up="<<numMO_up<<"  numMO_dn="<<numMO_dn<<std::endl;
-           std::cerr<<"The number of MO for the up Orbitals are different than the number of MOs for down orbitals. This is probably an error in your Pyscf input. Please contact QMCPACK developers"<<std::endl;     
+           
+           std::cerr<<"The number of MO for the up Orbitals are different than the number of MOs for down orbitals. This is probably an error in your "<<CodeName<<" input. Please contact QMCPACK developers"<<std::endl;     
            abort();
      }
   }
@@ -238,7 +244,7 @@ void PyscfParser::parse(const std::string& fname)
   }  
 }
 
-void PyscfParser::getCell(const std::string& fname)
+void LCAOParser::getCell(const std::string& fname)
 {
   X.resize(3);
   Y.resize(3);
@@ -269,7 +275,7 @@ void PyscfParser::getCell(const std::string& fname)
   std::cout<<Y[0]<<"  "<<Y[1]<<"  "<<Y[2]<<std::endl;
   std::cout<<Z[0]<<"  "<<Z[1]<<"  "<<Z[2]<<std::endl;
 }
-void PyscfParser::getGeometry(const std::string& fname)
+void LCAOParser::getGeometry(const std::string& fname)
 {
 
   hdf_archive hin(0);
@@ -330,7 +336,7 @@ void PyscfParser::getGeometry(const std::string& fname)
   hin.close();
 }
 
-void PyscfParser::getKpts(const std::string& fname)
+void LCAOParser::getKpts(const std::string& fname)
 {
   Matrix <double> MyVec(1,3);
   hdf_archive hin(0);
@@ -386,7 +392,7 @@ char *binpad (unsigned long int n, size_t sz)
 
 
 
-void PyscfParser::getMO(const std::string & fname)
+void LCAOParser::getMO(const std::string & fname)
 {
   EigVal_alpha.resize(numMO);
   EigVal_beta.resize(numMO);
@@ -440,6 +446,6 @@ void PyscfParser::getMO(const std::string & fname)
   hin.close();
 }
 
-void PyscfParser::getGaussianCenters(const std::string fname)
+void LCAOParser::getGaussianCenters(const std::string fname)
 {
 }
