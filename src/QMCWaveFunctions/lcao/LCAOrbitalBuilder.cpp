@@ -304,9 +304,8 @@ namespace qmcplusplus
         auto it = std::find(ao_built_centers.begin(), ao_built_centers.end(), elementType);
         if(it == ao_built_centers.end())
         {
-          AOBasisBuilder<ao_type> any(elementType);
+          AOBasisBuilder<ao_type> any(elementType, myComm);
           any.setReportLevel(ReportLevel);
-          any.initCommunicator(myComm);
           any.put(cur);
           ao_type* aoBasis = any.createAOSet(cur);
           if(aoBasis)
@@ -385,9 +384,8 @@ namespace qmcplusplus
       auto it = std::find(ao_built_centers.begin(), ao_built_centers.end(), elementType);
       if(it == ao_built_centers.end())
       {
-        AOBasisBuilder<ao_type> any(elementType);
+        AOBasisBuilder<ao_type> any(elementType,myComm);
         any.setReportLevel(ReportLevel);
-        any.initCommunicator(myComm);
         any.putH5(hin);
         ao_type* aoBasis = any.createAOSetH5(hin);
         if(aoBasis)

@@ -544,11 +544,6 @@ public:
     return j2copy;
   }
 
-  void copyFrom(const WaveFunctionComponent& old)
-  {
-    //nothing to do
-  }
-
   RealType ChiesaKEcorrection()
   {
 #if QMC_BUILD_LEVEL<5
