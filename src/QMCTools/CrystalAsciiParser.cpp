@@ -35,10 +35,11 @@ CrystalAsciiParser::CrystalAsciiParser(int argc, char** argv):
 
 void CrystalAsciiParser::parse(const std::string &fname) 
 {
-    std::ifstream fin(fname.c_str());
+    std::string crystal_output_name = fname+".out";
+    std::ifstream fin(crystal_output_name.c_str());
     if (fin.fail())
     {
-	std::cerr << "Error when opening file: " << fname << std::endl;
+	std::cerr << "Error when opening file: " << crystal_output_name << std::endl;
 	abort();
     }
     pivot_begin=fin.tellg();
