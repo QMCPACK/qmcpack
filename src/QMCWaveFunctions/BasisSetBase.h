@@ -160,7 +160,7 @@ struct RealBasisSetBase
   virtual bool is_S_orbital(int mo_idx, int ao_idx) { return false;}
 
   /// Determine which orbitals are S-type.  Used for cusp correction.
-  virtual void queryOrbitalsForSType(const std::vector<bool> &corrCenter, std::vector<bool> &is_s_orbital) {}
+  virtual void queryOrbitalsForSType(const std::vector<bool> &corrCenter, std::vector<bool> &is_s_orbital) const {}
 };
 
 }
