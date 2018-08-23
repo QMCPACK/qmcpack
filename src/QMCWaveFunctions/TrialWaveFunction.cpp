@@ -450,7 +450,6 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGradSource(ParticleSet& P
 TrialWaveFunction::RealType TrialWaveFunction::ratioGrad(ParticleSet& P
     ,int iat, GradType& grad_iat )
 {
-  //TAU_PROFILE("TrialWaveFunction::ratioGrad","(ParticleSet& P,int iat)", TAU_USER);
   grad_iat=0.0;
   ValueType r(1.0);
   for (int i=0, ii=VGL_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
@@ -460,13 +459,11 @@ TrialWaveFunction::RealType TrialWaveFunction::ratioGrad(ParticleSet& P
     myTimers[ii]->stop();
   }
 #if defined(QMC_COMPLEX)
-  //return std::exp(evaluateLogAndPhase(r,PhaseValue));
-  RealType logr=evaluateLogAndPhase(r,PhaseValue);
+  RealType logr=evaluateLogAndPhase(r,PhaseDiff);
   return std::exp(logr);
 #else
   if (r<0)
     PhaseDiff=M_PI;
-  //     else PhaseDiff=0.0;
   return r;
 #endif
 }
