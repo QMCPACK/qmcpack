@@ -47,9 +47,9 @@ echo --- QMCPACK git repo contains CMakeLists.txt
 
 # Build Quantum Espresso
 # Compiled only once with the Intel Compiler
-QE_VERSION=5.3.0
+QE_VERSION=6.3
 QE_sysdir=${testdir}/intel2017_QE
-QE_BIN=${QE_sysdir}/espresso-${QE_VERSION}/bin
+QE_BIN=${QE_sysdir}/qe-${QE_VERSION}/bin
 echo --- QE_BIN set to ${QE_BIN}
 
 # Always start from clean build, just in case we updated the QE patch.
@@ -63,17 +63,20 @@ mkdir ${QE_sysdir}
 cd ${QE_sysdir}
 cp -p ../qmcpack/external_codes/quantum_espresso/*${QE_VERSION}* .
 ./download_and_patch_qe${QE_VERSION}.sh
-cd espresso-${QE_VERSION}
+cd qe-${QE_VERSION}
 
 # Hack to get QE build to build and link against proper libraries on KNL
 # Eventually, Copy make.sys that is known to work. 
-cp /data/ci/auxfiles/build-hyperion.sh .
-echo --- Configure QE ${QE_VERSION}$
-./build-hyperion.sh 
-cp /data/ci/auxfiles/make.sys . 
-echo --- Building QE ${QE_VERSION}$
-make -j 32 pwall
+cp /data/ci/auxfiles/configure-qe-knl-omp.sh .
+cp /data/ci/auxfiles/configure-qe-libxsmm.mak .
+cp /data/ci/auxfiles/configure-qe-tbbmalloc.mak .
 
+echo --- Configure QE ${QE_VERSION}$
+./configure-qe-knl-omp.sh
+echo --- Building QE ${QE_VERSION}$
+# make pwall # parallel build fails due to incorrect dependency
+make -j 64 pw
+make -j 64 pp
 
 # Make fault-tolerant, maybe QE did not download properly or there
 # was a build failure
