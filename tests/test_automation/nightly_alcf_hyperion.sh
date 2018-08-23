@@ -106,43 +106,43 @@ cd $sys
 
 case $sys in
     "build_gcc")
-	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Release
-	ctest -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
+	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-SoA-Release
+	ctest -DENABLE_SOA=1 -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
 	;;
     "build_gcc_complex")
-	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Complex-Release
-	ctest -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
+	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Complex-SoA-Release
+	ctest -DENABLE_SOA=1 -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
 	;;
     "build_gcc_mixed")
-	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Mixed-Release
-	ctest -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
+	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Mixed-SoA-Release
+	ctest -DENABLE_SOA=1 -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
 	;;
     "build_gcc_complex_mixed")
-	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Complex-Mixed-Release
-	ctest -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
+	export QMCPACK_TEST_SUBMIT_NAME=GCC-MKL-Complex-Mixed-SoA-Release
+	ctest -DENABLE_SOA=1 -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpicxx -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
 	;;
     "build_intel2017")
 	source /opt/intel/2017/parallel_studio_xe_2017.1.043/bin/psxevars.sh intel64
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2017-Release
-	ctest -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=mpiicpc -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
+	export QMCPACK_TEST_SUBMIT_NAME=Intel2017-SoA-Release
+	ctest -DENABLE_SOA=1 -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=mpiicpc -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
 	;;
     "build_intel2017_complex")
 	# intel compiler should already be loaded 
 	# source /opt/intel/2017/parallel_studio_xe_2017.1.043/bin/psxevars.sh intel64
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2017-Complex-Release
-	ctest -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=mpiicpc -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
+	export QMCPACK_TEST_SUBMIT_NAME=Intel2017-Complex-SoA-Release
+	ctest -DENABLE_SOA=1 -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=0 -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=mpiicpc -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
 	;;
     "build_intel2017_mixed")
 	# intel compiler should already be loaded
 	# source /opt/intel/2017/parallel_studio_xe_2017.1.043/bin/psxevars.sh intel64
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2017-Mixed-Release
-	ctest -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=mpiicpc -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
+	export QMCPACK_TEST_SUBMIT_NAME=Intel2017-Mixed-SoA-Release
+	ctest -DENABLE_SOA=1 -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=mpiicpc -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
 	;;
     "build_intel2017_complex_mixed")
 	# intel compiler should already be loaded
 	# source /opt/intel/2017/parallel_studio_xe_2017.1.043/bin/psxevars.sh intel64
-	export QMCPACK_TEST_SUBMIT_NAME=Intel2017-Complex-Mixed-Release
-	ctest -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=mpiicpc -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
+	export QMCPACK_TEST_SUBMIT_NAME=Intel2017-Complex-Mixed-SoA-Release
+	ctest -DENABLE_SOA=1 -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER=icc -DCMAKE_CXX_COMPILER=mpiicpc -DQMC_DATA=${QMC_DATA} -DENABLE_TIMERS=1 -DQE_BIN=${QE_BIN} -S $PWD/../qmcpack/CMake/ctest_script.cmake,release -E 'long' -VV --timeout $timeout
 	;;
     *)
 	echo "ERROR: Unknown build type $sys"
