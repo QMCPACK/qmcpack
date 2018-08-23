@@ -123,15 +123,6 @@ public:
     Phi->resetTargetParticleSet(P);
   }
 
-  virtual RealType getAlternatePhaseDiff()
-  {
-    return 0.0;
-  }
-  virtual RealType getAlternatePhaseDiff(int iat)
-  {
-    return 0.0;
-  }
-
   ///reset the size: with the number of particles and number of orbtials
   virtual void resize(int nel, int morb);
 
