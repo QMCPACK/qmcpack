@@ -181,7 +181,8 @@ namespace qmcplusplus
       std::fill(hzz,hzz+num_splines,T());
 
       for (int i=0; i<4; i++)
-        for (int j=0; j<4; j++){
+        for (int j=0; j<4; j++)
+        {
           const T* restrict coefs = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs) + first; ASSUME_ALIGNED(coefs);
           const T* restrict coefszs  = coefs+zs;       ASSUME_ALIGNED(coefszs);
           const T* restrict coefs2zs = coefs+2*zs;     ASSUME_ALIGNED(coefs2zs);
@@ -194,14 +195,8 @@ namespace qmcplusplus
           const T pre01 =   a[i]* db[j];
           const T pre02 =   a[i]*d2b[j];
 
-#if defined(__AVX512F__) && defined(QMC_ES_PREFETCH)
-          const int iSplitPoint = std::max(0, num_splines - 32);
-#else
-          const int iSplitPoint = num_splines;
-#endif
-
           #pragma omp simd
-          for (int n=0; n<iSplitPoint; n++) {
+          for (int n=0; n<num_splines; n++) {
 
             T coefsv = coefs[n];
             T coefsvzs = coefszs[n];
@@ -224,50 +219,6 @@ namespace qmcplusplus
             vals[n]+= pre00 * sum0;
 
           }
-#if defined(__AVX512F__) && defined(QMC_ES_PREFETCH)
-          {
-            int pfi = (j==3) ? i+1:i;
-            int pfj = (j+1)%4;
-            T* restrict coefs = spline_m->coefs + ((ix+pfi)*xs + (iy+pfj)*ys + iz*zs) + first; ASSUME_ALIGNED(coefs);
-            T* restrict coefszs  = coefs+zs;       ASSUME_ALIGNED(coefszs);
-            T* restrict coefs2zs = coefs+2*zs;     ASSUME_ALIGNED(coefs2zs);
-            T* restrict coefs3zs = coefs+3*zs;     ASSUME_ALIGNED(coefs3zs);
-
-            for ( int dist = 0; dist < 64; dist +=16 ) {
-              _mm_prefetch((char const*)(coefs+dist),_MM_HINT_T1);
-              _mm_prefetch((char const*)(coefszs+dist),_MM_HINT_T1);
-              _mm_prefetch((char const*)(coefs2zs+dist),_MM_HINT_T1);
-              _mm_prefetch((char const*)(coefs3zs+dist),_MM_HINT_T1);
-            }
-
-          }
-
-          #pragma omp simd
-          for (int n=iSplitPoint; n<num_splines; n++) {
-
-            T coefsv = coefs[n];
-            T coefsvzs = coefszs[n];
-            T coefsv2zs = coefs2zs[n];
-            T coefsv3zs = coefs3zs[n];
-
-            T sum0 =   c[0] * coefsv +   c[1] * coefsvzs +   c[2] * coefsv2zs +   c[3] * coefsv3zs;
-            T sum1 =  dc[0] * coefsv +  dc[1] * coefsvzs +  dc[2] * coefsv2zs +  dc[3] * coefsv3zs;
-            T sum2 = d2c[0] * coefsv + d2c[1] * coefsvzs + d2c[2] * coefsv2zs + d2c[3] * coefsv3zs;
-
-            hxx[n] += pre20 * sum0;
-            hxy[n] += pre11 * sum0;
-            hxz[n] += pre10 * sum1;
-            hyy[n] += pre02 * sum0;
-            hyz[n] += pre01 * sum1;
-            hzz[n] += pre00 * sum2;
-            gx[n] += pre10 * sum0;
-            gy[n] += pre01 * sum0;
-            gz[n] += pre00 * sum1;
-            vals[n]+= pre00 * sum0;
-
-          }
-#endif
-
         }
 
       const T dxInv = spline_m->x_grid.delta_inv;

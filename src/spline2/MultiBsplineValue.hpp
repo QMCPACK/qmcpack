@@ -58,55 +58,6 @@ namespace qmcplusplus
           for(size_t n=0; n<num_splines; n++)
             vals[n] += pre00*(c[0]*coefs[n] + c[1]*coefs[n+zs] + c[2]*coefs[n+2*zs] + c[3]*coefs[n+3*zs]);
         }
-
-#if 0
-      constexpr int iSIMD=QMC_CLINE/sizeof(T);
-      const int nBlocks = num_splines/iSIMD;
-      //unnecessary
-      //assert ( nBlocks*iSIMD == num_splines);
-
-      for (int i=0; i<4; i++){
-        for (int j=0; j<4; j++){
-
-          const T pre00 =  a[i]*b[j];
-          
-          const T* restrict coefs = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs)+first; ASSUME_ALIGNED(coefs);
-          const T* restrict coefszs  = coefs+zs;       ASSUME_ALIGNED(coefszs);
-          const T* restrict coefs2zs = coefs+2*zs;     ASSUME_ALIGNED(coefs2zs);
-          const T* restrict coefs3zs = coefs+3*zs;     ASSUME_ALIGNED(coefs3zs);
-
-          for(int n=0; n<nBlocks; n++) {
-            int nnBlocks = n*iSIMD;
-#if defined(__AVX512F__) && defined(QMC_PREFETCH)
-            {
-
-                int pfi = (j==3) ? i+1 : i;
-                int pfj = ((j+1)%4);
-
-                const T* restrict coefs = spline_m->coefs + ((ix+pfi)*xs + (iy+pfj)*ys + iz*zs)+first; ASSUME_ALIGNED(coefs);
-                const T* restrict coefszs  = coefs+zs;       ASSUME_ALIGNED(coefszs);
-                const T* restrict coefs2zs = coefs+2*zs;     ASSUME_ALIGNED(coefs2zs);
-                const T* restrict coefs3zs = coefs+3*zs;     ASSUME_ALIGNED(coefs3zs);
-
-                _mm_prefetch((char const*)(coefs+nnBlocks),_MM_HINT_T1);
-                _mm_prefetch((char const*)(coefszs+nnBlocks),_MM_HINT_T1);
-                _mm_prefetch((char const*)(coefs2zs+nnBlocks),_MM_HINT_T1);
-                _mm_prefetch((char const*)(coefs3zs+nnBlocks),_MM_HINT_T1);
-            }
-#endif
-
-#pragma omp simd
-            for ( int m = 0; m < iSIMD; m++ ) {
-              int mIdx = nnBlocks + m;
-              vals[mIdx] += pre00*(c[0]*coefs[mIdx] + c[1]*coefszs[mIdx] + c[2]*coefs2zs[mIdx] + c[3]*coefs3zs[mIdx]);
-            }
-
-          }
-
-
-        } // j loop
-      } // i loop 
-#endif
     }
 #else
 // this is only experimental, not protected for general use.
