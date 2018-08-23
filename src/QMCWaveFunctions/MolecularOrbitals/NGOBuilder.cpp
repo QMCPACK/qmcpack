@@ -337,45 +337,33 @@ void NGOBuilder::addNumericalH5(hdf_archive &hin)
 {
   int L= m_nlms[1];
   int npts=0;
-  double r;
-  const double eps=1e-6;
-  bool too_small=true;
-
+  int imin = 0;
 
   if(hin.myComm->rank()==0){
       hin.read(npts,"grid_npts");
   }
   hin.myComm->bcast(npts);
-  int i=npts;
+  int imax = npts-1;
 
-  Matrix<RealType> numGrid(npts,2);
+  Vector <RealType> rad_orb;
+  rad_orb.resize(npts); 
+
   if(hin.myComm->rank()==0){
-     hin.read(numGrid,"basis_grid_xy");
+     hin.read(rad_orb,"basis_grid_xy");
   }
-
-  hin.myComm->bcast(numGrid.data(),numGrid.size());
+  hin.myComm->bcast(rad_orb);
 
   GridType* agrid = m_orbitals->Grids[0];
   RadialOrbitalType *radorb = new RadialOrbitalType(agrid);
-  radorb->resize(npts);
- 
-  while(too_small && i>0)
-  {
-    r=numGrid[i][0];
-    double x=numGrid[i][1];
-    too_small=(std::abs(x)<eps);
-    i--;
+
+  for (int i =0;i<npts; i++){
+       (*radorb)(i)=rad_orb[i];
   }
-  m_rcut=std::max(m_rcut,r);
-
+  RealType deriv = (rad_orb[imin+1]-rad_orb[imin])/((agrid->r(imin+1)-agrid->r(imin)));
+  radorb->spline(imin,deriv,npts-1,0.0);
   
-  for (int i=0;i<npts;i++)
-      (*radorb)(i)=numGrid[i][1];
-
-  radorb->spline(0,0,npts-1,0.0);
   m_orbitals->Rnl.push_back(radorb);
   m_orbitals->RnlID.push_back(m_nlms);
-
 }
 void NGOBuilder::addGaussianH5(hdf_archive &hin)
 {
