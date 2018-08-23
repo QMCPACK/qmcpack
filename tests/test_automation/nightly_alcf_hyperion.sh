@@ -73,6 +73,8 @@ cp /data/ci/auxfiles/configure-qe-tbbmalloc.mak .
 
 echo --- Configure QE ${QE_VERSION}$
 ./configure-qe-knl-omp.sh
+# HDF5 support in QE 6.3 is buggy, revert to older file I/O format
+sed -i 's/D__HDF5/D__HDF5_C/' make.inc 
 echo --- Building QE ${QE_VERSION}$
 # make pwall # parallel build fails due to incorrect dependency
 make -j 64 pw
