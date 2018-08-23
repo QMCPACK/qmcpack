@@ -107,17 +107,10 @@ namespace qmcplusplus
     struct MultiBspline: public MultiBsplineData<T>
     {
 
-#if (__cplusplus< 201103L)
-      ///define the einsplie object type
-      typedef  typename bspline_traits<T,3>::SplineType spliner_type;
-      ///define the real type
-      typedef typename bspline_traits<T,3>::real_type real_type;
-#else
       ///define the einsplie object type
       using spliner_type=typename bspline_traits<T,3>::SplineType;
       ///define the real type
       using real_type=typename bspline_traits<T,3>::real_type;
-#endif
       ///set to true if create is invoked
       bool own_spline;
       ///actual einspline multi-bspline object
@@ -128,16 +121,8 @@ namespace qmcplusplus
       einspline::Allocator myAllocator;
 
       MultiBspline():own_spline(false),spline_m(nullptr) {}
-#if (__cplusplus >= 201103L)
       MultiBspline(const MultiBspline& in)=delete;
       MultiBspline& operator=(const MultiBspline& in)=delete;
-#endif
-
-      //MultiBspline(const MultiBspline& in):own_spline(false),spline_m(in.splime_m),offset(in.offset)
-      //{ }
-      //MultiBspline& operator=(const MultiBspline& in)
-      //{
-      //}
 
       ~MultiBspline()
       {
@@ -285,17 +270,10 @@ namespace qmcplusplus
     struct MultiBspline1D: public MultiBsplineData<T>
     {
 
-#if (__cplusplus< 201103L)
-      ///define the einsplie object type
-      typedef  typename bspline_traits<T,1>::SplineType spliner_type;
-      ///define the real type
-      typedef typename bspline_traits<T,1>::real_type real_type;
-#else
       ///define the einsplie object type
       using spliner_type=typename bspline_traits<T,1>::SplineType;
       ///define the real type
       using real_type=typename bspline_traits<T,1>::real_type;
-#endif
       ///actual einspline multi-bspline object
       spliner_type spline_m;
       ///use allocator

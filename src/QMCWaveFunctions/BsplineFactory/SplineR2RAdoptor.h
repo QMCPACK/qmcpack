@@ -60,6 +60,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   ///multi bspline set
   MultiBspline<ST>* SplineInst;
   ///expose the pointer to reuse the reader and only assigned with create_spline
+  ///also used as identifier of shallow copy
   SplineType* MultiSpline;
 
   vContainer_type myV;
@@ -67,7 +68,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   gContainer_type myG;
   hContainer_type myH;
 
-  SplineR2RSoA(): BaseType(),SplineInst(nullptr), MultiSpline(nullptr)
+  SplineR2RSoA(): BaseType(), SplineInst(nullptr), MultiSpline(nullptr)
   {
     this->is_complex=false;
     this->is_soa_ready=true;
