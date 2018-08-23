@@ -144,6 +144,7 @@ NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
   
   if (ComputeForces)
   {
+    forces=0;
     if(myTable->DTType == DT_SOA)
     {
       for(int jel=0; jel<P.getTotalNum(); jel++)
@@ -152,7 +153,7 @@ NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
         const auto &displ = myTable->Displacements[jel];
         for(int iat=0; iat<NumIons; iat++)
           if(PP[iat]!=nullptr && dist[iat]<PP[iat]->Rmax)
-            Value += PP[iat]->evaluateOne(P,iat,Psi,jel,dist[iat],RealType(-1)*displ[iat],Tmove,Txy);
+            Value += PP[iat]->evaluateOneWithForces(P,iat,Psi,jel,dist[iat],RealType(-1)*displ[iat],forces[iat],Tmove,Txy);
       }
     }
     else
@@ -366,8 +367,8 @@ void NonLocalECPotential::addObservables(PropertySetType& plist
         std::ostringstream obsName1, obsName2;
         obsName1 << "FNL" << "_" << iat << "_" << x;
         plist.add(obsName1.str());
-        obsName2 << "FNL_Pulay" << "_" << iat << "_" << x;
-        plist.add(obsName2.str());
+//        obsName2 << "FNL_Pulay" << "_" << iat << "_" << x;
+//        plist.add(obsName2.str());
       }
     }
   }
@@ -387,10 +388,10 @@ NonLocalECPotential::registerObservables(std::vector<observable_helper*>& h5list
     h5o1->set_dimensions(ndim,FirstForceIndex);
     h5o1->open(gid);
     h5list.push_back(h5o1);
-    observable_helper* h5o2 = new observable_helper("FNL_Pulay");
-    h5o2->set_dimensions(ndim,FirstForceIndex+Nnuc*OHMMS_DIM);
-    h5o2->open(gid);
-    h5list.push_back(h5o2);
+//    observable_helper* h5o2 = new observable_helper("FNL_Pulay");
+//    h5o2->set_dimensions(ndim,FirstForceIndex+Nnuc*OHMMS_DIM);
+//    h5o2->open(gid);
+//    h5list.push_back(h5o2);
   }
 }
 
@@ -406,7 +407,7 @@ NonLocalECPotential::setObservables(QMCTraits::PropertySetType& plist)
       for(int x=0; x<OHMMS_DIM; x++)
       {
         plist[index++] = forces[iat][x];
-        plist[index++] = PulayTerm[iat][x];
+    //    plist[index++] = PulayTerm[iat][x];
       }
     }
   }
