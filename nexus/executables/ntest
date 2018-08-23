@@ -1822,7 +1822,7 @@ def user_examples(label):
         command = './'+script+' --generate_only --sleep=0.01'
         out,err,rc = execute(command)
         if rc>0:
-            nfail('example script failed to run\nattempted command: {0}\nlocation: {1}'.format(command,path))
+            nfail('example script failed to run\nattempted command: {0}\nlocation: {1}\nscript out:\n{2}\nscript err:\n{3}'.format(command,path,'  '+out.replace('\n','\n  '),'  '+err.replace('\n','\n  ')))
         #end if
         os.chdir(cwd)
     #end for
