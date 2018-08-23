@@ -2,7 +2,7 @@
 # source environment
 # MPI wrappers, MKL, and Intel and GCC compiler
 source /opt/rh/devtoolset-6/enable
-source /opt/intel/2017/parallel_studio_xe_2017.1.043/bin/psxevars.sh intel64
+source /opt/intel/2017/parallel_studio_xe_2017/psxevars.sh intel64
 
 # KNL NUMA + Memory Mode
 # quit if in a hybrid mode, could run out of memory
