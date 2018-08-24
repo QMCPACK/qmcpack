@@ -131,13 +131,17 @@ def _pdist(x):
     if m<2:
         return []
     
-    d = []
+    d = np.zeros((m**2-m)/2)
+    c_v = 0
     for i in range(m - 1):
-        for j in range(i + 1, m):
-            d.append((sum((x[j, :] - x[i, :])**2))**0.5)
+        d[0+c_v:m-i-1+c_v]=np.sqrt(np.sum((np.repeat(np.reshape(x[i, :],\
+                        [1,n]),m-i-1,axis=0)-x[i+1:m+1, :])**2,axis=1))
+        c_v = c_v+m-i-1
     
-    return np.array(d)
+    return d
 
+###############################################################################
+    
 def ackleyf(x):
 
     """
@@ -165,6 +169,8 @@ def ackleyf(x):
     
     return y
 
+###############################################################################
+
 def cfgp(r,ep):
 
     """
@@ -186,7 +192,8 @@ def cfgp(r,ep):
     
     return y
 
-
+###############################################################################
+    
 def cmgp(S1,S2,ep):
 
     """
@@ -216,7 +223,7 @@ def cmgp(S1,S2,ep):
     K = cfgp(K,ep)
     
     return K
-
+###############################################################################
 
 def sgd(hyper_cube,co_GP,mol_pos,ep,tol=None,verbose=None):
 
@@ -320,137 +327,173 @@ def sgd(hyper_cube,co_GP,mol_pos,ep,tol=None,verbose=None):
         
         
     return min_loc,min_E
-   
+###############################################################################
+def gp_sgd(hyper_cube_F,E_F,P_F,sigma,npoints=None,nlhc_its=None,\
+           ep=None,tol=None,verbose=None):
+
+    """
+    Performs one iteration of Gaussian Process optimization using 
+    stochastic gradient descent
+    
+    
+    Parameters
+    ----------
+    
+    hyper_cube_F:   Hypercube for all levels
+    E_F:            Energies for all levels
+    P_F:            Sample points for all levels
+    sigma:          Error measure
+    npoints:        Number of points to create optimization surface 
+    nlhc_its:       The number of iterations in the lhc algorithm
+    ep:             GP kernel parameter ep>0
+    tol:            Tolerance for termination
+    
+    Returns
+    -------
+    min_loc : Local minimums
+    min_E   : Energy Estimation of local minimums
+    """
+    
+    d = hyper_cube_F[0].shape[0]
+    
+    if tol is None:
+        tol = 1e-4
+    
+    if verbose is None:
+        verbose=0 
+        
+    if npoints is None:
+        npoints = (d+2)*(d+1)+1 
+        
+    if nlhc_its is None:
+        nlhc_its = 10
+        
+    if len(P_F)==0:
+        hyper_cube = hyper_cube_F[0]
+        
+        ## Generate random sample from LHS
+        mol_pos = np.repeat(np.reshape(hyper_cube[:,1]-hyper_cube[:,0],[1,d]) \
+            ,npoints,axis=0)*lhs(d, samples=npoints,iterations=nlhc_its)+ \
+            np.repeat(np.reshape(hyper_cube[:,0],[1,d]),npoints,axis=0)
+        
+        hyper_cube[:,0] = np.reshape(np.min(mol_pos,axis=0),d)
+        hyper_cube[:,1] = np.reshape(np.max(mol_pos,axis=0),d)
+        
+        hyper_cube_F[0] = hyper_cube.copy()
+        
+        P_F.append(mol_pos)
+        
+    else:
+        jits = len(P_F)-1
+        
+        mol_pos = P_F[jits]
+        E = E_F[jits]
+        hyper_cube = hyper_cube_F[jits]
+        ## Estimate Optimal Choice for ep
+        ep  = 1.0/np.max(_pdist(mol_pos))
+
+        ## Build Gaussian Process
+        K = cmgp(mol_pos,mol_pos,ep) 
+        Ks = K + (sigma**2)*np.identity(npoints)
+        co_GP = np.linalg.solve(Ks,E)
+        
+        if verbose != 0:
+            print "Starting Stochastic Grandient Descent"
+            
+        ## Use stochastic gradient descent to determine minimums
+        min_loc,min_E = sgd(hyper_cube,co_GP,mol_pos,ep)
+        
+        indb = np.argmin(min_E)
+        bmin_loc = np.reshape(min_loc[indb,:],[1,d])
+        
+        hyper_cube_F.append((hyper_cube_F[jits].copy()+\
+                    np.repeat(np.reshape(bmin_loc,[d,1]),2,axis=1))/2)
+        
+
+        hyper_cube_F[jits+1][:,0] = np.maximum(hyper_cube_F[jits+1][:,0],\
+                    hyper_cube_F[jits][:,0])
+        hyper_cube_F[jits+1][:,1] = np.minimum(hyper_cube_F[jits+1][:,1],\
+                    hyper_cube_F[jits][:,1])
+        cLHC = hyper_cube_F[jits+1]
+        mol_pos = np.repeat(np.reshape(cLHC[:,1]-cLHC[:,0],[1,d])\
+            ,npoints,axis=0)*lhs(d, samples=npoints,iterations=nlhc_its)+\
+            np.repeat(np.reshape(cLHC[:,0],[1,d]),npoints,axis=0)
+        
+        P_F.append(mol_pos)
+        
+        hyper_cube_F[jits+1][:,0] = np.reshape(np.min(mol_pos,axis=0),d)
+        hyper_cube_F[jits+1][:,1] = np.reshape(np.max(mol_pos,axis=0),d)
+        
+        if verbose != 0:
+            print "Error in min position",\
+                np.sqrt(np.sum((bmin_loc-x_true)**2)),"its=",jits
+                
+            if d == 1:
+                import matplotlib.pyplot as plt
+                npts = 100
+                mol_pos = P_F[jits]
+                plot_points = np.reshape(np.linspace(hyper_cube[0,0],\
+                    hyper_cube[0,1],num=npts),[npts,1])
+                gp_E = np.matmul(cmgp(plot_points,mol_pos,ep),co_GP)
+                Et = np.zeros([npts,1])
+                for jp in range(npts):
+                    Et[jp,0] = ackleyf(plot_points[jp,:]-x_true)
+                plt.plot(plot_points,gp_E,'b-',plot_points,Et,'g-',\
+                         mol_pos,E,'r.')
+                plt.show()
+            
+
+                
+
+    return hyper_cube_F,E_F,P_F
+
+###############################################################################
+
+
+"""
+Example using Gaussian Process optimization on Ackley function
+
+"""
+
+
+
+
     
 ## Parameters ##
-d = 22                           # Dimension of problem
-nits = 6                        # Number of iterations
-sigma = 0                       # Uncertainty in data
-hyper_cube = np.ones([d,2])     # Upper and lower bound for each dimension
+d = 8                               # Dimension of problem
+nits = 3                            # Number of iterations
+sigma = 1e-6                        # Uncertainty in data
+hyper_cube = np.ones([d,2])         # Upper and lower bound for each dimension
 hyper_cube[:,0] = -hyper_cube[:,0]
 
-## Suggested Parameters ##
-npoints = (d+2)*(d+1)+1    
-nlhc_its = 10
+## Set up gp_sgd structure ##
+hyper_cube_F =[]
+hyper_cube_F.append(hyper_cube)
+E_F = []
+P_F = []
 
-## Generate random sample from LHS
-mol_pos = np.repeat(np.reshape(hyper_cube[:,1]-hyper_cube[:,0],[1,d]) \
-    ,npoints,axis=0)*lhs(d, samples=npoints,iterations=nlhc_its)+np.repeat( \
-    np.reshape(hyper_cube[:,0],[1,d]),npoints,axis=0)
-
-hyper_cube[:,0] = np.reshape(np.min(mol_pos,axis=0),d)
-hyper_cube[:,1] = np.reshape(np.max(mol_pos,axis=0),d)
-
-E = np.zeros([npoints,1])
-## Randomly pick center for Ackley function
-x_true = 0.05*(2.0*np.random.rand(1,d)-1.0)
-
-## Determine Energies using Ackley function
-for jp in range(npoints):
-    E[jp,0] = ackleyf(mol_pos[jp,:]-x_true)
-
-## Estimate Optimal Choice for ep
-ep  = 1.0/np.max(_pdist(mol_pos))
-
-## Build Gaussian Process
-K = cmgp(mol_pos,mol_pos,ep) 
-Ks = K + (sigma**2)*np.identity(npoints)
-co_GP = np.linalg.solve(Ks,E)
-
-print "Starting Stochastic Grandient Descent"
-## Use stochastic gradient descent to determine minimums
-min_loc,min_E = sgd(hyper_cube,co_GP,mol_pos,ep)
-
-indb = np.argmin(min_E)
-bmin_loc = np.reshape(min_loc[indb,:],[1,d])
-
-print "Error in min position",np.sqrt(np.sum((bmin_loc-x_true)**2)),"its=0"
-
-if d == 1:
-    import matplotlib.pyplot as plt
-    npts = 100
-    plot_points = np.reshape(np.linspace(hyper_cube[0,0],hyper_cube[0,1], \
-        num=npts),[npts,1])
-    gp_E = np.matmul(cmgp(plot_points,mol_pos,ep),co_GP)
-    Et = np.zeros([npts,1])
-    for jp in range(npts):
-        Et[jp,0] = ackleyf(plot_points[jp,:]-x_true)
-    plt.plot(plot_points,gp_E,'b-',plot_points,Et,'g-',mol_pos,E,'r.')
-    plt.show()
-
-chyper_cube = np.ones([d,2])
-chyper_cube[:] = hyper_cube[:]
-for jits in range(nits-1):
-    chyper_cube = chyper_cube+np.repeat(np.reshape(bmin_loc,[d,1]),2,axis=1)
-    chyper_cube = chyper_cube/2.0
-    ## Generate random sample from LHS
-    mol_pos = np.repeat(np.reshape(chyper_cube[:,1]-chyper_cube[:,0],[1,d]) \
-        ,npoints,axis=0)*lhs(d, samples=npoints,iterations=nlhc_its)+np.repeat( \
-        np.reshape(chyper_cube[:,0],[1,d]),npoints,axis=0)
-    chyper_cube[:,0] = np.reshape(np.min(mol_pos,axis=0),d)
-    chyper_cube[:,1] = np.reshape(np.max(mol_pos,axis=0),d)
-    ## Determine Energies using Ackley function
+## Begin heirarchical optimization ##
+for jits in range(nits):
+    hyper_cube_F,E_F,P_F = gp_sgd(hyper_cube_F,E_F,P_F,sigma)
+    
+    # Determine Energy for new set of points
+    npoints = P_F[jits].shape[0]
+    E = np.zeros([npoints,1])  
+    if jits == 0:
+        ## Randomly pick center for Ackley function
+        x_true = 0.05*(2.0*np.random.rand(1,d)-1.0)
+        
+    ## Determine Energies on current points using Ackley function
     for jp in range(npoints):
-        E[jp,0] = ackleyf(mol_pos[jp,:]-x_true)
-    
-    ## Estimate Optimal Choice for ep
-    ep  = 1.0/np.max(_pdist(mol_pos))
-    
-    ## Build Gaussian Process
-    K = cmgp(mol_pos,mol_pos,ep) 
-    Ks = K + (sigma**2)*np.identity(npoints)
-    co_GP = np.linalg.solve(Ks,E)
-    print "Starting Stochastic Grandient Descent"
-    ## Use stochastic gradient descent to determine minimums
-    min_loc,min_E = sgd(chyper_cube,co_GP,mol_pos,ep)
-    indb = np.argmin(min_E)
-    bmin_loc = np.reshape(min_loc[indb,:],[1,d])
+        E[jp,0] = ackleyf(P_F[jits][jp,:]-x_true)
+        
+    E_F.append(E)
+        
 
-    print "Error in min position",np.sqrt(np.sum((bmin_loc-x_true)**2)),\
-        "its=",jits+1
-    
-    if d == 1:
-        plot_points = np.reshape(np.linspace(chyper_cube[0,0], \
-            chyper_cube[0,1],num=npts),[npts,1])
-        gp_E = np.matmul(cmgp(plot_points,mol_pos,ep),co_GP)
-        Et = np.zeros([npts,1])
-        for jp in range(npts):
-            Et[jp,0] = ackleyf(plot_points[jp,:]-x_true)
-        plt.plot(plot_points,gp_E,'b-',plot_points,Et,'g-',mol_pos,E,'r.')
-        plt.show()
-    
-    
-    
-    
-    
 
-# Code to test out LOOCV for optimal ep
-#Kinv = np.linalg.pinv(K)
-#loocv_est = np.zeros([npoints,1])
-#
-#for jsub in range(npoints):
-#    loocv_est[jsub,0] = co_GP[jsub,0]/Kinv[jsub,jsub]
-#
-#print sum(abs(loocv_est))
 
-#loocv_true = np.zeros([npoints,1])   
-#for jsub in range(npoints):   
-#    mol_pos_sub = np.zeros([npoints-1,d])
-#    E_sub = np.zeros([npoints-1,1])
-#    cp = 0
-#    for jp in range(npoints):
-#        if jp != jsub:
-#            mol_pos_sub[cp,:] = mol_pos[jp,:]
-#            E_sub[cp] = E[jp]
-#            cp = cp+1
-#            
-#    K_sub = cmgp(mol_pos_sub,mol_pos_sub,ep)
-#    Kinv_sub = np.linalg.pinv(K_sub)
-#    co_GP_sub = np.matmul(Kinv_sub,E_sub)
-#    S1 = np.zeros([1,d])
-#    S1[0,:] = mol_pos[jsub,:]
-#    loocv_true[jsub] = E[jsub]-np.matmul(cmgp(S1,mol_pos_sub,ep),co_GP_sub)
-#    
+
+
 
 
 
