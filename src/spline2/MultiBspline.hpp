@@ -244,9 +244,9 @@ namespace qmcplusplus
        */
       void evaluate_v_impl(T x, T y, T z, T* restrict vals) const;
 
-      void evaluate_vgl_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict lapl, size_t out_stride) const;
+      void evaluate_vgl_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict lapl, size_t out_offset) const;
 
-      void evaluate_vgh_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict hess, size_t out_stride) const;
+      void evaluate_vgh_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict hess, size_t out_offset) const;
     };
 
   template<typename T>
