@@ -111,40 +111,26 @@ namespace qmcplusplus
       using spliner_type=typename bspline_traits<T,3>::SplineType;
       ///define the real type
       using real_type=typename bspline_traits<T,3>::real_type;
-      ///set to true if create is invoked
-      bool own_spline;
       ///actual einspline multi-bspline object
       spliner_type* spline_m;
-      ///offset
-      std::vector<int> offset;
       ///use allocator
       einspline::Allocator myAllocator;
 
-      MultiBspline():own_spline(false),spline_m(nullptr) {}
+      MultiBspline():spline_m(nullptr) {}
       MultiBspline(const MultiBspline& in)=delete;
       MultiBspline& operator=(const MultiBspline& in)=delete;
 
       ~MultiBspline()
       {
-        if(own_spline)
-        {
+        if(spline_m!=nullptr)
           myAllocator.destroy(spline_m);
-        }
       }
 
       template<typename RV, typename IV>
-      void create(RV& start, RV& end, IV& ng, bc_code bc, int num_splines, int nteams=1)
+      void create(RV& start, RV& end, IV& ng, bc_code bc, int num_splines)
       {
         if(spline_m==nullptr)
-        {
           spline_m=myAllocator.createMultiBspline(T(0),start,end,ng,bc,num_splines);
-          own_spline=true;
-        }
-        //should be refined to ensure alignment with minimal waste
-        int nsb=num_splines/nteams;
-        offset.resize(nteams+1);
-        for(int i=0; i<nteams; ++i) offset[i]=i*nsb;
-        offset[nteams]=num_splines;
       }
 
       /** create the einspline as used in the builder
@@ -160,13 +146,7 @@ namespace qmcplusplus
           xBC.lVal=static_cast<T>(bc[0].lVal); yBC.lVal=static_cast<T>(bc[1].lVal); zBC.lVal=static_cast<T>(bc[2].lVal);
           xBC.rVal=static_cast<T>(bc[0].rVal); yBC.rVal=static_cast<T>(bc[1].rVal); zBC.rVal=static_cast<T>(bc[2].rVal);
           spline_m=myAllocator.allocateMultiBspline(grid[0],grid[1],grid[2],xBC,yBC,zBC,num_splines);
-          own_spline=true;
         }
-        //should be refined to ensure alignment with minimal waste
-        int nsb=num_splines/nteams;
-        offset.resize(nteams+1);
-        for(int i=0; i<nteams; ++i) offset[i]=i*nsb;
-        offset[nteams]=num_splines;
       }
 
       void flush_zero() const
@@ -213,57 +193,48 @@ namespace qmcplusplus
       template<typename PT, typename VT>
         void evaluate(const PT& r, VT& psi)
         {
-          evaluate_v_impl(r[0],r[1],r[2],psi.data(),0,psi.size());
+          evaluate_v_impl(r[0],r[1],r[2],psi.data());
         }
 
       template<typename PT, typename VT>
-        void evaluate(const PT& r, VT& psi, int ip)
+        void evaluate(const PT& r, VT& psi, int first)
         {
-          const int first=offset[ip];
-          evaluate_v_impl(r[0],r[1],r[2],psi.data()+first,first,offset[ip+1]);
-        }
-
-      template<typename PT, typename VT, typename GT>
-        inline void evaluate(const PT& r, VT& psi, GT& grad)
-        {
-          //einspline::evaluate(spliner,r,psi,grad);
+          evaluate_v_impl(r[0],r[1],r[2],psi.data()+first);
         }
 
       template<typename PT, typename VT, typename GT, typename LT>
         inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap)
         {
-          evaluate_vgl_impl(r[0],r[1],r[2],psi.data(),grad.data(),lap.data(),0,psi.size());
+          evaluate_vgl_impl(r[0],r[1],r[2],psi.data(),grad.data(),lap.data(),psi.size());
         }
 
       template<typename PT, typename VT, typename GT, typename LT>
-        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap, int ip)
+        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap, int first)
         {
-          const int first=offset[ip];
-          evaluate_vgl_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,lap.data()+first,first,offset[ip+1]);
+          evaluate_vgl_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,lap.data()+first,psi.size());
         }
 
       template<typename PT, typename VT, typename GT, typename HT>
         inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess)
         {
-          evaluate_vgh_impl(r[0],r[1],r[2],psi.data(),grad.data(),hess.data(),0,psi.size());
+          evaluate_vgh_impl(r[0],r[1],r[2],psi.data(),grad.data(),hess.data(),psi.size());
         }
 
       template<typename PT, typename VT, typename GT, typename HT>
-        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess, int ip)
+        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess, int first)
         {
-          const int first=offset[ip];
-          evaluate_vgh_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,hess.data()+first,first,offset[ip+1]);
+          evaluate_vgh_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,hess.data()+first,psi.size());
         }
 
       /** compute values vals[first,last)
        *
        * The base address for vals, grads and lapl are set by the callers, e.g., evaluate_vgh(r,psi,grad,hess,ip).
        */
-      void evaluate_v_impl(T x, T y, T z, T* restrict vals, int first, int last) const;
+      void evaluate_v_impl(T x, T y, T z, T* restrict vals) const;
 
-      void evaluate_vgl_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict lapl, int first, int last, size_t out_offset=0) const;
+      void evaluate_vgl_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict lapl, size_t out_stride) const;
 
-      void evaluate_vgh_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict hess, int first, int last, size_t out_offset=0) const;
+      void evaluate_vgh_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict hess, size_t out_stride) const;
     };
 
   template<typename T>
@@ -332,23 +303,20 @@ namespace qmcplusplus
       template<typename PT, typename VT>
         inline void evaluate(const PT& r, VT& psi)
         {
-          //einspline::evaluate(&spline_m,r,psi);
           evaluate_v_impl(r,psi.data());
         }
 
       template<typename PT, typename VT, typename GT, typename LT>
         inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap)
         {
-          //einspline::evaluate(&spline_m,r,psi,grad,lap);
           evaluate_vgl_impl(r,psi.data(),grad.data(),lap.data());
         }
 
-      template<typename PT, typename VT, typename GT, typename HT>
-        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess)
-        {
-          //einspline::evaluate(&spline_m,r,psi,grad,hess);
-          evaluate_vgl_impl(r,psi.data(),grad.data(),hess.data());
-        }
+      //template<typename PT, typename VT, typename GT, typename HT>
+      //  inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess)
+      //  {
+      //    evaluate_vgh_impl(r,psi.data(),grad.data(),hess.data());
+      //  }
 
       /// compute values only.
       void evaluate_v_impl(T r, T* restrict vals) const;

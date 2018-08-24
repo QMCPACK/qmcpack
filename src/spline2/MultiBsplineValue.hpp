@@ -25,7 +25,7 @@ namespace qmcplusplus
   /** define evaluate: common to any implementation */
   template<typename T>
     inline void
-    MultiBspline<T>::evaluate_v_impl(T x, T y, T z, T* restrict vals, int first, int last) const
+    MultiBspline<T>::evaluate_v_impl(T x, T y, T z, T* restrict vals) const
     {
       x -= spline_m->x_grid.start;
       y -= spline_m->y_grid.start;
@@ -46,14 +46,14 @@ namespace qmcplusplus
       const intptr_t zs = spline_m->z_stride;
 
       CONSTEXPR T zero(0);
-      const size_t num_splines=last-first;
+      const size_t num_splines=spline_m->num_splines;
       ASSUME_ALIGNED(vals);
       std::fill(vals,vals+num_splines,zero);
 
       for (size_t i=0; i<4; i++)
         for (size_t j=0; j<4; j++){
           const T pre00 =  a[i]*b[j];
-          const T* restrict coefs = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs)+first; ASSUME_ALIGNED(coefs);
+          const T* restrict coefs = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs); ASSUME_ALIGNED(coefs);
 //#pragma omp simd
           for(size_t n=0; n<num_splines; n++)
             vals[n] += pre00*(c[0]*coefs[n] + c[1]*coefs[n+zs] + c[2]*coefs[n+2*zs] + c[3]*coefs[n+3*zs]);
@@ -63,7 +63,7 @@ namespace qmcplusplus
 // this is only experimental, not protected for general use.
   template<typename T>
     inline void
-    MultiBspline<T>::evaluate_v_impl(T x, T y, T z, T* restrict vals, int first, int last) const
+    MultiBspline<T>::evaluate_v_impl(T x, T y, T z, T* restrict vals) const
     {
       x -= spline_m->x_grid.start;
       y -= spline_m->y_grid.start;
@@ -89,7 +89,7 @@ namespace qmcplusplus
       const intptr_t zs = spline_m->z_stride;
 
       CONSTEXPR T zero(0);
-      const int num_splines=last-first;
+      const int num_splines=spline_m->num_splines;
       std::fill(vals,vals+num_splines,zero);
 
       for (int i=0; i<4; i++)
@@ -97,7 +97,7 @@ namespace qmcplusplus
         {
           const T pre00 =  a[i]*b[j];
           vector4double vec_pre00 = vec_splats(pre00);
-          T* restrict coefs0 = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs) + first;
+          T* restrict coefs0 = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs);
           T* restrict coefs1 = coefs0 +   zs;
           T* restrict coefs2 = coefs0 + 2*zs;
           T* restrict coefs3 = coefs0 + 3*zs;
