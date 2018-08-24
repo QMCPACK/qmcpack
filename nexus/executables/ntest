@@ -2066,6 +2066,10 @@ if __name__=='__main__':
                       action='store_true',default=False,
                       help='Compatibility mode for calls from the CTest framework (default=%default).'
                       )
+    parser.add_option('--pythonpath',dest='pythonpath',
+                      default='none',
+                      help='Sets PYTHONPATH environment variable for any scripts executed by ntest.  The default behavior is to use PYTHONPATH as already defined in the host environment.'
+                      )
     parser.add_option('--trip',dest='trip',
                       default='none',
                       help='Cause the "trip"-th assertion statement to fail.  Useful when to ensure that the CMake script is working properly when interfacing with CTest (default=%default).'
@@ -2139,6 +2143,9 @@ if __name__=='__main__':
         #end for
         sys.stdout.write(c[:-1])
         exit()
+    #end if
+    if options.pythonpath!='none':
+        os.environ['PYTHONPATH']=options.pythonpath
     #end if
 
     # run each test and print the test outcome
