@@ -1,7 +1,55 @@
-"""
-This code uses Gaussian Processes to estimate optimization surfaces of noisy
-data.
-"""
+##################################################################
+##  (c) Copyright 2018-  by Richard K. Archibald                ##
+##################################################################
+
+
+#====================================================================#
+#  gaussian_process.py                                               #
+#    Uses Gaussian Processes to estimate optimization surfaces of    #
+#    noisy data.                                                     #
+#                                                                    #
+#  Content summary:                                                  #
+#    lhs                                                             #
+#      Function to generate a latin-hypercube design.                #
+#                                                                    #
+#    _lhsmaximin                                                     #
+#      Function to maximize the minimum distance between points.     #
+#      Subroutine of lhs.                                            #
+#                                                                    #
+#    _lhsclassic                                                     #
+#      Subroutine of _lhsmaximin                                     #
+#                                                                    #
+#    _pdist                                                          #
+#      Function to calculate the pair-wise point distances of a      #
+#      matrix.  Subroutine of lhsmaximin.                            #
+#                                                                    #
+#    cfgp                                                            #
+#      Function to calculate correlation function for Gaussian       #
+#      Process.  Subroutine of cmgp.                                 #
+#                                                                    #
+#    cmgp                                                            #
+#      Function to calculate correlation matrix for Gaussian         #
+#      Process.  Subroutine of sgd and gp_sgd.                       #
+#                                                                    #
+#    sgd                                                             #
+#      Function to calculate minimums of Gaussian Process using      #
+#      stochastic gradient descent.  Subroutine of gp_sgd.           #
+#                                                                    #
+#    gp_sgd                                                          #
+#      Function that performs one iteration of Gaussian Process      #
+#      optimization using stochastic gradient descent.  This is the  #
+#      main interface to Gaussian Process iterations.                #
+#                                                                    #
+#    ackleyf                                                         #
+#      Function to calculate the d-dimensional Ackley function on    #
+#      [-1,1]^d.                                                     #
+#                                                                    #
+#    ackley_example                                                  #
+#      Example using Gaussian Process optimization on Ackley         #
+#      function.                                                     #
+#                                                                    #
+#====================================================================#
+
 
 import numpy as np
 
@@ -43,14 +91,16 @@ def lhs(n, samples=None, iterations=None):
     
     if samples is None:
         samples = n
+    #end if
     
     if iterations is None:
         iterations = 5
-    
+    #end if
+
     H = _lhsmaximin(n, samples, iterations)
     
-    
     return H
+#end def lhs
 
 ###############################################################################
 
@@ -65,15 +115,17 @@ def _lhsclassic(n, samples):
     rdpoints = np.zeros_like(u)
     for j in range(n):
         rdpoints[:, j] = u[:, j]*(b-a) + a
-    
+    #end for
+
     # Make the random pairings
     H = np.zeros_like(rdpoints)
     for j in range(n):
         order = np.random.permutation(range(samples))
         H[:, j] = rdpoints[order, j]
-    
+    #end for
+
     return H
-    
+#end def _lhsclassic
     
 ###############################################################################
 
@@ -88,9 +140,11 @@ def _lhsmaximin(n, samples, iterations):
         if maxdist<np.min(d):
             maxdist = np.min(d)
             H = Hcandidate.copy()
-    
+        #end if
+    #end for
     return H
-    
+#end def _lhsmaximin
+
 ###############################################################################
 
 def _pdist(x):
@@ -130,6 +184,7 @@ def _pdist(x):
     m, n = x.shape
     if m<2:
         return []
+    #end if
     
     d = np.zeros((m**2-m)/2)
     c_v = 0
@@ -137,13 +192,14 @@ def _pdist(x):
         d[0+c_v:m-i-1+c_v]=np.sqrt(np.sum((np.repeat(np.reshape(x[i, :],\
                         [1,n]),m-i-1,axis=0)-x[i+1:m+1, :])**2,axis=1))
         c_v = c_v+m-i-1
-    
+    #end for
+
     return d
+#end def _pdist
 
 ###############################################################################
     
 def ackleyf(x):
-
     """
     Calculate the d-dimensional Ackley function on [-1,1]^d
     
@@ -166,13 +222,12 @@ def ackleyf(x):
     y = 20.0+np.exp(1.0)-20.0*np.exp(-0.2*np.sqrt(np.sum(x**2)/float(d)))- \
         np.exp(np.sum(np.cos(2.0*np.pi*x))/float(d))
     
-    
     return y
+#end def ackleyf
 
 ###############################################################################
 
 def cfgp(r,ep):
-
     """
     Calculate correlation function for Gaussian Process
     
@@ -191,11 +246,11 @@ def cfgp(r,ep):
     y = np.exp(-ep*r**2)
     
     return y
+#end def cfgp
 
 ###############################################################################
     
 def cmgp(S1,S2,ep):
-
     """
     Calculate correlation matrix for Gaussian Process
     
@@ -219,16 +274,18 @@ def cmgp(S1,S2,ep):
     for jn in range(n):
         K[jn,:] = np.sqrt(np.sum((np.repeat(np.reshape(S1[jn,:],[1,d]),\
              m,axis=0)-S2)**2,axis=1))
+    #end for
     
     K = cfgp(K,ep)
     
     return K
+#end def cmgp
+
 ###############################################################################
 
 def sgd(hyper_cube,co_GP,mol_pos,ep,tol=None,verbose=None):
-
     """
-    Calculate minumums of Gaussian Process using stochastic gradient descent
+    Calculate minimums of Gaussian Process using stochastic gradient descent
     
     
     Parameters
@@ -244,17 +301,17 @@ def sgd(hyper_cube,co_GP,mol_pos,ep,tol=None,verbose=None):
     min_E   : Energy Estimation of local minimums
     """
     
-    
     if tol is None:
         tol = 1e-4
+    #end if
     
     if verbose is None:
         verbose=0
-    
+    #end if
+
     npoints = mol_pos.shape[0]
     d = mol_pos.shape[1]
     epm = np.min(_pdist(mol_pos))
-    
     
     best_pos = np.copy(mol_pos)
     delta_pos = epm*np.ones([npoints,d])/10.0
@@ -270,37 +327,45 @@ def sgd(hyper_cube,co_GP,mol_pos,ep,tol=None,verbose=None):
             for jdim in range(d):
                 t_pos[np.where(t_pos[:,jdim]>hyper_cube[jdim,1]),jdim]= \
                     hyper_cube[jdim,0]
-                    
+            #end for
+
             c_E = np.matmul(cmgp(t_pos,mol_pos,ep),co_GP)
             for jp in range(npoints):
                 if c_E[jp,0]<best_E[jp,0]:
                     did_move[jp,0] = 1
                     best_E[jp,0] = c_E[jp,0]
                     best_pos[jp,:] = t_pos[jp,:]
-                    
+                #end if
+            #end for
+
             t_pos =  np.copy(best_pos)
             t_pos[:,jd] = t_pos[:,jd] - delta_pos[:,jd]
             for jdim in range(d):
                 t_pos[np.where(t_pos[:,jdim]<hyper_cube[jdim,0]),jdim]= \
                     hyper_cube[jdim,0]
-                    
+            #end for
+
             c_E = np.matmul(cmgp(t_pos,mol_pos,ep),co_GP)
             for jp in range(npoints):
                 if c_E[jp,0]<best_E[jp,0]:
                     did_move[jp,0] = 1
                     best_E[jp,0] = c_E[jp,0]
                     best_pos[jp,:] = t_pos[jp,:]
+                #end if
                 if did_move[jp,0] == 1:
                     delta_pos[jp,jd] = 1.25*delta_pos[jp,jd]
                 else:
                     delta_pos[jp,jd] = 0.75*delta_pos[jp,jd]
-        
+                #end if
+            #end for
+        #end for
+
         cm = np.max(delta_pos)
         if verbose == 1:
             use_ind = np.where(np.max(delta_pos,axis=1)>epm*tol)
             print cm,np.shape(use_ind)[1]
-      
-              
+        #end if
+    #end while
 
     c_class = 0
     ind_marker = -np.ones([npoints,1])
@@ -313,7 +378,8 @@ def sgd(hyper_cube,co_GP,mol_pos,ep,tol=None,verbose=None):
         class_ind = indc[0][np.where(dis_v<10*epm*tol)]
         ind_marker[class_ind,:] = c_class
         c_class = c_class+1
-        
+    #end while
+
     min_loc = np.zeros([c_class,d])
     min_E = np.zeros([c_class,1])  
     
@@ -324,13 +390,14 @@ def sgd(hyper_cube,co_GP,mol_pos,ep,tol=None,verbose=None):
         indb = np.argmin(c_E)
         min_E[jc,:] = c_E[indb,:]
         min_loc[jc,:] = t_pos[indb,:]
-        
+    #end for
         
     return min_loc,min_E
+#end def sgd
+
 ###############################################################################
 def gp_sgd(hyper_cube_F,E_F,P_F,E0_F,P0_F,sigma,npoints=None,nlhc_its=None,\
            ep=None,tol=None,verbose=None,gen_new=None):
-
     """
     Performs one iteration of Gaussian Process optimization using 
     stochastic gradient descent
@@ -363,19 +430,20 @@ def gp_sgd(hyper_cube_F,E_F,P_F,E0_F,P0_F,sigma,npoints=None,nlhc_its=None,\
     
     if tol is None:
         tol = 1e-4
-    
+    #end if
     if verbose is None:
         verbose=0 
-        
+    #end if
     if npoints is None:
         npoints = (d+2)*(d+1)+1 
-        
+    #end if
     if nlhc_its is None:
         nlhc_its = 10
-        
+    #end if
     if gen_new is None:
         gen_new = 1
-        
+    #end if
+
     if len(P_F)==0:
         hyper_cube = hyper_cube_F[0]
         
@@ -390,7 +458,7 @@ def gp_sgd(hyper_cube_F,E_F,P_F,E0_F,P0_F,sigma,npoints=None,nlhc_its=None,\
         hyper_cube_F[0] = hyper_cube.copy()
         
         P_F.append(mol_pos)
-        
+
     else:
         jits = len(P_F)-1
         
@@ -407,7 +475,8 @@ def gp_sgd(hyper_cube_F,E_F,P_F,E0_F,P0_F,sigma,npoints=None,nlhc_its=None,\
         
         if verbose != 0:
             print "Starting Stochastic Grandient Descent"
-            
+        #end if
+
         ## Use stochastic gradient descent to determine minimums
         min_loc,min_E = sgd(hyper_cube,co_GP,mol_pos,ep)
         
@@ -435,7 +504,8 @@ def gp_sgd(hyper_cube_F,E_F,P_F,E0_F,P0_F,sigma,npoints=None,nlhc_its=None,\
             
             hyper_cube_F[jits+1][:,0] = np.reshape(np.min(mol_pos,axis=0),d)
             hyper_cube_F[jits+1][:,1] = np.reshape(np.max(mol_pos,axis=0),d)
-        
+        #end if
+
         if verbose != 0:
             print "Error in min position",\
                 np.sqrt(np.sum((bmin_loc-x_true)**2)),"its=",jits
@@ -453,66 +523,62 @@ def gp_sgd(hyper_cube_F,E_F,P_F,E0_F,P0_F,sigma,npoints=None,nlhc_its=None,\
                 plt.plot(plot_points,gp_E,'b-',plot_points,Et,'g-',\
                          mol_pos,E,'r.')
                 plt.show()
-            
-
-                
+            #end if
+        #end if
+    #end if
 
     return hyper_cube_F,E_F,P_F,E0_F,P0_F
+#end def gp_sgd
 
 ###############################################################################
 
 
-"""
-Example using Gaussian Process optimization on Ackley function
-
-"""
 
 
 
+def ackley_example():
+    """
+    Example using Gaussian Process optimization on Ackley function
 
-    
-## Parameters ##
-d = 2                               # Dimension of problem
-nits = 3                            # Number of iterations
-sigma = 1e-6                        # Uncertainty in data
-hyper_cube = np.ones([d,2])         # Upper and lower bound for each dimension
-hyper_cube[:,0] = -hyper_cube[:,0]
+    """
 
-## Set up gp_sgd structure ##
-hyper_cube_F =[]
-hyper_cube_F.append(hyper_cube)
-E_F = []
-P_F = []
-E0_F = []
-P0_F = []
+    ## Parameters ##
+    d = 2                               # Dimension of problem
+    nits = 3                            # Number of iterations
+    sigma = 1e-6                        # Uncertainty in data
+    hyper_cube = np.ones([d,2])         # Upper and lower bound for each dimension
+    hyper_cube[:,0] = -hyper_cube[:,0]
 
-## Begin heirarchical optimization ##
-for jits in range(nits+1):
-    
-    if jits < nits:
-        hyper_cube_F,E_F,P_F,E0_F,P0_F = gp_sgd(hyper_cube_F,E_F,P_F,E0_F,P0_F,sigma)
-        
-        # Determine Energy for new set of points
-        npoints = P_F[jits].shape[0]
-        E = np.zeros([npoints,1])  
-        if jits == 0:
-            ## Randomly pick center for Ackley function
-            x_true = 0.05*(2.0*np.random.rand(1,d)-1.0)
-            
-        ## Determine Energies on current points using Ackley function
-        for jp in range(npoints):
-            E[jp,0] = ackleyf(P_F[jits][jp,:]-x_true)
-            
-        E_F.append(E)
-    else:
-        # Final iteration where only minimum is found and no new points generated
-        hyper_cube_F,E_F,P_F,E0_F,P0_F = gp_sgd(hyper_cube_F,E_F,P_F,E0_F,P0_F,sigma,gen_new=0)
-        
+    ## Set up gp_sgd structure ##
+    hyper_cube_F =[]
+    hyper_cube_F.append(hyper_cube)
+    E_F = []
+    P_F = []
+    E0_F = []
+    P0_F = []
 
+    ## Begin heirarchical optimization ##
+    for jits in range(nits+1):
+        if jits < nits:
+            hyper_cube_F,E_F,P_F,E0_F,P0_F = gp_sgd(hyper_cube_F,E_F,P_F,E0_F,P0_F,sigma)
 
+            # Determine Energy for new set of points
+            npoints = P_F[jits].shape[0]
+            E = np.zeros([npoints,1])  
+            if jits == 0:
+                ## Randomly pick center for Ackley function
+                x_true = 0.05*(2.0*np.random.rand(1,d)-1.0)
+            #end if
 
-
-
-
-
+            ## Determine Energies on current points using Ackley function
+            for jp in range(npoints):
+                E[jp,0] = ackleyf(P_F[jits][jp,:]-x_true)
+            #end for
+            E_F.append(E)
+        else:
+            # Final iteration where only minimum is found and no new points generated
+            hyper_cube_F,E_F,P_F,E0_F,P0_F = gp_sgd(hyper_cube_F,E_F,P_F,E0_F,P0_F,sigma,gen_new=0)
+        #end if
+    #end for
+#end def ackley_example
 
