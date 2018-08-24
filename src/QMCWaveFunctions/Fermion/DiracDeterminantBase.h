@@ -102,14 +102,6 @@ public:
    *@param nel number of particles in the determinant
    */
   virtual void set(int first, int nel);
-  virtual RealType getAlternatePhaseDiff()
-  {
-    return 0.0;
-  }
-  virtual RealType getAlternatePhaseDiff(int iat)
-  {
-    return 0.0;
-  }
 
   ///set BF pointers
   virtual
@@ -191,11 +183,6 @@ public:
   /** compute multiple ratios for a particle move
    */
   virtual void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios);
-
-  virtual ValueType alternateRatio(ParticleSet& P)
-  {
-    return 1.0;
-  }
 
   virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   virtual GradType evalGrad(ParticleSet& P, int iat);
