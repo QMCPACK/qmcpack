@@ -13,7 +13,15 @@
 // -*- C++ -*-
 /**@file MultiBspline.hpp
  *
- * Master header file to define MultiBspline
+ * Master header file to define MultiBspline and MultiBspline1D
+ *
+ * The evaluation functions in MultiBspline and MultiBspline1D are memory
+ * bandwith (BW) bound. Optimizations towards maximizing BW usage is always
+ * needed. For this reason, with SIMD, memory alignment is required in order
+ * to saturate the BW. The number of splines must be a multiple of aligned
+ * size. The result vectors must be in Structure-of-Array datayout with
+ * their starting address correctly aligned.
+ *
  */
 #ifndef QMCPLUSPLUS_MULTIEINSPLINE_COMMON_HPP
 #define QMCPLUSPLUS_MULTIEINSPLINE_COMMON_HPP
@@ -129,6 +137,8 @@ namespace qmcplusplus
       template<typename RV, typename IV>
       void create(RV& start, RV& end, IV& ng, bc_code bc, int num_splines)
       {
+        if(getAlignedSize<T>(num_splines)!=num_splines)
+          throw std::runtime_error("When creating the data space of MultiBspline, num_splines must be padded!");
         if(spline_m==nullptr)
           spline_m=myAllocator.createMultiBspline(T(0),start,end,ng,bc,num_splines);
       }
@@ -136,8 +146,10 @@ namespace qmcplusplus
       /** create the einspline as used in the builder
        */
       template<typename GT, typename BCT>
-      void create(GT& grid, BCT& bc, int num_splines, int nteams=1)
+      void create(GT& grid, BCT& bc, int num_splines)
       {
+        if(getAlignedSize<T>(num_splines)!=num_splines)
+          throw std::runtime_error("When creating the data space of MultiBspline, num_splines must be padded!");
         if(spline_m==nullptr)
         {
           typename bspline_traits<T,3>::BCType xBC, yBC, zBC;
@@ -260,15 +272,12 @@ namespace qmcplusplus
       /** create the einspline as used in the builder
        */
       template<typename GT, typename BCT>
-      void create(GT& grid, BCT& bc, int num_splines, const bool ishandle=false)
+      void create(GT& grid, BCT& bc, int num_splines)
       {
+        if(getAlignedSize<T>(num_splines)!=num_splines)
+          throw std::runtime_error("When creating the data space of MultiBspline1D, num_splines must be padded!");
         spliner_type* temp_spline;
         temp_spline=einspline::create(temp_spline, grid, bc, num_splines);
-        if(ishandle)
-        {
-          free(temp_spline->coefs);
-          temp_spline->coefs=nullptr;
-        }
         spline_m=*temp_spline;
         free(temp_spline);
       }
