@@ -19,6 +19,7 @@
 #define QMCPLUSPLUS_MULTI_FUNCTOR_QUINTIC_SPLINE_SET_H
 
 #include "Numerics/OneDimGridBase.h"
+#include "Numerics/OneDimQuinticSpline.h"
 #include "Numerics/NRSplineFunctions.h"
 #include <simd/allocator.hpp>
 
