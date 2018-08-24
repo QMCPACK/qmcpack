@@ -328,8 +328,8 @@ def sgd(hyper_cube,co_GP,mol_pos,ep,tol=None,verbose=None):
         
     return min_loc,min_E
 ###############################################################################
-def gp_sgd(hyper_cube_F,E_F,P_F,sigma,npoints=None,nlhc_its=None,\
-           ep=None,tol=None,verbose=None):
+def gp_sgd(hyper_cube_F,E_F,P_F,E0_F,P0_F,sigma,npoints=None,nlhc_its=None,\
+           ep=None,tol=None,verbose=None,gen_new=None):
 
     """
     Performs one iteration of Gaussian Process optimization using 
@@ -342,16 +342,21 @@ def gp_sgd(hyper_cube_F,E_F,P_F,sigma,npoints=None,nlhc_its=None,\
     hyper_cube_F:   Hypercube for all levels
     E_F:            Energies for all levels
     P_F:            Sample points for all levels
+    E0_F:           Estimated Minimum Energy
+    P0_F:           Estimated Position of Minimum
     sigma:          Error measure
     npoints:        Number of points to create optimization surface 
     nlhc_its:       The number of iterations in the lhc algorithm
     ep:             GP kernel parameter ep>0
     tol:            Tolerance for termination
     
-    Returns
+    Returns following for next iteration
     -------
-    min_loc : Local minimums
-    min_E   : Energy Estimation of local minimums
+    hyper_cube_F:   Hypercube for all levels
+    E_F:            Energies for all levels
+    P_F:            Sample points for all levels
+    E0_F:           Estimated Minimum Energy
+    P0_F:           Estimated Position of Minimum
     """
     
     d = hyper_cube_F[0].shape[0]
@@ -367,6 +372,9 @@ def gp_sgd(hyper_cube_F,E_F,P_F,sigma,npoints=None,nlhc_its=None,\
         
     if nlhc_its is None:
         nlhc_its = 10
+        
+    if gen_new is None:
+        gen_new = 1
         
     if len(P_F)==0:
         hyper_cube = hyper_cube_F[0]
@@ -406,23 +414,27 @@ def gp_sgd(hyper_cube_F,E_F,P_F,sigma,npoints=None,nlhc_its=None,\
         indb = np.argmin(min_E)
         bmin_loc = np.reshape(min_loc[indb,:],[1,d])
         
-        hyper_cube_F.append((hyper_cube_F[jits].copy()+\
-                    np.repeat(np.reshape(bmin_loc,[d,1]),2,axis=1))/2)
+        P0_F.append(bmin_loc)
+        E0_F.append(min_E[indb])
         
-
-        hyper_cube_F[jits+1][:,0] = np.maximum(hyper_cube_F[jits+1][:,0],\
-                    hyper_cube_F[jits][:,0])
-        hyper_cube_F[jits+1][:,1] = np.minimum(hyper_cube_F[jits+1][:,1],\
-                    hyper_cube_F[jits][:,1])
-        cLHC = hyper_cube_F[jits+1]
-        mol_pos = np.repeat(np.reshape(cLHC[:,1]-cLHC[:,0],[1,d])\
-            ,npoints,axis=0)*lhs(d, samples=npoints,iterations=nlhc_its)+\
-            np.repeat(np.reshape(cLHC[:,0],[1,d]),npoints,axis=0)
-        
-        P_F.append(mol_pos)
-        
-        hyper_cube_F[jits+1][:,0] = np.reshape(np.min(mol_pos,axis=0),d)
-        hyper_cube_F[jits+1][:,1] = np.reshape(np.max(mol_pos,axis=0),d)
+        if gen_new == 1:
+            hyper_cube_F.append((hyper_cube_F[jits].copy()+\
+                        np.repeat(np.reshape(bmin_loc,[d,1]),2,axis=1))/2)
+            
+    
+            hyper_cube_F[jits+1][:,0] = np.maximum(hyper_cube_F[jits+1][:,0],\
+                        hyper_cube_F[jits][:,0])
+            hyper_cube_F[jits+1][:,1] = np.minimum(hyper_cube_F[jits+1][:,1],\
+                        hyper_cube_F[jits][:,1])
+            cLHC = hyper_cube_F[jits+1]
+            mol_pos = np.repeat(np.reshape(cLHC[:,1]-cLHC[:,0],[1,d])\
+                ,npoints,axis=0)*lhs(d, samples=npoints,iterations=nlhc_its)+\
+                np.repeat(np.reshape(cLHC[:,0],[1,d]),npoints,axis=0)
+            
+            P_F.append(mol_pos)
+            
+            hyper_cube_F[jits+1][:,0] = np.reshape(np.min(mol_pos,axis=0),d)
+            hyper_cube_F[jits+1][:,1] = np.reshape(np.max(mol_pos,axis=0),d)
         
         if verbose != 0:
             print "Error in min position",\
@@ -445,7 +457,7 @@ def gp_sgd(hyper_cube_F,E_F,P_F,sigma,npoints=None,nlhc_its=None,\
 
                 
 
-    return hyper_cube_F,E_F,P_F
+    return hyper_cube_F,E_F,P_F,E0_F,P0_F
 
 ###############################################################################
 
@@ -460,7 +472,7 @@ Example using Gaussian Process optimization on Ackley function
 
     
 ## Parameters ##
-d = 8                               # Dimension of problem
+d = 2                               # Dimension of problem
 nits = 3                            # Number of iterations
 sigma = 1e-6                        # Uncertainty in data
 hyper_cube = np.ones([d,2])         # Upper and lower bound for each dimension
@@ -471,23 +483,30 @@ hyper_cube_F =[]
 hyper_cube_F.append(hyper_cube)
 E_F = []
 P_F = []
+E0_F = []
+P0_F = []
 
 ## Begin heirarchical optimization ##
-for jits in range(nits):
-    hyper_cube_F,E_F,P_F = gp_sgd(hyper_cube_F,E_F,P_F,sigma)
+for jits in range(nits+1):
     
-    # Determine Energy for new set of points
-    npoints = P_F[jits].shape[0]
-    E = np.zeros([npoints,1])  
-    if jits == 0:
-        ## Randomly pick center for Ackley function
-        x_true = 0.05*(2.0*np.random.rand(1,d)-1.0)
+    if jits < nits:
+        hyper_cube_F,E_F,P_F,E0_F,P0_F = gp_sgd(hyper_cube_F,E_F,P_F,E0_F,P0_F,sigma)
         
-    ## Determine Energies on current points using Ackley function
-    for jp in range(npoints):
-        E[jp,0] = ackleyf(P_F[jits][jp,:]-x_true)
-        
-    E_F.append(E)
+        # Determine Energy for new set of points
+        npoints = P_F[jits].shape[0]
+        E = np.zeros([npoints,1])  
+        if jits == 0:
+            ## Randomly pick center for Ackley function
+            x_true = 0.05*(2.0*np.random.rand(1,d)-1.0)
+            
+        ## Determine Energies on current points using Ackley function
+        for jp in range(npoints):
+            E[jp,0] = ackleyf(P_F[jits][jp,:]-x_true)
+            
+        E_F.append(E)
+    else:
+        # Final iteration where only minimum is found and no new points generated
+        hyper_cube_F,E_F,P_F,E0_F,P0_F = gp_sgd(hyper_cube_F,E_F,P_F,E0_F,P0_F,sigma,gen_new=0)
         
 
 
