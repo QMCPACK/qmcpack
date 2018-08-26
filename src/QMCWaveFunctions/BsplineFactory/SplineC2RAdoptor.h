@@ -361,7 +361,14 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   {
     const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
-    SplineInst->evaluate(ru,myV);
+
+    //cache blocking size 2KB
+    const int blocksize = 2048/sizeof(ST);
+    const int numblock = (myV.size()+blocksize-1)/blocksize;
+
+    #pragma omp parallel for
+    for (size_t iblock=0; iblock<numblock; iblock++)
+      SplineInst->evaluate(ru,myV,iblock*blocksize,std::min((iblock+1)*blocksize,myV.size()));
     assign_v(r,myV,psi);
   }
 
@@ -647,7 +654,14 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   {
     const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
-    SplineInst->evaluate_vgh(ru,myV,myG,myH);
+
+    //cache blocking size 2KB
+    const int blocksize = 2048/sizeof(ST);
+    const int numblock = (myV.size()+blocksize-1)/blocksize;
+
+    #pragma omp parallel for
+    for (size_t iblock=0; iblock<numblock; iblock++)
+      SplineInst->evaluate_vgh(ru,myV,myG,myH,iblock*blocksize,std::min((iblock+1)*blocksize,myV.size()));
     assign_vgl(r,psi,dpsi,d2psi);
   }
 
