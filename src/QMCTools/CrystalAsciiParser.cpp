@@ -52,12 +52,19 @@ void CrystalAsciiParser::parse(const std::string &fname)
 
     search(fin,"CALCULATION",aline);
     parsewords(aline.c_str(),currentWords);
-    if (currentWords[0] != "CRYSTAL")
+    if (currentWords[0] == "CRYSTAL")
     {
-	std::cerr << "Currently only converts CRYSTAL calculations" << std::endl;
+	PBC=true;
+    }
+    else if (currentWords[0] == "MOLECULAR")
+    {
+	PBC=false;
+    }
+    else
+    {
+	std::cerr << "Currently only converts CRYSTAL or MOLECULAR calculations" << std::endl;
 	abort();
     }
-    PBC=true;
 
     search(fin,"N. OF ATOMS PER CELL",aline);
     parsewords(aline.c_str(),currentWords);
@@ -101,9 +108,15 @@ void CrystalAsciiParser::parse(const std::string &fname)
     IonSystem.create(NumberOfAtoms);
     GroupName.resize(NumberOfAtoms);
 
-    getCell(fin);
-
-    getKpts(fin);
+    if (PBC)
+    {
+        getCell(fin);
+        getKpts(fin);
+    }
+    else 
+    {
+	NbKpts=1;
+    }
 
     getGeometry(fin);
 
@@ -202,21 +215,41 @@ void CrystalAsciiParser::getGeometry(std::istream & is)
     std::vector<int> atomic_number;
     std::vector<int> idx(NumberOfAtoms);
     Matrix<double> IonPos(NumberOfAtoms,3);
-    search(is,"CARTESIAN COORDINATES - PRIMITIVE CELL",aline);
-    getwords(currentWords,is);
-    getwords(currentWords,is);
-    getwords(currentWords,is);
-    for (int i=0; i<NumberOfAtoms; i++)
+    if (PBC)
     {
-	getwords(currentWords,is);
-	idx[i] = atoi(currentWords[1].c_str());
-	tags.push_back(currentWords[2]);
-	for (int d=0; d<3; d++)
-	{
-	    IonPos[i][d] = atof(currentWords[3+d].c_str())*ang_to_bohr;
-	}
+        search(is,"CARTESIAN COORDINATES - PRIMITIVE CELL",aline);
+        getwords(currentWords,is);
+        getwords(currentWords,is);
+        getwords(currentWords,is);
+        for (int i=0; i<NumberOfAtoms; i++)
+        {
+            getwords(currentWords,is);
+            idx[i] = atoi(currentWords[1].c_str());
+            tags.push_back(currentWords[2]);
+            for (int d=0; d<3; d++)
+            {
+                IonPos[i][d] = atof(currentWords[3+d].c_str())*ang_to_bohr;
+            }
 
+        }
     }
+    else
+    {
+	search(is,"ATOMS IN THE ASYMMETRIC UNIT",aline);
+	getwords(currentWords,is);
+	getwords(currentWords,is);
+	for(int i=0; i<NumberOfAtoms; i++)
+	{
+	    getwords(currentWords,is);
+	    idx[i] = atoi(currentWords[2].c_str());
+	    tags.push_back(currentWords[3].c_str());
+	    for (int d=0; d<3; d++)
+	    {
+		IonPos[i][d] = atof(currentWords[4+d].c_str())*ang_to_bohr;
+	    }
+	}
+    }
+
     for (int i=0; i<NumberOfAtoms; i++)
     {
 	AtomIndexmap.insert(std::pair<int,int>(i,idx[i]));
@@ -239,6 +272,10 @@ void CrystalAsciiParser::getGeometry(std::istream & is)
 	    }
 	}
     }
+    else
+    {
+	ECP=false;
+    }
 
     SpeciesSet & species(IonSystem.getSpeciesSet());
     for (int i=0; i<NumberOfAtoms; i++)
@@ -252,6 +289,36 @@ void CrystalAsciiParser::getGeometry(std::istream & is)
 	IonSystem.GroupID[i] = speciesID;
 	species(AtomicNumberIndex,speciesID)=convAtNum.at(AtomIndexmap.at(i)).atomicNum;
 	species(IonChargeIndex,speciesID)=convAtNum.at(AtomIndexmap.at(i)).zeff;
+    }
+}
+
+void CrystalAsciiParser::scaleBasis()
+{
+    for (int i=0; i < shID.size(); i++)
+    {
+	int count = 0; 
+	for (int j = 0; j < shID[i].size()-1; j++)
+	{
+	    int l = str_to_l.at(shID[i][j]);
+	    int nfunc = ncoeffpershell[i][j];
+	    double norm = 0.0;
+	    for (int a = 0; a < nfunc; a++)
+	    {
+		for (int b = 0; b < nfunc; b++)
+		{
+		    double tmp = 2.0*std::sqrt(expo[i][count+a]*expo[i][count+b]);
+		    tmp /= expo[i][count+a]+expo[i][count+b];
+		    tmp = std::pow(tmp,l+1.5);
+		    norm += coef[i][count+a]*coef[i][count+b]*tmp;
+		}
+	    }
+	    norm = 1.0/std::sqrt(norm);
+	    for (int a = 0; a < nfunc; a++)
+	    {
+		coef[i][count+a] *= norm;
+	    }
+	    count += nfunc;
+	}
     }
 }
 
@@ -287,6 +354,13 @@ void CrystalAsciiParser::getGaussianCenters(std::istream& is)
     gsMap[std::string("D")]=4;
     gsMap[std::string("F")]=5;
     gsMap[std::string("G")]=6;
+
+    str_to_l.insert(std::pair<std::string,int>("S",0));
+    str_to_l.insert(std::pair<std::string,int>("P",1));
+    str_to_l.insert(std::pair<std::string,int>("D",2));
+    str_to_l.insert(std::pair<std::string,int>("F",3));
+    str_to_l.insert(std::pair<std::string,int>("G",4));
+
 
     search(is,"LOCAL ATOMIC FUNCTIONS BASIS SET",aline);
     getwords(currentWords,is); 
@@ -326,7 +400,8 @@ void CrystalAsciiParser::getGaussianCenters(std::istream& is)
 		getwords(currentWords,is);
 		if((currentWords.size() == 5) 
 		  || (currentWords[0] == "INFORMATION")
-                  || (currentWords[0] == "*******************************************************************************"))
+                  || (currentWords[0] == "*******************************************************************************")
+		  || (currentWords[0] == "WARNING"))
 		{
 		    is.seekg(pivot);
 		    break;
@@ -462,6 +537,8 @@ void CrystalAsciiParser::getGaussianCenters(std::istream& is)
 	}
     }
     gBound[NumberOfAtoms] = gtot;
+
+    scaleBasis();
 
 }
 
@@ -795,16 +872,19 @@ void CrystalAsciiParser::dumpHDF5()
     hout.write(ids,"species_ids");
     hout.pop();
 
-    hout.push("Cell",true);
-    Matrix<double> cell(3,3);
-    for (int d = 0; d<3; d++)
+    if (PBC)
     {
-	cell[0][d] = X[d];
-	cell[1][d] = Y[d];
-	cell[2][d] = Z[d];
+        hout.push("Cell",true);
+        Matrix<double> cell(3,3);
+        for (int d = 0; d<3; d++)
+        {
+            cell[0][d] = X[d];
+            cell[1][d] = Y[d];
+            cell[2][d] = Z[d];
+        }
+        hout.write(cell,"LatticeVectors");
+        hout.pop();
     }
-    hout.write(cell,"LatticeVectors");
-    hout.pop();
 
     hout.push("parameters",true);
     hout.write(ECP,"ECP");
@@ -825,12 +905,6 @@ void CrystalAsciiParser::dumpHDF5()
     hout.write(NbElements,"NbElements");
     str = "LCAOBSet";
     hout.write(str,"name");
-    std::map<std::string,int> str_to_l;
-    str_to_l.insert(std::pair<std::string,int>("S",0));
-    str_to_l.insert(std::pair<std::string,int>("P",1));
-    str_to_l.insert(std::pair<std::string,int>("D",2));
-    str_to_l.insert(std::pair<std::string,int>("F",3));
-    str_to_l.insert(std::pair<std::string,int>("G",4));
 
     for (int i=0; i<shID.size(); i++)
     {
@@ -850,7 +924,7 @@ void CrystalAsciiParser::dumpHDF5()
 	hout.write(grid_ri,"grid_ri");
 	str = "log";
 	hout.write(str,"grid_type");
-	str = "input";
+	str = "name";
 	hout.write(str,"name");
 	str = "no";
 	hout.write(str,"normalized");
@@ -862,7 +936,12 @@ void CrystalAsciiParser::dumpHDF5()
 		str=it->first;
 	    }
 	}
-	hout.write(str,"elementType");
+	std::string element = str;
+	if (element.size() == 2)
+	{
+	    element[1] = std::tolower(element[1]);
+	}
+	hout.write(element,"elementType");
 
 	int count = 0;
 	for (int j = 0; j < NbBasisGroups; j++)
@@ -887,7 +966,7 @@ void CrystalAsciiParser::dumpHDF5()
 		count++;
 	    }
 	    hout.pop(); //end radfunctions
-	    str = "C"+std::to_string(j)+std::to_string(l);
+	    str = element+std::to_string(j)+std::to_string(l);
 	    hout.write(str,"rid");
 	    str = "Gaussian";
 	    hout.write(str,"type");
@@ -905,7 +984,10 @@ void CrystalAsciiParser::dumpHDF5()
     {
 	str = "KPTS_"+std::to_string(k);
 	hout.push(str,true);
-	hout.write(Kpoints_Coord[k],"Coord");
+	if (PBC)
+	{
+	    hout.write(Kpoints_Coord[k],"Coord");
+	}
 	if (IsComplex)
 	{
 	    Matrix<double> real(SizeOfBasisSet,SizeOfBasisSet);
@@ -945,13 +1027,27 @@ void CrystalAsciiParser::dumpHDF5()
 		}
 	    }
 	    hout.write(real,"eigenset_0");
+	    if (!SpinRestricted)
+	    {
+		for (int i=0; i < SizeOfBasisSet; i++)
+		{
+		    for (int j = 0; j < SizeOfBasisSet; j++)
+		    {
+			real[i][j] = real_kmos[k+NbKpts][i][j];
+		    }
+		}
+		hout.write(real,"eigenset_1");
+	    }
 	}
-	hout.write(eigvals[k],"eigenval_0");
-	if (!SpinRestricted)
+	if (PBC)
 	{
-	    hout.write(eigvals[k+NbKpts],"eigenval_1");
+	    hout.write(eigvals[k],"eigenval_0");
+	    if (!SpinRestricted)
+	    {
+	        hout.write(eigvals[k+NbKpts],"eigenval_1");
+	    }
+	    hout.pop();
 	}
-	hout.pop();
     }
 
     hout.close();

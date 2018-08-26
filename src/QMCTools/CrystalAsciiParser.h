@@ -49,6 +49,7 @@ private:
 
     void getKMO(std::istream & is, std::vector< std::vector< double > > & Mat);
     void getKMO(std::istream & is, std::vector< std::vector< std::complex<double> > > & CMat);
+    void scaleBasis();
     void dumpHDF5();
     std::string version;
     int NumberOfSpecies;
@@ -64,6 +65,7 @@ private:
     std::vector< std::vector< std::vector< double> > > real_kmos;
     std::vector< std::vector< std::vector< std::complex<double> > > > complex_kmos;
     std::vector< std::vector< double > > eigvals;
+    std::map<std::string,int> str_to_l;
 };
 
 #endif
