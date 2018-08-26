@@ -376,10 +376,53 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM, VAV& SPOMem)
   {
     const size_t m=psiM.cols();
+    //cache blocking size 2KB
+    const int blocksize = 2048/sizeof(ST);
+    const int numblock = (myV.size()+blocksize-1)/blocksize;
+    // setup consts
+    const ST* restrict kx=myKcart.data(0);
+    const ST* restrict ky=myKcart.data(1);
+    const ST* restrict kz=myKcart.data(2);
+
+    #pragma omp parallel
     for(int iat=0; iat<VP.getTotalNum(); ++iat)
     {
-      Vector<TT> psi(psiM[iat],m);
-      evaluate_v(VP,iat,psi);
+      const PointType& r=VP.activeR(iat);
+      const ST x=r[0], y=r[1], z=r[2];
+      PointType ru(PrimLattice.toUnit_floor(r));
+
+      #pragma omp for nowait
+      for (size_t iblock=0; iblock<numblock; iblock++)
+      {
+        const int first = iblock*blocksize;
+        const int last  = std::min((iblock+1)*blocksize,myV.size());
+        SplineInst->evaluate(ru,myV,first,last);
+
+        TT* restrict psi_s=psiM[iat]+first_spo;
+        #pragma omp simd
+        for (size_t j=first/2; j<std::min(nComplexBands,last/2); j++)
+        {
+          ST s, c;
+          const size_t jr=j<<1;
+          const size_t ji=jr+1;
+          const ST val_r=myV[jr];
+          const ST val_i=myV[ji];
+          sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
+          psi_s[jr] = val_r*c-val_i*s;
+          psi_s[ji] = val_i*c+val_r*s;
+        }
+
+        psi_s += nComplexBands;
+        #pragma omp simd
+        for (size_t j=std::max(nComplexBands,first/2); j<last/2; j++)
+        {
+          ST s, c;
+          const ST val_r=myV[2*j  ];
+          const ST val_i=myV[2*j+1];
+          sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
+          psi_s[j] = val_r*c-val_i*s;
+        }
+      }
     }
   }
 
