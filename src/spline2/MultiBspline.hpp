@@ -205,48 +205,48 @@ namespace qmcplusplus
       template<typename PT, typename VT>
         void evaluate(const PT& r, VT& psi) const
         {
-          evaluate_v_impl(r[0],r[1],r[2],psi.data());
+          evaluate_v_impl(r[0],r[1],r[2],psi.data(),0,psi.size());
         }
 
       template<typename PT, typename VT>
-        void evaluate(const PT& r, VT& psi, int first) const
+        void evaluate(const PT& r, VT& psi, int first, int last) const
         {
-          evaluate_v_impl(r[0],r[1],r[2],psi.data()+first);
+          evaluate_v_impl(r[0],r[1],r[2],psi.data()+first,first,last);
         }
 
       template<typename PT, typename VT, typename GT, typename LT>
         inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap) const
         {
-          evaluate_vgl_impl(r[0],r[1],r[2],psi.data(),grad.data(),lap.data(),psi.size());
+          evaluate_vgl_impl(r[0],r[1],r[2],psi.data(),grad.data(),lap.data(),psi.size(),0,psi.size());
         }
 
       template<typename PT, typename VT, typename GT, typename LT>
-        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap, int first) const
+        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap, int first, int last) const
         {
-          evaluate_vgl_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,lap.data()+first,psi.size());
+          evaluate_vgl_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,lap.data()+first,psi.size(),first,last);
         }
 
       template<typename PT, typename VT, typename GT, typename HT>
         inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess) const
         {
-          evaluate_vgh_impl(r[0],r[1],r[2],psi.data(),grad.data(),hess.data(),psi.size());
+          evaluate_vgh_impl(r[0],r[1],r[2],psi.data(),grad.data(),hess.data(),psi.size(),0,psi.size());
         }
 
       template<typename PT, typename VT, typename GT, typename HT>
-        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess, int first) const
+        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess, int first, int last) const
         {
-          evaluate_vgh_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,hess.data()+first,psi.size());
+          evaluate_vgh_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,hess.data()+first,psi.size(),first,last);
         }
 
       /** compute values vals[first,last)
        *
        * The base address for vals, grads and lapl are set by the callers, e.g., evaluate_vgh(r,psi,grad,hess,ip).
        */
-      void evaluate_v_impl(T x, T y, T z, T* restrict vals) const;
+      void evaluate_v_impl(T x, T y, T z, T* restrict vals, int first, int last) const;
 
-      void evaluate_vgl_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict lapl, size_t out_offset) const;
+      void evaluate_vgl_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict lapl, size_t out_offset, int first, int last) const;
 
-      void evaluate_vgh_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict hess, size_t out_offset) const;
+      void evaluate_vgh_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict hess, size_t out_offset, int first, int last) const;
     };
 
   template<typename T>
