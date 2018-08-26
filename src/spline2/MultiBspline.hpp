@@ -203,37 +203,37 @@ namespace qmcplusplus
       */
 
       template<typename PT, typename VT>
-        void evaluate(const PT& r, VT& psi)
+        void evaluate(const PT& r, VT& psi) const
         {
           evaluate_v_impl(r[0],r[1],r[2],psi.data());
         }
 
       template<typename PT, typename VT>
-        void evaluate(const PT& r, VT& psi, int first)
+        void evaluate(const PT& r, VT& psi, int first) const
         {
           evaluate_v_impl(r[0],r[1],r[2],psi.data()+first);
         }
 
       template<typename PT, typename VT, typename GT, typename LT>
-        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap)
+        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap) const
         {
           evaluate_vgl_impl(r[0],r[1],r[2],psi.data(),grad.data(),lap.data(),psi.size());
         }
 
       template<typename PT, typename VT, typename GT, typename LT>
-        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap, int first)
+        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap, int first) const
         {
           evaluate_vgl_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,lap.data()+first,psi.size());
         }
 
       template<typename PT, typename VT, typename GT, typename HT>
-        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess)
+        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess) const
         {
           evaluate_vgh_impl(r[0],r[1],r[2],psi.data(),grad.data(),hess.data(),psi.size());
         }
 
       template<typename PT, typename VT, typename GT, typename HT>
-        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess, int first)
+        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess, int first) const
         {
           evaluate_vgh_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,hess.data()+first,psi.size());
         }
@@ -310,13 +310,13 @@ namespace qmcplusplus
       }
 
       template<typename PT, typename VT>
-        inline void evaluate(const PT& r, VT& psi)
+        inline void evaluate(const PT& r, VT& psi) const
         {
           evaluate_v_impl(r,psi.data());
         }
 
       template<typename PT, typename VT, typename GT, typename LT>
-        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap)
+        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap) const
         {
           evaluate_vgl_impl(r,psi.data(),grad.data(),lap.data());
         }
