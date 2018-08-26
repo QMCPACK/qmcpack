@@ -58,13 +58,12 @@ namespace qmcplusplus
 
       const int num_splines=last-first;
 
-      ASSUME_ALIGNED(vals);
-      T* restrict gx=grads;              ASSUME_ALIGNED(gx);
-      T* restrict gy=grads+  out_offset; ASSUME_ALIGNED(gy);
-      T* restrict gz=grads+2*out_offset; ASSUME_ALIGNED(gz);
-      T* restrict lx=lapl;               ASSUME_ALIGNED(lx);
-      T* restrict ly=lapl+  out_offset;  ASSUME_ALIGNED(ly);
-      T* restrict lz=lapl+2*out_offset;  ASSUME_ALIGNED(lz);
+      T* restrict gx=grads;
+      T* restrict gy=grads+  out_offset;
+      T* restrict gz=grads+2*out_offset;
+      T* restrict lx=lapl;
+      T* restrict ly=lapl+  out_offset;
+      T* restrict lz=lapl+2*out_offset;
 
       std::fill(vals,vals+num_splines,T());
       std::fill(gx,gx+num_splines,T());
@@ -84,14 +83,14 @@ namespace qmcplusplus
           const T pre01 =   a[i]* db[j];
           const T pre02 =   a[i]*d2b[j];
 
-          const T* restrict coefs = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs) + first; ASSUME_ALIGNED(coefs);
-          const T* restrict coefszs  = coefs+zs;       ASSUME_ALIGNED(coefszs);
-          const T* restrict coefs2zs = coefs+2*zs;     ASSUME_ALIGNED(coefs2zs);
-          const T* restrict coefs3zs = coefs+3*zs;     ASSUME_ALIGNED(coefs3zs);
+          const T* restrict coefs = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs) + first;
+          const T* restrict coefszs  = coefs+zs;
+          const T* restrict coefs2zs = coefs+2*zs;
+          const T* restrict coefs3zs = coefs+3*zs;
 
-          #pragma noprefetch
-          #pragma omp simd
-          for (int n=0; n<num_splines; n++) {
+          #pragma omp simd aligned(coefs,coefszs,coefs2zs,coefs3zs,gx,gy,gz,lx,ly,lz,vals)
+          for (int n=0; n<num_splines; n++)
+          {
             const T coefsv = coefs[n];
             const T coefsvzs = coefszs[n];
             const T coefsv2zs = coefs2zs[n];
@@ -118,7 +117,7 @@ namespace qmcplusplus
       const T dyInv2 = dyInv*dyInv;
       const T dzInv2 = dzInv*dzInv;
 
-      #pragma omp simd
+      #pragma omp simd aligned(gx,gy,gz,lx)
       for (int n=0; n<num_splines; n++) 
       {
         gx[n] *= dxInv;
@@ -155,17 +154,16 @@ namespace qmcplusplus
 
       const int num_splines=last-first;
 
-      ASSUME_ALIGNED(vals);
-      T* restrict gx=grads             ; ASSUME_ALIGNED(gx);
-      T* restrict gy=grads  +out_offset; ASSUME_ALIGNED(gy);
-      T* restrict gz=grads+2*out_offset; ASSUME_ALIGNED(gz);
+      T* restrict gx=grads;
+      T* restrict gy=grads  +out_offset;
+      T* restrict gz=grads+2*out_offset;
 
-      T* restrict hxx=hess             ; ASSUME_ALIGNED(hxx);
-      T* restrict hxy=hess+  out_offset; ASSUME_ALIGNED(hxy);
-      T* restrict hxz=hess+2*out_offset; ASSUME_ALIGNED(hxz);
-      T* restrict hyy=hess+3*out_offset; ASSUME_ALIGNED(hyy);
-      T* restrict hyz=hess+4*out_offset; ASSUME_ALIGNED(hyz);
-      T* restrict hzz=hess+5*out_offset; ASSUME_ALIGNED(hzz);
+      T* restrict hxx=hess;
+      T* restrict hxy=hess+  out_offset;
+      T* restrict hxz=hess+2*out_offset;
+      T* restrict hyy=hess+3*out_offset;
+      T* restrict hyz=hess+4*out_offset;
+      T* restrict hzz=hess+5*out_offset;
 
       std::fill(vals,vals+num_splines,T());
       std::fill(gx,gx+num_splines,T());
@@ -181,10 +179,10 @@ namespace qmcplusplus
       for (int i=0; i<4; i++)
         for (int j=0; j<4; j++)
         {
-          const T* restrict coefs = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs) + first; ASSUME_ALIGNED(coefs);
-          const T* restrict coefszs  = coefs+zs;       ASSUME_ALIGNED(coefszs);
-          const T* restrict coefs2zs = coefs+2*zs;     ASSUME_ALIGNED(coefs2zs);
-          const T* restrict coefs3zs = coefs+3*zs;     ASSUME_ALIGNED(coefs3zs);
+          const T* restrict coefs = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs) + first;
+          const T* restrict coefszs  = coefs+zs;
+          const T* restrict coefs2zs = coefs+2*zs;
+          const T* restrict coefs3zs = coefs+3*zs;
 
           const T pre20 = d2a[i]*  b[j];
           const T pre10 =  da[i]*  b[j];
@@ -193,9 +191,9 @@ namespace qmcplusplus
           const T pre01 =   a[i]* db[j];
           const T pre02 =   a[i]*d2b[j];
 
-          #pragma omp simd
-          for (int n=0; n<num_splines; n++) {
-
+          #pragma omp simd aligned(coefs,coefszs,coefs2zs,coefs3zs,gx,gy,gz,hxx,hxy,hxz,hyy,hyz,hzz,vals)
+          for (int n=0; n<num_splines; n++)
+          {
             T coefsv = coefs[n];
             T coefsvzs = coefszs[n];
             T coefsv2zs = coefs2zs[n];
@@ -229,7 +227,7 @@ namespace qmcplusplus
       const T dxz=dxInv*dzInv;
       const T dyz=dyInv*dzInv;
 
-      #pragma omp simd
+      #pragma omp simd aligned(gx,gy,gz,hxx,hxy,hxz,hyy,hyz,hzz)
       for (int n=0; n<num_splines; n++)
       {
         gx[n]*=dxInv; 

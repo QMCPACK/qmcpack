@@ -47,16 +47,19 @@ namespace qmcplusplus
 
       CONSTEXPR T zero(0);
       const int num_splines=last-first;
-      ASSUME_ALIGNED(vals);
       std::fill(vals,vals+num_splines,zero);
 
       for (int i=0; i<4; i++)
-        for (int j=0; j<4; j++){
+        for (int j=0; j<4; j++)
+        {
           const T pre00 =  a[i]*b[j];
-          const T* restrict coefs = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs) + first; ASSUME_ALIGNED(coefs);
-//#pragma omp simd
+          const T* restrict coefs = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs) + first;
+          const T* restrict coefszs  = coefs+zs;
+          const T* restrict coefs2zs = coefs+2*zs;
+          const T* restrict coefs3zs = coefs+3*zs;
+          #pragma omp simd aligned(coefs,coefszs,coefs2zs,coefs3zs,vals)
           for(int n=0; n<num_splines; n++)
-            vals[n] += pre00*(c[0]*coefs[n] + c[1]*coefs[n+zs] + c[2]*coefs[n+2*zs] + c[3]*coefs[n+3*zs]);
+            vals[n] += pre00*(c[0]*coefs[n] + c[1]*coefszs[n] + c[2]*coefs2zs[n] + c[3]*coefs3zs[n]);
         }
     }
 #else
