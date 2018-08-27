@@ -332,15 +332,14 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
 
-    //cache blocking size 2KB
-    const int blocksize = 2048/sizeof(ST);
-    const int numblock = (myV.size()+blocksize-1)/blocksize;
-
-    #pragma omp parallel for
-    for (size_t iblock=0; iblock<numblock; iblock++)
+    #pragma omp parallel
     {
-      const int first = iblock*blocksize;
-      const int last  = std::min((iblock+1)*blocksize,myV.size());
+      const int tid          = omp_get_thread_num();
+      const int nt           = omp_get_num_threads();
+      const size_t blocksize = getAlignedSize<ST>((myV.size()+nt-1)/nt);
+      const int first        = tid*blocksize;
+      const int last         = std::min((tid+1)*blocksize,myV.size());
+
       SplineInst->evaluate(ru,myV,first,last);
       assign_v(r,myV,psi,first/2,last/2);
     }
@@ -349,23 +348,20 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   template<typename VM, typename VAV>
   inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM, VAV& SPOMem)
   {
-    const size_t m=psiM.cols();
-    //cache blocking size 2KB
-    const int blocksize = 2048/sizeof(ST);
-    const int numblock = (myV.size()+blocksize-1)/blocksize;
-
     #pragma omp parallel
-    for(int iat=0; iat<VP.getTotalNum(); ++iat)
     {
-      const PointType& r=VP.activeR(iat);
-      PointType ru(PrimLattice.toUnit_floor(r));
-      Vector<TT> psi(psiM[iat],m);
+      const int tid          = omp_get_thread_num();
+      const int nt           = omp_get_num_threads();
+      const size_t blocksize = getAlignedSize<ST>((myV.size()+nt-1)/nt);
+      const int first        = tid*blocksize;
+      const int last         = std::min((tid+1)*blocksize,myV.size());
 
-      #pragma omp for nowait
-      for (size_t iblock=0; iblock<numblock; iblock++)
+      for(int iat=0; iat<VP.getTotalNum(); ++iat)
       {
-        const int first = iblock*blocksize;
-        const int last  = std::min((iblock+1)*blocksize,myV.size());
+        const PointType& r=VP.activeR(iat);
+        PointType ru(PrimLattice.toUnit_floor(r));
+        Vector<TT> psi(psiM[iat],psiM.cols());
+
         SplineInst->evaluate(ru,myV,first,last);
         assign_v(r,myV,psi,first/2,last/2);
       }
@@ -643,15 +639,14 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
 
-    //cache blocking size 2KB
-    const int blocksize = 2048/sizeof(ST);
-    const int numblock = (myV.size()+blocksize-1)/blocksize;
-
-    #pragma omp parallel for
-    for (size_t iblock=0; iblock<numblock; iblock++)
+    #pragma omp parallel
     {
-      const int first = iblock*blocksize;
-      const int last  = std::min((iblock+1)*blocksize,myV.size());
+      const int tid          = omp_get_thread_num();
+      const int nt           = omp_get_num_threads();
+      const size_t blocksize = getAlignedSize<ST>((myV.size()+nt-1)/nt);
+      const int first        = tid*blocksize;
+      const int last         = std::min((tid+1)*blocksize,myV.size());
+
       SplineInst->evaluate_vgh(ru,myV,myG,myH,first,last);
       assign_vgl(r,psi,dpsi,d2psi,first/2,last/2);
     }
