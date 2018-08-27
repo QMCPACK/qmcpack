@@ -43,13 +43,13 @@ from debug import ci,ls,gs
 
 try:
     from scipy.special import erfc
-except ImportError:
+except:
     erfc = unavailable('scipy.special','erfc')
 #end try
 try:
     import matplotlib.pyplot as plt
     from matplotlib.pyplot import plot,subplot,title,xlabel,ylabel
-except (ImportError,RuntimeError):
+except:
     plot,subplot,title,xlabel,ylabel,plt = unavailable('matplotlib.pyplot','plot','subplot','title','xlabel','ylabel','plt')
 #end try
 
