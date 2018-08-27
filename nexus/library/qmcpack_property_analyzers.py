@@ -43,7 +43,7 @@ from developer import unavailable
 from debug import *
 try:
     from matplotlib.pyplot import plot,show,figure,xlabel,ylabel,title,legend
-except (ImportError,RuntimeError):
+except:
     plot,show,figure,xlabel,ylabel,title,legend = unavailable('matplotlib.pyplot','plot','show','figure','xlabel','ylabel','title','legend')
 #end try
 
