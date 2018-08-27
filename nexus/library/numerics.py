@@ -96,7 +96,7 @@ try:
     from scipy.optimize import fmin
     from scipy.spatial import KDTree,Delaunay,Voronoi
     scipy_unavailable = False
-except ImportError:
+except:
     betainc = unavailable('scipy.special' ,'betainc')
     fmin    = unavailable('scipy.optimize','fmin')
     KDTree,Delaunay,Voronoi  = unavailable('scipy.spatial' ,'KDTree','Delaunay','Voronoi')
