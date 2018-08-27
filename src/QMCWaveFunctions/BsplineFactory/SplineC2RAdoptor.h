@@ -290,70 +290,40 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV>
-  inline void assign_v(const PointType& r, const vContainer_type& myV, VV& psi)
+  inline void assign_v(const PointType& r, const vContainer_type& myV, VV& psi, int first = 0, int last = -1)
   {
-    const size_t N=kPoints.size();
+    // protect last
+    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+
     const ST x=r[0], y=r[1], z=r[2];
     const ST* restrict kx=myKcart.data(0);
     const ST* restrict ky=myKcart.data(1);
     const ST* restrict kz=myKcart.data(2);
-#if defined(USE_VECTOR_ML)
-    {//reuse myH
-      ST* restrict KdotR=myH.data(0);
-      ST* restrict CosV=myH.data(1);
-      ST* restrict SinV=myH.data(2);
-      #pragma omp simd
-      for(size_t j=0; j<N; ++j)
-        KdotR[j]=-(x*kx[j]+y*ky[j]+z*kz[j]);
 
-      eval_e2iphi(N,KdotR,CosV,SinV);
-
-      #pragma omp simd
-      for (size_t j=0,psiIndex=first_spo; j<nComplexBands; j++, psiIndex+=2)
-      {
-        const ST val_r=myV[2*j  ];
-        const ST val_i=myV[2*j+1];
-        psi[psiIndex  ] = val_r*CosV[j]-val_i*SinV[j];
-        psi[psiIndex+1] = val_i*CosV[j]+val_r*SinV[j];
-      }
-      #pragma omp simd
-      for (size_t j=nComplexBands,psiIndex=first_spo+2*nComplexBands; j<N; j++,psiIndex++)
-      {
-        const ST val_r=myV[2*j  ];
-        const ST val_i=myV[2*j+1];
-        psi[psiIndex  ] = val_r*CosV[j]-val_i*SinV[j];
-      }
-    }
-#else
+    TT* restrict psi_s=psi.data()+first_spo;
+    #pragma omp simd
+    for (size_t j=first; j<std::min(nComplexBands,last); j++)
     {
-      TT* restrict psi_s=psi.data()+first_spo;
-      #pragma omp simd
-      for (size_t j=0; j<nComplexBands; j++)
-      {
-        ST s, c;
-        const size_t jr=j<<1;
-        const size_t ji=jr+1;
-        const ST val_r=myV[jr];
-        const ST val_i=myV[ji];
-        sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
-        psi_s[jr] = val_r*c-val_i*s;
-        psi_s[ji] = val_i*c+val_r*s;
-      }
+      ST s, c;
+      const size_t jr=j<<1;
+      const size_t ji=jr+1;
+      const ST val_r=myV[jr];
+      const ST val_i=myV[ji];
+      sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
+      psi_s[jr] = val_r*c-val_i*s;
+      psi_s[ji] = val_i*c+val_r*s;
     }
 
+    psi_s += nComplexBands;
+    #pragma omp simd
+    for (size_t j=std::max(nComplexBands,first); j<last; j++)
     {
-      TT* restrict psi_s=psi.data()+first_spo+nComplexBands;
-      #pragma omp simd
-      for (size_t j=nComplexBands; j<N; j++)
-      {
-        ST s, c;
-        const ST val_r=myV[2*j  ];
-        const ST val_i=myV[2*j+1];
-        sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
-        psi_s[j] = val_r*c-val_i*s;
-      }
+      ST s, c;
+      const ST val_r=myV[2*j  ];
+      const ST val_i=myV[2*j+1];
+      sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
+      psi_s[j] = val_r*c-val_i*s;
     }
-#endif
   }
 
   template<typename VV>
@@ -368,8 +338,12 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 
     #pragma omp parallel for
     for (size_t iblock=0; iblock<numblock; iblock++)
-      SplineInst->evaluate(ru,myV,iblock*blocksize,std::min((iblock+1)*blocksize,myV.size()));
-    assign_v(r,myV,psi);
+    {
+      const int first = iblock*blocksize;
+      const int last  = std::min((iblock+1)*blocksize,myV.size());
+      SplineInst->evaluate(ru,myV,first,last);
+      assign_v(r,myV,psi,first/2,last/2);
+    }
   }
 
   template<typename VM, typename VAV>
@@ -379,17 +353,13 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     //cache blocking size 2KB
     const int blocksize = 2048/sizeof(ST);
     const int numblock = (myV.size()+blocksize-1)/blocksize;
-    // setup consts
-    const ST* restrict kx=myKcart.data(0);
-    const ST* restrict ky=myKcart.data(1);
-    const ST* restrict kz=myKcart.data(2);
 
     #pragma omp parallel
     for(int iat=0; iat<VP.getTotalNum(); ++iat)
     {
       const PointType& r=VP.activeR(iat);
-      const ST x=r[0], y=r[1], z=r[2];
       PointType ru(PrimLattice.toUnit_floor(r));
+      Vector<TT> psi(psiM[iat],m);
 
       #pragma omp for nowait
       for (size_t iblock=0; iblock<numblock; iblock++)
@@ -397,31 +367,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
         const int first = iblock*blocksize;
         const int last  = std::min((iblock+1)*blocksize,myV.size());
         SplineInst->evaluate(ru,myV,first,last);
-
-        TT* restrict psi_s=psiM[iat]+first_spo;
-        #pragma omp simd
-        for (size_t j=first/2; j<std::min(nComplexBands,last/2); j++)
-        {
-          ST s, c;
-          const size_t jr=j<<1;
-          const size_t ji=jr+1;
-          const ST val_r=myV[jr];
-          const ST val_i=myV[ji];
-          sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
-          psi_s[jr] = val_r*c-val_i*s;
-          psi_s[ji] = val_i*c+val_r*s;
-        }
-
-        psi_s += nComplexBands;
-        #pragma omp simd
-        for (size_t j=std::max(nComplexBands,first/2); j<last/2; j++)
-        {
-          ST s, c;
-          const ST val_r=myV[2*j  ];
-          const ST val_i=myV[2*j+1];
-          sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
-          psi_s[j] = val_r*c-val_i*s;
-        }
+        assign_v(r,myV,psi,first/2,last/2);
       }
     }
   }
@@ -431,7 +377,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   /** assign_vgl
    */
   template<typename VV, typename GV>
-  inline void assign_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
+  inline void assign_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi, int first = 0, int last = -1)
   {
     CONSTEXPR ST zero(0);
     CONSTEXPR ST two(2);
@@ -455,9 +401,10 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict h12=myH.data(4); ASSUME_ALIGNED(h12);
     const ST* restrict h22=myH.data(5); ASSUME_ALIGNED(h22);
 
-    const size_t N=kPoints.size();
-    const size_t nsplines=myL.size();
+    // protect last
+    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
 #if defined(PRECOMPUTE_L)
+    const size_t nsplines=myL.size();
     for(size_t j=0; j<nsplines; ++j)
     {
       myL[j]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
@@ -465,7 +412,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 #endif
 
     #pragma omp simd
-    for (size_t j=0; j<nComplexBands; j++)
+    for (size_t j=first; j<std::min(nComplexBands,last); j++)
     {
       const size_t jr=j<<1;
       const size_t ji=jr+1;
@@ -524,7 +471,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     }
 
     #pragma omp simd
-    for (size_t j=nComplexBands; j<N; j++)
+    for (size_t j=std::max(nComplexBands,first); j<last; j++)
     {
       const size_t jr=j<<1;
       const size_t ji=jr+1;
@@ -593,7 +540,6 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict g2=myG.data(2); ASSUME_ALIGNED(g2);
 
     const size_t N=kPoints.size();
-    const size_t nsplines=myL.size();
 
     #pragma omp simd
     for (size_t j=0; j<nComplexBands; j++)
@@ -646,7 +592,6 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       dpsi[psiIndex+1][2]=c*gZ_i+s*gZ_r;
     }
 
-    const size_t nComputed=2*nComplexBands;
     #pragma omp simd
     for (size_t j=nComplexBands; j<N; j++)
     {
@@ -704,8 +649,12 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 
     #pragma omp parallel for
     for (size_t iblock=0; iblock<numblock; iblock++)
-      SplineInst->evaluate_vgh(ru,myV,myG,myH,iblock*blocksize,std::min((iblock+1)*blocksize,myV.size()));
-    assign_vgl(r,psi,dpsi,d2psi);
+    {
+      const int first = iblock*blocksize;
+      const int last  = std::min((iblock+1)*blocksize,myV.size());
+      SplineInst->evaluate_vgh(ru,myV,myG,myH,first,last);
+      assign_vgl(r,psi,dpsi,d2psi,first/2,last/2);
+    }
   }
 
   /** identical to assign_vgl but the output container is SoA container
@@ -735,8 +684,8 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict h11=myH.data(3); ASSUME_ALIGNED(h11);
     const ST* restrict h12=myH.data(4); ASSUME_ALIGNED(h12);
     const ST* restrict h22=myH.data(5); ASSUME_ALIGNED(h22);
-    const size_t nsplines=myL.size();
 #if defined(PRECOMPUTE_L)
+    const size_t nsplines=myL.size();
     #pragma omp simd
     for(size_t j=0; j<nsplines; ++j)
     {
