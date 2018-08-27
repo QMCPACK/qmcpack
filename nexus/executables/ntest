@@ -1822,7 +1822,7 @@ def user_examples(label):
         command = './'+script+' --generate_only --sleep=0.01'
         out,err,rc = execute(command)
         if rc>0:
-            nfail('example script failed to run\nattempted command: {0}\nlocation: {1}'.format(command,path))
+            nfail('example script failed to run\nattempted command: {0}\nlocation: {1}\nscript out:\n{2}\nscript err:\n{3}'.format(command,path,'  '+out.replace('\n','\n  '),'  '+err.replace('\n','\n  ')))
         #end if
         os.chdir(cwd)
     #end for
@@ -2066,6 +2066,10 @@ if __name__=='__main__':
                       action='store_true',default=False,
                       help='Compatibility mode for calls from the CTest framework (default=%default).'
                       )
+    parser.add_option('--pythonpath',dest='pythonpath',
+                      default='none',
+                      help='Sets PYTHONPATH environment variable for any scripts executed by ntest.  The default behavior is to use PYTHONPATH as already defined in the host environment.'
+                      )
     parser.add_option('--trip',dest='trip',
                       default='none',
                       help='Cause the "trip"-th assertion statement to fail.  Useful when to ensure that the CMake script is working properly when interfacing with CTest (default=%default).'
@@ -2139,6 +2143,9 @@ if __name__=='__main__':
         #end for
         sys.stdout.write(c[:-1])
         exit()
+    #end if
+    if options.pythonpath!='none':
+        os.environ['PYTHONPATH']=options.pythonpath
     #end if
 
     # run each test and print the test outcome

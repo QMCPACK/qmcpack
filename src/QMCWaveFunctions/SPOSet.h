@@ -46,6 +46,7 @@ class SPOSet: public QMCTraits
 public:
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
+  typedef OrbitalSetTraits<ValueType>::ValueAlignedVector_t ValueAlignedVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
   typedef OrbitalSetTraits<ValueType>::GradMatrix_t  GradMatrix_t;
@@ -190,19 +191,18 @@ public:
   virtual ValueType RATIO(const ParticleSet& P, int iat, const ValueType*
       restrict arow);
 
-  /** evaluate VGL using SoA container for gl
-   *
-   * If newp is true, use particle set data for the proposed move
+  /** evaluate VGL of SPOs using SoA container for gl
    */
   virtual void
-    evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bool newp);
+    evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl);
 
   /** evaluate values for the virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
    * @param psiM single-particle orbitals psiM(i,j) for the i-th particle and the j-th orbital
+   * @param SPOMem scratch space for SPO value evaluation, alignment is required.
    */
   virtual void
-  evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM);
+  evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem);
 
   /** estimate the memory needs for evaluating SPOs of particles in the size of ValueType
    * @param nP, number of particles.
@@ -263,17 +263,6 @@ public:
                                    , const ParticleSet &source, int iat_src
                                    , GradMatrix_t &grad_phi, HessMatrix_t &grad_grad_phi, GradMatrix_t &grad_lapl_phi);
 
-  virtual void evaluateBasis (const ParticleSet &P, int first, int last
-                              , ValueMatrix_t &basis_val,  GradMatrix_t  &basis_grad, ValueMatrix_t &basis_lapl);
-
-  virtual void evaluateForDeriv (const ParticleSet &P, int first, int last
-                                 , ValueMatrix_t &basis_val,  GradMatrix_t  &basis_grad, ValueMatrix_t &basis_lapl);
-
-  virtual inline void setpm(int x) {};
-
-  virtual void copyParamsFromMatrix (const opt_variables_type& active
-                                     , const ValueMatrix_t &mat, std::vector<RealType> &destVec);
-
   virtual PosType get_k(int orb)
   {
     return PosType();
@@ -297,14 +286,6 @@ public:
   virtual void rotate_B(const std::vector<RealType> &rot_mat) { };
 
 #ifdef QMC_CUDA
-
-  /** evaluate the values of this single-particle orbital set
-   * @param P current ParticleSet
-   * @param r is the position of the particle
-   * @param psi values of the SPO
-   */
-  virtual void
-  evaluate (const ParticleSet& P, const PosType& r, std::vector<RealType> &psi);
 
   virtual void initGPU() {  }
 

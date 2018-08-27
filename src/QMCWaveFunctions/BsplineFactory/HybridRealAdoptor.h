@@ -116,13 +116,13 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     }
   }
 
-  template<typename VM>
-  inline void evaluateValues(VirtualParticleSet& VP, VM& psiM)
+  template<typename VM, typename VAV>
+  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM, VAV& SPOMem)
   {
     const size_t m=psiM.cols();
     if(VP.isOnSphere() && HybridBase::is_batched_safe(VP))
     {
-      Matrix<ST,aligned_allocator<ST> > multi_myV((ST*)VP.SPOMem.data(),VP.getTotalNum(),myV.size());
+      Matrix<ST,aligned_allocator<ST> > multi_myV((ST*)SPOMem.data(),VP.getTotalNum(),myV.size());
       std::vector<int> bc_signs(VP.getTotalNum());
       const RealType smooth_factor=HybridBase::evaluateValuesR2R(VP, PrimLattice, HalfG, multi_myV, bc_signs);
       const RealType cone(1);

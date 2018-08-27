@@ -136,15 +136,6 @@ namespace qmcplusplus
                             const ParticleSet &source, int iat_src,
                             GradMatrix_t &dphi, HessMatrix_t &ddphi,
                             GradMatrix_t &dlapl_phi);
-    void evaluateBasis(const ParticleSet &P, int first, int last,
-                       ValueMatrix_t &basis_val, GradMatrix_t &basis_grad,
-                       ValueMatrix_t &basis_lapl);
-    void evaluateForDeriv(const ParticleSet &P, int first, int last,
-                          ValueMatrix_t &basis_val, GradMatrix_t &basis_grad,
-                          ValueMatrix_t &basis_lapl);
-    void copyParamsFromMatrix(const opt_variables_type& active,
-                              const ValueMatrix_t &mat,
-                              std::vector<RealType> &destVec);
   };
 
 }

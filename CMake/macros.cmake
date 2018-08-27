@@ -116,6 +116,8 @@ FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED ${ARGN} 
                 PROCESSORS ${TOT_PROCS} WORKING_DIRECTORY ${WORKDIR}
                 ENVIRONMENT OMP_NUM_THREADS=${THREADS} )
             SET( ${TEST_ADDED} TRUE PARENT_SCOPE )
+        ELSE()
+            MESSAGE("Disabling test ${TESTNAME} (building without MPI)")
         ENDIF()
     ENDIF()
 ENDFUNCTION()
@@ -201,7 +203,7 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
                             SET( TEST_NAME "${FULL_NAME}-${SERIES}-${SCALAR_CHECK}" )
                         ENDIF()
                         #MESSAGE("Adding scalar check ${TEST_NAME}")
-                        SET(CHECK_CMD ${CMAKE_SOURCE_DIR}/utils/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e 2 ${FLAG} ${VALUE})
+                        SET(CHECK_CMD ${CMAKE_SOURCE_DIR}/tests/scripts/check_scalars.py --ns 3 --series ${SERIES} -p ${PREFIX} -e 2 ${FLAG} ${VALUE})
                         #MESSAGE("check command = ${CHECK_CMD}")
                         ADD_TEST( NAME ${TEST_NAME}
                             COMMAND ${CHECK_CMD}
@@ -235,7 +237,7 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
   set (test_added false)
   RUN_QMC_APP(${full_name} ${base_dir} ${procs} ${threads} test_added ${input_file})
   if ( NOT test_added)
-    message(FATAL_ERROR "test ${full_name} cannot be added")
+    RETURN()
   endif()
 
   # set up command to run check, assume check_script is in the same folder as input
@@ -252,10 +254,12 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
   set(test_name "${full_name}-check") # hard-code for single test
   set(work_dir "${CMAKE_CURRENT_BINARY_DIR}/${full_name}")
   #message(${work_dir})
-  add_test(NAME "${test_name}"
-    COMMAND "${check_cmd}"
+
+  add_test(
+    NAME "${test_name}"
+    COMMAND ${check_cmd} ${ARGN}
     WORKING_DIRECTORY "${work_dir}"
-  )
+    )
 
   # make test depend on the run
   set_property(TEST ${test_name} APPEND PROPERTY DEPENDS ${full_name})

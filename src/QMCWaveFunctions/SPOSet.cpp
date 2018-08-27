@@ -55,12 +55,12 @@ SPOSet::RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
   return ValueType();
 }
 
-void SPOSet::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bool newp)
+void SPOSet::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
 {
   APP_ABORT("SPOSet::evaluateVGL not implemented.");
 }
 
-void SPOSet::evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM)
+void SPOSet::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOmem)
 {
   for(int iat=0; iat<VP.getTotalNum(); ++iat)
   {
@@ -384,27 +384,6 @@ void SPOSet::basic_report(const std::string& pad)
   app_log().flush();
 }
 
-
-void SPOSet::evaluateBasis (const ParticleSet &P, int first, int last,
-                                ValueMatrix_t &basis_val,  GradMatrix_t  &basis_grad,
-                                ValueMatrix_t &basis_lapl)
-{
-  APP_ABORT("Need specialization of SPOSet::evaluateBasis.\n");
-}
-
-void SPOSet::evaluateForDeriv (const ParticleSet &P, int first, int last,
-                                   ValueMatrix_t &basis_val,  GradMatrix_t  &basis_grad,
-                                   ValueMatrix_t &basis_lapl)
-{
-  APP_ABORT("Need specialization of SPOSet::evaluateBasis.\n");
-}
-
-void SPOSet::copyParamsFromMatrix (const opt_variables_type& active,
-                                       const ValueMatrix_t &mat, std::vector<RealType> &destVec)
-{
-  APP_ABORT("Need specialization of SPOSet::copyParamsFromMatrix.");
-}
-
 void SPOSet::evaluateGradSource (const ParticleSet &P
                                      , int first, int last, const ParticleSet &source
                                      , int iat_src, GradMatrix_t &gradphi)
@@ -422,12 +401,6 @@ void SPOSet::evaluateGradSource (const ParticleSet &P, int first, int last,
 }
 
 #ifdef QMC_CUDA
-
-void SPOSet::evaluate(const ParticleSet& P, const PosType& r, std::vector<RealType> &psi)
-{
-  APP_ABORT("Not implemented.\n");
-}
-
 
 void SPOSet::evaluate (std::vector<Walker_t*> &walkers, int iat,
                            gpu::device_vector<CudaValueType*> &phi)

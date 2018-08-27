@@ -93,6 +93,7 @@ def run_test(test_name, c4q_exe, h5diff_exe, conv_inp, gold_file, expect_fail, e
                       print("  pass")
                       return True
                    else:
+                      print("h5diff reported a difference")
                       print("  FAIL")
                       return False
             test_file = gold_file.replace('gold', 'test')

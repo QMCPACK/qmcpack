@@ -114,15 +114,10 @@ struct NonLocalECPComponent: public QMCTraits
   RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& Psi, 
       int iel, RealType r, const PosType& dr, bool Tmove, std::vector<NonLocalData>& Txy) const;
 
-  RealType evaluate(ParticleSet& W, int iat, TrialWaveFunction& Psi,
-                    PosType &force_iat);
-
-  RealType evaluate(ParticleSet& W, ParticleSet &ions, int iat, TrialWaveFunction& Psi,
-                    PosType &force_iat, PosType &pulay_iat);
-
-  RealType
-  evaluate(ParticleSet& W, TrialWaveFunction& Psi,int iat, std::vector<NonLocalData>& Txy,
-           PosType &force_iat);
+  ///Computes the nonlocal PP energy and Hellman-Feynman force contribution coming from
+  /// ion "iat" and electron "iel".  
+  RealType evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFunction& Psi, 
+      int iel, RealType r, const PosType& dr, PosType &force_iat, bool Tmove, std::vector<NonLocalData>& Txy) const;
 
   RealType
   evaluateValueAndDerivatives(ParticleSet& P,
@@ -134,12 +129,6 @@ struct NonLocalECPComponent: public QMCTraits
   void print(std::ostream& os);
 
   void initVirtualParticle(const ParticleSet& qp);
-
-  // For space-warp transformation used in Pulay correction
-  inline RealType WarpFunction (RealType r)
-  {
-    return 1.0/(r*r*r*r);
-  }
 
 
 }; //end of RadialPotentialSet
