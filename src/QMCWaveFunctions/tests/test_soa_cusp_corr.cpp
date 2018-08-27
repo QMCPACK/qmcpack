@@ -161,10 +161,57 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   Matrix<CuspCorrectionParameters> info;
   info.resize(num_center, orbital_set_size);
   okay = readCuspInfo("hcn_downdet.cuspInfo.xml", "downdet", orbital_set_size, info);
+
   REQUIRE(okay);
+  Vector<double> xgrid;
+  Vector<double> rad_orb;
+  int ngrid = 10;
+  xgrid.resize(ngrid);
+  for (int i = 0; i < ngrid; i++)
+  {
+    xgrid[i] = 0.012 * (i + 1);
+  }
+
+  rad_orb.resize(ngrid);
+
+  int mo_idx = 0;
+  computeRadialPhiBar(&elec, &ions, mo_idx, center_idx, &phi, xgrid, rad_orb, info(center_idx, mo_idx));
+
+  // Comparisons generated from gen_cusp_corr.py
+  //  Center  0  MO 0 rc =  0.07691307008
+  REQUIRE(rad_orb[0] == Approx(9.1266186340)); // x = 0.012
+  REQUIRE(rad_orb[1] == Approx(8.3939106599)); // x = 0.024
+  REQUIRE(rad_orb[2] == Approx(7.7213972780)); // x = 0.036
+  REQUIRE(rad_orb[3] == Approx(7.1039662640)); // x = 0.048
+  REQUIRE(rad_orb[4] == Approx(6.5370601478)); // x = 0.06
+  REQUIRE(rad_orb[5] == Approx(6.0165935481)); // x = 0.072
+  REQUIRE(rad_orb[6] == Approx(5.5390213984)); // x = 0.084
+  REQUIRE(rad_orb[7] == Approx(5.1023814795)); // x = 0.096
+  REQUIRE(rad_orb[8] == Approx(4.7033287383)); // x = 0.108
+  REQUIRE(rad_orb[9] == Approx(4.3370522377)); // x = 0.12
+
+
+  mo_idx = 1;
+  computeRadialPhiBar(&elec, &ions, mo_idx, center_idx, &phi, xgrid, rad_orb, info(center_idx, mo_idx));
+
+  //  Center  0  MO 1 rc =  0.060909477888
+  REQUIRE(rad_orb[0] == Approx(-0.0099816961)); // x = 0.012
+  REQUIRE(rad_orb[1] == Approx(-0.0092950723)); // x = 0.024
+  REQUIRE(rad_orb[2] == Approx(-0.0086498844)); // x = 0.036
+  REQUIRE(rad_orb[3] == Approx(-0.0080440071)); // x = 0.048
+  REQUIRE(rad_orb[4] == Approx(-0.0074778482)); // x = 0.06
+  REQUIRE(rad_orb[5] == Approx(-0.0069529708)); // x = 0.072
+  REQUIRE(rad_orb[6] == Approx(-0.0064707256)); // x = 0.084
+  REQUIRE(rad_orb[7] == Approx(-0.0060313791)); // x = 0.096
+  REQUIRE(rad_orb[8] == Approx(-0.0056312867)); // x = 0.108
+  REQUIRE(rad_orb[9] == Approx(-0.0052652668)); // x = 0.12
+
+
+  // Reset the MO matrices for another center
 
   *(eta.C) = *(lcob->C);
   *(phi.C) = *(lcob->C);
+
 
   // C is second atom
   center_idx = 1;
@@ -173,6 +220,21 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   // 1S orbital on N
   CHECK((*phi.C)(0, 0) == Approx(0.0));
   CHECK((*eta.C)(0, 0) == Approx(1.00180500));
+
+  mo_idx = 0;
+  computeRadialPhiBar(&elec, &ions, mo_idx, center_idx, &phi, xgrid, rad_orb, info(center_idx, mo_idx));
+
+  //  Center  1  MO 0 rc =  0.105
+  REQUIRE(rad_orb[0] == Approx(0.0017535517)); // x = 0.012
+  REQUIRE(rad_orb[1] == Approx(0.0016496533)); // x = 0.024
+  REQUIRE(rad_orb[2] == Approx(0.0015544835)); // x = 0.036
+  REQUIRE(rad_orb[3] == Approx(0.0014678130)); // x = 0.048
+  REQUIRE(rad_orb[4] == Approx(0.0013891000)); // x = 0.06
+  REQUIRE(rad_orb[5] == Approx(0.0013175785)); // x = 0.072
+  REQUIRE(rad_orb[6] == Approx(0.0012523246)); // x = 0.084
+  REQUIRE(rad_orb[7] == Approx(0.0011923038)); // x = 0.096
+  REQUIRE(rad_orb[8] == Approx(0.0011364095)); // x = 0.108
+  REQUIRE(rad_orb[9] == Approx(0.0010837868)); // x = 0.12
 
 
   removeSTypeOrbitals(corrCenter, *lcob);
