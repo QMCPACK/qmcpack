@@ -467,8 +467,8 @@ namespace qmcplusplus
       LogGrid<RealType>* radial_grid = new LogGrid<RealType>;
       radial_grid->set(0.000001, 100.0, 1001);
 
-      Vector<double> xgrid;
-      Vector<double> rad_orb;
+      Vector<RealType> xgrid;
+      Vector<RealType> rad_orb;
       xgrid.resize(radial_grid->size());
       rad_orb.resize(radial_grid->size());
       for (int ig=0; ig < radial_grid->size(); ig++) {
@@ -502,9 +502,9 @@ namespace qmcplusplus
             // For testing against AoS output
             // Output phiBar to soaOrbs.downdet.C0.MO0
             int nElms = 500;
-            double dx = info(ic,mo_idx).Rc * 1.2/nElms;
-            Vector<double> pos;
-            Vector<double> output_orb;
+            RealType dx = info(ic,mo_idx).Rc * 1.2/nElms;
+            Vector<RealType> pos;
+            Vector<RealType> output_orb;
             pos.resize(nElms);
             output_orb.resize(nElms);
             for (int i = 0; i < nElms; i++) {
