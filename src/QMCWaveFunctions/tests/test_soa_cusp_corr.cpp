@@ -247,4 +247,167 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   SPOSetBuilderFactory::clear();
 }
 
+TEST_CASE("HCN MO with cusp", "[wavefunction]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  Communicate* c = OHMMS::Controller;
+
+  Libxml2Document doc;
+  bool okay = doc.parse("hcn.structure.xml");
+  REQUIRE(okay);
+  xmlNodePtr root = doc.getRoot();
+  Tensor<int, 3> tmat;
+  tmat(0, 0) = 1;
+  tmat(1, 1) = 1;
+  tmat(2, 2) = 1;
+
+  ParticleSet ions;
+  XMLParticleParser parse_ions(ions, tmat);
+  OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
+  REQUIRE(particleset_ion.size() == 1);
+  parse_ions.put(particleset_ion[0]);
+
+  REQUIRE(ions.groups() == 3);
+  REQUIRE(ions.R.size() == 3);
+  ions.update();
+
+  ParticleSet elec;
+  XMLParticleParser parse_elec(elec, tmat);
+  OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
+  REQUIRE(particleset_elec.size() == 1);
+  parse_elec.put(particleset_elec[0]);
+
+  REQUIRE(elec.groups() == 2);
+  REQUIRE(elec.R.size() == 14);
+
+  elec.R = 0.0;
+
+  elec.addTable(ions, DT_SOA);
+  elec.update();
+
+  Libxml2Document doc2;
+  okay = doc2.parse("hcn.wfnoj.xml");
+  REQUIRE(okay);
+  xmlNodePtr root2 = doc2.getRoot();
+
+  TrialWaveFunction psi(c);
+
+  WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
+  particle_set_map["e"]    = &elec;
+  particle_set_map["ion0"] = &ions;
+
+  SPOSetBuilderFactory bf(elec, psi, particle_set_map);
+
+  OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
+  REQUIRE(MO_base.size() == 1);
+
+  xmlSetProp(MO_base[0], (const xmlChar*)"cuspCorrection", (const xmlChar*)"yes");
+
+  SPOSetBuilder* bb = bf.createSPOSetBuilder(MO_base[0]);
+  REQUIRE(bb != NULL);
+
+  OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
+  bb->loadBasisSetFromXML(MO_base[0]);
+  SPOSet* sposet = bb->createSPOSet(slater_base[0]);
+
+
+  SPOSet::ValueVector_t values;
+  SPOSet::GradVector_t dpsi;
+  SPOSet::ValueVector_t d2psi;
+  values.resize(7);
+  dpsi.resize(7);
+  d2psi.resize(7);
+
+  elec.R = 0.0;
+  elec.update();
+  ParticleSet::SingleParticlePos_t newpos;
+  elec.makeMove(0, newpos);
+
+  sposet->evaluate(elec, 0, values);
+
+  // Values from gen_cusp_corr.py
+  REQUIRE(values[0] == Approx(0.00945227));
+  REQUIRE(values[1] == Approx(0.0200836));
+  REQUIRE(values[2] == Approx(0.416375));
+  REQUIRE(values[3] == Approx(-0.0885443));
+  REQUIRE(values[4] == Approx(0.273159));
+  REQUIRE(values[5] == Approx(0));
+  REQUIRE(values[6] == Approx(0));
+
+  // Put electron near N atom
+  elec.R[0][0] = -1.09;
+  elec.update();
+  elec.makeMove(0, newpos);
+
+  values = 0.0;
+  sposet->evaluate(elec, 0, values);
+  //std::cout << "values = " << values << std::endl;
+  // Values from gen_cusp_corr.py
+  REQUIRE(values[0] == Approx(9.5150713253));
+  REQUIRE(values[1] == Approx(-0.0086731542));
+  REQUIRE(values[2] == Approx(-1.6426151116));
+  REQUIRE(values[3] == Approx(0.6569242017));
+  REQUIRE(values[4] == Approx(0.9775522176));
+  REQUIRE(values[5] == Approx(0.0000000000));
+  REQUIRE(values[6] == Approx(0.0000000000));
+
+
+  values = 0.0;
+  sposet->evaluate(elec, 0, values, dpsi, d2psi);
+
+  //std::cout << "values = " << values << std::endl;
+  //std::cout << "dpsi = " << dpsi << std::endl;
+  //std::cout << "d2psi = " << d2psi << std::endl;
+
+  // Values from gen_cusp_corr.py
+  REQUIRE(values[0] == Approx(9.5150713253));
+  REQUIRE(values[1] == Approx(-0.0086731542));
+  REQUIRE(values[2] == Approx(-1.6426151116));
+  REQUIRE(values[3] == Approx(0.6569242017));
+  REQUIRE(values[4] == Approx(0.9775522176));
+  REQUIRE(values[5] == Approx(0.0000000000));
+  REQUIRE(values[6] == Approx(0.0000000000));
+
+  REQUIRE(dpsi[0][0] == Approx(-66.5007223213));
+  REQUIRE(dpsi[0][1] == Approx(0.0000000000));
+  REQUIRE(dpsi[0][2] == Approx(0.0000000000));
+  REQUIRE(d2psi[0] == Approx(-21540.9990552510));
+
+  REQUIRE(values[1] == Approx(-0.0086731542));
+  REQUIRE(dpsi[1][0] == Approx(0.0616909346));
+  REQUIRE(dpsi[1][1] == Approx(0.0000000000));
+  REQUIRE(dpsi[1][2] == Approx(0.0000000000));
+  REQUIRE(d2psi[1] == Approx(19.8720529007));
+
+
+  SPOSet::ValueMatrix_t all_values;
+  SPOSet::GradMatrix_t all_grad;
+  SPOSet::ValueMatrix_t all_lap;
+  all_values.resize(7, 7);
+  all_grad.resize(7, 7);
+  all_lap.resize(7, 7);
+
+
+  sposet->evaluate_notranspose(elec, 0, 7, all_values, all_grad, all_lap);
+
+  // Values from gen_cusp_corr.py
+  REQUIRE(values[0] == Approx(9.5150713253));
+
+  REQUIRE(all_values[0][0] == Approx(9.5150713253));
+  REQUIRE(all_grad[0][0][0] == Approx(-66.5007223213));
+  REQUIRE(all_grad[0][0][1] == Approx(0.0000000000));
+  REQUIRE(all_grad[0][0][2] == Approx(0.0000000000));
+  REQUIRE(all_lap[0][0] == Approx(-21540.9990552510));
+
+  REQUIRE(all_values[0][1] == Approx(-0.0086731542));
+  REQUIRE(all_grad[0][1][0] == Approx(0.0616909346));
+  REQUIRE(all_grad[0][1][1] == Approx(0.0000000000));
+  REQUIRE(all_grad[0][1][2] == Approx(0.0000000000));
+  REQUIRE(all_lap[0][1] == Approx(19.8720529007));
+
+
+  SPOSetBuilderFactory::clear();
+}
+
+
 } // namespace qmcplusplus

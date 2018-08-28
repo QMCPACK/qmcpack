@@ -15,9 +15,9 @@
 
 namespace qmcplusplus
 {
-  LCAOrbitalSet::LCAOrbitalSet(basis_type* bs,int rl): 
+  LCAOrbitalSet::LCAOrbitalSet(basis_type* bs,int rl):
     myBasisSet(nullptr), C(nullptr), ReportLevel(rl),
-    BasisSetSize(0), Identity(true), IsCloned(false)
+    BasisSetSize(0), Identity(true), IsCloned(false), cusp(nullptr)
   {
     if(bs != nullptr) setBasisSet(bs);
   }
@@ -59,6 +59,9 @@ namespace qmcplusplus
     LCAOrbitalSet* myclone = new LCAOrbitalSet(*this);
     myclone->myBasisSet = myBasisSet->makeClone();
     myclone->IsCloned=true;
+    if (cusp) {
+      myclone->cusp = cusp->makeClone();
+    }
     return myclone;
   }
 
@@ -74,6 +77,9 @@ namespace qmcplusplus
       Vector<ValueType> vTemp(Temp.data(0),BasisSetSize);
       myBasisSet->evaluateV(P,iat,vTemp.data());
       simd::gemv(*C,Temp.data(0),psi.data());
+    }
+    if (cusp) {
+      cusp->addV(P, iat, psi.data());
     }
   }
 
@@ -118,6 +124,9 @@ namespace qmcplusplus
         Product_ABt(Temp,*C,Tempv);
         evaluate_vgl_impl(Tempv,psi,dpsi,d2psi);
       }
+      if (cusp) {
+        cusp->add_vector_vgl(P, iat, psi, dpsi, d2psi);
+      }
     }
 
   void LCAOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, 
@@ -129,6 +138,9 @@ namespace qmcplusplus
     {
       myBasisSet->evaluateVGL(P,iat,Temp);
       Product_ABt(Temp,*C,vgl);
+    }
+    if (cusp) {
+      cusp->addVGL(P, iat, vgl);
     }
   }
 
@@ -193,6 +205,12 @@ namespace qmcplusplus
         myBasisSet->evaluateVGL(P,iat,Temp);
         Product_ABt(Temp,*C,Tempv);
         evaluate_vgl_impl(Tempv,i,logdet,dlogdet,d2logdet);
+      }
+    }
+    if (cusp) {
+      for(size_t i=0, iat=first; iat<last; i++,iat++)
+      {
+        cusp->add_vgl(P, iat, i, logdet, dlogdet, d2logdet);
       }
     }
   }

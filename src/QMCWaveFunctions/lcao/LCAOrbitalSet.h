@@ -15,6 +15,8 @@
 
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
+#include "QMCWaveFunctions/lcao/SoaCuspCorrectionBasisSet.h"
+
 
 namespace qmcplusplus
 {
@@ -47,6 +49,8 @@ namespace qmcplusplus
     vgl_type Temp; 
     ///Tempv(OrbitalSetSize) Tempv=C*Temp
     vgl_type Tempv; 
+
+    CuspCorrectionBase *cusp;
 
     /** constructor
      * @param bs pointer to the BasisSet
