@@ -25,25 +25,6 @@
 namespace qmcplusplus
 {
 
-  struct CuspCorrectionBase
-  {
-    typedef QMCTraits::ValueType ValueType;
-    typedef QMCTraits::RealType RealType;
-    typedef VectorSoaContainer<ValueType, 5> VGLVector_t;
-    typedef SPOSet::ValueMatrix_t ValueMatrix_t;
-    typedef SPOSet::GradMatrix_t GradMatrix_t;
-    typedef SPOSet::GradVector_t GradVector_t;
-    typedef SPOSet::ValueVector_t ValueVector_t;
-    typedef ParticleSet::PosType PosType;
-
-    virtual CuspCorrectionBase* makeClone() const = 0;
-    virtual void addVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)=0;
-    virtual void addV(const ParticleSet& P, int iat, ValueType* restrict vals)=0;
-    virtual void add_vgl(const ParticleSet& P, int iat, int idx, ValueMatrix_t &vals, GradMatrix_t &dpsi, ValueMatrix_t &d2psi) = 0;
-    virtual void add_vector_vgl(const ParticleSet& P, int iat, ValueVector_t &vals, GradVector_t &dpsi, ValueVector_t &d2psi) = 0;
-
-  };
-
   /** Handles a set of correction orbitals per atom
    *
    * Reduction over the orbitals - beware of the reduction problem
@@ -103,9 +84,16 @@ namespace qmcplusplus
  * The template parameter COT denotes Centered-Orbital-Type which provides
  * a set of localized orbitals associated with a center.
  */
-struct SoaCuspCorrection: public CuspCorrectionBase  //: public BasisSetBase<typename COT::ValueType>
+struct SoaCuspCorrection
 {
-  //typedef typename OrbitalSetTraits<ValueType>::VGLVector_t VGLVector_t;
+  typedef QMCTraits::ValueType ValueType;
+  typedef QMCTraits::RealType RealType;
+  typedef VectorSoaContainer<ValueType, 5> VGLVector_t;
+  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
+  typedef SPOSet::GradMatrix_t GradMatrix_t;
+  typedef SPOSet::GradVector_t GradVector_t;
+  typedef SPOSet::ValueVector_t ValueVector_t;
+  typedef ParticleSet::PosType PosType;
 
   ///number of centers, e.g., ions
   size_t NumCenters;
@@ -145,7 +133,7 @@ struct SoaCuspCorrection: public CuspCorrectionBase  //: public BasisSetBase<typ
   SoaCuspCorrection(const SoaCuspCorrection& a)=default;
 
   /** makeClone */
-  SoaCuspCorrection* makeClone() const override
+  SoaCuspCorrection* makeClone() const
   {
     SoaCuspCorrection* myclone=new SoaCuspCorrection(*this);
     for(int i=0; i<LOBasisSet.size(); ++i)
@@ -312,19 +300,19 @@ struct SoaCuspCorrection: public CuspCorrectionBase  //: public BasisSetBase<typ
   {
     LOBasisSet[icenter]=aos;
   }
-  virtual void addVGL(const ParticleSet& P, int iat, VGLVector_t& vgl) override
+  void addVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
   {
     evaluateVGL(P, iat, vgl);
   }
-  virtual void addV(const ParticleSet& P, int iat, ValueType* restrict vals) override
+  void addV(const ParticleSet& P, int iat, ValueType* restrict vals)
   {
     evaluateV(P, iat, vals);
   }
-  virtual void add_vgl(const ParticleSet& P, int iat, int idx, ValueMatrix_t &vals, GradMatrix_t &dpsi, ValueMatrix_t &d2psi) override
+  void add_vgl(const ParticleSet& P, int iat, int idx, ValueMatrix_t &vals, GradMatrix_t &dpsi, ValueMatrix_t &d2psi)
   {
     evaluate_vgl(P, iat, idx, vals, dpsi, d2psi);
   }
-  virtual void add_vector_vgl(const ParticleSet& P, int iat, ValueVector_t &vals, GradVector_t &dpsi, ValueVector_t &d2psi) override
+  void add_vector_vgl(const ParticleSet& P, int iat, ValueVector_t &vals, GradVector_t &dpsi, ValueVector_t &d2psi)
   {
     evaluate_vgl(P, iat, vals, dpsi, d2psi);
   }

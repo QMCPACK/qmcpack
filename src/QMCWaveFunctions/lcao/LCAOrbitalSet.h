@@ -50,7 +50,7 @@ namespace qmcplusplus
     ///Tempv(OrbitalSetSize) Tempv=C*Temp
     vgl_type Tempv; 
 
-    CuspCorrectionBase *cusp;
+    SoaCuspCorrection *cusp;
 
     /** constructor
      * @param bs pointer to the BasisSet
