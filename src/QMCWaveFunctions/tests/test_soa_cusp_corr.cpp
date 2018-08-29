@@ -406,6 +406,26 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   REQUIRE(all_lap[0][1] == Approx(19.8720529007));
 
 
+  // Test the makeClone method
+  SPOSet* sposet_clone = sposet->makeClone();
+
+  sposet_clone->evaluate_notranspose(elec, 0, 7, all_values, all_grad, all_lap);
+
+  // Values from gen_cusp_corr.py
+  REQUIRE(values[0] == Approx(9.5150713253));
+
+  REQUIRE(all_values[0][0] == Approx(9.5150713253));
+  REQUIRE(all_grad[0][0][0] == Approx(-66.5007223213));
+  REQUIRE(all_grad[0][0][1] == Approx(0.0000000000));
+  REQUIRE(all_grad[0][0][2] == Approx(0.0000000000));
+  REQUIRE(all_lap[0][0] == Approx(-21540.9990552510));
+
+  REQUIRE(all_values[0][1] == Approx(-0.0086731542));
+  REQUIRE(all_grad[0][1][0] == Approx(0.0616909346));
+  REQUIRE(all_grad[0][1][1] == Approx(0.0000000000));
+  REQUIRE(all_grad[0][1][2] == Approx(0.0000000000));
+  REQUIRE(all_lap[0][1] == Approx(19.8720529007));
+
   SPOSetBuilderFactory::clear();
 }
 

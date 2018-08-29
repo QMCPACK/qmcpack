@@ -26,7 +26,7 @@ namespace qmcplusplus
    */
 struct LCAOrbitalSetWithCorrection : public LCAOrbitalSet
 {
-  SoaCuspCorrection* cusp;
+  SoaCuspCorrection cusp;
 
   /** constructor
      * @param ions

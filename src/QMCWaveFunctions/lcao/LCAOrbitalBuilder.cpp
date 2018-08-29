@@ -496,7 +496,7 @@ namespace qmcplusplus
         out.close();
         }
       }
-      lcwc.cusp->add(ic, cot);
+      lcwc.cusp.add(ic, cot);
     }
     removeSTypeOrbitals(corrCenter, lcwc);
   }

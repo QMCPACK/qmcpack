@@ -16,17 +16,16 @@
 namespace qmcplusplus
 {
 LCAOrbitalSetWithCorrection::LCAOrbitalSetWithCorrection(ParticleSet& ions, ParticleSet& els, basis_type* bs, int rl)
-    : LCAOrbitalSet(bs, rl)
+    : LCAOrbitalSet(bs, rl), cusp(ions, els)
 {
-  cusp = new SoaCuspCorrection(ions, els);
 }
 
-LCAOrbitalSetWithCorrection::~LCAOrbitalSetWithCorrection() { delete cusp; }
+LCAOrbitalSetWithCorrection::~LCAOrbitalSetWithCorrection() { }
 
 void LCAOrbitalSetWithCorrection::setOrbitalSetSize(int norbs)
 {
   LCAOrbitalSet::setOrbitalSetSize(norbs);
-  cusp->setBasisSetSize(norbs);
+  cusp.setBasisSetSize(norbs);
 }
 
 
@@ -35,27 +34,26 @@ SPOSet* LCAOrbitalSetWithCorrection::makeClone() const
   LCAOrbitalSetWithCorrection* myclone = new LCAOrbitalSetWithCorrection(*this);
   myclone->myBasisSet                  = myBasisSet->makeClone();
   myclone->IsCloned                    = true;
-  myclone->cusp                        = cusp->makeClone();
   return myclone;
 }
 
 void LCAOrbitalSetWithCorrection::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
   LCAOrbitalSet::evaluate(P, iat, psi);
-  cusp->addV(P, iat, psi.data());
+  cusp.addV(P, iat, psi.data());
 }
 
 void LCAOrbitalSetWithCorrection::evaluate(
     const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
 {
   LCAOrbitalSet::evaluate(P, iat, psi, dpsi, d2psi);
-  cusp->add_vector_vgl(P, iat, psi, dpsi, d2psi);
+  cusp.add_vector_vgl(P, iat, psi, dpsi, d2psi);
 }
 
 void LCAOrbitalSetWithCorrection::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t vgl)
 {
   LCAOrbitalSet::evaluateVGL(P, iat, vgl);
-  cusp->addVGL(P, iat, vgl);
+  cusp.addVGL(P, iat, vgl);
 }
 
 void LCAOrbitalSetWithCorrection::evaluateValues(const VirtualParticleSet& VP,
@@ -78,7 +76,7 @@ void LCAOrbitalSetWithCorrection::evaluate_notranspose(
   LCAOrbitalSet::evaluate_notranspose(P, first, last, logdet, dlogdet, d2logdet);
   for (size_t i = 0, iat = first; iat < last; i++, iat++)
   {
-    cusp->add_vgl(P, iat, i, logdet, dlogdet, d2logdet);
+    cusp.add_vgl(P, iat, i, logdet, dlogdet, d2logdet);
   }
 }
 

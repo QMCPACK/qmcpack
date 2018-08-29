@@ -39,6 +39,12 @@ namespace qmcplusplus
   public:
     RadialSetType AOs;
     aligned_vector<size_t> ID;
+
+    CuspCorrectionAtomicBasis() {};
+
+    /** copy constructor */
+    CuspCorrectionAtomicBasis(const CuspCorrectionAtomicBasis& a)=default;
+
     inline void evaluate(const T r, T* restrict vals)
     {
       size_t nr=AOs.num_splines;
@@ -66,15 +72,6 @@ namespace qmcplusplus
         d2u[j]+= d2phi[i] + 2*dphi[i]/r;
       }
     }
-    /** makeClone */
-    CuspCorrectionAtomicBasis* makeClone() const
-    {
-      CuspCorrectionAtomicBasis* myclone=new CuspCorrectionAtomicBasis(*this);
-      myclone->AOs = AOs;
-      myclone->ID = ID;
-      return myclone;
-    }
-
   };
 
 /** A localized basis set derived from BasisSetBase<typename COT::ValueType>
@@ -131,15 +128,6 @@ struct SoaCuspCorrection
 
   /** copy constructor */
   SoaCuspCorrection(const SoaCuspCorrection& a)=default;
-
-  /** makeClone */
-  SoaCuspCorrection* makeClone() const
-  {
-    SoaCuspCorrection* myclone=new SoaCuspCorrection(*this);
-    for(int i=0; i<LOBasisSet.size(); ++i)
-      myclone->LOBasisSet[i]=LOBasisSet[i]->makeClone();
-    return myclone;
-  }
 
 
   /** set BasisSetSize and allocate mVGL container
