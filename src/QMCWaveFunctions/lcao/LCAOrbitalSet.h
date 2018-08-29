@@ -15,7 +15,6 @@
 
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
-#include "QMCWaveFunctions/lcao/SoaCuspCorrectionBasisSet.h"
 
 
 namespace qmcplusplus
