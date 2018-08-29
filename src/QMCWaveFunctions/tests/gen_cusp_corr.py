@@ -296,16 +296,17 @@ class CuspCorrection:
     self.phi_tilde_func, self.phi_tilde_dr_func, self.phi_tilde_d2r_func = get_phi_tilde_and_derivatives()
 
   def eval_phiBar_vgl(self, pos, mo_idx, pos_center, gto_mo, cusp_orb_data):
-    r = math.sqrt(pos[0]**2 + pos[1]**2 + pos[2]**2)
+    rel_pos = [pos[0]-pos_center[0], pos[1]-pos_center[1], pos[2]-pos_center[2]]
+    r = math.sqrt(rel_pos[0]**2 + rel_pos[1]**2 + rel_pos[2]**2)
     if r <= cusp_orb_data.Rc:
       a = cusp_orb_data.alpha
       #pr = a[0] + a[1]*r + a[2]*r*r + a[3]*r*r*r + a[4]*r*r*r*r
       #phiB = cusp_orb_data.C + cusp_orb_data.sg * exp(pr)
       phiB = self.phi_tilde_func(cusp_orb_data.C, cusp_orb_data.sg, a, r)
-      grad = self.phi_tilde_dr_func(cusp_orb_data.C, cusp_orb_data.sg, a, r) * np.array(pos)/r
+      grad = self.phi_tilde_dr_func(cusp_orb_data.C, cusp_orb_data.sg, a, r) * np.array(rel_pos)/r
       lap = self.phi_tilde_d2r_func(cusp_orb_data.C, cusp_orb_data.sg, a, r)
     else:
-      phiB,grad,lap = gto_mo.eval_vgl_one_MO(pos[0] + pos_center[0], pos[1] + pos_center[1], pos[2] + pos_center[2], mo_idx)
+      phiB,grad,lap = gto_mo.eval_vgl_one_MO(pos[0], pos[1], pos[2], mo_idx)
       grad = [float(g) for g in grad]
 
     return phiB,grad,lap
@@ -340,9 +341,55 @@ def gen_correction_for_hcn():
       #val_data = vals[(center_idx, mo_idx)][0]
       print('  //  Center ',center_idx, ' MO',mo_idx, 'rc = ',cusp_data[center_idx][mo_idx].Rc)
       for i,x in enumerate(xgrid):
-        epos = [x, 0.0, 0.0]
+        epos = np.array([x, 0.0, 0.0]) + pos_list[center_idx]
         v,g,l = cusp.compute_cusp_correction(center_idx, mo_idx, epos)
         print('  REQUIRE(rad_orb[%d] == Approx(%.10f)); // x = %g'%(i,v,x))
+      print()
+
+def gen_wavefunction_plus_correction_for_hcn():
+  basis_sets, MO_matrix = read_qmcpack.parse_qmc_wf("hcn.wfnoj.xml")
+  pos_list, elements = read_qmcpack.read_structure_file("hcn.structure.xml")
+
+  gtos = gaussian_orbitals.GTO_centers(pos_list, elements, basis_sets)
+
+  phi_list, eta_list, C_no_S = split_by_angular_momentum(pos_list, elements, basis_sets, MO_matrix)
+
+  spo_name, cusp_data = read_qmcpack.read_cusp_correction_file("hcn_downdet.cuspInfo.xml")
+
+  cusp = CuspCorrection(cusp_data, pos_list, gtos, phi_list)
+
+  # Bulk of the MO's - the non-cusp corrected parts
+  other_mo = gaussian_orbitals.MolecularOrbital(gtos, C_no_S)
+
+  # set electron position so it falls within rc for one center
+  xyzgrid = [(-1.09, 0.0, 0.0)]
+  #xyzgrid = [(0.0, 0.0, 0.0)]
+  iat = 0
+  for i,epos in enumerate(xyzgrid):
+    mo_v, mo_g, mo_l = other_mo.eval_vgl(epos[0], epos[1], epos[2])
+    for mo_idx in range(7):
+      final_v = mo_v[mo_idx]
+      final_g = mo_g[mo_idx, :]
+      final_l = mo_l[mo_idx]
+      for center_idx in range(3):
+        cv,cg,cl = cusp.compute_cusp_correction(center_idx, mo_idx, epos)
+        final_v += cv
+        final_g += cg
+        final_l += cl
+
+      print('  # MO %d'%mo_idx)
+      print('  REQUIRE(values[%d] == Approx(%.10f));'%(mo_idx,final_v))
+      print('  REQUIRE(dpsi[%d][0] == Approx(%.10f));'%(mo_idx, final_g[0]))
+      print('  REQUIRE(dpsi[%d][1] == Approx(%.10f));'%(mo_idx, final_g[1]))
+      print('  REQUIRE(dpsi[%d][2] == Approx(%.10f));'%(mo_idx, final_g[2]))
+      print('  REQUIRE(d2psi[%d] == Approx(%.10f));'%(mo_idx,final_l))
+      print()
+
+      print('  REQUIRE(all_values[%d][%d] == Approx(%.10f));'%(iat, mo_idx, final_v))
+      print('  REQUIRE(all_grad[%d][%d][0] == Approx(%.10f));'%(iat, mo_idx, final_g[0]))
+      print('  REQUIRE(all_grad[%d][%d][1] == Approx(%.10f));'%(iat, mo_idx, final_g[1]))
+      print('  REQUIRE(all_grad[%d][%d][2] == Approx(%.10f));'%(iat, mo_idx, final_g[2]))
+      print('  REQUIRE(all_lap[%d][%d] == Approx(%.10f));'%(iat, mo_idx, final_l))
       print()
 
 
@@ -351,4 +398,5 @@ def gen_correction_for_hcn():
 if __name__ == '__main__':
   #simple_X_vals()
   #values_for_He()
-  gen_correction_for_hcn()
+  #gen_correction_for_hcn()
+  gen_wavefunction_plus_correction_for_hcn()

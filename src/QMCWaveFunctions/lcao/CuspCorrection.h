@@ -156,7 +156,7 @@ void computeRadialPhiBar(ParticleSet* targetP,
                          SPOSet* Phi,
                          Vector<QMCTraits::RealType>& xgrid,
                          Vector<QMCTraits::RealType>& rad_orb,
-                         CuspCorrectionParameters& data);
+                         const CuspCorrectionParameters& data);
 
 
 } // namespace qmcplusplus
