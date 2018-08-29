@@ -50,8 +50,6 @@ namespace qmcplusplus
     ///Tempv(OrbitalSetSize) Tempv=C*Temp
     vgl_type Tempv; 
 
-    SoaCuspCorrection *cusp;
-
     /** constructor
      * @param bs pointer to the BasisSet
      * @param rl report level
@@ -60,7 +58,7 @@ namespace qmcplusplus
 
     LCAOrbitalSet(const LCAOrbitalSet& in)=default;
 
-    ~LCAOrbitalSet();
+    virtual ~LCAOrbitalSet();
 
     SPOSet* makeClone() const;
 
@@ -78,7 +76,7 @@ namespace qmcplusplus
 
     /** set the OrbitalSetSize
     */
-    void setOrbitalSetSize(int norbs)
+    virtual void setOrbitalSetSize(int norbs)
     {
       OrbitalSetSize=norbs;
       Tempv.resize(OrbitalSetSize);

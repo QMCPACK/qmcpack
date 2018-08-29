@@ -25,6 +25,7 @@
 #include "QMCWaveFunctions/lcao/SoaLocalizedBasisSet.h"
 #include "QMCWaveFunctions/lcao/SoaCuspCorrectionBasisSet.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
+#include "QMCWaveFunctions/lcao/LCAOrbitalSetWithCorrection.h"
 #include "QMCWaveFunctions/lcao/RadialOrbitalSetBuilder.h"
 #include "QMCWaveFunctions/lcao/AOBasisBuilder.h"
 #include "QMCWaveFunctions/lcao/LCAOrbitalBuilder.h"
@@ -430,7 +431,14 @@ namespace qmcplusplus
 
     if(optimize=="yes") PRE.error("Optimizable SPO has not been supported by SoA LCAO yet!.",true);
     if(myBasisSet==nullptr) PRE.error("Missing basisset.",true);
-    LCAOrbitalSet *lcos=new LCAOrbitalSet(myBasisSet,ReportLevel);
+    LCAOrbitalSet *lcos = nullptr;
+    LCAOrbitalSetWithCorrection *lcws = nullptr;
+    if (doCuspCorrection) {
+      lcws =new LCAOrbitalSetWithCorrection(sourcePtcl, targetPtcl, myBasisSet, ReportLevel);
+      lcos = lcws;
+    } else {
+      lcos=new LCAOrbitalSet(myBasisSet,ReportLevel);
+    }
     loadMO(*lcos, cur);
 
     if (doCuspCorrection) {
@@ -438,14 +446,13 @@ namespace qmcplusplus
           APP_ABORT("cusp file required for now");
       }
 
-      SoaCuspCorrection *cusp = new SoaCuspCorrection(sourcePtcl, targetPtcl);
-      cusp->setBasisSetSize(lcos->OrbitalSetSize);
+      int numCenters = sourcePtcl.getTotalNum();
 
       // Sometimes sposet attribute is 'name' and sometimes it is 'id'
       if (id == "") id = spo_name;
 
       int orbital_set_size = lcos->OrbitalSetSize;
-      Matrix<CuspCorrectionParameters> info(cusp->NumCenters, orbital_set_size);
+      Matrix<CuspCorrectionParameters> info(numCenters, orbital_set_size);
       bool okay = readCuspInfo(cusp_file, id, orbital_set_size, info);
       if (!okay) {
           APP_ABORT("failure in reading cusp info file");
@@ -462,7 +469,7 @@ namespace qmcplusplus
       eta.setIdentity(false);
 
 
-      std::vector<bool> corrCenter(cusp->NumCenters, "true");
+      std::vector<bool> corrCenter(numCenters, "true");
 
       LogGrid<RealType>* radial_grid = new LogGrid<RealType>;
       radial_grid->set(0.000001, 100.0, 1001);
@@ -475,7 +482,7 @@ namespace qmcplusplus
         xgrid[ig] = radial_grid->r(ig);
       }
 
-      for (int ic = 0; ic < cusp->NumCenters; ic++)
+      for (int ic = 0; ic < numCenters; ic++)
       {
         *(eta.C) = *(lcos->C);
         *(phi.C) = *(lcos->C);
@@ -523,9 +530,8 @@ namespace qmcplusplus
           out.close();
           }
         }
-        cusp->add(ic, cot);
+        lcws->cusp->add(ic, cot);
       }
-      lcos->cusp = cusp;
       removeSTypeOrbitals(corrCenter, *lcos);
     }
 
