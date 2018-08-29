@@ -49,6 +49,9 @@ class ProjectManager(NexusCore):
     #end def __init__
 
     def add_simulations(self,*simulations):
+        if len(simulations)==0:
+            self.add_simulations(Simulation.all_sims)
+        #end if
         if len(simulations)>0 and not isinstance(simulations[0],Simulation):
             simulations = simulations[0]
         #end if
