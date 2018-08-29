@@ -116,6 +116,8 @@ FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED ${ARGN} 
                 PROCESSORS ${TOT_PROCS} WORKING_DIRECTORY ${WORKDIR}
                 ENVIRONMENT OMP_NUM_THREADS=${THREADS} )
             SET( ${TEST_ADDED} TRUE PARENT_SCOPE )
+        ELSE()
+            MESSAGE("Disabling test ${TESTNAME} (building without MPI)")
         ENDIF()
     ENDIF()
 ENDFUNCTION()
@@ -235,7 +237,7 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
   set (test_added false)
   RUN_QMC_APP(${full_name} ${base_dir} ${procs} ${threads} test_added ${input_file})
   if ( NOT test_added)
-    message(FATAL_ERROR "test ${full_name} cannot be added")
+    RETURN()
   endif()
 
   # set up command to run check, assume check_script is in the same folder as input

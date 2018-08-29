@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -15,7 +15,7 @@
 
 namespace qmcplusplus
 {
-  LCAOrbitalSet::LCAOrbitalSet(basis_type* bs,int rl): 
+  LCAOrbitalSet::LCAOrbitalSet(basis_type* bs,int rl):
     myBasisSet(nullptr), C(nullptr), ReportLevel(rl),
     BasisSetSize(0), Identity(true), IsCloned(false)
   {

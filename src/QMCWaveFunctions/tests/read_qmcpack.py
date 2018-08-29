@@ -106,6 +106,44 @@ def read_structure_file(fname):
   return parse_structure(tree)
 
 
+CuspCorrectionParameters = namedtuple("CuspCorrectionParameters", ["C","sg","Rc","alpha","redo"])
+
+def parse_cusp_correction(node):
+  cusp_corr = dict()
+  sposet_nodes = node.findall(".//sposet")
+  #  assuming only one named sposet per file
+  assert(len(sposet_nodes) == 1)
+  sposet_node = sposet_nodes[0]
+  sposet_name = sposet_node.attrib['name']
+  center_nodes = sposet_node.findall("center")
+  for center_node in center_nodes:
+    orbitals = dict()
+    center = int(center_node.attrib['num'])
+    orbital_nodes = center_node.findall("orbital")
+    for orbital_node in orbital_nodes:
+      redo = int(orbital_node.attrib.get('redo','0'))
+      num = int(orbital_node.attrib['num'])
+      C = float(orbital_node.attrib['C'])
+      sg = float(orbital_node.attrib['sg'])
+      Rc = float(orbital_node.attrib['rc'])
+      a1 = float(orbital_node.attrib['a1'])
+      a2 = float(orbital_node.attrib['a2'])
+      a3 = float(orbital_node.attrib['a3'])
+      a4 = float(orbital_node.attrib['a4'])
+      a5 = float(orbital_node.attrib['a5'])
+      alpha = [a1,a2,a3,a4,a5]
+
+      orbitals[num] = CuspCorrectionParameters(C, sg, Rc, alpha, redo)
+    cusp_corr[center] = orbitals
+
+  return sposet_name, cusp_corr
+
+
+
+def read_cusp_correction_file(fname):
+  tree = ET.parse(fname)
+  return parse_cusp_correction(tree)
+
 
 if __name__ == '__main__':
     # For He
@@ -120,4 +158,8 @@ if __name__ == '__main__':
     gtos = gaussian_orbitals.GTO_centers(pos_list, elements, basis_sets)
     atomic_orbs =  gtos.eval_v(1.0, 0.0, 0.0)
     #print np.dot(MO_matrix, atomic_orbs)
+
+    #ccp = read_cusp_correction_file("hcn_downdet.cuspInfo.xml")
+    #print ccp
+
 

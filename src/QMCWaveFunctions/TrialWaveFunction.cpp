@@ -343,56 +343,6 @@ TrialWaveFunction::ValueType TrialWaveFunction::full_ratio(ParticleSet& P,int ia
   return r;
 }
 
-TrialWaveFunction::RealType TrialWaveFunction::ratioVector(ParticleSet& P, int iat, std::vector<RealType>& ratios)
-{
-  //TAU_PROFILE("TrialWaveFunction::ratio","(ParticleSet& P,int iat)", TAU_USER);
-  ratios.resize(Z.size(),0);
-  ValueType r(1.0);
-  std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
-  std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
-  for (int i=0,ii=V_TIMER; it!=it_end; ++i,++it,ii+=TIMER_SKIP)
-  {
-    myTimers[ii]->start();
-    ValueType zr=(*it)->ratio(P,iat);
-    r *= zr;
-#if defined(QMC_COMPLEX)
-    ratios[i] = std::abs(zr);
-#else
-    ratios[i] = zr;
-#endif
-    myTimers[ii]->stop();
-  }
-#if defined(QMC_COMPLEX)
-  //return std::exp(evaluateLogAndPhase(r,PhaseValue));
-  RealType logr=evaluateLogAndPhase(r,PhaseDiff);
-  return std::exp(logr);
-#else
-  if (r<0)
-    PhaseDiff=M_PI;
-  //     else PhaseDiff=0.0;
-  return r;
-#endif
-}
-
-TrialWaveFunction::RealType TrialWaveFunction::alternateRatio(ParticleSet& P)
-{
-  //TAU_PROFILE("TrialWaveFunction::ratio","(ParticleSet& P,int iat)", TAU_USER);
-  ValueType r(1.0);
-  for(size_t i=0,n=Z.size(); i<n; ++i)
-  {
-    r *= Z[i]->alternateRatio(P);
-  }
-#if defined(QMC_COMPLEX)
-  //return std::exp(evaluateLogAndPhase(r,PhaseValue));
-  RealType logr=evaluateLogAndPhase(r,PhaseDiff);
-  return std::exp(logr);
-#else
-  if (r<0)
-    PhaseDiff=M_PI;
-  return r;
-#endif
-}
-
 TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P,int iat)
 {
   //TAU_PROFILE("TrialWaveFunction::evalGrad","(ParticleSet& P,int iat)", TAU_USER);
@@ -403,15 +353,6 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P,int iat)
     grad_iat += Z[i]->evalGrad(P,iat);
     myTimers[ii]->stop();
   }
-  return grad_iat;
-}
-
-TrialWaveFunction::GradType TrialWaveFunction::alternateEvalGrad(ParticleSet& P,int iat)
-{
-  //TAU_PROFILE("TrialWaveFunction::evalGrad","(ParticleSet& P,int iat)", TAU_USER);
-  GradType grad_iat;
-  for(size_t i=0,n=Z.size(); i<n; ++i)
-    grad_iat += Z[i]->alternateEvalGrad(P,iat);
   return grad_iat;
 }
 
@@ -450,7 +391,6 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGradSource(ParticleSet& P
 TrialWaveFunction::RealType TrialWaveFunction::ratioGrad(ParticleSet& P
     ,int iat, GradType& grad_iat )
 {
-  //TAU_PROFILE("TrialWaveFunction::ratioGrad","(ParticleSet& P,int iat)", TAU_USER);
   grad_iat=0.0;
   ValueType r(1.0);
   for (int i=0, ii=VGL_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
@@ -460,37 +400,11 @@ TrialWaveFunction::RealType TrialWaveFunction::ratioGrad(ParticleSet& P
     myTimers[ii]->stop();
   }
 #if defined(QMC_COMPLEX)
-  //return std::exp(evaluateLogAndPhase(r,PhaseValue));
-  RealType logr=evaluateLogAndPhase(r,PhaseValue);
+  RealType logr=evaluateLogAndPhase(r,PhaseDiff);
   return std::exp(logr);
 #else
   if (r<0)
     PhaseDiff=M_PI;
-  //     else PhaseDiff=0.0;
-  return r;
-#endif
-}
-
-TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
-    ,int iat, GradType& grad_iat )
-{
-  //TAU_PROFILE("TrialWaveFunction::ratioGrad","(ParticleSet& P,int iat)", TAU_USER);
-  grad_iat=0.0;
-  ValueType r(1.0);
-  for (int i=0,ii=VGL_TIMER; i<Z.size(); ++i,ii+=TIMER_SKIP)
-  {
-    myTimers[ii]->start();
-    r *= Z[i]->alternateRatioGrad(P,iat,grad_iat);
-    myTimers[ii]->stop();
-  }
-#if defined(QMC_COMPLEX)
-  //return std::exp(evaluateLogAndPhase(r,PhaseValue));
-  RealType logr=evaluateLogAndPhase(r,PhaseValue);
-  return std::exp(logr);
-#else
-  if (r<0)
-    PhaseDiff=M_PI;
-  //     else PhaseDiff=0.0;
   return r;
 #endif
 }

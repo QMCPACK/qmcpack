@@ -115,11 +115,6 @@ public:
 
   void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
-  ValueType alternateRatio(ParticleSet& P)
-  {
-    return 1.0;
-  }
-
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   GradType evalGrad(ParticleSet& P, int iat);
   GradType evalGradSource(ParticleSet &P, ParticleSet &source,
