@@ -48,6 +48,8 @@ struct AtomicOrbitalSoA
   SoaSphericalTensor<ST> Ylm;
   vContainer_type l_vals;
   vContainer_type r_power_minus_l;
+  ///expose the pointer to reuse the reader and only assigned with create_spline
+  ///also used as identifier of shallow copy
   AtomicSplineType* MultiSpline;
   MultiBspline1D<ST>* SplineInst;
 

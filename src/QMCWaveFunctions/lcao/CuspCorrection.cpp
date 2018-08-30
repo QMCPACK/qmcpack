@@ -176,4 +176,28 @@ void removeSTypeOrbitals(const std::vector<bool>& corrCenter, LCAOrbitalSet& Phi
   }
 }
 
+
+// Will be the corrected value for r < rc and the original wavefunction for r > rc
+void computeRadialPhiBar(ParticleSet* targetP,
+                         ParticleSet* sourceP,
+                         int curOrb_,
+                         int curCenter_,
+                         SPOSet* Phi,
+                         Vector<QMCTraits::RealType>& xgrid,
+                         Vector<QMCTraits::RealType>& rad_orb,
+                         const CuspCorrectionParameters& data)
+{
+  CuspCorrection cusp(targetP, sourceP);
+  cusp.setPsi(Phi);
+  cusp.cparam    = data;
+  cusp.curOrb    = curOrb_;
+  cusp.curCenter = curCenter_;
+
+  for (int i = 0; i < xgrid.size(); i++)
+  {
+    rad_orb[i] = cusp.phiBar(xgrid[i]);
+  }
+}
+
+
 }; // namespace qmcplusplus

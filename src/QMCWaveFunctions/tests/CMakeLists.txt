@@ -30,7 +30,7 @@ MAYBE_SYMLINK(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
 MAYBE_SYMLINK(${UTEST_HDF_INPUT2} ${UTEST_DIR}/bccH.pwscf.h5)
 MAYBE_SYMLINK(${UTEST_HDF_INPUT3} ${UTEST_DIR}/LiH-arb.pwscf.h5)
 
-SET(FILES_TO_COPY he_sto3g.wfj.xml  ne_def2_svp.wfnoj.xml hcn.structure.xml hcn.wfnoj.xml hcn_downdet.cuspInfo.xml)
+SET(FILES_TO_COPY he_sto3g.wfj.xml  ne_def2_svp.wfnoj.xml hcn.structure.xml hcn.wfnoj.xml hcn_downdet.cuspInfo.xml hcn_updet.cuspInfo.xml)
 
 FOREACH(fname ${FILES_TO_COPY})
   EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/${fname}" ${UTEST_DIR})

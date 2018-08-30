@@ -35,7 +35,7 @@ namespace qmcplusplus
   template<typename T>
     inline void 
     MultiBspline<T>::evaluate_vgl_impl(T x, T y, T z, 
-        T* restrict vals, T* restrict grads, T* restrict lapl, int first, int last, size_t out_offset) const
+        T* restrict vals, T* restrict grads, T* restrict lapl, size_t out_offset, int first, int last) const
     {
       x -= spline_m->x_grid.start;
       y -= spline_m->y_grid.start;
@@ -56,16 +56,14 @@ namespace qmcplusplus
       const intptr_t ys = spline_m->y_stride;
       const intptr_t zs = spline_m->z_stride;
 
-      out_offset=(out_offset)?out_offset:spline_m->num_splines;
       const int num_splines=last-first;
 
-      ASSUME_ALIGNED(vals);
-      T* restrict gx=grads;              ASSUME_ALIGNED(gx);
-      T* restrict gy=grads+  out_offset; ASSUME_ALIGNED(gy);
-      T* restrict gz=grads+2*out_offset; ASSUME_ALIGNED(gz);
-      T* restrict lx=lapl;               ASSUME_ALIGNED(lx);
-      T* restrict ly=lapl+  out_offset;  ASSUME_ALIGNED(ly);
-      T* restrict lz=lapl+2*out_offset;  ASSUME_ALIGNED(lz);
+      T* restrict gx=grads;
+      T* restrict gy=grads+  out_offset;
+      T* restrict gz=grads+2*out_offset;
+      T* restrict lx=lapl;
+      T* restrict ly=lapl+  out_offset;
+      T* restrict lz=lapl+2*out_offset;
 
       std::fill(vals,vals+num_splines,T());
       std::fill(gx,gx+num_splines,T());
@@ -85,14 +83,14 @@ namespace qmcplusplus
           const T pre01 =   a[i]* db[j];
           const T pre02 =   a[i]*d2b[j];
 
-          const T* restrict coefs = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs) + first; ASSUME_ALIGNED(coefs);
-          const T* restrict coefszs  = coefs+zs;       ASSUME_ALIGNED(coefszs);
-          const T* restrict coefs2zs = coefs+2*zs;     ASSUME_ALIGNED(coefs2zs);
-          const T* restrict coefs3zs = coefs+3*zs;     ASSUME_ALIGNED(coefs3zs);
+          const T* restrict coefs = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs) + first;
+          const T* restrict coefszs  = coefs+zs;
+          const T* restrict coefs2zs = coefs+2*zs;
+          const T* restrict coefs3zs = coefs+3*zs;
 
-          #pragma noprefetch
-          #pragma omp simd
-          for (int n=0; n<num_splines; n++) {
+          #pragma omp simd aligned(coefs,coefszs,coefs2zs,coefs3zs,gx,gy,gz,lx,ly,lz,vals)
+          for (int n=0; n<num_splines; n++)
+          {
             const T coefsv = coefs[n];
             const T coefsvzs = coefszs[n];
             const T coefsv2zs = coefs2zs[n];
@@ -119,7 +117,7 @@ namespace qmcplusplus
       const T dyInv2 = dyInv*dyInv;
       const T dzInv2 = dzInv*dzInv;
 
-      #pragma omp simd
+      #pragma omp simd aligned(gx,gy,gz,lx)
       for (int n=0; n<num_splines; n++) 
       {
         gx[n] *= dxInv;
@@ -132,7 +130,7 @@ namespace qmcplusplus
   template<typename T>
     inline void 
     MultiBspline<T>::evaluate_vgh_impl(T x, T y, T z, 
-        T* restrict vals, T* restrict grads, T* restrict hess, int first, int last, size_t out_offset) const
+        T* restrict vals, T* restrict grads, T* restrict hess, size_t out_offset, int first, int last) const
     {
 
       int ix,iy,iz;
@@ -154,20 +152,18 @@ namespace qmcplusplus
       const intptr_t ys = spline_m->y_stride;
       const intptr_t zs = spline_m->z_stride;
 
-      out_offset=(out_offset)?out_offset:spline_m->num_splines;
       const int num_splines=last-first;
 
-      ASSUME_ALIGNED(vals);
-      T* restrict gx=grads             ; ASSUME_ALIGNED(gx);
-      T* restrict gy=grads  +out_offset; ASSUME_ALIGNED(gy);
-      T* restrict gz=grads+2*out_offset; ASSUME_ALIGNED(gz);
+      T* restrict gx=grads;
+      T* restrict gy=grads  +out_offset;
+      T* restrict gz=grads+2*out_offset;
 
-      T* restrict hxx=hess             ; ASSUME_ALIGNED(hxx);
-      T* restrict hxy=hess+  out_offset; ASSUME_ALIGNED(hxy);
-      T* restrict hxz=hess+2*out_offset; ASSUME_ALIGNED(hxz);
-      T* restrict hyy=hess+3*out_offset; ASSUME_ALIGNED(hyy);
-      T* restrict hyz=hess+4*out_offset; ASSUME_ALIGNED(hyz);
-      T* restrict hzz=hess+5*out_offset; ASSUME_ALIGNED(hzz);
+      T* restrict hxx=hess;
+      T* restrict hxy=hess+  out_offset;
+      T* restrict hxz=hess+2*out_offset;
+      T* restrict hyy=hess+3*out_offset;
+      T* restrict hyz=hess+4*out_offset;
+      T* restrict hzz=hess+5*out_offset;
 
       std::fill(vals,vals+num_splines,T());
       std::fill(gx,gx+num_splines,T());
@@ -181,11 +177,12 @@ namespace qmcplusplus
       std::fill(hzz,hzz+num_splines,T());
 
       for (int i=0; i<4; i++)
-        for (int j=0; j<4; j++){
-          const T* restrict coefs = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs) + first; ASSUME_ALIGNED(coefs);
-          const T* restrict coefszs  = coefs+zs;       ASSUME_ALIGNED(coefszs);
-          const T* restrict coefs2zs = coefs+2*zs;     ASSUME_ALIGNED(coefs2zs);
-          const T* restrict coefs3zs = coefs+3*zs;     ASSUME_ALIGNED(coefs3zs);
+        for (int j=0; j<4; j++)
+        {
+          const T* restrict coefs = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs) + first;
+          const T* restrict coefszs  = coefs+zs;
+          const T* restrict coefs2zs = coefs+2*zs;
+          const T* restrict coefs3zs = coefs+3*zs;
 
           const T pre20 = d2a[i]*  b[j];
           const T pre10 =  da[i]*  b[j];
@@ -194,57 +191,9 @@ namespace qmcplusplus
           const T pre01 =   a[i]* db[j];
           const T pre02 =   a[i]*d2b[j];
 
-#if defined(__AVX512F__) && defined(QMC_ES_PREFETCH)
-          const int iSplitPoint = std::max(0, num_splines - 32);
-#else
-          const int iSplitPoint = num_splines;
-#endif
-
-          #pragma omp simd
-          for (int n=0; n<iSplitPoint; n++) {
-
-            T coefsv = coefs[n];
-            T coefsvzs = coefszs[n];
-            T coefsv2zs = coefs2zs[n];
-            T coefsv3zs = coefs3zs[n];
-
-            T sum0 =   c[0] * coefsv +   c[1] * coefsvzs +   c[2] * coefsv2zs +   c[3] * coefsv3zs;
-            T sum1 =  dc[0] * coefsv +  dc[1] * coefsvzs +  dc[2] * coefsv2zs +  dc[3] * coefsv3zs;
-            T sum2 = d2c[0] * coefsv + d2c[1] * coefsvzs + d2c[2] * coefsv2zs + d2c[3] * coefsv3zs;
-
-            hxx[n] += pre20 * sum0;
-            hxy[n] += pre11 * sum0;
-            hxz[n] += pre10 * sum1;
-            hyy[n] += pre02 * sum0;
-            hyz[n] += pre01 * sum1;
-            hzz[n] += pre00 * sum2;
-            gx[n] += pre10 * sum0;
-            gy[n] += pre01 * sum0;
-            gz[n] += pre00 * sum1;
-            vals[n]+= pre00 * sum0;
-
-          }
-#if defined(__AVX512F__) && defined(QMC_ES_PREFETCH)
+          #pragma omp simd aligned(coefs,coefszs,coefs2zs,coefs3zs,gx,gy,gz,hxx,hxy,hxz,hyy,hyz,hzz,vals)
+          for (int n=0; n<num_splines; n++)
           {
-            int pfi = (j==3) ? i+1:i;
-            int pfj = (j+1)%4;
-            T* restrict coefs = spline_m->coefs + ((ix+pfi)*xs + (iy+pfj)*ys + iz*zs) + first; ASSUME_ALIGNED(coefs);
-            T* restrict coefszs  = coefs+zs;       ASSUME_ALIGNED(coefszs);
-            T* restrict coefs2zs = coefs+2*zs;     ASSUME_ALIGNED(coefs2zs);
-            T* restrict coefs3zs = coefs+3*zs;     ASSUME_ALIGNED(coefs3zs);
-
-            for ( int dist = 0; dist < 64; dist +=16 ) {
-              _mm_prefetch((char const*)(coefs+dist),_MM_HINT_T1);
-              _mm_prefetch((char const*)(coefszs+dist),_MM_HINT_T1);
-              _mm_prefetch((char const*)(coefs2zs+dist),_MM_HINT_T1);
-              _mm_prefetch((char const*)(coefs3zs+dist),_MM_HINT_T1);
-            }
-
-          }
-
-          #pragma omp simd
-          for (int n=iSplitPoint; n<num_splines; n++) {
-
             T coefsv = coefs[n];
             T coefsvzs = coefszs[n];
             T coefsv2zs = coefs2zs[n];
@@ -266,8 +215,6 @@ namespace qmcplusplus
             vals[n]+= pre00 * sum0;
 
           }
-#endif
-
         }
 
       const T dxInv = spline_m->x_grid.delta_inv;
@@ -280,7 +227,7 @@ namespace qmcplusplus
       const T dxz=dxInv*dzInv;
       const T dyz=dyInv*dzInv;
 
-      #pragma omp simd
+      #pragma omp simd aligned(gx,gy,gz,hxx,hxy,hxz,hyy,hyz,hzz)
       for (int n=0; n<num_splines; n++)
       {
         gx[n]*=dxInv; 
@@ -300,7 +247,7 @@ namespace qmcplusplus
   template<typename T>
     inline void
     MultiBspline<T>::evaluate_vgl_impl(T x, T y, T z,
-        T* restrict vals, T* restrict grads, T* restrict lapl, int first, int last, size_t out_offset) const
+        T* restrict vals, T* restrict grads, T* restrict lapl, size_t out_offset, int first, int last) const
     {
       x -= spline_m->x_grid.start;
       y -= spline_m->y_grid.start;
@@ -334,7 +281,6 @@ namespace qmcplusplus
       const intptr_t ys = spline_m->y_stride;
       const intptr_t zs = spline_m->z_stride;
 
-      out_offset=(out_offset)?out_offset:spline_m->num_splines;
       const int num_splines=last-first;
 
       T* restrict gx=grads;
@@ -457,7 +403,7 @@ namespace qmcplusplus
   template<typename T>
     inline void 
     MultiBspline<T>::evaluate_vgh_impl(T x, T y, T z, 
-        T* restrict vals, T* restrict grads, T* restrict hess, int first, int last, size_t out_offset) const
+        T* restrict vals, T* restrict grads, T* restrict hess, size_t out_offset, int first, int last) const
     {
       x -= spline_m->x_grid.start;
       y -= spline_m->y_grid.start;
@@ -493,7 +439,6 @@ namespace qmcplusplus
       const intptr_t ys = spline_m->y_stride;
       const intptr_t zs = spline_m->z_stride;
 
-      out_offset=(out_offset)?out_offset:spline_m->num_splines;
       const int num_splines=last-first;
 
       T* restrict gx=grads             ;

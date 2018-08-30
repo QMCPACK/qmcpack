@@ -16,6 +16,7 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
 
+
 namespace qmcplusplus
 {
   /** class to handle linear combinations of basis orbitals used to evaluate the Dirac determinants.
@@ -56,7 +57,7 @@ namespace qmcplusplus
 
     LCAOrbitalSet(const LCAOrbitalSet& in)=default;
 
-    ~LCAOrbitalSet();
+    virtual ~LCAOrbitalSet();
 
     SPOSet* makeClone() const;
 
@@ -74,7 +75,7 @@ namespace qmcplusplus
 
     /** set the OrbitalSetSize
     */
-    void setOrbitalSetSize(int norbs)
+    virtual void setOrbitalSetSize(int norbs)
     {
       OrbitalSetSize=norbs;
       Tempv.resize(OrbitalSetSize);
