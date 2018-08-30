@@ -12,16 +12,16 @@
 #include "catch.hpp"
 
 #include "QMCWaveFunctions/BsplineFactory/BsplineDeviceCUDA.h"
-#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBaseVectorized.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorVectorized.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineR2RAdoptorCUDA.h"
 #include <iostream>
 
 namespace qmcplusplus
 {
 
-TEST_CASE("SplineAdoptorBaseVectorized_Instantiation", "[wavefunction]")
+TEST_CASE("SplineAdoptorVectorized_Instantiation", "[wavefunction]")
 {
-  SplineAdoptorBaseVectorized<BsplineDeviceCUDA, double, 3> testAdoptor;
+  SplineAdoptorVectorized<BsplineDeviceCUDA, double, 3> testAdoptor;
 }
   
 TEST_CASE("SplineR2RAdoptorCUDA_Instantiation", "[wavefunction]")

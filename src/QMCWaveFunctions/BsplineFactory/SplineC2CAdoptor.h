@@ -19,7 +19,7 @@
 
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
-#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineAdoptor.h"
 
 //#define USE_VECTOR_ML 1
 
@@ -34,10 +34,10 @@ namespace qmcplusplus
  * Requires temporage storage and multiplication of phase vectors
  */
 template<typename ST, typename TT>
-struct SplineC2CAdoptor: public SplineAdoptorBase<ST,3>
+struct SplineC2CAdoptor: public SplineAdoptor<ST,3>
 {
   static const int D=3;
-  using BaseType=SplineAdoptorBase<ST,3>;
+  using BaseType=SplineAdoptor<ST,3>;
   using SplineType=typename bspline_traits<ST,3>::SplineType;
   using BCType=typename bspline_traits<ST,3>::BCType;
   using DataType=ST;
@@ -100,7 +100,7 @@ struct SplineC2CAdoptor: public SplineAdoptorBase<ST,3>
   //}
 
   SplineC2CAdoptor(const SplineC2CAdoptor& a):
-    SplineAdoptorBase<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr),
+    SplineAdoptor<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr),
     mKK(a.mKK), myKcart(a.myKcart)
   {
     const size_t n=a.myL.size();
@@ -199,7 +199,7 @@ struct SplineC2CAdoptor: public SplineAdoptorBase<ST,3>
   bool read_splines(hdf_archive& h5f)
   {
     std::ostringstream o;
-    o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
+    o<<"spline_" << SplineAdoptor<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(SplineInst->spline_m);
     return h5f.read(bigtable,o.str().c_str());//"spline_0");
   }
@@ -207,7 +207,7 @@ struct SplineC2CAdoptor: public SplineAdoptorBase<ST,3>
   bool write_splines(hdf_archive& h5f)
   {
     std::ostringstream o;
-    o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
+    o<<"spline_" << SplineAdoptor<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(SplineInst->spline_m);
     return h5f.write(bigtable,o.str().c_str());//"spline_0");
   }

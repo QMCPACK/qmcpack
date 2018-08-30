@@ -32,7 +32,7 @@
 #include <Utilities/ProgressReportEngine.h>
 #include <QMCWaveFunctions/einspline_helper.hpp>
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
-#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineAdoptor.h"
 
 namespace qmcplusplus
 {
@@ -368,7 +368,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
       temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);
       //set the flags for anti periodic boundary conditions
-      temp_OrbitalSet->HalfG = dynamic_cast<SplineAdoptorBase<double,3> *>(OrbitalSet)->HalfG;
+      temp_OrbitalSet->HalfG = dynamic_cast<SplineAdoptor<double,3> *>(OrbitalSet)->HalfG;
       new_OrbitalSet = temp_OrbitalSet;
     }
     else

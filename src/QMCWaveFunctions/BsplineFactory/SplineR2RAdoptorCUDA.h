@@ -15,8 +15,8 @@
 #include "Configuration.h"
 #include "OhmmsSoA/Container.h"
 #include "spline2/MultiBspline.hpp"
-#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
-#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBaseVectorized.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineAdoptor.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorVectorized.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineDeviceCUDA.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorReaderP.h"
 #include "CUDA/gpu_vector.h"
@@ -32,14 +32,14 @@ namespace qmcplusplus
  * Requires temporage storage and multiplication of phase vectors
  */
 template<typename ST, typename TT>
-class SplineR2RAdoptorCUDA: public SplineAdoptorBaseVectorized<BsplineDeviceCUDA, ST,3>
+class SplineR2RAdoptorCUDA: public SplineAdoptorVectorized<BsplineDeviceCUDA, ST,3>
 {
 public:
   //Dimensionality
   static constexpr int D = OHMMS_DIM;
 
   using PosType = PtclOnLatticeTraits::SingleParticlePos_t;
-  using BaseType = SplineAdoptorBaseVectorized<BsplineDeviceCUDA, ST, 3>;
+  using BaseType = SplineAdoptorVectorized<BsplineDeviceCUDA, ST, 3>;
   using SplineType = typename bspline_traits<ST,3>::SplineType;
   using BCType = typename bspline_traits<ST,3>::BCType;
   using PointType = typename BaseType::PointType;
@@ -47,7 +47,7 @@ public:
 
   using BaseType::first_spo;
   using BaseType::last_spo;
-  using SplineAdoptorBaseVectorized<BsplineDeviceCUDA, ST, D>::HalfG;
+  using SplineAdoptorVectorized<BsplineDeviceCUDA, ST, D>::HalfG;
   using BaseType::GGt;
   using BaseType::PrimLattice;
   using BaseType::kPoints;
@@ -89,7 +89,7 @@ public:
   }
 
   // SplineR2RAdoptorCUDA(const SplineR2RAdoptorCUDA& a):
-  //   SplineAdoptorBase<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr)
+  //   SplineAdoptor<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr)
   // {
   //   const size_t vsize = a.myVs.size();
   //   //Exception if you copy construct an unintialized Vectorized Adoptor
@@ -193,7 +193,7 @@ public:
   bool read_splines(hdf_archive& h5f)
   {
     std::ostringstream o;
-    o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
+    o<<"spline_" << SplineAdoptor<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(SplineInst->spline_m);
     return h5f.read(bigtable,o.str().c_str());//"spline_0");
   }
@@ -201,7 +201,7 @@ public:
   bool write_splines(hdf_archive& h5f)
   {
     std::ostringstream o;
-    o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
+    o<<"spline_" << SplineAdoptor<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(SplineInst->spline_m);
     return h5f.write(bigtable,o.str().c_str());//"spline_0");
   }

@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2018 QMCPACK developers.
+// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
@@ -13,8 +13,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/** \file SplineAdoptorBaseVectorized.h
- * \class SplineAdoptorVectorized
+/** @file SplineAdoptor.h
+ *
  * Base class for SplineAdoptor's used for BsplineSet<SplineAdoptor>
  * Specifies that a SplineXXXAdopter provides these functions
  * - evaluate_v    value only
@@ -24,18 +24,13 @@
  * - SplineC2RAdoptor<ST,TT,D> : real wavefunction using complex einspline, tiling
  * - SplineC2CAdoptor<ST,TT,D> : complex wavefunction using complex einspline, tiling
  * - SplineR2RAdoptor<ST,TT,D> : real wavefunction using real einspline, a single twist
- * where ST (TT) is the precision of the einspline (SPOSetBase).
+ * where ST (TT) is the precision of the einspline (SPOSet).
  *
  * typedefs and data members are duplicated for each adoptor class.
  * @todo Specalization and optimization for orthorhombic cells to use vgl not vgh
  */
-#ifndef QMCPLUSPLUS_SPLINEADOPTORBASEVECTORIZED_H
-#define QMCPLUSPLUS_SPLINEADOPTORBASEVECTORIZED_H
-
-//#include "QMCWaveFunctions/BsplineFactory/BsplineDevice.h"
-//#include "QMCWaveFunctions/BsplineFactory/BsplineDeviceCUDA.h"
-#include "Lattice/CrystalLattice.h"
-#include "simd/allocator.hpp"
+#ifndef QMCPLUSPLUS_SPLINEADOPTORBASE_H
+#define QMCPLUSPLUS_SPLINEADOPTORBASE_H
 
 namespace qmcplusplus
 {
@@ -44,16 +39,13 @@ namespace qmcplusplus
  *
  * This handles SC and twist and declare storage for einspline
  */
-template<template<typename, unsigned> class DEVICE, typename ST, unsigned D>
-class SplineAdoptorBaseVectorized
+template<typename ST, unsigned D>
+class SplineAdoptor
 {
 public:
-  //static_assert(std::is_base_of<BsplineDevice<DEVICE, ST, D>, DEVICE>, "DEVICE must inherit from BsplineDevice");
   using PointType=TinyVector<ST,D>;
-  using SingleSplineType = typename DEVICE<ST,D>::SingleBsplineType;
+  using SingleSplineType=UBspline_3d_d;
   using DataType=ST; 
-
-  DEVICE<ST,D> bspline_dev;
   ///true if the computed values are complex
   bool is_complex;
   ///true, if it has only one k point and Gamma
@@ -87,12 +79,14 @@ public:
   ///keyword used to match hdf5
   std::string KeyWord;
 
-  SplineAdoptorBaseVectorized()
+  SplineAdoptor()
     :is_complex(false),is_gamma_only(false), is_soa_ready(false),
     MyIndex(0),nunique_orbitals(0),first_spo(0),last_spo(0)
   { }
 
-  SplineAdoptorBaseVectorized(const SplineAdoptorBaseVectorized& rhs)=default;
+#if (__cplusplus >= 201103L)
+  SplineAdoptor(const SplineAdoptor& rhs)=default;
+#endif
 
   inline void init_base(int n)
   {
