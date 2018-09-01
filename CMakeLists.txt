@@ -195,15 +195,6 @@ SET(QMC_BUILD_STATIC 0 CACHE BOOL "Link to static libraries")
 SET(ENABLE_TIMERS 0 CACHE BOOL "Enable internal timers")
 
 ######################################################################
-# Performance-related macros
-# QMC_SK_USE_RECURSIVE enable/disable recursive evalaution of SK
-######################################################################
-SET(QMC_SK_USE_RECURSIVE 0 CACHE BOOL "Use recursive evalaution of SK")
-IF(QMC_SK_USE_RECURSIVE)
-  MESSAGE(STATUS "SK structure factor uses a recursive algorithm.")
-ENDIF(QMC_SK_USE_RECURSIVE)
-
-######################################################################
 # FIXED PARAMETERS for test and legacy reasons
 # DO NOT TOUCH THESE
 # QMC_ORTHO  = 0 for general unit cell, 1 for orthogonal cells

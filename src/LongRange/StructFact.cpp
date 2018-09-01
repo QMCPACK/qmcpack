@@ -90,33 +90,6 @@ void
 StructFact::FillRhok(ParticleSet& P)
 {
   int npart = P.getTotalNum();
-#if defined(QMC_SK_USE_RECURSIVE)
-  rhok=0.0;
-  for(int i=0; i<npart; i++)
-  {
-    //operate with a reduced positon
-    PosType tau_red=P.LRBox.toUnit(P.R[i]);
-    for(int idim=0; idim<DIM; idim++)
-    {
-      RealType phi=TWOPI*tau_red[idim];
-      ComplexType ctemp(std::cos(phi),std::sin(phi));
-      C(idim,KLists.mmax[idim])=1.0;
-      for(int n=1; n<=KLists.mmax[idim]; n++)
-      {
-        C(idim,KLists.mmax[idim]+n) = ctemp*C(idim,KLists.mmax[idim]+n-1);
-        C(idim,KLists.mmax[idim]-n) = conj(C(idim,KLists.mmax[idim]+n));
-      }
-    }
-    ComplexType* restrict eikr_ref=eikr[i];
-    for(int ki=0; ki<KLists.numk; ki++)
-    {
-      eikr_ref[ki]=C(0,KLists.kpts[ki][0]+KLists.mmax[0]);
-      for(idim=1; idim<DIM; id++)
-        eikr_ref[ki] *= C(idim,KLists.kpts[ki][idim]+KLists.mmax[idim]);
-    }
-    accumulate_elements(eikr_ref,eikr_ref+KLists.numk,rhok[P.GroupID[i]]);
-  } //End particle loop
-#else
 #if defined(USE_REAL_STRUCT_FACTOR)
   rhok_r=0.0;
   rhok_i=0.0;
@@ -165,18 +138,8 @@ StructFact::FillRhok(ParticleSet& P)
     }
   }
 #endif
-#endif
 }
 
-
-void
-StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int GroupID)
-{
-#if defined(USE_REAL_STRUCT_FACTOR)
-  APP_ABORT("WHO IS USING UpdateRhok");
-#else
-#endif
-}
 
 void StructFact::makeMove(int active, const PosType& pos)
 {

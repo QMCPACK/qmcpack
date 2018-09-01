@@ -131,20 +131,6 @@ namespace qmcplusplus {
           phi[i]=x*kpts[i*3]+y*kpts[i*3+1]+z*kpts[i*3+2];
       }
 
-    template<typename AT, typename BT, typename CT>
-      inline void get_phase(const AT& kpts, const BT& pos, CT& phase)
-      {
-        const char transa = 'T';
-        const char transb = 'N';
-        const double zone(1.0);
-        const double zero(0.0);
-        dgemm(transa, transb
-            , phase.cols(), phase.rows(), 3
-            , zone
-            , &(kpts[0][0]), 3
-            , &(pos[0][0]), 3
-            , zero, phase.data(), phase.rows());
-      }
   }
 }
 #endif
