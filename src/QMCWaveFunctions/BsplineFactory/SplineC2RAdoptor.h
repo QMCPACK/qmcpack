@@ -24,6 +24,8 @@
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
+#include <Utilities/UtilityFunctions.h>
+
 namespace qmcplusplus
 {
 
@@ -334,11 +336,11 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 
     #pragma omp parallel
     {
-      const int tid          = omp_get_thread_num();
-      const int nt           = omp_get_num_threads();
-      const size_t blocksize = getAlignedSize<ST>((myV.size()+nt-1)/nt);
-      const int first        = tid*blocksize;
-      const int last         = std::min((tid+1)*blocksize,myV.size());
+      int first, last;
+      FairDivideAligned(myV.size(), getAlignment<ST>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
 
       SplineInst->evaluate(ru,myV,first,last);
       assign_v(r,myV,psi,first/2,last/2);
@@ -350,11 +352,11 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   {
     #pragma omp parallel
     {
-      const int tid          = omp_get_thread_num();
-      const int nt           = omp_get_num_threads();
-      const size_t blocksize = getAlignedSize<ST>((myV.size()+nt-1)/nt);
-      const int first        = tid*blocksize;
-      const int last         = std::min((tid+1)*blocksize,myV.size());
+      int first, last;
+      FairDivideAligned(myV.size(), getAlignment<ST>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
 
       for(int iat=0; iat<VP.getTotalNum(); ++iat)
       {
@@ -641,11 +643,11 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
 
     #pragma omp parallel
     {
-      const int tid          = omp_get_thread_num();
-      const int nt           = omp_get_num_threads();
-      const size_t blocksize = getAlignedSize<ST>((myV.size()+nt-1)/nt);
-      const int first        = tid*blocksize;
-      const int last         = std::min((tid+1)*blocksize,myV.size());
+      int first, last;
+      FairDivideAligned(myV.size(), getAlignment<ST>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
 
       SplineInst->evaluate_vgh(ru,myV,myG,myH,first,last);
       assign_vgl(r,psi,dpsi,d2psi,first/2,last/2);

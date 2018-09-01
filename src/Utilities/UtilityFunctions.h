@@ -70,6 +70,21 @@ inline void FairDivide(int ntot, int npart, IV& adist)
   adist[npart]=ntot;
 }
 
+/** Partition ntot over npart and the size of each partition is a multiple of base size
+ *\param ntot the total size
+ *\param base the base size
+ *\param npart the number of partitions
+ *\param me my partition id [0,ntot)
+ *\param first the beginning of my partition, can be equal and larger than ntot
+ *\param last the end of my partition, must be smaller than ntot
+ *
+ */
+inline void FairDivideAligned(const int ntot, const int base, const int npart, int me, int& first, int& last)
+{
+  const int blocksize = (((ntot+npart-1)/npart+base-1)/base)*base;
+  first = me*blocksize;
+  last  = std::min((me+1)*blocksize,ntot);
+}
 
 /** partition ntot elements among npart
  * @param ntot total number of elements
