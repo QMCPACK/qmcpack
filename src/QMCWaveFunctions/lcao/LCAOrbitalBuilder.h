@@ -60,6 +60,9 @@ namespace qmcplusplus
     ///Number of periodic Images for Orbital evaluation
     TinyVector<int,3> PBCImages;
 
+    /// Enable cusp correction
+    bool doCuspCorrection;
+
     ///load basis set from hdf5 file
     void loadBasisSetFromH5();
     /** create basis set

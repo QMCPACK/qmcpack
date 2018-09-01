@@ -131,21 +131,9 @@ public:
   }
 
   virtual
-  inline ValueType alternateRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
-  {
-    return Dets[getDetID(iat)]->alternateRatioGrad(P,iat,grad_iat);
-  }
-
-  virtual
   GradType evalGrad(ParticleSet& P, int iat)
   {
     return Dets[getDetID(iat)]->evalGrad(P,iat);
-  }
-
-  virtual
-  GradType alternateEvalGrad(ParticleSet& P, int iat)
-  {
-    return Dets[getDetID(iat)]->alternateEvalGrad(P,iat);
   }
 
   virtual
@@ -174,19 +162,6 @@ public:
     return Dets[getDetID(iat)]->restore(iat);
   }
 
-  RealType getAlternatePhaseDiff()
-  {
-    RealType ap(0.0);
-    for (int iz=0; iz < size(); iz++)
-      ap += Dets[iz]->getAlternatePhaseDiff();
-    return ap;
-  }
-
-  RealType getAlternatePhaseDiff(int iat)
-  {
-    return Dets[getDetID(iat)]->getAlternatePhaseDiff();
-  }
-
   virtual
   inline void acceptMove(ParticleSet& P, int iat)
   {
@@ -204,22 +179,6 @@ public:
   inline ValueType ratio(ParticleSet& P, int iat)
   {
     return Dets[getDetID(iat)]->ratio(P,iat);
-  }
-
-  virtual
-  inline ValueType alternateRatio(ParticleSet& P)
-  {
-    ValueType v(1.0);
-    for(int i=0; i<Dets.size(); ++i)
-      v *= Dets[i]->alternateRatio(P);
-    return v;
-  }
-
-  virtual
-  inline void alternateGrad(ParticleSet::ParticleGradient_t& G)
-  {
-    for(int i=0; i<Dets.size(); ++i)
-      Dets[i]->alternateGrad(G);
   }
 
   virtual

@@ -166,15 +166,6 @@ struct WaveFunctionComponent: public QMCTraits
     ionDerivs=calcionderiv;
   }
 
-  virtual RealType getAlternatePhaseDiff()
-  {
-    return 0.0;
-  }
-  virtual RealType getAlternatePhaseDiff(int iat)
-  {
-    return 0.0;
-  }
-
   virtual void resetPhaseDiff() {}
 
   ///assign a differential orbital
@@ -255,11 +246,6 @@ struct WaveFunctionComponent: public QMCTraits
     return GradType();
   }
 
-  virtual GradType alternateEvalGrad(ParticleSet& P, int iat)
-  {
-    return GradType();
-  }
-
   /** return the logarithmic gradient for the iat-th particle
    * of the source particleset
    * @param Pquantum particle set
@@ -305,13 +291,6 @@ struct WaveFunctionComponent: public QMCTraits
     return ValueType();
   }
 
-  virtual ValueType alternateRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
-  {
-    return 1.0;
-  }
-
-  virtual void alternateGrad(ParticleSet::ParticleGradient_t& G) {}
-
   /** a move for iat-th particle is accepted. Update the content for the next moves
    * @param P target ParticleSet
    * @param iat index of the particle whose new position was proposed
@@ -331,11 +310,6 @@ struct WaveFunctionComponent: public QMCTraits
    *Specialized for particle-by-particle move.
    */
   virtual ValueType ratio(ParticleSet& P, int iat) =0;
-
-  virtual ValueType alternateRatio(ParticleSet& P)
-  {
-    return 1.0;
-  };
 
   /** For particle-by-particle move. Requests space in the buffer
    *  based on the data type sizes of the objects in this class.

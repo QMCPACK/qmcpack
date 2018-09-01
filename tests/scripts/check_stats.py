@@ -1052,17 +1052,7 @@ from numpy import array,ndarray,minimum,abs,ix_,resize
 import sys
 import keyword
 from inspect import getmembers
-
-from superstring import valid_variable_name
-from generic import obj
-from developer import DevBase,unavailable
-try:
-    import h5py
-except ImportError:
-    h5py = unavailable('h5py')
-#end try
-from debug import *
-
+import h5py
 
 
 class HDFglobals(DevBase):

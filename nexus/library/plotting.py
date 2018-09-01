@@ -31,7 +31,7 @@ try:
     params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
           'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
     rcParams.update(params)
-except (ImportError,RuntimeError):
+except:
     success = False
 #end try
 if not success:

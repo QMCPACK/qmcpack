@@ -55,7 +55,6 @@ StructFact::UpdateNewCell(ParticleSet& P, RealType kc)
 
 void StructFact::resize(int ns, int nptcl, int nkpts)
 {
-  phiV.resize(nkpts);
 #if defined(USE_REAL_STRUCT_FACTOR)
   rhok_r.resize(ns,nkpts);
   rhok_i.resize(ns,nkpts);
@@ -71,8 +70,6 @@ void StructFact::resize(int ns, int nptcl, int nkpts)
   eikr.resize(nptcl,nkpts);
   eikr_temp.resize(nkpts);
 #endif
-  int maxdim=KLists.mmax[DIM];
-  C.resize(DIM,2*maxdim+1);
 }
 
 
@@ -90,33 +87,6 @@ void
 StructFact::FillRhok(ParticleSet& P)
 {
   int npart = P.getTotalNum();
-#if defined(QMC_SK_USE_RECURSIVE)
-  rhok=0.0;
-  for(int i=0; i<npart; i++)
-  {
-    //operate with a reduced positon
-    PosType tau_red=P.LRBox.toUnit(P.R[i]);
-    for(int idim=0; idim<DIM; idim++)
-    {
-      RealType phi=TWOPI*tau_red[idim];
-      ComplexType ctemp(std::cos(phi),std::sin(phi));
-      C(idim,KLists.mmax[idim])=1.0;
-      for(int n=1; n<=KLists.mmax[idim]; n++)
-      {
-        C(idim,KLists.mmax[idim]+n) = ctemp*C(idim,KLists.mmax[idim]+n-1);
-        C(idim,KLists.mmax[idim]-n) = conj(C(idim,KLists.mmax[idim]+n));
-      }
-    }
-    ComplexType* restrict eikr_ref=eikr[i];
-    for(int ki=0; ki<KLists.numk; ki++)
-    {
-      eikr_ref[ki]=C(0,KLists.kpts[ki][0]+KLists.mmax[0]);
-      for(idim=1; idim<DIM; id++)
-        eikr_ref[ki] *= C(idim,KLists.kpts[ki][idim]+KLists.mmax[idim]);
-    }
-    accumulate_elements(eikr_ref,eikr_ref+KLists.numk,rhok[P.GroupID[i]]);
-  } //End particle loop
-#else
 #if defined(USE_REAL_STRUCT_FACTOR)
   rhok_r=0.0;
   rhok_i=0.0;
@@ -127,12 +97,18 @@ StructFact::FillRhok(ParticleSet& P)
     // save per particle and species value
     for(int i=0; i<npart; ++i)
     {
-      //defined in this file
-      simd::get_phase(nk,&(KLists.kpts_cart[0][0]), P.R[i].data(), phiV.data());
-      //get_phase simply encapsulate this
-      eval_e2iphi(nk, phiV.data(), eikr_r[i], eikr_i[i]);
-      simd::add(nk,eikr_r[i],rhok_r[P.GroupID[i]]);
-      simd::add(nk,eikr_i[i],rhok_i[P.GroupID[i]]);
+      const auto& pos = P.R[i];
+      auto* restrict eikr_r_ptr = eikr_r[i];
+      auto* restrict eikr_i_ptr = eikr_i[i];
+      auto* restrict rhok_r_ptr = rhok_r[P.GroupID[i]];
+      auto* restrict rhok_i_ptr = rhok_i[P.GroupID[i]];
+      #pragma omp simd
+      for(int ki=0; ki<nk; ki++)
+      {
+        sincos(dot(KLists.kpts_cart[ki],pos),&eikr_i_ptr[ki],&eikr_r_ptr[ki]);
+        rhok_r_ptr[ki] += eikr_r_ptr[ki];
+        rhok_i_ptr[ki] += eikr_i_ptr[ki];
+      }
     }
   }
   else
@@ -140,15 +116,19 @@ StructFact::FillRhok(ParticleSet& P)
     // save per species value
     for(int i=0; i<npart; ++i)
     {
-      //defined in this file
-      simd::get_phase(nk,&(KLists.kpts_cart[0][0]), P.R[i].data(), phiV.data());
-      //get_phase simply encapsulate this
-      eval_e2iphi(nk, phiV.data(), eikr_r_temp.data(), eikr_i_temp.data());
-      simd::add(nk,eikr_r_temp.data(),rhok_r[P.GroupID[i]]);
-      simd::add(nk,eikr_i_temp.data(),rhok_i[P.GroupID[i]]);
+      const auto& pos = P.R[i];
+      auto* restrict rhok_r_ptr = rhok_r[P.GroupID[i]];
+      auto* restrict rhok_i_ptr = rhok_i[P.GroupID[i]];
+      #pragma omp simd
+      for(int ki=0; ki<nk; ki++)
+      {
+        RealType s,c;
+        sincos(dot(KLists.kpts_cart[ki],pos),&s,&c);
+        rhok_r_ptr[ki] += c;
+        rhok_i_ptr[ki] += s;
+      }
     }
   }
-  //use dgemm: vtune shows algorithmA is better
 #else
   rhok=0.0;
   for(int i=0; i<npart; i++)
@@ -165,25 +145,15 @@ StructFact::FillRhok(ParticleSet& P)
     }
   }
 #endif
-#endif
 }
 
-
-void
-StructFact::UpdateRhok(const PosType& rold,const PosType& rnew,int iat,int GroupID)
-{
-#if defined(USE_REAL_STRUCT_FACTOR)
-  APP_ABORT("WHO IS USING UpdateRhok");
-#else
-#endif
-}
 
 void StructFact::makeMove(int active, const PosType& pos)
 {
 #if defined(USE_REAL_STRUCT_FACTOR)
+  #pragma omp simd
   for(int ki=0; ki<KLists.numk; ki++)
-    phiV[ki]=dot(KLists.kpts_cart[ki],pos);
-  eval_e2iphi(KLists.numk, phiV.data(), eikr_r_temp.data(), eikr_i_temp.data());
+    sincos(dot(KLists.kpts_cart[ki],pos),&eikr_i_temp[ki],&eikr_r_temp[ki]);
 #else
   RealType s,c;//get sin and cos
   for(int ki=0; ki<KLists.numk; ++ki)
@@ -216,22 +186,14 @@ void StructFact::acceptMove(int active, int gid, const PosType& rold)
     RealType* restrict rhok_ptr_r(rhok_r[gid]);
     RealType* restrict rhok_ptr_i(rhok_i[gid]);
 
-    // add the new value
+    // add the new value and substract the old value
+    #pragma omp simd
     for(int ki=0; ki<KLists.numk; ++ki)
     {
-      rhok_ptr_r[ki] += eikr_r_temp[ki];
-      rhok_ptr_i[ki] += eikr_i_temp[ki];
-    }
-
-    for(int ki=0; ki<KLists.numk; ki++)
-      phiV[ki]=dot(KLists.kpts_cart[ki],rold);
-    eval_e2iphi(KLists.numk, phiV.data(), eikr_r_temp.data(), eikr_i_temp.data());
-
-    // remove the old value
-    for(int ki=0; ki<KLists.numk; ++ki)
-    {
-      rhok_ptr_r[ki] -= eikr_r_temp[ki];
-      rhok_ptr_i[ki] -= eikr_i_temp[ki];
+      RealType s, c;
+      sincos(dot(KLists.kpts_cart[ki],rold),&s,&c);
+      rhok_ptr_r[ki] += eikr_r_temp[ki] - c;
+      rhok_ptr_i[ki] += eikr_i_temp[ki] - s;
     }
   }
 #else
