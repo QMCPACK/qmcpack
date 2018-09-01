@@ -61,9 +61,18 @@ struct SoaDistanceTableBA: public DTD_BConds<T,D,SC>, public DistanceTableData
   /** evaluate the full table */
   inline void evaluate(ParticleSet& P)
   {
-    //be aware of the sign of Displacement
-    for(int iat=0; iat<Ntargets; ++iat)
-      DTD_BConds<T,D,SC>::computeDistances(P.R[iat],Origin->RSoA, Distances[iat], Displacements[iat], 0, Nsources);
+    #pragma omp parallel
+    {
+      int first, last;
+      FairDivideAligned(Nsources, getAlignment<T>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
+
+      //be aware of the sign of Displacement
+      for(int iat=0; iat<Ntargets; ++iat)
+        DTD_BConds<T,D,SC>::computeDistances(P.R[iat],Origin->RSoA, Distances[iat], Displacements[iat], first, last);
+    }
   }
 
   /** evaluate the iat-row with the current position
