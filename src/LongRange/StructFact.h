@@ -165,8 +165,6 @@ public:
   void turnOnStorePerParticle(ParticleSet& P);
 
 private:
-  ///data for recursive evaluation for a given position
-  Matrix<ComplexType> C;
   ///Compute all rhok elements from the start
   void FillRhok(ParticleSet& P);
   /** resize the internal data

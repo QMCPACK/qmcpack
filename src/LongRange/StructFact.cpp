@@ -70,8 +70,6 @@ void StructFact::resize(int ns, int nptcl, int nkpts)
   eikr.resize(nptcl,nkpts);
   eikr_temp.resize(nkpts);
 #endif
-  int maxdim=KLists.mmax[DIM];
-  C.resize(DIM,2*maxdim+1);
 }
 
 
