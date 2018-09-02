@@ -123,14 +123,6 @@ namespace qmcplusplus {
         for(int i=0; i<n; ++i) out[i]+=in[i];
       }
 
-    template<typename T>
-      inline void get_phase(int n, const T* restrict kpts, const T* restrict xyz, T* restrict phi)
-      {
-        T x=xyz[0]; T y=xyz[1]; T z=xyz[2];
-        for(int i=0; i<n; ++i)
-          phi[i]=x*kpts[i*3]+y*kpts[i*3+1]+z*kpts[i*3+2];
-      }
-
   }
 }
 #endif
