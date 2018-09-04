@@ -135,7 +135,6 @@ private:
   ///quantum particle set
   ParticleSet &TargetPtcl;
 public:
-  ParticleSet& getTargetPtcl() { return TargetPtcl; };
   ///ionic system
   ParticleSet *SourcePtcl;
   ///index for the ion-el distance table
@@ -147,7 +146,6 @@ private:
   //std::vector<BandInfo> SortBands;
   std::vector<std::vector<BandInfo>*> FullBands;
 public:
-  std::vector<BandInfo>& getFullBandsBySpin(int spin) { return *(FullBands[spin]); }
   
   
   /// reader to use BsplineReaderBase
@@ -232,7 +230,6 @@ private:
   TinyVector<int,3> MeshSize;
 
 public:
-  TinyVector<int,3> getMeshSize() { return MeshSize; };
   
   RealType MatchingTol;
   std::vector<std::vector<TinyVector<int,3> > > Gvecs;
@@ -342,6 +339,26 @@ public:
   //inline void update_token(const char* f, int l, const char* msg) 
   //{}
 
+  // Accessors here so this monster class can be mocked out in testing
+  TinyVector<int, 3> getMeshSize() { return MeshSize; }
+  UnitCellType getPrimCell() { return PrimCell; }
+  UnitCellType getSuperCell() { return SuperCell; }
+  std::vector<int> getSuper2Prim() { return Super2Prim; }
+  Tensor<double, OHMMS_DIM> getGGt() { return GGt; }
+  std::vector<TinyVector<double,OHMMS_DIM> >& getTwistAngles() { return TwistAngles; }
+  ParticleSet& getTargetPtcl() { return TargetPtcl; }
+  ParticleSet& getSourcePtcl() { return *SourcePtcl; }
+  CentersInfo& getAtomicCentersInfo() { return AtomicCentersInfo; }
+  int getTwistNum() { return TwistNum; }
+  std::vector<std::vector<TinyVector<int,3> > >& getGvecs() { return Gvecs; }
+  std::string& getH5FileName() { return H5FileName; }
+  hid_t getH5FileID() { return H5FileID; }
+  int getNumberSpinStates() { return states.size(); }
+  int getMaxNumGvecs() { return MaxNumGvecs; }
+  std::vector<SPOSetInfo*>& getStates() { return states; }
+  std::vector<BandInfo>& getFullBandsBySpin(int spin) { return *(FullBands[spin]); }
+  Tensor<int,OHMMS_DIM>& getTileMatrix() { return TileMatrix; }
+  
 };
 
 }
