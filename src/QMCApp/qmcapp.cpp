@@ -67,8 +67,6 @@ int main(int argc, char **argv)
         clones=atoi(argv[++i]);
       if (c == "-debug")
         ReportEngine::enableOutput();
-      if (c == "-disable-timers")
-        TimerManager.set_timer_threshold(timer_level_none);
 
       // Default setting is 'timer_level_coarse'
       if (c.find("-enable-timers") < c.size())
@@ -80,7 +78,11 @@ int main(int argc, char **argv)
         if (pos != std::string::npos)
         {
           std::string timer_level = c.substr(pos+1);
-          if (timer_level == "coarse")
+          if (timer_level == "none")
+          {
+            TimerManager.set_timer_threshold(timer_level_none);
+          }
+          else if (timer_level == "coarse")
           {
             TimerManager.set_timer_threshold(timer_level_coarse);
           }

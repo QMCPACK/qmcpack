@@ -32,8 +32,6 @@ h2o = generate_physical_system(
                    [0.000000, 0.757160, 0.586260]],
     )
 
-sims = []
-
 rhf = generate_gamess(
     identifier = 'rhf',
     path       = 'pp_casscf',
@@ -51,7 +49,6 @@ rhf = generate_gamess(
     symmetry   = 'Cnv 2',
     prtmo      = True,
     )
-sims.append(rhf)
 
 cas = generate_gamess(
     identifier = 'cas',
@@ -85,7 +82,6 @@ cas = generate_gamess(
         ),
     dependencies = (rhf,'orbitals')
     )
-sims.append(cas)
 
-run_project(sims)
+run_project()
 

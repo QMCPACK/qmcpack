@@ -118,9 +118,9 @@ struct SoaLocalizedBasisSet: public RealBasisSetBase<typename COT::value_type>
   {
     int idx = 0;
     for (int c = 0; c < NumCenters; c++) {
-      int bss = LOBasisSet[c]->BasisSetSize;
+      int bss = LOBasisSet[IonID[c]]->BasisSetSize;
       std::vector<bool> local_is_s_orbital(bss);
-      LOBasisSet[c]->queryOrbitalsForSType(local_is_s_orbital);
+      LOBasisSet[IonID[c]]->queryOrbitalsForSType(local_is_s_orbital);
       for (int k = 0; k < bss; k++) {
         if (corrCenter[c]) {
           is_s_orbital[idx++] = local_is_s_orbital[k];
