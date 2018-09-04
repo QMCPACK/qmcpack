@@ -148,6 +148,17 @@ void splitPhiEta(int center, const std::vector<bool>& corrCenter, LCAOrbitalSet&
 /// Remove S atomic orbitals from all molecular orbitals on all centers.
 void removeSTypeOrbitals(const std::vector<bool>& corrCenter, LCAOrbitalSet& Phi);
 
+/// Compute the radial part of the corrected wavefunction
+void computeRadialPhiBar(ParticleSet* targetP,
+                         ParticleSet* sourceP,
+                         int curOrb_,
+                         int curCenter_,
+                         SPOSet* Phi,
+                         Vector<QMCTraits::RealType>& xgrid,
+                         Vector<QMCTraits::RealType>& rad_orb,
+                         const CuspCorrectionParameters& data);
+
+
 } // namespace qmcplusplus
 
 #endif
