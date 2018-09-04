@@ -115,7 +115,11 @@ int main(int argc, char **argv)
     else if (a == "-crystal")
     {
       parser = new CrystalAsciiParser(argc,argv);
-      in_file =argv[++iargc];
+      in_file =argv[++iargc]; //crystal file    FILENAME.out
+      parser->parse(in_file); //generate HDF5 file from crystal FILENAME.h5
+      delete parser;
+      in_file += ".h5"; //sets FILENAME.h5 as the in_file for LCAOParser
+      parser = new LCAOParser(argc,argv);
       allH5=true;
     }
     else if(a == "-VSVB")

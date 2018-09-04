@@ -81,29 +81,25 @@ void CrystalAsciiParser::parse(const std::string &fname)
     if (currentWords[4] == "RESTRICTED")
     {
 	SpinRestricted=true;
-	NumberOfAlpha = NumberOfEls/2;
-	NumberOfBeta = NumberOfAlpha;
-	SpinMultiplicity = 0;
+	SpinMultiplicity = 1;
     }
     else
     {
-	std::cerr<<"Currently CrystalAsciiParser only supports RHF calculations" << std::endl;
-	abort();
+	SpinRestricted=false;
+	fin.seekg(pivot_begin);
+	search(fin,"ALPHA-BETA ELECTRONS LOCKED TO",aline);
+	parsewords(aline.c_str(),currentWords);
+	int diff = atoi(currentWords[4].c_str()); //2S
+	SpinMultiplicity = diff+1; //2S+1
     }
+    NumberOfAlpha = NumberOfEls/2+(SpinMultiplicity-1);
+    NumberOfBeta = NumberOfEls-NumberOfAlpha;
 
-    std::cout << "NUMBER OF AOs: " << numAO << std::endl;
     SizeOfBasisSet = numAO;
-    std::cout << "Size of Basis Set: " << SizeOfBasisSet << std::endl;
     numMO = numAO;
-    std::cout << "NUMBER OF MOs: " << numMO << std::endl;
 
 
     BohrUnit=true; //will convert everything to Bohr
-    std::cout << "Number of alpha electrons: " << NumberOfAlpha << std::endl;
-    std::cout << "Number of beta electrons: " << NumberOfBeta << std::endl;
-    std::cout << "Number of electrons: " << NumberOfEls << std::endl;
-    std::cout << "SPIN MULTIPLICITY: " << SpinMultiplicity << std::endl;
-    std::cout << "NUMBER OF ATOMS: " << NumberOfAtoms << std::endl;
 
     IonSystem.create(NumberOfAtoms);
     GroupName.resize(NumberOfAtoms);
@@ -184,8 +180,6 @@ void CrystalAsciiParser::getKpts(std::istream& is)
 	    Kpoints_Coord[i][0]=a/(double)is_unit;
 	    Kpoints_Coord[i][1]=b/(double)is_unit;
 	    Kpoints_Coord[i][2]=c/(double)is_unit;
-	    std::cout << "Kpoint " << i << " " << Kpoints_Coord[i][0]
-            << " " << Kpoints_Coord[i][1] << " " << Kpoints_Coord[i][2] << std::endl;
 	    i++;
 	}
 	i--;
@@ -683,6 +677,7 @@ void CrystalAsciiParser::getMO(std::istream& is)
 	abort();
     }
     is.seekg(pivot);
+
     bool finished = false;
     while(!finished)
     {
@@ -780,7 +775,6 @@ void CrystalAsciiParser::getMO(std::istream& is)
 
     for (int k=0; k<pivots.size(); k++)
     {
-	std::cout << "Getting Orbitals for kpt: " << k << std::endl;
 	is.seekg(pivots[k]);
 	std::vector< std::vector< double > > Mat;
 	std::vector< std::vector< std::complex<double> > > CMat;
@@ -888,13 +882,12 @@ void CrystalAsciiParser::dumpHDF5()
 
     hout.push("parameters",true);
     hout.write(ECP,"ECP");
-    hout.write(IsComplex,"IsComplex");  //THIS NEEDS TO BE CHANGED
+    hout.write(IsComplex,"IsComplex");  
     hout.write(NumberOfAlpha,"NbAlpha");
     hout.write(NumberOfBeta,"NbBeta");
     hout.write(NumberOfEls,"NbTotElec");
     hout.write(SpinMultiplicity,"spin");
-    bool SpinUnRestricted  = !SpinRestricted;
-    hout.write(SpinUnRestricted,"SpinUnRestricted");
+    hout.write(SpinRestricted,"SpinRestricted");
     hout.write(BohrUnit,"Unit");
     hout.write(numMO,"numMO");
     hout.write(numAO,"numAO");
