@@ -120,7 +120,7 @@ void CrystalAsciiParser::parse(const std::string &fname)
 
     getMO(fin);
 
-    dumpHDF5();
+    dumpHDF5(fname);
 
 }
 
@@ -206,50 +206,6 @@ void CrystalAsciiParser::getGeometry(std::istream & is)
 	convAtNum.insert(std::pair<int,atzeff>(at,x));
     }
 
-    std::vector<int> atomic_number;
-    std::vector<int> idx(NumberOfAtoms);
-    Matrix<double> IonPos(NumberOfAtoms,3);
-    if (PBC)
-    {
-        search(is,"CARTESIAN COORDINATES - PRIMITIVE CELL",aline);
-        getwords(currentWords,is);
-        getwords(currentWords,is);
-        getwords(currentWords,is);
-        for (int i=0; i<NumberOfAtoms; i++)
-        {
-            getwords(currentWords,is);
-            idx[i] = atoi(currentWords[1].c_str());
-            tags.push_back(currentWords[2]);
-            for (int d=0; d<3; d++)
-            {
-                IonPos[i][d] = atof(currentWords[3+d].c_str())*ang_to_bohr;
-            }
-
-        }
-    }
-    else
-    {
-	search(is,"ATOMS IN THE ASYMMETRIC UNIT",aline);
-	getwords(currentWords,is);
-	getwords(currentWords,is);
-	for(int i=0; i<NumberOfAtoms; i++)
-	{
-	    getwords(currentWords,is);
-	    idx[i] = atoi(currentWords[2].c_str());
-	    tags.push_back(currentWords[3].c_str());
-	    for (int d=0; d<3; d++)
-	    {
-		IonPos[i][d] = atof(currentWords[4+d].c_str())*ang_to_bohr;
-	    }
-	}
-    }
-
-    for (int i=0; i<NumberOfAtoms; i++)
-    {
-	AtomIndexmap.insert(std::pair<int,int>(i,idx[i]));
-    }
-
-
     //Find which of the unique atoms have ECPs to determine the Zeff and atomic number
     if(lookFor(is,"PSEUDOPOTENTIAL INFORMATION",aline))
     {
@@ -269,6 +225,54 @@ void CrystalAsciiParser::getGeometry(std::istream & is)
     else
     {
 	ECP=false;
+    }
+
+    is.seekg(pivot_begin);
+    std::vector<int> atomic_number;
+    std::vector<int> idx(NumberOfAtoms);
+    Matrix<double> IonPos(NumberOfAtoms,3);
+    if (PBC)
+    {
+        search(is,"CARTESIAN COORDINATES - PRIMITIVE CELL",aline);
+        getwords(currentWords,is);
+        getwords(currentWords,is);
+        getwords(currentWords,is);
+        for (int i=0; i<NumberOfAtoms; i++)
+        {
+            getwords(currentWords,is);
+            idx[i] = atoi(currentWords[1].c_str());
+	    std::string name = IonName[convAtNum.at(idx[i]).atomicNum];
+	    std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+            tags.push_back(name);
+            for (int d=0; d<3; d++)
+            {
+                IonPos[i][d] = atof(currentWords[3+d].c_str())*ang_to_bohr;
+            }
+
+        }
+    }
+    else
+    {
+	search(is,"ATOMS IN THE ASYMMETRIC UNIT",aline);
+	getwords(currentWords,is);
+	getwords(currentWords,is);
+	for(int i=0; i<NumberOfAtoms; i++)
+	{
+	    getwords(currentWords,is);
+	    idx[i] = atoi(currentWords[2].c_str());
+	    std::string name = IonName[convAtNum.at(idx[i]).atomicNum];
+	    std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+	    tags.push_back(name);
+	    for (int d=0; d<3; d++)
+	    {
+		IonPos[i][d] = atof(currentWords[4+d].c_str())*ang_to_bohr;
+	    }
+	}
+    }
+
+    for (int i=0; i<NumberOfAtoms; i++)
+    {
+	AtomIndexmap.insert(std::pair<int,int>(i,idx[i]));
     }
 
     SpeciesSet & species(IonSystem.getSpeciesSet());
@@ -792,14 +796,15 @@ void CrystalAsciiParser::getMO(std::istream& is)
 
 }
 
-void CrystalAsciiParser::dumpHDF5() 
+void CrystalAsciiParser::dumpHDF5(const std::string & fname) 
 {
-    h5file+=".h5";
+    h5file = fname+".h5";
     hdf_archive hout(0);
     hout.create(h5file.c_str(),H5F_ACC_TRUNC);
 
     std::string str;
 
+    /*
     if (IsComplex)
     {
 	std::cerr << "Currently only real gaussians are implemented\n";
@@ -807,6 +812,7 @@ void CrystalAsciiParser::dumpHDF5()
 	std::cerr << "This will be removed once complex periodic gaussians is implemented\n";
 	abort();
     }
+    */
 
     hout.push("application",true);
     str = "crystal";

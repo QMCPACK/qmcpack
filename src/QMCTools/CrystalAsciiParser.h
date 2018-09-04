@@ -50,7 +50,7 @@ private:
     void getKMO(std::istream & is, std::vector< std::vector< double > > & Mat);
     void getKMO(std::istream & is, std::vector< std::vector< std::complex<double> > > & CMat);
     void scaleBasis();
-    void dumpHDF5();
+    void dumpHDF5(const std::string &fname);
     std::string version;
     int NumberOfSpecies;
     std::map<int,atzeff> convAtNum;
