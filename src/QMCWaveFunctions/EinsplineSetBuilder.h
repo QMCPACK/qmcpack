@@ -23,6 +23,7 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_SET_BUILDER_H
 #define QMCPLUSPLUS_EINSPLINE_SET_BUILDER_H
 
+#include "QMCWaveFunctions/SplineBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/BandInfo.h"
 #include "QMCWaveFunctions/AtomicOrbital.h"
@@ -121,27 +122,34 @@ struct H5OrbSet
 
 /** EinsplineSet builder
  */
-class EinsplineSetBuilder : public SPOSetBuilder
+class EinsplineSetBuilder : public SplineBuilder,
+			    public SPOSetBuilder
 {
 public:
 
   typedef std::map<std::string,ParticleSet*> PtclPoolType;
-  typedef CrystalLattice<ParticleSet::Scalar_t,DIM> UnitCellType;
-
+  
   ///reference to the particleset pool
   PtclPoolType &ParticleSets;
+private:
   ///quantum particle set
   ParticleSet &TargetPtcl;
+public:
+  ParticleSet& getTargetPtcl() { return TargetPtcl; };
   ///ionic system
   ParticleSet *SourcePtcl;
   ///index for the ion-el distance table
   int myTableIndex;
 
+private:
   /**  Helper vector for sorting bands
    */
   //std::vector<BandInfo> SortBands;
   std::vector<std::vector<BandInfo>*> FullBands;
-
+public:
+  std::vector<BandInfo>& getFullBandsBySpin(int spin) { return *(FullBands[spin]); }
+  
+  
   /// reader to use BsplineReaderBase
   BsplineReaderBase *MixedSplineReader;
 
@@ -219,8 +227,14 @@ public:
   int NumBands, NumElectrons, NumSpins, NumTwists, NumCoreStates;
   int MaxNumGvecs;
   double MeshFactor;
-  RealType MatchingTol;
+
+private:
   TinyVector<int,3> MeshSize;
+
+public:
+  TinyVector<int,3> getMeshSize() { return MeshSize; };
+  
+  RealType MatchingTol;
   std::vector<std::vector<TinyVector<int,3> > > Gvecs;
 
   //fftw_plan FFTplan;
@@ -289,28 +303,7 @@ public:
   ////////////////////////////////
   std::vector<AtomicOrbital<std::complex<double> > > AtomicOrbitals;
 
-  struct CenterInfo
-  {
-    std::vector<int> lmax, spline_npoints, GroupID;
-    std::vector<double> spline_radius, cutoff, inner_cutoff, non_overlapping_radius;
-    std::vector<TinyVector<double,OHMMS_DIM> > ion_pos;
-    int Ncenters;
-
-    CenterInfo(): Ncenters(0) {};
-
-    void resize(int ncenters)
-    {
-      Ncenters=ncenters;
-      lmax.resize(ncenters, -1);
-      spline_npoints.resize(ncenters, -1);
-      GroupID.resize(ncenters, 0);
-      spline_radius.resize(ncenters, -1.0);
-      inner_cutoff.resize(ncenters, -1.0);
-      non_overlapping_radius.resize(ncenters, -1.0);
-      cutoff.resize(ncenters, -1.0);
-      ion_pos.resize(ncenters);
-    }
-  } AtomicCentersInfo;
+  CentersInfo AtomicCentersInfo;
 
   // This returns the path in the HDF5 file to the group for orbital
   // with twist ti and band bi
@@ -348,6 +341,7 @@ public:
   }
   //inline void update_token(const char* f, int l, const char* msg) 
   //{}
+
 };
 
 }

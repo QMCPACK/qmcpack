@@ -14,6 +14,9 @@
 #include "QMCWaveFunctions/BsplineFactory/BsplineDeviceCUDA.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorVectorized.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineR2RAdoptorCUDA.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorReaderP.h"
+
+//#include "QMCWaveFunctions/BsplineFactory/mocks/MockEinsplineSetBuilder.h"
 #include <iostream>
 
 namespace qmcplusplus
@@ -29,5 +32,9 @@ TEST_CASE("SplineR2RAdoptorCUDA_Instantiation", "[wavefunction]")
   SplineR2RAdoptorCUDA<double, double> testAdoptor;
 }
 
+TEST_CASE("SplineAdoptorReader<SplineR2RAdoptorCUDA>", "[wavefunction")
+{
+  EinsplineSetBuilder e;
+  SplineAdoptorReader<SplineR2RAdoptorCUDA>(&e);
 }
 

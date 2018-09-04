@@ -84,9 +84,7 @@ public:
     MyIndex(0),nunique_orbitals(0),first_spo(0),last_spo(0)
   { }
 
-#if (__cplusplus >= 201103L)
   SplineAdoptor(const SplineAdoptor& rhs)=default;
-#endif
 
   inline void init_base(int n)
   {

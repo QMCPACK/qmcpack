@@ -54,7 +54,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
   BsplineSet<adoptor_type>* bspline;
   fftw_plan FFTplan;
 
-  SplineAdoptorReader(EinsplineSetBuilder* e)
+  SplineAdoptorReader(SplineBuilder* e)
     : BsplineReaderBase(e), spline_r(NULL), spline_i(NULL),
       bspline(0), FFTplan(NULL)
   {}
@@ -163,7 +163,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
       APP_ABORT("EinsplineAdoptorReader needs psi_g. Set precision=\"double\".");
     }
     bspline->create_spline(xyz_grid,xyz_bc);
-    int TwistNum = mybuilder->TwistNum;
+    int TwistNum = mybuilder->getTwistNum();
     std::ostringstream oo;
     oo<<bandgroup.myName << ".g"<<MeshSize[0]<<"x"<<MeshSize[1]<<"x"<<MeshSize[2]<<".h5";
     std::string splinefile= oo.str(); //bandgroup.myName+".h5";
@@ -263,17 +263,17 @@ struct SplineAdoptorReader: public BsplineReaderBase
    */
   inline void fft_spline(Vector<std::complex<double> >& cG, int ti)
   {
-    unpack4fftw(cG,mybuilder->Gvecs[0],MeshSize,FFTbox);
+    unpack4fftw(cG,mybuilder->getGvecs()[0],MeshSize,FFTbox);
     fftw_execute (FFTplan);
     if(bspline->is_complex)
     {
-      fix_phase_rotate_c2c(FFTbox,splineData_r, splineData_i,mybuilder->TwistAngles[ti], rotate_phase_r, rotate_phase_i);
+      fix_phase_rotate_c2c(FFTbox,splineData_r, splineData_i,mybuilder->TwistAngles()[ti], rotate_phase_r, rotate_phase_i);
       einspline::set(spline_r,splineData_r.data());
       einspline::set(spline_i,splineData_i.data());
     }
     else
     {
-      fix_phase_rotate_c2r(FFTbox,splineData_r, mybuilder->TwistAngles[ti], rotate_phase_r, rotate_phase_i);
+      fix_phase_rotate_c2r(FFTbox,splineData_r, mybuilder->TwistAngles()[ti], rotate_phase_r, rotate_phase_i);
       einspline::set(spline_r,splineData_r.data());
     }
   }
@@ -295,10 +295,10 @@ struct SplineAdoptorReader: public BsplineReaderBase
 
     app_log() << "Start transforming plane waves to 3D B-Splines." << std::endl;
     hdf_archive h5f(&band_group_comm,false);
-    Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());
+    Vector<std::complex<double> > cG(mybuilder->getGvecs()[0].size());
     const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
     if(band_group_comm.isGroupLeader())
-      h5f.open(mybuilder->H5FileName,H5F_ACC_RDONLY);
+      h5f.open(mybuilder->getH5FileName(),H5F_ACC_RDONLY);
     for(int iorb=iorb_first; iorb<iorb_last; iorb++)
     {
       if(band_group_comm.isGroupLeader())
@@ -352,7 +352,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
       {
         std::string path=psi_r_path(cur_bands[iorb].TwistIndex,spin,cur_bands[iorb].BandIndex);
         HDFAttribIO<Array<std::complex<double>,3> >  h_splineData(rawData);
-        h_splineData.read(mybuilder->H5FileID, path.c_str());
+        h_splineData.read(mybuilder->getH5FileID(), path.c_str());
         simd::copy(splineData_r.data(),splineData_i.data(),rawData.data(),rawData.size());
       }
       mpi::bcast(*myComm,splineData_r);

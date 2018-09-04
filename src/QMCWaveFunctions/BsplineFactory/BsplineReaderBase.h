@@ -38,7 +38,7 @@ namespace qmcplusplus
 struct BsplineReaderBase
 {
   ///pointer to the EinsplineSetBuilder
-  EinsplineSetBuilder* mybuilder;
+  SplineBuilder* mybuilder;
   ///communicator
   Communicate* myComm;
   ///mesh size
@@ -52,7 +52,7 @@ struct BsplineReaderBase
   ///map from spo index to band index
   std::vector<std::vector<int> > spo2band;
 
-  BsplineReaderBase(EinsplineSetBuilder* e);
+  BsplineReaderBase(SplineBuilder* e);
 
   virtual ~BsplineReaderBase();
 
@@ -65,10 +65,10 @@ struct BsplineReaderBase
     bool havePsig=mybuilder->ReadGvectors_ESHDF();
 
     //If this MeshSize is not initialized, use the meshsize set by the input based on FFT grid and meshfactor
-    if(MeshSize[0]==0) MeshSize=mybuilder->MeshSize;
+    if(MeshSize[0]==0) MeshSize=mybuilder->getMeshSize();
 
     app_log() << "  Using meshsize=" << MeshSize 
-            << "\n  vs input meshsize=" << mybuilder->MeshSize << std::endl;
+	      << "\n  vs input meshsize=" << mybuilder->getMeshSize() << std::endl;
 
     xyz_grid[0].start = 0.0;
     xyz_grid[0].end = 1.0;
@@ -102,9 +102,9 @@ struct BsplineReaderBase
   {
 
     //init(orbitalSet,bspline);
-    bspline->PrimLattice=mybuilder->PrimCell;
-    bspline->SuperLattice=mybuilder->SuperCell;
-    bspline->GGt=mybuilder->GGt;
+    bspline->PrimLattice=mybuilder->getPrimCell();
+    bspline->SuperLattice=mybuilder->getSuperCell();
+    bspline->GGt=mybuilder->getGGt();
     //bspline->HalfG=mybuilder->HalfG;
 
     int N = bandgroup.getNumDistinctOrbitals();
@@ -121,7 +121,7 @@ struct BsplineReaderBase
     for (int iorb=0; iorb<N; iorb++)
     {
       int ti = cur_bands[iorb].TwistIndex;
-      bspline->kPoints[iorb] = mybuilder->PrimCell.k_cart(mybuilder->TwistAngles[ti]); //twist);
+      bspline->kPoints[iorb] = mybuilder->getPrimCell().k_cart(mybuilder->getTwistAngles()[ti]); //twist);
       bspline->MakeTwoCopies[iorb] = (num < (numOrbs-1)) && cur_bands[iorb].MakeTwoCopies;
       num += bspline->MakeTwoCopies[iorb] ? 2 : 1;
     }
@@ -129,12 +129,12 @@ struct BsplineReaderBase
     app_log() << "NumDistinctOrbitals " << N << " numOrbs = " << numOrbs << std::endl;
 
     bspline->HalfG=0;
-    TinyVector<int,3> bconds=mybuilder->TargetPtcl.Lattice.BoxBConds;
+    TinyVector<int,3> bconds=mybuilder->getTargetPtcl().Lattice.BoxBConds;
     if(!bspline->is_complex)
     {
       //no k-point folding, single special k point (G, L ...)
       //TinyVector<double,3> twist0 = mybuilder->TwistAngles[cur_bands[0].TwistIndex];
-      TinyVector<double,3> twist0 = mybuilder->TwistAngles[bandgroup.TwistIndex];
+      TinyVector<double,3> twist0 = mybuilder->getTwistAngles()[bandgroup.TwistIndex];
       for (int i=0; i<3; i++)
         if (bconds[i] && ((std::abs(std::abs(twist0[i]) - 0.5) < 1.0e-8)))
           bspline->HalfG[i] = 1;

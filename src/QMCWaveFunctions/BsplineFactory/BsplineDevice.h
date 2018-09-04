@@ -11,16 +11,11 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-/** @file BplineDevice.h
- *
- * Base class for BsplineDevice<DEVICE> 
- */
 
 #ifndef QMCPLUSPLUS_BSPLINEDEVICE_H
 #define QMCPLUSPLUS_BSPLINEDEVICE_H
 
+#include "spline2/MultiBspline.hpp"
 
 namespace qmcplusplus
 {
@@ -36,6 +31,18 @@ class BsplineDevice
   {
     static_cast<DEVICETYPE*>(this)->implementation();
   }
+  
+  template<typename GT, typename BCT>
+  void createSpline(GT& xyz_g, BCT& xyz_bc)
+  {
+    static_cast<DEVICETYPE*>(this)->createSpline(xyz_g, xyz_bc);
+  }
+
+  void initDevice(MultiBspline<ST>& multi_bspline)
+  {
+    static_cast<DEVICETYPE*>(this)->initDevice_imp(multi_bspline);
+  }
+
 };
 
 }

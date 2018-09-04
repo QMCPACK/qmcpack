@@ -24,7 +24,7 @@
 #include "qmc_common.h"
 namespace qmcplusplus
 {
-  BsplineReaderBase::BsplineReaderBase(EinsplineSetBuilder* e)
+  BsplineReaderBase::BsplineReaderBase(SplineBuilder* e)
     : mybuilder(e), MeshSize(0), myFirstSPO(0), myNumOrbs(0), checkNorm(true)
   {
     myComm=mybuilder->getCommunicator();
@@ -37,11 +37,11 @@ namespace qmcplusplus
     {
       std::string path=psi_g_path(ti,spin,ib);
       HDFAttribIO<Vector<std::complex<double> > >  h_cG(cG);
-      h_cG.read (mybuilder->H5FileID, path.c_str());
+      h_cG.read (mybuilder->getH5FileID(), path.c_str());
       ncg=cG.size();
     }
     myComm->bcast(ncg);
-    if(ncg != mybuilder->MaxNumGvecs)
+    if(ncg != mybuilder->getMaxNumGvecs())
     {
       APP_ABORT("Failed : ncg != MaxNumGvecs");
     }
@@ -107,9 +107,9 @@ namespace qmcplusplus
       APP_ABORT_TRACE(__FILE__,__LINE__, "parameter/@size missing");
 
     if(spo2band.empty()) 
-      spo2band.resize(mybuilder->states.size());
+      spo2band.resize(mybuilder->getStateSpins());
 
-    std::vector<BandInfo>& fullband=(*(mybuilder->FullBands[spin]));
+    std::vector<BandInfo>& fullband= mybuilder->getFullBandsBySpin(spin);
 
     if(spo2band[spin].empty())
     {

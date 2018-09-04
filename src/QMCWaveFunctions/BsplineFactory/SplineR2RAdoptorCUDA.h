@@ -19,7 +19,9 @@
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorVectorized.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineDeviceCUDA.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorReaderP.h"
-#include "CUDA/gpu_vector.h"
+#include "einspline/multi_bspline.h"
+#include "einspline/multi_bspline_eval_cuda.h"
+
 
 namespace qmcplusplus
 {
@@ -32,7 +34,7 @@ namespace qmcplusplus
  * Requires temporage storage and multiplication of phase vectors
  */
 template<typename ST, typename TT>
-class SplineR2RAdoptorCUDA: public SplineAdoptorVectorized<BsplineDeviceCUDA, ST,3>
+class SplineR2RAdoptorCUDA: public SplineAdoptorVectorized<BsplineDeviceCUDA, ST, OHMMS_DIM>
 {
 public:
   //Dimensionality
@@ -57,8 +59,9 @@ public:
   //using CudaStorageType = typename StorageTypeConverter<StorageType,CUDA_PRECISION>::CudaStorageType;
   //using CudaSplineType = typename MultiOrbitalTraits<CudaStorageType,OHMMS_DIM>::CudaSplineType;
 
-  using CudaStorageType = typename std::complex<double>;
-  using vContainer_type=gpu::device_vector<CudaStorageType>;
+  //using CudaStorageType = typename std::complex<double>;
+  //using vContainer_type=gpu::device_vector<CudaStorageType>;
+
   //Currently CUDA doesn't seem to deal with gradient or hessian
   //using gContainer_type=VectorSoaContainer<ST,3>;
   //using hContainer_type=VectorSoaContainer<ST,6>;
@@ -69,11 +72,19 @@ public:
   int BaseN[3];
   ///offset of the original grid, always 0
   int BaseOffset[3];
+
+  //We still have these because we're going to use a convert onto the device
   ///multi bspline set
   MultiBspline<ST>* SplineInst;
   ///expose the pointer to reuse the reader and only assigned with create_spline
   SplineType* MultiSpline;
 
+  // The device spline
+  BsplineDeviceCUDA<ST, D> device_spline;
+
+  using vContainer_type = Vector<ST,aligned_allocator<ST> >;
+  //using gContainer_type = VectorSoaContainer<ST,3>;
+  //using hContainer_type = VectorSoaContainer<ST,6>;
   //These should be the reference device vector types
   std::vector<vContainer_type> myVs;
   std::vector<vContainer_type> myLs;
@@ -88,6 +99,7 @@ public:
     this->KeyWord="SplineR2RAdoptor";
   }
 
+  
   // SplineR2RAdoptorCUDA(const SplineR2RAdoptorCUDA& a):
   //   SplineAdoptor<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr)
   // {
@@ -134,21 +146,24 @@ public:
     gatherv(comm, MultiSpline, MultiSpline->z_stride, offset_real);
   }
 
-  // template<typename GT, typename BCT>
-  // void create_spline(GT& xyz_g, BCT& xyz_bc)
-  // {
-  //   GGt=dot(transpose(PrimLattice.G),PrimLattice.G);
-  //   SplineInst=new MultiBspline<ST>();
-  //   SplineInst->create(xyz_g,xyz_bc,myV.size());
-  //   MultiSpline=SplineInst->spline_m;
+  template<typename GT, typename BCT>
+  void create_spline(GT& xyz_g, BCT& xyz_bc)
+  {
+    
 
-  //   for(size_t i=0; i<D; ++i)
-  //   {
-  //     BaseOffset[i]=0;
-  //     BaseN[i]=xyz_g[i].num+3;
-  //   }
-  //   qmc_common.memory_allocated += SplineInst->sizeInByte();
-  // }
+    GGt=dot(transpose(PrimLattice.G),PrimLattice.G);
+    SplineInst=new MultiBspline<ST>();
+    SplineInst->create(xyz_g,xyz_bc,myVs[0].size());
+    MultiSpline=SplineInst->spline_m;
+
+    for(size_t i=0; i<D; ++i)
+    {
+      BaseOffset[i]=0;
+      BaseN[i]=xyz_g[i].num+3;
+    }
+    qmc_common.memory_allocated += SplineInst->sizeInByte();
+    device_spline.createSpline(*SplineInst);
+  }
 
   // void create_spline(TinyVector<int,D>& mesh, int n)
   // {
@@ -167,28 +182,29 @@ public:
   //   SplineInst->create(xyz_grid,xyz_bc,n);
   //   MultiSpline=SplineInst->spline_m;
   //   qmc_common.memory_allocated += MultiSpline->coefs_size*sizeof(ST);
+  //   device_spline.createSpline(TinyVector<int,D>& mesh, int n);
   // }
 
-  // inline void flush_zero()
-  // {
-  //   SplineInst->flush_zero();
-  // }
+  inline void flush_zero()
+  {
+    SplineInst->flush_zero();
+  }
 
-  // inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
-  // {
-  //   SplineInst->copy_spline(spline_r, ispline, BaseOffset, BaseN);
-  // }
+  inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
+  {
+    SplineInst->copy_spline(spline_r, ispline, BaseOffset, BaseN);
+  }
 
-  // void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
-  // {
-  //   Vector<ST> v_r(psi_r,0);
-  //   SplineInst->set(ispline, v_r);
-  // }
+  void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
+  {
+    Vector<ST> v_r(psi_r,0);
+    SplineInst->set(ispline, v_r);
+  }
 
-  // inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i,
-  //     int twist, int ispline, const int* offset_l, const int* mesh_l)
-  // {
-  // }
+  inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i,
+      int twist, int ispline, const int* offset_l, const int* mesh_l)
+  {
+  }
 
   bool read_splines(hdf_archive& h5f)
   {
