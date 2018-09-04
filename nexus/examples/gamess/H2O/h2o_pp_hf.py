@@ -32,8 +32,6 @@ h2o = generate_physical_system(
                    [0.000000, 0.757160, 0.586260]],
     )
 
-sims = []
-
 rhf = generate_gamess(
     identifier = 'rhf',
     path       = 'pp_hf',
@@ -50,6 +48,5 @@ rhf = generate_gamess(
     guess      = 'huckel',
     symmetry   = 'Cnv 2',
     )
-sims.append(rhf)
 
-run_project(sims)
+run_project()
