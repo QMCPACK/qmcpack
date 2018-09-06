@@ -9,14 +9,14 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_SPLINER2RADOPTORCUDA_H
-#define QMCPLUSPLUS_SPLINER2RADOPTORCUDA_H
+#ifndef QMCPLUSPLUS_SPLINER2RADOPTORBatched_H
+#define QMCPLUSPLUS_SPLINER2RADOPTORBatched_H
 
 #include "Configuration.h"
 #include "OhmmsSoA/Container.h"
 #include "spline2/MultiBspline.hpp"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptor.h"
-#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorVectorized.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBatched.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineDeviceCUDA.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorReaderP.h"
 #include "einspline/multi_bspline.h"
@@ -34,14 +34,14 @@ namespace qmcplusplus
  * Requires temporage storage and multiplication of phase vectors
  */
 template<typename ST, typename TT>
-class SplineR2RAdoptorCUDA: public SplineAdoptorVectorized<BsplineDeviceCUDA, ST, OHMMS_DIM>
+class SplineR2RAdoptorBatched: public SplineAdoptorBatched<BsplineDeviceCUDA, ST, OHMMS_DIM>
 {
 public:
   //Dimensionality
   static constexpr int D = OHMMS_DIM;
 
   using PosType = PtclOnLatticeTraits::SingleParticlePos_t;
-  using BaseType = SplineAdoptorVectorized<BsplineDeviceCUDA, ST, 3>;
+  using BaseType = SplineAdoptorBatched<BsplineDeviceCUDA, ST, 3>;
   using SplineType = typename bspline_traits<ST,3>::SplineType;
   using BCType = typename bspline_traits<ST,3>::BCType;
   using PointType = typename BaseType::PointType;
@@ -49,20 +49,20 @@ public:
 
   using BaseType::first_spo;
   using BaseType::last_spo;
-  using SplineAdoptorVectorized<BsplineDeviceCUDA, ST, D>::HalfG;
+  using SplineAdoptorBatched<BsplineDeviceCUDA, ST, D>::HalfG;
   using BaseType::GGt;
   using BaseType::PrimLattice;
   using BaseType::kPoints;
   using BaseType::offset_cplx;
   using BaseType::offset_real;
 
-  //using CudaStorageType = typename StorageTypeConverter<StorageType,CUDA_PRECISION>::CudaStorageType;
+  //using CudaStorageType = typename StorageTypeConverter<StorageType,Batched_PRECISION>::CudaStorageType;
   //using CudaSplineType = typename MultiOrbitalTraits<CudaStorageType,OHMMS_DIM>::CudaSplineType;
 
   //using CudaStorageType = typename std::complex<double>;
   //using vContainer_type=gpu::device_vector<CudaStorageType>;
 
-  //Currently CUDA doesn't seem to deal with gradient or hessian
+  //Currently Batched doesn't seem to deal with gradient or hessian
   //using gContainer_type=VectorSoaContainer<ST,3>;
   //using hContainer_type=VectorSoaContainer<ST,6>;
 
@@ -91,7 +91,7 @@ public:
   //gContainer_type myG;
   //hContainer_type myH;
 
-  SplineR2RAdoptorCUDA(): BaseType(),SplineInst(nullptr), MultiSpline(nullptr)
+  SplineR2RAdoptorBatched(): BaseType(),SplineInst(nullptr), MultiSpline(nullptr)
   {
     this->is_complex=false;
     this->is_soa_ready=true;
@@ -99,8 +99,7 @@ public:
     this->KeyWord="SplineR2RAdoptor";
   }
 
-  
-  // SplineR2RAdoptorCUDA(const SplineR2RAdoptorCUDA& a):
+  // SplineR2RAdoptorBatched(const SplineR2RAdoptorBatched& a):
   //   SplineAdoptor<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr)
   // {
   //   const size_t vsize = a.myVs.size();
@@ -114,7 +113,7 @@ public:
   //     myL.resize(nbasis);
   // }
 
-  ~SplineR2RAdoptorCUDA()
+  ~SplineR2RAdoptorBatched()
   {
     if(MultiSpline != nullptr) delete SplineInst;
   }

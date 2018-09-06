@@ -283,7 +283,7 @@ public:
   void ReadBands_ESHDF(int spin, EinsplineSetExtended<        double  >* orbitalSet);
 #endif
 
-  void CopyBands(int numOrbs);
+  //void CopyBands(int numOrbs);
 
   /////////////////////////////
   // Muffin-tin information  //
@@ -358,7 +358,8 @@ public:
   std::vector<SPOSetInfo*>& getStates() { return states; }
   std::vector<BandInfo>& getFullBandsBySpin(int spin) { return *(FullBands[spin]); }
   Tensor<int,OHMMS_DIM>& getTileMatrix() { return TileMatrix; }
-  
+  std::string getName() { return "qmcplusplus::EinsplineSetBuilder"; }
+  Communicate* getCommunicator() { return getCommunicator(); }
 };
 
 }

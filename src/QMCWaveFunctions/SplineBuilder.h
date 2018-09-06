@@ -90,7 +90,7 @@ public:
   virtual void OccupyBands(int spin, int sortBands, int numOrbs) = 0;
   virtual void OccupyBands_ESHDF(int spin, int sortBands, int numOrbs) = 0;
 
-  virtual void CopyBands(int numOrbs) = 0;
+  // virtual void CopyBands(int numOrbs) = 0;
 
   // This returns the path in the HDF5 file to the group for orbital
   // with twist ti and band bi

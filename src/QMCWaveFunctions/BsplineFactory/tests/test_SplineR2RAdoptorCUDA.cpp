@@ -12,19 +12,19 @@
 #include "catch.hpp"
 
 #include "QMCWaveFunctions/BsplineFactory/BsplineDeviceCUDA.h"
-#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorVectorized.h"
-#include "QMCWaveFunctions/BsplineFactory/SplineR2RAdoptorCUDA.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBatched.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineR2RAdoptorBatched.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorReaderP.h"
 
-//#include "QMCWaveFunctions/BsplineFactory/mocks/MockEinsplineSetBuilder.h"
+#include "QMCWaveFunctions/BsplineFactory/mocks/MockEinsplineSetBuilder.h"
 #include <iostream>
 
 namespace qmcplusplus
 {
 
-TEST_CASE("SplineAdoptorVectorized_Instantiation", "[wavefunction]")
+TEST_CASE("SplineAdoptorBatched_Instantiation", "[wavefunction]")
 {
-  SplineAdoptorVectorized<BsplineDeviceCUDA, double, 3> testAdoptor;
+  SplineAdoptorBatched<BsplineDeviceCUDA, double, 3> testAdoptor;
 }
   
 TEST_CASE("SplineR2RAdoptorCUDA_Instantiation", "[wavefunction]")
@@ -32,9 +32,9 @@ TEST_CASE("SplineR2RAdoptorCUDA_Instantiation", "[wavefunction]")
   SplineR2RAdoptorCUDA<double, double> testAdoptor;
 }
 
-TEST_CASE("SplineAdoptorReader<SplineR2RAdoptorCUDA>", "[wavefunction")
+TEST_CASE("SplineAdoptorReader<SplineR2RAdoptorCUDA>", "[wavefunction]")
 {
-  EinsplineSetBuilder e;
-  SplineAdoptorReader<SplineR2RAdoptorCUDA>(&e);
+  EinsplineSetBuilder* e = new EinsplineSetBuilder();
+  SplineAdoptorReader<SplineR2RAdoptorCUDA>(e);
 }
 

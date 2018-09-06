@@ -13,8 +13,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/** \file SplineAdoptorVectorized.h
- * \class SplineAdoptorVectorized
+/** \file SplineAdoptorBatched.h
+ * \class SplineAdoptorBatched
  * Base class for SplineAdoptor's used for BsplineSet<SplineAdoptor>
  * Specifies that a SplineXXXAdopter provides these functions
  * - evaluate_v    value only
@@ -45,7 +45,7 @@ namespace qmcplusplus
  * This handles SC and twist and declare storage for einspline
  */
 template<template<typename, unsigned> class DEVICE, typename ST, unsigned D>
-class SplineAdoptorVectorized
+class SplineAdoptorBatched
 {
 public:
   //static_assert(std::is_base_of<BsplineDevice<DEVICE, ST, D>, DEVICE>, "DEVICE must inherit from BsplineDevice");
@@ -86,11 +86,11 @@ public:
   std::string AdoptorName;
   ///keyword used to match hdf5
   std::string KeyWord;
-  SplineAdoptorVectorized()
+  SplineAdoptorBatched()
     :is_complex(false),is_gamma_only(false), is_soa_ready(false),
     MyIndex(0),nunique_orbitals(0),first_spo(0),last_spo(0)
   { }
-  SplineAdoptorVectorized(const SplineAdoptorVectorized& rhs)=default;
+  SplineAdoptorBatched(const SplineAdoptorBatched& rhs)=default;
 
   inline void init_base(int n)
   {

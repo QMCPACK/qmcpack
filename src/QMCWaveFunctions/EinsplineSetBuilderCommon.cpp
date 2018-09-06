@@ -26,6 +26,7 @@
 #include "Message/CommOperators.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "Particle/DistanceTableData.h"
+#include "QMCWaveFunctions/einspline_helper.hpp"
 
 namespace qmcplusplus
 {
