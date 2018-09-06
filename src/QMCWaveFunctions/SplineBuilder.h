@@ -112,7 +112,7 @@ public:
   virtual CentersInfo& getAtomicCentersInfo() = 0;
   virtual int getTwistNum() = 0;
   virtual std::vector<std::vector<TinyVector<int,3> > >& getGvecs() = 0;
-  virtual std::string& getH5FileName() = 0;
+  virtual std::string getH5FileName() = 0;
   virtual hid_t getH5FileID() = 0;
   virtual int getNumberSpinStates() = 0;
   virtual std::vector<BandInfo>& getFullBandsBySpin(int) = 0;

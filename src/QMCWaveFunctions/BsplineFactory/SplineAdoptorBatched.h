@@ -36,6 +36,7 @@
 //#include "QMCWaveFunctions/BsplineFactory/BsplineDeviceCUDA.h"
 #include "Lattice/CrystalLattice.h"
 #include "simd/allocator.hpp"
+#include "SplineAdoptor.h"
 
 namespace qmcplusplus
 {
@@ -45,87 +46,50 @@ namespace qmcplusplus
  * This handles SC and twist and declare storage for einspline
  */
 template<template<typename, unsigned> class DEVICE, typename ST, unsigned D>
-class SplineAdoptorBatched
+class SplineAdoptorBatched : public SplineAdoptor<ST, D>
 {
 public:
-  //static_assert(std::is_base_of<BsplineDevice<DEVICE, ST, D>, DEVICE>, "DEVICE must inherit from BsplineDevice");
+  using BaseType = SplineAdoptor<ST, D>;
   using PointType = TinyVector<ST,D>;
   using SingleSplineType=UBspline_3d_d;
   using DataType = ST; 
 
   DEVICE<ST,D> bspline_dev;
+
+
+  //static_assert(std::is_base_of<BsplineDevice<DEVICE, ST, D>, DEVICE>, "DEVICE must inherit from BsplineDevice");
+
   ///true if the computed values are complex
-  bool is_complex;
-  ///true, if it has only one k point and Gamma
-  bool is_gamma_only;
-  ///true, if it has only one k point and Gamma
-  bool is_soa_ready;
-  ///Index of this adoptor, when multiple adoptors are used for NUMA or distributed cases
-  size_t MyIndex;
-  ///number of unique orbitals
-  size_t nunique_orbitals;
-  ///first index of the SPOs this Spline handles
-  size_t first_spo;
-  ///last index of the SPOs this Spline handles
-  size_t last_spo;
-  ///sign bits at the G/2 boundaries
-  TinyVector<int,D>          HalfG;
-  ///\f$GGt=G^t G \f$, transformation for tensor in LatticeUnit to CartesianUnit, e.g. Hessian
-  Tensor<ST,D>               GGt;
-  CrystalLattice<ST,D>       SuperLattice;
-  CrystalLattice<ST,D>       PrimLattice;
-  /// flags to unpack sin/cos
-  std::vector<bool>               MakeTwoCopies;
-  ///kpoints for each unique orbitals
-  std::vector<TinyVector<ST,D> >  kPoints;
-  ///remap band
-  aligned_vector<int> BandIndexMap;
-  /// band offsets
-  std::vector<int> offset_real, offset_cplx;
-  ///name of the adoptor
-  std::string AdoptorName;
-  ///keyword used to match hdf5
-  std::string KeyWord;
-  SplineAdoptorBatched()
-    :is_complex(false),is_gamma_only(false), is_soa_ready(false),
-    MyIndex(0),nunique_orbitals(0),first_spo(0),last_spo(0)
-  { }
+  SplineAdoptorBatched() { };
   SplineAdoptorBatched(const SplineAdoptorBatched& rhs)=default;
 
+  // inline void resizeStorage(size_t n, size_t nvals)
+  // {
+  //   init_base(n);
+  // }
+  
   inline void init_base(int n)
   {
-    nunique_orbitals=n;
-    GGt=dot(transpose(PrimLattice.G),PrimLattice.G);
-    kPoints.resize(n);
-    MakeTwoCopies.resize(n);
+    BaseType::init_base(n);
   }
+
+  // template<typename VV>
+  // inline void evaluate_v(const std::vector<PointType>& P, const int iat, VV& psi)
+  // {
+  //   PointType ru(PrimLattice.toUnit_floor(P));
+  //   bspline_dev.evaluate(ru,myV);
+  //   bspline_dev.assign_v(r,myV,psi);
+  // }
 
   ///remap kpoints to group general kpoints & special kpoints
   int remap_kpoints()
   {
-    std::vector<TinyVector<ST,D> >  k_copy(kPoints);
-    const int nk=kPoints.size();
-    BandIndexMap.resize(nk);
-    int nCB=0;
-    //two pass
-    for(int i=0; i<nk; ++i)
-    {
-      if(MakeTwoCopies[i]) 
-      {
-        kPoints[nCB]=k_copy[i];
-        BandIndexMap[i]=nCB++;
-      }
-    }
-    int nRealBands=nCB;
-    for(int i=0; i<nk; ++i)
-    {
-      if(!MakeTwoCopies[i]) 
-      {
-        kPoints[nRealBands]=k_copy[i];
-        BandIndexMap[i]=nRealBands++;
-      }
-    }
-    return nCB; //return the number of complex bands
+    return BaseType::remap_kpoints();
+  }
+
+  void evaluate(const typename BaseType::ParticleSet& P, int iat, typename BaseType::ValueVector_t& psi)
+  {
+    APP_ABORT("SplineAdoptorBatched doesn't implement single walker evaluates");
   }
 };
 

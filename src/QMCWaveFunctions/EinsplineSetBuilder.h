@@ -351,7 +351,7 @@ public:
   CentersInfo& getAtomicCentersInfo() { return AtomicCentersInfo; }
   int getTwistNum() { return TwistNum; }
   std::vector<std::vector<TinyVector<int,3> > >& getGvecs() { return Gvecs; }
-  std::string& getH5FileName() { return H5FileName; }
+  std::string getH5FileName() { return H5FileName; }
   hid_t getH5FileID() { return H5FileID; }
   int getNumberSpinStates() { return states.size(); }
   int getMaxNumGvecs() { return MaxNumGvecs; }

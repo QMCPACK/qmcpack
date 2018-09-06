@@ -130,6 +130,14 @@ public:
   //   IsGamma=( (HalfG[0]==0) && (HalfG[1]==0) && (HalfG[2]==0));
   // }
 
+  inline void resizeStorage(size_t n, size_t nvals)
+  {
+    int nwalkers = 4;
+    BaseType::init_base(n);
+    device_spline.resizeStorage(n, nvals, nwalkers);
+  }
+
+  
   void bcast_tables(Communicate* comm)
   {
     chunked_bcast(comm, MultiSpline);

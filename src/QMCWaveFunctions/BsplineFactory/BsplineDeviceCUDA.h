@@ -32,7 +32,7 @@ namespace qmcplusplus
  */
   
 template<typename ST, unsigned D>
-class BsplineDeviceCUDA : BsplineDevice<BsplineDeviceCUDA<ST,D>, ST, D>
+class BsplineDeviceCUDA : public BsplineDevice<BsplineDeviceCUDA<ST,D>, ST, D>
 {
 public:
   //Code refactored from Einsplineset (still there for other functionality under AoS?)
@@ -48,7 +48,7 @@ public:
   CudaSplineType* cuda_multi_bspline;
   gpu::device_vector<CudaStorageType> CudaValueVector, CudaGradLaplVector;
   gpu::device_vector<CudaStorageType*> CudaValuePointers, CudaGradLaplPointers;
-  void resize_cuda(int numWalkers);
+  //void resize_cuda(int numWalkers);
   // Cuda equivalent
   gpu::device_vector<int> CudaMakeTwoCopies;
   gpu::device_vector<int> CudaTwoCopiesIndex;
@@ -88,11 +88,11 @@ public:
     // L_cuda    = L_host;
     // Linv_cuda = Linv_host;
   }
-  
-  template<typename GT, typename BCT>
-  void createSpline(MultiBspline<ST>& multi_spline)
+
+  void createSpline_imp(MultiBspline<ST>& multi_spline)
   {
-    cudasoatemp::create_multi_UBspline_3d_cuda(multi_spline, cuda_multi_bspline);
+    std::string something_string = "something";
+    //qmcplusplus::cudasoatemp::create_multi_UBspline_3d_cuda(multi_spline, cuda_multi_bspline);
     // Destroy original CPU spline
     // HACK HACK HACK
     //destroy_Bspline (MultiSpline);
@@ -109,7 +109,61 @@ public:
     // L_cuda    = L_host;
     // Linv_cuda = Linv_host;
   }
-  
+
+  //template<typename ST> void
+  //template<typename ST, 3>
+  void resizeStorage_imp(size_t n, size_t nvals, int num_walkers)
+  {
+    CudaValuePointers.resize(num_walkers);
+    CudaGradLaplPointers.resize(num_walkers);
+    // int N = CudaMultiSpline->num_splines;
+    // CudaValueVector.resize(N*num_walkers);
+    // CudaGradLaplVector.resize(4*N*num_walkers);
+    // gpu::host_vector<CudaStorageType*> hostValuePointers(num_walkers);
+    // gpu::host_vector<CudaStorageType*> hostGradLaplPointers(num_walkers);
+    // for (int i=0; i<num_walkers; i++)
+    //   {
+    // 	hostValuePointers[i]    = &(CudaValueVector.data()[i*N]);
+    // 	hostGradLaplPointers[i] = &(CudaGradLaplVector.data()[4*i*N]);
+    //   }
+    // CudaValuePointers    = hostValuePointers;
+    // CudaGradLaplPointers = hostGradLaplPointers;
+    // int M = MakeTwoCopies.size();
+    // CudaMakeTwoCopies.resize(M);
+    // CudaTwoCopiesIndex.resize(M);
+    // gpu::host_vector<int> hostMakeTwoCopies(M);
+    // gpu::host_vector<int> hostTwoCopiesIndex(M);
+    // int TwoCopiesIndexCounter = 0;
+    // for (int i=0; i<M; i++)
+    //   {
+    // 	hostMakeTwoCopies[i] = MakeTwoCopies[i];
+    // 	hostTwoCopiesIndex[i] = TwoCopiesIndexCounter;
+    // 	TwoCopiesIndexCounter = MakeTwoCopies[i] ? TwoCopiesIndexCounter+2 : TwoCopiesIndexCounter+1;
+    //   }
+    // CudaMakeTwoCopies = hostMakeTwoCopies;
+    // CudaTwoCopiesIndex = hostTwoCopiesIndex;
+    // CudakPoints.resize(M);
+    // CudakPoints_reduced.resize(M);
+    // gpu::host_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM> > hostkPoints(M),
+    //   hostkPoints_reduced(M);
+    // for (int i=0; i<M; i++)
+    //   {
+    // 	//      PosType k_red1 = PrimLattice.toCart(kPoints[i]);
+    // 	PosType k_red2(dot(kPoints[i], PrimLattice.a(0)),
+    // 		       dot(kPoints[i], PrimLattice.a(1)),
+    // 		       dot(kPoints[i], PrimLattice.a(2)));
+    // 	//       fprintf (stderr, "kred1 = %8.3f %8.3f %8.3f\n", k_red1[0], k_red1[1], k_red1[2]);
+    // 	//       fprintf (stderr, "kred2 = %8.3f %8.3f %8.3f\n", k_red2[0], k_red2[1], k_red2[2]);
+    // 	for (int j=0; j<OHMMS_DIM; j++)
+    // 	  {
+    // 	    hostkPoints[i][j]         = kPoints[i][j];
+    // 	    hostkPoints_reduced[i][j] = k_red2[j];
+    // 	  }
+    //   }
+    // CudakPoints = hostkPoints;
+    // CudakPoints_reduced = hostkPoints_reduced;
+  }
+
   void implementation()
   {
     std::cout<< "implemented for CUDA\n";

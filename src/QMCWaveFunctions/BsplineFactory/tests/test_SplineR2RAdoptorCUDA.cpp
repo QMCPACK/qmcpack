@@ -27,14 +27,16 @@ TEST_CASE("SplineAdoptorBatched_Instantiation", "[wavefunction]")
   SplineAdoptorBatched<BsplineDeviceCUDA, double, 3> testAdoptor;
 }
   
-TEST_CASE("SplineR2RAdoptorCUDA_Instantiation", "[wavefunction]")
+TEST_CASE("SplineR2RAdoptorBatched_Instantiation", "[wavefunction]")
 {
-  SplineR2RAdoptorCUDA<double, double> testAdoptor;
+  SplineR2RAdoptorBatched<double, double> testAdoptor;
 }
 
-TEST_CASE("SplineAdoptorReader<SplineR2RAdoptorCUDA>", "[wavefunction]")
+TEST_CASE("SplineAdoptorReader<SplineR2RAdoptorBatched>", "[wavefunction]")
 {
-  EinsplineSetBuilder* e = new EinsplineSetBuilder();
-  SplineAdoptorReader<SplineR2RAdoptorCUDA>(e);
+  MockEinsplineSetBuilder* e = new MockEinsplineSetBuilder();
+  SplineAdoptorReader<SplineR2RAdoptorBatched<double, double>>(dynamic_cast<SplineBuilder*>(e));
+  
 }
 
+}

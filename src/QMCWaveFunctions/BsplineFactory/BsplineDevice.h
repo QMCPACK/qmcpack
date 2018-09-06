@@ -2,14 +2,11 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2018 QMCPACK developers
 //
-// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
-//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //
-// File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
+// File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef QMCPLUSPLUS_BSPLINEDEVICE_H
@@ -27,15 +24,16 @@ namespace qmcplusplus
 template<class DEVICETYPE, typename ST, unsigned D>
 class BsplineDevice
 {
+public:
   void interface()
   {
     static_cast<DEVICETYPE*>(this)->implementation();
   }
+
   
-  template<typename GT, typename BCT>
-  void createSpline(GT& xyz_g, BCT& xyz_bc)
+  void createSpline(MultiBspline<ST>& multi_bspline)
   {
-    static_cast<DEVICETYPE*>(this)->createSpline(xyz_g, xyz_bc);
+    static_cast<DEVICETYPE*>(this)->createSpline_imp(multi_bspline);
   }
 
   void initDevice(MultiBspline<ST>& multi_bspline)
@@ -43,6 +41,10 @@ class BsplineDevice
     static_cast<DEVICETYPE*>(this)->initDevice_imp(multi_bspline);
   }
 
+  void resizeStorage(size_t n, size_t nvals, int num_walkers)
+  {
+    static_cast<DEVICETYPE*>(this)->resizeStorage_imp(n, nvals, num_walkers);
+  }
 };
 
 }
