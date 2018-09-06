@@ -96,11 +96,20 @@ bool LatticeParser::put(xmlNodePtr cur)
           {
             ref_.BoxBConds[idir] = false;
           }
-          else
+          else if(b == 'p' || b == 'P')
           {
             ref_.BoxBConds[idir] = true;
             boxsum++;
           }
+          else
+          {
+            APP_ABORT("LatticeParser::put. Unknown label '" + bconds[idir] +
+                      "' used for periodicity. Only 'p', 'P', 'n' and 'N' are valid!");
+          }
+
+          // Protect BCs which are not implemented.
+          if ( idir>0 && !ref_.BoxBConds[idir-1] && ref_.BoxBConds[idir] )
+            APP_ABORT("LatticeParser::put. In \"bconds\", non periodic directions must be placed after the periodic ones.");
         }
       }
       else if(aname == "vacuum")

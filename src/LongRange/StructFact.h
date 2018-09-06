@@ -56,6 +56,8 @@ public:
   int SuperCellEnum;
   /// K-Vector List.
   KContainer KLists;
+  ///1-D container for the phase
+  Vector<RealType> phiV;
   ///2-D container for the phase
 #if defined(USE_REAL_STRUCT_FACTOR)
   Matrix<RealType> rhok_r, rhok_i;

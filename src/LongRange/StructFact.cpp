@@ -55,6 +55,7 @@ StructFact::UpdateNewCell(ParticleSet& P, RealType kc)
 
 void StructFact::resize(int ns, int nptcl, int nkpts)
 {
+  phiV.resize(nkpts);
 #if defined(USE_REAL_STRUCT_FACTOR)
   rhok_r.resize(ns,nkpts);
   rhok_i.resize(ns,nkpts);
@@ -119,6 +120,7 @@ StructFact::FillRhok(ParticleSet& P)
       const auto& pos = P.R[i];
       auto* restrict rhok_r_ptr = rhok_r[P.GroupID[i]];
       auto* restrict rhok_i_ptr = rhok_i[P.GroupID[i]];
+#ifdef __INTEL_COMPILER
       #pragma omp simd
       for(int ki=0; ki<nk; ki++)
       {
@@ -127,6 +129,16 @@ StructFact::FillRhok(ParticleSet& P)
         rhok_r_ptr[ki] += c;
         rhok_i_ptr[ki] += s;
       }
+#else
+      for(int ki=0; ki<nk; ki++)
+        phiV[ki] = dot(KLists.kpts_cart[ki],pos);
+      eval_e2iphi(nk, phiV.data(), eikr_r_temp.data(), eikr_i_temp.data());
+      for(int ki=0; ki<nk; ki++)
+      {
+        rhok_r_ptr[ki] += eikr_r_temp[ki];
+        rhok_i_ptr[ki] += eikr_i_temp[ki];
+      }
+#endif
     }
   }
 #else

@@ -34,10 +34,6 @@ graphene = generate_physical_system(
     C         = 4                 # C has 4 valence electrons
     ) 
 
-
-# list of simulations in workflow
-sims = []
-
 # scf run produces charge density
 scf = generate_pwscf(
     # nexus inputs
@@ -58,7 +54,6 @@ scf = generate_pwscf(
     wf_collect   = False,           # don't collect orbitals
     use_folded   = True,            # use primitive rep of graphene
     )
-sims.append(scf)  
 
 # nscf run to produce orbitals for jastrow optimization
 nscf_opt = generate_pwscf(
@@ -83,7 +78,6 @@ nscf_opt = generate_pwscf(
     # workflow dependencies
     dependencies = (scf,'charge_density'),
     )
-sims.append(nscf_opt)
 
 # orbital conversion job for jastrow optimization
 p2q_opt = generate_pw2qmcpack(
@@ -96,7 +90,6 @@ p2q_opt = generate_pw2qmcpack(
     # workflow dependencies
     dependencies = (nscf_opt,'orbitals'),
     )
-sims.append(p2q_opt)
 
 # Jastrow optimization
 opt = generate_qmcpack(
@@ -132,8 +125,6 @@ opt = generate_qmcpack(
     # workflow dependencies
     dependencies = (p2q_opt,'orbitals'),
     )
-sims.append(opt)
-
 
 # nscf run to produce orbitals for final dmc
 nscf = generate_pwscf(
@@ -156,7 +147,6 @@ nscf = generate_pwscf(
     # workflow dependencies
     dependencies = (scf,'charge_density'),
     )
-sims.append(nscf)
 
 # orbital conversion job for final dmc
 p2q = generate_pw2qmcpack(
@@ -169,7 +159,6 @@ p2q = generate_pw2qmcpack(
     # workflow dependencies
     dependencies = (nscf,'orbitals'),
     )
-sims.append(p2q)
     
 # final dmc run
 qmc = generate_qmcpack( 
@@ -208,7 +197,7 @@ qmc = generate_qmcpack(
 
 
 # nexus monitors all runs
-run_project(sims)
+run_project()
 
 
 # print out the total energy

@@ -207,7 +207,7 @@ def values_for_He():
   rc_val = 0.1
   Z_val = 2
 
-  basis_set,MO = read_qmcpack.parse_qmc_wf('he_sto3g.wfj.xml')
+  basis_set,MO = read_qmcpack.parse_qmc_wf('he_sto3g.wfj.xml',['He'])
   he_gto = gaussian_orbitals.GTO(basis_set['He'])
 
   Xvals = evalX(he_gto, Z_val, rc_val)
@@ -320,8 +320,8 @@ class CuspCorrection:
 
 
 def gen_correction_for_hcn():
-  basis_sets, MO_matrix = read_qmcpack.parse_qmc_wf("hcn.wfnoj.xml")
   pos_list, elements = read_qmcpack.read_structure_file("hcn.structure.xml")
+  basis_sets, MO_matrix = read_qmcpack.parse_qmc_wf("hcn.wfnoj.xml", elements)
 
   gtos = gaussian_orbitals.GTO_centers(pos_list, elements, basis_sets)
 
@@ -347,8 +347,8 @@ def gen_correction_for_hcn():
       print()
 
 def gen_wavefunction_plus_correction_for_hcn():
-  basis_sets, MO_matrix = read_qmcpack.parse_qmc_wf("hcn.wfnoj.xml")
   pos_list, elements = read_qmcpack.read_structure_file("hcn.structure.xml")
+  basis_sets, MO_matrix = read_qmcpack.parse_qmc_wf("hcn.wfnoj.xml", elements)
 
   gtos = gaussian_orbitals.GTO_centers(pos_list, elements, basis_sets)
 
@@ -392,6 +392,51 @@ def gen_wavefunction_plus_correction_for_hcn():
       print('  REQUIRE(all_lap[%d][%d] == Approx(%.10f));'%(iat, mo_idx, final_l))
       print()
 
+def gen_wavefunction_plus_correction_for_ethanol():
+  pos_list, elements = read_qmcpack.read_structure_file("ethanol.structure.xml")
+  basis_sets, MO_matrix = read_qmcpack.parse_qmc_wf("ethanol.wfnoj.xml", elements)
+
+  gtos = gaussian_orbitals.GTO_centers(pos_list, elements, basis_sets)
+
+  phi_list, eta_list, C_no_S = split_by_angular_momentum(pos_list, elements, basis_sets, MO_matrix)
+
+  spo_name, cusp_data = read_qmcpack.read_cusp_correction_file("ethanol_downdet.cuspInfo.xml")
+
+  cusp = CuspCorrection(cusp_data, pos_list, gtos, phi_list)
+
+  # Bulk of the MO's - the non-cusp corrected parts
+  other_mo = gaussian_orbitals.MolecularOrbital(gtos, C_no_S)
+
+  # set electron position so it falls within rc near O atom
+  xyzgrid = [(-2.1, 0.5, 0.0)]
+  #xyzgrid = [(0.0, 0.0, 0.0)]
+  iat = 0
+  for i,epos in enumerate(xyzgrid):
+    mo_v, mo_g, mo_l = other_mo.eval_vgl(epos[0], epos[1], epos[2])
+    for mo_idx in range(13):
+      final_v = mo_v[mo_idx]
+      final_g = mo_g[mo_idx, :]
+      final_l = mo_l[mo_idx]
+      for center_idx in range(9):
+        cv,cg,cl = cusp.compute_cusp_correction(center_idx, mo_idx, epos)
+        final_v += cv
+        final_g += cg
+        final_l += cl
+
+      print('  # MO %d'%mo_idx)
+      print('  REQUIRE(values[%d] == Approx(%.10f));'%(mo_idx,final_v))
+      print('  REQUIRE(dpsi[%d][0] == Approx(%.10f));'%(mo_idx, final_g[0]))
+      print('  REQUIRE(dpsi[%d][1] == Approx(%.10f));'%(mo_idx, final_g[1]))
+      print('  REQUIRE(dpsi[%d][2] == Approx(%.10f));'%(mo_idx, final_g[2]))
+      print('  REQUIRE(d2psi[%d] == Approx(%.10f));'%(mo_idx,final_l))
+      print()
+
+      print('  REQUIRE(all_values[%d][%d] == Approx(%.10f));'%(iat, mo_idx, final_v))
+      print('  REQUIRE(all_grad[%d][%d][0] == Approx(%.10f));'%(iat, mo_idx, final_g[0]))
+      print('  REQUIRE(all_grad[%d][%d][1] == Approx(%.10f));'%(iat, mo_idx, final_g[1]))
+      print('  REQUIRE(all_grad[%d][%d][2] == Approx(%.10f));'%(iat, mo_idx, final_g[2]))
+      print('  REQUIRE(all_lap[%d][%d] == Approx(%.10f));'%(iat, mo_idx, final_l))
+      print()
 
 
 
@@ -399,4 +444,5 @@ if __name__ == '__main__':
   #simple_X_vals()
   #values_for_He()
   #gen_correction_for_hcn()
-  gen_wavefunction_plus_correction_for_hcn()
+  #gen_wavefunction_plus_correction_for_hcn()
+  gen_wavefunction_plus_correction_for_ethanol()
