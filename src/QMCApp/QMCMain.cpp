@@ -84,8 +84,19 @@ QMCMain::QMCMain(Communicate* c)
       << "\n  MPI Nodes            = " << OHMMS::Controller->size()
       << "\n  MPI Nodes per group  = " << myComm->size()
       << "\n  MPI Group ID         = " << myComm->getGroupID()
-      << "\n  OMP_NUM_THREADS      = " << omp_get_max_threads()
       << std::endl;
+  #pragma omp parallel
+  {
+    const int L1_tid = omp_get_thread_num();
+    if(L1_tid==0)
+      app_summary() << "  1st level threads    = " << omp_get_num_threads() << std::endl;
+    #pragma omp parallel
+    {
+      const int L2_tid = omp_get_thread_num();
+      if(L1_tid==0&&L2_tid==0)
+        app_summary() << "  2nd level threads    = " << omp_get_num_threads() << std::endl;
+    }
+  }
   app_summary()
       << "\n  Precision used in this calculation, see definitions in the manual:"
       << "\n  Base precision      = " << GET_MACRO_VAL(OHMMS_PRECISION)
