@@ -9,6 +9,7 @@
 #include<ctype.h>
 
 #include "Utilities/SimpleParser.h"
+#include "AFQMC/Utilities/readWfn.h"
 
 #include "AFQMC/config.h"
 #include "boost/multi_array.hpp"
@@ -182,6 +183,20 @@ WALKER_TYPES getWalkerType(std::string filename)
   else return UNDEFINED_WALKER_TYPE;
 }
 
+std::string getWfnType(std::ifstream& in)
+{
+  in.rewind();
+
+  bool fullMOMat = false;
+  bool Cstyle = true;
+  int wfn_type=0;
+  int ndet_in_file=-1;
+  std::string type;
+  read_header(in,type,wfn_type,fullMOMat,Cstyle,ndet_in_file);
+
+  return type;  
+}
+
 /*
  * Reads ndets from the ascii file. 
  * If pureSD == false, PsiT contains the Slater Matrices of all the terms in the expansion.
@@ -194,6 +209,8 @@ void read_wavefunction(std::string filename, int& ndets, std::string& type, WALK
         std::vector<PsiT_Matrix>& PsiT, std::vector<ComplexType>& ci,
         std::vector<int>& excitations) 
 {
+  in.rewind();
+
   assert(walker_type!=UNDEFINED_WALKER_TYPE);
   std::ifstream in;
   in.open(filename.c_str());
@@ -370,8 +387,6 @@ void read_wavefunction(std::string filename, int& ndets, std::string& type, WALK
   } else {
     APP_ABORT("Error: Unknown wavefunction type in file.\n");
   }
-
-  in.close();
 }
 
 
