@@ -429,5 +429,152 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   SPOSetBuilderFactory::clear();
 }
 
+// Test case with multiple atoms of the same type
+TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  Communicate* c = OHMMS::Controller;
+
+  Libxml2Document doc;
+  bool okay = doc.parse("ethanol.structure.xml");
+  REQUIRE(okay);
+  xmlNodePtr root = doc.getRoot();
+  Tensor<int, 3> tmat;
+  tmat(0, 0) = 1;
+  tmat(1, 1) = 1;
+  tmat(2, 2) = 1;
+
+  ParticleSet ions;
+  XMLParticleParser parse_ions(ions, tmat);
+  OhmmsXPathObject particleset_ion("//particleset[@name='ion0']", doc.getXPathContext());
+  REQUIRE(particleset_ion.size() == 1);
+  parse_ions.put(particleset_ion[0]);
+
+  REQUIRE(ions.groups() == 3);
+  REQUIRE(ions.R.size() == 9);
+  ions.update();
+
+  ParticleSet elec;
+  XMLParticleParser parse_elec(elec, tmat);
+  OhmmsXPathObject particleset_elec("//particleset[@name='e']", doc.getXPathContext());
+  REQUIRE(particleset_elec.size() == 1);
+  parse_elec.put(particleset_elec[0]);
+
+  REQUIRE(elec.groups() == 2);
+  REQUIRE(elec.R.size() == 26);
+
+  elec.R = 0.0;
+
+  elec.addTable(ions, DT_SOA);
+  elec.update();
+
+  Libxml2Document doc2;
+  okay = doc2.parse("ethanol.wfnoj.xml");
+  REQUIRE(okay);
+  xmlNodePtr root2 = doc2.getRoot();
+
+  TrialWaveFunction psi(c);
+
+  WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
+  particle_set_map["e"]    = &elec;
+  particle_set_map["ion0"] = &ions;
+
+  SPOSetBuilderFactory bf(elec, psi, particle_set_map);
+
+  OhmmsXPathObject MO_base("//determinantset", doc2.getXPathContext());
+  REQUIRE(MO_base.size() == 1);
+
+  xmlSetProp(MO_base[0], (const xmlChar*)"cuspCorrection", (const xmlChar*)"yes");
+
+  SPOSetBuilder* bb = bf.createSPOSetBuilder(MO_base[0]);
+  REQUIRE(bb != NULL);
+
+  OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
+  bb->loadBasisSetFromXML(MO_base[0]);
+  SPOSet* sposet = bb->createSPOSet(slater_base[0]);
+
+
+  SPOSet::ValueVector_t values;
+  SPOSet::GradVector_t dpsi;
+  SPOSet::ValueVector_t d2psi;
+  values.resize(13);
+  dpsi.resize(13);
+  d2psi.resize(13);
+
+  elec.R = 0.0;
+  // Put electron near O atom
+  elec.R[0][0] = -2.10;
+  elec.R[0][1] = 0.50;
+
+  elec.update();
+  ParticleSet::SingleParticlePos_t newpos;
+  elec.makeMove(0, newpos);
+
+  sposet->evaluate(elec, 0, values);
+
+  // Values from gen_cusp_corr.py
+  REQUIRE(values[0] == Approx(4.3617329704));
+  REQUIRE(values[1] == Approx(0.0014119853));
+  REQUIRE(values[2] == Approx(0.0001156461));
+  REQUIRE(values[3] == Approx(-0.6722670611));
+  REQUIRE(values[4] == Approx(0.2762949842));
+  REQUIRE(values[5] == Approx(0.2198735778));
+  REQUIRE(values[6] == Approx(0.0659454461));
+  REQUIRE(values[7] == Approx(0.2952071056));
+  REQUIRE(values[8] == Approx(0.0322071389));
+  REQUIRE(values[9] == Approx(0.0877981239));
+  REQUIRE(values[10] == Approx(-0.2151873873));
+  REQUIRE(values[11] == Approx(0.4250074750));
+  REQUIRE(values[12] == Approx(0.0767950823));
+
+  sposet->evaluate(elec, 0, values, dpsi, d2psi);
+
+  REQUIRE(values[0] == Approx(4.3617329704));
+  REQUIRE(values[1] == Approx(0.0014119853));
+  REQUIRE(values[2] == Approx(0.0001156461));
+  REQUIRE(values[3] == Approx(-0.6722670611));
+  REQUIRE(values[4] == Approx(0.2762949842));
+  REQUIRE(values[5] == Approx(0.2198735778));
+  REQUIRE(values[6] == Approx(0.0659454461));
+  REQUIRE(values[7] == Approx(0.2952071056));
+  REQUIRE(values[8] == Approx(0.0322071389));
+  REQUIRE(values[9] == Approx(0.0877981239));
+  REQUIRE(values[10] == Approx(-0.2151873873));
+  REQUIRE(values[11] == Approx(0.4250074750));
+  REQUIRE(values[12] == Approx(0.0767950823));
+
+  REQUIRE(dpsi[0][0] == Approx(-27.2844138432));
+  REQUIRE(dpsi[0][1] == Approx(15.9958208598));
+  REQUIRE(dpsi[0][2] == Approx(0.0195317131));
+  REQUIRE(d2psi[0] == Approx(-293.2869628790));
+
+  REQUIRE(dpsi[12][0] == Approx(1.7548511775));
+  REQUIRE(dpsi[12][1] == Approx(2.2759333828));
+  REQUIRE(dpsi[12][2] == Approx(-1.4878277937));
+  REQUIRE(d2psi[12] == Approx(-4.3399821309));
+
+
+  SPOSet::ValueMatrix_t all_values;
+  SPOSet::GradMatrix_t all_grad;
+  SPOSet::ValueMatrix_t all_lap;
+  all_values.resize(13, 13);
+  all_grad.resize(13, 13);
+  all_lap.resize(13, 13);
+
+  sposet->evaluate_notranspose(elec, 0, 7, all_values, all_grad, all_lap);
+
+  REQUIRE(all_values[0][0] == Approx(4.3617329704));
+  REQUIRE(all_grad[0][0][0] == Approx(-27.2844138432));
+  REQUIRE(all_grad[0][0][1] == Approx(15.9958208598));
+  REQUIRE(all_grad[0][0][2] == Approx(0.0195317131));
+  REQUIRE(all_lap[0][0] == Approx(-293.2869628790));
+
+  REQUIRE(all_values[0][11] == Approx(0.4250074750));
+  REQUIRE(all_grad[0][11][0] == Approx(-0.3947036210));
+  REQUIRE(all_grad[0][11][1] == Approx(0.9883840215));
+  REQUIRE(all_grad[0][11][2] == Approx(1.7863218842));
+  REQUIRE(all_lap[0][11] == Approx(-33.5202249813));
+}
+
 
 } // namespace qmcplusplus

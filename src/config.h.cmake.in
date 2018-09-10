@@ -86,9 +86,6 @@
 /* Define to 1 if complex wavefunctions are used */
 #cmakedefine QMC_COMPLEX @QMC_COMPLEX@
 
-/* Define to 1 if using recursive SK evaluation */
-#cmakedefine QMC_SK_USE_RECURSIVE @QMC_SK_USE_RECURSIVE@
-
 /* Define if the code is specialized for orthorhombic supercell */
 #define OHMMS_ORTHO @OHMMS_ORTHO@
 

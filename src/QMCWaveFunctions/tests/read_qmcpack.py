@@ -50,7 +50,7 @@ def read_basis_groups(atomic_basis_set):
 
 #  Read the atomic basis set and MO coefficients
 
-def parse_qmc_wf(fname):
+def parse_qmc_wf(fname, element_list):
     tree = ET.parse(fname)
 
     atomic_basis_sets = tree.findall('.//atomicBasisSet')
@@ -62,8 +62,8 @@ def parse_qmc_wf(fname):
 
 
     basis_size = 0
-    for element, basis_set in basis_sets.iteritems():
-      basis_size += get_total_basis_functions(basis_set)
+    for element in element_list:
+      basis_size += get_total_basis_functions(basis_sets[element])
     #print 'total basis size',basis_size
 
     #  Just use the first one for now - assume up and down MO's are the same
@@ -94,7 +94,7 @@ def parse_structure(node):
     npos = int(particleset.attrib['size'])
     pos_node = particleset.find("attrib[@name='position']")
     pos_values = [float(a) for a in pos_node.text.split()]
-    pos = np.array(pos_values).reshape( (3, npos) )
+    pos = np.array(pos_values).reshape( (npos, 3) )
 
     elements_node = particleset.find("attrib[@name='ionid']")
     elements = elements_node.text.split()
@@ -147,19 +147,28 @@ def read_cusp_correction_file(fname):
 
 if __name__ == '__main__':
     # For He
-    basis_set, MO_matrix = parse_qmc_wf('he_sto3g.wfj.xml')
+    basis_set, MO_matrix = parse_qmc_wf('he_sto3g.wfj.xml',['He'])
 
 
     # For HCN - need ion positions as well
-    basis_sets, MO_matrix = parse_qmc_wf('hcn.wfnoj.xml')
-
     pos_list, elements = read_structure_file("hcn.structure.xml")
+
+    basis_sets, MO_matrix = parse_qmc_wf('hcn.wfnoj.xml', elements)
+
 
     gtos = gaussian_orbitals.GTO_centers(pos_list, elements, basis_sets)
     atomic_orbs =  gtos.eval_v(1.0, 0.0, 0.0)
-    #print np.dot(MO_matrix, atomic_orbs)
+    print np.dot(MO_matrix, atomic_orbs)
 
     #ccp = read_cusp_correction_file("hcn_downdet.cuspInfo.xml")
     #print ccp
+
+    # Ethanol - example with repeated atoms
+    pos_list, elements = read_structure_file("ethanol.structure.xml")
+    print len(pos_list), pos_list
+    print 'elements',elements
+
+    basis_sets, MO_matrix = parse_qmc_wf("ethanol.wfnoj.xml", elements)
+    print MO_matrix.shape
 
 
