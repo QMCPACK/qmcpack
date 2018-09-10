@@ -24,6 +24,8 @@
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorReaderP.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineHybridAdoptorReaderP.h"
 
+#include "QMCWaveFunctions/BsplineFactory/temp_batch_type.h"
+
 namespace qmcplusplus
 {
 
@@ -34,14 +36,14 @@ namespace qmcplusplus
 
 #if defined(QMC_COMPLEX)
     if(hybrid_rep)
-      aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2CAdoptor<double,RealType> > >(e);
+      aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2CAdoptor<double,RealType> >, DEFAULT_BATCHING >(e);
     else
-      aReader= new SplineAdoptorReader<SplineC2CAdoptor<double,RealType> >(e);
+      aReader= new SplineAdoptorReader<SplineC2CAdoptor<double,RealType>, DEFAULT_BATCHING>(e);
 #else //QMC_COMPLEX
     if(hybrid_rep)
-      aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2RAdoptor<double,RealType> > >(e);
+      aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2RAdoptor<double,RealType> >, DEFAULT_BATCHING >(e);
     else
-      aReader= new SplineAdoptorReader<SplineC2RAdoptor<double,RealType> >(e);
+      aReader= new SplineAdoptorReader<SplineC2RAdoptor<double,RealType>, DEFAULT_BATCHING >(e);
 #endif
 
     return aReader;

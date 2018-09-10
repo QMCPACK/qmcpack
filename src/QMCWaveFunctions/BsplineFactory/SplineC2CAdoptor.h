@@ -19,8 +19,9 @@
 
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
+#include "qmc_common.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptor.h"
-
+#include "QMCWaveFunctions/BsplineFactory/temp_batch_type.h"
 //#define USE_VECTOR_ML 1
 
 namespace qmcplusplus
@@ -33,7 +34,8 @@ namespace qmcplusplus
  *
  * Requires temporage storage and multiplication of phase vectors
  */
-template<typename ST, typename TT>
+
+template<typename ST, typename TT, Batching batching>
 struct SplineC2CAdoptor: public SplineAdoptor<ST,3>
 {
   static const int D=3;

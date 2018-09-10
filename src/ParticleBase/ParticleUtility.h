@@ -16,6 +16,8 @@
 #ifndef OHMMS_PARTICLEUTILITY_H
 #define OHMMS_PARTICLEUTILITY_H
 
+#include "ParticleBase/ParticleAttrib.h"
+
 namespace qmcplusplus
 {
 //////////////////////////////////////////////////////////

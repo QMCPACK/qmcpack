@@ -34,6 +34,7 @@ namespace qmcplusplus
  *
  * Requires temporage storage and multiplication of phase vectors
  */
+
 template<typename ST, typename TT>
 struct SplineC2RAdoptor: public SplineAdoptor<ST,3>
 {

@@ -17,6 +17,8 @@
 #define QMCPLUSPLUS_EINSPLINE_ENGINE_HPP
 #include <spline/bspline_traits.hpp>
 #include <spline/einspline_impl.hpp>
+#include "OhmmsPETE/OhmmsArray.h"
+
 namespace qmcplusplus
 {
 

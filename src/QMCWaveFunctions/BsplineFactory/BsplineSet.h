@@ -24,6 +24,11 @@
 #include <spline/einspline_engine.hpp>
 #include <spline/einspline_util.hpp>
 #include <simd/allocator.hpp>
+#include "Configuration.h"
+#include "Particle/ParticleSet.h"
+#include "OhmmsPETE/OhmmsArray.h"
+#include "QMCWaveFunctions/BsplineFactory/temp_batch_type.h"
+#include "QMCWaveFunctions/SPOSet.h"
 
 namespace qmcplusplus
 {
@@ -36,21 +41,42 @@ namespace qmcplusplus
  * @todo Make SplineAdoptor be a member not the base class. This is needed
  * to make MultiBsplineSet (TBD) which has multiple SplineAdoptors for distributed
  * cases.
+ * SA SplineAdoptor type
+ * PST ParticleSet type
  */
-template<typename SplineAdoptor>
-struct BsplineSet: public SPOSet, public SplineAdoptor
+
+
+  // Unspecialized version of BsplineSet,
+  // defaults in here?
+  
+template<typename SA, Batching batching>
+struct BsplineSet: public SPOSet, public SA
 {
-  typedef typename SplineAdoptor::SplineType SplineType;
-  typedef typename SplineAdoptor::PointType  PointType;
-  typedef typename SplineAdoptor::DataType  DataType;
+  typedef typename SA::SplineType SplineType;
+  typedef typename SA::PointType  PointType;
+  typedef typename SA::DataType  DataType;
 
   ///** default constructor */
   //BsplineSet() { }
 
   SPOSet* makeClone() const
   {
-    return new BsplineSet<SplineAdoptor>(*this);
+    return new BsplineSet<SA, batching>(*this);
   }
+
+};
+
+template<typename SA>
+struct BsplineSet<SA, Batching::SINGLE>: public SPOSet, public SA
+{
+  typedef typename SA::SplineType SplineType;
+  typedef typename SA::PointType  PointType;
+  typedef typename SA::DataType  DataType;
+
+  Batching batching = Batching::SINGLE;
+  
+  ///** default constructor */
+  //BsplineSet() { }
 
   /** set_spline to the big table
    * @param psi_r starting address of real part of psi(ispline)
@@ -64,37 +90,37 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
   template<typename CT>
   void set_spline(CT* spline_r, CT* spline_i, int twist, int ispline, int level)
   {
-    SplineAdoptor::set_spline(spline_r,spline_i,twist,ispline,level);
+    SA::set_spline(spline_r,spline_i,twist,ispline,level);
   }
 
-  inline ValueType RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
+  QMCTraits::ValueType RATIO(int iat, const QMCTraits::ValueType* restrict arow)
   {
-    //this is just an example how to resuse t_logpsi
+  //this is just an example how to resuse t_logpsi
     int ip=omp_get_thread_num()*2;
     // YYYY: need to fix
     //return SplineAdoptor::evaluate_dot(P,iat,arow,reinterpret_cast<DataType*>(t_logpsi[ip]));
-    return ValueType();
+    return QMCTraits::ValueType();
   }
 
   inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
-    SplineAdoptor::evaluate_v(P,iat,psi);
+    SA::evaluate_v(P,iat,psi);
   }
 
   inline void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem)
   {
-    SplineAdoptor::evaluateValues(VP, psiM, SPOMem);
+    SA::evaluateValues(VP, psiM, SPOMem);
   }
 
   inline size_t estimateMemory(const int nP)
   {
-    return SplineAdoptor::estimateMemory(nP);
+    return SA::estimateMemory(nP);
   }
 
   inline void evaluate(const ParticleSet& P, int iat,
                        ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
-    SplineAdoptor::evaluate_vgl(P,iat,psi,dpsi,d2psi);
+    SA::evaluate_vgl(P,iat,psi,dpsi,d2psi);
 
 #if 0
     //debug GL combo
@@ -124,7 +150,7 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
   inline void evaluate(const ParticleSet& P, int iat,
                        ValueVector_t& psi, GradVector_t& dpsi, HessVector_t& grad_grad_psi)
   {
-    SplineAdoptor::evaluate_vgh(P,iat,psi,dpsi,grad_grad_psi);
+    SA::evaluate_vgh(P,iat,psi,dpsi,grad_grad_psi);
   }
 
   void resetParameters(const opt_variables_type& active)
@@ -150,7 +176,7 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
       ValueVector_t v(logdet[i],OrbitalSetSize);
       GradVector_t  g(dlogdet[i],OrbitalSetSize);
       ValueVector_t l(d2logdet[i],OrbitalSetSize);
-      SplineAdoptor::evaluate_vgl(P,iat,v,g,l);
+      SA::evaluate_vgl(P,iat,v,g,l);
     }
   }
 
@@ -165,17 +191,40 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
       ValueVector_t v(logdet[i],OrbitalSetSize);
       GradVector_t  g(dlogdet[i],OrbitalSetSize);
       HessVector_t  h(grad_grad_logdet[i],OrbitalSetSize);
-      SplineAdoptor::evaluate_vgh(P,iat,v,g,h);
+      SA::evaluate_vgh(P,iat,v,g,h);
     }
   }
 
   /** einspline does not need any other state data */
   void evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
   {
-    SplineAdoptor::evaluate_vgl_combo(P,iat,vgl);
+    SA::evaluate_vgl_combo(P,iat,vgl);
   }
 
 };
 
+  
+// template<typename SA, class batching>
+// inline typename QMCTraits::ValueType BsplineSet<SA, batching>::RATIO(const batching& P, int iat, const QMCTraits::ValueType* restrict arow)
+// {
+//     //this is just an example how to resuse t_logpsi
+//     int ip=omp_get_thread_num()*2;
+//     // YYYY: need to fix
+//     //return SplineAdoptor::evaluate_dot(P,iat,arow,reinterpret_cast<DataType*>(t_logpsi[ip]));
+//     return QMCTraits::ValueType();
+// }
+
+// template<typename SA>
+// class BsplineSet<SA, ParticleSet>
+// BsplineSet<SA, ParticleSet>:: QMCTraits::ValueType RATIO(const ParticleSet& P, int iat, const QMCTraits::ValueType* restrict arow)
+//   {
+//     //this is just an example how to resuse t_logpsi
+//     int ip=omp_get_thread_num()*2;
+//     // YYYY: need to fix
+//     //return SplineAdoptor::evaluate_dot(P,iat,arow,reinterpret_cast<DataType*>(t_logpsi[ip]));
+//     return QMCTraits::ValueType();
+//   }
+
+  
 }
 #endif

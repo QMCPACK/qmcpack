@@ -140,10 +140,10 @@ struct Gvectors
 
 /** General SplineHybridAdoptorReader to handle any unitcell
  */
-template<typename SA>
-struct SplineHybridAdoptorReader: public SplineAdoptorReader<SA>
+template<typename SA, Batching batching>
+struct SplineHybridAdoptorReader: public SplineAdoptorReader<SA, batching>
 {
-  typedef SplineAdoptorReader<SA> BaseReader;
+  typedef SplineAdoptorReader<SA, batching> BaseReader;
 
   using typename BaseReader::DataType;
   using BaseReader::bspline;
