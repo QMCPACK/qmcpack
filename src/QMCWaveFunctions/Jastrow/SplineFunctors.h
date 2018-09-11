@@ -17,7 +17,6 @@
 #ifndef QMCPLUSPLUS_CUBICFUNCTORSFORJASTROW_H
 #define QMCPLUSPLUS_CUBICFUNCTORSFORJASTROW_H
 #include "Numerics/OneDimGridBase.h"
-#include "Numerics/CubicSpline.h"
 #include "Numerics/CubicBspline.h"
 #include "Numerics/OptimizableFunctorBase.h"
 #include "Message/Communicate.h"
