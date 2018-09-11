@@ -25,18 +25,20 @@ namespace afqmc
 /*
  * Reads ndets from the ascii file. 
  */ 
-void read_general_wavefunction(std::string filename, int& ndets, 
+void read_general_wavefunction(std::ifstream& in, int& ndets, 
         std::string& type, WALKER_TYPES walker_type,
         boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB,
         std::vector<PsiT_Matrix>& PsiT, std::vector<ComplexType>& ci);
 
-ph_excitations read_ph_wavefunction(std::string filename, int& ndets, 
+ph_excitations read_ph_wavefunction(std::ifstream& in, int& ndets, 
         std::string& type, WALKER_TYPES walker_type,
         boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB,
         std::vector<PsiT_Matrix>& PsiT);
 
 
 WALKER_TYPES getWalkerType(std::string filename);
+
+std::string getWfnType(std::ifstream& in);
 
 // modify for multideterminant case based on type
 int readWfn( std::string fileName, boost::multi_array<ComplexType,3>& OrbMat, int NMO, int NAEA, int NAEB, int det = 0);

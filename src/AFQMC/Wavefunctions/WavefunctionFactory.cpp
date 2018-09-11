@@ -21,6 +21,7 @@
 #include "AFQMC/Wavefunctions/NOMSD.hpp"
 #include "AFQMC/Wavefunctions/PHMSD.hpp"
 #include "AFQMC/HamiltonianOperations/HamOpsIO.hpp"
+#include "AFQMC/Wavefunctions/Excitations.hpp"
 
 namespace qmcplusplus
 {
@@ -35,7 +36,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
   if(cur == NULL)
     APP_ABORT("Error: NULL xml pointer in HamiltonianFactory::parse(). \n");
 
-  std::string type("MSD");
+  std::string type("msd");
   std::string info("info0");
   std::string init_type("");
   std::string name("");
@@ -79,41 +80,91 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
   int NAEA = AFinfo.NAEA;
   int NAEB = AFinfo.NAEB;
 
-  std::vector<ComplexType> ci;
-  std::vector<PsiT_Matrix> PsiT;
-  std::vector<int> excitations;  
-  std::string wfn_type;
-  read_wavefunction(filename,ndets_to_read,wfn_type,walker_type,TGwfn.Node(),
-                    NMO,NAEA,NAEB,PsiT,ci,excitations);
+  std::ifstream in;
+  in.open(filename.c_str());
+  if(in.fail()) {
+     app_error()<<"Problems opening file:  " <<filename <<std::endl;
+     APP_ABORT("Problems opening file. \n");
+  }
+  std::string wfn_type = getWfnType(in);
 
   using Alloc = boost::mpi3::intranode::allocator<ComplexType>;
   if(type=="msd") {
+    std::vector<ComplexType> ci;
+    std::vector<PsiT_Matrix> PsiT;
     if(wfn_type == "occ") {
+      ph_excitations<int,ComlexType> abij = read_ph_wavefunction(in,ndets_to_read,walker_type,
+                    TGwfn.Node(),NMO,NAEA,NAEB,PsiT);
+      assert(abij.num_elements() == ndets_to_read);
       int NEL = (walker_type==NONCOLLINEAR)?(NAEA+NAEB):NAEA;  
       int N_ = (walker_type==NONCOLLINEAR)?2*NMO:NMO;
       ComplexType one(1.0,0.0);
-      auto it = excitations.begin();  
       if(walker_type==COLLINEAR) 
         PsiT.reserve(2*ndets_to_read);  
       else
         PsiT.reserve(ndets_to_read);  
-      for(int i=0; i<ndets_to_read; i++) {
-        PsiT.emplace_back(PsiT_Matrix({NEL,N_},{0,0},1,Alloc(TGwfn.Node())));
-        if(TGwfn.Node().root())  
-          for(int k=0; k<NEL; k++) 
-            PsiT.back().emplace_back({k,*it++},one); 
-        if(walker_type==COLLINEAR) {
-          PsiT.emplace_back(PsiT_Matrix({NAEB,NMO},{0,0},1,Alloc(TGwfn.Node())));
-          if(TGwfn.Node().root())  
-            for(int k=0; k<NAEB; k++) 
-              PsiT.back().emplace_back({k,(*it++)-NMO},one); 
-        }
-      }  
+      ci.reserve(ndets_to_read);
+      auto refc = abij.reference_configuration();
+      // add reference  
+      ci.emplace_back(*abij.coefficients_begin(0));  
+      PsiT.emplace_back(PsiT_Matrix({NEL,N_},{0,0},1,Alloc(TGwfn.Node())));
+      if(TGwfn.Node().root()) {
+        for(int k=0; k<NEL; k++)
+          PsiT.back().emplace_back({k,*(refc+k)},one);
+      }
+      if(walker_type==COLLINEAR) {
+        PsiT.emplace_back(PsiT_Matrix({NAEB,NMO},{0,0},1,Alloc(TGwfn.Node())));
+        if(TGwfn.Node().root())
+          for(int k=0; k<NAEB; k++)
+            PsiT.back().emplace_back({k,*(refc+NAEA+k)-NMO},one);
+      }
+      // work array
+      std::vector<int> iwork(NAEA+NAEB); 
+      for(int n=1; n<abij.maximum_excitation_number(); n++) {
+        auto itc = abij.coefficients_begin(n);
+        auto itc_end = abij.coefficients_end(n);
+        auto ite = abij.excitations_begin(n);
+        for(; itc<itc_end; ++itc, ++ite) { 
+          auto const exct = *ite;  
+          // not ideal but simple: add reference and substitute excitations  
+          ci.emplace_back(*itc);
+          PsiT.emplace_back(PsiT_Matrix({NEL,N_},{0,0},1,Alloc(TGwfn.Node())));
+          if(TGwfn.Node().root()) { 
+            // add excited configuration
+            std::copy_n(refc,NEL,iwork.data()); 
+            for(int np=0; np<n; np++) {
+              auto val = std::lower_bound(iwork.begin(),iwork.begin()+NEL,exct[np]);  
+              if(*val == exct[np]) {
+                *val = exct[np+n];
+              } else 
+                APP_ABORT(" Error in WavefunctionFactory::fromASCII: Inconsistent reference configuration.\n");
+            }
+            for(int k=0; k<NEL; k++) 
+              PsiT.back().emplace_back({k,iwork[k]},one); 
+          }
+          if(walker_type==COLLINEAR) {
+            PsiT.emplace_back(PsiT_Matrix({NAEB,NMO},{0,0},1,Alloc(TGwfn.Node())));
+            if(TGwfn.Node().root()) { 
+              std::copy_n(refc+NAEA,NAEB,iwork.data());
+              for(int np=0; np<n; np++) {
+                auto val = std::lower_bound(iwork.begin(),iwork.begin()+NAEB,exct[np]);
+                if(*val == exct[np]) {
+                  *val = exct[np+n];
+                } else 
+                  APP_ABORT(" Error in WavefunctionFactory::fromASCII: Inconsistent reference configuration.\n");
+              }
+              for(int k=0; k<NAEB; k++) 
+                PsiT.back().emplace_back(k,iwork[k]-NMO,one); 
+            } 
+          }
+        } 
+      } 
     } else if(wfn_type == "mixed") {
       // In this case, PsiT is the orbital matrix
       APP_ABORT("Finish WavefunctionFactory \n");
     } else if(wfn_type == "matrix") {
-      // nothing to do here  
+      read_general_wavefunction(in,ndets_to_read,walker_type,TGwfn.Node(),
+                    NMO,NAEA,NAEB,PsiT,ci);
     } else {
       APP_ABORT("Error: Unknown wfn_type in WavefunctionFactory with MSD wavefunction.\n");
     }

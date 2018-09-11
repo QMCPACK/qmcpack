@@ -199,26 +199,15 @@ std::string getWfnType(std::ifstream& in)
 
 /*
  * Reads ndets from the ascii file. 
- * If pureSD == false, PsiT contains the Slater Matrices of all the terms in the expansion.
- *      For walker_type==1, PsiT contains 2*ndets terms including both Alpha/Beta components.
- * If pureSD == true, PsiT contains only the reference determinant and excitations contains
- *      the occupation strings of all the determinants in the expansion, including the reference.  
  */ 
-void read_wavefunction(std::string filename, int& ndets, std::string& type, WALKER_TYPES walker_type,
+void read_general_wavefunction(std::ifstream& in, int& ndets, WALKER_TYPES walker_type,
         boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB,
-        std::vector<PsiT_Matrix>& PsiT, std::vector<ComplexType>& ci,
-        std::vector<int>& excitations) 
+        std::vector<PsiT_Matrix>& PsiT, std::vector<ComplexType>& ci)
 {
   in.rewind();
 
   assert(walker_type!=UNDEFINED_WALKER_TYPE);
-  std::ifstream in;
-  in.open(filename.c_str());
-  if(in.fail()) {
-     app_error()<<"Problems opening file:  " <<filename <<std::endl;
-     APP_ABORT("Problems opening file. \n");
-  }
-
+  std::string type;
   bool fullMOMat = false;
   bool Cstyle = true;
   int wfn_type=0;
@@ -228,10 +217,7 @@ void read_wavefunction(std::string filename, int& ndets, std::string& type, WALK
 
   /*
    * type:
-   *   - occ: All determinants are specified with occupation numbers 
    *   - matrix: Slater matrix for all terms in the expansion
-   *   - mixed: mixed representation. Reference determinant in matrix form, 
-   *            determinant list (including reference) in occupation numbers. 
    */ 
   read_header(in,type,wfn_type,fullMOMat,Cstyle,ndet_in_file);
 
@@ -240,7 +226,6 @@ void read_wavefunction(std::string filename, int& ndets, std::string& type, WALK
   /*
    * Expected order of inputs and tags:
    * Coefficients: 
-   * Occupations: 
    * Determinant: 
    */
 
@@ -248,8 +233,8 @@ void read_wavefunction(std::string filename, int& ndets, std::string& type, WALK
   
   if(ndet_in_file < ndets) 
     APP_ABORT("Error: Requesting too many determinants from wfn file.\n");
-  if(type != "occ" && type != "matrix" && type != "mixed") 
-    APP_ABORT("Error: Unknown wavefunction type in file.\n"); 
+  if(type != "matrix") 
+    APP_ABORT("Error: Expects type=matrix in read_general_wavefunction.\n"); 
   if(wfn_type == 1 && walker_type == CLOSED) 
     APP_ABORT("Error in read_wavefunction: walker_type < wfn_type. \n");
   if(wfn_type == 2 && (walker_type == CLOSED || walker_type == COLLINEAR)) 
@@ -260,7 +245,6 @@ void read_wavefunction(std::string filename, int& ndets, std::string& type, WALK
              <<"           Consider doing a closed shell calculation ( walker_type=closed in WalkerSet)\n"; 
 
   ci.reserve(ndets);
-  excitations.clear();
 
   std::string tag;
   in>>tag;
@@ -272,58 +256,7 @@ void read_wavefunction(std::string filename, int& ndets, std::string& type, WALK
     if(i<ndets) ci.emplace_back(dummy);
   }
   
-  if(type == "occ" || type == "mixed") {
-    in>>tag;
-    if(tag != "Occupations:")  
-      APP_ABORT(" Error: Expecting Occupations: tag in wavefunction file. \n");
-    excitations.reserve(NEL*ndets);
-    if(walker_type == NONCOLLINEAR)
-      APP_ABORT(" Error: walker_type==NONCOLLINEAR not yet implemented in read_wavefunction.\n");
-    for(int i=0; i<ndet_in_file; i++) {
-      if(i<ndets) {
-        for(int k=0, q=0; k<NAEA; k++) {
-          in>>q;
-          if(q < 1 || q > NMO)
-            APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
-          excitations.emplace_back(q-1);
-        }  
-        if(walker_type == COLLINEAR) {
-          if(wfn_type==0) {
-            for(int k=0, q=0; k<NAEB; k++) {
-              q = *(excitations.rbegin()+NAEA-1)+NMO;
-              excitations.emplace_back(q);
-            }
-          } else {
-            for(int k=0, q=0; k<NAEB; k++) {
-              in>>q;
-              if(q <= NMO || q > 2*NMO)
-                APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
-              excitations.emplace_back(q-1);
-            } 
-          }    
-        }
-      } else { 
-        int nel_ = NAEA;
-        if(wfn_type > 0) nel_+=NAEB; 
-        for(int k=0, q=0; k<nel_; k++) in>>q; 
-      }
-    }
-    // sort excitations
-    auto it = excitations.begin();
-    for(int i=0; i<ndets; i++) {
-      std::sort(it,(it+=NAEA));
-      if(walker_type == COLLINEAR) std::sort(it,(it+=NAEB));
-    }
-  }
-  
-  if(type == "occ")  {
-    // empty PsiT in this case
-  } else if(type == "mixed") {
-    // what you read into PsiT is the orbital set from which  
-    // slater matrices are built
-    //PsiT.reserve( (walker_type!=1)?1:2 );
-    APP_ABORT(" FINISH implementation of read_wavefunction \n\n\n");
-  } else if(type == "matrix") {
+  if(type == "matrix") {
     PsiT.reserve( (walker_type!=COLLINEAR)?ndets:2*ndets );
 
     if(wfn_type == 0) {
@@ -385,8 +318,209 @@ void read_wavefunction(std::string filename, int& ndets, std::string& type, WALK
     } //type 
  
   } else {
-    APP_ABORT("Error: Unknown wavefunction type in file.\n");
+    APP_ABORT("Error: Unknown wavefunction type in file. Expected type matrix .\n");
   }
+}
+
+// only root reads
+ph_excitations<int,ComlexType> read_ph_wavefunction(std::ifstream& in, int& ndets, WALKER_TYPES walker_type,
+        boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB,
+        std::vector<PsiT_Matrix>& PsiT)
+{
+  if(comm.root()) in.rewind();
+
+  assert(walker_type!=UNDEFINED_WALKER_TYPE);
+  std::string type;
+  bool fullMOMat = false;
+  bool Cstyle = true;
+  int wfn_type=0;
+  int ndet_in_file=-1;
+  int NEL = NAEA;
+  bool mixed=false;
+  if(walker_type!=CLOSED) NEL+=NAEB;
+
+  /*
+   * Expected order of inputs and tags:
+   * Reference: 
+   * Configurations: 
+   */
+
+  /*
+   * type:
+   *   - occ: All determinants are specified with occupation numbers 
+   *   - mixed: mixed representation. Reference determinant in matrix form, 
+   *            determinant list (including reference) in occupation numbers. 
+   */ 
+  if(comm.root()) {
+    read_header(in,type,wfn_type,fullMOMat,Cstyle,ndet_in_file);
+
+    std::transform(type.begin(),type.end(),type.begin(),(int (*)(int)) tolower);
+
+
+    if(walker_type != COLLINEAR)
+      APP_ABORT(" Error: walker_type!=COLLINEAR not yet implemented in read_ph_wavefunction.\n");
+  
+    if(ndet_in_file < ndets) 
+      APP_ABORT("Error: Requesting too many determinants from wfn file.\n");
+    if(type != "occ" && type != "mixed") 
+      APP_ABORT("Error: Expect type=occ or type==mixed in read_ph_wavefunction.\n"); 
+    if(wfn_type == 1 && walker_type == CLOSED) 
+      APP_ABORT("Error in read_wavefunction: walker_type < wfn_type. \n");
+    if(wfn_type == 2 && (walker_type == CLOSED || walker_type == COLLINEAR)) 
+      APP_ABORT("Error in read_wavefunction: walker_type < wfn_type. \n");
+
+    if(comm.root()) {
+      std::string tag;
+      in>>tag;
+      if(type == "mixed" ) mixed=true;
+    }
+
+    comm.broadcast_value(mixed); 
+    comm.broadcast_value(ndet_in_file); 
+    comm.broadcast_value(wfn_type); 
+    comm.broadcast_value(fullMOMat); 
+  } else {
+    comm.broadcast_value(mixed); 
+    comm.broadcast_value(ndet_in_file); 
+    comm.broadcast_value(wfn_type); 
+    comm.broadcast_value(fullMOMat); 
+  }
+
+  if(ndets <= 0) ndets = ndet_in_file; 
+
+  if(mixed) { // read reference
+    int nmo_ = (walker_type==NONCOLLINEAR?2*NMO:NMO);
+    if(not comm.root()) nmo_=0; // only root reads matrices
+    if(not fullMOMat)
+      APP_ABORT("Error: Wavefunction type mixed requires fullMOMat=true.\n");
+    PsiT.reserve( (walker_type!=COLLINEAR)?1:2);
+
+    boost::multi_array<ComplexType,2> OrbMat(extents[nmo_][nmo_]);
+    if(comm.root()) {
+      in>>tag;
+      if(tag != "Reference:" || q!=i+1)
+        APP_ABORT(" Error: Expecting Reference tag in wavefunction file. \n");
+      read_mat(in,OrbMat,Cstyle,fullMOMat,nmo_,nmo_);
+    }
+    PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
+                                        OrbMat,1e-8,'H',comm));
+    if(walker_type==COLLINEAR) { 
+      if(wfn_type != 1) {
+        PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
+                                        OrbMat,1e-8,'H',comm));
+      } else {  
+        if(comm.root())  read_mat(in,OrbMat,Cstyle,fullMOMat,NMO,NMO);
+        PsiT.emplace_back(csr::shm::construct_csr_matrix_single_input<PsiT_Matrix>(
+                                        OrbMat,1e-8,'H',comm));
+    }
+  }
+
+  if(comm.root()) {
+    std::string tag;
+    in>>tag;
+    if(tag != "Configurations:")
+      APP_ABORT(" Error: Expecting Configurations: tag in wavefunction file. \n");
+  }
+
+  ComplexType ci;
+  // count number of k-particle excitations
+  // counts[0] has special meaning, it must be equal to NAEA+NAEB.
+  std::vector<size_t> counts(NAEA+NAEB+1);
+  // reference configuration, taken as the first one right now
+  std::vector<int> refc;
+  // space to read configurations
+  std::vector<int> confg;
+  // space for excitation string identifying the current configuration 
+  std::vector<int> exct;
+  // record file position to come back
+  std::vector<int> Iwork1; // work arrays for permutation calculation
+  std::vector<int> Iwork2; // work arrays for permutation calculation 
+  if(comm.root()) {
+    refc.resize(NAEA+NAEB);
+    confg.resize(NAEA+NAEB);
+    exct.reserve(2*(NAEA+NAEB));
+    std::streampos start = in.tellg();
+    for(int i=0; i<ndet; i++) {
+      in>>ci; if(in.fail()) APP_ABORT(" Error: Reading wfn file.\n");
+      confg.clear();
+      for(int k=0, q=0; k<NAEA; k++) {
+        in>>q; if(in.fail()) APP_ABORT(" Error: Reading wfn file.\n");
+        if(q < 1 || q > NMO)
+          APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
+        confg.emplace_back(q-1);
+      }  
+      // assume right now collinear walkers, not sure it makes sense to specialize for closed
+      // shell case which would mean a perfect pairing expansion
+      if(wfn_type==0) {
+        for(int k=0, q=0; k<NAEB; k++) {
+          q = *(confg.rbegin()+NAEA-1)+NMO;
+          confg.emplace_back(q);
+        }
+      } else {
+        for(int k=0, q=0; k<NAEB; k++) {
+          in>>q; if(in.fail()) APP_ABORT(" Error: Reading wfn file.\n");
+          if(q <= NMO || q > 2*NMO)
+            APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
+          confg.emplace_back(q-1);
+        } 
+      }    
+      if(i==0) {
+        refc=confg;
+        // counts[0] has special meaning, it must be equal to NAEA+NAEB.
+        // ph_excitations stores the reference configutation on index [0]
+        counts[0]=NAEA+NAEB;
+      } else {
+        counts[get_excitation_number(false,refc,confg,exct,ci,Iwork1,Iwork2)]++;
+      }
+    }
+  }
+  comm.broadcast_n(counts.begin(),counts.size());
+  for(int i=counts.size()-1; i>=0; i--)
+    if(counts[i] > 0) {
+      counts.resize(i+1);
+      break;
+    }
+  // using int for now, but should move to short later when everything works well
+  // ph_struct stores the reference configuration on the index [0]
+  ph_excitations<int,ComlexType> ph_struct(counts,boost::mpi3::intranode::allocator<int>(comm));
+  
+  if(comm.root()) {
+    in.clear();
+    in.seekg(start);
+    for(int i=0; i<ndet; i++) {
+      in>>ci; if(in.fail()) APP_ABORT(" Error: Reading wfn file.\n");
+      confg.clear();
+      for(int k=0, q=0; k<NAEA; k++) {
+        in>>q; if(in.fail()) APP_ABORT(" Error: Reading wfn file.\n");
+        if(q < 1 || q > NMO)
+          APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
+        confg.emplace_back(q-1);
+      }
+      // assume right now collinear walkers, not sure it makes sense to specialize for closed
+      // shell case which would mean a perfect pairing expansion
+      if(wfn_type==0) {
+        for(int k=0, q=0; k<NAEB; k++) {
+          q = *(confg.rbegin()+NAEA-1)+NMO;
+          confg.emplace_back(q);
+        }
+      } else {
+        for(int k=0, q=0; k<NAEB; k++) {
+          in>>q; if(in.fail()) APP_ABORT(" Error: Reading wfn file.\n");
+          if(q <= NMO || q > 2*NMO)
+            APP_ABORT("Error: Bad occupation number in wavefunction file. \n");
+          confg.emplace_back(q-1);
+        }
+      }
+      int np = get_excitation_number(true,refc,confg,exct,ci,Iwork1,Iwork2);
+      if(np == 0) {
+        ph_struct.emplace_reference(NAEA+NAEB,refc.data(),ci);
+      } else {
+        ph_struct.emplace_back(np,exct.data(),ci);
+      }  
+    }
+  }
+  comm.barrier();
+  return ph_struct;
 }
 
 
