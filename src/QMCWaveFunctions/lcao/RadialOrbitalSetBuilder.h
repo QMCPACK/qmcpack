@@ -25,7 +25,6 @@
 #include "Numerics/GaussianBasisSet.h"
 #include "Numerics/SlaterBasisSet.h"
 #include "Numerics/Transform2GridFunctor.h"
-#include "Numerics/OneDimCubicSpline.h"
 #include "Numerics/OneDimQuinticSpline.h"
 #include "Numerics/OptimizableFunctorBase.h"
 #include "QMCFactory/OneDimGridFactory.h"
@@ -430,7 +429,7 @@ private:
 /* Finalize this set using the common grid
  *
  * This function puts the STO on a logarithmic grid and calculates the boundary
- * conditions for the 1D Cubic Spline.  The derivates at the endpoint
+ * conditions for the 1D quintic spline.  The derivatives at the endpoint
  * are assumed to be all zero.  Note: for the radial orbital we use
  * \f[ f(r) = \frac{R(r)}{r^l}, \f] where \f$ R(r) \f$ is the usual
  * radial orbital and \f$ l \f$ is the angular momentum.
