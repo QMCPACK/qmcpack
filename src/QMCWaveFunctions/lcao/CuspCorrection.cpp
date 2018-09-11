@@ -182,7 +182,7 @@ void computeRadialPhiBar(ParticleSet* targetP,
                          ParticleSet* sourceP,
                          int curOrb_,
                          int curCenter_,
-                         SPOSet* Phi,
+                         SPOSetSingle* Phi,
                          Vector<QMCTraits::RealType>& xgrid,
                          Vector<QMCTraits::RealType>& rad_orb,
                          const CuspCorrectionParameters& data)

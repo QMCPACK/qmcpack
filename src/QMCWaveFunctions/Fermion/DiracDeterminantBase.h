@@ -26,6 +26,7 @@
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
+#include "QMCWaveFunctions/SPOSetTypeAliases.h"
 
 namespace qmcplusplus
 {
@@ -41,15 +42,15 @@ public:
   // Optimizable parameters
   opt_variables_type myVars;
 
-
-  typedef SPOSet::IndexVector_t IndexVector_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSet::GradVector_t  GradVector_t;
-  typedef SPOSet::GradMatrix_t  GradMatrix_t;
-  typedef SPOSet::HessMatrix_t  HessMatrix_t;
-  typedef SPOSet::HessVector_t  HessVector_t;
-  typedef SPOSet::HessType      HessType;
+  using SSTA = SPOSetTypeAliases;
+  typedef SSTA::IndexVector_t IndexVector_t;
+  typedef SSTA::ValueVector_t ValueVector_t;
+  typedef SSTA::ValueMatrix_t ValueMatrix_t;
+  typedef SSTA::GradVector_t  GradVector_t;
+  typedef SSTA::GradMatrix_t  GradMatrix_t;
+  typedef SSTA::HessMatrix_t  HessMatrix_t;
+  typedef SSTA::HessVector_t  HessVector_t;
+  typedef SSTA::HessType      HessType;
 
 #ifdef MIXED_PRECISION
   typedef ParticleSet::SingleParticleValue_t mValueType;
@@ -63,7 +64,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantBase(SPOSetPtr const &spos, int first=0);
+  DiracDeterminantBase(int first=0);
 
   ///default destructor
   virtual ~DiracDeterminantBase();
@@ -82,10 +83,7 @@ public:
   // */
   //SPOSetPtr clonePhi() const;
 
-  SPOSetPtr getPhi()
-  {
-    return Phi;
-  };
+  virtual SPOSetPtr getPhi() = 0;
 
   inline IndexType rows() const
   {
@@ -107,32 +105,7 @@ public:
   virtual
   void setBF(BackflowTransformation* BFTrans) {}
 
-  ///optimizations  are disabled
-  virtual inline void checkInVariables(opt_variables_type& active)
-  {
-    Phi->checkInVariables(active);
-    Phi->checkInVariables(myVars);
-  }
-
-  virtual inline void checkOutVariables(const opt_variables_type& active)
-  {
-    Phi->checkOutVariables(active);
-    myVars.clear();
-    myVars.insertFrom(Phi->myVars);
-    myVars.getIndex(active);
-  }
-
-  virtual void resetParameters(const opt_variables_type& active)
-  {
-    Phi->resetParameters(active);
-    for(int i=0; i<myVars.size(); ++i)
-    {
-      int ii=myVars.Index[i];
-      if(ii>=0)
-        myVars[i]= active[ii];
-    }
-  }
-
+  
   ///invert psiM or its copies
   void invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat);
 
@@ -154,11 +127,6 @@ public:
 
   inline void reportStatus(std::ostream& os)
   {
-  }
-  virtual void resetTargetParticleSet(ParticleSet& P)
-  {
-    Phi->resetTargetParticleSet(P);
-    targetPtcl = &P;
   }
 
   ///reset the size: with the number of particles and number of orbtials
@@ -243,7 +211,7 @@ public:
   ///index of the particle (or row)
   int WorkingIndex;
   ///a set of single-particle orbitals used to fill in the  values of the matrix
-  SPOSetPtr Phi;
+  //SPOSetPtr Phi;
 
   /////Current determinant value
   //ValueType CurrentDet;

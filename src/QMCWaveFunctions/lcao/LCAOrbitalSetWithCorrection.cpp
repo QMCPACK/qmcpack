@@ -29,7 +29,7 @@ void LCAOrbitalSetWithCorrection::setOrbitalSetSize(int norbs)
 }
 
 
-SPOSet* LCAOrbitalSetWithCorrection::makeClone() const
+SPOSetSingle* LCAOrbitalSetWithCorrection::makeClone() const
 {
   LCAOrbitalSetWithCorrection* myclone = new LCAOrbitalSetWithCorrection(*this);
   myclone->myBasisSet                  = myBasisSet->makeClone();

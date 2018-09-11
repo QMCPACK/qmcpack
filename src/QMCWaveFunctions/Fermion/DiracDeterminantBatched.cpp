@@ -18,7 +18,7 @@
  * @brief Declaration of DiracDeterminantCUDA with a S(ingle)P(article)O(rbital)SetBase
  */
 
-#include "DiracDeterminantCUDA.h"
+#include "DiracDeterminantBatched.h"
 #include "Numerics/CUDA/cuda_inverse.h"
 #include "QMCWaveFunctions/Fermion/determinant_update.h"
 #include "Numerics/CUDA/cuda_inverse.h"
@@ -27,37 +27,9 @@
 
 namespace qmcplusplus
 {
-DiracDeterminantCUDA::DiracDeterminantCUDA(SPOSetPtr const &spos, int first) :
-  DiracDeterminantBase(spos, first),
-  UpdateJobList_d("DiracDeterminantBase::UpdateJobList_d"),
-  srcList_d("DiracDeterminantBase::srcList_d"),
-  destList_d("DiracDeterminantBase::destList_d"),
-  AList_d("DiracDeterminantBase::AList_d"),
-  AinvList_d("DiracDeterminantBase::AinvList_d"),
-  newRowList_d("DiracDeterminantBase::newRowList_d"),
-  AinvDeltaList_d("DiracDeterminantBase::AinvDeltaList_d"),
-  AinvColkList_d("DiracDeterminantBase::AinvColkList_d"),
-  gradLaplList_d("DiracDeterminantBase::gradLaplList_d"),
-  newGradLaplList_d("DiracDeterminantBase::newGradLaplList_d"),
-  AWorkList_d("DiracDeterminantBase::AWorkList_d"),
-  AinvWorkList_d("DiracDeterminantBase::AinvWorkList_d"),
-  PivotArray_d("DiracDeterminantBase::PivotArray_d"),
-  infoArray_d("DiracDeterminantBase::infoArray_d"),
-  GLList_d("DiracDeterminantBase::GLList_d"),
-  ratio_d("DiracDeterminantBase::ratio_d"),
-  gradLapl_d("DiracDeterminantBase::gradLapl_d"),
-  iatList_d("DiracDeterminantBase::iatList_d"),
-  NLrowBuffer_d("DiracDeterminantBase::NLrowBuffer_d"),
-  SplineRowList_d("DiracDeterminantBase::SplineRowList_d"),
-  RatioRowList_d("DiracDeterminantBase::RatioRowList_d"),
-  NLposBuffer_d("DiracDeterminantBase::NLposBuffer_d"),
-  NLAinvList_d("DiracDeterminantBase::NLAinvList_d"),
-  NLnumRatioList_d("DiracDeterminantBase::NLnumRatioList_d"),
-  NLelecList_d("DiracDeterminantBase::NLelecList_d"),
-  NLratioList_d("DiracDeterminantBase::NLratioList_d")
+DiracDeterminantBatched::DiracDeterminantBatched(SPOSetPtr const &spos, int first) :
+  DiracDeterminantBase(first)
 {
-  for(int i = 0; i < 2; ++i)
-    NLratios_d[i] = gpu::device_vector<CudaValueType>("DiracDeterminantBase::NLratios_d");
 }
 
 /////////////////////////////////////
@@ -71,7 +43,7 @@ void CheckAlign (void *p, std::string var)
 }
 
 void
-DiracDeterminantCUDA::update (std::vector<Walker_t*> &walkers, int iat)
+DiracDeterminantBatched::update (std::vector<Walker_t*> &walkers, int iat)
 {
   if (UpdateList.size() < walkers.size())
     UpdateList.resize(walkers.size());
@@ -183,7 +155,7 @@ DiracDeterminantCUDA::update (std::vector<Walker_t*> &walkers, int iat)
 
 
 void
-DiracDeterminantCUDA::update (const std::vector<Walker_t*> &walkers,
+DiracDeterminantBatched::update (const std::vector<Walker_t*> &walkers,
                               const std::vector<int> &iat_list)
 {
   int N = walkers.size();
@@ -301,7 +273,7 @@ DiracDeterminantCUDA::update (const std::vector<Walker_t*> &walkers,
 
 
 void
-DiracDeterminantCUDA::recompute(MCWalkerConfiguration &W, bool firstTime)
+DiracDeterminantBatched::recompute(MCWalkerConfiguration &W, bool firstTime)
 {
   std::vector<Walker_t*> &walkers = W.WalkerList;
   // HACK HACK HACK
@@ -324,7 +296,7 @@ DiracDeterminantCUDA::recompute(MCWalkerConfiguration &W, bool firstTime)
 // 		 << std::sqrt(sum2/(double)(NumPtcls*NumPtcls)) << std::endl;
 //     }
   if (AList.size() < walkers.size())
-    resizeLists(walkers.size());
+    resizeLists(walkers.size(), NumOrbitals);
   // Only reevalute the orbitals if this is the first time
   if (firstTime)
   {
@@ -476,11 +448,11 @@ DiracDeterminantCUDA::recompute(MCWalkerConfiguration &W, bool firstTime)
 }
 
 void
-DiracDeterminantCUDA::addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi)
+DiracDeterminantBatched::addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi)
 {
   std::vector<Walker_t*> &walkers = W.WalkerList;
   if (AList.size() < walkers.size())
-    resizeLists(walkers.size());
+    resizeLists(walkers.size(),NumOrbitals);
   std::vector<PosType> R(walkers.size());
   // Fill in the A matrix row by row
   for (int iat=FirstIndex; iat<LastIndex; iat++)
@@ -544,12 +516,12 @@ DiracDeterminantCUDA::addLog (MCWalkerConfiguration &W, std::vector<RealType> &l
 }
 
 void
-DiracDeterminantCUDA::calcGradient(MCWalkerConfiguration &W, int iat,
+DiracDeterminantBatched::calcGradient(MCWalkerConfiguration &W, int iat,
                                    std::vector<GradType> &grad)
 {
   std::vector<Walker_t*> &walkers = W.WalkerList;
   if (AList.size() < walkers.size())
-    resizeLists(walkers.size());
+    resizeLists(walkers.size(), NumOrbitals);
   for (int iw=0; iw<walkers.size(); iw++)
   {
     Walker_t::cuda_Buffer_t& data = walkers[iw]->cuda_DataSet;
@@ -567,7 +539,7 @@ DiracDeterminantCUDA::calcGradient(MCWalkerConfiguration &W, int iat,
 }
 
 void
-DiracDeterminantCUDA::addGradient(MCWalkerConfiguration &W, int iat,
+DiracDeterminantBatched::addGradient(MCWalkerConfiguration &W, int iat,
                                   std::vector<GradType> &grad)
 {
   std::vector<Walker_t*> &walkers = W.WalkerList;
@@ -597,13 +569,13 @@ DiracDeterminantCUDA::addGradient(MCWalkerConfiguration &W, int iat,
 #endif
 }
 
-void DiracDeterminantCUDA::ratio (MCWalkerConfiguration &W,
+void DiracDeterminantBatched::ratio (MCWalkerConfiguration &W,
                                   int iat,
                                   std::vector<ValueType> &psi_ratios)
 {
   std::vector<Walker_t*> &walkers = W.WalkerList;
   if (AList.size() < walkers.size())
-    resizeLists(walkers.size());
+    resizeLists(walkers.size(), NumOrbitals);
   // First evaluate orbitals
   for (int iw=0; iw<walkers.size(); iw++)
   {
@@ -625,7 +597,7 @@ void DiracDeterminantCUDA::ratio (MCWalkerConfiguration &W,
 }
 
 
-void DiracDeterminantCUDA::ratio (MCWalkerConfiguration &W, int iat,
+void DiracDeterminantBatched::ratio (MCWalkerConfiguration &W, int iat,
                                   std::vector<ValueType> &psi_ratios,
                                   std::vector<GradType>  &grad)
 {
@@ -634,14 +606,14 @@ void DiracDeterminantCUDA::ratio (MCWalkerConfiguration &W, int iat,
 
 // The gradient is (\nabla psi(Rnew))/psi(Rnew)
 // The laplaican is (\nabla^2 psi(Rnew))/psi(Rew)
-void DiracDeterminantCUDA::ratio (MCWalkerConfiguration &W, int iat,
+void DiracDeterminantBatched::ratio (MCWalkerConfiguration &W, int iat,
                                   std::vector<ValueType> &psi_ratios,
                                   std::vector<GradType>  &grad,
                                   std::vector<ValueType> &lapl)
 {
   std::vector<Walker_t*> &walkers = W.WalkerList;
   if (AList.size() < walkers.size())
-    resizeLists(walkers.size());
+    resizeLists(walkers.size(),NumOrbitals);
   //    if (iat-FirstIndex == 0) {
   // First evaluate orbitals
   for (int iw=0; iw<walkers.size(); iw++)
@@ -734,14 +706,14 @@ void DiracDeterminantCUDA::ratio (MCWalkerConfiguration &W, int iat,
   }
 #endif
 }
-void DiracDeterminantCUDA::calcRatio (MCWalkerConfiguration &W, int iat,
+void DiracDeterminantBatched::calcRatio (MCWalkerConfiguration &W, int iat,
                                       std::vector<ValueType> &psi_ratios,
                                       std::vector<GradType>  &grad,
                                       std::vector<ValueType> &lapl)
 {
   std::vector<Walker_t*> &walkers = W.WalkerList;
   if (AList.size() < walkers.size())
-    resizeLists(walkers.size());
+    resizeLists(walkers.size(), NumOrbitals);
   for (int iw=0; iw<walkers.size(); iw++)
   {
     Walker_t::cuda_Buffer_t& data = walkers[iw]->cuda_DataSet;
@@ -800,7 +772,7 @@ void DiracDeterminantCUDA::calcRatio (MCWalkerConfiguration &W, int iat,
 #endif
 }
 
-void DiracDeterminantCUDA::addRatio (MCWalkerConfiguration &W, int iat,
+void DiracDeterminantBatched::addRatio (MCWalkerConfiguration &W, int iat,
                                      std::vector<ValueType> &psi_ratios,
                                      std::vector<GradType>  &grad,
                                      std::vector<ValueType> &lapl)
@@ -842,14 +814,14 @@ void DiracDeterminantCUDA::addRatio (MCWalkerConfiguration &W, int iat,
 
 // The gradient is (\nabla psi(Rnew))/psi(Rnew)
 // The laplaican is (\nabla^2 psi(Rnew))/psi(Rew)
-void DiracDeterminantCUDA::ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iat_list,
+void DiracDeterminantBatched::ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iat_list,
                                   std::vector<PosType> &rNew,
                                   std::vector<ValueType> &psi_ratios,
                                   std::vector<GradType>  &grad,
                                   std::vector<ValueType> &lapl)
 {
   if (AList.size() < walkers.size())
-    resizeLists(walkers.size());
+    resizeLists(walkers.size(), NumOrbitals);
   for (int iw=0; iw<walkers.size(); iw++)
   {
     Walker_t::cuda_Buffer_t& data = walkers[iw]->cuda_DataSet;
@@ -887,12 +859,12 @@ void DiracDeterminantCUDA::ratio (std::vector<Walker_t*> &walkers, std::vector<i
 
 
 void
-DiracDeterminantCUDA::gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
+DiracDeterminantBatched::gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
                                 ValueMatrix_t &lapl)
 {
   std::vector<Walker_t*> &walkers = W.WalkerList;
   if (AList.size() < walkers.size())
-    resizeLists(walkers.size());
+    resizeLists(walkers.size(), NumOrbitals);
   // First evaluate orbitals
   for (int iw=0; iw<walkers.size(); iw++)
   {
@@ -1025,7 +997,7 @@ DiracDeterminantCUDA::gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
 }
 
 void
-DiracDeterminantCUDA::NLratios_CPU
+DiracDeterminantBatched::NLratios_CPU
 (MCWalkerConfiguration &W,     std::vector<NLjob> &jobList,
  std::vector<PosType> &quadPoints,   std::vector<ValueType> &psi_ratios)
 {
@@ -1071,7 +1043,7 @@ DiracDeterminantCUDA::NLratios_CPU
 }
 
 void
-DiracDeterminantCUDA::NLratios (MCWalkerConfiguration &W,
+DiracDeterminantBatched::NLratios (MCWalkerConfiguration &W,
                                 std::vector<NLjob> &jobList,
                                 std::vector<PosType> &quadPoints,
                                 std::vector<ValueType> &psi_ratios)

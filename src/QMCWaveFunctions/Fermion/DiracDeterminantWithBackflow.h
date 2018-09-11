@@ -33,18 +33,10 @@ class DiracDeterminantWithBackflow: public DiracDeterminantBase
 {
 public:
 
-  typedef SPOSet::IndexVector_t IndexVector_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSet::GradVector_t  GradVector_t;
-  typedef SPOSet::GradMatrix_t  GradMatrix_t;
-  typedef SPOSet::HessMatrix_t  HessMatrix_t;
-  typedef SPOSet::HessVector_t  HessVector_t;
-  typedef SPOSet::HessType      HessType;
-  typedef SPOSet::GGGType       GGGType;
-  typedef SPOSet::GGGVector_t   GGGVector_t;
-  typedef SPOSet::GGGMatrix_t   GGGMatrix_t;
-  typedef SPOSet::HessArray_t HessArray_t;
+  typedef SSTA::GGGType       GGGType;
+  typedef SSTA::GGGVector_t   GGGVector_t;
+  typedef SSTA::GGGMatrix_t   GGGMatrix_t;
+  typedef SSTA::HessArray_t HessArray_t;
   //typedef Array<GradType,3>       GradArray_t;
   //typedef Array<PosType,3>        PosArray_t;
 

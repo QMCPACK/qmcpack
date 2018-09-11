@@ -21,6 +21,7 @@
 #define QMCPLUSPLUS_TRIALORBITALBUILDERBASE_H
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCWaveFunctions/SPOSetTypeAliases.h"
 #include <map>
 
 /**@defgroup WFSBuilder Orbital builder group
@@ -36,7 +37,8 @@ class WaveFunctionComponentBuilder: public MPIObjectBase
 {
 
 public:
-
+  using SSTA = SPOSetTypeAliases;
+  using GGGType = SSTA::GGGType;
   typedef TrialWaveFunction::RealType  RealType;
   typedef TrialWaveFunction::ValueType ValueType;
   typedef TrialWaveFunction::PosType   PosType;

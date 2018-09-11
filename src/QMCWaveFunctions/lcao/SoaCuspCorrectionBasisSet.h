@@ -21,7 +21,7 @@
 #include "Particle/DistanceTable.h"
 #include "Particle/DistanceTableData.h"
 #include <QMCWaveFunctions/lcao/MultiQuinticSpline1D.h>
-
+#include "QMCWaveFunctions/SPOSetTypeAliases.h"
 namespace qmcplusplus
 {
 
@@ -83,13 +83,14 @@ namespace qmcplusplus
  */
 struct SoaCuspCorrection
 {
+  using SSTA = SPOSetTypeAliases;
   typedef QMCTraits::ValueType ValueType;
   typedef QMCTraits::RealType RealType;
   typedef VectorSoaContainer<ValueType, 5> VGLVector_t;
-  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSet::GradMatrix_t GradMatrix_t;
-  typedef SPOSet::GradVector_t GradVector_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
+  typedef SSTA::ValueMatrix_t ValueMatrix_t;
+  typedef SSTA::GradMatrix_t GradMatrix_t;
+  typedef SSTA::GradVector_t GradVector_t;
+  typedef SSTA::ValueVector_t ValueVector_t;
   typedef ParticleSet::PosType PosType;
 
   ///number of centers, e.g., ions

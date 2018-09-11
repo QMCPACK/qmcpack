@@ -30,7 +30,6 @@ public:
     static_cast<DEVICETYPE*>(this)->implementation();
   }
 
-  
   void createSpline(MultiBspline<ST>& multi_bspline)
   {
     static_cast<DEVICETYPE*>(this)->createSpline_imp(multi_bspline);

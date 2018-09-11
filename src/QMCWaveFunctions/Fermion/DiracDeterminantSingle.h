@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2018 QMCPACK developers.
 //
-// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Ying Wai Li, yingwaili@ornl.gov, Oak Ridge National Laboratory
@@ -15,32 +16,76 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/**@file DiracDeterminantCUDA.h
- * @brief Declaration of DiracDeterminantCUDA with a S(ingle)P(article)O(rbital)SetBase
+/**@file DiracDeterminantBatched.h
+ * @brief Declaration of DiracDeterminantBatched a specialization of 
+ *        for batched walkers of DiracDeterminant with with a 
+ *        S(ingle)P(article)O(rbital)SetBase
  */
-#ifndef QMCPLUSPLUS_DIRAC_DETERMINANT_CUDA_H
-#define QMCPLUSPLUS_DIRAC_DETERMINANT_CUDA_H
+#ifndef QMCPLUSPLUS_DIRAC_DETERMINANT_BATCHED_H
+#define QMCPLUSPLUS_DIRAC_DETERMINANT_BATCHED_H
 #include <typeinfo>
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
-#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/SPOSetBatched.h"
 #include "QMCWaveFunctions/Fermion/determinant_update.h"
 #include "Numerics/CUDA/cuda_inverse.h"
 #include "Utilities/NewTimer.h"
+#include "QMCWaveFunctions/SPOSetTypeAliases.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantEval.h"
 
 namespace qmcplusplus
 {
-class DiracDeterminantCUDA: public DiracDeterminantBase
+
+class DiracDeterminantSingle : public DiracDeterminantBase,
+                               public DiracDeterminantEval<Batching::SINGLE>
 {
 public:
-  typedef SPOSet::IndexVector_t IndexVector_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSet::GradVector_t  GradVector_t;
-  typedef SPOSet::GradMatrix_t  GradMatrix_t;
+  using SSTA = SPOSetTypeAliases;
+  typedef SSTA::IndexVector_t IndexVector_t;
+  typedef SSTA::ValueVector_t ValueVector_t;
+  typedef SSTA::ValueMatrix_t ValueMatrix_t;
+  typedef SSTA::GradVector_t  GradVector_t;
+  typedef SSTA::GradMatrix_t  GradMatrix_t;
   typedef ParticleSet::Walker_t     Walker_t;
 
-  DiracDeterminantCUDA(SPOSetPtr const &spos, int first=0);
-  DiracDeterminantCUDA(const DiracDeterminantCUDA& s) = delete;
+  using SPOSetPtr = SPOSetSingle*;
+  SPOSetPtr Phi; //Out local Phi_
+
+  virtual SPOSetPtr get_phi() { return Phi; }
+
+  ///optimizations  are disabled
+  virtual inline void checkInVariables(opt_variables_type& active)
+  {
+    Phi->checkInVariables(active);
+    Phi->checkInVariables(myVars);
+  }
+
+  virtual inline void checkOutVariables(const opt_variables_type& active)
+  {
+    Phi->checkOutVariables(active);
+    myVars.clear();
+    myVars.insertFrom(Phi->myVars);
+    myVars.getIndex(active);
+  }
+
+  virtual void resetParameters(const opt_variables_type& active)
+  {
+    Phi->resetParameters(active);
+    for(int i=0; i<myVars.size(); ++i)
+    {
+      int ii=myVars.Index[i];
+      if(ii>=0)
+        myVars[i]= active[ii];
+    }
+  }
+
+  virtual void resetTargetParticleSet(ParticleSet& P)
+  {
+    Phi->resetTargetParticleSet(P);
+    targetPtcl = &P;
+  }
+
+  DiracDeterminantSingle(SPOSetPtr const &spos, int first=0);
+  DiracDeterminantSingle(const DiracDeterminantSingle& s) = delete;
 
 protected:
   /////////////////////////////////////////////////////
@@ -149,28 +194,6 @@ public:
   void update (std::vector<Walker_t*> &walkers, int iat);
   void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList);
 
-  void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool) {
-    RowStride = ((NumOrbitals + 31)/32) * 32;
-    AOffset           = pool.reserve((size_t)    NumPtcls * RowStride);
-    AinvOffset        = pool.reserve((size_t)    NumPtcls * RowStride);
-    gradLaplOffset    = pool.reserve((size_t)4 * NumPtcls * RowStride);
-    newRowOffset      = pool.reserve((size_t)1            * RowStride);
-    AinvDeltaOffset   = pool.reserve((size_t)1            * RowStride);
-    AinvColkOffset    = pool.reserve((size_t)1            * RowStride);
-    newGradLaplOffset = pool.reserve((size_t)4            * RowStride);
-    if (typeid(CudaRealType) == typeid(float))
-    {
-      AWorkOffset       = pool.reserve((size_t)2 * NumPtcls * RowStride);
-      AinvWorkOffset    = pool.reserve((size_t)2 * NumPtcls * RowStride);
-    }
-    else if (typeid(CudaRealType) == typeid(double))
-    {
-      AWorkOffset       = pool.reserve((size_t)    NumPtcls * RowStride);
-      AinvWorkOffset    = 0;                  // not needed for inversion
-    }
-    Phi->reserve(pool);
-  }
-
   void recompute (MCWalkerConfiguration &W, bool firstTime);
 
   void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi);
@@ -211,4 +234,4 @@ public:
                      std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
 };
 }
-#endif // QMCPLUSPLUS_DIRAC_DETERMINANT_CUDA_H
+#endif // QMCPLUSPLUS_DIRAC_DETERMINANT_BATCHED_H

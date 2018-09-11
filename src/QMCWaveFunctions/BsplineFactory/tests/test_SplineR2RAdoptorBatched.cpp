@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2018 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2018 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //
@@ -18,6 +18,8 @@
 
 #include "QMCWaveFunctions/BsplineFactory/mocks/MockEinsplineSetBuilder.h"
 #include <iostream>
+
+#include "QMCWaveFunctions/BsplineFactory/temp_batch_type.h"
 
 namespace qmcplusplus
 {
@@ -35,7 +37,7 @@ TEST_CASE("SplineR2RAdoptorBatched_Instantiation", "[wavefunction]")
 TEST_CASE("SplineAdoptorReader<SplineR2RAdoptorBatched>", "[wavefunction]")
 {
   MockEinsplineSetBuilder* e = new MockEinsplineSetBuilder();
-  SplineAdoptorReader<SplineR2RAdoptorBatched<double, double>>(dynamic_cast<SplineBuilder*>(e));
+  SplineAdoptorReader<SplineR2RAdoptorBatched<double, double>, Batching::BATCHED>(dynamic_cast<SplineBuilder*>(e));
   
 }
 

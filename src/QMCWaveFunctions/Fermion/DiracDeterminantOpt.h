@@ -16,12 +16,12 @@
 #ifndef DIRAC_DETERMINANT_OPT_H
 #define DIRAC_DETERMINANT_OPT_H
 
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantSingle.h"
 
 namespace qmcplusplus
 {
 
-class DiracDeterminantOpt : public DiracDeterminantBase
+class DiracDeterminantOpt : public DiracDeterminantSingle
 {
 protected:
   typedef optimize::VariableSet opt_variables_type;
@@ -54,8 +54,9 @@ protected:
   //
   std::vector<PosType> MyG;
 
+  SPOSetPtr getPhi() { return Phi; }
 public:
-  DiracDeterminantBase* makeCopy(SPOSet* spo) const;
+  DiracDeterminantSingle* makeCopy(SPOSetPtr spo) const;
 
   DiracDeterminantOpt(ParticleSet &ptcl, SPOSetPtr const &gs_spos, int first=0);
   // This stores new orbital coefficients and updates the

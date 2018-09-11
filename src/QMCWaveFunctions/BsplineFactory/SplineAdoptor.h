@@ -32,6 +32,8 @@
 #ifndef QMCPLUSPLUS_SPLINEADOPTORBASE_H
 #define QMCPLUSPLUS_SPLINEADOPTORBASE_H
 
+#include "Particle/ParticleSet.h"
+
 namespace qmcplusplus
 {
 

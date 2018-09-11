@@ -37,6 +37,8 @@
 #include "Lattice/CrystalLattice.h"
 #include "simd/allocator.hpp"
 #include "SplineAdoptor.h"
+#include "Particle/ParticleSet.h"
+#include "QMCWaveFunctions/SPOSet.h"
 
 namespace qmcplusplus
 {
@@ -87,7 +89,7 @@ public:
     return BaseType::remap_kpoints();
   }
 
-  void evaluate(const typename BaseType::ParticleSet& P, int iat, typename BaseType::ValueVector_t& psi)
+  void evaluate(const ParticleSet& P, int iat, typename SPOSet::ValueVector_t& psi)
   {
     APP_ABORT("SplineAdoptorBatched doesn't implement single walker evaluates");
   }

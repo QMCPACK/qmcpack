@@ -30,8 +30,8 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-DiracDeterminantBase::DiracDeterminantBase(SPOSetPtr const &spos, int first):
-  NP(0), Phi(spos), FirstIndex(first)
+DiracDeterminantBase::DiracDeterminantBase(int first):
+  NP(0), FirstIndex(first)
   ,UpdateTimer("DiracDeterminantBase::update",timer_level_fine)
   ,RatioTimer("DiracDeterminantBase::ratio",timer_level_fine)
   ,InverseTimer("DiracDeterminantBase::inverse",timer_level_fine)
@@ -39,9 +39,6 @@ DiracDeterminantBase::DiracDeterminantBase(SPOSetPtr const &spos, int first):
   ,SPOVTimer("DiracDeterminantBase::spoval",timer_level_fine)
   ,SPOVGLTimer("DiracDeterminantBase::spovgl",timer_level_fine)
 {
-  Optimizable=false;
-  if(Phi->Optimizable)
-    Optimizable=true;
   OrbitalName="DiracDeterminantBase";
   registerTimers();
 }

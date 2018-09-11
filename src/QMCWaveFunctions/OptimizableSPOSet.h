@@ -18,15 +18,39 @@
 #ifndef OPTIMIZABLE_SPO_SET_H
 #define OPTIMIZABLE_SPO_SET_H
 
-#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/SPOSetSingle.h"
 #include "Numerics/OptimizableFunctorBase.h"
 #include "Optimize/VariableSet.h"
+#include "QMCWaveFunctions/SPOSetTypeAliases.h"
 
 namespace qmcplusplus
 {
 
-class OptimizableSPOSet : public SPOSet
+class OptimizableSPOSet : public SPOSetSingle
 {
+public:
+  // I prefer a type qualified back to the origin of the type alias
+  // but this requires fewer changes as this class used to aquire
+  // typedefs through inheritance.
+  using SSTA = SPOSetTypeAliases;
+  using ValueType = QMCTraits::ValueType;
+  using IndexVector_t = SSTA::IndexVector_t;
+  using ValueVector_t = SSTA::ValueVector_t;
+  using ValueAlignedVector_t = SSTA::ValueAlignedVector_t;
+  using ValueMatrix_t = SSTA::ValueMatrix_t;
+  using GradVector_t = SSTA::GradVector_t;
+  using GradMatrix_t = SSTA::GradMatrix_t;
+  using HessVector_t = SSTA::HessVector_t;
+  using HessMatrix_t = SSTA::HessMatrix_t;
+  using HessType = SSTA::HessType;
+  using HessArray_t = SSTA::HessArray_t;
+  using GradHessType = SSTA::GGGType;
+  using GradHessVector_t = SSTA::GGGVector_t;
+  using GradHessMatrix_t = SSTA::GGGMatrix_t;
+  using GGGMatrix_t = SSTA::GGGMatrix_t;
+  using VGLVector_t = SSTA::VGLVector_t;
+  using Walker_t = SSTA::Walker_t;
+
 protected:
   typedef optimize::VariableSet opt_variables_type;
   ///typedef for name-value lists
@@ -49,7 +73,7 @@ protected:
 
   // If BasisOrbitals==NULL, only GSOrbitals is used and it's evaluate
   // functions should return N+M orbitals.
-  SPOSet *GSOrbitals, *BasisOrbitals;
+  SPOSetSingle *GSOrbitals, *BasisOrbitals;
 
   // The first index is the orbital to be optimized, the second is the
   // basis element
@@ -92,8 +116,8 @@ public:
     Optimizable = true;
   }
 
-  OptimizableSPOSet(int num_orbs, SPOSet *gsOrbs,
-                    SPOSet* basisOrbs=0) :
+  OptimizableSPOSet(int num_orbs, SPOSetSingle *gsOrbs,
+                    SPOSetSingle* basisOrbs=0) :
     GSOrbitals(gsOrbs), BasisOrbitals(basisOrbs), derivScale(10.0)
   {
     N = num_orbs;
@@ -208,7 +232,7 @@ public:
   }
 
   // Make a copy of myself
-  SPOSet* makeClone() const;
+  SPOSetSingle* makeClone() const;
 };
 }
 

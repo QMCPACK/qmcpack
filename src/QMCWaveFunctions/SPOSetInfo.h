@@ -128,7 +128,7 @@ namespace qmcplusplus
     void modify();
 
     // This is a bad code smell.
-    // SPOSetBuilding is used in many locations to ignore access control to SPOSetInfo
+    // SPOSetBuilder is used in many locations to ignore access control to SPOSetInfo
     friend class SPOSetBuilder;
   };
 

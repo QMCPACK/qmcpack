@@ -17,7 +17,7 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Numerics/OhmmsBlas.h"
-#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/SPOSetSingle.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "simd/simd.hpp"
 
@@ -43,7 +43,7 @@ template <typename T1, typename T2> void check_matrix(Matrix<T1> &a, Matrix<T2> 
   }
 }
 
-class FakeSPO : public SPOSet
+class FakeSPO : public SPOSetSingle
 {
   public:
 

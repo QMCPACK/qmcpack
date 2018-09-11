@@ -20,8 +20,10 @@
 #define QMCPLUSPLUS_ORBITALSETTRAITS_H
 
 #include "Configuration.h"
+#include "simd/allocator.hpp"
 #include "type_traits/scalar_traits.h"
 #include "Optimize/VariableSet.h"
+#include "OhmmsSoA/VectorSoaContainer.h"
 
 namespace qmcplusplus
 {

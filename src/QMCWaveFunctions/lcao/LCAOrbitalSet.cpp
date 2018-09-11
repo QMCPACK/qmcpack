@@ -54,7 +54,7 @@ namespace qmcplusplus
     return true;
   }
 
-  SPOSet* LCAOrbitalSet::makeClone() const
+  SPOSetSingle* LCAOrbitalSet::makeClone() const
   {
     LCAOrbitalSet* myclone = new LCAOrbitalSet(*this);
     myclone->myBasisSet = myBasisSet->makeClone();

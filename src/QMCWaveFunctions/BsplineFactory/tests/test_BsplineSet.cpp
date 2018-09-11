@@ -30,8 +30,7 @@ namespace qmcplusplus
 TEST_CASE("BsplineSet_Instantiation", "[wavefunction]")
 {
   
-  qmcplusplus::BsplineSet<SplineC2CAdoptor<double, QMCTraits::RealType, DEFAULT_BATCHING>, DEFAULT_BATCHING>* SOA_CPU_BSS =
-    new qmcplusplus::BsplineSet<SplineC2CAdoptor<double, QMCTraits::RealType, DEFAULT_BATCHING>, DEFAULT_BATCHING>;
+  qmcplusplus::BsplineSet<SplineC2CAdoptor<double, QMCTraits::ComplexType, DEFAULT_BATCHING>, DEFAULT_BATCHING> SOA_CPU_BSS();
 }
 
 }

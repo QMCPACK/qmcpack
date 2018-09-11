@@ -77,7 +77,7 @@ class CuspCorrection
   typedef QMCTraits::RealType RealType;
   typedef QMCTraits::ValueType ValueType;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
-  typedef SPOSet* SPOSetPtr;
+  typedef SPOSetSingle* SPOSetPtr;
 
 public:
   inline RealType phiBar(RealType r)

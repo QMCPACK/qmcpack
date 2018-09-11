@@ -42,9 +42,10 @@ namespace qmcplusplus
  * the user classes {\bf KNOW} what they need to use.
  * }
  */
-struct SPOSetBuilder: public QMCTraits, public MPIObjectBase
+class SPOSetBuilder: public QMCTraits, public MPIObjectBase
 {
-  typedef std::map<std::string,SPOSet*> SPOPool_t;
+public:
+  using SPOPool_t = std::map<std::string,SPOSet*>;
   typedef std::vector<int> indices_t;
   typedef std::vector<RealType> energies_t;
 

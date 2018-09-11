@@ -13,7 +13,7 @@
 #ifndef QMCPLUSPLUS_SOA_LINEARCOMIBINATIONORBITALSET_TEMP_H
 #define QMCPLUSPLUS_SOA_LINEARCOMIBINATIONORBITALSET_TEMP_H
 
-#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/SPOSetSingle.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
 
 
@@ -24,7 +24,7 @@ namespace qmcplusplus
    * SoA verson of LCOrtbitalSet
    * Localized basis set is always real 
    */
-  struct LCAOrbitalSet: public SPOSet
+  struct LCAOrbitalSet: public SPOSetSingle
   {
     typedef RealBasisSetBase<RealType> basis_type;
     typedef basis_type::vgl_type vgl_type;
@@ -59,7 +59,7 @@ namespace qmcplusplus
 
     virtual ~LCAOrbitalSet();
 
-    SPOSet* makeClone() const;
+    SPOSetSingle* makeClone() const;
 
     ///reset
     void resetParameters(const opt_variables_type& active)

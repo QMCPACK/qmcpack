@@ -70,7 +70,7 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
   else
   {
     app_log() << "  Found ground-state SPOSet \"" << gsName << "\".\n";
-    GSOrbitals = iter->second;
+    GSOrbitals = dynamic_cast<SPOSetSingle*>(iter->second);
   }
   //////////////////////////////////////
   // Now, find basis SPOSet from pool //
@@ -78,15 +78,15 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
   iter = spo_pool.find(basisName);
   if (iter != spo_pool.end())
   {
-    BasisOrbitals = iter->second;
+    BasisOrbitals = dynamic_cast<SPOSetSingle*>(iter->second);
     app_log() << "  Found basis SPOSet \"" << basisName << "\".\n";
   }
   if (BasisOrbitals == GSOrbitals)
     BasisOrbitals = 0;
   if (BasisOrbitals)
-    M = BasisOrbitals->getOrbitalSetSize();
+    M = dynamic_cast<SPOSetSingle*>(BasisOrbitals)->getOrbitalSetSize();
   else
-    M = GSOrbitals->getOrbitalSetSize() - N;
+    M = dynamic_cast<SPOSetSingle*>(GSOrbitals)->getOrbitalSetSize() - N;
   resize(N,M);
   app_log() << "  linearopt sposet has " << N << " ground-state orbitals and "
             << M << " basis orbitals.\n";
@@ -104,7 +104,7 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
     SPOSet* basOrbs = BasisOrbitals ? BasisOrbitals : GSOrbitals;
     for (int igs=0; igs<N; igs++)
     {
-      PosType k_gs = GSOrbitals->get_k(igs);
+      PosType k_gs = dynamic_cast<SPOSetSingle*>(GSOrbitals)->get_k(igs);
       for (int ib=0; ib<M; ib++)
       {
         PosType k_b = basOrbs->get_k(ib+off);
@@ -310,9 +310,9 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
 void
 OptimizableSPOSet::resetTargetParticleSet(ParticleSet& P)
 {
-  GSOrbitals->resetTargetParticleSet(P);
+  dynamic_cast<SPOSetSingle*>(GSOrbitals)->resetTargetParticleSet(P);
   if (BasisOrbitals)
-    BasisOrbitals->resetTargetParticleSet(P);
+    dynamic_cast<SPOSetSingle*>(BasisOrbitals)->resetTargetParticleSet(P);
 }
 
 void
@@ -359,7 +359,7 @@ OptimizableSPOSet::evaluateDerivatives
   // Evaluate basis states
   if (BasisOrbitals)
   {
-    BasisOrbitals->evaluate(P,iat,BasisVal);
+    dynamic_cast<SPOSetSingle*>(BasisOrbitals)->evaluate(P,iat,BasisVal);
     std::vector<TinyVector<int,2> >::iterator iter;
     std::vector<TinyVector<int,2> >& act = ActiveBasis[iat];
     for (iter=act.begin(); iter != act.end(); iter++)
@@ -379,10 +379,10 @@ OptimizableSPOSet::evaluateDerivatives
 void
 OptimizableSPOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
-  GSOrbitals->evaluate(P,iat,GSVal);
+  dynamic_cast<SPOSetSingle*>(GSOrbitals)->evaluate(P,iat,GSVal);
   if (BasisOrbitals)
   {
-    BasisOrbitals->evaluate(P,iat,BasisVal);
+    dynamic_cast<SPOSetSingle*>(BasisOrbitals)->evaluate(P,iat,BasisVal);
     BLAS::gemv_trans (N, M, C->data(), &(BasisVal[0]), &(psi[0]));
   }
   else
@@ -401,11 +401,11 @@ OptimizableSPOSet::evaluate(const ParticleSet& P, int iat,
                             ValueVector_t& psi, GradVector_t& dpsi,
                             ValueVector_t& d2psi)
 {
-  GSOrbitals->evaluate(P,iat,GSVal,GSGrad,GSLapl);
+  dynamic_cast<SPOSetSingle*>(GSOrbitals)->evaluate(P,iat,GSVal,GSGrad,GSLapl);
   const ValueMatrix_t& cref(*C);
   if (BasisOrbitals)
   {
-    BasisOrbitals->evaluate(P,iat,BasisVal,BasisGrad,BasisLapl);
+    dynamic_cast<SPOSetSingle*>(BasisOrbitals)->evaluate(P,iat,BasisVal,BasisGrad,BasisLapl);
     BLAS::gemv_trans (N, M, C->data(), &(BasisVal[0]),  &(psi[0]));
     BLAS::gemv_trans (N, M, C->data(), &(BasisLapl[0]), &(d2psi[0]));
     for (int iorb=0; iorb<N; iorb++)
@@ -457,12 +457,12 @@ OptimizableSPOSet::evaluateBasis (const ParticleSet &P, int first, int last,
                                   ValueMatrix_t &basis_lapl)
 {
   if (BasisOrbitals)
-    BasisOrbitals->evaluate_notranspose(P, first, last, basis_val, basis_grad, basis_lapl);
+    dynamic_cast<SPOSetSingle*>(BasisOrbitals)->evaluate_notranspose(P, first, last, basis_val, basis_grad, basis_lapl);
   else
   {
     for (int iat=first; iat<last; iat++)
     {
-      GSOrbitals->evaluate(P, iat, GSVal, GSGrad, GSLapl);
+      dynamic_cast<SPOSetSingle*>(GSOrbitals)->evaluate(P, iat, GSVal, GSGrad, GSLapl);
       for (int i=0; i<M; i++)
       {
         basis_val (iat-first,i) = GSVal[N+i];
@@ -521,11 +521,11 @@ OptimizableSPOSet::evaluate_notranspose
 //     std::cerr << "GSGradMatrix.size =(" << GSGradMatrix.size(0) << ", " << GSGradMatrix.size(1) << ")\n";
 //     std::cerr << "GSLaplMatrix.size =(" << GSLaplMatrix.size(0) << ", " << GSLaplMatrix.size(1) << ")\n";
 //     std::cerr << "first=" << first << "  last=" << last << std::endl;
-  GSOrbitals->evaluate_notranspose
+  dynamic_cast<SPOSetSingle*>(GSOrbitals)->evaluate_notranspose
   (P, first, last, GSValMatrix, GSGradMatrix, GSLaplMatrix);
   if (BasisOrbitals)
   {
-    BasisOrbitals->evaluate_notranspose(P, first, last, BasisValMatrix, BasisGradMatrix, BasisLaplMatrix);
+    dynamic_cast<SPOSetSingle*>(BasisOrbitals)->evaluate_notranspose(P, first, last, BasisValMatrix, BasisGradMatrix, BasisLaplMatrix);
     //Note to Ken:
     //Use Numerics/MatrixOperators.h
     //for C=AB MatrixOperators::product(C,BasisValMatrix,logdet);
@@ -599,14 +599,14 @@ OptimizableSPOSet::evaluate_notranspose
   }
 }
 
-SPOSet*
+SPOSetSingle*
 OptimizableSPOSet::makeClone() const
 {
-  SPOSet *gs, *basis(0);
+  SPOSetSingle *gs, *basis(0);
   OptimizableSPOSet *clone;
   gs = GSOrbitals->makeClone();
   if (BasisOrbitals)
-    basis = BasisOrbitals->makeClone();
+    basis = dynamic_cast<SPOSetSingle*>(BasisOrbitals)->makeClone();
   clone = new OptimizableSPOSet(N,gs,basis);
   clone->IsCloned=true;
   clone->C=C; //just pointer
@@ -619,7 +619,7 @@ OptimizableSPOSet::makeClone() const
   for(int i=0; i<ParamIndex.size() ; i++)
   {
 #ifndef QMC_COMPLEX
-    clone->ParamPointers.push_back(&(clone->C(ParamIndex[i][0],ParamIndex[i][1])));
+    clone->ParamPointers.push_back(&(clone->C(ParamInde x[i][0],ParamIndex[i][1])));
 #else
     int ci=ParamIndex[i][0];
     int cj=ParamIndex[i][1];

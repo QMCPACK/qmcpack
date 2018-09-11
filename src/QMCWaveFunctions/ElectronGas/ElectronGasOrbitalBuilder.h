@@ -18,7 +18,7 @@
 #define QMCPLUSPLUS_ELECTRONGAS_ORBITALS_H
 
 #include <QMCWaveFunctions/WaveFunctionComponentBuilder.h>
-#include <QMCWaveFunctions/SPOSet.h>
+#include <QMCWaveFunctions/SPOSetSingle.h>
 #include <config/stdlib/math.h>
 
 #include "QMCWaveFunctions/SPOSetBuilder.h"
@@ -33,7 +33,7 @@ namespace qmcplusplus
 //forward declaration
 class  BackflowTransformation;
 
-struct RealEGOSet: public SPOSet
+struct RealEGOSet: public SPOSetSingle
 {
 
   int KptMax;
@@ -47,7 +47,7 @@ struct RealEGOSet: public SPOSet
   inline void resetTargetParticleSet(ParticleSet& P) { }
   void setOrbitalSetSize(int norbs) { }
 
-  SPOSet* makeClone() const
+  SPOSetSingle* makeClone() const
   {
     return new RealEGOSet(*this);
   }
@@ -331,7 +331,7 @@ public:
   /** initialize the Antisymmetric wave function for electrons
   *@param cur the current xml node
   */
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
+  SPOSetSingle* createSPOSetFromXML(xmlNodePtr cur);
 };
 
 }

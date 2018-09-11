@@ -17,7 +17,7 @@
  */
 #ifndef QMCPLUSPLUS_SPOSETPROXY_H
 #define QMCPLUSPLUS_SPOSETPROXY_H
-#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/SPOSetSingle.h"
 namespace qmcplusplus
 {
 
@@ -26,7 +26,7 @@ namespace qmcplusplus
  * This class owns a SPOSet for all the states to be evaluated
  * and will be owned by a DiracDeterminantBase object.
  */
-struct SPOSetProxy: public SPOSet
+struct SPOSetProxy: public SPOSetSingle
 {
 
   ///pointer to the SPOSet which evaluate the single-particle states
@@ -45,7 +45,7 @@ struct SPOSetProxy: public SPOSet
   ValueVector_t d2psiV;
 
   /** constructor
-   * @param spos a SPOSet
+   * @param spos a SPOSetSingle
    * @param first the first particle index
    * @param last the last particle index
    */

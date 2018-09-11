@@ -18,7 +18,7 @@
 #ifndef QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 #define QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 #ifdef QMC_CUDA
-#include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantBatched.h"
 #else
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #endif

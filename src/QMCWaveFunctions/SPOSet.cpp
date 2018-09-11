@@ -41,53 +41,6 @@ SPOSet::SPOSet()
 #endif
 }
 
-/** default implementation */
-SPOSet::ValueType
-SPOSet::RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
-{
-  int ip=omp_get_thread_num();
-  // YYYY to fix
-  /*
-  ValueVector_t psi(t_logpsi[ip],OrbitalSetSize);
-  evaluate(P,iat,psi);
-  return simd::dot(psi.data(),arow,OrbitalSetSize,ValueType());
-  */
-  return ValueType();
-}
-
-void SPOSet::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
-{
-  APP_ABORT("SPOSet::evaluateVGL not implemented.");
-}
-
-void SPOSet::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOmem)
-{
-  for(int iat=0; iat<VP.getTotalNum(); ++iat)
-  {
-    ValueVector_t psi(psiM[iat],OrbitalSetSize);
-    evaluate(VP,iat,psi);
-  }
-}
-
-void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last,
-                                    GGGMatrix_t& grad_grad_grad_logdet)
-{
-  APP_ABORT("Need specialization of SPOSet::evaluateThirdDeriv(). \n");
-}
-
-void SPOSet::evaluate_notranspose(const ParticleSet& P, int first, int last
-                                      , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
-{
-  APP_ABORT("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_logdet. \n");
-}
-
-void SPOSet::evaluate_notranspose(const ParticleSet& P, int first, int last,
-                                      ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
-{
-  APP_ABORT("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_grad_logdet. \n");
-}
-
-
 SPOSet* SPOSet::makeClone() const
 {
   APP_ABORT("Missing  SPOSet::makeClone for "+className);
@@ -384,67 +337,6 @@ void SPOSet::basic_report(const std::string& pad)
   app_log().flush();
 }
 
-void SPOSet::evaluateGradSource (const ParticleSet &P
-                                     , int first, int last, const ParticleSet &source
-                                     , int iat_src, GradMatrix_t &gradphi)
-{
-  APP_ABORT("SPOSetlBase::evalGradSource is not implemented");
-}
-
-void SPOSet::evaluateGradSource (const ParticleSet &P, int first, int last,
-                                     const ParticleSet &source, int iat_src,
-                                     GradMatrix_t &grad_phi,
-                                     HessMatrix_t &grad_grad_phi,
-                                     GradMatrix_t &grad_lapl_phi)
-{
-  APP_ABORT("SPOSetlBase::evalGradSource is not implemented");
-}
-
-#ifdef QMC_CUDA
-
-void SPOSet::evaluate (std::vector<Walker_t*> &walkers, int iat,
-                           gpu::device_vector<CudaValueType*> &phi)
-{
-  app_error() << "Need specialization of vectorized evaluate in SPOSet.\n";
-  app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
-  abort();
-}
-
-void SPOSet::evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &new_pos,
-                           gpu::device_vector<CudaValueType*> &phi)
-{
-  app_error() << "Need specialization of vectorized evaluate in SPOSet.\n";
-  app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
-  abort();
-}
-
-void SPOSet::evaluate (std::vector<Walker_t*> &walkers,
-                           std::vector<PosType> &new_pos,
-                           gpu::device_vector<CudaValueType*> &phi,
-                           gpu::device_vector<CudaValueType*> &grad_lapl_list,
-                           int row_stride)
-{
-  app_error() << "Need specialization of vectorized eval_grad_lapl in SPOSet.\n";
-  app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
-  abort();
-}
-
-void SPOSet::evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi)
-{
-  app_error() << "Need specialization of vectorized evaluate "
-              << "in SPOSet.\n";
-  app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
-  abort();
-}
-
-void SPOSet::evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi)
-{
-  app_error() << "Need specialization of vectorized evaluate "
-              << "in SPOSet.\n";
-  app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
-  abort();
-}
-#endif
 }
 
 

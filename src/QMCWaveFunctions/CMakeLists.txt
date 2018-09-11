@@ -27,6 +27,8 @@ SET(WFBASE_SRCS
   SPOSetInfo.cpp
   SPOSetInputInfo.cpp
   SPOSet.cpp
+  SPOSetSingle.cpp
+  SPOSetEvaluationBatchingSingle.cpp
   OptimizableSPOSet.cpp
   CompositeSPOSet.cpp
   HarmonicOscillator/SHOSet.cpp
@@ -39,6 +41,9 @@ IF(NOT QMC_COMPLEX)
     )
 ENDIF(NOT QMC_COMPLEX)
 
+IF(QMC_CUDA)
+  SET(WFBASE_SRCS SPOSetEvaluationBatchingBatched.cpp ${WFBASE_SRCS})
+ENDIF(QMC_CUDA)
 
 ########################
 # build jastrows
@@ -61,16 +66,15 @@ SET(JASTROW_SRCS
   Fermion/SPOSetProxyForMSD.cpp
   )
 
-IF(QMC_COMPLEX)
-  SET(FERMION_SRCS ${FERMION_SRCS}
-    ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
-    )
-ELSE(QMC_COMPLEX)
-  SET(FERMION_SRCS ${FERMION_SRCS}
-    ElectronGas/ElectronGasOrbitalBuilder.cpp
-    )
-
-ENDIF(QMC_COMPLEX)
+# IF(QMC_COMPLEX)
+#   SET(FERMION_SRCS ${FERMION_SRCS}
+#     ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
+#     )
+# ELSE(QMC_COMPLEX)
+#   SET(FERMION_SRCS ${FERMION_SRCS}
+#     ElectronGas/ElectronGasOrbitalBuilder.cpp
+#     )
+# ENDIF(QMC_COMPLEX)
 
 
 # wavefunctions only availbale to 3-dim problems
@@ -96,7 +100,8 @@ IF(OHMMS_DIM MATCHES 3)
   IF(QMC_CUDA)
     SET(FERMION_SRCS ${FERMION_SRCS}
       Fermion/determinant_update.cu 
-      Fermion/DiracDeterminantCUDA.cpp
+      Fermion/DiracDeterminantBatched.cpp
+      Fermion/DiracDeterminantEvalBatched.cpp
       Fermion/SlaterDetCUDA.cpp
       TrialWaveFunction_CUDA.cpp
       )
