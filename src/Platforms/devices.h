@@ -79,7 +79,7 @@ inline int get_device_num()
 
   if (cuda_devices[0]==0)
   {
-    APP_ABORT("get_device_num: One or more MPI ranks have 0 available/elligible CUDA devices");
+    APP_ABORT("get_device_num: One or more MPI ranks have 0 available/eligible CUDA devices");
   }
 
   int relative_ranknum = 0;
