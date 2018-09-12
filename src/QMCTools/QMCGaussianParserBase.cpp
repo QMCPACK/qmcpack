@@ -28,7 +28,6 @@
 #include "io/hdf_archive.h"
 #include <set>
 #include <map>
-#include "QMCTools/GTO2GridBuilder.h"
 #include "QMCApp/InitMolecularSystem.h"
 #include <sstream>
 
@@ -1518,65 +1517,6 @@ xmlNodePtr QMCGaussianParserBase::createJ1()
   return j1;
 }
 
-void QMCGaussianParserBase::map2GridFunctors(xmlNodePtr cur)
-{
-  using namespace qmcplusplus;
-  xmlNodePtr anchor = cur;
-  //xmlNodePtr grid_ptr = 0;
-  std::vector<xmlNodePtr> phi_ptr;
-  std::vector<QuantumNumberType> nlms;
-  int Lmax = 0;
-  int current = 0;
-  std::string acenter("none");
-  const xmlChar* aptr = xmlGetProp(cur,(const xmlChar*)"elementType");
-  if(aptr)
-    acenter = (const char*)aptr;
-  xmlNodePtr grid_ptr=0;
-  cur = anchor->children;
-  while(cur != NULL)
-  {
-    std::string cname((const char*)(cur->name));
-    if(cname == "grid")
-      grid_ptr = cur;
-    else
-      if(cname == "basisGroup")
-      {
-        int n=1,l=0,m=0;
-        const xmlChar* aptr = xmlGetProp(cur,(const xmlChar*)"n");
-        if(aptr)
-          n = atoi((const char*)aptr);
-        aptr = xmlGetProp(cur,(const xmlChar*)"l");
-        if(aptr)
-          l = atoi((const char*)aptr);
-        Lmax = std::max(l,Lmax);
-        phi_ptr.push_back(cur);
-        nlms.push_back(QuantumNumberType());
-        nlms[current][0]=n;
-        nlms[current][1]=l;
-        nlms[current][2]=m;
-        ++current;
-      }
-    cur = cur->next;
-  }
-  if(grid_ptr == 0)
-  {
-    LOGMSG("Grid is not defined: using default")
-    //xmlAddChild(anchor,gridPtr);
-    grid_ptr = xmlCopyNode(gridPtr,1);
-    xmlAddChild(anchor,grid_ptr);
-  }
-  RGFBuilderBase::CenteredOrbitalType aos(Lmax);
-  bool normalized(Normalized=="yes");
-  GTO2GridBuilder rbuilder(normalized);
-  rbuilder.setOrbitalSet(&aos,acenter);
-  rbuilder.addGrid(grid_ptr);
-  for(int i=0; i<nlms.size(); i++)
-  {
-    rbuilder.addRadialOrbital(phi_ptr[i],nlms[i]);
-  }
-  rbuilder.print(acenter,1,debug);
-}
-
 void QMCGaussianParserBase::createGridNode(int argc, char** argv)
 {
   gridPtr = xmlNewNode(NULL,(const xmlChar*)"grid");
@@ -1755,18 +1695,6 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
     xmlAddChild(qm_root,wfPtr);
   }
   xmlDocSetRootElement(doc, qm_root);
-  xmlXPathContextPtr m_context = xmlXPathNewContext(doc);
-  xmlXPathObjectPtr result
-  = xmlXPathEvalExpression((const xmlChar*)"//atomicBasisSet",m_context);
-  if(!xmlXPathNodeSetIsEmpty(result->nodesetval))
-  {
-    for(int ic=0; ic<result->nodesetval->nodeNr; ic++)
-    {
-      xmlNodePtr cur = result->nodesetval->nodeTab[ic];
-      map2GridFunctors(cur);
-    }
-  }
-  xmlXPathFreeObject(result);
   std::string fname = Title+".wf"+WFS_name+".xml";
   xmlSaveFormatFile(fname.c_str(),doc,1);
   xmlFreeDoc(doc);
@@ -1864,18 +1792,6 @@ void QMCGaussianParserBase::dumpPBC(const std::string& psi_tag,
     xmlAddChild(qm_root,wfPtr);
   }
   xmlDocSetRootElement(doc, qm_root);
-  xmlXPathContextPtr m_context = xmlXPathNewContext(doc);
-  xmlXPathObjectPtr result
-  = xmlXPathEvalExpression((const xmlChar*)"//atomicBasisSet",m_context);
-  if(!xmlXPathNodeSetIsEmpty(result->nodesetval))
-  {
-    for(int ic=0; ic<result->nodesetval->nodeNr; ic++)
-    {
-      xmlNodePtr cur = result->nodesetval->nodeTab[ic];
-      map2GridFunctors(cur);
-    }
-  }
-  xmlXPathFreeObject(result);
   std::string fname = Title+".wf"+WFS_name+".xml";
   xmlSaveFormatFile(fname.c_str(),doc,1);
   xmlFreeDoc(doc);
@@ -2403,19 +2319,6 @@ void QMCGaussianParserBase::Fmodump(const std::string& psi_tag,
   }
 
   xmlDocSetRootElement(doc, qm_root);
-  xmlXPathContextPtr m_context = xmlXPathNewContext(doc);
-  xmlXPathObjectPtr result
-  = xmlXPathEvalExpression((const xmlChar*)"//atomicBasisSet",m_context);
-  if(!xmlXPathNodeSetIsEmpty(result->nodesetval))
-  {
-    for(int ic=0; ic<result->nodesetval->nodeNr; ic++)
-    {
-      xmlNodePtr cur = result->nodesetval->nodeTab[ic];
-      map2GridFunctors(cur);
-
-    }
-  }
-  xmlXPathFreeObject(result);
   std::string fname = Mytag+".wfs.xml";
   xmlSaveFormatFile(fname.c_str(),doc,1);
   xmlFreeDoc(doc);
