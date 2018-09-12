@@ -14,14 +14,14 @@
  */
 #ifndef QMCPLUSPLUS_DIRACDETERMINANTWITHBASE_SOA_H
 #define QMCPLUSPLUS_DIRACDETERMINANTWITHBASE_SOA_H
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantSingle.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 
 namespace qmcplusplus
 {
 
-  /** a DiracDeterminantBase which uses SoA for G & L and implements both memory and compute optimization*/
-class DiracDeterminantSoA: public DiracDeterminantBase
+/** a DiracDeterminantBase which uses SoA for G & L and implements both memory and compute optimization*/
+class DiracDeterminantSoA : public DiracDeterminantSingle
 {
 
   public:
@@ -64,7 +64,7 @@ class DiracDeterminantSoA: public DiracDeterminantBase
   ///reset the size: with the number of particles and number of orbtials
   void resize(int nel, int morb);
   ///cloning with spo
-  DiracDeterminantBase* makeCopy(SPOSet* spo) const;
+  DiracDeterminantSingle* makeCopy(SPOSetPtr spo) const;
 
   RealType evaluateLog(ParticleSet& P,
               ParticleSet::ParticleGradient_t& G,

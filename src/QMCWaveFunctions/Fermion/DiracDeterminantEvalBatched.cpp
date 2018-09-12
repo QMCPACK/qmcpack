@@ -32,32 +32,33 @@ namespace qmcplusplus
     NLelecList_d("DiracDeterminantBase::NLelecList_d"),
     NLratioList_d("DiracDeterminantBase::NLratioList_d")
   {
-    for(int i = 0; i < 2; ++i)
+     for(int i = 0; i < 2; ++i)
       NLratios_d[i] = gpu::device_vector<CudaValueType>("DiracDeterminantBase::NLratios_d");
   }
   
-  void DiracDeterminantEval<Batching::BATCHED>::reserve (PointerPool<gpu::device_vector<QMCT::CudaValueType> > &pool,
-						     SPOSetSingle& Phi)
+  void DiracDeterminantEval<Batching::BATCHED>
+  ::reserve (PointerPool<gpu::device_vector<QMCT::CudaValueType>> &pool,
+	     SPOSetBatched& Phi, int num_particles, int num_orbitals)
 {
-    RowStride = ((NumOrbitals + 31)/32) * 32;
-    AOffset           = pool.reserve((size_t)    NumPtcls * RowStride);
-    AinvOffset        = pool.reserve((size_t)    NumPtcls * RowStride);
-    gradLaplOffset    = pool.reserve((size_t)4 * NumPtcls * RowStride);
+    RowStride = ((num_orbitals + 31)/32) * 32;
+    AOffset           = pool.reserve((size_t)    num_particles * RowStride);
+    AinvOffset        = pool.reserve((size_t)    num_particles * RowStride);
+    gradLaplOffset    = pool.reserve((size_t)4 * num_particles * RowStride);
     newRowOffset      = pool.reserve((size_t)1            * RowStride);
     AinvDeltaOffset   = pool.reserve((size_t)1            * RowStride);
     AinvColkOffset    = pool.reserve((size_t)1            * RowStride);
     newGradLaplOffset = pool.reserve((size_t)4            * RowStride);
     if (typeid(CudaRealType) == typeid(float))
     {
-      AWorkOffset       = pool.reserve((size_t)2 * NumPtcls * RowStride);
-      AinvWorkOffset    = pool.reserve((size_t)2 * NumPtcls * RowStride);
+      AWorkOffset       = pool.reserve((size_t)2 * num_particles * RowStride);
+      AinvWorkOffset    = pool.reserve((size_t)2 * num_particles * RowStride);
     }
     else if (typeid(CudaRealType) == typeid(double))
     {
-      AWorkOffset       = pool.reserve((size_t)    NumPtcls * RowStride);
+      AWorkOffset       = pool.reserve((size_t)    num_particles * RowStride);
       AinvWorkOffset    = 0;                  // not needed for inversion
     }
-    Phi->reserve(pool);
+    Phi.reserve(pool);
 }
 
 }

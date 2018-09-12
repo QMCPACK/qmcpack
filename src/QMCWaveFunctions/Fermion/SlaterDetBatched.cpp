@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2018 QMCPACK developers.
 //
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
@@ -14,7 +14,7 @@
     
     
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/Fermion/SlaterDet.h"
+#include "QMCWaveFunctions/Fermion/SlaterDetBatched.h"
 
 namespace qmcplusplus
 {
@@ -34,7 +34,7 @@ namespace qmcplusplus
 // }
 
 void
-SlaterDet::ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
+SlaterDetBatched::ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
                   std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
                   std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
 {
@@ -73,7 +73,7 @@ SlaterDet::ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
   }
 }
 
-void SlaterDet::update (const std::vector<Walker_t*> &walkers,
+void SlaterDetBatched::update (const std::vector<Walker_t*> &walkers,
                         const std::vector<int> &iatList)
 {
   // Sort walkers by determinant number

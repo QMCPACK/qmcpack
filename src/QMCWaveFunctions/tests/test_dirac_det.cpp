@@ -18,7 +18,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Numerics/OhmmsBlas.h"
 #include "QMCWaveFunctions/SPOSetSingle.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantSingle.h"
 #include "simd/simd.hpp"
 
 
@@ -192,24 +192,24 @@ FakeSPO::evaluate_notranspose(const ParticleSet& P, int first, int last
   }
 }
 
-TEST_CASE("DiracDeterminantBase_first", "[wavefunction][fermion]")
+TEST_CASE("DiracDeterminantSingle_first", "[wavefunction][fermion]")
 {
   FakeSPO *spo = new FakeSPO();
   spo->setOrbitalSetSize(3);
-  DiracDeterminantBase ddb(spo);
+  DiracDeterminantSingle dds(spo);
 
   int norb = 3;
-  ddb.set(0,norb);
+  dds.set(0,norb);
 
   // occurs in call to registerData
-  ddb.dpsiV.resize(norb);
-  ddb.d2psiV.resize(norb);
+  dds.dpsiV.resize(norb);
+  dds.d2psiV.resize(norb);
 
 
   ParticleSet elec;
 
   elec.create(3);
-  ddb.recompute(elec);
+  dds.recompute(elec);
 
   Matrix<ValueType> b;
   b.resize(3,3);
@@ -224,15 +224,15 @@ TEST_CASE("DiracDeterminantBase_first", "[wavefunction][fermion]")
   b(2,1) = -0.04586322768;
   b(2,2) = 0.3927890292;
 
-  check_matrix(ddb.psiM, b);
+  check_matrix(dds.psiM, b);
 
 
   DiracDeterminantBase::GradType grad;
-  ValueType det_ratio = ddb.ratioGrad(elec, 0, grad);
+  ValueType det_ratio = dds.ratioGrad(elec, 0, grad);
   ValueType det_ratio1 = 0.178276269185;
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
 
-  ddb.acceptMove(elec, 0);
+  dds.acceptMove(elec, 0);
 
   b(0,0) =  3.455170657;
   b(0,1) =  -1.35124809;
@@ -244,31 +244,31 @@ TEST_CASE("DiracDeterminantBase_first", "[wavefunction][fermion]")
   b(2,1) = 0.7119205298;
   b(2,2) = 0.9105960265;
 
-  check_matrix(ddb.psiM, b);
+  check_matrix(dds.psiM, b);
 
 
 }
 
 //#define DUMP_INFO
 
-TEST_CASE("DiracDeterminantBase_second", "[wavefunction][fermion]")
+TEST_CASE("DiracDeterminantSingle_second", "[wavefunction][fermion]")
 {
   FakeSPO *spo = new FakeSPO();
   spo->setOrbitalSetSize(4);
-  DiracDeterminantBase ddb(spo);
+  DiracDeterminantSingle dds(spo);
 
   int norb = 4;
-  ddb.set(0,norb);
+  dds.set(0,norb);
 
   // occurs in call to registerData
-  ddb.dpsiV.resize(norb);
-  ddb.d2psiV.resize(norb);
+  dds.dpsiV.resize(norb);
+  dds.d2psiV.resize(norb);
 
 
   ParticleSet elec;
 
   elec.create(4);
-  ddb.recompute(elec);
+  dds.recompute(elec);
 
   Matrix<ValueType> orig_a;
   orig_a.resize(4,4);
@@ -280,7 +280,7 @@ TEST_CASE("DiracDeterminantBase_second", "[wavefunction][fermion]")
     }
   }
 
-  //check_matrix(ddb.psiM, b);
+  //check_matrix(dds.psiM, b);
   DiracMatrix<ValueType> dm;
 
   Matrix<ValueType> a_update1;
@@ -308,15 +308,15 @@ TEST_CASE("DiracDeterminantBase_second", "[wavefunction][fermion]")
   }
 
 
-  DiracDeterminantBase::GradType grad;
-  ValueType det_ratio = ddb.ratioGrad(elec, 0, grad);
+  DiracDeterminantSingle::GradType grad;
+  ValueType det_ratio = dds.ratioGrad(elec, 0, grad);
 
   dm.invert(a_update1, true);
   ValueType det_update1 = dm.LogDet;
-  ValueType log_ratio1 = det_update1 - ddb.LogValue;
+  ValueType log_ratio1 = det_update1 - dds.LogValue;
   ValueType det_ratio1 = std::exp(log_ratio1);
 #ifdef DUMP_INFO
-  std::cout << "det 0 = " << std::exp(ddb.LogValue) << std::endl;
+  std::cout << "det 0 = " << std::exp(dds.LogValue) << std::endl;
   std::cout << "det 1 = " << std::exp(det_update1) << std::endl;
   std::cout << "det ratio 1 = " << det_ratio1 << std::endl;
 #endif
@@ -324,16 +324,16 @@ TEST_CASE("DiracDeterminantBase_second", "[wavefunction][fermion]")
 
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
 
-  ddb.acceptMove(elec, 0);
+  dds.acceptMove(elec, 0);
 
 
-  ValueType det_ratio2 = ddb.ratioGrad(elec, 1, grad);
+  ValueType det_ratio2 = dds.ratioGrad(elec, 1, grad);
   dm.invert(a_update2, true);
   ValueType det_update2 = dm.LogDet;
   ValueType log_ratio2 = det_update2 - det_update1;
   ValueType det_ratio2_val = std::exp(log_ratio2);
 #ifdef DUMP_INFO
-  std::cout << "det 1 = " << std::exp(ddb.LogValue) << std::endl;
+  std::cout << "det 1 = " << std::exp(dds.LogValue) << std::endl;
   std::cout << "det 2 = " << std::exp(det_update2) << std::endl;
   std::cout << "det ratio 2 = " << det_ratio2 << std::endl;
 #endif
@@ -341,22 +341,22 @@ TEST_CASE("DiracDeterminantBase_second", "[wavefunction][fermion]")
   REQUIRE(std::abs(det_ratio2) == ValueApprox(det_ratio2_val));
 
 
-  ddb.acceptMove(elec, 1);
+  dds.acceptMove(elec, 1);
 
-  ValueType det_ratio3 = ddb.ratioGrad(elec, 2, grad);
+  ValueType det_ratio3 = dds.ratioGrad(elec, 2, grad);
   dm.invert(a_update3, true);
   ValueType det_update3 = dm.LogDet;
   ValueType log_ratio3 = det_update3 - det_update2;
   ValueType det_ratio3_val = std::exp(log_ratio3);
 #ifdef DUMP_INFO
-  std::cout << "det 2 = " << std::exp(ddb.LogValue) << std::endl;
+  std::cout << "det 2 = " << std::exp(dds.LogValue) << std::endl;
   std::cout << "det 3 = " << std::exp(det_update3) << std::endl;
   std::cout << "det ratio 3 = " << det_ratio3 << std::endl;
 #endif
   REQUIRE(det_ratio3 == ValueApprox(det_ratio3_val));
   //check_value(det_ratio3, det_ratio3_val);
 
-  ddb.acceptMove(elec, 2);
+  dds.acceptMove(elec, 2);
 
   dm.invert(orig_a,false);
 
@@ -364,10 +364,10 @@ TEST_CASE("DiracDeterminantBase_second", "[wavefunction][fermion]")
   std::cout << "original " << std::endl;
   std::cout << orig_a << std::endl;
   std::cout << "block update " << std::endl;
-  std::cout << ddb.psiM << std::endl;
+  std::cout << dds.psiM << std::endl;
 #endif
 
-  check_matrix(orig_a, ddb.psiM);
+  check_matrix(orig_a, dds.psiM);
 
 
 }

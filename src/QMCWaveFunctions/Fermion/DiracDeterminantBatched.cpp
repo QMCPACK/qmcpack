@@ -2,20 +2,17 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2018 QMCPACK developers.
 //
-// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Ying Wai Li, yingwaili@ornl.gov, Oak Ridge National Laboratory
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
+//   initially refactored from DiracDeterminantCUDA.cpp
 //
-// File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+// File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/**@file DiracDeterminantCUDA.h
- * @brief Declaration of DiracDeterminantCUDA with a S(ingle)P(article)O(rbital)SetBase
+/**@file DiracDeterminantBatched.cpp
+ * @brief implementation of DiracDeterminantBatched with a S(ingle)P(article)O(rbital)SetBase
  */
 
 #include "DiracDeterminantBatched.h"
@@ -27,11 +24,20 @@
 
 namespace qmcplusplus
 {
-DiracDeterminantBatched::DiracDeterminantBatched(SPOSetPtr const &spos, int first) :
-  DiracDeterminantBase(first)
+DiracDeterminantBatched::DiracDeterminantBatched(SPOSet* const &spos, int first) :
+  DiracDeterminantBase(first), Phi(dynamic_cast<SPOSetBatched*>(spos))
 {
+  registerTimers();
 }
 
+DiracDeterminantBatched* DiracDeterminantBatched::makeCopy(SPOSet* spo) const
+{
+  DiracDeterminantBatched* dclone= new DiracDeterminantBatched(spo);
+  dclone->set(FirstIndex,LastIndex-FirstIndex);
+  return dclone;
+}
+
+  
 /////////////////////////////////////
 // Vectorized evaluation functions //
 /////////////////////////////////////
@@ -1211,4 +1217,6 @@ DiracDeterminantBatched::NLratios (MCWalkerConfiguration &W,
   // 		 i, psi_ratios[i], cpu_ratios[i], FirstIndex);
   // }
 }
+
+
 }

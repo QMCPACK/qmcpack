@@ -16,6 +16,7 @@
 
 #include <QMCHamiltonians/QMCHamiltonianBase.h>
 #include <QMCWaveFunctions/SPOSet.h>
+#include "QMCWaveFunctions/SPOSetTypeAliases.h"
 
 namespace qmcplusplus
 {
@@ -108,9 +109,9 @@ class OrbitalImages : public QMCHamiltonianBase
 {
  public:
   enum{DIM=OHMMS_DIM};
-
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::GradVector_t  GradVector_t;
+  using SSTA = SPOSetTypeAliases;
+  typedef SSTA::ValueVector_t ValueVector_t;
+  typedef SSTA::GradVector_t  GradVector_t;
   typedef ParticleSet::ParticleLayout_t Lattice_t;
   typedef std::map<std::string,ParticleSet*> PSPool;
 

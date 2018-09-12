@@ -27,7 +27,7 @@
 #include "LongRange/StructFact.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
-#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/SPOSetSingle.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Numerics/DeterminantOperators.h"
@@ -1966,6 +1966,7 @@ void WaveFunctionTester::runDerivCloneTest()
   for (int i=0; i<Nvars ; i++)
     fout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i])/HGradient[i] << std::endl;
 }
+
 void WaveFunctionTester::runwftricks()
 {
   std::vector<WaveFunctionComponent*>& Orbitals=Psi.getOrbitals();
@@ -1974,7 +1975,8 @@ void WaveFunctionTester::runwftricks()
   for (int i=0; i<Orbitals.size(); i++)
     if ("SlaterDet"==Orbitals[i]->OrbitalName)
       SDindex=i;
-  SPOSetPtr Phi= dynamic_cast<SlaterDet *>(Orbitals[SDindex])->getPhi();
+  SPOSetSingle* Phi= dynamic_cast<SPOSetSingle*>
+    (dynamic_cast<SlaterDet *>(Orbitals[SDindex])->getPhi());
   int NumOrbitals=Phi->getBasisSetSize();
   app_log()<<"Basis set size: "<<NumOrbitals<< std::endl;
   std::vector<int> SPONumbers(0,0);

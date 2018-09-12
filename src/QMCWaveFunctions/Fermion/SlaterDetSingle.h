@@ -15,12 +15,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#ifndef QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
-#define QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
+#ifndef QMCPLUSPLUS_SLATERDETERMINANT_SINGLE_H
+#define QMCPLUSPLUS_SLATERDETERMINANT_SINGLE_H
 
 #include "QMCWaveFunctions/Fermion/DiracDeterminantSingle.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBatched.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
+#include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include <map>
 
 namespace qmcplusplus
@@ -32,27 +32,24 @@ namespace qmcplusplus
 //     and SlaterDeterminantWithBackflow to SlaterDet<true>
 //     and remove all virtuals and inline them
 
-class SlaterDet: public WaveFunctionComponent
+class SlaterDetSingle: public SlaterDet
 {
 public:
+  typedef DiracDeterminantSingle Determinant_t;
 
-  ///container for the DiracDeterminants
-  std::vector<DiracDeterminantBase*>  Dets;
-  ///the last particle of each group
-  std::vector<int> Last;
-  std::map<std::string,SPOSet*> mySPOSet;
-  
+  //This could be dangerous shadowing the base class Dets;
+  std::vector<Determinant_t*>  Dets;
   /**  constructor
    * @param targetPtcl target Particleset
    * @param rn release node
    */
-  SlaterDet(ParticleSet& targetPtcl);
+  SlaterDetSingle(ParticleSet& targetPtcl);
 
   ///destructor
-  ~SlaterDet();
+  ~SlaterDetSingle();
 
   //get Det ID
-  virtual int getDetID(const int iat)
+  inline int getDetID(const int iat)
   {
     int id=0;
     while(iat>Last[id])
@@ -61,11 +58,11 @@ public:
   }
 
   ///add a SPOSet
-  virtual void add(SPOSet* sposet, const std::string& aname);
+  void add(SPOSet* sposet, const std::string& aname);
 
   ///add a new DiracDeterminant to the list of determinants
   virtual
-  void add(DiracDeterminantBase* det, int ispin);
+  void add(Determinant_t* det, int ispin);
 
   ///set BF pointers
   virtual
@@ -217,8 +214,8 @@ public:
       Dets[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
   }
 
-protected:
-  SlaterDet() {}
+private:
+  SlaterDetSingle() {}
 };
 }
 #endif

@@ -17,6 +17,9 @@
 #include "QMCWaveFunctions/BsplineFactory/temp_batch_type.h"
 #include "QMCWaveFunctions/SPOSetSingle.h"
 #include "QMCWaveFunctions/SPOSetBatched.h"
+#include "QMCWaveFunctions/Fermion/determinant_update.h"
+#include "Particle/MCWalkerConfiguration.h"
+#include "QMCWaveFunctions/SPOSetTypeAliases.h"
 
 namespace qmcplusplus
 {
@@ -25,13 +28,80 @@ class DiracDeterminantEvalDefault
 {
 public:
   using QMCT = QMCTraits;
+  using SSTA = SPOSetTypeAliases;
+  using Walker_t =  ParticleSet::Walker_t;
+
+  void abortNoSpecialize()
+  {
+    APP_ABORT("DiracDeterminantEvalDefault methods should not be reached");
+  }
   
+  virtual void addLog (MCWalkerConfiguration &W, std::vector<QMCT::RealType> &logPsi)
+  { abortNoSpecialize(); }
+  virtual void addGradient(MCWalkerConfiguration &W, int iat,
+			   std::vector<QMCT::GradType> &grad)
+  { abortNoSpecialize(); }
+  virtual void calcGradient(MCWalkerConfiguration &W, int iat,
+			    std::vector<QMCT::GradType> &grad)
+  { abortNoSpecialize(); }
+  virtual void ratio (MCWalkerConfiguration &W, int iat,
+		      std::vector<QMCT::ValueType> &psi_ratios)
+  { abortNoSpecialize(); }
+
+  virtual void ratio (MCWalkerConfiguration &W, int iat,
+		      std::vector<QMCT::ValueType> &psi_ratios,
+		      std::vector<QMCT::GradType>  &grad)
+  { abortNoSpecialize(); }
+  virtual void ratio (MCWalkerConfiguration &W, int iat,
+		      std::vector<QMCT::ValueType> &psi_ratios,
+		      std::vector<QMCT::GradType>  &grad,
+		      std::vector<QMCT::ValueType> &lapl)
+  { abortNoSpecialize(); }
+  virtual void calcRatio (MCWalkerConfiguration &W, int iat,
+			  std::vector<QMCT::ValueType> &psi_ratios,	std::vector<QMCT::GradType>  &grad,
+                  std::vector<QMCT::ValueType> &lapl)
+  { abortNoSpecialize(); }
+  virtual void addRatio (MCWalkerConfiguration &W, int iat,
+                 std::vector<QMCT::ValueType> &psi_ratios,	std::vector<QMCT::GradType>  &grad,
+                 std::vector<QMCT::ValueType> &lapl)
+  { abortNoSpecialize(); }
+
+  virtual void gradLapl (MCWalkerConfiguration &W, SSTA::GradMatrix_t &grads,
+			 SSTA::ValueMatrix_t &lapl)
+  { abortNoSpecialize(); }
+
+
+
+  
+  virtual void recompute(ParticleSet& P)
+  {
+    APP_ABORT("Need specialization of DiracDetermiantEval::recompute(ParticleSet& P).\n");
+  }
+  
+  virtual void recompute(MCWalkerConfiguration &W, bool firstTime)
+  {
+    std::cerr << "Need specialization of DiracDetermiantEval::recompute.\n";
+    abort();
+  }
+
+  virtual void update (std::vector<Walker_t*> &walkers, int iat)
+  {
+    APP_ABORT("Need specialization of DiracDetermiantEval::update.\n");
+  }
+
+  virtual void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList)
+  {
+    APP_ABORT("Need specialization of DiracDetermiantEval::update.\n");
+  }
+
+
+  virtual QMCT::ValueType ratio(ParticleSet& P, int iat);
 };
 
 template<Batching batching>
 class DiracDeterminantEval : public DiracDeterminantEvalDefault
 {
-  
+
 };
 
 template<>
@@ -42,9 +112,12 @@ class DiracDeterminantEval<Batching::SINGLE> : public DiracDeterminantEvalDefaul
 template<>
 class DiracDeterminantEval<Batching::BATCHED> : public DiracDeterminantEvalDefault
 {
+public:
+  DiracDeterminantEval();
+  
   using CudaValueType = QMCT::CudaValueType;
   using CudaRealType = QMCT::CudaRealType;
-  protected:
+protected:
   /////////////////////////////////////////////////////
   // Functions for vectorized evaluation and updates //
   /////////////////////////////////////////////////////
@@ -142,7 +215,37 @@ class DiracDeterminantEval<Batching::BATCHED> : public DiracDeterminantEvalDefau
     NLratios_host.resize(NLrowBufferRows);
   }
 
-  void reserve (PointerPool<gpu::device_vector<QMCT::CudaValueType> > &pool, SPOSetSingle& Phi);
+  void reserve (PointerPool<gpu::device_vector<QMCT::CudaValueType> > &pool, SPOSetBatched& Phi,
+		int num_particles, int num_orbitals);
+
+  void update (std::vector<Walker_t*> &walkers, int iat);
+  void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList);
+  void addLog (MCWalkerConfiguration &W, std::vector<QMCT::RealType> &logPsi);
+
+  void addGradient(MCWalkerConfiguration &W, int iat,
+                   std::vector<QMCT::GradType> &grad);
+
+  void calcGradient(MCWalkerConfiguration &W, int iat,
+                    std::vector<QMCT::GradType> &grad);
+
+  void ratio (MCWalkerConfiguration &W, int iat,
+              std::vector<QMCT::ValueType> &psi_ratios);
+
+  void ratio (MCWalkerConfiguration &W, int iat,
+              std::vector<QMCT::ValueType> &psi_ratios,	std::vector<QMCT::GradType>  &grad);
+
+  void ratio (MCWalkerConfiguration &W, int iat,
+              std::vector<QMCT::ValueType> &psi_ratios,	std::vector<QMCT::GradType>  &grad,
+              std::vector<QMCT::ValueType> &lapl);
+  void calcRatio (MCWalkerConfiguration &W, int iat,
+                  std::vector<QMCT::ValueType> &psi_ratios,	std::vector<QMCT::GradType>  &grad,
+                  std::vector<QMCT::ValueType> &lapl);
+  void addRatio (MCWalkerConfiguration &W, int iat,
+                 std::vector<QMCT::ValueType> &psi_ratios,	std::vector<QMCT::GradType>  &grad,
+                 std::vector<QMCT::ValueType> &lapl);
+  void gradLapl (MCWalkerConfiguration &W, SSTA::GradMatrix_t &grads,
+                 SSTA::ValueMatrix_t &lapl);
+
 
 };
 

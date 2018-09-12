@@ -29,6 +29,8 @@
 #include "OhmmsPETE/OhmmsArray.h"
 #include "QMCWaveFunctions/BsplineFactory/temp_batch_type.h"
 #include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/SPOSetSingle.h"
+#include "QMCWaveFunctions/SPOSetBatched.h"
 
 namespace qmcplusplus
 {

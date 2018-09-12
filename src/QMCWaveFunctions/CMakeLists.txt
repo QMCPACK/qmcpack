@@ -66,15 +66,15 @@ SET(JASTROW_SRCS
   Fermion/SPOSetProxyForMSD.cpp
   )
 
-# IF(QMC_COMPLEX)
-#   SET(FERMION_SRCS ${FERMION_SRCS}
-#     ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
-#     )
-# ELSE(QMC_COMPLEX)
-#   SET(FERMION_SRCS ${FERMION_SRCS}
-#     ElectronGas/ElectronGasOrbitalBuilder.cpp
-#     )
-# ENDIF(QMC_COMPLEX)
+IF(QMC_COMPLEX)
+  SET(FERMION_SRCS ${FERMION_SRCS}
+    ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
+    )
+ELSE(QMC_COMPLEX)
+  SET(FERMION_SRCS ${FERMION_SRCS}
+    ElectronGas/ElectronGasOrbitalBuilder.cpp
+    )
+ENDIF(QMC_COMPLEX)
 
 
 # wavefunctions only availbale to 3-dim problems
@@ -102,7 +102,7 @@ IF(OHMMS_DIM MATCHES 3)
       Fermion/determinant_update.cu 
       Fermion/DiracDeterminantBatched.cpp
       Fermion/DiracDeterminantEvalBatched.cpp
-      Fermion/SlaterDetCUDA.cpp
+      Fermion/SlaterDetBatched.cpp
       TrialWaveFunction_CUDA.cpp
       )
     IF(ENABLE_SOA)
@@ -186,9 +186,12 @@ ENDIF(OHMMS_DIM MATCHES 3)
 
 SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/DiracDeterminantBase.cpp
+  Fermion/DiracDeterminantEvalDefault.cpp
+  Fermion/DiracDeterminantSingle.cpp
   Fermion/DiracDeterminantSoA.cpp
   Fermion/DiracDeterminantOpt.cpp
   Fermion/SlaterDet.cpp
+  Fermion/SlaterDetSingle.cpp
   Fermion/SlaterDetBuilder.cpp
   Fermion/MultiSlaterDeterminant.cpp
   Fermion/MultiSlaterDeterminantFast.cpp

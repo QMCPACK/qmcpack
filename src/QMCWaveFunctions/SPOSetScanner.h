@@ -15,7 +15,7 @@
 
 #include "Particle/ParticleSet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
-#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/SPOSetSingle.h"
 #include "OhmmsData/AttributeSet.h"
 
 namespace qmcplusplus
@@ -26,8 +26,9 @@ namespace qmcplusplus
   class SPOSetScanner
   {
   public:
+    
     typedef std::map<std::string,ParticleSet*>         PtclPoolType;
-    typedef std::map<std::string,SPOSetPtr>        SPOMapType;
+    typedef std::map<std::string,SPOSet*>        SPOMapType;
     typedef QMCTraits::RealType                        RealType;
     typedef QMCTraits::ValueType                       ValueType;
     typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
@@ -64,7 +65,7 @@ namespace qmcplusplus
 
       // scanning the SPO sets
       xmlNodePtr cur_save=cur;
-      SPOSetPtr mySPOSet;
+      SPOSet* mySPOSet;
       for (SPOMapType::iterator spo_iter=SPOMap.begin(); spo_iter!=SPOMap.end(); spo_iter++)
       {
         app_log() << "  Processing SPO " << spo_iter->first << std::endl;
@@ -96,7 +97,7 @@ namespace qmcplusplus
     }
 
     // scanning a path
-    void scan_path(xmlNodePtr cur, SPOSetPtr mySPOSet, std::string prefix)
+    void scan_path(xmlNodePtr cur, SPOSet* mySPOSet, std::string prefix)
     {
       std::string file_name;
       file_name=prefix+"_v.dat";
@@ -156,7 +157,7 @@ namespace qmcplusplus
         target.R[ind][1] = (to_pos[1]-from_pos[1]) * Delta * icount + from_pos[1];
         target.R[ind][2] = (to_pos[2]-from_pos[2]) * Delta * icount + from_pos[2];
         target.makeMoveAndCheck(ind, zero_pos);
-        mySPOSet->evaluate(target, ind, SPO_v, SPO_g, SPO_l);
+        dynamic_cast<SPOSetSingle*>(mySPOSet)->evaluate(target, ind, SPO_v, SPO_g, SPO_l);
         std::ostringstream o;
         o << "x_y_z  " << std::fixed << std::setprecision(7) << target.R[ind][0] << " " << target.R[ind][1] << " " << target.R[ind][2] ;
         output_v << o.str() << " : "  << std::scientific << std::setprecision(12);

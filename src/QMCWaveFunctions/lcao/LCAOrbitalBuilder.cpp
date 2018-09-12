@@ -502,7 +502,7 @@ namespace qmcplusplus
   }
 
 
-  SPOSet* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
+  SPOSetSingle* LCAOrbitalBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     ReportEngine PRE(ClassName,"createSPO(xmlNodePtr)");
     std::string spo_name(""), id, cusp_file(""), optimize("no");

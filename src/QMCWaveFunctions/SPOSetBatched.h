@@ -26,7 +26,8 @@ namespace qmcplusplus
 class SPOSetBatched : public SPOSet,
 		      public SPOSetEvaluation<Batching::BATCHED>
 {
-  
+public:
+  using SPOSetPtr = SPOSetBatched*;
 };
 
 }

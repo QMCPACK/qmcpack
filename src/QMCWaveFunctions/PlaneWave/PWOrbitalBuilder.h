@@ -23,6 +23,9 @@
 #else
 #include "QMCWaveFunctions/PlaneWave/PWRealOrbitalSet.h"
 #endif
+
+#include "QMCWaveFunctions/SPOSetSingle.h"
+
 namespace qmcplusplus
 {
 
@@ -44,7 +47,8 @@ private:
   typedef PWRealOrbitalSet::PWBasisPtr PWBasisPtr;
 #endif
 
-  std::map<std::string,SPOSetPtr> spomap;
+  //using SPOSetPtr = SPOSetSingle::SPOSetPtr;
+  std::map<std::string,SPOSet*> spomap;
   PtclPoolType& ptclPool;
 
   ///Read routine for HDF wavefunction file version 0.10
@@ -75,7 +79,7 @@ private:
   hid_t getH5(xmlNodePtr cur, const char* aname);
   bool putSlaterDet(xmlNodePtr cur);
   bool createPWBasis(xmlNodePtr cur);
-  SPOSet* createPW(xmlNodePtr cur, int spinIndex);
+  SPOSetSingle* createPW(xmlNodePtr cur, int spinIndex);
 #if defined(QMC_COMPLEX)
   void transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, PWOrbitalSet& pwFunc);
 #endif

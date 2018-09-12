@@ -5,32 +5,31 @@
 // Copyright (c) 2018 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
-//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
-//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
-//                    Ying Wai Li, yingwaili@ornl.gov, Oak Ridge National Laboratory
-//                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
-//                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//   initially refactored from DiracDeterminantBase.h
 //
-// File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+// File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/**@file DiracDeterminantBatched.h
- * @brief Declaration of DiracDeterminantBatched a specialization of 
- *        for batched walkers of DiracDeterminant with with a 
+/**@file DiracDeterminantSingle.h
+ * @brief Declaration of DiracDeterminantSincle specialization of 
+ *        DiracDeterminant for single walkers
  *        S(ingle)P(article)O(rbital)SetBase
  */
-#ifndef QMCPLUSPLUS_DIRAC_DETERMINANT_BATCHED_H
-#define QMCPLUSPLUS_DIRAC_DETERMINANT_BATCHED_H
+#ifndef QMCPLUSPLUS_DIRAC_DETERMINANT_SINGLE_H
+#define QMCPLUSPLUS_DIRAC_DETERMINANT_SINGLE_H
+
 #include <typeinfo>
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantEval.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSetBatched.h"
+#include "QMCWaveFunctions/SPOSetSingle.h"
 #include "QMCWaveFunctions/Fermion/determinant_update.h"
 #include "Numerics/CUDA/cuda_inverse.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/SPOSetTypeAliases.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantEval.h"
+#include "QMCWaveFunctions/BsplineFactory/temp_batch_type.h"
 
 namespace qmcplusplus
 {
@@ -39,18 +38,16 @@ class DiracDeterminantSingle : public DiracDeterminantBase,
                                public DiracDeterminantEval<Batching::SINGLE>
 {
 public:
-  using SSTA = SPOSetTypeAliases;
-  typedef SSTA::IndexVector_t IndexVector_t;
-  typedef SSTA::ValueVector_t ValueVector_t;
-  typedef SSTA::ValueMatrix_t ValueMatrix_t;
-  typedef SSTA::GradVector_t  GradVector_t;
-  typedef SSTA::GradMatrix_t  GradMatrix_t;
-  typedef ParticleSet::Walker_t     Walker_t;
-
+  
   using SPOSetPtr = SPOSetSingle*;
+  using Walker_t =  ParticleSet::Walker_t;
   SPOSetPtr Phi; //Out local Phi_
 
-  virtual SPOSetPtr get_phi() { return Phi; }
+  DiracDeterminantSingle(SPOSetPtr const &spos, int first=0);
+  //DiracDeterminantSingle(const DiracDeterminantSingle& s) = delete;
+
+  
+  virtual SPOSet* getPhi() { return dynamic_cast<SPOSet*>(Phi); }
 
   ///optimizations  are disabled
   virtual inline void checkInVariables(opt_variables_type& active)
@@ -67,6 +64,13 @@ public:
     myVars.getIndex(active);
   }
 
+  ValueType
+  ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
+
+  void updateAfterSweep(ParticleSet& P,
+			ParticleSet::ParticleGradient_t& G,
+			ParticleSet::ParticleLaplacian_t& L);
+  
   virtual void resetParameters(const opt_variables_type& active)
   {
     Phi->resetParameters(active);
@@ -84,148 +88,40 @@ public:
     targetPtcl = &P;
   }
 
-  DiracDeterminantSingle(SPOSetPtr const &spos, int first=0);
-  DiracDeterminantSingle(const DiracDeterminantSingle& s) = delete;
-
-protected:
-  /////////////////////////////////////////////////////
-  // Functions for vectorized evaluation and updates //
-  /////////////////////////////////////////////////////
-  int RowStride;
-  size_t AOffset, AinvOffset, newRowOffset, AinvDeltaOffset,
-         AinvColkOffset, gradLaplOffset, newGradLaplOffset, 
-         AWorkOffset, AinvWorkOffset;
-  gpu::host_vector<CudaValueType*> UpdateList;
-  gpu::device_vector<CudaValueType*> UpdateList_d;
-  gpu::host_vector<updateJob> UpdateJobList;
-  gpu::device_vector<updateJob> UpdateJobList_d;
-  std::vector<CudaValueType*> srcList, destList, AList, AinvList, newRowList,
-                              AinvDeltaList, AinvColkList, gradLaplList, newGradLaplList, 
-                              AWorkList, AinvWorkList, GLList;
-  gpu::device_vector<CudaValueType*> srcList_d, destList_d, AList_d, AinvList_d, newRowList_d, 
-                                    AinvDeltaList_d, AinvColkList_d, gradLaplList_d, 
-                                    newGradLaplList_d, AWorkList_d, AinvWorkList_d, GLList_d;
-  gpu::device_vector<int> PivotArray_d;
-  gpu::device_vector<int> infoArray_d;
-  gpu::host_vector<int> infoArray_host;
-  gpu::device_vector<CudaValueType> ratio_d;
-  gpu::host_vector<CudaValueType> ratio_host;
-  gpu::device_vector<CudaValueType> gradLapl_d;
-  gpu::host_vector<CudaValueType> gradLapl_host;
-  gpu::device_vector<int> iatList_d;
-  gpu::host_vector<int> iatList;
-
-  // Data members for nonlocal psuedopotential ratio evaluation
-  static const int NLrowBufferRows = 4800;
-
-  gpu::device_vector<CudaValueType> NLrowBuffer_d;
-  gpu::host_vector<CudaValueType> NLrowBuffer_host;
-  gpu::device_vector<CudaValueType*> SplineRowList_d;
-  gpu::host_vector<CudaValueType*> SplineRowList_host;
-  gpu::device_vector<CudaValueType*> RatioRowList_d;
-  gpu::host_vector<CudaValueType*> RatioRowList_host[2];
-  gpu::device_vector<CudaRealType> NLposBuffer_d;
-  gpu::host_vector<CudaRealType> NLposBuffer_host;
-  gpu::device_vector<CudaValueType*> NLAinvList_d;
-  gpu::host_vector<CudaValueType*> NLAinvList_host[2];
-  gpu::device_vector<int> NLnumRatioList_d;
-  gpu::host_vector<int> NLnumRatioList_host[2];
-  gpu::device_vector<int> NLelecList_d;
-  gpu::host_vector<int> NLelecList_host[2];
-  gpu::device_vector<CudaValueType> NLratios_d[2];
-  gpu::host_vector<CudaValueType> NLratios_host;
-  gpu::device_vector<CudaValueType*> NLratioList_d;
-  gpu::host_vector<CudaValueType*> NLratioList_host[2];
-
-  void resizeLists(int numWalkers)
-  {
-    AList.resize(numWalkers);
-    AList_d.resize(numWalkers);
-    AinvList.resize(numWalkers);
-    AinvList_d.resize(numWalkers);
-    newRowList.resize(numWalkers);
-    newRowList_d.resize(numWalkers);
-    AinvDeltaList.resize(numWalkers);
-    AinvDeltaList_d.resize(numWalkers);
-    AinvColkList.resize(numWalkers);
-    AinvColkList_d.resize(numWalkers);
-    ratio_d.resize(5*numWalkers);
-    ratio_host.resize(5*numWalkers);
-    gradLaplList.resize(numWalkers);
-    gradLaplList_d.resize(numWalkers);
-    GLList.resize(numWalkers);
-    GLList_d.resize(numWalkers);
-    newGradLaplList.resize(numWalkers);
-    newGradLaplList_d.resize(numWalkers);
-    AWorkList.resize(numWalkers);
-    AinvWorkList.resize(numWalkers);
-    AWorkList_d.resize(numWalkers);
-    AinvWorkList_d.resize(numWalkers);
-    iatList.resize(numWalkers);
-    iatList_d.resize(numWalkers);
-    // HACK HACK HACK
-    // gradLapl_d.resize   (numWalkers*NumOrbitals*4);
-    // gradLapl_host.resize(numWalkers*NumOrbitals*4);
-    infoArray_d.resize(numWalkers*2);
-    infoArray_host.resize(numWalkers*2);
-    PivotArray_d.resize(numWalkers*NumOrbitals);
-    gradLapl_d.resize   (numWalkers*RowStride*4);
-    gradLapl_host.resize(numWalkers*RowStride*4);
-    NLrowBuffer_d.resize(NLrowBufferRows*RowStride);
-    NLrowBuffer_host.resize(NLrowBufferRows*RowStride);
-    SplineRowList_d.resize(NLrowBufferRows);
-    SplineRowList_host.resize(NLrowBufferRows);
-    for (int i=0; i<NLrowBufferRows; i++)
-      SplineRowList_host[i] = &(NLrowBuffer_d.data()[i*RowStride]);
-    SplineRowList_d = SplineRowList_host;
-    NLposBuffer_d.resize   (OHMMS_DIM * NLrowBufferRows);
-    NLposBuffer_host.resize(OHMMS_DIM * NLrowBufferRows);
-    for(int i = 0; i < 2; ++i)
-      NLratios_d[i].resize(NLrowBufferRows);
-    NLratios_host.resize(NLrowBufferRows);
-  }
-
+/** return the ratio only for the  iat-th partcle move
+ * @param P current configuration
+ * @param iat the particle thas is being moved
+ */
+  ValueType ratio(ParticleSet& P, int iat);
+  
 public:
-  ValueType ratio(ParticleSet& P, int iat)
-  {
-    return DiracDeterminantBase::ratio (P, iat);
-  }
+  DiracDeterminantSingle* makeCopy(SPOSetPtr spo) const;
+  
 
-  void update (std::vector<Walker_t*> &walkers, int iat);
-  void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList);
+  void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios);
 
-  void recompute (MCWalkerConfiguration &W, bool firstTime);
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
-  void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi);
+  GradType evalGradSource(ParticleSet& P, ParticleSet& source,
+			  int iat);
 
-  void addGradient(MCWalkerConfiguration &W, int iat,
-                   std::vector<GradType> &grad);
+  GradType evalGradSourcep(ParticleSet& P, ParticleSet& source,int iat,
+			   TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
+			   TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
 
-  void calcGradient(MCWalkerConfiguration &W, int iat,
-                    std::vector<GradType> &grad);
+  GradType evalGradSource(ParticleSet& P, ParticleSet& source,int iat,
+			  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
+			  TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
 
-  void ratio (MCWalkerConfiguration &W, int iat,
-              std::vector<ValueType> &psi_ratios);
-
-  void ratio (MCWalkerConfiguration &W, int iat,
-              std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad);
-
-  void ratio (MCWalkerConfiguration &W, int iat,
-              std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-              std::vector<ValueType> &lapl);
-  void calcRatio (MCWalkerConfiguration &W, int iat,
-                  std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-                  std::vector<ValueType> &lapl);
-  void addRatio (MCWalkerConfiguration &W, int iat,
-                 std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-                 std::vector<ValueType> &lapl);
+  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
+    
+  void recompute(ParticleSet& P);
+    
 
   void ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iatList,
               std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
               std::vector<GradType>  &grad, std::vector<ValueType> &lapl);
 
-  void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
-                 ValueMatrix_t &lapl);
 
   void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
                  std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
@@ -233,5 +129,6 @@ public:
   void NLratios_CPU (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
                      std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
 };
+
 }
-#endif // QMCPLUSPLUS_DIRAC_DETERMINANT_BATCHED_H
+#endif // QMCPLUSPLUS_DIRAC_DETERMINANT_SINGLE_H

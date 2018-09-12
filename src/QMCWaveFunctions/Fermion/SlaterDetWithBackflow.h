@@ -17,15 +17,17 @@
 #define QMCPLUSPLUS_SLATERDETERMINANT_WITHBACKFLOW_H
 #include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#include "QMCWaveFunctions/Fermion/SlaterDet.h"
+#include "QMCWaveFunctions/Fermion/SlaterDetSingle.h"
 #include<cmath>
 
 namespace qmcplusplus
 {
 
-class SlaterDetWithBackflow: public SlaterDet
+class SlaterDetWithBackflow: public SlaterDetSingle
 {
 public:
+  typedef DiracDeterminantSingle Determinant_t;
+  
   BackflowTransformation *BFTrans;
 
   /**  constructor
@@ -147,7 +149,7 @@ public:
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
-  SPOSetPtr getPhi(int i=0)
+  SPOSet* getPhi(int i=0)
   {
     return Dets[i]->getPhi();
   }

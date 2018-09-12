@@ -21,18 +21,19 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantSingle.h"
 #include "OhmmsPETE/OhmmsArray.h"
+#include "QMCWaveFunctions/SPOSetTypeAliases.h"
 
 namespace qmcplusplus
 {
 
 /** class to handle determinants with backflow
  */
-class DiracDeterminantWithBackflow: public DiracDeterminantBase
+class DiracDeterminantWithBackflow: public DiracDeterminantSingle
 {
 public:
-
+  using SSTA = SPOSetTypeAliases;
   typedef SSTA::GGGType       GGGType;
   typedef SSTA::GGGVector_t   GGGVector_t;
   typedef SSTA::GGGMatrix_t   GGGMatrix_t;
@@ -44,7 +45,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetPtr const &spos, BackflowTransformation * BF, int first=0);
+  DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetSingle* const &spos, BackflowTransformation * BF, int first=0);
 
   ///default destructor
   ~DiracDeterminantWithBackflow();
@@ -61,7 +62,7 @@ public:
 
   ///** return a clone of Phi
   // */
-  //SPOSetPtr clonePhi() const;
+  //SPOSet* clonePhi() const;
 
   ///set BF pointers
   void setBF(BackflowTransformation* bf)
@@ -144,7 +145,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  DiracDeterminantWithBackflow* makeCopy(SPOSet* spo) const;
+  DiracDeterminantWithBackflow* makeCopy(SPOSetSingle* spo) const;
 
   inline ValueType rcdot(TinyVector<RealType,OHMMS_DIM>& lhs, TinyVector<ValueType,OHMMS_DIM>& rhs)
   {

@@ -15,16 +15,16 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "QMCWaveFunctions/Fermion/SlaterDet.h"
+#include "QMCWaveFunctions/Fermion/SlaterDetSingle.h"
 #include "Message/Communicate.h"
 
 namespace qmcplusplus
 {
 
-SlaterDet::SlaterDet(ParticleSet& targetPtcl)
+SlaterDetSingle::SlaterDetSingle(ParticleSet& targetPtcl)
 {
   Optimizable = false;
-  OrbitalName = "SlaterDet";
+  OrbitalName = "SlaterDetSingle";
 
   Last.resize(targetPtcl.groups());
   for (int i = 0; i < Last.size(); ++i)
@@ -34,13 +34,13 @@ SlaterDet::SlaterDet(ParticleSet& targetPtcl)
 }
 
 ///destructor
-SlaterDet::~SlaterDet()
+SlaterDetSingle::~SlaterDetSingle()
 {
   ///clean up SPOSet
 }
 
 ///add a new SPOSet to the list of determinants
-void SlaterDet::add(SPOSet* sposet, const std::string& aname)
+void SlaterDetSingle::add(SPOSet* sposet, const std::string& aname)
 {
   if (mySPOSet.find(aname) == mySPOSet.end())
   {
@@ -49,24 +49,24 @@ void SlaterDet::add(SPOSet* sposet, const std::string& aname)
   }
   else
   {
-    APP_ABORT(" SlaterDet::add(SPOSet*, const std::string&) Cannot reuse the " + aname )
+    APP_ABORT(" SlaterDetSingle::add(SPOSet*, const std::string&) Cannot reuse the " + aname )
     ;
   }
 }
 
 ///add a new DiracDeterminant to the list of determinants
-void SlaterDet::add(DiracDeterminantBase* det, int ispin)
+void SlaterDetSingle::add(Determinant_t* det, int ispin)
 {
   if (Dets[ispin]!=nullptr)
   {
-    APP_ABORT("SlaterDet::add(Determinant_t* det, int ispin) is alreaded instantiated.");
+    APP_ABORT("SlaterDetSingle::add(Determinant_t* det, int ispin) is alreaded instantiated.");
   }
   else
     Dets[ispin] = det;
   Optimizable = Optimizable || det->Optimizable;
 }
 
-void SlaterDet::checkInVariables(opt_variables_type& active)
+void SlaterDetSingle::checkInVariables(opt_variables_type& active)
 {
   myVars.clear();
   if (Optimizable)
@@ -77,7 +77,7 @@ void SlaterDet::checkInVariables(opt_variables_type& active)
     }
 }
 
-void SlaterDet::checkOutVariables(const opt_variables_type& active)
+void SlaterDetSingle::checkOutVariables(const opt_variables_type& active)
 {
   myVars.clear();
   if (Optimizable)
@@ -90,18 +90,18 @@ void SlaterDet::checkOutVariables(const opt_variables_type& active)
 }
 
 ///reset all the Dirac determinants, Optimizable is true
-void SlaterDet::resetParameters(const opt_variables_type& active)
+void SlaterDetSingle::resetParameters(const opt_variables_type& active)
 {
   if (Optimizable)
     for (int i = 0; i < Dets.size(); i++)
       Dets[i]->resetParameters(active);
 }
 
-void SlaterDet::reportStatus(std::ostream& os)
+void SlaterDetSingle::reportStatus(std::ostream& os)
 {
 }
 
-void SlaterDet::resetTargetParticleSet(ParticleSet& P)
+void SlaterDetSingle::resetTargetParticleSet(ParticleSet& P)
 {
   std::map<std::string, SPOSet*>::iterator sit(mySPOSet.begin());
   while (sit != mySPOSet.end())
@@ -110,18 +110,18 @@ void SlaterDet::resetTargetParticleSet(ParticleSet& P)
     ++sit;
   }
   //BasisSet->resetTargetParticleSet(P);
-  //LOGMSG("\nSlaterDet::resetTargetParticleSet")
+  //LOGMSG("\nSlaterDetSingle::resetTargetParticleSet")
   for (int i = 0; i < Dets.size(); i++)
     Dets[i]->resetTargetParticleSet(P);
 }
 
-void SlaterDet::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
+void SlaterDetSingle::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   for (int i = 0; i < Dets.size(); ++i)
     Dets[i]->evaluateRatiosAlltoOne(P, ratios);
 }
 
-SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,
+SlaterDetSingle::RealType SlaterDetSingle::evaluateLog(ParticleSet& P,
     ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
 {
   //ValueType psi = 1.0;
@@ -137,13 +137,13 @@ SlaterDet::RealType SlaterDet::evaluateLog(ParticleSet& P,
   return LogValue;
 }
 
-void SlaterDet::recompute(ParticleSet& P)
+void SlaterDetSingle::recompute(ParticleSet& P)
 {
   for (int i = 0; i < Dets.size(); ++i)
     Dets[i]->recompute(P);
 }
 
-void SlaterDet::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad_psi)
+void SlaterDetSingle::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad_psi)
 {
 	grad_grad_psi.resize(P.getTotalNum());
 	HessVector_t tmp;
@@ -161,15 +161,15 @@ void SlaterDet::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad_psi)
 	
 }
 
-void SlaterDet::registerData(ParticleSet& P, WFBufferType& buf)
+void SlaterDetSingle::registerData(ParticleSet& P, WFBufferType& buf)
 {
-  DEBUG_PSIBUFFER(" SlaterDet::registerData ",buf.current());
+  DEBUG_PSIBUFFER(" SlaterDetSingle::registerData ",buf.current());
   for (int i = 0; i < Dets.size(); ++i)
     Dets[i]->registerData(P, buf);
-  DEBUG_PSIBUFFER(" SlaterDet::registerData ",buf.current());
+  DEBUG_PSIBUFFER(" SlaterDetSingle::registerData ",buf.current());
 }
 
-void SlaterDet::updateAfterSweep(ParticleSet& P,
+void SlaterDetSingle::updateAfterSweep(ParticleSet& P,
       ParticleSet::ParticleGradient_t& G,
       ParticleSet::ParticleLaplacian_t& L)
 {
@@ -179,9 +179,9 @@ void SlaterDet::updateAfterSweep(ParticleSet& P,
   }
 }
 
-SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+SlaterDetSingle::RealType SlaterDetSingle::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
-  DEBUG_PSIBUFFER(" SlaterDet::updateBuffer ",buf.current());
+  DEBUG_PSIBUFFER(" SlaterDetSingle::updateBuffer ",buf.current());
   //ValueType psi = 1.0;
   //for(int i=0; i<Dets.size(); i++) psi *= Dets[i]->updateBuffer(P,buf,fromscratch);
   //return LogValue = evaluateLogAndPhase(psi,PhaseValue);
@@ -192,21 +192,21 @@ SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P, WFBufferType& buf, b
     LogValue += Dets[i]->updateBuffer(P, buf, fromscratch);
     PhaseValue += Dets[i]->PhaseValue;
   }
-  DEBUG_PSIBUFFER(" SlaterDet::updateBuffer ",buf.current());
+  DEBUG_PSIBUFFER(" SlaterDetSingle::updateBuffer ",buf.current());
   return LogValue;
 }
 
-void SlaterDet::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
+void SlaterDetSingle::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
-  DEBUG_PSIBUFFER(" SlaterDet::copyFromBuffer ",buf.current());
+  DEBUG_PSIBUFFER(" SlaterDetSingle::copyFromBuffer ",buf.current());
   for (int i = 0; i < Dets.size(); i++)
     Dets[i]->copyFromBuffer(P, buf);
-  DEBUG_PSIBUFFER(" SlaterDet::copyFromBuffer ",buf.current());
+  DEBUG_PSIBUFFER(" SlaterDetSingle::copyFromBuffer ",buf.current());
 }
 
-WaveFunctionComponentPtr SlaterDet::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr SlaterDetSingle::makeClone(ParticleSet& tqp) const
 {
-  SlaterDet* myclone = new SlaterDet(tqp);
+  SlaterDetSingle* myclone = new SlaterDetSingle(tqp);
   myclone->Optimizable=Optimizable;
   if (mySPOSet.size() > 1)
   {
@@ -224,7 +224,7 @@ WaveFunctionComponentPtr SlaterDet::makeClone(ParticleSet& tqp) const
       {
         if (spo == Dets[i]->getPhi())
         {
-          DiracDeterminantBase* newD=Dets[i]->makeCopy(dynamic_cast<SPOSet*>(spo_clone));
+          Determinant_t* newD=Dets[i]->makeCopy(dynamic_cast<SPOSetSingle*>(spo_clone));
           newD->resetTargetParticleSet(tqp);
           myclone->add(newD, i);
         }
@@ -240,7 +240,7 @@ WaveFunctionComponentPtr SlaterDet::makeClone(ParticleSet& tqp) const
     myclone->add(spo_clone, spo->objectName);
     for (int i = 0; i < Dets.size(); ++i)
     {
-      DiracDeterminantBase* newD=Dets[i]->makeCopy(dynamic_cast<SPOSet*>(spo_clone));
+      Determinant_t* newD=Dets[i]->makeCopy(dynamic_cast<SPOSetSingle*>(spo_clone));
       newD->resetTargetParticleSet(tqp);
       myclone->add(newD, i);
     }

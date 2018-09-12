@@ -337,7 +337,7 @@ MultiDiracDeterminantBase::MultiDiracDeterminantBase(const MultiDiracDeterminant
   this->DetCalculator.resize(s.NumPtcls);
 }
 
-SPOSetPtr  MultiDiracDeterminantBase::clonePhi() const
+SPOSetSingle*  MultiDiracDeterminantBase::clonePhi() const
 {
   return Phi->makeClone();
 }
@@ -352,7 +352,7 @@ WaveFunctionComponentPtr MultiDiracDeterminantBase::makeClone(ParticleSet& tqp) 
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-MultiDiracDeterminantBase::MultiDiracDeterminantBase(SPOSetPtr const &spos, int first):
+MultiDiracDeterminantBase::MultiDiracDeterminantBase(SPOSetSingle* const &spos, int first):
   NP(0),Phi(spos),FirstIndex(first),ReferenceDeterminant(0), ciConfigList(nullptr),
   UpdateTimer("MultiDiracDeterminantBase::update"),
   RatioTimer("MultiDiracDeterminantBase::ratio"),

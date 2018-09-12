@@ -52,16 +52,48 @@ public:
   using SPOSetPtr = SPOSetBatched*;
   SPOSetPtr Phi; //Out local Phi_
 
-  SPOSetPtr get_phi() { return Phi; }
+  SPOSetPtr getPhi() { return Phi; }
   
-  DiracDeterminantBatched(SPOSetPtr const &spos, int first=0);
+  DiracDeterminantBatched(SPOSet* const &spos, int first=0);
   DiracDeterminantBatched(const DiracDeterminantBatched& s) = delete;
 
 
 public:
-  ValueType ratio(ParticleSet& P, int iat)
+
+  void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios);
+
+  DiracDeterminantBatched* makeCopy(SPOSet* spo) const;
+
+    ///optimizations  are disabled
+  virtual inline void checkInVariables(opt_variables_type& active)
   {
-    return DiracDeterminantBase::ratio (P, iat);
+    Phi->checkInVariables(active);
+    Phi->checkInVariables(myVars);
+  }
+
+  virtual inline void checkOutVariables(const opt_variables_type& active)
+  {
+    Phi->checkOutVariables(active);
+    myVars.clear();
+    myVars.insertFrom(Phi->myVars);
+    myVars.getIndex(active);
+  }
+
+  virtual void resetParameters(const opt_variables_type& active)
+  {
+    Phi->resetParameters(active);
+    for(int i=0; i<myVars.size(); ++i)
+    {
+      int ii=myVars.Index[i];
+      if(ii>=0)
+        myVars[i]= active[ii];
+    }
+  }
+
+  virtual void resetTargetParticleSet(ParticleSet& P)
+  {
+    Phi->resetTargetParticleSet(P);
+    targetPtcl = &P;
   }
 
   void update (std::vector<Walker_t*> &walkers, int iat);
@@ -105,6 +137,11 @@ public:
 
   void NLratios_CPU (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
                      std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
+
+
+
+
+
 };
 }
 #endif // QMCPLUSPLUS_DIRAC_DETERMINANT_BATCHED_H

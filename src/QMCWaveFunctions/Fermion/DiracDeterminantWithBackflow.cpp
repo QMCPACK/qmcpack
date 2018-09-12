@@ -29,7 +29,7 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetPtr const &spos, BackflowTransformation * BF, int first): DiracDeterminantBase(spos,first)
+DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetPtr const &spos, BackflowTransformation * BF, int first): DiracDeterminantSingle(spos,first)
 {
   Optimizable=true;
   OrbitalName="DiracDeterminantWithBackflow";
@@ -1029,7 +1029,7 @@ WaveFunctionComponentPtr DiracDeterminantWithBackflow::makeClone(ParticleSet& tq
   return 0;
 }
 
-DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetPtr spo) const
+DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetSingle* spo) const
 {
 //    BackflowTransformation *BF = BFTrans->makeClone();
   // mmorales: particle set is only needed to get number of particles, so using QP set here
@@ -1041,7 +1041,7 @@ DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetPtr s
 }
 
 DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s):
-  DiracDeterminantBase(s),BFTrans(s.BFTrans)
+  DiracDeterminantSingle(s),BFTrans(s.BFTrans)
 
 {
   registerTimers();

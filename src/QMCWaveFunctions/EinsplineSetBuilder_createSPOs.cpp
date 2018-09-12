@@ -33,7 +33,7 @@
 #include <QMCWaveFunctions/einspline_helper.hpp>
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptor.h"
-
+#include "QMCWaveFunctions/SPOSetBatched.h"
 namespace qmcplusplus
 {
 
@@ -460,7 +460,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (useGPU == "yes" || useGPU == "1")
   {
     app_log() << "Initializing GPU data structures.\n";
-    OrbitalSet->initGPU();
+    dynamic_cast<SPOSetBatched*>(OrbitalSet)->initGPU();
   }
 #endif
   spo_timer->stop();

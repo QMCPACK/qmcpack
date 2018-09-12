@@ -41,7 +41,7 @@ namespace qmcplusplus
     LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, xmlNodePtr cur);
     ~LCAOrbitalBuilder();
     void loadBasisSetFromXML(xmlNodePtr cur);
-    SPOSet* createSPOSetFromXML(xmlNodePtr cur);
+    SPOSetSingle* createSPOSetFromXML(xmlNodePtr cur);
 
     private:
 

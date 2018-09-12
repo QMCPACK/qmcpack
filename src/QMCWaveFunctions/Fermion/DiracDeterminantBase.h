@@ -51,6 +51,7 @@ public:
   typedef SSTA::HessMatrix_t  HessMatrix_t;
   typedef SSTA::HessVector_t  HessVector_t;
   typedef SSTA::HessType      HessType;
+  typedef ParticleSet::Walker_t     Walker_t;
 
 #ifdef MIXED_PRECISION
   typedef ParticleSet::SingleParticleValue_t mValueType;
@@ -83,7 +84,7 @@ public:
   // */
   //SPOSetPtr clonePhi() const;
 
-  virtual SPOSetPtr getPhi() = 0;
+  virtual SPOSet* getPhi() = 0;
 
   inline IndexType rows() const
   {
@@ -106,24 +107,9 @@ public:
   void setBF(BackflowTransformation* BFTrans) {}
 
   
+
   ///invert psiM or its copies
   void invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat);
-
-  virtual void evaluateDerivatives(ParticleSet& P,
-                                   const opt_variables_type& active,
-                                   std::vector<RealType>& dlogpsi,
-                                   std::vector<RealType>& dhpsioverpsi);
-
-  // used by DiracDeterminantWithBackflow
-  virtual void evaluateDerivatives(ParticleSet& P,
-                                   const opt_variables_type& active,
-                                   int offset,
-                                   Matrix<RealType>& dlogpsi,
-                                   Array<GradType,3>& dG,
-                                   Matrix<RealType>& dL) {}
-
-  //virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
-  //                                     std::vector<RealType>& dgradlogpsi);
 
   inline void reportStatus(std::ostream& os)
   {
@@ -134,38 +120,10 @@ public:
 
   virtual void registerData(ParticleSet& P, WFBufferType& buf);
 
-  virtual void updateAfterSweep(ParticleSet& P,
-      ParticleSet::ParticleGradient_t& G,
-      ParticleSet::ParticleLaplacian_t& L);
-
   virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-  /** return the ratio only for the  iat-th partcle move
-   * @param P current configuration
-   * @param iat the particle thas is being moved
-   */
-  virtual ValueType ratio(ParticleSet& P, int iat);
-
-  /** compute multiple ratios for a particle move
-   */
-  virtual void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios);
-
-  virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  virtual GradType evalGrad(ParticleSet& P, int iat);
-  virtual GradType evalGradSource(ParticleSet &P, ParticleSet &source,
-                                  int iat);
-
-  virtual GradType evalGradSource
-  (ParticleSet& P, ParticleSet& source, int iat,
-   TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
-   TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
-
-  virtual GradType evalGradSourcep
-  (ParticleSet& P, ParticleSet& source, int iat,
-   TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
-   TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
 
   /** move was accepted, update the real container
    */
@@ -181,10 +139,6 @@ public:
               ParticleSet::ParticleGradient_t& G,
               ParticleSet::ParticleLaplacian_t& L) ;
 
-  virtual void recompute(ParticleSet& P);
-
-  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
-
   virtual WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   /** cloning function
@@ -197,7 +151,6 @@ public:
   virtual DiracDeterminantBase* makeCopy(SPOSet* spo) const;
 //       virtual DiracDeterminantBase* makeCopy(ParticleSet& tqp, SPOSet* spo) const {return makeCopy(spo); };
 
-  virtual void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
   ///total number of particles
   int NP;
   ///number of single-particle orbitals which belong to this Dirac determinant
@@ -262,15 +215,9 @@ public:
   ValueType *FirstAddressOfdV;
   ValueType *LastAddressOfdV;
 
-#ifdef QMC_CUDA
   /////////////////////////////////////////////////////
   // Functions for vectorized evaluation and updates //
   /////////////////////////////////////////////////////
-  virtual void recompute(MCWalkerConfiguration &W, bool firstTime)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::recompute.\n";
-    abort();
-  }
 
   virtual void
   reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool)
@@ -367,7 +314,6 @@ public:
     std::cerr << "Need specialization of DiracDetermiantBase::NLratios.\n";
     abort();
   }
-#endif
 };
 
 

@@ -17,6 +17,7 @@
 #include <QMCHamiltonians/QMCHamiltonianBase.h>
 #include <QMCWaveFunctions/CompositeSPOSet.h>
 #include <ParticleBase/RandomSeqGenerator.h>
+#include "QMCWaveFunctions/SPOSetTypeAliases.h"
 
 namespace qmcplusplus
 {
@@ -28,10 +29,11 @@ class DensityMatrices1B : public QMCHamiltonianBase
 
   enum{DIM=OHMMS_DIM};
 
+  using SSTA = SPOSetTypeAliases;
   typedef ValueType Value_t;
   typedef GradType  Grad_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::GradVector_t  GradVector_t;
+  typedef SSTA::ValueVector_t ValueVector_t;
+  typedef SSTA::GradVector_t  GradVector_t;
   typedef ParticleSet::ParticleLayout_t Lattice_t;
   typedef Vector<Value_t> Vector_t;
   typedef Matrix<Value_t> Matrix_t;
