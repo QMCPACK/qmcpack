@@ -15,7 +15,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 SET(SRC_DIR estimators)
 SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME unit_test_${SRC_DIR})
+SET(UTEST_NAME deterministic_unit_test_${SRC_DIR})
 #SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/hamiltonians)
 
 SET(SRCS test_accumulator.cpp test_local_energy_est.cpp test_manager.cpp)
