@@ -210,14 +210,12 @@ namespace qmcplusplus {
         const int norb=Ainv.rows();
         const int lda_Binv=Binv.cols();
         T temp[lda_Binv];
+        // save AinvRow to new_AinvRow
+        simd::copy_n(AinvRow, norb, new_AinvRow);
         // multiply Ainv_U (NxK) Binv(KxK) V(KxN) AinvRow right to the left
-        BLAS::gemv('T', norb, delay_count, cone, V.data(), norb, AinvRow, 1, czero, new_AinvRow, 1);
-        // save new_AinvRow to B[delay_count]
-        simd::copy_n(new_AinvRow, delay_count, B[delay_count]);
-        BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, new_AinvRow, 1, czero, temp, 1);
-        BLAS::gemv('N', norb, delay_count, -cone, Ainv_U.data(), norb, temp, 1, czero, new_AinvRow, 1);
-        // AinvRow - new_AinvRow
-        simd::add(norb, AinvRow, new_AinvRow);
+        BLAS::gemv('T', norb, delay_count, cone, V.data(), norb, AinvRow, 1, czero, B[delay_count], 1);
+        BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, B[delay_count], 1, czero, temp, 1);
+        BLAS::gemv('N', norb, delay_count, -cone, Ainv_U.data(), norb, temp, 1, cone, new_AinvRow, 1);
       }
 
       inline void acceptRow(Matrix<T>& Ainv, T* arow, int rowchanged)
