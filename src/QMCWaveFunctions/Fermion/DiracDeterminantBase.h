@@ -21,8 +21,8 @@
  */
 #ifndef QMCPLUSPLUS_DIRACDETERMINANTWITHBASE_H
 #define QMCPLUSPLUS_DIRACDETERMINANTWITHBASE_H
-#include "QMCWaveFunctions/OrbitalBase.h"
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
@@ -30,11 +30,10 @@
 namespace qmcplusplus
 {
 
-class DiracDeterminantBase: public OrbitalBase
+class DiracDeterminantBase: public WaveFunctionComponent
 {
 protected:
   ParticleSet *targetPtcl;
-  int BufferMode;
 public:
   bool Optimizable;
   void registerTimers();
@@ -43,17 +42,17 @@ public:
   opt_variables_type myVars;
 
 
-  typedef SPOSetBase::IndexVector_t IndexVector_t;
-  typedef SPOSetBase::ValueVector_t ValueVector_t;
-  typedef SPOSetBase::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSetBase::GradVector_t  GradVector_t;
-  typedef SPOSetBase::GradMatrix_t  GradMatrix_t;
-  typedef SPOSetBase::HessMatrix_t  HessMatrix_t;
-  typedef SPOSetBase::HessVector_t  HessVector_t;
-  typedef SPOSetBase::HessType      HessType;
+  typedef SPOSet::IndexVector_t IndexVector_t;
+  typedef SPOSet::ValueVector_t ValueVector_t;
+  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
+  typedef SPOSet::GradVector_t  GradVector_t;
+  typedef SPOSet::GradMatrix_t  GradMatrix_t;
+  typedef SPOSet::HessMatrix_t  HessMatrix_t;
+  typedef SPOSet::HessVector_t  HessVector_t;
+  typedef SPOSet::HessType      HessType;
 
 #ifdef MIXED_PRECISION
-  typedef ParticleSet::ParticleValue_t mValueType;
+  typedef ParticleSet::SingleParticleValue_t mValueType;
   typedef OrbitalSetTraits<mValueType>::ValueMatrix_t ValueMatrix_hp_t;
 #else
   typedef ValueType mValueType;
@@ -64,7 +63,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantBase(SPOSetBasePtr const &spos, int first=0);
+  DiracDeterminantBase(SPOSetPtr const &spos, int first=0);
 
   ///default destructor
   virtual ~DiracDeterminantBase();
@@ -81,9 +80,9 @@ public:
 
   ///** return a clone of Phi
   // */
-  //SPOSetBasePtr clonePhi() const;
+  //SPOSetPtr clonePhi() const;
 
-  SPOSetBasePtr getPhi()
+  SPOSetPtr getPhi()
   {
     return Phi;
   };
@@ -103,14 +102,6 @@ public:
    *@param nel number of particles in the determinant
    */
   virtual void set(int first, int nel);
-  virtual RealType getAlternatePhaseDiff()
-  {
-    return 0.0;
-  }
-  virtual RealType getAlternatePhaseDiff(int iat)
-  {
-    return 0.0;
-  }
 
   ///set BF pointers
   virtual
@@ -173,15 +164,15 @@ public:
   ///reset the size: with the number of particles and number of orbtials
   virtual void resize(int nel, int morb);
 
-  virtual RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
+  virtual void registerData(ParticleSet& P, WFBufferType& buf);
 
   virtual void updateAfterSweep(ParticleSet& P,
       ParticleSet::ParticleGradient_t& G,
       ParticleSet::ParticleLaplacian_t& L);
 
-  virtual RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
+  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 
-  virtual void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
+  virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   /** return the ratio only for the  iat-th partcle move
    * @param P current configuration
@@ -192,11 +183,6 @@ public:
   /** compute multiple ratios for a particle move
    */
   virtual void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios);
-
-  virtual ValueType alternateRatio(ParticleSet& P)
-  {
-    return 1.0;
-  }
 
   virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
   virtual GradType evalGrad(ParticleSet& P, int iat);
@@ -229,14 +215,9 @@ public:
 
   virtual void recompute(ParticleSet& P);
 
-  virtual ValueType
-  evaluate(ParticleSet& P,
-           ParticleSet::ParticleGradient_t& G,
-           ParticleSet::ParticleLaplacian_t& L);
-           
   void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
 
-  virtual OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  virtual WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   /** cloning function
    * @param tqp target particleset
@@ -245,10 +226,10 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  virtual DiracDeterminantBase* makeCopy(SPOSetBase* spo) const;
-//       virtual DiracDeterminantBase* makeCopy(ParticleSet& tqp, SPOSetBase* spo) const {return makeCopy(spo); };
+  virtual DiracDeterminantBase* makeCopy(SPOSet* spo) const;
+//       virtual DiracDeterminantBase* makeCopy(ParticleSet& tqp, SPOSet* spo) const {return makeCopy(spo); };
 
-  virtual void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
+  virtual void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
   ///total number of particles
   int NP;
   ///number of single-particle orbitals which belong to this Dirac determinant
@@ -262,12 +243,15 @@ public:
   ///index of the particle (or row)
   int WorkingIndex;
   ///a set of single-particle orbitals used to fill in the  values of the matrix
-  SPOSetBasePtr Phi;
+  SPOSetPtr Phi;
 
   /////Current determinant value
   //ValueType CurrentDet;
   /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
   ValueMatrix_t psiM, psiM_temp;
+
+  /// memory pool for temporal data
+  aligned_vector<ValueType> memoryPool;
 
   /// temporary container for testing
   ValueMatrix_t psiMinv;
@@ -296,7 +280,7 @@ public:
 #ifdef MIXED_PRECISION
   /// temporal matrix and workspace in higher precision for the accurate inversion.
   ValueMatrix_hp_t psiM_hp;
-  Vector<ParticleSet::ParticleValue_t> WorkSpace_hp;
+  Vector<ParticleSet::SingleParticleValue_t> WorkSpace_hp;
   DiracMatrix<mValueType> detEng_hp;
 #endif
   DiracMatrix<ValueType> detEng;
@@ -305,15 +289,10 @@ public:
   Vector<IndexType> Pivot;
 
   ValueType curRatio,cumRatio;
-  ParticleSet::ParticleValue_t *FirstAddressOfG;
-  ParticleSet::ParticleValue_t *LastAddressOfG;
+  ParticleSet::SingleParticleValue_t *FirstAddressOfG;
+  ParticleSet::SingleParticleValue_t *LastAddressOfG;
   ValueType *FirstAddressOfdV;
   ValueType *LastAddressOfdV;
-  //    double ComputeExtraTerms(int ptcl_gradient, int elDim,int ionDim);
-  ParticleSet::ParticleGradient_t myG, myG_temp;
-  ParticleSet::ParticleLaplacian_t myL, myL_temp;
-//
-  virtual inline void setLogEpsilon(ValueType x) { }
 
 #ifdef QMC_CUDA
   /////////////////////////////////////////////////////

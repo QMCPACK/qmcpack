@@ -275,8 +275,8 @@ void GaussianCombo<T>::addGaussian(real_type c, real_type alpha)
   if(!Normalized) {
     c *= NormL*std::pow(alpha,NormPow);
   }
-  LOGMSG("    Gaussian exponent = " << alpha
-         << "\n              contraction=" << c0 <<  " nomralized contraction = " << c)
+  //  LOGMSG("    Gaussian exponent = " << alpha
+  //         << "\n              contraction=" << c0 <<  " normalized contraction = " << c)
   gset.push_back(BasicGaussian(alpha,c));
 }
 
@@ -334,8 +334,8 @@ bool GaussianCombo<T>::putBasisGroupH5(hdf_archive &hin)
     real_type c0=c;
     if(!Normalized)
       c *= NormL*std::pow(alpha,NormPow);
-    LOGMSG("    Gaussian exponent = " << alpha
-           << "\n              contraction=" << c0 <<  " nomralized contraction = " << c)
+    //    LOGMSG("    Gaussian exponent = " << alpha
+    //     << "\n              contraction=" << c0 <<  " nomralized contraction = " << c)
     gset.push_back(BasicGaussian(alpha,c));
     if(hin.myComm->rank()==0)  
        hin.pop();

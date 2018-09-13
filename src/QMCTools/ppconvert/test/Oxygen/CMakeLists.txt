@@ -1,0 +1,9 @@
+
+set(THISTESTNAME ppconvert_does_not_crash)
+
+EXECUTE_PROCESS( COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/O_test.sh ${CMAKE_CURRENT_BINARY_DIR} )
+EXECUTE_PROCESS( COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/O.BFD.gamess ${CMAKE_CURRENT_BINARY_DIR} )
+#set(ARGS "\-\-gamess_pot O.BFD.gamess") #--s_ref;'1s(2)2p(4)';--p_ref;'1s(2)2p(4)';--d_ref;'1s(2)2p(4)';--xml O.BFD.xml)
+add_test(NAME ${THISTESTNAME}
+  COMMAND bash ${CMAKE_CURRENT_BINARY_DIR}/O_test.sh $<TARGET_FILE:ppconvert>
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} )

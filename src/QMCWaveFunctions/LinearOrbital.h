@@ -13,7 +13,7 @@
 #ifndef QMCPLUSPLUS_LINEARORBITAL_H
 #define QMCPLUSPLUS_LINEARORBITAL_H
 
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 
 namespace qmcplusplus
 {
@@ -22,7 +22,7 @@ namespace qmcplusplus
 // phi = coeff[0]*x + coeff[1]*y + coeff[2]*z
 
 
-class LinearOrbital: public OrbitalBase
+class LinearOrbital: public WaveFunctionComponent
 {
 public:
   virtual void checkInVariables(opt_variables_type &active) {}
@@ -35,12 +35,11 @@ public:
 
   LinearOrbital() {coeff[0]=1.0; coeff[1]= 2.0; coeff[2]=3.0;}
 
-  virtual ValueType
-  evaluate(ParticleSet& P,
-           ParticleSet::ParticleGradient_t& G,
-           ParticleSet::ParticleLaplacian_t& L)
+  virtual RealType
+  evaluateLog(ParticleSet& P,
+              ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
   {
-    APP_ABORT("LinearOrbital. evaluate");
+    APP_ABORT("LinearOrbital. evaluateLog");
     ValueType v = 0.0;
     for (int i = 0; i < P.R.size(); i++) {
       for (int d = 0; d < OHMMS_DIM; d++) {
@@ -49,17 +48,8 @@ public:
       G[i] = coeff;
     }
     L = 0.0;
-    return v;
-  }
-
-  virtual RealType
-  evaluateLog(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
-  {
-    APP_ABORT("LinearOrbital. evaluateLog");
-    G = 0.0;
-    L = 0.0;
-    return 0.0;
+    LogValue = evaluateLogAndPhase(v,PhaseValue);
+    return LogValue;
   }
 
   virtual void acceptMove(ParticleSet& P, int iat) {}
@@ -81,11 +71,11 @@ public:
     return 1.0;
   }
 
-  virtual RealType registerData(ParticleSet& P, BufferType& buf) {return 0.0;}
+  virtual void registerData(ParticleSet& P, WFBufferType& buf) {}
 
-  virtual RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false) {return 0.0;}
+  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false) {return 0.0;}
 
-  virtual void copyFromBuffer(ParticleSet& P, BufferType& buf) {}
+  virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf) {}
 
 };
 

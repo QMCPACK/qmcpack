@@ -35,7 +35,7 @@ PairCorrEstimator::PairCorrEstimator(ParticleSet& elns, std::string& sources)
   //use the simulation cell radius if any direction is periodic
   if(elns.Lattice.SuperCellEnum)
   {
-    Dmax=elns.Lattice.SimulationCellRadius;
+    Dmax=elns.Lattice.WignerSeitzRadius;
     Volume=elns.Lattice.Volume;
   }
   else

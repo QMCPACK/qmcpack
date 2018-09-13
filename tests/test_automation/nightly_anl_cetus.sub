@@ -4,23 +4,21 @@
 #COBALT -n 128
 #COBALT -t 60
 #COBALT -O validation
-#COBALT -M xw111luoye@gmail.com
 
 #
 # Setup for cetus.alcf.anl.gov
 #
 # Run the "short" nightlies, requeue if an executable is built
 # 
-# Location of job script must be set at end ($HOME/.qmcpack_test_jobs/... ) for resubmit
-#
-# Checkout, build, and run on scratch. Use custom names for checkout
-# directory because scratch is shared.
-#
+
+export TEST_SITE_NAME=cetus.alcf.anl.gov
+export N_PROCS_BUILD=24
+export N_CONCURRENT_TESTS=1
 
 #Must be an absolute path
 place=/projects/PSFMat/QMCPACK_CI_BUILDS_DO_NOT_REMOVE
 
-#define compiler
+#define and load compiler
 #compiler=XL
 compiler=Clang++11
 
@@ -52,14 +50,16 @@ cd $entry
 
 git checkout $branch
 
-for sys in build_BGQ_${compiler}_real build_BGQ_${compiler}_complex build_BGQ_${compiler}_MP_real build_BGQ_${compiler}_MP_complex build_BGQ_${compiler}_real_SoA build_BGQ_${compiler}_complex_SoA
+for sys in Real-SoA Real-Mixed-SoA Complex-SoA Complex-Mixed-SoA
 do
 
-if [ -e $sys ]; then
-rm -r $sys
+folder=build_BGQ_$sys
+
+if [ -e $folder ]; then
+rm -r $folder
 fi
-mkdir $sys
-cd $sys
+mkdir $folder
+cd $folder
 
 echo --- Building for $sys `date`
 
@@ -70,41 +70,23 @@ then
   mkdir -p $place/log/$entry/$mydate
 fi
 
-case $sys in
-"build_BGQ_${compiler}_real_SoA")
-# Build the real version with ${compiler} compiler on BGQ
-    export QMCPACK_TEST_SUBMIT_NAME=BGQ-${compiler}-Real-SoA-Release
-    ctest -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_${compiler}_ToolChain.cmake -DQMC_COMPLEX=0 -DENABLE_SOA=1 -S $PWD/../CMake/ctest_script.cmake,release -R "short" -E "dmc|opt|csvmc" -VV &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
-    ;;
-"build_BGQ_${compiler}_complex_SoA")
-# Build the complex version with ${compiler} compiler on BGQ
-    export QMCPACK_TEST_SUBMIT_NAME=BGQ-${compiler}-Complex-SoA-Release
-    ctest -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_${compiler}_ToolChain.cmake -DQMC_COMPLEX=1 -DENABLE_SOA=1 -S $PWD/../CMake/ctest_script.cmake,release -R "short" -E "dmc|opt|csvmc" -VV &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
-    ;;
-"build_BGQ_${compiler}_real")
-# Build the real version with ${compiler} compiler on BGQ
-    export QMCPACK_TEST_SUBMIT_NAME=BGQ-${compiler}-Real-Release
-    ctest -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_${compiler}_ToolChain.cmake -DQMC_COMPLEX=0 -S $PWD/../CMake/ctest_script.cmake,release -R short -E "dmc|short-H4-opt" -VV &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
-    ;;
-"build_BGQ_${compiler}_complex")
-# Build the complex version with ${compiler} compiler on BGQ
-    export QMCPACK_TEST_SUBMIT_NAME=BGQ-${compiler}-Complex-Release
-    ctest -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_${compiler}_ToolChain.cmake -DQMC_COMPLEX=1 -S $PWD/../CMake/ctest_script.cmake,release -R "unit|short|qe-LiH-unpolarized-no-collect-np-16-12-12-nk-16-2-2" -E "dmc|short-H4-opt" -VV &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
-    ;;
-"build_BGQ_${compiler}_MP_real")
-# Build the real version with ${compiler} compiler on BGQ
-    export QMCPACK_TEST_SUBMIT_NAME=BGQ-${compiler}-MixedPrec-Real-Release
-    ctest -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_${compiler}_ToolChain.cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -S $PWD/../CMake/ctest_script.cmake,release -R short -E "dmc|short-H4-opt" -VV &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
-    ;;
-"build_BGQ_${compiler}_MP_complex")
-# Build the complex version with ${compiler} compiler on BGQ
-    export QMCPACK_TEST_SUBMIT_NAME=BGQ-${compiler}-MixedPrec-Complex-Release
-    ctest -DCMAKE_TOOLCHAIN_FILE=../config/BGQ_${compiler}_ToolChain.cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -S $PWD/../CMake/ctest_script.cmake,release -R "unit|short|qe-LiH-unpolarized-no-collect-np-16-12-12-nk-16-2-2" -E "dmc|short-H4-opt" -VV &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
-    ;;
-*)
-    echo "ERROR: Unknown build type $sys"
-    ;;
-esac
+CTEST_FLAGS="-DCMAKE_TOOLCHAIN_FILE=../config/BGQ_${compiler}_ToolChain.cmake"
+
+if [[ $sys == *"Complex"* ]]; then
+  CTEST_FLAGS="$CTEST_FLAGS -D QMC_COMPLEX=1"
+fi
+
+if [[ $sys == *"-SoA"* ]]; then
+  CTEST_FLAGS="$CTEST_FLAGS -D ENABLE_SOA=1"
+fi
+
+if [[ $sys == *"-Mixed"* ]]; then
+  CTEST_FLAGS="$CTEST_FLAGS -D QMC_MIXED_PRECISION=1"
+fi
+
+export QMCPACK_TEST_SUBMIT_NAME=BGQ-${compiler}-${sys}-Release
+
+ctest $CTEST_FLAGS -S $PWD/../CMake/ctest_script.cmake,release --stop-time `date --date=now+55mins +%H:%M:%S` -R "short" -E "dmc|opt|csvmc|heg" -VV &> $place/log/$entry/$mydate/${QMCPACK_TEST_SUBMIT_NAME}.log
 
 cd ..
 echo --- Finished $sys `date`

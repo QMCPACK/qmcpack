@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_RPA_JASTROW_H
 #define QMCPLUSPLUS_RPA_JASTROW_H
 
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "LongRange/LRHandlerBase.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "QMCWaveFunctions/Jastrow/SplineFunctors.h"
@@ -32,7 +32,7 @@ namespace qmcplusplus
  *  Modification of RPAJastrow
  *
  */
-struct RPAJastrow: public OrbitalBase
+struct RPAJastrow: public WaveFunctionComponent
 {
   typedef LRHandlerBase HandlerType;
   typedef BsplineFunctor<RealType> FuncType;
@@ -73,13 +73,6 @@ struct RPAJastrow: public OrbitalBase
 
   void resetTargetParticleSet(ParticleSet& P);
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-
   RealType evaluateLog(ParticleSet& P,
                        ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
@@ -91,13 +84,13 @@ struct RPAJastrow: public OrbitalBase
 
   void restore(int iat);
 
-  RealType registerData(ParticleSet& P, BufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
 
-  RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 
-  void copyFromBuffer(ParticleSet& P, BufferType& buf);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-  OrbitalBase* makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponent* makeClone(ParticleSet& tqp) const;
 
 private:
 
@@ -120,15 +113,15 @@ private:
   LRTwoBodyJastrow* LongRangeRPA;
   ///@{objects to handle the short-range part
   ///two-body Jastrow function
-  OrbitalBase* ShortRangeRPA;
+  WaveFunctionComponent* ShortRangeRPA;
   ///numerical function owned by ShortRangeRPA
   FuncType* nfunc;
   GridType* myGrid;
   ///adaptor function to initialize nfunc
   ShortRangePartAdapter<RealType>* SRA;
   ParticleSet& targetPtcl;
-  ///A list of OrbitalBase*
-  std::vector<OrbitalBase*> Psi;
+  ///A list of WaveFunctionComponent*
+  std::vector<WaveFunctionComponent*> Psi;
 };
 }
 #endif

@@ -20,7 +20,7 @@
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
@@ -131,12 +131,12 @@ const char *particles = \
   bool build_okay = jastrow.put(jas1);
   REQUIRE(build_okay);
 
-  OrbitalBase *orb = psi.getOrbitals()[0];
+  WaveFunctionComponent *orb = psi.getOrbitals()[0];
 
 #ifdef ENABLE_SOA
-  typedef J2OrbitalSoA<BsplineFunctor<OrbitalBase::RealType> > J2Type;
+  typedef J2OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType> > J2Type;
 #else
-  typedef TwoBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > J2Type;
+  typedef TwoBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> > J2Type;
 #endif
   J2Type *j2 = dynamic_cast<J2Type *>(orb);
   REQUIRE(j2 != NULL);
@@ -182,12 +182,12 @@ const char *particles = \
    };
 
 
-  BsplineFunctor<OrbitalBase::RealType> *bf = j2->F[0];
+  BsplineFunctor<WaveFunctionComponent::RealType> *bf = j2->F[0];
 
   for (int i = 0; i < N; i++) {
-    OrbitalBase::RealType dv = 0.0;
-    OrbitalBase::RealType ddv = 0.0;
-    OrbitalBase::RealType val = bf->evaluate(Vals[i].r,dv,ddv);
+    WaveFunctionComponent::RealType dv = 0.0;
+    WaveFunctionComponent::RealType ddv = 0.0;
+    WaveFunctionComponent::RealType val = bf->evaluate(Vals[i].r,dv,ddv);
     REQUIRE(Vals[i].u == Approx(val));
     REQUIRE(Vals[i].du == Approx(dv));
     REQUIRE(Vals[i].ddu == Approx(ddv));
@@ -219,6 +219,43 @@ const char *particles = \
   }
 #endif
 
+  typedef QMCTraits::ValueType ValueType;
+  typedef QMCTraits::PosType PosType;
+
+  // set virtutal particle position
+  PosType newpos(0.3,0.2,0.5);
+
+  elec_.makeVirtualMoves(newpos);
+  std::vector<ValueType> ratios(elec_.getTotalNum());
+  j2->evaluateRatiosAlltoOne(elec_,ratios);
+
+  REQUIRE(ratios[0] == ComplexApprox(0.9522052017).compare_real_only());
+  REQUIRE(ratios[1] == ComplexApprox(0.9871985577).compare_real_only());
+
+  elec_.makeMove(0, newpos-elec_.R[0]);
+  ValueType ratio_0 = j2->ratio(elec_,0);
+  elec_.rejectMove(0);
+
+  REQUIRE(ratio_0 == ComplexApprox(0.9522052017).compare_real_only());
+
+  VirtualParticleSet VP(elec_,2);
+  ParticleSet::ParticlePos_t newpos2(2);
+  newpos2[0] = newpos;
+  newpos2[1] = PosType(0.2,0.5,0.3);
+  VP.makeMoves(1, newpos2);
+  j2->evaluateRatios(VP, ratios);
+
+  REQUIRE(ratios[0] == ComplexApprox(0.9871985577).compare_real_only());
+  REQUIRE(ratios[1] == ComplexApprox(0.9989268241).compare_real_only());
+
+  //test acceptMove
+  elec_.makeMove(1, newpos-elec_.R[1]);
+  ValueType ratio_1 = j2->ratio(elec_,1);
+  j2->acceptMove(elec_,1);
+  elec_.acceptMove(1);
+
+  REQUIRE(ratio_1 == ComplexApprox(0.9871985577).compare_real_only());
+  REQUIRE(j2->LogValue == Approx(0.0883791773));
 
 }
 
@@ -297,16 +334,18 @@ const char *particles = \
   bool build_okay = jastrow.put(jas1);
   REQUIRE(build_okay);
 
-  OrbitalBase *orb = psi.getOrbitals()[0];
+  WaveFunctionComponent *orb = psi.getOrbitals()[0];
 
 #ifdef ENABLE_SOA
-  typedef J1OrbitalSoA<BsplineFunctor<OrbitalBase::RealType> > J1Type;
+  typedef J1OrbitalSoA<BsplineFunctor<WaveFunctionComponent::RealType> > J1Type;
 #else
-  typedef OneBodyJastrowOrbital<BsplineFunctor<OrbitalBase::RealType> > J1Type;
+  typedef OneBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> > J1Type;
 #endif
   J1Type *j1 = dynamic_cast<J1Type *>(orb);
   REQUIRE(j1 != NULL);
 
+  double logpsi = psi.evaluateLog(elec_);
+  REQUIRE(logpsi == Approx(0.3160552244)); // note: number not validated
 
   struct JValues
   {
@@ -343,15 +382,15 @@ const char *particles = \
 
 
 #ifdef ENABLE_SOA
-  BsplineFunctor<OrbitalBase::RealType> *bf = j1->F[0];
+  BsplineFunctor<WaveFunctionComponent::RealType> *bf = j1->F[0];
 #else
-  BsplineFunctor<OrbitalBase::RealType> *bf = j1->Fs[0];
+  BsplineFunctor<WaveFunctionComponent::RealType> *bf = j1->Fs[0];
 #endif
 
   for (int i = 0; i < N; i++) {
-    OrbitalBase::RealType dv = 0.0;
-    OrbitalBase::RealType ddv = 0.0;
-    OrbitalBase::RealType val = bf->evaluate(Vals[i].r,dv,ddv);
+    WaveFunctionComponent::RealType dv = 0.0;
+    WaveFunctionComponent::RealType ddv = 0.0;
+    WaveFunctionComponent::RealType val = bf->evaluate(Vals[i].r,dv,ddv);
     REQUIRE(Vals[i].u == Approx(val));
     REQUIRE(Vals[i].du == Approx(dv));
     REQUIRE(Vals[i].ddu == Approx(ddv));
@@ -383,6 +422,33 @@ const char *particles = \
   }
 #endif
 
+  typedef QMCTraits::ValueType ValueType;
+  typedef QMCTraits::PosType PosType;
+
+  // set virtutal particle position
+  PosType newpos(0.3,0.2,0.5);
+
+  elec_.makeVirtualMoves(newpos);
+  std::vector<ValueType> ratios(elec_.getTotalNum());
+  j1->evaluateRatiosAlltoOne(elec_,ratios);
+
+  REQUIRE(ratios[0] == ComplexApprox(0.9819208747).compare_real_only());
+  REQUIRE(ratios[1] == ComplexApprox(1.0040884258).compare_real_only());
+
+  elec_.makeMove(0, newpos-elec_.R[0]);
+  ValueType ratio_0 = j1->ratio(elec_,0);
+  elec_.rejectMove(0);
+
+  REQUIRE(ratio_0 == ComplexApprox(0.9819208747).compare_real_only());
+
+  // test acceptMove results
+  elec_.makeMove(1, newpos-elec_.R[1]);
+  ValueType ratio_1 = j1->ratio(elec_,1);
+  j1->acceptMove(elec_,1);
+  elec_.acceptMove(1);
+
+  REQUIRE(ratio_1 == ComplexApprox(1.0040884258).compare_real_only());
+  REQUIRE(j1->LogValue == Approx(0.32013531536));
 
 }
 }

@@ -36,7 +36,6 @@
 #include "QMCDrivers/QMCCostFunctionCUDA.h"
 #endif
 #include "Numerics/LinearFit.h"
-#include "qmc_common.h"
 #include <iostream>
 #include <fstream>
 
@@ -773,10 +772,10 @@ QMCLinearOptimize::put(xmlNodePtr q)
   {
 #if defined (QMC_CUDA)
     if (useGPU == "yes")
-      optTarget = new QMCCostFunctionCUDA(W,Psi,H,hamPool);
+      optTarget = new QMCCostFunctionCUDA(W,Psi,H);
     else
 #endif
-      optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
+      optTarget = new QMCCostFunctionOMP(W,Psi,H);
 //#if defined(ENABLE_OPENMP)
 //            if (omp_get_max_threads()>1)
 //            {
@@ -796,7 +795,7 @@ QMCLinearOptimize::put(xmlNodePtr q)
       vmcEngine = new VMCcuda(W,Psi,H,psiPool);
     else
 #endif
-      vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
+      vmcEngine = new VMCSingleOMP(W,Psi,H,psiPool);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
     vmcEngine->initCommunicator(myComm);
   }
@@ -815,14 +814,13 @@ void QMCLinearOptimize::resetComponents(xmlNodePtr cur)
     delete optTarget;
 #if defined (QMC_CUDA)
   if (useGPU == "yes")
-    optTarget = new QMCCostFunctionCUDA(W,Psi,H,hamPool);
+    optTarget = new QMCCostFunctionCUDA(W,Psi,H);
   else
 #endif
-    optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
+    optTarget = new QMCCostFunctionOMP(W,Psi,H);
   optTarget->setStream(&app_log());
   optTarget->put(cur);
 
-  //if(qmc_common.qmc_counter ==0) vmcEngine->put(cur);
   //vmcEngine->resetComponents(cur);
 }
 bool QMCLinearOptimize::fitMappedStabilizers(std::vector<std::pair<RealType,RealType> >&

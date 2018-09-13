@@ -355,9 +355,9 @@ QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
   if (optTarget == 0)
   {
 #if defined (QMC_CUDA)
-    optTarget = new QMCCostFunctionCUDA(W,Psi,H,hamPool);
+    optTarget = new QMCCostFunctionCUDA(W,Psi,H);
 #else
-    optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
+    optTarget = new QMCCostFunctionOMP(W,Psi,H);
 #endif
     optTarget->setneedGrads(false);
     optTarget->setStream(&app_log());

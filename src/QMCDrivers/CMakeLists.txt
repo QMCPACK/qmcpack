@@ -29,7 +29,6 @@ SET(QMCDRIVERS
   QMCLinearOptimize.cpp
   QMCCorrelatedSamplingLinearOptimize.cpp
   QMCFixedSampleLinearOptimize.cpp
-  QMCCSLinearOptimizeWFmanagerOMP.cpp
   QMCCostFunctionBase.cpp
   WaveFunctionTester.cpp
   WalkerControlBase.cpp
@@ -55,10 +54,7 @@ SET(QMCDRIVERS
   ../Estimators/CSEnergyEstimator.cpp
   ../Estimators/LocalEnergyEstimator.cpp
   ../Estimators/RMCLocalEnergyEstimator.cpp
-  ../Estimators/LocalEnergyEstimatorHDF.cpp
   ../Estimators/EstimatorManagerBase.cpp
-#  ../Estimators/EstimatorManager.cpp
-  ../Estimators/MultipleEnergyEstimator.cpp
   ../Estimators/CollectablesEstimator.cpp
 )
 
@@ -90,28 +86,8 @@ ENDIF(BUILD_LMYENGINE_INTERFACE)
 
 IF(QMC_BUILD_LEVEL GREATER 1)
   SET(QMCDRIVERS ${QMCDRIVERS}
-#     PolymerEstimator.cpp
-#     MultiChain.cpp
-#     RQMCMultiple.cpp
     ../Estimators/CSEnergyEstimator.cpp
-#     ../Estimators/CSPolymerEstimator.cpp
   )
-# REMOVE broken stuff
-#    ../Estimators/RQMCMultipleEstimator.cpp
-#    SpaceWarp.cpp
-#    RQMCMultiWarp.cpp
-#    VMC/VMCMultipleWarp.cpp
-#    VMC/VMCPbyPMultiWarp.cpp
-#    CorrelatedSampling/CSUpdateBase.cpp
-#    CorrelatedSampling/CSVMC.cpp
-#    CorrelatedSampling/CSVMCUpdateAll.cpp
-#    CorrelatedSampling/CSVMCUpdatePbyP.cpp
-#  IF(NOT QMC_COMPLEX)
-#    SET(QMCDRIVERS ${QMCDRIVERS}
-#    RQMCMultiplePbyP.cpp
-#    )
-#  ENDIF(NOT QMC_COMPLEX)
-
 ENDIF(QMC_BUILD_LEVEL GREATER 1)
 
 

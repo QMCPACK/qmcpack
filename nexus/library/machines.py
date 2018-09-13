@@ -156,6 +156,12 @@ class Job(NexusCore):
 
 
     @staticmethod
+    def restore_default_settings():
+        Job.machine = None
+    #end def restore_default_settings
+
+
+    @staticmethod
     def generate_jobid():
         Job.job_count += 1
         return Job.job_count
@@ -924,6 +930,14 @@ class Machine(NexusCore):
         Machine.add(self)
     #end def __init__
 
+    
+    def restore_default_settings(self):
+        self.account         = None
+        self.local_directory = None
+        self.app_directory   = None
+        self.app_directories = None
+    #end def restore_default_settings
+
 
     def add_job(self,job):
         if isinstance(job,Job):
@@ -1328,7 +1342,8 @@ class Supercomputer(Machine):
                                  PD = 'waiting',
                                  R = 'running',
                                  S = 'suspended',
-                                 CD = 'complete'
+                                 CD = 'complete',
+				 RD = 'held'
                                  )
         elif self.queue_querier=='sacct':
             self.job_states=dict(CANCELLED = 'failed',  #long form
@@ -1489,6 +1504,9 @@ class Supercomputer(Machine):
                 verbose = '--verbose=INFO',
                 envs    = envs
                 )
+            if job.processes_per_node is None:
+                self.error('please specify processes_per_node in each job to launched with runjob')
+            #end if
         elif launcher=='srun':  # Amos contribution from Ryan McAvoy
             None # anything needed here?
         elif launcher=='ibrun': # Lonestar contribution from Paul Young
@@ -1571,8 +1589,10 @@ class Supercomputer(Machine):
                         status = None
                         if len(tokens)==8:
                             jid,loc,name,uname,status,wtime,nodes,reason = tokens
-                        elif len(tokens)==11: # nersc squeue output
+                        elif len(tokens)==11 and self.name != 'stampede2': # nersc squeue output
                             jid,uname,acc,jname,part,qos,nodes,tlimit,wtime,status,start_time = tokens
+                        elif len(tokens)==11 and self.name == 'stampede2': # stampede squeue output
+                            jid,loc,name,uname,status,wtime,nodes,reason,tmp1,tmp2,tmp3 = tokens
                         #end if
                         if status is not None:
                             if status in self.job_states:
@@ -2536,14 +2556,14 @@ class ALCF_Machine(Supercomputer):
             env  = '--env BG_SHAREDMEMSIZE=32',
             mode = '--mode script'
             )
-        #if job.nodes<self.base_partition:
-        #    self.warn('!!! ATTENTION !!!\n  number of nodes on {0} should not be less than {1}\n  you requested: {2}'.format(self.name,self.base_partition,job.nodes))
-        #else:
-        #    partition = log(float(job.nodes)/self.base_partition)/log(2.)
-        #    if abs(partition-int(partition))>1e-6:
-        #        self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be {1} times a power of two\n  you requested: {2}\n  nearby valid node count: {3}'.format(self.name,self.base_partition,job.nodes,self.base_partition*2**int(round(partition))))
-        #    #end if
-        ##end if
+        if job.nodes<self.base_partition:
+            self.warn('!!! ATTENTION !!!\n  number of nodes on {0} should not be less than {1}\n  you requested: {2}'.format(self.name,self.base_partition,job.nodes))
+        else:
+            partition = log(float(job.nodes)/self.base_partition)/log(2.)
+            if abs(partition-int(partition))>1e-6:
+                self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be {1} times a power of two\n  you requested: {2}\n  nearby valid node count: {3}'.format(self.name,self.base_partition,job.nodes,self.base_partition*2**int(round(partition))))
+            #end if
+        #end if
     #end def process_job_extra
 
     def write_job_header(self,job):
@@ -2840,6 +2860,87 @@ class SuperMUC(Supercomputer):
     #end def write_job_header
 #end class SuperMUC
 
+#
+class Stampede2(Supercomputer):
+    name = 'stampede2'
+
+    requires_account   = True
+    batch_capable      = True
+    #executable_subfile = True
+
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='normal'
+	#end if
+
+	if job.queue == 'development':
+	    max_nodes = 16
+	    max_time = 2
+	elif job.queue == 'normal':
+	    max_nodes = 256
+	    max_time = 48
+	elif job.queue == 'large':
+	    max_nodes = 2048
+	    max_time = 48
+	elif job.queue == 'long':
+	    max_nodes = 32
+	    max_time = 96
+	elif job.queue == 'flat_quadrant':
+	    max_nodes = 24
+	    max_time = 48
+	elif job.queue == 'skx-dev':
+	    max_nodes = 4
+	    max_time = 2
+	elif job.queue == 'skx-normal':
+	    max_nodes = 128
+	    max_time = 48
+	elif job.queue == 'skx-large':
+	    max_nodes = 868
+	    max_time = 48
+	#end if
+
+	if 'skx' in job.queue:
+	    max_processes_per_node = 48
+	else:
+	    max_processes_per_node = 68
+	
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > max_time:   
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes =0
+            job.seconds =0
+        #end if
+
+	if job.nodes > max_nodes:
+	    self.warn('!!! ATTENTION !!!\n  the maximum nodes on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_nodes,job.nodes))
+	    job.nodes = max_nodes
+	#end if
+
+	if job.processes_per_node > max_processes_per_node:
+	    self.warn('!!! ATTENTION !!!\n  the maximum number of processes per node on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_processes_per_node,job.processes_per_node))
+	    job.processes_per_node = max_processes_per_node
+	#end if
+
+        c='#!/bin/bash\n'
+        c+='#SBATCH --job-name '+str(job.name)+'\n'
+        c+='#SBATCH --account='+str(job.account)+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+	c+='#SBATCH -p {0}\n'.format(job.queue)
+        c+='\n'
+        return c
+    #end def write_job_header
+#end class Stampede2
+
 
 
 #Known machines
@@ -2875,6 +2976,7 @@ Skybridge(    1848,   2,    16,   64, 1000,   'srun',   'sbatch',  'squeue', 'sc
 Redsky(       2302,   2,     8,   12, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 Solo(          187,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 SuperMUC(      205,   4,    10,  256,    8,'mpiexec', 'llsubmit',     'llq','llcancel')
+Stampede2(    4200,   1,    68,   96,    50, 'ibrun',   'sbatch',  'squeue', 'scancel')
 
 
 #machine accessor functions

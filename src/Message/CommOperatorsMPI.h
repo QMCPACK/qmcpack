@@ -402,11 +402,9 @@ template<>
 inline void
 Communicate::allreduce(PooledData<float>& g)
 {
-  PooledData<float> gt(g.size(), g.size_DP());
+  PooledData<float> gt(g.size());
   MPI_Allreduce(g.data(),gt.data(),g.size(),MPI_FLOAT,MPI_SUM,
                 myMPI);
-  if (g.size_DP()) MPI_Allreduce(g.data_DP(),gt.data_DP(),g.size_DP(),
-                                 MPI_DOUBLE,MPI_SUM,myMPI);
   g = gt;
 }
 
@@ -773,7 +771,6 @@ inline void
 Communicate::bcast(PooledData<float>& g)
 {
   MPI_Bcast(g.data(),g.size(),MPI_FLOAT,0,myMPI);
-  if (g.size_DP()) MPI_Bcast(g.data_DP(),g.size_DP(),MPI_DOUBLE,0,myMPI);
 }
 
 template<>
@@ -1418,6 +1415,15 @@ Communicate::gatherv(std::complex<double>* l, std::complex<double>* g, int n,
                          g, &counts[0], &displ[0], MPI_DOUBLE, dest, comm);
   for(int i=0; i<counts.size(); i++) counts[i]/=2;
   for(int i=0; i<displ.size(); i++) displ[i]/=2;
+}
+
+template<typename T, typename TMPI, typename IT>
+inline void Communicate::gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT& displ, int dest)
+{
+  if(!d_mycontext)
+    MPI_Gatherv(MPI_IN_PLACE, 0, datatype, buf, counts.data(), displ.data(), datatype, dest, myMPI);
+  else
+    MPI_Gatherv(buf+displ[d_mycontext], counts[d_mycontext], datatype, NULL, counts.data(), displ.data(), datatype, dest, myMPI);
 }
 
 template<>

@@ -65,14 +65,13 @@ void ForceBase::addObservablesStress(QMCTraits::PropertySetType& plist)
 {
   if(FirstForceIndex<0)
 	FirstForceIndex=plist.size();
-	
-	for(int i=0; i<OHMMS_DIM; i++)
-		for(int j=i; j<OHMMS_DIM; j++)
-		{
-		  std::ostringstream obsName;
-		  obsName <<prefix <<"_"<<i<<"_"<<j;
-		  plist.add(obsName.str());	
-		}
+  for(int i=0; i<OHMMS_DIM; i++)
+    for(int j=i; j<OHMMS_DIM; j++)
+    {
+      std::ostringstream obsName;
+      obsName <<prefix <<"_"<<i<<"_"<<j;
+      plist.add(obsName.str());	
+    }
 }
 
 void ForceBase::registerObservablesF(std::vector<observable_helper*>& h5list
@@ -89,28 +88,6 @@ void ForceBase::registerObservablesF(std::vector<observable_helper*>& h5list
 
 void ForceBase::setObservablesF(QMCTraits::PropertySetType& plist)
 {
-  // constant ion-ion contribution
-  if(FirstTime)
-  {
-    FirstTime = false;
-    forces_IonIon = 0.0;
-    DistanceTableData* d_aa=DistanceTable::add(Ions,DT_AOS);
-    if(addionion==true)
-    {
-      const ParticleSet::Scalar_t* restrict Zat=Ions.Z.first_address();
-      for(int iat=0; iat<Nnuc; iat++)
-      {
-        for(int nn=d_aa->M[iat], jat=1; nn<d_aa->M[iat+1]; nn++,jat++)
-        {
-          int jid = d_aa->J[nn];
-          real_type rinv=d_aa->rinv(nn);
-          real_type r3zz=Zat[jid]*Zat[iat]*rinv*rinv*rinv;
-          forces_IonIon[iat] -= r3zz*d_aa->dr(nn);
-          forces_IonIon[jid] += r3zz*d_aa->dr(nn);
-        }
-      }
-    }
-  }
   int index = FirstForceIndex;
   for(int iat=0; iat<Nnuc; iat++)
   {

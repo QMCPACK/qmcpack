@@ -90,11 +90,6 @@ struct BareForce: public QMCHamiltonianBase, public ForceBase
 
   Return_t evaluate(ParticleSet& P);
 
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P);
-  }
-
   void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const
   {
     registerObservablesF(h5list,gid);

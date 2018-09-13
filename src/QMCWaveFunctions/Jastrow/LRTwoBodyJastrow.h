@@ -24,7 +24,7 @@
 #ifndef QMCPLUSPLUS_LR_RPAJASTROW_H
 #define QMCPLUSPLUS_LR_RPAJASTROW_H
 
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Optimize/VarList.h"
 #include "OhmmsData/libxmldefs.h"
 #include "OhmmsPETE/OhmmsVector.h"
@@ -34,7 +34,7 @@
 namespace qmcplusplus
 {
 
-class LRTwoBodyJastrow: public OrbitalBase
+class LRTwoBodyJastrow: public WaveFunctionComponent
 {
   bool NeedToRestore;
   IndexType NumPtcls;
@@ -160,14 +160,6 @@ public:
     Fk_0=Fk;
   }
 
-  inline ValueType evaluate(ParticleSet& P,
-                            ParticleSet::ParticleGradient_t& G,
-                            ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-
-
   ValueType ratio(ParticleSet& P, int iat);
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType & g);
@@ -177,14 +169,14 @@ public:
   void restore(int iat);
   void acceptMove(ParticleSet& P, int iat);
 
-  RealType registerData(ParticleSet& P, PooledData<RealType>& buf);
-  RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false);
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
   ///process input file
   bool put(xmlNodePtr cur);
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 };
 }
 #endif

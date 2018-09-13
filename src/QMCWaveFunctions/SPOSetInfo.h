@@ -128,7 +128,7 @@ namespace qmcplusplus
     /// empty collection and render mutable
     void clear();
 
-    friend class BasisSetBuilder;
+    friend class SPOSetBuilder;
   };
 
 

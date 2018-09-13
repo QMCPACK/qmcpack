@@ -30,8 +30,8 @@ class DensityMatrices1B : public QMCHamiltonianBase
 
   typedef ValueType Value_t;
   typedef GradType  Grad_t;
-  typedef SPOSetBase::ValueVector_t ValueVector_t;
-  typedef SPOSetBase::GradVector_t  GradVector_t;
+  typedef SPOSet::ValueVector_t ValueVector_t;
+  typedef SPOSet::GradVector_t  GradVector_t;
   typedef ParticleSet::ParticleLayout_t Lattice_t;
   typedef Vector<Value_t> Vector_t;
   typedef Matrix<Value_t> Matrix_t;
@@ -130,10 +130,6 @@ class DensityMatrices1B : public QMCHamiltonianBase
   QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
   bool put(xmlNodePtr cur);
   Return_t evaluate(ParticleSet& P);
-  inline Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy)
-  {
-    return evaluate(P); 
-  }
 
   //optional standard interface
   void get_required_traces(TraceManager& tm);
@@ -191,9 +187,6 @@ class DensityMatrices1B : public QMCHamiltonianBase
   //  matrix implementation
   Return_t evaluate_check(ParticleSet& P);
   Return_t evaluate_matrix(ParticleSet& P);
-  //  postprocessing
-  void postprocess_density(const std::string& infile,const std::string& species,
-                           pts_t& points,dens_t& density,dens_t& density_err);
 
 
   bool match(Value_t e1, Value_t e2, RealType tol=1e-12);

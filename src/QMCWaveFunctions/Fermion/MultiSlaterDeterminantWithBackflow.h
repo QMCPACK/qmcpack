@@ -16,7 +16,6 @@
 #ifndef QMCPLUSPLUS_MULTISLATERDETERMINANTWITHBACKFLOW_ORBITAL_H
 #define QMCPLUSPLUS_MULTISLATERDETERMINANTWITHBACKFLOW_ORBITAL_H
 #include <Configuration.h>
-#include <QMCWaveFunctions/FermionBase.h>
 #include <QMCWaveFunctions/Fermion/DiracDeterminantBase.h>
 #include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
@@ -27,7 +26,7 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  *  @brief MultiSlaterDeterminantWithBackflow
  */
 class MultiSlaterDeterminantWithBackflow: public MultiSlaterDeterminant
@@ -72,11 +71,11 @@ public:
   void acceptMove(ParticleSet& P, int iat);
   void restore(int iat);
 
-  RealType registerData(ParticleSet& P, BufferType& buf);
-  RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
-  void copyFromBuffer(ParticleSet& P, BufferType& buf);
+  void registerData(ParticleSet& P, WFBufferType& buf);
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<RealType>& dlogpsi,

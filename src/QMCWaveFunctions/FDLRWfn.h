@@ -13,7 +13,7 @@
 #define QMCPLUSPLUS_FDLRWFN_H
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include <QMCWaveFunctions/OrbitalBase.h>
+#include <QMCWaveFunctions/WaveFunctionComponent.h>
 #include <OhmmsPETE/TinyVector.h>
 
 namespace qmcplusplus {
@@ -29,7 +29,7 @@ namespace qmcplusplus {
   ///    sum_i  2 * di * (dPsi/dxi)
   ///
   /////////////////////////////////////////////////////////////////////////////////////////////////
-  class FDLRWfn : public OrbitalBase {
+  class FDLRWfn : public WaveFunctionComponent {
 
   // protected data members
   private:
@@ -122,8 +122,11 @@ namespace qmcplusplus {
 
     ValueType curRatio;
 
-    // Temporary particleset
-    ParticleSet* tempP;
+    // gradients of FDLR wavefunction
+    ParticleSet::ParticleGradient_t G_FDLR;
+    // laplacians of FDLR wavefunction
+    ParticleSet::ParticleLaplacian_t L_FDLR;
+
 
   public:
 
@@ -151,7 +154,7 @@ namespace qmcplusplus {
 
     void init_driver_vars_singlet_or_triplet();
 
-    OrbitalBasePtr makeClone(ParticleSet& P) const;
+    WaveFunctionComponentPtr makeClone(ParticleSet& P) const;
 
     void checkInVariables(opt_variables_type& active);
 
@@ -167,8 +170,6 @@ namespace qmcplusplus {
 
     void resetTargetParticleSet(ParticleSet& P);
 
-    ValueType evaluate(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
-
     RealType evaluateLog(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L);
 
     RealType evaluateLogFDLR(ParticleSet& P, ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L,
@@ -177,23 +178,17 @@ namespace qmcplusplus {
                              const ParticleSet::ParticleGradient_t& G_plus,  const ParticleSet::ParticleGradient_t& G_minus,
                              const ParticleSet::ParticleLaplacian_t& L_plus, const ParticleSet::ParticleLaplacian_t& L_minus);
 
-    RealType evaluateLog(ParticleSet& P, BufferType& buf);
-
     GradType evalGrad(ParticleSet& P, int iat);
 
     ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
-    RealType registerData(ParticleSet& P, BufferType& buf);
+    void registerData(ParticleSet& P, WFBufferType& buf);
 
-    RealType updateBuffer(ParticleSet& P, BufferType& buf, bool fromscratch=false);
+    RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 
-    void copyFromBuffer(ParticleSet& P, BufferType& buf);
-
-    ValueType ratio(ParticleSet& P, int iat, ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL);
+    void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
     ValueType ratio(ParticleSet& P, int iat);
-
-    void update(ParticleSet& P, ParticleSet::ParticleGradient_t& dG, ParticleSet::ParticleLaplacian_t& dL, int iat);
 
     void acceptMove(ParticleSet& P, int iat);
 

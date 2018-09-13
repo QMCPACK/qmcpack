@@ -99,6 +99,12 @@ class Pwscf(Simulation):
         Pwscf.vdw_table = vdw_table
     #end def settings              
 
+    @staticmethod
+    def restore_default_settings():
+        Pwscf.vdw_table = None
+    #end def restore_default_settings
+
+
     #def propagate_identifier(self):
     #    self.input.control.prefix = self.identifier        
     ##end def propagate_identifier

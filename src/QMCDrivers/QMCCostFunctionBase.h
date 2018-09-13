@@ -103,8 +103,6 @@ public:
   }
   ///reset the wavefunction
   virtual void resetPsi(bool final_reset=false)=0;
-  ///reset Walkers before loadEnsemble
-  virtual void resetWalkers()=0;
 
   inline void getParameterTypes(std::vector<int>& types)
   {

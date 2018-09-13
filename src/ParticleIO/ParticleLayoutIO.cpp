@@ -49,6 +49,8 @@ bool LatticeParser::put(xmlNodePtr cur)
   bool bconds_defined=false;
   int boxsum=0;
 
+  app_log() << " Lattice" << std::endl;
+  app_log() << " -------" << std::endl;
   cur = cur->xmlChildrenNode;
   while (cur != NULL)
   {
@@ -62,6 +64,11 @@ bool LatticeParser::put(xmlNodePtr cur)
       }
       else if(aname == "lattice")
       {
+        const char *units_prop = (const char *)(xmlGetProp(cur, (const xmlChar *) "units"));
+        if (units_prop && std::string(units_prop) != "bohr") {
+          APP_ABORT("LatticeParser::put. Only atomic units (bohr) supported for lattice units. Input file uses: " << std::string(units_prop));
+        }
+
         putContent(lattice_in,cur);
         lattice_defined=true;
         //putContent(ref_.R,cur);
@@ -89,12 +96,25 @@ bool LatticeParser::put(xmlNodePtr cur)
           {
             ref_.BoxBConds[idir] = false;
           }
-          else
+          else if(b == 'p' || b == 'P')
           {
             ref_.BoxBConds[idir] = true;
             boxsum++;
           }
+          else
+          {
+            APP_ABORT("LatticeParser::put. Unknown label '" + bconds[idir] +
+                      "' used for periodicity. Only 'p', 'P', 'n' and 'N' are valid!");
+          }
+
+          // Protect BCs which are not implemented.
+          if ( idir>0 && !ref_.BoxBConds[idir-1] && ref_.BoxBConds[idir] )
+            APP_ABORT("LatticeParser::put. In \"bconds\", non periodic directions must be placed after the periodic ones.");
         }
+      }
+      else if(aname == "vacuum")
+      {
+        putContent(ref_.VacuumScale,cur);
       }
       else if(aname == "LR_dim_cutoff")
       {
@@ -183,12 +203,12 @@ bool LatticeParser::put(xmlNodePtr cur)
   ref_.makeGrid(grid);
   if(ref_.SuperCellEnum == SUPERCELL_OPEN)
     ref_.WignerSeitzRadius=ref_.SimulationCellRadius;
+  std::string unit_name = "bohr";
   app_log() << std::fixed;
-  app_log() << "  Simulation cell radius = " << ref_.SimulationCellRadius << std::endl;
-  app_log() << "  Wigner-Seitz    radius = " << ref_.WignerSeitzRadius    << std::endl;
+  app_log() << "  Simulation cell radius   = " << ref_.SimulationCellRadius << " " << unit_name << std::endl;
+  app_log() << "  Wigner-Seitz cell radius = " << ref_.WignerSeitzRadius    << " " << unit_name << std::endl;
+  app_log() << std::endl;
 
-  //initialize the global cell
-  //qmc_common.theSuperCell=lattice_in;
   return lattice_defined;
 }
 

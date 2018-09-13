@@ -1,0 +1,117 @@
+This integration test tests numerical Hartree-Fock orbitals generated 
+with the SQD code (packaged with QMCPACK) for a carbon atom with spin 
+multiplicity 3 (4 up, 2 down electrons).  A test of this type has been 
+used with QMCPACK since 2007.
+
+
+SQD orbitals and reference data
+===============================
+Orbitals were generated using SVN revision 6259 of SQD.  The 
+corresponding inputs and outputs of the SQD code can be found in 
+./sqd-ref.  The orbital file itself, C.s000.h5, has been moved 
+to the test directory (./).  Reference total, kinetic, and potential 
+Hartree-Fock energies are available in the log output from SQD 
+(C.s000.log):
+
+Energy =    -37.68858615  Ha
+KE     =     37.68859387  Ha
+PE     =    -75.37718002  Ha
+
+
+Test details
+============
+The tests include short and long VMC and DMC runs for the C atom: 
+1) Slater-only VMC (Hartree-Fock), 2) Slater-Jastrow VMC, 3) 
+Slater-Jastrow DMC (timestep = 0.01/Ha).  A previously optimized 
+two-body Jastrow factor (J1 B-spline, J2 Pade) was used in the 
+Slater-Jastrow runs. Reference data for the tests was produced with 
+QMCPACK SVN revision 6259.  QMCPACK versions 3.1.1, 3.2.0, and 3.3.0 
+were confirmed to produce correct results.
+
+Reference data was generated with runs the same overall length 
+(blocks x steps) as those included in ./qmc-ref, but using more blocks 
+and fewer steps.  Using more blocks reduced the statistical error of 
+the error bars, but resulted in output data files that were too large 
+to include in the QMCPACK distribution.  The reference values and error 
+bars were therefore computed from the higher block count runs.  The 
+included reference runs were confirmed to be consistent with the original 
+higher block count runs.
+
+Reference data from the high block count runs is found below:
+
+                   LocalEnergy             Variance               ratio 
+C.NO_HF series 0  -37.688652 +/- 0.000237  8.201219 +/- 0.340898  0.2176 
+ 
+C.NO_J2 series 0  -37.769812 +/- 0.000106  0.632539 +/- 0.000181  0.0167 
+C.NO_J2 series 1  -37.828154 +/- 0.000501  0.623047 +/- 0.000380  0.0165 
+C.NO_J2 series 2  -37.828225 +/- 0.000087  0.622712 +/- 0.000084  0.0165 
+
+For comparison, corresponding data for the lower block count reference 
+data found in ./qmc-ref is:
+
+>qmca -e 2 -q ev *scalar*
+                   LocalEnergy             Variance               ratio 
+C.NO_HF series 0  -37.688280 +/- 0.000227  7.828104 +/- 0.067403  0.2077 
+ 
+C.NO_J2 series 0  -37.769753 +/- 0.000102  0.632514 +/- 0.000160  0.0167 
+C.NO_J2 series 1  -37.828061 +/- 0.000984  0.623063 +/- 0.000498  0.0165 
+C.NO_J2 series 2  -37.828204 +/- 0.000090  0.622607 +/- 0.000094  0.0165 
+
+Test input files were created by reducing the number of steps from the 
+included reference by a factor of 10 for the "long" tests and by a 
+further factor of 10 for the "short" tests.
+
+Reference values for the mean local energy and variance were taken 
+from the high block count reference runs.  Expected error bars were 
+derived from the high block count data by multiplying the reference 
+error bars by a factor of sqrt(10+1) and sqrt(100+1) for the long 
+and short tests, respectively.  The factor of +1 accounts for the 
+error bar intrinsic to the high block count runs.  This factor was 
+set to zero for the direct Hartree-Fock comparison since the error 
+bar is formally zero for the SQD reference values.
+
+The target means and error bars for long and short tests are:
+
+                 refmean     referr    longerr   shorterr
+VMC HF energy   -37.68858615 0.000237  0.000749  0.002370
+VMC J2 energy   -37.769812   0.000106  0.000352  0.001065
+       variance   0.632539   0.000181  0.000600  0.001819    
+DMC J2 energy   -37.828225   0.000087  0.000289  0.000874
+       variance   0.622712   0.000084  0.000279  0.000844
+
+In the above, the reference energy from SQD has been used as the reference 
+value, while all other quantities were taken from the high block count 
+QMCPACK runs.         
+
+Error bars from typical long and short runs are shown below:
+
+Typical long run results:
+>qmca -e 2 -q ev *long*scalar*
+                        LocalEnergy             Variance               ratio 
+C.NO_HF_long series 0  -37.687586 +/- 0.000697  7.721598 +/- 0.089570  0.2049 
+ 
+C.NO_J2_long series 0  -37.769940 +/- 0.000320  0.632654 +/- 0.000524  0.0168 
+C.NO_J2_long series 1  -37.824099 +/- 0.002236  0.623312 +/- 0.000808  0.0165 
+C.NO_J2_long series 2  -37.827790 +/- 0.000247  0.622470 +/- 0.000400  0.0165 
+
+
+Typical short run results:
+>qmca -e 2 -q ev *short*scalar*
+                         LocalEnergy             Variance               ratio 
+C.NO_HF_short  series 0 -37.688656 +/- 0.002234  9.252361 +/- 1.776573  0.2455 
+ 
+C.NO_J2_short  series 0 -37.768393 +/- 0.001148  0.631094 +/- 0.001564  0.0167 
+C.NO_J2_short  series 1 -37.822020 +/- 0.003477  0.623159 +/- 0.001581  0.0165 
+C.NO_J2_short  series 2 -37.826284 +/- 0.000876  0.622990 +/- 0.000597  0.0165 
+
+
+Rough timings for the tests on an old (circa 2013) AMD system are:
+
+>grep 'Total Exe' *long*.out
+C.NO_HF_long.out:  Total Execution time = 2.2965329672e+02 secs
+C.NO_J2_long.out:  Total Execution time = 2.9021501733e+02 secs
+
+>grep 'Total Exe' *short*.out
+C.NO_HF_short.out:  Total Execution time = 2.5090213142e+01 secs
+C.NO_J2_short.out:  Total Execution time = 3.7398682589e+01 secs
+

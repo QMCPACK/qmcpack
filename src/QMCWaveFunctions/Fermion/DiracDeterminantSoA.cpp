@@ -17,10 +17,9 @@
 
 namespace qmcplusplus
 {
-  DiracDeterminantSoA::DiracDeterminantSoA(SPOSetBasePtr const &spos, int first): 
+  DiracDeterminantSoA::DiracDeterminantSoA(SPOSetPtr const &spos, int first): 
     DiracDeterminantBase(spos,first)
   { 
-    BufferMode=1;
     Need2Compute4PbyP=false; 
   }
 
@@ -29,7 +28,7 @@ namespace qmcplusplus
   DiracDeterminantSoA::DiracDeterminantSoA(const DiracDeterminantSoA& s):DiracDeterminantBase(s){}
 
   DiracDeterminantBase* 
-    DiracDeterminantSoA::makeCopy(SPOSetBasePtr spo) const
+    DiracDeterminantSoA::makeCopy(SPOSetPtr spo) const
     {
       DiracDeterminantSoA* dclone= new DiracDeterminantSoA(spo,FirstIndex);
       dclone->resize(NumPtcls,NumOrbitals);
@@ -65,7 +64,7 @@ namespace qmcplusplus
     mGL.resize(nel);
     //map mGL[i] to a block of memoryPool
     for(size_t i=0; i<nel; ++i)
-      mGL[i].resetByRef(norb,NorbPad,memoryPool.data()+i*BlockSize);
+      mGL[i].attachReference(norb,NorbPad,memoryPool.data()+i*BlockSize);
     vVGL.resize(norb);
   }
 
@@ -73,18 +72,13 @@ namespace qmcplusplus
     DiracDeterminantSoA::evalGrad(ParticleSet& P, int iat)
     {
       WorkingIndex = iat-FirstIndex;
-      if(BufferMode == 0)//need to compute 
-      {
-        Phi->evaluateVGL(P, iat, vVGL,false); 
-        simd::copy_n(vVGL.data(1),BlockSize,mGL[WorkingIndex].data());
-      }
       return computeG(psiM[WorkingIndex],mGL[WorkingIndex]);
     }
 
   DiracDeterminantSoA::ValueType
     DiracDeterminantSoA::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
     {
-      Phi->evaluateVGL(P, iat, vVGL,true); //use the new position
+      Phi->evaluateVGL(P, iat, vVGL);
       WorkingIndex = iat-FirstIndex;
 
       UpdateMode=ORB_PBYP_PARTIAL;
@@ -123,10 +117,9 @@ namespace qmcplusplus
   {
     if(UpdateMode == ORB_PBYP_RATIO) 
     {//ratio only method need to compute mGL
-      bool newp=false;
       for(size_t i=0; i<NumPtcls; ++i)
       {
-        Phi->evaluateVGL(P, i+FirstIndex, vVGL, newp); 
+        Phi->evaluateVGL(P, i+FirstIndex, vVGL);
         simd::copy_n(vVGL.data(1), BlockSize, mGL[i].data());
       }
     }
@@ -141,21 +134,18 @@ namespace qmcplusplus
     }
   }
 
-  DiracDeterminantSoA::RealType
-    DiracDeterminantSoA::registerData(ParticleSet& P, PooledData<RealType>& buf)
+  void
+    DiracDeterminantSoA::registerData(ParticleSet& P, WFBufferType& buf)
     {
-      LogValue=evaluateLog(P,P.G,P.L);
       //add the data: determinant, inverse, gradient and laplacians
       buf.add(psiM.first_address(),psiM.last_address());
-      if(BufferMode)
-        buf.add(memoryPool.data(),memoryPool.data()+memoryPool.size());
+      buf.add(memoryPool.data(),memoryPool.data()+memoryPool.size());
       buf.add(LogValue);
       buf.add(PhaseValue);
-      return LogValue;
     }
 
   DiracDeterminantSoA::RealType 
-    DiracDeterminantSoA::updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch)
+    DiracDeterminantSoA::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
     {
       if(fromscratch)
         LogValue=evaluateLog(P,P.G,P.L);
@@ -163,18 +153,16 @@ namespace qmcplusplus
         updateAfterSweep(P,P.G,P.L);
 
       buf.put(psiM.first_address(),psiM.last_address());
-      if(BufferMode)
-        buf.put(memoryPool.data(),memoryPool.data()+memoryPool.size());
+      buf.put(memoryPool.data(),memoryPool.data()+memoryPool.size());
       buf.put(LogValue);
       buf.put(PhaseValue);
       return LogValue;
     }
 
-  void DiracDeterminantSoA::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  void DiracDeterminantSoA::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     buf.get(psiM.first_address(),psiM.last_address());
-    if(BufferMode)
-      buf.get(memoryPool.data(),memoryPool.data()+memoryPool.size());
+    buf.get(memoryPool.data(),memoryPool.data()+memoryPool.size());
     buf.get(LogValue);
     buf.get(PhaseValue);
   }
@@ -208,10 +196,9 @@ namespace qmcplusplus
    */
   void DiracDeterminantSoA::recompute(ParticleSet& P)
   { 
-    bool curpos=false;
     for(size_t i=0,iat=FirstIndex; i<NumPtcls; ++i,++iat)
     {
-      Phi->evaluateVGL(P, iat, vVGL, curpos); 
+      Phi->evaluateVGL(P, iat, vVGL);
       simd::copy_n(vVGL.data(0), NumOrbitals, psiM_temp[i]);
       simd::copy_n(vVGL.data(1), BlockSize,  mGL[i].data());
     }

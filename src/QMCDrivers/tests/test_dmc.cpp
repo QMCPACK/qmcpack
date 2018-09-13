@@ -22,7 +22,7 @@
 #include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCApp/ParticleSetPool.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/ConstantOrbital.h"
 #include "QMCWaveFunctions/LinearOrbital.h"
@@ -69,8 +69,6 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   elec.R[1][1] = 0.0;
   elec.R[1][2] = 1.0;
   elec.createWalkers(1);
-  elec.WalkerList[0]->DataSet.resize(9);
-
 
   SpeciesSet &tspecies =  elec.getSpeciesSet();
   int upIdx = tspecies.addSpecies("u");
@@ -82,13 +80,19 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
   tspecies(massIdx, upIdx) = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
+#ifdef ENABLE_SOA
+  elec.addTable(ions,DT_SOA);
+#else
   elec.addTable(ions,DT_AOS);
+#endif
   elec.update();
 
 
-  TrialWaveFunction *psi = new TrialWaveFunction(c);
+  TrialWaveFunction psi(c);
   ConstantOrbital *orb = new ConstantOrbital;
-  psi->addOrbital(orb, "Constant");
+  psi.addOrbital(orb, "Constant");
+  psi.registerData(elec, elec.WalkerList[0]->DataSet);
+  elec.WalkerList[0]->DataSet.allocate();
 
   FakeRandom rg;
 
@@ -98,7 +102,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers ConstantOrbital", "[drivers][
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  DMCUpdatePbyPWithRejectionFast dmc(elec, *psi, h, rg);
+  DMCUpdatePbyPWithRejectionFast dmc(elec, psi, h, rg);
   EstimatorManagerBase EM;
   double tau = 0.1;
   SimpleFixedNodeBranch branch(tau, 1);
@@ -170,8 +174,6 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   elec.R[1][1] = 0.0;
   elec.R[1][2] = 1.0;
   elec.createWalkers(1);
-  elec.WalkerList[0]->DataSet.resize(9);
-
 
   SpeciesSet &tspecies =  elec.getSpeciesSet();
   int upIdx = tspecies.addSpecies("u");
@@ -183,13 +185,19 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
   tspecies(massIdx, upIdx) = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
+#ifdef ENABLE_SOA
+  elec.addTable(ions,DT_SOA);
+#else
   elec.addTable(ions,DT_AOS);
+#endif
   elec.update();
 
 
-  TrialWaveFunction *psi = new TrialWaveFunction(c);
+  TrialWaveFunction psi(c);
   LinearOrbital *orb = new LinearOrbital;
-  psi->addOrbital(orb, "Linear");
+  psi.addOrbital(orb, "Linear");
+  psi.registerData(elec, elec.WalkerList[0]->DataSet);
+  elec.WalkerList[0]->DataSet.allocate();
 
   FakeRandom rg;
 
@@ -199,7 +207,7 @@ TEST_CASE("DMC Particle-by-Particle advanceWalkers LinearOrbital", "[drivers][dm
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  DMCUpdatePbyPWithRejectionFast dmc(elec, *psi, h, rg);
+  DMCUpdatePbyPWithRejectionFast dmc(elec, psi, h, rg);
   EstimatorManagerBase EM;
   double tau = 0.1;
   SimpleFixedNodeBranch branch(tau, 1);

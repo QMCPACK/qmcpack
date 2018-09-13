@@ -27,7 +27,7 @@ import os
 from generic import obj
 from developer import error
 
-from nexus_base      import NexusCore,nexus_core,nexus_noncore,nexus_core_noncore
+from nexus_base      import NexusCore,nexus_core,nexus_noncore,nexus_core_noncore,restore_nexus_core_defaults,nexus_core_defaults
 from machines        import Job,job,Machine,Supercomputer,get_machine
 from simulation      import generate_simulation,input_template,multi_input_template,generate_template_input,generate_multi_template_input
 from project_manager import ProjectManager
@@ -88,6 +88,7 @@ class Settings(NexusCore):
         pseudo_dir      sleep           local_directory remote_directory 
         monitor         skip_submit     load_images     stages          
         verbose         debug           trace           progress_tty
+        command_line
         '''.split())
 
     core_process_vars = set('''
@@ -104,8 +105,8 @@ class Settings(NexusCore):
         ericfmt         mcppath
         '''.split())
     
-    pwscf_vars   = set('''                                                                              
-        vdw_table                                                                                       
+    pwscf_vars   = set('''
+        vdw_table
         '''.split())  
 
     nexus_core_vars    = core_assign_vars    | core_process_vars
@@ -133,7 +134,7 @@ class Settings(NexusCore):
         if Settings.singleton is None:
             Settings.singleton = self
         else:
-            self.error('attempted to create a second Settings object\n  please just use the original')
+            self.error('attempted to create a second Settings object\nplease just use the original')
         #end if
     #end def __init__
 
@@ -145,6 +146,7 @@ class Settings(NexusCore):
 
     # sets up Nexus core class behavior and passes information to broader class structure
     def __call__(self,**kwargs):
+        kwargs = obj(**kwargs)
 
         NexusCore.write_splash()
 
@@ -154,6 +156,17 @@ class Settings(NexusCore):
         not_allowed = set(kwargs.keys()) - Settings.allowed_vars
         if len(not_allowed)>0:
             self.error('unrecognized variables provided\nyou provided: {0}\nallowed variables are: {1}'.format(sorted(not_allowed),sorted(Settings.allowed_vars)))
+        #end if
+
+        # restore default core default settings
+        restore_nexus_core_defaults()
+
+        # process command line inputs, if any
+        if 'command_line' in kwargs:
+            nexus_core.command_line = kwargs.command_line
+        #end if
+        if nexus_core.command_line:
+            self.process_command_line_settings(kwargs)
         #end if
 
         # assign simple variables
@@ -204,16 +217,122 @@ class Settings(NexusCore):
 
 
         # process gamess settings
+        Gamess.restore_default_settings()
         Gamess.settings(**gamess_kw)
 
-        # process pwscf settings                                                                        
+        # process pwscf settings
+        Pwscf.restore_default_settings()
         Pwscf.settings(**pwscf_kw)   
 
         return
     #end def __call__
 
 
+    def process_command_line_settings(self,script_settings):
+        from optparse import OptionParser
+        usage = '''usage: %prog [options]'''
+        parser = OptionParser(usage=usage,add_help_option=True,version='%prog 1.0')
+
+        parser.add_option('--status_only',dest='status_only',
+                          action='store_true',default=False,
+                          help='Report status of all simulations and then exit.'
+                          )
+        parser.add_option('--status',dest='status',
+                          default='none',
+                          help="Controls displayed simulation status information.  May be set to one of 'standard', 'active', 'failed', or 'ready'."
+                          )
+        parser.add_option('--generate_only',dest='generate_only',
+                          action='store_true',default=False,
+                          help='Write inputs to all simulations and then exit.  Note that no dependencies are processed, e.g. if one simulation depends on another for an orbital file location or for a relaxed structure, this information will not be present in the generated input file for that simulation since no simulations are actually run with this option.'
+                          )
+        parser.add_option('--progress_tty',dest='progress_tty',
+                          action='store_true',default=False,
+                          help='Print abbreviated polling messages.'
+                          )
+        parser.add_option('--sleep',dest='sleep',
+                          default='none',
+                          help='Number of seconds between polls.  At each poll, simulations are actually run provided all simulations they depend on have successfully completed (default={0}).'.format(nexus_core_defaults.sleep)
+                          )
+        parser.add_option('--machine',dest='machine',
+                          default='none',
+                          help="(Required) Name of the machine the simulations will be run on.  Workstations with between 1 and 128 cores may be specified by 'ws1' to 'ws128' (works for any machine where only mpirun is used).  For a complete listing of currently available machines (including those at HPC centers) please see the manual."
+                          )
+        parser.add_option('--account',dest='account',
+                          default='none',
+                          help='Account name required to submit jobs at some HPC centers.'
+                          )
+        parser.add_option('--runs',dest='runs',
+                          default='none',
+                          help='Directory to perform all runs in.  Simulation paths are appended to this directory (default={0}).'.format(nexus_core_defaults.runs)
+                          )
+        parser.add_option('--results',dest='results',
+                          default='none',
+                          help="Directory to copy out lightweight results data.  If set to '', results will not be stored outside of the runs directory (default={0}).".format(nexus_core_defaults.results)
+                          )
+        parser.add_option('--local_directory',dest='local_directory',
+                          default='none',
+                          help='Base path where runs and results directories will be created (default={0}).'.format(nexus_core_defaults.local_directory)
+                          )
+        parser.add_option('--pseudo_dir',dest='pseudo_dir',
+                          default='none',
+                          help='Path to directory containing pseudopotential files (required if running with pseudopotentials).'
+                          )
+        parser.add_option('--basis_dir',dest='basis_dir',
+                          default='none',
+                          help='Path to directory containing basis set files (useful if running gaussian based QMC workflows).'
+                          )
+        parser.add_option('--ericfmt',dest='ericfmt',
+                          default='none',
+                          help='Path to the ericfmt file used with GAMESS (required if running GAMESS).'
+                          )
+        parser.add_option('--mcppath',dest='mcppath',
+                          default='none',
+                          help='Path to the mcpdata file used with GAMESS (optional for most workflows)'
+                          )
+        parser.add_option('--vdw_table',dest='vdw_table',
+                          default='none',
+                          help='Path to the vdw_table file used with Quantum Espresso (required only if running Quantum Espresso with van der Waals functionals).'
+                          )
+
+        # parse the command line inputs
+        options,files_in = parser.parse_args()
+        opt = obj()
+        opt.transfer_from(options.__dict__)
+
+        # check that all options are allowed (developer check)
+        invalid = set(opt.keys())-Settings.allowed_vars
+        if len(invalid)>0:
+            self.error('invalid command line settings encountered\ninvalid settings: {0}\nthis is a developer error'.format(sorted(invalid)))
+        #end if
+
+        # pre-process options, full processing occurs upon return
+        boolean_options = set(['status_only','generate_only','progress_tty'])
+        real_options = set(['sleep'])
+        for ropt in real_options:
+            if opt[ropt]!='none':
+                try:
+                    opt[ropt] = float(opt[ropt])
+                except:
+                    self.error("command line option '{0}' must be a real value\nyou provided: {1}\nplease try again".format(ropt,opt[ropt]))
+                #end try
+            #end if
+        #end for
+
+        # override script settings with command line settings
+        for name,value in opt.iteritems():
+            bool_name = name in boolean_options
+            if (bool_name and value) or (not bool_name and value!='none'):
+                script_settings[name] = value
+            #end if
+        #end for
+
+    #end def process_command_line_settings
+
+
     def process_machine_settings(self,mset):
+        Job.restore_default_settings()
+        ProjectManager.restore_default_settings()
+        mid_set = set()
         if 'machine_info' in mset:
             machine_info = mset.machine_info
             if isinstance(machine_info,dict) or isinstance(machine_info,obj):
@@ -221,7 +340,9 @@ class Settings(NexusCore):
                     mname = machine_name.lower()
                     if Machine.exists(mname):
                         machine = Machine.get(mname)
+                        machine.restore_default_settings()
                         machine.incorporate_user_info(minfo)
+                        mid_set.add(id(machine))
                     else:
                         self.error('machine {0} is unknown\n  cannot set machine_info'.format(machine_name))
                     #end if
@@ -236,7 +357,11 @@ class Settings(NexusCore):
                 self.error('machine {0} is unknown'.format(machine_name))
             #end if
             Job.machine = machine_name
-            ProjectManager.machine = Machine.get(machine_name)
+            machine = Machine.get(machine_name)
+            ProjectManager.machine = machine
+            if machine is not None and id(machine) not in mid_set:
+                machine.restore_default_settings()
+            #end if
             if 'account' in mset:
                 account = mset.account
                 if not isinstance(account,str):

@@ -48,7 +48,7 @@ QMCDriver* VMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi,
 #endif
     if(VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
     {
-      qmc = new VMCSingleOMP(w,psi,h,hpool,ppool);
+      qmc = new VMCSingleOMP(w,psi,h,ppool);
     }
   //else if(VMCMode == 2) //(0,1,0)
   //{
@@ -60,7 +60,7 @@ QMCDriver* VMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi,
   //}
     else if(VMCMode ==2 || VMCMode ==3)
     {
-      qmc = new CSVMC(w,psi,h,hpool,ppool);
+      qmc = new CSVMC(w,psi,h,ppool);
     }
 //#if !defined(QMC_COMPLEX)
 //    else if(VMCMode == 6) //(1,1,0)

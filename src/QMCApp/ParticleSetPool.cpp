@@ -27,7 +27,7 @@
 #if OHMMS_DIM ==3
 #include "ParticleIO/ESHDFParticleParser.h"
 #endif
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/Libxml2Doc.h"
@@ -42,16 +42,6 @@ ParticleSetPool::ParticleSetPool(Communicate* c, const char* aname)
   TileMatrix.diagonal(1);
   ClassName="ParticleSetPool";
   myName=aname;
-}
-
-void ParticleSetPool::make_clones(int n)
-{
-  PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
-  while(it != it_end)
-  {
-    (*it).second->make_clones(n);
-    ++it;
-  }
 }
 
 ParticleSet* ParticleSetPool::getParticleSet(const std::string& pname)
@@ -111,18 +101,23 @@ bool ParticleSetPool::putLattice(xmlNodePtr cur)
   bool printcell=false;
   if(SimulationCell==0)
   {
-    app_log() << "  Create Global SuperCell " << std::endl;
+    app_debug() << "  Creating global supercell " << std::endl;
     SimulationCell = new ParticleSet::ParticleLayout_t;
     printcell=true;
   }
   else
   {
-    app_log() << "  Overwrite Global SuperCell " << std::endl;
+    app_log() << "  Overwriting global supercell " << std::endl;
   }
   LatticeParser a(*SimulationCell);
   bool lattice_defined=a.put(cur);
-  if(printcell && lattice_defined)
-    SimulationCell->print(app_log());
+  if(printcell && lattice_defined) {
+    if (outputManager.isHighActive()) {
+      SimulationCell->print(app_log(),2);
+    } else {
+      SimulationCell->print(app_summary(),1);
+    }
+  }
   return lattice_defined;
 }
 
@@ -156,7 +151,10 @@ bool ParticleSetPool::put(xmlNodePtr cur)
   ParticleSet* pTemp = getParticleSet(id);
   if(pTemp == 0)
   {
-    app_log() << "  Creating " << id << " particleset" << std::endl;
+    app_summary() <<" Particle Set " << std::endl;
+    app_summary() <<" ------------" << std::endl;
+    app_summary() <<"  Name: " << id << std::endl;
+
     pTemp = new MCWalkerConfiguration;
     //if(role == "MC")
     //  pTemp = new MCWalkerConfiguration;
@@ -164,7 +162,7 @@ bool ParticleSetPool::put(xmlNodePtr cur)
     //  pTemp = new ParticleSet;
     if(SimulationCell)
     {
-      app_log() << "  Initializing the lattice of " << id << " by the global supercell" << std::endl;
+      app_log() << "  Initializing the lattice by the global supercell" << std::endl;
       pTemp->Lattice.copy(*SimulationCell);
     }
     myPool[id] = pTemp;
@@ -179,13 +177,15 @@ bool ParticleSetPool::put(xmlNodePtr cur)
       randomize_nodes.push_back(anode);
     }
     pTemp->setName(id);
-    app_log() << pTemp->getName() << std::endl;
+    app_summary() << "  Particle set size: " << pTemp->getTotalNum() << std::endl;
+    app_summary() << std::endl;
     return success;
   }
   else
   {
-    app_warning() << "particleset " << id << " is already created. Ignore this" << std::endl;
+    app_warning() << "Particle set " << id << " is already created. Ignoring this section." << std::endl;
   }
+  app_summary() << std::endl;
   return true;
 }
 
@@ -214,6 +214,19 @@ bool ParticleSetPool::get(std::ostream& os) const
     ++it;
   }
   return true;
+}
+
+void ParticleSetPool::output_particleset_info(Libxml2Document &doc, xmlNodePtr root)
+{
+  xmlNodePtr particles_info = doc.addChild(root, "particles");
+  PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
+  while(it != it_end)
+  {
+    xmlNodePtr particle = doc.addChild(particles_info, "particle");
+    doc.addChild(particle,"name",(*it).second->getName());
+    doc.addChild(particle,"size",(*it).second->getTotalNum());
+    ++it;
+  }
 }
 
 /** reset is used to initialize and evaluate the distance tables
@@ -326,7 +339,7 @@ ParticleSet* ParticleSetPool::createESParticleSet(xmlNodePtr cur,
     qp->Lattice.copy(ions->Lattice);
 
     app_log() << "  Simulation cell radius = " << qp->Lattice.SimulationCellRadius << std::endl;
-    app_log() << "  Wigner-Seitz    radius = " << qp->Lattice.WignerSeitzRadius    << std::endl;
+    app_log() << "  Wigner-Seitz cell radius = " << qp->Lattice.WignerSeitzRadius    << std::endl;
     SimulationCell->print(app_log());
 
     // Goback to the // and OhmmsXPathObject handles it internally

@@ -17,9 +17,10 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_C2C_SOA_ADOPTOR_H
 #define QMCPLUSPLUS_EINSPLINE_C2C_SOA_ADOPTOR_H
 
-#include <Numerics/VectorViewer.h>
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
+#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
+
 //#define USE_VECTOR_ML 1
 
 namespace qmcplusplus
@@ -53,6 +54,8 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   using BaseType::PrimLattice;
   using BaseType::kPoints;
   using BaseType::MakeTwoCopies;
+  using BaseType::offset_cplx;
+  using BaseType::offset_real;
 
   ///number of points of the original grid
   int BaseN[3];
@@ -61,6 +64,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   ///multi bspline set
   MultiBspline<ST>* SplineInst;
   ///expose the pointer to reuse the reader and only assigned with create_spline
+  ///also used as identifier of shallow copy
   SplineType* MultiSpline;
 
   vContainer_type  mKK;
@@ -79,7 +83,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   gContainer_type myG;
   hContainer_type myH;
 
-  SplineC2CSoA(): BaseType(),SplineInst(nullptr), MultiSpline(nullptr)
+  SplineC2CSoA(): BaseType(), SplineInst(nullptr), MultiSpline(nullptr)
   {
     this->is_complex=true;
     this->is_soa_ready=true;
@@ -128,9 +132,16 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     chunked_bcast(comm, MultiSpline);
   }
 
-  void reduce_tables(Communicate* comm)
+  void gather_tables(Communicate* comm)
   {
-    chunked_reduce(comm, MultiSpline);
+    if(comm->size()==1) return;
+    const int Nbands = kPoints.size();
+    const int Nbandgroups = comm->size();
+    offset_cplx.resize(Nbandgroups+1,0);
+    FairDivideLow(Nbands,Nbandgroups,offset_cplx);
+    for(size_t ib=0; ib<offset_cplx.size(); ib++)
+      offset_cplx[ib]*=2;
+    gatherv(comm, MultiSpline, MultiSpline->z_stride, offset_cplx);
   }
 
   template<typename GT, typename BCT>
@@ -174,7 +185,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
 
   void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
   {
-    VectorViewer<ST> v_r(psi_r,0), v_i(psi_i,0);
+    Vector<ST> v_r(psi_r,0), v_i(psi_i,0);
     SplineInst->set(2*ispline  ,v_r);
     SplineInst->set(2*ispline+1,v_i);
   }
@@ -206,7 +217,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
         bool compute_spline=true)
   {
     Vector<ST> vtmp(scratch,myV.size());
-    const PointType& r=P.R[iat];
+    const PointType& r=P.activeR(iat);
 
     if(compute_spline)
     {
@@ -241,7 +252,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV>
-  inline void assign_v(const PointType& r, VV& psi)
+  inline void assign_v(const PointType& r, const vContainer_type& myV, VV& psi)
   {
     typedef std::complex<TT> ComplexT;
     const size_t N=kPoints.size();
@@ -277,11 +288,24 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   template<typename VV>
   inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
   {
-    const PointType& r=P.R[iat];
+    const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
     SplineInst->evaluate(ru,myV);
-    assign_v(r,psi);
+    assign_v(r,myV,psi);
   }
+
+  template<typename VM, typename VAV>
+  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM, VAV& SPOMem)
+  {
+    const size_t m=psiM.cols();
+    for(int iat=0; iat<VP.getTotalNum(); ++iat)
+    {
+      Vector<std::complex<TT> > psi(psiM[iat],m);
+      evaluate_v(VP,iat,psi);
+    }
+  }
+
+  inline size_t estimateMemory(const int nP) { return 0; }
 
   /** assign_vgl
    */
@@ -435,7 +459,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   template<typename VV, typename GV>
   inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {
-    const PointType& r=P.R[iat];
+    const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
     SplineInst->evaluate_vgh(ru,myV,myG,myH);
     assign_vgl(r,psi,dpsi,d2psi);
@@ -542,7 +566,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   template<typename VGL>
   inline void evaluate_vgl_combo(const ParticleSet& P, const int iat, VGL& vgl)
   {
-    const PointType& r=P.R[iat];
+    const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
     SplineInst->evaluate_vgh(ru,myV,myG,myH);
     assign_vgl_soa(r,vgl);
@@ -551,15 +575,11 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   template<typename VV, typename GV, typename GGV>
   void assign_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
-#if 0
     typedef std::complex<TT> ComplexT;
-    CONSTEXPR ST zero(0);
-    CONSTEXPR ST two(2);
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
              g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
              g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
     const ST x=r[0], y=r[1], z=r[2];
-    const ST symGG[6]={GGt[0],GGt[1]+GGt[3],GGt[2]+GGt[6],GGt[4],GGt[5]+GGt[7],GGt[8]};
 
     const ST* restrict k0=myKcart.data(0);
     const ST* restrict k1=myKcart.data(1);
@@ -576,23 +596,8 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict h22=myH.data(5);
 
     const size_t N=kPoints.size();
-    const size_t nsplines=myL.size();
 
-    ComplexT* restrict psi =psi.data(0)+first_spo; ASSUME_ALIGNED(psi);
-    ComplexT* restrict vg_x=dpsi.data(0)+first_spo; ASSUME_ALIGNED(vg_x);
-    ComplexT* restrict vg_y=dpsi.data(1)+first_spo; ASSUME_ALIGNED(vg_y);
-    ComplexT* restrict vg_z=dpsi.data(2)+first_spo; ASSUME_ALIGNED(vg_z);
-    ComplexT* restrict gg_xx=grad_grad_psi.data(0)+first_spo; ASSUME_ALIGNED(gg_xx);
-    ComplexT* restrict gg_xy=grad_grad_psi.data(1)+first_spo; ASSUME_ALIGNED(gg_xy);
-    ComplexT* restrict gg_xz=grad_grad_psi.data(2)+first_spo; ASSUME_ALIGNED(gg_xz);
-    ComplexT* restrict gg_yx=grad_grad_psi.data(3)+first_spo; ASSUME_ALIGNED(gg_yx);
-    ComplexT* restrict gg_yy=grad_grad_psi.data(4)+first_spo; ASSUME_ALIGNED(gg_yy);
-    ComplexT* restrict gg_yz=grad_grad_psi.data(5)+first_spo; ASSUME_ALIGNED(gg_yz);
-    ComplexT* restrict gg_zx=grad_grad_psi.data(6)+first_spo; ASSUME_ALIGNED(gg_zx);
-    ComplexT* restrict gg_zy=grad_grad_psi.data(7)+first_spo; ASSUME_ALIGNED(gg_zy);
-    ComplexT* restrict gg_zz=grad_grad_psi.data(8)+first_spo; ASSUME_ALIGNED(gg_zz);
-
-    #pragma simd
+    #pragma omp simd
     for (size_t j=0; j<N; ++j)
     {
       int jr=j<<1;
@@ -625,48 +630,48 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
       const ST gY_i=dY_i-val_r*kY;
       const ST gZ_i=dZ_i-val_r*kZ;
 
-      psi[j] =ComplexT(c*val_r-s*val_i,c*val_i+s*val_r);
-      vg_x[j]=ComplexT(c*gX_r -s*gX_i, c*gX_i +s*gX_r);
-      vg_y[j]=ComplexT(c*gY_r -s*gY_i, c*gY_i +s*gY_r);
-      vg_z[j]=ComplexT(c*gZ_r -s*gZ_i, c*gZ_i +s*gZ_r);
+      const size_t psiIndex=j+first_spo;
+      psi[psiIndex] =ComplexT(c*val_r-s*val_i,c*val_i+s*val_r);
+      dpsi[psiIndex][0]=ComplexT(c*gX_r -s*gX_i, c*gX_i +s*gX_r);
+      dpsi[psiIndex][1]=ComplexT(c*gY_r -s*gY_i, c*gY_i +s*gY_r);
+      dpsi[psiIndex][2]=ComplexT(c*gZ_r -s*gZ_i, c*gZ_i +s*gZ_r);
 
-      const ST kkV_r=mKK[j]*val_r; //kk*Vr
-      const ST kkV_i=mKK[j]*val_i; //kk*Vi
-      const ST h_xx_r=h00[jr]+kkV_r+kX*gX_r;
-      const ST h_xy_r=h01[jr]+kkV_r+kX*gY_r;
-      const ST h_xz_r=h02[jr]+kkV_r+kX*gZ_r;
-      const ST h_yx_r=h01[jr]+kkV_r+kY*gX_r;
-      const ST h_yy_r=h11[jr]+kkV_r+kY*gY_r;
-      const ST h_yz_r=h12[jr]+kkV_r+kY*gZ_r;
-      const ST h_zx_r=h02[jr]+kkV_r+kz*gX_r;
-      const ST h_zy_r=h12[jr]+kkV_r+kz*gY_r;
-      const ST h_zz_r=h22[jr]+kkV_r+kz*gZ_r;
-      const ST h_xy_i=h01[ji]+kkV_i+kX*gY_i;
-      const ST h_xz_i=h02[ji]+kkV_i+kX*gZ_i;
-      const ST h_yx_i=h01[ji]+kkV_i+kY*gX_i;
-      const ST h_yy_i=h11[ji]+kkV_i+kY*gY_i;
-      const ST h_yz_i=h12[ji]+kkV_i+kY*gZ_i;
-      const ST h_zx_i=h02[ji]+kkV_i+kz*gX_i;
-      const ST h_zy_i=h12[ji]+kkV_i+kz*gY_i;
-      const ST h_zz_i=h22[ji]+kkV_i+kz*gZ_i;
+      const ST h_xx_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g00,g01,g02,g00,g01,g02)+kX*(gX_i+dX_i);
+      const ST h_xy_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g00,g01,g02,g10,g11,g12)+kX*(gY_i+dY_i);
+      const ST h_xz_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g00,g01,g02,g20,g21,g22)+kX*(gZ_i+dZ_i);
+      const ST h_yx_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g10,g11,g12,g00,g01,g02)+kY*(gX_i+dX_i);
+      const ST h_yy_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g10,g11,g12,g10,g11,g12)+kY*(gY_i+dY_i);
+      const ST h_yz_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g10,g11,g12,g20,g21,g22)+kY*(gZ_i+dZ_i);
+      const ST h_zx_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g20,g21,g22,g00,g01,g02)+kZ*(gX_i+dX_i);
+      const ST h_zy_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g20,g21,g22,g10,g11,g12)+kZ*(gY_i+dY_i);
+      const ST h_zz_r=v_m_v(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],g20,g21,g22,g20,g21,g22)+kZ*(gZ_i+dZ_i);
 
-      gg_xx[j]=ComplexT(c*h_xx_r-s*h_xx_i, c*h_xx_i+s*h_xx_r);
-      gg_xy[j]=ComplexT(c*h_xy_r-s*h_xy_i, c*h_xy_i+s*h_xy_r);
-      gg_xz[j]=ComplexT(c*h_xz_r-s*h_xz_i, c*h_xz_i+s*h_xz_r);
-      gg_yx[j]=ComplexT(c*h_yx_r-s*h_yx_i, c*h_yx_i+s*h_yx_r);
-      gg_yy[j]=ComplexT(c*h_yy_r-s*h_yy_i, c*h_yy_i+s*h_yy_r);
-      gg_yz[j]=ComplexT(c*h_yz_r-s*h_yz_i, c*h_yz_i+s*h_yz_r);
-      gg_zx[j]=ComplexT(c*h_zx_r-s*h_zx_i, c*h_zx_i+s*h_zx_r);
-      gg_zy[j]=ComplexT(c*h_zy_r-s*h_zy_i, c*h_zy_i+s*h_zy_r);
-      gg_zz[j]=ComplexT(c*h_zz_r-s*h_zz_i, c*h_zz_i+s*h_zz_r);
+      const ST h_xx_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g00,g01,g02,g00,g01,g02)-kX*(gX_r+dX_r);
+      const ST h_xy_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g00,g01,g02,g10,g11,g12)-kX*(gY_r+dY_r);
+      const ST h_xz_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g00,g01,g02,g20,g21,g22)-kX*(gZ_r+dZ_r);
+      const ST h_yx_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g10,g11,g12,g00,g01,g02)-kY*(gX_r+dX_r);
+      const ST h_yy_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g10,g11,g12,g10,g11,g12)-kY*(gY_r+dY_r);
+      const ST h_yz_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g10,g11,g12,g20,g21,g22)-kY*(gZ_r+dZ_r);
+      const ST h_zx_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g20,g21,g22,g00,g01,g02)-kZ*(gX_r+dX_r);
+      const ST h_zy_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g20,g21,g22,g10,g11,g12)-kZ*(gY_r+dY_r);
+      const ST h_zz_i=v_m_v(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],g20,g21,g22,g20,g21,g22)-kZ*(gZ_r+dZ_r);
+
+      grad_grad_psi[psiIndex][0]=ComplexT(c*h_xx_r-s*h_xx_i, c*h_xx_i+s*h_xx_r);
+      grad_grad_psi[psiIndex][1]=ComplexT(c*h_xy_r-s*h_xy_i, c*h_xy_i+s*h_xy_r);
+      grad_grad_psi[psiIndex][2]=ComplexT(c*h_xz_r-s*h_xz_i, c*h_xz_i+s*h_xz_r);
+      grad_grad_psi[psiIndex][3]=ComplexT(c*h_yx_r-s*h_yx_i, c*h_yx_i+s*h_yx_r);
+      grad_grad_psi[psiIndex][4]=ComplexT(c*h_yy_r-s*h_yy_i, c*h_yy_i+s*h_yy_r);
+      grad_grad_psi[psiIndex][5]=ComplexT(c*h_yz_r-s*h_yz_i, c*h_yz_i+s*h_yz_r);
+      grad_grad_psi[psiIndex][6]=ComplexT(c*h_zx_r-s*h_zx_i, c*h_zx_i+s*h_zx_r);
+      grad_grad_psi[psiIndex][7]=ComplexT(c*h_zy_r-s*h_zy_i, c*h_zy_i+s*h_zy_r);
+      grad_grad_psi[psiIndex][8]=ComplexT(c*h_zz_r-s*h_zz_i, c*h_zz_i+s*h_zz_r);
     }
-#endif
   }
 
   template<typename VV, typename GV, typename GGV>
   void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
-    const PointType& r=P.R[iat];
+    const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
     SplineInst->evaluate_vgh(ru,myV,myG,myH);
     assign_vgh(r,psi,dpsi,grad_grad_psi);

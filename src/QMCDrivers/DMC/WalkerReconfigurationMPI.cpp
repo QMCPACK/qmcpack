@@ -230,7 +230,6 @@ void WalkerReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W,
         minusN.insert(minusN.end(),-dN[ip],ip);
       }
   }
-  int wbuffer_size=W[0]->byteSize();
   int nswap=plusN.size();
   int last = std::abs(dN[MyContext])-1;
   int ic=0;
@@ -238,10 +237,10 @@ void WalkerReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W,
   {
     if(plusN[ic]==MyContext)
     {
-      //OOMPI_Packed sendBuffer(wbuffer_size,OOMPI_COMM_WORLD);
-      OOMPI_Packed sendBuffer(wbuffer_size,myComm->getComm());
-      W[plus[last]]->putMessage(sendBuffer);
-      //OOMPI_COMM_WORLD[minusN[ic]].Send(sendBuffer);
+      int im=plus[last];
+      size_t byteSize = W[im]->byteSize();
+      W[im]->updateBuffer();
+      OOMPI_Message sendBuffer(W[im]->DataSet.data(), byteSize);
       myComm->getComm()[minusN[ic]].Send(sendBuffer);
       --last;
     }
@@ -265,7 +264,6 @@ void WalkerReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W,
         minusN.insert(minusN.end(),-dN[ip],ip);
       }
   }
-  int wbuffer_size=W[0]->byteSize();
   int nswap=plusN.size();
   int last = std::abs(dN[MyContext])-1;
   int ic=0;
@@ -273,12 +271,11 @@ void WalkerReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W,
   {
     if(minusN[ic]==MyContext)
     {
-      //OOMPI_Packed recvBuffer(wbuffer_size,OOMPI_COMM_WORLD);
-      //OOMPI_COMM_WORLD[plusN[ic]].Recv(recvBuffer);
-      OOMPI_Packed recvBuffer(wbuffer_size,myComm->getComm());
-      myComm->getComm()[plusN[ic]].Recv(recvBuffer);
       int im=minus[last];
-      W[im]->getMessage(recvBuffer);
+      size_t byteSize = W[im]->byteSize();
+      OOMPI_Message recvBuffer(W[im]->DataSet.data(), byteSize);
+      myComm->getComm()[plusN[ic]].Recv(recvBuffer);
+      W[im]->copyFromBuffer();
       W[im]->ParentID=W[im]->ID;
       W[im]->ID=(++NumWalkersCreated)*NumContexts+MyContext;
       --last;

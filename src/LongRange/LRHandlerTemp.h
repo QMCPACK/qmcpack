@@ -54,10 +54,12 @@ public:
   BreakupBasisType Basis; //This needs a Lattice for the constructor...
   Func myFunc;
 
+
   //Constructor
   LRHandlerTemp(ParticleSet& ref, mRealType kc_in=-1.0):
     LRHandlerBase(kc_in),FirstTime(true), Basis(ref.LRBox)
   {
+    LRHandlerBase::ClassName="LRHandlerTemp";
     myFunc.reset(ref);
   }
 
@@ -141,9 +143,25 @@ public:
   {
     mRealType v=0.0;
     for(int n=0; n<coefs.size(); n++)
-      v -= coefs[n]*Basis.h(n,r);
+      v += coefs[n]*Basis.h(n,r);
     return v;
   }
+  /** evaluate the contribution from the long-range part for for spline
+   */
+  inline mRealType lrDf(mRealType r)
+  {
+    mRealType dv=0.0;
+    if(r<LR_rc)
+    {
+      for(int n=0; n<coefs.size(); n++)
+        dv += coefs[n]*Basis.df(n,r);
+    }
+    else
+      dv=myFunc.df(r);
+
+    return dv;
+  }
+
 
   inline mRealType evaluateSR_k0()
   {
@@ -260,6 +278,7 @@ private:
     //  Fk[ki] = evalFk(k); //Call derived fn.
     //}
   }
+
 };
 }
 #endif

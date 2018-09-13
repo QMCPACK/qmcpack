@@ -62,7 +62,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
     while(tcur != NULL)
     { //check <determinantset/> or <sposet_builder/> to extract the ionic and electronic structure
       std::string cname((const char*)tcur->name);
-      if(cname == OrbitalBuilderBase::detset_tag || cname =="sposet_builder")
+      if(cname == WaveFunctionComponentBuilder::detset_tag || cname =="sposet_builder")
       { 
         qp=ptclPool->createESParticleSet(tcur,target,qp);
       }
@@ -82,7 +82,10 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
     psiFactory->setName(id);
     isPrimary = (myPool.empty() || role == "primary");
     myPool[id]=psiFactory;
-    app_log()<<" Adding WavefunctionFactory for "<<psiFactory->getName()<< std::endl;
+    app_summary() << " Wavefunction setup: " << std::endl;
+    app_summary() << " ------------------- " << std::endl;
+    app_summary() << "  Name: " << psiFactory->getName() << std::endl;
+
   }
   else
   {
@@ -101,12 +104,12 @@ void  WaveFunctionPool::addFactory(WaveFunctionFactory* psifac)
   PoolType::iterator oit(myPool.find(psifac->getName()));
   if(oit == myPool.end())
   {
-    LOGMSG("  Adding " << psifac->getName() << " WaveFunctionFactory to the pool")
+    app_log() << "  Adding " << psifac->getName() << " WaveFunctionFactory to the pool" << std::endl;
     myPool[psifac->getName()]=psifac;
   }
   else
   {
-    WARNMSG("  " << psifac->getName() << " exists. Ignore addition")
+    app_warning() << "  " << psifac->getName() << " exists. Ignore addition" << std::endl;
   }
 }
 

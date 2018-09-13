@@ -28,34 +28,28 @@
 #include <limits>
 #include <iterator>
 
-using std::complex;
-
 template<class T>
 struct PooledData
 {
   typedef T value_type;
-  typedef OHMMS_PRECISION_FULL fp_value_type;
   typedef typename std::vector<T>::size_type size_type;
 
-  size_type Current, Current_DP;
+  size_type Current;
   std::vector<T> myData;
-  /// only active when T!=fp_value_type
-  std::vector<fp_value_type> myData_DP;
 
   ///default constructor
-  inline PooledData(): Current(0), Current_DP(0) { }
+  inline PooledData(): Current(0) { }
 
   ///constructor with a size
-  inline PooledData(size_type n, size_type n1=0): Current(0), Current_DP(0)
+  inline PooledData(size_type n): Current(0)
   {
     myData.resize(n,T());
-    myData_DP.resize(n1,fp_value_type());
   }
 
   ///return the size of the data
   inline size_type byteSize() const
   {
-    return sizeof(T)*myData.size() + sizeof(fp_value_type)*myData_DP.size();
+    return sizeof(T)*myData.size();
   }
 
   ///return the size of the data
@@ -64,30 +58,18 @@ struct PooledData
     return myData.size();
   }
 
-  ///return the size of the DP data
-  inline size_type size_DP() const
-  {
-    return myData_DP.size();
-  }
-
   //inline void clear() { std::vector<T>::clear(); Current=0;}
   inline size_type current() const
   {
     return Current;
   }
 
-   inline size_type current_DP() const
-  {
-    return Current_DP;
-  }
-
   /** set the Current to a cursor
    * @param cur locator to which Current is assigned
    */
-  inline void rewind(size_type cur=0, size_type cur_DP=0)
+  inline void rewind(size_type cur=0)
   {
     Current = cur;
-    Current_DP = cur_DP;
   }
 
   ///return the starting iterator
@@ -106,9 +88,7 @@ struct PooledData
   inline void clear()
   {
     myData.clear();
-    myData_DP.clear();
     Current=0;
-    Current_DP=0;
   }
   ///reserve the memory using std::vector<T>::reserve
   inline void reserve(size_type n)
@@ -134,14 +114,7 @@ struct PooledData
   }
   /*@}*/
 
-  template<class T1>
-  inline void add(T1 x)
-  {
-    Current++;
-    myData.push_back(static_cast<T>(x));
-  }
-
-  inline void add(T x)
+  inline void add(T& x)
   {
     Current++;
     myData.push_back(x);
@@ -154,6 +127,13 @@ struct PooledData
     myData.push_back(x.imag());
   }
 
+  template<class T1>
+  inline void add(T1& x)
+  {
+    Current++;
+    myData.push_back(static_cast<T>(x));
+  }
+
   template<class _InputIterator>
   inline void add(_InputIterator first, _InputIterator last)
   {
@@ -161,25 +141,11 @@ struct PooledData
     myData.insert(myData.end(),first,last);
   }
 
-  inline void add(T* first, T* last)
+  template<typename T1>
+  inline void add(T1* first, T1* last)
   {
     Current += last-first;
     myData.insert(myData.end(),first,last);
-  }
-
-  template<class T1>
-  inline void add(T1* first, T1* last)
-  {
-    Current_DP += last-first;
-    myData_DP.insert(myData_DP.end(),first,last);
-  }
-
-  inline void add(std::complex<T>* first,std::complex<T>* last)
-  {
-    size_type dn=2*(last-first);
-    T* t=reinterpret_cast<T*>(first);
-    myData.insert(myData.end(),t,t+dn);
-    Current += dn;
   }
 
   template<typename T1>
@@ -187,14 +153,8 @@ struct PooledData
   {
     size_type dn=2*(last-first);
     T1* t=reinterpret_cast<T1*>(first);
-    myData_DP.insert(myData_DP.end(),t,t+dn);
-    Current_DP += dn;
-  }
-
-  template<class T1>
-  inline void get(T1& x)
-  {
-    x = static_cast<T1>(myData[Current++]);
+    myData.insert(myData.end(),t,t+dn);
+    Current += dn;
   }
 
   inline void get(T& x)
@@ -208,6 +168,12 @@ struct PooledData
     Current+=2;
   }
 
+  template<class T1>
+  inline void get(T1& x)
+  {
+    x = static_cast<T1>(myData[Current++]);
+  }
+
   template<class _OutputIterator>
   inline void get(_OutputIterator first, _OutputIterator last)
   {
@@ -216,29 +182,12 @@ struct PooledData
     copy(myData.begin()+now,myData.begin()+Current,first);
   }
 
-  inline void get(T* first, T* last)
+  template<typename T1>
+  inline void get(T1* first, T1* last)
   {
     size_type now=Current;
     Current+=last-first;
     std::copy(myData.begin()+now,myData.begin()+Current,first);
-  }
-
-  template<class T1>
-  inline void get(T1* first, T1* last)
-  {
-    size_type now=Current_DP;
-    Current_DP+=last-first;
-    std::copy(myData_DP.begin()+now,myData_DP.begin()+Current_DP,first);
-  }
-
-  inline void get(std::complex<T>* first, std::complex<T>* last)
-  {
-    while(first != last)
-    {
-      (*first)=std::complex<T>(myData[Current],myData[Current+1]);
-      ++first;
-      Current+=2;
-    }
   }
 
   template<typename T1>
@@ -246,20 +195,27 @@ struct PooledData
   {
     while(first != last)
     {
-      (*first)=std::complex<T1>(myData_DP[Current_DP],myData_DP[Current_DP+1]);
+      (*first)=std::complex<T1>(myData[Current],myData[Current+1]);
       ++first;
-      Current_DP+=2;
+      Current+=2;
     }
   }
 
-  inline void put(T x)
+  inline void put(T& x)
   {
     myData[Current++] = x;
   }
+
   inline void put(std::complex<T>& x)
   {
     myData[Current++] = x.real();
     myData[Current++] = x.imag();
+  }
+
+  template<typename T1>
+  inline void put(T1& x)
+  {
+    myData[Current++] = static_cast<T>(x);
   }
 
   template<class _InputIterator>
@@ -269,20 +225,15 @@ struct PooledData
     Current+=last-first;
   }
 
-  inline void put(T* first, T* last)
+  template<typename T1>
+  inline void put(T1* first, T1* last)
   {
     std::copy(first,last,myData.begin()+Current);
     Current+=last-first;
   }
 
-  template<class T1>
-  inline void put(T1* first, T1* last)
-  {
-    std::copy(first,last,myData_DP.begin()+Current_DP);
-    Current_DP+=last-first;
-  }
-
-  inline void put(std::complex<T>* first, std::complex<T>* last)
+  template<typename T1>
+  inline void put(std::complex<T1>* first, std::complex<T1>* last)
   {
     while(first != last)
     {
@@ -292,28 +243,10 @@ struct PooledData
     }
   }
 
-  template<typename T1>
-  inline void put(std::complex<T1>* first, std::complex<T1>* last)
-  {
-    while(first != last)
-    {
-      myData_DP[Current_DP++] = (*first).real();
-      myData_DP[Current_DP++] = (*first).imag();
-      ++first;
-    }
-  }
-
-
   /** return the address of the first element **/
   inline T* data()
   {
     return &(myData[0]);
-  }
-
-  /** return the address of the first DP element **/
-  inline fp_value_type* data_DP()
-  {
-    return &(myData_DP[0]);
   }
 
   inline void print(std::ostream& os)
@@ -325,7 +258,6 @@ struct PooledData
   inline Msg& putMessage(Msg& m)
   {
     m.Pack(&(myData[0]),myData.size());
-    m.Pack(&(myData_DP[0]),myData_DP.size());
     return m;
   }
 
@@ -333,7 +265,6 @@ struct PooledData
   inline Msg& getMessage(Msg& m)
   {
     m.Unpack(&(myData[0]),myData.size());
-    m.Unpack(&(myData_DP[0]),myData_DP.size());
     return m;
   }
 

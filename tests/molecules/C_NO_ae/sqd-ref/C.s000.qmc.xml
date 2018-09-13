@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <particleset name="atom" size="1">
+    <group name="C">
+      <parameter name="charge">6</parameter>
+    </group>
+  </particleset>
+  <particleset name="e">
+    <group name="u" size="4">
+      <parameter name="charge">-1</parameter>
+    </group>
+    <group name="d" size="2">
+      <parameter name="charge">-1</parameter>
+    </group>
+  </particleset>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="MO" transform="yes" source="atom">
+      <basisset>
+        <atomicBasisSet type="Numerical" elementType="C" expandYlm="no" href="C.s000.h5">
+          <basisGroup rid="R000" ds="orbital0000" n="1" l="0" m="0" zeta="1"/>
+          <basisGroup rid="R001" ds="orbital0001" n="2" l="0" m="0" zeta="1"/>
+          <basisGroup rid="R002" ds="orbital0002" n="2" l="1" m="1" zeta="1"/>
+          <basisGroup rid="R002" ds="orbital0002" n="2" l="1" m="0" zeta="1"/>
+        </atomicBasisSet>
+      </basisset>
+      <slaterdeterminant>
+        <determinant spin="1" id="detu" size="4"/>
+        <determinant spin="-1" id="detd" size="2"/>
+      </slaterdeterminant>
+    </determinantset>
+  </wavefunction>
+</qmcsystem>

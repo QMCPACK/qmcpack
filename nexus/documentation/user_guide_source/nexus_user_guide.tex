@@ -257,7 +257,7 @@ To install the Python modules on other platforms, please see
 Of course, to run full calculations, the simulation codes and converters 
 involved must be installed as well.  These include a modified version of 
 Quantum Espresso (\texttt{pw.x}, \texttt{pw2qmcpack.x}, optionally 
-\texttt{pw2casino.x}), QMCPACK (\texttt{qmcapp}, \texttt{qmcapp\_complex}, \texttt{convert4qmc}, \texttt{wfconvert}, \texttt{ppconvert}), 
+\texttt{pw2casino.x}), QMCPACK (\texttt{qmcpack}, \texttt{qmcpack\_complex}, \texttt{convert4qmc}, \texttt{wfconvert}, \texttt{ppconvert}), 
 SQD (\texttt{sqd}, packaged with QMCPACK), VASP, and/or GAMESS.  
 Complete coverage of this task is beyond the scope of the current document, but 
 please see ``Helpful Links for Installing Electronic Structure Codes'' 
@@ -534,7 +534,7 @@ The \texttt{generate\_gamess} function also accepts arbitrary GAMESS keywords (\
 qmc = generate_qmcpack(
     identifier   = 'vmc',
     path         = 'diamond/vmc',
-    job          = Job(cores=16,threads=4,app='qmcapp'),
+    job          = Job(cores=16,threads=4,app='qmcpack'),
     input_type   = 'basic',
     system       = dia16,
     pseudos      = ['C.BFD.xml'],
@@ -736,8 +736,8 @@ directory in your Nexus installation:
 \end{shaded}
 \noindent
 The examples assume that you have working versions of \texttt{pw.x}, 
-\texttt{pw2qmcpack.x}, \texttt{qmcapp} (real version), and 
-\texttt{qmcapp\_complex} (complex version) installed and in your \texttt{PATH}. 
+\texttt{pw2qmcpack.x}, \texttt{qmcpack} (real version), and 
+\texttt{qmcpack\_complex} (complex version) installed and in your \texttt{PATH}. 
 A brief description of each example is given below.  
 
 
@@ -901,7 +901,7 @@ conv = generate_pw2qmcpack(
 qmc = generate_qmcpack(
     identifier   = 'vmc',           # identifier/file prefix 
     path         = 'diamond/vmc',   # directory for vmc run
-    job          = Job(cores=16,threads=4,app='qmcapp'),
+    job          = Job(cores=16,threads=4,app='qmcpack'),
     input_type   = 'basic',
     system       = dia16,           # run diamond system
     pseudos      = ['C.BFD.xml'],   # qmcpack PP for C
@@ -926,7 +926,7 @@ run_project(scf,conv,qmc)
 %\end{lstlisting}
 
 
-To fully execute the usage example provided here, copies of PWSCF, QMCPACK, and the orbital converter pw2qmcpack will need to be installed on the local machine.  The example assumes that the executables are in the user's \texttt{PATH} and are named \texttt{pw.x}, \texttt{qmcapp}, and \texttt{pw2qmcpack.x}.  See Sec. \ref{sec:install_code} for download and installation instructions for these codes. A test of Nexus including the generation of input files, but without actual job submission, can be performed without installing these codes.  However, Python itself and NumPy are required to run Nexus (see Sec. \ref{install_python}).    The example also assumes the local machine is a workstation with 16 available cores (``\texttt{ws16}'').  If fewer than 16 cores are available, \emph{e.g.} 4, change the example files to reflect this: \texttt{ws16}$\rightarrow$\texttt{ws4}, \texttt{Job(cores=16,$\ldots$)}$\rightarrow$\texttt{Job(cores=4,$\ldots$)}. 
+To fully execute the usage example provided here, copies of PWSCF, QMCPACK, and the orbital converter pw2qmcpack will need to be installed on the local machine.  The example assumes that the executables are in the user's \texttt{PATH} and are named \texttt{pw.x}, \texttt{qmcpack}, and \texttt{pw2qmcpack.x}.  See Sec. \ref{sec:install_code} for download and installation instructions for these codes. A test of Nexus including the generation of input files, but without actual job submission, can be performed without installing these codes.  However, Python itself and NumPy are required to run Nexus (see Sec. \ref{install_python}).    The example also assumes the local machine is a workstation with 16 available cores (``\texttt{ws16}'').  If fewer than 16 cores are available, \emph{e.g.} 4, change the example files to reflect this: \texttt{ws16}$\rightarrow$\texttt{ws4}, \texttt{Job(cores=16,$\ldots$)}$\rightarrow$\texttt{Job(cores=4,$\ldots$)}. 
 
 In this example, we will run Nexus in three different modes:
 \begin{enumerate}
@@ -1010,7 +1010,7 @@ Next, run the example in generate mode.  Set ``\texttt{status\_only}=0'' and ``\
          Entering ./runs/diamond/vmc 2 
            Would have executed:  
              export OMP_NUM_THREADS=4
-             mpirun -np 4 qmcapp vmc.in.xml 
+             mpirun -np 4 qmcpack vmc.in.xml 
      
        poll 5  memory 60.78 MB 
          Entering ./runs/diamond/vmc 2 
@@ -1188,7 +1188,7 @@ opt = generate_qmcpack(
     # nexus inputs
     identifier   = 'opt',           # identifier/file prefix
     path         = 'graphene/opt',  # directory for opt run
-    job          = Job(cores=16,app='qmcapp'),
+    job          = Job(cores=16,app='qmcpack'),
     pseudos      = ['C.BFD.xml'],   # qmcpack PP file
     system       = graphene,        # run graphene
     # input format selector   
@@ -1261,7 +1261,7 @@ qmc = generate_qmcpack(
     # nexus inputs
     identifier   = 'qmc',           # identifier/file prefix       
     path         = 'graphene/qmc',  # directory for dmc run       
-    job          = Job(cores=16,app='qmcapp'),
+    job          = Job(cores=16,app='qmcpack'),
     pseudos      = ['C.BFD.xml'],   # qmcpack PP file
     system       = graphene,        # run graphene
     # input format selector                                      
@@ -1396,7 +1396,7 @@ Project starting
     Entering ./runs/graphene/opt 6 
       Executing:                        # run qmcpack
         export OMP_NUM_THREADS=1        # w/ complex arithmetic
-        mpirun -np 16 qmcapp_complex opt.in.xml 
+        mpirun -np 16 qmcpack_complex opt.in.xml 
 
   poll 11  memory 56.32 MB 
   poll 12  memory 56.32 MB 
@@ -1421,7 +1421,7 @@ Project starting
     Entering ./runs/graphene/qmc 3 
       Executing:                        # run qmcpack
         export OMP_NUM_THREADS=1
-        mpirun -np 16 qmcapp_complex qmc.in.xml 
+        mpirun -np 16 qmcpack_complex qmc.in.xml 
 
   poll 797  memory 57.31 MB 
   poll 798  memory 57.31 MB 
@@ -1624,7 +1624,7 @@ opt = generate_qmcpack(
     # nexus inputs
     identifier   = 'opt',           # identifier/file prefix
     path         = 'c20/opt',       # directory for opt run
-    job          = Job(cores=16,app='qmcapp'),
+    job          = Job(cores=16,app='qmcpack'),
     pseudos      = ['C.BFD.xml'],   # qmcpack PP file
     system       = c20,             # run c20
     # input format selector   
@@ -1661,7 +1661,7 @@ qmc = generate_qmcpack(
     # nexus inputs
     identifier   = 'qmc',           # identifier/file prefix       
     path         = 'c20/qmc',  # directory for dmc run       
-    job          = Job(cores=16,app='qmcapp'),
+    job          = Job(cores=16,app='qmcpack'),
     pseudos      = ['C.BFD.xml'],   # qmcpack PP file
     system       = c20,             # run c20
     # input format selector                                      
@@ -1781,7 +1781,7 @@ Project starting
     Entering ./runs/c20/opt 3 
       Executing:                    # run qmcpack
         export OMP_NUM_THREADS=1    # w/ real arithmetic
-        mpirun -np 16 qmcapp opt.in.xml 
+        mpirun -np 16 qmcpack opt.in.xml 
 
   poll 13  memory 56.24 MB 
   poll 14  memory 56.24 MB 
@@ -1806,7 +1806,7 @@ Project starting
     Entering ./runs/c20/qmc 2 
       Executing:                    # run qmcpack
         export OMP_NUM_THREADS=1
-        mpirun -np 16 qmcapp qmc.in.xml 
+        mpirun -np 16 qmcpack qmc.in.xml 
 
   poll 208  memory 56.49 MB 
   poll 209  memory 56.49 MB 
@@ -2302,7 +2302,7 @@ the theory and practice of Quantum Monte Carlo.
   Download: \url{http://www.quantum-espresso.org/} , \url{http://qmcpack.org/downloads/} \\
   Installation instructions: See the \texttt{README} file in \texttt{qmcpack/external\_codes/quantum\_espresso} for instructions on patching Quantum Espresso version 5.1.
 
-\subsection{QMCPACK: qmcapp, qmcapp\_complex, convert4qmc, ppconvert, sqd}
+\subsection{QMCPACK: qmcpack, qmcpack\_complex, convert4qmc, ppconvert, sqd}
   Download: \url{http://qmcpack.org/downloads/}\\ 
   Install: \url{http://docs.qmcpack.org/ug/a00002.html}
 

@@ -15,7 +15,7 @@
 #define QMCPLUSPLUS_GTO_BUILDER_H
 
 #include "Configuration.h"
-#include "QMCWaveFunctions/SphericalBasisSet.h"
+#include "QMCWaveFunctions/MolecularOrbitals/SphericalBasisSet.h"
 #include "Numerics/GaussianBasisSet.h"
 #include "io/hdf_archive.h"
 namespace qmcplusplus

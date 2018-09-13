@@ -22,7 +22,6 @@
 #include "Particle/FastParticleOperators.h"
 #include "Message/OpenMP.h"
 #include "LongRange/StructFact.h"
-#include "qmc_common.h"
 
 namespace qmcplusplus
 {
@@ -77,21 +76,34 @@ void ParticleSet::createSK()
   {
     Lattice.SetLRCutoffs();
     LRBox=Lattice;
-    if(Lattice.SuperCellEnum == SUPERCELL_SLAB)
+    bool changed = false;
+    if(Lattice.SuperCellEnum == SUPERCELL_SLAB && Lattice.VacuumScale != 1.0)
     {
-      LRBox.R(2,2)*=qmc_common.vacuum;
+      LRBox.R(2,0)*=Lattice.VacuumScale;
+      LRBox.R(2,1)*=Lattice.VacuumScale;
+      LRBox.R(2,2)*=Lattice.VacuumScale;
+      changed = true;
     }
-    else if(Lattice.SuperCellEnum == SUPERCELL_WIRE)
+    else if(Lattice.SuperCellEnum == SUPERCELL_WIRE && Lattice.VacuumScale != 1.0)
     {
-      LRBox.R(1,1)*=qmc_common.vacuum;
-      LRBox.R(2,2)*=qmc_common.vacuum;
+      LRBox.R(1,0)*=Lattice.VacuumScale;
+      LRBox.R(1,1)*=Lattice.VacuumScale;
+      LRBox.R(1,2)*=Lattice.VacuumScale;
+      LRBox.R(2,0)*=Lattice.VacuumScale;
+      LRBox.R(2,1)*=Lattice.VacuumScale;
+      LRBox.R(2,2)*=Lattice.VacuumScale;
+      changed = true;
     }
     LRBox.reset();
     LRBox.SetLRCutoffs();
+    LRBox.printCutoffs();
 
-    app_log() << "--------------------------------------- " << std::endl;
-    LRBox.print(app_log());
-    app_log() << "--------------------------------------- " << std::endl;
+    if (changed) {
+      app_summary() << "  Simulation box changed by vacuum supercell conditions" << std::endl;
+      app_log() << "--------------------------------------- " << std::endl;
+      LRBox.print(app_log());
+      app_log() << "--------------------------------------- " << std::endl;
+    }
 
     if(SK)
     {

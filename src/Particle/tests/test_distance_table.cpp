@@ -398,7 +398,7 @@ const char *particles =
   ParticleSet::ParticleLayout_t* SimulationCell = new ParticleSet::ParticleLayout_t;
   LatticeParser lp(*SimulationCell);
   lp.put(part1);
-  SimulationCell->print(app_log());
+  SimulationCell->print(app_log(), 0);
 
   // read particle set
   ParticleSet ions, electrons;

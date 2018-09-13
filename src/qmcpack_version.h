@@ -8,7 +8,9 @@
 #define STR_EXPAND(x) #x
 #define STR(x) STR_EXPAND(x)
 
+#ifdef IS_GIT_PROJECT
 #include "git-rev.h"
+#endif
 
 #ifdef GIT_BRANCH_RAW
 #define QMCPACK_GIT_BRANCH STR(GIT_BRANCH_RAW)

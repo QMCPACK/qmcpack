@@ -25,7 +25,6 @@
 #include "Utilities/RandomGenerator.h"
 #include "QMCDrivers/WalkerControlBase.h"
 #include "Estimators/EstimatorManagerBase.h"
-//#include "Estimators/DMCEnergyEstimator.h"
 #include "QMCDrivers/BranchIO.h"
 #include "Particle/Reptile.h"
 #ifdef HAVE_ADIOS
@@ -122,7 +121,6 @@ void SimpleFixedNodeBranch::start(const std::string& froot, bool append)
   MyEstimator->reset();
 }
 
-//void SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, RealType tau, bool fixW, bool killwalker)
 int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, bool fixW, bool killwalker)
 {
   BranchMode.set(B_DMC,1);//set DMC
@@ -181,7 +179,7 @@ int SimpleFixedNodeBranch::initWalkerController(MCWalkerConfiguration& walkers, 
   //update the simulation parameters
   WalkerController->put(myNode);
   //assign current Eref and a large number for variance
-  WalkerController->setEnergyAndVariance(vParam[B_EREF],vParam[B_SIGMA2]);
+  WalkerController->setTrialEnergy(vParam[B_ETRIAL]);
   this->reset();
   if(fromscratch)
   {
@@ -372,24 +370,9 @@ void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers)
   MyEstimator->accumulate(walkers);
 }
 
-/** perform branching
- *
- * Set the trial energy of clones
- */
-void SimpleFixedNodeBranch::branch(int iter, MCWalkerConfiguration& walkers, std::vector<ThisType*>& clones)
-{
-  branch(iter,walkers);
-  //synchronize it
-  for(int i=0; i<clones.size(); i++)
-    clones[i]->vParam=vParam;
-  if((BranchMode[B_DMCSTAGE])&&(ToDoSteps==0))
-    for(int i=0; i<clones.size(); i++)
-      clones[i]->BranchMode=BranchMode;
-}
 /**
  *
  */
-
 void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
 {
   //Update the current energy and accumulate.
@@ -477,23 +460,9 @@ void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W)
   MyEstimator->accumulate(W);
 }
 
-//Ray Clay:  Have to come up with a better way to collect and sync up reptile copies.  This is taken from DMC.  See RMCSingleOMP
-
-void SimpleFixedNodeBranch::collect(int iter, MCWalkerConfiguration& W, std::vector<ThisType*>& clones)
-{
-  collect(iter,W);
-  //synchronize it
-  for(int i=0; i<clones.size(); i++)
-    clones[i]->vParam=vParam;
-  if((BranchMode[B_RMCSTAGE])&&(ToDoSteps==0))
-    for(int i=0; i<clones.size(); i++)
-      clones[i]->BranchMode=BranchMode;
-}
 /** Calculates and saves various action components, also does necessary updates for running averages.
  *
  */
-
-
 void SimpleFixedNodeBranch::reset()
 {
   //use effective time step of BranchInterval*Tau
@@ -635,7 +604,6 @@ int SimpleFixedNodeBranch::resetRun(xmlNodePtr cur)
   WalkerController->put(myNode);
   ToDoSteps=iParam[B_WARMUPSTEPS]=(iParam[B_WARMUPSTEPS])?iParam[B_WARMUPSTEPS]:10;
   setBranchCutoff(vParam[B_SIGMA2],WalkerController->targetSigma,10);
-  WalkerController->setEnergyAndVariance(vParam[B_EREF],vParam[B_SIGMA2]);
   WalkerController->reset();
 #ifdef QMC_CUDA
   reset(); // needed. Ye

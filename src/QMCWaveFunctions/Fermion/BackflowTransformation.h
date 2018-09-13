@@ -23,7 +23,6 @@
 #include "QMCWaveFunctions/Fermion/BackflowFunctionBase.h"
 #include "QMCWaveFunctions/Fermion/Backflow_ee.h"
 #include "QMCWaveFunctions/Fermion/Backflow_eI.h"
-#include "QMCWaveFunctions/Fermion/GaussianFunctor.h"
 #include "QMCWaveFunctions/Jastrow/BsplineFunctor.h"
 #include "Particle/ParticleSet.h"
 #include "Configuration.h"
@@ -38,6 +37,8 @@ class BackflowTransformation  //: public OrbitalSetTraits<QMCTraits::ValueType>
 {
 
 public:
+
+  typedef BackflowFunctionBase::WFBufferType WFBufferType;
 
   // All BF quantities should be real, so eliminating complex (ValueType) possibility
   enum {DIM=OHMMS_DIM};
@@ -293,7 +294,7 @@ public:
         bfFuns[i]->resetParameters(active);
   }
 
-  void registerData(ParticleSet& P, PooledData<RealType>& buf)
+  void registerData(ParticleSet& P, WFBufferType& buf)
   {
     if(storeQP.size() == 0)
     {
@@ -321,7 +322,7 @@ public:
       bfFuns[i]->registerData(buf);
   }
 
-  void updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool redo)
+  void updateBuffer(ParticleSet& P, WFBufferType& buf, bool redo)
   {
     //if(redo) evaluate(P);
     evaluate(P);
@@ -334,7 +335,7 @@ public:
       bfFuns[i]->updateBuffer(buf);
   }
 
-  void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     buf.get(FirstOfP,LastOfP);
     buf.get(FirstOfA,LastOfA);
@@ -734,7 +735,7 @@ public:
     Amat_0.resize(NumTargets,NumTargets);
     Amat_1.resize(NumTargets,NumTargets);
     P.update();
-    Walker_t::Buffer_t tbuffer;
+    Walker_t::WFBuffer_t tbuffer;
     size_t BufferCursor=tbuffer.current();
     registerData(P,tbuffer);
     tbuffer.rewind(BufferCursor);

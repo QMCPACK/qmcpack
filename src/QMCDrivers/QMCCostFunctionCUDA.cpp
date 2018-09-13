@@ -20,7 +20,6 @@
 #include "QMCDrivers/QMCCostFunctionCUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "Particle/HDFWalkerInputCollect.h"
 #include "Message/CommOperators.h"
 
 namespace qmcplusplus
@@ -28,8 +27,8 @@ namespace qmcplusplus
 
 QMCCostFunctionCUDA::QMCCostFunctionCUDA
 ( MCWalkerConfiguration& w, TrialWaveFunction& psi,
-  QMCHamiltonian& h, HamiltonianPool& hpool):
-  QMCCostFunctionBase(w,psi,h), CloneManager(hpool)
+  QMCHamiltonian& h):
+  QMCCostFunctionBase(w,psi,h)
 {
 }
 
@@ -40,13 +39,6 @@ QMCCostFunctionCUDA::~QMCCostFunctionCUDA()
   delete_iter(RecordsOnNode.begin(),RecordsOnNode.end());
   delete_iter(DerivRecords.begin(),DerivRecords.end());
   delete_iter(HDerivRecords.begin(),HDerivRecords.end());
-}
-
-void QMCCostFunctionCUDA::resetWalkers()
-{
-  if(W.getActiveWalkers()>nVMCWalkers) 
-    W.destroyWalkers(W.getActiveWalkers()-nVMCWalkers);
-  nVMCWalkers=0;
 }
 
 
@@ -197,8 +189,6 @@ QMCCostFunctionCUDA::getConfigurations(const std::string& aroot)
     }
     H_KE.addObservables(W);
   }
-
-  nVMCWalkers=W.getActiveWalkers();
 
   outputManager.pause();
   W.loadEnsemble();

@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 # import nexus functions
-from nexus import settings,Job,get_machine,run_project
+from nexus import settings,job,run_project
 from nexus import generate_physical_system
 from nexus import generate_pwscf
 from nexus import generate_pw2qmcpack
@@ -14,10 +14,7 @@ settings(
     runs          = '',
     results       = '',
     status_only   = 0,
-    #generate_only   = False,
-    # Complicated setting only so examples can be run in test harness.
-    # For real runs, use the plain setting of 'generate_only' above.
-    generate_only   = globals().get('override_generate_only_setting',False),
+    generate_only = 0,
     sleep         = 3,
     machine       = 'ws16',
     ) 
@@ -46,7 +43,7 @@ linopt1 = linear(
     alloweddifference    = 1e-4,
     stepsize             = 0.2,
     stabilizerscale      = 1.0,
-    nstabilizers         = 3
+    nstabilizers         = 3,
     )
 
 linopt2 = linopt1.copy()  
@@ -80,7 +77,6 @@ qmc_calcs = [
     ]
 
 # create opt & DMC sim's for each bond length
-sims = []
 scale = 1.00
 directory = 'scale_'+str(scale)
 
@@ -92,7 +88,7 @@ dimer = generate_physical_system(
     Lbox       = 15.0,         # box size
     units      = 'A',          # Angstrom units
     net_spin   = 2,            # Nup-Ndown = 2
-    O          = 6             # O has 6 val. electrons
+    O          = 6,            # pseudo O has 6 val. electrons
     )
 
 # describe scf run
@@ -100,7 +96,7 @@ scf = generate_pwscf(
     identifier   = 'scf',
     path         = directory,
     system       = dimer,
-    job          = Job(cores=16),
+    job          = job(cores=16),
     input_type   = 'scf',
     pseudos      = ['O.BFD.upf'],
     input_dft    = 'lda',
@@ -108,51 +104,47 @@ scf = generate_pwscf(
     conv_thr     = 1e-7,
     mixing_beta  = .7,
     nosym        = True,
-    wf_collect   = True
+    wf_collect   = True,
     )
-sims.append(scf)
 
 # describe orbital conversion
 p2q = generate_pw2qmcpack(
     identifier   = 'p2q',
     path         = directory,
-    job          = Job(cores=1),
+    job          = job(cores=1),
     write_psir   = False,
-    dependencies = (scf,'orbitals')
+    dependencies = (scf,'orbitals'),
     )
-sims.append(p2q)
     
 # describe optimization run
 opt = generate_qmcpack(
     identifier   = 'opt',
     path         = directory,
     system       = dimer,
-    job          = Job(cores=16,app='qmcapp'),
+    job          = job(cores=16,app='qmcpack'),
     input_type   = 'basic',
     pseudos      = ['O.BFD.xml'],
     bconds       = 'nnn',
     jastrows     = [('J1','bspline',8,4.5), # 1 & 2 body Jastrows
                     ('J2','pade',0.5,0.5)],
     calculations = opt_calcs,
-    dependencies = (p2q,'orbitals')
+    dependencies = (p2q,'orbitals'),
     )
-sims.append(opt)
 
 # describe DMC run
 qmc = generate_qmcpack(
     identifier   = 'qmc',
     path         = directory,
     system       = dimer,
-    job          = Job(cores=16,app='qmcapp'),
+    job          = job(cores=16,app='qmcpack'),
     input_type   = 'basic',
     pseudos      = ['O.BFD.xml'],
     bconds       = 'nnn',
     jastrows     = [],            
     calculations = qmc_calcs,
     dependencies = [(p2q,'orbitals'),
-                    (opt,'jastrow')]
+                    (opt,'jastrow')],
     )
-sims.append(qmc)
 
 # execute all simulations
-run_project(sims) 
+run_project()

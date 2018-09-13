@@ -29,7 +29,6 @@ QMCState::QMCState()
   use_density=false;
   dryrun=false;
   save_wfs=false;
-  async_swap=false;
   io_node=true;
   mpi_groups=1;
   use_ewald=false;
@@ -40,13 +39,11 @@ QMCState::QMCState()
 #else
   compute_device=0;
 #endif
-  vacuum=1.0;
-  master_eshd_name="none";
 }
 
 void QMCState::initialize(int argc, char **argv)
 {
-  io_node= (OHMMS::Controller->rank()==0);
+  io_node = (OHMMS::Controller->rank()==0);
   bool stopit=false;
   //going to use better option library
   int i=1;
@@ -61,10 +58,6 @@ void QMCState::initialize(int argc, char **argv)
     {
       save_wfs=(c.find("no")>=c.size());
     }
-    else if(c.find("--async_swap") < c.size())
-    {
-      async_swap=(c.find("no")>=c.size());
-    }
     else if(c.find("--help")< c.size())
     {
       stopit=true;
@@ -75,7 +68,10 @@ void QMCState::initialize(int argc, char **argv)
     }
     else if(c.find("--vacuum")<c.size())
     {
-      vacuum=atof(argv[++i]);
+      if(io_node)
+        std::cerr << std::endl << "ERROR: command line option --vacuum has been deprecated. "
+                  << "Use vacuum input tag as described in the manual." << std::endl;
+      stopit=true;
     }
     else if(c.find("--noprint")<c.size())
     {//do not print Jastrow or PP
@@ -87,17 +83,17 @@ void QMCState::initialize(int argc, char **argv)
     //}
     ++i;
   }
-  if(stopit)
+  if(stopit && io_node)
   {
     std::cerr << std::endl << "QMCPACK version "<< QMCPACK_VERSION_MAJOR <<"." << QMCPACK_VERSION_MINOR << "." << QMCPACK_VERSION_PATCH
         << " built on " << __DATE__ << std::endl;
-#ifdef QMCPACK_GIT_BRANCH
-    std::cerr << " git branch: " << QMCPACK_GIT_BRANCH << std::endl;
-    std::cerr << " git last commit: " << QMCPACK_GIT_HASH << std::endl;
-    std::cerr << " git last commit date: " << QMCPACK_GIT_COMMIT_LAST_CHANGED << std::endl;
-    std::cerr << " git last commit subject: " << QMCPACK_GIT_COMMIT_SUBJECT << std::endl;
-#endif
-    std::cerr << "Usage: qmcpack input [--dryrun --save_wfs[=no] --async_swap[=no] --gpu]" << std::endl << std::endl;
+    print_git_info_if_present(std::cerr);
+    std::cerr << std::endl << "Usage: qmcpack input [--dryrun --save_wfs[=no] --gpu]" << std::endl << std::endl;
+  }
+  if(stopit)
+  {
+    OHMMS::Controller->finalize();
+    exit(1);
   }
 }
 
@@ -108,10 +104,6 @@ void QMCState::print_options(std::ostream& os)
     os << "  dryrun : qmc sections will be ignored." << std::endl;
   if(save_wfs)
     os << "  save_wfs=1 : save wavefunctions in hdf5. " << std::endl;
-  if(async_swap)
-    os << "  async_swap=1 : using async isend/irecv for walker swaps " << std::endl;
-  else
-    os << "  async_swap=0 : using blocking send/recv for walker swaps " << std::endl;
 }
 
 void QMCState::print_memory_change(const std::string& who, size_t before)
@@ -119,6 +111,18 @@ void QMCState::print_memory_change(const std::string& who, size_t before)
   before=memory_allocated-before;
   app_log() << "MEMORY increase " << (before>>20) << " MB " << who << std::endl;
 }
+
+void QMCState::print_git_info_if_present(std::ostream& os)
+{
+#ifdef QMCPACK_GIT_BRANCH
+    os << std::endl;
+    os << "  Git branch: " << QMCPACK_GIT_BRANCH << std::endl;
+    os << "  Last git commit: " << QMCPACK_GIT_HASH << std::endl;
+    os << "  Last git commit date: " << QMCPACK_GIT_COMMIT_LAST_CHANGED << std::endl;
+    os << "  Last git commit subject: " << QMCPACK_GIT_COMMIT_SUBJECT << std::endl;
+#endif
+}
+
 
 QMCState qmc_common;
 

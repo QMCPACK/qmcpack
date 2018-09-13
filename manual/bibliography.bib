@@ -1,3 +1,22 @@
+% Encoding: UTF-8
+
+@Article{Ceperley1978,
+  author    = {Ceperley, D.},
+  title     = {Ground state of the fermion one-component plasma: A Monte Carlo study in two and three dimensions},
+  journal   = {Phys. Rev. B},
+  year      = {1978},
+  volume    = {18},
+  pages     = {3126--3138},
+  month     = oct,
+  doi       = {10.1103/PhysRevB.18.3126},
+  issue     = {7},
+  numpages  = {0},
+  publisher = {American Physical Society},
+  url       = {https://link.aps.org/doi/10.1103/PhysRevB.18.3126},
+}
+
+
+
 @article{CeperleyAlderPRL1980,
 	Author = {Ceperley, D. M. and Alder, B. J.},
 	Issue = {7},
@@ -9,6 +28,18 @@
 	Volume = {45},
 	Year = {1980},
 	url = {http://dx.doi.org/10.1103/PhysRevLett.45.566}
+}
+
+@article{Drummond2004,
+  author = {Drummond, N. D. and Towler, M. D. and Needs, R. J.},
+  doi = {10.1103/PhysRevB.70.235119},
+  issn = {10980121},
+  journal = {Physical Review B - Condensed Matter and Materials Physics},
+  number = {23},
+  pages = {1--11},
+  title = {{Jastrow correlation factor for atoms, molecules, and solids}},
+  volume = {70},
+  year = {2004}
 }
 
 @article{Burkatzki07,
@@ -185,11 +216,23 @@ keywords = "Quantum Espresso",
 keywords = "VASP "
 }
 
-@article{IPCC_SC17,
-title = "Embracing a new era of highly efficient and productive quantum Monte Carlo simulations",
-author = "Mathuriya, Amrita and Luo, Ye and Clay, Raymond C. III and Benali, Anouar and  Shulenburger, Luke and Kim, Jeongnim",
-note = "arXiv:1708.02645",
-year = {2017},
+@inproceedings{IPCC_SC17,
+ author = {Mathuriya, Amrita and Luo, Ye and Clay,III, Raymond C. and Benali, Anouar and Shulenburger, Luke and Kim, Jeongnim},
+ title = {Embracing a New Era of Highly Efficient and Productive Quantum Monte Carlo Simulations},
+ booktitle = {Proceedings of the International Conference for High Performance Computing, Networking, Storage and Analysis},
+ series = {SC '17},
+ year = {2017},
+ isbn = {978-1-4503-5114-0},
+ location = {Denver, Colorado},
+ pages = {38:1--38:12},
+ articleno = {38},
+ numpages = {12},
+ url = {http://doi.acm.org/10.1145/3126908.3126952},
+ doi = {10.1145/3126908.3126952},
+ acmid = {3126952},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {CPUs, QMC, optimizations, portability, vectorization},
 }
 
 @article{Kwon1993backflow,
@@ -280,3 +323,266 @@ eprint = {http://dx.doi.org/10.1063/1.2437215}
 	year = {2017},
 	pages = {194101}
 }
+
+@article{Casula2006,
+abstract = {We present a way to include non local potentials in the standard Diffusion Monte Carlo method without using the locality approximation. We define a stochastic projection based on a fixed node effective Hamiltonian, whose lowest energy is an upper bound of the true ground state energy, even in the presence of non local operators in the Hamiltonian. The variational property of the resulting algorithm provides a stable diffusion process, even in the case of divergent non local potentials, like the hard-core pseudopotentials. It turns out that the modification required to improve the standard Diffusion Monte Carlo algorithm is simple.},
+archivePrefix = {arXiv},
+arxivId = {cond-mat/0610246},
+author = {Casula, Michele},
+doi = {10.1103/PhysRevB.74.161102},
+eprint = {0610246},
+issn = {10980121},
+journal = {Physical Review B - Condensed Matter and Materials Physics},
+keywords = {DMC,T-move},
+mendeley-groups = {QMC-methods/DMC},
+mendeley-tags = {DMC,T-move},
+pages = {1--4},
+primaryClass = {cond-mat},
+title = {{Beyond the locality approximation in the standard diffusion Monte Carlo method}},
+volume = {74},
+year = {2006}
+}
+
+@article{Casula2010,
+abstract = {We propose improved versions of the standard diffusion Monte Carlo (DMC) and the lattice regularized diffusion Monte Carlo (LRDMC) algorithms. For the DMC method, we refine a scheme recently devised to treat nonlocal pseudopotential in a variational way. We show that such scheme-when applied to large enough systems-maintains its effectiveness only at correspondingly small enough time-steps, and we present two simple upgrades of the method which guarantee the variational property in a size-consistent manner. For the LRDMC method, which is size-consistent and variational by construction, we enhance the computational efficiency by introducing: (i) an improved definition of the effective lattice Hamiltonian which remains size-consistent and entails a small lattice-space error with a known leading term and (ii) a new randomization method for the positions of the lattice knots which requires a single lattice-space.},
+archivePrefix = {arXiv},
+arxivId = {1002.0356},
+author = {Casula, Michele and Moroni, Saverio and Sorella, Sandro and Filippi, Claudia},
+doi = {10.1063/1.3380831},
+eprint = {1002.0356},
+isbn = {0021-9606},
+issn = {00219606},
+journal = {Journal of Chemical Physics},
+number = {15},
+pmid = {20423174},
+title = {{Size-consistent variational approaches to nonlocal pseudopotentials: Standard and lattice regularized diffusion Monte Carlo methods revisited}},
+volume = {132},
+year = {2010}
+}
+
+@article{Caffarel2013,
+	Author = {E. Giner, A. Scemama, M. Caffarel },
+	Journal = {Canadian Journal of Chemistry},
+	Pages = {9},
+	Title = { Using perturbatively selected configuration interaction in quantum Monte Carlo calculations },
+	Volume = {91},
+	Year = {2013}}
+
+@Misc{QP,
+author =   {A. Scemamma},
+title =    {Quantum Package},
+howpublished = {\url{https://github.com/LCPQ/quantum_package}},
+year = {2013--2017}
+}
+
+@inproceedings{FladCaffarelSavin97,
+	Address = {World Scientific},
+	Author = {H.-J. Flad, M. Caffarel and A. Savin},
+	Booktitle = {Recent Advances in Quantum Monte Carlo Methods, Vol. III},
+	Pages = {73-98},
+	Publisher = {ed. by W. A. Lester},
+	Title = {Monte Carlo in solids},
+	Year = {1997}}
+    
+@Article{Diner1967,
+author="Diner, S.
+and Malrieu, J. P.
+and Claverie, P.",
+title="The use of perturbation methods for the study of the effects of configuration interaction",
+journal="Theoretica chimica acta",
+year="1967",
+volume="8",
+number="5",
+pages="390--403",
+abstract="The second order contribution to $\pi$ correlation energy of linear polyenes and polyacenes is studied in two partitions of the C.I. matrix, starting from delocalized Molecular Orbitals. When one uses the classical partition H=HSCF+V, the correlation energy increases proportionnai to the number of electrons, quite independently of the shape of the molecule. Another partition, which insures the perturbation matrix to be zero-diagonal, gives a larger 2                  nd                 order correlation energy; the difference between the 2                  nd                 order contributions of these two expressions tends to a constant and is larger for a compact system than for a linear one. The dependence of the correlation energy to the values of bielectronic integrals used at short distances shows that it arises mainly from short range interactions.",
+issn="1432-2234",
+doi="10.1007/BF00529454",
+url="http://dx.doi.org/10.1007/BF00529454"
+}
+@article {Nesbet1955,
+	author = {Nesbet, R. K.},
+	title = {Configuration Interaction in Orbital Theories},
+	volume = {230},
+	number = {1182},
+	pages = {312--321},
+	year = {1955},
+	doi = {10.1098/rspa.1955.0134},
+	publisher = {The Royal Society},
+	abstract = {A systematic method is developed for estimating or calculating corrections for configuration interaction in atomic, molecular and nuclear wave-function calculations. Solutions of the Hartree-Fock equations for a single Slater determinant or approximate Hartree-Fock solutions obtained by Roothaan{\textquoteright}s iterative procedure have special properties which are used to simplify the matrix of the many-particle Hamiltonian. A restricted self-consistent field method is proposed for treating states of low symmetry. This method avoids the off-diagonal Lagrange multipliers encountered in previous methods and is adapted to configuration interaction calculations.},
+	issn = {0080-4630},
+	URL = {http://rspa.royalsocietypublishing.org/content/230/1182/312},
+	eprint = {http://rspa.royalsocietypublishing.org/content/230/1182/312.full.pdf},
+	journal = {Proceedings of the Royal Society of London A: Mathematical, Physical and Engineering Sciences}
+}
+
+@article{Scemama2018,
+author = {Scemama, Anthony and Garniron, Yann and Caffarel, Michel and Loos, Pierre-Francois},
+title = {Deterministic construction of nodal surfaces within quantum Monte Carlo: the case of FeS},
+journal = {Journal of Chemical Theory and Computation},
+volume = {0},
+number = {ja},
+pages = {null},
+year = {0},
+doi = {10.1021/acs.jctc.7b01250},
+
+URL = { 
+        http://dx.doi.org/10.1021/acs.jctc.7b01250
+    
+},
+eprint = { 
+        http://dx.doi.org/10.1021/acs.jctc.7b01250
+    
+}
+
+}
+
+
+@article{Garniron2017-1,
+author = {Yann Garniron and Emmanuel Giner and Jean-Paul Malrieu and Anthony Scemama},
+title = {Alternative definition of excitation amplitudes in multi-reference state-specific coupled cluster},
+journal = {The Journal of Chemical Physics},
+volume = {146},
+number = {15},
+pages = {154107},
+year = {2017},
+doi = {10.1063/1.4980034},
+
+URL = { 
+        https://doi.org/10.1063/1.4980034
+    
+},
+eprint = { 
+        https://doi.org/10.1063/1.4980034
+    
+}
+
+}
+@article{Garniron2017-2,
+author = {Yann Garniron and Anthony Scemama and Pierre-François Loos and Michel Caffarel},
+title = {Hybrid stochastic-deterministic calculation of the second-order perturbative contribution of multireference perturbation theory},
+journal = {The Journal of Chemical Physics},
+volume = {147},
+number = {3},
+pages = {034101},
+year = {2017},
+doi = {10.1063/1.4992127},
+
+URL = { 
+        https://doi.org/10.1063/1.4992127
+    
+},
+eprint = { 
+        https://doi.org/10.1063/1.4992127
+    
+}
+
+}
+@article {Scemama2016,
+author = {Scemama, Anthony and Applencourt, Thomas and Giner, Emmanuel and Caffarel, Michel},
+title = {Quantum Monte Carlo with very large multideterminant wavefunctions},
+journal = {Journal of Computational Chemistry},
+volume = {37},
+number = {20},
+issn = {1096-987X},
+url = {http://dx.doi.org/10.1002/jcc.24382},
+doi = {10.1002/jcc.24382},
+pages = {1866--1875},
+keywords = {quantum Monte Carlo, fixed-node diffusion Monte Carlo, large multideterminant wavefunction, configuration interaction},
+year = {2016},
+}
+@article {schmidt93,
+author = {Schmidt, Michael W. and Baldridge, Kim K. and Boatz, Jerry A. and Elbert, Steven T. and Gordon, Mark S. and Jensen, Jan H. and Koseki, Shiro and Matsunaga, Nikita and Nguyen, Kiet A. and Su, Shujun and Windus, Theresa L. and Dupuis, Michel and Montgomery, John A.},
+title = {General atomic and molecular electronic structure system},
+journal = {Journal of Computational Chemistry},
+volume = {14},
+number = {11},
+publisher = {John Wiley & Sons, Inc.},
+issn = {1096-987X},
+url = {http://dx.doi.org/10.1002/jcc.540141112},
+doi = {10.1002/jcc.540141112},
+pages = {1347--1363},
+year = {1993},
+}
+@article {Sun2018,
+author = {Sun, Qiming and Berkelbach, Timothy C. and Blunt, Nick S. and Booth, George H. and Guo, Sheng and Li, Zhendong and Liu, Junzi and McClain, James D. and Sayfutyarova, Elvira R. and Sharma, Sandeep and Wouters, Sebastian and Chan, Garnet Kin-Lic},
+title = {PySCF: the Python-based simulations of chemistry framework},
+journal = {Wiley Interdisciplinary Reviews: Computational Molecular Science},
+volume = {8},
+number = {1},
+publisher = {Wiley Periodicals, Inc.},
+issn = {1759-0884},
+url = {http://dx.doi.org/10.1002/wcms.1340},
+doi = {10.1002/wcms.1340},
+pages = {n/a--n/a},
+year = {2018},
+}
+@article {Fedorov2004,
+author = {Fedorov, Dmitri G. and Olson, Ryan M. and Kitaura, Kazuo and Gordon, Mark S. and Koseki, Shiro},
+title = {A new hierarchical parallelization scheme: Generalized distributed data interface (GDDI), and an application to the fragment molecular orbital method (FMO)},
+journal = {Journal of Computational Chemistry},
+volume = {25},
+number = {6},
+publisher = {Wiley Subscription Services, Inc., A Wiley Company},
+issn = {1096-987X},
+url = {http://dx.doi.org/10.1002/jcc.20018},
+doi = {10.1002/jcc.20018},
+pages = {872--880},
+keywords = {fragment molecular orbital (FMO), GAMESS, DDI, parallel},
+year = {2004},
+}
+@article{Ma2005,
+author = {A. Ma and M. D. Towler and N. D. Drummond and R. J. Needs},
+title = {Scheme for adding electron–nucleus cusps to Gaussian orbitals},
+journal = {The Journal of Chemical Physics},
+volume = {122},
+number = {22},
+pages = {224322},
+year = {2005},
+doi = {10.1063/1.1940588},
+
+URL = { 
+        https://doi.org/10.1063/1.1940588
+    
+},
+eprint = { 
+        https://doi.org/10.1063/1.1940588
+    
+}
+
+}
+
+
+
+@article{Gaskell1961,
+  author={T Gaskell},
+  title={The Collective Treatment of a Fermi Gas: II},
+  journal={Proceedings of the Physical Society},
+  volume={77},
+  number={6},
+  pages={1182},
+  url={http://stacks.iop.org/0370-1328/77/i=6/a=312},
+  year={1961},
+}
+
+@article{Gaskell1962,
+  author={T Gaskell},
+  title={The Collective Treatment of Many-body Systems: III},
+  journal={Proceedings of the Physical Society},
+  volume={80},
+  number={5},
+  pages={1091},
+  url={http://stacks.iop.org/0370-1328/80/i=5/a=307},
+  year={1962},
+}
+
+@article{Luo2018hyb,
+  author={Ye Luo and Kenneth P. Esler and Paul R. C. Kent and Luke Shulenburger},
+  title={An efficient hybrid orbital representation for quantum Monte Carlo calculations},
+  journal={The Journal of Chemical Physics},
+  volume={149},
+  number={8},
+  pages={084107},
+  year={2018},
+}
+
+@Comment{jabref-meta: databaseType:bibtex;}

@@ -38,6 +38,7 @@ KContainer::UpdateKLists(ParticleLayout_t& lattice, RealType kc, bool useSphere)
   app_log() << "  KContainer initialised with cutoff " << kcutoff << std::endl;
   app_log() << "   # of K-shell  = " << kshell.size() << std::endl;
   app_log() << "   # of K points = " << kpts.size() << std::endl;
+  app_log() << std::endl;
 }
 
 void

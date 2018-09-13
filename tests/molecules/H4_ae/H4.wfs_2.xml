@@ -47,5 +47,20 @@
       </sposet>
     </determinantset>
 
+    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
+      <correlation rcut="2" size="10" speciesA="u" speciesB="u">
+        <coefficients id="uu" type="Array" optimize="no"> 0.04661440939 0.0555644703 0.1286335481 0.1077457768 0.0811381484 0.0626555805 0.0436904683 0.02811397453 0.01572772511 0.006258753264</coefficients>
+      </correlation>
+      <correlation rcut="2" size="10" speciesA="u" speciesB="d">
+        <coefficients id="ud" type="Array" optimize="no"> 0.4465508582 0.3603308616 0.2893897103 0.2269436006 0.1717850082 0.1250275368 0.08538908372 0.05318480503 0.02806504868 0.01035981902</coefficients>
+      </correlation>
+    </jastrow>
+
+    <jastrow name="J1" type="One-Body" function="Bspline" source="ion0" print="yes">
+      <correlation rcut="2" size="10" cusp="1" elementType="H">
+        <coefficients id="eH" type="Array" optimize="no"> 0.0167926566 0.1405038909 0.1611311956 0.1198446618 0.06764720157 0.03602453588 0.02460661286 0.01952889643 0.01300432967 0.005621933949</coefficients>
+      </correlation>
+    </jastrow>
+
   </wavefunction>
 </qmcsystem>

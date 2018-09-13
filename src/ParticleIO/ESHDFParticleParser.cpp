@@ -86,7 +86,7 @@ bool ESHDFIonsParser::put(xmlNodePtr cur)
   }
   delete [] species_names;
   ParticleSet::Tensor_t lat(ref_.Lattice.R);
-  ParticleSet::Buffer_t pbuffer;
+  PooledData<OHMMS_PRECISION_FULL> pbuffer;
   for(int i=0; i<tspecies.numAttributes(); ++i)
     pbuffer.add(tspecies.d_attrib[i]->begin(),tspecies.d_attrib[i]->end());
   pbuffer.add(lat.begin(),lat.end());

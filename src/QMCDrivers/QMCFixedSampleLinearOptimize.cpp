@@ -66,7 +66,8 @@ vdeps(1,std::vector<double>()),
   stabilizerScale(2.0), bigChange(50), w_beta(0.0),  MinMethod("OneShiftOnly"), GEVtype("mixed"),
   StabilizerMethod("best"), GEVSplit("no"), stepsize(0.25), doAdaptiveThreeShift(false),
   targetExcitedStr("no"), targetExcited(false), block_lmStr("no"), block_lm(false),
-  bestShift_i(-1.0), bestShift_s(-1.0), shift_i_input(0.01), shift_s_input(1.00), doOneShiftOnly(false),
+  bestShift_i(-1.0), bestShift_s(-1.0), shift_i_input(0.01), shift_s_input(1.00),
+  doOneShiftOnly(false), shift_s_base(4.0), accept_history(3),
   num_shifts(3), nblocks(1), nolds(1), nkept(1), nsamp_comp(0), omega_shift(0.0), max_param_change(0.3),
   max_relative_cost_change(10.0), block_first(true), block_second(false), block_third(false)
 {
@@ -473,7 +474,7 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
       vmcEngine = new VMCcuda(W,Psi,H,psiPool);
     else
 #endif
-      vmcEngine = new VMCSingleOMP(W,Psi,H,hamPool,psiPool);
+      vmcEngine = new VMCSingleOMP(W,Psi,H,psiPool);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
     vmcEngine->initCommunicator(myComm);
   }
@@ -486,10 +487,10 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   {
 #if defined (QMC_CUDA)
     if (useGPU == "yes")
-      optTarget = new QMCCostFunctionCUDA(W,Psi,H,hamPool);
+      optTarget = new QMCCostFunctionCUDA(W,Psi,H);
     else
 #endif
-      optTarget = new QMCCostFunctionOMP(W,Psi,H,hamPool);
+      optTarget = new QMCCostFunctionOMP(W,Psi,H);
     optTarget->setStream(&app_log());
     success=optTarget->put(q);
   }
@@ -1141,12 +1142,17 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
   for (int i=0; i<numParams; i++)
     optTarget->Params(i) = currentParameters.at(i) + parameterDirections.at(i+1);
 
-  RealType bigVec(0);
+  RealType largestChange(0);
+  int max_element;
   for (int i=0; i<numParams; i++)
-    bigVec = std::max(bigVec,std::abs(parameterDirections.at(i+1)));
+    if (std::abs(parameterDirections.at(i+1)) > largestChange)
+    {
+      largestChange = std::abs(parameterDirections.at(i+1));
+      max_element = i;
+    }
   app_log() << std::endl << "Among totally " << numParams << " optimized parameters, "
             << "largest LM parameter change : "
-            << bigVec << std::endl;
+            << largestChange << " at parameter " << max_element << std::endl;
 
   // compute the new cost
   optTarget->IsValid = true;
@@ -1167,11 +1173,19 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
     app_log() << std::endl << "The new set of parameters is not valid. Revert to the old set!" << std::endl;
     for (int i=0; i<numParams; i++)
       optTarget->Params(i) = currentParameters.at(i);
-    bestShift_s=bestShift_s*4.0;
+    bestShift_s=bestShift_s*shift_s_base;
+    if(accept_history[0]==true && accept_history[1]==false) // rejected the one before last and accepted the last
+    {
+      shift_s_base = std::sqrt(shift_s_base);
+      app_log() << "Update shift_s_base to " << shift_s_base << std::endl;
+    }
+    accept_history <<= 1;
   } else {
-    if ( bestShift_s > 1.0e-2 ) bestShift_s=bestShift_s/4.0;
+    if ( bestShift_s > 1.0e-2 ) bestShift_s=bestShift_s/shift_s_base;
     // say what we are doing
     app_log() << std::endl << "The new set of parameters is valid. Updating the trial wave function!" << std::endl;
+    accept_history <<= 1;
+    accept_history.set(0,true);
   }
 
   app_log() << std::endl

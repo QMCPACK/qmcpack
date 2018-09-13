@@ -64,10 +64,12 @@ void Uniform3DGridLayout::SetLRCutoffs()
   }
   //Set KC for structure-factor and LRbreakups.
   LR_kc = LR_dim_cutoff/LR_rc;
-  LOGMSG("\tLong-range breakup parameters:");
-  LOGMSG("\trc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc << "\n");
-  LOGMSG("\tWignerSeitzRadius = " << WignerSeitzRadius << "\n");
-  LOGMSG("\tSimulationCellRadius = " << SimulationCellRadius << "\n");
+}
+
+void Uniform3DGridLayout::printCutoffs()
+{
+  app_log() << "  Long-range breakup parameters:" << std::endl;
+  app_log() << "    rc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc << std::endl;
 }
 
 void Uniform3DGridLayout::makeShell(std::vector<SingleParticleIndex_t>& RS,
@@ -317,16 +319,15 @@ int Uniform3DGridLayout::connectGrid(value_type int_rad, value_type con_rad)
     }
   }
   MaxConnections = maxnc;
-  //print(std::cout);
   return maxnc; // return the maxmimum number of connected cells
 }
 
-void Uniform3DGridLayout::print(std::ostream& os) const
+void Uniform3DGridLayout::print(std::ostream& os, int level) const
 {
-  os << "Unit Cell" << std::endl;
-  Base_t::print(os);
-  os << "    Long-range breakup parameters:" << std::endl;
-  os << "    rc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc << "\n" << std::endl;
+  os << " Unit Cell" << std::endl;
+  os << " ---------" << std::endl;
+  Base_t::print(os, level);
+  os << std::endl;
   ////printGrid(os);
   //for(int ig=0; ig<c_offset.size()-1; ig++) {
   //  os << ig << " has neighboring cell "

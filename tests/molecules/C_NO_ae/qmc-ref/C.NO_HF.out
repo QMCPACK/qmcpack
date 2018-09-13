@@ -1,0 +1,231 @@
+Rank =    0  Free Memory = 127529 MB
+Rank =    8  Free Memory = 127529 MB
+Rank =    9  Free Memory = 127529 MB
+Rank =   10  Free Memory = 127529 MB
+Rank =   11  Free Memory = 127529 MB
+Rank =   12  Free Memory = 127529 MB
+Rank =   13  Free Memory = 127529 MB
+Rank =   14  Free Memory = 127529 MB
+Rank =   15  Free Memory = 127529 MB
+Rank =    1  Free Memory = 127529 MB
+Rank =    2  Free Memory = 127529 MB
+Rank =    3  Free Memory = 127529 MB
+Rank =    4  Free Memory = 127529 MB
+Rank =    5  Free Memory = 127529 MB
+Rank =    6  Free Memory = 127529 MB
+Rank =    7  Free Memory = 127529 MB
+  Input file(s): C.NO_HF.in.xml 
+
+=====================================================
+                    QMCPACK 1.0.0 
+
+  (c) Copyright 2003-  QMCPACK developers            
+
+  Subversion branch 6259
+  Last modified     2014-02-28 09:47:36 -0500 (Fri, 28 Feb 2014)
+=====================================================
+  Global options 
+  async_swap=0 : using blocking send/recv for walker swaps 
+
+  MPI Nodes            = 16
+  MPI Nodes per group  = 16
+  MPI Group ID         = 0
+  OMP_NUM_THREADS      = 1
+  Input XML = C.NO_HF.in.xml
+
+  Project = C.NO_HF
+  date    = 2017-12-19 11:20:44 EST
+  host    = jaguar
+  user    = auser
+
+  DO NOT READ DENSITY
+  Offset for the random number seeds based on time 92
+  Random number offset = 92  seeds = 491-601
+  ParticleSetPool::put
+  Creating atom particleset
+  XMLParticleParser::putSpecial
+  All the species have the same mass 1
+Particles are grouped. Safe to use groups 
+atom
+  ParticleSetPool::put
+  Creating e particleset
+  XMLParticleParser::putSpecial
+  All the species have the same mass 1
+Particles are grouped. Safe to use groups 
+e
+ Adding WavefunctionFactory for psi0
+  WaveFunctionFactory::build
+  WaveFunctionFactory::addFermionTerm
+  SlaterDetBuilder::put(xmlNodePtr)
+  BasisSetFactory::createBasisSet
+Using MolecularBasisBuilder<NGOBuilder>
+
+  MolecularBasisBuilder::put(xmlNodePtr)
+<input node="basisset"/>
+  Distance table for AA: source/target = e
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates with 
+  ... ParticleSet::addTable Create Table #0 e_e
+  Distance table for AB: source = atom target = e
+    PBC=open Orthorhombic=NA
+ using Cartesian coordinates 
+  ... ParticleSet::addTable Create Table #1 atom_e
+  AtomicBasisBuilder::put(xmlNodePtr)
+<input node="atomicBasisSet"  type="Numerical"  elementType="C"  expandYlm="no"  href="C.s000.h5"/>
+  C.s000.h5 version 0 1
+  AtomicBasisBuilder::createAOSet(xmlNodePtr)
+  AO BasisSet for C
+   Spherical Harmonics  DO NOT contain (-1)^m factor
+   Angular momentum m is explicitly given.
+   Grid is created by the input paremters in h5
+    Using log grid ri = 1.66667e-07 rf = 163.299 npts = 2001
+   R(n,l,m,s) 1 0 0 0
+   R(n,l,m,s) 2 0 0 0
+	Setting GridManager of 1 radial orbital to false
+   R(n,l,m,s) 2 1 0 0
+	Setting GridManager of 2 radial orbital to false
+   R(n,l,m,s) 2 1 1 0
+   Maximu Angular Momentum   = 1
+   Number of Radial functors = 3
+   Basis size                = 4
+
+Built BasisSetBuilder "MO" of type mo
+  BasisSetFactory::createBasisSet
+Reuse BasisSetBuilder "MO" type MO
+ Building SPOset  with  basis set.
+  MolecularBasisBuilder::createSPO(xmlNodePtr)
+Creating LCOrbitalSet with the Identity coefficient
+   Using Identity for the LCOrbitalSet 
+  BasisSetFactory::createBasisSet
+Reuse BasisSetBuilder "MO" type MO
+ Building SPOset  with  basis set.
+  MolecularBasisBuilder::createSPO(xmlNodePtr)
+Creating LCOrbitalSet with the Identity coefficient
+   Using Identity for the LCOrbitalSet 
+  SlaterDetBuilder::putDeterminant(xmlNodePtr,int)
+  Creating a determinant detu group=0 sposet=detu
+  Reusing a SPO set detu
+
+  SlaterDetBuilder::putDeterminant(xmlNodePtr,int)
+  Creating a determinant detd group=1 sposet=detd
+  Reusing a SPO set detd
+
+  FermionWF=SlaterDet
+  HamiltonianPool::put
+  QMCHamiltonian::addOperator Kinetic to H, physical Hamiltonian 
+  ... ParticleSet::addTable Reuse Table #0 e_e
+  QMCHamiltonian::addOperator ElecElec to H, physical Hamiltonian 
+  ... ParticleSet::addTable Reuse Table #1 atom_e
+  QMCHamiltonian::addOperator Coulomb to H, physical Hamiltonian 
+
+  QMCHamiltonian::add2WalkerProperty added
+    3 to P::PropertyList 
+    0 to P::Collectables 
+    starting Index of the observables in P::PropertyList = 9
+  Hamiltonian disables VirtualMoves
+<init source="atom" target="e">
+</init>
+ParticleSetPool::randomize 
+=========================================================
+ Summary of QMC systems 
+=========================================================
+ParticleSetPool has: 
+
+  ParticleSet atom : 0 1 
+
+    1
+
+    C  0.0000000000e+00  0.0000000000e+00  0.0000000000e+00
+
+  ParticleSet e : 0 4 6 
+
+    6
+
+    u  4.2858934506e-02 -1.1555246765e+00  2.3784426783e+00
+    u  1.2214792486e+00 -3.7875743304e-01 -1.0145946320e-01
+    u  3.9936086452e-01 -3.0503123619e+00 -1.1096015686e+00
+    u -7.9881252336e-01  2.7748174082e-01  3.9173420283e-01
+    d  1.3054745664e+00 -6.8352305651e-01 -1.1382583248e+00
+    d  4.8645839244e-01  1.5910471307e-01  4.4667645102e-01
+
+  Hamiltonian h0
+  Kinetic         Kinetic energy
+  ElecElec        CoulombAA source/target e
+
+  Coulomb         CoulombAB source=atom
+
+
+=========================================================
+  Start VMCSingleOMP
+  File Root C.NO_HF.s000 append = no 
+=========================================================
+  Adding 1 walkers to 0 existing sets
+  Total number of walkers: 1.6000000000e+01
+  Total weight: 1.6000000000e+01
+  Resetting Properties of the walkers 1 x 12
+
+<vmc function="put">
+  qmc_counter=0  my_counter=0
+  time step      = 2.0000000000e-01
+  blocks         = 1000
+  steps          = 200000
+  substeps       = 1
+  current        = 0
+  target samples = 0.0000000000e+00
+  walkers/mpi    = 1
+
+  stepsbetweensamples = 200200000
+<parameter name="blocks" condition="int">1000</parameter>
+<parameter name="check_properties" condition="int">100</parameter>
+<parameter name="checkproperties" condition="int">100</parameter>
+<parameter name="current" condition="int">0</parameter>
+<parameter name="dmcwalkersperthread" condition="real">0.0000000000e+00</parameter>
+<parameter name="maxcpusecs" condition="real">3.6000000000e+05</parameter>
+<parameter name="record_configs" condition="int">0</parameter>
+<parameter name="record_walkers" condition="int">200200000</parameter>
+<parameter name="recordconfigs" condition="int">0</parameter>
+<parameter name="recordwalkers" condition="int">200200000</parameter>
+<parameter name="rewind" condition="int">0</parameter>
+<parameter name="samples" condition="real">0.0000000000e+00</parameter>
+<parameter name="samplesperthread" condition="real">0.0000000000e+00</parameter>
+<parameter name="steps" condition="int">200000</parameter>
+<parameter name="stepsbetweensamples" condition="int">200200000</parameter>
+<parameter name="store_configs" condition="int">0</parameter>
+<parameter name="storeconfigs" condition="int">0</parameter>
+<parameter name="sub_steps" condition="int">1</parameter>
+<parameter name="substeps" condition="int">1</parameter>
+<parameter name="tau" condition="au">2.0000000000e-01</parameter>
+<parameter name="time_step" condition="au">2.0000000000e-01</parameter>
+<parameter name="timestep" condition="au">2.0000000000e-01</parameter>
+<parameter name="use_drift" condition="string">yes</parameter>
+<parameter name="usedrift" condition="string">yes</parameter>
+<parameter name="walkers" condition="int">1</parameter>
+<parameter name="warmup_steps" condition="int">2000</parameter>
+<parameter name="warmupsteps" condition="int">2000</parameter>
+  DumpConfig==false Nothing (configurations, state) will be saved.
+  Walker Samples are dumped every 200200000 steps.
+</vmc>
+
+ TraceManager::put() 1
+  traces requested          : 0
+  method allows traces      : 1
+  traces available          : 0
+
+  Adding a default LocalEnergyEstimator for the MainEstimator 
+  Initial partition of walkers 0 1 
+  PbyP moves with drift, using VMCUpdatePbyPWithDriftFast
+
+  Total Sample Size   =0
+  Walker distribution on root = 0 1 
+====================================================
+  SimpleFixedNodeBranch::finalize after a VMC block
+    QMC counter        = 0
+    time step          = 0.2
+    reference energy   = -34.5235
+    reference variance = 17.1698
+====================================================
+  QMC Execution time = 2.2730829200e+03 secs 
+  Total Execution time = 2.2731030268e+03 secs
+
+=========================================================
+  A new xml input file : C.NO_HF.s000.cont.xml

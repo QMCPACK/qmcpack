@@ -44,7 +44,7 @@ from developer import unavailable
 from nexus_base import nexus_core
 try:
     import h5py
-except ImportError:
+except:
     h5py = unavailable('h5py')
 #end try
 
@@ -176,7 +176,7 @@ class Qmcpack(Simulation):
                 elif 'determinantset' in wf and wf.determinantset.type in ('bspline','einspline'):
                     orb_elem = wf.determinantset
                 else:
-                    self.error('could not incorporate pw2qmcpack/wfconvert orbitals\n  bspline sposet_builder and determinantset are both missing')
+                    self.error('could not incorporate pw2qmcpack/wfconvert orbitals\nbspline sposet_builder and determinantset are both missing')
                 #end if
                 if 'href' in orb_elem and isinstance(orb_elem.href,str) and os.path.exists(orb_elem.href):
                     # user specified h5 file for orbitals, bypass orbital dependency
@@ -272,6 +272,7 @@ class Qmcpack(Simulation):
                 qs  = input.simulation.qmcsystem
                 oldwfn = qs.wavefunction
                 newwfn = res.qmcsystem.wavefunction
+                dset = newwfn.determinantset
                 if 'jastrows' in newwfn:
                     del newwfn.jastrows
                 #end if
@@ -279,7 +280,11 @@ class Qmcpack(Simulation):
                     newwfn.jastrows = oldwfn.jastrows
                 #end if
                 if input.cusp_correction():
-                    newwfn.determinantset.cuspcorrection = True
+                    dset.cuspcorrection = True
+                #end if
+                if 'orbfile' in result:
+                    h5file = result.orbfile
+                    dset.href = os.path.relpath(h5file,self.locdir)
                 #end if
                 qs.wavefunction = newwfn
 

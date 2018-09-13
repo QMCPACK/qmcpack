@@ -30,8 +30,8 @@ typedef enum { V_TIMER, VGL_TIMER, ACCEPT_REJECT_TIMER, NL_TIMER,
 
 TrialWaveFunction::TrialWaveFunction(Communicate* c)
   : MPIObjectBase(c)
-  , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0), BufferCursor_DP(0)
-  , PhaseValue(0.0),LogValue(0.0),OneOverM(1.0), PhaseDiff(0.0), FermionWF(0)
+  , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0), BufferCursor_scalar(0)
+  , PhaseValue(0.0),LogValue(0.0),OneOverM(1.0), PhaseDiff(0.0)
 {
   ClassName="TrialWaveFunction";
   myName="psi0";
@@ -40,7 +40,7 @@ TrialWaveFunction::TrialWaveFunction(Communicate* c)
 ///private and cannot be used
 TrialWaveFunction::TrialWaveFunction()
   : MPIObjectBase(0)
-  , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0), BufferCursor_DP(0)
+  , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0), BufferCursor_scalar(0)
   ,  PhaseValue(0.0),LogValue(0.0) ,OneOverM(1.0), PhaseDiff(0.0)
 {
   ClassName="TrialWaveFunction";
@@ -82,20 +82,17 @@ void TrialWaveFunction::stopOptimization()
 }
 
 /** add an ObritalBase
- * @param aterm an OrbitalBase
+ * @param aterm an WaveFunctionComponent
  * @param aname  name of aterm
  * @param fermion if true, set aterm to FermionWF
  */
 void
-TrialWaveFunction::addOrbital(OrbitalBase* aterm, const std::string& aname, bool fermion)
+TrialWaveFunction::addOrbital(WaveFunctionComponent* aterm, const std::string& aname, bool fermion)
 {
   Z.push_back(aterm);
   aterm->IsFermionWF=fermion;
   if(fermion) 
-  {
-    app_log() << "  FermionWF=" << aname << std::endl;
-    FermionWF=dynamic_cast<FermionBase*>(aterm);
-  }
+    app_log() << "  FermionWF = " << aname << std::endl;
 
   std::vector<std::string> suffixes(7);
   suffixes[0] = "_V";
@@ -140,8 +137,8 @@ TrialWaveFunction::evaluateLog(ParticleSet& P)
 
 void TrialWaveFunction::recompute(ParticleSet& P)
 {
-  std::vector<OrbitalBase*>::iterator it(Z.begin());
-  std::vector<OrbitalBase*>::iterator it_end(Z.end());
+  std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
+  std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
   for (int ii=RECOMPUTE_TIMER; it!=it_end; ++it,ii+=TIMER_SKIP)
   {
     myTimers[ii]->start();
@@ -163,8 +160,8 @@ TrialWaveFunction::evaluateLogOnly(ParticleSet& P)
   tempP->G=0.0;
   ValueType logpsi(0.0);
   PhaseValue=0.0;
-  std::vector<OrbitalBase*>::iterator it(Z.begin());
-  std::vector<OrbitalBase*>::iterator it_end(Z.end());
+  std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
+  std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
   //WARNING: multiplication for PhaseValue is not correct, fix this!!
   for (; it!=it_end; ++it)
   {
@@ -199,8 +196,8 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
   P.L = 0.0;
   ValueType logpsi(0.0);
   PhaseValue=0.0;
-  std::vector<OrbitalBase*>::iterator it(Z.begin());
-  std::vector<OrbitalBase*>::iterator it_end(Z.end());
+  std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
+  std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
   int ii=RECOMPUTE_TIMER;
   for (; it!=it_end; ++it,ii+=TIMER_SKIP)
   {
@@ -260,8 +257,8 @@ TrialWaveFunction::evaluateDeltaLog(ParticleSet& P
   fixedG = 0.0;
   ValueType logpsi_fixed(0.0);
   ValueType logpsi_opt(0.0);
-  std::vector<OrbitalBase*>::iterator it(Z.begin());
-  std::vector<OrbitalBase*>::iterator it_end(Z.end());
+  std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
+  std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
   int ii=RECOMPUTE_TIMER;
   for (; it!=it_end; ++it,ii+=TIMER_SKIP)
   {
@@ -282,8 +279,8 @@ TrialWaveFunction::evaluateDeltaLog(ParticleSet& P
 
 /*void TrialWaveFunction::evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi)
 {
-  std::vector<OrbitalBase*>::iterator it(Z.begin());
-  std::vector<OrbitalBase*>::iterator it_end(Z.end());
+  std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
+  std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
   
   grad_grad_psi=0.0;
   
@@ -297,8 +294,8 @@ TrialWaveFunction::evaluateDeltaLog(ParticleSet& P
 
 void TrialWaveFunction::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad_psi)
 {
-  std::vector<OrbitalBase*>::iterator it(Z.begin());
-  std::vector<OrbitalBase*>::iterator it_end(Z.end());
+  std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
+  std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
   
   grad_grad_psi.resize(P.getTotalNum());
   
@@ -314,35 +311,12 @@ void TrialWaveFunction::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad
  // app_log()<<" TrialWavefunction::Hessian = "<<grad_grad_psi<< std::endl;
 }
 
-
-/** evaluate the value of a many-body wave function
-*@param P input configuration containing N particles
-*@return the value of many-body wave function
-*
-*Upon return, the gradient and laplacian operators are added by the components.
-*/
-TrialWaveFunction::ValueType TrialWaveFunction::evaluate(ParticleSet& P)
-{
-  //TAU_PROFILE("TrialWaveFunction::evaluate","ParticleSet& P", TAU_USER);
-  P.G = 0.0;
-  P.L = 0.0;
-  ValueType psi(1.0);
-  for(size_t i=0,n=Z.size(); i<n; ++i)
-  {
-    psi *= Z[i]->evaluate(P, P.G, P.L);
-  }
-  //for(int iat=0; iat<P.getTotalNum(); iat++)
-  // std::cout << P.G[iat] << " " << P.L[iat] << std::endl;
-  LogValue = evaluateLogAndPhase(psi,PhaseValue);
-  return psi;
-}
-
 TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P,int iat)
 {
   //TAU_PROFILE("TrialWaveFunction::ratio","(ParticleSet& P,int iat)", TAU_USER);
   ValueType r(1.0);
-  std::vector<OrbitalBase*>::iterator it(Z.begin());
-  std::vector<OrbitalBase*>::iterator it_end(Z.end());
+  std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
+  std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
   for (int ii=V_TIMER; it!=it_end; ++it,ii+=TIMER_SKIP)
   {
     myTimers[ii]->start();
@@ -369,56 +343,6 @@ TrialWaveFunction::ValueType TrialWaveFunction::full_ratio(ParticleSet& P,int ia
   return r;
 }
 
-TrialWaveFunction::RealType TrialWaveFunction::ratioVector(ParticleSet& P, int iat, std::vector<RealType>& ratios)
-{
-  //TAU_PROFILE("TrialWaveFunction::ratio","(ParticleSet& P,int iat)", TAU_USER);
-  ratios.resize(Z.size(),0);
-  ValueType r(1.0);
-  std::vector<OrbitalBase*>::iterator it(Z.begin());
-  std::vector<OrbitalBase*>::iterator it_end(Z.end());
-  for (int i=0,ii=V_TIMER; it!=it_end; ++i,++it,ii+=TIMER_SKIP)
-  {
-    myTimers[ii]->start();
-    ValueType zr=(*it)->ratio(P,iat);
-    r *= zr;
-#if defined(QMC_COMPLEX)
-    ratios[i] = std::abs(zr);
-#else
-    ratios[i] = zr;
-#endif
-    myTimers[ii]->stop();
-  }
-#if defined(QMC_COMPLEX)
-  //return std::exp(evaluateLogAndPhase(r,PhaseValue));
-  RealType logr=evaluateLogAndPhase(r,PhaseDiff);
-  return std::exp(logr);
-#else
-  if (r<0)
-    PhaseDiff=M_PI;
-  //     else PhaseDiff=0.0;
-  return r;
-#endif
-}
-
-TrialWaveFunction::RealType TrialWaveFunction::alternateRatio(ParticleSet& P)
-{
-  //TAU_PROFILE("TrialWaveFunction::ratio","(ParticleSet& P,int iat)", TAU_USER);
-  ValueType r(1.0);
-  for(size_t i=0,n=Z.size(); i<n; ++i)
-  {
-    r *= Z[i]->alternateRatio(P);
-  }
-#if defined(QMC_COMPLEX)
-  //return std::exp(evaluateLogAndPhase(r,PhaseValue));
-  RealType logr=evaluateLogAndPhase(r,PhaseDiff);
-  return std::exp(logr);
-#else
-  if (r<0)
-    PhaseDiff=M_PI;
-  return r;
-#endif
-}
-
 TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P,int iat)
 {
   //TAU_PROFILE("TrialWaveFunction::evalGrad","(ParticleSet& P,int iat)", TAU_USER);
@@ -429,15 +353,6 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P,int iat)
     grad_iat += Z[i]->evalGrad(P,iat);
     myTimers[ii]->stop();
   }
-  return grad_iat;
-}
-
-TrialWaveFunction::GradType TrialWaveFunction::alternateEvalGrad(ParticleSet& P,int iat)
-{
-  //TAU_PROFILE("TrialWaveFunction::evalGrad","(ParticleSet& P,int iat)", TAU_USER);
-  GradType grad_iat;
-  for(size_t i=0,n=Z.size(); i<n; ++i)
-    grad_iat += Z[i]->alternateEvalGrad(P,iat);
   return grad_iat;
 }
 
@@ -476,7 +391,6 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGradSource(ParticleSet& P
 TrialWaveFunction::RealType TrialWaveFunction::ratioGrad(ParticleSet& P
     ,int iat, GradType& grad_iat )
 {
-  //TAU_PROFILE("TrialWaveFunction::ratioGrad","(ParticleSet& P,int iat)", TAU_USER);
   grad_iat=0.0;
   ValueType r(1.0);
   for (int i=0, ii=VGL_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
@@ -486,37 +400,11 @@ TrialWaveFunction::RealType TrialWaveFunction::ratioGrad(ParticleSet& P
     myTimers[ii]->stop();
   }
 #if defined(QMC_COMPLEX)
-  //return std::exp(evaluateLogAndPhase(r,PhaseValue));
-  RealType logr=evaluateLogAndPhase(r,PhaseValue);
+  RealType logr=evaluateLogAndPhase(r,PhaseDiff);
   return std::exp(logr);
 #else
   if (r<0)
     PhaseDiff=M_PI;
-  //     else PhaseDiff=0.0;
-  return r;
-#endif
-}
-
-TrialWaveFunction::RealType TrialWaveFunction::alternateRatioGrad(ParticleSet& P
-    ,int iat, GradType& grad_iat )
-{
-  //TAU_PROFILE("TrialWaveFunction::ratioGrad","(ParticleSet& P,int iat)", TAU_USER);
-  grad_iat=0.0;
-  ValueType r(1.0);
-  for (int i=0,ii=VGL_TIMER; i<Z.size(); ++i,ii+=TIMER_SKIP)
-  {
-    myTimers[ii]->start();
-    r *= Z[i]->alternateRatioGrad(P,iat,grad_iat);
-    myTimers[ii]->stop();
-  }
-#if defined(QMC_COMPLEX)
-  //return std::exp(evaluateLogAndPhase(r,PhaseValue));
-  RealType logr=evaluateLogAndPhase(r,PhaseValue);
-  return std::exp(logr);
-#else
-  if (r<0)
-    PhaseDiff=M_PI;
-  //     else PhaseDiff=0.0;
   return r;
 #endif
 }
@@ -619,43 +507,28 @@ void TrialWaveFunction::getPhases(std::vector<RealType>& pvals)
 }
 
 
-TrialWaveFunction::RealType TrialWaveFunction::registerData(ParticleSet& P, PooledData<RealType>& buf)
+void TrialWaveFunction::registerData(ParticleSet& P, WFBufferType& buf)
 {
-  delta_G.resize(P.getTotalNum());
-  delta_L.resize(P.getTotalNum());
-  P.G = 0.0;
-  P.L = 0.0;
   //save the current position
   BufferCursor=buf.current();
-  BufferCursor_DP=buf.current_DP();
-  ValueType logpsi(0.0);
-  PhaseValue=0.0;
+  BufferCursor_scalar=buf.current_scalar();
   for (int i=0, ii=BUFFER_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
   {
     myTimers[ii]->start();
-    logpsi += Z[i]->registerData(P,buf);
-    PhaseValue += Z[i]->PhaseValue;
+    Z[i]->registerData(P,buf);
     myTimers[ii]->stop();
   }
-  convert(logpsi,LogValue);
-  //LogValue=real(logpsi);
-//append current gradients and laplacians to the buffer
-  NumPtcls = P.getTotalNum();
-  TotalDim = PosType::Size*NumPtcls;
   buf.add(PhaseValue);
   buf.add(LogValue);
-  //buf.add(&(P.G[0][0]), &(P.G[0][0])+TotalDim);
-  //buf.add(&(P.L[0]), &(P.L[P.getTotalNum()]));
-  return LogValue;
 }
 
 TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P
-    , PooledData<RealType>& buf, bool fromscratch)
+    , WFBufferType& buf, bool fromscratch)
 {
   //TAU_PROFILE("TrialWaveFunction::updateBuffer","(P,..)", TAU_USER);
   P.G = 0.0;
   P.L = 0.0;
-  buf.rewind(BufferCursor,BufferCursor_DP);
+  buf.rewind(BufferCursor,BufferCursor_scalar);
   ValueType logpsi(0.0);
   PhaseValue=0.0;
   for (int i=0, ii=BUFFER_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
@@ -670,12 +543,14 @@ TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P
   //LogValue=real(logpsi);
   buf.put(PhaseValue);
   buf.put(LogValue);
+  // Ye: temperal added check, to be removed
+  assert(buf.size()==buf.current()+buf.current_scalar()*sizeof(double));
   return LogValue;
 }
 
-void TrialWaveFunction::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+void TrialWaveFunction::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
-  buf.rewind(BufferCursor,BufferCursor_DP);
+  buf.rewind(BufferCursor,BufferCursor_scalar);
   //TAU_PROFILE("TrialWaveFunction::copyFromBuffer","(P,..)", TAU_USER);
   for (int i=0, ii=BUFFER_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
   {
@@ -686,17 +561,21 @@ void TrialWaveFunction::copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf
   //get the gradients and laplacians from the buffer
   buf.get(PhaseValue);
   buf.get(LogValue);
+  assert(buf.size()==buf.current()+buf.current_scalar()*sizeof(double));
 }
 
 void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<RealType>& ratios)
 {
+  assert(VP.getTotalNum()==ratios.size());
 #if defined(QMC_COMPLEX)
   std::vector<ValueType> t(ratios.size()),r(ratios.size(),1.0);;
-  for (int i=0; i<Z.size(); ++i)
+  for (int i=0, ii=NL_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
   {
+    myTimers[ii]->start();
     Z[i]->evaluateRatios(VP,t);
     for (int j=0; j<ratios.size(); ++j)
       r[j]*=t[j];
+    myTimers[ii]->stop();
   }
   RealType pdiff;
   for(int j=0; j<ratios.size(); ++j)
@@ -708,11 +587,13 @@ void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<RealT
 #else
   std::fill(ratios.begin(),ratios.end(),1.0);
   std::vector<ValueType> t(ratios.size());
-  for (int i=0; i<Z.size(); ++i)
+  for (int i=0, ii=NL_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
   {
+    myTimers[ii]->start();
     Z[i]->evaluateRatios(VP,t);
     for (int j=0; j<ratios.size(); ++j)
       ratios[j]*=t[j];
+    myTimers[ii]->stop();
   }
 #endif
 }
@@ -746,7 +627,7 @@ void TrialWaveFunction::reset()
 void TrialWaveFunction::reverse()
 {
   Ordered=false;
-  //vector<OrbitalBase*> zcopy(Z);
+  //vector<WaveFunctionComponent*> zcopy(Z);
   //int n=Z.size()-1;
   //for(int i=0; i<Z.size(); ++i) Z[n-i]=zcopy[i];
 }
@@ -755,7 +636,7 @@ TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp)  const
 {
   TrialWaveFunction* myclone = new TrialWaveFunction(myComm);
   myclone->BufferCursor=BufferCursor;
-  myclone->BufferCursor_DP=BufferCursor_DP;
+  myclone->BufferCursor_scalar=BufferCursor_scalar;
   for (int i=0; i<Z.size(); ++i)
     myclone->addOrbital(Z[i]->makeClone(tqp),"dummy",Z[i]->IsFermionWF);
   myclone->OneOverM=OneOverM;
@@ -764,7 +645,7 @@ TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp)  const
 
 /** evaluate derivatives of KE wrt optimizable varibles
  *
- * @todo OrbitalBase objects should take the mass into account.
+ * @todo WaveFunctionComponent objects should take the mass into account.
  */
 void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
     const opt_variables_type& optvars,
@@ -818,15 +699,17 @@ TrialWaveFunction::KECorrection() const
   return sum;
 }
 
-void TrialWaveFunction::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+void TrialWaveFunction::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   std::fill(ratios.begin(),ratios.end(),1.0);
   std::vector<ValueType> t(ratios.size());
-  for (int i=0; i<Z.size(); ++i)
+  for (int i=0, ii=V_TIMER; i<Z.size(); ++i,ii+=TIMER_SKIP)
   {
-    Z[i]->get_ratios(P,t);
+    myTimers[ii]->start();
+    Z[i]->evaluateRatiosAlltoOne(P,t);
     for (int j=0; j<t.size(); ++j)
       ratios[j]*=t[j];
+    myTimers[ii]->stop();
   }
 }
 

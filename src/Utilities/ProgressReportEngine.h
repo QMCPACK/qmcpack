@@ -37,7 +37,7 @@ class ReportEngine
 public:
 
   inline ReportEngine(const std::string& cname, const std::string& fname, int atype=1):
-    ReportType(atype),ClassName(cname), LogBuffer(infoLog), FuncName(fname)
+    ReportType(atype),ClassName(cname), LogBuffer(infoDebug), FuncName(fname)
   {
     if (DoOutput) {
       LogBuffer << "  " << ClassName << "::" << FuncName << "\n";
@@ -75,7 +75,7 @@ public:
 
   inline void error(const std::string& msg, bool fatal=false)
   {
-    LogBuffer << ("ERROR: "+msg+"\n");
+    app_error() << ("ERROR: "+msg+"\n");
     if(fatal)
       APP_ABORT(ClassName+"::"+FuncName);
   }
@@ -103,7 +103,7 @@ private:
    */
   InfoStream& LogBuffer;
   //disable copy constructor
-  ReportEngine(const ReportEngine& a):LogBuffer(infoLog) {}
+  ReportEngine(const ReportEngine& a):LogBuffer(infoDebug) {}
 
   static bool DoOutput;
 
@@ -114,7 +114,7 @@ template<class T>
 inline
 ReportEngine& operator<<(ReportEngine& o, const T& val)
 {
-  app_log()<< val;
+  app_debug() << val;
   return o;
 }
 }

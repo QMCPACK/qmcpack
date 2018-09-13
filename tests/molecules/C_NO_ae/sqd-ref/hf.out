@@ -1,0 +1,12 @@
+Total number of orbitals = 6
+Total number of unique radial orbitals = 3
+(Orbital index, Number of Orbitals, n,l,m,s)
+(0, 2, 1, 0, 0, -1)
+(0, 2, 1, 0, 0, 1)
+(1, 2, 2, 0, 0, 1)
+(1, 2, 2, 0, 0, -1)
+(2, 2, 2, 1, 1, 1)
+(2, 2, 2, 1, 0, 1)
+Safe cutoff 3.13096
+Safe cutoff 10.9557
+Safe cutoff 13.0637

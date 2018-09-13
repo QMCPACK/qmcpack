@@ -36,107 +36,108 @@ ultimate result of the MC simulations.
 
 \section{Lab directories and files}
 
-\begin{shade}
+\footnotesize
+\begin{verbatim}
 labs/lab1_qmc_statistics/
-
- atom                              - H atom VMC calculation
-    H.s000.scalar.dat                - H atom VMC data 
-    H.xml                            - H atom VMC input file
-
- autocorrelation                   - varying autocorrelation
-    H.dat                            - data for gnuplot
-    H.plt                            - gnuplot for time step vs. E_L, tau_c
-    H.s000.scalar.dat                - H atom VMC data: time step = 10 
-    H.s001.scalar.dat                - H atom VMC data: time step =  5 
-    H.s002.scalar.dat                - H atom VMC data: time step =  2 
-    H.s003.scalar.dat                - H atom VMC data: time step =  1 
-    H.s004.scalar.dat                - H atom VMC data: time step =  0.5
-    H.s005.scalar.dat                - H atom VMC data: time step =  0.2
-    H.s006.scalar.dat                - H atom VMC data: time step =  0.1
-    H.s007.scalar.dat                - H atom VMC data: time step =  0.05 
-    H.s008.scalar.dat                - H atom VMC data: time step =  0.02
-    H.s009.scalar.dat                - H atom VMC data: time step =  0.01
-    H.s010.scalar.dat                - H atom VMC data: time step =  0.005
-    H.s011.scalar.dat                - H atom VMC data: time step =  0.002
-    H.s012.scalar.dat                - H atom VMC data: time step =  0.001
-    H.s013.scalar.dat                - H atom VMC data: time step =  0.0005
-    H.s014.scalar.dat                - H atom VMC data: time step =  0.0002
-    H.s015.scalar.dat                - H atom VMC data: time step =  0.0001
-    H.xml                            - H atom VMC input file
-
- average                            - Python scripts for average/std. dev.
-    average.py                         - average five E_L from H atom VMC
-    stddev2.py                         - standard deviation using (E_L)^2
-    stddev.py                          - standard deviation around the mean
-
- basis                              - varying basis set for orbitals
-    H__exact.s000.scalar.dat           - H atom VMC data using STO basis
-    H_STO-2G.s000.scalar.dat           - H atom VMC data using STO-2G basis
-    H_STO-3G.s000.scalar.dat           - H atom VMC data using STO-3G basis
-    H_STO-6G.s000.scalar.dat           - H atom VMC data using STO-6G basis
-
- blocking                           - varying block/step ratio
-    H.dat                              - data for gnuplot
-    H.plt                              - gnuplot for N_block vs. E, tau_c
-    H.s000.scalar.dat                  - H atom VMC data 50000:1 blocks:steps
-    H.s001.scalar.dat                  - "  "    "    "  25000:2 blocks:steps
-    H.s002.scalar.dat                  - "  "    "    "  12500:4 blocks:steps
-    H.s003.scalar.dat                  - "  "    "    "  6250: 8 blocks:steps
-    H.s004.scalar.dat                  - "  "    "    "  3125:16 blocks:steps
-    H.s005.scalar.dat                  - "  "    "    "  2500:20 blocks:steps
-    H.s006.scalar.dat                  - "  "    "    "  1250:40 blocks:steps
-    H.s007.scalar.dat                  - "  "    "    "  1000:50 blocks:steps
-    H.s008.scalar.dat                  - "  "    "    "  500:100 blocks:steps
-    H.s009.scalar.dat                  - "  "    "    "  250:200 blocks:steps
-    H.s010.scalar.dat                  - "  "    "    "  125:400 blocks:steps
-    H.s011.scalar.dat                  - "  "    "    "  100:500 blocks:steps
-    H.s012.scalar.dat                  - "  "    "    "  50:1000 blocks:steps
-    H.s013.scalar.dat                  - "  "    "    "  40:1250 blocks:steps
-    H.s014.scalar.dat                  - "  "    "    "  20:2500 blocks:steps
-    H.s015.scalar.dat                  - "  "    "    "  10:5000 blocks:steps
-    H.xml                             - H atom VMC input file
-
- blocks                             -  varying total number of blocks
-    H.dat                             - data for gnuplot
-    H.plt                             - gnuplot for N_block vs. E
-    H.s000.scalar.dat                 - H atom VMC data    500 blocks
-    H.s001.scalar.dat                 - "  "    "    "    2000 blocks
-    H.s002.scalar.dat                 - "  "    "    "    8000 blocks
-    H.s003.scalar.dat                 - "  "    "    "   32000 blocks
-    H.s004.scalar.dat                 - "  "    "    "  128000 blocks
-    H.xml                             - H atom VMC input file 
-
- dimer                          - comparing no and simple Jastrow factor
-    H2_STO___no_jastrow.s000.scalar.dat - H dimer VMC data without Jastrow
-    H2_STO_with_jastrow.s000.scalar.dat - H dimer VMC data with Jastrow
-
- docs                               - documentation
-    Lab_1_MC_Analysis.pdf             - this document
-    Lab_1_Slides.pdf                  - slides presented in the lab
-
- nodes                              - varying number of computing nodes
-    H.dat                             - data for gnuplot
-    H.plt                             - gnuplot for N_node vs. E
-    H.s000.scalar.dat                 - H atom VMC data with  32 nodes
-    H.s001.scalar.dat                 - H atom VMC data with 128 nodes
-    H.s002.scalar.dat                 - H atom VMC data with 512 nodes
-
- problematic                        - problematic VMC run
-    H.s000.scalar.dat                 - H atom VMC data with a problem
-
- size                                - scaling with number of particles
-    01________H.s000.scalar.dat       - H atom VMC data
-    02_______H2.s000.scalar.dat       - H dimer "   "
-    06________C.s000.scalar.dat       - C atom  "   "
-    10______CH4.s000.scalar.dat       - methane "   "
-    12_______C2.s000.scalar.dat       - C dimer "   "
-    16_____C2H4.s000.scalar.dat       - ethene  " 
-    18___CH4CH4.s000.scalar.dat       - methane dimer VMC data
-    32_C2H4C2H4.s000.scalar.dat       - ethene dimer   "   "
-    nelectron_tcpu.dat                - data for gnuplot
-    Nelectron_tCPU.plt                - gnuplot for N_elec vs. t_CPU
-\end{shade}
-
+│
+├── atom                              - H atom VMC calculation
+│   ├── H.s000.scalar.dat                - H atom VMC data 
+│   └── H.xml                            - H atom VMC input file
+│
+├── autocorrelation                   - varying autocorrelation
+│   ├── H.dat                            - data for gnuplot
+│   ├── H.plt                            - gnuplot for time step vs. E_L, tau_c
+│   ├── H.s000.scalar.dat                - H atom VMC data: time step = 10 
+│   ├── H.s001.scalar.dat                - H atom VMC data: time step =  5 
+│   ├── H.s002.scalar.dat                - H atom VMC data: time step =  2 
+│   ├── H.s003.scalar.dat                - H atom VMC data: time step =  1 
+│   ├── H.s004.scalar.dat                - H atom VMC data: time step =  0.5
+│   ├── H.s005.scalar.dat                - H atom VMC data: time step =  0.2
+│   ├── H.s006.scalar.dat                - H atom VMC data: time step =  0.1
+│   ├── H.s007.scalar.dat                - H atom VMC data: time step =  0.05 
+│   ├── H.s008.scalar.dat                - H atom VMC data: time step =  0.02
+│   ├── H.s009.scalar.dat                - H atom VMC data: time step =  0.01
+│   ├── H.s010.scalar.dat                - H atom VMC data: time step =  0.005
+│   ├── H.s011.scalar.dat                - H atom VMC data: time step =  0.002
+│   ├── H.s012.scalar.dat                - H atom VMC data: time step =  0.001
+│   ├── H.s013.scalar.dat                - H atom VMC data: time step =  0.0005
+│   ├── H.s014.scalar.dat                - H atom VMC data: time step =  0.0002
+│   ├── H.s015.scalar.dat                - H atom VMC data: time step =  0.0001
+│   └── H.xml                            - H atom VMC input file
+│
+├── average                            - Python scripts for average/std. dev.
+│   ├── average.py                         - average five E_L from H atom VMC
+│   ├── stddev2.py                         - standard deviation using (E_L)^2
+│   └── stddev.py                          - standard deviation around the mean
+│
+├── basis                              - varying basis set for orbitals
+│   ├── H__exact.s000.scalar.dat           - H atom VMC data using STO basis
+│   ├── H_STO-2G.s000.scalar.dat           - H atom VMC data using STO-2G basis
+│   ├── H_STO-3G.s000.scalar.dat           - H atom VMC data using STO-3G basis
+│   └── H_STO-6G.s000.scalar.dat           - H atom VMC data using STO-6G basis
+│
+├── blocking                           - varying block/step ratio
+│   ├── H.dat                              - data for gnuplot
+│   ├── H.plt                              - gnuplot for N_block vs. E, tau_c
+│   ├── H.s000.scalar.dat                  - H atom VMC data 50000:1 blocks:steps
+│   ├── H.s001.scalar.dat                  - "  "    "    "  25000:2 blocks:steps
+│   ├── H.s002.scalar.dat                  - "  "    "    "  12500:4 blocks:steps
+│   ├── H.s003.scalar.dat                  - "  "    "    "  6250: 8 blocks:steps
+│   ├── H.s004.scalar.dat                  - "  "    "    "  3125:16 blocks:steps
+│   ├── H.s005.scalar.dat                  - "  "    "    "  2500:20 blocks:steps
+│   ├── H.s006.scalar.dat                  - "  "    "    "  1250:40 blocks:steps
+│   ├── H.s007.scalar.dat                  - "  "    "    "  1000:50 blocks:steps
+│   ├── H.s008.scalar.dat                  - "  "    "    "  500:100 blocks:steps
+│   ├── H.s009.scalar.dat                  - "  "    "    "  250:200 blocks:steps
+│   ├── H.s010.scalar.dat                  - "  "    "    "  125:400 blocks:steps
+│   ├── H.s011.scalar.dat                  - "  "    "    "  100:500 blocks:steps
+│   ├── H.s012.scalar.dat                  - "  "    "    "  50:1000 blocks:steps
+│   ├── H.s013.scalar.dat                  - "  "    "    "  40:1250 blocks:steps
+│   ├── H.s014.scalar.dat                  - "  "    "    "  20:2500 blocks:steps
+│   ├── H.s015.scalar.dat                  - "  "    "    "  10:5000 blocks:steps
+│   └── H.xml                             - H atom VMC input file
+│
+├── blocks                             -  varying total number of blocks
+│   ├── H.dat                             - data for gnuplot
+│   ├── H.plt                             - gnuplot for N_block vs. E
+│   ├── H.s000.scalar.dat                 - H atom VMC data    500 blocks
+│   ├── H.s001.scalar.dat                 - "  "    "    "    2000 blocks
+│   ├── H.s002.scalar.dat                 - "  "    "    "    8000 blocks
+│   ├── H.s003.scalar.dat                 - "  "    "    "   32000 blocks
+│   ├── H.s004.scalar.dat                 - "  "    "    "  128000 blocks
+│   └── H.xml                             - H atom VMC input file 
+│
+├── dimer                          - comparing no and simple Jastrow factor
+│   ├── H2_STO___no_jastrow.s000.scalar.dat - H dimer VMC data without Jastrow
+│   └── H2_STO_with_jastrow.s000.scalar.dat - H dimer VMC data with Jastrow
+│
+├──  docs                               - documentation
+│   ├──  Lab_1_MC_Analysis.pdf             - this document
+│   └──  Lab_1_Slides.pdf                  - slides presented in the lab
+│
+├── nodes                              - varying number of computing nodes
+│   ├──  H.dat                             - data for gnuplot
+│   ├──  H.plt                             - gnuplot for N_node vs. E
+│   ├──  H.s000.scalar.dat                 - H atom VMC data with  32 nodes
+│   ├──  H.s001.scalar.dat                 - H atom VMC data with 128 nodes
+│   └──  H.s002.scalar.dat                 - H atom VMC data with 512 nodes
+│
+├── problematic                        - problematic VMC run
+│   └──  H.s000.scalar.dat                 - H atom VMC data with a problem
+│
+└── size                                - scaling with number of particles
+    ├──  01________H.s000.scalar.dat       - H atom VMC data
+    ├──  02_______H2.s000.scalar.dat       - H dimer "   "
+    ├──  06________C.s000.scalar.dat       - C atom  "   "
+    ├──  10______CH4.s000.scalar.dat       - methane "   "
+    ├──  12_______C2.s000.scalar.dat       - C dimer "   "
+    ├──  16_____C2H4.s000.scalar.dat       - ethene  " 
+    ├──  18___CH4CH4.s000.scalar.dat       - methane dimer VMC data
+    ├──  32_C2H4C2H4.s000.scalar.dat       - ethene dimer   "   "
+    ├──  nelectron_tcpu.dat                - data for gnuplot
+    └──  Nelectron_tCPU.plt                - gnuplot for N_elec vs. t_CPU
+\end{verbatim}
+\normalsize
 
 \section{Atomic units} 
 
@@ -414,7 +415,7 @@ trace of the local energy:
 \FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_qmc_statistics_tracing1.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_tracing1.png}
 \end{center}
 \end{figure}
 \FloatBarrier
@@ -438,7 +439,7 @@ H.s000.scalar.dat} to produce this graph:
 \FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_qmc_statistics_tracing2.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_tracing2.png}
 \end{center}
 \end{figure}
 \FloatBarrier
@@ -502,7 +503,7 @@ H.plt}:
 \FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_qmc_statistics_blocking1.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_blocking1.png}
 \end{center}
 \end{figure}
 \FloatBarrier
@@ -556,7 +557,7 @@ visualize the data:
 \FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_qmc_statistics_blocking2.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_blocking2.png}
 \end{center}
 \end{figure}
 \FloatBarrier
@@ -659,7 +660,7 @@ nodes.  Visualize this with \textbf{gnuplot H.plt}:
 \FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_qmc_statistics_nodes.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_nodes.png}
 \end{center}
 \end{figure}
 \FloatBarrier
@@ -680,7 +681,7 @@ increasing the total number of samples.   Visualize the tradeoff by inputting
 \FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_qmc_statistics_blocks.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_blocks.png}
 \end{center}
 \end{figure}
 \FloatBarrier
@@ -778,7 +779,7 @@ time of the simulation by \textbf{gnuplot Nelectron\_tCPU.plt}:
 \FloatBarrier
 \begin{figure}[ht!]
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_qmc_statistics_scaling.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_statistics_scaling.png}
 \end{center}
 \end{figure}
 \FloatBarrier

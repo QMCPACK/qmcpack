@@ -89,10 +89,10 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     std::string cname((const char*)(cur->name));
     if(cname =="sposet_builder")
     {
-      BasisSetFactory basisFactory(*targetPtcl,*targetPsi,ptclPool);
+      SPOSetBuilderFactory basisFactory(*targetPtcl,*targetPsi,ptclPool);
       basisFactory.build_sposet_collection(cur);
     }
-    else if (cname == OrbitalBuilderBase::detset_tag)
+    else if (cname == WaveFunctionComponentBuilder::detset_tag)
     {
       success = addFermionTerm(cur);
       bool foundtwist(false);
@@ -122,14 +122,14 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
         targetPsi->setTwist(tsts);
       }
     }
-    else if (cname ==  OrbitalBuilderBase::jastrow_tag)
+    else if (cname ==  WaveFunctionComponentBuilder::jastrow_tag)
     {
-      OrbitalBuilderBase *jbuilder = new JastrowBuilder(*targetPtcl,*targetPsi,ptclPool);
+      WaveFunctionComponentBuilder *jbuilder = new JastrowBuilder(*targetPtcl,*targetPsi,ptclPool);
       jbuilder->setReportLevel(ReportLevel);
       success = jbuilder->put(cur);
       addNode(jbuilder,cur);
     }
-    else if (cname ==  OrbitalBuilderBase::fdlrwfn_tag)
+    else if (cname ==  WaveFunctionComponentBuilder::fdlrwfn_tag)
     {
 #ifdef QMC_COMPLEX
       APP_ABORT("FDLR wave functions are not implemented with QMC_COMPLEX enabled.");
@@ -137,7 +137,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
       success = addFDLRTerm(cur);
 #endif
     }
-    else if (cname == OrbitalBuilderBase::ionorb_tag)
+    else if (cname == WaveFunctionComponentBuilder::ionorb_tag)
     {
       IonOrbitalBuilder *builder = new IonOrbitalBuilder
         (*targetPtcl, *targetPsi, ptclPool);
@@ -183,7 +183,7 @@ bool WaveFunctionFactory::addFermionTerm(xmlNodePtr cur)
   oAttrib.add(orbtype,"type");
   oAttrib.add(nuclei,"source");
   oAttrib.put(cur);
-  OrbitalBuilderBase* detbuilder=0;
+  WaveFunctionComponentBuilder* detbuilder=0;
   if(orbtype == "electron-gas")
   {
 #if defined(QMC_COMPLEX)
@@ -295,7 +295,7 @@ bool WaveFunctionFactory::addFDLRTerm(xmlNodePtr cur)
 }
 #endif
 
-bool WaveFunctionFactory::addNode(OrbitalBuilderBase* b, xmlNodePtr cur)
+bool WaveFunctionFactory::addNode(WaveFunctionComponentBuilder* b, xmlNodePtr cur)
 {
   psiBuilder.push_back(b);
   ///if(myNode != NULL) {
@@ -363,7 +363,7 @@ void WaveFunctionFactory::reset() { }
 //      }
 //    }
 //
-//    OrbitalBuilderBase* jbuilder=0;
+//    WaveFunctionComponentBuilder* jbuilder=0;
 //    if(jasttype.find("Two") < jasttype.size())
 //    {
 //      jbuilder=new TwoBodyJastrowBuilder(*targetPtcl,*targetPsi,ptclPool);

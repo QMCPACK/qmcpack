@@ -12,7 +12,7 @@
 #ifndef QMCPLUSPLUS_ONEBODYJASTROW_OPTIMIZED_SOA_H
 #define QMCPLUSPLUS_ONEBODYJASTROW_OPTIMIZED_SOA_H
 #include "Configuration.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 #include <qmc_common.h>
 #include <simd/allocator.hpp>
@@ -23,11 +23,11 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  *  @brief Specialization for one-body Jastrow function using multiple functors
  */
 template<class FT>
-struct  J1OrbitalSoA : public OrbitalBase
+struct  J1OrbitalSoA : public WaveFunctionComponent
 {
   ///alias FuncType
   using FuncType=FT;
@@ -48,13 +48,12 @@ struct  J1OrbitalSoA : public OrbitalBase
   ///reference to the sources (ions)
   const ParticleSet& Ions;
 
-  valT LogValue;
   valT curAt;
   valT curLap;
   posT curGrad;
 
   ///\f$Vat[i] = sum_(j) u_{i,j}\f$
-  aligned_vector<RealType> Vat;
+  Vector<valT> Vat;
   aligned_vector<valT> U, dU, d2U;
   aligned_vector<valT> DistCompressed;
   aligned_vector<int> DistIndice;
@@ -125,23 +124,51 @@ struct  J1OrbitalSoA : public OrbitalBase
     return LogValue;
   }
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-  
   ValueType ratio(ParticleSet& P, int iat)
   {
     UpdateMode=ORB_PBYP_RATIO;
-    curAt = valT(0);
-    const valT* restrict dist=P.DistTables[myTableID]->Temp_r.data();
+    curAt = computeU(P.DistTables[myTableID]->Temp_r.data());
+    return std::exp(Vat[iat]-curAt);
+  }
+
+  inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
+  {
+    for(int k=0; k<ratios.size(); ++k)
+      ratios[k]=std::exp(Vat[VP.refPtcl] -
+                         computeU(VP.DistTables[myTableID]->Distances[k]));
+  }
+
+  inline valT computeU(const valT* dist)
+  {
+    valT curVat(0);
     if(NumGroups>0)
     {
       for(int jg=0; jg<NumGroups; ++jg)
       {
-        if(F[jg]!=nullptr) 
+        if(F[jg]!=nullptr)
+          curVat += F[jg]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist, DistCompressed.data());
+      }
+    }
+    else
+    {
+      for(int c=0; c<Nions; ++c)
+      {
+        int gid=Ions.GroupID[c];
+        if(F[gid]!=nullptr) curVat += F[gid]->evaluate(dist[c]);
+      }
+    }
+    return curVat;
+  }
+
+  void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
+  {
+    const valT* restrict dist=P.DistTables[myTableID]->Temp_r.data();
+    curAt = valT(0);
+    if(NumGroups>0)
+    {
+      for(int jg=0; jg<NumGroups; ++jg)
+      {
+        if(F[jg]!=nullptr)
           curAt += F[jg]->evaluateV(-1, Ions.first(jg), Ions.last(jg), dist, DistCompressed.data());
       }
     }
@@ -154,14 +181,8 @@ struct  J1OrbitalSoA : public OrbitalBase
       }
     }
 
-    if(!P.Ready4Measure)
-    {//need to compute per atom
-      computeU3(P,iat,P.DistTables[myTableID]->Distances[iat]);
-      Lap[iat]=accumulateGL(dU.data(),d2U.data(),P.DistTables[myTableID]->Displacements[iat],Grad[iat]);
-      Vat[iat]=simd::accumulate_n(U.data(),Nions,valT());
-    }
-
-    return std::exp(Vat[iat]-curAt);
+    for(int i=0; i<Nelec; ++i)
+      ratios[i]=std::exp(Vat[i]-curAt);
   }
 
   inline void evaluateGL(ParticleSet& P,
@@ -239,9 +260,6 @@ struct  J1OrbitalSoA : public OrbitalBase
    */
   GradType evalGrad(ParticleSet& P, int iat)
   {
-    computeU3(P,iat,P.DistTables[myTableID]->Distances[iat]);
-    Lap[iat]=accumulateGL(dU.data(),d2U.data(),P.DistTables[myTableID]->Displacements[iat],Grad[iat]);
-    Vat[iat]=simd::accumulate_n(U.data(),Nions,valT());
     return GradType(Grad[iat]);
   }
 
@@ -282,21 +300,41 @@ struct  J1OrbitalSoA : public OrbitalBase
   }
 
 
-  inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
+  inline void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    evaluateLog(P,P.G,P.L);
-    return LogValue;
+    if ( Bytes_in_WFBuffer == 0 )
+    {
+      Bytes_in_WFBuffer = buf.current();
+      buf.add(Vat.begin(), Vat.end());
+      buf.add(Grad.begin(), Grad.end());
+      buf.add(Lap.begin(), Lap.end());
+      Bytes_in_WFBuffer = buf.current()-Bytes_in_WFBuffer;
+      // free local space
+      Vat.free();
+      Grad.free();
+      Lap.free();
+    }
+    else
+    {
+      buf.forward(Bytes_in_WFBuffer);
+    }
   }
 
-  inline RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf, bool fromscratch=false)
+  inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false)
   {
     evaluateGL(P, P.G, P.L, false);
+    buf.forward(Bytes_in_WFBuffer);
     return LogValue;
   }
 
-  inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf) { }
+  inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
+  {
+    Vat.attachReference(buf.lendReference<valT>(Nelec), Nelec);
+    Grad.attachReference(buf.lendReference<posT>(Nelec), Nelec);
+    Lap.attachReference(buf.lendReference<valT>(Nelec), Nelec);
+  }
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
     J1OrbitalSoA<FT>* j1copy=new J1OrbitalSoA<FT>(Ions,tqp);
     j1copy->Optimizable=Optimizable;
@@ -311,7 +349,7 @@ struct  J1OrbitalSoA : public OrbitalBase
     return j1copy;
   }
 
-  /**@{ OrbitalBase virtual functions that are not essential for the development */
+  /**@{ WaveFunctionComponent virtual functions that are not essential for the development */
   void resetTargetParticleSet(ParticleSet& P){}
   void reportStatus(std::ostream& os)
   {

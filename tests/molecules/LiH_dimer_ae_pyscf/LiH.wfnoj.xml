@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<qmcsystem>
+  <wavefunction name="psi0" target="e">
+    <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes" href="LiH-pyscf.h5">
+      <slaterdeterminant>
+        <determinant id="updet" size="2">
+          <occupation mode="ground"/>
+          <coefficient size="135" spindataset="0"/>
+        </determinant>
+        <determinant id="downdet" size="2">
+          <occupation mode="ground"/>
+          <coefficient size="135" spindataset="0"/>
+        </determinant>
+      </slaterdeterminant>
+    </determinantset>
+  </wavefunction>
+</qmcsystem>

@@ -112,17 +112,17 @@ public:
   gpu::device_vector<int> AcceptList_GPU;
   gpu::host_vector<int> AcceptList_host;
 
-  void allocateGPU(size_t buffersize);
-  void copyWalkersToGPU(bool copyGrad=false);
-  void copyWalkerGradToGPU();
-  void updateLists_GPU();
+  GPU_XRAY_TRACE void allocateGPU(size_t buffersize);
+  GPU_XRAY_TRACE void copyWalkersToGPU(bool copyGrad=false);
+  GPU_XRAY_TRACE void copyWalkerGradToGPU();
+  GPU_XRAY_TRACE void updateLists_GPU();
   int CurrentParticle;
-  void proposeMove_GPU
+  GPU_XRAY_TRACE void proposeMove_GPU
   (std::vector<PosType> &newPos, int iat);
-  void acceptMove_GPU(std::vector<bool> &toAccept);
-  void NLMove_GPU (std::vector<Walker_t*> &walkers,
-                   std::vector<PosType> &Rnew,
-                   std::vector<int> &iat);
+  GPU_XRAY_TRACE void acceptMove_GPU(std::vector<bool> &toAccept);
+  GPU_XRAY_TRACE void NLMove_GPU (std::vector<Walker_t*> &walkers,
+				  std::vector<PosType> &Rnew,
+				  std::vector<int> &iat);
 #endif
 
   ///default constructor
@@ -138,12 +138,12 @@ public:
    *
    * Append Walkers to WalkerList.
    */
-  void createWalkers(int numWalkers);
+  GPU_XRAY_TRACE void createWalkers(int numWalkers);
   /** create walkers
    * @param first walker iterator
    * @param last walker iterator
    */
-  void createWalkers(iterator first, iterator last);
+  GPU_XRAY_TRACE void createWalkers(iterator first, iterator last);
   /** copy walkers
    * @param first input walker iterator
    * @param last input walker iterator
@@ -151,7 +151,7 @@ public:
    *
    * No memory allocation is allowed.
    */
-  void copyWalkers(iterator first, iterator last, iterator start);
+  GPU_XRAY_TRACE void copyWalkers(iterator first, iterator last, iterator start);
 
   /** destroy Walkers from itstart to itend
    *@param first starting iterator of the walkers
@@ -172,15 +172,15 @@ public:
    * Clear the current WalkerList and add two walkers, head and tail.
    * OwnWalkers are set to false.
    */
-  void copyWalkerRefs(Walker_t* head, Walker_t* tail);
+  GPU_XRAY_TRACE void copyWalkerRefs(Walker_t* head, Walker_t* tail);
 
   ///clean up the walker list and make a new list
-  void resize(int numWalkers, int numPtcls);
+  GPU_XRAY_TRACE void resize(int numWalkers, int numPtcls);
 
   ///make random moves for all the walkers
   //void sample(iterator first, iterator last, value_type tauinv);
   ///make a random move for a walker
-  void sample(iterator it, RealType tauinv);
+  GPU_XRAY_TRACE void sample(iterator it, RealType tauinv);
 
   ///return the number of active walkers
   inline int getActiveWalkers() const
@@ -334,23 +334,25 @@ public:
   ///set the number of max samples
   void setNumSamples(int n);
   ///save the position of current walkers to SampleStack
-  void saveEnsemble();
+  GPU_XRAY_TRACE void saveEnsemble();
   ///save the position of current walkers
-  void saveEnsemble(iterator first, iterator last);
+  GPU_XRAY_TRACE void saveEnsemble(iterator first, iterator last);
+  /// load a single sample from SampleStack
+  GPU_XRAY_TRACE void loadSample(ParticleSet::ParticlePos_t &Pos, size_t iw) const;
   /** load SampleStack data to current walkers
    */
-  void loadEnsemble();
+  GPU_XRAY_TRACE void loadEnsemble();
   //void loadEnsemble(const Walker_t& wcopy);
   /** load SampleStack from others
     */
-  void loadEnsemble(std::vector<MCWalkerConfiguration*>& others, bool doclean=true);
+  GPU_XRAY_TRACE void loadEnsemble(std::vector<MCWalkerConfiguration*>& others, bool doclean=true);
   /** dump Samples to a file
    * @param others MCWalkerConfigurations whose samples will be collected
    * @param out engine to write the samples to state_0/walkers
    * @param np number of processors
    * @return true with non-zero samples
    */
-  bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock);
+  GPU_XRAY_TRACE bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock);
   ///clear the ensemble
   void clearEnsemble();
   //@}
@@ -372,9 +374,6 @@ public:
       (*it)->ParentID = (*it)->ID;
     }
   }
-
-  ///overwrite make_clones function
-  void make_clones(int n);
 
 protected:
 

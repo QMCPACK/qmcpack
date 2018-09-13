@@ -15,7 +15,7 @@
 #ifndef QMCPLUSPLUS_DIFFERENTIAL_ONEBODYSPINJASTROW_H
 #define QMCPLUSPLUS_DIFFERENTIAL_ONEBODYSPINJASTROW_H
 #include "Configuration.h"
-#include "QMCWaveFunctions/DiffOrbitalBase.h"
+#include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleAttribOps.h"
@@ -25,11 +25,11 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  *  @brief Specialization for two-body Jastrow function using multiple functors
  */
 template<class FT>
-class DiffOneBodySpinJastrowOrbital: public DiffOrbitalBase
+class DiffOneBodySpinJastrowOrbital: public DiffWaveFunctionComponent
 {
   bool Spin;
   ///number of variables this object handles
@@ -247,7 +247,7 @@ public:
     }
   }
 
-  DiffOrbitalBasePtr makeClone(ParticleSet& tqp) const
+  DiffWaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
     DiffOneBodySpinJastrowOrbital<FT>* j1copy=new DiffOneBodySpinJastrowOrbital<FT>(CenterRef,tqp);
     if(Spin)

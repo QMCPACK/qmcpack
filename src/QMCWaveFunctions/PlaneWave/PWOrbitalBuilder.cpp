@@ -19,7 +19,6 @@
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
-#include "QMCWaveFunctions/DummyBasisSet.h"
 #include "QMCWaveFunctions/SPOSetScanner.h"
 #include "OhmmsData/ParameterSet.h"
 #include "OhmmsData/AttributeSet.h"
@@ -31,8 +30,8 @@ namespace qmcplusplus
 {
 
 PWOrbitalBuilder::PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets)
-  : OrbitalBuilderBase(els,psi), ptclPool(psets), hfileID(-1), rootNode(NULL)
-#if !defined(EANBLE_SMARTPOINTER)
+  : WaveFunctionComponentBuilder(els,psi), ptclPool(psets), hfileID(-1), rootNode(NULL)
+#if !defined(ENABLE_SMARTPOINTER)
   ,myBasisSet(0)
 #endif
 {
@@ -128,13 +127,13 @@ bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
       if(ref == "0")
         ref=id;
       int firstIndex=targetPtcl.first(spin_group);
-      std::map<std::string,SPOSetBasePtr>::iterator lit(spomap.find(ref));
+      std::map<std::string,SPOSetPtr>::iterator lit(spomap.find(ref));
       Det_t* adet=0;
       //int spin_group=0;
       if(lit == spomap.end())
       {
         app_log() << "  Create a PWOrbitalSet" << std::endl;;
-        SPOSetBasePtr psi(createPW(cur,spin_group));
+        SPOSetPtr psi(createPW(cur,spin_group));
         sdet->add(psi,ref);
         spomap[ref] = psi;
         adet = new Det_t(psi,firstIndex);
@@ -236,7 +235,7 @@ bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
   return true;
 }
 
-SPOSetBase*
+SPOSet*
 PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
 {
   int nb=targetPtcl.last(spinIndex)-targetPtcl.first(spinIndex);
@@ -400,7 +399,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
   RealType dy=1.0/static_cast<RealType>(nG[1]-1);
   RealType dz=1.0/static_cast<RealType>(nG[2]-1);
 #if defined(VERYTINYMEMORY)
-  typedef Array<ParticleSet::ParticleValue_t,3> StorageType;
+  typedef Array<ParticleSet::SingleParticleValue_t,3> StorageType;
   StorageType inData(nG[0],nG[1],nG[2]);
   int ib=0;
   while(ib<myParam->numBands)
@@ -452,7 +451,7 @@ void PWOrbitalBuilder::transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, 
     ++ib;
   }
 #else
-  typedef Array<ParticleSet::ParticleValue_t,3> StorageType;
+  typedef Array<ParticleSet::SingleParticleValue_t,3> StorageType;
   std::vector<StorageType*> inData;
   int nb=myParam->numBands;
   for(int ib=0; ib<nb; ib++)

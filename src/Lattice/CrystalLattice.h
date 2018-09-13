@@ -93,6 +93,8 @@ struct CrystalLattice
   int SuperCellEnum;
   ///The boundary condition in each direction.
   TinyVector<int,D> BoxBConds;
+  ///The scale factor for adding vacuum.
+  T VacuumScale;
   //@{
   /**@brief Physcial properties of a supercell*/
   /// Volume of a supercell
@@ -103,6 +105,8 @@ struct CrystalLattice
   Scalar_t SimulationCellRadius;
   /// SimulationCellRadius*SimulationCellRadius
   Scalar_t CellRadiusSq;
+  /// Wigner-Seitz cell radius in reciprocal space
+  Scalar_t WignerSeitzRadius_G;
   ///Real-space unit vectors. R(i,j) i=vector and j=x,y,z
   Tensor_t R;
   ///Reciprocal unit vectors. G(j,i) i=vector and j=x,y,z

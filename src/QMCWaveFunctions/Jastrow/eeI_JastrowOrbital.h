@@ -21,7 +21,7 @@
 #include "Configuration.h"
 #include  <map>
 #include  <numeric>
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "LongRange/StructFact.h"
@@ -34,13 +34,13 @@ namespace qmcplusplus
 struct IonData
 {
   typedef std::vector<int> eListType;
-  OrbitalBase::RealType cutoff_radius;
+  WaveFunctionComponent::RealType cutoff_radius;
   eListType elecs_inside;
   IonData() : cutoff_radius(0.0) { }
 };
 
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  *  @brief Specialization for three-body Jastrow function using multiple functors
  *
  *Each pair-type can have distinct function \f$u(r_{ij})\f$.
@@ -48,7 +48,7 @@ struct IonData
  *for spins up-up/down-down and up-down/down-up.
  */
 template<class FT>
-class eeI_JastrowOrbital: public OrbitalBase
+class eeI_JastrowOrbital: public WaveFunctionComponent
 {
 
   //flag to prevent parallel output
@@ -493,13 +493,6 @@ public:
     // }
   }
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-
   inline GradType evalGradSourceFD(ParticleSet& P,
                                    ParticleSet& source, int isrc)
   {
@@ -711,14 +704,14 @@ public:
 
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
-    const int iat=VP.activePtcl;
+    const int iat=VP.refPtcl;
     const int nk=ratios.size();
     int nat=iat*Nelec;
     RealType x=std::accumulate(&(U[nat]),&(U[nat+Nelec]),0.0);
     std::vector<RealType> newval(nk,x);
     const DistanceTableData* ee_table=VP.DistTables[0];
     const DistanceTableData* eI_table=VP.DistTables[myTableIndex];
-    const DistanceTableData* eI_0=VP.refPtcl.DistTables[myTableIndex];
+    const DistanceTableData* eI_0=VP.refPS.DistTables[myTableIndex];
 
     for (int i=0,nn=0; i<Nion; i++)
     {
@@ -1025,48 +1018,14 @@ public:
     // }
   }
 
-  inline RealType registerData(ParticleSet& P, PooledData<RealType>& buf)
+  inline void registerData(ParticleSet& P, WFBufferType& buf)
   {
-    // std::cerr <<"REGISTERING 2 BODY JASTROW"<< std::endl;
-    evaluateLogAndStore(P,P.G,P.L);
-    //LogValue=0.0;
-    //RealType dudr, d2udr2,u;
-    //GradType gr;
-    //PairID.resize(ee_table->size(SourceIndex),ee_table->size(SourceIndex));
-    //int nsp=P.groups();
-    //for(int i=0; i<ee_table->size(SourceIndex); i++)
-    //  for(int j=0; j<ee_table->size(SourceIndex); j++)
-    //    PairID(i,j) = P.GroupID[i]*nsp+P.GroupID[j];
-    //for(int i=0; i<ee_table->size(SourceIndex); i++) {
-    //  for(int nn=ee_table->M[i]; nn<ee_table->M[i+1]; nn++) {
-    //    int j = ee_table->J[nn];
-    //    //ValueType sumu = F.evaluate(ee_table->r(nn));
-    //    u = F[ee_table->PairID[nn]]->evaluate(ee_table->r(nn), dudr, d2udr2);
-    //    LogValue -= u;
-    //    dudr *= ee_table->rinv(nn);
-    //    gr = dudr*ee_table->dr(nn);
-    //    //(d^2 u \over dr^2) + (2.0\over r)(du\over\dr)\f$
-    //    RealType lap = d2udr2+2.0*dudr;
-    //    int ij = i*Nelec+j, ji=j*Nelec+i;
-    //    U[ij]=u; U[ji]=u;
-    //    //dU[ij] = gr; dU[ji] = -1.0*gr;
-    //    dU[ij] = gr; dU[ji] = gr*-1.0;
-    //    d2U[ij] = -lap; d2U[ji] = -lap;
-    //    //add gradient and laplacian contribution
-    //    P.G[i] += gr;
-    //    P.G[j] -= gr;
-    //    P.L[i] -= lap;
-    //    P.L[j] -= lap;
-    //  }
-    //}
-    U[NN]= LogValue;
     buf.add(U.begin(), U.end());
     buf.add(d2U.begin(), d2U.end());
     buf.add(FirstAddressOfdU,LastAddressOfdU);
-    return LogValue;
   }
 
-  inline RealType updateBuffer(ParticleSet& P, PooledData<RealType>& buf,
+  inline RealType updateBuffer(ParticleSet& P, WFBufferType& buf,
                                bool fromscratch=false)
   {
     evaluateLogAndStore(P,P.G,P.L);
@@ -1115,7 +1074,7 @@ public:
     return LogValue;
   }
 
-  inline void copyFromBuffer(ParticleSet& P, PooledData<RealType>& buf)
+  inline void copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   {
     //      std::cerr << "Called copyFromBuffer.\n";
     buf.get(U.begin(), U.end());
@@ -1147,7 +1106,7 @@ public:
     DiffValSum=0.0;
   }
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
     eeI_JastrowOrbital<FT>* eeIcopy=
       new eeI_JastrowOrbital<FT>(*IRef, tqp, false);
@@ -1178,12 +1137,6 @@ public:
     eeIcopy->Optimizable = Optimizable;
     return eeIcopy;
   }
-
-  void copyFrom(const OrbitalBase& old)
-  {
-    //nothing to do
-  }
-
 
   void
   finalizeOptimization()
