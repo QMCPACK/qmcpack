@@ -16,7 +16,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 SET(SRC_DIR hamiltonian)
 SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic_unit_test_${SRC_DIR})
+SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/hamiltonians)
 
 SET(SRCS test_bare_kinetic.cpp test_coulomb_pbcAB.cpp test_coulomb_pbcAB_ewald.cpp test_coulomb_pbcAA.cpp

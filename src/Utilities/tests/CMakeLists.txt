@@ -14,7 +14,7 @@ SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR} )
 
 SET(SRC_DIR utilities)
 SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic_unit_test_${SRC_DIR})
+SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 ADD_EXECUTABLE(${UTEST_EXE} test_rng.cpp test_parser.cpp test_timer.cpp
                             test_prime_set.cpp test_partition.cpp test_pooled_memory.cpp
