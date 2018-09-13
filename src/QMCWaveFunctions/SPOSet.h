@@ -35,7 +35,7 @@
 #include <boost/shared_ptr.hpp>
 #endif
 
-#include "QMCWaveFunctions/BsplineFactory/temp_batch_type.h"
+#include "QMCWaveFunctions/Batching.h"
 
 namespace qmcplusplus
 {

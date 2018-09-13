@@ -29,9 +29,9 @@ namespace qmcplusplus
     BsplineReaderBase* aReader=nullptr;
 
     if(hybrid_rep)
-      aReader= new SplineHybridAdoptorReader<HybridRealSoA<SplineR2RAdoptor<float,OHMMS_PRECISION> >, DEFAULT_BATCHING >(e);
+      aReader= new SplineHybridAdoptorReader<HybridRealSoA<SplineR2RAdoptor<float,OHMMS_PRECISION> >, Batching::SINGLE >(e);
     else
-      aReader= new SplineAdoptorReader<SplineR2RAdoptor<float,OHMMS_PRECISION>, DEFAULT_BATCHING >(e);
+      aReader= new SplineAdoptorReader<SplineR2RAdoptor<float,OHMMS_PRECISION>, Batching::SINGLE >(e);
     return aReader;
   }
 }

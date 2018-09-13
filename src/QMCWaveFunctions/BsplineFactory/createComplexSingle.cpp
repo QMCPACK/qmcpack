@@ -34,14 +34,14 @@ namespace qmcplusplus
 
 #if defined(QMC_COMPLEX)
     if(hybrid_rep)
-      aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2CAdoptor<float,RealType> >, DEFAULT_BATCHING >(e);
+      aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2CAdoptor<float,RealType> >, Batching::SINGLE >(e);
     else
-      aReader= new SplineAdoptorReader<SplineC2CAdoptor<float,RealType>, DEFAULT_BATCHING>(e);
+      aReader= new SplineAdoptorReader<SplineC2CAdoptor<float,RealType>, Batching::SINGLE>(e);
 #else //QMC_COMPLEX
     if(hybrid_rep)
-      aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2RAdoptor<float,RealType> >, DEFAULT_BATCHING >(e);
+      aReader= new SplineHybridAdoptorReader<HybridCplxSoA<SplineC2RAdoptor<float,RealType> >, Batching::SINGLE >(e);
     else
-      aReader= new SplineAdoptorReader<SplineC2RAdoptor<float,RealType>, DEFAULT_BATCHING >(e);
+      aReader= new SplineAdoptorReader<SplineC2RAdoptor<float,RealType>, Batching::SINGLE >(e);
 #endif
 
     return aReader;

@@ -29,7 +29,7 @@
 #include "Numerics/CUDA/cuda_inverse.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/SPOSetTypeAliases.h"
-#include "QMCWaveFunctions/BsplineFactory/temp_batch_type.h"
+#include "QMCWaveFunctions/Batching.h"
 
 namespace qmcplusplus
 {

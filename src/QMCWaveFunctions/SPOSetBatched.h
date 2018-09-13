@@ -12,7 +12,7 @@
 #ifndef QMCPLUSPLUS_SPOSET_BATCHED_H
 #define QMCPLUSPLUS_SPOSET_BATCHED_H
 
-#include "QMCWaveFunctions/BsplineFactory/temp_batch_type.h"
+#include "QMCWaveFunctions/Batching.h"
 #include "QMCWaveFunctions/SPOSetTypeAliases.h"
 //! SPOSet evaluation interface depends on walker batching strategy
 /*!
@@ -28,6 +28,14 @@ class SPOSetBatched : public SPOSet,
 {
 public:
   using SPOSetPtr = SPOSetBatched*;
+
+  virtual void resetParameters(const opt_variables_type& active)
+  { }
+
+  virtual void resetTargetParticleSet(ParticleSet& e)
+  { }
+
+
 };
 
 }

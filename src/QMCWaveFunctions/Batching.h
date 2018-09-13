@@ -6,7 +6,7 @@ namespace qmcplusplus
   
 enum class Batching { SINGLE, BATCHED };
 
-const Batching DEFAULT_BATCHING = Batching::SINGLE;
+//const Batching DEFAULT_BATCHING = Batching::SINGLE;
 } // namespace qmcplusplus
 
 

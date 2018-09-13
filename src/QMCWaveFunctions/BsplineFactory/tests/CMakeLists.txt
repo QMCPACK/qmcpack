@@ -14,7 +14,8 @@ SET(SRC_DIR wavefunction_bsplinefactory)
 SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME unit_test_${SRC_DIR})
 
-SET(SRCS test_BsplineSet.cpp test_BsplineDeviceCUDA.cpp test_BsplineDeviceCPU.cpp test_SplineC2CAdoptorBatched.cpp)
+SET(SRCS test_BsplineSet.cpp test_BsplineDeviceCUDA.cpp test_BsplineDeviceCPU.cpp test_SplineR2RAdoptor.cpp)
+#test_SplineC2CAdoptorBatched.cpp)
 IF(HAVE_CUDA)
   SET(SRCS ${SRCS}
       test_BsplineCUDA.cu)

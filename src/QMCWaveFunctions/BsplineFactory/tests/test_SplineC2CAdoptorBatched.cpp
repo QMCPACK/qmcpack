@@ -13,7 +13,7 @@
 
 #include "QMCWaveFunctions/BsplineFactory/BsplineDeviceCUDA.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBatched.h"
-#include "QMCWaveFunctions/BsplineFactory/SplineR2RAdoptorBatched.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineC2CAdoptorBatched.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorReaderP.h"
 
 #include "QMCWaveFunctions/BsplineFactory/mocks/MockEinsplineSetBuilder.h"
@@ -21,9 +21,12 @@
 
 #include "QMCWaveFunctions/Batching.h"
 
+#include "Configuration.h"
+
 namespace qmcplusplus
 {
 
+using QMCT = QMCTraits;
 TEST_CASE("SplineAdoptorBatched_Instantiation", "[wavefunction]")
 {
   SplineAdoptorBatched<BsplineDeviceCUDA, double, 3> testAdoptor;
@@ -31,13 +34,14 @@ TEST_CASE("SplineAdoptorBatched_Instantiation", "[wavefunction]")
   
 TEST_CASE("SplineR2RAdoptorBatched_Instantiation", "[wavefunction]")
 {
-  SplineR2RAdoptorBatched<double, double> testAdoptor;
+  SplineC2CAdoptorBatched<double, QMCT::RealType> testAdoptor;
 }
 
-TEST_CASE("SplineAdoptorReader<SplineR2RAdoptorBatched>", "[wavefunction]")
+TEST_CASE("SplineAdoptorReader<SplineC2CAdoptorBatched>", "[wavefunction]")
 {
   MockEinsplineSetBuilder* e = new MockEinsplineSetBuilder();
-  SplineAdoptorReader<SplineR2RAdoptorBatched<double, double>, Batching::BATCHED>(dynamic_cast<SplineBuilder*>(e));
+  BsplineReaderBase* aReader=nullptr;
+  aReader = new SplineAdoptorReader<SplineC2CAdoptorBatched<double, QMCT::RealType>,Batching::BATCHED>(dynamic_cast<SplineBuilder*>(e));
   
 }
 

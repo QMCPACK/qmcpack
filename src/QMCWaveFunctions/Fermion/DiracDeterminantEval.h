@@ -14,7 +14,7 @@
 #define QMCPLUSPLUS_DIRAC_DETERMINANT_EVAL_H
 
 #include "Configuration.h"
-#include "QMCWaveFunctions/BsplineFactory/temp_batch_type.h"
+#include "QMCWaveFunctions/Batching.h"
 #include "QMCWaveFunctions/SPOSetSingle.h"
 #include "QMCWaveFunctions/SPOSetBatched.h"
 #include "QMCWaveFunctions/Fermion/determinant_update.h"

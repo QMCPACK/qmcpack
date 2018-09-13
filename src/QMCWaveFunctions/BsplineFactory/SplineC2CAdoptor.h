@@ -17,11 +17,14 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_C2C_SOA_ADOPTOR_H
 #define QMCPLUSPLUS_EINSPLINE_C2C_SOA_ADOPTOR_H
 
+#include <spline/einspline_engine.hpp>
+#include <spline/einspline_util.hpp>
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
 #include "qmc_common.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptor.h"
-#include "QMCWaveFunctions/BsplineFactory/temp_batch_type.h"
+#include "QMCWaveFunctions/Batching.h"
+#include "Particle/VirtualParticleSet.h"
 //#define USE_VECTOR_ML 1
 
 namespace qmcplusplus
@@ -35,7 +38,7 @@ namespace qmcplusplus
  * Requires temporage storage and multiplication of phase vectors
  */
 
-template<typename ST, typename TT, Batching batching>
+template<typename ST, typename TT>
 struct SplineC2CAdoptor: public SplineAdoptor<ST,3>
 {
   static const int D=3;
@@ -198,7 +201,7 @@ struct SplineC2CAdoptor: public SplineAdoptor<ST,3>
   {
   }
 
-  bool read_splines(hdf_archive& h5f)
+  virtual bool read_splines(hdf_archive& h5f)
   {
     std::ostringstream o;
     o<<"spline_" << SplineAdoptor<ST,D>::MyIndex;
@@ -206,7 +209,7 @@ struct SplineC2CAdoptor: public SplineAdoptor<ST,3>
     return h5f.read(bigtable,o.str().c_str());//"spline_0");
   }
 
-  bool write_splines(hdf_archive& h5f)
+  virtual bool write_splines(hdf_archive& h5f)
   {
     std::ostringstream o;
     o<<"spline_" << SplineAdoptor<ST,D>::MyIndex;

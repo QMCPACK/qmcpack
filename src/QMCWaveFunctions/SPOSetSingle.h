@@ -12,7 +12,7 @@
 #ifndef QMCPLUSPLUS_SPOSET_SINGLE_H
 #define QMCPLUSPLUS_SPOSET_SINGLE_H
 
-#include "QMCWaveFunctions/BsplineFactory/temp_batch_type.h"
+#include "QMCWaveFunctions/Batching.h"
 #include "QMCWaveFunctions/SPOSetTypeAliases.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSetEvaluation.h"

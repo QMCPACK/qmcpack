@@ -42,16 +42,16 @@ namespace qmcplusplus
 template<typename SA, Batching batching>
 struct SplineAdoptorReader: public BsplineReaderBase
 {
-  typedef SA adoptor_type;
-  typedef typename adoptor_type::DataType    DataType;
-  typedef typename adoptor_type::SplineType SplineType;
+  //typedef SA adoptor_type;
+  typedef typename SA::DataType    DataType;
+  typedef typename SA::SplineType SplineType;
 
   Array<std::complex<double>,3> FFTbox;
   Array<double,3> splineData_r, splineData_i;
   double rotate_phase_r, rotate_phase_i;
   UBspline_3d_d* spline_r;
   UBspline_3d_d* spline_i;
-  BsplineSet<adoptor_type, batching>* bspline;
+  BsplineSet<SA, batching>* bspline;
   fftw_plan FFTplan;
 
   SplineAdoptorReader(SplineBuilder* e)
@@ -139,7 +139,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
     ReportEngine PRE("SplineC2XAdoptorReader","create_spline_set(spin,SPE*)");
     //Timer c_prep, c_unpack,c_fft, c_phase, c_spline, c_newphase, c_h5, c_init;
     //double t_prep=0.0, t_unpack=0.0, t_fft=0.0, t_phase=0.0, t_spline=0.0, t_newphase=0.0, t_h5=0.0, t_init=0.0;
-    bspline=new BsplineSet<adoptor_type, batching>;
+    bspline=new BsplineSet<SA, batching>;
     app_log() << "  AdoptorName = " << bspline->AdoptorName << std::endl;
     if(bspline->is_complex)
       app_log() << "  Using complex einspline table" << std::endl;
@@ -156,7 +156,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
 
     Ugrid xyz_grid[3];
 
-    typename adoptor_type::BCType xyz_bc[3];
+    typename SA::BCType xyz_bc[3];
     bool havePsig=set_grid(bspline->HalfG,xyz_grid, xyz_bc);
     if(!havePsig)
     {
@@ -186,7 +186,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
       {
         int sizeD=0;
         foundspline=h5f.read(sizeD,"sizeof");
-        foundspline = (sizeD == sizeof(typename adoptor_type::DataType));
+        foundspline = (sizeD == sizeof(typename SA::DataType));
       }
       if(foundspline)
       {
@@ -242,7 +242,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
         hdf_archive h5f;
         h5f.create(splinefile);
         h5f.write(bspline->AdoptorName,"adoptor_name");
-        int sizeD=sizeof(typename adoptor_type::DataType);
+        int sizeD=sizeof(typename SA::DataType);
         h5f.write(sizeD,"sizeof");
         bspline->write_splines(h5f);
         h5f.close();
@@ -251,7 +251,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
     }
 
     clear();
-    return bspline;
+    return dynamic_cast<SPOSet*>(bspline);
   }
 
   /** fft and spline cG

@@ -19,6 +19,11 @@
 #include "OhmmsSoA/Container.h"
 #include "spline2/MultiBspline.hpp"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptor.h"
+#include "io/hdf_archive.h"
+#include "Particle/VirtualParticleSet.h"
+#include "qmc_common.h"
+#include "spline/einspline_engine.hpp"
+#include "spline/einspline_util.hpp"
 
 namespace qmcplusplus
 {
