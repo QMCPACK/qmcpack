@@ -53,16 +53,15 @@ public:
   SPOSetPtr Phi; //Out local Phi_
 
   SPOSetPtr getPhi() { return Phi; }
-  
+
+  virtual DiracDeterminantBase* makeCopy(SPOSet* spo) const;
+  virtual DiracDeterminantBatched* makeCopy(SPOSetBatched* spo) const;
+
   DiracDeterminantBatched(SPOSet* const &spos, int first=0);
   DiracDeterminantBatched(const DiracDeterminantBatched& s) = delete;
 
 
 public:
-
-  void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios);
-
-  DiracDeterminantBatched* makeCopy(SPOSet* spo) const;
 
     ///optimizations  are disabled
   virtual inline void checkInVariables(opt_variables_type& active)
@@ -109,6 +108,9 @@ public:
   void calcGradient(MCWalkerConfiguration &W, int iat,
                     std::vector<GradType> &grad);
 
+  // This keeps getting defined because the base doesn't have access to Phi
+  ValueType ratio(ParticleSet& P, int iat);
+
   void ratio (MCWalkerConfiguration &W, int iat,
               std::vector<ValueType> &psi_ratios);
 
@@ -134,12 +136,6 @@ public:
 
   void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
                  std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
-
-  void NLratios_CPU (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
-                     std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
-
-
-
 
 
 };

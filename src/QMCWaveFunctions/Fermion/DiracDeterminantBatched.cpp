@@ -30,7 +30,14 @@ DiracDeterminantBatched::DiracDeterminantBatched(SPOSet* const &spos, int first)
   registerTimers();
 }
 
-DiracDeterminantBatched* DiracDeterminantBatched::makeCopy(SPOSet* spo) const
+DiracDeterminantBase* DiracDeterminantBatched::makeCopy(SPOSet* spo) const
+{
+  DiracDeterminantBatched* dclone= new DiracDeterminantBatched(spo);
+  dclone->set(FirstIndex,LastIndex-FirstIndex);
+  return dclone;
+}
+
+DiracDeterminantBatched* DiracDeterminantBatched::makeCopy(SPOSetBatched* spo) const
 {
   DiracDeterminantBatched* dclone= new DiracDeterminantBatched(spo);
   dclone->set(FirstIndex,LastIndex-FirstIndex);
@@ -602,6 +609,12 @@ void DiracDeterminantBatched::ratio (MCWalkerConfiguration &W,
     psi_ratios[iw] *= ratio_host[iw];
 }
 
+DiracDeterminantBatched::ValueType
+DiracDeterminantBatched::ratio(ParticleSet& P, int iat)
+{
+  APP_ABORT("This should not be called on DiracDeterminantBatched\n");
+}
+
 
 void DiracDeterminantBatched::ratio (MCWalkerConfiguration &W, int iat,
                                   std::vector<ValueType> &psi_ratios,
@@ -1000,52 +1013,6 @@ DiracDeterminantBatched::gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads
     }
   }
 #endif
-}
-
-void
-DiracDeterminantBatched::NLratios_CPU
-(MCWalkerConfiguration &W,     std::vector<NLjob> &jobList,
- std::vector<PosType> &quadPoints,   std::vector<ValueType> &psi_ratios)
-{
-  // Phi->evaluate needs to be replaced
-  APP_ABORT("DiracDeterminantCUDA::NLratios_CPU is currently disabled.\n");
-  std::vector<Walker_t*> &walkers = W.WalkerList;
-  std::vector<ValueMatrix_t> Ainv_host;
-  int nw = walkers.size();
-  Ainv_host.resize(nw);
-  int mat_size = NumOrbitals*NumOrbitals*sizeof(CudaValueType);
-  for (int iw=0; iw<nw; iw++)
-  {
-    Ainv_host[iw].resize(NumOrbitals, NumOrbitals);
-    ValueType *dest = &(Ainv_host[iw](0,0));
-    CudaValueType *src = &(walkers[iw]->cuda_DataSet.data()[AinvOffset]);
-    cudaMemcpy(dest, src, mat_size, cudaMemcpyDeviceToHost);
-  }
-  std::vector<RealType> phi(NumOrbitals);
-  int index = 0;
-  for (int ijob=0; ijob < jobList.size(); ijob++)
-  {
-    NLjob &job = jobList[ijob];
-    int numQuad = job.numQuadPoints;
-    int elec    = job.elec;
-    int iw      = job.walker;
-    // Check if this electron belongs to this determinant
-    if (elec < FirstIndex || elec >= LastIndex)
-      index += numQuad;
-    else
-    {
-      for (int iq=0; iq<numQuad; iq++)
-      {
-        //The following line should be replaced with Phi->evaluateValues
-        //Phi->evaluate(W, quadPoints[index], phi);
-        ValueType ratio = 0.0;
-        for (int i=0; i<NumOrbitals; i++)
-          ratio += Ainv_host[iw](i,elec-FirstIndex) * phi[i];
-        psi_ratios[index] *= ratio;
-        index++;
-      }
-    }
-  }
 }
 
 void

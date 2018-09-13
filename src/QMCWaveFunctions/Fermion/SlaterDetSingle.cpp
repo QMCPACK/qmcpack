@@ -248,4 +248,5 @@ WaveFunctionComponentPtr SlaterDetSingle::makeClone(ParticleSet& tqp) const
   return myclone;
 }
 
+
 }

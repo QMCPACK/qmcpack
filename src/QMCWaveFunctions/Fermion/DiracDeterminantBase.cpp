@@ -65,7 +65,7 @@ void DiracDeterminantBase::set(int first, int nel)
   FirstIndex = first;
   resize(nel,nel);
 }
-
+  
 void DiracDeterminantBase::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
 {
   InverseTimer.start();
@@ -128,17 +128,6 @@ void DiracDeterminantBase::resize(int nel, int morb)
   */
 }
 
-DiracDeterminantBase::GradType
-DiracDeterminantBase::evalGrad(ParticleSet& P, int iat)
-{
-  WorkingIndex = iat-FirstIndex;
-  RatioTimer.start();
-  DiracDeterminantBase::GradType g = simd::dot(psiM[WorkingIndex],dpsiM[WorkingIndex],NumOrbitals);
-  RatioTimer.stop();
-  return g;
-}
-
-
 /** move was accepted, update the real container
 */
 void DiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
@@ -193,25 +182,6 @@ DiracDeterminantBase::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(PhaseValue);
 }
 
-DiracDeterminantBase::RealType DiracDeterminantBase::updateBuffer(ParticleSet& P,
-    WFBufferType& buf, bool fromscratch)
-{
-  if(fromscratch)
-  {
-    LogValue=evaluateLog(P,P.G,P.L);
-  }
-  else
-  {
-    updateAfterSweep(P,P.G,P.L);
-  }
-  BufferTimer.start();
-  buf.forward(Bytes_in_WFBuffer);
-  buf.put(LogValue);
-  buf.put(PhaseValue);
-  BufferTimer.stop();
-  return LogValue;
-}
-
 void DiracDeterminantBase::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   BufferTimer.start();
@@ -260,14 +230,6 @@ DiracDeterminantBase::evaluateLog(ParticleSet& P,
     }
   }
   return LogValue;
-}
-
-void
-DiracDeterminantBase::evaluateDerivatives(ParticleSet& P,
-    const opt_variables_type& active,
-    std::vector<RealType>& dlogpsi,
-    std::vector<RealType>& dhpsioverpsi)
-{
 }
 
 WaveFunctionComponentPtr DiracDeterminantBase::makeClone(ParticleSet& tqp) const

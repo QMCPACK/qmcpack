@@ -146,6 +146,7 @@ public:
    * can overwrite to clone itself correctly.
    */
   DiracDeterminantWithBackflow* makeCopy(SPOSetSingle* spo) const;
+  DiracDeterminantBase* makeCopy(SPOSet* spo) const;
 
   inline ValueType rcdot(TinyVector<RealType,OHMMS_DIM>& lhs, TinyVector<ValueType,OHMMS_DIM>& rhs)
   {

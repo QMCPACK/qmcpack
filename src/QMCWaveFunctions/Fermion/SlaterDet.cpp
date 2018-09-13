@@ -173,12 +173,10 @@ void SlaterDet::updateAfterSweep(ParticleSet& P,
       ParticleSet::ParticleGradient_t& G,
       ParticleSet::ParticleLaplacian_t& L)
 {
-  for (size_t i = 0, n=Dets.size(); i < n; ++i)
-  {
-    Dets[i]->updateAfterSweep(P,G,L);
-  }
+  APP_ABORT("A specialized method in a SlaterDet derived class is required");
 }
 
+  
 SlaterDet::RealType SlaterDet::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   DEBUG_PSIBUFFER(" SlaterDet::updateBuffer ",buf.current());

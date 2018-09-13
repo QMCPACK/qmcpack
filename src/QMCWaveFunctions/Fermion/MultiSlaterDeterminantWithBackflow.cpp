@@ -849,12 +849,14 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
         for(int i=0; i<dets_up.size(); i++)
         {
           spo_up->prepareFor(i);
-          dets_up[i]->evaluateDerivatives(BFTrans->QP,optvars,i,dpsia_up,dGa_up,dLa_up);
+          dynamic_cast<DiracDeterminantWithBackflow*>(dets_up[i])->
+			    evaluateDerivatives(BFTrans->QP,optvars,i,dpsia_up,dGa_up,dLa_up);
         }
         for(int i=0; i<dets_dn.size(); i++)
         {
           spo_dn->prepareFor(i);
-          dets_dn[i]->evaluateDerivatives(BFTrans->QP,optvars,i,dpsia_dn,dGa_dn,dLa_dn);
+          dynamic_cast<DiracDeterminantWithBackflow*>(dets_dn[i])->
+			   evaluateDerivatives(BFTrans->QP,optvars,i,dpsia_dn,dGa_dn,dLa_dn);
         }
         for(int pa=0; pa<numBFprm; pa++)
         {

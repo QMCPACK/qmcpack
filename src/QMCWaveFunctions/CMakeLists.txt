@@ -66,17 +66,6 @@ SET(JASTROW_SRCS
   Fermion/SPOSetProxyForMSD.cpp
   )
 
-IF(QMC_COMPLEX)
-  SET(FERMION_SRCS ${FERMION_SRCS}
-    ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
-    )
-ELSE(QMC_COMPLEX)
-  SET(FERMION_SRCS ${FERMION_SRCS}
-    ElectronGas/ElectronGasOrbitalBuilder.cpp
-    )
-ENDIF(QMC_COMPLEX)
-
-
 # wavefunctions only availbale to 3-dim problems
 IF(OHMMS_DIM MATCHES 3)
 
@@ -205,6 +194,17 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   TrialWaveFunction.cpp
   WaveFunctionFactory.cpp
   )
+
+IF(QMC_COMPLEX)
+  SET(FERMION_SRCS ${FERMION_SRCS}
+    ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
+    )
+ELSE(QMC_COMPLEX)
+  SET(FERMION_SRCS ${FERMION_SRCS}
+    ElectronGas/ElectronGasOrbitalBuilder.cpp
+    )
+ENDIF(QMC_COMPLEX)
+
 
 IF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
   SET(FERMION_SRCS ${FERMION_SRCS}

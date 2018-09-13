@@ -354,6 +354,35 @@ DiracDeterminantSingle::evalGradSource
   return gradPsi;
 }
 
+DiracDeterminantSingle::GradType
+DiracDeterminantSingle::evalGrad(ParticleSet& P, int iat)
+{
+  WorkingIndex = iat-FirstIndex;
+  RatioTimer.start();
+  DiracDeterminantSingle::GradType g = simd::dot(psiM[WorkingIndex],dpsiM[WorkingIndex],NumOrbitals);
+  RatioTimer.stop();
+  return g;
+}
+
+DiracDeterminantSingle::RealType DiracDeterminantSingle::updateBuffer(ParticleSet& P,
+    WFBufferType& buf, bool fromscratch)
+{
+  if(fromscratch)
+  {
+    LogValue=evaluateLog(P,P.G,P.L);
+  }
+  else
+  {
+    updateAfterSweep(P,P.G,P.L);
+  }
+  BufferTimer.start();
+  buf.forward(Bytes_in_WFBuffer);
+  buf.put(LogValue);
+  buf.put(PhaseValue);
+  BufferTimer.stop();
+  return LogValue;
+}
+
 void DiracDeterminantSingle::recompute(ParticleSet& P)
 {
   SPOVGLTimer.start();
@@ -377,6 +406,11 @@ DiracDeterminantSingle* DiracDeterminantSingle::makeCopy(SPOSetPtr spo) const
   DiracDeterminantSingle* dclone= new DiracDeterminantSingle(spo);
   dclone->set(FirstIndex,LastIndex-FirstIndex);
   return dclone;
+}
+
+DiracDeterminantBase* DiracDeterminantSingle::makeCopy(SPOSet* spo) const
+{
+  return makeCopy(dynamic_cast<SPOSetSingle*>(spo));
 }
 
 

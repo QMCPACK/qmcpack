@@ -5,7 +5,6 @@
 // Copyright (c) 2018 QMCPACK developers.
 //
 // File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
-//   refactored from SPOSet.h
 //
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
@@ -21,6 +20,12 @@
 namespace qmcplusplus
 {
 
+/*! Collects common types for SPOSet consumers and children
+ *  When MI and the idea of gaining typdefs and typealiases through
+ *  inheritance ambiguous name resolution is soon to follow.
+ *  This prevents that and can help make more explicit where
+ *  types actually originate.
+ */
 struct SPOSetTypeAliases
 {
   using ValueType = QMCTraits::ValueType;

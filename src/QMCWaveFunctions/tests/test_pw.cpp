@@ -287,7 +287,7 @@ const char *particles =
   SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
-  SPOSetSingle* spo = sd->mySPOSet.begin()->second;
+  SPOSetSingle* spo = dynamic_cast<SPOSetSingle*>(sd->mySPOSet.begin()->second);
   REQUIRE(spo != NULL);
   //SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   //REQUIRE(spo != NULL);

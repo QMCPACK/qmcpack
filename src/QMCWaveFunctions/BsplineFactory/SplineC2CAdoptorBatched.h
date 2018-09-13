@@ -11,8 +11,8 @@
 
 // This seems like a waste of effort
 ///\file SplineC2CAdoptorCUDA.h
-#ifndef QMCPLUSPLUS_EINSPLINE_C2C_SOA_ADOPTOR_H
-#define QMCPLUSPLUS_EINSPLINE_C2C_SOA_ADOPTOR_H
+#ifndef QMCPLUSPLUS_BATCHED_C2C_SOA_ADOPTOR_H
+#define QMCPLUSPLUS_BATCHED_C2C_SOA_ADOPTOR_H
 
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
@@ -33,7 +33,7 @@ namespace qmcplusplus
  * Requires temporage storage and multiplication of phase vectors
  */
 template<typename ST, typename TT>
-struct SplineC2CAdoptorCUDA: public SplineAdoptor<ST,3>
+struct SplineC2CAdoptorBatched: public SplineAdoptorBatched<BsplineDeviceCUDA, ST, OHMMS_DIM>
 {
   static const int D=3;
   using BaseType=SplineAdoptor<ST,3>;
@@ -81,7 +81,7 @@ struct SplineC2CAdoptorCUDA: public SplineAdoptor<ST,3>
   gContainer_type myG;
   hContainer_type myH;
 
-  SplineC2CAdoptorCUDA(): BaseType(),SplineInst(nullptr), MultiSpline(nullptr)
+  SplineC2CAdoptorBatched(): BaseType(),SplineInst(nullptr), MultiSpline(nullptr)
   {
     this->is_complex=true;
     this->is_soa_ready=true;
@@ -97,15 +97,15 @@ struct SplineC2CAdoptorCUDA: public SplineAdoptor<ST,3>
   //  this->KeyWord="C2RSoA";
   //}
 
-  SplineC2CAdoptorCUDA(const SplineC2CAdoptorCUDA& a):
-    SplineAdoptor<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr),
-    mKK(a.mKK), myKcart(a.myKcart)
-  {
-    const size_t n=a.myL.size();
-    myV.resize(n); myG.resize(n); myL.resize(n); myH.resize(n);
-  }
+  // SplineC2CAdoptorBatched(const SplineC2CAdoptorBatched& a):
+  //   SplineAdoptorBatched<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr),
+  //   mKK(a.mKK), myKcart(a.myKcart)
+  // {
+  //   const size_t n=a.myL.size();
+  //   myV.resize(n); myG.resize(n); myL.resize(n); myH.resize(n);
+  // }
 
-  ~SplineC2CAdoptorCUDA()
+  ~SplineC2CAdoptorBatched()
   {
     if(MultiSpline != nullptr) delete SplineInst;
   }
@@ -194,21 +194,21 @@ struct SplineC2CAdoptorCUDA: public SplineAdoptor<ST,3>
   {
   }
 
-  bool read_splines(hdf_archive& h5f)
-  {
-    std::ostringstream o;
-    o<<"spline_" << SplineAdoptor<ST,D>::MyIndex;
-    einspline_engine<SplineType> bigtable(SplineInst->spline_m);
-    return h5f.read(bigtable,o.str().c_str());//"spline_0");
-  }
+  // bool read_splines(hdf_archive& h5f)
+  // {
+  //   std::ostringstream o;
+  //   o<<"spline_" << SplineAdoptor<ST,D>::MyIndex;
+  //   einspline_engine<SplineType> bigtable(SplineInst->spline_m);
+  //   return h5f.read(bigtable,o.str().c_str());//"spline_0");
+  // }
 
-  bool write_splines(hdf_archive& h5f)
-  {
-    std::ostringstream o;
-    o<<"spline_" << SplineAdoptor<ST,D>::MyIndex;
-    einspline_engine<SplineType> bigtable(SplineInst->spline_m);
-    return h5f.write(bigtable,o.str().c_str());//"spline_0");
-  }
+  // bool write_splines(hdf_archive& h5f)
+  // {
+  //   std::ostringstream o;
+  //   o<<"spline_" << SplineAdoptor<ST,D>::MyIndex;
+  //   einspline_engine<SplineType> bigtable(SplineInst->spline_m);
+  //   return h5f.write(bigtable,o.str().c_str());//"spline_0");
+  // }
 
   inline std::complex<TT> 
     evaluate_dot(const ParticleSet& P, const int iat, const std::complex<TT>* restrict arow, ST* scratch,

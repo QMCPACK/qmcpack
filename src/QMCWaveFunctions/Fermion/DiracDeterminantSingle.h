@@ -96,7 +96,11 @@ public:
   
 public:
   DiracDeterminantSingle* makeCopy(SPOSetPtr spo) const;
-  
+  DiracDeterminantBase* makeCopy(SPOSet* spo) const;
+
+  RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
+
+  GradType evalGrad(ParticleSet& P, int iat);
 
   void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios);
 
@@ -117,15 +121,6 @@ public:
     
   void recompute(ParticleSet& P);
     
-
-  void ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iatList,
-              std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
-              std::vector<GradType>  &grad, std::vector<ValueType> &lapl);
-
-
-  void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
-                 std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
-
   void NLratios_CPU (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
                      std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
 };

@@ -344,7 +344,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminant::ratio(ParticleSet& P, i
     for(int i=0; i<dets_up.size(); i++)
     {
       spo_up->prepareFor(i);
-      detsRatios[i]=dynamic_cast<DiracDetermiantEval*>(dets_up[i])->ratio(P,iat);
+      detsRatios[i]=dynamic_cast<DiracDeterminantSingle*>(dets_up[i])->ratio(P,iat);
     }
     Ratio1Timer.stop();
     std::vector<size_t>::iterator upC(C2node_up.begin()),dnC(C2node_dn.begin());

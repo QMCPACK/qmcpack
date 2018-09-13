@@ -106,7 +106,7 @@ public:
   virtual void updateAfterSweep(ParticleSet& P,
       ParticleSet::ParticleGradient_t& G,
       ParticleSet::ParticleLaplacian_t& L);
-
+  
   virtual
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
 
