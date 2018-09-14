@@ -15,7 +15,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 SET(SRC_DIR ohmmspete)
 SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic_unit_test_${SRC_DIR})
+SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 
 ADD_EXECUTABLE(${UTEST_EXE} test_vector.cpp test_matrix.cpp test_tinyvector.cpp)
