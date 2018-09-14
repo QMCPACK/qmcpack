@@ -263,9 +263,9 @@ bool DMCcuda::run()
           W.NLMove_GPU (accepted, accPos, iatList);
         }
       }
-      else if(UseTMove==TMOVE_V1)
+      else if(UseTMove==TMOVE_V1||UseTMove==TMOVE_V3)
       {
-        APP_ABORT("Tmove v1 has not been implemented on GPU.\n  please contact the developers if you need this feature");
+        APP_ABORT("Tmove v1 and v3 have not been implemented on GPU.\n  please contact the developers if you need this feature");
       }
       // Now branch
       BranchTimer.start();
