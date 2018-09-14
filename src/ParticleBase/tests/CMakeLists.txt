@@ -14,7 +14,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 SET(SRC_DIR particle_base)
 SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic_unit_test_${SRC_DIR})
+SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 
 ADD_EXECUTABLE(${UTEST_EXE} test_particle_attrib.cpp test_random_seq.cpp test_attrib_ops.cpp)

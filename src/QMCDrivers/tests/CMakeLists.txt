@@ -14,7 +14,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 SET(SRC_DIR drivers)
 SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME deterministic_unit_test_${SRC_DIR})
+SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 
 SET(DRIVER_TEST_SRC test_vmc.cpp test_dmc.cpp test_drift.cpp test_clone_manager.cpp test_fixed_node_branch.cpp)
