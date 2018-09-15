@@ -40,7 +40,7 @@ MultiArray2D getrf(MultiArray2D&& m, Array1D& pivot){
 		pivot.data(), 
 		status
 	);
-	assert(status==0);
+	assert(status>=0); // status>0 signals singular matrix, catch problem later
 	return std::forward<MultiArray2D>(m);
 }
 

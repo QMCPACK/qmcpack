@@ -87,6 +87,7 @@ inline Tp MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, Mat1&& 
   // NOTE: Using C as temporary 
   // T1 = T1^(-1)
   Tp ovlp = static_cast<Tp>(ma::invert(std::forward<Mat1>(T1),IWORK,WORK));
+  if(ovlp == Tp(0.0)) return Tp(0.0); // don't bother calculating further
 
   if(compact) {
 
@@ -159,6 +160,7 @@ inline Tp MixedDensityMatrix_noHerm(const MatA& A, const MatB& B, MatC&& C, Mat1
   // NOTE: Using C as temporary 
   // T1 = T1^(-1)
   Tp ovlp = static_cast<Tp>(ma::invert(std::forward<Mat1>(T1),IWORK,WORK));
+  if(ovlp == Tp(0.0)) return Tp(0.0); // don't bother calculating further
 
   if(compact) {
 
@@ -210,6 +212,48 @@ inline Tp Overlap(const MatA& hermA, const MatB& B, Mat&& T1, IBuffer& IWORK)
   ma::product(hermA,B,std::forward<Mat>(T1));   
 
   return static_cast<Tp>(ma::determinant(std::forward<Mat>(T1),IWORK));
+}
+
+template< class Tp,
+          class integer,
+          class MatA,
+          class MatB,
+          class MatC,
+          class MatD,
+          class MatE,
+          class IBuffer,
+          class TBuffer
+        >
+inline Tp OverlapForWoodbury(const MatA& hermA, const MatB& B, MatC&& QQ0, integer *ref, 
+                             MatD && TNN, MatE && TMN, IBuffer& IWORK, TBuffer& WORK)
+{
+  // check dimensions are consistent
+  int NEL = B.shape()[1];
+  assert( hermA.shape()[1] == B.shape()[0] );
+  assert( hermA.shape()[0] == B.shape()[1] );
+  assert( hermA.shape()[0] == TMN.shape()[0] );
+  assert( B.shape()[1] == TMN.shape()[1] );
+  assert( B.shape()[1] == TNN.shape()[0] );
+  assert( B.shape()[1] == TNN.shape()[1] );
+  assert( hermA.shape()[0] == QQ0.shape()[0] );
+  assert( B.shape()[1] == QQ0.shape()[1] );
+
+  using ma::T;
+
+  // TMN = herm(A)*B 
+  ma::product(hermA,B,std::forward<MatD>(TMN));
+
+  // TNN = TMN[ref,:]
+  for(int i=0; i<NEL; i++)
+    std::copy_n(std::addressof(*TMN[*(ref+i)].origin()),NEL,std::addressof(*TNN[i].origin())); 
+ 
+  // TNN -> inv(TNN)
+  Tp res =  static_cast<Tp>(ma::invert(std::forward<MatE>(TNN),IWORK,WORK));
+
+  // QQ0 = TMN * inv(TNN) 
+  ma::product(TMN,TNN,std::forward<MatC>(QQ0));  
+
+  return res;
 }
 
 /*
@@ -316,6 +360,7 @@ inline Tp MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, Mat&& T
   if(comm.rank()==0)
    ovlp = static_cast<Tp>(ma::invert(std::forward<Mat>(T1),IWORK,WORK));
   comm.broadcast_value(ovlp);  
+  if(ovlp == Tp(0.0)) return Tp(0.0); // don't bother calculating further
 
   if(compact) {
 

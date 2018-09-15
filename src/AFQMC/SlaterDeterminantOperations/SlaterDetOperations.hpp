@@ -138,6 +138,21 @@ class SlaterDetOperations
       return SlaterDeterminantOperations::shm::Overlap<T>(hermA,B,TNN,IWORK,comm);
     }
 
+    // routines for PHMSD
+    template<typename integer, class MatA, class MatB, class MatC>
+    T OverlapForWoodbury(const MatA& hermA, const MatB& B, integer* ref, MatC&& QQ0) {
+      int Nact = hermA.shape()[0];
+      int NEL = B.shape()[1];
+      assert(hermA.shape()[1]==B.shape()[0]);
+      assert(QQ0.shape()[0]==Nact);  
+      assert(QQ0.shape()[1]==NEL);  
+      assert(TMat_NN.num_elements() >= NEL*NEL);
+      assert(TMat_MM.num_elements() >= Nact*NEL);
+      boost::multi_array_ref<T,2> TNN(TMat_NN.data(), extents[NEL][NEL]);
+      boost::multi_array_ref<T,2> TMN(TMat_MM.data(), extents[Nact][NEL]);
+      return SlaterDeterminantOperations::base::OverlapForWoodbury<T>(hermA,B,std::forward<MatC>(QQ0),ref,TNN,TMN,IWORK,WORK);
+    }    
+
     template<class Mat, class MatP1, class MatV>
     void Propagate(Mat&& A, const MatP1& P1, const MatV& V, int order=6) {
       int NMO = A.shape()[0];

@@ -17,7 +17,7 @@
 #define QMCPLUSPLUS_AFQMC_EXCITATIONS_HPP
 
 #include <boost/iterator/iterator_facade.hpp>
-
+#include <map>
 #include "AFQMC/config.h"
 #include "AFQMC/Matrix/array_of_sequences.hpp"
 
@@ -27,19 +27,92 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+template<class Vector>
+void push_excitation(Vector const& abij, Vector& v)
+{
+  assert(v.size()%abij.size()==0);
+  size_t n = abij.size();
+  for(typename Vector::iterator it=v.begin(); it<v.end(); it+=n) 
+    if( std::equal(abij.begin(),abij.end(),it) ) return;
+  v.insert(v.end(),abij.begin(),abij.end());
+}
+
+template<class Vector>
+size_t find_excitation(Vector const& abij, Vector& v)
+{
+  assert(v.size()%abij.size()==0);
+  size_t n = abij.size();
+  size_t loc=0;
+  for(typename Vector::iterator it=v.begin(); it<v.end(); it+=n, loc++) 
+    if( std::equal(abij.begin(),abij.end(),it) ) return loc;
+  APP_ABORT("Error: Sequence not found in find_excitation.\n");
+}
+
+template<class excitations>
+std::map<int,int> find_active_space(bool single_list, excitations const& abij, int NMO, int NAEA, int NAEB)
+{
+  std::map<int,int> mo2active;
+  for(int i=0; i<2*NMO; i++) mo2active[i]=-1;
+  std::vector<size_t> count(2*NMO);
+  // reference first
+  auto refc = abij.reference_configuration();
+  for(int i=0; i<NAEA+NAEB; i++, ++refc) ++count[*refc];
+  auto nex = abij.maximum_excitation_number();
+  for(int n=1; n<nex.first; ++n) {
+    auto it = abij.alpha_begin(n);
+    auto itend = abij.alpha_end(n);
+    for(; it<itend; ++it) {
+      auto exct = *it+n; // skip locations
+      for(int ak=0; ak<n; ++ak, ++exct)
+        ++count[*exct];
+    }
+  }
+  for(int n=1; n<nex.second; ++n) {
+    auto it = abij.beta_begin(n);
+    auto itend = abij.beta_end(n);
+    for(; it<itend; ++it) {
+      auto exct = *it+n; // skip locations
+      for(int ak=0; ak<n; ++ak, ++exct)
+        ++count[*exct];
+    }
+  }
+  if(not single_list) {
+    int ik=0;
+    for(int i=0; i<NMO; ++i)
+      if(count[i]>0 || count[i+NMO]>0) {
+        if(count[i]>0) mo2active[i] = ik;
+        if(count[i+NMO]>0) mo2active[i+NMO] = ik;
+        ++ik;
+      }
+  } else {  
+    int ik=0;
+    for(int i=0; i<NMO; ++i)
+      if(count[i]>0) mo2active[i] = ik++;
+    ik=0;
+    for(int i=NMO; i<2*NMO; ++i)
+      if(count[i]>0) mo2active[i] = ik++;
+  }
+  return mo2active;
+}
+
+/*
+ * - exct stores, for each electron excitaion, the location of the orbital in the reference 
+ *    being excited and the index of the excited orbital.
+ */
 template<class Vector, class T>
-int get_excitation_number(bool getIndx, Vector& refc, Vector& confg, Vector* exct, T& ci, Vector& loc, Vector& Iwork) {
+int get_excitation_number(bool getIndx, Vector& refc, Vector& confg, Vector& exct, T& ci, Vector& Iwork) {
   int NE = refc.size();
-  auto ref = refc.data();
   exct.clear();
   int cnt=0;
   if(getIndx) std::copy(refc.begin(),refc.end(),Iwork.begin());
-  auto it = ref;
+  auto it = refc.data();
+  assert(Iwork.size() >= refc.size());  
   for(int i=0; i<NE; i++,it++)
     if(!std::binary_search(confg.begin(),confg.end(),*it)) {
       if(getIndx) {
-        exct.emplace_back(*it);
-        loc[cnt]=i;
+        // store the location, NOT the index!!!
+        //exct.emplace_back(*it);
+        exct.emplace_back(i);
       }
       cnt++;
     }
@@ -50,7 +123,7 @@ int get_excitation_number(bool getIndx, Vector& refc, Vector& confg, Vector* exc
   for(int i=0; i<NE; i++,it++)
     if(!std::binary_search(refc.begin(),refc.end(),*it)) {
       exct.emplace_back(*it);
-      Iwork[loc[cnt2]]=*it;
+      Iwork[exct[cnt2]]=*it;
       cnt2++;
     }
   assert(cnt==cnt2);
@@ -68,6 +141,16 @@ int get_excitation_number(bool getIndx, Vector& refc, Vector& confg, Vector* exc
   return cnt;
 }
 
+template<typename intT, class csr>
+inline std::vector<size_t> get_nnz(csr const& PsiT_MO, intT* refc, size_t N, size_t shift)
+{
+  std::vector<size_t> res(N);
+  for(size_t i=0; i<N; i++)
+    res[i] = PsiT_MO.num_non_zero_elements(*(refc+i)-shift);
+  return res;
+}
+
+
 // try putting this in shared memory later on
 template<class I = int,
 	 class VType = std::complex<double>,	
@@ -77,12 +160,12 @@ struct ph_excitations
 {
   public:
   using integer_type = I;
+  using configuration_type = std::tuple<int,int,VType>;
 
   private:
-  using std::size_t;
   using IAllocator = Alloc;
-  using CAllocator = typename Alloc::template rebind<VType>::other;
-  using coeff_aos = ma::sparse::array_of_sequences<VType,int,CAllocator,is_root>;
+  using CAllocator = typename Alloc::template rebind<configuration_type>::other;
+  using confg_aos = ma::sparse::array_of_sequences<configuration_type,int,CAllocator,is_root>;
   using index_aos = ma::sparse::array_of_sequences<integer_type,int,IAllocator,is_root>;
 
   IAllocator i_allocator_;
@@ -98,7 +181,7 @@ struct ph_excitations
   { 
     public: 
       using difference_type = std::ptrdiff_t;
-      using reference = Integer*;
+      using reference = Integer *;
       using const_reference = Integer const*;
       using value_tupe = Integer*;
     
@@ -132,7 +215,7 @@ struct ph_excitations
   };
 
   template< typename Integer>
-  class Iterator_const: public boost::iterator_facade< Iterator<Integer>,
+  class Iterator_const: public boost::iterator_facade< Iterator_const<Integer>,
                                                Integer const*,
                                                std::random_access_iterator_tag,
                                                Integer const*,
@@ -145,8 +228,8 @@ struct ph_excitations
       using const_reference = Integer const*;
       using value_tupe = Integer*;
 
-      Iterator(Integer * index, size_t d_) : p_index(index),D(d_) {}
-      Iterator(Integer const* index, size_t d_) : p_index(index),D(d_) {}
+      Iterator_const(Integer * index, size_t d_) : p_index(index),D(d_) {}
+      Iterator_const(Integer const* index, size_t d_) : p_index(index),D(d_) {}
 
         // What we implement is determined by the boost::forward_traversal_tag
     private:
@@ -154,7 +237,7 @@ struct ph_excitations
 
       void increment() { p_index+=2*D; }
 
-      bool equal(Iterator const& other) const
+      bool equal(Iterator_const const& other) const
       {
         return this->p_index == other.p_index;
       }
@@ -168,7 +251,7 @@ struct ph_excitations
 
       void advance(int n) { p_index+=2*D*n; }
 
-      difference_type distance_to(Iterator const& z) const { return ((z.p_index-p_index)/2/D); }
+      difference_type distance_to(Iterator_const const& z) const { return ((z.p_index-p_index)/2/D); }
 
     private:
       Integer* p_index;
@@ -184,15 +267,31 @@ struct ph_excitations
 
   // Note: terms_per_excitation[0] has special meaning, the number of electrons in the calculation.
   // coefficients[0] will store the reference configuration itself.
-  ph_excitations(std::vector<size_t>& terms_per_excitation, Alloc alloc_ = Alloc{}):
-                i_allocator_(alloc_),
-                c_allocator_(alloc_),
-                excitations(terms_per_excitation.size(),terms_per_excitation,i_allocator_),
-                coefficients(terms_per_excitation.size(),0,c_allocator_)
+  ph_excitations(size_t number_of_configurations,
+                 int na_, int nb_,
+                 std::vector<size_t>& unique_alpha_counts, 
+                 std::vector<size_t>& unique_beta_counts, 
+                 Alloc alloc_ = Alloc{}):
+                 i_allocator_(alloc_),
+                 c_allocator_(alloc_),
+                 NAEA(na_),NAEB(nb_),
+                 configurations(1,number_of_configurations,c_allocator_),
+                 reference(1,NAEA+NAEB,i_allocator_),
+                 unique_alpha(unique_alpha_counts.size(),unique_alpha_counts,i_allocator_),
+                 unique_beta(unique_beta_counts.size(),unique_beta_counts,i_allocator_)
   { 
-    // to accomodate a different treatment of [0]
-    terms_per_excitation[0]=1;
-    coefficients.reserve(terms_per_excitation);
+    size_t emax = std::max(unique_alpha_counts.size(),unique_beta_counts.size());
+    sum_of_exct.resize(emax+1);
+    sum_of_exct[0] = {0,0};
+    sum_of_exct[1] = {1,1};
+    for(size_t n=1; n<unique_alpha.size(); ++n) 
+      sum_of_exct[n+1].first = sum_of_exct[n].first+unique_alpha_counts[n]/size_t(2)/n;
+    for(size_t n=unique_alpha.size()+1; n<=emax; n++)
+      sum_of_exct[n].first=sum_of_exct[n-1].first;
+    for(size_t n=1; n<unique_beta.size(); ++n)
+      sum_of_exct[n+1].second = sum_of_exct[n].second+unique_beta_counts[n]/size_t(2)/n;
+    for(size_t n=unique_beta.size()+1; n<=emax; n++)
+      sum_of_exct[n].second=sum_of_exct[n-1].second;
   }
 
   ph_excitations(ph_excitations const& other) = delete;
@@ -201,70 +300,201 @@ struct ph_excitations
   ph_excitations& operator=(ph_excitations const& other) = delete;
   ph_excitations& operator=(ph_excitations && other) = default;
 
-  size_t maximum_excitation_number() const{ return coefficients.size(); } 
-  size_t number_of_excitations(int n) const{ return coefficients.num_elements(n); } 
-  size_t number_of_excitations() const{ return coefficients.num_elements(); } 
+  std::pair<size_t,size_t> maximum_excitation_number() const
+  { return {unique_alpha.size(),unique_beta.size()}; } 
+  size_t number_of_unique_alpha_excitations(int n) const
+  { 
+    if(n==0) return 1;
+    return unique_alpha.num_elements(n)/2/n;
+  }
+  size_t number_of_unique_beta_excitations(int n) const
+  { 
+    if(n==0) return 1;
+    return unique_beta.num_elements(n)/2/n;
+  }
+  std::pair<size_t,size_t> number_of_unique_excitations(int n) const
+  { 
+    if(n==0) return {1,1};
+    std::pair<size_t,size_t> res{0,0};
+    if(n < unique_alpha.size()) res.first = unique_alpha.num_elements(n)/2/n;
+    if(n < unique_beta.size()) res.second = unique_beta.num_elements(n)/2/n;
+    return res; 
+  } 
+  std::pair<size_t,size_t> number_of_unique_excitations() const
+  { 
+    return sum_of_exct.back();
+  } 
 
-  template<typename integer1, typename integer2, typename value> 
-  void emplace_back(integer n, integer2* indx, value ci) {
-    assert(n < maximum_excitation_number());
+  size_t number_of_configurations() const { return configurations.num_elements(0); }
+  
+  // returns the number of unique excitations with particle number less than n
+  std::pair<size_t,size_t> number_of_unique_smaller_than(int n) const { return sum_of_exct[n]; }
+
+  template<class intIt>
+  void add_alpha(size_t n, intIt indx) {
+    assert(n<unique_alpha.size());
     assert(n>0);
-    coefficients.emplace_back(n,static_cast<VType>(ci));
     for(int i=0; i<2*n; i++, ++indx)	
-      excitations.emplace_back(n,static_cast<integer_type>(*indx));	
+      unique_alpha.emplace_back(n,static_cast<integer_type>(*indx));	
   }
 
-  template<typename integer1, typename integer2, typename value>
-  void emplace_reference(integer1 N, integer2* indx, value ci) {
-    coefficients.emplace_back(0,static_cast<VType>(ci));
-    for(int i=0; i<N; i++, ++indx)  
-      excitations.emplace_back(0,static_cast<integer_type>(*indx));  
-  }
-
-  Excitation_Iterator::const_reference reference_configuration() const{
-    return excitations.values(0);
-  }
-
-  VType const* coefficients_begin(int n) const {
-    assert(n < maximum_excitation_number());
-    return coefficients.values(n);
-  }
-
-  VType const* coefficients_end(int n) const {
-    assert(n < maximum_excitation_number());
-    return coefficients.values() + (*coefficients.pointers_end(n));
-  }
-
-  Excitation_Iterator excitations_begin(int n) {
-    assert(n < maximum_excitation_number());
+  template<class intIt>
+  void add_beta(size_t n, intIt indx) {
+    assert(n<unique_beta.size());
     assert(n>0);
-    return Excitation_Iterator(excitations.values(n),n); 
+    for(int i=0; i<2*n; i++, ++indx)
+      unique_beta.emplace_back(n,static_cast<integer_type>(*indx));
   }
 
-  Excitation_Iterator excitations_end(int n) {
-    assert(n < maximum_excitation_number());
-    assert(n>0);
-    return Excitation_Iterator(excitations.values()+(*excitations.pointers_end(n)),n);
+  template<class Vector>
+  void add_reference(Vector& refa, Vector& refb) {
+    for(auto k: refa)
+      reference.emplace_back(0,static_cast<integer_type>(k));  
+    for(auto k: refb)
+      reference.emplace_back(0,static_cast<integer_type>(k));  
+  }
+ 
+  // index=0 is reserved for the reference!!! 
+  template<typename integer, typename value>
+  void add_configuration(integer alpha_indx, integer beta_index, value ci) {
+    configurations.emplace_back(0,configuration_type{alpha_indx,beta_index,ci});
   }
 
-  Excitation_const_Iterator excitations_begin(int n) {
-    assert(n < maximum_excitation_number());
-    assert(n>0);
-    return Excitation_const_Iterator(excitations.values(n),n);
+  typename Excitation_Iterator::const_reference reference_configuration() const{
+    return std::addressof(*reference.values(0));
   }
 
-  Excitation_const_Iterator excitations_end(int n) {
-    assert(n < maximum_excitation_number());
-    assert(n>0);
-    return Excitation_const_Iterator(excitations.values()+(*excitations.pointers_end(n)),n);
+  typename Excitation_Iterator::reference reference_configuration() {
+    return std::addressof(*reference.values(0));
   }
+
+  configuration_type const* configurations_begin() const {
+    return std::addressof(*configurations.values(0));
+  }
+
+  configuration_type const* configurations_end() const {
+    return std::addressof(*configurations.values()) + (*configurations.pointers_end(0));
+  }
+
+  Excitation_Iterator alpha_begin(int n) {
+    assert(n>0);
+    if(n<unique_alpha.size())
+      return Excitation_Iterator(std::addressof(*unique_alpha.values(n)),n); 
+    else
+      return alpha_end(n); 
+  }
+
+  Excitation_Iterator alpha_end(int n) {
+    assert(n>0);
+    if(n<unique_alpha.size())
+      return Excitation_Iterator(std::addressof(*unique_alpha.values())
+                                    +(*unique_alpha.pointers_end(n)),n);
+    else
+      return Excitation_Iterator(std::addressof(*unique_alpha.values())
+                                    +(*unique_alpha.pointers_end(unique_alpha.size()-1)),1);
+  }
+
+  Excitation_const_Iterator alpha_begin(int n) const {
+    assert(n>0);
+    if(n<unique_alpha.size())
+      return Excitation_const_Iterator(std::addressof(*unique_alpha.values(n)),n);
+    else
+      return alpha_end(n);
+  }
+
+  Excitation_const_Iterator alpha_end(int n) const {
+    assert(n>0);
+    if(n<unique_alpha.size())
+      return Excitation_const_Iterator(std::addressof(*unique_alpha.values())
+                                    +(*unique_alpha.pointers_end(n)),n);
+    else
+      return Excitation_const_Iterator(std::addressof(*unique_alpha.values())
+                                    +(*unique_alpha.pointers_end(unique_alpha.size()-1)),1);
+  }
+
+  Excitation_Iterator beta_begin(int n) {
+    assert(n>0);
+    if(n<unique_beta.size())
+      return Excitation_Iterator(std::addressof(*unique_beta.values(n)),n);
+    else
+      return beta_end(n);
+  }
+
+  Excitation_Iterator beta_end(int n) {
+    assert(n>0);
+    if(n<unique_beta.size())
+      return Excitation_Iterator(std::addressof(*unique_beta.values())
+                                    +(*unique_beta.pointers_end(n)),n);
+    else
+      return Excitation_Iterator(std::addressof(*unique_beta.values())
+                                    +(*unique_beta.pointers_end(unique_beta.size()-1)),1);
+  }
+
+  Excitation_const_Iterator beta_begin(int n) const {
+    assert(n>0);
+    if(n<unique_beta.size())
+      return Excitation_const_Iterator(std::addressof(*unique_beta.values(n)),n);
+    else
+      return beta_end(n);
+  }
+
+  Excitation_const_Iterator beta_end(int n) const {
+    assert(n>0);
+    if(n<unique_beta.size())
+      return Excitation_const_Iterator(std::addressof(*unique_beta.values())
+                                    +(*unique_beta.pointers_end(n)),n);
+    else
+      return Excitation_const_Iterator(std::addressof(*unique_beta.values())
+                                    +(*unique_beta.pointers_end(unique_beta.size()-1)),1);
+  }
+
+  template<class Vector>
+  void get_alpha_configuration(size_t index, Vector& confg) const{
+    assert(confg.size() >= NAEA); 
+    std::copy_n(std::addressof(*reference.values(0)),NAEA,confg.data());
+    if(index==0) return;
+    // could use lower bound 
+    for(int i=1; i<unique_alpha.size(); i++) {
+      if(index >= sum_of_exct[i].first && index < sum_of_exct[i+1].first) {
+        size_t dn = index-sum_of_exct[i].first;
+        auto exct = unique_alpha.values(i) + 2*i*dn;
+        for(int n=0; n<i; n++)
+          confg[ exct[n] ] = exct[n+i];      
+        return;
+      }
+    } 
+    APP_ABORT(" Error in ph_excitations::get_alpha_configuration() \n");
+  }
+
+  template<class Vector>
+  void get_beta_configuration(size_t index, Vector& confg) const{
+    assert(confg.size() >= NAEB); 
+    std::copy_n(std::addressof(*reference.values(0))+NAEA,NAEB,confg.data());
+    if(index==0) return;
+    // could use lower bound 
+    for(int i=1; i<unique_beta.size(); i++) {
+      if(index >= sum_of_exct[i].first && index < sum_of_exct[i+1].first) {
+        size_t dn = index-sum_of_exct[i].first;
+        auto exct = unique_beta.values(i) + 2*i*dn;
+        for(int n=0; n<i; n++)
+          confg[ exct[n] ] = exct[n+i];
+        return;
+      }
+    }
+    APP_ABORT(" Error in ph_excitations::get_beta_configuration() \n");
+  } 
 
   private:
 
-  coeff_aos coefficients;
-  index_aos excitations; 
+  // using array_of_seq until I switch to Boost.Multi to be able to use shared_allocator
+  int NAEA, NAEB;
+  confg_aos configurations;
+  index_aos reference; 
+  index_aos unique_alpha; 
+  index_aos unique_beta; 
+  std::vector<std::pair<size_t,size_t>> sum_of_exct;
 
-}
+};
 
 }
 

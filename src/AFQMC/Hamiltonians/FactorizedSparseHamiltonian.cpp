@@ -131,9 +131,10 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
  SpCType_shm_csr_matrix FactorizedSparseHamiltonian::halfRotatedHijkl(WALKER_TYPES type, TaskGroup_& TGHam, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, RealType const cut){
     check_wavefunction_consistency(type,Alpha,Beta,NMO,NAEA,NAEB);
     using Alloc = boost::mpi3::intranode::allocator<SPComplexType>;
-    std::size_t nr=NAEA*NMO;
-    if(type==COLLINEAR) nr = (NAEA+NAEB)*NMO;
-    else if(type==NONCOLLINEAR) nr = (NAEA+NAEB)*2*NMO;
+    assert(Alpha!=nullptr);
+    if(type==COLLINEAR) assert(Beta!=nullptr);
+    std::size_t nr=Alpha->shape()[0]*Alpha->shape()[1];
+    if(type==COLLINEAR) nr = (Alpha->shape()[0]+Beta->shape()[0])*Alpha->shape()[1];
     if(TGHam.getNNodesPerTG() > 1) {
       using tvec = std::vector<std::tuple<int,int,SPComplexType>>;
       tvec tmat;

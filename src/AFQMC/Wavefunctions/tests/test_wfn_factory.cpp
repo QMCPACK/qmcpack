@@ -31,6 +31,7 @@
 #include <vector>
 #include <complex>
 #include <iomanip>
+#include <random>
 
 #include "AFQMC/Utilities/test_utils.hpp"
 
@@ -88,7 +89,7 @@ TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
     InfoMap.insert ( std::pair<std::string,AFQMCInfo>("info0",AFQMCInfo{"info0",NMO,NAEA,NAEB}) );
     HamiltonianFactory HamFac(InfoMap);
     const char *ham_xml_block =
-"<Hamiltonian name=\"ham0\" type=\"SparseGeneral\" info=\"info0\"> \
+"<Hamiltonian name=\"ham0\" info=\"info0\"> \
     <parameter name=\"filetype\">hdf5</parameter> \
     <parameter name=\"filename\">./afqmc.h5</parameter> \
     <parameter name=\"cutoff_decomposition\">1e-5</parameter> \
@@ -917,6 +918,174 @@ const char *wlk_xml_block =
         Vsum += vHS[i][0];
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
+  }
+}
+
+TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  OhmmsInfo("testlogfile",boost::mpi3::world.rank());
+
+  if(not file_exists("./afqmc_msd.h5") ||
+     not file_exists("./wfn_msd.dat") ) {
+    app_log()<<" Skipping wfn_fac_collinear_phmsd text. afqmc_msd.h5 and ./wfn_msd.dat files not found. \n";
+  } else {
+
+    // mpi3
+    communicator& world = boost::mpi3::world;
+
+    // Global Task Group
+    GlobalTaskGroup gTG(world);
+
+    auto file_data = read_test_results_from_hdf<ValueType>("./afqmc_msd.h5");
+    int NMO=file_data.NMO;
+    int NAEA=file_data.NAEA;
+    int NAEB=file_data.NAEB;
+
+    std::map<std::string,AFQMCInfo> InfoMap;
+    InfoMap.insert ( std::pair<std::string,AFQMCInfo>("info0",AFQMCInfo{"info0",NMO,NAEA,NAEB}) );
+    HamiltonianFactory HamFac(InfoMap);
+    const char *ham_xml_block =
+"<Hamiltonian name=\"ham0\" type=\"SparseGeneral\" info=\"info0\"> \
+    <parameter name=\"filetype\">hdf5</parameter> \
+    <parameter name=\"filename\">./afqmc_msd.h5</parameter> \
+    <parameter name=\"cutoff_decomposition\">1e-5</parameter> \
+  </Hamiltonian> \
+";
+    Libxml2Document doc;
+    bool okay = doc.parseFromString(ham_xml_block);
+    REQUIRE(okay);
+    std::string ham_name("ham0");
+    HamFac.push(ham_name,doc.getRoot());
+    Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
+
+
+    auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
+    int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
+    RandomGenerator_t rng;
+
+const char *wlk_xml_block =
+"<WalkerSet name=\"wset0\">  \
+  <parameter name=\"walker_type\">collinear</parameter>  \
+</WalkerSet> \
+";
+    Libxml2Document doc3;
+    okay = doc3.parseFromString(wlk_xml_block);
+    REQUIRE(okay);
+
+    const char *wfn_xml_block =
+"<Wavefunction name=\"wfn0\" type=\"phmsd\" info=\"info0\"> \
+      <parameter name=\"filetype\">ascii</parameter> \
+      <parameter name=\"filename\">./wfn_msd.dat</parameter> \
+      <parameter name=\"cutoff\">1e-6</parameter> \
+  </Wavefunction> \
+";
+    Libxml2Document doc2;
+    okay = doc2.parseFromString(wfn_xml_block);
+    REQUIRE(okay);
+    std::string wfn_name("wfn0");
+    WavefunctionFactory WfnFac(InfoMap); 
+    WfnFac.push(wfn_name,doc2.getRoot());
+    Wavefunction& wfn = WfnFac.getWavefunction(TG,TG,wfn_name,COLLINEAR,&ham,1e-6,nwalk); 
+
+    const char *wfn_xml_block2 =
+"<Wavefunction name=\"wfn1\" type=\"nomsd\" info=\"info0\"> \
+      <parameter name=\"filetype\">ascii</parameter> \
+      <parameter name=\"filename\">./wfn_msd.dat</parameter> \
+      <parameter name=\"cutoff\">1e-6</parameter> \
+  </Wavefunction> \
+";
+    Libxml2Document doc2_;
+    okay = doc2_.parseFromString(wfn_xml_block2);
+    REQUIRE(okay);
+    std::string wfn2_name("wfn1");
+    WfnFac.push(wfn2_name,doc2_.getRoot());
+    Wavefunction& nomsd = WfnFac.getWavefunction(TG,TG,wfn2_name,COLLINEAR,&ham,1e-6,nwalk);
+
+    WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
+    auto initial_guess = WfnFac.getInitialGuess(wfn_name);
+    REQUIRE(initial_guess.shape()[0]==2);
+    REQUIRE(initial_guess.shape()[1]==NMO);
+    REQUIRE(initial_guess.shape()[2]==NAEA);
+    
+
+    std::default_random_engine generator;
+    std::uniform_real_distribution<double> distribution(-0.05,0.05);
+    for(int i=0; i<NMO; i++) {
+      for(int j=0; j<NAEA; j++) 
+        initial_guess[0][i][j] += distribution(generator); 
+      for(int j=0; j<NAEB; j++) 
+        initial_guess[1][i][j] += distribution(generator); 
+    }
+    wset.resize(nwalk,initial_guess[0],
+                         initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
+
+    // no guarantee that overlap is 1.0
+    nomsd.Overlap(wset);
+    app_log()<<" NOMSD Overlap: " <<wset[0].overlap() <<std::endl;
+    wfn.Overlap(wset);
+    app_log()<<" PHMSD Overlap: " <<wset[0].overlap() <<std::endl;
+
+    using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
+    using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
+
+    nomsd.Energy(wset);
+    app_log()<<" NOMSD E: " <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<std::endl;
+    wfn.Energy(wset);
+    app_log()<<" PHDMSD E: " <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<std::endl;
+
+/*
+    auto size_of_G = wfn.size_of_G_for_vbias();
+    SHM_Buffer Gbuff(TG.TG_local(),nwalk*size_of_G);
+    int Gdim1 = (wfn.transposed_G_for_vbias()?nwalk:size_of_G);
+    int Gdim2 = (wfn.transposed_G_for_vbias()?size_of_G:nwalk);
+    boost::multi_array_ref<ComplexType,2> G(Gbuff.data(),extents[Gdim1][Gdim2]);
+    wfn.MixedDensityMatrix_for_vbias(wset,G);
+
+    double sqrtdt = std::sqrt(0.01);
+    auto nCV = wfn.local_number_of_cholesky_vectors();
+    SHM_Buffer Xbuff(TG.TG_local(),nCV*nwalk);
+    boost::multi_array_ref<ComplexType,2> X(Xbuff.data(),extents[nCV][nwalk]);
+    wfn.vbias(G,X,sqrtdt);
+    ComplexType Xsum=0;
+    if(std::abs(file_data.Xsum)>1e-8) {
+      for(int n=0; n<nwalk; n++) {
+        Xsum=0;
+        for(int i=0; i<X.shape()[0]; i++)
+          Xsum += X[i][n];
+        REQUIRE( real(Xsum) == Approx(real(file_data.Xsum)) );
+        REQUIRE( imag(Xsum) == Approx(imag(file_data.Xsum)) );
+      }
+    } else {
+      Xsum=0;
+      for(int i=0; i<X.shape()[0]; i++)
+        Xsum += X[i][0];
+      app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
+    }
+
+
+    SHM_Buffer vHSbuff(TG.TG_local(),NMO*NMO*nwalk);
+    int vdim1 = (wfn.transposed_vHS()?nwalk:NMO*NMO);
+    int vdim2 = (wfn.transposed_vHS()?NMO*NMO:nwalk);
+    boost::multi_array_ref<ComplexType,2> vHS(vHSbuff.data(),extents[vdim1][vdim2]);
+    wfn.vHS(X,vHS,sqrtdt);
+    TG.local_barrier();
+    ComplexType Vsum=0;
+    if(std::abs(file_data.Vsum)>1e-8) {
+      for(int n=0; n<nwalk; n++) {
+        Vsum=0;
+        for(int i=0; i<vHS.shape()[0]; i++)
+          Vsum += vHS[i][n];
+        REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
+        REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
+      }
+    } else {
+      Vsum=0;
+      for(int i=0; i<vHS.shape()[0]; i++)
+        Vsum += vHS[i][0];
+      app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
+    }
+*/
   }
 }
 

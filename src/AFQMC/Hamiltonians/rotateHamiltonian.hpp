@@ -43,15 +43,16 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+// due to generalized Slater matrices, the conditions change
 inline void check_wavefunction_consistency(WALKER_TYPES type, PsiT_Matrix *A, PsiT_Matrix *B, int NMO, int NAEA, int NAEB) 
 {
     if(type == CLOSED) {
-      if(A->shape()[1] != NMO || A->shape()[0] != NAEA) {
+      if(A->shape()[1] != NMO || A->shape()[0] < NAEA) {
         app_error()<<" Error: Incorrect Slater Matrix dimensions in check_wavefunction_consistency(): wfn_type=0, NMO, NAEA, A.rows, A.cols: " <<NMO <<" " <<NAEA <<" " <<A->shape()[0] <<" " <<A->shape()[1] <<std::endl; 
         APP_ABORT(" Error: Incorrect Slater Matrix dimensions in check_wavefunction_consistency().\n");
       }
     } else if(type == COLLINEAR) {
-      if(A->shape()[1] != NMO || A->shape()[0] != NAEA || B->shape()[1] != NMO || B->shape()[0] != NAEB) {
+      if(A->shape()[1] != NMO || A->shape()[0] < NAEA || B->shape()[1] != NMO || B->shape()[0] < NAEB) {
         app_error()<<" Error: Incorrect Slater Matrix dimensions in check_wavefunction_consistency(): wfn_type=1, NMO, NAEA, NAEB, A.rows, A.cols, B.rows, B.cols: " 
         <<NMO <<" " <<NAEA <<" " <<NAEB <<" " 
         <<A->shape()[0] <<" " <<A->shape()[1] <<" "
@@ -59,7 +60,7 @@ inline void check_wavefunction_consistency(WALKER_TYPES type, PsiT_Matrix *A, Ps
         APP_ABORT(" Error: Incorrect Slater Matrix dimensions in check_wavefunction_consistency().\n");
       }
     } else if(type==NONCOLLINEAR) {
-      if(A->shape()[1] != 2*NMO || A->shape()[0] != (NAEB+NAEA)) {
+      if(A->shape()[1] != 2*NMO || A->shape()[0] < (NAEB+NAEA)) {
         app_error()<<" Error: Incorrect Slater Matrix dimensions in check_wavefunction_consistency(): wfn_type=1, NMO, NAEA, NAEB, A.rows, A.cols: " <<NMO <<" " <<NAEA <<" " <<NAEB <<" " <<A->shape()[0] <<" " <<A->shape()[1] <<std::endl; 
         APP_ABORT(" Error: Incorrect Slater Matrix dimensions in check_wavefunction_consistency().\n");
       }
@@ -69,15 +70,19 @@ inline void check_wavefunction_consistency(WALKER_TYPES type, PsiT_Matrix *A, Ps
     }
 }
 
-inline boost::multi_array<SPComplexType,1> rotateHij(WALKER_TYPES walker_type, int NMO, int NAEA, int NAEB, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, const std::vector<s2D<ValueType> >& H1)
+inline boost::multi_array<SPComplexType,1> rotateHij(WALKER_TYPES walker_type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, const std::vector<s2D<ValueType> >& H1)
 {
+  assert(Alpha!=nullptr);
+  int NAEA = Alpha->shape()[0];
+  int NMO = Alpha->shape()[1];
+  
   boost::multi_array<SPComplexType,1> N;  
   boost::multi_array<ComplexType,2> M;  
   const ComplexType one = ComplexType(1.0);
   const ComplexType zero = ComplexType(0.0);
 
   // 1-body part 
-  if(walker_type == CLOSED) {
+  if(walker_type == CLOSED || walker_type == NONCOLLINEAR) {
 
     ValueType V;
     M.resize(extents[NMO][NMO]);
@@ -104,6 +109,8 @@ inline boost::multi_array<SPComplexType,1> rotateHij(WALKER_TYPES walker_type, i
 
   } else if(walker_type == COLLINEAR) {
 
+    assert(Beta!=nullptr);
+    int NAEB = Beta->shape()[0];
     ValueType V;
     M.resize(extents[NMO][NMO]);
     std::fill_n(M.origin(),NMO*NMO,ComplexType(0.0,0.0));
@@ -133,44 +140,23 @@ inline boost::multi_array<SPComplexType,1> rotateHij(WALKER_TYPES walker_type, i
     std::copy_n(NB_.origin(),NAEB*NMO,N.origin()+NAEA*NMO);
 #endif
 
-  } else if(walker_type == NONCOLLINEAR) {
-
-    ValueType V;
-    M.resize(extents[2*NMO][2*NMO]);
-    std::fill_n(M.origin(),4*NMO*NMO,ComplexType(0.0,0.0));
-    N.resize(extents[(NAEA+NAEB)*2*NMO]);
-#if(AFQMC_SP)
-    boost::multi_array<ComplexType,2> N_(extents[NAEA+NAEB][2*NMO]);
-#else
-    boost::multi_array_ref<ComplexType,2> N_(N.origin(),extents[NAEA+NAEB][2*NMO]);
-#endif
-
-    std::vector<s2D<ValueType> >::const_iterator it1 = H1.begin();
-    while(it1 != H1.end()) {
-      IndexType i,j;
-      std::tie (i,j,V) = *it1++;
-      M[i][j] = V; //
-      if( i!=j ) M[j][i] = myconj(V);
-    }
-
-    ma::product(*Alpha,M,N_);
-#if(AFQMC_SP)
-    std::copy_n(N_.origin(),(NAEA+NAEB)*2*NMO,N.origin());
-#endif
-
   }
 
   return N;
 }
 
-inline boost::multi_array<SPComplexType,1> rotateHij(WALKER_TYPES walker_type, int NMO, int NAEA, int NAEB, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, const boost::multi_array<ComplexType,2>& H1)
+inline boost::multi_array<SPComplexType,1> rotateHij(WALKER_TYPES walker_type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, const boost::multi_array<ComplexType,2>& H1)
 {
+  assert(Alpha!=nullptr);
+  int NAEA = Alpha->shape()[0];
+  int NMO = Alpha->shape()[1];
+
   boost::multi_array<SPComplexType,1> N;  
   const ComplexType one = ComplexType(1.0);
   const ComplexType zero = ComplexType(0.0);
 
   // 1-body part 
-  if(walker_type == CLOSED) {
+  if(walker_type == CLOSED || walker_type == NONCOLLINEAR) {
 
     N.resize(extents[NAEA*NMO]);
 #if(AFQMC_SP)
@@ -187,6 +173,9 @@ inline boost::multi_array<SPComplexType,1> rotateHij(WALKER_TYPES walker_type, i
 
   } else if(walker_type == COLLINEAR) {
 
+    assert(Beta!=nullptr);
+    int NAEB = Beta->shape()[0];
+
     N.resize(extents[(NAEA+NAEB)*NMO]);
 #if(AFQMC_SP)
     boost::multi_array<ComplexType,2> NA_(extents[NAEA][NMO]);
@@ -201,20 +190,6 @@ inline boost::multi_array<SPComplexType,1> rotateHij(WALKER_TYPES walker_type, i
 #if(AFQMC_SP)
     std::copy_n(NA_.origin(),NAEA*NMO,N.origin());
     std::copy_n(NB_.origin(),NAEB*NMO,N.origin()+NAEA*NMO);
-#endif
-
-  } else if(walker_type == NONCOLLINEAR) {
-
-    N.resize(extents[(NAEA+NAEB)*2*NMO]);
-#if(AFQMC_SP)
-    boost::multi_array<ComplexType,2> N_(extents[NAEA+NAEB][2*NMO]);
-#else
-    boost::multi_array_ref<ComplexType,2> N_(N.origin(),extents[NAEA+NAEB][2*NMO]);
-#endif
-
-    ma::product(*Alpha,H1,N_);
-#if(AFQMC_SP)
-    std::copy_n(N_.origin(),(NAEA+NAEB)*2*NMO,N.origin());
 #endif
 
   }

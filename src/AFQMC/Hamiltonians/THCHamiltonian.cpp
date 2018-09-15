@@ -414,7 +414,7 @@ HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD,
   int skp=((type==COLLINEAR)?1:0);
   for(int n=0, nd=0; n<ndet; ++n, nd+=(skp+1)) {
     check_wavefunction_consistency(type,&PsiT[nd],&PsiT[nd+skp],NMO,NAEA,NAEB);
-    hij.emplace_back(rotateHij(type,NMO,NAEA,NAEB,&PsiT[nd],&PsiT[nd+skp],OneBodyHamiltonian::H1));
+    hij.emplace_back(rotateHij(type,&PsiT[nd],&PsiT[nd+skp],OneBodyHamiltonian::H1));
   }
 
   // dense one body hamiltonian

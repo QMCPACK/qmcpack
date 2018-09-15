@@ -100,12 +100,9 @@ class FactorizedSparseHamiltonian: public OneBodyHamiltonian
 
   boost::multi_array<ComplexType,2> getH1() const{ return OneBodyHamiltonian::getH1(); }
 
-  // Haj[0:NAEA*NMO] for type CLOSED,
-  // Haj[0:(NAEA+NAEB)*NMO] for type COLLINEAR,
-  // Haj[0:(NAEA+NAEB)*2*NMO] for type NONCOLLINEAR
   boost::multi_array<SPComplexType,1> halfRotatedHij(WALKER_TYPES type, PsiT_Matrix *Alpha, PsiT_Matrix *Beta) {
     check_wavefunction_consistency(type,Alpha,Beta,NMO,NAEA,NAEB);
-    return rotateHij(type,NMO,NAEA,NAEB,Alpha,Beta,OneBodyHamiltonian::H1);
+    return rotateHij(type,Alpha,Beta,OneBodyHamiltonian::H1);
   }
 
   SpVType_shm_csr_matrix generateHijkl(WALKER_TYPES type, TaskGroup_& TGwfn, std::map<IndexType,std::pair<bool,IndexType>>& occ_a, std::map<IndexType,std::pair<bool,IndexType>>& occ_b , RealType const cut=1e-6); 

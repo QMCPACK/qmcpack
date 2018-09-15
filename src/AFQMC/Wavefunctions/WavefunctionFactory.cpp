@@ -89,13 +89,16 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
   std::string wfn_type = getWfnType(in);
 
   using Alloc = boost::mpi3::intranode::allocator<ComplexType>;
-  if(type=="msd") {
+  if(type=="msd" || type=="nomsd") {
     std::vector<ComplexType> ci;
     std::vector<PsiT_Matrix> PsiT;
-    if(wfn_type == "occ") {
-      ph_excitations<int,ComlexType> abij = read_ph_wavefunction(in,ndets_to_read,walker_type,
-                    TGwfn.Node(),NMO,NAEA,NAEB,PsiT);
-      assert(abij.num_elements() == ndets_to_read);
+    if(wfn_type == "occ" || wfn_type == "mixed") {
+      std::vector<PsiT_Matrix> PsiT_MO; // read_ph_wavefunction returns the full MO matrix
+      // careful here!!!!
+      // number of terms in PsiT_MO depend on RHF/UHF type, not on walker_type!!!
+      ph_excitations<int,ComplexType> abij = read_ph_wavefunction(in,ndets_to_read,walker_type,
+                    TGwfn.Node(),NMO,NAEA,NAEB,PsiT_MO);
+      assert(abij.number_of_configurations() == ndets_to_read);
       int NEL = (walker_type==NONCOLLINEAR)?(NAEA+NAEB):NAEA;  
       int N_ = (walker_type==NONCOLLINEAR)?2*NMO:NMO;
       ComplexType one(1.0,0.0);
@@ -106,62 +109,97 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
       ci.reserve(ndets_to_read);
       auto refc = abij.reference_configuration();
       // add reference  
-      ci.emplace_back(*abij.coefficients_begin(0));  
-      PsiT.emplace_back(PsiT_Matrix({NEL,N_},{0,0},1,Alloc(TGwfn.Node())));
+      ci.emplace_back(std::get<2>(*abij.configurations_begin()));  
+      if(wfn_type == "occ")
+        PsiT.emplace_back(PsiT_Matrix({NEL,N_},{0,0},1,Alloc(TGwfn.Node())));
+      else 
+        PsiT.emplace_back(PsiT_Matrix({NEL,N_},{0,0},
+                          get_nnz(PsiT_MO[0],refc,NEL,0),Alloc(TGwfn.Node())));
       if(TGwfn.Node().root()) {
-        for(int k=0; k<NEL; k++)
-          PsiT.back().emplace_back({k,*(refc+k)},one);
+        if(wfn_type == "occ") {
+          for(int k=0; k<NEL; k++)
+            PsiT.back().emplace_back({k,*(refc+k)},one);
+        } else {
+          for(int k=0; k<NEL; k++) {
+            size_t ki = *(refc+k); // occupied state #k
+            auto col = PsiT_MO[0].non_zero_indices2_data(ki);
+            auto val = PsiT_MO[0].non_zero_values_data(ki);
+            for(size_t ic=0, icend=PsiT_MO[0].num_non_zero_elements(ki); ic<icend; ic++, ++col, ++val)
+              PsiT.back().emplace_back({k,*col},*val);
+          }
+        }
       }
       if(walker_type==COLLINEAR) {
-        PsiT.emplace_back(PsiT_Matrix({NAEB,NMO},{0,0},1,Alloc(TGwfn.Node())));
-        if(TGwfn.Node().root())
-          for(int k=0; k<NAEB; k++)
-            PsiT.back().emplace_back({k,*(refc+NAEA+k)-NMO},one);
-      }
-      // work array
-      std::vector<int> iwork(NAEA+NAEB); 
-      for(int n=1; n<abij.maximum_excitation_number(); n++) {
-        auto itc = abij.coefficients_begin(n);
-        auto itc_end = abij.coefficients_end(n);
-        auto ite = abij.excitations_begin(n);
-        for(; itc<itc_end; ++itc, ++ite) { 
-          auto const exct = *ite;  
-          // not ideal but simple: add reference and substitute excitations  
-          ci.emplace_back(*itc);
-          PsiT.emplace_back(PsiT_Matrix({NEL,N_},{0,0},1,Alloc(TGwfn.Node())));
-          if(TGwfn.Node().root()) { 
-            // add excited configuration
-            std::copy_n(refc,NEL,iwork.data()); 
-            for(int np=0; np<n; np++) {
-              auto val = std::lower_bound(iwork.begin(),iwork.begin()+NEL,exct[np]);  
-              if(*val == exct[np]) {
-                *val = exct[np+n];
-              } else 
-                APP_ABORT(" Error in WavefunctionFactory::fromASCII: Inconsistent reference configuration.\n");
+        if(wfn_type == "occ")
+          PsiT.emplace_back(PsiT_Matrix({NAEB,NMO},{0,0},1,Alloc(TGwfn.Node())));
+        else
+          PsiT.emplace_back(PsiT_Matrix({NAEB,NMO},{0,0},
+                            get_nnz(PsiT_MO.back(),refc+NAEA,NAEB,NMO),Alloc(TGwfn.Node())));
+        if(TGwfn.Node().root()) {
+          if(wfn_type == "occ") {
+            for(int k=0; k<NAEB; k++)
+              PsiT.back().emplace_back({k,*(refc+NAEA+k)-NMO},one);
+          } else {
+            for(int k=0; k<NAEB; k++) {
+              size_t ki = *(refc+NAEA+k)-NMO; // occupied state #k
+              // this should be correct 
+              auto col = PsiT_MO.back().non_zero_indices2_data(ki);
+              auto val = PsiT_MO.back().non_zero_values_data(ki);
+              for(size_t ic=0, icend=PsiT_MO.back().num_non_zero_elements(ki); ic<icend; ic++, ++col, ++val)
+                PsiT.back().emplace_back({k,*col},*val);
             }
-            for(int k=0; k<NEL; k++) 
-              PsiT.back().emplace_back({k,iwork[k]},one); 
-          }
-          if(walker_type==COLLINEAR) {
-            PsiT.emplace_back(PsiT_Matrix({NAEB,NMO},{0,0},1,Alloc(TGwfn.Node())));
-            if(TGwfn.Node().root()) { 
-              std::copy_n(refc+NAEA,NAEB,iwork.data());
-              for(int np=0; np<n; np++) {
-                auto val = std::lower_bound(iwork.begin(),iwork.begin()+NAEB,exct[np]);
-                if(*val == exct[np]) {
-                  *val = exct[np+n];
-                } else 
-                  APP_ABORT(" Error in WavefunctionFactory::fromASCII: Inconsistent reference configuration.\n");
-              }
-              for(int k=0; k<NAEB; k++) 
-                PsiT.back().emplace_back(k,iwork[k]-NMO,one); 
-            } 
           }
         } 
+      }
+      // work array
+      std::vector<int> iwork(NAEA); 
+      auto configurations = abij.configurations_begin()+1;
+      for(; configurations<abij.configurations_end(); ++configurations) {
+        ci.emplace_back(std::get<2>(*configurations));
+        abij.get_alpha_configuration( std::get<0>(*configurations) ,iwork); 
+        if(wfn_type == "occ")
+          PsiT.emplace_back(PsiT_Matrix({NEL,N_},{0,0},1,Alloc(TGwfn.Node())));
+        else 
+          PsiT.emplace_back(PsiT_Matrix({NEL,N_},{0,0},
+                        get_nnz(PsiT_MO[0],iwork.data(),NEL,0),Alloc(TGwfn.Node())));
+        if(TGwfn.Node().root()) { 
+          // add excited configuration
+          if(wfn_type == "occ") {
+            for(int k=0; k<NEL; k++) 
+              PsiT.back().emplace_back({k,iwork[k]},one); 
+          } else {
+            for(int k=0; k<NEL; k++) {
+              size_t ki = iwork[k]; // occupied state #k
+              auto col = PsiT_MO[0].non_zero_indices2_data(ki);
+              auto val = PsiT_MO[0].non_zero_values_data(ki);
+              for(size_t ic=0, icend=PsiT_MO[0].num_non_zero_elements(ki); ic<icend; ic++, ++col, ++val)
+                PsiT.back().emplace_back({k,*col},*val);
+            }
+          }
+        }
+        if(walker_type==COLLINEAR) {
+          abij.get_beta_configuration( std::get<1>(*configurations) ,iwork); 
+          if(wfn_type == "occ")
+            PsiT.emplace_back(PsiT_Matrix({NAEB,NMO},{0,0},1,Alloc(TGwfn.Node())));
+          else
+            PsiT.emplace_back(PsiT_Matrix({NAEB,NMO},{0,0},
+                            get_nnz(PsiT_MO.back(),iwork.data(),NAEB,NMO),Alloc(TGwfn.Node())));
+          if(TGwfn.Node().root()) { 
+            if(wfn_type == "occ") {
+              for(int k=0; k<NAEB; k++) 
+                PsiT.back().emplace_back({k,iwork[k]-NMO},one); 
+            } else {
+              for(int k=0; k<NAEB; k++) {
+                size_t ki = iwork[k]-NMO; // occupied state #k
+                auto col = PsiT_MO.back().non_zero_indices2_data(ki);
+                auto val = PsiT_MO.back().non_zero_values_data(ki);
+                for(size_t ic=0, icend=PsiT_MO.back().num_non_zero_elements(ki); ic<icend; ic++, ++col, ++val)
+                  PsiT.back().emplace_back({k,*col},*val);
+              }
+            }
+          } 
+        } 
       } 
-    } else if(wfn_type == "mixed") {
-      // In this case, PsiT is the orbital matrix
-      APP_ABORT("Finish WavefunctionFactory \n");
     } else if(wfn_type == "matrix") {
       read_general_wavefunction(in,ndets_to_read,walker_type,TGwfn.Node(),
                     NMO,NAEA,NAEB,PsiT,ci);
@@ -193,7 +231,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
         }
       }  
     }
-    auto HOps(h.getHamiltonianOperations(wfn_type == "occ",walker_type,PsiT,cutvn,cutv2,TGprop,TGwfn,dump));  
+    auto HOps(h.getHamiltonianOperations(wfn_type == "occ" && walker_type==CLOSED,walker_type,PsiT,cutvn,cutv2,TGprop,TGwfn,dump));  
     if(restart_file != "") 
       if(TGwfn.Global().root()) {
         dump.pop();
@@ -217,8 +255,9 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
         auto v0 = PsiT[0].non_zero_values_data();  
         auto c0 = PsiT[0].non_zero_indices2_data();  
         for(int i=0; i<PsiT[0].shape()[0]; i++) 
-          for(int ip=pbegin[i]; ip<pend[i]; ip++) 
+          for(int ip=pbegin[i]; ip<pend[i]; ip++) { 
             ((newg.first)->second)[0][c0[ip-p0]][i] = conj(v0[ip-p0]);
+          }
       }  
       if(walker_type==COLLINEAR) {
         auto pbegin = PsiT[1].pointers_begin(); 
@@ -227,8 +266,9 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
         auto v0 = PsiT[1].non_zero_values_data();
         auto c0 = PsiT[1].non_zero_indices2_data();
         for(int i=0; i<PsiT[1].shape()[0]; i++) 
-          for(int ip=pbegin[i]; ip<pend[i]; ip++) 
+          for(int ip=pbegin[i]; ip<pend[i]; ip++) { 
             ((newg.first)->second)[1][c0[ip-p0]][i] = conj(v0[ip-p0]);  
+          }
       }  
     } else
       APP_ABORT(" Error: Problems adding new initial guess, already exists. \n"); 
@@ -237,40 +277,135 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
     return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(HOps),std::move(ci),std::move(PsiT),
                         walker_type,NCE,targetNW)); 
   } else if(type == "phmsd") {
+
+    /* Implementation notes: 
+     *  - PsiT: [Nact, NMO] where Nact is the number of active space orbitals, 
+     *                     those that participate in the ci expansion
+     *  - The half rotation is done with respect to the supermatrix PsiT
+     *  - Need to calculate Nact and create a mapping from orbital index to actice space index.
+     *    Those orbitals in the corresponding virtual space (not in active) map to -1 as a precaution.
+     */   
+
+    // assuming walker_type==COLLINEAR for now, specialize a type for perfect pairing PHMSD
+    if(walker_type!=COLLINEAR)
+      APP_ABORT("Error: PHMSD requires a COLLINEAR calculation.\n");
+    std::vector<PsiT_Matrix> PsiT_MO;
+    ph_excitations<int,ComplexType> abij = read_ph_wavefunction(in,ndets_to_read,walker_type,
+                  TGwfn.Node(),NMO,NAEA,NAEB,PsiT_MO);
+    int NEL = (walker_type==NONCOLLINEAR)?(NAEA+NAEB):NAEA;  
+    int N_ = (walker_type==NONCOLLINEAR)?2*NMO:NMO;
     if(wfn_type == "occ") {
-      int NEL = (walker_type==NONCOLLINEAR)?(NAEA+NAEB):NAEA;  
-      int N_ = (walker_type==NONCOLLINEAR)?2*NMO:NMO;
+      //build PsiT_MO
       ComplexType one(1.0,0.0);
-      auto it = excitations.begin();  
-      if(walker_type==COLLINEAR) 
-        PsiT.reserve(2*ndets_to_read);  
-      else
-        PsiT.reserve(ndets_to_read);  
-      for(int i=0; i<ndets_to_read; i++) {
-        PsiT.emplace_back(PsiT_Matrix({NEL,N_},{0,0},1,Alloc(TGwfn.Node())));
-        if(TGwfn.Node().root())  
-          for(int k=0; k<NEL; k++) 
-            PsiT.back().emplace_back({k,*it++},one); 
-        if(walker_type==COLLINEAR) {
-          PsiT.emplace_back(PsiT_Matrix({NAEB,NMO},{0,0},1,Alloc(TGwfn.Node())));
-          if(TGwfn.Node().root())  
-            for(int k=0; k<NAEB; k++) 
-              PsiT.back().emplace_back({k,(*it++)-NMO},one); 
-        }
-      }  
+      // wfn_type == "occ" implies a single reference now, since integrals can't be UHF
+      PsiT_MO.reserve(1);
+      PsiT_MO.emplace_back(PsiT_Matrix({N_,N_},{0,0},1,Alloc(TGwfn.Node())));
+      if(TGwfn.Node().root())  
+        for(int k=0; k<N_; k++) 
+          PsiT_MO.back().emplace_back({k,k},one); 
     } else if(wfn_type == "mixed") {
-      // In this case, PsiT is the orbital matrix
-      APP_ABORT("Finish WavefunctionFactory \n");
+      // nothing to do
     } else if(wfn_type == "matrix") {
-      // nothing to do here  
+      APP_ABORT("Error: wfn_type=matrix not allowed in WavefunctionFactory with PHMSD wavefunction.\n");
     } else {
       APP_ABORT("Error: Unknown wfn_type in WavefunctionFactory with MSD wavefunction.\n");
     }
     TGwfn.node_barrier();
 
+    // find active space orbitals and create super trial matrix PsiT
+    std::vector<PsiT_Matrix> PsiT;
+    PsiT.reserve( PsiT_MO.size() );
+    // expect mapped over range [0-2*NMO], but alpha and beta sectors with 0-based active indexes
+    std::map<int,int> mo2active(find_active_space(PsiT_MO.size()==1,abij,NMO,NAEA,NAEB));
+    std::map<int,int> acta2mo; 
+    std::map<int,int> actb2mo; 
+    std::vector<int> active_alpha;
+    std::vector<int> active_beta;
+    std::vector<int> active_combined;
+    for(int i=0; i<NMO; i++) {
+      if(mo2active[i]>=0) {
+        active_alpha.push_back(i);
+        acta2mo[mo2active[i]] = i;
+      }  
+      if(mo2active[i+NMO]>=0) {
+        active_beta.push_back(i);
+        actb2mo[mo2active[i+NMO]] = i+NMO;
+      }  
+      if(mo2active[i]>=0 || mo2active[i+NMO]>=0) active_combined.push_back(i);
+    }
+    if(PsiT_MO.size() == 1) {
+      // RHF reference
+      PsiT.emplace_back(PsiT_Matrix({active_combined.size(),NMO},{0,0},
+                     get_nnz(PsiT_MO[0],active_combined.data(),active_combined.size(),0),
+                     Alloc(TGwfn.Node())));
+      if(TGwfn.Node().root()) {
+        for(int k=0; k<active_combined.size(); k++) {
+          size_t ki = active_combined[k]; // occupied state #k
+          auto col = PsiT_MO[0].non_zero_indices2_data(ki);
+          auto val = PsiT_MO[0].non_zero_values_data(ki);
+          for(size_t ic=0, icend=PsiT_MO[0].num_non_zero_elements(ki); ic<icend; ic++, ++col, ++val)
+            PsiT[0].emplace_back({k,*col},*val);
+        }
+      }
+    } else {
+      // UHF reference
+      PsiT.emplace_back(PsiT_Matrix({active_alpha.size(),NMO},{0,0},
+                     get_nnz(PsiT_MO[0],active_alpha.data(),active_alpha.size(),0),
+                     Alloc(TGwfn.Node())));
+      if(TGwfn.Node().root()) {
+        for(int k=0; k<active_alpha.size(); k++) {
+          size_t ki = active_alpha[k]; // occupied state #k
+          auto col = PsiT_MO[0].non_zero_indices2_data(ki);
+          auto val = PsiT_MO[0].non_zero_values_data(ki);
+          for(size_t ic=0, icend=PsiT_MO[0].num_non_zero_elements(ki); ic<icend; ic++, ++col, ++val)
+            PsiT.back().emplace_back({k,*col},*val);
+        }
+      }
+      PsiT.emplace_back(PsiT_Matrix({active_beta.size(),NMO},{0,0},
+                     get_nnz(PsiT_MO[1],active_beta.data(),active_beta.size(),0),
+                     Alloc(TGwfn.Node())));
+      if(TGwfn.Node().root()) {
+        for(int k=0; k<active_beta.size(); k++) {
+          size_t ki = active_beta[k]; // occupied state #k
+          auto col = PsiT_MO[1].non_zero_indices2_data(ki);
+          auto val = PsiT_MO[1].non_zero_values_data(ki);
+          for(size_t ic=0, icend=PsiT_MO[1].num_non_zero_elements(ki); ic<icend; ic++, ++col, ++val)
+            PsiT[1].emplace_back({k,*col},*val);
+        }
+      }
+    }
+    // now that mappings have been constructed, map indexes of excited state orbitals
+    // to the corresponding active space indexes
+    if(TGwfn.Node().root()) {
+      // map reference  
+      auto refc = abij.reference_configuration();
+      for(int i=0; i<NAEA+NAEB; i++, ++refc) *refc = mo2active[*refc]; 
+      for(int n=1; n<abij.maximum_excitation_number().first; n++) {  
+        auto it = abij.alpha_begin(n);
+        auto ite = abij.alpha_end(n);
+        for(; it<ite; ++it) {
+          auto exct = (*it)+n; // only need to map excited state indexes
+          for(int np=0; np<n; ++np, ++exct)
+            *exct = mo2active[*exct];  
+        }       
+      }
+      for(int n=1; n<abij.maximum_excitation_number().second; n++) {
+        auto it = abij.beta_begin(n);
+        auto ite = abij.beta_end(n);
+        for(; it<ite; ++it) {
+          auto exct = (*it)+n; // only need to map excited state indexes
+          for(int np=0; np<n; ++np, ++exct)
+            *exct = mo2active[*exct]; 
+        } 
+      }
+    }
+    TGwfn.node_barrier();
+    
+
     // if requested, create restart file
     // Will use phdf5 in the future, for now only head node writes
     hdf_archive dump(TGwfn.Global());
+/* no restart yet!
     if(restart_file != "") {
       if(TGwfn.Global().root()) {
         if(!dump.create(restart_file,H5F_ACC_EXCL)) {
@@ -291,15 +426,23 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
         }
       }  
     }
-    auto HOps(h.getHamiltonianOperations(wfn_type == "occ",walker_type,PsiT,cutvn,cutv2,TGprop,TGwfn,dump));  
+*/
+    WALKER_TYPES reference_type = (PsiT.size()==1?CLOSED:COLLINEAR);
+    // is PureSD actually faster??? CHECK!!!
+    auto HOps(h.getHamiltonianOperations(wfn_type == "occ" && reference_type == CLOSED,
+    //auto HOps(h.getHamiltonianOperations(false,
+                                         reference_type,PsiT,cutvn,cutv2,TGprop,TGwfn,dump));  
+/*
     if(restart_file != "") 
       if(TGwfn.Global().root()) {
         dump.pop();
         dump.pop();
         dump.close();
       }  
+*/
     TGwfn.node_barrier();
     // add initial_guess
+    // when propagating Nact states, change this here
     auto guess = initial_guess.find(name);
     if( guess == initial_guess.end() ) {
       auto newg = initial_guess.insert(
@@ -308,31 +451,39 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
         APP_ABORT(" Error: Problems adding new initial guess. \n"); 
       using std::conj;
       std::fill_n((newg.first)->second.origin(),2*NMO*NAEA,ComplexType(0.0,0.0));
+      auto refc = abij.reference_configuration();
       {  
         auto pbegin = PsiT[0].pointers_begin(); 
         auto pend = PsiT[0].pointers_end(); 
         auto p0 = pbegin[0]; 
         auto v0 = PsiT[0].non_zero_values_data();  
         auto c0 = PsiT[0].non_zero_indices2_data();  
-        for(int i=0; i<PsiT[0].shape()[0]; i++) 
-          for(int ip=pbegin[i]; ip<pend[i]; ip++) 
+        // only takinf NAEA states, increase later if super SM is needed
+        for(int i=0; i<NAEA; i++) { 
+          int ik = *(refc+i);
+          for(int ip=pbegin[ik]; ip<pend[ik]; ip++) 
             ((newg.first)->second)[0][c0[ip-p0]][i] = conj(v0[ip-p0]);
+        }
       }  
       if(walker_type==COLLINEAR) {
-        auto pbegin = PsiT[1].pointers_begin(); 
-        auto pend = PsiT[1].pointers_end();  
+        auto pbegin = PsiT.back().pointers_begin(); 
+        auto pend = PsiT.back().pointers_end();  
         auto p0 = pbegin[0];                
-        auto v0 = PsiT[1].non_zero_values_data();
-        auto c0 = PsiT[1].non_zero_indices2_data();
-        for(int i=0; i<PsiT[1].shape()[0]; i++) 
-          for(int ip=pbegin[i]; ip<pend[i]; ip++) 
+        auto v0 = PsiT.back().non_zero_values_data();
+        auto c0 = PsiT.back().non_zero_indices2_data();
+        // only takinf NAEB states, increase later if super SM is needed
+        for(int i=0; i<NAEB; i++) { 
+          int ik = *(refc+NAEA+i);
+          for(int ip=pbegin[ik]; ip<pend[ik]; ip++) 
             ((newg.first)->second)[1][c0[ip-p0]][i] = conj(v0[ip-p0]);  
+        }
       }  
     } else
       APP_ABORT(" Error: Problems adding new initial guess, already exists. \n"); 
 
     //return Wavefunction{}; 
-    return Wavefunction(PHMSD(AFinfo,cur,TGwfn,std::move(HOps),std::move(ci),std::move(PsiT),
+    return Wavefunction(PHMSD(AFinfo,cur,TGwfn,std::move(HOps),std::move(acta2mo),
+                        std::move(actb2mo),std::move(abij),std::move(PsiT),
                         walker_type,NCE,targetNW)); 
   } else if(type == "generalmsd") {
     app_error()<<" Error: Wavefunction type GeneralMSD not yet implemented. \n"; 
@@ -461,7 +612,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
   TGwfn.Global().broadcast_n(ci.data(),ci.size());
   TGwfn.Global().broadcast_value(NCE);
 
-  if(type=="msd") {
+  if(type=="msd" || type=="nomsd") {
 
     int nd = (walker_type==COLLINEAR?2*ndets_to_read:ndets_to_read);
     PsiT.reserve(nd); 
@@ -511,7 +662,8 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
 
     return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(HOps),std::move(ci),std::move(PsiT),
                         walker_type,NCE,targetNW));
-  } else if(type == "fastmsd") {
+  } else if(type == "phmsd") {
+/*
     int nd = (walker_type==COLLINEAR?2*ndets_to_read:ndets_to_read);
     PsiT.reserve(nd); 
     using Alloc = boost::mpi3::intranode::allocator<ComplexType>;
@@ -557,9 +709,12 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
       APP_ABORT(" Error: Problems adding new initial guess, already exists. \n");
 
     HamiltonianOperations HOps(loadHamOps(dump,walker_type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2));
-
     return Wavefunction(PHMSD(AFinfo,cur,TGwfn,std::move(HOps),std::move(ci),std::move(PsiT),
                         walker_type,NCE,targetNW));
+*/
+    app_error()<<" Error: Wavefunction type PHMSD not yet implemented. \n";
+    APP_ABORT(" Error: Wavefunction type PHMSD not yet implemented. \n");
+    return Wavefunction();
   } else if(type == "generalmsd") {
     app_error()<<" Error: Wavefunction type GeneralMSD not yet implemented. \n";
     APP_ABORT(" Error: Wavefunction type GeneralMSD not yet implemented. \n");

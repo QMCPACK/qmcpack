@@ -25,6 +25,8 @@
 #include "AFQMC/Utilities/readWfn.h"
 #include "AFQMC/config.h"
 #include "alf/boost/mpi3/shm/mutex.hpp"
+#include "AFQMC/multi/array.hpp"
+#include "AFQMC/multi/array_ref.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
 
@@ -54,29 +56,46 @@ class PHMSD: public AFQMCInfo
   using CMatrix = boost::multi_array<ComplexType,2>;  
   using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;  
   using shared_mutex = boost::mpi3::mutex;  
+  using shared_CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
 
   public:
 
     PHMSD(AFQMCInfo& info, xmlNodePtr cur, afqmc::TaskGroup_& tg_, HamiltonianOperations&& hop_, 
-          std::vector<ComplexType>&& ci_, std::vector<PsiT_Matrix>&& orbs_, 
+          std::map<int,int>&& acta2mo_, std::map<int,int>&& actb2mo_,
+          ph_excitations<int,ComplexType>&& abij_, std::vector<PsiT_Matrix>&& orbs_, 
           WALKER_TYPES wlk, ValueType nce, int targetNW=1):
                 AFQMCInfo(info),TG(tg_),
                 SDetOp(((wlk!=2)?(NMO):(2*NMO)),((wlk!=2)?(NAEA):(NAEA+NAEB))),
-                HamOp(std::move(hop_)),ci(std::move(ci_)),OrbMats(std::move(orbs_)),
+                HamOp(std::move(hop_)),
+                acta2mo(acta2mo_),
+                actb2mo(actb2mo_),
+                abij(std::move(abij_)),
+                OrbMats(std::move(orbs_)),
                 walker_type(wlk),NuclearCoulombEnergy(nce),
                 shmbuff_for_E(nullptr),
                 mutex(std::make_unique<shared_mutex>(TG.TG_local())),
                 last_number_extra_tasks(-1),last_task_index(-1),
-                //local_group_comm(nullptr),
-                //local_group_comm(std::make_unique<shared_communicator>(TG.TG_local().split(0))),
                 local_group_comm(),
                 shmbuff_for_G(nullptr),
                 req_Gsend(MPI_REQUEST_NULL),
                 req_Grecv(MPI_REQUEST_NULL),
                 req_SMsend(MPI_REQUEST_NULL),
-                req_SMrecv(MPI_REQUEST_NULL)
+                req_SMrecv(MPI_REQUEST_NULL),
+                maxnactive(std::max(OrbMats[0].shape()[0],OrbMats.back().shape()[0])),
+                max_exct_n(std::max(abij.maximum_excitation_number().first,
+                                    abij.maximum_excitation_number().second)),
+                maxn_unique_confg(    
+                    std::max(abij.number_of_unique_excitations().first,
+                             abij.number_of_unique_excitations().second)),
+                unique_overlaps({2,maxn_unique_confg},shared_allocator<ComplexType>{TG.TG_local()}), 
+                unique_Etot({2,maxn_unique_confg},shared_allocator<ComplexType>{TG.TG_local()}), 
+                Q({maxnactive,NAEA},shared_allocator<ComplexType>{TG.TG_local()}),
+                Q0({NAEA,NAEA},shared_allocator<ComplexType>{TG.TG_local()}),
+                QQ0inv({NAEA,NAEA},shared_allocator<ComplexType>{TG.TG_local()}),
+                Qwork({max_exct_n,max_exct_n}),
+                Gwork({maxnactive,NAEA})  // [Nact,Nel]
     {
-      compact_G_for_vbias = (ci.size()==1); // this should be input, since it is determined by HOps 
+      compact_G_for_vbias = true; 
       transposed_G_for_vbias_ = HamOp.transposed_G_for_vbias();  
       transposed_G_for_E_ = HamOp.transposed_G_for_E();  
       transposed_vHS_ = HamOp.transposed_vHS();  
@@ -172,22 +191,7 @@ class PHMSD: public AFQMCInfo
         assert( G.shape()[1] == v.shape()[1] );
       }  
       assert( v.shape()[0] == HamOp.local_number_of_cholesky_vectors());
-      if(ci.size()==1) {
-        // HamOp expects a compact Gc with alpha/beta components 
-        HamOp.vbias(G,std::forward<MatA>(v),a);
-      } else {
-        if(walker_type == CLOSED )
-          HamOp.vbias(G,std::forward<MatA>(v),a); // factor of 2 now in HamOps
-        else if(walker_type == NONCOLLINEAR)
-          HamOp.vbias(G,std::forward<MatA>(v),a);
-        else {
-          // HamOp expects either alpha or beta, so must be called twice 
-          HamOp.vbias(G[indices[range_t(0,NMO*NMO)][range_t()]]
-                ,std::forward<MatA>(v),a,0.0);
-          HamOp.vbias(G[indices[range_t(NMO*NMO,2*NMO*NMO)][range_t()]]
-                ,std::forward<MatA>(v),a,1.0);
-        }
-      }  
+      HamOp.vbias(G,std::forward<MatA>(v),a);
       TG.local_barrier();    
     }
 
@@ -327,7 +331,10 @@ class PHMSD: public AFQMCInfo
   
     HamiltonianOperations HamOp;
 
-    std::vector<ComplexType> ci;
+    std::map<int,int> acta2mo;
+    std::map<int,int> actb2mo;
+
+    ph_excitations<int,ComplexType> abij;
 
     // eventually switched from CMatrix to SMHSparseMatrix(node)
     std::vector<PsiT_Matrix> OrbMats;
@@ -356,6 +363,18 @@ class PHMSD: public AFQMCInfo
     //std::unique_ptr<shared_communicator> local_group_comm; 
     shared_communicator local_group_comm; 
     std::unique_ptr<SHM_Buffer> shmbuff_for_G;
+
+    // shared memory arrays for temporary calculations
+    size_t maxn_unique_confg; // maximum number of unque configurations 
+    size_t maxnactive;   // maximum number of states in active space
+    size_t max_exct_n;   // maximum excitation number (number of electrons excited simultaneously)
+    shared_CMatrix unique_overlaps;
+    shared_CMatrix unique_Etot;
+    shared_CMatrix Q;    // PsiT * B
+    shared_CMatrix Q0;   // P0 * Q
+    shared_CMatrix QQ0inv;  // Q * inv(Q0) 
+    boost::multi::array<ComplexType,2> Qwork;     
+    boost::multi::array<ComplexType,2> Gwork; 
 
     // excited states
     bool excitedState;
@@ -397,10 +416,12 @@ class PHMSD: public AFQMCInfo
      */
     template<class WlkSet, class Mat, class TVec>
     void Energy_distributed(const WlkSet& wset, Mat&& E, TVec&& Ov) {
+/*
       if(ci.size()==1)
         Energy_distributed_singleDet(wset,std::forward<Mat>(E),std::forward<TVec>(Ov));
       else
         Energy_distributed_multiDet(wset,std::forward<Mat>(E),std::forward<TVec>(Ov));
+*/
     }
 
     template<class WlkSet, class Mat, class TVec>

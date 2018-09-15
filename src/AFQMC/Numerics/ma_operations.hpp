@@ -320,6 +320,8 @@ T invert(MultiArray2D&& m, MultiArray1D&& pivot, Buffer&& WORK){
 			detvalue *= -static_cast<T>(m[i][i]);
 		}
 	}
+        if(detvalue == T(0.0))
+            return detvalue;
 	getri(std::forward<MultiArray2D>(m), pivot, WORK);
 	return detvalue;
 }

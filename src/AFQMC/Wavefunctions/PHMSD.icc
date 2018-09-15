@@ -38,6 +38,7 @@ namespace afqmc
   template<class WlkSet, class Mat, class TVec>
   void PHMSD::Energy_shared(const WlkSet& wset, Mat&& E, TVec&& Ov)
   {
+/*
     size_t nt = wset.size()*(1+dm_size(false));
     // allocte space in shared memory for temporary G (always compact) and ov
     if(not shmbuff_for_E) 
@@ -79,6 +80,7 @@ namespace afqmc
       for(int k=0; k<3; k++) 
         E[i][k] /= Ov[i]; 
     TG.local_barrier();
+*/
   }
 
   /*
@@ -88,6 +90,7 @@ namespace afqmc
   template<class WlkSet, class Mat, class TVec>
   void PHMSD::Energy_distributed_singleDet(const WlkSet& wset, Mat&& E, TVec&& Ov)
   {
+/*
     //1. Calculate G and overlaps
     //2. Loop over nodes in TG
     // 2.a isend G to next node. irecv next G from "previous" node 
@@ -188,6 +191,7 @@ namespace afqmc
     std::copy_n(elocal.origin(),3*nwalk,E.origin());
     std::copy_n(overlaps.origin(),nwalk,Ov.origin());
     TG.local_barrier();    
+*/
   }
 
   /*
@@ -200,6 +204,7 @@ namespace afqmc
   template<class WlkSet, class Mat, class TVec>
   void PHMSD::Energy_distributed_multiDet(const WlkSet& wset, Mat&& E, TVec&& Ov)
   {
+/*
     //1. Copies SM from wset to shm buffer. 
     //2. Loop over nodes in TG
     // 2.a isend SM to next node. irecv next SM from "previous" node 
@@ -325,6 +330,7 @@ namespace afqmc
       E[i][2] = elocal[i][2]/Ov[i];
     }
     TG.local_barrier();    
+*/
   }
 
   /* 
@@ -336,6 +342,7 @@ namespace afqmc
   template<class MatSM, class MatG, class TVec>
   void PHMSD::MixedDensityMatrix_for_E_from_SM(const MatSM& SM, MatG&& G, TVec&& Ov, int nd) 
   {
+/*
     auto Gsize = size_t(dm_size(false));
     const int nw = SM.shape()[0]; 
     assert(G.strides()[1]==1);
@@ -424,6 +431,7 @@ namespace afqmc
           Ov[iw] = ovlp2[2*iw]*ovlp2[2*iw+1];
     }
     TG.local_barrier();
+*/
   }
 
   /* 
@@ -435,6 +443,7 @@ namespace afqmc
   template<class WlkSet, class MatG, class TVec>
   void PHMSD::MixedDensityMatrix_for_E(const WlkSet& wset, MatG&& G, TVec&& Ov, int nd) 
   {
+/*
     assert(G.strides()[1]==1);
     assert(Ov.strides()[0]==1);
     if(transposed_G_for_E_) 
@@ -516,6 +525,7 @@ namespace afqmc
           Ov[iw] = ovlp2[2*iw]*ovlp2[2*iw+1];
     }
     TG.local_barrier();
+*/
   }
 
   /*
@@ -530,6 +540,7 @@ namespace afqmc
   template<class WlkSet, class MatG, class TVec>
   void PHMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact, bool transpose)
   {
+/*
     assert(G.strides()[1]==1);
     assert(Ov.strides()[0]==1);
     if(transpose)
@@ -741,6 +752,7 @@ namespace afqmc
         }
     }
     TG.local_barrier();
+*/
   } 
 
 
@@ -751,6 +763,8 @@ namespace afqmc
   template<class WlkSet, class TVec>
   void PHMSD::Overlap(const WlkSet& wset, TVec&& Ov)
   {
+
+/*
     const int nw = wset.size(); 
     const int ndet = ci.size();
     assert(Ov.size() >= nw);  
@@ -856,6 +870,7 @@ namespace afqmc
 
     }
     TG.TG_local().all_reduce_in_place_n(Ov.origin(),nw,std::plus<>());
+*/
   }
 
   /*
@@ -965,6 +980,7 @@ namespace afqmc
    */
   template<class Vec>
   void PHMSD::vMF(Vec&& v) {
+/*
     assert(v.num_elements() == local_number_of_cholesky_vectors());
     std::fill_n(v.origin(),v.num_elements(),ComplexType(0));  
 
@@ -1062,6 +1078,7 @@ namespace afqmc
     //       Set it to zero.
     for(int i=0; i<v.num_elements(); i++)
       v[i] = ComplexType(real(v[i]),0.0); 
+*/
   }
 
 }

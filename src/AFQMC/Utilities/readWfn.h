@@ -26,12 +26,12 @@ namespace afqmc
  * Reads ndets from the ascii file. 
  */ 
 void read_general_wavefunction(std::ifstream& in, int& ndets, 
-        std::string& type, WALKER_TYPES walker_type,
+        WALKER_TYPES walker_type,
         boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB,
         std::vector<PsiT_Matrix>& PsiT, std::vector<ComplexType>& ci);
 
-ph_excitations read_ph_wavefunction(std::ifstream& in, int& ndets, 
-        std::string& type, WALKER_TYPES walker_type,
+ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& ndets, 
+        WALKER_TYPES walker_type,
         boost::mpi3::shared_communicator& comm, int NMO, int NAEA, int NAEB,
         std::vector<PsiT_Matrix>& PsiT);
 
