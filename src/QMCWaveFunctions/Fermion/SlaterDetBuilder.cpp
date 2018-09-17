@@ -510,7 +510,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
     adet = new DiracDeterminantBatched(psi,firstIndex);
 #else
     if(UseBackflow)
-      adet = new DiracDeterminantWithBackflow(targetPtcl,psi,BFTrans,firstIndex);
+      adet = new DiracDeterminantWithBackflow(targetPtcl,dynamic_cast<SPOSetSingle*>(psi),BFTrans,firstIndex);
 #ifndef ENABLE_SOA
     else if (slater_det_opt)
     {
@@ -561,18 +561,18 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
     }
 #endif
     else if (psi->Optimizable)
-      adet = new DiracDeterminantOpt(targetPtcl, psi, firstIndex);
+      adet = new DiracDeterminantOpt(targetPtcl, dynamic_cast<SPOSetSingle*>(psi), firstIndex);
     else
     {
       if((usesoa=="yes") && psi->CanUseGLCombo)
       {
         app_log()<<"Using DiracDeterminantSoA "<< std::endl;
-        adet = new DiracDeterminantSoA(psi,firstIndex);
+        adet = new DiracDeterminantSoA(dynamic_cast<SPOSetSingle*>(psi),firstIndex);
       }
       else
       {
         app_log()<<"Using DiracDeterminantBase "<< std::endl;
-        adet = new DiracDeterminantBase(psi,firstIndex);
+        adet = new DiracDeterminantSingle(dynamic_cast<SPOSetSingle*>(psi),firstIndex);
       }
     }
 #endif

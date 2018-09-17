@@ -20,7 +20,12 @@ namespace qmcplusplus
 class MockEinsplineSetBuilder : public SplineBuilder
 {
 public:
-  MockEinsplineSetBuilder() {};
+  MockEinsplineSetBuilder()
+  {
+    OHMMS::Controller->initialize(0, NULL);
+    myComm = OHMMS::Controller;
+  };
+  
   MockEinsplineSetBuilder(const MockEinsplineSetBuilder&) = default;
 
   /** initialize the Antisymmetric wave function for electrons
@@ -36,6 +41,7 @@ public:
   /** initialize with the existing SPOSet */
   SPOSet* createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info) { return nullptr; };
 
+  Communicate* myComm;
   //////////////////////////////////////
   // HDF5-related data  and functions //
   //////////////////////////////////////
@@ -98,7 +104,7 @@ public:
   //{}
   std::string getName() { return "mock_String"; };
   // Why are we getting our mpi communicator from the spline set builder?
-  Communicate* getCommunicator() { return nullptr; };
+  Communicate* getCommunicator() { return myComm; };
 
 };
 

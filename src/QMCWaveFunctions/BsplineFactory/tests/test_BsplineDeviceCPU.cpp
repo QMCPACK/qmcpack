@@ -27,7 +27,7 @@ namespace qmcplusplus
 
 TEST_CASE("BsplineDeviceCPU_Instantiation", "[wavefunction]")
 {
-  qmcplusplus::BsplineDeviceCPU<double, 3> BDC;
+  BsplineDeviceCPU<double, 3> BDC;
 }
 
 }

@@ -359,7 +359,7 @@ public:
   std::vector<BandInfo>& getFullBandsBySpin(int spin) { return *(FullBands[spin]); }
   Tensor<int,OHMMS_DIM>& getTileMatrix() { return TileMatrix; }
   std::string getName() { return "qmcplusplus::EinsplineSetBuilder"; }
-  virtual Communicate* getCommunicator() { return getCommunicator(); }
+  virtual Communicate* getCommunicator() { return SPOSetBuilder::getCommunicator(); }
 };
 
 }

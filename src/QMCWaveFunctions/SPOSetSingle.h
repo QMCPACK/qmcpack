@@ -33,6 +33,9 @@ class SPOSetSingle : public SPOSet,
 public:
   using SPOSetPtr = SPOSetSingle*;
 
+  SPOSetSingle() {};
+  SPOSetSingle(SPOSet& spo) : SPOSet(spo) {};
+  
   virtual SPOSetSingle* makeClone() const;
 };
 

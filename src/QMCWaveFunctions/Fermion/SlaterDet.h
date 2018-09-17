@@ -18,8 +18,7 @@
 #ifndef QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 #define QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 
-#include "QMCWaveFunctions/Fermion/DiracDeterminantSingle.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBatched.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include <map>
 

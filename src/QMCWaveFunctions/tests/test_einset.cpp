@@ -24,7 +24,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
-
+#include "QMCWaveFunctions/SPOSetSingle.h"
 
 #include <stdio.h>
 #include <string>
@@ -129,7 +129,7 @@ const char *particles =
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), ein1);
-  SPOSet *spo = einSet.createSPOSetFromXML(ein1);
+  SPOSetSingle *spo = dynamic_cast<SPOSetSingle*>(einSet.createSPOSetFromXML(ein1));
   REQUIRE(spo != NULL);
 
 #if !defined(QMC_CUDA) || defined(QMC_COMPLEX)

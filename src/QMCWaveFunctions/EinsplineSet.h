@@ -20,7 +20,7 @@
 
 #include "Configuration.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
-#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/SPOSetSingle.h"
 #include "QMCWaveFunctions/AtomicOrbital.h"
 #include "QMCWaveFunctions/MuffinTin.h"
 #include "Utilities/NewTimer.h"
@@ -35,7 +35,7 @@ namespace qmcplusplus
 
 class EinsplineSetBuilder;
 
-class EinsplineSet : public SPOSet
+class EinsplineSet : public SPOSetSingle
 {
   friend class EinsplineSetBuilder;
 public:
@@ -426,7 +426,7 @@ public:
   }
 
 
-  SPOSet* makeClone() const;
+  SPOSetSingle* makeClone() const;
 
   EinsplineSetExtended() :
     ValueTimer  ("EinsplineSetExtended::ValueOnly"),

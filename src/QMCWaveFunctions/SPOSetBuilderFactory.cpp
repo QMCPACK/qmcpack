@@ -162,15 +162,16 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
 
   SPOSetBuilder* bb=0;
 
+  // If this is premature optimization its complicating SPOSet<Batching>
   //check if builder can be reused
-  std::map<std::string,SPOSetBuilder*>::iterator bbit=spo_builders.find(name);
-  if(bbit!= spo_builders.end())
-  {
-    app_log() << "Reuse SPOSetBuilder \""<<name << "\" type " << type_in << std::endl;
-    app_log().flush();
-    bb=(*bbit).second;
-    return last_builder=bb;
-  }
+  // std::map<std::string,SPOSetBuilder*>::iterator bbit=spo_builders.find(name);
+  // if(bbit!= spo_builders.end())
+  // {
+  //   app_log() << "Reuse SPOSetBuilder \""<<name << "\" type " << type_in << std::endl;
+  //   app_log().flush();
+  //   bb=(*bbit).second;
+  //   return last_builder=bb;
+  // }
 
   //assign last_builder
   bb=last_builder;

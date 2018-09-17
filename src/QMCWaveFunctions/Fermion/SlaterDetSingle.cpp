@@ -45,7 +45,7 @@ void SlaterDetSingle::add(SPOSet* sposet, const std::string& aname)
   if (mySPOSet.find(aname) == mySPOSet.end())
   {
     mySPOSet[aname] = sposet;
-    sposet->objectName = aname;
+    dynamic_cast<SPOSetSingle*>(sposet)->objectName = aname;
   }
   else
   {

@@ -123,7 +123,7 @@ namespace qmcplusplus
 
     /// determine the ordering of the states, if any
     void determine_order(RealType tol);
-
+  public:
     /// render collection mutable
     void modify();
 

@@ -14,16 +14,24 @@ SET(SRC_DIR wavefunction_bsplinefactory)
 SET(UTEST_EXE test_${SRC_DIR})
 SET(UTEST_NAME unit_test_${SRC_DIR})
 
-SET(SRCS test_BsplineSet.cpp test_BsplineDeviceCUDA.cpp test_BsplineDeviceCPU.cpp test_SplineR2RAdoptor.cpp)
+SET(SRCS test_BsplineSet.cpp test_BsplineDeviceCPU.cpp test_SplineR2RAdoptor.cpp)
 #test_SplineC2CAdoptorBatched.cpp)
+SET(BSPLINEFACTORY_LIBS qmc qmcwfs qmcbase qmcutil)
 IF(HAVE_CUDA)
-  SET(SRCS ${SRCS}
-      test_BsplineCUDA.cu)
+  SET(SRCS ${SRCS} test_BsplineDeviceCUDA.cpp test_BsplineCUDA.cu)
   CUDA_ADD_LIBRARY(bspline_cudatests test_BsplineCUDA.cu)
-ENDIF()
+  SET(BSPLINEFACTORY_LIBS ${BSPLINEFACTORY_LIBS} bspline_cudatests)
+ENDIF(HAVE_CUDA)
+
+IF(QMC_COMPLEX)
+  SET(SRCS ${SRCS} test_BsplineSetComplex.cpp)
+ENDIF(QMC_COMPLEX)
+
+MESSAGE("###Adding BsplineFactoryTests with srcs: ${SRCS}")
+MESSAGE("###                           with LIBS: ${BSPLINEFACTORY_LIBS}")
 
 ADD_EXECUTABLE(${UTEST_EXE} ${SRCS})
-TARGET_LINK_LIBRARIES(${UTEST_EXE} bspline_cudatests qmc qmcwfs qmcbase qmcutil ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
+TARGET_LINK_LIBRARIES(${UTEST_EXE} ${BSPLINEFACTORY_LIBS} ${QMC_UTIL_LIBS} ${MPI_LIBRARY})
 
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS "unit")

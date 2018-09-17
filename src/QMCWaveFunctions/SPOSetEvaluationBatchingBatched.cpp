@@ -10,7 +10,7 @@
 // File created by: Peter Doak, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCWaveFunctions/SPOSetEvaluation.h"
+#include "QMCWaveFunctions/SPOSetEvaluationBatched.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSetTypeAliases.h"
 

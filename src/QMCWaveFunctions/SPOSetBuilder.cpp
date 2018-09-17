@@ -13,6 +13,7 @@
 
 
 #include <QMCWaveFunctions/SPOSetBuilder.h>
+#include "QMCWaveFunctions/SPOSetSingle.h"
 
 namespace qmcplusplus
 {
@@ -58,7 +59,7 @@ namespace qmcplusplus
     if(sposet)
     {
       //sposet->put(cur); //initialize C and other internal containers
-      sposet->builder_index = sposets.size();
+      dynamic_cast<SPOSetSingle*>(sposet)->builder_index = sposets.size();
       sposets.push_back(sposet);
     }
     else

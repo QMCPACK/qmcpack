@@ -50,23 +50,23 @@ namespace qmcplusplus
   
 // Unspecialized version of BsplineSet,
 
-template<typename SA, Batching batching>
-struct BsplineSet: public SA
-{
-  ///** default constructor */
-  //BsplineSet() { }
+  template<typename SA, Batching batching = Batching::SINGLE>
+  struct BsplineSet: public SA {};
+// {
+//   ///** default constructor */
+//   //BsplineSet() { }
 
-  virtual void resetParameters(const opt_variables_type& active)
-  { }
-  virtual void resetTargetParticleSet(ParticleSet& e)
-  { }
+//   virtual void resetParameters(const opt_variables_type& active)
+//   { }
+//   virtual void resetTargetParticleSet(ParticleSet& e)
+//   { }
 
-  SPOSet* makeClone() const
-  {
-    return new BsplineSet<SA, batching>(*this);
-  }
+//   SPOSet* makeClone() const
+//   {
+//     return new BsplineSet<SA, batching>(*this);
+//   }
 
-};
+// };
 
 template<typename SA>
 struct BsplineSet<SA, Batching::SINGLE>: public SA,

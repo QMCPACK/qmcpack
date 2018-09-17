@@ -27,7 +27,7 @@ namespace qmcplusplus
   BsplineReaderBase::BsplineReaderBase(SplineBuilder* e)
     : mybuilder(e), MeshSize(0), myFirstSPO(0), myNumOrbs(0), checkNorm(true)
   {
-    myComm=mybuilder->getCommunicator();
+    myComm=dynamic_cast<SplineBuilder*>(mybuilder)->getCommunicator();
   }
 
   void BsplineReaderBase::get_psi_g(int ti, int spin, int ib, Vector<std::complex<double> >& cG)

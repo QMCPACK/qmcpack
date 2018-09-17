@@ -216,43 +216,5 @@ public:
                                    , SSTA::GradMatrix_t &grad_phi, SSTA::HessMatrix_t &grad_grad_phi, SSTA::GradMatrix_t &grad_lapl_phi);
 };
 
-  
-template<>
-class SPOSetEvaluation<Batching::BATCHED> : public SPOSetEvaluationDefault
-{
-public:
-  using SSTA = SPOSetTypeAliases;
-  using QMCT = QMCTraits;
-  virtual void initGPU() {  }
-
-  //////////////////////////////////////////
-  // Walker-parallel vectorized functions //
-  //////////////////////////////////////////
-  virtual void
-  reserve (PointerPool<gpu::device_vector<QMCT::CudaValueType> > &pool) { }
-
-  virtual void
-  evaluate (std::vector<SSTA::Walker_t*> &walkers, int iat, gpu::device_vector<QMCT::CudaValueType*> &phi);
-
-  virtual void evaluate (std::vector<SSTA::Walker_t*> &walkers, std::vector<QMCT::PosType> &new_pos
-                         , gpu::device_vector<QMCT::CudaValueType*> &phi);
-
-  virtual void
-  evaluate (std::vector<SSTA::Walker_t*> &walkers,
-            std::vector<QMCT::PosType> &new_pos,
-            gpu::device_vector<QMCT::CudaValueType*> &phi,
-            gpu::device_vector<QMCT::CudaValueType*> &grad_lapl_list,
-            int row_stride);
-
-  virtual void
-  evaluate (std::vector<QMCT::PosType> &pos, gpu::device_vector<QMCT::CudaRealType*> &phi);
-  virtual void
-  evaluate (std::vector<QMCT::PosType> &pos, gpu::device_vector<QMCT::CudaComplexType*> &phi);
-
-};
-
-
-
-
-}
+}  
 #endif

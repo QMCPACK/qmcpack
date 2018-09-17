@@ -9,7 +9,6 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
 #include "einspline/bspline_base.h"

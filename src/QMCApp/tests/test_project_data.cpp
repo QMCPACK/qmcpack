@@ -41,6 +41,7 @@ TEST_CASE("ProjectData", "[ohmmsapp]")
   REQUIRE(std::string(proj1.m_title).size() > 0);
   REQUIRE(std::string(proj1.m_title) == proj1.getName());
 
+  INFO("Project data loading");
 
   ProjectData proj2("test");
   REQUIRE(proj2.m_series == 0);

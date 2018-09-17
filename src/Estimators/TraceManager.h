@@ -34,7 +34,9 @@
 #include <Utilities/IteratorUtility.h>
 #include <Message/Communicate.h>
 #include <io/hdf_archive.h>
+#include <string>
 #include <map>
+//#include <functional> //for set below with std headers from rh7 gcc4.8.5, this seems wrong.
 #include <set>
 #include <algorithm>
 

@@ -25,8 +25,6 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSetBatched.h"
 #include "QMCWaveFunctions/SPOSetSingle.h"
-#include "QMCWaveFunctions/Fermion/determinant_update.h"
-#include "Numerics/CUDA/cuda_inverse.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/SPOSetTypeAliases.h"
 #include "QMCWaveFunctions/Batching.h"
