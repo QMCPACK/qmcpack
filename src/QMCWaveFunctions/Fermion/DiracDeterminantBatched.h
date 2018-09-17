@@ -30,7 +30,7 @@
 #include "Numerics/CUDA/cuda_inverse.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/SPOSetTypeAliases.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantEval.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantEvalBatched.h"
 
 namespace qmcplusplus
 {
@@ -95,47 +95,6 @@ public:
     targetPtcl = &P;
   }
 
-  void update (std::vector<Walker_t*> &walkers, int iat);
-  void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList);
-
-  void recompute (MCWalkerConfiguration &W, bool firstTime);
-
-  void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi);
-
-  void addGradient(MCWalkerConfiguration &W, int iat,
-                   std::vector<GradType> &grad);
-
-  void calcGradient(MCWalkerConfiguration &W, int iat,
-                    std::vector<GradType> &grad);
-
-  // This keeps getting defined because the base doesn't have access to Phi
-  ValueType ratio(ParticleSet& P, int iat);
-
-  void ratio (MCWalkerConfiguration &W, int iat,
-              std::vector<ValueType> &psi_ratios);
-
-  void ratio (MCWalkerConfiguration &W, int iat,
-              std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad);
-
-  void ratio (MCWalkerConfiguration &W, int iat,
-              std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-              std::vector<ValueType> &lapl);
-  void calcRatio (MCWalkerConfiguration &W, int iat,
-                  std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-                  std::vector<ValueType> &lapl);
-  void addRatio (MCWalkerConfiguration &W, int iat,
-                 std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-                 std::vector<ValueType> &lapl);
-
-  void ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iatList,
-              std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
-              std::vector<GradType>  &grad, std::vector<ValueType> &lapl);
-
-  void gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
-                 ValueMatrix_t &lapl);
-
-  void NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
-                 std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
 
 
 };

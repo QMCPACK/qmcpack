@@ -139,16 +139,6 @@ public:
 
   virtual WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
-  virtual ValueType ratio(ParticleSet& P, int iat) = 0;
-
-  virtual void
-  ratio (MCWalkerConfiguration &W, int iat,
-         std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-         std::vector<ValueType> &lapl)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::ratio.\n";
-    abort();
-  }
   /** cloning function
    * @param tqp target particleset
    * @param spo spo set
@@ -159,52 +149,6 @@ public:
   virtual DiracDeterminantBase* makeCopy(SPOSet* spo) const = 0;
 //       virtual DiracDeterminantBase* makeCopy(ParticleSet& tqp, SPOSet* spo) const {return makeCopy(spo); };
 
-  ///total number of particles
-  int NP;
-  ///number of single-particle orbitals which belong to this Dirac determinant
-  int NumOrbitals;
-  ///number of particles which belong to this Dirac determinant
-  int NumPtcls;
-  ///index of the first particle with respect to the particle set
-  int FirstIndex;
-  ///index of the last particle with respect to the particle set
-  int LastIndex;
-  ///index of the particle (or row)
-  int WorkingIndex;
-  ///a set of single-particle orbitals used to fill in the  values of the matrix
-  //SPOSetPtr Phi;
-
-  /////Current determinant value
-  //ValueType CurrentDet;
-  /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  ValueMatrix_t psiM, psiM_temp;
-
-  /// memory pool for temporal data
-  aligned_vector<ValueType> memoryPool;
-
-  /// temporary container for testing
-  ValueMatrix_t psiMinv;
-
-  /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
-  GradMatrix_t  dpsiM, dpsiM_temp;
-
-  /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
-  ValueMatrix_t d2psiM, d2psiM_temp;
-
-  /// Used for force computations
-  GradMatrix_t grad_source_psiM, grad_lapl_source_psiM;
-  HessMatrix_t  grad_grad_source_psiM;
-  
-  GradMatrix_t phi_alpha_Minv, grad_phi_Minv;
-  ValueMatrix_t lapl_phi_Minv;
-  HessMatrix_t grad_phi_alpha_Minv;
-
-  /// value of single-particle orbital for particle-by-particle update
-  ValueVector_t psiV;
-  GradVector_t dpsiV;
-  ValueVector_t d2psiV;
-  ValueVector_t workV1, workV2;
-  GradVector_t workG;
 
 #ifdef MIXED_PRECISION
   /// temporal matrix and workspace in higher precision for the accurate inversion.

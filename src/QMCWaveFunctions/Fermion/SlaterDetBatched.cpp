@@ -58,7 +58,8 @@ SlaterDetBatched::ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &i
     grad_det[idet].resize(sorted_walkers[idet].size());
     lapl_det[idet].resize(sorted_walkers[idet].size());
     if (sorted_walkers[idet].size())
-      dynamic_cast<DiracDeterminantBatched*>(Dets[idet])->ratio(sorted_walkers[idet], sorted_iatList[idet], sorted_rNew[idet],
+      dynamic_cast<DiracDeterminantBatched::DiracDeterminantEval*>(Dets[idet])->
+	ratio(sorted_walkers[idet], sorted_iatList[idet], sorted_rNew[idet],
                         ratio_det[idet], grad_det[idet], lapl_det[idet]);
   }
   // Copy ratios back into output

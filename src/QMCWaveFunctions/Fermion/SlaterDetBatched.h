@@ -10,9 +10,11 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_SLATERDETERMINANT_SINGLE_H 
-#define QMCPLUSPLUS_SLATERDETERMINANT_SINGLE_H
+#ifndef QMCPLUSPLUS_SLATERDETERMINANT_BATCHED_H 
+#define QMCPLUSPLUS_SLATERDETERMINANT_BATCHED_H
 
+#include "QMCWaveFunctions/Fermion/DiracDeterminantBatched.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminantEvalBatched.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 
 namespace qmcplusplus
@@ -44,7 +46,7 @@ class SlaterDetBatched : public SlaterDet
   GPU_XRAY_TRACE void ratio (MCWalkerConfiguration &W, int iat
          , std::vector<ValueType> &psi_ratios,std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
   {
-    dynamic_cast<DiracDeterminantBatched*>(Dets[getDetID(iat)])->ratio(W, iat, psi_ratios, grad, lapl);
+    dynamic_cast<DiracDeterminantBatched::DiracDeterminantEval<Batching::BATCHED>*>(Dets[getDetID(iat)])->ratio(W, iat, psi_ratios, grad, lapl);
   }
 
   GPU_XRAY_TRACE void calcRatio (MCWalkerConfiguration &W, int iat

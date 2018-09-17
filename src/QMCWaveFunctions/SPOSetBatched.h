@@ -14,6 +14,8 @@
 
 #include "QMCWaveFunctions/Batching.h"
 #include "QMCWaveFunctions/SPOSetTypeAliases.h"
+#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/SPOSetEvaluationBatched.h"
 //! SPOSet evaluation interface depends on walker batching strategy
 /*!
   SPOSet inherits this so the correct evaluation function signatures and translations

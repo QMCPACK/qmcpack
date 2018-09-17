@@ -28,6 +28,7 @@
 #ifdef QMC_CUDA
 #include <einspline/multi_bspline_create_cuda.h>
 #include "QMCWaveFunctions/AtomicOrbitalCuda.h"
+#include "QMCWaveFunctions/SPOSetBatched.h"
 #endif
 
 namespace qmcplusplus
@@ -35,7 +36,7 @@ namespace qmcplusplus
 
 class EinsplineSetBuilder;
 
-class EinsplineSet : public SPOSetSingle
+class EinsplineSet : public SPOSet
 {
   friend class EinsplineSetBuilder;
 public:
@@ -426,7 +427,7 @@ public:
   }
 
 
-  SPOSetSingle* makeClone() const;
+  SPOSet* makeClone() const;
 
   EinsplineSetExtended() :
     ValueTimer  ("EinsplineSetExtended::ValueOnly"),

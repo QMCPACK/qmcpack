@@ -30,6 +30,11 @@ class SPOSetEvaluationDefault
 public:
   using QMCT = QMCTraits;
   using SSTA = SPOSetTypeAliases;
+
+  void appAbort()
+  {
+    APP_ABORT("SPOSetEvaluationDefault methods should not be called");
+  }
   
   virtual void
   evaluate (const ParticleSet& P, QMCT::PosType &r, SSTA::ValueVector_t &psi)
@@ -119,12 +124,13 @@ public:
     APP_ABORT("SPOSetEvaluationDefault methods should not be called");
   }
 
+  // Interface for Batched Evaluation
+  virtual void initGPU() { appAbort(); }
+
 };
   
-template<Batching batching>
-class SPOSetEvaluation : public SPOSetEvaluationDefault
-{
-};
+template<Batching batching = Batching::SINGLE>
+class SPOSetEvaluation;
 
   
 template<>

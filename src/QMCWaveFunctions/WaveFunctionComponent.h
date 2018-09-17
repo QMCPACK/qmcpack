@@ -301,7 +301,11 @@ struct WaveFunctionComponent: public QMCTraits
    *
    *Specialized for particle-by-particle move.
    */
-  virtual ValueType ratio(ParticleSet& P, int iat) =0;
+  virtual ValueType ratio(ParticleSet& P, int iat)
+  {
+    APP_ABORT("WaveFunctionComponent cannot be call unless overidden in child class");
+    return ValueType();
+  }
 
   /** For particle-by-particle move. Requests space in the buffer
    *  based on the data type sizes of the objects in this class.

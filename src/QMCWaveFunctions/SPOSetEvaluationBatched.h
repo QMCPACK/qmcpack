@@ -16,7 +16,7 @@
 #include "Configuration.h"
 #include "QMCWaveFunctions/Batching.h"
 #include "QMCWaveFunctions/SPOSetTypeAliases.h"
-
+#include "QMCWaveFunctions/SPOSetEvaluation.h"
 namespace qmcplusplus
 {
 
@@ -64,3 +64,5 @@ public:
 
 
 }
+
+#endif
