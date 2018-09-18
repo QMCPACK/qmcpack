@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2018 QMCPACK developers.
 //
-// File developed by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Peter Doak, Oak Ridge National Laboratory
+//                    Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //                    Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
@@ -26,7 +27,7 @@
 namespace qmcplusplus
 {
 
-SPOSet::SPOSet()
+SPOSet<Batching::SINGLE>::SPOSet()
   :OrbitalSetSize(0),Optimizable(false),ionDerivs(false),builder_index(-1)
 #if !defined(ENABLE_SOA)
   ,Identity(false),BasisSetSize(0),C(nullptr)
@@ -41,14 +42,14 @@ SPOSet::SPOSet()
 #endif
 }
 
-SPOSet* SPOSet::makeClone() const
+SPOSet<>* SPOSet<Batching::SINGLE>::makeClone() const
 {
-  APP_ABORT("Missing  SPOSet::makeClone for "+className);
+  APP_ABORT("Missing  SPOSet<Batching::SINGLE>::makeClone for "+className);
   return 0;
 }
 
 #if !defined(ENABLE_SOA)
-bool SPOSet::setIdentity(bool useIdentity)
+bool SPOSet<Batching::SINGLE>::setIdentity(bool useIdentity)
 {
   Identity = useIdentity;
   if(Identity) return true;
@@ -62,7 +63,7 @@ bool SPOSet::setIdentity(bool useIdentity)
     app_error() << "either OrbitalSetSize or BasisSetSize has an invalid value !!\n";
     app_error() << "OrbitalSetSize = " << OrbitalSetSize << std::endl;
     app_error() << "BasisSetSize = " << BasisSetSize << std::endl;
-    APP_ABORT("SPOSet::setIdentiy ");
+    APP_ABORT("SPOSet<Batching::SINGLE>::setIdentiy ");
   }
 
   return true;
@@ -71,7 +72,7 @@ bool SPOSet::setIdentity(bool useIdentity)
 /** Parse the xml file for information on the Dirac determinants.
  *@param cur the current xmlNode
  */
-bool SPOSet::put(xmlNodePtr cur)
+bool SPOSet<Batching::SINGLE>::put(xmlNodePtr cur)
 {
   #undef FunctionName
 #define FunctionName printf("Calling FunctionName from %s\n",__FUNCTION__);FunctionNameReal
@@ -147,7 +148,7 @@ bool SPOSet::put(xmlNodePtr cur)
 
     if(myComm->rank()==0){
       if(!hin.open(MOhref2,H5F_ACC_RDONLY))
-        APP_ABORT("SPOSet::putFromH5 missing or incorrect path to H5 file.");
+        APP_ABORT("SPOSet<Batching::SINGLE>::putFromH5 missing or incorrect path to H5 file.");
       //TO REVIEWERS:: IDEAL BEHAVIOUR SHOULD BE:
       /*
        if(!hin.push("PBC")
@@ -162,7 +163,7 @@ bool SPOSet::put(xmlNodePtr cur)
       hin.read(PBC,"PBC");
       hin.close();
       if (PBC)
-        APP_ABORT("SPOSet::putFromH5 PBC is not supported by AoS builds");
+        APP_ABORT("SPOSet<Batching::SINGLE>::putFromH5 PBC is not supported by AoS builds");
     }
     myComm->bcast(PBC);
     success = putFromH5(MOhref2, coeff_ptr);
@@ -183,18 +184,18 @@ bool SPOSet::put(xmlNodePtr cur)
  return true;
 }
 
-void SPOSet::checkObject()
+void SPOSet<Batching::SINGLE>::checkObject()
 {
   if(!(OrbitalSetSize == C->rows() && BasisSetSize == C->cols()))
   {
-    app_error() << "   SPOSet::checkObject Linear coeffient for SPOSet is not consistent with the input." << std::endl;
+    app_error() << "   SPOSet<Batching::SINGLE>::checkObject Linear coeffient for SPOSet is not consistent with the input." << std::endl;
     OHMMS::Controller->abort();
   }
 }
 
 
 
-bool SPOSet::putFromXML(xmlNodePtr coeff_ptr)
+bool SPOSet<Batching::SINGLE>::putFromXML(xmlNodePtr coeff_ptr)
 {
   Identity=true;
   int norbs=0;
@@ -205,7 +206,7 @@ bool SPOSet::putFromXML(xmlNodePtr coeff_ptr)
   if(norbs < OrbitalSetSize)
   {
     return false;
-    APP_ABORT("SPOSet::putFromXML missing or incorrect size");
+    APP_ABORT("SPOSet<Batching::SINGLE>::putFromXML missing or incorrect size");
   }
   if(norbs)
   {
@@ -235,7 +236,7 @@ bool SPOSet::putFromXML(xmlNodePtr coeff_ptr)
  * @param fname hdf5 file name
  * @param coeff_ptr xmlnode for coefficients
  */
-bool SPOSet::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
+bool SPOSet<Batching::SINGLE>::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
 {
 #if defined(HAVE_LIBHDF5)
   int norbs=OrbitalSetSize;
@@ -252,7 +253,7 @@ bool SPOSet::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
   if(myComm->rank()==0)
   {
     if(!hin.open(fname,H5F_ACC_RDONLY))
-      APP_ABORT("SPOSet::putFromH5 missing or incorrect path to H5 file.");
+      APP_ABORT("SPOSet<Batching::SINGLE>::putFromH5 missing or incorrect path to H5 file.");
 
     Matrix<RealType> Ctemp(neigs,BasisSetSize);
     char name[72];
@@ -260,7 +261,7 @@ bool SPOSet::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
     setname=name;
     if(!hin.read(Ctemp,setname))
     {
-       setname="SPOSet::putFromH5 Missing "+setname+" from HDF5 File.";
+       setname="SPOSet<Batching::SINGLE>::putFromH5 Missing "+setname+" from HDF5 File.";
        APP_ABORT(setname.c_str());
     }
     hin.close();
@@ -278,18 +279,18 @@ bool SPOSet::putFromH5(const char* fname, xmlNodePtr coeff_ptr)
   }
   myComm->bcast(C->data(),C->size());
 #else
-  APP_ABORT("SPOSet::putFromH5 HDF5 is disabled.")
+  APP_ABORT("SPOSet<Batching::SINGLE>::putFromH5 HDF5 is disabled.")
 #endif
   return true;
 }
 
 
-bool SPOSet::putOccupation(xmlNodePtr occ_ptr)
+bool SPOSet<Batching::SINGLE>::putOccupation(xmlNodePtr occ_ptr)
 {
   //die??
   if(BasisSetSize ==0)
   {
-    APP_ABORT("SPOSet::putOccupation detected ZERO BasisSetSize");
+    APP_ABORT("SPOSet<Batching::SINGLE>::putOccupation detected ZERO BasisSetSize");
     return false;
   }
   Occ.resize(std::max(BasisSetSize,OrbitalSetSize));
@@ -329,7 +330,7 @@ bool SPOSet::putOccupation(xmlNodePtr occ_ptr)
 }
 #endif
 
-void SPOSet::basic_report(const std::string& pad)
+void SPOSet<Batching::SINGLE>::basic_report(const std::string& pad)
 {
   app_log()<<pad<<"size = "<<size()<< std::endl;
   app_log()<<pad<<"state info:"<< std::endl;
@@ -337,6 +338,56 @@ void SPOSet::basic_report(const std::string& pad)
   app_log().flush();
 }
 
+
+SPOSet<Batching::SINGLE>::ValueType
+SPOSet<Batching::SINGLE>::RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
+{
+  int ip=omp_get_thread_num();
+  // YYYY to fix
+  /*
+  ValueVector_t psi(t_logpsi[ip],OrbitalSetSize);
+  evaluate(P,iat,psi);
+  return simd::dot(psi.data(),arow,OrbitalSetSize,ValueType());
+  */
+  return ValueType();
+}
+
+void SPOSet<Batching::SINGLE>::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
+{
+  APP_ABORT("SPOSet<Batching::SINGLE>::evaluateVGL not implemented.");
+}
+
+void SPOSet<Batching::SINGLE>::evaluateValues(const VirtualParticleSet& VP,
+					      SSTA::ValueMatrix_t& psiM,
+					      SSTA::ValueAlignedVector_t& SPOmem)
+{
+  for(int iat=0; iat<VP.getTotalNum(); ++iat)
+  {
+    ValueVector_t psi(psiM[iat],OrbitalSetSize);
+    evaluate(VP,iat,psi);
+  }
+}
+
+void SPOSet<Batching::SINGLE>::evaluateThirdDeriv(const ParticleSet& P, int first, int last,
+                                    GGGMatrix_t& grad_grad_grad_logdet)
+{
+  APP_ABORT("Need specialization of SPOSet<Batching::SINGLE>::evaluateThirdDeriv(). \n");
+}
+
+void SPOSet<Batching::SINGLE>::evaluate_notranspose(const ParticleSet& P, int first, int last
+                                      , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
+{
+  APP_ABORT("Need specialization of SPOSet<Batching::SINGLE>::evaluate_notranspose() for grad_grad_logdet. \n");
+}
+
+void SPOSet<Batching::SINGLE>::evaluate_notranspose(const ParticleSet& P, int first, int last,
+                                      ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
+{
+  APP_ABORT("Need specialization of SPOSet<Batching::SINGLE>::evaluate_notranspose() for grad_grad_grad_logdet. \n");
+}
+
+
+  
 }
 
 

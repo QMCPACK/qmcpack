@@ -30,7 +30,7 @@
 #include "OhmmsPETE/OhmmsArray.h"
 #include "QMCWaveFunctions/Batching.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "QMCWaveFunctions/SPOSetSingle.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSetBatched.h"
 
 namespace qmcplusplus
@@ -70,7 +70,7 @@ namespace qmcplusplus
 
 template<typename SA>
 struct BsplineSet<SA, Batching::SINGLE>: public SA,
-					 public SPOSetSingle
+					 public SPOSet<Batching::SINGLE>
 {
   typedef typename SA::SplineType SplineType;
   typedef typename SA::PointType  PointType;

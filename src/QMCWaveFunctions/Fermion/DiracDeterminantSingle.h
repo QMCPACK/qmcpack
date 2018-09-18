@@ -24,7 +24,7 @@
 #include "QMCWaveFunctions/Fermion/DiracDeterminantEval.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSetBatched.h"
-#include "QMCWaveFunctions/SPOSetSingle.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/SPOSetTypeAliases.h"
 #include "QMCWaveFunctions/Batching.h"
@@ -37,11 +37,11 @@ class DiracDeterminantSingle : public DiracDeterminantBase,
 {
 public:
   
-  using SPOSetPtr = SPOSetSingle*;
+  using SPOSetPtr = SPOSet<Batching::SINGLE>*;
   using Walker_t =  ParticleSet::Walker_t;
   SPOSetPtr Phi; //Out local Phi_
 
-  DiracDeterminantSingle(SPOSetPtr const &spos, int first=0);
+  
   //DiracDeterminantSingle(const DiracDeterminantSingle& s) = delete;
 
   

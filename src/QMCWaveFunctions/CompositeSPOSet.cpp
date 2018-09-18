@@ -56,7 +56,7 @@ namespace qmcplusplus
   }
 
 
-  void CompositeSPOSet::add(SPOSetSingle* component)
+  void CompositeSPOSet::add(SPOSet<Batching::SINGLE>* component)
   {
     if(components.empty())
     {
@@ -90,7 +90,7 @@ namespace qmcplusplus
     app_log()<<"  components"<< std::endl;
     for(int i=0;i<components.size();++i)
     {
-      SPOSetSingle& c = *components[i];
+      SPOSet<Batching::SINGLE>& c = *components[i];
       app_log()<<"    "<<i<< std::endl;
       components[i]->basic_report("      ");
     }
@@ -104,7 +104,7 @@ namespace qmcplusplus
   }
 
 
-  SPOSetSingle* CompositeSPOSet::makeClone() const
+  SPOSet<Batching::SINGLE>* CompositeSPOSet::makeClone() const
   {
     // base class and shallow copy
     CompositeSPOSet* clone = new CompositeSPOSet(*this);
@@ -132,7 +132,7 @@ namespace qmcplusplus
     int n=0;
     for(int c=0;c<components.size();++c)
     {
-      SPOSetSingle&    component = *components[c];
+      SPOSet<Batching::SINGLE>&    component = *components[c];
       ValueVector_t& values    = *component_values[c];
       component.evaluate(P,iat,values);
       std::copy(values.begin(),values.end(),psi.begin()+n);
@@ -147,7 +147,7 @@ namespace qmcplusplus
     int n=0;
     for(int c=0;c<components.size();++c)
     {
-      SPOSetSingle&    component  = *components[c];
+      SPOSet<Batching::SINGLE>&    component  = *components[c];
       ValueVector_t& values     = *component_values[c];
       GradVector_t&  gradients  = *component_gradients[c];
       ValueVector_t& laplacians = *component_laplacians[c];
@@ -225,7 +225,7 @@ namespace qmcplusplus
   }
 
 
-  SPOSetSingle* CompositeSPOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
+  SPOSet<Batching::SINGLE>* CompositeSPOSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   {
     std::vector<std::string> spolist;
     putContent(spolist,cur);
@@ -237,15 +237,15 @@ namespace qmcplusplus
     for(int i=0; i<spolist.size(); ++i)
     {
       // NOTE: get_sposet is a non threadsafe global function
-      // If the case fails (i.e. the SPOSet is not a SPOSetSingle a nullptr
+      // If the case fails (i.e. the SPOSet is not a SPOSet<Batching::SINGLE> a nullptr
       // will come out of the dynamic_cast then spo_now will be missing a SPO
-      SPOSetSingle* spo= dynamic_cast<SPOSetSingle*>(get_sposet(spolist[i]));
+      SPOSet<Batching::SINGLE>* spo= dynamic_cast<SPOSet<Batching::SINGLE>*>(get_sposet(spolist[i]));
       if(spo) spo_now->add(spo);
     }
     return (spo_now->size())? spo_now:0;
   }
 
-  SPOSetSingle* CompositeSPOSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input)
+  SPOSet<Batching::SINGLE>* CompositeSPOSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input)
   {
     return createSPOSetFromXML(cur);
   }

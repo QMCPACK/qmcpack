@@ -24,13 +24,13 @@
 #include "QMCWaveFunctions/PlaneWave/PWRealOrbitalSet.h"
 #endif
 
-#include "QMCWaveFunctions/SPOSetSingle.h"
+#include "QMCWaveFunctions/SPOSet.h"
 
 namespace qmcplusplus
 {
 
 class PWParameterSet;
-class SlaterDet;
+  //class SlaterDet;
 
 /** OrbitalBuilder for Slater determinants in PW basis
 */
@@ -47,7 +47,7 @@ private:
   typedef PWRealOrbitalSet::PWBasisPtr PWBasisPtr;
 #endif
 
-  //using SPOSetPtr = SPOSetSingle::SPOSetPtr;
+  //using SPOSetPtr = SPOSet<Batching::SINGLE>::SPOSetPtr;
   std::map<std::string,SPOSet*> spomap;
   PtclPoolType& ptclPool;
 
@@ -79,7 +79,7 @@ private:
   hid_t getH5(xmlNodePtr cur, const char* aname);
   bool putSlaterDet(xmlNodePtr cur);
   bool createPWBasis(xmlNodePtr cur);
-  SPOSetSingle* createPW(xmlNodePtr cur, int spinIndex);
+  SPOSet<Batching::SINGLE>* createPW(xmlNodePtr cur, int spinIndex);
 #if defined(QMC_COMPLEX)
   void transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, PWOrbitalSet& pwFunc);
 #endif

@@ -29,7 +29,7 @@ namespace qmcplusplus
    *  only use in serial portion of execution
    *  ie during initialization prior to threaded code
    */
-  SPOSet* get_sposet(const std::string& name);
+  SPOSet<>* get_sposet(const std::string& name);
 
 
 
@@ -63,7 +63,7 @@ public:
     last_builder->loadBasisSetFromXML(cur);
   }
 
-  SPOSet* createSPOSet(xmlNodePtr cur);
+  SPOSet<>* createSPOSet(xmlNodePtr cur);
 
   void build_sposet_collection(xmlNodePtr cur);
 

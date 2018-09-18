@@ -18,16 +18,16 @@
 namespace qmcplusplus
 {
   DiracDeterminantSoA::DiracDeterminantSoA(SPOSetPtr const &spos, int first): 
-    DiracDeterminantSingle(spos,first)
+    DiracDeterminant<>(spos,first)
   { 
     Need2Compute4PbyP=false; 
   }
 
   /** nothing useful yet */
   DiracDeterminantSoA::~DiracDeterminantSoA() {}
-  DiracDeterminantSoA::DiracDeterminantSoA(const DiracDeterminantSoA& s):DiracDeterminantSingle(s){}
+  DiracDeterminantSoA::DiracDeterminantSoA(const DiracDeterminantSoA& s): DiracDeterminant<>(s){}
 
-  DiracDeterminantSingle* 
+  DiracDeterminant<>* 
   DiracDeterminantSoA::makeCopy(SPOSetPtr spo) const
   {
     DiracDeterminantSoA* dclone= new DiracDeterminantSoA(spo,FirstIndex);
@@ -68,14 +68,14 @@ namespace qmcplusplus
     vVGL.resize(norb);
   }
 
-  DiracDeterminantSingle::GradType
+  DiracDeterminant<>::GradType
     DiracDeterminantSoA::evalGrad(ParticleSet& P, int iat)
     {
       WorkingIndex = iat-FirstIndex;
       return computeG(psiM[WorkingIndex],mGL[WorkingIndex]);
     }
 
-  DiracDeterminantSoA::ValueType
+  DiracDeterminant<>::ValueType
     DiracDeterminantSoA::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
     {
       Phi->evaluateVGL(P, iat, vVGL);
@@ -167,7 +167,7 @@ namespace qmcplusplus
     buf.get(PhaseValue);
   }
 
-  DiracDeterminantSingle::ValueType 
+  DiracDeterminant<>::ValueType 
     DiracDeterminantSoA::ratio(ParticleSet& P, int iat)
     {
       UpdateMode=ORB_PBYP_RATIO;

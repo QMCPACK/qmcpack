@@ -23,13 +23,13 @@
 #define QMCPLUSPLUS_PLANEWAVE_REALORBITALSET_BLAS_H
 
 #include "QMCWaveFunctions/PlaneWave/PWBasis.h"
-#include "QMCWaveFunctions/SPOSetSingle.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "Numerics/OhmmsBlas.h"
 
 namespace qmcplusplus
 {
 
-class PWRealOrbitalSet: public SPOSetSingle
+class PWRealOrbitalSet: public SPOSet<Batching::SINGLE>
 {
 
 public:
@@ -62,7 +62,7 @@ public:
    */
   ~PWRealOrbitalSet();
 
-  SPOSetSingle* makeClone() const;
+  SPOSet<Batching::SINGLE>* makeClone() const;
 
   /** resize  the orbital base
    * @param bset PWBasis

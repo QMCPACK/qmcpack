@@ -27,8 +27,6 @@ SET(WFBASE_SRCS
   SPOSetInfo.cpp
   SPOSetInputInfo.cpp
   SPOSet.cpp
-  SPOSetSingle.cpp
-  SPOSetEvaluationBatchingSingle.cpp
   OptimizableSPOSet.cpp
   CompositeSPOSet.cpp
   HarmonicOscillator/SHOSet.cpp
@@ -42,7 +40,7 @@ IF(NOT QMC_COMPLEX)
 ENDIF(NOT QMC_COMPLEX)
 
 IF(QMC_CUDA)
-  SET(WFBASE_SRCS SPOSetEvaluationBatchingBatched.cpp ${WFBASE_SRCS})
+  SET(WFBASE_SRCS SPOSetBatched.cpp ${WFBASE_SRCS})
 ENDIF(QMC_CUDA)
 
 ########################
@@ -62,7 +60,6 @@ SET(JASTROW_SRCS
   IonOrbital.cpp
   IonOrbitalBuilder.cpp
   OptimizableSPOBuilder.cpp
-  Fermion/SPOSetProxy.cpp
   Fermion/SPOSetProxyForMSD.cpp
   )
 
@@ -90,7 +87,6 @@ IF(OHMMS_DIM MATCHES 3)
     SET(FERMION_SRCS ${FERMION_SRCS}
       Fermion/determinant_update.cu 
       Fermion/DiracDeterminantBatched.cpp
-      Fermion/DiracDeterminantEvalBatched.cpp
       Fermion/SlaterDetBatched.cpp
       TrialWaveFunction_CUDA.cpp
       )
@@ -174,13 +170,10 @@ IF(OHMMS_DIM MATCHES 3)
 ENDIF(OHMMS_DIM MATCHES 3)
 
 SET(FERMION_SRCS ${FERMION_SRCS}
-  Fermion/DiracDeterminantBase.cpp
-  Fermion/DiracDeterminantEvalDefault.cpp
-  Fermion/DiracDeterminantSingle.cpp
+  Fermion/DiracDeterminant.cpp
   Fermion/DiracDeterminantSoA.cpp
   Fermion/DiracDeterminantOpt.cpp
   Fermion/SlaterDet.cpp
-  Fermion/SlaterDetSingle.cpp
   Fermion/SlaterDetBuilder.cpp
   Fermion/MultiSlaterDeterminant.cpp
   Fermion/MultiSlaterDeterminantFast.cpp

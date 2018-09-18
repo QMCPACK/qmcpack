@@ -17,8 +17,8 @@
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Numerics/OhmmsBlas.h"
-#include "QMCWaveFunctions/SPOSetSingle.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantSingle.h"
+#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "simd/simd.hpp"
 
 
@@ -43,7 +43,7 @@ template <typename T1, typename T2> void check_matrix(Matrix<T1> &a, Matrix<T2> 
   }
 }
 
-class FakeSPO : public SPOSetSingle
+class FakeSPO : public SPOSet<Batching::SINGLE>
 {
   public:
 
@@ -192,11 +192,11 @@ FakeSPO::evaluate_notranspose(const ParticleSet& P, int first, int last
   }
 }
 
-TEST_CASE("DiracDeterminantSingle_first", "[wavefunction][fermion]")
+TEST_CASE("DiracDeterminant<Batching::SINGLE>_first", "[wavefunction][fermion]")
 {
   FakeSPO *spo = new FakeSPO();
   spo->setOrbitalSetSize(3);
-  DiracDeterminantSingle dds(spo);
+  DiracDeterminant<> dds(spo);
 
   int norb = 3;
   dds.set(0,norb);
@@ -227,7 +227,7 @@ TEST_CASE("DiracDeterminantSingle_first", "[wavefunction][fermion]")
   check_matrix(dds.psiM, b);
 
 
-  DiracDeterminantBase::GradType grad;
+  DiracDeterminant<>::GradType grad;
   ValueType det_ratio = dds.ratioGrad(elec, 0, grad);
   ValueType det_ratio1 = 0.178276269185;
   REQUIRE(det_ratio1 == ValueApprox(det_ratio));
@@ -251,11 +251,11 @@ TEST_CASE("DiracDeterminantSingle_first", "[wavefunction][fermion]")
 
 //#define DUMP_INFO
 
-TEST_CASE("DiracDeterminantSingle_second", "[wavefunction][fermion]")
+TEST_CASE("DiracDeterminant<Batching::SINGLE>_second", "[wavefunction][fermion]")
 {
   FakeSPO *spo = new FakeSPO();
   spo->setOrbitalSetSize(4);
-  DiracDeterminantSingle dds(spo);
+  DiracDeterminant<> dds(spo);
 
   int norb = 4;
   dds.set(0,norb);
@@ -308,7 +308,7 @@ TEST_CASE("DiracDeterminantSingle_second", "[wavefunction][fermion]")
   }
 
 
-  DiracDeterminantSingle::GradType grad;
+  DiracDeterminant<>::GradType grad;
   ValueType det_ratio = dds.ratioGrad(elec, 0, grad);
 
   dm.invert(a_update1, true);

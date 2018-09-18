@@ -15,7 +15,6 @@
 #include "QMCWaveFunctions/Batching.h"
 #include "QMCWaveFunctions/SPOSetTypeAliases.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "QMCWaveFunctions/SPOSetEvaluationBatched.h"
 //! SPOSet evaluation interface depends on walker batching strategy
 /*!
   SPOSet inherits this so the correct evaluation function signatures and translations
@@ -25,11 +24,11 @@
 namespace qmcplusplus
 {
 
-class SPOSetBatched : public SPOSet,
-		      public SPOSetEvaluation<Batching::BATCHED>
+template<>
+class SPOSet<Batching::BATCHED>: public SPOSet<Batching::SINGLE>
 {
 public:
-  using SPOSetPtr = SPOSetBatched*;
+  using SPOSetPtr = SPOSet<Batching::BATCHED>*;
 
   virtual void resetParameters(const opt_variables_type& active)
   { }
@@ -37,6 +36,31 @@ public:
   virtual void resetTargetParticleSet(ParticleSet& e)
   { }
 
+  virtual void initGPU() {  }
+
+  //////////////////////////////////////////
+  // Walker-parallel vectorized functions //
+  //////////////////////////////////////////
+  virtual void
+  reserve (PointerPool<gpu::device_vector<QMCT::CudaValueType> > &pool) { }
+
+  virtual void
+  evaluate (std::vector<SSTA::Walker_t*> &walkers, int iat, gpu::device_vector<QMCT::CudaValueType*> &phi);
+
+  virtual void evaluate (std::vector<SSTA::Walker_t*> &walkers, std::vector<QMCT::PosType> &new_pos
+                         , gpu::device_vector<QMCT::CudaValueType*> &phi);
+
+  virtual void
+  evaluate (std::vector<SSTA::Walker_t*> &walkers,
+            std::vector<QMCT::PosType> &new_pos,
+            gpu::device_vector<QMCT::CudaValueType*> &phi,
+            gpu::device_vector<QMCT::CudaValueType*> &grad_lapl_list,
+            int row_stride);
+
+  virtual void
+  evaluate (std::vector<QMCT::PosType> &pos, gpu::device_vector<QMCT::CudaRealType*> &phi);
+  virtual void
+  evaluate (std::vector<QMCT::PosType> &pos, gpu::device_vector<QMCT::CudaComplexType*> &phi);
 
 };
 

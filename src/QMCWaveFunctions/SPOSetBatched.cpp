@@ -10,8 +10,7 @@
 // File created by: Peter Doak, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "QMCWaveFunctions/SPOSetEvaluationBatched.h"
-#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/SPOSetBatched.h"
 #include "QMCWaveFunctions/SPOSetTypeAliases.h"
 
 namespace qmcplusplus
@@ -19,7 +18,7 @@ namespace qmcplusplus
 /** batched walker implementation */
 
 void
-SPOSetEvaluation<Batching::BATCHED>::evaluate (std::vector<SSTA::Walker_t*> &walkers, int iat,
+SPOSet<Batching::BATCHED>::evaluate (std::vector<SSTA::Walker_t*> &walkers, int iat,
 					       gpu::device_vector<QMCT::CudaValueType*> &phi)
 {
   app_error() << "Need specialization of vectorized evaluate in SPOSet.\n";
@@ -28,7 +27,7 @@ SPOSetEvaluation<Batching::BATCHED>::evaluate (std::vector<SSTA::Walker_t*> &wal
 }
 
 void
-SPOSetEvaluation<Batching::BATCHED>::evaluate (std::vector<SSTA::Walker_t*> &walkers, std::vector<QMCT::PosType> &new_pos,
+SPOSet<Batching::BATCHED>::evaluate (std::vector<SSTA::Walker_t*> &walkers, std::vector<QMCT::PosType> &new_pos,
 					       gpu::device_vector<QMCT::CudaValueType*> &phi)
 {
   app_error() << "Need specialization of vectorized evaluate in SPOSet.\n";
@@ -37,7 +36,7 @@ SPOSetEvaluation<Batching::BATCHED>::evaluate (std::vector<SSTA::Walker_t*> &wal
 }
 
 void
-SPOSetEvaluation<Batching::BATCHED>::evaluate (std::vector<SSTA::Walker_t*> &walkers,
+SPOSet<Batching::BATCHED>::evaluate (std::vector<SSTA::Walker_t*> &walkers,
 					       std::vector<QMCT::PosType> &new_pos,
 					       gpu::device_vector<QMCT::CudaValueType*> &phi,
 					       gpu::device_vector<QMCT::CudaValueType*> &grad_lapl_list,
@@ -49,7 +48,7 @@ SPOSetEvaluation<Batching::BATCHED>::evaluate (std::vector<SSTA::Walker_t*> &wal
 }
 
 void
-SPOSetEvaluation<Batching::BATCHED>::evaluate (std::vector<QMCT::PosType> &pos, gpu::device_vector<QMCT::CudaRealType*> &phi)
+SPOSet<Batching::BATCHED>::evaluate (std::vector<QMCT::PosType> &pos, gpu::device_vector<QMCT::CudaRealType*> &phi)
 {
   app_error() << "Need specialization of vectorized evaluate "
               << "in SPOSet.\n";
@@ -58,7 +57,7 @@ SPOSetEvaluation<Batching::BATCHED>::evaluate (std::vector<QMCT::PosType> &pos, 
 }
 
 void
-SPOSetEvaluation<Batching::BATCHED>::evaluate (std::vector<QMCT::PosType> &pos, gpu::device_vector<QMCT::CudaComplexType*> &phi)
+SPOSet<Batching::BATCHED>::evaluate (std::vector<QMCT::PosType> &pos, gpu::device_vector<QMCT::CudaComplexType*> &phi)
 {
   app_error() << "Need specialization of vectorized evaluate "
               << "in SPOSet.\n";

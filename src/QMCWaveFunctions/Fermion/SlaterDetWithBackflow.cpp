@@ -20,7 +20,7 @@ namespace qmcplusplus
 {
 
   
-SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl, BackflowTransformation *BF):SlaterDetSingle(targetPtcl),BFTrans(BF)
+SlaterDetWithBackflow::SlaterDetWithBackflow(ParticleSet& targetPtcl, BackflowTransformation *BF):SlaterDet<>(targetPtcl),BFTrans(BF)
 {
   Optimizable=false;
   OrbitalName="SlaterDetWithBackflow";
@@ -129,7 +129,7 @@ WaveFunctionComponentPtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) cons
       }
       // Make a copy of the determinant.
       DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) Dets[i]->
-	  makeCopy(dynamic_cast<SPOSetSingle*>(spo_clone));
+	  makeCopy(dynamic_cast<SPOSet<Batching::SINGLE>*>(spo_clone));
 //       dclne->BFTrans=tr;
 //       dclne->resetTargetParticleSet(tqp);
       myclone->add(dclne,i);
@@ -144,7 +144,7 @@ WaveFunctionComponentPtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) cons
     for(int i=0; i<Dets.size(); ++i)
     {
       DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) Dets[i]->
-	makeCopy(dynamic_cast<SPOSetSingle*>(spo_clone));
+	makeCopy(dynamic_cast<SPOSet<Batching::SINGLE>*>(spo_clone));
 //        dclne->setBF(tr);
 //        dclne->resetTargetParticleSet(tr->QP);
       myclone->add(dclne,i);

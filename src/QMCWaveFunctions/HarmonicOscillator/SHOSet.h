@@ -48,12 +48,16 @@ namespace qmcplusplus
   };
 
 
-  struct SHOSet : public SPOSet
+  struct SHOSet : public SPOSet<>
   {
 
     // I prefer a type qualified back to the origin of the type alias
     // but this requires fewer changes as this class used to aquire
     // typedefs through inheritance.
+    using QMCT = QMCTraits;
+    using RealType = QMCT::RealType;
+    using ComplexType = QMCT::ComplexType;
+    using PosType = QMCT::PosType;
     using SSTA = SPOSetTypeAliases;
     using ValueType = QMCTraits::ValueType;
     using IndexVector_t = SSTA::IndexVector_t;
@@ -74,12 +78,12 @@ namespace qmcplusplus
     using Walker_t = SSTA::Walker_t;
     typedef ValueMatrix_t::value_type value_type;
     typedef GradMatrix_t::value_type grad_type;
-
+    
     RealType length;
     PosType  center;
 
     int nmax;
-    TinyVector<int,DIM> qn_max;
+    TinyVector<int,OHMMS_DIM> qn_max;
     std::vector<SHOState>  state_info;
     std::vector<RealType>  prefactors;
     Array<RealType,2> hermite;

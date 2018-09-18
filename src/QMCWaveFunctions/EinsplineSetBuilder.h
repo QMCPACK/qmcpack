@@ -160,7 +160,7 @@ public:
   ////static std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> ExtendedMap_z;
   ////static std::map<H5OrbSet,EinsplineSetExtended<double>*,H5OrbSet> ExtendedSetMap_d;
   //static std::map<H5OrbSet,SPOSet*,H5OrbSet> SPOSetMap;
-  std::map<H5OrbSet,SPOSet*,H5OrbSet> SPOSetMap;
+  std::map<H5OrbSet,SPOSet<>*,H5OrbSet> SPOSetMap;
 
   ///constructor
   EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur);
@@ -171,7 +171,7 @@ public:
   /** initialize the Antisymmetric wave function for electrons
    * @param cur the current xml node
    */
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
+  SPOSet<>* createSPOSetFromXML(xmlNodePtr cur);
 
   /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
    * @param cur the current xml node
@@ -179,7 +179,7 @@ public:
   void set_metadata(int numOrbs, int TwistNum_inp);
 
   /** initialize with the existing SPOSet */
-  SPOSet* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info);
+  SPOSet<>* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info);
 
   //////////////////////////////////////
   // HDF5-related data  and functions //

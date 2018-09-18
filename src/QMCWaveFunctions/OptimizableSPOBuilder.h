@@ -27,7 +27,7 @@ class OptimizableSPOBuilder : public SPOSetBuilder
 {
 protected:
   typedef std::map<std::string,ParticleSet*> PtclPoolType;
-  typedef std::map<std::string,SPOSet*>  SPOPoolType;
+  typedef std::map<std::string,SPOSet<>*>  SPOPoolType;
   ParticleSet *targetPtcl;
 public:
   OptimizableSPOBuilder(ParticleSet& p, PtclPoolType& psets,
@@ -36,8 +36,8 @@ public:
   /** initialize the Antisymmetric wave function for electrons
    *@param cur the current xml node
    */
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
-  //    SPOSet* createSPOSetFromXML(xmlNodePtr cur, SPOPool_t& spo_pool);
+  SPOSet<>* createSPOSetFromXML(xmlNodePtr cur);
+  //    SPOSet<>* createSPOSetFromXML(xmlNodePtr cur, SPOPool_t& spo_pool);
 
 };
 }

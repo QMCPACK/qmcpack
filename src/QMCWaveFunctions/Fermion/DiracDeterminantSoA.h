@@ -14,16 +14,16 @@
  */
 #ifndef QMCPLUSPLUS_DIRACDETERMINANTWITHBASE_SOA_H
 #define QMCPLUSPLUS_DIRACDETERMINANTWITHBASE_SOA_H
-#include "QMCWaveFunctions/Fermion/DiracDeterminantSingle.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 
 namespace qmcplusplus
 {
 
 /** a DiracDeterminantBase which uses SoA for G & L and implements both memory and compute optimization*/
-class DiracDeterminantSoA : public DiracDeterminantSingle
+class DiracDeterminantSoA : public DiracDeterminant<Batching::SINGLE>
 {
-
+  using SPOSetPtr = SPOSet<Batching::SINGLE>*;
   public:
   
   typedef VectorSoaContainer<ValueType,DIM+1> GLVector_t;
@@ -64,7 +64,7 @@ class DiracDeterminantSoA : public DiracDeterminantSingle
   ///reset the size: with the number of particles and number of orbtials
   void resize(int nel, int morb);
   ///cloning with spo
-  DiracDeterminantSingle* makeCopy(SPOSetPtr spo) const;
+  DiracDeterminant<>* makeCopy(SPOSetPtr spo) const;
 
   RealType evaluateLog(ParticleSet& P,
               ParticleSet::ParticleGradient_t& G,

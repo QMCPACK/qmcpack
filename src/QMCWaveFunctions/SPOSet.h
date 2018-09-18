@@ -28,7 +28,6 @@
 #if !defined(ENABLE_SOA)
 #include "Message/CommOperators.h"
 #endif
-#include "QMCWaveFunctions/SPOSetEvaluation.h"
 #include "QMCWaveFunctions/SPOSetTypeAliases.h"
 
 #if defined(ENABLE_SMARTPOINTER)
@@ -46,12 +45,17 @@ namespace qmcplusplus
  * a number of single-particle orbitals with capabilities of evaluating \f$ \psi_j({\bf r}_i)\f$
  */
 
-class SPOSet: public QMCTraits
+template<Batching batching = Batching::SINGLE>
+class SPOSet;
+
+template<>
+class SPOSet<Batching::SINGLE>
 {
 public:
-    //Because so many SPOSetSingle children exist and
+    // Because so many SPOSet<Batching::SINGLE> children exist and
   //expect to inherit typedefs
   using SSTA = SPOSetTypeAliases;
+  using QMCT = QMCTraits;
   using ValueType = QMCTraits::ValueType;
   using IndexVector_t = SSTA::IndexVector_t;
   using ValueVector_t = SSTA::ValueVector_t;
@@ -71,19 +75,21 @@ public:
   using VGLVector_t = SSTA::VGLVector_t;
   using Walker_t = SSTA::Walker_t;
   using GGGType = SSTA::GGGType;
-
   typedef std::map<std::string,SPOSet*> SPOPool_t;
+
+  static constexpr int DIM = 3;
   
   ///index in the builder list of sposets
   int builder_index;
   ///true if SPO is optimizable
   bool Optimizable;
+
   ///flag to calculate ionic derivatives
   bool ionDerivs;
   ///if true, can use GL type, default=false
   bool CanUseGLCombo;
   ///number of Single-particle orbitals
-  IndexType OrbitalSetSize;
+  QMCT::IndexType OrbitalSetSize;
   /// Optimizable variables
   opt_variables_type myVars;
   ///name of the basis set
@@ -197,9 +203,9 @@ public:
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   virtual bool is_of_type_LCOrbitalSetOpt() const { return false; }
 
-  virtual PosType get_k(int orb)
+  virtual QMCT::PosType get_k(int orb)
   {
-    return PosType();
+    return QMCT::PosType();
   }
 
   /** make a clone of itself
@@ -217,7 +223,7 @@ public:
 
   // Routine to update internal data for the LCOrbitalSetOpt child class specifically
   // Should be left empty for other derived classes
-  virtual void rotate_B(const std::vector<RealType> &rot_mat) { };
+  virtual void rotate_B(const std::vector<QMCT::RealType> &rot_mat) { };
 
 #if !defined(ENABLE_SOA)
 protected:
@@ -225,6 +231,88 @@ protected:
   bool putFromXML(xmlNodePtr coeff_ptr);
   bool putFromH5(const char* fname, xmlNodePtr coeff_ptr);
 #endif
+
+  virtual void
+  evaluate (const ParticleSet& P, QMCT::PosType &r, SSTA::ValueVector_t &psi)
+  {
+    app_error() << "Need specialization for SPOSet::evaluate "
+                << "(const ParticleSet& P, PosType &r).\n";
+    abort();
+  }
+
+  /** evaluate the values of this single-particle orbital set
+   * @param P current ParticleSet
+   * @param iat active particle
+   * @param psi values of the SPO
+   */
+  virtual void
+  evaluate(const ParticleSet& P, int iat, SSTA::ValueVector_t& psi)=0;
+
+  /** compute dot_product of new row and old row */
+  virtual QMCT::ValueType RATIO(const ParticleSet& P, int iat, const QMCT::ValueType*
+      restrict arow);
+
+  /** evaluate VGL of SPOs using SoA container for gl
+   */
+  virtual void
+  evaluateVGL(const ParticleSet& P, int iat, SSTA::VGLVector_t& vgl);
+
+  /** evaluate values for the virtual moves, e.g., sphere move for nonlocalPP
+   * @param VP virtual particle set
+   * @param psiM single-particle orbitals psiM(i,j) for the i-th particle and the j-th orbital
+   * @param SPOMem scratch space for SPO value evaluation, alignment is required.
+   */
+  virtual void
+  evaluateValues(const VirtualParticleSet& VP, SSTA::ValueMatrix_t& psiM, SSTA::ValueAlignedVector_t& SPOMem);
+
+
+  /** evaluate the values, gradients and laplacians of this single-particle orbital set
+   * @param P current ParticleSet
+   * @param iat active particle
+   * @param psi values of the SPO
+   */
+  virtual void
+  evaluate(const ParticleSet& P, int iat,
+           SSTA::ValueVector_t& psi, SSTA::GradVector_t& dpsi, SSTA::ValueVector_t& d2psi)=0;
+
+  /** evaluate the values, gradients and hessians of this single-particle orbital set
+   * @param P current ParticleSet
+   * @param iat active particle
+   * @param psi values of the SPO
+   */
+  virtual void
+  evaluate(const ParticleSet& P, int iat,
+           SSTA::ValueVector_t& psi, SSTA::GradVector_t& dpsi, SSTA::HessVector_t& grad_grad_psi)=0;
+
+  virtual void
+  evaluateThirdDeriv(const ParticleSet& P, int first, int last
+                     , SSTA::GGGMatrix_t& grad_grad_grad_logdet);
+
+  
+  /** evaluate the values, gradients and laplacians of this single-particle orbital for [first,last) particles
+   * @param P current ParticleSet
+   * @param first starting index of the particles
+   * @param last ending index of the particles
+   * @param logdet determinant matrix to be inverted
+   * @param dlogdet gradients
+   * @param d2logdet laplacians
+   *
+   */
+  virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
+                                    , SSTA::ValueMatrix_t& logdet, SSTA::GradMatrix_t& dlogdet, SSTA::ValueMatrix_t& d2logdet)=0;
+
+  virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
+                                    , SSTA::ValueMatrix_t& logdet, SSTA::GradMatrix_t& dlogdet, SSTA::HessMatrix_t& grad_grad_logdet);
+
+  virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
+                                    , SSTA::ValueMatrix_t& logdet, SSTA::GradMatrix_t& dlogdet, SSTA::HessMatrix_t& grad_grad_logdet, SSTA::GGGMatrix_t& grad_grad_grad_logdet);
+
+  virtual void evaluateGradSource (const ParticleSet &P, int first, int last
+                                   , const ParticleSet &source, int iat_src, SSTA::GradMatrix_t &gradphi);
+
+  virtual void evaluateGradSource (const ParticleSet &P, int first, int last
+                                   , const ParticleSet &source, int iat_src
+                                   , SSTA::GradMatrix_t &grad_phi, SSTA::HessMatrix_t &grad_grad_phi, SSTA::GradMatrix_t &grad_lapl_phi);
 
 };
 

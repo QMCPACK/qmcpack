@@ -16,7 +16,7 @@
     
     
 #include "QMCWaveFunctions/ElectronGas/ElectronGasOrbitalBuilder.h"
-#include "QMCWaveFunctions/Fermion/SlaterDetSingle.h"
+#include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "OhmmsData/AttributeSet.h"
 #if QMC_BUILD_LEVEL>2
 #include "QMCWaveFunctions/Fermion/BackflowBuilder.h"
@@ -83,8 +83,8 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
     cur = cur->next;
   }
 #endif
-  typedef SlaterDetSingle::Determinant_t Det_t;
-  typedef SlaterDetSingle SlaterDeterminant_t;
+  typedef SlaterDet<>::Determinant_t Det_t;
+  typedef SlaterDet<> SlaterDeterminant_t;
   HEGGrid<RealType,OHMMS_DIM> egGrid(targetPtcl.Lattice);
   HEGGrid<RealType,OHMMS_DIM> egGrid2(targetPtcl.Lattice);
   int nat=targetPtcl.getTotalNum();
@@ -206,7 +206,7 @@ ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur)
 {
 }
 
-SPOSetSingle* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
+SPOSet<Batching::SINGLE>* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   app_log() << "ElectronGasSPOBuilder::createSPOSet " << std::endl;
   int nc=0;

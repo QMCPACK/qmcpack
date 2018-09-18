@@ -20,7 +20,7 @@
 #ifndef QMCPLUSPLUS_MULTIDIRACDETERMINANTWITHBASE_H
 #define QMCPLUSPLUS_MULTIDIRACDETERMINANTWITHBASE_H
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "QMCWaveFunctions/SPOSetSingle.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase_help.h"
@@ -54,7 +54,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  MultiDiracDeterminantBase(SPOSetSingle* const &spos, int first=0);
+  MultiDiracDeterminantBase(SPOSet<Batching::SINGLE>* const &spos, int first=0);
 
   ///default destructor
   ~MultiDiracDeterminantBase();
@@ -71,9 +71,9 @@ public:
 
   /** return a clone of Phi
    */
-  SPOSetSingle* clonePhi() const;
+  SPOSet<Batching::SINGLE>* clonePhi() const;
 
-  SPOSetSingle* getPhi()
+  SPOSet<Batching::SINGLE>* getPhi()
   {
     return Phi;
   };
@@ -326,7 +326,7 @@ public:
   ///index of the particle (or row)
   int WorkingIndex;
   ///a set of single-particle orbitals used to fill in the  values of the matrix
-  SPOSetSingle* Phi;
+  SPOSet<Batching::SINGLE>* Phi;
   /// number of determinants handled by this object
   int NumDets;
   ///bool to cleanup

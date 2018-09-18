@@ -96,7 +96,7 @@ namespace qmcplusplus
     }
   }
 
-  SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
+  SPOSet<>* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur)
   {
     int ns(0);
     OhmmsAttributeSet a;
@@ -126,7 +126,7 @@ namespace qmcplusplus
     vals.selectBands(fullband,0, ns, false);
 
     size_t mem_now=qmc_common.memory_allocated;
-    SPOSet* newspo=create_spline_set(spin,vals);       
+    SPOSet<>* newspo=create_spline_set(spin,vals);       
     qmc_common.print_memory_change("BsplineSetReader", mem_now);
     return newspo;
 
@@ -153,7 +153,7 @@ namespace qmcplusplus
     //return bb;
   }
 
-  SPOSet* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info)
+  SPOSet<>* BsplineReaderBase::create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info)
   {
     if(spo2band.empty()) 
       spo2band.resize(mybuilder->getStates().size());
@@ -180,7 +180,7 @@ namespace qmcplusplus
     //vals.FirstSPO=0;
     //vals.NumSPOs=input_info.max_index()-input_info.min_index();
     size_t mem_now=qmc_common.memory_allocated;
-    SPOSet* newspo=create_spline_set(spin,vals);       
+    SPOSet<>* newspo=create_spline_set(spin,vals);       
     qmc_common.print_memory_change("BsplineSetReader", mem_now);
     return newspo;
   }

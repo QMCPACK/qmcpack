@@ -17,16 +17,16 @@
 #define QMCPLUSPLUS_SLATERDETERMINANT_WITHBACKFLOW_H
 #include "QMCWaveFunctions/Fermion/DiracDeterminantWithBackflow.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#include "QMCWaveFunctions/Fermion/SlaterDetSingle.h"
+#include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include<cmath>
 
 namespace qmcplusplus
 {
 
-class SlaterDetWithBackflow: public SlaterDetSingle
+class SlaterDetWithBackflow: public SlaterDet<Batching::SINGLE>
 {
 public:
-  typedef DiracDeterminantSingle Determinant_t;
+  typedef DiracDeterminant<Batching::SINGLE> Determinant_t;
   
   BackflowTransformation *BFTrans;
 

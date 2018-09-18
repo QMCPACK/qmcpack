@@ -35,7 +35,7 @@ namespace qmcplusplus
 class SlaterDetSingle: public SlaterDet
 {
 public:
-  typedef DiracDeterminantSingle Determinant_t;
+  typedef DiracDeterminant<Batching::SINGLE> Determinant_t;
 
   //This could be dangerous shadowing the base class Dets;
   std::vector<Determinant_t*>  Dets;

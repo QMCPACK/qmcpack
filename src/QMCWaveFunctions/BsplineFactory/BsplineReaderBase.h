@@ -177,17 +177,17 @@ struct BsplineReaderBase
 
   /** create the actual spline sets
    */
-  virtual SPOSet* create_spline_set(int spin, const BandInfoGroup& bandgroup)=0;
+  virtual SPOSet<>* create_spline_set(int spin, const BandInfoGroup& bandgroup)=0;
 
   /** setting common parameters
    */
   void setCommon(xmlNodePtr cur);
 
   /** create the spline after one of the kind is created */
-  SPOSet* create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info);
+  SPOSet<>* create_spline_set(int spin, xmlNodePtr cur, SPOSetInputInfo& input_info);
 
   /** create the spline set */
-  SPOSet* create_spline_set(int spin, xmlNodePtr cur);
+  SPOSet<>* create_spline_set(int spin, xmlNodePtr cur);
 
   void initialize_spo2band(int spin, const std::vector<BandInfo>& bigspace, SPOSetInfo& sposet,
       std::vector<int>& band2spo);

@@ -30,10 +30,10 @@ WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleS
   // mmorales: the proxy classes read from the particle set inside BFTrans
   BackflowTransformation *tr = BFTrans->makeClone(tqp);
   tr->resetTargetParticleSet(tqp);
-  SPOSetProxyForMSD* spo_up_C = new SPOSetProxyForMSD(dynamic_cast<SPOSetSingle*>(spo_up->refPhi->makeClone()),
+  SPOSetProxyForMSD* spo_up_C = new SPOSetProxyForMSD(dynamic_cast<SPOSet<Batching::SINGLE>*>(spo_up->refPhi->makeClone()),
 						      FirstIndex_up,
 						      LastIndex_up);
-  SPOSetProxyForMSD* spo_dn_C = new SPOSetProxyForMSD(dynamic_cast<SPOSetSingle*>(spo_dn->refPhi->makeClone()),
+  SPOSetProxyForMSD* spo_dn_C = new SPOSetProxyForMSD(dynamic_cast<SPOSet<Batching::SINGLE>*>(spo_dn->refPhi->makeClone()),
 						      FirstIndex_dn,
 						      LastIndex_dn);
   spo_up_C->occup= spo_up->occup;

@@ -16,7 +16,7 @@
 #include <OhmmsData/AttributeSet.h>
 #include <QMCWaveFunctions/SPOSetBuilderFactory.h>
 #include <Utilities/unit_conversion.h>
-#include "QMCWaveFunctions/SPOSetSingle.h"
+#include "QMCWaveFunctions/SPOSet.h"
 
 namespace qmcplusplus
 {
@@ -318,7 +318,7 @@ namespace qmcplusplus
         const std::string& sposet_name = sposet_names[i];
         app_log()<<"  evaluating orbitals in "+sposet_name+" on the grid"<< std::endl;
         std::vector<int>& sposet_inds = *sposet_indices[i];
-        SPOSetSingle& sposet = *(dynamic_cast<SPOSetSingle*>(sposets[i]));
+        SPOSet<Batching::SINGLE>& sposet = *(dynamic_cast<SPOSet<Batching::SINGLE>*>(sposets[i]));
         int nspo = sposet_inds.size();
         
         //set the batch size

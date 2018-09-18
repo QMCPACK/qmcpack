@@ -2305,8 +2305,8 @@ EinsplineSetExtended<StorageType>::registerTimers()
 }
 
 
-
-template<typename StorageType> SPOSetSingle*
+//This is not good since this should be a SPOSetBatched object
+template<typename StorageType> SPOSet<Batching::SINGLE>*
 EinsplineSetExtended<StorageType>::makeClone() const
 {
   EinsplineSetExtended<StorageType> *clone =
@@ -2332,7 +2332,7 @@ EinsplineSetHybrid<double>::Type()
 }
 
 
-template<typename StorageType> SPOSet*
+template<typename StorageType> SPOSet<Batching::SINGLE>*
 EinsplineSetHybrid<StorageType>::makeClone() const
 {
   EinsplineSetHybrid<StorageType> *clone =

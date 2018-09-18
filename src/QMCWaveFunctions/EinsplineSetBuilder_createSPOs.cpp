@@ -116,7 +116,7 @@ void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
   AnalyzeTwists2();
 }
 
-SPOSet*
+SPOSet<Batching::SINGLE>*
 EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   update_token(__FILE__,__LINE__,"createSPOSetFromXML");

@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_COMPOSITE_SPOSET_H
 #define QMCPLUSPLUS_COMPOSITE_SPOSET_H
 
-#include <QMCWaveFunctions/SPOSetSingle.h>
+#include <QMCWaveFunctions/SPOSet.h>
 #include <QMCWaveFunctions/BasisSetBase.h>
 #include <QMCWaveFunctions/SPOSetBuilder.h>
 #include "QMCWaveFunctions/SPOSetTypeAliases.h"
@@ -24,10 +24,12 @@
 namespace qmcplusplus
 {
 
-  class CompositeSPOSet : public SPOSetSingle
+  class CompositeSPOSet : public SPOSet<Batching::SINGLE>
   {
-      using SSTA = SPOSetTypeAliases;
-    using ValueType = QMCTraits::ValueType;
+    using QMCT = QMCTraits;
+    using ValueType = QMCT::ValueType;
+    using PosType = QMCT::PosType;
+    using SSTA = SPOSetTypeAliases;
     using IndexVector_t = SSTA::IndexVector_t;
     using ValueVector_t = SSTA::ValueVector_t;
     using ValueAlignedVector_t = SSTA::ValueAlignedVector_t;
@@ -47,8 +49,8 @@ namespace qmcplusplus
 
 
   public:
-    ///component SPOSetSingles
-    std::vector<SPOSetSingle*>    components;
+    ///component SPOSet<Batching::SINGLE>s
+    std::vector<SPOSet<Batching::SINGLE>*>    components;
     ///temporary storage for values
     std::vector<ValueVector_t*> component_values;
     ///temporary storage for gradients
@@ -62,18 +64,18 @@ namespace qmcplusplus
     ~CompositeSPOSet();
 
     ///add a sposet component to this composite sposet
-    void add(SPOSetSingle* component);
+    void add(SPOSet<Batching::SINGLE>* component);
 
     ///print out component info
     void report();
 
-    //SPOSetSingle interface methods
+    //SPOSet<Batching::SINGLE> interface methods
     ///size is determined by component sposets and nothing else
     inline void setOrbitalSetSize(int norbs) { }
 
     void resetTargetParticleSet(ParticleSet& P);
 
-    SPOSetSingle* makeClone() const;
+    SPOSet<Batching::SINGLE>* makeClone() const;
 
     /** add sposet clones from another Composite SPOSet
      *   should only be used in makeClone functions following shallow copy
@@ -113,9 +115,9 @@ namespace qmcplusplus
   {
 
     //SPOSetBuilder interface
-    SPOSetSingle* createSPOSetFromXML(xmlNodePtr cur);
+    SPOSet<Batching::SINGLE>* createSPOSetFromXML(xmlNodePtr cur);
 
-    SPOSetSingle* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input);
+    SPOSet<Batching::SINGLE>* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input);
     
   };
 }

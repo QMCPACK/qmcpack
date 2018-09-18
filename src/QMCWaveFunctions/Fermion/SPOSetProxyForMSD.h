@@ -16,7 +16,7 @@
  */
 #ifndef QMCPLUSPLUS_SPOSETPROXY_FORMSD_H
 #define QMCPLUSPLUS_SPOSETPROXY_FORMSD_H
-#include "QMCWaveFunctions/SPOSetSingle.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 namespace qmcplusplus
 {
@@ -26,7 +26,7 @@ namespace qmcplusplus
  * This class owns a SPOSet for all the states to be evaluated
  * and will be owned by a DiracDeterminantBase object.
  */
-struct SPOSetProxyForMSD: public SPOSetSingle
+struct SPOSetProxyForMSD: public SPOSet<Batching::SINGLE>
 {
 
   ///pointer to the SPOSet which evaluate the single-particle states

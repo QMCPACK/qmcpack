@@ -16,10 +16,14 @@
  * @brief implements the member functions of SPOSetProxy
  */
 #include "QMCWaveFunctions/Fermion/SPOSetProxy.h"
+#include "QMCWaveFunctions/SPOSet.h"
+#include "QMCWaveFunctions/SPOSetBatched.h"
+
 namespace qmcplusplus
 {
 
-SPOSetProxy::SPOSetProxy(SPOSetPtr const& spos, int first, int last)
+template<Batching B>
+SPOSetProxy<B>::SPOSetProxy(SPOSetPtr const& spos, int first, int last)
   : refPhi(spos)
 {
   className="SPOSetProxy";

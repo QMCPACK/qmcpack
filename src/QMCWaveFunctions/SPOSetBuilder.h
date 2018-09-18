@@ -45,7 +45,7 @@ namespace qmcplusplus
 class SPOSetBuilder: public QMCTraits, public MPIObjectBase
 {
 public:
-  using SPOPool_t = std::map<std::string,SPOSet*>;
+  using SPOPool_t = std::map<std::string,SPOSet<>*>;
   typedef std::vector<int> indices_t;
   typedef std::vector<RealType> energies_t;
 
@@ -57,7 +57,7 @@ public:
   std::vector<SPOSetInfo*> states;
 
   /// list of all sposets created by this builder
-  std::vector<SPOSet*> sposets;
+  std::vector<SPOSet<>*> sposets;
 
   SPOSetBuilder();
   virtual ~SPOSetBuilder() {}
@@ -80,13 +80,13 @@ public:
   }
 
   /// create an sposet from xml (legacy)
-  virtual SPOSet* createSPOSetFromXML(xmlNodePtr cur)=0;
+  virtual SPOSet<>* createSPOSetFromXML(xmlNodePtr cur)=0;
 
   /// create an sposet from a general xml request
-  virtual SPOSet* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info);
+  virtual SPOSet<>* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info);
 
   /// create an sposet from xml and save the resulting SPOSet
-  SPOSet* createSPOSet(xmlNodePtr cur);
+  SPOSet<>* createSPOSet(xmlNodePtr cur);
 
 
 };

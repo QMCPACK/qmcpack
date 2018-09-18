@@ -10,7 +10,7 @@
 // File created by: Peter Doak, Oak Ridge National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
 
-#include "SPOSetSingle.h"
+#include "SPOSet.h"
 
 namespace qmcplusplus
 {

@@ -34,7 +34,7 @@ namespace qmcplusplus
 // }
 
 void
-SlaterDetBatched::ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
+SlaterDet<Batching::BATCHED>::ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
                   std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
                   std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
 {
@@ -58,7 +58,7 @@ SlaterDetBatched::ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &i
     grad_det[idet].resize(sorted_walkers[idet].size());
     lapl_det[idet].resize(sorted_walkers[idet].size());
     if (sorted_walkers[idet].size())
-      dynamic_cast<DiracDeterminantBatched::DiracDeterminantEval*>(Dets[idet])->
+      Dets[idet]->
 	ratio(sorted_walkers[idet], sorted_iatList[idet], sorted_rNew[idet],
                         ratio_det[idet], grad_det[idet], lapl_det[idet]);
   }
@@ -74,7 +74,7 @@ SlaterDetBatched::ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &i
   }
 }
 
-void SlaterDetBatched::update (const std::vector<Walker_t*> &walkers,
+void SlaterDet<Batching::BATCHED>::update (const std::vector<Walker_t*> &walkers,
                         const std::vector<int> &iatList)
 {
   // Sort walkers by determinant number

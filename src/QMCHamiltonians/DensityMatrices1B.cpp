@@ -256,7 +256,7 @@ namespace qmcplusplus
     {
       app_log()<<"  sposets requested "<<sposets.size()<<" "<<i<<" "<<sposets[i]<< std::endl;
       app_log()<<"  size before "<<basis_functions.size()<< std::endl;
-      basis_functions.add(dynamic_cast<SPOSetSingle*>(get_sposet(sposets[i])));
+      basis_functions.add(dynamic_cast<SPOSet<Batching::SINGLE>*>(get_sposet(sposets[i])));
       app_log()<<"  size after  "<<basis_functions.size()<< std::endl;
     }
     basis_size = basis_functions.size();

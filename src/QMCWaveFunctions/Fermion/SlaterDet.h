@@ -18,7 +18,7 @@
 #ifndef QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 #define QMCPLUSPLUS_SLATERDETERMINANT_WITHBASE_H
 
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include <map>
 
@@ -31,12 +31,19 @@ namespace qmcplusplus
 //     and SlaterDeterminantWithBackflow to SlaterDet<true>
 //     and remove all virtuals and inline them
 
-class SlaterDet: public WaveFunctionComponent
+template<Batching batching = Batching::SINGLE>
+class SlaterDet;
+
+template<>
+class SlaterDet<Batching::SINGLE>: public WaveFunctionComponent
 {
 public:
+  using Determinant_t =  DiracDeterminant<Batching::SINGLE>;
 
+  std::vector<Determinant_t*>  Dets;
+  
   ///container for the DiracDeterminants
-  std::vector<DiracDeterminantBase*>  Dets;
+  //std::vector<DiracDeterminant*>  Dets;
   ///the last particle of each group
   std::vector<int> Last;
   std::map<std::string,SPOSet*> mySPOSet;
@@ -64,7 +71,7 @@ public:
 
   ///add a new DiracDeterminant to the list of determinants
   virtual
-  void add(DiracDeterminantBase* det, int ispin);
+  void add(DiracDeterminant<>* det, int ispin);
 
   ///set BF pointers
   virtual

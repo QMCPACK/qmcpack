@@ -24,7 +24,7 @@
 #include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
 #include "QMCWaveFunctions/lcao/CuspCorrection.h"
 
-#include "QMCWaveFunctions/SPOSetSingle.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
 namespace qmcplusplus
@@ -324,7 +324,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   ParticleSet::SingleParticlePos_t newpos;
   elec.makeMove(0, newpos);
 
-  dynamic_cast<SPOSetSingle*>(sposet)->evaluate(elec, 0, values);
+  dynamic_cast<SPOSet<Batching::SINGLE>*>(sposet)->evaluate(elec, 0, values);
 
   // Values from gen_cusp_corr.py
   REQUIRE(values[0] == Approx(0.00945227));
@@ -341,7 +341,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   elec.makeMove(0, newpos);
 
   values = 0.0;
-  dynamic_cast<SPOSetSingle*>(sposet)->evaluate(elec, 0, values);
+  dynamic_cast<SPOSet<Batching::SINGLE>*>(sposet)->evaluate(elec, 0, values);
   //std::cout << "values = " << values << std::endl;
   // Values from gen_cusp_corr.py
   REQUIRE(values[0] == Approx(9.5150713253));
@@ -354,7 +354,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
 
   values = 0.0;
-  dynamic_cast<SPOSetSingle*>(sposet)->evaluate(elec, 0, values, dpsi, d2psi);
+  dynamic_cast<SPOSet<Batching::SINGLE>*>(sposet)->evaluate(elec, 0, values, dpsi, d2psi);
 
   //std::cout << "values = " << values << std::endl;
   //std::cout << "dpsi = " << dpsi << std::endl;
@@ -389,7 +389,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   all_lap.resize(7, 7);
 
 
-  dynamic_cast<SPOSetSingle*>(sposet)->evaluate_notranspose(elec, 0, 7, all_values, all_grad, all_lap);
+  dynamic_cast<SPOSet<Batching::SINGLE>*>(sposet)->evaluate_notranspose(elec, 0, 7, all_values, all_grad, all_lap);
 
   // Values from gen_cusp_corr.py
   REQUIRE(values[0] == Approx(9.5150713253));
@@ -408,7 +408,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
 
   // Test the makeClone method
-  SPOSetSingle* sposet_clone = dynamic_cast<SPOSetSingle*>(sposet)->makeClone();
+  SPOSet<Batching::SINGLE>* sposet_clone = dynamic_cast<SPOSet<Batching::SINGLE>*>(sposet)->makeClone();
 
   sposet_clone->evaluate_notranspose(elec, 0, 7, all_values, all_grad, all_lap);
 

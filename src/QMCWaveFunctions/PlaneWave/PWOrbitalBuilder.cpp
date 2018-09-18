@@ -18,7 +18,7 @@
  */
 #include "QMCWaveFunctions/PlaneWave/PWOrbitalBuilder.h"
 #include "QMCWaveFunctions/PlaneWave/PWParameterSet.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantSingle.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/SPOSetScanner.h"
 #include "OhmmsData/ParameterSet.h"
@@ -108,8 +108,8 @@ bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
 {
   //catch parameters
   myParam->put(cur);
-  typedef SlaterDet SlaterDeterminant_t;
-  typedef DiracDeterminantSingle Det_t;
+  typedef SlaterDet<> SlaterDeterminant_t;
+  typedef DiracDeterminant<> Det_t;
   SlaterDeterminant_t* sdet(new SlaterDeterminant_t(targetPtcl));
   int spin_group=0;
   cur=cur->children;
@@ -134,7 +134,7 @@ bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
       if(lit == spomap.end())
       {
         app_log() << "  Create a PWOrbitalSet" << std::endl;;
-        SPOSetSingle* psi(createPW(cur,spin_group));
+        SPOSet<Batching::SINGLE>* psi(createPW(cur,spin_group));
         sdet->add(psi,ref);
         spomap[ref] = psi;
         adet = new Det_t(psi,firstIndex);
@@ -142,7 +142,7 @@ bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
       else
       {
         app_log() << "  Reuse a PWOrbitalSet" << std::endl;
-        adet = new Det_t(dynamic_cast<SPOSetSingle*>((*lit).second),firstIndex);
+        adet = new Det_t(dynamic_cast<SPOSet<Batching::SINGLE>*>((*lit).second),firstIndex);
       }
       app_log()<< "    spin=" << spin_group  << " id=" << id << " ref=" << ref << std::endl;
       if(adet)
@@ -236,7 +236,7 @@ bool PWOrbitalBuilder::createPWBasis(xmlNodePtr cur)
   return true;
 }
 
-SPOSetSingle*
+SPOSet<Batching::SINGLE>*
 PWOrbitalBuilder::createPW(xmlNodePtr cur, int spinIndex)
 {
   int nb=targetPtcl.last(spinIndex)-targetPtcl.first(spinIndex);

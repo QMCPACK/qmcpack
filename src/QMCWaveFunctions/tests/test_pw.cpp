@@ -130,10 +130,10 @@ const char *particles =
 
   REQUIRE(psi.getOrbitals().size() == 1);
   WaveFunctionComponent *orb = psi.getOrbitals()[0];
-  SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
+  SlaterDet<> *sd = dynamic_cast<SlaterDet<> *>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
-  SPOSetSingle* spo = dynamic_cast<SPOSetSingle*>(sd->mySPOSet.begin()->second);
+  SPOSet<Batching::SINGLE>* spo = dynamic_cast<SPOSet<Batching::SINGLE>*>(sd->mySPOSet.begin()->second);
   REQUIRE(spo != NULL);
   //SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   //REQUIRE(spo != NULL);
@@ -284,10 +284,10 @@ const char *particles =
 
   REQUIRE(psi.getOrbitals().size() == 1);
   WaveFunctionComponent *orb = psi.getOrbitals()[0];
-  SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
+  SlaterDet<> *sd = dynamic_cast<SlaterDet<> *>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
-  SPOSetSingle* spo = dynamic_cast<SPOSetSingle*>(sd->mySPOSet.begin()->second);
+  SPOSet<Batching::SINGLE>* spo = dynamic_cast<SPOSet<Batching::SINGLE>*>(sd->mySPOSet.begin()->second);
   REQUIRE(spo != NULL);
   //SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   //REQUIRE(spo != NULL);

@@ -61,7 +61,7 @@ public:
   /** initialize the Antisymmetric wave function for electrons
    * @param cur the current xml node
    */
-  virtual SPOSet* createSPOSetFromXML(xmlNodePtr cur) = 0;
+  virtual SPOSet<>* createSPOSetFromXML(xmlNodePtr cur) = 0;
 
   /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
    * @param cur the current xml node
@@ -69,7 +69,7 @@ public:
   virtual void set_metadata(int numOrbs, int TwistNum_inp) = 0;
 
   /** initialize with the existing SPOSet */
-  virtual SPOSet* createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info) = 0;
+  virtual SPOSet<>* createSPOSet(xmlNodePtr cur, SPOSetInputInfo& input_info) = 0;
 
   //////////////////////////////////////
   // HDF5-related data  and functions //

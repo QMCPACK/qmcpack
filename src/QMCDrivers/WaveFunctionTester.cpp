@@ -27,7 +27,7 @@
 #include "LongRange/StructFact.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
-#include "QMCWaveFunctions/SPOSetSingle.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Numerics/DeterminantOperators.h"
@@ -803,14 +803,14 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
     if (!checkSlaterDet) continue; // skip SlaterDet check if <backflow> is present
     // DiracDeterminantWithBackflow::evaluateLog requires a call to BackflowTransformation::evaluate in its owning SlaterDetWithBackflow to work correctly.
-    SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
+    SlaterDet<> *sd = dynamic_cast<SlaterDet<> *>(orb);
     if (sd)
     {
       for (int isd = 0; isd < sd->Dets.size(); isd++)
       {
         ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
         ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
-        DiracDeterminantBase *det = sd->Dets[isd];
+        DiracDeterminant<> *det = sd->Dets[isd];
         RealType logpsi2 = det->evaluateLog(W, G, L); // this won't work with backflow
         fail_log << "  Slater Determiant " << isd << " (for particles " << det->FirstIndex << " to " << det->LastIndex << ") log psi = " << logpsi2 << std::endl;
         // Should really check the condition number on the matrix determinant.
@@ -1975,8 +1975,8 @@ void WaveFunctionTester::runwftricks()
   for (int i=0; i<Orbitals.size(); i++)
     if ("SlaterDet"==Orbitals[i]->OrbitalName)
       SDindex=i;
-  SPOSetSingle* Phi= dynamic_cast<SPOSetSingle*>
-    (dynamic_cast<SlaterDet *>(Orbitals[SDindex])->getPhi());
+  SPOSet<Batching::SINGLE>* Phi= dynamic_cast<SPOSet<Batching::SINGLE>*>
+    (dynamic_cast<SlaterDet<> *>(Orbitals[SDindex])->getPhi());
   int NumOrbitals=Phi->getBasisSetSize();
   app_log()<<"Basis set size: "<<NumOrbitals<< std::endl;
   std::vector<int> SPONumbers(0,0);

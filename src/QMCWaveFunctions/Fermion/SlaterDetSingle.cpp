@@ -45,7 +45,7 @@ void SlaterDetSingle::add(SPOSet* sposet, const std::string& aname)
   if (mySPOSet.find(aname) == mySPOSet.end())
   {
     mySPOSet[aname] = sposet;
-    dynamic_cast<SPOSetSingle*>(sposet)->objectName = aname;
+    dynamic_cast<SPOSet<Batching::SINGLE>*>(sposet)->objectName = aname;
   }
   else
   {
@@ -224,7 +224,7 @@ WaveFunctionComponentPtr SlaterDetSingle::makeClone(ParticleSet& tqp) const
       {
         if (spo == Dets[i]->getPhi())
         {
-          Determinant_t* newD=Dets[i]->makeCopy(dynamic_cast<SPOSetSingle*>(spo_clone));
+          Determinant_t* newD=Dets[i]->makeCopy(dynamic_cast<SPOSet<Batching::SINGLE>*>(spo_clone));
           newD->resetTargetParticleSet(tqp);
           myclone->add(newD, i);
         }
@@ -240,7 +240,7 @@ WaveFunctionComponentPtr SlaterDetSingle::makeClone(ParticleSet& tqp) const
     myclone->add(spo_clone, spo->objectName);
     for (int i = 0; i < Dets.size(); ++i)
     {
-      Determinant_t* newD=Dets[i]->makeCopy(dynamic_cast<SPOSetSingle*>(spo_clone));
+      Determinant_t* newD=Dets[i]->makeCopy(dynamic_cast<SPOSet<Batching::SINGLE>*>(spo_clone));
       newD->resetTargetParticleSet(tqp);
       myclone->add(newD, i);
     }
