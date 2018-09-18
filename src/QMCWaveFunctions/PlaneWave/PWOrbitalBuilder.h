@@ -48,7 +48,7 @@ private:
 #endif
 
   //using SPOSetPtr = SPOSet<Batching::SINGLE>::SPOSetPtr;
-  std::map<std::string,SPOSet*> spomap;
+  std::map<std::string,SPOSet<>*> spomap;
   PtclPoolType& ptclPool;
 
   ///Read routine for HDF wavefunction file version 0.10

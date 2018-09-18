@@ -44,6 +44,10 @@ public:
   // Type definitions //
   //////////////////////
   using QMCT = QMCTraits;
+  using PosType = QMCT::PosType;
+  using RealType = QMCT::RealType;
+
+  
   typedef CrystalLattice<ParticleSet::Scalar_t,OHMMS_DIM> UnitCellType;
   
   ///////////
@@ -287,7 +291,9 @@ protected:
   // Cuda equivalents of the above
   typedef typename StorageTypeConverter<StorageType,CUDA_PRECISION>::CudaStorageType CudaStorageType;
   typedef typename MultiOrbitalTraits<CudaStorageType,OHMMS_DIM>::CudaSplineType CudaSplineType;
-
+  using CudaRealType = QMCT::CudaRealType;
+  using CudaComplexType = QMCT::CudaComplexType;
+  
   CudaSplineType *CudaMultiSpline;
   gpu::device_vector<CudaStorageType> CudaValueVector, CudaGradLaplVector;
   gpu::device_vector<CudaStorageType*> CudaValuePointers, CudaGradLaplPointers;

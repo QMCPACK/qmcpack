@@ -128,7 +128,7 @@ bool PWOrbitalBuilder::putSlaterDet(xmlNodePtr cur)
       if(ref == "0")
         ref=id;
       int firstIndex=targetPtcl.first(spin_group);
-      std::map<std::string,SPOSet*>::iterator lit(spomap.find(ref));
+      std::map<std::string,SPOSet<>*>::iterator lit(spomap.find(ref));
       Det_t* adet=0;
       //int spin_group=0;
       if(lit == spomap.end())

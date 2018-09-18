@@ -25,13 +25,13 @@
 namespace qmcplusplus
 {
 
-DiracDeterminant<Batching::BATCHED>::DiracDeterminant(SPOSet* const &spos, int first) :
-  DiracDeterminant<Batching::SINGLE>(first), Phi(dynamic_cast<SPOSetBatched*>(spos))
+DiracDeterminant<Batching::BATCHED>::DiracDeterminant(SPOSet<Batching::BATCHED>* const &spos, int first) :
+  DiracDeterminant<Batching::SINGLE>(first), Phi(dynamic_cast<SPOSet<Batching::BATCHED>*>(spos))
 {
   registerTimers();
 }
 
-DiracDeterminant<>* DiracDeterminant<Batching::BATCHED>::makeCopy(SPOSet* spo) const
+  DiracDeterminant<>* DiracDeterminant<Batching::BATCHED>::makeCopy(SPOSet<Batching::BATCHED>* spo) const
 {
   DiracDeterminant<Batching::BATCHED>* dclone= new DiracDeterminant<Batching::BATCHED>(spo);
   dclone->set(FirstIndex,LastIndex-FirstIndex);

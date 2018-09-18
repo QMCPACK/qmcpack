@@ -15,7 +15,7 @@
 
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
-
+#include "Configuration.h"
 
 namespace qmcplusplus
 {
@@ -26,9 +26,13 @@ namespace qmcplusplus
    */
   struct LCAOrbitalSet: public SPOSet<Batching::SINGLE>
   {
-    typedef RealBasisSetBase<RealType> basis_type;
+    using QMCT = QMCTraits;
+    typedef RealBasisSetBase<QMCT::RealType> basis_type;
     typedef basis_type::vgl_type vgl_type;
-
+    using IndexType = QMCT::IndexType;
+    using ValueType = QMCT::ValueType;
+    using RealType = QMCT::RealType;
+    
     ///level of printing
     int ReportLevel;
     ///pointer to the basis set

@@ -28,7 +28,7 @@ namespace qmcplusplus
   public:
     
     typedef std::map<std::string,ParticleSet*>         PtclPoolType;
-    typedef std::map<std::string,SPOSet*>        SPOMapType;
+    typedef std::map<std::string,SPOSet<>*>        SPOMapType;
     typedef QMCTraits::RealType                        RealType;
     typedef QMCTraits::ValueType                       ValueType;
     typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
@@ -65,7 +65,7 @@ namespace qmcplusplus
 
       // scanning the SPO sets
       xmlNodePtr cur_save=cur;
-      SPOSet* mySPOSet;
+      SPOSet<>* mySPOSet;
       for (SPOMapType::iterator spo_iter=SPOMap.begin(); spo_iter!=SPOMap.end(); spo_iter++)
       {
         app_log() << "  Processing SPO " << spo_iter->first << std::endl;
@@ -97,7 +97,7 @@ namespace qmcplusplus
     }
 
     // scanning a path
-    void scan_path(xmlNodePtr cur, SPOSet* mySPOSet, std::string prefix)
+    void scan_path(xmlNodePtr cur, SPOSet<>* mySPOSet, std::string prefix)
     {
       std::string file_name;
       file_name=prefix+"_v.dat";

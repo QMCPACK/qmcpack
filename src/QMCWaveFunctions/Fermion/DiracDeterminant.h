@@ -41,7 +41,7 @@ class DiracDeterminant<Batching::SINGLE> : public WaveFunctionComponent
 {
 protected:
   ParticleSet* targetPtcl;
-
+  static constexpr Batching B = Batching::SINGLE;
 public:
   bool Optimizable;
   void registerTimers();
@@ -76,7 +76,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminant(SPOSet* const &spos, int first=0);
+  DiracDeterminant(SPOSet<B>* const &spos, int first=0);
   DiracDeterminant(int first = 0);
 
   ///default destructor
@@ -95,7 +95,7 @@ public:
   ///** return a clone of Phi
   // */
   //SPOSetPtr clonePhi() const;
-  virtual SPOSet* getPhi() { return dynamic_cast<SPOSet*>(Phi); }
+  virtual SPOSet<B>* getPhi() { return dynamic_cast<SPOSet<B>*>(Phi); }
   
   inline IndexType rows() const { return NumPtcls; }
 
@@ -144,7 +144,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  virtual DiracDeterminant* makeCopy(SPOSet* spo) const;
+  virtual DiracDeterminant* makeCopy(SPOSet<B>* spo) const;
   //       virtual DiracDeterminantBase* makeCopy(ParticleSet& tqp, SPOSet* spo) const {return makeCopy(spo); };
 
 

@@ -37,6 +37,8 @@ class SlaterDet;
 template<>
 class SlaterDet<Batching::SINGLE>: public WaveFunctionComponent
 {
+protected:
+  static constexpr Batching B = Batching::SINGLE;
 public:
   using Determinant_t =  DiracDeterminant<Batching::SINGLE>;
 
@@ -46,7 +48,7 @@ public:
   //std::vector<DiracDeterminant*>  Dets;
   ///the last particle of each group
   std::vector<int> Last;
-  std::map<std::string,SPOSet*> mySPOSet;
+  std::map<std::string,SPOSet<B>*> mySPOSet;
   
   /**  constructor
    * @param targetPtcl target Particleset
@@ -67,7 +69,7 @@ public:
   }
 
   ///add a SPOSet
-  virtual void add(SPOSet* sposet, const std::string& aname);
+  virtual void add(SPOSet<B>* sposet, const std::string& aname);
 
   ///add a new DiracDeterminant to the list of determinants
   virtual
@@ -189,7 +191,7 @@ public:
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   virtual
-  SPOSet* getPhi(int i=0)
+  SPOSet<B>* getPhi(int i=0)
   {
     return Dets[i]->getPhi();
   }

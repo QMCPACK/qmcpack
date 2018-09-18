@@ -36,6 +36,8 @@ namespace qmcplusplus
 template<>
 class DiracDeterminant<Batching::BATCHED> : public DiracDeterminant<Batching::SINGLE>
 {
+protected:
+  static constexpr Batching B = Batching::BATCHED;
 public:
   using SSTA = SPOSetTypeAliases;
   typedef SSTA::IndexVector_t IndexVector_t;
@@ -48,16 +50,16 @@ public:
   using CudaValueType =  QMCT::CudaValueType;
   using CudaRealType = QMCT::CudaRealType;
 
-  using SPOSetPtr = SPOSetBatched*;
+  using SPOSetPtr = SPOSet<B>*;
   SPOSetPtr Phi; //Out local Phi_
 
   SPOSetPtr getPhi() { return Phi; }
 
-  virtual DiracDeterminant<>* makeCopy(SPOSet* spo) const;
+  virtual DiracDeterminant<>* makeCopy(SPOSet<B>* spo) const;
   //virtual DiracDeterminant<>Batching::BATCHED>* makeCopy(SPOSetBatched* spo) const;
 
   DiracDeterminant<Batching::BATCHED>();
-  DiracDeterminant<Batching::BATCHED>(SPOSet* const &spos, int first=0);
+  DiracDeterminant<Batching::BATCHED>(SPOSet<B>* const &spos, int first=0);
   DiracDeterminant<Batching::BATCHED>(const DiracDeterminant<Batching::BATCHED>& s) = delete;
 
   virtual inline void checkInVariables(opt_variables_type& active)

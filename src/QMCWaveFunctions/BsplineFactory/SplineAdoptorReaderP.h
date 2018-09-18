@@ -134,7 +134,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
     *target = (multi_UBspline_3d_d*) bspline->MultiSpline;
   }
 
-  SPOSet* create_spline_set(int spin, const BandInfoGroup& bandgroup)
+  SPOSet<>* create_spline_set(int spin, const BandInfoGroup& bandgroup)
   {
     ReportEngine PRE("SplineC2XAdoptorReader","create_spline_set(spin,SPE*)");
     //Timer c_prep, c_unpack,c_fft, c_phase, c_spline, c_newphase, c_h5, c_init;
@@ -251,7 +251,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
     }
 
     clear();
-    return dynamic_cast<SPOSet*>(bspline);
+    return dynamic_cast<SPOSet<>*>(bspline);
   }
 
   /** fft and spline cG

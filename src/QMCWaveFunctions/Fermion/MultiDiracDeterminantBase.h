@@ -26,6 +26,7 @@
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase_help.h"
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
+#include "QMCWaveFunctions/SPOSetTypeAliases.h"
 //#include "Numerics/OhmmsBlas.h"
 
 namespace qmcplusplus
@@ -42,13 +43,14 @@ public:
   // Optimizable parameters
   opt_variables_type myVars;
 
-  typedef SPOSet::IndexVector_t IndexVector_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSet::GradVector_t  GradVector_t;
-  typedef SPOSet::GradMatrix_t  GradMatrix_t;
-  typedef SPOSet::HessMatrix_t  HessMatrix_t;
-  typedef SPOSet::HessType      HessType;
+  using SSTA = SPOSetTypeAliases;
+  typedef SSTA::IndexVector_t IndexVector_t;
+  typedef SSTA::ValueVector_t ValueVector_t;
+  typedef SSTA::ValueMatrix_t ValueMatrix_t;
+  typedef SSTA::GradVector_t  GradVector_t;
+  typedef SSTA::GradMatrix_t  GradMatrix_t;
+  typedef SSTA::HessMatrix_t  HessMatrix_t;
+  typedef SSTA::HessType      HessType;
 
   /** constructor
    *@param spos the single-particle orbital set

@@ -18,25 +18,20 @@
 namespace qmcplusplus
 {
 
-SPOSetProxyForMSD::SPOSetProxyForMSD(SPOSetPtr const& spos, int first, int last)
-  : refPhi(spos)
-{
-  className="SPOSetProxy";
-  OrbitalSetSize=last-first;
-  setOrbitalSetSize(refPhi->getOrbitalSetSize());
-}
-
-void SPOSetProxyForMSD::resetParameters(const opt_variables_type& optVariables)
+template<Batching B>
+void SPOSetProxyForMSD<B>::resetParameters(const opt_variables_type& optVariables)
 {
   refPhi->resetParameters(optVariables);
 }
 
-void SPOSetProxyForMSD::resetTargetParticleSet(ParticleSet& P)
+template<Batching B>
+void SPOSetProxyForMSD<B>::resetTargetParticleSet(ParticleSet& P)
 {
   refPhi->resetTargetParticleSet(P);
 }
 
-void SPOSetProxyForMSD::setOrbitalSetSize(int norbs)
+template<Batching B>
+void SPOSetProxyForMSD<B>::setOrbitalSetSize(int norbs)
 {
   //psiM.resize(norbs,OrbitalSetSize);
   //dpsiM.resize(norbs,OrbitalSetSize);
@@ -53,32 +48,38 @@ void SPOSetProxyForMSD::setOrbitalSetSize(int norbs)
   grad_grad_gradV.resize(norbs);
 }
 
-void SPOSetProxyForMSD::evaluateForPtclMove(const ParticleSet& P, int iat)
+template<Batching B>
+void SPOSetProxyForMSD<B>::evaluateForPtclMove(const ParticleSet& P, int iat)
 {
   refPhi->evaluate(P, iat, psiV);
 }
 
-void SPOSetProxyForMSD::evaluateAllForPtclMove(const ParticleSet& P, int iat)
+template<Batching B>
+void SPOSetProxyForMSD<B>::evaluateAllForPtclMove(const ParticleSet& P, int iat)
 {
   refPhi->evaluate(P, iat, psiV, dpsiV, d2psiV);
 }
 
-void SPOSetProxyForMSD::evaluateForWalkerMove(const ParticleSet& P, int first, int last)
+template<Batching B>
+void SPOSetProxyForMSD<B>::evaluateForWalkerMove(const ParticleSet& P, int first, int last)
 {
   refPhi->evaluate_notranspose(P,first,last,psiM,dpsiM,d2psiM);
 }
 
-void SPOSetProxyForMSD::evaluateForWalkerMoveWithHessian(const ParticleSet& P, int first, int last)
+template<Batching B>
+void SPOSetProxyForMSD<B>::evaluateForWalkerMoveWithHessian(const ParticleSet& P, int first, int last)
 {
   refPhi->evaluate_notranspose(P,first,last,psiM,dpsiM,grad_grad_psiM);
 }
 
-void SPOSetProxyForMSD::evaluateForWalkerMoveWithThirdDeriv(const ParticleSet& P, int first, int last)
+template<Batching B>
+void SPOSetProxyForMSD<B>::evaluateForWalkerMoveWithThirdDeriv(const ParticleSet& P, int first, int last)
 {
   refPhi->evaluate_notranspose(P,first,last,psiM,dpsiM,grad_grad_psiM,grad_grad_grad_psiM);
 }
 
-void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+template<Batching B>
+void SPOSetProxyForMSD<B>::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
   int n=occup.cols();
   for(int i=0; i<n; i++)
@@ -88,7 +89,8 @@ void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int iat, ValueVector_t& p
   }
 }
 
-void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int iat,
+template<Batching B>
+void SPOSetProxyForMSD<B>::evaluate(const ParticleSet& P, int iat,
                                  ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
 {
   int n=occup.cols();
@@ -101,7 +103,8 @@ void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int iat,
   }
 }
 
-void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int first, int last,
+template<Batching B>
+void SPOSetProxyForMSD<B>::evaluate(const ParticleSet& P, int first, int last,
                                  ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
 {
   int n=occup.cols();
@@ -117,7 +120,8 @@ void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int first, int last,
   }
 }
 
-void SPOSetProxyForMSD::evaluate_notranspose(const ParticleSet& P, int first, int last,
+template<Batching B>
+void SPOSetProxyForMSD<B>::evaluate_notranspose(const ParticleSet& P, int first, int last,
     ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
 {
   int n=occup.cols();
@@ -133,7 +137,8 @@ void SPOSetProxyForMSD::evaluate_notranspose(const ParticleSet& P, int first, in
   }
 }
 
-void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int first, int last,
+template<Batching B>
+void SPOSetProxyForMSD<B>::evaluate(const ParticleSet& P, int first, int last,
                                  ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
 {
   int n=occup.cols();
@@ -149,7 +154,8 @@ void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int first, int last,
   }
 }
 
-void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int first, int last,
+template<Batching B>
+void SPOSetProxyForMSD<B>::evaluate(const ParticleSet& P, int first, int last,
                                  ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet,
                                  GGGMatrix_t& grad_grad_grad_logdet)
 {
@@ -167,7 +173,8 @@ void SPOSetProxyForMSD::evaluate(const ParticleSet& P, int first, int last,
   }
 }
 
-void SPOSetProxyForMSD::evaluate_notranspose(const ParticleSet& P, int first, int last,
+template<Batching B>
+void SPOSetProxyForMSD<B>::evaluate_notranspose(const ParticleSet& P, int first, int last,
      ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
 {
   int n=occup.cols();
@@ -183,7 +190,8 @@ void SPOSetProxyForMSD::evaluate_notranspose(const ParticleSet& P, int first, in
   }
 }
 
-void SPOSetProxyForMSD::evaluate_notranspose(const ParticleSet& P, int first, int last,
+template<Batching B>
+void SPOSetProxyForMSD<B>::evaluate_notranspose(const ParticleSet& P, int first, int last,
      ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet,
      GGGMatrix_t& grad_grad_grad_logdet)
 {

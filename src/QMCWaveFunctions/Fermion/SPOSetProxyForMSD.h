@@ -18,6 +18,7 @@
 #define QMCPLUSPLUS_SPOSETPROXY_FORMSD_H
 #include "QMCWaveFunctions/SPOSet.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
+#include "QMCWaveFunctions/SPOSetTypeAliases.h"
 namespace qmcplusplus
 {
 
@@ -26,9 +27,20 @@ namespace qmcplusplus
  * This class owns a SPOSet for all the states to be evaluated
  * and will be owned by a DiracDeterminantBase object.
  */
-struct SPOSetProxyForMSD: public SPOSet<Batching::SINGLE>
+template<Batching B>
+struct SPOSetProxyForMSD: public SPOSet<B>
 {
-
+  using SPOSetPtr = SPOSet<B>*;
+  using SSTA = SPOSetTypeAliases;
+  using ValueMatrix_t = SSTA::ValueMatrix_t;
+  using GradMatrix_t = SSTA::GradMatrix_t;
+  using GradVector_t = SSTA::GradVector_t;
+  using HessMatrix_t = SSTA::HessMatrix_t;
+  using HessVector_t = SSTA::HessVector_t;
+  using GGGMatrix_t = SSTA::GGGMatrix_t;
+  using GGGVector_t = SSTA::GGGVector_t;
+  using ValueVector_t = SSTA::ValueVector_t;
+  
   ///pointer to the SPOSet which evaluate the single-particle states
   SPOSetPtr refPhi;
   ///container for the values
@@ -52,6 +64,9 @@ struct SPOSetProxyForMSD: public SPOSet<Batching::SINGLE>
   ///contatiner for the laplacians for a particle
   ValueVector_t d2psiV;
 
+  using SPOSet<B>::className;
+  using SPOSet<B>::OrbitalSetSize;
+  
   Matrix<int> occup;
 
   int workingSet;
@@ -61,7 +76,14 @@ struct SPOSetProxyForMSD: public SPOSet<Batching::SINGLE>
    * @param first the first particle index
    * @param last the last particle index
    */
-  SPOSetProxyForMSD(SPOSetPtr const& spos, int first, int last);
+  SPOSetProxyForMSD(SPOSetPtr const& spos, int first, int last)
+    : refPhi(spos)
+  {
+    className="SPOSetProxy";
+    OrbitalSetSize=last-first;
+    setOrbitalSetSize(refPhi->getOrbitalSetSize());
+  }
+
   void resetParameters(const opt_variables_type& optVariables);
   void resetTargetParticleSet(ParticleSet& P);
   void setOrbitalSetSize(int norbs);
