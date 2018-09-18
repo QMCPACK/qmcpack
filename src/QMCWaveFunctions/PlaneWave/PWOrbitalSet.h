@@ -58,7 +58,7 @@ public:
    */
   ~PWOrbitalSet();
 
-  SPOSet* makeClone() const;
+  SPOSet<>* makeClone() const;
   /** resize  the orbital base
    * @param bset PWBasis
    * @param nbands number of bands

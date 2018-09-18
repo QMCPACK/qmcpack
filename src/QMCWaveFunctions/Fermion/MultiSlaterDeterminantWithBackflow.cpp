@@ -30,10 +30,10 @@ WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleS
   // mmorales: the proxy classes read from the particle set inside BFTrans
   BackflowTransformation *tr = BFTrans->makeClone(tqp);
   tr->resetTargetParticleSet(tqp);
-  SPOSetProxyForMSD* spo_up_C = new SPOSetProxyForMSD(dynamic_cast<SPOSet<Batching::SINGLE>*>(spo_up->refPhi->makeClone()),
+  SPOSetProxyForMSD<>* spo_up_C = new SPOSetProxyForMSD<>(dynamic_cast<SPOSet<Batching::SINGLE>*>(spo_up->refPhi->makeClone()),
 						      FirstIndex_up,
 						      LastIndex_up);
-  SPOSetProxyForMSD* spo_dn_C = new SPOSetProxyForMSD(dynamic_cast<SPOSet<Batching::SINGLE>*>(spo_dn->refPhi->makeClone()),
+  SPOSetProxyForMSD<>* spo_dn_C = new SPOSetProxyForMSD<>(dynamic_cast<SPOSet<Batching::SINGLE>*>(spo_dn->refPhi->makeClone()),
 						      FirstIndex_dn,
 						      LastIndex_dn);
   spo_up_C->occup= spo_up->occup;
@@ -52,14 +52,14 @@ WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleS
   }
   for(int i=0; i<dets_up.size(); i++)
   {
-    DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) dets_up[i]->makeCopy((SPOSet*) clone->spo_up);
+    DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) dets_up[i]->makeCopy((SPOSet<>*) clone->spo_up);
     dclne->BFTrans=tr;
     dclne->resetTargetParticleSet(tr->QP);
     clone->dets_up.push_back(dclne);
   }
   for(int i=0; i<dets_dn.size(); i++)
   {
-    DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) dets_dn[i]->makeCopy((SPOSet*) clone->spo_dn);
+    DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) dets_dn[i]->makeCopy((SPOSet<>*) clone->spo_dn);
     dclne->BFTrans=tr;
     dclne->resetTargetParticleSet(tr->QP);
     clone->dets_dn.push_back(dclne);

@@ -35,7 +35,7 @@ struct EGOSet: public SPOSet
   EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2);
   EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2, const std::vector<int>& d);
 
-  SPOSet* makeClone() const
+  SPOSet<>* makeClone() const
   {
     return new EGOSet(*this);
   }
@@ -134,8 +134,8 @@ public:
   /** initialize the Antisymmetric wave function for electrons
   *@param cur the current xml node
   */
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
-  SPOSet* createSPOSetFromIndices(indices_t& indices);
+  SPOSet<>* createSPOSetFromXML(xmlNodePtr cur);
+  SPOSet<>* createSPOSetFromIndices(indices_t& indices);
 
 };
 }

@@ -52,7 +52,7 @@ struct AtomicBasisBuilder: public SPOSetBuilder
   bool put(xmlNodePtr cur);
   bool putH5(hdf_archive &hin);
 
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur)
+  SPOSet<>* createSPOSetFromXML(xmlNodePtr cur)
   {
     return 0;
   }

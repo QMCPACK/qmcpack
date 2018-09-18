@@ -28,7 +28,7 @@ namespace qmcplusplus
  * This class owns a SPOSet for all the states to be evaluated
  * and will be owned by a DiracDeterminantBase object.
  */
-template<Batching B>
+template<Batching B = Batching::SINGLE>
 struct SPOSetProxy : public SPOSet<B>
 {
   using SPOSetPtr = SPOSet<B>*;
@@ -44,7 +44,9 @@ struct SPOSetProxy : public SPOSet<B>
   using HessType = SSTA::HessType;
   using HessArray_t = SSTA::HessArray_t;
   using GGGMatrix_t = SSTA::GGGMatrix_t;
-    
+
+  using SPOSet<B>::className;
+  using SPOSet<B>::OrbitalSetSize;
   ///container for the values
   ValueMatrix_t psiM;
   ///container for the gradients
@@ -63,25 +65,25 @@ struct SPOSetProxy : public SPOSet<B>
    * @param first the first particle index
    * @param last the last particle index
    */
-SPOSetProxy<B>::SPOSetProxy(SPOSetPtr const& spos, int first, int last)
-  : refPhi(spos)
-{
-  className="SPOSetProxy";
-  OrbitalSetSize=last-first;
-  setOrbitalSetSize(refPhi->getOrbitalSetSize());
-}
+  SPOSetProxy(SPOSetPtr const& spos, int first, int last)
+    : refPhi(spos)
+  {
+    className="SPOSetProxy";
+    OrbitalSetSize=last-first;
+    setOrbitalSetSize(refPhi->getOrbitalSetSize());
+  }
 
-void SPOSetProxy::resetParameters(const opt_variables_type& optVariables)
+void resetParameters(const opt_variables_type& optVariables)
 {
   refPhi->resetParameters(optVariables);
 }
 
-void SPOSetProxy::resetTargetParticleSet(ParticleSet& P)
+void resetTargetParticleSet(ParticleSet& P)
 {
   refPhi->resetTargetParticleSet(P);
 }
 
-void SPOSetProxy::setOrbitalSetSize(int norbs)
+void setOrbitalSetSize(int norbs)
 {
   //psiM.resize(norbs,OrbitalSetSize);
   //dpsiM.resize(norbs,OrbitalSetSize);
@@ -94,7 +96,7 @@ void SPOSetProxy::setOrbitalSetSize(int norbs)
   d2psiV.resize(norbs);
 }
 
-void SPOSetProxy::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 {
   refPhi->evaluate(P, iat, psiV);
   std::copy(psiV.begin(),psiV.begin()+OrbitalSetSize,psi.begin());
@@ -102,7 +104,7 @@ void SPOSetProxy::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   std::copy(psiV.begin(),psiV.end(),psiM[iat]);
 }
 
-void SPOSetProxy::evaluate(const ParticleSet& P, int iat,
+void evaluate(const ParticleSet& P, int iat,
                            ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
 {
   refPhi->evaluate(P, iat, psiV, dpsiV, d2psiV);
@@ -115,7 +117,7 @@ void SPOSetProxy::evaluate(const ParticleSet& P, int iat,
   std::copy(d2psiV.begin(),d2psiV.end(),d2psiM[iat]);
 }
 
-void SPOSetProxy::evaluate(const ParticleSet& P, int first, int last
+void evaluate(const ParticleSet& P, int first, int last
                            , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
 {
   //evaluate all using notranspose
@@ -131,7 +133,7 @@ void SPOSetProxy::evaluate(const ParticleSet& P, int first, int last
     std::copy(d2psiM[i],d2psiM[i]+OrbitalSetSize,d2logdet[i]);
 }
 
-void SPOSetProxy::evaluate_notranspose(const ParticleSet& P, int first, int last
+void evaluate_notranspose(const ParticleSet& P, int first, int last
                                        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, ValueMatrix_t& d2logdet)
 {
   //evaluate all
@@ -145,26 +147,26 @@ void SPOSetProxy::evaluate_notranspose(const ParticleSet& P, int first, int last
     std::copy(d2psiM[i],d2psiM[i]+OrbitalSetSize,d2logdet[i]);
 }
 
-void SPOSetProxy::evaluate(const ParticleSet& P, int first, int last
+void evaluate(const ParticleSet& P, int first, int last
                            , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
 {
   APP_ABORT("SPOSetProxy::evaluate_notranspose need specialization for GGGMatrix.\n");
 }
 
-void SPOSetProxy::evaluate(const ParticleSet& P, int first, int last
+void evaluate(const ParticleSet& P, int first, int last
                            , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet
                            , GGGMatrix_t& grad_grad_grad_logdet)
 {
   APP_ABORT("SPOSetProxy::evaluate_notranspose need specialization for GGGMatrix.\n");
 }
 
-void SPOSetProxy::evaluate_notranspose(const ParticleSet& P, int first, int last
+void evaluate_notranspose(const ParticleSet& P, int first, int last
                                        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
 {
   APP_ABORT("SPOSetProxy::evaluate_notranspose need specialization for GGGMatrix.\n");
 }
 
-void SPOSetProxy::evaluate_notranspose(const ParticleSet& P, int first, int last
+void evaluate_notranspose(const ParticleSet& P, int first, int last
                                        , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet
                                        , GGGMatrix_t& grad_grad_grad_logdet)
 {

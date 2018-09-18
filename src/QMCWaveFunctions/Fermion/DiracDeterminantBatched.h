@@ -59,7 +59,7 @@ public:
   //virtual DiracDeterminant<>Batching::BATCHED>* makeCopy(SPOSetBatched* spo) const;
 
   DiracDeterminant<Batching::BATCHED>();
-  DiracDeterminant<Batching::BATCHED>(SPOSet<B>* const &spos, int first=0);
+  DiracDeterminant<Batching::BATCHED>(SPOSet<>* const &spos, int first=0);
   DiracDeterminant<Batching::BATCHED>(const DiracDeterminant<Batching::BATCHED>& s) = delete;
 
   virtual inline void checkInVariables(opt_variables_type& active)

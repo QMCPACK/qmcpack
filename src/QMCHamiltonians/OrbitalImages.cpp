@@ -190,7 +190,7 @@ namespace qmcplusplus
       APP_ABORT("OrbitalImages::put  must have at least one sposet");
     for(int i=0;i<sposet_names.size();++i)
     {
-      SPOSet* sposet = get_sposet(sposet_names[i]);
+      SPOSet<>* sposet = get_sposet(sposet_names[i]);
       if(sposet==0)
         APP_ABORT("OrbitalImages::put  sposet "+sposet_names[i]+" does not exist");
       sposets.push_back(sposet);
@@ -254,7 +254,7 @@ namespace qmcplusplus
     for(int i=0;i<sposet_names.size();++i)
     {
       std::vector<int>& sposet_inds = *sposet_indices[i];
-      SPOSet& sposet = *sposets[i];
+      SPOSet<>& sposet = *sposets[i];
       if(sposet_inds.size()==sposet.size())
         app_log()<<pad<<"  "<<sposet_names[i]<<" = all "<<sposet.size()<<" orbitals"<< std::endl;
       else

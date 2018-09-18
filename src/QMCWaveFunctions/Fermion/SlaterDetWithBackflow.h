@@ -149,7 +149,7 @@ public:
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
-  SPOSet* getPhi(int i=0)
+  SPOSet<>* getPhi(int i=0)
   {
     return Dets[i]->getPhi();
   }

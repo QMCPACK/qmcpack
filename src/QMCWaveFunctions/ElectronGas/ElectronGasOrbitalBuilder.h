@@ -35,7 +35,10 @@ class  BackflowTransformation;
 
 struct RealEGOSet: public SPOSet<Batching::SINGLE>
 {
-
+  using PosType = QMCT::PosType;
+  using RealType = QMCT::RealType;
+  using GradType = QMCT::GradType;
+  
   int KptMax;
   RealType kdotr;
   std::vector<PosType> K;

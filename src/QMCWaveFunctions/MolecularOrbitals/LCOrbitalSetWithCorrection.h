@@ -74,7 +74,7 @@ public:
    */
   ~LCOrbitalSetWithCorrection() {}
 
-  SPOSet* makeClone() const
+  SPOSet<>* makeClone() const
   {
     LCOrbitalSetWithCorrection<BS,true>* myclone = new LCOrbitalSetWithCorrection<BS,true>(*this);
     myclone->setBasisSet(myBasisSet->makeClone());
@@ -273,7 +273,7 @@ public:
    */
   ~LCOrbitalSetWithCorrection() {}
 
-  SPOSet* makeClone() const
+  SPOSet<>* makeClone() const
   {
     LCOrbitalSetWithCorrection<BS,false>* myclone = new LCOrbitalSetWithCorrection<BS,false>(*this);
 //       myclone->myBasisSet = myBasisSet->makeClone();

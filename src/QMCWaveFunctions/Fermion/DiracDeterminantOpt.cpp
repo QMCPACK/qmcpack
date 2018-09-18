@@ -22,7 +22,7 @@ namespace qmcplusplus
 {
 
 DiracDeterminantOpt::DiracDeterminantOpt
-(ParticleSet &ptcl, SPOSet* const &gs_spos, int first) :
+(ParticleSet &ptcl, SPOSet<>* const &gs_spos, int first) :
   DiracDeterminant<>(gs_spos, first)
 {
   targetPtcl = &ptcl;
@@ -42,7 +42,7 @@ DiracDeterminantOpt::DiracDeterminantOpt
 }
 
 DiracDeterminant<>*
-DiracDeterminantOpt::makeCopy(SPOSet* spo) const
+DiracDeterminantOpt::makeCopy(SPOSet<>* spo) const
 {
   DiracDeterminant<>* dclone= new DiracDeterminantOpt(*targetPtcl, spo, FirstIndex);
   dclone->set(FirstIndex,LastIndex-FirstIndex);

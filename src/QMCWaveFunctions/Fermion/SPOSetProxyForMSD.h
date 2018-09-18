@@ -27,7 +27,8 @@ namespace qmcplusplus
  * This class owns a SPOSet for all the states to be evaluated
  * and will be owned by a DiracDeterminantBase object.
  */
-template<Batching B>
+
+template<Batching B = Batching::SINGLE>
 struct SPOSetProxyForMSD: public SPOSet<B>
 {
   using SPOSetPtr = SPOSet<B>*;

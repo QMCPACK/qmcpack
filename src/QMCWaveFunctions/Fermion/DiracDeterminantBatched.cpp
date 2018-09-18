@@ -25,7 +25,7 @@
 namespace qmcplusplus
 {
 
-DiracDeterminant<Batching::BATCHED>::DiracDeterminant(SPOSet<Batching::BATCHED>* const &spos, int first) :
+DiracDeterminant<Batching::BATCHED>::DiracDeterminant(SPOSet<>* const &spos, int first) :
   DiracDeterminant<Batching::SINGLE>(first), Phi(dynamic_cast<SPOSet<Batching::BATCHED>*>(spos))
 {
   registerTimers();

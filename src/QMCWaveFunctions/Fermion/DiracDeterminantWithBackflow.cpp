@@ -29,7 +29,7 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-  DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSet* const &spos, BackflowTransformation * BF, int first): DiracDeterminant<>(spos,first)
+  DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSet<>* const &spos, BackflowTransformation * BF, int first): DiracDeterminant<>(spos,first)
 {
   Optimizable=true;
   OrbitalName="DiracDeterminantWithBackflow";
@@ -1029,18 +1029,18 @@ WaveFunctionComponentPtr DiracDeterminantWithBackflow::makeClone(ParticleSet& tq
   return 0;
 }
 
-DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSet<Batching::SINGLE>* spo) const
-{
-//    BackflowTransformation *BF = BFTrans->makeClone();
-  // mmorales: particle set is only needed to get number of particles, so using QP set here
-  DiracDeterminantWithBackflow* dclone= new DiracDeterminantWithBackflow(BFTrans->QP,spo,BFTrans);
-  dclone->resize(NumPtcls, NumOrbitals);
-  dclone->Optimizable=Optimizable;
-  dclone->set(FirstIndex,LastIndex-FirstIndex);
-  return dclone;
-}
+// DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSet<Batching::SINGLE>* spo) const
+// {
+// //    BackflowTransformation *BF = BFTrans->makeClone();
+//   // mmorales: particle set is only needed to get number of particles, so using QP set here
+//   DiracDeterminantWithBackflow* dclone= new DiracDeterminantWithBackflow(BFTrans->QP,spo,BFTrans);
+//   dclone->resize(NumPtcls, NumOrbitals);
+//   dclone->Optimizable=Optimizable;
+//   dclone->set(FirstIndex,LastIndex-FirstIndex);
+//   return dclone;
+// }
 
-DiracDeterminant<>* DiracDeterminantWithBackflow::makeCopy(SPOSet* spo) const
+DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSet<>* spo) const
 {
 //    BackflowTransformation *BF = BFTrans->makeClone();
   // mmorales: particle set is only needed to get number of particles, so using QP set here

@@ -339,7 +339,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   HasCoreOrbs=bcastSortBands(spinSet,NumDistinctOrbitals,myComm->rank()==0);
   SPOSet<>* bspline_zd=MixedSplineReader->create_spline_set(spinSet,spo_cur);
   if(!bspline_zd)
-    APP_ABORT_TRACE(__FILE__,__LINE__,"Failed to create SPOSet*");
+    APP_ABORT_TRACE(__FILE__,__LINE__,"Failed to create SPOSet<>*");
   delta_mem=qmc_common.memory_allocated-delta_mem;
   app_log() <<"  MEMORY allocated SplineAdoptorReader " << (delta_mem>>20) << " MB" << std::endl;
   OrbitalSet = bspline_zd;

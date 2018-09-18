@@ -213,7 +213,7 @@ public:
       thisBasisSet->setBasisSetSize(-1);
   }
 
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur)
+  SPOSet<>* createSPOSetFromXML(xmlNodePtr cur)
   {
     ReportEngine PRE(ClassName,"createSPO(xmlNodePtr)");
     if(thisBasisSet==nullptr) PRE.error("Missing basisset.",true);

@@ -43,7 +43,7 @@ void SlaterDetWithBackflow::resetTargetParticleSet(ParticleSet& P)
   BFTrans->resetTargetParticleSet(P);
   for (int i = 0; i < Dets.size(); i++)
     Dets[i]->resetTargetParticleSet(BFTrans->QP);
-  std::map<std::string, SPOSet*>::iterator sit(mySPOSet.begin());
+  std::map<std::string, SPOSet<>*>::iterator sit(mySPOSet.begin());
   while (sit != mySPOSet.end())
   {
     (*sit).second->resetTargetParticleSet(BFTrans->QP);
@@ -108,11 +108,11 @@ WaveFunctionComponentPtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) cons
   {
     for(int i=0; i<Dets.size(); ++i)
     {
-      SPOSet* spo=Dets[i]->getPhi();
+      SPOSet<>* spo=Dets[i]->getPhi();
       // Check to see if this determinants SPOSet has already been
       // cloned
       bool found = false;
-      SPOSet* spo_clone;
+      SPOSet<>* spo_clone;
       for (int j=0; j<i; j++)
         if (spo == Dets[j]->getPhi())
         {
@@ -137,8 +137,8 @@ WaveFunctionComponentPtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) cons
   }
   else
   {
-    SPOSet* spo=Dets[0]->getPhi();
-    SPOSet* spo_clone=spo->makeClone();
+    SPOSet<>* spo=Dets[0]->getPhi();
+    SPOSet<>* spo_clone=spo->makeClone();
 //      spo_clone->resetTargetParticleSet(tqp);
     myclone->add(spo_clone,spo->objectName);
     for(int i=0; i<Dets.size(); ++i)

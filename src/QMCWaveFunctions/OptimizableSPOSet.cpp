@@ -101,7 +101,7 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
   if (same_k)
   {
     int off         = BasisOrbitals ? 0 : N;
-    SPOSet* basOrbs = BasisOrbitals ? BasisOrbitals : GSOrbitals;
+    SPOSet<>* basOrbs = BasisOrbitals ? BasisOrbitals : GSOrbitals;
     for (int igs=0; igs<N; igs++)
     {
       PosType k_gs = dynamic_cast<SPOSet<Batching::SINGLE>*>(GSOrbitals)->get_k(igs);

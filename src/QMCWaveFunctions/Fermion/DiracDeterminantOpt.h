@@ -54,11 +54,11 @@ protected:
   //
   std::vector<PosType> MyG;
 
-  SPOSet* getPhi() { return Phi; }
+  SPOSet<>* getPhi() { return Phi; }
 public:
-  DiracDeterminant<Batching::SINGLE>* makeCopy(SPOSet* spo) const;
+  DiracDeterminant<Batching::SINGLE>* makeCopy(SPOSet<>* spo) const;
 
-  DiracDeterminantOpt(ParticleSet &ptcl, SPOSet* const &gs_spos, int first=0);
+  DiracDeterminantOpt(ParticleSet &ptcl, SPOSet<>* const &gs_spos, int first=0);
   // This stores new orbital coefficients and updates the
   // inverse matrices.
   void resetParameters(const opt_variables_type& optvars);

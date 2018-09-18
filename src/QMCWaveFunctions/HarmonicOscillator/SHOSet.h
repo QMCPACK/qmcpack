@@ -101,7 +101,7 @@ namespace qmcplusplus
 
 
     //SPOSet interface methods
-    SPOSet* makeClone() const;
+    SPOSet<>* makeClone() const;
 
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi);
 

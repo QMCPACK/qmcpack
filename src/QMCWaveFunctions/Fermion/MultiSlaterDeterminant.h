@@ -48,6 +48,9 @@ namespace qmcplusplus
  (\nabla_i^2S^{ij}_n({\bf r_i}))(S^{-1})^{ji}_n}{\sum_{n=1}^M c_n S_n}
  \f]
  */
+
+extern template class SPOSetProxyForMSD<>;
+
 class MultiSlaterDeterminant: public WaveFunctionComponent
 {
 
@@ -57,7 +60,7 @@ public:
   NewTimer Ratio1Timer,Ratio1GradTimer,Ratio1AllTimer,AccRejTimer,evalOrbTimer;
 
   typedef DiracDeterminant<>*    DiracDeterminantPtr;
-  typedef SPOSetProxyForMSD*             SPOSetProxyPtr;
+  typedef SPOSetProxyForMSD<>*             SPOSetProxyPtr;
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;

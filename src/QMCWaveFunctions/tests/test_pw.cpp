@@ -140,7 +140,7 @@ const char *particles =
 
   int orbSize= spo->getOrbitalSetSize();
   elec.update();
-  SPOSet::ValueVector_t orbs(orbSize);
+  SPOSet<>::ValueVector_t orbs(orbSize);
   spo->evaluate(elec, 0, orbs);
 
   REQUIRE(orbs[0] == ComplexApprox(-1.2473558998).compare_real_only());
@@ -294,7 +294,7 @@ const char *particles =
 
   int orbSize= spo->getOrbitalSetSize();
   elec.update();
-  SPOSet::ValueVector_t orbs(orbSize);
+  SPOSet<>::ValueVector_t orbs(orbSize);
   spo->evaluate(elec, 0, orbs);
 
   REQUIRE(orbs[0] == ComplexApprox(-14.3744302974).compare_real_only());

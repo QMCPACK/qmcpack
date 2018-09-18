@@ -51,8 +51,8 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetPr
 
 WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) const
 {
-  SPOSetProxyForMSD* spo_up_C = new SPOSetProxyForMSD(spo_up->refPhi->makeClone(),FirstIndex_up,LastIndex_up);
-  SPOSetProxyForMSD* spo_dn_C = new SPOSetProxyForMSD(spo_dn->refPhi->makeClone(),FirstIndex_dn,LastIndex_dn);
+  SPOSetProxyForMSD<>* spo_up_C = new SPOSetProxyForMSD<>(spo_up->refPhi->makeClone(),FirstIndex_up,LastIndex_up);
+  SPOSetProxyForMSD<>* spo_dn_C = new SPOSetProxyForMSD<>(spo_dn->refPhi->makeClone(),FirstIndex_dn,LastIndex_dn);
   spo_up_C->occup= spo_up->occup;
   spo_dn_C->occup= spo_dn->occup;
   spo_up_C->refPhi->resetTargetParticleSet(tqp);

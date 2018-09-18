@@ -40,7 +40,7 @@ SlaterDet<>::~SlaterDet()
 }
 
 ///add a new SPOSet to the list of determinants
-void SlaterDet<>::add(SPOSet* sposet, const std::string& aname)
+void SlaterDet<>::add(SPOSet<>* sposet, const std::string& aname)
 {
   if (mySPOSet.find(aname) == mySPOSet.end())
   {
@@ -49,7 +49,7 @@ void SlaterDet<>::add(SPOSet* sposet, const std::string& aname)
   }
   else
   {
-    APP_ABORT(" SlaterDet<>::add(SPOSet*, const std::string&) Cannot reuse the " + aname )
+    APP_ABORT(" SlaterDet<>::add(SPOSet<>*, const std::string&) Cannot reuse the " + aname )
     ;
   }
 }
@@ -103,7 +103,7 @@ void SlaterDet<>::reportStatus(std::ostream& os)
 
 void SlaterDet<>::resetTargetParticleSet(ParticleSet& P)
 {
-  std::map<std::string, SPOSet*>::iterator sit(mySPOSet.begin());
+  std::map<std::string, SPOSet<>*>::iterator sit(mySPOSet.begin());
   while (sit != mySPOSet.end())
   {
     (*sit).second->resetTargetParticleSet(P);
@@ -208,13 +208,14 @@ WaveFunctionComponentPtr SlaterDet<>::makeClone(ParticleSet& tqp) const
   myclone->Optimizable=Optimizable;
   if (mySPOSet.size() > 1)
   {
-    std::map<std::string,SPOSet*>::const_iterator Mit,Lit;
+    std::map<std::string,SPOSet<>*>::const_iterator Mit,Lit;
     Mit= mySPOSet.begin();
     Lit= mySPOSet.end();
+
     while (Mit!=Lit)
     {
-      SPOSet* spo = (*Mit).second;
-      SPOSet* spo_clone;
+      SPOSet<>* spo = (*Mit).second;
+      SPOSet<>* spo_clone;
       spo_clone = spo->makeClone();
       spo_clone->resetTargetParticleSet(tqp);
       myclone->add(spo_clone,spo->objectName);
@@ -222,7 +223,7 @@ WaveFunctionComponentPtr SlaterDet<>::makeClone(ParticleSet& tqp) const
       {
         if (spo == Dets[i]->getPhi())
         {
-          DiracDeterminant<>* newD=Dets[i]->makeCopy(dynamic_cast<SPOSet*>(spo_clone));
+          DiracDeterminant<>* newD=Dets[i]->makeCopy(dynamic_cast<SPOSet<>*>(spo_clone));
           newD->resetTargetParticleSet(tqp);
           myclone->add(newD, i);
         }
@@ -232,13 +233,13 @@ WaveFunctionComponentPtr SlaterDet<>::makeClone(ParticleSet& tqp) const
   }
   else
   {
-    SPOSet* spo = Dets[0]->getPhi();
-    SPOSet* spo_clone = spo->makeClone();
+    SPOSet<>* spo = Dets[0]->getPhi();
+    SPOSet<>* spo_clone = spo->makeClone();
     spo_clone->resetTargetParticleSet(tqp);
     myclone->add(spo_clone, spo->objectName);
     for (int i = 0; i < Dets.size(); ++i)
     {
-      DiracDeterminant<>* newD=Dets[i]->makeCopy(dynamic_cast<SPOSet*>(spo_clone));
+      DiracDeterminant<>* newD=Dets[i]->makeCopy(dynamic_cast<SPOSet<>*>(spo_clone));
       newD->resetTargetParticleSet(tqp);
       myclone->add(newD, i);
     }

@@ -386,6 +386,21 @@ void SPOSet<Batching::SINGLE>::evaluate_notranspose(const ParticleSet& P, int fi
   APP_ABORT("Need specialization of SPOSet<Batching::SINGLE>::evaluate_notranspose() for grad_grad_grad_logdet. \n");
 }
 
+void SPOSet<Batching::SINGLE>::evaluateGradSource (const ParticleSet &P
+                                     , int first, int last, const ParticleSet &source
+							     , int iat_src, SSTA::GradMatrix_t &gradphi)
+{
+  APP_ABORT("SPOSetlBase::evalGradSource is not implemented");
+}
+
+void SPOSet<Batching::SINGLE>::evaluateGradSource (const ParticleSet &P, int first, int last,
+                                     const ParticleSet &source, int iat_src,
+							     SSTA::GradMatrix_t &grad_phi,
+							     SSTA::HessMatrix_t &grad_grad_phi,
+							     SSTA::GradMatrix_t &grad_lapl_phi)
+{
+  APP_ABORT("SPOSetlBase::evalGradSource is not implemented");
+}
 
   
 }

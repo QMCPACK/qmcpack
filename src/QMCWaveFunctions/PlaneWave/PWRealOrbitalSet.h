@@ -36,7 +36,7 @@ class PWRealOrbitalSet: public SPOSet<Batching::SINGLE>
   using PosType = QMCT::PosType;
   using RealType = QMCT::RealType;
   using IndexType = QMCT::IndexType;
-  using GradType = SSTA::GradType;
+  using GradType = QMCT::GradType;
   
 public:
 

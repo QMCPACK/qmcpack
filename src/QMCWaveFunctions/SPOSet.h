@@ -75,7 +75,7 @@ public:
   using VGLVector_t = SSTA::VGLVector_t;
   using Walker_t = SSTA::Walker_t;
   using GGGType = SSTA::GGGType;
-  typedef std::map<std::string,SPOSet*> SPOPool_t;
+  typedef std::map<std::string,SPOSet<>*> SPOPool_t;
 
   static constexpr int DIM = 3;
   
@@ -210,7 +210,7 @@ public:
 
   /** make a clone of itself
    */
-  virtual SPOSet* makeClone() const;
+  virtual SPOSet<>* makeClone() const;
 
   virtual bool transformSPOSet()
   {

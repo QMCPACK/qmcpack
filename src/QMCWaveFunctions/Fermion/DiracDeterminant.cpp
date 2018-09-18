@@ -44,7 +44,7 @@ DiracDeterminant<Batching::SINGLE>::DiracDeterminant(int first):
   registerTimers();
 }
 
-DiracDeterminant<Batching::SINGLE>::DiracDeterminant(SPOSet* const &spos, int first):
+DiracDeterminant<Batching::SINGLE>::DiracDeterminant(SPOSet<>* const &spos, int first):
   Phi(dynamic_cast<SPOSet<Batching::SINGLE>*>(spos)),
   UpdateTimer("DiracDeterminant::update",timer_level_fine),
   RatioTimer("DiracDeterminant::ratio",timer_level_fine),
@@ -470,10 +470,10 @@ void DiracDeterminant<Batching::SINGLE>::evaluateRatios(VirtualParticleSet& VP, 
     // SPO value result matrix. Always use existing memory
     Matrix<ValueType> psiT(memoryPool.data()+offset, nVP, NumOrbitals);
     // SPO scratch memory. Always use existing memory
-    SPOSet::ValueAlignedVector_t SPOMem;
+    SSTA::ValueAlignedVector_t SPOMem;
     SPOMem.attachReference((ValueType*)memoryPool.data(),offset);
     SPOVTimer.start();
-    Phi->evaluateValues(VP, psiT, SPOMem, Phi->OrbitalSetSize);
+    Phi->evaluateValues(VP, psiT, SPOMem);
     SPOVTimer.stop();
     RatioTimer.start();
     MatrixOperators::product(psiT, psiM[VP.refPtcl-FirstIndex], ratios.data());
@@ -648,7 +648,7 @@ void DiracDeterminant<Batching::SINGLE>::recompute(ParticleSet& P)
   }
 }
 
-DiracDeterminant<Batching::SINGLE>* DiracDeterminant<Batching::SINGLE>::makeCopy(SPOSet* spo) const
+DiracDeterminant<Batching::SINGLE>* DiracDeterminant<Batching::SINGLE>::makeCopy(SPOSet<>* spo) const
 {
   DiracDeterminant<Batching::SINGLE>* dclone= new DiracDeterminant<Batching::SINGLE>(spo);
   dclone->set(FirstIndex,LastIndex-FirstIndex);

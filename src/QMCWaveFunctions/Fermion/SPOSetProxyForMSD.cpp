@@ -209,4 +209,6 @@ void SPOSetProxyForMSD<B>::evaluate_notranspose(const ParticleSet& P, int first,
   }
 }
 
+template class SPOSetProxyForMSD<>;
+
 }
