@@ -14,15 +14,15 @@
 #include "qmc_common.h"
 #include <Utilities/ProgressReportEngine.h>
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
-#include "QMCWaveFunctions/EinsplineAdoptor.h"
+#include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineC2RAdoptor.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineC2CAdoptor.h"
 #include "QMCWaveFunctions/BsplineFactory/HybridCplxAdoptor.h"
 #include <fftw3.h>
 #include <QMCWaveFunctions/einspline_helper.hpp>
-#include "QMCWaveFunctions/BsplineReaderBase.h"
-#include "QMCWaveFunctions/SplineAdoptorReaderP.h"
-#include "QMCWaveFunctions/SplineHybridAdoptorReaderP.h"
+#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorReaderP.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineHybridAdoptorReaderP.h"
 
 namespace qmcplusplus
 {

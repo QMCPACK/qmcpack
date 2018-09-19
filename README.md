@@ -73,7 +73,7 @@ make -j 8
 |----------------------|-------------|
 |   CXX          |    C++ compiler |
 |   CC           |    C Compiler |
-|   MKL_HOME     |    Path for MKL |
+|   MKL_ROOT     |    Path for MKL |
 |   LIBXML2_HOME |    Path for libxml2 |
 |   HDF5_ROOT    |    Path for HDF5 |
 |   BOOST_ROOT   |    Path for Boost |

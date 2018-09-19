@@ -277,6 +277,7 @@ class Simulation(NexusCore):
     creating_fake_sims = False
 
     sim_directories = dict()
+    all_sims = []
 
     @classmethod
     def code_name(cls):
@@ -418,6 +419,7 @@ class Simulation(NexusCore):
         #end if
         self.post_init()
 
+        Simulation.all_sims.append(self)
     #end def __init__
 
 

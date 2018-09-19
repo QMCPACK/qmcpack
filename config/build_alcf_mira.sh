@@ -29,7 +29,6 @@ mkdir $folder
 cd $folder
 if [ ! -f CMakeCache.txt ] ; then
 cmake $CMAKE_FLAGS ..
-cmake $CMAKE_FLAGS ..
 fi
 make -j24
 cd ..

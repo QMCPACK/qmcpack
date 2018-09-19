@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_LINEARCOMIBINATIONORBITALSET_TEMP_H
 #define QMCPLUSPLUS_LINEARCOMIBINATIONORBITALSET_TEMP_H
 
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include <Numerics/MatrixOperators.h>
 
 namespace qmcplusplus
@@ -25,12 +25,12 @@ namespace qmcplusplus
 
 /** decalaration of generic class to handle a linear-combination of basis function*/
 template<class BS, bool IDENTITY>
-class LCOrbitalSet: public SPOSetBase
+class LCOrbitalSet: public SPOSet
 {
 };
 
 template<class BS>
-class LCOrbitalSet<BS,true>: public SPOSetBase
+class LCOrbitalSet<BS,true>: public SPOSet
 {
 
 public:
@@ -58,7 +58,7 @@ public:
    */
   ~LCOrbitalSet() {}
 
-  SPOSetBase* makeClone() const
+  SPOSet* makeClone() const
   {
     LCOrbitalSet<BS,true>* myclone = new LCOrbitalSet<BS,true>(*this);
     myclone->myBasisSet = myBasisSet->makeClone();
@@ -173,7 +173,7 @@ public:
  * A templated version is LCOrbitals.
  */
 template<class BS>
-class LCOrbitalSet<BS,false>: public SPOSetBase
+class LCOrbitalSet<BS,false>: public SPOSet
 {
 
 public:
@@ -217,7 +217,7 @@ public:
    */
   ~LCOrbitalSet() {}
 
-  SPOSetBase* makeClone() const
+  SPOSet* makeClone() const
   {
     LCOrbitalSet<BS,false>* myclone = new LCOrbitalSet<BS,false>(*this);
     myclone->myBasisSet = myBasisSet->makeClone();
@@ -456,15 +456,17 @@ public:
    * For the i-th virtual move and the j-th orbital,
    * \f$ psiM(i,j)= \sum_k phiM(i,k)*C(j,k) \f$
    */
-  void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM)
+  void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem)
   {
-    ValueMatrix_t phiM(VP.getTotalNum(),BasisSetSize);
+    ValueMatrix_t phiM(SPOMem.data(), VP.getTotalNum(), BasisSetSize);
     myBasisSet->evaluateValues(VP,phiM);
     MatrixOperators::product_ABt(phiM,*C,psiM);
     //for(int i=0; i<psiM.rows(); ++i)
     //  for(int j=0; j<psiM.cols(); ++j)
     //    psiM(i,j)=simd::dot(C[j],phiM[i],BasisSetSize);
   }
+
+  size_t estimateMemory(const int nP) { return BasisSetSize*nP; }
 
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last
                           , GGGMatrix_t& grad_grad_grad_logdet)

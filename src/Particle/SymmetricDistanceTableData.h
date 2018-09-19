@@ -124,7 +124,7 @@ struct SymmetricDTD
   //   }
   // }
 
-  inline void evaluate(ParticleSet& P, bool update_neighbor_list)
+  inline void evaluate(ParticleSet& P)
   {
     const int n = N[SourceIndex];
     for(int i=0,ij=0; i<n; i++)
@@ -139,7 +139,7 @@ struct SymmetricDTD
   {
     APP_ABORT("  No need to call SymmetricDTD::evaluate(ParticleSet& P, int jat)");
     //based on full evaluation. Only compute it if jat==0
-    if(jat==0) evaluate(P,true);
+    if(jat==0) evaluate(P);
   }
 
   ///evaluate the temporary pair relations

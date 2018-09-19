@@ -26,7 +26,7 @@ OptimizableSPOBuilder::OptimizableSPOBuilder
 {
 }
 
-SPOSetBase*
+SPOSet*
 OptimizableSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   OptimizableSPOSet *spo =  new OptimizableSPOSet();

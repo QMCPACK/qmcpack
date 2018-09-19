@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_MULTISLATERDETERMINANTFAST_ORBITAL_H
 #define QMCPLUSPLUS_MULTISLATERDETERMINANTFAST_ORBITAL_H
 #include <Configuration.h>
-#include <QMCWaveFunctions/OrbitalBase.h>
+#include <QMCWaveFunctions/WaveFunctionComponent.h>
 #include <QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h>
 #include <QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h>
 #include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
@@ -26,8 +26,8 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
- *  @brief An AntiSymmetric OrbitalBase composed of a linear combination of SlaterDeterminants.
+/** @ingroup WaveFunctionComponent
+ *  @brief An AntiSymmetric WaveFunctionComponent composed of a linear combination of SlaterDeterminants.
  *
  *\f[
  *MS({\bf R}) = \sum_n c_n S_n({\bf R})
@@ -50,7 +50,7 @@ namespace qmcplusplus
  (\nabla_i^2S^{ij}_n({\bf r_i}))(S^{-1})^{ji}_n}{\sum_{n=1}^M c_n S_n}
  \f]
  */
-class MultiSlaterDeterminantFast: public OrbitalBase
+class MultiSlaterDeterminantFast: public WaveFunctionComponent
 {
 
 public:
@@ -60,7 +60,7 @@ public:
   NewTimer Ratio1Timer,Ratio1GradTimer,Ratio1AllTimer, AccRejTimer;
 
   typedef MultiDiracDeterminantBase*    DiracDeterminantPtr;
-  typedef SPOSetBase*                   SPOSetBasePtr;
+  typedef SPOSet*                   SPOSetPtr;
   typedef SPOSetProxyForMSD*            SPOSetProxyPtr;
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
@@ -131,7 +131,7 @@ public:
   RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
   void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& optvars,
                            std::vector<RealType>& dlogpsi,

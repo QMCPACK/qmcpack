@@ -22,8 +22,8 @@
 #include <string>
 #include <sstream>
 
-#include <QMCWaveFunctions/SPOSetBase.h>
-#include <QMCWaveFunctions/OrbitalBase.h>
+#include <QMCWaveFunctions/SPOSet.h>
+#include <QMCWaveFunctions/WaveFunctionComponent.h>
 #include <Numerics/MatrixOperators.h>
 #include <Utilities/RandomGenerator.h>
 
@@ -36,13 +36,13 @@ namespace qmcplusplus {
 ///         The set of molecular orbitals is optimized by rotating them amongst each other.
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
+template<class BS> class LCOrbitalSetOpt : public SPOSet {
 
   // protected data members
   protected:
 
     /// \brief  pointer that, if not null, will be used to evaluate the basis orbitals
-    SPOSetBase * m_spo_set;
+    SPOSet * m_spo_set;
 
     /// \brief  pointer to the basis set that evaluates the basis orbitals if m_spo_set == 0
     BS * m_basis_set;
@@ -278,7 +278,7 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
     /// \param[in]      rl             reporting level to use
     ///
     ///////////////////////////////////////////////////////////////////////////////////////////////////
-    LCOrbitalSetOpt(SPOSetBase * const spo, const int rl = 0) : m_spo_set(0), m_basis_set(0), m_report_level(rl), m_omixfac(0) {
+    LCOrbitalSetOpt(SPOSet * const spo, const int rl = 0) : m_spo_set(0), m_basis_set(0), m_report_level(rl), m_omixfac(0) {
 
       // set the internal SPO set
       if ( spo ) this->setSPOSet(spo);
@@ -341,7 +341,7 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
     /// \param[in]      spo            pointer to the SPO set to use
     ///
     ///////////////////////////////////////////////////////////////////////////////////////////////////
-    void setSPOSet(SPOSetBase * const spo) {
+    void setSPOSet(SPOSet * const spo) {
 
       // error if the pointer is empty
       if ( !spo )
@@ -358,12 +358,12 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     /// \brief  clone the object (specialization of the base class virtual funciton)
     ///
-    ///         This is a specialization of the SPOSetBase class virtual funciton.
+    ///         This is a specialization of the SPOSet class virtual funciton.
     ///
     /// \return  a base class pointer to the clone
     ///
     ///////////////////////////////////////////////////////////////////////////////////////////////////
-    SPOSetBase * makeClone() const {
+    SPOSet * makeClone() const {
 
       // create a clone that contains a cloned spo set or basis set
       LCOrbitalSetOpt * retval;
@@ -388,7 +388,7 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     /// \brief  reset the basis's target particleset
     ///
-    ///         This is a specialization of the SPOSetBase class virtual funciton.
+    ///         This is a specialization of the SPOSet class virtual funciton.
     ///
     /// \param[in,out]  P              ???
     ///
@@ -416,7 +416,7 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     /// \brief  set the number of linear combinations of basis functions (i.e. molecular orbitals)
     ///
-    ///         This is a specialization of the SPOSetBase class virtual funciton.
+    ///         This is a specialization of the SPOSet class virtual funciton.
     ///
     /// \param[in]      norbs          how many linear combinations are desired
     ///
@@ -429,7 +429,7 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
 
     }
 
-//    !!! this function does not appear to be callable via the base class pointer as it is not virtual in SPOSetBase
+//    !!! this function does not appear to be callable via the base class pointer as it is not virtual in SPOSet
 //    inline int getBasisSetSize() const
 //    {
 //      return (m_basis_set==0)? 0: m_basis_set->getBasisSetSize();
@@ -783,8 +783,8 @@ template<class BS> class LCOrbitalSetOpt : public SPOSetBase {
     ///   ----------------------------------------------------------------------------------------------------------------------
     ///
     ///////////////////////////////////////////////////////////////////////////////////////////////////
-    void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM) {
-      throw std::runtime_error("LCOrbitalSetOpt::evaluateValues(VP, psiM) not yet implemented");
+    void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem) {
+      throw std::runtime_error("LCOrbitalSetOpt::evaluateValues(VP, psiM, SPOMem) not yet implemented");
       //ValueMatrix_t phiM(P.getTotalNum(),BasisSetSize);
       //m_basis_set->evaluateValues(P,phiM);
       //MatrixOperators::product_ABt(phiM,C,psiM);

@@ -17,7 +17,7 @@
 
 namespace qmcplusplus
 {
-  DiracDeterminantSoA::DiracDeterminantSoA(SPOSetBasePtr const &spos, int first): 
+  DiracDeterminantSoA::DiracDeterminantSoA(SPOSetPtr const &spos, int first): 
     DiracDeterminantBase(spos,first)
   { 
     Need2Compute4PbyP=false; 
@@ -28,7 +28,7 @@ namespace qmcplusplus
   DiracDeterminantSoA::DiracDeterminantSoA(const DiracDeterminantSoA& s):DiracDeterminantBase(s){}
 
   DiracDeterminantBase* 
-    DiracDeterminantSoA::makeCopy(SPOSetBasePtr spo) const
+    DiracDeterminantSoA::makeCopy(SPOSetPtr spo) const
     {
       DiracDeterminantSoA* dclone= new DiracDeterminantSoA(spo,FirstIndex);
       dclone->resize(NumPtcls,NumOrbitals);
@@ -78,7 +78,7 @@ namespace qmcplusplus
   DiracDeterminantSoA::ValueType
     DiracDeterminantSoA::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
     {
-      Phi->evaluateVGL(P, iat, vVGL,true); //use the new position
+      Phi->evaluateVGL(P, iat, vVGL);
       WorkingIndex = iat-FirstIndex;
 
       UpdateMode=ORB_PBYP_PARTIAL;
@@ -117,10 +117,9 @@ namespace qmcplusplus
   {
     if(UpdateMode == ORB_PBYP_RATIO) 
     {//ratio only method need to compute mGL
-      bool newp=false;
       for(size_t i=0; i<NumPtcls; ++i)
       {
-        Phi->evaluateVGL(P, i+FirstIndex, vVGL, newp); 
+        Phi->evaluateVGL(P, i+FirstIndex, vVGL);
         simd::copy_n(vVGL.data(1), BlockSize, mGL[i].data());
       }
     }
@@ -197,10 +196,9 @@ namespace qmcplusplus
    */
   void DiracDeterminantSoA::recompute(ParticleSet& P)
   { 
-    bool curpos=false;
     for(size_t i=0,iat=FirstIndex; i<NumPtcls; ++i,++iat)
     {
-      Phi->evaluateVGL(P, iat, vVGL, curpos); 
+      Phi->evaluateVGL(P, iat, vVGL);
       simd::copy_n(vVGL.data(0), NumOrbitals, psiM_temp[i]);
       simd::copy_n(vVGL.data(1), BlockSize,  mGL[i].data());
     }

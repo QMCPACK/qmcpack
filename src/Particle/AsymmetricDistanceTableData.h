@@ -172,7 +172,7 @@ struct AsymmetricDTD
   }
 
   ///not so useful inline but who knows
-  inline void evaluate(ParticleSet& P, bool update_neighbor_list)
+  inline void evaluate(ParticleSet& P)
   {
     const int ns=N[SourceIndex];
     const int nt=N[VisitorIndex];
@@ -186,7 +186,7 @@ struct AsymmetricDTD
   {
     APP_ABORT("  No need to call AsymmetricDTD::evaluate(ParticleSet& P, int jat)");
     //based on full evaluation. Only compute it if jat==0
-    if(jat==0) evaluate(P,true);
+    if(jat==0) evaluate(P);
   }
 
   ///evaluate the temporary pair relations

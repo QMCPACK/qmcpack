@@ -207,9 +207,6 @@ int main(int argc, char** argv)
     else
       Jastrow=new AoSWaveFunction(ions,els);
 
-    //set Rmax for ion-el distance table for PP
-    Jastrow->setRmax(Rmax);
-
     //create pseudopp
     NonLocalPP<OHMMS_PRECISION> ecp(random_th);
 
@@ -288,26 +285,22 @@ int main(int argc, char** argv)
       const DistanceTableData* d_ie=Jastrow->d_ie;
 
       clock_mc.restart();
-      for(int iat=0; iat<nions; ++iat)
+      for(int jel=0; jel<nels; ++jel)
       {
-        const auto centerP=ions.R[iat];
-        for(int nj=0, jmax=d_ie->nadj(iat); nj<jmax; ++nj)
-        {
-          const auto r=d_ie->distance(iat,nj);
-          if(r<Rmax)
+        const auto &dist  = d_ie->Distances[jel];
+        const auto &displ = d_ie->Displacements[jel];
+        for(int iat=0; iat<nions; ++iat)
+          if(dist[iat]<Rmax)
           {
-            const int iel=d_ie->iadj(iat,nj);
-            const auto dr=d_ie->displacement(iat,nj);
             for (int k=0; k < nknots ; k++)
             {
-              PosType deltar(r*rOnSphere[k]-dr);
-              els.makeMoveOnSphere(iel,deltar);
-              spo.evaluate_v(els.R[iel]);
-              Jastrow->ratio(els,iel);
-              els.rejectMove(iel);
+              PosType deltar(dist[iat]*rOnSphere[k]-displ[iat]);
+              els.makeMoveOnSphere(jel,deltar);
+              spo.evaluate_v(els.R[jel]);
+              Jastrow->ratio(els,jel);
+              els.rejectMove(jel);
             }
           }
-        }
       }
       t_pseudo_loc+=clock_mc.elapsed();
     }

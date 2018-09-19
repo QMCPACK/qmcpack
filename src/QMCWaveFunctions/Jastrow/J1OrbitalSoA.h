@@ -12,7 +12,7 @@
 #ifndef QMCPLUSPLUS_ONEBODYJASTROW_OPTIMIZED_SOA_H
 #define QMCPLUSPLUS_ONEBODYJASTROW_OPTIMIZED_SOA_H
 #include "Configuration.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 #include <qmc_common.h>
 #include <simd/allocator.hpp>
@@ -23,11 +23,11 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  *  @brief Specialization for one-body Jastrow function using multiple functors
  */
 template<class FT>
-struct  J1OrbitalSoA : public OrbitalBase
+struct  J1OrbitalSoA : public WaveFunctionComponent
 {
   ///alias FuncType
   using FuncType=FT;
@@ -334,7 +334,7 @@ struct  J1OrbitalSoA : public OrbitalBase
     Lap.attachReference(buf.lendReference<valT>(Nelec), Nelec);
   }
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
     J1OrbitalSoA<FT>* j1copy=new J1OrbitalSoA<FT>(Ions,tqp);
     j1copy->Optimizable=Optimizable;
@@ -349,7 +349,7 @@ struct  J1OrbitalSoA : public OrbitalBase
     return j1copy;
   }
 
-  /**@{ OrbitalBase virtual functions that are not essential for the development */
+  /**@{ WaveFunctionComponent virtual functions that are not essential for the development */
   void resetTargetParticleSet(ParticleSet& P){}
   void reportStatus(std::ostream& os)
   {

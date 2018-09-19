@@ -50,18 +50,24 @@ namespace qmcplusplus
   std::map<std::string,SPOSetBuilder*> SPOSetBuilderFactory::spo_builders;
   SPOSetBuilder* SPOSetBuilderFactory::last_builder=0;
 
-  SPOSetBase* get_sposet(const std::string& name)
+  void SPOSetBuilderFactory::clear()
+  {
+    spo_builders.clear();
+    last_builder = nullptr;
+  }
+
+  SPOSet* get_sposet(const std::string& name)
   {
     int nfound = 0;
-    SPOSetBase* spo = 0;
+    SPOSet* spo = 0;
     std::map<std::string,SPOSetBuilder*>::iterator it;
     for(it=SPOSetBuilderFactory::spo_builders.begin();
         it!=SPOSetBuilderFactory::spo_builders.end();++it)
     {
-      std::vector<SPOSetBase*>& sposets = it->second->sposets;
+      std::vector<SPOSet*>& sposets = it->second->sposets;
       for(int i=0;i<sposets.size();++i)
       {
-        SPOSetBase* sposet = sposets[i];
+        SPOSet* sposet = sposets[i];
         if(sposet->objectName==name)
         {
           spo = sposet;
@@ -90,7 +96,7 @@ namespace qmcplusplus
     for(it=SPOSetBuilderFactory::spo_builders.begin();it!=SPOSetBuilderFactory::spo_builders.end();++it)
     {
       const std::string& type = it->first;
-      std::vector<SPOSetBase*>& sposets = it->second->sposets;
+      std::vector<SPOSet*>& sposets = it->second->sposets;
       app_log()<<pad<<"sposets for SPOSetBuilder of type "<<type<< std::endl;
       for(int i=0;i<sposets.size();++i)
       {
@@ -107,7 +113,7 @@ namespace qmcplusplus
  * \param ions reference to the ions
  */
 SPOSetBuilderFactory::SPOSetBuilderFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets):
-  OrbitalBuilderBase(els,psi), ptclPool(psets)
+  WaveFunctionComponentBuilder(els,psi), ptclPool(psets)
 {
   ClassName="SPOSetBuilderFactory";
 }
@@ -259,7 +265,7 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
 }
 
 
-SPOSetBase* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
+SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
 {
   std::string bname("");
   std::string sname("");
@@ -331,7 +337,7 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
       attrib.put(element);
 
       app_log()<<"  Building SPOSet \""<<name<<"\" with "<<type<<" SPOSetBuilder"<< std::endl;
-      SPOSetBase* spo = bb->createSPOSet(element);
+      SPOSet* spo = bb->createSPOSet(element);
       spo->objectName = name;
       nsposets++;
     }

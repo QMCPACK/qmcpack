@@ -116,7 +116,6 @@ echo "building qmcpack for gpu real for titan"
 mkdir -p build_titan_gpu_real
 cd build_titan_gpu_real
 cmake -D QMC_CUDA=1 ..
-cmake -D QMC_CUDA=1 ..
 make -j 32
 cd ..
 ln -sf ./build_titan_gpu_real/bin/qmcpack ./qmcpack_titan_gpu_real
@@ -127,7 +126,6 @@ echo ""
 echo "building qmcpack for gpu complex for titan"
 mkdir -p build_titan_gpu_comp
 cd build_titan_gpu_comp
-cmake -D QMC_CUDA=1 -D QMC_COMPLEX=1 ..
 cmake -D QMC_CUDA=1 -D QMC_COMPLEX=1 ..
 make -j 32
 cd ..

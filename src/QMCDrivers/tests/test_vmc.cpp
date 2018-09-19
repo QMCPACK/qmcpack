@@ -23,7 +23,7 @@
 #include "Particle/SymmetricDistanceTableData.h"
 #include "Particle/MCWalkerConfiguration.h"
 #include "QMCApp/ParticleSetPool.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/ConstantOrbital.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
@@ -80,7 +80,11 @@ TEST_CASE("VMC Particle-by-Particle advanceWalkers", "[drivers][vmc]")
   tspecies(massIdx, upIdx) = 1.0;
   tspecies(massIdx, downIdx) = 1.0;
 
+#ifdef ENABLE_SOA
+  elec.addTable(ions,DT_SOA);
+#else
   elec.addTable(ions,DT_AOS);
+#endif
   elec.update();
 
 

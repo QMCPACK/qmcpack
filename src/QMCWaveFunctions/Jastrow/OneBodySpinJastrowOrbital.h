@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_GENERIC_ONEBODYJASTROWSPIN_H
 #define QMCPLUSPLUS_GENERIC_ONEBODYJASTROWSPIN_H
 #include "Configuration.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 //#include "QMCWaveFunctions/Jastrow/DiffOneBodySpinJastrowOrbital.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
@@ -30,7 +30,7 @@ namespace qmcplusplus
  * Based on the OneBodyJastrowOrbital for the grouped particle sets.
  */
 template<class FT>
-class OneBodySpinJastrowOrbital: public OrbitalBase
+class OneBodySpinJastrowOrbital: public WaveFunctionComponent
 {
   bool Spin;
   int myTableIndex;
@@ -463,7 +463,7 @@ public:
     DEBUG_PSIBUFFER(" OneBodySpinJastrow::copyFromBuffer ",buf.current());
   }
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
     OneBodySpinJastrowOrbital<FT>* j1copy=new OneBodySpinJastrowOrbital<FT>(CenterRef,tqp);
     if(Spin)
@@ -485,10 +485,6 @@ public:
     return j1copy;
   }
 
-  void copyFrom(const OrbitalBase& old)
-  {
-    //nothing to do
-  }
 };
 
 }

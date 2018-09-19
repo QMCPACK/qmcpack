@@ -53,8 +53,6 @@ rocksalt_LiH = generate_physical_system(
     H               = 1,
     )
 
-sims = []
-
 # DFT SCF To Generate Converged Density
 scf = generate_pwscf(
     identifier      = 'scf',
@@ -70,7 +68,6 @@ scf = generate_pwscf(
     kgrid           = (7,7,7),
     kshift          = (1,1,1),
     )
-sims.append(scf)
 
 # DFT NSCF To Generate Wave Function At Specified K-points
 nscf = generate_pwscf(
@@ -86,7 +83,6 @@ nscf = generate_pwscf(
     mixing_beta     = 0.7,
     dependencies    = (scf,'charge-density'),
     )
-sims.append(nscf)
 
 # Convert DFT Wavefunction Into HDF5 File For QMCPACK
 p2q = generate_pw2qmcpack(
@@ -96,7 +92,6 @@ p2q = generate_pw2qmcpack(
     write_psir      = False,
     dependencies    = (nscf,'orbitals'),
     )
-sims.append(p2q)
 
 # QMC Optimization Parameters - Coarse Sampling Set
 linopt1 = linear(
@@ -159,7 +154,6 @@ pp.H.set(
     lmax    = 2,
     cutoff  = 0.50,
     )
-sims.append(opt)
 
 # QMC VMC/DMC With Optimized Jastrow Parameters
 qmc = generate_qmcpack(
@@ -209,6 +203,5 @@ pp.H.set(
     lmax    = 2,
     cutoff  = 0.50,
     )
-sims.append(qmc)
 
-run_project(sims)
+run_project()

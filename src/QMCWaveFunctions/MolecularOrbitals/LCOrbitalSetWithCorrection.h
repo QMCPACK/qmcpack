@@ -19,7 +19,7 @@
 
 #include <vector>
 #include <cstdlib>
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/MatrixOperators.h"
 #include "Message/Communicate.h"
@@ -41,12 +41,12 @@ namespace qmcplusplus
 
 /** decalaration of generic class to handle a linear-combination of basis function*/
 template<class BS, bool IDENTITY>
-class LCOrbitalSetWithCorrection: public SPOSetBase
+class LCOrbitalSetWithCorrection: public SPOSet
 {
 };
 
 template<class BS>
-class LCOrbitalSetWithCorrection<BS,true>: public SPOSetBase
+class LCOrbitalSetWithCorrection<BS,true>: public SPOSet
 {
 
 public:
@@ -74,7 +74,7 @@ public:
    */
   ~LCOrbitalSetWithCorrection() {}
 
-  SPOSetBase* makeClone() const
+  SPOSet* makeClone() const
   {
     LCOrbitalSetWithCorrection<BS,true>* myclone = new LCOrbitalSetWithCorrection<BS,true>(*this);
     myclone->setBasisSet(myBasisSet->makeClone());
@@ -216,7 +216,7 @@ public:
  * A templated version is LCOrbitals.
  */
 template<class BS>
-class LCOrbitalSetWithCorrection<BS,false>: public SPOSetBase
+class LCOrbitalSetWithCorrection<BS,false>: public SPOSet
 {
 
 public:
@@ -273,7 +273,7 @@ public:
    */
   ~LCOrbitalSetWithCorrection() {}
 
-  SPOSetBase* makeClone() const
+  SPOSet* makeClone() const
   {
     LCOrbitalSetWithCorrection<BS,false>* myclone = new LCOrbitalSetWithCorrection<BS,false>(*this);
 //       myclone->myBasisSet = myBasisSet->makeClone();
@@ -687,15 +687,15 @@ public:
 
   bool transformSPOSet();
 
-  bool readCuspInfo(Matrix<TinyVector<RealType,9> > &);
+  bool readCuspInfo(Matrix<CuspCorrectionParameters > &);
 
+  std::string cuspInfoFile;
 private:
 
   BS* extractHighYLM(std::vector<bool> &rmv);
   LCOrbitalSet<BS,false>* originalSPOSet;
   RealType Rcut;
   std::vector<RealType> Z;
-  std::string cuspInfoFile;
 
   void createLCOSets(int centr, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta);
 

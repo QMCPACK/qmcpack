@@ -1,4 +1,5 @@
 \documentclass[11pt,usletter]{report}
+\usepackage{qmcpack_manual}
 \usepackage{bibtopic}
 \bibliographystyle{ieeetr}
 \usepackage{amsmath}
@@ -7,18 +8,14 @@
 \usepackage{algorithmic}
 \usepackage{algorithm}
 \usepackage{makeidx}
-\usepackage{ifpdf}
 \usepackage{fancyhdr}
 \usepackage{hyperref} %for urls
-%\usepackage{url}
 \usepackage{tabularx}
 \usepackage{placeins}
 % environment for shaded verbatim
 \usepackage{verbatim}
 \usepackage{caption}
-\usepackage{subcaption}
 \usepackage{graphicx}
-\usepackage{epsfig}
 
 % making listing behave properly
 %   with setting below, listings now render correctly
@@ -27,22 +24,11 @@
 %     -copy/paste can result in mangled text
 %     -mangling depends on pdf viewer (it is different for acroread and evince)
 %     -verbatim suffers from this also
+
 \usepackage{upquote}  % render ' properly
 \usepackage{listings}
 
 \lstloadlanguages{C++,XML,Python}
-
-
-\lstset{language=xml, 
-  basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
-  keywordstyle=\color{black}\bfseries, 
-  frame=single,
-  breaklines=true,
-  escapeinside={<:}{:>},
-  columns=fullflexible,   % copy/paste from pdf w/o added spaces
-  keepspaces=true,        % but do keep the spaces that are already there
-  showstringspaces=false, % avoid showing underbrackets in quoted text
-}
 
 \lstset{language=C++,
   basicstyle=\ttfamily \scriptsize,
@@ -53,20 +39,36 @@
   frame=single
 }
 
+\lstset{language=xml, 
+  basicstyle=\small\ttfamily,  % copy/paste from pdf w/o mangled quotes
+  keywordstyle=\color{black}\bfseries, 
+  frame=single,
+  breaklines=true,
+  escapeinside={<:}{:>},
+  columns=fullflexible,   % copy/paste from pdf w/o added spaces
+  keepspaces=true,        % but do keep the spaces that are already there
+  showstringspaces=false, % avoid showing underbrackets in quoted text
+}
+
+%% \ifxetex
+%% \usepackage{framed}
+%% \usepackage{xcolor}
+%% \pagecolor{white}
+%% \definecolor{shadecolor}{rgb}{.9, .9, .9}
 
 
-\ifpdf
-\usepackage{framed}
-\usepackage{xcolor}
-\pagecolor{white}
-\definecolor{shadecolor}{rgb}{.9, .9, .9}
+%% \newenvironment{shade}%
+%%                {\snugshade\verbatim}%
+%%                {\endverbatim\endsnugshade}
 
-\newenvironment{shade}%
-   {\snugshade\verbatim}%
-   {\endverbatim\endsnugshade}
+%% %% \newenvironment{shade}{
+%% %%   \begin{snugshade}[\hsize=\textwidth,\FrameRestore]%
+%% %% \small%
+%% %% }{%
+%% %%   \end{snugshade}&
+%% %%   }
 
-
-\else
+%% \else
 
 \usepackage{xcolor}
 \definecolor{verbgray}{gray}{0.9}
@@ -78,11 +80,17 @@
   basicstyle=\ttfamily,
   columns=fullflexible}}{}
 
-%\newenvironment{shade}
-%    {\HCode{<div class='code'>}\verbatim}
-%    {\endverbatim\HCode{</div>}}
+%% Default verbatim uses a rather large
+\makeatletter
+\newcommand{\verbatimfont}[1]{\renewcommand{\verbatim@font}{\ttfamily#1}}
+\makeatother
 
-\fi
+
+%% \newenvironment{shade}
+%%    {\HCode{<div class='code'>}\verbatim}
+%%    {\endverbatim\HCode{</div>}}
+
+%% \fi
 
 
 % set margins for whole document, lots of wasted space at top and bottom originally
@@ -92,7 +100,7 @@
 
 
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
-\newcommand{\courier}[1]{{\fontfamily{pcr}\selectfont #1}}
+%% \newcommand{\courier}[1]{{\fontfamily{pcr}\selectfont #1}}
 
 % for markup, as needed
 \newcommand{\red}[1]{{\color{red} #1}}
@@ -109,9 +117,9 @@
 % control display of instructions in the labs
 %   normally one only wants to show the 'workstation' way of running the labs
 \newif\ifws
-%\wstrue
+\wstrue
 %   for the pdf used during the labs, one wants to show the host supercomputer way
-\wsfalse
+%\wsfalse
 %  command for switching inline text (do not wrap verbatim environments with this!)
 \ifws
 \newcommand{\labsw}[2]{#1}
@@ -150,7 +158,6 @@
 \newpage
 
 \begin{btUnit}
-\begin{btSect}{bibliography}
 
 \input{introduction}
 \input{features}
@@ -184,11 +191,13 @@
 
 \input{output_overview}
 \input{analysis}
-
+\input{gaussian_orbitals_solids}
 \input{selected_ci}
 
 \input{afqmc}
 \input{integrals_for_afqmc}
+
+
 
 \input{examples}
 
@@ -207,13 +216,11 @@
 \input{design_features}
 \input{developing}
 
-\chapter{References}
-%\begingroup  % Avoid "References" section title
-%\renewcommand{\section}[2]{}%
-%\bibliographystyle{ieeetr}
-%\bibliography{bibliography}
-%\endgroup
-
+%% \renewcommand{\chaptername}{}
+%% \renewcommand{\thechapter}{}
+\chapter*{References}
+\addcontentsline{toc}{chapter}{References}
+\begin{btSect}{bibliography}
 \btPrintCited
 \end{btSect}
 \end{btUnit}

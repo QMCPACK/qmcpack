@@ -25,7 +25,7 @@
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "QMCApp/WaveFunctionPool.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/ConstantOrbital.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"

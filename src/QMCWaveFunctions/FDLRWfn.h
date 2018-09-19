@@ -13,7 +13,7 @@
 #define QMCPLUSPLUS_FDLRWFN_H
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include <QMCWaveFunctions/OrbitalBase.h>
+#include <QMCWaveFunctions/WaveFunctionComponent.h>
 #include <OhmmsPETE/TinyVector.h>
 
 namespace qmcplusplus {
@@ -29,7 +29,7 @@ namespace qmcplusplus {
   ///    sum_i  2 * di * (dPsi/dxi)
   ///
   /////////////////////////////////////////////////////////////////////////////////////////////////
-  class FDLRWfn : public OrbitalBase {
+  class FDLRWfn : public WaveFunctionComponent {
 
   // protected data members
   private:
@@ -154,7 +154,7 @@ namespace qmcplusplus {
 
     void init_driver_vars_singlet_or_triplet();
 
-    OrbitalBasePtr makeClone(ParticleSet& P) const;
+    WaveFunctionComponentPtr makeClone(ParticleSet& P) const;
 
     void checkInVariables(opt_variables_type& active);
 

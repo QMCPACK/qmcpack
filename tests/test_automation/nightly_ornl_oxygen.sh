@@ -131,7 +131,7 @@ case $sys in
 	export QMCPACK_TEST_SUBMIT_NAME=Intel2017-Release
 
 	#For Intel2017 we also setup QE
-	export QE_VERSION=6.2.1
+	export QE_VERSION=6.3
         # QE version 6.x unpacks to qe-; Older versions 5.x uses espresso-
         export QE_PREFIX=qe-
 	export QE_BIN=${test_dir}/${sys}_QE/${QE_PREFIX}${QE_VERSION}/bin

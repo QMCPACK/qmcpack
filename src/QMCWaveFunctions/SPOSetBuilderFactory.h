@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_BASISSETFACTORY_H
 #define QMCPLUSPLUS_BASISSETFACTORY_H
 
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 
 namespace qmcplusplus
@@ -29,19 +29,22 @@ namespace qmcplusplus
    *  only use in serial portion of execution
    *  ie during initialization prior to threaded code
    */
-  SPOSetBase* get_sposet(const std::string& name);
+  SPOSet* get_sposet(const std::string& name);
 
 
 
-/** derived class from OrbitalBuilderBase
+/** derived class from WaveFunctionComponentBuilder
  */
-class SPOSetBuilderFactory: public OrbitalBuilderBase
+class SPOSetBuilderFactory: public WaveFunctionComponentBuilder
 {
 
 public:
 
   ///set of basis set builders resolved by type
   static std::map<std::string,SPOSetBuilder*> spo_builders;
+
+  /// Reset the map and last_builder pointers.  Mostly for unit tests.
+  static void clear();
 
   /** constructor
    * \param els reference to the electrons
@@ -60,7 +63,7 @@ public:
     last_builder->loadBasisSetFromXML(cur);
   }
 
-  SPOSetBase* createSPOSet(xmlNodePtr cur);
+  SPOSet* createSPOSet(xmlNodePtr cur);
 
   void build_sposet_collection(xmlNodePtr cur);
 

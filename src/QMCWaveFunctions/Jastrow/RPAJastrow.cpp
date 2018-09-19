@@ -17,7 +17,7 @@
  */
 
 #include "QMCWaveFunctions/Jastrow/RPAJastrow.h"
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
 #include "QMCWaveFunctions/Jastrow/LRBreakupUtilities.h"
 #include "QMCWaveFunctions/Jastrow/LRTwoBodyJastrow.h"
@@ -292,7 +292,7 @@ RPAJastrow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
     Psi[i]->copyFromBuffer(P,buf);
 }
 
-OrbitalBase* RPAJastrow::makeClone(ParticleSet& tpq) const
+WaveFunctionComponent* RPAJastrow::makeClone(ParticleSet& tpq) const
 {
   HandlerType* tempHandler;
   if (rpafunc=="yukawa" || rpafunc=="breakup")

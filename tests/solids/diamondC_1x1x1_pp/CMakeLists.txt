@@ -254,3 +254,186 @@ ENDIF()
                     1 LONG_DIAMOND_DMC_SCALARS # DMC
                     )
 
+
+
+# estimator tests
+INCLUDE("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
+set(stat_python_reqs numpy;h5py)
+CHECK_PYTHON_REQS(stat_python_reqs diamond-estimator add_tests)
+if (NOT QMC_CUDA)
+  set(NMPI 4)
+  set(NOMP 4)
+  set(IFEXT "")
+else()
+  set(NMPI 1)
+  set(NOMP 16)
+  set(IFEXT "_gpu")
+endif()
+if (NOT QMC_COMPLEX)
+  set(OFEXT "_real")
+else()
+  set(OFEXT "_comp")
+endif()
+if (add_tests)
+  # density tests
+  SIMPLE_RUN_AND_CHECK(
+    short-diamondC_1x1x1_pp-vmc-estimator-density
+    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    qmc_dens_short${IFEXT}.in.xml
+    ${NMPI} ${NOMP}
+    check_stats.py -s 0 -q density -e 20 -c 8 -p qmc_dens_short -r qmc-ref/qmc_dens_short.s000.stat_ref_density.dat
+    )
+
+  SIMPLE_RUN_AND_CHECK(
+    short-diamondC_1x1x1_pp-dmc-estimator-density
+    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    qmc_dens_dmc_short.in.xml
+    ${NMPI} ${NOMP}
+    check_stats.py -s 1 -q density -e 20 -c 8 -p qmc_dens_dmc_short -r qmc-ref/qmc_dens_dmc_short.s001.stat_ref_density.dat
+    )
+
+  SIMPLE_RUN_AND_CHECK(
+    long-diamondC_1x1x1_pp-vmc-estimator-density
+    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    qmc_dens_long${IFEXT}.in.xml
+    ${NMPI} ${NOMP}
+    check_stats.py -s 0 -q density -e 20 -c 8 -p qmc_dens_long -r qmc-ref/qmc_dens_long.s000.stat_ref_density.dat
+    )
+
+  SIMPLE_RUN_AND_CHECK(
+    long-diamondC_1x1x1_pp-dmc-estimator-density
+    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    qmc_dens_dmc_long.in.xml
+    ${NMPI} ${NOMP}
+    check_stats.py -s 1 -q density -e 20 -c 8 -p qmc_dens_dmc_long -r qmc-ref/qmc_dens_dmc_long.s001.stat_ref_density.dat
+    )
+
+
+  # spindensity tests
+  SIMPLE_RUN_AND_CHECK(
+    short-diamondC_1x1x1_pp-vmc-estimator-spindensity
+    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    qmc_spindens_short${IFEXT}.in.xml
+    ${NMPI} ${NOMP}
+    check_stats.py -s 0 -q spindensity -e 20 -c 8 -p qmc_spindens_short -r qmc-ref/qmc_spindens_short.s000.stat_ref_spindensity.dat
+    )
+
+  SIMPLE_RUN_AND_CHECK(
+    short-diamondC_1x1x1_pp-dmc-estimator-spindensity
+    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    qmc_spindens_dmc_short.in.xml
+    ${NMPI} ${NOMP}
+    check_stats.py -s 1 -q spindensity -e 2 -c 8 -p qmc_spindens_dmc_short -r qmc-ref/qmc_spindens_dmc_short.s001.stat_ref_spindensity.dat
+    )
+
+  SIMPLE_RUN_AND_CHECK(
+    long-diamondC_1x1x1_pp-vmc-estimator-spindensity
+    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    qmc_spindens_long${IFEXT}.in.xml
+    ${NMPI} ${NOMP}
+    check_stats.py -s 0 -q spindensity -e 20 -c 8 -p qmc_spindens_long -r qmc-ref/qmc_spindens_long.s000.stat_ref_spindensity.dat
+    )
+
+  SIMPLE_RUN_AND_CHECK(
+    long-diamondC_1x1x1_pp-dmc-estimator-spindensity
+    "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+    qmc_spindens_dmc_long.in.xml
+    ${NMPI} ${NOMP}
+    check_stats.py -s 1 -q spindensity -e 20 -c 8 -p qmc_spindens_dmc_long -r qmc-ref/qmc_spindens_dmc_long.s001.stat_ref_spindensity.dat
+    )
+
+  # 1rdm tests
+  if (NOT QMC_CUDA)
+    # no Jastrow tests
+    SIMPLE_RUN_AND_CHECK(
+      short-diamondC_1x1x1_pp-vmc-noJ-estimator-1rdm
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_1rdm_noJ_short.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 0 -q 1rdm -e 20 -c 8 -p qmc_1rdm_noJ_short -r qmc-ref/qmc_1rdm_noJ_short${OFEXT}.s000.stat_ref_1rdm.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      long-diamondC_1x1x1_pp-vmc-noJ-estimator-1rdm
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_1rdm_noJ_long.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 0 -q 1rdm -e 20 -c 8 -p qmc_1rdm_noJ_long -r qmc-ref/qmc_1rdm_noJ_long${OFEXT}.s000.stat_ref_1rdm.dat
+      )
+
+    # two body Jastrow tests
+    SIMPLE_RUN_AND_CHECK(
+      short-diamondC_1x1x1_pp-vmc-J2-estimator-1rdm
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_1rdm_J2_short.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 0 -q 1rdm -e 20 -c 8 -p qmc_1rdm_J2_short -r qmc-ref/qmc_1rdm_J2_short${OFEXT}.s000.stat_ref_1rdm.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      long-diamondC_1x1x1_pp-vmc-J2-estimator-1rdm
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_1rdm_J2_long.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 0 -q 1rdm -e 20 -c 8 -p qmc_1rdm_J2_long -r qmc-ref/qmc_1rdm_J2_long${OFEXT}.s000.stat_ref_1rdm.dat
+      )
+  else()
+    message("Skipping diamond 1rdm test because CUDA is not supported")
+  endif()
+
+  if (NOT QMC_CUDA)
+    # energydensity tests
+    SIMPLE_RUN_AND_CHECK(
+      short-diamondC_1x1x1_pp-vmc-estimator-energydensity-cell
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_edens_cell_short${IFEXT}.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 0 -q 'energydensity,EDcell' -e 20 -c 8 -p qmc_edens_cell_short -r qmc-ref/qmc_edens_cell_short.s000.stat_ref_energydensity.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      short-diamondC_1x1x1_pp-vmc-estimator-energydensity-voronoi
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_edens_vor_short${IFEXT}.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 0 -q 'energydensity,EDvoronoi' -e 20 -c 2 -p qmc_edens_vor_short -r qmc-ref/qmc_edens_vor_short.s000.stat_ref_energydensity.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      short-diamondC_1x1x1_pp-dmc-estimator-energydensity-cell
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_edens_cell_dmc_short${IFEXT}.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 1 -q 'energydensity,EDcell' -e 2 -c 8 -p qmc_edens_cell_dmc_short -r qmc-ref/qmc_edens_cell_dmc_short.s001.stat_ref_energydensity.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      long-diamondC_1x1x1_pp-vmc-estimator-energydensity-cell
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_edens_cell_long${IFEXT}.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 0 -q 'energydensity,EDcell' -e 20 -c 8 -p qmc_edens_cell_long -r qmc-ref/qmc_edens_cell_long.s000.stat_ref_energydensity.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      long-diamondC_1x1x1_pp-vmc-estimator-energydensity-voronoi
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_edens_vor_long${IFEXT}.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 0 -q 'energydensity,EDvoronoi' -e 20 -c 2 -p qmc_edens_vor_long -r qmc-ref/qmc_edens_vor_long.s000.stat_ref_energydensity.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      long-diamondC_1x1x1_pp-dmc-estimator-energydensity-cell
+      "${CMAKE_SOURCE_DIR}/tests/solids/diamondC_1x1x1_pp"
+      qmc_edens_cell_dmc_long${IFEXT}.in.xml
+      ${NMPI} ${NOMP}
+      check_stats.py -s 1 -q 'energydensity,EDcell' -e 2 -c 8 -p qmc_edens_cell_dmc_long -r qmc-ref/qmc_edens_cell_dmc_long.s001.stat_ref_energydensity.dat
+      )
+
+  else()
+    message("Skipping diamond 1rdm test because CUDA is not supported")
+  endif()
+
+
+endif()

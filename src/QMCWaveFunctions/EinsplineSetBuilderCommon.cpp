@@ -24,13 +24,13 @@
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
-#include "QMCWaveFunctions/BsplineReaderBase.h"
+#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus
 {
 
-//std::map<H5OrbSet,SPOSetBase*,H5OrbSet>  EinsplineSetBuilder::SPOSetMap;
+//std::map<H5OrbSet,SPOSet*,H5OrbSet>  EinsplineSetBuilder::SPOSetMap;
 //std::map<TinyVector<int,4>,EinsplineSetBuilder::OrbType*,Int4less> EinsplineSetBuilder::OrbitalMap;
 ////std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_z;
 ////std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_d;

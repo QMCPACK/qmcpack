@@ -17,7 +17,6 @@
 #define QMCPLUSPLUS_NUMERICALGRIDORBITALBUILDER_H
 
 #include "Configuration.h"
-#include "Numerics/OneDimCubicSpline.h"
 #include "Numerics/OneDimQuinticSpline.h"
 #include "Numerics/OptimizableFunctorBase.h"
 #include "QMCWaveFunctions/MolecularOrbitals/SphericalBasisSet.h"
@@ -31,11 +30,7 @@ struct NGOrbital: public OptimizableFunctorBase
   typedef real_type                    value_type;
   typedef real_type                    point_type;
   typedef OneDimGridBase<real_type>    grid_type;
-#if QMC_BUILD_LEVEL>2
   typedef OneDimQuinticSpline<real_type> functor_type;
-#else
-  typedef OneDimCubicSpline<real_type> functor_type;
-#endif
   functor_type myFunc;
   real_type Y, dY, d2Y, d3Y;
 

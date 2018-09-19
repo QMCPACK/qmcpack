@@ -28,7 +28,6 @@
 #include "io/hdf_archive.h"
 #include <set>
 #include <map>
-#include "QMCTools/GTO2GridBuilder.h"
 #include "QMCApp/InitMolecularSystem.h"
 #include <sstream>
 
@@ -40,8 +39,8 @@ std::vector<int> QMCGaussianParserBase::gShellID;
 
 QMCGaussianParserBase::QMCGaussianParserBase():
   Title("sample"),basisType("Gaussian"),basisName("generic"),DoCusp(false),debug(false),production(false),
-  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),WFS_name("wfj"),AllH5(false),NbKpts(0)
-  ,usingCSF(false),readNO(0),readGuess(0),zeroCI(false),target_state(0),Structure(false),PBC(false)
+  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),optDetCoeffs(false),WFS_name("wfj"),AllH5(false),NbKpts(0)
+  ,usingCSF(false),readNO(0),readGuess(0),zeroCI(false),target_state(0),Structure(false),PBC(false),CodeName("")
   ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false),QP(false),ECP(false),X(0),Y(0),Z(0)
 {
 }
@@ -50,7 +49,7 @@ QMCGaussianParserBase::QMCGaussianParserBase(int argc, char** argv):
   BohrUnit(true),SpinRestricted(false),NumberOfAtoms(0),NumberOfEls(0),DoCusp(false),debug(false),
   SpinMultiplicity(0),NumberOfAlpha(0),NumberOfBeta(0),SizeOfBasisSet(0),WFS_name("wfj"),PBC(false),
   Title("sample"),basisType("Gaussian"),basisName("generic"),numMO(0),numMO2print(-1),production(false),
-  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),target_state(0),AllH5(false),
+  Normalized("no"),gridPtr(0),multideterminant(false),ci_threshold(0.01),optDetCoeffs(false),target_state(0),AllH5(false),
   angular_type("spherical"),usingCSF(false),readNO(0),readGuess(0),zeroCI(false),Structure(false),NbKpts(0)
   ,orderByExcitation(false), addJastrow(true), addJastrow3Body(false), QP(false),ECP(false),X(0),Y(0),Z(0)
 {
@@ -806,7 +805,10 @@ xmlNodePtr
 QMCGaussianParserBase::createMultiDeterminantSetQPHDF5()
 {
   xmlNodePtr multislaterdet = xmlNewNode(NULL,(const xmlChar*)"multideterminant");
-  xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+  if(optDetCoeffs)
+    xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+  else
+    xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"no");
   xmlNewProp(multislaterdet,(const xmlChar*)"spo_up",(const xmlChar*)"spo-up");
   xmlNewProp(multislaterdet,(const xmlChar*)"spo_dn",(const xmlChar*)"spo-dn");
   xmlNodePtr detlist = xmlNewNode(NULL,(const xmlChar*)"detlist");
@@ -869,7 +871,10 @@ xmlNodePtr
 QMCGaussianParserBase::createMultiDeterminantSetQP()
 {
     xmlNodePtr multislaterdet = xmlNewNode(NULL,(const xmlChar*)"multideterminant");
-    xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+    if(optDetCoeffs)
+      xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+    else
+      xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"no");
     xmlNewProp(multislaterdet,(const xmlChar*)"spo_up",(const xmlChar*)"spo-up");
     xmlNewProp(multislaterdet,(const xmlChar*)"spo_dn",(const xmlChar*)"spo-dn");
     xmlNodePtr detlist = xmlNewNode(NULL,(const xmlChar*)"detlist");
@@ -924,7 +929,10 @@ xmlNodePtr
 QMCGaussianParserBase::createMultiDeterminantSetVSVB()
 {
   xmlNodePtr multislaterdet = xmlNewNode(NULL,(const xmlChar*)"multideterminant");
-  xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+  if(optDetCoeffs)
+    xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+  else
+    xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"no");
   xmlNewProp(multislaterdet,(const xmlChar*)"spo_up",(const xmlChar*)"spo-up");
   xmlNewProp(multislaterdet,(const xmlChar*)"spo_dn",(const xmlChar*)"spo-dn");
   xmlNodePtr detlist = xmlNewNode(NULL,(const xmlChar*)"detlist");
@@ -1001,7 +1009,10 @@ xmlNodePtr
 QMCGaussianParserBase::createMultiDeterminantSet()
 {
   xmlNodePtr multislaterdet = xmlNewNode(NULL,(const xmlChar*)"multideterminant");
-  xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+  if(optDetCoeffs)
+    xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+  else
+    xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"no");
   xmlNewProp(multislaterdet,(const xmlChar*)"spo_up",(const xmlChar*)"spo-up");
   xmlNewProp(multislaterdet,(const xmlChar*)"spo_dn",(const xmlChar*)"spo-dn");
   if(usingCSF)
@@ -1506,65 +1517,6 @@ xmlNodePtr QMCGaussianParserBase::createJ1()
   return j1;
 }
 
-void QMCGaussianParserBase::map2GridFunctors(xmlNodePtr cur)
-{
-  using namespace qmcplusplus;
-  xmlNodePtr anchor = cur;
-  //xmlNodePtr grid_ptr = 0;
-  std::vector<xmlNodePtr> phi_ptr;
-  std::vector<QuantumNumberType> nlms;
-  int Lmax = 0;
-  int current = 0;
-  std::string acenter("none");
-  const xmlChar* aptr = xmlGetProp(cur,(const xmlChar*)"elementType");
-  if(aptr)
-    acenter = (const char*)aptr;
-  xmlNodePtr grid_ptr=0;
-  cur = anchor->children;
-  while(cur != NULL)
-  {
-    std::string cname((const char*)(cur->name));
-    if(cname == "grid")
-      grid_ptr = cur;
-    else
-      if(cname == "basisGroup")
-      {
-        int n=1,l=0,m=0;
-        const xmlChar* aptr = xmlGetProp(cur,(const xmlChar*)"n");
-        if(aptr)
-          n = atoi((const char*)aptr);
-        aptr = xmlGetProp(cur,(const xmlChar*)"l");
-        if(aptr)
-          l = atoi((const char*)aptr);
-        Lmax = std::max(l,Lmax);
-        phi_ptr.push_back(cur);
-        nlms.push_back(QuantumNumberType());
-        nlms[current][0]=n;
-        nlms[current][1]=l;
-        nlms[current][2]=m;
-        ++current;
-      }
-    cur = cur->next;
-  }
-  if(grid_ptr == 0)
-  {
-    LOGMSG("Grid is not defined: using default")
-    //xmlAddChild(anchor,gridPtr);
-    grid_ptr = xmlCopyNode(gridPtr,1);
-    xmlAddChild(anchor,grid_ptr);
-  }
-  RGFBuilderBase::CenteredOrbitalType aos(Lmax);
-  bool normalized(Normalized=="yes");
-  GTO2GridBuilder rbuilder(normalized);
-  rbuilder.setOrbitalSet(&aos,acenter);
-  rbuilder.addGrid(grid_ptr);
-  for(int i=0; i<nlms.size(); i++)
-  {
-    rbuilder.addRadialOrbital(phi_ptr[i],nlms[i]);
-  }
-  rbuilder.print(acenter,1,debug);
-}
-
 void QMCGaussianParserBase::createGridNode(int argc, char** argv)
 {
   gridPtr = xmlNewNode(NULL,(const xmlChar*)"grid");
@@ -1650,6 +1602,15 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
         if(UseHDF5)
         {
           xmlNodePtr bsetPtr = createBasisSetWithHDF5();
+          //Adding generic code name to the H5 file.
+          std::string CodeName("generic");
+          hdf_archive hout(0); 
+          hout.open(h5file.c_str(),H5F_ACC_RDWR);
+          hout.push("application",true);
+          hout.write(CodeName,"code");
+          hout.pop(); 
+          hout.close();
+           
         }
         else
         {
@@ -1734,18 +1695,6 @@ void QMCGaussianParserBase::dump(const std::string& psi_tag,
     xmlAddChild(qm_root,wfPtr);
   }
   xmlDocSetRootElement(doc, qm_root);
-  xmlXPathContextPtr m_context = xmlXPathNewContext(doc);
-  xmlXPathObjectPtr result
-  = xmlXPathEvalExpression((const xmlChar*)"//atomicBasisSet",m_context);
-  if(!xmlXPathNodeSetIsEmpty(result->nodesetval))
-  {
-    for(int ic=0; ic<result->nodesetval->nodeNr; ic++)
-    {
-      xmlNodePtr cur = result->nodesetval->nodeTab[ic];
-      map2GridFunctors(cur);
-    }
-  }
-  xmlXPathFreeObject(result);
   std::string fname = Title+".wf"+WFS_name+".xml";
   xmlSaveFormatFile(fname.c_str(),doc,1);
   xmlFreeDoc(doc);
@@ -1843,18 +1792,6 @@ void QMCGaussianParserBase::dumpPBC(const std::string& psi_tag,
     xmlAddChild(qm_root,wfPtr);
   }
   xmlDocSetRootElement(doc, qm_root);
-  xmlXPathContextPtr m_context = xmlXPathNewContext(doc);
-  xmlXPathObjectPtr result
-  = xmlXPathEvalExpression((const xmlChar*)"//atomicBasisSet",m_context);
-  if(!xmlXPathNodeSetIsEmpty(result->nodesetval))
-  {
-    for(int ic=0; ic<result->nodesetval->nodeNr; ic++)
-    {
-      xmlNodePtr cur = result->nodesetval->nodeTab[ic];
-      map2GridFunctors(cur);
-    }
-  }
-  xmlXPathFreeObject(result);
   std::string fname = Title+".wf"+WFS_name+".xml";
   xmlSaveFormatFile(fname.c_str(),doc,1);
   xmlFreeDoc(doc);
@@ -2382,19 +2319,6 @@ void QMCGaussianParserBase::Fmodump(const std::string& psi_tag,
   }
 
   xmlDocSetRootElement(doc, qm_root);
-  xmlXPathContextPtr m_context = xmlXPathNewContext(doc);
-  xmlXPathObjectPtr result
-  = xmlXPathEvalExpression((const xmlChar*)"//atomicBasisSet",m_context);
-  if(!xmlXPathNodeSetIsEmpty(result->nodesetval))
-  {
-    for(int ic=0; ic<result->nodesetval->nodeNr; ic++)
-    {
-      xmlNodePtr cur = result->nodesetval->nodeTab[ic];
-      map2GridFunctors(cur);
-
-    }
-  }
-  xmlXPathFreeObject(result);
   std::string fname = Mytag+".wfs.xml";
   xmlSaveFormatFile(fname.c_str(),doc,1);
   xmlFreeDoc(doc);
@@ -2633,7 +2557,10 @@ QMCGaussianParserBase::createMultiDeterminantSetFromH5()
 {
 
     xmlNodePtr multislaterdet = xmlNewNode(NULL,(const xmlChar*)"multideterminant");
-    xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+    if(optDetCoeffs)
+      xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"yes");
+    else
+      xmlNewProp(multislaterdet,(const xmlChar*)"optimize",(const xmlChar*)"no");
     xmlNewProp(multislaterdet,(const xmlChar*)"spo_up",(const xmlChar*)"spo-up");
     xmlNewProp(multislaterdet,(const xmlChar*)"spo_dn",(const xmlChar*)"spo-dn");
     xmlNodePtr detlist = xmlNewNode(NULL,(const xmlChar*)"detlist");

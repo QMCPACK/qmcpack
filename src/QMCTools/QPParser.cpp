@@ -626,8 +626,8 @@ void QPParser::getQPCI(std::istream& is)
   int ds=SpinMultiplicity-1;
   int neb= (NumberOfEls-ds)/2;
   int nea= NumberOfEls-NumberOfBeta;
-  ci_nca = nea-ci_nea;
-  ci_ncb = neb-ci_neb;
+  ci_nca = 0 ;
+  ci_ncb = 0 ;
   std::cout <<" Done reading CIs!!"<< std::endl;
   ci_nstates = CIalpha[0].size();
 }

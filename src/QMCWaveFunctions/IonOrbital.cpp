@@ -221,7 +221,7 @@ IonOrbital::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   buf.get(FirstAddressOfdU,LastAddressOfdU);
 }
 
-OrbitalBasePtr
+WaveFunctionComponentPtr
 IonOrbital::makeClone(ParticleSet& tqp) const
 {
   IonOrbital* j1copy=new IonOrbital(CenterRef,tqp);

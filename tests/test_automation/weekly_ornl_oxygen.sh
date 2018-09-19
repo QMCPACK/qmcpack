@@ -38,7 +38,7 @@ export OXYGEN_KEPLER=GPU-224da96d-fb1a-955e-b082-a0f2214877e3
 export OXYGEN_VOLTA=GPU-6bf1c875-b5de-2486-fd0e-ed4bca724ba1
 export CUDA_VISIBLE_DEVICES=$OXYGEN_KEPLER
 
-#Caution: intel2017 also builds QE and sets QE_BIN directory. Should be run ahead of intel2015_complex, intel2015_cuda, intel2015_cuda_complex
+#Caution: intel2017 also builds QE and sets QE_BIN directory. Should be run ahead of intel2017_complex, intel2017_cuda, intel2017_cuda_complex etc.
 #for sys in build_intel2017_nompi build_intel2017_nompi_soa build_intel2017 build_intel2017_soa build_intel2017_complex build_intel2017_complex_soa build_gcc_mkl build_gcc_cuda build_intel2017_mixed build_intel2017_mixed_soa build_intel2017_complex_mixed build_intel2017_complex_mixed_soa build_gcc_mkl_complex build_intel2015 build_intel2015_complex build_intel2015_cuda build_intel2015_cuda_complex build_gcc build_gcc_complex build_gcc_cuda_complex build_gcc_cuda_full build_gcc_cuda_complex_full build_gcc_mkl_soa build_gcc_cuda_soa 
 #for sys in build_intel2017_nompi build_intel2017 build_gcc_cuda build_volta_gcc_cuda build_gcc_cuda_complex build_gcc_mkl_soa  build_intel2017_soa build_intel2017_complex build_intel2017_complex_soa  build_intel2017_mixed build_intel2017_mixed_soa build_intel2017_complex_mixed build_intel2017_complex_mixed_soa build_gcc_mkl_complex build_gcc build_gcc_complex build_gcc_mkl build_gcc_cuda_soa build_intel2017_nompi_soa 
 for sys in build_intel2017 build_intel2017_complex build_intel2017_soa build_intel2017_complex_soa
@@ -132,7 +132,7 @@ case $sys in
 	export QMCPACK_TEST_SUBMIT_NAME=Intel2017-Release
 
 	#For Intel2017 we also setup QE
-	export QE_VERSION=6.2.1
+	export QE_VERSION=6.3
         # QE version 6.x unpacks to qe-; Older versions 5.x uses espresso-
         export QE_PREFIX=qe-
 	export QE_BIN=${test_dir}/${sys}_QE/${QE_PREFIX}${QE_VERSION}/bin

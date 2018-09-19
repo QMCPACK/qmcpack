@@ -53,14 +53,14 @@ The cell is specified using 3 lattice vectors.
 QMCPACK offers the capability to use a mixture of open and periodic boundary conditions.
 The \texttt{bconds} parameter expects a single string of three characters separated by
 spaces, \textit{e.g.} ``p p p'' for purely periodic boundary conditions. These characters control
-the behavior of the $x$, $y$, and $z$, axes, respectively.
+the behavior of the $x$, $y$, and $z$, axes, respectively. Non periodic directions must be placed after the periodic ones.
 Examples of valid \texttt{bconds} include:
 
 \begin{description}
 \item[``p p p''] Periodic boundary conditions. Corresponds to a 3D crystal.
-\item[``n n n''] Open boundary conditions. Corresponds to an isolated molecule in a vacuum.
 \item[``p p n''] Slab geometry. Corresponds to a 2D crystal.
 \item[``p n n''] Wire geometry. Corresponds to a 1D crystal.
+\item[``n n n''] Open boundary conditions. Corresponds to an isolated molecule in a vacuum.
 \end{description}
 
 \subsection{Vacuum}
