@@ -107,6 +107,73 @@ inline Tp MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, Mat1&& 
   return ovlp;
 }
 
+template< class Tp,
+          class integer,
+          class MatA,
+          class MatB,
+          class MatC,
+          class MatD,
+          class Mat1,
+          class Mat2,
+          class Mat3,
+          class IBuffer,
+          class TBuffer 
+        >
+inline Tp MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&& C, MatD&& QQ0, integer *ref, Mat1&& TNN, Mat2&& TAB, Mat3&& TNM, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
+{
+  // check dimensions are consistent
+  int NEL = B.shape()[1];
+  assert( hermA.shape()[1] == B.shape()[0] );
+  assert( hermA.shape()[0] == TAB.shape()[0] );
+  assert( B.shape()[1] == TAB.shape()[1] );
+  assert( B.shape()[1] == TNN.shape()[0] );
+  assert( B.shape()[1] == TNN.shape()[1] );
+  assert( hermA.shape()[0] == QQ0.shape()[0] );
+  assert( B.shape()[1] == QQ0.shape()[1] );
+  if(compact) {
+    assert( C.shape()[0] == TNN.shape()[1] );
+    assert( C.shape()[1] == B.shape()[0] );
+  } else {
+    assert( TNM.shape()[1] == B.shape()[0] );
+    assert( TNM.shape()[0] == TNN.shape()[1] );
+    assert( C.shape()[0] == hermA.shape()[1] );
+    assert( C.shape()[1] == TNM.shape()[1] );
+  }
+
+  using ma::T;
+
+  // TAB = herm(A)*B
+  ma::product(hermA,B,std::forward<Mat2>(TAB));  
+
+  // TNN = TAB[ref,:] 
+  for(int i=0; i<NEL; i++)
+    std::copy_n(std::addressof(*TAB[*(ref+i)].origin()),NEL,std::addressof(*TNN[i].origin()));
+
+  // TNN = TNN^(-1)
+  Tp ovlp = static_cast<Tp>(ma::invert(std::forward<Mat1>(TNN),IWORK,WORK));
+  if(ovlp == Tp(0.0)) return Tp(0.0); // don't bother calculating further
+
+  // QQ0 = TAB * inv(TNN) 
+  ma::product(TAB,TNN,std::forward<MatD>(QQ0));
+
+  if(compact) {
+
+    // C = T(TNN) * T(B)
+    ma::product(T(TNN),T(B),std::forward<MatC>(C)); 
+
+  } else {
+
+    // TNM = T(TNN) * T(B)
+    ma::product(T(TNN),T(B),std::forward<Mat3>(TNM)); 
+
+    // C = conj(A) * TNM
+    ma::product(T(hermA),TNM,std::forward<MatC>(C));
+
+  }
+
+  return ovlp;
+}
+
 /*
  * Calculates the 1-body mixed density matrix:
  *   < A | c+i cj | B > / <A|B> = conj(A) * ( T(B) * conj(A) )^-1 * T(B) 
@@ -230,7 +297,6 @@ inline Tp OverlapForWoodbury(const MatA& hermA, const MatB& B, MatC&& QQ0, integ
   // check dimensions are consistent
   int NEL = B.shape()[1];
   assert( hermA.shape()[1] == B.shape()[0] );
-  assert( hermA.shape()[0] == B.shape()[1] );
   assert( hermA.shape()[0] == TMN.shape()[0] );
   assert( B.shape()[1] == TMN.shape()[1] );
   assert( B.shape()[1] == TNN.shape()[0] );
@@ -248,12 +314,13 @@ inline Tp OverlapForWoodbury(const MatA& hermA, const MatB& B, MatC&& QQ0, integ
     std::copy_n(std::addressof(*TMN[*(ref+i)].origin()),NEL,std::addressof(*TNN[i].origin())); 
  
   // TNN -> inv(TNN)
-  Tp res =  static_cast<Tp>(ma::invert(std::forward<MatE>(TNN),IWORK,WORK));
+//  Tp res =  static_cast<Tp>(ma::invert(std::forward<MatD>(TNN),IWORK,WORK));
 
   // QQ0 = TMN * inv(TNN) 
   ma::product(TMN,TNN,std::forward<MatC>(QQ0));  
 
-  return res;
+//  return res;
+  return Tp(1.0);
 }
 
 /*
@@ -450,6 +517,60 @@ inline Tp Overlap(const MatA& hermA, const MatB& B, Mat&& T1, IBuffer& IWORK, co
   comm.broadcast_value(ovlp);  
 
   return ovlp; 
+}
+
+// Serial Implementation
+template< class Tp,
+          class integer,
+          class MatA,
+          class MatB,
+          class MatC,
+          class MatD,
+          class MatE,
+          class IBuffer,
+          class TBuffer,
+          class communicator
+        >
+inline Tp OverlapForWoodbury(const MatA& hermA, const MatB& B, MatC&& QQ0, integer *ref, MatD&& TNN, MatE& TMN, IBuffer& IWORK, TBuffer& WORK, communicator& comm)
+{
+  // check dimensions are consistent
+  int NEL = B.shape()[1];
+  assert( hermA.shape()[1] == B.shape()[0] );
+  assert( hermA.shape()[0] == TMN.shape()[0] );
+  assert( B.shape()[1] == TMN.shape()[1] );
+  assert( B.shape()[1] == TNN.shape()[0] );
+  assert( B.shape()[1] == TNN.shape()[1] );
+  assert( hermA.shape()[0] == QQ0.shape()[0] );
+  assert( B.shape()[1] == QQ0.shape()[1] );
+
+  using ma::T;
+
+  int N0,Nn,sz = B.shape()[1];
+  std::tie(N0,Nn) = FairDivideBoundary(comm.rank(),sz,comm.size());
+
+  // T(B)*conj(A) 
+  if(N0!=Nn)
+    ma::product(hermA,
+              B[indices[range_t()][range_t(N0,Nn)]],
+              TMN[indices[range_t()][range_t(N0,Nn)]]);
+  comm.barrier();
+  Tp ovlp=Tp(0.);
+  if(comm.rank()==0) {
+    for(int i=0; i<NEL; i++)
+      std::copy_n(std::addressof(*TMN[*(ref+i)].origin()),NEL,std::addressof(*TNN[i].origin()));
+   ovlp = static_cast<Tp>(ma::invert(std::forward<MatD>(TNN),IWORK,WORK));
+  }
+  comm.broadcast_value(ovlp);
+
+  int M0,Mn;
+  sz = TMN.shape()[0];
+  std::tie(M0,Mn) = FairDivideBoundary(comm.rank(),sz,comm.size());
+
+  // QQ0 = TMN * inv(TNN) 
+  ma::product(TMN[indices[range_t(M0,Mn)][range_t()]],TNN,
+              QQ0({M0,Mn},QQ0.extension(1)));
+  comm.barrier();
+  return ovlp;
 }
 
 } // namespace shm 

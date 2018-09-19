@@ -528,7 +528,7 @@ ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& nde
       }
       np = get_excitation_number(true,refa,confg,exct,ci,Iwork);
       alpha_index = ((np==0)?(0):(find_excitation(exct,unique_alpha[np]) + 
-                                  ph_struct.number_of_unique_smaller_than(np).first)); 
+                                  ph_struct.number_of_unique_smaller_than(np)[0])); 
       confg.clear();
       for(int k=0, q=0; k<NAEB; k++) {
         in>>q; if(in.fail()) APP_ABORT(" Error: Reading wfn file.\n");
@@ -538,7 +538,7 @@ ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& nde
       }
       np = get_excitation_number(true,refb,confg,exct,ci,Iwork);
       beta_index = ((np==0)?(0):(find_excitation(exct,unique_beta[np]) + 
-                                  ph_struct.number_of_unique_smaller_than(np).second)); 
+                                  ph_struct.number_of_unique_smaller_than(np)[1])); 
       ph_struct.add_configuration(alpha_index,beta_index,ci);
     }
   }

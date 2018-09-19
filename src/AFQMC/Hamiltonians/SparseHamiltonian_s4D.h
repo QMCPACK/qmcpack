@@ -118,7 +118,7 @@ class SparseHamiltonian_s4D: public OneBodyHamiltonian
     return SpCType_shm_csr_matrix({0,0},{0,0},0,Alloc(TG.Node()));
   }
 
-  HamiltonianOperations getHamiltonianOperations(bool pureSD, WALKER_TYPES type, 
+  HamiltonianOperations getHamiltonianOperations(bool pureSD, bool addCoulomb, WALKER_TYPES type, 
             std::vector<PsiT_Matrix>& PsiT, double cutvn, double cutv2,
             TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& dump) {
     APP_ABORT("Calling getHamiltonianOperations S4D\n");

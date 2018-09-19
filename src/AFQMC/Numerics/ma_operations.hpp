@@ -21,6 +21,7 @@
 #include "ma_blas.hpp"
 #include "ma_lapack.hpp"
 #include "spblas.hpp"
+#include "AFQMC/Numerics/ma_small_mat_ops.hpp"
 
 #include<type_traits> // enable_if
 #include<vector>
@@ -125,7 +126,8 @@ MultiArray1DC product(T alpha, SparseMatrixA const& A, MultiArray1DB const& B, T
             std::addressof(*arg(A).non_zero_indices2_data()),
             std::addressof(*arg(A).pointers_begin()),  
             std::addressof(*arg(A).pointers_end()),
-            arg(B).origin(), beta, std::forward<MultiArray1DC>(C).origin());
+            std::addressof(*arg(B).origin()), beta, 
+            std::addressof(*std::forward<MultiArray1DC>(C).origin()));
 
         return std::forward<MultiArray1DC>(C);
 }
@@ -191,9 +193,10 @@ MultiArray2DC product(T alpha, SparseMatrixA const& A, MultiArray2DB const& B, T
             std::addressof(*(arg(A).non_zero_indices2_data())),
             std::addressof(*(arg(A).pointers_begin())),  
             std::addressof(*(arg(A).pointers_end())),
-            arg(B).origin(), arg(B).strides()[0], 
+            std::addressof(*arg(B).origin()), arg(B).strides()[0], 
             beta, 
-            std::forward<MultiArray2DC>(C).origin(), std::forward<MultiArray2DC>(C).strides()[0]);
+            std::addressof(*std::forward<MultiArray2DC>(C).origin()), 
+            std::forward<MultiArray2DC>(C).strides()[0]);
 
         return std::forward<MultiArray2DC>(C);
 }
@@ -370,7 +373,7 @@ MultiArray2D exp(MultiArray2D const& A) {
         size_t N = A.shape()[0];
 
         MultiArray2D ExpA(boost::extents[N][N]);
-        std::fill_n(ExpA.origin(),N*N,Type(0));
+        std::fill_n(std::addressof(*ExpA.origin()),N*N,Type(0));
 
         if(is_hermitian(A)) { 
         

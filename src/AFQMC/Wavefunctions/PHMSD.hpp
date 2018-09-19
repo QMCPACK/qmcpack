@@ -13,8 +13,8 @@
 //    Lawrence Livermore National Laboratory 
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_AFQMC_PHMSD_H
-#define QMCPLUSPLUS_AFQMC_PHMSD_H
+#ifndef QMCPLUSPLUS_AFQMC_PHMSD_HPP
+#define QMCPLUSPLUS_AFQMC_PHMSD_HPP
 
 #include <vector>
 #include <map>
@@ -29,10 +29,12 @@
 #include "AFQMC/multi/array_ref.hpp"
 #include "AFQMC/Utilities/taskgroup.h"
 #include "AFQMC/Matrix/mpi3_SHMBuffer.hpp"
+#include "AFQMC/Matrix/array_of_sequences.hpp"
 
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
 #include "AFQMC/SlaterDeterminantOperations/SlaterDetOperations.hpp"
 
+#include "AFQMC/Wavefunctions/phmsd_helpers.hpp"
 #include "AFQMC/Wavefunctions/Excitations.hpp"
 
 
@@ -57,12 +59,19 @@ class PHMSD: public AFQMCInfo
   using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;  
   using shared_mutex = boost::mpi3::mutex;  
   using shared_CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
+  using shared_CTensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;
+  using index_aos = ma::sparse::array_of_sequences<int,int,
+                                                   boost::mpi3::intranode::allocator<int>,
+                                                   boost::mpi3::intranode::is_root>;
 
   public:
 
     PHMSD(AFQMCInfo& info, xmlNodePtr cur, afqmc::TaskGroup_& tg_, HamiltonianOperations&& hop_, 
           std::map<int,int>&& acta2mo_, std::map<int,int>&& actb2mo_,
-          ph_excitations<int,ComplexType>&& abij_, std::vector<PsiT_Matrix>&& orbs_, 
+          ph_excitations<int,ComplexType>&& abij_, 
+          index_aos&& beta_coupled_to_unique_alpha__,
+          index_aos&& alpha_coupled_to_unique_beta__,
+          std::vector<PsiT_Matrix>&& orbs_, 
           WALKER_TYPES wlk, ValueType nce, int targetNW=1):
                 AFQMCInfo(info),TG(tg_),
                 SDetOp(((wlk!=2)?(NMO):(2*NMO)),((wlk!=2)?(NAEA):(NAEA+NAEB))),
@@ -82,18 +91,22 @@ class PHMSD: public AFQMCInfo
                 req_SMsend(MPI_REQUEST_NULL),
                 req_SMrecv(MPI_REQUEST_NULL),
                 maxnactive(std::max(OrbMats[0].shape()[0],OrbMats.back().shape()[0])),
-                max_exct_n(std::max(abij.maximum_excitation_number().first,
-                                    abij.maximum_excitation_number().second)),
+                max_exct_n(std::max(abij.maximum_excitation_number()[0],
+                                    abij.maximum_excitation_number()[1])),
                 maxn_unique_confg(    
-                    std::max(abij.number_of_unique_excitations().first,
-                             abij.number_of_unique_excitations().second)),
-                unique_overlaps({2,maxn_unique_confg},shared_allocator<ComplexType>{TG.TG_local()}), 
-                unique_Etot({2,maxn_unique_confg},shared_allocator<ComplexType>{TG.TG_local()}), 
-                Q({maxnactive,NAEA},shared_allocator<ComplexType>{TG.TG_local()}),
-                Q0({NAEA,NAEA},shared_allocator<ComplexType>{TG.TG_local()}),
-                QQ0inv({NAEA,NAEA},shared_allocator<ComplexType>{TG.TG_local()}),
+                    std::max(abij.number_of_unique_excitations()[0],
+                             abij.number_of_unique_excitations()[1])),
+                unique_overlaps({2,1},shared_allocator<ComplexType>{TG.TG_local()}), 
+                unique_Etot({2,1},shared_allocator<ComplexType>{TG.TG_local()}), 
+                QQ0inv({2,1,1},shared_allocator<ComplexType>{TG.TG_local()}),
+                local_ov({2,maxn_unique_confg}),
+                local_etot({2,maxn_unique_confg}),
+                local_QQ0inv({((walker_type==COLLINEAR)?2:1),maxnactive,NAEA}),
                 Qwork({max_exct_n,max_exct_n}),
-                Gwork({maxnactive,NAEA})  // [Nact,Nel]
+                //Gwork({size_t(NAEA),maxnactive}),
+                Gwork({NMO,NMO}),
+                beta_coupled_to_unique_alpha(std::move(beta_coupled_to_unique_alpha__)),
+                alpha_coupled_to_unique_beta(std::move(alpha_coupled_to_unique_beta__)) 
     {
       compact_G_for_vbias = true; 
       transposed_G_for_vbias_ = HamOp.transposed_G_for_vbias();  
@@ -191,7 +204,8 @@ class PHMSD: public AFQMCInfo
         assert( G.shape()[1] == v.shape()[1] );
       }  
       assert( v.shape()[0] == HamOp.local_number_of_cholesky_vectors());
-      HamOp.vbias(G,std::forward<MatA>(v),a);
+      HamOp.vbias(G[indices[range_t(0,OrbMats[0].shape()[0]*NMO)][range_t()]],std::forward<MatA>(v),a,0.0);
+      HamOp.vbias(G[indices[range_t(OrbMats[0].shape()[0]*NMO,G.shape()[0])][range_t()]],std::forward<MatA>(v),a,1.0);
       TG.local_barrier();    
     }
 
@@ -370,11 +384,17 @@ class PHMSD: public AFQMCInfo
     size_t max_exct_n;   // maximum excitation number (number of electrons excited simultaneously)
     shared_CMatrix unique_overlaps;
     shared_CMatrix unique_Etot;
-    shared_CMatrix Q;    // PsiT * B
-    shared_CMatrix Q0;   // P0 * Q
-    shared_CMatrix QQ0inv;  // Q * inv(Q0) 
+    shared_CTensor QQ0inv;  // Q * inv(Q0) 
+    boost::multi::array<ComplexType,2> local_ov;
+    boost::multi::array<ComplexType,2> local_etot;
+    boost::multi::array<ComplexType,3> local_QQ0inv;
+    //boost::multi::array<ComplexType,2> QQ0inv;  // Q * inv(Q0) 
     boost::multi::array<ComplexType,2> Qwork;     
     boost::multi::array<ComplexType,2> Gwork; 
+
+    // array of sequence structure storing the list of connected alpha/beta configurations
+    index_aos beta_coupled_to_unique_alpha; 
+    index_aos alpha_coupled_to_unique_beta; 
 
     // excited states
     bool excitedState;
@@ -433,13 +453,13 @@ class PHMSD: public AFQMCInfo
     int dm_size(bool full) const {
       switch(walker_type) {
         case CLOSED: // closed-shell RHF
-          return (full)?(NMO*NMO):(NAEA*NMO);
+          return (full)?(NMO*NMO):(OrbMats[0].shape()[0]*NMO);
           break;
         case COLLINEAR:
-          return (full)?(2*NMO*NMO):((NAEA+NAEB)*NMO);
+          return (full)?(2*NMO*NMO):((OrbMats[0].shape()[0]+OrbMats.back().shape()[0])*NMO);
           break;
         case NONCOLLINEAR:
-          return (full)?(4*NMO*NMO):((NAEA+NAEB)*2*NMO);
+          return (full)?(4*NMO*NMO):((OrbMats[0].shape()[0])*2*NMO);
           break;
         default:
           APP_ABORT(" Error: Unknown walker_type in dm_size. \n");
@@ -451,13 +471,30 @@ class PHMSD: public AFQMCInfo
       using arr = std::pair<int,int>;
       switch(walker_type) {
         case CLOSED: // closed-shell RHF
+          return (full)?(arr{NMO,NMO}):(arr{OrbMats[0].shape()[0],NMO});
+          break;
+        case COLLINEAR:
+          return (full)?(arr{NMO,NMO}):((sp==Alpha)?(arr{OrbMats[0].shape()[0],NMO}):(arr{OrbMats.back().shape()[0],NMO}));
+          break;
+        case NONCOLLINEAR:
+          return (full)?(arr{2*NMO,2*NMO}):(arr{OrbMats[0].shape()[0],2*NMO});
+          break;
+        default:
+          APP_ABORT(" Error: Unknown walker_type in dm_size. \n");
+          return arr{-1,-1};
+      }
+    }
+    std::pair<int,int> dm_dims_ref(bool full, SpinTypes sp=Alpha) const {
+      using arr = std::pair<int,int>;
+      switch(walker_type) {
+        case CLOSED: // closed-shell RHF
           return (full)?(arr{NMO,NMO}):(arr{NAEA,NMO});
           break;
         case COLLINEAR:
-          return (full)?(arr{NMO,NMO}):((sp==Alpha)?(arr{NAEA,NMO}):(arr{NAEB,NMO}));
+          return (full)?(arr{NMO,NMO}):((sp==Alpha)?(arr{NAEA,NMO}):(arr{NAEA,NMO}));
           break;
         case NONCOLLINEAR:
-          return (full)?(arr{2*NMO,2*NMO}):(arr{NAEA+NAEB,2*NMO});
+          return (full)?(arr{2*NMO,2*NMO}):(arr{NAEA,2*NMO});
           break;
         default:
           APP_ABORT(" Error: Unknown walker_type in dm_size. \n");

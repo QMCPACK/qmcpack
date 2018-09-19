@@ -105,14 +105,14 @@ class FactorizedSparseHamiltonian: public OneBodyHamiltonian
     return rotateHij(type,Alpha,Beta,OneBodyHamiltonian::H1);
   }
 
-  SpVType_shm_csr_matrix generateHijkl(WALKER_TYPES type, TaskGroup_& TGwfn, std::map<IndexType,std::pair<bool,IndexType>>& occ_a, std::map<IndexType,std::pair<bool,IndexType>>& occ_b , RealType const cut=1e-6); 
+  SpVType_shm_csr_matrix generateHijkl(WALKER_TYPES type, bool addCoulomb, TaskGroup_& TGwfn, std::map<IndexType,std::pair<bool,IndexType>>& occ_a, std::map<IndexType,std::pair<bool,IndexType>>& occ_b , RealType const cut=1e-6); 
 
-  SpCType_shm_csr_matrix halfRotatedHijkl(WALKER_TYPES type, TaskGroup_& TGHam, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, RealType const cut=1e-6);
+  SpCType_shm_csr_matrix halfRotatedHijkl(WALKER_TYPES type, bool addCoulomb, TaskGroup_& TGHam, PsiT_Matrix *Alpha, PsiT_Matrix *Beta, RealType const cut=1e-6);
 
   SpVType_shm_csr_matrix calculateHSPotentials(double cut, TaskGroup_& TGprop,
         boost::multi_array<ComplexType,2>& vn0); 
 
-  HamiltonianOperations getHamiltonianOperations(bool pureSD, WALKER_TYPES type, 
+  HamiltonianOperations getHamiltonianOperations(bool pureSD, bool addCoulomb, WALKER_TYPES type, 
             std::vector<PsiT_Matrix>& PsiT, double cutvn, double cutv2,
             TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& dump); 
 

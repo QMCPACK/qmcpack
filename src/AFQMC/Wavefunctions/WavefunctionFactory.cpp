@@ -231,7 +231,9 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
         }
       }  
     }
-    auto HOps(h.getHamiltonianOperations(wfn_type == "occ" && walker_type==CLOSED,walker_type,PsiT,cutvn,cutv2,TGprop,TGwfn,dump));  
+    // multideterminant NOMSD needs 
+    auto HOps(h.getHamiltonianOperations(wfn_type == "occ" && walker_type==CLOSED,
+			ndets_to_read>1,walker_type,PsiT,cutvn,cutv2,TGprop,TGwfn,dump));  
     if(restart_file != "") 
       if(TGwfn.Global().root()) {
         dump.pop();
@@ -380,7 +382,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
       // map reference  
       auto refc = abij.reference_configuration();
       for(int i=0; i<NAEA+NAEB; i++, ++refc) *refc = mo2active[*refc]; 
-      for(int n=1; n<abij.maximum_excitation_number().first; n++) {  
+      for(int n=1; n<abij.maximum_excitation_number()[0]; n++) {  
         auto it = abij.alpha_begin(n);
         auto ite = abij.alpha_end(n);
         for(; it<ite; ++it) {
@@ -389,7 +391,7 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
             *exct = mo2active[*exct];  
         }       
       }
-      for(int n=1; n<abij.maximum_excitation_number().second; n++) {
+      for(int n=1; n<abij.maximum_excitation_number()[1]; n++) {
         auto it = abij.beta_begin(n);
         auto ite = abij.beta_end(n);
         for(; it<ite; ++it) {
@@ -429,9 +431,13 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
 */
     WALKER_TYPES reference_type = (PsiT.size()==1?CLOSED:COLLINEAR);
     // is PureSD actually faster??? CHECK!!!
-    auto HOps(h.getHamiltonianOperations(wfn_type == "occ" && reference_type == CLOSED,
-    //auto HOps(h.getHamiltonianOperations(false,
-                                         reference_type,PsiT,cutvn,cutv2,TGprop,TGwfn,dump));  
+    // NOTE: For UHF reference, treat HOps as a 2 determinant wavefunction of a
+    //        CLOSED walker type. This way you can treat alpha/beta sectors independently in 
+    //        HOps through the index corresponding 0/1.			
+    // never add coulomb to half rotated v2 tensor in PHMSD	
+    //auto HOps(h.getHamiltonianOperations(wfn_type == "occ",false, 
+    auto HOps(h.getHamiltonianOperations(false,false,
+                                         CLOSED,PsiT,cutvn,cutv2,TGprop,TGwfn,dump));  
 /*
     if(restart_file != "") 
       if(TGwfn.Global().root()) {
@@ -481,9 +487,38 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
     } else
       APP_ABORT(" Error: Problems adding new initial guess, already exists. \n"); 
 
+    // setup configuration coupligs
+    using index_aos = ma::sparse::array_of_sequences<int,int,
+                                                   boost::mpi3::intranode::allocator<int>,
+                                                   boost::mpi3::intranode::is_root>;
+    boost::mpi3::intranode::allocator<int> alloc_{TGwfn.Node()};
+    
+    // alpha
+    std::vector<int> counts_alpha(abij.number_of_unique_excitations()[0]);
+    std::vector<int> counts_beta(abij.number_of_unique_excitations()[1]);
+    if(TGwfn.Node().root()) {
+      for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it) {
+        ++counts_alpha[std::get<0>(*it)];
+        ++counts_beta[std::get<1>(*it)];
+      }
+    }
+    TGwfn.Node().broadcast_n(counts_alpha.begin(),counts_alpha.size());
+    TGwfn.Node().broadcast_n(counts_beta.begin(),counts_beta.size());
+    index_aos beta_coupled_to_unique_alpha(counts_alpha.size(),counts_alpha,alloc_);  
+    index_aos alpha_coupled_to_unique_beta(counts_beta.size(),counts_beta,alloc_);  
+    if(TGwfn.Node().root()) {
+      int ni=0;
+      for(auto it=abij.configurations_begin(); it<abij.configurations_end(); ++it, ++ni) {
+        beta_coupled_to_unique_alpha.emplace_back(std::get<0>(*it),ni);
+        alpha_coupled_to_unique_beta.emplace_back(std::get<1>(*it),ni);
+      }
+    }
+    TGwfn.Node().barrier();
+
     //return Wavefunction{}; 
     return Wavefunction(PHMSD(AFinfo,cur,TGwfn,std::move(HOps),std::move(acta2mo),
-                        std::move(actb2mo),std::move(abij),std::move(PsiT),
+                        std::move(actb2mo),std::move(abij),std::move(beta_coupled_to_unique_alpha),
+                        std::move(alpha_coupled_to_unique_beta),std::move(PsiT),
                         walker_type,NCE,targetNW)); 
   } else if(type == "generalmsd") {
     app_error()<<" Error: Wavefunction type GeneralMSD not yet implemented. \n"; 
@@ -708,7 +743,7 @@ Wavefunction WavefunctionFactory::fromHDF5(TaskGroup_& TGprop, TaskGroup_& TGwfn
     } else
       APP_ABORT(" Error: Problems adding new initial guess, already exists. \n");
 
-    HamiltonianOperations HOps(loadHamOps(dump,walker_type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2));
+    HamiltonianOperations HOps(loadHamOps(dump,false,walker_type,NMO,NAEA,NAEB,PsiT,TGprop,TGwfn,cutvn,cutv2));
     return Wavefunction(PHMSD(AFinfo,cur,TGwfn,std::move(HOps),std::move(ci),std::move(PsiT),
                         walker_type,NCE,targetNW));
 */

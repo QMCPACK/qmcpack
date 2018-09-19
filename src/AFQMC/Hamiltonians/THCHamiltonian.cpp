@@ -24,7 +24,8 @@ namespace afqmc
 {
 
 // Right now, cutvn, cutvn2, TGprop and TGwfn are completely ignored.
-HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, 
+// Note: addCoulomb only has meaning on the sparse hamiltonians, not in THC
+HamiltonianOperations THCHamiltonian::getHamiltonianOperations(bool pureSD, bool addCoulomb, 
             WALKER_TYPES type,std::vector<PsiT_Matrix>& PsiT, double cutvn, 
             double cutv2,TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& hdf_restart)
 {

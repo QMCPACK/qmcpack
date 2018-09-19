@@ -98,7 +98,7 @@ class SymmetricFactorizedSparseHamiltonian: public OneBodyHamiltonian
   SpVType_shm_csr_matrix calculateHSPotentials(double cut, TaskGroup_& TGprop,
         boost::multi_array<ComplexType,2>& vn0); 
 
-  HamiltonianOperations getHamiltonianOperations(bool pureSD, WALKER_TYPES type, 
+  HamiltonianOperations getHamiltonianOperations(bool pureSD, bool addCoulomb, WALKER_TYPES type, 
             std::vector<PsiT_Matrix>& PsiT, double cutvn, double cutv2,
             TaskGroup_& TGprop, TaskGroup_& TGwfn, hdf_archive& dump); 
 

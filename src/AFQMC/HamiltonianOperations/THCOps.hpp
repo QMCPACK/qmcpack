@@ -85,6 +85,8 @@ class THCOps
                 E0(e0_),
                 SM_TMats(nullptr) 
     {
+      if(haj.size() > 1)
+	APP_ABORT(" Error: THC not yet implemented for multiple references.\n");	
       assert(comm);
       // current partition over 'u' for L/Piu
       assert(Luv.shape()[0] == Piu.shape()[1]);
@@ -162,24 +164,23 @@ class THCOps
     
     template<class Mat, class MatB>
     void energy(Mat&& E, MatB const& G, int k, bool addH1=true, bool addEJ=true, bool addEXX=true) {
-/*
-Timer.reset("T0");
-Timer.reset("T1");
-Timer.reset("T2");
-Timer.reset("T3");
-Timer.reset("T4");
-Timer.reset("T5");
-Timer.reset("T6");
-Timer.reset("T7");
-Timer.reset("T8");
-Timer.start("T0");
-*/
+      if(k>0)
+	APP_ABORT(" Error: THC not yet implemented for multiple references.\n");	
       // G[nel][nmo]
       //static_assert(E.dimensionality==2);
       //static_assert(G.dimensionality==2);
       assert(E.shape()[0] == G.shape()[0]);        
       assert(E.shape()[1] == 3);        
       int nwalk = G.shape()[0];
+
+      // addH1	
+      std::fill_n(E.origin(),E.num_elements(),ComplexType(0.0));
+      if(addH1) {
+        ma::product(ComplexType(1.0),G,haj[k],ComplexType(0.0),E[indices[range_t()][0]]);
+        for(int i=0; i<nwalk; i++) E[i][0] += E0;
+      }
+      if(not (addEJ || addEXX)) return;		
+
       int nmo_ = rotPiu.shape()[0];
       int nu = rotMuv.shape()[0]; 
       int nu0 = rotMuv.offset()[0]; 
@@ -215,60 +216,26 @@ Timer.start("T0");
         Rbk.resize(extents[nel_][nmo_]);
       boost::multi_array_ref<ComplexType,1> R1D(Rbk.origin(),extents[nel_*nmo_]);
       
-      std::fill_n(E.origin(),E.num_elements(),ComplexType(0.0));  
-//Timer.stop("T0");
-//Timer.start("T1");
-      if(addH1) { 
-        ma::product(ComplexType(1.0),G,haj[k],ComplexType(0.0),E[indices[range_t()][0]]);
-        for(int i=0; i<nwalk; i++) E[i][0] += E0;
-      }
-//Timer.stop("T1");
       if(walker_type==CLOSED || walker_type==NONCOLLINEAR) {
         for(int wi=0; wi<nwalk; wi++) {
-//Timer.start("T2");
           boost::const_multi_array_ref<ComplexType,2> Gw(G[wi].origin(),extents[nel_][nmo_]);
           boost::const_multi_array_ref<ComplexType,1> G1D(G[wi].origin(),extents[nel_*nmo_]);
           Guv_Guu(Gw,Guv,Guu,T1,k);
-//Timer.stop("T2");
-//Timer.start("T3");
           ma::product(rotMuv.get()[indices[range_t(u0,uN)][range_t()]],Guu,
                       Tuu[indices[range_t(u0,uN)]]);
-//Timer.stop("T3");
-//Timer.start("T4");
           E[wi][2] = 0.5*ma::dot(Guu[indices[range_t(nu0+u0,nu0+uN)]],Tuu[indices[range_t(u0,uN)]]); 
-//Timer.stop("T4");
-//Timer.start("T5");
           auto Mptr = rotMuv.get()[u0].origin();  
           auto Gptr = Guv[0][u0].origin();  
           for(size_t k=0, kend=(uN-u0)*nv; k<kend; ++k, ++Gptr, ++Mptr)
             (*Gptr) *= (*Mptr); 
-//Timer.stop("T5");
-//Timer.start("T6");
           ma::product(Guv[0][indices[range_t(u0,uN)][range_t()]],rotcPua[k].get(),
                       Qub[indices[range_t(u0,uN)][range_t()]]);
-//Timer.stop("T6");
-//Timer.start("T7");
           // using this for now, which should not be much worse
           ma::product(T(Qub[indices[range_t(u0,uN)][range_t()]]),
                       T(rotPiu.get()[indices[range_t()][range_t(nu0+u0,nu0+uN)]]),  
                       Rbk);
-//Timer.stop("T7");
-//Timer.start("T8");
           E[wi][1] = -0.5*ma::dot(R1D,G1D);
-//Timer.stop("T8");
         }
-/*
-std::cout
-<<"init:         " <<Timer.total("T0") <<"\n"
-<<"H1:           " <<Timer.total("T1") <<"\n"
-<<"Guv/Guu:      " <<Timer.total("T2") <<"\n"
-<<"Tuu:          " <<Timer.total("T3") <<"\n"
-<<"dot(Guu,Tuu): " <<Timer.total("T4") <<"\n"
-<<"Tuv:          " <<Timer.total("T5") <<"\n"
-<<"Qub:          " <<Timer.total("T6") <<"\n"
-<<"Rbk:          " <<Timer.total("T7") <<"\n"
-<<"dot(Q,R):     " <<Timer.total("T8") <<std::endl;
-*/
       } else {
         for(int wi=0; wi<nwalk; wi++) {
           boost::const_multi_array_ref<ComplexType,2> Gw(G[wi].origin(),extents[nel_][nmo_]);
@@ -431,17 +398,19 @@ app_log()
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==1)>,
              typename = void
             >
-    void vbias(MatA const& G, MatB&& v, double a=1., double c=0.) {
+    void vbias(MatA const& G, MatB&& v, double a=1., double c=0., int k=0) {
         boost::const_multi_array_ref<ComplexType,2> G_(G.origin(),extents[1][G.shape()[0]]);
         boost::multi_array_ref<ComplexType,2> v_(v.origin(),extents[v.shape()[0]][1]);
-        vbias(G_,v_,a,c);
+        vbias(G_,v_,a,c,k);
     }
 
     template<class MatA, class MatB,
              typename = typename std::enable_if_t<(std::decay<MatA>::type::dimensionality==2)>,
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
             >
-    void vbias(MatA const& G, MatB&& v, double a=1., double c=0.) {
+    void vbias(MatA const& G, MatB&& v, double a=1., double c=0., int k=0) {
+      if(k>0)
+	APP_ABORT(" Error: THC not yet implemented for multiple references.\n");	
       int nwalk = G.shape()[0];
       int nmo_ = Piu.shape()[0];
       int nu = Piu.shape()[1];  
