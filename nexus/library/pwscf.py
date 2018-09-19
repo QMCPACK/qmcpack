@@ -234,7 +234,6 @@ class Pwscf(Simulation):
                 #end if
                 sync_record = os.path.join(outdir,'nexus_sync_record')
                 if not os.path.exists(sync_record):
-                    print 'executing',command
                     execute(command)
                     f = open(sync_record,'w')
                     f.write('\n')
