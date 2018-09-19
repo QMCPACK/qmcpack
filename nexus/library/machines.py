@@ -200,6 +200,7 @@ class Job(NexusCore):
                  cores        = None, # number of cores for the job
                  nodes        = None, # number of nodes for the job
                  threads      = 1,    # number of openmp threads for the job
+                 hyperthreads = None,
                  ppn          = None,
                  compiler     = None,
                  override     = None,
@@ -242,6 +243,7 @@ class Job(NexusCore):
         self.cores       = cores
         self.nodes       = nodes
         self.threads     = threads
+        self.hyperthreads= hyperthreads
         self.ppn         = ppn
         self.compiler    = compiler
         self.override    = override
@@ -2635,6 +2637,44 @@ class Cooley(Supercomputer):
 #end class Cooley
 
 
+class Theta(Supercomputer):
+    name = 'theta'
+    requires_account   = True
+    batch_capable      = True
+    executable_subfile = True
+
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def process_job_extra(self,job):
+        if job.hyperthreads is None:
+            job.hyperthreads = 1
+        #end if
+        job.run_options.add(
+            N  = '-N {0}'.format(job.processes_per_node),
+            cc = '-cc depth',
+            d  = '-d {0}'.format(job.threads),
+            j  = '-j {0}'.format(job.hyperthreads),
+            )
+    #end def process_job_extra
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'default'
+        #end if
+        c= '#!/bin/bash\n'
+        c+='#COBALT -q {0}\n'.format(job.queue)
+        c+='#COBALT -A {0}\n'.format(job.account)
+        c+='#COBALT -n {0}\n'.format(job.nodes)
+        c+='#COBALT -t {0}\n'.format(job.total_minutes())
+        c+='#COBALT -O {0}\n'.format(job.identifier)
+        c+='#COBALT --attrs mcdram=cache:numa=quad\n'
+        return c
+    #end def write_job_header
+#end class Theta
+
+
 class Lonestar(Supercomputer):  # Lonestar contribution from Paul Young
 
     name = 'lonestar' # will be converted to lowercase anyway
@@ -2965,6 +3005,7 @@ Vesta(        2048,   1,    16,   16,   10, 'runjob',     'qsub',  'qstata',    
 Cetus(        1024,   1,    16,   16,   10, 'runjob',     'qsub',  'qstata',    'qdel')
 Mira(        49152,   1,    16,   16,   10, 'runjob',     'qsub',  'qstata',    'qdel')
 Cooley(        126,   2,     6,  384,   10, 'mpirun',     'qsub',  'qstata',    'qdel')
+Theta(        4392,   1,    64,  192, 1000,  'aprun',     'qsub',  'qstata',    'qdel')
 Lonestar(    22656,   2,     6,   12,  128,  'ibrun',     'qsub',   'qstat',    'qdel')
 Matisse(        20,   2,     8,   64,    2, 'mpirun',   'sbatch',   'sacct', 'scancel')
 Komodo(         24,   2,     6,   48,    2, 'mpirun',   'sbatch',   'sacct', 'scancel')
