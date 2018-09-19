@@ -4462,7 +4462,7 @@ def generate_determinantset_old(type           = 'bspline',
                                 spin_polarized = False,
                                 source         = 'ion0',
                                 href           = 'MISSING.h5',
-                                excite         = None,
+                                excitation     = None,
                                 system         = None
                                 ):
     if system is None:
@@ -4508,23 +4508,23 @@ def generate_determinantset_old(type           = 'bspline',
     else:
         dset.twistnum = None
     #end if
-    if excite is not None:
+    if excitation is not None:
         format_failed = False
-        if not isinstance(excite,(tuple,list)):
-            QmcpackInput.class_error('excite must be a tuple or list\nyou provided type: {0}\nwith value: {1}'.format(excite.__class__.__name__,excite))
-        elif len(excite)!=2 or excite[0] not in ('up','down') or not isinstance(excite[1],str):
+        if not isinstance(excitation,(tuple,list)):
+            QmcpackInput.class_error('excitation must be a tuple or list\nyou provided type: {0}\nwith value: {1}'.format(excitation.__class__.__name__,excitation))
+        elif len(excitation)!=2 or excitation[0] not in ('up','down') or not isinstance(excitation[1],str):
             format_failed = True
         else:
             try:
-                tmp = array(excite[1].split(),dtype=int)
+                tmp = array(excitation[1].split(),dtype=int)
             except:
                 format_failed = True
             #end try
         #end if
         if format_failed:
-            QmcpackInput.class_error('excite must be a tuple or list with with two elements\nthe first element must be either "up" or "down"\nand the second element must be integers separated by spaces, e.g. "-216 +217"\nyou provided: {0}'.format(excite))
+            QmcpackInput.class_error('excitation must be a tuple or list with with two elements\nthe first element must be either "up" or "down"\nand the second element must be integers separated by spaces, e.g. "-216 +217"\nyou provided: {0}'.format(excitation))
         #end if
-        spin_channel,excitation = excite
+        spin_channel,excitation = excitation
         if spin_channel=='up':
             det = dset.get('updet')
         elif spin_channel=='down':
@@ -5456,7 +5456,7 @@ def generate_basic_input(id             = 'qmc',
                          hybrid_rcut    = None,
                          hybrid_lmax    = None,
                          orbitals_h5    = 'MISSING.h5',
-                         excite         = None,
+                         excitation     = None,
                          system         = 'missing',
                          pseudos        = None,
                          jastrows       = 'generateJ12',
@@ -5545,8 +5545,8 @@ def generate_basic_input(id             = 'qmc',
 
 
     if det_format=='new':
-        if excite is not None:
-            QmcpackInput.class_error('user provided "excite" input argument with new style determinant format\nplease add det_format="old" and try again')
+        if excitation is not None:
+            QmcpackInput.class_error('user provided "excitation" input argument with new style determinant format\nplease add det_format="old" and try again')
         #end if
         if system!=None and isinstance(system.structure,Jellium):
             ssb = generate_sposet_builder(
@@ -5599,7 +5599,7 @@ def generate_basic_input(id             = 'qmc',
             precision      = precision,
             href           = orbitals_h5,
             spin_polarized = spin_polarized,
-            excite         = excite,
+            excitation     = excitation,
             system         = system,
             )
     else:
