@@ -30,7 +30,7 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-DiracDeterminantBase::DiracDeterminantBase(SPOSetBasePtr const &spos, int first):
+DiracDeterminantBase::DiracDeterminantBase(SPOSetPtr const &spos, int first):
   NP(0), Phi(spos), FirstIndex(first)
   ,UpdateTimer("DiracDeterminantBase::update",timer_level_fine)
   ,RatioTimer("DiracDeterminantBase::ratio",timer_level_fine)
@@ -310,10 +310,13 @@ void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, std::vector<Va
   else
   {
     const size_t offset = memory_needed-nVP*NumOrbitals;
-    VP.SPOMem.attachReference((RealType*)memoryPool.data(),offset*sizeof(ValueType)/sizeof(RealType));
+    // SPO value result matrix. Always use existing memory
     Matrix<ValueType> psiT(memoryPool.data()+offset, nVP, NumOrbitals);
+    // SPO scratch memory. Always use existing memory
+    SPOSet::ValueAlignedVector_t SPOMem;
+    SPOMem.attachReference((ValueType*)memoryPool.data(),offset);
     SPOVTimer.start();
-    Phi->evaluateValues(VP, psiT);
+    Phi->evaluateValues(VP, psiT, SPOMem);
     SPOVTimer.stop();
     RatioTimer.start();
     MatrixOperators::product(psiT, psiM[VP.refPtcl-FirstIndex], ratios.data());
@@ -617,13 +620,13 @@ DiracDeterminantBase::evaluateDerivatives(ParticleSet& P,
 {
 }
 
-OrbitalBasePtr DiracDeterminantBase::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr DiracDeterminantBase::makeClone(ParticleSet& tqp) const
 {
   APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::makeClone");
   return 0;
 }
 
-DiracDeterminantBase* DiracDeterminantBase::makeCopy(SPOSetBasePtr spo) const
+DiracDeterminantBase* DiracDeterminantBase::makeCopy(SPOSetPtr spo) const
 {
   DiracDeterminantBase* dclone= new DiracDeterminantBase(spo);
   dclone->set(FirstIndex,LastIndex-FirstIndex);
@@ -631,7 +634,7 @@ DiracDeterminantBase* DiracDeterminantBase::makeCopy(SPOSetBasePtr spo) const
 }
 
 DiracDeterminantBase::DiracDeterminantBase(const DiracDeterminantBase& s)
-  : OrbitalBase(s), NP(0), Phi(s.Phi), FirstIndex(s.FirstIndex)
+  : WaveFunctionComponent(s), NP(0), Phi(s.Phi), FirstIndex(s.FirstIndex)
   ,UpdateTimer(s.UpdateTimer)
   ,RatioTimer(s.RatioTimer)
   ,InverseTimer(s.InverseTimer)
@@ -643,7 +646,7 @@ DiracDeterminantBase::DiracDeterminantBase(const DiracDeterminantBase& s)
   this->resize(s.NumPtcls,s.NumOrbitals);
 }
 
-//SPOSetBasePtr  DiracDeterminantBase::clonePhi() const
+//SPOSetPtr  DiracDeterminantBase::clonePhi() const
 //{
 //  return Phi->makeClone();
 //}

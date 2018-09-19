@@ -42,7 +42,7 @@ void SlaterDetWithBackflow::resetTargetParticleSet(ParticleSet& P)
   BFTrans->resetTargetParticleSet(P);
   for (int i = 0; i < Dets.size(); i++)
     Dets[i]->resetTargetParticleSet(BFTrans->QP);
-  std::map<std::string, SPOSetBasePtr>::iterator sit(mySPOSet.begin());
+  std::map<std::string, SPOSetPtr>::iterator sit(mySPOSet.begin());
   while (sit != mySPOSet.end())
   {
     (*sit).second->resetTargetParticleSet(BFTrans->QP);
@@ -97,7 +97,7 @@ void SlaterDetWithBackflow::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
     Dets[i]->copyFromBuffer(P,buf);
 }
 
-OrbitalBasePtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
 {
   BackflowTransformation *tr = BFTrans->makeClone(tqp);
 //    tr->resetTargetParticleSet(tqp);
@@ -107,11 +107,11 @@ OrbitalBasePtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
   {
     for(int i=0; i<Dets.size(); ++i)
     {
-      SPOSetBasePtr spo=Dets[i]->getPhi();
+      SPOSetPtr spo=Dets[i]->getPhi();
       // Check to see if this determinants SPOSet has already been
       // cloned
       bool found = false;
-      SPOSetBasePtr spo_clone;
+      SPOSetPtr spo_clone;
       for (int j=0; j<i; j++)
         if (spo == Dets[j]->getPhi())
         {
@@ -135,8 +135,8 @@ OrbitalBasePtr SlaterDetWithBackflow::makeClone(ParticleSet& tqp) const
   }
   else
   {
-    SPOSetBasePtr spo=Dets[0]->getPhi();
-    SPOSetBasePtr spo_clone=spo->makeClone();
+    SPOSetPtr spo=Dets[0]->getPhi();
+    SPOSetPtr spo_clone=spo->makeClone();
 //      spo_clone->resetTargetParticleSet(tqp);
     myclone->add(spo_clone,spo->objectName);
     for(int i=0; i<Dets.size(); ++i)
@@ -220,7 +220,7 @@ void SlaterDetWithBackflow::testDerivGL(ParticleSet& P)
     BFTrans->evaluate(P);
     for(int k=0; k<Dets.size(); k++)
       psi2 += Dets[k]->evaluateLog(P,G2,L2);
-    ParticleSet::ParticleValue_t tmp=0.0;
+    ParticleSet::SingleParticleValue_t tmp=0.0;
     for(int q=0; q<P.getTotalNum(); q++)
       tmp+=(L1[q]-L2[q])/(2.0*dh);
     app_log() <<i <<"\n"

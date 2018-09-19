@@ -40,7 +40,7 @@ SlaterDet::~SlaterDet()
 }
 
 ///add a new SPOSet to the list of determinants
-void SlaterDet::add(SPOSetBase* sposet, const std::string& aname)
+void SlaterDet::add(SPOSet* sposet, const std::string& aname)
 {
   if (mySPOSet.find(aname) == mySPOSet.end())
   {
@@ -49,7 +49,7 @@ void SlaterDet::add(SPOSetBase* sposet, const std::string& aname)
   }
   else
   {
-    APP_ABORT(" SlaterDet::add(SPOSetBase*, const std::string&) Cannot reuse the " + aname )
+    APP_ABORT(" SlaterDet::add(SPOSet*, const std::string&) Cannot reuse the " + aname )
     ;
   }
 }
@@ -103,7 +103,7 @@ void SlaterDet::reportStatus(std::ostream& os)
 
 void SlaterDet::resetTargetParticleSet(ParticleSet& P)
 {
-  std::map<std::string, SPOSetBasePtr>::iterator sit(mySPOSet.begin());
+  std::map<std::string, SPOSetPtr>::iterator sit(mySPOSet.begin());
   while (sit != mySPOSet.end())
   {
     (*sit).second->resetTargetParticleSet(P);
@@ -204,19 +204,19 @@ void SlaterDet::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   DEBUG_PSIBUFFER(" SlaterDet::copyFromBuffer ",buf.current());
 }
 
-OrbitalBasePtr SlaterDet::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr SlaterDet::makeClone(ParticleSet& tqp) const
 {
   SlaterDet* myclone = new SlaterDet(tqp);
   myclone->Optimizable=Optimizable;
   if (mySPOSet.size() > 1)
   {
-    std::map<std::string,SPOSetBasePtr>::const_iterator Mit,Lit;
+    std::map<std::string,SPOSetPtr>::const_iterator Mit,Lit;
     Mit= mySPOSet.begin();
     Lit= mySPOSet.end();
     while (Mit!=Lit)
     {
-      SPOSetBasePtr spo = (*Mit).second;
-      SPOSetBasePtr spo_clone;
+      SPOSetPtr spo = (*Mit).second;
+      SPOSetPtr spo_clone;
       spo_clone = spo->makeClone();
       spo_clone->resetTargetParticleSet(tqp);
       myclone->add(spo_clone,spo->objectName);
@@ -234,8 +234,8 @@ OrbitalBasePtr SlaterDet::makeClone(ParticleSet& tqp) const
   }
   else
   {
-    SPOSetBasePtr spo = Dets[0]->getPhi();
-    SPOSetBasePtr spo_clone = spo->makeClone();
+    SPOSetPtr spo = Dets[0]->getPhi();
+    SPOSetPtr spo_clone = spo->makeClone();
     spo_clone->resetTargetParticleSet(tqp);
     myclone->add(spo_clone, spo->objectName);
     for (int i = 0; i < Dets.size(); ++i)

@@ -24,7 +24,7 @@
 #ifndef QMCPLUSPLUS_LR_KSPACEJASTROW_H
 #define QMCPLUSPLUS_LR_KSPACEJASTROW_H
 
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Optimize/VarList.h"
 #include "OhmmsData/libxmldefs.h"
 #include "OhmmsPETE/OhmmsVector.h"
@@ -70,7 +70,7 @@ public:
   }
 };
 
-class kSpaceJastrow: public OrbitalBase
+class kSpaceJastrow: public WaveFunctionComponent
 {
 public:
   typedef enum { CRYSTAL, ISOTROPIC, NOSYMM } SymmetryType;
@@ -189,7 +189,7 @@ public:
   // structure factors.  Used to sort the G-vectors according to
   // crystal symmetry
   bool operator()(PosType G1, PosType G2);
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,

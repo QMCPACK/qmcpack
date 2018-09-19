@@ -453,12 +453,14 @@ namespace qmcplusplus
       for(int s=0;s<nspecies;++s)
       {
         out<<pad<<"  matrices/vectors for species "<<s<< std::endl;
-        out<<pad<<"    E_N        : "<< E_N[s]->size()<< std::endl;
+        if(energy_mat)
+          out<<pad<<"    E_N        : "<< E_N[s]->size()<< std::endl;
         out<<pad<<"    Phi_NB     : "<< Phi_NB[s]->rows()<<" "<<Phi_NB[s]->cols()<< std::endl;
         out<<pad<<"    Psi_NM     : "<< Psi_NM[s]->rows()<<" "<<Psi_NM[s]->cols()<< std::endl;
         out<<pad<<"    Phi_Psi_NB : "<< Phi_Psi_NB[s]->rows()<<" "<<Phi_Psi_NB[s]->cols()<< std::endl;
         out<<pad<<"    N_BB       : "<< N_BB[s]->rows()<<" "<<N_BB[s]->cols()<< std::endl;
-        out<<pad<<"    E_BB       : "<< E_BB[s]->rows()<<" "<<E_BB[s]->cols()<< std::endl;
+        if(energy_mat)
+          out<<pad<<"    E_BB       : "<< E_BB[s]->rows()<<" "<<E_BB[s]->cols()<< std::endl;
       }
     }
     out<<pad<<"  basis_norms"<< std::endl;
@@ -590,7 +592,7 @@ namespace qmcplusplus
 
   DensityMatrices1B::Return_t DensityMatrices1B::evaluate(ParticleSet& P)
   {
-    if(have_required_traces)
+    if(have_required_traces || !energy_mat)
     {
       if(check_derivatives)
         test_derivatives();
@@ -611,7 +613,11 @@ namespace qmcplusplus
     if(!warmed_up)
       warmup_sampling();
     // get weight and single particle energy trace data
-    RealType weight=w_trace->sample[0]*metric;
+    RealType weight;
+    if(energy_mat)
+      weight=w_trace->sample[0]*metric;
+    else
+      weight=tWalker->Weight*metric;
     if(energy_mat)
       get_energies(E_N);               // energies        : particles x 1
     // compute sample positions (monte carlo or deterministic)
@@ -825,7 +831,11 @@ namespace qmcplusplus
     const int basis_size2 = basis_size*basis_size;
     if(!warmed_up)
       warmup_sampling();
-    RealType weight=w_trace->sample[0]*metric;
+    RealType weight;
+    if(energy_mat)
+      weight=w_trace->sample[0]*metric;
+    else
+      weight=tWalker->Weight*metric;
     int nparticles = P.getTotalNum();
     generate_samples(weight);
     int n=0;

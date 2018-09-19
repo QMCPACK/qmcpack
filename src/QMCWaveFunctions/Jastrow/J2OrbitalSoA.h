@@ -15,7 +15,7 @@
 #define QMCPLUSPLUS_TWOBODYJASTROW_OPTIMIZED_SOA_H
 #include "Configuration.h"
 #if QMC_BUILD_LEVEL<5
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
 #include <qmc_common.h>
 #endif
@@ -28,7 +28,7 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  *  @brief Specialization for two-body Jastrow function using multiple functors
  *
  * Each pair-type can have distinct function \f$u(r_{ij})\f$.
@@ -44,7 +44,7 @@ namespace qmcplusplus
  * - Memory use is O(N). 
  */
 template<class FT>
-struct  J2OrbitalSoA : public OrbitalBase
+struct  J2OrbitalSoA : public WaveFunctionComponent
 {
   ///alias FuncType
   using FuncType=FT;
@@ -169,7 +169,7 @@ struct  J2OrbitalSoA : public OrbitalBase
   RealType ChiesaKEcorrection() { return RealType();}
   /**@} */
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   RealType evaluateLog(ParticleSet& P,
                        ParticleSet::ParticleGradient_t& G,
@@ -351,7 +351,7 @@ void J2OrbitalSoA<FT>::addFunc(int ia, int ib, FT* j)
 }
 
 template<typename FT>
-OrbitalBasePtr J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr J2OrbitalSoA<FT>::makeClone(ParticleSet& tqp) const
 {
   J2OrbitalSoA<FT>* j2copy=new J2OrbitalSoA<FT>(tqp,-1);
   if (dPsi)

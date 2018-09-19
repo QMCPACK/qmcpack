@@ -8,7 +8,7 @@ In most scenario, it should be used with pseudo potential.
 
 # Note import path which is different to molecule code
 #from pyscf.pbc import gto, scf, df, dft
-from pyscf import gto, dft
+from pyscf import gto, df, dft
 import  numpy
 
 
@@ -36,19 +36,25 @@ cell = gto.M(
    unit="angstrom",
    spin=4,
    verbose = 5,
-   cart=True,
+   cart = False,
+   charge = 2,
 )
 
 
 
 
-#mf = dft.RKS(cell).density_fit()
-mf = dft.RKS(cell)
+mf = dft.RKS(cell).density_fit()
+#mf = dft.RKS(cell)
 mf.xc = 'b3lyp'
-mf.kernel()
+#mf.chkfile = 'FeCO6.chk'
+#dm = mf.from_chk('FeCO6.chk')
+mf.chkfile = 'FeCO6-spherical.chk'
+dm = mf.from_chk('FeCO6-spherical.chk')
+mf.kernel(dm)
+#mf.kernel()
 
 title='FeCO6'
-
+kpts=[]
 
 from PyscfToQmcpack import savetoqmcpack
-savetoqmcpack(cell,mf,title)
+savetoqmcpack(cell,mf,title=title,kpts=kpts)

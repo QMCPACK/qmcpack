@@ -17,7 +17,7 @@
 #ifndef QMCPLUSPLUS_DIFFERENTIAL_TWOBODYJASTROW_H
 #define QMCPLUSPLUS_DIFFERENTIAL_TWOBODYJASTROW_H
 #include "Configuration.h"
-#include "QMCWaveFunctions/DiffOrbitalBase.h"
+#include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleAttribOps.h"
@@ -26,11 +26,11 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  *  @brief Specialization for two-body Jastrow function using multiple functors
  */
 template<class FT>
-class DiffTwoBodyJastrowOrbital: public DiffOrbitalBase
+class DiffTwoBodyJastrowOrbital: public DiffWaveFunctionComponent
 {
   ///number of variables this object handles
   int NumVars;
@@ -283,7 +283,7 @@ public:
     }
   }
 
-  DiffOrbitalBasePtr makeClone(ParticleSet& tqp) const
+  DiffWaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
     DiffTwoBodyJastrowOrbital<FT>* j2copy=new DiffTwoBodyJastrowOrbital<FT>(tqp);
     std::map<const FT*,FT*> fcmap;

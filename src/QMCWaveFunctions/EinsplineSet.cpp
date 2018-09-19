@@ -2306,7 +2306,7 @@ EinsplineSetExtended<StorageType>::registerTimers()
 
 
 
-template<typename StorageType> SPOSetBase*
+template<typename StorageType> SPOSet*
 EinsplineSetExtended<StorageType>::makeClone() const
 {
   EinsplineSetExtended<StorageType> *clone =
@@ -2332,7 +2332,7 @@ EinsplineSetHybrid<double>::Type()
 }
 
 
-template<typename StorageType> SPOSetBase*
+template<typename StorageType> SPOSet*
 EinsplineSetHybrid<StorageType>::makeClone() const
 {
   EinsplineSetHybrid<StorageType> *clone =

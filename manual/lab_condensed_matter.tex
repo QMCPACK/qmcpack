@@ -30,22 +30,22 @@ DE-AC04-94AL85000.}
 
 \section{Lab directories and files}
 
-\begin{shade}
+\footnotesize
+\begin{verbatim}
 labs/lab4_condensed_matter/
 ├── Be-2at-setup.py           - DFT only for prim to conv cell
 ├── Be-2at-qmc.py             - QMC only for prim to conv cell
 ├── Be-16at-qmc.py            - DFT and QMC for prim to 16 atom cell
 ├── graphene-setup.py         - DFT and OPT for graphene
 ├── graphene-loop-mesh.py     - VMC scan over orbital bspline mesh factors
-├── graphene-loop-buffer.py   - VMC scan over orbital bspline buffer region size
-├── graphene-final.py         - DMC for final meshfactor and buffer region
+├── graphene-final.py         - DMC for final meshfactor
 └── pseudopotentials          - pseudopotential directory
     ├── Be.ncpp                 - Be PP for Quantum ESPRESSO
     ├── Be.xml                  - Be PP for QMCPACK
     ├── C.BFD.upf               - C  PP for Quantum ESPRESSO
     └── C.BFD.xml               - C  PP for QMCPACK
-\end{shade}
-
+\end{verbatim}
+\normalsize
 
 The goal of this lab will be to introduce you to the somewhat specialized problems involved in performing diffusion Monte Carlo calculations on condensed matter as opposed to the atoms and molecules that were the focus of earlier labs.   Calculations will be performed on two different systems.  Firstly, we will perform a series of calculations on BCC beryllium focusing on the necessary methodology to limit finite size effects.  Secondly, we will perform calculations on graphene as an example of a system where qmcpack’s ability to handle cases with mixed periodic and open boundary conditions is useful.  This example will also focus on strategies to limit memory usage for such systems.
 All of the calculations performed in this lab will utilize the Nexus workflow management system that vastly simplifies the process by automating the steps of generating trial wavefunctions and performing DMC calculations.
@@ -181,16 +181,14 @@ Another useful exercise would be to attempt to validate this pseudopotential by 
 \section{Handling a 2D system: graphene}
 In this section we will examine a calculation of an isolated sheet of graphene.  As graphene is a two dimensional system, we will take advantage of qmcpack's ability to mix periodic and open boundary conditions to eliminate and spurious interaction of the sheet with its images in the z direction.  Run the script graphene-setup.py which will generate the wavefunction and optimize one and two body jastrow factors.  In the script, notice line 160: bconds = 'ppn' in the generate\_qmcpack function which specifies this mix of open and periodic boundary conditions.  As a consequence of this, the atoms will need to be kept away from this open boundary in the z direction as the electronic wavefunction will not be defined outside of the simulation box in this direction.  For this reason, all of the atom positions in at the beginning of the file have z coordinates 7.5.  At this point, run the script graphene-setup.py.
 
-Aside from the change in boundary conditions, the main thing that distinguished this kind of calculation from the beryllium example above is the large amount of vacuum in the cell.  While this is a very small calculation designed to run quickly in the tutorial, in general a more converged calculation would quickly become memory limited on an architecture like BG/Q.  When the initial wavefunciton optimizaiton has completed to your satisfaction, run the scripts graphene-loop-buffer.py and graphene-loop-mesh.py.  These examine within variational Monte Carlo two approaches to reducing the memory required to store the wavefunction.  In graphene-loop-mesh.py, the spacing between the b-spline points is varied uniformly.  The mesh spacing is a prefactor to the linear spacing between the spline points, so the memory usage goes as the cube of the meshfactor.  When you run the calculations, examine the .s000.scalar.dat files with qmca to determine the lowest possible mesh spacing that preserves both the vmc energy and the variance.  Similarly, the script graphene-loop-buffer.py uses a feature which generates two spline tables for the wavefunction.  One will have half of the mesh spacing requested in the input file and will be valid everywhere.  The second one will only be defined in the smallest parallelpiped that contains all of the atoms in the simulation cell with minimum distance given by the buffer size.  Again, see what the smallest possible buffer size is that preserves the vmc energy and variance.
+Aside from the change in boundary conditions, the main thing that distinguished this kind of calculation from the beryllium example above is the large amount of vacuum in the cell.  While this is a very small calculation designed to run quickly in the tutorial, in general a more converged calculation would quickly become memory limited on an architecture like BG/Q.  When the initial wavefunciton optimizaiton has completed to your satisfaction, run the script graphene-loop-mesh.py.  This examines within variational Monte Carlo an approache to reducing the memory required to store the wavefunction.  In graphene-loop-mesh.py, the spacing between the b-spline points is varied uniformly.  The mesh spacing is a prefactor to the linear spacing between the spline points, so the memory usage goes as the cube of the meshfactor.  When you run the calculations, examine the .s000.scalar.dat files with qmca to determine the lowest possible mesh spacing that preserves both the vmc energy and the variance.  
 
 Finally, edit the file graphene-final.py which will perform two DMC calculations.  In the first, (qmc1) replace the following lines:
 \begin{lstlisting}
     meshfactor   = xxx,
     precision    = '---',
-    truncate     = False,
-    buffer       = 0.0,
 \end{lstlisting}
-using the values you have determined to perform the calculation with as small as possible of wavefunction.  Note that we can also use single precision arithmetic to store the wavefunction by specifying precision='single'.  When you run the script, compare the output of the two DMC calculations in terms of energy and variance.  Also see if you can calculate the fraction of memory that you were able to save by using a meshfactor other than 1, a buffer table and single precision arithmetic.
+using the values you have determined to perform the calculation with as small as possible of wavefunction.  Note that we can also use single precision arithmetic to store the wavefunction by specifying precision='single'.  When you run the script, compare the output of the two DMC calculations in terms of energy and variance.  Also see if you can calculate the fraction of memory that you were able to save by using a meshfactor other than 1 and single precision arithmetic.
 
 \section{Conclusion}
 Upon completion of this lab, you should be able to use Nexus to perform DMC calculations on periodic solids when provided with a pseudopotential.  You should also be able to reduce the size of the wavefunction in a solid state calculation in cases where memory is a limiting factor.

@@ -33,7 +33,6 @@ EGOSet::EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2): 
 {
   KptMax=k.size();
   OrbitalSetSize=k.size();
-  BasisSetSize=k.size();
   className="EGOSet";
   //assign_energies();
 }
@@ -43,7 +42,6 @@ EGOSet::EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2, c
 {
   KptMax=k.size();
   OrbitalSetSize=k.size();
-  BasisSetSize=k.size();
   className="EGOSet";
   //assign_energies();
   //assign_degeneracies(d);
@@ -51,7 +49,7 @@ EGOSet::EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2, c
 
 ElectronGasComplexOrbitalBuilder::ElectronGasComplexOrbitalBuilder(ParticleSet& els,
     TrialWaveFunction& psi):
-  OrbitalBuilderBase(els,psi)
+  WaveFunctionComponentBuilder(els,psi)
 {
 }
 
@@ -101,7 +99,7 @@ ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur)
 {
 }
 
-SPOSetBase* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
+SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   app_log() << "ElectronGasSPOBuilder::createSPOSet " << std::endl;
   int nc=0;
@@ -136,7 +134,7 @@ SPOSetBase* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 }
 
 
-SPOSetBase* ElectronGasSPOBuilder::createSPOSetFromIndices(indices_t& indices)
+SPOSet* ElectronGasSPOBuilder::createSPOSetFromIndices(indices_t& indices)
 {
   egGrid.createGrid(indices);
   EGOSet* spo = new EGOSet(egGrid.kpt,egGrid.mk2,egGrid.deg);

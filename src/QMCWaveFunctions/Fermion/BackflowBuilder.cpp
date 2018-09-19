@@ -39,7 +39,7 @@ namespace qmcplusplus
 {
 
 BackflowBuilder::BackflowBuilder(ParticleSet& els, PtclPoolType& pool, TrialWaveFunction& psi)
-  : OrbitalBuilderBase(els,psi), ptclPool(pool), BFTrans(0), cutOff(-1.0)
+  : WaveFunctionComponentBuilder(els,psi), ptclPool(pool), BFTrans(0), cutOff(-1.0)
 {
   ClassName="BackflowBuilder";
 }

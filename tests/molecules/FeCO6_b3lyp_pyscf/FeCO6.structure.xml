@@ -36,10 +36,10 @@
 </attrib>
   </particleset>
   <particleset name="e" random="yes" randomsrc="ion0">
-    <group name="u" size="40">
+    <group name="u" size="39">
       <parameter name="charge">-1</parameter>
     </group>
-    <group name="d" size="36">
+    <group name="d" size="35">
       <parameter name="charge">-1</parameter>
     </group>
   </particleset>

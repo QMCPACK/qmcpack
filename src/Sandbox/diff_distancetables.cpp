@@ -120,9 +120,7 @@ int main(int argc, char** argv)
   DistanceTableData* d_ee=DistanceTable::add(els,DT_SOA);
   DistanceTableData* d_ie=DistanceTable::add(ions,els,DT_SOA);
 
-  d_ie->setRmax(els.Lattice.WignerSeitzRadius);
   RealType Rsim=els.Lattice.WignerSeitzRadius;
-  std::cout << "Setting 1-body cutoff " <<  d_ie->Rmax << std::endl;
 
   DistanceTableData* d_ee_aos=DistanceTable::add(els_aos,DT_AOS);
   DistanceTableData* d_ie_aos=DistanceTable::add(ions_aos,els_aos,DT_AOS);
@@ -191,7 +189,6 @@ int main(int argc, char** argv)
   els.donePbyP();
   els_aos.donePbyP();
 
-  std::cout << "WignerSeitzRadius " <<  d_ie->Rmax << std::endl;
   {
     double r_err=0.0;
     for(int iat=0; iat<nels; ++iat)
@@ -273,27 +270,6 @@ int main(int argc, char** argv)
     cout << endl;
     cout << "AB SoA-AoS in distance           = " << dist_err/nn << endl;
     cout << "AB SoA-AoS in displacement       = " << disp_err/nn << endl;
-  }
-
-
-  {
-    double dist_err=0.0;
-    double displ_err=0.0;
-    int nn=0;
-    for(int i=0; i<nions; ++i)
-      for(int nj=0, jmax=d_ie->M[i]; nj<jmax; ++nj)
-      {
-        int j=d_ie->J2(i,nj);
-        int ij=i*nels+j;
-        PosType diff_dr=d_ie->dr_m2(i,nj)-d_ie_aos->dr(ij);
-        RealType diff_r=d_ie->r_m2(i,nj)- d_ie_aos->r(ij);
-        dist_err += abs(diff_r);
-        displ_err += sqrt(dot(diff_dr,diff_dr));
-        nn++;
-      }
-    cout << "---------------------------------" << endl;
-    cout << "AB SoA-AoS compact = " << dist_err/nn << " " << displ_err/nn;
-    cout << " Total number of nn = " << nn << " / " << nels*nions << endl;
   }
 
   OHMMS::Controller->finalize();

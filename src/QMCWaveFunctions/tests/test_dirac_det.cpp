@@ -15,9 +15,9 @@
 
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Numerics/OhmmsBlas.h"
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
 #include "simd/simd.hpp"
 
@@ -43,7 +43,7 @@ template <typename T1, typename T2> void check_matrix(Matrix<T1> &a, Matrix<T2> 
   }
 }
 
-class FakeSPO : public SPOSetBase
+class FakeSPO : public SPOSet
 {
   public:
 

@@ -98,24 +98,12 @@ public:
     return psi;
   }
 
-  inline ValueType alternateRatioGrad(ParticleSet& P, int iat, GradType& grad_iat)
-  {
-    APP_ABORT("Need to implement SlaterDetWithBackflow::ratioGrad() \n");
-    return ValueType();
-  }
-
   GradType evalGrad(ParticleSet& P, int iat)
   {
     QMCTraits::GradType g;
     for(int i=0; i<Dets.size(); ++i)
       g += Dets[i]->evalGrad(P,iat);
     return g;
-  }
-
-  GradType alternateEvalGrad(ParticleSet& P, int iat)
-  {
-    APP_ABORT("Need to implement SlaterDetWithBackflow::alternateEvalGrad() \n");
-    return GradType();
   }
 
   GradType evalGradSource(ParticleSet& P, ParticleSet &src, int iat)
@@ -157,20 +145,9 @@ public:
     return ratio;
   }
 
-  inline ValueType alternateRatio(ParticleSet& P)
-  {
-    APP_ABORT("Need to implement SlaterDetWithBackflow::alternateRatio() \n");
-    return ValueType();
-  }
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
-  inline void alternateGrad(ParticleSet::ParticleGradient_t& G)
-  {
-    APP_ABORT("Need to implement SlaterDetWithBackflow::alternateRatio() \n");
-  }
-
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
-
-  SPOSetBasePtr getPhi(int i=0)
+  SPOSetPtr getPhi(int i=0)
   {
     return Dets[i]->getPhi();
   }

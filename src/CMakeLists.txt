@@ -232,6 +232,7 @@ ENDIF()
     LongRange/LPQHIBasis.cpp
     LongRange/LPQHISRCoulombBasis.cpp
     LongRange/EwaldHandler.cpp
+    LongRange/EwaldHandler3D.cpp
     LongRange/LRCoulombSingleton.cpp
     )
 
@@ -272,7 +273,7 @@ ENDIF()
 
   #Need to add this if nothing else but miniapps is compiled
   if(QMC_BUILD_LEVEL GREATER 4)
-    set(PARTICLE  ${PARTICLE} QMCWaveFunctions/OrbitalBase.cpp)
+    set(PARTICLE  ${PARTICLE} QMCWaveFunctions/WaveFunctionComponent.cpp)
   endif()
 
   ADD_LIBRARY(qmcbase ${PARTICLE}  ${PARTICLEIO}) 

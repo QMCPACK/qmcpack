@@ -23,7 +23,7 @@
 
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
-
+#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
 namespace qmcplusplus
 {
 
@@ -67,6 +67,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   ///multi bspline set
   MultiBspline<ST>* SplineInst;
   ///expose the pointer to reuse the reader and only assigned with create_spline
+  ///also used as identifier of shallow copy
   SplineType* MultiSpline;
 
   vContainer_type  mKK;
@@ -77,7 +78,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   gContainer_type myG;
   hContainer_type myH;
 
-  SplineC2RSoA(): BaseType(),SplineInst(nullptr), MultiSpline(nullptr)
+  SplineC2RSoA(): BaseType(), SplineInst(nullptr), MultiSpline(nullptr)
   {
     this->is_complex=true;
     this->is_soa_ready=true;
@@ -129,6 +130,11 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     std::vector<int> offset(Nbandgroups+1,0);
     FairDivideLow(Nbands,Nbandgroups,offset);
 
+#ifdef QMC_CUDA
+    for(size_t ib=0; ib<offset.size(); ib++)
+      offset[ib] = offset[ib]*2;
+    gatherv(comm, MultiSpline, MultiSpline->z_stride, offset);
+#else
     // complex bands
     int gid=1;
     offset_cplx.resize(Nbandgroups+1,0);
@@ -155,6 +161,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     for(int bg=0; bg<Nbandgroups; ++bg)
       offset_real[bg+1] = offset_real[bg+1]*2+offset_real[bg];
     gatherv(comm, MultiSpline, MultiSpline->z_stride, offset_real);
+#endif
   }
 
   template<typename GT, typename BCT>
@@ -358,8 +365,8 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     assign_v(r,myV,psi);
   }
 
-  template<typename VM>
-  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM)
+  template<typename VM, typename VAV>
+  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM, VAV& SPOMem)
   {
     const size_t m=psiM.cols();
     for(int iat=0; iat<VP.getTotalNum(); ++iat)

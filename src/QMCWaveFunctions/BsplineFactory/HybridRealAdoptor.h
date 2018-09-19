@@ -32,8 +32,8 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   using ST               = typename BaseAdoptor::DataType;
   using PointType        = typename BaseAdoptor::PointType;
   using SingleSplineType = typename BaseAdoptor::SingleSplineType;
-  using RealType         = typename SPOSetBase::RealType;
-  using ValueType        = typename SPOSetBase::ValueType;
+  using RealType         = typename SPOSet::RealType;
+  using ValueType        = typename SPOSet::ValueType;
 
   typename OrbitalSetTraits<ValueType>::ValueVector_t psi_AO, d2psi_AO;
   typename OrbitalSetTraits<ValueType>::GradVector_t dpsi_AO;
@@ -116,13 +116,13 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     }
   }
 
-  template<typename VM>
-  inline void evaluateValues(VirtualParticleSet& VP, VM& psiM)
+  template<typename VM, typename VAV>
+  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM, VAV& SPOMem)
   {
     const size_t m=psiM.cols();
     if(VP.isOnSphere() && HybridBase::is_batched_safe(VP))
     {
-      Matrix<ST,aligned_allocator<ST> > multi_myV((ST*)VP.SPOMem.data(),VP.getTotalNum(),myV.size());
+      Matrix<ST,aligned_allocator<ST> > multi_myV((ST*)SPOMem.data(),VP.getTotalNum(),myV.size());
       std::vector<int> bc_signs(VP.getTotalNum());
       const RealType smooth_factor=HybridBase::evaluateValuesR2R(VP, PrimLattice, HalfG, multi_myV, bc_signs);
       const RealType cone(1);
@@ -130,7 +130,7 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
       {
         for(int iat=0; iat<VP.getTotalNum(); ++iat)
         {
-          Vector<SPOSetBase::ValueType> psi(psiM[iat],m);
+          Vector<SPOSet::ValueType> psi(psiM[iat],m);
           BaseAdoptor::evaluate_v(VP,iat,psi);
         }
       }
@@ -139,7 +139,7 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
         for(int iat=0; iat<VP.getTotalNum(); ++iat)
         {
           const PointType& r=VP.R[iat];
-          Vector<SPOSetBase::ValueType> psi(psiM[iat],m);
+          Vector<SPOSet::ValueType> psi(psiM[iat],m);
           Vector<ST,aligned_allocator<ST> > myV_one(multi_myV[iat],myV.size());
           BaseAdoptor::assign_v(bc_signs[iat],myV_one,psi);
         }
@@ -149,7 +149,7 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
         psi_AO.resize(m);
         for(int iat=0; iat<VP.getTotalNum(); ++iat)
         {
-          Vector<SPOSetBase::ValueType> psi(psiM[iat],m);
+          Vector<SPOSet::ValueType> psi(psiM[iat],m);
           Vector<ST,aligned_allocator<ST> > myV_one(multi_myV[iat],myV.size());
           BaseAdoptor::assign_v(bc_signs[iat],myV_one,psi_AO);
           BaseAdoptor::evaluate_v(VP,iat,psi);
@@ -162,7 +162,7 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     {
       for(int iat=0; iat<VP.getTotalNum(); ++iat)
       {
-        Vector<SPOSetBase::ValueType> psi(psiM[iat],m);
+        Vector<SPOSet::ValueType> psi(psiM[iat],m);
         evaluate_v(VP,iat,psi);
       }
     }

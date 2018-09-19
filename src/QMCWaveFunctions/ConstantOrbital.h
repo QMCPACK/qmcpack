@@ -13,13 +13,13 @@
 #ifndef QMCPLUSPLUS_CONSTANTORBITAL_H
 #define QMCPLUSPLUS_CONSTANTORBITAL_H
 
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 
 namespace qmcplusplus
 {
 
 
-class ConstantOrbital: public OrbitalBase
+class ConstantOrbital: public WaveFunctionComponent
 {
 public:
   virtual void checkInVariables(opt_variables_type &active) override {}
@@ -66,7 +66,7 @@ public:
 
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf) override {}
 
-  virtual OrbitalBasePtr makeClone(ParticleSet& tpq) const override {
+  virtual WaveFunctionComponentPtr makeClone(ParticleSet& tpq) const override {
     return new ConstantOrbital();
   }
 

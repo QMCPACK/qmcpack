@@ -1699,6 +1699,20 @@ example_information = dict(
             ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_666/relax.in'),
             ],
         ),
+    gamess_H2O = dict(
+        scripts = [
+            'gamess/H2O/h2o_pp_hf.py',
+            'gamess/H2O/h2o_pp_cisd.py',
+            'gamess/H2O/h2o_pp_casscf.py',
+            ],
+        files = [
+            ('gamess'    ,'input','gamess/H2O/runs/pp_hf/rhf.inp'),
+            ('gamess'    ,'input','gamess/H2O/runs/pp_cisd/rhf.inp'),
+            ('gamess'    ,'input','gamess/H2O/runs/pp_cisd/cisd.inp'),
+            ('gamess'    ,'input','gamess/H2O/runs/pp_casscf/rhf.inp'),
+            ('gamess'    ,'input','gamess/H2O/runs/pp_casscf/cas.inp'),
+            ],
+        ),
     qmcpack_H2O = dict(
         scripts = [
             'qmcpack/H2O/H2O.py',
@@ -1808,7 +1822,7 @@ def user_examples(label):
         command = './'+script+' --generate_only --sleep=0.01'
         out,err,rc = execute(command)
         if rc>0:
-            nfail('example script failed to run\nattempted command: {0}\nlocation: {1}'.format(command,path))
+            nfail('example script failed to run\nattempted command: {0}\nlocation: {1}\nscript out:\n{2}\nscript err:\n{3}'.format(command,path,'  '+out.replace('\n','\n  '),'  '+err.replace('\n','\n  ')))
         #end if
         os.chdir(cwd)
     #end for
@@ -1846,8 +1860,13 @@ def user_examples(label):
                 failed = True
                 # if difference due to periodically equivalent points
                 # then it is not a failure
-                check_pbc = code=='qmcpack' and len(dgen)==1 and len(dref)==1 and dgen.keys()[0].endswith('/position') and dref.keys()[0].endswith('/position')
-                check_pbc |= code=='pwscf' and len(dgen)==1 and len(dref)==1 and dgen.keys()[0].endswith('/positions') and dref.keys()[0].endswith('/positions')
+                check_pbc = False
+                if len(dgen)==1 and len(dref)==1:
+                    kgen = dgen.keys()[0].rsplit('/',1)[1]
+                    kref = dref.keys()[0].rsplit('/',1)[1]
+                    check_pbc |= code=='qmcpack' and kgen==kref=='position'
+                    check_pbc |= code=='pwscf'   and kgen==kref=='positions'
+                #end if
                 if check_pbc:
                     try:
                         # extract Structure objects from SimulationInput objects
@@ -1972,7 +1991,7 @@ def regenerate_reference(update=False,overwrite=True):
 
     # execute all example scripts in generate_only mode
     for label,einfo in example_information.iteritems():
-        for script_path in einfo.scripts:
+        for script_path in einfo['scripts']:
             print '  generating reference data for '+script_path
             path,script = os.path.split(script_path)
             path = os.path.join(refgen_example_dir,path)
@@ -1990,9 +2009,10 @@ def regenerate_reference(update=False,overwrite=True):
 
     # update the reference set of example files
     if update:
+        overwrite = False
         ref_example_dir = os.path.join(reference_dir,'user_examples')
-        for label,filelist in example_files.iteritems():
-            for code,filetype,filepath in filelist:
+        for label,einfo in example_information.iteritems():
+            for code,filetype,filepath in einfo['files']:
                 ref_filepath = os.path.join(ref_example_dir,filepath)
                 gen_filepath = os.path.join(refgen_example_dir,filepath)
                 if overwrite or not os.path.exists(ref_filepath):
@@ -2046,6 +2066,10 @@ if __name__=='__main__':
                       action='store_true',default=False,
                       help='Compatibility mode for calls from the CTest framework (default=%default).'
                       )
+    parser.add_option('--pythonpath',dest='pythonpath',
+                      default='none',
+                      help='Sets PYTHONPATH environment variable for any scripts executed by ntest.  The default behavior is to use PYTHONPATH as already defined in the host environment.'
+                      )
     parser.add_option('--trip',dest='trip',
                       default='none',
                       help='Cause the "trip"-th assertion statement to fail.  Useful when to ensure that the CMake script is working properly when interfacing with CTest (default=%default).'
@@ -2098,7 +2122,7 @@ if __name__=='__main__':
     for test in NexusTest.test_list:
         if regex is None:
             tests.append(test)
-        elif re.match(regex,test.name):
+        elif re.search(regex,test.name):
             tests.append(test)
         #end if
     #end for
@@ -2119,6 +2143,9 @@ if __name__=='__main__':
         #end for
         sys.stdout.write(c[:-1])
         exit()
+    #end if
+    if options.pythonpath!='none':
+        os.environ['PYTHONPATH']=options.pythonpath
     #end if
 
     # run each test and print the test outcome

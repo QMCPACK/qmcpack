@@ -30,8 +30,8 @@ class DensityMatrices1B : public QMCHamiltonianBase
 
   typedef ValueType Value_t;
   typedef GradType  Grad_t;
-  typedef SPOSetBase::ValueVector_t ValueVector_t;
-  typedef SPOSetBase::GradVector_t  GradVector_t;
+  typedef SPOSet::ValueVector_t ValueVector_t;
+  typedef SPOSet::GradVector_t  GradVector_t;
   typedef ParticleSet::ParticleLayout_t Lattice_t;
   typedef Vector<Value_t> Vector_t;
   typedef Matrix<Value_t> Matrix_t;

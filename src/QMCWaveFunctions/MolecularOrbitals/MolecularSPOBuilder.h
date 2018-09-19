@@ -213,7 +213,7 @@ public:
       thisBasisSet->setBasisSetSize(-1);
   }
 
-  SPOSetBase* createSPOSetFromXML(xmlNodePtr cur)
+  SPOSet* createSPOSetFromXML(xmlNodePtr cur)
   {
     ReportEngine PRE(ClassName,"createSPO(xmlNodePtr)");
     if(thisBasisSet==nullptr) PRE.error("Missing basisset.",true);
@@ -226,7 +226,7 @@ public:
     spoAttrib.add (cusp_file, "cuspInfo");
     spoAttrib.add (use_new_opt_class, "optimize");
     spoAttrib.put(cur);
-    SPOSetBase *lcos=0;
+    SPOSet *lcos=0;
     xmlNodePtr cur_saved = cur;
     cur = cur->xmlChildrenNode;
     while(cur!=NULL)

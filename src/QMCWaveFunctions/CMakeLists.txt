@@ -19,14 +19,14 @@
     
     
 SET(WFBASE_SRCS
-  OrbitalBase.cpp
-  DiffOrbitalBase.cpp
-  OrbitalBuilderBase.cpp
+  WaveFunctionComponent.cpp
+  DiffWaveFunctionComponent.cpp
+  WaveFunctionComponentBuilder.cpp
   SPOSetBuilder.cpp
   SPOInfo.cpp
   SPOSetInfo.cpp
   SPOSetInputInfo.cpp
-  SPOSetBase.cpp
+  SPOSet.cpp
   OptimizableSPOSet.cpp
   CompositeSPOSet.cpp
   HarmonicOscillator/SHOSet.cpp
@@ -90,7 +90,7 @@ IF(OHMMS_DIM MATCHES 3)
 
   IF(NOT QMC_COMPLEX AND ENABLE_SOA)
     #lcao is deigned for localized orbitals in bulk and complex
-    SET(FERMION_SRCS ${FERMION_SRCS}  lcao/LCAOrbitalSet.cpp lcao/LCAOrbitalBuilder.cpp)
+    SET(FERMION_SRCS ${FERMION_SRCS}  lcao/LCAOrbitalSet.cpp lcao/LCAOrbitalBuilder.cpp lcao/CuspCorrection.cpp lcao/LCAOrbitalSetWithCorrection.cpp)
   ENDIF(NOT QMC_COMPLEX AND ENABLE_SOA)
 
   IF(QMC_CUDA)
@@ -100,12 +100,21 @@ IF(OHMMS_DIM MATCHES 3)
       Fermion/SlaterDetCUDA.cpp
       TrialWaveFunction_CUDA.cpp
       )
-    SET(JASTROW_SRCS ${JASTROW_SRCS}
-      Jastrow/BsplineJastrowCuda.cu
-      Jastrow/BsplineJastrowCudaPBC.cu
-      Jastrow/OneBodyJastrowOrbitalBspline.cpp
-      Jastrow/TwoBodyJastrowOrbitalBspline.cpp
-      )
+    IF(ENABLE_SOA)
+      SET(JASTROW_SRCS ${JASTROW_SRCS}
+        Jastrow/BsplineJastrowCuda.cu
+        Jastrow/BsplineJastrowCudaPBC.cu
+        Jastrow/OneBodyJastrowOrbitalBspline.cpp
+        Jastrow/TwoBodyJastrowOrbitalBspline.cpp
+        )
+    ELSE(ENABLE_SOA)
+      SET(JASTROW_SRCS ${JASTROW_SRCS}
+        Jastrow/BsplineJastrowCuda.cu
+        Jastrow/BsplineJastrowCudaPBC.cu
+        Jastrow/OneBodyJastrowOrbitalBsplineAoS.cpp
+        Jastrow/TwoBodyJastrowOrbitalBsplineAoS.cpp
+        )
+    ENDIF(ENABLE_SOA)
     IF(HAVE_EINSPLINE)
       SET(FERMION_SRCS ${FERMION_SRCS}
         EinsplineSetCuda.cpp
@@ -131,7 +140,7 @@ IF(OHMMS_DIM MATCHES 3)
       BsplineFactory/createComplexDouble.cpp
       BsplineFactory/createComplexSingle.cpp
       BandInfo.cpp
-      BsplineReaderBase.cpp
+      BsplineFactory/BsplineReaderBase.cpp
       )
 
     IF(NOT QMC_COMPLEX)
