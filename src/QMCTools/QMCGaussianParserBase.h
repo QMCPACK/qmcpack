@@ -162,7 +162,6 @@ struct QMCGaussianParserBase
 
   int numberOfExcitationsCSF( std::string&);
 
-  void map2GridFunctors(xmlNodePtr cur);
   virtual void parse(const std::string& fname) = 0;
 
   virtual void dumpPBC(const std::string& psi_tag,
