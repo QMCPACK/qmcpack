@@ -20,8 +20,7 @@
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
-
-//#define USE_VECTOR_ML 1
+#include <Utilities/UtilityFunctions.h>
 
 namespace qmcplusplus
 {
@@ -43,6 +42,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   using DataType=ST;
   using PointType=typename BaseType::PointType;
   using SingleSplineType=typename BaseType::SingleSplineType;
+  using ComplexT=typename std::complex<TT>;
 
   using vContainer_type=Vector<ST,aligned_allocator<ST> >;
   using gContainer_type=VectorSoaContainer<ST,3>;
@@ -70,14 +70,6 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   vContainer_type  mKK;
   VectorSoaContainer<ST,3>  myKcart;
 
-  VectorSoaContainer<std::complex<ST>,3>  myGL;
-
-#if defined(USE_VECTOR_ML)
-  vContainer_type  KdotR;
-  vContainer_type  CosV;
-  vContainer_type  SinV;
-#endif
-
   vContainer_type myV;
   vContainer_type myL;
   gContainer_type myG;
@@ -90,14 +82,6 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     this->AdoptorName="SplineC2CSoAAdoptor";
     this->KeyWord="SplineC2CSoA";
   }
-
-  ///** copy the base property */
-  //SplineC2CSoA(BaseType& rhs): BaseType(rhs)
-  //{
-  //  this->is_complex=true;
-  //  this->AdoptorName="SplineC2CSoA";
-  //  this->KeyWord="C2RSoA";
-  //}
 
   SplineC2CSoA(const SplineC2CSoA& a):
     SplineAdoptorBase<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr),
@@ -120,11 +104,6 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     myG.resize(npad);
     myL.resize(npad);
     myH.resize(npad);
-#if defined(USE_VECTOR_ML)
-    KdotR.resize(n);
-    CosV.resize(n);
-    SinV.resize(n);
-#endif
   }
 
   void bcast_tables(Communicate* comm)
@@ -248,33 +227,21 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
       sum_r+=psi0[jr]*psi_r-psi0[ji]*psi_i;
       sum_i+=psi0[ji]*psi_r+psi0[jr]*psi_i;
     }
-    return std::complex<TT>(sum_r,sum_i);
+    return ComplexT(sum_r,sum_i);
   }
 
   template<typename VV>
-  inline void assign_v(const PointType& r, const vContainer_type& myV, VV& psi)
+  inline void assign_v(const PointType& r, const vContainer_type& myV, VV& psi, int first = 0, int last = -1) const
   {
-    typedef std::complex<TT> ComplexT;
-    const size_t N=kPoints.size();
+    // protect last
+    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+
     const ST x=r[0], y=r[1], z=r[2];
     const ST* restrict kx=myKcart.data(0);
     const ST* restrict ky=myKcart.data(1);
     const ST* restrict kz=myKcart.data(2);
-#if defined(USE_VECTOR_ML)
-    {
-      for(size_t j=0; j<N; ++j)
-        KdotR[j]=-(x*kx[j]+y*ky[j]+z*kz[j]);
-      eval_e2iphi(N,KdotR.data(),CosV.data(),SinV.data());
-    }
-    for (size_t j=0, psiIndex=first_spo; psiIndex<last_spo; j++,psiIndex++)
-    {
-      const ST val_r=myV[2*j  ];
-      const ST val_i=myV[2*j+1];
-      psi[psiIndex]=ComplexT( val_r*CosV[j]-val_i*SinV[j], val_i*CosV[j]+val_r*SinV[j]);
-    }
-#else
     #pragma omp simd
-    for (size_t j=0; j<N; ++j)
+    for (size_t j=first; j<last; ++j)
     {
       ST s, c;
       const ST val_r=myV[2*j  ];
@@ -282,7 +249,6 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
       sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
       psi[j+first_spo] = ComplexT(val_r*c-val_i*s,val_i*c+val_r*s);
     }
-#endif
   }
 
   template<typename VV>
@@ -290,18 +256,41 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   {
     const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
-    SplineInst->evaluate(ru,myV);
-    assign_v(r,myV,psi);
+
+    #pragma omp parallel
+    {
+      int first, last;
+      FairDivideAligned(myV.size(), getAlignment<ST>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
+
+      SplineInst->evaluate(ru,myV,first,last);
+      assign_v(r,myV,psi,first/2,last/2);
+    }
   }
 
   template<typename VM, typename VAV>
   inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM, VAV& SPOMem)
   {
-    const size_t m=psiM.cols();
-    for(int iat=0; iat<VP.getTotalNum(); ++iat)
+    #pragma omp parallel
     {
-      Vector<std::complex<TT> > psi(psiM[iat],m);
-      evaluate_v(VP,iat,psi);
+      int first, last;
+      FairDivideAligned(myV.size(), getAlignment<ST>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
+
+      const size_t m=psiM.cols();
+      for(int iat=0; iat<VP.getTotalNum(); ++iat)
+      {
+        const PointType& r=VP.activeR(iat);
+        PointType ru(PrimLattice.toUnit_floor(r));
+        Vector<ComplexT> psi(psiM[iat],m);
+
+        SplineInst->evaluate(ru,myV,first,last);
+        assign_v(r,myV,psi,first/2,last/2);
+      }
     }
   }
 
@@ -310,9 +299,11 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   /** assign_vgl
    */
   template<typename VV, typename GV>
-  inline void assign_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
+  inline void assign_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi, int first = 0, int last = -1) const
   {
-    typedef std::complex<TT> ComplexT;
+    // protect last
+    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+
     CONSTEXPR ST zero(0);
     CONSTEXPR ST two(2);
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
@@ -335,7 +326,6 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict h12=myH.data(4);
     const ST* restrict h22=myH.data(5);
 
-    const size_t N=kPoints.size();
 #if defined(PRECOMPUTE_L)
     for(size_t j=0,nsplines=myL.size(); j<nsplines; ++j)
     {
@@ -343,7 +333,7 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     }
 #endif
     #pragma omp simd
-    for (size_t j=0; j<N; ++j)
+    for (size_t j=first; j<last; ++j)
     {
       const size_t jr=j<<1;
       const size_t ji=jr+1;
@@ -398,7 +388,6 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   template<typename VV, typename GV>
   inline void assign_vgl_from_l(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
   {
-    typedef std::complex<TT> ComplexT;
     CONSTEXPR ST two(2);
     const ST x=r[0], y=r[1], z=r[2];
 
@@ -461,8 +450,18 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   {
     const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
-    SplineInst->evaluate_vgh(ru,myV,myG,myH);
-    assign_vgl(r,psi,dpsi,d2psi);
+
+    #pragma omp parallel
+    {
+      int first, last;
+      FairDivideAligned(myV.size(), getAlignment<ST>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
+
+      SplineInst->evaluate_vgh(ru,myV,myG,myH,first,last);
+      assign_vgl(r,psi,dpsi,d2psi,first/2,last/2);
+    }
   }
 
   /** identical to assign_vgl but the output container is SoA container
@@ -470,7 +469,6 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   template<typename VGL>
   inline void assign_vgl_soa(const PointType& r, VGL& vgl)
   {
-    typedef std::complex<TT> ComplexT;
     CONSTEXPR ST zero(0);
     CONSTEXPR ST two(2);
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
@@ -575,7 +573,6 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   template<typename VV, typename GV, typename GGV>
   void assign_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {
-    typedef std::complex<TT> ComplexT;
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
              g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
              g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);

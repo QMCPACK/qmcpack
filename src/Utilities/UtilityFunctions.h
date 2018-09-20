@@ -84,6 +84,7 @@ inline void FairDivideAligned(const int ntot, const int base, const int npart, i
   const int blocksize = (((ntot+npart-1)/npart+base-1)/base)*base;
   first = me*blocksize;
   last  = std::min((me+1)*blocksize,ntot);
+  if (first>last) first = last;
 }
 
 /** partition ntot elements among npart

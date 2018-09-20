@@ -88,14 +88,6 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     this->KeyWord="SplineC2RSoA";
   }
 
-  ///** copy the base property */
-  //SplineC2RSoA(BaseType& rhs): BaseType(rhs)
-  //{
-  //  this->is_complex=true;
-  //  this->AdoptorName="SplineC2RSoA";
-  //  this->KeyWord="C2RSoA";
-  //}
-
   SplineC2RSoA(const SplineC2RSoA& a):
     SplineAdoptorBase<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr),
     nComplexBands(a.nComplexBands),mKK(a.mKK), myKcart(a.myKcart)
@@ -292,7 +284,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV>
-  inline void assign_v(const PointType& r, const vContainer_type& myV, VV& psi, int first = 0, int last = -1)
+  inline void assign_v(const PointType& r, const vContainer_type& myV, VV& psi, int first = 0, int last = -1) const
   {
     // protect last
     last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
@@ -358,11 +350,12 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
                         omp_get_thread_num(),
                         first, last);
 
+      const size_t m = psiM.cols();
       for(int iat=0; iat<VP.getTotalNum(); ++iat)
       {
         const PointType& r=VP.activeR(iat);
         PointType ru(PrimLattice.toUnit_floor(r));
-        Vector<TT> psi(psiM[iat],psiM.cols());
+        Vector<TT> psi(psiM[iat],m);
 
         SplineInst->evaluate(ru,myV,first,last);
         assign_v(r,myV,psi,first/2,last/2);
@@ -375,7 +368,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   /** assign_vgl
    */
   template<typename VV, typename GV>
-  inline void assign_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi, int first = 0, int last = -1)
+  inline void assign_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi, int first = 0, int last = -1) const
   {
     CONSTEXPR ST zero(0);
     CONSTEXPR ST two(2);

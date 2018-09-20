@@ -95,7 +95,7 @@ TEST_CASE("FairDivideAligned", "[utilities]")
   REQUIRE(last  == 36);
 
   FairDivideAligned(37,6,5,4,first,last);
-  REQUIRE(first == 48);
+  REQUIRE(first == 37);
   REQUIRE(last  == 37);
 
   FairDivideAligned(37,6,1,0,first,last);
