@@ -326,12 +326,6 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict h12=myH.data(4);
     const ST* restrict h22=myH.data(5);
 
-#if defined(PRECOMPUTE_L)
-    for(size_t j=0,nsplines=myL.size(); j<nsplines; ++j)
-    {
-      myL[j]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
-    }
-#endif
     #pragma omp simd
     for (size_t j=first; j<last; ++j)
     {
@@ -365,15 +359,10 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
       const ST gY_i=dY_i-val_r*kY;
       const ST gZ_i=dZ_i-val_r*kZ;
 
-#if defined(PRECOMPUTE_L)
-      const ST lap_r=myL[jr]+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
-      const ST lap_i=myL[ji]+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#else
       const ST lcart_r=SymTrace(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],symGG);
       const ST lcart_i=SymTrace(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],symGG);
       const ST lap_r=lcart_r+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
       const ST lap_i=lcart_i+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#endif
       const size_t psiIndex=j+first_spo;
       psi[psiIndex ]   = ComplexT(c*val_r-s*val_i,c*val_i+s*val_r);
       dpsi[psiIndex][0]= ComplexT(c*gX_r -s*gX_i, c*gX_i +s*gX_r);
@@ -493,12 +482,6 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
 
     const size_t N=kPoints.size();
     const size_t nsplines=myL.size();
-#if defined(PRECOMPUTE_L)
-    for(size_t j=0; j<nsplines; ++j)
-    {
-      myL[j]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
-    }
-#endif
 
     ComplexT* restrict psi =vgl.data(0)+first_spo; ASSUME_ALIGNED(psi);
     ComplexT* restrict vg_x=vgl.data(1)+first_spo; ASSUME_ALIGNED(vg_x);
@@ -539,15 +522,10 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
       const ST gY_i=dY_i-val_r*kY;
       const ST gZ_i=dZ_i-val_r*kZ;
 
-#if defined(PRECOMPUTE_L)
-      const ST lap_r=myL[jr]+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
-      const ST lap_i=myL[ji]+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#else
       const ST lcart_r=SymTrace(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],symGG);
       const ST lcart_i=SymTrace(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],symGG);
       const ST lap_r=lcart_r+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
       const ST lap_i=lcart_i+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#endif
       psi[j] =ComplexT(c*val_r-s*val_i,c*val_i+s*val_r);
       vg_x[j]=ComplexT(c*gX_r -s*gX_i, c*gX_i +s*gX_r);
       vg_y[j]=ComplexT(c*gY_r -s*gY_i, c*gY_i +s*gY_r);

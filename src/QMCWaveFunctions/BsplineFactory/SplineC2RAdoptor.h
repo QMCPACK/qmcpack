@@ -370,6 +370,9 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   template<typename VV, typename GV>
   inline void assign_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi, int first = 0, int last = -1) const
   {
+    // protect last
+    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+
     CONSTEXPR ST zero(0);
     CONSTEXPR ST two(2);
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
@@ -391,16 +394,6 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict h11=myH.data(3); ASSUME_ALIGNED(h11);
     const ST* restrict h12=myH.data(4); ASSUME_ALIGNED(h12);
     const ST* restrict h22=myH.data(5); ASSUME_ALIGNED(h22);
-
-    // protect last
-    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
-#if defined(PRECOMPUTE_L)
-    const size_t nsplines=myL.size();
-    for(size_t j=0; j<nsplines; ++j)
-    {
-      myL[j]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
-    }
-#endif
 
     #pragma omp simd
     for (size_t j=first; j<std::min(nComplexBands,last); j++)
@@ -435,16 +428,10 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       const ST gY_i=dY_i-val_r*kY;
       const ST gZ_i=dZ_i-val_r*kZ;
 
-#if defined(PRECOMPUTE_L)
-      const ST lap_r=myL[jr]+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
-      const ST lap_i=myL[ji]+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#else
       const ST lcart_r=SymTrace(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],symGG);
       const ST lcart_i=SymTrace(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],symGG);
       const ST lap_r=lcart_r+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
       const ST lap_i=lcart_i+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#endif
-
 
       const size_t psiIndex=first_spo+jr;
       //this will be fixed later
@@ -501,15 +488,10 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       dpsi[psiIndex  ][1]=c*gY_r-s*gY_i;
       dpsi[psiIndex  ][2]=c*gZ_r-s*gZ_i;
 
-#if defined(PRECOMPUTE_L)
-      const ST lap_r=myL[jr]+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
-      const ST lap_i=myL[ji]+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#else
       const ST lcart_r=SymTrace(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],symGG);
       const ST lcart_i=SymTrace(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],symGG);
       const ST lap_r=lcart_r+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
       const ST lap_i=lcart_i+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#endif
       d2psi[psiIndex  ]=c*lap_r-s*lap_i;
     }
   }
@@ -674,14 +656,6 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict h11=myH.data(3); ASSUME_ALIGNED(h11);
     const ST* restrict h12=myH.data(4); ASSUME_ALIGNED(h12);
     const ST* restrict h22=myH.data(5); ASSUME_ALIGNED(h22);
-#if defined(PRECOMPUTE_L)
-    const size_t nsplines=myL.size();
-    #pragma omp simd
-    for(size_t j=0; j<nsplines; ++j)
-    {
-      myL[j]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
-    }
-#endif
 
     TT* restrict psi =vgl.data(0)+first_spo; ASSUME_ALIGNED(psi);
     TT* restrict vl_x=vgl.data(1)+first_spo; ASSUME_ALIGNED(vl_x);
@@ -722,15 +696,10 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       const ST gY_i=dY_i-val_r*kY;
       const ST gZ_i=dZ_i-val_r*kZ;
 
-#if defined(PRECOMPUTE_L)
-      const ST lap_r=myL[jr]+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
-      const ST lap_i=myL[ji]+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#else
       const ST lcart_r=SymTrace(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],symGG);
       const ST lcart_i=SymTrace(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],symGG);
       const ST lap_r=lcart_r+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
       const ST lap_i=lcart_i+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#endif
 
       //this will be fixed later
       psi[jr]=c*val_r-s*val_i;
@@ -777,15 +746,10 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
       const ST gX_i=dX_i-val_r*kX;
       const ST gY_i=dY_i-val_r*kY;
       const ST gZ_i=dZ_i-val_r*kZ;
-#if defined(PRECOMPUTE_L)
-      const ST lap_r=myL[jr]+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
-      const ST lap_i=myL[ji]+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#else
       const ST lcart_r=SymTrace(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],symGG);
       const ST lcart_i=SymTrace(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],symGG);
       const ST lap_r=lcart_r+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
       const ST lap_i=lcart_i+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#endif
       const size_t psiIndex=first_spo+nComplexBands+j;
       //const size_t psiIndex=j+nComplexBands;
       psi [psiIndex]=c*val_r-s*val_i;
