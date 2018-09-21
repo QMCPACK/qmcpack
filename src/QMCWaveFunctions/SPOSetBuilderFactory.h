@@ -51,7 +51,7 @@ public:
    * \param psi reference to the wavefunction
    * \param ions reference to the ions
    */
-  SPOSetBuilderFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets);
+  SPOSetBuilderFactory(ParticleSet& els, TrialWaveFunction<>& psi, PtclPoolType& psets);
 
   ~SPOSetBuilderFactory();
   bool put(xmlNodePtr cur);

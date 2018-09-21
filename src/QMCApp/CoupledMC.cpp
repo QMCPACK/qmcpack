@@ -52,7 +52,7 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
   a.put(cur);
 
   MCWalkerConfiguration *ions = ptclPool->getWalkerSet(target);
-  TrialWaveFunction* primaryPsi=psiPool->getPrimary();
+  TrialWaveFunction<>* primaryPsi=psiPool->getPrimary();
   QMCHamiltonian* primaryH=hamPool->getPrimary();
 
   app_log() << "QMCMain::executeCMCSection moving " << target << " by dummy move." << std::endl;

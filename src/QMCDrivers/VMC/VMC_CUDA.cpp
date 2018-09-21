@@ -33,10 +33,12 @@ namespace qmcplusplus
 {
 
 /// Constructor.
-VMCcuda::VMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                 QMCHamiltonian& h,WaveFunctionPool& ppool):
-  QMCDriver(w,psi,h,ppool),UseDrift("yes"),
-  myPeriod4WalkerDump(0), GEVtype("mixed"), w_alpha(0.0), w_beta(0.0), forOpt(false)
+VMCcuda::VMCcuda(MCWalkerConfiguration& w,
+		 TrialWaveFunction<Batching::BATCHED>& psi,
+		 QMCHamiltonian& h,
+		 WaveFunctionPool<Batching::BATCHED>& ppool):
+     QMCDriver<Batching::BATCHED>(w,psi,h,ppool),UseDrift("yes"),
+     myPeriod4WalkerDump(0), GEVtype("mixed"), w_alpha(0.0), w_beta(0.0), forOpt(false)
 {
   RootName = "vmc";
   QMCType ="VMCcuda";
@@ -91,9 +93,9 @@ void VMCcuda::advanceWalkers()
 #endif
       }
       W.proposeMove_GPU(newpos, iat);
-      Psi.ratio(W,iat,ratios,newG, newL);
+      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).ratio(W, iat, ratios, newG, newL);
 #ifdef QMC_COMPLEX
-      Psi.convertRatiosFromComplexToReal(ratios, ratios_real);
+      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).convertRatiosFromComplexToReal(ratios, ratios_real);
 #endif
       accepted.clear();
       std::vector<bool> acc(nw, true);
@@ -120,7 +122,7 @@ void VMCcuda::advanceWalkers()
       }
       W.acceptMove_GPU(acc);
       if (accepted.size())
-        Psi.update(accepted,iat);
+        dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).update(accepted,iat);
     }
   }
 }
@@ -168,20 +170,20 @@ bool VMCcuda::run()
       ++CurrentStep;
       W.resetCollectables();
       advanceWalkers();
-      Psi.gradLapl(W, grad, lapl);
+      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).gradLapl(W, grad, lapl);
       H.evaluate (W, LocalEnergy);
       if (myPeriod4WalkerDump && (CurrentStep % myPeriod4WalkerDump)==0)
         W.saveEnsemble();
       Estimators->accumulate(W);
     }
     while(step<nSteps);
-    if ( nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 ) Psi.recompute(W);
+    if ( nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 ) dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).recompute(W);
     if(forOpt)
     {
       d_logpsi_dalpha=0.0;
       d_hpsioverpsi_dalpha=0.0;
       W.copyWalkerGradToGPU();
-      Psi.evaluateDerivatives(W, dummy, d_logpsi_dalpha, d_hpsioverpsi_dalpha);
+      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).evaluateDerivatives(W, dummy, d_logpsi_dalpha, d_hpsioverpsi_dalpha);
       std::vector<RealType> g_stats(5,0);
       for (int ip=0; ip<nw; ip++)
       {
@@ -272,10 +274,10 @@ void VMCcuda::advanceWalkersWithDrift()
   {
     for(int iat=0; iat<nat; iat++)
     {
-      Psi.calcGradient (W, iat, oldG);
+      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).calcGradient (W, iat, oldG);
       //create a 3N-Dimensional Gaussian with variance=1
       makeGaussRandomWithEngine(delpos,Random);
-      Psi.addGradient(W, iat, oldG);
+      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).addGradient(W, iat, oldG);
       for(int iw=0; iw<nw; iw++)
       {
         PosType dr;
@@ -288,7 +290,7 @@ void VMCcuda::advanceWalkersWithDrift()
 #endif
       }
       W.proposeMove_GPU(newpos, iat);
-      Psi.calcRatio(W,iat,ratios,newG, newL);
+      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).calcRatio(W,iat,ratios,newG, newL);
       accepted.clear();
       std::vector<bool> acc(nw, true);
       if (W.UseBoundBox)
@@ -300,9 +302,9 @@ void VMCcuda::advanceWalkersWithDrift()
         logGf_v[iw] = -m_oneover2tau * dot(delpos[iw], delpos[iw]);
         rand_v[iw] = Random();
       }
-      Psi.addRatio(W, iat, ratios, newG, newL);
+      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).addRatio(W, iat, ratios, newG, newL);
 #ifdef QMC_COMPLEX
-      Psi.convertRatiosFromComplexToReal(ratios, ratios_real);
+      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).convertRatiosFromComplexToReal(ratios, ratios_real);
 #endif
       for(int iw=0; iw<nw; ++iw)
       {
@@ -333,7 +335,7 @@ void VMCcuda::advanceWalkersWithDrift()
       }
       W.acceptMove_GPU(acc);
       if (accepted.size())
-        Psi.update(accepted,iat);
+        dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).update(accepted,iat);
     }
   }
 }
@@ -369,20 +371,20 @@ bool VMCcuda::runWithDrift()
       CurrentStep++;
       W.resetCollectables();
       advanceWalkersWithDrift();
-      Psi.gradLapl(W, grad, lapl);
+      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).gradLapl(W, grad, lapl);
       H.evaluate (W, LocalEnergy);
       if (myPeriod4WalkerDump && (CurrentStep % myPeriod4WalkerDump)==0)
         W.saveEnsemble();
       Estimators->accumulate(W);
     }
     while(step<nSteps);
-    if ( nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 ) Psi.recompute(W);
+    if ( nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 ) dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).recompute(W);
     if(forOpt)
     {
       d_logpsi_dalpha=0.0;
       d_hpsioverpsi_dalpha=0.0;
       W.copyWalkerGradToGPU();
-      Psi.evaluateDerivatives(W, dummy, d_logpsi_dalpha, d_hpsioverpsi_dalpha);
+      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).evaluateDerivatives(W, dummy, d_logpsi_dalpha, d_hpsioverpsi_dalpha);
       std::vector<RealType> g_stats(5,0);
       for (int ip=0; ip<nw; ip++)
       {
@@ -424,7 +426,7 @@ bool VMCcuda::runWithDrift()
       //for (int i=0; i<numParams; i++) app_log()<<HD[i]<<" ";
       //  app_log()<< std::endl;
     }
-//      Psi.recompute(W);
+//      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).recompute(W);
     double accept_ratio = (double)nAccept/(double)(nAccept+nReject);
     Estimators->stopBlock(accept_ratio);
     nAcceptTot += nAccept;
@@ -467,7 +469,7 @@ void VMCcuda::resetRun()
   // Compute the size of data needed for each walker on the GPU card
   PointerPool<Walker_t::cuda_Buffer_t > pool;
   app_log() << "Starting VMCcuda::resetRun() " << std::endl;
-  Psi.reserve (pool);
+  dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).reserve (pool);
   app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CudaValueType)
             << " bytes in GPU memory.\n";
   // Now allocate memory on the GPU card for each walker
@@ -487,7 +489,7 @@ void VMCcuda::resetRun()
   W.updateLists_GPU();
   std::vector<RealType> logPsi(W.WalkerList.size(), 0.0);
   //Psi.evaluateLog(W, logPsi);
-  Psi.recompute(W, true);
+  dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).recompute(W, true);
   Estimators->start(nBlocks, true);
   // Compute sample dumping frequency
   if (nTargetSamples>(myComm->size()*W.WalkerList.size()))

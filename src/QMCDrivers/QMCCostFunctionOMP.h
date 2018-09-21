@@ -35,7 +35,7 @@ class QMCCostFunctionOMP: public QMCCostFunctionBase, public CloneManager
 public:
 
   ///Constructor.
-  QMCCostFunctionOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+  QMCCostFunctionOMP(MCWalkerConfiguration& w, TrialWaveFunction<>& psi,
                      QMCHamiltonian& h);
 
   ///Destructor

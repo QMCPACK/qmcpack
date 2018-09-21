@@ -30,7 +30,7 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
 {
   public:
   NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
-                      TrialWaveFunction& psi, bool computeForces=false, bool useVP=false);
+                      TrialWaveFunction<>& psi, bool computeForces=false, bool useVP=false);
 
   ~NonLocalECPotential();
 
@@ -74,7 +74,7 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi);
 
   void add(int groupID, NonLocalECPComponent* pp);
 
@@ -102,7 +102,7 @@ class NonLocalECPotential: public QMCHamiltonianBase, public ForceBase
   ///reference to the center ion
   ParticleSet& IonConfig;
   ///target TrialWaveFunction
-  TrialWaveFunction& Psi;
+  TrialWaveFunction<>& Psi;
 
   private:
   ///number of ions

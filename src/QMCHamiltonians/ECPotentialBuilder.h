@@ -18,12 +18,14 @@
 #include "Particle/DistanceTableData.h"
 #include "QMCHamiltonians/LocalECPotential.h"
 #include "QMCHamiltonians/NonLocalECPotential.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
+
 namespace qmcplusplus
 {
 
 class QMCHamiltonian;
 class ParticleSet;
-class TrialWaveFunction;
+//class TrialWaveFunction;
 
 struct ECPotentialBuilder: public MPIObjectBase, public QMCTraits
 {
@@ -36,14 +38,14 @@ struct ECPotentialBuilder: public MPIObjectBase, public QMCTraits
   QMCHamiltonian&  targetH;
   ParticleSet& IonConfig;
   ParticleSet& targetPtcl;
-  TrialWaveFunction& targetPsi;
+  TrialWaveFunction<>& targetPsi;
 
   std::vector<RealType>  localZeff;
   std::vector<RadialPotentialType*>  localPot;
   std::vector<NonLocalECPComponent*>  nonLocalPot;
 
   ECPotentialBuilder(QMCHamiltonian& h,
-                     ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi,
+                     ParticleSet& ions, ParticleSet& els, TrialWaveFunction<>& psi,
                      Communicate* c);
 
   bool put(xmlNodePtr cur);

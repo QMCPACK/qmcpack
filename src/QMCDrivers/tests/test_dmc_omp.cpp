@@ -91,7 +91,7 @@ TEST_CASE("DMCOMP", "[drivers][dmc]")
 
   CloneManager::clear_for_unit_tests();
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction<> psi = TrialWaveFunction<>(c);
   ConstantOrbital *orb = new ConstantOrbital;
   psi.addOrbital(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);

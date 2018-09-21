@@ -29,7 +29,7 @@ class VMCUpdatePbyP: public QMCUpdateBase
 {
 public:
   /// Constructor.
-  VMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+  VMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction<>& psi,
                 QMCHamiltonian& h, RandomGenerator_t& rg);
 
   ~VMCUpdatePbyP();

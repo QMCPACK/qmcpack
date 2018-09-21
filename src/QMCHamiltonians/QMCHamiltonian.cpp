@@ -645,7 +645,7 @@ void QMCHamiltonian::setRandomGenerator(RandomGenerator_t* rng)
     auxH[i]->setRandomGenerator(rng);
 }
 
-QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+QMCHamiltonian* QMCHamiltonian::makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
 {
   QMCHamiltonian* myclone=new QMCHamiltonian;
   for(int i=0; i<H.size(); ++i)

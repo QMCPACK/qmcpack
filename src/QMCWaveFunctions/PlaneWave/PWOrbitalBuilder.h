@@ -69,7 +69,7 @@ private:
 public:
 
   ///constructor
-  PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& wfs, PtclPoolType& psets);
+  PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction<>& wfs, PtclPoolType& psets);
   ~PWOrbitalBuilder();
 
   ///implement vritual function

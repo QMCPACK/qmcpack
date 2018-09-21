@@ -48,65 +48,72 @@ namespace qmcplusplus
   using MatrixOperators::product;
 
 
-QMCCorrelatedSamplingLinearOptimize::QMCCorrelatedSamplingLinearOptimize(MCWalkerConfiguration& w,
-    TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool): QMCLinearOptimize(w,psi,h,hpool,ppool),
+template<Batching batching>
+QMCCorrelatedSamplingLinearOptimize<batching>::QMCCorrelatedSamplingLinearOptimize(MCWalkerConfiguration& w,
+										   TrialWaveFunction<batching>& psi,
+										   QMCHamiltonian& h,
+										   HamiltonianPool<batching>& hpool, WaveFunctionPool<batching>& ppool): QMCLinearOptimize<batching>(w,psi,h,hpool,ppool),
   exp0(-16), nstabilizers(3), stabilizerScale(2.0), bigChange(3), w_beta(0.0), MinMethod("quartic"), GEVtype("mixed")
 {
-  IsQMCDriver=false;
+  QDT::IsQMCDriver=false;
   //set the optimization flag
-  QMCDriverMode.set(QMC_OPTIMIZE,1);
+  QDT::QMCDriverMode.set(QDT::QMC_OPTIMIZE,1);
   //read to use vmc output (just in case)
-  RootName = "pot";
-  QMCType ="QMCCorrelatedSamplingLinearOptimize";
-  m_param.add(WarmupBlocks,"warmupBlocks","int");
-  m_param.add(stabilizerScale,"stabilizerscale","double");
-  m_param.add(bigChange,"bigchange","double");
-  m_param.add(w_beta,"beta","double");
-  m_param.add(GEVtype,"GEVMethod","string");
+  QDT::RootName = "pot";
+  QDT::QMCType ="QMCCorrelatedSamplingLinearOptimize";
+  QDT::m_param.add(QLOT::WarmupBlocks,"warmupBlocks","int");
+  QDT::m_param.add(QLOT::stabilizerScale,"stabilizerscale","double");
+  QDT::m_param.add(QLOT::bigChange,"bigchange","double");
+  QDT::m_param.add(QLOT::w_beta,"beta","double");
+  QDT::m_param.add(QLOT::GEVtype,"GEVMethod","string");
   quadstep=-1.0;
   stepsize=0.3;
-  m_param.add(quadstep,"quadstep","double");
-  m_param.add(stepsize,"stepsize","double");
-  m_param.add(exp0,"exp0","double");
-  m_param.add(MinMethod,"MinMethod","string");
-  m_param.add(LambdaMax,"LambdaMax","double");
-  m_param.add(nstabilizers,"nstabilizers","int");
+  QDT::m_param.add(quadstep,"quadstep","double");
+  QDT::m_param.add(stepsize,"stepsize","double");
+  QDT::m_param.add(exp0,"exp0","double");
+  QDT::m_param.add(MinMethod,"MinMethod","string");
+  QDT::m_param.add(LambdaMax,"LambdaMax","double");
+  QDT::m_param.add(nstabilizers,"nstabilizers","int");
   //Set parameters for line minimization:
 }
 
 /** Clean up the vector */
-QMCCorrelatedSamplingLinearOptimize::~QMCCorrelatedSamplingLinearOptimize()
+template<Batching batching>
+QMCCorrelatedSamplingLinearOptimize<batching>::~QMCCorrelatedSamplingLinearOptimize()
 {
 }
 
-QMCCorrelatedSamplingLinearOptimize::RealType QMCCorrelatedSamplingLinearOptimize::Func(RealType dl)
+template<Batching batching>
+typename QMCCorrelatedSamplingLinearOptimize<batching>::RealType
+QMCCorrelatedSamplingLinearOptimize<batching>::Func(RealType dl)
 {
-  for (int i=0; i<optparm.size(); i++)
-    optTarget->Params(i) = optparm[i] + dl*optdir[i];
-  QMCLinearOptimize::RealType c = optTarget->Cost(false);
+  for (int i=0; i< QLOT::optparm.size(); i++)
+    QLOT::optTarget->Params(i) = QLOT::optparm[i] + dl*QLOT::optdir[i];
+  QMCT::RealType c = QLOT::optTarget->Cost(false);
   //only allow this to go false if it was true. If false, stay false
 //     if (validFuncVal)
-  validFuncVal = optTarget->IsValid;
+  validFuncVal = QLOT::optTarget->IsValid;
   return c;
 }
 
-bool QMCCorrelatedSamplingLinearOptimize::run()
+template<Batching batching>
+bool QMCCorrelatedSamplingLinearOptimize<batching>::run()
 {
-  start();
+  QLOT::start();
 //size of matrix
-  numParams = optTarget->NumParams();
-  N = numParams + 1;
+  QLOT::numParams = QLOT::optTarget->NumParams();
+  QLOT::N = QLOT::numParams + 1;
 //  solve CSFs and other parameters separately then rescale elements accordingly
   int first,last;
-  getNonLinearRange(first,last);
+  QLOT::getNonLinearRange(first,last);
 //     initialize our parameters
-  std::vector<RealType> currentParameterDirections(N,0);
-  std::vector<RealType> currentParameters(numParams,0);
+  std::vector<RealType> currentParameterDirections(QLOT::N,0);
+  std::vector<RealType> currentParameters(QLOT::numParams,0);
   std::vector<RealType> bestParameters(currentParameters);
-  optdir.resize(numParams,0);
-  optparm.resize(numParams,0);
-  for (int i=0; i<numParams; i++)
-    currentParameters[i] = optTarget->Params(i);
+  QLOT::optdir.resize(QLOT::numParams,0);
+  QLOT::optparm.resize(QLOT::numParams,0);
+  for (int i=0; i<QLOT::numParams; i++)
+    currentParameters[i] = QLOT::optTarget->Params(i);
   //this is the small amount added to the diagonal to stabilize the eigenvalue equation. e^stabilityBase
   RealType stabilityBase(exp0);
   std::vector<std::vector<RealType> > LastDirections;
@@ -114,9 +121,9 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
   bool acceptedOneMove(false);
   int tooManyTries(20);
   int failedTries(0);
-  Matrix<RealType> Left(N,N);
-  Matrix<RealType> LeftT(N,N);
-  Matrix<RealType> Right(N,N);
+  Matrix<RealType> Left(QLOT::N,QLOT::N);
+  Matrix<RealType> LeftT(QLOT::N,QLOT::N);
+  Matrix<RealType> Right(QLOT::N,QLOT::N);
   Right=0;
   LeftT=0;
   Left=0;
@@ -126,9 +133,9 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
   RealType startCost(0);
 //    if ((GEVtype!="H2")||(MinMethod!="rescale"))
 //    {
-  myTimers[4]->start();
-  startCost = lastCost = optTarget->Cost(false);
-  myTimers[4]->stop();
+  QLOT::myTimers[4]->start();
+  startCost = lastCost = QLOT::optTarget->Cost(false);
+  QLOT::myTimers[4]->stop();
 //    }
   bool apply_inverse(true);
   if(apply_inverse)
@@ -150,44 +157,44 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
 //    if(nstabilizers>1)
 //      stabilizerScale = stabilizerScale/(nstabilizers-1.0);
   app_log()<<"  stabilityBase "<<stabilityBase<< std::endl;
-  app_log()<<"  stabilizerScale "<<stabilizerScale<< std::endl;
+  app_log()<<"  QLOT::stabilizerScale "<<QLOT::stabilizerScale<< std::endl;
   RealType safe = Left(0,0);
   for (int stability=0; stability<nstabilizers; stability++)
   {
-    for (int i=0; i<N; i++)
-      for (int j=0; j<N; j++)
+    for (int i=0; i<QLOT::N; i++)
+      for (int j=0; j<QLOT::N; j++)
       {
         LeftT(i,j) = Left(j,i);
       }
-    RealType XS(stabilityBase+stabilizerScale*stability);
+    RealType XS(stabilityBase+QLOT::stabilizerScale*stability);
     if (failedTries>0)
     {
-      for (int i=1; i<N; i++)
+      for (int i=1; i<QLOT::N; i++)
         LeftT(i,i) += std::exp(XS);
       app_log()<<"  Using XS:"<<XS<< std::endl;
     }
     RealType lowestEV(0);
     RealType bigVec(0);
-    myTimers[2]->start();
+    QLOT::myTimers[2]->start();
 //                     lowestEV =getLowestEigenvector(LeftT,RightT,currentParameterDirections);
-    if (GEVtype!="sd")
+    if (QLOT::GEVtype!="sd")
     {
-      lowestEV = getLowestEigenvector(LeftT,currentParameterDirections);
-      Lambda = getNonLinearRescale(currentParameterDirections,Right);
+      lowestEV = QLOT::getLowestEigenvector(LeftT,currentParameterDirections);
+      Lambda = QLOT::getNonLinearRescale(currentParameterDirections,Right);
     }
     else
     {
       currentParameterDirections[0]=1.0;
-      for (int i=0; i<numParams; i++)
+      for (int i=0; i<QLOT::numParams; i++)
         bigVec = std::max(bigVec,std::abs(LeftT(i+1,0)));
       //bigVec /= LeftT(0,0);
       RealType rscale(stepsize/bigVec);
-      for (int i=0; i<numParams; i++)
+      for (int i=0; i<QLOT::numParams; i++)
         currentParameterDirections[i+1]=LeftT(i+1,0)*rscale;
       Lambda=1.0;
     }
-    myTimers[2]->stop();
-    for (int i=0; i<numParams; i++)
+    QLOT::myTimers[2]->stop();
+    for (int i=0; i<QLOT::numParams; i++)
       bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
     if (std::abs(Lambda*bigVec)>bigChange)
     {
@@ -206,27 +213,27 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
     }
     if (MinMethod=="rescale")
     {
-      for (int i=0; i<numParams; i++)
-        bestParameters[i] = optTarget->Params(i) = currentParameters[i] + Lambda*currentParameterDirections[i+1];
+      for (int i=0; i<QLOT::numParams; i++)
+        bestParameters[i] = QLOT::optTarget->Params(i) = currentParameters[i] + Lambda*currentParameterDirections[i+1];
       if (GEVtype=="H2")
         acceptedOneMove = true;
     }
     else
     {
-      for (int i=0; i<numParams; i++)
-        optparm[i] = currentParameters[i];
-      for (int i=0; i<numParams; i++)
-        optdir[i] = currentParameterDirections[i+1];
+      for (int i=0; i<QLOT::numParams; i++)
+        QLOT::optparm[i] = currentParameters[i];
+      for (int i=0; i<QLOT::numParams; i++)
+        QLOT::optdir[i] = currentParameterDirections[i+1];
       RealType bigOptVec(0);
-      for (int i=0; i<numParams; i++)
-        bigOptVec = std::max(bigOptVec,std::abs(optdir[i]));
-      TOL = param_tol/bigOptVec;
+      for (int i=0; i<QLOT::numParams; i++)
+        bigOptVec = std::max(bigOptVec,std::abs(QLOT::optdir[i]));
+      TOL = QLOT::param_tol/bigOptVec;
       AbsFuncTol=true;
       largeQuarticStep=bigChange/bigVec;
       quadstep = stepsize/bigVec;
 //                  initial guess for line min bracketing
       LambdaMax = quadstep;
-      myTimers[3]->start();
+      QLOT::myTimers[3]->start();
       if (MinMethod=="quartic")
       {
         int npts(7);
@@ -236,7 +243,7 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
       }
       else
         lineoptimization2();
-      myTimers[3]->stop();
+      QLOT::myTimers[3]->stop();
       RealType biggestParameterChange = bigOptVec*std::abs(Lambda);
       if (biggestParameterChange>bigChange)
       {
@@ -248,12 +255,12 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
         //mappedStabilizers.push_back(make_pair<RealType,RealType>(XS,std::numeric_limits<RealType>::quiet_NaN()));
         mappedStabilizers.push_back(std::pair<RealType,RealType>(XS,std::numeric_limits<RealType>::quiet_NaN()));
         continue;
-//                     for (int i=0; i<numParams; i++) optTarget->Params(i) = optparm[i];
+//                     for (int i=0; i<QLOT::numParams; i++) optTarget->Params(i) = optparm[i];
       }
       else
       {
-        for (int i=0; i<numParams; i++)
-          optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
+        for (int i=0; i<QLOT::numParams; i++)
+          QLOT::optTarget->Params(i) = QLOT::optparm[i] + Lambda * QLOT::optdir[i];
         app_log()<<"  Largest LM parameter change:"<<biggestParameterChange<< std::endl;
       }
       //Save this value in here for later
@@ -262,15 +269,15 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
 //      if ((GEVtype!="H2")||(MinMethod!="rescale"))
 //      {
     //get cost at new minimum
-    RealType newCost = optTarget->Cost(false);
+    RealType newCost = QLOT::optTarget->Cost(false);
     mappedStabilizers.push_back(*(new std::pair<RealType,RealType>(XS,newCost)));
     app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" Delta Cost:"<<(newCost-lastCost)<< std::endl;
-    optTarget->printEstimates();
+    QLOT::optTarget->printEstimates();
     if (newCost < lastCost)
     {
       //Move was acceptable
-      for (int i=0; i<numParams; i++)
-        bestParameters[i] = optTarget->Params(i);
+      for (int i=0; i<QLOT::numParams; i++)
+        bestParameters[i] = QLOT::optTarget->Params(i);
       lastCost=newCost;
       acceptedOneMove=true;
       deltaPrms= Lambda;
@@ -281,21 +288,22 @@ bool QMCCorrelatedSamplingLinearOptimize::run()
 //    }
   }
   if (acceptedOneMove)
-    for (int i=0; i<numParams; i++)
-      optTarget->Params(i) = bestParameters[i];
+    for (int i=0; i<QLOT::numParams; i++)
+      QLOT::optTarget->Params(i) = bestParameters[i];
   else
-    for (int i=0; i<numParams; i++)
-      optTarget->Params(i) = currentParameters[i];
-  finish();
-  return (optTarget->getReportCounter() > 0);
+    for (int i=0; i<QLOT::numParams; i++)
+      QLOT::optTarget->Params(i) = currentParameters[i];
+  QLOT::finish();
+  return (QLOT::optTarget->getReportCounter() > 0);
 }
 
 /** Parses the xml input file for parameter definitions for the wavefunction optimization.
 * @param q current xmlNode
 * @return true if successful
 */
-bool
-QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
+
+template<Batching batching>
+bool QMCCorrelatedSamplingLinearOptimize<batching>::put(xmlNodePtr q)
 {
   std::string useGPU("no");
   std::string vmcMove("pbyp");
@@ -311,7 +319,7 @@ QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
     std::string cname((const char*)(cur->name));
     if (cname == "mcwalkerset")
     {
-      mcwalkerNodePtr.push_back(cur);
+      QDT::mcwalkerNodePtr.push_back(cur);
     }
 //         else if (cname == "optimizer")
 //         {
@@ -333,35 +341,35 @@ QMCCorrelatedSamplingLinearOptimize::put(xmlNodePtr q)
     cur=cur->next;
   }
   //no walkers exist, add 10
-  if (W.getActiveWalkers() == 0)
-    addWalkers(omp_get_max_threads());
-  NumOfVMCWalkers=W.getActiveWalkers();
+  if (QDT::W.getActiveWalkers() == 0)
+    QDT::addWalkers(omp_get_max_threads());
+  QLOT::NumOfVMCWalkers=QDT::W.getActiveWalkers();
   //create VMC engine
-  if (vmcEngine ==0)
+  if (QLOT::vmcEngine ==0)
   {
 #if defined (QMC_CUDA)
-    vmcCSEngine = new VMCcuda(W,Psi,H,psiPool);
+    vmcCSEngine = new VMCcuda(QDT::W,dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(QDT::Psi),QDT::H,QDT::psiPool);
     vmcCSEngine->setOpt(true);
-    vmcEngine = vmcCSEngine;
+    QLOT::vmcEngine = vmcCSEngine;
 #else
-    vmcEngine = vmcCSEngine = new VMCLinearOptOMP(W,Psi,H,hamPool,psiPool);
+    QLOT::vmcEngine = vmcCSEngine = new VMCLinearOptOMP(QDT::W,QDT::Psi,QDT::H,QDT::hamPool,QDT::psiPool);
 #endif
-    vmcEngine->setUpdateMode(vmcMove[0] == 'p');
-    vmcEngine->initCommunicator(myComm);
+    QLOT::vmcEngine->setUpdateMode(vmcMove[0] == 'p');
+    QLOT::vmcEngine->initCommunicator(QDT::myComm);
   }
-  vmcEngine->setStatus(RootName,h5FileRoot,AppendRun);
-  vmcEngine->process(qsave);
+  QLOT::vmcEngine->setStatus(QDT::RootName,QDT::h5FileRoot,QDT::AppendRun);
+  QLOT::vmcEngine->process(qsave);
   bool success=true;
-  if (optTarget == 0)
+  if (QLOT::optTarget == 0)
   {
 #if defined (QMC_CUDA)
-    optTarget = new QMCCostFunctionCUDA(W,Psi,H);
+    QLOT::optTarget = new QMCCostFunctionCUDA(QDT::W,QDT::Psi,QDT::H);
 #else
-    optTarget = new QMCCostFunctionOMP(W,Psi,H);
+    QLOT::optTarget = new QMCCostFunctionOMP(QDT::W,QDT::Psi,QDT::H);
 #endif
-    optTarget->setneedGrads(false);
-    optTarget->setStream(&app_log());
-    success=optTarget->put(qsave);
+    QLOT::optTarget->setneedGrads(false);
+    QLOT::optTarget->setStream(&app_log());
+    success=QLOT::optTarget->put(qsave);
   }
   return success;
 }

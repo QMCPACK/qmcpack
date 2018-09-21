@@ -28,7 +28,7 @@ namespace qmcplusplus
 
 /// Constructor.
 CSVMCUpdatePbyP::CSVMCUpdatePbyP(MCWalkerConfiguration& w,
-                                 std::vector<TrialWaveFunction*>& psi,
+                                 std::vector<TrialWaveFunction<>*>& psi,
                                  std::vector<QMCHamiltonian*>& h,
                                  RandomGenerator_t& rg):
   CSUpdateBase(w,psi,h,rg)
@@ -154,7 +154,7 @@ void CSVMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
 
 /// UpdatePbyP With Drift Fast.
 CSVMCUpdatePbyPWithDriftFast::CSVMCUpdatePbyPWithDriftFast(MCWalkerConfiguration& w,
-                                 std::vector<TrialWaveFunction*>& psi,
+                                 std::vector<TrialWaveFunction<>*>& psi,
                                  std::vector<QMCHamiltonian*>& h,
                                  RandomGenerator_t& rg):
   CSUpdateBase(w,psi,h,rg)

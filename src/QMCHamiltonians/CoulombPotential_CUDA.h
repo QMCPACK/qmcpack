@@ -38,7 +38,7 @@ struct CoulombPotentialAA_CUDA : public CoulombPotential<OHMMS_PRECISION>
   void addEnergy(MCWalkerConfiguration &W,
                  std::vector<RealType> &LocalEnergy);
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi);
 };
 
 /** CoulombPotential for ion-el
@@ -61,7 +61,7 @@ struct CoulombPotentialAB_CUDA : public CoulombPotential<OHMMS_PRECISION>
   void addEnergy(MCWalkerConfiguration &W,
                  std::vector<RealType> &LocalEnergy);
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi);
 };
 
 }

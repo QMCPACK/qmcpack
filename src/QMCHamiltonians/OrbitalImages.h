@@ -205,7 +205,7 @@ class OrbitalImages : public QMCHamiltonianBase
   ~OrbitalImages() { };
 
   //standard interface
-  QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction<>& psi);
 
   ///read xml input
   bool put(xmlNodePtr cur);

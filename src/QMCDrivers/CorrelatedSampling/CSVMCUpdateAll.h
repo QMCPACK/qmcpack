@@ -37,7 +37,7 @@ class CSVMCUpdateAll: public CSUpdateBase
 
 public:
   /// Constructor.
-  CSVMCUpdateAll(MCWalkerConfiguration& w,  std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& h,
+  CSVMCUpdateAll(MCWalkerConfiguration& w,  std::vector<TrialWaveFunction<>*>& psi, std::vector<QMCHamiltonian*>& h,
                  RandomGenerator_t& rg);
 
   void advanceWalker(Walker_t& thisWalker, bool recompute);
@@ -51,7 +51,7 @@ class CSVMCUpdateAllWithDrift: public CSUpdateBase
 
 public:
   /// Constructor.
-  CSVMCUpdateAllWithDrift(MCWalkerConfiguration& w,  std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& h,
+  CSVMCUpdateAllWithDrift(MCWalkerConfiguration& w,  std::vector<TrialWaveFunction<>*>& psi, std::vector<QMCHamiltonian*>& h,
                  RandomGenerator_t& rg);
 
   void advanceWalker(Walker_t& thisWalker, bool recompute);

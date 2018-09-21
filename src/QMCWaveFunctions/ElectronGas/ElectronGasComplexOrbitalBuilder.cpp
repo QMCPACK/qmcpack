@@ -48,7 +48,7 @@ EGOSet::EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2, c
 }
 
 ElectronGasComplexOrbitalBuilder::ElectronGasComplexOrbitalBuilder(ParticleSet& els,
-    TrialWaveFunction& psi):
+    TrialWaveFunction<>& psi):
   WaveFunctionComponentBuilder(els,psi)
 {
 }

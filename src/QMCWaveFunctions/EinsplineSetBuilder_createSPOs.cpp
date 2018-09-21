@@ -34,6 +34,8 @@
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptor.h"
 #include "QMCWaveFunctions/SPOSetBatched.h"
+#include "QMCWaveFunctions/BsplineFactory/BsplineCreator.h"
+
 namespace qmcplusplus
 {
 
@@ -308,6 +310,13 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   // safeguard for a removed feature
   if(truncate=="yes") APP_ABORT("The 'truncate' feature of spline SPO has been removed. Please use hybrid orbtial representation.");
 
+#ifdef QMC_CUDA
+  if(UseRealOrbitals)
+  {
+    // false means not hybrid
+    MixedSplineReader = BsplineCreator<Batching::BATCHED>::createBsplineRealDouble(this, false);
+  }
+#else
 #if !defined(QMC_COMPLEX)
   if (UseRealOrbitals)
   {
@@ -315,9 +324,13 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     if(MixedSplineReader==0)
     {
       if(use_single)
-        MixedSplineReader= createBsplineRealSingle(this, hybrid_rep=="yes");
+      {
+	MixedSplineReader= createBsplineRealSingle(this, hybrid_rep=="yes");
+      }
       else
+      {
         MixedSplineReader= createBsplineRealDouble(this, hybrid_rep=="yes");
+      }
     }
   }
   else
@@ -331,6 +344,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
         MixedSplineReader= createBsplineComplexDouble(this, hybrid_rep=="yes");
     }
   }
+#endif
 
   MixedSplineReader->setCommon(XMLRoot);
   size_t delta_mem=qmc_common.memory_allocated;
@@ -460,7 +474,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (useGPU == "yes" || useGPU == "1")
   {
     app_log() << "Initializing GPU data structures.\n";
-    dynamic_cast<SPOSet<Batching::BATCHED>*>(OrbitalSet)->initGPU();
+    dynamic_cast<EinsplineSetExtended<double>*>(OrbitalSet)->initGPU();
   }
 #endif
   spo_timer->stop();

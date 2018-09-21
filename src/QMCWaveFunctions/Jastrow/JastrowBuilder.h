@@ -29,7 +29,7 @@ class JastrowBuilder: public WaveFunctionComponentBuilder
 
 public:
 
-  JastrowBuilder(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& psets);
+  JastrowBuilder(ParticleSet& p, TrialWaveFunction<>& psi, PtclPoolType& psets);
 
   bool put(xmlNodePtr cur);
 

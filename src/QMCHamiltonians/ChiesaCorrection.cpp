@@ -29,7 +29,7 @@ ChiesaCorrection::put(xmlNodePtr cur)
 
 
 QMCHamiltonianBase*
-ChiesaCorrection::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+ChiesaCorrection::makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
 {
   return new ChiesaCorrection (qp, psi);
 }

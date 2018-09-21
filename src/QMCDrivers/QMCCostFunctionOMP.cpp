@@ -29,7 +29,7 @@ namespace qmcplusplus
 {
 
 QMCCostFunctionOMP::QMCCostFunctionOMP(MCWalkerConfiguration& w,
-                                       TrialWaveFunction& psi, QMCHamiltonian& h):
+                                       TrialWaveFunction<>& psi, QMCHamiltonian& h):
   QMCCostFunctionBase(w,psi,h)
 {
   CSWeight=1.0;

@@ -311,7 +311,7 @@ class ElectronGasOrbitalBuilder: public WaveFunctionComponentBuilder
 public:
 
   ///constructor
-  ElectronGasOrbitalBuilder(ParticleSet& els, TrialWaveFunction& wfs);
+  ElectronGasOrbitalBuilder(ParticleSet& els, TrialWaveFunction<>& wfs);
 
   ///implement vritual function
   bool put(xmlNodePtr cur);

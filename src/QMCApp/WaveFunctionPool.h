@@ -25,7 +25,7 @@
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include <map>
 #include <string>
-
+#include "QMCWaveFunctions/Batching.h"
 namespace qmcplusplus
 {
 
@@ -38,6 +38,7 @@ class ParticleSet;
  * This object handles \<wavefunction\> elements and
  * functions as a builder class for TrialWaveFunction objects.
  */
+template<Batching batching = Batching::SINGLE>
 class WaveFunctionPool : public MPIObjectBase
 {
 
@@ -55,17 +56,17 @@ public:
     return myPool.empty();
   }
 
-  TrialWaveFunction* getPrimary()
+  TrialWaveFunction<batching>* getPrimary()
   {
     return primaryPsi;
   }
 
-  void setPrimary(TrialWaveFunction *psi)
+  void setPrimary(TrialWaveFunction<batching> *psi)
   {
     primaryPsi=psi;
   }
 
-  TrialWaveFunction* getWaveFunction(const std::string& pname)
+  TrialWaveFunction<batching>* getWaveFunction(const std::string& pname)
   {
     std::map<std::string,WaveFunctionFactory*>::iterator pit(myPool.find(pname));
     if(pit == myPool.end())
@@ -122,7 +123,7 @@ public:
 private:
 
   /// pointer to the primary TrialWaveFunction
-  TrialWaveFunction* primaryPsi;
+  TrialWaveFunction<batching>* primaryPsi;
 
   /// storage of WaveFunctionFactory
   PoolType myPool;

@@ -38,7 +38,7 @@ StressPBCAB::StressPBCAB(ParticleSet& ions, ParticleSet& elns,
   is_active=true;
 }
 
-QMCHamiltonianBase* StressPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+QMCHamiltonianBase* StressPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
 {
   StressPBCAB* myclone=new StressPBCAB(PtclA,qp,ComputeForces);
   myclone->FirstForceIndex = FirstForceIndex;

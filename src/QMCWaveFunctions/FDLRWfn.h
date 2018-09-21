@@ -66,10 +66,10 @@ namespace qmcplusplus {
     bool triplet;
 
     // Pointer to the "x+d" wavefunction object
-    TrialWaveFunction * m_wfn_xpd;
+    TrialWaveFunction<> * m_wfn_xpd;
 
     // Pointer to the "x-d" wavefunction object
-    TrialWaveFunction * m_wfn_xmd;
+    TrialWaveFunction<> * m_wfn_xmd;
 
     // Vector to hold the derivatives of the logarithm of the "x+d" part
     // of the FDLR wave function with respect to the optimizable parameters
@@ -146,7 +146,7 @@ namespace qmcplusplus {
     /// \param[in]   triplet_loc  If true, enforce triplet symmetry on WF parameters.
     ///
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    FDLRWfn(TrialWaveFunction * const wfn_1, TrialWaveFunction * const wfn_2, ParticleSet& P,
+    FDLRWfn(TrialWaveFunction<>* const wfn_1, TrialWaveFunction<>* const wfn_2, ParticleSet& P,
             const bool opt_x = true, const bool opt_d = true,
             const bool singlet_loc = false, const bool triplet_loc = false);
 

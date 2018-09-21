@@ -53,6 +53,7 @@
 #endif
 #include "OhmmsData/AttributeSet.h"
 #ifdef QMC_CUDA
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCHamiltonians/SkEstimator_CUDA.h"
 #endif
 
@@ -122,7 +123,12 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
   OrbitalPoolType::iterator psi_it(psiPool.find(psiName));
   if(psi_it == psiPool.end())
     APP_ABORT("Unknown psi \""+psiName+"\" for target Psi");
-  TrialWaveFunction* targetPsi = psi_it->second->targetPsi;
+#ifdef QMC_CUDA
+  TrialWaveFunction<Batching::BATCHED>* targetPsi = dynamic_cast<TrialWaveFunction<Batching::BATCHED>*>(psi_it->second->targetPsi);
+#else
+  TrialWaveFunction<>* targetPsi = psi_it->second->targetPsi;
+#endif
+  
   xmlNodePtr cur_saved(cur);
   cur = cur->children;
   while(cur != NULL)
@@ -360,7 +366,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         {
           APP_ABORT("Unknown psi \""+PsiName+"\" for Chiesa correction.");
         }
-        const TrialWaveFunction &psi = *psi_it->second->targetPsi;
+        const TrialWaveFunction<> &psi = *psi_it->second->targetPsi;
         ChiesaCorrection *chiesa = new ChiesaCorrection (source, psi);
         targetH->addOperator(chiesa,"KEcorr",false);
 #endif
@@ -416,7 +422,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
         {
           APP_ABORT("Unknown psi \""+PsiName+"\" for momentum.");
         }
-        TrialWaveFunction *psi=(*psi_it).second->targetPsi;
+        TrialWaveFunction<> *psi=(*psi_it).second->targetPsi;
         MomentumEstimator* ME = new MomentumEstimator(*targetPtcl, *psi);
         bool rt(myComm->rank()==0);
         ME->putSpecial(cur,*targetPtcl,rt);
@@ -526,7 +532,7 @@ HamiltonianFactory::~HamiltonianFactory()
 }
 
 HamiltonianFactory*
-HamiltonianFactory::clone(ParticleSet* qp, TrialWaveFunction* psi,
+HamiltonianFactory::clone(ParticleSet* qp, TrialWaveFunction<>* psi,
                           int ip, const std::string& aname)
 {
   HamiltonianFactory* aCopy=new HamiltonianFactory(qp, ptclPool, psiPool, myComm);

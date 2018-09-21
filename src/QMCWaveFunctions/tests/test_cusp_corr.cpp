@@ -74,7 +74,7 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
   REQUIRE(okay);
   xmlNodePtr root = doc.getRoot();
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction<> psi(c);
 
   WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
   particle_set_map["e"] = &elec;

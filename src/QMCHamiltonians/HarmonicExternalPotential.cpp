@@ -57,7 +57,7 @@ namespace qmcplusplus
   } 
 
 
-  QMCHamiltonianBase* HarmonicExternalPotential::makeClone(ParticleSet& P, TrialWaveFunction& psi)
+  QMCHamiltonianBase* HarmonicExternalPotential::makeClone(ParticleSet& P, TrialWaveFunction<>& psi)
   {
     return new HarmonicExternalPotential(*this);
   }

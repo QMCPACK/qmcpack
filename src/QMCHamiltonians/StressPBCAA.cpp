@@ -435,7 +435,7 @@ StressPBCAA::evalLR(ParticleSet& P)
 
 
 
-QMCHamiltonianBase* StressPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+QMCHamiltonianBase* StressPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
 {
   if(is_active)
     return new StressPBCAA(qp, is_active);

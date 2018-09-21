@@ -35,13 +35,18 @@ namespace qmcplusplus
  * generated from VMC.
  */
 
-class QMCFixedSampleLinearOptimize: public QMCLinearOptimize, private NRCOptimization<QMCTraits::RealType>
+template<Batching batching = Batching::SINGLE>
+class QMCFixedSampleLinearOptimize: public QMCLinearOptimize<batching>, private NRCOptimization<QMCTraits::RealType>
 {
 public:
+  using QMCT = QMCTraits;
+  using QDT = typename QMCLinearOptimize<batching>::QDT;
+  using QLOT = QMCLinearOptimize<batching>;
+  using RealType = QMCT::RealType;
 
   ///Constructor.
-  QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                               QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool);
+  QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction<batching>& psi,
+                               QMCHamiltonian& h, HamiltonianPool<batching>& hpool, WaveFunctionPool<batching>& ppool);
 
   ///Destructor
   ~QMCFixedSampleLinearOptimize();

@@ -53,7 +53,7 @@ class HamiltonianFactory: public MPIObjectBase
   std::map<std::string,std::string> RenamedProperty;
 
   ///constructor
-  HamiltonianFactory(ParticleSet* qp, PtclPoolType& pset, OrbitalPoolType& oset,
+ HamiltonianFactory(ParticleSet* qp, PtclPoolType& pset, OrbitalPoolType& oset,
                      Communicate* c);
 
   ///destructor
@@ -80,7 +80,7 @@ class HamiltonianFactory: public MPIObjectBase
 
   void setCloneSize(int np);
 
-  HamiltonianFactory* clone(ParticleSet* qp, TrialWaveFunction* psi,
+  HamiltonianFactory* clone(ParticleSet* qp, TrialWaveFunction<>* psi,
                             int ip, const std::string& aname);
 
   std::vector<HamiltonianFactory*> myClones;

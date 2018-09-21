@@ -29,7 +29,7 @@ namespace qmcplusplus
 {
 
 /// Constructor
-VMCUpdatePbyP::VMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+VMCUpdatePbyP::VMCUpdatePbyP(MCWalkerConfiguration& w, TrialWaveFunction<>& psi,
                              QMCHamiltonian& h, RandomGenerator_t& rg):
   QMCUpdateBase(w,psi,h,rg)
 {

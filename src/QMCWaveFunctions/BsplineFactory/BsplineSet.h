@@ -50,8 +50,8 @@ namespace qmcplusplus
   
 // Unspecialized version of BsplineSet,
 
-  template<typename SA, Batching batching = Batching::SINGLE>
-  struct BsplineSet: public SA {};
+template<typename SA, Batching batching = Batching::SINGLE>
+struct BsplineSet: public SA {};
 // {
 //   ///** default constructor */
 //   //BsplineSet() { }

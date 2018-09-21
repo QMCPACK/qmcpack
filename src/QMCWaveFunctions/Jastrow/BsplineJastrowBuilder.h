@@ -25,14 +25,14 @@ struct BsplineJastrowBuilder: public WaveFunctionComponentBuilder
 {
   ParticleSet *sourcePtcl;
   // One-body constructor
-  BsplineJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi,
+  BsplineJastrowBuilder(ParticleSet& target, TrialWaveFunction<>& psi,
                         ParticleSet& source) :
     WaveFunctionComponentBuilder(target,psi), sourcePtcl(&source)
   {
     ClassName="BsplineJastrowBuilder";
   }
   // Two-body constructor
-  BsplineJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi) :
+  BsplineJastrowBuilder(ParticleSet& target, TrialWaveFunction<>& psi) :
     WaveFunctionComponentBuilder(target,psi), sourcePtcl(NULL)
   {
     ClassName="BsplineJastrowBuilder";

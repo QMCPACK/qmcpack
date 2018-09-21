@@ -221,7 +221,7 @@ LocalECPotential::evaluate_orig(ParticleSet& P)
   return Value;
 }
 
-QMCHamiltonianBase* LocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+QMCHamiltonianBase* LocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
 {
   LocalECPotential* myclone=new LocalECPotential(IonConfig,qp);
   for(int ig=0; ig<PPset.size(); ++ig)

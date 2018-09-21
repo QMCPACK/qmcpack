@@ -24,7 +24,7 @@ namespace qmcplusplus
 {
 
 ZeroVarianceForce::ZeroVarianceForce(ParticleSet& ions, ParticleSet& elns,
-                                     TrialWaveFunction &psi)
+                                     TrialWaveFunction<> &psi)
   : ForceBase(ions, elns), Ions(ions), Electrons(elns),
     Psi(psi)
 {

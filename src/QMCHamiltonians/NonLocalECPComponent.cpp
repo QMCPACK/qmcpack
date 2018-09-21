@@ -103,7 +103,7 @@ void NonLocalECPComponent::print(std::ostream& os)
 }
 
 NonLocalECPComponent::RealType
-NonLocalECPComponent::evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& psi, 
+NonLocalECPComponent::evaluateOne(ParticleSet& W, int iat, TrialWaveFunction<>& psi, 
     int iel, RealType r, const PosType& dr, 
     bool Tmove, std::vector<NonLocalData>& Txy) const
 {
@@ -189,7 +189,7 @@ NonLocalECPComponent::evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& ps
 }
 
 NonLocalECPComponent::RealType
-NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFunction& psi, 
+NonLocalECPComponent::evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFunction<>& psi, 
     int iel, RealType r, const PosType& dr, 
     PosType & force_iat, bool Tmove, std::vector<NonLocalData>& Txy) const
 {

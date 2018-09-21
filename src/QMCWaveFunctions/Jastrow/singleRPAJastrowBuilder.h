@@ -49,7 +49,7 @@ struct singleRPAJastrowBuilder: public WaveFunctionComponentBuilder
   JneType* J1s;
   ParticleSet* sourcePtcl;
 
-  singleRPAJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi,
+  singleRPAJastrowBuilder(ParticleSet& target, TrialWaveFunction<>& psi,
                           ParticleSet& source) :
     WaveFunctionComponentBuilder(target,psi), sourcePtcl(&source), myHandler(0),J1s(0)
   {

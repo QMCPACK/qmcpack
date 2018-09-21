@@ -88,7 +88,7 @@ IF(OHMMS_DIM MATCHES 3)
       Fermion/determinant_update.cu 
       Fermion/DiracDeterminantBatched.cpp
       Fermion/SlaterDetBatched.cpp
-      TrialWaveFunction_CUDA.cpp
+      TrialWaveFunctionBatched.cpp
       )
     IF(ENABLE_SOA)
       SET(JASTROW_SRCS ${JASTROW_SRCS}

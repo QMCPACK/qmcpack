@@ -22,7 +22,7 @@ class MomentumEstimator: public QMCHamiltonianBase
 {
 public:
 
-  MomentumEstimator(ParticleSet& elns, TrialWaveFunction& psi);
+  MomentumEstimator(ParticleSet& elns, TrialWaveFunction<>& psi);
   void resetTargetParticleSet(ParticleSet& P);
 
   Return_t evaluate(ParticleSet& P);
@@ -38,7 +38,7 @@ public:
     return false;
   };
   bool get(std::ostream& os) const;
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi);
   void setRandomGenerator(RandomGenerator_t* rng);
   //resize the internal data by input k-point list
   void resize(const std::vector<PosType>& kin, const int Min);
@@ -47,7 +47,7 @@ public:
   ///normalization factor for n(k)
   RealType norm_nofK;
   ///reference to the trial wavefunction for ratio evaluations
-  TrialWaveFunction& refPsi;
+  TrialWaveFunction<>& refPsi;
   ///lattice vector
   ParticleSet::ParticleLayout_t Lattice;
   ///random generator

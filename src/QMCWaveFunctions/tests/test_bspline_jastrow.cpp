@@ -108,7 +108,7 @@ TEST_CASE("BSpline builder Jastrow J2", "[wavefunction]")
   elec_.update();
 
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction<> psi = TrialWaveFunction<>(c);
 
 const char *particles = \
 "<tmp> \
@@ -308,7 +308,7 @@ TEST_CASE("BSpline builder Jastrow J1", "[wavefunction]")
   elec_.update();
 
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction<> psi = TrialWaveFunction<>(c);
 
 const char *particles = \
 "<tmp> \

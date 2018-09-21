@@ -43,7 +43,7 @@ public:
   bool put(xmlNodePtr cur);
   bool put(xmlNodePtr cur, ParticleSet& P);
   bool get(std::ostream& os) const;
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi);
 
   void write_description(std::ostream& os);
 

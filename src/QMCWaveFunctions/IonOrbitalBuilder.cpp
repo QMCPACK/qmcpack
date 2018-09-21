@@ -19,7 +19,7 @@
 namespace qmcplusplus
 {
 IonOrbitalBuilder::IonOrbitalBuilder
-(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& psets) :
+(ParticleSet& p, TrialWaveFunction<>& psi, PtclPoolType& psets) :
   WaveFunctionComponentBuilder(p, psi), ptclPool(psets)
 {
 }

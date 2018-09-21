@@ -111,17 +111,17 @@ struct NonLocalECPComponent: public QMCTraits
   void randomize_grid(RandomGenerator_t& myRNG);
   template<typename T> void randomize_grid(std::vector<T> &sphere, RandomGenerator_t& myRNG);
 
-  RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction& Psi, 
+  RealType evaluateOne(ParticleSet& W, int iat, TrialWaveFunction<>& Psi, 
       int iel, RealType r, const PosType& dr, bool Tmove, std::vector<NonLocalData>& Txy) const;
 
   ///Computes the nonlocal PP energy and Hellman-Feynman force contribution coming from
   /// ion "iat" and electron "iel".  
-  RealType evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFunction& Psi, 
+  RealType evaluateOneWithForces(ParticleSet& W, int iat, TrialWaveFunction<>& Psi, 
       int iel, RealType r, const PosType& dr, PosType &force_iat, bool Tmove, std::vector<NonLocalData>& Txy) const;
 
   RealType
   evaluateValueAndDerivatives(ParticleSet& P,
-      int iat, TrialWaveFunction& psi,
+      int iat, TrialWaveFunction<>& psi,
       const opt_variables_type& optvars,
       const std::vector<RealType>& dlogpsi,
       std::vector<RealType>& dhpsioverpsi);

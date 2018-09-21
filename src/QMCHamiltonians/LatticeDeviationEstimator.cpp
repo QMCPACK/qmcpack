@@ -197,7 +197,7 @@ void LatticeDeviationEstimator::resetTargetParticleSet(ParticleSet& P)
 {
 }
 
-QMCHamiltonianBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+QMCHamiltonianBase* LatticeDeviationEstimator::makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
 { 
   // default constructor does not work with threads
   //LatticeDeviationEstimator* myclone = new LatticeDeviationEstimator(*this); 

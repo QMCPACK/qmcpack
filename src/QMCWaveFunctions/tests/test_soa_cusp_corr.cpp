@@ -108,7 +108,7 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   REQUIRE(okay);
   xmlNodePtr root2 = doc2.getRoot();
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction<> psi(c);
 
   WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
   particle_set_map["e"]    = &elec;
@@ -291,7 +291,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   REQUIRE(okay);
   xmlNodePtr root2 = doc2.getRoot();
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction<> psi(c);
 
   WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
   particle_set_map["e"]    = &elec;

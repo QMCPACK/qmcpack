@@ -157,7 +157,7 @@ struct CoulombPBCAB: public QMCHamiltonianBase, public ForceBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi);
   
   ///Creates the long-range handlers, then splines and stores it by particle and species for quick evaluation.
   void initBreakup(ParticleSet& P);

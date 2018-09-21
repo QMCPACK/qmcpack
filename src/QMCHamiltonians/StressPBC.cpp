@@ -26,7 +26,7 @@
 namespace qmcplusplus
 {
 
-StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Psi0, bool firsttime):
+StressPBC::StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction<>& Psi0, bool firsttime):
   ForceBase(ions, elns), PtclTarg(elns), PtclA(ions), Psi(Psi0), first_time(firsttime)
 {
   ReportEngine PRE("StressPBC","StressPBC");
@@ -472,7 +472,7 @@ bool StressPBC::put(xmlNodePtr cur)
   return true;
 }
 
-QMCHamiltonianBase* StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+QMCHamiltonianBase* StressPBC::makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
 {
   StressPBC* tmp = new StressPBC(PtclA, qp, psi, false);
   tmp->targetconsts=targetconsts;

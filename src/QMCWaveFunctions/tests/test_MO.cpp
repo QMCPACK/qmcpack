@@ -76,7 +76,7 @@ void test_He(bool transform)
     REQUIRE(okay);
     xmlNodePtr root = doc.getRoot();
 
-    TrialWaveFunction psi(c);
+    TrialWaveFunction<> psi(c);
 
     WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
     particle_set_map["e"] = &elec;
@@ -203,7 +203,7 @@ void test_Ne(bool transform)
     REQUIRE(okay);
     xmlNodePtr root = doc.getRoot();
 
-    TrialWaveFunction psi(c);
+    TrialWaveFunction<> psi(c);
 
     WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
     particle_set_map["e"] = &elec;
@@ -345,7 +345,7 @@ void test_HCN(bool transform)
     REQUIRE(okay);
     xmlNodePtr root2 = doc2.getRoot();
 
-    TrialWaveFunction psi(c);
+    TrialWaveFunction<> psi(c);
 
     WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
     particle_set_map["e"] = &elec;

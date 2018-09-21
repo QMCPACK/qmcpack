@@ -81,7 +81,7 @@ bool SkPot::get(std::ostream& os) const
 }
 
 QMCHamiltonianBase* SkPot::makeClone(ParticleSet& qp
-                                     , TrialWaveFunction& psi)
+                                     , TrialWaveFunction<>& psi)
 {
   SkPot* myclone = new SkPot(*this);
   myclone->FillFk();

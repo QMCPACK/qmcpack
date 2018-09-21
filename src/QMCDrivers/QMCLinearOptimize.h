@@ -29,14 +29,15 @@
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
 #endif
-
+#include "QMCWaveFunctions/Batching.h"
+#include "QMCApp/HamiltonianPool.h"
 
 namespace qmcplusplus
 {
 
 ///forward declaration of a cost function
 class QMCCostFunctionBase;
-class HamiltonianPool;
+  //class HamiltonianPool;
 
 /** @ingroup QMCDrivers
  * @brief Implements wave-function optimization
@@ -45,13 +46,15 @@ class HamiltonianPool;
  * generated from VMC.
  */
 
-class QMCLinearOptimize: public QMCDriver
+template<Batching batching>
+class QMCLinearOptimize: public QMCDriver<batching>
 {
 public:
-
+  using QDT = QMCDriver<batching>;
+  using RealType = typename QDT::RealType;
   ///Constructor.
-  QMCLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                    QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool);
+  QMCLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction<batching>& psi,
+                    QMCHamiltonian& h, HamiltonianPool<batching>& hpool, WaveFunctionPool<batching>& ppool);
 
   ///Destructor
   virtual ~QMCLinearOptimize();
@@ -80,13 +83,13 @@ public:
   ///Number of iterations maximum before generating new configurations.
   int Max_iterations;
   ///need to know HamiltonianPool to use OMP
-  HamiltonianPool& hamPool;
+  HamiltonianPool<batching>& hamPool;
   ///target cost function to optimize
   QMCCostFunctionBase* optTarget;
   ///Dimension of matrix and number of parameters
   int N,numParams;
   ///vmc engine
-  QMCDriver* vmcEngine;
+  QMCDriver<batching>* vmcEngine;
   ///xml node to be dumped
   xmlNodePtr wfNode;
   ///xml node for optimizer

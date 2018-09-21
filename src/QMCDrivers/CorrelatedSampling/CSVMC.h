@@ -34,12 +34,12 @@ class CSUpdateBase;
  * Energy difference method with multiple H/Psi.
  * Consult S. Chiesa's note.
  */
-class CSVMC: public QMCDriver, public CloneManager
+class CSVMC: public QMCDriver<Batching::SINGLE>, public CloneManager
 {
 public:
   /// Constructor.
-  CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
-        WaveFunctionPool& ppool);
+  CSVMC(MCWalkerConfiguration& w, TrialWaveFunction<Batching::SINGLE>& psi, QMCHamiltonian& h, 
+        WaveFunctionPool<Batching::SINGLE>& ppool);
 
   bool run();
   bool put(xmlNodePtr cur);
@@ -51,7 +51,7 @@ private:
   ///blocks over which normalization factors are accumulated
   int equilBlocks;
   /// Copy Constructor (disabled)
-  CSVMC(const CSVMC& a): QMCDriver(a), CloneManager(a) { }
+  CSVMC(const CSVMC& a): QMCDriver<Batching::SINGLE>(a), CloneManager(a) { }
   /// Copy operator (disabled).
   CSVMC& operator=(const CSVMC&)
   {

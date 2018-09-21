@@ -166,7 +166,7 @@ LocalCorePolPotential::evaluate(ParticleSet& P)
   return Value=e;
 }
 
-QMCHamiltonianBase* LocalCorePolPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+QMCHamiltonianBase* LocalCorePolPotential::makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
 {
   LocalCorePolPotential* myclone=new LocalCorePolPotential(IonConfig,qp);
   //copy cpp parameters

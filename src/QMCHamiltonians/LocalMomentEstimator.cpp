@@ -110,7 +110,7 @@ bool LocalMomentEstimator::get(std::ostream& os) const
 }
 
 QMCHamiltonianBase* LocalMomentEstimator::makeClone(ParticleSet& qp
-    , TrialWaveFunction& psi)
+    , TrialWaveFunction<>& psi)
 {
   //default constructor is sufficient
   LocalMomentEstimator* myClone = new LocalMomentEstimator(*this);

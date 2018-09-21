@@ -41,13 +41,13 @@ struct StressKinetic: public QMCHamiltonianBase, public ForceBase
   std::vector<int> NofSpecies;
   std::vector<int> SpeciesID;
   
-  TrialWaveFunction& Psi;
+  TrialWaveFunction<>& Psi;
 
   ParticleSet& Ps;
 
 
   /** constructor */
-  StressKinetic(ParticleSet& els, TrialWaveFunction& Psi0);
+  StressKinetic(ParticleSet& els, TrialWaveFunction<>& Psi0);
   
 
   ~StressKinetic();
@@ -69,7 +69,7 @@ struct StressKinetic: public QMCHamiltonianBase, public ForceBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi);
 
   SymTensor<RealType, OHMMS_DIM> evaluateStress(){return stress;}
   void registerObservables(std::vector<observable_helper*>& h5list, hid_t gid) const

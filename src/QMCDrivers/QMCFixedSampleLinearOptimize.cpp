@@ -56,9 +56,10 @@ namespace qmcplusplus
   using MatrixOperators::product;
 
 
-QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
-    TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool):
-  QMCLinearOptimize(w,psi,h,hpool,ppool), 
+template<Batching batching>
+QMCFixedSampleLinearOptimize<batching>::QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
+    TrialWaveFunction<batching>& psi, QMCHamiltonian& h, HamiltonianPool<batching>& hpool, WaveFunctionPool<batching>& ppool):
+  QMCLinearOptimize<batching>(w,psi,h,hpool,ppool), 
 #ifdef HAVE_LMY_ENGINE
 vdeps(1,std::vector<double>()),
 #endif
@@ -71,31 +72,31 @@ vdeps(1,std::vector<double>()),
   num_shifts(3), nblocks(1), nolds(1), nkept(1), nsamp_comp(0), omega_shift(0.0), max_param_change(0.3),
   max_relative_cost_change(10.0), block_first(true), block_second(false), block_third(false)
 {
-  IsQMCDriver=false;
+  QDT::IsQMCDriver=false;
   //set the optimization flag
-  QMCDriverMode.set(QMC_OPTIMIZE,1);
+  QDT::QMCDriverMode.set(QDT::oQMC_OPTIMIZE,1);
   //read to use vmc output (just in case)
-  RootName = "pot";
-  QMCType ="QMCFixedSampleLinearOptimize";
-  m_param.add(WarmupBlocks,"warmupBlocks","int");
-  m_param.add(Max_iterations,"max_its","int");
-  m_param.add(nstabilizers,"nstabilizers","int");
-  m_param.add(stabilizerScale,"stabilizerscale","double");
-  m_param.add(bigChange,"bigchange","double");
-  m_param.add(MinMethod,"MinMethod","string");
-  m_param.add(exp0,"exp0","double");
-  m_param.add(targetExcitedStr,"targetExcited","string");
-  m_param.add(block_lmStr, "block_lm", "string");
-  m_param.add(nblocks, "nblocks", "int");
-  m_param.add(nolds, "nolds", "int");
-  m_param.add(nkept, "nkept", "int");
-  m_param.add(nsamp_comp, "nsamp_comp", "int");
-  m_param.add(omega_shift,"omega","double");
-  m_param.add(max_relative_cost_change,"max_relative_cost_change","double");
-  m_param.add(max_param_change,"max_param_change","double");
-  m_param.add(shift_i_input, "shift_i", "double");
-  m_param.add(shift_s_input, "shift_s", "double");
-  m_param.add(num_shifts, "num_shifts", "int");
+  QDT::RootName = "pot";
+  QDT::QMCType ="QMCFixedSampleLinearOptimize";
+  QDT::m_param.add(QLOT::WarmupBlocks,"warmupBlocks","int");
+  QDT::m_param.add(Max_iterations,"max_its","int");
+  QDT::m_param.add(nstabilizers,"nstabilizers","int");
+  QDT::m_param.add(QLOT::stabilizerScale,"stabilizerscale","double");
+  QDT::m_param.add(QLOT::bigChange,"bigchange","double");
+  QDT::m_param.add(MinMethod,"MinMethod","string");
+  QDT::m_param.add(exp0,"exp0","double");
+  QDT::m_param.add(targetExcitedStr,"targetExcited","string");
+  QDT::m_param.add(block_lmStr, "block_lm", "string");
+  QDT::m_param.add(nblocks, "nblocks", "int");
+  QDT::m_param.add(nolds, "nolds", "int");
+  QDT::m_param.add(nkept, "nkept", "int");
+  QDT::m_param.add(nsamp_comp, "nsamp_comp", "int");
+  QDT::m_param.add(omega_shift,"omega","double");
+  QDT::m_param.add(max_relative_cost_change,"max_relative_cost_change","double");
+  QDT::m_param.add(max_param_change,"max_param_change","double");
+  QDT::m_param.add(shift_i_input, "shift_i", "double");
+  QDT::m_param.add(shift_s_input, "shift_s", "double");
+  QDT::m_param.add(num_shifts, "num_shifts", "int");
 
   #ifdef HAVE_LMY_ENGINE
   //app_log() << "construct QMCFixedSampleLinearOptimize" << endl;
@@ -139,7 +140,7 @@ vdeps(1,std::vector<double>()),
   #endif
 //   stale parameters
 //   m_param.add(eigCG,"eigcg","int");
-//   m_param.add(TotalCGSteps,"cgsteps","int");
+//   QDT::m_param.add(TotalCGSteps,"cgsteps","int");
 //   m_param.add(w_beta,"beta","double");
 //   quadstep=-1.0;
 //   m_param.add(quadstep,"quadstep","double");
@@ -153,25 +154,28 @@ vdeps(1,std::vector<double>()),
 }
 
 /** Clean up the vector */
-QMCFixedSampleLinearOptimize::~QMCFixedSampleLinearOptimize()
+template<Batching batching>
+QMCFixedSampleLinearOptimize<batching>::~QMCFixedSampleLinearOptimize()
 {
   #ifdef HAVE_LMY_ENGINE
   delete EngineObj;
   #endif
 }
 
-QMCFixedSampleLinearOptimize::RealType QMCFixedSampleLinearOptimize::Func(RealType dl)
+template<Batching batching>
+typename QMCFixedSampleLinearOptimize<batching>::RealType QMCFixedSampleLinearOptimize<batching>::Func(RealType dl)
 {
-  for (int i=0; i<optparm.size(); i++)
-    optTarget->Params(i) = optparm[i] + dl*optdir[i];
-  QMCLinearOptimize::RealType c = optTarget->Cost(false);
+  for (int i=0; i<QLOT::optparm.size(); i++)
+    QLOT::optTarget->Params(i) = QLOT::optparm[i] + dl*QLOT::optdir[i];
+  QMCT::RealType c = QLOT::optTarget->Cost(false);
   //only allow this to go false if it was true. If false, stay false
 //    if (validFuncVal)
-  validFuncVal = optTarget->IsValid;
+  validFuncVal = QLOT::optTarget->IsValid;
   return c;
 }
 
-bool QMCFixedSampleLinearOptimize::run()
+template<Batching batching>
+bool QMCFixedSampleLinearOptimize<batching>::run()
 {
 
   // if requested, perform the update via the adaptive three-shift or single-shift method
@@ -180,21 +184,21 @@ bool QMCFixedSampleLinearOptimize::run()
 #endif
   if ( doOneShiftOnly ) return one_shift_run();
 
-  start();
+  QLOT::start();
   bool Valid(true);
   int Total_iterations(0);
 //size of matrix
-  numParams = optTarget->NumParams();
-  N = numParams + 1;
+  QLOT::numParams = QLOT::optTarget->NumParams();
+  QLOT::N = QLOT::numParams + 1;
 //   where we are and where we are pointing
-  std::vector<RealType> currentParameterDirections(N,0);
-  std::vector<RealType> currentParameters(numParams,0);
-  std::vector<RealType> bestParameters(numParams,0);
-  for (int i=0; i<numParams; i++)
-    bestParameters[i] = currentParameters[i] = optTarget->Params(i);
+  std::vector<RealType> currentParameterDirections(QLOT::N,0);
+  std::vector<RealType> currentParameters(QLOT::numParams,0);
+  std::vector<RealType> bestParameters(QLOT::numParams,0);
+  for (int i=0; i<QLOT::numParams; i++)
+    bestParameters[i] = currentParameters[i] = QLOT::optTarget->Params(i);
 //   proposed direction and new parameters
-  optdir.resize(numParams,0);
-  optparm.resize(numParams,0);
+  QLOT::optdir.resize(QLOT::numParams,0);
+  QLOT::optparm.resize(QLOT::numParams,0);
 
   while (Total_iterations < Max_iterations)
   {
@@ -205,22 +209,22 @@ bool QMCFixedSampleLinearOptimize::run()
 //this is the small amount added to the diagonal to stabilize the eigenvalue equation. 10^stabilityBase
     RealType stabilityBase(exp0);
 //     reset params if necessary
-    for (int i=0; i<numParams; i++)
-      optTarget->Params(i) = currentParameters[i];
-    myTimers[4]->start();
-    RealType lastCost(optTarget->Cost(true));
-    myTimers[4]->stop();
+    for (int i=0; i<QLOT::numParams; i++)
+      QLOT::optTarget->Params(i) = currentParameters[i];
+    QLOT::myTimers[4]->start();
+    RealType lastCost(QLOT::optTarget->Cost(true));
+    QLOT::myTimers[4]->stop();
 //     if cost function is currently invalid continue
-    Valid=optTarget->IsValid;
+    Valid=QLOT::optTarget->IsValid;
     if (!ValidCostFunction(Valid))
       continue;
     RealType newCost(lastCost);
     RealType startCost(lastCost);
-    Matrix<RealType> Left(N,N);
-    Matrix<RealType> Right(N,N);
-    Matrix<RealType> S(N,N);
+    Matrix<RealType> Left(QLOT::N,QLOT::N);
+    Matrix<RealType> Right(QLOT::N,QLOT::N);
+    Matrix<RealType> S(QLOT::N,QLOT::N);
 //     stick in wrong matrix to reduce the number of matrices we need by 1.( Left is actually stored in Right, & vice-versa)
-    optTarget->fillOverlapHamiltonianMatrices(Right,Left);
+    QLOT::optTarget->fillOverlapHamiltonianMatrices(Right,Left);
     S.copy(Left);
     bool apply_inverse(true);
     if(apply_inverse)
@@ -234,8 +238,8 @@ bool QMCFixedSampleLinearOptimize::run()
     //Find largest off-diagonal element compared to diagonal element.
     //This gives us an idea how well conditioned it is, used to stabilize.
     RealType od_largest(0);
-    for (int i=0; i<N; i++)
-      for (int j=0; j<N; j++)
+    for (int i=0; i<QLOT::N; i++)
+      for (int j=0; j<QLOT::N; j++)
         od_largest=std::max( std::max(od_largest,std::abs(Left(i,j))-std::abs(Left(i,i))), std::abs(Left(i,j))-std::abs(Left(j,j)));
     app_log()<<"od_largest "<<od_largest<< std::endl;
     //if(od_largest>0)
@@ -247,34 +251,34 @@ bool QMCFixedSampleLinearOptimize::run()
     //else
     //  stabilizerScale = std::max( 0.2*(od_largest-stabilityBase)/nstabilizers, stabilizerScale);
     app_log()<<"  stabilityBase "<<stabilityBase<< std::endl;
-    app_log()<<"  stabilizerScale "<<stabilizerScale<< std::endl;
+    app_log()<<"  stabilizerScale "<<QLOT::stabilizerScale<< std::endl;
     int failedTries(0);
     bool acceptedOneMove(false);
     for (int stability=0; stability<nstabilizers; stability++)
     {
       bool goodStep(true);
 //       store the Hamiltonian matrix in Right
-      for (int i=0; i<N; i++)
-        for (int j=0; j<N; j++)
+      for (int i=0; i<QLOT::N; i++)
+        for (int j=0; j<QLOT::N; j++)
           Right(i,j)= Left(j,i);
-      RealType XS(stabilityBase+stabilizerScale*(failedTries+stability));
-      for (int i=1; i<N; i++)
+      RealType XS(stabilityBase+QLOT::stabilizerScale*(failedTries+stability));
+      for (int i=1; i<QLOT::N; i++)
         Right(i,i) += std::exp(XS);
       app_log()<<"  Using XS:"<<XS<<" "<<failedTries<<" "<<stability<< std::endl;
       RealType lowestEV(0);
-      myTimers[2]->start();
-      lowestEV = getLowestEigenvector(Right,currentParameterDirections);
-      Lambda = getNonLinearRescale(currentParameterDirections,S);
-      myTimers[2]->stop();
+      QLOT::myTimers[2]->start();
+      lowestEV = QLOT::getLowestEigenvector(Right,currentParameterDirections);
+      Lambda = QLOT::getNonLinearRescale(currentParameterDirections,S);
+      QLOT::myTimers[2]->stop();
 //       biggest gradient in the parameter direction vector
       RealType bigVec(0);
-      for (int i=0; i<numParams; i++)
+      for (int i=0; i<QLOT::numParams; i++)
         bigVec = std::max(bigVec,std::abs(currentParameterDirections[i+1]));
 //       this can be overwritten during the line minimization
       RealType evaluated_cost(startCost);
       if (MinMethod=="rescale")
       {
-        if (std::abs(Lambda*bigVec)>bigChange)
+        if (std::abs(Lambda*bigVec)>QLOT::bigChange)
         {
           goodStep=false;
           app_log()<<"  Failed Step. Magnitude of largest parameter change: "<<std::abs(Lambda*bigVec)<< std::endl;
@@ -286,33 +290,33 @@ bool QMCFixedSampleLinearOptimize::run()
           else
             stability=nstabilizers;
         }
-        for (int i=0; i<numParams; i++)
-          optTarget->Params(i) = currentParameters[i] + Lambda*currentParameterDirections[i+1];
-        optTarget->IsValid = true;
+        for (int i=0; i<QLOT::numParams; i++)
+          QLOT::optTarget->Params(i) = currentParameters[i] + Lambda*currentParameterDirections[i+1];
+        QLOT::optTarget->IsValid = true;
       }
       else
       {
-        for (int i=0; i<numParams; i++)
-          optparm[i] = currentParameters[i];
-        for (int i=0; i<numParams; i++)
-          optdir[i] = currentParameterDirections[i+1];
-        TOL = param_tol/bigVec;
+        for (int i=0; i<QLOT::numParams; i++)
+          QLOT::optparm[i] = currentParameters[i];
+        for (int i=0; i<QLOT::numParams; i++)
+          QLOT::optdir[i] = currentParameterDirections[i+1];
+        TOL = QLOT::param_tol/bigVec;
         AbsFuncTol=true;
-        largeQuarticStep=bigChange/bigVec;
+        largeQuarticStep=QLOT::bigChange/bigVec;
         LambdaMax = 0.5*Lambda;
-        myTimers[3]->start();
+        QLOT::myTimers[3]->start();
         if (MinMethod=="quartic")
         {
           int npts(7);
           quadstep = stepsize*Lambda;
-          largeQuarticStep=bigChange/bigVec;
+          largeQuarticStep=QLOT::bigChange/bigVec;
           Valid=lineoptimization3(npts,evaluated_cost);
         }
         else
           Valid=lineoptimization2();
-        myTimers[3]->stop();
+        QLOT::myTimers[3]->stop();
         RealType biggestParameterChange = bigVec*std::abs(Lambda);
-        if (biggestParameterChange>bigChange)
+        if (biggestParameterChange>QLOT::bigChange)
         {
           goodStep=false;
           failedTries++;
@@ -324,8 +328,8 @@ bool QMCFixedSampleLinearOptimize::run()
         }
         else
         {
-          for (int i=0; i<numParams; i++)
-            optTarget->Params(i) = optparm[i] + Lambda * optdir[i];
+          for (int i=0; i<QLOT::numParams; i++)
+            QLOT::optTarget->Params(i) = QLOT::optparm[i] + Lambda * QLOT::optdir[i];
           app_log()<<"  Good Step. Largest LM parameter change:"<<biggestParameterChange<< std::endl;
         }
       }
@@ -335,12 +339,12 @@ bool QMCFixedSampleLinearOptimize::run()
 // 	this may have been evaluated allready
 // 	newCost=evaluated_cost;
         //get cost at new minimum
-        newCost = optTarget->Cost(false);
+        newCost = QLOT::optTarget->Cost(false);
         app_log()<<" OldCost: "<<lastCost<<" NewCost: "<<newCost<<" Delta Cost:"<<(newCost-lastCost)<< std::endl;
-        optTarget->printEstimates();
+        QLOT::optTarget->printEstimates();
         //                 quit if newcost is greater than lastcost. E(Xs) looks quadratic (between steepest descent and parabolic)
         // mmorales
-        Valid=optTarget->IsValid;
+        Valid=QLOT::optTarget->IsValid;
         //if (MinMethod!="rescale" && !ValidCostFunction(Valid))
         if (!ValidCostFunction(Valid))
         {
@@ -355,8 +359,8 @@ bool QMCFixedSampleLinearOptimize::run()
         if (newCost < lastCost && goodStep)
         {
           //Move was acceptable
-          for (int i=0; i<numParams; i++)
-            bestParameters[i] = optTarget->Params(i);
+          for (int i=0; i<QLOT::numParams; i++)
+            bestParameters[i] = QLOT::optTarget->Params(i);
           lastCost=newCost;
           acceptedOneMove=true;
           if(std::abs(newCost-lastCost)<1e-4)
@@ -382,29 +386,29 @@ bool QMCFixedSampleLinearOptimize::run()
     if (acceptedOneMove)
     {
       app_log()<<"Setting new Parameters"<<std::endl;
-      for (int i=0; i<numParams; i++)
-        optTarget->Params(i) = bestParameters[i];
+      for (int i=0; i<QLOT::numParams; i++)
+        QLOT::optTarget->Params(i) = bestParameters[i];
     }
     else
     {
       app_log()<<"Revertting to old Parameters"<<std::endl;
-      for (int i=0; i<numParams; i++)
-        optTarget->Params(i) = currentParameters[i];
+      for (int i=0; i<QLOT::numParams; i++)
+        QLOT::optTarget->Params(i) = currentParameters[i];
     }
     app_log().flush();
     app_error().flush();
   }
 
-  finish();
-  return (optTarget->getReportCounter() > 0);
+  QLOT::finish();
+  return (QLOT::optTarget->getReportCounter() > 0);
 }
 
 /** Parses the xml input file for parameter definitions for the wavefunction optimization.
 * @param q current xmlNode
 * @return true if successful
 */
-bool
-QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
+template<Batching batching>
+bool QMCFixedSampleLinearOptimize<batching>::put(xmlNodePtr q)
 {
   std::string useGPU("yes");
   std::string vmcMove("pbyp");
@@ -412,7 +416,7 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   oAttrib.add(useGPU,"gpu");
   oAttrib.add(vmcMove,"move");
   oAttrib.put(q);
-  m_param.put(q);
+  QDT::m_param.put(q);
 
   tolower(targetExcitedStr);
   targetExcited = ( targetExcitedStr == "yes" );
@@ -458,41 +462,44 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
     std::string cname((const char*)(cur->name));
     if (cname == "mcwalkerset")
     {
-      mcwalkerNodePtr.push_back(cur);
+      QDT::mcwalkerNodePtr.push_back(cur);
     }
     cur=cur->next;
   }
   //no walkers exist, add 10
-  if (W.getActiveWalkers() == 0)
-    addWalkers(omp_get_max_threads());
-  NumOfVMCWalkers=W.getActiveWalkers();
+  if (QDT::W.getActiveWalkers() == 0)
+    QDT::addWalkers(omp_get_max_threads());
+  NumOfVMCWalkers=QDT::W.getActiveWalkers();
   //create VMC engine
-  if (vmcEngine ==0)
+  if (QLOT::vmcEngine ==0)
   {
 #if defined (QMC_CUDA)
     if (useGPU == "yes")
-      vmcEngine = new VMCcuda(W,Psi,H,psiPool);
+      QLOT::vmcEngine = new VMCcuda(QDT::W,
+			      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(QDT::Psi),
+			      QDT::H,
+			      QDT::psiPool);
     else
 #endif
-      vmcEngine = new VMCSingleOMP(W,Psi,H,psiPool);
-    vmcEngine->setUpdateMode(vmcMove[0] == 'p');
-    vmcEngine->initCommunicator(myComm);
+      QLOT::vmcEngine = new VMCSingleOMP(QDT::W,QDT::Psi,QDT::H,QDT::psiPool);
+    QLOT::vmcEngine->setUpdateMode(vmcMove[0] == 'p');
+    QLOT::vmcEngine->initCommunicator(QDT::myComm);
   }
 
-  vmcEngine->setStatus(RootName,h5FileRoot,AppendRun);
-  vmcEngine->process(qsave);
+  QLOT::vmcEngine->setStatus(QDT::RootName,QDT::h5FileRoot,QDT::AppendRun);
+  QLOT::vmcEngine->process(qsave);
 
   bool success=true;
-  if (optTarget == 0)
+  if (QLOT::optTarget == 0)
   {
 #if defined (QMC_CUDA)
     if (useGPU == "yes")
-      optTarget = new QMCCostFunctionCUDA(W,Psi,H);
+      QLOT::optTarget = new QMCCostFunctionCUDA(QDT::W,QDT::Psi,QDT::H);
     else
 #endif
-      optTarget = new QMCCostFunctionOMP(W,Psi,H);
-    optTarget->setStream(&app_log());
-    success=optTarget->put(q);
+      QLOT::optTarget = new QMCCostFunctionOMP(QDT::W,QDT::Psi,QDT::H);
+    QLOT::optTarget->setStream(&app_log());
+    success=QLOT::optTarget->put(q);
   }
   return success;
 }
@@ -503,7 +510,8 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
 /// \param[in]      central_shift  the central shift
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<double> QMCFixedSampleLinearOptimize::prepare_shifts(const double central_shift) const {
+template<Batching batching>
+std::vector<double> QMCFixedSampleLinearOptimize<batching>::prepare_shifts(const double central_shift) const {
   std::vector<double> retval(num_shifts);
 
   // check to see whether the number of shifts is odd
@@ -531,7 +539,8 @@ std::vector<double> QMCFixedSampleLinearOptimize::prepare_shifts(const double ce
 /// \brief  prints a header for the summary of each shift's result
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void QMCFixedSampleLinearOptimize::print_cost_summary_header() {
+template<Batching batching>
+void QMCFixedSampleLinearOptimize<batching>::print_cost_summary_header() {
     app_log() << "   " << std::right << std::setw(12) << "shift_i";
     app_log() << "   " << std::right << std::setw(12) << "shift_s";
     app_log() << "   " << std::right << std::setw(20) << "max param change";
@@ -556,7 +565,8 @@ void QMCFixedSampleLinearOptimize::print_cost_summary_header() {
 /// \param[in]      gu             flag telling whether it was a good update
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void QMCFixedSampleLinearOptimize::print_cost_summary(const double si, const double ss, const RealType mc, const RealType cv, const int ind, const int bi, const bool gu) {
+template<Batching batching>
+void QMCFixedSampleLinearOptimize<batching>::print_cost_summary(const double si, const double ss, const RealType mc, const RealType cv, const int ind, const int bi, const bool gu) {
     if ( ind >= 0 ) {
       if ( gu ) {
         app_log() << "   " << std::scientific << std::right << std::setw(12) << std::setprecision(4)  << si;
@@ -591,7 +601,8 @@ void QMCFixedSampleLinearOptimize::print_cost_summary(const double si, const dou
 /// \param[in]      ic             the initial cost
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-bool QMCFixedSampleLinearOptimize::is_best_cost(const int ii, const std::vector<RealType> & cv, const RealType ic) const {
+template<Batching batching>
+bool QMCFixedSampleLinearOptimize<batching>::is_best_cost(const int ii, const std::vector<RealType> & cv, const RealType ic) const {
   
   // initialize return value
   bool retval = true;
@@ -635,7 +646,8 @@ bool QMCFixedSampleLinearOptimize::is_best_cost(const int ii, const std::vector<
 /// \param[out]     parameterDirections   on exit, the update directions for the different shifts
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector<double> & shifts_i,
+template<Batching batching>
+void QMCFixedSampleLinearOptimize<batching>::solveShiftsWithoutLMYEngine(const std::vector<double> & shifts_i,
                                                                const std::vector<double> & shifts_s,
                                                                std::vector<std::vector<RealType> > & parameterDirections) {
 
@@ -643,25 +655,25 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
   const int nshifts = shifts_i.size();
 
   // get number of optimizable parameters
-  numParams = optTarget->NumParams();
+  QLOT::numParams = QLOT::optTarget->NumParams();
 
   // get dimension of the linear method matrices
-  N = numParams + 1;
+  QLOT::N = QLOT::numParams + 1;
 
   // prepare vectors to hold the parameter updates
   parameterDirections.resize(nshifts);
   for (int i = 0; i < parameterDirections.size(); i++)
-    parameterDirections.at(i).assign(N, 0.0);
+    parameterDirections.at(i).assign(QLOT::N, 0.0);
 
   // allocate the matrices we will need
-  Matrix<RealType> ovlMat(N,N); ovlMat = 0.0;
-  Matrix<RealType> hamMat(N,N); hamMat = 0.0;
-  Matrix<RealType> invMat(N,N); invMat = 0.0;
-  Matrix<RealType> sftMat(N,N); sftMat = 0.0;
-  Matrix<RealType> prdMat(N,N); prdMat = 0.0;
+  Matrix<RealType> ovlMat(QLOT::N,QLOT::N); ovlMat = 0.0;
+  Matrix<RealType> hamMat(QLOT::N,QLOT::N); hamMat = 0.0;
+  Matrix<RealType> invMat(QLOT::N,QLOT::N); invMat = 0.0;
+  Matrix<RealType> sftMat(QLOT::N,QLOT::N); sftMat = 0.0;
+  Matrix<RealType> prdMat(QLOT::N,QLOT::N); prdMat = 0.0;
 
   // build the overlap and hamiltonian matrices
-  optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
+  QLOT::optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
 
   //// print the hamiltonian matrix
   //app_log() << std::endl;
@@ -694,20 +706,20 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
     sftMat.copy(hamMat);
 
     // apply the identity shift
-    for (int i=1; i<N; i++)
+    for (int i=1; i<QLOT::N; i++)
       sftMat(i,i) += shifts_i.at(shift_index);
 
     // apply the overlap shift
-    for (int i=1; i<N; i++)
-    for (int j=1; j<N; j++)
+    for (int i=1; i<QLOT::N; i++)
+    for (int j=1; j<QLOT::N; j++)
       sftMat(i,j) += shifts_s.at(shift_index) * ovlMat(i,j);
 
     // multiply the shifted hamiltonian matrix by the inverse of the overlap matrix
     qmcplusplus::MatrixOperators::product(invMat, sftMat, prdMat);
 
     // transpose the result (why?)
-    for (int i=0; i<N; i++)
-    for (int j=i+1; j<N; j++)
+    for (int i=0; i<QLOT::N; i++)
+    for (int j=i+1; j<QLOT::N; j++)
       std::swap(prdMat(i,j), prdMat(j,i));
 
     // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
@@ -717,7 +729,7 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
     this->Lambda = this->getNonLinearRescale(parameterDirections.at(shift_index), ovlMat);
 
     // scale the update by the scaling constant
-    for (int i=0; i<numParams; i++)
+    for (int i=0; i<QLOT::numParams; i++)
       parameterDirections.at(shift_index).at(i+1) *= Lambda;
 
   }
@@ -737,19 +749,20 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef HAVE_LMY_ENGINE
-bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
+template<Batching batching>
+bool QMCFixedSampleLinearOptimize<batching>::adaptive_three_shift_run() {
 
   // remember what the cost function grads flag was
-  const bool saved_grads_flag = this->optTarget->getneedGrads();
+  const bool saved_grads_flag = this->QLOT::optTarget->getneedGrads();
 
   // remember the initial number of samples
-  const int init_num_samp = this->optTarget->getNumSamples();
+  const int init_num_samp = this->QLOT::optTarget->getNumSamples();
 
   // the index of central shift
   const int central_index = num_shifts / 2;
 
   // get number of optimizable parameters
-  numParams = optTarget->NumParams();
+  QLOT::numParams = QLOT::optTarget->NumParams();
 
   // prepare the shifts that we will try
   const std::vector<double> shifts_i = this->prepare_shifts(this->bestShift_i);
@@ -759,13 +772,13 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
     shift_scales.at(i) = shifts_i.at(i) / shift_i_input;
 
   // ensure the cost function is set to compute derivative vectors
-  this->optTarget->setneedGrads(true);
+  this->QLOT::optTarget->setneedGrads(true);
 
   // prepare previous updates 
   int count = 0;
   while ( block_lm && previous_update.size() < nolds ) {
-    previous_update.push_back(formic::ColVec<double>(numParams));
-    for (int i = 0; i < numParams; i++) 
+    previous_update.push_back(formic::ColVec<double>(QLOT::numParams));
+    for (int i = 0; i < QLOT::numParams; i++) 
       previous_update.at(count).at(i) =  2.0 * ( formic::random_number<double>() - 0.5 );
     count++;
   }
@@ -773,7 +786,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   if ( !EngineObj->full_init() ) {
 
     // prepare a variable dependency object with no dependencies
-    formic::VarDeps real_vdeps(numParams, std::vector<double>());
+    formic::VarDeps real_vdeps(QLOT::numParams, std::vector<double>());
     vdeps = real_vdeps;
     EngineObj->get_param(&vdeps,
                          false, // exact sampling
@@ -783,7 +796,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
                          false, // ssquare
                          block_lm, 
                          12000, 
-                         numParams,
+                         QLOT::numParams,
                          omega_shift,
                          max_relative_cost_change,
                          shifts_i.at(central_index), 
@@ -812,7 +825,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   this->engine_start(EngineObj);
 
   // get dimension of the linear method matrices
-  N = numParams + 1;
+  QLOT::N = QLOT::numParams + 1;
 
   // have the cost function prepare derivative vectors
   EngineObj->energy_target_compute();
@@ -832,15 +845,15 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
 
   if ( block_lm ) {
 
-    this->optTarget->setneedGrads(true);
+    this->QLOT::optTarget->setneedGrads(true);
 
-    int numOptParams = optTarget->NumParams();
+    int numOptParams = QLOT::optTarget->NumParams();
 
     // reset the engine object 
     EngineObj->reset();
 
     // finish last sample
-    this->finish();
+    this->QLOT::finish();
 
     // take sample
     this->engine_start(EngineObj);
@@ -869,9 +882,9 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   //app_log() << endl;
   parameterDirections.resize(shifts_i.size());
   for (int i = 0; i < shifts_i.size(); i++) {
-    parameterDirections.at(i).assign(N, 0.0);
+    parameterDirections.at(i).assign(QLOT::N, 0.0);
     if ( true ) {
-      for (int j = 0; j < N; j++) 
+      for (int j = 0; j < QLOT::N; j++) 
         parameterDirections.at(i).at(j) = EngineObj->wfn_update().at(i*N+j);
     }
     else 
@@ -879,14 +892,14 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   }
 
   // now that we are done with them, prevent further computation of derivative vectors
-  this->optTarget->setneedGrads(false);
+  this->QLOT::optTarget->setneedGrads(false);
 
   // prepare vectors to hold the initial and current parameters
-  std::vector<RealType> currParams(numParams, 0.0);
+  std::vector<RealType> currParams(QLOT::numParams, 0.0);
 
   // initialize the initial and current parameter vectors
-  for (int i=0; i<numParams; i++)
-    currParams.at(i) = this->optTarget->Params(i);
+  for (int i=0; i<QLOT::numParams; i++)
+    currParams.at(i) = this->QLOT::optTarget->Params(i);
 
   // create a vector telling which updates are within our constraints
   std::vector<bool> good_update(parameterDirections.size(), true);
@@ -894,14 +907,14 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   // compute the largest parameter change for each shift, and zero out updates that have too-large changes
   std::vector<RealType> max_change(parameterDirections.size(), 0.0);
   for (int k = 0; k < parameterDirections.size(); k++) {
-    for ( int i = 0; i < numParams; i++)
+    for ( int i = 0; i < QLOT::numParams; i++)
       max_change.at(k) = std::max(max_change.at(k), std::abs(parameterDirections.at(k).at(i+1) / parameterDirections.at(k).at(0)));
     good_update.at(k) = ( good_update.at(k) && max_change.at(k) <= max_param_change );
   }
 
   // prepare to use the middle shift's update as the guiding function for a new sample
-  for (int i=0; i<numParams; i++)
-    this->optTarget->Params(i) = currParams.at(i) + parameterDirections.at(central_index).at(i+1);
+  for (int i=0; i<QLOT::numParams; i++)
+    this->QLOT::optTarget->Params(i) = currParams.at(i) + parameterDirections.at(central_index).at(i+1);
 
   // say what we are doing
   app_log() << std::endl
@@ -911,7 +924,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
             << std::endl;
 
   // generate the new sample on which we will compare the different shifts
-  this->finish();
+  this->QLOT::finish();
 
   // reset the number of samples
   //this->optTarget->setNumSamples(nsamp_comp);
@@ -923,7 +936,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
             << "Generating a new sample based on the updated guiding function" << std::endl
             << "*************************************************************" << std::endl
             << std::endl;
-  this->start();
+  this->QLOT::start();
   //app_log() << "number of samples is" << this->optTarget->getNumSamples() << std::endl;
 
   // say what we are doing
@@ -934,17 +947,17 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
             << std::endl;
 
   // update the current parameters to those of the new guiding function
-  for (int i=0; i<numParams; i++)
-    currParams.at(i) = optTarget->Params(i);
+  for (int i=0; i<QLOT::numParams; i++)
+    currParams.at(i) = QLOT::optTarget->Params(i);
 
   // compute cost function for the initial parameters (by subtracting the middle shift's update back off)
-  for (int i=0; i<numParams; i++)
-    this->optTarget->Params(i) = currParams.at(i) - parameterDirections.at(central_index).at(i+1);
-  this->optTarget->IsValid = true;
-  const RealType initCost = this->optTarget->LMYEngineCost(false, EngineObj);
+  for (int i=0; i<QLOT::numParams; i++)
+    this->QLOT::optTarget->Params(i) = currParams.at(i) - parameterDirections.at(central_index).at(i+1);
+  this->QLOT::optTarget->IsValid = true;
+  const RealType initCost = this->QLOT::optTarget->LMYEngineCost(false, EngineObj);
 
   // compute the update directions for the smaller and larger shifts relative to that of the middle shift
-  for (int i=0; i<numParams; i++) {
+  for (int i=0; i<QLOT::numParams; i++) {
     for (int j = 0; j < parameterDirections.size(); j++) {
       if ( j != central_index ) 
         parameterDirections.at(j).at(i+1) -= parameterDirections.at(1).at(i+1);
@@ -957,10 +970,10 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
 
   // compute the cost function value for each shift and make sure the change is within our constraints
   for (int k = 0; k < parameterDirections.size(); k++) {
-    for (int i=0; i<numParams; i++)
-      this->optTarget->Params(i) = currParams.at(i) + ( k == num_shifts ? 0.0 : parameterDirections.at(k).at(i+1) );
-    this->optTarget->IsValid = true;
-    costValues.at(k) = this->optTarget->LMYEngineCost(false, EngineObj);
+    for (int i=0; i<QLOT::numParams; i++)
+      this->QLOT::optTarget->Params(i) = currParams.at(i) + ( k == num_shifts ? 0.0 : parameterDirections.at(k).at(i+1) );
+    this->QLOT::optTarget->IsValid = true;
+    costValues.at(k) = this->QLOT::optTarget->LMYEngineCost(false, EngineObj);
     good_update.at(k) = ( good_update.at(k) && std::abs( (initCost - costValues.at(k)) / initCost ) < max_relative_cost_change );
     //app_log() << std::abs( (starting_cost - costValues.at(k)) / starting_cost ) << "  ";
     if (!good_update.at(k))
@@ -993,8 +1006,8 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
 
     this->bestShift_i = shifts_i.at(best_shift);
     this->bestShift_s = shifts_s.at(best_shift);
-    for (int i=0; i<numParams; i++)
-      optTarget->Params(i) = currParams.at(i) + ( best_shift == central_index ? 0.0 : bestDirection->at(i+1) );
+    for (int i=0; i<QLOT::numParams; i++)
+      QLOT::optTarget->Params(i) = currParams.at(i) + ( best_shift == central_index ? 0.0 : bestDirection->at(i+1) );
     app_log() << std::endl
               << "*****************************************************************************" << std::endl
               << "Applying the update for shift_i = "
@@ -1009,8 +1022,8 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   } else {
     this->bestShift_i *= 10.0;
     this->bestShift_s *= 10.0;
-    for (int i=0; i<numParams; i++)
-      optTarget->Params(i) = currParams.at(i) - parameterDirections.at(central_index).at(i+1);
+    for (int i=0; i<QLOT::numParams; i++)
+      QLOT::optTarget->Params(i) = currParams.at(i) - parameterDirections.at(central_index).at(i+1);
     app_log() << std::endl
               << "***********************************************************" << std::endl
               << "Reverting to old parameters and increasing shift magnitudes" << std::endl
@@ -1022,8 +1035,8 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   if ( block_lm && bestDirection ) {
     
     // save the difference between the updated and old variables
-    formic::ColVec<double> update_dirs(numParams, 0.0);
-    for (int i = 0; i < numParams; i++) 
+    formic::ColVec<double> update_dirs(QLOT::numParams, 0.0);
+    for (int i = 0; i < QLOT::numParams; i++) 
       update_dirs.at(i) = bestDirection->at(i+1) + parameterDirections.at(central_index).at(i+1);
     previous_update.insert(previous_update.begin(), update_dirs);
     
@@ -1033,54 +1046,55 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   }
 
   // return the cost function grads flag to what it was
-  this->optTarget->setneedGrads(saved_grads_flag);
+  this->QLOT::optTarget->setneedGrads(saved_grads_flag);
 
-  // perform some finishing touches for this linear method iteration
-  this->finish();
+  // perform some QLOT::finishing touches for this linear method iteration
+  this->QLOT::finish();
 
   // set the number samples to be initial one
-  this->optTarget->setNumSamples(init_num_samp);
+  this->QLOT::optTarget->setNumSamples(init_num_samp);
   nTargetSamples = init_num_samp;
 
   //app_log() << "block first second third end " << block_first << block_second << block_third << endl; 
   // return whether the cost function's report counter is positive
-  return (optTarget->getReportCounter() > 0);
+  return (QLOT::optTarget->getReportCounter() > 0);
 
 }
 #endif
 
-bool QMCFixedSampleLinearOptimize::one_shift_run() {
+template<Batching batching>
+bool QMCFixedSampleLinearOptimize<batching>::one_shift_run() {
 
   // ensure the cost function is set to compute derivative vectors
-  optTarget->setneedGrads(true);
+  QLOT::optTarget->setneedGrads(true);
 
   // generate samples and compute weights, local energies, and derivative vectors
-  start();
+  QLOT::start();
 
   // get number of optimizable parameters
-  numParams = optTarget->NumParams();
+  QLOT::numParams = QLOT::optTarget->NumParams();
 
   // get dimension of the linear method matrices
-  N = numParams + 1;
+  QLOT::N = QLOT::numParams + 1;
 
   // prepare vectors to hold the initial and current parameters
-  std::vector<RealType> currentParameters(numParams, 0.0);
+  std::vector<RealType> currentParameters(QLOT::numParams, 0.0);
 
   // initialize the initial and current parameter vectors
-  for (int i=0; i<numParams; i++)
-    currentParameters.at(i) = optTarget->Params(i);
+  for (int i=0; i<QLOT::numParams; i++)
+    currentParameters.at(i) = QLOT::optTarget->Params(i);
 
   // prepare vectors to hold the parameter update directions for each shift
   std::vector<RealType> parameterDirections;
-  parameterDirections.assign(N, 0.0);
+  parameterDirections.assign(QLOT::N, 0.0);
 
   // compute the initial cost
 #ifdef QMC_CUDA
   // Ye : can't call computedCost directly, internal data was not correct for ham,ovl matrices.
   // more investiation is needed.
-  const RealType initCost = optTarget->Cost(true);
+  const RealType initCost = QLOT::optTarget->Cost(true);
 #else
-  const RealType initCost = optTarget->computedCost();
+  const RealType initCost = QLOT::optTarget->computedCost();
 #endif
 
   // say what we are doing
@@ -1090,20 +1104,20 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
             << "*****************************************" << std::endl;
 
   // allocate the matrices we will need
-  Matrix<RealType> ovlMat(N,N); ovlMat = 0.0;
-  Matrix<RealType> hamMat(N,N); hamMat = 0.0;
-  Matrix<RealType> invMat(N,N); invMat = 0.0;
-  Matrix<RealType> prdMat(N,N); prdMat = 0.0;
+  Matrix<RealType> ovlMat(QLOT::N,QLOT::N); ovlMat = 0.0;
+  Matrix<RealType> hamMat(QLOT::N,QLOT::N); hamMat = 0.0;
+  Matrix<RealType> invMat(QLOT::N,QLOT::N); invMat = 0.0;
+  Matrix<RealType> prdMat(QLOT::N,QLOT::N); prdMat = 0.0;
 
   // build the overlap and hamiltonian matrices
-  optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
+  QLOT::optTarget->fillOverlapHamiltonianMatrices(hamMat, ovlMat);
   invMat.copy(ovlMat);
 
   // prepare vector to hold largest parameter change for each shift
   RealType max_change(0.0);
 
   // apply the identity shift
-  for (int i=1; i<N; i++)
+  for (int i=1; i<QLOT::N; i++)
   {
     hamMat(i,i) += bestShift_i;
     if(invMat(i,i)==0) invMat(i,i) = bestShift_i*bestShift_s;
@@ -1113,50 +1127,50 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
   invert_matrix(invMat, false);
 
   // apply the overlap shift
-  for (int i=1; i<N; i++)
-    for (int j=1; j<N; j++)
+  for (int i=1; i<QLOT::N; i++)
+    for (int j=1; j<QLOT::N; j++)
       hamMat(i,j) += bestShift_s * ovlMat(i,j);
 
   // multiply the shifted hamiltonian matrix by the inverse of the overlap matrix
   qmcplusplus::MatrixOperators::product(invMat, hamMat, prdMat);
 
   // transpose the result (why?)
-  for (int i=0; i<N; i++)
-    for (int j=i+1; j<N; j++)
+  for (int i=0; i<QLOT::N; i++)
+    for (int j=i+1; j<QLOT::N; j++)
       std::swap(prdMat(i,j), prdMat(j,i));
 
   // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-  const RealType lowestEV = getLowestEigenvector(prdMat, parameterDirections);
+  const RealType lowestEV = QLOT::getLowestEigenvector(prdMat, parameterDirections);
 
   // compute the scaling constant to apply to the update
-  Lambda = getNonLinearRescale(parameterDirections, ovlMat);
+  Lambda = QLOT::getNonLinearRescale(parameterDirections, ovlMat);
 
   // scale the update by the scaling constant
-  for (int i=0; i<numParams; i++)
+  for (int i=0; i<QLOT::numParams; i++)
     parameterDirections.at(i+1) *= Lambda;
 
   // now that we are done building the matrices, prevent further computation of derivative vectors
-  optTarget->setneedGrads(false);
+  QLOT::optTarget->setneedGrads(false);
 
   // prepare to use the middle shift's update as the guiding function for a new sample
-  for (int i=0; i<numParams; i++)
-    optTarget->Params(i) = currentParameters.at(i) + parameterDirections.at(i+1);
+  for (int i=0; i<QLOT::numParams; i++)
+    QLOT::optTarget->Params(i) = currentParameters.at(i) + parameterDirections.at(i+1);
 
   RealType largestChange(0);
   int max_element;
-  for (int i=0; i<numParams; i++)
+  for (int i=0; i<QLOT::numParams; i++)
     if (std::abs(parameterDirections.at(i+1)) > largestChange)
     {
       largestChange = std::abs(parameterDirections.at(i+1));
       max_element = i;
     }
-  app_log() << std::endl << "Among totally " << numParams << " optimized parameters, "
+  app_log() << std::endl << "Among totally " << QLOT::numParams << " optimized parameters, "
             << "largest LM parameter change : "
             << largestChange << " at parameter " << max_element << std::endl;
 
   // compute the new cost
-  optTarget->IsValid = true;
-  const RealType newCost = optTarget->Cost(false);
+  QLOT::optTarget->IsValid = true;
+  const RealType newCost = QLOT::optTarget->Cost(false);
 
   app_log() << std::endl
             << "******************************************************************************" << std::endl
@@ -1169,10 +1183,10 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
             << std::endl
             << "******************************************************************************" << std::endl;
 
-  if ( !optTarget->IsValid || std::isnan(newCost)) {
+  if ( !QLOT::optTarget->IsValid || std::isnan(newCost)) {
     app_log() << std::endl << "The new set of parameters is not valid. Revert to the old set!" << std::endl;
-    for (int i=0; i<numParams; i++)
-      optTarget->Params(i) = currentParameters.at(i);
+    for (int i=0; i<QLOT::numParams; i++)
+      QLOT::optTarget->Params(i) = currentParameters.at(i);
     bestShift_s=bestShift_s*shift_s_base;
     if(accept_history[0]==true && accept_history[1]==false) // rejected the one before last and accepted the last
     {
@@ -1198,10 +1212,10 @@ bool QMCFixedSampleLinearOptimize::one_shift_run() {
             << "*****************************************************************************" << std::endl;
 
   // perform some finishing touches for this linear method iteration
-  finish();
+  QLOT::finish();
 
   // return whether the cost function's report counter is positive
-  return (optTarget->getReportCounter() > 0);
+  return (QLOT::optTarget->getReportCounter() > 0);
 
 }
 

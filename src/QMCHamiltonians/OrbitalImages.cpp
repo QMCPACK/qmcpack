@@ -32,7 +32,7 @@ namespace qmcplusplus
   }
 
   
-  QMCHamiltonianBase* OrbitalImages::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
+  QMCHamiltonianBase* OrbitalImages::makeClone(ParticleSet& P, TrialWaveFunction<>& Psi)
   {
     //cloning shouldn't strictly be necessary, but do it right just in case
     OrbitalImages* clone = new OrbitalImages(*this);

@@ -28,7 +28,7 @@ class DMCUpdatePbyPWithRejectionFast: public QMCUpdateBase
 public:
 
   /// Constructor.
-  DMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+  DMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w, TrialWaveFunction<>& psi,
                                  QMCHamiltonian& h, RandomGenerator_t& rg);
   ///destructor
   ~DMCUpdatePbyPWithRejectionFast();

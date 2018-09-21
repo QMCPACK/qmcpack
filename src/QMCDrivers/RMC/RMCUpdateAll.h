@@ -32,7 +32,7 @@ namespace qmcplusplus
     { SYM_ACTION, DMC_ACTION };
 
       RMCUpdateAllWithDrift (MCWalkerConfiguration & w,
-			     TrialWaveFunction & psi, QMCHamiltonian & h,
+			     TrialWaveFunction<>& psi, QMCHamiltonian & h,
 			     RandomGenerator_t & rg, std::vector < int >act,
 			     std::vector < int >tp);
      ~RMCUpdateAllWithDrift ();

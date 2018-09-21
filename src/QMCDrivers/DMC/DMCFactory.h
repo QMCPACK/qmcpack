@@ -29,9 +29,10 @@ struct DMCFactory
     PbyPUpdate(pbyp), myNode(cur), GPU(gpu)
   { }
 
-  QMCDriver* create(MCWalkerConfiguration& w,
-                    TrialWaveFunction& psi,
-                    QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool);
+  template<Batching batching = Batching::SINGLE>
+  QMCDriver<batching>* create(MCWalkerConfiguration& w,
+                    TrialWaveFunction<batching>& psi,
+                    QMCHamiltonian& h, HamiltonianPool<batching>& hpool,WaveFunctionPool<batching>& ppool);
 };
 }
 

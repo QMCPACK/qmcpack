@@ -149,7 +149,7 @@ BareForce::BareForce(ParticleSet& ions, ParticleSet& elns): ForceBase(ions,elns)
 
 void BareForce::resetTargetParticleSet(ParticleSet& P) { }
 
-QMCHamiltonianBase* BareForce::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+QMCHamiltonianBase* BareForce::makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
 {
   return new BareForce(*this);
 }

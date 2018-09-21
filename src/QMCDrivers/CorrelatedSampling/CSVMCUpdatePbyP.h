@@ -30,7 +30,7 @@ class CSVMCUpdatePbyP: public CSUpdateBase
 public:
   /// Constructor.
   CSVMCUpdatePbyP(MCWalkerConfiguration& w,
-                   std::vector<TrialWaveFunction*>& psi,
+                   std::vector<TrialWaveFunction<>*>& psi,
                    std::vector<QMCHamiltonian*>& h,
                   RandomGenerator_t& rg);
 
@@ -50,7 +50,7 @@ class CSVMCUpdatePbyPWithDriftFast: public CSUpdateBase
 public:
   /// Constructor.
   CSVMCUpdatePbyPWithDriftFast(MCWalkerConfiguration& w,
-                   std::vector<TrialWaveFunction*>& psi,
+                   std::vector<TrialWaveFunction<>*>& psi,
                    std::vector<QMCHamiltonian*>& h,
                   RandomGenerator_t& rg);
 

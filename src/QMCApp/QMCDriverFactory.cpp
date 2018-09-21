@@ -225,9 +225,9 @@ void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
   ///////////////////////////////////////////////
   // get primaryPsi and primaryH
   ///////////////////////////////////////////////
-  TrialWaveFunction* primaryPsi= 0;
+  TrialWaveFunction<>* primaryPsi= 0;
   QMCHamiltonian* primaryH=0;
-  std::queue<TrialWaveFunction*> targetPsi;//FIFO
+  std::queue<TrialWaveFunction<>*> targetPsi;//FIFO
   std::queue<QMCHamiltonian*> targetH;//FIFO
   xmlNodePtr tcur=cur->children;
   while(tcur != NULL)

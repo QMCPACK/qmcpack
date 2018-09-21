@@ -237,7 +237,7 @@ TEST_CASE("Chiesa Force", "[hamiltonian]")
   // copied.  Would be nice if there were a better way than inspection
   // to ensure all the members are copied/set up/tested.
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction<> psi = TrialWaveFunction<>(c);
   QMCHamiltonianBase *base_force2 = force.makeClone(elec,psi);
   ForceChiesaPBCAA *force2 = dynamic_cast<ForceChiesaPBCAA *>(base_force2);
   REQUIRE(force2 != NULL);

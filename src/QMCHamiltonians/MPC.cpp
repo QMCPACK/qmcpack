@@ -352,7 +352,7 @@ MPC::initBreakup()
 }
 
 QMCHamiltonianBase*
-MPC::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+MPC::makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
 {
   // return new MPC(qp, Ecut);
   MPC* newMPC = new MPC(*this);

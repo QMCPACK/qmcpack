@@ -125,7 +125,7 @@ struct LocalCorePolPotential: public QMCHamiltonianBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi);
   //inline RealType fcpp(RealType z) {
   //  return pow((1.0-exp(-1.0*z*z)),2);
   //}

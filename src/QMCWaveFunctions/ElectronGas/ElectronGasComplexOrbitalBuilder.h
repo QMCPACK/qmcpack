@@ -110,7 +110,7 @@ class ElectronGasComplexOrbitalBuilder: public WaveFunctionComponentBuilder
 public:
 
   ///constructor
-  ElectronGasComplexOrbitalBuilder(ParticleSet& els, TrialWaveFunction& wfs);
+  ElectronGasComplexOrbitalBuilder(ParticleSet& els, TrialWaveFunction<>& wfs);
   //typedef VarRegistry<RealType> OptimizableSetType;
 
   ///implement vritual function

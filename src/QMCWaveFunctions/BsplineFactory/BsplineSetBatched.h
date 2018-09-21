@@ -84,11 +84,38 @@ struct BsplineSet<SA, Batching::BATCHED>: public SA,
     return QMCTraits::ValueType();
   }
 
+  inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
+  {
+    APP_ABORT("Single evaluations not supported by BsplineSet<BATCHED>");
+    //SA::evaluate_v(P,iat,psi);
+  }
+  
   inline void evaluate(const std::vector<ParticleSet*>& P, int iat, ValueVector_t& psi)
   {
     SA::evaluate_v(P,iat,psi);
   }
 
+  virtual void
+  evaluate(const ParticleSet& P, int iat,
+           SSTA::ValueVector_t& psi, SSTA::GradVector_t& dpsi, SSTA::ValueVector_t& d2psi)
+  {
+    APP_ABORT("Single evaluations not supported by BsplineSet<BATCHED>");
+  }
+
+  virtual void
+  evaluate(const ParticleSet& P, int iat,
+           SSTA::ValueVector_t& psi, SSTA::GradVector_t& dpsi, SSTA::HessVector_t& grad_grad_psi)
+  {
+    APP_ABORT("Single evaluations not supported by BsplineSet<BATCHED>");
+  }
+
+  virtual void evaluate_notranspose(const ParticleSet& P, int first, int last
+                                    , SSTA::ValueMatrix_t& logdet, SSTA::GradMatrix_t& dlogdet, SSTA::ValueMatrix_t& d2logdet)
+  {
+    APP_ABORT("Single evaluations not supported by BsplineSet<BATCHED>");
+  }
+
+  
   inline void evaluateValues(const std::vector<VirtualParticleSet*>& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem)
   {
     SA::evaluateValues(VP, psiM, SPOMem);
@@ -129,22 +156,13 @@ struct BsplineSet<SA, Batching::BATCHED>: public SA,
   virtual void evaluate_notranspose(const std::vector<ParticleSet*>& P, int first, int last
                                     , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
   {
-    typedef ValueMatrix_t::value_type value_type;
-    typedef GradMatrix_t::value_type grad_type;
-    typedef HessMatrix_t::value_type hess_type;
-    for(int iat=first, i=0; iat<last; ++iat,++i)
-    {
-      ValueVector_t v(logdet[i],OrbitalSetSize);
-      GradVector_t  g(dlogdet[i],OrbitalSetSize);
-      HessVector_t  h(grad_grad_logdet[i],OrbitalSetSize);
-      SA::evaluate_vgh(P,iat,v,g,h);
-    }
+    APP_ABORT("Single evaluations not supported by BsplineSet<BATCHED>");
   }
 
   /** einspline does not need any other state data */
   void evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
   {
-    SA::evaluate_vgl_combo(P,iat,vgl);
+    APP_ABORT("Single evaluations not supported by BsplineSet<BATCHED>");
   }
 
 };

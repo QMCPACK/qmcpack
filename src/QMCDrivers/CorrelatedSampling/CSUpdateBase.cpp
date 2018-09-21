@@ -25,7 +25,7 @@
 namespace qmcplusplus
 {
 CSUpdateBase::CSUpdateBase(MCWalkerConfiguration& w,
-                           std::vector<TrialWaveFunction*>& psipool, std::vector<QMCHamiltonian*>& hpool, RandomGenerator_t& rg):
+                           std::vector<TrialWaveFunction<>*>& psipool, std::vector<QMCHamiltonian*>& hpool, RandomGenerator_t& rg):
   QMCUpdateBase(w,*psipool[0],*hpool[0],rg), nPsi(0), useDriftOption("no"), H1(hpool), Psi1(psipool)
 {
   myParams.add(useDriftOption,"useDrift","string");

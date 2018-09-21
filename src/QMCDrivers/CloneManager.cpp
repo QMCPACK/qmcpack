@@ -38,16 +38,16 @@ namespace qmcplusplus
 //initialization of the static wClones
 std::vector<MCWalkerConfiguration*> CloneManager::wClones;
 //initialization of the static psiClones
-std::vector<TrialWaveFunction*> CloneManager::psiClones;
+std::vector<TrialWaveFunction<>*> CloneManager::psiClones;
 //initialization of the static guideClones
-std::vector<TrialWaveFunction*> CloneManager::guideClones;
+std::vector<TrialWaveFunction<>*> CloneManager::guideClones;
 
 std::vector<MCWalkerConfiguration*> CloneManager::wgClones;
 //initialization of the static hClones
 std::vector<QMCHamiltonian*> CloneManager::hClones;
 
 std::vector<std::vector<MCWalkerConfiguration*> > CloneManager::WPoolClones; 
-std::vector<std::vector<TrialWaveFunction*> > CloneManager::PsiPoolClones;
+std::vector<std::vector<TrialWaveFunction<>*> > CloneManager::PsiPoolClones;
 std::vector<std::vector<QMCHamiltonian*> > CloneManager::HPoolClones;
 
 
@@ -89,7 +89,7 @@ CloneManager::~CloneManager()
 }
 
 void CloneManager::makeClones(MCWalkerConfiguration& w,
-                              TrialWaveFunction& psi, QMCHamiltonian& ham)
+                              TrialWaveFunction<>& psi, QMCHamiltonian& ham)
 {
   if(wClones.size())
   {
@@ -127,7 +127,7 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
 
 
 void CloneManager::makeClones(MCWalkerConfiguration& w,
-                              std::vector<TrialWaveFunction*>& psipool, std::vector<QMCHamiltonian*>& hampool)
+                              std::vector<TrialWaveFunction<>*>& psipool, std::vector<QMCHamiltonian*>& hampool)
 {
   if(WPoolClones.size())
   {
@@ -179,7 +179,7 @@ void CloneManager::makeClones(MCWalkerConfiguration& w,
 }
 
 
-void CloneManager::makeClones(TrialWaveFunction& guide)
+void CloneManager::makeClones(TrialWaveFunction<>& guide)
 {
   if(guideClones.size())
   {
@@ -204,7 +204,7 @@ void CloneManager::makeClones(TrialWaveFunction& guide)
   infoSummary.resume();
   infoLog.resume();
 }
-void CloneManager::makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guide)
+void CloneManager::makeClones(MCWalkerConfiguration& wg, TrialWaveFunction<>& guide)
 {
   if(guideClones.size())
   {

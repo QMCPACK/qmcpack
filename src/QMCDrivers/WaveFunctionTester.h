@@ -22,6 +22,8 @@
 
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCApp/ParticleSetPool.h"
+#include "QMCWaveFunctions/SPOSetTypeAliases.h"
+
 namespace qmcplusplus
 {
 
@@ -43,15 +45,26 @@ public:
 /** Test the correctness of TrialWaveFunction for the values,
     gradients and laplacians
 */
-class WaveFunctionTester: public QMCDriver
+template<Batching batching = Batching::SINGLE>
+class WaveFunctionTester: public QMCDriver<batching>
 {
+public:
+  using QMCT = QMCTraits;
+  using RealType = QMCT::RealType;
+  using IndexType = QMCT::IndexType;
+  using GradType = QMCT::GradType;
+  using PosType = QMCT::PosType;
+  using ValueType = QMCT::ValueType;
+  using SSTA = SPOSetTypeAliases;
+  using Walker_t = SSTA::Walker_t;
+  using QDT = QMCDriver<batching>;
 public:
   /// Constructor.
   WaveFunctionTester(MCWalkerConfiguration& w,
-                     TrialWaveFunction& psi,
+                     TrialWaveFunction<batching>& psi,
                      QMCHamiltonian& h,
                      ParticleSetPool& ptclPool,
-                     WaveFunctionPool& ppool);
+                     WaveFunctionPool<batching>& ppool);
 
   ~WaveFunctionTester();
 
@@ -72,8 +85,8 @@ private:
   FiniteDiffErrData DeltaVsError;
  
   /// Copy Constructor (disabled)
-  WaveFunctionTester(const WaveFunctionTester& a):
-    QMCDriver(a), PtclPool(a.PtclPool) { }
+  WaveFunctionTester(const WaveFunctionTester<batching>& a):
+    QMCDriver<batching>(a), PtclPool(a.PtclPool) { }
   /// Copy Operator (disabled)
   WaveFunctionTester& operator=(const WaveFunctionTester&)
   {

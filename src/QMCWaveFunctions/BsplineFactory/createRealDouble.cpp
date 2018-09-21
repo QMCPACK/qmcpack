@@ -23,7 +23,6 @@
 
 namespace qmcplusplus
 {
-
   BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_rep)
   {
     BsplineReaderBase* aReader=nullptr;

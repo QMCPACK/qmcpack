@@ -31,6 +31,8 @@
 #endif
 #include <QMCWaveFunctions/OrbitalSetTraits.h>
 #include <bitset>
+#include "QMCWaveFunctions/Batching.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 
 namespace qmcplusplus
 {
@@ -41,7 +43,6 @@ class MCWalkerConfiguration;
  *
  */
 class DistanceTableData;
-class TrialWaveFunction;
 class QMCHamiltonian;
 
 struct NonLocalData: public QMCTraits
@@ -323,14 +324,14 @@ struct QMCHamiltonianBase: public QMCTraits
   /** write about the class */
   virtual bool get(std::ostream& os) const =0;
 
-  virtual QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)=0;
+  virtual QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)=0;
 
   virtual void setRandomGenerator(RandomGenerator_t* rng)
   {
     //empty
   }
 
-  virtual void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi
+  virtual void add2Hamiltonian(ParticleSet& qp, TrialWaveFunction<>& psi
                                , QMCHamiltonian& targetH);
   //virtual QMCHamiltonianBase* makeDependants(ParticleSet& qp )
   //{

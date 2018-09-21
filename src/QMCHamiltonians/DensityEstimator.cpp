@@ -272,7 +272,7 @@ bool DensityEstimator::get(std::ostream& os) const
 }
 
 QMCHamiltonianBase* DensityEstimator::makeClone(ParticleSet& qp
-    , TrialWaveFunction& psi)
+    , TrialWaveFunction<>& psi)
 {
   //default constructor is sufficient
   return new DensityEstimator(*this);

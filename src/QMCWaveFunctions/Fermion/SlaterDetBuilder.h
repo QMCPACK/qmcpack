@@ -46,7 +46,7 @@ public:
    * \param psi reference to the wavefunction
    * \param ions reference to the ions
    */
-  SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets);
+  SlaterDetBuilder(ParticleSet& els, TrialWaveFunction<>& psi, PtclPoolType& psets);
 
   ~SlaterDetBuilder();
 

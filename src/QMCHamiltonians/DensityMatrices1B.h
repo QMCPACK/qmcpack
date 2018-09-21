@@ -61,7 +61,7 @@ class DensityMatrices1B : public QMCHamiltonianBase
   PosType  drift;
   int nindex;
   int eindex;
-  TrialWaveFunction& Psi;
+  TrialWaveFunction<>& Psi;
   Lattice_t& Lattice;
   ParticleSet& Pq;
   const ParticleSet* Pc;
@@ -124,12 +124,12 @@ class DensityMatrices1B : public QMCHamiltonianBase
   RandomGenerator_t* uniform_random;
 
   //constructor/destructor
-  DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi,ParticleSet* Pcl);
-  DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi);
+  DensityMatrices1B(ParticleSet& P, TrialWaveFunction<>& psi,ParticleSet* Pcl);
+  DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction<>& psi);
   ~DensityMatrices1B();
 
   //standard interface
-  QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction<>& psi);
   bool put(xmlNodePtr cur);
   Return_t evaluate(ParticleSet& P);
 

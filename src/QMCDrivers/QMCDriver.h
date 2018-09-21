@@ -33,6 +33,7 @@
 #include "Estimators/EstimatorManagerBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
+#include "QMCWaveFunctions/Batching.h"
 class Communicate;
 
 namespace qmcplusplus
@@ -61,10 +62,16 @@ class MCWalkerConfiguration;
 class HDFWalkerOutput;
 class TraceManager;
 
+
 /** @ingroup QMCDrivers
  * @{
- * @brief abstract base class for QMC engines
+ * @brief base class for QMC engines
  */
+
+template<Batching batching = Batching::SINGLE>
+class QMCDriver;
+
+template<Batching batching>
 class QMCDriver: public QMCTraits, public MPIObjectBase
 {
 
@@ -91,7 +98,7 @@ public:
   xmlNodePtr traces_xml;
 
   /// Constructor.
-  QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool);
+  QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction<batching>& psi, QMCHamiltonian& h, WaveFunctionPool<batching>& ppool);
 
   virtual ~QMCDriver();
 
@@ -128,7 +135,7 @@ public:
    * *Multiple* drivers use multiple H/Psi pairs to perform correlated sampling
    * for energy difference evaluations.
    */
-  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi);
+  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction<>* psi);
 
   /** initialize with xmlNode
    */
@@ -332,15 +339,15 @@ protected:
   MCWalkerConfiguration& W;
 
   ///trial function
-  TrialWaveFunction& Psi;
+  TrialWaveFunction<batching>& Psi;
 
-  WaveFunctionPool& psiPool;
+  WaveFunctionPool<batching>& psiPool;
 
   ///Hamiltonian
   QMCHamiltonian& H;
 
   ///a list of TrialWaveFunctions for multiple method
-  std::vector<TrialWaveFunction*> Psi1;
+  std::vector<TrialWaveFunction<batching>*> Psi1;
 
   ///a list of QMCHamiltonians for multiple method
   std::vector<QMCHamiltonian*> H1;

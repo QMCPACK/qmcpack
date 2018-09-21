@@ -104,7 +104,7 @@ struct ForwardWalking: public QMCHamiltonianBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi);
 
   void addObservables(PropertySetType& plist);
 

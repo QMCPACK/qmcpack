@@ -40,7 +40,7 @@ class StaticStructureFactor : public QMCHamiltonianBase
   ~StaticStructureFactor() { }
 
   //standard interface
-  QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction<>& psi);
   bool put(xmlNodePtr cur);
   Return_t evaluate(ParticleSet& P);
 

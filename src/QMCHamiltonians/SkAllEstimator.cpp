@@ -347,7 +347,7 @@ bool SkAllEstimator::get(std::ostream& os) const
 }
 
 QMCHamiltonianBase* SkAllEstimator::makeClone(ParticleSet& qp
-    , TrialWaveFunction& psi)
+    , TrialWaveFunction<>& psi)
 {
   SkAllEstimator* myclone = new SkAllEstimator(*this);
   myclone->hdf5_out=hdf5_out;

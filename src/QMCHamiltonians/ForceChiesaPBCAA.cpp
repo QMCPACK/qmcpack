@@ -363,7 +363,7 @@ void ForceChiesaPBCAA::addObservables(PropertySetType& plist, BufferType& collec
     addObservablesF(plist);
 }
 
-QMCHamiltonianBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+QMCHamiltonianBase* ForceChiesaPBCAA::makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
 {
 //  ForceChiesaPBCAA* tmp = new ForceChiesaPBCAA(*this);
   ForceChiesaPBCAA* tmp= new ForceChiesaPBCAA(PtclA,qp,false);

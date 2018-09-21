@@ -20,12 +20,13 @@
 #define QMCPLUSPLUS_CORRELATEDLOCALENERGYESTIMATOR_H
 
 #include "Estimators/ScalarEstimatorBase.h"
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 
 namespace qmcplusplus
 {
 
 class QMCHamiltonian;
-class TrialWaveFunction;
+//class TrialWaveFunction;
 
 struct CSEnergyEstimator: public ScalarEstimatorBase
 {

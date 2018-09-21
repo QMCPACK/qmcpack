@@ -31,14 +31,14 @@ namespace qmcplusplus
   using MatrixOperators::diag_product;
 
 
-  DensityMatrices1B::DensityMatrices1B(ParticleSet& P, TrialWaveFunction& psi, ParticleSet* Pcl) 
+  DensityMatrices1B::DensityMatrices1B(ParticleSet& P, TrialWaveFunction<>& psi, ParticleSet* Pcl) 
     : Lattice(P.Lattice),Pq(P),Psi(psi),Pc(Pcl)
   {
     reset();
   }
 
 
-  DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction& psi) 
+  DensityMatrices1B::DensityMatrices1B(DensityMatrices1B& master, ParticleSet& P, TrialWaveFunction<>& psi) 
     : QMCHamiltonianBase(master), Lattice(P.Lattice),Pq(P),Psi(psi),Pc(master.Pc)
   {
     app_log()<<"dm1b deepcopy"<< std::endl;
@@ -57,7 +57,7 @@ namespace qmcplusplus
   }
 
 
-  QMCHamiltonianBase* DensityMatrices1B::makeClone(ParticleSet& P, TrialWaveFunction& psi)
+  QMCHamiltonianBase* DensityMatrices1B::makeClone(ParticleSet& P, TrialWaveFunction<>& psi)
   {
     return new DensityMatrices1B(*this,P,psi);
   }

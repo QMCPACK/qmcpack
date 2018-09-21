@@ -113,7 +113,7 @@ namespace qmcplusplus
  * \param ions reference to the ions
  */
 SPOSetBuilderFactory::
-SPOSetBuilderFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets):
+SPOSetBuilderFactory(ParticleSet& els, TrialWaveFunction<>& psi, PtclPoolType& psets):
   WaveFunctionComponentBuilder(els,psi), ptclPool(psets)
 {
   ClassName="SPOSetBuilderFactory";

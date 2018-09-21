@@ -101,7 +101,7 @@ TEST_CASE("PolynomialFunctor3D Jastrow", "[wavefunction]")
 #endif
   elec_.update();
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction<> psi = TrialWaveFunction<>(c);
 
 const char *particles = \
 "<tmp> \

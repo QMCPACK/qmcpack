@@ -38,7 +38,7 @@ public:
 
   // pure virtual functions require overrider
   void resetTargetParticleSet(ParticleSet& P) { }                         // required
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi); // required
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi); // required
 
   // allocate multiple columns in scalar.dat
   void addObservables(PropertySetType& plist, BufferType& collectables);

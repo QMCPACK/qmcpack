@@ -18,7 +18,7 @@
 
 namespace qmcplusplus {
 
-class TrialWaveFunction;
+class TrialWaveFunction<>;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  A class for a Slater determinant with optimizable orbitals.

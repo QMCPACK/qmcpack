@@ -27,16 +27,21 @@
 namespace qmcplusplus
 {
 
-QMCDriver* DMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi
-                              , QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool)
+template<>
+QMCDriver<Batching::SINGLE>* DMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction<Batching::SINGLE>& psi
+                              , QMCHamiltonian& h, HamiltonianPool<Batching::SINGLE>& hpool,WaveFunctionPool<Batching::SINGLE>& ppool)
 {
-#ifdef QMC_CUDA
-  if (GPU)
-    return new DMCcuda (w, psi, h,ppool);
-#endif
-  app_log() << "Creating DMCMP for the qmc driver" << std::endl;
-  QMCDriver*  qmc = new DMCOMP(w,psi,h,ppool);
+  app_log() << "Creating DMCOMP for the qmc driver" << std::endl;
+  QMCDriver<Batching::SINGLE>*  qmc = new DMCOMP(w,psi,h,ppool);
   qmc->setUpdateMode(PbyPUpdate);
   return qmc;
 }
+
+template<>
+QMCDriver<Batching::BATCHED>* DMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction<Batching::BATCHED>& psi
+                              , QMCHamiltonian& h, HamiltonianPool<Batching::BATCHED>& hpool,WaveFunctionPool<Batching::BATCHED>& ppool)
+{
+  return new DMCcuda (w, psi, h,ppool);
+}
+  
 }

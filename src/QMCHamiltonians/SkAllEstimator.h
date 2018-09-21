@@ -46,7 +46,7 @@ public:
   void setParticlePropertyList(PropertySetType& plist, int offset);
   bool put(xmlNodePtr cur);
   bool get(std::ostream& os) const;
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi);
 
 protected:
 //  ParticleSet *sourcePtcl;

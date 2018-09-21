@@ -30,7 +30,7 @@
 namespace qmcplusplus
 {
 
-QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
+QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunction<>& psi, QMCHamiltonian& h):
   MPIObjectBase(0),
   W(w),H(h),Psi(psi),  Write2OneXml(true),
   PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(1e6),

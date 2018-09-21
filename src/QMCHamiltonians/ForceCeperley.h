@@ -67,7 +67,7 @@ struct ForceCeperley: public QMCHamiltonianBase, public ForceBase
   {
     setParticleSetF(plist, offset);
   }
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi);
 
   bool put(xmlNodePtr cur) ;
 

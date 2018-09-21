@@ -53,7 +53,7 @@
 namespace qmcplusplus
 {
 
-SlaterDetBuilder::SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi,
+SlaterDetBuilder::SlaterDetBuilder(ParticleSet& els, TrialWaveFunction<>& psi,
                                    PtclPoolType& psets)
   : WaveFunctionComponentBuilder(els,psi), ptclPool(psets)
   , mySPOSetBuilderFactory(0), slaterdet_0(0), multislaterdet_0(0)

@@ -73,10 +73,10 @@ public:
   bool UseDrift;
 
   /// Constructor.
-  QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+  QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction<>& psi, QMCHamiltonian& h,
                 RandomGenerator_t& rg);
   ///Alt Constructor.
-  QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide, QMCHamiltonian& h,
+  QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction<>& psi, TrialWaveFunction<>& guide, QMCHamiltonian& h,
                 RandomGenerator_t& rg);
   ///destructor
   virtual ~QMCUpdateBase();
@@ -259,9 +259,9 @@ protected:
   ///walker ensemble
   MCWalkerConfiguration& W;
   ///trial function
-  TrialWaveFunction& Psi;
+  TrialWaveFunction<>& Psi;
   ///guide function
-  TrialWaveFunction& Guide;
+  TrialWaveFunction<>& Guide;
   ///Hamiltonian
   QMCHamiltonian& H;
   ///random number generator

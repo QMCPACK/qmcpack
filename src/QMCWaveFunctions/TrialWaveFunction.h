@@ -26,6 +26,7 @@
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
+#include "QMCWaveFunctions/Batching.h"
 #include "Utilities/NewTimer.h"
 /**@defgroup MBWfs Many-body wave function group
  * @brief Classes to handle many-body trial wave functions
@@ -96,7 +97,11 @@ struct CoefficientHolder
  *Each WaveFunctionComponent should provide proper evaluate functions
  *for the value, gradient and laplacian values.
  */
-class TrialWaveFunction: public MPIObjectBase
+template<Batching batching = Batching::SINGLE>
+class TrialWaveFunction;
+
+template<>
+class TrialWaveFunction<Batching::SINGLE>: public MPIObjectBase
 {
 
 public:
@@ -304,7 +309,7 @@ public:
     //OneOverM = 1.0/mass;
   }
 
-private:
+protected:
 
   ///control how ratio is calculated
   bool Ordered;

@@ -24,12 +24,13 @@ namespace qmcplusplus
 /** @ingroup QMCDrivers  ParticleByParticle
  * @brief Implements a VMC using particle-by-particle move. Threaded execution.
  */
-class VMCSingleOMP: public QMCDriver, public CloneManager
+class VMCSingleOMP: public QMCDriver<>, CloneManager
 {
 public:
+  Batching B = Batching::SINGLE;
   /// Constructor.
-  VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-               WaveFunctionPool& ppool);
+  VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction<>& psi, QMCHamiltonian& h,
+               WaveFunctionPool<>& ppool);
   bool run();
   bool put(xmlNodePtr cur);
   //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
@@ -44,7 +45,7 @@ private:
   ///check the run-time environments
   void resetRun();
   ///copy constructor
-  VMCSingleOMP(const VMCSingleOMP& a): QMCDriver(a),CloneManager(a) { }
+  VMCSingleOMP(const VMCSingleOMP& a): QMCDriver<>(a),CloneManager(a) { }
   /// Copy operator (disabled).
   VMCSingleOMP& operator=(const VMCSingleOMP&)
   {

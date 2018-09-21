@@ -29,7 +29,7 @@
 namespace qmcplusplus
 {
 
-JastrowBuilder::JastrowBuilder(ParticleSet& p, TrialWaveFunction& psi, PtclPoolType& psets):
+JastrowBuilder::JastrowBuilder(ParticleSet& p, TrialWaveFunction<>& psi, PtclPoolType& psets):
   WaveFunctionComponentBuilder(p,psi), ptclPool(psets)
 {
   resetOptions();

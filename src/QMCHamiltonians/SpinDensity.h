@@ -46,7 +46,7 @@ class SpinDensity : public QMCHamiltonianBase
   ~SpinDensity() { }
 
   //standard interface
-  QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& P, TrialWaveFunction<>& psi);
   bool put(xmlNodePtr cur);
   Return_t evaluate(ParticleSet& P);
 

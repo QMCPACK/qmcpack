@@ -23,11 +23,11 @@
 #define QMCPLUSPLUS_CLONEMANAGER_H
 #include "QMCDrivers/QMCUpdateBase.h"
 #include "CorrelatedSampling/CSUpdateBase.h"
-
+#include "QMCApp/HamiltonianPool.h"
 namespace qmcplusplus
 {
 
-class HamiltonianPool;
+  //class HamiltonianPool;
 
 /** Manager clones for threaded applications
  *
@@ -48,10 +48,10 @@ public:
   // Only for using in unit testing.
   static void clear_for_unit_tests();
 
-  void makeClones(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& ham);
-  void makeClones(MCWalkerConfiguration& w, std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& ham);
-  void makeClones(MCWalkerConfiguration& wg, TrialWaveFunction& guide);
-  void makeClones(TrialWaveFunction& guide);
+  void makeClones(MCWalkerConfiguration& w, TrialWaveFunction<>& psi, QMCHamiltonian& ham);
+  void makeClones(MCWalkerConfiguration& w, std::vector<TrialWaveFunction<>*>& psi, std::vector<QMCHamiltonian*>& ham);
+  void makeClones(MCWalkerConfiguration& wg, TrialWaveFunction<>& guide);
+  void makeClones(TrialWaveFunction<>& guide);
 
   inline RealType acceptRatio() const
   {
@@ -72,9 +72,9 @@ protected:
   static std::vector<MCWalkerConfiguration*> wClones;
   static std::vector<MCWalkerConfiguration*> wgClones;
   ///trial wavefunctions
-  static std::vector<TrialWaveFunction*> psiClones;
+  static std::vector<TrialWaveFunction<>*> psiClones;
   ///guide wavefunctions
-  static std::vector<TrialWaveFunction*> guideClones;
+  static std::vector<TrialWaveFunction<>*> guideClones;
   ///Hamiltonians
   static std::vector<QMCHamiltonian*> hClones;
   ///update engines
@@ -86,7 +86,7 @@ protected:
   
   //for correlated sampling.
   static std::vector<std::vector<MCWalkerConfiguration*> > WPoolClones; 
-  static std::vector<std::vector<TrialWaveFunction*> > PsiPoolClones;
+  static std::vector<std::vector<TrialWaveFunction<>*> > PsiPoolClones;
   static std::vector<std::vector<QMCHamiltonian*> > HPoolClones;
   std::vector<CSUpdateBase*> CSMovers;
 

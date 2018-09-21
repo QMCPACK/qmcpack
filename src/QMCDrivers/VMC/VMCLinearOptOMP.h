@@ -20,18 +20,20 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCDrivers/CloneManager.h"
 #include "Message/CommOperators.h"
+#include "QMCWaveFunctions/Batching.h"
+
 namespace qmcplusplus
 {
 
 /** @ingroup QMCDrivers  ParticleByParticle
  * @brief Implements a VMC using particle-by-particle move. Threaded execution.
  */
-class VMCLinearOptOMP: public QMCDriver, public CloneManager
+class VMCLinearOptOMP: public QMCDriver<Batching::SINGLE>, public CloneManager
 {
 public:
   /// Constructor.
-  VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-                  HamiltonianPool& hpool, WaveFunctionPool& ppool);
+  VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction<Batching::SINGLE>& psi, QMCHamiltonian& h,
+                  HamiltonianPool<Batching::SINGLE>& hpool, WaveFunctionPool<Batching::SINGLE>& ppool);
 
   ~VMCLinearOptOMP()
   {
@@ -75,7 +77,7 @@ private:
   ///check the run-time environments
   void resetRun();
   ///copy constructor
-  VMCLinearOptOMP(const VMCLinearOptOMP& a): QMCDriver(a),CloneManager(a) { }
+  VMCLinearOptOMP(const VMCLinearOptOMP& a): QMCDriver<Batching::SINGLE>(a),CloneManager(a) { }
   /// Copy operator (disabled).
   VMCLinearOptOMP& operator=(const VMCLinearOptOMP&)
   {

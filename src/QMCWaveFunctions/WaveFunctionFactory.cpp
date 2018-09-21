@@ -39,27 +39,31 @@
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
 #endif
 
+#include "QMCWaveFunctions/TrialWaveFunctionBatched.h"
+
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
 #include "OhmmsData/AttributeSet.h"
 namespace qmcplusplus
 {
 
-WaveFunctionFactory::WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset, Communicate* c)
+  WaveFunctionFactory::WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset, Communicate* c, Batching batching)
   : MPIObjectBase(c)
   , targetPtcl(qp),ptclPool(pset),targetPsi(0), myNode(NULL)
 {
   ClassName="WaveFunctionFactory";
   myName="psi0";
+  batching_ = batching; 
 }
 
-void WaveFunctionFactory::setPsi(TrialWaveFunction* psi)
+template<Batching B>
+void WaveFunctionFactory::setPsi(TrialWaveFunction<B>* psi)
 {
   this->setName(psi->getName());
   targetPsi=psi;
 }
 
-bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
+  bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
 {
   ReportEngine PRE(ClassName,"build");
   if(cur == NULL)
@@ -78,7 +82,10 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
   }
   if(targetPsi==0) //allocate targetPsi and set the name
   {
-    targetPsi  = new TrialWaveFunction(myComm);
+    if(batching_ == Batching::SINGLE)
+      targetPsi = new TrialWaveFunction<>(myComm);
+    else
+      targetPsi = new TrialWaveFunction<Batching::BATCHED>(myComm);
     targetPsi->setName(myName);
     targetPsi->setMassTerm(*targetPtcl);
   }

@@ -27,7 +27,7 @@ struct kSpaceJastrowBuilder: public WaveFunctionComponentBuilder
   ParticleSet sourcePtcl;
   std::map<std::string,kSpaceJastrow::SymmetryType> SymmMap;
   // One-body constructor
-  kSpaceJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi,
+  kSpaceJastrowBuilder(ParticleSet& target, TrialWaveFunction<>& psi,
                        ParticleSet& source) :
     WaveFunctionComponentBuilder(target,psi), sourcePtcl(source)
   {

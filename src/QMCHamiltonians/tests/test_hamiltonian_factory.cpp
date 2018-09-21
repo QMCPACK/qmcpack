@@ -64,6 +64,7 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   HamiltonianFactory hf(qp, particle_set_map, orbital_map, c);
 
   WaveFunctionFactory wff(qp, particle_set_map, c);
+
   orbital_map["psi0"] = &wff;
 
 
@@ -119,8 +120,11 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
   particle_set_map["ion0"] = &ions;
 
   HamiltonianFactory hf(qp, particle_set_map, orbital_map, c);
-
-  WaveFunctionFactory wff(qp, particle_set_map, c);
+#ifdef QMC_CUDA
+  WaveFunctionFactory wff(qp, particle_set_map, c, Batching::BATCHED);
+#else
+    WaveFunctionFactory wff(qp, particle_set_map, c);
+#endif
   orbital_map["psi0"] = &wff;
 
 
