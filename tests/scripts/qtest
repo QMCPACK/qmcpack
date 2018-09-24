@@ -1,0 +1,214 @@
+#! /usr/bin/env python
+
+import os
+import re
+import sys
+from optparse import OptionParser
+from numpy import ndarray,array,abs
+from generic import obj
+
+# find the path to the qtest executable and its parent directory
+script_path = os.path.realpath(__file__)
+parent_dir  = os.path.dirname(os.path.dirname(script_path))
+test_dir    = parent_dir
+source_dir  = os.path.dirname(test_dir)
+
+
+
+
+
+def parse_scalar_test(text,ref_lists):
+    text = text.replace('QMC_RUN_AND_CHECK','').strip().strip('()')
+    tokens = text.split()
+    name = tokens[0]
+
+    #check that the test is actually short
+    if not name.startswith('short'):
+        return None
+    #end if
+
+    # parse test contents
+    test = obj(
+        type      = 'scalar',
+        name      = name,
+        path      = tokens[1].replace('${CMAKE_SOURCE_DIR}',source_dir).strip('"'),
+        prefix    = tokens[2],
+        infile    = tokens[3],
+        reference = obj(),
+        )
+    for n in range(7,len(tokens)-1,2):
+        series    = tokens[n]
+        list_name = tokens[n+1]
+        test.reference[series] = ref_lists[list_name]
+    #end for
+
+    return test
+#end def parse_scalar_test
+
+
+
+def parse_stat_test(text):
+    text = text.replace('SIMPLE_RUN_AND_CHECK','').strip().strip('()')
+    tokens = text.split()
+    name = tokens[0]
+
+    #check that the test is actually short
+    if not name.startswith('short'):
+        return None
+    #end if
+
+    # parse test contents
+    test = obj(
+        type   = 'stat',
+        name   = name,
+        path   = tokens[1].replace('${CMAKE_SOURCE_DIR}',source_dir).strip('"'),
+        infile = tokens[2].replace('${IFEXT}',''),
+        )
+
+    return test
+#end def parse_stat_test
+
+
+
+def parse_qmcpack_cmakelists():
+
+    # data structure to hold parsed short test information
+    short_tests = obj()
+
+    # recursive walk over test directories
+    for path,dirs,files in os.walk(test_dir):
+        for file in files:
+            # parse each CMakelists.txt file
+            if file=='CMakeLists.txt':
+
+                # open the CMakeLists.txt file and read raw contents
+                filepath = os.path.join(path,file)
+                f = open(filepath,'r')
+                raw = f.read()
+                f.close()
+
+                # remove comments from the file contents
+                text  = ''
+                lines = []
+                for line in raw.splitlines():
+                    ls = line.strip()
+                    if not ls.startswith('#'):
+                        cloc = line.find('#')
+                        if cloc!=-1:
+                            line = line[:cloc]
+                            ls = line.strip()
+                        #end if
+                        text += line+'\n'
+                        lines.append(ls)
+                    #end if
+                #end for
+
+                # make sure there are active tests
+                scalar_test = 'QMC_RUN_AND_CHECK' in text
+                stat_test   = 'SIMPLE_RUN_AND_CHECK' in text
+                if not scalar_test and not stat_test:
+                    continue
+                #end if
+
+                # find and parse all LIST() statements
+                ref_lists = obj()
+                for ls in lines:
+                    if ls.startswith('LIST') or ls.startswith('list'):
+                        s = ls.replace('(',' ( ').replace(')',' ) ')
+                        tokens = re.findall(r'(?:[^\s,"]|"(?:\\.|[^"])*")+', s)
+                        if tokens[2].lower()=='append':
+                            list_name = tokens[3]
+                            quant_name = tokens[4].strip('"')
+                            ref_value  = tuple(tokens[5].strip('"').split())
+                            if list_name not in ref_lists:
+                                ref_lists[list_name] = obj()
+                            #end if
+                            ref_lists[list_name][quant_name] = ref_value
+                        #end if
+                    #end if
+                #end for
+
+                # find and parse all short scalar tests
+                istart = 0
+                iend   = 0
+                while istart!=-1:
+                    istart = text.find('QMC_RUN_AND_CHECK',istart)
+                    if istart!=-1:
+                        iend = text.find(')',istart)
+                        if iend!=-1:
+                            test = parse_scalar_test(
+                                text      = text[istart:iend+1],
+                                ref_lists = ref_lists
+                                )
+                            if test is not None:
+                                short_tests[test.name] = test
+                            #end if
+                        #end if
+                        istart = iend
+                    #end if
+                #end while
+
+                # find and parse all short stat.h5 tests
+                istart = 0
+                iend   = 0
+                while istart!=-1:
+                    istart = text.find('SIMPLE_RUN_AND_CHECK',istart)
+                    if istart!=-1:
+                        iend = text.find(')',istart)
+                        if iend!=-1:
+                            test = parse_stat_test(
+                                text = text[istart:iend+1],
+                                )
+                            if test is not None:
+                                short_tests[test.name] = test
+                            #end if
+                        #end if
+                        istart = iend
+                    #end if
+                #end while
+
+            #end if
+        #end for
+    #end for
+    
+    return short_tests
+#end def parse_qmcpack_cmakelists
+
+
+
+
+
+if __name__=='__main__':
+    import re
+
+
+    parser = OptionParser(
+        usage='usage: %prog [options]',
+        add_help_option=False,
+        version='%prog 0.1'
+        )
+
+
+    parser.add_option('-h','--help',dest='help',
+                      action='store_true',default=False,
+                      help='Print help information and exit (default=%default).'
+                      )
+    parser.add_option('-R','--regex',dest='regex',
+                      help='Tests with names matching the regular expression (regex) will be run.  The default behavior is to run all tests (default=%default).'
+                      )
+
+
+
+    options_in,files_in = parser.parse_args()
+
+    options = obj()
+    options.transfer_from(options_in.__dict__)
+
+    if options.help or len(sys.argv)==1 or len(file_in)>0:
+        print('\n'+parser.format_help().strip())
+        exit()
+    #end if
+
+    short_tests = parse_qmcpack_cmakelists()
+
+#end if
