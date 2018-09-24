@@ -35,7 +35,7 @@ namespace qmcplusplus
 
 /// Constructor.
 VMCLinearOptOMP::VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction<Batching::SINGLE>& psi, QMCHamiltonian& h,
-                                 HamiltonianPool<Batching::SINGLE>& hpool, WaveFunctionPool<Batching::SINGLE>& ppool):
+                                 HamiltonianPool<Batching::SINGLE>& hpool, WaveFunctionPool& ppool):
   QMCDriver<Batching::SINGLE>(w,psi,h,ppool), UseDrift("yes"), NumOptimizables(0), w_beta(0.0), GEVtype("mixed"),
   w_alpha(0.0),printderivs("no")
 //     myRNWarmupSteps(0), logoffset(2.0), logepsilon(0), beta_errorbars(0), alpha_errorbars(0),

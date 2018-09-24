@@ -30,7 +30,7 @@ public:
   Batching B = Batching::SINGLE;
   /// Constructor.
   VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction<>& psi, QMCHamiltonian& h,
-               WaveFunctionPool<>& ppool);
+               WaveFunctionPool& ppool);
   bool run();
   bool put(xmlNodePtr cur);
   //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}

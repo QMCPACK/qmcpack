@@ -64,7 +64,7 @@ public:
                      TrialWaveFunction<batching>& psi,
                      QMCHamiltonian& h,
                      ParticleSetPool& ptclPool,
-                     WaveFunctionPool<batching>& ppool);
+                     WaveFunctionPool& ppool);
 
   ~WaveFunctionTester();
 

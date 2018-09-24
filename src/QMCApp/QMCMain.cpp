@@ -36,6 +36,7 @@
 #include "QMCApp/InitMolecularSystem.h"
 #include "Particle/DistanceTable.h"
 #include "QMCDrivers/QMCDriver.h"
+#include "QMCApp/QMCDriverFactory.h"
 #include "Message/Communicate.h"
 #include "Message/OpenMP.h"
 #include <queue>
@@ -63,8 +64,8 @@ extern "C" {
 namespace qmcplusplus
 {
 
-QMCMain::QMCMain(Communicate* c)
-  : QMCDriverFactory(c), QMCAppBase(), FirstQMC(true)
+QMCMain::QMCMain(Communicate* c, Batching batching)
+  : QMCAppBase(), FirstQMC(true), myComm(c)
 #if !defined(REMOVE_TRACEMANAGER)
   , traces_xml(NULL)
 #endif
@@ -97,6 +98,14 @@ QMCMain::QMCMain(Communicate* c)
       << std::endl;
   app_summary() << std::endl;
   app_summary().flush();
+  switch(batching)
+  {
+  case Batching::BATCHED:
+    qmc_driver_factory = dynamic_cast<QMCDriverFactoryInterface*>(new QMCDriverFactory<Batching::BATCHED>(c));
+    break;
+  default:
+    qmc_driver_factory = dynamic_cast<QMCDriverFactoryInterface*>(new QMCDriverFactory<Batching::SINGLE>(c));
+  }
 }
 
 ///destructor
@@ -194,7 +203,7 @@ bool QMCMain::execute()
     return false;
   }
   //initialize all the instances of distance tables and evaluate them
-  ptclPool->reset();
+  qmc_driver_factory->getParticleSetPool().reset();
   infoSummary.flush();
   infoLog.flush();
   app_log() << "  Initialization Execution time = " << std::setprecision(4) << t0.elapsed() << " secs" << std::endl;
@@ -202,8 +211,8 @@ bool QMCMain::execute()
   app_log() << "=========================================================\n";
   app_log() << " Summary of QMC systems \n";
   app_log() << "=========================================================\n";
-  ptclPool->get(app_log());
-  hamPool->get(app_log());
+  qmc_driver_factory->getParticleSetPool().get(app_log());
+  getQMCDriverFactory().getHamiltonianPool().get(app_log());
   OHMMS::Controller->barrier();
   if(qmc_common.dryrun)
   {
@@ -212,7 +221,7 @@ bool QMCMain::execute()
   }
   t3->stop();
   Timer t1;
-  curMethod = std::string("invalid");
+  getQMCDriverFactory().setMethod("invalid");
   qmc_common.qmc_counter=0;
   for(int qa=0; qa<m_qmcaction.size(); qa++)
   {
@@ -243,7 +252,7 @@ bool QMCMain::execute()
   m_qmcaction.clear();
   t2->stop();
   app_log() << "  Total Execution time = " << std::setprecision(4) << t1.elapsed() << " secs" << std::endl;
-  if(is_manager())
+  if(!myComm->rank())
   {
     //generate multiple files
     xmlNodePtr mcptr = NULL;
@@ -324,8 +333,8 @@ bool QMCMain::executeQMCSection(xmlNodePtr cur, bool noloop)
   a.put(cur);
   if(random_test=="yes")
     RandomNumberControl::test();
-  if(qmcSystem ==0)
-    qmcSystem = ptclPool->getWalkerSet(target);
+  //refactored into QMCDriverFactory
+  qmc_driver_factory->checkQMCSystem(target);
   bool success = runQMC(cur);
   FirstQMC=false;
   return success;
@@ -468,19 +477,19 @@ bool QMCMain::validateXML()
     bool inputnode=true;
     if(cname == "parallel")
     {
-      putCommunicator(cur);
+      qmc_driver_factory->putCommunicator(cur);
     }
     else if(cname == "particleset")
     {
-      ptclPool->put(cur);
+      qmc_driver_factory->getParticleSetPool().put(cur);
     }
     else if(cname == "wavefunction")
     {
-      psiPool->put(cur);
+      qmc_driver_factory->getWaveFunctionPool().put(cur);
     }
     else if(cname == "hamiltonian")
     {
-      hamPool->put(cur);
+      qmc_driver_factory->getHamiltonianPool().put(cur);
     }
     else if(cname == "include")
     {
@@ -499,7 +508,7 @@ bool QMCMain::validateXML()
     }
     else if(cname == "init")
     {
-      InitMolecularSystem moinit(ptclPool);
+      InitMolecularSystem moinit(qmc_driver_factory->getParticleSetPoolPtr());
       moinit.put(cur);
     }
 #if !defined(REMOVE_TRACEMANAGER)
@@ -518,23 +527,23 @@ bool QMCMain::validateXML()
       lastInputNode=cur;
     cur=cur->next;
   }
-  if(ptclPool->empty())
+  if(qmc_driver_factory->getParticleSetPool().empty())
   {
     ERRORMSG("Illegal input. Missing particleset ")
     return false;
   }
-  if(psiPool->empty())
+  if(qmc_driver_factory->getWaveFunctionPool().empty())
   {
     ERRORMSG("Illegal input. Missing wavefunction. ")
     return false;
   }
-  if(hamPool->empty())
+  if(qmc_driver_factory->getHamiltonianPool().empty())
   {
     ERRORMSG("Illegal input. Missing hamiltonian. ")
     return false;
   }
   //randomize any particleset with random="yes" && random_source="ion0"
-  ptclPool->randomize();
+  qmc_driver_factory->getParticleSetPool().randomize();
 
   setMCWalkers(m_context);
 
@@ -564,23 +573,23 @@ bool QMCMain::processPWH(xmlNodePtr cur)
     if(cname == "simulationcell")
     {
       inputnode=true;
-      ptclPool->putLattice(cur);
+      qmc_driver_factory->getParticleSetPool().putLattice(cur);
     }
     else if(cname == "particleset")
     {
       inputnode=true;
-      ptclPool->putTileMatrix(cur_root);
-      ptclPool->put(cur);
+      qmc_driver_factory->getParticleSetPool().putTileMatrix(cur_root);
+      qmc_driver_factory->getParticleSetPool().put(cur);
     }
     else if(cname == "wavefunction")
     {
       inputnode=true;
-      psiPool->put(cur);
+      qmc_driver_factory->getWaveFunctionPool().put(cur);
     }
     else if(cname == "hamiltonian")
     {
       inputnode=true;
-      hamPool->put(cur);
+      qmc_driver_factory->getHamiltonianPool().put(cur);
     }
     else
       //add to m_qmcaction
@@ -600,25 +609,26 @@ bool QMCMain::processPWH(xmlNodePtr cur)
  */
 bool QMCMain::runQMC(xmlNodePtr cur)
 {
-  bool append_run = setQMCDriver(myProject.m_series,cur);
-  if(qmcDriver)
+  bool append_run = qmc_driver_factory->setQMCDriver(myProject.m_series,cur);
+  if(qmc_driver_factory->driverExists())
   {
+
     //advance the project id
     //if it is NOT the first qmc node and qmc/@append!='yes'
     if(!FirstQMC && !append_run)
       myProject.advance();
-    qmcDriver->setStatus(myProject.CurrentMainRoot(),PrevConfigFile, append_run);
-    qmcDriver->putWalkers(m_walkerset_in);
+    qmc_driver_factory->getQMCDriver().setStatus(myProject.CurrentMainRoot(),PrevConfigFile, append_run);
+    qmc_driver_factory->getQMCDriver().putWalkers(m_walkerset_in);
 #if !defined(REMOVE_TRACEMANAGER)
-    qmcDriver->putTraces(traces_xml);
+    qmc_driver_factory->getQMCDriver().putTraces(traces_xml);
 #endif
-    qmcDriver->process(cur);
+    qmc_driver_factory->getQMCDriver().process(cur);
     infoSummary.flush();
     infoLog.flush();
     Timer qmcTimer;
-    NewTimer *t1 = TimerManager.createTimer(qmcDriver->getEngineName(), timer_level_coarse);
+    NewTimer *t1 = TimerManager.createTimer(qmc_driver_factory->getQMCDriver().getEngineName(), timer_level_coarse);
     t1->start();
-    qmcDriver->run();
+    qmc_driver_factory->getQMCDriver().run();
     t1->stop();
     app_log() << "  QMC Execution time = " << std::setprecision(4) << qmcTimer.elapsed() << " secs " << std::endl;
     //keeps track of the configuration file

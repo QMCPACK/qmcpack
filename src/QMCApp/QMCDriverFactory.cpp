@@ -37,34 +37,40 @@
 #include <queue>
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
+#include "QMCDrivers/SimpleFixedNodeBranch.h"
+#include "QMCDrivers/WaveFunctionTester.h"
 
 namespace qmcplusplus
 {
 
 ///initialize the static data member
 //ParticleSetPool* QMCDriverFactory::ptclPool = new ParticleSetPool;
-QMCDriverFactory::QMCDriverFactory(Communicate* c): MPIObjectBase(c),
-  qmcSystem(0), qmcDriver(0) , curRunType(DUMMY_RUN)
-{
-  ////create ParticleSetPool
-  ptclPool = new ParticleSetPool(myComm);
-  //create WaveFunctionPool
-  psiPool = new WaveFunctionPool(myComm);
-  psiPool->setParticleSetPool(ptclPool);
-  //create HamiltonianPool
-  hamPool = new HamiltonianPool(myComm);
-  hamPool->setParticleSetPool(ptclPool);
-  hamPool->setWaveFunctionPool(psiPool);
-}
 
-QMCDriverFactory::~QMCDriverFactory()
+// template<Batching batching>
+// QMCDriverFactory<batching>::QMCDriverFactory(Communicate* c): MPIObjectBase(c),
+//   qmcSystem(0), qmcDriver(0) , curRunType(DUMMY_RUN)
+// {
+//   ////create ParticleSetPool
+//   ptclPool = new ParticleSetPool(c);
+//   //create WaveFunctionPool
+//   psiPool = new WaveFunctionPool(c);
+//   psiPool->setParticleSetPool(ptclPool);
+//   //create HamiltonianPool
+//   hamPool = new HamiltonianPool<batching>(c);
+//   hamPool->setParticleSetPool(ptclPool);
+//   hamPool->setWaveFunctionPool(psiPool);
+// }
+  
+template<Batching batching>
+QMCDriverFactory<batching>::~QMCDriverFactory()
 {
   delete hamPool;
   delete psiPool;
   delete ptclPool;
 }
 
-void QMCDriverFactory::putCommunicator(xmlNodePtr cur)
+template<Batching batching>
+void QMCDriverFactory<batching>::putCommunicator(xmlNodePtr cur)
 {
   //BROKEN: myComm is ALWAYS initialized by the constructor
   if(myComm)
@@ -81,7 +87,8 @@ void QMCDriverFactory::putCommunicator(xmlNodePtr cur)
   }
 }
 
-bool QMCDriverFactory::setQMCDriver(int curSeries, xmlNodePtr cur)
+template<Batching batching>
+bool QMCDriverFactory<batching>::setQMCDriver(int curSeries, xmlNodePtr cur)
 {
   std::string curName((const char*)cur->name);
   std::string update_mode("pbyp");
@@ -167,14 +174,15 @@ bool QMCDriverFactory::setQMCDriver(int curSeries, xmlNodePtr cur)
   }
   unsigned long newQmcMode=WhatToDo.to_ulong();
   //initialize to 0
-  QMCDriver::BranchEngineType* branchEngine=0;
+  SimpleFixedNodeBranch* branchEngine=0;
+  
   if(qmcDriver)
   {
     if( newRunType != curRunType || newQmcMode != curQmcMode)
     {
       if(curRunType == DUMMY_RUN)
       {
-        APP_ABORT("QMCDriverFactory::setQMCDriver\n Other qmc sections cannot come after <qmc method=\"test\">.\n");
+        APP_ABORT("QMCDriverFactory<batching>::setQMCDriver\n Other qmc sections cannot come after <qmc method=\"test\">.\n");
       }
       //pass to the new driver
       branchEngine=qmcDriver->getBranchEngine();
@@ -220,7 +228,15 @@ bool QMCDriverFactory::setQMCDriver(int curSeries, xmlNodePtr cur)
   return append_run;
 }
 
-void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
+template<Batching batching>
+void QMCDriverFactory<batching>::checkQMCSystem(const std::string& target)
+{
+  if(qmcSystem == 0)
+    qmcSystem = ptclPool->getWalkerSet(target);
+}
+
+template<Batching batching>
+void QMCDriverFactory<batching>::createQMCDriver(xmlNodePtr cur)
 {
   ///////////////////////////////////////////////
   // get primaryPsi and primaryH
@@ -286,26 +302,42 @@ void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
   if(curRunType == VMC_RUN || curRunType == CSVMC_RUN)
   {
     //VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
-    VMCFactory fac(curQmcModeBits.to_ulong(),cur);
-    qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool,*psiPool);
+    VMCFactory<batching> fac(curQmcModeBits.to_ulong(),cur);
+    qmcDriver = fac.create(*qmcSystem,
+			   *dynamic_cast<TrialWaveFunction<batching>*>(primaryPsi),
+			   *primaryH,*ptclPool,*hamPool,*psiPool);
     //TESTING CLONE
     //TrialWaveFunction* psiclone=primaryPsi->makeClone(*qmcSystem);
     //qmcDriver = fac.create(*qmcSystem,*psiclone,*primaryH,*ptclPool,*hamPool);
   }
   else if(curRunType == DMC_RUN)
   {
-    DMCFactory fac(curQmcModeBits[UPDATE_MODE],
+    DMCFactory<batching> fac(curQmcModeBits[UPDATE_MODE],
                    curQmcModeBits[GPU_MODE], cur);
-    qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
+    qmcDriver = fac.create(*qmcSystem,
+			   *dynamic_cast<TrialWaveFunction<batching>*>(primaryPsi),
+			   *primaryH,
+			   *hamPool,
+			   *psiPool);
   }
   else if(curRunType == RMC_RUN)
   {
-    RMCFactory fac(curQmcModeBits[UPDATE_MODE], cur);
-    qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool,*psiPool);
+    RMCFactory<batching> fac(curQmcModeBits[UPDATE_MODE], cur);
+    qmcDriver = fac.create(*qmcSystem,
+			   *dynamic_cast<TrialWaveFunction<batching>*>(primaryPsi),
+			   *primaryH,
+			   *ptclPool,
+			   *hamPool,
+			   *psiPool);
   }
   else if(curRunType == OPTIMIZE_RUN)
   {
-    QMCOptimize *opt = new QMCOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
+    QMCOptimize<batching> *opt =
+      new QMCOptimize<batching>(*qmcSystem,
+				*dynamic_cast<TrialWaveFunction<batching>*>(primaryPsi),
+				*primaryH,
+				*hamPool,
+				*psiPool);
     //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
     opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
     qmcDriver=opt;
@@ -313,9 +345,14 @@ void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
   else if(curRunType == LINEAR_OPTIMIZE_RUN)
   {
 #ifdef MIXED_PRECISION
-    APP_ABORT("QMCDriverFactory::createQMCDriver : method=\"linear\" is not safe with CPU mixed precision. Please use full precision build instead.");
+    APP_ABORT("QMCDriverFactory<batching>::createQMCDriver : method=\"linear\" is not safe with CPU mixed precision. Please use full precision build instead.");
 #endif
-    QMCFixedSampleLinearOptimize *opt = new QMCFixedSampleLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
+    QMCFixedSampleLinearOptimize<batching> *opt =
+      new QMCFixedSampleLinearOptimize<batching>(*qmcSystem,
+						 *dynamic_cast<TrialWaveFunction<batching>*>(primaryPsi),
+						 *primaryH,
+						 *hamPool,
+						 *psiPool);
     //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
     opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
     qmcDriver=opt;
@@ -324,9 +361,19 @@ void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
   {
 #if defined(QMC_CUDA)
     app_log() << "cslinear is not supported. Switch to linear method. " << std::endl;
-    QMCFixedSampleLinearOptimize *opt = new QMCFixedSampleLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
+    QMCFixedSampleLinearOptimize<batching> *opt =
+      new QMCFixedSampleLinearOptimize<batching>(*qmcSystem,
+						 *dynamic_cast<TrialWaveFunction<batching>*>(primaryPsi),
+						 *primaryH,
+						 *hamPool,
+						 *psiPool);
 #else
-    QMCCorrelatedSamplingLinearOptimize *opt = new QMCCorrelatedSamplingLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
+    QMCCorrelatedSamplingLinearOptimize<batching> *opt =
+      new QMCCorrelatedSamplingLinearOptimize<batching>(*qmcSystem,
+							*dynamic_cast<TrialWaveFunction<batching>*>(primaryPsi),
+							*primaryH,
+							*hamPool,
+							*psiPool);
 #endif
     opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
     qmcDriver=opt;
@@ -334,8 +381,11 @@ void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
   else if(curRunType == WF_TEST_RUN)
   {
     app_log() << "Testing wavefunctions." << std::endl;
-    qmcDriver = new WaveFunctionTester(*qmcSystem,*primaryPsi,*primaryH,
-        *ptclPool,*psiPool);
+    qmcDriver = new WaveFunctionTester<batching>(*qmcSystem,
+						 *dynamic_cast<TrialWaveFunction<batching>*>(primaryPsi),
+						 *primaryH,
+						 *ptclPool,
+						 *psiPool);
   }
   else
   {
@@ -351,4 +401,7 @@ void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
     }
   }
 }
+
+template class QMCDriverFactory<Batching::SINGLE>;
+template class QMCDriverFactory<Batching::BATCHED>;
 }

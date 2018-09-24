@@ -58,7 +58,7 @@ namespace qmcplusplus
 
 template<Batching batching>
 QMCFixedSampleLinearOptimize<batching>::QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
-    TrialWaveFunction<batching>& psi, QMCHamiltonian& h, HamiltonianPool<batching>& hpool, WaveFunctionPool<batching>& ppool):
+    TrialWaveFunction<batching>& psi, QMCHamiltonian& h, HamiltonianPool<batching>& hpool, WaveFunctionPool& ppool):
   QMCLinearOptimize<batching>(w,psi,h,hpool,ppool), 
 #ifdef HAVE_LMY_ENGINE
 vdeps(1,std::vector<double>()),

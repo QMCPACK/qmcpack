@@ -30,14 +30,17 @@
 namespace qmcplusplus
 {
 
-HamiltonianPool::HamiltonianPool(Communicate* c, const char* aname)
+
+template<Batching batching>
+HamiltonianPool<batching>::HamiltonianPool(Communicate* c, const char* aname)
   : MPIObjectBase(c), curH(0), ptclPool(0), psiPool(0), curDoc(0)
 {
   ClassName="HamiltonianPool";
   myName=aname;
 }
 
-bool HamiltonianPool::put(xmlNodePtr cur)
+template<Batching batching>
+bool HamiltonianPool<batching>::put(xmlNodePtr cur)
 {
   ReportEngine PRE("HamiltonianPool","put");
   std::string id("h0"), target("e"),role("extra");
@@ -74,7 +77,8 @@ bool HamiltonianPool::put(xmlNodePtr cur)
   return success;
 }
 
-bool HamiltonianPool::get(std::ostream& os) const
+template<Batching batching>
+bool HamiltonianPool<batching>::get(std::ostream& os) const
 {
   PoolType::const_iterator it(myPool.begin()), it_end(myPool.end());
   while(it != it_end)
@@ -86,7 +90,12 @@ bool HamiltonianPool::get(std::ostream& os) const
   return true;
 }
 
-void HamiltonianPool::reset()
+template<Batching batching>
+void HamiltonianPool<batching>::reset()
 {
 }
+
+template class HamiltonianPool<Batching::SINGLE>;
+template class HamiltonianPool<Batching::BATCHED>;
+  
 }

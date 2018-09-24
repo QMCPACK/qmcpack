@@ -46,7 +46,7 @@ public:
   using RealType = QMCT::RealType;
   ///Constructor.
   QMCCorrelatedSamplingLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction<batching>& psi,
-                                      QMCHamiltonian& h, HamiltonianPool<batching>& hpool, WaveFunctionPool<batching>& ppool);
+                                      QMCHamiltonian& h, HamiltonianPool<batching>& hpool, WaveFunctionPool& ppool);
 
   ///Destructor
   ~QMCCorrelatedSamplingLinearOptimize();

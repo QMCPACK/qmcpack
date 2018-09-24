@@ -52,7 +52,7 @@ template<Batching batching>
 QMCCorrelatedSamplingLinearOptimize<batching>::QMCCorrelatedSamplingLinearOptimize(MCWalkerConfiguration& w,
 										   TrialWaveFunction<batching>& psi,
 										   QMCHamiltonian& h,
-										   HamiltonianPool<batching>& hpool, WaveFunctionPool<batching>& ppool): QMCLinearOptimize<batching>(w,psi,h,hpool,ppool),
+										   HamiltonianPool<batching>& hpool, WaveFunctionPool& ppool) : QMCDriver<batching>(w,psi,h,hpool,ppool),
   exp0(-16), nstabilizers(3), stabilizerScale(2.0), bigChange(3), w_beta(0.0), MinMethod("quartic"), GEVtype("mixed")
 {
   QDT::IsQMCDriver=false;

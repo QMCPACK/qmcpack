@@ -45,11 +45,11 @@ public:
   
   ///Constructor.
   QMCOptimize(MCWalkerConfiguration& w, TrialWaveFunction<batching>& psi,
-              QMCHamiltonian& h, HamiltonianPool<batching>& hpool, WaveFunctionPool<batching>& ppool);
+              QMCHamiltonian& h, HamiltonianPool<batching>& hpool, WaveFunctionPool& ppool);
 
   ///Destructor
   ~QMCOptimize();
-
+  
   ///Run the Optimization algorithm.
   bool run();
   ///process xml node
@@ -91,6 +91,11 @@ private:
   std::string optmethod;
   ///list of files storing configurations
   std::vector<std::string> ConfigFile;
+  QMCDriver<batching>* createEngine(MCWalkerConfiguration& W,
+				    TrialWaveFunction<batching>& psi,
+				    HamiltonianPool<batching>& H,
+				    WaveFunctionPool& psiPool);
+
   ///Copy Constructor (disabled).
   QMCOptimize(const QMCOptimize& a): QMCDriver<batching>(a),hamPool(a.hamPool) { }
   ///Copy operator (disabled).

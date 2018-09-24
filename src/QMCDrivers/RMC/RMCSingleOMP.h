@@ -36,7 +36,7 @@ namespace qmcplusplus
     typedef Reptile::ReptileConfig_t ReptileConfig_t;
 
       RMCSingleOMP (MCWalkerConfiguration & w, TrialWaveFunction<Batching::SINGLE>& psi,
-		    QMCHamiltonian & h, WaveFunctionPool<Batching::SINGLE> & ppool);
+		    QMCHamiltonian & h, WaveFunctionPool & ppool);
     bool run ();
     bool put (xmlNodePtr cur);
     //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}

@@ -35,7 +35,7 @@ class DMCcuda: public QMCDriver<Batching::BATCHED>
 public:
   /// Constructor.
   GPU_XRAY_TRACE DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction<Batching::BATCHED>& psi,
-			 QMCHamiltonian& h,WaveFunctionPool<Batching::BATCHED>& ppool);
+			 QMCHamiltonian& h,WaveFunctionPool& ppool);
   GPU_XRAY_TRACE bool run();
   GPU_XRAY_TRACE bool put(xmlNodePtr cur);
   GPU_XRAY_TRACE void resetUpdateEngine();

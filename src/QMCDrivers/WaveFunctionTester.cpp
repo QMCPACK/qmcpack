@@ -43,7 +43,7 @@ template<Batching batching>
 WaveFunctionTester<batching>::WaveFunctionTester(MCWalkerConfiguration& w,
                                        TrialWaveFunction<batching>& psi,
                                        QMCHamiltonian& h,
-                                       ParticleSetPool &ptclPool, WaveFunctionPool<batching>& ppool):
+                                       ParticleSetPool &ptclPool, WaveFunctionPool& ppool):
   QMCDriver<batching>(w,psi,h,ppool),checkRatio("no"),checkClone("no"), checkHamPbyP("no"),
   PtclPool(ptclPool), wftricks("no"),checkEloc("no"), checkBasic("yes"), checkRatioV("no"),
   deltaParam(0.0), toleranceParam(0.0), outputDeltaVsError(false), checkSlaterDet(true)

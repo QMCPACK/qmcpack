@@ -47,7 +47,7 @@ namespace qmcplusplus
 
 template<Batching batching>
 QMCLinearOptimize<batching>::QMCLinearOptimize(MCWalkerConfiguration& w,
-					       TrialWaveFunction<batching>& psi, QMCHamiltonian& h, HamiltonianPool<batching>& hpool, WaveFunctionPool<batching>& ppool): QMCDriver<batching>(w,psi,h,ppool),
+					       TrialWaveFunction<batching>& psi, QMCHamiltonian& h, HamiltonianPool<batching>& hpool, WaveFunctionPool& ppool): QMCDriver<batching>(w,psi,h,ppool),
   PartID(0), NumParts(1), WarmupBlocks(10),  hamPool(hpool), optTarget(0), vmcEngine(0),  wfNode(NULL), optNode(NULL), param_tol(1e-4)
 {
   QDT::IsQMCDriver=false;

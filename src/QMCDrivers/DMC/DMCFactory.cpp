@@ -28,8 +28,8 @@ namespace qmcplusplus
 {
 
 template<>
-QMCDriver<Batching::SINGLE>* DMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction<Batching::SINGLE>& psi
-                              , QMCHamiltonian& h, HamiltonianPool<Batching::SINGLE>& hpool,WaveFunctionPool<Batching::SINGLE>& ppool)
+QMCDriver<Batching::SINGLE>* DMCFactory<Batching::SINGLE>::create(MCWalkerConfiguration& w, TrialWaveFunction<Batching::SINGLE>& psi
+                              , QMCHamiltonian& h, HamiltonianPool<Batching::SINGLE>& hpool,WaveFunctionPool& ppool)
 {
   app_log() << "Creating DMCOMP for the qmc driver" << std::endl;
   QMCDriver<Batching::SINGLE>*  qmc = new DMCOMP(w,psi,h,ppool);
@@ -38,8 +38,8 @@ QMCDriver<Batching::SINGLE>* DMCFactory::create(MCWalkerConfiguration& w, TrialW
 }
 
 template<>
-QMCDriver<Batching::BATCHED>* DMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction<Batching::BATCHED>& psi
-                              , QMCHamiltonian& h, HamiltonianPool<Batching::BATCHED>& hpool,WaveFunctionPool<Batching::BATCHED>& ppool)
+QMCDriver<Batching::BATCHED>* DMCFactory<Batching::BATCHED>::create(MCWalkerConfiguration& w, TrialWaveFunction<Batching::BATCHED>& psi
+                              , QMCHamiltonian& h, HamiltonianPool<Batching::BATCHED>& hpool,WaveFunctionPool& ppool)
 {
   return new DMCcuda (w, psi, h,ppool);
 }

@@ -38,7 +38,6 @@ class ParticleSet;
  * This object handles \<wavefunction\> elements and
  * functions as a builder class for TrialWaveFunction objects.
  */
-template<Batching batching = Batching::SINGLE>
 class WaveFunctionPool : public MPIObjectBase
 {
 
@@ -56,17 +55,17 @@ public:
     return myPool.empty();
   }
 
-  TrialWaveFunction<batching>* getPrimary()
+  TrialWaveFunction<>* getPrimary()
   {
     return primaryPsi;
   }
 
-  void setPrimary(TrialWaveFunction<batching> *psi)
+  void setPrimary(TrialWaveFunction<> *psi)
   {
     primaryPsi=psi;
   }
 
-  TrialWaveFunction<batching>* getWaveFunction(const std::string& pname)
+  TrialWaveFunction<>* getWaveFunction(const std::string& pname)
   {
     std::map<std::string,WaveFunctionFactory*>::iterator pit(myPool.find(pname));
     if(pit == myPool.end())
@@ -123,7 +122,7 @@ public:
 private:
 
   /// pointer to the primary TrialWaveFunction
-  TrialWaveFunction<batching>* primaryPsi;
+  TrialWaveFunction<>* primaryPsi;
 
   /// storage of WaveFunctionFactory
   PoolType myPool;

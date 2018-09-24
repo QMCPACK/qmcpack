@@ -35,12 +35,12 @@
 namespace qmcplusplus
 {
 template<>
-QMCDriver<Batching::BATCHED>* VMCFactory::create(MCWalkerConfiguration& w,
+QMCDriver<Batching::BATCHED>* VMCFactory<Batching::BATCHED>::create(MCWalkerConfiguration& w,
 					TrialWaveFunction<Batching::BATCHED>& psi,
 					QMCHamiltonian& h,
 					ParticleSetPool& ptclpool,
 					HamiltonianPool<Batching::BATCHED>& hpool,
-					WaveFunctionPool<Batching::BATCHED>& ppool)
+					WaveFunctionPool& ppool)
 {
   int np=omp_get_max_threads();
   //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
@@ -57,12 +57,12 @@ QMCDriver<Batching::BATCHED>* VMCFactory::create(MCWalkerConfiguration& w,
 }
 
 template<>
-QMCDriver<Batching::SINGLE>* VMCFactory::create(MCWalkerConfiguration& w,
+QMCDriver<Batching::SINGLE>* VMCFactory<Batching::SINGLE>::create(MCWalkerConfiguration& w,
 					TrialWaveFunction<Batching::SINGLE>& psi,
 					QMCHamiltonian& h,
 					ParticleSetPool& ptclpool,
 					HamiltonianPool<Batching::SINGLE>& hpool,
-					WaveFunctionPool<Batching::SINGLE>& ppool)
+					WaveFunctionPool& ppool)
 {
   int np=omp_get_max_threads();
   //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)

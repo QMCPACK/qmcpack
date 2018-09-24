@@ -36,7 +36,7 @@ namespace qmcplusplus
 VMCcuda::VMCcuda(MCWalkerConfiguration& w,
 		 TrialWaveFunction<Batching::BATCHED>& psi,
 		 QMCHamiltonian& h,
-		 WaveFunctionPool<Batching::BATCHED>& ppool):
+		 WaveFunctionPool& ppool):
      QMCDriver<Batching::BATCHED>(w,psi,h,ppool),UseDrift("yes"),
      myPeriod4WalkerDump(0), GEVtype("mixed"), w_alpha(0.0), w_beta(0.0), forOpt(false)
 {

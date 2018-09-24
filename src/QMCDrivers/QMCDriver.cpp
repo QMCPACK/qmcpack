@@ -50,7 +50,7 @@ namespace qmcplusplus
 {
 
 template<Batching batching>
-QMCDriver<batching>::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction<batching>& psi, QMCHamiltonian& h, WaveFunctionPool<batching>& ppool)
+QMCDriver<batching>::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction<batching>& psi, QMCHamiltonian& h, WaveFunctionPool& ppool)
   : MPIObjectBase(0), branchEngine(0), W(w), Psi(psi), H(h), psiPool(ppool),
     Estimators(0),Traces(0), qmcNode(NULL), wOut(0)
 {

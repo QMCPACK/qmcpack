@@ -33,7 +33,7 @@ class VMCLinearOptOMP: public QMCDriver<Batching::SINGLE>, public CloneManager
 public:
   /// Constructor.
   VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction<Batching::SINGLE>& psi, QMCHamiltonian& h,
-                  HamiltonianPool<Batching::SINGLE>& hpool, WaveFunctionPool<Batching::SINGLE>& ppool);
+                  HamiltonianPool<Batching::SINGLE>& hpool, WaveFunctionPool& ppool);
 
   ~VMCLinearOptOMP()
   {

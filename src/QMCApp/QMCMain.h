@@ -28,20 +28,23 @@
 namespace qmcplusplus
 {
 
+extern template class QMCDriverFactory<Batching::SINGLE>;
+extern template class QMCDriverFactory<Batching::BATCHED>;
+
 /** @ingroup qmcapp
  * @brief Main application to perform QMC simulations
  *
  * This is a generalized QMC application which can handle multiple ParticleSet,
  * TrialWaveFunction and QMCHamiltonian objects.
  */
-class QMCMain: public QMCDriverFactory,
-  public QMCAppBase
+
+class QMCMain: public QMCAppBase
 {
 
 public:
 
   ///constructor
-  QMCMain(Communicate* c);
+  QMCMain(Communicate* c, Batching batching);
 
   ///destructor
   ~QMCMain();
@@ -49,7 +52,11 @@ public:
   bool validateXML();
   bool execute();
 
+  QMCDriverFactoryInterface& getQMCDriverFactory() { return *qmc_driver_factory; }
 private:
+  Communicate* myComm;
+  
+  QMCDriverFactoryInterface* qmc_driver_factory;
 
   ///flag to indicate that a qmc is the first QMC
   bool FirstQMC;

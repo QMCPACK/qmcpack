@@ -25,7 +25,9 @@
 #include "Message/MPIObjectBase.h"
 #include <map>
 #include "QMCApp/WaveFunctionPool.h"
+#include "QMCApp/HamiltonianPoolInterface.h"
 #include "QMCWaveFunctions/Batching.h"
+
 class Libxml2Document;
 
 namespace qmcplusplus
@@ -43,7 +45,7 @@ class ParticleSetPool;
  * functions as a builder class for QMCHamiltonian objects.
  */
 template<Batching batching = Batching::SINGLE>
-class HamiltonianPool : public MPIObjectBase
+class HamiltonianPool : public HamiltonianPoolInterface, public MPIObjectBase
 {
 
 public:
@@ -102,7 +104,7 @@ public:
 
   /** assign a pointer to a WaveFunctionPool
    */
-  inline void setWaveFunctionPool(WaveFunctionPool<batching>* pset)
+  inline void setWaveFunctionPool(WaveFunctionPool* pset)
   {
     psiPool=pset;
   }
@@ -131,7 +133,7 @@ private:
    * For those QMCHamiltonianBase that depends on TrialWaveFunction,
    * e.g., NonLocalPPotential.
    */
-  WaveFunctionPool<batching>* psiPool;
+  WaveFunctionPool* psiPool;
 
 
   /** point to the working document */

@@ -34,7 +34,7 @@ class VMCcuda: public QMCDriver<Batching::BATCHED>
 {
 public:
   /// Constructor.
-  VMCcuda(MCWalkerConfiguration& w, TrialWaveFunction<Batching::BATCHED>& psi, QMCHamiltonian& h,WaveFunctionPool<Batching::BATCHED>& ppool);
+  VMCcuda(MCWalkerConfiguration& w, TrialWaveFunction<Batching::BATCHED>& psi, QMCHamiltonian& h,WaveFunctionPool& ppool);
 
   GPU_XRAY_TRACE bool run();
   GPU_XRAY_TRACE bool runWithDrift();

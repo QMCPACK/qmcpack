@@ -54,7 +54,7 @@ public:
   using RealType = typename QDT::RealType;
   ///Constructor.
   QMCLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction<batching>& psi,
-                    QMCHamiltonian& h, HamiltonianPool<batching>& hpool, WaveFunctionPool<batching>& ppool);
+                    QMCHamiltonian& h, HamiltonianPool<batching>& hpool, WaveFunctionPool& ppool);
 
   ///Destructor
   virtual ~QMCLinearOptimize();

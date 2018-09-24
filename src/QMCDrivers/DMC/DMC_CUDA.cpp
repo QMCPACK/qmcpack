@@ -37,7 +37,7 @@ namespace qmcplusplus
 
 /// Constructor.
 DMCcuda::DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction<Batching::BATCHED>& psi,
-                 QMCHamiltonian& h,WaveFunctionPool<Batching::BATCHED>& ppool):
+                 QMCHamiltonian& h,WaveFunctionPool& ppool):
   QMCDriver<Batching::BATCHED>(w,psi,h,ppool), myWarmupSteps(0), Mover(0),
   NLop(w.getTotalNum()),
   ResizeTimer("DMCcuda::resize"),

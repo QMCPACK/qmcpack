@@ -34,6 +34,7 @@
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
 #include "QMCWaveFunctions/Batching.h"
+#include "QMCDrivers/QMCDriverInterface.h"
 class Communicate;
 
 namespace qmcplusplus
@@ -72,7 +73,7 @@ template<Batching batching = Batching::SINGLE>
 class QMCDriver;
 
 template<Batching batching>
-class QMCDriver: public QMCTraits, public MPIObjectBase
+class QMCDriver: public QMCDriverInterface, public QMCTraits, public MPIObjectBase
 {
 
 public:
@@ -98,7 +99,7 @@ public:
   xmlNodePtr traces_xml;
 
   /// Constructor.
-  QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction<batching>& psi, QMCHamiltonian& h, WaveFunctionPool<batching>& ppool);
+  QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction<batching>& psi, QMCHamiltonian& h, WaveFunctionPool& ppool);
 
   virtual ~QMCDriver();
 
@@ -341,7 +342,7 @@ protected:
   ///trial function
   TrialWaveFunction<batching>& Psi;
 
-  WaveFunctionPool<batching>& psiPool;
+  WaveFunctionPool& psiPool;
 
   ///Hamiltonian
   QMCHamiltonian& H;

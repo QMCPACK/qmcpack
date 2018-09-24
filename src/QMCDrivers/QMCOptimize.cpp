@@ -38,8 +38,10 @@ namespace qmcplusplus
 
 template<Batching batching>
 QMCOptimize<batching>::QMCOptimize(MCWalkerConfiguration& w,
-				   TrialWaveFunction<batching>& psi, QMCHamiltonian& h, HamiltonianPool<batching>& hpool,
-				   WaveFunctionPool<batching>& ppool): QMCDriver<batching>(w,psi,h,ppool),
+				   TrialWaveFunction<batching>& psi,
+				   QMCHamiltonian& h,
+				   HamiltonianPool<batching>& hpool,
+				   WaveFunctionPool& ppool): QMCDriver<batching>(w,psi,h,ppool),
   PartID(0), NumParts(1), WarmupBlocks(10),
   SkipSampleGeneration("no"), hamPool(hpool),
   optTarget(0), optSolver(0), vmcEngine(0),
@@ -201,7 +203,7 @@ bool QMCOptimize<batching>::put(xmlNodePtr q)
   {
 #if defined (QMC_CUDA)
     if (useGPU == "yes")
-      vmcEngine = new VMCcuda(QDT::W,dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(QDT::Psi),QDT::H, QDT::psiPool);
+      vmcEngine = new VMCcuda(QDT::W,dynamic_cast<TrialWaveFunction<batching>&>(QDT::Psi),QDT::H, QDT::psiPool);
     else
 #endif
       vmcEngine = new VMCSingleOMP(QDT::W,QDT::Psi,QDT::H,QDT::psiPool);
@@ -266,4 +268,22 @@ bool QMCOptimize<batching>::put(xmlNodePtr q)
   }
   return success;
 }
+
+template<>
+QMCDriver<Batching::BATCHED>*
+QMCOptimize<Batching::BATCHED>::createEngine(MCWalkerConfiguration& W,
+					     TrialWaveFunction<batching>& psi,
+					     HamiltonianPool<batching>& H,
+					     WaveFunctionPool& psiPool)
+{
+  if (useGPU == "yes")
+    vmcEngine = new VMCcuda(QDT::W,dynamic_cast<TrialWaveFunction<batching>&>(QDT::Psi),QDT::H, QDT::psiPool);
+  else
+    vmcEngine = new VMCSingleOMP(QDT::W,QDT::Psi,QDT::H,QDT::psiPool);
+  return vmcEngine;
+}
+
+  
+template class QMCOptimize<Batching::SINGLE>;
+template class QMCOptimize<Batching::BATCHED>;
 }

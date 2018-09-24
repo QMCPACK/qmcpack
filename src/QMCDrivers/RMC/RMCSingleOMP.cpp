@@ -40,7 +40,7 @@ namespace qmcplusplus
 /// Constructor.
   RMCSingleOMP::RMCSingleOMP (MCWalkerConfiguration & w,
 			      TrialWaveFunction<Batching::SINGLE>& psi, QMCHamiltonian & h,
-			      WaveFunctionPool<Batching::SINGLE> & ppool)
+			      WaveFunctionPool & ppool)
   :QMCDriver<Batching::SINGLE> (w, psi, h, ppool), prestepsVMC (-1), rescaleDrift ("no"), beta (-1),
     beads (-1), fromScratch (true)
   {

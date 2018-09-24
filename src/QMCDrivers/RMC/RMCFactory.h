@@ -20,20 +20,20 @@
 #include "QMCApp/HamiltonianPool.h"
 namespace qmcplusplus
 {
-  class ParticleSetPool;
+class ParticleSetPool;
 
-  struct RMCFactory
-  {
+template<Batching batching = Batching::SINGLE>
+struct RMCFactory
+{
     int RMCMode;
     xmlNodePtr myNode;
       RMCFactory (int vmode, xmlNodePtr cur):RMCMode (vmode), myNode (cur)
     {
     }
 
-    template<Batching batching = Batching::SINGLE>
     QMCDriver<batching> *create (MCWalkerConfiguration & w, TrialWaveFunction<batching>& psi,
 		       QMCHamiltonian & h, ParticleSetPool & ptclpool,
-		       HamiltonianPool<batching> & hpool, WaveFunctionPool<batching> & ppool);
+		       HamiltonianPool<batching> & hpool, WaveFunctionPool & ppool);
     
   };
 }

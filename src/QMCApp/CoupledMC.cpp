@@ -51,9 +51,9 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
   a.add(target,"target");
   a.put(cur);
 
-  MCWalkerConfiguration *ions = ptclPool->getWalkerSet(target);
-  TrialWaveFunction<>* primaryPsi=psiPool->getPrimary();
-  QMCHamiltonian* primaryH=hamPool->getPrimary();
+  MCWalkerConfiguration* ions = qmc_driver_factory->getParticleSetPool().getWalkerSet(target);
+  TrialWaveFunction<>* primaryPsi = qmc_driver_factory->getWaveFunctionPool().getPrimary();
+  QMCHamiltonian* primaryH = qmc_driver_factory->getHamiltonianPool().getPrimary();
 
   app_log() << "QMCMain::executeCMCSection moving " << target << " by dummy move." << std::endl;
   //DummyIonMove dummy(*ions,*primaryPsi,*primaryH,*hamPool,*psiPool,qmcDriver);
@@ -65,12 +65,12 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
   makeGaussRandomWithEngine(deltaR,Random); //generate random displaement
 
   //update QMC system
-  qmcSystem->update();
+  qmc_driver_factory->updateQMCSystem();
 
-  double logpsi1 = primaryPsi->evaluateLog(*qmcSystem);
+  double logpsi1 = primaryPsi->evaluateLog(*qmc_driver_factory->getQMCSystem());
   std::cout << "logpsi1 " << logpsi1 << std::endl;
 
-  double eloc1  = primaryH->evaluate(*qmcSystem);
+  double eloc1  = primaryH->evaluate(*qmc_driver_factory->getQMCSystem());
   std::cout << "Local Energy " << eloc1 << std::endl;
 
   for (int i=0; i<primaryH->sizeOfObservables(); i++)
@@ -83,9 +83,9 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
     ions->update(); //update position and distance table of itself 
     primaryH->update_source(*ions);
 
-    qmcSystem->update();
-    double logpsi2 = primaryPsi->evaluateLog(*qmcSystem);
-    double eloc2  = primaryH->evaluate(*qmcSystem);
+    qmc_driver_factory->updateQMCSystem();
+    double logpsi2 = primaryPsi->evaluateLog(*qmc_driver_factory->getQMCSystem());
+    double eloc2  = primaryH->evaluate(*qmc_driver_factory->getQMCSystem());
 
     std::cout << "\nION " << iat << " " << ions->R[iat] << std::endl;
     std::cout << "logpsi " << logpsi2 << std::endl;
@@ -97,9 +97,9 @@ bool QMCMain::executeCMCSection(xmlNodePtr cur)
     ions->update(); //update position and distance table of itself 
     primaryH->update_source(*ions);
 
-    qmcSystem->update();
-    double logpsi3 = primaryPsi->evaluateLog(*qmcSystem);
-    double eloc3  = primaryH->evaluate(*qmcSystem);
+    qmc_driver_factory->updateQMCSystem();
+    double logpsi3 = primaryPsi->evaluateLog(*qmc_driver_factory->getQMCSystem());
+    double eloc3  = primaryH->evaluate(*qmc_driver_factory->getQMCSystem());
 
     if(std::abs(eloc1-eloc3)>1e-12)
     {

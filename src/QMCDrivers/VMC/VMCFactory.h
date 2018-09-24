@@ -21,14 +21,14 @@ namespace qmcplusplus
 {
 class ParticleSetPool;
 
+template<Batching batching = Batching::SINGLE>
 struct VMCFactory
 {
   int VMCMode;
   xmlNodePtr myNode;
   VMCFactory(int vmode, xmlNodePtr cur):VMCMode(vmode), myNode(cur) {}
-  template<Batching batching = Batching::SINGLE>
   QMCDriver<batching>* create(MCWalkerConfiguration& w, TrialWaveFunction<batching>& psi, QMCHamiltonian& h,
-                    ParticleSetPool& ptclpool, HamiltonianPool<batching>& hpool, WaveFunctionPool<batching>& ppool);
+                    ParticleSetPool& ptclpool, HamiltonianPool<batching>& hpool, WaveFunctionPool& ppool);
 };
 }
 
