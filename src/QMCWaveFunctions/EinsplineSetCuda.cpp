@@ -564,7 +564,7 @@ EinsplineSetExtended<T>::resize_cuda(int numWalkers)
       cudaMemAdvise(CudaGradLaplVector.data(),4*N*numWalkers*sizeof(CudaStorageType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
     }
     else
-    { // only a subsection of the output memory is written to be each other GPU
+    { // only a subsection of the output memory is written to by each other GPU
       cudaMemAdvise(&CudaValueVector.data()[i*numWalkers*Nsplit],Nsplit*numWalkers*sizeof(CudaStorageType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
       cudaMemAdvise(&CudaGradLaplVector.data()[4*i*numWalkers*Nsplit],4*Nsplit*numWalkers*sizeof(CudaStorageType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
     }
@@ -742,8 +742,8 @@ EinsplineSetExtended<std::complex<double> >::evaluate
 {
 //  std::cerr << "here.6\n";
   // app_log() << "Eval 3.\n";
-  cudaProfilerStart();
 #ifdef USE_NVTX
+  cudaProfilerStart();
   char s[32];
 #endif
   int N = walkers.size();
@@ -863,7 +863,9 @@ EinsplineSetExtended<std::complex<double> >::evaluate
                        (CudaRealType**)CudaValuePointers.data(), phi.data(),
                        (CudaRealType**)CudaGradLaplPointers.data(), grad_lapl.data(),
                        CudaMultiSpline->num_splines,  walkers.size(), row_stride);
+#ifdef USE_NVTX
   cudaProfilerStop();
+#endif
 // AT debug:
 #ifdef SPLIT_SPLINE_DEBUG
   if(abort_counter+1>=4)
