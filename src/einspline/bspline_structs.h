@@ -21,7 +21,7 @@
 #ifndef BSPLINE_STRUCTS_STD_H
 #define BSPLINE_STRUCTS_STD_H
 #include <stdlib.h>
-#include "einspline/bspline_base.h"
+
 ///////////////////////////
 // Single precision real //
 ///////////////////////////
