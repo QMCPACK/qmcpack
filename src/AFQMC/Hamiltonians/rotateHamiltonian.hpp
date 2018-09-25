@@ -755,11 +755,11 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
   // allocate Qk or SpQk
   // sadly no std::optional in c++14!!!
   int nx = (sparseQk?0:1);
-  boost::multi::array<SPComplexType,2,Allocator> Qk({nx*NMO*NEL,nx*nvec},alloc);
+  boost::multi_array<SPComplexType,2> Qk(extents[nx*NMO*NEL][nx*nvec]);
   nx = (sparseQk?1:0);
   SpCType_shm_csr_matrix SpQk({nx*NMO*NEL,nx*nvec},{0,0},0,alloc);
 
-  boost::multi::array<SPComplexType,2,Allocator> Rl({nvec,NMO*NEL},alloc);
+  boost::multi_array<SPComplexType,2> Rl(extents[nvec][NMO*NEL]);
 
   if(distribute_Ham) {
    APP_ABORT(" Finish THIS (43)!!! \n\n\n");
@@ -807,7 +807,7 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
   
   app_log()<<"   Temporary integral matrix Ta: " <<NMO*NAEA*maxnk*NAEA*sizeof(SPComplexType)/1024.0/1024.0 <<" MB " <<std::endl;
 
-  boost::multi::array<SPComplexType,1,Allocator> Ta_shmbuff({NMO*NAEA*maxnk*NAEA}, alloc);
+  boost::multi_array<SPComplexType,1> Ta_shmbuff(extents[NMO*NAEA*maxnk*NAEA]);
   myTimer Timer_;
 
   ComplexType EJX(0.0);
@@ -852,7 +852,7 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
         boost::multi_array_ref<SPComplexType,2> Ta(std::addressof(*Ta_shmbuff.origin()),
                                          extents[nk*NAEB][NAEB*NMO]);
 	// until I switch to boost::multi::array
-        boost::multi_array_ref<SPComplexType,2> Rl_(std::addressof(*Rl.origin())+nvec*NAEA*NMO,
+        boost::multi_array_ref<SPComplexType,2> Rl_(std::addressof(*Rl.origin())+NAEA*NMO,
 					 extents[nvec][NAEB*NMO]);
         if(type == "SD")
           count_Qk_x_Rl(walker_type,EJX,TG,sz_local,k0+NMO,kN+NMO,NMO,2*NMO,NMO,NAEA,NAEB,
@@ -956,7 +956,7 @@ inline void rotateHijkl_single_node(std::string& type, WALKER_TYPES walker_type,
       boost::multi_array_ref<SPComplexType,2> Ta(std::addressof(*Ta_shmbuff.origin()),
                                        extents[nk*NAEB][NAEB*NMO]);
       // until I switch to boost::multi::array
-      boost::multi_array_ref<SPComplexType,2> Rl_(std::addressof(*Rl.origin())+nvec*NAEA*NMO,
+      boost::multi_array_ref<SPComplexType,2> Rl_(std::addressof(*Rl.origin())+NAEA*NMO,
                                        extents[nvec][NAEB*NMO]);
       if(type == "SD")
         Qk_x_Rl(walker_type,EJX,TG,k0+NMO,kN+NMO,NMO,2*NMO,NMO,NAEA,NAEB,

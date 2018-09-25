@@ -62,7 +62,6 @@ class SparseTensor
   using Vshm_csr_matrix_view = typename Vshm_csr_matrix::template matrix_view<int>; 
   using CVector = boost::multi_array<ComplexType,1>;  
   using CMatrix = boost::multi_array<ComplexType,2>;  
-  using SpT1Vector = boost::multi_array<SpT1,1>;  
   using T1Vector = boost::multi_array<T1,1>;  
   using T1Matrix = boost::multi_array<T1,2>;  
   using SpVector = boost::multi_array<SPComplexType,1>;  
@@ -72,7 +71,7 @@ class SparseTensor
 
     SparseTensor(WALKER_TYPES type,
                  CMatrix&& hij_,
-                 std::vector<SpT1Vector>&& h1, 
+                 std::vector<T1Vector>&& h1, 
                  std::vector<T1shm_csr_matrix>&& v2, 
                  std::vector<T1shm_csr_matrix_view>&& v2view, 
                  Vshm_csr_matrix&& vn, 
@@ -184,14 +183,32 @@ class SparseTensor
         Gcloc.resize(extents[Vakbl_view[k].shape()[0]*Gc.shape()[1]]);
       boost::multi_array_ref<SPComplexType,2> buff(Gcloc.data(),
                         extents[Vakbl_view[k].shape()[0]][Gc.shape()[1]]);
+
+      int nwalk = Gc.shape()[1];
+      if(E.shape()[0] != nwalk || E.shape()[1] < 3)
+        APP_ABORT(" Error in AFQMC/HamiltonianOperations/sparse_matrix_energy::calculate_energy(). Incorrect matrix dimensions \n");
+
+      for(int n=0; n<nwalk; n++) 
+        std::fill_n(E[n].origin(),3,ComplexType(0.));
+
+      // one-body contribution
+      if(addH1) {
+        boost::const_multi_array_ref<ComplexType,1> haj_ref(haj[k].origin(), extents[haj[k].num_elements()]);
+        ma::product(ComplexType(1.),ma::T(Gc),haj_ref,ComplexType(1.),E[indices[range_t()][0]]);
+        for(int i=0; i<nwalk; i++)
+          E[i][0] += E0;  
+      }
+
       // move calculation of H1 here	
-      shm::calculate_energy(std::forward<Mat>(E),Gc,buff,haj[k],Vakbl_view[k],addH1);
-      // testing how to do this right now, make clean design later
-      // when you write the FastMSD class 
-      if(separateEJ) {
+      if(addEXX) {  
+        shm::calculate_energy(std::forward<Mat>(E),Gc,buff,Vakbl_view[k]);
+      }  
+
+      if(separateEJ && addEJ) {
         using ma::T;
         if(Gcloc.num_elements() < SpvnT[k].shape()[0] * Gc.shape()[1])
           Gcloc.resize(extents[SpvnT[k].shape()[0]*Gc.shape()[1]]);
+        assert(SpvnT_view[k].shape()[1] == Gc.shape()[0]);
         RealType scl = (walker_type==CLOSED?4.0:1.0); 
         // SpvnT*G
         boost::multi_array_ref<T2,2> v_(Gcloc.origin()+
@@ -201,9 +218,7 @@ class SparseTensor
         for(int wi=0; wi<Gc.shape()[1]; wi++)
           E[wi][2] = 0.5*scl*ma::dot(v_[indices[range_t()][wi]],v_[indices[range_t()][wi]]); 
       }
-      if(addH1) 
-        for(int i=0; i<E.shape()[0]; i++)
-          E[i][0] += E0;  
+
     }
 
     template<class MatA, class MatB,
@@ -299,7 +314,7 @@ std::cout<<"sizes: " <<SpvnT[k].shape()[0] <<" " <<SpvnT[k].shape()[1] <<" " <<G
     CMatrix hij;
 
     // (potentially half rotated) one body hamiltonian
-    std::vector<SpT1Vector> haj;
+    std::vector<T1Vector> haj;
 
     // sparse 2-body 2-electron integrals in matrix form  
     std::vector<T1shm_csr_matrix> Vakbl; 

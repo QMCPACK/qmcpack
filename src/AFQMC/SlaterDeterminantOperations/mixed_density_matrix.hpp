@@ -174,6 +174,67 @@ inline Tp MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&&
   return ovlp;
 }
 
+template< class Tp,
+          class integer,
+          class MatA,
+          class MatB,
+          class MatC,
+          class Mat1,
+          class Mat2,
+          class Mat3,
+          class IBuffer,
+          class TBuffer 
+        >
+inline Tp MixedDensityMatrixFromConfiguration(const MatA& hermA, const MatB& B, MatC&& C, integer *ref, Mat1&& TNN, Mat2&& TAB, Mat3&& TNM, IBuffer& IWORK, TBuffer& WORK, bool compact=true)
+{
+  // check dimensions are consistent
+  int NEL = B.shape()[1];
+  assert( hermA.shape()[1] == B.shape()[0] );
+  assert( hermA.shape()[0] == TAB.shape()[0] );
+  assert( B.shape()[1] == TAB.shape()[1] );
+  assert( B.shape()[1] == TNN.shape()[0] );
+  assert( B.shape()[1] == TNN.shape()[1] );
+  if(compact) {
+    assert( C.shape()[0] == TNN.shape()[1] );
+    assert( C.shape()[1] == B.shape()[0] );
+  } else {
+    assert( TNM.shape()[1] == B.shape()[0] );
+    assert( TNM.shape()[0] == TNN.shape()[1] );
+    assert( C.shape()[0] == hermA.shape()[1] );
+    assert( C.shape()[1] == TNM.shape()[1] );
+  }
+
+  using ma::T;
+
+  // TAB = herm(A)*B
+  ma::product(hermA,B,std::forward<Mat2>(TAB));  
+
+  // TNN = TAB[ref,:] 
+  for(int i=0; i<NEL; i++)
+    std::copy_n(std::addressof(*TAB[*(ref+i)].origin()),NEL,std::addressof(*TNN[i].origin()));
+
+  // TNN = TNN^(-1)
+  Tp ovlp = static_cast<Tp>(ma::invert(std::forward<Mat1>(TNN),IWORK,WORK));
+  if(ovlp == Tp(0.0)) return Tp(0.0); // don't bother calculating further
+
+  if(compact) {
+
+    // C = T(TNN) * T(B)
+    ma::product(T(TNN),T(B),std::forward<MatC>(C)); 
+
+  } else {
+
+    // TNM = T(TNN) * T(B)
+    ma::product(T(TNN),T(B),std::forward<Mat3>(TNM)); 
+
+    // C = conj(A) * TNM
+    ma::product(T(hermA),TNM,std::forward<MatC>(C));
+
+  }
+
+  return ovlp;
+}
+
 /*
  * Calculates the 1-body mixed density matrix:
  *   < A | c+i cj | B > / <A|B> = conj(A) * ( T(B) * conj(A) )^-1 * T(B) 
@@ -314,13 +375,12 @@ inline Tp OverlapForWoodbury(const MatA& hermA, const MatB& B, MatC&& QQ0, integ
     std::copy_n(std::addressof(*TMN[*(ref+i)].origin()),NEL,std::addressof(*TNN[i].origin())); 
  
   // TNN -> inv(TNN)
-//  Tp res =  static_cast<Tp>(ma::invert(std::forward<MatD>(TNN),IWORK,WORK));
+  Tp res =  static_cast<Tp>(ma::invert(std::forward<MatD>(TNN),IWORK,WORK));
 
   // QQ0 = TMN * inv(TNN) 
   ma::product(TMN,TNN,std::forward<MatC>(QQ0));  
 
-//  return res;
-  return Tp(1.0);
+  return res;
 }
 
 /*
@@ -568,7 +628,7 @@ inline Tp OverlapForWoodbury(const MatA& hermA, const MatB& B, MatC&& QQ0, integ
 
   // QQ0 = TMN * inv(TNN) 
   ma::product(TMN[indices[range_t(M0,Mn)][range_t()]],TNN,
-              QQ0({M0,Mn},QQ0.extension(1)));
+              QQ0[indices[range_t(M0,Mn)][range_t()]]); 
   comm.barrier();
   return ovlp;
 }

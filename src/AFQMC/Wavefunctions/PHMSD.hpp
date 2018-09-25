@@ -58,11 +58,11 @@ class PHMSD: public AFQMCInfo
   using CMatrix = boost::multi_array<ComplexType,2>;  
   using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;  
   using shared_mutex = boost::mpi3::mutex;  
-  using shared_CMatrix = boost::multi::array<ComplexType,2,shared_allocator<ComplexType>>;
-  using shared_CTensor = boost::multi::array<ComplexType,3,shared_allocator<ComplexType>>;
-  using index_aos = ma::sparse::array_of_sequences<int,int,
-                                                   boost::mpi3::intranode::allocator<int>,
-                                                   boost::mpi3::intranode::is_root>;
+  using shared_CMatrix = boost::multi_array<ComplexType,2>;//,shared_allocator<ComplexType>>;
+  using shared_CTensor = boost::multi_array<ComplexType,3>;//,shared_allocator<ComplexType>>;
+  using index_aos = ma::sparse::array_of_sequences<int,int>;
+//                                                   boost::mpi3::intranode::allocator<int>,
+//                                                   boost::mpi3::intranode::is_root>;
 
   public:
 
@@ -96,22 +96,23 @@ class PHMSD: public AFQMCInfo
                 maxn_unique_confg(    
                     std::max(abij.number_of_unique_excitations()[0],
                              abij.number_of_unique_excitations()[1])),
-                unique_overlaps({2,1},shared_allocator<ComplexType>{TG.TG_local()}), 
-                unique_Etot({2,1},shared_allocator<ComplexType>{TG.TG_local()}), 
-                QQ0inv({2,1,1},shared_allocator<ComplexType>{TG.TG_local()}),
-                local_ov({2,maxn_unique_confg}),
-                local_etot({2,maxn_unique_confg}),
-                local_QQ0inv({((walker_type==COLLINEAR)?2:1),maxnactive,NAEA}),
-                Qwork({max_exct_n,max_exct_n}),
+                unique_overlaps(extents[2][1]), //,shared_allocator<ComplexType>{TG.TG_local()}), 
+                unique_Etot(extents[2][1]), //,shared_allocator<ComplexType>{TG.TG_local()}), 
+                QQ0inv(extents[2][1][1]), //,shared_allocator<ComplexType>{TG.TG_local()}),
+                local_ov(extents[2][maxn_unique_confg]),
+                local_etot(extents[2][maxn_unique_confg]),
+                local_QQ0inv(extents[((walker_type==COLLINEAR)?2:1)][maxnactive][NAEA]),
+                Qwork(extents[max_exct_n][max_exct_n]),
                 //Gwork({size_t(NAEA),maxnactive}),
-                Gwork({NMO,NMO}),
-                beta_coupled_to_unique_alpha(std::move(beta_coupled_to_unique_alpha__)),
-                alpha_coupled_to_unique_beta(std::move(alpha_coupled_to_unique_beta__)) 
+                Gwork(extents[NAEA][maxnactive]),
+                det_couplings{std::move(beta_coupled_to_unique_alpha__),
+                              std::move(alpha_coupled_to_unique_beta__)}
     {
       compact_G_for_vbias = true; 
       transposed_G_for_vbias_ = HamOp.transposed_G_for_vbias();  
       transposed_G_for_E_ = HamOp.transposed_G_for_E();  
       transposed_vHS_ = HamOp.transposed_vHS();  
+      fast_ph_energy = false; // HamOp.fast_ph_energy();
 
       excitedState = false;  
       std::string excited_file("");  
@@ -204,8 +205,10 @@ class PHMSD: public AFQMCInfo
         assert( G.shape()[1] == v.shape()[1] );
       }  
       assert( v.shape()[0] == HamOp.local_number_of_cholesky_vectors());
-      HamOp.vbias(G[indices[range_t(0,OrbMats[0].shape()[0]*NMO)][range_t()]],std::forward<MatA>(v),a,0.0);
-      HamOp.vbias(G[indices[range_t(OrbMats[0].shape()[0]*NMO,G.shape()[0])][range_t()]],std::forward<MatA>(v),a,1.0);
+      double scl = (walker_type==COLLINEAR)?0.5:1.0;
+      HamOp.vbias(G[indices[range_t(0,OrbMats[0].shape()[0]*NMO)][range_t()]],std::forward<MatA>(v),scl*a,0.0);
+      if(walker_type==COLLINEAR) 
+        HamOp.vbias(G[indices[range_t(OrbMats[0].shape()[0]*NMO,G.shape()[0])][range_t()]],std::forward<MatA>(v),scl*a,1.0);
       TG.local_barrier();    
     }
 
@@ -379,22 +382,22 @@ class PHMSD: public AFQMCInfo
     std::unique_ptr<SHM_Buffer> shmbuff_for_G;
 
     // shared memory arrays for temporary calculations
+    bool fast_ph_energy;
     size_t maxn_unique_confg; // maximum number of unque configurations 
     size_t maxnactive;   // maximum number of states in active space
     size_t max_exct_n;   // maximum excitation number (number of electrons excited simultaneously)
     shared_CMatrix unique_overlaps;
     shared_CMatrix unique_Etot;
     shared_CTensor QQ0inv;  // Q * inv(Q0) 
-    boost::multi::array<ComplexType,2> local_ov;
-    boost::multi::array<ComplexType,2> local_etot;
-    boost::multi::array<ComplexType,3> local_QQ0inv;
-    //boost::multi::array<ComplexType,2> QQ0inv;  // Q * inv(Q0) 
-    boost::multi::array<ComplexType,2> Qwork;     
-    boost::multi::array<ComplexType,2> Gwork; 
+    boost::multi_array<ComplexType,2> local_ov;
+    boost::multi_array<ComplexType,2> local_etot;
+    boost::multi_array<ComplexType,3> local_QQ0inv;
+    boost::multi_array<ComplexType,2> Qwork;     
+    boost::multi_array<ComplexType,2> Gwork; 
+    boost::multi_array<ComplexType,1> wgt; 
 
     // array of sequence structure storing the list of connected alpha/beta configurations
-    index_aos beta_coupled_to_unique_alpha; 
-    index_aos alpha_coupled_to_unique_beta; 
+    std::array<index_aos,2> det_couplings; 
 
     // excited states
     bool excitedState;

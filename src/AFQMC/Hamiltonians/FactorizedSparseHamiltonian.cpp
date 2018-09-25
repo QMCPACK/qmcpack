@@ -193,6 +193,8 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
     if(type==COLLINEAR)
       assert(PsiT.size()%2 == 0);
 
+std::cout<<" getHamiltonianOperations 0 " <<std::endl;
+
     // hack until parallel hdf is in place
     bool write_hdf = false;
     if(TGwfn.Global().root()) write_hdf = (dump.file_id != hdf_archive::is_closed);
@@ -403,6 +405,8 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
         if(write_hdf)
           writeSparseTensor(dump,type,NMO,NAEA,NAEB,TGprop,TGwfn,H1,
                             V2,Spvn,vn0,E0,global_ncvecs,21);
+
+std::cout<<" getHamiltonianOperations 100 " <<std::endl;
 
         return HamiltonianOperations(sparse_ham(type,std::move(H1),std::move(hij),std::move(V2),
             std::move(V2view),std::move(Spvn),std::move(Spvnview),

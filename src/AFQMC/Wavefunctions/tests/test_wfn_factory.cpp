@@ -998,12 +998,16 @@ const char *wlk_xml_block =
       <parameter name=\"cutoff\">1e-6</parameter> \
   </Wavefunction> \
 ";
+
+#define __compare__
+#ifdef __compare__
     Libxml2Document doc2_;
     okay = doc2_.parseFromString(wfn_xml_block2);
     REQUIRE(okay);
     std::string wfn2_name("wfn1");
     WfnFac.push(wfn2_name,doc2_.getRoot());
     Wavefunction& nomsd = WfnFac.getWavefunction(TG,TG,wfn2_name,COLLINEAR,&ham,1e-6,nwalk);
+#endif
 
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);
     auto initial_guess = WfnFac.getInitialGuess(wfn_name);
@@ -1024,25 +1028,26 @@ const char *wlk_xml_block =
                          initial_guess[1][indices[range_t()][range_t(0,NAEB)]]);
     qmcplusplus::Timer Time;
     // no guarantee that overlap is 1.0
+    double t1;
+#ifdef __compare__
     Time.restart();
     nomsd.Overlap(wset);
-    double t1=Time.elapsed();
+    t1=Time.elapsed();
     app_log()<<" NOMSD Overlap: " <<wset[0].overlap() <<" " <<t1 <<std::endl;
+#endif
     Time.restart();
     wfn.Overlap(wset);
     t1=Time.elapsed();
     app_log()<<" PHMSD Overlap: " <<wset[0].overlap() <<" " <<t1 <<std::endl;
 
-return;
-
     using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
     using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
 
-    nomsd.Energy(wset);
-    app_log()<<" NOMSD E: " <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<std::endl;
     wfn.Energy(wset);
     app_log()<<" PHDMSD E: " <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<std::endl;
-    {
+#ifdef __compare__
+    nomsd.Energy(wset);
+    app_log()<<" NOMSD E: " <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<std::endl;
       SHM_Buffer Gbuff_(TG.TG_local(),nwalk*NMO*NMO*4);
       boost::multi_array_ref<ComplexType,2> Gph(Gbuff_.data(),extents[2*NMO*NMO][nwalk]);
       boost::multi_array_ref<ComplexType,2> Gno(Gbuff_.data()+Gph.num_elements(),
@@ -1055,7 +1060,7 @@ return;
         if(std::abs(Gph[i*NMO+j][0]-Gno[i*NMO+j][0]) > 1e-8) 
           std::cout<<i <<" " <<j <<" " <<Gph[i*NMO+j][0] <<" " <<Gno[i*NMO+j][0] <<" " 
                    <<std::abs(Gph[i*NMO+j][0]-Gno[i*NMO+j][0]) <<std::endl;  
-    }
+#endif
 
     auto size_of_G = wfn.size_of_G_for_vbias();
     SHM_Buffer Gbuff(TG.TG_local(),nwalk*size_of_G);
@@ -1084,23 +1089,7 @@ return;
         Xsum += X[i][0];
       app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
     }
-    
-    assert(nCV == nomsd.local_number_of_cholesky_vectors());
-   
-    {
-      auto size_of_G2 = nomsd.size_of_G_for_vbias();
-      SHM_Buffer Gbuff2(TG.TG_local(),nwalk*size_of_G2);
-      int Gdim1_ = (wfn.transposed_G_for_vbias()?nwalk:size_of_G2);
-      int Gdim2_ = (wfn.transposed_G_for_vbias()?size_of_G2:nwalk);
-      boost::multi_array_ref<ComplexType,2> G_(Gbuff2.data(),extents[Gdim1_][Gdim2_]); 
-      nomsd.vbias(G_,X,sqrtdt);
-      Xsum=0;
-      for(int i=0; i<X.shape()[0]; i++)
-        Xsum += X[i][0];
-      app_log()<<" Xsum (NOMSD): " <<setprecision(12) <<Xsum <<std::endl;
-    }
 
-/*
     SHM_Buffer vHSbuff(TG.TG_local(),NMO*NMO*nwalk);
     int vdim1 = (wfn.transposed_vHS()?nwalk:NMO*NMO);
     int vdim2 = (wfn.transposed_vHS()?NMO*NMO:nwalk);
@@ -1122,7 +1111,54 @@ return;
         Vsum += vHS[i][0];
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
-*/
+    
+#ifdef __compare__
+    assert(nCV == nomsd.local_number_of_cholesky_vectors());
+   
+      auto size_of_G2 = nomsd.size_of_G_for_vbias();
+      SHM_Buffer Gbuff2(TG.TG_local(),nwalk*size_of_G2);
+      int Gdim1_ = (nomsd.transposed_G_for_vbias()?nwalk:size_of_G2);
+      int Gdim2_ = (nomsd.transposed_G_for_vbias()?size_of_G2:nwalk);
+      boost::multi_array_ref<ComplexType,2> G_(Gbuff2.data(),extents[Gdim1_][Gdim2_]); 
+      nomsd.MixedDensityMatrix_for_vbias(wset,G_);
+      std::cout<<" Comparing G \n";
+      for(int i=0; i<NMO; i++)
+       for(int j=0; j<NMO; j++) {
+        if(std::abs(Gph[i*NMO+j][0]-G_[i*NMO+j][0]) > 1e-8) 
+          std::cout<<i <<" - " <<j <<" " <<Gph[i*NMO+j][0] <<" " <<G_[i*NMO+j][0] <<" "
+                   <<std::abs(Gph[i*NMO+j][0]-G_[i*NMO+j][0]) <<std::endl;
+        if(std::abs(G_[i*NMO+j][0]-Gno[i*NMO+j][0]) > 1e-8) 
+          std::cout<<i <<" -- " <<j <<" " <<G_[i*NMO+j][0] <<" " <<Gno[i*NMO+j][0] <<" "
+                   <<std::abs(G_[i*NMO+j][0]-Gno[i*NMO+j][0]) <<std::endl;
+       } 
+      nomsd.vbias(G_,X,sqrtdt);
+      Xsum=0;
+      for(int i=0; i<X.shape()[0]; i++)
+        Xsum += X[i][0];
+      app_log()<<" Xsum (NOMSD): " <<setprecision(12) <<Xsum <<std::endl;
+
+    SHM_Buffer vHSbuff_(TG.TG_local(),NMO*NMO*nwalk);
+    int vdim1_ = (nomsd.transposed_vHS()?nwalk:NMO*NMO);
+    int vdim2_ = (nomsd.transposed_vHS()?NMO*NMO:nwalk);
+    boost::multi_array_ref<ComplexType,2> vHS_(vHSbuff_.data(),extents[vdim1_][vdim2_]);
+    nomsd.vHS(X,vHS_,sqrtdt);
+    TG.local_barrier();
+    Vsum=0;
+    if(std::abs(file_data.Vsum)>1e-8) {
+      for(int n=0; n<nwalk; n++) {
+        Vsum=0;
+        for(int i=0; i<vHS_.shape()[0]; i++)
+          Vsum += vHS_[i][n];
+        REQUIRE( real(Vsum) == Approx(real(file_data.Vsum)) );
+        REQUIRE( imag(Vsum) == Approx(imag(file_data.Vsum)) );
+      }
+    } else {
+      Vsum=0;
+      for(int i=0; i<vHS_.shape()[0]; i++)
+        Vsum += vHS_[i][0];
+      app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
+    }
+#endif
   }
 }
 

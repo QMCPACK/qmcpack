@@ -198,7 +198,7 @@ auto transpose(csr_matrix&& A)
 {
   using integer = typename std::decay<csr_matrix>::type::index_type;
   using MatrixType = typename std::decay<csr_matrix>::type;
-  auto& comm = *A.getAlloc().comm_;
+  auto& comm = A.getAlloc().comm_;
   std::vector<std::size_t> sz_per_row(A.shape()[1]);
   integer r0, rN, ncols = integer(A.shape()[1]);
   integer rank = comm.rank(), size = comm.size();
@@ -251,7 +251,7 @@ MultiArray2D transpose(csr_matrix&& A, MultiArray2D&& AT)
   using Type = typename std::decay<MultiArray2D>::type::element;
   assert(A.shape()[0] == AT.shape()[1]);
   assert(A.shape()[1] == AT.shape()[0]);
-  auto& comm = *A.getAlloc().comm_;
+  auto& comm = A.getAlloc().comm_;
   integer r0, rN, nrows = integer(A.shape()[0]);
   integer rank = comm.rank(), size = comm.size();
   std::tie(r0, rN) = FairDivideBoundary(rank,nrows,size); 

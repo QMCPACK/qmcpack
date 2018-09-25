@@ -51,45 +51,29 @@ namespace base
 template< class EMat,
           class MatA,
           class MatB,
-          class MatC,
           class SpMat
         >
-inline void calculate_energy(EMat&& locV, const MatA& Gc, MatB&& Gcloc, const MatC& haj, const SpMat& Vakbl, bool addH1=true)
+inline void calculate_energy(EMat&& locV, const MatA& Gc, MatB&& Gcloc, const SpMat& Vakbl)
 {
   assert(locV.dimensionality==2);
   assert(Gc.shape()[1] == Gcloc.shape()[1]);
   assert(Gc.shape()[0] == Gcloc.shape()[0]);
-  assert(Gc.shape()[0] == haj.num_elements());
   assert(Gc.shape()[0] == Vakbl.shape()[0]);
   assert(Gc.shape()[0] == Vakbl.shape()[1]);
 
-  using Type = typename std::decay<MatC>::type::element;
-//  index_gen indices;
+  using Type = typename std::decay<MatA>::type::element;
   Type zero = Type(0.);
   Type one = Type(1.); 
   Type half = Type(0.5); 
 
   int nwalk = Gc.shape()[1];
-  //if(locV.shape()[0] != nwalk || locV.shape()[1] != 3) locV.resize(extents[nwalk][3]);
-  if(locV.shape()[0] != nwalk || locV.shape()[1] < 3) 
-    APP_ABORT(" Error in AFQMC/HamiltonianOperations/sparse_matrix_energy::calculate_energy(). Incorrect matrix dimensions \n");
-  for(int n=0; n<nwalk; n++) 
-    std::fill_n(locV[n].origin(),3,zero);
   // Vakbl * Gc(bl,nw) = Gcloc(ak,nw)
   ma::product(Vakbl, Gc, std::forward<MatB>(Gcloc));
 
-  // E2(nw) = 0.5*Gc(:,nw)*Gcloc(:,nw) 
-    // how do I do this through BLAS?
   for(int i=0, iend=Gc.shape()[0]; i<iend; i++) 
     for(int n=0; n<nwalk; n++) 
       locV[n][1] += Gc[i][n]*Gcloc[i][n];   
   for(int n=0; n<nwalk; n++) locV[n][1] *= half;
-    
-  // one-body contribution
-  if(addH1) {  
-    boost::const_multi_array_ref<Type,1> haj_ref(haj.origin(), extents[haj.num_elements()]);
-    ma::product(one,ma::T(Gc),haj_ref,one,locV[indices[range_t()][0]]);
-  }
 }
 
 }
@@ -117,50 +101,32 @@ namespace shm
 template< class EMat,
           class MatA,
           class MatB,
-          class MatC,
           class SpMat
         >
-inline void calculate_energy(EMat&& locV, const MatA& Gc, MatB&& Gcloc, const MatC& haj, const SpMat& Vakbl, bool addH1 = true)
+inline void calculate_energy(EMat&& locV, const MatA& Gc, MatB&& Gcloc, const SpMat& Vakbl)
 {
   // W[nwalk][2][NMO][NAEA]
  
   assert(locV.dimensionality==2);
   assert(Gc.shape()[1] == Gcloc.shape()[1]);
   assert(Vakbl.shape()[0]  == Gcloc.shape()[0]);
-  assert(Gc.shape()[0] == haj.num_elements());
   assert(Gc.shape()[0] == Vakbl.shape()[1]);
 
   using Type = typename std::decay<MatB>::type::element; 
-//  index_gen indices;
   const Type zero = Type(0.);
   const Type one = Type(1.); 
   const Type half = Type(0.5); 
 
   int nwalk = Gc.shape()[1];
-  //if(locV.shape()[0] != nwalk || locV.shape()[1] != 3) locV.resize(extents[nwalk][3]);
-  if(locV.shape()[0] != nwalk || locV.shape()[1] < 3) 
-    APP_ABORT(" Error in AFQMC/HamiltonianOperations/sparse_matrix_energy::calculate_energy(). Incorrect matrix dimensions \n");
-  for(int n=0; n<nwalk; n++) 
-    std::fill_n(locV[n].origin(),3,zero);
-
   // Vakbl * Gc(bl,nw) = Gcloc(ak,nw)
   ma::product(Vakbl, Gc, std::forward<MatB>(Gcloc));
 
   // E2(nw) = 0.5*Gc(:,nw)*Gcloc(:,nw) 
-    // how do I do this through BLAS?
   int r0 = Vakbl.local_origin()[0];
   for(int i=0, iend=Gcloc.shape()[0]; i<iend; i++) 
     for(int n=0; n<nwalk; n++) 
       locV[n][1] += Gc[i+r0][n]*Gcloc[i][n];   
   for(int n=0; n<nwalk; n++) locV[n][1] *= half;
-   
-  // not splitting the 1-body part yet 
-  if(addH1) {
-    // one-body contribution
-    boost::multi_array_ref<const Type,1> haj_ref(haj.origin(), extents[haj.num_elements()]);
-    ma::product(one,ma::T(Gc),haj_ref,one,locV[indices[range_t()][0]]);
-  }
-
 }
 
 }
