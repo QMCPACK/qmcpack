@@ -59,6 +59,11 @@ public:
   ///Destructor
   virtual ~QMCLinearOptimize();
 
+  virtual QMCDriver<batching>* createEngine(MCWalkerConfiguration& W,
+				    TrialWaveFunction<batching>& psi,
+				    QMCHamiltonian& H,
+				    WaveFunctionPool& psiPool);
+  
   ///Run the Optimization algorithm.
   virtual bool run()=0;
   ///process xml node

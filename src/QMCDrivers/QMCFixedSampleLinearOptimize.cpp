@@ -74,15 +74,15 @@ vdeps(1,std::vector<double>()),
 {
   QDT::IsQMCDriver=false;
   //set the optimization flag
-  QDT::QMCDriverMode.set(QDT::oQMC_OPTIMIZE,1);
+  QDT::QMCDriverMode.set(QDT::QMC_OPTIMIZE,1);
   //read to use vmc output (just in case)
   QDT::RootName = "pot";
   QDT::QMCType ="QMCFixedSampleLinearOptimize";
   QDT::m_param.add(QLOT::WarmupBlocks,"warmupBlocks","int");
   QDT::m_param.add(Max_iterations,"max_its","int");
   QDT::m_param.add(nstabilizers,"nstabilizers","int");
-  QDT::m_param.add(QLOT::stabilizerScale,"stabilizerscale","double");
-  QDT::m_param.add(QLOT::bigChange,"bigchange","double");
+  QDT::m_param.add(stabilizerScale,"stabilizerscale","double");
+  QDT::m_param.add(bigChange,"bigchange","double");
   QDT::m_param.add(MinMethod,"MinMethod","string");
   QDT::m_param.add(exp0,"exp0","double");
   QDT::m_param.add(targetExcitedStr,"targetExcited","string");
@@ -251,7 +251,7 @@ bool QMCFixedSampleLinearOptimize<batching>::run()
     //else
     //  stabilizerScale = std::max( 0.2*(od_largest-stabilityBase)/nstabilizers, stabilizerScale);
     app_log()<<"  stabilityBase "<<stabilityBase<< std::endl;
-    app_log()<<"  stabilizerScale "<<QLOT::stabilizerScale<< std::endl;
+    app_log()<<"  stabilizerScale "<<stabilizerScale<< std::endl;
     int failedTries(0);
     bool acceptedOneMove(false);
     for (int stability=0; stability<nstabilizers; stability++)
@@ -261,7 +261,7 @@ bool QMCFixedSampleLinearOptimize<batching>::run()
       for (int i=0; i<QLOT::N; i++)
         for (int j=0; j<QLOT::N; j++)
           Right(i,j)= Left(j,i);
-      RealType XS(stabilityBase+QLOT::stabilizerScale*(failedTries+stability));
+      RealType XS(stabilityBase+stabilizerScale*(failedTries+stability));
       for (int i=1; i<QLOT::N; i++)
         Right(i,i) += std::exp(XS);
       app_log()<<"  Using XS:"<<XS<<" "<<failedTries<<" "<<stability<< std::endl;
@@ -278,7 +278,7 @@ bool QMCFixedSampleLinearOptimize<batching>::run()
       RealType evaluated_cost(startCost);
       if (MinMethod=="rescale")
       {
-        if (std::abs(Lambda*bigVec)>QLOT::bigChange)
+        if (std::abs(Lambda*bigVec)>bigChange)
         {
           goodStep=false;
           app_log()<<"  Failed Step. Magnitude of largest parameter change: "<<std::abs(Lambda*bigVec)<< std::endl;
@@ -302,21 +302,21 @@ bool QMCFixedSampleLinearOptimize<batching>::run()
           QLOT::optdir[i] = currentParameterDirections[i+1];
         TOL = QLOT::param_tol/bigVec;
         AbsFuncTol=true;
-        largeQuarticStep=QLOT::bigChange/bigVec;
+        largeQuarticStep=bigChange/bigVec;
         LambdaMax = 0.5*Lambda;
         QLOT::myTimers[3]->start();
         if (MinMethod=="quartic")
         {
           int npts(7);
           quadstep = stepsize*Lambda;
-          largeQuarticStep=QLOT::bigChange/bigVec;
+          largeQuarticStep=bigChange/bigVec;
           Valid=lineoptimization3(npts,evaluated_cost);
         }
         else
           Valid=lineoptimization2();
         QLOT::myTimers[3]->stop();
         RealType biggestParameterChange = bigVec*std::abs(Lambda);
-        if (biggestParameterChange>QLOT::bigChange)
+        if (biggestParameterChange>bigChange)
         {
           goodStep=false;
           failedTries++;
@@ -473,15 +473,13 @@ bool QMCFixedSampleLinearOptimize<batching>::put(xmlNodePtr q)
   //create VMC engine
   if (QLOT::vmcEngine ==0)
   {
-#if defined (QMC_CUDA)
     if (useGPU == "yes")
-      QLOT::vmcEngine = new VMCcuda(QDT::W,
-			      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(QDT::Psi),
-			      QDT::H,
-			      QDT::psiPool);
+      QLOT::vmcEngine = QLOT::createEngine(QDT::W,
+				    dynamic_cast<TrialWaveFunction<batching>&>(QDT::Psi),
+				    QDT::H,
+				    QDT::psiPool);
     else
-#endif
-      QLOT::vmcEngine = new VMCSingleOMP(QDT::W,QDT::Psi,QDT::H,QDT::psiPool);
+      QLOT::vmcEngine = QLOT::createEngine(QDT::W,QDT::Psi,QDT::H,QDT::psiPool);
     QLOT::vmcEngine->setUpdateMode(vmcMove[0] == 'p');
     QLOT::vmcEngine->initCommunicator(QDT::myComm);
   }
@@ -1218,5 +1216,9 @@ bool QMCFixedSampleLinearOptimize<batching>::one_shift_run() {
   return (QLOT::optTarget->getReportCounter() > 0);
 
 }
+
+template class QMCFixedSampleLinearOptimize<Batching::SINGLE>;
+template class QMCFixedSampleLinearOptimize<Batching::BATCHED>;
+
 
 }

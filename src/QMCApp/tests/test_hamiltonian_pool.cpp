@@ -59,7 +59,7 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  HamiltonianPool hpool(c);
+  HamiltonianPool<Batching::SINGLE> hpool(c);
 
   REQUIRE(hpool.empty());
 
@@ -82,15 +82,23 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   hpool.setParticleSetPool(&pp);
 
   WaveFunctionPool wfp(c);
+#ifdef QMC_CUDA
+  TrialWaveFunction<> psi = TrialWaveFunction<Batching::BATCHED>(c);
+  wfp.setParticleSetPool(&pp);
+  wfp.setPrimary(&psi);
+
+  WaveFunctionFactory::PtclPoolType ptcl_pool;
+  ptcl_pool["e"] = qp;
+
+  WaveFunctionFactory *wf_factory = new WaveFunctionFactory(qp, ptcl_pool, c, Batching::BATCHED);
+#else
   TrialWaveFunction<> psi = TrialWaveFunction<>(c);
   wfp.setParticleSetPool(&pp);
   wfp.setPrimary(&psi);
 
   WaveFunctionFactory::PtclPoolType ptcl_pool;
   ptcl_pool["e"] = qp;
-#ifdef QMC_CUDA
-  WaveFunctionFactory *wf_factory = new WaveFunctionFactory(qp, ptcl_pool, c, Batching::BATCHED);
-#else
+
   WaveFunctionFactory *wf_factory = new WaveFunctionFactory(qp, ptcl_pool, c);
 #endif
   

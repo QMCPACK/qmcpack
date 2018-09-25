@@ -127,6 +127,8 @@ private:
                                     std::stringstream &fail_log,
                                     bool &ignore);
 
+  void abortNoSpecialize();
+  
   //vector<RealType> Mv3(std::vector<std::vector<RealType> >& M, std::vector<RealType>& v);
 
   std::ofstream fout;

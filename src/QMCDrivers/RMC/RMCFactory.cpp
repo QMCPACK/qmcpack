@@ -26,7 +26,7 @@ namespace qmcplusplus
 				 HamiltonianPool<Batching::BATCHED> & hpool,
 				 WaveFunctionPool & ppool)
   {
-    APP_ABORT("RMCFactory::create. RMC is not supported on GPU.\n");
+    APP_ABORT("RMCFactory::create. RMC is not supported on GPU.\n"); 
   }
   
   template<>

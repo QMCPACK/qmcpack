@@ -34,7 +34,10 @@ namespace qmcplusplus
  * Optimization by correlated sampling method with configurations
  * generated from VMC.
  */
+extern template class QMCLinearOptimize<Batching::SINGLE>;
+extern template class QMCLinearOptimize<Batching::BATCHED>;
 
+  
 template<Batching batching = Batching::SINGLE>
 class QMCFixedSampleLinearOptimize: public QMCLinearOptimize<batching>, private NRCOptimization<QMCTraits::RealType>
 {

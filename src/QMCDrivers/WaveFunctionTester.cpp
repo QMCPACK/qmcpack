@@ -87,66 +87,15 @@ WaveFunctionTester<batching>::~WaveFunctionTester()
 */
 
 
-template<Batching batching>
-bool WaveFunctionTester<batching>::run()
-{
-  //DistanceTable::create(1);
-  char fname[16];
-  sprintf(fname,"wftest.%03d",OHMMS::Controller->rank());
-  fout.open(fname);
-  fout.precision(15);
 
-  app_log() << "Starting a Wavefunction tester.  Additional information in "  << fname << std::endl;
-
-  put(QDT::qmcNode);
-  if (checkSlaterDetOption=="no") checkSlaterDet = false;
-  if (checkRatio == "yes")
-  {
-    //runRatioTest();
-    runRatioTest2();
-  }
-  else if (checkClone == "yes")
-    runCloneTest();
-  else if(checkEloc != "no")
-    printEloc();
-  else if (sourceName.size() != 0)
-  {
-    runGradSourceTest();
-    runZeroVarianceTest();
-  }
-  else if (checkRatio =="deriv")
-  {
-    makeGaussRandom(deltaR);
-    deltaR *=0.2;
-    runDerivTest();
-    runDerivNLPPTest();
-  }
-  else if (checkRatio =="derivclone")
-    runDerivCloneTest();
-  else if (wftricks =="rotate")
-    runwftricks();
-  else if (wftricks =="plot")
-    runNodePlot();
-  else if (checkBasic == "yes")
-    runBasicTest();
-  else if (checkRatioV == "yes")
-    runRatioV();
-  else
-    app_log() << "No wavefunction test specified" << std::endl;
-
-  //RealType ene = H.evaluate(W);
-  //app_log() << " Energy " << ene << std::endl;
-  return true;
-}
-
-template<Batching batching>
-void WaveFunctionTester<batching>::runCloneTest()
+template<>
+void WaveFunctionTester<Batching::SINGLE>::runCloneTest()
 {
   for (int iter=0; iter<4; ++iter)
   {
     app_log() << "Clone" << iter << std::endl;
     ParticleSet* w_clone = new MCWalkerConfiguration(QDT::W);
-    TrialWaveFunction<batching> *psi_clone = QDT::Psi.makeClone(*w_clone);
+    TrialWaveFunction<Batching::SINGLE> *psi_clone = QDT::Psi.makeClone(*w_clone);
     QMCHamiltonian *h_clone = QDT::H.makeClone(*w_clone,*psi_clone);
     h_clone->setPrimary(false);
     IndexType nskipped = 0;
@@ -200,8 +149,8 @@ void WaveFunctionTester<batching>::runCloneTest()
   }
 }
 
-template<Batching batching>
-void WaveFunctionTester<batching>::printEloc()
+template<>
+void WaveFunctionTester<Batching::SINGLE>::printEloc()
 {
   ParticleSetPool::PoolType::iterator p;
   for (p=PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
@@ -574,8 +523,8 @@ void FiniteDifference::computeFiniteDiffRichardson(RealType delta,
 }
 
 // Compute numerical gradient and Laplacian
-template<Batching batching>
-void WaveFunctionTester<batching>::computeNumericalGrad(RealType delta,
+template<>
+void WaveFunctionTester<Batching::SINGLE>::computeNumericalGrad(RealType delta,
                                               ParticleSet::ParticleGradient_t &G_fd, // finite difference
                                               ParticleSet::ParticleLaplacian_t &L_fd)
 {
@@ -698,8 +647,8 @@ bool WaveFunctionTester<batching>::checkGradients(int lower_iat, int upper_iat,
   return all_okay;
 }
 
-template<Batching batching>
-bool WaveFunctionTester<batching>::checkGradientAtConfiguration(MCWalkerConfiguration::Walker_t *W1, std::stringstream &fail_log, bool &ignore)
+template<>
+bool WaveFunctionTester<Batching::SINGLE>::checkGradientAtConfiguration(MCWalkerConfiguration::Walker_t *W1, std::stringstream &fail_log, bool &ignore)
 {
 
   int nat = QDT::W.getTotalNum();
@@ -902,8 +851,8 @@ bool WaveFunctionTester<batching>::checkGradientAtConfiguration(MCWalkerConfigur
   return all_okay;
 }
 
-template<Batching batching>
-void WaveFunctionTester<batching>::runBasicTest()
+template<>
+void WaveFunctionTester<Batching::SINGLE>::runBasicTest()
 {
   RealType sig2Enloc=0, sig2Drift=0;
 
@@ -1257,8 +1206,8 @@ void WaveFunctionTester<batching>::runRatioTest()
  #endif
 }
 
-template<Batching batching>
-void WaveFunctionTester<batching>::runRatioTest2()
+template<>
+void WaveFunctionTester<Batching::SINGLE>::runRatioTest2()
 {
   int nat = QDT::W.getTotalNum();
   ParticleSet::ParticleGradient_t Gp(nat), dGp(nat);
@@ -1406,8 +1355,8 @@ void WaveFunctionTester<batching>::runRatioV()
 #endif
 }
 
-template<Batching batching>
-void WaveFunctionTester<batching>::runGradSourceTest()
+template<>
+void WaveFunctionTester<Batching::SINGLE>::runGradSourceTest()
 {
   ParticleSetPool::PoolType::iterator p;
   for (p=PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
@@ -1512,8 +1461,8 @@ void WaveFunctionTester<batching>::runGradSourceTest()
 }
 
 
-template<Batching batching>
-void WaveFunctionTester<batching>::runZeroVarianceTest()
+template<>
+void WaveFunctionTester<Batching::SINGLE>::runZeroVarianceTest()
 {
   ParticleSetPool::PoolType::iterator p;
   for (p=PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
@@ -1630,8 +1579,8 @@ bool WaveFunctionTester<batching>::put(xmlNodePtr q)
   return success;
 }
 
-template<Batching batching>
-void WaveFunctionTester<batching>::runDerivTest()
+template<>
+void WaveFunctionTester<Batching::SINGLE>::runDerivTest()
 {
   app_log()<<" Testing derivatives"<< std::endl;
   IndexType nskipped = 0;
@@ -1737,8 +1686,8 @@ void WaveFunctionTester<batching>::runDerivTest()
 }
 
 
-template<Batching batching>
-void WaveFunctionTester<batching>::runDerivNLPPTest()
+template<>
+void WaveFunctionTester<Batching::SINGLE>::runDerivNLPPTest()
 {
   char fname[16];
   sprintf(fname,"nlpp.%03d",OHMMS::Controller->rank());
@@ -1857,15 +1806,15 @@ void WaveFunctionTester<batching>::runDerivNLPPTest()
 }
 
 
-template<Batching batching>
-void WaveFunctionTester<batching>::runDerivCloneTest()
+template<>
+void WaveFunctionTester<Batching::SINGLE>::runDerivCloneTest()
 {
   app_log()<<" Testing derivatives clone"<< std::endl;
   RandomGenerator_t* Rng1= new RandomGenerator_t();
   RandomGenerator_t* Rng2= new RandomGenerator_t();
   (*Rng1) = (*Rng2);
   MCWalkerConfiguration* w_clone = new MCWalkerConfiguration(QDT::W);
-  TrialWaveFunction<batching> *psi_clone = QDT::Psi.makeClone(*w_clone);
+  TrialWaveFunction<Batching::SINGLE> *psi_clone = QDT::Psi.makeClone(*w_clone);
   QMCHamiltonian *h_clone = QDT::H.makeClone(*w_clone,*psi_clone);
   h_clone->setRandomGenerator(Rng2);
   QDT::H.setRandomGenerator(Rng1);
@@ -1985,8 +1934,8 @@ void WaveFunctionTester<batching>::runDerivCloneTest()
     fout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i])/HGradient[i] << std::endl;
 }
 
-template<Batching batching>
-void WaveFunctionTester<batching>::runwftricks()
+template<>
+void WaveFunctionTester<Batching::SINGLE>::runwftricks()
 {
   std::vector<WaveFunctionComponent*>& Orbitals=QDT::Psi.getOrbitals();
   app_log()<<" Total of "<<Orbitals.size()<<" orbitals."<< std::endl;
@@ -2390,6 +2339,184 @@ void  WaveFunctionTester<batching>::runNodePlot()
 #endif
 }
 
+template<>
+bool WaveFunctionTester<Batching::SINGLE>::run()
+{
+  //DistanceTable::create(1);
+  char fname[16];
+  sprintf(fname,"wftest.%03d",OHMMS::Controller->rank());
+  fout.open(fname);
+  fout.precision(15);
+
+  app_log() << "Starting a Wavefunction tester.  Additional information in "  << fname << std::endl;
+
+  put(QDT::qmcNode);
+  if (checkSlaterDetOption=="no") checkSlaterDet = false;
+  if (checkRatio == "yes")
+  {
+    //runRatioTest();
+    runRatioTest2();
+  }
+  else if (checkClone == "yes")
+    runCloneTest();
+  else if(checkEloc != "no")
+    printEloc();
+  else if (sourceName.size() != 0)
+  {
+    runGradSourceTest();
+    runZeroVarianceTest();
+  }
+  else if (checkRatio =="deriv")
+  {
+    makeGaussRandom(deltaR);
+    deltaR *=0.2;
+    runDerivTest();
+    runDerivNLPPTest();
+  }
+  else if (checkRatio =="derivclone")
+    runDerivCloneTest();
+  else if (wftricks =="rotate")
+    runwftricks();
+  else if (wftricks =="plot")
+    runNodePlot();
+  else if (checkBasic == "yes")
+    runBasicTest();
+  else if (checkRatioV == "yes")
+    runRatioV();
+  else
+    app_log() << "No wavefunction test specified" << std::endl;
+
+  //RealType ene = H.evaluate(W);
+  //app_log() << " Energy " << ene << std::endl;
+  return true;
+}
+
+template<Batching batching>
+void WaveFunctionTester<batching>::abortNoSpecialize()
+{
+  APP_ABORT("WaveFunctionTester does not currently support batched evaluation");
+}
+
+
+// Perhaps the below should be the generic class template member functions
+template<>
+bool WaveFunctionTester<Batching::BATCHED>::run()
+{
+  abortNoSpecialize();
+  return false;
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runBasicTest()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runRatioTest()
+{
+  abortNoSpecialize();
+}
+    
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runRatioTest2()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>:: runRatioV()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runCloneTest()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runDerivTest()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runDerivNLPPTest()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runDerivCloneTest()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runGradSourceTest()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runZeroVarianceTest()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runwftricks()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runNodePlot()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::printEloc()
+{
+  abortNoSpecialize();
+}
+
+
+  // compute numerical gradient and laplacian
+template<>
+void WaveFunctionTester<Batching::BATCHED>::computeNumericalGrad(RealType delta,
+                            ParticleSet::ParticleGradient_t &G_fd,
+                            ParticleSet::ParticleLaplacian_t &L_fd)
+{
+  abortNoSpecialize();
+}
+
+template<>
+bool WaveFunctionTester<Batching::BATCHED>::checkGradients(int lower_iat, int upper_iat,
+                      ParticleSet::ParticleGradient_t &G,
+                      ParticleSet::ParticleLaplacian_t &L,
+                      ParticleSet::ParticleGradient_t &G_fd,
+                      ParticleSet::ParticleLaplacian_t &L_fd,
+                      std::stringstream &log,
+                      int indent)
+{
+  abortNoSpecialize();
+  return false;
+}
+
+template<>
+bool WaveFunctionTester<Batching::BATCHED>::checkGradientAtConfiguration(MCWalkerConfiguration::Walker_t* W1,
+                                    std::stringstream &fail_log,
+                                    bool &ignore)
+{
+  abortNoSpecialize();
+  return false;
+}
+
+
 FiniteDiffErrData::FiniteDiffErrData() : particleIndex(0), gradientComponentIndex(0), outputFile("delta.dat") {}
 
 bool
@@ -2403,7 +2530,8 @@ FiniteDiffErrData::put(xmlNodePtr q)
   return s;
 }
 
-
+template class WaveFunctionTester<Batching::SINGLE>;
+template class WaveFunctionTester<Batching::BATCHED>;
 
 }
 

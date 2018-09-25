@@ -812,13 +812,13 @@ bool QMCLinearOptimize<batching>::put(xmlNodePtr q)
   {
 #if defined (QMC_CUDA)
     if (useGPU == "yes")
-      vmcEngine = new VMCcuda(QDT::QDT::W,
-			      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(QDT::QDT::Psi),
-			      QDT::QDT::H,
+      vmcEngine = createEngine(QDT::W,
+			      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(QDT::Psi),
+			      QDT::H,
 			      QDT::psiPool);
     else
 #endif
-      vmcEngine = new VMCSingleOMP(QDT::W,QDT::Psi,QDT::H,QDT::psiPool);
+      vmcEngine = createEngine(QDT::W,QDT::Psi,QDT::H,QDT::psiPool);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
     vmcEngine->initCommunicator(QDT::myComm);
   }
@@ -925,4 +925,30 @@ bool QMCLinearOptimize<batching>::fitMappedStabilizers(std::vector<std::pair<Rea
     }
   return SuccessfulFit;
 }
+
+template<>
+QMCDriver<Batching::BATCHED>*
+QMCLinearOptimize<Batching::BATCHED>::createEngine(MCWalkerConfiguration& W,
+					     TrialWaveFunction<Batching::BATCHED>& psi,
+					     QMCHamiltonian& H,
+					     WaveFunctionPool& psiPool)
+{
+  vmcEngine = new VMCcuda(QDT::W,dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(psi),H, psiPool);
+  return vmcEngine;
+}
+
+template<>
+QMCDriver<Batching::SINGLE>*
+QMCLinearOptimize<Batching::SINGLE>::createEngine(MCWalkerConfiguration& W,
+					     TrialWaveFunction<Batching::SINGLE>& psi,
+					     QMCHamiltonian& H,
+					     WaveFunctionPool& psiPool)
+{
+  vmcEngine = new VMCSingleOMP(W,psi,H,psiPool);
+  return vmcEngine;
+}
+
+template class QMCLinearOptimize<Batching::SINGLE>;
+template class QMCLinearOptimize<Batching::BATCHED>;
+
 }

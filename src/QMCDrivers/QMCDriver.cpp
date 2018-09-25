@@ -159,7 +159,7 @@ template<Batching batching>
 void QMCDriver<batching>::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction<>* psi)
 {
   H1.push_back(h);
-  Psi1.push_back(psi);
+  Psi1.push_back(dynamic_cast<TrialWaveFunction<batching>*>(psi));
 }
 
 /** process a <qmc/> element
@@ -676,6 +676,10 @@ xmlNodePtr QMCDriver<batching>::getQMCNode()
   getContent(CurrentStep,current_ptr);
   return newqmc;
 }
+
+template class QMCDriver<Batching::SINGLE>;
+template class QMCDriver<Batching::BATCHED>;
+
 
 }
 

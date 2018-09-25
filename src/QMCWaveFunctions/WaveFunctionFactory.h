@@ -56,8 +56,12 @@ struct WaveFunctionFactory : public MPIObjectBase
   ~WaveFunctionFactory();
 
   template<Batching B>
-  void setPsi(TrialWaveFunction<B>* psi);
-
+  void setPsi(TrialWaveFunction<B>* psi)
+  {
+    this->setName(psi->getName());
+    targetPsi=psi;
+  }
+  
   ///read from xmlNode
   bool put(xmlNodePtr cur);
 

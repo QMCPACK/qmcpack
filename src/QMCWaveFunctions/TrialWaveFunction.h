@@ -202,7 +202,7 @@ public:
   RealType evaluateLogOnly(ParticleSet& P);
 
   /** evalaute the log of the trial wave function */
-  RealType evaluateLog(ParticleSet& P);
+  virtual RealType evaluateLog(ParticleSet& P);
   
   /** recompute the value of the orbitals which require critical accuracy */
   void recompute(ParticleSet& P);
@@ -280,7 +280,7 @@ public:
     tempP = new ParticleSet(P);
   }
 
-  TrialWaveFunction* makeClone(ParticleSet& tqp) const;
+  virtual TrialWaveFunction* makeClone(ParticleSet& tqp) const;
 
   std::vector<WaveFunctionComponent*>& getOrbitals()
   {

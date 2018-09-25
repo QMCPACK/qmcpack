@@ -79,7 +79,7 @@ TEST_CASE("CloneManager", "[drivers]")
   OHMMS::Controller->initialize(0, NULL);
   Communicate *c = OHMMS::Controller;
 
-  HamiltonianPool hpool(c);
+  HamiltonianPool<Batching::SINGLE>  hpool(c);
   CloneManager cm;
 
   //double acc_ratio = cm.acceptRatio();

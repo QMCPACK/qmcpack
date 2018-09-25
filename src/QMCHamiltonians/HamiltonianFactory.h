@@ -29,7 +29,7 @@ namespace qmcplusplus
  */
 class HamiltonianFactory: public MPIObjectBase
 {
-  public:
+public:
   typedef std::map<std::string,ParticleSet*> PtclPoolType;
   typedef std::map<std::string,WaveFunctionFactory*> OrbitalPoolType;
 
@@ -53,7 +53,7 @@ class HamiltonianFactory: public MPIObjectBase
   std::map<std::string,std::string> RenamedProperty;
 
   ///constructor
- HamiltonianFactory(ParticleSet* qp, PtclPoolType& pset, OrbitalPoolType& oset,
+  HamiltonianFactory(ParticleSet* qp, PtclPoolType& pset, OrbitalPoolType& oset,
                      Communicate* c);
 
   ///destructor

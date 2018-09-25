@@ -28,6 +28,8 @@
 #include "QMCApp/QMCDriverFactoryInterface.h"
 #include "QMCApp/HamiltonianPoolInterface.h"
 #include "QMCApp/HamiltonianPool.h"
+#include "QMCDrivers/QMCOptimize.h"
+#include "QMCDrivers/WaveFunctionTester.h"
 #include <bitset>
 
 class Communicate;
@@ -39,11 +41,15 @@ extern template class HamiltonianPool<Batching::SINGLE>;
 extern template class HamiltonianPool<Batching::BATCHED>;
 extern template class QMCOptimize<Batching::SINGLE>;
 extern template class QMCOptimize<Batching::BATCHED>;
+extern template class WaveFunctionTester<Batching::SINGLE>;
+extern template class WaveFunctionTester<Batching::BATCHED>;
 
+  
 //forward declaration
 class MCWalkerConfiguration;
 
 
+  
 template<Batching batching = Batching::SINGLE>
 struct QMCDriverFactory: public QMCDriverFactoryInterface, public MPIObjectBase
 {

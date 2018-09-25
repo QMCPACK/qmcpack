@@ -40,7 +40,7 @@ public:
 
   bool run();
   bool put(xmlNodePtr cur);
-  void setTau(RealType i);
+  //void setTau(RealType i);
   void resetComponents(xmlNodePtr cur);
 
 private:

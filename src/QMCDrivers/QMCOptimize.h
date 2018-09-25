@@ -38,6 +38,9 @@ class QMCCostFunctionBase;
  * generated from VMC.
  */
 template<Batching batching = Batching::SINGLE>
+class QMCOptimize;
+  
+template<Batching batching>
 class QMCOptimize: public QMCDriver<batching>
 {
 public:
@@ -93,7 +96,7 @@ private:
   std::vector<std::string> ConfigFile;
   QMCDriver<batching>* createEngine(MCWalkerConfiguration& W,
 				    TrialWaveFunction<batching>& psi,
-				    HamiltonianPool<batching>& H,
+				    QMCHamiltonian& H,
 				    WaveFunctionPool& psiPool);
 
   ///Copy Constructor (disabled).

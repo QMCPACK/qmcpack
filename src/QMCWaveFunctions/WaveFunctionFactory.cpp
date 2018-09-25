@@ -47,7 +47,7 @@
 namespace qmcplusplus
 {
 
-  WaveFunctionFactory::WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset, Communicate* c, Batching batching)
+WaveFunctionFactory::WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset, Communicate* c, Batching batching)
   : MPIObjectBase(c)
   , targetPtcl(qp),ptclPool(pset),targetPsi(0), myNode(NULL)
 {
@@ -56,14 +56,7 @@ namespace qmcplusplus
   batching_ = batching; 
 }
 
-template<Batching B>
-void WaveFunctionFactory::setPsi(TrialWaveFunction<B>* psi)
-{
-  this->setName(psi->getName());
-  targetPsi=psi;
-}
-
-  bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
+bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
 {
   ReportEngine PRE(ClassName,"build");
   if(cur == NULL)
