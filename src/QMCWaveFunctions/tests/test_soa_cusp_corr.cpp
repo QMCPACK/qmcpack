@@ -124,7 +124,7 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
 
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
   bb->loadBasisSetFromXML(MO_base[0]);
-  SPOSet* sposet = bb->createSPOSet(slater_base[0]);
+  SPOSet<>* sposet = bb->createSPOSet(slater_base[0]);
 
   LCAOrbitalSet* lcob = dynamic_cast<LCAOrbitalSet*>(sposet);
   REQUIRE(lcob != NULL);
@@ -309,12 +309,12 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
   bb->loadBasisSetFromXML(MO_base[0]);
-  SPOSet* sposet = bb->createSPOSet(slater_base[0]);
+  SPOSet<>* sposet = bb->createSPOSet(slater_base[0]);
 
 
-  SPOSet::ValueVector_t values;
-  SPOSet::GradVector_t dpsi;
-  SPOSet::ValueVector_t d2psi;
+  SPOSet<>::ValueVector_t values;
+  SPOSet<>::GradVector_t dpsi;
+  SPOSet<>::ValueVector_t d2psi;
   values.resize(7);
   dpsi.resize(7);
   d2psi.resize(7);
@@ -381,9 +381,9 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   REQUIRE(d2psi[1] == Approx(19.8720529007));
 
 
-  SPOSet::ValueMatrix_t all_values;
-  SPOSet::GradMatrix_t all_grad;
-  SPOSet::ValueMatrix_t all_lap;
+  SPOSet<>::ValueMatrix_t all_values;
+  SPOSet<>::GradMatrix_t all_grad;
+  SPOSet<>::ValueMatrix_t all_lap;
   all_values.resize(7, 7);
   all_grad.resize(7, 7);
   all_lap.resize(7, 7);

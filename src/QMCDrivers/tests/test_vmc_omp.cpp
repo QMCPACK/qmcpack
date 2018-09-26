@@ -105,7 +105,7 @@ TEST_CASE("VMCSingleOMP", "[drivers][vmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  HamiltonianPool hpool(c);
+  HamiltonianPool<> hpool(c);
 
   WaveFunctionPool wpool(c);
 

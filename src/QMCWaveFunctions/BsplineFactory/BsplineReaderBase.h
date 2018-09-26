@@ -22,8 +22,9 @@
 #include <mpi/collectives.h>
 #include <mpi/point2point.h>
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
+#ifdef QMC_CUDA
 #include "BsplineSetBatched.h"
-
+#endif
 namespace qmcplusplus
 {
 

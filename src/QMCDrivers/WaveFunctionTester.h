@@ -26,7 +26,8 @@
 
 namespace qmcplusplus
 {
-
+extern template class QMCDriver<Batching::SINGLE>;
+extern template class QMCDriver<Batching::BATCHED>;
 
 /** Information for output of relative error in wavefunction derivatives
   vs. finite difference delta.

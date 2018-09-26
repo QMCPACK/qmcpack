@@ -31,8 +31,9 @@
 #include "QMCWaveFunctions/Batching.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSet.h"
+#ifdef QMC_CUDA
 #include "QMCWaveFunctions/SPOSetBatched.h"
-
+#endif
 namespace qmcplusplus
 {
 

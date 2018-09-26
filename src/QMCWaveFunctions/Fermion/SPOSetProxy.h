@@ -18,7 +18,9 @@
 #ifndef QMCPLUSPLUS_SPOSETPROXY_H
 #define QMCPLUSPLUS_SPOSETPROXY_H
 #include "QMCWaveFunctions/SPOSet.h"
+#ifdef QMC_CUDA
 #include "QMCWaveFunctions/SPOSetBatched.h"
+#endif
 
 namespace qmcplusplus
 {

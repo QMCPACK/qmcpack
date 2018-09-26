@@ -135,9 +135,9 @@ const char *particles =
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
   // for vgl
-  SPOSet::ValueMatrix_t psiM(elec_.R.size(),spo->getOrbitalSetSize());
-  SPOSet::GradMatrix_t dpsiM(elec_.R.size(),spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t d2psiM(elec_.R.size(),spo->getOrbitalSetSize());
+  SPOSet<Batching::SINGLE>::ValueMatrix_t psiM(elec_.R.size(),spo->getOrbitalSetSize());
+  SPOSet<Batching::SINGLE>::GradMatrix_t dpsiM(elec_.R.size(),spo->getOrbitalSetSize());
+  SPOSet<Batching::SINGLE>::ValueMatrix_t d2psiM(elec_.R.size(),spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
   // value
@@ -155,9 +155,9 @@ const char *particles =
   REQUIRE(d2psiM[1][1] == ComplexApprox(-4.712583065).compare_real_only());
 
   // for vgh
-  SPOSet::ValueVector_t psiV(psiM[1],spo->getOrbitalSetSize());
-  SPOSet::GradVector_t dpsiV(dpsiM[1],spo->getOrbitalSetSize());
-  SPOSet::HessVector_t ddpsiV(spo->getOrbitalSetSize());
+  SPOSet<Batching::SINGLE>::ValueVector_t psiV(psiM[1],spo->getOrbitalSetSize());
+  SPOSet<Batching::SINGLE>::GradVector_t dpsiV(dpsiM[1],spo->getOrbitalSetSize());
+  SPOSet<Batching::SINGLE>::HessVector_t ddpsiV(spo->getOrbitalSetSize());
   spo->evaluate(elec_, 1, psiV, dpsiV, ddpsiV);
 
   //hess

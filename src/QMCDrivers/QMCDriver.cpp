@@ -678,8 +678,9 @@ xmlNodePtr QMCDriver<batching>::getQMCNode()
 }
 
 template class QMCDriver<Batching::SINGLE>;
+#ifdef QMC_CUDA
 template class QMCDriver<Batching::BATCHED>;
-
+#endif
 
 }
 

@@ -33,8 +33,10 @@
 #include <QMCWaveFunctions/einspline_helper.hpp>
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptor.h"
-#include "QMCWaveFunctions/SPOSetBatched.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineCreator.h"
+#ifdef QMC_CUDA
+#include "QMCWaveFunctions/SPOSetBatched.h"
+#endif
 
 namespace qmcplusplus
 {

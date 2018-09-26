@@ -100,9 +100,11 @@ QMCMain::QMCMain(Communicate* c, Batching batching)
   app_summary().flush();
   switch(batching)
   {
+#ifdef QMC_CUDA
   case Batching::BATCHED:
     qmc_driver_factory = dynamic_cast<QMCDriverFactoryInterface*>(new QMCDriverFactory<Batching::BATCHED>(c));
     break;
+#endif
   default:
     qmc_driver_factory = dynamic_cast<QMCDriverFactoryInterface*>(new QMCDriverFactory<Batching::SINGLE>(c));
   }

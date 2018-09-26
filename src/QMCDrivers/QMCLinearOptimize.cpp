@@ -127,7 +127,7 @@ template<Batching batching>
 void QMCLinearOptimize<batching>::engine_start( cqmc::engine::LMYEngine * EngineObj ) 
 {
   app_log() << "entering engine_start function" << std::endl;
-  optTarget->initCommunicator(myComm);
+  optTarget->initCommunicator(QDT::myComm);
 
   // generate samples
   myTimers[0]->start();
@@ -135,19 +135,19 @@ void QMCLinearOptimize<batching>::engine_start( cqmc::engine::LMYEngine * Engine
   myTimers[0]->stop();
 
   // store active number of walkers
-  NumOfVMCWalkers=W.getActiveWalkers();
+  NumOfVMCWalkers=QDT::W.getActiveWalkers();
   app_log() << "<opt stage=\"setup\">" << std::endl;
   app_log() << "  <log>"<<std::endl;
 
   // reset the root name
-  optTarget->setRootName(RootName);
+  optTarget->setRootName(QDT::RootName);
   optTarget->setWaveFunctionNode(wfNode);
-  app_log() << "     Reading configurations from h5FileRoot " << h5FileRoot << std::endl;
+  app_log() << "     Reading configurations from h5FileRoot " << QDT::h5FileRoot << std::endl;
 
   // get configuration from the previous run 
   Timer t1;
   myTimers[1]->start();
-  optTarget->getConfigurations(h5FileRoot);
+  optTarget->getConfigurations(QDT::h5FileRoot);
   optTarget->setRng(vmcEngine->getRng());
   optTarget->engine_checkConfigurations(EngineObj); // computes derivative ratios and pass into engine
   myTimers[1]->stop();
@@ -926,6 +926,7 @@ bool QMCLinearOptimize<batching>::fitMappedStabilizers(std::vector<std::pair<Rea
   return SuccessfulFit;
 }
 
+#ifdef QMC_CUDA
 template<>
 QMCDriver<Batching::BATCHED>*
 QMCLinearOptimize<Batching::BATCHED>::createEngine(MCWalkerConfiguration& W,
@@ -936,6 +937,7 @@ QMCLinearOptimize<Batching::BATCHED>::createEngine(MCWalkerConfiguration& W,
   vmcEngine = new VMCcuda(QDT::W,dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(psi),H, psiPool);
   return vmcEngine;
 }
+#endif
 
 template<>
 QMCDriver<Batching::SINGLE>*
@@ -949,6 +951,8 @@ QMCLinearOptimize<Batching::SINGLE>::createEngine(MCWalkerConfiguration& W,
 }
 
 template class QMCLinearOptimize<Batching::SINGLE>;
+#ifdef QMC_CUDA
 template class QMCLinearOptimize<Batching::BATCHED>;
+#endif
 
 }

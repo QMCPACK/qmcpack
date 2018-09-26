@@ -52,7 +52,7 @@ template<Batching batching>
 QMCCorrelatedSamplingLinearOptimize<batching>::QMCCorrelatedSamplingLinearOptimize(MCWalkerConfiguration& w,
 										   TrialWaveFunction<batching>& psi,
 										   QMCHamiltonian& h,
-										   HamiltonianPool<batching>& hpool, WaveFunctionPool& ppool) : QMCDriver<batching>(w,psi,h,hpool,ppool),
+										   HamiltonianPool<batching>& hpool, WaveFunctionPool& ppool) : QMCLinearOptimize<batching>(w,psi,h,hpool,ppool),
   exp0(-16), nstabilizers(3), stabilizerScale(2.0), bigChange(3), w_beta(0.0), MinMethod("quartic"), GEVtype("mixed")
 {
   QDT::IsQMCDriver=false;
@@ -62,10 +62,10 @@ QMCCorrelatedSamplingLinearOptimize<batching>::QMCCorrelatedSamplingLinearOptimi
   QDT::RootName = "pot";
   QDT::QMCType ="QMCCorrelatedSamplingLinearOptimize";
   QDT::m_param.add(QLOT::WarmupBlocks,"warmupBlocks","int");
-  QDT::m_param.add(QLOT::stabilizerScale,"stabilizerscale","double");
-  QDT::m_param.add(QLOT::bigChange,"bigchange","double");
-  QDT::m_param.add(QLOT::w_beta,"beta","double");
-  QDT::m_param.add(QLOT::GEVtype,"GEVMethod","string");
+  QDT::m_param.add(stabilizerScale,"stabilizerscale","double");
+  QDT::m_param.add(bigChange,"bigchange","double");
+  QDT::m_param.add(w_beta,"beta","double");
+  QDT::m_param.add(GEVtype,"GEVMethod","string");
   quadstep=-1.0;
   stepsize=0.3;
   QDT::m_param.add(quadstep,"quadstep","double");
@@ -157,7 +157,7 @@ bool QMCCorrelatedSamplingLinearOptimize<batching>::run()
 //    if(nstabilizers>1)
 //      stabilizerScale = stabilizerScale/(nstabilizers-1.0);
   app_log()<<"  stabilityBase "<<stabilityBase<< std::endl;
-  app_log()<<"  QLOT::stabilizerScale "<<QLOT::stabilizerScale<< std::endl;
+  app_log()<<"  stabilizerScale "<<stabilizerScale<< std::endl;
   RealType safe = Left(0,0);
   for (int stability=0; stability<nstabilizers; stability++)
   {
@@ -166,7 +166,7 @@ bool QMCCorrelatedSamplingLinearOptimize<batching>::run()
       {
         LeftT(i,j) = Left(j,i);
       }
-    RealType XS(stabilityBase+QLOT::stabilizerScale*stability);
+    RealType XS(stabilityBase+stabilizerScale*stability);
     if (failedTries>0)
     {
       for (int i=1; i<QLOT::N; i++)
@@ -177,7 +177,7 @@ bool QMCCorrelatedSamplingLinearOptimize<batching>::run()
     RealType bigVec(0);
     QLOT::myTimers[2]->start();
 //                     lowestEV =getLowestEigenvector(LeftT,RightT,currentParameterDirections);
-    if (QLOT::GEVtype!="sd")
+    if (GEVtype!="sd")
     {
       lowestEV = QLOT::getLowestEigenvector(LeftT,currentParameterDirections);
       Lambda = QLOT::getNonLinearRescale(currentParameterDirections,Right);
@@ -352,7 +352,7 @@ bool QMCCorrelatedSamplingLinearOptimize<batching>::put(xmlNodePtr q)
     vmcCSEngine->setOpt(true);
     QLOT::vmcEngine = vmcCSEngine;
 #else
-    QLOT::vmcEngine = vmcCSEngine = new VMCLinearOptOMP(QDT::W,QDT::Psi,QDT::H,QDT::hamPool,QDT::psiPool);
+    QLOT::vmcEngine = vmcCSEngine = new VMCLinearOptOMP(QDT::W,QDT::Psi,QDT::H,QLOT::hamPool,QDT::psiPool);
 #endif
     QLOT::vmcEngine->setUpdateMode(vmcMove[0] == 'p');
     QLOT::vmcEngine->initCommunicator(QDT::myComm);
@@ -374,4 +374,9 @@ bool QMCCorrelatedSamplingLinearOptimize<batching>::put(xmlNodePtr q)
   return success;
 }
 
+template class QMCCorrelatedSamplingLinearOptimize<Batching::SINGLE>;
+#ifdef QMC_CUDA
+template class QMCCorrelatedSamplingLinearOptimize<Batching::BATCHED>;
+#endif
+  
 }

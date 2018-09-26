@@ -37,11 +37,13 @@ QMCDriver<Batching::SINGLE>* DMCFactory<Batching::SINGLE>::create(MCWalkerConfig
   return qmc;
 }
 
+#ifdef QMC_CUDA
 template<>
 QMCDriver<Batching::BATCHED>* DMCFactory<Batching::BATCHED>::create(MCWalkerConfiguration& w, TrialWaveFunction<Batching::BATCHED>& psi
                               , QMCHamiltonian& h, HamiltonianPool<Batching::BATCHED>& hpool,WaveFunctionPool& ppool)
 {
   return new DMCcuda (w, psi, h,ppool);
 }
+#endif
   
 }

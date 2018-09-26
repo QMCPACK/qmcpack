@@ -27,28 +27,39 @@ template<>
 class TrialWaveFunction<Batching::BATCHED>: public TrialWaveFunction<Batching::SINGLE>
 {
 public:
-  typedef WaveFunctionComponent::CudaValueType   CudaValueType;
-  typedef WaveFunctionComponent::CudaGradType    CudaGradType;
-  typedef WaveFunctionComponent::CudaRealType    CudaRealType;
+  typedef ParticleSet::Walker_t        Walker_t;
   typedef WaveFunctionComponent::RealMatrix_t    RealMatrix_t;
   typedef WaveFunctionComponent::ValueMatrix_t   ValueMatrix_t;
   typedef WaveFunctionComponent::GradMatrix_t    GradMatrix_t;
-  typedef ParticleSet::Walker_t        Walker_t;
 
+//TO_DO this should get put into a device abstraction
+#ifdef QMC_CUDA
+  typedef WaveFunctionComponent::CudaValueType   CudaValueType;
+  typedef WaveFunctionComponent::CudaGradType    CudaGradType;
+  typedef WaveFunctionComponent::CudaRealType    CudaRealType;
 private:
   gpu::device_host_vector<CudaValueType>   GPUratios;
   gpu::device_host_vector<CudaGradType>    GPUgrads;
   gpu::device_host_vector<CudaValueType>   GPUlapls;
-
+#endif
 public:
   TrialWaveFunction(Communicate* c) : TrialWaveFunction<Batching::SINGLE>(c) {}
   
   void freeGPUmem GPU_XRAY_TRACE ();
 
   void recompute GPU_XRAY_TRACE (MCWalkerConfiguration &W, bool firstTime=true);
-
+#ifdef QMC_CUDA
   void reserve GPU_XRAY_TRACE (PointerPool<gpu::device_vector<CudaValueType> > &pool,
                 bool onlyOptimizable=false);
+
+  void NLratios GPU_XRAY_TRACE (MCWalkerConfiguration &W,
+                 gpu::device_vector<CUDA_PRECISION*> &Rlist,
+                 gpu::device_vector<int*>            &ElecList,
+                 gpu::device_vector<int>             &NumCoreElecs,
+                 gpu::device_vector<CUDA_PRECISION*> &QuadPosList,
+                 gpu::device_vector<CUDA_PRECISION*> &RatioList,
+                 int numQuadPoints);
+#endif
   void getGradient GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat,
                     std::vector<GradType> &grad);
   void calcGradient GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat,
@@ -84,20 +95,13 @@ public:
               std::vector<GradType> &newG,
               std::vector<ValueType> &newL);
 
-  void NLratios GPU_XRAY_TRACE (MCWalkerConfiguration &W,
-                 gpu::device_vector<CUDA_PRECISION*> &Rlist,
-                 gpu::device_vector<int*>            &ElecList,
-                 gpu::device_vector<int>             &NumCoreElecs,
-                 gpu::device_vector<CUDA_PRECISION*> &QuadPosList,
-                 gpu::device_vector<CUDA_PRECISION*> &RatioList,
-                 int numQuadPoints);
 
   void NLratios GPU_XRAY_TRACE (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
                  std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios);
 
-  void update GPU_XRAY_TRACE GPU_XRAY_TRACE (std::vector<Walker_t*> &walkers, int iat);
+  void update GPU_XRAY_TRACE (std::vector<Walker_t*> &walkers, int iat);
   void update GPU_XRAY_TRACE (const std::vector<Walker_t*> &walkers,
-               const std::vector<int> &iatList);
+			      const std::vector<int> &iatList);
 
   void gradLapl GPU_XRAY_TRACE (MCWalkerConfiguration &W, GradMatrix_t &grads,
                  ValueMatrix_t &lapl);

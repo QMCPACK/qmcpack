@@ -883,7 +883,7 @@ bool QMCFixedSampleLinearOptimize<batching>::adaptive_three_shift_run() {
     parameterDirections.at(i).assign(QLOT::N, 0.0);
     if ( true ) {
       for (int j = 0; j < QLOT::N; j++) 
-        parameterDirections.at(i).at(j) = EngineObj->wfn_update().at(i*N+j);
+        parameterDirections.at(i).at(j) = EngineObj->wfn_update().at(i*QLOT::N+j);
     }
     else 
       parameterDirections.at(i).at(0) = 1.0;
@@ -1051,7 +1051,7 @@ bool QMCFixedSampleLinearOptimize<batching>::adaptive_three_shift_run() {
 
   // set the number samples to be initial one
   this->QLOT::optTarget->setNumSamples(init_num_samp);
-  nTargetSamples = init_num_samp;
+  QLOT::nTargetSamples = init_num_samp;
 
   //app_log() << "block first second third end " << block_first << block_second << block_third << endl; 
   // return whether the cost function's report counter is positive
@@ -1218,7 +1218,8 @@ bool QMCFixedSampleLinearOptimize<batching>::one_shift_run() {
 }
 
 template class QMCFixedSampleLinearOptimize<Batching::SINGLE>;
+#ifdef QMC_CUDA
 template class QMCFixedSampleLinearOptimize<Batching::BATCHED>;
-
+#endif
 
 }

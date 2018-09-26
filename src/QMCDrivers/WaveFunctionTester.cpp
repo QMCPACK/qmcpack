@@ -2472,6 +2472,7 @@ void WaveFunctionTester<Batching::BATCHED>::runwftricks()
   abortNoSpecialize();
 }
 
+
 template<>
 void WaveFunctionTester<Batching::BATCHED>::runNodePlot()
 {
@@ -2530,8 +2531,10 @@ FiniteDiffErrData::put(xmlNodePtr q)
   return s;
 }
 
-template class WaveFunctionTester<Batching::SINGLE>;
-template class WaveFunctionTester<Batching::BATCHED>;
 
+template class WaveFunctionTester<Batching::SINGLE>;
+#ifdef QMC_CUDA
+template class WaveFunctionTester<Batching::BATCHED>;
+#endif
 }
 

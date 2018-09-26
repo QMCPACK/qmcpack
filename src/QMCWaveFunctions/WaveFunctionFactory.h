@@ -20,11 +20,13 @@
 #define QMCPLUSPLUS_TRIALWAVEFUNCTION_FACTORY_H
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
-#include "QMCWaveFunctions/TrialWaveFunctionBatched.h"
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "Message/MPIObjectBase.h"
 #include "QMCWaveFunctions/Batching.h"
+#ifdef QMC_CUDA
+#include "QMCWaveFunctions/TrialWaveFunctionBatched.h"
+#endif
 
 namespace qmcplusplus
 {

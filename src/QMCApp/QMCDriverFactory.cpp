@@ -403,5 +403,7 @@ void QMCDriverFactory<batching>::createQMCDriver(xmlNodePtr cur)
 }
 
 template class QMCDriverFactory<Batching::SINGLE>;
+#ifdef QMC_CUDA
 template class QMCDriverFactory<Batching::BATCHED>;
+#endif
 }

@@ -105,7 +105,7 @@ TEST_CASE("DMCOMP", "[drivers][dmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  HamiltonianPool hpool(c);
+  HamiltonianPool<> hpool(c);
 
   WaveFunctionPool wpool(c);
 

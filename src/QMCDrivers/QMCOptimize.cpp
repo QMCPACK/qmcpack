@@ -267,6 +267,7 @@ bool QMCOptimize<batching>::put(xmlNodePtr q)
   return success;
 }
 
+#ifdef QMC_CUDA
 template<>
 QMCDriver<Batching::BATCHED>*
 QMCOptimize<Batching::BATCHED>::createEngine(MCWalkerConfiguration& W,
@@ -277,6 +278,7 @@ QMCOptimize<Batching::BATCHED>::createEngine(MCWalkerConfiguration& W,
   vmcEngine = new VMCcuda(QDT::W,dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(psi),H, psiPool);
   return vmcEngine;
 }
+#endif
 
 template<>
 QMCDriver<Batching::SINGLE>*
@@ -290,5 +292,7 @@ QMCOptimize<Batching::SINGLE>::createEngine(MCWalkerConfiguration& W,
 }
   
 template class QMCOptimize<Batching::SINGLE>;
+#ifdef QMC_CUDA
 template class QMCOptimize<Batching::BATCHED>;
+#endif
 }

@@ -572,7 +572,7 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
       else
       {
         app_log()<<"Using DiracDeterminantBase "<< std::endl;
-        adet = new DiracDeterminantSingle(dynamic_cast<SPOSet<Batching::SINGLE>*>(psi),firstIndex);
+        adet = new DiracDeterminant<Batching::SINGLE>(dynamic_cast<SPOSet<Batching::SINGLE>*>(psi),firstIndex);
       }
     }
 #endif

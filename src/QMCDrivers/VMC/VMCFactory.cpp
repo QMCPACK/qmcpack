@@ -34,6 +34,7 @@
 
 namespace qmcplusplus
 {
+#ifdef QMC_CUDA
 template<>
 QMCDriver<Batching::BATCHED>* VMCFactory<Batching::BATCHED>::create(MCWalkerConfiguration& w,
 					TrialWaveFunction<Batching::BATCHED>& psi,
@@ -55,7 +56,8 @@ QMCDriver<Batching::BATCHED>* VMCFactory<Batching::BATCHED>::create(MCWalkerConf
   qmc->setUpdateMode(VMCMode&1);
   return qmc;
 }
-
+#endif
+  
 template<>
 QMCDriver<Batching::SINGLE>* VMCFactory<Batching::SINGLE>::create(MCWalkerConfiguration& w,
 					TrialWaveFunction<Batching::SINGLE>& psi,
