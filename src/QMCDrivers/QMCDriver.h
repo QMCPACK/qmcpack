@@ -157,6 +157,9 @@ public:
 
   virtual bool put(xmlNodePtr cur) = 0;
 
+  //This is here so VMCLinearOpt VMCcuda both work
+  virtual RealType fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM) { return 0.0; };
+
   inline std::string getEngineName() const
   {
     return  QMCType;

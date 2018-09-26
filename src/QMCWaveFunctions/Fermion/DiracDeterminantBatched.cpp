@@ -24,14 +24,14 @@
 
 namespace qmcplusplus
 {
-
+  
 DiracDeterminant<Batching::BATCHED>::DiracDeterminant(SPOSet<>* const &spos, int first) :
-  DiracDeterminant<Batching::SINGLE>(first), Phi(dynamic_cast<SPOSet<Batching::BATCHED>*>(spos))
+  DiracDeterminant<Batching::SINGLE>(spos, first)//, Phi(dynamic_cast<SPOSet<Batching::BATCHED>*>(spos))
 {
   registerTimers();
 }
 
-  DiracDeterminant<>* DiracDeterminant<Batching::BATCHED>::makeCopy(SPOSet<Batching::BATCHED>* spo) const
+DiracDeterminant<>* DiracDeterminant<Batching::BATCHED>::makeCopy(SPOSet<Batching::BATCHED>* spo) const
 {
   DiracDeterminant<Batching::BATCHED>* dclone= new DiracDeterminant<Batching::BATCHED>(spo);
   dclone->set(FirstIndex,LastIndex-FirstIndex);
@@ -70,7 +70,7 @@ void DiracDeterminant<Batching::BATCHED>::reserve(PointerPool<gpu::device_vector
       AWorkOffset       = pool.reserve((size_t)    NumPtcls * RowStride);
       AinvWorkOffset    = 0;                  // not needed for inversion
     }
-    Phi->reserve(pool);
+    dynamic_cast<SPOSet<Batching::BATCHED>*>(Phi)->reserve(pool);
 }
 
   
@@ -126,7 +126,7 @@ DiracDeterminant<Batching::BATCHED>::addLog (MCWalkerConfiguration &W, std::vect
     }
     newRowList_d = newRowList;
     gradLaplList_d = gradLaplList;
-    Phi->evaluate (walkers, R, newRowList_d, gradLaplList_d, RowStride);
+    dynamic_cast<SPOSet<Batching::BATCHED>*>(Phi)->evaluate (walkers, R, newRowList_d, gradLaplList_d, RowStride);
   }
   // Now, compute determinant
   for (int iw=0; iw<walkers.size(); iw++)
@@ -244,7 +244,7 @@ void DiracDeterminant<Batching::BATCHED>::ratio (MCWalkerConfiguration &W,
   }
   newRowList_d = newRowList;
   AinvList_d   = AinvList;
-  Phi->evaluate (walkers, W.Rnew, newRowList_d);
+  dynamic_cast<SPOSet<Batching::BATCHED>*>(Phi)->evaluate (walkers, W.Rnew, newRowList_d);
   // Now evaluate ratios
   determinant_ratios_cuda
   (AinvList_d.data(), newRowList_d.data(), ratio_d.data(),
@@ -296,7 +296,7 @@ void DiracDeterminant<Batching::BATCHED>::ratio (MCWalkerConfiguration &W, int i
   newGradLaplList_d.asyncCopy(newGradLaplList);
   AinvList_d.asyncCopy(AinvList);
   //    }
-  Phi->evaluate (walkers, W.Rnew, newRowList_d, newGradLaplList_d, RowStride);
+  dynamic_cast<SPOSet<Batching::BATCHED>*>(Phi)->evaluate (walkers, W.Rnew, newRowList_d, newGradLaplList_d, RowStride);
 #ifdef CUDA_DEBUG2
   Vector<ValueType> testPhi(NumOrbitals), testLapl(NumOrbitals);
   Vector<GradType> testGrad(NumOrbitals);
@@ -393,7 +393,7 @@ void DiracDeterminant<Batching::BATCHED>::calcRatio (MCWalkerConfiguration &W, i
   newRowList_d.asyncCopy(newRowList);
   newGradLaplList_d.asyncCopy(newGradLaplList);
   AinvList_d.asyncCopy(AinvList);
-  Phi->evaluate (walkers, W.Rnew, newRowList_d, newGradLaplList_d, RowStride);
+  dynamic_cast<SPOSet<Batching::BATCHED>*>(Phi)->evaluate (walkers, W.Rnew, newRowList_d, newGradLaplList_d, RowStride);
 #ifdef CUDA_DEBUG2
   Vector<ValueType> testPhi(NumOrbitals), testLapl(NumOrbitals);
   Vector<GradType> testGrad(NumOrbitals);
@@ -503,7 +503,7 @@ void DiracDeterminant<Batching::BATCHED>::ratio (std::vector<Walker_t*> &walkers
   newGradLaplList_d = newGradLaplList;
   AinvList_d   = AinvList;
   iatList_d    = iatList;
-  Phi->evaluate (walkers, rNew, newRowList_d, newGradLaplList_d, RowStride);
+  dynamic_cast<SPOSet<B>*>(Phi)->evaluate (walkers, rNew, newRowList_d, newGradLaplList_d, RowStride);
   determinant_ratios_grad_lapl_cuda
   (AinvList_d.data(), newRowList_d.data(), newGradLaplList_d.data(),
    ratio_d.data(), NumPtcls, RowStride, iatList_d.data(), walkers.size());
@@ -567,7 +567,7 @@ DiracDeterminant<Batching::BATCHED>::recompute(MCWalkerConfiguration &W, bool fi
       }
       newRowList_d = newRowList;
       newGradLaplList_d = newGradLaplList;
-      Phi->evaluate (walkers, R, newRowList_d, newGradLaplList_d, RowStride);
+      dynamic_cast<SPOSet<B>*>(Phi)->evaluate (walkers, R, newRowList_d, newGradLaplList_d, RowStride);
     }
 //       new_data = walkers[iwsave]->cuda_DataSet;
 //       for (int i=0; i<NumOrbitals; i++)
@@ -905,7 +905,7 @@ DiracDeterminant<Batching::BATCHED>::NLratios (MCWalkerConfiguration &W,
     if(rowIndex + numQuad > NLrowBufferRows)
     {
       // Compute orbital rows
-      Phi->evaluate (posBuffer[counter], SplineRowList_d);
+      dynamic_cast<SPOSet<B>*>(Phi)->evaluate (posBuffer[counter], SplineRowList_d);
       // Compute ratios
       NLAinvList_d.asyncCopy(NLAinvList_host[counter]);
       NLnumRatioList_d.asyncCopy(NLnumRatioList_host[counter]);
@@ -981,7 +981,7 @@ DiracDeterminant<Batching::BATCHED>::NLratios (MCWalkerConfiguration &W,
   {
     // Compute whatever remains in the buffer
     // Compute orbital rows
-    Phi->evaluate (posBuffer[counter], SplineRowList_d);
+    dynamic_cast<SPOSet<B>*>(Phi)->evaluate (posBuffer[counter], SplineRowList_d);
     // Compute ratios
     NLAinvList_d.asyncCopy(NLAinvList_host[counter]);
     NLnumRatioList_d.asyncCopy(NLnumRatioList_host[counter]);

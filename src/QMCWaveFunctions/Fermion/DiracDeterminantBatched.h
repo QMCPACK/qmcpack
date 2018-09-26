@@ -50,10 +50,10 @@ public:
   using CudaValueType =  QMCT::CudaValueType;
   using CudaRealType = QMCT::CudaRealType;
 
-  using SPOSetPtr = SPOSet<B>*;
-  SPOSetPtr Phi; //Out local Phi_
+  //using SPOSetPtr = SPOSet<B>*;
+  //SPOSet<B>* Phi; //Out local Phi_
 
-  SPOSetPtr getPhi() { return Phi; }
+  //SPOSet<B>* getPhi() { return Phi; }
 
   virtual DiracDeterminant<>* makeCopy(SPOSet<B>* spo) const;
   //virtual DiracDeterminant<>Batching::BATCHED>* makeCopy(SPOSetBatched* spo) const;
@@ -64,21 +64,21 @@ public:
 
   virtual inline void checkInVariables(opt_variables_type& active)
   {
-    Phi->checkInVariables(active);
-    Phi->checkInVariables(myVars);
+    this->Phi->checkInVariables(active);
+    this->Phi->checkInVariables(myVars);
   }
 
   virtual inline void checkOutVariables(const opt_variables_type& active)
   {
-    Phi->checkOutVariables(active);
-    myVars.clear();
-    myVars.insertFrom(Phi->myVars);
-    myVars.getIndex(active);
+    this->Phi->checkOutVariables(active);
+    this->myVars.clear();
+    this->myVars.insertFrom(Phi->myVars);
+    this->myVars.getIndex(active);
   }
 
   virtual void resetParameters(const opt_variables_type& active)
   {
-    Phi->resetParameters(active);
+    this->Phi->resetParameters(active);
     for(int i=0; i<myVars.size(); ++i)
     {
       int ii=myVars.Index[i];

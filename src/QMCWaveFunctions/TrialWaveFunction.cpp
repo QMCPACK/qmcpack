@@ -105,7 +105,7 @@ TrialWaveFunction<Batching::SINGLE>::addOrbital(WaveFunctionComponent* aterm, co
   for (int i = 0; i < suffixes.size(); i++)
   {
     std::string name = "WaveFunction::" + aname + suffixes[i];
-    myTimers.push_back(TimerManager.createTimer(name));
+    this->myTimers.push_back(TimerManager.createTimer(name));
   }
 }
 

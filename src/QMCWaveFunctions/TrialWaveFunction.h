@@ -185,10 +185,10 @@ public:
    *
    * Update myOptIndex if o is found among the "active" paramemters.
    */
-  void checkInVariables(opt_variables_type& o);
+  virtual void checkInVariables(opt_variables_type& o);
   /** check out optimizable variables
    */
-  void checkOutVariables(const opt_variables_type& o);
+  virtual void checkOutVariables(const opt_variables_type& o);
   ///reset member data
   void resetParameters(const opt_variables_type& active);
   /** print out state of the trial wavefunction

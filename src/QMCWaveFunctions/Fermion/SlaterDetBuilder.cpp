@@ -54,7 +54,7 @@ namespace qmcplusplus
 {
 
 SlaterDetBuilder::SlaterDetBuilder(ParticleSet& els, TrialWaveFunction<>& psi,
-                                   PtclPoolType& psets)
+                                   PtclPoolType& psets, Batching batching)
   : WaveFunctionComponentBuilder(els,psi), ptclPool(psets)
   , mySPOSetBuilderFactory(0), slaterdet_0(0), multislaterdet_0(0)
   , multislaterdetfast_0(0)
@@ -62,6 +62,7 @@ SlaterDetBuilder::SlaterDetBuilder(ParticleSet& els, TrialWaveFunction<>& psi,
   ClassName="SlaterDetBuilder";
   BFTrans=0;
   UseBackflow=false;
+  batching_ = batching;
 }
 
 SlaterDetBuilder::~SlaterDetBuilder()

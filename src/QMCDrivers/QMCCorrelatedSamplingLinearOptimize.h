@@ -58,6 +58,10 @@ public:
   RealType Func(Return_t dl);
 
 private:
+  QMCDriver<batching>* create(MCWalkerConfiguration& w,
+                    TrialWaveFunction<batching>& psi,
+                    QMCHamiltonian& h, HamiltonianPool<batching>& hpool,WaveFunctionPool& ppool);
+  
   inline bool ValidCostFunction(bool valid)
   {
     if (!valid)
@@ -65,11 +69,12 @@ private:
     return valid;
   }
 
-#if defined(QMC_CUDA)
-  VMCcuda* vmcCSEngine;
-#else
-  VMCLinearOptOMP* vmcCSEngine;
-#endif
+  QMCDriver<batching>* vmcCSEngine;
+// #if defined(QMC_CUDA)
+//   VMCcuda* vmcCSEngine;
+// #else
+//   VMCLinearOptOMP* vmcCSEngine;
+// #endif
 
   int NumOfVMCWalkers;
   ///Number of iterations maximum before generating new configurations.

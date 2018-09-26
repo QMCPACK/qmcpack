@@ -347,13 +347,8 @@ bool QMCCorrelatedSamplingLinearOptimize<batching>::put(xmlNodePtr q)
   //create VMC engine
   if (QLOT::vmcEngine ==0)
   {
-#if defined (QMC_CUDA)
-    vmcCSEngine = new VMCcuda(QDT::W,dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(QDT::Psi),QDT::H,QDT::psiPool);
-    vmcCSEngine->setOpt(true);
+    vmcCSEngine = create(QDT::W,dynamic_cast<TrialWaveFunction<batching>&>(QDT::Psi),QDT::H,QLOT::hamPool,QDT::psiPool);
     QLOT::vmcEngine = vmcCSEngine;
-#else
-    QLOT::vmcEngine = vmcCSEngine = new VMCLinearOptOMP(QDT::W,QDT::Psi,QDT::H,QLOT::hamPool,QDT::psiPool);
-#endif
     QLOT::vmcEngine->setUpdateMode(vmcMove[0] == 'p');
     QLOT::vmcEngine->initCommunicator(QDT::myComm);
   }
@@ -374,6 +369,26 @@ bool QMCCorrelatedSamplingLinearOptimize<batching>::put(xmlNodePtr q)
   return success;
 }
 
+template<>
+QMCDriver<Batching::SINGLE>* QMCCorrelatedSamplingLinearOptimize<Batching::SINGLE>::
+  create(MCWalkerConfiguration& w, TrialWaveFunction<Batching::SINGLE>& psi
+	 , QMCHamiltonian& h, HamiltonianPool<Batching::SINGLE>& hpool,WaveFunctionPool& ppool)
+{
+  return new VMCLinearOptOMP(QDT::W,QDT::Psi,QDT::H,QLOT::hamPool,QDT::psiPool);
+}
+
+#ifdef QMC_CUDA
+template<>
+QMCDriver<Batching::BATCHED>* QMCCorrelatedSamplingLinearOptimize<Batching::BATCHED>::create(MCWalkerConfiguration& w, TrialWaveFunction<Batching::BATCHED>& psi
+                              , QMCHamiltonian& h, HamiltonianPool<Batching::BATCHED>& hpool,WaveFunctionPool& ppool)
+{
+    VMCcuda* this_vmcCSEngine = new VMCcuda(QDT::W,dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(QDT::Psi),QDT::H,QDT::psiPool);
+    this_vmcCSEngine->setOpt(true);
+    return this_vmcCSEngine;
+}
+#endif
+
+  
 template class QMCCorrelatedSamplingLinearOptimize<Batching::SINGLE>;
 #ifdef QMC_CUDA
 template class QMCCorrelatedSamplingLinearOptimize<Batching::BATCHED>;

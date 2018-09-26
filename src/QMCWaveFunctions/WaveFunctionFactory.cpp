@@ -166,6 +166,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
   //}
 // synch all parameters. You don't want some being different if same name.
   opt_variables_type dummy;
+  
   targetPsi->checkInVariables(dummy);
   dummy.resetIndex();
   targetPsi->checkOutVariables(dummy);

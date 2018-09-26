@@ -63,7 +63,7 @@ public:
   typedef SSTA::HessVector_t HessVector_t;
   typedef SSTA::HessType HessType;
 
-  SPOSet<Batching::SINGLE>* Phi;
+  SPOSet<>* Phi;
 #ifdef MIXED_PRECISION
   typedef ParticleSet::SingleParticleValue_t mValueType;
   typedef OrbitalSetTraits<mValueType>::ValueMatrix_t ValueMatrix_hp_t;
@@ -95,7 +95,7 @@ public:
   ///** return a clone of Phi
   // */
   //SPOSetPtr clonePhi() const;
-  virtual SPOSet<B>* getPhi() { return dynamic_cast<SPOSet<B>*>(Phi); }
+  virtual SPOSet<B>* getPhi() { return Phi; }
   
   inline IndexType rows() const { return NumPtcls; }
 
