@@ -35,7 +35,7 @@
 #endif
 
 #include "QMCWaveFunctions/Batching.h"
-
+#include "WhatAmI.h"
 namespace qmcplusplus
 {
 
@@ -49,7 +49,7 @@ template<Batching batching = Batching::SINGLE>
 class SPOSet;
 
 template<>
-class SPOSet<Batching::SINGLE>
+class SPOSet<Batching::SINGLE> : public virtual WhatAmI
 {
 public:
     // Because so many SPOSet<Batching::SINGLE> children exist and

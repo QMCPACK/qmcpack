@@ -31,6 +31,8 @@
 #include "QMCWaveFunctions/Batching.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSet.h"
+#include "WhatAmI.h"
+
 #ifdef QMC_CUDA
 #include "QMCWaveFunctions/SPOSetBatched.h"
 #endif
@@ -52,7 +54,7 @@ namespace qmcplusplus
 // Unspecialized version of BsplineSet,
 
 template<typename SA, Batching batching = Batching::SINGLE>
-struct BsplineSet: public SA {};
+struct BsplineSet; //: public SA {};
 // {
 //   ///** default constructor */
 //   //BsplineSet() { }
@@ -62,10 +64,6 @@ struct BsplineSet: public SA {};
 //   virtual void resetTargetParticleSet(ParticleSet& e)
 //   { }
 
-//   SPOSet* makeClone() const
-//   {
-//     return new BsplineSet<SA, batching>(*this);
-//   }
 
 // };
 
@@ -77,7 +75,14 @@ struct BsplineSet<SA, Batching::SINGLE>: public SA,
   typedef typename SA::PointType  PointType;
   typedef typename SA::DataType  DataType;
 
-  Batching batching = Batching::SINGLE;
+  SPOSet* makeClone() const
+  {
+    return new BsplineSet<SA, Batching::SINGLE>(*this);
+  }
+
+
+  
+  Batching B_ = Batching::SINGLE;
 
   virtual void setOrbitalSetSize(int norbs)
   {
@@ -92,7 +97,7 @@ struct BsplineSet<SA, Batching::SINGLE>: public SA,
   { }
 
   ///** default constructor */
-  //BsplineSet() { }
+  BsplineSet() : SPOSet<Batching::SINGLE>::WhatAmI("BsplineSet<SA, Batching::SINGLE>") {}
 
   /** set_spline to the big table
    * @param psi_r starting address of real part of psi(ispline)

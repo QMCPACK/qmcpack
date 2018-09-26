@@ -41,7 +41,14 @@ struct BsplineSet<SA, Batching::BATCHED>: public SA,
   typedef typename SA::PointType  PointType;
   typedef typename SA::DataType  DataType;
 
-  Batching batching = Batching::BATCHED;
+  Batching B_ = Batching::BATCHED;
+
+  BsplineSet() : SPOSet<Batching::BATCHED>::WhatAmI("BsplineSet<SA, Batching::BATCHED>") {}
+  
+  SPOSet* makeClone() const
+  {
+    return new BsplineSet<SA, Batching::BATCHED>(*this);
+  }
 
   // SPOSet has these pure virtal members. Not making another wrapper for them.
   // Should be possible to template SPOSet and put in common class.

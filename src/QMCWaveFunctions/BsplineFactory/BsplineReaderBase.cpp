@@ -126,7 +126,7 @@ namespace qmcplusplus
     vals.selectBands(fullband,0, ns, false);
 
     size_t mem_now=qmc_common.memory_allocated;
-    SPOSet<>* newspo=create_spline_set(spin,vals);       
+    SPOSet<>* newspo=create_spline_set(spin,vals);
     qmc_common.print_memory_change("BsplineSetReader", mem_now);
     return newspo;
 

@@ -33,6 +33,7 @@
 #include "QMCWaveFunctions/einspline_helper.hpp"
 #include "Utilities/ProgressReportEngine.h"
 #include "qmc_common.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineAdoptor.h"
 
 namespace qmcplusplus
 {
@@ -251,7 +252,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
     }
 
     clear();
-    return dynamic_cast<SPOSet<>*>(bspline);
+    return bspline;
   }
 
   /** fft and spline cG
