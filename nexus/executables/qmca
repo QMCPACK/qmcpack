@@ -2045,7 +2045,7 @@ class DatAnalyzer(QBase):
         q = self.stats[qname]
         if opt.precision is not None:
             prec = opt.precision
-            line = '{0:<22}=  {1:'+prec+'} +/- {2:'+prec+'}'
+            line = '{0:<22}=  {1: '+prec+'} +/- {2: '+prec+'}'
         elif prec=='auto':
             if (q.mean !=0.0 and abs(q.error/q.mean) > 1e-8):
                 d = int(max(2,1-floor(log(q.error)/log(10.))))
