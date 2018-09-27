@@ -331,7 +331,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       }
       else
       {
-        MixedSplineReader= createBsplineRealDouble(this, hybrid_rep=="yes");
+        MixedSplineReader= BsplineCreator<Batching::SINGLE>::createBsplineRealDouble(this, hybrid_rep=="yes");
       }
     }
   }
