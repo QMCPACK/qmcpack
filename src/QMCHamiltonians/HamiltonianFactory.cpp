@@ -60,9 +60,10 @@
 namespace qmcplusplus
 {
 HamiltonianFactory::HamiltonianFactory(ParticleSet* qp,
-                                       PtclPoolType& pset, OrbitalPoolType& oset, Communicate* c)
+                                       PtclPoolType& pset, OrbitalPoolType& oset, Communicate* c,
+				       Batching batching)
   : MPIObjectBase(c), targetPtcl(qp), targetH(0)
-  , ptclPool(pset),psiPool(oset), myNode(NULL), psiName("psi0")
+  , ptclPool(pset),psiPool(oset), myNode(NULL), psiName("psi0"), batching_(batching)
 {
   //PBCType is zero or 1 but should be generalized
   PBCType=targetPtcl->Lattice.SuperCellEnum;
@@ -123,11 +124,8 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
   OrbitalPoolType::iterator psi_it(psiPool.find(psiName));
   if(psi_it == psiPool.end())
     APP_ABORT("Unknown psi \""+psiName+"\" for target Psi");
-#ifdef QMC_CUDA
-  TrialWaveFunction<Batching::BATCHED>* targetPsi = dynamic_cast<TrialWaveFunction<Batching::BATCHED>*>(psi_it->second->targetPsi);
-#else
+
   TrialWaveFunction<>* targetPsi = psi_it->second->targetPsi;
-#endif
   
   xmlNodePtr cur_saved(cur);
   cur = cur->children;

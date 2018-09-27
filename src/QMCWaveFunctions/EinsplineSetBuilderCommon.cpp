@@ -36,12 +36,14 @@ namespace qmcplusplus
 ////std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_z;
 ////std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_d;
 
-EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur)
+  EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur,
+					   Batching batching)
   : TargetPtcl(p),ParticleSets(psets), MixedSplineReader(0), XMLRoot(cur), Format(QMCPACK),
   TileFactor(1,1,1), TwistNum(0), LastSpinSet(-1),
   NumOrbitalsRead(-1), NumMuffinTins(0), NumCoreStates(0),
   NumBands(0), NumElectrons(0), NumSpins(0), NumTwists(0),
-  H5FileID(-1), makeRotations(false), MeshFactor(1.0), MeshSize(0,0,0)
+    H5FileID(-1), makeRotations(false), MeshFactor(1.0), MeshSize(0,0,0),
+    B_(batching)
 {
   //assume one, not safe!! 
   myTableIndex=1;

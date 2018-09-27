@@ -33,15 +33,15 @@ namespace qmcplusplus
  *
  * Requires temporage storage and multiplication of phase vectors
  */
-template<typename ST, typename TT>
-class SplineR2RAdoptorBatched: public SplineAdoptorBatched<BsplineDeviceCUDA, ST, OHMMS_DIM>
+template<template<typename, unsigned> calss DEVICE, typename ST, typename TT>
+class SplineR2RAdoptorBatched: public SplineR2RAdoptor<ST, TT>
 {
 public:
   //Dimensionality
   static constexpr int D = OHMMS_DIM;
 
   using PosType = PtclOnLatticeTraits::SingleParticlePos_t;
-  using BaseType = SplineAdoptorBatched<BsplineDeviceCUDA, ST, 3>;
+  using BaseType = SplineR2RAdoptor<ST, TT>;
   using SplineType = typename bspline_traits<ST,3>::SplineType;
   using BCType = typename bspline_traits<ST,3>::BCType;
   using PointType = typename BaseType::PointType;
@@ -49,7 +49,7 @@ public:
 
   using BaseType::first_spo;
   using BaseType::last_spo;
-  using SplineAdoptorBatched<BsplineDeviceCUDA, ST, D>::HalfG;
+  using BaseTYpe::HalfG;
   using BaseType::GGt;
   using BaseType::PrimLattice;
   using BaseType::kPoints;
@@ -73,13 +73,7 @@ public:
   ///offset of the original grid, always 0
   int BaseOffset[3];
 
-  //We still have these because we're going to use a convert onto the device
-  ///multi bspline set
-  MultiBspline<ST>* SplineInst;
-  ///expose the pointer to reuse the reader and only assigned with create_spline
-  SplineType* MultiSpline;
-
-  // The device spline
+    // The device spline
   BsplineDeviceCUDA<ST, D> device_spline;
 
   using vContainer_type = Vector<ST,aligned_allocator<ST> >;

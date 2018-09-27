@@ -42,10 +42,11 @@ class WaveFunctionPool : public MPIObjectBase
 {
 
 public:
-
+  Batching B_;
+  
   typedef std::map<std::string,WaveFunctionFactory*> PoolType;
 
-  WaveFunctionPool(Communicate* c, const char* aname = "wavefunction");
+  WaveFunctionPool(Communicate* c, const char* aname = "wavefunction", Batching batching = Batching::SINGLE);
   ~WaveFunctionPool();
 
   bool put(xmlNodePtr cur);

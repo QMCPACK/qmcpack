@@ -39,7 +39,8 @@ class SPOSetBuilderFactory: public WaveFunctionComponentBuilder
 {
 
 public:
-
+  Batching B_;
+  
   ///set of basis set builders resolved by type
   static std::map<std::string,SPOSetBuilder*> spo_builders;
 
@@ -51,7 +52,8 @@ public:
    * \param psi reference to the wavefunction
    * \param ions reference to the ions
    */
-  SPOSetBuilderFactory(ParticleSet& els, TrialWaveFunction<>& psi, PtclPoolType& psets);
+  SPOSetBuilderFactory(ParticleSet& els, TrialWaveFunction<>& psi, PtclPoolType& psets,
+		       Batching batching = Batching::SINGLE);
 
   ~SPOSetBuilderFactory();
   bool put(xmlNodePtr cur);

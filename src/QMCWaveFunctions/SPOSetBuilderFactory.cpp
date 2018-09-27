@@ -113,8 +113,8 @@ namespace qmcplusplus
  * \param ions reference to the ions
  */
 SPOSetBuilderFactory::
-SPOSetBuilderFactory(ParticleSet& els, TrialWaveFunction<>& psi, PtclPoolType& psets):
-  WaveFunctionComponentBuilder(els,psi), ptclPool(psets)
+SPOSetBuilderFactory(ParticleSet& els, TrialWaveFunction<>& psi, PtclPoolType& psets, Batching batching):
+  WaveFunctionComponentBuilder(els,psi), ptclPool(psets), B_(batching)
 {
   ClassName="SPOSetBuilderFactory";
 }
@@ -202,7 +202,7 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     name=type_in;
 #if defined(HAVE_EINSPLINE)
     PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
-    bb = new EinsplineSetBuilder(targetPtcl,ptclPool,rootNode);
+    bb = new EinsplineSetBuilder(targetPtcl,ptclPool,rootNode, B_);
 #else
     PRE.error("Einspline is missing for B-spline orbitals",true);
 #endif

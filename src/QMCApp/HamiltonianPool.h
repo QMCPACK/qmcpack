@@ -11,9 +11,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-
-
-
 /**@file HamiltonianPool.h
  * @brief Declaration of HamiltonianPool
  */
@@ -47,9 +44,9 @@ class ParticleSetPool;
 template<Batching batching = Batching::SINGLE>
 class HamiltonianPool : public HamiltonianPoolInterface, public MPIObjectBase
 {
-
+  static constexpr Batching B_ = batching;
 public:
-
+  
   typedef std::map<std::string,HamiltonianFactory*> PoolType;
 
   HamiltonianPool(Communicate* c, const char* aname = "hamiltonian");
@@ -106,6 +103,8 @@ public:
    */
   inline void setWaveFunctionPool(WaveFunctionPool* pset)
   {
+    if(pset->B_ != B_)
+      APP_ABORT("Batching for HamiltonianPool and WaveFunctionPool must match");
     psiPool=pset;
   }
 

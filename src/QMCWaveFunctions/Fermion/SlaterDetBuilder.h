@@ -35,7 +35,7 @@ namespace qmcplusplus
  */
 class SlaterDetBuilder: public WaveFunctionComponentBuilder
 {
-
+  Batching B_;
 public:
 
   typedef SlaterDet<> SlaterDeterminant_t;

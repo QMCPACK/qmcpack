@@ -72,6 +72,7 @@ public:
   virtual void createQMCDriver(xmlNodePtr cur) = 0;
   
   //Accessors
+  virtual Batching getBatching() = 0;
   virtual std::string& getMethod() = 0;
   virtual ParticleSetPool& getParticleSetPool() = 0;
   virtual bool driverExists() = 0;

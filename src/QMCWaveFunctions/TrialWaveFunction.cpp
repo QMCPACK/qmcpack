@@ -31,7 +31,7 @@ typedef enum { V_TIMER, VGL_TIMER, ACCEPT_REJECT_TIMER, NL_TIMER,
 TrialWaveFunction<Batching::SINGLE>::TrialWaveFunction(Communicate* c)
   : MPIObjectBase(c)
   , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0), BufferCursor_scalar(0)
-  , PhaseValue(0.0),LogValue(0.0),OneOverM(1.0), PhaseDiff(0.0)
+  , PhaseValue(0.0),LogValue(0.0),OneOverM(1.0), PhaseDiff(0.0), B_(Batching::SINGLE)
 {
   ClassName="TrialWaveFunction<SINGLE>";
   myName="psi0";
@@ -41,7 +41,7 @@ TrialWaveFunction<Batching::SINGLE>::TrialWaveFunction(Communicate* c)
 TrialWaveFunction<Batching::SINGLE>::TrialWaveFunction()
   : MPIObjectBase(0)
   , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0), BufferCursor_scalar(0)
-  ,  PhaseValue(0.0),LogValue(0.0) ,OneOverM(1.0), PhaseDiff(0.0)
+  ,  PhaseValue(0.0),LogValue(0.0) ,OneOverM(1.0), PhaseDiff(0.0), B_(Batching::SINGLE)
 {
   ClassName="TrialWaveFunction<SINGLE>";
   myName="psi0";

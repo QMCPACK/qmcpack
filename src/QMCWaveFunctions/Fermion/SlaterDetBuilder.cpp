@@ -96,7 +96,7 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
 
   if (mySPOSetBuilderFactory == 0)
   {//always create one, using singleton and just to access the member functions
-    mySPOSetBuilderFactory = new SPOSetBuilderFactory(targetPtcl, targetPsi, ptclPool);
+    mySPOSetBuilderFactory = new SPOSetBuilderFactory(targetPtcl, targetPsi, ptclPool, B_);
     mySPOSetBuilderFactory->setReportLevel(ReportLevel);
     mySPOSetBuilderFactory->createSPOSetBuilder(curRoot);
   }

@@ -21,6 +21,7 @@
 #include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "Utilities/RandomGenerator.h"
 #include "Message/Communicate.h"
 #include "QMCDrivers/WaveFunctionTester.h"
 #include "QMCDrivers/DriftOperators.h"
@@ -2536,5 +2537,6 @@ template class WaveFunctionTester<Batching::SINGLE>;
 #ifdef QMC_CUDA
 template class WaveFunctionTester<Batching::BATCHED>;
 #endif
+
 }
 

@@ -48,7 +48,7 @@ namespace qmcplusplus
  * This handles SC and twist and declare storage for einspline
  */
 template<template<typename, unsigned> class DEVICE, typename ST, unsigned D>
-class SplineAdoptorBatched
+class SplineAdoptorBatched : public SplineAdoptor<ST, D>
 {
 public:
   using BaseType = SplineAdoptor<ST, D>;

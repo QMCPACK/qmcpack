@@ -46,7 +46,7 @@ struct WaveFunctionFactory : public MPIObjectBase
   xmlNodePtr myNode;
   ///builder tree
   std::vector<WaveFunctionComponentBuilder*> psiBuilder;
-  Batching batching_;
+  Batching B_;
   
   /** constructor
    * @param qp quantum particleset

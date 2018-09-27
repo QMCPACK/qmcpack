@@ -18,8 +18,8 @@
 
 
 
-#ifndef QMCPLUSPLUS_QMCDRIVER_FACTORY_H
-#define QMCPLUSPLUS_QMCDRIVER_FACTORY_H
+#ifndef QMCPLUSPLUS_QMCDRIVER_FACTORY_BATCHED_H
+#define QMCPLUSPLUS_QMCDRIVER_FACTORY_BATCHED_H
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Message/MPIObjectBase.h"
 #include "QMCApp/HamiltonianPool.h"
@@ -38,83 +38,98 @@ namespace qmcplusplus
 class MCWalkerConfiguration;
 
 
-template<Batching batching = Batching::SINGLE>
-struct QMCDriverFactory: public MPIObjectBase
-{
-  /*! enum for QMC Run Type */
-  enum QMCRunType
-  {
-    DUMMY_RUN, /*!< dummy */
-    VMC_RUN, /**< VMC type: vmc, vmc-ptcl, vmc-multiple, vmc-ptcl-multiple */
-    CSVMC_RUN,
-    DMC_RUN, /**< DMC type: dmc, dmc-ptcl*/
-    RMC_RUN, /**< RMC type: rmc, rmc-ptcl */
-    OPTIMIZE_RUN,/*!< Optimization */
-    VMC_OPT_RUN, /*!< Optimization with vmc blocks */
-    LINEAR_OPTIMIZE_RUN,
-    CS_LINEAR_OPTIMIZE_RUN,
-    WF_TEST_RUN
-  };
+// template<>
+// class QMCDriverFactory<Batching::BATCHED>: public QMCDriverFactoryInterface, public MPIObjectBase
+// {
+//   Batching B_ = Batching::BATCHED;
+  
+//   /*! enum for QMC Run Type */
+//   enum QMCRunType
+//   {
+//     DUMMY_RUN, /*!< dummy */
+//     VMC_RUN, /**< VMC type: vmc, vmc-ptcl, vmc-multiple, vmc-ptcl-multiple */
+//     CSVMC_RUN,
+//     DMC_RUN, /**< DMC type: dmc, dmc-ptcl*/
+//     RMC_RUN, /**< RMC type: rmc, rmc-ptcl */
+//     OPTIMIZE_RUN,/*!< Optimization */
+//     VMC_OPT_RUN, /*!< Optimization with vmc blocks */
+//     LINEAR_OPTIMIZE_RUN,
+//     CS_LINEAR_OPTIMIZE_RUN,
+//     WF_TEST_RUN
+//   };
 
-  /*! enum to set the bit to determine the QMC mode */
-  enum QMCModeEnum
-  {
-    UPDATE_MODE,  /**< bit for move: walker or pbyp */
-    MULTIPLE_MODE, /**< bit for multple configuration */
-    SPACEWARP_MODE, /**< bit for space-warping */
-    ALTERNATE_MODE, /**< bit for performing various analysis and weird qmc methods */
-    GPU_MODE,     /**< bit to use GPU driver */
-    QMC_MODE_MAX=8
-  };
+//   /*! enum to set the bit to determine the QMC mode */
+//   enum QMCModeEnum
+//   {
+//     UPDATE_MODE,  /**< bit for move: walker or pbyp */
+//     MULTIPLE_MODE, /**< bit for multple configuration */
+//     SPACEWARP_MODE, /**< bit for space-warping */
+//     ALTERNATE_MODE, /**< bit for performing various analysis and weird qmc methods */
+//     GPU_MODE,     /**< bit to use GPU driver */
+//     QMC_MODE_MAX=8
+//   };
 
-  ///current QMC mode determined by curQmcModeBits
-  unsigned long curQmcMode;
+//   ///current QMC mode determined by curQmcModeBits
+//   unsigned long curQmcMode;
 
-  ///8-bit (ALTERNATE_MODE,SPACEWARP_MODE, MULTIPLE_MODE, UPDATE_MODE)
-  std::bitset<QMC_MODE_MAX> curQmcModeBits;
+//   ///8-bit (ALTERNATE_MODE,SPACEWARP_MODE, MULTIPLE_MODE, UPDATE_MODE)
+//   std::bitset<QMC_MODE_MAX> curQmcModeBits;
 
-  ///type of qmcdriver
-  QMCRunType curRunType;
+//   ///type of qmcdriver
+//   QMCRunType curRunType;
 
-  ///name of the current QMCriver
-  std::string curMethod;
+//   ///name of the current QMCriver
+//   std::string curMethod;
 
-  /** current MCWalkerConfiguration
-   */
-  MCWalkerConfiguration *qmcSystem;
+//   /** current MCWalkerConfiguration
+//    */
+//   MCWalkerConfiguration *qmcSystem;
 
-  /** current QMCDriver
-   */
-  QMCDriver<batching> *qmcDriver;
+//   /** current QMCDriver
+//    */
+//   QMCDriver<Batching::BATCHED> *qmcDriver;
 
-  /** ParticleSet Pool
-   */
-  ParticleSetPool* ptclPool;
+//   /** ParticleSet Pool
+//    */
+//   ParticleSetPool* ptclPool;
 
-  /** TrialWaveFunction Pool
-   */
-  WaveFunctionPool* psiPool;
+//   /** TrialWaveFunction Pool
+//    */
+//   WaveFunctionPool* psiPool;
 
-  /** QMCHamiltonian Pool
-   */
-  HamiltonianPool<batching>* hamPool;
+//   /** QMCHamiltonian Pool
+//    */
+//   HamiltonianPool<Batching::BATCHED>* hamPool;
 
-  /** default constructor **/
-  QMCDriverFactory(Communicate* c);
+//   /** default constructor **/
+//   QMCDriverFactory(Communicate* c, Batching batching  = Batching::BATCHED): MPIObjectBase(c),
+// 				    qmcSystem(0), qmcDriver(0) , curRunType(DUMMY_RUN), B_(batching)
+//   {
+//     ////create ParticleSetPool
+//     ptclPool = new ParticleSetPool(c);
+//     //create WaveFunctionPool
+//     psiPool = new WaveFunctionPool(c, "dummy", B_);
+//     psiPool->setParticleSetPool(ptclPool);
+//     //create HamiltonianPool
+//     hamPool = new HamiltonianPool<Batching::BATCHED>(c);
+//     hamPool->setParticleSetPool(ptclPool);
+//     hamPool->setWaveFunctionPool(psiPool);
+//   }
 
-  /** set the active qmcDriver */
-  void putCommunicator(xmlNodePtr cur);
+  
+//   /** set the active qmcDriver */
+//   void putCommunicator(xmlNodePtr cur);
 
-  /** set the active qmcDriver */
-  bool setQMCDriver(int curSeries, xmlNodePtr cur);
+//   /** set the active qmcDriver */
+//   bool setQMCDriver(int curSeries, xmlNodePtr cur);
 
-  /** create a new QMCDriver
-   */
-  void createQMCDriver(xmlNodePtr cur);
+//   /** create a new QMCDriver
+//    */
+//   void createQMCDriver(xmlNodePtr cur);
 
-  /** virtual destructor **/
-  virtual ~QMCDriverFactory();
-};
+//   /** virtual destructor **/
+//   virtual ~QMCDriverFactory();
+// };
 }
 #endif
 

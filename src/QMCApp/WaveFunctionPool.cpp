@@ -28,8 +28,8 @@ namespace qmcplusplus
 
 
 
-WaveFunctionPool::WaveFunctionPool(Communicate* c, const char* aname)
-  : MPIObjectBase(c)
+WaveFunctionPool::WaveFunctionPool(Communicate* c, const char* aname, Batching batching)
+  : MPIObjectBase(c), B_(batching)
 {
   ClassName="WaveFunctionPool";
   myName=aname;
@@ -79,7 +79,7 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
   bool isPrimary=true;
   if(pit == myPool.end())
   {
-    psiFactory=new WaveFunctionFactory(qp,ptclPool->getPool(),myComm);
+    psiFactory=new WaveFunctionFactory(qp,ptclPool->getPool(),myComm, B_);
     psiFactory->setName(id);
     isPrimary = (myPool.empty() || role == "primary");
     myPool[id]=psiFactory;

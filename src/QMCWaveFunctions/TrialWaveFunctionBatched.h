@@ -43,7 +43,10 @@ private:
   gpu::device_host_vector<CudaValueType>   GPUlapls;
 #endif
 public:
-  TrialWaveFunction(Communicate* c) : TrialWaveFunction<Batching::SINGLE>(c) {}
+  TrialWaveFunction();
+  TrialWaveFunction(Communicate* c);
+
+  TrialWaveFunction<>* makeClone(ParticleSet& tqp) const;
   
   void freeGPUmem GPU_XRAY_TRACE ();
 

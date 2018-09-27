@@ -126,7 +126,7 @@ class EinsplineSetBuilder : public SplineBuilder,
 			    public SPOSetBuilder
 {
 public:
-
+  Batching B_;
   typedef std::map<std::string,ParticleSet*> PtclPoolType;
   
   ///reference to the particleset pool
@@ -163,7 +163,8 @@ public:
   std::map<H5OrbSet,SPOSet<>*,H5OrbSet> SPOSetMap;
 
   ///constructor
-  EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur);
+  EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur,
+		      Batching batching = Batching::SINGLE);
 
   ///destructor
   ~EinsplineSetBuilder();

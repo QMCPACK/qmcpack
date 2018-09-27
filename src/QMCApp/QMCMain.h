@@ -23,13 +23,16 @@
 #define QMCPLUSPLUS_MAINAPPLICATIONS_H
 
 #include "QMCApp/QMCDriverFactory.h"
+#include "QMCApp/QMCDriverFactoryBatched.h"
 #include "QMCApp/QMCAppBase.h"
 
 namespace qmcplusplus
 {
 
 extern template class QMCDriverFactory<Batching::SINGLE>;
+#ifdef QMC_CUDA
 extern template class QMCDriverFactory<Batching::BATCHED>;
+#endif
 
 /** @ingroup qmcapp
  * @brief Main application to perform QMC simulations

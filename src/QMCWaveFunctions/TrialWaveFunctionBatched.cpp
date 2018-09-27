@@ -23,6 +23,29 @@ typedef enum { V_TIMER, VGL_TIMER, ACCEPT_TIMER, NL_TIMER,
                RECOMPUTE_TIMER, DERIVS_TIMER, TIMER_SKIP
              } TimerEnum;
 
+TrialWaveFunction<Batching::BATCHED>::TrialWaveFunction()
+{
+  this->B_ = Batching::BATCHED;
+}
+
+TrialWaveFunction<Batching::BATCHED>::TrialWaveFunction(Communicate* c)
+  : TrialWaveFunction<Batching::SINGLE>(c)
+{
+  this->B_ = Batching::BATCHED;
+}
+  
+TrialWaveFunction<>* TrialWaveFunction<Batching::BATCHED>::makeClone(ParticleSet& tqp)  const
+{
+  TrialWaveFunction<Batching::BATCHED>* myclone = new TrialWaveFunction<Batching::BATCHED>(this->myComm);
+  myclone->BufferCursor=this->BufferCursor;
+  myclone->BufferCursor_scalar=this->BufferCursor_scalar;
+  for (int i=0; i<this->Z.size(); ++i)
+    myclone->addOrbital(Z[i]->makeClone(tqp),"dummy",this->Z[i]->IsFermionWF);
+  myclone->OneOverM=this->OneOverM;
+  return myclone;
+}
+
+  
 ////////////////////////////////
 // Vectorized member fuctions //
 ///////////////////////////////

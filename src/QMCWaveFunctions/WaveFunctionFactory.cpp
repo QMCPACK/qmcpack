@@ -49,11 +49,10 @@ namespace qmcplusplus
 
 WaveFunctionFactory::WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset, Communicate* c, Batching batching)
   : MPIObjectBase(c)
-  , targetPtcl(qp),ptclPool(pset),targetPsi(0), myNode(NULL)
+  , targetPtcl(qp),ptclPool(pset),targetPsi(0), myNode(NULL), B_(batching)
 {
   ClassName="WaveFunctionFactory";
   myName="psi0";
-  batching_ = batching; 
 }
 
 bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
@@ -75,10 +74,16 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
   }
   if(targetPsi==0) //allocate targetPsi and set the name
   {
-    if(batching_ == Batching::SINGLE)
+    if(B_ == Batching::SINGLE)
       targetPsi = new TrialWaveFunction<>(myComm);
     else
-      targetPsi = new TrialWaveFunction<Batching::BATCHED>(myComm);
+    {
+#ifdef QMC_CUDA
+	targetPsi = new TrialWaveFunction<Batching::BATCHED>(myComm);
+#else
+	APP_ABORT("TrialWaveFunction<Batching::BATCHED> only supported for CUDA build");
+#endif
+    }
     targetPsi->setName(myName);
     targetPsi->setMassTerm(*targetPtcl);
   }
@@ -200,7 +205,7 @@ bool WaveFunctionFactory::addFermionTerm(xmlNodePtr cur)
     }
 //#endif /* QMC_BUILD_LEVEL>1 */
   else
-    detbuilder = new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool);
+    detbuilder = new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool, B_);
   detbuilder->setReportLevel(ReportLevel);
   detbuilder->put(cur);
   addNode(detbuilder,cur);

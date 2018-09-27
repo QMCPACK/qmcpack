@@ -204,7 +204,7 @@ public:
   void addGradient(MCWalkerConfiguration &W, int iat,
                    std::vector<QMCT::GradType> &grad);
 
-  void calcGradient(MCWalkerConfiguration &W, int iat,
+  virtual void calcGradient(MCWalkerConfiguration &W, int iat,
                     std::vector<QMCT::GradType> &grad);
 
   void ratio (MCWalkerConfiguration &W, int iat,

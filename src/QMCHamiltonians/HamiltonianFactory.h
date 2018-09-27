@@ -22,12 +22,14 @@
 
 #include <QMCHamiltonians/QMCHamiltonian.h>
 #include <QMCWaveFunctions/WaveFunctionFactory.h>
+#include "WhatAmI.h"
+
 namespace qmcplusplus
 {
 
 /** Factory class to build a many-body wavefunction
  */
-class HamiltonianFactory: public MPIObjectBase
+  class HamiltonianFactory: public MPIObjectBase
 {
 public:
   typedef std::map<std::string,ParticleSet*> PtclPoolType;
@@ -52,9 +54,10 @@ public:
   ///list of the old to new name
   std::map<std::string,std::string> RenamedProperty;
 
+  Batching batching_;
   ///constructor
   HamiltonianFactory(ParticleSet* qp, PtclPoolType& pset, OrbitalPoolType& oset,
-                     Communicate* c);
+                     Communicate* c, Batching batching = Batching::SINGLE);
 
   ///destructor
   ~HamiltonianFactory();

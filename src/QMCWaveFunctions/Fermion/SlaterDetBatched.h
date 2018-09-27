@@ -19,11 +19,20 @@
 namespace qmcplusplus
 {
 
+  
 template<>
 class SlaterDet<Batching::BATCHED> : public SlaterDet<Batching::SINGLE>
 {
   using Determinant_t = DiracDeterminant<Batching::BATCHED>;
   std::vector<Determinant_t*> Dets;
+
+
+  SlaterDet(ParticleSet& targetPtcl) : SlaterDet<Batching::SINGLE>(targetPtcl)
+  {
+    this->OrbitalName = "SlaterDetBatched";
+  }
+
+
   /////////////////////////////////////////////////////
   // Functions for vectorized evaluation and updates //
   /////////////////////////////////////////////////////
@@ -69,7 +78,7 @@ class SlaterDet<Batching::BATCHED> : public SlaterDet<Batching::SINGLE>
 
   GPU_XRAY_TRACE void  calcGradient(MCWalkerConfiguration &W, int iat, std::vector<GradType> &grad)
   {
-    Dets[getDetID(iat)]->calcGradient(W, iat, grad);
+    this->Dets[getDetID(iat)]->calcGradient(W, iat, grad);
   }
 
   GPU_XRAY_TRACE void  addGradient(MCWalkerConfiguration &W, int iat, std::vector<GradType> &grad)

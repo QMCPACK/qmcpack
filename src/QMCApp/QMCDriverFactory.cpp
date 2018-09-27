@@ -15,15 +15,13 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-
 
 
 /**@file QMCDriverFactory.cpp
  * @brief Implments QMCMain operators.
  */
 #include "QMCApp/QMCDriverFactory.h"
+#include "QMCApp/QMCDriverFactoryBatched.h"
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
@@ -305,7 +303,7 @@ void QMCDriverFactory<batching>::createQMCDriver(xmlNodePtr cur)
     VMCFactory<batching> fac(curQmcModeBits.to_ulong(),cur);
     qmcDriver = fac.create(*qmcSystem,
 			   *dynamic_cast<TrialWaveFunction<batching>*>(primaryPsi),
-			   *primaryH,*ptclPool,*hamPool,*psiPool);
+			   *primaryH,*ptclPool,*dynamic_cast<HamiltonianPool<batching>*>(hamPool),*psiPool);
     //TESTING CLONE
     //TrialWaveFunction* psiclone=primaryPsi->makeClone(*qmcSystem);
     //qmcDriver = fac.create(*qmcSystem,*psiclone,*primaryH,*ptclPool,*hamPool);

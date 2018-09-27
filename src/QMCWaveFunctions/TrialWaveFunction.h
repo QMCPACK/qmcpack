@@ -124,11 +124,13 @@ public:
   typedef ParticleSet::Walker_t        Walker_t;
 #endif
 
+  Batching B_;
   ///differential gradients
   ParticleSet::ParticleGradient_t G;
   ///differential laplacians
   ParticleSet::ParticleLaplacian_t L;
 
+  TrialWaveFunction();
   TrialWaveFunction(Communicate* c);
 
   ~TrialWaveFunction();
@@ -280,7 +282,7 @@ public:
     tempP = new ParticleSet(P);
   }
 
-  virtual TrialWaveFunction* makeClone(ParticleSet& tqp) const;
+  virtual TrialWaveFunction<>* makeClone(ParticleSet& tqp) const;
 
   std::vector<WaveFunctionComponent*>& getOrbitals()
   {
@@ -346,8 +348,6 @@ protected:
 
   ///fake particleset
   ParticleSet* tempP;
-
-  TrialWaveFunction();
 
   std::vector<NewTimer*> myTimers;
   std::vector<RealType> myTwist;

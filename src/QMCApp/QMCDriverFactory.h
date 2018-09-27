@@ -49,10 +49,10 @@ extern template class WaveFunctionTester<Batching::BATCHED>;
 class MCWalkerConfiguration;
 
 
-  
 template<Batching batching = Batching::SINGLE>
-struct QMCDriverFactory: public QMCDriverFactoryInterface, public MPIObjectBase
+class QMCDriverFactory: public QMCDriverFactoryInterface, public MPIObjectBase
 {
+  Batching B_ = batching;
   ///current QMC mode determined by curQmcModeBits
   unsigned long curQmcMode;
 
@@ -87,14 +87,14 @@ struct QMCDriverFactory: public QMCDriverFactoryInterface, public MPIObjectBase
 
   /** default constructor **/
   // QMCDriverFactory(Communicate* c);
-
+public:
   QMCDriverFactory(Communicate* c): MPIObjectBase(c),
 				    qmcSystem(0), qmcDriver(0) , curRunType(DUMMY_RUN)
   {
     ////create ParticleSetPool
     ptclPool = new ParticleSetPool(c);
     //create WaveFunctionPool
-    psiPool = new WaveFunctionPool(c);
+    psiPool = new WaveFunctionPool(c, "dummy", B_);
     psiPool->setParticleSetPool(ptclPool);
     //create HamiltonianPool
     hamPool = new HamiltonianPool<batching>(c);
@@ -120,6 +120,7 @@ struct QMCDriverFactory: public QMCDriverFactoryInterface, public MPIObjectBase
   void updateQMCSystem() { qmcSystem->update(); };
 
   //Accessors
+  Batching getBatching() { return B_; }
   std::string& getMethod() { return curMethod; }
   ParticleSetPool& getParticleSetPool() { return *ptclPool; }
   ParticleSetPool* getParticleSetPoolPtr() { return ptclPool; }
