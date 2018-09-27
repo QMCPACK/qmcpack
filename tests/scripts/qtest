@@ -13,7 +13,7 @@ from developer import DevBase,ci,log,warn,error
 from fileio import TextFile
 from nexus import settings,job,run_project
 from nexus import input_template,generate_qmcpack
-
+from simulation import NullSimulationAnalyzer
 
 
 #======================================#
@@ -814,6 +814,7 @@ def run_adjusted_tests(short_tests):
                         input       = test_input,
                         skip_submit = options.generate,
                         )
+                    qmc.analyzer_type = NullSimulationAnalyzer
                     if options.generate or options.run:
                         make_symlinks(qmc,short_test)
                     #end if
