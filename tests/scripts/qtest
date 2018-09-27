@@ -296,7 +296,7 @@ class OIC5Jobs(MachineJobs):
         if code not in self.app_paths:
             return None
         #end if
-        if count%2==0:
+        if count%3==0:
             queue = 'mstqmc13q'
         else:
             queue = 'mst13q'
@@ -587,7 +587,10 @@ def make_symlinks(sim,short_test):
         os.chdir(sim.locdir)
         for href in short_test.hrefs:
             href_full = os.path.join(short_test.path,href)
-            os.system('ln -s {0} {1}'.format(href_full,href))
+            href = os.path.basename(href)
+            if not os.path.exists(href):
+                os.system('ln -s {0} {1}'.format(href_full,href))
+            #end if
         #end for
         os.chdir(cwd)
     #end if
@@ -811,7 +814,9 @@ def run_adjusted_tests(short_tests):
                         input       = test_input,
                         skip_submit = options.generate,
                         )
-                    make_symlinks(qmc,short_test)
+                    if options.generate or options.run:
+                        make_symlinks(qmc,short_test)
+                    #end if
                 #end if
                 n += 1
             #end if

@@ -478,12 +478,14 @@ class Qmcpack(Simulation):
 
     
     def post_analyze(self,analyzer):
-        calctypes = self.input.get_output_info('calctypes')
-        opt_run = calctypes!=None and 'opt' in calctypes
-        if opt_run:
-            opt_file = analyzer.results.optimization.optimal_file
-            if opt_file is None:
-                self.failed = True
+        if not self.has_generic_input():
+            calctypes = self.input.get_output_info('calctypes')
+            opt_run = calctypes!=None and 'opt' in calctypes
+            if opt_run:
+                opt_file = analyzer.results.optimization.optimal_file
+                if opt_file is None:
+                    self.failed = True
+                #end if
             #end if
         #end if
     #end def post_analyze
