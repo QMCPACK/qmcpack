@@ -63,8 +63,8 @@ for k,vlist in build_types.iteritems():
     #end for
 #end for
 
-
 # release dates
+#   r6259   140228
 #   v3.0.0  170130
 #   v3.0.1  180303
 #   v3.1.0  170621
@@ -76,7 +76,18 @@ for k,vlist in build_types.iteritems():
 reference_code_hashes = obj(
     r6259       = 'a63b16e5053a9500b22bb59ec4876d203074ff8c', # JTK
     r6361       = 'deaca41a22cf0cbd4f76d1fd467a7b873ca9c0df', # JTK
+    r7115       = 'aab82c60cd3d124a8a5cb9ee38d7ebceb9a689e8', # PK
+    r7309       = 'd9825b9402c580ef6bbf9fea4585cd4f04425eda', # YL
+    v300_170319 = '25fb25a4a0fb2e0ca8e8e2405b96b8e0080d9c80', # YL
+    v300_170407 = 'cdd68c9a77a1c44e1d7e7ddb9e53055a284e2126', # RC
+    v300_170524 = 'dc06dbd3d600b43daa2dba64c7e5e668327532a4', # PY
+    v311_170906 = '018e4bf160a8552d66cf9511af81c6a7a634ac50', # RC
+    v320_171120 = 'c1e67e38caa92af7586a4757da9e3323f04e4c4f', # NB
+    v330_180103 = 'e9f28206e0a44bcba1ba6c5d7c9769b093551a9b', # AB
+    v330_180107 = 'be540cfb2b625e7dc34d09a1f4aa4010d3d19106', # YL
+    v340_180227 = '2aa757b813344cbf04c81550c26206142a29be90', # YL
     v340_180328 = 'ebe686dbc89f0c0962a30abae45caa455ae8bc22', # JTK
+    v340_180505 = 'e83ba9606f43ed0feffe75a0e521008cecef0b3e', # YL
     )
 
 reference_code_tests = obj(
@@ -97,12 +108,6 @@ reference_code_tests = obj(
         short-diamondC_1x1x1_pp-dmc-estimator-density
         short-diamondC_1x1x1_pp-dmc-estimator-spindensity
         short-diamondC_1x1x1_pp-dmc-estimator-energydensity-cell
-        short-H4-opt-cslinear-linemin
-        short-H4-opt-cslinear-quartic
-        short-H4-opt-cslinear-rescale
-        short-H4-opt-linear
-        short-H4-opt-linear-linemin
-        short-H4-opt-linear-rescale
         short-hcpBe_1x1x1_pp-vmc_sdj
         short-heg_14_gamma-hf
         short-heg_14_gamma-ni
@@ -129,11 +134,7 @@ reference_code_tests = obj(
         short-monoO_1x1x1_pp-vmc_sdj
         short-monoO_1x1x1_pp-vmc_sdj3
 
-        short-bccH_1x1x1_ae-rmc_sdj
-        short-C2_pp-msdj-traditional_vmc
-        short-C2_pp-msdj_vmc
         short-diamondC_1x1x1_pp-vmc_sdj-meshf
-        short-FeCO6_gms-vmc_noj
         short-H2O_dimer_sep_pp-j3_dmc_la
         short-NiO_a4_e48_pp-vmc_sdj
         short-NiO_a4_e48_pp-vmc_sdj3
@@ -149,6 +150,71 @@ reference_code_tests = obj(
         short-diamondC_1x1x1_pp-vmc-J2-estimator-1rdm
         short-diamondC_1x1x1_pp-vmc-noJ-estimator-1rdm
         '''.split(),
+    r7115 = '''
+        short-bccH_1x1x1_ae-vmc_sdj-pw
+        '''.split(),
+    r7309 = '''
+        short-H4-opt-OneShiftOnly
+        short-H4-opt-adaptive
+        short-H4-opt-cslinear-linemin
+        short-H4-opt-cslinear-quartic
+        short-H4-opt-cslinear-rescale
+        short-H4-opt-linear
+        short-H4-opt-linear-linemin
+        short-H4-opt-linear-rescale
+        short-diamondC_1x1x1_pp-opt_sdj
+        '''.split(),
+    #v300_170319 = '''
+    #    short-diamondC_1x1x1_hybridrep_pp-vmc_sdj
+    #    short-diamondC_2x1x1_hybridrep_pp-vmc_sdj
+    #    '''.split(),
+    v300_170407 = '''
+        short-diamondC_1x1x1_hybridrep_pp-vmc_sdj
+        short-diamondC_2x1x1_hybridrep_pp-vmc_sdj
+        short-bccH_1x1x1_ae-rmc_sdj
+        '''.split(),
+    v300_170524 = ''',
+        short-bccH_1x1x1_ae-vmc-all_sdj
+        short-bccH_1x1x1_ae-dmc-all_sdj
+        short-bccH_1x1x1_ae-vmc-all-nodrift_sdj
+        ''',
+    v311_170906 = '''
+        short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj
+        short-bccH_1x1x1_ae-csvmc-all_sdj
+        short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj
+        ''',
+    #v320_171120 = '''
+    #    short-H2-FDLR
+    #    short-H2-orb-opt
+    #    short-H4-FDLR
+    #    '''.split(),
+    #v330_180103 = '''
+    #    short-H2-FDLR
+    #    short-H2-orb-opt
+    #    short-H4-FDLR
+    #    short-H4-orb-opt
+    #    short-H4-orb-opt-dmc
+    #    short-FeCO6_gms-vmc_noj
+    #    short-FeCO6_pyscf-vmc_noj
+    #    '''.split(),
+    v330_180107 = '''
+        short-H2-FDLR
+        short-H2-orb-opt
+        short-H4-FDLR
+        short-H4-orb-opt
+        short-H4-orb-opt-dmc
+        short-FeCO6_gms-vmc_noj
+        short-FeCO6_pyscf-vmc_noj
+        '''.split(),
+    #v330_180107 = '''
+    #    short-H2O_dimer_sep_pp-j3_dmc_tm0
+    #    short-H2O_dimer_sep_pp-j3_dmc_tm3
+    #    '''.split(),
+    v340_180227 = '''
+        short-H2O_dimer_sep_pp-j3_dmc_tm0
+        short-H2O_dimer_sep_pp-j3_dmc_tm3
+        short-H2O_dimer_sep_pp-j3_dmc_tm1
+        '''.split(),
     v340_180328_afqmc = '''
         short-diamondC-afqmc
         short-diamondC-afqmc_hyb
@@ -157,50 +223,58 @@ reference_code_tests = obj(
         short-diamondC-afqmc_incmf_nn2
         short-diamondC-afqmc_nn2
         '''.split(),
+    v340_180505 = '''
+        short-C2_pp-msdj-traditional_vmc
+        ''',
     unknown = '''
-        short-FeCO6_pyscf-vmc_noj
-        short-H2-FDLR
-        short-H2-orb-opt
-        short-H2O_dimer_sep_pp-j3_dmc_tm0
-        short-H2O_dimer_sep_pp-j3_dmc_tm1
-        short-H2O_dimer_sep_pp-j3_dmc_tm3
-        short-H4-FDLR
-        short-H4-opt-OneShiftOnly
-        short-H4-opt-adaptive
-        short-H4-orb-opt
-        short-H4-orb-opt-dmc
+
+        short-C2_pp-msdj_vmc
+
+
+
         short-LiH_dimer_ae_pyscf-vmc_hf_noj
         short-LiH_dimer_ae_qp-vmc_hf_noj
         short-LiH_dimer_pp-vmc_hf_sdj_hdf5
+
         short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj
+
         short-NiO_a4_e48-batched_pp-vmc_sdj3
         short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3
         short-NiO_a4_e48-hybridrep-pp-vmc_sdj3
-        short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj
-        short-bccH_1x1x1_ae-csvmc-all_sdj
-        short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj
-        short-bccH_1x1x1_ae-dmc-all_sdj
-        short-bccH_1x1x1_ae-vmc-all-nodrift_sdj
-        short-bccH_1x1x1_ae-vmc-all_sdj
-        short-bccH_1x1x1_ae-vmc_sdj-pw
+
+
+
+
         short-bccH_2x2x2_ae-deriv
         short-bccH_2x2x2_ae-gamma-deriv
         short-bccH_2x2x2_ae-grad_lap
+
         short-bccH_3x3x3_ae-deriv
         short-bccH_3x3x3_ae-gamma-deriv
         short-bccH_3x3x3_ae-grad_lap
         short-bccH_3x3x3_ae-not_orth-deriv
-        short-diamondC_1x1x1_hybridrep_pp-vmc_sdj
-        short-diamondC_1x1x1_pp-opt_sdj
+
+
+
         short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj
+
         short-diamondC_1x1x1_pp-vmc_gaussian_sdj
-        short-diamondC_2x1x1_hybridrep_pp-vmc_sdj
+
+
         short-diamondC_2x1x1_pp-dmc-reconf_sdj
+
         short-diamondC_2x1x1_pp-vmc_gaussian_sdj
+
         short-sho-grad_lap
         short-sho-vmc
         '''.split(),
     )
+
+for k,v in reference_code_tests.iteritems():
+    if isinstance(v,str):
+        reference_code_tests[k] = v.split()
+    #end if
+#end for
 
 
 reference_code_by_test = obj()
@@ -244,6 +318,19 @@ class OIC5Jobs(MachineJobs):
             r6361         = 'qmcapp_r6361',
             r6361_complex = 'qmcapp_r6361_complex',
             r6366         = 'qmcapp_r6366',
+
+            #r7115         = 'qmcpack_r7115',
+            #r7309         = 'qmcpack_r7309',
+            #v300_170319   = 'qmcpack_v300_170319',
+            v300_170407   = 'qmcpack_v300_170407',
+            #v300_170524   = 'qmcpack_v300_170524',
+            v311_170906   = 'qmcpack_v311_170906',
+            #v330_180103   = 'qmcpack_v330_180103',
+            v330_180107   = 'qmcpack_v330_180107',
+            #v340_180227   = 'qmcpack_v340_180227',
+            v340_180328   = 'qmcpack_v340_180328',
+            v340_180505   = 'qmcpack_v340_180505',
+
             v300          = 'qmcpack_v3_real',
             v311          = 'qmcpack_v311_real',
             v311nb        = 'qmcpack_v311nb_real',
@@ -253,8 +340,24 @@ class OIC5Jobs(MachineJobs):
             v350          = 'qmcpack_v350_real',
             )
 
-        apps_old_build = 'r6259 r6259_complex r6361 r6361_complex r6366'.split()
-        apps_new_build = 'v311nb v320 v330 v340 v350'.split()
+        apps_old_build = '''
+            r6259 
+            r6259_complex 
+            r6361 r6361_complex 
+            r6366
+            v300_170407
+            '''.split()
+        apps_new_build = '''
+            v311_170906
+            v330_180107
+            v340_180328
+            v340_180505
+            v311nb 
+            v320 
+            v330 
+            v340 
+            v350
+            '''.split()
 
 
         old_presub = '''
