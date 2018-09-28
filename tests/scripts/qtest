@@ -82,12 +82,18 @@ reference_code_hashes = obj(
     v300_170407 = 'cdd68c9a77a1c44e1d7e7ddb9e53055a284e2126', # RC
     v300_170524 = 'dc06dbd3d600b43daa2dba64c7e5e668327532a4', # PY
     v311_170906 = '018e4bf160a8552d66cf9511af81c6a7a634ac50', # RC
+    v320_171020 = 'f1061720cd707163f9aa0ac8df73ecae93d20afa', # YL
+    v320_171113 = 'efcb969cdf8ffe56d74d03954e692a11e41206e6', # AB
     v320_171120 = 'c1e67e38caa92af7586a4757da9e3323f04e4c4f', # NB
     v330_180103 = 'e9f28206e0a44bcba1ba6c5d7c9769b093551a9b', # AB
     v330_180107 = 'be540cfb2b625e7dc34d09a1f4aa4010d3d19106', # YL
     v340_180227 = '2aa757b813344cbf04c81550c26206142a29be90', # YL
     v340_180328 = 'ebe686dbc89f0c0962a30abae45caa455ae8bc22', # JTK
+    v340_180329 = '292bb3bb8793ae1a7c6472a15e35023ba88da475', # AB
+    v340_180413 = 'b85b4c61de319fbd3227934094a2e8483509f703', # YL
+    v340_180417 = 'd07f8ea7d0cddc6b112397afd7fc37e09e868489', # YL
     v340_180505 = 'e83ba9606f43ed0feffe75a0e521008cecef0b3e', # YL
+    v340_180705 = '8d443a259279bd6d5866176ee89e69a7e3036725', # AB
     )
 
 reference_code_tests = obj(
@@ -150,10 +156,22 @@ reference_code_tests = obj(
         short-diamondC_1x1x1_pp-vmc-J2-estimator-1rdm
         short-diamondC_1x1x1_pp-vmc-noJ-estimator-1rdm
         '''.split(),
-    r7115 = '''
+    #r7115 = '''
+    #    short-bccH_1x1x1_ae-vmc_sdj-pw
+    #    '''.split(),
+    #r7309 = '''
+    #    short-H4-opt-OneShiftOnly
+    #    short-H4-opt-adaptive
+    #    short-H4-opt-cslinear-linemin
+    #    short-H4-opt-cslinear-quartic
+    #    short-H4-opt-cslinear-rescale
+    #    short-H4-opt-linear
+    #    short-H4-opt-linear-linemin
+    #    short-H4-opt-linear-rescale
+    #    short-diamondC_1x1x1_pp-opt_sdj
+    #    '''.split(),
+    v300 = '''
         short-bccH_1x1x1_ae-vmc_sdj-pw
-        '''.split(),
-    r7309 = '''
         short-H4-opt-OneShiftOnly
         short-H4-opt-adaptive
         short-H4-opt-cslinear-linemin
@@ -163,15 +181,19 @@ reference_code_tests = obj(
         short-H4-opt-linear-linemin
         short-H4-opt-linear-rescale
         short-diamondC_1x1x1_pp-opt_sdj
-        '''.split(),
+        ''',
     #v300_170319 = '''
     #    short-diamondC_1x1x1_hybridrep_pp-vmc_sdj
     #    short-diamondC_2x1x1_hybridrep_pp-vmc_sdj
+    #    short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj
     #    '''.split(),
     v300_170407 = '''
+        short-bccH_1x1x1_ae-rmc_sdj
+        '''.split(),
+    v300_170407_soa = '''
         short-diamondC_1x1x1_hybridrep_pp-vmc_sdj
         short-diamondC_2x1x1_hybridrep_pp-vmc_sdj
-        short-bccH_1x1x1_ae-rmc_sdj
+        short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj
         '''.split(),
     v300_170524 = ''',
         short-bccH_1x1x1_ae-vmc-all_sdj
@@ -182,6 +204,20 @@ reference_code_tests = obj(
         short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj
         short-bccH_1x1x1_ae-csvmc-all_sdj
         short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj
+        ''',
+    v320_171020 = '''
+        short-diamondC_2x1x1_pp-dmc-reconf_sdj
+        short-C2_pp-msdj_vmc
+        short-bccH_2x2x2_ae-deriv
+        short-bccH_2x2x2_ae-gamma-deriv
+        short-bccH_2x2x2_ae-grad_lap
+        short-bccH_3x3x3_ae-deriv
+        short-bccH_3x3x3_ae-gamma-deriv
+        short-bccH_3x3x3_ae-grad_lap
+        short-bccH_3x3x3_ae-not_orth-deriv
+        ''',
+    v320_171113 = '''
+        short-LiH_dimer_pp-vmc_hf_sdj_hdf5
         ''',
     #v320_171120 = '''
     #    short-H2-FDLR
@@ -205,6 +241,8 @@ reference_code_tests = obj(
         short-H4-orb-opt-dmc
         short-FeCO6_gms-vmc_noj
         short-FeCO6_pyscf-vmc_noj
+        short-sho-grad_lap
+        short-sho-vmc
         '''.split(),
     #v330_180107 = '''
     #    short-H2O_dimer_sep_pp-j3_dmc_tm0
@@ -223,50 +261,26 @@ reference_code_tests = obj(
         short-diamondC-afqmc_incmf_nn2
         short-diamondC-afqmc_nn2
         '''.split(),
-    v340_180505 = '''
-        short-C2_pp-msdj-traditional_vmc
+    v340_180329_soa = '''
+        short-diamondC_1x1x1_pp-vmc_gaussian_sdj
+        short-diamondC_2x1x1_pp-vmc_gaussian_sdj
         ''',
-    unknown = '''
-
-        short-C2_pp-msdj_vmc
-
-
-
-        short-LiH_dimer_ae_pyscf-vmc_hf_noj
-        short-LiH_dimer_ae_qp-vmc_hf_noj
-        short-LiH_dimer_pp-vmc_hf_sdj_hdf5
-
-        short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj
-
+    v340_180413 = '''
+        short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj
+        ''',
+    v340_180417_soa = '''
         short-NiO_a4_e48-batched_pp-vmc_sdj3
         short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3
         short-NiO_a4_e48-hybridrep-pp-vmc_sdj3
-
-
-
-
-        short-bccH_2x2x2_ae-deriv
-        short-bccH_2x2x2_ae-gamma-deriv
-        short-bccH_2x2x2_ae-grad_lap
-
-        short-bccH_3x3x3_ae-deriv
-        short-bccH_3x3x3_ae-gamma-deriv
-        short-bccH_3x3x3_ae-grad_lap
-        short-bccH_3x3x3_ae-not_orth-deriv
-
-
-
-        short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj
-
-        short-diamondC_1x1x1_pp-vmc_gaussian_sdj
-
-
-        short-diamondC_2x1x1_pp-dmc-reconf_sdj
-
-        short-diamondC_2x1x1_pp-vmc_gaussian_sdj
-
-        short-sho-grad_lap
-        short-sho-vmc
+        ''',
+    v340_180505 = '''
+        short-C2_pp-msdj-traditional_vmc
+        ''',
+    v340_180705 = '''
+        short-LiH_dimer_ae_qp-vmc_hf_noj
+        short-LiH_dimer_ae_pyscf-vmc_hf_noj
+        ''',
+    unknown = '''
         '''.split(),
     )
 
@@ -313,31 +327,41 @@ class MachineJobs(DevBase):
 class OIC5Jobs(MachineJobs):
     def __init__(self):
         app_paths = obj(
-            r6259         = 'qmcapp_r6259',
-            r6259_complex = 'qmcapp_r6259_complex',
-            r6361         = 'qmcapp_r6361',
-            r6361_complex = 'qmcapp_r6361_complex',
-            r6366         = 'qmcapp_r6366',
+            r6259           = 'qmcapp_r6259',
+            r6259_complex   = 'qmcapp_r6259_complex',
+            r6361           = 'qmcapp_r6361',
+            r6361_complex   = 'qmcapp_r6361_complex',
+            r6366           = 'qmcapp_r6366',
+                            
+            #r7115           = 'qmcpack_r7115',
+            #r7309           = 'qmcpack_r7309',
+            #v300_170319     = 'qmcpack_v300_170319',
+            v300_170407     = 'qmcpack_v300_170407',
+            v300_170524     = 'qmcpack_v300_170524',
+            v311_170906     = 'qmcpack_v311_170906',
+            v330_180103     = 'qmcpack_v330_180103',
+            v330_180107     = 'qmcpack_v330_180107',
+            v340_180227     = 'qmcpack_v340_180227',
+            v340_180328     = 'qmcpack_v340_180328',
+            v340_180505     = 'qmcpack_v340_180505',
 
-            #r7115         = 'qmcpack_r7115',
-            #r7309         = 'qmcpack_r7309',
-            #v300_170319   = 'qmcpack_v300_170319',
-            v300_170407   = 'qmcpack_v300_170407',
-            #v300_170524   = 'qmcpack_v300_170524',
-            v311_170906   = 'qmcpack_v311_170906',
-            #v330_180103   = 'qmcpack_v330_180103',
-            v330_180107   = 'qmcpack_v330_180107',
-            #v340_180227   = 'qmcpack_v340_180227',
-            v340_180328   = 'qmcpack_v340_180328',
-            v340_180505   = 'qmcpack_v340_180505',
+            v300_170407_soa = 'qmcpack_v300_170407_soa',
+            v320_171113     = 'qmcpack_v320_171113',
+            v320_171020     = 'qmcpack_v320_171020',
+            v340_180329     = 'qmcpack_v340_180329',
+            v340_180329_soa = 'qmcpack_v340_180329_soa',
+            v340_180413     = 'qmcpack_v340_180413',
+            v340_180417     = 'qmcpack_v340_180417',
+            v340_180417_soa = 'qmcpack_v340_180417_soa',
+            v340_180705     = 'qmcpack_v340_180705',
 
-            v300          = 'qmcpack_v3_real',
-            v311          = 'qmcpack_v311_real',
-            v311nb        = 'qmcpack_v311nb_real',
-            v320          = 'qmcpack_v320_real',
-            v330          = 'qmcpack_v330_real',
-            v340          = 'qmcpack_v340_real',
-            v350          = 'qmcpack_v350_real',
+            v300            = 'qmcpack_v3_real',
+            v311            = 'qmcpack_v311_real',
+            v311nb          = 'qmcpack_v311nb_real',
+            v320            = 'qmcpack_v320_real',
+            v330            = 'qmcpack_v330_real',
+            v340            = 'qmcpack_v340_real',
+            v350            = 'qmcpack_v350_real',
             )
 
         apps_old_build = '''
@@ -345,13 +369,26 @@ class OIC5Jobs(MachineJobs):
             r6259_complex 
             r6361 r6361_complex 
             r6366
+            v300
             v300_170407
             '''.split()
         apps_new_build = '''
+            v300_170524
             v311_170906
+            v330_180103
             v330_180107
+            v340_180227
             v340_180328
             v340_180505
+            v300_170407_soa
+            v320_171113    
+            v320_171020    
+            v340_180329    
+            v340_180329_soa
+            v340_180413    
+            v340_180417    
+            v340_180417_soa
+            v340_180705    
             v311nb 
             v320 
             v330 
@@ -764,6 +801,7 @@ def get_adjusted_input(short_test):
     replaced_steps  = False
     xmc_methods = set(['vmc','dmc','rmc','csvmc'])
     opt_methods = set(['linear','cslinear'])
+    test_methods = set(['wftest'])
     reader_state.test_name  = test_name
     reader_state.infilepath = infilepath
     for line in f:
@@ -792,6 +830,8 @@ def get_adjusted_input(short_test):
                     in_xmc = True
                 elif method in opt_methods:
                     in_opt = True
+                elif method in test_methods:
+                    None
                 else:
                     error('cannot perform test {0}\nunrecognized QMC method in short QMCPACK input file\nunrecognized method: {1}\ninput file location: {2}'.format(test_name,method,infilepath))
                 #end if
