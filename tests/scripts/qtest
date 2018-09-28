@@ -780,6 +780,33 @@ def rescale_parameter(scale,line):
 #end def rescale_parameter
 
 
+def follow_href(href,filepath,hrefs=None):
+    if hrefs is None:
+        hrefs = []
+    #end if
+    hrpath = os.path.join(os.path.dirname(filepath),href)
+    if href.endswith('xml'):
+        f = open(hrpath,'r')
+        in_comment = False
+        for line in f:
+            if '<!--' in line:
+                in_comment = True
+            #end if
+            if '-->' in line:
+                in_comment = False
+            #end if
+            if not in_comment and 'href=' in line:
+                href = get_attribute('href',line)
+                hrefs.append(href)
+                follow_href(href,hrpath,hrefs)
+            #end if
+        #end for
+        f.close()
+    #end if
+    return hrefs
+#end def follow_href
+
+
 def get_adjusted_input(short_test):
     path       = short_test.path
     infile     = short_test.infile
@@ -824,6 +851,7 @@ def get_adjusted_input(short_test):
                 href = get_attribute('href',line)
                 line = set_attribute('href',os.path.basename(href),line)
                 hrefs.append(href)
+                hrefs.extend(follow_href(href,infilepath))
             elif '<qmc ' in line:
                 method = get_attribute('method',line)
                 if method in xmc_methods:
