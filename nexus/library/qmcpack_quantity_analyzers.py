@@ -1877,15 +1877,15 @@ class DensityAnalyzerBase(HDFAnalyzer):
         print 'writing to ',self.info.source_path,prefix
 
         # mean
-        f.add_density(cell,density,centered=c,add_ghost=g,transpose=t)
+        f.add_density(cell,density,centered=c,add_ghost=g)
         f.write(os.path.join(self.info.source_path,prefix+'.xsf'))
 
         # mean + errorbar
-        f.add_density(cell,density+density_err,centered=c,add_ghost=g,transpose=t)
+        f.add_density(cell,density+density_err,centered=c,add_ghost=g)
         f.write(os.path.join(self.info.source_path,prefix+'+err.xsf'))
 
         # mean - errorbar
-        f.add_density(cell,density-density_err,centered=c,add_ghost=g,transpose=t)
+        f.add_density(cell,density-density_err,centered=c,add_ghost=g)
         f.write(os.path.join(self.info.source_path,prefix+'-err.xsf'))
     #end def write_single_density
 
