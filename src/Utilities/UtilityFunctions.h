@@ -79,7 +79,7 @@ inline void FairDivide(int ntot, int npart, IV& adist)
  *\param last the end of my partition, must be smaller than ntot
  *
  */
-inline void FairDivideAligned(const int ntot, const int base, const int npart, int me, int& first, int& last)
+inline void FairDivideAligned(const int ntot, const int base, const int npart, const int me, int& first, int& last)
 {
   const int blocksize = (((ntot+npart-1)/npart+base-1)/base)*base;
   first = me*blocksize;
