@@ -101,7 +101,7 @@ public:
     myV.resize(n); myG.resize(n); myL.resize(n); myH.resize(n);
   }
 
-  ~SplineR2RAdoptor()
+  virtual ~SplineR2RAdoptor()
   {
     if(MultiSpline != nullptr) delete SplineInst;
   }

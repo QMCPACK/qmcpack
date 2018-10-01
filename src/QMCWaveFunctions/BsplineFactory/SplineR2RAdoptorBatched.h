@@ -33,7 +33,7 @@ namespace qmcplusplus
  *
  * Requires temporage storage and multiplication of phase vectors
  */
-template<template<typename, unsigned> calss DEVICE, typename ST, typename TT>
+template<template<typename, unsigned> class DEVICE, typename ST, typename TT>
 class SplineR2RAdoptorBatched: public SplineR2RAdoptor<ST, TT>
 {
 public:
@@ -66,26 +66,10 @@ public:
   //using gContainer_type=VectorSoaContainer<ST,3>;
   //using hContainer_type=VectorSoaContainer<ST,6>;
 
-  bool IsGamma;
-
-  ///number of points of the original grid
-  int BaseN[3];
-  ///offset of the original grid, always 0
-  int BaseOffset[3];
-
     // The device spline
   BsplineDeviceCUDA<ST, D> device_spline;
 
-  using vContainer_type = Vector<ST,aligned_allocator<ST> >;
-  //using gContainer_type = VectorSoaContainer<ST,3>;
-  //using hContainer_type = VectorSoaContainer<ST,6>;
-  //These should be the reference device vector types
-  std::vector<vContainer_type> myVs;
-  std::vector<vContainer_type> myLs;
-  //gContainer_type myG;
-  //hContainer_type myH;
-
-  SplineR2RAdoptorBatched(): BaseType(),SplineInst(nullptr), MultiSpline(nullptr)
+  SplineR2RAdoptorBatched(): BaseType()
   {
     this->is_complex=false;
     this->is_soa_ready=true;
@@ -93,36 +77,8 @@ public:
     this->KeyWord="SplineR2RAdoptor";
   }
 
-  // SplineR2RAdoptorBatched(const SplineR2RAdoptorBatched& a):
-  //   SplineAdoptor<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr)
-  // {
-  //   const size_t vsize = a.myVs.size();
-  //   //Exception if you copy construct an unintialized Vectorized Adoptor
-  //   const size_t nbasis = (a.myVs.at(0)).size();
-  //   myVs.resize(vsize);
-  //   myLs.resize(vsize);
-  //   for(auto myV : myVs.items())
-  //     myV.resize(nbasis);
-  //   for(auto myL : myLs.items())
-  //     myL.resize(nbasis);
-  // }
-
   ~SplineR2RAdoptorBatched()
-  {
-    if(MultiSpline != nullptr) delete SplineInst;
-  }
-
-  // inline void resizeStorage(size_t n, size_t nvals)
-  // {
-  //   BaseType::init_base(n);
-  //   const size_t npad=getAlignedSize<ST>(n);
-  //   myV.resize(npad);
-  //   myG.resize(npad);
-  //   myL.resize(npad);
-  //   myH.resize(npad);
-
-  //   IsGamma=( (HalfG[0]==0) && (HalfG[1]==0) && (HalfG[2]==0));
-  // }
+  {}
 
   inline void resizeStorage(size_t n, size_t nvals)
   {
@@ -131,27 +87,9 @@ public:
     device_spline.resizeStorage(n, nvals, nwalkers);
   }
 
-  
-  void bcast_tables(Communicate* comm)
-  {
-    chunked_bcast(comm, MultiSpline);
-  }
-
-  void gather_tables(Communicate* comm)
-  {
-    if(comm->size()==1) return;
-    const int Nbands = kPoints.size();
-    const int Nbandgroups = comm->size();
-    offset_real.resize(Nbandgroups+1,0);
-    FairDivideLow(Nbands,Nbandgroups,offset_real);
-    gatherv(comm, MultiSpline, MultiSpline->z_stride, offset_real);
-  }
-
   template<typename GT, typename BCT>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
-    
-
     GGt=dot(transpose(PrimLattice.G),PrimLattice.G);
     SplineInst=new MultiBspline<ST>();
     SplineInst->create(xyz_g,xyz_bc,myVs[0].size());

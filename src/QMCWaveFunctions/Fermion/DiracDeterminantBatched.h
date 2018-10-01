@@ -192,46 +192,39 @@ public:
     NLratios_host.resize(NLrowBufferRows);
   }
 
-  void recompute(MCWalkerConfiguration &W, bool firstTime);
+  virtual void recompute(MCWalkerConfiguration &W, bool firstTime);
   
-  void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool);
+  virtual void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool);
 
   // void update (std::vector<Walker_t*> &walkers, int iat);
   // void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList);
-
-  void addLog (MCWalkerConfiguration &W, std::vector<QMCT::RealType> &logPsi);
-
-  void addGradient(MCWalkerConfiguration &W, int iat,
+  virtual void addLog (MCWalkerConfiguration &W, std::vector<QMCT::RealType> &logPsi);
+  virtual void addGradient(MCWalkerConfiguration &W, int iat,
                    std::vector<QMCT::GradType> &grad);
 
   virtual void calcGradient(MCWalkerConfiguration &W, int iat,
                     std::vector<QMCT::GradType> &grad);
-
-  void ratio (MCWalkerConfiguration &W, int iat,
+  virtual void ratio (MCWalkerConfiguration &W, int iat,
               std::vector<QMCT::ValueType> &psi_ratios);
-
-  void ratio (MCWalkerConfiguration &W, int iat,
+  virtual void ratio (MCWalkerConfiguration &W, int iat,
               std::vector<QMCT::ValueType> &psi_ratios,	std::vector<QMCT::GradType>  &grad);
-
-  void ratio (MCWalkerConfiguration &W, int iat,
+  virtual void ratio (MCWalkerConfiguration &W, int iat,
               std::vector<QMCT::ValueType> &psi_ratios,	std::vector<QMCT::GradType>  &grad,
               std::vector<QMCT::ValueType> &lapl);
-  void ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iat_list,
+  virtual void ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iat_list,
 	      std::vector<QMCT::PosType> &rNew,
 	      std::vector<QMCT::ValueType> &psi_ratios,
 	      std::vector<QMCT::GradType>  &grad,
 	      std::vector<QMCT::ValueType> &lapl);
-    
-  void calcRatio (MCWalkerConfiguration &W, int iat,
+  virtual void calcRatio (MCWalkerConfiguration &W, int iat,
                   std::vector<QMCT::ValueType> &psi_ratios,	std::vector<QMCT::GradType>  &grad,
                   std::vector<QMCT::ValueType> &lapl);
-  void addRatio (MCWalkerConfiguration &W, int iat,
+  virtual void addRatio (MCWalkerConfiguration &W, int iat,
                  std::vector<QMCT::ValueType> &psi_ratios,	std::vector<QMCT::GradType>  &grad,
                  std::vector<QMCT::ValueType> &lapl);
-  void gradLapl (MCWalkerConfiguration &W, SSTA::GradMatrix_t &grads,
+  virtual void gradLapl (MCWalkerConfiguration &W, SSTA::GradMatrix_t &grads,
                  SSTA::ValueMatrix_t &lapl);
-
-  void NLratios (MCWalkerConfiguration &W,
+  virtual void NLratios (MCWalkerConfiguration &W,
 		 std::vector<NLjob> &jobList,
 		 std::vector<PosType> &quadPoints,
 		 std::vector<ValueType> &psi_ratios);
