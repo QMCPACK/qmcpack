@@ -156,8 +156,8 @@ inline std::vector<size_t> get_nnz(csr const& PsiT_MO, intT* refc, size_t N, siz
 // try putting this in shared memory later on
 template<class I = int,
 	 class VType = std::complex<double>,	
-         class Alloc = std::allocator<I>> //boost::mpi3::intranode::allocator<I>,
-//         class is_root = boost::mpi3::intranode::is_root>
+         class Alloc = boost::mpi3::intranode::allocator<I>,
+         class is_root = boost::mpi3::intranode::is_root>
 struct ph_excitations
 {
   public:
@@ -167,8 +167,8 @@ struct ph_excitations
   private:
   using IAllocator = Alloc;
   using CAllocator = typename Alloc::template rebind<configuration_type>::other;
-  using confg_aos = ma::sparse::array_of_sequences<configuration_type,int>;//,CAllocator,is_root>;
-  using index_aos = ma::sparse::array_of_sequences<integer_type,int>;//,IAllocator,is_root>;
+  using confg_aos = ma::sparse::array_of_sequences<configuration_type,int,CAllocator,is_root>;
+  using index_aos = ma::sparse::array_of_sequences<integer_type,int,IAllocator,is_root>;
 
   IAllocator i_allocator_;
   CAllocator c_allocator_;

@@ -462,6 +462,7 @@ void halfRotateCholeskyMatrix(WALKER_TYPES type, task_group& TG, int k0, int kN,
       }
     }
   }
+  TG.Node().barrier();
 }
 
 }

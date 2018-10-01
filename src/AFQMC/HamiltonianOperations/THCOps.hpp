@@ -161,9 +161,16 @@ class THCOps
       return H1;
     }
 
-    
     template<class Mat, class MatB>
     void energy(Mat&& E, MatB const& G, int k, bool addH1=true, bool addEJ=true, bool addEXX=true) {
+      MatB* Kr(nullptr);  
+      MatB* Kl(nullptr);
+      energy(E,G,k,Kl,Kr,addH1,addEJ,addEXX);  
+    }
+
+    // Kl and Kr must be in shared memory for this to work correctly  
+    template<class Mat, class MatB, class MatC, class MatD>
+    void energy(Mat&& E, MatB const& G, int k, MatC* Kl, MatD* Kr, bool addH1=true, bool addEJ=true, bool addEXX=true) {
       if(k>0)
 	APP_ABORT(" Error: THC not yet implemented for multiple references.\n");	
       // G[nel][nmo]
@@ -172,6 +179,8 @@ class THCOps
       assert(E.shape()[0] == G.shape()[0]);        
       assert(E.shape()[1] == 3);        
       int nwalk = G.shape()[0];
+      int getKr = Kr!=nullptr;
+      int getKl = Kl!=nullptr;
 
       // addH1	
       std::fill_n(E.origin(),E.num_elements(),ComplexType(0.0));
@@ -188,6 +197,10 @@ class THCOps
       int nel_ = rotcPua[0].shape()[1];
       int nspin = (walker_type==COLLINEAR)?2:1;
       assert(G.shape()[1] == nel_*nmo_);        
+      if(addEJ and getKl)
+        assert(Kl->shape()[0] == nwalk && Kl->shape()[1] == nu);
+      if(addEJ and getKr)
+        assert(Kr->shape()[0] == nwalk && Kr->shape()[1] == nu);
       using ma::T;
       int u0,uN;
       std::tie(u0,uN) = FairDivideBoundary(comm->rank(),nu,comm->size());
@@ -220,21 +233,31 @@ class THCOps
         for(int wi=0; wi<nwalk; wi++) {
           boost::const_multi_array_ref<ComplexType,2> Gw(G[wi].origin(),extents[nel_][nmo_]);
           boost::const_multi_array_ref<ComplexType,1> G1D(G[wi].origin(),extents[nel_*nmo_]);
+          // need a new routine if addEXX is false, 
+          // otherwise it is quite inefficient to get Ej only
           Guv_Guu(Gw,Guv,Guu,T1,k);
-          ma::product(rotMuv.get()[indices[range_t(u0,uN)][range_t()]],Guu,
-                      Tuu[indices[range_t(u0,uN)]]);
-          E[wi][2] = 0.5*ma::dot(Guu[indices[range_t(nu0+u0,nu0+uN)]],Tuu[indices[range_t(u0,uN)]]); 
-          auto Mptr = rotMuv.get()[u0].origin();  
-          auto Gptr = Guv[0][u0].origin();  
-          for(size_t k=0, kend=(uN-u0)*nv; k<kend; ++k, ++Gptr, ++Mptr)
-            (*Gptr) *= (*Mptr); 
-          ma::product(Guv[0][indices[range_t(u0,uN)][range_t()]],rotcPua[k].get(),
-                      Qub[indices[range_t(u0,uN)][range_t()]]);
-          // using this for now, which should not be much worse
-          ma::product(T(Qub[indices[range_t(u0,uN)][range_t()]]),
-                      T(rotPiu.get()[indices[range_t()][range_t(nu0+u0,nu0+uN)]]),  
-                      Rbk);
-          E[wi][1] = -0.5*ma::dot(R1D,G1D);
+          if(addEJ) {
+            ma::product(rotMuv.get()[indices[range_t(u0,uN)][range_t()]],Guu,
+                        Tuu[indices[range_t(u0,uN)]]);
+            if(getKl)
+              std::copy_n(std::addressof(*Guu.origin())+nu0+u0,uN,std::addressof(*(*Kl)[wi].origin())+u0);
+            if(getKr)
+              std::copy_n(std::addressof(*Tuu.origin())+u0,uN,std::addressof(*(*Kr)[wi].origin())+u0);
+            E[wi][2] = 0.5*ma::dot(Guu[indices[range_t(nu0+u0,nu0+uN)]],Tuu[indices[range_t(u0,uN)]]); 
+          }
+          if(addEXX) {
+            auto Mptr = rotMuv.get()[u0].origin();  
+            auto Gptr = Guv[0][u0].origin();  
+            for(size_t k=0, kend=(uN-u0)*nv; k<kend; ++k, ++Gptr, ++Mptr)
+              (*Gptr) *= (*Mptr); 
+            ma::product(Guv[0][indices[range_t(u0,uN)][range_t()]],rotcPua[k].get(),
+                        Qub[indices[range_t(u0,uN)][range_t()]]);
+            // using this for now, which should not be much worse
+            ma::product(T(Qub[indices[range_t(u0,uN)][range_t()]]),
+                        T(rotPiu.get()[indices[range_t()][range_t(nu0+u0,nu0+uN)]]),  
+                        Rbk);
+            E[wi][1] = -0.5*ma::dot(R1D,G1D);
+          }
         }
       } else {
         for(int wi=0; wi<nwalk; wi++) {
@@ -243,35 +266,43 @@ class THCOps
           boost::const_multi_array_ref<ComplexType,1> G1DB(G[wi].origin()+NAEA*nmo_,extents[NAEB*nmo_]);
           Guv_Guu(Gw,Guv,Guu,T1,k);
           // move calculation of Guv/Guu here to avoid storing 2 copies of Guv for alpha/beta
-          ma::product(rotMuv.get()[indices[range_t(u0,uN)][range_t()]],Guu,
+          if(addEJ) {
+            ma::product(rotMuv.get()[indices[range_t(u0,uN)][range_t()]],Guu,
                       Tuu[indices[range_t(u0,uN)]]);
-          E[wi][2] = 0.5*ma::dot(Guu[indices[range_t(nu0+u0,nu0+uN)]],Tuu[indices[range_t(u0,uN)]]);
-          // alpha
-          auto Mptr = rotMuv.get()[u0].origin();
-          auto Gptr = Guv[0][u0].origin();
-          for(size_t k=0, kend=(uN-u0)*nv; k<kend; ++k, ++Gptr, ++Mptr)
-            (*Gptr) *= (*Mptr);
-          ma::product(Guv[indices[0][range_t(u0,uN)][range_t()]],
+            if(getKl)
+              std::copy_n(std::addressof(*Guu.origin())+nu0+u0,uN,std::addressof(*(*Kl)[wi].origin())+u0);
+            if(getKr)
+              std::copy_n(std::addressof(*Tuu.origin())+u0,uN,std::addressof(*(*Kr)[wi].origin())+u0);
+            E[wi][2] = 0.5*ma::dot(Guu[indices[range_t(nu0+u0,nu0+uN)]],Tuu[indices[range_t(u0,uN)]]);
+          }
+          if(addEXX) {
+            // alpha
+            auto Mptr = rotMuv.get()[u0].origin();
+            auto Gptr = Guv[0][u0].origin();
+            for(size_t k=0, kend=(uN-u0)*nv; k<kend; ++k, ++Gptr, ++Mptr)
+              (*Gptr) *= (*Mptr);
+            ma::product(Guv[indices[0][range_t(u0,uN)][range_t()]],
                       (rotcPua[k].get())[indices[range_t()][range_t(0,NAEA)]],
                       Qub[indices[range_t(u0,uN)][range_t(0,NAEA)]]);
-          // using this for now, which should not be much worse
-          ma::product(T(Qub[indices[range_t(u0,uN)][range_t(0,NAEA)]]),
+            // using this for now, which should not be much worse
+            ma::product(T(Qub[indices[range_t(u0,uN)][range_t(0,NAEA)]]),
                       T(rotPiu.get()[indices[range_t()][range_t(nu0+u0,nu0+uN)]]),
                       Rbk[indices[range_t(0,NAEA)][range_t()]]);
-          E[wi][1] = -0.5*ma::dot(R1D[indices[range_t(0,NAEA*nmo_)]],G1DA);
-          // beta
-          Mptr = rotMuv.get()[u0].origin();
-          Gptr = Guv[1][u0].origin();
-          for(size_t k=0, kend=(uN-u0)*nv; k<kend; ++k, ++Gptr, ++Mptr)
-            (*Gptr) *= (*Mptr);
-          ma::product(Guv[indices[0][range_t(u0,uN)][range_t()]],
+            E[wi][1] = -0.5*ma::dot(R1D[indices[range_t(0,NAEA*nmo_)]],G1DA);
+            // beta
+            Mptr = rotMuv.get()[u0].origin();
+            Gptr = Guv[1][u0].origin();
+            for(size_t k=0, kend=(uN-u0)*nv; k<kend; ++k, ++Gptr, ++Mptr)
+              (*Gptr) *= (*Mptr);
+            ma::product(Guv[indices[0][range_t(u0,uN)][range_t()]],
                       (rotcPua[k].get())[indices[range_t()][range_t(NAEA,NAEA+NAEB)]],
                       Qub[indices[range_t(u0,uN)][range_t(0,NAEB)]]);
-          // using this for now, which should not be much worse
-          ma::product(T(Qub[indices[range_t(u0,uN)][range_t(0,NAEB)]]),
+            // using this for now, which should not be much worse
+            ma::product(T(Qub[indices[range_t(u0,uN)][range_t(0,NAEB)]]),
                       T(rotPiu.get()[indices[range_t()][range_t(nu0+u0,nu0+uN)]]),
                       Rbk[indices[range_t(0,NAEB)][range_t()]]);
-          E[wi][1] -= 0.5*ma::dot(R1D[indices[range_t(0,NAEB*nmo_)]],G1DB);
+            E[wi][1] -= 0.5*ma::dot(R1D[indices[range_t(0,NAEB*nmo_)]],G1DB);
+          }
         }
       }    
       comm->barrier();
@@ -471,11 +502,19 @@ app_log()
 
     bool distribution_over_cholesky_vectors() const { return false; }
 #if defined(QMC_COMPLEX)
-    int local_number_of_cholesky_vectors() const{ return 2*Luv.shape()[1]; }
-    int global_number_of_cholesky_vectors() const{return 2*Luv.shape()[1]; }
+    int local_number_of_cholesky_vectors() const{ 
+        return 2*Luv.shape()[1]; 
+    }
+    int global_number_of_cholesky_vectors() const{
+        return 2*Luv.shape()[1]; 
+    }
 #else
-    int local_number_of_cholesky_vectors() const{ return Luv.shape()[1]; }
-    int global_number_of_cholesky_vectors() const{return Luv.shape()[1]; }
+    int local_number_of_cholesky_vectors() const{ 
+        return Luv.shape()[1]; 
+    }
+    int global_number_of_cholesky_vectors() const{
+        return Luv.shape()[1]; 
+    }
 #endif
 
     // transpose=true means G[nwalk][ik], false means G[ik][nwalk]

@@ -493,8 +493,7 @@ ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& nde
   // using int for now, but should move to short later when everything works well
   // ph_struct stores the reference configuration on the index [0]
   ph_excitations<int,ComplexType> ph_struct(ndets,NAEA,NAEB,counts_alpha,counts_beta,
-                                              std::allocator<int>{});
-//                                            boost::mpi3::intranode::allocator<int>(comm));
+                                            boost::mpi3::intranode::allocator<int>(comm));
   
   if(comm.root()) {
     in.clear();

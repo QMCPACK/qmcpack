@@ -503,12 +503,11 @@ std::cout<<" fromASCII 5 " <<std::endl;
 
     // setup configuration coupligs
 std::cout<<" fromASCII 5 " <<std::endl;
-    using index_aos = ma::sparse::array_of_sequences<int,int>; /*,
+    using index_aos = ma::sparse::array_of_sequences<int,int,
                                                    boost::mpi3::intranode::allocator<int>,
                                                    boost::mpi3::intranode::is_root>;
-*/
-    std::allocator<ComplexType> alloc_{}; //boost::mpi3::intranode::allocator<ComplexType>;
-//    boost::mpi3::intranode::allocator<int> alloc_{TGwfn.Node()};
+//    std::allocator<ComplexType> alloc_{}; //boost::mpi3::intranode::allocator<ComplexType>;
+    boost::mpi3::intranode::allocator<int> alloc_{TGwfn.Node()};
     
     // alpha
     std::vector<int> counts_alpha(abij.number_of_unique_excitations()[0]);

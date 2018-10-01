@@ -722,7 +722,7 @@ const char *wlk_xml_block =
         REQUIRE( imag(it->energy()) == Approx(imag(file_data.E0+file_data.E1+file_data.E2)));
       }
     } else {
-      app_log()<<" E: " <<wset[0].E1() <<" " <<wset[0].EXX()+wset[0].EJ() <<std::endl;
+      app_log()<<" E: " <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<std::endl;
     }
 
     auto size_of_G = wfn.size_of_G_for_vbias();
@@ -1043,11 +1043,17 @@ const char *wlk_xml_block =
     using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
     using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
 
+    Time.restart();
     wfn.Energy(wset);
-    app_log()<<" PHDMSD E: " <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<std::endl;
+    t1=Time.elapsed();
+    app_log()<<" PHMSD E: " <<wset[0].energy() <<" " 
+             <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<" " <<t1 <<std::endl;
 #ifdef __compare__
+    Time.restart();
     nomsd.Energy(wset);
-    app_log()<<" NOMSD E: " <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<std::endl;
+    t1=Time.elapsed();
+    app_log()<<" NOMSD E: " <<wset[0].energy() <<" " 
+             <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<" " <<t1  <<std::endl;
       SHM_Buffer Gbuff_(TG.TG_local(),nwalk*NMO*NMO*4);
       boost::multi_array_ref<ComplexType,2> Gph(Gbuff_.data(),extents[2*NMO*NMO][nwalk]);
       boost::multi_array_ref<ComplexType,2> Gno(Gbuff_.data()+Gph.num_elements(),

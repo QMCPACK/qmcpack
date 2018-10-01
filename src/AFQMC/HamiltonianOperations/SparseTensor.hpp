@@ -161,21 +161,16 @@ class SparseTensor
       return H1;  
     }
 
-#if defined(AFQMC_SP) 
- template<class Mat, class MatB,
-            typename = typename std::enable_if_t<
-                    std::is_same<typename std::decay<MatB>::type::element, SPComplexType>::value> 
-    >
-    void energy(Mat&& E, const MatB& Gc, int k, bool addH1=true, bool addEJ=true, bool addEXX=true) {
-      APP_ABORT(" Error: AFQMC_SP not yet implemented in HamitonianOperations::SparseTensor(). \n"); 
+    template<class Mat, class MatB>
+    void energy(Mat&& E, MatB const& G, int k, bool addH1=true, bool addEJ=true, bool addEXX=true) {
+      MatB* Kr(nullptr);
+      MatB* Kl(nullptr);
+      energy(E,G,k,Kl,Kr,addH1,addEJ,addEXX);
     }
-#endif
-    
-    template<class Mat, class MatB,
-            typename = typename std::enable_if_t<
-                    std::is_same<typename std::decay<MatB>::type::element, ComplexType>::value> 
-    >
-    void energy(Mat&& E, const MatB& Gc, int k, bool addH1=true, bool addEJ=true, bool addEXX=true) {
+
+    // Kl and Kr must be in shared memory for this to work correctly  
+    template<class Mat, class MatB, class MatC, class MatD>
+    void energy(Mat&& E, MatB const& Gc, int k, MatC* Kl, MatD* Kr, bool addH1=true, bool addEJ=true, bool addEXX=true) {
       assert(E.shape()[1]>=3);
       assert(k >= 0 && k < haj.size());  
       assert(k >= 0 && k < Vakbl_view.size());  
@@ -185,8 +180,15 @@ class SparseTensor
                         extents[Vakbl_view[k].shape()[0]][Gc.shape()[1]]);
 
       int nwalk = Gc.shape()[1];
+      int getKr = Kr!=nullptr;
+      int getKl = Kl!=nullptr;
       if(E.shape()[0] != nwalk || E.shape()[1] < 3)
         APP_ABORT(" Error in AFQMC/HamiltonianOperations/sparse_matrix_energy::calculate_energy(). Incorrect matrix dimensions \n");
+
+      if(addEJ and getKl)
+        assert(Kl->shape()[0] == nwalk && Kl->shape()[1] == SpvnT[k].shape()[0]);
+      if(addEJ and getKr)
+        assert(Kr->shape()[0] == nwalk && Kr->shape()[1] == SpvnT[k].shape()[0]);
 
       for(int n=0; n<nwalk; n++) 
         std::fill_n(E[n].origin(),3,ComplexType(0.));
@@ -215,7 +217,22 @@ class SparseTensor
                                             SpvnT_view[k].local_origin()[0]*Gc.shape()[1],
                                         extents[SpvnT_view[k].shape()[0]][Gc.shape()[1]]);
         ma::product(SpvnT_view[k], Gc, v_); 
-        for(int wi=0; wi<Gc.shape()[1]; wi++)
+        if(getKl || getKr) { 
+          for(int wi=0; wi<Gc.shape()[1]; wi++) {
+            auto _v_ = v_[indices[range_t()][wi]];
+            if(getKl) {
+              auto Kli = (*Kl)[wi];
+              for(int ki=0, qi = SpvnT_view[k].local_origin()[0]; ki<_v_.size(); ki++, qi++)
+                Kli[qi] = _v_[ki];
+            }
+            if(getKr) {
+              auto Kri = (*Kr)[wi];
+              for(int ki=0, qi = SpvnT_view[k].local_origin()[0]; ki<_v_.size(); ki++, qi++)
+                Kri[qi] = _v_[ki];
+            }
+          }
+        }
+        for(int wi=0; wi<Gc.shape()[1]; wi++) 
           E[wi][2] = 0.5*scl*ma::dot(v_[indices[range_t()][wi]],v_[indices[range_t()][wi]]); 
       }
 
@@ -292,7 +309,7 @@ std::cout<<"sizes: " <<SpvnT[k].shape()[0] <<" " <<SpvnT[k].shape()[1] <<" " <<G
 
     bool distribution_over_cholesky_vectors() const{ return true; }
     int local_number_of_cholesky_vectors() const{ return Spvn.shape()[1]; }
-    int global_number_of_cholesky_vectors() const{return global_nCV; }
+    int global_number_of_cholesky_vectors() const{ return global_nCV; }
 
     // transpose=true means G[nwalk][ik], false means G[ik][nwalk]
     bool transposed_G_for_vbias() const{return false;}

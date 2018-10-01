@@ -38,6 +38,7 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+
 /*
  * Class that implements a multi-Slater determinant trial wave-function.
  * Single determinant wfns are also allowed. 

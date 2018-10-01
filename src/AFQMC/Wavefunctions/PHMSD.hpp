@@ -60,9 +60,9 @@ class PHMSD: public AFQMCInfo
   using shared_mutex = boost::mpi3::mutex;  
   using shared_CMatrix = boost::multi_array<ComplexType,2>;//,shared_allocator<ComplexType>>;
   using shared_CTensor = boost::multi_array<ComplexType,3>;//,shared_allocator<ComplexType>>;
-  using index_aos = ma::sparse::array_of_sequences<int,int>;
-//                                                   boost::mpi3::intranode::allocator<int>,
-//                                                   boost::mpi3::intranode::is_root>;
+  using index_aos = ma::sparse::array_of_sequences<int,int,
+                                                   boost::mpi3::intranode::allocator<int>,
+                                                   boost::mpi3::intranode::is_root>;
 
   public:
 
@@ -395,6 +395,7 @@ class PHMSD: public AFQMCInfo
     boost::multi_array<ComplexType,2> Qwork;     
     boost::multi_array<ComplexType,2> Gwork; 
     boost::multi_array<ComplexType,1> wgt; 
+    boost::multi_array<ComplexType,1> opSpinEJ; 
 
     // array of sequence structure storing the list of connected alpha/beta configurations
     std::array<index_aos,2> det_couplings; 
@@ -415,17 +416,6 @@ class PHMSD: public AFQMCInfo
     MPI_Request req_Gsend, req_Grecv;
     MPI_Request req_SMsend, req_SMrecv;
 
-    /* 
-     * Computes the mixed density matrix of a single given determinant in the trial wave function.
-     * Intended to be used in combination with the energy evaluation routine.
-     * G and Ov are expected to be in shared memory.
-     */
-    template<class WlkSet, class MatG, class TVec>
-    void MixedDensityMatrix_for_E(const WlkSet& wset, MatG&& G, TVec&& Ov, int nd);
-
-    template<class MatSM, class MatG, class TVec>
-    void MixedDensityMatrix_for_E_from_SM(const MatSM& SM, MatG&& G, TVec&& Ov, int nd); 
-
     /*
      * Calculates the local energy and overlaps of all the walkers in the set and 
      * returns them in the appropriate data structures
@@ -438,20 +428,7 @@ class PHMSD: public AFQMCInfo
      * returns them in the appropriate data structures
      */
     template<class WlkSet, class Mat, class TVec>
-    void Energy_distributed(const WlkSet& wset, Mat&& E, TVec&& Ov) {
-/*
-      if(ci.size()==1)
-        Energy_distributed_singleDet(wset,std::forward<Mat>(E),std::forward<TVec>(Ov));
-      else
-        Energy_distributed_multiDet(wset,std::forward<Mat>(E),std::forward<TVec>(Ov));
-*/
-    }
-
-    template<class WlkSet, class Mat, class TVec>
-    void Energy_distributed_singleDet(const WlkSet& wset, Mat&& E, TVec&& Ov);
-
-    template<class WlkSet, class Mat, class TVec>
-    void Energy_distributed_multiDet(const WlkSet& wset, Mat&& E, TVec&& Ov);
+    void Energy_distributed(const WlkSet& wset, Mat&& E, TVec&& Ov); 
 
     int dm_size(bool full) const {
       switch(walker_type) {
