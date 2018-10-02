@@ -88,20 +88,19 @@ Wavefunction WavefunctionFactory::fromASCII(TaskGroup_& TGprop, TaskGroup_& TGwf
   }
   std::string wfn_type = getWfnType(in);
 
-std::cout<<" fromASCII 0 " <<std::endl;
-
   using Alloc = boost::mpi3::intranode::allocator<ComplexType>;
   if(type=="msd" || type=="nomsd") {
+
+    app_log()<<" Wavefunction type: NOMSD\n";
+
     std::vector<ComplexType> ci;
     std::vector<PsiT_Matrix> PsiT;
     if(wfn_type == "occ" || wfn_type == "mixed") {
       std::vector<PsiT_Matrix> PsiT_MO; // read_ph_wavefunction returns the full MO matrix
       // careful here!!!!
       // number of terms in PsiT_MO depend on RHF/UHF type, not on walker_type!!!
-std::cout<<" fromASCII 1 " <<std::endl;
       ph_excitations<int,ComplexType> abij = read_ph_wavefunction(in,ndets_to_read,walker_type,
                     TGwfn.Node(),NMO,NAEA,NAEB,PsiT_MO);
-std::cout<<" fromASCII 2 " <<std::endl;
       assert(abij.number_of_configurations() == ndets_to_read);
       int NEL = (walker_type==NONCOLLINEAR)?(NAEA+NAEB):NAEA;  
       int N_ = (walker_type==NONCOLLINEAR)?2*NMO:NMO;
@@ -155,7 +154,6 @@ std::cout<<" fromASCII 2 " <<std::endl;
           }
         } 
       }
-std::cout<<" fromASCII 3 " <<std::endl;
       // work array
       std::vector<int> iwork(NAEA); 
       auto configurations = abij.configurations_begin()+1;
@@ -213,7 +211,6 @@ std::cout<<" fromASCII 3 " <<std::endl;
     }
     TGwfn.node_barrier();
 
-std::cout<<" fromASCII 4 " <<std::endl;
     // if requested, create restart file
     // Will use phdf5 in the future, for now only head node writes
     hdf_archive dump(TGwfn.Global());
@@ -238,10 +235,8 @@ std::cout<<" fromASCII 4 " <<std::endl;
       }  
     }
     // multideterminant NOMSD needs 
-std::cout<<" fromASCII 5 " <<std::endl;
     auto HOps(h.getHamiltonianOperations(wfn_type == "occ" && walker_type==CLOSED,
 			ndets_to_read>1,walker_type,PsiT,cutvn,cutv2,TGprop,TGwfn,dump));  
-std::cout<<" fromASCII 6 " <<std::endl;
     if(restart_file != "") 
       if(TGwfn.Global().root()) {
         dump.pop();
@@ -284,10 +279,11 @@ std::cout<<" fromASCII 6 " <<std::endl;
       APP_ABORT(" Error: Problems adding new initial guess, already exists. \n"); 
 
     //return Wavefunction{}; 
-std::cout<<" fromASCII 100 " <<std::endl;
     return Wavefunction(NOMSD(AFinfo,cur,TGwfn,std::move(HOps),std::move(ci),std::move(PsiT),
                         walker_type,NCE,targetNW)); 
   } else if(type == "phmsd") {
+
+    app_log()<<" Wavefunction type: PHMSD\n";
 
     /* Implementation notes: 
      *  - PsiT: [Nact, NMO] where Nact is the number of active space orbitals, 
@@ -301,10 +297,8 @@ std::cout<<" fromASCII 100 " <<std::endl;
     if(walker_type!=COLLINEAR)
       APP_ABORT("Error: PHMSD requires a COLLINEAR calculation.\n");
     std::vector<PsiT_Matrix> PsiT_MO;
-std::cout<<" fromASCII 1 " <<std::endl;
     ph_excitations<int,ComplexType> abij = read_ph_wavefunction(in,ndets_to_read,walker_type,
                   TGwfn.Node(),NMO,NAEA,NAEB,PsiT_MO);
-std::cout<<" fromASCII 2 " <<std::endl;
     int NEL = (walker_type==NONCOLLINEAR)?(NAEA+NAEB):NAEA;  
     int N_ = (walker_type==NONCOLLINEAR)?2*NMO:NMO;
     if(wfn_type == "occ") {
@@ -387,7 +381,6 @@ std::cout<<" fromASCII 2 " <<std::endl;
         }
       }
     }
-std::cout<<" fromASCII 3 " <<std::endl;
     // now that mappings have been constructed, map indexes of excited state orbitals
     // to the corresponding active space indexes
     if(TGwfn.Node().root()) {
@@ -448,10 +441,8 @@ std::cout<<" fromASCII 3 " <<std::endl;
     //        HOps through the index corresponding 0/1.			
     // never add coulomb to half rotated v2 tensor in PHMSD	
     //auto HOps(h.getHamiltonianOperations(wfn_type == "occ",false, 
-std::cout<<" fromASCII 4 " <<std::endl;
     auto HOps(h.getHamiltonianOperations(false,false,
                                          CLOSED,PsiT,cutvn,cutv2,TGprop,TGwfn,dump));  
-std::cout<<" fromASCII 5 " <<std::endl;
 /*
     if(restart_file != "") 
       if(TGwfn.Global().root()) {
@@ -502,7 +493,6 @@ std::cout<<" fromASCII 5 " <<std::endl;
       APP_ABORT(" Error: Problems adding new initial guess, already exists. \n"); 
 
     // setup configuration coupligs
-std::cout<<" fromASCII 5 " <<std::endl;
     using index_aos = ma::sparse::array_of_sequences<int,int,
                                                    boost::mpi3::intranode::allocator<int>,
                                                    boost::mpi3::intranode::is_root>;
@@ -531,7 +521,6 @@ std::cout<<" fromASCII 5 " <<std::endl;
     }
     TGwfn.Node().barrier();
 
-std::cout<<" fromASCII 1000 " <<std::endl;
     //return Wavefunction{}; 
     return Wavefunction(PHMSD(AFinfo,cur,TGwfn,std::move(HOps),std::move(acta2mo),
                         std::move(actb2mo),std::move(abij),std::move(beta_coupled_to_unique_alpha),

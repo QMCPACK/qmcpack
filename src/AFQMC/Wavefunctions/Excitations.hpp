@@ -27,6 +27,15 @@ namespace qmcplusplus
 namespace afqmc
 {
 
+// CHEAT!!! 
+template<class TP, class integer>
+size_t get_index(TP const& tp_, integer loc)
+{
+  if(loc == 0) return size_t(std::get<0>(tp_));
+  else if(loc == 1) return size_t(std::get<1>(tp_));
+  else throw std::runtime_error(" Error in qmcplusplus::afqmc::get_index<TP,integer>(). \n");
+}
+
 template<class Vector>
 void push_excitation(Vector const& abij, Vector& v)
 {

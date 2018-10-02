@@ -50,6 +50,11 @@ namespace afqmc
  * No relation between different determinants in the expansion is assumed.
  * Designed for non-orthogonal MSD expansions. 
  * For particle-hole orthogonal MSD wfns, use FastMSD.
+ * NOTE: Optimization note: CLOSED and NONCOLLINEAR calculations with a unique reference
+ *                          only need a single set of unique overlaps/determinants/energies.
+ *                          Fix this to improve performance!!!! 
+ * THERE IS A PROBLEM WITH CLOSED SHELL CALCULATIONS!!!!
+ * INCONSISTENCY WHEN SPIN DEPENDENT QUANTITIES ARE REUESTED, e.g. G. 
  */  
 class PHMSD: public AFQMCInfo
 {
@@ -103,11 +108,18 @@ class PHMSD: public AFQMCInfo
                 local_etot(extents[2][maxn_unique_confg]),
                 local_QQ0inv(extents[((walker_type==COLLINEAR)?2:1)][maxnactive][NAEA]),
                 Qwork(extents[max_exct_n][max_exct_n]),
-                //Gwork({size_t(NAEA),maxnactive}),
                 Gwork(extents[NAEA][maxnactive]),
                 det_couplings{std::move(beta_coupled_to_unique_alpha__),
                               std::move(alpha_coupled_to_unique_beta__)}
     {
+      /* To me, PHMSD is not compatible with walker_type=CLOSED unless
+       * the MSD expansion is symmetric with respect to spin. For this, 
+       * it is better to write a specialized class that assumes either spin symmetry
+       * or e.g. Perfect Pairing.
+       */
+      if(walker_type == CLOSED) 
+        APP_ABORT("Error: PHMSD requires walker_type != CLOSED.\n");
+
       compact_G_for_vbias = true; 
       transposed_G_for_vbias_ = HamOp.transposed_G_for_vbias();  
       transposed_G_for_E_ = HamOp.transposed_G_for_E();  
@@ -471,7 +483,7 @@ class PHMSD: public AFQMCInfo
           return (full)?(arr{NMO,NMO}):(arr{NAEA,NMO});
           break;
         case COLLINEAR:
-          return (full)?(arr{NMO,NMO}):((sp==Alpha)?(arr{NAEA,NMO}):(arr{NAEA,NMO}));
+          return (full)?(arr{NMO,NMO}):((sp==Alpha)?(arr{NAEA,NMO}):(arr{NAEB,NMO}));
           break;
         case NONCOLLINEAR:
           return (full)?(arr{2*NMO,2*NMO}):(arr{NAEA,2*NMO});

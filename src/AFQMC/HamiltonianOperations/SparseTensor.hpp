@@ -294,7 +294,6 @@ class SparseTensor
             >
     void vbias(const MatA& G, MatB&& v, double a=1., double c=0., int k=0) {
       if(not separateEJ) k=0;
-std::cout<<"sizes: " <<SpvnT[k].shape()[0] <<" " <<SpvnT[k].shape()[1] <<" " <<G.shape()[0] <<" " <<G.shape()[1] <<std::endl;
       assert( SpvnT[k].shape()[1] == G.shape()[0] );
       assert( SpvnT[k].shape()[0] == v.shape()[0] );   
       assert( G.shape()[1] == v.shape()[1] );

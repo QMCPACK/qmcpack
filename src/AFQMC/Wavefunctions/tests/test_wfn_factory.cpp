@@ -961,7 +961,8 @@ TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
 
-    auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
+    //auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
+    auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,1);
     int nwalk = 1; // choose prime number to force non-trivial splits in shared routines
     //int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
@@ -1033,12 +1034,12 @@ const char *wlk_xml_block =
     Time.restart();
     nomsd.Overlap(wset);
     t1=Time.elapsed();
-    app_log()<<" NOMSD Overlap: " <<wset[0].overlap() <<" " <<t1 <<std::endl;
+    app_log()<<" NOMSD Overlap: " <<setprecision(12) <<wset[0].overlap() <<" " <<t1 <<std::endl;
 #endif
     Time.restart();
     wfn.Overlap(wset);
     t1=Time.elapsed();
-    app_log()<<" PHMSD Overlap: " <<wset[0].overlap() <<" " <<t1 <<std::endl;
+    app_log()<<" PHMSD Overlap: " <<setprecision(12) <<wset[0].overlap() <<" " <<t1 <<std::endl;
 
     using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
     using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
@@ -1046,13 +1047,13 @@ const char *wlk_xml_block =
     Time.restart();
     wfn.Energy(wset);
     t1=Time.elapsed();
-    app_log()<<" PHMSD E: " <<wset[0].energy() <<" " 
+    app_log()<<" PHMSD E: " <<setprecision(12) <<wset[0].energy() <<" " 
              <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<" " <<t1 <<std::endl;
 #ifdef __compare__
     Time.restart();
     nomsd.Energy(wset);
     t1=Time.elapsed();
-    app_log()<<" NOMSD E: " <<wset[0].energy() <<" " 
+    app_log()<<" NOMSD E: " <<setprecision(12) <<wset[0].energy() <<" " 
              <<wset[0].E1() <<" " <<wset[0].EXX() <<" " <<wset[0].EJ() <<" " <<t1  <<std::endl;
       SHM_Buffer Gbuff_(TG.TG_local(),nwalk*NMO*NMO*4);
       boost::multi_array_ref<ComplexType,2> Gph(Gbuff_.data(),extents[2*NMO*NMO][nwalk]);
@@ -1077,7 +1078,7 @@ const char *wlk_xml_block =
 
     double sqrtdt = std::sqrt(0.01);
     auto nCV = wfn.local_number_of_cholesky_vectors();
-    SHM_Buffer Xbuff(TG.TG_local(),nCV*nwalk);
+    SHM_Buffer Xbuff(TG.TG_local(),2*nCV*nwalk);
     boost::multi_array_ref<ComplexType,2> X(Xbuff.data(),extents[nCV][nwalk]);
     wfn.vbias(G,X,sqrtdt);
     ComplexType Xsum=0;
@@ -1117,7 +1118,17 @@ const char *wlk_xml_block =
         Vsum += vHS[i][0];
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
-    
+
+    boost::multi_array_ref<ComplexType,1> vMF(Xbuff.data(),extents[nCV]);
+    wfn.vMF(vMF);
+    ComplexType vMFsum=0;
+    {
+      vMFsum=0;
+      for(int i=0; i<vMF.shape()[0]; i++)
+        vMFsum += vMF[i];
+      app_log()<<" vMFsum: " <<setprecision(12) <<vMFsum <<std::endl;
+    }
+
 #ifdef __compare__
     assert(nCV == nomsd.local_number_of_cholesky_vectors());
    
@@ -1137,17 +1148,18 @@ const char *wlk_xml_block =
           std::cout<<i <<" -- " <<j <<" " <<G_[i*NMO+j][0] <<" " <<Gno[i*NMO+j][0] <<" "
                    <<std::abs(G_[i*NMO+j][0]-Gno[i*NMO+j][0]) <<std::endl;
        } 
-      nomsd.vbias(G_,X,sqrtdt);
+      boost::multi_array_ref<ComplexType,2> X2(Xbuff.data()+nCV*nwalk,extents[nCV][nwalk]);
+      nomsd.vbias(G_,X2,sqrtdt);
       Xsum=0;
-      for(int i=0; i<X.shape()[0]; i++)
-        Xsum += X[i][0];
+      for(int i=0; i<X2.shape()[0]; i++)
+        Xsum += X2[i][0];
       app_log()<<" Xsum (NOMSD): " <<setprecision(12) <<Xsum <<std::endl;
 
     SHM_Buffer vHSbuff_(TG.TG_local(),NMO*NMO*nwalk);
     int vdim1_ = (nomsd.transposed_vHS()?nwalk:NMO*NMO);
     int vdim2_ = (nomsd.transposed_vHS()?NMO*NMO:nwalk);
     boost::multi_array_ref<ComplexType,2> vHS_(vHSbuff_.data(),extents[vdim1_][vdim2_]);
-    nomsd.vHS(X,vHS_,sqrtdt);
+    nomsd.vHS(X2,vHS_,sqrtdt);
     TG.local_barrier();
     Vsum=0;
     if(std::abs(file_data.Vsum)>1e-8) {
@@ -1164,6 +1176,21 @@ const char *wlk_xml_block =
         Vsum += vHS_[i][0];
       app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
     }
+
+    boost::multi_array_ref<ComplexType,1> vMF2(Xbuff.data()+nCV,extents[nCV]);
+    nomsd.vMF(vMF2);
+    vMFsum=0;
+    {
+      vMFsum=0;
+      app_log()<<" vMF: " <<std::endl; 
+      for(int i=0; i<vMF2.shape()[0]; i++) {
+        vMFsum += vMF2[i];
+//        if(std::abs(vMF[i]-vMF2[i]) > 1e-8)
+//          app_log()<<i <<": " <<setprecision(12) <<vMF[i] <<" " <<vMF2[i] <<" " <<std::abs(vMF[i]-vMF2[i]) <<std::endl;
+      }  
+      app_log()<<" vMFsum: " <<setprecision(12) <<vMFsum <<std::endl;
+    }
+
 #endif
   }
 }
