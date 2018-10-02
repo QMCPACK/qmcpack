@@ -54,14 +54,14 @@ class WalkerSetFactory
       return true;
   }
 
-  WalkerSet& getWalkerSet(TaskGroup_& TG, const std::string& ID, RandomGenerator_t* rng, int nback_prop)
+  WalkerSet& getWalkerSet(TaskGroup_& TG, const std::string& ID, RandomGenerator_t* rng)
   {
     auto xml = xmlBlocks.find(ID);
     if(xml == xmlBlocks.end())
       APP_ABORT("Error: Missing xml Block in WalkerSetFactory::getWalkerSet(string&). \n");
     auto wlk = handlers.find(ID);
     if( wlk == handlers.end() ) {
-      auto newwlk = handlers.insert(std::make_pair(ID,buildHandler(TG,xml->second,rng,nback_prop)));
+      auto newwlk = handlers.insert(std::make_pair(ID,buildHandler(TG,xml->second,rng)));
       if(!newwlk.second)
         APP_ABORT(" Error: Problems inserting new hamiltonian in WalkerSetFactory::getHandler(streing&). \n");
       return (newwlk.first)->second;  
@@ -93,7 +93,7 @@ class WalkerSetFactory
   std::map<std::string,AFQMCInfo>& InfoMap;
 
   // generates a new WalkerSet and returns the pointer to the base class
-  WalkerSet buildHandler(TaskGroup_& TG, xmlNodePtr cur, RandomGenerator_t* rng, int nback_prop)
+  WalkerSet buildHandler(TaskGroup_& TG, xmlNodePtr cur, RandomGenerator_t* rng)
   {
     std::string type("shared");
     std::string info("info0");
@@ -111,7 +111,7 @@ class WalkerSetFactory
     if(type != "shared")
       APP_ABORT(" Error: Unknown WalkerSet type in WalkerSetFactory::buildHandler(). \n"); 
 
-    return WalkerSet(TG,cur,InfoMap[info],rng,nback_prop); 
+    return WalkerSet(TG,cur,InfoMap[info],rng); 
   }
 
   std::map<std::string,xmlNodePtr> xmlBlocks;

@@ -101,8 +101,6 @@ class AFQMCSharedPropagator: public AFQMCInfo
     // useful when the current buffers use too much memory (e.g. reducing steps in future calls)
     void reset() { shmbuff.reset(nullptr); }
 
-    int getNBackProp() const { return nback_prop_steps; }
-
     bool hybrid_propagation() { return hybrid; }
 
   protected: 

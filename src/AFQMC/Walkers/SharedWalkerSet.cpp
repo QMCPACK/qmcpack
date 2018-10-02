@@ -44,6 +44,7 @@ void SharedWalkerSet::parse(xmlNodePtr cur)
     m_param.add(type,"walker_type","std::string");
     m_param.add(load_balance_type,"load_balance","std::string");
     m_param.add(pop_control_type,"pop_control","std::string");
+    m_param.add(nback_prop,"back_propagation_steps","int");
     m_param.put(cur);
 
     std::for_each(type.begin(), type.end(), [](char & c){
