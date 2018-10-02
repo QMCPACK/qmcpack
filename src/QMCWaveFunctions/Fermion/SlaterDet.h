@@ -35,7 +35,7 @@ template<Batching batching = Batching::SINGLE>
 class SlaterDet;
 
 template<>
-class SlaterDet<Batching::SINGLE>: public WaveFunctionComponent
+class SlaterDet<Batching::SINGLE>: public virtual WaveFunctionComponent
 {
 protected:
   static constexpr Batching B = Batching::SINGLE;

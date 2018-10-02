@@ -26,6 +26,7 @@ typedef enum { V_TIMER, VGL_TIMER, ACCEPT_TIMER, NL_TIMER,
 TrialWaveFunction<Batching::BATCHED>::TrialWaveFunction()
 {
   this->B_ = Batching::BATCHED;
+  this->ClassName = "TrialWaveFunction<Batching::BATCHED>";
 }
 
 TrialWaveFunction<Batching::BATCHED>::TrialWaveFunction(Communicate* c)

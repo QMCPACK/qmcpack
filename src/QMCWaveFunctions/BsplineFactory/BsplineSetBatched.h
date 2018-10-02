@@ -172,6 +172,8 @@ struct BsplineSet<SA, Batching::BATCHED>: public SA,
     APP_ABORT("Single evaluations not supported by BsplineSet<BATCHED>");
   }
 
+  
+  
 };
 
 }

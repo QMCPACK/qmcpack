@@ -16,7 +16,6 @@
 #include "OhmmsSoA/Container.h"
 #include "spline2/MultiBspline.hpp"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptor.h"
-#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBatched.h"
 #include "QMCWaveFunctions/BsplineFactory/BsplineDeviceCUDA.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorReaderP.h"
 #include "einspline/multi_bspline.h"
@@ -49,7 +48,7 @@ public:
 
   using BaseType::first_spo;
   using BaseType::last_spo;
-  using BaseTYpe::HalfG;
+  using BaseType::HalfG;
   using BaseType::GGt;
   using BaseType::PrimLattice;
   using BaseType::kPoints;
@@ -66,7 +65,7 @@ public:
   //using gContainer_type=VectorSoaContainer<ST,3>;
   //using hContainer_type=VectorSoaContainer<ST,6>;
 
-    // The device spline
+  // The device spline
   BsplineDeviceCUDA<ST, D> device_spline;
 
   SplineR2RAdoptorBatched(): BaseType()
@@ -90,18 +89,18 @@ public:
   template<typename GT, typename BCT>
   void create_spline(GT& xyz_g, BCT& xyz_bc)
   {
-    GGt=dot(transpose(PrimLattice.G),PrimLattice.G);
-    SplineInst=new MultiBspline<ST>();
-    SplineInst->create(xyz_g,xyz_bc,myVs[0].size());
-    MultiSpline=SplineInst->spline_m;
+    this->GGt=dot(transpose(PrimLattice.G),PrimLattice.G);
+    this->SplineInst=new MultiBspline<ST>();
+    this->SplineInst->create(xyz_g,xyz_bc,this->myV.size());
+    this->MultiSpline=this->SplineInst->spline_m;
 
     for(size_t i=0; i<D; ++i)
     {
-      BaseOffset[i]=0;
-      BaseN[i]=xyz_g[i].num+3;
+      this->BaseOffset[i]=0;
+      this->BaseN[i]=xyz_g[i].num+3;
     }
-    qmc_common.memory_allocated += SplineInst->sizeInByte();
-    device_spline.createSpline(*SplineInst);
+    qmc_common.memory_allocated += this->SplineInst->sizeInByte();
+    this->device_spline.createSpline(this->PrimLattice,*(this->SplineInst));
   }
 
   // void create_spline(TinyVector<int,D>& mesh, int n)
@@ -126,18 +125,18 @@ public:
 
   inline void flush_zero()
   {
-    SplineInst->flush_zero();
+    this->SplineInst->flush_zero();
   }
 
   inline void set_spline(SingleSplineType* spline_r, SingleSplineType* spline_i, int twist, int ispline, int level)
   {
-    SplineInst->copy_spline(spline_r, ispline, BaseOffset, BaseN);
+    this->SplineInst->copy_spline(spline_r, ispline, this->BaseOffset, this->BaseN);
   }
 
   void set_spline(ST* restrict psi_r, ST* restrict psi_i, int twist, int ispline, int level)
   {
     Vector<ST> v_r(psi_r,0);
-    SplineInst->set(ispline, v_r);
+    this->SplineInst->set(ispline, v_r);
   }
 
   inline void set_spline_domain(SingleSplineType* spline_r, SingleSplineType* spline_i,
@@ -149,7 +148,7 @@ public:
   {
     std::ostringstream o;
     o<<"spline_" << SplineAdoptor<ST,D>::MyIndex;
-    einspline_engine<SplineType> bigtable(SplineInst->spline_m);
+    einspline_engine<SplineType> bigtable(this->SplineInst->spline_m);
     return h5f.read(bigtable,o.str().c_str());//"spline_0");
   }
 
@@ -157,7 +156,7 @@ public:
   {
     std::ostringstream o;
     o<<"spline_" << SplineAdoptor<ST,D>::MyIndex;
-    einspline_engine<SplineType> bigtable(SplineInst->spline_m);
+    einspline_engine<SplineType> bigtable(this->SplineInst->spline_m);
     return h5f.write(bigtable,o.str().c_str());//"spline_0");
   }
 
@@ -221,8 +220,8 @@ public:
     {
       bc_signs[i] = convertPos(activePs[i], rus[i]);
     }
-    SplineInst->evaluate(rus,myVs);
-    assign_v(bc_signs,myVs,psis);
+    this->SplineInst->evaluate(rus,this->myVs);
+    assign_v(bc_signs,this->myVs,psis);
   }
 
   template<typename VM>

@@ -175,8 +175,9 @@ DiracDeterminant<Batching::BATCHED>::addLog (MCWalkerConfiguration &W, std::vect
 }
 
 void
-DiracDeterminant<Batching::BATCHED>::calcGradient(MCWalkerConfiguration &W, int iat,
-                                   std::vector<GradType> &grad)
+DiracDeterminant<Batching::BATCHED>::calcGradient(MCWalkerConfiguration &W,
+						  int iat,
+						  std::vector<GradType> &grad)
 {
   std::vector<Walker_t*> &walkers = W.WalkerList;
   if (AList.size() < walkers.size())

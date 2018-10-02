@@ -26,9 +26,12 @@
 
 namespace qmcplusplus
 {
-
+  
 SPOSet<Batching::SINGLE>::SPOSet()
   :OrbitalSetSize(0),Optimizable(false),ionDerivs(false),builder_index(-1)
+#ifdef QMC_CUDA
+  ,WhatAmI("SPOSet<SINGLE>")
+#endif
 #if !defined(ENABLE_SOA)
   ,Identity(false),BasisSetSize(0),C(nullptr)
 #endif
@@ -402,7 +405,10 @@ void SPOSet<Batching::SINGLE>::evaluateGradSource (const ParticleSet &P, int fir
   APP_ABORT("SPOSetlBase::evalGradSource is not implemented");
 }
 
-  
+#ifndef QMC_CUDA
+template class SPOSet<Batching::SINGLE>;
+#endif
+
 }
 
 

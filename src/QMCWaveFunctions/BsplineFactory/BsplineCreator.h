@@ -14,6 +14,10 @@
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorReaderP.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineHybridAdoptorReaderP.h"
 
+#ifdef QMC_CUDA
+#include "QMCWaveFunctions/BsplineFactory/SplineR2RAdoptorBatched.h"
+#endif
+
 namespace qmcplusplus
 {
 template<Batching batching = Batching::SINGLE>
@@ -26,8 +30,12 @@ public:
     if(hybrid_rep)
       aReader= new SplineHybridAdoptorReader<HybridRealSoA<SplineR2RAdoptor<double,OHMMS_PRECISION>>,
     					     batching>(e);
-    else 
+    else
+#if QMC_CUDA
+      aReader= new SplineAdoptorReader<SplineR2RAdoptorBatched<BsplineDeviceCUDA, double, OHMMS_PRECISION>, batching>(e);
+#else
       aReader= new SplineAdoptorReader<SplineR2RAdoptor<double,OHMMS_PRECISION>, batching>(e);
+#endif
     return aReader;
   }
 #ifdef QMC_COMPLEX

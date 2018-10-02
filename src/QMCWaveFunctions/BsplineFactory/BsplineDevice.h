@@ -13,6 +13,7 @@
 #define QMCPLUSPLUS_BSPLINEDEVICE_H
 
 #include "spline2/MultiBspline.hpp"
+#include "Lattice/CrystalLattice.h"
 
 namespace qmcplusplus
 {
@@ -30,9 +31,9 @@ public:
     static_cast<DEVICETYPE*>(this)->implementation();
   }
 
-  void createSpline(MultiBspline<ST>& multi_bspline)
+  void createSpline(CrystalLattice<ST, D>& prim_lattice, MultiBspline<ST>& multi_bspline)
   {
-    static_cast<DEVICETYPE*>(this)->createSpline_imp(multi_bspline);
+    static_cast<DEVICETYPE*>(this)->createSpline_imp(prim_lattice, multi_bspline);
   }
 
   void initDevice(MultiBspline<ST>& multi_bspline)
@@ -44,6 +45,10 @@ public:
   {
     static_cast<DEVICETYPE*>(this)->resizeStorage_imp(n, nvals, num_walkers);
   }
+
+  //CrystalLattice<ST,D>  prim_lattice_;
+  //void setPrimLattice(CrystalLattice<ST,D> prim_lattice) { prim_lattice_ = prim_lattice; }
+
 };
 
 }

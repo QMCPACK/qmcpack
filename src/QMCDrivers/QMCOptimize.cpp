@@ -275,7 +275,7 @@ QMCOptimize<Batching::BATCHED>::createEngine(MCWalkerConfiguration& W,
 					     QMCHamiltonian& H,
 					     WaveFunctionPool& psiPool)
 {
-  vmcEngine = new VMCcuda(QDT::W,dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(psi),H, psiPool);
+  vmcEngine = new VMCcuda(QDT::W,psi,H, psiPool);
   return vmcEngine;
 }
 #endif

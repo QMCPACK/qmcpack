@@ -89,7 +89,7 @@ public:
 
   virtual void resetTargetParticleSet(ParticleSet& P)
   {
-    Phi->resetTargetParticleSet(P);
+    this->Phi->resetTargetParticleSet(P);
     targetPtcl = &P;
   }
 

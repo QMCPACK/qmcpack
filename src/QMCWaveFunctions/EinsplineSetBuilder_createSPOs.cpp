@@ -41,14 +41,20 @@
 namespace qmcplusplus
 {
 
-  ///create R2R, real wavefunction in double
-  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_rep);
-  ///create R2R, real wavefunction in float
-  BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, bool hybrid_rep);
-  ///create C2C or C2R, complex wavefunction in double
-  BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, bool hybrid_rep);
-  ///create C2C or C2R, complex wavefunction in single
-  BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybrid_rep);
+extern template class SPOSet<Batching::SINGLE>;
+#ifdef QMC_CUDA
+extern template class SPOSet<Batching::BATCHED>;
+#endif
+
+
+///create R2R, real wavefunction in double
+BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_rep);
+///create R2R, real wavefunction in float
+BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, bool hybrid_rep);
+///create C2C or C2R, complex wavefunction in double
+BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, bool hybrid_rep);
+///create C2C or C2R, complex wavefunction in single
+BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybrid_rep);
 
 void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
 {
@@ -411,6 +417,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     //set the internal parameters
     setTiling(new_OrbitalSet,numOrbs);
     OrbitalSet = new_OrbitalSet;
+    //Ok now we have a tiled orbital set
   }
 #endif
 #ifdef Ye_debug

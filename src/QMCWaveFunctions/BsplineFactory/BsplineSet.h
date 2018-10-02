@@ -79,8 +79,6 @@ struct BsplineSet<SA, Batching::SINGLE>: public SA,
   {
     return new BsplineSet<SA, Batching::SINGLE>(*this);
   }
-
-
   
   Batching B_ = Batching::SINGLE;
 

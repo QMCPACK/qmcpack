@@ -66,4 +66,6 @@ SPOSet<Batching::BATCHED>::evaluate (std::vector<QMCT::PosType> &pos, gpu::devic
 }
 
 
+template class SPOSet<Batching::BATCHED>;
+  
 }

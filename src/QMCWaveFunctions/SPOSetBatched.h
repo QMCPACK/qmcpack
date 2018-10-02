@@ -30,6 +30,9 @@ class SPOSet<Batching::BATCHED>: public SPOSet<Batching::SINGLE>
 public:
   using SPOSetPtr = SPOSet<Batching::BATCHED>*;
 
+  SPOSet() : WhatAmI("SPOSet<BATCHED>") {}
+  
+  
   virtual void resetParameters(const opt_variables_type& active)
   { }
 

@@ -36,7 +36,9 @@ class BsplineDeviceCUDA : public BsplineDevice<BsplineDeviceCUDA<ST,D>, ST, D>
 {
 public:
   //Code refactored from Einsplineset (still there for other functionality under AoS?)
-
+  TinyVector<int, 3> TileFactor;
+  Tensor<int, D> TileMatrix;
+  
   // I prefer this as a method of bringing in QMCTraits typedefs
   using QMCT = QMCTraits;
   using CudaRealType = QMCT::CudaRealType;
@@ -68,46 +70,51 @@ public:
   gpu::device_vector<CudaRealType> Linv_cuda, L_cuda;
   gpu::host_vector<CudaRealType> L_host, Linv_host;
 
+  
+  
 public:
   
   void initDevice_imp(MultiBspline<ST>& multi_bspline)
   {
     app_log() << "Copying einspline orbitals to GPU.\n";
-    create_multi_UBspline_3d_cuda(multi_bspline, cuda_multi_bspline);
+    qmcplusplus::cudasoatemp::create_multi_UBspline_3d_cuda((multi_UBspline_3d_d*)multi_bspline.spline_m,
+							    cuda_multi_bspline);
     app_log() << "Successful copy.\n";
-    // L_host.resize(9);
-    // Linv_host.resize(9);
-    // Linv_cuda.resize(9);
-    // L_cuda.resize(9);
-    // for (int i=0; i<3; i++)
-    //   for (int j=0; j<3; j++)
-    // 	{
-    // 	  L_host[i*3+j]    = PrimLattice.R(i,j);
-    // 	  Linv_host[i*3+j] = PrimLattice.G(i,j);
-    // 	}
-    // L_cuda    = L_host;
-    // Linv_cuda = Linv_host;
+
+    L_host.resize(9);
+    Linv_host.resize(9);
+    Linv_cuda.resize(9);
+    L_cuda.resize(9);
+    for (int i=0; i<3; i++)
+      for (int j=0; j<3; j++)
+    	{
+    	  L_host[i*3+j]    = this->PrimLattice.R(i,j);
+    	  Linv_host[i*3+j] = this->PrimLattice.G(i,j);
+    	}
+    L_cuda    = L_host;
+    Linv_cuda = Linv_host;
   }
 
-  void createSpline_imp(MultiBspline<ST>& multi_spline)
+  void createSpline_imp(CrystalLattice<ST, D>& prim_lattice, MultiBspline<ST>& multi_spline)
   {
     std::string something_string = "something";
-    //qmcplusplus::cudasoatemp::create_multi_UBspline_3d_cuda(multi_spline, cuda_multi_bspline);
+    qmcplusplus::cudasoatemp::create_multi_UBspline_3d_cuda(multi_spline.spline_m,
+							    cuda_multi_bspline);
     // Destroy original CPU spline
     // HACK HACK HACK
     //destroy_Bspline (MultiSpline);
-    // L_host.resize(9);
-    // Linv_host.resize(9);
-    // Linv_cuda.resize(9);
-    // L_cuda.resize(9);
-    // for (int i=0; i<3; i++)
-    //   for (int j=0; j<3; j++)
-    // 	{
-    // 	  L_host[i*3+j]    = PrimLattice.R(i,j);
-    // 	  Linv_host[i*3+j] = PrimLattice.G(i,j);
-    // 	}
-    // L_cuda    = L_host;
-    // Linv_cuda = Linv_host;
+    L_host.resize(9);
+    Linv_host.resize(9);
+    Linv_cuda.resize(9);
+    L_cuda.resize(9);
+    for (int i=0; i<3; i++)
+      for (int j=0; j<3; j++)
+    	{
+    	  L_host[i*3+j]    = prim_lattice.R(i,j);
+    	  Linv_host[i*3+j] = prim_lattice.G(i,j);
+    	}
+    L_cuda    = L_host;
+    Linv_cuda = Linv_host;
   }
 
   //template<typename ST> void

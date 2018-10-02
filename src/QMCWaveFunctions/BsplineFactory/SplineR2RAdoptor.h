@@ -78,11 +78,13 @@ public:
   gContainer_type myG;
   hContainer_type myH;
 
+  
+  
   SplineR2RAdoptor(): BaseType(),SplineInst(nullptr), MultiSpline(nullptr)
   {
     this->is_complex=false;
     this->is_soa_ready=true;
-    this->AdoptorName="SplineR2RAdoptorAdoptor";
+    this->AdoptorName="SplineR2RAdoptor";
     this->KeyWord="SplineR2RAdoptor";
   }
 

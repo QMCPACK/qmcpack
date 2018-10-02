@@ -175,12 +175,12 @@ namespace qmcplusplus
 				    mybuilder->getTileMatrix(),
         input_info.min_index(),input_info.max_index());
     vals.selectBands(fullband,
-        spo2band[spin][input_info.min_index()], 
+        spo2band[spin][input_info.min_index()],
         input_info.max_index()-input_info.min_index(),false);
     //vals.FirstSPO=0;
     //vals.NumSPOs=input_info.max_index()-input_info.min_index();
     size_t mem_now=qmc_common.memory_allocated;
-    SPOSet<>* newspo=create_spline_set(spin,vals);       
+    SPOSet<>* newspo=create_spline_set(spin,vals);
     qmc_common.print_memory_change("BsplineSetReader", mem_now);
     return newspo;
   }
