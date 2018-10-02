@@ -75,6 +75,7 @@ public:
 
     ComplexApprox &epsilon(double new_epsilon)
     {
+      m_epsilon = new_epsilon;
       return *this;
     }
 
