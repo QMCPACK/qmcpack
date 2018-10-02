@@ -92,16 +92,16 @@ class SharedWalkerSet: public AFQMCInfo
 	if(desc[2] <= 0 && s!=Alpha)
 	  APP_ABORT("error:walker spin out of range in SM(SpinType).\n");
 	return (s==Alpha)?(const_SMType((&w_[indx[SM]]),extents[desc[0]][desc[1]])):
-			  (const_SMType((&w_[indx[SM]])+desc[0]*desc[1],extents[desc[0]][desc[2]])); 
-      }	
-      const_SMType SlaterMatrixN(SpinTypes s) const{
+			  (const_SMType((&w_[indx[SM]])+desc[0]*desc[1],extents[desc[0]][desc[2]]));
+      }
+      const_SMType SlaterMatrixN(SpinTypes s) const {
         if(indx[SMN] < 0)
           APP_ABORT("error: access to uninitialized BP sector. \n");
-	if(desc[2] <= 0 && s!=Alpha)
-	  APP_ABORT("error:walker spin out of range in SM(SpinType).\n");
+        if(desc[2] <= 0 && s!=Alpha)
+          APP_ABORT("error:walker spin out of range in SM(SpinType).\n");
         return (s==Alpha)?(const_SMType((&w_[indx[SMN]]),extents[desc[0]][desc[1]])):
                           (const_SMType((&w_[indx[SMN]])+desc[0]*desc[1],extents[desc[0]][desc[2]]));
-      }	
+      }
       ComplexType weight() const { return w_[indx[WEIGHT]]; } 
       ComplexType phase() const { return w_[indx[PHASE]]; } 
       ComplexType pseudo_energy() const { return w_[indx[PSEUDO_ELOC_]]; } 
@@ -113,17 +113,37 @@ class SharedWalkerSet: public AFQMCInfo
       ComplexType EJ() const { return w_[indx[EJ_]]; } 
       ComplexType energy() const { return w_[indx[E1_]]+w_[indx[EXX_]]+w_[indx[EJ_]]; } 
       ComplexType overlap() const { return w_[indx[OVLP]]; } 
-      // propagators can not be spin dependent	
-      const_SMType PM() const {
+      // propagators can not be spin dependent
+      const_SMType BMatrix() const {
         if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0)
           APP_ABORT("error: access to uninitialized BP sector. \n");
         auto ip = getHead();
-	if(ip < 0 || ip >= desc[3])
-	  APP_ABORT("error: Index out of bounds.\n");
-	return const_SMType( &(w_[indx[PROPAGATORS] + desc[0]*desc[0]*ip]) , 
+        if(ip < 0 || ip >= desc[3])
+          APP_ABORT("error: Index out of bounds.\n");
+        return const_SMType( &(w_[indx[PROPAGATORS] + desc[0]*desc[0]*ip]) ,
                                                         extents[desc[0]][desc[0]]);
       }
-      bool isPMBufferFull() const {	
+      //void incrementBMatrix() const {
+        //if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0) {
+          //APP_ABORT("error: access to uninitialized BP sector. \n");
+        //}
+        //auto ip = getHead();
+        //if(ip < 0 || ip >= desc[3]) {
+          //APP_ABORT("error: Index out of bounds.\n");
+        //}
+        //w_[indx[HEAD]] = ComplexType((ip+1)%desc[3],0);	
+      //}
+      //void decrementBMatrix() const {
+        //if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0) {
+          //APP_ABORT("error: access to uninitialized BP sector. \n");
+        //}
+        //auto ip = getHead();
+        //if(ip < 0 || ip >= desc[3]) {
+          //APP_ABORT("error: Index out of bounds.\n");
+        //}
+        //w_[indx[HEAD]] = ComplexType((ip-1+desc[3])%desc[3],0);  
+      //}
+      bool isBMatrixBufferFull() const {
         return getHead()==0;
       }
       ComplexType cosineFactor() const { 
@@ -195,33 +215,35 @@ class SharedWalkerSet: public AFQMCInfo
       ComplexType& EJ() { return w_[indx[EJ_]]; } 
       ComplexType energy() { return w_[indx[E1_]]+w_[indx[EXX_]]+w_[indx[EJ_]]; } 
       ComplexType& overlap() { return w_[indx[OVLP]]; } 
-      // propagators can not be spin dependent	
-      SMType PM() {
-        if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0)
+      // propagators can not be spin dependent
+      SMType BMatrix() {
+        if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0) {
           APP_ABORT("error: access to uninitialized BP sector. \n");
         auto ip = getHead();
-	if(ip < 0 || ip >= desc[3])
-	  APP_ABORT("error: Index out of bounds.\n");
-	return SMType( &(w_[indx[PROPAGATORS] + desc[0]*desc[0]*ip]) , extents[desc[0]][desc[0]]);
+        if(ip < 0 || ip >= desc[3]) {
+          APP_ABORT("error: Index out of bounds.\n");
+        }
+        return SMType(&(w_[indx[PROPAGATORS]+desc[0]*desc[0]*ip]),
+                      extents[desc[0]][desc[0]]);
       }
-      void incrementPM() {		
-        if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0)
+      void incrementBMatrix() {
+        if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0) {
           APP_ABORT("error: access to uninitialized BP sector. \n");
         auto ip = getHead();
 	if(ip < 0 || ip >= desc[3])
 	  APP_ABORT("error: Index out of bounds.\n");
         w_[indx[HEAD]] = ComplexType((ip+1)%desc[3],0);	
-      }	
-      void decrementPM() {
-        if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0)
+      }
+      void decrementBMatrix() {
+        if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0) {
           APP_ABORT("error: access to uninitialized BP sector. \n");
         auto ip = getHead();
 	if(ip < 0 || ip >= desc[3])
 	  APP_ABORT("error: Index out of bounds.\n");
         w_[indx[HEAD]] = ComplexType((ip-1+desc[3])%desc[3],0);  
       }
-      bool isPMBufferFull() const {	
-        return getHead()==0;
+      bool isBMatrixBufferFull() const {
+        return getHead() == 0;
       }
       ComplexType& cosineFactor() { 
         if(indx[COS_FAC]) 
@@ -240,10 +262,11 @@ class SharedWalkerSet: public AFQMCInfo
         std::copy(data,data+size(),base());
       }	
       // replaces Slater Matrix at timestep M+N to timestep N for back propagation.
-      void copy_slater_matrix_to_historic_slater_matrix() {
-	SlaterMatrixN(Alpha) = SlaterMatrix(Alpha);
-        if(desc[2]>0)
-	  SlaterMatrixN(Beta) = SlaterMatrix(Beta);
+      void setSlaterMatrixN() {
+        SlaterMatrixN(Alpha) = SlaterMatrix(Alpha);
+        if(desc[2] > 0) {
+          SlaterMatrixN(Beta) = SlaterMatrix(Beta);
+        }
       }
 
     private:
