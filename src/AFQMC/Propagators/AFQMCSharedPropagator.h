@@ -169,6 +169,10 @@ class AFQMCSharedPropagator: public AFQMCInfo
     void apply_propagators(WSet& wset, int ni, int tk0, int tkN, int ntask_total_serial,
                            boost::multi_array_ref<ComplexType,3>& vHS3D);
 
+    template<class WSet>
+    void apply_propagators_matrix(WSet& wset, int ni, int tk0, int tkN, int ntask_total_serial,
+                                  boost::multi_array_ref<ComplexType,3>& vHS3D);
+
     ComplexType apply_bound_vbias(ComplexType v, RealType sqrtdt)
     {
       return (std::abs(v)>vbias_bound*sqrtdt)?

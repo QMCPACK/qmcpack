@@ -16,6 +16,7 @@
 
 #include "AFQMC/config.h"
 #include "AFQMC/Numerics/ma_operations.hpp"
+#include "AFQMC/Numerics/csr_blas.hpp"
 #include "AFQMC/SlaterDeterminantOperations/mixed_density_matrix.hpp"
 #include "AFQMC/SlaterDeterminantOperations/apply_expM.hpp"
 
@@ -51,6 +52,7 @@ class SlaterDetOperations
       TMat_NN.resize(extents[NAEA][NAEA]);
       TMat_MM.resize(extents[NMO][NMO]);
       TMat_MM2.resize(extents[NMO][NMO]);
+      TMat_MM3.resize(extents[NMO][NMO]);
 
       // reserve enough space in lapack's work array
       // Make sure it is large enough for:
@@ -169,6 +171,27 @@ class SlaterDetOperations
       comm.barrier();
     }
 
+    template<class MatP1, class MatV, class MatB>
+    void ConstructPropagator(const MatP1& P1, const MatV& V, MatB& B, int order=6) {
+      int NMO = B.shape()[0];
+      boost::multi_array<T,2> TMM(extents[NMO][NMO]);
+      boost::multi_array_ref<T,2> T1(TMat_MM2.data(), extents[NMO][NMO]);
+      boost::multi_array_ref<T,2> T2(TMat_MM3.data(), extents[NMO][NMO]);
+      csr::CSR2MA('N',P1,TMM);
+      SlaterDeterminantOperations::base::apply_expM(V,TMM,T1,T2,order);
+      ma::product(P1,TMM,B);
+    }
+
+    template<class Mat, class MatB>
+    void Propagate(Mat&& A, const MatB& B) {
+      int NMO = A.shape()[0];
+      int NAEA = A.shape()[1];
+      if(TMat_MN.num_elements() < NMO*NAEA)
+        TMat_MN.resize(extents[NMO][NAEA]);
+      ma::product(B,std::forward<Mat>(A),TMat_MN);
+      A = TMat_MN;
+    }
+
     // need to check if this is equivalent to QR!!!
     template<class Mat>
     T Orthogonalize(Mat&& A) {
@@ -204,6 +227,7 @@ class SlaterDetOperations
     TMatrix TMat_MN;
     TMatrix TMat_MM;
     TMatrix TMat_MM2;
+    TMatrix TMat_MM3;
 
     // shm temporary matrices
     std::unique_ptr<SHM_Buffer> SM_TMats;

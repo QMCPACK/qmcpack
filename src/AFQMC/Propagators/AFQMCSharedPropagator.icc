@@ -152,7 +152,11 @@ void AFQMCSharedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, Rea
 
     // 5. Propagate walkers
     AFQMCTimers[propagate_timer]->start();
-    apply_propagators(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
+    if (wset.getNBackProp() > 0) {
+      apply_propagators(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
+    } else {
+      apply_propagators_matrix(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
+    }
     AFQMCTimers[propagate_timer]->stop();
 
     // 6. Calculate local energy/overlap
@@ -261,6 +265,66 @@ void AFQMCSharedPropagator::apply_propagators(WSet& wset, int ni, int tk0, int t
         int nt = ni*nwalk+iw;
         local_vHS = vHS3D[indices[range_t()][range_t()][nt]];
         SDetOp.Propagate(wset[iw].SlaterMatrix(Alpha),P1,local_vHS,local_group_comm,order);
+      }
+    }
+  }
+  TG.local_barrier();
+}
+template<class WSet>
+void AFQMCSharedPropagator::apply_propagators_matrix(WSet& wset, int ni, int tk0, int tkN,
+                                              int ntasks_total_serial,
+                                              boost::multi_array_ref<ComplexType,3>& vHS3D)
+{
+  int nwalk = wset.size();
+  auto walker_type = wset.getWalkerType();
+  if(transposed_vHS_) {
+    // vHS3D[nstep*nwalk][M][M]
+    if(walker_type == COLLINEAR) {
+      // in this case, tk corresponds to 2x the walker number
+      for(int tk=tk0; tk<tkN; ++tk) {
+        int nt = ni*nwalk+tk/2;
+        boost::multi_array_ref<ComplexType,2> B = wset[tk/2].BMatrix();
+        SDetOp.ConstructPropagator(P1,vHS3D[nt],B,order);
+        if(tk%2==0)
+          SDetOp.Propagate(wset[tk/2].SlaterMatrix(Alpha),B);
+        else
+          SDetOp.Propagate(wset[tk/2].SlaterMatrix(Beta),B);
+      }
+    } else {
+      // in this case, tk corresponds to walker number
+      for(int tk=tk0; tk<tkN; ++tk) {
+        int nt = ni*nwalk+tk;
+        boost::multi_array_ref<ComplexType,2> B = wset[tk].BMatrix();
+        SDetOp.ConstructPropagator(P1,vHS3D[nt],B,order);
+        SDetOp.Propagate(wset[tk].SlaterMatrix(Alpha),B);
+      }
+    }
+  } else {
+    // vHS3D[M][M][nstep*nwalk]: need temporary buffer in this case
+    if(walker_type == COLLINEAR) {
+      int oldw=-1;
+      // in this case, tk corresponds to 2x the walker number
+      for(int tk=tk0; tk<tkN; ++tk) {
+        int nt = ni*nwalk+tk/2;
+        if(oldw != tk/2) {
+          local_vHS = vHS3D[indices[range_t()][range_t()][nt]];
+          oldw=tk/2;
+        }
+        boost::multi_array_ref<ComplexType,2> B = wset[tk/2].BMatrix();
+        SDetOp.ConstructPropagator(P1,local_vHS,B,order);
+        if(tk%2==0)
+          SDetOp.Propagate(wset[tk/2].SlaterMatrix(Alpha),B);
+        else
+          SDetOp.Propagate(wset[tk/2].SlaterMatrix(Beta),B);
+      }
+    } else {
+      // in this case, tk corresponds to walker number
+      for(int tk=tk0; tk<tkN; ++tk) {
+        int nt = ni*nwalk+tk;
+        local_vHS = vHS3D[indices[range_t()][range_t()][nt]];
+        boost::multi_array_ref<ComplexType,2> B = wset[tk/2].BMatrix();
+        SDetOp.ConstructPropagator(P1,local_vHS,B,order);
+        SDetOp.Propagate(wset[tk].SlaterMatrix(Alpha),B);
       }
     }
   }
