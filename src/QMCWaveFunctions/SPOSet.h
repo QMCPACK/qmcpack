@@ -67,8 +67,6 @@ public:
   bool Optimizable;
   ///flag to calculate ionic derivatives
   bool ionDerivs;
-  ///if true, can use GL type, default=false
-  bool CanUseGLCombo;
   ///number of Single-particle orbitals
   IndexType OrbitalSetSize;
   /// Optimizable variables
@@ -190,7 +188,7 @@ public:
   /** evaluate VGL of SPOs using SoA container for gl
    */
   virtual void
-    evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl);
+  evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl);
 
   /** evaluate values for the virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set

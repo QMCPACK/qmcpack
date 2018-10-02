@@ -32,7 +32,6 @@ SPOSet::SPOSet()
   ,Identity(false),BasisSetSize(0),C(nullptr)
 #endif
 {
-  CanUseGLCombo=false;
   className="invalid";
 #if !defined(ENABLE_SOA)
   IsCloned=false;
