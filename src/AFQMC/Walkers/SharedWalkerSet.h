@@ -355,15 +355,14 @@ class SharedWalkerSet: public AFQMCInfo
 
   /// constructor
   SharedWalkerSet(afqmc::TaskGroup_& tg_, xmlNodePtr cur, AFQMCInfo& info, 
-        RandomGenerator_t* r, int nbp=0): 
+        RandomGenerator_t* r):
                 TG(tg_),AFQMCInfo(info),rng(r),
                 walker_memory_usage(0),tot_num_walkers(0),
-                nback_prop(nbp),
 		walker_buffer(std::make_unique<SHM_Buffer>
                                     (TG.TG_local(),0)),
                 load_balance(UNDEFINED_LOAD_BALANCE),
                 pop_control(UNDEFINED_BRANCHING),min_weight(0.05),max_weight(4.0),
-                walkerType(UNDEFINED_WALKER_TYPE)
+                walkerType(UNDEFINED_WALKER_TYPE),nback_prop(0)
   {
     parse(cur);
     setup(); 
