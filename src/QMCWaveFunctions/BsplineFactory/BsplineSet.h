@@ -67,15 +67,6 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
     SplineAdoptor::set_spline(spline_r,spline_i,twist,ispline,level);
   }
 
-  inline ValueType RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
-  {
-    //this is just an example how to resuse t_logpsi
-    int ip=omp_get_thread_num()*2;
-    // YYYY: need to fix
-    //return SplineAdoptor::evaluate_dot(P,iat,arow,reinterpret_cast<DataType*>(t_logpsi[ip]));
-    return ValueType();
-  }
-
   inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
     SplineAdoptor::evaluate_v(P,iat,psi);

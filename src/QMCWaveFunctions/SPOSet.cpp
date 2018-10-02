@@ -41,20 +41,6 @@ SPOSet::SPOSet()
 #endif
 }
 
-/** default implementation */
-SPOSet::ValueType
-SPOSet::RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
-{
-  int ip=omp_get_thread_num();
-  // YYYY to fix
-  /*
-  ValueVector_t psi(t_logpsi[ip],OrbitalSetSize);
-  evaluate(P,iat,psi);
-  return simd::dot(psi.data(),arow,OrbitalSetSize,ValueType());
-  */
-  return ValueType();
-}
-
 void SPOSet::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
 {
   APP_ABORT("SPOSet::evaluateVGL not implemented.");
