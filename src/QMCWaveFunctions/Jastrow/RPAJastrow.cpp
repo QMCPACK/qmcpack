@@ -37,7 +37,7 @@ RPAJastrow::RPAJastrow(ParticleSet& target, bool is_manager)
   :IsManager(is_manager), targetPtcl(target)
 {
   Optimizable=true;
-  OrbitalName="RPAJastrow";
+  ClassName="RPAJastrow";
 }
 
 RPAJastrow::~RPAJastrow()

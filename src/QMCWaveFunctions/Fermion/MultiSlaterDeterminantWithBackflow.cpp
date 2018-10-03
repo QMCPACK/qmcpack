@@ -22,7 +22,7 @@ namespace qmcplusplus
 MultiSlaterDeterminantWithBackflow::MultiSlaterDeterminantWithBackflow(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo, BackflowTransformation *BF):MultiSlaterDeterminant(targetPtcl,upspo,dnspo),BFTrans(BF)
 {
   Optimizable=false;
-  OrbitalName="MultiSlaterDeterminantWithBackflow";
+  ClassName="MultiSlaterDeterminantWithBackflow";
 }
 
 WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const

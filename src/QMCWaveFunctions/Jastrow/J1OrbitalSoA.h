@@ -66,7 +66,7 @@ struct  J1OrbitalSoA : public WaveFunctionComponent
   {
     initalize(els);
     myTableID=els.addTable(ions,DT_SOA);
-    OrbitalName = "J1OrbitalSoA";
+    ClassName = "J1OrbitalSoA";
   }
 
   J1OrbitalSoA(const J1OrbitalSoA& rhs)=delete;

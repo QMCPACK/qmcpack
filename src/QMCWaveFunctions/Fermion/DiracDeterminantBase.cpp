@@ -42,7 +42,7 @@ DiracDeterminantBase::DiracDeterminantBase(SPOSetPtr const &spos, int first):
   Optimizable=false;
   if(Phi->Optimizable)
     Optimizable=true;
-  OrbitalName="DiracDeterminantBase";
+  ClassName="DiracDeterminantBase";
   registerTimers();
 }
 
