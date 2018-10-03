@@ -188,8 +188,9 @@ class SlaterDetOperations
       int NAEA = A.shape()[1];
       if(TMat_MN.num_elements() < NMO*NAEA)
         TMat_MN.resize(extents[NMO][NAEA]);
-      ma::product(B,std::forward<Mat>(A),TMat_MN);
-      A = TMat_MN;
+      boost::multi_array_ref<T,2> TMN(TMat_MN.data(), extents[NMO][NAEA]);
+      ma::product(B,std::forward<Mat>(A),TMN);
+      A = TMN;
     }
 
     // need to check if this is equivalent to QR!!!

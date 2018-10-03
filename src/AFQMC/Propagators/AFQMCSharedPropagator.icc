@@ -153,9 +153,9 @@ void AFQMCSharedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, Rea
     // 5. Propagate walkers
     AFQMCTimers[propagate_timer]->start();
     if (wset.getNBackProp() > 0) {
-      apply_propagators(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
-    } else {
       apply_propagators_matrix(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
+    } else {
+      apply_propagators(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
     }
     AFQMCTimers[propagate_timer]->stop();
 
