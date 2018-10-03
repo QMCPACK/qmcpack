@@ -112,7 +112,7 @@ public:
   JeeIOrbitalSoA(const ParticleSet& ions, ParticleSet& elecs, bool is_master=false)
     : Ions(ions), NumVars(0)
   {
-    OrbitalName = "JeeIOrbitalSoA";
+    ClassName = "JeeIOrbitalSoA";
     myTableID=elecs.addTable(Ions,DT_SOA);
     elecs.DistTables[myTableID]->Need_full_table_loadWalker=true;
     init(elecs);
