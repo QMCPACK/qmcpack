@@ -57,7 +57,7 @@ class AFQMCDistributedPropagator: public AFQMCSharedPropagator
                           Wavefunction& wfn_, CMatrix&& h1_, CVector&& vmf_, 
                           RandomGenerator_t* r): 
             AFQMCSharedPropagator(info,cur,tg_,wfn_,std::move(h1_),std::move(vmf_),r)
-            ,core_comm(tg_.TG().split(tg_.getLocalTGRank()))
+            ,core_comm(tg_.TG().split(tg_.getLocalTGRank(),tg_.TG().rank()))
 //            ,core_comm()
     {
 //      core_comm = std::move(tg_.TG().split(tg_.getLocalTGRank()));
@@ -74,7 +74,7 @@ class AFQMCDistributedPropagator: public AFQMCSharedPropagator
                 core_comm()
     {
       // move constructor for communicator seems broken
-      core_comm = std::move(TG.TG().split(TG.getLocalTGRank()));  
+      core_comm = std::move(TG.TG().split(TG.getLocalTGRank(),TG.TG().rank()));  
     }
     AFQMCDistributedPropagator& operator=(AFQMCDistributedPropagator&& other) = default;
 

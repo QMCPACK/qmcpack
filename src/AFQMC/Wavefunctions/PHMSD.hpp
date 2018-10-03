@@ -62,7 +62,7 @@ class PHMSD: public AFQMCInfo
   using CVector = boost::multi_array<ComplexType,1>;  
   using CMatrix = boost::multi_array<ComplexType,2>;  
   using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;  
-  using shared_mutex = boost::mpi3::mutex;  
+  using shared_mutex = boost::mpi3::shm::mutex;  
   using shared_CMatrix = boost::multi_array<ComplexType,2>;//,shared_allocator<ComplexType>>;
   using shared_CTensor = boost::multi_array<ComplexType,3>;//,shared_allocator<ComplexType>>;
   using index_aos = ma::sparse::array_of_sequences<int,int,
@@ -84,6 +84,7 @@ class PHMSD: public AFQMCInfo
                 acta2mo(acta2mo_),
                 actb2mo(actb2mo_),
                 abij(std::move(abij_)),
+//
                 OrbMats(std::move(orbs_)),
                 walker_type(wlk),NuclearCoulombEnergy(nce),
                 shmbuff_for_E(nullptr),
@@ -109,6 +110,7 @@ class PHMSD: public AFQMCInfo
                 local_QQ0inv(extents[((walker_type==COLLINEAR)?2:1)][maxnactive][NAEA]),
                 Qwork(extents[max_exct_n][max_exct_n]),
                 Gwork(extents[NAEA][maxnactive]),
+//
                 det_couplings{std::move(beta_coupled_to_unique_alpha__),
                               std::move(alpha_coupled_to_unique_beta__)}
     {

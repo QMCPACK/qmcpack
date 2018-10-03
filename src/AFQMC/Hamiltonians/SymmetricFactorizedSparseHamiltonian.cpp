@@ -164,7 +164,7 @@ SpVType_shm_csr_matrix SymmetricFactorizedSparseHamiltonian::calculateHSPotentia
     int global_ncvecs=0;
     if(TG.getNodeID() == TG.getTotalNodes()-1 && TG.getCoreID()==0)
       global_ncvecs = Spvn.global_origin()[1] + Spvn.shape()[1];
-    global_ncvecs = TG.Global().all_reduce_value(global_ncvecs,std::plus<>());
+    global_ncvecs = (TG.Global() += global_ncvecs);
 
     ValueType E0 = OneBodyHamiltonian::NuclearCoulombEnergy + 
                    OneBodyHamiltonian::FrozenCoreEnergy;

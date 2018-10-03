@@ -428,7 +428,7 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
       nkbounds.push_back(norb-n0);
     }
 
-    MPI_Allgather(&n_,1,MPI_INT,Qknum.data(),1,MPI_INT,comm.impl_);
+    MPI_Allgather(&n_,1,MPI_INT,Qknum.data(),1,MPI_INT,&comm);
 
     int ntt = std::accumulate(Qknum.begin(),Qknum.end(),0);
     Qksizes.resize(2*ntt);
@@ -441,11 +441,11 @@ inline void rotateHijkl(std::string& type, WALKER_TYPES walker_type, bool addCou
       disp[i]=cnt;
       cnt+=cnts[i];
     }
-    MPI_Allgatherv(nkbounds.data(),nkbounds.size(),MPI_INT,Qksizes.data(),cnts.data(),disp.data(),MPI_INT,comm.impl_ );
+    MPI_Allgatherv(nkbounds.data(),nkbounds.size(),MPI_INT,Qksizes.data(),cnts.data(),disp.data(),MPI_INT,&comm );
 
   }
 
-  MPI_Bcast(Qknum.data(),comm.size(),MPI_INT,0,TG.Node().impl_);
+  MPI_Bcast(Qknum.data(),comm.size(),MPI_INT,0,&TG.Node());
   int ntt = std::accumulate(Qknum.begin(),Qknum.end(),0);
   if(!coreid==0)
     Qksizes.resize(2*ntt);
@@ -1161,7 +1161,7 @@ inline void rotateHijklSymmetric(WALKER_TYPES walker_type, TaskGroup_& TG, Conta
       disp[i]=cnt;
       cnt+=cnts[i];
     }
-    MPI_Allgatherv(nkbounds.data(),nkbounds.size(),MPI_INT,Qksizes.data(),cnts.data(),disp.data(),MPI_INT,&comm);
+    MPI_Allgatherv(nkbounds.data(),nkbounds.size(),MPI_INT,Qksizes.data(),cnts.data(),disp.data(),MPI_INT,&comm );
 
   }
 

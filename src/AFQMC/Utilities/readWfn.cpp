@@ -384,15 +384,15 @@ ph_excitations<int,ComplexType> read_ph_wavefunction(std::ifstream& in, int& nde
 
     if(type == "mixed" ) mixed=true;
 
-    comm.broadcast_value(mixed); 
-    comm.broadcast_value(ndet_in_file); 
-    comm.broadcast_value(wfn_type); 
-    comm.broadcast_value(fullMOMat); 
+    comm.broadcast_n(&mixed,1,0); 
+    comm.broadcast_n(&ndet_in_file,1,0); 
+    comm.broadcast_n(&wfn_type,1,0); 
+    comm.broadcast_n(&fullMOMat,1,0); 
   } else {
-    comm.broadcast_value(mixed); 
-    comm.broadcast_value(ndet_in_file); 
-    comm.broadcast_value(wfn_type); 
-    comm.broadcast_value(fullMOMat); 
+    comm.broadcast_n(&mixed,1,0); 
+    comm.broadcast_n(&ndet_in_file,1,0); 
+    comm.broadcast_n(&wfn_type,1,0); 
+    comm.broadcast_n(&fullMOMat,1,0); 
   }
 
   if(ndets <= 0) ndets = ndet_in_file; 

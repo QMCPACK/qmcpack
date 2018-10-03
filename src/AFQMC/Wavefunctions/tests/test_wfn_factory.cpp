@@ -68,14 +68,13 @@ using namespace afqmc;
 
 TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
 {
+  OHMMS::Controller->initialize(0, NULL);
+  boost::mpi3::communicator world{MPI_COMM_WORLD};
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
     app_log()<<" Skipping wfn_fac_collinear_sdet text. afqmc.h5 and ./wfn.dat files not found. \n";
   } else {
-
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     GlobalTaskGroup gTG(world);
@@ -329,14 +328,13 @@ const char *wlk_xml_block_noncol =
 
 TEST_CASE("wfn_fac_sdet_distributed", "[wavefunction_factory]")
 {
+  OHMMS::Controller->initialize(0, NULL);
+  boost::mpi3::communicator world{MPI_COMM_WORLD};
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
     app_log()<<" Skipping wfn_fac_sdet_distributed text. afqmc.h5 and ./wfn.dat files not found. \n";
   } else {
-
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     GlobalTaskGroup gTG(world);
@@ -637,14 +635,13 @@ const char *wlk_xml_block_noncol =
 
 TEST_CASE("wfn_fac_collinear_multidet", "[wavefunction_factory]")
 {
+  OHMMS::Controller->initialize(0, NULL);
+  boost::mpi3::communicator world{MPI_COMM_WORLD};
 
   if(not file_exists("./afqmc_msd.h5") ||
      not file_exists("./wfn_msd.dat") ) {
     app_log()<<" Skipping wfn_fac_collinear_multidet text. afqmc_msd.h5 and ./wfn_msd.dat files not found. \n";
   } else {
-
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     GlobalTaskGroup gTG(world);
@@ -780,14 +777,13 @@ const char *wlk_xml_block =
 
 TEST_CASE("wfn_fac_collinear_multidet_distributed", "[wavefunction_factory]")
 {
+  OHMMS::Controller->initialize(0, NULL);
+  boost::mpi3::communicator world{MPI_COMM_WORLD};
 
   if(not file_exists("./afqmc_msd.h5") ||
      not file_exists("./wfn_msd.dat") ) {
     app_log()<<" Skipping wfn_fac_collinear_multidet text. afqmc_msd.h5 and ./wfn_msd.dat files not found. \n";
   } else {
-
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     GlobalTaskGroup gTG(world);
@@ -925,15 +921,13 @@ const char *wlk_xml_block =
 TEST_CASE("wfn_fac_collinear_phmsd", "[wavefunction_factory]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  OhmmsInfo("testlogfile",boost::mpi3::world.rank());
+  boost::mpi3::communicator world{MPI_COMM_WORLD};
+  OhmmsInfo("testlogfile",world.rank());
 
   if(not file_exists("./afqmc_msd.h5") ||
      not file_exists("./wfn_msd.dat") ) {
     app_log()<<" Skipping wfn_fac_collinear_phmsd text. afqmc_msd.h5 and ./wfn_msd.dat files not found. \n";
   } else {
-
-    // mpi3
-    communicator& world = boost::mpi3::world;
 
     // Global Task Group
     GlobalTaskGroup gTG(world);
@@ -992,6 +986,8 @@ const char *wlk_xml_block =
     WfnFac.push(wfn_name,doc2.getRoot());
     Wavefunction& wfn = WfnFac.getWavefunction(TG,TG,wfn_name,COLLINEAR,&ham,1e-6,nwalk); 
 
+std::cout<<" -- after WfnFac.getWavefunction  " <<std::endl;
+
     const char *wfn_xml_block2 =
 "<Wavefunction name=\"wfn1\" type=\"nomsd\" info=\"info0\"> \
       <parameter name=\"filetype\">ascii</parameter> \
@@ -1008,6 +1004,8 @@ const char *wlk_xml_block =
     std::string wfn2_name("wfn1");
     WfnFac.push(wfn2_name,doc2_.getRoot());
     Wavefunction& nomsd = WfnFac.getWavefunction(TG,TG,wfn2_name,COLLINEAR,&ham,1e-6,nwalk);
+
+std::cout<<" -- after nomsd WfnFac.getWavefunction  " <<std::endl;
 #endif
 
     WalkerSet wset(TG,doc3.getRoot(),InfoMap["info0"],&rng);

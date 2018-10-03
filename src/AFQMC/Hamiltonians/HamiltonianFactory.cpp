@@ -175,10 +175,11 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
   HamiltonianTypes htype;
   if(head) htype = peekHamType(in);
-  int tmp_htype = htype;
-  TG.Global().broadcast_value(tmp_htype);
-  htype = static_cast<HamiltonianTypes>(tmp_htype);
-
+  {
+    int htype_ = int(htype);
+    TG.Global().broadcast_n(&htype_,1,0);
+    htype = HamiltonianTypes(htype_);
+  }
 
   if(NCA != NCB) {
     app_error()<<"Error in readFCIDUMP. NCA!=NCB. Not sure how to implement this! \n";
@@ -203,10 +204,10 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
       APP_ABORT(" Error: Frozen core has been temporarily disabled. \n\n\n");
   }
 
-  TG.Global().broadcast_value(nOne);
-  TG.Global().broadcast_value(nTwo);
-  TG.Global().broadcast_value(nThree);
-  TG.Global().broadcast_value(n3Vecs);
+  TG.Global().broadcast_n(&nOne,1,0);
+  TG.Global().broadcast_n(&nTwo,1,0);
+  TG.Global().broadcast_n(&nThree,1,0);
+  TG.Global().broadcast_n(&n3Vecs,1,0);
 
   std::vector<s2D<ValueType> > H1;
 
@@ -261,7 +262,7 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
     
     {
       int sz = H1.size();
-      TG.Global().broadcast_value(sz);
+      TG.Global().broadcast_n(&sz,1,0);
       if(!head)         
         H1.resize(sz);
       //TG.Global().broadcast(H1.begin(),H1.end());
@@ -269,7 +270,7 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
     }
     if(TG.getCoreID()==0) {
       int sz = V2.size();
-      TG.Cores().broadcast_value(sz);
+      TG.Cores().broadcast_n(&sz,1,0);
       if(!head)
         V2.resize_serial(sz);      
       //TG.Cores().broadcast(V2.begin(),V2.end());    
@@ -326,7 +327,7 @@ Hamiltonian HamiltonianFactory::fromASCII(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
     {
       int sz = H1.size();
-      TG.Global().broadcast_value(sz);
+      TG.Global().broadcast_n(&sz,1,0);
       if(!head)
         H1.resize(sz);  
       //TG.Global().broadcast(H1.begin(),H1.end());
@@ -451,9 +452,11 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
     HamiltonianTypes htype;
     if(head) htype = peekHamType(dump);
-    int tmp_htype = htype;
-    TG.Global().broadcast_value(tmp_htype);
-    htype = static_cast<HamiltonianTypes>(tmp_htype);
+    {
+      int htype_ = int(htype);
+      TG.Global().broadcast_n(&htype_,1,0);
+      htype = HamiltonianTypes(htype_);
+    }
 
     int int_blocks,nvecs;
     std::vector<int> Idata(8);
@@ -509,8 +512,8 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
     
     TG.Global().broadcast(occup_alpha.begin(),occup_alpha.end());
     TG.Global().broadcast(occup_beta.begin(),occup_beta.end());
-    TG.Global().broadcast_value(NuclearCoulombEnergy);
-    TG.Global().broadcast_value(FrozenCoreEnergy);
+    TG.Global().broadcast_n(&NuclearCoulombEnergy,1,0);
+    TG.Global().broadcast_n(&FrozenCoreEnergy,1,0);
 
     if(head) { 
 

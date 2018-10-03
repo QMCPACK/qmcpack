@@ -161,7 +161,7 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD,PHMSD>
     explicit Wavefunction(NOMSD&& other) : variant(std::move(other)) {}
     explicit Wavefunction(NOMSD const& other) = delete;
 
-    explicit Wavefunction(PHMSD&& other) : variant(std::move(other)) {}
+    explicit Wavefunction(PHMSD&& other) : variant(std::move(other)) {} 
     explicit Wavefunction(PHMSD const& other) = delete;
 
     Wavefunction(Wavefunction const& other) = delete; 

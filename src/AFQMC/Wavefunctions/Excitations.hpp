@@ -306,7 +306,17 @@ struct ph_excitations
   }
 
   ph_excitations(ph_excitations const& other) = delete;
-  ph_excitations(ph_excitations && other) = default;
+  //ph_excitations(ph_excitations && other) = default;
+  ph_excitations(ph_excitations && other):
+                 i_allocator_(other.i_allocator_),
+                 c_allocator_(other.c_allocator_),
+                 NAEA(other.NAEA),NAEB(other.NAEB),
+                 configurations(std::move(other.configurations)),
+                 reference(std::move(other.reference)),
+                 unique_alpha(std::move(other.unique_alpha)),
+                 unique_beta(std::move(other.unique_beta)),
+                 sum_of_exct(std::move(other.sum_of_exct)) 
+  {}
 
   ph_excitations& operator=(ph_excitations const& other) = delete;
   ph_excitations& operator=(ph_excitations && other) = default;

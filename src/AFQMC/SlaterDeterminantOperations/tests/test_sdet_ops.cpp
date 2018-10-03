@@ -220,8 +220,8 @@ TEST_CASE("SDetOps_double_mpi3", "[sdet_ops]")
   Communicate *c = OHMMS::Controller;
   
   using boost::mpi3::shared_communicator;
-
-  shared_communicator node = c->comm.split_shared(c->comm.rank());
+  boost::mpi3::communicator world{MPI_COMM_WORLD};
+  shared_communicator node = world.split_shared(world.rank()); 
 
   const int NMO = 4;
   const int NEL = 3;
@@ -545,8 +545,8 @@ TEST_CASE("SDetOps_complex_mpi3", "[sdet_ops]")
   Communicate *c = OHMMS::Controller;
   
   using boost::mpi3::shared_communicator;
-
-  shared_communicator node = c->comm.split_shared(c->comm.rank()); 
+  boost::mpi3::communicator world{MPI_COMM_WORLD};
+  shared_communicator node = world.split_shared(world.rank()); 
 
   const int NMO = 4;
   const int NEL = 3;
@@ -729,7 +729,8 @@ TEST_CASE("SDetOps_complex_csr", "[sdet_ops]")
   
   using boost::mpi3::shared_communicator;
 
-  shared_communicator node = c->comm.split_shared(c->comm.rank()); 
+  boost::mpi3::communicator world{MPI_COMM_WORLD};
+  shared_communicator node = world.split_shared(world.rank()); 
 
   const int NMO = 4;
   const int NEL = 3;

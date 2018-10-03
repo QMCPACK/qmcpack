@@ -86,10 +86,11 @@ using communicator = boost::mpi3::communicator;
 
 void test_basic_walker_features(bool serial)
 {
+  OHMMS::Controller->initialize(0, NULL);
+  boost::mpi3::communicator world{MPI_COMM_WORLD}; 
 
   using Type = std::complex<double>;
 
-  communicator& world = OHMMS::Controller->comm;
   //assert(world.size()%2 == 0); 
 
   int NMO=8,NAEA=2,NAEB=2, nwalkers=10;
@@ -218,11 +219,12 @@ cout<<" after (*it) test  " <<std::endl;
 
 void test_hyperslab()
 {
+  OHMMS::Controller->initialize(0, NULL);
+  boost::mpi3::communicator world{MPI_COMM_WORLD};
 
   using Type = std::complex<double>;
   using Matrix = boost::multi_array<Type,2>;
 
-  communicator& world = OHMMS::Controller->comm;
   int rank = world.rank();
 
   int nwalk = 9;
@@ -279,11 +281,12 @@ void test_hyperslab()
 
 void test_double_hyperslab()
 {
+  OHMMS::Controller->initialize(0, NULL);
+  boost::mpi3::communicator world{MPI_COMM_WORLD};
 
   using Type = std::complex<double>;
   using Matrix = boost::multi_array<Type,2>;
 
-  communicator& world = OHMMS::Controller->comm;
   int rank = world.rank();
 
   int nwalk = 9;
@@ -357,10 +360,11 @@ void test_double_hyperslab()
 
 void test_walker_io()
 {
+  OHMMS::Controller->initialize(0, NULL);
+  boost::mpi3::communicator world{MPI_COMM_WORLD};
 
   using Type = std::complex<double>;
 
-  communicator& world = OHMMS::Controller->comm;
   //assert(world.size()%2 == 0); 
 
   int NMO=8,NAEA=2,NAEB=2, nwalkers=10;

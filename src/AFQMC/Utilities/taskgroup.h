@@ -47,7 +47,7 @@ class GlobalTaskGroup
     // check for consistency
     int dum = node_.size();
 
-    global_.broadcast_value(dum); 
+    global_.broadcast_n(&dum,1,0); 
     if(dum != node_.size()) {
       app_error()<<" Error: Inconsistent number of cores in node: " <<dum <<" "
                  <<node_.size() <<" " <<global_.rank() <<std::endl;
@@ -56,14 +56,14 @@ class GlobalTaskGroup
     
     // consistency checks
     dum = core_.size();  
-    global_.broadcast_value(dum); 
+    global_.broadcast_n(&dum,1,0); 
     if(dum != core_.size()) {
       app_error()<<" Error: Inconsistent number of nodes: " <<dum <<" " <<core_.size()
                  <<" " <<global_.rank() <<std::endl;
       APP_ABORT(" Error in GlobalTaskGroup::GlobalTaskGroup() \n");
     }
     dum = core_.rank();
-    node_.broadcast_value(dum); 
+    node_.broadcast_n(&dum,1,0); 
     if(dum != core_.rank()) {
       app_error()<<" Error: Inconsistent node number: " <<dum <<" " <<core_.rank()
                  <<" " <<global_.rank() <<std::endl;
@@ -123,9 +123,9 @@ class TaskGroup_
   TaskGroup_(GlobalTaskGroup& gTG, std::string name, int nn, int nc):
         tgname(name),global_(gTG.Global()),
         node_(gTG.Node()),core_(gTG.Cores()),
-        local_tg_(node_.split(node_.rank()/((nc<1)?(1):(std::min(nc,node_.size()))))),
+        local_tg_(node_.split(node_.rank()/((nc<1)?(1):(std::min(nc,node_.size()))),node_.rank())),
         tgrp_(),
-        tg_heads_(global_.split(node_.rank()%((nc<1)?(1):(std::min(nc,node_.size())))))     
+        tg_heads_(global_.split(node_.rank()%((nc<1)?(1):(std::min(nc,node_.size()))),global_.rank()))     
   {
     setup(nn,nc);
   }
@@ -133,9 +133,9 @@ class TaskGroup_
   TaskGroup_(TaskGroup_& other, std::string name, int nn, int nc):
         tgname(name),global_(other.Global()),
         node_(other.Node()),core_(other.Cores()),
-        local_tg_(node_.split(node_.rank()/((nc<1)?(1):(std::min(nc,node_.size()))))),
+        local_tg_(node_.split(node_.rank()/((nc<1)?(1):(std::min(nc,node_.size()))),node_.rank())),
         tgrp_(),
-        tg_heads_(global_.split(node_.rank()%((nc<1)?(1):(std::min(nc,node_.size())))))     
+        tg_heads_(global_.split(node_.rank()%((nc<1)?(1):(std::min(nc,node_.size()))),global_.rank()))     
   {
     setup(nn,nc);
   }
@@ -145,7 +145,7 @@ class TaskGroup_
   TaskGroup_(const TaskGroup_& other) = delete;
   TaskGroup_(TaskGroup_&& other):
         global_(other.global_),node_(other.node_),core_(other.core_),
-        local_tg_(other.node_.split(0)),  // inefficient, but needed to get around lack of 
+        local_tg_(other.node_.split(0,other.node_.rank())),  // inefficient, but needed to get around lack of 
                                           // default constructor in shared_communicator
         tgrp_(),tg_heads_()
   {
@@ -260,14 +260,14 @@ class TaskGroup_
 
     if( node_.size()%ncores_per_TG != 0  ) {
       app_error()<<"Found " <<node_.size() <<" cores per node. " <<std::endl;
-      app_error()<<" Error in GlobalTaskGroup setup(): Number of cores per node is not divisible by requested number of cores in Task Group." <<std::endl;
-      APP_ABORT(" Error in GlobalTaskGroup::GlobalTaskGroup() \n");
+      app_error()<<" Error in TaskGroup setup(): Number of cores per node is not divisible by requested number of cores in Task Group." <<std::endl;
+      APP_ABORT(" Error in TaskGroup::TaskGroup() \n");
     }
 
     if( local_tg_.size() != ncores_per_TG ) {
 app_log()<<nn <<" " <<nc <<std::endl;
       app_error()<<"Problems creating local TG: " <<local_tg_.size() <<" " <<ncores_per_TG <<std::endl;
-      APP_ABORT(" Error in GlobalTaskGroup::GlobalTaskGroup() \n");
+      APP_ABORT(" Error in TaskGroup::TaskGroup() \n");
     }
 
     if( core_.size()%nnodes_per_TG != 0  ) {
@@ -287,7 +287,7 @@ app_log()<<nn <<" " <<nc <<std::endl;
     number_of_TGs = nrows*ncols;
 
     // split communicator
-    tgrp_ = global_.split(TG_number);
+    tgrp_ = global_.split(TG_number,global_.rank());
 
     if( tgrp_.rank() != node_in_TG*ncores_per_TG+local_tg_.rank() ) {
       app_error()<<" Error in TG::setup(): Unexpected TG_rank: " <<tgrp_.rank()  <<" " <<node_in_TG <<" " <<local_tg_.rank() <<" " <<node_in_TG*ncores_per_TG+local_tg_.rank() <<std::endl;

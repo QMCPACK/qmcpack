@@ -268,7 +268,7 @@ class array_of_sequences:
 	array_of_sequences(const this_t& other) = delete;  
 	array_of_sequences& operator=(const this_t& other) = delete;  
 	array_of_sequences(this_t&& other):array_of_sequences(0,0,other.Valloc_)
-	{ *this = std::move(other); } 
+        { *this = std::move(other); } 
         // Instead of moving allocators, require they are the same right now
 	array_of_sequences& operator=(this_t&& other) {
 		if(this != std::addressof(other)) {

@@ -62,15 +62,13 @@ using namespace afqmc;
 TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
 {
   OHMMS::Controller->initialize(0, NULL);
+  boost::mpi3::communicator world{MPI_COMM_WORLD};
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
     app_log()<<" Skipping ham_factory_factorized_closed_pure text. afqmc.h5 or wfn.dat files not found. \n";
   } else {  
 
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
- 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
 
@@ -252,15 +250,13 @@ TEST_CASE("ham_factory_factorized_closed_pure", "[hamiltonian_factory]")
 TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factory]")
 {
   OHMMS::Controller->initialize(0, NULL);
+  boost::mpi3::communicator world{MPI_COMM_WORLD};
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
     app_log()<<" Skipping ham_factory_factorized_collinear_with_rotation text. afqmc.h5 or wfn.dat files not found. \n";
   } else {  
 
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
- 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
 
@@ -439,15 +435,13 @@ TEST_CASE("ham_factory_factorized_collinear_with_rotation", "[hamiltonian_factor
 TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltonian_factory]")
 {
   OHMMS::Controller->initialize(0, NULL);
+  boost::mpi3::communicator world{MPI_COMM_WORLD};
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
     app_log()<<" Skipping ham_factory_factorized_collinear_with_rotation text. afqmc.h5 or wfn.dat files not found. \n";
   } else {  
 
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
- 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
 
@@ -633,13 +627,11 @@ TEST_CASE("ham_factory_dist_ham_factorized_collinear_with_rotation", "[hamiltoni
 TEST_CASE("ham_generation_timing_hdf", "[hamiltonian_factory]")
 {
   OHMMS::Controller->initialize(0, NULL);
+  boost::mpi3::communicator world{MPI_COMM_WORLD};
 
   if(not file_exists("./afqmc_timing.h5")) {
     app_log()<<" Skipping ham_fac_timing text. afqmc_timing.h5 file not found. \n";
   } else { 
-
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);

@@ -210,7 +210,7 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
     int global_ncvecs=0;
     if(TG.getNodeID() == TG.getTotalNodes()-1 && TG.getCoreID()==0)
       global_ncvecs = Spvn.global_origin()[1] + Spvn.shape()[1];
-    global_ncvecs = TG.Global().all_reduce_value(global_ncvecs,std::plus<>());
+    global_ncvecs = (TG.Global() += global_ncvecs);
 
     ValueType E0 = OneBodyHamiltonian::NuclearCoulombEnergy + 
                    OneBodyHamiltonian::FrozenCoreEnergy;
@@ -297,6 +297,8 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
         if(write_hdf)
           writeSparseTensor(dump,type,NMO,NAEA,NAEB,TGprop,TGwfn,H1,
                             V2,Spvn,vn0,E0,global_ncvecs,22);
+
+std::cout<<" -- after writeSparseTensor " <<std::endl;
 
         return HamiltonianOperations(sparse_ham(type,std::move(H1),std::move(hij),std::move(V2),
             std::move(V2view),std::move(Spvn),std::move(Spvnview),

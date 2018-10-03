@@ -66,6 +66,8 @@ using namespace afqmc;
 
 TEST_CASE("propg_fac_shared", "[propagator_factory]")
 {
+  OHMMS::Controller->initialize(0, NULL);
+  boost::mpi3::communicator world{MPI_COMM_WORLD};
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
@@ -74,9 +76,6 @@ TEST_CASE("propg_fac_shared", "[propagator_factory]")
 
     TimerManager.set_timer_threshold(timer_level_coarse);
     setup_timers(AFQMCTimers, AFQMCTimerNames,timer_level_coarse);
-
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);
@@ -216,6 +215,8 @@ const char *propg_xml_block =
 
 TEST_CASE("propg_fac_distributed", "[propagator_factory]")
 {
+  OHMMS::Controller->initialize(0, NULL);
+  boost::mpi3::communicator world{MPI_COMM_WORLD};
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
@@ -224,9 +225,6 @@ TEST_CASE("propg_fac_distributed", "[propagator_factory]")
 
     TimerManager.set_timer_threshold(timer_level_coarse);
     setup_timers(AFQMCTimers, AFQMCTimerNames,timer_level_coarse);
-
-    // mpi3
-    communicator& world = OHMMS::Controller->comm;
 
     // Global Task Group
     afqmc::GlobalTaskGroup gTG(world);

@@ -526,11 +526,11 @@ namespace afqmc
           ov_ *= std::conj(ci[nd]);
           if(local_group_comm.root()) {
             if(transpose) {
-              std::lock_guard<boost::mpi3::mutex> guard(*mutex);
+              std::lock_guard<shared_mutex> guard(*mutex);
               ma::axpy(ov_,GA1D_2,G[indices[iw][range_t(0,GAdims.first*GAdims.second)]]);
               ma::axpy(ov_,GB1D_2,G[indices[iw][range_t(GAdims.first*GAdims.second,G.shape()[1])]]);
             } else {
-              std::lock_guard<boost::mpi3::mutex> guard(*mutex);
+              std::lock_guard<shared_mutex> guard(*mutex);
               ma::axpy(ov_,GA1D_2,G[indices[range_t(0,GAdims.first*GAdims.second)][iw]]);
               ma::axpy(ov_,GB1D_2,G[indices[range_t(GAdims.first*GAdims.second,G.shape()[0])][iw]]);
             }
@@ -740,7 +740,7 @@ APP_ABORT(" Finish PHMSD \n");
           else
             detR = SDetOp.Orthogonalize(it->SlaterMatrix(Alpha));
           if(!impSamp) {
-            std::lock_guard<boost::mpi3::mutex> guard(*mutex);
+            std::lock_guard<shared_mutex> guard(*mutex);
             it->weight() *= detR;
           }
         }
@@ -750,7 +750,7 @@ APP_ABORT(" Finish PHMSD \n");
           else
             detR = SDetOp.Orthogonalize(it->SlaterMatrix(Beta));
           if(!impSamp) {
-            std::lock_guard<boost::mpi3::mutex> guard(*mutex);
+            std::lock_guard<shared_mutex> guard(*mutex);
             it->weight() *= detR;
           }
         }

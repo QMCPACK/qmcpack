@@ -486,7 +486,7 @@ inline Tp MixedDensityMatrix(const MatA& hermA, const MatB& B, MatC&& C, Mat&& T
   Tp ovlp=Tp(0.);
   if(comm.rank()==0)
    ovlp = static_cast<Tp>(ma::invert(std::forward<Mat>(T1),IWORK,WORK));
-  comm.broadcast_value(ovlp);  
+  comm.broadcast_n(&ovlp,1,0);  
   if(ovlp == Tp(0.0)) return Tp(0.0); // don't bother calculating further
 
   if(compact) {
@@ -574,7 +574,7 @@ inline Tp Overlap(const MatA& hermA, const MatB& B, Mat&& T1, IBuffer& IWORK, co
   Tp ovlp=Tp(0.);
   if(comm.rank()==0)
    ovlp = static_cast<Tp>(ma::determinant(std::forward<Mat>(T1),IWORK));
-  comm.broadcast_value(ovlp);  
+  comm.broadcast_n(&ovlp,1,0);  
 
   return ovlp; 
 }
@@ -620,7 +620,7 @@ inline Tp OverlapForWoodbury(const MatA& hermA, const MatB& B, MatC&& QQ0, integ
       std::copy_n(std::addressof(*TMN[*(ref+i)].origin()),NEL,std::addressof(*TNN[i].origin()));
    ovlp = static_cast<Tp>(ma::invert(std::forward<MatD>(TNN),IWORK,WORK));
   }
-  comm.broadcast_value(ovlp);
+  comm.broadcast_n(&ovlp,1,0);
 
   int M0,Mn;
   sz = TMN.shape()[0];
