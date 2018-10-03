@@ -30,7 +30,7 @@ namespace qmcplusplus
     {
       x -= spline_m.x_grid.start;
       T tx; int ix;
-      SplineBound<T>::get(x*spline_m.x_grid.delta_inv,tx,ix,spline_m.x_grid.num-2);
+      getSplineBound(x*spline_m.x_grid.delta_inv,tx,ix,spline_m.x_grid.num-2);
 
       T a[4];
       MultiBsplineData<T>::compute_prefactors(a, tx);
@@ -54,7 +54,7 @@ namespace qmcplusplus
     {
       x -= spline_m.x_grid.start;
       T tx; int ix;
-      SplineBound<T>::get(x*spline_m.x_grid.delta_inv,tx,ix,spline_m.x_grid.num-2);
+      getSplineBound(x*spline_m.x_grid.delta_inv,tx,ix,spline_m.x_grid.num-2);
 
       T a[4], da[4], d2a[4];
       MultiBsplineData<T>::compute_prefactors(a, da, d2a, tx);

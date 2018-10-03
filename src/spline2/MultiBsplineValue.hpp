@@ -32,9 +32,9 @@ namespace qmcplusplus
       z -= spline_m->z_grid.start;
       T tx,ty,tz;
       int ix,iy,iz;
-      SplineBound<T>::get(x*spline_m->x_grid.delta_inv,tx,ix,spline_m->x_grid.num-1);
-      SplineBound<T>::get(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
-      SplineBound<T>::get(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
+      getSplineBound(x*spline_m->x_grid.delta_inv,tx,ix,spline_m->x_grid.num-1);
+      getSplineBound(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
+      getSplineBound(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
       T a[4], b[4], c[4];
 
       MultiBsplineData<T>::compute_prefactors(a, tx);
@@ -73,9 +73,9 @@ namespace qmcplusplus
       z -= spline_m->z_grid.start;
       T tx,ty,tz;
       int ix,iy,iz;
-      SplineBound<T>::get(x*spline_m->x_grid.delta_inv,tx,ix,spline_m->x_grid.num-1);
-      SplineBound<T>::get(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
-      SplineBound<T>::get(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
+      getSplineBound(x*spline_m->x_grid.delta_inv,tx,ix,spline_m->x_grid.num-1);
+      getSplineBound(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
+      getSplineBound(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
       T a[4], b[4], c[4];
 
       MultiBsplineData<T>::compute_prefactors(a, tx);

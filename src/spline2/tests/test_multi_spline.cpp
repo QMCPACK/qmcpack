@@ -22,36 +22,35 @@ namespace qmcplusplus
 template<typename T>
 void test_spline_bounds()
 {
-  SplineBound<T> sb;
   T x = 2.2;
   T dx;
   int ind;
   int ng=10;
-  sb.get(x, dx, ind, ng);
+  getSplineBound(x, dx, ind, ng);
   REQUIRE(dx == Approx(0.2));
   REQUIRE(ind == 2);
 
   // check clamping to a maximum index value
   x = 11.5;
-  sb.get(x, dx, ind, ng);
+  getSplineBound(x, dx, ind, ng);
   REQUIRE(dx == Approx(0.5));
   REQUIRE(ind == 10);
 
   // check clamping to a zero index value
   x = -1.3;
-  sb.get(x, dx, ind, ng);
+  getSplineBound(x, dx, ind, ng);
   REQUIRE(dx == Approx(-0.3));
   REQUIRE(ind == 0);
 
 }
 
-TEST_CASE("SplineBound double","[spline2]")
+TEST_CASE("getSplineBound double","[spline2]")
 {
   test_spline_bounds<double>();
 }
 
 
-TEST_CASE("SplineBound float","[spline2]")
+TEST_CASE("getSplineBound float","[spline2]")
 {
   test_spline_bounds<float>();
 }

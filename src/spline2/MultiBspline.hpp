@@ -32,15 +32,13 @@
 
 namespace qmcplusplus
 {
-  template<typename T> struct SplineBound
-  {
-    static inline void get(T x, T& dx, int& ind, int ng)
+  template<typename T, typename TRESIDUAL>
+    inline void getSplineBound(T x, TRESIDUAL& dx, int& ind, int ng)
     {
       T ipart;
       dx=std::modf(x,&ipart);
       ind = std::min(std::max(int(0),static_cast<int>(ipart)),ng);
     }
-  };
 
   /** compute Trace(H*G)
    *
