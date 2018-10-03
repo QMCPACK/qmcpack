@@ -232,7 +232,7 @@ struct WaveFunctionComponent: public QMCTraits
   
   virtual void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi_all)
   {
-    APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented");  
+    APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in "+ClassName+" class.");
   }
 
   /** return the current gradient for the iat-th particle
@@ -242,7 +242,7 @@ struct WaveFunctionComponent: public QMCTraits
    */
   virtual GradType evalGrad(ParticleSet& P, int iat)
   {
-    APP_ABORT("WaveFunctionComponent::evalGradient is not implemented");
+    APP_ABORT("WaveFunctionComponent::evalGradient is not implemented in "+ClassName+" class.");
     return GradType();
   }
 
@@ -287,7 +287,7 @@ struct WaveFunctionComponent: public QMCTraits
    */
   virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
-    APP_ABORT("WaveFunctionComponent::ratioGrad is not implemented");
+    APP_ABORT("WaveFunctionComponent::ratioGrad is not implemented in "+ClassName+" class.");
     return ValueType();
   }
 
@@ -370,7 +370,7 @@ struct WaveFunctionComponent: public QMCTraits
    */
   virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
                                        std::vector<RealType>& dgradlogpsi) {
-    app_error() << "Need specialization of WaveFunctionComponent::evaluateGradDerivatives.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::evaluateGradDerivatives in "+ClassName+" class.\n";
     abort();
   }
 
