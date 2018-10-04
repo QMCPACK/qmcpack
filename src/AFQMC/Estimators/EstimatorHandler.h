@@ -114,7 +114,7 @@ class EstimatorHandler: public AFQMCInfo
           if (name == "reduced_density_matrix") {
 //            estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<OneRdmEstimator>(TGgen.getTG(1),info,title,cur,*wfn)));
           } else if (name == "back_propagation") {
-//            estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<BackPropagatedEstimator>(TGgen.getTG(1),info,title,walker_types,cur,*wfn)));
+            estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<BackPropagatedEstimator>(TGgen.getTG(1),info,title,cur,walker_type,*wfn)));
           } else if (name == "energy") {
             estimators.emplace_back(static_cast<EstimPtr>(std::make_shared<EnergyEstimator>(TGgen.getTG(1),info,cur,*wfn,impsamp)));
           } else {
