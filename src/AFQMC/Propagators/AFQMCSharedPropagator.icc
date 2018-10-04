@@ -153,7 +153,7 @@ void AFQMCSharedPropagator::step(int nsteps_, WlkSet& wset, RealType Eshift, Rea
     // 5. Propagate walkers
     AFQMCTimers[propagate_timer]->start();
     if (wset.getNBackProp() > 0) {
-      apply_propagators_matrix(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
+      apply_propagators_construct_matrix(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
     } else {
       apply_propagators(wset,ni,tk0,tkN,ntasks_total_serial,vHS3D);
     }
@@ -271,9 +271,9 @@ void AFQMCSharedPropagator::apply_propagators(WSet& wset, int ni, int tk0, int t
   TG.local_barrier();
 }
 template<class WSet>
-void AFQMCSharedPropagator::apply_propagators_matrix(WSet& wset, int ni, int tk0, int tkN,
-                                              int ntasks_total_serial,
-                                              boost::multi_array_ref<ComplexType,3>& vHS3D)
+void AFQMCSharedPropagator::apply_propagators_construct_matrix(WSet& wset, int ni, int tk0, int tkN,
+                                                               int ntasks_total_serial,
+                                                               boost::multi_array_ref<ComplexType,3>& vHS3D)
 {
   int nwalk = wset.size();
   auto walker_type = wset.getWalkerType();
@@ -289,6 +289,7 @@ void AFQMCSharedPropagator::apply_propagators_matrix(WSet& wset, int ni, int tk0
           SDetOp.Propagate(wset[tk/2].SlaterMatrix(Alpha),B);
         else
           SDetOp.Propagate(wset[tk/2].SlaterMatrix(Beta),B);
+        wset[tk/2].incrementBMatrix();
       }
     } else {
       // in this case, tk corresponds to walker number
@@ -297,6 +298,7 @@ void AFQMCSharedPropagator::apply_propagators_matrix(WSet& wset, int ni, int tk0
         boost::multi_array_ref<ComplexType,2> B = wset[tk].BMatrix();
         SDetOp.ConstructPropagator(P1,vHS3D[nt],B,order);
         SDetOp.Propagate(wset[tk].SlaterMatrix(Alpha),B);
+        wset[tk].incrementBMatrix();
       }
     }
   } else {
@@ -316,15 +318,17 @@ void AFQMCSharedPropagator::apply_propagators_matrix(WSet& wset, int ni, int tk0
           SDetOp.Propagate(wset[tk/2].SlaterMatrix(Alpha),B);
         else
           SDetOp.Propagate(wset[tk/2].SlaterMatrix(Beta),B);
+        wset[tk/2].incrementBMatrix();
       }
     } else {
       // in this case, tk corresponds to walker number
       for(int tk=tk0; tk<tkN; ++tk) {
         int nt = ni*nwalk+tk;
         local_vHS = vHS3D[indices[range_t()][range_t()][nt]];
-        boost::multi_array_ref<ComplexType,2> B = wset[tk/2].BMatrix();
+        boost::multi_array_ref<ComplexType,2> B = wset[tk].BMatrix();
         SDetOp.ConstructPropagator(P1,local_vHS,B,order);
         SDetOp.Propagate(wset[tk].SlaterMatrix(Alpha),B);
+        wset[tk].incrementBMatrix();
       }
     }
   }

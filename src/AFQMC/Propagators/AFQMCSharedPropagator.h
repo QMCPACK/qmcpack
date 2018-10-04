@@ -168,8 +168,8 @@ class AFQMCSharedPropagator: public AFQMCInfo
                            boost::multi_array_ref<ComplexType,3>& vHS3D);
 
     template<class WSet>
-    void apply_propagators_matrix(WSet& wset, int ni, int tk0, int tkN, int ntask_total_serial,
-                                  boost::multi_array_ref<ComplexType,3>& vHS3D);
+    void apply_propagators_construct_matrix(WSet& wset, int ni, int tk0, int tkN, int ntask_total_serial,
+                                            boost::multi_array_ref<ComplexType,3>& vHS3D);
 
     ComplexType apply_bound_vbias(ComplexType v, RealType sqrtdt)
     {
