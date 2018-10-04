@@ -129,15 +129,15 @@ class BackPropagatedEstimator: public EstimatorBase
   }
 
   template <typename T>
-  ComplexType back_propagate_wavefunction(const std::vector<PsiT_Matrix>& trial, SMType& psiBP, T& walker, int nback_prop)
+  ComplexType back_propagate_wavefunction(const boost::multi_array<ComplexType,2>& trialSM, SMType& psiBP, T& walker, int nback_prop)
   {
     ComplexType detR = one;
     walker.decrementBMatrix();
     SMType B = walker.BMatrix();
-    ma::product(B, B, T1);
+    ma::product(ma::H(B), trialSM, T1);
     for (int i = 0; i < nback_prop-1; i++) {
       SMType B = walker.BMatrix();
-      ma::product(B, T1, psiBP);
+      ma::product(ma::H(B), T1, std::forward<SMType>(psiBP));
       T1 = psiBP;
       if ((i != 0) && (i%nStabalize == 0)) {
         //detR *= DenseMatrixOperators::GeneralizedGramSchmidt(T1.data(),NAEA,NMO,NAEA);
