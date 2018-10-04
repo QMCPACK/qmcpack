@@ -19,6 +19,7 @@
 
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
+#include <spline2/MultiBsplineEval.hpp>
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
 #include <Utilities/UtilityFunctions.h>
 
