@@ -23,7 +23,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "Message/MPIObjectBase.h"
-#include "QMCWaveFunctions/Batching.h"
+#include "Batching.h"
 #ifdef QMC_CUDA
 #include "QMCWaveFunctions/TrialWaveFunctionBatched.h"
 #endif

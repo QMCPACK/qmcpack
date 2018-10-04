@@ -23,7 +23,7 @@
 #include <map>
 #include "QMCApp/WaveFunctionPool.h"
 #include "QMCApp/HamiltonianPoolInterface.h"
-#include "QMCWaveFunctions/Batching.h"
+#include "Batching.h"
 
 class Libxml2Document;
 

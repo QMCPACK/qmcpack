@@ -14,7 +14,7 @@
 #define QMCPLUSPLUS_SPOSET_EVALUATION_H
 
 #include "Configuration.h"
-#include "QMCWaveFunctions/Batching.h"
+#include "Batching.h"
 #include "QMCWaveFunctions/SPOSetTypeAliases.h"
 //! SPOSet evaluation interface depends on walker batching strategy
 /*!

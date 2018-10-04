@@ -23,7 +23,7 @@
 #include <spline2/MultiBspline.hpp>
 #include "qmc_common.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptor.h"
-#include "QMCWaveFunctions/Batching.h"
+#include "Batching.h"
 #include "Particle/VirtualParticleSet.h"
 //#define USE_VECTOR_ML 1
 

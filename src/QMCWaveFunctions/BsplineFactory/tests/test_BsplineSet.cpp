@@ -26,7 +26,7 @@
 #include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineR2RAdoptor.h"
 #include "Particle/ParticleSet.h"
-#include "QMCWaveFunctions/Batching.h"
+#include "Batching.h"
 #include <iostream>
 
 namespace qmcplusplus

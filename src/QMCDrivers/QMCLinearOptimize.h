@@ -29,7 +29,7 @@
 #include "formic/utils/matrix.h"
 #include "formic/utils/lmyengine/engine.h"
 #endif
-#include "QMCWaveFunctions/Batching.h"
+#include "Batching.h"
 #include "QMCApp/HamiltonianPool.h"
 
 namespace qmcplusplus

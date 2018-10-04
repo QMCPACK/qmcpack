@@ -26,7 +26,7 @@
 #include "Particle/VirtualParticleSet.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
-#include "QMCWaveFunctions/Batching.h"
+#include "Batching.h"
 #include "Utilities/NewTimer.h"
 /**@defgroup MBWfs Many-body wave function group
  * @brief Classes to handle many-body trial wave functions

@@ -24,7 +24,7 @@
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorReaderP.h"
 #include "QMCWaveFunctions/BsplineFactory/SplineHybridAdoptorReaderP.h"
 
-#include "QMCWaveFunctions/Batching.h"
+#include "Batching.h"
 
 namespace qmcplusplus
 {

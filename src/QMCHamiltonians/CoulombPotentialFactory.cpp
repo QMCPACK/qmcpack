@@ -47,7 +47,7 @@
 #include "QMCHamiltonians/MPC_CUDA.h"
 #endif
 
-#include "QMCWaveFunctions/Batching.h"
+#include "Batching.h"
 
 //#include <iostream>
 namespace qmcplusplus

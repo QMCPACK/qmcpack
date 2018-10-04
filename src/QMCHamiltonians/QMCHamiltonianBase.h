@@ -31,7 +31,7 @@
 #endif
 #include <QMCWaveFunctions/OrbitalSetTraits.h>
 #include <bitset>
-#include "QMCWaveFunctions/Batching.h"
+#include "Batching.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 
 namespace qmcplusplus

@@ -17,7 +17,7 @@
 #include "Message/MPIObjectBase.h"
 #include <map>
 #include "QMCApp/WaveFunctionPool.h"
-#include "QMCWaveFunctions/Batching.h"
+#include "Batching.h"
 class Libxml2Document;
 
 namespace qmcplusplus

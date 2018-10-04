@@ -25,7 +25,7 @@
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include <map>
 #include <string>
-#include "QMCWaveFunctions/Batching.h"
+#include "Batching.h"
 namespace qmcplusplus
 {
 

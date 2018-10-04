@@ -25,7 +25,7 @@
 #include "Configuration.h"
 #include "Particle/ParticleSet.h"
 #include "OhmmsPETE/OhmmsArray.h"
-#include "QMCWaveFunctions/Batching.h"
+#include "Batching.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSetBatched.h"

@@ -34,7 +34,7 @@
 #include <boost/shared_ptr.hpp>
 #endif
 
-#include "QMCWaveFunctions/Batching.h"
+#include "Batching.h"
 #include "WhatAmI.h"
 namespace qmcplusplus
 {

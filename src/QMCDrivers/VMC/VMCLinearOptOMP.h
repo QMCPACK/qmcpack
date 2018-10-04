@@ -20,7 +20,7 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCDrivers/CloneManager.h"
 #include "Message/CommOperators.h"
-#include "QMCWaveFunctions/Batching.h"
+#include "Batching.h"
 
 namespace qmcplusplus
 {

@@ -19,7 +19,7 @@
 #include "QMCWaveFunctions/BsplineFactory/mocks/MockEinsplineSetBuilder.h"
 #include <iostream>
 
-#include "QMCWaveFunctions/Batching.h"
+#include "Batching.h"
 
 #include "Configuration.h"
 

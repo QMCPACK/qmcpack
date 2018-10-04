@@ -25,7 +25,7 @@
 #if defined(QMC_CUDA)
 #include "QMCDrivers/VMC/VMC_CUDA.h"
 #endif
-#include "QMCWaveFunctions/Batching.h"
+#include "Batching.h"
 
 namespace qmcplusplus
 {

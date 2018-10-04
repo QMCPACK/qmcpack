@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_RMC_FACTORY_H
 #define QMCPLUSPLUS_RMC_FACTORY_H
 #include "QMCDrivers/QMCDriver.h"
-#include "QMCWaveFunctions/Batching.h"
+#include "Batching.h"
 #include "QMCApp/HamiltonianPool.h"
 namespace qmcplusplus
 {

@@ -34,7 +34,7 @@
 #include "Estimators/EstimatorManagerBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
-#include "QMCWaveFunctions/Batching.h"
+#include "Batching.h"
 #include "QMCDrivers/QMCDriverInterface.h"
 class Communicate;
 
