@@ -27,7 +27,7 @@ namespace spline2
 {
 
   template<typename T>
-    inline void evaluate_vgl_impl(const typename qmcplusplus::bspline_traits<T,3>::SplineType *spline_m, T x, T y, T z,
+    inline void evaluate_vgl_impl(const typename qmcplusplus::bspline_traits<T,3>::SplineType *restrict spline_m, T x, T y, T z,
         T* restrict vals, T* restrict grads, T* restrict lapl, size_t out_offset, int first, int last)
     {
       x -= spline_m->x_grid.start;
@@ -121,7 +121,7 @@ namespace spline2
     }
 
   template<typename T>
-    inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T,3>::SplineType *spline_m, T x, T y, T z,
+    inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T,3>::SplineType *restrict spline_m, T x, T y, T z,
         T* restrict vals, T* restrict grads, T* restrict hess, size_t out_offset, int first, int last)
     {
 

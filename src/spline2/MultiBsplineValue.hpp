@@ -19,7 +19,7 @@ namespace spline2
 
   /** define evaluate: common to any implementation */
   template<typename T>
-    inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<T,3>::SplineType *spline_m,
+    inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<T,3>::SplineType *restrict spline_m,
                                 T x, T y, T z, T* restrict vals, int first, int last)
     {
       x -= spline_m->x_grid.start;
