@@ -37,7 +37,7 @@ SlaterDetOpt::SlaterDetOpt(ParticleSet & ptcl, SPOSet * spo_ptr, const int up_or
   targetPtcl = &ptcl;
 
   Optimizable=true;
-  OrbitalName="SlaterDetOpt";
+  ClassName="SlaterDetOpt";
   this->resetTargetParticleSet(*targetPtcl);
 
   m_nlc = Phi->OrbitalSetSize;

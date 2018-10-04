@@ -82,11 +82,28 @@ QMCMain::QMCMain(Communicate* c, Batching batching)
   app_summary()  << "=====================================================\n";
   qmc_common.print_options(app_log());
   app_summary()
-      << "\n  MPI Nodes            = " << OHMMS::Controller->size()
-      << "\n  MPI Nodes per group  = " << myComm->size()
-      << "\n  MPI Group ID         = " << myComm->getGroupID()
-      << "\n  OMP_NUM_THREADS      = " << omp_get_max_threads()
+      << "\n  MPI Nodes             = " << OHMMS::Controller->size()
+      << "\n  MPI Nodes per group   = " << myComm->size()
+      << "\n  MPI Group ID          = " << myComm->getGroupID()
       << std::endl;
+  #pragma omp parallel
+  {
+    const int L1_tid = omp_get_thread_num();
+    if(L1_tid==0)
+      app_summary() << "  OMP 1st level threads = " << omp_get_num_threads() << std::endl;
+    #pragma omp parallel
+    {
+      const int L2_tid = omp_get_thread_num();
+      const int L2_num_threads = omp_get_num_threads();
+      if(L1_tid==0&&L2_tid==0)
+      {
+        if (L2_num_threads==1)
+          app_summary() << "  OMP nested threading disabled or only 1 thread on the 2nd level" << std::endl;
+        else
+          app_summary() << "  OMP 2nd level threads = " << L2_num_threads << std::endl;
+      }
+    }
+  }
   app_summary()
       << "\n  Precision used in this calculation, see definitions in the manual:"
       << "\n  Base precision      = " << GET_MACRO_VAL(OHMMS_PRECISION)

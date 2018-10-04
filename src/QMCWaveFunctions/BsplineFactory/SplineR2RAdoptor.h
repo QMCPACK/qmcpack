@@ -88,14 +88,6 @@ public:
     this->KeyWord="SplineR2RAdoptor";
   }
 
-  ///** copy the base property */
-  //SplineC2CSoA(BaseType& rhs): BaseType(rhs)
-  //{
-  //  this->is_complex=true;
-  //  this->AdoptorName="SplineC2CSoA";
-  //  this->KeyWord="C2RSoA";
-  //}
-
   SplineR2RAdoptor(const SplineR2RAdoptor& a):
     SplineAdoptor<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr)
   {

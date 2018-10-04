@@ -407,7 +407,9 @@ CoulombPBCAA::evalSR(ParticleSet& P)
   mRealType SR=0.0;
   if(d_aa.DTType == DT_SOA)
   {
-    for(size_t ipart=1; ipart<NumCenters; ipart++)
+    // Ye: the threading will be enabled when splint is thread safe.
+    //#pragma omp parallel for reduction(+:SR)
+    for(size_t ipart=1; ipart<(NumCenters/2+1); ipart++)
     {
       mRealType esum = 0.0;
       const RealType* restrict dist=d_aa.Distances[ipart];
@@ -416,6 +418,16 @@ CoulombPBCAA::evalSR(ParticleSet& P)
         esum += Zat[j]*rVs->splint(dist[j])/dist[j];
       }
       SR += Zat[ipart]*esum;
+
+      if(ipart==NumCenters-ipart) continue;
+
+      esum = 0.0;
+      dist = d_aa.Distances[NumCenters-ipart];
+      for(size_t j=0; j<NumCenters-ipart; ++j)
+      {
+        esum += Zat[j]*rVs->splint(dist[j])/dist[j];
+      }
+      SR += Zat[NumCenters-ipart]*esum;
     }
   }
   else

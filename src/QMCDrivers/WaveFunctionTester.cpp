@@ -725,7 +725,7 @@ bool WaveFunctionTester<Batching::SINGLE>::checkGradientAtConfiguration(MCWalker
 
     RealType logpsi1 = orb->evaluateLog(QDT::W, G, L);
 
-    fail_log << "Orbital " << iorb << " " << orb->OrbitalName << " log psi = " << logpsi1 << std::endl;
+    fail_log << "WaveFunctionComponent " << iorb << " " << orb->ClassName << " log psi = " << logpsi1 << std::endl;
 
     FiniteDifference::ValueVector logpsi_vals;
     FiniteDifference::PosChangeVector::iterator it;
@@ -752,7 +752,7 @@ bool WaveFunctionTester<Batching::SINGLE>::checkGradientAtConfiguration(MCWalker
     }
     fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
 
-    fout << "  Orbital " << iorb << " " << orb->OrbitalName << std::endl;
+    fout << "  WaveFunctionComponent " << iorb << " " << orb->ClassName << std::endl;
 
     if (!checkGradients(0, nat, G, L, G1, L1, fail_log, 1))
     {
@@ -1942,7 +1942,7 @@ void WaveFunctionTester<Batching::SINGLE>::runwftricks()
   app_log()<<" Total of "<<Orbitals.size()<<" orbitals."<< std::endl;
   int SDindex(0);
   for (int i=0; i<Orbitals.size(); i++)
-    if ("SlaterDet"==Orbitals[i]->OrbitalName)
+    if ("SlaterDet"==Orbitals[i]->ClassName)
       SDindex=i;
   SPOSet<Batching::SINGLE>* Phi= dynamic_cast<SPOSet<Batching::SINGLE>*>
     (dynamic_cast<SlaterDet<> *>(Orbitals[SDindex])->getPhi());

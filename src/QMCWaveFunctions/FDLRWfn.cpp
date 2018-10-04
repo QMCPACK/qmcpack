@@ -44,7 +44,7 @@ namespace qmcplusplus {
     //  Optimizable = false;
     Optimizable = true;
 
-    OrbitalName = "FDLR";
+    ClassName = "FDLR";
 
     // Copy variables "x", which are currently encoded in the m_wfn_xmd wave
     // function, to the x_vars object, and similarly for "d" variables,

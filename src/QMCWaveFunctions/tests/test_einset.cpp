@@ -28,6 +28,7 @@
 
 #include <stdio.h>
 #include <string>
+#include <limits>
 
 using std::string;
 
@@ -160,12 +161,14 @@ const char *particles =
   SPOSet<Batching::SINGLE>::HessVector_t ddpsiV(spo->getOrbitalSetSize());
   spo->evaluate(elec_, 1, psiV, dpsiV, ddpsiV);
 
+  // Catch default is 100*(float epsilson)
+  double eps = 2000*std::numeric_limits<float>::epsilon();
   //hess
   REQUIRE(ddpsiV[1](0,0) == ComplexApprox(-2.3160984034).compare_real_only());
   REQUIRE(ddpsiV[1](0,1) == ComplexApprox(1.8089479397).compare_real_only());
   REQUIRE(ddpsiV[1](0,2) == ComplexApprox(0.5608575749).compare_real_only());
   REQUIRE(ddpsiV[1](1,0) == ComplexApprox(1.8089479397).compare_real_only());
-  REQUIRE(ddpsiV[1](1,1) == ComplexApprox(-0.0799493616).compare_real_only());
+  REQUIRE(ddpsiV[1](1,1) == ComplexApprox(-0.07996207476).epsilon(eps).compare_real_only());
   REQUIRE(ddpsiV[1](1,2) == ComplexApprox(0.5237969314).compare_real_only());
   REQUIRE(ddpsiV[1](2,0) == ComplexApprox(0.5608575749).compare_real_only());
   REQUIRE(ddpsiV[1](2,1) == ComplexApprox(0.5237969314).compare_real_only());

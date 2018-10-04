@@ -367,7 +367,7 @@ MultiDiracDeterminantBase::MultiDiracDeterminantBase(SPOSet<Batching::SINGLE>* c
   ExtraStuffTimer("MultiDiracDeterminantBase::ExtraStuff")
 {
   Optimizable=true;
-  OrbitalName="MultiDiracDeterminantBase";
+  ClassName="MultiDiracDeterminantBase";
 
   IsCloned=false;
 

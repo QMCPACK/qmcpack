@@ -22,7 +22,7 @@ namespace qmcplusplus
 {
 WaveFunctionComponent::WaveFunctionComponent():
   IsOptimizing(false), Optimizable(true), UpdateMode(ORB_WALKER),
-  LogValue(1.0),PhaseValue(0.0),OrbitalName("WaveFunctionComponent"),
+  LogValue(1.0),PhaseValue(0.0),ClassName("WaveFunctionComponent"),
   derivsDone(false), parameterType(0), Bytes_in_WFBuffer(0)
 #if !defined(ENABLE_SMARTPOINTER)
   ,dPsi(0), ionDerivs(false)
@@ -35,7 +35,7 @@ WaveFunctionComponent::WaveFunctionComponent():
 // WaveFunctionComponent::WaveFunctionComponent(const WaveFunctionComponent& old):
 //   Optimizable(old.Optimizable), UseBuffer(old.UseBuffer),
 //   dPsi(old.dPsi),dLogPsi(old.dLogPsi),d2LogPsi(old.d2LogPsi),
-//   OrbitalName(old.OrbitalName),myVars(old.myVars)
+//   ClassName(old.ClassName),myVars(old.myVars)
 // {
 //   //
 //   //if(dLogPsi.size()) dLogPsi.resize(dLogPsi.size());
@@ -69,7 +69,7 @@ void WaveFunctionComponent::evaluateDerivatives(ParticleSet& P,
  */
 WaveFunctionComponentPtr WaveFunctionComponent::makeClone(ParticleSet& tpq) const
 {
-  APP_ABORT("Implement WaveFunctionComponent::makeClone "+OrbitalName+ " class.");
+  APP_ABORT("Implement WaveFunctionComponent::makeClone "+ClassName+ " class.");
   return 0;
 }
 
@@ -88,7 +88,7 @@ void WaveFunctionComponent::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<V
 void WaveFunctionComponent::evaluateRatios(VirtualParticleSet& P, std::vector<ValueType>& ratios)
 {
   std::ostringstream o;
-  o << "WaveFunctionComponent::evaluateRatios is not implemented by " << OrbitalName;
+  o << "WaveFunctionComponent::evaluateRatios is not implemented by " << ClassName;
   APP_ABORT(o.str());
 }
 

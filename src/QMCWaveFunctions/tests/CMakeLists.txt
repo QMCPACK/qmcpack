@@ -17,7 +17,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 SET(SRC_DIR wavefunction)
 SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME unit_test_${SRC_DIR})
+SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/wavefunction)
 #SET(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp/pwscf.pwscf.h5)

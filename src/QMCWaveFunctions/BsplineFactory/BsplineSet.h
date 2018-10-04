@@ -112,15 +112,6 @@ struct BsplineSet<SA, Batching::SINGLE>: public SA,
     SA::set_spline(spline_r,spline_i,twist,ispline,level);
   }
 
-  QMCTraits::ValueType RATIO(int iat, const QMCTraits::ValueType* restrict arow)
-  {
-  //this is just an example how to resuse t_logpsi
-    int ip=omp_get_thread_num()*2;
-    // YYYY: need to fix
-    //return SplineAdoptor::evaluate_dot(P,iat,arow,reinterpret_cast<DataType*>(t_logpsi[ip]));
-    return QMCTraits::ValueType();
-  }
-
   inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
     SA::evaluate_v(P,iat,psi);

@@ -36,13 +36,44 @@ SPOSet<Batching::SINGLE>::SPOSet()
   ,Identity(false),BasisSetSize(0),C(nullptr)
 #endif
 {
-  CanUseGLCombo=false;
   className="invalid";
 #if !defined(ENABLE_SOA)
   IsCloned=false;
   //default is false: LCOrbitalSet.h needs to set this true and recompute needs to check
   myComm=nullptr;
 #endif
+}
+
+void SPOSet::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
+{
+  APP_ABORT("SPOSet::evaluateVGL not implemented.");
+}
+
+void SPOSet::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOmem)
+{
+  for(int iat=0; iat<VP.getTotalNum(); ++iat)
+  {
+    ValueVector_t psi(psiM[iat],OrbitalSetSize);
+    evaluate(VP,iat,psi);
+  }
+}
+
+void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last,
+                                    GGGMatrix_t& grad_grad_grad_logdet)
+{
+  APP_ABORT("Need specialization of SPOSet::evaluateThirdDeriv(). \n");
+}
+
+void SPOSet::evaluate_notranspose(const ParticleSet& P, int first, int last
+                                      , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
+{
+  APP_ABORT("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_logdet. \n");
+}
+
+void SPOSet::evaluate_notranspose(const ParticleSet& P, int first, int last,
+                                      ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
+{
+  APP_ABORT("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_grad_logdet. \n");
 }
 
 SPOSet<>* SPOSet<Batching::SINGLE>::makeClone() const
@@ -405,6 +436,7 @@ void SPOSet<Batching::SINGLE>::evaluateGradSource (const ParticleSet &P, int fir
   APP_ABORT("SPOSetlBase::evalGradSource is not implemented");
 }
 
+// Explicit instantiation unecessary if explicit instantiation of SPOSet<Batching::BATCHED> exists
 #ifndef QMC_CUDA
 template class SPOSet<Batching::SINGLE>;
 #endif

@@ -110,7 +110,7 @@ public:
   eeI_JastrowOrbital(ParticleSet& ions, ParticleSet& elecs, bool is_master)
     : Write_Chiesa_Correction(is_master), KEcorr(0.0)
   {
-    OrbitalName = "eeI_JastrowOrbital";
+    ClassName = "eeI_JastrowOrbital";
     eRef = &elecs;
     IRef = &ions;
     myTableIndex=elecs.addTable(ions,DT_AOS);

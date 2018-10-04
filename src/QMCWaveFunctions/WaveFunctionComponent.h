@@ -133,9 +133,9 @@ struct WaveFunctionComponent: public QMCTraits
   /** A vector for \f$ \frac{\partial \nabla^2 \log\phi}{\partial \alpha} \f$
    */
   ValueVectorType d2LogPsi;
-  /** Name of this orbital
+  /** Name of the class derived from WaveFunctionComponent
    */
-  std::string OrbitalName;
+  std::string ClassName;
   ///list of variables this orbital handles
   opt_variables_type myVars;
   ///Bytes in WFBuffer
@@ -224,7 +224,7 @@ struct WaveFunctionComponent: public QMCTraits
   
   virtual void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi_all)
   {
-    APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented");  
+    APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in "+ClassName+" class.");
   }
 
   /** return the current gradient for the iat-th particle
@@ -234,7 +234,7 @@ struct WaveFunctionComponent: public QMCTraits
    */
   virtual GradType evalGrad(ParticleSet& P, int iat)
   {
-    APP_ABORT("WaveFunctionComponent::evalGradient is not implemented");
+    APP_ABORT("WaveFunctionComponent::evalGradient is not implemented in "+ClassName+" class.");
     return GradType();
   }
 
@@ -279,7 +279,7 @@ struct WaveFunctionComponent: public QMCTraits
    */
   virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
-    APP_ABORT("WaveFunctionComponent::ratioGrad is not implemented");
+    APP_ABORT("WaveFunctionComponent::ratioGrad is not implemented in "+ClassName+" class.");
     return ValueType();
   }
 
@@ -372,7 +372,7 @@ struct WaveFunctionComponent: public QMCTraits
    */
   virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
                                        std::vector<RealType>& dgradlogpsi) {
-    app_error() << "Need specialization of WaveFunctionComponent::evaluateGradDerivatives.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::evaluateGradDerivatives in "+ClassName+" class.\n";
     abort();
   }
 
@@ -420,7 +420,7 @@ struct WaveFunctionComponent: public QMCTraits
           std::vector<RealType> &logPsi)
   {
     app_error() << "Need specialization of WaveFunctionComponent::addLog for "
-                << OrbitalName << ".\n";
+                << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -497,7 +497,7 @@ struct WaveFunctionComponent: public QMCTraits
               std::vector<GradType> &grad)
   {
     app_error() << "Need specialization of WaveFunctionComponent::addGradient for "
-                << OrbitalName << ".\n";
+                << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -507,7 +507,7 @@ struct WaveFunctionComponent: public QMCTraits
                std::vector<GradType> &grad)
   {
     app_error() << "Need specialization of WaveFunctionComponent::calcGradient for "
-                << OrbitalName << ".\n";
+                << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -517,7 +517,7 @@ struct WaveFunctionComponent: public QMCTraits
             ValueMatrix_t &lapl)
   {
     app_error() << "Need specialization of WaveFunctionComponent::gradLapl for "
-                << OrbitalName << ".\n";
+                << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }

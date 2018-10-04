@@ -86,8 +86,6 @@ public:
 
   ///flag to calculate ionic derivatives
   bool ionDerivs;
-  ///if true, can use GL type, default=false
-  bool CanUseGLCombo;
   ///number of Single-particle orbitals
   QMCT::IndexType OrbitalSetSize;
   /// Optimizable variables
@@ -247,10 +245,6 @@ protected:
    */
   virtual void
   evaluate(const ParticleSet& P, int iat, SSTA::ValueVector_t& psi)=0;
-
-  /** compute dot_product of new row and old row */
-  virtual QMCT::ValueType RATIO(const ParticleSet& P, int iat, const QMCT::ValueType*
-      restrict arow);
 
   /** evaluate VGL of SPOs using SoA container for gl
    */

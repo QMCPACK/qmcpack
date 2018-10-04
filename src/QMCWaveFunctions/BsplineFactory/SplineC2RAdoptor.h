@@ -24,6 +24,8 @@
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptor.h"
+#include <Utilities/FairDivide.h>
+
 namespace qmcplusplus
 {
 
@@ -86,14 +88,6 @@ struct SplineC2RAdoptor: public SplineAdoptor<ST,3>
     this->AdoptorName="SplineC2RAdoptorAdoptor";
     this->KeyWord="SplineC2RAdoptor";
   }
-
-  ///** copy the base property */
-  //SplineC2RSoA(BaseType& rhs): BaseType(rhs)
-  //{
-  //  this->is_complex=true;
-  //  this->AdoptorName="SplineC2RSoA";
-  //  this->KeyWord="C2RSoA";
-  //}
 
   SplineC2RAdoptor(const SplineC2RAdoptor& a):
     SplineAdoptor<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr),
@@ -291,70 +285,40 @@ struct SplineC2RAdoptor: public SplineAdoptor<ST,3>
   }
 
   template<typename VV>
-  inline void assign_v(const PointType& r, const vContainer_type& myV, VV& psi)
+  inline void assign_v(const PointType& r, const vContainer_type& myV, VV& psi, int first = 0, int last = -1) const
   {
-    const size_t N=kPoints.size();
+    // protect last
+    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+
     const ST x=r[0], y=r[1], z=r[2];
     const ST* restrict kx=myKcart.data(0);
     const ST* restrict ky=myKcart.data(1);
     const ST* restrict kz=myKcart.data(2);
-#if defined(USE_VECTOR_ML)
-    {//reuse myH
-      ST* restrict KdotR=myH.data(0);
-      ST* restrict CosV=myH.data(1);
-      ST* restrict SinV=myH.data(2);
-      #pragma omp simd
-      for(size_t j=0; j<N; ++j)
-        KdotR[j]=-(x*kx[j]+y*ky[j]+z*kz[j]);
 
-      eval_e2iphi(N,KdotR,CosV,SinV);
-
-      #pragma omp simd
-      for (size_t j=0,psiIndex=first_spo; j<nComplexBands; j++, psiIndex+=2)
-      {
-        const ST val_r=myV[2*j  ];
-        const ST val_i=myV[2*j+1];
-        psi[psiIndex  ] = val_r*CosV[j]-val_i*SinV[j];
-        psi[psiIndex+1] = val_i*CosV[j]+val_r*SinV[j];
-      }
-      #pragma omp simd
-      for (size_t j=nComplexBands,psiIndex=first_spo+2*nComplexBands; j<N; j++,psiIndex++)
-      {
-        const ST val_r=myV[2*j  ];
-        const ST val_i=myV[2*j+1];
-        psi[psiIndex  ] = val_r*CosV[j]-val_i*SinV[j];
-      }
-    }
-#else
+    TT* restrict psi_s=psi.data()+first_spo;
+    #pragma omp simd
+    for (size_t j=first; j<std::min(nComplexBands,last); j++)
     {
-      TT* restrict psi_s=psi.data()+first_spo;
-      #pragma omp simd
-      for (size_t j=0; j<nComplexBands; j++)
-      {
-        ST s, c;
-        const size_t jr=j<<1;
-        const size_t ji=jr+1;
-        const ST val_r=myV[jr];
-        const ST val_i=myV[ji];
-        sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
-        psi_s[jr] = val_r*c-val_i*s;
-        psi_s[ji] = val_i*c+val_r*s;
-      }
+      ST s, c;
+      const size_t jr=j<<1;
+      const size_t ji=jr+1;
+      const ST val_r=myV[jr];
+      const ST val_i=myV[ji];
+      sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
+      psi_s[jr] = val_r*c-val_i*s;
+      psi_s[ji] = val_i*c+val_r*s;
     }
 
+    psi_s += nComplexBands;
+    #pragma omp simd
+    for (size_t j=std::max(nComplexBands,first); j<last; j++)
     {
-      TT* restrict psi_s=psi.data()+first_spo+nComplexBands;
-      #pragma omp simd
-      for (size_t j=nComplexBands; j<N; j++)
-      {
-        ST s, c;
-        const ST val_r=myV[2*j  ];
-        const ST val_i=myV[2*j+1];
-        sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
-        psi_s[j] = val_r*c-val_i*s;
-      }
+      ST s, c;
+      const ST val_r=myV[2*j  ];
+      const ST val_i=myV[2*j+1];
+      sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
+      psi_s[j] = val_r*c-val_i*s;
     }
-#endif
   }
 
   template<typename VV>
@@ -362,18 +326,41 @@ struct SplineC2RAdoptor: public SplineAdoptor<ST,3>
   {
     const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
-    SplineInst->evaluate(ru,myV);
-    assign_v(r,myV,psi);
+
+    #pragma omp parallel
+    {
+      int first, last;
+      FairDivideAligned(myV.size(), getAlignment<ST>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
+
+      SplineInst->evaluate(ru,myV,first,last);
+      assign_v(r,myV,psi,first/2,last/2);
+    }
   }
 
   template<typename VM, typename VAV>
   inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM, VAV& SPOMem)
   {
-    const size_t m=psiM.cols();
-    for(int iat=0; iat<VP.getTotalNum(); ++iat)
+    #pragma omp parallel
     {
-      Vector<TT> psi(psiM[iat],m);
-      evaluate_v(VP,iat,psi);
+      int first, last;
+      FairDivideAligned(myV.size(), getAlignment<ST>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
+
+      const size_t m = psiM.cols();
+      for(int iat=0; iat<VP.getTotalNum(); ++iat)
+      {
+        const PointType& r=VP.activeR(iat);
+        PointType ru(PrimLattice.toUnit_floor(r));
+        Vector<TT> psi(psiM[iat],m);
+
+        SplineInst->evaluate(ru,myV,first,last);
+        assign_v(r,myV,psi,first/2,last/2);
+      }
     }
   }
 
@@ -382,8 +369,11 @@ struct SplineC2RAdoptor: public SplineAdoptor<ST,3>
   /** assign_vgl
    */
   template<typename VV, typename GV>
-  inline void assign_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi)
+  inline void assign_vgl(const PointType& r, VV& psi, GV& dpsi, VV& d2psi, int first = 0, int last = -1) const
   {
+    // protect last
+    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+
     CONSTEXPR ST zero(0);
     CONSTEXPR ST two(2);
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
@@ -406,17 +396,8 @@ struct SplineC2RAdoptor: public SplineAdoptor<ST,3>
     const ST* restrict h12=myH.data(4); ASSUME_ALIGNED(h12);
     const ST* restrict h22=myH.data(5); ASSUME_ALIGNED(h22);
 
-    const size_t N=kPoints.size();
-    const size_t nsplines=myL.size();
-#if defined(PRECOMPUTE_L)
-    for(size_t j=0; j<nsplines; ++j)
-    {
-      myL[j]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
-    }
-#endif
-
     #pragma omp simd
-    for (size_t j=0; j<nComplexBands; j++)
+    for (size_t j=first; j<std::min(nComplexBands,last); j++)
     {
       const size_t jr=j<<1;
       const size_t ji=jr+1;
@@ -448,16 +429,10 @@ struct SplineC2RAdoptor: public SplineAdoptor<ST,3>
       const ST gY_i=dY_i-val_r*kY;
       const ST gZ_i=dZ_i-val_r*kZ;
 
-#if defined(PRECOMPUTE_L)
-      const ST lap_r=myL[jr]+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
-      const ST lap_i=myL[ji]+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#else
       const ST lcart_r=SymTrace(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],symGG);
       const ST lcart_i=SymTrace(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],symGG);
       const ST lap_r=lcart_r+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
       const ST lap_i=lcart_i+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#endif
-
 
       const size_t psiIndex=first_spo+jr;
       //this will be fixed later
@@ -475,7 +450,7 @@ struct SplineC2RAdoptor: public SplineAdoptor<ST,3>
     }
 
     #pragma omp simd
-    for (size_t j=nComplexBands; j<N; j++)
+    for (size_t j=std::max(nComplexBands,first); j<last; j++)
     {
       const size_t jr=j<<1;
       const size_t ji=jr+1;
@@ -514,15 +489,10 @@ struct SplineC2RAdoptor: public SplineAdoptor<ST,3>
       dpsi[psiIndex  ][1]=c*gY_r-s*gY_i;
       dpsi[psiIndex  ][2]=c*gZ_r-s*gZ_i;
 
-#if defined(PRECOMPUTE_L)
-      const ST lap_r=myL[jr]+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
-      const ST lap_i=myL[ji]+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#else
       const ST lcart_r=SymTrace(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],symGG);
       const ST lcart_i=SymTrace(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],symGG);
       const ST lap_r=lcart_r+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
       const ST lap_i=lcart_i+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#endif
       d2psi[psiIndex  ]=c*lap_r-s*lap_i;
     }
   }
@@ -544,7 +514,6 @@ struct SplineC2RAdoptor: public SplineAdoptor<ST,3>
     const ST* restrict g2=myG.data(2); ASSUME_ALIGNED(g2);
 
     const size_t N=kPoints.size();
-    const size_t nsplines=myL.size();
 
     #pragma omp simd
     for (size_t j=0; j<nComplexBands; j++)
@@ -597,7 +566,6 @@ struct SplineC2RAdoptor: public SplineAdoptor<ST,3>
       dpsi[psiIndex+1][2]=c*gZ_i+s*gZ_r;
     }
 
-    const size_t nComputed=2*nComplexBands;
     #pragma omp simd
     for (size_t j=nComplexBands; j<N; j++)
     {
@@ -648,8 +616,18 @@ struct SplineC2RAdoptor: public SplineAdoptor<ST,3>
   {
     const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
-    SplineInst->evaluate_vgh(ru,myV,myG,myH);
-    assign_vgl(r,psi,dpsi,d2psi);
+
+    #pragma omp parallel
+    {
+      int first, last;
+      FairDivideAligned(myV.size(), getAlignment<ST>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
+
+      SplineInst->evaluate_vgh(ru,myV,myG,myH,first,last);
+      assign_vgl(r,psi,dpsi,d2psi,first/2,last/2);
+    }
   }
 
   /** identical to assign_vgl but the output container is SoA container
@@ -679,14 +657,6 @@ struct SplineC2RAdoptor: public SplineAdoptor<ST,3>
     const ST* restrict h11=myH.data(3); ASSUME_ALIGNED(h11);
     const ST* restrict h12=myH.data(4); ASSUME_ALIGNED(h12);
     const ST* restrict h22=myH.data(5); ASSUME_ALIGNED(h22);
-    const size_t nsplines=myL.size();
-#if defined(PRECOMPUTE_L)
-    #pragma omp simd
-    for(size_t j=0; j<nsplines; ++j)
-    {
-      myL[j]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
-    }
-#endif
 
     TT* restrict psi =vgl.data(0)+first_spo; ASSUME_ALIGNED(psi);
     TT* restrict vl_x=vgl.data(1)+first_spo; ASSUME_ALIGNED(vl_x);
@@ -727,15 +697,10 @@ struct SplineC2RAdoptor: public SplineAdoptor<ST,3>
       const ST gY_i=dY_i-val_r*kY;
       const ST gZ_i=dZ_i-val_r*kZ;
 
-#if defined(PRECOMPUTE_L)
-      const ST lap_r=myL[jr]+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
-      const ST lap_i=myL[ji]+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#else
       const ST lcart_r=SymTrace(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],symGG);
       const ST lcart_i=SymTrace(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],symGG);
       const ST lap_r=lcart_r+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
       const ST lap_i=lcart_i+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#endif
 
       //this will be fixed later
       psi[jr]=c*val_r-s*val_i;
@@ -782,15 +747,10 @@ struct SplineC2RAdoptor: public SplineAdoptor<ST,3>
       const ST gX_i=dX_i-val_r*kX;
       const ST gY_i=dY_i-val_r*kY;
       const ST gZ_i=dZ_i-val_r*kZ;
-#if defined(PRECOMPUTE_L)
-      const ST lap_r=myL[jr]+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
-      const ST lap_i=myL[ji]+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#else
       const ST lcart_r=SymTrace(h00[jr],h01[jr],h02[jr],h11[jr],h12[jr],h22[jr],symGG);
       const ST lcart_i=SymTrace(h00[ji],h01[ji],h02[ji],h11[ji],h12[ji],h22[ji],symGG);
       const ST lap_r=lcart_r+mKK[j]*val_r+two*(kX*dX_i+kY*dY_i+kZ*dZ_i);
       const ST lap_i=lcart_i+mKK[j]*val_i-two*(kX*dX_r+kY*dY_r+kZ*dZ_r);
-#endif
       const size_t psiIndex=first_spo+nComplexBands+j;
       //const size_t psiIndex=j+nComplexBands;
       psi [psiIndex]=c*val_r-s*val_i;

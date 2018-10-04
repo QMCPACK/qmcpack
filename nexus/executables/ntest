@@ -291,14 +291,30 @@ def nlog_restore():
 
 
 # enter the current testing directory
-def nenter(path=''):
-    testpath = NexusTestBase.test_path()
-    if not os.path.exists(testpath):
-        os.makedirs(os.path.join(testpath,path))
+def nenter(path=None,preserve=False,relative=False):
+    if not relative:
+        testpath = NexusTestBase.test_path()
+        if path is None:
+            path = testpath
+        else:
+            path = os.path.join(testpath,path)
+        #end if
     #end if
-    os.chdir(testpath)
+    if not preserve and os.path.exists(path):
+        try:
+            shutil.rmtree(path)
+        except Exception as e:
+            if os.path.exists(path):
+                raise e
+            #end if
+        #end try
+    #end if
+    if not os.path.exists(path):
+        os.makedirs(path)
+    #end if
+    os.chdir(path)
     NexusTestBase.entered = True
-    return testpath
+    return path
 #end def nenter
 
 
@@ -398,15 +414,6 @@ class NexusTest(NexusTestBase):
     def setup():
         NexusTestBase.launch_path = os.getcwd()
         nexus_test_dir = './'+NexusTestBase.nexus_test_dir
-        if 'nexus_test' in nexus_test_dir and os.path.exists(nexus_test_dir):
-            try:
-                shutil.rmtree(nexus_test_dir)
-            except Exception as e:
-                if os.path.exists(nexus_test_dir):
-                    raise e
-                #end if
-            #end try
-        #end if
     #end def setup
 
 
@@ -1689,8 +1696,9 @@ def settings_operation():
 
 example_information = dict(
     pwscf_relax_Ge_T = dict(
+        path = 'quantum_espresso/relax_Ge_T_vs_kpoints', 
         scripts = [
-            'quantum_espresso/relax_Ge_T_vs_kpoints/relax_vs_kpoints_example.py',
+            'relax_vs_kpoints_example.py',
             ],
         files = [
             ('pwscf'     ,'input','quantum_espresso/relax_Ge_T_vs_kpoints/runs/relax/kgrid_111/relax.in'),
@@ -1700,10 +1708,11 @@ example_information = dict(
             ],
         ),
     gamess_H2O = dict(
+        path = 'gamess/H2O',
         scripts = [
-            'gamess/H2O/h2o_pp_hf.py',
-            'gamess/H2O/h2o_pp_cisd.py',
-            'gamess/H2O/h2o_pp_casscf.py',
+            'h2o_pp_hf.py',
+            'h2o_pp_cisd.py',
+            'h2o_pp_casscf.py',
             ],
         files = [
             ('gamess'    ,'input','gamess/H2O/runs/pp_hf/rhf.inp'),
@@ -1714,8 +1723,9 @@ example_information = dict(
             ],
         ),
     qmcpack_H2O = dict(
+        path = 'qmcpack/H2O',
         scripts = [
-            'qmcpack/H2O/H2O.py',
+            'H2O.py',
             ],
         files = [
             ('pwscf'     ,'input','qmcpack/H2O/runs/scf.in'),
@@ -1725,8 +1735,9 @@ example_information = dict(
             ],
         ),
     qmcpack_LiH = dict(
+        path = 'qmcpack/LiH',
         scripts = [
-            'qmcpack/LiH/LiH.py',
+            'LiH.py',
             ],
         files = [
             ('pwscf'     ,'input','qmcpack/LiH/runs/scf.in'),
@@ -1737,8 +1748,9 @@ example_information = dict(
             ],
         ),
     qmcpack_c20 = dict(
+        path = 'qmcpack/c20',
         scripts = [
-            'qmcpack/c20/c20.py',
+            'c20.py',
             ],
         files = [
             ('pwscf'     ,'input','qmcpack/c20/runs/c20/scf/scf.in'),
@@ -1748,9 +1760,10 @@ example_information = dict(
             ],
         ),
     qmcpack_diamond = dict(
+        path = 'qmcpack/diamond',
         scripts = [
-            'qmcpack/diamond/diamond.py',
-            'qmcpack/diamond/diamond_vacancy.py',
+            'diamond.py',
+            'diamond_vacancy.py',
             ],
         files = [
             ('pwscf'     ,'input','qmcpack/diamond/runs/diamond/scf/scf.in'),
@@ -1761,8 +1774,9 @@ example_information = dict(
             ],
         ),
     qmcpack_graphene = dict(
+        path = 'qmcpack/graphene',
         scripts = [
-            'qmcpack/graphene/graphene.py',
+            'graphene.py',
             ],
         files = [
             ('pwscf'     ,'input','qmcpack/graphene/runs/graphene/scf/scf.in'),
@@ -1775,8 +1789,9 @@ example_information = dict(
             ],
         ),
     qmcpack_oxygen_dimer = dict(
+        path = 'qmcpack/oxygen_dimer',
         scripts = [
-            'qmcpack/oxygen_dimer/oxygen_dimer.py',
+            'oxygen_dimer.py',
             ],
         files = [
             ('pwscf'     ,'input','qmcpack/oxygen_dimer/scale_1.0/scf.in'),
@@ -1801,12 +1816,12 @@ def user_examples(label):
     einfo = example_information[label]
 
     # create local directory for these tests
-    test_dir = nenter()
+    test_dir = nenter(preserve=True)
 
     # copy over nexus user examples into reference generation directory
     #   only do this the first time as all user example tests share a test directory
     if not os.path.exists(os.path.join(test_dir,'qmcpack')):
-        command = 'rsync -av {0}/* {1}/'.format(example_dir,test_dir)
+        command = 'rsync -av --ignore-existing {0}/* {1}/'.format(example_dir,test_dir)
         out,err,rc = execute(command)
         if rc>0:
             nfail('copying example directory failed\nattempted command:\n'+command)
@@ -1814,18 +1829,27 @@ def user_examples(label):
     #end if
 
     # execute all example scripts in generate_only mode
-    for script_path in einfo['scripts']:
-        path,script = os.path.split(script_path)
-        path = os.path.join(test_dir,path)
-        cwd = os.getcwd()
-        os.chdir(path)
+    path = einfo['path']
+    cwd = os.getcwd()
+    tpath = os.path.join(test_dir,path)
+    # remove prexisting example files
+    nenter(tpath,relative=True)
+    # copy over nexus examples files just for this example
+    epath = os.path.join(example_dir,path)
+    command = 'rsync -av {0}/* ./'.format(epath)
+    out,err,rc = execute(command)
+    if rc>0:
+        nfail('copying example directory failed\nattempted command:\n'+command)
+    #end if
+    for script in einfo['scripts']:
+        # run the example script
         command = './'+script+' --generate_only --sleep=0.01'
         out,err,rc = execute(command)
         if rc>0:
-            nfail('example script failed to run\nattempted command: {0}\nlocation: {1}\nscript out:\n{2}\nscript err:\n{3}'.format(command,path,'  '+out.replace('\n','\n  '),'  '+err.replace('\n','\n  ')))
+            nfail('example script failed to run\nattempted command: {0}\nlocation: {1}\nscript out:\n{2}\nscript err:\n{3}'.format(command,tpath,'  '+out.replace('\n','\n  '),'  '+err.replace('\n','\n  ')))
         #end if
-        os.chdir(cwd)
     #end for
+    os.chdir(cwd)
 
     # check that generated files match reference files
     ref_example_dir = os.path.join(reference_dir,'user_examples')

@@ -5,11 +5,6 @@
       <basisset name="LCAOBSet">
         <atomicBasisSet name="Gaussian" angular="cartesian" type="Gaussian" elementType="He" normalized="no">
           <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
-          <!-- Possible substitution He00 by a Slater-type orbital
-  <basisGroup rid="He00" n="0" l="0" type="Slater">
-    <radfunc exponent="1.80302" contraction="1.0"/>
-  </basisGroup>
--->
           <basisGroup rid="He00" n="0" l="0" type="Gaussian">
             <radfunc exponent="6.362421400000e+00" contraction="1.543289672950e-01"/>
             <radfunc exponent="1.158923000000e+00" contraction="5.353281422820e-01"/>
