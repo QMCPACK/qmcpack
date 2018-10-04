@@ -216,24 +216,6 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     }
   }
 
-  /** evaluate VGL using VectorSoaContainer
-   * @param r position
-   * @param psi value container
-   * @param dpsi gradient-laplacian container
-   */
-  template<typename VGL>
-  inline void evaluate_vgl_combo(const ParticleSet& P, const int iat, VGL& vgl)
-  {
-    APP_ABORT("HybridCplxSoA::evaluate_vgl_combo not implemented!");
-    if(HybridBase::evaluate_vgh(P,iat,myV,myG,myH))
-    {
-      const PointType& r=P.activeR(iat);
-      BaseAdoptor::assign_vgl_soa(r,vgl);
-    }
-    else
-      BaseAdoptor::evaluate_vgl_combo(P,iat,vgl);
-  }
-
   template<typename VV, typename GV, typename GGV>
   inline void evaluate_vgh(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, GGV& grad_grad_psi)
   {

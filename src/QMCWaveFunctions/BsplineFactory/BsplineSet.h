@@ -86,30 +86,6 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
                        ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     SplineAdoptor::evaluate_vgl(P,iat,psi,dpsi,d2psi);
-
-#if 0
-    //debug GL combo
-    CONSTEXPR double eps=std::numeric_limits<float>::epsilon();
-    ValueVector_t psi_copy(psi);
-    GLVector_t gl(psi.size());
-    SplineAdoptor::evaluate_vgl_combo(P,iat,psi_copy,gl);
-    auto gradX=gl.data(0);
-    auto gradY=gl.data(1);
-    auto gradZ=gl.data(2);
-    auto lap=gl.data(3);
-    double v_err=0, g_err=0, l_err=0;
-    for(size_t i=0; i<psi.size(); ++i)
-    {
-      v_err+=std::abs(psi[i]-psi_copy[i]);
-      double dx=std::abs(dpsi[i][0]-gradX[i]);
-      double dy=std::abs(dpsi[i][1]-gradY[i]);
-      double dz=std::abs(dpsi[i][2]-gradZ[i]);
-      g_err+=std::sqrt(dx*dx+dy*dy+dz*dz);
-      l_err+=std::abs(d2psi[i]-lap[i]);
-    }
-    if(v_err>eps || g_err > eps || l_err>eps)
-      std::cout << "ERROR " << v_err << " " << g_err << " " << l_err << std::endl;
-#endif
   }
 
   inline void evaluate(const ParticleSet& P, int iat,
