@@ -170,7 +170,6 @@ ENDIF(OHMMS_DIM MATCHES 3)
 
 SET(FERMION_SRCS ${FERMION_SRCS}
   Fermion/DiracDeterminant.cpp
-  Fermion/DiracDeterminantSoA.cpp
   Fermion/DiracDeterminantOpt.cpp
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp

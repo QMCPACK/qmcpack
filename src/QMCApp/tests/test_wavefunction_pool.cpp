@@ -126,6 +126,7 @@ TEST_CASE("WaveFunctionPool", "[qmcapp]")
   REQUIRE(psi != NULL);
 }
 
+#ifdef QMC_CUDA
 TEST_CASE("WaveFunctionPool-Batched", "[qmcapp]")
 {
 
@@ -169,5 +170,6 @@ TEST_CASE("WaveFunctionPool-Batched", "[qmcapp]")
 
   REQUIRE(psi != NULL);
 }
+#endif
 
 }

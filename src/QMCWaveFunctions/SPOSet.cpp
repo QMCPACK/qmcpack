@@ -44,12 +44,12 @@ SPOSet<Batching::SINGLE>::SPOSet()
 #endif
 }
 
-void SPOSet::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
+void SPOSet<Batching::SINGLE>::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
 {
-  APP_ABORT("SPOSet::evaluateVGL not implemented.");
+  APP_ABORT("SPOSet<Batching::SINGLE>::evaluateVGL not implemented.");
 }
 
-void SPOSet::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOmem)
+void SPOSet<Batching::SINGLE>::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOmem)
 {
   for(int iat=0; iat<VP.getTotalNum(); ++iat)
   {
@@ -58,22 +58,22 @@ void SPOSet::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, V
   }
 }
 
-void SPOSet::evaluateThirdDeriv(const ParticleSet& P, int first, int last,
+void SPOSet<Batching::SINGLE>::evaluateThirdDeriv(const ParticleSet& P, int first, int last,
                                     GGGMatrix_t& grad_grad_grad_logdet)
 {
-  APP_ABORT("Need specialization of SPOSet::evaluateThirdDeriv(). \n");
+  APP_ABORT("Need specialization of SPOSet<Batching::SINGLE>::evaluateThirdDeriv(). \n");
 }
 
-void SPOSet::evaluate_notranspose(const ParticleSet& P, int first, int last
+void SPOSet<Batching::SINGLE>::evaluate_notranspose(const ParticleSet& P, int first, int last
                                       , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
 {
-  APP_ABORT("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_logdet. \n");
+  APP_ABORT("Need specialization of SPOSet<Batching::SINGLE>::evaluate_notranspose() for grad_grad_logdet. \n");
 }
 
-void SPOSet::evaluate_notranspose(const ParticleSet& P, int first, int last,
+void SPOSet<Batching::SINGLE>::evaluate_notranspose(const ParticleSet& P, int first, int last,
                                       ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
 {
-  APP_ABORT("Need specialization of SPOSet::evaluate_notranspose() for grad_grad_grad_logdet. \n");
+  APP_ABORT("Need specialization of SPOSet<Batching::SINGLE>::evaluate_notranspose() for grad_grad_grad_logdet. \n");
 }
 
 SPOSet<>* SPOSet<Batching::SINGLE>::makeClone() const
@@ -372,59 +372,11 @@ void SPOSet<Batching::SINGLE>::basic_report(const std::string& pad)
   app_log().flush();
 }
 
-
-SPOSet<Batching::SINGLE>::ValueType
-SPOSet<Batching::SINGLE>::RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
-{
-  int ip=omp_get_thread_num();
-  // YYYY to fix
-  /*
-  ValueVector_t psi(t_logpsi[ip],OrbitalSetSize);
-  evaluate(P,iat,psi);
-  return simd::dot(psi.data(),arow,OrbitalSetSize,ValueType());
-  */
-  return ValueType();
-}
-
-void SPOSet<Batching::SINGLE>::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
-{
-  APP_ABORT("SPOSet<Batching::SINGLE>::evaluateVGL not implemented.");
-}
-
-void SPOSet<Batching::SINGLE>::evaluateValues(const VirtualParticleSet& VP,
-					      SSTA::ValueMatrix_t& psiM,
-					      SSTA::ValueAlignedVector_t& SPOmem)
-{
-  for(int iat=0; iat<VP.getTotalNum(); ++iat)
-  {
-    ValueVector_t psi(psiM[iat],OrbitalSetSize);
-    evaluate(VP,iat,psi);
-  }
-}
-
-void SPOSet<Batching::SINGLE>::evaluateThirdDeriv(const ParticleSet& P, int first, int last,
-                                    GGGMatrix_t& grad_grad_grad_logdet)
-{
-  APP_ABORT("Need specialization of SPOSet<Batching::SINGLE>::evaluateThirdDeriv(). \n");
-}
-
-void SPOSet<Batching::SINGLE>::evaluate_notranspose(const ParticleSet& P, int first, int last
-                                      , ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
-{
-  APP_ABORT("Need specialization of SPOSet<Batching::SINGLE>::evaluate_notranspose() for grad_grad_logdet. \n");
-}
-
-void SPOSet<Batching::SINGLE>::evaluate_notranspose(const ParticleSet& P, int first, int last,
-                                      ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet, GGGMatrix_t& grad_grad_grad_logdet)
-{
-  APP_ABORT("Need specialization of SPOSet<Batching::SINGLE>::evaluate_notranspose() for grad_grad_grad_logdet. \n");
-}
-
 void SPOSet<Batching::SINGLE>::evaluateGradSource (const ParticleSet &P
                                      , int first, int last, const ParticleSet &source
 							     , int iat_src, SSTA::GradMatrix_t &gradphi)
 {
-  APP_ABORT("SPOSetlBase::evalGradSource is not implemented");
+  APP_ABORT("SPOSet<Batching::SINGLE>::evalGradSource is not implemented");
 }
 
 void SPOSet<Batching::SINGLE>::evaluateGradSource (const ParticleSet &P, int first, int last,
@@ -433,7 +385,7 @@ void SPOSet<Batching::SINGLE>::evaluateGradSource (const ParticleSet &P, int fir
 							     SSTA::HessMatrix_t &grad_grad_phi,
 							     SSTA::GradMatrix_t &grad_lapl_phi)
 {
-  APP_ABORT("SPOSetlBase::evalGradSource is not implemented");
+  APP_ABORT("SPOSet<Batching::SINGLE>::evalGradSource is not implemented");
 }
 
 // Explicit instantiation unecessary if explicit instantiation of SPOSet<Batching::BATCHED> exists

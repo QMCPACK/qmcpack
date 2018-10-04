@@ -40,7 +40,7 @@ DiracDeterminant<Batching::SINGLE>::DiracDeterminant(int first):
   ,SPOVTimer("DiracDeterminant::spoval",timer_level_fine)
   ,SPOVGLTimer("DiracDeterminant::spovgl",timer_level_fine)
 {
-  OrbitalName="DiracDeterminant";
+  ClassName="DiracDeterminant<Batching::SINGLE>";
   registerTimers();
 }
 
@@ -56,7 +56,7 @@ DiracDeterminant<Batching::SINGLE>::DiracDeterminant(SPOSet<>* const &spos, int 
   Optimizable=false;
   if(Phi->Optimizable)
     Optimizable=true;
-  OrbitalName="DiracDeterminant<Batching::SINGLE>";
+  ClassName="DiracDeterminant<Batching::SINGLE>";
   registerTimers();
 }
 

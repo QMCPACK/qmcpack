@@ -474,7 +474,7 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   REQUIRE(okay);
   xmlNodePtr root2 = doc2.getRoot();
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction<> psi(c);
 
   WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
   particle_set_map["e"]    = &elec;
@@ -492,12 +492,12 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
 
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
   bb->loadBasisSetFromXML(MO_base[0]);
-  SPOSet* sposet = bb->createSPOSet(slater_base[0]);
+  SPOSet<>* sposet = bb->createSPOSet(slater_base[0]);
 
 
-  SPOSet::ValueVector_t values;
-  SPOSet::GradVector_t dpsi;
-  SPOSet::ValueVector_t d2psi;
+  SPOSet<>::ValueVector_t values;
+  SPOSet<>::GradVector_t dpsi;
+  SPOSet<>::ValueVector_t d2psi;
   values.resize(13);
   dpsi.resize(13);
   d2psi.resize(13);
@@ -555,9 +555,9 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   REQUIRE(d2psi[12] == Approx(-4.3399821309));
 
 
-  SPOSet::ValueMatrix_t all_values;
-  SPOSet::GradMatrix_t all_grad;
-  SPOSet::ValueMatrix_t all_lap;
+  SPOSet<>::ValueMatrix_t all_values;
+  SPOSet<>::GradMatrix_t all_grad;
+  SPOSet<>::ValueMatrix_t all_lap;
   all_values.resize(13, 13);
   all_grad.resize(13, 13);
   all_lap.resize(13, 13);

@@ -29,7 +29,7 @@ class SlaterDet<Batching::BATCHED> : public SlaterDet<Batching::SINGLE>
 
   SlaterDet(ParticleSet& targetPtcl) : SlaterDet<Batching::SINGLE>(targetPtcl)
   {
-    this->OrbitalName = "SlaterDetBatched";
+    this->ClassName = "SlaterDet<Batching::BATCHED>";
   }
 
 
