@@ -160,7 +160,6 @@ namespace qmcplusplus
         {
           evaluate_v_impl(r[0],r[1],r[2],psi.data()+first,first,last);
         }
-      */
 
       template<typename PT, typename VT, typename GT, typename LT>
         inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap) const
@@ -185,16 +184,19 @@ namespace qmcplusplus
         {
           evaluate_vgh_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,hess.data()+first,psi.size(),first,last);
         }
+      */
 
       /** compute values vals[first,last)
        *
        * The base address for vals, grads and lapl are set by the callers, e.g., evaluate_vgh(r,psi,grad,hess,ip).
        */
-      // void evaluate_v_impl(T x, T y, T z, T* restrict vals, int first, int last) const;
+      /*
+      void evaluate_v_impl(T x, T y, T z, T* restrict vals, int first, int last) const;
 
       void evaluate_vgl_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict lapl, size_t out_offset, int first, int last) const;
 
       void evaluate_vgh_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict hess, size_t out_offset, int first, int last) const;
+      */
     };
 
   template<typename T>

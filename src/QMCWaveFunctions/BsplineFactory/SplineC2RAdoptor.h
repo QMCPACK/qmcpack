@@ -625,7 +625,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
                         omp_get_thread_num(),
                         first, last);
 
-      SplineInst->evaluate_vgh(ru,myV,myG,myH,first,last);
+      spline2::evaluate3d_vgh(SplineInst->spline_m,ru,myV,myG,myH,first,last);
       assign_vgl(r,psi,dpsi,d2psi,first/2,last/2);
     }
   }
@@ -771,7 +771,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   {
     const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
-    SplineInst->evaluate_vgh(ru,myV,myG,myH);
+    spline2::evaluate3d_vgh(SplineInst->spline_m,ru,myV,myG,myH);
     assign_vgl_soa(r,vgl);
   }
 
@@ -962,7 +962,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   {
     const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
-    SplineInst->evaluate_vgh(ru,myV,myG,myH);
+    spline2::evaluate3d_vgh(SplineInst->spline_m,ru,myV,myG,myH);
     assign_vgh(r,psi,dpsi,grad_grad_psi);
   }
 };

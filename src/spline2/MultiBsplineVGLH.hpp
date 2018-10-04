@@ -20,31 +20,30 @@
  * Function signatures modified anticipating its use by a class that can perform data parallel execution
  * - evaluate(...., int first, int last)
  */
-#ifndef QMCPLUSPLUS_MULTIEINSPLINE_VGLH_STD3_HPP
-#define QMCPLUSPLUS_MULTIEINSPLINE_VGLH_STD3_HPP
+#ifndef SPLINE2_MULTIEINSPLINE_VGLH_STD3_HPP
+#define SPLINE2_MULTIEINSPLINE_VGLH_STD3_HPP
 
-namespace qmcplusplus
+namespace spline2
 {
 
   template<typename T>
-    inline void 
-    MultiBspline<T>::evaluate_vgl_impl(T x, T y, T z, 
-        T* restrict vals, T* restrict grads, T* restrict lapl, size_t out_offset, int first, int last) const
+    inline void evaluate_vgl_impl(const typename qmcplusplus::bspline_traits<T,3>::SplineType *spline_m, T x, T y, T z,
+        T* restrict vals, T* restrict grads, T* restrict lapl, size_t out_offset, int first, int last)
     {
       x -= spline_m->x_grid.start;
       y -= spline_m->y_grid.start;
       z -= spline_m->z_grid.start;
       T tx,ty,tz;
       int ix,iy,iz;
-      spline2::getSplineBound(x*spline_m->x_grid.delta_inv,tx,ix,spline_m->x_grid.num-1);
-      spline2::getSplineBound(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
-      spline2::getSplineBound(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
+      getSplineBound(x*spline_m->x_grid.delta_inv,tx,ix,spline_m->x_grid.num-1);
+      getSplineBound(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
+      getSplineBound(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
 
       T a[4],b[4],c[4],da[4],db[4],dc[4],d2a[4],d2b[4],d2c[4];
 
-      spline2::MultiBsplineData<T>::compute_prefactors(a, da, d2a, tx);
-      spline2::MultiBsplineData<T>::compute_prefactors(b, db, d2b, ty);
-      spline2::MultiBsplineData<T>::compute_prefactors(c, dc, d2c, tz);
+      MultiBsplineData<T>::compute_prefactors(a, da, d2a, tx);
+      MultiBsplineData<T>::compute_prefactors(b, db, d2b, ty);
+      MultiBsplineData<T>::compute_prefactors(c, dc, d2c, tz);
 
       const intptr_t xs = spline_m->x_stride;
       const intptr_t ys = spline_m->y_stride;
@@ -122,9 +121,8 @@ namespace qmcplusplus
     }
 
   template<typename T>
-    inline void 
-    MultiBspline<T>::evaluate_vgh_impl(T x, T y, T z, 
-        T* restrict vals, T* restrict grads, T* restrict hess, size_t out_offset, int first, int last) const
+    inline void evaluate_vgh_impl(const typename qmcplusplus::bspline_traits<T,3>::SplineType *spline_m, T x, T y, T z,
+        T* restrict vals, T* restrict grads, T* restrict hess, size_t out_offset, int first, int last)
     {
 
       int ix,iy,iz;
@@ -134,13 +132,13 @@ namespace qmcplusplus
       x -= spline_m->x_grid.start;
       y -= spline_m->y_grid.start;
       z -= spline_m->z_grid.start;
-      spline2::getSplineBound(x*spline_m->x_grid.delta_inv,tx,ix,spline_m->x_grid.num-1);
-      spline2::getSplineBound(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
-      spline2::getSplineBound(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
+      getSplineBound(x*spline_m->x_grid.delta_inv,tx,ix,spline_m->x_grid.num-1);
+      getSplineBound(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
+      getSplineBound(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
 
-      spline2::MultiBsplineData<T>::compute_prefactors(a, da, d2a, tx);
-      spline2::MultiBsplineData<T>::compute_prefactors(b, db, d2b, ty);
-      spline2::MultiBsplineData<T>::compute_prefactors(c, dc, d2c, tz);
+      MultiBsplineData<T>::compute_prefactors(a, da, d2a, tx);
+      MultiBsplineData<T>::compute_prefactors(b, db, d2b, ty);
+      MultiBsplineData<T>::compute_prefactors(c, dc, d2c, tz);
 
       const intptr_t xs = spline_m->x_stride;
       const intptr_t ys = spline_m->y_stride;

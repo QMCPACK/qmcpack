@@ -347,7 +347,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const PointType& r=P.activeR(iat);
     PointType ru;
     int bc_sign=convertPos(r,ru);
-    SplineInst->evaluate_vgh(ru,myV,myG,myH);
+    spline2::evaluate3d_vgh(SplineInst->spline_m,ru,myV,myG,myH);
     assign_vgl(bc_sign,psi,dpsi,d2psi);
   }
 
@@ -415,7 +415,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const PointType& r=P.activeR(iat);
     PointType ru;
     int bc_sign=convertPos(r,ru);
-    SplineInst->evaluate_vgh(ru,myV,myG,myH);
+    spline2::evaluate3d_vgh(SplineInst->spline_m,ru,myV,myG,myH);
     assign_vgl_soa(bc_sign,vgl);
   }
 
@@ -482,7 +482,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const PointType& r=P.activeR(iat);
     PointType ru;
     int bc_sign=convertPos(r,ru);
-    SplineInst->evaluate_vgh(ru,myV,myG,myH);
+    spline2::evaluate3d_vgh(SplineInst->spline_m,ru,myV,myG,myH);
     assign_vgh(bc_sign,psi,dpsi,grad_grad_psi);
   }
 };

@@ -195,7 +195,7 @@ void test_splines()
 
   VectorSoaContainer<T,3> dv(npad);
   VectorSoaContainer<T,6> hess(npad);
-  bs.evaluate_vgh(pos, v, dv, hess);
+  spline2::evaluate3d_vgh(bs.spline_m, pos, v, dv, hess);
   // Gradient
   REQUIRE(dv[0][0] == Approx(    6.178320809));
   REQUIRE(dv[0][1] == Approx(   -7.402942564));
@@ -212,7 +212,7 @@ void test_splines()
   // Value
   REQUIRE(v[0] == Approx(  -0.9476393279));
 
-  bs.evaluate_vgh(pos, v, dv, hess);
+  spline2::evaluate3d_vgh(bs.spline_m, pos, v, dv, hess);
   // Value
   REQUIRE(v[0] == Approx(  -0.9476393279));
   // Gradient
@@ -229,7 +229,7 @@ void test_splines()
 
 
   VectorSoaContainer<T,3> lap(npad);
-  bs.evaluate_vgl(pos, v, dv, lap);
+  spline2::evaluate3d_vgl(bs.spline_m, pos, v, dv, lap);
   // Value
   REQUIRE(v[0] == Approx(  -0.9476393279));
   // Gradient
