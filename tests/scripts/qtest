@@ -46,6 +46,17 @@ def vlog(msg,n=0,indent='  '):
 # test and build information #
 #============================#
 
+qmc_data_files = obj({
+    'NiO_a4_e48-batched_pp-vmc_sdj3'           : ['NiO-fcc-supertwist111-supershift000-S1.h5'],
+    'NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3' : ['NiO-fcc-supertwist111-supershift000-S1.h5'],
+    'NiO_a4_e48-hybridrep-pp-vmc_sdj3'         : ['NiO-fcc-supertwist111-supershift000-S1.h5'],
+    'NiO_a4_e48_pp-vmc_sdj'                    : ['NiO-fcc-supertwist111-supershift000-S1.h5'],
+    'NiO_a4_e48_pp-vmc_sdj3'                   : ['NiO-fcc-supertwist111-supershift000-S1.h5'],
+    })
+
+requires_qmc_data = set(qmc_data_files.keys())
+
+
 build_type_order = ('array','value','device','precision')
 
 build_types = obj(
@@ -496,6 +507,9 @@ def read_command_line():
                       type=int,default=10,
                       help='Increase number of steps by this factor relative to short tests (default=%default).'
                       )
+    parser.add_option('-d','--qmc_data',dest='qmc_data',
+                      help='Path to QMC_DATA directory.  Optional unless running tests that require it (default=%default).'
+                      )
     parser.add_option('-g','--generate',
                       action='store_true',default=False,
                       help='Generate test inputs (default=%default).'
@@ -518,13 +532,20 @@ def read_command_line():
 
     options.transfer_from(options_in.__dict__)
 
-    vlog('reading command line options')
+    vlog('\nreading command line options')
     vlog(str(options))
 
     if options.help or len(sys.argv)==1 or len(files_in)>0:
         print('\n'+parser.format_help().strip())
         exit()
     #end if
+
+    if options.qmc_data is not None:
+        if not os.path.exists(options.qmc_data):
+            error('QMC_DATA directory does not exist\ndirectory provided: {0}'.format(options.qmc_data))
+        #end if
+    #end if
+
 #end def read_command_line
 
 
@@ -596,6 +617,7 @@ def parse_stat_test(text):
 def parse_qmcpack_cmakelists():
 
     vlog('reading test info from QMCPACK CMakeLists.txt')
+    vlog('  test directory: '+test_dir)
 
     # data structure to hold parsed short test information
     short_tests = obj()
@@ -720,6 +742,10 @@ def get_test_path(code,test_name):
 
 def make_symlinks(sim,short_test):
     if len(short_test.hrefs)>0:
+        qmc_data = options.qmc_data
+        if qmc_data is not None:
+            qmc_data = os.path.abspath(qmc_data)
+        #end if
         if not os.path.exists(sim.locdir):
             os.makedirs(sim.locdir)
         #end if
@@ -728,6 +754,18 @@ def make_symlinks(sim,short_test):
         for href in short_test.hrefs:
             href_full = os.path.join(short_test.path,href)
             href = os.path.basename(href)
+            if not os.path.exists(href_full):
+                if qmc_data is not None:
+                    if short_test.name in qmc_data_files:
+                        if href in qmc_data_files[short_test.name]:
+                            href_full = os.path.join(qmc_data,href)
+                        #end if
+                    #end if
+                #end if
+                if not os.path.exists(href_full):
+                    error('href file does not exist\nfile path: {0}'.format(href_full))
+                #end if
+            #end if
             if not os.path.exists(href):
                 os.system('ln -s {0} {1}'.format(href_full,href))
             #end if
@@ -954,18 +992,30 @@ def run_adjusted_tests(short_tests):
     #end if
 
 
-    vlog('list of tests requested:',n=1)
+    vlog('\nlist of tests requested:',n=1)
     for t in tests:
         vlog(t,n=2)
     #end for
 
+    qmc_data_tests = set(tests) & requires_qmc_data
+    if len(qmc_data_tests)>0:
+        vlog('\ntests requiring QMC_DATA',n=1)
+        for t in sorted(qmc_data_tests):
+            vlog(t,n=2)
+        #end for
+        if options.qmc_data is None:
+            error('QMC_DATA directory not provided\nplease use --qmc_data to specify its location')
+        #end if
+    #end if
+
     if options.reference:
-        vlog('creating simulation job for each test',n=1)
+        vlog('\ncreating simulation job for each test',n=1)
         n = 0
         refcode_unknown = []
         refjob_unknown  = []
         tests_to_run    = []
         for test_name in tests:
+            vlog('creating simulation for: '+test_name,n=2)
             short_test = short_tests[test_name]
             code = get_reference_code(short_test)
             if code=='unknown':
