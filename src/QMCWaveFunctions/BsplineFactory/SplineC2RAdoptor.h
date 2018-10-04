@@ -240,49 +240,6 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
     return h5f.write(bigtable,o.str().c_str());//"spline_0");
   }
 
-  TT evaluate_dot(const ParticleSet& P, int iat, const TT* restrict arow, ST* scratch, bool compute_spline=true)
-  {
-    Vector<ST> vtmp(scratch,myV.size());
-    const PointType& r=P.activeR(iat);
-    if(compute_spline)
-    {
-      PointType ru(PrimLattice.toUnit_floor(r));
-      SplineInst->evaluate(ru,vtmp);
-    }
-
-    TT res=TT();
-    const size_t N=kPoints.size();
-    const ST x=r[0], y=r[1], z=r[2];
-    const ST* restrict kx=myKcart.data(0);
-    const ST* restrict ky=myKcart.data(1);
-    const ST* restrict kz=myKcart.data(2);
-
-    const TT* restrict arow_s=arow+first_spo;
-    #pragma omp simd reduction(+:res)
-    for (size_t j=0; j<nComplexBands; j++)
-    {
-      const size_t jr=j<<1;
-      const size_t ji=jr+1;
-      const ST val_r=vtmp[jr];
-      const ST val_i=vtmp[ji];
-      ST s, c;
-      sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
-      res+=arow_s[jr] * (val_r*c-val_i*s);
-      res+=arow_s[ji] * (val_i*c+val_r*s);
-    }
-    const TT* restrict arow_c=arow+first_spo+nComplexBands;
-    #pragma omp simd reduction(+:res)
-    for (size_t j=nComplexBands; j<N; j++)
-    {
-      const ST val_r=vtmp[2*j  ];
-      const ST val_i=vtmp[2*j+1];
-      ST s, c;
-      sincos(-(x*kx[j]+y*ky[j]+z*kz[j]),&s,&c);
-      res+=arow_c[j]*(val_r*c-val_i*s);
-    }
-    return res;
-  }
-
   template<typename VV>
   inline void assign_v(const PointType& r, const vContainer_type& myV, VV& psi, int first = 0, int last = -1) const
   {

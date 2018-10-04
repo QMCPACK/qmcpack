@@ -215,25 +215,6 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
         psi[psiIndex]=myV[j];
   }
 
-  inline TT evaluate_dot(const ParticleSet& P, const int iat, const TT* restrict arow, ST* scratch, bool compute_spline=true)
-  {
-    Vector<ST> vtmp(scratch,myV.size());
-    PointType ru;
-    int bc_sign=convertPos(P.activeR(iat),ru);
-    if(compute_spline) SplineInst->evaluate(ru,vtmp);
-
-    TT res=TT();
-    if (bc_sign & 1)
-      #pragma omp simd reduction(+:res)
-      for(size_t psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
-        res -= vtmp[psiIndex-first_spo]*arow[psiIndex];
-    else
-      #pragma omp simd reduction(+:res)
-      for(size_t psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
-        res += vtmp[psiIndex-first_spo]*arow[psiIndex];
-    return res;
-  }
-
   template<typename VV>
   inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
   {
