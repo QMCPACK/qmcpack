@@ -14,6 +14,8 @@ option is disabled.
 \begin{description}
 \item[\texttt{-{}-dryrun}]{ Validate the input file without performing the simulation.
   This is a good way to ensure that QMCPACK will do what you think it will. }
+\item[\texttt{-{}-enable-timers=none|coarse|medium|fine}]{ Control the timer granularity
+  when the build option \texttt{ENABLE\_TIMER} is enabled. }
 \item[\texttt{-{}-help}]{ Print version information as well as a list of optional
   command-line arguments. }
 \item[\texttt{-{}-noprint}]{ Do not print extra information on Jastrow or pseudopotential.
@@ -24,7 +26,8 @@ option is disabled.
 \item[\texttt{-{}-save\_wfs}]{ Write a \texttt{.h5} file containing the real-space B-spline
   coefficients of the single particle wave functions. See the manual
   \ref{sec:spo_spline} for more information.}
-\item[\texttt{-{}-vacuum X}]{deprecated, use `vacuum' input tag described in \ref{chap:simulationcell}. }
+\item[\texttt{-{}-vacuum X}]{Removed, use `vacuum' input tag described in \ref{chap:simulationcell}. }
+\item[\texttt{-{}-verbosity=low|high|debug}]{ Control the output verbosity. }
 \item[\texttt{-{}-version}]{ Print version information and optional arguments.
   Same as \texttt{-{}-help}. }
 \end{description}

@@ -101,15 +101,13 @@ struct SoaCuspCorrection
   int myTableIndex;
   ///size of the basis set
   int BasisSetSize;
-  ///Reference to the center
-  const ParticleSet::ParticleIndex_t& IonID;
 
   ///COMPLEX WON'T WORK
   typedef CuspCorrectionAtomicBasis<RealType> COT;
 
   /** container of the unique pointers to the Atomic Orbitals
    *
-   * size of LOBasisSet = number  of unique centers
+   * size of LOBasisSet = number of centers (atoms)
    */
   aligned_vector<COT*> LOBasisSet;
 
@@ -119,12 +117,12 @@ struct SoaCuspCorrection
    * @param ions ionic system
    * @param els electronic system
    */
-  SoaCuspCorrection(ParticleSet& ions, ParticleSet& els): IonID(ions.GroupID)
+  SoaCuspCorrection(ParticleSet& ions, ParticleSet& els)
   {
     myTableIndex=els.addTable(ions,DT_SOA);
     NumCenters=ions.getTotalNum();
     NumTargets=els.getTotalNum();
-    LOBasisSet.resize(ions.getSpeciesSet().getTotalNum(),0);
+    LOBasisSet.resize(NumCenters, 0);
   }
 
   /** copy constructor */
@@ -158,8 +156,8 @@ struct SoaCuspCorrection
     const auto displ = (P.activePtcl==iat)? d_table->Temp_dr: d_table->Displacements[iat];
     for(int c=0; c<NumCenters; c++)
     {
-      if (LOBasisSet[IonID[c]]) {
-        LOBasisSet[IonID[c]]->evaluate_vgl(dist[c],displ[c],myVGL[0],myVGL[1],myVGL[2],myVGL[3],myVGL[4]);
+      if (LOBasisSet[c]) {
+        LOBasisSet[c]->evaluate_vgl(dist[c],displ[c],myVGL[0],myVGL[1],myVGL[2],myVGL[3],myVGL[4]);
       }
     }
 
@@ -197,8 +195,8 @@ struct SoaCuspCorrection
     const auto displ = (P.activePtcl==iat)? d_table->Temp_dr: d_table->Displacements[iat];
     for(int c=0; c<NumCenters; c++)
     {
-      if (LOBasisSet[IonID[c]]) {
-        LOBasisSet[IonID[c]]->evaluate_vgl(dist[c],displ[c],myVGL[0],myVGL[1],myVGL[2],myVGL[3],myVGL[4]);
+      if (LOBasisSet[c]) {
+        LOBasisSet[c]->evaluate_vgl(dist[c],displ[c],myVGL[0],myVGL[1],myVGL[2],myVGL[3],myVGL[4]);
       }
     }
 
@@ -229,8 +227,8 @@ struct SoaCuspCorrection
     const auto displ = (P.activePtcl==iat)? d_table->Temp_dr: d_table->Displacements[iat];
     for(int c=0; c<NumCenters; c++)
     {
-      if (LOBasisSet[IonID[c]]) {
-        LOBasisSet[IonID[c]]->evaluate_vgl(dist[c],displ[c],myVGL[0],myVGL[1],myVGL[2],myVGL[3],myVGL[4]);
+      if (LOBasisSet[c]) {
+        LOBasisSet[c]->evaluate_vgl(dist[c],displ[c],myVGL[0],myVGL[1],myVGL[2],myVGL[3],myVGL[4]);
       }
     }
 
@@ -266,8 +264,8 @@ struct SoaCuspCorrection
     //THIS IS SERIAL, only way to avoid this is to use myVGL
     for(int c=0; c<NumCenters; c++)
     {
-      if (LOBasisSet[IonID[c]]) {
-        LOBasisSet[IonID[c]]->evaluate(dist[c],tmp_vals);
+      if (LOBasisSet[c]) {
+        LOBasisSet[c]->evaluate(dist[c],tmp_vals);
       }
     }
 

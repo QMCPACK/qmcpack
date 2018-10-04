@@ -40,10 +40,6 @@ c20 = generate_physical_system(
     C          = 4,          # C has 4 valence electrons
     ) 
 
-
-# list of simulations in workflow
-sims = []
-
 # scf run produces charge density
 scf = generate_pwscf(
     # nexus inputs
@@ -62,7 +58,6 @@ scf = generate_pwscf(
     nosym        = True,            # don't use symmetry
     wf_collect   = True,            # write out orbitals
     )
-sims.append(scf)  
 
 # orbital conversion job for opt and dmc
 p2q = generate_pw2qmcpack(
@@ -75,7 +70,6 @@ p2q = generate_pw2qmcpack(
     # workflow dependencies
     dependencies = (scf,'orbitals')
     )
-sims.append(p2q)
 
 
 # Jastrow optimization
@@ -112,7 +106,6 @@ opt = generate_qmcpack(
     # workflow dependencies
     dependencies = (p2q,'orbitals')        
     )
-sims.append(opt)
 
     
 # final dmc run
@@ -153,7 +146,7 @@ qmc = generate_qmcpack(
 
 
 # nexus monitors all runs
-run_project(sims)
+run_project()
 
 
 
