@@ -157,10 +157,13 @@ input_specification = obj({
 
 # create mapping from variable name to section (directory) name
 known_sections = set()
+known_variables = set()
 variable_section = obj()
+section_variables = obj()
 for vpath in input_specification.keys():
     secname,varname = vpath.split('/')
     known_sections.add(secname)
+    known_variables.add(varname)
     if varname not in variable_section:
         variable_section[varname] = secname
     else:
@@ -171,6 +174,10 @@ for vpath in input_specification.keys():
             vsec.append(secname)
         #end if
     #end if
+    if secname not in section_variables:
+        section_variables[secname] = set()
+    #end if
+    section_variables[secname].add(varname)
 #end for
 for varname in variable_section.keys():
     vsec = variable_section[varname]
@@ -290,13 +297,114 @@ class QuantumPackageInput(SimulationInput):
     def incorporate_system(self,system):
         self.not_implemented()
     #end def incorporate_system
+
+
+    def check_valid(self,sections=True,variables=True,types=True,exit=True):
+        msg = ''
+        valid_types = {float:(int,float)}
+        if sections:
+            for secname,sec in self.iteritems():
+                if secname not in known_sections:
+                    msg = 'input is invalid\nunknown section encountered\nunknown section provided: {0}\nvalid options are: {1}'.format(secname,sorted(known_sections))
+                elif not isinstance(sec,Section):
+                    msg = 'input is invalid\ninvalid section type encountered\nsection must be of type: Section\nsection name: {0}\nsection type: {1}\nsection contents: {2}'.format(secname,sec.__class__.__name__,sec)
+                #end if
+                if len(msg)>0:
+                    break
+                #end if
+                if variables:
+                    for varname,var in sec.iteritems():
+                        if varname not in known_variables:
+                            msg = 'input is invalid\nunknown variable encountered in section "{0}"\nunknown variable: {1}\nvalid options are: {2}'.format(secname,varname,sorted(section_variables[secname]))
+                        elif types:
+                            vpath = secname+'/'+varname
+                            if vpath not in input_specification:
+                                msg = 'variable is known but variable path not found in input_specification\nvariable name: {0}\nvariable path: {1}\nthis is a developer error\nplease contact the developers'.format(varname,vpath)
+                            else:
+                                vtype = input_specification[vpath]
+                                if vtype in valid_types:
+                                    vtype = valid_types[vtype]
+                                #end if
+                                if not isinstance(var,vtype):
+                                    msg = 'input is invalid\nvariable "{0}" in section "{1}" must be of type {2}\ntype provided: {3}\nvalue provided: {4}'.format(varname,secname,vtype,var.__class__.__name__,var)
+                                #end if
+                            #end if
+                        #end if
+                        if len(msg)>0:
+                            break
+                        #end if
+                    #end for
+                    if len(msg)>0:
+                        break
+                    #end if
+                #end if
+            #end for
+        #end if
+        is_valid = len(msg)==0
+        if not is_valid and exit:
+            self.error(msg)
+        #end if
+        return is_valid
+    #end check_valid
+
+
+    def is_valid(self):
+        return self.check_valid(exit=False)
+    #end def is_valid
+                
 #end class QuantumPackageInput
 
 
 
 def generate_quantum_package_input(**kwargs):
-    
+
+    # make empty input
     qpi = QuantumPackageInput()
+
+    # partition inputs into sections and variables
+    sections = obj()
+    variables = obj()
+    for name,value in kwargs.iteritems():
+        is_sec = name in known_sections
+        is_var = name in known_variables
+        if is_sec and is_var:
+            if isinstance(value,section_types):
+                sections[name] = value
+            else:
+                variables[name] = value
+            #end if
+        elif is_sec:
+            sections[name] = value
+        elif is_var:
+            variables[name] = value
+        else:
+            QuantumPackageInput.class_error('cannot generate input\nencountered name that is not known as a section or variable\nunrecognized name provided: {0}\nvalid sections: {1}\nvalid variables: {2}'.format(name,sorted(known_sections),sorted(known_variables)))
+        #end if
+    #end for
+    # assign sections
+    for secname,sec in sections.iteritems():
+        if isinstance(sec,(obj,dict)):
+            sec = Section(sec) # defer checking to validate
+        #end if
+        qpi[secname] = sec
+    #end for
+    # assign variables to sections
+    for varname,var in variables.iteritems():
+        if varname not in variable_section:
+            QuantumPackageInput.class_error('cannot generate input\nsection cannot be fond for variable provided\nunrecognized variable: {0}'.format(varname))
+        #end if
+        secname = variable_section[varname]
+        if isinstance(secname,tuple):
+            QuantumPackageInput.class_error('cannot generate input\nsection cannot be uniquely determined from variable name\nvariable name provided: {0}\npossible sections: {1}\nplease provide this variable directly within on of the input sections listed and try again'.format(varname,secname))
+        #end if
+        if secname not in qpi:
+            qpi[secname] = Section()
+        #end if
+        sec = qpi[secname][varname] = var
+    #end for
+
+    # validate the input
+    qpi.validate()
 
     return qpi
 #end def generate_quantum_package_input
