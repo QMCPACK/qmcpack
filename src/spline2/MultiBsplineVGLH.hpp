@@ -36,15 +36,15 @@ namespace qmcplusplus
       z -= spline_m->z_grid.start;
       T tx,ty,tz;
       int ix,iy,iz;
-      getSplineBound(x*spline_m->x_grid.delta_inv,tx,ix,spline_m->x_grid.num-1);
-      getSplineBound(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
-      getSplineBound(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
+      spline2::getSplineBound(x*spline_m->x_grid.delta_inv,tx,ix,spline_m->x_grid.num-1);
+      spline2::getSplineBound(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
+      spline2::getSplineBound(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
 
       T a[4],b[4],c[4],da[4],db[4],dc[4],d2a[4],d2b[4],d2c[4];
 
-      MultiBsplineData<T>::compute_prefactors(a, da, d2a, tx);
-      MultiBsplineData<T>::compute_prefactors(b, db, d2b, ty);
-      MultiBsplineData<T>::compute_prefactors(c, dc, d2c, tz);
+      spline2::MultiBsplineData<T>::compute_prefactors(a, da, d2a, tx);
+      spline2::MultiBsplineData<T>::compute_prefactors(b, db, d2b, ty);
+      spline2::MultiBsplineData<T>::compute_prefactors(c, dc, d2c, tz);
 
       const intptr_t xs = spline_m->x_stride;
       const intptr_t ys = spline_m->y_stride;
@@ -134,13 +134,13 @@ namespace qmcplusplus
       x -= spline_m->x_grid.start;
       y -= spline_m->y_grid.start;
       z -= spline_m->z_grid.start;
-      getSplineBound(x*spline_m->x_grid.delta_inv,tx,ix,spline_m->x_grid.num-1);
-      getSplineBound(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
-      getSplineBound(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
+      spline2::getSplineBound(x*spline_m->x_grid.delta_inv,tx,ix,spline_m->x_grid.num-1);
+      spline2::getSplineBound(y*spline_m->y_grid.delta_inv,ty,iy,spline_m->y_grid.num-1);
+      spline2::getSplineBound(z*spline_m->z_grid.delta_inv,tz,iz,spline_m->z_grid.num-1);
 
-      MultiBsplineData<T>::compute_prefactors(a, da, d2a, tx);
-      MultiBsplineData<T>::compute_prefactors(b, db, d2b, ty);
-      MultiBsplineData<T>::compute_prefactors(c, dc, d2c, tz);
+      spline2::MultiBsplineData<T>::compute_prefactors(a, da, d2a, tx);
+      spline2::MultiBsplineData<T>::compute_prefactors(b, db, d2b, ty);
+      spline2::MultiBsplineData<T>::compute_prefactors(c, dc, d2c, tz);
 
       const intptr_t xs = spline_m->x_stride;
       const intptr_t ys = spline_m->y_stride;

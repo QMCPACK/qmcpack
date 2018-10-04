@@ -9,14 +9,15 @@
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-/**@file MultiBspline.cpp
+/**@file MultiBsplineData.cpp
  *
  * Initialize the static data for float and double
  */
 
-#include <spline2/MultiBspline.hpp>
+#include <config.h>
+#include <spline2/MultiBsplineData.hpp>
 
-namespace qmcplusplus
+namespace spline2
 {
   /** initialization of static data for MultiBsplineData<float> */
   template<>

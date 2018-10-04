@@ -17,6 +17,7 @@
 
 #include <OhmmsSoA/Container.h>
 #include <spline2/MultiBspline.hpp>
+#include <spline2/MultiBsplineEval.hpp>
 #include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
 
 namespace qmcplusplus
@@ -240,7 +241,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const PointType& r=P.activeR(iat);
     PointType ru;
     int bc_sign=convertPos(r,ru);
-    SplineInst->evaluate(ru,myV);
+    spline2::evaluate3d(SplineInst->spline_m,ru,myV);
     assign_v(bc_sign,myV,psi);
   }
 

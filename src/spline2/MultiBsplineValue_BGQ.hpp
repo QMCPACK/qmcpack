@@ -11,19 +11,20 @@
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef QMCPLUSPLUS_MULTIEINSPLINE_VALUE_BGQ_HPP
-#define QMCPLUSPLUS_MULTIEINSPLINE_VALUE_BGQ_HPP
+#ifndef SPLINE2_MULTIEINSPLINE_VALUE_BGQ_HPP
+#define SPLINE2_MULTIEINSPLINE_VALUE_BGQ_HPP
 
 #if defined(__xlC__)
 #include <builtins.h>
 #endif
 
-namespace qmcplusplus
+namespace spline2
 {
 
   template<typename T>
     inline void
-    MultiBspline<T>::evaluate_v_impl(T x, T y, T z, T* restrict vals, int first, int last) const
+    evaluate_v_impl(const typename qmcplusplus::bspline_traits<T,3>::SplineType *spline_m,
+                    T x, T y, T z, T* restrict vals, int first, int last)
     {
       x -= spline_m->x_grid.start;
       y -= spline_m->y_grid.start;
