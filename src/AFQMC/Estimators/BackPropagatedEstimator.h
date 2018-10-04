@@ -124,7 +124,8 @@ class BackPropagatedEstimator: public EstimatorBase
         wi.setSlaterMatrixN();
       } // walker loop
     }
-    TG.Global().reduce_in_place_n(data.begin(),data.size(),std::plus<>());
+    // Crashing code
+    TG.Global().all_reduce_in_place_n(data.begin(),data.size(),std::plus<>());
   }
 
   template <typename T>
