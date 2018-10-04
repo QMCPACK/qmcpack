@@ -63,8 +63,9 @@ class BackPropagatedEstimator: public EstimatorBase
     int NMO2 = (wlk==CLOSED)?(NMO):(2*NMO);
     backPropSM.resize(extents[NMO][NEL]);
     walkerDM.resize(extents[NMO2][NMO]);
+    T1.resize(extents[NMO2][NAEA]);
     // (weight, GF)
-    data.resize(1+walkerDM.size());
+    data.resize(1+NMO2*NMO);
     std::fill(data.begin(), data.end(), zero);
   }
 
