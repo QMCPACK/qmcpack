@@ -26,7 +26,7 @@
 #include"AFQMC/Numerics/SparseMatrixOperations.h"
 #include"AFQMC/Numerics/DenseMatrixOperations.h"
 #include "Utilities/RandomGenerator.h"
-#include "Utilities/UtilityFunctions.h"
+#include "Utilities/FairDivide.h"
 #include "AFQMC/Utilities/Utils.h"
 
 namespace qmcplusplus

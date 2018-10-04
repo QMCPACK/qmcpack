@@ -120,18 +120,6 @@ namespace qmcplusplus
       }
     }
 
-  void LCAOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, 
-      VGLVector_t vgl)
-  {
-    if(Identity)
-      myBasisSet->evaluateVGL(P,iat,vgl);
-    else
-    {
-      myBasisSet->evaluateVGL(P,iat,Temp);
-      Product_ABt(Temp,*C,vgl);
-    }
-  }
-
   void LCAOrbitalSet::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem)
   {
     const int nVP = VP.getTotalNum();

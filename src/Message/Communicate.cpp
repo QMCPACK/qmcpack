@@ -26,7 +26,7 @@
 #include <cstdio>
 #include <Platforms/sysutil.h>
 #include <tau/profiler.h>
-#include <Utilities/UtilityFunctions.h>
+#include <Utilities/FairDivide.h>
 #include <fstream>
 
 #ifdef HAVE_ADIOS
