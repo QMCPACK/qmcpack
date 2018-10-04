@@ -14,10 +14,10 @@
 #include<cstdlib>
 #include<tuple>
 
-#ifndef OHMMS_UTILITYFUNCTIONS_H
-#define OHMMS_UTILITYFUNCTIONS_H
-/**@file UtilityFunctions.h
- *@brief A collection of utility functions.
+#ifndef FAIRDIVIDE_H
+#define FAIRDIVIDE_H
+/**@file FairDivide.h
+ *@brief A collection of functions for dividing fairly.
  */
 
 /** Partition ntot over npart

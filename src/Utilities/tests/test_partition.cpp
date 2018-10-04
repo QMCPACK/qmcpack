@@ -13,7 +13,7 @@
 #include "catch.hpp"
 
 #include <iostream>
-#include "Utilities/UtilityFunctions.h"
+#include "Utilities/FairDivide.h"
 #include <stdio.h>
 #include <string>
 #include <vector>
