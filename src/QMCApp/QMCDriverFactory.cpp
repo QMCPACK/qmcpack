@@ -44,20 +44,20 @@ namespace qmcplusplus
 ///initialize the static data member
 //ParticleSetPool* QMCDriverFactory::ptclPool = new ParticleSetPool;
 
-// template<Batching batching>
-// QMCDriverFactory<batching>::QMCDriverFactory(Communicate* c): MPIObjectBase(c),
-//   qmcSystem(0), qmcDriver(0) , curRunType(DUMMY_RUN)
-// {
-//   ////create ParticleSetPool
-//   ptclPool = new ParticleSetPool(c);
-//   //create WaveFunctionPool
-//   psiPool = new WaveFunctionPool(c);
-//   psiPool->setParticleSetPool(ptclPool);
-//   //create HamiltonianPool
-//   hamPool = new HamiltonianPool<batching>(c);
-//   hamPool->setParticleSetPool(ptclPool);
-//   hamPool->setWaveFunctionPool(psiPool);
-// }
+template<Batching batching>
+QMCDriverFactory<batching>::QMCDriverFactory(Communicate* c) : MPIObjectBase(c),
+  qmcSystem(0), qmcDriver(0), curRunType(DUMMY_RUN)
+{
+  ////create ParticleSetPool
+  ptclPool = new ParticleSetPool(c);
+  //create WaveFunctionPool
+  psiPool = new WaveFunctionPool(c, "dummy", B_);
+  psiPool->setParticleSetPool(ptclPool);
+  //create HamiltonianPool
+  hamPool = new HamiltonianPool<batching>(c);
+  hamPool->setParticleSetPool(ptclPool);
+  hamPool->setWaveFunctionPool(psiPool);
+}
   
 template<Batching batching>
 QMCDriverFactory<batching>::~QMCDriverFactory()

@@ -88,20 +88,7 @@ class QMCDriverFactory: public QMCDriverFactoryInterface, public MPIObjectBase
   /** default constructor **/
   // QMCDriverFactory(Communicate* c);
 public:
-  QMCDriverFactory(Communicate* c): MPIObjectBase(c),
-				    qmcSystem(0), qmcDriver(0) , curRunType(DUMMY_RUN)
-  {
-    ////create ParticleSetPool
-    ptclPool = new ParticleSetPool(c);
-    //create WaveFunctionPool
-    psiPool = new WaveFunctionPool(c, "dummy", B_);
-    psiPool->setParticleSetPool(ptclPool);
-    //create HamiltonianPool
-    hamPool = new HamiltonianPool<batching>(c);
-    hamPool->setParticleSetPool(ptclPool);
-    hamPool->setWaveFunctionPool(psiPool);
-  }
-
+  QMCDriverFactory(Communicate* c);
   
   /** set the active qmcDriver */
   void putCommunicator(xmlNodePtr cur);
