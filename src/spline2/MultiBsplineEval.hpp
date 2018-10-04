@@ -21,8 +21,8 @@
  * their starting address correctly aligned.
  *
  */
-#ifndef QMCPLUSPLUS_MULTIEINSPLINE_EVAL_HPP
-#define QMCPLUSPLUS_MULTIEINSPLINE_EVAL_HPP
+#ifndef SPLINE2_MULTIEINSPLINE_EVAL_HPP
+#define SPLINE2_MULTIEINSPLINE_EVAL_HPP
 
 #include <algorithm>
 #include <spline2/bspline_traits.hpp>
@@ -46,37 +46,37 @@ namespace spline2
 {
 
   template<typename SPLINET, typename PT, typename VT>
-    inline void evaluate3d(const SPLINET &spline, const PT& r, VT& psi)
+    __forceinline void evaluate3d(const SPLINET &spline, const PT& r, VT& psi)
     {
       evaluate_v_impl(spline,r[0],r[1],r[2],psi.data(),0,psi.size());
     }
 
   template<typename SPLINET, typename PT, typename VT>
-    inline void evaluate3d(const SPLINET &spline, const PT& r, VT& psi, int first, int last)
+    __forceinline void evaluate3d(const SPLINET &spline, const PT& r, VT& psi, int first, int last)
     {
       evaluate_v_impl(spline,r[0],r[1],r[2],psi.data()+first,first,last);
     }
 
   template<typename SPLINET, typename PT, typename VT, typename GT, typename LT>
-    inline void evaluate3d_vgl(const SPLINET &spline, const PT& r, VT& psi, GT& grad, LT& lap)
+    __forceinline void evaluate3d_vgl(const SPLINET &spline, const PT& r, VT& psi, GT& grad, LT& lap)
     {
       evaluate_vgl_impl(spline,r[0],r[1],r[2],psi.data(),grad.data(),lap.data(),psi.size(),0,psi.size());
     }
 
   template<typename SPLINET, typename PT, typename VT, typename GT, typename LT>
-    inline void evaluate3d_vgl(const SPLINET &spline, const PT& r, VT& psi, GT& grad, LT& lap, int first, int last)
+    __forceinline void evaluate3d_vgl(const SPLINET &spline, const PT& r, VT& psi, GT& grad, LT& lap, int first, int last)
     {
       evaluate_vgl_impl(spline,r[0],r[1],r[2],psi.data()+first,grad.data()+first,lap.data()+first,psi.size(),first,last);
     }
 
   template<typename SPLINET, typename PT, typename VT, typename GT, typename HT>
-    inline void evaluate3d_vgh(const SPLINET &spline, const PT& r, VT& psi, GT& grad, HT& hess)
+    __forceinline void evaluate3d_vgh(const SPLINET &spline, const PT& r, VT& psi, GT& grad, HT& hess)
     {
       evaluate_vgh_impl(spline,r[0],r[1],r[2],psi.data(),grad.data(),hess.data(),psi.size(),0,psi.size());
     }
 
   template<typename SPLINET, typename PT, typename VT, typename GT, typename HT>
-    inline void evaluate3d_vgh(const SPLINET &spline, const PT& r, VT& psi, GT& grad, HT& hess, int first, int last)
+    __forceinline void evaluate3d_vgh(const SPLINET &spline, const PT& r, VT& psi, GT& grad, HT& hess, int first, int last)
     {
       evaluate_vgh_impl(spline,r[0],r[1],r[2],psi.data()+first,grad.data()+first,hess.data()+first,psi.size(),first,last);
     }
