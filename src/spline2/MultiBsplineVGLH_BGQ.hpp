@@ -27,7 +27,7 @@
 #include <builtins.h>
 #endif
 
-namespace qmcplusplus
+namespace spline2
 {
 
   template<typename T>
@@ -370,6 +370,6 @@ namespace qmcplusplus
       }
     }
 
-}/** qmcplusplus namespace */
+}/** spline2 namespace */
 #endif
 

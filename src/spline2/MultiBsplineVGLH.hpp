@@ -234,6 +234,6 @@ namespace spline2
       }
     }
 
-}/** qmcplusplus namespace */
+}/** spline2 namespace */
 #endif
 
