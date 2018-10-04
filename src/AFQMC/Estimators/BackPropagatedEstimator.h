@@ -87,7 +87,7 @@ class BackPropagatedEstimator: public EstimatorBase
         // the QR decomposition (stabalisation) step.
         ComplexType weight = wi.weight();
         if (std::abs(weight) <= 1e-6 || std::isnan(weight.real())
-            || wi.isBMatrixBufferFull()) continue;
+            || !wi.isBMatrixBufferFull()) continue;
         // 1. Back propagate each walker.
         ComplexType detR = one;
         // Initial state for back propagation.
