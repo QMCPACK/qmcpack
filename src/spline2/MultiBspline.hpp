@@ -322,10 +322,18 @@ namespace qmcplusplus
 }/** qmcplusplus namespace */
 
 ///include evaluate_v_impl
+#ifdef BGQPX
+#include <spline2/MultiBsplineValue_BGQ.hpp>
+#else
 #include <spline2/MultiBsplineValue.hpp>
+#endif
 
 ///include evaluate_vgl/vgh_impl
-#include <spline2/MultiBsplineStd.hpp>
+#ifdef BGQPX
+#include <spline2/MultiBsplineVGLH_BGQ.hpp>
+#else
+#include <spline2/MultiBsplineVGLH.hpp>
+#endif
 
 ///include evaluate_v/vgl/vgh_impl for 1D case
 #include <spline2/MultiBspline1D.hpp>
