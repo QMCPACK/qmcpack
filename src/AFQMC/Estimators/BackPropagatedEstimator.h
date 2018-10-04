@@ -155,7 +155,7 @@ class BackPropagatedEstimator: public EstimatorBase
           if (i < NMO) {
             out << "Gup_" << i << "_"  << j << " ";
           } else {
-              out << "Gdn_" << i << "_"  << j << " ";
+              out << "Gdn_" << i-NMO << "_"  << j << " ";
           }
         }
       }
