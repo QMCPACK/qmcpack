@@ -89,10 +89,9 @@ class BackPropagatedEstimator: public EstimatorBase
         if (std::abs(weight) <= 1e-6 || std::isnan(weight.real())
             || !wi.isBMatrixBufferFull()) continue;
         // 1. Back propagate each walker.
-        ComplexType detR = one;
         // Initial state for back propagation.
         SMType BPAlpha = SMType(backPropSM.data(), extents[NMO][NAEA]);
-        detR = back_propagate_wavefunction(trialSM, BPAlpha, wi, nback_prop);
+        ComplexType detR = back_propagate_wavefunction(trialSM, BPAlpha, wi, nback_prop);
         // 2. Construct Green's function / 1RDM.
         // Note we use the Slater Matrix from timestep N (before back propagation).
         SMType DMAlpha = SMType(walkerDM.data(), extents[NMO][NMO]);
