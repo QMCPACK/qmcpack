@@ -35,14 +35,13 @@
 #include <spline2/MultiBsplineValue.hpp>
 #endif
 
-/*
 ///include evaluate_vgl/vgh_impl
 #ifdef BGQPX
 #include <spline2/MultiBsplineVGLH_BGQ.hpp>
 #else
 #include <spline2/MultiBsplineVGLH.hpp>
 #endif
-*/
+
 namespace spline2
 {
 
