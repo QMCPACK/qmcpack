@@ -95,13 +95,13 @@ class BackPropagatedEstimator: public EstimatorBase
         // 2. Construct Green's function / 1RDM.
         // Note we use the Slater Matrix from timestep N (before back propagation).
         SMType DMAlpha = SMType(walkerDM.data(), extents[NMO][NMO]);
-        SDetOp.MixedDensityMatrix(BPAlpha, wi.SlaterMatrixN(Alpha), DMAlpha);
+        SDetOp.MixedDensityMatrix_noHerm(BPAlpha, wi.SlaterMatrixN(Alpha), std::forward<SMType>(DMAlpha));
         if (walker_type == COLLINEAR) {
           // Do the same for down spin block.
           SMType BPBeta = SMType(backPropSM.data()+NMO*NAEA, extents[NMO][NAEB]);
           detR *= back_propagate_wavefunction(trialSM, BPBeta, wi, nback_prop);
           SMType DMBeta = SMType(walkerDM.data()+NMO*NMO, extents[NMO][NMO]);
-          SDetOp.MixedDensityMatrix(BPBeta, wi.SlaterMatrixN(Alpha), DMAlpha);
+          SDetOp.MixedDensityMatrix_noHerm(BPBeta, wi.SlaterMatrixN(Alpha), std::forward<SMType>(DMBeta));
         }
         // 3. Update averages.
         // 3.a Get walker weight at timestep M+N
@@ -114,7 +114,7 @@ class BackPropagatedEstimator: public EstimatorBase
         // Update all the elements of the Green's function estimator.
         for (int i = 0; i < walkerDM.shape()[0]; i++) {
           for (int j = 0; j < walkerDM.shape()[1]; j++) {
-            data[i+j*walkerDM.shape()[1]+1] += walkerDM[i][j];
+            data[i+j*walkerDM.shape()[1]+1] += weight * walkerDM[i][j];
           }
         }
         // 4. Copy current Slater Matrix (timestep M+N) to be the Nth Wavefunction for the
