@@ -24,7 +24,7 @@ namespace qmcplusplus
 SlaterDet::SlaterDet(ParticleSet& targetPtcl)
 {
   Optimizable = false;
-  OrbitalName = "SlaterDet";
+  ClassName = "SlaterDet";
 
   Last.resize(targetPtcl.groups());
   for (int i = 0; i < Last.size(); ++i)

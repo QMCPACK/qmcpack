@@ -14,10 +14,10 @@
 #include<cstdlib>
 #include<tuple>
 
-#ifndef OHMMS_UTILITYFUNCTIONS_H
-#define OHMMS_UTILITYFUNCTIONS_H
-/**@file UtilityFunctions.h
- *@brief A collection of utility functions.
+#ifndef FAIRDIVIDE_H
+#define FAIRDIVIDE_H
+/**@file FairDivide.h
+ *@brief A collection of functions for dividing fairly.
  */
 
 /** Partition ntot over npart
@@ -70,6 +70,22 @@ inline void FairDivide(int ntot, int npart, IV& adist)
   adist[npart]=ntot;
 }
 
+/** Partition ntot over npart and the size of each partition is a multiple of base size
+ *\param ntot the total size
+ *\param base the base size
+ *\param npart the number of partitions
+ *\param me my partition id [0,ntot)
+ *\param first the beginning of my partition, can be equal and larger than ntot
+ *\param last the end of my partition, must be smaller than ntot
+ *
+ */
+inline void FairDivideAligned(const int ntot, const int base, const int npart, const int me, int& first, int& last)
+{
+  const int blocksize = (((ntot+npart-1)/npart+base-1)/base)*base;
+  first = me*blocksize;
+  last  = std::min((me+1)*blocksize,ntot);
+  if (first>last) first = last;
+}
 
 /** partition ntot elements among npart
  * @param ntot total number of elements

@@ -76,14 +76,6 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     this->KeyWord="SplineR2RSoA";
   }
 
-  ///** copy the base property */
-  //SplineC2CSoA(BaseType& rhs): BaseType(rhs)
-  //{
-  //  this->is_complex=true;
-  //  this->AdoptorName="SplineC2CSoA";
-  //  this->KeyWord="C2RSoA";
-  //}
-
   SplineR2RSoA(const SplineR2RSoA& a):
     SplineAdoptorBase<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr)
   {

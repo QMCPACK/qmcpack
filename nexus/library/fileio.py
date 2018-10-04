@@ -22,7 +22,7 @@
 
 import os
 import mmap
-from numpy import array,zeros,ndarray,around,arange,dot,savetxt,empty
+from numpy import array,zeros,ndarray,around,arange,dot,savetxt,empty,reshape
 from numpy.linalg import det,norm
 from generic import obj
 from developer import DevBase,error
@@ -294,7 +294,7 @@ class XsfFile(StandardFile):
     # forces are in units of Hatree/Angstrom
     # each section should be followed by a blank line
 
-    def __init__(self,filepath):
+    def __init__(self,filepath=None):
         self.filetype    = None
         self.periodicity = None
         StandardFile.__init__(self,filepath)
@@ -454,7 +454,7 @@ class XsfFile(StandardFile):
                                 line = lines[i].strip().lower()
                             #end while
                             grid_data = array(dtokens,dtype=float)
-                            grid_data.shape = tuple(grid)
+                            grid_data=reshape(grid_data,grid,order='F')
                             data[grid_identifier] = obj(
                                 grid   = grid,
                                 corner = corner,
@@ -656,7 +656,7 @@ class XsfFile(StandardFile):
                     #end for
                     c = c[:-1]
                     n=0
-                    for v in dg.values.ravel():
+                    for v in dg.values.ravel(order='F'):
                         if n%ncols==0:
                             c += '\n    '
                         #end if
@@ -793,7 +793,7 @@ class XsfFile(StandardFile):
     #end def incorporate_structure
 
 
-    def add_density(self,cell,density,name='density',corner=None,grid=None,centered=False,add_ghost=False,transpose=False):
+    def add_density(self,cell,density,name='density',corner=None,grid=None,centered=False,add_ghost=False):
         if corner is None:
             corner = zeros((3,),dtype=float)
         #end if
@@ -825,21 +825,6 @@ class XsfFile(StandardFile):
             density[   -1,:g[1],   -1] = d[0,:,0] 
             density[:g[0],   -1,   -1] = d[:,0,0] 
             density[   -1,   -1,   -1] = d[0,0,0] # corner copy
-        #end if
-
-        if transpose: # shift from row major to column major
-            g = grid
-            d = density
-            density = zeros((d.size,))
-            n = 0
-            for k in xrange(g[2]):
-                for j in xrange(g[1]):
-                    for i in xrange(g[0]):
-                        density[n] = d[i,j,k]
-                        n+=1
-                    #end for
-                #end for
-            #end for
             density.shape = tuple(grid)
         #end if
 
@@ -870,7 +855,7 @@ class XsfFile(StandardFile):
     #end def change_units
 
 
-    def remove_ghost(self,density=None,transpose=True):
+    def remove_ghost(self,density=None):
         if density is None:
             density = self.get_density()
         #end if
@@ -878,20 +863,7 @@ class XsfFile(StandardFile):
             return density.values_noghost
         #end if
         data = density.values
-        if transpose: # switch from column major to row major
-            g = data.shape
-            d = data.ravel()
-            data = zeros(g,dtype=float)
-            n = 0
-            for k in xrange(g[2]):
-                for j in xrange(g[1]):
-                    for i in xrange(g[0]):
-                        data[i,j,k] = d[n]
-                        n+=1
-                    #end for
-                #end for
-            #end for
-        #end if
+
         # remove the ghost cells
         d = data
         g = array(d.shape,dtype=int)-1
