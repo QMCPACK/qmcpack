@@ -83,10 +83,11 @@ bool WaveFunctionPool::put(xmlNodePtr cur)
     psiFactory->setName(id);
     isPrimary = (myPool.empty() || role == "primary");
     myPool[id]=psiFactory;
-    app_summary() << " Wavefunction setup: " << std::endl;
-    app_summary() << " ------------------- " << std::endl;
-    app_summary() << "  Name: " << psiFactory->getName() << std::endl;
-
+    app_summary() << " Wavefunction setup: \n";
+    if(B_ == Batching::BATCHED)
+      app_summary() << "BATCHED mode\n";
+    app_summary() << " ------------------- \n";
+    app_summary() << "  Name: " << psiFactory->getName() << '\n';
   }
   else
   {

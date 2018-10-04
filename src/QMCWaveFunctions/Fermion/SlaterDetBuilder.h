@@ -47,7 +47,9 @@ public:
    * \param ions reference to the ions
    */
   SlaterDetBuilder(ParticleSet& els,
-		   TrialWaveFunction<>& psi, PtclPoolType& psets, Batching batching = Batching::SINGLE);
+		   TrialWaveFunction<>& psi,
+		   PtclPoolType& psets,
+		   Batching batching = Batching::SINGLE);
 
   ~SlaterDetBuilder();
 

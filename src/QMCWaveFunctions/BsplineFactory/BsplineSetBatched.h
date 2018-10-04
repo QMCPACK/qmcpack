@@ -42,8 +42,8 @@ struct BsplineSet<SA, Batching::BATCHED>: public SA,
   typedef typename SA::DataType  DataType;
 
   Batching B_ = Batching::BATCHED;
-
-  BsplineSet() : SPOSet<Batching::BATCHED>::WhatAmI("BsplineSet<SA, Batching::BATCHED>") {}
+  
+  BsplineSet() { this->setWhatAmI("BsplineSet<SA, Batching::BATCHED>") ; }
   
   SPOSet* makeClone() const
   {

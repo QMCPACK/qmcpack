@@ -64,8 +64,5 @@ SPOSet<Batching::BATCHED>::evaluate (std::vector<QMCT::PosType> &pos, gpu::devic
   app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
   abort();
 }
-
-
-template class SPOSet<Batching::BATCHED>;
   
 }

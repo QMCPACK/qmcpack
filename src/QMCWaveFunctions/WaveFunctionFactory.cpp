@@ -52,6 +52,8 @@ WaveFunctionFactory::WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset, Co
   , targetPtcl(qp),ptclPool(pset),targetPsi(0), myNode(NULL), B_(batching)
 {
   ClassName="WaveFunctionFactory";
+  if(B_ == Batching::BATCHED)
+    ClassName+=" with batching";
   myName="psi0";
 }
 
@@ -75,7 +77,9 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
   if(targetPsi==0) //allocate targetPsi and set the name
   {
     if(B_ == Batching::SINGLE)
+    {
       targetPsi = new TrialWaveFunction<>(myComm);
+    }
     else
     {
 #ifdef QMC_CUDA

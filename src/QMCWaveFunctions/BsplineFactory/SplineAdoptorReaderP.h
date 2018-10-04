@@ -341,6 +341,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
     int nx=MeshSize[0];
     int ny=MeshSize[1];
     int nz=MeshSize[2];
+    // these shadow the classes splineData_r
     Array<DataType,3> splineData_r(nx,ny,nz),splineData_i(ny,ny,nz);
     Array<std::complex<double>,3> rawData(nx,ny,nz);
     const std::vector<BandInfo>& cur_bands=bandgroup.myBands;

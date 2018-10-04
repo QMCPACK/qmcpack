@@ -166,8 +166,8 @@ TEST_CASE("WaveFunctionPool-Batched", "[qmcapp]")
   wp.put(root);
 
   TrialWaveFunction<> *psi = wp.getWaveFunction("psi0");
-  
+
   REQUIRE(psi != NULL);
 }
-  
+
 }

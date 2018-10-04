@@ -33,6 +33,7 @@ TrialWaveFunction<Batching::BATCHED>::TrialWaveFunction(Communicate* c)
   : TrialWaveFunction<Batching::SINGLE>(c)
 {
   this->B_ = Batching::BATCHED;
+  this->ClassName = "TrialWaveFunction<Batching::BATCHED>";
 }
   
 TrialWaveFunction<>* TrialWaveFunction<Batching::BATCHED>::makeClone(ParticleSet& tqp)  const
