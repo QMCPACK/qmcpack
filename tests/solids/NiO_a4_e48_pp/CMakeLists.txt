@@ -9,10 +9,8 @@ SET(H5_FULL_PATH "${QMC_DATA}/NiO/${H5_FILE}")
 
 IF (EXISTS ${H5_FULL_PATH})
   #symlink h5 file
-  MAYBE_SYMLINK(${H5_FULL_PATH} ${CMAKE_CURRENT_BINARY_DIR}/${H5_FILE})
-  #symlink pp files
-  MAYBE_SYMLINK(${CMAKE_SOURCE_DIR}/tests/performance/NiO/O.xml ${CMAKE_CURRENT_BINARY_DIR}/O.xml)
-  MAYBE_SYMLINK(${CMAKE_SOURCE_DIR}/tests/performance/NiO/Ni.opt.xml ${CMAKE_CURRENT_BINARY_DIR}/Ni.opt.xml)
+  MAYBE_SYMLINK(${H5_FULL_PATH} ${CMAKE_SOURCE_DIR}/tests/solids/NiO_a4_e48_pp/${H5_FILE})
+
 
 #  LocalEnergy           =         -370.7944 +/-           0.0011
 #  Variance              =            12.836 +/-            0.052
