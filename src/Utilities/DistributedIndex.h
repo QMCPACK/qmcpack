@@ -16,7 +16,7 @@
 
 #ifndef OHMMS_DISTRIBUTEDINDEX_H
 #define OHMMS_DISTRIBUTEDINDEX_H
-#include "Utilities/UtilityFunctions.h"
+#include "Utilities/FairDivide.h"
 #include <vector>
 #include <list>
 #include <map>
@@ -237,7 +237,7 @@ struct DistributedIndex
    *
    *Partition ntot data over npart groups so that the size of each
    *group can only vary by 1 using FairDivide(int,int,std::vector<int>&)
-   *(see UtilityFunctions.h).
+   *(see FairDivide.h).
    */
   inline void distribute(int ntot, int npart)
   {

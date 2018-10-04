@@ -17,7 +17,7 @@
 
 #include "QMCDrivers/DMC/WalkerReconfigurationMPI.h"
 #include "Utilities/IteratorUtility.h"
-#include "Utilities/UtilityFunctions.h"
+#include "Utilities/FairDivide.h"
 #include "Utilities/RandomGenerator.h"
 using namespace qmcplusplus;
 
