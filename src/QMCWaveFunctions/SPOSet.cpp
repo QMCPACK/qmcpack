@@ -40,11 +40,6 @@ SPOSet::SPOSet()
 #endif
 }
 
-void SPOSet::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
-{
-  APP_ABORT("SPOSet::evaluateVGL not implemented.");
-}
-
 void SPOSet::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOmem)
 {
   for(int iat=0; iat<VP.getTotalNum(); ++iat)

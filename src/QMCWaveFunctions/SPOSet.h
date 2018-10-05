@@ -185,11 +185,6 @@ public:
   virtual void
   evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)=0;
 
-  /** evaluate VGL of SPOs using SoA container for gl
-   */
-  virtual void
-  evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl);
-
   /** evaluate values for the virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
    * @param psiM single-particle orbitals psiM(i,j) for the i-th particle and the j-th orbital
