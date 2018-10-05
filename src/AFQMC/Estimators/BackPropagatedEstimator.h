@@ -136,13 +136,13 @@ class BackPropagatedEstimator: public EstimatorBase
     SMType B = walker.BMatrix();
     ma::product(ma::H(B), trialSM, T1);
     for (int i = 0; i < nback_prop-1; i++) {
+      walker.decrementBMatrix();
       SMType B = walker.BMatrix();
       ma::product(ma::H(B), T1, std::forward<SMType>(psiBP));
       T1 = psiBP;
       if ((i != 0) && (i%nStabalize == 0)) {
         //detR *= DenseMatrixOperators::GeneralizedGramSchmidt(T1.data(),NAEA,NMO,NAEA);
       }
-      walker.decrementBMatrix();
     }
     return detR;
   }
