@@ -45,7 +45,6 @@ class QuantumPackage(Simulation):
             elif not os.path.exists(qprc):
                 QuantumPackage.class_error('quantum_package.rc file does not exist\nfile path provided via "qprc" in settings\nfile path: {0}'.format(qprc))
             #end if
-            execute('source '+qprc)
         #end if
     #end def settings
 

@@ -18,10 +18,14 @@
 import os
 from generic import obj
 from developer import DevBase,log,error
+from structure import Structure
+from physical_system import PhysicalSystem
 from simulation import SimulationInput
+from execute import execute
 
 
 bool_values = dict(T=True,F=False)
+bool_values_inv = {True:'T',False:'F'}
 
 def read_qp_value_type(value_filepath):
     f = open(value_filepath,'r')
@@ -64,6 +68,24 @@ def read_qp_value(value_filepath):
     #end try
     return v
 #end def read_qp_value
+
+
+def write_qp_value(value_filepath,value):
+    if isinstance(value,bool):
+        svalue = bool_values_inv[value]
+    elif isinstance(value,int):
+        svalue = str(value)
+    elif isinstance(value,float):
+        '{0: 24.15e}'.format(value)
+    elif isinstance(value,str):
+        svalue = value
+    else:
+        QuantumPackageInput.class_error('invalid type encountered on write\nattempted to write variable: {0}\nwith type: {1}\nvalid type options: bool,int,float,str'.format(value_filepath,value.__class__.__name__))
+    #end if
+    f = open(value_filepath,'w')
+    f.write(svalue+'\n')
+    f.close()
+#end def write_qp_value
 
 
 
@@ -249,21 +271,39 @@ class Section(DevBase):
 
 
 class QuantumPackageInput(SimulationInput):
+
+    added_keys = ['structure']
+
     def __init__(self,filepath=None):
+        for key in QuantumPackageInput.added_keys:
+            self[key] = None
+        #end for
         if filepath!=None:
             self.read(filepath)
         #end if
     #end def __init__
 
 
+    def extract_added_keys(self):
+        extra = obj()
+        extra.move_from(self,QuantumPackageInput.added_keys)
+        return extra
+    #end def extract_added_keys
+
+
+    def restore_added_keys(self,extra):
+        extra.move_to(self,QuantumPackageInput.added_keys)
+    #end def restore_added_keys
+
+
     def read(self,filepath):
         epath = filepath.rstrip('/')
         if not os.path.exists(epath):
-            self.error('provided ezfio directory does not exist\ndirectory provided:  {0}'.format(epath))
+            self.error('cannot read input\nprovided ezfio directory does not exist\ndirectory provided:  {0}'.format(epath))
         elif not os.path.isdir(epath):
-            self.error('provided ezfio path is not a directory\npath provided:  {0}'.format(epath))
+            self.error('cannot read input\nprovided ezfio path is not a directory\npath provided:  {0}'.format(epath))
         elif not epath.endswith('.ezfio'):
-            self.error('provided path does not end in an ezfio directory\ndirectory must end with .ezfio\npath provided:  {0}'.format(epath))
+            self.error('cannot read input\nprovided path does not end in an ezfio directory\ndirectory must end with .ezfio\npath provided:  {0}'.format(epath))
         #end if
         for path,dirs,files in os.walk(epath):
             for file in files:
@@ -284,6 +324,60 @@ class QuantumPackageInput(SimulationInput):
     #end def read
 
 
+    def write(self,filepath=None):
+        if filepath is None:
+            return str(self)
+        #end if
+        epath = filepath.rstrip('/')
+        if not epath.endswith('.ezfio'):
+            self.error('cannot write input\nprovided path does not end in an ezfio directory\ndirectory must end with .ezfio\npath provided:  {0}'.format(epath))
+        #end if
+        path,edir = os.path.split(epath)
+        if path=='':
+            path = './'
+        #end if
+        if not os.path.exists(path):
+            self.error('cannot write input\nattempted to write ezfio directory "{0}" at non-existent destination path\ndestination path: {1}'.format(edir,path))
+        #end if
+        if not os.path.exists(epath):
+            if self.structure is None:
+                self.error('cannot write input\nstructure is missing\ninput path provided: {0}'.format(epath))
+            elif not isinstance(self.structure,Structure):
+                self.error('cannot write input\nstructure must be of type: Structure\ntype provided: {0}\ninput path provided: {1}'.format(self.structure.__class__.__name__,epath))
+            #end if
+            cwd = os.getcwd()
+            os.chdir(path)
+            prefix = edir.rsplit('.',1)[0]
+            struct_file = prefix+'.xyz'
+            self.structure.write_xyz(struct_file)
+            command = 'qp_create_ezfio_from_xyz'
+            if self.path_exists('ao_basis/ao_basis'):
+                command += ' -b '+self.ao_basis.ao_basis
+            #end if
+            command += ' '+struct_file
+            execute(command)
+            if not os.path.exists(edir):
+                self.error('cannot write input\nezfio creation command failed: {0}\nexecuted at path: {1}\ndirectory {2} not created\nplease source your quantum_package.rc file before running the current script'.format(command,path,edir))
+            #end if
+            execute('qp_edit -c '+edir)
+            os.chdir(cwd)
+        #end if
+        extra = self.extract_added_keys()
+        for secname,sec in self.iteritems():
+            secpath = os.path.join(epath,secname)
+            if not os.path.exists(secpath):
+                self.error('cannot write input\ninput section path does not exist\nsection path: {0}\nplease ensure that all variables were created previously for this ezfio directory\n(to create all variables, run "qp_edit -c {1}")'.format(secpath,edir))
+            #end if
+            for varname,val in sec.iteritems():
+                vpath = os.path.join(secpath,varname)
+                write_qp_value(vpath,val)
+            #end for
+        #end for
+        self.restore_added_keys(extra)
+        return ''
+    #end def write
+
+
     def read_text(self,text,filepath=None):
         self.not_implemented()
     #end def read_text
@@ -301,6 +395,9 @@ class QuantumPackageInput(SimulationInput):
 
     def check_valid(self,sections=True,variables=True,types=True,exit=True):
         msg = ''
+
+        extra = self.extract_added_keys()
+
         valid_types = {float:(int,float)}
         if sections:
             for secname,sec in self.iteritems():
@@ -326,7 +423,8 @@ class QuantumPackageInput(SimulationInput):
                                     vtype = valid_types[vtype]
                                 #end if
                                 if not isinstance(var,vtype):
-                                    msg = 'input is invalid\nvariable "{0}" in section "{1}" must be of type {2}\ntype provided: {3}\nvalue provided: {4}'.format(varname,secname,vtype,var.__class__.__name__,var)
+                                    type_map = {bool:'bool',int:'int',float:'float',str:'str'}
+                                    msg = 'input is invalid\nvariable "{0}" in section "{1}" must be of type {2}\ntype provided: {3}\nvalue provided: {4}'.format(varname,secname,type_map[vtype],var.__class__.__name__,var)
                                 #end if
                             #end if
                         #end if
@@ -344,6 +442,9 @@ class QuantumPackageInput(SimulationInput):
         if not is_valid and exit:
             self.error(msg)
         #end if
+
+        self.restore_added_keys(extra)
+
         return is_valid
     #end check_valid
 
@@ -356,19 +457,49 @@ class QuantumPackageInput(SimulationInput):
 
 
 
+gen_kw_required = set('''
+    system
+    '''.split())
+gen_kw_optional = obj(
+    validate = True,
+    )
+gen_kw_types = obj(
+    system   = PhysicalSystem,
+    validate = bool,
+    )
+
 def generate_quantum_package_input(**kwargs):
 
     # make empty input
     qpi = QuantumPackageInput()
 
+    # read generation inputs (separate from input file variables)
+    kw  = obj(**kwargs)
+    gkw = obj()
+    for name,vtype in gen_kw_types.iteritems():
+        if name in kw:
+            val = kw.delete(name)
+            if isinstance(val,vtype):
+                gkw[name] = val
+            else:
+                QuantumPackage.class_error('cannot generate input\nvariable "{0}" has the wrong type\ntype required: {1}\ntype provided: {2}'.format(name,vtype.__name__,val.__class__.__name__))
+            #end if
+        #end if
+    #end for
+    gkw.set_optional(**gen_kw_optional)
+    req_missing = gen_kw_required-set(gkw.keys())
+    if len(req_missing)>0:
+        QuantumPackageInput.class_error('cannot generate input\nrequired variables are missing\nmissing variables: {0}\nplease supply values for these variables via generate_quantum_package'.format(sorted(req_missing)))
+    #end if
+
     # partition inputs into sections and variables
     sections = obj()
     variables = obj()
-    for name,value in kwargs.iteritems():
+    for name,value in kw.iteritems():
         is_sec = name in known_sections
         is_var = name in known_variables
         if is_sec and is_var:
-            if isinstance(value,section_types):
+            if isinstance(value,(obj,dict)):
                 sections[name] = value
             else:
                 variables[name] = value
@@ -381,13 +512,15 @@ def generate_quantum_package_input(**kwargs):
             QuantumPackageInput.class_error('cannot generate input\nencountered name that is not known as a section or variable\nunrecognized name provided: {0}\nvalid sections: {1}\nvalid variables: {2}'.format(name,sorted(known_sections),sorted(known_variables)))
         #end if
     #end for
+
     # assign sections
     for secname,sec in sections.iteritems():
         if isinstance(sec,(obj,dict)):
-            sec = Section(sec) # defer checking to validate
+            sec = Section(sec) # defer checking to check_valid
         #end if
         qpi[secname] = sec
     #end for
+
     # assign variables to sections
     for varname,var in variables.iteritems():
         if varname not in variable_section:
@@ -403,8 +536,20 @@ def generate_quantum_package_input(**kwargs):
         sec = qpi[secname][varname] = var
     #end for
 
+    # incorporate atomic and electronic structure
+    system = gkw.system
+    qpi.structure = system.structure.copy()
+    if 'electrons' not in qpi:
+        qpi.electrons = Section()
+    #end if
+    nup,ndn = system.particles.electron_counts()
+    qpi.electrons.elec_alpha_num = nup
+    qpi.electrons.elec_beta_num  = ndn
+
     # validate the input
-    qpi.validate()
+    if gkw.validate:
+        qpi.check_valid()
+    #end if
 
     return qpi
 #end def generate_quantum_package_input
