@@ -416,8 +416,11 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV, typename GV, typename GGV>
-  void assign_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+  void assign_vgh(const PointType& r, VV& psi, GV& dpsi, GGV& grad_grad_psi, int first = 0, int last = -1) const
   {
+    // protect last
+    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
              g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
              g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
@@ -437,10 +440,8 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict h12=myH.data(4);
     const ST* restrict h22=myH.data(5);
 
-    const size_t N=kPoints.size();
-
     #pragma omp simd
-    for (size_t j=0; j<N; ++j)
+    for (size_t j=first; j<last; ++j)
     {
       int jr=j<<1;
       int ji=jr+1;
@@ -515,9 +516,18 @@ struct SplineC2CSoA: public SplineAdoptorBase<ST,3>
   {
     const PointType& r=P.activeR(iat);
     PointType ru(PrimLattice.toUnit_floor(r));
-    spline2::evaluate3d_vgh(SplineInst->spline_m,ru,myV,myG,myH);
-    assign_vgh(r,psi,dpsi,grad_grad_psi);
-    //missing
+
+    #pragma omp parallel
+    {
+      int first, last;
+      FairDivideAligned(myV.size(), getAlignment<ST>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
+
+      spline2::evaluate3d_vgh(SplineInst->spline_m,ru,myV,myG,myH,first,last);
+      assign_vgh(r,psi,dpsi,grad_grad_psi,first/2,last/2);
+    }
   }
 };
 
