@@ -50,12 +50,6 @@ void LCAOrbitalSetWithCorrection::evaluate(
   cusp.add_vector_vgl(P, iat, psi, dpsi, d2psi);
 }
 
-void LCAOrbitalSetWithCorrection::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t vgl)
-{
-  LCAOrbitalSet::evaluateVGL(P, iat, vgl);
-  cusp.addVGL(P, iat, vgl);
-}
-
 void LCAOrbitalSetWithCorrection::evaluateValues(const VirtualParticleSet& VP,
                                                  ValueMatrix_t& psiM,
                                                  ValueAlignedVector_t& SPOMem)

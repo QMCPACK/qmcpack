@@ -108,8 +108,6 @@ namespace qmcplusplus
 
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
 
-    void evaluateVGL(const ParticleSet& P, int iat, VGLVector_t vgl);
-
     void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem);
 
     size_t estimateMemory(const int nP);

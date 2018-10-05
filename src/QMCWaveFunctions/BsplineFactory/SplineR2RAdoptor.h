@@ -227,25 +227,6 @@ public:
         psi[psiIndex]=myV[j];
   }
 
-  inline TT evaluate_dot(const ParticleSet& P, const int iat, const TT* restrict arow, ST* scratch, bool compute_spline=true)
-  {
-    Vector<ST> vtmp(scratch,myV.size());
-    PointType ru;
-    int bc_sign=convertPos(P.activeR(iat),ru);
-    if(compute_spline) SplineInst->evaluate(ru,vtmp);
-
-    TT res=TT();
-    if (bc_sign & 1)
-      #pragma omp simd reduction(+:res)
-      for(size_t psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
-        res -= vtmp[psiIndex-first_spo]*arow[psiIndex];
-    else
-      #pragma omp simd reduction(+:res)
-      for(size_t psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
-        res += vtmp[psiIndex-first_spo]*arow[psiIndex];
-    return res;
-  }
-
   template<typename VV>
   inline void evaluate_v(const ParticleSet& P, const int iat, VV& psi)
   {
@@ -360,74 +341,6 @@ public:
     int bc_sign=convertPos(r,ru);
     SplineInst->evaluate_vgh(ru,myV,myG,myH);
     assign_vgl(bc_sign,psi,dpsi,d2psi);
-  }
-
-  /** identical to assign_vgl but the output container is SoA container
-   */
-  template<typename VGL>
-  inline void assign_vgl_soa(int bc_sign, VGL& vgl)
-  {
-    const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
-             g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
-             g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
-    const ST symGG[6]={GGt[0],GGt[1]+GGt[3],GGt[2]+GGt[6],GGt[4],GGt[5]+GGt[7],GGt[8]};
-
-    const ST* restrict g0=myG.data(0);
-    const ST* restrict g1=myG.data(1);
-    const ST* restrict g2=myG.data(2);
-    const ST* restrict h00=myH.data(0);
-    const ST* restrict h01=myH.data(1);
-    const ST* restrict h02=myH.data(2);
-    const ST* restrict h11=myH.data(3);
-    const ST* restrict h12=myH.data(4);
-    const ST* restrict h22=myH.data(5);
-
-    TT* restrict psi =vgl.data(0)+first_spo; ASSUME_ALIGNED(psi);
-    TT* restrict vg_x=vgl.data(1)+first_spo; ASSUME_ALIGNED(vg_x);
-    TT* restrict vg_y=vgl.data(2)+first_spo; ASSUME_ALIGNED(vg_y);
-    TT* restrict vg_z=vgl.data(3)+first_spo; ASSUME_ALIGNED(vg_z);
-    TT* restrict vl_l=vgl.data(4)+first_spo; ASSUME_ALIGNED(vl_l);
-
-    const size_t N=last_spo-first_spo;
-    if (bc_sign & 1)
-    {
-      #pragma omp simd
-      for(int j=0; j<N; ++j)
-      {
-        psi [j]=-myV[j];
-        vg_x[j]=-(g00*g0[j]+g01*g1[j]+g02*g2[j]);
-        vg_y[j]=-(g10*g0[j]+g11*g1[j]+g12*g2[j]);
-        vg_z[j]=-(g20*g0[j]+g21*g1[j]+g22*g2[j]);
-        vl_l[j]=-SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
-      }
-    }
-    else
-    {
-      #pragma omp simd
-      for(int j=0; j<N; ++j)
-      {
-        psi [j]=myV[j];
-        vg_x[j]=(g00*g0[j]+g01*g1[j]+g02*g2[j]);
-        vg_y[j]=(g10*g0[j]+g11*g1[j]+g12*g2[j]);
-        vg_z[j]=(g20*g0[j]+g21*g1[j]+g22*g2[j]);
-        vl_l[j]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
-      }
-    }
-  }
-
-  /** evaluate VGL using VectorSoaContainer
-   * @param r position
-   * @param psi value container
-   * @param dpsi gradient-laplacian container
-   */
-  template<typename VGL>
-  inline void evaluate_vgl_combo(const ParticleSet& P, const int iat, VGL& vgl)
-  {
-    const PointType& r=P.activeR(iat);
-    PointType ru;
-    int bc_sign=convertPos(r,ru);
-    SplineInst->evaluate_vgh(ru,myV,myG,myH);
-    assign_vgl_soa(bc_sign,vgl);
   }
 
   template<typename VV, typename GV, typename GGV>
