@@ -223,18 +223,42 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const PointType& r=P.activeR(iat);
     PointType ru;
     int bc_sign=convertPos(r,ru);
-    spline2::evaluate3d(SplineInst->spline_m,ru,myV);
-    assign_v(bc_sign,myV,psi);
+
+    #pragma omp parallel
+    {
+      int first, last;
+      FairDivideAligned(myV.size(), getAlignment<ST>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
+
+      spline2::evaluate3d(SplineInst->spline_m,ru,myV,first,last);
+      assign_v(bc_sign,myV,psi,first,last);
+    }
   }
 
   template<typename VM, typename VAV>
   inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM, VAV& SPOMem)
   {
-    const size_t m=psiM.cols();
-    for(int iat=0; iat<VP.getTotalNum(); ++iat)
+    #pragma omp parallel
     {
-      Vector<TT> psi(psiM[iat],m);
-      evaluate_v(VP,iat,psi);
+      int first, last;
+      FairDivideAligned(myV.size(), getAlignment<ST>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
+
+      const size_t m=psiM.cols();
+      for(int iat=0; iat<VP.getTotalNum(); ++iat)
+      {
+        const PointType& r=VP.activeR(iat);
+        PointType ru;
+        int bc_sign=convertPos(r,ru);
+        Vector<TT> psi(psiM[iat],m);
+
+        spline2::evaluate3d(SplineInst->spline_m,ru,myV,first,last);
+        assign_v(bc_sign,myV,psi,first,last);
+      }
     }
   }
 
@@ -302,8 +326,18 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const PointType& r=P.activeR(iat);
     PointType ru;
     int bc_sign=convertPos(r,ru);
-    spline2::evaluate3d_vgh(SplineInst->spline_m,ru,myV,myG,myH);
-    assign_vgl(bc_sign,psi,dpsi,d2psi);
+
+    #pragma omp parallel
+    {
+      int first, last;
+      FairDivideAligned(myV.size(), getAlignment<ST>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
+
+      spline2::evaluate3d_vgh(SplineInst->spline_m,ru,myV,myG,myH,first,last);
+      assign_vgl(bc_sign,psi,dpsi,d2psi,first,last);
+    }
   }
 
   template<typename VV, typename GV, typename GGV>
@@ -370,8 +404,18 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const PointType& r=P.activeR(iat);
     PointType ru;
     int bc_sign=convertPos(r,ru);
-    spline2::evaluate3d_vgh(SplineInst->spline_m,ru,myV,myG,myH);
-    assign_vgh(bc_sign,psi,dpsi,grad_grad_psi);
+
+    #pragma omp parallel
+    {
+      int first, last;
+      FairDivideAligned(myV.size(), getAlignment<ST>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
+
+      spline2::evaluate3d_vgh(SplineInst->spline_m,ru,myV,myG,myH,first,last);
+      assign_vgh(bc_sign,psi,dpsi,grad_grad_psi,first,last);
+    }
   }
 };
 

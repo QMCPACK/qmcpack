@@ -308,7 +308,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
                         omp_get_thread_num(),
                         first, last);
 
-      const size_t m = psiM.cols();
+      const size_t m=psiM.cols();
       for(int iat=0; iat<VP.getTotalNum(); ++iat)
       {
         const PointType& r=VP.activeR(iat);
