@@ -206,14 +206,15 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV>
-  inline void assign_v(int bc_sign, const vContainer_type& myV, VV& psi)
+  inline void assign_v(int bc_sign, const vContainer_type& myV, VV& psi, int first = 0, int last = -1) const
   {
-    if (bc_sign & 1)
-      for(size_t psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
-        psi[psiIndex]=-myV[j];
-    else
-      for(size_t psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
-        psi[psiIndex]=myV[j];
+    // protect last
+    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+
+    const ST cone = (bc_sign &1)? -1:1;
+    #pragma omp simd
+    for(size_t j=first; j<last; ++j)
+      psi[first_spo+j]=cone*myV[j];
   }
 
   template<typename VV>
@@ -240,8 +241,12 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   inline size_t estimateMemory(const int nP) { return 0; }
 
   template<typename VV, typename GV>
-  inline void assign_vgl(int bc_sign, VV& psi, GV& dpsi, VV& d2psi)
+  inline void assign_vgl(int bc_sign, VV& psi, GV& dpsi, VV& d2psi, int first = 0, int last = -1) const
   {
+    // protect last
+    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+
+    const ST cone = (bc_sign &1)? -1:1;
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
              g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
              g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
@@ -257,31 +262,15 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict h12=myH.data(4);
     const ST* restrict h22=myH.data(5);
 
-    if (bc_sign & 1)
+    #pragma omp simd
+    for(size_t j=first; j<last; ++j)
     {
-      #pragma omp simd
-      for(size_t psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
-      {
-        const size_t j=psiIndex-first_spo;
-        psi[psiIndex]=-myV[j];
-        dpsi[psiIndex][0]=-(g00*g0[j]+g01*g1[j]+g02*g2[j]);
-        dpsi[psiIndex][1]=-(g10*g0[j]+g11*g1[j]+g12*g2[j]);
-        dpsi[psiIndex][2]=-(g20*g0[j]+g21*g1[j]+g22*g2[j]);
-        d2psi[psiIndex]=-SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
-      }
-    }
-    else
-    {
-      #pragma omp simd
-      for(size_t psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
-      {
-        const size_t j=psiIndex-first_spo;
-        psi[psiIndex]=myV[j];
-        dpsi[psiIndex][0]=(g00*g0[j]+g01*g1[j]+g02*g2[j]);
-        dpsi[psiIndex][1]=(g10*g0[j]+g11*g1[j]+g12*g2[j]);
-        dpsi[psiIndex][2]=(g20*g0[j]+g21*g1[j]+g22*g2[j]);
-        d2psi[psiIndex]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
-      }
+      const size_t psiIndex=first_spo+j;
+      psi[psiIndex]=cone*myV[j];
+      dpsi[psiIndex][0]=cone*(g00*g0[j]+g01*g1[j]+g02*g2[j]);
+      dpsi[psiIndex][1]=cone*(g10*g0[j]+g11*g1[j]+g12*g2[j]);
+      dpsi[psiIndex][2]=cone*(g20*g0[j]+g21*g1[j]+g22*g2[j]);
+      d2psi[psiIndex]=cone*SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
     }
   }
 
@@ -290,35 +279,20 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   template<typename VV, typename GV>
   inline void assign_vgl_from_l(int bc_sign, VV& psi, GV& dpsi, VV& d2psi)
   {
+    const ST cone = (bc_sign &1)? -1:1;
     const ST* restrict g0=myG.data(0);
     const ST* restrict g1=myG.data(1);
     const ST* restrict g2=myG.data(2);
 
-    if (bc_sign & 1)
+    #pragma omp simd
+    for(int psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
     {
-      #pragma omp simd
-      for(int psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
-      {
-        const size_t j=psiIndex-first_spo;
-        psi[psiIndex]=-myV[j];
-        dpsi[psiIndex][0]=-g0[j];
-        dpsi[psiIndex][1]=-g1[j];
-        dpsi[psiIndex][2]=-g2[j];
-        d2psi[psiIndex]=-myL[j];
-      }
-    }
-    else
-    {
-      #pragma omp simd
-      for(int psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
-      {
-        const size_t j=psiIndex-first_spo;
-        psi[psiIndex]=myV[j];
-        dpsi[psiIndex][0]=g0[j];
-        dpsi[psiIndex][1]=g1[j];
-        dpsi[psiIndex][2]=g2[j];
-        d2psi[psiIndex]=myL[j];
-      }
+      const size_t j=psiIndex-first_spo;
+      psi[psiIndex]=cone*myV[j];
+      dpsi[psiIndex][0]=cone*g0[j];
+      dpsi[psiIndex][1]=cone*g1[j];
+      dpsi[psiIndex][2]=cone*g2[j];
+      d2psi[psiIndex]=cone*myL[j];
     }
   }
 
@@ -333,8 +307,11 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV, typename GV, typename GGV>
-  void assign_vgh(int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+  void assign_vgh(int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi, int first = 0, int last = -1) const
   {
+    // protect last
+    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+
     const ST cone = (bc_sign &1)? -1:1;
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
              g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
@@ -350,10 +327,8 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict h12=myH.data(4);
     const ST* restrict h22=myH.data(5);
 
-    const size_t N=last_spo-first_spo;
-
     #pragma omp simd
-    for (size_t j=0; j<N; ++j)
+    for(size_t j=first; j<last; ++j)
     {
       //dot(PrimLattice.G,myG[j])
       const ST dX_r = g00*g0[j]+g01*g1[j]+g02*g2[j];
