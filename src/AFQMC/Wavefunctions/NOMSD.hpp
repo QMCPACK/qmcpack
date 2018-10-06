@@ -143,12 +143,6 @@ class NOMSD: public AFQMCInfo
     bool transposed_G_for_E() const { return transposed_G_for_E_; }
     bool transposed_vHS() const { return transposed_vHS_; }
 
-/*
-    const std::vector<PsiT_Matrix>& getOrbMat() { return OrbMats; }
-    int getOrbSize () { return 2*NMO; }
-    const std::vector<ComplexType>& getCiCoeff() { return ci; }
-*/
-
     template<class Vec>
     void vMF(Vec&& v);
 
