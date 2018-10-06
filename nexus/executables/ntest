@@ -1285,6 +1285,12 @@ def generic_extensions():
 
     o2 = oref.copy()
     o = obj()
+    o.move_from_optional(o2,keys=['b','c',(3,4,5),'alpha','beta'])
+    nassert(object_eq(o,osmall))
+    nassert(object_eq(o2,osmall2))
+
+    o2 = oref.copy()
+    o = obj()
     try:
         o.move_from(o2,keys=['a','x'])
         nfail()
@@ -1308,6 +1314,12 @@ def generic_extensions():
     o2 = oref.copy()
     o = obj()
     o2.move_to(o,keys=['b','c',(3,4,5)])
+    nassert(object_eq(o,osmall))
+    nassert(object_eq(o2,osmall2))
+
+    o2 = oref.copy()
+    o = obj()
+    o2.move_to_optional(o,keys=['b','c',(3,4,5),'alpha','beta'])
     nassert(object_eq(o,osmall))
     nassert(object_eq(o2,osmall2))
 
@@ -1370,7 +1382,63 @@ def generic_extensions():
         npass()
     #end try
 
-    
+    # test extract
+    nlabel('extract')
+    o = oref.copy()
+    o2 = o.extract()
+    nassert(len(o)==0)
+    nassert(object_eq(o2,oref))
+
+    o = oref.copy()
+    o2 = o.extract(['b','c',(3,4,5)])
+    nassert(object_eq(o2,osmall))
+    nassert(object_eq(o,osmall2))
+
+    o = oref.copy()
+    o2 = o.extract_optional(['b','c',(3,4,5),'alpha','beta'])
+    nassert(object_eq(o2,osmall))
+    nassert(object_eq(o,osmall2))
+
+
+    # test check_required
+    nlabel('check_required')
+    oref.check_required(['a','d',(3,4,5)])
+    try:
+        oref.check_required(['alpha','beta'])
+        nfail()
+    except:
+        npass()
+    #end try
+
+    # test check_types
+    nlabel('check_types')
+    types = dict(
+        a = int,
+        b = str,
+        c = tuple,
+        d = dict,
+        )
+    types[3,4,5] = tuple
+    oref.check_types(types)
+
+    types['b'] = int
+    try:
+        oref.check_types(types)
+        nfail()
+    except:
+        npass()
+    #end try
+
+    types['b'] = str
+    types['alpha'] = float
+    types['beta'] = list
+    try:
+        oref.check_types_optional(types)
+        npass()
+    except:
+        nfail()
+    #end try
+
     # test shallow_copy
     nlabel('shallow_copy')
     class DerivedObj(obj):
@@ -1392,6 +1460,7 @@ def generic_extensions():
     oi = do.inverse()
     nassert(sorted(oi.keys())==sorted(do.values()))
     nassert(sorted(oi.values())==sorted(do.keys()))
+
     nassert(oi[1]=='a')
     nassert(oi.b=='b')
     nassert(oi[1,1,1]=='c')

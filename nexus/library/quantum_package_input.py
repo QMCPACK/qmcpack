@@ -272,12 +272,94 @@ class Section(DevBase):
 
 class QuantumPackageInput(SimulationInput):
 
-    added_keys = ['structure']
+    added_keys = '''
+        structure
+        run_control
+        '''.split()
+
+    run_types = set('''
+        Gen_Ezfio_from_integral.sh
+        H_CORE_guess
+        Huckel_guess
+        SCF
+        SCF_old
+        analyze_wf
+        check_orthonormality
+        cis
+        create_ezfio.py
+        davidson_slave
+        densify_coefmatrix
+        diagonalize_restart_and_save_all_states
+        diagonalize_restart_and_save_lowest_state
+        diagonalize_restart_and_save_one_state
+        diagonalize_restart_and_save_two_states
+        dump_nto
+        dump_one_body_mos
+        fci_zmq
+        fci_zmq_nos
+        four_idx_transform
+        guess_doublet
+        guess_lowest_state
+        guess_singlet
+        guess_triplet
+        localize_mos
+        mo_permutation
+        overwrite_with_cas
+        print_H_matrix_restart
+        print_aos
+        print_bitmask
+        print_energy
+        print_hcc
+        print_holes_particles
+        print_integrals_ao
+        print_integrals_mo
+        print_mo_in_space
+        print_mulliken
+        print_spin_density
+        print_wf
+        provide_deltarho
+        pt2_slave
+        pt2_stoch
+        pyscf.main
+        qmc_create_wf
+        qmc_e_curve
+        qp_ao_ints
+        qp_convert_qmcpack_to_ezfio.py
+        read_ao_eri_chunk
+        read_integrals_achocol
+        read_integrals_achocol2
+        read_integrals_ao
+        read_integrals_mo
+        read_integrals_mo_chocol
+        save_HF_determinant
+        save_for_qmcchem
+        save_for_qmcpack
+        save_natorb
+        save_only_singles
+        save_ortho_mos
+        selection_davidson_slave
+        selection_slave
+        super_ci
+        swap_mos
+        target_pt2_qmc
+        target_pt2_ratio_zmq
+        target_pt2_zmq
+        test_integrals
+        test_two_body_dm
+        truncate_wf
+        truncate_wf_spin
+        '''.split())
+
+    slave_allowed = set('''
+        SCF
+        cis
+        fci_zmq
+        '''.split())
+
 
     def __init__(self,filepath=None):
-        for key in QuantumPackageInput.added_keys:
-            self[key] = None
-        #end for
+        self.structure   = None
+        self.run_control = obj()
         if filepath!=None:
             self.read(filepath)
         #end if
@@ -457,15 +539,60 @@ class QuantumPackageInput(SimulationInput):
 
 
 
-gen_kw_required = set('''
+run_inputs = set('''
+    run_type
+    sleep
+    postprocess
+    '''.split())
+gen_inputs = set('''
+    system
+    defaults
+    save_integrals
+    validate
+    '''.split())
+added_inputs = run_inputs | gen_inputs
+added_types = obj(
+    # run inputs
+    run_type       = str,
+    sleep          = (int,float),
+    postprocess    = (tuple,list),
+    # gen inputs
+    system         = PhysicalSystem,
+    defaults       = str,
+    save_integrals = bool,
+    validate       = bool,
+    )
+added_required = set('''
     system
     '''.split())
-gen_kw_optional = obj(
-    validate = True,
+qp_defaults_version = 'v1'
+shared_defaults = obj(
+    # run inputs
+    postprocess = [],
+    # gen inputs
+    validate    = True,
     )
-gen_kw_types = obj(
-    system   = PhysicalSystem,
-    validate = bool,
+qp_defaults = obj(
+    none = obj(
+        # gen inputs
+        save_integrals = False,
+        **shared_defaults
+        ),
+    v1 = obj(
+        # run inputs
+        sleep          = 30,
+        # gen inputs
+        save_integrals = True,
+        # qp inputs
+        n_det_max      = 5000,
+        **shared_defaults
+        ),
+    )
+save_ints_defaults = obj(
+    disk_access_ao_one_integrals = 'Write',
+    disk_access_mo_one_integrals = 'Write',
+    disk_access_ao_integrals     = 'Write',
+    disk_access_mo_integrals     = 'Write',
     )
 
 def generate_quantum_package_input(**kwargs):
@@ -473,24 +600,42 @@ def generate_quantum_package_input(**kwargs):
     # make empty input
     qpi = QuantumPackageInput()
 
-    # read generation inputs (separate from input file variables)
+    # rewrap keywords and apply defaults
     kw  = obj(**kwargs)
-    gkw = obj()
-    for name,vtype in gen_kw_types.iteritems():
-        if name in kw:
-            val = kw.delete(name)
-            if isinstance(val,vtype):
-                gkw[name] = val
-            else:
-                QuantumPackage.class_error('cannot generate input\nvariable "{0}" has the wrong type\ntype required: {1}\ntype provided: {2}'.format(name,vtype.__name__,val.__class__.__name__))
-            #end if
-        #end if
-    #end for
-    gkw.set_optional(**gen_kw_optional)
-    req_missing = gen_kw_required-set(gkw.keys())
+    kw.set_optional(defaults=qp_defaults_version)
+    if kw.defaults not in qp_defaults:
+        QuantumPackageInput.class_error('cannot generate input\nrequested invalid default set\ndefault set requested: {0}\nvalid options are: {1}'.format(kw.defaults,sorted(qp_defaults.keys())))
+    #end if
+    kw.set_optional(**qp_defaults[kw.defaults])
+    if kw.save_integrals:
+        kw.set_optional(**save_ints_defaults)
+    #end if
+
+    # check for required variables
+    req_missing = kw.check_required(added_inputs,exit=False)
     if len(req_missing)>0:
         QuantumPackageInput.class_error('cannot generate input\nrequired variables are missing\nmissing variables: {0}\nplease supply values for these variables via generate_quantum_package'.format(sorted(req_missing)))
     #end if
+
+    # check types of added variables
+    name,vtype = kw.check_types_optional(added_types,exit=False)
+    if name is not None:
+        QuantumPackageInput.class_error('cannot generate input\nvariable "{0}" has the wrong type\ntype required: {1}\ntype provided: {2}'.format(name,vtype.__name__,kw[name].__class__.__name__))
+    #end if
+
+    # separate run inputs from input file variables
+    run_kw = kw.extract_optional(run_inputs)
+    if run_kw.run_type not in QuantumPackageInput.run_types:
+        valid = ''
+        for rt in sorted(QuantumPackageInput.run_types):
+            valid += '  '+rt+'\n'
+        #end for
+        QuantumPackageInput.class_error('cannot generate input\ninvalid run_type requested\nrun_type provided: {0}\nvalid options are:\n{1}'.format(run_kw.run_type,valid))
+    #end if
+    qpi.run_control.set(**run_kw)
+
+    # separate generation inputs from input file variables
+    gen_kw = kw.extract_optional(gen_inputs)
 
     # partition inputs into sections and variables
     sections = obj()
@@ -537,7 +682,7 @@ def generate_quantum_package_input(**kwargs):
     #end for
 
     # incorporate atomic and electronic structure
-    system = gkw.system
+    system = gen_kw.system
     qpi.structure = system.structure.copy()
     if 'electrons' not in qpi:
         qpi.electrons = Section()
@@ -547,7 +692,7 @@ def generate_quantum_package_input(**kwargs):
     qpi.electrons.elec_beta_num  = ndn
 
     # validate the input
-    if gkw.validate:
+    if gen_kw.validate:
         qpi.check_valid()
     #end if
 

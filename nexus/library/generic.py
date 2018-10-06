@@ -750,7 +750,7 @@ class obj(object_interface):
     #end def add_optional
 
     def transfer_from(self,other,keys=None,copy=False,overwrite=True):
-        if keys==None:
+        if keys is None:
             if isinstance(other,object_interface):
                 keys = other._keys()
             else:
@@ -776,7 +776,7 @@ class obj(object_interface):
     #end def transfer_from
 
     def transfer_to(self,other,keys=None,copy=False,overwrite=True):
-        if keys==None:
+        if keys is None:
             keys = self._keys()
         #end if
         if copy:
@@ -797,29 +797,55 @@ class obj(object_interface):
         #end if
     #end def transfer_to
 
-    def move_from(self,other,keys=None):
-        if keys==None:
+    def move_from(self,other,keys=None,optional=False):
+        if keys is None:
             if isinstance(other,object_interface):
                 keys = other._keys()
             else:
                 keys = other.keys()
             #end if
         #end if
-        for k in keys:
-            self[k]=other[k]
-            del other[k]
-        #end for
+        if not optional:
+            for k in keys:
+                self[k]=other[k]
+                del other[k]
+            #end for
+        else:
+            for k in keys:
+                if k in other:
+                    self[k]=other[k]
+                    del other[k]
+                #end if
+            #end for
+        #end if
     #end def move_from
 
-    def move_to(self,other,keys=None):
-        if keys==None:
+    def move_to(self,other,keys=None,optional=False):
+        if keys is None:
             keys = self._keys()
         #end if
-        for k in keys:
-            other[k]=self[k]
-            del self[k]
-        #end for
+        if not optional:
+            for k in keys:
+                other[k]=self[k]
+                del self[k]
+            #end for
+        else:
+            for k in keys:
+                if k in self:
+                    other[k]=self[k]
+                    del self[k]
+                #end if
+            #end for
+        #end if
     #end def move_to
+
+    def move_from_optional(self,other,keys=None):
+        self.move_from(other,keys,optional=True)
+    #end def move_from_optional
+
+    def move_to_optional(self,other,keys=None):
+        self.move_to(other,keys,optional=True)
+    #end def move_to_optional
 
     def copy_from(self,other,keys=None,deep=True):
         obj.transfer_from(self,other,keys,copy=deep)
@@ -828,6 +854,57 @@ class obj(object_interface):
     def copy_to(self,other,keys=None,deep=True):
         obj.transfer_to(self,other,keys,copy=deep)
     #end def copy_to
+
+    def extract(self,keys=None,optional=False):
+        ext = obj()
+        ext.move_from(self,keys,optional=optional)
+        return ext
+    #end def extract
+
+    def extract_optional(self,keys=None):
+        return self.extract(keys,optional=True)
+    #end def extract_optional
+
+    def check_required(self,keys,exit=True):
+        if not isinstance(keys,set):
+            keys = set(keys)
+        #end if
+        missing = keys-set(self.keys())
+        if exit and len(missing)>0:
+            self._error('required keys are missing\nmissing keys: {0}'.format(sorted(missing)))
+        #end if
+        return missing
+    #end def check_required
+
+    def check_types(self,types,optional=False,exit=True):
+        kfail = None
+        tfail = None
+        if not optional:
+            for k,t in types.iteritems():
+                if not isinstance(self[k],t):
+                    kfail = k
+                    tfail = t
+                    break
+                #end if
+            #end for
+        else:
+            for k,t in types.iteritems():
+                if k in self and not isinstance(self[k],t):
+                    kfail = k
+                    tfail = t
+                    break
+                #end if
+            #end for
+        #end if
+        if exit and kfail is not None:
+            self._error('incorrect type encountered for key value\ntype required: {0}\ntype encountered: {1}\ninvalid key: {2}'.format(tfail.__name__,self[kfail].__class__.__name__,kfail))
+        #end if
+        return kfail,tfail
+    #end def check_types
+
+    def check_types_optional(self,types,exit=True):
+        return self.check_types(types,exit=exit,optional=True)
+    #end def check_types_optional
 
     def shallow_copy(self):
         new = self.__class__()
@@ -917,7 +994,6 @@ class obj(object_interface):
     #end def serial
 
 
-
     # access preserving functions
     #  list interface
     def _append(self,*args,**kwargs):
@@ -973,10 +1049,24 @@ class obj(object_interface):
         obj.move_from(self,*args,**kwargs)
     def _move_to(self,*args,**kwargs):
         obj.move_to(self,*args,**kwargs)
+    def _move_from_optional(self,*args,**kwargs):
+        obj.move_from_optional(self,*args,**kwargs)
+    def _move_to_optional(self,*args,**kwargs):
+        obj.move_to_optional(self,*args,**kwargs)
     def _copy_from(self,*args,**kwargs):
         obj.copy_from(self,*args,**kwargs)
     def _copy_to(self,*args,**kwargs):
         obj.copy_to(self,*args,**kwargs)
+    def _extract(self,*args,**kwargs):
+        obj.extract(self,*args,**kwargs)
+    def _extract_optional(self,*args,**kwargs):
+        obj.extract_optional(self,*args,**kwargs)
+    def _check_required(self,*args,**kwargs):
+        obj.check_required(self,*args,**kwargs)
+    def _check_types(self,*args,**kwargs):
+        obj.check_types(self,*args,**kwargs)
+    def _check_types_optional(self,*args,**kwargs):
+        obj.check_types_optional(self,*args,**kwargs)
     def _shallow_copy(self,*args,**kwargs):
         obj.shallow_copy(self,*args,**kwargs)
     def _inverse(self,*args,**kwargs):

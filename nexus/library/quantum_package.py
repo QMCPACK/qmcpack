@@ -29,7 +29,8 @@ class QuantumPackage(Simulation):
     input_type         = QuantumPackageInput
     analyzer_type      = QuantumPackageAnalyzer
     generic_identifier = 'qp'
-    application        = 'quantum_package' 
+    infile_extension   = '.ezfio'
+    application        = 'qp_run'
     application_properties = set(['serial','mpi'])
     application_results    = set([]) 
 
@@ -93,9 +94,11 @@ def generate_quantum_package(**kwargs):
     sim_args,inp_args = QuantumPackage.separate_inputs(kwargs)
 
     if not 'input' in sim_args:
-        input_type = inp_args.input_type
-        del inp_args.input_type
-        sim_args.input = generate_quantum_package_input(input_type,**inp_args)
+        if 'input_type' in inp_args:
+            input_type = inp_args.input_type
+            del inp_args.input_type
+        #end if
+        sim_args.input = generate_quantum_package_input(**inp_args)
     #end if
     qp = QuantumPackage(**sim_args)
 
