@@ -3977,6 +3977,8 @@ class Structure(Sobj):
         if len(lines)>1:
             ntot = int(lines[0].strip())
             natoms = 0
+            e = None
+            p = None
             try:
                 tokens = lines[1].split()
                 if len(tokens)==4:
@@ -3984,8 +3986,7 @@ class Structure(Sobj):
                     p = array(tokens[1:],float)
                 #end if
             except:
-                e = None
-                p = None
+                None
             #end try
             if p is not None:
                 elem.append(e)
