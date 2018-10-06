@@ -61,21 +61,6 @@ class dummy_wavefunction
     return false; 
   }
 
-/*
-  const std::vector<PsiT_Matrix>& getOrbMat() {
-    throw std::runtime_error("calling visitor on dummy_wavefunction object");  
-    return orbs; 
-  } 
-  int getOrbSize () { 
-    throw std::runtime_error("calling visitor on dummy_wavefunction object");  
-    return 0; 
-  }
-  const std::vector<ComplexType>& getCiCoeff() { 
-    throw std::runtime_error("calling visitor on dummy_wavefunction object");  
-    return ci; 
-  }
-*/
-
   bool transposed_G_for_vbias() const { 
     throw std::runtime_error("calling visitor on dummy_wavefunction object");
     return false; 
@@ -219,31 +204,6 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD>
             *this
         );
     }
-
-
-
-/*
-    std::vector<PsiT_Matrix> const& getOrbMat() const {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.getOrbMat();},
-            *this
-        );
-    }
-
-    std::vector<ComplexType> const& getCiCoeff() const {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.getCiCoeff();},
-            *this
-        );
-    }
-
-    int getOrbSize () const {
-        return boost::apply_visitor(
-            [&](auto&& a){return a.getOrbSize();},
-            *this
-        );
-    }
-*/
 
     template<class... Args>
     void vMF(Args&&... args) {
