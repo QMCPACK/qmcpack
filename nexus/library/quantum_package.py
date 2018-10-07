@@ -83,6 +83,13 @@ class QuantumPackage(Simulation):
 
 
     def app_command(self):
+        job = self.job
+        if job.full_command is None:
+            machine = job.get_machine()
+            app_launcher = machine.launcher
+        #end if
+        print 'working on app_command in quantum_package.py'
+        exit()
         return ''
     #end def app_command
 

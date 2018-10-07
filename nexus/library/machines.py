@@ -176,123 +176,123 @@ class Job(NexusCore):
 
 
     def __init__(self,
-                 name         = 'jobname',
-                 type         = None,
-                 directory    = None,
-                 sub_dir      = None,
-                 app_name     = None, # name of/path to application
-                 app_flags    = None,
-                 app_command  = None,
-                 app_props    = None,
-                 app          = None, # name of/path to application
-                 env          = None,
-                 user_env     = True, # import user environment
-                 presub       = '',   # shell text executed just prior to submission
-                 postsub      = '',   # shell text executed just after submission
-                 outfile      = None,
-                 errfile      = None,
-                 mode         = None,
-                 machine      = None,
-                 account      = None,
-                 queue        = None,
-                 bundled_jobs = None,
-                 relative     = False,
-                 cores        = None, # number of cores for the job
-                 nodes        = None, # number of nodes for the job
-                 threads      = 1,    # number of openmp threads for the job
-                 hyperthreads = None,
-                 ppn          = None,
-                 compiler     = None,
-                 override     = None,
-                 options      = None,
-                 app_options  = None,
-                 run_options  = None,
-                 sub_options  = None,
-                 serial       = False, # run job serially, no mpi
-                 local        = False, # run job locally, no queue submission
-                 days         = 0,
-                 hours        = 0,
-                 minutes      = 0,
-                 seconds      = 0,
-                 subfile      = None,
-                 grains       = None,
-                 procs        = None,
-                 processes    = None,
+                 name               = 'jobname',
+                 type               = None,
+                 directory          = None,
+                 sub_dir            = None,
+                 app_name           = None, # name of/path to application
+                 app_flags          = None,
+                 app_command        = None, # command used to launch application
+                 app_props          = None,
+                 app                = None, # name of/path to application
+                 full_command       = None, # custom command including e.g. mpirun
+                 env                = None,
+                 user_env           = True, # import user environment
+                 presub             = '',   # shell text executed just prior to submission
+                 postsub            = '',   # shell text executed just after submission
+                 outfile            = None,
+                 errfile            = None,
+                 mode               = None,
+                 machine            = None,
+                 account            = None,
+                 queue              = None,
+                 bundled_jobs       = None,
+                 relative           = False,
+                 cores              = None, # number of cores for the job
+                 nodes              = None, # number of nodes for the job
+                 threads            = 1,    # number of openmp threads for the job
+                 hyperthreads       = None,
+                 ppn                = None,
+                 compiler           = None,
+                 options            = None,
+                 app_options        = None,
+                 run_options        = None,
+                 sub_options        = None,
+                 serial             = False, # run job serially, no mpi
+                 local              = False, # run job locally, no queue submission
+                 days               = 0,
+                 hours              = 0,
+                 minutes            = 0,
+                 seconds            = 0,
+                 subfile            = None,
+                 grains             = None,
+                 procs              = None,
+                 processes          = None,
                  processes_per_proc = None,
                  processes_per_node = None,
-                 email        = None,
-                 constraint   = None, # slurm specific, Cori
-                 fake         = False,
+                 email              = None,
+                 constraint         = None, # slurm specific, Cori
+                 fake               = False,
                  ):
 
-        self.directory   = directory
-        self.subdir      = sub_dir
-        self.app_name    = app_name
-        self.app_command = app_command
-        self.app_props   = app_props
-        self.outfile     = outfile
-        self.errfile     = errfile
-        self.user_env    = user_env
-        self.presub      = presub
-        self.postsub     = postsub
-        self.name        = name
-        self.type        = type
-        self.queue       = queue
-        self.bundled_jobs= bundled_jobs
-        self.relative    = relative
-        self.cores       = cores
-        self.nodes       = nodes
-        self.threads     = threads
-        self.hyperthreads= hyperthreads
-        self.ppn         = ppn
-        self.compiler    = compiler
-        self.override    = override
-        self.app_options = Options()
-        self.run_options = Options()
-        self.sub_options = Options()
-        self.serial      = serial
-        self.local       = local
-        self.days        = days
-        self.hours       = hours
-        self.minutes     = minutes
-        self.seconds     = seconds
-        self.subfile     = subfile
-        self.grains      = grains
-        self.procs       = procs
-        self.processes   = processes
+        self.directory    = directory
+        self.subdir       = sub_dir
+        self.app_name     = app_name
+        self.app_command  = app_command
+        self.app_props    = app_props
+        self.full_command = full_command
+        self.outfile      = outfile
+        self.errfile      = errfile
+        self.user_env     = user_env
+        self.presub       = presub
+        self.postsub      = postsub
+        self.name         = name
+        self.type         = type
+        self.queue        = queue
+        self.bundled_jobs = bundled_jobs
+        self.relative     = relative
+        self.cores        = cores
+        self.nodes        = nodes
+        self.threads      = threads
+        self.hyperthreads = hyperthreads
+        self.ppn          = ppn
+        self.compiler     = compiler
+        self.app_options  = Options()
+        self.run_options  = Options()
+        self.sub_options  = Options()
+        self.serial       = serial
+        self.local        = local
+        self.days         = days
+        self.hours        = hours
+        self.minutes      = minutes
+        self.seconds      = seconds
+        self.subfile      = subfile
+        self.grains       = grains
+        self.procs        = procs
+        self.processes    = processes
         self.processes_per_proc = processes_per_proc
         self.processes_per_node = processes_per_node        
-        self.account     = account
-        self.email       = email
-        self.constraint  = constraint
-        self.internal_id = None
-        self.system_id   = None
-        self.tot_cores   = None
-        self.identifier  = None
-        self.submitted   = False
-        self.status      = self.states.none
-        self.crashed     = False
-        self.overtime    = False
-        self.successful  = False
-        self.finished    = False
-        self.fake_job    = fake
+        self.account      = account
+        self.email        = email
+        self.constraint   = constraint
+        self.internal_id  = None
+        self.system_id    = None
+        self.tot_cores    = None
+        self.identifier   = None
+        self.submitted    = False
+        self.status       = self.states.none
+        self.crashed      = False
+        self.overtime     = False
+        self.successful   = False
+        self.finished     = False
+        self.fake_job     = fake
 
-        if app != None:
+        if app is not None:
             self.app_name = app
         #end if
-        if app_options != None:
+        if app_options is not None:
             self.app_options.read(app_options)
         #end if
-        if run_options != None:
+        if run_options is not None:
             self.run_options.read(run_options)
         #end if
-        if sub_options != None:
+        if sub_options is not None:
             self.sub_options.read(sub_options)
         #end if
-        if app_flags != None:
+        if app_flags is not None:
             self.app_options.read(app_flags)
         #end if
-        if options != None:
+        if options is not None:
             self.run_options.read(options)
         #end if
         if env is None:
@@ -301,10 +301,10 @@ class Job(NexusCore):
             self.set_environment(**env)
         #end if
 
-        if app_props==None:
+        if app_props is None:
             self.app_props = []
         #end if
-        if compiler!=None:
+        if compiler is not None:
             if compiler in self.intel_compilers:
                 self.compiler = 'intel'
             elif compiler in self.gnu_compilers:
@@ -321,7 +321,7 @@ class Job(NexusCore):
             self.nodes = None
         #end if
 
-        if machine!=None:
+        if machine is not None:
             self.machine = machine
         #end if
         #check that the machine exists and have it complete the job info
@@ -330,7 +330,7 @@ class Job(NexusCore):
         machine = self.get_machine() 
         self.batch_mode = machine.in_batch_mode()
 
-        if bundled_jobs!=None and not machine.batch_capable:
+        if bundled_jobs is not None and not machine.batch_capable:
             self.error('running batched/bundled jobs on {0} is either not possible or not yet implemented, sorry.'.format(machine.name))
         #end if
 
@@ -351,6 +351,14 @@ class Job(NexusCore):
     #end def process
 
 
+    def process_options(self,machine=None):
+        if machine is None:
+            machine = self.get_machine()
+        #end if
+        machine.process_job_options(self)
+    #end def process_options
+
+
     def initialize(self,sim):
         self.set_id()
         self.identifier = sim.identifier
@@ -361,7 +369,7 @@ class Job(NexusCore):
         #end if
         if self.directory is None:
             self.directory = sim.locdir
-            self.abs_dir    = os.path.abspath(sim.locdir)
+            self.abs_dir   = os.path.abspath(sim.locdir)
         elif self.abs_dir is None:
             self.abs_dir = os.path.abspath(self.directory)
         #end if
@@ -394,10 +402,10 @@ class Job(NexusCore):
         #end if
         sim.set_app_name(app_name)
         self.set(
-            name        = sim.identifier,
-            simid       = sim.simid,
-            outfile     = sim.outfile,
-            errfile     = sim.errfile
+            name    = sim.identifier,
+            simid   = sim.simid,
+            outfile = sim.outfile,
+            errfile = sim.errfile
             )
         if self.app_command is None:
             self.app_command = sim.app_command()
@@ -510,8 +518,8 @@ class Job(NexusCore):
     def run_command(self,launcher,redirect=False):
         c = ''
         if self.bundled_jobs is None:
-            if isinstance(self.override,str):
-                c = self.override
+            if self.full_command is not None:
+                c = self.full_command
             else:
                 if self.app_command is None:
                     self.error('app_command has not been provided')
@@ -901,6 +909,10 @@ class Machine(NexusCore):
         self.not_implemented()
     #end def process_job
 
+    def process_job_options(self,job):
+        self.not_implemented()
+    #end def process_job_options
+
     def write_job(self,job,file=False):
         self.not_implemented()
     #end def write_job
@@ -1019,8 +1031,13 @@ class Workstation(Machine):
         job.grains = grains
         job.cores = grains*self.process_granularity
 
-        job.run_options.add(np='-np '+str(job.processes))
+        self.process_job_options(job)
     #end def process_job
+
+
+    def process_job_options(self,job):
+        job.run_options.add(np='-np '+str(job.processes))
+    #end def process_job_options
 
 
     def write_job_states(self,title=''):
@@ -1474,6 +1491,11 @@ class Supercomputer(Machine):
 
         job.set_environment(OMP_NUM_THREADS=job.threads)
 
+        self.process_job_options(job)
+    #end def process_job
+
+
+    def process_job_options(self,job):
         launcher = self.app_launcher
         if launcher=='mpirun':
             job.run_options.add(np='-np '+str(job.processes))
@@ -1519,7 +1541,7 @@ class Supercomputer(Machine):
         else:
             self.error(launcher+' is not yet implemented as an application launcher')
         #end if
-    #end def process_job
+    #end def process_job_options
 
 
     def process_job_extra(self,job):

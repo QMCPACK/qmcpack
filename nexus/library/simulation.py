@@ -402,6 +402,7 @@ class Simulation(NexusCore):
         self.infile         = None
         self.outfile        = None
         self.errfile        = None
+        self.bundleable     = True
         self.bundled        = False
         self.bundler        = None
         self.fake_sim       = Simulation.creating_fake_sims
