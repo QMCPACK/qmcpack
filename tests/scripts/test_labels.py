@@ -3,6 +3,7 @@
 import sys
 import traceback
 
+
 def error(msg=None):
     if msg is None:
         sys.stdout.write(traceback.format_exc())
@@ -11,6 +12,7 @@ def error(msg=None):
     #end if
     sys.exit(1)
 #end def error
+
 
 
 # label descriptions
@@ -47,23 +49,23 @@ def error(msg=None):
 #                       statistical failure means: prioritize quality assessment
 #     (good/poor/unknown are exclusive and comprehensive for all tests)
 #
-#   a failing test is put into one or more of the following categories
-#   all other failure categories are determined only by these
+#   put failing tests into the following categories (these determine the others)
 #     unsupported
 #     hard_fail
 #     abort
+#     check_fail
+#     reference_stat_fail
 #     definite_stat_fail
 #     intermittent_stat_fail
-#     check_fail
 #     deterministic_fail
 #     poor_test
-
+#
 # main actions for developers and corresponding categories
 #   fix known bugs in QMCPACK  - identified by label "bug"
 #   fix poor tests             - identified by label "poor_test"
-#   investigate failure causes - identified by label "cause_unknown"
 #   assess test quality        - identified by label "quality_unknown"
-
+#   investigate failure causes - identified by label "cause_unknown"
+#                                run reference-level statistical test in this case
 
 def create_label_sets():
 
@@ -106,7 +108,6 @@ def create_label_sets():
         'short-diamondC_1x1x1_pp-dmc-estimator-density',
         'short-diamondC_1x1x1_pp-dmc-estimator-spindensity',
         ])
-
 
     # aos specific (but general otherwise)
     if aos:
@@ -167,10 +168,13 @@ def create_label_sets():
         None
     #end if
 
+    # derive all other sets from the primary sets
 
+    # weak failures: insufficient to tell if there is a bug
     weak_fail   = intermittent_stat_fail \
                 | deterministic_fail
 
+    # strong failures: sufficient to tell if there is a bug
     strong_fail = hard_fail           \
                 | abort               \
                 | check_fail          \
@@ -179,10 +183,17 @@ def create_label_sets():
 
     fail = weak_fail | strong_fail
 
+    # a test is unstable if it fails for any reason
     unstable = fail | poor_test | unsupported
 
+    # a failure is a bug if it is a strong failure (strong fail => bug)
+    #   intermittent failures imply bugs only with verified good test data
     bug = strong_fail | (good_test & intermittent_stat_fail)
 
+    # a failing test needs to be followed up with a reference-level statistical test
+    #   if it is insufficient on its own to imply a bug
+    # currently this includes intermittent failures with test data of unverified quality
+    #   and deterministic failures  
     cause_unknown = unstable - bug - unsupported - poor_test
 
 
@@ -208,13 +219,14 @@ def create_label_sets():
 
     negative_label_sets = dict(
         # main classification
-        stable          = unstable,
+        #stable          = unstable, # can't add this because ctest regex matches "unstable"
         # test quality categories
-        quality_unknown = good_test | poor_test
+        quality_unknown = good_test | poor_test,
         )
 
     return positive_label_sets,negative_label_sets
 #end def create_label_sets
+
 
 
 def check_exclusive(*labels):
@@ -242,6 +254,7 @@ def check_exclusive(*labels):
 #end def check_exclusive
 
 
+
 def check_comprehensive(full_label,*other_labels):
     full = set(positive_label_sets[full_label])
     for label in other_labels:
@@ -251,6 +264,7 @@ def check_comprehensive(full_label,*other_labels):
         error('the following sets are not comprehensive:\n  {0}\nthese should equate to set: {1}\nbut the following tests are not labeled: {2}'.format(other_labels,full_label,sorted(full)))
     #end if
 #end def check_comprehensive
+
 
 
 def check_positive_label_sets(positive_label_sets):
@@ -287,6 +301,11 @@ def check_positive_label_sets(positive_label_sets):
                         )
 #end def check_positive_label_sets
 
+
+
+#================#
+# main execution #
+#================#
 
 # extract test name and build flags from args
 try:
@@ -331,12 +350,14 @@ except:
     error()
 #end try
 
+
 # check positive label sets
 try:
     check_positive_label_sets(positive_label_sets)
 except:
     error()
 #end try
+
 
 # get labels from known sets
 try:
@@ -354,6 +375,7 @@ try:
 except:
     error()
 #end try
+
 
 # make a ctest list of the labels
 try:

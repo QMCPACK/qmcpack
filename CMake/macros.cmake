@@ -95,7 +95,7 @@ ENDMACRO()
 
 # Runs qmcpack
 #  Note that TEST_ADDED is an output variable
-FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED ${ARGN} )
+FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED TEST_LABELS ${ARGN} )
     MATH( EXPR TOT_PROCS "${PROCS} * ${THREADS}" )
     SET( QMC_APP "${qmcpack_BINARY_DIR}/bin/qmcpack" )
     SET( ${TEST_ADDED} FALSE PARENT_SCOPE )
@@ -121,19 +121,32 @@ FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED ${ARGN} 
         ENDIF()
     ENDIF()
     IF ( TEST_ADDED )
-       SET(TEST_LABELS "")
-       EXECUTE_PROCESS(COMMAND ${PROJECT_SOURCE_DIR}/tests/scripts/test_labels.py ${TESTNAME} ${QMC_CUDA} ${ENABLE_SOA} ${QMC_COMPLEX} ${QMC_MIXED_PRECISION} OUTPUT_VARIABLE TEST_LABELS)
-       MESSAGE("  Test labels: ${TEST_LABELS}")
+       SET(SUCCESS FALSE)
+       # workaround the fact that ENABLE_SOA=="" rather than "0" 
+       #   when -DENABLE_SOA is not explicitly provided
+       SET(TEST_LABELS_TEMP "")
+       EXECUTE_PROCESS(COMMAND ${PROJECT_SOURCE_DIR}/tests/scripts/test_labels.py ${TESTNAME} ${QMC_CUDA} ${ENABLE_SOA} ${QMC_COMPLEX} ${QMC_MIXED_PRECISION} OUTPUT_VARIABLE TEST_LABELS_TEMP RESULT_VARIABLE SUCCESS)
+       #MESSAGE("  Label script return value: ${SUCCESS}")
+       IF( ${SUCCESS} STREQUAL "1" )
+         MESSAGE("Test labeling failed.  Test labeling error output:\n${TEST_LABELS_TEMP}")
+         SET(TEST_LABELS_TEMP "")
+       #ELSE()
+       #  MESSAGE("  Test labels: ${TEST_LABELS_TEMP}   ${TESTNAME}")
+       ENDIF()
+       SET_PROPERTY(TEST ${TESTNAME} APPEND PROPERTY LABELS ${TEST_LABELS_TEMP})
+       SET(${TEST_LABELS} ${TEST_LABELS_TEMP} PARENT_SCOPE)
     ENDIF()
 ENDFUNCTION()
 
 # Runs qmcpack
 #  Note that TEST_ADDED is an output variable
-FUNCTION( RUN_QMC_APP TESTNAME SRC_DIR PROCS THREADS TEST_ADDED ${ARGN} )
+FUNCTION( RUN_QMC_APP TESTNAME SRC_DIR PROCS THREADS TEST_ADDED TEST_LABELS ${ARGN} )
     COPY_DIRECTORY_MAYBE_USING_SYMLINK( "${SRC_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME}" )
     SET( TEST_ADDED_TEMP FALSE )
-    RUN_QMC_APP_NO_COPY( ${TESTNAME} ${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME} ${PROCS} ${THREADS} TEST_ADDED_TEMP ${ARGN} )
+    SET( TEST_LABELS_TEMP "" )
+    RUN_QMC_APP_NO_COPY( ${TESTNAME} ${CMAKE_CURRENT_BINARY_DIR}/${TESTNAME} ${PROCS} ${THREADS} TEST_ADDED_TEMP TEST_LABELS_TEMP ${ARGN} )
     SET( ${TEST_ADDED} ${TEST_ADDED_TEMP} PARENT_SCOPE )
+    SET( ${TEST_LABELS} ${TEST_LABELS_TEMP} PARENT_SCOPE )
 ENDFUNCTION()
 
 
@@ -164,9 +177,10 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
 
 
     SET( TEST_ADDED FALSE )
+    SET( TEST_LABELS "")
     SET( FULL_NAME "${BASE_NAME}-${PROCS}-${THREADS}" )
     MESSAGE("Adding test ${FULL_NAME}")
-    RUN_QMC_APP(${FULL_NAME} ${BASE_DIR} ${PROCS} ${THREADS} TEST_ADDED ${INPUT_FILE})
+    RUN_QMC_APP(${FULL_NAME} ${BASE_DIR} ${PROCS} ${THREADS} TEST_ADDED TEST_LABELS ${INPUT_FILE})
     IF ( TEST_ADDED )
         SET_PROPERTY(TEST ${FULL_NAME} APPEND PROPERTY LABELS "QMCPACK")
     ENDIF()
@@ -216,6 +230,7 @@ FUNCTION(QMC_RUN_AND_CHECK BASE_NAME BASE_DIR PREFIX INPUT_FILE PROCS THREADS SH
                         )
                         SET_PROPERTY( TEST ${TEST_NAME} APPEND PROPERTY DEPENDS ${FULL_NAME} )
                         SET_PROPERTY( TEST ${TEST_NAME} APPEND PROPERTY LABELS "QMCPACK-checking-results" )
+                        SET_PROPERTY( TEST ${TEST_NAME} APPEND PROPERTY LABELS ${TEST_LABELS} )
                     ENDIF()
                 ENDFOREACH(SCALAR_CHECK)
                 IF (NOT SCALAR_VALUE_FOUND)
@@ -240,7 +255,8 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
 
   # add run (task 1)
   set (test_added false)
-  RUN_QMC_APP(${full_name} ${base_dir} ${procs} ${threads} test_added ${input_file})
+  set (test_labels "")
+  RUN_QMC_APP(${full_name} ${base_dir} ${procs} ${threads} test_added test_labels ${input_file})
   if ( NOT test_added)
     RETURN()
   endif()
@@ -268,5 +284,6 @@ function(SIMPLE_RUN_AND_CHECK base_name base_dir input_file procs threads check_
 
   # make test depend on the run
   set_property(TEST ${test_name} APPEND PROPERTY DEPENDS ${full_name})
+  set_property(TEST ${test_name} APPEND PROPERTY LABELS ${test_labels} )
 
 endfunction()
