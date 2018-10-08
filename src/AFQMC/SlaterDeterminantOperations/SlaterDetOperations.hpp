@@ -144,6 +144,8 @@ class SlaterDetOperations
       int NAEA = A.shape()[1];
       if(TMat_MN.num_elements() < NMO*NAEA)
         TMat_MN.resize(extents[NMO][NAEA]);
+      if(TMat_NM.num_elements() < NMO*NAEA)
+        TMat_NM.resize(extents[NAEA][NMO]);
       boost::multi_array_ref<T,2> TMN(TMat_MN.data(), extents[NMO][NAEA]);
       boost::multi_array_ref<T,2> T1(TMat_NM.data(), extents[NMO][NAEA]);
       boost::multi_array_ref<T,2> T2(TMat_MM.data(), extents[NMO][NAEA]);
