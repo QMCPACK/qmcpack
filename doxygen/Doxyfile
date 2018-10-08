@@ -808,7 +808,6 @@ EXCLUDE_SYMLINKS       = NO
 
 EXCLUDE_PATTERNS       = */Experimental/* \
                          */SQD/* \
-                         */GUI/* \
                          */AtomicHF/* \
                          */PseudGen/* \
                          */Spline3D/*

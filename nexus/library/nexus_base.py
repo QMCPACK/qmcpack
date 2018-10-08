@@ -38,6 +38,7 @@ from developer import DevBase
 #  nexus_noncore: allows read only access to some nexus_core data to non-core classes
 nexus_core    = obj()
 nexus_noncore = obj()
+nexus_core_noncore = obj()
 
 status_modes = obj(
     none     = 0,
@@ -61,18 +62,18 @@ modes = obj(
 garbage_collector.enable()
 
 
-nexus_noncore.set(
+nexus_noncore_defaults = obj(
     basis_dir         = None,
     basissets         = None,
     )
 
 # core namespace elements that can be accessed by noncore classes
-nexus_core_noncore = obj(
+nexus_core_noncore_defaults = obj(
     pseudo_dir        = None,              # used by: Settings, VaspInput
     pseudopotentials  = None,              # used by: Simulation, GamessInput
     )
 
-nexus_core.set(
+nexus_core_defaults = obj(
     status_only       = False,             # used by: ProjectManager
     generate_only     = False,             # used by: Simulation,Machine
     sleep             = 3,                 # used by: ProjectManager
@@ -98,8 +99,22 @@ nexus_core.set(
     status            = status_modes.none, # used by: ProjectManager
     emulate           = False,             # unused
     progress_tty      = False,             # used by: ProjectManager
-    **nexus_core_noncore
+    command_line      = True,              # used by: Settings
+    **nexus_core_noncore_defaults
     )
+
+def restore_nexus_core_defaults():
+    nexus_core.clear()
+    nexus_noncore.clear()
+    nexus_core_noncore.clear()
+
+    nexus_core.set(**nexus_core_defaults.copy())
+    nexus_noncore.set(**nexus_noncore_defaults.copy())
+    nexus_core_noncore.transfer_from(nexus_core,keys=nexus_core_noncore_defaults.keys())
+#end def restore_nexus_core_defaults
+
+restore_nexus_core_defaults()
+
 
 nexus_core_no_process = set('''
   status_only  generate_only  sleep

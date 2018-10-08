@@ -49,5 +49,29 @@ TEST_CASE("vector", "[OhmmsPETE]")
 
 }
 
+TEST_CASE("VectorViewer", "[OhmmsPETE]")
+{
+  int a[3];
+  a[0] = 2;
+  a[1] = 4;
+  a[2] = -5;
+  Vector<int> view_a(a, 3);
+
+  REQUIRE(view_a.size() == 3);
+
+  // operator[]
+  REQUIRE(view_a[0] == 2);
+  REQUIRE(view_a[1] == 4);
+  REQUIRE(view_a[2] == -5);
+
+  // operator[] returning a reference
+  view_a[1] = 42;
+
+  REQUIRE(a[0] == 2);
+  REQUIRE(a[1] == 42);
+  REQUIRE(a[2] == -5);
+
+ // TODO: add optional bounds checking to accesses via operator[]
+}
 
 }

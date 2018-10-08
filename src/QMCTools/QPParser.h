@@ -36,8 +36,6 @@ public:
 
   std::streampos pivot_begin;
   std::vector<std::string> tags;
-  bool usingECP;
-  bool ECP;
   std::string MOtype;
   int readtype, numAO;
   int NFZC, NEXT, NTOT, NAC;

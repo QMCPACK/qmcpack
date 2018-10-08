@@ -21,6 +21,9 @@ The simulated systems consist of a number of repeats of a NiO
 primitive cell.
 
 Name  Atoms Electrons  Electrons per spin
+  S1     4       48             24
+  S2     8       96             48
+  S4    16      192             96
   S8    32      384            192
  S16    64      768            384
  S32   128     1536            768
@@ -61,6 +64,9 @@ Please check the md5 value of h5 files before starting any
 benchmarking.
 
 $ md5sum *.h5
+e09c619f93daebca67f51a6d235bfcb8  NiO-fcc-supertwist111-supershift000-S1.h5
+0beffc63ef597f27b70d10be43825515  NiO-fcc-supertwist111-supershift000-S2.h5
+10c4f5150b1e77bbb73da8b1e4aa2b7a  NiO-fcc-supertwist111-supershift000-S4.h5
 6476972b54b58c89d15c478ed4e10317  NiO-fcc-supertwist111-supershift000-S8.h5
 b47f4be12f98f8a3d4b65d0ae048b837  NiO-fcc-supertwist111-supershift000-S16.h5
 ee1f6c6699a24e30d7e6c122cde55ac1  NiO-fcc-supertwist111-supershift000-S32.h5
@@ -69,6 +75,9 @@ ee1f6c6699a24e30d7e6c122cde55ac1  NiO-fcc-supertwist111-supershift000-S32.h5
 cff0101debb11c8c215e9138658fbd21  NiO-fcc-supertwist111-supershift000-S256.h5
 
 $ ls -l *.h5
+  42861392 NiO-fcc-supertwist111-supershift000-S1.h5
+  75298480 NiO-fcc-supertwist111-supershift000-S2.h5
+ 141905680 NiO-fcc-supertwist111-supershift000-S4.h5
  275701688 NiO-fcc-supertwist111-supershift000-S8.h5 
  545483396 NiO-fcc-supertwist111-supershift000-S16.h5
 1093861616 NiO-fcc-supertwist111-supershift000-S32.h5  

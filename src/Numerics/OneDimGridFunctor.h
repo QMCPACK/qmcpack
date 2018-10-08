@@ -24,8 +24,6 @@
 
 namespace qmcplusplus
 {
-template<class T, unsigned D>
-struct FunctorBase { };
 
 /** Implement One-Dimensional function on a radial grid.
  *
@@ -42,7 +40,7 @@ template <class Td,
          class Tg = Td,
          class CTd= Vector<Td>,
          class CTg= Vector<Tg>  >
-struct OneDimGridFunctor//: public FunctorBase<Td,1> {
+struct OneDimGridFunctor
 {
 
   /// the type of the value on a grid

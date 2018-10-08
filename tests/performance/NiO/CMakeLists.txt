@@ -74,7 +74,7 @@ ELSE()
 
 
   # Size is number of supercells. Multiply by 4 to get the number of atoms.
-  SET(NIO_SIZES 8 16 32 64 128 256)
+  SET(NIO_SIZES 1 2 4 8 16 32 64 128 256)
 
   IF (QMC_NIO_MAX_SIZE)
     FOREACH(SIZE IN LISTS NIO_SIZES)

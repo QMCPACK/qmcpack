@@ -658,7 +658,8 @@ BsplineFunctor<T>::evaluateV(const int iat, const int iStart, const int iEnd,
 #pragma vector always 
   for ( int jat = 0; jat < iLimit; jat++ ) {
     real_type r = distArray[jat];
-    if ( r < cutoff_radius )
+    // pick the distances smaller than the cutoff and avoid the reference atom
+    if ( r < cutoff_radius && iStart+jat != iat )
       distArrayCompressed[iCount++] = distArray[jat];
   }
 
@@ -708,7 +709,7 @@ inline void BsplineFunctor<T>::evaluateVGL(const int iat, const int iStart, cons
 #pragma vector always
   for ( int jat = 0; jat < iLimit; jat++ ) {
     real_type r = distArray[jat];
-    if ( r < cutoff_radius ) {
+    if ( r < cutoff_radius && iStart+jat != iat ) {
       distIndices[iCount] = jat;
       distArrayCompressed[iCount] = r;
       iCount++;

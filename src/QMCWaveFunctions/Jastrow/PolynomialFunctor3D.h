@@ -372,9 +372,10 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
   }
 
   // assume r_1I < L && r_2I < L, compression and screening is handled outside
-  inline real_type evaluateV(int Nptcl, const real_type* restrict r_12_array,
-                            const real_type r_1I,
-                            const real_type* restrict r_2I_array) const
+  inline real_type evaluateV(int Nptcl,
+                             const real_type* restrict r_12_array,
+                             const real_type* restrict r_1I_array,
+                             const real_type* restrict r_2I_array) const
   {
     constexpr real_type czero(0);
     constexpr real_type cone(1);
@@ -383,10 +384,11 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
     const real_type L = chalf*cutoff_radius;
     real_type val_tot = czero;
 
-    #pragma omp simd aligned(r_12_array,r_2I_array) reduction(+:val_tot)
+    #pragma omp simd aligned(r_12_array,r_1I_array,r_2I_array) reduction(+:val_tot)
     for(int ptcl=0; ptcl<Nptcl; ptcl++)
     {
       const real_type r_12 = r_12_array[ptcl];
+      const real_type r_1I = r_1I_array[ptcl];
       const real_type r_2I = r_2I_array[ptcl];
       real_type val = czero;
       real_type r2l(cone);
@@ -499,7 +501,7 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
 
   // assume r_1I < L && r_2I < L, compression and screening is handled outside
   inline void evaluateVGL(int Nptcl, const real_type* restrict r_12_array,
-                          const real_type r_1I,
+                          const real_type* restrict r_1I_array,
                           const real_type* restrict r_2I_array,
                           real_type* restrict val_array,
                           real_type* restrict grad0_array,
@@ -517,12 +519,13 @@ struct PolynomialFunctor3D: public OptimizableFunctorBase
     constexpr real_type ctwo(2);
 
     const real_type L = chalf*cutoff_radius;
-    #pragma omp simd aligned(r_12_array,r_2I_array,val_array, \
+    #pragma omp simd aligned(r_12_array,r_1I_array,r_2I_array,val_array, \
       grad0_array,grad1_array,grad2_array, \
       hess00_array,hess11_array,hess22_array,hess01_array,hess02_array)
     for(int ptcl=0; ptcl<Nptcl; ptcl++)
     {
       const real_type r_12 = r_12_array[ptcl];
+      const real_type r_1I = r_1I_array[ptcl];
       const real_type r_2I = r_2I_array[ptcl];
 
       real_type val(czero);

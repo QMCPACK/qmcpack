@@ -77,6 +77,11 @@ inline int get_device_num()
   number_ranks[0] = 0;
   cuda_devices[0]=get_num_appropriate_devices();
 
+  if (cuda_devices[0]==0)
+  {
+    APP_ABORT("get_device_num: One or more MPI ranks have 0 available/eligible CUDA devices");
+  }
+
   int relative_ranknum = 0;
   int num_nodes=0;
   std::string curr_host;

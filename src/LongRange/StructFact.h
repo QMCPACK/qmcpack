@@ -142,22 +142,7 @@ public:
     buf.put(eikr.first_address(),eikr.last_address());
 #endif
   }
-  /** @brief copy the data to an anonymous buffer
-   *
-   * Any data that will be used by the next iteration will be copied to a buffer.
-   */
-  inline void copyToBuffer(BufferType& buf)
-  {
-#if defined(USE_REAL_STRUCT_FACTOR)
-    buf.put(rhok_r.first_address(),rhok_r.last_address());
-    buf.put(rhok_i.first_address(),rhok_i.last_address());
-    buf.put(eikr_r.first_address(),eikr_r.last_address());
-    buf.put(eikr_i.first_address(),eikr_i.last_address());
-#else
-    buf.put(rhok.first_address(),rhok.last_address());
-    buf.put(eikr.first_address(),eikr.last_address());
-#endif
-  }
+
   /** @brief copy the data from an anonymous buffer
    *
    * Any data that was used by the previous iteration will be copied from a buffer.
@@ -182,13 +167,8 @@ public:
   void turnOnStorePerParticle(ParticleSet& P);
 
 private:
-  ///data for recursive evaluation for a given position
-  Matrix<ComplexType> C;
   ///Compute all rhok elements from the start
   void FillRhok(ParticleSet& P);
-  ///Smart update of rhok for 1-particle move. Simply supply old+new position
-  void UpdateRhok(const PosType& rold,
-                  const PosType& rnew,int iat,int GroupID);
   /** resize the internal data
    * @param np number of species
    * @param nptcl number of particles

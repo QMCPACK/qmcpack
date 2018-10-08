@@ -96,6 +96,7 @@ void ParticleSet::createSK()
     }
     LRBox.reset();
     LRBox.SetLRCutoffs();
+    LRBox.printCutoffs();
 
     if (changed) {
       app_summary() << "  Simulation box changed by vacuum supercell conditions" << std::endl;

@@ -76,6 +76,7 @@ public:
     rV_force(0), rV_energy(0), drV_force(0), rV_stress(0), drV_stress(0)
 
   {
+    LRHandlerBase::ClassName="LRHandlerSRCoulomb";
     myFunc.reset(ref);
   }
    

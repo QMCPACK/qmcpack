@@ -30,7 +30,7 @@ void test_e2iphi()
   T vcos[N];
   T vsin[N];
   for (int i = 0; i < N; i++) {
-    phi[0] = 0.2*i;
+    phi[i] = 0.2*i;
   }
 
   eval_e2iphi(N, phi, vcos, vsin);

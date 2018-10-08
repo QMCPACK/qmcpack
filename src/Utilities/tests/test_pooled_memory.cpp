@@ -13,11 +13,16 @@
 #include "catch.hpp"
 
 #include "Utilities/PooledMemory.h"
+#include "Utilities/PooledData.h"
+#include "Utilities/Timer.h"
+#include <iostream>
 #include <stdio.h>
 #include <string>
 #include <vector>
 #include <random>
 #include <complex>
+
+//#define CHECK_ALLOCATION_PERF
 
 using std::string;
 using std::vector;
@@ -91,6 +96,36 @@ TEST_CASE("pack scalar", "[utilities]")
   REQUIRE(i6[0]==i6[0]);
   REQUIRE(i6[1]==i6[1]);
   REQUIRE(i6[2]==i6[2]);
+
+#ifdef CHECK_ALLOCATION_PERF
+  // up to 512 MB.
+  for(size_t size_scale=15; size_scale<30; size_scale++)
+  {
+    const size_t size = (1<<size_scale)+17*8;
+    {
+      PooledMemory<double> pm_walker;
+      pm_walker.Current = size;
+      Timer PoolTimer;
+      pm_walker.allocate();
+      std::cout << "PooledMemory Allocate " << pm_walker.byteSize() << " bytes Time " << PoolTimer.elapsed() << std::endl;
+      PoolTimer.restart();
+      PooledMemory<double> pm_walker_copy(pm_walker);
+      std::cout << "PooledMemory Copy Time " << PoolTimer.elapsed() << std::endl;
+    }
+
+    {
+      PooledData<double> pd_walker;
+      Timer PoolTimer;
+      pd_walker.resize(size/8);
+      std::cout << "PooledData Allocate " << pd_walker.byteSize() << " bytes Time " << PoolTimer.elapsed() << std::endl;
+      PoolTimer.restart();
+      PooledData<double> pd_walker_copy(pd_walker);
+      std::cout << "PooledData Copy Time " << PoolTimer.elapsed() << std::endl;
+    }
+
+    std::cout << std::endl;
+  }
+#endif
 }
 
 }

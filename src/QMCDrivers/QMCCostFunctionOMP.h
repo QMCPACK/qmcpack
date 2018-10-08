@@ -36,7 +36,7 @@ public:
 
   ///Constructor.
   QMCCostFunctionOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                     QMCHamiltonian& h, HamiltonianPool& hpool);
+                     QMCHamiltonian& h);
 
   ///Destructor
   ~QMCCostFunctionOMP();

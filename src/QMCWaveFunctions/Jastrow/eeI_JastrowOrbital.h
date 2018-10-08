@@ -21,7 +21,7 @@
 #include "Configuration.h"
 #include  <map>
 #include  <numeric>
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
 #include "LongRange/StructFact.h"
@@ -34,13 +34,13 @@ namespace qmcplusplus
 struct IonData
 {
   typedef std::vector<int> eListType;
-  OrbitalBase::RealType cutoff_radius;
+  WaveFunctionComponent::RealType cutoff_radius;
   eListType elecs_inside;
   IonData() : cutoff_radius(0.0) { }
 };
 
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  *  @brief Specialization for three-body Jastrow function using multiple functors
  *
  *Each pair-type can have distinct function \f$u(r_{ij})\f$.
@@ -48,7 +48,7 @@ struct IonData
  *for spins up-up/down-down and up-down/down-up.
  */
 template<class FT>
-class eeI_JastrowOrbital: public OrbitalBase
+class eeI_JastrowOrbital: public WaveFunctionComponent
 {
 
   //flag to prevent parallel output
@@ -493,13 +493,6 @@ public:
     // }
   }
 
-  ValueType evaluate(ParticleSet& P,
-                     ParticleSet::ParticleGradient_t& G,
-                     ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-
   inline GradType evalGradSourceFD(ParticleSet& P,
                                    ParticleSet& source, int isrc)
   {
@@ -711,14 +704,14 @@ public:
 
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
-    const int iat=VP.activePtcl;
+    const int iat=VP.refPtcl;
     const int nk=ratios.size();
     int nat=iat*Nelec;
     RealType x=std::accumulate(&(U[nat]),&(U[nat+Nelec]),0.0);
     std::vector<RealType> newval(nk,x);
     const DistanceTableData* ee_table=VP.DistTables[0];
     const DistanceTableData* eI_table=VP.DistTables[myTableIndex];
-    const DistanceTableData* eI_0=VP.refPtcl.DistTables[myTableIndex];
+    const DistanceTableData* eI_0=VP.refPS.DistTables[myTableIndex];
 
     for (int i=0,nn=0; i<Nion; i++)
     {
@@ -1113,7 +1106,7 @@ public:
     DiffValSum=0.0;
   }
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
     eeI_JastrowOrbital<FT>* eeIcopy=
       new eeI_JastrowOrbital<FT>(*IRef, tqp, false);
@@ -1144,12 +1137,6 @@ public:
     eeIcopy->Optimizable = Optimizable;
     return eeIcopy;
   }
-
-  void copyFrom(const OrbitalBase& old)
-  {
-    //nothing to do
-  }
-
 
   void
   finalizeOptimization()

@@ -1417,6 +1417,15 @@ Communicate::gatherv(std::complex<double>* l, std::complex<double>* g, int n,
   for(int i=0; i<displ.size(); i++) displ[i]/=2;
 }
 
+template<typename T, typename TMPI, typename IT>
+inline void Communicate::gatherv_in_place(T* buf, TMPI& datatype, IT& counts, IT& displ, int dest)
+{
+  if(!d_mycontext)
+    MPI_Gatherv(MPI_IN_PLACE, 0, datatype, buf, counts.data(), displ.data(), datatype, dest, myMPI);
+  else
+    MPI_Gatherv(buf+displ[d_mycontext], counts[d_mycontext], datatype, NULL, counts.data(), displ.data(), datatype, dest, myMPI);
+}
+
 template<>
 inline void
 Communicate::allgather(std::vector<int>& sb,

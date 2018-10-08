@@ -71,7 +71,7 @@ void MultiSlaterDeterminantFast::initialize()
   }
 }
 
-OrbitalBasePtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp) const
 {
   MultiDiracDeterminantBase* up_clone = new MultiDiracDeterminantBase(*Dets[0]);
   MultiDiracDeterminantBase* dn_clone = new MultiDiracDeterminantBase(*Dets[1]);
@@ -198,7 +198,7 @@ void MultiSlaterDeterminantFast::testMSD(ParticleSet& P, int iat)
  * - evaluateLog(P,G,L,buf,fillbuffer)
  * Miguel's note: can this change over time??? I don't know yet
  */
-OrbitalBase::ValueType MultiSlaterDeterminantFast::evaluate_vgl_impl(ParticleSet& P
+WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::evaluate_vgl_impl(ParticleSet& P
     , ParticleSet::ParticleGradient_t& g_tmp, ParticleSet::ParticleLaplacian_t& l_tmp)
 {
   const ValueVector_t& detValues_up = Dets[0]->detValues;
@@ -246,7 +246,7 @@ OrbitalBase::ValueType MultiSlaterDeterminantFast::evaluate_vgl_impl(ParticleSet
   return psi;
 }
 
-OrbitalBase::ValueType MultiSlaterDeterminantFast::evaluate(ParticleSet& P
+WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::evaluate(ParticleSet& P
     , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
 {
   EvaluateTimer.start();
@@ -264,14 +264,14 @@ OrbitalBase::ValueType MultiSlaterDeterminantFast::evaluate(ParticleSet& P
   return psiCurrent;
 }
 
-OrbitalBase::RealType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P
+WaveFunctionComponent::RealType MultiSlaterDeterminantFast::evaluateLog(ParticleSet& P
     , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
 {
   ValueType psi = evaluate(P,G,L);
   return LogValue = evaluateLogAndPhase(psi,PhaseValue);
 }
 
-OrbitalBase::ValueType
+WaveFunctionComponent::ValueType
 MultiSlaterDeterminantFast::evalGrad_impl(ParticleSet& P, int iat, bool newpos, GradType& g_at)
 {
   const bool upspin=(iat<FirstIndex_dn);
@@ -305,7 +305,7 @@ MultiSlaterDeterminantFast::evalGrad_impl(ParticleSet& P, int iat, bool newpos, 
   return psi;
 }
 
-OrbitalBase::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet& P, int iat)
+WaveFunctionComponent::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet& P, int iat)
 {
   if(usingBF)
   {
@@ -318,7 +318,7 @@ OrbitalBase::GradType MultiSlaterDeterminantFast::evalGrad(ParticleSet& P, int i
   return grad_iat;
 }
 
-OrbitalBase::ValueType MultiSlaterDeterminantFast::ratioGrad(ParticleSet& P
+WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::ratioGrad(ParticleSet& P
     , int iat, GradType& grad_iat)
 {
   if(usingBF)
@@ -335,7 +335,7 @@ OrbitalBase::ValueType MultiSlaterDeterminantFast::ratioGrad(ParticleSet& P
   return curRatio;
 }
 
-OrbitalBase::ValueType 
+WaveFunctionComponent::ValueType 
 MultiSlaterDeterminantFast::ratio_impl(ParticleSet& P, int iat)
 {
   const bool upspin=(iat<FirstIndex_dn);
@@ -358,7 +358,7 @@ MultiSlaterDeterminantFast::ratio_impl(ParticleSet& P, int iat)
 }
 
 // use ci_node for this routine only
-OrbitalBase::ValueType MultiSlaterDeterminantFast::ratio(ParticleSet& P, int iat)
+WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::ratio(ParticleSet& P, int iat)
 {
   if(usingBF)
   {
@@ -412,13 +412,12 @@ void MultiSlaterDeterminantFast::registerData(ParticleSet& P, WFBufferType& buf)
 
   Dets[0]->registerData(P,buf);
   Dets[1]->registerData(P,buf);
-  LogValue = evaluateLog(P,P.G,P.L);
 
   buf.add(psiCurrent);
 }
 
 // FIX FIX FIX
-OrbitalBase::RealType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+WaveFunctionComponent::RealType MultiSlaterDeterminantFast::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
 
   UpdateTimer.start();

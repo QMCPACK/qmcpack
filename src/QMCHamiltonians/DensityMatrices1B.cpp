@@ -18,7 +18,7 @@
 #include <Numerics/MatrixOperators.h>
 #include <Utilities/IteratorUtility.h>
 #include <Utilities/string_utils.h>
-#include <QMCWaveFunctions/BasisSetFactory.h>
+#include <QMCWaveFunctions/SPOSetBuilderFactory.h>
 
 
 
@@ -453,12 +453,14 @@ namespace qmcplusplus
       for(int s=0;s<nspecies;++s)
       {
         out<<pad<<"  matrices/vectors for species "<<s<< std::endl;
-        out<<pad<<"    E_N        : "<< E_N[s]->size()<< std::endl;
+        if(energy_mat)
+          out<<pad<<"    E_N        : "<< E_N[s]->size()<< std::endl;
         out<<pad<<"    Phi_NB     : "<< Phi_NB[s]->rows()<<" "<<Phi_NB[s]->cols()<< std::endl;
         out<<pad<<"    Psi_NM     : "<< Psi_NM[s]->rows()<<" "<<Psi_NM[s]->cols()<< std::endl;
         out<<pad<<"    Phi_Psi_NB : "<< Phi_Psi_NB[s]->rows()<<" "<<Phi_Psi_NB[s]->cols()<< std::endl;
         out<<pad<<"    N_BB       : "<< N_BB[s]->rows()<<" "<<N_BB[s]->cols()<< std::endl;
-        out<<pad<<"    E_BB       : "<< E_BB[s]->rows()<<" "<<E_BB[s]->cols()<< std::endl;
+        if(energy_mat)
+          out<<pad<<"    E_BB       : "<< E_BB[s]->rows()<<" "<<E_BB[s]->cols()<< std::endl;
       }
     }
     out<<pad<<"  basis_norms"<< std::endl;
@@ -590,7 +592,7 @@ namespace qmcplusplus
 
   DensityMatrices1B::Return_t DensityMatrices1B::evaluate(ParticleSet& P)
   {
-    if(have_required_traces)
+    if(have_required_traces || !energy_mat)
     {
       if(check_derivatives)
         test_derivatives();
@@ -611,7 +613,11 @@ namespace qmcplusplus
     if(!warmed_up)
       warmup_sampling();
     // get weight and single particle energy trace data
-    RealType weight=w_trace->sample[0]*metric;
+    RealType weight;
+    if(energy_mat)
+      weight=w_trace->sample[0]*metric;
+    else
+      weight=tWalker->Weight*metric;
     if(energy_mat)
       get_energies(E_N);               // energies        : particles x 1
     // compute sample positions (monte carlo or deterministic)
@@ -825,7 +831,11 @@ namespace qmcplusplus
     const int basis_size2 = basis_size*basis_size;
     if(!warmed_up)
       warmup_sampling();
-    RealType weight=w_trace->sample[0]*metric;
+    RealType weight;
+    if(energy_mat)
+      weight=w_trace->sample[0]*metric;
+    else
+      weight=tWalker->Weight*metric;
     int nparticles = P.getTotalNum();
     generate_samples(weight);
     int n=0;
@@ -1361,86 +1371,6 @@ namespace qmcplusplus
     APP_ABORT("DensityMatrices1B::test_derivatives");
 
   }
-
-
-  void DensityMatrices1B::
-  postprocess_density(const std::string& infile,const std::string& species,
-                      pts_t& points,dens_t& density,dens_t& density_err)
-  {
-    std::ifstream datafile;
-    datafile.open(infile.c_str());
-    if(!datafile.is_open())
-      APP_ABORT("DensityMatrices1B::postprocess_density\n  could not open file: "+infile);
-
-    const int nelem = basis_size*basis_size;
-    int n=0;
-    std::vector<RealType> nmr;
-    std::vector<RealType> nmi;
-    std::vector<RealType> nmr_err;
-    std::vector<RealType> nmi_err;
-    RealType value;    
-    while(datafile>>value)
-    {
-      if(n<nelem)
-        nmr.push_back(value);
-      else if(n<2*nelem)
-        nmr_err.push_back(value);
-      else if(n<3*nelem)
-        nmi.push_back(value);
-      else if(n<4*nelem)
-        nmi_err.push_back(value);
-      n++;
-    }
-    std::vector<Value_t> nm;
-    std::vector<Value_t> nmv;
-    nm.resize(nelem);
-    nmv.resize(nelem);
-#if defined(QMC_COMPLEX)
-    const int nmat = 4;
-    for(int ij=0;ij<nelem;++ij)
-      nm[ij] = Value_t(nmr[ij],nmi[ij]);
-    for(int ij=0;ij<nelem;++ij)
-    {
-      Value_t s = Value_t(nmr_err[ij],nmi_err[ij]);
-      nmv[ij] = qmcplusplus::conj(s)*s; 
-    }
-#else
-    const int nmat = 2;
-    for(int ij=0;ij<nelem;++ij)
-      nm[ij] = nmr[ij];
-    for(int ij=0;ij<nelem;++ij)
-      nmv[ij] = nmr_err[ij]*nmr_err[ij];
-#endif
-    if(n!=nmat*nelem)
-    {
-      app_log()<<"DensityMatrices1B::postprocess_density\n  file "<<infile<<"\n  contains "<< n <<" values\n  expected "<<nmat*nelem<<" values"<< std::endl;
-      APP_ABORT("DensityMatrices1B::postprocess_density");
-    }
-
-    //evaluate the density
-    //  this error analysis neglects spatial (i,j) correlations
-    for(int p=0;p<points.size();++p)
-    {
-      RealType d  = 0.0;
-      RealType de = 0.0;
-      update_basis(points[p]);
-      int ij=0;
-      for(int i=0;i<basis_size;++i)
-        for(int j=0;j<basis_size;++j,++ij)
-        {
-          Value_t aij = basis_values[i]*qmcplusplus::conj(basis_values[j]);
-          d  += real(aij*nm[ij]);
-          de += real(qmcplusplus::conj(aij)*aij*nmv[ij]);
-        }
-      de = std::sqrt(de);
-      density[p]     = d;
-      density_err[p] = de;
-    }
-    
-  }
-
-
-
 
 
   bool DensityMatrices1B::match(Value_t e1, Value_t e2, RealType tol)

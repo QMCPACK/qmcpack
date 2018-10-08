@@ -25,7 +25,7 @@ MultiSlaterDeterminantWithBackflow::MultiSlaterDeterminantWithBackflow(ParticleS
   OrbitalName="MultiSlaterDeterminantWithBackflow";
 }
 
-OrbitalBasePtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
 {
   // mmorales: the proxy classes read from the particle set inside BFTrans
   BackflowTransformation *tr = BFTrans->makeClone(tqp);
@@ -48,14 +48,14 @@ OrbitalBasePtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) c
   }
   for(int i=0; i<dets_up.size(); i++)
   {
-    DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) dets_up[i]->makeCopy((SPOSetBasePtr) clone->spo_up);
+    DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) dets_up[i]->makeCopy((SPOSetPtr) clone->spo_up);
     dclne->BFTrans=tr;
     dclne->resetTargetParticleSet(tr->QP);
     clone->dets_up.push_back(dclne);
   }
   for(int i=0; i<dets_dn.size(); i++)
   {
-    DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) dets_dn[i]->makeCopy((SPOSetBasePtr) clone->spo_dn);
+    DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) dets_dn[i]->makeCopy((SPOSetPtr) clone->spo_dn);
     dclne->BFTrans=tr;
     dclne->resetTargetParticleSet(tr->QP);
     clone->dets_dn.push_back(dclne);
@@ -108,7 +108,7 @@ void MultiSlaterDeterminantWithBackflow::resize(int n1, int n2)
   }
 }
 
-OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::evaluate(ParticleSet& P
+WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::evaluate(ParticleSet& P
     , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
 {
   EvaluateTimer.start();
@@ -125,7 +125,8 @@ OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::evaluate(ParticleSet&
     spo_up->prepareFor(i);
     grads_up[i]=0.0;
     lapls_up[i]=0.0;
-    detValues_up[i]=dets_up[i]->evaluate(BFTrans->QP,grads_up[i],lapls_up[i]);
+    dets_up[i]->evaluateLog(BFTrans->QP,grads_up[i],lapls_up[i]);
+    detValues_up[i]=dets_up[i]->getValue();
     // need \nabla^2 Det / Det
     for(int k=0; k<numP; k++)
       lapls_up[i][k] += dot(grads_up[i][k],grads_up[i][k]);
@@ -135,7 +136,8 @@ OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::evaluate(ParticleSet&
     spo_dn->prepareFor(i);
     grads_dn[i]=0.0;
     lapls_dn[i]=0.0;
-    detValues_dn[i]=dets_dn[i]->evaluate(BFTrans->QP,grads_dn[i],lapls_dn[i]);
+    dets_dn[i]->evaluateLog(BFTrans->QP,grads_dn[i],lapls_dn[i]);
+    detValues_dn[i]=dets_dn[i]->getValue();
     // need \nabla^2 Det / Det
     for(int k=0; k<numP; k++)
       lapls_dn[i][k] += dot(grads_dn[i][k],grads_dn[i][k]);
@@ -147,14 +149,14 @@ OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::evaluate(ParticleSet&
   {
     int upC = C2node_up[i];
     int dnC = C2node_dn[i];
-    ParticleSet::ParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
+    ParticleSet::SingleParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
     psi += tmp;
     myG += grads_up[upC]*tmp;
     myG += grads_dn[dnC]*tmp;
     myL += lapls_up[upC]*tmp;
     myL += lapls_dn[dnC]*tmp;
     for(int k=0; k<numP; k++)
-      myL[k] += 2.0*static_cast<ParticleSet::ParticleValue_t>(tmp)*dot(grads_up[upC][k],grads_dn[dnC][k]);
+      myL[k] += 2.0*static_cast<ParticleSet::SingleParticleValue_t>(tmp)*dot(grads_up[upC][k],grads_dn[dnC][k]);
   }
   ValueType psiinv = (RealType)1.0/psi;
   myG *= psiinv;
@@ -166,14 +168,14 @@ OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::evaluate(ParticleSet&
   return psi;
 }
 
-OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::evaluateLog(ParticleSet& P
+WaveFunctionComponent::RealType MultiSlaterDeterminantWithBackflow::evaluateLog(ParticleSet& P
     , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
 {
   ValueType psi = evaluate(P,G,L);
   return LogValue = evaluateLogAndPhase(psi,PhaseValue);
 }
 
-OrbitalBase::GradType MultiSlaterDeterminantWithBackflow::evalGrad(ParticleSet& P, int iat)
+WaveFunctionComponent::GradType MultiSlaterDeterminantWithBackflow::evalGrad(ParticleSet& P, int iat)
 {
   APP_ABORT("MultiSlaterDeterminantWithBackflow:: pbyp routines not implemented ");
   GradType grad_iat;
@@ -189,7 +191,7 @@ OrbitalBase::GradType MultiSlaterDeterminantWithBackflow::evalGrad(ParticleSet& 
     {
       int upC = C2node_up[i];
       int dnC = C2node_dn[i];
-      ParticleSet::ParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
+      ParticleSet::SingleParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
       psi += tmp;
       grad_iat += grads_up[upC][iat]*tmp;
     }
@@ -208,7 +210,7 @@ OrbitalBase::GradType MultiSlaterDeterminantWithBackflow::evalGrad(ParticleSet& 
     {
       int upC = C2node_up[i];
       int dnC = C2node_dn[i];
-      ParticleSet::ParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
+      ParticleSet::SingleParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
       psi += tmp;
       grad_iat += grads_dn[dnC][iat]*tmp;
     }
@@ -217,7 +219,7 @@ OrbitalBase::GradType MultiSlaterDeterminantWithBackflow::evalGrad(ParticleSet& 
   }
 }
 
-OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::ratioGrad(ParticleSet& P
+WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::ratioGrad(ParticleSet& P
     , int iat, GradType& grad_iat)
 {
   APP_ABORT("MultiSlaterDeterminantWithBackflow:: pbyp routines not implemented ");
@@ -287,7 +289,7 @@ OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::ratioGrad(ParticleSet
 }
 
 // use ci_node for this routine only
-OrbitalBase::ValueType MultiSlaterDeterminantWithBackflow::ratio(ParticleSet& P, int iat)
+WaveFunctionComponent::ValueType MultiSlaterDeterminantWithBackflow::ratio(ParticleSet& P, int iat)
 {
   APP_ABORT("MultiSlaterDeterminantWithBackflow:: pbyp routines not implemented ");
   UpdateMode=ORB_PBYP_RATIO;
@@ -487,7 +489,7 @@ void MultiSlaterDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferTy
   }
   P.G = myG;
   P.L = myL;
-  ValueType logpsi = evaluateLog(P,P.G,P.L);
+  //ValueType logpsi = evaluateLog(P,P.G,P.L);
   int TotalDim = PosType::Size*P.getTotalNum();
   //buf.add(detValues_up.begin(),detValues_up.end());
   //buf.add(detValues_dn.begin(),detValues_dn.end());
@@ -506,7 +508,7 @@ void MultiSlaterDeterminantWithBackflow::registerData(ParticleSet& P, WFBufferTy
 }
 
 // FIX FIX FIX
-OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
+WaveFunctionComponent::RealType MultiSlaterDeterminantWithBackflow::updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch)
 {
   UpdateTimer.start();
   if(fromscratch || UpdateMode == ORB_PBYP_RATIO)
@@ -521,6 +523,8 @@ OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::updateBuffer(ParticleS
   PhaseValue=0.0;
   for (int i=0; i<dets_up.size(); i++)
   {
+    BFTrans->QP.G = 0.0;
+    BFTrans->QP.L = 0.0;
     spo_up->prepareFor(i);
     logpsi = dets_up[i]->updateBuffer(BFTrans->QP,buf,fromscratch);
 #if defined(QMC_COMPLEX)
@@ -529,13 +533,15 @@ OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::updateBuffer(ParticleS
 #else
     detValues_up[i]=std::cos(dets_up[i]->PhaseValue)*std::exp(logpsi);
 #endif
-    grads_up[i]=dets_up[i]->myG;
-    lapls_up[i]=dets_up[i]->myL;
+    grads_up[i]=BFTrans->QP.G;
+    lapls_up[i]=BFTrans->QP.L;
     for(int k=FirstIndex_up; k<LastIndex_up; k++)
       lapls_up[i][k] += dot(grads_up[i][k],grads_up[i][k]);
   }
   for (int i=0; i<dets_dn.size(); i++)
   {
+    BFTrans->QP.G = 0.0;
+    BFTrans->QP.L = 0.0;
     spo_dn->prepareFor(i);
     logpsi = dets_dn[i]->updateBuffer(BFTrans->QP,buf,fromscratch);
 #if defined(QMC_COMPLEX)
@@ -544,8 +550,8 @@ OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::updateBuffer(ParticleS
 #else
     detValues_dn[i]=std::cos(dets_dn[i]->PhaseValue)*std::exp(logpsi);
 #endif
-    grads_dn[i]=dets_dn[i]->myG;
-    lapls_dn[i]=dets_dn[i]->myL;
+    grads_dn[i]=BFTrans->QP.G;
+    lapls_dn[i]=BFTrans->QP.L;
     for(int k=FirstIndex_dn; k<LastIndex_dn; k++)
       lapls_dn[i][k] += dot(grads_dn[i][k],grads_dn[i][k]);
   }
@@ -571,7 +577,7 @@ OrbitalBase::RealType MultiSlaterDeterminantWithBackflow::updateBuffer(ParticleS
   {
     int upC = C2node_up[i];
     int dnC = C2node_dn[i];
-    ParticleSet::ParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
+    ParticleSet::SingleParticleValue_t tmp = C[i]*detValues_up[upC]*detValues_dn[dnC];
     psi += tmp;
     myG += grads_up[upC]*tmp; // other spin sector should be zero
     myG += grads_dn[dnC]*tmp; // other spin sector should be zero
@@ -679,9 +685,9 @@ void MultiSlaterDeterminantWithBackflow::checkOutVariables(const opt_variables_t
   }
 }
 
-//   OrbitalBasePtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
+//   WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
 //   {
-//      APP_ABORT("IMPLEMENT OrbitalBase::makeClone");
+//      APP_ABORT("IMPLEMENT WaveFunctionComponent::makeClone");
 //      return 0;
 //   }
 
@@ -729,8 +735,8 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
         ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
         lapl_sum += tmp*(tempstorage_up[upC]+tempstorage_dn[dnC]
                          +static_cast<ValueType>(2.0*Dot(grads_up[upC],grads_dn[dnC])));
-        g += grads_up[upC]*static_cast<ParticleSet::ParticleValue_t>(tmp);
-        g += grads_dn[dnC]*static_cast<ParticleSet::ParticleValue_t>(tmp);
+        g += grads_up[upC]*static_cast<ParticleSet::SingleParticleValue_t>(tmp);
+        g += grads_dn[dnC]*static_cast<ParticleSet::SingleParticleValue_t>(tmp);
       }
       gmP=g-P.G;
       gg=Dot(gmP,g);
@@ -793,8 +799,8 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
         int dnC = C2node_dn[i];
         ValueType tmp = C[i]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
         lapl_sum += tmp*(tempstorage_up[upC]+tempstorage_dn[dnC]+static_cast<ValueType>(2.0*Dot(grads_up[upC],grads_dn[dnC])));
-        g += grads_up[upC]*static_cast<ParticleSet::ParticleValue_t>(tmp);
-        g += grads_dn[dnC]*static_cast<ParticleSet::ParticleValue_t>(tmp);
+        g += grads_up[upC]*static_cast<ParticleSet::SingleParticleValue_t>(tmp);
+        g += grads_dn[dnC]*static_cast<ParticleSet::SingleParticleValue_t>(tmp);
       }
       gmP=g-P.G;
       ggP=Dot(gmP,g);
@@ -861,7 +867,7 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
             int upC = C2node_up[i];
             int dnC = C2node_dn[i];
             ValueType cdet=C[i]*detValues_up[upC]*detValues_dn[dnC]*psiinv;
-            ParticleSet::ParticleValue_t dot1=0.0;
+            ParticleSet::SingleParticleValue_t dot1=0.0;
             ValueType dpsi1=dpsia_up(upC,pa);
             ValueType dpsi2=dpsia_dn(dnC,pa);
             ParticleSet::ParticleGradient_t& g1 = grads_up[upC];
@@ -869,8 +875,8 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
             for(int k=0; k<n; k++)
               dot1 += dot((g2[k]-gmP[k]),dGa_up(upC,pa,k))
                       + dot((g1[k]-gmP[k]),dGa_dn(dnC,pa,k))
-                      - static_cast<ParticleSet::ParticleValue_t>(dpsi1)*(dot(gmP[k],g2[k]))
-                      - static_cast<ParticleSet::ParticleValue_t>(dpsi2)*(dot(gmP[k],g1[k]));
+                      - static_cast<ParticleSet::SingleParticleValue_t>(dpsi1)*(dot(gmP[k],g2[k]))
+                      - static_cast<ParticleSet::SingleParticleValue_t>(dpsi2)*(dot(gmP[k],g1[k]));
             dlog += cdet*(dpsi1+dpsi2);
             dhpsi += cdet*( dLa_up(upC,pa) + dLa_dn(dnC,pa)
                             + dpsi2*tempstorage_up[upC] + dpsi1*tempstorage_dn[dnC]

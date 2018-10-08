@@ -50,10 +50,12 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     nonLocalPot.resize(ng,0);
   }
   std::string ecpFormat("table");
+  std::string NLPP_algo("default");
   std::string pbc("yes");
   std::string forces("no");
   OhmmsAttributeSet pAttrib;
   pAttrib.add(ecpFormat,"format");
+  pAttrib.add(NLPP_algo,"algorithm");
   pAttrib.add(pbc,"pbc");
   pAttrib.add(forces,"forces");
   pAttrib.put(cur);
@@ -71,8 +73,6 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     useSimpleTableFormat();
   }
 
-  RealType rcore_max=0;
-
   ///create LocalECPotential
   bool usePBC =
     !(IonConfig.Lattice.SuperCellEnum == SUPERCELL_OPEN || pbc =="no");
@@ -89,13 +89,7 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
       LocalECPotential* apot = new LocalECPotential(IonConfig,targetPtcl);
 #endif
       for(int i=0; i<localPot.size(); i++)
-      {
-        if(localPot[i])
-        {
-          apot->add(i,localPot[i],localZeff[i]);
-          rcore_max=std::max(rcore_max,localPot[i]->r_max);
-        }
-      }
+        if(localPot[i]) apot->add(i,localPot[i],localZeff[i]);
       targetH.addOperator(apot,"LocalECP");
     }
     else
@@ -120,14 +114,13 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
   if(hasNonLocalPot)
   {
     //resize the sphere
-    targetPtcl.resizeSphere(IonConfig.getTotalNum());
     RealType rc2=0.0;
 #ifdef QMC_CUDA
     NonLocalECPotential_CUDA* apot =
       new NonLocalECPotential_CUDA(IonConfig,targetPtcl,targetPsi,usePBC,doForces);
 #else
     NonLocalECPotential* apot =
-      new NonLocalECPotential(IonConfig,targetPtcl,targetPsi, doForces);
+      new NonLocalECPotential(IonConfig,targetPtcl,targetPsi, doForces, NLPP_algo=="batched");
 #endif
     int nknot_max=0;
     for(int i=0; i<nonLocalPot.size(); i++)
@@ -142,32 +135,12 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     app_log() << "\n  Using NonLocalECP potential \n"
               << "    Maximum grid on a sphere for NonLocalECPotential: "
               << nknot_max << std::endl;
+    if(NLPP_algo=="batched") app_log() << "    Using batched ratio computing in NonLocalECP" << std::endl;
 
-    rcore_max=std::max(rc2,rcore_max);
     targetPtcl.checkBoundBox(2*rc2);
 
     targetH.addOperator(apot,"NonLocalECP");
-    for(int ic=0; ic<IonConfig.getTotalNum(); ic++)
-    {
-      int ig=IonConfig.GroupID[ic];
-      if(nonLocalPot[ig])
-      {
-        if(nonLocalPot[ig]->nknot)
-        {
-          targetPtcl.Sphere[ic]->resize(nknot_max);
-          //targetPsi.resizeSphere(nknot_max);
-          //targetPtcl.Sphere[ic]->resize(nonLocalPot[ig]->nknot);
-          //targetPsi.resizeSphere(nonLocalPot[ig]->nknot);
-        }
-      }
-    }
   }
-
-  //app_log() << "Checking THIS " << std::endl;
-  //DEV::OPTIMIZE_SOA
-  int tid=targetPtcl.addTable(IonConfig,DT_SOA_PREFERRED);
-  targetPtcl.DistTables[tid]->setRmax(rcore_max); //For the optimization only
-  app_log() << "  ECPotential::Rmax " << targetPtcl.DistTables[tid]->Rmax << std::endl;
 
   app_log().flush();
   return true;

@@ -22,12 +22,12 @@ namespace qmcplusplus
 {
 
 DiracDeterminantOpt::DiracDeterminantOpt
-(ParticleSet &ptcl, SPOSetBasePtr const &gs_spos, int first) :
+(ParticleSet &ptcl, SPOSetPtr const &gs_spos, int first) :
   DiracDeterminantBase(gs_spos, first)
 {
   targetPtcl = &ptcl;
   NumOrbitals = gs_spos->OrbitalSetSize;
-  NumBasis    = gs_spos->BasisSetSize;
+  NumBasis    = gs_spos->getBasisSetSize();
   BasisVals.resize(NumOrbitals,NumBasis);
   BasisGrad.resize(NumOrbitals,NumBasis);
   BasisLapl.resize(NumOrbitals,NumBasis);
@@ -42,7 +42,7 @@ DiracDeterminantOpt::DiracDeterminantOpt
 }
 
 DiracDeterminantBase*
-DiracDeterminantOpt::makeCopy(SPOSetBasePtr spo) const
+DiracDeterminantOpt::makeCopy(SPOSetPtr spo) const
 {
   DiracDeterminantBase* dclone= new DiracDeterminantOpt(*targetPtcl, spo, FirstIndex);
   dclone->set(FirstIndex,LastIndex-FirstIndex);
@@ -77,13 +77,15 @@ DiracDeterminantOpt::evaluateDerivatives(ParticleSet& P,
     std::vector<RealType>& dlogpsi,
     std::vector<RealType>& dhpsioverpsi)
 {
+  APP_ABORT("DiracDeterminantOpt::evaluateDerivatives is currently disabled.\n");
   // The dlogpsi part is simple -- just ratios
   // First, evaluate the basis functions
   // std::cerr << "GEMM 1:\n";
   // fprintf (stderr, "FirstIndex = %d  LastIndex=%d\n", FirstIndex,
   // LastIndex);
   resetParameters(active);
-  Phi->evaluateBasis (P, FirstIndex, LastIndex, BasisVals, BasisGrad, BasisLapl);
+  // Ye: comment out the following operation on Phi, to be revisited
+  //Phi->evaluateBasis (P, FirstIndex, LastIndex, BasisVals, BasisGrad, BasisLapl);
   BLAS::gemm ('N', 'T', NumBasis, NumOrbitals, NumOrbitals, 1.0,
               BasisVals.data(), NumBasis, psiM.data(), NumOrbitals,
               0.0, dlogdet_dC.data(), NumBasis);
@@ -173,8 +175,9 @@ DiracDeterminantOpt::evaluateDerivatives(ParticleSet& P,
 //       }
   // Pull elements from dense d_dC matrices and put into parameter
   // derivatives, dlogpsi and dhpsioverpsi
-  Phi->copyParamsFromMatrix(active, dlogdet_dC, dlogpsi);
-  Phi->copyParamsFromMatrix(active,   dlapl_dC, dhpsioverpsi);
+  // Ye: comment out the following operations on Phi, to be revisited
+  //Phi->copyParamsFromMatrix(active, dlogdet_dC, dlogpsi);
+  //Phi->copyParamsFromMatrix(active,   dlapl_dC, dhpsioverpsi);
 }
 
 void

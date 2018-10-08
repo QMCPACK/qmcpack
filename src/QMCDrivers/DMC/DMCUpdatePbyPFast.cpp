@@ -93,10 +93,8 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
         ++nRejectTemp;
         continue;
       }
-      //PosType newpos(W.makeMove(iat,dr));
       if(!W.makeMoveAndCheck(iat,dr))
         continue;
-      PosType newpos(W.R[iat]);
       RealType ratio = Psi.ratioGrad(W,iat,grad_iat);
       bool valid_move=false;
       //node is crossed reject the move
@@ -114,9 +112,9 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
         EstimatorRealType logGf = -0.5*dot(deltaR[iat],deltaR[iat]);
         //Use the force of the particle iat
         //RealType scale=getDriftScale(m_tauovermass,grad_iat);
-        //dr = thisWalker.R[iat]-newpos-scale*real(grad_iat);
+        //dr = W.R[iat]-W.activePos-scale*real(grad_iat);
         getScaledDrift(tauovermass, grad_iat, dr);
-        dr = thisWalker.R[iat] - newpos - dr;
+        dr = W.R[iat] - W.activePos - dr;
         EstimatorRealType logGb = -oneover2tau*dot(dr,dr);
         RealType prob = ratio*ratio*std::exp(logGb-logGf);
         if(RandomGen() < prob)
@@ -141,8 +139,6 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
   W.donePbyP();
   myTimers[DMC_movePbyP]->stop();
 
-  if(UseTMove)
-    nonLocalOps.reset();
   bool advanced=true;
   if(nAcceptTemp>0)
   {
@@ -153,10 +149,7 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
     W.saveWalker(thisWalker);
     myTimers[DMC_buffer]->stop();
     myTimers[DMC_hamiltonian]->start();
-    if(UseTMove)
-      enew= H.evaluate(W,nonLocalOps.Txy);
-    else
-      enew= H.evaluate(W);
+    enew = H.evaluateWithToperator(W);
     myTimers[DMC_hamiltonian]->stop();
     thisWalker.resetProperty(logpsi,Psi.getPhase(),enew,rr_accepted,rr_proposed,1.0 );
     thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
@@ -185,47 +178,19 @@ void DMCUpdatePbyPWithRejectionFast::advanceWalker(Walker_t& thisWalker, bool re
 #if !defined(REMOVE_TRACEMANAGER)
   Traces->buffer_sample(W.current_step);
 #endif
-  if(UseTMove)
+  myTimers[DMC_tmoves]->start();
+  const int NonLocalMoveAcceptedTemp = H.makeNonLocalMoves(W);
+  if(NonLocalMoveAcceptedTemp>0)
   {
-    myTimers[DMC_tmoves]->start();
-    int ibar = nonLocalOps.selectMove(RandomGen());
-    //make a non-local move
-    if(ibar)
-    {
-      int iat=nonLocalOps.id(ibar);
-#ifdef ENABLE_SOA
-      W.setActive(iat);
-#endif
-      if(W.makeMoveAndCheck(iat,nonLocalOps.delta(ibar)))
-      {
-        GradType grad_iat;
-        Psi.ratioGrad(W,iat,grad_iat);
-        Psi.acceptMove(W,iat);
-#ifndef ENABLE_SOA
-        W.acceptMove(iat);
-#endif
-        RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
-        // debugging lines
-        //W.update(true);
-        //RealType logpsi2 = Psi.evaluateLog(W);
-        //if(logpsi!=logpsi2) std::cout << " logpsi " << logpsi << " logps2i " << logpsi2 << " diff " << logpsi2-logpsi << std::endl;
-        W.saveWalker(thisWalker);
-        ++NonLocalMoveAccepted;
-      }
-    }
-    myTimers[DMC_tmoves]->stop();
+    RealType logpsi = Psi.updateBuffer(W,w_buffer,false);
+    // debugging lines
+    //W.update(true);
+    //RealType logpsi2 = Psi.evaluateLog(W);
+    //if(logpsi!=logpsi2) std::cout << " logpsi " << logpsi << " logps2i " << logpsi2 << " diff " << logpsi2-logpsi << std::endl;
+    W.saveWalker(thisWalker);
+    NonLocalMoveAccepted+=NonLocalMoveAcceptedTemp;
   }
-  //2008-06-26: select any
-  //bare green function by setting nodecorr=nodecorr_old=1.0
-  //2011-11-15 JNKIM COLLECTABLE FIX
-  //thisWalker.Weight *= branchEngine->branchWeight(enew,eold);
-  //Filtering extreme energies
-  //thisWalker.Weight *= branchEngine->branchWeight(eold,enew);
-  //using the corrections: see QMCUpdateBase::getNodeCorrection
-  //thisWalker.Weight *= branchEngine->branchWeight(enew,eold,nodecorr,nodecorr_old);
-  //using the corrections: see QMCUpdateBase::getNodeCorrection  including gf_acc
-  //RealType odd=std::min(gf_acc,1.0)
-  //thisWalker.Weight *= branchEngine->branchWeight(enew,eold,nodecorr,nodecorr_oldi,odd);
+  myTimers[DMC_tmoves]->stop();
   nAccept += nAcceptTemp;
   nReject += nRejectTemp;
 

@@ -43,9 +43,13 @@ public:
 
   /** constructor with size n*/
   explicit inline
-    Vector(size_t n=0): nLocal(n), nAllocated(0), X(nullptr)
+    Vector(size_t n=0, Type_t val = Type_t()): nLocal(n), nAllocated(0), X(nullptr)
   {
-    if(n) resize_impl(n);
+    if(n)
+    {
+      resize_impl(n);
+      std::fill_n(X, n, val);
+    }
   }
 
   /** constructor with an initialized ref */
@@ -113,12 +117,20 @@ public:
   }
 
   ///resize
-  inline void resize(size_t n)
+  inline void resize(size_t n, Type_t val = Type_t())
   {
     if(nLocal>nAllocated)
       throw std::runtime_error("Resize not allowed on Vector constructed by initialized memory.");
     if(n>nAllocated)
+    {
       resize_impl(n);
+      std::fill_n(X, n, val);
+    }
+    else if(n>nLocal)
+    {
+      std::fill_n(X+nLocal, n-nLocal, val);
+      nLocal=n;
+    }
     else
       nLocal=n;
     return;
@@ -204,7 +216,6 @@ private:
       mAllocator.deallocate(X,nAllocated);
     }
     X=mAllocator.allocate(n);
-    std::fill_n(X, n, T());
     nLocal=n;
     nAllocated=n;
   }
@@ -317,8 +328,7 @@ inline void evaluate(Vector<T, C> &lhs, const Op &op, const Expression<RHS> &rhs
   }
   else
   {
-    std::cerr << "Error: LHS and RHS don't conform in OhmmsVector." << std::endl;
-    abort();
+    throw std::runtime_error("Error in evaluate: LHS and RHS don't conform in OhmmsVector.");
   }
 }
 // I/O

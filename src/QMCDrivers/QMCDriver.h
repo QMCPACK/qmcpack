@@ -372,8 +372,6 @@ protected:
 
   void addWalkers(int nwalkers);
 
-  //void updateWalkers();
-
   /** record the state of the block
    * @param block current block
    *

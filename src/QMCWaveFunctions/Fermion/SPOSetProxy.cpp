@@ -19,13 +19,11 @@
 namespace qmcplusplus
 {
 
-SPOSetProxy::SPOSetProxy(SPOSetBasePtr const& spos, int first, int last)
+SPOSetProxy::SPOSetProxy(SPOSetPtr const& spos, int first, int last)
   : refPhi(spos)
 {
-  Identity=true;
   className="SPOSetProxy";
   OrbitalSetSize=last-first;
-  BasisSetSize=last-first;
   setOrbitalSetSize(refPhi->getOrbitalSetSize());
 }
 
@@ -60,10 +58,10 @@ void SPOSetProxy::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   std::copy(psiV.begin(),psiV.end(),psiM[iat]);
 }
 
-void SPOSetProxy::evaluate(const ParticleSet& P, int iat
-                           , ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
+void SPOSetProxy::evaluate(const ParticleSet& P, int iat,
+                           ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
 {
-  refPhi->evaluate(P, iat, psiV,dpsiV,d2psiV);
+  refPhi->evaluate(P, iat, psiV, dpsiV, d2psiV);
   std::copy(psiV.begin(),psiV.begin()+OrbitalSetSize,psi.begin());
   std::copy(dpsiV.begin(),dpsiV.begin()+OrbitalSetSize,dpsi.begin());
   std::copy(d2psiV.begin(),d2psiV.begin()+OrbitalSetSize,d2psi.begin());

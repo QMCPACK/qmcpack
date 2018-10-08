@@ -359,33 +359,18 @@ struct SimpleFixedNodeBranch: public QMCTraits
     return vParam[B_TAUEFF];
   }
 
-  inline void setTrialEnergy(RealType etot, RealType wtot=1.0)
-  {
-    vParam[B_EREF]=vParam[B_ETRIAL]=etot/wtot;
-    //Eref=Etrial=etot/wtot;
-  }
-
   /** perform branching
    * @param iter current step
    * @param w Walker configuration
    */
   void branch(int iter, MCWalkerConfiguration& w);
 
-  /** perform branching
-   * @param iter the iteration
-   * @param w the walker ensemble
-   * @param clones of the branch engine for OpenMP threads
-   */
-  void branch(int iter, MCWalkerConfiguration& w, std::vector<ThisType*>& clones);
-
   /** update RMC counters and running averages.
    * @param iter the iteration
    * @param w the walker ensemble
    * @param clones of the branch engine for OpenMP threads
    */
-
   void collect(int iter, MCWalkerConfiguration& w);
-  void collect(int iter, MCWalkerConfiguration& w, std::vector<ThisType*>& clones);
 
   /** restart averaging
    * @param counter Counter to determine the cummulative average will be reset.

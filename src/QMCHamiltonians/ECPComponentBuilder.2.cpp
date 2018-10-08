@@ -17,7 +17,6 @@
 #include "Numerics/OneDimCubicSpline.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/SimpleParser.h"
-//#include "QMCHamiltonians/FSAtomPseudoPot.h"
 //#include "Utilities/IteratorUtility.h"
 #ifdef QMC_CUDA
 #include <cuda_runtime_api.h>
@@ -179,14 +178,13 @@ ECPComponentBuilder::parseCasino(const std::string& fname, xmlNodePtr cur)
   if(pp_nonloc==0)
     pp_nonloc=new NonLocalECPComponent;
   OhmmsAsciiParser aParser;
-  int atomNumber=0;
   int npts=0, idummy;
   std::string eunits("rydberg");
   app_log() << "    ECPComponentBuilder::parseCasino" << std::endl;
   aParser.skiplines(fin,1);//Header
   aParser.skiplines(fin,1);//Atomic number and pseudo-charge
-  aParser.getValue(fin,atomNumber,Zeff);
-  app_log() << "      Atomic number = " << atomNumber << "  Zeff = " << Zeff << std::endl;
+  aParser.getValue(fin,AtomicNumber,Zeff);
+  app_log() << "      Atomic number = " << AtomicNumber << "  Zeff = " << Zeff << std::endl;
   aParser.skiplines(fin,1);//Energy units (rydberg/hartree/ev):
   aParser.getValue(fin,eunits);
   app_log() << "      Unit of the potentials = " << eunits << std::endl;

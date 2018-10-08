@@ -13,7 +13,15 @@
 // -*- C++ -*-
 /**@file MultiBspline.hpp
  *
- * Master header file to define MultiBspline
+ * Master header file to define MultiBspline and MultiBspline1D
+ *
+ * The evaluation functions in MultiBspline and MultiBspline1D are memory
+ * bandwith (BW) bound. Optimizations towards maximizing BW usage is always
+ * needed. For this reason, with SIMD, memory alignment is required in order
+ * to saturate the BW. The number of splines must be a multiple of aligned
+ * size. The result vectors must be in Structure-of-Array datayout with
+ * their starting address correctly aligned.
+ *
  */
 #ifndef QMCPLUSPLUS_MULTIEINSPLINE_COMMON_HPP
 #define QMCPLUSPLUS_MULTIEINSPLINE_COMMON_HPP
@@ -24,24 +32,12 @@
 
 namespace qmcplusplus
 {
-  template<typename T> struct SplineBound {};
-
-  template<> struct SplineBound <double>
+  template<typename T> struct SplineBound
   {
-    static inline void get(double x, double& dx, int& ind, int ng)
+    static inline void get(T x, T& dx, int& ind, int ng)
     {
-      double ipart;
-      dx=modf(x,&ipart);
-      ind = std::min(std::max(int(0),static_cast<int>(ipart)),ng);
-    }
-  };
-
-  template<> struct SplineBound <float>
-  {
-    static inline void get(float x, float& dx, int& ind, int ng)
-    {
-      float ipart;
-      dx=modff(x,&ipart);
+      T ipart;
+      dx=std::modf(x,&ipart);
       ind = std::min(std::max(int(0),static_cast<int>(ipart)),ng);
     }
   };
@@ -60,6 +56,14 @@ namespace qmcplusplus
     inline T SymTrace(T h00, T h01, T h02, T h11, T h12, T h22, const T* restrict gg)
     {
       return h00*gg[0]+h01*gg[1]+h02*gg[2]+h11*gg[3]+h12*gg[4]+h22*gg[5];
+    }
+
+  template<typename T>
+    T v_m_v(T h00, T h01, T h02, T h11, T h12, T h22, T g1x, T g1y, T g1z, T g2x, T g2y, T g2z)
+    {
+      return g1x*g2x*h00+g1x*g2y*h01+g1x*g2z*h02
+            +g1y*g2x*h01+g1y*g2y*h11+g1y*g2z*h12
+            +g1z*g2x*h02+g1z*g2y*h12+g1z*g2z*h22;
     }
 
   template<typename T>
@@ -99,66 +103,41 @@ namespace qmcplusplus
     struct MultiBspline: public MultiBsplineData<T>
     {
 
-#if (__cplusplus< 201103L)
-      ///define the einsplie object type
-      typedef  typename bspline_traits<T,3>::SplineType spliner_type;
-      ///define the real type
-      typedef typename bspline_traits<T,3>::real_type real_type;
-#else
       ///define the einsplie object type
       using spliner_type=typename bspline_traits<T,3>::SplineType;
       ///define the real type
       using real_type=typename bspline_traits<T,3>::real_type;
-#endif
-      ///set to true if create is invoked
-      bool own_spline;
       ///actual einspline multi-bspline object
       spliner_type* spline_m;
-      ///offset
-      std::vector<int> offset;
       ///use allocator
       einspline::Allocator myAllocator;
 
-      MultiBspline():own_spline(false),spline_m(nullptr) {}
-#if (__cplusplus >= 201103L)
+      MultiBspline():spline_m(nullptr) {}
       MultiBspline(const MultiBspline& in)=delete;
       MultiBspline& operator=(const MultiBspline& in)=delete;
-#endif
-
-      //MultiBspline(const MultiBspline& in):own_spline(false),spline_m(in.splime_m),offset(in.offset)
-      //{ }
-      //MultiBspline& operator=(const MultiBspline& in)
-      //{
-      //}
 
       ~MultiBspline()
       {
-        if(own_spline)
-        {
+        if(spline_m!=nullptr)
           myAllocator.destroy(spline_m);
-        }
       }
 
       template<typename RV, typename IV>
-      void create(RV& start, RV& end, IV& ng, bc_code bc, int num_splines, int nteams=1)
+      void create(RV& start, RV& end, IV& ng, bc_code bc, int num_splines)
       {
+        if(getAlignedSize<T>(num_splines)!=num_splines)
+          throw std::runtime_error("When creating the data space of MultiBspline, num_splines must be padded!");
         if(spline_m==nullptr)
-        {
           spline_m=myAllocator.createMultiBspline(T(0),start,end,ng,bc,num_splines);
-          own_spline=true;
-        }
-        //should be refined to ensure alignment with minimal waste
-        int nsb=num_splines/nteams;
-        offset.resize(nteams+1);
-        for(int i=0; i<nteams; ++i) offset[i]=i*nsb;
-        offset[nteams]=num_splines;
       }
 
       /** create the einspline as used in the builder
        */
       template<typename GT, typename BCT>
-      void create(GT& grid, BCT& bc, int num_splines, int nteams=1)
+      void create(GT& grid, BCT& bc, int num_splines)
       {
+        if(getAlignedSize<T>(num_splines)!=num_splines)
+          throw std::runtime_error("When creating the data space of MultiBspline, num_splines must be padded!");
         if(spline_m==nullptr)
         {
           typename bspline_traits<T,3>::BCType xBC, yBC, zBC;
@@ -167,13 +146,7 @@ namespace qmcplusplus
           xBC.lVal=static_cast<T>(bc[0].lVal); yBC.lVal=static_cast<T>(bc[1].lVal); zBC.lVal=static_cast<T>(bc[2].lVal);
           xBC.rVal=static_cast<T>(bc[0].rVal); yBC.rVal=static_cast<T>(bc[1].rVal); zBC.rVal=static_cast<T>(bc[2].rVal);
           spline_m=myAllocator.allocateMultiBspline(grid[0],grid[1],grid[2],xBC,yBC,zBC,num_splines);
-          own_spline=true;
         }
-        //should be refined to ensure alignment with minimal waste
-        int nsb=num_splines/nteams;
-        offset.resize(nteams+1);
-        for(int i=0; i<nteams; ++i) offset[i]=i*nsb;
-        offset[nteams]=num_splines;
       }
 
       void flush_zero() const
@@ -218,48 +191,39 @@ namespace qmcplusplus
       */
 
       template<typename PT, typename VT>
-        void evaluate(const PT& r, VT& psi)
+        void evaluate(const PT& r, VT& psi) const
         {
           evaluate_v_impl(r[0],r[1],r[2],psi.data(),0,psi.size());
         }
 
       template<typename PT, typename VT>
-        void evaluate(const PT& r, VT& psi, int ip)
+        void evaluate(const PT& r, VT& psi, int first, int last) const
         {
-          const int first=offset[ip];
-          evaluate_v_impl(r[0],r[1],r[2],psi.data()+first,first,offset[ip+1]);
-        }
-
-      template<typename PT, typename VT, typename GT>
-        inline void evaluate(const PT& r, VT& psi, GT& grad)
-        {
-          //einspline::evaluate(spliner,r,psi,grad);
+          evaluate_v_impl(r[0],r[1],r[2],psi.data()+first,first,last);
         }
 
       template<typename PT, typename VT, typename GT, typename LT>
-        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap)
+        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap) const
         {
-          evaluate_vgl_impl(r[0],r[1],r[2],psi.data(),grad.data(),lap.data(),0,psi.size());
+          evaluate_vgl_impl(r[0],r[1],r[2],psi.data(),grad.data(),lap.data(),psi.size(),0,psi.size());
         }
 
       template<typename PT, typename VT, typename GT, typename LT>
-        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap, int ip)
+        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap, int first, int last) const
         {
-          const int first=offset[ip];
-          evaluate_vgl_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,lap.data()+first,first,offset[ip+1]);
+          evaluate_vgl_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,lap.data()+first,psi.size(),first,last);
         }
 
       template<typename PT, typename VT, typename GT, typename HT>
-        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess)
+        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess) const
         {
-          evaluate_vgh_impl(r[0],r[1],r[2],psi.data(),grad.data(),hess.data(),0,psi.size());
+          evaluate_vgh_impl(r[0],r[1],r[2],psi.data(),grad.data(),hess.data(),psi.size(),0,psi.size());
         }
 
       template<typename PT, typename VT, typename GT, typename HT>
-        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess, int ip)
+        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess, int first, int last) const
         {
-          const int first=offset[ip];
-          evaluate_vgh_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,hess.data()+first,first,offset[ip+1]);
+          evaluate_vgh_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,hess.data()+first,psi.size(),first,last);
         }
 
       /** compute values vals[first,last)
@@ -268,26 +232,19 @@ namespace qmcplusplus
        */
       void evaluate_v_impl(T x, T y, T z, T* restrict vals, int first, int last) const;
 
-      void evaluate_vgl_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict lapl, int first, int last, size_t out_offset=0) const;
+      void evaluate_vgl_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict lapl, size_t out_offset, int first, int last) const;
 
-      void evaluate_vgh_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict hess, int first, int last, size_t out_offset=0) const;
+      void evaluate_vgh_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict hess, size_t out_offset, int first, int last) const;
     };
 
   template<typename T>
     struct MultiBspline1D: public MultiBsplineData<T>
     {
 
-#if (__cplusplus< 201103L)
-      ///define the einsplie object type
-      typedef  typename bspline_traits<T,1>::SplineType spliner_type;
-      ///define the real type
-      typedef typename bspline_traits<T,1>::real_type real_type;
-#else
       ///define the einsplie object type
       using spliner_type=typename bspline_traits<T,1>::SplineType;
       ///define the real type
       using real_type=typename bspline_traits<T,1>::real_type;
-#endif
       ///actual einspline multi-bspline object
       spliner_type spline_m;
       ///use allocator
@@ -303,15 +260,12 @@ namespace qmcplusplus
       /** create the einspline as used in the builder
        */
       template<typename GT, typename BCT>
-      void create(GT& grid, BCT& bc, int num_splines, const bool ishandle=false)
+      void create(GT& grid, BCT& bc, int num_splines)
       {
+        if(getAlignedSize<T>(num_splines)!=num_splines)
+          throw std::runtime_error("When creating the data space of MultiBspline1D, num_splines must be padded!");
         spliner_type* temp_spline;
         temp_spline=einspline::create(temp_spline, grid, bc, num_splines);
-        if(ishandle)
-        {
-          free(temp_spline->coefs);
-          temp_spline->coefs=nullptr;
-        }
         spline_m=*temp_spline;
         free(temp_spline);
       }
@@ -344,25 +298,22 @@ namespace qmcplusplus
       }
 
       template<typename PT, typename VT>
-        inline void evaluate(const PT& r, VT& psi)
+        inline void evaluate(const PT& r, VT& psi) const
         {
-          //einspline::evaluate(&spline_m,r,psi);
           evaluate_v_impl(r,psi.data());
         }
 
       template<typename PT, typename VT, typename GT, typename LT>
-        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap)
+        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap) const
         {
-          //einspline::evaluate(&spline_m,r,psi,grad,lap);
           evaluate_vgl_impl(r,psi.data(),grad.data(),lap.data());
         }
 
-      template<typename PT, typename VT, typename GT, typename HT>
-        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess)
-        {
-          //einspline::evaluate(&spline_m,r,psi,grad,hess);
-          evaluate_vgl_impl(r,psi.data(),grad.data(),hess.data());
-        }
+      //template<typename PT, typename VT, typename GT, typename HT>
+      //  inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess)
+      //  {
+      //    evaluate_vgh_impl(r,psi.data(),grad.data(),hess.data());
+      //  }
 
       /// compute values only.
       void evaluate_v_impl(T r, T* restrict vals) const;
@@ -375,21 +326,10 @@ namespace qmcplusplus
 ///include evaluate_v_impl
 #include <spline2/MultiBsplineValue.hpp>
 
-/** choose vgl/vgh, default MultiBsplineStd.hpp based on Ye's BGQ version
- * Only used by tests
- */
-#ifdef USE_EINSPLINE_UNROLLED
-#include <spline2/MultiBsplineStd2.hpp>
-#elif USE_EINSPLINE_STD4
-#include <spline2/MultiBsplineStd4.hpp>
-#elif USE_EINSPLINE_BASE
-#include <spline2/MultiBsplineBase.hpp>
-#elif USE_EINSPLINE_BLOCKED
-#include <spline2/MultiBsplineStd5.hpp>
-#else
+///include evaluate_vgl/vgh_impl
 #include <spline2/MultiBsplineStd.hpp>
-#endif
 
+///include evaluate_v/vgl/vgh_impl for 1D case
 #include <spline2/MultiBspline1D.hpp>
 
 #endif

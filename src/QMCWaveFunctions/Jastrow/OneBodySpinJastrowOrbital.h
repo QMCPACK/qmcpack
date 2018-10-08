@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_GENERIC_ONEBODYJASTROWSPIN_H
 #define QMCPLUSPLUS_GENERIC_ONEBODYJASTROWSPIN_H
 #include "Configuration.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 //#include "QMCWaveFunctions/Jastrow/DiffOneBodySpinJastrowOrbital.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
@@ -30,7 +30,7 @@ namespace qmcplusplus
  * Based on the OneBodyJastrowOrbital for the grouped particle sets.
  */
 template<class FT>
-class OneBodySpinJastrowOrbital: public OrbitalBase
+class OneBodySpinJastrowOrbital: public WaveFunctionComponent
 {
   bool Spin;
   int myTableIndex;
@@ -239,12 +239,6 @@ public:
     return LogValue;
   }
 
-  ValueType evaluate(ParticleSet& P
-                     , ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-
   /** evaluate the ratio \f$exp(U(iat)-U_0(iat))\f$
    * @param P active particle set
    * @param iat particle that has been moved.
@@ -267,9 +261,9 @@ public:
 
   inline void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios)
   {
-    std::vector<RealType> myr(ratios.size(),U[VP.activePtcl]);
+    std::vector<RealType> myr(ratios.size(),U[VP.refPtcl]);
     const DistanceTableData* d_table=VP.DistTables[myTableIndex];
-    int tg=VP.GroupID[VP.activePtcl];
+    int tg=VP.GroupID[VP.refPtcl];
     for(int sg=0; sg<F.rows(); ++sg)
     {
       FT* func=F(sg,tg);
@@ -281,14 +275,14 @@ public:
       }
     }
     for(int k=0; k<ratios.size(); ++k) ratios[k]=std::exp(myr[k]);
-    //RealType x=U[VP.activePtcl];
+    //RealType x=U[VP.refPtcl];
     //for(int k=0; k<ratios.size(); ++k)
     //  ratios[k]=std::exp(x-myr[k]);
   }
 
   /** evaluate the ratio
    */
-  inline void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+  inline void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
   {
     std::fill(ratios.begin(),ratios.end(),0.0);
     const DistanceTableData* d_table=P.DistTables[myTableIndex];
@@ -469,7 +463,7 @@ public:
     DEBUG_PSIBUFFER(" OneBodySpinJastrow::copyFromBuffer ",buf.current());
   }
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
     OneBodySpinJastrowOrbital<FT>* j1copy=new OneBodySpinJastrowOrbital<FT>(CenterRef,tqp);
     if(Spin)
@@ -491,10 +485,6 @@ public:
     return j1copy;
   }
 
-  void copyFrom(const OrbitalBase& old)
-  {
-    //nothing to do
-  }
 };
 
 }

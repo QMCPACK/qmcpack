@@ -1,0 +1,42 @@
+<simulation>
+  <project id="m5" series="0"/>
+
+  <qmcsystem>
+    <simulationcell>
+      <parameter name="lattice" units="bohr">
+        10 0 0
+        0 10 0
+        0 0 10
+      </parameter>
+      <parameter name="bconds">
+        p p p 
+      </parameter>
+    </simulationcell>
+
+    <particleset name="e">
+      <group name="m5" size="1">
+        <parameter name="mass">   5.0   </parameter>
+        <attrib name="position" datatype="posArray" condition="0">
+          0.0001 -0.0001 0.0002
+        </attrib>
+      </group>
+    </particleset>
+    <particleset name="trap_center" size="1">
+      <group name="center">
+        <attrib name="position" datatype="posArray" condition="0">
+          0 0 0
+        </attrib>
+      </group>
+    </particleset>
+
+    <wavefunction target="e" id="psi0">
+      <ionwf name="proton_wf" source="trap_center" width="0.816496580927726"/>
+    </wavefunction>
+
+    <hamiltonian name="h0" type="generic" target="e">
+      <extpot type="HarmonicExt" mass="5.0" energy="0.3"/>
+    </hamiltonian>
+  </qmcsystem>
+
+  <qmc method="wftest"/>
+</simulation>

@@ -15,7 +15,7 @@
     
 
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "Particle/DistanceTable.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Utilities/Timer.h"
@@ -73,7 +73,7 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
             SuperLattice(1,0), SuperLattice(1,1), SuperLattice(1,2),
             SuperLattice(2,0), SuperLattice(2,1), SuperLattice(2,2));
   app_log() << buff;
-  CheckLattice();
+  if (!CheckLattice()) APP_ABORT("CheckLattice failed");
   PrimCell.set(Lattice);
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
@@ -186,13 +186,13 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
     AtomicCentersInfo.resize(IonPos.size());
     for (int i=0; i<IonPos.size(); i++)
       AtomicCentersInfo.ion_pos[i]=IonPos[i];
+    SourcePtcl->update(true);
     int Zind=SourcePtcl->mySpecies.findAttribute("atomicnumber");
-    // set GroupID for each ion
-    for (int i=0; i<SourcePtcl->R.size(); i++)
-    {
+    for (int i=0; i<IonPos.size(); i++)
       for (int j=0; j<Super2Prim.size(); j++)
         if (Super2Prim[j]==i)
         {
+          // set GroupID for each ion in primitive cell
           if ( (Zind<0) || (SourcePtcl->mySpecies(Zind,SourcePtcl->GroupID[j])==IonTypes[i]) )
             AtomicCentersInfo.GroupID[i] = SourcePtcl->GroupID[j];
           else
@@ -201,12 +201,17 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
                         << IonTypes[i] << " vs " << SourcePtcl->mySpecies(Zind,SourcePtcl->GroupID[j]) << std::endl;
             abort();
           }
-          continue;
+          // set non_overlapping_radius for each ion in primitive cell
+          RealType r(0);
+          PosType dr;
+          SourcePtcl->DistTables[0]->get_first_neighbor(j, r, dr, false);
+          if(r<1e-3) APP_ABORT("EinsplineSetBuilder::ReadOrbitalInfo_ESHDF too close ions <1e-3 bohr!");
+          AtomicCentersInfo.non_overlapping_radius[i] = 0.5*r;
+          break;
         }
-      //app_log() << "debug atomic number " << PrimSourcePtcl.mySpecies(Zind,PrimSourcePtcl.GroupID[i]) << std::endl;
-    }
 
     // load cutoff_radius, spline_radius, spline_npoints, lmax if exists.
+    const int inner_cutoff_ind=SourcePtcl->mySpecies.findAttribute("inner_cutoff");
     const int cutoff_radius_ind=SourcePtcl->mySpecies.findAttribute("cutoff_radius");
     const int spline_radius_ind=SourcePtcl->mySpecies.findAttribute("spline_radius");
     const int spline_npoints_ind=SourcePtcl->mySpecies.findAttribute("spline_npoints");
@@ -215,6 +220,8 @@ bool EinsplineSetBuilder::ReadOrbitalInfo_ESHDF()
     for(int center_idx=0; center_idx<AtomicCentersInfo.Ncenters; center_idx++)
     {
       const int my_GroupID = AtomicCentersInfo.GroupID[center_idx];
+      if(inner_cutoff_ind>=0)
+        AtomicCentersInfo.inner_cutoff[center_idx] = SourcePtcl->mySpecies(inner_cutoff_ind, my_GroupID);
       if(cutoff_radius_ind>=0)
         AtomicCentersInfo.cutoff[center_idx] = SourcePtcl->mySpecies(cutoff_radius_ind, my_GroupID);
       if(spline_radius_ind>=0)
@@ -499,68 +506,6 @@ void EinsplineSetBuilder::OccupyBands_ESHDF(int spin, int sortBands, int numOrbs
       }
     }
   }
-//    if(qafm!=0)
-//    {
-//      app_log()<<"Finding AFM pair for first "<<ntoshift<<" orbitals."<< std::endl;
-//
-//      for (int ti=0; ti<ntoshift; ti++)
-//      {
-//        bool found(false);
-//        PosType ku = TwistAngles[SortBands[ti].TwistIndex];
-//        PosType k1 = OrbitalSet->PrimLattice.k_cart(ku);
-//        for (int tj=0; tj<TwistAngles.size(); tj++)
-//        {
-//          if(tj!=SortBands[ti].TwistIndex)
-//          {
-//            ku=TwistAngles[tj];
-//            PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
-//            double dkx = std::abs(k1[0] - k2[0]);
-//            double dky = std::abs(k1[1] - k2[1]);
-//            double dkz = std::abs(k1[2] - k2[2]);
-//            bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
-//            if(rightK)
-//            {
-//              SortBands[ti].TwistIndex = tj;
-//              //               app_log()<<"swapping: "<<ti<<" "<<tj<< std::endl;
-//              found=true;
-//              break;
-//            }
-//          }
-//        }
-//        if(!found)
-//        {
-//          if((std::abs(k1[1])<qafm+0.0001)&&(std::abs(k1[1])>qafm-0.0001)) k1[1]*=-1;
-//          else if((std::abs(k1[2])<qafm+0.0001)&&(std::abs(k1[2])>qafm-0.0001)) k1[2]*=-1;
-//
-//          for (int tj=0; tj<TwistAngles.size(); tj++)
-//          {
-//            if(tj!=SortBands[ti].TwistIndex)
-//            {
-//              ku=TwistAngles[tj];
-//              PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
-//              double dkx = std::abs(k1[0] - k2[0]);
-//              double dky = std::abs(k1[1] - k2[1]);
-//              double dkz = std::abs(k1[2] - k2[2]);
-//              bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
-//              if(rightK)
-//              {
-//                SortBands[ti].TwistIndex = tj;
-//                //               app_log()<<"swapping: "<<ti<<" "<<tj<< std::endl;
-//                found=true;
-//                break;
-//              }
-//            }
-//          }
-//        }
-//
-//        if(!found)
-//        {
-//          app_log()<<"Need twist: ("<<k1[0]+qafm<<","<<k1[1]<<","<<k1[2]<<")"<< std::endl;
-//          app_log()<<"Did not find afm pair for orbital: "<<ti<<", twist index: "<<SortBands[ti].TwistIndex<< std::endl;
-//          APP_ABORT("EinsplineSetBuilder::OccupyBands_ESHDF");
-//        }
-//      }
-//    }
   if (occ_format=="energy")
   {
     // To get the occupations right.

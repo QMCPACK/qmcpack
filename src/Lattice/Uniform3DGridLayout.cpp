@@ -64,6 +64,10 @@ void Uniform3DGridLayout::SetLRCutoffs()
   }
   //Set KC for structure-factor and LRbreakups.
   LR_kc = LR_dim_cutoff/LR_rc;
+}
+
+void Uniform3DGridLayout::printCutoffs()
+{
   app_log() << "  Long-range breakup parameters:" << std::endl;
   app_log() << "    rc*kc = " << LR_dim_cutoff << "; rc = " << LR_rc << "; kc = " << LR_kc << std::endl;
 }

@@ -166,6 +166,26 @@ TEST_CASE("write_file", "[xml]")
   xmlNodePtr node1 = doc.addChild(doc.getRoot(), "node1");
   doc.addChild(node1, "value1", 1);
   doc.addChild(node1, "value2", 3.2);
+  doc.addChild(node1, "boolvalue3", true);
+  doc.addChild(node1, "boolvalue4", false);
   doc.dump("tmp.out.xml");
+}
+
+TEST_CASE("XPathObject", "[xml]")
+{
+  const char *content = " \
+<simulation> \
+   <parameter name=\"p1\">1</parameter> \
+   <p2>2</p2> \
+</simulation>";
+  Libxml2Document doc;
+  bool okay = doc.parseFromString(content);
+  REQUIRE(okay == true);
+
+  xmlXPathContextPtr path_ctx = doc.getXPathContext();
+  OhmmsXPathObject xpath("//parameter", path_ctx);
+  REQUIRE(xpath.empty() == false);
+  REQUIRE(xpath.size() == 1);
+  REQUIRE(xpath[0] != NULL);
 }
 

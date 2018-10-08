@@ -29,7 +29,7 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetBasePtr const &spos, BackflowTransformation * BF, int first): DiracDeterminantBase(spos,first)
+DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetPtr const &spos, BackflowTransformation * BF, int first): DiracDeterminantBase(spos,first)
 {
   Optimizable=true;
   OrbitalName="DiracDeterminantWithBackflow";
@@ -89,7 +89,7 @@ void DiracDeterminantWithBackflow::resize(int nel, int morb)
   */
 }
 
-/** replace of SPOSetBase::evaluate function with the removal of t_logpsi */
+/** replace of SPOSet::evaluate function with the removal of t_logpsi */
 void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
 {
   Phi->evaluate_notranspose(BFTrans->QP, FirstIndex, LastIndex, psiM_temp, dlogdet, grad_grad_logdet);
@@ -236,9 +236,9 @@ DiracDeterminantWithBackflow::ValueType DiracDeterminantWithBackflow::ratio(Part
 #endif
 }
 
-void DiracDeterminantWithBackflow::get_ratios(ParticleSet& P, std::vector<ValueType>& ratios)
+void DiracDeterminantWithBackflow::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
-  APP_ABORT(" Need to implement DiracDeterminantWithBackflow::get_ratios(ParticleSet& P, int iat). \n");
+  APP_ABORT(" Need to implement DiracDeterminantWithBackflow::evaluateRatiosAlltoOne. \n");
 }
 
 DiracDeterminantWithBackflow::GradType
@@ -495,6 +495,16 @@ void DiracDeterminantWithBackflow::testL(ParticleSet& P)
   APP_ABORT("Finished testL: Aborting \n");
 }
 
+/** Calculate the log value of the Dirac determinant for particles
+ *@param P input configuration containing N particles
+ *@param G a vector containing N gradients
+ *@param L a vector containing N laplacians
+ *@return the value of the determinant
+ *
+ *\f$ (first,first+nel). \f$  Add the gradient and laplacian
+ *contribution of the determinant to G(radient) and L(aplacian)
+ *for local energy calculations.
+ */
 DiracDeterminantWithBackflow::RealType
 DiracDeterminantWithBackflow::evaluateLog(ParticleSet& P,
     ParticleSet::ParticleGradient_t& G,
@@ -612,31 +622,6 @@ void DiracDeterminantWithBackflow::acceptMove(ParticleSet& P, int iat)
 void DiracDeterminantWithBackflow::restore(int iat)
 {
   curRatio=1.0;
-}
-
-
-/** Calculate the value of the Dirac determinant for particles
- *@param P input configuration containing N particles
- *@param G a vector containing N gradients
- *@param L a vector containing N laplacians
- *@return the value of the determinant
- *
- *\f$ (first,first+nel). \f$  Add the gradient and laplacian
- *contribution of the determinant to G(radient) and L(aplacian)
- *for local energy calculations.
- */
-DiracDeterminantWithBackflow::ValueType
-DiracDeterminantWithBackflow::evaluate(ParticleSet& P,
-                                       ParticleSet::ParticleGradient_t& G,
-                                       ParticleSet::ParticleLaplacian_t& L)
-{
-  RealType logval = evaluateLog(P, G, L);
-#if defined(QMC_COMPLEX)
-  RealType ratioMag = std::exp(logval);
-  return std::complex<OHMMS_PRECISION>(std::cos(PhaseValue)*ratioMag,std::sin(PhaseValue)*ratioMag);
-#else
-  return std::cos(PhaseValue)*std::exp(logval);
-#endif
 }
 
 void
@@ -772,10 +757,10 @@ DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     int kk = BFTrans->optIndexMap[pa];
 #if defined(QMC_COMPLEX)
     dlogpsi[kk]+=real(dpsia);
-    dhpsioverpsi[kk] -= real(0.5*static_cast<ParticleSet::ParticleValue_t>(dLa)+Dot(P.G,Gtemp));
+    dhpsioverpsi[kk] -= real(0.5*static_cast<ParticleSet::SingleParticleValue_t>(dLa)+Dot(P.G,Gtemp));
 #else
     dlogpsi[kk]+=dpsia;
-    dhpsioverpsi[kk] -= (0.5*static_cast<ParticleSet::ParticleValue_t>(dLa)+Dot(P.G,Gtemp));
+    dhpsioverpsi[kk] -= (0.5*static_cast<ParticleSet::SingleParticleValue_t>(dLa)+Dot(P.G,Gtemp));
 #endif
   }
 }
@@ -914,7 +899,7 @@ DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
 #endif
     // \sum_i (\nabla_pa  \nabla2_i D) / D
     for(int k=0; k<num; k++)
-      dG(offset,pa,k) = Gtemp[k] + myG[k]*static_cast<ParticleSet::ParticleValue_t>(dpsia);  // (\nabla_pa \nabla_i D) / D
+      dG(offset,pa,k) = Gtemp[k] + myG[k]*static_cast<ParticleSet::SingleParticleValue_t>(dpsia);  // (\nabla_pa \nabla_i D) / D
   }
 }
 
@@ -1028,23 +1013,23 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     int kk = pa; //BFTrans->optIndexMap[pa];
 #if defined(QMC_COMPLEX)
     dlogpsi[kk]+=real(dpsia);
-    dhpsioverpsi[kk] -= real(0.5*static_cast<ParticleSet::ParticleValue_t>(La1+La2+La3)+Dot(P.G,Gtemp));
+    dhpsioverpsi[kk] -= real(0.5*static_cast<ParticleSet::SingleParticleValue_t>(La1+La2+La3)+Dot(P.G,Gtemp));
 #else
     dlogpsi[kk]+=dpsia;
-    dhpsioverpsi[kk] -= (0.5*static_cast<ParticleSet::ParticleValue_t>(La1+La2+La3)+Dot(P.G,Gtemp));
+    dhpsioverpsi[kk] -= (0.5*static_cast<ParticleSet::SingleParticleValue_t>(La1+La2+La3)+Dot(P.G,Gtemp));
 #endif
     *G0 += Gtemp;
     (*L0)[0] += La1+La2+La3;
   }
 }
 
-OrbitalBasePtr DiracDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr DiracDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
 {
   APP_ABORT(" Illegal action. Cannot use DiracDeterminantWithBackflow::makeClone");
   return 0;
 }
 
-DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetBasePtr spo) const
+DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetPtr spo) const
 {
 //    BackflowTransformation *BF = BFTrans->makeClone();
   // mmorales: particle set is only needed to get number of particles, so using QP set here
@@ -1063,7 +1048,7 @@ DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(const DiracDeterminan
   this->resize(s.NumPtcls,s.NumOrbitals);
 }
 
-//SPOSetBasePtr  DiracDeterminantWithBackflow::clonePhi() const
+//SPOSetPtr  DiracDeterminantWithBackflow::clonePhi() const
 //{
 //  return Phi->makelone();
 //}

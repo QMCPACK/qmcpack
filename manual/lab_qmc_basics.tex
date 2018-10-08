@@ -37,11 +37,8 @@ This lab focuses on the basics of performing quality QMC calculations.  As an ex
 
 
 \section{Lab directories and files}
-%│
-%├── docs                  - documentation 
-%│   └── Lab_2_Slides.pdf     - slides presented during the lab
-
-\begin{shade}
+\footnotesize
+\begin{verbatim}%
 labs/lab2_qmc_basics/
 │
 ├── oxygen_atom           - oxygen atom calculations 
@@ -62,12 +59,8 @@ labs/lab2_qmc_basics/
     ├── example.py           - example nexus file for periodic diamond
     ├── pseudopotentials     - directory containing C pseudopotentials
     └── reference            - directory w/ completed runs
-
-\end{shade}
-
-
-
-
+\end{verbatim}
+\normalsize
 
 \section{Obtaining and converting a pseudopotential for oxygen}
 \label{sec:lqb_pseudo}
@@ -145,7 +138,7 @@ The full QMCPACK pseudopotential is also included in \texttt{oxygen\_atom/refere
 \label{sec:lqb_dft}
 With the pseudopotential in hand, the next step toward a QMC calculation is to obtain the Fermionic part of the wavefunction, in this case a single Slater determinant constructed from DFT-LDA orbitals for a neutral oxygen atom.  If you had trouble with the pseudopotential conversion step, pre-converted pseudopotential files are located in the \texttt{oxygen\_atom/reference} directory.  
 
-Quantum ESPRESSO input for the DFT-LDA ground state of the neutral oxygen atom can be found in \texttt{O.q0.dft.in} and also listing \ref{lst:O_q0_dft} below.  Setting \texttt{wf\_collect=.true.} instructs Quantum Espresso to write the orbitals to disk at the end of the run. Option \texttt{wf\_collect=.true.} may be a potential problem in large simulations, it is recommended to avoid it and use the converter pw2qmcpack in parallel, see details in Sec.~\ref{app:pw2qmcpack}. Note that the plane-wave energy cutoff has been set to a reasonable value of 300 Ry here (\texttt{ecutwfc=300}).  This value depends on the pseudopotentials used, and in general should be selected by running DFT$\rightarrow$(orbital conversion)$\rightarrow$VMC with increasing energy cutoffs until the lowest VMC total energy and variance is reached.
+Quantum ESPRESSO input for the DFT-LDA ground state of the neutral oxygen atom can be found in \texttt{O.q0.dft.in} and also listing \ref{lst:O_q0_dft} below.  Setting \texttt{wf\_collect=.true.} instructs Quantum Espresso to write the orbitals to disk at the end of the run. Option \texttt{wf\_collect=.true.} may be a potential problem in large simulations, it is recommended to avoid it and use the converter pw2qmcpack in parallel, see details in Sec.~\ref{sec:pw2qmcpack}. Note that the plane-wave energy cutoff has been set to a reasonable value of 300 Ry here (\texttt{ecutwfc=300}).  This value depends on the pseudopotentials used, and in general should be selected by running DFT$\rightarrow$(orbital conversion)$\rightarrow$VMC with increasing energy cutoffs until the lowest VMC total energy and variance is reached.
 
 \begin{lstlisting}[caption={Quantum ESPRESSO input file for the neutral oxygen atom (\texttt{O.q0.dft.in})\label{lst:O_q0_dft}}]
 &CONTROL
@@ -283,7 +276,7 @@ for transition metal species or when high accuracy is desired for molecules.
 
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_qmc_basics_J1.png}
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_basics_J1.png}
 \end{center}
 \caption{Optimized $U_1$ function for 1-body Jastrow factor of an oxygen atom.
 \label{fig:u1_spline}
@@ -325,7 +318,7 @@ Iterative varational Monte Carlo methods have been developed to handle the non-l
 }
 
 First, we need to update the template particle and wavefunction information in \texttt{O.q0.ptcl.xml} and \texttt{O.q0.wfs.xml}.  We want to simulate the O atom in open boundary conditions (the default is periodic).  To do this open \texttt{O.q0.ptcl.xml} with your favorite text editor (e.g. \texttt{emacs} or \texttt{vi}) and replace
-\begin{lstlisting}
+\begin{lstlisting}[language=xml]
 <parameter name="bconds">
    p p p
 </parameter>
@@ -334,7 +327,7 @@ First, we need to update the template particle and wavefunction information in \
 </parameter>
 \end{lstlisting}
 with
-\begin{lstlisting}
+\begin{lstlisting}[language=xml]
 <parameter name="bconds">
    n n n 
 </parameter>
@@ -620,11 +613,14 @@ b               = -0.0457479       +/- 0.0422       (92.24%)
 
 \begin{figure}
 \begin{center}
-\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{figures/lab_qmc_basics_timestep_conv.pdf}
+\ifdefined\HCode
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_basics_timestep_conv.dmn}
+\else
+\includegraphics[trim = 0mm 0mm 0mm 0mm, clip,width=0.75\columnwidth]{./figures/lab_qmc_basics_timestep_conv.pdf}
+\fi
 \end{center}
-\caption{Linear fit to DMC timestep data from \texttt{PlotTstepConv.pl}.
+\caption{Linear fit to DMC timestep data from \texttt{PlotTstepConv.pl}.}
 \label{fig:timestep_conv}
-}
 \end{figure}
 
 
@@ -677,7 +673,7 @@ Obtaining the timestep extrapolated DMC total energy for ionized oxygen should t
   \begin{enumerate}
     \item{Copy the optimization input (\texttt{O.q0.opt.in.xml}) to \texttt{O.q1.opt.in.xml}}
     \item{Edit \texttt{O.q1.opt.in.xml} to match the file prefix used in DFT}
-    \begin{verbatim}
+    \begin{lstlisting}[language=xml]
      ...
      <project id="O.q1.opt" series="0">
      ...
@@ -685,15 +681,15 @@ Obtaining the timestep extrapolated DMC total energy for ionized oxygen should t
      ...
      <include href="O.q1.wfs.xml"/>
      ...
-    \end{verbatim}
+    \end{lstlisting}
     \item{Edit the particle XML file (O.q1.ptcl.xml) to have open boundary conditions}
-    \begin{verbatim}
+    \begin{lstlisting}[language=xml]
       <parameter name="bconds">
         n n n 
       </parameter>
-    \end{verbatim}
+    \end{lstlisting}
     \item{Add cutoffs to the Jastrow factors in the wavefunction XML file (O.q1.wfs.xml)}
-    \begin{verbatim}
+    \begin{lstlisting}[language=xml]
       ...
       <correlation speciesA="u" speciesB="u" size="8" rcut="10.0">
       ...
@@ -701,7 +697,7 @@ Obtaining the timestep extrapolated DMC total energy for ionized oxygen should t
       ...
       <correlation elementType="O" size="8" rcut="5.0">
       ...
-    \end{verbatim}
+    \end{lstlisting}
     \item{Perform the Jastrow optimization run: \ifws\verb|mpirun -np 4 qmcpack O.q1.opt.in.xml >&O.q1.opt.out&|\else\verb|jobrun_vesta qmcpack O.q1.opt.in.xml|\fi}
     \item{Identify the optimal set of parameters with \texttt{qmca} (\verb|[your opt.xml]|).}
   \end{enumerate}
@@ -710,7 +706,7 @@ Obtaining the timestep extrapolated DMC total energy for ionized oxygen should t
   \begin{enumerate}
     \item{Copy the DMC input (\texttt{O.q0.dmc.in.xml}) to \texttt{O.q1.dmc.in.xml}}
     \item{Edit \texttt{O.q1.dmc.in.xml} to use the DFT prefix and the optimal Jastrow}
-    \begin{verbatim}
+    \begin{lstlisting}[language=xml]
      ...
      <project id="O.q1.dmc" series="0">
      ...
@@ -718,7 +714,7 @@ Obtaining the timestep extrapolated DMC total energy for ionized oxygen should t
      ...
      <include href="[your opt.xml]"/>
      ...
-    \end{verbatim}
+    \end{lstlisting}
     \item{Perform the DMC run: \ifws\verb|mpirun -np 4 qmcpack O.q1.dmc.in.xml >&O.q1.dmc.out&|\else\verb|jobrun_vesta qmcpack O.q1.dmc.in.xml|\fi}
     \item{Obtain the DMC total energy extrapolated to zero timestep with \texttt{PlotTstepConv.pl}.}
   \end{enumerate}
@@ -1293,60 +1289,60 @@ Nexus polls the simulation status every 3 seconds and sleeps in between.  The ``
 \ifws
 \begin{shade}
 scale_1.0
-├── dft.in
-├── O.BFD.upf
-├── O.BFD.xml
-├── opt.in.xml
-├── p2q.in
-├── pwscf_output
-├── qmc.in.xml
-├── sim_dft
-│   ├── analyzer.p
-│   ├── input.p
-│   └── sim.p
-├── sim_opt
-│   ├── analyzer.p
-│   ├── input.p
-│   └── sim.p
-├── sim_p2q
-│   ├── analyzer.p
-│   ├── input.p
-│   └── sim.p
-└── sim_qmc
-    ├── analyzer.p
-    ├── input.p
-    └── sim.p
+   dft.in
+   O.BFD.upf
+   O.BFD.xml
+   opt.in.xml
+   p2q.in
+   pwscf_output
+   qmc.in.xml
+   sim_dft/
+       analyzer.p
+       input.p
+       sim.p
+   sim_opt/
+       analyzer.p
+       input.p
+       sim.p
+   sim_p2q/
+       analyzer.p
+       input.p
+       sim.p
+   sim_qmc/
+       analyzer.p
+       input.p
+       sim.p
 \end{shade}
 \else
 \begin{shade}
 scale_1.0
-├── dft.in
-├── dft.qsub.in
-├── O.BFD.upf
-├── O.BFD.xml
-├── opt.in.xml
-├── opt.qsub.in
-├── p2q.in
-├── p2q.qsub.in
-├── pwscf_output
-├── qmc.in.xml
-├── qmc.qsub.in
-├── sim_dft
-│   ├── analyzer.p
-│   ├── input.p
-│   └── sim.p
-├── sim_opt
-│   ├── analyzer.p
-│   ├── input.p
-│   └── sim.p
-├── sim_p2q
-│   ├── analyzer.p
-│   ├── input.p
-│   └── sim.p
-└── sim_qmc
-    ├── analyzer.p
-    ├── input.p
-    └── sim.p
+   dft.in
+   dft.qsub.in
+   O.BFD.upf
+   O.BFD.xml
+   opt.in.xml
+   opt.qsub.in
+   p2q.in
+   p2q.qsub.in
+   pwscf_output
+   qmc.in.xml
+   qmc.qsub.in
+   sim_dft/
+       analyzer.p
+       input.p
+       sim.p
+   sim_opt/
+       analyzer.p
+       input.p
+       sim.p
+   sim_p2q/
+       analyzer.p
+       input.p
+       sim.p
+   sim_qmc/
+       analyzer.p
+       input.p
+       sim.p
 \end{shade}
 \fi
 \noindent
@@ -1728,22 +1724,5 @@ f(**o)                   # kw. args from obj, prints:
                          #   ()
                          #   {'timestep': 0.02, 'blocks': 100, 'steps': 5}
 \end{shade}
-\section{Appendix B: pw2qmcpack in parallel\label{app:pw2qmcpack}}
-
-pw2qmcpack is a converter which extracts the orbitals calculated by DFT with Quantum ESPRESSO and packs them into a HDF5 file for QMCPACK.
-It used to be used in serial without problems in small systems and becomes a severe bottleneck for a large system.
-Due to the large energy cutoff in the calculation with pw.x required by the pseudopotentials and the increasing sizes of systems we are interested in, one limitation of QE can be easily reached
-that \texttt{wf\_collect=.true.} results in problems of writing and loading correct plane wave coefficients on disks by pw.x because of the 32bit integer issue. Thus, pw2qmcpack.x fails to convert the orbitals for QMCPACK.
-
-Since Quantum ESPRESSO 5.3.0, the new converter has been fully parallelized to overcome that limitation completely.
-By removing \texttt{wf\_collect=.true.} (by default \texttt{wf\_collect=.false.}), pw.x doesn't collect the whole wave function into individual files for each k point but write one small file for each processor instead.
-By just running pw2qmcpack.x in the same parallel setup (MPI tasks and k-pools) as the last scf/nscf calculation with pw.x,
-the orbitals distributed among processors will first be aggregated by the converter into individual temporal HDF5 files for each k-pool and then merged into the final file.
-In large calculations, users should benefit from a significant reduction of time in writing the wave function by pw.x thanks to avoiding the wavefunction collection.
-
-pw2qmcpack has been included in the test suite of QMCPACK, see instructions about how to activate the tests in Sec.~\ref{sec:buildqe}.
-There are tests labeled ``no-collect'' running the pw.x without setting \texttt{wf\_collect}.
-The input files are stored at examples/solids/dft-inputs-polarized-no-collect.
-The scf, nscf, pw2qmcpack runs are performed on 16, 12, 12 MPI tasks with 16, 2, 2 k-pools respectively.
 
 %}

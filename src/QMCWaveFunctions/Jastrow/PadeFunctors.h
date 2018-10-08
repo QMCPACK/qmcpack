@@ -427,7 +427,11 @@ struct Pade2ndOrderFunctor:public OptimizableFunctorBase
     while(tcur != NULL)
     {
       std::string cname((const char*)(tcur->name));
-      if(cname == "parameter" || cname == "Var")
+      if(cname == "parameter")
+      {
+        throw std::runtime_error("Keyword 'parameter' has been replaced by 'var' in the 'correlation' of pade2 Jastrow!");
+      }
+      else if(cname == "var" || cname == "Var")
       {
         std::string doopt("yes");
         std::string id_in("0");
@@ -704,7 +708,11 @@ struct PadeTwo2ndOrderFunctor:public OptimizableFunctorBase
     while(tcur != NULL)
     {
       std::string cname((const char*)(tcur->name));
-      if(cname == "parameter" || cname == "Var")
+      if(cname == "parameter")
+      {
+        throw std::runtime_error("Keyword 'parameter' has been replaced by 'var' in the 'correlation' of pade2 Jastrow!");
+      }
+      else if(cname == "var" || cname == "Var")
       {
         std::string id_in("0");
         std::string p_name("B");

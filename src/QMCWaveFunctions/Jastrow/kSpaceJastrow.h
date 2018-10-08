@@ -24,7 +24,7 @@
 #ifndef QMCPLUSPLUS_LR_KSPACEJASTROW_H
 #define QMCPLUSPLUS_LR_KSPACEJASTROW_H
 
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Optimize/VarList.h"
 #include "OhmmsData/libxmldefs.h"
 #include "OhmmsPETE/OhmmsVector.h"
@@ -70,7 +70,7 @@ public:
   }
 };
 
-class kSpaceJastrow: public OrbitalBase
+class kSpaceJastrow: public WaveFunctionComponent
 {
 public:
   typedef enum { CRYSTAL, ISOTROPIC, NOSYMM } SymmetryType;
@@ -165,14 +165,6 @@ public:
                        ParticleSet::ParticleGradient_t& G,
                        ParticleSet::ParticleLaplacian_t& L);
 
-  inline ValueType evaluate(ParticleSet& P,
-                            ParticleSet::ParticleGradient_t& G,
-                            ParticleSet::ParticleLaplacian_t& L)
-  {
-    return std::exp(evaluateLog(P,G,L));
-  }
-
-
   ValueType ratio(ParticleSet& P, int iat);
 
   GradType evalGrad(ParticleSet& P, int iat);
@@ -197,7 +189,7 @@ public:
   // structure factors.  Used to sort the G-vectors according to
   // crystal symmetry
   bool operator()(PosType G1, PosType G2);
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const;
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   void evaluateDerivatives(ParticleSet& P,
                            const opt_variables_type& active,
@@ -206,7 +198,7 @@ public:
 
   /** evaluate the ratio
   */
-  inline void get_ratios(ParticleSet& P, std::vector<ValueType>& ratios);
+  inline void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
 
 private:
   void copyFrom(const kSpaceJastrow& old);

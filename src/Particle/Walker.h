@@ -95,7 +95,7 @@ struct Walker
   /** array of laplacians */
   typedef typename p_traits::ParticleLaplacian_t ParticleLaplacian_t;
   /** typedef for value data type. */
-  typedef typename p_traits::ParticleValue_t ParticleValue_t;
+  typedef typename p_traits::SingleParticleValue_t SingleParticleValue_t;
 
   ///typedef for the property container, fixed size
   typedef Matrix<EstimatorRealType>           PropertyContainer_t;
@@ -121,6 +121,8 @@ struct Walker
    * When Multiplicity = 0, this walker will be destroyed.
    */
   RealType Multiplicity;
+  /// mark true if this walker is being sent.
+  bool SendInProgress;
 
   /** The configuration vector (3N-dimensional vector to store
      the positions of all the particles for a single walker)*/
@@ -166,15 +168,15 @@ struct Walker
     k_species_stride = ((2*num_k + 15)/16) * 16;
     if (num_k)
       Rhok_GPU.resize (num_species * k_species_stride);
-  }
+  } GPU_XRAY_TRACE
   inline CUDA_PRECISION_FULL* get_rhok_ptr ()
   {
     return Rhok_GPU.data();
-  }
+  } GPU_XRAY_TRACE
   inline CUDA_PRECISION_FULL* get_rhok_ptr (int isp)
   {
     return Rhok_GPU.data() + k_species_stride * isp;
-  }
+  } GPU_XRAY_TRACE
 
 #endif
 
@@ -198,7 +200,7 @@ struct Walker
     if(nptcl>0)
       resize(nptcl);
     Properties=0.0;
-  }
+  } GPU_XRAY_TRACE
 
   inline int addPropertyHistory(int leng)
   {
@@ -277,7 +279,7 @@ struct Walker
     Lap_GPU.resize(nptcl);
 #endif
     //Drift.resize(nptcl);
-  }
+  } GPU_XRAY_TRACE
 
   ///copy the content of a walker
   inline void makeCopy(const Walker& a)
@@ -311,7 +313,7 @@ struct Walker
     Grad_GPU = a.Grad_GPU;
     Lap_GPU = a.Lap_GPU;
 #endif
-  }
+  } GPU_XRAY_TRACE 
 
   //return the address of the values of Hamiltonian terms
   inline EstimatorRealType* restrict getPropertyBase()
@@ -461,7 +463,7 @@ struct Walker
 #endif
     block_end = DataSet.current();
     scalar_end = DataSet.current_scalar();
-  }
+  } GPU_XRAY_TRACE
 
   void copyFromBuffer()
   {
@@ -508,9 +510,11 @@ struct Walker
 #endif
     assert(block_end == DataSet.current());
     assert(scalar_end == DataSet.current_scalar());
-  }
+  } GPU_XRAY_TRACE
 
-  void updateBuffer()
+  // In Clang 4.0.1 it is unclear why but attibute list cannot go at the end
+  // when a template declaration follows
+  GPU_XRAY_TRACE void updateBuffer()
   {
     DataSet.rewind();
     DataSet << ID << ParentID << Generation << Age << ReleasedNodeAge << ReleasedNodeWeight;
@@ -551,7 +555,7 @@ struct Walker
     assert(block_end == DataSet.current());
     assert(scalar_end == DataSet.current_scalar());
   }
-
+  
   template<class Msg>
   inline Msg& putMessage(Msg& m)
   {

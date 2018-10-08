@@ -24,13 +24,13 @@
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 #include "OhmmsData/AttributeSet.h"
 #include "Message/CommOperators.h"
-#include "QMCWaveFunctions/BsplineReaderBase.h"
+#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
 #include "Particle/DistanceTableData.h"
 
 namespace qmcplusplus
 {
 
-//std::map<H5OrbSet,SPOSetBase*,H5OrbSet>  EinsplineSetBuilder::SPOSetMap;
+//std::map<H5OrbSet,SPOSet*,H5OrbSet>  EinsplineSetBuilder::SPOSetMap;
 //std::map<TinyVector<int,4>,EinsplineSetBuilder::OrbType*,Int4less> EinsplineSetBuilder::OrbitalMap;
 ////std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_z;
 ////std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> EinsplineSetBuilder::ExtendedMap_d;
@@ -46,7 +46,6 @@ EinsplineSetBuilder::EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xm
   myTableIndex=1;
 
   MatchingTol=10*std::numeric_limits<float>::epsilon();
-//     for (int i=0; i<3; i++) afm_vector[i]=0;
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
       TileMatrix(i,j) = 0;
@@ -88,15 +87,6 @@ EinsplineSetBuilder::~EinsplineSetBuilder()
 
 
 bool
-EinsplineSetBuilder::put(xmlNodePtr cur)
-{
-  std::string hdfName;
-  OhmmsAttributeSet attribs;
-  attribs.add (hdfName, "href");
-  return attribs.put(XMLRoot);
-}
-
-bool
 EinsplineSetBuilder::CheckLattice()
 {
   update_token(__FILE__,__LINE__,"CheckLattice");
@@ -125,7 +115,8 @@ EinsplineSetBuilder::CheckLattice()
     o << SuperLattice-TargetPtcl.Lattice.R << std::endl;
     o << " Max relative error = "<< diff << std::endl;
     o << " Tolerance      = "<< MatchingTol << std::endl;
-    APP_ABORT(o.str());
+    app_error() << o.str();
+    return false;
   }
   return true;
 }
@@ -283,10 +274,13 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
   myComm->bcast(cibuffer);
   AtomicCentersInfo.resize(numIons);
   Super2Prim.resize(SourcePtcl->R.size());
+  cbuffer.add(AtomicCentersInfo.inner_cutoff.begin(), AtomicCentersInfo.inner_cutoff.end());
+  cbuffer.add(AtomicCentersInfo.non_overlapping_radius.begin(), AtomicCentersInfo.non_overlapping_radius.end());
   cbuffer.add(AtomicCentersInfo.cutoff.begin(), AtomicCentersInfo.cutoff.end());
   cbuffer.add(AtomicCentersInfo.spline_radius.begin(), AtomicCentersInfo.spline_radius.end());
   cibuffer.add(Super2Prim.begin(),Super2Prim.end());
   cibuffer.add(AtomicCentersInfo.lmax.begin(), AtomicCentersInfo.lmax.end());
+  cibuffer.add(AtomicCentersInfo.GroupID.begin(), AtomicCentersInfo.GroupID.end());
   cibuffer.add(AtomicCentersInfo.spline_npoints.begin(), AtomicCentersInfo.spline_npoints.end());
   myComm->bcast(cbuffer);
   myComm->bcast(cibuffer);
@@ -294,10 +288,13 @@ EinsplineSetBuilder::BroadcastOrbitalInfo()
   {
     cbuffer.rewind();
     cibuffer.rewind();
+    cbuffer.get(AtomicCentersInfo.inner_cutoff.begin(), AtomicCentersInfo.inner_cutoff.end());
+    cbuffer.get(AtomicCentersInfo.non_overlapping_radius.begin(), AtomicCentersInfo.non_overlapping_radius.end());
     cbuffer.get(AtomicCentersInfo.cutoff.begin(), AtomicCentersInfo.cutoff.end());
     cbuffer.get(AtomicCentersInfo.spline_radius.begin(), AtomicCentersInfo.spline_radius.end());
     cibuffer.get(Super2Prim.begin(),Super2Prim.end());
     cibuffer.get(AtomicCentersInfo.lmax.begin(), AtomicCentersInfo.lmax.end());
+    cibuffer.get(AtomicCentersInfo.GroupID.begin(), AtomicCentersInfo.GroupID.end());
     cibuffer.get(AtomicCentersInfo.spline_npoints.begin(), AtomicCentersInfo.spline_npoints.end());
     for (int i=0; i<numIons; i++)
       AtomicCentersInfo.ion_pos[i]=IonPos[i];
@@ -901,30 +898,6 @@ EinsplineSetBuilder::OccupyBands(int spin, int sortBands, int numOrbs)
   app_log() << "We will read " << NumDistinctOrbitals << " distinct orbitals.\n";
   app_log() << "There are " << NumCoreOrbs << " core states and "
             << NumValenceOrbs << " valence states.\n";
-//     if(qafm!=0) //afm_vector[0]=qafm;
-//     {afm_vector
-//       bool found(false);
-//       for (int tj=0; tj<TwistAngles.size(); tj++)
-//       {
-//         PosType ku=TwistAngles[tj];
-//         PosType k2 = OrbitalSet->PrimLattice.k_cart(ku);
-//         double dkx = std::abs(afm_vector[0] - k2[0]);
-//         double dky = std::abs(afm_vector[1] - k2[1]);
-//         double dkz = std::abs(afm_vector[2] - k2[2]);
-//         bool rightK = ((dkx<qafm+0.0001)&&(dkx>qafm-0.0001)&&(dky<0.0001)&&(dkz<0.0001));
-//         if(rightK)
-//         {
-//           afm_vector=k2;
-//           found=true;
-//           break;
-//         }
-//       }
-//       if(!found)
-//       {
-//         app_log()<<"Need twist: ("<<qafm<<",0,0)"<< std::endl;
-//         APP_ABORT("EinsplineSetBuilder::OccupyBands_ESHDF");
-//       }
-//     }
 }
 
 }

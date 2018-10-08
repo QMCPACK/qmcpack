@@ -22,11 +22,11 @@
 
 import os
 import mmap
-from numpy import array,zeros,ndarray,around,arange,dot,savetxt
+from numpy import array,zeros,ndarray,around,arange,dot,savetxt,empty
 from numpy.linalg import det,norm
 from generic import obj
-from developer import DevBase
-from periodic_table import pt as ptable
+from developer import DevBase,error
+from periodic_table import pt as ptable,is_element
 from unit_converter import convert
 from debug import *
 
@@ -208,7 +208,84 @@ class TextFile(DevBase):
 
 
 
-class XsfFile(DevBase):
+class StandardFile(DevBase):
+
+    sftype = ''
+
+    def __init__(self,filepath=None):
+        if filepath is None:
+            None
+        elif isinstance(filepath,str):
+            self.read(filepath)
+        else:
+            self.error('unsupported input: {0}'.format(filepath))
+        #end if
+    #end def __init__
+
+
+    def read(self,filepath):
+        if not os.path.exists(filepath):
+            self.error('read failed\nfile does not exist: {0}'.format(filepath))
+        #end if
+        self.read_text(open(filepath,'r').read())
+        self.check_valid('read failed')
+    #end def read
+
+
+    def write(self,filepath=None):
+        self.check_valid('write failed')
+        text = self.write_text()
+        if filepath!=None:
+            open(filepath,'w').write(text)
+        #end if
+        return text
+    #end def write
+
+
+    def is_valid(self):
+        return len(self.validity_checks())==0
+    #end def is_valid
+
+
+    def check_valid(self,header=None):
+        messages = self.validity_checks()
+        if len(messages)>0:
+            msg = ''
+            if header is not None:
+                msg += header+'\n'
+            #end if
+            msg += 'not a valid {0} file, see below for details\n'.format(self.sftype)
+            for m in messages:
+                msg+=m+'\n'
+            #end for
+            self.error(msg)
+        #end if
+    #end def check_valid
+
+
+    def validity_checks(self):
+        messages = []
+        return messages
+    #end def validity_checks
+
+
+    def read_text(self,text):
+        self.not_implemented()
+    #end def read_text
+
+
+    def write_text(self):
+        self.not_implemented()
+    #end def write_text
+
+#end class StandardFile
+
+
+
+class XsfFile(StandardFile):
+
+    sftype = 'xsf'
+
     filetypes     = set(['xsf','axsf','bxsf'])
     periodicities = set(['molecule','polymer','slab','crystal']) 
     dimensions    = obj(molecule=0,polymer=1,slab=2,crystal=3)
@@ -217,20 +294,10 @@ class XsfFile(DevBase):
     # forces are in units of Hatree/Angstrom
     # each section should be followed by a blank line
 
-    def __init__(self,arg0=None):
+    def __init__(self,filepath):
         self.filetype    = None
         self.periodicity = None
-        # primvec convec elem pos force data
-        # animsteps images
-        # band info
-        if arg0!=None:
-            if isinstance(arg0,str):
-                filepath = arg0
-                self.read(filepath)
-            else:
-                self.error('unsupported input: {0}'.format(arg0))
-            #end if
-        #end if
+        StandardFile.__init__(self,filepath)
     #end def __init__
 
 
@@ -249,27 +316,7 @@ class XsfFile(DevBase):
     #end def add_to_image
 
 
-    def read(self,filepath):
-        if not os.path.exists(filepath):
-            self.error('read failed, file does not exist: {0}'.format(filepath))
-        #end if
-        self.read_text(open(filepath,'r').read(),check=False)
-        if not self.is_valid():
-            self.error('read failed,file {0} is not a valid xsf file'.format(filepath))
-        #end if
-    #end def read
-
-
-    def write(self,filepath=None):
-        text = self.write_text()
-        if filepath!=None:
-            open(filepath,'w').write(text)
-        #end if
-        return text
-    #end def write
-
-
-    def read_text(self,text,check=True):
+    def read_text(self,text):
         lines = text.splitlines()
         i=0
         self.filetype = 'xsf'
@@ -499,16 +546,10 @@ class XsfFile(DevBase):
             #end if
             i+=1
         #end while
-        if check and not self.is_valid():
-            self.error('read failed, not a valid xsf file')
-        #end if
     #end def read_text
 
 
     def write_text(self):
-        if not self.is_valid():
-            self.error('write failed, not a valid xsf file')
-        #end if
         c=''
         if self.filetype=='xsf':    # only write structure/datagrid if present
             if self.periodicity=='molecule' and 'elem' in self:
@@ -714,14 +755,18 @@ class XsfFile(DevBase):
     #end def has_data
 
 
-    def is_valid(self):
+    def validity_checks(self):
         ha = self.has_animation() 
         hb = self.has_bands()
         hs = self.has_structure()
         hd = self.has_data()
         v = ha or hb or hs or hd
-        return v
-    #end def is_valid
+        if v:
+            return []
+        else:
+            return ['xsf file must have animation, bands, structure, or data\nthe current file is missing all of these']
+        #end if
+    #end def validity_checks
 
 
     def incorporate_structure(self,structure):
@@ -905,3 +950,558 @@ class XsfFile(DevBase):
         savetxt(filepath,array(zip(r,d)))
     #end def line_plot
 #end class XsfFile
+
+
+
+class PoscarFile(StandardFile):
+
+    sftype = 'POSCAR'
+
+    def __init__(self,filepath=None):
+        self.description = None
+        self.scale       = None
+        self.axes        = None
+        self.elem        = None
+        self.elem_count  = None
+        self.coord       = None
+        self.pos         = None
+        self.dynamic     = None
+        self.vel_coord   = None
+        self.vel         = None
+        StandardFile.__init__(self,filepath)
+    #end def __init__
+
+
+    def assign_defaults(self):
+        if self.description is None:
+            self.description = 'System cell and coordinates'
+        #end if
+    #end def assign_defaults
+
+
+    def validity_checks(self):
+        msgs = []
+        if self.description is None:
+            msgs.append('description is missing')
+        elif not isinstance(self.description,str):
+            msgs.append('description must be text')
+        #end if
+        if self.scale is None:
+            msgs.append('scale is missing')
+        elif not isinstance(self.scale,(float,int)):
+            msgs.append('scale must be a real number')
+        elif self.scale<0:
+            msgs.append('scale must be greater than zero')
+        #end if
+        if self.axes is None:
+            msgs.append('axes is missing')
+        elif not isinstance(self.axes,ndarray):
+            msgs.append('axes must be an array')
+        elif self.axes.shape!=(3,3):
+            msgs.append('axes must be a 3x3 array, shape provided is {0}'.format(self.axes.shape))
+        elif not isinstance(self.axes[0,0],float):
+            msgs.append('axes must be an array of real numbers')
+        #end if
+        natoms = -1
+        if self.elem_count is None:
+            msgs.append('elem_count is missing')
+        elif not isinstance(self.elem_count,ndarray):
+            msgs.append('elem_count must be an array')
+        elif len(self.elem_count)==0:
+            msgs.append('elem_count array must contain at least one entry')
+        elif not isinstance(self.elem_count[0],int):
+            msgs.append('elem_count must be an array of integers')
+        else:
+            if (self.elem_count<1).sum()>0:
+                msgs.append('all elem_count entries must be greater than zero')
+            #end if
+            natoms = self.elem_count.sum()
+        #end if
+        if self.elem is not None: # presence depends on vasp version
+            if not isinstance(self.elem,ndarray):
+                msgs.append('elem must be an array')
+            elif isinstance(self.elem_count,ndarray) and len(self.elem)!=len(self.elem_count):
+                msgs.append('elem and elem_count arrays must be the same length')
+            elif not isinstance(self.elem[0],str):
+                msgs.append('elem must be an array of text')
+            else:
+                for e in self.elem:
+                    iselem,symbol = is_element(e,symbol=True)
+                    if not iselem:
+                        msgs.append('elem entry "{0}" is not an element'.format(e))
+                    #end if
+                #end for
+            #end for
+        #end if
+        if self.coord is None:
+            msgs.append('coord is missing')
+        elif not isinstance(self.coord,str):
+            msgs.append('coord must be text')
+        #end if
+        if self.pos is None:
+            msgs.append('pos is missing')
+        elif not isinstance(self.pos,ndarray):
+            msgs.append('pos must be an array')
+        elif natoms>0 and self.pos.shape!=(natoms,3):
+            msgs.append('pos must be a {0}x3 array, shape provided is {1}'.format(natoms),self.pos.shape)
+        elif natoms>0 and not isinstance(self.pos[0,0],float):
+            msgs.append('pos must be an array of real numbers')
+        #end if
+        if self.dynamic is not None: # dynamic is optional
+            if not isinstance(self.dynamic,ndarray):
+                msgs.append('dynamic must be an array')
+            elif natoms>0 and self.dynamic.shape!=(natoms,3):
+                msgs.append('dynamic must be a {0}x3 array, shape provided is {1}'.format(natoms),self.dynamic.shape)
+            elif natoms>0 and not isinstance(self.dynamic[0,0],bool):
+                msgs.append('dynamic must be an array of booleans (true/false)')
+            #end if
+        #end if
+        if self.vel_coord is not None: # velocities are optional
+            if not isinstance(self.vel_coord,str):
+                msgs.append('vel_coord must be text')
+            #end if
+        #end if
+        if self.vel is not None: # velocities are optional
+            if not isinstance(self.vel,ndarray):
+                msgs.append('vel must be an array')
+            elif natoms>0 and self.vel.shape!=(natoms,3):
+                msgs.append('vel must be a {0}x3 array, shape provided is {1}'.format(natoms),self.vel.shape)
+            elif natoms>0 and not isinstance(self.vel[0,0],float):
+                msgs.append('vel must be an array of real numbers')
+            #end if
+        #end if
+        return msgs
+    #end def validity_checks
+
+
+    def read_text(self,text):
+        read_poscar_chgcar(self,text)
+    #end def read_text
+
+
+    def write_text(self):
+        text = ''
+        if self.description is None:
+            text += 'System cell and coordinates\n'
+        else:
+            text += self.description+'\n'
+        #end if
+        text += ' {0}\n'.format(self.scale)
+        for a in self.axes:
+            text += ' {0:20.14f} {1:20.14f} {2:20.14f}\n'.format(*a)
+        #end for
+        if self.elem is not None:
+            for e in self.elem:
+                iselem,symbol = is_element(e,symbol=True)
+                if not iselem:
+                    self.error('{0} is not an element'.format(e))
+                #end if
+                text += symbol+' '
+            #end for
+            text += '\n'
+        #end if
+        for ec in self.elem_count:
+            text += ' {0}'.format(ec)
+        #end for
+        text += '\n'
+        if self.dynamic!=None:
+            text += 'selective dynamics\n'
+        #end if
+        text += self.coord+'\n'
+        if self.dynamic is None:
+            for p in self.pos:
+                text += ' {0:20.14f} {1:20.14f} {2:20.14f}\n'.format(*p)
+            #end for
+        else:
+            bm = self.bool_map
+            for i in xrange(len(self.pos)):
+                p = self.pos[i]
+                d = self.dynamic[i]
+                text += ' {0:20.14f} {1:20.14f} {2:20.14f}  {3}  {4}  {5}\n'.format(p[0],p[1],p[2],bm[d[0]],bm[d[1]],bm[d[2]])
+            #end for
+        #end if
+        if self.vel!=None:
+            text += self.vel_coord+'\n'
+            for v in self.vel:
+                text += ' {0:20.14f} {1:20.14f} {2:20.14f}\n'.format(*v)
+            #end for
+        #end if
+        return text
+    #end def write_text
+
+
+    def incorporate_xsf(self,xsf):
+        if 'primvec' in xsf:
+            axes = xsf.primvec.copy()
+        #end if
+        if 'convvec' in xsf:
+            axes = xsf.convvec.copy()
+        #end if
+        elem = xsf.elem.copy()
+        pos  = xsf.pos.copy()
+
+        species        = []
+        species_counts = []
+        elem_indices   = []
+
+        spec_set = set()
+        for i in xrange(len(elem)):
+            e = elem[i]
+            if not e in spec_set:
+                spec_set.add(e)
+                species.append(e)
+                species_counts.append(0)
+                elem_indices.append([])
+            #end if
+            sindex = species.index(e)
+            species_counts[sindex] += 1
+            elem_indices[sindex].append(i)
+        #end for
+
+        elem_order = []
+        for elem_inds in elem_indices:
+            elem_order.extend(elem_inds)
+        #end for
+
+        pos = pos[elem_order]
+
+        species_ind = species
+        species = []
+        for i in species_ind:
+            species.append(ptable.simple_elements[i].symbol)
+        #end for
+
+        self.scale      = 1.0
+        self.axes       = axes
+        self.elem       = array(species,dtype=str)
+        self.elem_count = array(species_counts,dtype=int)
+        self.coord      = 'cartesian'
+        self.pos        = pos
+
+        self.assign_defaults()
+    #end def incorporate_xsf
+#end class PoscarFile
+
+
+
+class ChgcarFile(StandardFile):
+
+    sftype = 'CHGCAR'
+
+    def __init__(self,filepath=None):
+        self.poscar         = None
+        self.grid           = None
+        self.charge_density = None
+        self.spin_density   = None
+        StandardFile.__init__(self,filepath)
+    #end def __init__
+
+
+    def validity_checks(self):
+        msgs = []
+        if self.poscar is None:
+            msgs.append('poscar elements are missing')
+        elif not isinstance(self.poscar,PoscarFile):
+            msgs.append('poscar is not an instance of PoscarFile')
+        else:
+            msgs.extend(self.poscar.validity_checks())
+        #end if
+        if self.grid is None:
+            msgs.append('grid is missing')
+        elif not isinstance(self.grid,ndarray):
+            msgs.append('grid must be an array')
+        elif len(self.grid)!=3 or self.grid.size!=3:
+            msgs.append('grid must have 3 entries')
+        elif not isinstance(self.grid[0],int):
+            msgs.append('grid must be an array of integers')
+        elif (self.grid<1).sum()>0:
+            msgs.append('all grid entries must be greater than zero')
+        #end if
+        ng = self.grid.prod()
+        if self.charge_density is None:
+            msgs.append('charge_density is missing')
+        elif not isinstance(self.charge_density,ndarray):
+            msgs.append('charge_density must be an array')
+        elif len(self.charge_density)!=ng:
+            msgs.append('charge_density must have {0} entries ({1} present by length)'.format(ng,len(self.charge_density)))
+        elif self.charge_density.size!=ng:
+            msgs.append('charge_density must have {0} entries ({1} present by size)'.format(ng,self.charge_density.size))
+        elif not isinstance(self.charge_density[0],float):
+            msgs.append('charge_density must be an array of real numbers')
+        #end if
+        if self.spin_density is not None: # spin density is optional
+            if not isinstance(self.spin_density,ndarray):
+                msgs.append('spin_density must be an array')
+            elif len(self.spin_density)!=ng:
+                msgs.append('spin_density must have {0} entries ({1} present)'.format(ng,len(self.spin_density)))
+            elif self.spin_density.size!=ng and self.spin_density.shape!=(ng,3):
+                msgs.append('non-collinear spin_density must be a {0}x3 array, shape provided: {1}'.format(ng,self.spin_density.shape))
+            elif not isinstance(self.spin_density.ravel()[0],float):
+                msgs.append('spin_density must be an array of real numbers')
+            #end if
+        #end if
+        return msgs
+    #end def validity_checks
+
+
+    def read_text(self,text):
+        read_poscar_chgcar(self,text)
+    #end def read_text
+
+
+    def write_text(self):
+        text = self.poscar.write_text()
+        text+= '\n {0} {1} {2}\n'.format(*self.grid)
+        densities = [self.charge_density]
+        if self.spin_density is not None:
+            if self.spin_density.size==self.charge_density.size:
+                densities.append(self.spin_density)
+            else:
+                for i in range(3):
+                    densities.append(self.spin_density[:,i])
+                #end for
+            #end if
+        #end if
+        n=0
+        for dens in densities:
+            for d in dens:
+                text += '{0:20.12E}'.format(d)
+                n+=1
+                if n%5==0:
+                    text+='\n'
+                #end if
+            #end for
+        #end for
+        return text
+    #end def write_text
+
+
+    def incorporate_xsf(self,xsf):
+        poscar = PoscarFile()
+        poscar.incorporate_xsf(xsf)
+        density = xsf.remove_ghost()
+        self.poscar         = poscar
+        self.grid           = array(density.shape,dtype=int)
+        self.charge_density = density.ravel()
+        self.check_valid()
+    #end def incorporate_xsf
+#end class ChgcarFile
+
+
+
+def read_poscar_chgcar(host,text):
+    is_poscar = isinstance(host,PoscarFile)
+    is_chgcar = isinstance(host,ChgcarFile)
+    if not is_poscar and not is_chgcar:
+        error('read_poscar_chgcar must be used in conjunction with PoscarFile or ChgcarFile objects only\nencountered object of type: {0}'.format(host.__class__.__name__))
+    #end if
+
+    # read lines and remove fortran comments
+    raw_lines = text.splitlines()
+    lines = []
+    for line in raw_lines:
+        # remove fortran comments
+        cloc1 = line.find('!')
+        cloc2 = line.find('#')
+        has1  = cloc1!=-1
+        has2  = cloc2!=-1
+        if has1 or has2:
+            if has1 and has2:
+                cloc = min(cloc1,cloc2)
+            elif has1:
+                cloc = cloc1
+            else:
+                cloc = cloc2
+            #end if
+            line = line[:cloc]
+        #end if
+        lines.append(line.strip())
+    #end for
+
+    # extract file information
+    nlines = len(lines)
+    min_lines = 8
+    if nlines<min_lines:
+        host.error('file {0} must have at least {1} lines\nonly {2} lines found'.format(filepath,min_lines,nlines))
+    #end if
+    description = lines[0]
+    dim = 3
+    scale = float(lines[1].strip())
+    axes = empty((dim,dim))
+    axes[0] = array(lines[2].split(),dtype=float)
+    axes[1] = array(lines[3].split(),dtype=float)
+    axes[2] = array(lines[4].split(),dtype=float)
+    tokens = lines[5].split()
+    if tokens[0].isdigit():
+        counts = array(tokens,dtype=int)
+        elem   = None
+        lcur   = 6
+    else:
+        elem   = array(tokens,dtype=str)
+        counts = array(lines[6].split(),dtype=int)
+        lcur   = 7
+    #end if
+
+    if lcur<len(lines) and len(lines[lcur])>0:
+        c = lines[lcur].lower()[0]
+        lcur+=1
+    else:
+        host.error('file {0} is incomplete (missing positions)'.format(filepath))
+    #end if
+    selective_dynamics = c=='s'
+    if selective_dynamics: # Selective dynamics
+        if lcur<len(lines) and len(lines[lcur])>0:
+            c = lines[lcur].lower()[0]
+            lcur+=1
+        else:
+            host.error('file {0} is incomplete (missing positions)'.format(filepath))
+        #end if
+    #end if
+    cartesian = c=='c' or c=='k'
+    if cartesian:
+        coord = 'cartesian'
+    else:
+        coord = 'direct'
+    #end if
+    npos = counts.sum()
+    if lcur+npos>len(lines):
+        host.error('file {0} is incomplete (missing positions)'.format(filepath))
+    #end if
+    spos = []
+    for i in range(npos):
+        spos.append(lines[lcur+i].split())
+    #end for
+    lcur += npos
+    spos = array(spos)
+    pos  = array(spos[:,0:3],dtype=float)
+    if selective_dynamics:
+        dynamic = array(spos[:,3:6],dtype=str)
+        dynamic = dynamic=='T'
+    else:
+        dynamic = None
+    #end if
+
+    def is_empty(lines,start=None,end=None):
+        if start is None:
+            start = 0
+        #end if
+        if end is None:
+            end = len(lines)
+        #end if
+        is_empty = True
+        for line in lines[start:end]:
+            is_empty &= len(line)==0
+        #end for
+        return is_empty
+    #end def is_empty
+
+    # velocities may be present for poscar
+    #   assume they are not for chgcar
+    if is_poscar and lcur<len(lines) and not is_empty(lines,lcur):
+        cline = lines[lcur].lower()
+        lcur+=1
+        if lcur+npos>len(lines):
+            host.error('file {0} is incomplete (missing velocities)'.format(filepath))
+        #end if
+        cartesian = len(cline)>0 and (cline[0]=='c' or cline[0]=='k')
+        if cartesian:
+            vel_coord = 'cartesian'
+        else:
+            vel_coord = 'direct'
+        #end if
+        svel = []
+        for i in range(npos):
+            svel.append(lines[lcur+i].split())
+        #end for
+        lcur += npos
+        vel = array(svel,dtype=float)
+    else:
+        vel_coord = None
+        vel = None
+    #end if
+
+    # grid data is present for chgcar
+    if is_chgcar:
+        lcur+=1
+        if lcur<len(lines) and len(lines[lcur])>0:
+            grid = array(lines[lcur].split(),dtype=int)
+            lcur+=1
+        else:
+            host.error('file {0} is incomplete (missing grid)'.format(filepath))
+        #end if
+        if lcur<len(lines):
+            ng = grid.prod()
+            density = []
+            for line in lines[lcur:]:
+                density.extend(line.split())
+            #end for
+            if len(density)>0:
+                def is_float(val):
+                    try:
+                        v = float(val)
+                        return True
+                    except:
+                        return False
+                    #end try
+                #end def is_float
+                # remove anything but the densities (e.g. augmentation charges)
+                n=0
+                while is_float(density[n]) and n+ng<len(density):
+                    n+=ng
+                #end while
+                density = array(density[:n],dtype=float)
+            else:
+                host.error('file {0} is incomplete (missing density)'.format(filepath))
+            #end if
+            if density.size%ng!=0:
+                host.error('number of density data entries is not a multiple of the grid\ngrid shape: {0}\ngrid size: {1}\ndensity size: {2}'.format(grid,ng,density.size))
+            #end if
+            ndens = density.size/ng
+            if ndens==1:
+                charge_density = density
+                spin_density   = None
+            elif ndens==2:
+                charge_density = density[:ng]
+                spin_density   = density[ng:]
+            elif ndens==4:
+                charge_density = density[:ng]
+                spin_density   = empty((ng,3),dtype=float)
+                for i in range(3):
+                    spin_density[:,i] = density[(i+1)*ng:(i+2)*ng]
+                #end for
+            else:
+                host.error('density data must be present for one of the following situations\n  1) charge density only (1 density)\n2) charge and collinear spin densities (2 densities)\n  3) charge and non-collinear spin densities (4 densities)\nnumber of densities found: {0}'.format(ndens))
+            #end if
+        else:
+            host.error('file {0} is incomplete (missing density)'.format(filepath))
+        #end if
+    #end if
+
+    if is_poscar:
+        poscar = host
+    elif is_chgcar:
+        poscar = PoscarFile()
+    #end if
+
+    poscar.set(
+        description = description,
+        scale       = scale,
+        axes        = axes,
+        elem        = elem,
+        elem_count  = counts,
+        coord       = coord,
+        pos         = pos,
+        dynamic     = dynamic,
+        vel_coord   = vel_coord,
+        vel         = vel
+        )
+
+    if is_chgcar:
+        host.set(
+            poscar         = poscar,
+            grid           = grid,
+            charge_density = charge_density,
+            spin_density   = spin_density,
+            )
+    #end if
+#end def read_poscar_chgcar

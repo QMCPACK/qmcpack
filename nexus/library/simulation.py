@@ -120,6 +120,10 @@ class SimulationInput(NexusCore):
         return text
     #end def write
 
+    def return_structure(self):
+        return self.return_system(structure_only=True)
+    #end def return_structure
+
     def read_text(self,text,filepath=None):
         self.not_implemented()
     #end def read_text
@@ -133,7 +137,7 @@ class SimulationInput(NexusCore):
         self.not_implemented()
     #end def incorporate_system
 
-    def return_system(self):
+    def return_system(self,structure_only=False):
         #create a physical system object from input file information
         self.not_implemented()
     #end def return_system
@@ -273,6 +277,7 @@ class Simulation(NexusCore):
     creating_fake_sims = False
 
     sim_directories = dict()
+    all_sims = []
 
     @classmethod
     def code_name(cls):
@@ -414,6 +419,7 @@ class Simulation(NexusCore):
         #end if
         self.post_init()
 
+        Simulation.all_sims.append(self)
     #end def __init__
 
 
@@ -574,11 +580,11 @@ class Simulation(NexusCore):
         return ready
     #end def ready
 
-    def check_result(self,result_name):
+    def check_result(self,result_name,sim):
         self.not_implemented()
     #end def check_result
 
-    def get_result(self,result_name):
+    def get_result(self,result_name,sim):
         self.not_implemented()
     #end def get_result
 
@@ -1017,13 +1023,15 @@ class Simulation(NexusCore):
 
     def submit(self):
         if not self.submitted:
+            if self.skip_submit:
+                self.block_dependents(block_self=True)
+                return
+            #end if
             self.log('submitting job'+self.idstr(),n=3)
-            if not self.skip_submit:
-                if not self.job.local:
-                    self.job.submit()
-                else:
-                    self.execute() # execute local job immediately
-                #end if
+            if not self.job.local:
+                self.job.submit()
+            else:
+                self.execute() # execute local job immediately
             #end if
             self.submitted = True
             if (self.job.batch_mode or not nexus_core.monitor) and not nexus_core.generate_only:

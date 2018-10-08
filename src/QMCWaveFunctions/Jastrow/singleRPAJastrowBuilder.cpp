@@ -88,7 +88,7 @@ bool singleRPAJastrowBuilder::put(xmlNodePtr cur, int addOrbital)
   return true;
 }
 
-OrbitalBase* singleRPAJastrowBuilder::getOrbital()
+WaveFunctionComponent* singleRPAJastrowBuilder::getOrbital()
 {
 //     RealType Rs=tlen;
 //     RealType Kc = 1e-5 ;

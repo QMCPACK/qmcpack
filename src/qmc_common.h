@@ -37,8 +37,6 @@ struct QMCState
   bool dryrun;
   ///true, if wave functions are stored for next runs
   bool save_wfs;
-  ///true, if walker swap is done by async
-  bool async_swap;
   ///true, print out file
   bool io_node;
   ///true, use Ewald instead of optimal breakup for the Coulomb
@@ -49,14 +47,8 @@ struct QMCState
   int qmc_counter;
   ///number of mpi groups
   int mpi_groups;
-  /** size of memory allocated in byte per MPI
-   */
+  ///size of memory allocated in byte per MPI
   size_t memory_allocated;
-  ///supercell in full precision
-  Tensor<OHMMS_PRECISION_FULL,OHMMS_DIM> theSuperCell;
-
-  ///store the name of the main eshd file name
-  std::string master_eshd_name;
 
   ///constructor
   QMCState();
@@ -69,6 +61,9 @@ struct QMCState
    * @param before memory_allocated before calling print
    */
   void print_memory_change(const std::string& who, size_t before);
+
+  /// Print git info (commit hash, etc) if project was build from git repository
+  void print_git_info_if_present(std::ostream& os);
 };
 
 ///a unique QMCState during a run

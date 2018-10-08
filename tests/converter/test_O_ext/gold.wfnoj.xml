@@ -3,13 +3,8 @@
   <wavefunction name="psi0" target="e">
     <determinantset type="MolecularOrbital" name="LCAOBSet" source="ion0" transform="yes">
       <basisset name="LCAOBSet">
-        <atomicBasisSet name="Gaussian-G2" angular="cartesian" type="Gaussian" elementType="O" normalized="no">
+        <atomicBasisSet name="Gaussian" angular="cartesian" type="Gaussian" elementType="O" normalized="no">
           <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
-          <!-- Possible substitution O00 by a Slater-type orbital
-  <basisGroup rid="O00" n="0" l="0" type="Slater">
-    <radfunc exponent="7.87046" contraction="1.0"/>
-  </basisGroup>
--->
           <basisGroup rid="O00" n="0" l="0" type="Gaussian">
             <radfunc exponent="1.642000000000e+05" contraction="2.716833700000e-05"/>
             <radfunc exponent="2.459000000000e+04" contraction="2.142118890000e-04"/>
@@ -22,11 +17,6 @@
             <radfunc exponent="1.381000000000e+01" contraction="3.787057203820e-01"/>
             <radfunc exponent="6.256000000000e+00" contraction="2.915904474880e-01"/>
           </basisGroup>
-          <!-- Possible substitution O10 by a Slater-type orbital
-  <basisGroup rid="O10" n="1" l="0" type="Slater">
-    <radfunc exponent="6.54636" contraction="1.0"/>
-  </basisGroup>
--->
           <basisGroup rid="O10" n="1" l="0" type="Gaussian">
             <radfunc exponent="1.642000000000e+05" contraction="-1.752362200000e-05"/>
             <radfunc exponent="2.459000000000e+04" contraction="-1.343477710000e-04"/>

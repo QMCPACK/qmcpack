@@ -101,7 +101,7 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
   if (same_k)
   {
     int off         = BasisOrbitals ? 0 : N;
-    SPOSetBase* basOrbs = BasisOrbitals ? BasisOrbitals : GSOrbitals;
+    SPOSet* basOrbs = BasisOrbitals ? BasisOrbitals : GSOrbitals;
     for (int igs=0; igs<N; igs++)
     {
       PosType k_gs = GSOrbitals->get_k(igs);
@@ -303,7 +303,7 @@ OptimizableSPOSet::put (xmlNodePtr node, SPOPool_t &spo_pool)
     }
     xmlCoefs = xmlCoefs->next;
   }
-  return SPOSetBase::put(node);
+  return true;
 }
 
 
@@ -397,14 +397,6 @@ OptimizableSPOSet::evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
 }
 
 void
-OptimizableSPOSet::evaluate(const ParticleSet& P, const PosType& r,
-                            std::vector<RealType> &psi)
-{
-  app_error() << "OptimizableSPOSet::evaluate(const ParticleSet& P, const PosType& r, std::vector<RealType> &psi)\n  should not be called.  Abort.\n";
-  abort();
-}
-
-void
 OptimizableSPOSet::evaluate(const ParticleSet& P, int iat,
                             ValueVector_t& psi, GradVector_t& dpsi,
                             ValueVector_t& d2psi)
@@ -470,7 +462,7 @@ OptimizableSPOSet::evaluateBasis (const ParticleSet &P, int first, int last,
   {
     for (int iat=first; iat<last; iat++)
     {
-      GSOrbitals->evaluate (P, iat, GSVal, GSGrad, GSLapl);
+      GSOrbitals->evaluate(P, iat, GSVal, GSGrad, GSLapl);
       for (int i=0; i<M; i++)
       {
         basis_val (iat-first,i) = GSVal[N+i];
@@ -607,10 +599,10 @@ OptimizableSPOSet::evaluate_notranspose
   }
 }
 
-SPOSetBase*
+SPOSet*
 OptimizableSPOSet::makeClone() const
 {
-  SPOSetBase *gs, *basis(0);
+  SPOSet *gs, *basis(0);
   OptimizableSPOSet *clone;
   gs = GSOrbitals->makeClone();
   if (BasisOrbitals)

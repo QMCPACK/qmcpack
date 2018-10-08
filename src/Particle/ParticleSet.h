@@ -127,35 +127,30 @@ public:
 
   ///true, if a physical or local bounding box is used
   bool UseBoundBox;
-  ///true if fast update for sphere moves
-  bool UseSphereUpdate;
   ///true if the particles are grouped
   bool IsGrouped;
   ///true if the particles have the same mass
   bool SameMass;
-  /// true if all the internal state is ready for estimators
-  bool Ready4Measure;
   ///threa id
   Index_t ThreadID;
-  ///the index of the active particle for particle-by-particle moves
+  /** the index of the active particle during particle-by-particle moves
+   *
+   * when a single particle move is proposed, the particle id is assigned to activePtcl
+   * No matter the move is accepted or rejected, activePtcl is marked back to -1.
+   * This state flag is used for picking coordinates and distances for SPO evaluation.
+   */
   Index_t activePtcl;
-  ///the group of the active particle for particle-by-particle moves
+  ///the group of the active particle during particle-by-particle moves
   Index_t activeGroup;
   ///the index of the active bead for particle-by-particle moves
   Index_t activeBead;
   ///the direction reptile traveling
   Index_t direction;
-  ///pointer to the working walker
-  Walker_t*  activeWalker;
 
-  /** the position of the active particle for particle-by-particle moves
-   *
-   * Saves the position before making a move to handle rejectMove
-   */
+  ///the proposed position of activePtcl during particle-by-particle moves
   SingleParticlePos_t activePos;
 
-  /** the proposed position in the Lattice unit
-   */
+  ///the proposed position in the Lattice unit
   SingleParticlePos_t newRedPos;
 
   ///SpeciesSet of particles
@@ -166,9 +161,6 @@ public:
 
   ///distance tables that need to be updated by moving this ParticleSet
   std::vector<DistanceTableData*> DistTables;
-
-  ///spherical-grids for non-local PP
-  std::vector<ParticlePos_t*> Sphere;
 
   ///Particle density in G-space for MPC interaction
   std::vector<TinyVector<int,OHMMS_DIM> > DensityReducedGvecs;
@@ -286,7 +278,7 @@ public:
    *
    * Ensure that the distance for this-this is always created first.
    */
-  int  addTable(const ParticleSet& psrc, int dt_type);
+  int addTable(const ParticleSet& psrc, int dt_type);
 
   /** returns index of a distance table, -1 if not present
    * @param psrc source particle set
@@ -357,6 +349,15 @@ public:
    * Introduced to work with update-only methods.
    */
   void setActive(int iat);
+
+  /** return the position of the active partice
+   *
+   * activePtcl=-1 is used to flag non-physical moves
+   */
+  inline const PosType& activeR(int iat) const
+  {
+    return (activePtcl == iat)? activePos:R[iat];
+  }
   
   /**move a particle
    *@param iat the index of the particle to be moved
@@ -415,11 +416,6 @@ public:
    */
   void rejectMove(Index_t iat);
 
-  inline SingleParticlePos_t getOldPos() const
-  {
-    return activePos;
-  }
-
   void initPropertyList();
   inline int addProperty(const std::string& pname)
   {
@@ -432,7 +428,6 @@ public:
   //        void addPropertyHistoryPoint(int index, RealType data);
 
   void clearDistanceTables();
-  void resizeSphere(int nc);
 
   void convert(const ParticlePos_t& pin, ParticlePos_t& pout);
   void convert2Unit(const ParticlePos_t& pin, ParticlePos_t& pout);
@@ -458,24 +453,22 @@ public:
    */
   void saveWalker(Walker_t& awalker);
 
-  /** load a walker : R <= awalker->R 
+  /** update structure factor and unmark activePtcl
    *
-   * No other copy is made
+   * The Coulomb interaction evaluation needs the structure factor.
+   * For these reason, call donePbyP after the loop of single
+   * electron moves before evaluating the Hamiltonian. Unmark
+   * activePtcl is more of a safety measure probably not needed.
    */
-  void loadWalker(Walker_t* awalker);
+  void donePbyP();
 
-  /** update the buffer
-   *@param skip SK update if skipSK is true
-   */
-  void donePbyP(bool skipSK=false);
-
-  //return the address of the values of Hamiltonian terms
+  ///return the address of the values of Hamiltonian terms
   inline EstimatorRealType* restrict getPropertyBase()
   {
     return Properties.data();
   }
 
-  //return the address of the values of Hamiltonian terms
+  ///return the address of the values of Hamiltonian terms
   inline const EstimatorRealType* restrict getPropertyBase() const
   {
     return Properties.data();
@@ -506,11 +499,6 @@ public:
    * Used to initialize an electron ParticleSet by an ion ParticleSet
    */
   void randomizeFromSource (ParticleSet &src);
-
-  /** make clones
-   * @param n number of clones including itself
-   */
-  virtual void make_clones(int n);
 
   /** return the ip-th clone
    * @param ip thread number

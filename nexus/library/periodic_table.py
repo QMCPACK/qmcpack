@@ -17,7 +17,7 @@
 #                                                                    #
 #    Element                                                         #
 #      Class representing a single element.                          #
-#                                                                    #                                        
+#                                                                    #
 #====================================================================#
 
 
@@ -51,10 +51,6 @@ class SimpleElement(DevBase):
         self.ionic_radius      = None 
         self.melting_point     = None 
         self.boiling_point     = None 
-        #self. = None
-        #self. = None
-        #self. = None
-        #self. = None
 
         self.string_rep = None
         self.var_dict = None
@@ -536,7 +532,7 @@ class PeriodicTable(DevBase):
 	e[84].group = 16
 	e[85].group = 17
 	e[86].group = 18
-	e[87].group =1
+	e[87].group = 1
 	e[88].group = 2
 	e[89].group = 3
 	e[90].group = 0

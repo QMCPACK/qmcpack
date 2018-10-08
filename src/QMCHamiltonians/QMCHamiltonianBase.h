@@ -93,7 +93,6 @@ struct QMCHamiltonianBase: public QMCTraits
     PHYSICAL=3, 
     COLLECTABLE=4, 
     NONLOCAL=5,
-    VIRTUALMOVES=6
   };
   
   ///set the current update mode
@@ -275,16 +274,20 @@ struct QMCHamiltonianBase: public QMCTraits
    */
   virtual void resetTargetParticleSet(ParticleSet& P) = 0;
 
-  /** Evaluate the local energies of an N-particle configuration
+  /** Evaluate the local energy contribution of this component
    *@param P input configuration containing N particles
-   *@return the value of the Hamiltonian
+   *@return the value of the Hamiltonian component
    */
   virtual Return_t evaluate(ParticleSet& P) = 0;
   virtual Return_t rejectedMove(ParticleSet& P)
   {
     return 0;
   }
-  virtual Return_t evaluate(ParticleSet& P, std::vector<NonLocalData>& Txy) = 0;
+  /** Evaluate the local energy contribution of this component with Toperators updated if requested
+   *@param P input configuration containing N particles
+   *@return the value of the Hamiltonian component
+   */
+  virtual Return_t evaluateWithToperator(ParticleSet& P) { return evaluate(P); }
   
   /** evaluate value and derivatives wrt the optimizables
    *

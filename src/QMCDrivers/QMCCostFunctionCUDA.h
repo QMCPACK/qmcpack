@@ -38,7 +38,7 @@ public:
 
   ///Constructor.
   QMCCostFunctionCUDA( MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                       QMCHamiltonian& h, HamiltonianPool& hpool);
+                       QMCHamiltonian& h);
 
   ///Destructor
   ~QMCCostFunctionCUDA();

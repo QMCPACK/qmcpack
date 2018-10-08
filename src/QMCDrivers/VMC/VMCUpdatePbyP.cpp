@@ -94,7 +94,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
           prob = ratio*ratio;
           logGf = mhalf*dot(deltaR[iat],deltaR[iat]);
           getScaledDrift(tauovermass,grad_new,dr);
-          dr = thisWalker.R[iat]-W.R[iat]-dr;
+          dr = W.R[iat] - W.activePos - dr;
           logGb = -oneover2tau*dot(dr,dr);
         }
         else
@@ -117,7 +117,6 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
         }
       }
     }
-    thisWalker.R=W.R;
   }
   W.donePbyP();
   myTimers[1]->stop();

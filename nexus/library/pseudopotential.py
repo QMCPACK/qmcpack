@@ -212,10 +212,9 @@ class Pseudopotentials(DevBase):
             ppfiles = ppfiles[0]
         #end if
         pps = []
-        print
-        print '  Pseudopotentials'
+        self.log('\n  Pseudopotentials')
         for filepath in ppfiles:
-            print '    reading pp: ',filepath
+            self.log('    reading pp: ',filepath)
             ext = filepath.split('.')[-1].lower()
             if ext=='gms':
                 pp = gamessPPFile(filepath)
@@ -224,7 +223,7 @@ class Pseudopotentials(DevBase):
             #end if
             pps.append(pp)
         #end for
-        print
+        self.log(' ')
         self.addpp(pps)
     #end def readpp
 
