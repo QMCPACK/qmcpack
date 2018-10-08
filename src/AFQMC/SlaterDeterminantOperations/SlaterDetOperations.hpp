@@ -171,28 +171,6 @@ class SlaterDetOperations
       comm.barrier();
     }
 
-    template<class MatP1, class MatV, class MatB>
-    void ConstructPropagator(const MatP1& P1, const MatV& V, MatB& B, int order=6) {
-      int NMO = B.shape()[0];
-      boost::multi_array<T,2> TMM(extents[NMO][NMO]);
-      boost::multi_array_ref<T,2> T1(TMat_MM2.data(), extents[NMO][NMO]);
-      boost::multi_array_ref<T,2> T2(TMat_MM3.data(), extents[NMO][NMO]);
-      csr::CSR2MA('N',P1,TMM);
-      SlaterDeterminantOperations::base::apply_expM(V,TMM,T1,T2,order);
-      ma::product(P1,TMM,B);
-    }
-
-    template<class Mat, class MatB>
-    void Propagate(Mat&& A, const MatB& B) {
-      int NMO = A.shape()[0];
-      int NAEA = A.shape()[1];
-      if(TMat_MN.num_elements() < NMO*NAEA)
-        TMat_MN.resize(extents[NMO][NAEA]);
-      boost::multi_array_ref<T,2> TMN(TMat_MN.data(), extents[NMO][NAEA]);
-      ma::product(B,std::forward<Mat>(A),TMN);
-      A = TMN;
-    }
-
     // need to check if this is equivalent to QR!!!
     template<class Mat>
     T Orthogonalize(Mat&& A) {
