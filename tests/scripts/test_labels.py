@@ -85,28 +85,63 @@ def create_label_sets():
     hard_fail |= set([
         # https://github.com/QMCPACK/qmcpack/issues/848
         'developer-heg_54_J2rpa',
+        ])
+
+    abort |= set([
+        # https://github.com/QMCPACK/qmcpack/issues/998
+        'long-LiH_dimer_pp-vmc_hf_sdj_estimator_spindensity',
+        'short-LiH_dimer_pp-vmc_hf_sdj_estimator_spindensity',
 
         # https://github.com/QMCPACK/qmcpack/issues/1040
         'short-diamondC-afqmc_hyb_nn2',
         'short-diamondC-afqmc_incmf_nn2',
         'short-diamondC-afqmc_nn2',
-        ])
 
-    definite_stat_fail |= set([
-        # https://github.com/QMCPACK/qmcpack/issues/995
-        # https://github.com/QMCPACK/qmcpack/issues/1052
-        'short-diamondC_1x1x1_pp-vmc-J2-estimator-1rdm-4-4',
-
-        # https://github.com/QMCPACK/qmcpack/issues/982
-        'short-diamondC_1x1x1_pp-vmc-estimator-energydensity-voronoi',
-        'short-diamondC_1x1x1_pp-vmc-estimator-energydensity-cell',
-        'short-diamondC_1x1x1_pp-dmc-estimator-energydensity-cell',
+        'short-bccH_2x2x2_ae-deriv',
+        'short-bccH_2x2x2_ae-gamma-deriv',
+        'short-bccH_2x2x2_ae-grad_lap',
+        'short-bccH_3x3x3_ae-deriv',
+        'short-bccH_3x3x3_ae-gamma-deriv',
+        'short-bccH_3x3x3_ae-grad_lap',
+        'short-bccH_3x3x3_ae-not_orth-deriv',
         ])
 
     check_fail |= set([
         # https://github.com/QMCPACK/qmcpack/issues/934
         'short-diamondC_1x1x1_pp-dmc-estimator-density',
         'short-diamondC_1x1x1_pp-dmc-estimator-spindensity',
+        'long-diamondC_1x1x1_pp-dmc-estimator-density',
+        'long-diamondC_1x1x1_pp-dmc-estimator-spindensity',
+        ])
+
+    definite_stat_fail |= set([
+        # https://github.com/QMCPACK/qmcpack/issues/995
+        # https://github.com/QMCPACK/qmcpack/issues/1052
+        'short-diamondC_1x1x1_pp-vmc-J2-estimator-1rdm-4-4',
+        'short-diamondC_1x1x1_pp-vmc-noJ-estimator-1rdm-4-4',
+        'long-diamondC_1x1x1_pp-vmc-J2-estimator-1rdm-4-4',
+        'long-diamondC_1x1x1_pp-vmc-noJ-estimator-1rdm-4-4',
+
+        # https://github.com/QMCPACK/qmcpack/issues/982
+        'long-diamondC_1x1x1_pp-vmc-estimator-energydensity-voronoi',
+        'long-diamondC_1x1x1_pp-vmc-estimator-energydensity-cell',
+        'long-diamondC_1x1x1_pp-dmc-estimator-energydensity-cell',
+        'long-LiH_dimer_ae-vmc_hf_noj_estimator_energydensity_voronoi',
+        'long-LiH_dimer_ae-vmc_hf_sdj_estimator_energydensity_voronoi',
+        'short-diamondC_1x1x1_pp-vmc-estimator-energydensity-voronoi',
+        'short-diamondC_1x1x1_pp-vmc-estimator-energydensity-cell',
+        'short-diamondC_1x1x1_pp-dmc-estimator-energydensity-cell',
+        'short-LiH_dimer_ae-vmc_hf_noj_estimator_energydensity_voronoi',
+        'short-LiH_dimer_ae-vmc_hf_sdj_estimator_energydensity_voronoi',
+        ])
+
+    intermittent_stat_fail |= set([
+        'short-bccH_1x1x1_ae-csvmc-all_sdj',
+        'short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj',
+        'short-bccH_1x1x1_ae-vmc-all-nodrift_sdj',
+        ])
+
+    poor_test |= set([
         ])
 
     # aos specific (but general otherwise)
@@ -116,7 +151,20 @@ def create_label_sets():
 
     # soa specific (but general otherwise)
     if soa:
-        None
+        hard_fail |= set([
+            'long-heg_14_gamma-sjb',
+            'short-heg_14_gamma-sjb',
+            ])
+        abort |= set([
+            'long-c_no-hf_vmc',
+            'short-c_no-hf_vmc',
+            'short-c_no-sj_dmc',
+            'short-H2-FDLR',
+            'short-H2-orb-opt',
+            'short-H4-FDLR',
+            'short-H4-orb-opt',
+            'short-H4-orb-opt-dmc',
+            ])
     #end if
 
     # gpu specific (but general otherwise)
@@ -139,32 +187,89 @@ def create_label_sets():
         unsupported |= set()
     #end if
 
+
     # finer details based on build
+
     # AoS issues
     if aos and cpu and real and full:
-        None
+        abort |= set([
+            'long-NiO_afm-afqmc',
+            'short-c_no-hf_vmc-4-4',
+            ])
+        definite_stat_fail |= set([
+            'long-monoO_1x1x1_pp-vmc_sdj3',  # flux fails
+            'short-H4-opt-cslinear-rescale', # energy fails
+            ])
+        intermittent_stat_fail |= set([
+            'short-H4-orb-opt-dmc',
+            ])
     elif aos and cpu and real and mixed:
         None
     elif aos and cpu and comp and full:
-        None
+        intermittent_stat_fail |= set([
+            'long-diamondC_1x1x1_pp-vmc-dmc-allp_sdj',
+            'short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj',
+            ])
     elif aos and cpu and comp and mixed:
         None
-    elif aos and gpu and real:
+    elif aos and gpu and real and full:
         None
-    elif aos and gpu and comp:
+    elif aos and gpu and real and mixed:
         None
+    elif aos and gpu and comp and full:
+        None
+    elif aos and gpu and comp and mixed:
+        None
+    #end if
+
     # SoA issues
-    elif soa and cpu and real and full:
-        None
+    if soa and comp and cpu:
+        abort |= set([
+            'short-diamondC_1x1x1_pp-vmc_gaussian_sdj',
+            'short-diamondC_2x1x1_pp-vmc_gaussian_sdj',
+            ])
+    #end if
+    if soa and cpu and real and full:
+        abort |= set([
+            'long-NiO_afm-afqmc',
+            ])
+        check_fail |= set([
+            'short-diamondC_2x1x1_pp-vmc_gaussian_sdj', # ionion fails
+            ])
+        definite_stat_fail |= set([
+            'long-C2_pp-msdj_vmc',
+            'long-diamondC_1x1x1_pp-vmc-dmc-allp_sdj',
+            ])
+        intermittent_stat_fail |= set([
+            'long-H2O_dimer_sep_pp-j3_dmc_la',
+            'short-C2_pp-msdj_vmc',
+            'short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj',
+            ])
     elif soa and cpu and real and mixed:
-        None
+        abort |= set([
+            'short-diamondC_1x1x1_pp-vmc-estimator-energydensity-cell',
+            'short-diamondC_1x1x1_pp-vmc-estimator-energydensity-voronoi',
+            ])
+        check_fail |= set([
+            'short-diamondC_2x1x1_pp-vmc_gaussian_sdj', # ionion fails
+            ])
+        intermittent_stat_fail |= set([
+            'short-LiH_dimer_pp-vmc_hf_sdj_hdf5',
+            ])
     elif soa and cpu and comp and full:
         None
     elif soa and cpu and comp and mixed:
+        abort |= set([
+            'short-diamondC_1x1x1_pp-vmc-estimator-energydensity-cell',
+            'short-diamondC_1x1x1_pp-vmc-estimator-energydensity-voronoi',
+            ])
+    elif soa and gpu and real and full:
         None
-    elif soa and gpu and real:
+    elif soa and gpu and real and mixed:
         None
-    elif soa and gpu and comp:
+    elif soa and gpu and comp and full:
+        None
+    elif soa and gpu and comp and mixed:
         None
     #end if
 
@@ -227,6 +332,26 @@ def create_label_sets():
     return positive_label_sets,negative_label_sets
 #end def create_label_sets
 
+
+def failure_sites():
+    fsites = '''
+long-C2_pp-msdj_vmc-1-16                  oxygen
+long-diamondC_1x1x1_pp-vmc-dmc-allp_sdj   oxygen
+long-H2O_dimer_sep_pp-j3_dmc_la           oxygen
+long-monoO_1x1x1_pp-vmc_sdj3              oxygen 
+long-NiO_afm-afqmc-16-1-Eloc              oxygen
+short-bccH_1x1x1_ae-csvmc-all_sdj         oxygen bora
+short-bccH_1x1x1_ae-vmc-all-nodrift_sdj          bora
+short-C2_pp-msdj_vmc-1-16-variance        oxygen
+short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj  oxygen
+short-diamondC_1x1x1_pp-vmc_gaussian_sdj  oxygen
+short-diamondC_2x1x1_pp-vmc_gaussian_sdj  oxygen
+short-H4-opt-cslinear-rescale             oxygen
+short-H4-orb-opt-dmc                      oxygen
+short-LiH_dimer_pp-vmc_hf_sdj_hdf5               bora
+    '''
+    return fsites
+#end def fsites
 
 
 def check_exclusive(*labels):
