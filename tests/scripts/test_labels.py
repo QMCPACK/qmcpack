@@ -37,7 +37,7 @@ def error(msg=None):
 #     definite_stat_fail     - statistical failure by > 5 sigma
 #     intermittent_stat_fail - statistical failure by < 5 sigma
 #     deterministic_fail     - fails non-rigorous deterministic check
-#     (failure types are exclusive and comprehensive for failures)
+#     (failure types are comprehensive for failures)
 #  
 #   test quality categories
 #     good_test       - test well designed: test fail means there is a bug  
@@ -97,12 +97,9 @@ def create_label_sets():
         'short-diamondC-afqmc_incmf_nn2',
         'short-diamondC-afqmc_nn2',
 
-        'short-bccH_2x2x2_ae-deriv',
         'short-bccH_2x2x2_ae-gamma-deriv',
         'short-bccH_2x2x2_ae-grad_lap',
-        'short-bccH_3x3x3_ae-deriv',
         'short-bccH_3x3x3_ae-gamma-deriv',
-        'short-bccH_3x3x3_ae-grad_lap',
         'short-bccH_3x3x3_ae-not_orth-deriv',
         ])
 
@@ -136,9 +133,25 @@ def create_label_sets():
         ])
 
     intermittent_stat_fail |= set([
+        'long-diamondC_1x1x1_pp-vmc-dmc-allp_sdj',
+        'long-diamondC_2x1x1_pp-dmc-reconf_sdj',
+        'long-diamondC_2x1x1_pp-vmc_sdj',
+        'long-H2O_dimer_sep_pp-j3_dmc_la',
         'short-bccH_1x1x1_ae-csvmc-all_sdj',
+        'short-bccH_1x1x1_ae-csvmc-all-nodrift_sdj',
         'short-bccH_1x1x1_ae-csvmc-pbyp-nodrift_sdj',
+        'short-bccH_1x1x1_ae-dmc-all_sdj',
         'short-bccH_1x1x1_ae-vmc-all-nodrift_sdj',
+        'short-C2_pp-msdj_vmc',
+        'short-C2_pp-msdj-traditional_vmc',
+        'short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj',
+        'short-diamondC_2x1x1_pp-dmc-reconf_sdj',
+        'short-H4-opt-adaptive',
+        'long-LiH_dimer_ae_qp-vmc_hf_noj',
+        'short-LiH_dimer_pp-vmc_hf_sdj_hdf5',
+        'short-LiH_dimer_pp-vmc_hf_sdj_xml',
+        'short-LiH_solid_1x1x1_pp-x-dmcnl-hf_noj',
+        'short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj',
         ])
 
     poor_test |= set([
@@ -146,7 +159,17 @@ def create_label_sets():
 
     # aos specific (but general otherwise)
     if aos:
-        unsupported |= set()
+        intermittent_stat_fail |= set([
+            'short-bccH_2x2x2_ae-deriv',
+            'short-bccH_3x3x3_ae-deriv',
+            'short-bccH_3x3x3_ae-grad_lap',
+            'short-H4-orb-opt-dmc',
+            ])
+        poor_test |= set([
+            'short-bccH_2x2x2_ae-deriv',
+            'short-bccH_3x3x3_ae-deriv',
+            'short-bccH_3x3x3_ae-grad_lap',
+            ])
     #end if
 
     # soa specific (but general otherwise)
@@ -157,6 +180,9 @@ def create_label_sets():
             ])
         abort |= set([
             'long-c_no-hf_vmc',
+            'short-bccH_2x2x2_ae-deriv',
+            'short-bccH_3x3x3_ae-deriv',
+            'short-bccH_3x3x3_ae-grad_lap',
             'short-c_no-hf_vmc',
             'short-c_no-sj_dmc',
             'short-H2-FDLR',
@@ -165,26 +191,34 @@ def create_label_sets():
             'short-H4-orb-opt',
             'short-H4-orb-opt-dmc',
             ])
+        intermittent_stat_fail |= set([
+            'short-H4-opt-cslinear-rescale',
+            ])
     #end if
 
     # gpu specific (but general otherwise)
     if gpu:
-        unsupported |= set()
+        None
     #end if
 
     # real specific (but general otherwise)
     if real:
-        unsupported |= set()
+        None
     #end if
 
     # complex specific (but general otherwise)
     if comp:
-        unsupported |= set()
+        None
     #end if
     
     # mixed precision specific (but general otherwise)
     if mixed:
-        unsupported |= set()
+        abort |= set([
+            'short-diamondC_1x1x1_pp-vmc-estimator-energydensity-cell',
+            'short-diamondC_1x1x1_pp-vmc-estimator-energydensity-voronoi',
+            'short-LiH_dimer_ae-vmc_hf_noj_estimator_energydensity_voronoi',
+            'short-LiH_dimer_pp-vmc_hf_sdj_estimator_spindensity',
+            ])
     #end if
 
 
@@ -197,19 +231,16 @@ def create_label_sets():
             'short-c_no-hf_vmc-4-4',
             ])
         definite_stat_fail |= set([
-            'long-monoO_1x1x1_pp-vmc_sdj3',  # flux fails
-            'short-H4-opt-cslinear-rescale', # energy fails
-            ])
-        intermittent_stat_fail |= set([
-            'short-H4-orb-opt-dmc',
+            'long-monoO_1x1x1_pp-vmc_sdj3',     # flux fails
+            'short-H4-opt-cslinear-rescale',    # energy fails
+            'short-LiH_dimer_ae_qp-vmc_hf_noj', # energy fails
             ])
     elif aos and cpu and real and mixed:
-        None
-    elif aos and cpu and comp and full:
-        intermittent_stat_fail |= set([
-            'long-diamondC_1x1x1_pp-vmc-dmc-allp_sdj',
-            'short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj',
+        definite_stat_fail |= set([
+            'short-c_no-sj_dmc', # variance fails
             ])
+    elif aos and cpu and comp and full:
+        None
     elif aos and cpu and comp and mixed:
         None
     elif aos and gpu and real and full:
@@ -240,29 +271,14 @@ def create_label_sets():
             'long-C2_pp-msdj_vmc',
             'long-diamondC_1x1x1_pp-vmc-dmc-allp_sdj',
             ])
-        intermittent_stat_fail |= set([
-            'long-H2O_dimer_sep_pp-j3_dmc_la',
-            'short-C2_pp-msdj_vmc',
-            'short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj',
-            ])
     elif soa and cpu and real and mixed:
-        abort |= set([
-            'short-diamondC_1x1x1_pp-vmc-estimator-energydensity-cell',
-            'short-diamondC_1x1x1_pp-vmc-estimator-energydensity-voronoi',
-            ])
         check_fail |= set([
             'short-diamondC_2x1x1_pp-vmc_gaussian_sdj', # ionion fails
-            ])
-        intermittent_stat_fail |= set([
-            'short-LiH_dimer_pp-vmc_hf_sdj_hdf5',
             ])
     elif soa and cpu and comp and full:
         None
     elif soa and cpu and comp and mixed:
-        abort |= set([
-            'short-diamondC_1x1x1_pp-vmc-estimator-energydensity-cell',
-            'short-diamondC_1x1x1_pp-vmc-estimator-energydensity-voronoi',
-            ])
+        None
     elif soa and gpu and real and full:
         None
     elif soa and gpu and real and mixed:
@@ -333,26 +349,6 @@ def create_label_sets():
 #end def create_label_sets
 
 
-def failure_sites():
-    fsites = '''
-long-C2_pp-msdj_vmc-1-16                  oxygen
-long-diamondC_1x1x1_pp-vmc-dmc-allp_sdj   oxygen
-long-H2O_dimer_sep_pp-j3_dmc_la           oxygen
-long-monoO_1x1x1_pp-vmc_sdj3              oxygen 
-long-NiO_afm-afqmc-16-1-Eloc              oxygen
-short-bccH_1x1x1_ae-csvmc-all_sdj         oxygen bora
-short-bccH_1x1x1_ae-vmc-all-nodrift_sdj          bora
-short-C2_pp-msdj_vmc-1-16-variance        oxygen
-short-diamondC_1x1x1_pp-vmc-dmc-allp_sdj  oxygen
-short-diamondC_1x1x1_pp-vmc_gaussian_sdj  oxygen
-short-diamondC_2x1x1_pp-vmc_gaussian_sdj  oxygen
-short-H4-opt-cslinear-rescale             oxygen
-short-H4-orb-opt-dmc                      oxygen
-short-LiH_dimer_pp-vmc_hf_sdj_hdf5               bora
-    '''
-    return fsites
-#end def fsites
-
 
 def check_exclusive(*labels):
     # fast check of mutual exclusivity
@@ -370,8 +366,9 @@ def check_exclusive(*labels):
     if not exclusive:
         for i in range(len(labels)):
             for j in range(i):
-                if(len(lsets[i]&lsets[j])>0):
-                    error('label sets {0} and {1} are not mutually exclusive'.format(labels[i],labels[j]))
+                overlap = lsets[i] & lsets[j]
+                if(len(overlap)>0):
+                    error('label sets {0} and {1} are not mutually exclusive\n  overlap: {2}'.format(labels[i],labels[j],sorted(overlap)))
                 #end if
             #end for
         #end for
@@ -396,15 +393,6 @@ def check_positive_label_sets(positive_label_sets):
 
     check_exclusive('bug','unsupported','cause_unknown')
     check_exclusive('bug','unsupported','poor_test')
-
-    check_exclusive('hard_fail',
-                    'abort',
-                    'check_fail',
-                    'reference_stat_fail',
-                    'definite_stat_fail',
-                    'intermittent_stat_fail',
-                    'deterministic_fail'
-                    )
 
     check_exclusive('good_test','poor_test')
 
