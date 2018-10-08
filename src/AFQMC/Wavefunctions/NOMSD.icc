@@ -528,7 +528,7 @@ namespace afqmc
    * Ov is assumed to be local to the core
    */ 
   template<class WlkSet, class MatG, class TVec>
-  void NOMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact, bool transpose)
+  void NOMSD::MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact, bool transpose, bool back_propagate)
   {
     assert(G.strides()[1]==1);
     assert(Ov.strides()[0]==1);
@@ -547,6 +547,11 @@ namespace afqmc
     auto Gsize = size_t(dm_size(not compact));
     if(localGbuff.size() < Gsize)
       localGbuff.resize(extents[Gsize]);
+    auto wlk_dims = wset.walker_dims();
+    if(back_propagate && (T2ForBP.shape()[0] != wlk_dims.first || T2ForBP.shape()[1] != wlk_dims.second)) {
+      T2ForBP.resize(extents[wlk_dims.first][wlk_dims.second]);
+      T1ForBP.resize(extents[wlk_dims.first][NAEA]);
+    }
     if(walker_type != COLLINEAR) {
 
       auto Gdims = dm_dims(not compact,Alpha);
@@ -566,8 +571,16 @@ namespace afqmc
       for(int tk=tk0; tk<tkN; ++tk) {
         int iw = tk/ndet;
         int nd = tk%ndet;
-        ComplexType ov = SDetOp.MixedDensityMatrix(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),
-                                                   G2D_,compact);
+        ComplexType ov;
+        if(back_propagate) {
+          boost::multi_array_ref<ComplexType, 2> PsiBP = boost::multi_array_ref<ComplexType, 2>(T2ForBP.data(), extents[NMO][NAEA]);
+          BackPropagateOrbMat(OrbMats[nd], wset[iw], PsiBP);
+          ov = SDetOp.MixedDensityMatrix(PsiBP,wset[iw].SlaterMatrix(Alpha),
+                                                     G2D_,not compact);
+        } else {
+          ov = SDetOp.MixedDensityMatrix(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),
+                                                     G2D_,compact);
+        }
         if(walker_type==CLOSED) ov *= ov;
         ov *= std::conj(ci[nd]);
         // if the overhead of the mutex is too much, invert the loop order (make iw the fast index)
@@ -609,8 +622,16 @@ namespace afqmc
           boost::multi_array_ref<ComplexType,1> G1D_2(shmbuff_for_G->data(),extents[Gsize]);
           int iw = (last_task_index+ntasks_total_serial)/ndet;
           int nd = (last_task_index+ntasks_total_serial)%ndet;
-          ComplexType ov = SDetOp.MixedDensityMatrix(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),
-                                                   G2D_2,local_group_comm,compact);
+          ComplexType ov;
+          if(back_propagate) {
+            boost::multi_array_ref<ComplexType, 2> PsiBP = boost::multi_array_ref<ComplexType, 2>(T2ForBP.data(), extents[NMO][NAEA]);
+            BackPropagateOrbMat(OrbMats[nd], wset[iw], PsiBP);
+            ov = SDetOp.MixedDensityMatrix(PsiBP,wset[iw].SlaterMatrix(Alpha),
+                                           G2D_2,local_group_comm,not compact);
+          } else {
+            ov = SDetOp.MixedDensityMatrix(OrbMats[nd],wset[iw].SlaterMatrix(Alpha),
+                                           G2D_2,local_group_comm,compact);
+          }
           if(walker_type==CLOSED) ov *= ov;
           ov *= std::conj(ci[nd]);
 
@@ -652,10 +673,22 @@ namespace afqmc
       for(int tk=tk0; tk<tkN; ++tk) {
         int iw = tk/ndet;
         int nd = tk%ndet;
-        ComplexType ov_ = SDetOp.MixedDensityMatrix(OrbMats[2*nd],wset[iw].SlaterMatrix(Alpha),
-                                                   GA2D_,compact);
-        ov_ *= SDetOp.MixedDensityMatrix(OrbMats[2*nd+1],wset[iw].SlaterMatrix(Beta),
-                                                   GB2D_,compact);
+        ComplexType ov_;
+        if(back_propagate) {
+          boost::multi_array_ref<ComplexType, 2> PsiBPAlpha = boost::multi_array_ref<ComplexType, 2>(T2ForBP.data(), extents[NMO][NAEA]);
+          BackPropagateOrbMat(OrbMats[2*nd], wset[iw], PsiBPAlpha);
+          ov_ = SDetOp.MixedDensityMatrix(PsiBPAlpha,wset[iw].SlaterMatrix(Alpha),
+                                          GA2D_,not compact);
+          boost::multi_array_ref<ComplexType, 2> PsiBPBeta = boost::multi_array_ref<ComplexType, 2>(T2ForBP.data()+NMO*NAEA, extents[NMO][NAEB]);
+          BackPropagateOrbMat(OrbMats[2*nd+1], wset[iw], PsiBPBeta);
+          ov_ *= SDetOp.MixedDensityMatrix(PsiBPBeta,wset[iw].SlaterMatrix(Beta),
+                                           GB2D_,not compact);
+        } else { 
+          ov_ = SDetOp.MixedDensityMatrix(OrbMats[2*nd],wset[iw].SlaterMatrix(Alpha),
+                                          GA2D_,compact);
+          ov_ *= SDetOp.MixedDensityMatrix(OrbMats[2*nd+1],wset[iw].SlaterMatrix(Beta),
+                                           GB2D_,compact);
+        }
         ov_ *= std::conj(ci[nd]);
         if(transpose) {
           std::lock_guard<boost::mpi3::shm::mutex> guard(*mutex);
@@ -702,10 +735,22 @@ namespace afqmc
           int task = (last_task_index+ntasks_total_serial);
           int iw = task/ndet;
           int nd = task%ndet;
-          ComplexType ov_ = SDetOp.MixedDensityMatrix(OrbMats[2*nd],wset[iw].SlaterMatrix(Alpha),
-                                                 GA2D_2,local_group_comm,compact);
-          ov_ *= SDetOp.MixedDensityMatrix(OrbMats[2*nd+1],wset[iw].SlaterMatrix(Beta),
-                                                   GB2D_2,local_group_comm,compact);
+          ComplexType ov_;
+          if(back_propagate) {
+            boost::multi_array_ref<ComplexType, 2> PsiBPAlpha = boost::multi_array_ref<ComplexType, 2>(T2ForBP.data(), extents[NMO][NAEA]);
+            BackPropagateOrbMat(OrbMats[2*nd], wset[iw], PsiBPAlpha);
+            ov_ = SDetOp.MixedDensityMatrix(PsiBPAlpha,wset[iw].SlaterMatrix(Alpha),
+                                            GA2D_,local_group_comm,not compact);
+            boost::multi_array_ref<ComplexType, 2> PsiBPBeta = boost::multi_array_ref<ComplexType, 2>(T2ForBP.data()+NMO*NAEA, extents[NMO][NAEB]);
+            BackPropagateOrbMat(OrbMats[2*nd+1], wset[iw], PsiBPBeta);
+            ov_ *= SDetOp.MixedDensityMatrix(PsiBPBeta,wset[iw].SlaterMatrix(Beta),
+                                             GB2D_,local_group_comm,not compact);
+          } else {
+            SDetOp.MixedDensityMatrix(OrbMats[2*nd],wset[iw].SlaterMatrix(Alpha),
+                                      GA2D_2,local_group_comm,compact);
+            ov_ *= SDetOp.MixedDensityMatrix(OrbMats[2*nd+1],wset[iw].SlaterMatrix(Beta),
+                                             GB2D_2,local_group_comm,compact);
+          }
           ov_ *= std::conj(ci[nd]);
           if(local_group_comm.root()) {
             if(transpose) {
@@ -1062,6 +1107,23 @@ namespace afqmc
     //       Set it to zero.
     for(int i=0; i<v.num_elements(); i++)
       v[i] = ComplexType(real(v[i]),0.0); 
+  }
+
+  template <class MatA, class Wlk, class MatB>
+  ComplexType NOMSD::BackPropagateOrbMat(MatA& OrbMat, const Wlk& walker, MatB& PsiBP)
+  {
+    ComplexType detR = ComplexType(1.0, 0.0);
+    const int nbp = walker.getNumBackProp();
+    int ip = nbp - 1;
+    boost::multi_array_ref<const ComplexType, 2> B = walker.BMatrix(nbp-1);
+    ma::product(OrbMat, B, T1ForBP);
+    for (int i = 0; i < nbp-1; i++) {
+      ip -= 1;
+      boost::multi_array_ref<const ComplexType, 2> B = walker.BMatrix(ip);
+      ma::product(T1ForBP, B, std::forward<boost::multi_array_ref<ComplexType, 2> >(PsiBP));
+      T1ForBP = PsiBP;
+    }
+    return detR;
   }
 
 }

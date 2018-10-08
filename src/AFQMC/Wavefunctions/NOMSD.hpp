@@ -245,7 +245,7 @@ class NOMSD: public AFQMCInfo
      *                 otherwise returns the transpose with Dim: [nW][XXX}
      */
     template<class WlkSet, class MatG>
-    void MixedDensityMatrix(const WlkSet& wset, MatG&& G, bool compact=true, bool transpose=false) {
+    void MixedDensityMatrix(const WlkSet& wset, MatG&& G, bool compact=true, bool transpose=false, bool back_propagate=false) {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
         ovlp.resize(extents[nw]);
@@ -253,7 +253,7 @@ class NOMSD: public AFQMCInfo
     }
 
     template<class WlkSet, class MatG, class TVec>
-    void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
+    void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false, bool back_propagate=false);
 
     /*
      * Calculates the mixed density matrix for all walkers in the walker set
@@ -311,6 +311,13 @@ class NOMSD: public AFQMCInfo
     template<class Mat>
     void OrthogonalizeExcited(Mat&& A, SpinTypes spin);
 
+    /*
+     * Back Propagates the trial wavefunction.
+    */
+    template<class MatA, class Wlk, class MatB>
+    ComplexType BackPropagateOrbMat(MatA& OrbMat, const Wlk& walker, MatB& PsiBP);
+
+
   protected: 
 
     TaskGroup_& TG;
@@ -323,6 +330,8 @@ class NOMSD: public AFQMCInfo
 
     // eventually switched from CMatrix to SMHSparseMatrix(node)
     std::vector<PsiT_Matrix> OrbMats;
+    // Buffers for back propagation.
+    boost::multi_array<ComplexType, 2> T1ForBP, T2ForBP;
 
     std::unique_ptr<SHM_Buffer> shmbuff_for_E;
 
