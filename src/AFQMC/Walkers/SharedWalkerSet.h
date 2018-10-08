@@ -250,8 +250,27 @@ class SharedWalkerSet: public AFQMCInfo
       bool isBMatrixBufferFull() const {
         return getHead() == 0;
       }
-      ComplexType& cosineFactor() { 
-        if(indx[COS_FAC]) 
+      void resetBMatrixBuffer() {
+        if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0) {
+          APP_ABORT("error: access to uninitialized BP sector. \n");
+        }
+        int nbp = desc[3];
+        for(int ip = 0; ip < nbp; ip++) {
+          SMType B = SMType(&(w_[indx[PROPAGATORS]+desc[0]*desc[0]*ip]),
+                            extents[desc[0]][desc[0]]);
+          for(int i = 0; i < desc[0]; i++) {
+            for(int j = 0; j < desc[0]; j++) {
+              if(i == j) {
+                B[i][i] = ComplexType(1.0, 0.0);
+              } else {
+                B[i][j] = ComplexType(0.0, 0.0);
+              }
+            }
+          }
+        }
+      }
+      ComplexType& cosineFactor() {
+        if(indx[COS_FAC]) {
           APP_ABORT("error: access to uninitialized BP sector. \n");
         return w_[indx[COS_FAC] + getHead()]; 
       }	
