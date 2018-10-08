@@ -22,6 +22,12 @@
 namespace spline2
 {
 
+/** break x into the integer part and residual part and apply bounds
+ * @param x input coordinate
+ * @param dx fractional part
+ * @param ind integer part
+ * @param ng upper bound
+ */
 template<typename T, typename TRESIDUAL>
 inline void getSplineBound(T x, TRESIDUAL& dx, int& ind, int ng)
 {
@@ -30,14 +36,23 @@ inline void getSplineBound(T x, TRESIDUAL& dx, int& ind, int ng)
   ind = std::min(std::max(int(0),static_cast<int>(ipart)),ng);
 }
 
+/** class for cublic spline parameters
+ *
+ * static constant data and static functions are defined here
+ */
 template<typename T>
 struct MultiBsplineData
 {
+  /// spline interpolation parameters, statically initialized
   static const T A44[16];
   static const T dA44[16];
   static const T d2A44[16];
   static const T d3A44[16];
 
+  /** compute interpolation prefactors
+   * @param tx fractional coordinate with respect to the grid length in range [0,1)
+   * @param a[4] prefactor for the four consecutive grid points
+   */
   inline static void compute_prefactors(T a[4], T tx)
   {
     a[0] = ((A44[0] * tx + A44[1]) * tx + A44[2]) * tx + A44[3];
@@ -46,6 +61,12 @@ struct MultiBsplineData
     a[3] = ((A44[12] * tx + A44[13]) * tx + A44[14]) * tx + A44[15];
   }
 
+  /** compute interpolation prefactors up to the second order
+   * @param tx fractional coordinate with respect to the grid length in range [0,1)
+   * @param a[4] prefactor for the four consecutive grid points
+   * @param da[4] first order prefactor for the four consecutive grid points
+   * @param d2a[4] second order prefactor for the four consecutive grid points
+   */
   inline static void compute_prefactors(T a[4], T da[4], T d2a[4], T tx)
   {
     a[0]   = ((A44[0] * tx + A44[1]) * tx + A44[2]) * tx + A44[3];

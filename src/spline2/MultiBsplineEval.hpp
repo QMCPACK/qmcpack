@@ -14,10 +14,10 @@
  * Master header file to define MultiBspline and MultiBspline1D evaluation functions
  *
  * The evaluation functions in MultiBspline and MultiBspline1D are memory
- * bandwith (BW) bound. Optimizations towards maximizing BW usage is always
+ * bandwidth (BW) bound. Optimizations towards maximizing BW usage is always
  * needed. For this reason, with SIMD, memory alignment is required in order
  * to saturate the BW. The number of splines must be a multiple of aligned
- * size. The result vectors must be in Structure-of-Array datayout with
+ * size. The result vectors must be in Structure-of-Array data layout with
  * their starting address correctly aligned.
  *
  */
@@ -28,6 +28,7 @@
 #include <spline2/bspline_traits.hpp>
 #include <spline2/MultiBsplineData.hpp>
 
+// select evaluation functions based on the architecture.
 ///include evaluate_v_impl
 #ifdef BGQPX
 #include <spline2/MultiBsplineValue_BGQ.hpp>
@@ -45,6 +46,7 @@
 namespace spline2
 {
 
+  /// evaluate values optionally in the range [first,last)
   template<typename SPLINET, typename PT, typename VT>
     __forceinline void evaluate3d(const SPLINET &spline, const PT& r, VT& psi)
     {
@@ -57,6 +59,7 @@ namespace spline2
       evaluate_v_impl(spline,r[0],r[1],r[2],psi.data()+first,first,last);
     }
 
+  /// evaluate values, gradients, laplacians optionally in the range [first,last)
   template<typename SPLINET, typename PT, typename VT, typename GT, typename LT>
     __forceinline void evaluate3d_vgl(const SPLINET &spline, const PT& r, VT& psi, GT& grad, LT& lap)
     {
@@ -69,6 +72,7 @@ namespace spline2
       evaluate_vgl_impl(spline,r[0],r[1],r[2],psi.data()+first,grad.data()+first,lap.data()+first,psi.size(),first,last);
     }
 
+  /// evaluate values, gradients, hessians optionally in the range [first,last)
   template<typename SPLINET, typename PT, typename VT, typename GT, typename HT>
     __forceinline void evaluate3d_vgh(const SPLINET &spline, const PT& r, VT& psi, GT& grad, HT& hess)
     {

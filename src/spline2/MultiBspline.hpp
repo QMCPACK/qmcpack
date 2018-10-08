@@ -13,15 +13,8 @@
 // -*- C++ -*-
 /**@file MultiBspline.hpp
  *
- * Master header file to define MultiBspline and MultiBspline1D
- *
- * The evaluation functions in MultiBspline and MultiBspline1D are memory
- * bandwith (BW) bound. Optimizations towards maximizing BW usage is always
- * needed. For this reason, with SIMD, memory alignment is required in order
- * to saturate the BW. The number of splines must be a multiple of aligned
- * size. The result vectors must be in Structure-of-Array datayout with
- * their starting address correctly aligned.
- *
+ * define classes MultiBspline and MultiBspline1D
+ * The evaluation functions are defined in MultiBsplineEval.hpp
  */
 #ifndef QMCPLUSPLUS_MULTIEINSPLINE_COMMON_HPP
 #define QMCPLUSPLUS_MULTIEINSPLINE_COMMON_HPP
