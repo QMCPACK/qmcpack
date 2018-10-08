@@ -14,10 +14,10 @@
  * Master header file to define MultiBspline and MultiBspline1D evaluation functions
  *
  * The evaluation functions in MultiBspline and MultiBspline1D are memory
- * bandwith (BW) bound. Optimizations towards maximizing BW usage is always
+ * bandwidth (BW) bound. Optimizations towards maximizing BW usage is always
  * needed. For this reason, with SIMD, memory alignment is required in order
  * to saturate the BW. The number of splines must be a multiple of aligned
- * size. The result vectors must be in Structure-of-Array datayout with
+ * size. The result vectors must be in Structure-of-Array data layout with
  * their starting address correctly aligned.
  *
  */

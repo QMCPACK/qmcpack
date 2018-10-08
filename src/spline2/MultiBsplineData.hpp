@@ -64,7 +64,7 @@ struct MultiBsplineData
   /** compute interpolation prefactors up to the second order
    * @param tx
    * @param a[4] prefactor for the four consecutive grid points
-   * @param da[4] firt order prefactor for the four consecutive grid points
+   * @param da[4] first order prefactor for the four consecutive grid points
    * @param d2a[4] second order prefactor for the four consecutive grid points
    */
   inline static void compute_prefactors(T a[4], T da[4], T d2a[4], T tx)
