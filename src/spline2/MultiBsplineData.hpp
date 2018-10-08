@@ -50,7 +50,7 @@ struct MultiBsplineData
   static const T d3A44[16];
 
   /** compute interpolation prefactors
-   * @param tx factional coordinate with respect to the grid length in range [0,1)
+   * @param tx fractional coordinate with respect to the grid length in range [0,1)
    * @param a[4] prefactor for the four consecutive grid points
    */
   inline static void compute_prefactors(T a[4], T tx)
@@ -62,7 +62,7 @@ struct MultiBsplineData
   }
 
   /** compute interpolation prefactors up to the second order
-   * @param tx factional coordinate with respect to the grid length in range [0,1)
+   * @param tx fractional coordinate with respect to the grid length in range [0,1)
    * @param a[4] prefactor for the four consecutive grid points
    * @param da[4] first order prefactor for the four consecutive grid points
    * @param d2a[4] second order prefactor for the four consecutive grid points
