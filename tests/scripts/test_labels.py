@@ -1,9 +1,14 @@
 #! /usr/bin/env python
 
 import sys
+import traceback
 
-def error(mark):
-    sys.stdout.write('label_error;mark_'+mark)
+def error(msg=None):
+    if msg is None:
+        sys.stdout.write(traceback.format_exc())
+    else:
+        sys.stdout.write('error: '+msg+'\n')
+    #end if
     sys.exit(1)
 #end def error
 
@@ -13,46 +18,79 @@ def error(mark):
 #   main classification
 #     stable   - test is expected to pass
 #     unstable - test may fail (definitely or with some probability)
-#     (stable/unstable are exclusive)
+#     (stable/unstable are exclusive and comprehensive for all tests)
 #
-#   feature classification of unstable tests
-#     broken      - test fails because tested feature is broken (bug)
-#     unsupported - test fails because tested feature is not supported and never will be
-#     (broken/unsupported are exclusive but not comprehensive)
-#   
+#   reason for instability
+#     bug           - test failure definitely a bug and QMCPACK needs to be fixed
+#     unsupported   - test fails because feature is not supported and never will be
+#     poor_test     - test fails because test is insufficient (false positive)
+#     cause_unknown - cause/nature of failure is not known and needs investigation
+#     (bug/unsupported/poor/unknown are comprehensive for failures)
+#
 #   failure type classification of unstable tests
-#     hard_fail              - ungraceful crash (segfault, etc) (bug)
-#     abort                  - controlled abort (bug)
-#     definite_stat_fail     - statistical failure by > 5 sigma (bug)
+#     hard_fail              - ungraceful crash (segfault, etc) 
+#     abort                  - controlled abort 
+#     check_fail             - fails rigorous non-statistical check (e.g. checksum)
+#     reference_stat_fail    - fails separate reference level check by > 5 sigma
+#     definite_stat_fail     - statistical failure by > 5 sigma
 #     intermittent_stat_fail - statistical failure by < 5 sigma
+#     deterministic_fail     - fails non-rigorous deterministic check
+#     (failure types are exclusive and comprehensive for failures)
+#  
+#   test quality categories
+#     good_test       - test well designed: test fail means there is a bug  
+#                       any failure means: action needed to fix QMCPACK
+#     poor_test       - test poorly designed and failure likely reflects this
+#                       regardless of pass/fail: action needed to improve test 
+#     quality_unknown - test quality has not yet been assessed
+#                       code failure means: action needed to fix QMCPACK
+#                       statistical failure means: prioritize quality assessment
+#     (good/poor/unknown are exclusive and comprehensive for all tests)
 #
-#     code_fail              - hard fail or abort
-#     stat_fail              - definite or intermittent statistical failure
-#
-#   other classifications
-#     bug - broken or code_fail or definite_stat_fail
-#
+#   a failing test is put into one or more of the following categories
+#   all other failure categories are determined only by these
+#     unsupported
+#     hard_fail
+#     abort
+#     definite_stat_fail
+#     intermittent_stat_fail
+#     check_fail
+#     deterministic_fail
+#     poor_test
+
+# main actions for developers and corresponding categories
+#   fix known bugs in QMCPACK  - identified by label "bug"
+#   fix poor tests             - identified by label "poor_test"
+#   investigate failure causes - identified by label "cause_unknown"
+#   assess test quality        - identified by label "quality_unknown"
 
 
 def create_label_sets():
 
     # primary sets, all others derived from these
-    broken        = set()
-    unsupported   = set()
-    hard_fail     = set()
-    abort         = set()
-    def_stat_fail = set()
-    int_stat_fail = set()
+    unsupported            = set() # failure categories may depend on build
+    hard_fail              = set()
+    abort                  = set()
+    check_fail             = set()
+    reference_stat_fail    = set()
+    definite_stat_fail     = set()
+    intermittent_stat_fail = set()
+    deterministic_fail     = set()
+    good_test              = set() # test quality does not depend on build
+    poor_test              = set()
 
-    # universally broken tests (irrespective of build)
-    broken |= set([
+    # universal failures (irrespective of build)
+    hard_fail |= set([
         # https://github.com/QMCPACK/qmcpack/issues/848
         'developer-heg_54_J2rpa',
 
-        # https://github.com/QMCPACK/qmcpack/issues/934
-        'short-diamondC_1x1x1_pp-dmc-estimator-density',
-        'short-diamondC_1x1x1_pp-dmc-estimator-spindensity',
-        
+        # https://github.com/QMCPACK/qmcpack/issues/1040
+        'short-diamondC-afqmc_hyb_nn2',
+        'short-diamondC-afqmc_incmf_nn2',
+        'short-diamondC-afqmc_nn2',
+        ])
+
+    definite_stat_fail |= set([
         # https://github.com/QMCPACK/qmcpack/issues/995
         # https://github.com/QMCPACK/qmcpack/issues/1052
         'short-diamondC_1x1x1_pp-vmc-J2-estimator-1rdm-4-4',
@@ -61,12 +99,14 @@ def create_label_sets():
         'short-diamondC_1x1x1_pp-vmc-estimator-energydensity-voronoi',
         'short-diamondC_1x1x1_pp-vmc-estimator-energydensity-cell',
         'short-diamondC_1x1x1_pp-dmc-estimator-energydensity-cell',
-
-        # https://github.com/QMCPACK/qmcpack/issues/1040
-        'short-diamondC-afqmc_hyb_nn2',
-        'short-diamondC-afqmc_incmf_nn2',
-        'short-diamondC-afqmc_nn2',
         ])
+
+    check_fail |= set([
+        # https://github.com/QMCPACK/qmcpack/issues/934
+        'short-diamondC_1x1x1_pp-dmc-estimator-density',
+        'short-diamondC_1x1x1_pp-dmc-estimator-spindensity',
+        ])
+
 
     # aos specific (but general otherwise)
     if aos:
@@ -75,12 +115,11 @@ def create_label_sets():
 
     # soa specific (but general otherwise)
     if soa:
-        broken |= set()
+        None
     #end if
 
     # gpu specific (but general otherwise)
     if gpu:
-        broken      |= set()
         unsupported |= set()
     #end if
 
@@ -96,7 +135,6 @@ def create_label_sets():
     
     # mixed precision specific (but general otherwise)
     if mixed:
-        broken      |= set()
         unsupported |= set()
     #end if
 
@@ -129,28 +167,125 @@ def create_label_sets():
         None
     #end if
 
-    code_fail = hard_fail | abort
-    stat_fail = def_stat_fail | int_stat_fail
 
-    bug = broken | code_fail | def_stat_fail
+    weak_fail   = intermittent_stat_fail \
+                | deterministic_fail
 
-    unstable = broken | unsupported | code_fail | stat_fail
+    strong_fail = hard_fail           \
+                | abort               \
+                | check_fail          \
+                | reference_stat_fail \
+                | definite_stat_fail 
 
-    label_sets = dict(
+    fail = weak_fail | strong_fail
+
+    unstable = fail | poor_test | unsupported
+
+    bug = strong_fail | (good_test & intermittent_stat_fail)
+
+    cause_unknown = unstable - bug - unsupported - poor_test
+
+
+    positive_label_sets = dict(
+        # main classification
         unstable               = unstable,
-        broken                 = broken,
+        # reason for failure
+        bug                    = bug,
         unsupported            = unsupported,
+        poor_test              = poor_test,
+        cause_unknown          = cause_unknown,
+        # failure type classification
         hard_fail              = hard_fail,
         abort                  = abort,
-        definite_stat_fail     = def_stat_fail,
-        intermittent_stat_fail = int_stat_fail,
-        code_fail              = code_fail,
-        stat_fail              = stat_fail,
-        bug                    = bug,
+        check_fail             = check_fail,
+        reference_stat_fail    = reference_stat_fail,
+        definite_stat_fail     = definite_stat_fail,
+        intermittent_stat_fail = intermittent_stat_fail,
+        deterministic_fail     = deterministic_fail,
+        # test quality categories (also poor_test)
+        good_test              = good_test,
         )
 
-    return label_sets
+    negative_label_sets = dict(
+        # main classification
+        stable          = unstable,
+        # test quality categories
+        quality_unknown = good_test | poor_test
+        )
+
+    return positive_label_sets,negative_label_sets
 #end def create_label_sets
+
+
+def check_exclusive(*labels):
+    # fast check of mutual exclusivity
+    exclusive = True
+    lsets = [positive_label_sets[l] for l in labels]
+    combined = set(lsets[0])
+    for lset in lsets[1:]:
+        exclusive &= len(lset & combined)==0
+        if not exclusive:
+            break
+        #end if
+        combined |= lset
+    #end for
+    # slower process to report errors
+    if not exclusive:
+        for i in range(len(labels)):
+            for j in range(i):
+                if(len(lsets[i]&lsets[j])>0):
+                    error('label sets {0} and {1} are not mutually exclusive'.format(labels[i],labels[j]))
+                #end if
+            #end for
+        #end for
+    #end if
+#end def check_exclusive
+
+
+def check_comprehensive(full_label,*other_labels):
+    full = set(positive_label_sets[full_label])
+    for label in other_labels:
+        full -= positive_label_sets[label]
+    #end for
+    if len(full)>0:
+        error('the following sets are not comprehensive:\n  {0}\nthese should equate to set: {1}\nbut the following tests are not labeled: {2}'.format(other_labels,full_label,sorted(full)))
+    #end if
+#end def check_comprehensive
+
+
+def check_positive_label_sets(positive_label_sets):
+
+    check_exclusive('bug','unsupported','cause_unknown')
+    check_exclusive('bug','unsupported','poor_test')
+
+    check_exclusive('hard_fail',
+                    'abort',
+                    'check_fail',
+                    'reference_stat_fail',
+                    'definite_stat_fail',
+                    'intermittent_stat_fail',
+                    'deterministic_fail'
+                    )
+
+    check_exclusive('good_test','poor_test')
+
+    check_comprehensive('unstable',
+                        'bug',
+                        'unsupported',
+                        'poor_test',
+                        'cause_unknown'
+                        )
+
+    check_comprehensive('unstable',
+                        'hard_fail',
+                        'abort',
+                        'check_fail',
+                        'reference_stat_fail',
+                        'definite_stat_fail',
+                        'intermittent_stat_fail',
+                        'deterministic_fail'
+                        )
+#end def check_positive_label_sets
 
 
 # extract test name and build flags from args
@@ -169,7 +304,7 @@ try:
     full  = not qmc_mixed
     mixed = qmc_mixed
 except:
-    error('extract')
+    error()
 #end try
 
 
@@ -185,27 +320,39 @@ try:
         #end if
     #end if
 except:
-    error('shorten')
+    error()
 #end try
 
 
 # get known label sets
 try:
-    label_sets = create_label_sets()
+    positive_label_sets,negative_label_sets = create_label_sets()
 except:
-    error('create_labels')
+    error()
+#end try
+
+# check positive label sets
+try:
+    check_positive_label_sets(positive_label_sets)
+except:
+    error()
 #end try
 
 # get labels from known sets
 try:
     labels = []
-    for label,label_set in label_sets.iteritems():
+    for label,label_set in positive_label_sets.iteritems():
         if test in label_set or full_test in label_set:
             labels.append(label)
         #end if
     #end for
+    for label,label_set in negative_label_sets.iteritems():
+        if test not in label_set and full_test not in label_set:
+            labels.append(label)
+        #end if
+    #end for
 except:
-    error('find_labels')
+    error()
 #end try
 
 # make a ctest list of the labels
@@ -216,7 +363,7 @@ try:
     #end for
     ctest_labels = ctest_labels.rstrip(';')
 except:
-    error('ctest_list')
+    error()
 #end try
 
 
