@@ -39,6 +39,9 @@ IF(NOT QMC_COMPLEX)
     )
 ENDIF(NOT QMC_COMPLEX)
 
+IF(QMC_CUDA)
+  SET(WFBASE_SRCS SPOSetBatched.cpp ${WFBASE_SRCS})
+ENDIF(QMC_CUDA)
 
 ########################
 # build jastrows
@@ -57,21 +60,8 @@ SET(JASTROW_SRCS
   IonOrbital.cpp
   IonOrbitalBuilder.cpp
   OptimizableSPOBuilder.cpp
-  Fermion/SPOSetProxy.cpp
   Fermion/SPOSetProxyForMSD.cpp
   )
-
-IF(QMC_COMPLEX)
-  SET(FERMION_SRCS ${FERMION_SRCS}
-    ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
-    )
-ELSE(QMC_COMPLEX)
-  SET(FERMION_SRCS ${FERMION_SRCS}
-    ElectronGas/ElectronGasOrbitalBuilder.cpp
-    )
-
-ENDIF(QMC_COMPLEX)
-
 
 # wavefunctions only availbale to 3-dim problems
 IF(OHMMS_DIM MATCHES 3)
@@ -96,9 +86,9 @@ IF(OHMMS_DIM MATCHES 3)
   IF(QMC_CUDA)
     SET(FERMION_SRCS ${FERMION_SRCS}
       Fermion/determinant_update.cu 
-      Fermion/DiracDeterminantCUDA.cpp
-      Fermion/SlaterDetCUDA.cpp
-      TrialWaveFunction_CUDA.cpp
+      Fermion/DiracDeterminantBatched.cpp
+      Fermion/SlaterDetBatched.cpp
+      TrialWaveFunctionBatched.cpp
       )
     IF(ENABLE_SOA)
       SET(JASTROW_SRCS ${JASTROW_SRCS}
@@ -146,7 +136,6 @@ IF(OHMMS_DIM MATCHES 3)
     IF(NOT QMC_COMPLEX)
       SET(FERMION_SRCS ${FERMION_SRCS}
         BsplineFactory/createRealSingle.cpp
-        BsplineFactory/createRealDouble.cpp
         )
     ENDIF()
 
@@ -180,7 +169,7 @@ IF(OHMMS_DIM MATCHES 3)
 ENDIF(OHMMS_DIM MATCHES 3)
 
 SET(FERMION_SRCS ${FERMION_SRCS}
-  Fermion/DiracDeterminantBase.cpp
+  Fermion/DiracDeterminant.cpp
   Fermion/DiracDeterminantOpt.cpp
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp
@@ -196,6 +185,17 @@ SET(FERMION_SRCS ${FERMION_SRCS}
   TrialWaveFunction.cpp
   WaveFunctionFactory.cpp
   )
+
+IF(QMC_COMPLEX)
+  SET(FERMION_SRCS ${FERMION_SRCS}
+    ElectronGas/ElectronGasComplexOrbitalBuilder.cpp
+    )
+ELSE(QMC_COMPLEX)
+  SET(FERMION_SRCS ${FERMION_SRCS}
+    ElectronGas/ElectronGasOrbitalBuilder.cpp
+    )
+ENDIF(QMC_COMPLEX)
+
 
 IF(NOT QMC_COMPLEX AND NOT ENABLE_SOA)
   SET(FERMION_SRCS ${FERMION_SRCS}

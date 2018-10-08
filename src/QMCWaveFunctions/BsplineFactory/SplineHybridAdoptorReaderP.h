@@ -140,10 +140,10 @@ struct Gvectors
 
 /** General SplineHybridAdoptorReader to handle any unitcell
  */
-template<typename SA>
-struct SplineHybridAdoptorReader: public SplineAdoptorReader<SA>
+template<typename SA, Batching batching>
+struct SplineHybridAdoptorReader: public SplineAdoptorReader<SA, batching>
 {
-  typedef SplineAdoptorReader<SA> BaseReader;
+  typedef SplineAdoptorReader<SA, batching> BaseReader;
 
   using typename BaseReader::DataType;
   using BaseReader::bspline;
@@ -151,16 +151,16 @@ struct SplineHybridAdoptorReader: public SplineAdoptorReader<SA>
   using BaseReader::rotate_phase_r;
   using BaseReader::rotate_phase_i;
 
-  SplineHybridAdoptorReader(EinsplineSetBuilder* e)
+  SplineHybridAdoptorReader(SplineBuilder* e)
     : BaseReader(e)
   {}
 
   /** initialize basic parameters of atomic orbitals */
   void initialize_hybridrep_atomic_centers() override
   {
-    bspline->set_info(*(mybuilder->SourcePtcl), mybuilder->TargetPtcl, mybuilder->Super2Prim);
+    bspline->set_info(mybuilder->getSourcePtcl(), mybuilder->getTargetPtcl(), mybuilder->getSuper2Prim());
     auto& centers=bspline->AtomicCenters;
-    auto& ACInfo=mybuilder->AtomicCentersInfo;
+    auto& ACInfo=mybuilder->getAtomicCentersInfo();
     // load atomic center info only when it is not initialized
     if(centers.size()==0)
     {
@@ -267,7 +267,7 @@ struct SplineHybridAdoptorReader: public SplineAdoptorReader<SA>
     band_group_comm.bcast(rotate_phase_i);
     band_group_comm.bcast(cG);
     //distribute G-vectors over processor groups
-    const int Ngvecs=mybuilder->Gvecs[0].size();
+    const int Ngvecs=mybuilder->getGvecs()[0].size();
     const int Nprocs=band_group_comm.size();
     const int Ngvecgroups=std::min(Ngvecs,Nprocs);
     Communicate gvec_group_comm(band_group_comm, Ngvecgroups);
@@ -278,7 +278,7 @@ struct SplineHybridAdoptorReader: public SplineAdoptorReader<SA>
 
     // prepare Gvecs Ylm(G)
     typedef typename EinsplineSetBuilder::UnitCellType UnitCellType;
-    Gvectors<double, UnitCellType> Gvecs(mybuilder->Gvecs[0], mybuilder->PrimCell, bspline->HalfG,
+    Gvectors<double, UnitCellType> Gvecs(mybuilder->getGvecs()[0], mybuilder->getPrimCell(), bspline->HalfG,
                                          gvec_first, gvec_last);
     // if(band_group_comm.isGroupLeader()) std::cout << "print band=" << iorb << " KE=" << Gvecs.evaluate_KE(cG) << std::endl;
 
@@ -288,7 +288,7 @@ struct SplineHybridAdoptorReader: public SplineAdoptorReader<SA>
     std::vector<int> uniq_species;
     for(int center_idx=0; center_idx<centers.size(); center_idx++)
     {
-      auto& ACInfo = mybuilder->AtomicCentersInfo;
+      auto& ACInfo = mybuilder->getAtomicCentersInfo();
       const int my_GroupID = ACInfo.GroupID[center_idx];
       int found_idx = -1;
       for(size_t idx=0; idx<uniq_species.size(); idx++)
@@ -302,7 +302,7 @@ struct SplineHybridAdoptorReader: public SplineAdoptorReader<SA>
     std::vector<std::vector<int> > group_list(uniq_species.size());
     for(int center_idx=0; center_idx<centers.size(); center_idx++)
     {
-      auto& ACInfo = mybuilder->AtomicCentersInfo;
+      auto& ACInfo = mybuilder->getAtomicCentersInfo();
       const int my_GroupID = ACInfo.GroupID[center_idx];
       for(size_t idx=0; idx<uniq_species.size(); idx++)
         if(my_GroupID==uniq_species[idx])

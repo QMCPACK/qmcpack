@@ -23,6 +23,7 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_SET_BUILDER_H
 #define QMCPLUSPLUS_EINSPLINE_SET_BUILDER_H
 
+#include "QMCWaveFunctions/SplineBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilder.h"
 #include "QMCWaveFunctions/BandInfo.h"
 #include "QMCWaveFunctions/AtomicOrbital.h"
@@ -121,27 +122,32 @@ struct H5OrbSet
 
 /** EinsplineSet builder
  */
-class EinsplineSetBuilder : public SPOSetBuilder
+class EinsplineSetBuilder : public SplineBuilder,
+			    public SPOSetBuilder
 {
 public:
-
+  Batching B_;
   typedef std::map<std::string,ParticleSet*> PtclPoolType;
-  typedef CrystalLattice<ParticleSet::Scalar_t,DIM> UnitCellType;
-
+  
   ///reference to the particleset pool
   PtclPoolType &ParticleSets;
+private:
   ///quantum particle set
   ParticleSet &TargetPtcl;
+public:
   ///ionic system
   ParticleSet *SourcePtcl;
   ///index for the ion-el distance table
   int myTableIndex;
 
+private:
   /**  Helper vector for sorting bands
    */
   //std::vector<BandInfo> SortBands;
   std::vector<std::vector<BandInfo>*> FullBands;
-
+public:
+  
+  
   /// reader to use BsplineReaderBase
   BsplineReaderBase *MixedSplineReader;
 
@@ -154,10 +160,11 @@ public:
   ////static std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> ExtendedMap_z;
   ////static std::map<H5OrbSet,EinsplineSetExtended<double>*,H5OrbSet> ExtendedSetMap_d;
   //static std::map<H5OrbSet,SPOSet*,H5OrbSet> SPOSetMap;
-  std::map<H5OrbSet,SPOSet*,H5OrbSet> SPOSetMap;
+  std::map<H5OrbSet,SPOSet<>*,H5OrbSet> SPOSetMap;
 
   ///constructor
-  EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur);
+  EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur,
+		      Batching batching = Batching::SINGLE);
 
   ///destructor
   ~EinsplineSetBuilder();
@@ -165,7 +172,7 @@ public:
   /** initialize the Antisymmetric wave function for electrons
    * @param cur the current xml node
    */
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
+  SPOSet<>* createSPOSetFromXML(xmlNodePtr cur);
 
   /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
    * @param cur the current xml node
@@ -173,7 +180,7 @@ public:
   void set_metadata(int numOrbs, int TwistNum_inp);
 
   /** initialize with the existing SPOSet */
-  SPOSet* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info);
+  SPOSet<>* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info);
 
   //////////////////////////////////////
   // HDF5-related data  and functions //
@@ -219,8 +226,13 @@ public:
   int NumBands, NumElectrons, NumSpins, NumTwists, NumCoreStates;
   int MaxNumGvecs;
   double MeshFactor;
-  RealType MatchingTol;
+
+private:
   TinyVector<int,3> MeshSize;
+
+public:
+  
+  RealType MatchingTol;
   std::vector<std::vector<TinyVector<int,3> > > Gvecs;
 
   //fftw_plan FFTplan;
@@ -272,7 +284,7 @@ public:
   void ReadBands_ESHDF(int spin, EinsplineSetExtended<        double  >* orbitalSet);
 #endif
 
-  void CopyBands(int numOrbs);
+  //void CopyBands(int numOrbs);
 
   /////////////////////////////
   // Muffin-tin information  //
@@ -289,28 +301,7 @@ public:
   ////////////////////////////////
   std::vector<AtomicOrbital<std::complex<double> > > AtomicOrbitals;
 
-  struct CenterInfo
-  {
-    std::vector<int> lmax, spline_npoints, GroupID;
-    std::vector<double> spline_radius, cutoff, inner_cutoff, non_overlapping_radius;
-    std::vector<TinyVector<double,OHMMS_DIM> > ion_pos;
-    int Ncenters;
-
-    CenterInfo(): Ncenters(0) {};
-
-    void resize(int ncenters)
-    {
-      Ncenters=ncenters;
-      lmax.resize(ncenters, -1);
-      spline_npoints.resize(ncenters, -1);
-      GroupID.resize(ncenters, 0);
-      spline_radius.resize(ncenters, -1.0);
-      inner_cutoff.resize(ncenters, -1.0);
-      non_overlapping_radius.resize(ncenters, -1.0);
-      cutoff.resize(ncenters, -1.0);
-      ion_pos.resize(ncenters);
-    }
-  } AtomicCentersInfo;
+  CentersInfo AtomicCentersInfo;
 
   // This returns the path in the HDF5 file to the group for orbital
   // with twist ti and band bi
@@ -348,6 +339,28 @@ public:
   }
   //inline void update_token(const char* f, int l, const char* msg) 
   //{}
+
+  // Accessors here so this monster class can be mocked out in testing
+  TinyVector<int, 3> getMeshSize() { return MeshSize; }
+  UnitCellType getPrimCell() { return PrimCell; }
+  UnitCellType getSuperCell() { return SuperCell; }
+  std::vector<int> getSuper2Prim() { return Super2Prim; }
+  Tensor<double, OHMMS_DIM> getGGt() { return GGt; }
+  std::vector<TinyVector<double,OHMMS_DIM> >& getTwistAngles() { return TwistAngles; }
+  ParticleSet& getTargetPtcl() { return TargetPtcl; }
+  ParticleSet& getSourcePtcl() { return *SourcePtcl; }
+  CentersInfo& getAtomicCentersInfo() { return AtomicCentersInfo; }
+  int getTwistNum() { return TwistNum; }
+  std::vector<std::vector<TinyVector<int,3> > >& getGvecs() { return Gvecs; }
+  std::string getH5FileName() { return H5FileName; }
+  hid_t getH5FileID() { return H5FileID; }
+  int getNumberSpinStates() { return states.size(); }
+  int getMaxNumGvecs() { return MaxNumGvecs; }
+  std::vector<SPOSetInfo*>& getStates() { return states; }
+  std::vector<BandInfo>& getFullBandsBySpin(int spin) { return *(FullBands[spin]); }
+  Tensor<int,OHMMS_DIM>& getTileMatrix() { return TileMatrix; }
+  std::string getName() { return "qmcplusplus::EinsplineSetBuilder"; }
+  virtual Communicate* getCommunicator() { return SPOSetBuilder::getCommunicator(); }
 };
 
 }

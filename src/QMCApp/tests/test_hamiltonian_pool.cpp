@@ -19,7 +19,7 @@
 #include "QMCApp/HamiltonianPool.h"
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCApp/WaveFunctionPool.h"
-
+#include "QMCWaveFunctions/TrialWaveFunction.h"
 
 #include <stdio.h>
 #include <string>
@@ -59,7 +59,7 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  HamiltonianPool hpool(c);
+  HamiltonianPool<Batching::SINGLE> hpool(c);
 
   REQUIRE(hpool.empty());
 
@@ -82,13 +82,26 @@ TEST_CASE("HamiltonianPool", "[qmcapp]")
   hpool.setParticleSetPool(&pp);
 
   WaveFunctionPool wfp(c);
-  TrialWaveFunction psi = TrialWaveFunction(c);
+#ifdef QMC_CUDA
+  TrialWaveFunction<> psi = TrialWaveFunction<Batching::BATCHED>(c);
   wfp.setParticleSetPool(&pp);
   wfp.setPrimary(&psi);
 
   WaveFunctionFactory::PtclPoolType ptcl_pool;
   ptcl_pool["e"] = qp;
+
+  WaveFunctionFactory *wf_factory = new WaveFunctionFactory(qp, ptcl_pool, c, Batching::BATCHED);
+#else
+  TrialWaveFunction<> psi = TrialWaveFunction<>(c);
+  wfp.setParticleSetPool(&pp);
+  wfp.setPrimary(&psi);
+
+  WaveFunctionFactory::PtclPoolType ptcl_pool;
+  ptcl_pool["e"] = qp;
+
   WaveFunctionFactory *wf_factory = new WaveFunctionFactory(qp, ptcl_pool, c);
+#endif
+  
   wf_factory->setPsi(&psi);
   wfp.getPool()["psi0"] = wf_factory;
 

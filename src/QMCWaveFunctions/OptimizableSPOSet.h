@@ -21,12 +21,40 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Numerics/OptimizableFunctorBase.h"
 #include "Optimize/VariableSet.h"
+#include "QMCWaveFunctions/SPOSetTypeAliases.h"
 
 namespace qmcplusplus
 {
 
-class OptimizableSPOSet : public SPOSet
+class OptimizableSPOSet : public SPOSet<Batching::SINGLE>
 {
+public:
+  // I prefer a type qualified back to the origin of the type alias
+  // but this requires fewer changes as this class used to aquire
+  // typedefs through inheritance.
+  using QMCT = QMCTraits;
+  using PosType = QMCT::PosType;
+  using RealType = QMCT::RealType;
+  using ComplexType = QMCT::ComplexType;
+  using SSTA = SPOSetTypeAliases;
+  using ValueType = QMCTraits::ValueType;
+  using IndexVector_t = SSTA::IndexVector_t;
+  using ValueVector_t = SSTA::ValueVector_t;
+  using ValueAlignedVector_t = SSTA::ValueAlignedVector_t;
+  using ValueMatrix_t = SSTA::ValueMatrix_t;
+  using GradVector_t = SSTA::GradVector_t;
+  using GradMatrix_t = SSTA::GradMatrix_t;
+  using HessVector_t = SSTA::HessVector_t;
+  using HessMatrix_t = SSTA::HessMatrix_t;
+  using HessType = SSTA::HessType;
+  using HessArray_t = SSTA::HessArray_t;
+  using GradHessType = SSTA::GGGType;
+  using GradHessVector_t = SSTA::GGGVector_t;
+  using GradHessMatrix_t = SSTA::GGGMatrix_t;
+  using GGGMatrix_t = SSTA::GGGMatrix_t;
+  using VGLVector_t = SSTA::VGLVector_t;
+  using Walker_t = SSTA::Walker_t;
+
 protected:
   typedef optimize::VariableSet opt_variables_type;
   ///typedef for name-value lists
@@ -35,7 +63,7 @@ protected:
   // Number of occupied states, number of basis states
   int N, M;
   ///number of basis
-  IndexType BasisSetSize;
+  QMCT::IndexType BasisSetSize;
   /** pointer to matrix containing the coefficients
    *
    * makeClone makes a shallow copy
@@ -44,12 +72,12 @@ protected:
   ///if true, do not clean up
   bool IsCloned;
 
-  RealType derivScale;
-  RealType thr;
+  QMCT::RealType derivScale;
+  QMCT::RealType thr;
 
   // If BasisOrbitals==NULL, only GSOrbitals is used and it's evaluate
   // functions should return N+M orbitals.
-  SPOSet *GSOrbitals, *BasisOrbitals;
+  SPOSet<Batching::SINGLE> *GSOrbitals, *BasisOrbitals;
 
   // The first index is the orbital to be optimized, the second is the
   // basis element
@@ -58,7 +86,7 @@ protected:
   // This maps the parameter indices to elements in the C
   // matrix.  Using pointers allows the use of complex C
   // while maintaining real optimizable parameters.
-  std::vector<RealType*> ParamPointers;
+  std::vector<QMCT::RealType*> ParamPointers;
   // Maps the parameter index in myVars to an index in the C array
   std::vector<TinyVector<int,2> > ParamIndex;
 
@@ -72,7 +100,7 @@ protected:
 
   // Cache the positions to avoid recomputing GSVal, BasisVal, etc.
   // if unnecessary.
-  std::vector<PosType> CachedPos;
+  std::vector<QMCT::PosType> CachedPos;
 public:
   ///set of variables to be optimized;  These are mapped to the
   ///C matrix.  Update:  Moved to SPOSet
@@ -92,8 +120,8 @@ public:
     Optimizable = true;
   }
 
-  OptimizableSPOSet(int num_orbs, SPOSet *gsOrbs,
-                    SPOSet* basisOrbs=0) :
+  OptimizableSPOSet(int num_orbs, SPOSet<Batching::SINGLE> *gsOrbs,
+                    SPOSet<Batching::SINGLE>* basisOrbs=0) :
     GSOrbitals(gsOrbs), BasisOrbitals(basisOrbs), derivScale(10.0)
   {
     N = num_orbs;
@@ -161,11 +189,11 @@ public:
                       ValueMatrix_t &basis_val, GradMatrix_t &basis_grad,
                       ValueMatrix_t &basis_lapl);
   void copyParamsFromMatrix (const opt_variables_type& active,
-                             const Matrix<RealType> &mat,
-                             std::vector<RealType> &destVec);
+                             const Matrix<QMCT::RealType> &mat,
+                             std::vector<QMCT::RealType> &destVec);
   void copyParamsFromMatrix (const opt_variables_type& active,
-                             const Matrix<ComplexType> &mat,
-                             std::vector<RealType> &destVec);
+                             const Matrix<QMCT::ComplexType> &mat,
+                             std::vector<QMCT::RealType> &destVec);
 
 
   void resize(int n, int m)
@@ -208,7 +236,7 @@ public:
   }
 
   // Make a copy of myself
-  SPOSet* makeClone() const;
+  SPOSet<Batching::SINGLE>* makeClone() const;
 };
 }
 

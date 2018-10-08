@@ -34,22 +34,45 @@
 
 namespace qmcplusplus
 {
-
-QMCDriver* VMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                              QMCHamiltonian& h, ParticleSetPool& ptclpool, HamiltonianPool& hpool, WaveFunctionPool& ppool)
+#ifdef QMC_CUDA
+template<>
+QMCDriver<Batching::BATCHED>* VMCFactory<Batching::BATCHED>::create(MCWalkerConfiguration& w,
+					TrialWaveFunction<Batching::BATCHED>& psi,
+					QMCHamiltonian& h,
+					ParticleSetPool& ptclpool,
+					HamiltonianPool<Batching::BATCHED>& hpool,
+					WaveFunctionPool& ppool)
 {
   int np=omp_get_max_threads();
   //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
-  QMCDriver* qmc=0;
-#ifdef QMC_CUDA
+  QMCDriver<Batching::BATCHED>* qmc=0;
   if (VMCMode & 16)
-    qmc = new VMCcuda(w,psi,h,ppool);
+    qmc = new VMCcuda(w,
+		      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(psi),
+		      h,
+		      ppool);
   else
+    APP_ABORT("Only Batched walker evaluation is suppoer for mode VMC mode 16");
+  qmc->setUpdateMode(VMCMode&1);
+  return qmc;
+}
 #endif
-    if(VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
-    {
-      qmc = new VMCSingleOMP(w,psi,h,ppool);
-    }
+  
+template<>
+QMCDriver<Batching::SINGLE>* VMCFactory<Batching::SINGLE>::create(MCWalkerConfiguration& w,
+					TrialWaveFunction<Batching::SINGLE>& psi,
+					QMCHamiltonian& h,
+					ParticleSetPool& ptclpool,
+					HamiltonianPool<Batching::SINGLE>& hpool,
+					WaveFunctionPool& ppool)
+{
+  int np=omp_get_max_threads();
+  //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
+  QMCDriver<Batching::SINGLE>* qmc=0;
+  if(VMCMode == 0 || VMCMode == 1) //(0,0,0) (0,0,1)
+  {
+    qmc = new VMCSingleOMP(w,psi,h,ppool);
+  }
   //else if(VMCMode == 2) //(0,1,0)
   //{
   //  qmc = new VMCMultiple(w,psi,h);
@@ -58,10 +81,10 @@ QMCDriver* VMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi,
   //{
   //  qmc = new VMCPbyPMultiple(w,psi,h);
   //}
-    else if(VMCMode ==2 || VMCMode ==3)
-    {
-      qmc = new CSVMC(w,psi,h,ppool);
-    }
+  else if(VMCMode ==2 || VMCMode ==3)
+  {
+    qmc = new CSVMC(w,psi,h,ppool);
+  }
 //#if !defined(QMC_COMPLEX)
 //    else if(VMCMode == 6) //(1,1,0)
 //    {
@@ -79,4 +102,5 @@ QMCDriver* VMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi,
   qmc->setUpdateMode(VMCMode&1);
   return qmc;
 }
+ 
 }

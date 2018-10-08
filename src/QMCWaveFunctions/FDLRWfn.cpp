@@ -29,7 +29,7 @@ namespace qmcplusplus {
   /// \param[in]   triplet_loc  If true, enforce triplet symmetry on WF parameters.
   ///
   ///////////////////////////////////////////////////////////////////////////////////////////////
-  FDLRWfn::FDLRWfn(TrialWaveFunction * const wfn_1, TrialWaveFunction * const wfn_2, ParticleSet& P,
+  FDLRWfn::FDLRWfn(TrialWaveFunction<> * const wfn_1, TrialWaveFunction<> * const wfn_2, ParticleSet& P,
           const bool opt_x, const bool opt_d, const bool singlet_loc, const bool triplet_loc) :
     m_wfn_xpd(wfn_1), m_wfn_xmd(wfn_2), opt_x_vars(opt_x), opt_d_vars(opt_d)
   {
@@ -170,8 +170,8 @@ namespace qmcplusplus {
   ///
   ///////////////////////////////////////////////////////////////////////////////////////////////
   WaveFunctionComponentPtr FDLRWfn::makeClone(ParticleSet& P) const {
-    TrialWaveFunction* wfn_xpd_clone = m_wfn_xpd->makeClone(P);
-    TrialWaveFunction* wfn_xmd_clone = m_wfn_xmd->makeClone(P);
+    TrialWaveFunction<>* wfn_xpd_clone = m_wfn_xpd->makeClone(P);
+    TrialWaveFunction<>* wfn_xmd_clone = m_wfn_xmd->makeClone(P);
     FDLRWfn* fdlr_clone = new FDLRWfn( wfn_xpd_clone, wfn_xmd_clone, P );
     return WaveFunctionComponentPtr( fdlr_clone );
   }

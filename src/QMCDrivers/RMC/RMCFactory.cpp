@@ -19,20 +19,26 @@
 
 namespace qmcplusplus
 {
-
-
-  QMCDriver *RMCFactory::create (MCWalkerConfiguration & w,
-				 TrialWaveFunction & psi, QMCHamiltonian & h,
+  template<>
+  QMCDriver<Batching::BATCHED> *RMCFactory<Batching::BATCHED>::create (MCWalkerConfiguration & w,
+				 TrialWaveFunction<Batching::BATCHED>& psi, QMCHamiltonian & h,
 				 ParticleSetPool & ptclpool,
-				 HamiltonianPool & hpool,
+				 HamiltonianPool<Batching::BATCHED> & hpool,
+				 WaveFunctionPool & ppool)
+  {
+    APP_ABORT("RMCFactory::create. RMC is not supported on GPU.\n"); 
+  }
+  
+  template<>
+  QMCDriver<Batching::SINGLE> *RMCFactory<Batching::SINGLE>::create (MCWalkerConfiguration & w,
+				 TrialWaveFunction<Batching::SINGLE>& psi, QMCHamiltonian & h,
+				 ParticleSetPool & ptclpool,
+				 HamiltonianPool<Batching::SINGLE>& hpool,
 				 WaveFunctionPool & ppool)
   {
     int np = omp_get_max_threads ();
     //(SPACEWARP_MODE,MULTIPE_MODE,UPDATE_MODE)
-    QMCDriver *qmc = 0;
-#ifdef QMC_CUDA
-    APP_ABORT("RMCFactory::create. RMC is not supported on GPU.\n");
-#endif
+    QMCDriver<Batching::SINGLE> *qmc = 0;
 
     if (RMCMode == 0 || RMCMode == 1)	//(0,0,0) (0,0,1) pbyp and all electron
       {

@@ -23,6 +23,7 @@
 #include "QMCHamiltonians/CoulombPBCAB_CUDA.h"
 #include "QMCHamiltonians/LocalECPotential_CUDA.h"
 #include "QMCHamiltonians/NonLocalECPotential_CUDA.h"
+#include "QMCWaveFunctions/TrialWaveFunctionBatched.h"
 #endif
 
 namespace qmcplusplus
@@ -33,7 +34,7 @@ namespace qmcplusplus
  *\param psi trial wavefunction
  */
 ECPotentialBuilder::ECPotentialBuilder(QMCHamiltonian& h,
-                                       ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi,
+                                       ParticleSet& ions, ParticleSet& els, TrialWaveFunction<>& psi,
                                        Communicate* c):
   MPIObjectBase(c),
   hasLocalPot(false),hasNonLocalPot(false),
@@ -117,7 +118,11 @@ bool ECPotentialBuilder::put(xmlNodePtr cur)
     RealType rc2=0.0;
 #ifdef QMC_CUDA
     NonLocalECPotential_CUDA* apot =
-      new NonLocalECPotential_CUDA(IonConfig,targetPtcl,targetPsi,usePBC,doForces);
+      new NonLocalECPotential_CUDA(IonConfig,
+				   targetPtcl,
+				   dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(targetPsi),
+				   usePBC,
+				   doForces);
 #else
     NonLocalECPotential* apot =
       new NonLocalECPotential(IonConfig,targetPtcl,targetPsi, doForces, NLPP_algo=="batched");

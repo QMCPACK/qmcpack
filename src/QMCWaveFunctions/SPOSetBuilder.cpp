@@ -13,6 +13,7 @@
 
 
 #include <QMCWaveFunctions/SPOSetBuilder.h>
+#include "QMCWaveFunctions/SPOSet.h"
 
 namespace qmcplusplus
 {
@@ -33,14 +34,14 @@ namespace qmcplusplus
   }
 
 
-  SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info)
+  SPOSet<>* SPOSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info)
   { 
     APP_ABORT("BasisSetBase::createSPOSet(cur,input_info) has not been implemented");
     return 0;
   }
 
 
-  SPOSet* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
+  SPOSet<>* SPOSetBuilder::createSPOSet(xmlNodePtr cur)
   {
     // read specialized sposet construction requests
     //   and translate them into a set of orbital indices
@@ -48,7 +49,7 @@ namespace qmcplusplus
 
     // process general sposet construction requests
     //   and preserve legacy interface 
-    SPOSet* sposet = 0;
+    SPOSet<>* sposet = nullptr;
     if(legacy && input_info.legacy_request)
       sposet = createSPOSetFromXML(cur);
     else
@@ -58,7 +59,7 @@ namespace qmcplusplus
     if(sposet)
     {
       //sposet->put(cur); //initialize C and other internal containers
-      sposet->builder_index = sposets.size();
+      dynamic_cast<SPOSet<Batching::SINGLE>*>(sposet)->builder_index = sposets.size();
       sposets.push_back(sposet);
     }
     else

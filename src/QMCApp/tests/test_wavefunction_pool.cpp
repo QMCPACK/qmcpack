@@ -122,7 +122,54 @@ TEST_CASE("WaveFunctionPool", "[qmcapp]")
 
   wp.put(root);
 
-  TrialWaveFunction *psi = wp.getWaveFunction("psi0");
+  TrialWaveFunction<> *psi = wp.getWaveFunction("psi0");
   REQUIRE(psi != NULL);
 }
+
+#ifdef QMC_CUDA
+TEST_CASE("WaveFunctionPool-Batched", "[qmcapp]")
+{
+
+  Communicate *c;
+  OHMMS::Controller->initialize(0, NULL);
+  c = OHMMS::Controller;
+
+  WaveFunctionPool wp(c, "test WavefuntionPool Batched", Batching::BATCHED);
+
+  REQUIRE(wp.empty() == true);
+
+
+  ParticleSetPool pp(c);
+  setupParticleSetPool(pp);
+  wp.setParticleSetPool(&pp);
+
+  const char *wf_input = \
+  "<wavefunction target='e'>\
+     <determinantset type='einspline' href='pwscf.pwscf.h5' tilematrix='1 0 0 0 1 0 0 0 1' twistnum='0' source='ion' meshfactor='1.0' precision='float'> \
+         <slaterdeterminant> \
+            <determinant id='updet' size='4'> \
+              <occupation mode='ground' spindataset='0'/>\
+             </determinant>\
+              <determinant id='downdet' size='4'>\
+                <occupation mode='ground' spindataset='0'/>\
+             </determinant>\
+         </slaterdeterminant>\
+     </determinantset> \
+   </wavefunction> \
+  ";
+
+  Libxml2Document *doc = new Libxml2Document;
+  bool okay = doc->parseFromString(wf_input);
+  REQUIRE(okay);
+
+  xmlNodePtr root = doc->getRoot();
+
+  wp.put(root);
+
+  TrialWaveFunction<> *psi = wp.getWaveFunction("psi0");
+
+  REQUIRE(psi != NULL);
+}
+#endif
+
 }

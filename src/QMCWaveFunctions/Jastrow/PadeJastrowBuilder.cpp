@@ -27,7 +27,7 @@
 namespace qmcplusplus
 {
 
-PadeJastrowBuilder::PadeJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi,
+PadeJastrowBuilder::PadeJastrowBuilder(ParticleSet& target, TrialWaveFunction<>& psi,
                                        PtclPoolType& psets):
   WaveFunctionComponentBuilder(target,psi),ptclPool(psets)
 {

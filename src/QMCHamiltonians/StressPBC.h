@@ -45,7 +45,7 @@ struct StressPBC: public QMCHamiltonianBase, public ForceBase
   SymTensor<RealType, OHMMS_DIM> stress_eI_const;
   
   
-  TrialWaveFunction& Psi;
+  TrialWaveFunction<>& Psi;
   
   bool kcdifferent;
   RealType minkc;
@@ -99,7 +99,7 @@ struct StressPBC: public QMCHamiltonianBase, public ForceBase
 
   ParticleSet::ParticlePos_t forces_ShortRange;
   //Constructor
-  StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction& Psi, bool firsttime=true);
+  StressPBC(ParticleSet& ions, ParticleSet& elns, TrialWaveFunction<>& Psi, bool firsttime=true);
   //"Copy" constructor
  // StressPBC(const StressPBC& aST, ParticleSet& p, TrialWaveFunction& Psi):
 //	StressPBC(aST), ForceBase(aST.PtclA, p), PtclTarg(p), Psi(Psi0)
@@ -149,7 +149,7 @@ struct StressPBC: public QMCHamiltonianBase, public ForceBase
   {
     setParticleSetStress(plist, offset);
   }
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi);
 //  StressPBC* makeStressClone(ParticleSet& qp, TrialWaveFunction& psi);
   bool put(xmlNodePtr cur) ;
 

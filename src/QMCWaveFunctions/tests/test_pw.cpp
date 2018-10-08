@@ -93,7 +93,7 @@ TEST_CASE("PlaneWave SPO from HDF for BCC H", "[wavefunction]")
   elec.update();
 
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction<> psi = TrialWaveFunction<>(c);
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -130,17 +130,17 @@ const char *particles =
 
   REQUIRE(psi.getOrbitals().size() == 1);
   WaveFunctionComponent *orb = psi.getOrbitals()[0];
-  SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
+  SlaterDet<> *sd = dynamic_cast<SlaterDet<> *>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
-  SPOSetPtr spo = sd->mySPOSet.begin()->second;
+  SPOSet<Batching::SINGLE>* spo = dynamic_cast<SPOSet<Batching::SINGLE>*>(sd->mySPOSet.begin()->second);
   REQUIRE(spo != NULL);
   //SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   //REQUIRE(spo != NULL);
 
   int orbSize= spo->getOrbitalSetSize();
   elec.update();
-  SPOSet::ValueVector_t orbs(orbSize);
+  SPOSet<>::ValueVector_t orbs(orbSize);
   spo->evaluate(elec, 0, orbs);
 
   REQUIRE(orbs[0] == ComplexApprox(-1.2473558998).compare_real_only());
@@ -247,7 +247,7 @@ TEST_CASE("PlaneWave SPO from HDF for LiH arb", "[wavefunction]")
   elec.update();
 
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction<> psi = TrialWaveFunction<>(c);
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -284,17 +284,17 @@ const char *particles =
 
   REQUIRE(psi.getOrbitals().size() == 1);
   WaveFunctionComponent *orb = psi.getOrbitals()[0];
-  SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
+  SlaterDet<> *sd = dynamic_cast<SlaterDet<> *>(orb);
   REQUIRE(sd != NULL);
   REQUIRE(sd->Dets.size() == 2);
-  SPOSetPtr spo = sd->mySPOSet.begin()->second;
+  SPOSet<Batching::SINGLE>* spo = dynamic_cast<SPOSet<Batching::SINGLE>*>(sd->mySPOSet.begin()->second);
   REQUIRE(spo != NULL);
   //SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   //REQUIRE(spo != NULL);
 
   int orbSize= spo->getOrbitalSetSize();
   elec.update();
-  SPOSet::ValueVector_t orbs(orbSize);
+  SPOSet<>::ValueVector_t orbs(orbSize);
   spo->evaluate(elec, 0, orbs);
 
   REQUIRE(orbs[0] == ComplexApprox(-14.3744302974).compare_real_only());

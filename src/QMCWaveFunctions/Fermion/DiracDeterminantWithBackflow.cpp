@@ -29,7 +29,7 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetPtr const &spos, BackflowTransformation * BF, int first): DiracDeterminantBase(spos,first)
+  DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSet<>* const &spos, BackflowTransformation * BF, int first): DiracDeterminant<>(spos,first)
 {
   Optimizable=true;
   ClassName="DiracDeterminantWithBackflow";
@@ -1029,11 +1029,25 @@ WaveFunctionComponentPtr DiracDeterminantWithBackflow::makeClone(ParticleSet& tq
   return 0;
 }
 
-DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetPtr spo) const
+// DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSet<Batching::SINGLE>* spo) const
+// {
+// //    BackflowTransformation *BF = BFTrans->makeClone();
+//   // mmorales: particle set is only needed to get number of particles, so using QP set here
+//   DiracDeterminantWithBackflow* dclone= new DiracDeterminantWithBackflow(BFTrans->QP,spo,BFTrans);
+//   dclone->resize(NumPtcls, NumOrbitals);
+//   dclone->Optimizable=Optimizable;
+//   dclone->set(FirstIndex,LastIndex-FirstIndex);
+//   return dclone;
+// }
+
+DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSet<>* spo) const
 {
 //    BackflowTransformation *BF = BFTrans->makeClone();
   // mmorales: particle set is only needed to get number of particles, so using QP set here
-  DiracDeterminantWithBackflow* dclone= new DiracDeterminantWithBackflow(BFTrans->QP,spo,BFTrans);
+  DiracDeterminantWithBackflow* dclone =
+    new DiracDeterminantWithBackflow(BFTrans->QP,
+                                     dynamic_cast<SPOSet<Batching::SINGLE>*>(spo),
+                                     BFTrans);
   dclone->resize(NumPtcls, NumOrbitals);
   dclone->Optimizable=Optimizable;
   dclone->set(FirstIndex,LastIndex-FirstIndex);
@@ -1041,7 +1055,7 @@ DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetPtr s
 }
 
 DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s):
-  DiracDeterminantBase(s),BFTrans(s.BFTrans)
+  DiracDeterminant<>(s),BFTrans(s.BFTrans)
 
 {
   registerTimers();

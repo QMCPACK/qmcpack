@@ -47,6 +47,8 @@
 #include "QMCHamiltonians/MPC_CUDA.h"
 #endif
 
+#include "Batching.h"
+
 //#include <iostream>
 namespace qmcplusplus
 {
@@ -244,7 +246,7 @@ HamiltonianFactory::addForceHam(xmlNodePtr cur)
     {
       APP_ABORT("Unknown psi \""+PsiName+"\" for Pulay force.");
     }
-    TrialWaveFunction &psi = *psi_it->second->targetPsi;
+    TrialWaveFunction<> &psi = *psi_it->second->targetPsi;
     targetH->addOperator(new PulayForce(*source, *target, psi),
                          "PulayForce", false);
   }
@@ -256,7 +258,7 @@ HamiltonianFactory::addForceHam(xmlNodePtr cur)
     {
       APP_ABORT("Unknown psi \""+PsiName+"\" for zero-variance force.");
     }
-    TrialWaveFunction &psi = *psi_it->second->targetPsi;
+    TrialWaveFunction<> &psi = *psi_it->second->targetPsi;
     targetH->addOperator
     (new ZeroVarianceForce(*source, *target, psi), "ZVForce", false);
   }
@@ -268,7 +270,7 @@ HamiltonianFactory::addForceHam(xmlNodePtr cur)
       {
        APP_ABORT("Unknown psi \""+PsiName+"\" for Stress tensor.");
       }
-      TrialWaveFunction &psi = *psi_it->second->targetPsi;
+      TrialWaveFunction<> &psi = *psi_it->second->targetPsi;
       
       StressPBC* stress_ham = new StressPBC(*source,*target, psi);
       stress_ham->put(cur);
@@ -294,7 +296,7 @@ HamiltonianFactory::addForceHam(xmlNodePtr cur)
       {
        APP_ABORT("Unknown psi \""+PsiName+"\" for Stress tensor.");
       }
-      TrialWaveFunction &psi = *psi_it->second->targetPsi;
+      TrialWaveFunction<> &psi = *psi_it->second->targetPsi;
 	  
 		StressKinetic* stress_ham = new StressKinetic(*target, psi);
         stress_ham->put(cur);
@@ -334,7 +336,7 @@ HamiltonianFactory::addPseudoPotential(xmlNodePtr cur)
   }
   ParticleSet* ion=(*pit).second;
   OrbitalPoolType::iterator oit(psiPool.find(wfname));
-  TrialWaveFunction* psi=0;
+  TrialWaveFunction<>* psi=0;
   if(oit == psiPool.end())
   {
     if(psiPool.empty())

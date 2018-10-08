@@ -22,13 +22,14 @@
 
 #include "QMCDrivers/QMCDriver.h"
 #include "Optimize/OptimizeBase.h"
+#include "QMCApp/HamiltonianPool.h"
 
 namespace qmcplusplus
 {
 
 ///forward declaration of a cost function
 class QMCCostFunctionBase;
-class HamiltonianPool;
+  //class HamiltonianPool;
 
 /** @ingroup QMCDrivers
  * @brief Implements wave-function optimization
@@ -36,18 +37,22 @@ class HamiltonianPool;
  * Optimization by correlated sampling method with configurations
  * generated from VMC.
  */
-
-class QMCOptimize: public QMCDriver
+template<Batching batching = Batching::SINGLE>
+class QMCOptimize;
+  
+template<Batching batching>
+class QMCOptimize: public QMCDriver<batching>
 {
 public:
-
+  using QDT = QMCDriver<batching>; //QMCDriver Type
+  
   ///Constructor.
-  QMCOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-              QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool);
+  QMCOptimize(MCWalkerConfiguration& w, TrialWaveFunction<batching>& psi,
+              QMCHamiltonian& h, HamiltonianPool<batching>& hpool, WaveFunctionPool& ppool);
 
   ///Destructor
   ~QMCOptimize();
-
+  
   ///Run the Optimization algorithm.
   bool run();
   ///process xml node
@@ -61,7 +66,7 @@ public:
   }
 
 private:
-
+  using QMCT = QMCTraits;
   ///index to denote the partition id
   int PartID;
   ///total number of partitions that will share a set of configuratons
@@ -73,14 +78,14 @@ private:
   ///yes/no applicable only first time
   std::string SkipSampleGeneration;
   ///need to know HamiltonianPool to use OMP
-  HamiltonianPool& hamPool;
+  HamiltonianPool<batching>& hamPool;
   ///target cost function to optimize
   //QMCCostFunction* optTarget;
   QMCCostFunctionBase* optTarget;
   ///solver
-  MinimizerBase<RealType>* optSolver;
+  MinimizerBase<QMCT::RealType>* optSolver;
   ///vmc engine
-  QMCDriver* vmcEngine;
+  QMCDriver<batching>* vmcEngine;
   ///xml node to be dumped
   xmlNodePtr wfNode;
   ///xml node for optimizer
@@ -89,8 +94,13 @@ private:
   std::string optmethod;
   ///list of files storing configurations
   std::vector<std::string> ConfigFile;
+  QMCDriver<batching>* createEngine(MCWalkerConfiguration& W,
+				    TrialWaveFunction<batching>& psi,
+				    QMCHamiltonian& H,
+				    WaveFunctionPool& psiPool);
+
   ///Copy Constructor (disabled).
-  QMCOptimize(const QMCOptimize& a): QMCDriver(a),hamPool(a.hamPool) { }
+  QMCOptimize(const QMCOptimize& a): QMCDriver<batching>(a),hamPool(a.hamPool) { }
   ///Copy operator (disabled).
   QMCOptimize& operator=(const QMCOptimize&)
   {

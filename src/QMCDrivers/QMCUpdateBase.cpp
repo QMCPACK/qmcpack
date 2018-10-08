@@ -31,14 +31,14 @@ namespace qmcplusplus
 {
 
 /// Constructor.
-QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, TrialWaveFunction& guide, QMCHamiltonian& h, RandomGenerator_t& rg)
+QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction<>& psi, TrialWaveFunction<>& guide, QMCHamiltonian& h, RandomGenerator_t& rg)
   : W(w), Psi(psi), Guide(guide), H(h), RandomGen(rg), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
 {
   setDefaults();
 }
 
 /// Constructor.
-QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
+QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction<>& psi, QMCHamiltonian& h, RandomGenerator_t& rg)
   : W(w), Psi(psi), H(h), Guide(psi), RandomGen(rg), branchEngine(0), Estimators(0), Traces(0), csoffset(0)
 {
   setDefaults();

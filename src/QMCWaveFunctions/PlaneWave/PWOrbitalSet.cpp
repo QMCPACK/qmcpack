@@ -29,7 +29,7 @@ PWOrbitalSet::~PWOrbitalSet()
 #endif
 }
 
-SPOSet* PWOrbitalSet::makeClone() const
+SPOSet<>* PWOrbitalSet::makeClone() const
 {
   PWOrbitalSet *myclone=new PWOrbitalSet(*this);
   myclone->myBasisSet = new PWBasis(*myBasisSet);

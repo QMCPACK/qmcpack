@@ -22,8 +22,8 @@ namespace qmcplusplus
 {
 
 DiracDeterminantOpt::DiracDeterminantOpt
-(ParticleSet &ptcl, SPOSetPtr const &gs_spos, int first) :
-  DiracDeterminantBase(gs_spos, first)
+(ParticleSet &ptcl, SPOSet<>* const &gs_spos, int first) :
+  DiracDeterminant<>(gs_spos, first)
 {
   targetPtcl = &ptcl;
   NumOrbitals = gs_spos->OrbitalSetSize;
@@ -41,10 +41,10 @@ DiracDeterminantOpt::DiracDeterminantOpt
   Optimizable = true;
 }
 
-DiracDeterminantBase*
-DiracDeterminantOpt::makeCopy(SPOSetPtr spo) const
+DiracDeterminant<>*
+DiracDeterminantOpt::makeCopy(SPOSet<>* spo) const
 {
-  DiracDeterminantBase* dclone= new DiracDeterminantOpt(*targetPtcl, spo, FirstIndex);
+  DiracDeterminant<>* dclone= new DiracDeterminantOpt(*targetPtcl, spo, FirstIndex);
   dclone->set(FirstIndex,LastIndex-FirstIndex);
   return dclone;
 }

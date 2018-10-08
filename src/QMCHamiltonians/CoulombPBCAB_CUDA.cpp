@@ -242,7 +242,7 @@ CoulombPBCAB_CUDA::addEnergy(MCWalkerConfiguration &W,
 
 
 QMCHamiltonianBase*
-CoulombPBCAB_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+CoulombPBCAB_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
 {
   CoulombPBCAB_CUDA* myclone=new CoulombPBCAB_CUDA(PtclA, qp, true);
   if(myGrid) myclone->myGrid=new GridType(*myGrid);

@@ -22,7 +22,7 @@
 namespace qmcplusplus
 {
 
-VMCUpdateAll::VMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+VMCUpdateAll::VMCUpdateAll(MCWalkerConfiguration& w, TrialWaveFunction<>& psi,
                            QMCHamiltonian& h, RandomGenerator_t& rg)
   : QMCUpdateBase(w,psi,h,rg)
 {

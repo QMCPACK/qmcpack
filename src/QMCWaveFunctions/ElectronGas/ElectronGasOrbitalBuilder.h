@@ -33,9 +33,12 @@ namespace qmcplusplus
 //forward declaration
 class  BackflowTransformation;
 
-struct RealEGOSet: public SPOSet
+struct RealEGOSet: public SPOSet<Batching::SINGLE>
 {
-
+  using PosType = QMCT::PosType;
+  using RealType = QMCT::RealType;
+  using GradType = QMCT::GradType;
+  
   int KptMax;
   RealType kdotr;
   std::vector<PosType> K;
@@ -47,7 +50,7 @@ struct RealEGOSet: public SPOSet
   inline void resetTargetParticleSet(ParticleSet& P) { }
   void setOrbitalSetSize(int norbs) { }
 
-  SPOSet* makeClone() const
+  SPOSet<Batching::SINGLE>* makeClone() const
   {
     return new RealEGOSet(*this);
   }
@@ -308,7 +311,7 @@ class ElectronGasOrbitalBuilder: public WaveFunctionComponentBuilder
 public:
 
   ///constructor
-  ElectronGasOrbitalBuilder(ParticleSet& els, TrialWaveFunction& wfs);
+  ElectronGasOrbitalBuilder(ParticleSet& els, TrialWaveFunction<>& wfs);
 
   ///implement vritual function
   bool put(xmlNodePtr cur);
@@ -331,7 +334,7 @@ public:
   /** initialize the Antisymmetric wave function for electrons
   *@param cur the current xml node
   */
-  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
+  SPOSet<Batching::SINGLE>* createSPOSetFromXML(xmlNodePtr cur);
 };
 
 }

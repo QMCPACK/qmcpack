@@ -46,7 +46,7 @@ class BackflowBuilder: public WaveFunctionComponentBuilder
 
 public:
 
-  BackflowBuilder(ParticleSet& p, PtclPoolType& pool, TrialWaveFunction& psi);
+  BackflowBuilder(ParticleSet& p, PtclPoolType& pool, TrialWaveFunction<>& psi);
 
   ~BackflowBuilder();
 

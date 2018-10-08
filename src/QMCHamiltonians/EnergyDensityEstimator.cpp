@@ -482,7 +482,7 @@ void EnergyDensityEstimator::setParticlePropertyList(PropertySetType& plist
 
 
 QMCHamiltonianBase* EnergyDensityEstimator::makeClone(ParticleSet& qp
-    , TrialWaveFunction& psi)
+    , TrialWaveFunction<>& psi)
 {
   bool write=omp_get_thread_num()==0;
   if(write)

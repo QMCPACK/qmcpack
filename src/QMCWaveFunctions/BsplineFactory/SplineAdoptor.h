@@ -13,7 +13,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/** @file SplineAdoptorBase.h
+/** @file SplineAdoptor.h
  *
  * Base class for SplineAdoptor's used for BsplineSet<SplineAdoptor>
  * Specifies that a SplineXXXAdopter provides these functions
@@ -32,6 +32,8 @@
 #ifndef QMCPLUSPLUS_SPLINEADOPTORBASE_H
 #define QMCPLUSPLUS_SPLINEADOPTORBASE_H
 
+#include "Particle/ParticleSet.h"
+
 namespace qmcplusplus
 {
 
@@ -40,17 +42,12 @@ namespace qmcplusplus
  * This handles SC and twist and declare storage for einspline
  */
 template<typename ST, unsigned D>
-struct SplineAdoptorBase
+class SplineAdoptor
 {
-#if (__cplusplus >= 201103L)
+public:
   using PointType=TinyVector<ST,D>;
   using SingleSplineType=UBspline_3d_d;
   using DataType=ST; 
-#else
-  typedef TinyVector<ST,D> PointType;
-  typedef UBspline_3d_d SingleSplineType;
-  typedef ST DataType;
-#endif
   ///true if the computed values are complex
   bool is_complex;
   ///true, if it has only one k point and Gamma
@@ -84,14 +81,12 @@ struct SplineAdoptorBase
   ///keyword used to match hdf5
   std::string KeyWord;
 
-  SplineAdoptorBase()
+  SplineAdoptor()
     :is_complex(false),is_gamma_only(false), is_soa_ready(false),
     MyIndex(0),nunique_orbitals(0),first_spo(0),last_spo(0)
   { }
 
-#if (__cplusplus >= 201103L)
-  SplineAdoptorBase(const SplineAdoptorBase& rhs)=default;
-#endif
+  SplineAdoptor(const SplineAdoptor& rhs)=default;
 
   inline void init_base(int n)
   {

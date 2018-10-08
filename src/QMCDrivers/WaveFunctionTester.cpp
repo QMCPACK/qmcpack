@@ -21,6 +21,7 @@
 #include "Particle/DistanceTable.h"
 #include "ParticleBase/ParticleUtility.h"
 #include "ParticleBase/RandomSeqGenerator.h"
+#include "Utilities/RandomGenerator.h"
 #include "Message/Communicate.h"
 #include "QMCDrivers/WaveFunctionTester.h"
 #include "QMCDrivers/DriftOperators.h"
@@ -39,31 +40,33 @@ namespace qmcplusplus
 {
 
 
-WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
-                                       TrialWaveFunction& psi,
+template<Batching batching>
+WaveFunctionTester<batching>::WaveFunctionTester(MCWalkerConfiguration& w,
+                                       TrialWaveFunction<batching>& psi,
                                        QMCHamiltonian& h,
                                        ParticleSetPool &ptclPool, WaveFunctionPool& ppool):
-  QMCDriver(w,psi,h,ppool),checkRatio("no"),checkClone("no"), checkHamPbyP("no"),
+  QMCDriver<batching>(w,psi,h,ppool),checkRatio("no"),checkClone("no"), checkHamPbyP("no"),
   PtclPool(ptclPool), wftricks("no"),checkEloc("no"), checkBasic("yes"), checkRatioV("no"),
   deltaParam(0.0), toleranceParam(0.0), outputDeltaVsError(false), checkSlaterDet(true)
 {
-  m_param.add(checkRatio,"ratio","string");
-  m_param.add(checkClone,"clone","string");
-  m_param.add(checkHamPbyP,"hamiltonianpbyp","string");
-  m_param.add(sourceName,"source","string");
-  m_param.add(wftricks,"orbitalutility","string");
-  m_param.add(checkEloc,"printEloc","string");
-  m_param.add(checkBasic,"basic","string");
-  m_param.add(checkRatioV,"virtual_move","string");
-  m_param.add(deltaParam,"delta","none");
-  m_param.add(toleranceParam,"tolerance","none");
-  m_param.add(checkSlaterDetOption,"sd","string");
+  QDT::m_param.add(checkRatio,"ratio","string");
+  QDT::m_param.add(checkClone,"clone","string");
+  QDT::m_param.add(checkHamPbyP,"hamiltonianpbyp","string");
+  QDT::m_param.add(sourceName,"source","string");
+  QDT::m_param.add(wftricks,"orbitalutility","string");
+  QDT::m_param.add(checkEloc,"printEloc","string");
+  QDT::m_param.add(checkBasic,"basic","string");
+  QDT::m_param.add(checkRatioV,"virtual_move","string");
+  QDT::m_param.add(deltaParam,"delta","none");
+  QDT::m_param.add(toleranceParam,"tolerance","none");
+  QDT::m_param.add(checkSlaterDetOption,"sd","string");
 
   deltaR.resize(w.getTotalNum());
   makeGaussRandom(deltaR);
 }
 
-WaveFunctionTester::~WaveFunctionTester()
+template<Batching batching>
+WaveFunctionTester<batching>::~WaveFunctionTester()
 {
 }
 
@@ -84,66 +87,17 @@ WaveFunctionTester::~WaveFunctionTester()
  small displacement for the ith particle.
 */
 
-bool
-WaveFunctionTester::run()
-{
-  //DistanceTable::create(1);
-  char fname[16];
-  sprintf(fname,"wftest.%03d",OHMMS::Controller->rank());
-  fout.open(fname);
-  fout.precision(15);
 
-  app_log() << "Starting a Wavefunction tester.  Additional information in "  << fname << std::endl;
 
-  put(qmcNode);
-  if (checkSlaterDetOption=="no") checkSlaterDet = false;
-  if (checkRatio == "yes")
-  {
-    //runRatioTest();
-    runRatioTest2();
-  }
-  else if (checkClone == "yes")
-    runCloneTest();
-  else if(checkEloc != "no")
-    printEloc();
-  else if (sourceName.size() != 0)
-  {
-    runGradSourceTest();
-    runZeroVarianceTest();
-  }
-  else if (checkRatio =="deriv")
-  {
-    makeGaussRandom(deltaR);
-    deltaR *=0.2;
-    runDerivTest();
-    runDerivNLPPTest();
-  }
-  else if (checkRatio =="derivclone")
-    runDerivCloneTest();
-  else if (wftricks =="rotate")
-    runwftricks();
-  else if (wftricks =="plot")
-    runNodePlot();
-  else if (checkBasic == "yes")
-    runBasicTest();
-  else if (checkRatioV == "yes")
-    runRatioV();
-  else
-    app_log() << "No wavefunction test specified" << std::endl;
-
-  //RealType ene = H.evaluate(W);
-  //app_log() << " Energy " << ene << std::endl;
-  return true;
-}
-
-void WaveFunctionTester::runCloneTest()
+template<>
+void WaveFunctionTester<Batching::SINGLE>::runCloneTest()
 {
   for (int iter=0; iter<4; ++iter)
   {
     app_log() << "Clone" << iter << std::endl;
-    ParticleSet* w_clone = new MCWalkerConfiguration(W);
-    TrialWaveFunction *psi_clone = Psi.makeClone(*w_clone);
-    QMCHamiltonian *h_clone = H.makeClone(*w_clone,*psi_clone);
+    ParticleSet* w_clone = new MCWalkerConfiguration(QDT::W);
+    TrialWaveFunction<Batching::SINGLE> *psi_clone = QDT::Psi.makeClone(*w_clone);
+    QMCHamiltonian *h_clone = QDT::H.makeClone(*w_clone,*psi_clone);
     h_clone->setPrimary(false);
     IndexType nskipped = 0;
     RealType sig2Enloc=0, sig2Drift=0;
@@ -151,16 +105,16 @@ void WaveFunctionTester::runCloneTest()
     RealType delta2 = 2*delta;
     ValueType c1 = 1.0/delta/2.0;
     ValueType c2 = 1.0/delta/delta;
-    int nat = W.getTotalNum();
+    int nat = QDT::W.getTotalNum();
     MCWalkerConfiguration::PropertyContainer_t Properties;
     //pick the first walker
-    MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+    MCWalkerConfiguration::Walker_t* awalker = *(QDT::W.begin());
     //copy the properties of the working walker
     Properties = awalker->Properties;
-    W.R = awalker->R;
-    W.update();
-    ValueType logpsi1 = Psi.evaluateLog(W);
-    RealType eloc1  = H.evaluate(W);
+    QDT::W.R = awalker->R;
+    QDT::W.update();
+    ValueType logpsi1 = QDT::Psi.evaluateLog(QDT::W);
+    RealType eloc1  = QDT::H.evaluate(QDT::W);
     w_clone->R=awalker->R;
     w_clone->update();
     ValueType logpsi2 = psi_clone->evaluateLog(*w_clone);
@@ -172,21 +126,21 @@ void WaveFunctionTester::runCloneTest()
     Walker_t::WFBuffer_t &wbuffer(awalker->DataSet);
     wbuffer.clear();
     app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << std::endl;
-    Psi.registerData(W,wbuffer);
+    QDT::Psi.registerData(QDT::W,wbuffer);
     wbuffer.allocate();
-    Psi.copyFromBuffer(W,wbuffer);
-    Psi.evaluateLog(W);
-    logpsi1 = Psi.updateBuffer(W,wbuffer,false);
-    eloc1= H.evaluate(W);
+    QDT::Psi.copyFromBuffer(QDT::W,wbuffer);
+    QDT::Psi.evaluateLog(QDT::W);
+    logpsi1 = QDT::Psi.updateBuffer(QDT::W,wbuffer,false);
+    eloc1= QDT::H.evaluate(QDT::W);
     app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << std::endl;
     wbuffer.clear();
     app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << std::endl;
-    psi_clone->registerData(W,wbuffer);
+    psi_clone->registerData(QDT::W,wbuffer);
     wbuffer.allocate();
-    Psi.copyFromBuffer(W,wbuffer);
-    Psi.evaluateLog(W);
-    logpsi2 = Psi.updateBuffer(W,wbuffer,false);
-    eloc2= H.evaluate(*w_clone);
+    QDT::Psi.copyFromBuffer(QDT::W,wbuffer);
+    QDT::Psi.evaluateLog(QDT::W);
+    logpsi2 = QDT::Psi.updateBuffer(QDT::W,wbuffer,false);
+    eloc2= QDT::H.evaluate(*w_clone);
     app_log() << "  Walker Buffer State current=" << wbuffer.current() << " size=" << wbuffer.size() << std::endl;
     app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << std::endl;
     app_log() << "log (clone)    = " << logpsi2 << " energy = " << eloc2 << std::endl;
@@ -196,7 +150,8 @@ void WaveFunctionTester::runCloneTest()
   }
 }
 
-void WaveFunctionTester::printEloc()
+template<>
+void WaveFunctionTester<Batching::SINGLE>::printEloc()
 {
   ParticleSetPool::PoolType::iterator p;
   for (p=PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
@@ -207,7 +162,7 @@ void WaveFunctionTester::printEloc()
      APP_ABORT("Unknown source \"" + sourceName + "\" in printEloc in WaveFunctionTester.");
   ParticleSet& source = *((*pit).second);
   app_log() << "Source = " <<sourceName <<"  " <<(*pit).first << std::endl;
-  int nel = W.getTotalNum();
+  int nel = QDT::W.getTotalNum();
   int ncenter = source.getTotalNum();
 //    int ncenter = 3;
 //    std::cout <<"number of centers: " <<source.getTotalNum() << std::endl;
@@ -216,19 +171,19 @@ void WaveFunctionTester::printEloc()
 //    std::cout <<"2: " <<source.R[2] << std::endl;
   MCWalkerConfiguration::PropertyContainer_t Properties;
   //pick the first walker
-  MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+  MCWalkerConfiguration::Walker_t* awalker = *(QDT::W.begin());
   //copy the properties of the working walker
   Properties = awalker->Properties;
-  W.R = awalker->R;
-  W.update();
-  //ValueType psi = Psi.evaluate(W);
-  ValueType logpsi = Psi.evaluateLog(W);
-  RealType eloc=H.evaluate(W);
+  QDT::W.R = awalker->R;
+  QDT::W.update();
+  //ValueType psi = Psi.evaluate(QDT::W);
+  ValueType logpsi = QDT::Psi.evaluateLog(QDT::W);
+  RealType eloc=QDT::H.evaluate(QDT::W);
   app_log() << "  Logpsi: " <<logpsi  << std::endl;
   app_log() << "  HamTest " << "  Total " <<  eloc << std::endl;
-  for (int i=0; i<H.sizeOfObservables(); i++)
-    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
-  //RealType psi = Psi.evaluateLog(W);
+  for (int i=0; i<QDT::H.sizeOfObservables(); i++)
+    app_log() << "  HamTest " << QDT::H.getObservableName(i) << " " << QDT::H.getObservable(i) << std::endl;
+  //RealType psi = Psi.evaluateLog(QDT::W);
   //int iat=0;
   double maxR = 1000000.0;
   std::vector<int> closestElectron(ncenter);
@@ -237,9 +192,9 @@ void WaveFunctionTester::printEloc()
     maxR=10000000;
     for(int k=0; k<nel; k++)
     {
-      double dx = std::sqrt( (W.R[k][0]-source.R[iat][0])*(W.R[k][0]-source.R[iat][0])
-                             +(W.R[k][1]-source.R[iat][1])*(W.R[k][1]-source.R[iat][1])
-                             +(W.R[k][2]-source.R[iat][2])*(W.R[k][2]-source.R[iat][2]));
+      double dx = std::sqrt( (QDT::W.R[k][0]-source.R[iat][0])*(QDT::W.R[k][0]-source.R[iat][0])
+                             +(QDT::W.R[k][1]-source.R[iat][1])*(QDT::W.R[k][1]-source.R[iat][1])
+                             +(QDT::W.R[k][2]-source.R[iat][2])*(QDT::W.R[k][2]-source.R[iat][2]));
       if(dx < maxR)
       {
         maxR = dx;
@@ -256,29 +211,29 @@ void WaveFunctionTester::printEloc()
     out<<x <<"  ";
     for(int iat=0; iat<ncenter; iat++)
     {
-      PosType tempR = W.R[closestElectron[iat]];
-      W.R[closestElectron[iat]]=source.R[iat];
-//        W.R[closestElectron[iat]]=0.0;
-      W.R[closestElectron[iat]][0] += x;
-      W.update();
-      ValueType logpsi_p = Psi.evaluateLog(W);
-      ValueType ene = H.evaluate(W);
+      PosType tempR = QDT::W.R[closestElectron[iat]];
+      QDT::W.R[closestElectron[iat]]=source.R[iat];
+//        QDT::W.R[closestElectron[iat]]=0.0;
+      QDT::W.R[closestElectron[iat]][0] += x;
+      QDT::W.update();
+      ValueType logpsi_p = QDT::Psi.evaluateLog(QDT::W);
+      ValueType ene = QDT::H.evaluate(QDT::W);
       out<<ene <<"  ";
-      W.R[closestElectron[iat]]=source.R[iat];
-//        W.R[closestElectron[iat]]=0.0;
-      W.R[closestElectron[iat]][1] += x;
-      W.update();
-      logpsi_p = Psi.evaluateLog(W);
-      ene = H.evaluate(W);
+      QDT::W.R[closestElectron[iat]]=source.R[iat];
+//        QDT::W.R[closestElectron[iat]]=0.0;
+      QDT::W.R[closestElectron[iat]][1] += x;
+      QDT::W.update();
+      logpsi_p = QDT::Psi.evaluateLog(QDT::W);
+      ene = QDT::H.evaluate(QDT::W);
       out<<ene <<"  ";
-      W.R[closestElectron[iat]]=source.R[iat];
-//        W.R[closestElectron[iat]]=0.0;
-      W.R[closestElectron[iat]][2] += x;
-      W.update();
-      logpsi_p = Psi.evaluateLog(W);
-      ene = H.evaluate(W);
+      QDT::W.R[closestElectron[iat]]=source.R[iat];
+//        QDT::W.R[closestElectron[iat]]=0.0;
+      QDT::W.R[closestElectron[iat]][2] += x;
+      QDT::W.update();
+      logpsi_p = QDT::Psi.evaluateLog(QDT::W);
+      ene = QDT::H.evaluate(QDT::W);
       out<<ene <<"  ";
-      W.R[closestElectron[iat]] = tempR;
+      QDT::W.R[closestElectron[iat]] = tempR;
     }
     out<< std::endl;
   }
@@ -569,7 +524,8 @@ void FiniteDifference::computeFiniteDiffRichardson(RealType delta,
 }
 
 // Compute numerical gradient and Laplacian
-void WaveFunctionTester::computeNumericalGrad(RealType delta,
+template<>
+void WaveFunctionTester<Batching::SINGLE>::computeNumericalGrad(RealType delta,
                                               ParticleSet::ParticleGradient_t &G_fd, // finite difference
                                               ParticleSet::ParticleLaplacian_t &L_fd)
 {
@@ -577,18 +533,18 @@ void WaveFunctionTester::computeNumericalGrad(RealType delta,
   //FiniteDifference fd(FiniteDifference::FiniteDiff_Richardson);
   FiniteDifference::PosChangeVector positions;
 
-  fd.finiteDifferencePoints(delta, W, positions);
+  fd.finiteDifferencePoints(delta, QDT::W, positions);
 
   FiniteDifference::ValueVector logpsi_vals;
   FiniteDifference::PosChangeVector::iterator it;
 
   for (it = positions.begin(); it != positions.end(); it++)
   {
-    PosType r0 = W.R[it->index];
-    W.R[it->index] = it->r;
-    W.update();
-    RealType logpsi0 = Psi.evaluateLog(W);
-    RealType phase0 = Psi.getPhase();
+    PosType r0 = QDT::W.R[it->index];
+    QDT::W.R[it->index] = it->r;
+    QDT::W.update();
+    RealType logpsi0 = QDT::Psi.evaluateLog(QDT::W);
+    RealType phase0 = QDT::Psi.getPhase();
 #if defined(QMC_COMPLEX)
     ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0,phase0);
 #else
@@ -596,9 +552,9 @@ void WaveFunctionTester::computeNumericalGrad(RealType delta,
 #endif
     logpsi_vals.push_back(logpsi);
 
-    W.R[it->index] = r0;
-    W.update();
-    Psi.evaluateLog(W);
+    QDT::W.R[it->index] = r0;
+    QDT::W.update();
+    QDT::Psi.evaluateLog(QDT::W);
   }
 
   fd.computeFiniteDiff(delta, positions, logpsi_vals, G_fd, L_fd);
@@ -607,7 +563,8 @@ void WaveFunctionTester::computeNumericalGrad(RealType delta,
 // Usually
 // lower_iat = 0
 // upper_iat = nat
-bool WaveFunctionTester::checkGradients(int lower_iat, int upper_iat,
+template<Batching batching>
+bool WaveFunctionTester<batching>::checkGradients(int lower_iat, int upper_iat,
                                            ParticleSet::ParticleGradient_t &G,
                                            ParticleSet::ParticleLaplacian_t &L,
                                            ParticleSet::ParticleGradient_t &G_fd,
@@ -674,7 +631,7 @@ bool WaveFunctionTester::checkGradients(int lower_iat, int upper_iat,
       }
     }
 
-    fout << pad << "For particle #" << iat << " at " << W.R[iat] << std::endl;
+    fout << pad << "For particle #" << iat << " at " << QDT::W.R[iat] << std::endl;
     fout << pad << "Gradient      = " << std::setw(12) << G[iat] << std::endl;
     fout << pad << "  Finite diff = " << std::setw(12) << G_fd[iat] << std::endl;
     fout << pad << "  Error       = " << std::setw(12) << G[iat]-G_fd[iat] << std::endl;
@@ -691,19 +648,20 @@ bool WaveFunctionTester::checkGradients(int lower_iat, int upper_iat,
   return all_okay;
 }
 
-bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Walker_t *W1, std::stringstream &fail_log, bool &ignore)
+template<>
+bool WaveFunctionTester<Batching::SINGLE>::checkGradientAtConfiguration(MCWalkerConfiguration::Walker_t *W1, std::stringstream &fail_log, bool &ignore)
 {
 
-  int nat = W.getTotalNum();
+  int nat = QDT::W.getTotalNum();
   ParticleSet::ParticleGradient_t G(nat), G1(nat);
   ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
 
-  W.loadWalker(*W1, true);
+  QDT::W.loadWalker(*W1, true);
 
   // compute analytic values
-  Psi.evaluateLog(W);
-  G = W.G;
-  L = W.L;
+  QDT::Psi.evaluateLog(QDT::W);
+  G = QDT::W.G;
+  L = QDT::W.L;
 
   // Use a single delta with a fairly large tolerance
   //computeNumericalGrad(delta, G1, L1);
@@ -719,18 +677,18 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
   FiniteDifference::PosChangeVector positions;
 
-  fd.finiteDifferencePoints(delta, W, positions);
+  fd.finiteDifferencePoints(delta, QDT::W, positions);
 
   FiniteDifference::ValueVector logpsi_vals;
   FiniteDifference::PosChangeVector::iterator it;
 
   for (it = positions.begin(); it != positions.end(); it++)
   {
-    PosType r0 = W.R[it->index];
-    W.R[it->index] = it->r;
-    W.update();
-    RealType logpsi0 = Psi.evaluateLog(W);
-    RealType phase0 = Psi.getPhase();
+    PosType r0 = QDT::W.R[it->index];
+    QDT::W.R[it->index] = it->r;
+    QDT::W.update();
+    RealType logpsi0 = QDT::Psi.evaluateLog(QDT::W);
+    RealType phase0 = QDT::Psi.getPhase();
 #if defined(QMC_COMPLEX)
     ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0,phase0);
 #else
@@ -738,9 +696,9 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 #endif
     logpsi_vals.push_back(logpsi);
 
-    W.R[it->index] = r0;
-    W.update();
-    Psi.evaluateLog(W);
+    QDT::W.R[it->index] = r0;
+    QDT::W.update();
+    QDT::Psi.evaluateLog(QDT::W);
   }
 
   fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
@@ -757,15 +715,15 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
     tol = toleranceParam;
   } 
 
-  for (int iorb = 0; iorb < Psi.getOrbitals().size(); iorb++)
+  for (int iorb = 0; iorb < QDT::Psi.getOrbitals().size(); iorb++)
   {
-    WaveFunctionComponent *orb = Psi.getOrbitals()[iorb];
+    WaveFunctionComponent *orb = QDT::Psi.getOrbitals()[iorb];
 
     ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
     ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
 
 
-    RealType logpsi1 = orb->evaluateLog(W, G, L);
+    RealType logpsi1 = orb->evaluateLog(QDT::W, G, L);
 
     fail_log << "WaveFunctionComponent " << iorb << " " << orb->ClassName << " log psi = " << logpsi1 << std::endl;
 
@@ -773,13 +731,13 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
     FiniteDifference::PosChangeVector::iterator it;
     for (it = positions.begin(); it != positions.end(); it++)
     {
-      PosType r0 = W.R[it->index];
-      W.R[it->index] = it->r;
-      W.update();
+      PosType r0 = QDT::W.R[it->index];
+      QDT::W.R[it->index] = it->r;
+      QDT::W.update();
       ParticleSet::SingleParticlePos_t zeroR;
-      W.makeMove(it->index,zeroR);
+      QDT::W.makeMove(it->index,zeroR);
 
-      RealType logpsi0 = orb->evaluateLog(W, tmpG, tmpL);
+      RealType logpsi0 = orb->evaluateLog(QDT::W, tmpG, tmpL);
       RealType phase0 = orb->PhaseValue;
 #if defined(QMC_COMPLEX)
       ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0,phase0);
@@ -787,10 +745,10 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
       ValueType logpsi = logpsi0;
 #endif
       logpsi_vals.push_back(logpsi);
-      W.rejectMove(it->index);
+      QDT::W.rejectMove(it->index);
 
-      W.R[it->index] = r0;
-      W.update();
+      QDT::W.R[it->index] = r0;
+      QDT::W.update();
     }
     fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
 
@@ -803,15 +761,15 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
     if (!checkSlaterDet) continue; // skip SlaterDet check if <backflow> is present
     // DiracDeterminantWithBackflow::evaluateLog requires a call to BackflowTransformation::evaluate in its owning SlaterDetWithBackflow to work correctly.
-    SlaterDet *sd = dynamic_cast<SlaterDet *>(orb);
+    SlaterDet<> *sd = dynamic_cast<SlaterDet<> *>(orb);
     if (sd)
     {
       for (int isd = 0; isd < sd->Dets.size(); isd++)
       {
         ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
         ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
-        DiracDeterminantBase *det = sd->Dets[isd];
-        RealType logpsi2 = det->evaluateLog(W, G, L); // this won't work with backflow
+        DiracDeterminant<> *det = sd->Dets[isd];
+        RealType logpsi2 = det->evaluateLog(QDT::W, G, L); // this won't work with backflow
         fail_log << "  Slater Determiant " << isd << " (for particles " << det->FirstIndex << " to " << det->LastIndex << ") log psi = " << logpsi2 << std::endl;
         // Should really check the condition number on the matrix determinant.
         // For now, just ignore values that too small.
@@ -823,11 +781,11 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
         FiniteDifference::PosChangeVector::iterator it;
         for (it = positions.begin(); it != positions.end(); it++)
         {
-          PosType r0 = W.R[it->index];
-          W.R[it->index] = it->r;
-          W.update();
+          PosType r0 = QDT::W.R[it->index];
+          QDT::W.R[it->index] = it->r;
+          QDT::W.update();
 
-          RealType logpsi0 = det->evaluateLog(W, tmpG, tmpL);
+          RealType logpsi0 = det->evaluateLog(QDT::W, tmpG, tmpL);
           RealType phase0 = det->PhaseValue;
     #if defined(QMC_COMPLEX)
           ValueType logpsi = std::complex<OHMMS_PRECISION>(logpsi0,phase0);
@@ -836,8 +794,8 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
     #endif
           logpsi_vals.push_back(logpsi);
 
-          W.R[it->index] = r0;
-          W.update();
+          QDT::W.R[it->index] = r0;
+          QDT::W.update();
         }
         fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
 
@@ -859,26 +817,26 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
           ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
           ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
-          RealType logpsi3 = det->evaluateLog(W, G, L);
+          RealType logpsi3 = det->evaluateLog(QDT::W, G, L);
           FiniteDifference::ValueVector logpsi_vals;
           FiniteDifference::PosChangeVector::iterator it;
           for (it = positions.begin(); it != positions.end(); it++)
           {
-            PosType r0 = W.R[it->index];
-            W.R[it->index] = it->r;
-            W.update();
+            PosType r0 = QDT::W.R[it->index];
+            QDT::W.R[it->index] = it->r;
+            QDT::W.update();
             ParticleSet::SingleParticlePos_t zeroR;
-            W.makeMove(it->index,zeroR);
+            QDT::W.makeMove(it->index,zeroR);
 
             SPOSet::ValueVector_t psi(spo->size());
 
-            spo->evaluate(W, it->index, psi);
+            spo->evaluate(QDT::W, it->index, psi);
             ValueType logpsi = psi[0];
             logpsi_vals.push_back(logpsi);
 
-            W.rejectMove(it->index);
-            W.R[it->index] = r0;
-            W.update();
+            QDT::W.rejectMove(it->index);
+            QDT::W.R[it->index] = r0;
+            QDT::W.update();
           }
           fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
 
@@ -894,11 +852,12 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
   return all_okay;
 }
 
-void WaveFunctionTester::runBasicTest()
+template<>
+void WaveFunctionTester<Batching::SINGLE>::runBasicTest()
 {
   RealType sig2Enloc=0, sig2Drift=0;
 
-  int nat = W.getTotalNum();
+  int nat = QDT::W.getTotalNum();
   fout << "Numerical gradient and Laplacian test" << std::endl;
 
   std::stringstream fail_log;
@@ -907,8 +866,8 @@ void WaveFunctionTester::runBasicTest()
   int nconfig = 0;
   int nignore = 0;
 
-  MCWalkerConfiguration::iterator Wit(W.begin());
-  for (; Wit != W.end(); Wit++)
+  MCWalkerConfiguration::iterator Wit(QDT::W.begin());
+  for (; Wit != QDT::W.end(); Wit++)
   {
     fout << "Walker # " << nconfig << std::endl;
     std::stringstream fail_log1;
@@ -975,9 +934,9 @@ void WaveFunctionTester::runBasicTest()
       ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
       for (int i = 0; i < 20; i++) {
         // compute analytic values
-        G = W.G;
-        L = W.L;
-        Psi.evaluateLog(W);
+        G = QDT::W.G;
+        L = QDT::W.L;
+        QDT::Psi.evaluateLog(QDT::W);
 
         computeNumericalGrad(delta, G1, L1);
         ParticleSet::Scalar_t L_err = std::abs(L[iat]-L1[iat]);
@@ -1005,21 +964,21 @@ void WaveFunctionTester::runBasicTest()
   //testing ratio alone
   for (int iat=0; iat<nat; iat++)
   {
-    W.update();
-    //ValueType psi_p = log(std::abs(Psi.evaluate(W)));
-    RealType psi_p = Psi.evaluateLog(W);
-    RealType phase_p=Psi.getPhase();
-    W.makeMove(iat,deltaR[iat]);
-    //W.update();
-    RealType aratio = Psi.ratio(W,iat);
-    RealType phaseDiff = Psi.getPhaseDiff();
-    W.rejectMove(iat);
-    Psi.rejectMove(iat);
-    W.R[iat] += deltaR[iat];
-    W.update();
-    //ValueType psi_m = log(std::abs(Psi.evaluate(W)));
-    RealType psi_m = Psi.evaluateLog(W);
-    RealType phase_m=Psi.getPhase();
+    QDT::W.update();
+    //ValueType psi_p = log(std::abs(QDT::Psi.evaluate(QDT::W)));
+    RealType psi_p = QDT::Psi.evaluateLog(QDT::W);
+    RealType phase_p=QDT::Psi.getPhase();
+    QDT::W.makeMove(iat,deltaR[iat]);
+    //QDT::W.update();
+    RealType aratio = QDT::Psi.ratio(QDT::W,iat);
+    RealType phaseDiff = QDT::Psi.getPhaseDiff();
+    QDT::W.rejectMove(iat);
+    QDT::Psi.rejectMove(iat);
+    QDT::W.R[iat] += deltaR[iat];
+    QDT::W.update();
+    //ValueType psi_m = log(std::abs(QDT::Psi.evaluate(QDT::W)));
+    RealType psi_m = QDT::Psi.evaluateLog(QDT::W);
+    RealType phase_m=QDT::Psi.getPhase();
     
 #if defined(QMC_COMPLEX)
     RealType ratioMag = std::exp(psi_m-psi_p);
@@ -1052,52 +1011,53 @@ void WaveFunctionTester::runBasicTest()
   app_log() << "Ratio test: " << (any_ratio_fail?"FAIL":"PASS") << std::endl;
 }
 
-void WaveFunctionTester::runRatioTest()
+template<Batching batching>
+void WaveFunctionTester<batching>::runRatioTest()
 {
 #if 0
-  int nat = W.getTotalNum();
+  int nat = QDT::W.getTotalNum();
   ParticleSet::ParticleGradient_t Gp(nat), dGp(nat);
   ParticleSet::ParticleLaplacian_t Lp(nat), dLp(nat);
   bool checkHam=(checkHamPbyP == "yes");
   Tau=0.025;
-  MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
+  MCWalkerConfiguration::iterator it(QDT::W.begin()), it_end(QDT::W.end());
   while (it != it_end)
   {
     makeGaussRandom(deltaR);
     Walker_t::WFBuffer_t tbuffer;
-    W.R = (**it).R+Tau*deltaR;
-    (**it).R=W.R;
-    W.update();
-    RealType logpsi=Psi.registerData(W,tbuffer);
+    QDT::W.R = (**it).R+Tau*deltaR;
+    (**it).R=QDT::W.R;
+    QDT::W.update();
+    RealType logpsi=QDT::Psi.registerData(QDT::W,tbuffer);
     RealType ene;
     if (checkHam)
-      ene = H.registerData(W,tbuffer);
+      ene = QDT::H.registerData(QDT::W,tbuffer);
     else
-      ene = H.evaluate(W);
+      ene = QDT::H.evaluate(QDT::W);
     (*it)->DataSet=tbuffer;
-    //RealType ene = H.evaluate(W);
-    (*it)->resetProperty(logpsi,Psi.getPhase(),ene,0.0,0.0,1.0);
-    H.saveProperty((*it)->getPropertyBase());
+    //RealType ene = QDT::H.evaluate(QDT::W);
+    (*it)->resetProperty(logpsi,QDT::Psi.getPhase(),ene,0.0,0.0,1.0);
+    QDT::H.saveProperty((*it)->getPropertyBase());
     ++it;
     app_log() << "  HamTest " << "  Total " <<  ene << std::endl;
-    for (int i=0; i<H.sizeOfObservables(); i++)
-      app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
+    for (int i=0; i<QDT::H.sizeOfObservables(); i++)
+      app_log() << "  HamTest " << QDT::H.getObservableName(i) << " " << QDT::H.getObservable(i) << std::endl;
   }
   fout << "  Update using drift " << std::endl;
   bool pbyp_mode=true;
   for (int iter=0; iter<4; ++iter)
   {
     int iw=0;
-    it=W.begin();
+    it=QDT::W.begin();
     while (it != it_end)
     {
       fout << "\nStart Walker " << iw++ << std::endl;
       Walker_t& thisWalker(**it);
-      W.loadWalker(thisWalker,pbyp_mode);
+      QDT::W.loadWalker(thisWalker,pbyp_mode);
       Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
-      Psi.copyFromBuffer(W,w_buffer);
-      H.copyFromBuffer(W,w_buffer);
-//             Psi.evaluateLog(W);
+      QDT::Psi.copyFromBuffer(QDT::W,w_buffer);
+      QDT::H.copyFromBuffer(QDT::W,w_buffer);
+//             QDT::Psi.evaluateLog(QDT::W);
       RealType eold(thisWalker.Properties(LOCALENERGY));
       RealType logpsi(thisWalker.Properties(LOGPSI));
       RealType emixed(eold), enew(eold);
@@ -1107,51 +1067,51 @@ void WaveFunctionTester::runRatioTest()
       for (int iat=0; iat<nat; iat++)
       {
         PosType dr(Tau*deltaR[iat]);
-        PosType newpos(W.makeMove(iat,dr));
-        //RealType ratio=Psi.ratio(W,iat,dGp,dLp);
-        W.dG=0;
-        W.dL=0;
-        RealType ratio=Psi.ratio(W,iat,W.dG,W.dL);
-        Gp = W.G + W.dG;
-        //RealType enew = H.evaluatePbyP(W,iat);
+        PosType newpos(QDT::W.makeMove(iat,dr));
+        //RealType ratio=QDT::Psi.ratio(QDT::W,iat,dGp,dLp);
+        QDT::W.dG=0;
+        QDT::W.dL=0;
+        RealType ratio=QDT::Psi.ratio(QDT::W,iat,QDT::W.dG,QDT::W.dL);
+        Gp = QDT::W.G + QDT::W.dG;
+        //RealType enew = QDT::H.evaluatePbyP(QDT::W,iat);
         if (checkHam)
-          enew = H.evaluatePbyP(W,iat);
+          enew = QDT::H.evaluatePbyP(QDT::W,iat);
         if (ratio > Random())
         {
           fout << " Accepting a move for " << iat << std::endl;
           fout << " Energy after a move " << enew << std::endl;
-          W.G += W.dG;
-          W.L += W.dL;
-          W.acceptMove(iat);
-          Psi.acceptMove(W,iat);
+          QDT::W.G += QDT::W.dG;
+          QDT::W.L += QDT::W.dL;
+          QDT::W.acceptMove(iat);
+          QDT::Psi.acceptMove(QDT::W,iat);
           if (checkHam)
-            H.acceptMove(iat);
+            QDT::H.acceptMove(iat);
           ratio_accum *= ratio;
         }
         else
         {
           fout << " Rejecting a move for " << iat << std::endl;
-          W.rejectMove(iat);
-          Psi.rejectMove(iat);
-          //H.rejectMove(iat);
+          QDT::W.rejectMove(iat);
+          QDT::Psi.rejectMove(iat);
+          //QDT::H.rejectMove(iat);
         }
       }
-      fout << " Energy after pbyp = " << H.getLocalEnergy() << std::endl;
-      RealType newlogpsi_up = Psi.evaluateLog(W,w_buffer);
-      W.saveWalker(thisWalker);
+      fout << " Energy after pbyp = " << QDT::H.getLocalEnergy() << std::endl;
+      RealType newlogpsi_up = QDT::Psi.evaluateLog(QDT::W,w_buffer);
+      QDT::W.saveWalker(thisWalker);
       RealType ene_up;
       if (checkHam)
-        ene_up= H.evaluate(W,w_buffer);
+        ene_up= QDT::H.evaluate(QDT::W,w_buffer);
       else
-        ene_up = H.evaluate(W);
-      Gp=W.G;
-      Lp=W.L;
-      W.R=thisWalker.R;
-      W.update();
-      RealType newlogpsi=Psi.updateBuffer(W,w_buffer,false);
-      RealType ene = H.evaluate(W);
-      thisWalker.resetProperty(newlogpsi,Psi.getPhase(),ene);
-      //thisWalker.resetProperty(std::log(psi),Psi.getPhase(),ene);
+        ene_up = QDT::H.evaluate(QDT::W);
+      Gp=QDT::W.G;
+      Lp=QDT::W.L;
+      QDT::W.R=thisWalker.R;
+      QDT::W.update();
+      RealType newlogpsi=QDT::Psi.updateBuffer(QDT::W,w_buffer,false);
+      RealType ene = QDT::H.evaluate(QDT::W);
+      thisWalker.resetProperty(newlogpsi,QDT::Psi.getPhase(),ene);
+      //thisWalker.resetProperty(std::log(psi),QDT::Psi.getPhase(),ene);
       fout << iter << "  Energy by update = "<< ene_up << " " << ene << " "  << ene_up-ene << std::endl;
       fout << iter << " Ratio " << ratio_accum*ratio_accum
             << " | " << std::exp(2.0*(newlogpsi-logpsi)) << " "
@@ -1161,26 +1121,26 @@ void WaveFunctionTester::runRatioTest()
             << " old log(psi) " << logpsi << std::endl;
       fout << " Gradients " << std::endl;
       for (int iat=0; iat<nat; iat++)
-        fout << W.G[iat]-Gp[iat] << W.G[iat] << std::endl; //W.G[iat] << G[iat] << std::endl;
+        fout << QDT::W.G[iat]-Gp[iat] << QDT::W.G[iat] << std::endl; //QDT::W.G[iat] << G[iat] << std::endl;
       fout << " Laplacians " << std::endl;
       for (int iat=0; iat<nat; iat++)
-        fout << W.L[iat]-Lp[iat] << " " << W.L[iat] << std::endl;
+        fout << QDT::W.L[iat]-Lp[iat] << " " << QDT::W.L[iat] << std::endl;
       ++it;
     }
   }
   fout << "  Update without drift : for VMC useDrift=\"no\"" << std::endl;
   for (int iter=0; iter<4; ++iter)
   {
-    it=W.begin();
+    it=QDT::W.begin();
     int iw=0;
     while (it != it_end)
     {
       fout << "\nStart Walker " << iw++ << std::endl;
       Walker_t& thisWalker(**it);
-      W.loadWalker(thisWalker,pbyp_mode);
+      QDT::W.loadWalker(thisWalker,pbyp_mode);
       Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
-      //Psi.updateBuffer(W,w_buffer,true);
-      Psi.copyFromBuffer(W,w_buffer);
+      //QDT::Psi.updateBuffer(QDT::W,w_buffer,true);
+      QDT::Psi.copyFromBuffer(QDT::W,w_buffer);
       RealType eold(thisWalker.Properties(LOCALENERGY));
       RealType logpsi(thisWalker.Properties(LOGPSI));
       RealType emixed(eold), enew(eold);
@@ -1192,32 +1152,32 @@ void WaveFunctionTester::runRatioTest()
         for (int iat=0; iat<nat; iat++)
         {
           PosType dr(Tau*deltaR[iat]);
-          PosType newpos(W.makeMove(iat,dr));
-          RealType ratio=Psi.ratio(W,iat);
+          PosType newpos(QDT::W.makeMove(iat,dr));
+          RealType ratio=QDT::Psi.ratio(QDT::W,iat);
           RealType prob = ratio*ratio;
           if (prob > Random())
           {
             fout << " Accepting a move for " << iat << std::endl;
-            W.acceptMove(iat);
-            Psi.acceptMove(W,iat);
+            QDT::W.acceptMove(iat);
+            QDT::Psi.acceptMove(QDT::W,iat);
             ratio_accum *= ratio;
           }
           else
           {
             fout << " Rejecting a move for " << iat << std::endl;
-            W.rejectMove(iat);
-            Psi.rejectMove(iat);
+            QDT::W.rejectMove(iat);
+            QDT::Psi.rejectMove(iat);
           }
         }
-        RealType logpsi_up = Psi.updateBuffer(W,w_buffer,false);
-        W.saveWalker(thisWalker);
-        RealType ene = H.evaluate(W);
-        thisWalker.resetProperty(logpsi_up,Psi.getPhase(),ene);
+        RealType logpsi_up = QDT::Psi.updateBuffer(QDT::W,w_buffer,false);
+        QDT::W.saveWalker(thisWalker);
+        RealType ene = QDT::H.evaluate(QDT::W);
+        thisWalker.resetProperty(logpsi_up,QDT::Psi.getPhase(),ene);
       }
-      Gp=W.G;
-      Lp=W.L;
-      W.update();
-      RealType newlogpsi=Psi.evaluateLog(W);
+      Gp=QDT::W.G;
+      Lp=QDT::W.L;
+      QDT::W.update();
+      RealType newlogpsi=QDT::Psi.evaluateLog(QDT::W);
       fout << iter << " Ratio " << ratio_accum*ratio_accum
             << " | " << std::exp(2.0*(newlogpsi-logpsi)) << " "
             << ratio_accum*ratio_accum/std::exp(2.0*(newlogpsi-logpsi)) << std::endl
@@ -1226,89 +1186,90 @@ void WaveFunctionTester::runRatioTest()
       fout << " Gradients " << std::endl;
       for (int iat=0; iat<nat; iat++)
       {
-        fout << W.G[iat]-Gp[iat] << W.G[iat] << std::endl; //W.G[iat] << G[iat] << std::endl;
+        fout << QDT::W.G[iat]-Gp[iat] << QDT::W.G[iat] << std::endl; //QDT::W.G[iat] << G[iat] << std::endl;
       }
       fout << " Laplacians " << std::endl;
       for (int iat=0; iat<nat; iat++)
       {
-        fout << W.L[iat]-Lp[iat] << " " << W.L[iat] << std::endl;
+        fout << QDT::W.L[iat]-Lp[iat] << " " << QDT::W.L[iat] << std::endl;
       }
       ++it;
     }
   }
-  //for(it=W.begin();it != it_end; ++it)
+  //for(it=QDT::W.begin();it != it_end; ++it)
   //{
   //  Walker_t& thisWalker(**it);
   //  Walker_t::WFBuffer_t& w_buffer((*it)->DataSet);
   //  w_buffer.rewind();
-  //  W.updateBuffer(**it,w_buffer);
-  //  RealType logpsi=Psi.updateBuffer(W,w_buffer,true);
+  //  QDT::W.updateBuffer(**it,w_buffer);
+  //  RealType logpsi=QDT::Psi.updateBuffer(QDT::W,w_buffer,true);
   //}
  #endif
 }
 
-void WaveFunctionTester::runRatioTest2()
+template<>
+void WaveFunctionTester<Batching::SINGLE>::runRatioTest2()
 {
-  int nat = W.getTotalNum();
+  int nat = QDT::W.getTotalNum();
   ParticleSet::ParticleGradient_t Gp(nat), dGp(nat);
   ParticleSet::ParticleLaplacian_t Lp(nat), dLp(nat);
-  Tau=0.025;
-  MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
+  QDT::Tau=0.025;
+  MCWalkerConfiguration::iterator it(QDT::W.begin()), it_end(QDT::W.end());
   for (; it != it_end; ++it)
   {
     makeGaussRandom(deltaR);
     Walker_t::WFBuffer_t tbuffer;
-    (**it).R  +=  Tau*deltaR;
-    W.loadWalker(**it,true);
-    Psi.registerData(W,tbuffer);
+    (**it).R  +=  QDT::Tau*deltaR;
+    QDT::W.loadWalker(**it,true);
+    QDT::Psi.registerData(QDT::W,tbuffer);
     tbuffer.allocate();
-    Psi.copyFromBuffer(W,tbuffer);
-    Psi.evaluateLog(W);
-    RealType logpsi = Psi.updateBuffer(W,tbuffer,false);
-    RealType ene = H.evaluate(W);
+    QDT::Psi.copyFromBuffer(QDT::W,tbuffer);
+    QDT::Psi.evaluateLog(QDT::W);
+    RealType logpsi = QDT::Psi.updateBuffer(QDT::W,tbuffer,false);
+    RealType ene = QDT::H.evaluate(QDT::W);
     (*it)->DataSet=tbuffer;
-    //RealType ene = H.evaluate(W);
-    (*it)->resetProperty(logpsi,Psi.getPhase(),ene,0.0,0.0,1.0);
-    H.saveProperty((*it)->getPropertyBase());
+    //RealType ene = QDT::H.evaluate(QDT::W);
+    (*it)->resetProperty(logpsi,QDT::Psi.getPhase(),ene,0.0,0.0,1.0);
+    QDT::H.saveProperty((*it)->getPropertyBase());
     app_log() << "  HamTest " << "  Total " <<  ene << std::endl;
-    for (int i=0; i<H.sizeOfObservables(); i++)
-      app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
+    for (int i=0; i<QDT::H.sizeOfObservables(); i++)
+      app_log() << "  HamTest " << QDT::H.getObservableName(i) << " " << QDT::H.getObservable(i) << std::endl;
   }
   for (int iter=0; iter<20; ++iter)
   {
     int iw=0;
-    it=W.begin();
+    it=QDT::W.begin();
     //while(it != it_end)
     for (; it != it_end; ++it)
     {
       fout << "\nStart Walker " << iw++ << std::endl;
       Walker_t& thisWalker(**it);
-      W.loadWalker(thisWalker,true);
+      QDT::W.loadWalker(thisWalker,true);
       Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
-      Psi.copyFromBuffer(W,w_buffer);
+      QDT::Psi.copyFromBuffer(QDT::W,w_buffer);
       RealType eold(thisWalker.Properties(LOCALENERGY));
       RealType logpsi(thisWalker.Properties(LOGPSI));
       RealType emixed(eold), enew(eold);
-      Psi.evaluateLog(W);
-      ParticleSet::ParticleGradient_t realGrad(W.G);
+      QDT::Psi.evaluateLog(QDT::W);
+      ParticleSet::ParticleGradient_t realGrad(QDT::W.G);
       makeGaussRandom(deltaR);
       //mave a move
       RealType ratio_accum(1.0);
       for (int iat=0; iat<nat; iat++)
       {
-        TinyVector<ParticleSet::SingleParticleValue_t,OHMMS_DIM> grad_now=Psi.evalGrad(W,iat);
+        TinyVector<ParticleSet::SingleParticleValue_t,OHMMS_DIM> grad_now=QDT::Psi.evalGrad(QDT::W,iat);
         GradType grad_new;
         for(int sds=0; sds<3; sds++)
           fout<< realGrad[iat][sds]-grad_now[sds]<<" ";
-        PosType dr(Tau*deltaR[iat]);
-        PosType newpos(W.makeMove(iat,dr));
-        RealType ratio2 = Psi.ratioGrad(W,iat,grad_new);
-        W.rejectMove(iat);
-        Psi.rejectMove(iat);
-        newpos=W.makeMove(iat,dr);
-        RealType ratio1 = Psi.ratio(W,iat);
-        //Psi.rejectMove(iat);
-        W.rejectMove(iat);
+        PosType dr(QDT::Tau*deltaR[iat]);
+        PosType newpos(QDT::W.makeMove(iat,dr));
+        RealType ratio2 = QDT::Psi.ratioGrad(QDT::W,iat,grad_new);
+        QDT::W.rejectMove(iat);
+        QDT::Psi.rejectMove(iat);
+        newpos=QDT::W.makeMove(iat,dr);
+        RealType ratio1 = QDT::Psi.ratio(QDT::W,iat);
+        //QDT::Psi.rejectMove(iat);
+        QDT::W.rejectMove(iat);
         fout << "  ratio1 = " << ratio1 << " ration2 = " << ratio2 << std::endl;
       }
     }
@@ -1331,35 +1292,36 @@ inline void randomize(ParticleAttrib<TinyVector<T,D> >& displ, T fac)
   for(int i=0; i<displ.size()*D; ++i) rv[i] =fac*(rv[i]-0.5);
 }
 
-void WaveFunctionTester::runRatioV()
+template<Batching batching>
+void WaveFunctionTester<batching>::runRatioV()
 {
 #if 0
   app_log() << "WaveFunctionTester::runRatioV " << std::endl;
-  int nat = W.getTotalNum();
-  Tau=0.025;
+  int nat = QDT::W.getTotalNum();
+  QDT::Tau=0.025;
 
   //create a VP with 8 virtual moves
-  VirtualParticleSet vp(&W,8);
-  W.enableVirtualMoves();
+  VirtualParticleSet vp(&QDT::W,8);
+  QDT::W.enableVirtualMoves();
 
   //cheating
-  const ParticleSet& ions=W.DistTables[1]->origin();
-  DistanceTableData* dt_ie=W.DistTables[1];
+  const ParticleSet& ions=QDT::W.DistTables[1]->origin();
+  DistanceTableData* dt_ie=QDT::W.DistTables[1];
   double Rmax=2.0;
 
   ParticleSet::ParticlePos_t sphere(8);
   std::vector<RealType> ratio_1(8), ratio_v(8);
-  MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
+  MCWalkerConfiguration::iterator it(QDT::W.begin()), it_end(QDT::W.end());
   while (it != it_end)
   {
     makeGaussRandom(deltaR);
     Walker_t::WFBuffer_t tbuffer;
-    W.R = (**it).R+Tau*deltaR;
-    (**it).R=W.R;
-    W.update();
-    RealType logpsi=Psi.registerData(W,tbuffer);
+    QDT::W.R = (**it).R+QDT::Tau*deltaR;
+    (**it).R=QDT::W.R;
+    QDT::W.update();
+    RealType logpsi=QDT::Psi.registerData(QDT::W,tbuffer);
 
-    W.initVirtualMoves();
+    QDT::W.initVirtualMoves();
 
     for(int iat=0; iat<ions.getTotalNum(); ++iat)
     {
@@ -1371,15 +1333,15 @@ void WaveFunctionTester::runRatioV()
         
         for(int k=0; k<sphere.size(); ++k)
         {
-          W.makeMoveOnSphere(iel,sphere[k]);
-          ratio_1[k]=Psi.ratio(W,iel);
-          W.rejectMove(iel);
-          Psi.resetPhaseDiff();
+          QDT::W.makeMoveOnSphere(iel,sphere[k]);
+          ratio_1[k]=QDT::Psi.ratio(QDT::W,iel);
+          QDT::W.rejectMove(iel);
+          QDT::Psi.resetPhaseDiff();
         }
 
         vp.makeMoves(iel,sphere);
 
-        Psi.evaluateRatios(vp,ratio_v);
+        QDT::Psi.evaluateRatios(vp,ratio_v);
 
         app_log() << "IAT = " << iat << " " << iel << std::endl;
         for(int k=0; k<sphere.size(); ++k)
@@ -1394,7 +1356,8 @@ void WaveFunctionTester::runRatioV()
 #endif
 }
 
-void WaveFunctionTester::runGradSourceTest()
+template<>
+void WaveFunctionTester<Batching::SINGLE>::runGradSourceTest()
 {
   ParticleSetPool::PoolType::iterator p;
   for (p=PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
@@ -1411,29 +1374,29 @@ void WaveFunctionTester::runGradSourceTest()
   RealType delta2 = 2*delta;
   ValueType c1 = 1.0/delta/2.0;
   ValueType c2 = 1.0/delta/delta;
-  int nat = W.getTotalNum();
+  int nat = QDT::W.getTotalNum();
   ParticleSet::ParticlePos_t deltaR(nat);
   MCWalkerConfiguration::PropertyContainer_t Properties;
   //pick the first walker
-  MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+  MCWalkerConfiguration::Walker_t* awalker = *(QDT::W.begin());
   //copy the properties of the working walker
   Properties = awalker->Properties;
   //sample a new walker configuration and copy to ParticleSet::R
   //makeGaussRandom(deltaR);
-  W.R = awalker->R;
-  //W.R += deltaR;
-  W.update();
-  //ValueType psi = Psi.evaluate(W);
-  ValueType logpsi = Psi.evaluateLog(W);
-  RealType eloc=H.evaluate(W);
+  QDT::W.R = awalker->R;
+  //QDT::W.R += deltaR;
+  QDT::W.update();
+  //ValueType psi = QDT::Psi.evaluate(QDT::W);
+  ValueType logpsi = QDT::Psi.evaluateLog(QDT::W);
+  RealType eloc=QDT::H.evaluate(QDT::W);
   app_log() << "  HamTest " << "  Total " <<  eloc << std::endl;
-  for (int i=0; i<H.sizeOfObservables(); i++)
-    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
-  //RealType psi = Psi.evaluateLog(W);
+  for (int i=0; i<QDT::H.sizeOfObservables(); i++)
+    app_log() << "  HamTest " << QDT::H.getObservableName(i) << " " << QDT::H.getObservable(i) << std::endl;
+  //RealType psi = QDT::Psi.evaluateLog(QDT::W);
   ParticleSet::ParticleGradient_t G(nat), G1(nat);
   ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
-  G = W.G;
-  L = W.L;
+  G = QDT::W.G;
+  L = QDT::W.L;
   for (int isrc=0; isrc < 1/*source.getTotalNum()*/; isrc++)
   {
     TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> grad_grad;
@@ -1447,29 +1410,29 @@ void WaveFunctionTester::runGradSourceTest()
       grad_grad_FD[dim].resize(nat);
       lapl_grad_FD[dim].resize(nat);
     }
-    Psi.evaluateLog(W);
-    GradType grad_log = Psi.evalGradSource(W, source, isrc, grad_grad, lapl_grad);
-    ValueType log = Psi.evaluateLog(W);
-    //grad_log = Psi.evalGradSource (W, source, isrc);
+    QDT::Psi.evaluateLog(QDT::W);
+    GradType grad_log = QDT::Psi.evalGradSource(QDT::W, source, isrc, grad_grad, lapl_grad);
+    ValueType log = QDT::Psi.evaluateLog(QDT::W);
+    //grad_log = QDT::Psi.evalGradSource (QDT::W, source, isrc);
     for (int iat=0; iat<nat; iat++)
     {
-      PosType r0 = W.R[iat];
+      PosType r0 = QDT::W.R[iat];
       GradType gFD[OHMMS_DIM];
       GradType lapFD = ValueType();
       for (int eldim=0; eldim<3; eldim++)
       {
-        W.R[iat][eldim] = r0[eldim]+delta;
-        W.update();
-        ValueType log_p = Psi.evaluateLog(W);
-        GradType gradlogpsi_p =  Psi.evalGradSource(W, source, isrc);
-        W.R[iat][eldim] = r0[eldim]-delta;
-        W.update();
-        ValueType log_m = Psi.evaluateLog(W);
-        GradType gradlogpsi_m = Psi.evalGradSource(W, source, isrc);
+        QDT::W.R[iat][eldim] = r0[eldim]+delta;
+        QDT::W.update();
+        ValueType log_p = QDT::Psi.evaluateLog(QDT::W);
+        GradType gradlogpsi_p =  QDT::Psi.evalGradSource(QDT::W, source, isrc);
+        QDT::W.R[iat][eldim] = r0[eldim]-delta;
+        QDT::W.update();
+        ValueType log_m = QDT::Psi.evaluateLog(QDT::W);
+        GradType gradlogpsi_m = QDT::Psi.evalGradSource(QDT::W, source, isrc);
         lapFD    += gradlogpsi_m + gradlogpsi_p;
         gFD[eldim] = gradlogpsi_p - gradlogpsi_m;
-        W.R[iat] = r0;
-        W.update();
+        QDT::W.R[iat] = r0;
+        QDT::W.update();
         //Psi.evaluateLog(W);
       }
       const ValueType six(6);
@@ -1484,7 +1447,7 @@ void WaveFunctionTester::runGradSourceTest()
     {
       for (int iat=0; iat<nat; iat++)
       {
-        fout << "For particle #" << iat << " at " << W.R[iat] << std::endl;
+        fout << "For particle #" << iat << " at " << QDT::W.R[iat] << std::endl;
         fout << "Gradient      = " << std::setw(12) << grad_grad[dimsrc][iat] << std::endl
              << "  Finite diff = " << std::setw(12) << grad_grad_FD[dimsrc][iat] << std::endl
              << "  Error       = " << std::setw(12)
@@ -1499,7 +1462,8 @@ void WaveFunctionTester::runGradSourceTest()
 }
 
 
-void WaveFunctionTester::runZeroVarianceTest()
+template<>
+void WaveFunctionTester<Batching::SINGLE>::runZeroVarianceTest()
 {
   ParticleSetPool::PoolType::iterator p;
   for (p=PtclPool.getPool().begin(); p != PtclPool.getPool().end(); p++)
@@ -1510,36 +1474,36 @@ void WaveFunctionTester::runZeroVarianceTest()
   // if(pit == PtclPool.getPool().end())
   //   APP_ABORT("Unknown source \"" + sourceName + "\" WaveFunctionTester.");
   ParticleSet& source = *((*pit).second);
-  int nat = W.getTotalNum();
+  int nat = QDT::W.getTotalNum();
   ParticleSet::ParticlePos_t deltaR(nat);
   MCWalkerConfiguration::PropertyContainer_t Properties;
   //pick the first walker
-  MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+  MCWalkerConfiguration::Walker_t* awalker = *(QDT::W.begin());
   //copy the properties of the working walker
   Properties = awalker->Properties;
   //sample a new walker configuration and copy to ParticleSet::R
   //makeGaussRandom(deltaR);
-  W.R = awalker->R;
-  //W.R += deltaR;
-  W.update();
-  //ValueType psi = Psi.evaluate(W);
-  ValueType logpsi = Psi.evaluateLog(W);
-  RealType eloc=H.evaluate(W);
-  //RealType psi = Psi.evaluateLog(W);
+  QDT::W.R = awalker->R;
+  //QDT::W.R += deltaR;
+  QDT::W.update();
+  //ValueType psi = QDT::Psi.evaluate(QDT::W);
+  ValueType logpsi = QDT::Psi.evaluateLog(QDT::W);
+  RealType eloc=QDT::H.evaluate(QDT::W);
+  //RealType psi = QDT::Psi.evaluateLog(QDT::W);
   ParticleSet::ParticleGradient_t G(nat), G1(nat);
   ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
-  G = W.G;
-  L = W.L;
+  G = QDT::W.G;
+  L = QDT::W.L;
   PosType r1(5.0, 2.62, 2.55);
-  W.R[1] = PosType(4.313, 5.989, 4.699);
-  W.R[2] = PosType(5.813, 4.321, 4.893);
-  W.R[3] = PosType(4.002, 5.502, 5.381);
-  W.R[4] = PosType(5.901, 5.121, 5.311);
-  W.R[5] = PosType(5.808, 4.083, 5.021);
-  W.R[6] = PosType(4.750, 5.810, 4.732);
-  W.R[7] = PosType(4.690, 5.901, 4.989);
+  QDT::W.R[1] = PosType(4.313, 5.989, 4.699);
+  QDT::W.R[2] = PosType(5.813, 4.321, 4.893);
+  QDT::W.R[3] = PosType(4.002, 5.502, 5.381);
+  QDT::W.R[4] = PosType(5.901, 5.121, 5.311);
+  QDT::W.R[5] = PosType(5.808, 4.083, 5.021);
+  QDT::W.R[6] = PosType(4.750, 5.810, 4.732);
+  QDT::W.R[7] = PosType(4.690, 5.901, 4.989);
   for (int i=1; i<8; i++)
-    W.R[i] -= PosType(2.5, 2.5, 2.5);
+    QDT::W.R[i] -= PosType(2.5, 2.5, 2.5);
   char fname[32];
   sprintf(fname,"ZVtest.%03d.dat",OHMMS::Controller->rank());
   FILE *fzout = fopen(fname, "w");
@@ -1556,19 +1520,19 @@ void WaveFunctionTester::runZeroVarianceTest()
   }
   for (r1[0]=0.0; r1[0]<5.0; r1[0]+=1.0e-4)
   {
-    W.R[0] = r1;
+    QDT::W.R[0] = r1;
     fprintf(fzout, "%1.8e %1.8e %1.8e ", r1[0], r1[1], r1[2]);
-    RealType log = Psi.evaluateLog(W);
-//        ValueType psi = std::cos(Psi.getPhase())*std::exp(log);//*W.PropertyList[SIGN];
+    RealType log = QDT::Psi.evaluateLog(QDT::W);
+//        ValueType psi = std::cos(QDT::Psi.getPhase())*std::exp(log);//*QDT::W.PropertyList[SIGN];
 #if defined(QMC_COMPLEX)
     RealType ratioMag = std::exp(log);
-    ValueType psi=std::complex<OHMMS_PRECISION>(ratioMag*std::cos(Psi.getPhase()),ratioMag*std::sin(Psi.getPhase())) ;
+    ValueType psi=std::complex<OHMMS_PRECISION>(ratioMag*std::cos(QDT::Psi.getPhase()),ratioMag*std::sin(QDT::Psi.getPhase())) ;
 #else
-    ValueType psi = std::cos(Psi.getPhase())*std::exp(log);//*W.PropertyList[SIGN];
+    ValueType psi = std::cos(QDT::Psi.getPhase())*std::exp(log);//*QDT::W.PropertyList[SIGN];
 #endif
-    double E = H.evaluate(W);
-    //double KE = E - W.PropertyList[LOCALPOTENTIAL];
-    double KE = -0.5*(Sum(W.L) + Dot(W.G,W.G));
+    double E = QDT::H.evaluate(QDT::W);
+    //double KE = E - QDT::W.PropertyList[LOCALPOTENTIAL];
+    double KE = -0.5*(Sum(QDT::W.L) + Dot(QDT::W.G,QDT::W.G));
 #if defined(QMC_COMPLEX)
     fprintf(fzout, "%16.12e %16.12e %16.12e ", psi.real(), psi.imag(),KE);
 #else
@@ -1576,10 +1540,10 @@ void WaveFunctionTester::runZeroVarianceTest()
 #endif
     for (int isrc=0; isrc < source.getTotalNum(); isrc++)
     {
-      GradType grad_log = Psi.evalGradSource(W, source, isrc, grad_grad, lapl_grad);
+      GradType grad_log = QDT::Psi.evalGradSource(QDT::W, source, isrc, grad_grad, lapl_grad);
       for (int dim=0; dim<OHMMS_DIM; dim++)
       {
-        double ZV = 0.5*Sum(lapl_grad[dim]) + Dot(grad_grad[dim], W.G);
+        double ZV = 0.5*Sum(lapl_grad[dim]) + Dot(grad_grad[dim], QDT::W.G);
 #if defined(QMC_COMPLEX)
         fprintf(fzout, "%16.12e %16.12e %16.12e ", ZV, grad_log[dim].real(), grad_log[dim].imag());
 #else
@@ -1594,8 +1558,9 @@ void WaveFunctionTester::runZeroVarianceTest()
 
 
 
-bool
-WaveFunctionTester::put(xmlNodePtr q)
+
+template<Batching batching>
+bool WaveFunctionTester<batching>::put(xmlNodePtr q)
 {
   myNode = q;
   xmlNodePtr tcur=q->children;
@@ -1610,12 +1575,13 @@ WaveFunctionTester::put(xmlNodePtr q)
     tcur = tcur->next;
   }
 
-  bool success = putQMCInfo(q);
+  bool success = QDT::putQMCInfo(q);
 
   return success;
 }
 
-void WaveFunctionTester::runDerivTest()
+template<>
+void WaveFunctionTester<Batching::SINGLE>::runDerivTest()
 {
   app_log()<<" Testing derivatives"<< std::endl;
   IndexType nskipped = 0;
@@ -1624,49 +1590,49 @@ void WaveFunctionTester::runDerivTest()
   RealType delta2 = 2*delta;
   ValueType c1 = 1.0/delta/2.0;
   ValueType c2 = 1.0/delta/delta;
-  int nat = W.getTotalNum();
+  int nat = QDT::W.getTotalNum();
   MCWalkerConfiguration::PropertyContainer_t Properties;
   //pick the first walker
-  MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+  MCWalkerConfiguration::Walker_t* awalker = *(QDT::W.begin());
   //copy the properties of the working walker
   Properties = awalker->Properties;
   //sample a new walker configuration and copy to ParticleSet::R
-  W.R = awalker->R+deltaR;
+  QDT::W.R = awalker->R+deltaR;
 
-  fout << "Position " << std::endl << W.R << std::endl;
+  fout << "Position " << std::endl << QDT::W.R << std::endl;
 
-  //W.R += deltaR;
-  W.update();
-  //ValueType psi = Psi.evaluate(W);
-  ValueType logpsi = Psi.evaluateLog(W);
-  RealType eloc=H.evaluate(W);
+  //QDT::W.R += deltaR;
+  QDT::W.update();
+  //ValueType psi = QDT::Psi.evaluate(QDT::W);
+  ValueType logpsi = QDT::Psi.evaluateLog(QDT::W);
+  RealType eloc=QDT::H.evaluate(QDT::W);
   app_log() << "  HamTest " << "  Total " <<  eloc << std::endl;
-  for (int i=0; i<H.sizeOfObservables(); i++)
-    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
-  //RealType psi = Psi.evaluateLog(W);
+  for (int i=0; i<QDT::H.sizeOfObservables(); i++)
+    app_log() << "  HamTest " << QDT::H.getObservableName(i) << " " << QDT::H.getObservable(i) << std::endl;
+  //RealType psi = QDT::Psi.evaluateLog(QDT::W);
   ParticleSet::ParticleGradient_t G(nat), G1(nat);
   ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
-  G = W.G;
-  L = W.L;
+  G = QDT::W.G;
+  L = QDT::W.L;
   fout<<"Gradients"<< std::endl;
-  for (int iat=0; iat<W.R.size(); iat++)
+  for (int iat=0; iat<QDT::W.R.size(); iat++)
   {
     for (int i=0; i<3 ; i++)
-      fout<<W.G[iat][i]<<"  ";
+      fout<<QDT::W.G[iat][i]<<"  ";
     fout<< std::endl;
   }
   fout<<"Laplaians"<< std::endl;
-  for (int iat=0; iat<W.R.size(); iat++)
+  for (int iat=0; iat<QDT::W.R.size(); iat++)
   {
-    fout<<W.L[iat]<<"  ";
+    fout<<QDT::W.L[iat]<<"  ";
     fout<< std::endl;
   }
   opt_variables_type wfVars,wfvar_prime;
 //build optimizables from the wavefunction
   wfVars.clear();
-  Psi.checkInVariables(wfVars);
+  QDT::Psi.checkInVariables(wfVars);
   wfVars.resetIndex();
-  Psi.checkOutVariables(wfVars);
+  QDT::Psi.checkOutVariables(wfVars);
   wfvar_prime= wfVars;
   wfVars.print(fout);
   int Nvars= wfVars.size();
@@ -1674,14 +1640,14 @@ void WaveFunctionTester::runDerivTest()
   std::vector<RealType> HDsaved(Nvars);
   std::vector<RealType> PGradient(Nvars);
   std::vector<RealType> HGradient(Nvars);
-  Psi.resetParameters(wfVars);
-  logpsi = Psi.evaluateLog(W);
+  QDT::Psi.resetParameters(wfVars);
+  logpsi = QDT::Psi.evaluateLog(QDT::W);
 
   //reuse the sphere
-  H.setPrimary(false);
+  QDT::H.setPrimary(false);
 
-  eloc=H.evaluate(W);
-  Psi.evaluateDerivatives(W, wfVars, Dsaved, HDsaved);
+  eloc=QDT::H.evaluate(QDT::W);
+  QDT::Psi.evaluateDerivatives(QDT::W, wfVars, Dsaved, HDsaved);
   RealType FiniteDiff = 1e-6;
   QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);
   for (int i=0; i<Nvars ; i++)
@@ -1689,29 +1655,29 @@ void WaveFunctionTester::runDerivTest()
     for (int j=0; j<Nvars; j++)
       wfvar_prime[j]=wfVars[j];
     wfvar_prime[i] = wfVars[i]+ FiniteDiff;
-//     Psi.checkOutVariables(wfvar_prime);
-    Psi.resetParameters(wfvar_prime);
-    Psi.reset();
-    W.update();
-    W.G=0;
-    W.L=0;
-    RealType logpsiPlus = Psi.evaluateLog(W);
-    H.evaluate(W);
-    RealType elocPlus=H.getLocalEnergy()-H.getLocalPotential();
+//     QDT::Psi.checkOutVariables(wfvar_prime);
+    QDT::Psi.resetParameters(wfvar_prime);
+    QDT::Psi.reset();
+    QDT::W.update();
+    QDT::W.G=0;
+    QDT::W.L=0;
+    RealType logpsiPlus = QDT::Psi.evaluateLog(QDT::W);
+    QDT::H.evaluate(QDT::W);
+    RealType elocPlus=QDT::H.getLocalEnergy()-QDT::H.getLocalPotential();
     wfvar_prime[i] = wfVars[i]- FiniteDiff;
-//     Psi.checkOutVariables(wfvar_prime);
-    Psi.resetParameters(wfvar_prime);
-    Psi.reset();
-    W.update();
-    W.G=0;
-    W.L=0;
-    RealType logpsiMinus = Psi.evaluateLog(W);
-    H.evaluate(W);
-    RealType elocMinus = H.getLocalEnergy()-H.getLocalPotential();
+//     QDT::Psi.checkOutVariables(wfvar_prime);
+    QDT::Psi.resetParameters(wfvar_prime);
+    QDT::Psi.reset();
+    QDT::W.update();
+    QDT::W.G=0;
+    QDT::W.L=0;
+    RealType logpsiMinus = QDT::Psi.evaluateLog(QDT::W);
+    QDT::H.evaluate(QDT::W);
+    RealType elocMinus = QDT::H.getLocalEnergy()-QDT::H.getLocalPotential();
     PGradient[i]= (logpsiPlus-logpsiMinus)*dh;
     HGradient[i]= (elocPlus-elocMinus)*dh;
   }
-  Psi.resetParameters(wfVars);
+  QDT::Psi.resetParameters(wfVars);
   fout<< std::endl<<"Deriv  Numeric Analytic"<< std::endl;
   for (int i=0; i<Nvars ; i++)
     fout<<i<<"  "<<PGradient[i]<<"  "<<Dsaved[i] <<"  " <<(PGradient[i]-Dsaved[i]) << std::endl;
@@ -1721,7 +1687,8 @@ void WaveFunctionTester::runDerivTest()
 }
 
 
-void WaveFunctionTester::runDerivNLPPTest()
+template<>
+void WaveFunctionTester<Batching::SINGLE>::runDerivNLPPTest()
 {
   char fname[16];
   sprintf(fname,"nlpp.%03d",OHMMS::Controller->rank());
@@ -1735,49 +1702,49 @@ void WaveFunctionTester::runDerivNLPPTest()
   RealType delta2 = 2*delta;
   ValueType c1 = 1.0/delta/2.0;
   ValueType c2 = 1.0/delta/delta;
-  int nat = W.getTotalNum();
+  int nat = QDT::W.getTotalNum();
   MCWalkerConfiguration::PropertyContainer_t Properties;
   //pick the first walker
-  MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+  MCWalkerConfiguration::Walker_t* awalker = *(QDT::W.begin());
   //copy the properties of the working walker
   Properties = awalker->Properties;
   //sample a new walker configuration and copy to ParticleSet::R
-  W.R = awalker->R+deltaR;
+  QDT::W.R = awalker->R+deltaR;
 
-  //W.R += deltaR;
-  W.update();
-  //ValueType psi = Psi.evaluate(W);
-  ValueType logpsi = Psi.evaluateLog(W);
-  RealType eloc=H.evaluate(W);
+  //QDT::W.R += deltaR;
+  QDT::W.update();
+  //ValueType psi = QDT::Psi.evaluate(QDT::W);
+  ValueType logpsi = QDT::Psi.evaluateLog(QDT::W);
+  RealType eloc=QDT::H.evaluate(QDT::W);
 
   app_log() << "  HamTest " << "  Total " <<  eloc << std::endl;
-  for (int i=0; i<H.sizeOfObservables(); i++)
-    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
+  for (int i=0; i<QDT::H.sizeOfObservables(); i++)
+    app_log() << "  HamTest " << QDT::H.getObservableName(i) << " " << QDT::H.getObservable(i) << std::endl;
 
-  //RealType psi = Psi.evaluateLog(W);
+  //RealType psi = QDT::Psi.evaluateLog(QDT::W);
   ParticleSet::ParticleGradient_t G(nat), G1(nat);
   ParticleSet::ParticleLaplacian_t L(nat), L1(nat);
-  G = W.G;
-  L = W.L;
+  G = QDT::W.G;
+  L = QDT::W.L;
   nlout<<"Gradients"<< std::endl;
-  for (int iat=0; iat<W.R.size(); iat++)
+  for (int iat=0; iat<QDT::W.R.size(); iat++)
   {
     for (int i=0; i<3 ; i++)
-      nlout<<W.G[iat][i]<<"  ";
+      nlout<<QDT::W.G[iat][i]<<"  ";
     nlout<< std::endl;
   }
   nlout<<"Laplaians"<< std::endl;
-  for (int iat=0; iat<W.R.size(); iat++)
+  for (int iat=0; iat<QDT::W.R.size(); iat++)
   {
-    nlout<<W.L[iat]<<"  ";
+    nlout<<QDT::W.L[iat]<<"  ";
     nlout<< std::endl;
   }
   opt_variables_type wfVars,wfvar_prime;
 //build optimizables from the wavefunction
   wfVars.clear();
-  Psi.checkInVariables(wfVars);
+  QDT::Psi.checkInVariables(wfVars);
   wfVars.resetIndex();
-  Psi.checkOutVariables(wfVars);
+  QDT::Psi.checkOutVariables(wfVars);
   wfvar_prime= wfVars;
   wfVars.print(nlout);
   int Nvars= wfVars.size();
@@ -1785,17 +1752,17 @@ void WaveFunctionTester::runDerivNLPPTest()
   std::vector<RealType> HDsaved(Nvars);
   std::vector<RealType> PGradient(Nvars);
   std::vector<RealType> HGradient(Nvars);
-  Psi.resetParameters(wfVars);
+  QDT::Psi.resetParameters(wfVars);
 
-  logpsi = Psi.evaluateLog(W);
+  logpsi = QDT::Psi.evaluateLog(QDT::W);
 
   //reuse the sphere for non-local pp
-  H.setPrimary(false);
+  QDT::H.setPrimary(false);
 
   std::vector<RealType> ene(4), ene_p(4), ene_m(4);
-  Psi.evaluateDerivatives(W, wfVars, Dsaved, HDsaved);
-  ene[0]=H.evaluateValueAndDerivatives(W,wfVars,Dsaved,HDsaved,true);
-  app_log() << "Check the energy " << eloc << " " << H.getLocalEnergy() << " " << ene[0] << std::endl;
+  QDT::Psi.evaluateDerivatives(QDT::W, wfVars, Dsaved, HDsaved);
+  ene[0]=QDT::H.evaluateValueAndDerivatives(QDT::W,wfVars,Dsaved,HDsaved,true);
+  app_log() << "Check the energy " << eloc << " " << QDT::H.getLocalEnergy() << " " << ene[0] << std::endl;
 
   RealType FiniteDiff = 1e-6;
   QMCTraits::RealType dh=1.0/(2.0*FiniteDiff);
@@ -1804,28 +1771,28 @@ void WaveFunctionTester::runDerivNLPPTest()
     for (int j=0; j<Nvars; j++)
       wfvar_prime[j]=wfVars[j];
     wfvar_prime[i] = wfVars[i]+ FiniteDiff;
-    Psi.resetParameters(wfvar_prime);
-    Psi.reset();
-    W.update();
-    W.G=0;
-    W.L=0;
-    RealType logpsiPlus = Psi.evaluateLog(W);
-    RealType elocPlus=H.evaluateVariableEnergy(W,true);
+    QDT::Psi.resetParameters(wfvar_prime);
+    QDT::Psi.reset();
+    QDT::W.update();
+    QDT::W.G=0;
+    QDT::W.L=0;
+    RealType logpsiPlus = QDT::Psi.evaluateLog(QDT::W);
+    RealType elocPlus=QDT::H.evaluateVariableEnergy(QDT::W,true);
 
-    //H.evaluate(W);
-    //RealType elocPlus=H.getLocalEnergy()-H.getLocalPotential();
+    //QDT::H.evaluate(QDT::W);
+    //RealType elocPlus=QDT::H.getLocalEnergy()-QDT::H.getLocalPotential();
 
     wfvar_prime[i] = wfVars[i]- FiniteDiff;
-    Psi.resetParameters(wfvar_prime);
-    Psi.reset();
-    W.update();
-    W.G=0;
-    W.L=0;
-    RealType logpsiMinus = Psi.evaluateLog(W);
-    RealType elocMinus=H.evaluateVariableEnergy(W,true);
+    QDT::Psi.resetParameters(wfvar_prime);
+    QDT::Psi.reset();
+    QDT::W.update();
+    QDT::W.G=0;
+    QDT::W.L=0;
+    RealType logpsiMinus = QDT::Psi.evaluateLog(QDT::W);
+    RealType elocMinus=QDT::H.evaluateVariableEnergy(QDT::W,true);
 
-    //H.evaluate(W);
-    //RealType elocMinus = H.getLocalEnergy()-H.getLocalPotential();
+    //QDT::H.evaluate(QDT::W);
+    //RealType elocMinus = QDT::H.getLocalEnergy()-QDT::H.getLocalPotential();
     
     PGradient[i]= (logpsiPlus-logpsiMinus)*dh;
     HGradient[i]= (elocPlus-elocMinus)*dh;
@@ -1840,34 +1807,35 @@ void WaveFunctionTester::runDerivNLPPTest()
 }
 
 
-void WaveFunctionTester::runDerivCloneTest()
+template<>
+void WaveFunctionTester<Batching::SINGLE>::runDerivCloneTest()
 {
   app_log()<<" Testing derivatives clone"<< std::endl;
   RandomGenerator_t* Rng1= new RandomGenerator_t();
   RandomGenerator_t* Rng2= new RandomGenerator_t();
   (*Rng1) = (*Rng2);
-  MCWalkerConfiguration* w_clone = new MCWalkerConfiguration(W);
-  TrialWaveFunction *psi_clone = Psi.makeClone(*w_clone);
-  QMCHamiltonian *h_clone = H.makeClone(*w_clone,*psi_clone);
+  MCWalkerConfiguration* w_clone = new MCWalkerConfiguration(QDT::W);
+  TrialWaveFunction<Batching::SINGLE> *psi_clone = QDT::Psi.makeClone(*w_clone);
+  QMCHamiltonian *h_clone = QDT::H.makeClone(*w_clone,*psi_clone);
   h_clone->setRandomGenerator(Rng2);
-  H.setRandomGenerator(Rng1);
+  QDT::H.setRandomGenerator(Rng1);
   h_clone->setPrimary(true);
-  int nat = W.getTotalNum();
+  int nat = QDT::W.getTotalNum();
   ParticleSet::ParticlePos_t deltaR(nat);
   //pick the first walker
-  MCWalkerConfiguration::Walker_t* awalker = *(W.begin());
+  MCWalkerConfiguration::Walker_t* awalker = *(QDT::W.begin());
 //   MCWalkerConfiguration::Walker_t* bwalker = *(w_clone->begin());
 //   bwalker->R = awalker->R;
-  W.R = awalker->R;
-  W.update();
+  QDT::W.R = awalker->R;
+  QDT::W.update();
   w_clone->R=awalker->R;
   w_clone->update();
   opt_variables_type wfVars;
   //build optimizables from the wavefunction
 //   wfVars.clear();
-  Psi.checkInVariables(wfVars);
+  QDT::Psi.checkInVariables(wfVars);
   wfVars.resetIndex();
-  Psi.checkOutVariables(wfVars);
+  QDT::Psi.checkOutVariables(wfVars);
   wfVars.print(fout);
   int Nvars= wfVars.size();
   opt_variables_type wfvar_prime;
@@ -1880,7 +1848,7 @@ void WaveFunctionTester::runDerivCloneTest()
   psi_clone->checkOutVariables(wfvar_prime);
   wfvar_prime.print(fout);
   psi_clone->resetParameters(wfvar_prime);
-  Psi.resetParameters(wfVars);
+  QDT::Psi.resetParameters(wfVars);
   std::vector<RealType> Dsaved(Nvars,0), og_Dsaved(Nvars,0);
   std::vector<RealType> HDsaved(Nvars,0), og_HDsaved(Nvars,0);
   std::vector<RealType> PGradient(Nvars,0), og_PGradient(Nvars,0);
@@ -1888,12 +1856,12 @@ void WaveFunctionTester::runDerivCloneTest()
   ValueType logpsi2 = psi_clone->evaluateLog(*w_clone);
   RealType eloc2  = h_clone->evaluate(*w_clone);
   psi_clone->evaluateDerivatives(*w_clone, wfvar_prime, Dsaved, HDsaved);
-  ValueType logpsi1 = Psi.evaluateLog(W);
-  RealType eloc1  = H.evaluate(W);
-  Psi.evaluateDerivatives(W, wfVars, og_Dsaved, og_HDsaved);
+  ValueType logpsi1 = QDT::Psi.evaluateLog(QDT::W);
+  RealType eloc1  = QDT::H.evaluate(QDT::W);
+  QDT::Psi.evaluateDerivatives(QDT::W, wfVars, og_Dsaved, og_HDsaved);
   app_log() << "log (original) = " << logpsi1 << " energy = " << eloc1 << std::endl;
-  for (int i=0; i<H.sizeOfObservables(); i++)
-    app_log() << "  HamTest " << H.getObservableName(i) << " " << H.getObservable(i) << std::endl;
+  for (int i=0; i<QDT::H.sizeOfObservables(); i++)
+    app_log() << "  HamTest " << QDT::H.getObservableName(i) << " " << QDT::H.getObservable(i) << std::endl;
   app_log() << "log (clone)    = " << logpsi2 << " energy = " << eloc2 << std::endl;
   for (int i=0; i<h_clone->sizeOfObservables(); i++)
     app_log() << "  HamTest " << h_clone->getObservableName(i) << " " << h_clone->getObservable(i) << std::endl;
@@ -1938,23 +1906,23 @@ void WaveFunctionTester::runDerivCloneTest()
     for (int j=0; j<Nvars; j++)
       wfvar_prime[j]=wfVars[j];
     wfvar_prime[i] = wfVars[i]+ FiniteDiff;
-    Psi.resetParameters(wfvar_prime);
-    Psi.reset();
-    W.update();
-    W.G=0;
-    W.L=0;
-    RealType logpsiPlus = Psi.evaluateLog(W);
-    H.evaluate(W);
-    RealType elocPlus=H.getLocalEnergy()-H.getLocalPotential();
+    QDT::Psi.resetParameters(wfvar_prime);
+    QDT::Psi.reset();
+    QDT::W.update();
+    QDT::W.G=0;
+    QDT::W.L=0;
+    RealType logpsiPlus = QDT::Psi.evaluateLog(QDT::W);
+    QDT::H.evaluate(QDT::W);
+    RealType elocPlus=QDT::H.getLocalEnergy()-QDT::H.getLocalPotential();
     wfvar_prime[i] = wfVars[i]- FiniteDiff;
-    Psi.resetParameters(wfvar_prime);
-    Psi.reset();
-    W.update();
-    W.G=0;
-    W.L=0;
-    RealType logpsiMinus = Psi.evaluateLog(W);
-    H.evaluate(W);
-    RealType elocMinus = H.getLocalEnergy()-H.getLocalPotential();
+    QDT::Psi.resetParameters(wfvar_prime);
+    QDT::Psi.reset();
+    QDT::W.update();
+    QDT::W.G=0;
+    QDT::W.L=0;
+    RealType logpsiMinus = QDT::Psi.evaluateLog(QDT::W);
+    QDT::H.evaluate(QDT::W);
+    RealType elocMinus = QDT::H.getLocalEnergy()-QDT::H.getLocalPotential();
     PGradient[i]= (logpsiPlus-logpsiMinus)*dh;
     HGradient[i]= (elocPlus-elocMinus)*dh;
   }
@@ -1966,15 +1934,18 @@ void WaveFunctionTester::runDerivCloneTest()
   for (int i=0; i<Nvars ; i++)
     fout<<i <<"  "<<HGradient[i]<<"  "<<HDsaved[i] <<"  " <<(HGradient[i]-HDsaved[i])/HGradient[i] << std::endl;
 }
-void WaveFunctionTester::runwftricks()
+
+template<>
+void WaveFunctionTester<Batching::SINGLE>::runwftricks()
 {
-  std::vector<WaveFunctionComponent*>& Orbitals=Psi.getOrbitals();
+  std::vector<WaveFunctionComponent*>& Orbitals=QDT::Psi.getOrbitals();
   app_log()<<" Total of "<<Orbitals.size()<<" orbitals."<< std::endl;
   int SDindex(0);
   for (int i=0; i<Orbitals.size(); i++)
     if ("SlaterDet"==Orbitals[i]->ClassName)
       SDindex=i;
-  SPOSetPtr Phi= dynamic_cast<SlaterDet *>(Orbitals[SDindex])->getPhi();
+  SPOSet<Batching::SINGLE>* Phi= dynamic_cast<SPOSet<Batching::SINGLE>*>
+    (dynamic_cast<SlaterDet<> *>(Orbitals[SDindex])->getPhi());
   int NumOrbitals=Phi->getBasisSetSize();
   app_log()<<"Basis set size: "<<NumOrbitals<< std::endl;
   std::vector<int> SPONumbers(0,0);
@@ -2069,13 +2040,13 @@ void WaveFunctionTester::runwftricks()
             R_unit[0][1]=overG1*RealType(j);// R_cart[0][1]=0;
             R_unit[0][2]=overG2*RealType(k);// R_cart[0][2]=0;
 //                 for(int a=0; a<3; a++) for(int b=0;b<3;b++) R_cart[0][a]+=BasisMatrix[a][b]*R_unit[0][b];
-            W.convert2Cart(R_unit,R_cart);
+            QDT::W.convert2Cart(R_unit,R_cart);
             symOp.TransformSinglePosition(R_cart,l);
-            W.R[0]=R_cart[0];
+            QDT::W.R[0]=R_cart[0];
             values=0.0;
             //evaluate orbitals
-//                 Phi->evaluate(W,0,values);
-            Psi.evaluateLog(W);
+//                 Phi->evaluate(QDT::W,0,values);
+            QDT::Psi.evaluateLog(QDT::W);
             // YYYY: is the following two lines still maintained?
             //for(int n=0; n<NumOrbitals; n++)
             //  values[n] = Phi->t_logpsi(0,n);
@@ -2201,7 +2172,8 @@ void WaveFunctionTester::runwftricks()
   }
 }
 
-void  WaveFunctionTester::runNodePlot()
+template<Batching batching>
+void  WaveFunctionTester<batching>::runNodePlot()
 {
   xmlNodePtr kids=myNode->children;
   std::string doEnergy("no");
@@ -2220,10 +2192,10 @@ void  WaveFunctionTester::runNodePlot()
   R_cart.setUnit(PosUnit::CartesianUnit);
   ParticleSet::ParticlePos_t R_unit(1);
   R_unit.setUnit(PosUnit::LatticeUnit);
-  Walker_t& thisWalker(**(W.begin()));
-  W.loadWalker(thisWalker,true);
+  Walker_t& thisWalker(**(QDT::W.begin()));
+  QDT::W.loadWalker(thisWalker,true);
   Walker_t::WFBuffer_t& w_buffer(thisWalker.DataSet);
-  Psi.copyFromBuffer(W,w_buffer);
+  QDT::Psi.copyFromBuffer(QDT::W,w_buffer);
 #if OHMMS_DIM==2
   assert(Grid.size()==2);
   char fname[16];
@@ -2231,8 +2203,8 @@ void  WaveFunctionTester::runNodePlot()
 //       std::ofstream e_out(fname);
 //       e_out.precision(6);
 //       e_out<<"#e  x  y"<< std::endl;
-  int nat = W.getTotalNum();
-  int nup = W.getTotalNum()/2;//std::max(W.getSpeciesSet().findSpecies("u"),W.getSpeciesSet().findSpecies("d"));
+  int nat = QDT::W.getTotalNum();
+  int nup = QDT::W.getTotalNum()/2;//std::max(W.getSpeciesSet().findSpecies("u"),W.getSpeciesSet().findSpecies("d"));
 //       for(int iat(0);iat<nat;iat++)
 //         e_out<<iat<<" "<<W[0]->R[iat][0]<<" "<<W[0]->R[iat][1]<< std::endl;
   RealType overG0(1.0/Grid[0]);
@@ -2247,7 +2219,7 @@ void  WaveFunctionTester::runNodePlot()
 //         plot_out<<"#e  x  y  ratio"<< std::endl;
     R_unit[0][0]=1.0;
     R_unit[0][1]=1.0;
-    W.convert2Cart(R_unit,R_cart);
+    QDT::W.convert2Cart(R_unit,R_cart);
     RealType xmax=R_cart[0][0];
     RealType ymax=R_cart[0][1];
     plot_out<<"import matplotlib\n";
@@ -2270,12 +2242,12 @@ void  WaveFunctionTester::runNodePlot()
       {
         R_unit[0][0]=overG0*RealType(i);
         R_unit[0][1]=overG1*RealType(j);
-        W.convert2Cart(R_unit,R_cart);
-        PosType dr(R_cart[0]-W.R[iat]);
-        W.makeMove(iat,dr);
-        RealType aratio = Psi.ratio(W,iat);
-        W.rejectMove(iat);
-        Psi.rejectMove(iat);
+        QDT::W.convert2Cart(R_unit,R_cart);
+        PosType dr(R_cart[0]-QDT::W.R[iat]);
+        QDT::W.makeMove(iat,dr);
+        RealType aratio = QDT::Psi.ratio(QDT::W,iat);
+        QDT::W.rejectMove(iat);
+        QDT::Psi.rejectMove(iat);
         plot_out<<aratio<<", ";
       }
       plot_out<<"], ";
@@ -2346,7 +2318,7 @@ void  WaveFunctionTester::runNodePlot()
 //         RealType overG1(1.0/Grid[1]);
 //         RealType overG2(1.0/Grid[2]);
 //         int iat(0);
-//         W.update();
+//         QDT::W.update();
 //         plot_out<<"#e  x  y  z  ratio"<< std::endl;
 //
 //         for(int i=0;i<Grid[0];i++)
@@ -2356,17 +2328,196 @@ void  WaveFunctionTester::runNodePlot()
 //             R_unit[iat][0]=overG0*RealType(i);
 //             R_unit[iat][1]=overG1*RealType(j);
 //             R_unit[iat][2]=overG2*RealType(k);
-//             W.convert2Cart(R_unit,R_cart);
-//             PosType dr(R_cart[iat]-W.R[iat]);
+//             QDT::W.convert2Cart(R_unit,R_cart);
+//             PosType dr(R_cart[iat]-QDT::W.R[iat]);
 //
-//             W.makeMove(iat,dr);
-//             RealType aratio = Psi.ratio(W,iat);
-//             W.rejectMove(iat);
-//             Psi.rejectMove(iat);
+//             QDT::W.makeMove(iat,dr);
+//             RealType aratio = QDT::Psi.ratio(QDT::W,iat);
+//             QDT::W.rejectMove(iat);
+//             QDT::Psi.rejectMove(iat);
 //             plot_out<<iat<<" "<<R_cart[iat][0]<<" "<<R_cart[iat][1]<<" "<<R_cart[iat][2]<<" "<<aratio<<" "<< std::endl;
 //           }
 #endif
 }
+
+template<>
+bool WaveFunctionTester<Batching::SINGLE>::run()
+{
+  //DistanceTable::create(1);
+  char fname[16];
+  sprintf(fname,"wftest.%03d",OHMMS::Controller->rank());
+  fout.open(fname);
+  fout.precision(15);
+
+  app_log() << "Starting a Wavefunction tester.  Additional information in "  << fname << std::endl;
+
+  put(QDT::qmcNode);
+  if (checkSlaterDetOption=="no") checkSlaterDet = false;
+  if (checkRatio == "yes")
+  {
+    //runRatioTest();
+    runRatioTest2();
+  }
+  else if (checkClone == "yes")
+    runCloneTest();
+  else if(checkEloc != "no")
+    printEloc();
+  else if (sourceName.size() != 0)
+  {
+    runGradSourceTest();
+    runZeroVarianceTest();
+  }
+  else if (checkRatio =="deriv")
+  {
+    makeGaussRandom(deltaR);
+    deltaR *=0.2;
+    runDerivTest();
+    runDerivNLPPTest();
+  }
+  else if (checkRatio =="derivclone")
+    runDerivCloneTest();
+  else if (wftricks =="rotate")
+    runwftricks();
+  else if (wftricks =="plot")
+    runNodePlot();
+  else if (checkBasic == "yes")
+    runBasicTest();
+  else if (checkRatioV == "yes")
+    runRatioV();
+  else
+    app_log() << "No wavefunction test specified" << std::endl;
+
+  //RealType ene = H.evaluate(W);
+  //app_log() << " Energy " << ene << std::endl;
+  return true;
+}
+
+template<Batching batching>
+void WaveFunctionTester<batching>::abortNoSpecialize()
+{
+  APP_ABORT("WaveFunctionTester does not currently support batched evaluation");
+}
+
+
+// Perhaps the below should be the generic class template member functions
+template<>
+bool WaveFunctionTester<Batching::BATCHED>::run()
+{
+  abortNoSpecialize();
+  return false;
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runBasicTest()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runRatioTest()
+{
+  abortNoSpecialize();
+}
+    
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runRatioTest2()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>:: runRatioV()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runCloneTest()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runDerivTest()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runDerivNLPPTest()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runDerivCloneTest()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runGradSourceTest()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runZeroVarianceTest()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runwftricks()
+{
+  abortNoSpecialize();
+}
+
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::runNodePlot()
+{
+  abortNoSpecialize();
+}
+
+template<>
+void WaveFunctionTester<Batching::BATCHED>::printEloc()
+{
+  abortNoSpecialize();
+}
+
+
+  // compute numerical gradient and laplacian
+template<>
+void WaveFunctionTester<Batching::BATCHED>::computeNumericalGrad(RealType delta,
+                            ParticleSet::ParticleGradient_t &G_fd,
+                            ParticleSet::ParticleLaplacian_t &L_fd)
+{
+  abortNoSpecialize();
+}
+
+template<>
+bool WaveFunctionTester<Batching::BATCHED>::checkGradients(int lower_iat, int upper_iat,
+                      ParticleSet::ParticleGradient_t &G,
+                      ParticleSet::ParticleLaplacian_t &L,
+                      ParticleSet::ParticleGradient_t &G_fd,
+                      ParticleSet::ParticleLaplacian_t &L_fd,
+                      std::stringstream &log,
+                      int indent)
+{
+  abortNoSpecialize();
+  return false;
+}
+
+template<>
+bool WaveFunctionTester<Batching::BATCHED>::checkGradientAtConfiguration(MCWalkerConfiguration::Walker_t* W1,
+                                    std::stringstream &fail_log,
+                                    bool &ignore)
+{
+  abortNoSpecialize();
+  return false;
+}
+
 
 FiniteDiffErrData::FiniteDiffErrData() : particleIndex(0), gradientComponentIndex(0), outputFile("delta.dat") {}
 
@@ -2382,6 +2533,10 @@ FiniteDiffErrData::put(xmlNodePtr q)
 }
 
 
+template class WaveFunctionTester<Batching::SINGLE>;
+#ifdef QMC_CUDA
+template class WaveFunctionTester<Batching::BATCHED>;
+#endif
 
 }
 

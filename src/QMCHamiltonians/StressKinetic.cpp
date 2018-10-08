@@ -21,7 +21,7 @@
 namespace qmcplusplus
 {
 
-StressKinetic::StressKinetic(ParticleSet& ref, TrialWaveFunction& Psi0) :
+StressKinetic::StressKinetic(ParticleSet& ref, TrialWaveFunction<>& Psi0) :
    ForceBase(ref,ref), Ps(ref), Psi(Psi0)
 {
   ReportEngine PRE("StressKinetic","StressKinetic");
@@ -66,7 +66,7 @@ StressKinetic::evaluate(ParticleSet& P)
  return 0.0;
 }
 
-QMCHamiltonianBase* StressKinetic::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+QMCHamiltonianBase* StressKinetic::makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
 {
   return new StressKinetic(*this);
 }

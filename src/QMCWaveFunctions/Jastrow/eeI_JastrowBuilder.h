@@ -24,7 +24,7 @@ struct eeI_JastrowBuilder: public WaveFunctionComponentBuilder
 {
   ParticleSet *sourcePtcl;
   // Two-body constructor
-  eeI_JastrowBuilder(ParticleSet& target, TrialWaveFunction& psi,
+  eeI_JastrowBuilder(ParticleSet& target, TrialWaveFunction<>& psi,
                      ParticleSet& source) :
     WaveFunctionComponentBuilder(target,psi), sourcePtcl(&source)
   {

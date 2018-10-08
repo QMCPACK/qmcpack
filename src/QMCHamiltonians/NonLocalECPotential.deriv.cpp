@@ -101,7 +101,7 @@ namespace qmcplusplus
    */
   NonLocalECPComponent::RealType
     NonLocalECPComponent::evaluateValueAndDerivatives(ParticleSet& W,
-        int iat, TrialWaveFunction& psi,
+        int iat, TrialWaveFunction<>& psi,
         const opt_variables_type& optvars,
         const std::vector<RealType>& dlogpsi,
         std::vector<RealType>& dhpsioverpsi)

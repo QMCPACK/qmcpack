@@ -45,7 +45,7 @@ TimerNameList_t<DMCTimers> DMCTimerNames =
 
 /// Constructor.
 DMCUpdatePbyPWithRejectionFast::DMCUpdatePbyPWithRejectionFast(MCWalkerConfiguration& w,
-    TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg):
+    TrialWaveFunction<>& psi, QMCHamiltonian& h, RandomGenerator_t& rg):
   QMCUpdateBase(w,psi,h,rg)
 {
   setup_timers(myTimers, DMCTimerNames, timer_level_medium);

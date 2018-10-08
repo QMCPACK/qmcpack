@@ -129,7 +129,7 @@ LocalECPotential_CUDA::addEnergy(MCWalkerConfiguration &W,
 
 
 QMCHamiltonianBase*
-LocalECPotential_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+LocalECPotential_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
 {
   LocalECPotential_CUDA* myclone =
     new LocalECPotential_CUDA(IonRef, qp);

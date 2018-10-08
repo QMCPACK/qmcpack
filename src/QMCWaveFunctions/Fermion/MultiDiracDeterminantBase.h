@@ -26,6 +26,7 @@
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase_help.h"
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
+#include "QMCWaveFunctions/SPOSetTypeAliases.h"
 //#include "Numerics/OhmmsBlas.h"
 
 namespace qmcplusplus
@@ -42,19 +43,20 @@ public:
   // Optimizable parameters
   opt_variables_type myVars;
 
-  typedef SPOSet::IndexVector_t IndexVector_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSet::GradVector_t  GradVector_t;
-  typedef SPOSet::GradMatrix_t  GradMatrix_t;
-  typedef SPOSet::HessMatrix_t  HessMatrix_t;
-  typedef SPOSet::HessType      HessType;
+  using SSTA = SPOSetTypeAliases;
+  typedef SSTA::IndexVector_t IndexVector_t;
+  typedef SSTA::ValueVector_t ValueVector_t;
+  typedef SSTA::ValueMatrix_t ValueMatrix_t;
+  typedef SSTA::GradVector_t  GradVector_t;
+  typedef SSTA::GradMatrix_t  GradMatrix_t;
+  typedef SSTA::HessMatrix_t  HessMatrix_t;
+  typedef SSTA::HessType      HessType;
 
   /** constructor
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  MultiDiracDeterminantBase(SPOSetPtr const &spos, int first=0);
+  MultiDiracDeterminantBase(SPOSet<Batching::SINGLE>* const &spos, int first=0);
 
   ///default destructor
   ~MultiDiracDeterminantBase();
@@ -71,9 +73,9 @@ public:
 
   /** return a clone of Phi
    */
-  SPOSetPtr clonePhi() const;
+  SPOSet<Batching::SINGLE>* clonePhi() const;
 
-  SPOSetPtr getPhi()
+  SPOSet<Batching::SINGLE>* getPhi()
   {
     return Phi;
   };
@@ -326,7 +328,7 @@ public:
   ///index of the particle (or row)
   int WorkingIndex;
   ///a set of single-particle orbitals used to fill in the  values of the matrix
-  SPOSetPtr Phi;
+  SPOSet<Batching::SINGLE>* Phi;
   /// number of determinants handled by this object
   int NumDets;
   ///bool to cleanup

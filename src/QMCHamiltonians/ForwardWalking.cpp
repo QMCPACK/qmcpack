@@ -150,7 +150,7 @@ bool ForwardWalking::putSpecial(xmlNodePtr cur, QMCHamiltonian& h, ParticleSet& 
   return true;
 }
 
-QMCHamiltonianBase* ForwardWalking::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+QMCHamiltonianBase* ForwardWalking::makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
 {
   //nothing to worry, default copy constructor will do
   return new ForwardWalking(*this);

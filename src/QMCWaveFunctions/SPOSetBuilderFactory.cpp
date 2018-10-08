@@ -56,18 +56,18 @@ namespace qmcplusplus
     last_builder = nullptr;
   }
 
-  SPOSet* get_sposet(const std::string& name)
+  SPOSet<>* get_sposet(const std::string& name)
   {
     int nfound = 0;
-    SPOSet* spo = 0;
+    SPOSet<>* spo = 0;
     std::map<std::string,SPOSetBuilder*>::iterator it;
     for(it=SPOSetBuilderFactory::spo_builders.begin();
         it!=SPOSetBuilderFactory::spo_builders.end();++it)
     {
-      std::vector<SPOSet*>& sposets = it->second->sposets;
+      std::vector<SPOSet<>*>& sposets = it->second->sposets;
       for(int i=0;i<sposets.size();++i)
       {
-        SPOSet* sposet = sposets[i];
+        SPOSet<>* sposet = sposets[i];
         if(sposet->objectName==name)
         {
           spo = sposet;
@@ -96,7 +96,7 @@ namespace qmcplusplus
     for(it=SPOSetBuilderFactory::spo_builders.begin();it!=SPOSetBuilderFactory::spo_builders.end();++it)
     {
       const std::string& type = it->first;
-      std::vector<SPOSet*>& sposets = it->second->sposets;
+      std::vector<SPOSet<>*>& sposets = it->second->sposets;
       app_log()<<pad<<"sposets for SPOSetBuilder of type "<<type<< std::endl;
       for(int i=0;i<sposets.size();++i)
       {
@@ -112,8 +112,9 @@ namespace qmcplusplus
  * \param psi reference to the wavefunction
  * \param ions reference to the ions
  */
-SPOSetBuilderFactory::SPOSetBuilderFactory(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets):
-  WaveFunctionComponentBuilder(els,psi), ptclPool(psets)
+SPOSetBuilderFactory::
+SPOSetBuilderFactory(ParticleSet& els, TrialWaveFunction<>& psi, PtclPoolType& psets, Batching batching):
+  WaveFunctionComponentBuilder(els,psi), ptclPool(psets), B_(batching)
 {
   ClassName="SPOSetBuilderFactory";
 }
@@ -161,15 +162,16 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
 
   SPOSetBuilder* bb=0;
 
+  // If this is premature optimization its complicating SPOSet<Batching>
   //check if builder can be reused
-  std::map<std::string,SPOSetBuilder*>::iterator bbit=spo_builders.find(name);
-  if(bbit!= spo_builders.end())
-  {
-    app_log() << "Reuse SPOSetBuilder \""<<name << "\" type " << type_in << std::endl;
-    app_log().flush();
-    bb=(*bbit).second;
-    return last_builder=bb;
-  }
+  // std::map<std::string,SPOSetBuilder*>::iterator bbit=spo_builders.find(name);
+  // if(bbit!= spo_builders.end())
+  // {
+  //   app_log() << "Reuse SPOSetBuilder \""<<name << "\" type " << type_in << std::endl;
+  //   app_log().flush();
+  //   bb=(*bbit).second;
+  //   return last_builder=bb;
+  // }
 
   //assign last_builder
   bb=last_builder;
@@ -200,7 +202,7 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     name=type_in;
 #if defined(HAVE_EINSPLINE)
     PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
-    bb = new EinsplineSetBuilder(targetPtcl,ptclPool,rootNode);
+    bb = new EinsplineSetBuilder(targetPtcl,ptclPool,rootNode, B_);
 #else
     PRE.error("Einspline is missing for B-spline orbitals",true);
 #endif
@@ -265,7 +267,7 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
 }
 
 
-SPOSet* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
+SPOSet<>* SPOSetBuilderFactory::createSPOSet(xmlNodePtr cur)
 {
   std::string bname("");
   std::string sname("");
@@ -337,7 +339,7 @@ void SPOSetBuilderFactory::build_sposet_collection(xmlNodePtr cur)
       attrib.put(element);
 
       app_log()<<"  Building SPOSet \""<<name<<"\" with "<<type<<" SPOSetBuilder"<< std::endl;
-      SPOSet* spo = bb->createSPOSet(element);
+      SPOSet<>* spo = bb->createSPOSet(element);
       spo->objectName = name;
       nsposets++;
     }

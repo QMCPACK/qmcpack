@@ -72,10 +72,12 @@ protected:
 
 public:
   GPU_XRAY_TRACE NonLocalECPotential_CUDA(ParticleSet& ions, ParticleSet& els,
-                           TrialWaveFunction& psi, bool usePBC,
-                           bool doForces=false);
+					  TrialWaveFunction<Batching::BATCHED>& psi,
+					  bool usePBC,
+					  bool doForces=false);
 
-  GPU_XRAY_TRACE QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  GPU_XRAY_TRACE QMCHamiltonianBase* makeClone(ParticleSet& qp,
+					       TrialWaveFunction<Batching::BATCHED>& psi);
 
   GPU_XRAY_TRACE void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy);
   GPU_XRAY_TRACE void addEnergy(MCWalkerConfiguration &W, std::vector<RealType> &LocalEnergy,

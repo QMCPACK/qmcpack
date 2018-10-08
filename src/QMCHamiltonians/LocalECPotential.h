@@ -90,7 +90,7 @@ struct LocalECPotential: public QMCHamiltonianBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi);
 
   /** Add a RadialPotentialType of a species
    * @param groupID index of the ion species

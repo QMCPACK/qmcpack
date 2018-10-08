@@ -24,6 +24,8 @@
 #include "OhmmsData/RecordProperty.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "QMCWaveFunctions/NLjob.h"
+#include "QMCWaveFunctions/WaveFunctionComponentTypeAliases.h"
 #if defined(ENABLE_SMARTPOINTER)
 #include <boost/shared_ptr.hpp>
 #endif
@@ -34,17 +36,6 @@
 namespace qmcplusplus
 {
 
-#ifdef QMC_CUDA
-struct NLjob
-{
-  int walker;
-  int elec;
-  int numQuadPoints;
-  NLjob(int w, int e, int n) :
-    walker(w), elec(e), numQuadPoints(n)
-  { }
-};
-#endif
 
 ///forward declaration of WaveFunctionComponent
 class WaveFunctionComponent;
@@ -93,9 +84,10 @@ struct WaveFunctionComponent: public QMCTraits
 
   typedef ParticleAttrib<ValueType> ValueVectorType;
   typedef ParticleAttrib<GradType>  GradVectorType;
-  typedef ParticleSet::Walker_t     Walker_t;
-  typedef Walker_t::WFBuffer_t      WFBufferType;
-  typedef Walker_t::Buffer_t        BufferType;
+  using WFCA = WaveFunctionComponentTypeAliases;
+  using Walker_t = WFCA::Walker_t;
+  using WFBufferType = WFCA::WFBufferType;
+  using BufferType = WFCA::BufferType;
   typedef OrbitalSetTraits<RealType>::ValueMatrix_t       RealMatrix_t;
   typedef OrbitalSetTraits<ValueType>::ValueMatrix_t      ValueMatrix_t;
   typedef OrbitalSetTraits<ValueType>::GradMatrix_t       GradMatrix_t;
@@ -309,7 +301,11 @@ struct WaveFunctionComponent: public QMCTraits
    *
    *Specialized for particle-by-particle move.
    */
-  virtual ValueType ratio(ParticleSet& P, int iat) =0;
+  virtual ValueType ratio(ParticleSet& P, int iat)
+  {
+    APP_ABORT("WaveFunctionComponent cannot be call unless overidden in child class");
+    return ValueType();
+  }
 
   /** For particle-by-particle move. Requests space in the buffer
    *  based on the data type sizes of the objects in this class.
@@ -326,7 +322,13 @@ struct WaveFunctionComponent: public QMCTraits
    *        pieces of wavefunction from scratch
    * @return log value of the wavefunction.
    */
-  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false) =0;
+  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false)
+  {
+    app_error() << "Need specialization of WaveFunctionComponent::updateBuffer.\n";
+    app_error() << "This used to be a pure virtual member\n";
+    abort();
+  }
+
 
   /** For particle-by-particle move. Copy data or attach memory
    *  from a walker buffer to the objects of this class.

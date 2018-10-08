@@ -19,15 +19,38 @@
 #include <QMCWaveFunctions/SPOSet.h>
 #include <QMCWaveFunctions/BasisSetBase.h>
 #include <QMCWaveFunctions/SPOSetBuilder.h>
+#include "QMCWaveFunctions/SPOSetTypeAliases.h"
 
 namespace qmcplusplus
 {
 
-  class CompositeSPOSet : public SPOSet
+  class CompositeSPOSet : public SPOSet<Batching::SINGLE>
   {
+    using QMCT = QMCTraits;
+    using ValueType = QMCT::ValueType;
+    using PosType = QMCT::PosType;
+    using SSTA = SPOSetTypeAliases;
+    using IndexVector_t = SSTA::IndexVector_t;
+    using ValueVector_t = SSTA::ValueVector_t;
+    using ValueAlignedVector_t = SSTA::ValueAlignedVector_t;
+    using ValueMatrix_t = SSTA::ValueMatrix_t;
+    using GradVector_t = SSTA::GradVector_t;
+    using GradMatrix_t = SSTA::GradMatrix_t;
+    using HessVector_t = SSTA::HessVector_t;
+    using HessMatrix_t = SSTA::HessMatrix_t;
+    using HessType = SSTA::HessType;
+    using HessArray_t = SSTA::HessArray_t;
+    using GradHessType = SSTA::GGGType;
+    using GradHessVector_t = SSTA::GGGVector_t;
+    using GradHessMatrix_t = SSTA::GGGMatrix_t;
+    using GGGMatrix_t = SSTA::GGGMatrix_t;
+    using VGLVector_t = SSTA::VGLVector_t;
+    using Walker_t = SSTA::Walker_t;
+
+
   public:
-    ///component SPOSets
-    std::vector<SPOSet*>    components;
+    ///component SPOSet<Batching::SINGLE>s
+    std::vector<SPOSet<Batching::SINGLE>*>    components;
     ///temporary storage for values
     std::vector<ValueVector_t*> component_values;
     ///temporary storage for gradients
@@ -41,18 +64,18 @@ namespace qmcplusplus
     ~CompositeSPOSet();
 
     ///add a sposet component to this composite sposet
-    void add(SPOSet* component);
+    void add(SPOSet<Batching::SINGLE>* component);
 
     ///print out component info
     void report();
 
-    //SPOSet interface methods
+    //SPOSet<Batching::SINGLE> interface methods
     ///size is determined by component sposets and nothing else
     inline void setOrbitalSetSize(int norbs) { }
 
     void resetTargetParticleSet(ParticleSet& P);
 
-    SPOSet* makeClone() const;
+    SPOSet<Batching::SINGLE>* makeClone() const;
 
     /** add sposet clones from another Composite SPOSet
      *   should only be used in makeClone functions following shallow copy
@@ -92,9 +115,9 @@ namespace qmcplusplus
   {
 
     //SPOSetBuilder interface
-    SPOSet* createSPOSetFromXML(xmlNodePtr cur);
+    SPOSet<Batching::SINGLE>* createSPOSetFromXML(xmlNodePtr cur);
 
-    SPOSet* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input);
+    SPOSet<Batching::SINGLE>* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input);
     
   };
 }

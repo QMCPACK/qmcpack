@@ -31,6 +31,7 @@
 #include "OhmmsApp/ProjectData.h"
 #include "QMCApp/QMCMain.h"
 #include "qmc_common.h"
+#include "Batching.h"
 //#include "tau/profiler.h"
 
 void output_hardware_info(Communicate *comm, Libxml2Document &doc, xmlNodePtr root);
@@ -54,6 +55,7 @@ int main(int argc, char **argv)
   qmcplusplus::qmc_common.initialize(argc,argv);
   int clones=1;
   bool useGPU=(qmc_common.compute_device == 1);
+  Batching batching=useGPU ? Batching::BATCHED : Batching::SINGLE;
   std::vector<std::string> fgroup1,fgroup2;
   int i=1;
   while(i<argc)
@@ -174,6 +176,7 @@ int main(int argc, char **argv)
   }
   if (useGPU)
     Init_CUDA();
+  
   //safe to move on
   Communicate* qmcComm=OHMMS::Controller;
   if(inputs.size()>1)
@@ -204,13 +207,14 @@ int main(int argc, char **argv)
 //  //broadcast the input file name to other nodes
 //  MPI_Bcast(fname.c_str(),fname.size(),MPI_CHAR,0,OHMMS::Controller->getID());
 //#endif
+  
   QMCMain *qmc=0;
   bool validInput=false;
   app_log() << "  Input file(s): ";
   for(int k=0; k<inputs.size(); ++k)
     app_log() << inputs[k] << " ";
   app_log() << std::endl;
-  qmc = new QMCMain(qmcComm);
+  qmc = new QMCMain(qmcComm, batching);
   if(inputs.size()>1)
     validInput=qmc->parse(inputs[qmcComm->getGroupID()]);
   else
@@ -222,7 +226,7 @@ int main(int argc, char **argv)
   timingDoc.newDoc("resources");
   output_hardware_info(qmcComm, timingDoc, timingDoc.getRoot());
   TimerManager.output_timing(qmcComm, timingDoc, timingDoc.getRoot());
-  qmc->ptclPool->output_particleset_info(timingDoc, timingDoc.getRoot());
+  qmc->getQMCDriverFactory().getParticleSetPool().output_particleset_info(timingDoc, timingDoc.getRoot());
   if(OHMMS::Controller->rank()==0)
   {
     timingDoc.dump(qmc->getTitle() + ".info.xml");

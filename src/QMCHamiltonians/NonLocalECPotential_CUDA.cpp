@@ -18,27 +18,30 @@
 #include "QMCHamiltonians/NonLocalECPotential_CUDA.h"
 #include "QMCHamiltonians/NLPP.h"
 #include "Particle/MCWalkerConfiguration.h"
+#include "QMCWaveFunctions/TrialWaveFunctionBatched.h"
 
 namespace qmcplusplus
 {
 
 NonLocalECPotential_CUDA::NonLocalECPotential_CUDA
-(ParticleSet& ions, ParticleSet& els, TrialWaveFunction& psi,
- bool usePBC, bool doForces) :
-  NonLocalECPotential(ions, els, psi, doForces),
-  UsePBC(usePBC),
-  CurrentNumWalkers(0),
-  Ions_GPU("NonLocalECPotential_CUDA::Ions_GPU"),
-  L("NonLocalECPotential_CUDA::L"),
-  Linv("NonLocalECPotential_CUDA::Linv"),
-  Elecs_GPU("NonLocalECPotential_CUDA::Elecs_GPU"),
-  Dist_GPU("NonLocalECPotential_CUDA::Dist_GPU"),
-  Eleclist_GPU("NonLocalECPotential_CUDA::Eleclist_GPU"),
-  Distlist_GPU("NonLocalECPotential_CUDA::Distlist_GPU"),
-  NumPairs_GPU("NonLocalECPotential_CUDA::NumPairs_GPU"),
-  RatioPos_GPU("NonLocalECPotential_CUDA::RatioPos_GPU"),
-  CosTheta_GPU("NonLocalECPotential_CUDA::CosTheta_GPU"),
-  RatioPoslist_GPU("NonLocalECPotential_CUDA::RatioPoslist_GPU")
+(ParticleSet& ions,
+ ParticleSet& els,
+ TrialWaveFunction<Batching::BATCHED>& psi,
+ bool usePBC,
+ bool doForces) : NonLocalECPotential(ions, els, psi, doForces),
+		  UsePBC(usePBC),
+		  CurrentNumWalkers(0),
+		  Ions_GPU("NonLocalECPotential_CUDA::Ions_GPU"),
+		  L("NonLocalECPotential_CUDA::L"),
+		  Linv("NonLocalECPotential_CUDA::Linv"),
+		  Elecs_GPU("NonLocalECPotential_CUDA::Elecs_GPU"),
+		  Dist_GPU("NonLocalECPotential_CUDA::Dist_GPU"),
+		  Eleclist_GPU("NonLocalECPotential_CUDA::Eleclist_GPU"),
+		  Distlist_GPU("NonLocalECPotential_CUDA::Distlist_GPU"),
+		  NumPairs_GPU("NonLocalECPotential_CUDA::NumPairs_GPU"),
+		  RatioPos_GPU("NonLocalECPotential_CUDA::RatioPos_GPU"),
+		  CosTheta_GPU("NonLocalECPotential_CUDA::CosTheta_GPU"),
+		  RatioPoslist_GPU("NonLocalECPotential_CUDA::RatioPoslist_GPU")
 {
   setupCUDA(els);
 }
@@ -46,7 +49,7 @@ NonLocalECPotential_CUDA::NonLocalECPotential_CUDA
 
 QMCHamiltonianBase*
 NonLocalECPotential_CUDA::makeClone
-(ParticleSet& qp, TrialWaveFunction& psi)
+(ParticleSet& qp, TrialWaveFunction<Batching::BATCHED>& psi)
 {
   NonLocalECPotential_CUDA* myclone =
     new NonLocalECPotential_CUDA(IonConfig,qp,psi,UsePBC);
@@ -283,7 +286,7 @@ void NonLocalECPotential_CUDA::addEnergy(MCWalkerConfiguration &W,
       RatioList.resize(QuadPosList.size());
       RealType vrad[pp.nchannel];
       RealType lpol[pp.lmax+1];
-      Psi.NLratios(W, JobList, QuadPosList, RatioList);
+      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).NLratios(W, JobList, QuadPosList, RatioList);
       int ratioIndex=0;
       for (int iw=0; iw<nw; iw++)
       {
@@ -406,7 +409,7 @@ void NonLocalECPotential_CUDA::addEnergy
       RatioList.resize(QuadPosList.size());
       RealType vrad[pp.nchannel];
       RealType lpol[pp.lmax+1];
-      Psi.NLratios(W, JobList, QuadPosList, RatioList);
+      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).NLratios(W, JobList, QuadPosList, RatioList);
       int ratioIndex=0;
       for (int iw=0; iw<nw; iw++)
       {

@@ -123,7 +123,7 @@ struct ForceChiesaPBCAA: public QMCHamiltonianBase, public ForceBase
   
   
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi);
 
   bool put(xmlNodePtr cur) ;
 

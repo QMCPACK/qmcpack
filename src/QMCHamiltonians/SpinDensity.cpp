@@ -54,7 +54,7 @@ namespace qmcplusplus
   }
 
   
-  QMCHamiltonianBase* SpinDensity::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
+  QMCHamiltonianBase* SpinDensity::makeClone(ParticleSet& P, TrialWaveFunction<>& Psi)
   {
     return new SpinDensity(*this);
   }

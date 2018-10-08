@@ -30,17 +30,17 @@ namespace qmcplusplus
  *
  * This is the main DMC driver with MPI/OpenMP loops over the walkers.
  */
-class DMCOMP: public QMCDriver, public CloneManager
+class DMCOMP: public QMCDriver<Batching::SINGLE>, public CloneManager
 {
 public:
 
   /// Constructor.
-  DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+  DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction<Batching::SINGLE>& psi, QMCHamiltonian& h,
          WaveFunctionPool& ppool);
 
   bool run();
   bool put(xmlNodePtr cur);
-  void setTau(RealType i);
+  //void setTau(RealType i);
   void resetComponents(xmlNodePtr cur);
 
 private:
@@ -69,7 +69,7 @@ private:
   void resetUpdateEngines();
   void benchMark();
   /// Copy Constructor (disabled)
-  DMCOMP(const DMCOMP& a): QMCDriver(a), CloneManager(a) { }
+  DMCOMP(const DMCOMP& a): QMCDriver<Batching::SINGLE>(a), CloneManager(a) { }
   /// Copy operator (disabled).
   DMCOMP& operator=(const DMCOMP&)
   {

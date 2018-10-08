@@ -38,7 +38,7 @@ namespace qmcplusplus
 
 /// Constructor.
   RMCUpdateAllWithDrift::RMCUpdateAllWithDrift (MCWalkerConfiguration & w,
-						TrialWaveFunction & psi,
+						TrialWaveFunction<>& psi,
 						QMCHamiltonian & h,
 						RandomGenerator_t & rg,
 						std::vector < int >act,

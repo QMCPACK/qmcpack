@@ -64,6 +64,7 @@ TEST_CASE("HamiltonianFactory", "[hamiltonian]")
   HamiltonianFactory hf(qp, particle_set_map, orbital_map, c);
 
   WaveFunctionFactory wff(qp, particle_set_map, c);
+
   orbital_map["psi0"] = &wff;
 
 
@@ -110,8 +111,6 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
   tspecies(chargeIdx, idx) = 4;
   tspecies(atomicNumberIdx, idx) = 6;
 
-
-
   HamiltonianFactory::PtclPoolType particle_set_map;
   HamiltonianFactory::OrbitalPoolType orbital_map;
 
@@ -119,8 +118,17 @@ TEST_CASE("HamiltonianFactory pseudopotential", "[hamiltonian]")
   particle_set_map["ion0"] = &ions;
 
   HamiltonianFactory hf(qp, particle_set_map, orbital_map, c);
-
+#ifdef QMC_CUDA
+  WaveFunctionFactory wff(qp, particle_set_map, c, Batching::BATCHED);
+  TrialWaveFunction<Batching::BATCHED> dummyPsi(nullptr);
+#else
   WaveFunctionFactory wff(qp, particle_set_map, c);
+  TrialWaveFunction<Batching::SINGLE> dummyPsi(nullptr);
+#endif
+  //Since WaveFunctionFactory doesn't actually build its target psi
+  //it cannot by dynamically cast to Batched.  This could be protected in the constructor.
+  //But would you normall pass an unbuilt wff to the hamiltonian factory?
+  wff.setPsi(&dummyPsi);
   orbital_map["psi0"] = &wff;
 
 

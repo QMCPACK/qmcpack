@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
 #define QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
 #include <Configuration.h>
-#include <QMCWaveFunctions/Fermion/DiracDeterminantBase.h>
+#include <QMCWaveFunctions/Fermion/DiracDeterminant.h>
 #include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
@@ -48,6 +48,9 @@ namespace qmcplusplus
  (\nabla_i^2S^{ij}_n({\bf r_i}))(S^{-1})^{ji}_n}{\sum_{n=1}^M c_n S_n}
  \f]
  */
+
+extern template class SPOSetProxyForMSD<>;
+
 class MultiSlaterDeterminant: public WaveFunctionComponent
 {
 
@@ -56,9 +59,8 @@ public:
   NewTimer RatioTimer,RatioGradTimer,RatioAllTimer,UpdateTimer,EvaluateTimer;
   NewTimer Ratio1Timer,Ratio1GradTimer,Ratio1AllTimer,AccRejTimer,evalOrbTimer;
 
-  typedef DiracDeterminantBase*    DiracDeterminantPtr;
-  typedef SPOSet*              SPOSetPtr;
-  typedef SPOSetProxyForMSD*             SPOSetProxyPtr;
+  typedef DiracDeterminant<>*    DiracDeterminantPtr;
+  typedef SPOSetProxyForMSD<>*             SPOSetProxyPtr;
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;

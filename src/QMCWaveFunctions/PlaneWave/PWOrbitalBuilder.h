@@ -23,11 +23,14 @@
 #else
 #include "QMCWaveFunctions/PlaneWave/PWRealOrbitalSet.h"
 #endif
+
+#include "QMCWaveFunctions/SPOSet.h"
+
 namespace qmcplusplus
 {
 
 class PWParameterSet;
-class SlaterDet;
+  //class SlaterDet;
 
 /** OrbitalBuilder for Slater determinants in PW basis
 */
@@ -44,7 +47,8 @@ private:
   typedef PWRealOrbitalSet::PWBasisPtr PWBasisPtr;
 #endif
 
-  std::map<std::string,SPOSetPtr> spomap;
+  //using SPOSetPtr = SPOSet<Batching::SINGLE>::SPOSetPtr;
+  std::map<std::string,SPOSet<>*> spomap;
   PtclPoolType& ptclPool;
 
   ///Read routine for HDF wavefunction file version 0.10
@@ -65,7 +69,7 @@ private:
 public:
 
   ///constructor
-  PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& wfs, PtclPoolType& psets);
+  PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction<>& wfs, PtclPoolType& psets);
   ~PWOrbitalBuilder();
 
   ///implement vritual function
@@ -75,7 +79,7 @@ private:
   hid_t getH5(xmlNodePtr cur, const char* aname);
   bool putSlaterDet(xmlNodePtr cur);
   bool createPWBasis(xmlNodePtr cur);
-  SPOSet* createPW(xmlNodePtr cur, int spinIndex);
+  SPOSet<Batching::SINGLE>* createPW(xmlNodePtr cur, int spinIndex);
 #if defined(QMC_COMPLEX)
   void transform2GridData(PWBasis::GIndex_t& nG, int spinIndex, PWOrbitalSet& pwFunc);
 #endif

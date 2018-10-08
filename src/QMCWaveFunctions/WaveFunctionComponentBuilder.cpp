@@ -63,7 +63,7 @@ std::string WaveFunctionComponentBuilder::multisd_tag="multideterminant";
 
 std::string WaveFunctionComponentBuilder::sposcanner_tag="spo_scanner";
 
-WaveFunctionComponentBuilder::WaveFunctionComponentBuilder(ParticleSet& p, TrialWaveFunction& psi):
+WaveFunctionComponentBuilder::WaveFunctionComponentBuilder(ParticleSet& p, TrialWaveFunction<>& psi):
   MPIObjectBase(psi.getCommunicator()),
   targetPtcl(p), targetPsi(psi), myNode(NULL)
 {

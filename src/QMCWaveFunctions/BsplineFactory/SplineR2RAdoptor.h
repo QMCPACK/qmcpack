@@ -15,9 +15,15 @@
 #ifndef QMCPLUSPLUS_EINSPLINE_R2RSOA_ADOPTOR_H
 #define QMCPLUSPLUS_EINSPLINE_R2RSOA_ADOPTOR_H
 
-#include <OhmmsSoA/Container.h>
-#include <spline2/MultiBspline.hpp>
-#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
+#include "Configuration.h"
+#include "OhmmsSoA/Container.h"
+#include "spline2/MultiBspline.hpp"
+#include "QMCWaveFunctions/BsplineFactory/SplineAdoptor.h"
+#include "io/hdf_archive.h"
+#include "Particle/VirtualParticleSet.h"
+#include "qmc_common.h"
+#include "spline/einspline_engine.hpp"
+#include "spline/einspline_util.hpp"
 
 namespace qmcplusplus
 {
@@ -30,29 +36,33 @@ namespace qmcplusplus
  * Requires temporage storage and multiplication of phase vectors
  */
 template<typename ST, typename TT>
-struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
+class SplineR2RAdoptor: public SplineAdoptor<ST,3>
 {
-  static const int D=3;
-  bool IsGamma;
-  using BaseType=SplineAdoptorBase<ST,3>;
-  using SplineType=typename bspline_traits<ST,3>::SplineType;
-  using BCType=typename bspline_traits<ST,3>::BCType;
-  using PointType=typename BaseType::PointType;
-  using SingleSplineType=typename BaseType::SingleSplineType;
+public:
+  //Dimensionality
+  static constexpr int D = OHMMS_DIM;
 
-  using vContainer_type=Vector<ST,aligned_allocator<ST> >;
-  using gContainer_type=VectorSoaContainer<ST,3>;
-  using hContainer_type=VectorSoaContainer<ST,6>;
+  using PosType = PtclOnLatticeTraits::SingleParticlePos_t;
+  using BaseType = SplineAdoptor<ST,3>;
+  using SplineType = typename bspline_traits<ST,3>::SplineType;
+  using BCType = typename bspline_traits<ST,3>::BCType;
+  using PointType = typename BaseType::PointType;
+  using SingleSplineType = typename BaseType::SingleSplineType;
+
+  using vContainer_type = Vector<ST,aligned_allocator<ST> >;
+  using gContainer_type = VectorSoaContainer<ST,3>;
+  using hContainer_type = VectorSoaContainer<ST,6>;
 
   using BaseType::first_spo;
   using BaseType::last_spo;
-  using SplineAdoptorBase<ST,D>::HalfG;
+  using SplineAdoptor<ST,D>::HalfG;
   using BaseType::GGt;
   using BaseType::PrimLattice;
   using BaseType::kPoints;
   using BaseType::offset_cplx;
   using BaseType::offset_real;
 
+  bool IsGamma;
   ///number of points of the original grid
   int BaseN[3];
   ///offset of the original grid, always 0
@@ -68,22 +78,24 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   gContainer_type myG;
   hContainer_type myH;
 
-  SplineR2RSoA(): BaseType(), SplineInst(nullptr), MultiSpline(nullptr)
+  
+  
+  SplineR2RAdoptor(): BaseType(),SplineInst(nullptr), MultiSpline(nullptr)
   {
     this->is_complex=false;
     this->is_soa_ready=true;
-    this->AdoptorName="SplineR2RSoAAdoptor";
-    this->KeyWord="SplineR2RSoA";
+    this->AdoptorName="SplineR2RAdoptor";
+    this->KeyWord="SplineR2RAdoptor";
   }
 
-  SplineR2RSoA(const SplineR2RSoA& a):
-    SplineAdoptorBase<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr)
+  SplineR2RAdoptor(const SplineR2RAdoptor& a):
+    SplineAdoptor<ST,3>(a),SplineInst(a.SplineInst),MultiSpline(nullptr)
   {
     const size_t n=a.myV.size();
     myV.resize(n); myG.resize(n); myL.resize(n); myH.resize(n);
   }
 
-  ~SplineR2RSoA()
+  virtual ~SplineR2RAdoptor()
   {
     if(MultiSpline != nullptr) delete SplineInst;
   }
@@ -174,7 +186,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   bool read_splines(hdf_archive& h5f)
   {
     std::ostringstream o;
-    o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
+    o<<"spline_" << SplineAdoptor<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(SplineInst->spline_m);
     return h5f.read(bigtable,o.str().c_str());//"spline_0");
   }
@@ -182,7 +194,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   bool write_splines(hdf_archive& h5f)
   {
     std::ostringstream o;
-    o<<"spline_" << SplineAdoptorBase<ST,D>::MyIndex;
+    o<<"spline_" << SplineAdoptor<ST,D>::MyIndex;
     einspline_engine<SplineType> bigtable(SplineInst->spline_m);
     return h5f.write(bigtable,o.str().c_str());//"spline_0");
   }

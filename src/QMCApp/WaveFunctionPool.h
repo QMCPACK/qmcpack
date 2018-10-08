@@ -25,7 +25,7 @@
 #include "QMCWaveFunctions/WaveFunctionFactory.h"
 #include <map>
 #include <string>
-
+#include "Batching.h"
 namespace qmcplusplus
 {
 
@@ -42,10 +42,11 @@ class WaveFunctionPool : public MPIObjectBase
 {
 
 public:
-
+  Batching B_;
+  
   typedef std::map<std::string,WaveFunctionFactory*> PoolType;
 
-  WaveFunctionPool(Communicate* c, const char* aname = "wavefunction");
+  WaveFunctionPool(Communicate* c, const char* aname = "wavefunction", Batching batching = Batching::SINGLE);
   ~WaveFunctionPool();
 
   bool put(xmlNodePtr cur);
@@ -55,17 +56,17 @@ public:
     return myPool.empty();
   }
 
-  TrialWaveFunction* getPrimary()
+  TrialWaveFunction<>* getPrimary()
   {
     return primaryPsi;
   }
 
-  void setPrimary(TrialWaveFunction *psi)
+  void setPrimary(TrialWaveFunction<> *psi)
   {
     primaryPsi=psi;
   }
 
-  TrialWaveFunction* getWaveFunction(const std::string& pname)
+  TrialWaveFunction<>* getWaveFunction(const std::string& pname)
   {
     std::map<std::string,WaveFunctionFactory*>::iterator pit(myPool.find(pname));
     if(pit == myPool.end())
@@ -122,7 +123,7 @@ public:
 private:
 
   /// pointer to the primary TrialWaveFunction
-  TrialWaveFunction* primaryPsi;
+  TrialWaveFunction<>* primaryPsi;
 
   /// storage of WaveFunctionFactory
   PoolType myPool;

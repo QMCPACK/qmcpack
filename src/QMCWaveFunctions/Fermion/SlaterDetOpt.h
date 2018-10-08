@@ -18,7 +18,7 @@
 
 namespace qmcplusplus {
 
-class TrialWaveFunction;
+class TrialWaveFunction<>;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 /// \brief  A class for a Slater determinant with optimizable orbitals.
@@ -187,7 +187,7 @@ class SlaterDetOpt : public DiracDeterminantBase {
 
     WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
-    DiracDeterminantBase* makeCopy(SPOSet* spo) const;
+    DiracDeterminantBase* makeCopy(SPOSet<>* spo) const;
 
     void add_derivatives(const int nl,
                          const int np,

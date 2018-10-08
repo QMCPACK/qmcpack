@@ -310,7 +310,7 @@ bool PairCorrEstimator::get(std::ostream& os) const
 }
 
 QMCHamiltonianBase* PairCorrEstimator::makeClone(ParticleSet& qp
-    , TrialWaveFunction& psi)
+    , TrialWaveFunction<>& psi)
 {
   //default constructor is sufficient
   return new PairCorrEstimator(*this);

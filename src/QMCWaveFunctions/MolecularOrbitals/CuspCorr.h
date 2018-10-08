@@ -79,7 +79,7 @@ class CuspCorr : public QMCTraits
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
-  typedef SPOSet*        SPOSetPtr;
+  typedef SPOSet<>*        SPOSetPtr;
 
 public:
 

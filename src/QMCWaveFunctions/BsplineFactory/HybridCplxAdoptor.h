@@ -19,6 +19,8 @@
 #define QMCPLUSPLUS_HYBRID_CPLX_SOA_ADOPTOR_H
 
 #include <QMCWaveFunctions/BsplineFactory/HybridAdoptorBase.h>
+#include "Configuration.h"
+
 namespace qmcplusplus
 {
 
@@ -28,12 +30,13 @@ namespace qmcplusplus
 template<typename BaseAdoptor>
 struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename BaseAdoptor::DataType>
 {
+  using QMCT = QMCTraits;
   using HybridBase       = HybridAdoptorBase<typename BaseAdoptor::DataType>;
   using ST               = typename BaseAdoptor::DataType;
   using PointType        = typename BaseAdoptor::PointType;
   using SingleSplineType = typename BaseAdoptor::SingleSplineType;
-  using RealType         = typename SPOSet::RealType;
-  using ValueType        = typename SPOSet::ValueType;
+  using RealType         = typename QMCT::RealType;
+  using ValueType        = typename QMCT::ValueType;
 
   typename OrbitalSetTraits<ValueType>::ValueVector_t psi_AO, d2psi_AO;
   typename OrbitalSetTraits<ValueType>::GradVector_t dpsi_AO;
@@ -126,7 +129,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
       {
         for(int iat=0; iat<VP.getTotalNum(); ++iat)
         {
-          Vector<SPOSet::ValueType> psi(psiM[iat],m);
+          Vector<SPOSet<>::ValueType> psi(psiM[iat],m);
           BaseAdoptor::evaluate_v(VP,iat,psi);
         }
       }
@@ -135,7 +138,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
         for(int iat=0; iat<VP.getTotalNum(); ++iat)
         {
           const PointType& r=VP.R[iat];
-          Vector<SPOSet::ValueType> psi(psiM[iat],m);
+          Vector<SPOSet<>::ValueType> psi(psiM[iat],m);
           Vector<ST,aligned_allocator<ST> > myV_one(multi_myV[iat],myV.size());
           BaseAdoptor::assign_v(r,myV_one,psi);
         }
@@ -146,7 +149,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
         for(int iat=0; iat<VP.getTotalNum(); ++iat)
         {
           const PointType& r=VP.R[iat];
-          Vector<SPOSet::ValueType> psi(psiM[iat],m);
+          Vector<SPOSet<>::ValueType> psi(psiM[iat],m);
           Vector<ST,aligned_allocator<ST> > myV_one(multi_myV[iat],myV.size());
           BaseAdoptor::assign_v(r,myV_one,psi_AO);
           BaseAdoptor::evaluate_v(VP,iat,psi);
@@ -159,7 +162,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     {
       for(int iat=0; iat<VP.getTotalNum(); ++iat)
       {
-        Vector<SPOSet::ValueType> psi(psiM[iat],m);
+        Vector<SPOSet<>::ValueType> psi(psiM[iat],m);
         evaluate_v(VP,iat,psi);
       }
     }

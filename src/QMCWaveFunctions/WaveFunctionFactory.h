@@ -23,37 +23,47 @@
 #include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 #include "Message/MPIObjectBase.h"
+#include "Batching.h"
+#ifdef QMC_CUDA
+#include "QMCWaveFunctions/TrialWaveFunctionBatched.h"
+#endif
+
 namespace qmcplusplus
 {
 
 /** Factory class to build a many-body wavefunction
  */
-struct WaveFunctionFactory: public MPIObjectBase
+struct WaveFunctionFactory : public MPIObjectBase
 {
-
   typedef std::map<std::string,ParticleSet*> PtclPoolType;
   ///target ParticleSet
   ParticleSet* targetPtcl;
   ///many-body wavefunction object
-  TrialWaveFunction* targetPsi;
+  TrialWaveFunction<>* targetPsi;
   ///reference to the PtclPoolType
   PtclPoolType&  ptclPool;
   ///input node for a many-body wavefunction
   xmlNodePtr myNode;
   ///builder tree
   std::vector<WaveFunctionComponentBuilder*> psiBuilder;
-
+  Batching B_;
+  
   /** constructor
    * @param qp quantum particleset
    * @param pset pool of particlesets
    * @param c  communicator
    */
-  WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset, Communicate* c);
+  WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset, Communicate* c, Batching batching = Batching::SINGLE);
 
   ~WaveFunctionFactory();
 
-  void setPsi(TrialWaveFunction* psi);
-
+  template<Batching B>
+  void setPsi(TrialWaveFunction<B>* psi)
+  {
+    this->setName(psi->getName());
+    targetPsi=psi;
+  }
+  
   ///read from xmlNode
   bool put(xmlNodePtr cur);
 

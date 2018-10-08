@@ -21,7 +21,7 @@
 namespace qmcplusplus
 {
 
-GTOMolecularOrbitals::GTOMolecularOrbitals(ParticleSet& els, TrialWaveFunction& psi,
+GTOMolecularOrbitals::GTOMolecularOrbitals(ParticleSet& els, TrialWaveFunction<>& psi,
     ParticleSet& ions):
   WaveFunctionComponentBuilder(els,psi), IonSys(ions), Normalized(false),BasisSet(0), d_table(0)
 {

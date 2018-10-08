@@ -24,7 +24,7 @@
 namespace qmcplusplus
 {
 
-AGPDeterminantBuilder::AGPDeterminantBuilder(ParticleSet& els, TrialWaveFunction& wfs,
+AGPDeterminantBuilder::AGPDeterminantBuilder(ParticleSet& els, TrialWaveFunction<>& wfs,
     PtclPoolType& pset):
   WaveFunctionComponentBuilder(els,wfs), ptclPool(pset), mySPOSetBuilderFactory(0), agpDet(0)
 {

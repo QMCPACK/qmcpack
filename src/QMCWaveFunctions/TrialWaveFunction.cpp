@@ -28,22 +28,22 @@ typedef enum { V_TIMER, VGL_TIMER, ACCEPT_REJECT_TIMER, NL_TIMER,
              } TimerEnum;
 
 
-TrialWaveFunction::TrialWaveFunction(Communicate* c)
+TrialWaveFunction<Batching::SINGLE>::TrialWaveFunction(Communicate* c)
   : MPIObjectBase(c)
   , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0), BufferCursor_scalar(0)
-  , PhaseValue(0.0),LogValue(0.0),OneOverM(1.0), PhaseDiff(0.0)
+  , PhaseValue(0.0),LogValue(0.0),OneOverM(1.0), PhaseDiff(0.0), B_(Batching::SINGLE)
 {
-  ClassName="TrialWaveFunction";
+  ClassName="TrialWaveFunction<SINGLE>";
   myName="psi0";
 }
 
 ///private and cannot be used
-TrialWaveFunction::TrialWaveFunction()
+TrialWaveFunction<Batching::SINGLE>::TrialWaveFunction()
   : MPIObjectBase(0)
   , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0), BufferCursor_scalar(0)
-  ,  PhaseValue(0.0),LogValue(0.0) ,OneOverM(1.0), PhaseDiff(0.0)
+  ,  PhaseValue(0.0),LogValue(0.0) ,OneOverM(1.0), PhaseDiff(0.0), B_(Batching::SINGLE)
 {
-  ClassName="TrialWaveFunction";
+  ClassName="TrialWaveFunction<SINGLE>";
   myName="psi0";
 }
 
@@ -52,7 +52,7 @@ TrialWaveFunction::TrialWaveFunction()
 *@warning Have not decided whether Z is cleaned up by TrialWaveFunction
 *  or not. It will depend on I/O implementation.
 */
-TrialWaveFunction::~TrialWaveFunction()
+TrialWaveFunction<Batching::SINGLE>::~TrialWaveFunction()
 {
   delete_iter(Z.begin(),Z.end());
   //delete_iter(SPOSet.begin(),SPOSet.end());
@@ -60,19 +60,19 @@ TrialWaveFunction::~TrialWaveFunction()
 }
 
 void
-TrialWaveFunction::resetTargetParticleSet(ParticleSet& P)
+TrialWaveFunction<Batching::SINGLE>::resetTargetParticleSet(ParticleSet& P)
 {
   for (int i=0; i<Z.size(); i++)
     Z[i]->resetTargetParticleSet(P);
 }
 
-void TrialWaveFunction::startOptimization()
+void TrialWaveFunction<Batching::SINGLE>::startOptimization()
 {
   for (int i=0; i<Z.size(); i++)
     Z[i]->IsOptimizing=true;
 }
 
-void TrialWaveFunction::stopOptimization()
+void TrialWaveFunction<Batching::SINGLE>::stopOptimization()
 {
   for (int i=0; i<Z.size(); i++)
   {
@@ -87,7 +87,7 @@ void TrialWaveFunction::stopOptimization()
  * @param fermion if true, set aterm to FermionWF
  */
 void
-TrialWaveFunction::addOrbital(WaveFunctionComponent* aterm, const std::string& aname, bool fermion)
+TrialWaveFunction<Batching::SINGLE>::addOrbital(WaveFunctionComponent* aterm, const std::string& aname, bool fermion)
 {
   Z.push_back(aterm);
   aterm->IsFermionWF=fermion;
@@ -105,7 +105,7 @@ TrialWaveFunction::addOrbital(WaveFunctionComponent* aterm, const std::string& a
   for (int i = 0; i < suffixes.size(); i++)
   {
     std::string name = "WaveFunction::" + aname + suffixes[i];
-    myTimers.push_back(TimerManager.createTimer(name));
+    this->myTimers.push_back(TimerManager.createTimer(name));
   }
 }
 
@@ -114,10 +114,10 @@ TrialWaveFunction::addOrbital(WaveFunctionComponent* aterm, const std::string& a
 *
 * PhaseValue is the phase for the complex wave function
 */
-TrialWaveFunction::RealType
-TrialWaveFunction::evaluateLog(ParticleSet& P)
+TrialWaveFunction<Batching::SINGLE>::RealType
+TrialWaveFunction<Batching::SINGLE>::evaluateLog(ParticleSet& P)
 {
-  //TAU_PROFILE("TrialWaveFunction::evaluateLog","ParticleSet& P", TAU_USER);
+  //TAU_PROFILE("TrialWaveFunction<Batching::SINGLE>::evaluateLog","ParticleSet& P", TAU_USER);
   P.G = 0.0;
   P.L = 0.0;
   ValueType logpsi(0.0);
@@ -135,7 +135,7 @@ TrialWaveFunction::evaluateLog(ParticleSet& P)
   //return LogValue=real(logpsi);
 }
 
-void TrialWaveFunction::recompute(ParticleSet& P)
+void TrialWaveFunction<Batching::SINGLE>::recompute(ParticleSet& P)
 {
   std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
   std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
@@ -151,10 +151,10 @@ void TrialWaveFunction::recompute(ParticleSet& P)
 *
 * PhaseValue is the phase for the complex wave function
 */
-TrialWaveFunction::RealType
-TrialWaveFunction::evaluateLogOnly(ParticleSet& P)
+TrialWaveFunction<Batching::SINGLE>::RealType
+TrialWaveFunction<Batching::SINGLE>::evaluateLogOnly(ParticleSet& P)
 {
-  //TAU_PROFILE("TrialWaveFunction::evaluateLogOnly","ParticleSet& P", TAU_USER);
+  //TAU_PROFILE("TrialWaveFunction<Batching::SINGLE>::evaluateLogOnly","ParticleSet& P", TAU_USER);
   tempP->R=P.R;
   tempP->L=0.0;
   tempP->G=0.0;
@@ -190,7 +190,7 @@ TrialWaveFunction::evaluateLogOnly(ParticleSet& P)
  * the logpsi, G, and L don't change, evaluateLog is called anyways to compute these auxiliary quantities from scratch.
  * logpsi, G, and L associated with these non-optimizable orbitals are discarded explicitly and with dummy variables. 
  */
-TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, bool recomputeall)
+TrialWaveFunction<Batching::SINGLE>::RealType TrialWaveFunction<Batching::SINGLE>::evaluateDeltaLog(ParticleSet& P, bool recomputeall)
 {
   P.G = 0.0;
   P.L = 0.0;
@@ -246,11 +246,11 @@ TrialWaveFunction::RealType TrialWaveFunction::evaluateDeltaLog(ParticleSet& P, 
 * and the external object adds the varying G and L and the fixed terms.
 */
 void
-TrialWaveFunction::evaluateDeltaLog(ParticleSet& P
+TrialWaveFunction<Batching::SINGLE>::evaluateDeltaLog(ParticleSet& P
                                     , RealType& logpsi_fixed_r, RealType& logpsi_opt_r
                                     , ParticleSet::ParticleGradient_t& fixedG, ParticleSet::ParticleLaplacian_t& fixedL)
 {
-  //TAU_PROFILE("TrialWaveFunction::evaluateDeltaLog","ParticleSet& P", TAU_USER);
+  //TAU_PROFILE("TrialWaveFunction<Batching::SINGLE>::evaluateDeltaLog","ParticleSet& P", TAU_USER);
   P.G = 0.0;
   P.L = 0.0;
   fixedL = 0.0;
@@ -277,7 +277,7 @@ TrialWaveFunction::evaluateDeltaLog(ParticleSet& P
   //logpsi_opt_r = real(logpsi_opt);
 }
 
-/*void TrialWaveFunction::evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi)
+/*void TrialWaveFunction<Batching::SINGLE>::evaluateHessian(ParticleSet & P, int iat, HessType& grad_grad_psi)
 {
   std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
   std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
@@ -292,7 +292,7 @@ TrialWaveFunction::evaluateDeltaLog(ParticleSet& P
   }
 }*/
 
-void TrialWaveFunction::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad_psi)
+void TrialWaveFunction<Batching::SINGLE>::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad_psi)
 {
   std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
   std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
@@ -311,9 +311,9 @@ void TrialWaveFunction::evaluateHessian(ParticleSet & P, HessVector_t& grad_grad
  // app_log()<<" TrialWavefunction::Hessian = "<<grad_grad_psi<< std::endl;
 }
 
-TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P,int iat)
+TrialWaveFunction<Batching::SINGLE>::RealType TrialWaveFunction<Batching::SINGLE>::ratio(ParticleSet& P,int iat)
 {
-  //TAU_PROFILE("TrialWaveFunction::ratio","(ParticleSet& P,int iat)", TAU_USER);
+  //TAU_PROFILE("TrialWaveFunction<Batching::SINGLE>::ratio","(ParticleSet& P,int iat)", TAU_USER);
   ValueType r(1.0);
   std::vector<WaveFunctionComponent*>::iterator it(Z.begin());
   std::vector<WaveFunctionComponent*>::iterator it_end(Z.end());
@@ -335,7 +335,7 @@ TrialWaveFunction::RealType TrialWaveFunction::ratio(ParticleSet& P,int iat)
 #endif
 }
 
-TrialWaveFunction::ValueType TrialWaveFunction::full_ratio(ParticleSet& P,int iat)
+TrialWaveFunction<Batching::SINGLE>::ValueType TrialWaveFunction<Batching::SINGLE>::full_ratio(ParticleSet& P,int iat)
 {
   ValueType r(1.0);
   for(size_t i=0,n=Z.size(); i<n; ++i)
@@ -343,9 +343,9 @@ TrialWaveFunction::ValueType TrialWaveFunction::full_ratio(ParticleSet& P,int ia
   return r;
 }
 
-TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P,int iat)
+TrialWaveFunction<Batching::SINGLE>::GradType TrialWaveFunction<Batching::SINGLE>::evalGrad(ParticleSet& P,int iat)
 {
-  //TAU_PROFILE("TrialWaveFunction::evalGrad","(ParticleSet& P,int iat)", TAU_USER);
+  //TAU_PROFILE("TrialWaveFunction<Batching::SINGLE>::evalGrad","(ParticleSet& P,int iat)", TAU_USER);
   GradType grad_iat;
   for (int i=0, ii=VGL_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
   {
@@ -358,7 +358,7 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGrad(ParticleSet& P,int iat)
 
 // Evaluates the gradient w.r.t. to the source of the Laplacian
 // w.r.t. to the electrons of the wave function.
-TrialWaveFunction::GradType TrialWaveFunction::evalGradSource(ParticleSet& P
+TrialWaveFunction<Batching::SINGLE>::GradType TrialWaveFunction<Batching::SINGLE>::evalGradSource(ParticleSet& P
     , ParticleSet &source, int iat)
 {
   GradType grad_iat = GradType();
@@ -367,7 +367,7 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGradSource(ParticleSet& P
   return grad_iat;
 }
 
-TrialWaveFunction::GradType TrialWaveFunction::evalGradSource(ParticleSet& P
+TrialWaveFunction<Batching::SINGLE>::GradType TrialWaveFunction<Batching::SINGLE>::evalGradSource(ParticleSet& P
     , ParticleSet &source, int iat
     , TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad
     , TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
@@ -388,7 +388,7 @@ TrialWaveFunction::GradType TrialWaveFunction::evalGradSource(ParticleSet& P
 
 
 
-TrialWaveFunction::RealType TrialWaveFunction::ratioGrad(ParticleSet& P
+TrialWaveFunction<Batching::SINGLE>::RealType TrialWaveFunction<Batching::SINGLE>::ratioGrad(ParticleSet& P
     ,int iat, GradType& grad_iat )
 {
   grad_iat=0.0;
@@ -409,7 +409,7 @@ TrialWaveFunction::RealType TrialWaveFunction::ratioGrad(ParticleSet& P
 #endif
 }
 
-void TrialWaveFunction::printGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L, std::string tag)
+void TrialWaveFunction<Batching::SINGLE>::printGL(ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L, std::string tag)
 {
   std::ostringstream o;
   o << "---  reporting " << tag << std::endl << "  ---" << std::endl;
@@ -427,7 +427,7 @@ void TrialWaveFunction::printGL(ParticleSet::ParticleGradient_t& G, ParticleSet:
  * The proposed move of the iath particle is rejected.
  * All the temporary data should be restored to the state prior to the move.
  */
-void TrialWaveFunction::rejectMove(int iat)
+void TrialWaveFunction<Batching::SINGLE>::rejectMove(int iat)
 {
   for (int i=0, ii=ACCEPT_REJECT_TIMER; i<Z.size(); i++, ii+=TIMER_SKIP)
   {
@@ -445,7 +445,7 @@ void TrialWaveFunction::rejectMove(int iat)
  * The proposed move of the iath particle is accepted.
  * All the temporary data should be incorporated so that the next move is valid.
  */
-void   TrialWaveFunction::acceptMove(ParticleSet& P,int iat)
+void   TrialWaveFunction<Batching::SINGLE>::acceptMove(ParticleSet& P,int iat)
 {
   for (int i=0, ii=ACCEPT_REJECT_TIMER; i<Z.size(); i++, ii+=TIMER_SKIP)
   {
@@ -460,35 +460,35 @@ void   TrialWaveFunction::acceptMove(ParticleSet& P,int iat)
     LogValue+= Z[i]->LogValue;
 }
 
-//void TrialWaveFunction::resizeByWalkers(int nwalkers){
+//void TrialWaveFunction<Batching::SINGLE>::resizeByWalkers(int nwalkers){
 //  for(int i=0; i<Z.size(); i++) Z[i]->resizeByWalkers(nwalkers);
 //}
 
-void TrialWaveFunction::checkInVariables(opt_variables_type& active)
+void TrialWaveFunction<Batching::SINGLE>::checkInVariables(opt_variables_type& active)
 {
   for (int i=0; i<Z.size(); i++)
     Z[i]->checkInVariables(active);
 }
 
-void TrialWaveFunction::checkOutVariables(const opt_variables_type& active)
+void TrialWaveFunction<Batching::SINGLE>::checkOutVariables(const opt_variables_type& active)
 {
   for (int i=0; i<Z.size(); i++)
     Z[i]->checkOutVariables(active);
 }
 
-void TrialWaveFunction::resetParameters(const opt_variables_type& active)
+void TrialWaveFunction<Batching::SINGLE>::resetParameters(const opt_variables_type& active)
 {
   for (int i=0; i<Z.size(); i++)
     Z[i]->resetParameters(active);
 }
 
-void TrialWaveFunction::reportStatus(std::ostream& os)
+void TrialWaveFunction<Batching::SINGLE>::reportStatus(std::ostream& os)
 {
   for (int i=0; i<Z.size(); i++)
     Z[i]->reportStatus(os);
 }
 
-void TrialWaveFunction::getLogs(std::vector<RealType>& lvals)
+void TrialWaveFunction<Batching::SINGLE>::getLogs(std::vector<RealType>& lvals)
 {
   lvals.resize(Z.size(),0);
   for (int i=0; i<Z.size(); i++)
@@ -497,7 +497,7 @@ void TrialWaveFunction::getLogs(std::vector<RealType>& lvals)
   }
 }
 
-void TrialWaveFunction::getPhases(std::vector<RealType>& pvals)
+void TrialWaveFunction<Batching::SINGLE>::getPhases(std::vector<RealType>& pvals)
 {
   pvals.resize(Z.size(),0);
   for (int i=0; i<Z.size(); i++)
@@ -507,7 +507,7 @@ void TrialWaveFunction::getPhases(std::vector<RealType>& pvals)
 }
 
 
-void TrialWaveFunction::registerData(ParticleSet& P, WFBufferType& buf)
+void TrialWaveFunction<Batching::SINGLE>::registerData(ParticleSet& P, WFBufferType& buf)
 {
   //save the current position
   BufferCursor=buf.current();
@@ -522,10 +522,10 @@ void TrialWaveFunction::registerData(ParticleSet& P, WFBufferType& buf)
   buf.add(LogValue);
 }
 
-TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P
+TrialWaveFunction<Batching::SINGLE>::RealType TrialWaveFunction<Batching::SINGLE>::updateBuffer(ParticleSet& P
     , WFBufferType& buf, bool fromscratch)
 {
-  //TAU_PROFILE("TrialWaveFunction::updateBuffer","(P,..)", TAU_USER);
+  //TAU_PROFILE("TrialWaveFunction<Batching::SINGLE>::updateBuffer","(P,..)", TAU_USER);
   P.G = 0.0;
   P.L = 0.0;
   buf.rewind(BufferCursor,BufferCursor_scalar);
@@ -548,10 +548,10 @@ TrialWaveFunction::RealType TrialWaveFunction::updateBuffer(ParticleSet& P
   return LogValue;
 }
 
-void TrialWaveFunction::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
+void TrialWaveFunction<Batching::SINGLE>::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   buf.rewind(BufferCursor,BufferCursor_scalar);
-  //TAU_PROFILE("TrialWaveFunction::copyFromBuffer","(P,..)", TAU_USER);
+  //TAU_PROFILE("TrialWaveFunction<Batching::SINGLE>::copyFromBuffer","(P,..)", TAU_USER);
   for (int i=0, ii=BUFFER_TIMER; i<Z.size(); ++i, ii+=TIMER_SKIP)
   {
     myTimers[ii]->start();
@@ -564,7 +564,7 @@ void TrialWaveFunction::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   assert(buf.size()==buf.current()+buf.current_scalar()*sizeof(double));
 }
 
-void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<RealType>& ratios)
+void TrialWaveFunction<Batching::SINGLE>::evaluateRatios(VirtualParticleSet& VP, std::vector<RealType>& ratios)
 {
   assert(VP.getTotalNum()==ratios.size());
 #if defined(QMC_COMPLEX)
@@ -598,11 +598,11 @@ void TrialWaveFunction::evaluateRatios(VirtualParticleSet& VP, std::vector<RealT
 #endif
 }
 
-void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
+void TrialWaveFunction<Batching::SINGLE>::evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
     std::vector<RealType>& ratios, Matrix<RealType>& dratio)
 {
 #if defined(QMC_COMPLEX)
-  APP_ABORT("TrialWaveFunction::evaluateDerivRatios not available for complex wavefunctions");
+  APP_ABORT("TrialWaveFunction<Batching::SINGLE>::evaluateDerivRatios not available for complex wavefunctions");
 #else
   std::fill(ratios.begin(),ratios.end(),1.0);
   std::vector<ValueType> t(ratios.size());
@@ -615,16 +615,16 @@ void TrialWaveFunction::evaluateDerivRatios(VirtualParticleSet& VP, const opt_va
 #endif
 }
 
-bool TrialWaveFunction::put(xmlNodePtr cur)
+bool TrialWaveFunction<Batching::SINGLE>::put(xmlNodePtr cur)
 {
   return true;
 }
 
-void TrialWaveFunction::reset()
+void TrialWaveFunction<Batching::SINGLE>::reset()
 {
 }
 
-void TrialWaveFunction::reverse()
+void TrialWaveFunction<Batching::SINGLE>::reverse()
 {
   Ordered=false;
   //vector<WaveFunctionComponent*> zcopy(Z);
@@ -632,9 +632,9 @@ void TrialWaveFunction::reverse()
   //for(int i=0; i<Z.size(); ++i) Z[n-i]=zcopy[i];
 }
 
-TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp)  const
+TrialWaveFunction<>* TrialWaveFunction<Batching::SINGLE>::makeClone(ParticleSet& tqp)  const
 {
-  TrialWaveFunction* myclone = new TrialWaveFunction(myComm);
+  TrialWaveFunction<>* myclone = new TrialWaveFunction(myComm);
   myclone->BufferCursor=BufferCursor;
   myclone->BufferCursor_scalar=BufferCursor_scalar;
   for (int i=0; i<Z.size(); ++i)
@@ -647,7 +647,7 @@ TrialWaveFunction* TrialWaveFunction::makeClone(ParticleSet& tqp)  const
  *
  * @todo WaveFunctionComponent objects should take the mass into account.
  */
-void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
+void TrialWaveFunction<Batching::SINGLE>::evaluateDerivatives(ParticleSet& P,
     const opt_variables_type& optvars,
     std::vector<RealType>& dlogpsi,
     std::vector<RealType>& dhpsioverpsi,
@@ -683,15 +683,15 @@ void TrialWaveFunction::evaluateDerivatives(ParticleSet& P,
   }
 }
 
-void TrialWaveFunction::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
+void TrialWaveFunction<Batching::SINGLE>::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
                                                 std::vector<RealType>& dgradlogpsi) {
   for (int i=0; i<Z.size(); i++) {
     Z[i]->evaluateGradDerivatives(G_in, dgradlogpsi);
   }
 }
 
-TrialWaveFunction::RealType
-TrialWaveFunction::KECorrection() const
+TrialWaveFunction<Batching::SINGLE>::RealType
+TrialWaveFunction<Batching::SINGLE>::KECorrection() const
 {
   RealType sum = 0.0;
   for (int i=0; i<Z.size(); ++i)
@@ -699,7 +699,7 @@ TrialWaveFunction::KECorrection() const
   return sum;
 }
 
-void TrialWaveFunction::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
+void TrialWaveFunction<Batching::SINGLE>::evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios)
 {
   std::fill(ratios.begin(),ratios.end(),1.0);
   std::vector<ValueType> t(ratios.size());

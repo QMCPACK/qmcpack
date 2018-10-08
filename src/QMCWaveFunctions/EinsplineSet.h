@@ -28,6 +28,7 @@
 #ifdef QMC_CUDA
 #include <einspline/multi_bspline_create_cuda.h>
 #include "QMCWaveFunctions/AtomicOrbitalCuda.h"
+#include "QMCWaveFunctions/SPOSetBatched.h"
 #endif
 
 namespace qmcplusplus
@@ -35,15 +36,20 @@ namespace qmcplusplus
 
 class EinsplineSetBuilder;
 
-class EinsplineSet : public SPOSet
+class EinsplineSet : public SPOSet<Batching::SINGLE>
 {
   friend class EinsplineSetBuilder;
 public:
   //////////////////////
   // Type definitions //
   //////////////////////
-  typedef CrystalLattice<ParticleSet::Scalar_t,OHMMS_DIM> UnitCellType;
+  using QMCT = QMCTraits;
+  using PosType = QMCT::PosType;
+  using RealType = QMCT::RealType;
 
+  
+  typedef CrystalLattice<ParticleSet::Scalar_t,OHMMS_DIM> UnitCellType;
+  
   ///////////
   // Flags //
   ///////////
@@ -62,12 +68,12 @@ public:
   UnitCellType SuperLattice, PrimLattice;
   /// The "Twist" variables are in reduced coords, i.e. from 0 to1.
   /// The "k" variables are in Cartesian coordinates.
-  PosType TwistVector, kVector;
+  QMCT::PosType TwistVector, kVector;
   /// This stores which "true" twist vector this clone is using.
   /// "True" indicates the physical twist angle after untiling
   int TwistNum;
   /// metric tensor to handle generic unitcell
-  Tensor<RealType,OHMMS_DIM> GGt;
+  Tensor<QMCT::RealType,OHMMS_DIM> GGt;
 
   ///////////////////////////////////////////////
   // Muffin-tin orbitals from LAPW calculation //
@@ -285,7 +291,9 @@ protected:
   // Cuda equivalents of the above
   typedef typename StorageTypeConverter<StorageType,CUDA_PRECISION>::CudaStorageType CudaStorageType;
   typedef typename MultiOrbitalTraits<CudaStorageType,OHMMS_DIM>::CudaSplineType CudaSplineType;
-
+  using CudaRealType = QMCT::CudaRealType;
+  using CudaComplexType = QMCT::CudaComplexType;
+  
   CudaSplineType *CudaMultiSpline;
   gpu::device_vector<CudaStorageType> CudaValueVector, CudaGradLaplVector;
   gpu::device_vector<CudaStorageType*> CudaValuePointers, CudaGradLaplPointers;
@@ -297,17 +305,17 @@ protected:
   gpu::device_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM > > CudakPoints,
       CudakPoints_reduced;
   void applyPhaseFactors (gpu::device_vector<CudaStorageType*> &storageVector,
-                          gpu::device_vector<CudaRealType*> &phi);
+                          gpu::device_vector<QMCT::CudaRealType*> &phi);
   // Data for vectorized evaluations
-  std::vector<CudaPosType> hostPos;
-  gpu::host_vector<CudaPosType> NLhostPos;
-  gpu::device_vector<CudaPosType> cudapos, NLcudapos;
-  gpu::host_vector<CudaRealType> hostSign, NLhostSign;
-  gpu::device_vector<CudaRealType> cudaSign, NLcudaSign;
+  std::vector<QMCT::CudaPosType> hostPos;
+  gpu::host_vector<QMCT::CudaPosType> NLhostPos;
+  gpu::device_vector<QMCT::CudaPosType> cudapos, NLcudapos;
+  gpu::host_vector<QMCT::CudaRealType> hostSign, NLhostSign;
+  gpu::device_vector<QMCT::CudaRealType> cudaSign, NLcudaSign;
   // This stores the inverse of the lattice vector matrix in
   // GPU memory.
-  gpu::device_vector<CudaRealType> Linv_cuda, L_cuda;
-  gpu::host_vector<CudaRealType> L_host, Linv_host;
+  gpu::device_vector<QMCT::CudaRealType> Linv_cuda, L_cuda;
+  gpu::host_vector<QMCT::CudaRealType> L_host, Linv_host;
 #endif
 
 public:
@@ -395,23 +403,23 @@ public:
 
   // Vectorized evaluation functions
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, int iat,
-                 gpu::device_vector<CudaRealType*> &phi);
+                 gpu::device_vector<QMCT::CudaRealType*> &phi);
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, int iat,
-                 gpu::device_vector<CudaComplexType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-                 gpu::device_vector<CudaRealType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-                 gpu::device_vector<CudaComplexType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-                 gpu::device_vector<CudaRealType*> &phi,
-                 gpu::device_vector<CudaRealType*> &grad_lapl,
+                 gpu::device_vector<QMCT::CudaComplexType*> &phi);
+  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<QMCT::PosType> &newpos,
+                 gpu::device_vector<QMCT::CudaRealType*> &phi);
+  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<QMCT::PosType> &newpos,
+                 gpu::device_vector<QMCT::CudaComplexType*> &phi);
+  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<QMCT::PosType> &newpos,
+                 gpu::device_vector<QMCT::CudaRealType*> &phi,
+                 gpu::device_vector<QMCT::CudaRealType*> &grad_lapl,
                  int row_stride);
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-                 gpu::device_vector<CudaComplexType*> &phi,
-                 gpu::device_vector<CudaComplexType*> &grad_lapl,
+  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<QMCT::PosType> &newpos,
+                 gpu::device_vector<QMCT::CudaComplexType*> &phi,
+                 gpu::device_vector<QMCT::CudaComplexType*> &grad_lapl,
                  int row_stride);
-  GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi);
+  GPU_XRAY_TRACE void  evaluate (std::vector<QMCT::PosType> &pos, gpu::device_vector<QMCT::CudaRealType*> &phi);
+  GPU_XRAY_TRACE void  evaluate (std::vector<QMCT::PosType> &pos, gpu::device_vector<QMCT::CudaComplexType*> &phi);
 #endif
 
   void resetParameters(const opt_variables_type& active);
@@ -420,13 +428,13 @@ public:
   std::string Type();
 
   void registerTimers();
-  PosType get_k(int orb)
+  QMCT::PosType get_k(int orb)
   {
     return kPoints[orb];
   }
 
 
-  SPOSet* makeClone() const;
+  SPOSet<Batching::SINGLE>* makeClone() const;
 
   EinsplineSetExtended() :
     ValueTimer  ("EinsplineSetExtended::ValueOnly"),
@@ -491,6 +499,8 @@ struct AtomicPolyJob
 template<typename StorageType>
 class EinsplineSetHybrid : public EinsplineSetExtended<StorageType>
 {
+public:
+  using QMCT = QMCTraits;
   friend class EinsplineSetBuilder;
 protected:
   int a;
@@ -546,7 +556,7 @@ protected:
   ////////////
   // Data for vectorized evaluations
 
-  GPU_XRAY_TRACE void  sort_electrons(std::vector<PosType> &pos);
+  GPU_XRAY_TRACE void  sort_electrons(std::vector<QMCT::PosType> &pos);
 
 public:
   GPU_XRAY_TRACE void  initGPU();
@@ -557,27 +567,27 @@ public:
 
   // Vectorized evaluation functions
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, int iat,
-                 gpu::device_vector<CudaRealType*> &phi);
+                 gpu::device_vector<QMCT::CudaRealType*> &phi);
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, int iat,
-                 gpu::device_vector<CudaComplexType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-                 gpu::device_vector<CudaRealType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-                 gpu::device_vector<CudaComplexType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-                 gpu::device_vector<CudaRealType*> &phi,
-                 gpu::device_vector<CudaRealType*> &grad_lapl,
+                 gpu::device_vector<QMCT::CudaComplexType*> &phi);
+  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<QMCT::PosType> &newpos,
+                 gpu::device_vector<QMCT::CudaRealType*> &phi);
+  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<QMCT::PosType> &newpos,
+                 gpu::device_vector<QMCT::CudaComplexType*> &phi);
+  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<QMCT::PosType> &newpos,
+                 gpu::device_vector<QMCT::CudaRealType*> &phi,
+                 gpu::device_vector<QMCT::CudaRealType*> &grad_lapl,
                  int row_stride);
-  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-                 gpu::device_vector<CudaComplexType*> &phi,
-                 gpu::device_vector<CudaComplexType*> &grad_lapl,
+  GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<QMCT::PosType> &newpos,
+                 gpu::device_vector<QMCT::CudaComplexType*> &phi,
+                 gpu::device_vector<QMCT::CudaComplexType*> &grad_lapl,
                  int row_stride);
-  GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi);
+  GPU_XRAY_TRACE void  evaluate (std::vector<QMCT::PosType> &pos, gpu::device_vector<QMCT::CudaRealType*> &phi);
+  GPU_XRAY_TRACE void  evaluate (std::vector<QMCT::PosType> &pos, gpu::device_vector<QMCT::CudaComplexType*> &phi);
 
   std::string Type();
 
-  GPU_XRAY_TRACE SPOSet* makeClone() const;
+  GPU_XRAY_TRACE SPOSet<Batching::SINGLE>* makeClone() const;
 
   GPU_XRAY_TRACE EinsplineSetHybrid();
 };

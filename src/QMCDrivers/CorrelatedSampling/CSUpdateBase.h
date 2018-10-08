@@ -31,7 +31,7 @@ class CSUpdateBase: public QMCUpdateBase
 {
 public:
 
-  CSUpdateBase(MCWalkerConfiguration& w, std::vector<TrialWaveFunction*>& psi, std::vector<QMCHamiltonian*>& h,
+  CSUpdateBase(MCWalkerConfiguration& w, std::vector<TrialWaveFunction<>*>& psi, std::vector<QMCHamiltonian*>& h,
                RandomGenerator_t& rg);
 
   virtual ~CSUpdateBase();
@@ -54,7 +54,7 @@ public:
   ///multiple estimator
   CSEnergyEstimator* multiEstimator;
   ///a list of TrialWaveFunctions for multiple method
-  std::vector<TrialWaveFunction*> Psi1;
+  std::vector<TrialWaveFunction<>*> Psi1;
   ///a list of QMCHamiltonians for multiple method
   std::vector<QMCHamiltonian*> H1;
 

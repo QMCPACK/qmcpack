@@ -27,14 +27,14 @@ struct PulayForce : public QMCHamiltonianBase, public ForceBase
 {
   ParticleSet& Ions;
   ParticleSet& Electrons;
-  TrialWaveFunction& Psi;
+  TrialWaveFunction<>& Psi;
 
   std::vector<RealType> WarpNorm;
 
   ParticleSet::ParticlePos_t GradLogPsi, EGradLogPsi;
 
   PulayForce(ParticleSet& ions, ParticleSet& elns,
-             TrialWaveFunction &psi);
+             TrialWaveFunction<> &psi);
 
   void resetTargetParticleSet(ParticleSet& P);
 
@@ -50,7 +50,7 @@ struct PulayForce : public QMCHamiltonianBase, public ForceBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
   {
     PulayForce *myClone = new PulayForce (Ions, qp, psi);
     myClone->FirstForceIndex = FirstForceIndex;

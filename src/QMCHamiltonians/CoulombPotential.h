@@ -355,7 +355,7 @@ struct CoulombPotential: public QMCHamiltonianBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
   {
     if(myTableIndex)
       return new CoulombPotential(Pa,&qp,true);

@@ -322,7 +322,7 @@ public:
   void setRandomGenerator(RandomGenerator_t* rng);
 
   /** return a clone */
-  QMCHamiltonian* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  QMCHamiltonian* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi);
 
   ////////////////////////////////////////////
   // Vectorized evaluation routines for GPU //

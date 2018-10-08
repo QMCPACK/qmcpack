@@ -11,9 +11,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-
-
-
 /**@file HamiltonianPool.h
  * @brief Declaration of HamiltonianPool
  */
@@ -24,6 +21,9 @@
 #include "OhmmsData/OhmmsElementBase.h"
 #include "Message/MPIObjectBase.h"
 #include <map>
+#include "QMCApp/WaveFunctionPool.h"
+#include "QMCApp/HamiltonianPoolInterface.h"
+#include "Batching.h"
 
 class Libxml2Document;
 
@@ -33,7 +33,7 @@ namespace qmcplusplus
 class ParticleSet;
 class MCWalkerConfiguration;
 class ParticleSetPool;
-class WaveFunctionPool;
+  //class WaveFunctionPool;
 
 /** @ingroup qmcapp
  * @brief Manage a collection of QMCHamiltonian objects
@@ -41,11 +41,12 @@ class WaveFunctionPool;
  * This object handles \<hamiltonian\> elements and
  * functions as a builder class for QMCHamiltonian objects.
  */
-class HamiltonianPool : public MPIObjectBase
+template<Batching batching = Batching::SINGLE>
+class HamiltonianPool : public HamiltonianPoolInterface, public MPIObjectBase
 {
-
+  static constexpr Batching B_ = batching;
 public:
-
+  
   typedef std::map<std::string,HamiltonianFactory*> PoolType;
 
   HamiltonianPool(Communicate* c, const char* aname = "hamiltonian");
@@ -102,6 +103,8 @@ public:
    */
   inline void setWaveFunctionPool(WaveFunctionPool* pset)
   {
+    if(pset->B_ != B_)
+      APP_ABORT("Batching for HamiltonianPool and WaveFunctionPool must match");
     psiPool=pset;
   }
 

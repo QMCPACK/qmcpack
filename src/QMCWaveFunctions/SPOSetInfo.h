@@ -18,7 +18,6 @@
 #include <QMCWaveFunctions/SPOInfo.h>
 #include <Utilities/IteratorUtility.h>
 
-
 namespace qmcplusplus
 {
 
@@ -85,6 +84,9 @@ namespace qmcplusplus
       finish(ord,tol);
     }
 
+    /// empty collection and render mutable
+    void clear();
+
   private:
     /// whether initialization is complete and SPOSetInfo is ready for use
     bool is_complete;
@@ -121,13 +123,12 @@ namespace qmcplusplus
 
     /// determine the ordering of the states, if any
     void determine_order(RealType tol);
-
+  public:
     /// render collection mutable
     void modify();
 
-    /// empty collection and render mutable
-    void clear();
-
+    // This is a bad code smell.
+    // SPOSetBuilder is used in many locations to ignore access control to SPOSetInfo
     friend class SPOSetBuilder;
   };
 

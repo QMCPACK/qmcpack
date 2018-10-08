@@ -23,9 +23,11 @@
 namespace qmcplusplus
 {
 
-class SlaterDetWithBackflow: public SlaterDet
+class SlaterDetWithBackflow: public SlaterDet<Batching::SINGLE>
 {
 public:
+  typedef DiracDeterminant<Batching::SINGLE> Determinant_t;
+  
   BackflowTransformation *BFTrans;
 
   /**  constructor
@@ -147,7 +149,7 @@ public:
 
   WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
-  SPOSetPtr getPhi(int i=0)
+  SPOSet<>* getPhi(int i=0)
   {
     return Dets[i]->getPhi();
   }

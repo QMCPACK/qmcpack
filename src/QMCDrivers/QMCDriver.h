@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2018 QMCPACK developers.
 //
-// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
+//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Cynthia Gu, zg1@ornl.gov, Oak Ridge National Laboratory
 //                    Jaron T. Krogel, krogeljt@ornl.gov, Oak Ridge National Laboratory
@@ -33,6 +34,8 @@
 #include "Estimators/EstimatorManagerBase.h"
 #include "QMCDrivers/SimpleFixedNodeBranch.h"
 #include "QMCDrivers/BranchIO.h"
+#include "Batching.h"
+#include "QMCDrivers/QMCDriverInterface.h"
 class Communicate;
 
 namespace qmcplusplus
@@ -61,11 +64,17 @@ class MCWalkerConfiguration;
 class HDFWalkerOutput;
 class TraceManager;
 
+
 /** @ingroup QMCDrivers
  * @{
- * @brief abstract base class for QMC engines
+ * @brief base class for QMC engines
  */
-class QMCDriver: public QMCTraits, public MPIObjectBase
+
+template<Batching batching = Batching::SINGLE>
+class QMCDriver;
+
+template<Batching batching>
+class QMCDriver: public QMCDriverInterface, public QMCTraits, public MPIObjectBase
 {
 
 public:
@@ -91,7 +100,7 @@ public:
   xmlNodePtr traces_xml;
 
   /// Constructor.
-  QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool);
+  QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction<batching>& psi, QMCHamiltonian& h, WaveFunctionPool& ppool);
 
   virtual ~QMCDriver();
 
@@ -128,7 +137,7 @@ public:
    * *Multiple* drivers use multiple H/Psi pairs to perform correlated sampling
    * for energy difference evaluations.
    */
-  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi);
+  void add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction<>* psi);
 
   /** initialize with xmlNode
    */
@@ -147,6 +156,9 @@ public:
   virtual bool run() = 0;
 
   virtual bool put(xmlNodePtr cur) = 0;
+
+  //This is here so VMCLinearOpt VMCcuda both work
+  virtual RealType fillOverlapHamiltonianMatrices(Matrix<RealType>& LeftM, Matrix<RealType>& RightM) { return 0.0; };
 
   inline std::string getEngineName() const
   {
@@ -332,7 +344,7 @@ protected:
   MCWalkerConfiguration& W;
 
   ///trial function
-  TrialWaveFunction& Psi;
+  TrialWaveFunction<batching>& Psi;
 
   WaveFunctionPool& psiPool;
 
@@ -340,7 +352,7 @@ protected:
   QMCHamiltonian& H;
 
   ///a list of TrialWaveFunctions for multiple method
-  std::vector<TrialWaveFunction*> Psi1;
+  std::vector<TrialWaveFunction<batching>*> Psi1;
 
   ///a list of QMCHamiltonians for multiple method
   std::vector<QMCHamiltonian*> H1;

@@ -17,14 +17,17 @@
     
 
 
-#ifndef QMCPLUSPLUS_WAVEFUNCTIONTEST_H
-#define QMCPLUSPLUS_WAVEFUNCTIONTEST_H
+#ifndef QMCPLUSPLUS_WAVEFUNCTIONTESTER_H
+#define QMCPLUSPLUS_WAVEFUNCTIONTESTER_H
 
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCApp/ParticleSetPool.h"
+#include "QMCWaveFunctions/SPOSetTypeAliases.h"
+
 namespace qmcplusplus
 {
-
+extern template class QMCDriver<Batching::SINGLE>;
+extern template class QMCDriver<Batching::BATCHED>;
 
 /** Information for output of relative error in wavefunction derivatives
   vs. finite difference delta.
@@ -43,12 +46,23 @@ public:
 /** Test the correctness of TrialWaveFunction for the values,
     gradients and laplacians
 */
-class WaveFunctionTester: public QMCDriver
+template<Batching batching = Batching::SINGLE>
+class WaveFunctionTester: public QMCDriver<batching>
 {
+public:
+  using QMCT = QMCTraits;
+  using RealType = QMCT::RealType;
+  using IndexType = QMCT::IndexType;
+  using GradType = QMCT::GradType;
+  using PosType = QMCT::PosType;
+  using ValueType = QMCT::ValueType;
+  using SSTA = SPOSetTypeAliases;
+  using Walker_t = SSTA::Walker_t;
+  using QDT = QMCDriver<batching>;
 public:
   /// Constructor.
   WaveFunctionTester(MCWalkerConfiguration& w,
-                     TrialWaveFunction& psi,
+                     TrialWaveFunction<batching>& psi,
                      QMCHamiltonian& h,
                      ParticleSetPool& ptclPool,
                      WaveFunctionPool& ppool);
@@ -72,8 +86,8 @@ private:
   FiniteDiffErrData DeltaVsError;
  
   /// Copy Constructor (disabled)
-  WaveFunctionTester(const WaveFunctionTester& a):
-    QMCDriver(a), PtclPool(a.PtclPool) { }
+  WaveFunctionTester(const WaveFunctionTester<batching>& a):
+    QMCDriver<batching>(a), PtclPool(a.PtclPool) { }
   /// Copy Operator (disabled)
   WaveFunctionTester& operator=(const WaveFunctionTester&)
   {
@@ -114,6 +128,8 @@ private:
                                     std::stringstream &fail_log,
                                     bool &ignore);
 
+  void abortNoSpecialize();
+  
   //vector<RealType> Mv3(std::vector<std::vector<RealType> >& M, std::vector<RealType>& v);
 
   std::ofstream fout;

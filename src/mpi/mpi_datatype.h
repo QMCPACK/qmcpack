@@ -17,6 +17,8 @@
 #include <type_traits/scalar_traits.h>
 #if defined(HAVE_MPI)
 #include <mpi.h>
+#include "Message/Communicate.h"
+
 #else
 typedef int MPI_Datatype;
 #endif

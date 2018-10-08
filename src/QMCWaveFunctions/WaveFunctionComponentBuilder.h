@@ -21,6 +21,7 @@
 #define QMCPLUSPLUS_TRIALORBITALBUILDERBASE_H
 
 #include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCWaveFunctions/SPOSetTypeAliases.h"
 #include <map>
 
 /**@defgroup WFSBuilder Orbital builder group
@@ -36,11 +37,12 @@ class WaveFunctionComponentBuilder: public MPIObjectBase
 {
 
 public:
-
-  typedef TrialWaveFunction::RealType  RealType;
-  typedef TrialWaveFunction::ValueType ValueType;
-  typedef TrialWaveFunction::PosType   PosType;
-  typedef TrialWaveFunction::GradType  GradType;
+  using SSTA = SPOSetTypeAliases;
+  using GGGType = SSTA::GGGType;
+  typedef TrialWaveFunction<>::RealType  RealType;
+  typedef TrialWaveFunction<>::ValueType ValueType;
+  typedef TrialWaveFunction<>::PosType   PosType;
+  typedef TrialWaveFunction<>::GradType  GradType;
   typedef std::map<std::string,ParticleSet*> PtclPoolType;
 
   /////level of printing
@@ -97,7 +99,7 @@ public:
    * targetPsi. The position of targetPtcl is related to targetPsi's
    * capability to return a value and derivatives \f$\Psi[\{R\}]\f$ .
    */
-  WaveFunctionComponentBuilder(ParticleSet& p, TrialWaveFunction& psi);
+  WaveFunctionComponentBuilder(ParticleSet& p, TrialWaveFunction<>& psi);
 
   virtual ~WaveFunctionComponentBuilder();
   /// process a xml node at cur
@@ -108,7 +110,7 @@ protected:
   ParticleSet& targetPtcl;
 
   /// reference to the many-body wavefucntion to which each derived class add a term
-  TrialWaveFunction& targetPsi;
+  TrialWaveFunction<>& targetPsi;
 
   /// xmlNode operated by this object
   xmlNodePtr myNode;

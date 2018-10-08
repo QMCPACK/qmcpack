@@ -13,7 +13,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-#include "QMCWaveFunctions/TrialWaveFunction.h"
+
+#include "QMCWaveFunctions/TrialWaveFunctionBatched.h"
 
 namespace qmcplusplus
 {
@@ -22,18 +23,43 @@ typedef enum { V_TIMER, VGL_TIMER, ACCEPT_TIMER, NL_TIMER,
                RECOMPUTE_TIMER, DERIVS_TIMER, TIMER_SKIP
              } TimerEnum;
 
+TrialWaveFunction<Batching::BATCHED>::TrialWaveFunction()
+{
+  this->B_ = Batching::BATCHED;
+  this->ClassName = "TrialWaveFunction<Batching::BATCHED>";
+}
+
+TrialWaveFunction<Batching::BATCHED>::TrialWaveFunction(Communicate* c)
+  : TrialWaveFunction<Batching::SINGLE>(c)
+{
+  this->B_ = Batching::BATCHED;
+  this->ClassName = "TrialWaveFunction<Batching::BATCHED>";
+}
+  
+TrialWaveFunction<>* TrialWaveFunction<Batching::BATCHED>::makeClone(ParticleSet& tqp)  const
+{
+  TrialWaveFunction<Batching::BATCHED>* myclone = new TrialWaveFunction<Batching::BATCHED>(this->myComm);
+  myclone->BufferCursor=this->BufferCursor;
+  myclone->BufferCursor_scalar=this->BufferCursor_scalar;
+  for (int i=0; i<this->Z.size(); ++i)
+    myclone->addOrbital(Z[i]->makeClone(tqp),"dummy",this->Z[i]->IsFermionWF);
+  myclone->OneOverM=this->OneOverM;
+  return myclone;
+}
+
+  
 ////////////////////////////////
 // Vectorized member fuctions //
 ///////////////////////////////
 void
-TrialWaveFunction::freeGPUmem()
+TrialWaveFunction<Batching::BATCHED>::freeGPUmem()
 {
   for (int i=Z.size()-1; i>=0; i--)
     Z[i]->freeGPUmem();
 }
 
 void
-TrialWaveFunction::recompute
+TrialWaveFunction<Batching::BATCHED>::recompute
 (MCWalkerConfiguration &W, bool firstTime)
 {
   for (int i=0,ii=RECOMPUTE_TIMER; i<Z.size(); i++,ii+=TIMER_SKIP)
@@ -46,7 +72,7 @@ TrialWaveFunction::recompute
 
 
 void
-TrialWaveFunction::reserve
+TrialWaveFunction<Batching::BATCHED>::reserve
 (PointerPool<gpu::device_vector<CudaValueType> > &pool,
  bool onlyOptimizable)
 {
@@ -56,7 +82,7 @@ TrialWaveFunction::reserve
 }
 
 void
-TrialWaveFunction::evaluateLog (MCWalkerConfiguration &W,
+TrialWaveFunction<Batching::BATCHED>::evaluateLog (MCWalkerConfiguration &W,
                                 std::vector<RealType> &logPsi)
 {
   for (int iw=0; iw<logPsi.size(); iw++)
@@ -66,7 +92,7 @@ TrialWaveFunction::evaluateLog (MCWalkerConfiguration &W,
 }
 
 void
-TrialWaveFunction::calcGradient (MCWalkerConfiguration &W, int iat,
+TrialWaveFunction<Batching::BATCHED>::calcGradient (MCWalkerConfiguration &W, int iat,
                                  std::vector<GradType> &grad)
 {
   for (int iw=0; iw<grad.size(); iw++)
@@ -76,7 +102,7 @@ TrialWaveFunction::calcGradient (MCWalkerConfiguration &W, int iat,
 }
 
 void
-TrialWaveFunction::addGradient (MCWalkerConfiguration &W, int iat,
+TrialWaveFunction<Batching::BATCHED>::addGradient (MCWalkerConfiguration &W, int iat,
                                 std::vector<GradType> &grad)
 {
   for(int i=0; i<Z.size()-1; i++)
@@ -85,7 +111,7 @@ TrialWaveFunction::addGradient (MCWalkerConfiguration &W, int iat,
 }
 
 void
-TrialWaveFunction::getGradient (MCWalkerConfiguration &W, int iat,
+TrialWaveFunction<Batching::BATCHED>::getGradient (MCWalkerConfiguration &W, int iat,
                                 std::vector<GradType> &grad)
 {
   for (int iw=0; iw<grad.size(); iw++)
@@ -95,7 +121,7 @@ TrialWaveFunction::getGradient (MCWalkerConfiguration &W, int iat,
 }
 
 void
-TrialWaveFunction::ratio (MCWalkerConfiguration &W, int iat,
+TrialWaveFunction<Batching::BATCHED>::ratio (MCWalkerConfiguration &W, int iat,
                           std::vector<ValueType> &psi_ratios,
                           std::vector<GradType> &newG)
 {
@@ -114,7 +140,7 @@ TrialWaveFunction::ratio (MCWalkerConfiguration &W, int iat,
 
 
 void
-TrialWaveFunction::ratio (MCWalkerConfiguration &W, int iat,
+TrialWaveFunction<Batching::BATCHED>::ratio (MCWalkerConfiguration &W, int iat,
                           std::vector<ValueType> &psi_ratios,
                           std::vector<GradType> &newG, std::vector<ValueType> &newL)
 {
@@ -134,7 +160,7 @@ TrialWaveFunction::ratio (MCWalkerConfiguration &W, int iat,
 
 
 void
-TrialWaveFunction::calcRatio (MCWalkerConfiguration &W, int iat,
+TrialWaveFunction<Batching::BATCHED>::calcRatio (MCWalkerConfiguration &W, int iat,
                               std::vector<ValueType> &psi_ratios,
                               std::vector<GradType> &newG, std::vector<ValueType> &newL)
 {
@@ -154,7 +180,7 @@ TrialWaveFunction::calcRatio (MCWalkerConfiguration &W, int iat,
 
 
 void
-TrialWaveFunction::addRatio (MCWalkerConfiguration &W, int iat,
+TrialWaveFunction<Batching::BATCHED>::addRatio (MCWalkerConfiguration &W, int iat,
                              std::vector<ValueType> &psi_ratios,
                              std::vector<GradType> &newG, std::vector<ValueType> &newL)
 {
@@ -172,7 +198,7 @@ TrialWaveFunction::addRatio (MCWalkerConfiguration &W, int iat,
 
 #if defined (QMC_COMPLEX)
 void
-TrialWaveFunction::convertRatiosFromComplexToReal (std::vector<ValueType> &psi_ratios,
+TrialWaveFunction<Batching::BATCHED>::convertRatiosFromComplexToReal (std::vector<ValueType> &psi_ratios,
                                                    std::vector<RealType> &psi_ratios_real)
 {
   RealType PhaseValue;
@@ -192,7 +218,7 @@ TrialWaveFunction::convertRatiosFromComplexToReal (std::vector<ValueType> &psi_r
 #endif
 
 void
-TrialWaveFunction::ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iatList,
+TrialWaveFunction<Batching::BATCHED>::ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iatList,
                           std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
                           std::vector<GradType> &newG, std::vector<ValueType> &newL)
 {
@@ -211,7 +237,7 @@ TrialWaveFunction::ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iat
 }
 
 void
-TrialWaveFunction::ratio (MCWalkerConfiguration &W, int iat,
+TrialWaveFunction<Batching::BATCHED>::ratio (MCWalkerConfiguration &W, int iat,
                           std::vector<ValueType> &psi_ratios)
 {
   for (int iw=0; iw<W.WalkerList.size(); iw++)
@@ -225,7 +251,7 @@ TrialWaveFunction::ratio (MCWalkerConfiguration &W, int iat,
 }
 
 void
-TrialWaveFunction::update (std::vector<Walker_t*> &walkers, int iat)
+TrialWaveFunction<Batching::BATCHED>::update (std::vector<Walker_t*> &walkers, int iat)
 {
   for (int i=0,ii=ACCEPT_TIMER; i<Z.size(); i++,ii+=TIMER_SKIP)
   {
@@ -236,7 +262,7 @@ TrialWaveFunction::update (std::vector<Walker_t*> &walkers, int iat)
 }
 
 void
-TrialWaveFunction::update (const std::vector<Walker_t*> &walkers,
+TrialWaveFunction<Batching::BATCHED>::update (const std::vector<Walker_t*> &walkers,
                            const std::vector<int> &iatList)
 {
   for (int i=0,ii=ACCEPT_TIMER; i<Z.size(); i++,ii+=TIMER_SKIP)
@@ -249,7 +275,7 @@ TrialWaveFunction::update (const std::vector<Walker_t*> &walkers,
 
 
 void
-TrialWaveFunction::gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
+TrialWaveFunction<Batching::BATCHED>::gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
                              ValueMatrix_t &lapl)
 {
   for (int i=0; i<grads.rows(); i++)
@@ -273,7 +299,7 @@ TrialWaveFunction::gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
 }
 
 void
-TrialWaveFunction::NLratios (MCWalkerConfiguration &W,
+TrialWaveFunction<Batching::BATCHED>::NLratios (MCWalkerConfiguration &W,
                              std::vector<NLjob> &jobList,
                              std::vector<PosType> &quadPoints,
                              std::vector<ValueType> &psi_ratios)
@@ -289,7 +315,7 @@ TrialWaveFunction::NLratios (MCWalkerConfiguration &W,
 }
 
 void
-TrialWaveFunction::NLratios (MCWalkerConfiguration &W,
+TrialWaveFunction<Batching::BATCHED>::NLratios (MCWalkerConfiguration &W,
                              gpu::device_vector<CUDA_PRECISION*> &Rlist,
                              gpu::device_vector<int*>            &ElecList,
                              gpu::device_vector<int>             &NumCoreElecs,
@@ -307,7 +333,7 @@ TrialWaveFunction::NLratios (MCWalkerConfiguration &W,
 }
 
 void
-TrialWaveFunction::evaluateDeltaLog(MCWalkerConfiguration &W,
+TrialWaveFunction<Batching::BATCHED>::evaluateDeltaLog(MCWalkerConfiguration &W,
                                     std::vector<RealType>& logpsi_opt)
 {
   for (int iw=0; iw<logpsi_opt.size(); iw++)
@@ -323,7 +349,7 @@ TrialWaveFunction::evaluateDeltaLog(MCWalkerConfiguration &W,
 
 
 void
-TrialWaveFunction::evaluateDeltaLog (MCWalkerConfiguration &W,
+TrialWaveFunction<Batching::BATCHED>::evaluateDeltaLog (MCWalkerConfiguration &W,
                                      std::vector<RealType>& logpsi_fixed,
                                      std::vector<RealType>& logpsi_opt,
                                      GradMatrix_t&  fixedG,
@@ -374,7 +400,7 @@ TrialWaveFunction::evaluateDeltaLog (MCWalkerConfiguration &W,
 }
 
 void
-TrialWaveFunction::evaluateOptimizableLog (MCWalkerConfiguration &W,
+TrialWaveFunction<Batching::BATCHED>::evaluateOptimizableLog (MCWalkerConfiguration &W,
     std::vector<RealType>& logpsi_opt,
     GradMatrix_t&  optG,
     ValueMatrix_t& optL)
@@ -399,7 +425,7 @@ TrialWaveFunction::evaluateOptimizableLog (MCWalkerConfiguration &W,
 
 
 void
-TrialWaveFunction::evaluateDerivatives (MCWalkerConfiguration &W,
+TrialWaveFunction<Batching::BATCHED>::evaluateDerivatives (MCWalkerConfiguration &W,
                                         const opt_variables_type& optvars,
                                         RealMatrix_t &dlogpsi,
                                         RealMatrix_t &dhpsioverpsi)

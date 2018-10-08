@@ -29,9 +29,15 @@
 namespace qmcplusplus
 {
 
-class PWRealOrbitalSet: public SPOSet
+class PWRealOrbitalSet: public SPOSet<Batching::SINGLE>
 {
-
+  using QMCT = QMCTraits;
+  using ComplexType = QMCT::ComplexType;
+  using PosType = QMCT::PosType;
+  using RealType = QMCT::RealType;
+  using IndexType = QMCT::IndexType;
+  using GradType = QMCT::GradType;
+  
 public:
 
   typedef PWBasis                    BasisSet_t;
@@ -62,7 +68,7 @@ public:
    */
   ~PWRealOrbitalSet();
 
-  SPOSet* makeClone() const;
+  SPOSet<Batching::SINGLE>* makeClone() const;
 
   /** resize  the orbital base
    * @param bset PWBasis
@@ -75,7 +81,7 @@ public:
    * @param coefs real input data
    * @param jorb orbital index
    */
-  void addVector(const std::vector<RealType>& coefs,int jorb);
+  void addVector(const std::vector<QMCT::RealType>& coefs,int jorb);
 
   /** add eigenstate for jorb-th orbital
    * @param coefs complex input data

@@ -39,24 +39,22 @@
 #include "QMCWaveFunctions/AGPDeterminantBuilder.h"
 #endif
 
+#include "QMCWaveFunctions/TrialWaveFunctionBatched.h"
+
 #include "Utilities/ProgressReportEngine.h"
 #include "Utilities/IteratorUtility.h"
 #include "OhmmsData/AttributeSet.h"
 namespace qmcplusplus
 {
 
-WaveFunctionFactory::WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset, Communicate* c)
+WaveFunctionFactory::WaveFunctionFactory(ParticleSet* qp, PtclPoolType& pset, Communicate* c, Batching batching)
   : MPIObjectBase(c)
-  , targetPtcl(qp),ptclPool(pset),targetPsi(0), myNode(NULL)
+  , targetPtcl(qp),ptclPool(pset),targetPsi(0), myNode(NULL), B_(batching)
 {
   ClassName="WaveFunctionFactory";
+  if(B_ == Batching::BATCHED)
+    ClassName+=" with batching";
   myName="psi0";
-}
-
-void WaveFunctionFactory::setPsi(TrialWaveFunction* psi)
-{
-  this->setName(psi->getName());
-  targetPsi=psi;
 }
 
 bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
@@ -78,7 +76,18 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
   }
   if(targetPsi==0) //allocate targetPsi and set the name
   {
-    targetPsi  = new TrialWaveFunction(myComm);
+    if(B_ == Batching::SINGLE)
+    {
+      targetPsi = new TrialWaveFunction<>(myComm);
+    }
+    else
+    {
+#ifdef QMC_CUDA
+	targetPsi = new TrialWaveFunction<Batching::BATCHED>(myComm);
+#else
+	APP_ABORT("TrialWaveFunction<Batching::BATCHED> only supported for CUDA build");
+#endif
+    }
     targetPsi->setName(myName);
     targetPsi->setMassTerm(*targetPtcl);
   }
@@ -166,6 +175,7 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
   //}
 // synch all parameters. You don't want some being different if same name.
   opt_variables_type dummy;
+  
   targetPsi->checkInVariables(dummy);
   dummy.resetIndex();
   targetPsi->checkOutVariables(dummy);
@@ -199,7 +209,7 @@ bool WaveFunctionFactory::addFermionTerm(xmlNodePtr cur)
     }
 //#endif /* QMC_BUILD_LEVEL>1 */
   else
-    detbuilder = new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool);
+    detbuilder = new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool, B_);
   detbuilder->setReportLevel(ReportLevel);
   detbuilder->put(cur);
   addNode(detbuilder,cur);

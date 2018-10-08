@@ -32,19 +32,29 @@
 #include <Utilities/ProgressReportEngine.h>
 #include <QMCWaveFunctions/einspline_helper.hpp>
 #include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
-#include "QMCWaveFunctions/BsplineFactory/SplineAdoptorBase.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineAdoptor.h"
+#include "QMCWaveFunctions/BsplineFactory/BsplineCreator.h"
+#ifdef QMC_CUDA
+#include "QMCWaveFunctions/SPOSetBatched.h"
+#endif
 
 namespace qmcplusplus
 {
 
-  ///create R2R, real wavefunction in double
-  BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_rep);
-  ///create R2R, real wavefunction in float
-  BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, bool hybrid_rep);
-  ///create C2C or C2R, complex wavefunction in double
-  BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, bool hybrid_rep);
-  ///create C2C or C2R, complex wavefunction in single
-  BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybrid_rep);
+extern template class SPOSet<Batching::SINGLE>;
+#ifdef QMC_CUDA
+extern template class SPOSet<Batching::BATCHED>;
+#endif
+
+
+///create R2R, real wavefunction in double
+BsplineReaderBase* createBsplineRealDouble(EinsplineSetBuilder* e, bool hybrid_rep);
+///create R2R, real wavefunction in float
+BsplineReaderBase* createBsplineRealSingle(EinsplineSetBuilder* e, bool hybrid_rep);
+///create C2C or C2R, complex wavefunction in double
+BsplineReaderBase* createBsplineComplexDouble(EinsplineSetBuilder* e, bool hybrid_rep);
+///create C2C or C2R, complex wavefunction in single
+BsplineReaderBase* createBsplineComplexSingle(EinsplineSetBuilder* e, bool hybrid_rep);
 
 void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
 {
@@ -116,12 +126,12 @@ void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
   AnalyzeTwists2();
 }
 
-SPOSet*
+SPOSet<Batching::SINGLE>*
 EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   update_token(__FILE__,__LINE__,"createSPOSetFromXML");
   //use 2 bohr as the default when truncated orbitals are used based on the extend of the ions
-  SPOSet *OrbitalSet;
+  SPOSet<> *OrbitalSet;
   int numOrbs = 0;
   int sortBands(1);
   int spinSet = 0;
@@ -246,7 +256,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   spo_prec="single"; //overwrite
 #endif
   H5OrbSet aset(H5FileName, spinSet, numOrbs);
-  std::map<H5OrbSet,SPOSet*,H5OrbSet>::iterator iter;
+  std::map<H5OrbSet,SPOSet<>*,H5OrbSet>::iterator iter;
   iter = SPOSetMap.find (aset);
   if ((iter != SPOSetMap.end() ) && (!NewOcc))
   {
@@ -308,6 +318,13 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   // safeguard for a removed feature
   if(truncate=="yes") APP_ABORT("The 'truncate' feature of spline SPO has been removed. Please use hybrid orbtial representation.");
 
+#ifdef QMC_CUDA
+  if(UseRealOrbitals)
+  {
+    // false means not hybrid
+    MixedSplineReader = BsplineCreator<Batching::BATCHED>::createBsplineRealDouble(this, false);
+  }
+#else
 #if !defined(QMC_COMPLEX)
   if (UseRealOrbitals)
   {
@@ -315,9 +332,13 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     if(MixedSplineReader==0)
     {
       if(use_single)
-        MixedSplineReader= createBsplineRealSingle(this, hybrid_rep=="yes");
+      {
+	MixedSplineReader= createBsplineRealSingle(this, hybrid_rep=="yes");
+      }
       else
-        MixedSplineReader= createBsplineRealDouble(this, hybrid_rep=="yes");
+      {
+        MixedSplineReader= BsplineCreator<Batching::SINGLE>::createBsplineRealDouble(this, hybrid_rep=="yes");
+      }
     }
   }
   else
@@ -331,15 +352,16 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
         MixedSplineReader= createBsplineComplexDouble(this, hybrid_rep=="yes");
     }
   }
+#endif
 
   MixedSplineReader->setCommon(XMLRoot);
   size_t delta_mem=qmc_common.memory_allocated;
   // temporary disable the following function call, Ye Luo
   // RotateBands_ESHDF(spinSet, dynamic_cast<EinsplineSetExtended<std::complex<double> >*>(OrbitalSet));
   HasCoreOrbs=bcastSortBands(spinSet,NumDistinctOrbitals,myComm->rank()==0);
-  SPOSet* bspline_zd=MixedSplineReader->create_spline_set(spinSet,spo_cur);
+  SPOSet<>* bspline_zd=MixedSplineReader->create_spline_set(spinSet,spo_cur);
   if(!bspline_zd)
-    APP_ABORT_TRACE(__FILE__,__LINE__,"Failed to create SPOSet*");
+    APP_ABORT_TRACE(__FILE__,__LINE__,"Failed to create SPOSet<>*");
   delta_mem=qmc_common.memory_allocated-delta_mem;
   app_log() <<"  MEMORY allocated SplineAdoptorReader " << (delta_mem>>20) << " MB" << std::endl;
   OrbitalSet = bspline_zd;
@@ -368,7 +390,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
       temp_OrbitalSet->MultiSpline->num_splines = NumDistinctOrbitals;
       temp_OrbitalSet->resizeStorage(NumDistinctOrbitals, NumValenceOrbs);
       //set the flags for anti periodic boundary conditions
-      temp_OrbitalSet->HalfG = dynamic_cast<SplineAdoptorBase<double,3> *>(OrbitalSet)->HalfG;
+      temp_OrbitalSet->HalfG = dynamic_cast<SplineAdoptor<double,3> *>(OrbitalSet)->HalfG;
       new_OrbitalSet = temp_OrbitalSet;
     }
     else
@@ -395,6 +417,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     //set the internal parameters
     setTiling(new_OrbitalSet,numOrbs);
     OrbitalSet = new_OrbitalSet;
+    //Ok now we have a tiled orbital set
   }
 #endif
 #ifdef Ye_debug
@@ -460,14 +483,14 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (useGPU == "yes" || useGPU == "1")
   {
     app_log() << "Initializing GPU data structures.\n";
-    OrbitalSet->initGPU();
+    dynamic_cast<EinsplineSetExtended<double>*>(OrbitalSet)->initGPU();
   }
 #endif
   spo_timer->stop();
   return OrbitalSet;
 }
 
-SPOSet* EinsplineSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info)
+SPOSet<>* EinsplineSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info)
 {
   update_token(__FILE__,__LINE__,"createSPOSet(cur,input_info)");
 
@@ -493,7 +516,7 @@ SPOSet* EinsplineSetBuilder::createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_
   int norb=input_info.max_index();
   H5OrbSet aset(H5FileName, spinSet, norb);
 
-  SPOSet* bspline_zd=MixedSplineReader->create_spline_set(spinSet,cur,input_info);
+  SPOSet<>* bspline_zd=MixedSplineReader->create_spline_set(spinSet,cur,input_info);
   //APP_ABORT_TRACE(__FILE__,__LINE__,"DONE");
   if(bspline_zd)
     SPOSetMap[aset] = bspline_zd;

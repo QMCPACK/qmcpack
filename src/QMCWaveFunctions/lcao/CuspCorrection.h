@@ -77,7 +77,7 @@ class CuspCorrection
   typedef QMCTraits::RealType RealType;
   typedef QMCTraits::ValueType ValueType;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
-  typedef SPOSet* SPOSetPtr;
+  typedef SPOSet<Batching::SINGLE>* SPOSetPtr;
 
 public:
   inline RealType phiBar(RealType r)
@@ -153,7 +153,7 @@ void computeRadialPhiBar(ParticleSet* targetP,
                          ParticleSet* sourceP,
                          int curOrb_,
                          int curCenter_,
-                         SPOSet* Phi,
+                         SPOSet<Batching::SINGLE>* Phi,
                          Vector<QMCTraits::RealType>& xgrid,
                          Vector<QMCTraits::RealType>& rad_orb,
                          const CuspCorrectionParameters& data);

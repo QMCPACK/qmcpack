@@ -29,7 +29,7 @@ class ParticleSet;
 struct JABBuilder: public WaveFunctionComponentBuilder
 {
 
-  JABBuilder(ParticleSet& p, TrialWaveFunction& psi,
+  JABBuilder(ParticleSet& p, TrialWaveFunction<>& psi,
              PtclPoolType& psets):WaveFunctionComponentBuilder(p,psi), ptclPool(psets) {}
 
   bool put(xmlNodePtr cur);

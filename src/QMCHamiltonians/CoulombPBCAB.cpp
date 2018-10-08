@@ -41,7 +41,7 @@ CoulombPBCAB::CoulombPBCAB(ParticleSet& ions, ParticleSet& elns,
   app_log() << "  Number of k vectors " << AB->Fk.size() << std::endl;
 }
 
-QMCHamiltonianBase* CoulombPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+QMCHamiltonianBase* CoulombPBCAB::makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
 {
   CoulombPBCAB* myclone=new CoulombPBCAB(PtclA,qp,ComputeForces);
   myclone->FirstForceIndex = FirstForceIndex;

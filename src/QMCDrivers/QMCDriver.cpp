@@ -49,7 +49,8 @@ typedef int TraceManager;
 namespace qmcplusplus
 {
 
-QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool)
+template<Batching batching>
+QMCDriver<batching>::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction<batching>& psi, QMCHamiltonian& h, WaveFunctionPool& ppool)
   : MPIObjectBase(0), branchEngine(0), W(w), Psi(psi), H(h), psiPool(ppool),
     Estimators(0),Traces(0), qmcNode(NULL), wOut(0)
 {
@@ -149,15 +150,16 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamilt
   checkpointTimer = TimerManager.createTimer("checkpoint::recordBlock", timer_level_medium);
 }
 
-QMCDriver::~QMCDriver()
+template<Batching batching>
+QMCDriver<batching>::~QMCDriver()
 {
   delete_iter(Rng.begin(),Rng.end());
 }
-
-void QMCDriver::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
+template<Batching batching>
+void QMCDriver<batching>::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction<>* psi)
 {
   H1.push_back(h);
-  Psi1.push_back(psi);
+  Psi1.push_back(dynamic_cast<TrialWaveFunction<batching>*>(psi));
 }
 
 /** process a <qmc/> element
@@ -175,7 +177,9 @@ void QMCDriver::add_H_and_Psi(QMCHamiltonian* h, TrialWaveFunction* psi)
  * - initialize Estimators
  * - initialize Walkers
  */
-void QMCDriver::process(xmlNodePtr cur)
+
+template<Batching batching>
+void QMCDriver<batching>::QMCDriver::process(xmlNodePtr cur)
 {
   deltaR.resize(W.getTotalNum());
   drift.resize(W.getTotalNum());
@@ -230,7 +234,8 @@ void QMCDriver::process(xmlNodePtr cur)
   branchEngine->advanceQMCCounter();
 }
 
-void QMCDriver::setStatus(const std::string& aname, const std::string& h5name, bool append)
+template<Batching batching>
+void QMCDriver<batching>::setStatus(const std::string& aname, const std::string& h5name, bool append)
 {
   RootName = aname;
   app_log() << "\n========================================================="
@@ -250,7 +255,8 @@ void QMCDriver::setStatus(const std::string& aname, const std::string& h5name, b
 /** Read walker configurations from *.config.h5 files
  * @param wset list of xml elements containing mcwalkerset
  */
-void QMCDriver::putWalkers(std::vector<xmlNodePtr>& wset)
+template<Batching batching>
+void QMCDriver<batching>::putWalkers(std::vector<xmlNodePtr>& wset)
 {
   if(wset.empty()) return;
   int nfile=wset.size();
@@ -277,7 +283,8 @@ void QMCDriver::putWalkers(std::vector<xmlNodePtr>& wset)
     qmc_common.is_restart=false;
 }
 
-std::string QMCDriver::getRotationName( std::string RootName)
+template<Batching batching>
+std::string QMCDriver<batching>::getRotationName( std::string RootName)
 {
   std::string r_RootName;
   if(rotation % 2 == 0)
@@ -292,7 +299,8 @@ std::string QMCDriver::getRotationName( std::string RootName)
   return r_RootName;
 }
 
-std::string QMCDriver::getLastRotationName( std::string RootName)
+template<Batching batching>
+std::string QMCDriver<batching>::getLastRotationName( std::string RootName)
 {
   std::string r_RootName;
   if((rotation -1)%2 == 0)
@@ -306,7 +314,8 @@ std::string QMCDriver::getLastRotationName( std::string RootName)
   return r_RootName;
 }
 
-void QMCDriver::adiosCheckpoint(int block)
+template<Batching batching>
+void QMCDriver<batching>::adiosCheckpoint(int block)
 {
 #ifdef HAVE_ADIOS
   int64_t adios_handle;
@@ -368,7 +377,8 @@ void QMCDriver::adiosCheckpoint(int block)
 #endif
 }
 
-void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
+template<Batching batching>
+void QMCDriver<batching>::adiosCheckpointFinal(int block, bool dumpwalkers)
 {
 #ifdef HAVE_ADIOS
   int64_t adios_handle;
@@ -432,7 +442,8 @@ void QMCDriver::adiosCheckpointFinal(int block, bool dumpwalkers)
 #endif
 }
 
-void QMCDriver::recordBlock(int block)
+template<Batching batching>
+void QMCDriver<batching>::recordBlock(int block)
 {
   if(DumpConfig && block % Period4CheckPoint == 0)
   {
@@ -451,7 +462,8 @@ void QMCDriver::recordBlock(int block)
   }
 }
 
-bool QMCDriver::finalize(int block, bool dumpwalkers)
+template<Batching batching>
+bool QMCDriver<batching>::finalize(int block, bool dumpwalkers)
 {
   if(ADIOS::useADIOS())
   {
@@ -480,8 +492,9 @@ bool QMCDriver::finalize(int block, bool dumpwalkers)
 /** Add walkers to the end of the ensemble of walkers.
  * @param nwalkers number of walkers to add
  */
-void
-QMCDriver::addWalkers(int nwalkers)
+
+template<Batching batching>
+void QMCDriver<batching>::addWalkers(int nwalkers)
 {
   if(nwalkers>0)
   {
@@ -511,7 +524,8 @@ QMCDriver::addWalkers(int nwalkers)
   ////myComm->allreduce(nw);
 }
 
-void QMCDriver::setWalkerOffsets()
+template<Batching batching>
+void QMCDriver<batching>::setWalkerOffsets()
 {
   std::vector<int> nw(myComm->size(),0),nwoff(myComm->size()+1,0);
   nw[myComm->rank()]=W.getActiveWalkers();
@@ -540,7 +554,8 @@ void QMCDriver::setWalkerOffsets()
  *   -- 0 = dump after the completion of a qmc section
  *   -- n = dump after n blocks
  */
-bool QMCDriver::putQMCInfo(xmlNodePtr cur)
+template<Batching batching>
+bool QMCDriver<batching>::putQMCInfo(xmlNodePtr cur)
 {
   if(!IsQMCDriver)
   {
@@ -633,7 +648,8 @@ bool QMCDriver::putQMCInfo(xmlNodePtr cur)
   return (W.getActiveWalkers()>0);
 }
 
-xmlNodePtr QMCDriver::getQMCNode()
+template<Batching batching>
+xmlNodePtr QMCDriver<batching>::getQMCNode()
 {
   xmlNodePtr newqmc = xmlCopyNode(qmcNode,1);
   xmlNodePtr current_ptr=NULL;
@@ -660,6 +676,11 @@ xmlNodePtr QMCDriver::getQMCNode()
   getContent(CurrentStep,current_ptr);
   return newqmc;
 }
+
+template class QMCDriver<Batching::SINGLE>;
+#ifdef QMC_CUDA
+template class QMCDriver<Batching::BATCHED>;
+#endif
 
 }
 

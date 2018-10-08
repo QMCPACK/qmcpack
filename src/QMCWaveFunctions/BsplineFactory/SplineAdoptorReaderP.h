@@ -25,30 +25,37 @@
  */
 #ifndef QMCPLUSPLUS_EINSPLINE_ADOPTOR_READERP_H
 #define QMCPLUSPLUS_EINSPLINE_ADOPTOR_READERP_H
+#include <fftw3.h>
 #include <mpi/collectives.h>
 #include <mpi/point2point.h>
+#include "QMCWaveFunctions/BsplineFactory/BsplineReaderBase.h"
+#include "QMCWaveFunctions/BsplineFactory/BsplineSet.h"
+#include "QMCWaveFunctions/einspline_helper.hpp"
+#include "Utilities/ProgressReportEngine.h"
+#include "qmc_common.h"
+#include "QMCWaveFunctions/BsplineFactory/SplineAdoptor.h"
 
 namespace qmcplusplus
 {
 
 /** General SplineAdoptorReader to handle any unitcell
  */
-template<typename SA>
+template<typename SA, Batching batching>
 struct SplineAdoptorReader: public BsplineReaderBase
 {
-  typedef SA adoptor_type;
-  typedef typename adoptor_type::DataType    DataType;
-  typedef typename adoptor_type::SplineType SplineType;
+  //typedef SA adoptor_type;
+  typedef typename SA::DataType    DataType;
+  typedef typename SA::SplineType SplineType;
 
   Array<std::complex<double>,3> FFTbox;
   Array<double,3> splineData_r, splineData_i;
   double rotate_phase_r, rotate_phase_i;
   UBspline_3d_d* spline_r;
   UBspline_3d_d* spline_i;
-  BsplineSet<adoptor_type>* bspline;
+  BsplineSet<SA, batching>* bspline;
   fftw_plan FFTplan;
 
-  SplineAdoptorReader(EinsplineSetBuilder* e)
+  SplineAdoptorReader(SplineBuilder* e)
     : BsplineReaderBase(e), spline_r(NULL), spline_i(NULL),
       bspline(0), FFTplan(NULL)
   {}
@@ -128,12 +135,12 @@ struct SplineAdoptorReader: public BsplineReaderBase
     *target = (multi_UBspline_3d_d*) bspline->MultiSpline;
   }
 
-  SPOSet* create_spline_set(int spin, const BandInfoGroup& bandgroup)
+  SPOSet<>* create_spline_set(int spin, const BandInfoGroup& bandgroup)
   {
     ReportEngine PRE("SplineC2XAdoptorReader","create_spline_set(spin,SPE*)");
     //Timer c_prep, c_unpack,c_fft, c_phase, c_spline, c_newphase, c_h5, c_init;
     //double t_prep=0.0, t_unpack=0.0, t_fft=0.0, t_phase=0.0, t_spline=0.0, t_newphase=0.0, t_h5=0.0, t_init=0.0;
-    bspline=new BsplineSet<adoptor_type>;
+    bspline=new BsplineSet<SA, batching>;
     app_log() << "  AdoptorName = " << bspline->AdoptorName << std::endl;
     if(bspline->is_complex)
       app_log() << "  Using complex einspline table" << std::endl;
@@ -150,14 +157,14 @@ struct SplineAdoptorReader: public BsplineReaderBase
 
     Ugrid xyz_grid[3];
 
-    typename adoptor_type::BCType xyz_bc[3];
+    typename SA::BCType xyz_bc[3];
     bool havePsig=set_grid(bspline->HalfG,xyz_grid, xyz_bc);
     if(!havePsig)
     {
       APP_ABORT("EinsplineAdoptorReader needs psi_g. Set precision=\"double\".");
     }
     bspline->create_spline(xyz_grid,xyz_bc);
-    int TwistNum = mybuilder->TwistNum;
+    int TwistNum = mybuilder->getTwistNum();
     std::ostringstream oo;
     oo<<bandgroup.myName << ".g"<<MeshSize[0]<<"x"<<MeshSize[1]<<"x"<<MeshSize[2]<<".h5";
     std::string splinefile= oo.str(); //bandgroup.myName+".h5";
@@ -180,7 +187,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
       {
         int sizeD=0;
         foundspline=h5f.read(sizeD,"sizeof");
-        foundspline = (sizeD == sizeof(typename adoptor_type::DataType));
+        foundspline = (sizeD == sizeof(typename SA::DataType));
       }
       if(foundspline)
       {
@@ -236,7 +243,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
         hdf_archive h5f;
         h5f.create(splinefile);
         h5f.write(bspline->AdoptorName,"adoptor_name");
-        int sizeD=sizeof(typename adoptor_type::DataType);
+        int sizeD=sizeof(typename SA::DataType);
         h5f.write(sizeD,"sizeof");
         bspline->write_splines(h5f);
         h5f.close();
@@ -257,17 +264,17 @@ struct SplineAdoptorReader: public BsplineReaderBase
    */
   inline void fft_spline(Vector<std::complex<double> >& cG, int ti)
   {
-    unpack4fftw(cG,mybuilder->Gvecs[0],MeshSize,FFTbox);
+    unpack4fftw(cG,mybuilder->getGvecs()[0],MeshSize,FFTbox);
     fftw_execute (FFTplan);
     if(bspline->is_complex)
     {
-      fix_phase_rotate_c2c(FFTbox,splineData_r, splineData_i,mybuilder->TwistAngles[ti], rotate_phase_r, rotate_phase_i);
+      fix_phase_rotate_c2c(FFTbox,splineData_r, splineData_i,mybuilder->getTwistAngles()[ti], rotate_phase_r, rotate_phase_i);
       einspline::set(spline_r,splineData_r.data());
       einspline::set(spline_i,splineData_i.data());
     }
     else
     {
-      fix_phase_rotate_c2r(FFTbox,splineData_r, mybuilder->TwistAngles[ti], rotate_phase_r, rotate_phase_i);
+      fix_phase_rotate_c2r(FFTbox,splineData_r, mybuilder->getTwistAngles()[ti], rotate_phase_r, rotate_phase_i);
       einspline::set(spline_r,splineData_r.data());
     }
   }
@@ -289,10 +296,10 @@ struct SplineAdoptorReader: public BsplineReaderBase
 
     app_log() << "Start transforming plane waves to 3D B-Splines." << std::endl;
     hdf_archive h5f(&band_group_comm,false);
-    Vector<std::complex<double> > cG(mybuilder->Gvecs[0].size());
+    Vector<std::complex<double> > cG(mybuilder->getGvecs()[0].size());
     const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
     if(band_group_comm.isGroupLeader())
-      h5f.open(mybuilder->H5FileName,H5F_ACC_RDONLY);
+      h5f.open(mybuilder->getH5FileName(),H5F_ACC_RDONLY);
     for(int iorb=iorb_first; iorb<iorb_last; iorb++)
     {
       if(band_group_comm.isGroupLeader())
@@ -334,6 +341,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
     int nx=MeshSize[0];
     int ny=MeshSize[1];
     int nz=MeshSize[2];
+    // these shadow the classes splineData_r
     Array<DataType,3> splineData_r(nx,ny,nz),splineData_i(ny,ny,nz);
     Array<std::complex<double>,3> rawData(nx,ny,nz);
     const std::vector<BandInfo>& cur_bands=bandgroup.myBands;
@@ -346,7 +354,7 @@ struct SplineAdoptorReader: public BsplineReaderBase
       {
         std::string path=psi_r_path(cur_bands[iorb].TwistIndex,spin,cur_bands[iorb].BandIndex);
         HDFAttribIO<Array<std::complex<double>,3> >  h_splineData(rawData);
-        h_splineData.read(mybuilder->H5FileID, path.c_str());
+        h_splineData.read(mybuilder->getH5FileID(), path.c_str());
         simd::copy(splineData_r.data(),splineData_i.data(),rawData.data(),rawData.size());
       }
       mpi::bcast(*myComm,splineData_r);

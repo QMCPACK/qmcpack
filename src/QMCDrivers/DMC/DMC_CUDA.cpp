@@ -26,6 +26,7 @@
 #include "Utilities/RunTimeManager.h"
 #include "Message/CommOperators.h"
 #include "type_traits/scalar_traits.h"
+#include "QMCWaveFunctions/TrialWaveFunctionBatched.h"
 #ifdef USE_NVTX_API
 #include <nvToolsExt.h>
 #endif
@@ -35,9 +36,9 @@ namespace qmcplusplus
 {
 
 /// Constructor.
-DMCcuda::DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi,
+DMCcuda::DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction<Batching::BATCHED>& psi,
                  QMCHamiltonian& h,WaveFunctionPool& ppool):
-  QMCDriver(w,psi,h,ppool), myWarmupSteps(0), Mover(0),
+  QMCDriver<Batching::BATCHED>(w,psi,h,ppool), myWarmupSteps(0), Mover(0),
   NLop(w.getTotalNum()),
   ResizeTimer("DMCcuda::resize"),
   DriftDiffuseTimer("DMCcuda::Drift_Diffuse"),
@@ -157,10 +158,11 @@ bool DMCcuda::run()
       DriftDiffuseTimer.start();
       for(int iat=0; iat<nat; iat++)
       {
-        Psi.calcGradient (W, iat, oldG);
+        dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).calcGradient (W, iat, oldG);
         //create a 3N-Dimensional Gaussian with variance=1
         makeGaussRandomWithEngine(delpos,Random);
-        Psi.addGradient(W, iat, oldG);
+        dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi)
+	    .addGradient(W, iat, oldG);
         for(int iw=0; iw<nw; iw++)
         {
           delpos[iw] *= m_sqrttau;
@@ -174,7 +176,7 @@ bool DMCcuda::run()
           R2prop[iw] += dot(delpos[iw], delpos[iw]);
         }
         W.proposeMove_GPU(newpos, iat);
-        Psi.calcRatio(W,iat,ratios,newG, newL);
+        dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).calcRatio(W,iat,ratios,newG, newL);
         accepted.clear();
         std::vector<bool> acc(nw, true);
         if (W.UseBoundBox)
@@ -186,9 +188,9 @@ bool DMCcuda::run()
           logGf_v[iw] = -m_oneover2tau * dot(delpos[iw], delpos[iw]);
           rand_v[iw] = Random();
         }
-        Psi.addRatio(W, iat, ratios, newG, newL);
+        dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).addRatio(W, iat, ratios, newG, newL);
 #ifdef QMC_COMPLEX
-        Psi.convertRatiosFromComplexToReal(ratios, ratios_real);
+        dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).convertRatiosFromComplexToReal(ratios, ratios_real);
 #endif
         for(int iw=0; iw<nw; ++iw)
         {
@@ -221,10 +223,10 @@ bool DMCcuda::run()
         }
         W.acceptMove_GPU(acc);
         if (accepted.size())
-          Psi.update(accepted,iat);
+          dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).update(accepted,iat);
       }
       DriftDiffuseTimer.stop();
-      Psi.gradLapl(W, grad, lapl);
+      dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).gradLapl(W, grad, lapl);
       HTimer.start();
       if (UseTMove)
         H.evaluate (W, LocalEnergy, Txy);
@@ -256,8 +258,8 @@ bool DMCcuda::run()
         }
         if (accepted.size())
         {
-          Psi.ratio(accepted,iatList, accPos, ratios, newG, newL);
-          Psi.update(accepted,iatList);
+          dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).ratio(accepted,iatList, accPos, ratios, newG, newL);
+          dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).update(accepted,iatList);
           for (int i=0; i<accepted.size(); i++)
             accepted[i]->R[iatList[i]] = accPos[i];
           W.NLMove_GPU (accepted, accPos, iatList);
@@ -313,7 +315,7 @@ bool DMCcuda::run()
       BranchTimer.stop();
     }
     while(step<nSteps);
-    if ( nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 ) Psi.recompute(W, true);
+    if ( nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 ) dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).recompute(W, true);
     double accept_ratio = (double)nAccept/(double)(nAccept+nReject);
     Estimators->stopBlock(accept_ratio);
     nAcceptTot += nAccept;
@@ -345,7 +347,7 @@ void DMCcuda::resetUpdateEngine()
     //load walkers if they were saved
     W.loadEnsemble();
     branchEngine->initWalkerController(W,false,false);
-    Mover = new DMCUpdatePbyPWithRejectionFast(W,Psi,H,Random);
+    Mover = new DMCUpdatePbyPWithRejectionFast(W,dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi),H,Random);
     Mover->resetRun(branchEngine,Estimators);
     //Mover->initWalkersForPbyP(W.begin(),W.end());
   }
@@ -386,7 +388,7 @@ void DMCcuda::resetRun()
     gpu::cuda_memory_manager.report();
   // Compute the size of data needed for each walker on the GPU card
   PointerPool<Walker_t::cuda_Buffer_t > pool;
-  Psi.reserve (pool);
+  dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).reserve (pool);
   app_log() << "Each walker requires "
             << pool.getTotalSize() * sizeof(CudaValueType)
             << " bytes in GPU memory.\n";
@@ -405,7 +407,7 @@ void DMCcuda::resetRun()
   W.updateLists_GPU();
   std::vector<RealType> logPsi(W.WalkerList.size(), 0.0);
   //Psi.evaluateLog(W, logPsi);
-  Psi.recompute(W, true);
+  dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).recompute(W, true);
   Estimators->start(nBlocks, true);
 }
 

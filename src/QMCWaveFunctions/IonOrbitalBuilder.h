@@ -28,7 +28,7 @@ class IonOrbitalBuilder: public WaveFunctionComponentBuilder
 
 public:
 
-  IonOrbitalBuilder(ParticleSet& p, TrialWaveFunction& psi,
+  IonOrbitalBuilder(ParticleSet& p, TrialWaveFunction<>& psi,
                     PtclPoolType& psets);
 
   bool put(xmlNodePtr cur);

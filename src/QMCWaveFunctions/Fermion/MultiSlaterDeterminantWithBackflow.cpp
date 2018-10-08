@@ -30,8 +30,12 @@ WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleS
   // mmorales: the proxy classes read from the particle set inside BFTrans
   BackflowTransformation *tr = BFTrans->makeClone(tqp);
   tr->resetTargetParticleSet(tqp);
-  SPOSetProxyForMSD* spo_up_C = new SPOSetProxyForMSD(spo_up->refPhi->makeClone(),FirstIndex_up,LastIndex_up);
-  SPOSetProxyForMSD* spo_dn_C = new SPOSetProxyForMSD(spo_dn->refPhi->makeClone(),FirstIndex_dn,LastIndex_dn);
+  SPOSetProxyForMSD<>* spo_up_C = new SPOSetProxyForMSD<>(dynamic_cast<SPOSet<Batching::SINGLE>*>(spo_up->refPhi->makeClone()),
+						      FirstIndex_up,
+						      LastIndex_up);
+  SPOSetProxyForMSD<>* spo_dn_C = new SPOSetProxyForMSD<>(dynamic_cast<SPOSet<Batching::SINGLE>*>(spo_dn->refPhi->makeClone()),
+						      FirstIndex_dn,
+						      LastIndex_dn);
   spo_up_C->occup= spo_up->occup;
   spo_dn_C->occup= spo_dn->occup;
   spo_up_C->refPhi->resetTargetParticleSet(tr->QP);
@@ -48,14 +52,14 @@ WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleS
   }
   for(int i=0; i<dets_up.size(); i++)
   {
-    DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) dets_up[i]->makeCopy((SPOSetPtr) clone->spo_up);
+    DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) dets_up[i]->makeCopy((SPOSet<>*) clone->spo_up);
     dclne->BFTrans=tr;
     dclne->resetTargetParticleSet(tr->QP);
     clone->dets_up.push_back(dclne);
   }
   for(int i=0; i<dets_dn.size(); i++)
   {
-    DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) dets_dn[i]->makeCopy((SPOSetPtr) clone->spo_dn);
+    DiracDeterminantWithBackflow* dclne = (DiracDeterminantWithBackflow*) dets_dn[i]->makeCopy((SPOSet<>*) clone->spo_dn);
     dclne->BFTrans=tr;
     dclne->resetTargetParticleSet(tr->QP);
     clone->dets_dn.push_back(dclne);
@@ -849,12 +853,14 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
         for(int i=0; i<dets_up.size(); i++)
         {
           spo_up->prepareFor(i);
-          dets_up[i]->evaluateDerivatives(BFTrans->QP,optvars,i,dpsia_up,dGa_up,dLa_up);
+          dynamic_cast<DiracDeterminantWithBackflow*>(dets_up[i])->
+			    evaluateDerivatives(BFTrans->QP,optvars,i,dpsia_up,dGa_up,dLa_up);
         }
         for(int i=0; i<dets_dn.size(); i++)
         {
           spo_dn->prepareFor(i);
-          dets_dn[i]->evaluateDerivatives(BFTrans->QP,optvars,i,dpsia_dn,dGa_dn,dLa_dn);
+          dynamic_cast<DiracDeterminantWithBackflow*>(dets_dn[i])->
+			   evaluateDerivatives(BFTrans->QP,optvars,i,dpsia_dn,dGa_dn,dLa_dn);
         }
         for(int pa=0; pa<numBFprm; pa++)
         {

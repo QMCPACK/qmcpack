@@ -37,7 +37,7 @@ public:
   typedef MCWalkerConfiguration::Walker_t Walker_t;
 
   ///Constructor.
-  QMCCostFunctionCUDA( MCWalkerConfiguration& w, TrialWaveFunction& psi,
+  QMCCostFunctionCUDA( MCWalkerConfiguration& w, TrialWaveFunction<>& psi,
                        QMCHamiltonian& h);
 
   ///Destructor
@@ -50,9 +50,9 @@ public:
 
 protected:
   Matrix<Return_t> Records;
-  typedef TrialWaveFunction::RealMatrix_t  RealMatrix_t;
-  typedef TrialWaveFunction::ValueMatrix_t ValueMatrix_t;
-  typedef TrialWaveFunction::GradMatrix_t  GradMatrix_t;
+  typedef TrialWaveFunction<>::RealMatrix_t  RealMatrix_t;
+  typedef TrialWaveFunction<>::ValueMatrix_t ValueMatrix_t;
+  typedef TrialWaveFunction<>::GradMatrix_t  GradMatrix_t;
   /** Temp derivative properties and Hderivative properties of all the walkers
   */
   std::vector<std::vector<Return_t> >  TempDerivRecords;

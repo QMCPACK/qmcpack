@@ -43,7 +43,7 @@ class FakeUpdate : public QMCUpdateBase
 {
 public:
 
-  FakeUpdate(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+  FakeUpdate(MCWalkerConfiguration& w, TrialWaveFunction<>& psi, QMCHamiltonian& h,
              RandomGenerator_t& rg) : QMCUpdateBase(w, psi, h, rg) {}
 
   void advanceWalker(Walker_t& thisWalker, bool recompute) override {
@@ -65,7 +65,7 @@ TEST_CASE("QMCUpdate", "[drivers]")
   FakeRandom rg;
 
   QMCHamiltonian h;
-  TrialWaveFunction psi(c);
+  TrialWaveFunction<> psi(c);
   FakeUpdate update(elec, psi, h, rg);
 
   update.put(NULL);
@@ -79,7 +79,7 @@ TEST_CASE("CloneManager", "[drivers]")
   OHMMS::Controller->initialize(0, NULL);
   Communicate *c = OHMMS::Controller;
 
-  HamiltonianPool hpool(c);
+  HamiltonianPool<Batching::SINGLE>  hpool(c);
   CloneManager cm;
 
   //double acc_ratio = cm.acceptRatio();

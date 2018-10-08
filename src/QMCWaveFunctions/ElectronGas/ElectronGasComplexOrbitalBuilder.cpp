@@ -48,7 +48,7 @@ EGOSet::EGOSet(const std::vector<PosType>& k, const std::vector<RealType>& k2, c
 }
 
 ElectronGasComplexOrbitalBuilder::ElectronGasComplexOrbitalBuilder(ParticleSet& els,
-    TrialWaveFunction& psi):
+    TrialWaveFunction<>& psi):
   WaveFunctionComponentBuilder(els,psi)
 {
 }
@@ -99,7 +99,7 @@ ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur)
 {
 }
 
-SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
+SPOSet<>* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   app_log() << "ElectronGasSPOBuilder::createSPOSet " << std::endl;
   int nc=0;
@@ -134,7 +134,7 @@ SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 }
 
 
-SPOSet* ElectronGasSPOBuilder::createSPOSetFromIndices(indices_t& indices)
+SPOSet<>* ElectronGasSPOBuilder::createSPOSetFromIndices(indices_t& indices)
 {
   egGrid.createGrid(indices);
   EGOSet* spo = new EGOSet(egGrid.kpt,egGrid.mk2,egGrid.deg);

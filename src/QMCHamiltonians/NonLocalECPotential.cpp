@@ -32,7 +32,7 @@ void NonLocalECPotential::resetTargetParticleSet(ParticleSet& P)
  *\param psi trial wavefunction
  */
 NonLocalECPotential::NonLocalECPotential(ParticleSet& ions, ParticleSet& els,
-    TrialWaveFunction& psi, bool computeForces, bool useVP):
+    TrialWaveFunction<>& psi, bool computeForces, bool useVP):
   IonConfig(ions), Psi(psi), UseTMove(TMOVE_OFF), myRNG(&Random),
   nonLocalOps(els.getTotalNum()), ComputeForces(computeForces),
   UseVP(useVP), ForceBase(ions,els), Peln(els)
@@ -336,7 +336,7 @@ NonLocalECPotential::add(int groupID, NonLocalECPComponent* ppot)
   if(UseVP && ppot->VP==0) ppot->initVirtualParticle(Peln);
 }
 
-QMCHamiltonianBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+QMCHamiltonianBase* NonLocalECPotential::makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
 {
   NonLocalECPotential* myclone=new NonLocalECPotential(IonConfig,qp,psi,
       ComputeForces, UseVP);

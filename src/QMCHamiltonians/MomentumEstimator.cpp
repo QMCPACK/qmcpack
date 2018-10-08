@@ -26,7 +26,7 @@
 namespace qmcplusplus
 {
 
-MomentumEstimator::MomentumEstimator(ParticleSet& elns, TrialWaveFunction& psi)
+MomentumEstimator::MomentumEstimator(ParticleSet& elns, TrialWaveFunction<>& psi)
   :M(40), refPsi(psi), Lattice(elns.Lattice), norm_nofK(1), hdf5_out(false)
 {
   UpdateMode.set(COLLECTABLE,1);
@@ -422,7 +422,7 @@ bool MomentumEstimator::get(std::ostream& os) const
 }
 
 QMCHamiltonianBase* MomentumEstimator::makeClone(ParticleSet& qp
-    , TrialWaveFunction& psi)
+    , TrialWaveFunction<>& psi)
 {
   MomentumEstimator* myclone=new MomentumEstimator(qp,psi);
   myclone->resize(kPoints,M);

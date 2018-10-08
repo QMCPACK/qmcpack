@@ -16,22 +16,25 @@
 #ifndef QMCPLUSPLUS_RMC_FACTORY_H
 #define QMCPLUSPLUS_RMC_FACTORY_H
 #include "QMCDrivers/QMCDriver.h"
-
+#include "Batching.h"
+#include "QMCApp/HamiltonianPool.h"
 namespace qmcplusplus
 {
-  class ParticleSetPool;
-  class HamiltonianPool;
+class ParticleSetPool;
 
-  struct RMCFactory
-  {
+template<Batching batching = Batching::SINGLE>
+struct RMCFactory
+{
     int RMCMode;
     xmlNodePtr myNode;
       RMCFactory (int vmode, xmlNodePtr cur):RMCMode (vmode), myNode (cur)
     {
     }
-    QMCDriver *create (MCWalkerConfiguration & w, TrialWaveFunction & psi,
+
+    QMCDriver<batching> *create (MCWalkerConfiguration & w, TrialWaveFunction<batching>& psi,
 		       QMCHamiltonian & h, ParticleSetPool & ptclpool,
-		       HamiltonianPool & hpool, WaveFunctionPool & ppool);
+		       HamiltonianPool<batching> & hpool, WaveFunctionPool & ppool);
+    
   };
 }
 

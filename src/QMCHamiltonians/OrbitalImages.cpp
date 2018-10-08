@@ -16,7 +16,7 @@
 #include <OhmmsData/AttributeSet.h>
 #include <QMCWaveFunctions/SPOSetBuilderFactory.h>
 #include <Utilities/unit_conversion.h>
-
+#include "QMCWaveFunctions/SPOSet.h"
 
 namespace qmcplusplus
 {
@@ -32,7 +32,7 @@ namespace qmcplusplus
   }
 
   
-  QMCHamiltonianBase* OrbitalImages::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
+  QMCHamiltonianBase* OrbitalImages::makeClone(ParticleSet& P, TrialWaveFunction<>& Psi)
   {
     //cloning shouldn't strictly be necessary, but do it right just in case
     OrbitalImages* clone = new OrbitalImages(*this);
@@ -190,7 +190,7 @@ namespace qmcplusplus
       APP_ABORT("OrbitalImages::put  must have at least one sposet");
     for(int i=0;i<sposet_names.size();++i)
     {
-      SPOSet* sposet = get_sposet(sposet_names[i]);
+      SPOSet<>* sposet = get_sposet(sposet_names[i]);
       if(sposet==0)
         APP_ABORT("OrbitalImages::put  sposet "+sposet_names[i]+" does not exist");
       sposets.push_back(sposet);
@@ -254,7 +254,7 @@ namespace qmcplusplus
     for(int i=0;i<sposet_names.size();++i)
     {
       std::vector<int>& sposet_inds = *sposet_indices[i];
-      SPOSet& sposet = *sposets[i];
+      SPOSet<>& sposet = *sposets[i];
       if(sposet_inds.size()==sposet.size())
         app_log()<<pad<<"  "<<sposet_names[i]<<" = all "<<sposet.size()<<" orbitals"<< std::endl;
       else
@@ -318,7 +318,7 @@ namespace qmcplusplus
         const std::string& sposet_name = sposet_names[i];
         app_log()<<"  evaluating orbitals in "+sposet_name+" on the grid"<< std::endl;
         std::vector<int>& sposet_inds = *sposet_indices[i];
-        SPOSet& sposet = *sposets[i];
+        SPOSet<Batching::SINGLE>& sposet = *(dynamic_cast<SPOSet<Batching::SINGLE>*>(sposets[i]));
         int nspo = sposet_inds.size();
         
         //set the batch size

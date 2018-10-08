@@ -58,7 +58,7 @@ MPC_CUDA::initBreakup()
 }
 
 QMCHamiltonianBase*
-MPC_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+MPC_CUDA::makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
 {
   // return new MPC(qp, Ecut);
   MPC_CUDA* newMPC = new MPC_CUDA(*this);

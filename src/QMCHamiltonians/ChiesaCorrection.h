@@ -23,11 +23,11 @@ namespace qmcplusplus
 class ChiesaCorrection : public QMCHamiltonianBase
 {
 private:
-  const TrialWaveFunction &psi_ref;
+  const TrialWaveFunction<> &psi_ref;
   ParticleSet &ptcl_ref;
 
 public:
-  ChiesaCorrection (ParticleSet& ptcl, const TrialWaveFunction &psi) :
+  ChiesaCorrection (ParticleSet& ptcl, const TrialWaveFunction<> &psi) :
     psi_ref(psi), ptcl_ref(ptcl)
   {
   }
@@ -48,7 +48,7 @@ public:
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi);
 };
 
 }

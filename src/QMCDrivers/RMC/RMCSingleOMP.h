@@ -25,14 +25,17 @@ namespace qmcplusplus
 /** @ingroup QMCDrivers  ParticleByParticle
  * @brief Implements a RMC using threaded execution.
  */
-  class RMCSingleOMP:public QMCDriver, public CloneManager
+
+  class RMCSingleOMP:public QMCDriver<Batching::SINGLE>, public CloneManager
   {
   public:
+    using QDT = QMCDriver<Batching::SINGLE>;
+    using QDT::W;
     /// Constructor.
     typedef PtclAttribTraits::ParticlePos_t ParticlePos_t;
     typedef Reptile::ReptileConfig_t ReptileConfig_t;
 
-      RMCSingleOMP (MCWalkerConfiguration & w, TrialWaveFunction & psi,
+      RMCSingleOMP (MCWalkerConfiguration & w, TrialWaveFunction<Batching::SINGLE>& psi,
 		    QMCHamiltonian & h, WaveFunctionPool & ppool);
     bool run ();
     bool put (xmlNodePtr cur);
@@ -76,7 +79,7 @@ namespace qmcplusplus
     void resetReptiles (std::vector< ParticlePos_t > &walker_samps, int nbeads,
 			RealType tau);
     ///copy constructor
-      RMCSingleOMP (const RMCSingleOMP & a):QMCDriver (a), CloneManager (a)
+      RMCSingleOMP (const RMCSingleOMP & a):QMCDriver<Batching::SINGLE> (a), CloneManager (a)
     {
     }
     /// Copy operator (disabled).

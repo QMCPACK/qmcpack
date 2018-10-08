@@ -2,9 +2,10 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2018 QMCPACK developers.
 //
-// File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+// File developed by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
+//                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
 //
@@ -24,11 +25,12 @@ namespace qmcplusplus
 /** @ingroup QMCDrivers  ParticleByParticle
  * @brief Implements a VMC using particle-by-particle move. Threaded execution.
  */
-class VMCSingleOMP: public QMCDriver, public CloneManager
+class VMCSingleOMP: public QMCDriver<>, public CloneManager
 {
 public:
+  Batching B = Batching::SINGLE;
   /// Constructor.
-  VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+  VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction<>& psi, QMCHamiltonian& h,
                WaveFunctionPool& ppool);
   bool run();
   bool put(xmlNodePtr cur);
@@ -44,7 +46,7 @@ private:
   ///check the run-time environments
   void resetRun();
   ///copy constructor
-  VMCSingleOMP(const VMCSingleOMP& a): QMCDriver(a),CloneManager(a) { }
+  VMCSingleOMP(const VMCSingleOMP& a): QMCDriver<>(a),CloneManager(a) { }
   /// Copy operator (disabled).
   VMCSingleOMP& operator=(const VMCSingleOMP&)
   {

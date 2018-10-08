@@ -21,6 +21,7 @@
 
 namespace qmcplusplus
 {
+template<Batching batching = Batching::SINGLE>
 struct DMCFactory
 {
   bool PbyPUpdate, GPU;
@@ -29,9 +30,9 @@ struct DMCFactory
     PbyPUpdate(pbyp), myNode(cur), GPU(gpu)
   { }
 
-  QMCDriver* create(MCWalkerConfiguration& w,
-                    TrialWaveFunction& psi,
-                    QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool);
+  QMCDriver<batching>* create(MCWalkerConfiguration& w,
+                    TrialWaveFunction<batching>& psi,
+                    QMCHamiltonian& h, HamiltonianPool<batching>& hpool,WaveFunctionPool& ppool);
 };
 }
 

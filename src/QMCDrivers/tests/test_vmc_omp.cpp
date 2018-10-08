@@ -91,7 +91,7 @@ TEST_CASE("VMCSingleOMP", "[drivers][vmc]")
 
   CloneManager::clear_for_unit_tests();
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction<> psi = TrialWaveFunction<>(c);
   ConstantOrbital *orb = new ConstantOrbital;
   psi.addOrbital(orb, "Constant");
   psi.registerData(elec, elec.WalkerList[0]->DataSet);
@@ -105,7 +105,7 @@ TEST_CASE("VMCSingleOMP", "[drivers][vmc]")
 
   elec.resetWalkerProperty(); // get memory corruption w/o this
 
-  HamiltonianPool hpool(c);
+  HamiltonianPool<> hpool(c);
 
   WaveFunctionPool wpool(c);
 

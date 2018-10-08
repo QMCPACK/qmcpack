@@ -93,7 +93,7 @@ bool QMCHamiltonianBase::quantum_domain_valid(quantum_domains qdomain)
   return qdomain!=no_quantum_domain;
 }
 
-void QMCHamiltonianBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction& psi
+void QMCHamiltonianBase::add2Hamiltonian(ParticleSet& qp, TrialWaveFunction<>& psi
     ,QMCHamiltonian& targetH)
 {
   QMCHamiltonianBase* myclone=makeClone(qp,psi);

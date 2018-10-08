@@ -35,18 +35,21 @@ namespace qmcplusplus
  */
 class SlaterDetBuilder: public WaveFunctionComponentBuilder
 {
-
+  Batching B_;
 public:
 
-  typedef SlaterDet SlaterDeterminant_t;
+  typedef SlaterDet<> SlaterDeterminant_t;
   typedef MultiSlaterDeterminant MultiSlaterDeterminant_t;
-  typedef DiracDeterminantBase Det_t;
+  typedef DiracDeterminant<> Det_t;
   /** constructor
    * \param els reference to the electrons
    * \param psi reference to the wavefunction
    * \param ions reference to the ions
    */
-  SlaterDetBuilder(ParticleSet& els, TrialWaveFunction& psi, PtclPoolType& psets);
+  SlaterDetBuilder(ParticleSet& els,
+		   TrialWaveFunction<>& psi,
+		   PtclPoolType& psets,
+		   Batching batching = Batching::SINGLE);
 
   ~SlaterDetBuilder();
 
@@ -58,7 +61,7 @@ public:
 
 
 private:
-
+  Batching batching_;
   ///reference to a PtclPoolType
   PtclPoolType& ptclPool;
   SPOSetBuilderFactory* mySPOSetBuilderFactory;

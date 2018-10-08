@@ -46,6 +46,7 @@ IF ((NOT QMC_COMPLEX) AND (NOT QMC_MIXED_PRECISION) AND (NOT QMC_CUDA))
   ENDIF()
 ENDIF()
 
+
 ADD_EXECUTABLE(${UTEST_EXE} test_wf.cpp test_bspline_jastrow.cpp test_einset.cpp test_pw.cpp
                test_polynomial_eeI_jastrow.cpp test_dirac_det.cpp test_dirac_matrix.cpp
                test_wavefunction_factory.cpp ${MO_SRCS})

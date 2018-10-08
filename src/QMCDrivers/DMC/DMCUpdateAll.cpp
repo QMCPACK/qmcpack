@@ -24,7 +24,7 @@ namespace qmcplusplus
 
 /// Constructor.
 DMCUpdateAllWithRejection::DMCUpdateAllWithRejection(MCWalkerConfiguration& w,
-    TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg):
+    TrialWaveFunction<>& psi, QMCHamiltonian& h, RandomGenerator_t& rg):
   QMCUpdateBase(w,psi,h,rg)
 { 
   UpdatePbyP=false;
@@ -133,7 +133,7 @@ void DMCUpdateAllWithRejection::advanceWalker(Walker_t& thisWalker, bool recompu
  */
 /// Constructor.
 DMCUpdateAllWithKill::DMCUpdateAllWithKill(MCWalkerConfiguration& w,
-    TrialWaveFunction& psi, QMCHamiltonian& h, RandomGenerator_t& rg): QMCUpdateBase(w,psi,h,rg)
+    TrialWaveFunction<>& psi, QMCHamiltonian& h, RandomGenerator_t& rg): QMCUpdateBase(w,psi,h,rg)
 { 
   UpdatePbyP=false;
 }

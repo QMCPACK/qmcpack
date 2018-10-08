@@ -19,14 +19,14 @@
 
 #include "QMCDrivers/QMCCostFunctionCUDA.h"
 #include "Particle/MCWalkerConfiguration.h"
-#include "QMCWaveFunctions/TrialWaveFunction.h"
+#include "QMCWaveFunctions/TrialWaveFunctionBatched.h"
 #include "Message/CommOperators.h"
 
 namespace qmcplusplus
 {
 
 QMCCostFunctionCUDA::QMCCostFunctionCUDA
-( MCWalkerConfiguration& w, TrialWaveFunction& psi,
+( MCWalkerConfiguration& w, TrialWaveFunction<>& psi,
   QMCHamiltonian& h):
   QMCCostFunctionBase(w,psi,h)
 {
@@ -67,7 +67,7 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needD
     d_logpsi_dalpha.resize(nw, numParams);
     d_hpsioverpsi_dalpha.resize(nw, numParams);
   }
-  Psi.evaluateOptimizableLog(W, logpsi_new, newG, newL);
+  dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).evaluateOptimizableLog(W, logpsi_new, newG, newL);
   //    RealType factor = samplePsi2 ? 2.0 : 1.0;
   RealType factor = 2.0;
   // Add optimizable and non-optimizable gradients and Laplacians
@@ -101,7 +101,7 @@ QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needD
   W.copyWalkersToGPU(needDerivs);
   H_KE.evaluate (W, KE);
   if (needDerivs)
-    Psi.evaluateDerivatives(W, OptVariablesForPsi,
+    dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).evaluateDerivatives(W, OptVariablesForPsi,
                             d_logpsi_dalpha, d_hpsioverpsi_dalpha);
   wgt_tot = 0.0;
   for (int iw=0; iw<nw; iw++)
@@ -211,9 +211,9 @@ QMCCostFunctionCUDA::getConfigurations(const std::string& aroot)
   PointerPool<Walker_t::cuda_Buffer_t > pool;
   // Reserve memory only for optimizable parts of the wavefunction
   if (includeNonlocalH != "no")
-    Psi.reserve (pool, false);
+    dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).reserve (pool, false);
   else
-    Psi.reserve (pool, true);
+    dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).reserve (pool, true);
   app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CudaRealType)
             << " bytes in GPU memory.\n";
   // for (int iw=0; iw<W.WalkerList.size(); iw++) {
@@ -256,11 +256,11 @@ QMCCostFunctionCUDA::checkConfigurations()
   std::vector<GradType> dlogPsi_free(numWalkers);
   //Psi.evaluateDeltaLog(W, logPsi_free);
   if (includeNonlocalH != "no")
-    Psi.evaluateDeltaLog(W, logPsi_fixed, logPsi_free, dlogPsi_fixed, d2logPsi_fixed);
+    dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).evaluateDeltaLog(W, logPsi_fixed, logPsi_free, dlogPsi_fixed, d2logPsi_fixed);
   else
-    Psi.evaluateOptimizableLog (W, logPsi_free, dlogPsi_opt, d2logPsi_opt);
+    dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).evaluateOptimizableLog (W, logPsi_free, dlogPsi_opt, d2logPsi_opt);
   if (needGrads)
-    Psi.evaluateDerivatives (W, OptVariables, LogPsi_Derivs, LocE_Derivs);
+    dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).evaluateDerivatives (W, OptVariables, LogPsi_Derivs, LocE_Derivs);
   int nat = W.getTotalNum();
   MCWalkerConfiguration::iterator it(W.begin());
   MCWalkerConfiguration::iterator it_end(W.end());
@@ -371,10 +371,10 @@ void QMCCostFunctionCUDA::resetPsi(bool final_reset)
   //cout << "######### QMCCostFunctionCUDA::resetPsi " << std::endl;
   //OptVariablesForPsi.print(std::cout);
   //cout << "-------------------------------------- " << std::endl;
-  Psi.resetParameters(OptVariablesForPsi);
+  dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).resetParameters(OptVariablesForPsi);
   if (final_reset)
   {
-    Psi.stopOptimization();
+    dynamic_cast<TrialWaveFunction<Batching::BATCHED>&>(Psi).stopOptimization();
     for (int i=0; i<psiClones.size(); ++i)
       psiClones[i]->stopOptimization();
   }

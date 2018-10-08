@@ -27,14 +27,14 @@ struct ZeroVarianceForce : public QMCHamiltonianBase, public ForceBase
 {
   ParticleSet& Ions;
   ParticleSet& Electrons;
-  TrialWaveFunction& Psi;
+  TrialWaveFunction<>& Psi;
 
   ParticleSet::ParticlePos_t F_ZV1, F_ZV2;
   TinyVector<ParticleSet::ParticleGradient_t,OHMMS_DIM>  grad_grad_psi;
   TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> lapl_grad_psi;
 
   ZeroVarianceForce(ParticleSet& ions, ParticleSet& elns,
-                    TrialWaveFunction &psi);
+                    TrialWaveFunction<> &psi);
 
   void resetTargetParticleSet(ParticleSet& P);
 
@@ -50,7 +50,7 @@ struct ZeroVarianceForce : public QMCHamiltonianBase, public ForceBase
     return true;
   }
 
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi)
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi)
   {
     ZeroVarianceForce *myClone = new ZeroVarianceForce (Ions, qp, psi);
     myClone->FirstForceIndex = FirstForceIndex;

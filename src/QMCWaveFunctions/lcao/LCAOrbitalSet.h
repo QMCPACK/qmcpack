@@ -15,7 +15,7 @@
 
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
-
+#include "Configuration.h"
 
 namespace qmcplusplus
 {
@@ -24,11 +24,15 @@ namespace qmcplusplus
    * SoA verson of LCOrtbitalSet
    * Localized basis set is always real 
    */
-  struct LCAOrbitalSet: public SPOSet
+  struct LCAOrbitalSet: public SPOSet<Batching::SINGLE>
   {
-    typedef RealBasisSetBase<RealType> basis_type;
+    using QMCT = QMCTraits;
+    typedef RealBasisSetBase<QMCT::RealType> basis_type;
     typedef basis_type::vgl_type vgl_type;
-
+    using IndexType = QMCT::IndexType;
+    using ValueType = QMCT::ValueType;
+    using RealType = QMCT::RealType;
+    
     ///level of printing
     int ReportLevel;
     ///pointer to the basis set
@@ -59,7 +63,7 @@ namespace qmcplusplus
 
     virtual ~LCAOrbitalSet();
 
-    SPOSet* makeClone() const;
+    SPOSet<Batching::SINGLE>* makeClone() const;
 
     ///reset
     void resetParameters(const opt_variables_type& active)

@@ -24,6 +24,7 @@
 #include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
 #include "QMCWaveFunctions/lcao/CuspCorrection.h"
 
+#include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
 namespace qmcplusplus
@@ -107,7 +108,7 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
   REQUIRE(okay);
   xmlNodePtr root2 = doc2.getRoot();
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction<> psi(c);
 
   WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
   particle_set_map["e"]    = &elec;
@@ -123,7 +124,7 @@ TEST_CASE("applyCuspInfo", "[wavefunction]")
 
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
   bb->loadBasisSetFromXML(MO_base[0]);
-  SPOSet* sposet = bb->createSPOSet(slater_base[0]);
+  SPOSet<>* sposet = bb->createSPOSet(slater_base[0]);
 
   LCAOrbitalSet* lcob = dynamic_cast<LCAOrbitalSet*>(sposet);
   REQUIRE(lcob != NULL);
@@ -290,7 +291,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   REQUIRE(okay);
   xmlNodePtr root2 = doc2.getRoot();
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction<> psi(c);
 
   WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
   particle_set_map["e"]    = &elec;
@@ -308,12 +309,12 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
   bb->loadBasisSetFromXML(MO_base[0]);
-  SPOSet* sposet = bb->createSPOSet(slater_base[0]);
+  SPOSet<>* sposet = bb->createSPOSet(slater_base[0]);
 
 
-  SPOSet::ValueVector_t values;
-  SPOSet::GradVector_t dpsi;
-  SPOSet::ValueVector_t d2psi;
+  SPOSet<>::ValueVector_t values;
+  SPOSet<>::GradVector_t dpsi;
+  SPOSet<>::ValueVector_t d2psi;
   values.resize(7);
   dpsi.resize(7);
   d2psi.resize(7);
@@ -323,7 +324,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   ParticleSet::SingleParticlePos_t newpos;
   elec.makeMove(0, newpos);
 
-  sposet->evaluate(elec, 0, values);
+  dynamic_cast<SPOSet<Batching::SINGLE>*>(sposet)->evaluate(elec, 0, values);
 
   // Values from gen_cusp_corr.py
   REQUIRE(values[0] == Approx(0.00945227));
@@ -340,7 +341,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   elec.makeMove(0, newpos);
 
   values = 0.0;
-  sposet->evaluate(elec, 0, values);
+  dynamic_cast<SPOSet<Batching::SINGLE>*>(sposet)->evaluate(elec, 0, values);
   //std::cout << "values = " << values << std::endl;
   // Values from gen_cusp_corr.py
   REQUIRE(values[0] == Approx(9.5150713253));
@@ -353,7 +354,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
 
   values = 0.0;
-  sposet->evaluate(elec, 0, values, dpsi, d2psi);
+  dynamic_cast<SPOSet<Batching::SINGLE>*>(sposet)->evaluate(elec, 0, values, dpsi, d2psi);
 
   //std::cout << "values = " << values << std::endl;
   //std::cout << "dpsi = " << dpsi << std::endl;
@@ -380,15 +381,15 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
   REQUIRE(d2psi[1] == Approx(19.8720529007));
 
 
-  SPOSet::ValueMatrix_t all_values;
-  SPOSet::GradMatrix_t all_grad;
-  SPOSet::ValueMatrix_t all_lap;
+  SPOSet<>::ValueMatrix_t all_values;
+  SPOSet<>::GradMatrix_t all_grad;
+  SPOSet<>::ValueMatrix_t all_lap;
   all_values.resize(7, 7);
   all_grad.resize(7, 7);
   all_lap.resize(7, 7);
 
 
-  sposet->evaluate_notranspose(elec, 0, 7, all_values, all_grad, all_lap);
+  dynamic_cast<SPOSet<Batching::SINGLE>*>(sposet)->evaluate_notranspose(elec, 0, 7, all_values, all_grad, all_lap);
 
   // Values from gen_cusp_corr.py
   REQUIRE(values[0] == Approx(9.5150713253));
@@ -407,7 +408,7 @@ TEST_CASE("HCN MO with cusp", "[wavefunction]")
 
 
   // Test the makeClone method
-  SPOSet* sposet_clone = sposet->makeClone();
+  SPOSet<Batching::SINGLE>* sposet_clone = dynamic_cast<SPOSet<Batching::SINGLE>*>(sposet)->makeClone();
 
   sposet_clone->evaluate_notranspose(elec, 0, 7, all_values, all_grad, all_lap);
 
@@ -473,7 +474,7 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   REQUIRE(okay);
   xmlNodePtr root2 = doc2.getRoot();
 
-  TrialWaveFunction psi(c);
+  TrialWaveFunction<> psi(c);
 
   WaveFunctionComponentBuilder::PtclPoolType particle_set_map;
   particle_set_map["e"]    = &elec;
@@ -491,12 +492,12 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
 
   OhmmsXPathObject slater_base("//determinant", doc2.getXPathContext());
   bb->loadBasisSetFromXML(MO_base[0]);
-  SPOSet* sposet = bb->createSPOSet(slater_base[0]);
+  SPOSet<>* sposet = bb->createSPOSet(slater_base[0]);
 
 
-  SPOSet::ValueVector_t values;
-  SPOSet::GradVector_t dpsi;
-  SPOSet::ValueVector_t d2psi;
+  SPOSet<>::ValueVector_t values;
+  SPOSet<>::GradVector_t dpsi;
+  SPOSet<>::ValueVector_t d2psi;
   values.resize(13);
   dpsi.resize(13);
   d2psi.resize(13);
@@ -554,9 +555,9 @@ TEST_CASE("Ethanol MO with cusp", "[wavefunction]")
   REQUIRE(d2psi[12] == Approx(-4.3399821309));
 
 
-  SPOSet::ValueMatrix_t all_values;
-  SPOSet::GradMatrix_t all_grad;
-  SPOSet::ValueMatrix_t all_lap;
+  SPOSet<>::ValueMatrix_t all_values;
+  SPOSet<>::GradMatrix_t all_grad;
+  SPOSet<>::ValueMatrix_t all_lap;
   all_values.resize(13, 13);
   all_grad.resize(13, 13);
   all_lap.resize(13, 13);

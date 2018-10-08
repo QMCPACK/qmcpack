@@ -32,7 +32,7 @@ class AGPDeterminantBuilder: public WaveFunctionComponentBuilder
 
 public:
 
-  AGPDeterminantBuilder(ParticleSet& els, TrialWaveFunction& wfs, PtclPoolType& pset);
+  AGPDeterminantBuilder(ParticleSet& els, TrialWaveFunction<>& wfs, PtclPoolType& pset);
 
   /// process a xml node at cur
   bool put(xmlNodePtr cur);

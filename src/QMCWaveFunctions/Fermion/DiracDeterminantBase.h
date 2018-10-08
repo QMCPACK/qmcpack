@@ -26,6 +26,7 @@
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
+#include "QMCWaveFunctions/SPOSetTypeAliases.h"
 
 namespace qmcplusplus
 {
@@ -41,15 +42,16 @@ public:
   // Optimizable parameters
   opt_variables_type myVars;
 
-
-  typedef SPOSet::IndexVector_t IndexVector_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSet::GradVector_t  GradVector_t;
-  typedef SPOSet::GradMatrix_t  GradMatrix_t;
-  typedef SPOSet::HessMatrix_t  HessMatrix_t;
-  typedef SPOSet::HessVector_t  HessVector_t;
-  typedef SPOSet::HessType      HessType;
+  using SSTA = SPOSetTypeAliases;
+  typedef SSTA::IndexVector_t IndexVector_t;
+  typedef SSTA::ValueVector_t ValueVector_t;
+  typedef SSTA::ValueMatrix_t ValueMatrix_t;
+  typedef SSTA::GradVector_t  GradVector_t;
+  typedef SSTA::GradMatrix_t  GradMatrix_t;
+  typedef SSTA::HessMatrix_t  HessMatrix_t;
+  typedef SSTA::HessVector_t  HessVector_t;
+  typedef SSTA::HessType      HessType;
+  typedef ParticleSet::Walker_t     Walker_t;
 
 #ifdef MIXED_PRECISION
   typedef ParticleSet::SingleParticleValue_t mValueType;
@@ -63,7 +65,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantBase(SPOSetPtr const &spos, int first=0);
+  DiracDeterminantBase(int first=0);
 
   ///default destructor
   virtual ~DiracDeterminantBase();
@@ -82,10 +84,7 @@ public:
   // */
   //SPOSetPtr clonePhi() const;
 
-  SPOSetPtr getPhi()
-  {
-    return Phi;
-  };
+  virtual SPOSet* getPhi() = 0;
 
   inline IndexType rows() const
   {
@@ -107,58 +106,13 @@ public:
   virtual
   void setBF(BackflowTransformation* BFTrans) {}
 
-  ///optimizations  are disabled
-  virtual inline void checkInVariables(opt_variables_type& active)
-  {
-    Phi->checkInVariables(active);
-    Phi->checkInVariables(myVars);
-  }
-
-  virtual inline void checkOutVariables(const opt_variables_type& active)
-  {
-    Phi->checkOutVariables(active);
-    myVars.clear();
-    myVars.insertFrom(Phi->myVars);
-    myVars.getIndex(active);
-  }
-
-  virtual void resetParameters(const opt_variables_type& active)
-  {
-    Phi->resetParameters(active);
-    for(int i=0; i<myVars.size(); ++i)
-    {
-      int ii=myVars.Index[i];
-      if(ii>=0)
-        myVars[i]= active[ii];
-    }
-  }
+  
 
   ///invert psiM or its copies
-  void invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat);
-
-  virtual void evaluateDerivatives(ParticleSet& P,
-                                   const opt_variables_type& active,
-                                   std::vector<RealType>& dlogpsi,
-                                   std::vector<RealType>& dhpsioverpsi);
-
-  // used by DiracDeterminantWithBackflow
-  virtual void evaluateDerivatives(ParticleSet& P,
-                                   const opt_variables_type& active,
-                                   int offset,
-                                   Matrix<RealType>& dlogpsi,
-                                   Array<GradType,3>& dG,
-                                   Matrix<RealType>& dL) {}
-
-  //virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
-  //                                     std::vector<RealType>& dgradlogpsi);
+  virtual void invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat);
 
   inline void reportStatus(std::ostream& os)
   {
-  }
-  virtual void resetTargetParticleSet(ParticleSet& P)
-  {
-    Phi->resetTargetParticleSet(P);
-    targetPtcl = &P;
   }
 
   ///reset the size: with the number of particles and number of orbtials
@@ -166,38 +120,8 @@ public:
 
   virtual void registerData(ParticleSet& P, WFBufferType& buf);
 
-  virtual void updateAfterSweep(ParticleSet& P,
-      ParticleSet::ParticleGradient_t& G,
-      ParticleSet::ParticleLaplacian_t& L);
-
-  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false);
-
   virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf);
 
-  /** return the ratio only for the  iat-th partcle move
-   * @param P current configuration
-   * @param iat the particle thas is being moved
-   */
-  virtual ValueType ratio(ParticleSet& P, int iat);
-
-  /** compute multiple ratios for a particle move
-   */
-  virtual void evaluateRatios(VirtualParticleSet& VP, std::vector<ValueType>& ratios);
-
-  virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  virtual GradType evalGrad(ParticleSet& P, int iat);
-  virtual GradType evalGradSource(ParticleSet &P, ParticleSet &source,
-                                  int iat);
-
-  virtual GradType evalGradSource
-  (ParticleSet& P, ParticleSet& source, int iat,
-   TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
-   TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
-
-  virtual GradType evalGradSourcep
-  (ParticleSet& P, ParticleSet& source, int iat,
-   TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
-   TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
 
   /** move was accepted, update the real container
    */
@@ -213,10 +137,6 @@ public:
               ParticleSet::ParticleGradient_t& G,
               ParticleSet::ParticleLaplacian_t& L) ;
 
-  virtual void recompute(ParticleSet& P);
-
-  void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi);
-
   virtual WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
   /** cloning function
@@ -226,56 +146,9 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  virtual DiracDeterminantBase* makeCopy(SPOSet* spo) const;
+  virtual DiracDeterminantBase* makeCopy(SPOSet* spo) const = 0;
 //       virtual DiracDeterminantBase* makeCopy(ParticleSet& tqp, SPOSet* spo) const {return makeCopy(spo); };
 
-  virtual void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
-  ///total number of particles
-  int NP;
-  ///number of single-particle orbitals which belong to this Dirac determinant
-  int NumOrbitals;
-  ///number of particles which belong to this Dirac determinant
-  int NumPtcls;
-  ///index of the first particle with respect to the particle set
-  int FirstIndex;
-  ///index of the last particle with respect to the particle set
-  int LastIndex;
-  ///index of the particle (or row)
-  int WorkingIndex;
-  ///a set of single-particle orbitals used to fill in the  values of the matrix
-  SPOSetPtr Phi;
-
-  /////Current determinant value
-  //ValueType CurrentDet;
-  /// psiM(j,i) \f$= \psi_j({\bf r}_i)\f$
-  ValueMatrix_t psiM, psiM_temp;
-
-  /// memory pool for temporal data
-  aligned_vector<ValueType> memoryPool;
-
-  /// temporary container for testing
-  ValueMatrix_t psiMinv;
-
-  /// dpsiM(i,j) \f$= \nabla_i \psi_j({\bf r}_i)\f$
-  GradMatrix_t  dpsiM, dpsiM_temp;
-
-  /// d2psiM(i,j) \f$= \nabla_i^2 \psi_j({\bf r}_i)\f$
-  ValueMatrix_t d2psiM, d2psiM_temp;
-
-  /// Used for force computations
-  GradMatrix_t grad_source_psiM, grad_lapl_source_psiM;
-  HessMatrix_t  grad_grad_source_psiM;
-  
-  GradMatrix_t phi_alpha_Minv, grad_phi_Minv;
-  ValueMatrix_t lapl_phi_Minv;
-  HessMatrix_t grad_phi_alpha_Minv;
-
-  /// value of single-particle orbital for particle-by-particle update
-  ValueVector_t psiV;
-  GradVector_t dpsiV;
-  ValueVector_t d2psiV;
-  ValueVector_t workV1, workV2;
-  GradVector_t workG;
 
 #ifdef MIXED_PRECISION
   /// temporal matrix and workspace in higher precision for the accurate inversion.
@@ -294,112 +167,8 @@ public:
   ValueType *FirstAddressOfdV;
   ValueType *LastAddressOfdV;
 
-#ifdef QMC_CUDA
-  /////////////////////////////////////////////////////
-  // Functions for vectorized evaluation and updates //
-  /////////////////////////////////////////////////////
-  virtual void recompute(MCWalkerConfiguration &W, bool firstTime)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::recompute.\n";
-    abort();
-  }
-
-  virtual void
-  reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::reserve.\n";
-    abort();
-  }
-
-  virtual void
-  addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::addLog.\n";
-    abort();
-  }
-
-  virtual void
-  ratio (MCWalkerConfiguration &W, int iat,
-         std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-         std::vector<ValueType> &lapl)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::ratio.\n";
-    abort();
-  }
-  virtual void
-  addRatio (MCWalkerConfiguration &W, int iat,
-            std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-            std::vector<ValueType> &lapl)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::addRatio.\n";
-    abort();
-  }
-  virtual void
-  calcRatio (MCWalkerConfiguration &W, int iat,
-             std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-             std::vector<ValueType> &lapl)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::calcRatio.\n";
-    abort();
-  }
 
 
-
-  virtual void
-  ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
-         std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
-         std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::ratio.\n";
-    abort();
-  }
-
-  virtual void
-  addGradient(MCWalkerConfiguration &W, int iat,
-              std::vector<GradType> &grad)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::addGradient.\n";
-    abort();
-  }
-  virtual void
-  calcGradient(MCWalkerConfiguration &W, int iat,
-               std::vector<GradType> &grad)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::calcGradient.\n";
-    abort();
-  }
-
-
-  virtual void update (std::vector<Walker_t*> &walkers, int iat)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::update.\n";
-    abort();
-  }
-
-  virtual void
-  update (const std::vector<Walker_t*> &walkers,
-          const std::vector<int> &iatList)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::update.\n";
-    abort();
-  }
-
-  void
-  gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
-            ValueMatrix_t &lapl)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::gradLapl.\n";
-    abort();
-  }
-
-  virtual void
-  NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
-            std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::NLratios.\n";
-    abort();
-  }
-#endif
 };
 
 

@@ -24,7 +24,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
-
+#include "QMCWaveFunctions/SPOSet.h"
 
 #include <stdio.h>
 #include <string>
@@ -104,7 +104,7 @@ TEST_CASE("Einspline SPO from HDF", "[wavefunction]")
   elec_.update();
 
 
-  TrialWaveFunction psi = TrialWaveFunction(c);
+  TrialWaveFunction<> psi = TrialWaveFunction<>(c);
   // Need 1 electron and 1 proton, somehow
   //ParticleSet target = ParticleSet();
   ParticleSetPool ptcl = ParticleSetPool(c);
@@ -130,16 +130,15 @@ const char *particles =
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), ein1);
-  SPOSet *spo = einSet.createSPOSetFromXML(ein1);
+  SPOSet<Batching::SINGLE> *spo = dynamic_cast<SPOSet<Batching::SINGLE>*>(einSet.createSPOSetFromXML(ein1)); 
   REQUIRE(spo != NULL);
-
 #if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
   // for vgl
-  SPOSet::ValueMatrix_t psiM(elec_.R.size(),spo->getOrbitalSetSize());
-  SPOSet::GradMatrix_t dpsiM(elec_.R.size(),spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t d2psiM(elec_.R.size(),spo->getOrbitalSetSize());
+  SPOSet<Batching::SINGLE>::ValueMatrix_t psiM(elec_.R.size(),spo->getOrbitalSetSize());
+  SPOSet<Batching::SINGLE>::GradMatrix_t dpsiM(elec_.R.size(),spo->getOrbitalSetSize());
+  SPOSet<Batching::SINGLE>::ValueMatrix_t d2psiM(elec_.R.size(),spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
   // value
@@ -157,9 +156,9 @@ const char *particles =
   REQUIRE(d2psiM[1][1] == ComplexApprox(-4.712583065).compare_real_only());
 
   // for vgh
-  SPOSet::ValueVector_t psiV(psiM[1],spo->getOrbitalSetSize());
-  SPOSet::GradVector_t dpsiV(dpsiM[1],spo->getOrbitalSetSize());
-  SPOSet::HessVector_t ddpsiV(spo->getOrbitalSetSize());
+  SPOSet<Batching::SINGLE>::ValueVector_t psiV(psiM[1],spo->getOrbitalSetSize());
+  SPOSet<Batching::SINGLE>::GradVector_t dpsiV(dpsiM[1],spo->getOrbitalSetSize());
+  SPOSet<Batching::SINGLE>::HessVector_t ddpsiV(spo->getOrbitalSetSize());
   spo->evaluate(elec_, 1, psiV, dpsiV, ddpsiV);
 
   // Catch default is 100*(float epsilson)

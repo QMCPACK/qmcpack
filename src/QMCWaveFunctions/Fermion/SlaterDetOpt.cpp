@@ -73,7 +73,7 @@ SlaterDetOpt::SlaterDetOpt(ParticleSet & ptcl, SPOSet * spo_ptr, const int up_or
 /// \param[in]      name           a name for the component
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-//void SlaterDetOpt::add_orbs_to_tf(TrialWaveFunction & twf, const std::string & name) {
+//void SlaterDetOpt::add_orbs_to_tf(TrialWaveFunction<>& twf, const std::string & name) {
 //  if ( std::find(twf.getOrbitals().begin(), twf.getOrbitals().end(), Phi->tf_component()) == twf.getOrbitals().end() )
 //    twf.addOrbital(Phi->tf_component(), name, false);
 //}

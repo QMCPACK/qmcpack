@@ -25,6 +25,7 @@
 #if defined(QMC_CUDA)
 #include "QMCDrivers/VMC/VMC_CUDA.h"
 #endif
+#include "Batching.h"
 
 namespace qmcplusplus
 {
@@ -35,13 +36,17 @@ namespace qmcplusplus
  * generated from VMC.
  */
 
-class QMCCorrelatedSamplingLinearOptimize: public QMCLinearOptimize, private NRCOptimization<QMCTraits::RealType>
+template<Batching batching = Batching::SINGLE>
+class QMCCorrelatedSamplingLinearOptimize: public QMCLinearOptimize<batching>, private NRCOptimization<QMCTraits::RealType>
 {
 public:
-
+  using QMCT = QMCTraits;
+  using QDT = typename QMCLinearOptimize<batching>::QDT;
+  using QLOT = QMCLinearOptimize<batching>;
+  using RealType = QMCT::RealType;
   ///Constructor.
-  QMCCorrelatedSamplingLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                                      QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool);
+  QMCCorrelatedSamplingLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction<batching>& psi,
+                                      QMCHamiltonian& h, HamiltonianPool<batching>& hpool, WaveFunctionPool& ppool);
 
   ///Destructor
   ~QMCCorrelatedSamplingLinearOptimize();
@@ -53,6 +58,10 @@ public:
   RealType Func(Return_t dl);
 
 private:
+  QMCDriver<batching>* create(MCWalkerConfiguration& w,
+                    TrialWaveFunction<batching>& psi,
+                    QMCHamiltonian& h, HamiltonianPool<batching>& hpool,WaveFunctionPool& ppool);
+  
   inline bool ValidCostFunction(bool valid)
   {
     if (!valid)
@@ -60,19 +69,20 @@ private:
     return valid;
   }
 
-#if defined(QMC_CUDA)
-  VMCcuda* vmcCSEngine;
-#else
-  VMCLinearOptOMP* vmcCSEngine;
-#endif
+  QMCDriver<batching>* vmcCSEngine;
+// #if defined(QMC_CUDA)
+//   VMCcuda* vmcCSEngine;
+// #else
+//   VMCLinearOptOMP* vmcCSEngine;
+// #endif
 
   int NumOfVMCWalkers;
   ///Number of iterations maximum before generating new configurations.
   int Max_iterations;
   int nstabilizers;
-  RealType stabilizerScale, bigChange, exp0, exp1, stepsize, savedQuadstep;
+  QMCT::RealType stabilizerScale, bigChange, exp0, exp1, stepsize, savedQuadstep;
   std::string MinMethod, GEVtype, StabilizerMethod, GEVSplit;
-  RealType w_beta;
+  QMCT::RealType w_beta;
   /// number of previous steps to orthogonalize to.
   int eigCG;
   /// total number of cg steps per iterations

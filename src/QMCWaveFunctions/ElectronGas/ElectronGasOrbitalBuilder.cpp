@@ -40,7 +40,7 @@ RealEGOSet::RealEGOSet(const std::vector<PosType>& k, const std::vector<RealType
   className="EGOSet";
 }
 
-ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi):
+ElectronGasOrbitalBuilder::ElectronGasOrbitalBuilder(ParticleSet& els, TrialWaveFunction<>& psi):
 #if QMC_BUILD_LEVEL>2
   WaveFunctionComponentBuilder(els,psi),UseBackflow(false),BFTrans(0)
 #else
@@ -83,8 +83,8 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
     cur = cur->next;
   }
 #endif
-  typedef SlaterDet::Determinant_t Det_t;
-  typedef SlaterDet SlaterDeterminant_t;
+  typedef SlaterDet<>::Determinant_t Det_t;
+  typedef SlaterDet<> SlaterDeterminant_t;
   HEGGrid<RealType,OHMMS_DIM> egGrid(targetPtcl.Lattice);
   HEGGrid<RealType,OHMMS_DIM> egGrid2(targetPtcl.Lattice);
   int nat=targetPtcl.getTotalNum();
@@ -206,7 +206,7 @@ ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur)
 {
 }
 
-SPOSet* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
+SPOSet<Batching::SINGLE>* ElectronGasSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   app_log() << "ElectronGasSPOBuilder::createSPOSet " << std::endl;
   int nc=0;

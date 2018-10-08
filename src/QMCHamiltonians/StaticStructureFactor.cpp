@@ -47,7 +47,7 @@ namespace qmcplusplus
   }
 
   
-  QMCHamiltonianBase* StaticStructureFactor::makeClone(ParticleSet& P, TrialWaveFunction& Psi)
+  QMCHamiltonianBase* StaticStructureFactor::makeClone(ParticleSet& P, TrialWaveFunction<>& Psi)
   {
     return new StaticStructureFactor(*this);
   }

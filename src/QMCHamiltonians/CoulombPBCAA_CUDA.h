@@ -51,7 +51,7 @@ struct CoulombPBCAA_CUDA : public CoulombPBCAA
                  std::vector<RealType> &LocalEnergy);
 
   void initBreakup(ParticleSet& P, bool cloning);
-  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction& psi);
+  QMCHamiltonianBase* makeClone(ParticleSet& qp, TrialWaveFunction<>& psi);
 
 };
 }

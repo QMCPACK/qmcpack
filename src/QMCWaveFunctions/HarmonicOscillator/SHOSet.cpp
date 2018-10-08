@@ -70,7 +70,7 @@ namespace qmcplusplus
   }
 
 
-  SPOSet* SHOSet::makeClone() const
+  SPOSet<>* SHOSet::makeClone() const
   {
     return new SHOSet(*this);
   }

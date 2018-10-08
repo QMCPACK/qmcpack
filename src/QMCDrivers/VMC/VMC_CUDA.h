@@ -19,6 +19,9 @@
 #ifndef QMCPLUSPLUS_VMC_CUDA_H
 #define QMCPLUSPLUS_VMC_CUDA_H
 #include "QMCDrivers/QMCDriver.h"
+
+#include "QMCWaveFunctions/TrialWaveFunctionBatched.h"
+
 namespace qmcplusplus
 {
 
@@ -27,11 +30,11 @@ class QMCUpdateBase;
 /** @ingroup QMCDrivers  PbyP
  *@brief Implements the VMC algorithm using particle-by-particle move.
  */
-class VMCcuda: public QMCDriver
+class VMCcuda: public QMCDriver<Batching::BATCHED>
 {
 public:
   /// Constructor.
-  VMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,WaveFunctionPool& ppool);
+  VMCcuda(MCWalkerConfiguration& w, TrialWaveFunction<Batching::BATCHED>& psi, QMCHamiltonian& h,WaveFunctionPool& ppool);
 
   GPU_XRAY_TRACE bool run();
   GPU_XRAY_TRACE bool runWithDrift();

@@ -21,30 +21,23 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "OhmmsPETE/OhmmsArray.h"
+#include "QMCWaveFunctions/SPOSetTypeAliases.h"
 
 namespace qmcplusplus
 {
 
 /** class to handle determinants with backflow
  */
-class DiracDeterminantWithBackflow: public DiracDeterminantBase
+class DiracDeterminantWithBackflow: public DiracDeterminant<>
 {
 public:
-
-  typedef SPOSet::IndexVector_t IndexVector_t;
-  typedef SPOSet::ValueVector_t ValueVector_t;
-  typedef SPOSet::ValueMatrix_t ValueMatrix_t;
-  typedef SPOSet::GradVector_t  GradVector_t;
-  typedef SPOSet::GradMatrix_t  GradMatrix_t;
-  typedef SPOSet::HessMatrix_t  HessMatrix_t;
-  typedef SPOSet::HessVector_t  HessVector_t;
-  typedef SPOSet::HessType      HessType;
-  typedef SPOSet::GGGType       GGGType;
-  typedef SPOSet::GGGVector_t   GGGVector_t;
-  typedef SPOSet::GGGMatrix_t   GGGMatrix_t;
-  typedef SPOSet::HessArray_t HessArray_t;
+  using SSTA = SPOSetTypeAliases;
+  typedef SSTA::GGGType       GGGType;
+  typedef SSTA::GGGVector_t   GGGVector_t;
+  typedef SSTA::GGGMatrix_t   GGGMatrix_t;
+  typedef SSTA::HessArray_t HessArray_t;
   //typedef Array<GradType,3>       GradArray_t;
   //typedef Array<PosType,3>        PosArray_t;
 
@@ -52,7 +45,7 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetPtr const &spos, BackflowTransformation * BF, int first=0);
+  DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSet<>* const &spos, BackflowTransformation * BF, int first=0);
 
   ///default destructor
   ~DiracDeterminantWithBackflow();
@@ -69,7 +62,7 @@ public:
 
   ///** return a clone of Phi
   // */
-  //SPOSetPtr clonePhi() const;
+  //SPOSet* clonePhi() const;
 
   ///set BF pointers
   void setBF(BackflowTransformation* bf)
@@ -152,7 +145,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  DiracDeterminantWithBackflow* makeCopy(SPOSet* spo) const;
+  DiracDeterminantWithBackflow* makeCopy(SPOSet<>* spo) const;
 
   inline ValueType rcdot(TinyVector<RealType,OHMMS_DIM>& lhs, TinyVector<ValueType,OHMMS_DIM>& rhs)
   {

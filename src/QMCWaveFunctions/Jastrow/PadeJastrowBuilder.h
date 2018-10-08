@@ -26,7 +26,7 @@ namespace qmcplusplus
 struct PadeJastrowBuilder: public WaveFunctionComponentBuilder
 {
 
-  PadeJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi, PtclPoolType& psets);
+  PadeJastrowBuilder(ParticleSet& target, TrialWaveFunction<>& psi, PtclPoolType& psets);
   bool put(xmlNodePtr cur);
   PtclPoolType& ptclPool;
 };
