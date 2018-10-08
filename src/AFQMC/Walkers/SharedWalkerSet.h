@@ -114,10 +114,9 @@ class SharedWalkerSet: public AFQMCInfo
       ComplexType energy() const { return w_[indx[E1_]]+w_[indx[EXX_]]+w_[indx[EJ_]]; } 
       ComplexType overlap() const { return w_[indx[OVLP]]; } 
       // propagators can not be spin dependent
-      const_SMType BMatrix() const {
+      const_SMType BMatrix(int ip) const {
         if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0)
           APP_ABORT("error: access to uninitialized BP sector. \n");
-        auto ip = getHead();
         if(ip < 0 || ip >= desc[3])
           APP_ABORT("error: Index out of bounds.\n");
         return const_SMType( &(w_[indx[PROPAGATORS] + desc[0]*desc[0]*ip]) ,
@@ -146,8 +145,11 @@ class SharedWalkerSet: public AFQMCInfo
       bool isBMatrixBufferFull() const {
         return getHead()==0;
       }
-      ComplexType cosineFactor() const { 
-        if(indx[COS_FAC]) 
+      int getNumBackProp() const {
+        return desc[3];
+      }
+      ComplexType cosineFactor() const {
+        if(indx[COS_FAC]) {
           APP_ABORT("error: access to uninitialized BP sector. \n");
         return w_[indx[COS_FAC] + getHead()]; 
       }	
@@ -225,6 +227,9 @@ class SharedWalkerSet: public AFQMCInfo
         }
         return SMType(&(w_[indx[PROPAGATORS]+desc[0]*desc[0]*ip]),
                       extents[desc[0]][desc[0]]);
+      }
+      int getNumBackProp() {
+        return desc[3];
       }
       void incrementBMatrix() {
         if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0) {
@@ -460,6 +465,9 @@ class SharedWalkerSet: public AFQMCInfo
   int get_global_target_population() const{ return targetN; }
 
   int getNBackProp() const { return nback_prop; }
+  std::pair<int,int> walker_dims() const {
+    return std::pair<int,int> {wlk_desc[0], wlk_desc[1]};
+  }
 
   int GlobalPopulation() const{
     int res=0;
