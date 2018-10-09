@@ -11,13 +11,16 @@
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
 // -*- C++ -*-
-#ifndef SPLINE2_MULTIEINSPLINE_VALUE_STD3_HPP
-#define SPLINE2_MULTIEINSPLINE_VALUE_STD3_HPP
+#ifndef SPLINE2_MULTIEINSPLINE_VALUE_BGQ_HPP
+#define SPLINE2_MULTIEINSPLINE_VALUE_BGQ_HPP
+
+#if defined(__xlC__)
+#include <builtins.h>
+#endif
 
 namespace spline2
 {
 
-  /** define evaluate: common to any implementation */
   template<typename T>
     inline void evaluate_v_impl(const typename qmcplusplus::bspline_traits<T,3>::SplineType *restrict spline_m,
                                 T x, T y, T z, T* restrict vals, int first, int last)
@@ -36,6 +39,11 @@ namespace spline2
       MultiBsplineData<T>::compute_prefactors(b, ty);
       MultiBsplineData<T>::compute_prefactors(c, tz);
 
+      vector4double vec_c0 = vec_splats(c[0]);
+      vector4double vec_c1 = vec_splats(c[1]);
+      vector4double vec_c2 = vec_splats(c[2]);
+      vector4double vec_c3 = vec_splats(c[3]);
+
       const intptr_t xs = spline_m->x_stride;
       const intptr_t ys = spline_m->y_stride;
       const intptr_t zs = spline_m->z_stride;
@@ -48,13 +56,33 @@ namespace spline2
         for (int j=0; j<4; j++)
         {
           const T pre00 =  a[i]*b[j];
-          const T* restrict coefs = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs) + first;
-          const T* restrict coefszs  = coefs+zs;
-          const T* restrict coefs2zs = coefs+2*zs;
-          const T* restrict coefs3zs = coefs+3*zs;
-          #pragma omp simd aligned(coefs,coefszs,coefs2zs,coefs3zs,vals)
-          for(int n=0; n<num_splines; n++)
-            vals[n] += pre00*(c[0]*coefs[n] + c[1]*coefszs[n] + c[2]*coefs2zs[n] + c[3]*coefs3zs[n]);
+          vector4double vec_pre00 = vec_splats(pre00);
+          T* restrict coefs0 = spline_m->coefs + ((ix+i)*xs + (iy+j)*ys + iz*zs) + first;
+          T* restrict coefs1 = coefs0 +   zs;
+          T* restrict coefs2 = coefs0 + 2*zs;
+          T* restrict coefs3 = coefs0 + 3*zs;
+          for(int n=0, p=0; n<num_splines; n+=4, p+=4*sizeof(T))
+          {
+            vector4double vec_coef0, vec_coef1, vec_coef2, vec_coef3, vec_val;
+
+            __dcbt(&coefs0[n+8]);
+            __dcbt(&coefs1[n+8]);
+            __dcbt(&coefs2[n+8]);
+            __dcbt(&coefs3[n+8]);
+
+            vec_coef0 = vec_ld(p, coefs0);
+            vec_coef1 = vec_ld(p, coefs1);
+            vec_coef2 = vec_ld(p, coefs2);
+            vec_coef3 = vec_ld(p, coefs3);
+            vec_val = vec_ld(p, vals);
+
+            vec_coef0 = vec_mul(vec_c0, vec_coef0);
+            vec_coef0 = vec_madd(vec_c1, vec_coef1, vec_coef0);
+            vec_coef0 = vec_madd(vec_c2, vec_coef2, vec_coef0);
+            vec_coef0 = vec_madd(vec_c3, vec_coef3, vec_coef0);
+            vec_val = vec_madd(vec_pre00, vec_coef0, vec_val);
+            vec_st(vec_val, p, vals);
+          }
         }
     }
 
