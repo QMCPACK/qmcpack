@@ -96,11 +96,6 @@ def create_label_sets():
         'short-diamondC-afqmc_hyb_nn2',
         'short-diamondC-afqmc_incmf_nn2',
         'short-diamondC-afqmc_nn2',
-
-        'short-bccH_2x2x2_ae-gamma-deriv',
-        'short-bccH_2x2x2_ae-grad_lap',
-        'short-bccH_3x3x3_ae-gamma-deriv',
-        'short-bccH_3x3x3_ae-not_orth-deriv',
         ])
 
     check_fail |= set([
@@ -109,10 +104,6 @@ def create_label_sets():
         'short-diamondC_1x1x1_pp-dmc-estimator-spindensity',
         'long-diamondC_1x1x1_pp-dmc-estimator-density',
         'long-diamondC_1x1x1_pp-dmc-estimator-spindensity',
-
-        'short-bccH_2x2x2_ae-deriv',
-        'short-bccH_3x3x3_ae-deriv',
-        'short-bccH_3x3x3_ae-grad_lap',
         ])
 
     definite_stat_fail |= set([
@@ -160,14 +151,27 @@ def create_label_sets():
 
     poor_test |= set([
         'short-bccH_2x2x2_ae-deriv',
+        'short-bccH_2x2x2_ae-gamma-deriv',
+        'short-bccH_2x2x2_ae-grad_lap',
         'short-bccH_3x3x3_ae-deriv',
+        'short-bccH_3x3x3_ae-gamma-deriv',
         'short-bccH_3x3x3_ae-grad_lap',
+        'short-bccH_3x3x3_ae-not_orth-deriv',
         ])
 
     # aos specific (but general otherwise)
     if aos:
         intermittent_stat_fail |= set([
             'short-H4-orb-opt-dmc',
+            ])
+        check_fail |= set([
+            'short-bccH_2x2x2_ae-deriv',
+            'short-bccH_2x2x2_ae-gamma-deriv',
+            'short-bccH_2x2x2_ae-grad_lap',
+            'short-bccH_3x3x3_ae-deriv',
+            'short-bccH_3x3x3_ae-gamma-deriv',
+            'short-bccH_3x3x3_ae-grad_lap',
+            'short-bccH_3x3x3_ae-not_orth-deriv',
             ])
     #end if
 
@@ -190,6 +194,15 @@ def create_label_sets():
             'short-H4-FDLR',
             'short-H4-orb-opt',
             'short-H4-orb-opt-dmc',
+            'short-bccH_2x2x2_ae-gamma-deriv',
+            'short-bccH_2x2x2_ae-grad_lap',
+            'short-bccH_3x3x3_ae-gamma-deriv',
+            'short-bccH_3x3x3_ae-not_orth-deriv',
+            ])
+        check_fail |= set([
+            'short-bccH_2x2x2_ae-deriv',
+            'short-bccH_3x3x3_ae-deriv',
+            'short-bccH_3x3x3_ae-grad_lap',
             ])
         intermittent_stat_fail |= set([
             'short-H4-opt-cslinear-rescale',
@@ -284,6 +297,7 @@ def create_label_sets():
         abort |= set([
             'short-diamondC_1x1x1_pp-vmc_gaussian_sdj',
             'short-diamondC_2x1x1_pp-vmc_gaussian_sdj',
+            'long-diamondC_2x1x1_pp-dmc_gaussian_sdj',
             ])
     #end if
     if soa and cpu and real and full:
