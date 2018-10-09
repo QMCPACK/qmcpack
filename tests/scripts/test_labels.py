@@ -109,6 +109,10 @@ def create_label_sets():
         'short-diamondC_1x1x1_pp-dmc-estimator-spindensity',
         'long-diamondC_1x1x1_pp-dmc-estimator-density',
         'long-diamondC_1x1x1_pp-dmc-estimator-spindensity',
+
+        'short-bccH_2x2x2_ae-deriv',
+        'short-bccH_3x3x3_ae-deriv',
+        'short-bccH_3x3x3_ae-grad_lap',
         ])
 
     definite_stat_fail |= set([
@@ -155,20 +159,15 @@ def create_label_sets():
         ])
 
     poor_test |= set([
+        'short-bccH_2x2x2_ae-deriv',
+        'short-bccH_3x3x3_ae-deriv',
+        'short-bccH_3x3x3_ae-grad_lap',
         ])
 
     # aos specific (but general otherwise)
     if aos:
         intermittent_stat_fail |= set([
-            'short-bccH_2x2x2_ae-deriv',
-            'short-bccH_3x3x3_ae-deriv',
-            'short-bccH_3x3x3_ae-grad_lap',
             'short-H4-orb-opt-dmc',
-            ])
-        poor_test |= set([
-            'short-bccH_2x2x2_ae-deriv',
-            'short-bccH_3x3x3_ae-deriv',
-            'short-bccH_3x3x3_ae-grad_lap',
             ])
     #end if
 
@@ -180,6 +179,7 @@ def create_label_sets():
             ])
         abort |= set([
             'long-c_no-hf_vmc',
+            'long-c_no-sj_dmc',
             'short-bccH_2x2x2_ae-deriv',
             'short-bccH_3x3x3_ae-deriv',
             'short-bccH_3x3x3_ae-grad_lap',
@@ -198,7 +198,33 @@ def create_label_sets():
 
     # gpu specific (but general otherwise)
     if gpu:
-        None
+        check_fail |= set([
+            'restart-1-16',
+            'short-diamondC_1x1x1_pp-dmc-estimator-density',
+            'short-diamondC_1x1x1_pp-dmc-estimator-spindensity',
+            ])
+        poor_test |= set([
+            'restart-1-16',
+            ])
+        unsupported |= set([
+            'estimator-skinetic',
+            'short-afqmc-N2_vdz',
+            'short-diamondC-afqmc',
+            'short-diamondC-afqmc_hyb',
+            'short-diamondC-afqmc_hyb_nn2',
+            'short-diamondC-afqmc_incmf',
+            'short-diamondC-afqmc_incmf_nn2',
+            'short-diamondC-afqmc_nn2',
+            'short-diamondC_1x1x1_hybridrep_pp-vmc_sdj',
+            'short-diamondC_1x1x1_pp-vmc_sdj_kspace',
+            'short-diamondC_2x1x1_hybridrep_pp-vmc_sdj',
+            'short-LiH_solid_1x1x1_hybridrep_pp-x-vmc_hf_noj',
+            'short-monoO_1x1x1_pp-vmc_sdj3',
+            'short-NiO_a4_e48-batched_pp-vmc_sdj3',
+            'short-NiO_a4_e48-hybridrep-batched_pp-vmc_sdj3',
+            'short-NiO_a4_e48-hybridrep-pp-vmc_sdj3',
+            'short-NiO_a4_e48_pp-vmc_sdj3',
+            ])
     #end if
 
     # real specific (but general otherwise)
@@ -290,6 +316,10 @@ def create_label_sets():
     #end if
 
     # derive all other sets from the primary sets
+
+    # don't require failure type to be enumerated for unsupported
+    #   just assume abort is used for now
+    abort |= unsupported - abort - hard_fail
 
     # weak failures: insufficient to tell if there is a bug
     weak_fail   = intermittent_stat_fail \
@@ -390,9 +420,6 @@ def check_comprehensive(full_label,*other_labels):
 
 
 def check_positive_label_sets(positive_label_sets):
-
-    check_exclusive('bug','unsupported','cause_unknown')
-    check_exclusive('bug','unsupported','poor_test')
 
     check_exclusive('good_test','poor_test')
 
