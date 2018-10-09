@@ -228,7 +228,7 @@ inline void Init_CUDA()
   gpu::initCublas();
   gpu::MaxGPUSpineSizeMB = MAX_GPU_SPLINE_SIZE_MB;
   std::cerr << "Rank " << gpu::rank << ": relative rank number = " << gpu::relative_rank << ", number of devices = " << gpu::device_group_size << "\n";
-  std::cerr << "Available device numbers: ";
+  std::cerr << "Visible device numbers: ";
   for (int i=0; i<gpu::device_group_size; i++)
   {
     if (i>0) std::cerr << ", ";

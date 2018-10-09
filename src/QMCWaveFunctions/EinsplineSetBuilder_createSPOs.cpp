@@ -137,6 +137,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
 #else
   std::string useGPU="no";
 #endif
+  std::string GPUsharing="no";
   NewTimer* spo_timer = new NewTimer("einspline::CreateSPOSetFromXML", timer_level_medium);
   TimerManager.addTimer(spo_timer);
   spo_timer->start();
@@ -153,6 +154,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
     a.add (MeshFactor, "meshfactor");
     a.add (hybrid_rep, "hybridrep");
     a.add (useGPU,     "gpu");
+    a.add (GPUsharing, "gpusharing"); // split spline across GPUs visible per rank
     a.add (spo_prec,   "precision");
     a.add (truncate,   "truncate");
     a.add (use_einspline_set_extended,"use_old_spline");
@@ -460,6 +462,15 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (useGPU == "yes" || useGPU == "1")
   {
     app_log() << "Initializing GPU data structures.\n";
+    if (GPUsharing == "yes" || GPUsharing == "1")
+    {
+      app_log() << "Splitting spline data across " << gpu::device_group_size << " GPUs.\n";
+    } else
+    {
+      if (gpu::device_group_size>1)
+        app_log() << "Spline data residing on each rank's GPU.\n";
+      gpu::device_group_size=1;
+    }
     OrbitalSet->initGPU();
   }
 #endif

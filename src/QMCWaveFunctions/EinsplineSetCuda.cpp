@@ -378,7 +378,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (cudapos.size() < N)
   {
     hostPos.resize(N);
-    cudapos.resize(N,1.0,true);
+    cudapos.resize(N,1.0,split_splines);
     cudapos2.resize(N);
   }
   for (int iw=0; iw < N; iw++)
@@ -391,7 +391,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     hostPos[iw] = ru;
   }
   cudapos = hostPos;
-  if (gpu::device_group_size>1)
+  if (split_splines)
   {
     eval_multi_multi_UBspline_3d_cuda
     (CudaMultiSpline, (CudaRealType*)cudapos.data(), CudaValuePointers.data(), N, spline_rank_pointers.data(), spline_events.data(), spline_streams.data());
@@ -483,8 +483,9 @@ EinsplineSetExtended<double>::evaluate
 template<typename T> void
 EinsplineSetExtended<T>::get_split_spline_pointers()
 {
+  split_splines=(gpu::device_group_size>1);
   int size = OHMMS::Controller->size(); // how many MPI ranks
-  if ((size>1) && (gpu::device_group_size>1))
+  if ((size>1) && split_splines)
   {
     app_log() << "Gathering einspline GPU memory pointers from all ranks.\n";
     std::vector<cudaIpcMemHandle_t> rank_handle(1);
@@ -544,31 +545,34 @@ EinsplineSetExtended<T>::get_split_spline_pointers()
 template<typename T> void
 EinsplineSetExtended<T>::resize_cuda(int numWalkers)
 {
-  CudaValuePointers.resize(numWalkers,1.0,true); // use managed memory
-  CudaGradLaplPointers.resize(numWalkers,1.0,true);
-  cudaMemAdvise(CudaValuePointers.data(),numWalkers*sizeof(CudaStorageType*),cudaMemAdviseSetReadMostly,0);
-  cudaMemAdvise(CudaGradLaplPointers.data(),numWalkers*sizeof(CudaStorageType*),cudaMemAdviseSetReadMostly,0);
+  CudaValuePointers.resize(numWalkers,1.0,split_splines); // use managed memory
+  CudaGradLaplPointers.resize(numWalkers,1.0,split_splines);
   int N = CudaMultiSpline->num_splines;
   int Nsplit = CudaMultiSpline->num_split_splines;
-  if (gpu::device_group_size>1)
-    N = Nsplit * gpu::device_group_size;
-  CudaValueVector.resize(N*numWalkers,1.0,true);
-  CudaGradLaplVector.resize(4*N*numWalkers,1.0,true);
-  for(unsigned int i=0; i<gpu::device_group_size; i++)
+  if(split_splines)
   {
-    cudaMemAdvise(CudaValuePointers.data(),numWalkers*sizeof(CudaStorageType*),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
-    cudaMemAdvise(CudaGradLaplPointers.data(),numWalkers*sizeof(CudaStorageType*),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
-    if(i==gpu::relative_rank)
-    { // all of the output memory is accessed by this rank's GPU
-      cudaMemAdvise(CudaValueVector.data(),N*numWalkers*sizeof(CudaStorageType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
-      cudaMemAdvise(CudaGradLaplVector.data(),4*N*numWalkers*sizeof(CudaStorageType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
-    }
-    else
-    { // only a subsection of the output memory is written to by each other GPU
-      cudaMemAdvise(&CudaValueVector.data()[i*numWalkers*Nsplit],Nsplit*numWalkers*sizeof(CudaStorageType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
-      cudaMemAdvise(&CudaGradLaplVector.data()[4*i*numWalkers*Nsplit],4*Nsplit*numWalkers*sizeof(CudaStorageType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
-    }
+    cudaMemAdvise(CudaValuePointers.data(),numWalkers*sizeof(CudaStorageType*),cudaMemAdviseSetReadMostly,0);
+    cudaMemAdvise(CudaGradLaplPointers.data(),numWalkers*sizeof(CudaStorageType*),cudaMemAdviseSetReadMostly,0);
+    N = Nsplit * gpu::device_group_size;
   }
+  CudaValueVector.resize(N*numWalkers,1.0,split_splines);
+  CudaGradLaplVector.resize(4*N*numWalkers,1.0,split_splines);
+  if(split_splines)
+    for(unsigned int i=0; i<gpu::device_group_size; i++)
+    {
+      cudaMemAdvise(CudaValuePointers.data(),numWalkers*sizeof(CudaStorageType*),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+      cudaMemAdvise(CudaGradLaplPointers.data(),numWalkers*sizeof(CudaStorageType*),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+      if(i==gpu::relative_rank)
+      { // all of the output memory is accessed by this rank's GPU
+        cudaMemAdvise(CudaValueVector.data(),N*numWalkers*sizeof(CudaStorageType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+        cudaMemAdvise(CudaGradLaplVector.data(),4*N*numWalkers*sizeof(CudaStorageType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+      }
+      else
+      { // only a subsection of the output memory is written to by each other GPU
+        cudaMemAdvise(&CudaValueVector.data()[i*numWalkers*Nsplit],Nsplit*numWalkers*sizeof(CudaStorageType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+        cudaMemAdvise(&CudaGradLaplVector.data()[4*i*numWalkers*Nsplit],4*Nsplit*numWalkers*sizeof(CudaStorageType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+      }
+    }
   gpu::host_vector<CudaStorageType*> hostValuePointers(numWalkers);
   gpu::host_vector<CudaStorageType*> hostGradLaplPointers(numWalkers);
   for (int i=0; i<numWalkers; i++)
@@ -627,7 +631,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (cudapos.size() < N)
   {
     hostPos.resize(N);
-    cudapos.resize(N,1.0,true);
+    cudapos.resize(N,1.0,split_splines);
     cudapos2.resize(N);
   }
   for (int iw=0; iw < N; iw++)
@@ -640,7 +644,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     hostPos[iw] = ru;
   }
   cudapos = hostPos;
-  if (gpu::device_group_size>1)
+  if (split_splines)
   {
     eval_multi_multi_UBspline_3d_cuda
     (CudaMultiSpline, (CudaRealType*)cudapos.data(), CudaValuePointers.data(), N, spline_rank_pointers.data(), spline_events.data(), spline_streams.data());
@@ -753,11 +757,14 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (cudapos.size() < N)
   {
     hostPos.resize(N);
-    cudapos.resize(N,1.0,true); // use managed memory here
+    cudapos.resize(N,1.0,split_splines); // use managed memory here
     cudapos2.resize(N);
-    cudaMemAdvise(cudapos.data(),N*sizeof(CudaPosType),cudaMemAdviseSetReadMostly,0);
-    for(unsigned int i=0; i<gpu::device_group_size; i++)
-      cudaMemAdvise(cudapos.data(),N*sizeof(CudaPosType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+    if(split_splines)
+    {
+      cudaMemAdvise(cudapos.data(),N*sizeof(CudaPosType),cudaMemAdviseSetReadMostly,0);
+      for(unsigned int i=0; i<gpu::device_group_size; i++)
+        cudaMemAdvise(cudapos.data(),N*sizeof(CudaPosType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+    }
   }
   for (int iw=0; iw < N; iw++)
   {
@@ -769,7 +776,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     hostPos[iw] = ru;
   }
   cudapos = hostPos;
-  if (gpu::device_group_size>1)
+  if (split_splines)
   {
     eval_multi_multi_UBspline_3d_vgl_cuda
     (CudaMultiSpline, (CudaRealType*)cudapos.data(),  Linv_cuda.data(),
@@ -808,7 +815,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
 #ifdef SPLIT_SPLINE_DEBUG
   if(gpu::rank==1)
   {
-    if(gpu::device_group_size>1)
+    if(split_splines)
     {
       int mygpu = gpu::device_group_numbers[gpu::relative_rank%gpu::device_group_size];
       int curr_gpu;
@@ -919,7 +926,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     hostPos[iw] = ru;
   }
   cudapos = hostPos;
-  if (gpu::device_group_size>1)
+  if (split_splines)
   {
     eval_multi_multi_UBspline_3d_vgl_cuda
     (CudaMultiSpline, (CudaRealType*)cudapos.data(),  Linv_cuda.data(), CudaValuePointers.data(),
@@ -1008,11 +1015,14 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (cudapos.size() < N)
   {
     hostPos.resize(N);
-    cudapos.resize(N,1.0,true);
+    cudapos.resize(N,1.0,split_splines);
     cudapos2.resize(N);
-    cudaMemAdvise(cudapos.data(),N*sizeof(CudaPosType),cudaMemAdviseSetReadMostly,0);
-    for(unsigned int i=0; i<gpu::device_group_size; i++)
-      cudaMemAdvise(cudapos.data(),N*sizeof(CudaPosType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+    if(split_splines)
+    {
+      cudaMemAdvise(cudapos.data(),N*sizeof(CudaPosType),cudaMemAdviseSetReadMostly,0);
+      for(unsigned int i=0; i<gpu::device_group_size; i++)
+        cudaMemAdvise(cudapos.data(),N*sizeof(CudaPosType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+    }
   }
   for (int iw=0; iw < N; iw++)
   {
@@ -1024,7 +1034,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     hostPos[iw] = ru;
   }
   cudapos = hostPos;
-  if (gpu::device_group_size>1)
+  if (split_splines)
   {
     eval_multi_multi_UBspline_3d_cuda
     (CudaMultiSpline, (CudaRealType*) cudapos.data(),
@@ -1071,7 +1081,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   cudapos = hostPos;
 // AT debug:
 //  std::cout << "# splines: " << CudaMultiSpline->num_splines << "\n";
-  if (gpu::device_group_size>1)
+  if (split_splines)
   {
     eval_multi_multi_UBspline_3d_cuda
     (CudaMultiSpline, (CudaRealType*)cudapos.data(), CudaValuePointers.data(), N, spline_rank_pointers.data(), spline_events.data());
@@ -2138,8 +2148,8 @@ EinsplineSetExtended<double>::initGPU()
   //destroy_Bspline (MultiSpline);
   L_host.resize(9);
   Linv_host.resize(9);
-  Linv_cuda.resize(9,1.0,true);
-  L_cuda.resize(9,1.0,true);
+  Linv_cuda.resize(9,1.0,split_splines);
+  L_cuda.resize(9,1.0,split_splines);
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
     {
@@ -2148,13 +2158,16 @@ EinsplineSetExtended<double>::initGPU()
     }
   L_cuda    = L_host;
   Linv_cuda = Linv_host;
-  cudaMemAdvise(L_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetReadMostly,0);
-  cudaMemAdvise(Linv_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetReadMostly,0);
-  for(unsigned int i=0; i<gpu::device_group_size; i++)
+  if(split_splines)
   {
-    cudaMemAdvise(L_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
-    cudaMemAdvise(Linv_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
-    cudaMemPrefetchAsync(Linv_cuda.data(),9*sizeof(CudaRealType),gpu::device_group_numbers[i]);
+    cudaMemAdvise(L_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetReadMostly,0);
+    cudaMemAdvise(Linv_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetReadMostly,0);
+    for(unsigned int i=0; i<gpu::device_group_size; i++)
+    {
+      cudaMemAdvise(L_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+      cudaMemAdvise(Linv_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+      cudaMemPrefetchAsync(Linv_cuda.data(),9*sizeof(CudaRealType),gpu::device_group_numbers[i]);
+    }
   }
 }
 
@@ -2172,8 +2185,8 @@ EinsplineSetExtended<std::complex<double> >::initGPU()
   //destroy_Bspline (MultiSpline);
   L_host.resize(9);
   Linv_host.resize(9);
-  Linv_cuda.resize(9,1.0,true);
-  L_cuda.resize(9,1.0,true);
+  Linv_cuda.resize(9,1.0,split_splines);
+  L_cuda.resize(9,1.0,split_splines);
   for (int i=0; i<3; i++)
     for (int j=0; j<3; j++)
     {
@@ -2182,13 +2195,16 @@ EinsplineSetExtended<std::complex<double> >::initGPU()
     }
   L_cuda    = L_host;
   Linv_cuda = Linv_host;
-  cudaMemAdvise(L_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetReadMostly,0);
-  cudaMemAdvise(Linv_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetReadMostly,0);
-  for(unsigned int i=0; i<gpu::device_group_size; i++)
+  if(split_splines)
   {
-    cudaMemAdvise(L_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
-    cudaMemAdvise(Linv_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
-    cudaMemPrefetchAsync(Linv_cuda.data(),9*sizeof(CudaRealType),gpu::device_group_numbers[i]);
+    cudaMemAdvise(L_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetReadMostly,0);
+    cudaMemAdvise(Linv_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetReadMostly,0);
+    for(unsigned int i=0; i<gpu::device_group_size; i++)
+    {
+      cudaMemAdvise(L_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+      cudaMemAdvise(Linv_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+      cudaMemPrefetchAsync(Linv_cuda.data(),9*sizeof(CudaRealType),gpu::device_group_numbers[i]);
+    }
   }
 }
 

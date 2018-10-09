@@ -294,6 +294,7 @@ protected:
   std::vector<cudaEvent_t> spline_events;
   std::vector<cudaStream_t> spline_streams;
   int abort_counter=0;
+  bool split_splines=false;
   void resize_cuda(int numWalkers);
   void get_split_spline_pointers();
   // Cuda equivalent
