@@ -339,7 +339,8 @@ def create_label_sets():
 
     # a failure is a bug if it is a strong failure (strong fail => bug)
     #   intermittent failures imply bugs only with verified good test data
-    bug = strong_fail | (good_test & intermittent_stat_fail)
+    #   unsupported features are not bugs
+    bug = (strong_fail | (good_test & intermittent_stat_fail)) - unsupported
 
     # a failing test needs to be followed up with a reference-level statistical test
     #   if it is insufficient on its own to imply a bug
