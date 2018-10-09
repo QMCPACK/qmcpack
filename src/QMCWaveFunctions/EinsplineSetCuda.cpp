@@ -234,6 +234,15 @@ eval_multi_multi_UBspline_3d_cuda (multi_UBspline_3d_z_cuda *spline,
   eval_multi_multi_UBspline_3d_z_cuda  (spline, pos, phi, N);
 }
 
+inline void
+eval_multi_multi_UBspline_3d_cuda (multi_UBspline_3d_z_cuda *spline,
+                                   double *pos, std::complex<double> *phi[], int N,
+                                   std::complex<double> *spline_coefs[], cudaEvent_t spline_events[], cudaStream_t spline_streams[])
+{
+  app_error() << "Complex double split spline codepath not fully implemented yet.\n";
+  abort();
+}
+
 inline void eval_multi_multi_UBspline_3d_vgl_cuda
 (multi_UBspline_3d_c_cuda *spline, float *pos, float Linv[],
  std::complex<float> *phi[], std::complex<float> *grad_lapl[], int N, int row_stride)

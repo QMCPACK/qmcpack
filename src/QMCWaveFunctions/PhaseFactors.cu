@@ -800,7 +800,7 @@ void apply_phase_factors(float kPoints[], float pos[],
 
   phase_factor_kernel<float,thrust::complex<float>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (kPoints, pos, (thrust::complex<float>**)phi_in, (thrust::complex<float>**)phi_out, (thrust::complex<float>**)GL_in, (thrust::complex<float>**)GL_out, 
-  num_splines, num_walkers, row_stride, N_split);
+  num_splines, num_walkers, row_stride, Nsplit);
 }
 
 
@@ -823,7 +823,7 @@ void apply_phase_factors(double kPoints[], double pos[],
 
   phase_factor_kernel<double,thrust::complex<double>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
   (kPoints, pos, (thrust::complex<double>**)phi_in, (thrust::complex<double>**)phi_out, (thrust::complex<double>**)GL_in, (thrust::complex<double>**)GL_out, 
-  num_splines, num_walkers, row_stride, N_split);
+  num_splines, num_walkers, row_stride, Nsplit);
 }
 
 #endif
