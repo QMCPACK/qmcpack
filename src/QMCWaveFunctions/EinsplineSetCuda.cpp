@@ -196,7 +196,6 @@ eval_multi_multi_UBspline_3d_cuda (multi_UBspline_3d_c_cuda *spline,
 {
   int curr_gpu;
   int devicenr=0;
-//  int prev_devicenr=0;
   for (unsigned int i=0; i<gpu::device_group_size; i++)
   {
     devicenr=(i+gpu::relative_rank+1)%gpu::device_group_size;
@@ -205,14 +204,11 @@ eval_multi_multi_UBspline_3d_cuda (multi_UBspline_3d_c_cuda *spline,
 #ifdef SPLIT_SPLINE_DEBUG
     std::cerr << "Rank " << OHMMS::Controller->rank() << ", GPU mem before: " << spline->coefs << "; after: " << spline_coefs[devicenr] << "\n";
 #endif
-//    if(i>0)
-//      cudaStreamWaitEvent(spline_streams[devicenr],spline_events[prev_devicenr],0);
 #ifdef USE_SPLIT_SPLINES_MEM_PREFETCH
     cudaMemPrefetchAsync(pos,3*N*sizeof(float),curr_gpu,spline_streams[devicenr]);
 #endif
     eval_multi_multi_UBspline_3d_c_cudasplit  (spline, pos, phi, N, (float*)spline_coefs[devicenr], devicenr, spline_streams[devicenr]);
     cudaEventRecord(spline_events[devicenr],spline_streams[devicenr]);
-//    prev_devicenr=devicenr;
   }
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess)
@@ -221,10 +217,10 @@ eval_multi_multi_UBspline_3d_cuda (multi_UBspline_3d_c_cuda *spline,
              OHMMS::Controller->rank(),cudaGetErrorString(err));
     abort();
   }
-//  cudaStreamWaitEvent(gpu::kernelStream,spline_events[devicenr],0);
   for (unsigned int i=0; i<gpu::device_group_size; i++)
     cudaStreamWaitEvent(gpu::kernelStream,spline_events[i],0);
 #ifdef USE_SPLIT_SPLINES_MEM_PREFETCH
+//  This slows things down on Summit
 //  cudaMemPrefetchAsync(phi,N*sizeof(float*),curr_gpu,gpu::kernelStream);
 //  cudaMemPrefetchAsync(&phi[0],2*spline->num_splines*N*sizeof(float),curr_gpu,gpu::kernelStream);
 #endif
@@ -253,38 +249,17 @@ inline void eval_multi_multi_UBspline_3d_vgl_cuda (multi_UBspline_3d_c_cuda *spl
 {
   int curr_gpu;
   int devicenr=0;
-//  int prev_devicenr=0;
-#ifdef USE_NVTX
-  int curr_dev;
-  char s[32];
-#endif
   for (unsigned int i=0; i<gpu::device_group_size; i++)
   {
     devicenr=(i+gpu::relative_rank+1)%gpu::device_group_size;
     curr_gpu=gpu::device_group_numbers[devicenr];
-#ifdef USE_NVTX
-    snprintf(s,31,"r%i:setdev %i",OHMMS::Controller->rank(),curr_gpu);
-    nvtxMarkA(s);
-#endif
     cudaSetDevice(curr_gpu);
-//    if(i>0)
-//      cudaStreamWaitEvent(spline_streams[devicenr],spline_events[prev_devicenr],0);
-#ifdef USE_NVTX
-    cudaGetDevice(&curr_dev);
-    snprintf(s,31,"r%i:getdev:%i",OHMMS::Controller->rank(),curr_dev);
-    nvtxMarkA(s);
-#endif
 #ifdef USE_SPLIT_SPLINES_MEM_PREFETCH
     cudaMemPrefetchAsync(pos,3*N*sizeof(float),curr_gpu,spline_streams[devicenr]);
-#endif
-#ifdef USE_NVTX
-    snprintf(s,31,"r%i:eval %i",OHMMS::Controller->rank(),devicenr);
-    nvtxMarkA(s);
 #endif
     eval_multi_multi_UBspline_3d_c_vgl_cudasplit
       (spline, pos, Linv, phi, grad_lapl, N, row_stride, (float*)spline_coefs[devicenr], devicenr, spline_streams[devicenr]);
     cudaEventRecord(spline_events[devicenr],spline_streams[devicenr]);
-//    prev_devicenr=devicenr;
   }
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess)
@@ -293,20 +268,10 @@ inline void eval_multi_multi_UBspline_3d_vgl_cuda (multi_UBspline_3d_c_cuda *spl
              OHMMS::Controller->rank(),cudaGetErrorString(err));
     abort();
   }
-#ifdef USE_NVTX
-  snprintf(s,31,"r%i:setdev %i",OHMMS::Controller->rank(),mygpu);
-  nvtxMarkA(s);
-#endif
-//  cudaSetDevice(mygpu); // set device back to original GPU for this rank
-#ifdef USE_NVTX
-  cudaGetDevice(&curr_dev);
-  snprintf(s,31,"r%i:getdev:%i",OHMMS::Controller->rank(),curr_dev);
-  nvtxMarkA(s);
-#endif
-//  cudaStreamWaitEvent(gpu::kernelStream,spline_events[devicenr],0);
   for (unsigned int i=0; i<gpu::device_group_size; i++)
     cudaStreamWaitEvent(gpu::kernelStream,spline_events[i],0);
 #ifdef USE_SPLIT_SPLINES_MEM_PREFETCH
+//  This slows things down on Summit
 //  cudaMemPrefetchAsync(phi,N*sizeof(float*),curr_gpu,gpu::kernelStream);
 //  cudaMemPrefetchAsync(grad_lapl,N*sizeof(float*),curr_gpu,gpu::kernelStream);
 //  cudaMemPrefetchAsync(&phi[0],2*spline->num_splines*N*sizeof(float),curr_gpu,gpu::kernelStream);
@@ -331,7 +296,6 @@ EinsplineSetExtended<double>::evaluate
 (std::vector<Walker_t*> &walkers, int iat,
  gpu::device_vector<CudaRealType*> &phi)
 {
-//  std::cerr << "here.1\n";
   // app_log() << "Start EinsplineSet CUDA evaluation\n";
   int N = walkers.size();
   CudaRealType plus_minus[2] = {1.0, -1.0};
@@ -370,7 +334,6 @@ EinsplineSetExtended<std::complex<double> >::evaluate
 (std::vector<Walker_t*> &walkers, int iat,
  gpu::device_vector<CudaRealType*> &phi)
 {
-//  std::cerr << "here.2\n";
   // app_log() << "Eval 1.\n";
   int N = walkers.size();
   if (CudaValuePointers.size() < N)
@@ -443,7 +406,6 @@ EinsplineSetExtended<double>::evaluate
 (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
  gpu::device_vector<CudaRealType*> &phi)
 {
-//  std::cerr << "here.3\n";
   // app_log() << "Start EinsplineSet CUDA evaluation\n";
   int N = newpos.size();
   CudaRealType plus_minus[2] = {1.0, -1.0};
@@ -623,7 +585,6 @@ EinsplineSetExtended<std::complex<double> >::evaluate
 (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
  gpu::device_vector<CudaRealType*> &phi)
 {
-//  std::cerr << "here.4\n";
   // app_log() << "Eval 2.\n";
   int N = walkers.size();
   if (CudaValuePointers.size() < N)
@@ -697,7 +658,6 @@ EinsplineSetExtended<double>::evaluate
  gpu::device_vector<CudaRealType*> &phi, gpu::device_vector<CudaRealType*> &grad_lapl,
  int row_stride)
 {
-//  std::cerr << "here.5\n";
   int N = walkers.size();
   CudaRealType plus_minus[2] = {1.0, -1.0};
   if (cudapos.size() < N)
@@ -744,12 +704,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
  gpu::device_vector<CudaRealType*> &phi, gpu::device_vector<CudaRealType*> &grad_lapl,
  int row_stride)
 {
-//  std::cerr << "here.6\n";
   // app_log() << "Eval 3.\n";
-#ifdef USE_NVTX
-  cudaProfilerStart();
-  char s[32];
-#endif
   int N = walkers.size();
   int M = CudaMultiSpline->num_splines;
   if (CudaValuePointers.size() < N)
@@ -824,17 +779,9 @@ EinsplineSetExtended<std::complex<double> >::evaluate
       {
         devicenr=(i+gpu::relative_rank)%gpu::device_group_size;
         curr_gpu=gpu::device_group_numbers[devicenr];
-#ifdef USE_NVTX
-        snprintf(s,31,"r%i:setdev %i",OHMMS::Controller->rank(),curr_gpu);
-        nvtxMarkA(s);
-#endif
         cudaSetDevice(curr_gpu);
         cudaDeviceSynchronize();
       }
-#ifdef USE_NVTX
-      snprintf(s,31,"r%i:setdev %i",OHMMS::Controller->rank(),mygpu);
-      nvtxMarkA(s);
-#endif
       cudaSetDevice(mygpu); // set device back to original GPU for this rank
     } else
       cudaDeviceSynchronize();
@@ -870,12 +817,9 @@ EinsplineSetExtended<std::complex<double> >::evaluate
                        (CudaRealType**)CudaValuePointers.data(), phi.data(),
                        (CudaRealType**)CudaGradLaplPointers.data(), grad_lapl.data(),
                        CudaMultiSpline->num_splines,  walkers.size(), row_stride);
-#ifdef USE_NVTX
-  cudaProfilerStop();
-#endif
 // AT debug:
 #ifdef SPLIT_SPLINE_DEBUG
-  if(abort_counter+1>=4)
+  if(abort_counter>=3)
   {
     _exit(0);
   } else
@@ -905,8 +849,6 @@ EinsplineSetExtended<std::complex<double> >::evaluate
  gpu::device_vector<CudaComplexType*> &grad_lapl,
  int row_stride)
 {
-//  std::cerr << "here.7\n";
-  // app_log() << "Eval there.\n";
   int N = walkers.size();
   int M = CudaMultiSpline->num_splines;
   if (CudaValuePointers.size() < N)
@@ -956,8 +898,6 @@ template<> void
 EinsplineSetExtended<double>::evaluate
 (std::vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi)
 {
-  // std::cerr << "here.8\n";
-  // app_log() << "Eval over here.\n";
   int N = pos.size();
   CudaRealType plus_minus[2] = {1.0, -1.0};
   if (NLcudapos.size() < N)
@@ -1007,7 +947,6 @@ template<> void
 EinsplineSetExtended<std::complex<double> >::evaluate
 (std::vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi)
 {
-  // std::cerr << "here.9\n";
   // app_log() << "Eval 4.\n";
   int N = pos.size();
   if (CudaValuePointers.size() < N)
@@ -1061,7 +1000,6 @@ EinsplineSetExtended<std::complex<double> >::evaluate
 (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi)
 {
 #ifdef QMC_COMPLEX
-//  std::cerr << "here.10\n";
   int N = pos.size();
   if (CudaValuePointers.size() < N)
     resize_cuda(N);
@@ -1322,7 +1260,6 @@ EinsplineSetHybrid<double>::evaluate (std::vector<Walker_t*> &walkers, std::vect
                                       gpu::device_vector<CudaRealType*> &grad_lapl,
                                       int row_stride)
 {
-//  std::cerr << "here.11\n";
   int N = newpos.size();
   if (cudapos.size() < N)
   {
@@ -1656,7 +1593,6 @@ template<> void
 EinsplineSetHybrid<double>::evaluate
 (std::vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi)
 {
-//  std::cerr << "here.12\n";
   int N = pos.size();
   if (cudapos.size() < N)
   {
@@ -1741,7 +1677,6 @@ EinsplineSetHybrid<std::complex<double> >::evaluate
  gpu::device_vector<CudaRealType*> &phi, gpu::device_vector<CudaRealType*> &grad_lapl,
  int row_stride)
 {
-//  std::cerr << "here.13\n";
   static int numAtomic=0;
   static int num3D=0;
   int N = newpos.size();
@@ -2055,7 +1990,6 @@ template<> void
 EinsplineSetHybrid<std::complex<double> >::evaluate
 (std::vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi)
 {
-//  std::cerr << "here.14\n";
   int N = pos.size();
   if (cudapos.size() < N)
   {
@@ -2137,7 +2071,6 @@ EinsplineSetHybrid<std::complex<double> >::evaluate
 template<> void
 EinsplineSetExtended<double>::initGPU()
 {
-//  std::cerr << "here.15\n";
   app_log() << "Copying einspline orbitals to GPU.\n";
   create_multi_UBspline_3d_cuda
   (MultiSpline, CudaMultiSpline);
@@ -2174,7 +2107,6 @@ EinsplineSetExtended<double>::initGPU()
 template<> void
 EinsplineSetExtended<std::complex<double> >::initGPU()
 {
-//  std::cerr << "here.16\n";
   app_log() << "Copying einspline orbitals to GPU.\n";
   create_multi_UBspline_3d_cuda
   (MultiSpline, CudaMultiSpline);
@@ -2213,7 +2145,6 @@ EinsplineSetExtended<std::complex<double> >::initGPU()
 template<> void
 EinsplineSetHybrid<double>::initGPU()
 {
-//  std::cerr << "here.17\n";
   EinsplineSetExtended<double>::initGPU();
   // Setup B-spline Acuda matrix in constant memory
   init_atomic_cuda();
@@ -2291,7 +2222,6 @@ EinsplineSetHybrid<double>::initGPU()
 template<> void
 EinsplineSetHybrid<std::complex<double> >::initGPU()
 {
-//  std::cerr << "here.18\n";
   EinsplineSetExtended<std::complex<double> >::initGPU();
   // Setup B-spline Acuda matrix in constant memory
   init_atomic_cuda();

@@ -306,7 +306,6 @@ protected:
   void applyPhaseFactors (gpu::device_vector<CudaStorageType*> &storageVector,
                           gpu::device_vector<CudaRealType*> &phi);
   // Data for vectorized evaluations
-//  std::vector<CudaPosType> hostPos;
   gpu::host_vector<CudaPosType> hostPos, NLhostPos;
   gpu::device_vector<CudaPosType> cudapos, cudapos2, NLcudapos;
   gpu::host_vector<CudaRealType> hostSign, NLhostSign;
