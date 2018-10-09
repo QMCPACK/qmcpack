@@ -23,12 +23,13 @@
 namespace qmcplusplus
 {
 
-/** adoptor class to match std::complex<ST> spline with TT real SPOs
+/** adoptor class to match ST real spline with TT real SPOs
  * @tparam ST precision of spline
  * @tparam TT precision of SPOs
  * @tparam D dimension
  *
- * Requires temporage storage and multiplication of phase vectors
+ * Requires temporage storage and multiplication of the sign of the real part of the phase
+ * Internal storage ST type arrays are aligned and padded.
  */
 template<typename ST, typename TT>
 struct SplineR2RSoA: public SplineAdoptorBase<ST,3>

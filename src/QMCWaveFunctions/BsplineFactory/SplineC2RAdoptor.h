@@ -36,6 +36,7 @@ namespace qmcplusplus
  * @tparam D dimension
  *
  * Requires temporage storage and multiplication of phase vectors
+ * Internal storage use double sized arrays of ST type, aligned and padded.
  */
 template<typename ST, typename TT>
 struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
