@@ -122,8 +122,6 @@ FUNCTION( RUN_QMC_APP_NO_COPY TESTNAME WORKDIR PROCS THREADS TEST_ADDED TEST_LAB
     ENDIF()
     IF ( TEST_ADDED )
        SET(SUCCESS FALSE)
-       # workaround the fact that ENABLE_SOA=="" rather than "0" 
-       #   when -DENABLE_SOA is not explicitly provided
        SET(TEST_LABELS_TEMP "")
        EXECUTE_PROCESS(COMMAND ${PROJECT_SOURCE_DIR}/tests/scripts/test_labels.py ${TESTNAME} ${QMC_CUDA} ${ENABLE_SOA} ${QMC_COMPLEX} ${QMC_MIXED_PRECISION} OUTPUT_VARIABLE TEST_LABELS_TEMP RESULT_VARIABLE SUCCESS)
        #MESSAGE("  Label script return value: ${SUCCESS}")
