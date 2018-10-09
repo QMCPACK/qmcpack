@@ -24,7 +24,7 @@ def error(msg=None):
 #
 #   reason for instability
 #     bug           - test failure definitely a bug and QMCPACK needs to be fixed
-#     unsupported   - test fails because feature is not supported and never will be
+#     unsupported   - test fails because feature is not supported and was not before
 #     poor_test     - test fails because test is insufficient (false positive)
 #     cause_unknown - cause/nature of failure is not known and needs investigation
 #     (bug/unsupported/poor/unknown are comprehensive for failures)
