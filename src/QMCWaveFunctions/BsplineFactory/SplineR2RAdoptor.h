@@ -23,12 +23,13 @@
 namespace qmcplusplus
 {
 
-/** adoptor class to match std::complex<ST> spline with TT real SPOs
+/** adoptor class to match ST real spline with TT real SPOs
  * @tparam ST precision of spline
  * @tparam TT precision of SPOs
  * @tparam D dimension
  *
- * Requires temporage storage and multiplication of phase vectors
+ * Requires temporage storage and multiplication of the sign of the real part of the phase
+ * Internal storage ST type arrays are aligned and padded.
  */
 template<typename ST, typename TT>
 struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
@@ -206,14 +207,15 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   }
 
   template<typename VV>
-  inline void assign_v(int bc_sign, const vContainer_type& myV, VV& psi)
+  inline void assign_v(int bc_sign, const vContainer_type& myV, VV& psi, int first = 0, int last = -1) const
   {
-    if (bc_sign & 1)
-      for(size_t psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
-        psi[psiIndex]=-myV[j];
-    else
-      for(size_t psiIndex=first_spo,j=0; psiIndex<last_spo; ++psiIndex,++j)
-        psi[psiIndex]=myV[j];
+    // protect last
+    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+
+    const ST signed_one = (bc_sign &1)? -1:1;
+    #pragma omp simd
+    for(size_t j=first; j<last; ++j)
+      psi[first_spo+j]=signed_one*myV[j];
   }
 
   template<typename VV>
@@ -222,26 +224,54 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const PointType& r=P.activeR(iat);
     PointType ru;
     int bc_sign=convertPos(r,ru);
-    spline2::evaluate3d(SplineInst->spline_m,ru,myV);
-    assign_v(bc_sign,myV,psi);
+
+    #pragma omp parallel
+    {
+      int first, last;
+      FairDivideAligned(myV.size(), getAlignment<ST>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
+
+      spline2::evaluate3d(SplineInst->spline_m,ru,myV,first,last);
+      assign_v(bc_sign,myV,psi,first,last);
+    }
   }
 
   template<typename VM, typename VAV>
   inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM, VAV& SPOMem)
   {
-    const size_t m=psiM.cols();
-    for(int iat=0; iat<VP.getTotalNum(); ++iat)
+    #pragma omp parallel
     {
-      Vector<TT> psi(psiM[iat],m);
-      evaluate_v(VP,iat,psi);
+      int first, last;
+      FairDivideAligned(myV.size(), getAlignment<ST>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
+
+      const size_t m=psiM.cols();
+      for(int iat=0; iat<VP.getTotalNum(); ++iat)
+      {
+        const PointType& r=VP.activeR(iat);
+        PointType ru;
+        int bc_sign=convertPos(r,ru);
+        Vector<TT> psi(psiM[iat],m);
+
+        spline2::evaluate3d(SplineInst->spline_m,ru,myV,first,last);
+        assign_v(bc_sign,myV,psi,first,last);
+      }
     }
   }
 
   inline size_t estimateMemory(const int nP) { return 0; }
 
   template<typename VV, typename GV>
-  inline void assign_vgl(int bc_sign, VV& psi, GV& dpsi, VV& d2psi)
+  inline void assign_vgl(int bc_sign, VV& psi, GV& dpsi, VV& d2psi, int first = 0, int last = -1) const
   {
+    // protect last
+    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+
+    const ST signed_one = (bc_sign &1)? -1:1;
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
              g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
              g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
@@ -257,31 +287,15 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict h12=myH.data(4);
     const ST* restrict h22=myH.data(5);
 
-    if (bc_sign & 1)
+    #pragma omp simd
+    for(size_t j=first; j<last; ++j)
     {
-      #pragma omp simd
-      for(size_t psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
-      {
-        const size_t j=psiIndex-first_spo;
-        psi[psiIndex]=-myV[j];
-        dpsi[psiIndex][0]=-(g00*g0[j]+g01*g1[j]+g02*g2[j]);
-        dpsi[psiIndex][1]=-(g10*g0[j]+g11*g1[j]+g12*g2[j]);
-        dpsi[psiIndex][2]=-(g20*g0[j]+g21*g1[j]+g22*g2[j]);
-        d2psi[psiIndex]=-SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
-      }
-    }
-    else
-    {
-      #pragma omp simd
-      for(size_t psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
-      {
-        const size_t j=psiIndex-first_spo;
-        psi[psiIndex]=myV[j];
-        dpsi[psiIndex][0]=(g00*g0[j]+g01*g1[j]+g02*g2[j]);
-        dpsi[psiIndex][1]=(g10*g0[j]+g11*g1[j]+g12*g2[j]);
-        dpsi[psiIndex][2]=(g20*g0[j]+g21*g1[j]+g22*g2[j]);
-        d2psi[psiIndex]=SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
-      }
+      const size_t psiIndex=first_spo+j;
+      psi[psiIndex]=signed_one*myV[j];
+      dpsi[psiIndex][0]=signed_one*(g00*g0[j]+g01*g1[j]+g02*g2[j]);
+      dpsi[psiIndex][1]=signed_one*(g10*g0[j]+g11*g1[j]+g12*g2[j]);
+      dpsi[psiIndex][2]=signed_one*(g20*g0[j]+g21*g1[j]+g22*g2[j]);
+      d2psi[psiIndex]=signed_one*SymTrace(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],symGG);
     }
   }
 
@@ -290,35 +304,20 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
   template<typename VV, typename GV>
   inline void assign_vgl_from_l(int bc_sign, VV& psi, GV& dpsi, VV& d2psi)
   {
+    const ST signed_one = (bc_sign &1)? -1:1;
     const ST* restrict g0=myG.data(0);
     const ST* restrict g1=myG.data(1);
     const ST* restrict g2=myG.data(2);
 
-    if (bc_sign & 1)
+    #pragma omp simd
+    for(int psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
     {
-      #pragma omp simd
-      for(int psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
-      {
-        const size_t j=psiIndex-first_spo;
-        psi[psiIndex]=-myV[j];
-        dpsi[psiIndex][0]=-g0[j];
-        dpsi[psiIndex][1]=-g1[j];
-        dpsi[psiIndex][2]=-g2[j];
-        d2psi[psiIndex]=-myL[j];
-      }
-    }
-    else
-    {
-      #pragma omp simd
-      for(int psiIndex=first_spo; psiIndex<last_spo; ++psiIndex)
-      {
-        const size_t j=psiIndex-first_spo;
-        psi[psiIndex]=myV[j];
-        dpsi[psiIndex][0]=g0[j];
-        dpsi[psiIndex][1]=g1[j];
-        dpsi[psiIndex][2]=g2[j];
-        d2psi[psiIndex]=myL[j];
-      }
+      const size_t j=psiIndex-first_spo;
+      psi[psiIndex]=signed_one*myV[j];
+      dpsi[psiIndex][0]=signed_one*g0[j];
+      dpsi[psiIndex][1]=signed_one*g1[j];
+      dpsi[psiIndex][2]=signed_one*g2[j];
+      d2psi[psiIndex]=signed_one*myL[j];
     }
   }
 
@@ -328,14 +327,27 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const PointType& r=P.activeR(iat);
     PointType ru;
     int bc_sign=convertPos(r,ru);
-    spline2::evaluate3d_vgh(SplineInst->spline_m,ru,myV,myG,myH);
-    assign_vgl(bc_sign,psi,dpsi,d2psi);
+
+    #pragma omp parallel
+    {
+      int first, last;
+      FairDivideAligned(myV.size(), getAlignment<ST>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
+
+      spline2::evaluate3d_vgh(SplineInst->spline_m,ru,myV,myG,myH,first,last);
+      assign_vgl(bc_sign,psi,dpsi,d2psi,first,last);
+    }
   }
 
   template<typename VV, typename GV, typename GGV>
-  void assign_vgh(int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi)
+  void assign_vgh(int bc_sign, VV& psi, GV& dpsi, GGV& grad_grad_psi, int first = 0, int last = -1) const
   {
-    const ST cone = (bc_sign &1)? -1:1;
+    // protect last
+    last = last<0 ? kPoints.size() : (last>kPoints.size() ? kPoints.size() : last);
+
+    const ST signed_one = (bc_sign &1)? -1:1;
     const ST g00=PrimLattice.G(0), g01=PrimLattice.G(1), g02=PrimLattice.G(2),
              g10=PrimLattice.G(3), g11=PrimLattice.G(4), g12=PrimLattice.G(5),
              g20=PrimLattice.G(6), g21=PrimLattice.G(7), g22=PrimLattice.G(8);
@@ -350,10 +362,8 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const ST* restrict h12=myH.data(4);
     const ST* restrict h22=myH.data(5);
 
-    const size_t N=last_spo-first_spo;
-
     #pragma omp simd
-    for (size_t j=0; j<N; ++j)
+    for(size_t j=first; j<last; ++j)
     {
       //dot(PrimLattice.G,myG[j])
       const ST dX_r = g00*g0[j]+g01*g1[j]+g02*g2[j];
@@ -361,10 +371,10 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
       const ST dZ_r = g20*g0[j]+g21*g1[j]+g22*g2[j];
 
       const size_t psiIndex=j+first_spo;
-      psi[psiIndex]    =cone*myV[j];
-      dpsi[psiIndex][0]=cone*dX_r;
-      dpsi[psiIndex][1]=cone*dY_r;
-      dpsi[psiIndex][2]=cone*dZ_r;
+      psi[psiIndex]    =signed_one*myV[j];
+      dpsi[psiIndex][0]=signed_one*dX_r;
+      dpsi[psiIndex][1]=signed_one*dY_r;
+      dpsi[psiIndex][2]=signed_one*dZ_r;
 
       const ST h_xx_r=v_m_v(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],g00,g01,g02,g00,g01,g02);
       const ST h_xy_r=v_m_v(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],g00,g01,g02,g10,g11,g12);
@@ -376,15 +386,15 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
       const ST h_zy_r=v_m_v(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],g20,g21,g22,g10,g11,g12);
       const ST h_zz_r=v_m_v(h00[j],h01[j],h02[j],h11[j],h12[j],h22[j],g20,g21,g22,g20,g21,g22);
 
-      grad_grad_psi[psiIndex][0]=cone*h_xx_r;
-      grad_grad_psi[psiIndex][1]=cone*h_xy_r;
-      grad_grad_psi[psiIndex][2]=cone*h_xz_r;
-      grad_grad_psi[psiIndex][3]=cone*h_yx_r;
-      grad_grad_psi[psiIndex][4]=cone*h_yy_r;
-      grad_grad_psi[psiIndex][5]=cone*h_yz_r;
-      grad_grad_psi[psiIndex][6]=cone*h_zx_r;
-      grad_grad_psi[psiIndex][7]=cone*h_zy_r;
-      grad_grad_psi[psiIndex][8]=cone*h_zz_r;
+      grad_grad_psi[psiIndex][0]=signed_one*h_xx_r;
+      grad_grad_psi[psiIndex][1]=signed_one*h_xy_r;
+      grad_grad_psi[psiIndex][2]=signed_one*h_xz_r;
+      grad_grad_psi[psiIndex][3]=signed_one*h_yx_r;
+      grad_grad_psi[psiIndex][4]=signed_one*h_yy_r;
+      grad_grad_psi[psiIndex][5]=signed_one*h_yz_r;
+      grad_grad_psi[psiIndex][6]=signed_one*h_zx_r;
+      grad_grad_psi[psiIndex][7]=signed_one*h_zy_r;
+      grad_grad_psi[psiIndex][8]=signed_one*h_zz_r;
     }
   }
 
@@ -395,8 +405,18 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     const PointType& r=P.activeR(iat);
     PointType ru;
     int bc_sign=convertPos(r,ru);
-    spline2::evaluate3d_vgh(SplineInst->spline_m,ru,myV,myG,myH);
-    assign_vgh(bc_sign,psi,dpsi,grad_grad_psi);
+
+    #pragma omp parallel
+    {
+      int first, last;
+      FairDivideAligned(myV.size(), getAlignment<ST>(),
+                        omp_get_num_threads(),
+                        omp_get_thread_num(),
+                        first, last);
+
+      spline2::evaluate3d_vgh(SplineInst->spline_m,ru,myV,myG,myH,first,last);
+      assign_vgh(bc_sign,psi,dpsi,grad_grad_psi,first,last);
+    }
   }
 };
 
