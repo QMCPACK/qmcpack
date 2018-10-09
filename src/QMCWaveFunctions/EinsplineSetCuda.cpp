@@ -239,7 +239,7 @@ eval_multi_multi_UBspline_3d_cuda (multi_UBspline_3d_z_cuda *spline,
                                    double *pos, std::complex<double> *phi[], int N,
                                    std::complex<double> *spline_coefs[], cudaEvent_t spline_events[], cudaStream_t spline_streams[])
 {
-  app_error() << "Complex double split spline codepath not fully implemented yet.\n";
+  app_error() << "Complex double split spline code path not fully implemented yet.\n";
   abort();
 }
 
@@ -294,6 +294,14 @@ inline void eval_multi_multi_UBspline_3d_vgl_cuda
 {
   eval_multi_multi_UBspline_3d_z_vgl_cuda
   (spline, pos, Linv, phi, grad_lapl, N, row_stride);
+}
+
+inline void eval_multi_multi_UBspline_3d_vgl_cuda (multi_UBspline_3d_z_cuda *spline, double *pos, double Linv[],
+                                                   std::complex<double> *phi[], std::complex<double> *grad_lapl[], int N, int row_stride,
+                                                   std::complex<double> *spline_coefs[], cudaEvent_t spline_events[], cudaStream_t spline_streams[])
+{
+  app_error() << "Complex double split spline code path not fully implemented yet.\n";
+  abort();
 }
 
 //////////////////////////////////////////////
@@ -1031,7 +1039,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (split_splines)
   {
     eval_multi_multi_UBspline_3d_cuda
-    (CudaMultiSpline, (CudaRealType*)cudapos.data(), CudaValuePointers.data(), N, spline_rank_pointers.data(), spline_events.data());
+    (CudaMultiSpline, (CudaRealType*)cudapos.data(), CudaValuePointers.data(), N, spline_rank_pointers.data(), spline_events.data(), spline_streams.data());
   } else
   {
     eval_multi_multi_UBspline_3d_cuda
