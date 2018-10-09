@@ -24,14 +24,12 @@ cudaStream_t memoryStream;
 
 cudaEvent_t syncEvent;
 
-cudaEvent_t updateinverseSyncDiracEvent;
 cudaEvent_t gradientSyncDiracEvent;
 cudaEvent_t gradientSyncOneBodyEvent;
 cudaEvent_t gradientSyncTwoBodyEvent;
 cudaEvent_t ratioSyncDiracEvent;
 cudaEvent_t ratioSyncOneBodyEvent;
 cudaEvent_t ratioSyncTwoBodyEvent;
-
 cublasHandle_t cublasHandle;
 
 size_t MaxGPUSpineSizeMB;
