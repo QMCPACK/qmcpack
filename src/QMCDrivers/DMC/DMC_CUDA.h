@@ -34,7 +34,7 @@ class DMCcuda: public QMCDriver
 public:
   /// Constructor.
   GPU_XRAY_TRACE DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-			 QMCHamiltonian& h,WaveFunctionPool& ppool);
+			 QMCHamiltonian& h,WaveFunctionPool& ppool, Communicate* comm);
   GPU_XRAY_TRACE bool run();
   GPU_XRAY_TRACE bool put(xmlNodePtr cur);
   GPU_XRAY_TRACE void resetUpdateEngine();

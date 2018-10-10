@@ -115,7 +115,7 @@ bool BsplineJastrowBuilder::createOneBodyJastrow(xmlNodePtr cur)
             else
               sprintf(fname,"%s.%s.dat",j1name.c_str(),speciesA.c_str());
           }
-          functor->setReportLevel(ReportLevel,fname);
+          functor->setReportLevel(rank()==0,fname);
           functor->print();
         }
       }
@@ -305,7 +305,7 @@ bool BsplineJastrowBuilder::put(xmlNodePtr cur)
             sprintf(fname,"J2.%s.g%03d.dat",pairType.c_str(),taskid);
           else
             sprintf(fname,"J2.%s.dat",pairType.c_str());
-          functor->setReportLevel(ReportLevel,fname);
+          functor->setReportLevel(rank()==0,fname);
           functor->print();
         }
       }

@@ -177,22 +177,22 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
   if (type == "composite")
   {
     app_log() << "Composite SPO set with existing SPOSets." << std::endl;
-    bb= new  CompositeSPOSetBuilder();
+    bb= new  CompositeSPOSetBuilder(myComm);
   }
   else if (type == "jellium" || type == "heg")
   {
     app_log()<<"Electron gas SPO set"<< std::endl;
-    bb = new ElectronGasSPOBuilder(targetPtcl,rootNode);
+    bb = new ElectronGasSPOBuilder(targetPtcl, myComm, rootNode);
   }
   else if (type == "sho")
   {
     app_log()<<"Harmonic Oscillator SPO set"<< std::endl;
-    bb = new SHOSetBuilder(targetPtcl);
+    bb = new SHOSetBuilder(targetPtcl, myComm);
   }
   else if (type == "linearopt")
   {
     //app_log()<<"Optimizable SPO set"<< std::endl;
-    bb = new OptimizableSPOBuilder(targetPtcl,ptclPool,rootNode);
+    bb = new OptimizableSPOBuilder(targetPtcl, ptclPool, myComm, rootNode);
   }
 #if OHMMS_DIM ==3
   else if(type.find("spline")<type.size())
@@ -200,7 +200,7 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     name=type_in;
 #if defined(HAVE_EINSPLINE)
     PRE << "EinsplineSetBuilder:  using libeinspline for B-spline orbitals.\n";
-    bb = new EinsplineSetBuilder(targetPtcl,ptclPool,rootNode);
+    bb = new EinsplineSetBuilder(targetPtcl, ptclPool, myComm, rootNode);
 #else
     PRE.error("Einspline is missing for B-spline orbitals",true);
 #endif
@@ -219,15 +219,15 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     else
       ions=(*pit).second;
 #if defined(ENABLE_SOA)
-    bb=new LCAOrbitalBuilder(targetPtcl,*ions,rootNode);
+    bb=new LCAOrbitalBuilder(targetPtcl, *ions, myComm, rootNode);
 #else
     if(transformOpt == "yes")
     {
       app_log() << "Using MolecularSPOBuilder<NGOBuilder>" << std::endl;
 #if QMC_BUILD_LEVEL>2
-      bb = new MolecularSPOBuilder<NGOBuilder>(targetPtcl,*ions,cuspC=="yes",cuspInfo,MOH5Ref);
+      bb = new MolecularSPOBuilder<NGOBuilder>(targetPtcl,*ions,myComm,cuspC=="yes",cuspInfo,MOH5Ref);
 #else
-      bb = new MolecularSPOBuilder<NGOBuilder>(targetPtcl,*ions,false);
+      bb = new MolecularSPOBuilder<NGOBuilder>(targetPtcl,*ions,myComm,false);
 #endif
     }
     else
@@ -237,9 +237,9 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
         app_log() <<" ****** Cusp Correction algorithm is only implemented in combination with numerical radial orbitals. Use transform=yes to enable this option. \n";
 #endif
       if(keyOpt == "GTO")
-        bb = new MolecularSPOBuilder<GTOBuilder>(targetPtcl,*ions);
+        bb = new MolecularSPOBuilder<GTOBuilder>(targetPtcl,*ions,myComm);
       else if(keyOpt == "STO")
-        bb = new MolecularSPOBuilder<STOBuilder>(targetPtcl,*ions);
+        bb = new MolecularSPOBuilder<STOBuilder>(targetPtcl,*ions,myComm);
     }
 #endif
   }
@@ -254,8 +254,6 @@ SPOSetBuilder* SPOSetBuilderFactory::createSPOSetBuilder(xmlNodePtr rootNode)
     app_log() << " Missing both \"@name\" and \"@type\". Use the last SPOSetBuilder." << std::endl;
   else
   {
-    bb->setReportLevel(ReportLevel);
-    bb->initCommunicator(myComm);
     app_log()<<"  Created SPOSet builder named '"<< name<< "' of type "<< type << std::endl;
     spo_builders[name]=bb; //use name, if missing type is used
   }

@@ -35,7 +35,7 @@ PWOrbitalBuilder::PWOrbitalBuilder(ParticleSet& els, TrialWaveFunction& psi, Ptc
   ,myBasisSet(0)
 #endif
 {
-  myParam=new PWParameterSet;
+  myParam=new PWParameterSet(myComm);
 }
 
 PWOrbitalBuilder::~PWOrbitalBuilder()

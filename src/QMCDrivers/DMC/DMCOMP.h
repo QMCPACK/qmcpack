@@ -36,7 +36,7 @@ public:
 
   /// Constructor.
   DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-         WaveFunctionPool& ppool);
+         WaveFunctionPool& ppool, Communicate* comm);
 
   bool run();
   bool put(xmlNodePtr cur);

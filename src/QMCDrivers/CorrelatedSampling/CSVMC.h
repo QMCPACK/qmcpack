@@ -39,7 +39,7 @@ class CSVMC: public QMCDriver, public CloneManager
 public:
   /// Constructor.
   CSVMC(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, 
-        WaveFunctionPool& ppool);
+        WaveFunctionPool& ppool, Communicate* comm);
 
   bool run();
   bool put(xmlNodePtr cur);

@@ -40,8 +40,8 @@ namespace qmcplusplus
 /// Constructor.
   RMCSingleOMP::RMCSingleOMP (MCWalkerConfiguration & w,
 			      TrialWaveFunction & psi, QMCHamiltonian & h,
-			      WaveFunctionPool & ppool)
-  :QMCDriver (w, psi, h, ppool), prestepsVMC (-1), rescaleDrift ("no"), beta (-1),
+			      WaveFunctionPool & ppool, Communicate* comm)
+  :QMCDriver (w, psi, h, ppool, comm), prestepsVMC (-1), rescaleDrift ("no"), beta (-1),
     beads (-1), fromScratch (true)
   {
     RootName = "rmc";

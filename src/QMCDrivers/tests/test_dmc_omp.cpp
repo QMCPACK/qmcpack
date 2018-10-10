@@ -112,7 +112,7 @@ TEST_CASE("DMCOMP", "[drivers][dmc]")
   //EstimatorManagerBase emb(c);
 
 
-  DMCOMP dmc_omp(elec, psi, h, wpool);
+  DMCOMP dmc_omp(elec, psi, h, wpool, c);
 
   const char *dmc_input= \
   "<qmc method=\"dmc\"> \
