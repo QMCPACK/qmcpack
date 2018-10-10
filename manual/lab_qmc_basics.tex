@@ -571,7 +571,7 @@ To study timestep bias, we will perform a sequence of DMC runs over a range of t
   \texttt{blocks}_{n}      &= \texttt{blocks}_{n-1}\nonumber\\
   \texttt{steps}_{n}       &= \texttt{steps}_{n-1}\times 2
 \end{align}
-Each DMC run will require about twice as much computer time as the one preceeding it.  Note that the number of blocks is kept fixed for uniform statistical analysis.  $\texttt{blocks}\times\texttt{steps}\times\texttt{timestep}\sim 60~\mathrm{Ha}^{-1}$ is sufficient for this system.
+Each DMC run will require about twice as much computer time as the one preceding it.  Note that the number of blocks is kept fixed for uniform statistical analysis.  $\texttt{blocks}\times\texttt{steps}\times\texttt{timestep}\sim 60~\mathrm{Ha}^{-1}$ is sufficient for this system.
 
 Choose an initial DMC timestep and create a sequence of $N$ timesteps according to \ref{eq:timestep_iter}.  Make $N$ copies of the DMC XML block in the input file
 \begin{lstlisting}
@@ -891,7 +891,7 @@ run_project(qmc)                       # write input file and submit job
 
 \section{Automated binding curve of the oxygen dimer}
 \label{sec:dimer_automation}
-In this section we will use Nexus to calculate the DMC total energy of the oxygen dimer over a series of bond lengths.  The equilibrium bond length and binding energy of the dimer will be determined by performing a polynomial fit to the data (Morse potential fits should be preferred in production tests).  Comparing these values with correponding experimental data provides a second test of the BFD pseudopotential for oxygen.
+In this section we will use Nexus to calculate the DMC total energy of the oxygen dimer over a series of bond lengths.  The equilibrium bond length and binding energy of the dimer will be determined by performing a polynomial fit to the data (Morse potential fits should be preferred in production tests).  Comparing these values with corresponding experimental data provides a second test of the BFD pseudopotential for oxygen.
 
 Enter the \texttt{oxygen\_dimer} directory.  Copy your BFD pseudopotential from the atom runs into \texttt{oxygen\_dimer/pseudopotentials} (be sure to move both files: \texttt{.upf} and \texttt{.xml}).  Open \texttt{O\_dimer.py} with a text editor.  The overall format is similar to the example file shown in the last section.  
 %The header material, including Nexus imports, settings, and the job parameters for QMC are identical.  
@@ -1471,7 +1471,7 @@ If you have a system you would like to try with QMC, make a copy of \texttt{exam
 %    )
 %\end{lstlisting}
 
-Set ``\texttt{generate\_only}'' to \texttt{1} and type ``\texttt{./example.py}'' or similar to generate the input files.  All files will be written to ``\texttt{./diamond\_vmc}'' (``\texttt{./[my\_project\_name]}'' if you have changed ``\texttt{my\_project\_name}'' in the file).  The input files for PWSCF, pw2qmcpack, and QMCPACK are \texttt{scf.in}, \texttt{pw2qmcpack.in}, and \texttt{vmc.in.xml}, repectively.  Take some time to inspect the generated input files.  If you have questions about the file contents, or run into issues with the generation process, feel free to consult with a lab instructor.  
+Set ``\texttt{generate\_only}'' to \texttt{1} and type ``\texttt{./example.py}'' or similar to generate the input files.  All files will be written to ``\texttt{./diamond\_vmc}'' (``\texttt{./[my\_project\_name]}'' if you have changed ``\texttt{my\_project\_name}'' in the file).  The input files for PWSCF, pw2qmcpack, and QMCPACK are \texttt{scf.in}, \texttt{pw2qmcpack.in}, and \texttt{vmc.in.xml}, respectively.  Take some time to inspect the generated input files.  If you have questions about the file contents, or run into issues with the generation process, feel free to consult with a lab instructor.  
 
 If desired, you can submit the runs directly with \texttt{example.py}.  To do this, first reset the Nexus simulation record by typing ``\texttt{rm ./diamond\_vmc/sim*/sim.p}'' or similar and set ``\texttt{generate\_only}'' back to \texttt{0}.  Next rerun \texttt{example.py}  (you may want to redirect the text output).  
 

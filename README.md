@@ -65,9 +65,9 @@ make -j 8
 
 ## Set the environment
 
- A number of enviornmental variables affect the build.  In particular
+ A number of environmental variables affect the build.  In particular
  they can control the default paths for libraries, the default
- compilers, etc.  The list of enviornmental variables is given below:
+ compilers, etc.  The list of environmental variables is given below:
 
 | Environment variable | Description |
 |----------------------|-------------|
@@ -81,10 +81,10 @@ make -j 8
 
 ## CMake options
 
- In addition to reading the enviornmental variables, CMake provides a
+ In addition to reading the environmental variables, CMake provides a
  number of optional variables that can be set to control the build and
  configure steps.  When passed to CMake, these variables will take
- precident over the enviornmental and default variables.  To set them
+ precident over the environmental and default variables.  To set them
  add -D FLAG=VALUE to the configure line between the cmake command and
  the path to the source directory.
 

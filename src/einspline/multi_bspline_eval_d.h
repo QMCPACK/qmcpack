@@ -26,7 +26,7 @@
 #include "multi_bspline_structs.h"
 
 /************************************************************/
-/* 1D double-precision, real evaulation functions        */
+/* 1D double-precision, real evaluation functions        */
 /************************************************************/
 void
 eval_multi_UBspline_1d_d (const multi_UBspline_1d_d *spline,
@@ -54,7 +54,7 @@ eval_multi_UBspline_1d_d_vgh (const multi_UBspline_1d_d *spline,
                               double* restrict hess);
 
 /************************************************************/
-/* 2D double-precision, real evaulation functions        */
+/* 2D double-precision, real evaluation functions        */
 /************************************************************/
 void
 eval_multi_UBspline_2d_d (const multi_UBspline_2d_d *spline,
@@ -82,7 +82,7 @@ eval_multi_UBspline_2d_d_vgh (const multi_UBspline_2d_d *spline,
                               double* restrict hess);
 
 /************************************************************/
-/* 3D double-precision, real evaulation functions           */
+/* 3D double-precision, real evaluation functions           */
 /************************************************************/
 void
 eval_multi_UBspline_3d_d (const multi_UBspline_3d_d *spline,

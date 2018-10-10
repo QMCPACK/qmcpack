@@ -26,7 +26,7 @@
 #include "nubspline_structs.h"
 
 /************************************************************/
-/* 1D single-precision, real evaulation functions           */
+/* 1D single-precision, real evaluation functions           */
 /************************************************************/
 
 void
@@ -48,7 +48,7 @@ eval_NUBspline_1d_d_vgh (NUBspline_1d_d * restrict spline, double x,
                          double* restrict hess);
 
 /************************************************************/
-/* 2D single-precision, real evaulation functions           */
+/* 2D single-precision, real evaluation functions           */
 /************************************************************/
 
 void
@@ -71,7 +71,7 @@ eval_NUBspline_2d_d_vgh (NUBspline_2d_d * restrict spline,
                          double* restrict grad, double* restrict hess);
 
 /************************************************************/
-/* 3D single-precision, real evaulation functions           */
+/* 3D single-precision, real evaluation functions           */
 /************************************************************/
 
 void

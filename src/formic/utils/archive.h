@@ -207,11 +207,11 @@ namespace formic {
             throw formic::Exception("expected the \"[\" character at the start of a vector, found \"%s\" instead") % c;
         }
 
-        // read in the body of the vector, which is terminated by a ']' preceeded by whitespace, e.g. " ]"
+        // read in the body of the vector, which is terminated by a ']' preceded by whitespace, e.g. " ]"
         std::string vec_text;
         std::getline(*_s, vec_text, ']');
         if ( _s->eof() || _s->fail() )
-          throw formic::Exception("expected a \"]\" character preceeded by whitespace at the end of the vector");
+          throw formic::Exception("expected a \"]\" character preceded by whitespace at the end of the vector");
 
         // count the number of elements and resize the vector
         size_t n = 0;

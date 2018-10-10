@@ -169,7 +169,7 @@ public:
    */
   virtual void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
 
-  /** initalize Walker for walker update
+  /** initialize Walker for walker update
    */
   virtual void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
 
