@@ -112,7 +112,7 @@ TEST_CASE("VMCSingleOMP", "[drivers][vmc]")
   //EstimatorManagerBase emb(c);
 
 
-  VMCSingleOMP vmc_omp(elec, psi, h, wpool);
+  VMCSingleOMP vmc_omp(elec, psi, h, wpool, c);
 
   const char *vmc_input= \
   "<qmc method=\"vmc\" move=\"pbyp\"> \

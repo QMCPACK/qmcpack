@@ -31,7 +31,7 @@ class VMCLinearOptOMP: public QMCDriver, public CloneManager
 public:
   /// Constructor.
   VMCLinearOptOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-                  HamiltonianPool& hpool, WaveFunctionPool& ppool);
+                  HamiltonianPool& hpool, WaveFunctionPool& ppool, Communicate* comm);
 
   ~VMCLinearOptOMP()
   {

@@ -32,8 +32,8 @@ namespace qmcplusplus
     typedef PtclAttribTraits::ParticlePos_t ParticlePos_t;
     typedef Reptile::ReptileConfig_t ReptileConfig_t;
 
-      RMCSingleOMP (MCWalkerConfiguration & w, TrialWaveFunction & psi,
-		    QMCHamiltonian & h, WaveFunctionPool & ppool);
+    RMCSingleOMP(MCWalkerConfiguration & w, TrialWaveFunction & psi,
+                QMCHamiltonian & h, WaveFunctionPool & ppool, Communicate* comm);
     bool run ();
     bool put (xmlNodePtr cur);
     //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}

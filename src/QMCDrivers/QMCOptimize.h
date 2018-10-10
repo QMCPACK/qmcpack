@@ -42,8 +42,8 @@ class QMCOptimize: public QMCDriver
 public:
 
   ///Constructor.
-  QMCOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-              QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool);
+  QMCOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
+              HamiltonianPool& hpool, WaveFunctionPool& ppool, Communicate* comm);
 
   ///Destructor
   ~QMCOptimize();

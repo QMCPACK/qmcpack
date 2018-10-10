@@ -31,7 +31,7 @@ class VMCcuda: public QMCDriver
 {
 public:
   /// Constructor.
-  VMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,WaveFunctionPool& ppool);
+  VMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,WaveFunctionPool& ppool, Communicate* comm);
 
   GPU_XRAY_TRACE bool run();
   GPU_XRAY_TRACE bool runWithDrift();

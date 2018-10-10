@@ -42,8 +42,10 @@ namespace qmcplusplus
 WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
                                        TrialWaveFunction& psi,
                                        QMCHamiltonian& h,
-                                       ParticleSetPool &ptclPool, WaveFunctionPool& ppool):
-  QMCDriver(w,psi,h,ppool),checkRatio("no"),checkClone("no"), checkHamPbyP("no"),
+                                       ParticleSetPool &ptclPool,
+                                       WaveFunctionPool& ppool,
+                                       Communicate* comm):
+  QMCDriver(w,psi,h,ppool,comm),checkRatio("no"),checkClone("no"), checkHamPbyP("no"),
   PtclPool(ptclPool), wftricks("no"),checkEloc("no"), checkBasic("yes"), checkRatioV("no"),
   deltaParam(0.0), toleranceParam(0.0), outputDeltaVsError(false), checkSlaterDet(true)
 {

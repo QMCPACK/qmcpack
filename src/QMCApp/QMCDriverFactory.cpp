@@ -210,7 +210,6 @@ bool QMCDriverFactory::setQMCDriver(int curSeries, xmlNodePtr cur)
   //create a driver
   createQMCDriver(cur);
   //initialize QMCDriver::myComm
-  qmcDriver->initCommunicator(myComm);
   //branchEngine has to be transferred to a new QMCDriver
   if(branchEngine)
     qmcDriver->setBranchEngine(branchEngine);
@@ -287,7 +286,7 @@ void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
   {
     //VMCFactory fac(curQmcModeBits[UPDATE_MODE],cur);
     VMCFactory fac(curQmcModeBits.to_ulong(),cur);
-    qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool,*psiPool);
+    qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool,*psiPool,myComm);
     //TESTING CLONE
     //TrialWaveFunction* psiclone=primaryPsi->makeClone(*qmcSystem);
     //qmcDriver = fac.create(*qmcSystem,*psiclone,*primaryH,*ptclPool,*hamPool);
@@ -296,16 +295,16 @@ void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
   {
     DMCFactory fac(curQmcModeBits[UPDATE_MODE],
                    curQmcModeBits[GPU_MODE], cur);
-    qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
+    qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool,myComm);
   }
   else if(curRunType == RMC_RUN)
   {
     RMCFactory fac(curQmcModeBits[UPDATE_MODE], cur);
-    qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool,*psiPool);
+    qmcDriver = fac.create(*qmcSystem,*primaryPsi,*primaryH,*ptclPool,*hamPool,*psiPool,myComm);
   }
   else if(curRunType == OPTIMIZE_RUN)
   {
-    QMCOptimize *opt = new QMCOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
+    QMCOptimize *opt = new QMCOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool,myComm);
     //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
     opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
     qmcDriver=opt;
@@ -315,7 +314,7 @@ void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
 #ifdef MIXED_PRECISION
     APP_ABORT("QMCDriverFactory::createQMCDriver : method=\"linear\" is not safe with CPU mixed precision. Please use full precision build instead.");
 #endif
-    QMCFixedSampleLinearOptimize *opt = new QMCFixedSampleLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
+    QMCFixedSampleLinearOptimize *opt = new QMCFixedSampleLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool,myComm);
     //ZeroVarianceOptimize *opt = new ZeroVarianceOptimize(*qmcSystem,*primaryPsi,*primaryH );
     opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
     qmcDriver=opt;
@@ -324,9 +323,9 @@ void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
   {
 #if defined(QMC_CUDA)
     app_log() << "cslinear is not supported. Switch to linear method. " << std::endl;
-    QMCFixedSampleLinearOptimize *opt = new QMCFixedSampleLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
+    QMCFixedSampleLinearOptimize *opt = new QMCFixedSampleLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool,myComm);
 #else
-    QMCCorrelatedSamplingLinearOptimize *opt = new QMCCorrelatedSamplingLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool);
+    QMCCorrelatedSamplingLinearOptimize *opt = new QMCCorrelatedSamplingLinearOptimize(*qmcSystem,*primaryPsi,*primaryH,*hamPool,*psiPool,myComm);
 #endif
     opt->setWaveFunctionNode(psiPool->getWaveFunctionNode("psi0"));
     qmcDriver=opt;
@@ -335,7 +334,7 @@ void QMCDriverFactory::createQMCDriver(xmlNodePtr cur)
   {
     app_log() << "Testing wavefunctions." << std::endl;
     qmcDriver = new WaveFunctionTester(*qmcSystem,*primaryPsi,*primaryH,
-        *ptclPool,*psiPool);
+        *ptclPool,*psiPool,myComm);
   }
   else
   {
