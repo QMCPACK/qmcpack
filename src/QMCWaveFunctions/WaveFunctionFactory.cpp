@@ -125,7 +125,6 @@ bool WaveFunctionFactory::build(xmlNodePtr cur, bool buildtree)
     else if (cname ==  WaveFunctionComponentBuilder::jastrow_tag)
     {
       WaveFunctionComponentBuilder *jbuilder = new JastrowBuilder(*targetPtcl,*targetPsi,ptclPool);
-      jbuilder->setReportLevel(ReportLevel);
       success = jbuilder->put(cur);
       addNode(jbuilder,cur);
     }
@@ -200,7 +199,6 @@ bool WaveFunctionFactory::addFermionTerm(xmlNodePtr cur)
 //#endif /* QMC_BUILD_LEVEL>1 */
   else
     detbuilder = new SlaterDetBuilder(*targetPtcl,*targetPsi,ptclPool);
-  detbuilder->setReportLevel(ReportLevel);
   detbuilder->put(cur);
   addNode(detbuilder,cur);
   return true;
@@ -315,7 +313,6 @@ WaveFunctionFactory::clone(ParticleSet* qp, int ip, const std::string& aname)
 {
   WaveFunctionFactory* aCopy= new WaveFunctionFactory(qp,ptclPool,myComm);
   //turn off the report for the clones
-  aCopy->setReportLevel(0);
   aCopy->setName(aname);
   aCopy->build(myNode,false);
   myClones[ip]=aCopy;

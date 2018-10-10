@@ -53,8 +53,10 @@ public:
    * \param els reference to the electrons
    * \param ions reference to the ions
    */
-  MolecularSPOBuilder(ParticleSet& els, ParticleSet& ions, bool cusp=false, std::string cusp_info="",std::string MOH5Ref=""):
-    targetPtcl(els), sourcePtcl(ions), thisBasisSet(0), cuspCorr(cusp), cuspInfo(cusp_info), h5_path(MOH5Ref)
+  MolecularSPOBuilder(ParticleSet& els, ParticleSet& ions, Communicate *comm,
+                      bool cusp=false, std::string cusp_info="",std::string MOH5Ref="")
+    : SPOSetBuilder(comm), targetPtcl(els), sourcePtcl(ions),
+    thisBasisSet(0), cuspCorr(cusp), cuspInfo(cusp_info), h5_path(MOH5Ref)
   {
     ClassName="MolecularSPOBuilder";
     if(h5_path!="")loadBasisSetFromH5();
@@ -104,8 +106,7 @@ public:
           std::map<std::string,SPOSetBuilder*>::iterator it = aoBuilders.find(elementType);
           if(it == aoBuilders.end())
           {
-            AtomicBasisBuilder<RFB>* any = new AtomicBasisBuilder<RFB>(elementType);
-            any->setReportLevel(ReportLevel);
+            AtomicBasisBuilder<RFB>* any = new AtomicBasisBuilder<RFB>(elementType, myComm);
             any->put(cur);
             COT* aoBasis= any->createAOSet(cur);
             if(aoBasis)
@@ -186,8 +187,7 @@ public:
           std::map<std::string,SPOSetBuilder*>::iterator it = aoBuilders.find(elementType);
           if(it == aoBuilders.end())
           {
-            AtomicBasisBuilder<RFB>* any = new AtomicBasisBuilder<RFB>(elementType);
-            any->setReportLevel(ReportLevel);
+            AtomicBasisBuilder<RFB>* any = new AtomicBasisBuilder<RFB>(elementType, myComm);
             any->putH5(hin);
             COT* aoBasis= any->createAOSetH5(hin);
             if(aoBasis)
@@ -245,7 +245,7 @@ public:
           std::string tmp = cuspInfo;
           if(cusp_file != "")
             tmp=cusp_file;
-          lcos= new LCOrbitalSetWithCorrection<ThisBasisSetType,false>(thisBasisSet,&targetPtcl,&sourcePtcl,ReportLevel,0.1,tmp,algorithm);
+          lcos= new LCOrbitalSetWithCorrection<ThisBasisSetType,false>(thisBasisSet,&targetPtcl,&sourcePtcl,rank()==0,0.1,tmp,algorithm);
 // mmorales:
 // this is a small hack to allow the cusp correction to work
 // but it should be fixed, all basisset/sposet objects should always be named
@@ -260,7 +260,7 @@ public:
           if ( use_new_opt_class == "yes" ) {
 #ifndef ENABLE_SOA
             app_log() << "Creating LCOrbitalSetOpt with the input coefficients" << std::endl;
-            lcos= new LCOrbitalSetOpt<ThisBasisSetType>(thisBasisSet,ReportLevel);
+            lcos= new LCOrbitalSetOpt<ThisBasisSetType>(thisBasisSet,rank()==0);
             if(spo_name != "")
               lcos->objectName=spo_name;
             else
@@ -270,7 +270,7 @@ public:
 #endif
           } else {
             app_log() << "Creating LCOrbitalSet with the input coefficients" << std::endl;
-            lcos= new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet,ReportLevel,algorithm);
+            lcos= new LCOrbitalSet<ThisBasisSetType,false>(thisBasisSet,rank()==0,algorithm);
           }
         }
       }
@@ -279,7 +279,7 @@ public:
     if(lcos==0)
     {
       app_log() << "Creating LCOrbitalSet with the Identity coefficient" << std::endl;
-      lcos = new LCOrbitalSet<ThisBasisSetType,true>(thisBasisSet,ReportLevel);
+      lcos = new LCOrbitalSet<ThisBasisSetType,true>(thisBasisSet,rank()==0);
     }
     lcos->myComm=myComm;
     lcos->put(cur_saved);
