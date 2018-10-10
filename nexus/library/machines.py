@@ -48,7 +48,6 @@ import time
 #from multiprocessing import cpu_count
 from socket import gethostname
 from subprocess import Popen,PIPE
-from random import randint
 from numpy import array,mod,floor,ceil,round,log,empty
 from generic import obj
 from developer import DevBase
@@ -69,6 +68,7 @@ def  cpu_count():
         return multiprocessing.cpu_count()
     except (ImportError,NotImplementedError):
         None
+    #end try
 
     # POSIX
     try:
@@ -76,8 +76,10 @@ def  cpu_count():
 
         if res > 0:
             return res
+        #end if
     except (AttributeError,ValueError):
         None
+    #end try
 #end def cpu_count
 
 
@@ -515,7 +517,11 @@ class Job(NexusCore):
     #end def reenter_queue
 
 
-    def run_command(self,launcher,redirect=False):
+    def run_command(self,launcher=None,redirect=False):
+        if launcher is None:
+            machine = self.get_machine()
+            launcher = machine.app_launcher
+        #end if
         c = ''
         if self.bundled_jobs is None:
             if self.full_command is not None:
@@ -671,7 +677,7 @@ class Machine(NexusCore):
     @staticmethod
     def is_unique(machine):
         return id(machine)==id(Machine.machines[machine.name])
-    #end def is_valid
+    #end def is_unique
 
 
     @staticmethod
@@ -703,174 +709,10 @@ class Machine(NexusCore):
         else:
             machs = Machine.machines.keys()
             machs.sort()
-            Machine.class_error('attempted to get machine '+machine_name+', but it is unknown\n  known options are '+str(machs))
+            Machine.class_error('attempted to get machine '+machine_name+', but it is unknown\nknown options are '+str(machs))
         #end if
         return machine
     #end def get
-
-
-    @staticmethod
-    def check_process_job_idempotency(nw=10,nwj=10,nsj=10,nij=10):
-        allow_warn = Machine.allow_warnings
-        Machine.allow_warnings = False
-        # sort known machines
-        workstations   = obj()
-        supercomputers = []
-        for machine in Machine.machines:
-            if isinstance(machine,Workstation):
-                workstations.append(machine)
-            elif isinstance(machine,Supercomputer):
-                supercomputers.append(machine)
-            else:
-                Machine.class_error('unknown machine type encountered: {0}'.format(machine.__class__.__name__),'check_process_job_idempotency')
-            #end if
-        #end for
-
-        not_idempotent = obj()
-
-        # check workstations
-        nworkstations = nw
-        if nworkstations is None:
-            nworkstations=len(workstations)
-        #end if
-        nworkstations = min(nworkstations,len(workstations))
-        njobs = nwj
-        for nm in range(nworkstations):
-            if nworkstations<len(workstations):
-                machine = workstations.select_random() # select machine at random
-            else:
-                machine = workstations[nm]
-            #end if
-            cores_min     = 1
-            cores_max     = machine.cores
-            processes_min = 1
-            processes_max = machine.cores
-            threads_min   = 1
-            threads_max   = machine.cores
-            job_inputs = []
-            job_inputs_base = []
-            for nj in range(njobs): # vary cores
-                cores   = randint(cores_min,cores_max)
-                threads = randint(threads_min,threads_max)
-                job_inputs_base.append(obj(cores=cores,threads=threads))
-            #end for
-            for nj in range(njobs): # vary processes
-                processes   = randint(processes_min,processes_max)
-                threads = randint(threads_min,threads_max)
-                job_inputs_base.append(obj(processes=processes,threads=threads))
-            #end for
-            job_inputs.extend(job_inputs_base)
-            for job_input in job_inputs_base: # run in serial
-                ji = job_input.copy()
-                ji.serial = True
-                job_inputs.append(ji)
-            #end for
-            # perform idempotency test
-            machine_idempotent = True
-            for job_input in job_inputs:
-                job = Job(machine=machine.name,**job_input)
-                job2 = obj.copy(job)
-                machine.process_job(job2)
-                machine_idempotent &= job==job2
-            #end for
-            if not machine_idempotent:
-                not_idempotent[machine.name] = machine
-            #end if
-        #end for
-
-        # check supercomputers
-        njobs = nsj
-        small_node_ceiling = 20
-        nodes_min   = 1
-        cores_min   = 1
-        threads_min = 1
-        shared_job_inputs = obj(name='some_job',account='some_account')
-        for machine in supercomputers:
-            job_inputs = []
-            job_inputs_base = []
-            threads_max = 2*machine.cores_per_node
-            # sample small number of nodes more heavily
-            nodes_max   = min(small_node_ceiling,machine.nodes)
-            cores_max   = min(small_node_ceiling*machine.cores_per_node,machine.cores)
-            for nj in range(njobs): # nodes alone
-                nodes   = randint(nodes_min,nodes_max)
-                threads = randint(threads_min,threads_max)
-                job_input = obj(nodes=nodes,threads=threads,**shared_job_inputs)
-                job_inputs_base.append(job_input)
-            #end for
-            for nj in range(njobs): # cores alone
-                cores   = randint(cores_min,cores_max)
-                threads = randint(threads_min,threads_max)
-                job_input = obj(cores=cores,threads=threads,**shared_job_inputs)
-                job_inputs_base.append(job_input)
-            #end for
-            for nj in range(njobs): # nodes and cores
-                nodes   = randint(nodes_min,nodes_max)
-                cores   = randint(cores_min,cores_max)
-                threads = randint(threads_min,threads_max)
-                job_input = obj(nodes=nodes,cores=cores,threads=threads,**shared_job_inputs)
-                job_inputs_base.append(job_input)
-            #end for
-            # sample full node set
-            nodes_max = machine.nodes
-            cores_max = machine.cores
-            for nj in range(njobs): # nodes alone
-                nodes   = randint(nodes_min,nodes_max)
-                threads = randint(threads_min,threads_max)
-                job_input = obj(nodes=nodes,threads=threads,**shared_job_inputs)
-                job_inputs_base.append(job_input)
-            #end for
-            for nj in range(njobs): # cores alone
-                cores   = randint(cores_min,cores_max)
-                threads = randint(threads_min,threads_max)
-                job_input = obj(cores=cores,threads=threads,**shared_job_inputs)
-                job_inputs_base.append(job_input)
-            #end for
-            for nj in range(njobs): # nodes and cores
-                nodes   = randint(nodes_min,nodes_max)
-                cores   = randint(cores_min,cores_max)
-                threads = randint(threads_min,threads_max)
-                job_input = obj(nodes=nodes,cores=cores,threads=threads,**shared_job_inputs)
-                job_inputs_base.append(job_input)
-            #end for
-            job_inputs.extend(job_inputs_base)
-            # now add serial jobs
-            for job_input in job_inputs_base:
-                ji = job_input.copy()
-                ji.serial = True
-                job_inputs.append(ji)
-            #end for
-            # now add local, serial jobs
-            for job_input in job_inputs_base:
-                ji = job_input.copy()
-                ji.serial = True
-                ji.local  = True
-                job_inputs.append(ji)
-            #end for
-            # perform idempotency test
-            machine_idempotent = True
-            for job_input in job_inputs:
-                job = Job(machine=machine.name,**job_input)
-                job2 = obj.copy(job)
-                machine.process_job(job2)
-                machine_idempotent &= job==job2
-            #end for
-            if not machine_idempotent:
-                not_idempotent[machine.name] = machine
-            #end if
-        #end for
-
-        if len(not_idempotent)>0:
-            mlist = ''
-            for name in sorted(not_idempotent.keys()):
-                mlist+= '\n  '+name
-            #end for
-            Machine.class_error('\n\nsome machines failed process_job idempotency test:{0}'.format(mlist))
-        #end if
-        Machine.class_log('done checking idempotency')
-        exit()
-        Machine.allow_warnings = allow_warn
-    #end def check_process_job_idempotency
 
 
     def warn(self,*args,**kwargs):
@@ -938,7 +780,7 @@ class Machine(NexusCore):
         self.app_directories = None
 
         if not isinstance(name,str):
-            self.error('machine name must be a string\n  you provided '+str(name))
+            self.error('machine name must be a string\nyou provided '+str(name))
         #end if
 
         Machine.add(self)
@@ -979,12 +821,12 @@ class Machine(NexusCore):
         vars = set(info.keys())
         invalid = vars-self.allowed_user_info
         if len(invalid)>0:
-            self.error('invalid inputs encountered in incorporate_user_info\n  allowed inputs: {0}\n  invalid inputs: {1}'.format(list(self.allowed_user_info),list(invalid)))
+            self.error('invalid inputs encountered in incorporate_user_info\nallowed inputs: {0}\n  invalid inputs: {1}'.format(list(self.allowed_user_info),list(invalid)))
         #end if
         if 'app_directories' in info:
             ad = info.app_directories
             if not isinstance(ad,dict) and not isinstance(ad,obj):
-                self.error('app_directories must be of type dict or obj\n you provided '+ad.__class__.__name__)
+                self.error('app_directories must be of type dict or obj\nyou provided '+ad.__class__.__name__)
             #end if
         #end if
         self.transfer_from(info)
@@ -1000,7 +842,12 @@ class Workstation(Machine):
 
     batch_capable = False
 
-    def __init__(self,name='workstation',cores=None,app_launcher='mpirun',process_granularity=1):
+    def __init__(self,
+                 name                = 'workstation',
+                 cores               = None,
+                 app_launcher        = 'mpirun',
+                 process_granularity = 1
+                 ):
         Machine.__init__(self,name)
         self.app_launcher = app_launcher
         if cores==None:
@@ -1080,6 +927,7 @@ class Workstation(Machine):
         self.log('end job states',n=1)
     #end def write_job_states
 
+
     def query_queue(self):
         #self.write_job_states('query queue')
         self.validate()
@@ -1109,7 +957,6 @@ class Workstation(Machine):
             del self.processes[pid]
         #end for
     #end def query_queue
-
 
 
     def submit_jobs(self):
@@ -1144,7 +991,7 @@ class Workstation(Machine):
 
         for job in job_req:
             if job.cores>self.cores and not nexus_core.generate_only:                
-                self.error('job '+str(job.internal_id)+' is too large to run on this machine\n  cores requested: '+str(job.cores)+'\n  machine cores: '+str(self.cores))
+                self.error('job '+str(job.internal_id)+' is too large to run on this machine\ncores requested: '+str(job.cores)+'\nmachine cores: '+str(self.cores))
             #end if
             if job.cores<=cores_available:
                 iid = job.internal_id
@@ -1153,7 +1000,7 @@ class Workstation(Machine):
                 self.submit_job(job)
                 cores_available-=job.cores
             elif job.cores>self.cores:
-                self.error('job requested more cores than are present on '+self.name+'\n  cores requested: {0}\n  cores present: {1}'.format(job.cores,self.cores))
+                self.error('job requested more cores than are present on '+self.name+'\ncores requested: {0}\ncores present: {1}'.format(job.cores,self.cores))
             else:
                 break
             #end if
@@ -1216,8 +1063,8 @@ class Workstation(Machine):
 
 
 class InteractiveCluster(Workstation):
+
     def __init__(self,*args,**kwargs):
-        
         if len(args)==0 or not isinstance(args[0],Supercomputer):
             self.init_from_args(*args,**kwargs)
         else:
@@ -1297,12 +1144,32 @@ class Supercomputer(Machine):
 
     aprun_options = set(['n','d'])
 
-    def __init__(self,nodes=None,procs_per_node=None,
-                 cores_per_proc=None,ram_per_node=None,queue_size=0,
-                 app_launcher=None,sub_launcher=None,queue_querier=None,
-                 job_remover=None,name=None):
+    required_inputs = [
+        'nodes',
+        'procs_per_node',
+        'cores_per_proc',
+        'ram_per_node',
+        'queue_size',
+        'app_launcher',
+        'sub_launcher',
+        'queue_querier',
+        'job_remover'
+        ]
+
+    def __init__(self,
+                 nodes          = None,
+                 procs_per_node = None,
+                 cores_per_proc = None,
+                 ram_per_node   = None,
+                 queue_size     = 0,
+                 app_launcher   = None,
+                 sub_launcher   = None,
+                 queue_querier  = None,
+                 job_remover    = None,
+                 name           = None
+                 ):
         if name is None:
-            if self.name!=None:
+            if self.name is not None:
                 name = self.name
             else:
                 name = self.__class__.__name__.lower()
@@ -1319,9 +1186,8 @@ class Supercomputer(Machine):
         self.queue_querier  = queue_querier
         self.job_remover    = job_remover
      
-        required = ['nodes','procs_per_node','cores_per_proc','ram_per_node','queue_size','app_launcher','sub_launcher','queue_querier','job_remover']
-        for var in required:
-            if self[var]==None:
+        for var in Supercomputer.required_inputs:
+            if self[var] is None:
                 self.error('input variable '+var+' is required to initialize Supercomputer object.')
             #end if
         #end for
@@ -1442,8 +1308,8 @@ class Supercomputer(Machine):
             return
         #end if
         job.subfile = job.name+'.'+self.sub_launcher+'.in'
-        no_cores = job.cores==None
-        no_nodes = job.nodes==None
+        no_cores = job.cores is None
+        no_nodes = job.nodes is None
         if no_cores and no_nodes:
             self.error('job did not specify cores or nodes\nAt least one must be provided')
         elif no_cores:
@@ -1456,8 +1322,8 @@ class Supercomputer(Machine):
         else:
             job.cores = min(job.cores,job.nodes*self.cores_per_node)
         #end if
-        if job.processes_per_node!=None:
-            job.processes=job.nodes*job.processes_per_node
+        if job.processes_per_node is not None:
+            job.processes = job.nodes*job.processes_per_node
         else:
             job.processes = max(1,int(float(job.cores)/job.threads))
         #end if
@@ -1528,9 +1394,6 @@ class Supercomputer(Machine):
                 verbose = '--verbose=INFO',
                 envs    = envs
                 )
-            if job.processes_per_node is None:
-                self.error('please specify processes_per_node in each job to launched with runjob')
-            #end if
         elif launcher=='srun':  # Amos contribution from Ryan McAvoy
             None # anything needed here?
         elif launcher=='ibrun': # Lonestar contribution from Paul Young
@@ -1869,6 +1732,8 @@ class Supercomputer(Machine):
 
 #end class Supercomputer
 
+
+
 # Load local class for local cluster's setting from ~/.nexus/local.py
 # The following is an example of this file (see machines.py for more examples):
 '''
@@ -1880,6 +1745,7 @@ class Clustername(Supercomputer):
     def write_job_header(self,job):
         if job.queue is None:
             job.queue='batch'
+        #end if
         c= '#!/bin/bash\n'
         c+='#PBS -l nodes={0}:ppn={1}\n'.format(job.nodes,job.ppn)
         c+='#PBS -l walltime='+job.pbs_walltime()+'\n'
@@ -1888,10 +1754,9 @@ class Clustername(Supercomputer):
         c+='#PBS -e '+job.errfile+'\n'
         c+='#PBS -V\n'
         c+='#PBS -q '+job.queue+'\n'
-
-        #end if
         c+=' \n '
         return c
+    #end def write_job_header
 #end class Clustername
 #            nodes sockets cores ram qslots  qlaunch  qsubmit     qstatus   qdelete
 Clustername(      4,   1,    16,   24,    4, 'mpirun',     'qsub',   'qstat',    'qdel')
@@ -1902,6 +1767,8 @@ except IOError:
     pass
 except:
     raise
+#end try
+
 
 class Kraken(Supercomputer):
 
@@ -1930,304 +1797,7 @@ export MPI_MSGS_PER_PROC=32768
 '''
         return c
     #end def write_job_header
-
-
-    def read_process_id(self,output):
-        self.not_implemented()
-    #end def read_process_id
 #end class Kraken
-
-
-
-# SANDIA test
-class Chama(Supercomputer):
-    name = 'chama'
-
-    requires_account   = True
-    batch_capable      = True
-    #executable_subfile = True
-
-    prefixed_output    = True
-    outfile_extension  = '.output'
-    errfile_extension  = '.error'
-
-    def write_job_header(self,job):
-        if job.queue is None:
-            job.queue='batch'
-        #end if
-        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
-        if job.total_hours > 96:   # warn if job will take more than 96 hrs.
-            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
-            job.hours   = max_time
-            job.minutes =0
-            job.seconds =0
-        #end if
-
-        #end if
-        c='#!/bin/bash\n'
-        c+='#SBATCH --job-name '+str(job.name)+'\n'
-        c+='#SBATCH --account='+str(job.account)+'\n'
-        c+='#SBATCH -N '+str(job.nodes)+'\n'
-        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
-        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
-        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
-        #c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
-        c+='#SBATCH -o {0}\n'.format(job.outfile)
-        c+='#SBATCH -e {0}\n'.format(job.errfile)
-        c+='\n'
-        c+='module purge\n'
-        c+='module add intel/intel-16.0.1.150\n'
-        c+='module add libraries/intel-mkl-16.0.1.150\n'
-        c+='module add mvapich2-intel-psm/1.7\n'
-        return c
-    #end def write_job_header
-#end class Chama
-##### SANDIA test
-
-
-
-class Uno(Supercomputer):
-    name = 'uno'
-
-    requires_account   = True
-    batch_capable      = True
-    #executable_subfile = True
-
-    prefixed_output    = True
-    outfile_extension  = '.output'
-    errfile_extension  = '.error'
-
-    def write_job_header(self,job):
-        if job.queue is None:
-            job.queue='batch'
-
-        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
-        if job.total_hours > 96:   # warn if job will take more than 96 hrs.
-            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
-            job.hours   = max_time
-            job.minutes =0
-            job.seconds =0
-        #end if
-
-        #end if
-        c='#!/bin/bash\n'
-        c+='#SBATCH --job-name '+str(job.name)+'\n'
-        c+='#SBATCH --account='+str(job.account)+'\n'
-        c+='#SBATCH -N '+str(job.nodes)+'\n'
-        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
-        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
-        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
-        #c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
-        c+='#SBATCH -o {0}\n'.format(job.outfile)
-        c+='#SBATCH -e {0}\n'.format(job.errfile)
-        c+='#SBATCH -p quad\n'
-        c+='\n'
-        c+='module purge\n'
-        c+='module add intel/intel-16.0.1.150\n'
-        c+='module add libraries/intel-mkl-16.0.1.150\n'
-        c+='module add mvapich2-intel-psm/1.7\n'
-        return c
-    #end def write_job_header
-#end class Uno
-##### SANDIA test
-
-
-
-
-## Added 09/23/2016 by JP Townsend
-class Serrano(Supercomputer):
-    name = 'serrano'
-
-    requires_account   = True
-    batch_capable      = True
-    #executable_subfile = True
-
-    prefixed_output    = True
-    outfile_extension  = '.output'
-    errfile_extension  = '.error'
-
-    def write_job_header(self,job):
-        if job.queue is None:
-            job.queue='batch'
-
-        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
-        if job.total_hours > 96:   # warn if job will take more than 96 hrs.
-            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
-            job.hours   = max_time
-            job.minutes =0
-            job.seconds =0
-        #end if
-
-        #end if
-        c='#!/bin/bash\n'
-        c+='#SBATCH --job-name '+str(job.name)+'\n'
-        c+='#SBATCH --account='+str(job.account)+'\n'
-        c+='#SBATCH -N '+str(job.nodes)+'\n'
-        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
-        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
-        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
-        #c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
-        c+='#SBATCH -o {0}\n'.format(job.outfile)
-        c+='#SBATCH -e {0}\n'.format(job.errfile)
-        #c+='#SBATCH -p quad\n'
-        c+='\n'
-        c+='module purge\n'
-        c+='module add intel/16.0.3\n'
-        c+='module add mkl/16.0\n'
-        c+='module add mvapich2-intel-psm2/2.2rc1\n'
-        return c
-    #end def write_job_header
-#end class Serrano
-##### SANDIA test
-
-
-
-
-## Added 09/23/2016 by JP Townsend
-class Skybridge(Supercomputer):
-    name = 'skybridge'
-
-    requires_account   = True
-    batch_capable      = True
-    #executable_subfile = True
-
-    prefixed_output    = True
-    outfile_extension  = '.output'
-    errfile_extension  = '.error'
-
-    def write_job_header(self,job):
-        if job.queue is None:
-            job.queue='batch'
-
-        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
-        if job.total_hours > 96:   # warn if job will take more than 96 hrs.
-            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
-            job.hours   = max_time
-            job.minutes =0
-            job.seconds =0
-        #end if
-
-        #end if
-        c='#!/bin/bash\n'
-        c+='#SBATCH --job-name '+str(job.name)+'\n'
-        c+='#SBATCH --account='+str(job.account)+'\n'
-        c+='#SBATCH -N '+str(job.nodes)+'\n'
-        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
-        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
-        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
-        #c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
-        c+='#SBATCH -o {0}\n'.format(job.outfile)
-        c+='#SBATCH -e {0}\n'.format(job.errfile)
-        #c+='#SBATCH -p quad\n'
-        c+='\n'
-        c+='module purge\n'
-        c+='module add intel/intel-16.0.1.150\n'
-        c+='module add libraries/intel-mkl-16.0.1.150\n'
-        c+='module add mvapich2-intel-psm/1.7\n'
-        return c
-    #end def write_job_header
-#end class Skybridge
-##### SANDIA test
-
-
-
-
-## Added 09/23/2016 by JP Townsend
-class Redsky(Supercomputer):
-    name = 'redsky'
-
-    requires_account   = True
-    batch_capable      = True
-    #executable_subfile = True
-
-    prefixed_output    = True
-    outfile_extension  = '.output'
-    errfile_extension  = '.error'
-
-    def write_job_header(self,job):
-        if job.queue is None:
-            job.queue='batch'
-
-        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
-        if job.total_hours > 96:   # warn if job will take more than 96 hrs.
-            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
-            job.hours   = max_time
-            job.minutes =0
-            job.seconds =0
-        #end if
-
-        #end if
-        c='#!/bin/bash\n'
-        c+='#SBATCH --job-name '+str(job.name)+'\n'
-        c+='#SBATCH --account='+str(job.account)+'\n'
-        c+='#SBATCH -N '+str(job.nodes)+'\n'
-        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
-        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
-        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
-        #c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
-        c+='#SBATCH -o {0}\n'.format(job.outfile)
-        c+='#SBATCH -e {0}\n'.format(job.errfile)
-        #c+='#SBATCH -p quad\n'
-        c+='\n'
-        c+='module purge\n'
-        c+='module add intel/intel-16.0.1.150\n'
-        c+='module add libraries/intel-mkl-16.0.1.150\n'
-        c+='module add mvapich2-intel-psm/1.7\n'
-        return c
-    #end def write_job_header
-#end class Redsky
-##### SANDIA test
-
-
-
-
-## Added 09/23/2016 by JP Townsend
-class Solo(Supercomputer):
-    name = 'solo'
-
-    requires_account   = True
-    batch_capable      = True
-    #executable_subfile = True
-
-    prefixed_output    = True
-    outfile_extension  = '.output'
-    errfile_extension  = '.error'
-
-    def write_job_header(self,job):
-        if job.queue is None:
-            job.queue='batch'
-
-        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
-        if job.total_hours > 96:   # warn if job will take more than 96 hrs.
-            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
-            job.hours   = max_time
-            job.minutes =0
-            job.seconds =0
-        #end if
-
-        #end if
-        c='#!/bin/bash\n'
-        c+='#SBATCH --job-name '+str(job.name)+'\n'
-        c+='#SBATCH --account='+str(job.account)+'\n'
-        c+='#SBATCH -N '+str(job.nodes)+'\n'
-        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
-        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
-        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
-        #c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
-        c+='#SBATCH -o {0}\n'.format(job.outfile)
-        c+='#SBATCH -e {0}\n'.format(job.errfile)
-        #c+='#SBATCH -p quad\n'
-        c+='\n'
-        c+='module purge\n'
-        c+='module add intel/16.0.3\n'
-        c+='module add mkl/16.0\n'
-        c+='module add mvapich2-intel-psm2/2.2rc1\n'
-        return c
-    #end def write_job_header
-#end class Solo
-##### SANDIA test
-
-
 
 
 
@@ -2263,11 +1833,6 @@ export MPI_MSGS_PER_PROC=32768
 '''
         return c
     #end def write_job_header
-
-
-    def read_process_id(self,output):
-        self.not_implemented()
-    #end def read_process_id
 #end class Jaguar
 
 
@@ -2580,6 +2145,9 @@ class ALCF_Machine(Supercomputer):
             env  = '--env BG_SHAREDMEMSIZE=32',
             mode = '--mode script'
             )
+        #if job.processes<job.nodes: # seems like a good idea, but breaks idempotency
+        #    job.processes_per_node=1
+        ##end if
         if job.nodes<self.base_partition:
             self.warn('!!! ATTENTION !!!\n  number of nodes on {0} should not be less than {1}\n  you requested: {2}'.format(self.name,self.base_partition,job.nodes))
         else:
@@ -2587,6 +2155,12 @@ class ALCF_Machine(Supercomputer):
             if abs(partition-int(partition))>1e-6:
                 self.warn('!!! ATTENTION !!!\n  number of nodes on {0} must be {1} times a power of two\n  you requested: {2}\n  nearby valid node count: {3}'.format(self.name,self.base_partition,job.nodes,self.base_partition*2**int(round(partition))))
             #end if
+        #end if
+        valid_ppn = (1,2,4,8,16,32,64)
+        if job.processes_per_node is None:
+            self.warn('job may not run properly\nplease specify processes_per_node in each job to be launched with runjob on {0}'.format(self.name))
+        elif job.processes_per_node not in valid_ppn:
+            self.warn('job may not run properly\nprocesses_per_node is not a valid value for {0}\nprocesses_per_node provided: {1}\nvalid options are: {2}'.format(self.name,job.processes_per_node,valid_ppn))
         #end if
     #end def process_job_extra
 
@@ -2623,6 +2197,7 @@ class Mira(ALCF_Machine):
 #end class Mira
 
 
+
 class Cooley(Supercomputer):
     name = 'cooley'
     requires_account   = True
@@ -2634,9 +2209,9 @@ class Cooley(Supercomputer):
     errfile_extension  = '.error'
 
     def process_job_extra(self,job):
-        if job.processes_per_node is None and job.threads!=1:
-            self.error('threads must be 1,2,3,4,6, or 12 on Cooley\nyou provided: {0}'.format(job.threads))
-        #end if
+        #if job.processes_per_node is None and job.threads!=1:
+        #    self.error('threads must be 1,2,3,4,6, or 12 on Cooley\nyou provided: {0}'.format(job.threads))
+        ##end if
 
         job.run_options.add(
             f   = '-f $COBALT_NODEFILE',
@@ -2697,6 +2272,7 @@ class Theta(Supercomputer):
 #end class Theta
 
 
+
 class Lonestar(Supercomputer):  # Lonestar contribution from Paul Young
 
     name = 'lonestar' # will be converted to lowercase anyway
@@ -2740,6 +2316,7 @@ class Lonestar(Supercomputer):  # Lonestar contribution from Paul Young
 #end class Lonestar
 
 
+
 class ICMP_Machine(Supercomputer): # ICMP and Amos contributions from Ryan McAvoy
     batch_capable      = True
     executable_subfile = True
@@ -2774,6 +2351,7 @@ class Komodo(ICMP_Machine):
 class Matisse(ICMP_Machine):
     name = 'matisse'
 #end class Matisse
+
 
 
 class Amos(Supercomputer):
@@ -2852,6 +2430,303 @@ class Amos(Supercomputer):
 #end class Amos
 
 
+
+# SANDIA test
+class Chama(Supercomputer):
+    name = 'chama'
+
+    requires_account   = True
+    batch_capable      = True
+    #executable_subfile = True
+
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='batch'
+        #end if
+
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > 96:   # warn if job will take more than 96 hrs.
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes =0
+            job.seconds =0
+        #end if
+
+        #end if
+        c='#!/bin/bash\n'
+        c+='#SBATCH --job-name '+str(job.name)+'\n'
+        c+='#SBATCH --account='+str(job.account)+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        #c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+        c+='\n'
+        c+='module purge\n'
+        c+='module add intel/intel-16.0.1.150\n'
+        c+='module add libraries/intel-mkl-16.0.1.150\n'
+        c+='module add mvapich2-intel-psm/1.7\n'
+        return c
+    #end def write_job_header
+#end class Chama
+##### SANDIA test
+
+
+
+class Uno(Supercomputer):
+    name = 'uno'
+
+    requires_account   = True
+    batch_capable      = True
+    #executable_subfile = True
+
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='batch'
+        #end if
+
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > 96:   # warn if job will take more than 96 hrs.
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes =0
+            job.seconds =0
+        #end if
+
+        #end if
+        c='#!/bin/bash\n'
+        c+='#SBATCH --job-name '+str(job.name)+'\n'
+        c+='#SBATCH --account='+str(job.account)+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        #c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+        c+='#SBATCH -p quad\n'
+        c+='\n'
+        c+='module purge\n'
+        c+='module add intel/intel-16.0.1.150\n'
+        c+='module add libraries/intel-mkl-16.0.1.150\n'
+        c+='module add mvapich2-intel-psm/1.7\n'
+        return c
+    #end def write_job_header
+#end class Uno
+##### SANDIA test
+
+
+
+
+## Added 09/23/2016 by JP Townsend
+class Serrano(Supercomputer):
+    name = 'serrano'
+
+    requires_account   = True
+    batch_capable      = True
+    #executable_subfile = True
+
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='batch'
+        #end if
+
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > 96:   # warn if job will take more than 96 hrs.
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes =0
+            job.seconds =0
+        #end if
+
+        #end if
+        c='#!/bin/bash\n'
+        c+='#SBATCH --job-name '+str(job.name)+'\n'
+        c+='#SBATCH --account='+str(job.account)+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        #c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+        #c+='#SBATCH -p quad\n'
+        c+='\n'
+        c+='module purge\n'
+        c+='module add intel/16.0.3\n'
+        c+='module add mkl/16.0\n'
+        c+='module add mvapich2-intel-psm2/2.2rc1\n'
+        return c
+    #end def write_job_header
+#end class Serrano
+##### SANDIA test
+
+
+
+
+## Added 09/23/2016 by JP Townsend
+class Skybridge(Supercomputer):
+    name = 'skybridge'
+
+    requires_account   = True
+    batch_capable      = True
+    #executable_subfile = True
+
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='batch'
+        #end if
+
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > 96:   # warn if job will take more than 96 hrs.
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes =0
+            job.seconds =0
+        #end if
+
+        #end if
+        c='#!/bin/bash\n'
+        c+='#SBATCH --job-name '+str(job.name)+'\n'
+        c+='#SBATCH --account='+str(job.account)+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        #c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+        #c+='#SBATCH -p quad\n'
+        c+='\n'
+        c+='module purge\n'
+        c+='module add intel/intel-16.0.1.150\n'
+        c+='module add libraries/intel-mkl-16.0.1.150\n'
+        c+='module add mvapich2-intel-psm/1.7\n'
+        return c
+    #end def write_job_header
+#end class Skybridge
+##### SANDIA test
+
+
+
+
+## Added 09/23/2016 by JP Townsend
+class Redsky(Supercomputer):
+    name = 'redsky'
+
+    requires_account   = True
+    batch_capable      = True
+    #executable_subfile = True
+
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='batch'
+        #end if
+
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > 96:   # warn if job will take more than 96 hrs.
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes =0
+            job.seconds =0
+        #end if
+
+        #end if
+        c='#!/bin/bash\n'
+        c+='#SBATCH --job-name '+str(job.name)+'\n'
+        c+='#SBATCH --account='+str(job.account)+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        #c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+        #c+='#SBATCH -p quad\n'
+        c+='\n'
+        c+='module purge\n'
+        c+='module add intel/intel-16.0.1.150\n'
+        c+='module add libraries/intel-mkl-16.0.1.150\n'
+        c+='module add mvapich2-intel-psm/1.7\n'
+        return c
+    #end def write_job_header
+#end class Redsky
+##### SANDIA test
+
+
+
+
+## Added 09/23/2016 by JP Townsend
+class Solo(Supercomputer):
+    name = 'solo'
+
+    requires_account   = True
+    batch_capable      = True
+    #executable_subfile = True
+
+    prefixed_output    = True
+    outfile_extension  = '.output'
+    errfile_extension  = '.error'
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue='batch'
+        #end if
+
+        job.total_hours = job.days*24 + job.hours + job.minutes/60.0 + job.seconds/3600.0
+        if job.total_hours > 96:   # warn if job will take more than 96 hrs.
+            self.warn('!!! ATTENTION !!!\n  the maximum runtime on {0} should not be more than {1}\n  you requested: {2}'.format(job.queue,max_time,job.total_hours))
+            job.hours   = max_time
+            job.minutes =0
+            job.seconds =0
+        #end if
+
+        #end if
+        c='#!/bin/bash\n'
+        c+='#SBATCH --job-name '+str(job.name)+'\n'
+        c+='#SBATCH --account='+str(job.account)+'\n'
+        c+='#SBATCH -N '+str(job.nodes)+'\n'
+        c+='#SBATCH --ntasks-per-node={0}\n'.format(job.processes_per_node)
+        c+='#SBATCH --cpus-per-task={0}\n'.format(job.threads)
+        c+='#SBATCH -t {0}:{1}:{2}\n'.format(str(job.hours+24*job.days).zfill(2),str(job.minutes).zfill(2),str(job.seconds).zfill(2))
+        #c+='#SBATCH --export=ALL\n'   # equiv to PBS -V
+        c+='#SBATCH -o {0}\n'.format(job.outfile)
+        c+='#SBATCH -e {0}\n'.format(job.errfile)
+        #c+='#SBATCH -p quad\n'
+        c+='\n'
+        c+='module purge\n'
+        c+='module add intel/16.0.3\n'
+        c+='module add mkl/16.0\n'
+        c+='module add mvapich2-intel-psm2/2.2rc1\n'
+        return c
+    #end def write_job_header
+#end class Solo
+##### SANDIA test
+
+
+
 # machines at LRZ  https://www.lrz.de/english/
 class SuperMUC(Supercomputer):
     name = 'supermuc'
@@ -2922,7 +2797,8 @@ class SuperMUC(Supercomputer):
     #end def write_job_header
 #end class SuperMUC
 
-#
+
+
 class Stampede2(Supercomputer):
     name = 'stampede2'
 
@@ -3050,8 +2926,5 @@ get_machine      = Machine.get
 job=Job
 
 
-
-# tests
-#Machine.check_process_job_idempotency()
 
 
