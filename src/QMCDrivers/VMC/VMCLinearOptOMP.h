@@ -74,15 +74,10 @@ private:
 //       RealType alpha_errorbars, beta_errorbars;
   ///check the run-time environments
   void resetRun();
-  ///copy constructor
-  VMCLinearOptOMP(const VMCLinearOptOMP& a): QMCDriver(a),CloneManager(a) { }
+  /// Copy constructor (disabled)
+  VMCLinearOptOMP(const VMCLinearOptOMP &) = delete;
   /// Copy operator (disabled).
-  VMCLinearOptOMP& operator=(const VMCLinearOptOMP&)
-  {
-    return *this;
-  }
-  ///Ways to set rn constant
-//       RealType logoffset,logepsilon;
+  VMCLinearOptOMP & operator=(const VMCLinearOptOMP &) = delete;
 
   int NumOptimizables;
   RealType w_beta,w_alpha;
