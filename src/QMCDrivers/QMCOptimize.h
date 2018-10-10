@@ -90,12 +90,9 @@ private:
   ///list of files storing configurations
   std::vector<std::string> ConfigFile;
   ///Copy Constructor (disabled).
-  QMCOptimize(const QMCOptimize& a): QMCDriver(a),hamPool(a.hamPool) { }
+  QMCOptimize(const QMCOptimize &) = delete;
   ///Copy operator (disabled).
-  QMCOptimize& operator=(const QMCOptimize&)
-  {
-    return *this;
-  }
+  QMCOptimize & operator=(const QMCOptimize &) = delete;
 
   void generateSamples();
 };

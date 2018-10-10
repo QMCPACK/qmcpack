@@ -75,16 +75,10 @@ namespace qmcplusplus
     //For # of walker samples, create that many reptiles with nbeads each.  Initialize each reptile to have the value of the walker "seed".
     void resetReptiles (std::vector< ParticlePos_t > &walker_samps, int nbeads,
 			RealType tau);
-    ///copy constructor
-      RMCSingleOMP (const RMCSingleOMP & a):QMCDriver (a), CloneManager (a)
-    {
-    }
+    ///copy constructor (disabled)
+    RMCSingleOMP(const RMCSingleOMP &) = delete;
     /// Copy operator (disabled).
-    RMCSingleOMP & operator= (const RMCSingleOMP &)
-    {
-      return *this;
-    }
-
+    RMCSingleOMP & operator=(const RMCSingleOMP &) = delete;
 
   };
 }

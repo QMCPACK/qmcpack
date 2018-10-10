@@ -52,16 +52,13 @@ private:
   ///update engine
   QMCUpdateBase* Mover;
   /// Copy Constructor (disabled)
-  DMCcuda(const DMCcuda& a) = delete;
+  DMCcuda(const DMCcuda &) = delete;
+  /// Copy operator (disabled).
+  DMCcuda & operator=(const DMCcuda &) = delete;
 
   bool checkBounds (const PosType &newpos);
   void checkBounds (std::vector<PosType> &newpos, std::vector<bool> &valid);
 
-  /// Copy operator (disabled).
-  DMCcuda& operator=(const DMCcuda&)
-  {
-    return *this;
-  }
   ///hide initialization from the main function
   GPU_XRAY_TRACE void resetRun();
   NonLocalTOperator NLop;

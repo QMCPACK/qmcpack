@@ -51,12 +51,9 @@ private:
   ///blocks over which normalization factors are accumulated
   int equilBlocks;
   /// Copy Constructor (disabled)
-  CSVMC(const CSVMC& a): QMCDriver(a), CloneManager(a) { }
+  CSVMC(const CSVMC &) = delete;
   /// Copy operator (disabled).
-  CSVMC& operator=(const CSVMC&)
-  {
-    return *this;
-  }
+  CSVMC & operator=(const CSVMC &) = delete;
   
   void resetRun();
   

@@ -60,12 +60,9 @@ private:
   ///period for walker dump
   int myPeriod4WalkerDump;
   /// Copy Constructor (disabled)
-  VMCcuda(const VMCcuda& a): QMCDriver(a) { }
+  VMCcuda(const VMCcuda &) = delete;
   /// Copy operator (disabled).
-  VMCcuda& operator=(const VMCcuda&)
-  {
-    return *this;
-  }
+  VMCcuda & operator=(const VMCcuda &) = delete;
   ///hide initialization from the main function
   bool checkBounds (std::vector<PosType> &newpos, std::vector<bool> &valid);
 

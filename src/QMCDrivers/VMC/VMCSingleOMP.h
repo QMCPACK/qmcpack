@@ -44,12 +44,9 @@ private:
   ///check the run-time environments
   void resetRun();
   ///copy constructor
-  VMCSingleOMP(const VMCSingleOMP& a): QMCDriver(a),CloneManager(a) { }
+  VMCSingleOMP(const VMCSingleOMP &) = delete;
   /// Copy operator (disabled).
-  VMCSingleOMP& operator=(const VMCSingleOMP&)
-  {
-    return *this;
-  }
+  VMCSingleOMP & operator=(const VMCSingleOMP &) = delete;
 };
 }
 

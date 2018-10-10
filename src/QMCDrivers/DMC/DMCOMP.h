@@ -69,12 +69,9 @@ private:
   void resetUpdateEngines();
   void benchMark();
   /// Copy Constructor (disabled)
-  DMCOMP(const DMCOMP& a): QMCDriver(a), CloneManager(a) { }
+  DMCOMP(const DMCOMP &) = delete;
   /// Copy operator (disabled).
-  DMCOMP& operator=(const DMCOMP&)
-  {
-    return *this;
-  }
+  DMCOMP & operator=(const DMCOMP&) = delete;
 };
 }
 
