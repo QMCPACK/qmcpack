@@ -2104,11 +2104,11 @@ def machines():
         ('chama'          , 'n2'            ) : 'srun test.x',
         ('chama'          , 'n2_t2'         ) : 'srun test.x',
         ('chama'          , 'n2_t2_p2'      ) : 'srun test.x',
-        ('cooley'         , 'n1'            ) : 'mpirun -np 12 -ppn 12 -f $COBALT_NODEFILE test.x',
-        ('cooley'         , 'n1_p1'         ) : 'mpirun -np 1 -ppn 1 -f $COBALT_NODEFILE test.x',
-        ('cooley'         , 'n2'            ) : 'mpirun -np 24 -ppn 12 -f $COBALT_NODEFILE test.x',
-        ('cooley'         , 'n2_t2'         ) : 'mpirun -np 12 -ppn 6 -f $COBALT_NODEFILE test.x',
-        ('cooley'         , 'n2_t2_p2'      ) : 'mpirun -np 4 -ppn 2 -f $COBALT_NODEFILE test.x',
+        ('cooley'         , 'n1'            ) : 'mpirun -np 12 -f $COBALT_NODEFILE test.x',
+        ('cooley'         , 'n1_p1'         ) : 'mpirun -np 1 -f $COBALT_NODEFILE test.x',
+        ('cooley'         , 'n2'            ) : 'mpirun -np 24 -f $COBALT_NODEFILE test.x',
+        ('cooley'         , 'n2_t2'         ) : 'mpirun -np 12 -f $COBALT_NODEFILE test.x',
+        ('cooley'         , 'n2_t2_p2'      ) : 'mpirun -np 4 -f $COBALT_NODEFILE test.x',
         ('cori'           , 'n1'            ) : 'srun test.x',
         ('cori'           , 'n1_p1'         ) : 'srun test.x',
         ('cori'           , 'n2'            ) : 'srun test.x',
@@ -2237,7 +2237,7 @@ def machines():
                       **job_inputs[jtype]
                       )
             command = job.run_command()
-            # uncommend below to get lines for job_run_ref table above
+            # uncomment below to get lines for job_run_ref table above
             #sname = "'{0}'".format(name)
             #stype = "'{0}'".format(jtype)
             #print "        ({0:<16} , {1:<16}) : '{2}',".format(sname,stype,command)
@@ -2247,6 +2247,50 @@ def machines():
             #end for
         #end for
     #end for
+
+
+    nlabel('Job.split_nodes')
+    for name in sorted(supercomputers.keys()):
+        m = supercomputers[name]
+        if m.app_launcher=='srun': # no slurm support yet
+            continue
+        #end if
+        if m.requires_account:
+            acc = 'ABC123'
+        else:
+            acc = None
+        #end if
+        # make a 4 node job
+        job = Job(app_command = 'test.x',
+                  machine     = name,
+                  account     = acc,
+                  nodes       = 4,
+                  threads     = m.cores_per_node,
+                  )
+        # split the job into 1 and 3 nodes
+        job1,job2 = job.split_nodes(1)
+        # get the split run commands
+        rc  = job.run_command()
+        rc1 = job1.run_command()
+        rc2 = job2.run_command()
+        ns  = ' {0} '.format(job.nodes)
+        ns1 = ' {0} '.format(job1.nodes)
+        ns2 = ' {0} '.format(job2.nodes)
+        # verify that node count is in each command
+        nassert(ns  in rc )
+        nassert(ns1 in rc1)
+        nassert(ns2 in rc2)
+        # verify that text on either side of node count 
+        # agrees for original and split commands
+        rcl ,rcr  = rc.split(ns,1)
+        rc1l,rc1r = rc1.split(ns1,1)
+        rc2l,rc2r = rc2.split(ns2,1)
+        nassert(rcl==rc1l)
+        nassert(rcr==rc1r)
+        nassert(rcl==rc2l)
+        nassert(rcr==rc2r)
+    #end for
+
 
     # restore logging function
     nlog_restore()

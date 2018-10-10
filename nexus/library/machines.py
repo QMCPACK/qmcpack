@@ -630,6 +630,29 @@ class Job(NexusCore):
     def total_days(self):
         return int(self.total_seconds()/(24*3600))
     #end def total_days
+
+
+    def split_nodes(self,n):
+        run_options = self.run_options
+        if not isinstance(n,int):
+            self.error('cannot split job by nodes\nrequested split value must be an integer\nreceived type: {0}\nwith value: {1}'.format(n.__class__.__name__,n))
+        elif n<1 or n>=self.nodes:
+            self.error('cannot split job by nodes\nrequested split must be in the range [1,{0})\nrequested split: {1}'.format(self.nodes,n))
+        #end if
+        m = self.get_machine()
+        if m.app_launcher=='srun':
+            self.error('splitting jobs by nodes is not currently supported on machine "{0}" (SLURM)'.format(m.name))
+        #end if
+        job1 = self.copy()
+        job2 = self.copy()
+        job1.set_id()
+        job2.set_id()
+        job1.nodes = n
+        job2.nodes = self.nodes - n
+        m.process_job(job1)
+        m.process_job(job2)
+        return job1,job2
+    #end def split_nodes
 #end class Job
 
 
@@ -1374,19 +1397,25 @@ class Supercomputer(Machine):
             if 'd' in self.aprun_options and job.threads>1:
                 job.run_options.add(d='-d '+str(job.threads))
             #end if
-            if 'N' in self.aprun_options and job.processes_per_node!=None:
+            if 'N' in self.aprun_options and job.processes_per_node is not None:
                 job.run_options.add(N='-N '+str(job.processes_per_node))
             #end if
-            if 'S' in self.aprun_options and job.processes_per_proc!=None:
+            if 'S' in self.aprun_options and job.processes_per_proc is not None:
                 job.run_options.add(S='-S '+str(job.processes_per_proc))
             #end if
         elif launcher=='runjob':
             #bypass setup_environment
-            envs='--envs'
-            for name,value in job.env.iteritems():
-                envs+=' {0}={1}'.format(name,value)
-            #end for
-            job.env = None
+            if job.env is not None:
+                envs='--envs'
+                for name,value in job.env.iteritems():
+                    envs+=' {0}={1}'.format(name,value)
+                #end for
+                job.env = None
+            elif 'envs' in job.run_options:
+                envs = job.run_options.envs
+            else:
+                self.error('failed to set env options for runjob')
+            #end if
             job.run_options.add(
                 np      = '--np '+str(job.processes),
                 p       = '-p '+str(job.processes_per_node),
@@ -2215,7 +2244,7 @@ class Cooley(Supercomputer):
 
         job.run_options.add(
             f   = '-f $COBALT_NODEFILE',
-            ppn = '-ppn {0}'.format(job.processes_per_node),
+            #ppn = '-ppn {0}'.format(job.processes_per_node),
             )
     #end def process_job_extra
 
