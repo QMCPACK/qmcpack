@@ -131,6 +131,7 @@ SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
 SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
+SET(ENABLE_SOA 0 CACHE BOOL "Enable/disable SoA optimization")
 
 ######################################################################
 # set debug printout
@@ -193,15 +194,6 @@ SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 #SET(MPIP_PROFILE 0)
 SET(QMC_BUILD_STATIC 0 CACHE BOOL "Link to static libraries")
 SET(ENABLE_TIMERS 0 CACHE BOOL "Enable internal timers")
-
-######################################################################
-# Performance-related macros
-# QMC_SK_USE_RECURSIVE enable/disable recursive evalaution of SK
-######################################################################
-SET(QMC_SK_USE_RECURSIVE 0 CACHE BOOL "Use recursive evalaution of SK")
-IF(QMC_SK_USE_RECURSIVE)
-  MESSAGE(STATUS "SK structure factor uses a recursive algorithm.")
-ENDIF(QMC_SK_USE_RECURSIVE)
 
 ######################################################################
 # FIXED PARAMETERS for test and legacy reasons

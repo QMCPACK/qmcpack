@@ -21,17 +21,19 @@
 
 namespace qmcplusplus
 {
-struct DMCFactory
+class DMCFactory
 {
+  private:
   bool PbyPUpdate, GPU;
   xmlNodePtr myNode;
+
+  public:
   DMCFactory(bool pbyp, bool gpu, xmlNodePtr cur) :
-    PbyPUpdate(pbyp), myNode(cur), GPU(gpu)
-  { }
+    PbyPUpdate(pbyp), myNode(cur), GPU(gpu) { }
 
   QMCDriver* create(MCWalkerConfiguration& w,
                     TrialWaveFunction& psi,
-                    QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool);
+                    QMCHamiltonian& h, HamiltonianPool& hpool,WaveFunctionPool& ppool, Communicate* comm);
 };
 }
 

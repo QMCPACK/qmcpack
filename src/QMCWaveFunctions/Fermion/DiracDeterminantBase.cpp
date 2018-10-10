@@ -42,7 +42,7 @@ DiracDeterminantBase::DiracDeterminantBase(SPOSetPtr const &spos, int first):
   Optimizable=false;
   if(Phi->Optimizable)
     Optimizable=true;
-  OrbitalName="DiracDeterminantBase";
+  ClassName="DiracDeterminantBase";
   registerTimers();
 }
 
@@ -354,10 +354,13 @@ void DiracDeterminantBase::evaluateRatios(VirtualParticleSet& VP, std::vector<Va
   else
   {
     const size_t offset = memory_needed-nVP*NumOrbitals;
-    VP.SPOMem.attachReference((RealType*)memoryPool.data(),offset*sizeof(ValueType)/sizeof(RealType));
+    // SPO value result matrix. Always use existing memory
     Matrix<ValueType> psiT(memoryPool.data()+offset, nVP, NumOrbitals);
+    // SPO scratch memory. Always use existing memory
+    SPOSet::ValueAlignedVector_t SPOMem;
+    SPOMem.attachReference((ValueType*)memoryPool.data(),offset);
     SPOVTimer.start();
-    Phi->evaluateValues(VP, psiT);
+    Phi->evaluateValues(VP, psiT, SPOMem);
     SPOVTimer.stop();
     RatioTimer.start();
     MatrixOperators::product(psiT, psiM[VP.refPtcl-FirstIndex], ratios.data());

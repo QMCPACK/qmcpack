@@ -46,6 +46,7 @@ class SPOSet: public QMCTraits
 public:
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
+  typedef OrbitalSetTraits<ValueType>::ValueAlignedVector_t ValueAlignedVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
   typedef OrbitalSetTraits<ValueType>::GradMatrix_t  GradMatrix_t;
@@ -66,8 +67,6 @@ public:
   bool Optimizable;
   ///flag to calculate ionic derivatives
   bool ionDerivs;
-  ///if true, can use GL type, default=false
-  bool CanUseGLCombo;
   ///number of Single-particle orbitals
   IndexType OrbitalSetSize;
   /// Optimizable variables
@@ -186,21 +185,13 @@ public:
   virtual void
   evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)=0;
 
-  /** compute dot_product of new row and old row */
-  virtual ValueType RATIO(const ParticleSet& P, int iat, const ValueType*
-      restrict arow);
-
-  /** evaluate VGL of SPOs using SoA container for gl
-   */
-  virtual void
-    evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl);
-
   /** evaluate values for the virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
    * @param psiM single-particle orbitals psiM(i,j) for the i-th particle and the j-th orbital
+   * @param SPOMem scratch space for SPO value evaluation, alignment is required.
    */
   virtual void
-  evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM);
+  evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem);
 
   /** estimate the memory needs for evaluating SPOs of particles in the size of ValueType
    * @param nP, number of particles.

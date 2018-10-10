@@ -17,7 +17,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 SET(SRC_DIR wavefunction)
 SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME unit_test_${SRC_DIR})
+SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 
 SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/wavefunction)
 #SET(UTEST_HDF_INPUT ${qmcpack_SOURCE_DIR}/tests/solids/monoO_1x1x1_pp/pwscf.pwscf.h5)
@@ -30,7 +30,8 @@ MAYBE_SYMLINK(${UTEST_HDF_INPUT} ${UTEST_DIR}/pwscf.pwscf.h5)
 MAYBE_SYMLINK(${UTEST_HDF_INPUT2} ${UTEST_DIR}/bccH.pwscf.h5)
 MAYBE_SYMLINK(${UTEST_HDF_INPUT3} ${UTEST_DIR}/LiH-arb.pwscf.h5)
 
-SET(FILES_TO_COPY he_sto3g.wfj.xml  ne_def2_svp.wfnoj.xml hcn.structure.xml hcn.wfnoj.xml)
+SET(FILES_TO_COPY he_sto3g.wfj.xml  ne_def2_svp.wfnoj.xml hcn.structure.xml hcn.wfnoj.xml hcn_downdet.cuspInfo.xml hcn_updet.cuspInfo.xml
+    ethanol.structure.xml ethanol.wfnoj.xml ethanol_updet.cuspInfo.xml ethanol_downdet.cuspInfo.xml)
 
 FOREACH(fname ${FILES_TO_COPY})
   EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/${fname}" ${UTEST_DIR})
@@ -38,7 +39,9 @@ ENDFOREACH()
 
 IF ((NOT QMC_COMPLEX) AND (NOT QMC_MIXED_PRECISION) AND (NOT QMC_CUDA))
   SET(MO_SRCS test_MO.cpp test_multiquintic_spline.cpp)
-  IF (NOT ENABLE_SOA)
+  IF (ENABLE_SOA)
+    SET(MO_SRCS ${MO_SRCS} test_soa_cusp_corr.cpp)
+  ELSE()
     SET(MO_SRCS ${MO_SRCS} test_cusp_corr.cpp)
   ENDIF()
 ENDIF()

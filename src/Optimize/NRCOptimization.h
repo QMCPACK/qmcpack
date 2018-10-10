@@ -24,7 +24,7 @@
 #include "Numerics/DeterminantOperators.h"
 #include "Numerics/LinearFit.h"
 #include "Configuration.h"
-#include <math.h>
+#include <cmath>
 #if (__GNUC__ == 2)
 #include <algo.h>
 #else

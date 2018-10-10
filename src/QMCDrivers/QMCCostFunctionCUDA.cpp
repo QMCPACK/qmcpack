@@ -27,8 +27,8 @@ namespace qmcplusplus
 
 QMCCostFunctionCUDA::QMCCostFunctionCUDA
 ( MCWalkerConfiguration& w, TrialWaveFunction& psi,
-  QMCHamiltonian& h):
-  QMCCostFunctionBase(w,psi,h)
+  QMCHamiltonian& h, Communicate* comm):
+  QMCCostFunctionBase(w,psi,h,comm)
 {
 }
 

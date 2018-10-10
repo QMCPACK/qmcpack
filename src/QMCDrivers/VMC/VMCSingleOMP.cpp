@@ -40,8 +40,8 @@ namespace qmcplusplus
 
 /// Constructor.
 VMCSingleOMP::VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-                           WaveFunctionPool& ppool):
-  QMCDriver(w,psi,h,ppool), UseDrift("yes")
+                           WaveFunctionPool& ppool, Communicate* comm):
+  QMCDriver(w,psi,h,ppool,comm), UseDrift("yes")
 {
   RootName = "vmc";
   QMCType ="VMCSingleOMP";

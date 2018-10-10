@@ -159,7 +159,7 @@ ENDIF(HAVE_OOMPI)
     io/hdf_archive.cpp
     spline2/einspline_allocator.c
     spline2/bspline_allocator.cpp
-    spline2/MultiBspline.cpp
+    spline2/MultiBsplineData.cpp
     )
 IF (IS_GIT_PROJECT)
   SET(UTILITIES "${UTILITIES};${GITREV_TMP}")

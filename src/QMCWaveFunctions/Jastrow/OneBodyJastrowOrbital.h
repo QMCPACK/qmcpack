@@ -105,7 +105,7 @@ public:
     //allocate vector of proper size  and set them to 0
     Funique.resize(CenterRef.getSpeciesSet().getTotalNum(),nullptr);
     Fs.resize(CenterRef.getTotalNum(),nullptr);
-    OrbitalName = "OneBodyJastrow";
+    ClassName = "OneBodyJastrow";
   }
 
   ~OneBodyJastrowOrbital() { }
@@ -499,7 +499,7 @@ public:
       if (Funique[i])
         j1copy->addFunc(i,new FT(*Funique[i]));
     }
-    //j1copy->OrbitalName=OrbitalName+"_clone";
+    //j1copy->ClassName=ClassName+"_clone";
     if (dPsi)
     {
       j1copy->dPsi =  dPsi->makeClone(tqp);
@@ -507,10 +507,6 @@ public:
     return j1copy;
   }
 
-  void copyFrom(const WaveFunctionComponent& old)
-  {
-    //nothing to do
-  }
 };
 
 }

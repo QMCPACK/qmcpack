@@ -105,15 +105,15 @@ factor and numerical screening in future.
 
 Similar to any QMC calculation, using periodic GTOs requires the
 generation of a periodic trial wavefunction. QMCPACK is currently
-interfaced to PySCF which is a
-multipurpose electronic structure written mainly in Python with key
-numerical functionality implemented via optimized C and C++
-libraries\cite{Sun2018}. Such a wavefunction can be generated
-following the example
-for a 2x1x1 supercell, below. Note that the current
-implementation and example covers only the use of the Gamma ($\Gamma$)
-point. More general and multiple k-points (real and complex) will be
-supported in future releases.
+interfaced to PySCF which is a multipurpose electronic structure
+written mainly in Python with key numerical functionality implemented
+via optimized C and C++ libraries\cite{Sun2018}. Such a wavefunction
+can be generated following the example for a 2x1x1 supercell,
+below. Note that the current implementation and examples cover only
+the use of k-points where symmetry allows real coefficients to be
+used.  This allows calculation at $\Gamma$) and, e.g., some high
+symmetry k-points at the Brillouin zone edges.  More general k-points
+requiring complex coefficients will be supported in future releases.
 
 \begin{lstlisting}[caption=Example PySCF input for single k-point calculation for a 2x1x1 Carbon supercell.]
 #!/usr/bin/env python
@@ -190,14 +190,94 @@ to specify the path to the file in your PYTHONPATH such as
 export PYTHONPATH=QMCPACK_PATH/src/QMCTools:$PYTHONPATH
 \end{lstlisting}
 
+When using multiple k-points, it is necessary to expand the kpoints into the equivalent supercell, adjust for the phase factor in the coefficient's value due to the translation by the lattice vector and order the molecular coefficients from each k-point according to their occupation. These operations are all automated in the \textit{savetoqmcpack()} function.\\
 
-In order to generate QMCPACK input files, you will need to run \textit{convert4qmc} exactly as specified in section ~\ref{sec:convert4qmc};
+The following example corresponds to the same carbon system (2x1x1) however, in this case, we use a primitive simulation cell and a 2x1x1 kpoint mesh.   
+
+\begin{lstlisting}[caption=Example PySCF input for single k-point calculation for a 2x1x1 Carbon supercell.]
+#!/usr/bin/env python
+
+import numpy
+from pyscf.pbc import gto, scf, dft,df
+kmesh = [2, 1, 1]
+
+cell = gto.Cell()
+cell.a = '''
+         3.37316115       3.37316115       0.00000000
+         0.00000000       3.37316115       3.37316115
+         3.37316115       0.00000000       3.37316115'''
+cell.atom = '''  
+   C        0.00000000       0.00000000       0.00000000
+   C        1.686580575      1.686580575      1.686580575 
+            '''
+cell.basis='bfd-vtz'
+cell.ecp = 'bfd'
+
+cell.unit='B'
+cell.drop_exponent=0.1
+
+cell.verbose = 5
+
+cell.build()
+
+kpts = cell.make_kpts(kmesh)
+kpts -= kpts[0]
+
+mydf = df.GDF(cell,kpts)
+mydf.auxbasis = 'weigend'
+mf = scf.KRHF(supcell,kpts).density_fit()
+
+mf.exxdiv = 'ewald'
+mf.with_df = mydf
+e_scf=mf.kernel()
+
+
+title="C_Diamond-211"
+
+from PyscfToQmcpack import savetoqmcpack
+savetoqmcpack(supcell,mf,title=title,kpts=kpts,kmesh=kmesh)
+
+\end{lstlisting}
+
+
+
+Note the difference between the 2 input files where:\\
+\begin{lstlisting}
+kmesh=[2,1,1]  #k-point mesh
+\end{lstlisting}
+
+\begin{lstlisting}
+kpts = cell.make_kpts(kmesh)
+kpts -= kpts[0]
+\end{lstlisting}
+Will generate k-points centered around the $\Gamma$-point and will insure the molecular coefficients are real.\\
+
+\begin{lstlisting}
+mf = scf.KRHF(supcell,kpts).density_fit()
+\end{lstlisting}
+The Computational algorithm chosen in PySCF is \textit{KRHF} instead of \textit{RHF}.
+
+Finally, to generate the HDF5 file needed by \qmcpack we call the \textit{savetoqmcpack} function\\
+\begin{lstlisting}
+from PyscfToQmcpack import savetoqmcpack
+savetoqmcpack(supcell,mf,title=title,kpts=kpts,kmesh=kmesh)
+\end{lstlisting}
+In this call, we simply specify the k-point mesh used in order to force the converter to generate the desired cell. Note that if the parameter \textit{kmesh} is ommited, the converter will still try to ``guess'' it.
+
+
+
+In order to generate QMCPACK input files, you will need to run for both cases \textit{convert4qmc} exactly as specified in section ~\ref{sec:convert4qmc};
 \begin{lstlisting}
 convert4qmc -pyscf C_Diamond.h5
 \end{lstlisting}
 
-This tool can be used with any option described in convert4qmc. Since the HDF5 contains all the information needed for a QMC run, there is no need to specify any other specific tag for periodicity.
-Running such a command will generate 3 input files;\\
+This tool can be used with any option described in convert4qmc. Since
+the HDF5 contains all the information needed, there is no need to
+specify any other specific tag for periodicity.A supercell at
+$\Gamma$-point or using multiple k-points will work without further
+modification..
+
+Running convert4qmv will generate 3 input files;\\
 \begin{lstlisting}[caption=CDiamond.structure.xml. This file contains the geometry of the system.]
 <?xml version="1.0"?>
 <qmcsystem>
@@ -237,7 +317,7 @@ Running such a command will generate 3 input files;\\
 </qmcsystem>
   \end{lstlisting}
 
-  As one can see, the cell has been extended to contain 4 atoms in a 2x1x1 Carbon Cell.
+  As one can see, that for both examples the 2 atom primitive cell has been expanded to contain 4 atoms in a 2x1x1 carbon cell.
 \begin{lstlisting}[caption=CDiamond.wfj-Twist0.xml. This file contains the trial wavefunction.]
 <?xml version="1.0"?>
 <qmcsystem>

@@ -294,8 +294,8 @@ protected:
    */
   RealType getNodeCorrection(const ParticleSet::ParticleGradient_t& g, ParticleSet::ParticlePos_t& gscaled);
 
-  ///copy constructor
-  QMCUpdateBase(const QMCUpdateBase& a);
+  ///copy constructor (disabled)
+  QMCUpdateBase(const QMCUpdateBase &) = delete;
 
 private:
 

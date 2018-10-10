@@ -123,7 +123,14 @@ namespace qmcplusplus
       inline void setCenter(int c, int offset)
       { }
 
-      
+      /// Sets a boolean vector for S-type orbitals.  Used for cusp correction.
+      void queryOrbitalsForSType(std::vector<bool> &s_orbitals) const {
+        for (int i = 0; i < BasisSetSize; i++) {
+          s_orbitals[i] = (RnlID[NL[i]][1] == 0);
+        }
+      }
+
+
 
  template<typename LAT, typename T, typename PosType, typename VGL>
         inline void

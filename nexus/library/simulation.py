@@ -277,6 +277,7 @@ class Simulation(NexusCore):
     creating_fake_sims = False
 
     sim_directories = dict()
+    all_sims = []
 
     @classmethod
     def code_name(cls):
@@ -418,6 +419,7 @@ class Simulation(NexusCore):
         #end if
         self.post_init()
 
+        Simulation.all_sims.append(self)
     #end def __init__
 
 
@@ -1021,13 +1023,15 @@ class Simulation(NexusCore):
 
     def submit(self):
         if not self.submitted:
+            if self.skip_submit:
+                self.block_dependents(block_self=True)
+                return
+            #end if
             self.log('submitting job'+self.idstr(),n=3)
-            if not self.skip_submit:
-                if not self.job.local:
-                    self.job.submit()
-                else:
-                    self.execute() # execute local job immediately
-                #end if
+            if not self.job.local:
+                self.job.submit()
+            else:
+                self.execute() # execute local job immediately
             #end if
             self.submitted = True
             if (self.job.batch_mode or not nexus_core.monitor) and not nexus_core.generate_only:

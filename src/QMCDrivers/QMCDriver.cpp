@@ -49,8 +49,8 @@ typedef int TraceManager;
 namespace qmcplusplus
 {
 
-QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool)
-  : MPIObjectBase(0), branchEngine(0), W(w), Psi(psi), H(h), psiPool(ppool),
+QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool, Communicate* comm)
+  : MPIObjectBase(comm), branchEngine(0), W(w), Psi(psi), H(h), psiPool(ppool),
     Estimators(0),Traces(0), qmcNode(NULL), wOut(0)
 {
   ResetRandom=false;

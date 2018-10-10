@@ -32,7 +32,6 @@ SPOSet::SPOSet()
   ,Identity(false),BasisSetSize(0),C(nullptr)
 #endif
 {
-  CanUseGLCombo=false;
   className="invalid";
 #if !defined(ENABLE_SOA)
   IsCloned=false;
@@ -41,26 +40,7 @@ SPOSet::SPOSet()
 #endif
 }
 
-/** default implementation */
-SPOSet::ValueType
-SPOSet::RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
-{
-  int ip=omp_get_thread_num();
-  // YYYY to fix
-  /*
-  ValueVector_t psi(t_logpsi[ip],OrbitalSetSize);
-  evaluate(P,iat,psi);
-  return simd::dot(psi.data(),arow,OrbitalSetSize,ValueType());
-  */
-  return ValueType();
-}
-
-void SPOSet::evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl)
-{
-  APP_ABORT("SPOSet::evaluateVGL not implemented.");
-}
-
-void SPOSet::evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM)
+void SPOSet::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOmem)
 {
   for(int iat=0; iat<VP.getTotalNum(); ++iat)
   {

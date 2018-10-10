@@ -36,6 +36,27 @@ IF (NOT QMC_CUDA)
                     0 LIH_LONG # VMC
                     )
 
+  # estimator tests
+  INCLUDE("${qmcpack_SOURCE_DIR}/CMake/python.cmake")
+  set(stat_python_reqs numpy;h5py)
+  CHECK_PYTHON_REQS(stat_python_reqs diamond-estimator add_tests)
+  if (add_tests)
+    SIMPLE_RUN_AND_CHECK(
+      short-LiH_dimer_ae-vmc_hf_noj_estimator_energydensity_voronoi
+      "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae_gms"
+      vmc_noj_edens_vor_short.in.xml
+      4 4
+      check_stats.py -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_noj_edens_vor_short -r qmc-ref/vmc_noj_edens_vor_short.s000.stat_ref_energydensity.dat
+      )
+
+    SIMPLE_RUN_AND_CHECK(
+      long-LiH_dimer_ae-vmc_hf_noj_estimator_energydensity_voronoi
+      "${CMAKE_SOURCE_DIR}/tests/molecules/LiH_dimer_ae_gms"
+      vmc_noj_edens_vor_long.in.xml
+      4 4
+      check_stats.py -s 0 -q 'energydensity,EDvoronoi' -e 2 -c 2 -p vmc_noj_edens_vor_long -r qmc-ref/vmc_noj_edens_vor_long.s000.stat_ref_energydensity.dat
+      )
+  endif()
 
  ELSE()
     MESSAGE("Skipping LiH_dimer_ae tests because gaussian basis sets are not supported by complex build (QMC_COMPLEX=1)")

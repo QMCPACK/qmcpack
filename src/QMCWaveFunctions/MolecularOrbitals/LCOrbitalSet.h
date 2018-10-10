@@ -456,15 +456,17 @@ public:
    * For the i-th virtual move and the j-th orbital,
    * \f$ psiM(i,j)= \sum_k phiM(i,k)*C(j,k) \f$
    */
-  void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM)
+  void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem)
   {
-    ValueMatrix_t phiM(VP.getTotalNum(),BasisSetSize);
+    ValueMatrix_t phiM(SPOMem.data(), VP.getTotalNum(), BasisSetSize);
     myBasisSet->evaluateValues(VP,phiM);
     MatrixOperators::product_ABt(phiM,*C,psiM);
     //for(int i=0; i<psiM.rows(); ++i)
     //  for(int j=0; j<psiM.cols(); ++j)
     //    psiM(i,j)=simd::dot(C[j],phiM[i],BasisSetSize);
   }
+
+  size_t estimateMemory(const int nP) { return BasisSetSize*nP; }
 
   void evaluateThirdDeriv(const ParticleSet& P, int first, int last
                           , GGGMatrix_t& grad_grad_grad_logdet)

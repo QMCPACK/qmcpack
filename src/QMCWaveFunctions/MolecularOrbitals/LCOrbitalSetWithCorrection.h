@@ -687,15 +687,15 @@ public:
 
   bool transformSPOSet();
 
-  bool readCuspInfo(Matrix<TinyVector<RealType,9> > &);
+  bool readCuspInfo(Matrix<CuspCorrectionParameters > &);
 
+  std::string cuspInfoFile;
 private:
 
   BS* extractHighYLM(std::vector<bool> &rmv);
   LCOrbitalSet<BS,false>* originalSPOSet;
   RealType Rcut;
   std::vector<RealType> Z;
-  std::string cuspInfoFile;
 
   void createLCOSets(int centr, LCOrbitalSet<BS,false>* Phi, LCOrbitalSet<BS,false>* Eta);
 

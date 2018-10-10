@@ -57,7 +57,7 @@ public:
 
 
   ///Constructor.
-  QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h);
+  QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
   virtual ~QMCCostFunctionBase();

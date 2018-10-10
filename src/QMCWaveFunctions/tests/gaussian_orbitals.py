@@ -5,6 +5,7 @@
 
 from sympy import *
 from collections import namedtuple, defaultdict
+import numpy as np
 
 
 CG_basis = namedtuple('CG_basis',['orbtype','nbasis','zeta','contraction_coeff'])
@@ -166,6 +167,16 @@ def get_ijk_by_type():
 
   return by_type
 
+def get_ijk_inverse_index(basis_set):
+  ijk_list = get_ijk_by_type()
+  by_index = list()
+  for basis in basis_set:
+    angular_list = ijk_list[basis.orbtype]
+    for angular_info in angular_list:
+      by_index.append( (basis, angular_info) )
+  return by_index
+
+
 
 # Collection of atoms with different types and positions
 class GTO_centers:
@@ -193,6 +204,44 @@ class GTO_centers:
       laps.extend(l)
 
     return vs, grads, laps
+
+def get_center_and_ijk_by_index(pos_list, elements, basis_sets):
+  index = []
+  for pos_idx, (pos, element) in enumerate(zip(pos_list, elements)):
+    index_for_one = get_ijk_inverse_index(basis_sets[element])
+    for basis,angular_info in index_for_one:
+      index.append((pos_idx, basis, angular_info))
+  return index
+
+class MolecularOrbital:
+  def __init__(self, gto, MO_matrix):
+    self.gto = gto
+    self.MO_matrix = MO_matrix
+
+  def eval_v(self, x, y, z):
+    ao_vals = self.gto.eval_v(x, y, z)
+    mo_vals = np.dot(self.MO_matrix, ao_vals)
+    return mo_vals
+
+  def eval_v_one_MO(self, x, y, z, mo_idx):
+    ao_vals = self.gto.eval_v(x, y, z)
+    mo_val = np.dot(self.MO_matrix[mo_idx, :], ao_vals)
+    return mo_val
+
+  def eval_vgl(self, x, y, z):
+    ao_v, ao_g, ao_l = self.gto.eval_vgl(x, y, z)
+    mo_v = np.dot(self.MO_matrix, ao_v)
+    mo_g = np.dot(self.MO_matrix, ao_g)
+    mo_l = np.dot(self.MO_matrix, ao_l)
+
+    return mo_v, mo_g, mo_l
+
+  def eval_vgl_one_MO(self, x, y, z, mo_idx):
+    ao_vals, ao_g, ao_l = self.gto.eval_vgl(x, y, z)
+    mo_val = np.dot(self.MO_matrix[mo_idx, :], ao_vals)
+    mo_g = np.dot(self.MO_matrix[mo_idx, :], ao_g)
+    mo_l = np.dot(self.MO_matrix[mo_idx, :], ao_l)
+    return mo_val, mo_g, mo_l
 
 
 

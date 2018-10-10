@@ -783,8 +783,8 @@ template<class BS> class LCOrbitalSetOpt : public SPOSet {
     ///   ----------------------------------------------------------------------------------------------------------------------
     ///
     ///////////////////////////////////////////////////////////////////////////////////////////////////
-    void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM) {
-      throw std::runtime_error("LCOrbitalSetOpt::evaluateValues(VP, psiM) not yet implemented");
+    void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem) {
+      throw std::runtime_error("LCOrbitalSetOpt::evaluateValues(VP, psiM, SPOMem) not yet implemented");
       //ValueMatrix_t phiM(P.getTotalNum(),BasisSetSize);
       //m_basis_set->evaluateValues(P,phiM);
       //MatrixOperators::product_ABt(phiM,C,psiM);

@@ -116,13 +116,13 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     }
   }
 
-  template<typename VM>
-  inline void evaluateValues(VirtualParticleSet& VP, VM& psiM)
+  template<typename VM, typename VAV>
+  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM, VAV& SPOMem)
   {
     const size_t m=psiM.cols();
     if(VP.isOnSphere() && HybridBase::is_batched_safe(VP))
     {
-      Matrix<ST,aligned_allocator<ST> > multi_myV((ST*)VP.SPOMem.data(),VP.getTotalNum(),myV.size());
+      Matrix<ST,aligned_allocator<ST> > multi_myV((ST*)SPOMem.data(),VP.getTotalNum(),myV.size());
       std::vector<int> bc_signs(VP.getTotalNum());
       const RealType smooth_factor=HybridBase::evaluateValuesR2R(VP, PrimLattice, HalfG, multi_myV, bc_signs);
       const RealType cone(1);
@@ -173,16 +173,6 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     return BaseAdoptor::estimateMemory(nP)+myV.size()*sizeof(ST)/sizeof(ValueType)*nP;
   }
 
-  template<typename T1>
-  inline T1 evaluate_dot(const ParticleSet& P, int iat, const T1* restrict arow, ST* scratch)
-  {
-    Vector<ST> vtmp(scratch,myV.size());
-    if(HybridBase::evaluate_v(P,iat,vtmp))
-      return BaseAdoptor::evaluate_dot(P,iat,arow,scratch,false);
-    else
-      return BaseAdoptor::evaluate_dot(P,iat,arow,scratch,true);
-  }
-
   template<typename VV, typename GV>
   inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {
@@ -219,25 +209,6 @@ struct HybridRealSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
           psi[i] =   psi_AO[i]*smooth_factor +   psi[i]*(cone-smooth_factor);
       }
     }
-  }
-
-  /** evaluate VGL using VectorSoaContainer
-   * @param r position
-   * @param psi value container
-   * @param dpsi gradient-laplacian container
-   */
-  template<typename VGL>
-  inline void evaluate_vgl_combo(const ParticleSet& P, const int iat, VGL& vgl)
-  {
-    APP_ABORT("HybridRealSoA::evaluate_vgl_combo not implemented!");
-    if(HybridBase::evaluate_vgh(P,iat,myV,myG,myH))
-    {
-      const PointType& r=P.activeR(iat);
-      int bc_sign=HybridBase::get_bc_sign(r, PrimLattice, HalfG);
-      BaseAdoptor::assign_vgl_soa(bc_sign,vgl);
-    }
-    else
-      BaseAdoptor::evaluate_vgl_combo(P,iat,vgl);
   }
 
   template<typename VV, typename GV, typename GGV>
