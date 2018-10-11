@@ -356,6 +356,12 @@ class QuantumPackageInput(SimulationInput):
         fci_zmq
         '''.split())
 
+    integral_write_allowed = set('''
+        SCF
+        cis
+        fci_zmq
+        '''.split())
+
 
     def __init__(self,filepath=None):
         self.structure   = None
@@ -364,6 +370,55 @@ class QuantumPackageInput(SimulationInput):
             self.read(filepath)
         #end if
     #end def __init__
+
+
+    def present(self,name):
+        if name not in known_variables:
+            self.error('attempted to check presence of unknown variable "{0}"valid options are: {1}'.format(name,sorted(known_variables)))
+        #end if
+        secname = variable_section[name]
+        return secname in self and name in self[secname]
+    #end def present
+
+
+    def set(self,**kwargs):
+        for name,value in kwargs.iteritems():
+            if name not in known_variables:
+                self.error('cannot set variable\nattempted to set unknown variable "{0}"\nwith value: {1}\nvalid options are: {2}'.format(name,value,sorted(known_variables)))
+            #end if
+            secname = variable_section[name]
+            if secname not in self:
+                self[secname] = Section()
+            #end if
+            self[secname][name] = value
+        #end for
+    #end def set
+
+
+    def get(self,name):
+        if name not in known_variables:
+            self.error('cannot get variable\nattempted to get unknown variable "{0}"\nvalid options are: {1}'.format(name,sorted(known_variables)))
+        #end if
+        value = None
+        secname = variable_section[name]
+        if secname in self and name in self[secname]:
+            value = self[secname][name]
+        #end if
+        return value
+    #end def get
+
+
+    def delete(self,name):
+        if name not in known_variables:
+            self.error('cannot get variable\nattempted to get unknown variable "{0}"\nvalid options are: {1}'.format(name,sorted(known_variables)))
+        #end if
+        value = None
+        secname = variable_section[name]
+        if secname in self and name in self[secname]:
+            value = self[secname].delete(name)
+        #end if
+        return value
+    #end def delete
 
 
     def extract_added_keys(self):
@@ -410,7 +465,11 @@ class QuantumPackageInput(SimulationInput):
         if filepath is None:
             return str(self)
         #end if
+
+        # get the ezfio path
         epath = filepath.rstrip('/')
+
+        # check that write can occur
         if not epath.endswith('.ezfio'):
             self.error('cannot write input\nprovided path does not end in an ezfio directory\ndirectory must end with .ezfio\npath provided:  {0}'.format(epath))
         #end if
@@ -421,6 +480,8 @@ class QuantumPackageInput(SimulationInput):
         if not os.path.exists(path):
             self.error('cannot write input\nattempted to write ezfio directory "{0}" at non-existent destination path\ndestination path: {1}'.format(edir,path))
         #end if
+
+        # if there is no ezfio directory, initialize one
         if not os.path.exists(epath):
             if self.structure is None:
                 self.error('cannot write input\nstructure is missing\ninput path provided: {0}'.format(epath))
@@ -444,6 +505,8 @@ class QuantumPackageInput(SimulationInput):
             execute('qp_edit -c '+edir)
             os.chdir(cwd)
         #end if
+
+        # write inputs into the ezfio directory/file tree
         extra = self.extract_added_keys()
         for secname,sec in self.iteritems():
             secpath = os.path.join(epath,secname)
@@ -456,6 +519,18 @@ class QuantumPackageInput(SimulationInput):
             #end for
         #end for
         self.restore_added_keys(extra)
+
+        # take other steps that modify the input, as requested
+        if 'run_control' in self:
+            rc = self.run_control
+            if 'frozen_core' in rc and rc.frozen_core:
+                cwd = os.getcwd()
+                os.chdir(path)
+                execute('qp_set_frozen_core.py '+edir)
+                os.chdir(cwd)
+            #end if
+        #end if
+
         return ''
     #end def write
 
@@ -540,7 +615,10 @@ class QuantumPackageInput(SimulationInput):
 
 
 run_inputs = set('''
+    prefix
     run_type
+    frozen_core
+    cis_loop
     sleep
     slave
     postprocess
@@ -554,7 +632,10 @@ gen_inputs = set('''
 added_inputs = run_inputs | gen_inputs
 added_types = obj(
     # run inputs
+    prefix         = str,
     run_type       = str,
+    frozen_core    = bool,
+    cis_loop       = (bool,int),
     sleep          = (int,float),
     slave          = str,
     postprocess    = (tuple,list),
@@ -566,6 +647,7 @@ added_types = obj(
     )
 added_required = set('''
     system
+    prefix
     sleep
     '''.split())
 qp_defaults_version = 'v1'
@@ -610,9 +692,6 @@ def generate_quantum_package_input(**kwargs):
         QuantumPackageInput.class_error('cannot generate input\nrequested invalid default set\ndefault set requested: {0}\nvalid options are: {1}'.format(kw.defaults,sorted(qp_defaults.keys())))
     #end if
     kw.set_optional(**qp_defaults[kw.defaults])
-    if kw.save_integrals:
-        kw.set_optional(**save_ints_defaults)
-    #end if
 
     # check for required variables
     req_missing = kw.check_required(added_required,exit=False)
@@ -639,6 +718,10 @@ def generate_quantum_package_input(**kwargs):
 
     # separate generation inputs from input file variables
     gen_kw = kw.extract_optional(gen_inputs)
+
+    if gen_kw.save_integrals and run_kw.run_type in QuantumPackageInput.integral_write_allowed:
+        kw.set_optional(**save_ints_defaults)
+    #end if
 
     # partition inputs into sections and variables
     sections = obj()

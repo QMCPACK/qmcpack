@@ -35,6 +35,8 @@ class QuantumPackage(Simulation):
     application_properties = set(['serial','mpi'])
     application_results    = set([]) 
 
+    allow_overlapping_files = True
+
     qprc = None
 
     slave_partners = obj(
@@ -60,6 +62,11 @@ class QuantumPackage(Simulation):
         QuantumPackage.qprc = None
     #end def restore_default_settings
 
+    def pre_init(self):
+        prefix = self.input.run_control.prefix
+        self.infile = prefix + self.infile_extension
+    #end def pre_init
+
 
     def post_init(self):
         qprc = QuantumPackage.qprc
@@ -68,6 +75,20 @@ class QuantumPackage(Simulation):
         #end if
         self.job.presub += '\nsource {0}\n'.format(os.path.abspath(qprc))
     #end def post_init
+
+
+    def write_prep(self):
+        # write an ascii represenation of the input changes
+        infile = self.identifier+'.in'
+        infile = os.path.join(self.locdir,infile)
+        f = open(infile,'w')
+        s = self.input.delete_optional('structure',None)
+        f.write(str(self.input))
+        if s is not None:
+            self.input.structure = s
+        #end if
+        f.close()
+    #end def write_prep
 
 
     def check_result(self,result_name,sim):
@@ -111,9 +132,58 @@ class QuantumPackage(Simulation):
 
 
     def app_command(self):
-        run_type = self.input.run_control.run_type
+
+        # get run controls
+        input = self.input
+        rc = input.run_control
+
+        # make the basic app command, no splitting etc
+        run_type = rc.run_type
         app_command = self.app_name+' '+run_type+' '+self.infile
+
+        # prepare local vars in case splitting or other tricks are needed
+        fc = ''
         job = self.job
+
+        # add cis-loop runs if requested
+        if 'cis_loop' in rc:
+            nloop = 0
+            if isinstance(rc.cis_loop,bool) and rc.cis_loop:
+                nloop = 2
+            else:
+                nloop = rc.cis_loop
+            #end for
+            if nloop>0:
+                jloop = job.clone()
+                fc+='\n'
+                for n in range(nloop):
+                    jloop.app_command = self.app_name+' cis '+self.infile
+                    fc += jloop.run_command()+' >{0}_{1}.out 2>{0}_{1}.err\n'.format(self.identifier,n)
+                    jloop.app_command = self.app_name+' save_natorb '+self.infile
+                    fc += jloop.run_command()+'\n'
+                #end for
+                fc+='\n'
+                integrals = [
+                    'integrals_monoelec/disk_access_ao_one_integrals',
+                    'integrals_monoelec/disk_access_mo_one_integrals',
+                    'integrals_bielec/disk_access_ao_integrals',
+                    'integrals_bielec/disk_access_mo_integrals',
+                    ]
+                cl = ''
+                for integral in integrals:
+                    isec,ivar = integral.split('/')
+                    if input.present(ivar):
+                        val = input.delete(ivar)
+                        cl += 'echo "{0}" > {1}/{2}\n'.format(val,self.infile,integral)
+                    #end if
+                #end for
+                if len(cl)>0:
+                    fc+=cl+'\n'
+                #end if
+            #end if
+        #end if
+
+        # perform master-slave job splitting if necessary
         slave = self.get_slave()
         split_nodes  = job.nodes>1 and job.full_command is None
         split_nodes &= slave is not None
@@ -130,11 +200,21 @@ class QuantumPackage(Simulation):
             job1,job2 = job.split_nodes(1)
             job1.app_command = app_command
             job2.app_command = slave_command
-            s  = ''
-            s += job1.run_command()+' >{0} 2>{1}&\n'.format(outfile,errfile)
-            s += 'sleep {0}\n'.format(self.input.run_control.sleep)
-            s += job2.run_command()+' >{0} 2>{1}\n'.format(slave_outfile,slave_errfile)
-            job.full_command = s
+            fc += job1.run_command()+' >{0} 2>{1}&\n'.format(outfile,errfile)
+            fc += 'sleep {0}\n'.format(self.input.run_control.sleep)
+            fc += job2.run_command()+' >{0} 2>{1}\n'.format(slave_outfile,slave_errfile)
+
+            if 'davidson' in slave and not input.present('distributed_davidson'):
+                input.set(distributed_davidson=True)
+            #end if
+        elif len(fc)>0:
+            job.divert_out_err()
+            job.app_command = app_command
+            fc += job.run_command()+' >{0} 2>{1}\n'.format(self.outfile,self.errfile)
+        #end if
+
+        if len(fc)>0:
+            job.full_command = fc
         #end if
 
         return app_command

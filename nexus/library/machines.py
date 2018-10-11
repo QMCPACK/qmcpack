@@ -641,6 +641,13 @@ class Job(NexusCore):
     #end def total_days
 
 
+    def clone(self):
+        job = self.copy()
+        job.set_id()
+        return job
+    #end def clone
+
+
     def split_nodes(self,n):
         run_options = self.run_options
         if not isinstance(n,int):
@@ -652,10 +659,8 @@ class Job(NexusCore):
         if m.app_launcher=='srun':
             self.error('splitting jobs by nodes is not currently supported on machine "{0}" (SLURM)'.format(m.name))
         #end if
-        job1 = self.copy()
-        job2 = self.copy()
-        job1.set_id()
-        job2.set_id()
+        job1 = self.clone()
+        job2 = self.clone()
         job1.nodes = n
         job2.nodes = self.nodes - n
         m.process_job(job1)
@@ -2257,10 +2262,11 @@ class Cooley(Supercomputer):
         #    self.error('threads must be 1,2,3,4,6, or 12 on Cooley\nyou provided: {0}'.format(job.threads))
         ##end if
 
-        job.run_options.add(
+        #job.run_options.add(
             #f   = '-f $COBALT_NODEFILE',
             #ppn = '-ppn {0}'.format(job.processes_per_node),
-            )
+            #)
+        return
     #end def process_job_extra
 
     def write_job_header(self,job):
