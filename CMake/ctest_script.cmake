@@ -2,7 +2,7 @@
 # Usage:  ctest -s script,build
 #   build = debug / optimized / valgrind / coverage
 # Note: this test will use use the number of processors defined in the variable N_PROCS,
-#   the environmental variables
+#   the environment variables
 #   N_PROCS, or the number of processors available (if not specified)
 #   N_PROCS_BUILD, or N_PROCS (if not specified)
 #   N_CONCURRENT_TESTS, or N_PROCS (if not specified)

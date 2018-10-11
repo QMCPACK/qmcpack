@@ -65,7 +65,7 @@ ranks as the number of GPUs per node in order to let each MPI rank take one GPU.
 Modern processors integrate multiple identical cores even with hardware threads
 on a single die to increase the total performance and maintain a reasonable
 power draw. QMCPACK takes advantage of all that compute capability on a
-processor by using threads via OpenMP programming model as well as threaded linear algebra libraries. By default, QMCPACK is always built with OpenMP enabled. When launching calculations, users should instruct QMCPACK to create the right number of threads per MPI rank by specifying environmental variable OMP\_NUM\_THREADS. Even in the GPU accelerated version, using threads significantly reduces the time spent on the calculations performed by the CPU.
+processor by using threads via OpenMP programming model as well as threaded linear algebra libraries. By default, QMCPACK is always built with OpenMP enabled. When launching calculations, users should instruct QMCPACK to create the right number of threads per MPI rank by specifying environment variable OMP\_NUM\_THREADS. Even in the GPU accelerated version, using threads significantly reduces the time spent on the calculations performed by the CPU.
 
 \subsubsection{Performance consideration}
 \label{sec:cpu:performance}
