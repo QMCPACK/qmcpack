@@ -520,7 +520,7 @@ walker: walker-by-walker update</xs:documentation>
 		</xs:attribute>
 		<xs:attribute name="append" use="optional" default="no">
 			<xs:annotation>
-				<xs:documentation>If yes, the section is appended to a preceeding qmc section.</xs:documentation>
+				<xs:documentation>If yes, the section is appended to a preceding qmc section.</xs:documentation>
 			</xs:annotation>
 			<xs:simpleType>
 				<xs:restriction base="xs:NMTOKEN">

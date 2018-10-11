@@ -412,7 +412,7 @@ bool AFQMCDriver::checkpoint(int block, int step)
   }
 
   if(!wlkBucket->dumpToHDF5(dump,hdf_write_tag) ) {
-    app_error()<<" Problems writting checkpoint file in Driver/AFQMCDriver::checkpoint(). \n";
+    app_error()<<" Problems writing checkpoint file in Driver/AFQMCDriver::checkpoint(). \n";
     return false;
   }
 
@@ -444,7 +444,7 @@ bool AFQMCDriver::writeSamples()
 
   int nwtowrite=-1;
   if(!wlkBucket->dumpSamplesHDF5(dump,nwtowrite) ) {
-    app_error()<<" Problems writting checkpoint file in Driver/AFQMCDriver::writeSample(). \n";
+    app_error()<<" Problems writing checkpoint file in Driver/AFQMCDriver::writeSample(). \n";
     return false;
   }
 

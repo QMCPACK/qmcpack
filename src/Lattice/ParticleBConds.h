@@ -48,11 +48,11 @@ struct PowerOfN<N,0>
  <td>SC</td><td>3D</td><td>2D</td><td>1D</td><td>comment</td>
  </th>
  <tr><td>SUPERCELL_OPEN           </td><td>n n n</td><td>n n</td><td>n</td><td>open boudary conditions </td> </tr>
- <tr><td>SUPERCELL_BULK           </td><td>p p p</td><td>NA   </td><td>NA</td><td>periodic boundry conditions in 3 dimensions, general cell</td> </tr>
- <tr><td>SUPERCELL_BULK+TwoPowerD </td><td>p p p</td><td>NA   </td><td>NA</td><td>periodic boundry conditions in 3 dimensions, orthorombic cell</td></tr>
- <tr><td>SUPERCELL_SLAB           </td><td>p p n</td><td>p p</td><td>NA</td><td>periodic boundry conditions in 2 dimensions, general cell</td></tr>
- <tr><td>SUPERCELL_SLAB+TwoPowerD </td><td>p p n</td><td>p p</td><td>NA</td><td>periodic boundry conditions in 2 dimensions, orthorombic cell</td></tr>
- <tr><td>SUPERCELL_WIRE           </td><td>p n n</td><td>p n</td><td>p</td><td>periodic boundry conditions in 1 dimension</td></tr>
+ <tr><td>SUPERCELL_BULK           </td><td>p p p</td><td>NA   </td><td>NA</td><td>periodic boundary conditions in 3 dimensions, general cell</td> </tr>
+ <tr><td>SUPERCELL_BULK+TwoPowerD </td><td>p p p</td><td>NA   </td><td>NA</td><td>periodic boundary conditions in 3 dimensions, orthorombic cell</td></tr>
+ <tr><td>SUPERCELL_SLAB           </td><td>p p n</td><td>p p</td><td>NA</td><td>periodic boundary conditions in 2 dimensions, general cell</td></tr>
+ <tr><td>SUPERCELL_SLAB+TwoPowerD </td><td>p p n</td><td>p p</td><td>NA</td><td>periodic boundary conditions in 2 dimensions, orthorombic cell</td></tr>
+ <tr><td>SUPERCELL_WIRE           </td><td>p n n</td><td>p n</td><td>p</td><td>periodic boundary conditions in 1 dimension</td></tr>
  </table>
  * \endhtmlonly
  * Specialization of DTD_BConds should implement

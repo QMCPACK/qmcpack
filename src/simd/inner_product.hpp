@@ -146,7 +146,7 @@ namespace qmcplusplus {
         return res;
       }
 
-    /** x*y dot product of two vectors using the same arugment list for blas::dot
+    /** x*y dot product of two vectors using the same argument list for blas::dot
      * @param n size
      * @param x starting address of x 
      * @param incx stride of x

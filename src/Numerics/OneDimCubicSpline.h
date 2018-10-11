@@ -46,7 +46,7 @@ namespace qmcplusplus
  piecewise linear equations with a zero second derivative within each interval
  and an undefined or infinite second derivative at the interval boundaries,
  the grid points \f$ \{x_i\}. \f$  Ideally we would like to construct an
- interpolation function with a smooth first derivate and a continuous second
+ interpolation function with a smooth first derivative and a continuous second
  derivative both within the intervals and at the the grid points.
 
  By adding a cubic polynomial to the linear interpolation equation within
@@ -69,7 +69,7 @@ namespace qmcplusplus
  \f]
 
 
- To explictly check that this function does indeed satisfy the conditions
+ To explicitly check that this function does indeed satisfy the conditions
  at the endpoints take the derivatives
  \f[
  \frac{dy}{dx} = \frac{y_{j+1}-y_j}{x_{j+1}-x_j}
@@ -327,7 +327,7 @@ public:
     return
       m_grid->cubicInterpolateSecond(m_Y[Loc],m_Y[Loc+1],m_Y2[Loc],m_Y2[Loc+1],du,d2u);
   }
-  /** Evaluate the 2nd derivate on the grid points
+  /** Evaluate the 2nd derivative on the grid points
    *\param imin the index of the first valid data point
    *\param yp1 the derivative at the imin-th grid point
    *\param imax the index of the last valid data point

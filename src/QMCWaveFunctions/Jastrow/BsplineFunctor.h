@@ -112,7 +112,7 @@ struct BsplineFunctor: public OptimizableFunctorBase
     DeltaRInv = 1.0/DeltaR;
     for (int i=0; i<SplineCoefs.size(); i++)
       SplineCoefs[i] = 0.0;
-    // Ensure that cusp conditions is satsified at the origin
+    // Ensure that cusp conditions is satisfied at the origin
     SplineCoefs[1] = Parameters[0];
     SplineCoefs[2] = Parameters[1];
     SplineCoefs[0] = Parameters[1] - 2.0*DeltaR * CuspValue;

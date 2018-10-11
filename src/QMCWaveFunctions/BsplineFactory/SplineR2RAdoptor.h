@@ -189,7 +189,7 @@ struct SplineR2RSoA: public SplineAdoptorBase<ST,3>
     return h5f.write(bigtable,o.str().c_str());//"spline_0");
   }
 
-  /** convert postion in PrimLattice unit and return sign */
+  /** convert position in PrimLattice unit and return sign */
   inline int convertPos(const PointType& r, PointType& ru)
   {
     ru=PrimLattice.toUnit(r);
