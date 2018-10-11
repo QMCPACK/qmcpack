@@ -1,6 +1,6 @@
 #ifdef __bgq__
 #include </bgsys/drivers/ppcfloor/spi/include/kernel/location.h>
-#else
+#elif __linux__
 #include <sched.h>
 #endif
 #include <omp.h>
@@ -15,9 +15,11 @@ int get_core()
 #ifdef __bgq__
     int core = Kernel_ProcessorCoreID();
     return core;
-#else
+#elif __linux__
     int cpuid = sched_getcpu();
     return cpuid;
+#else
+    return -1;
 #endif
 }
 
@@ -36,6 +38,7 @@ int get_hwthread()
 
 int main()
 {
+  std::cout << "Note: -1 means the property is not accessible on this platform." << std::endl << std::endl;
   #pragma omp parallel
   {
     int L1_thread_id  = omp_get_thread_num();
