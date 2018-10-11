@@ -121,7 +121,7 @@ vdeps(1,std::vector<double>()),
                                           60, // max krylov iter
                                           0, // max spam inner iter
                                           1, // spam appro degree
-                                          0, // eom relates 
+                                          0, // eom related 
                                           0, // eom related
                                           0, // eom related
                                           0.0, // omega
