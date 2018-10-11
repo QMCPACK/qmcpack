@@ -2078,6 +2078,39 @@ def machines():
 
     # test Job.run_command
     nlabel('job_run_command')
+    def parse_job_command(command):
+        tokens = command.replace(':',' ').split()
+        launcher = tokens[0]
+        exe = tokens[-1]
+        args = []
+        options = obj()
+        last_option = None
+        for t in tokens[1:-1]:
+            if t.startswith('-'):
+                options[t] = None
+                last_option = t
+            elif last_option is not None:
+                options[last_option] = t
+                last_option = None
+            else:
+                args.append(t)
+            #end if
+        #end for
+        jc = obj(
+            launcher   = launcher,
+            executable = exe,
+            args       = args,
+            options    = options,
+            )
+        return jc
+    #end def parse_job_command
+
+    def job_commands_equal(c1,c2):
+        jc1 = parse_job_command(c1)
+        jc2 = parse_job_command(c2)
+        return object_eq(jc1,jc2)
+    #end def job_command_equal
+
     job_run_ref = obj({
         ('amos'           , 'n1'            ) : 'srun test.x',
         ('amos'           , 'n1_p1'         ) : 'srun test.x',
@@ -2194,11 +2227,11 @@ def machines():
         ('taub'           , 'n2'            ) : 'mpirun -np 24 test.x',
         ('taub'           , 'n2_t2'         ) : 'mpirun -np 12 test.x',
         ('taub'           , 'n2_t2_p2'      ) : 'mpirun -np 4 test.x',
-        ('theta'          , 'n1'            ) : 'aprun -cc depth -n 64 -j 1 -d 1 -N 64 test.x',
-        ('theta'          , 'n1_p1'         ) : 'aprun -cc depth -n 1 -j 1 -d 1 -N 1 test.x',
-        ('theta'          , 'n2'            ) : 'aprun -cc depth -n 128 -j 1 -d 1 -N 64 test.x',
-        ('theta'          , 'n2_t2'         ) : 'aprun -cc depth -n 64 -j 1 -d 2 -N 32 test.x',
-        ('theta'          , 'n2_t2_p2'      ) : 'aprun -cc depth -n 4 -j 1 -d 2 -N 2 test.x',
+        ('theta'          , 'n1'            ) : 'aprun  -e OMP_NUM_THREADS=1 -cc depth -n 64 -j 1 -d 1 -N 64 test.x',
+        ('theta'          , 'n1_p1'         ) : 'aprun  -e OMP_NUM_THREADS=1 -cc depth -n 1 -j 1 -d 1 -N 1 test.x',
+        ('theta'          , 'n2'            ) : 'aprun  -e OMP_NUM_THREADS=1 -cc depth -n 128 -j 1 -d 1 -N 64 test.x',
+        ('theta'          , 'n2_t2'         ) : 'aprun  -e OMP_NUM_THREADS=2 -cc depth -n 64 -j 1 -d 2 -N 32 test.x',
+        ('theta'          , 'n2_t2_p2'      ) : 'aprun  -e OMP_NUM_THREADS=2 -cc depth -n 4 -j 1 -d 2 -N 2 test.x',
         ('titan'          , 'n1'            ) : 'aprun -n 16 test.x',
         ('titan'          , 'n1_p1'         ) : 'aprun -n 1 test.x',
         ('titan'          , 'n2'            ) : 'aprun -n 32 test.x',
@@ -2242,7 +2275,7 @@ def machines():
             #stype = "'{0}'".format(jtype)
             #print "        ({0:<16} , {1:<16}) : '{2}',".format(sname,stype,command)
             ref_command = job_run_ref[name,jtype]
-            if command!=ref_command:
+            if not job_commands_equal(command,ref_command):
                 nfail('Job.run_command for machine "{0}" does not match the reference\njob inputs: {1}\nreference command: {2}\nincorrect command: {3}'.format(name,job_inputs[jtype],ref_command,command))
             #end for
         #end for
@@ -2285,10 +2318,11 @@ def machines():
         rcl ,rcr  = rc.split(ns,1)
         rc1l,rc1r = rc1.split(ns1,1)
         rc2l,rc2r = rc2.split(ns2,1)
-        nassert(rcl==rc1l)
-        nassert(rcr==rc1r)
-        nassert(rcl==rc2l)
-        nassert(rcr==rc2r)
+        rcf  = rcl+' '+rcr
+        rc1f = rc1l+' '+rc1r
+        rc2f = rc2l+' '+rc2r
+        nassert(job_commands_equal(rcf,rc1f))
+        nassert(job_commands_equal(rcf,rc2f))
     #end for
 
 

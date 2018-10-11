@@ -542,6 +542,7 @@ class QuantumPackageInput(SimulationInput):
 run_inputs = set('''
     run_type
     sleep
+    slave
     postprocess
     '''.split())
 gen_inputs = set('''
@@ -555,6 +556,7 @@ added_types = obj(
     # run inputs
     run_type       = str,
     sleep          = (int,float),
+    slave          = str,
     postprocess    = (tuple,list),
     # gen inputs
     system         = PhysicalSystem,
@@ -564,6 +566,7 @@ added_types = obj(
     )
 added_required = set('''
     system
+    sleep
     '''.split())
 qp_defaults_version = 'v1'
 shared_defaults = obj(
@@ -612,7 +615,7 @@ def generate_quantum_package_input(**kwargs):
     #end if
 
     # check for required variables
-    req_missing = kw.check_required(added_inputs,exit=False)
+    req_missing = kw.check_required(added_required,exit=False)
     if len(req_missing)>0:
         QuantumPackageInput.class_error('cannot generate input\nrequired variables are missing\nmissing variables: {0}\nplease supply values for these variables via generate_quantum_package'.format(sorted(req_missing)))
     #end if

@@ -227,57 +227,57 @@ class Job(NexusCore):
                  fake               = False,
                  ):
 
-        self.directory    = directory
-        self.subdir       = sub_dir
-        self.app_name     = app_name
-        self.app_command  = app_command
-        self.app_props    = app_props
-        self.full_command = full_command
-        self.outfile      = outfile
-        self.errfile      = errfile
-        self.user_env     = user_env
-        self.presub       = presub
-        self.postsub      = postsub
-        self.name         = name
-        self.type         = type
-        self.queue        = queue
-        self.bundled_jobs = bundled_jobs
-        self.relative     = relative
-        self.cores        = cores
-        self.nodes        = nodes
-        self.threads      = threads
-        self.hyperthreads = hyperthreads
-        self.ppn          = ppn
-        self.compiler     = compiler
-        self.app_options  = Options()
-        self.run_options  = Options()
-        self.sub_options  = Options()
-        self.serial       = serial
-        self.local        = local
-        self.days         = days
-        self.hours        = hours
-        self.minutes      = minutes
-        self.seconds      = seconds
-        self.subfile      = subfile
-        self.grains       = grains
-        self.procs        = procs
-        self.processes    = processes
+        self.directory          = directory
+        self.subdir             = sub_dir
+        self.app_name           = app_name
+        self.app_command        = app_command
+        self.app_props          = app_props
+        self.full_command       = full_command
+        self.outfile            = outfile
+        self.errfile            = errfile
+        self.user_env           = user_env
+        self.presub             = presub
+        self.postsub            = postsub
+        self.name               = name
+        self.type               = type
+        self.queue              = queue
+        self.bundled_jobs       = bundled_jobs
+        self.relative           = relative
+        self.cores              = cores
+        self.nodes              = nodes
+        self.threads            = threads
+        self.hyperthreads       = hyperthreads
+        self.ppn                = ppn
+        self.compiler           = compiler
+        self.app_options        = Options()
+        self.run_options        = Options()
+        self.sub_options        = Options()
+        self.serial             = serial
+        self.local              = local
+        self.days               = days
+        self.hours              = hours
+        self.minutes            = minutes
+        self.seconds            = seconds
+        self.subfile            = subfile
+        self.grains             = grains
+        self.procs              = procs
+        self.processes          = processes
         self.processes_per_proc = processes_per_proc
         self.processes_per_node = processes_per_node        
-        self.account      = account
-        self.email        = email
-        self.constraint   = constraint
-        self.internal_id  = None
-        self.system_id    = None
-        self.tot_cores    = None
-        self.identifier   = None
-        self.submitted    = False
-        self.status       = self.states.none
-        self.crashed      = False
-        self.overtime     = False
-        self.successful   = False
-        self.finished     = False
-        self.fake_job     = fake
+        self.account            = account
+        self.email              = email
+        self.constraint         = constraint
+        self.internal_id        = None
+        self.system_id          = None
+        self.tot_cores          = None
+        self.identifier         = None
+        self.submitted          = False
+        self.status             = self.states.none
+        self.crashed            = False
+        self.overtime           = False
+        self.successful         = False
+        self.finished           = False
+        self.fake_job           = fake
 
         if app is not None:
             self.app_name = app
@@ -427,7 +427,7 @@ class Job(NexusCore):
 
     def set_processes(self):
         if self.processes is None:
-            self.error('processes should have been set before now\n  contact the developers and have them fix this','Developer')
+            self.error('processes should have been set before now\ncontact the developers and have them fix this','Developer')
             self.processes = int(ceil(float(self.cores)/self.threads))
         #end if
     #end def set_processes
@@ -451,6 +451,15 @@ class Job(NexusCore):
             self.env[n]=str(v)
         #end for
     #end def set_environment
+
+
+    def divert_out_err(self):
+        self.identifier += '_divert'
+        #prefix,ext = self.outfile.split('.',1)
+        #self.outfile = prefix+'_divert.'+ext
+        #prefix,ext = self.errfile.split('.',1)
+        #self.errfile = prefix+'_divert.'+ext
+    #end def divert_out_err
 
 
     def get_time(self):
@@ -1099,9 +1108,15 @@ class InteractiveCluster(Workstation):
     #end def __init__
 
 
-    def init_from_args(self,name='icluster',nodes=None,procs_per_node=None,
-                 cores_per_proc=None,process_granularity=None,ram_per_node=None,
-                 app_launcher=None):
+    def init_from_args(self,
+                       name                = 'icluster',
+                       nodes               = None,
+                       procs_per_node      = None,
+                       cores_per_proc      = None,
+                       process_granularity = None,
+                       ram_per_node        = None,
+                       app_launcher        = None
+                       ):
         self.name           = name
         self.nodes          = nodes
         self.procs_per_node = procs_per_node
@@ -2243,7 +2258,7 @@ class Cooley(Supercomputer):
         ##end if
 
         job.run_options.add(
-            f   = '-f $COBALT_NODEFILE',
+            #f   = '-f $COBALT_NODEFILE',
             #ppn = '-ppn {0}'.format(job.processes_per_node),
             )
     #end def process_job_extra
@@ -2282,6 +2297,7 @@ class Theta(Supercomputer):
             cc = '-cc depth',
             d  = '-d {0}'.format(job.threads),
             j  = '-j {0}'.format(job.hyperthreads),
+            e  = '-e OMP_NUM_THREADS={0}'.format(job.threads),
             )
     #end def process_job_extra
 
