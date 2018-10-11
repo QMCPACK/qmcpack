@@ -213,7 +213,7 @@ class NexusTestBase(object):
         #end if
     #end def assert_called
 
-    # provide a directory path to place test ouput data in
+    # provide a directory path to place test output data in
     @staticmethod
     def test_path():
         test   = NexusTestBase.current_test

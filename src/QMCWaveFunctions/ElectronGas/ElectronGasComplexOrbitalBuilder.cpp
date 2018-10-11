@@ -94,8 +94,8 @@ bool ElectronGasComplexOrbitalBuilder::put(xmlNodePtr cur)
   return true;
 }
 
-ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur)
-  :egGrid(p.Lattice),unique_twist(-1.0),has_twist(false)
+ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate *comm, xmlNodePtr cur)
+  : SPOSetBuilder(comm), egGrid(p.Lattice),unique_twist(-1.0),has_twist(false)
 {
 }
 

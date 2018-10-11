@@ -91,7 +91,7 @@ public:
   xmlNodePtr traces_xml;
 
   /// Constructor.
-  QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool);
+  QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool, Communicate* comm);
 
   virtual ~QMCDriver();
 
@@ -366,7 +366,9 @@ protected:
   //PooledData<RealType> HamPool;
 
   ///Copy Constructor (disabled).
-  QMCDriver(const QMCDriver& a): W(a.W), Psi(a.Psi), H(a.H), psiPool(a.psiPool), Estimators(0) {}
+  QMCDriver(const QMCDriver &) = delete;
+  ///Copy operator (disabled).
+  QMCDriver & operator=(const QMCDriver &) = delete;
 
   bool putQMCInfo(xmlNodePtr cur);
 

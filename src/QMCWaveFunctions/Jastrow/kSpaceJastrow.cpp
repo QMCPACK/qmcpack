@@ -237,7 +237,7 @@ kSpaceJastrow::sortGvecs(std::vector<PosType> &gvecs,
       }
   app_log() << "Using a total of " << gvecs.size() << " G-vectors in " << coefs.size()
             << " symmetry groups.\n";
-  app_log() << "kSpace coefficent groups:\n";
+  app_log() << "kSpace coefficient groups:\n";
   for (int i=0; i<coefs.size(); i++)
   {
     app_log() << "  Group " << i << ":\n";

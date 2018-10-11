@@ -56,7 +56,7 @@ bool AdiosWalkerInput::put(std::vector<xmlNodePtr>& wset)
   if (wset.empty())
     return false;
   int walker_win = 0;
-  //This will accumalate the walkers we will be reading from the file
+  //This will accumulate the walkers we will be reading from the file
   std::string bpFileName;
   //Number of walkers per process
   std::vector<int> nw(myComm->size(), 0);
@@ -106,7 +106,7 @@ bool AdiosWalkerInput::put(std::vector<xmlNodePtr>& wset)
                                     myComm->getMPI());
     //Did the bp file open successfully
     check_adios_error();
-    //Inquire about the number of proccess
+    //Inquire about the number of process
     ADIOS_VARINFO* var_info = adios_inq_var(adios_file_handle, "walkers");
     nprocs = *var_info->nblocks;
     app_log() << "Number of procs that wrote " << nprocs << std::endl;
@@ -155,12 +155,12 @@ void AdiosWalkerInput::read(int nprocs,
   for (int j = 0; j < walker_num.size(); j++)
     app_log() << walker_num[j] << ", ";
   app_log() << std::endl;
-  //The number of proccess to add 1 extra walker too
+  //The number of process to add 1 extra walker too
   int walker_wrap = total_walker_num % myComm->size();
   //Buffer for each block in the adios
   R_t block_buff((total_walker_num / nprocs + 1) * targetW.getParticleNum());
-  //Calculate how many walkers each proccess should read and from which files
-  // this proccess should read
+  //Calculate how many walkers each process should read and from which files
+  // this process should read
   int current_adios_block = 0;
   int current_offset = 0;
   int next_offset;
@@ -175,7 +175,7 @@ void AdiosWalkerInput::read(int nprocs,
     else
       walkers_to_read = total_walker_num / myComm->size();
     app_log() << "walkers_to_read " << walkers_to_read << " proc=" << i << std::endl;
-    //Keep track of how many walkers each proccess has
+    //Keep track of how many walkers each process has
     nw[i] += walkers_to_read;
     while (walkers_to_read != 0)
     {

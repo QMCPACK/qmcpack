@@ -79,7 +79,7 @@ public:
     PtclRef = &p;
     init(p);
     FirstTime = true;
-    OrbitalName = "TwoBodyJastrow";
+    ClassName = "TwoBodyJastrow";
     p.addTable(p,DT_AOS);
   }
 

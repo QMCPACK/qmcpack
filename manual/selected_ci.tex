@@ -159,7 +159,7 @@ To run a simulation with QP, use the binary \textit{qp\_run} with the desired le
 mpirun -np 1 qp_run SCF C2O2H3N.ezfio &> C2O2H3N-SCF.out 
 \end{shade}
 
-If run in serial, the evaluation of the integrals and the Hamiltonian diagonalization would take a substential amount of computer time. It is recommended to add a few more \textit{slave-nodes} to help speed up the calculation.\\
+If run in serial, the evaluation of the integrals and the Hamiltonian diagonalization would take a substantial amount of computer time. It is recommended to add a few more \textit{slave-nodes} to help speed up the calculation.\\
 
 \begin{shade}
 mpirun -np 20 qp_run -slave qp_ao_ints C2O2H3N.ezfio &> C2O2H3N-SCF-Slave.out 
@@ -293,7 +293,7 @@ and then with the added J3. Trying to initially optimze J1, J2 and J3
 at the same time may lead to numerical instabilities.\\
 
 (3) The parameters of the Jastrow function will need to be optimized
-for each truncation scheme and usually cannot be reused effeciently
+for each truncation scheme and usually cannot be reused efficiently
 from one truncation scheme to another.
 
 \item Step 8: Analyzing DMC results from \qmcpack \\

@@ -235,7 +235,7 @@ class object_interface(object):
             if isinstance(eqval,bool):
                 eq &= eqval
             else:
-                try: # accomodate numpy arrays implicitly
+                try: # accommodate numpy arrays implicitly
                     eq &= eqval.all()
                 except:
                     return False

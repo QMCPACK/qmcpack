@@ -96,7 +96,7 @@ struct CrystalLattice
   ///The scale factor for adding vacuum.
   T VacuumScale;
   //@{
-  /**@brief Physcial properties of a supercell*/
+  /**@brief Physical properties of a supercell*/
   /// Volume of a supercell
   Scalar_t Volume;
   /// Wigner-Seitz cell radius

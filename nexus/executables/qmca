@@ -1178,7 +1178,7 @@ class UnitConverter:
     hartree       = Unit('Hartree'      ,'Ha'    ,'energy',Ha)
     kJ_mole       = Unit('kJ_mole'      ,'kJ_mol','energy',kJ_mol)
     kelvin        = Unit('Kelvin'       ,'K'     ,'energy',K)
-    celcius       = Unit('Celcius'      ,'degC'  ,'energy',degC,degC_shift)
+    celsius       = Unit('Celsius'      ,'degC'  ,'energy',degC,degC_shift)
     fahrenheit    = Unit('Fahrenheit'   ,'degF'  ,'energy',degF,degF_shift)
 
     coulomb         = Unit('Coulomb'        ,'C','charge',C)
@@ -1220,7 +1220,7 @@ class UnitConverter:
                           ('Ha',hartree),\
                           ('kJ_mol',kJ_mole),\
                           ('K',kelvin),\
-                          ('degC',celcius),\
+                          ('degC',celsius),\
                           ('degF',fahrenheit),\
                           ])
 
@@ -1266,7 +1266,7 @@ class UnitConverter:
                           ('Ha',hartree),\
                           ('kJ_mol',kJ_mole),\
                           ('K',kelvin),\
-                          ('degC',celcius),\
+                          ('degC',celsius),\
                           ('degF',fahrenheit),\
                           ('C',coulomb),\
                           ('e',electron_charge),\

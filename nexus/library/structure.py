@@ -2618,7 +2618,7 @@ class Structure(Sobj):
     #end def voronoi_neighbors
 
 
-    # get nearest neighbors according to constrants (voronoi, max distance, coord. number)
+    # get nearest neighbors according to constraints (voronoi, max distance, coord. number)
     def nearest_neighbors(self,indices=None,rmax=None,nmax=None,restrict=False,voronoi=False,distances=False,**spec_max):
         if indices is None:
             indices = arange(len(self.pos))
@@ -4072,7 +4072,7 @@ class Structure(Sobj):
             lcur = 7
         #end if
         species = elem
-        # relabel species that have multiple occurances
+        # relabel species that have multiple occurrences
         sset = set(species)
         for spec in sset:
             if species.count(spec)>1:

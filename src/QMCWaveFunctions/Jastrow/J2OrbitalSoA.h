@@ -276,7 +276,7 @@ J2OrbitalSoA<FT>::J2OrbitalSoA(ParticleSet& p, int tid) : TaskID(tid)
   init(p);
   FirstTime =true;
   KEcorr=0.0;
-  OrbitalName = "J2OrbitalSoA";
+  ClassName = "J2OrbitalSoA";
 }
 
 template<typename FT>

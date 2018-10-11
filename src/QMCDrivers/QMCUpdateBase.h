@@ -169,7 +169,7 @@ public:
    */
   virtual void initWalkersForPbyP(WalkerIter_t it, WalkerIter_t it_end);
 
-  /** initalize Walker for walker update
+  /** initialize Walker for walker update
    */
   virtual void initWalkers(WalkerIter_t it, WalkerIter_t it_end);
 
@@ -294,8 +294,8 @@ protected:
    */
   RealType getNodeCorrection(const ParticleSet::ParticleGradient_t& g, ParticleSet::ParticlePos_t& gscaled);
 
-  ///copy constructor
-  QMCUpdateBase(const QMCUpdateBase& a);
+  ///copy constructor (disabled)
+  QMCUpdateBase(const QMCUpdateBase &) = delete;
 
 private:
 

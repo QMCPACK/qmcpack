@@ -40,8 +40,8 @@ namespace qmcplusplus
 /// Constructor.
   RMCSingleOMP::RMCSingleOMP (MCWalkerConfiguration & w,
 			      TrialWaveFunction & psi, QMCHamiltonian & h,
-			      WaveFunctionPool & ppool)
-  :QMCDriver (w, psi, h, ppool), prestepsVMC (-1), rescaleDrift ("no"), beta (-1),
+			      WaveFunctionPool & ppool, Communicate* comm)
+  :QMCDriver (w, psi, h, ppool, comm), prestepsVMC (-1), rescaleDrift ("no"), beta (-1),
     beads (-1), fromScratch (true)
   {
     RootName = "rmc";
@@ -131,7 +131,7 @@ namespace qmcplusplus
     //copy back the random states
     for (int ip = 0; ip < NumThreads; ++ip)
       *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
-    //return nbeads and stuff to its orginal unset state;
+    //return nbeads and stuff to its original unset state;
     resetVars ();
     return finalize (nBlocks);
   }

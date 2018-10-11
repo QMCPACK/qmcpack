@@ -34,7 +34,7 @@ class DMCcuda: public QMCDriver
 public:
   /// Constructor.
   GPU_XRAY_TRACE DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-			 QMCHamiltonian& h,WaveFunctionPool& ppool);
+			 QMCHamiltonian& h,WaveFunctionPool& ppool, Communicate* comm);
   GPU_XRAY_TRACE bool run();
   GPU_XRAY_TRACE bool put(xmlNodePtr cur);
   GPU_XRAY_TRACE void resetUpdateEngine();
@@ -52,16 +52,13 @@ private:
   ///update engine
   QMCUpdateBase* Mover;
   /// Copy Constructor (disabled)
-  DMCcuda(const DMCcuda& a) = delete;
+  DMCcuda(const DMCcuda &) = delete;
+  /// Copy operator (disabled).
+  DMCcuda & operator=(const DMCcuda &) = delete;
 
   bool checkBounds (const PosType &newpos);
   void checkBounds (std::vector<PosType> &newpos, std::vector<bool> &valid);
 
-  /// Copy operator (disabled).
-  DMCcuda& operator=(const DMCcuda&)
-  {
-    return *this;
-  }
   ///hide initialization from the main function
   GPU_XRAY_TRACE void resetRun();
   NonLocalTOperator NLop;

@@ -13,7 +13,7 @@ IF(QMC_OMP)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 ENDIF(QMC_OMP)
 
-# Set gnu specfic flags (which we always want)
+# Set gnu specific flags (which we always want)
 ADD_DEFINITIONS( -Drestrict=__restrict__ )
 
 SET(CMAKE_C_FLAGS     "${CMAKE_C_FLAGS} -fomit-frame-pointer -finline-limit=1000 -fstrict-aliasing -funroll-all-loops")
