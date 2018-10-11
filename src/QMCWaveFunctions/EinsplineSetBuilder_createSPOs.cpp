@@ -462,9 +462,12 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   if (useGPU == "yes" || useGPU == "1")
   {
     app_log() << "Initializing GPU data structures.\n";
-    if (GPUsharing == "yes" || GPUsharing == "1")
+    if ((GPUsharing == "yes" || GPUsharing == "1"))
     {
-      app_log() << "Splitting spline data across " << gpu::device_group_size << " GPUs.\n";
+      if (gpu::device_group_size>1)
+        app_log() << "Splitting spline data across " << gpu::device_group_size << " GPUs.\n";
+      else
+        app_log() << "Spline data residing on each rank's GPU.\n";
     } else
     {
       if (gpu::device_group_size>1)

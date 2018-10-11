@@ -419,6 +419,11 @@ create_multi_UBspline_3d_c_cuda_conv (multi_UBspline_3d_z* spline)
   size_t max_GPU_spine_size = gpu::MaxGPUSpineSizeMB;
   if (!gpu::rank && size > (max_GPU_spine_size<<20)) {
     fprintf (stderr, "Required spline table %ld MB on the GPU is larger than the limit %ld MB.\n", size>>20, max_GPU_spine_size);
+    if (gpu::device_group_size>1)
+    {
+      fprintf(stderr, "Error: Using unified memory and split splines together is currently not supported.\n");
+      abort();
+    }
     fprintf (stderr, "Partial table is stored on the host memory.\n");
   }
   int Nx_host;
