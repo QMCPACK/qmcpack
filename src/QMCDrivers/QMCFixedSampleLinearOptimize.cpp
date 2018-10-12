@@ -121,7 +121,7 @@ vdeps(1,std::vector<double>()),
                                           60, // max krylov iter
                                           0, // max spam inner iter
                                           1, // spam appro degree
-                                          0, // eom relateds 
+                                          0, // eom related 
                                           0, // eom related
                                           0, // eom related
                                           0.0, // omega
@@ -332,7 +332,7 @@ bool QMCFixedSampleLinearOptimize::run()
 
       if (goodStep)
       {
-// 	this may have been evaluated allready
+// 	this may have been evaluated already
 // 	newCost=evaluated_cost;
         //get cost at new minimum
         newCost = optTarget->Cost(false);

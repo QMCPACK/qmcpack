@@ -726,7 +726,7 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<std:
       else
       {
         fout.close();
-        fout.open(backupName.c_str() , std::ios::out | std::ios::binary); // change to writting mode
+        fout.open(backupName.c_str() , std::ios::out | std::ios::binary); // change to writing mode
         int BUFFER_SIZE = 128;
         char buffer[BUFFER_SIZE];
         while (!fin.eof() )
@@ -902,7 +902,7 @@ void EinsplineSetBuilder::RotateBands_ESHDF (int spin, EinsplineSetExtended<doub
       else
       {
         fout.close();
-        fout.open(backupName.c_str() , std::ios::out | std::ios::binary); // change to writting mode
+        fout.open(backupName.c_str() , std::ios::out | std::ios::binary); // change to writing mode
         int BUFFER_SIZE = 128;
         char buffer[BUFFER_SIZE];
         while (!fin.eof() )

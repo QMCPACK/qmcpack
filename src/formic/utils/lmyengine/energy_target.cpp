@@ -54,21 +54,21 @@ void cqmc::engine::et(const bool exact_sampling,
   // create a computer for energy and target function 
   cqmc::engine::ETCompute etcal(le_history, vg_history, w_history, exact_sampling, ground_state, variance_correct, hd_lm_shift, var_weight);
 
-  // compute energy, target function value and relevent parameters
+  // compute energy, target function value and relevant parameters
   etcal.en_tar();
   
   // correct finite variance issue if request
   if ( variance_correct ) 
     etcal.correct_finite_variance();
 
-  // get the energy and relevent quantities
+  // get the energy and relevant quantities
   energy = etcal.energy();
 
   esdev = std::sqrt(etcal.variance());
 
   eserr = etcal.eserr(output);
 
-  // get the target function value and relevent quantities 
+  // get the target function value and relevant quantities 
   if ( !ground_state ) {
     target = etcal.tar_fn_val();
 

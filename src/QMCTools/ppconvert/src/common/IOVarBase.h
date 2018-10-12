@@ -29,7 +29,7 @@ using namespace blitz;
   ///////////////////////////////////////////////////////////////////
   /// The following is a template trick for counting how many     ///
   /// dimension reductions we have made to a dataset by indexing  ///
-  /// by integer arguements.                                      ///
+  /// by integer arguments.                                      ///
   ///////////////////////////////////////////////////////////////////
   template<typename T> class SliceCheck
   { public:  static const int isSlice = 0; };

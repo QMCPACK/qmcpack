@@ -429,7 +429,7 @@ bool HamiltonianFactory::build(xmlNodePtr cur, bool buildtree)
       std::string SourceName = "I";
       OhmmsAttributeSet hAttrib;
       hAttrib.add(TargetName,"Dependant");
-      hAttrib.add(SourceName, "Independant");
+      hAttrib.add(SourceName, "Independent");
       hAttrib.put(cur);
     }
 

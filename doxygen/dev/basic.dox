@@ -66,7 +66,7 @@ Simply add new files to the INPUT list in \c ug.cfg or \c dev.cfg and run \c dox
 \code
 INPUT =  ug/index.dox ug/gettingstarted.dox ug/somethingnew.dox
 \endcode
-See an exmaple <tt>ug/qmc.dox</tt>. 
+See an example <tt>ug/qmc.dox</tt>. 
 
 <!--
 Each page has

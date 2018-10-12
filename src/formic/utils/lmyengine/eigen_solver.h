@@ -53,7 +53,7 @@ protected:
   /// \brief initial wavefunction's variance
   double _init_variance;
 
-  /// \brief maximum alowed energy change
+  /// \brief maximum allowed energy change
   double _max_energy_change;
 
   /// \brief linear method identity shift applied to the Hamiltonian diagonal 

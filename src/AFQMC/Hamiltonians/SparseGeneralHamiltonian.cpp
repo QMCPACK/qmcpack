@@ -696,7 +696,7 @@ namespace qmcplusplus
     }
 
     MPI_Barrier(TG.getNodeCommLocal()); 
-    // generate IJ matrix to speedup table seaches
+    // generate IJ matrix to speedup table searches
     if(V2.size()>0)
       generateIJ();
 
@@ -1971,7 +1971,7 @@ namespace qmcplusplus
     }
     myComm->barrier();
 
-    // generate IJ matrix to speedup table seaches
+    // generate IJ matrix to speedup table searches
     if(!skip_V2 && V2.size()>0)
       generateIJ();
 
@@ -2316,7 +2316,7 @@ namespace qmcplusplus
     ComplexMatrix v(NMO2,NMO),P(NMO2,NMO);
     
     // v is the dense representation of H1+H1add+v0
-    // 1. Hadd should be the contribution from mean-field substraction, otherwise zero  
+    // 1. Hadd should be the contribution from mean-field subtraction, otherwise zero  
     //    Now also includes contribution from vn0 = -0.5* sum_{i,l,sigma} (sum_j <i_sigma,j_sigma|j_sigma,l_sigma> ) c+i_sigma cl_sigma
     for(int i=0; i<NMO; i++) { 
      v(i,i) = Hadd(i,i); 
@@ -4843,7 +4843,7 @@ namespace qmcplusplus
       std::swap(std::get<0>(val),std::get<2>(val));
       std::swap(std::get<1>(val),std::get<3>(val));
       std::get<4>(val) = std::conj(std::get<4>(val));
-      // jl < ik again since ij<->kl swap occured  
+      // jl < ik again since ij<->kl swap occurred  
       if(  std::forward_as_tuple(std::get<1>(val),std::get<3>(val) ) < std::forward_as_tuple(std::get<0>(val),std::get<2>(val) )  ) {
         std::swap(std::get<0>(val),std::get<1>(val));
         std::swap(std::get<2>(val),std::get<3>(val));
