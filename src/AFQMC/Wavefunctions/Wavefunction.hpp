@@ -108,17 +108,22 @@ class dummy_wavefunction
   }
 
   template<class WlkSet, class MatG>
-  void MixedDensityMatrix(const WlkSet& wset, MatG&& G, bool compact=true, bool transpose=false, bool back_propagate=false) {
+  void MixedDensityMatrix(const WlkSet& wset, MatG&& G, bool compact=true, bool transpose=false) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
   }
 
   template<class WlkSet, class MatG, class TVec>
-  void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false, bool back_propagate=false) {
+  void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
   }
 
+  template<class WlkSet, class MatG>
+  void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, bool modify_weights=true) {
+    throw std::runtime_error("calling visitor on dummy_wavefunction object");
+  }
+
   template<class MatA, class Wlk, class MatB>
-  ComplexType BackPropagateOrbMat(MatA& OrbMat, const Wlk& walker, MatB& PsiBP) {
+  void BackPropagateOrbMat(MatA& OrbMat, const Wlk& walker, MatB& PsiBP) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
   }
 
@@ -283,13 +288,20 @@ class Wavefunction: public boost::variant<dummy::dummy_wavefunction,NOMSD>
     }
 
     template<class... Args>
-    ComplexType BackPropagateOrbMat(Args&&... args) {
-        return boost::apply_visitor(
-              [&](auto&& a){a.BackPropagateOrbMat(std::forward<Args>(args)...);},
+    void BackPropagatedDensityMatrix(Args&&... args) {
+        boost::apply_visitor(
+              [&](auto&& a){a.BackPropagatedDensityMatrix(std::forward<Args>(args)...);},
               *this
         );
     }
 
+    template<class... Args>
+    void BackPropagateOrbMat(Args&&... args) {
+        boost::apply_visitor(
+              [&](auto&& a){a.BackPropagateOrbMat(std::forward<Args>(args)...);},
+              *this
+        );
+    }
 
 }; 
 
