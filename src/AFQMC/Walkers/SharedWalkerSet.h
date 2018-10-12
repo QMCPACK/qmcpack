@@ -148,16 +148,18 @@ class SharedWalkerSet: public AFQMCInfo
       int getNumBackProp() const {
         return desc[3];
       }
-      ComplexType cosineFactor() const {
-        if(indx[COS_FAC]) {
+      ComplexType BPWeightFactor() const {
+        if(indx[WEIGHT_FAC] < 0) {
           APP_ABORT("error: access to uninitialized BP sector. \n");
-        return w_[indx[COS_FAC] + getHead()]; 
-      }	
-      ComplexType weightFactor() const { 
-        if(indx[COS_FAC]) 
-          APP_ABORT("error: access to uninitialized BP sector. \n");
-        return w_[indx[WEIGHT_FAC] + getHead()]; 
-      }	
+        }
+        return w_[indx[WEIGHT_FAC] + getHead()];
+      }
+      //ComplexType weightFactor() const {
+        //if(indx[COS_FAC]) {
+          //APP_ABORT("error: access to uninitialized BP sector. \n");
+        //}
+        //return w_[indx[WEIGHT_FAC] + getHead()];
+      //}
       void copy_to_buffer(ComplexType* data) const {
         std::copy(base(),base()+size(),data);
       }	
@@ -250,7 +252,8 @@ class SharedWalkerSet: public AFQMCInfo
       bool isBMatrixBufferFull() const {
         return getHead() == 0;
       }
-      void resetBMatrixBuffer() {
+      // Reset back propagation information. B = I, weight factors = 1.0.
+      void resetForBackPropagation() {
         if(indx[PROPAGATORS] < 0 || indx[HEAD] < 0 || desc[3] <= 0) {
           APP_ABORT("error: access to uninitialized BP sector. \n");
         }
@@ -268,14 +271,12 @@ class SharedWalkerSet: public AFQMCInfo
             }
           }
         }
+        BPWeightFactor() = ComplexType(1.0,0.0);
+        setSlaterMatrixN();
       }
-      ComplexType& cosineFactor() {
-        if(indx[COS_FAC]) {
-          APP_ABORT("error: access to uninitialized BP sector. \n");
-        return w_[indx[COS_FAC] + getHead()]; 
-      }	
-      ComplexType& weightFactor() { 
-        if(indx[COS_FAC]) 
+      // Weight factors for partial path restoration approximation.
+      ComplexType& BPWeightFactor() {
+        if(indx[WEIGHT_FAC] < 0) {
           APP_ABORT("error: access to uninitialized BP sector. \n");
         return w_[indx[WEIGHT_FAC] + getHead()]; 
       }	
