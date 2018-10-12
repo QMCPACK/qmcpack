@@ -42,7 +42,7 @@ ADD_LIBRARY(mocommon ${MOSRCS})
 
 set(QTOOLS convert4qmc extract-eshdf-kvectors)
 ADD_EXECUTABLE(getSupercell getSupercell.cpp)
-ADD_EXECUTABLE(checkAffinity checkAffinity.cpp)
+ADD_EXECUTABLE(qmc-check-affinity check-affinity.cpp)
 
 FOREACH(p ${QTOOLS})
 

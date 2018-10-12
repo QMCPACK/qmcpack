@@ -96,7 +96,7 @@ namespace qmcplusplus
           return *this;
         }
 
-        /** asign value */
+        /** assign value */
         template<typename T1>
         __forceinline Accessor& operator=(T1 rhs)
         {

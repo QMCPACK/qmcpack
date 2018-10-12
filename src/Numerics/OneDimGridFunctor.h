@@ -34,7 +34,7 @@ namespace qmcplusplus
  * - CTg container type associated with the grid data
  *
  * Store the values of the function for the
- * cooresponding grid points, \f$ y_i = y(x_i) \f$.
+ * corresponding grid points, \f$ y_i = y(x_i) \f$.
  */
 template <class Td,
          class Tg = Td,

@@ -53,7 +53,7 @@ class OhmmsParameter: public OhmmsElementBase
   T& ref_;
   ///the unit of this object
   std::string unit_;
-  ///pointer to the correponding xmlNode
+  ///pointer to the corresponding xmlNode
   xmlNodePtr node_;
   //@}
 
@@ -140,7 +140,7 @@ class OhmmsParameter<bool>: public OhmmsElementBase
   bool& ref_;
   ///the unit of this object
   std::string unit_;
-  ///pointer to the correponding xmlNode
+  ///pointer to the corresponding xmlNode
   xmlNodePtr node_;
   //@}
 

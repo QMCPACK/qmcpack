@@ -42,7 +42,7 @@ QMCCostFunctionCUDA::~QMCCostFunctionCUDA()
 }
 
 
-/**  Perform the correlated sampling algorthim.
+/**  Perform the correlated sampling algorithm.
  */
 QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needDerivs)
 {

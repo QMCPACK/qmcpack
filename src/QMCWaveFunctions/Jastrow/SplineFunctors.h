@@ -112,7 +112,7 @@ struct CubicSplineSingle: public OptimizableFunctorBase
   }
 
 
-  /** evaluate everything: value, first and second derivaties
+  /** evaluate everything: value, first and second derivatives
    */
   inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2)
   {
@@ -135,7 +135,7 @@ struct CubicSplineSingle: public OptimizableFunctorBase
     return Y=OutFunc.splint(r);
   }
 
-  /** evaluate everything: value, first and second derivaties
+  /** evaluate everything: value, first and second derivatives
    *
    * Function required for SphericalBasisSet
    */
@@ -284,7 +284,7 @@ struct CubicSplineBasisSet: public OptimizableFunctorBase
     OutFunc->Init(0.0,Rmax,datain,true,InFunc->df(0.0),0.0);
   }
 
-  /** evaluate everything: value, first and second derivaties
+  /** evaluate everything: value, first and second derivatives
   */
   inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2)
   {
@@ -378,7 +378,7 @@ struct CubicSplineBasisSet: public OptimizableFunctorBase
 //      ///set the output numerical function
 //      void setOutFunc(FNOUT* out_) { OutFunc=out_;}
 //
-//      /** evaluate everything: value, first and second derivaties
+//      /** evaluate everything: value, first and second derivatives
 //       */
 //      inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) {
 //        return OutFunc->splint(r,dudr,d2udr2);
@@ -399,7 +399,7 @@ struct CubicSplineBasisSet: public OptimizableFunctorBase
 //        return Y=OutFunc->splint(r);
 //      }
 //
-//      /** evaluate everything: value, first and second derivaties
+//      /** evaluate everything: value, first and second derivatives
 //       *
 //       * Function required for SphericalBasisSet
 //       */
@@ -529,7 +529,7 @@ struct CubicSplineBasisSet: public OptimizableFunctorBase
 //        Rmax=grid(last);
 //      }
 //
-//      /** evaluate everything: value, first and second derivaties
+//      /** evaluate everything: value, first and second derivatives
 //      */
 //      inline real_type evaluate(real_type r, real_type& dudr, real_type& d2udr2) {
 //        return OutFunc->splint(r,dudr,d2udr2);

@@ -95,7 +95,7 @@ namespace qmcplusplus
       // Set the number of periodic image for the evaluation of the orbitals. 
       void setPBCImages(const TinyVector<int,3>& pbc_images) { PBCImages = pbc_images; }
 
-      /** implement a BasisSetBase virutal function
+      /** implement a BasisSetBase virtual function
        *
        * Set Rmax and BasisSetSize
        * @todo Should be able to overwrite Rmax to be much smaller than the maximum grid

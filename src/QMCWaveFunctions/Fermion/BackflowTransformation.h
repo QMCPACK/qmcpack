@@ -399,7 +399,7 @@ public:
     for(int i=0; i<NumTargets; i++) newQP[i] = dummyQP.R[i];
     * /
     indexQP.clear();
-    indexQP.push_back(iat); // set in the beggining by default
+    indexQP.push_back(iat); // set in the beginning by default
     for(int jat=0; jat<NumTargets; jat++) {
       if(jat!=iat) // && myTable->Temp[jat].r1 < cutOff )
         indexQP.push_back(jat);

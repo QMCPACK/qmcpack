@@ -47,7 +47,7 @@ StructFact::UpdateNewCell(ParticleSet& P, RealType kc)
 {
   //Generate the lists of k-vectors
   KLists.UpdateKLists(P.LRBox,kc);
-  //resize any arrary
+  //resize any array
   resize(P.getSpeciesSet().size(),P.getTotalNum(),KLists.numk);
   //Compute the entire Rhok
   FillRhok(P);
@@ -198,7 +198,7 @@ void StructFact::acceptMove(int active, int gid, const PosType& rold)
     RealType* restrict rhok_ptr_r(rhok_r[gid]);
     RealType* restrict rhok_ptr_i(rhok_i[gid]);
 
-    // add the new value and substract the old value
+    // add the new value and subtract the old value
     #pragma omp simd
     for(int ki=0; ki<KLists.numk; ++ki)
     {

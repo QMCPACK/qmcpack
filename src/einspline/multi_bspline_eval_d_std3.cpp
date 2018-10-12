@@ -30,7 +30,7 @@ extern const double* restrict d2Ad;
 extern const double* restrict d3Ad;
 
 /************************************************************/
-/* 1D double-precision, real evaulation functions        */
+/* 1D double-precision, real evaluation functions        */
 /************************************************************/
 void
 eval_multi_UBspline_1d_d (const multi_UBspline_1d_d *spline,
@@ -168,7 +168,7 @@ eval_multi_UBspline_1d_d_vgh (const multi_UBspline_1d_d *spline,
 
 
 /************************************************************/
-/* 2D double-precision, real evaulation functions        */
+/* 2D double-precision, real evaluation functions        */
 /************************************************************/
 void
 eval_multi_UBspline_2d_d (const multi_UBspline_2d_d *spline,
@@ -465,7 +465,7 @@ eval_multi_UBspline_2d_d_vgh (const multi_UBspline_2d_d *spline,
 
 
 /************************************************************/
-/* 3D double-precision, real evaulation functions           */
+/* 3D double-precision, real evaluation functions           */
 /************************************************************/
 
 

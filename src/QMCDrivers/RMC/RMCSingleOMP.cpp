@@ -131,7 +131,7 @@ namespace qmcplusplus
     //copy back the random states
     for (int ip = 0; ip < NumThreads; ++ip)
       *(RandomNumberControl::Children[ip]) = *(Rng[ip]);
-    //return nbeads and stuff to its orginal unset state;
+    //return nbeads and stuff to its original unset state;
     resetVars ();
     return finalize (nBlocks);
   }

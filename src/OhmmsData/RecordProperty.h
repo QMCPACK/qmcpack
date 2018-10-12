@@ -22,7 +22,7 @@
 #include <string>
 #include <fstream>
 
-/** abstract base class to recrod any properties
+/** abstract base class to record any properties
  */
 struct RecordProperty
 {
