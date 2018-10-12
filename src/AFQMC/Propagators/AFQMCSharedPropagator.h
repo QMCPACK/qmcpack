@@ -131,8 +131,6 @@ class AFQMCSharedPropagator: public AFQMCInfo
 
     RealType vbias_bound;
 
-    int nback_prop_steps;
-
     // type of propagation
     bool free_projection;
     bool hybrid;
