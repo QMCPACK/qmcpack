@@ -34,16 +34,8 @@ public:
   typedef Communicate::mpi_comm_type mpi_comm_type;
   typedef Communicate::intra_comm_type intra_comm_type;
 
-  ///default constructor
-  MPIObjectBase(Communicate* c=0);
-
-  ///virtual destructor
-  virtual ~MPIObjectBase();
-
-  /** initialize myComm
-   * @param c communicator
-   */
-  void initCommunicator(Communicate* c);
+  ///constructor with communicator
+  MPIObjectBase(Communicate* c);
 
   ///return the rank of the communicator
   inline int rank() const
@@ -76,10 +68,6 @@ public:
     return !myComm->rank();
   }
 
-  /** default is 1 minal
-   */
-  void setReportLevel(int level=1);
-
   ///return the name
   inline const std::string& getName() const
   {
@@ -92,8 +80,6 @@ public:
   }
 
 protected:
-  ///level of report
-  int ReportLevel;
   /** pointer to Communicate
    * @todo use smart pointer
    */
@@ -104,9 +90,6 @@ protected:
   /** name of the object */
   std::string myName;
 
-  //private:
-  //  //disable copy constructor for now
-  //  MPIObjectBase(const MPIObjectBase& a);
 };
 
 }

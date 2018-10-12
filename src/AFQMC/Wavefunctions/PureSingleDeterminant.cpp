@@ -1269,7 +1269,7 @@ void PureSingleDeterminant::local_evaluateOneBodyTrialDensityMatrix(bool full)
     } else {
 
       // copy to mixed_density_matrix 
-      // Careful here!!!!! Only writting NAEB terms 
+      // Careful here!!!!! Only writing NAEB terms 
       for(int i=0; i<NAEB; i++)
        for(int j=0; j<NMO; j++)
         trial_density_matrix(i+NMO,j) = SS0(j+NMO,i);

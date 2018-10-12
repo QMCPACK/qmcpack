@@ -1101,7 +1101,7 @@ void GamesAsciiParser::getCSF(std::istream& is)
   std::cout <<"Done reading csf coefficients." << std::endl;
   std::cout <<"Found: " <<coeff2csf.size() <<" CSFs.\n";
   std::cout.flush();
-// look for highest occupied MO to avoid using unnecesary ones
+// look for highest occupied MO to avoid using unnecessary ones
   ci_nstates = 0;
   for(int i=0; i<CSFocc.size(); i++)
   {

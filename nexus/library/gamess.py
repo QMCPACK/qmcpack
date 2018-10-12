@@ -16,7 +16,7 @@
 #      User function to create arbitrary GAMESS input.               #
 #                                                                    #
 #    KeywordGroup                                                    #
-#      Represents an arbitary keyword group in the input file.       #
+#      Represents an arbitrary keyword group in the input file.       #
 #                                                                    #
 #    KeywordSpecGroup                                                #
 #      Base class for specialized keyword groups.                    #

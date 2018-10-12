@@ -13,35 +13,19 @@
 // -*- C++ -*-
 /**@file MultiBspline.hpp
  *
- * Master header file to define MultiBspline and MultiBspline1D
- *
- * The evaluation functions in MultiBspline and MultiBspline1D are memory
- * bandwith (BW) bound. Optimizations towards maximizing BW usage is always
- * needed. For this reason, with SIMD, memory alignment is required in order
- * to saturate the BW. The number of splines must be a multiple of aligned
- * size. The result vectors must be in Structure-of-Array datayout with
- * their starting address correctly aligned.
- *
+ * define classes MultiBspline and MultiBspline1D
+ * The evaluation functions are defined in MultiBsplineEval.hpp
  */
 #ifndef QMCPLUSPLUS_MULTIEINSPLINE_COMMON_HPP
 #define QMCPLUSPLUS_MULTIEINSPLINE_COMMON_HPP
 #include "config.h"
 #include <iostream>
 #include <spline2/bspline_allocator.hpp>
+#include <spline2/MultiBsplineData.hpp>
 #include <stdlib.h>
 
 namespace qmcplusplus
 {
-  template<typename T> struct SplineBound
-  {
-    static inline void get(T x, T& dx, int& ind, int ng)
-    {
-      T ipart;
-      dx=std::modf(x,&ipart);
-      ind = std::min(std::max(int(0),static_cast<int>(ipart)),ng);
-    }
-  };
-
   /** compute Trace(H*G)
    *
    * gg is symmetrized as
@@ -67,40 +51,7 @@ namespace qmcplusplus
     }
 
   template<typename T>
-    struct MultiBsplineData
-    {
-      static const T   A44[16];
-      static const T  dA44[16];
-      static const T d2A44[16];
-      static const T d3A44[16];
-
-      inline void compute_prefactors(T a[4], T tx) const
-      {
-        a[0] = ( ( A44[0]  * tx + A44[1] ) * tx + A44[2] ) * tx + A44[3];
-        a[1] = ( ( A44[4]  * tx + A44[5] ) * tx + A44[6] ) * tx + A44[7];
-        a[2] = ( ( A44[8]  * tx + A44[9] ) * tx + A44[10] ) * tx + A44[11];
-        a[3] = ( ( A44[12] * tx + A44[13] ) * tx + A44[14] ) * tx + A44[15];
-      }
-
-      inline void compute_prefactors(T a[4], T da[4], T d2a[4], T tx) const
-      {
-        a[0] = ( ( A44[0]  * tx + A44[1] ) * tx + A44[2] ) * tx + A44[3];
-        a[1] = ( ( A44[4]  * tx + A44[5] ) * tx + A44[6] ) * tx + A44[7];
-        a[2] = ( ( A44[8]  * tx + A44[9] ) * tx + A44[10] ) * tx + A44[11];
-        a[3] = ( ( A44[12] * tx + A44[13] ) * tx + A44[14] ) * tx + A44[15];
-        da[0] = ( ( dA44[0]  * tx + dA44[1] ) * tx + dA44[2] ) * tx + dA44[3];
-        da[1] = ( ( dA44[4]  * tx + dA44[5] ) * tx + dA44[6] ) * tx + dA44[7];
-        da[2] = ( ( dA44[8]  * tx + dA44[9] ) * tx + dA44[10] ) * tx + dA44[11];
-        da[3] = ( ( dA44[12] * tx + dA44[13] ) * tx + dA44[14] ) * tx + dA44[15];
-        d2a[0] = ( ( d2A44[0]  * tx + d2A44[1] ) * tx + d2A44[2] ) * tx + d2A44[3];
-        d2a[1] = ( ( d2A44[4]  * tx + d2A44[5] ) * tx + d2A44[6] ) * tx + d2A44[7];
-        d2a[2] = ( ( d2A44[8]  * tx + d2A44[9] ) * tx + d2A44[10] ) * tx + d2A44[11];
-        d2a[3] = ( ( d2A44[12] * tx + d2A44[13] ) * tx + d2A44[14] ) * tx + d2A44[15];
-      }
-    };
-
-  template<typename T>
-    struct MultiBspline: public MultiBsplineData<T>
+    struct MultiBspline
     {
 
       ///define the einsplie object type
@@ -182,63 +133,10 @@ namespace qmcplusplus
         myAllocator.copy(aSpline,spline_m,i,offset_,base_);
       }
 
-      /*
-      void print(std::ostream& os)
-      {
-        std::copy(A44,A44+16,std::ostream_iterator<T>(std::cout," "));
-        os << std::endl;
-      }
-      */
-
-      template<typename PT, typename VT>
-        void evaluate(const PT& r, VT& psi) const
-        {
-          evaluate_v_impl(r[0],r[1],r[2],psi.data(),0,psi.size());
-        }
-
-      template<typename PT, typename VT>
-        void evaluate(const PT& r, VT& psi, int first, int last) const
-        {
-          evaluate_v_impl(r[0],r[1],r[2],psi.data()+first,first,last);
-        }
-
-      template<typename PT, typename VT, typename GT, typename LT>
-        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap) const
-        {
-          evaluate_vgl_impl(r[0],r[1],r[2],psi.data(),grad.data(),lap.data(),psi.size(),0,psi.size());
-        }
-
-      template<typename PT, typename VT, typename GT, typename LT>
-        inline void evaluate_vgl(const PT& r, VT& psi, GT& grad, LT& lap, int first, int last) const
-        {
-          evaluate_vgl_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,lap.data()+first,psi.size(),first,last);
-        }
-
-      template<typename PT, typename VT, typename GT, typename HT>
-        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess) const
-        {
-          evaluate_vgh_impl(r[0],r[1],r[2],psi.data(),grad.data(),hess.data(),psi.size(),0,psi.size());
-        }
-
-      template<typename PT, typename VT, typename GT, typename HT>
-        inline void evaluate_vgh(const PT& r, VT& psi, GT& grad, HT& hess, int first, int last) const
-        {
-          evaluate_vgh_impl(r[0],r[1],r[2],psi.data()+first,grad.data()+first,hess.data()+first,psi.size(),first,last);
-        }
-
-      /** compute values vals[first,last)
-       *
-       * The base address for vals, grads and lapl are set by the callers, e.g., evaluate_vgh(r,psi,grad,hess,ip).
-       */
-      void evaluate_v_impl(T x, T y, T z, T* restrict vals, int first, int last) const;
-
-      void evaluate_vgl_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict lapl, size_t out_offset, int first, int last) const;
-
-      void evaluate_vgh_impl(T x, T y, T z, T* restrict vals, T* restrict grads, T* restrict hess, size_t out_offset, int first, int last) const;
     };
 
   template<typename T>
-    struct MultiBspline1D: public MultiBsplineData<T>
+    struct MultiBspline1D
     {
 
       ///define the einsplie object type
@@ -322,12 +220,6 @@ namespace qmcplusplus
     };
 
 }/** qmcplusplus namespace */
-
-///include evaluate_v_impl
-#include <spline2/MultiBsplineValue.hpp>
-
-///include evaluate_vgl/vgh_impl
-#include <spline2/MultiBsplineStd.hpp>
 
 ///include evaluate_v/vgl/vgh_impl for 1D case
 #include <spline2/MultiBspline1D.hpp>

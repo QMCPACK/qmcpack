@@ -6,7 +6,7 @@ namespace qmcplusplus
 {
 
 /** @ingroup Numerics
- * @brief Compute spherical bessel funciton from 0 to lmax
+ * @brief Compute spherical bessel function from 0 to lmax
  *
  * Using Steed/Barnett algorithm from Comp. Phys. Comm. 21, 297 (1981)
  */

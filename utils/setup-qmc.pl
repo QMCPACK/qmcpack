@@ -952,7 +952,7 @@ close(FILELIST);
 # TODO: Add facility to use rescaling for optimization rather than quartic.
 #       This will require decoupling optsamples from the number of vmc steps
 #       so that H and S matrices can be relatively well converged without having
-#       too many samples.  This will be extermely useful on machines which have
+#       too many samples.  This will be extremely useful on machines which have
 #       small amounts of memory.
 #
 #
@@ -2182,7 +2182,7 @@ sub getWavefunctionString {
     my $jastrowStartsRef = shift;
     if ($hasJastrow) {
 $#{$jastrowStartsRef}+1 == $sizeOneBody*($#{$atomsNameRef}+1) || die
-    "jastrowStarts must contain inital values for all types of one body jastrow.  As such it has\n to be $sizeOneBody (sizeOneBody) * ($#{$atomsNameRef} + 1) (Number of species in atomsName array) elements long\n";
+    "jastrowStarts must contain initial values for all types of one body jastrow.  As such it has\n to be $sizeOneBody (sizeOneBody) * ($#{$atomsNameRef} + 1) (Number of species in atomsName array) elements long\n";
     }
 
     # Now need to create a data structure that maps from the values in ionIds to the

@@ -342,8 +342,6 @@ private:
   ///fake particleset
   ParticleSet* tempP;
 
-  TrialWaveFunction();
-
   std::vector<NewTimer*> myTimers;
   std::vector<RealType> myTwist;
 

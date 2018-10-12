@@ -33,7 +33,7 @@ extern const float* restrict d2Af;
 extern const float* restrict d3Af;
 
 /************************************************************/
-/* 1D double-precision, real evaulation functions        */
+/* 1D double-precision, real evaluation functions        */
 /************************************************************/
 void
 eval_multi_UBspline_1d_s (const multi_UBspline_1d_s *spline,
@@ -170,7 +170,7 @@ eval_multi_UBspline_1d_s_vgh (const multi_UBspline_1d_s *spline,
 
 
 /************************************************************/
-/* 2D double-precision, real evaulation functions        */
+/* 2D double-precision, real evaluation functions        */
 /************************************************************/
 void
 eval_multi_UBspline_2d_s (const multi_UBspline_2d_s *spline,
@@ -465,7 +465,7 @@ eval_multi_UBspline_2d_s_vgh (const multi_UBspline_2d_s *spline,
 
 
 /************************************************************/
-/* 3D double-precision, real evaulation functions        */
+/* 3D double-precision, real evaluation functions        */
 /************************************************************/
 
 #ifdef BGQPX

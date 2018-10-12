@@ -37,12 +37,9 @@ public:
 
 private:
   /// Copy Constructor (disabled)
-  VMCUpdateAll(const VMCUpdateAll& a): QMCUpdateBase(a) { }
+  VMCUpdateAll(const VMCUpdateAll &) = delete;
   /// Copy operator (disabled).
-  VMCUpdateAll& operator=(const VMCUpdateAll&)
-  {
-    return *this;
-  }
+  VMCUpdateAll & operator=(const VMCUpdateAll &) = delete;
 };
 
 }

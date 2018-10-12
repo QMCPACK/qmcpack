@@ -64,9 +64,9 @@ struct  J1OrbitalSoA : public WaveFunctionComponent
 
   J1OrbitalSoA(const ParticleSet& ions, ParticleSet& els) : Ions(ions)
   {
-    initalize(els);
+    initialize(els);
     myTableID=els.addTable(ions,DT_SOA);
-    OrbitalName = "J1OrbitalSoA";
+    ClassName = "J1OrbitalSoA";
   }
 
   J1OrbitalSoA(const J1OrbitalSoA& rhs)=delete;
@@ -78,7 +78,7 @@ struct  J1OrbitalSoA : public WaveFunctionComponent
   }
 
   /* initialize storage */
-  void initalize(ParticleSet& els)
+  void initialize(ParticleSet& els)
   {
     Nions=Ions.getTotalNum();
     NumGroups=Ions.getSpeciesSet().getTotalNum();

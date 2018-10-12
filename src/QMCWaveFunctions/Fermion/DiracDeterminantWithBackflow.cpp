@@ -32,7 +32,7 @@ namespace qmcplusplus
 DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetPtr const &spos, BackflowTransformation * BF, int first): DiracDeterminantBase(spos,first)
 {
   Optimizable=true;
-  OrbitalName="DiracDeterminantWithBackflow";
+  ClassName="DiracDeterminantWithBackflow";
   registerTimers();
   BFTrans=BF;
   NumParticles = ptcl.getTotalNum();

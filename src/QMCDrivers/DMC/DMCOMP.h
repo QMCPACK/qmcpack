@@ -36,7 +36,7 @@ public:
 
   /// Constructor.
   DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-         WaveFunctionPool& ppool);
+         WaveFunctionPool& ppool, Communicate* comm);
 
   bool run();
   bool put(xmlNodePtr cur);
@@ -69,12 +69,9 @@ private:
   void resetUpdateEngines();
   void benchMark();
   /// Copy Constructor (disabled)
-  DMCOMP(const DMCOMP& a): QMCDriver(a), CloneManager(a) { }
+  DMCOMP(const DMCOMP &) = delete;
   /// Copy operator (disabled).
-  DMCOMP& operator=(const DMCOMP&)
-  {
-    return *this;
-  }
+  DMCOMP & operator=(const DMCOMP&) = delete;
 };
 }
 

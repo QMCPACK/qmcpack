@@ -27,8 +27,8 @@ namespace qmcplusplus
 
 QMCCostFunctionCUDA::QMCCostFunctionCUDA
 ( MCWalkerConfiguration& w, TrialWaveFunction& psi,
-  QMCHamiltonian& h):
-  QMCCostFunctionBase(w,psi,h)
+  QMCHamiltonian& h, Communicate* comm):
+  QMCCostFunctionBase(w,psi,h,comm)
 {
 }
 
@@ -42,7 +42,7 @@ QMCCostFunctionCUDA::~QMCCostFunctionCUDA()
 }
 
 
-/**  Perform the correlated sampling algorthim.
+/**  Perform the correlated sampling algorithm.
  */
 QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needDerivs)
 {

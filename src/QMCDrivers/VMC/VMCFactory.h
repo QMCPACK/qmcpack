@@ -22,13 +22,17 @@ namespace qmcplusplus
 class ParticleSetPool;
 class HamiltonianPool;
 
-struct VMCFactory
+class VMCFactory
 {
+  private:
   int VMCMode;
   xmlNodePtr myNode;
+
+  public:
   VMCFactory(int vmode, xmlNodePtr cur):VMCMode(vmode), myNode(cur) {}
+
   QMCDriver* create(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-                    ParticleSetPool& ptclpool, HamiltonianPool& hpool, WaveFunctionPool& ppool);
+                    ParticleSetPool& ptclpool, HamiltonianPool& hpool, WaveFunctionPool& ppool, Communicate* comm);
 };
 }
 

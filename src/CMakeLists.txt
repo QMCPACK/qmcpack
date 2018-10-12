@@ -32,7 +32,7 @@ EXECUTE_PROCESS(
 
 IF (IS_GIT_PROJECT)
   # The following custom command picks up changes to the git revision information
-  # every time the project is rebuilt. Even if the repositiory is updated (git pull)
+  # every time the project is rebuilt. Even if the repository is updated (git pull)
   # without re-running cmake. It also appends '-dirty' to the commit hash if there are
   # unsaved changes to the repository.
   #
@@ -97,7 +97,7 @@ IF (IS_GIT_PROJECT)
 
   # Breaking down the arguments to 'git describe'
   #  --abbrev=40     Size of hash to print.  This should print the entire hash.
-  #  --dirty         Append hash with '-dirty' if there are uncommited changes.
+  #  --dirty         Append hash with '-dirty' if there are uncommitted changes.
   # The behavior of describe looks for a tag in the parents first, and then falls
   # back to the commit hash (if --always is specified)
   #  --always        Show the commit hash as fallback
@@ -159,7 +159,7 @@ ENDIF(HAVE_OOMPI)
     io/hdf_archive.cpp
     spline2/einspline_allocator.c
     spline2/bspline_allocator.cpp
-    spline2/MultiBspline.cpp
+    spline2/MultiBsplineData.cpp
     )
 IF (IS_GIT_PROJECT)
   SET(UTILITIES "${UTILITIES};${GITREV_TMP}")

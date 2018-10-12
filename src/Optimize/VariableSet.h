@@ -24,7 +24,7 @@
 
 namespace optimize
 {
-/** An enum useful for determing the type of parameter is being optimized.
+/** An enum useful for determining the type of parameter is being optimized.
 *   knowing this in the opt routine can reduce the computational load.
 */
 enum
@@ -271,7 +271,7 @@ struct VariableSet
 //       void insertTo(variable_map_type& output) const;
 
   /** insert a VariableSet to the list
-   * @param input varaibles
+   * @param input variables
    */
   void insertFrom(const VariableSet& input);
 
@@ -350,7 +350,7 @@ struct VariableSet
   // */
   //void activate(const std::vector<std::string>& selected, bool reindex);
 
-  /** exlcude variables
+  /** exclude variables
    * @param selected name-value pairs that should be dropped from the set
    */
   void disable(const variable_map_type& selected);

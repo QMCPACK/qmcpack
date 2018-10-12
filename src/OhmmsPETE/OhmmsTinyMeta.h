@@ -25,7 +25,7 @@ namespace qmcplusplus
  *  Therefore, users do not have to include this file.
  */
 
-// foward declarations
+// forward declarations
 template<class T, unsigned D> class TinyVector;
 template<class T, unsigned D> class Tensor;
 template<class T, unsigned D> class SymTensor;

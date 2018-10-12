@@ -34,8 +34,8 @@ namespace qmcplusplus
 
 /// Constructor.
 VMCcuda::VMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                 QMCHamiltonian& h,WaveFunctionPool& ppool):
-  QMCDriver(w,psi,h,ppool),UseDrift("yes"),
+                 QMCHamiltonian& h,WaveFunctionPool& ppool, Communicate* comm):
+  QMCDriver(w,psi,h,ppool,comm),UseDrift("yes"),
   myPeriod4WalkerDump(0), GEVtype("mixed"), w_alpha(0.0), w_beta(0.0), forOpt(false)
 {
   RootName = "vmc";
