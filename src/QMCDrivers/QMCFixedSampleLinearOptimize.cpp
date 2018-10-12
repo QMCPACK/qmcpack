@@ -910,19 +910,23 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
             << std::endl;
 
   // generate the new sample on which we will compare the different shifts
-  this->finish();
 
-  // reset the number of samples
-  //this->optTarget->setNumSamples(nsamp_comp);
-  //nTargetSamples = nsamp_comp;
-  //app_log() << "# of sample before correlated sampling is " << nTargetSamples << std::endl;
-  //app_log() << "number of samples is" << this->optTarget->getNumSamples() << std::endl;
-  app_log() << std::endl
-            << "*************************************************************" << std::endl
+  this->finish();
+      // reset the number of samples
+      //this->optTarget->setNumSamples(nsamp_comp);
+      //nTargetSamples = nsamp_comp;
+      //app_log() << "# of sample before correlated sampling is " << nTargetSamples << std::endl;
+      //app_log() << "number of samples is" << this->optTarget->getNumSamples() << std::endl;
+      app_log() << std::endl
+		<< "*************************************************************" << std::endl
             << "Generating a new sample based on the updated guiding function" << std::endl
             << "*************************************************************" << std::endl
             << std::endl;
+
+  std::string old_name = vmcEngine->getCommunicator()->getName();
+  vmcEngine->getCommunicator()->setName(old_name+".middleShift");
   this->start();
+  vmcEngine->getCommunicator()->setName(old_name);
   //app_log() << "number of samples is" << this->optTarget->getNumSamples() << std::endl;
 
   // say what we are doing
