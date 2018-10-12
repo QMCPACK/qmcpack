@@ -245,7 +245,7 @@ class NOMSD: public AFQMCInfo
      *                 otherwise returns the transpose with Dim: [nW][XXX}
      */
     template<class WlkSet, class MatG>
-    void MixedDensityMatrix(const WlkSet& wset, MatG&& G, bool compact=true, bool transpose=false, bool back_propagate=false) {
+    void MixedDensityMatrix(const WlkSet& wset, MatG&& G, bool compact=true, bool transpose=false) {
       int nw = wset.size();
       if(ovlp.num_elements() != nw)
         ovlp.resize(extents[nw]);
@@ -253,7 +253,10 @@ class NOMSD: public AFQMCInfo
     }
 
     template<class WlkSet, class MatG, class TVec>
-    void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false, bool back_propagate=false);
+    void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
+
+    template<class WlkSet, class MatG>
+    void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, bool modify_weights=true);
 
     /*
      * Calculates the mixed density matrix for all walkers in the walker set
@@ -316,7 +319,6 @@ class NOMSD: public AFQMCInfo
     */
     template<class MatA, class Wlk, class MatB>
     ComplexType BackPropagateOrbMat(MatA& OrbMat, const Wlk& walker, MatB& PsiBP);
-
 
   protected: 
 
@@ -444,6 +446,8 @@ class NOMSD: public AFQMCInfo
           return arr{-1,-1};
       }
     }
+
+
 
 };
 
