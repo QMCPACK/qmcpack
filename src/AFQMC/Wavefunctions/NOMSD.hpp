@@ -50,6 +50,8 @@ class NOMSD: public AFQMCInfo
 
   using CVector = boost::multi_array<ComplexType,1>;  
   using CMatrix = boost::multi_array<ComplexType,2>;  
+  using CVector_ref = boost::multi_array_ref<ComplexType,1>;
+  using CMatrix_ref = boost::multi_array_ref<ComplexType,2>;
   using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;  
   using shared_mutex = boost::mpi3::shm::mutex;  
 
@@ -333,7 +335,7 @@ class NOMSD: public AFQMCInfo
     // eventually switched from CMatrix to SMHSparseMatrix(node)
     std::vector<PsiT_Matrix> OrbMats;
     // Buffers for back propagation.
-    boost::multi_array<ComplexType, 2> T1ForBP, T2ForBP;
+    boost::multi_array<ComplexType, 2> T1ForBP, T2ForBP, T3ForBP;
 
     std::unique_ptr<SHM_Buffer> shmbuff_for_E;
 
