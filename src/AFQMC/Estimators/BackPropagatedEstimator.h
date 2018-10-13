@@ -43,7 +43,7 @@ class BackPropagatedEstimator: public EstimatorBase
       m_param.add(nStabalize, "ortho", "int");
       m_param.add(restore_paths, "path_restoration", "std::string");
       m_param.put(cur);
-      if (restore_paths == "true") {
+      if(restore_paths == "true") {
         path_restoration = true;
       } else {
         path_restoration = false;
@@ -56,16 +56,17 @@ class BackPropagatedEstimator: public EstimatorBase
     if(wlk == CLOSED) {
       dm_size = NMO*NMO;
       dm_dims = {NMO,NMO};
-    } else if (wlk == COLLINEAR) {
+    } else if(wlk == COLLINEAR) {
       dm_size = 2*NMO*NMO;
       dm_dims = {2*NMO,NMO};
-    } else if (wlk == NONCOLLINEAR) {
+    } else if(wlk == NONCOLLINEAR) {
       dm_size = 4*NMO*NMO;
       dm_dims = {2*NMO,2*NMO};
     }
-    if (DMBuffer.size() < dm_size) {
+    if(DMBuffer.size() < dm_size) {
       DMBuffer.resize(extents[dm_size]);
     }
+    std::fill(DMBuffer.begin(), DMBuffer.end(), ComplexType(0.0,0.0));
   }
 
   ~BackPropagatedEstimator() {}
@@ -77,7 +78,7 @@ class BackPropagatedEstimator: public EstimatorBase
     bool transpose = false, compact = false;
     // check to see whether we should be accumulating estimates.
     bool back_propagate = wset[0].isBMatrixBufferFull();
-    if (back_propagate) {
+    if(back_propagate) {
       CMatrix_ref BackPropDM(DMBuffer.data(), extents[dm_dims.first][dm_dims.second]);
       // Computes GBP(i,j)
       wfn0.BackPropagatedDensityMatrix(wset, BackPropDM, path_restoration);
@@ -110,9 +111,9 @@ class BackPropagatedEstimator: public EstimatorBase
 
   void tags(std::ofstream& out)
   {
-    if (TG.getGlobalRank() == 0) {
-      for (int i = 0; i < dm_dims.first; i++) {
-        for (int j = 0; j < dm_dims.second; j++) {
+    if(TG.getGlobalRank() == 0) {
+      for(int i = 0; i < dm_dims.first; i++) {
+        for(int j = 0; j < dm_dims.second; j++) {
           out << "G_" << i << "_"  << j << " ";
         }
       }
@@ -121,13 +122,13 @@ class BackPropagatedEstimator: public EstimatorBase
 
   void print(std::ofstream& out, WalkerSet& wset)
   {
-    if (writer) {
-      for (int i = 0; i < DMBuffer.size(); i++) {
+    if(writer) {
+      for(int i = 0; i < DMBuffer.size(); i++) {
         out << std::setprecision(16) << " " << DMBuffer[i].real() << " ";
       }
     }
     // Zero our estimator array.
-    std::fill(DMBuffer.begin(), DMBuffer.end(), 0);
+    std::fill(DMBuffer.begin(), DMBuffer.end(), ComplexType(0.0,0.0));
   }
 
   private:
