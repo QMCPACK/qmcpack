@@ -869,81 +869,104 @@ namespace afqmc
     bool compact = false;
     auto Gsize = size_t(dm_size(not compact));
     if(localGbuff.size() < Gsize)
-      localGbuff.resize(extents[Gsize]);
+      localGbuff.resize(extents[2*Gsize]);
     auto wlk_dims = wset.walker_dims();
     if((T2ForBP.shape()[0] != wlk_dims.first || T2ForBP.shape()[1] != wlk_dims.second)) {
-      T2ForBP.resize(extents[wlk_dims.first][wlk_dims.second]);
-      T1ForBP.resize(extents[wlk_dims.first][NAEA]);
+      T2ForBP.resize(extents[wlk_dims.second][wlk_dims.first]);
+      T1ForBP.resize(extents[NAEA][wlk_dims.first]);
+      T3ForBP.resize(extents[wlk_dims.first][wlk_dims.second]);
     }
     CVector denominator;
     denominator.resize(extents[1]);
+    denominator[0] = ComplexType(0.0, 0.0);
     if(walker_type != COLLINEAR) {
       auto Gdims = dm_dims(not compact,Alpha);
-      boost::multi_array_ref<ComplexType,2> G2D_(localGbuff.origin(),
-                                                 extents[Gdims.first][Gdims.second]);
-      boost::multi_array_ref<ComplexType,1> G1D_(localGbuff.origin(),extents[Gsize]);
-      boost::multi_array_ref<ComplexType,1> G1D(G.origin(),extents[Gsize]);
+      // Temporaries for determinant component of walker rdm function.
+      CMatrix_ref G2D_(localGbuff.origin(), extents[Gdims.first][Gdims.second]);
+      CVector_ref G1D_(localGbuff.origin(), extents[Gsize]);
+      // Accumulator for trial wavefunction sum.
+      CVector_ref G21D_(localGbuff.origin()+Gsize,extents[Gsize]);
+      // 1D view of walker averaged RDM
+      CVector_ref G1D(G.origin(),extents[Gsize]);
       for(int iw=0; iw<nwalk; iw++) {
         if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
+        std::fill(G21D_.begin(), G21D_.end(), ComplexType(0.0));
+        ComplexType overlap = ComplexType(0.0,0.0);
+        ComplexType restore_fac;
+        if(modify_weights) {
+          restore_fac = wset[iw].BPWeightFactor();
+        } else {
+          restore_fac = ComplexType(1.0,0.0);
+        }
+        ComplexType wfac = wset[iw].weight() * restore_fac;
+        denominator[0] += wfac;
         for(int id=0; id<ndet; id++) {
-          boost::multi_array_ref<ComplexType, 2> PsiBP = boost::multi_array_ref<ComplexType, 2>(T2ForBP.data(), extents[NMO][NAEA]);
-          BackPropagateOrbMat(OrbMats[id], wset[iw], PsiBP);
-          ComplexType ov = SDetOp.MixedDensityMatrix(PsiBP,wset[iw].SlaterMatrix(Alpha),
-                                                     G2D_,not compact);
-          if(walker_type==CLOSED) ov *= ov;
-          //ComplexType weight_factor \cc= wset[iw].BPWeightFactor();
-          ComplexType restore_fac;
-          if (modify_weights) {
-            restore_fac = wset[iw].BPWeightFactor();
-          } else {
-            restore_fac = ComplexType(1.0,0.0);
+          // We construct PsiBP^{\dagger}
+          CMatrix_ref PsiBP = CMatrix_ref(T2ForBP.data(), extents[NAEA][NMO]);
+          ComplexType detR = BackPropagateOrbMat(OrbMats[id], wset[iw], PsiBP);
+          // Construct RDM with Slater Matrix from beginning of path.
+          ComplexType ov = SDetOp.MixedDensityMatrix(PsiBP,
+                                                     wset[iw].SlaterMatrixN(Alpha),
+                                                     G2D_,compact);
+          if(walker_type==CLOSED) {
+            ov *= ov;
+            detR *= detR;
           }
           ov *= std::conj(ci[id]);
-          ComplexType wfac = wset[iw].weight() * restore_fac * ov;
-          ma::axpy(wfac,G1D_,G1D);
-          denominator[0] += wfac;
+          overlap += ov;
+          ma::axpy(ov,G1D_,G21D_);
         }
+        ComplexType ov_denom = wfac/overlap;
+        ma::axpy(ov_denom, G21D_, G1D);
       }
     } else {
       auto GAdims = dm_dims(not compact,Alpha);
       auto GBdims = dm_dims(not compact,Beta);
-      boost::multi_array_ref<ComplexType,2> GA2D_(localGbuff.origin(),
+      CMatrix_ref GA2D_(localGbuff.origin(),
                                    extents[GAdims.first][GAdims.second]);
-      boost::multi_array_ref<ComplexType,2> GB2D_(localGbuff.origin()+GAdims.first*GAdims.second,
+      CMatrix_ref GB2D_(localGbuff.origin()+GAdims.first*GAdims.second,
                                    extents[GBdims.first][GBdims.second]);
-      boost::multi_array_ref<ComplexType,1> GA1D_(localGbuff.origin(),
+      CVector_ref GA1D_(localGbuff.origin(),
                                    extents[GAdims.first*GAdims.second]);
-      boost::multi_array_ref<ComplexType,1> GB1D_(localGbuff.origin()+GAdims.first*GAdims.second,
+      CVector_ref GB1D_(localGbuff.origin()+GAdims.first*GAdims.second,
                                    extents[GBdims.first*GBdims.second]);
-      boost::multi_array_ref<ComplexType,1> GA1D(G.origin(),
+      CVector_ref GA21D_(localGbuff.origin()+Gsize,
                                    extents[GAdims.first*GAdims.second]);
-      boost::multi_array_ref<ComplexType,1> GB1D(G.origin()+GAdims.first*GAdims.second,
+      CVector_ref GB21D_(localGbuff.origin()+Gsize+GAdims.first*GAdims.second,
                                    extents[GBdims.first*GBdims.second]);
+      CVector_ref GA1D(G.origin(), extents[GAdims.first*GAdims.second]);
+      CVector_ref GB1D(G.origin()+GAdims.first*GAdims.second,
+                       extents[GBdims.first*GBdims.second]);
       for(int iw=0; iw<nwalk; iw++) {
         if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
-        for(int id=0; id<ndet; id++) {
-          boost::multi_array_ref<ComplexType, 2> PsiBPAlpha = boost::multi_array_ref<ComplexType, 2>(T2ForBP.data(), extents[NMO][NAEA]);
-          BackPropagateOrbMat(OrbMats[2*id], wset[iw], PsiBPAlpha);
-          ComplexType ov_ = SDetOp.MixedDensityMatrix(PsiBPAlpha,wset[iw].SlaterMatrix(Alpha),
-                                                      GA2D_,not compact);
-          boost::multi_array_ref<ComplexType, 2> PsiBPBeta = boost::multi_array_ref<ComplexType, 2>(T2ForBP.data()+NMO*NAEA, extents[NMO][NAEB]);
-          BackPropagateOrbMat(OrbMats[2*id+1], wset[iw], PsiBPBeta);
-          ov_ *= SDetOp.MixedDensityMatrix(PsiBPBeta,wset[iw].SlaterMatrix(Beta),
-                                           GB2D_,not compact);
-          ov_ *= std::conj(ci[id]);
-          ComplexType restore_fac;
-          if (modify_weights) {
-            restore_fac = wset[iw].BPWeightFactor();
-          } else {
-            restore_fac = ComplexType(1.0,0.0);
-          }
-          ComplexType wfac = wset[iw].weight() * restore_fac * ov_;
-          ma::axpy(wfac,GA1D_,GA1D);
-          ma::axpy(wfac,GB1D_,GB1D);
-          denominator[0] += wfac;
+        ComplexType restore_fac;
+        if(modify_weights) {
+          restore_fac = wset[iw].BPWeightFactor();
+        } else {
+          restore_fac = ComplexType(1.0,0.0);
         }
+        ComplexType wfac = wset[iw].weight() * restore_fac;
+        denominator[0] += wfac;
+        ComplexType overlap = ComplexType(0.0,0.0);
+        for(int id=0; id<ndet; id++) {
+          CMatrix_ref PsiBPAlpha = CMatrix_ref(T2ForBP.data(), extents[NAEA][NMO]);
+          ComplexType detR = BackPropagateOrbMat(OrbMats[2*id], wset[iw], PsiBPAlpha);
+          ComplexType ov_ = SDetOp.MixedDensityMatrix(PsiBPAlpha,wset[iw].SlaterMatrixN(Alpha),
+                                                      GA2D_,compact);
+          CMatrix_ref PsiBPBeta = CMatrix_ref(T2ForBP.data()+NMO*NAEA, extents[NAEB][NMO]);
+          detR *= BackPropagateOrbMat(OrbMats[2*id+1], wset[iw], PsiBPBeta);
+          ov_ *= SDetOp.MixedDensityMatrix(PsiBPBeta,wset[iw].SlaterMatrix(Beta),
+                                           GB2D_,compact);
+          ov_ *= std::conj(ci[id]);
+          ma::axpy(ov_,GA1D_,GA21D_);
+          ma::axpy(ov_,GB1D_,GB21D_);
+        }
+        ComplexType ov_denom = wfac/overlap;
+        ma::axpy(ov_denom, GA21D_, GA1D);
+        ma::axpy(ov_denom, GB21D_, GB1D);
       }
     }
+    // Average over walker's
     TG.Global().all_reduce_in_place_n(denominator.origin(),1,std::plus<>());
     TG.Global().all_reduce_in_place_n(G.origin(),Gsize,std::plus<>());
     auto denom = ComplexType(1.0,0.0)/denominator[0];
@@ -1164,12 +1187,17 @@ namespace afqmc
     ComplexType detR = ComplexType(1.0, 0.0);
     const int nbp = walker.getNumBackProp();
     int ip = nbp - 1;
-    boost::multi_array_ref<const ComplexType, 2> B = walker.BMatrix(nbp-1);
+    boost::multi_array_ref<const ComplexType, 2> B = walker.BMatrix(ip);
     ma::product(OrbMat, B, T1ForBP);
     for (int i = 0; i < nbp-1; i++) {
       ip -= 1;
       boost::multi_array_ref<const ComplexType, 2> B = walker.BMatrix(ip);
-      ma::product(T1ForBP, B, std::forward<boost::multi_array_ref<ComplexType, 2> >(PsiBP));
+      ma::product(T1ForBP, B, PsiBP);
+      if ((i != 0) && (i%10 == 0)) {
+        ma::transpose(PsiBP, T3ForBP);
+        detR *= SDetOp.Orthogonalize(T3ForBP);
+        ma::transpose(T3ForBP, PsiBP);
+      }
       T1ForBP = PsiBP;
     }
     return detR;
