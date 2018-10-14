@@ -145,7 +145,7 @@ class SharedWalkerSet: public AFQMCInfo
       bool isBMatrixBufferFull() const {
         return getHead()==0;
       }
-      int getNumBackProp() const {
+      int NumBackProp() const {
         return desc[3];
       }
       ComplexType BPWeightFactor() const {
@@ -230,7 +230,7 @@ class SharedWalkerSet: public AFQMCInfo
         return SMType(&(w_[indx[PROPAGATORS]+desc[0]*desc[0]*ip]),
                       extents[desc[0]][desc[0]]);
       }
-      int getNumBackProp() {
+      int NumBackProp() {
         return desc[3];
       }
       void incrementBMatrix() {
@@ -263,11 +263,7 @@ class SharedWalkerSet: public AFQMCInfo
                             extents[desc[0]][desc[0]]);
           for(int i = 0; i < desc[0]; i++) {
             for(int j = 0; j < desc[0]; j++) {
-              if(i == j) {
-                B[i][i] = ComplexType(1.0, 0.0);
-              } else {
-                B[i][j] = ComplexType(0.0, 0.0);
-              }
+              B[i][j] = ((i==j)?ComplexType(1.0,0.0):ComplexType(0.0,0.0));
             }
           }
         }
