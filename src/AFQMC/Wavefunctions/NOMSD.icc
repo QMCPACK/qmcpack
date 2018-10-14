@@ -890,6 +890,7 @@ namespace afqmc
       CVector_ref G1D(G.origin(),extents[Gsize]);
       for(int iw=0; iw<nwalk; iw++) {
         if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
+        if( std::abs(wset[iw].weight()) < 1e-10 ) continue;
         std::fill(G21D_.begin(), G21D_.end(), ComplexType(0.0));
         ComplexType overlap = ComplexType(0.0,0.0);
         ComplexType restore_fac;
@@ -939,6 +940,7 @@ namespace afqmc
                        extents[GBdims.first*GBdims.second]);
       for(int iw=0; iw<nwalk; iw++) {
         if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
+        if( std::abs(wset[iw].weight()) < 1e-10 ) continue;
         ComplexType restore_fac;
         if(modify_weights) {
           restore_fac = wset[iw].BPWeightFactor();
@@ -1185,7 +1187,7 @@ namespace afqmc
   ComplexType NOMSD::BackPropagateOrbMat(MatA& OrbMat, const Wlk& walker, MatB& PsiBP)
   {
     ComplexType detR = ComplexType(1.0, 0.0);
-    const int nbp = walker.getNumBackProp();
+    const int nbp = walker.NumBackProp();
     int ip = nbp - 1;
     boost::multi_array_ref<const ComplexType, 2> B = walker.BMatrix(ip);
     ma::product(OrbMat, B, T1ForBP);
