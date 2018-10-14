@@ -83,6 +83,11 @@ std::cout<<" update: "
 
   w.weight() *= ComplexType(scale*std::exp( -dt*( 0.5*( eloc.real() + old_eloc.real() ) -
                             Eshift )),0.0);
+  if (w.NumBackProp() > 0) {
+    w.BPWeightFactor() *= std::exp( -ComplexType(0.0,dt) * ( 0.5*( eloc.imag() + old_eloc.imag() ) ) );
+    // If the cosine factor is zero it won't contribute to a BP path anyway.
+    if (std::abs(scale) > 1e-16) w.BPWeightFactor() /= scale;
+  }
 
   w.pseudo_energy() = eloc;
   w.overlap() = overlap;
@@ -119,6 +124,11 @@ void local_energy_walker_update(Wlk&& w, RealType dt, bool apply_constrain, Real
 
   w.weight() *= ComplexType(scale*std::exp( -dt*( 0.5*( eloc.real() + old_eloc.real() ) - 
                             Eshift )),0.0);
+  if (w.NumBackProp() > 0) {
+    w.BPWeightFactor() = std::exp( -ComplexType(0.0,dt) * ( 0.5*( eloc.imag() + old_eloc.imag() ) ) );
+    // If the cosine factor is zero it won't contribute to a BP path anyway.
+    if (std::abs(scale) > 1e-16) w.BPWeightFactor() /= scale;
+  }
   w.pseudo_energy() = eloc;
   w.E1() = energies[0];
   w.EXX() = energies[1];
