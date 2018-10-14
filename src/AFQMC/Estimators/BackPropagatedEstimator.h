@@ -85,6 +85,7 @@ class BackPropagatedEstimator: public EstimatorBase
       for(int iw = 0; iw < wset.size(); iw++) {
         // Resets B matrix buffer to identity, copies current wavefunction and resets weight
         // factor.
+        if( iw%TG.TG_local().size() != TG.TG_local().rank() ) continue;
         wset[iw].resetForBackPropagation();
       }
     }
