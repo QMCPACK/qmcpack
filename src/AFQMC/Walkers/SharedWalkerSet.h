@@ -152,7 +152,7 @@ class SharedWalkerSet: public AFQMCInfo
         if(indx[WEIGHT_FAC] < 0) {
           APP_ABORT("error: access to uninitialized BP sector. \n");
         }
-        return w_[indx[WEIGHT_FAC] + getHead()];
+        return w_[indx[WEIGHT_FAC]];
       }
       //ComplexType weightFactor() const {
         //if(indx[COS_FAC]) {
@@ -274,8 +274,9 @@ class SharedWalkerSet: public AFQMCInfo
       ComplexType& BPWeightFactor() {
         if(indx[WEIGHT_FAC] < 0) {
           APP_ABORT("error: access to uninitialized BP sector. \n");
-        return w_[indx[WEIGHT_FAC] + getHead()]; 
-      }	
+        }
+        return w_[indx[WEIGHT_FAC]];
+      }
       void copy_to_buffer(ComplexType* data) {
         std::copy(base(),base()+size(),data);
       }	

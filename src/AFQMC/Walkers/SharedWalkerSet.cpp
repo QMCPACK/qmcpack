@@ -171,8 +171,8 @@ void SharedWalkerSet::setup()
     data_displ[HEAD] = cnt;        cnt+=1; // current location of propagator matrix in circular buffer.
     data_displ[TAIL] = cnt;        cnt+=1; // position of tail of circular buffer.
     data_displ[SMN] = cnt;         cnt+=nrow*ncol; // Slater Matrix at beggining of BP path 
-    data_displ[COS_FAC] = cnt;     cnt+=nback_prop; // Cosine factors along BP path.
-    data_displ[WEIGHT_FAC] = cnt;  cnt+=nback_prop; // Missing imaginary weight factors along BP path.
+    data_displ[COS_FAC] = cnt;     cnt+=1; // Cosine factors along BP path.
+    data_displ[WEIGHT_FAC] = cnt;  cnt+=1; // Missing imaginary weight factors along BP path.
   } else {
     data_displ[PROPAGATORS] = -1; 
     data_displ[HEAD] = -1;        
