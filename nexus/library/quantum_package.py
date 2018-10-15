@@ -106,7 +106,7 @@ class QuantumPackage(Simulation):
                         if not os.path.exists(s_ezfio):
                             os.makedirs(s_ezfio)
                         #end if
-                        command = 'rsync -av {0}/* {1}/'.format(d_ezfio,s_ezfio)
+                        command = 'rsync -av {0}/ {1}/'.format(d_ezfio,s_ezfio)
                         execute(command)
                         f = open(sync_record,'w')
                         f.write(command+'\n')
