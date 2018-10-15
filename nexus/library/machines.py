@@ -195,7 +195,8 @@ class Job(NexusCore):
                  machine      = None,
                  account      = None,
                  queue        = None,
-                 bundled_jobs = None,
+                 qos	      = None,
+		 bundled_jobs = None,
                  relative     = False,
                  cores        = None, # number of cores for the job
                  nodes        = None, # number of nodes for the job
@@ -238,6 +239,7 @@ class Job(NexusCore):
         self.name        = name
         self.type        = type
         self.queue       = queue
+	self.qos         = qos
         self.bundled_jobs= bundled_jobs
         self.relative    = relative
         self.cores       = cores
@@ -2981,6 +2983,43 @@ class Stampede2(Supercomputer):
     #end def write_job_header
 #end class Stampede2
 
+#
+class Cades(Supercomputer):
+
+    name = 'cades'
+    requires_account = True
+    batch_capable    = True
+
+    def process_job_extra(self,job):
+        if job.threads>1:
+            job.run_options.add(npersocket='--npersocket 1')
+        #end if
+    #end def process_job_extra
+
+    def write_job_header(self,job):
+        if job.queue is None:
+            job.queue = 'skylake'
+        #end if
+        if job.qos is None:
+            job.qos = 'std'
+        #end if
+        c= '#!/bin/bash\n'
+        c+='#PBS -A {0}\n'.format(job.account)
+        c+='#PBS -W group_list=cades-qmc\n' 
+        c+='#PBS -q {0}\n'.format(job.queue)
+        c+='#PBS -N {0}\n'.format(job.name)
+        c+='#PBS -o {0}\n'.format(job.outfile)
+        c+='#PBS -e {0}\n'.format(job.errfile)
+        c+='#PBS -l qos={0}\n'.format(job.qos) # This could be qos=burst as well, but then it can be cancelled by others
+        c+='#PBS -l walltime={0}\n'.format(job.pbs_walltime())
+        c+='#PBS -l nodes={0}:ppn={1}\n'.format(job.nodes, job.ppn)
+        c+='''
+echo $PBS_O_WORKDIR
+cd $PBS_O_WORKDIR
+'''
+        return c
+    #end def write_job_header
+#end class Cades
 
 
 #Known machines
@@ -3018,7 +3057,7 @@ Redsky(       2302,   2,     8,   12, 1000,   'srun',   'sbatch',  'squeue', 'sc
 Solo(          187,   2,    18,  128, 1000,   'srun',   'sbatch',  'squeue', 'scancel')
 SuperMUC(      205,   4,    10,  256,    8,'mpiexec', 'llsubmit',     'llq','llcancel')
 Stampede2(    4200,   1,    68,   96,    50, 'ibrun',   'sbatch',  'squeue', 'scancel')
-
+Cades(       156,   2,    18,   128,  100,  'mpirun',     'qsub',   'qstat',    'qdel')
 
 #machine accessor functions
 get_machine_name = Machine.get_hostname
