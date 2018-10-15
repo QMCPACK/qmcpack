@@ -629,7 +629,10 @@ run_inputs = set('''
 gen_inputs = set('''
     system
     defaults
-    save_integrals
+    save_ao_one_integrals
+    save_mo_one_integrals
+    save_ao_integrals
+    save_mo_integrals
     validate
     '''.split())
 added_inputs = run_inputs | gen_inputs
@@ -645,7 +648,10 @@ added_types = obj(
     # gen inputs
     system         = PhysicalSystem,
     defaults       = str,
-    save_integrals = bool,
+    save_ao_one_integrals = bool,
+    save_mo_one_integrals = bool,
+    save_ao_integrals     = bool,
+    save_mo_integrals     = bool,
     validate       = bool,
     )
 added_required = set('''
@@ -658,23 +664,31 @@ shared_defaults = obj(
     # run inputs
     postprocess = [],
     # gen inputs
+    save_ao_one_integrals = False,
+    save_mo_one_integrals = False,
+    save_ao_integrals     = False,
+    save_mo_integrals     = False,
     validate    = True,
     )
 qp_defaults = obj(
     none = obj(
         # gen inputs
-        save_integrals = False,
         **shared_defaults
         ),
     v1 = obj(
         # run inputs
         sleep          = 30,
         # gen inputs
-        save_integrals = True,
         # qp inputs
         n_det_max      = 5000,
         **shared_defaults
         ),
+    )
+save_ints_map = obj(
+    save_ao_one_integrals = 'disk_access_ao_one_integrals',
+    save_mo_one_integrals = 'disk_access_mo_one_integrals',
+    save_ao_integrals     = 'disk_access_ao_integrals'    ,
+    save_mo_integrals     = 'disk_access_mo_integrals'    ,
     )
 save_ints_defaults = obj(
     disk_access_ao_one_integrals = 'Write',
@@ -722,9 +736,12 @@ def generate_quantum_package_input(**kwargs):
     # separate generation inputs from input file variables
     gen_kw = kw.extract_optional(gen_inputs)
 
-    if gen_kw.save_integrals and run_kw.run_type in QuantumPackageInput.integral_write_allowed:
-        kw.set_optional(**save_ints_defaults)
-    #end if
+    # save integrals, if requested
+    for gk,qk in save_ints_map:
+        if gen_kw[gk] and qk not in kw:
+            kw[qk] = 'Write'
+        #end if
+    #end for
 
     # partition inputs into sections and variables
     sections = obj()
