@@ -90,6 +90,9 @@ def write_qp_value(value_filepath,value):
 
 
 # quantum package path input specification
+#   The spec below was obtained by using the extract_input_specification
+#   function.  Run this function again with ezfio directory paths as 
+#   arguments to further augment the specification over time.
 input_specification = obj({
     'ao_basis/ao_basis' : str,
     'ao_basis/ao_cartesian' : bool,
