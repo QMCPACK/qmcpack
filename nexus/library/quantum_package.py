@@ -23,6 +23,7 @@ from execute import execute
 from simulation import Simulation
 from quantum_package_input import QuantumPackageInput,generate_quantum_package_input
 from quantum_package_analyzer import QuantumPackageAnalyzer
+from developer import ci
 
 
 
@@ -78,7 +79,7 @@ class QuantumPackage(Simulation):
 
 
     def write_prep(self):
-        # write an ascii represenation of the input changes
+        # write an ascii representation of the input changes
         infile = self.identifier+'.in'
         infile = os.path.join(self.locdir,infile)
         f = open(infile,'w')
@@ -88,6 +89,39 @@ class QuantumPackage(Simulation):
             self.input.structure = s
         #end if
         f.close()
+
+        # copy ezfio directory from dependencies
+        qp_dirs = []
+        for dep in self.dependencies:
+            dsim = dep.sim
+            if isinstance(dsim,QuantumPackage):
+                d_ezfio = os.path.join(dsim.locdir,dsim.infile)
+                s_ezfio = os.path.join(self.locdir,self.infile)
+                d_ezfio = os.path.abspath(d_ezfio)
+                s_ezfio = os.path.abspath(s_ezfio)
+                sync_record = os.path.join(self.locdir,self.identifier+'.sync_record')
+                if s_ezfio!=d_ezfio:
+                    qp_dirs.append(d_ezfio)
+                    if not os.path.exists(sync_record):
+                        if not os.path.exists(s_ezfio):
+                            os.makedirs(s_ezfio)
+                        #end if
+                        command = 'rsync -av {0}/* {1}/'.format(d_ezfio,s_ezfio)
+                        execute(command)
+                        f = open(sync_record,'w')
+                        f.write(command+'\n')
+                        f.close()
+                    #end if
+                #end if
+            #end if
+        #end for
+        if len(qp_dirs)>1:
+            qpd = ''
+            for d in qp_dirs:
+                qpd += d+'\n'
+            #end for
+            self.error('quantum package run depends on multiple others with distince ezfio directories\ncannot determine which run to copy ezfio directory from\nezfio directories from prior runs:\n{0}'.format(qpd))
+        #end if
     #end def write_prep
 
 
@@ -231,6 +265,9 @@ def generate_quantum_package(**kwargs):
         if 'input_type' in inp_args:
             input_type = inp_args.input_type
             del inp_args.input_type
+        #end if
+        if 'prefix' not in inp_args and 'identifier' in sim_args:
+            inp_args['prefix'] = sim_args['identifier']
         #end if
         sim_args.input = generate_quantum_package_input(**inp_args)
     #end if

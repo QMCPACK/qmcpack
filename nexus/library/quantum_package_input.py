@@ -770,7 +770,7 @@ def generate_quantum_package_input(**kwargs):
     gen_kw = kw.extract_optional(gen_inputs)
 
     # save integrals, if requested
-    for gk,qk in save_ints_map:
+    for gk,qk in save_ints_map.iteritems():
         if gen_kw[gk] and qk not in kw:
             kw[qk] = 'Write'
         #end if
