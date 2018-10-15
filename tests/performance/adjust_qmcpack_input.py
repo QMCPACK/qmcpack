@@ -71,6 +71,8 @@ if __name__ == '__main__':
                       help="Use the batched algorithm for non-local pseudopotential evaluation")
   parser.add_argument('-d', '--delay',
                       help="Use the delayed update for determinants")
+  parser.add_argument('-i', '--inplace', action='store_true',
+                      help="Edit files in place")
   parser.add_argument('-j', '--J123',
                       help="Use one, two and three body Jastrow factors")
   parser.add_argument('-o', '--output',
@@ -99,5 +101,8 @@ if __name__ == '__main__':
   if args.output:
     tree.write(args.output)
   else:
-    tree.write(fname_in)
+    if args.inplace:
+      tree.write(fname_in)
+    else:
+      print "Nothing has been changed. Use -i or -o options for in-place change or output to a file."
 
