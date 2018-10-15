@@ -7,6 +7,7 @@
 import argparse
 import xml.etree.ElementTree as ET
 
+# utilities
 def add_or_change_parameter(parent_node, param_name, new_value):
   nodes = parent_node.findall("./parameter[@name='%s']"%param_name)
   if nodes:
@@ -24,7 +25,8 @@ def add_or_change_attribute(node, attrib_name, new_value):
   node.attrib[attrib_name] = new_value
 
 
-def rewrite_walkers(tree, new_number_of_walkers):
+# utilities
+def change_number_of_walkers(tree, new_number_of_walkers):
   qmc_nodes = tree.findall(".//qmc")
   for qmc in qmc_nodes:
     change_parameter(qmc, 'walkers', str(new_number_of_walkers))
@@ -73,6 +75,8 @@ if __name__ == '__main__':
                       help="Use one, two and three body Jastrow factors")
   parser.add_argument('-o', '--output',
                       help="Ouput XML file")
+  parser.add_argument('-w', '--walker',
+                      help="Change the number of walkers")
 
   args = parser.parse_args()
   fname_in = args.input_file
@@ -88,6 +92,9 @@ if __name__ == '__main__':
   if args.J123:
     j3_tree = ET.parse(args.J123)
     change_jastrow(tree, j3_tree)
+
+  if args.walker:
+    change_number_of_walkers(tree,args.walker)
 
   if args.output:
     tree.write(args.output)
