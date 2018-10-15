@@ -19,7 +19,7 @@ IF (NOT QMC_CUDA)
 
   #
   # H2 starting from unoptimized CIS coefficients and orbital
-  # Targetting the first excited state, and using the adaptive linear method
+  # Targeting the first excited state, and using the adaptive linear method
   # The Jastrow is already optimized (by itself). This test optimizes both orbitals and CIS coefficients
   #
   LIST(APPEND H2_FDLR_SCALARS "totenergy" "-0.64755 0.0015") # total energy

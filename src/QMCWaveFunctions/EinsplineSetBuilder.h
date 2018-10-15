@@ -157,7 +157,7 @@ public:
   std::map<H5OrbSet,SPOSet*,H5OrbSet> SPOSetMap;
 
   ///constructor
-  EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur);
+  EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Communicate *comm, xmlNodePtr cur);
 
   ///destructor
   ~EinsplineSetBuilder();

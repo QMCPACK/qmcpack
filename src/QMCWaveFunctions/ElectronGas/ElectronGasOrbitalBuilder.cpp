@@ -201,8 +201,8 @@ bool ElectronGasOrbitalBuilder::put(xmlNodePtr cur)
   return true;
 }
 
-ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur)
-  :egGrid(p.Lattice)
+ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate *comm, xmlNodePtr cur)
+  :SPOSetBuilder(comm), egGrid(p.Lattice)
 {
 }
 

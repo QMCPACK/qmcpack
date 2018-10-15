@@ -57,8 +57,8 @@ namespace qmcplusplus
 
 
 QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
-    TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool):
-  QMCLinearOptimize(w,psi,h,hpool,ppool), 
+    TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool, Communicate* comm):
+  QMCLinearOptimize(w,psi,h,hpool,ppool,comm), 
 #ifdef HAVE_LMY_ENGINE
 vdeps(1,std::vector<double>()),
 #endif
@@ -121,7 +121,7 @@ vdeps(1,std::vector<double>()),
                                           60, // max krylov iter
                                           0, // max spam inner iter
                                           1, // spam appro degree
-                                          0, // eom relateds 
+                                          0, // eom related 
                                           0, // eom related
                                           0, // eom related
                                           0.0, // omega
@@ -332,7 +332,7 @@ bool QMCFixedSampleLinearOptimize::run()
 
       if (goodStep)
       {
-// 	this may have been evaluated allready
+// 	this may have been evaluated already
 // 	newCost=evaluated_cost;
         //get cost at new minimum
         newCost = optTarget->Cost(false);
@@ -471,12 +471,11 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   {
 #if defined (QMC_CUDA)
     if (useGPU == "yes")
-      vmcEngine = new VMCcuda(W,Psi,H,psiPool);
+      vmcEngine = new VMCcuda(W,Psi,H,psiPool,myComm);
     else
 #endif
-      vmcEngine = new VMCSingleOMP(W,Psi,H,psiPool);
+      vmcEngine = new VMCSingleOMP(W,Psi,H,psiPool,myComm);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
-    vmcEngine->initCommunicator(myComm);
   }
 
   vmcEngine->setStatus(RootName,h5FileRoot,AppendRun);
@@ -487,10 +486,10 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   {
 #if defined (QMC_CUDA)
     if (useGPU == "yes")
-      optTarget = new QMCCostFunctionCUDA(W,Psi,H);
+      optTarget = new QMCCostFunctionCUDA(W,Psi,H,myComm);
     else
 #endif
-      optTarget = new QMCCostFunctionOMP(W,Psi,H);
+      optTarget = new QMCCostFunctionOMP(W,Psi,H,myComm);
     optTarget->setStream(&app_log());
     success=optTarget->put(q);
   }

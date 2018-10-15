@@ -44,14 +44,6 @@ QMCUpdateBase::QMCUpdateBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, Q
   setDefaults();
 }
 
-///copy constructor
-QMCUpdateBase::QMCUpdateBase(const QMCUpdateBase& a)
-  : W(a.W), Psi(a.Psi), Guide(a.Guide), H(a.H), RandomGen(a.RandomGen)
-  , branchEngine(0), Estimators(0), Traces(0)
-{
-  APP_ABORT("QMCUpdateBase::QMCUpdateBase(const QMCUpdateBase& a) Not Allowed");
-}
-
 /// destructor
 QMCUpdateBase::~QMCUpdateBase()
 {

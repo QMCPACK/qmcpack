@@ -326,7 +326,7 @@ protected:
   xmlNodePtr spo_node;
 public:
   ///constructor
-  ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur);
+  ElectronGasSPOBuilder(ParticleSet& p, Communicate *comm, xmlNodePtr cur);
 
   /** initialize the Antisymmetric wave function for electrons
   *@param cur the current xml node

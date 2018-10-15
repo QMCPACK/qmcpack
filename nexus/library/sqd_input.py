@@ -1125,7 +1125,7 @@ class Param(Names):
 
     def __call__(self,*args,**kwargs):
         if len(args)==0:
-            self.error('no arguments provided, should have recieved one XMLelement')
+            self.error('no arguments provided, should have received one XMLelement')
         elif not isinstance(args[0],XMLelement):
             return args[0]
             #self.error('first argument is not an XMLelement')

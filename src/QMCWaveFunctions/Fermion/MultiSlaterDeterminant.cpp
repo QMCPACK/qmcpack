@@ -34,7 +34,7 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetPr
   registerTimers();
   //Optimizable=true;
   Optimizable=false;
-  OrbitalName="MultiSlaterDeterminant";
+  ClassName="MultiSlaterDeterminant";
   usingCSF=false;
   FirstIndex_up = targetPtcl.first(0);
   LastIndex_up = targetPtcl.last(0);

@@ -57,7 +57,7 @@ int formic::binom_coeff(int n, int m) {
 ///          integers in the range (0, 1, 2, ..., k)
 ///
 /// \param[in]     n        number of variables
-/// \param[in]     r        sum of varaibles
+/// \param[in]     r        sum of variables
 /// \param[in]     k        range of each variable
 /// \param[out]    work     integer workspace, either null or size >= k+1
 ///
@@ -108,14 +108,14 @@ int formic::n_integer_solutions(const int n, const int r, const int k, int * wor
         t += n_with_value[i];
 
       // count how many ways the variables can satisfy this distribution
-      int occurances = formic::binom_coeff(n, t);
+      int occurrences = formic::binom_coeff(n, t);
       for (int i = 1; i < k; i++) {
-        occurances *= formic::binom_coeff(t, n_with_value[i]);
+        occurrences *= formic::binom_coeff(t, n_with_value[i]);
         t -= n_with_value[i]; // t is now equal to the number of variables greater than i
       }
 
       // record how many ways the variables satisfy this distribution
-      retval += occurances;
+      retval += occurrences;
 
     }
 

@@ -31,6 +31,7 @@ protected:
   ParticleSet *targetPtcl;
 public:
   OptimizableSPOBuilder(ParticleSet& p, PtclPoolType& psets,
+                        Communicate *comm,
                         xmlNodePtr cur);
 
   /** initialize the Antisymmetric wave function for electrons

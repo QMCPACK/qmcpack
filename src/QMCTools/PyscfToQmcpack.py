@@ -543,7 +543,7 @@ def savetoqmcpack(cell,mf,title="Default",kpts=[],kmesh=[]):
   
   H5_qmcpack.close()
 
-  print ('Wavefunction successfuly saved to QMCPACK HDF5 Format')
+  print ('Wavefunction successfully saved to QMCPACK HDF5 Format')
   print ('Use: "convert4qmc -pyscf  {}.h5" to generate QMCPACK input files'.format(title))
   # Close the file before exiting
 

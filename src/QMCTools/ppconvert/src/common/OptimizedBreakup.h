@@ -42,9 +42,9 @@ public:
   virtual double c(int n, double k) = 0;
   virtual double dc_dk(int n, double k) = 0;
   double c_numerical (int n, double k);
-  /// This returns the coefficent of the nth basis function
+  /// This returns the coefficient of the nth basis function
   //virtual double  Get_t(int n) const     = 0;
-  /// This sets the coefficent of the nth basis function
+  /// This sets the coefficient of the nth basis function
   //virtual void    Set_t(int n, double t) = 0;
   /// This returns the linear combination of the basis functions with
   /// coefficients t_n
@@ -99,7 +99,7 @@ public:
   int NumKnots;
   double delta, deltaInv;
   TinyMatrix<double,3,6> S;
-  /// The following are helpers to calculate the Fourier tranform of
+  /// The following are helpers to calculate the Fourier transform of
   /// the basis functions
   inline std::complex<double> Eplus(int i, double k, int n);
   inline std::complex<double> Eminus(int i, double k, int n);

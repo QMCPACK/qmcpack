@@ -37,16 +37,6 @@ TrialWaveFunction::TrialWaveFunction(Communicate* c)
   myName="psi0";
 }
 
-///private and cannot be used
-TrialWaveFunction::TrialWaveFunction()
-  : MPIObjectBase(0)
-  , Ordered(true), NumPtcls(0), TotalDim(0), BufferCursor(0), BufferCursor_scalar(0)
-  ,  PhaseValue(0.0),LogValue(0.0) ,OneOverM(1.0), PhaseDiff(0.0)
-{
-  ClassName="TrialWaveFunction";
-  myName="psi0";
-}
-
 /** Destructor
 *
 *@warning Have not decided whether Z is cleaned up by TrialWaveFunction

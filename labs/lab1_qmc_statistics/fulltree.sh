@@ -3,7 +3,7 @@
 # Script that displays a recursive formatted folder and file listing
 # @author Corbin
 # @site iamcorbin.net
-#Folder Seperator
+#Folder Separator
 BREAK='-------------------------------------------------------------------------------------'
 
 #Optional: if a folder is passed as an argument, run fulltree on that folder rather than the current folder
