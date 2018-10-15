@@ -402,6 +402,7 @@ class Simulation(NexusCore):
         self.infile         = None
         self.outfile        = None
         self.errfile        = None
+        self.bundleable     = True
         self.bundled        = False
         self.bundler        = None
         self.fake_sim       = Simulation.creating_fake_sims
@@ -411,6 +412,7 @@ class Simulation(NexusCore):
                              # accessed by dependents when calling get_dependencies
 
         self.set(**kwargs)
+        self.pre_init()
         self.set_directories()
         self.set_files()
         self.propagate_identifier()
@@ -608,6 +610,10 @@ class Simulation(NexusCore):
     def propagate_identifier(self):
         None
     #end def propagate_identifier
+
+    def pre_init(self):
+        None
+    #end def pre_init
 
     def post_init(self):
         None
@@ -946,7 +952,7 @@ class Simulation(NexusCore):
         self.enter(self.locdir,False,self.simid)
         self.log('writing input files'+self.idstr(),n=3)
         self.write_prep()
-        if self.infile!=None:
+        if self.infile is not None:
             infile = os.path.join(self.locdir,self.infile)
             self.input.write(infile)
         #end if

@@ -44,6 +44,7 @@ from pwscf   import Pwscf  , PwscfInput  , PwscfAnalyzer  , generate_pwscf_input
 from gamess  import Gamess , GamessInput , GamessAnalyzer , generate_gamess_input , generate_gamess, FormattedGroup
 from vasp    import Vasp   , VaspInput   , VaspAnalyzer   , generate_vasp_input   , generate_vasp
 from qmcpack import Qmcpack, QmcpackInput, QmcpackAnalyzer, generate_qmcpack_input, generate_qmcpack
+from quantum_package import QuantumPackage,QuantumPackageInput,QuantumPackageAnalyzer,generate_quantum_package_input,generate_quantum_package
 
 from qmcpack_converters import Pw2qmcpack , Pw2qmcpackInput , Pw2qmcpackAnalyzer , generate_pw2qmcpack_input , generate_pw2qmcpack
 from qmcpack_converters import Wfconvert  , WfconvertInput  , WfconvertAnalyzer  , generate_wfconvert_input  , generate_wfconvert
@@ -107,12 +108,17 @@ class Settings(NexusCore):
     
     pwscf_vars   = set('''
         vdw_table
-        '''.split())  
+        '''.split())
+
+    qm_package_vars = set('''
+        qprc
+        '''.split())
 
     nexus_core_vars    = core_assign_vars    | core_process_vars
     nexus_noncore_vars = noncore_assign_vars | noncore_process_vars
     nexus_vars         = nexus_core_vars     | nexus_noncore_vars
-    allowed_vars       = nexus_vars | machine_vars | gamess_vars | pwscf_vars
+    allowed_vars       = nexus_vars | machine_vars \
+                       | gamess_vars | pwscf_vars | qm_package_vars
 
 
     @staticmethod
@@ -184,10 +190,11 @@ class Settings(NexusCore):
         #end for
 
         # extract settings based on keyword groups
-        kw        = Settings.kw_set(Settings.nexus_vars  ,kwargs)   
-        mach_kw   = Settings.kw_set(Settings.machine_vars,kwargs)      
-        gamess_kw = Settings.kw_set(Settings.gamess_vars ,kwargs)       
-        pwscf_kw  = Settings.kw_set(Settings.pwscf_vars  ,kwargs)
+        kw        = Settings.kw_set(Settings.nexus_vars     ,kwargs)
+        mach_kw   = Settings.kw_set(Settings.machine_vars   ,kwargs)
+        gamess_kw = Settings.kw_set(Settings.gamess_vars    ,kwargs)
+        pwscf_kw  = Settings.kw_set(Settings.pwscf_vars     ,kwargs)
+        qm_pkg_kw = Settings.kw_set(Settings.qm_package_vars,kwargs)
         if len(kwargs)>0:
             self.error('some settings keywords have not been accounted for\nleftover keywords: {0}\nthis is a developer error'.format(sorted(kwargs.keys())))
         #end if
@@ -222,7 +229,11 @@ class Settings(NexusCore):
 
         # process pwscf settings
         Pwscf.restore_default_settings()
-        Pwscf.settings(**pwscf_kw)   
+        Pwscf.settings(**pwscf_kw)
+
+        # process quantum package settings
+        QuantumPackage.restore_default_settings()
+        QuantumPackage.settings(**qm_pkg_kw)
 
         return
     #end def __call__
@@ -292,6 +303,10 @@ class Settings(NexusCore):
         parser.add_option('--vdw_table',dest='vdw_table',
                           default='none',
                           help='Path to the vdw_table file used with Quantum Espresso (required only if running Quantum Espresso with van der Waals functionals).'
+                          )
+        parser.add_option('--qprc',dest='qprc',
+                          default='none',
+                          help='Path to the quantum_package.rc file used with Quantum Package.'
                           )
 
         # parse the command line inputs
