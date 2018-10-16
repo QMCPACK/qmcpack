@@ -107,10 +107,16 @@ class QuantumPackage(Simulation):
                             os.makedirs(s_ezfio)
                         #end if
                         command = 'rsync -av {0}/ {1}/'.format(d_ezfio,s_ezfio)
-                        execute(command)
-                        f = open(sync_record,'w')
-                        f.write(command+'\n')
-                        f.close()
+                        out,err,rc = execute(command)
+                        if rc>0:
+                            self.warn('rsync of ezfio directory failed\nall runs depending on this one will be blocked\nsimulation identifier: {0}\nlocal directory: {1}\nattempted rsync command: {2}'.format(self.identifier,self.locdir,command))
+                            self.failed = True
+                            self.block_dependents()
+                        else:
+                            f = open(sync_record,'w')
+                            f.write(command+'\n')
+                            f.close()
+                        #end if
                     #end if
                 #end if
             #end if
