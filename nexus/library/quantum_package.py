@@ -153,15 +153,29 @@ class QuantumPackage(Simulation):
 
 
     def check_sim_status(self):
-        # assume successful completion of the run
-        #   more sophisticated checks can be added in the future
-        success = True
-        self.finished = success
 
-        # check to see if the job needs to be restarted
+        # get the run type
         input = self.input
         rc = self.input.run_control
-        sel_ci    = rc.run_type=='fci_zmq'
+        scf    = rc.run_type=='SCF'
+        sel_ci = rc.run_type=='fci_zmq'
+
+        # assess successful completion of the run
+        #   currently a check only exists for HF/SCF runs
+        #   more sophisticated checks can be added in the future
+        failed = False
+        if scf:
+            outfile = os.path.join(self.locdir,self.outfile)
+            f = open(outfile,'r')
+            output = f.read()
+            f.close()
+            hf_not_converged = '* Hartree-Fock energy' not in output
+            failed |= hf_not_converged
+        #end if
+        self.failed = failed
+        self.finished = self.job.finished
+
+        # check to see if the job needs to be restarted
         conv_dets = 'converge_dets' in rc and rc.converge_dets
         n_det_max = input.get('n_det_max')
         if sel_ci and conv_dets and n_det_max is not None:
