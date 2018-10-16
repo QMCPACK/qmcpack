@@ -182,6 +182,7 @@ public:
       L = LHost;
       Linv = LinvHost;
     }
+    this->ClassName = "TwoBodyJastrowOrbitalBspline";
   }
 };
 }
