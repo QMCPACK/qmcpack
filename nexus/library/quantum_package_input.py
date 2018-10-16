@@ -657,6 +657,7 @@ run_inputs = set('''
     run_type
     frozen_core
     cis_loop
+    converge_dets
     sleep
     slave
     postprocess
@@ -677,6 +678,7 @@ added_types = obj(
     run_type              = str,
     frozen_core           = bool,
     cis_loop              = (bool,int),
+    converge_dets         = bool,
     sleep                 = (int,float),
     slave                 = str,
     postprocess           = (tuple,list),
@@ -692,6 +694,7 @@ added_types = obj(
 added_required = set('''
     system
     prefix
+    run_type
     sleep
     '''.split())
 qp_defaults_version = 'v1'

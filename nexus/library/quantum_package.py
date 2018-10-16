@@ -21,7 +21,7 @@ import os
 from generic import obj
 from execute import execute
 from simulation import Simulation
-from quantum_package_input import QuantumPackageInput,generate_quantum_package_input
+from quantum_package_input import QuantumPackageInput,generate_quantum_package_input,read_qp_value
 from quantum_package_analyzer import QuantumPackageAnalyzer
 from developer import ci
 
@@ -146,9 +146,35 @@ class QuantumPackage(Simulation):
     #end def incorporate_result
 
 
+    def attempt_files(self):
+        return (self.outfile,self.errfile)
+    #end def attempt_files
+
+
     def check_sim_status(self):
+        # assume successful completion of the run
+        #   more sophisticated checks can be added in the future
         success = True
-        self.finished = success and self.job.finished
+        self.finished = success
+
+        # check to see if the job needs to be restarted
+        input = self.input
+        rc = self.input.run_control
+        sel_ci    = rc.run_type=='fci_zmq'
+        conv_dets = 'converge_dets' in rc and rc.converge_dets
+        n_det_max = input.get('n_det_max')
+        if sel_ci and conv_dets and n_det_max is not None:
+            n_det = None
+            n_det_path = os.path.join(self.locdir,self.infile,'determinants/n_det')
+            if os.path.exists(n_det_path):
+                n_det = read_qp_value(n_det_path)
+                if isinstance(n_det,int) and n_det<n_det_max:
+                    self.save_attempt()
+                    input.set(read_wf=True)
+                    self.reset_indicators()
+                #end if
+            #end if
+        #end if
     #end def check_sim_status
 
 
