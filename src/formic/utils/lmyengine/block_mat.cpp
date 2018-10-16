@@ -159,7 +159,7 @@ void cqmc::engine::LMBlockerMatData::acc(const double d, const std::vector<doubl
   // loop over blocks
   for (int b = 0; b < this->nb(); b++) {
     
-    // begining index
+    // beginning index
     const int ibeg = 1 + m_block_beg.at(b);
 
     // block length

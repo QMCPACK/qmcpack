@@ -138,7 +138,7 @@ bool phaseless_ImpSamp_ForceBias::parse(xmlNodePtr cur)
     app_log()<<"\n\n --------------- Parsing Propagator input ------------------ \n\n";
 
     if(substractMF) 
-      app_log()<<" Using mean-field substraction in propagator. \n";
+      app_log()<<" Using mean-field subtraction in propagator. \n";
 
     if(parallel_factorization)
       app_log()<<" Calculating factorization of 2-body hamiltonian in parallel. \n";
@@ -1635,7 +1635,7 @@ void phaseless_ImpSamp_ForceBias::serial_propagation_single_step(WalkerHandlerBa
 // the marix operation for vbias and CV0 determines the operation for vHS.
 // These two are assembled independently, so it can be done.
 // The actual assembly of each of these matrices may not be optimal, 
-// but for now implement with the efficientcy of the MM in mind.
+// but for now implement with the efficiently of the MM in mind.
 void phaseless_ImpSamp_ForceBias::dist_propagation_single_step(WalkerHandlerBase* wset, RealType& Eshift)
 {
   // structure in TG [hybrid_w, MFfactor, G(1:{2*}NMO*NMO), sigma(1:nCholVecs), vHS(1:{2*}NMO*NMO)] 

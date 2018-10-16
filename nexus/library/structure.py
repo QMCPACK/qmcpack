@@ -2618,7 +2618,7 @@ class Structure(Sobj):
     #end def voronoi_neighbors
 
 
-    # get nearest neighbors according to constrants (voronoi, max distance, coord. number)
+    # get nearest neighbors according to constraints (voronoi, max distance, coord. number)
     def nearest_neighbors(self,indices=None,rmax=None,nmax=None,restrict=False,voronoi=False,distances=False,**spec_max):
         if indices is None:
             indices = arange(len(self.pos))
@@ -3970,27 +3970,46 @@ class Structure(Sobj):
         elem = []
         pos  = []
         if os.path.exists(filepath):
-            lines = open(filepath,'r').read().splitlines()
+            lines = open(filepath,'r').read().strip().splitlines()
         else:
-            lines = filepath.splitlines() # "filepath" is file contents
+            lines = filepath.strip().splitlines() # "filepath" is file contents
         #end if
-        ntot = 1000000
-        natoms = 0
-        for l in lines:
-            ls = l.strip()
-            if ls.isdigit():
-                ntot = int(ls)
-            #end if
-            tokens = ls.split()
-            if len(tokens)==4:
-                elem.append(tokens[0])
-                pos.append(array(tokens[1:],float))
-                natoms+=1
-                if natoms==ntot:
-                    break
+        if len(lines)>1:
+            ntot = int(lines[0].strip())
+            natoms = 0
+            e = None
+            p = None
+            try:
+                tokens = lines[1].split()
+                if len(tokens)==4:
+                    e = tokens[0]
+                    p = array(tokens[1:],float)
                 #end if
+            except:
+                None
+            #end try
+            if p is not None:
+                elem.append(e)
+                pos.append(p)
+                natoms+=1
             #end if
-        #end for
+            if len(lines)>2:
+                for l in lines[2:]:
+                    tokens = l.split()
+                    if len(tokens)==4:
+                        elem.append(tokens[0])
+                        pos.append(array(tokens[1:],float))
+                        natoms+=1
+                        if natoms==ntot:
+                            break
+                        #end if
+                    #end if
+                #end for
+            #end if
+            if natoms!=ntot:
+                self.error('xyz file read failed\nattempted to read file: {0}\nnumber of atoms expected: {1}\nnumber of atoms found: {2}'.format(filepath,ntot,natoms))
+            #end if
+        #end if
         self.dim   = 3
         self.set_elem(elem)
         self.pos   = array(pos)
@@ -4053,7 +4072,7 @@ class Structure(Sobj):
             lcur = 7
         #end if
         species = elem
-        # relabel species that have multiple occurances
+        # relabel species that have multiple occurrences
         sset = set(species)
         for spec in sset:
             if species.count(spec)>1:

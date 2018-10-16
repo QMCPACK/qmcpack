@@ -702,7 +702,7 @@ void SlaterDetOpt::reportStatus(std::ostream& os) {
 ///                            particle's position.  Note that we assume the derivatives of
 ///                            ( H Psi ) / Psi are the same for each of the three directions'
 ///                            (x,y,z) second derivatives and so dh2 is defined as the
-///                            derivaties corresponding to the x coordinate's second derivative,
+///                            derivatives corresponding to the x coordinate's second derivative,
 ///                            NOT the sum of the derivatives for all three x, y, and z.
 /// \param[in]      Bchi       An nl by np column-major-ordered matrix of the values of the
 ///                            molecular orbitals at each particle's position.
@@ -988,7 +988,7 @@ void SlaterDetOpt::evaluateDerivatives(ParticleSet& P,
     }
   }
 
-  // reset the internally stored derivatives to zero in preperation for the next sample
+  // reset the internally stored derivatives to zero in preparation for the next sample
   this->initialize_matrices();
 }
 
@@ -1072,7 +1072,7 @@ void SlaterDetOpt::evaluateGradDerivatives(const ParticleSet::ParticleGradient_t
     dgradlogpsi.at(m_first_var_pos+i) += m_hder_mat.at(p+q*m_nlc) - m_hder_mat.at(q+p*m_nlc);
   }
 
-  // reset the internally stored derivatives to zero in preperation for the next sample
+  // reset the internally stored derivatives to zero in preparation for the next sample
   this->initialize_matrices();
 }
 
@@ -1149,7 +1149,7 @@ void SlaterDetOpt::buildOptVariables(std::vector<RealType>& input_params,
          << ( q < 1000 ? "0" : "" )
          << q;
 
-    // If the user input parameteres, use those. Otherwise, initialize the
+    // If the user input parameters, use those. Otherwise, initialize the
     // parameter to zero.
     if (params_supplied) {
       myVars.insert(sstr.str(), input_params[i]);
