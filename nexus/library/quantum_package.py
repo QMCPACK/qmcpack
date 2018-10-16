@@ -116,6 +116,7 @@ class QuantumPackage(Simulation):
                             f = open(sync_record,'w')
                             f.write(command+'\n')
                             f.close()
+                            execute('qp_edit -c {0}'.format(d_ezfio))
                         #end if
                     #end if
                 #end if
