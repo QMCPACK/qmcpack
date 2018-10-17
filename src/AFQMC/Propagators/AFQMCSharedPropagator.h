@@ -104,6 +104,8 @@ class AFQMCSharedPropagator: public AFQMCInfo
 
     bool hybrid_propagation() { return hybrid; }
 
+    bool free_propagation() { return free_projection; }
+
   protected: 
 
     TaskGroup_& TG;

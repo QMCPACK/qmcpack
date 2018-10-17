@@ -241,13 +241,13 @@ bool DriverFactory::executeAFQMCDriver(std::string title, int m_series, xmlNodeP
     read.close();
 
   // is this run using importance sampling?
-  bool impsamp = true;
+  bool free_proj = prop0.free_propagation();
   // if hybrid calculation, set to true
   bool addEnergyEstim = hybrid; 
 
   // estimator setup
   // FIX issue with Hamiltonian object expected by estimator handler
-  EstimatorHandler estim0(TGHandler,AFinfo,title,cur,WfnFac,wfn0,nullptr,walker_type,addEnergyEstim, impsamp);
+  EstimatorHandler estim0(TGHandler,AFinfo,title,cur,WfnFac,wfn0,nullptr,walker_type,addEnergyEstim,!free_proj);
 
   app_log()<<"\n****************************************************\n"
            <<"****************************************************\n"
