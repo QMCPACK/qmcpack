@@ -21,6 +21,7 @@
 #include "QMCDrivers/QMCCostFunctionBase.h"
 #include "QMCDrivers/CloneManager.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
+#include "CUDA/CUDATypeAliases.h"
 
 namespace qmcplusplus
 {
@@ -49,6 +50,7 @@ public:
   Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right);
 
 protected:
+  using CTA = CUDAGlobalTypeAliases;
   Matrix<Return_t> Records;
   typedef TrialWaveFunction::RealMatrix_t  RealMatrix_t;
   typedef TrialWaveFunction::ValueMatrix_t ValueMatrix_t;

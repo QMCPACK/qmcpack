@@ -24,6 +24,7 @@
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowCuda.h"
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowCudaPBC.h"
 #include "Configuration.h"
+#include "CUDA/CUDATypeAliases.h"
 
 namespace qmcplusplus
 {
@@ -34,13 +35,12 @@ class OneBodyJastrowOrbitalBspline :
 {
 private:
   bool UsePBC;
+  using CTA = CUDAGlobalTypeAliases;
   // The following is so we can refer to type aliases(defs) below the
   // templated base class in the object hierarchy
   // Mostly QMCTraits here
   using JBase = J1OrbitalSoA<FT>;
-  using CudaRealType = typename JBase::CudaRealType;
   // Duplication that should be removed
-  using CudaReal = CudaRealType;
   using RealType = typename JBase::RealType;
   using ValueType = typename JBase::ValueType;
   using GradType = typename JBase::GradType;
@@ -49,34 +49,34 @@ private:
   using ValueMatrix_t = typename JBase::ValueMatrix_t;
   using RealMatrix_t = typename JBase::RealMatrix_t;
 
-  std::vector<CudaSpline<CudaReal>*> GPUSplines, UniqueSplines;
+  std::vector<CudaSpline<CTA::RealType>*> GPUSplines, UniqueSplines;
   int MaxCoefs;
   ParticleSet &ElecRef;
-  gpu::device_vector<CudaReal> L, Linv;
+  gpu::device_vector<CTA::RealType> L, Linv;
 
   // Holds center positions
-  gpu::device_vector<CudaReal> C;
+  gpu::device_vector<CTA::RealType> C;
 
-  gpu::device_vector<CudaReal*> UpdateListGPU;
-  gpu::device_vector<CudaReal> SumGPU, GradLaplGPU, OneGradGPU;
+  gpu::device_vector<CTA::RealType*> UpdateListGPU;
+  gpu::device_vector<CTA::RealType> SumGPU, GradLaplGPU, OneGradGPU;
 
-  gpu::host_vector<CudaReal*> UpdateListHost;
-  gpu::host_vector<CudaReal> SumHost, GradLaplHost, OneGradHost;
+  gpu::host_vector<CTA::RealType*> UpdateListHost;
+  gpu::host_vector<CTA::RealType> SumHost, GradLaplHost, OneGradHost;
   int NumCenterGroups, NumElecGroups;
   std::vector<int> CenterFirst, CenterLast;
-  gpu::host_vector<CudaReal> SplineDerivsHost;
-  gpu::device_vector<CudaReal> SplineDerivsGPU;
-  gpu::host_vector<CudaReal*> DerivListHost;
-  gpu::device_vector<CudaReal*> DerivListGPU;
+  gpu::host_vector<CTA::RealType> SplineDerivsHost;
+  gpu::device_vector<CTA::RealType> SplineDerivsGPU;
+  gpu::host_vector<CTA::RealType*> DerivListHost;
+  gpu::device_vector<CTA::RealType*> DerivListGPU;
 
-  gpu::host_vector<CudaReal*> NL_SplineCoefsListHost;
-  gpu::device_vector<CudaReal*> NL_SplineCoefsListGPU;
-  gpu::host_vector<NLjobGPU<CudaReal> > NL_JobListHost;
-  gpu::device_vector<NLjobGPU<CudaReal> > NL_JobListGPU;
+  gpu::host_vector<CTA::RealType*> NL_SplineCoefsListHost;
+  gpu::device_vector<CTA::RealType*> NL_SplineCoefsListGPU;
+  gpu::host_vector<NLjobGPU<CTA::RealType> > NL_JobListHost;
+  gpu::device_vector<NLjobGPU<CTA::RealType> > NL_JobListGPU;
   gpu::host_vector<int> NL_NumCoefsHost, NL_NumQuadPointsHost;
   gpu::device_vector<int> NL_NumCoefsGPU,  NL_NumQuadPointsGPU;
-  gpu::host_vector<CudaReal> NL_rMaxHost, NL_QuadPointsHost, NL_RatiosHost;
-  gpu::device_vector<CudaReal> NL_rMaxGPU,  NL_QuadPointsGPU,  NL_RatiosGPU;
+  gpu::host_vector<CTA::RealType> NL_rMaxHost, NL_QuadPointsHost, NL_RatiosHost;
+  gpu::device_vector<CTA::RealType> NL_rMaxGPU,  NL_QuadPointsGPU,  NL_RatiosGPU;
 
   int N;
 public:
@@ -86,7 +86,7 @@ public:
   GPU_XRAY_TRACE void checkInVariables(opt_variables_type& active);
   GPU_XRAY_TRACE void addFunc(int ig, FT* j, int jg=-1);
   GPU_XRAY_TRACE void recompute(MCWalkerConfiguration &W, bool firstTime);
-  GPU_XRAY_TRACE void reserve (PointerPool<gpu::device_vector<CudaRealType> > &pool);
+  GPU_XRAY_TRACE void reserve (PointerPool<gpu::device_vector<CTA::RealType> > &pool);
   GPU_XRAY_TRACE void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi);
   GPU_XRAY_TRACE void update (std::vector<Walker_t*> &walkers, int iat);
   void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList)
@@ -151,20 +151,20 @@ public:
     GPUSplines.resize(NumCenterGroups,0);
     if (UsePBC)
     {
-      gpu::host_vector<CudaReal> LHost(OHMMS_DIM*OHMMS_DIM),
+      gpu::host_vector<CTA::RealType> LHost(OHMMS_DIM*OHMMS_DIM),
           LinvHost(OHMMS_DIM*OHMMS_DIM);
       for (int i=0; i<OHMMS_DIM; i++)
         for (int j=0; j<OHMMS_DIM; j++)
         {
-          LHost[OHMMS_DIM*i+j]    = (CudaReal)elecs.Lattice.a(i)[j];
-          LinvHost[OHMMS_DIM*i+j] = (CudaReal)elecs.Lattice.b(j)[i];
+          LHost[OHMMS_DIM*i+j]    = (CTA::RealType)elecs.Lattice.a(i)[j];
+          LinvHost[OHMMS_DIM*i+j] = (CTA::RealType)elecs.Lattice.b(j)[i];
         }
       L = LHost;
       Linv = LinvHost;
     }
     N = elecs.getTotalNum();
     // Copy center positions to GPU, sorting by GroupID
-    gpu::host_vector<CudaReal> C_host(OHMMS_DIM*centers.getTotalNum());
+    gpu::host_vector<CTA::RealType> C_host(OHMMS_DIM*centers.getTotalNum());
     int index=0;
     for (int cgroup=0; cgroup<NumCenterGroups; cgroup++)
     {
@@ -180,7 +180,7 @@ public:
       }
       CenterLast.push_back(index-1);
     }
-    // gpu::host_vector<CudaReal> C_host(OHMMS_DIM*centers.getTotalNum());
+    // gpu::host_vector<CTA::RealType> C_host(OHMMS_DIM*centers.getTotalNum());
     // for (int i=0; i<centers.getTotalNum(); i++)
     // 	for (int dim=0; dim<OHMMS_DIM; dim++)
     // 	  C_host[OHMMS_DIM*i+dim] = centers.R[i][dim];

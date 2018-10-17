@@ -19,6 +19,7 @@
 #ifndef QMCPLUSPLUS_VMC_CUDA_H
 #define QMCPLUSPLUS_VMC_CUDA_H
 #include "QMCDrivers/QMCDriver.h"
+#include "CUDA/CUDATypeAliases.h"
 namespace qmcplusplus
 {
 
@@ -49,6 +50,7 @@ public:
   };
 
 private:
+  using CTA = CUDAGlobalTypeAliases;
   ///previous steps
   int prevSteps;
   ///previous stepsbetweensamples

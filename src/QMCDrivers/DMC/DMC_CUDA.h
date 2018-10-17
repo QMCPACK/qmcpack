@@ -20,6 +20,7 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCHamiltonians/NonLocalTOperator.h"
 #include "Utilities/NewTimer.h"
+#include "CUDA/CUDATypeAliases.h"
 
 namespace qmcplusplus
 {
@@ -40,6 +41,7 @@ public:
   GPU_XRAY_TRACE void resetUpdateEngine();
 
 private:
+  using CTA = CUDAGlobalTypeAliases;
   std::string ScaleWeight;
   /// tau/mass
   RealType m_tauovermass;

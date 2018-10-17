@@ -24,6 +24,9 @@
 #include "OhmmsData/RecordProperty.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Particle/MCWalkerConfiguration.h"
+#ifdef QMC_CUDA
+#include "CUDA/CUDATypeAliases.h"
+#endif
 #if defined(ENABLE_SMARTPOINTER)
 #include <boost/shared_ptr.hpp>
 #endif
@@ -400,13 +403,15 @@ struct WaveFunctionComponent: public QMCTraits
   // Functions for vectorized evaluation and updates //
   /////////////////////////////////////////////////////
 #ifdef QMC_CUDA
+  using CTA = CUDAGlobalTypeAliases;
+  
   virtual void freeGPUmem()
   { }
 
   virtual void recompute(MCWalkerConfiguration &W, bool firstTime)
   { }
 
-  virtual void reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool)
+  virtual void reserve (PointerPool<gpu::device_vector<CTA::ValueType> > &pool)
   { }
 
   /** Evaluate the log of the WF for all walkers

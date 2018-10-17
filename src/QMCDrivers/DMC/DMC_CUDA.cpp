@@ -388,7 +388,7 @@ void DMCcuda::resetRun()
   PointerPool<Walker_t::cuda_Buffer_t > pool;
   Psi.reserve (pool);
   app_log() << "Each walker requires "
-            << pool.getTotalSize() * sizeof(CudaValueType)
+            << pool.getTotalSize() * sizeof(CTA::ValueType)
             << " bytes in GPU memory.\n";
   app_log() << "Preparing to allocate " << W.WalkerList.size()
             << " walkers.\n";

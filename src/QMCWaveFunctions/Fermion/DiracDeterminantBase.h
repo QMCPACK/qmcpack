@@ -305,7 +305,7 @@ public:
   }
 
   virtual void
-  reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool)
+  reserve (PointerPool<gpu::device_vector<CTA::ValueType> > &pool)
   {
     std::cerr << "Need specialization of DiracDetermiantBase::reserve.\n";
     abort();

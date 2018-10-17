@@ -9,19 +9,27 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
 
+#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
-#include "CUDA/CudaTypeAliases.h"
+#include "CUDA/CUDATypeAliases.h"
+
+
+namespace qmcplusplus
+{
 
 template<typename P>
 class TestDeviceCUDA
 {
-  using CTA = CudaTypeAliases<P>;
-  CTA::RealType testReal;
-  CTA::ComplexType testComplex;
-}
+  using CTA = CUDATypeAliases<P,3>;
+  typename CTA::RealType testReal;
+  typename CTA::ComplexType testComplex;
+};
 
 TEST_CASE("CUDA_Type_Aliases", "[CUDA]")
 {
   TestDeviceCUDA<float> floatTest;
   TestDeviceCUDA<double> doubleTest;
+  //REQUIRE(floatTest);
+}
+
 }
