@@ -179,6 +179,7 @@ ENDIF()
       CUDA/gpu_vector.cpp
       CUDA/gpu_misc.cpp
       Particle/accept_kernel.cu)
+    SUBDIRS(CUDA/tests)
   ENDIF(QMC_CUDA)
 
   IF(QMC_CUDA)

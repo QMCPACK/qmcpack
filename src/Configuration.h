@@ -84,14 +84,8 @@ struct QMCTraits
   typedef OHMMS_PRECISION_FULL           EstimatorRealType;
 #if defined(QMC_COMPLEX)
   typedef std::complex<OHMMS_PRECISION>  ValueType;
-#ifdef QMC_CUDA
-  typedef std::complex<CUDA_PRECISION>   CudaValueType;
-#endif
 #else
   typedef OHMMS_PRECISION                ValueType;
-#ifdef QMC_CUDA
-  typedef CUDA_PRECISION                 CudaValueType;
-#endif
 #endif
   typedef std::complex<RealType>         ComplexType;
   typedef TinyVector<RealType,DIM>       PosType;
@@ -99,12 +93,6 @@ struct QMCTraits
   typedef Tensor<RealType,DIM>           TensorType;
   ///define PropertyList_t
   typedef RecordNamedProperty<EstimatorRealType>    PropertySetType;
-#ifdef QMC_CUDA
-  typedef CUDA_PRECISION                 CudaRealType;
-  typedef TinyVector<CudaValueType,DIM>  CudaGradType;
-  typedef TinyVector<CudaRealType,DIM>   CudaPosType;
-  typedef std::complex<CUDA_PRECISION>   CudaComplexType;
-#endif
 };
 
 /** Particle traits to use UniformGridLayout for the ParticleLayout.
