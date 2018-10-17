@@ -291,7 +291,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
 template<> void
 EinsplineSetExtended<double>::evaluate
 (std::vector<Walker_t*> &walkers, int iat,
- gpu::device_vector<CudaComplexType*> &phi)
+ gpu::device_vector<CTA::ComplexType*> &phi)
 {
   app_error() << "Code should not arrive at this point: "
               << "EinsplineSetExtended<double>::evaluate at line " 
@@ -302,7 +302,7 @@ EinsplineSetExtended<double>::evaluate
 template<> void
 EinsplineSetExtended<std::complex<double> >::evaluate
 (std::vector<Walker_t*> &walkers, int iat,
- gpu::device_vector<CudaComplexType*> &phi)
+ gpu::device_vector<CTA::ComplexType*> &phi)
 {
   app_error() << "EinsplineSetExtended<std::complex<double> >::evaluate at line " << __LINE__ 
               << " in file " << __FILE__
@@ -448,7 +448,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
 template<> void
 EinsplineSetExtended<double>::evaluate
 (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
- gpu::device_vector<CudaComplexType*> &phi)
+ gpu::device_vector<CTA::ComplexType*> &phi)
 {
   app_error() << "Code should not arrive at this point: "
               << "EinsplineSetExtended<double>::evaluate at line " 
@@ -459,7 +459,7 @@ EinsplineSetExtended<double>::evaluate
 template<> void
 EinsplineSetExtended<std::complex<double> >::evaluate
 (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
- gpu::device_vector<CudaComplexType*> &phi)
+ gpu::device_vector<CTA::ComplexType*> &phi)
 {
   app_error() << "EinsplineSetExtended<std::complex<double>>::evaluate at line " << __LINE__ 
               << " in file " << __FILE__
@@ -592,8 +592,8 @@ EinsplineSetExtended<std::complex<double> >::evaluate
 template<> void
 EinsplineSetExtended<double>::evaluate
 (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
- gpu::device_vector<CudaComplexType*> &phi,
- gpu::device_vector<CudaComplexType*> &grad_lapl,
+ gpu::device_vector<CTA::ComplexType*> &phi,
+ gpu::device_vector<CTA::ComplexType*> &grad_lapl,
  int row_stride)
 {
   app_error() << "Code should not arrive at this point: "
@@ -605,8 +605,8 @@ EinsplineSetExtended<double>::evaluate
 template<> void
 EinsplineSetExtended<std::complex<double> >::evaluate
 (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
- gpu::device_vector<CudaComplexType*> &phi,
- gpu::device_vector<CudaComplexType*> &grad_lapl,
+ gpu::device_vector<CTA::ComplexType*> &phi,
+ gpu::device_vector<CTA::ComplexType*> &grad_lapl,
  int row_stride)
 {
   int N = walkers.size();
@@ -958,7 +958,7 @@ EinsplineSetHybrid<double>::evaluate (std::vector<Walker_t*> &walkers, int iat,
                                       gpu::device_vector<CTA::ComplexType*> &phi)
 {
   app_error() << "EinsplineSetHybrid<double>::evaluate (std::vector<Walker_t*> &walkers, int iat,\n"
-              << " gpu::device_vector<CudaComplexType*> &phi) not implemented.\n";
+              << " gpu::device_vector<CTA::ComplexType*> &phi) not implemented.\n";
   abort();
 }
 
@@ -979,7 +979,7 @@ EinsplineSetHybrid<double>::evaluate (std::vector<Walker_t*> &walkers, std::vect
 {
   app_error() << "EinsplineSetHybrid<double>::evaluate \n"
               << "  (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,\n"
-              << "   gpu::device_vector<CudaComplexType*> &phi) not implemented.\n";
+              << "   gpu::device_vector<CTA::ComplexType*> &phi) not implemented.\n";
   abort();
 }
 
@@ -1314,8 +1314,8 @@ EinsplineSetHybrid<double>::evaluate (std::vector<Walker_t*> &walkers, std::vect
 {
   app_error() << "EinsplineSetHybrid<double>::evaluate \n"
               << "(std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos, \n"
-              << " gpu::device_vector<CudaComplexType*> &phi,\n"
-              << " gpu::device_vector<CudaComplexType*> &grad_lapl, int row_stride)\n"
+              << " gpu::device_vector<CTA::ComplexType*> &phi,\n"
+              << " gpu::device_vector<CTA::ComplexType*> &grad_lapl, int row_stride)\n"
               << "     is not yet implemented.\n";
   abort();
 }
