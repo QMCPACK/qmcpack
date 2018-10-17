@@ -19,36 +19,58 @@
 namespace qmcplusplus
 {
 
-/* Facilitates use of CUDA full and mixed precision without rebuilding the code
+/* Facilitates use of CUDA real/complex full/mixed precision 
+ * without rebuilding the code
  *
  * a CUDA device implmentation templated on precision (P) 
- * would write this template<typename P>
+ * and value type (V)
+ * would write this template<typename P, V>
  * class FooDeviveCUDA
  * {
- *   using CTA = CUDATypeAliases<P>;
+ *   using CTA = CUDATypeAliases<P, V>;
  *   ...
  * };    
  * Then instead of CudaGradType CTA::GradType.
+ *
+ * on P and V different in complexity is supported
  */
+template<typename P, typename V, int DIM>
+class CUDATypeAliases;
+
+// Partial Specializations
+
+// Real
 template<typename P, int DIM>
-class CUDATypeAliases final
+class CUDATypeAliases<P, P, DIM>  final
 {
 public:
   using RealType = P;
   using ComplexType = std::complex<P>;
-#ifdef QMC_COMPLEX
-  using GradType = TinyVector<std::complex<P>,DIM>;
-  using ValueType = std::complex<P>;
-#else
   using GradType = TinyVector<P,DIM>;
   using ValueType = P;
-#endif
   using PosType = TinyVector<P,DIM>;
 };
 
-// Right now we build only one CUDA precision at a time.
+// Complex
+template<typename P, int DIM>
+class CUDATypeAliases<P, std::complex<P>, DIM>  final
+{
+public:
+  using RealType = P;
+  using ComplexType = std::complex<P>;
+  using GradType = TinyVector<std::complex<P>,DIM>;
+  using ValueType = std::complex<P>;
+  using PosType = TinyVector<P,DIM>;
+};
+
+// Right now we build only one CUDA precision and complexity at a time.
 // This was set once in QMCTraits then inherited everywhere
-using CUDAGlobalTypeAliases = CUDATypeAliases<CUDA_PRECISION, OHMMS_DIM>;
+// The CUDAGlobalTypeAliases reproduces this old behavior for now
+#ifdef QMC_COMPLEX
+using CUDAGlobalTypeAliases = CUDATypeAliases<CUDA_PRECISION, std::complex<CUDA_PRECISION>, OHMMS_DIM>;
+#else
+using CUDAGlobalTypeAliases = CUDATypeAliases<CUDA_PRECISION, CUDA_PRECISION, OHMMS_DIM>;
+#endif  
  
 }
 #endif
