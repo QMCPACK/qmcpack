@@ -24,7 +24,7 @@
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowCuda.h"
 #include "QMCWaveFunctions/Jastrow/BsplineJastrowCudaPBC.h"
 #include "Configuration.h"
-#include "CUDA/CUDATypeAliases.h"
+#include "type_traits/CUDATypes.h"
 
 namespace qmcplusplus
 {

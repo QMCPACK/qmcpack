@@ -45,7 +45,7 @@
 typedef int TraceManager;
 #endif
 #ifdef QMC_CUDA
-#include "CUDA/CUDATypeAliases.h"
+#include "type_traits/CUDATypes.h"
 #endif
 
 namespace qmcplusplus

@@ -27,7 +27,7 @@ namespace qmcplusplus
  * would write this template<typename P, V>
  * class FooDeviveCUDA
  * {
- *   using CTA = CUDATypeAliases<P, V>;
+ *   using CTA = CUDATypes<P, V>;
  *   ...
  * };    
  * Then instead of CudaGradType CTA::GradType.
@@ -35,13 +35,13 @@ namespace qmcplusplus
  * on P and V different in complexity is supported
  */
 template<typename P, typename V, int DIM>
-class CUDATypeAliases;
+class CUDATypes;
 
 // Partial Specializations
 
 // Real
 template<typename P, int DIM>
-class CUDATypeAliases<P, P, DIM>  final
+class CUDATypes<P, P, DIM>  final
 {
 public:
   using RealType = P;
@@ -53,7 +53,7 @@ public:
 
 // Complex
 template<typename P, int DIM>
-class CUDATypeAliases<P, std::complex<P>, DIM>  final
+class CUDATypes<P, std::complex<P>, DIM>  final
 {
 public:
   using RealType = P;
@@ -67,9 +67,9 @@ public:
 // This was set once in QMCTraits then inherited everywhere
 // The CUDAGlobalTypeAliases reproduces this old behavior for now
 #ifdef QMC_COMPLEX
-using CUDAGlobalTypeAliases = CUDATypeAliases<CUDA_PRECISION, std::complex<CUDA_PRECISION>, OHMMS_DIM>;
+using CUDAGlobalTypeAliases = CUDATypes<CUDA_PRECISION, std::complex<CUDA_PRECISION>, OHMMS_DIM>;
 #else
-using CUDAGlobalTypeAliases = CUDATypeAliases<CUDA_PRECISION, CUDA_PRECISION, OHMMS_DIM>;
+using CUDAGlobalTypeAliases = CUDATypes<CUDA_PRECISION, CUDA_PRECISION, OHMMS_DIM>;
 #endif  
  
 }

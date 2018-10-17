@@ -12,7 +12,7 @@
 #include <complex>
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
-#include "CUDA/CUDATypeAliases.h"
+#include "type_traits/CUDATypes.h"
 
 
 namespace qmcplusplus
@@ -21,12 +21,12 @@ namespace qmcplusplus
 template<typename P, typename V>
 class TestDeviceCUDA
 {
-  using CTA = CUDATypeAliases<P,V,3>;
+  using CTA = CUDATypes<P,V,3>;
   typename CTA::RealType testReal;
   typename CTA::ComplexType testComplex;
 };
 
-TEST_CASE("CUDA_Type_Aliases", "[CUDA]")
+TEST_CASE("CUDA_Type_Aliases", "[type_traits][CUDA]")
 {
   TestDeviceCUDA<float, float> float_test;
   TestDeviceCUDA<double, double> double_test;

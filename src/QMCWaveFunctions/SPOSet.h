@@ -29,7 +29,7 @@
 #include "Message/CommOperators.h"
 #endif
 #ifdef QMC_CUDA
-#include "CUDA/CUDATypeAliases.h"
+#include "type_traits/CUDATypes.h"
 #endif
 
 #if defined(ENABLE_SMARTPOINTER)

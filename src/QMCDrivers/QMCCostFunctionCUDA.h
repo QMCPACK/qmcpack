@@ -21,7 +21,7 @@
 #include "QMCDrivers/QMCCostFunctionBase.h"
 #include "QMCDrivers/CloneManager.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
-#include "CUDA/CUDATypeAliases.h"
+#include "type_traits/CUDATypes.h"
 
 namespace qmcplusplus
 {

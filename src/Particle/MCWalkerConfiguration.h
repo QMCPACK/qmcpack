@@ -31,7 +31,7 @@
 //#include "Particle/Reptile.h"
 
 #ifdef QMC_CUDA
-#include "CUDA/CUDATypeAliases.h"
+#include "type_traits/CUDATypes.h"
 #endif
 
 namespace qmcplusplus

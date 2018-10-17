@@ -28,7 +28,7 @@
 #include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 #include "Utilities/NewTimer.h"
 #ifdef QMC_CUDA
-#include "CUDA/CUDATypeAliases.h"
+#include "type_traits/CUDATypes.h"
 #endif
 
 /**@defgroup MBWfs Many-body wave function group

@@ -25,7 +25,7 @@
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Particle/MCWalkerConfiguration.h"
 #ifdef QMC_CUDA
-#include "CUDA/CUDATypeAliases.h"
+#include "type_traits/CUDATypes.h"
 #endif
 #if defined(ENABLE_SMARTPOINTER)
 #include <boost/shared_ptr.hpp>

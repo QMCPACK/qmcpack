@@ -20,7 +20,7 @@
 #include "QMCDrivers/QMCDriver.h"
 #include "QMCHamiltonians/NonLocalTOperator.h"
 #include "Utilities/NewTimer.h"
-#include "CUDA/CUDATypeAliases.h"
+#include "type_traits/CUDATypes.h"
 
 namespace qmcplusplus
 {

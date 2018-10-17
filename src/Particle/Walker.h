@@ -28,7 +28,7 @@
 #include "Utilities/PooledData.h"
 #include "Utilities/PooledMemory.h"
 #ifdef QMC_CUDA
-#include "CUDA/CUDATypeAliases.h"
+#include "type_traits/CUDATypes.h"
 #include "Utilities/PointerPool.h"
 #include "CUDA/gpu_vector.h"
 #endif

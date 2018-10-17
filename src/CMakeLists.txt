@@ -179,7 +179,6 @@ ENDIF()
       CUDA/gpu_vector.cpp
       CUDA/gpu_misc.cpp
       Particle/accept_kernel.cu)
-    SUBDIRS(CUDA/tests)
   ENDIF(QMC_CUDA)
 
   IF(QMC_CUDA)
@@ -309,7 +308,8 @@ ENDIF()
 
   ADD_LIBRARY(adios_config ${ADIOS})
 
-
+  SUBDIRS(type_traits/tests)
+  
   SUBDIRS(QMCWaveFunctions)
   SUBDIRS(QMCHamiltonians)
   SUBDIRS(QMCDrivers)
