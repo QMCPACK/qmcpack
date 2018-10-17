@@ -61,6 +61,7 @@ inline void SharedWalkerSet::resize(int n, MatA&& A, MatB&& B) {
           w0.SlaterMatrix(Beta) = B; 
         w0.weight() = ComplexType(1.0,0.0);
         w0.overlap() = ComplexType(1.0,0.0);
+        w0.phase() = ComplexType(1.0,0.0);
         if(nback_prop > 0) {
           // Initialise back propagation data.
           w0.resetForBackPropagation();

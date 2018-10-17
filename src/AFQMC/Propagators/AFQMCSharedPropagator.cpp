@@ -58,26 +58,24 @@ void AFQMCSharedPropagator::parse(xmlNodePtr cur)
     app_log()<<"\n\n --------------- Parsing Propagator input ------------------ \n\n";
 
   if(free_projection) {
-    APP_ABORT(" Error: Free propagation not yet fully implemented. \n");
-/*
-    if (tau_release > 0) {
-      app_log()<<" AFQMC with free projection after tau = " << tau_release << "\n"
-             <<" WARNING: Will Set: \n"
-             <<"               -apply_constrain     = no \n"
-             <<"               -importance_sampling = no \n"
-             <<" after this time.\n"
-             <<" Setting: \n"
-             <<"               -hybrid       = yes \n"
-             <<"               -importance_sampling = yes\n"
-             <<"               -apply_constrain     = yes\n"
-             <<"               -free_projection     = no\n"
-             <<" now.\n";
-      importance_sampling = true;
-      apply_constrain = true;
-      hybrid = true;
-      free_projection = false;
-    } else {
-*/
+
+    //if (tau_release > 0) {
+      //app_log()<<" AFQMC with free projection after tau = " << tau_release << "\n"
+             //<<" WARNING: Will Set: \n"
+             //<<"               -apply_constrain     = no \n"
+             //<<"               -importance_sampling = no \n"
+             //<<" after this time.\n"
+             //<<" Setting: \n"
+             //<<"               -hybrid       = yes \n"
+             //<<"               -importance_sampling = yes\n"
+             //<<"               -apply_constrain     = yes\n"
+             //<<"               -free_projection     = no\n"
+             //<<" now.\n";
+      //importance_sampling = true;
+      //apply_constrain = true;
+      //hybrid = true;
+      //free_projection = false;
+    //} else {
       app_log()<<" AFQMC with free projection. \n"
              <<" WARNING: Setting: \n"
              <<"               -apply_constrain     = no \n"
@@ -86,7 +84,7 @@ void AFQMCSharedPropagator::parse(xmlNodePtr cur)
       importance_sampling=false;
       hybrid=true;
       apply_constrain=false;
-//    }
+    //}
 
   } else { 
 
@@ -168,7 +166,8 @@ void AFQMCSharedPropagator::assemble_X(size_t nsteps, size_t nwalk, RealType sqr
       auto hws_ = HWs[ni].origin();
       auto mf_ = MF[ni].origin();
       for(int iw=0; iw<nwalk; iw++) {
-        ComplexType vdiff = im * ( vb_[iw] - vmf_t );
+        // No force bias term when doing free projection.
+        ComplexType vdiff = free_projection?ComplexType(0.0, 0.0):(im*(vb_[iw]-vmf_t));
         X_[iw] += vdiff; 
         hws_[iw] -= vdiff * ( X_[iw] - 0.5*vdiff );
         mf_[iw] += im * X_[iw] * vmf_;

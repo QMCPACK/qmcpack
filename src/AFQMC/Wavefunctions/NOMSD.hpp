@@ -258,7 +258,7 @@ class NOMSD: public AFQMCInfo
     void MixedDensityMatrix(const WlkSet& wset, MatG&& G, TVec&& Ov, bool compact=true, bool transpose=false);
 
     template<class WlkSet, class MatG>
-    void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, bool modify_weights=true);
+    void BackPropagatedDensityMatrix(const WlkSet& wset, MatG& G, CVector& denom, bool path_restoration=false, bool free_projection=false);
 
     /*
      * Calculates the mixed density matrix for all walkers in the walker set
