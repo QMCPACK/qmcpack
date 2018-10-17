@@ -438,7 +438,8 @@ struct WaveFunctionComponent: public QMCTraits
   ratio (MCWalkerConfiguration &W, int iat,
          std::vector<ValueType> &psi_ratios)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::ratio.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::ratio for "
+                << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -449,7 +450,8 @@ struct WaveFunctionComponent: public QMCTraits
   ratio (MCWalkerConfiguration &W, int iat,
          std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::ratio.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::ratio for "
+                << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -459,7 +461,8 @@ struct WaveFunctionComponent: public QMCTraits
          std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
          std::vector<ValueType> &lapl)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::ratio.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::ratio for "
+                << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -469,7 +472,8 @@ struct WaveFunctionComponent: public QMCTraits
              std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
              std::vector<ValueType> &lapl)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::calcRatio.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::calcRatio for "
+                << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -479,7 +483,8 @@ struct WaveFunctionComponent: public QMCTraits
             std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
             std::vector<ValueType> &lapl)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::addRatio.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::addRatio for "
+                << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -489,7 +494,8 @@ struct WaveFunctionComponent: public QMCTraits
          std::vector<PosType> &rNew,  std::vector<ValueType> &psi_ratios,
          std::vector<GradType>  &grad,  std::vector<ValueType> &lapl)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::ratio.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::ratio for "
+                << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -529,7 +535,8 @@ struct WaveFunctionComponent: public QMCTraits
   virtual void
   update (std::vector<Walker_t*> &walkers, int iat)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::update.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::update for "
+                << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -538,7 +545,8 @@ struct WaveFunctionComponent: public QMCTraits
   update (const std::vector<Walker_t*> &walkers,
           const std::vector<int> &iatList)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::update.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::update for "
+                << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -548,7 +556,8 @@ struct WaveFunctionComponent: public QMCTraits
   NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
             std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::NLRatios.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::NLRatios for "
+                << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -560,7 +569,8 @@ struct WaveFunctionComponent: public QMCTraits
             gpu::device_vector<CUDA_PRECISION*> &RatioList,
             int numQuadPoints)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::NLRatios.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::NLRatios for "
+                << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -571,7 +581,8 @@ struct WaveFunctionComponent: public QMCTraits
                        RealMatrix_t &dgrad_logpsi,
                        RealMatrix_t &dhpsi_over_psi)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::evaluateDerivatives.\n";
+    app_error() << "Need specialization of WaveFunctionComponent::evaluateDerivatives for "
+                << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }

@@ -185,6 +185,7 @@ public:
     // 	for (int dim=0; dim<OHMMS_DIM; dim++)
     // 	  C_host[OHMMS_DIM*i+dim] = centers.R[i][dim];
     C = C_host;
+    this->ClassName = "OneBodyJastrowOrbitalBspline";
   }
 };
 }

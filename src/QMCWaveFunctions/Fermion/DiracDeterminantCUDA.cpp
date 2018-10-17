@@ -58,6 +58,7 @@ DiracDeterminantCUDA::DiracDeterminantCUDA(SPOSetPtr const &spos, int first) :
 {
   for(int i = 0; i < 2; ++i)
     NLratios_d[i] = gpu::device_vector<CTA::ValueType>("DiracDeterminantBase::NLratios_d");
+  ClassName="DiracDeterminantCUDA";
 }
 
 /////////////////////////////////////
