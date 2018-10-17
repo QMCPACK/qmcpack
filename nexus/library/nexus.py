@@ -89,7 +89,7 @@ class Settings(NexusCore):
         pseudo_dir      sleep           local_directory remote_directory 
         monitor         skip_submit     load_images     stages          
         verbose         debug           trace           progress_tty
-        command_line
+        graph_sims      command_line
         '''.split())
 
     core_process_vars = set('''
@@ -255,6 +255,10 @@ class Settings(NexusCore):
         parser.add_option('--generate_only',dest='generate_only',
                           action='store_true',default=False,
                           help='Write inputs to all simulations and then exit.  Note that no dependencies are processed, e.g. if one simulation depends on another for an orbital file location or for a relaxed structure, this information will not be present in the generated input file for that simulation since no simulations are actually run with this option.'
+                          )
+        parser.add_option('--graph_sims',dest='graph_sims',
+                          action='store_true',default=False,
+                          help='Display a graph of simulation workflows, then exit.'
                           )
         parser.add_option('--progress_tty',dest='progress_tty',
                           action='store_true',default=False,
@@ -523,6 +527,9 @@ settings = Settings()
 
 
 def run_project(*args,**kwargs):
+    if nexus_core.graph_sims:
+        graph_sims()
+    #end if
     pm = ProjectManager()
     pm.add_simulations(*args,**kwargs)
     pm.run_project()
