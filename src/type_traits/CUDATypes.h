@@ -9,12 +9,12 @@
 // File created by: Peter Doak, doakpw@ornl.gov, Oak Ridge National Lab
 //////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef QMCPLUSPLUS_CUDA_TYPE_ALIASES_H
-#define QMCPLUSPLUS_CUDA_TYPE_ALIASES_H
+#ifndef QMCPLUSPLUS_CUDA_TYPES_H
+#define QMCPLUSPLUS_CUDA_TYPES_H
 
 #include "config.h"
-#include <OhmmsPETE/TinyVector.h>
-#include <OhmmsPETE/Tensor.h>
+#include "OhmmsPETE/TinyVector.h"
+#include "OhmmsPETE/Tensor.h"
 
 namespace qmcplusplus
 {
