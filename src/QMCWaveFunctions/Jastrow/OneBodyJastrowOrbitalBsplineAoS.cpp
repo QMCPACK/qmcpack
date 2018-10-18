@@ -41,19 +41,14 @@ OneBodyJastrowOrbitalBsplineAoS::checkInVariables(opt_variables_type& active)
     GPUSplines[i]->set(*Funique[i]);
 }
 
-// void
-// OneBodyJastrowOrbitalBsplineAoS::addFunc(int ig, FT* j, int jg=-1)
-// {
-//   OneBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> >::addFunc(ig, j);
-//   CudaSpline<CTS::RealType> *newSpline = new CudaSpline<CTS::RealType>(*j);
-//   UniqueSplines.push_back(newSpline);
-//   // if(i==0) { //first time, assign everything
-//   //   for(int ig=0; ig<NumCenterGroups; ++ig)
-//   // 	if(GPUSplines[ig]==0) GPUSplines[ig]=newSpline;
-//   // }
-//   // else
-//   GPUSplines[ig]=newSpline;
-// }
+void
+OneBodyJastrowOrbitalBsplineAoS::addFunc(int ig, FT* j, int jg)
+{
+  OneBodyJastrowOrbital<BsplineFunctor<WaveFunctionComponent::RealType> >::addFunc(ig, j);
+  CudaSpline<CTS::RealType> *newSpline = new CudaSpline<CTS::RealType>(*j);
+  UniqueSplines.push_back(newSpline);
+  GPUSplines[ig]=newSpline;
+}
 
 
 void
