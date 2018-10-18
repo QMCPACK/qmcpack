@@ -33,7 +33,7 @@ class TwoBodyJastrowOrbitalBspline :
 private:
   bool UsePBC;
   // At the moment the CUDA Types are all set globally
-  using CTA = CUDAGlobalTypeAliases;
+  using CTS = CUDAGlobalTypes;
   
   // The following is so we can refer to type aliases(defs) below the
   // templated base class in the object hierarchy
@@ -48,29 +48,29 @@ private:
   using ValueMatrix_t = typename JBase::ValueMatrix_t;
   using RealMatrix_t = typename JBase::RealMatrix_t;
 
-  std::vector<CudaSpline<CTA::RealType>*> GPUSplines, UniqueSplines;
+  std::vector<CudaSpline<CTS::RealType>*> GPUSplines, UniqueSplines;
   int MaxCoefs;
   ParticleSet &PtclRef;
-  gpu::device_vector<CTA::RealType> L, Linv;
+  gpu::device_vector<CTS::RealType> L, Linv;
 
-  gpu::device_vector<CTA::RealType*> UpdateListGPU;
-  gpu::device_vector<CTA::RealType> SumGPU, GradLaplGPU, OneGradGPU;
+  gpu::device_vector<CTS::RealType*> UpdateListGPU;
+  gpu::device_vector<CTS::RealType> SumGPU, GradLaplGPU, OneGradGPU;
 
-  gpu::host_vector<CTA::RealType*> UpdateListHost;
-  gpu::host_vector<CTA::RealType> SumHost, GradLaplHost, OneGradHost;
-  gpu::host_vector<CTA::RealType> SplineDerivsHost;
-  gpu::device_vector<CTA::RealType> SplineDerivsGPU;
-  gpu::host_vector<CTA::RealType*> DerivListHost;
-  gpu::device_vector<CTA::RealType*> DerivListGPU;
+  gpu::host_vector<CTS::RealType*> UpdateListHost;
+  gpu::host_vector<CTS::RealType> SumHost, GradLaplHost, OneGradHost;
+  gpu::host_vector<CTS::RealType> SplineDerivsHost;
+  gpu::device_vector<CTS::RealType> SplineDerivsGPU;
+  gpu::host_vector<CTS::RealType*> DerivListHost;
+  gpu::device_vector<CTS::RealType*> DerivListGPU;
 
-  gpu::host_vector<CTA::RealType*> NL_SplineCoefsListHost;
-  gpu::device_vector<CTA::RealType*> NL_SplineCoefsListGPU;
-  gpu::host_vector<NLjobGPU<CTA::RealType> > NL_JobListHost;
-  gpu::device_vector<NLjobGPU<CTA::RealType> > NL_JobListGPU;
+  gpu::host_vector<CTS::RealType*> NL_SplineCoefsListHost;
+  gpu::device_vector<CTS::RealType*> NL_SplineCoefsListGPU;
+  gpu::host_vector<NLjobGPU<CTS::RealType> > NL_JobListHost;
+  gpu::device_vector<NLjobGPU<CTS::RealType> > NL_JobListGPU;
   gpu::host_vector<int> NL_NumCoefsHost, NL_NumQuadPointsHost;
   gpu::device_vector<int> NL_NumCoefsGPU,  NL_NumQuadPointsGPU;
-  gpu::host_vector<CTA::RealType> NL_rMaxHost, NL_QuadPointsHost, NL_RatiosHost;
-  gpu::device_vector<CTA::RealType> NL_rMaxGPU,  NL_QuadPointsGPU,  NL_RatiosGPU;
+  gpu::host_vector<CTS::RealType> NL_rMaxHost, NL_QuadPointsHost, NL_RatiosHost;
+  gpu::device_vector<CTS::RealType> NL_rMaxGPU,  NL_QuadPointsGPU,  NL_RatiosGPU;
 public:
   typedef ParticleSet::Walker_t     Walker_t;
 
@@ -79,7 +79,7 @@ public:
   //void addFunc(const std::string& aname, int ia, int ib, FT* j);
   GPU_XRAY_TRACE void addFunc(int ia, int ib, FT* j);
   GPU_XRAY_TRACE void recompute(MCWalkerConfiguration &W, bool firstTime);
-  GPU_XRAY_TRACE void reserve (PointerPool<gpu::device_vector<CTA::RealType> > &pool);
+  GPU_XRAY_TRACE void reserve (PointerPool<gpu::device_vector<CTS::RealType> > &pool);
   GPU_XRAY_TRACE void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi);
   GPU_XRAY_TRACE void update (std::vector<Walker_t*> &walkers, int iat);
   void update (const std::vector<Walker_t*> &walkers, const std::vector<int> &iatList)
@@ -150,13 +150,13 @@ public:
     GPUSplines.resize(nsp*nsp,0);
     if (UsePBC)
     {
-      gpu::host_vector<CTA::RealType> LHost(OHMMS_DIM*OHMMS_DIM),
+      gpu::host_vector<CTS::RealType> LHost(OHMMS_DIM*OHMMS_DIM),
           LinvHost(OHMMS_DIM*OHMMS_DIM);
       for (int i=0; i<OHMMS_DIM; i++)
         for (int j=0; j<OHMMS_DIM; j++)
         {
-          LHost[OHMMS_DIM*i+j]    = (CTA::RealType)pset.Lattice.a(i)[j];
-          LinvHost[OHMMS_DIM*i+j] = (CTA::RealType)pset.Lattice.b(j)[i];
+          LHost[OHMMS_DIM*i+j]    = (CTS::RealType)pset.Lattice.a(i)[j];
+          LinvHost[OHMMS_DIM*i+j] = (CTS::RealType)pset.Lattice.b(j)[i];
         }
       // for (int i=0; i<OHMMS_DIM; i++)
       // 	for (int j=0; j<OHMMS_DIM; j++) {
@@ -173,7 +173,7 @@ public:
       //       fprintf (stderr, "Identity should follow:\n");
       //       for (int i=0; i<3; i++){
       // 	for (int j=0; j<3; j++) {
-      // 	  CTA::RealType val = 0.0f;
+      // 	  CTS::RealType val = 0.0f;
       // 	  for (int k=0; k<3; k++)
       // 	    val += LinvHost[3*i+k]*LHost[3*k+j];
       // 	  fprintf (stderr, "  %8.3f", val);

@@ -47,7 +47,7 @@ TrialWaveFunction::recompute
 
 void
 TrialWaveFunction::reserve
-(PointerPool<gpu::device_vector<CTA::ValueType> > &pool,
+(PointerPool<gpu::device_vector<CTS::ValueType> > &pool,
  bool onlyOptimizable)
 {
   for(int i=0; i<Z.size(); i++)

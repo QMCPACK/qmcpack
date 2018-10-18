@@ -95,22 +95,22 @@ public:
   // laplacians for each walker.  These vectors .data() is often
   // passed to GPU kernels.
 #ifdef QMC_CUDA
-  using CTA = CUDAGlobalTypeAliases;
-  gpu::device_vector<CTA::RealType*>  RList_GPU;
-  gpu::device_vector<CTA::ValueType*> GradList_GPU, LapList_GPU;
+  using CTS = CUDAGlobalTypes;
+  gpu::device_vector<CTS::RealType*>  RList_GPU;
+  gpu::device_vector<CTS::ValueType*> GradList_GPU, LapList_GPU;
   // First index is the species.  The second index is the walker
   std::vector<gpu::device_vector<CUDA_PRECISION_FULL*> > RhokLists_GPU;
-  gpu::device_vector<CTA::ValueType*>  DataList_GPU;
-  gpu::device_vector<CTA::PosType>    Rnew_GPU;
-  gpu::host_vector<CTA::PosType>      Rnew_host;
+  gpu::device_vector<CTS::ValueType*>  DataList_GPU;
+  gpu::device_vector<CTS::PosType>    Rnew_GPU;
+  gpu::host_vector<CTS::PosType>      Rnew_host;
   std::vector<PosType>                    Rnew;
-  gpu::device_vector<CTA::RealType*>  NLlist_GPU;
-  gpu::host_vector<CTA::RealType*>    NLlist_host;
-  gpu::host_vector<CTA::RealType*>    hostlist;
-  gpu::host_vector<CTA::ValueType*>   hostlist_valueType;
+  gpu::device_vector<CTS::RealType*>  NLlist_GPU;
+  gpu::host_vector<CTS::RealType*>    NLlist_host;
+  gpu::host_vector<CTS::RealType*>    hostlist;
+  gpu::host_vector<CTS::ValueType*>   hostlist_valueType;
   gpu::host_vector<CUDA_PRECISION_FULL*> hostlist_AA; 
-  gpu::host_vector<CTA::PosType>      R_host;
-  gpu::host_vector<CTA::GradType>     Grad_host;
+  gpu::host_vector<CTS::PosType>      R_host;
+  gpu::host_vector<CTS::GradType>     Grad_host;
   gpu::device_vector<int> iatList_GPU;
   gpu::host_vector<int> iatList_host;
   gpu::device_vector<int> AcceptList_GPU;

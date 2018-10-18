@@ -122,13 +122,13 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamilt
   m_param.add(MaxCPUSecs,"maxcpusecs","real");
   // by default call recompute at the end of each block in the mixed precision case.
 #ifdef QMC_CUDA
-  using CTA = CUDAGlobalTypeAliases;
-  if (typeid(CTA::RealType) == typeid(float))
+  using CTS = CUDAGlobalTypes;
+  if (typeid(CTS::RealType) == typeid(float))
   {
     // gpu mixed precision
     nBlocksBetweenRecompute = 1;
   }
-  else if (typeid(CTA::RealType) == typeid(double))
+  else if (typeid(CTS::RealType) == typeid(double))
   {
     // gpu double precision
     nBlocksBetweenRecompute = 0;

@@ -19,26 +19,45 @@
 namespace qmcplusplus
 {
 
-/* Facilitates use of CUDA real/complex full/mixed precision 
- * without rebuilding the code
+/** \brief Provides consistent set of CUDA types 
+ * 
+ *  Multiple classes need to share the same set of types
+ *  for CUDA implementation depending on full/mixed precision
+ *  and complex or real values. 
+ *  Currently we build only one combination of these based on
+ *  QMC_COMPLEX and CUDA_PRECISION.
+ *  These types are available via: \c CUDAGlobalTypes \c
  *
- * a CUDA device implmentation templated on precision (P) 
- * and value type (V)
- * would write this template<typename P, V>
- * class FooDeviveCUDA
- * {
- *   using CTA = CUDATypes<P, V>;
- *   ...
- * };    
- * Then instead of CudaGradType CTA::GradType.
+ *  usage:
+\code{.cpp}
+class FooCUDA
+{
+using CTS = CUDAGlobalTypes
+};
+\endcode
+ *  then CudaGradType is replaced with CTS::GradType.
+ *  Do not make local type alias or typedefs use CTS::*Type
  *
- * on P and V different in complexity is supported
+ *  A CUDA device implmentation class template 
+ *  on precision (P) and value type (V)
+ *  would write this. 
+\code{.cpp}
+template<typename P, V, DIM>
+class FooDeviveCUDA
+{
+  using CTS = CUDATypes<P, V, DIM>;
+  ...
+};
+\endcode
+ *
+ *  P and V are assumed to match in precision
+ *  this is enforced by partial template 
+ *  specialization
  */
 template<typename P, typename V, int DIM>
 class CUDATypes;
 
 // Partial Specializations
-
 // Real
 template<typename P, int DIM>
 class CUDATypes<P, P, DIM>  final
@@ -65,11 +84,11 @@ public:
 
 // Right now we build only one CUDA precision and complexity at a time.
 // This was set once in QMCTraits then inherited everywhere
-// The CUDAGlobalTypeAliases reproduces this old behavior for now
+// The CUDAGlobalTypes reproduces this behavior
 #ifdef QMC_COMPLEX
-using CUDAGlobalTypeAliases = CUDATypes<CUDA_PRECISION, std::complex<CUDA_PRECISION>, OHMMS_DIM>;
+using CUDAGlobalTypes = CUDATypes<CUDA_PRECISION, std::complex<CUDA_PRECISION>, OHMMS_DIM>;
 #else
-using CUDAGlobalTypeAliases = CUDATypes<CUDA_PRECISION, CUDA_PRECISION, OHMMS_DIM>;
+using CUDAGlobalTypes = CUDATypes<CUDA_PRECISION, CUDA_PRECISION, OHMMS_DIM>;
 #endif  
  
 }

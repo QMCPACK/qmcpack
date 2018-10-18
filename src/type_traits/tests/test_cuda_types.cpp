@@ -21,9 +21,9 @@ namespace qmcplusplus
 template<typename P, typename V>
 class TestDeviceCUDA
 {
-  using CTA = CUDATypes<P,V,3>;
-  typename CTA::RealType testReal;
-  typename CTA::ComplexType testComplex;
+  using CTS = CUDATypes<P,V,3>;
+  typename CTS::RealType testReal;
+  typename CTS::ComplexType testComplex;
 };
 
 TEST_CASE("CUDA_Type_Aliases", "[type_traits][CUDA]")
@@ -33,6 +33,9 @@ TEST_CASE("CUDA_Type_Aliases", "[type_traits][CUDA]")
   TestDeviceCUDA<float, std::complex<float>> complex_float_test;
   TestDeviceCUDA<double, std::complex<double>> complex_double_test;
 
+  // This should cause compiler error
+  // Realtype and ValueType precision do not match
+  //TestDeviceCUDA<float, double> pv_mismatch_test;
   //REQUIRE(floatTest);
 }
 

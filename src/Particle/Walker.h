@@ -78,9 +78,9 @@ struct Walker
   /** typedef for value data type. */
   typedef typename t_traits::ValueType ValueType;
 #ifdef QMC_CUDA
-  using CTA = CUDAGlobalTypeAliases;
+  using CTS = CUDAGlobalTypes;
   /** array of laplacians */
-  typedef typename CTA::ValueType CudaLapType;
+  typedef typename CTS::ValueType CudaLapType;
 #endif
   /** array of particles */
   typedef typename p_traits::ParticlePos_t ParticlePos_t;
@@ -141,12 +141,12 @@ struct Walker
   /// Data for GPU-vectorized versions
 #ifdef QMC_CUDA
   static int cuda_DataSize;
-  typedef gpu::device_vector<CTA::ValueType> cuda_Buffer_t;
+  typedef gpu::device_vector<CTS::ValueType> cuda_Buffer_t;
   cuda_Buffer_t cuda_DataSet;
   // Note that R_GPU has size N+1.  The last element contains the
   // proposed position for single-particle moves.
-  gpu::device_vector<CTA::PosType> R_GPU;
-  gpu::device_vector<CTA::GradType> Grad_GPU;
+  gpu::device_vector<CTS::PosType> R_GPU;
+  gpu::device_vector<CTS::GradType> Grad_GPU;
   gpu::device_vector<CudaLapType> Lap_GPU;
   gpu::device_vector<CUDA_PRECISION_FULL> Rhok_GPU;
   int k_species_stride;
@@ -475,10 +475,10 @@ struct Walker
     DataSet.get(PHindex.data(), PHindex.data()+PHindex.size());
 #ifdef QMC_CUDA
     // Unpack GPU data
-    std::vector<CTA::ValueType> host_data;
+    std::vector<CTS::ValueType> host_data;
     std::vector<CUDA_PRECISION_FULL> host_rhok;
-    std::vector<CTA::PosType> R_host;
-    std::vector<CTA::GradType> Grad_host;
+    std::vector<CTS::PosType> R_host;
+    std::vector<CTS::GradType> Grad_host;
     std::vector<CudaLapType>  host_lapl;
 
     TinyVector<size_t, 3> dim;
@@ -524,10 +524,10 @@ struct Walker
     DataSet.put(PHindex.data(), PHindex.data()+PHindex.size());
 #ifdef QMC_CUDA
     // Pack GPU data
-    std::vector<CTA::ValueType> host_data;
+    std::vector<CTS::ValueType> host_data;
     std::vector<CUDA_PRECISION_FULL> host_rhok;
-    std::vector<CTA::PosType> R_host;
-    std::vector<CTA::GradType> Grad_host;
+    std::vector<CTS::PosType> R_host;
+    std::vector<CTS::GradType> Grad_host;
     std::vector<CudaLapType>  host_lapl;
 
     cuda_DataSet.copyFromGPU(host_data);

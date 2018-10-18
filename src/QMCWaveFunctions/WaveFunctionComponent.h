@@ -403,7 +403,7 @@ struct WaveFunctionComponent: public QMCTraits
   // Functions for vectorized evaluation and updates //
   /////////////////////////////////////////////////////
 #ifdef QMC_CUDA
-  using CTA = CUDAGlobalTypeAliases;
+  using CTS = CUDAGlobalTypes;
   
   virtual void freeGPUmem()
   { }
@@ -411,7 +411,7 @@ struct WaveFunctionComponent: public QMCTraits
   virtual void recompute(MCWalkerConfiguration &W, bool firstTime)
   { }
 
-  virtual void reserve (PointerPool<gpu::device_vector<CTA::ValueType> > &pool)
+  virtual void reserve (PointerPool<gpu::device_vector<CTS::ValueType> > &pool)
   { }
 
   /** Evaluate the log of the WF for all walkers

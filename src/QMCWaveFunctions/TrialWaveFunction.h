@@ -114,7 +114,7 @@ public:
   typedef WaveFunctionComponent::HessType           HessType;
   typedef WaveFunctionComponent::HessVector_t       HessVector_t;
 #ifdef QMC_CUDA
-  using CTA = CUDAGlobalTypeAliases;
+  using CTS = CUDAGlobalTypes;
   typedef WaveFunctionComponent::RealMatrix_t    RealMatrix_t;
   typedef WaveFunctionComponent::ValueMatrix_t   ValueMatrix_t;
   typedef WaveFunctionComponent::GradMatrix_t    GradMatrix_t;
@@ -352,16 +352,16 @@ private:
   ///////////////////////////////////////////
 #ifdef QMC_CUDA
 private:
-  gpu::device_host_vector<CTA::ValueType>   GPUratios;
-  gpu::device_host_vector<CTA::GradType>    GPUgrads;
-  gpu::device_host_vector<CTA::ValueType>   GPUlapls;
+  gpu::device_host_vector<CTS::ValueType>   GPUratios;
+  gpu::device_host_vector<CTS::GradType>    GPUgrads;
+  gpu::device_host_vector<CTS::ValueType>   GPUlapls;
 
 public:
   void freeGPUmem GPU_XRAY_TRACE ();
 
   void recompute GPU_XRAY_TRACE (MCWalkerConfiguration &W, bool firstTime=true);
 
-  void reserve GPU_XRAY_TRACE (PointerPool<gpu::device_vector<CTA::ValueType> > &pool,
+  void reserve GPU_XRAY_TRACE (PointerPool<gpu::device_vector<CTS::ValueType> > &pool,
                 bool onlyOptimizable=false);
   void getGradient GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat,
                     std::vector<GradType> &grad);

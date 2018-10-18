@@ -297,17 +297,17 @@ protected:
   gpu::device_vector<TinyVector<CUDA_PRECISION,OHMMS_DIM > > CudakPoints,
       CudakPoints_reduced;
   void applyPhaseFactors (gpu::device_vector<CudaStorageType*> &storageVector,
-                          gpu::device_vector<CTA::RealType*> &phi);
+                          gpu::device_vector<CTS::RealType*> &phi);
   // Data for vectorized evaluations
-  std::vector<CTA::PosType> hostPos;
-  gpu::host_vector<CTA::PosType> NLhostPos;
-  gpu::device_vector<CTA::PosType> cudapos, NLcudapos;
-  gpu::host_vector<CTA::RealType> hostSign, NLhostSign;
-  gpu::device_vector<CTA::RealType> cudaSign, NLcudaSign;
+  std::vector<CTS::PosType> hostPos;
+  gpu::host_vector<CTS::PosType> NLhostPos;
+  gpu::device_vector<CTS::PosType> cudapos, NLcudapos;
+  gpu::host_vector<CTS::RealType> hostSign, NLhostSign;
+  gpu::device_vector<CTS::RealType> cudaSign, NLcudaSign;
   // This stores the inverse of the lattice vector matrix in
   // GPU memory.
-  gpu::device_vector<CTA::RealType> Linv_cuda, L_cuda;
-  gpu::host_vector<CTA::RealType> L_host, Linv_host;
+  gpu::device_vector<CTS::RealType> Linv_cuda, L_cuda;
+  gpu::host_vector<CTS::RealType> L_host, Linv_host;
 #endif
 
 public:
@@ -395,23 +395,23 @@ public:
 
   // Vectorized evaluation functions
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, int iat,
-                 gpu::device_vector<CTA::RealType*> &phi);
+                 gpu::device_vector<CTS::RealType*> &phi);
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, int iat,
-				 gpu::device_vector<CTA::ComplexType*> &phi);
+				 gpu::device_vector<CTS::ComplexType*> &phi);
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-                 gpu::device_vector<CTA::RealType*> &phi);
+                 gpu::device_vector<CTS::RealType*> &phi);
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-				 gpu::device_vector<CTA::ComplexType*> &phi);
+				 gpu::device_vector<CTS::ComplexType*> &phi);
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-                 gpu::device_vector<CTA::RealType*> &phi,
-                 gpu::device_vector<CTA::RealType*> &grad_lapl,
+                 gpu::device_vector<CTS::RealType*> &phi,
+                 gpu::device_vector<CTS::RealType*> &grad_lapl,
                  int row_stride);
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-				 gpu::device_vector<CTA::ComplexType*> &phi,
-				 gpu::device_vector<CTA::ComplexType*> &grad_lapl,
+				 gpu::device_vector<CTS::ComplexType*> &phi,
+				 gpu::device_vector<CTS::ComplexType*> &grad_lapl,
                  int row_stride);
-  GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTA::RealType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTA::ComplexType*> &phi);
+  GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::RealType*> &phi);
+  GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::ComplexType*> &phi);
 #endif
 
   void resetParameters(const opt_variables_type& active);
@@ -497,35 +497,35 @@ protected:
   //////////////////////
   // Type definitions //
   //////////////////////
-  using CTA = CUDAGlobalTypeAliases;
+  using CTS = CUDAGlobalTypes;
   typedef typename EinsplineSetExtended<StorageType>::Walker_t     Walker_t;
   typedef typename EinsplineSetExtended<StorageType>::PosType      PosType;
   typedef typename EinsplineSetExtended<StorageType>::CudaStorageType CudaStorageType;
 
-  std::vector<gpu::device_vector<CTA::RealType> > AtomicSplineCoefs_GPU,
+  std::vector<gpu::device_vector<CTS::RealType> > AtomicSplineCoefs_GPU,
          AtomicPolyCoefs_GPU;
-  gpu::device_vector<AtomicOrbitalCuda<CTA::RealType> > AtomicOrbitals_GPU;
+  gpu::device_vector<AtomicOrbitalCuda<CTS::RealType> > AtomicOrbitals_GPU;
 
-  // gpu::host_vector<AtomicPolyJob<CTA::RealType> >   AtomicPolyJobs_CPU;
-  // gpu::device_vector<AtomicPolyJob<CTA::RealType> >   AtomicPolyJobs_GPU;
-  // gpu::host_vector<AtomicSplineJob<CTA::RealType> > AtomicSplineJobs_CPU;
-  // gpu::device_vector<AtomicSplineJob<CTA::RealType> > AtomicSplineJobs_GPU;
+  // gpu::host_vector<AtomicPolyJob<CTS::RealType> >   AtomicPolyJobs_CPU;
+  // gpu::device_vector<AtomicPolyJob<CTS::RealType> >   AtomicPolyJobs_GPU;
+  // gpu::host_vector<AtomicSplineJob<CTS::RealType> > AtomicSplineJobs_CPU;
+  // gpu::device_vector<AtomicSplineJob<CTS::RealType> > AtomicSplineJobs_GPU;
 
   gpu::device_vector<HybridJobType> HybridJobs_GPU;
-  gpu::device_vector<CTA::RealType>  IonPos_GPU;
-  gpu::device_vector<CTA::RealType>  CutoffRadii_GPU, PolyRadii_GPU;
-  gpu::device_vector<HybridData<CTA::RealType> > HybridData_GPU;
+  gpu::device_vector<CTS::RealType>  IonPos_GPU;
+  gpu::device_vector<CTS::RealType>  CutoffRadii_GPU, PolyRadii_GPU;
+  gpu::device_vector<HybridData<CTS::RealType> > HybridData_GPU;
 
-  gpu::device_vector<CTA::RealType> Ylm_GPU;
-  gpu::device_vector<CTA::RealType*> Ylm_ptr_GPU, dYlm_dtheta_ptr_GPU, dYlm_dphi_ptr_GPU;
-  gpu::host_vector<CTA::RealType*> Ylm_ptr_CPU, dYlm_dtheta_ptr_CPU, dYlm_dphi_ptr_CPU;
-  gpu::device_vector<CTA::RealType> rhats_GPU;
-  gpu::host_vector<CTA::RealType> rhats_CPU;
+  gpu::device_vector<CTS::RealType> Ylm_GPU;
+  gpu::device_vector<CTS::RealType*> Ylm_ptr_GPU, dYlm_dtheta_ptr_GPU, dYlm_dphi_ptr_GPU;
+  gpu::host_vector<CTS::RealType*> Ylm_ptr_CPU, dYlm_dtheta_ptr_CPU, dYlm_dphi_ptr_CPU;
+  gpu::device_vector<CTS::RealType> rhats_GPU;
+  gpu::host_vector<CTS::RealType> rhats_CPU;
   gpu::device_vector<int> JobType;
 
   // Vectors for 3D Bspline evaluation
-  gpu::device_vector<CTA::RealType> BsplinePos_GPU;
-  gpu::host_vector<CTA::RealType> BsplinePos_CPU;
+  gpu::device_vector<CTS::RealType> BsplinePos_GPU;
+  gpu::host_vector<CTS::RealType> BsplinePos_CPU;
   gpu::device_vector<CudaStorageType*> BsplineVals_GPU, BsplineGradLapl_GPU;
   gpu::host_vector<CudaStorageType*> BsplineVals_CPU, BsplineGradLapl_CPU;
 
@@ -556,23 +556,23 @@ public:
 
   // Vectorized evaluation functions
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, int iat,
-                 gpu::device_vector<CTA::RealType*> &phi);
+                 gpu::device_vector<CTS::RealType*> &phi);
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, int iat,
-				 gpu::device_vector<CTA::ComplexType*> &phi);
+				 gpu::device_vector<CTS::ComplexType*> &phi);
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-                 gpu::device_vector<CTA::RealType*> &phi);
+                 gpu::device_vector<CTS::RealType*> &phi);
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-				 gpu::device_vector<CTA::ComplexType*> &phi);
+				 gpu::device_vector<CTS::ComplexType*> &phi);
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-                 gpu::device_vector<CTA::RealType*> &phi,
-                 gpu::device_vector<CTA::RealType*> &grad_lapl,
+                 gpu::device_vector<CTS::RealType*> &phi,
+                 gpu::device_vector<CTS::RealType*> &grad_lapl,
                  int row_stride);
   GPU_XRAY_TRACE void  evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &newpos,
-				 gpu::device_vector<CTA::ComplexType*> &phi,
-				 gpu::device_vector<CTA::ComplexType*> &grad_lapl,
+				 gpu::device_vector<CTS::ComplexType*> &phi,
+				 gpu::device_vector<CTS::ComplexType*> &grad_lapl,
                  int row_stride);
-  GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTA::RealType*> &phi);
-  GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTA::ComplexType*> &phi);
+  GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::RealType*> &phi);
+  GPU_XRAY_TRACE void  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::ComplexType*> &phi);
 
   std::string Type();
 

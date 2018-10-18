@@ -41,7 +41,7 @@ public:
   GPU_XRAY_TRACE void resetUpdateEngine();
 
 private:
-  using CTA = CUDAGlobalTypeAliases;
+  using CTS = CUDAGlobalTypes;
   std::string ScaleWeight;
   /// tau/mass
   RealType m_tauovermass;

@@ -50,7 +50,7 @@ public:
   };
 
 private:
-  using CTA = CUDAGlobalTypeAliases;
+  using CTS = CUDAGlobalTypes;
   ///previous steps
   int prevSteps;
   ///previous stepsbetweensamples

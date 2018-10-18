@@ -214,7 +214,7 @@ QMCCostFunctionCUDA::getConfigurations(const std::string& aroot)
     Psi.reserve (pool, false);
   else
     Psi.reserve (pool, true);
-  app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CTA::RealType)
+  app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CTS::RealType)
             << " bytes in GPU memory.\n";
   // for (int iw=0; iw<W.WalkerList.size(); iw++) {
   //   Walker_t &walker = *(W.WalkerList[iw]);
