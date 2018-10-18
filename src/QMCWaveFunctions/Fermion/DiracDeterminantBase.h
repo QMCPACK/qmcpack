@@ -301,7 +301,6 @@ public:
   using WaveFunctionComponent::ratio;
   using WaveFunctionComponent::addRatio;
   using WaveFunctionComponent::calcRatio;
-  using WaveFunctionComponent::ratio;
   using WaveFunctionComponent::addGradient;
   using WaveFunctionComponent::calcGradient;
   using WaveFunctionComponent::update;
