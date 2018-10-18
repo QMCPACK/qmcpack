@@ -15,6 +15,7 @@
 #include "config.h"
 #include "OhmmsPETE/TinyVector.h"
 #include "OhmmsPETE/Tensor.h"
+#include "type_traits/QMCTypes.h"
 
 namespace qmcplusplus
 {
@@ -82,14 +83,10 @@ public:
   using PosType = TinyVector<P,DIM>;
 };
 
-// Right now we build only one CUDA precision and complexity at a time.
+// Right now we build only one CUDA precision at a time.
 // This was set once in QMCTraits then inherited everywhere
 // The CUDAGlobalTypes reproduces this behavior
-#ifdef QMC_COMPLEX
-using CUDAGlobalTypes = CUDATypes<CUDA_PRECISION, std::complex<CUDA_PRECISION>, OHMMS_DIM>;
-#else
-using CUDAGlobalTypes = CUDATypes<CUDA_PRECISION, CUDA_PRECISION, OHMMS_DIM>;
-#endif  
+using CUDAGlobalTypes = QMCTypes<CUDA_PRECISION, OHMMS_DIM>;
  
 }
 #endif
