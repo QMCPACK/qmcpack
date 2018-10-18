@@ -25,9 +25,9 @@ EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory "${UTEST_DIR}")
 #this is the only unit test program for type_traits
 #I'm not going to figure out how to deal with that fact.
 #If you write another test program in here you can make
-#test_cuda_type_aliases.cpp an optional src for the add_executable command
+#test_qmctypes.cpp an optional src for the add_executable command
 IF(QMC_CUDA)
-  ADD_EXECUTABLE(${UTEST_EXE} test_cuda_types.cpp)
+  ADD_EXECUTABLE(${UTEST_EXE} test_qmctypes.cpp)
   ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
   SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS "unit" WORKING_DIRECTORY ${UTEST_DIR})
 ENDIF(QMC_CUDA)
