@@ -72,6 +72,7 @@ public:
 
   GPU_XRAY_TRACE void resetParameters(const opt_variables_type& active);
   GPU_XRAY_TRACE void checkInVariables(opt_variables_type& active);
+  GPU_XRAY_TRACE void addFunc(int ig, FT* j, int jg=-1);
   GPU_XRAY_TRACE void recompute(MCWalkerConfiguration &W, bool firstTime);
   GPU_XRAY_TRACE void reserve (PointerPool<gpu::device_vector<CTS::RealType> > &pool);
   GPU_XRAY_TRACE void addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi);
@@ -96,7 +97,6 @@ public:
     /* This function doesn't really need to return the ratio */
   }
 
-  GPU_XRAY_TRACE void addFunc(int ig, FT* j, int jg=-1);
   GPU_XRAY_TRACE void calcGradient(MCWalkerConfiguration &W, int iat,
                     std::vector<GradType> &grad);
   GPU_XRAY_TRACE void addGradient(MCWalkerConfiguration &W, int iat,
