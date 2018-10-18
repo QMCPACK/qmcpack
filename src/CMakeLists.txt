@@ -308,8 +308,6 @@ ENDIF()
 
   ADD_LIBRARY(adios_config ${ADIOS})
 
-  SUBDIRS(type_traits/tests)
-  
   SUBDIRS(QMCWaveFunctions)
   SUBDIRS(QMCHamiltonians)
   SUBDIRS(QMCDrivers)
@@ -349,6 +347,8 @@ ENDIF()
     SUBDIRS(ParticleIO/tests)
     SUBDIRS(QMCWaveFunctions/tests)
     SUBDIRS(QMCHamiltonians/tests)
+    SUBDIRS(type_traits/tests)
+  
     IF (HAS_TARGET_COMPILE_DEFINITIONS)
       SUBDIRS(ParticleBase/tests)
       SUBDIRS(Estimators/tests)
