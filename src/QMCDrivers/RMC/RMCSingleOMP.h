@@ -29,7 +29,7 @@ namespace qmcplusplus
   {
   public:
     /// Constructor.
-    typedef PtclAttribTraits::ParticlePos_t ParticlePos_t;
+    typedef ParticleSet::ParticlePos_t ParticlePos_t;
     typedef Reptile::ReptileConfig_t ReptileConfig_t;
 
     RMCSingleOMP(MCWalkerConfiguration & w, TrialWaveFunction & psi,
