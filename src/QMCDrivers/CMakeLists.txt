@@ -95,10 +95,8 @@ ENDIF(QMC_BUILD_LEVEL GREATER 1)
 # create libqmc 
 ####################################
 ADD_LIBRARY(qmcdriver ${QMCDRIVERS})
-IF (HAS_TARGET_COMPILE_DEFINITIONS)
-  ADD_LIBRARY(qmcdriver_unit ${QMCDRIVERS})
-  USE_FAKE_RNG(qmcdriver_unit)
-ENDIF()
+ADD_LIBRARY(qmcdriver_unit ${QMCDRIVERS})
+USE_FAKE_RNG(qmcdriver_unit)
 #IF(QMC_BUILD_STATIC)
 #  ADD_LIBRARY(qmcdriver STATIC ${QMCDRIVERS})
 #ELSE(QMC_BUILD_STATIC)
