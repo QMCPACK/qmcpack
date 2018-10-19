@@ -446,6 +446,7 @@ struct HybridAdoptorBase
 
   void gather_atomic_tables(Communicate* comm, std::vector<int> &offset)
   {
+    if(comm->size()==1) return;
     for(int ic=0; ic<AtomicCenters.size(); ic++)
       AtomicCenters[ic].gather_tables(comm, offset);
   }
