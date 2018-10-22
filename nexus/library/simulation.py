@@ -1011,7 +1011,7 @@ class Simulation(NexusCore):
             if found_file:
                 self.copy_file(local,remote)
             else:
-                self.error('file {0} not found\n  locations checked: {1}'.format(file,file_locations))
+                self.error('file {0} not found\nlocations checked: {1}'.format(file,file_locations))
             #end if
         #end for
         self.sent_files = True

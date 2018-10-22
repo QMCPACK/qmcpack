@@ -125,6 +125,19 @@ input_specification = obj({
     'determinants/target_energy' : float,
     'determinants/threshold_generators' : float,
     'determinants/threshold_selectors' : float,
+    'determinants/use_l3_weight' : bool,
+    'determinants/used_weight' : int,
+    'dft_keywords/basis_set_hf_potential' : bool,
+    'dft_keywords/correlation_functional' : str,
+    'dft_keywords/exchange_functional' : str,
+    'dft_keywords/hf_exchange' : float,
+    'dft_keywords/md_correlation_functional' : str,
+    'dft_keywords/mu_erf' : float,
+    'dft_keywords/ontop_approx' : bool,
+    'dft_keywords/projected_wft_for_dft' : bool,
+    'dft_keywords/read_density_from_input' : bool,
+    'dft_keywords/thr_ontop_approx' : float,
+    'dft_keywords/threshold_grid_dft' : float,
     'electrons/elec_alpha_num' : int,
     'electrons/elec_beta_num' : int,
     'ezfio/creation' : str,
@@ -134,6 +147,7 @@ input_specification = obj({
     'full_ci_zmq/energy_pt2' : float,
     'full_ci_zmq/iterative_save' : int,
     'full_ci_zmq/n_iter' : int,
+    'full_ci_zmq/store_one_body_dm' : bool,
     'hartree_fock/energy' : float,
     'hartree_fock/level_shift' : float,
     'hartree_fock/max_dim_diis' : int,
@@ -151,16 +165,29 @@ input_specification = obj({
     'integrals_bielec/no_vvvv_integrals' : bool,
     'integrals_bielec/threshold_ao' : float,
     'integrals_bielec/threshold_mo' : float,
+    'integrals_erf/disk_access_ao_integrals_erf' : str,
+    'integrals_erf/disk_access_ao_integrals_sr' : str,
+    'integrals_erf/disk_access_mo_integrals_erf' : str,
+    'integrals_erf/disk_access_mo_integrals_sr' : str,
+    'integrals_ijkl_in_r3/disk_access_ao_ijkl_r3' : str,
+    'integrals_ijkl_in_r3/disk_access_mo_ijkl_r3' : str,
     'integrals_monoelec/disk_access_ao_one_integrals' : str,
     'integrals_monoelec/disk_access_mo_one_integrals' : str,
+    'integrals_monoelec/disk_access_only_mo_one_integrals' : str,
     'mo_basis/ao_md5' : str,
     'mo_basis/mo_label' : str,
     'mo_basis/mo_tot_num' : int,
     'mrpt_utils/do_third_order_1h1p' : bool,
+    'mrpt_utils/orbital_ordered' : bool,
+    'mu_of_r_ints/disk_access_ao_integrals_mu_of_r' : str,
+    'mu_of_r_ints/disk_access_ao_integrals_sr_mu_of_r' : str,
+    'mu_of_r_ints/disk_access_mo_integrals_mu_of_r' : str,
+    'mu_of_r_ints/disk_access_mo_integrals_sr_mu_of_r' : str,
     'nuclei/disk_access_nuclear_repulsion' : str,
     'nuclei/nucl_num' : int,
     'perturbation/correlation_energy_ratio_max' : float,
     'perturbation/do_pt2' : bool,
+    'perturbation/h0_type' : str,
     'perturbation/pt2_absolute_error' : float,
     'perturbation/pt2_max' : float,
     'perturbation/pt2_relative_error' : float,
@@ -175,6 +202,14 @@ input_specification = obj({
     'pseudo/pseudo_kmax' : int,
     'pseudo/pseudo_lmax' : int,
     'qmc/ci_threshold' : float,
+    'scf_utils/level_shift' : float,
+    'scf_utils/max_dim_diis' : int,
+    'scf_utils/mo_guess_type' : str,
+    'scf_utils/n_it_scf_max' : int,
+    'scf_utils/no_oa_or_av_opt' : bool,
+    'scf_utils/scf_algorithm' : str,
+    'scf_utils/thresh_scf' : float,
+    'scf_utils/threshold_diis' : float,
     'work/empty' : bool,
     'work/qp_run_address' : str,
     })
@@ -233,7 +268,7 @@ def extract_input_specification(*ezfio_paths):
         log('  extracting from: {0}'.format(epath))
         for path,dirs,files in os.walk(epath):
             for file in files:
-                if 'save' not in path:
+                if 'save' not in path and 'work' not in path:
                     if not file.startswith('.') and not file.endswith('.gz'):
                         filepath = os.path.join(path,file)
                         vtype = read_qp_value_type(filepath)
@@ -629,24 +664,30 @@ run_inputs = set('''
 gen_inputs = set('''
     system
     defaults
-    save_integrals
+    save_ao_one_integrals
+    save_mo_one_integrals
+    save_ao_integrals
+    save_mo_integrals
     validate
     '''.split())
 added_inputs = run_inputs | gen_inputs
 added_types = obj(
     # run inputs
-    prefix         = str,
-    run_type       = str,
-    frozen_core    = bool,
-    cis_loop       = (bool,int),
-    sleep          = (int,float),
-    slave          = str,
-    postprocess    = (tuple,list),
+    prefix                = str,
+    run_type              = str,
+    frozen_core           = bool,
+    cis_loop              = (bool,int),
+    sleep                 = (int,float),
+    slave                 = str,
+    postprocess           = (tuple,list),
     # gen inputs
-    system         = PhysicalSystem,
-    defaults       = str,
-    save_integrals = bool,
-    validate       = bool,
+    system                = PhysicalSystem,
+    defaults              = str,
+    save_ao_one_integrals = bool,
+    save_mo_one_integrals = bool,
+    save_ao_integrals     = bool,
+    save_mo_integrals     = bool,
+    validate              = bool,
     )
 added_required = set('''
     system
@@ -656,25 +697,31 @@ added_required = set('''
 qp_defaults_version = 'v1'
 shared_defaults = obj(
     # run inputs
-    postprocess = [],
+    postprocess           = [],
     # gen inputs
-    validate    = True,
+    save_ao_one_integrals = False,
+    save_mo_one_integrals = False,
+    save_ao_integrals     = False,
+    save_mo_integrals     = False,
+    validate              = True,
     )
 qp_defaults = obj(
     none = obj(
-        # gen inputs
-        save_integrals = False,
         **shared_defaults
         ),
     v1 = obj(
         # run inputs
         sleep          = 30,
-        # gen inputs
-        save_integrals = True,
         # qp inputs
         n_det_max      = 5000,
         **shared_defaults
         ),
+    )
+save_ints_map = obj(
+    save_ao_one_integrals = 'disk_access_ao_one_integrals',
+    save_mo_one_integrals = 'disk_access_mo_one_integrals',
+    save_ao_integrals     = 'disk_access_ao_integrals'    ,
+    save_mo_integrals     = 'disk_access_mo_integrals'    ,
     )
 save_ints_defaults = obj(
     disk_access_ao_one_integrals = 'Write',
@@ -722,9 +769,12 @@ def generate_quantum_package_input(**kwargs):
     # separate generation inputs from input file variables
     gen_kw = kw.extract_optional(gen_inputs)
 
-    if gen_kw.save_integrals and run_kw.run_type in QuantumPackageInput.integral_write_allowed:
-        kw.set_optional(**save_ints_defaults)
-    #end if
+    # save integrals, if requested
+    for gk,qk in save_ints_map.iteritems():
+        if gen_kw[gk] and qk not in kw:
+            kw[qk] = 'Write'
+        #end if
+    #end for
 
     # partition inputs into sections and variables
     sections = obj()
