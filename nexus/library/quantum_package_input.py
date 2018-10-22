@@ -76,7 +76,7 @@ def write_qp_value(value_filepath,value):
     elif isinstance(value,int):
         svalue = str(value)
     elif isinstance(value,float):
-        '{0: 24.15e}'.format(value)
+        svalue = '{0: 24.15e}'.format(value)
     elif isinstance(value,str):
         svalue = value
     else:
@@ -386,6 +386,7 @@ class QuantumPackageInput(SimulationInput):
         test_two_body_dm
         truncate_wf
         truncate_wf_spin
+        write_integrals_restart_dft_no_ecmd
         '''.split())
 
     slave_allowed = set('''
