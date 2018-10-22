@@ -716,7 +716,7 @@ class Structure(Sobj):
         if elem is None:
             elem = []
         #end if
-        if posu!=None:
+        if posu is not None:
             pos = posu
         #end if
         if pos is None:
@@ -747,10 +747,10 @@ class Structure(Sobj):
         else:
             self.kaxes=2*pi*inv(self.axes).T
         #end if
-        if posu!=None:
+        if posu is not None:
             self.pos_to_cartesian()
         #end if
-        if frozen!=None:
+        if frozen is not None:
             self.frozen = array(frozen,dtype=bool)
             if self.frozen.shape!=self.pos.shape:
                 self.error('frozen directions must have the same shape as positions\n  positions shape: {0}\n  frozen directions shape: {1}'.format(self.pos.shape,self.frozen.shape))
@@ -775,10 +775,10 @@ class Structure(Sobj):
         else:
             self.scale = scale
         #end if
-        if permute!=None:
+        if permute is not None:
             self.permute(permute)
         #end if
-        if operations!=None:
+        if operations is not None:
             self.operate(operations)
         #end if
     #end def __init__

@@ -127,7 +127,7 @@ class QuantumPackage(Simulation):
             for d in qp_dirs:
                 qpd += d+'\n'
             #end for
-            self.error('quantum package run depends on multiple others with distince ezfio directories\ncannot determine which run to copy ezfio directory from\nezfio directories from prior runs:\n{0}'.format(qpd))
+            self.error('quantum package run depends on multiple others with distinct ezfio directories\ncannot determine which run to copy ezfio directory from\nezfio directories from prior runs:\n{0}'.format(qpd))
         #end if
     #end def write_prep
 
