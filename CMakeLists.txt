@@ -5,6 +5,15 @@ PROJECT(qmcpack)
 CMAKE_MINIMUM_REQUIRED(VERSION 3.6.0)
 IF(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
+  IF (COMPILING_ON_BGQ)
+    # On BG/Q, the HDF libraries variable includes some supporting shared libraries
+    # such as libm.so.  With the old behavior of CMP0060, these were converted
+    # to -lm for the linker, which then correctly selects the static version.
+    # With the new behavior of CMP0060, the form of the libraries are left alone
+    # on the link line (eg. /usr/lib64/libm.so), and this causes a linker error
+    # because shared libraries are not allowed with static linking.
+    cmake_policy(SET CMP0060 OLD)
+  ENDIF()
   IF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
     cmake_policy(SET CMP0056 NEW)
     # This policy insures that the CMAKE_EXE_LINKER_FLAGS of the calling project
