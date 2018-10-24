@@ -21,6 +21,7 @@ module load fftw
 export FFTW_HOME=\$FFTW3_DIR
 module load hdf5
 module load git
+module load cmake/3.6.1
 
 env
 module list
