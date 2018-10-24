@@ -23,6 +23,7 @@ from execute import execute
 from simulation import Simulation
 from quantum_package_input import QuantumPackageInput,generate_quantum_package_input,read_qp_value
 from quantum_package_analyzer import QuantumPackageAnalyzer
+from gamess import Gamess
 from developer import ci
 
 
@@ -108,7 +109,7 @@ class QuantumPackage(Simulation):
                         #end if
                         command = 'rsync -av {0}/ {1}/'.format(d_ezfio,s_ezfio)
                         out,err,rc = execute(command)
-                        if rc>0:
+                        if rc!=0:
                             self.warn('rsync of ezfio directory failed\nall runs depending on this one will be blocked\nsimulation identifier: {0}\nlocal directory: {1}\nattempted rsync command: {2}'.format(self.identifier,self.locdir,command))
                             self.failed = True
                             self.block_dependents()
@@ -143,7 +144,38 @@ class QuantumPackage(Simulation):
 
 
     def incorporate_result(self,result_name,result,sim):
-        self.not_implemented()
+        not_implemented = False
+        if isinstance(sim,Gamess):
+            if result_name=='orbitals':
+                loc_file = self.input.run_control.prefix
+                loc_out = os.path.join(self.locdir,loc_file)
+                gms_out = result.outfile
+                command = 'cp {0} {1}'.format(gms_out,loc_out)
+                out,err,rc = execute(command)
+                if rc!=0:
+                    self.warn('copying GAMESS output failed\nall runs depending on this one will be blocked\nsimulation identifier: {0}\nlocal directory: {1}\nattempted rsync command: {2}'.format(self.identifier,self.locdir,command))
+                    self.failed = True
+                    self.block_dependents()
+                #end if
+                command = 'qp_convert_output_to_ezfio.py '+loc_file
+                cwd = os.getcwd()
+                os.chdir(self.locdir)
+                out,err,rc = execute(command)
+                os.chdir(cwd)
+                if rc!=0:
+                    self.warn('creation of ezfio file from GAMESS output failed\nall runs depending on this one will be blocked\nsimulation identifier: {0}\nlocal directory: {1}\nattempted rsync command: {2}'.format(self.identifier,self.locdir,command))
+                    self.failed = True
+                    self.block_dependents()
+                #end if
+            else:
+                not_implemented = True
+            #end if
+        else:
+            not_implemented = True
+        #end if
+        if not_implemented:
+            self.error('ability to incorporate result '+result_name+' has not been implemented')
+        #end if
     #end def incorporate_result
 
 
