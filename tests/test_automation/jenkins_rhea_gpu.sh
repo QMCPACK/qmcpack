@@ -7,7 +7,7 @@ cat > $BUILD_TAG.pbs << EOF
 #PBS -A MAT151
 #PBS -N $BUILD_TAG
 #PBS -j oe
-#PBS -l walltime=1:30:00,nodes=1
+#PBS -l walltime=2:30:00,nodes=1
 #PBS -d $BUILD_DIR
 #PBS -l partition=gpu
 
