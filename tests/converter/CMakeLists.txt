@@ -1,4 +1,7 @@
 
+
+INCLUDE("${PROJECT_SOURCE_DIR}/CMake/test_labels.cmake")
+
 # Add tests for conversion of GAMESS to QMCPACK input (via convert4qmc)
 
 FUNCTION(ADD_CONVERTER_TEST test_name)
@@ -9,6 +12,9 @@ FUNCTION(ADD_CONVERTER_TEST test_name)
     ENDIF()
     ADD_TEST(NAME converter_${test_name} COMMAND python converter_test.py "${CMAKE_CURRENT_BINARY_DIR}/${test_name}" --exe "${EXE_NAME}" --h5diff "${HDF5_DIFF_EXECUTABLE}")
     SET_TESTS_PROPERTIES(converter_${test_name} PROPERTIES TIMEOUT 120)
+
+    SET(TEST_LABELS "")
+    ADD_TEST_LABELS( converter_${test_name} TEST_LABELS )
     
 ENDFUNCTION()
 
