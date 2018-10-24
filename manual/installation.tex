@@ -676,7 +676,8 @@ Each node features a second-generation Intel Xeon Phi 7230 processor and 192 GB 
 \verbatimfont{\footnotesize}%
 \begin{verbatim}
 export CRAYPE_LINK_TYPE=dynamic
-module load cmake/3.9.1
+# Do not use cmake 3.9.1, it causes trouble with parallel HDF5.
+module load cmake/3.11.4
 module unload cray-libsci
 module load cray-hdf5-parallel
 export BOOST_ROOT=/soft/libraries/boost/1.64.0/intel
