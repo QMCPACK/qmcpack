@@ -229,7 +229,7 @@ public:
       Dets[id]->recompute(W, firstTime);
   }
 
-  GPU_XRAY_TRACE void  reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool)
+  GPU_XRAY_TRACE void  reserve (PointerPool<gpu::device_vector<CTS::ValueType> > &pool)
   {
     for (int id=0; id<Dets.size(); id++)
       Dets[id]->reserve(pool);

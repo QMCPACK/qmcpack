@@ -57,8 +57,8 @@ namespace qmcplusplus
 
 
 QMCFixedSampleLinearOptimize::QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
-    TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool):
-  QMCLinearOptimize(w,psi,h,hpool,ppool), 
+    TrialWaveFunction& psi, QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool, Communicate* comm):
+  QMCLinearOptimize(w,psi,h,hpool,ppool,comm), 
 #ifdef HAVE_LMY_ENGINE
 vdeps(1,std::vector<double>()),
 #endif
@@ -121,7 +121,7 @@ vdeps(1,std::vector<double>()),
                                           60, // max krylov iter
                                           0, // max spam inner iter
                                           1, // spam appro degree
-                                          0, // eom relateds 
+                                          0, // eom related 
                                           0, // eom related
                                           0, // eom related
                                           0.0, // omega
@@ -332,7 +332,7 @@ bool QMCFixedSampleLinearOptimize::run()
 
       if (goodStep)
       {
-// 	this may have been evaluated allready
+// 	this may have been evaluated already
 // 	newCost=evaluated_cost;
         //get cost at new minimum
         newCost = optTarget->Cost(false);
@@ -471,12 +471,11 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   {
 #if defined (QMC_CUDA)
     if (useGPU == "yes")
-      vmcEngine = new VMCcuda(W,Psi,H,psiPool);
+      vmcEngine = new VMCcuda(W,Psi,H,psiPool,myComm);
     else
 #endif
-      vmcEngine = new VMCSingleOMP(W,Psi,H,psiPool);
+      vmcEngine = new VMCSingleOMP(W,Psi,H,psiPool,myComm);
     vmcEngine->setUpdateMode(vmcMove[0] == 'p');
-    vmcEngine->initCommunicator(myComm);
   }
 
   vmcEngine->setStatus(RootName,h5FileRoot,AppendRun);
@@ -487,10 +486,10 @@ QMCFixedSampleLinearOptimize::put(xmlNodePtr q)
   {
 #if defined (QMC_CUDA)
     if (useGPU == "yes")
-      optTarget = new QMCCostFunctionCUDA(W,Psi,H);
+      optTarget = new QMCCostFunctionCUDA(W,Psi,H,myComm);
     else
 #endif
-      optTarget = new QMCCostFunctionOMP(W,Psi,H);
+      optTarget = new QMCCostFunctionOMP(W,Psi,H,myComm);
     optTarget->setStream(&app_log());
     success=optTarget->put(q);
   }
@@ -601,7 +600,7 @@ bool QMCFixedSampleLinearOptimize::is_best_cost(const int ii, const std::vector<
   // new cost is only best if it is less than or equal to the other new costs
   for (int i = 0; i < cv.size(); i++) {
     // we only worry about being less than the other value if the other value is within the maximum relative change threshold
-    const bool other_is_valid = ( ( ic == 0.0 ? 0.0 : std::abs( ( cv.at(i) - ic ) / ic ) ) < this->max_relative_cost_change );
+    const bool other_is_valid = ( ( ic == 0.0 ? 0.0 : std::abs( ( cv.at(i) - ic ) / ic ) ) < max_relative_cost_change );
     retval = ( retval && ( cv.at(ii) <= cv.at(i) || !other_is_valid ) );
     //app_log() << "cv.at(ii)   = " << std::fixed << std::right << std::setw(20) << std::setprecision(12) << cv.at(ii) << " <= "
     //          << "cv.at(i)    = " << std::fixed << std::right << std::setw(20) << std::setprecision(12) << cv.at(i)  << " ?" << std::endl;
@@ -615,7 +614,7 @@ bool QMCFixedSampleLinearOptimize::is_best_cost(const int ii, const std::vector<
   //app_log() << "retval = " << retval << std::endl;
 
   // new cost is only best if it's relative change from the initial cost is not too large ( or if the initial cost is exactly zero )
-  retval = ( retval && ( ic == 0.0 ? 0.0 : std::abs( ( cv.at(ii) - ic ) / ic ) ) < this->max_relative_cost_change );
+  retval = ( retval && ( ic == 0.0 ? 0.0 : std::abs( ( cv.at(ii) - ic ) / ic ) ) < max_relative_cost_change );
   //app_log() << "std::abs( ( cv.at(ii) - ic ) / ic ) = " << std::fixed << std::right << std::setw(20) << std::setprecision(12)
   //          << std::abs( ( cv.at(ii) - ic ) / ic ) << " <= " << this->max_relative_cost_change << " ? " << std::endl;
   //app_log() << "retval = " << retval << std::endl;
@@ -711,10 +710,10 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
       std::swap(prdMat(i,j), prdMat(j,i));
 
     // compute the lowest eigenvalue of the product matrix and the corresponding eigenvector
-    const RealType lowestEV = this->getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
+    const RealType lowestEV = getLowestEigenvector(prdMat, parameterDirections.at(shift_index));
 
     // compute the scaling constant to apply to the update
-    this->Lambda = this->getNonLinearRescale(parameterDirections.at(shift_index), ovlMat);
+    Lambda = getNonLinearRescale(parameterDirections.at(shift_index), ovlMat);
 
     // scale the update by the scaling constant
     for (int i=0; i<numParams; i++)
@@ -740,10 +739,10 @@ void QMCFixedSampleLinearOptimize::solveShiftsWithoutLMYEngine(const std::vector
 bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
 
   // remember what the cost function grads flag was
-  const bool saved_grads_flag = this->optTarget->getneedGrads();
+  const bool saved_grads_flag = optTarget->getneedGrads();
 
   // remember the initial number of samples
-  const int init_num_samp = this->optTarget->getNumSamples();
+  const int init_num_samp = optTarget->getNumSamples();
 
   // the index of central shift
   const int central_index = num_shifts / 2;
@@ -752,14 +751,14 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   numParams = optTarget->NumParams();
 
   // prepare the shifts that we will try
-  const std::vector<double> shifts_i = this->prepare_shifts(this->bestShift_i);
-  const std::vector<double> shifts_s = this->prepare_shifts(this->bestShift_s);
+  const std::vector<double> shifts_i = prepare_shifts(bestShift_i);
+  const std::vector<double> shifts_s = prepare_shifts(bestShift_s);
   std::vector<double> shift_scales(shifts_i.size(), 1.0);
   for (int i = 0; i < shift_scales.size(); i++) 
     shift_scales.at(i) = shifts_i.at(i) / shift_i_input;
 
   // ensure the cost function is set to compute derivative vectors
-  this->optTarget->setneedGrads(true);
+  optTarget->setneedGrads(true);
 
   // prepare previous updates 
   int count = 0;
@@ -809,7 +808,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   EngineObj->reset();
 
   // generate samples and compute weights, local energies, and derivative vectors
-  this->engine_start(EngineObj);
+  engine_start(EngineObj);
 
   // get dimension of the linear method matrices
   N = numParams + 1;
@@ -832,7 +831,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
 
   if ( block_lm ) {
 
-    this->optTarget->setneedGrads(true);
+    optTarget->setneedGrads(true);
 
     int numOptParams = optTarget->NumParams();
 
@@ -840,10 +839,10 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
     EngineObj->reset();
 
     // finish last sample
-    this->finish();
+    finish();
 
     // take sample
-    this->engine_start(EngineObj);
+    engine_start(EngineObj);
   }
 
   // say what we are doing
@@ -860,7 +859,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   EngineObj->wfn_update_compute();
   //std::cout << "optimization here 0.5" << std::endl;
   #else
-  this->solveShiftsWithoutLMYEngine(shifts_i, shifts_s, parameterDirections);
+  solveShiftsWithoutLMYEngine(shifts_i, shifts_s, parameterDirections);
   #endif
 
   // size update direction vector correctly
@@ -879,14 +878,14 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   }
 
   // now that we are done with them, prevent further computation of derivative vectors
-  this->optTarget->setneedGrads(false);
+  optTarget->setneedGrads(false);
 
   // prepare vectors to hold the initial and current parameters
   std::vector<RealType> currParams(numParams, 0.0);
 
   // initialize the initial and current parameter vectors
   for (int i=0; i<numParams; i++)
-    currParams.at(i) = this->optTarget->Params(i);
+    currParams.at(i) = optTarget->Params(i);
 
   // create a vector telling which updates are within our constraints
   std::vector<bool> good_update(parameterDirections.size(), true);
@@ -901,7 +900,7 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
 
   // prepare to use the middle shift's update as the guiding function for a new sample
   for (int i=0; i<numParams; i++)
-    this->optTarget->Params(i) = currParams.at(i) + parameterDirections.at(central_index).at(i+1);
+    optTarget->Params(i) = currParams.at(i) + parameterDirections.at(central_index).at(i+1);
 
   // say what we are doing
   app_log() << std::endl
@@ -911,19 +910,23 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
             << std::endl;
 
   // generate the new sample on which we will compare the different shifts
-  this->finish();
 
-  // reset the number of samples
-  //this->optTarget->setNumSamples(nsamp_comp);
-  //nTargetSamples = nsamp_comp;
-  //app_log() << "# of sample before correlated sampling is " << nTargetSamples << std::endl;
-  //app_log() << "number of samples is" << this->optTarget->getNumSamples() << std::endl;
-  app_log() << std::endl
-            << "*************************************************************" << std::endl
+  finish();
+      // reset the number of samples
+      //this->optTarget->setNumSamples(nsamp_comp);
+      //nTargetSamples = nsamp_comp;
+      //app_log() << "# of sample before correlated sampling is " << nTargetSamples << std::endl;
+      //app_log() << "number of samples is" << this->optTarget->getNumSamples() << std::endl;
+      app_log() << std::endl
+		<< "*************************************************************" << std::endl
             << "Generating a new sample based on the updated guiding function" << std::endl
             << "*************************************************************" << std::endl
             << std::endl;
-  this->start();
+
+  std::string old_name = vmcEngine->getCommunicator()->getName();
+  vmcEngine->getCommunicator()->setName(old_name+".middleShift");
+  start();
+  vmcEngine->getCommunicator()->setName(old_name);
   //app_log() << "number of samples is" << this->optTarget->getNumSamples() << std::endl;
 
   // say what we are doing
@@ -939,9 +942,9 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
 
   // compute cost function for the initial parameters (by subtracting the middle shift's update back off)
   for (int i=0; i<numParams; i++)
-    this->optTarget->Params(i) = currParams.at(i) - parameterDirections.at(central_index).at(i+1);
-  this->optTarget->IsValid = true;
-  const RealType initCost = this->optTarget->LMYEngineCost(false, EngineObj);
+    optTarget->Params(i) = currParams.at(i) - parameterDirections.at(central_index).at(i+1);
+  optTarget->IsValid = true;
+  const RealType initCost = optTarget->LMYEngineCost(false, EngineObj);
 
   // compute the update directions for the smaller and larger shifts relative to that of the middle shift
   for (int i=0; i<numParams; i++) {
@@ -958,9 +961,9 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   // compute the cost function value for each shift and make sure the change is within our constraints
   for (int k = 0; k < parameterDirections.size(); k++) {
     for (int i=0; i<numParams; i++)
-      this->optTarget->Params(i) = currParams.at(i) + ( k == num_shifts ? 0.0 : parameterDirections.at(k).at(i+1) );
-    this->optTarget->IsValid = true;
-    costValues.at(k) = this->optTarget->LMYEngineCost(false, EngineObj);
+      optTarget->Params(i) = currParams.at(i) + ( k == num_shifts ? 0.0 : parameterDirections.at(k).at(i+1) );
+    optTarget->IsValid = true;
+    costValues.at(k) = optTarget->LMYEngineCost(false, EngineObj);
     good_update.at(k) = ( good_update.at(k) && std::abs( (initCost - costValues.at(k)) / initCost ) < max_relative_cost_change );
     //app_log() << std::abs( (starting_cost - costValues.at(k)) / starting_cost ) << "  ";
     if (!good_update.at(k))
@@ -976,39 +979,39 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   const std::vector<RealType> * bestDirection = 0;
   int best_shift = -1;
   for (int k = 0; k < costValues.size() && std::abs( (initCost - initCost) / initCost ) < max_relative_cost_change; k++)
-    if ( this->is_best_cost(k, costValues, initCost) && good_update.at(k) ) {
+    if ( is_best_cost(k, costValues, initCost) && good_update.at(k) ) {
       best_shift = k;
       bestDirection = &parameterDirections.at(k);
     }
 
   // print the results for each shift
   app_log() << std::endl;
-  this->print_cost_summary_header();
-  this->print_cost_summary(0.0, 0.0, 0.0, initCost, -1, best_shift, true);
+  print_cost_summary_header();
+  print_cost_summary(0.0, 0.0, 0.0, initCost, -1, best_shift, true);
   for (int k = 0; k < good_update.size(); k++)
-    this->print_cost_summary(shifts_i.at(k), shifts_s.at(k), max_change.at(k), costValues.at(k), k, best_shift, good_update.at(k));
+    print_cost_summary(shifts_i.at(k), shifts_s.at(k), max_change.at(k), costValues.at(k), k, best_shift, good_update.at(k));
 
   // if any of the shifts produced a good update, apply the best such update and remember those shifts for next time
   if ( bestDirection ) {
 
-    this->bestShift_i = shifts_i.at(best_shift);
-    this->bestShift_s = shifts_s.at(best_shift);
+    bestShift_i = shifts_i.at(best_shift);
+    bestShift_s = shifts_s.at(best_shift);
     for (int i=0; i<numParams; i++)
       optTarget->Params(i) = currParams.at(i) + ( best_shift == central_index ? 0.0 : bestDirection->at(i+1) );
     app_log() << std::endl
               << "*****************************************************************************" << std::endl
               << "Applying the update for shift_i = "
-              << std::scientific << std::right << std::setw(12) << std::setprecision(4) << this->bestShift_i
+              << std::scientific << std::right << std::setw(12) << std::setprecision(4) << bestShift_i
               << "     and shift_s = "
-              << std::scientific << std::right << std::setw(12) << std::setprecision(4) << this->bestShift_s
+              << std::scientific << std::right << std::setw(12) << std::setprecision(4) << bestShift_s
               << std::endl
               << "*****************************************************************************" << std::endl
               << std::endl;
 
   // otherwise revert to the old parameters and set the next shift to be larger
   } else {
-    this->bestShift_i *= 10.0;
-    this->bestShift_s *= 10.0;
+    bestShift_i *= 10.0;
+    bestShift_s *= 10.0;
     for (int i=0; i<numParams; i++)
       optTarget->Params(i) = currParams.at(i) - parameterDirections.at(central_index).at(i+1);
     app_log() << std::endl
@@ -1033,13 +1036,13 @@ bool QMCFixedSampleLinearOptimize::adaptive_three_shift_run() {
   }
 
   // return the cost function grads flag to what it was
-  this->optTarget->setneedGrads(saved_grads_flag);
+  optTarget->setneedGrads(saved_grads_flag);
 
   // perform some finishing touches for this linear method iteration
-  this->finish();
+  finish();
 
   // set the number samples to be initial one
-  this->optTarget->setNumSamples(init_num_samp);
+  optTarget->setNumSamples(init_num_samp);
   nTargetSamples = init_num_samp;
 
   //app_log() << "block first second third end " << block_first << block_second << block_third << endl; 

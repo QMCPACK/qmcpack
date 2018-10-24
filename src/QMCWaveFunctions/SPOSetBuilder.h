@@ -58,7 +58,7 @@ struct SPOSetBuilder: public QMCTraits, public MPIObjectBase
   /// list of all sposets created by this builder
   std::vector<SPOSet*> sposets;
 
-  SPOSetBuilder();
+  SPOSetBuilder(Communicate *comm);
   virtual ~SPOSetBuilder() {}
   /// load from XML if there is a basisset
   virtual void loadBasisSetFromXML(xmlNodePtr cur) {}

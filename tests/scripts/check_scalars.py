@@ -382,7 +382,7 @@ if __name__=='__main__':
     # Compute means of desired quantities from scalar.dat files.
     values = process_scalar_files(options,quants_check)
 
-    # Check computed means agains reference solutions.
+    # Check computed means against reference solutions.
     success,msg = check_values(options,quants_check,values)
 
     # Pass success/failure exit codes and strings to the OS.

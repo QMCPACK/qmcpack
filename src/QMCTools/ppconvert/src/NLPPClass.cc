@@ -476,7 +476,7 @@ PseudoClass::WriteXML(string fname)
 //   xmlTextWriterPtr writer = xmlNewTextWriterFilename (fname.c_str(), 0);
 
 //   rc = xmlTextWriterStartDocument (writer, NULL, "UTF-8", NULL);
-//   // Start psuedo
+//   // Start pseudo
 //   rc = xmlTextWriterStartElement(writer, (xmlChar*)"pseudo");
 //   rc = xmlTextWriterWriteAttribute
 //     (writer, (xmlChar*) "version", (xmlChar*)"0.5");

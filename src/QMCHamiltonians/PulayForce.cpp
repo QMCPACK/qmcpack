@@ -120,7 +120,7 @@ PulayForce::evaluate(ParticleSet& P)
   }
   return Value=0.0;
   //    std::cerr << "In PulayForce::evaluate(ParticleSet& P).\n";
-  // Compute normalization of the warp tranform for each electron
+  // Compute normalization of the warp transform for each electron
   for (int elec=0; elec<Nel; elec++)
     WarpNorm[elec] = 0.0;
   for (int ion=0; ion<Nnuc; ion++)

@@ -38,7 +38,7 @@ namespace qmcplusplus
      * \param els reference to the electrons
      * \param ions reference to the ions
      */
-    LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, xmlNodePtr cur);
+    LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate *comm, xmlNodePtr cur);
     ~LCAOrbitalBuilder();
     void loadBasisSetFromXML(xmlNodePtr cur);
     SPOSet* createSPOSetFromXML(xmlNodePtr cur);

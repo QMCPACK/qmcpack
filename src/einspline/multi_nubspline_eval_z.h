@@ -23,7 +23,7 @@
 
 
 /************************************************************/
-/* 1D double-precision, complex evaulation functions        */
+/* 1D double-precision, complex evaluation functions        */
 /************************************************************/
 void
 eval_multi_NUBspline_1d_z (multi_NUBspline_1d_z *spline,
@@ -53,7 +53,7 @@ eval_multi_NUBspline_1d_z_vgh (multi_NUBspline_1d_z *spline,
 
 
 /************************************************************/
-/* 2D double-precision, complex evaulation functions        */
+/* 2D double-precision, complex evaluation functions        */
 /************************************************************/
 void
 eval_multi_NUBspline_2d_z (multi_NUBspline_2d_z *spline,
@@ -81,7 +81,7 @@ eval_multi_NUBspline_2d_z_vgh (multi_NUBspline_2d_z *spline,
                                complex_double* restrict hess);
 
 /************************************************************/
-/* 3D double-precision, complex evaulation functions        */
+/* 3D double-precision, complex evaluation functions        */
 /************************************************************/
 void
 eval_multi_NUBspline_3d_z (multi_NUBspline_3d_z *spline,

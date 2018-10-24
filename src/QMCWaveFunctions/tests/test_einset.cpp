@@ -129,7 +129,7 @@ const char *particles =
 
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
   SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo != NULL);
 
@@ -238,7 +238,7 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
   ptcl_map["e"] = elec;
 
   xmlNodePtr cur = NULL;
-  EinsplineSetBuilder esb(*elec, ptcl_map, cur);
+  EinsplineSetBuilder esb(*elec, ptcl_map, c, cur);
 
   esb.SuperLattice = 0.0;
   esb.SuperLattice(0,0) = 1.0;

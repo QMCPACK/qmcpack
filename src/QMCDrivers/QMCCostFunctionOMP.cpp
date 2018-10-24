@@ -29,8 +29,8 @@ namespace qmcplusplus
 {
 
 QMCCostFunctionOMP::QMCCostFunctionOMP(MCWalkerConfiguration& w,
-                                       TrialWaveFunction& psi, QMCHamiltonian& h):
-  QMCCostFunctionBase(w,psi,h)
+                                       TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm):
+  QMCCostFunctionBase(w,psi,h,comm)
 {
   CSWeight=1.0;
   app_log()<<" Using QMCCostFunctionOMP::QMCCostFunctionOMP"<< std::endl;
