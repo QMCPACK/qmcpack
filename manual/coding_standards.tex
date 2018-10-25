@@ -60,45 +60,46 @@ In each section the included files should be sorted in alphabetical order.
 \section{Naming}
 The balance between description and ease of implementation should be balanced such that the code remains self documenting within a single terminal window.  If an extremely short variable name is used its scope must be shorter than $\sim 40$ lines. An exception is made for template parameters which must be in all CAPS.
 
-\subsection{Type and Class Names}
-
-Type and class names should start with a capital letter and have a capital letter for each new word.
-Underscores \inlinecode{_} are not allowed. 
 \subsection{Namespace Names}
-
 Namespace names should be one word, lowercase.
 
-\subsection{Variable Names}
+\subsection{Type and Class Names}
+Type and class names should start with a capital letter and have a capital letter for each new word.
+Underscores \inlinecode{_} are not allowed. 
 
-Variable names should not begin with a capital letter this is reserved for type and class names. Mixed caps or underscores to separate words are both permitable but only one convention should be used in a file.
+\subsection{Variable Names}
+Variable names should not begin with a capital letter this is reserved for type and class names. Underscores (\inlinecode{_}) should be used to separate words.
 
 \subsection{Class Data Members}
-
 Class private/protected data members names should follow the convention of variable names with a trailing underscore \inlinecode{_}.
 
-\subsection{Function Names}
-
+\subsection{(Member) Function Names}
 Function names should start with a lowercase character and have a capital letter for each new word.
 
 \subsection{Lambda Expressions}
-
-Named lambda expressions follow the naming convention for variables:
+Named lambda expressions follow the naming convention for functions:
 
 \begin{lstlisting}[showspaces=false]
 auto myWhatever = [](int i) { return i + 4; };
 \end{lstlisting}
 
 \subsection{Macro Names}
-
 Macro names should be all uppercase and can include underscores (\inlinecode{_}).
 The underscore is not allowed as first or last character.
 
 \subsection{Test Case and Test Names}
+Test code files should be named
+\begin{lstlisting}[showspaces=false]
+class DiracMatrix;
+\\leads to
+test_dirac_matrix.cpp
+\\which contains test cases named
+TEST_CASE("DiracMatrix_update_row","[wavefunction][fermion]")
+\end{lstlisting}
+Where the test case covers the \inlinecode{updateRow} and  \inlinecode{[wavefunction][fermion]} indicates this test belongs to the fermion wavefunction functionality.
 
 \section{Comments}
-
 \subsection{Comment Style}
-
 Use the \inlinecode{// Comment} syntax for actual comments.
 Use:
 \begin{lstlisting}
@@ -156,34 +157,52 @@ Name should be self-descriptive.  If you need documentation consider renaming fi
 \subsubsection{Golden Rule of Comments}
 If you modify a piece of code, also adapt the comments that belong to it if necessary.
 
-\section{Formatting}
-Use the provided clang-format style in \inlinecode{config/.clang-format} to format \verb|.h|, \verb|.hpp|, \verb|.cu| and \verb|.cpp| files. In general you should run clang-format on every file you modify, however if it hasn't been run on the file before, you should make a separate reformat PR and rebase your changes onto that.  We do not want reformatting and change commits mixed.
+\section{Formatting and ``Style''}
+Use the provided clang-format style in \inlinecode{src/.clang-format} to format \verb|.h|, \verb|.hpp|, \verb|.cu| and \verb|.cpp| files. Many of the rules below will be applied to the code by clang-format, which should allow you to ignore most of them if you always run it on your modified code.
 
-The following should cover the formats specified.
+You should use clang-format support and the .clangformat file with your editor, use a git precommit hook to run clang-format or run clang-format manually on every file you modify.  However if you see numerous formatting updates outside of the code you have modified first commit the formatting changes in a separate PR.
+
+\subsection{Indentation}
+Indentation consists of 2 spaces.
+Do not use tabs in the code.
+
 \subsection{Line Length}
-The length of each line of your code should, in principle, be at most \emph{120} characters.
+The length of each line of your code should be at most \emph{120} characters.
 
 \subsection{Horizontal Spacing}
 No trailing whitespaces should be added to any line.
 Use no space before a comma (\inlinecode{,}) and a semicolon (\inlinecode{;}) and add a space after them if they are not at the end of a line.
 
-\subsubsection{Binary Operators}
-The assignment operator should always have spaces around it.
-Other operators may have spaces around them, but it is not mandatory.
+\subsection{Preprocessor Directives}
+The preprocessor directives are not indented.
+The hash is the first character of the line.
 
-\subsubsection{Unary Operators}
+\subsection{Binary Operators}
+The assignment operators should always have spaces around them.
+
+\subsection{Unary Operators}
 Do not put any space between an unary operator and their argument.
 
-\subsubsection{Types}
+\subsection{Types}
 The \inlinecode{using} syntax is preferred to \inlinecode{typedef} for type aliases.
-If the actual type is not excessively long or complex simple just use it.
+If the actual type is not excessively long or complex simply just use it, renaming simple types makes code less understandable.
 
-The angle brackets of templates should not have any external and internal padding.
-Pointer or Reference operators should go with the type.
-Examples:
+\subsection{Pointers and References}
+Pointer or Reference operators should go with the type. But understand the compiler reads them right to left.
+
 \begin{lstlisting}
 Type* var;
 Type& var;
+
+//Understand this is incompatible with multiple declarations
+Type* var1, var2; // var1 is a pointer to Type but var2 is a Type.
+\end{lstlisting}
+
+\subsection{Templates}
+The angle brackets of templates should not have any external and internal padding.
+\begin{lstlisting}
+template<class C>
+class Class1;
 
 Class1<Class2<type1>> object;
 \end{lstlisting}
@@ -195,20 +214,15 @@ or before a brace which closes a scope.
 Each file should contain an empty line at the end of the file.
 Some editors add an empty line automatically, some do not.
 
-\subsection{Indentation}
-Indentation consists of 2 spaces.
-Do not use tabs in the code.
-
 \subsection{Variable Declarations and Definitions}
-
 \begin{itemize}
 \item Avoid declaring multiple variables in the same declaration, especially if they are not fundamental types:
 
 \begin{lstlisting}[showspaces=false]
-int x, y;                        // Not recommended.
-Matrix a("my-matrix"), b(size);  // Disallowed.
+int x, y;                        // Not recommended
+Matrix a("my-matrix"), b(size);  // Not allowed
 
-// Preferred way.
+// Preferred
 int x;
 int y;
 Matrix a("my-matrix");
@@ -225,7 +239,7 @@ Matrix b(10);
 [static] [const] Type* [const] variable_name;
 
 // Integer
-// int is optional, if a signedness or size modifier is present.
+// the int is not optional not all platforms support long, etc.
 [static] [const/constexpr] [signedness] [size] int variable_name;
 
 // Examples:
@@ -239,16 +253,26 @@ constexpr unsigned long l(42);
 \subsection{Function Declarations and Definitions}
 
 The return type should be on the same line as the function name.
-Parameters should be on the same line, too, unless they do not fit on it.
+Parameters should be on the same line, too, unless they do not fit on it then one parameter
+per line aligned with the first parameter should be used.
+
 Include the parameter names also in the declaration of a function, i.e.
 \begin{lstlisting}
-/** calculates a*b+c
- */
+// calculates a*b+c
 double function(double a, double b, double c);
-\end{lstlisting}
-avoid
-\begin{lstlisting}
-Type function(Type1, Type2, Type3);
+
+// avoid
+double function(double, double, double);
+
+//dont do this
+double function(BigTemplatedSomething<double> a, BigTemplatedSomething<double> b,
+                BigTemplatedSomething<double> c);
+
+//do this
+double function(BigTemplatedSomething<double> a,
+                BigTemplatedSomething<double> b,
+                BigTemplatedSomething<double> c);
+
 \end{lstlisting}
 
 \subsection{Conditionals}
@@ -323,15 +347,9 @@ do {
 while (condition);
 \end{lstlisting}
 
-\subsection{Preprocessor Directives}
-The preprocessor directives are not indented.
-The hash is the first character of the line.
-
 \subsection{Class Format}
 \label{subsec:class_format}
 \inlinecode{public}, \inlinecode{protected} and \inlinecode{private} keywords are not indented.
-Do not to use \inlinecode{struct} as a way to avoid controlling access to the class. In rare cases where
-a class is a fully public data structure \inlinecode{struct} is appropriate.
 
 Example:
 \begin{lstlisting}
@@ -388,9 +406,8 @@ Foo::Foo(int var)
 \end{lstlisting}
 
 \subsection{Namespace Formatting}
-
 The content of namespaces is not indented.
-A comment should indicate when a namespace is closed.
+A comment should indicate when a namespace is closed. (clang-format will add these if absent)
 If nested namespaces are used, a comment with the full namespace is required after opening a set of namespaces or an inner namespace.
 
 Examples:
@@ -422,10 +439,40 @@ void foo();
 \end{lstlisting}
 
 
-\section{Other C++ Features}
+\section{QMCPack C++ Guidance}
+The guidance here like any advice on how to program should not be treated as a set of rules but rather the hardwon wisdom of many hours of develop suffering. In the past many were ignored and the absolute worst results of that will affect whatever code you need to work with. Your PR should go much smoother if you don't ignore them.
+
+\subsection{Encapsulation}
+A class is not just a naming scheme for a set of variables and functions. It should provide a logical set of methods, could contain the state of a logical object and might allow access to object data through a well defined interface related variables. while preserving maximally ability to change internal implementation of the class.
+
+Do not use \inlinecode{struct} as a way to avoid controlling access to the class. Only in rare cases where a class is a fully public data structure \inlinecode{struct} is this appropriate. Ignore (or fix one) the many examples of this in QMCPACK.
+
+Do not use inheritance primarily as a means to break encapsulation. If your class could aggregate or compose another class do that and access it solely through its public interface. You will reduce dependencies.
+
+\subsection{Casting}
+In C++ source avoid C style casts, they are difficult to search for and imprecise in function.
+An exception is made for controlling implicit conversion of simple numerical types.
+
+Explicit C++ style casts make it clear what the safety of the cast is and what sort of conversion is expected to be possible.
+
+\begin{lstlisting}
+int c = 2;
+int d = 3;
+double a;
+a = (double)c / d;  // Ok
+
+const class1 c1;
+class2* c2;
+c2 = (class2*)&c1; // NO
+SPOSetAdvanced* spo_advanced = new SPOSetAdvanced();
+
+SPOSet* spo = (SPOSet*)spo_advanced; // NO
+SPOSet* spo = static_cast<SPOSet*>(spo_advanced); // OK if upcast, dangerous if downcast
+\end{lstlisting}
+
+\subsection{
 
 \subsection{Pre-increment and pre-decrement}
-
 Use the pre-increment (pre-decrement) operator when a variable is incremented (decremented) and the value of the expression is not used.
 In particular, use the pre-increment (pre-decrement) operator for loop counters where i is not used:
 
@@ -442,16 +489,14 @@ for (int i = 0; i < N; i++) {
 The post-increment and post-decrement operators create an unnecessary copy, that the compiler cannot optimize away in the case of iterators or other classes with overloaded increment and decrement operators.
 
 \subsection{Alternative Operator Representations}
-
 Alternative representations of operators and other tokens such as \inlinecode{and}, \inlinecode{or}, and \inlinecode{not} instead of \inlinecode{&&}, \inlinecode{||}, and \inlinecode{!} are not allowed.
 For the reason of consistency, the far more common primary tokens should always be used.
 
 \subsection{Use of const}
-
 \begin{itemize}
-
 \item Add the \inlinecode{const} qualifier to all function parameters that are not modified in the function body.
-For parameters passed by value, only add the keyword in the function definition.
+\item For parameters passed by value, only add the keyword in the function definition.
+\item Member functions should be specified const whenever possible.
 
 \begin{lstlisting}[showspaces=false]
 // Declaration
@@ -466,34 +511,13 @@ int computeFoo(const int bar, const Matrix& m) {
 
   return foo;
 }
+
+class MyClass {
+  int count_
+  ...
+  int getCount() const { return count_;}
+}
 \end{lstlisting}
 
 \end{itemize}
 
-\subsection{In-class member initialization}
-
-In-class member initialization is recommended for members that are \emph{always} initialized with the same value to avoid code duplication.
-In all other cases it is disallowed.
-
-\begin{lstlisting}[showspaces=false]
-std::string getNameFromId(const int id);
-
-class Customer {
-public:
-  Customer(const std::string& name = "Doe",
-           const std::string& address = default_address_)
-    : name_(name), address_(address) {}
-  Customer(const int id,
-           const std::string& address = default_address_)
-    : name_(getNameFromId(id)), address_(address) {}
-
-private:
-  static const std::string default_address_;
-
-  std::string name_;
-  std::string address_;
-  int num_orders_ = 0;
-};
-
-const std::string Customer::default_address_ = "Zurich";
-\end{lstlisting}
