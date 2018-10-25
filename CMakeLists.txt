@@ -387,6 +387,12 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
   set(CMAKE_CXX_EXTENSIONS OFF)
 
+  # Check that a C++14 library is configured
+  include(CMake/TestCxx14Library.cmake)
+  #if (NOT CXX14_LIBRARY_OKAY)
+  #  message(
+  #endif()
+
   #-------------------------------------------------------------------
   #  check MPI installation
   #-------------------------------------------------------------------
