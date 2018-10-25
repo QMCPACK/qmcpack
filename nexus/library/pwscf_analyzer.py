@@ -18,7 +18,7 @@
 
 
 import os
-from numpy import array,fromstring,sqrt,dot,max,equal,zeros
+from numpy import array,fromstring,sqrt,dot,max,equal,zeros,min, where
 from generic import obj
 from unit_converter import convert
 from periodic_table import PeriodicTable
@@ -27,6 +27,7 @@ from pwscf_input import PwscfInput
 from pwscf_data_reader import read_qexml
 from debug import *
 import code
+import pdb
 
 pt = PeriodicTable()
 elements = set(pt.elements.keys())
@@ -176,7 +177,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                               
                 if 'number of k points=' in l:
                     try:
-                        num_kpoints      = int(l.strip().split()[-1])
+                        num_kpoints      = int(l.strip().split()[4])
                     except:
                         print "Number of k-points {0} is not an integer".format(num_kpoints)
 
@@ -185,7 +186,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     kpoints_2pi_alat = array([k.strip().split()[4:6] + [k.strip().split()[6][0:-2]] for k in kpoints_2pi_alat], dtype=float)
                     kpoints_rel      = array([k.strip().split()[4:6] + [k.strip().split()[6][0:-2]] for k in kpoints_rel], dtype=float)
                 #end if
-                
                 if 'bands (ev)' in l:
                     index+=1
                     nfound+=1
@@ -244,6 +244,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     vbm.kpoint_2pi_alat = b['kpoint_2pi_alat']
                     vbm.index           = b['index']
                     vbm.pol             = b['pol']
+                    vbm.band_number     = max(where(b['occs'] > 0.5))
                 #end if
                 if e_cond < cbm.energy:
                     cbm.energy          = e_cond
@@ -251,6 +252,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     cbm.kpoint_2pi_alat = b['kpoint_2pi_alat']
                     cbm.index           = b['index']
                     cbm.pol             = b['pol']
+                    cbm.band_number     = min(where(b['occs'] < 0.5))
                 #end if
                 if (e_cond - e_val) < direct_gap.energy:
                     direct_gap.energy          = e_cond - e_val
@@ -261,8 +263,8 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end if
             #end for
             electronic_structure = ''
-            if vbm.energy >= cbm.energy:
-                if vbm.kpoint_rel == cbm.kpoint_rel:
+            if (vbm.energy +0.025) >= cbm.energy:
+                if vbm.band_number == cbm.band_number:
                     electronic_structure = 'metallic'
                 else:
                     electronic_structure = 'semi-metal'
@@ -670,7 +672,7 @@ class PwscfAnalyzer(SimulationAnalyzer):
             #end for
         #end for
     #end def make_movie
-    def plot_bandstructure(self, filename=None, filepath=None, ylims = None, show=False, save=True, show_vbm_cbm=True):
+    def plot_bandstructure(self, filename=None, filepath=None, max_min_e = None, show=False, save=True, show_vbm_cbm=True):
         if 'bands' in self:
             from structure import get_kpath
             if filename==None:
@@ -697,8 +699,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 params = {'legend.fontsize':14,'figure.facecolor':'white','figure.subplot.hspace':0.,
                               'axes.labelsize':16,'xtick.labelsize':14,'ytick.labelsize':14}
                 rcParams.update(params)
-                #rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
-                #rc('text', usetex=True)
             except(ImportError, RuntimeError):
                 success = False
             if not success:
@@ -710,8 +710,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
             x      = kpath['explicit_path_linearcoords']
             labels = kpath['explicit_kpoints_labels']
             nbands = self.input.system.nbnd
-            import pdb
-            pdb.set_trace()
             for nb in range(nbands):
                 y = []
                 for bi in self.bands.up:
@@ -719,8 +717,6 @@ class PwscfAnalyzer(SimulationAnalyzer):
                 #end for
                 y = array(y) - self.bands.vbm.energy
                 plot(x, y, 'k')
-                import pdb
-                pdb.set_trace()
                 if len(self.bands.down) > 0:
                     y = []
                     for bi in self.bands.down:
@@ -735,26 +731,28 @@ class PwscfAnalyzer(SimulationAnalyzer):
                     axvline(x[ln], ymin=-100, ymax=100, linewidth=3, color='k')
                     if li == 'GAMMA':
                         labels[ln] = r'$\Gamma$'
+                    elif li is not '':
+                        labels[ln] = '${0}$'.format(li)
+                    #end if
                     if labels[ln-1] is not '' and ln > 0:
                         labels[ln] = labels[ln-1]+'|'+labels[ln]
                         labels[ln-1] = ''
                     #end if
                 #end if
             #end for
-            if ylims is None:
-                ylim(bottom=-5.0)
-            else:
-                ylim(ylims)
-            #end if
             
             xlim([min(x), max(x)])
-            #ylim(bottom=-5.0)
+            if max_min_e is None:
+                ylim(-5, +5)
+            else:
+                ylim(max_min_e[0],max_min_e[1])
+            #end if
             ylabel('Energy (eV)')
             xticks(x, labels)
             ax.tick_params(axis='x', which='both', length=0)
             ax.tick_params(axis='x', which='both', pad=10)
         #end if
-        if show_vbm_cbm and (self.bands.electronic_structure is not 'metallic'):
+        if show_vbm_cbm:
             vbm = self.bands.vbm
             cbm = self.bands.cbm
             for kn, ki in enumerate(self.bands.up):

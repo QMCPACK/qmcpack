@@ -29,7 +29,7 @@
 import os
 from copy import deepcopy
 from random import randint
-from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros,logical_not,flipud,uint64,sign,matmul
+from numpy import array,floor,empty,dot,diag,sqrt,pi,mgrid,exp,append,arange,ceil,cross,cos,sin,identity,ndarray,atleast_2d,around,ones,zeros,logical_not,flipud,uint64,sign,matmul,isclose
 from numpy.linalg import inv,det,norm
 from types import NoneType
 from unit_converter import convert
@@ -4426,7 +4426,7 @@ try:
         bcharge     = structure.background_charge*volfac
         pos         = matmul(posd,axes)
         sout        = structure.copy()
-        elem        = empty(len(enumbers), dtype='str')
+        elem        = array(enumbers, dtype='str')
         for el in ptable.elements.iteritems():
             elem[enumbers==el[1].atomic_number]=el[0]
         #end for
@@ -4437,10 +4437,10 @@ try:
                   reference_distance=0.025, threshold=1E-7, symprec=1E-5, angle_tolerance=1.0):
         seekpathout = _getseekpath(structure=structure, symprec = symprec, angle_tolerance=angle_tolerance,
                                    recipe=recipe, reference_distance=reference_distance, with_time_reversal=with_time_reversal)
-        if check_standard:
+	if check_standard:
             axes    = structure.axes
             primlat = seekpathout['primitive_lattice']
-            if not array_equal(primlat, axes):
+            if not isclose(primlat, axes).all():
                 Structure.class_error('Input lattice is not the conventional lattice. If you like otherwise, set check_standard=False.')
             #end if
         #end if
@@ -4520,9 +4520,6 @@ try:
                     if tempaxes_cubicity < max_cubicity:
                         new_axes = tempaxes
                         max_cubicity = tempaxes_cubicity
-                        print 't'
-                        print tempaxes_cubicity
-                        print tempaxes
                         found = True
                     #end if
                 #end for
