@@ -172,7 +172,7 @@ namespace qmcplusplus {
   template<typename T, typename T_hp>
     struct DelayedUpdate
     {
-      Matrix<T> Ainv_U, V, B, Binv, tempMat;
+      Matrix<T> U, V, B, Binv, tempMat;
       Matrix<T_hp> Binv_hp;
       DiracMatrix<T_hp> deteng;
       std::vector<int> delay_list;
@@ -182,8 +182,8 @@ namespace qmcplusplus {
 
       inline void resize(int norb, int delay)
       {
-        Ainv_U.resize(delay, norb);
         V.resize(delay, norb);
+        U.resize(delay, norb);
         tempMat.resize(norb, delay);
         B.resize(delay, delay);
         Binv.resize(delay, delay);
@@ -212,10 +212,10 @@ namespace qmcplusplus {
         T temp[lda_Binv];
         // save AinvRow to new_AinvRow
         simd::copy_n(AinvRow, norb, new_AinvRow);
-        // multiply Ainv_U (NxK) Binv(KxK) V(KxN) AinvRow right to the left
-        BLAS::gemv('T', norb, delay_count, cone, V.data(), norb, AinvRow, 1, czero, B[delay_count], 1);
+        // multiply V (NxK) Binv(KxK) U(KxN) AinvRow right to the left
+        BLAS::gemv('T', norb, delay_count, cone, U.data(), norb, AinvRow, 1, czero, B[delay_count], 1);
         BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, B[delay_count], 1, czero, temp, 1);
-        BLAS::gemv('N', norb, delay_count, -cone, Ainv_U.data(), norb, temp, 1, cone, new_AinvRow, 1);
+        BLAS::gemv('N', norb, delay_count, -cone, V.data(), norb, temp, 1, cone, new_AinvRow, 1);
       }
 
       inline void acceptRow(Matrix<T>& Ainv, T* arow, int rowchanged)
@@ -224,12 +224,12 @@ namespace qmcplusplus {
         CONSTEXPR T czero(0);
         const int norb=Ainv.rows();
         const int lda_Binv=Binv.cols();
-        simd::copy_n(Ainv[rowchanged], norb, Ainv_U[delay_count]);
-        simd::copy_n(arow, norb, V[delay_count]);
+        simd::copy_n(Ainv[rowchanged], norb, V[delay_count]);
+        simd::copy_n(arow, norb, U[delay_count]);
         delay_list[delay_count] = rowchanged;
         delay_count++;
         // the new row in B has been computed, now compute the new column
-        BLAS::gemv('T', norb, delay_count, cone, Ainv_U.data(), norb, arow, 1, czero, B.data()+delay_count-1, lda_Binv);
+        BLAS::gemv('T', norb, delay_count, cone, V.data(), norb, arow, 1, czero, B.data()+delay_count-1, lda_Binv);
         if(delay_count==1)
         {
           Binv[0][0]=1.0/T_hp(B[0][0]);
@@ -264,17 +264,17 @@ namespace qmcplusplus {
         if(delay_count==1)
         {
           // Only use the first norb elements of tempMat as a temporal array
-          BLAS::gemv('T', norb, norb, cone, Ainv.data(), norb, V[0], 1, czero, tempMat[0], 1);
+          BLAS::gemv('T', norb, norb, cone, Ainv.data(), norb, U[0], 1, czero, tempMat[0], 1);
           tempMat(0,delay_list[0]) -= cone;
-          BLAS::ger(norb,norb,-Binv[0][0],Ainv_U[0],1,tempMat[0],1,Ainv.data(),norb);
+          BLAS::ger(norb,norb,-Binv[0][0],V[0],1,tempMat[0],1,Ainv.data(),norb);
         }
         else
         {
           const int lda_Binv=Binv.cols();
-          BLAS::gemm('T', 'N', delay_count, norb, norb, cone, V.data(), norb, Ainv.data(), norb, czero, tempMat.data(), lda_Binv);
+          BLAS::gemm('T', 'N', delay_count, norb, norb, cone, U.data(), norb, Ainv.data(), norb, czero, tempMat.data(), lda_Binv);
           for(int i=0; i<delay_count; i++) tempMat(delay_list[i], i) -= cone;
-          BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, Ainv_U.data(), norb, Binv.data(), lda_Binv, czero, V.data(), norb);
-          BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, V.data(), norb, tempMat.data(), lda_Binv, cone, Ainv.data(), norb);
+          BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, V.data(), norb, Binv.data(), lda_Binv, czero, U.data(), norb);
+          BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U.data(), norb, tempMat.data(), lda_Binv, cone, Ainv.data(), norb);
         }
         delay_count = 0;
       }
