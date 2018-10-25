@@ -40,9 +40,9 @@ The symbol name of the \inlinecode{\#define} guards should be \inlinecode{NAMESP
 
 \subsection{Includes}
 Header files should be included with the full path based on the \verb|src| directory.
-For example, the file \verb|qmcpack/src/QMCWaveFunctions/SPOSetBase.h| should be included as
+For example, the file \verb|qmcpack/src/QMCWaveFunctions/SPOSet.h| should be included as
 \begin{lstlisting}
-#include "QMCWaveFunctions/SPOSetBash.h"
+#include "QMCWaveFunctions/SPOSet.h"
 \end{lstlisting}
 Even if the included file is located in the same directory as the including file this rule should be obeyed. Header files from external projects and standard libraries should be includes using \inlinecode{<iostream>} convention, while headers that are part of the QMCPACK project should be included using the \verb|"our_header.h"| convention.
 
@@ -304,7 +304,8 @@ Switch statements should always have a default case.
 
 Example:
 \begin{lstlisting}
-switch (var) {
+switch (var)
+{
   case 0:
     statement1;
     statement2;
@@ -328,7 +329,8 @@ Examples:
 for (statement; condition; statement)
   statement;
 
-for (statement; condition; statement) {
+for (statement; condition; statement)
+{
   statement1;
   statement2;
 }
@@ -336,12 +338,14 @@ for (statement; condition; statement) {
 while (condition)
   statement;
 
-while (condition) {
+while (condition)
+{
   statement1;
   statement2;
 }
 
-do {
+do
+{
   statement;
 }
 while (condition);
@@ -353,7 +357,8 @@ while (condition);
 
 Example:
 \begin{lstlisting}
-class Foo : public Bar {
+class Foo : public Bar 
+{
 public:
   Foo();
   explicit Foo(int var);
@@ -361,10 +366,12 @@ public:
   void function();
   void emptyFunction() {}
 
-  void set_var(const int var) {
+  void set_var(const int var)
+  {
     var_ = var;
   }
-  int get_var() const {
+  int get_var() const
+  {
     return var_;
   }
 
@@ -381,14 +388,16 @@ private:
 Examples:
 \begin{lstlisting}
 // When everything fits on one line:
-Foo::Foo(int var) : var_(var) {
+Foo::Foo(int var) : var_(var) 
+{
   statement;
 }
 
 // If the signature and the initializer list do not
 // fit on one line, the colon is indented by 4 spaces:
 Foo::Foo(int var)
-    : var_(var), var2_(var + 1) {
+    : var_(var), var2_(var + 1)
+{
   statement;
 }
 
@@ -396,7 +405,8 @@ Foo::Foo(int var)
 // they are aligned in the following way:
 Foo::Foo(int var)
     : some_var_(var),
-      some_other_var_(var + 1) {
+      some_other_var_(var + 1) 
+{
   statement;
 }
 
@@ -412,25 +422,31 @@ If nested namespaces are used, a comment with the full namespace is required aft
 
 Examples:
 \begin{lstlisting}
-namespace ns{
+namespace ns
+{
 void foo();
 }  // ns
 \end{lstlisting}
 
 \begin{lstlisting}
-namespace ns1{
-namespace ns2{
+namespace ns1
+{
+namespace ns2
+{
 // ns1::ns2::
 void foo();
 
-namespace ns3{
+namespace ns3
+{
 // ns1::ns2::ns3::
 void bar();
 }  // ns3
 }  // ns2
 
-namespace ns4{
-namespace ns5{
+namespace ns4
+{
+namespace ns5
+{
 // ns1::ns4::ns5::
 void foo();
 }  // ns5
@@ -470,18 +486,18 @@ SPOSet* spo = (SPOSet*)spo_advanced; // NO
 SPOSet* spo = static_cast<SPOSet*>(spo_advanced); // OK if upcast, dangerous if downcast
 \end{lstlisting}
 
-\subsection{
-
 \subsection{Pre-increment and pre-decrement}
 Use the pre-increment (pre-decrement) operator when a variable is incremented (decremented) and the value of the expression is not used.
 In particular, use the pre-increment (pre-decrement) operator for loop counters where i is not used:
 
 \begin{lstlisting}[showspaces=false]
-for (int i = 0; i < N; ++i) {
+for (int i = 0; i < N; ++i)
+{
   doSomething();
 }
 
-for (int i = 0; i < N; i++) {
+for (int i = 0; i < N; i++)
+{
   doSomething(i);
 }
 \end{lstlisting}
@@ -500,10 +516,11 @@ For the reason of consistency, the far more common primary tokens should always 
 
 \begin{lstlisting}[showspaces=false]
 // Declaration
-int computeFoo(int bar, const Matrix& m) {
+int computeFoo(int bar, const Matrix& m)
 
 // Definition
-int computeFoo(const int bar, const Matrix& m) {
+int computeFoo(const int bar, const Matrix& m)
+{
   int foo = 42;
 
   // Compute foo without changing bar or m.
@@ -512,7 +529,8 @@ int computeFoo(const int bar, const Matrix& m) {
   return foo;
 }
 
-class MyClass {
+class MyClass
+{
   int count_
   ...
   int getCount() const { return count_;}
