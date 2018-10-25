@@ -909,8 +909,13 @@ class Simulation(NexusCore):
     #end def load_analyzer_image
 
 
+    def attempt_files(self):
+        return (self.infile,self.outfile,self.errfile)
+    #end def attempt_files
+
+
     def save_attempt(self):
-        local = [self.infile,self.outfile,self.errfile]
+        local = self.attempt_files()
         filepaths = []
         for file in local:
             filepath = os.path.join(self.locdir,file)
@@ -938,7 +943,6 @@ class Simulation(NexusCore):
             #os.system('ls '+attempt_dir)
             #exit()
         #end if
-        #self.error('save_attempt')
     #end def save_attempt
 
 
@@ -1011,7 +1015,7 @@ class Simulation(NexusCore):
             if found_file:
                 self.copy_file(local,remote)
             else:
-                self.error('file {0} not found\n  locations checked: {1}'.format(file,file_locations))
+                self.error('file {0} not found\nlocations checked: {1}'.format(file,file_locations))
             #end if
         #end for
         self.sent_files = True

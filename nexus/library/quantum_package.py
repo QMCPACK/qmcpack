@@ -21,8 +21,10 @@ import os
 from generic import obj
 from execute import execute
 from simulation import Simulation
-from quantum_package_input import QuantumPackageInput,generate_quantum_package_input
+from quantum_package_input import QuantumPackageInput,generate_quantum_package_input,read_qp_value
 from quantum_package_analyzer import QuantumPackageAnalyzer
+from gamess import Gamess
+from developer import ci
 
 
 
@@ -78,7 +80,7 @@ class QuantumPackage(Simulation):
 
 
     def write_prep(self):
-        # write an ascii represenation of the input changes
+        # write an ascii representation of the input changes
         infile = self.identifier+'.in'
         infile = os.path.join(self.locdir,infile)
         f = open(infile,'w')
@@ -88,6 +90,46 @@ class QuantumPackage(Simulation):
             self.input.structure = s
         #end if
         f.close()
+
+        # copy ezfio directory from dependencies
+        qp_dirs = []
+        for dep in self.dependencies:
+            dsim = dep.sim
+            if isinstance(dsim,QuantumPackage):
+                d_ezfio = os.path.join(dsim.locdir,dsim.infile)
+                s_ezfio = os.path.join(self.locdir,self.infile)
+                d_ezfio = os.path.abspath(d_ezfio)
+                s_ezfio = os.path.abspath(s_ezfio)
+                sync_record = os.path.join(self.locdir,self.identifier+'.sync_record')
+                if s_ezfio!=d_ezfio:
+                    qp_dirs.append(d_ezfio)
+                    if not os.path.exists(sync_record):
+                        if not os.path.exists(s_ezfio):
+                            os.makedirs(s_ezfio)
+                        #end if
+                        command = 'rsync -av {0}/ {1}/'.format(d_ezfio,s_ezfio)
+                        out,err,rc = execute(command)
+                        if rc!=0:
+                            self.warn('rsync of ezfio directory failed\nall runs depending on this one will be blocked\nsimulation identifier: {0}\nlocal directory: {1}\nattempted rsync command: {2}'.format(self.identifier,self.locdir,command))
+                            self.failed = True
+                            self.block_dependents()
+                        else:
+                            f = open(sync_record,'w')
+                            f.write(command+'\n')
+                            f.close()
+                            execute('qp_edit -c {0}'.format(d_ezfio))
+                        #end if
+                    #end if
+                #end if
+            #end if
+        #end for
+        if len(qp_dirs)>1:
+            qpd = ''
+            for d in qp_dirs:
+                qpd += d+'\n'
+            #end for
+            self.error('quantum package run depends on multiple others with distinct ezfio directories\ncannot determine which run to copy ezfio directory from\nezfio directories from prior runs:\n{0}'.format(qpd))
+        #end if
     #end def write_prep
 
 
@@ -102,13 +144,84 @@ class QuantumPackage(Simulation):
 
 
     def incorporate_result(self,result_name,result,sim):
-        self.not_implemented()
+        not_implemented = False
+        if isinstance(sim,Gamess):
+            if result_name=='orbitals':
+                loc_file = self.input.run_control.prefix
+                loc_out = os.path.join(self.locdir,loc_file)
+                gms_out = result.outfile
+                command = 'cp {0} {1}'.format(gms_out,loc_out)
+                out,err,rc = execute(command)
+                if rc!=0:
+                    self.warn('copying GAMESS output failed\nall runs depending on this one will be blocked\nsimulation identifier: {0}\nlocal directory: {1}\nattempted rsync command: {2}'.format(self.identifier,self.locdir,command))
+                    self.failed = True
+                    self.block_dependents()
+                #end if
+                command = 'qp_convert_output_to_ezfio.py '+loc_file
+                cwd = os.getcwd()
+                os.chdir(self.locdir)
+                out,err,rc = execute(command)
+                os.chdir(cwd)
+                if rc!=0:
+                    self.warn('creation of ezfio file from GAMESS output failed\nall runs depending on this one will be blocked\nsimulation identifier: {0}\nlocal directory: {1}\nattempted rsync command: {2}'.format(self.identifier,self.locdir,command))
+                    self.failed = True
+                    self.block_dependents()
+                #end if
+            else:
+                not_implemented = True
+            #end if
+        else:
+            not_implemented = True
+        #end if
+        if not_implemented:
+            self.error('ability to incorporate result '+result_name+' has not been implemented')
+        #end if
     #end def incorporate_result
 
 
+    def attempt_files(self):
+        return (self.outfile,self.errfile)
+    #end def attempt_files
+
+
     def check_sim_status(self):
-        success = True
-        self.finished = success and self.job.finished
+
+        # get the run type
+        input = self.input
+        rc = self.input.run_control
+        scf    = rc.run_type=='SCF'
+        sel_ci = rc.run_type=='fci_zmq'
+
+        # assess successful completion of the run
+        #   currently a check only exists for HF/SCF runs
+        #   more sophisticated checks can be added in the future
+        failed = False
+        if scf:
+            outfile = os.path.join(self.locdir,self.outfile)
+            f = open(outfile,'r')
+            output = f.read()
+            f.close()
+            hf_not_converged = '* Hartree-Fock energy' not in output
+            failed |= hf_not_converged
+        #end if
+        self.failed = failed
+        self.finished = self.job.finished
+
+        # check to see if the job needs to be restarted
+        conv_dets = 'converge_dets' in rc and rc.converge_dets
+        n_det_max = input.get('n_det_max')
+        if sel_ci and conv_dets and n_det_max is not None:
+            n_det = None
+            n_det_path = os.path.join(self.locdir,self.infile,'determinants/n_det')
+            if os.path.exists(n_det_path):
+                n_det = read_qp_value(n_det_path)
+                if isinstance(n_det,int) and n_det<n_det_max:
+                    self.save_attempt()
+                    input.set(read_wf=True)
+                    self.reset_indicators()
+                #end if
+            #end if
+        #end if
     #end def check_sim_status
 
 
@@ -231,6 +344,9 @@ def generate_quantum_package(**kwargs):
         if 'input_type' in inp_args:
             input_type = inp_args.input_type
             del inp_args.input_type
+        #end if
+        if 'prefix' not in inp_args and 'identifier' in sim_args:
+            inp_args['prefix'] = sim_args['identifier']
         #end if
         sim_args.input = generate_quantum_package_input(**inp_args)
     #end if
