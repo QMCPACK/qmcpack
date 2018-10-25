@@ -91,9 +91,9 @@ The underscore is not allowed as first or last character.
 Test code files should be named
 \begin{lstlisting}[showspaces=false]
 class DiracMatrix;
-\\leads to
+//leads to
 test_dirac_matrix.cpp
-\\which contains test cases named
+//which contains test cases named
 TEST_CASE("DiracMatrix_update_row","[wavefunction][fermion]")
 \end{lstlisting}
 Where the test case covers the \inlinecode{updateRow} and  \inlinecode{[wavefunction][fermion]} indicates this test belongs to the fermion wavefunction functionality.
@@ -105,7 +105,7 @@ Use:
 \begin{lstlisting}
 /** base class for Single-particle orbital sets
  *
- * SPOSetBase stands for S(ingle)P(article)O(rbital)SetBase which contains
+ * SPOSet stands for S(ingle)P(article)O(rbital)Set which contains
  * a number of single-particle orbitals with capabilities of
  * evaluating \f$ \psi_j({\bf r}_i)\f$
  */
