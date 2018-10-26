@@ -30,18 +30,20 @@
 
 \lstloadlanguages{C++,XML,Python}
 
-\lstset{language=C++,
-  basicstyle=\ttfamily \scriptsize,
+\lstdefinestyle{C++}{language=C++,
+  basicstyle=\ttfamily\footnotesize,
   keywordstyle=\color{blue}\ttfamily,
   stringstyle=\color{red}\ttfamily,
   commentstyle=\color{gray}\ttfamily,
   morecomment=[l][\color{magenta}]{\#},
-  frame=single
+  frame=tlrb
+  frameround=ftft
 }
 
-\lstset{language=xml, 
-  basicstyle=\small\ttfamily,  % copy/paste from pdf w/o mangled quotes
-  keywordstyle=\color{black}\bfseries, 
+\lstdefinestyle{XML}{language=xml, 
+  basicstyle=\footnotesize\ttfamily,  % copy/paste from pdf w/o mangled quotes
+  keywordstyle=\color{black}\bfseries,
+  backgroundcolor=\color{gray},
   frame=single,
   breaklines=true,
   escapeinside={<:}{:>},
@@ -49,6 +51,8 @@
   keepspaces=true,        % but do keep the spaces that are already there
   showstringspaces=false, % avoid showing underbrackets in quoted text
 }
+
+\newcommand{\inlinecode}[1]{\lstinline|#1|}
 
 %% \ifxetex
 %% \usepackage{framed}
