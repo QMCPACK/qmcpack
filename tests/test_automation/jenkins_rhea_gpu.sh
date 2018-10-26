@@ -7,7 +7,7 @@ cat > $BUILD_TAG.pbs << EOF
 #PBS -A MAT151
 #PBS -N $BUILD_TAG
 #PBS -j oe
-#PBS -l walltime=1:00:00,nodes=1
+#PBS -l walltime=2:30:00,nodes=1
 #PBS -d $BUILD_DIR
 #PBS -l partition=gpu
 
@@ -22,6 +22,7 @@ export FFTW_HOME=\$FFTW3_DIR
 module load hdf5
 module load git
 module load cudatoolkit/8.0.44
+module load cmake/3.6.1
 
 env
 module list

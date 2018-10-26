@@ -26,7 +26,8 @@
  e.g., /usr, /usr/local, there is no need to set environment or cmake
  variables for the packages.
 
- See the manual in manual/qmcpack_manual.pdf for build examples on Linux, Mac OS X etc.
+ See the manuals linked at https://www.qmcpack.org/documentation or buildable via
+ manual/build_manual.sh for build examples on Linux, Mac OS X etc.
 
 ## Quick build
 
