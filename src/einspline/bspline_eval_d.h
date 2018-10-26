@@ -22,7 +22,7 @@
 #define BSPLINE_EVAL_D_H
 
 /************************************************************/
-/* 1d double-precision, real evaulation functions           */
+/* 1d double-precision, real evaluation functions           */
 /************************************************************/
 
 void
@@ -43,7 +43,7 @@ eval_UBspline_1d_d_vgh (UBspline_1d_d * restrict spline, double x,
 
 
 /************************************************************/
-/* 2d double-precision, real evaulation functions           */
+/* 2d double-precision, real evaluation functions           */
 /************************************************************/
 
 void
@@ -66,7 +66,7 @@ eval_UBspline_2d_d_vgh (UBspline_2d_d * restrict spline,
                         double* restrict grad, double* restrict hess);
 
 /************************************************************/
-/* 3d double-precision, real evaulation functions           */
+/* 3d double-precision, real evaluation functions           */
 /************************************************************/
 
 void

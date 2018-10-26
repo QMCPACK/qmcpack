@@ -34,8 +34,8 @@ namespace qmcplusplus
 
 /// Constructor.
 VMCcuda::VMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                 QMCHamiltonian& h,WaveFunctionPool& ppool):
-  QMCDriver(w,psi,h,ppool),UseDrift("yes"),
+                 QMCHamiltonian& h,WaveFunctionPool& ppool, Communicate* comm):
+  QMCDriver(w,psi,h,ppool,comm),UseDrift("yes"),
   myPeriod4WalkerDump(0), GEVtype("mixed"), w_alpha(0.0), w_beta(0.0), forOpt(false)
 {
   RootName = "vmc";
@@ -468,7 +468,7 @@ void VMCcuda::resetRun()
   PointerPool<Walker_t::cuda_Buffer_t > pool;
   app_log() << "Starting VMCcuda::resetRun() " << std::endl;
   Psi.reserve (pool);
-  app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CudaValueType)
+  app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CTS::ValueType)
             << " bytes in GPU memory.\n";
   // Now allocate memory on the GPU card for each walker
   // for (int iw=0; iw<W.WalkerList.size(); iw++) {

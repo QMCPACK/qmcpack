@@ -47,7 +47,7 @@ struct AtomicBasisBuilder: public SPOSetBuilder
   ///map for (n,l,m,s) to its quantum number index
   std::map<std::string,int> nlms_id;
 
-  AtomicBasisBuilder(const std::string& eName);
+  AtomicBasisBuilder(const std::string& eName, Communicate *comm);
 
   bool put(xmlNodePtr cur);
   bool putH5(hdf_archive &hin);
@@ -69,8 +69,8 @@ struct AtomicBasisBuilder: public SPOSetBuilder
 };
 
 template<class RFB>
-AtomicBasisBuilder<RFB>::AtomicBasisBuilder(const std::string& eName):
-  addsignforM(false), expandlm(GAUSSIAN_EXPAND), Morder("gaussian"),
+AtomicBasisBuilder<RFB>::AtomicBasisBuilder(const std::string& eName, Communicate *comm):
+  SPOSetBuilder(comm), addsignforM(false), expandlm(GAUSSIAN_EXPAND), Morder("gaussian"),
   sph("default"), elementType(eName)
 {
 // mmorales: for "Cartesian Gaussian", m is an integer that maps

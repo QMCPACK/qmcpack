@@ -22,7 +22,6 @@
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 
-#include "QMCWaveFunctions/Fermion/DiracDeterminantSoA.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminant.h"
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
 #if !defined(QMC_COMPLEX) && !defined(ENABLE_SOA)
@@ -96,7 +95,6 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
   if (mySPOSetBuilderFactory == 0)
   {//always create one, using singleton and just to access the member functions
     mySPOSetBuilderFactory = new SPOSetBuilderFactory(targetPtcl, targetPsi, ptclPool);
-    mySPOSetBuilderFactory->setReportLevel(ReportLevel);
     mySPOSetBuilderFactory->createSPOSetBuilder(curRoot);
   }
 
@@ -428,7 +426,6 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
   std::string basisName("invalid");
   std::string detname("0"), refname("0");
   std::string s_detSize("0");
-  std::string usesoa("no");
 
   OhmmsAttributeSet aAttrib;
   aAttrib.add(basisName,basisset_tag);
@@ -436,7 +433,6 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
   aAttrib.add(sposet,"sposet");
   aAttrib.add(refname,"ref");
   aAttrib.add(s_detSize,"DetSize");
-  aAttrib.add(usesoa,"soa");
 
   std::string s_cutoff("0.0");
   std::string s_radius("0.0");
@@ -560,16 +556,8 @@ bool SlaterDetBuilder::putDeterminant(xmlNodePtr cur, int spin_group, bool slate
       adet = new DiracDeterminantOpt(targetPtcl, psi, firstIndex);
     else
     {
-      if((usesoa=="yes") && psi->CanUseGLCombo)
-      {
-        app_log()<<"Using DiracDeterminantSoA "<< std::endl;
-        adet = new DiracDeterminantSoA(psi,firstIndex);
-      }
-      else
-      {
-        app_log()<<"Using DiracDeterminantBase "<< std::endl;
-        adet = new DiracDeterminantBase(psi,firstIndex);
-      }
+      app_log()<<"Using DiracDeterminantBase "<< std::endl;
+      adet = new DiracDeterminantBase(psi,firstIndex);
     }
 #endif
   }

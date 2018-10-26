@@ -699,7 +699,7 @@
    default="no">
    <xs:annotation>
     <xs:documentation>
-     If yes, the section is appended to a preceeding qmc section.
+     If yes, the section is appended to a preceding qmc section.
     </xs:documentation>
    </xs:annotation>
   </xs:attribute>

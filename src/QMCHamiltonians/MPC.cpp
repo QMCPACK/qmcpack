@@ -276,7 +276,7 @@ MPC::init_spline()
       //          * (4.0*M_PI*volInv/G2 - f_G[iG]);
     }
   }
-  // G=0 component calculated seperately
+  // G=0 component calculated separately
   //GBox(0,0,0) = -vol * f_0 * Rho_G[0];
   //Vconst += 0.5 * vol * vol * f_0 * norm(Rho_G[0]);
   const RealType volf=vol*f_0;

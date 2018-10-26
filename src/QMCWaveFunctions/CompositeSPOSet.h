@@ -91,6 +91,8 @@ namespace qmcplusplus
   struct CompositeSPOSetBuilder : public SPOSetBuilder
   {
 
+    CompositeSPOSetBuilder(Communicate *comm) : SPOSetBuilder(comm) { }
+
     //SPOSetBuilder interface
     SPOSet* createSPOSetFromXML(xmlNodePtr cur);
 

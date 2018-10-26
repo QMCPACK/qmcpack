@@ -259,7 +259,7 @@ public:
   ///UniformCartesianGrid for multi levels.
   std::vector<Grid_t*> SuperGrid;
 
-  ///offsets to determine cell conection
+  ///offsets to determine cell connection
   std::vector<int> c_offset, c_max;
 
   ///cell index connected to each cell

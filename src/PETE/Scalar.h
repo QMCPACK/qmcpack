@@ -67,7 +67,7 @@ public:
   explicit Scalar(const T1 &t) : scalar_m(t) { }
 
   //---------------------------------------------------------------------------
-  // Constructor with arbitary second/third arguments, which is/are ignored.
+  // Constructor with arbitrary second/third arguments, which is/are ignored.
   // Needed for compatibility with tree node constructors taking an
   // arbitrary argument.
 

@@ -266,8 +266,8 @@ out3.close();
 out4.close();
 APP_ABORT("Testing. \n");
 */
-        bool sucess = DenseMatrixOperators::genHermitianEigenSysSelect(N,H.data(),N,S.data(),N,nstates,eigVal.data(),getEigV,eigVec.data(),eigVec.size2(),ifail.data());
-        if(!sucess) for(int i=0; i<nstates; i++) eigVal[i]=0.0;
+        bool success = DenseMatrixOperators::genHermitianEigenSysSelect(N,H.data(),N,S.data(),N,nstates,eigVal.data(),getEigV,eigVec.data(),eigVec.size2(),ifail.data());
+        if(!success) for(int i=0; i<nstates; i++) eigVal[i]=0.0;
         else {
           std::ofstream out("diag.dat",std::ios_base::app | std::ios_base::out);
           std::vector<double> coeff(N);

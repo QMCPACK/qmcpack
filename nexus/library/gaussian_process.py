@@ -268,6 +268,7 @@ def cmgp(S1,S2,ep):
     """
     
     n = S1.shape[0]
+    d = S1.shape[1]
     m = S2.shape[0]
     K = np.zeros([n,m])
     

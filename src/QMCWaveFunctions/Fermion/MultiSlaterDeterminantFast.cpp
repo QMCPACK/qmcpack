@@ -37,7 +37,7 @@ MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl, 
   registerTimers();
   //Optimizable=true;
   Optimizable=true;
-  OrbitalName="MultiSlaterDeterminantFast";
+  ClassName="MultiSlaterDeterminantFast";
   usingCSF=false;
   NP = targetPtcl.getTotalNum();
   nels_up = targetPtcl.last(0)-targetPtcl.first(0);

@@ -12,7 +12,7 @@
 /** @file bspline_traits.h
  *
  * extend spline/bspline_traints by introducing
- * bspline_traits<T,D> with only speciliazation with 3D
+ * bspline_traits<T,D> with only specialization with 3D
  */
 #ifndef QMCPLUSPLUS_BSPLINE_SPLINE2_TRAITS_H
 #define QMCPLUSPLUS_BSPLINE_SPLINE2_TRAITS_H

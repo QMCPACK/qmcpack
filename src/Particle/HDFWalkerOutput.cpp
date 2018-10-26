@@ -18,7 +18,7 @@
 
 
 /** @file HDFWalkerOuput.cpp
- * @breif definition  of HDFWalkerOuput  and other support class and functions
+ * @brief definition  of HDFWalkerOuput  and other support class and functions
  */
 #include "Particle/HDFWalkerOutput.h"
 #include "Utilities/IteratorUtility.h"

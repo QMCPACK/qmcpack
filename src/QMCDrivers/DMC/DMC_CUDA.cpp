@@ -36,8 +36,8 @@ namespace qmcplusplus
 
 /// Constructor.
 DMCcuda::DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                 QMCHamiltonian& h,WaveFunctionPool& ppool):
-  QMCDriver(w,psi,h,ppool), myWarmupSteps(0), Mover(0),
+                 QMCHamiltonian& h,WaveFunctionPool& ppool, Communicate* comm):
+  QMCDriver(w,psi,h,ppool,comm), myWarmupSteps(0), Mover(0),
   NLop(w.getTotalNum()),
   ResizeTimer("DMCcuda::resize"),
   DriftDiffuseTimer("DMCcuda::Drift_Diffuse"),
@@ -263,9 +263,9 @@ bool DMCcuda::run()
           W.NLMove_GPU (accepted, accPos, iatList);
         }
       }
-      else if(UseTMove==TMOVE_V1)
+      else if(UseTMove==TMOVE_V1||UseTMove==TMOVE_V3)
       {
-        APP_ABORT("Tmove v1 has not been implemented on GPU.\n  please contact the developers if you need this feature");
+        APP_ABORT("Tmove v1 and v3 have not been implemented on GPU.\n  please contact the developers if you need this feature");
       }
       // Now branch
       BranchTimer.start();
@@ -388,7 +388,7 @@ void DMCcuda::resetRun()
   PointerPool<Walker_t::cuda_Buffer_t > pool;
   Psi.reserve (pool);
   app_log() << "Each walker requires "
-            << pool.getTotalSize() * sizeof(CudaValueType)
+            << pool.getTotalSize() * sizeof(CTS::ValueType)
             << " bytes in GPU memory.\n";
   app_log() << "Preparing to allocate " << W.WalkerList.size()
             << " walkers.\n";

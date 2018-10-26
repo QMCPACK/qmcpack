@@ -41,7 +41,7 @@ public:
 
   ///Constructor.
   QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                               QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool);
+                               QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool, Communicate* comm);
 
   ///Destructor
   ~QMCFixedSampleLinearOptimize();

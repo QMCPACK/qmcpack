@@ -7,7 +7,7 @@ cat > $BUILD_TAG.pbs << EOF
 #PBS -A MAT151
 #PBS -N $BUILD_TAG
 #PBS -j oe
-#PBS -l walltime=1:00:00,nodes=1
+#PBS -l walltime=2:30:00,nodes=1
 #PBS -d $BUILD_DIR
 #PBS -l partition=gpu
 
@@ -22,6 +22,7 @@ export FFTW_HOME=\$FFTW3_DIR
 module load hdf5
 module load git
 module load cudatoolkit/8.0.44
+module load cmake/3.6.1
 
 env
 module list
@@ -63,7 +64,7 @@ rm -rf ./build
 mkdir -p build
 cd build
 
-cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_intel14.0.4/include" -DQMC_CUDA=1 .. 2>&1 | tee cmake.out
+cmake -DQMC_COMPLEX=0 -DQMC_MIXED_PRECISION=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_intel14.0.4/include" -DQMC_CUDA=1 .. 2>&1 | tee cmake.out
 
 make -j 1
 make -j 24
@@ -98,7 +99,7 @@ rm -rf ./build
 mkdir -p build
 cd build
 
-cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_intel14.0.4/include" -DQMC_CUDA=1 .. 2>&1 | tee cmake.out
+cmake -DQMC_COMPLEX=1 -DQMC_MIXED_PRECISION=1 -DENABLE_SOA=1 -DCMAKE_C_COMPILER="mpicc" -DCMAKE_CXX_COMPILER="mpicxx" -DCMAKE_CXX_FLAGS="-mno-bmi2 -mno-avx2" -DCMAKE_C_FLAGS="-mno-bmi2 -mno-avx2" -DBLAS_blas_LIBRARY="/usr/lib64/libblas.so.3" -DLAPACK_lapack_LIBRARY="/usr/lib64/atlas/liblapack.so.3" -DHDF5_INCLUDE_DIR="/sw/rhea/hdf5/1.8.11/rhel6.6_intel14.0.4/include" -DQMC_CUDA=1 .. 2>&1 | tee cmake.out
 
 make -j 1
 make -j 24
