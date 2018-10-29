@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# this scripte generate all the input files for GPU and CPU-J3 from CPU input files.
+# this script generates all the input files for GPU and CPU-J3 tests from CPU test input files.
 
 for name in dmc-*-cpu
 do
