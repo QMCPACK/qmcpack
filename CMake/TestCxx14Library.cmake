@@ -3,6 +3,8 @@
 
 try_compile(CXX14_LIBRARY_OKAY ${CMAKE_BINARY_DIR}
             ${CMAKE_SOURCE_DIR}/CMake/try_cxx14_library.cpp
+            CXX_STANDARD 14
+            CXX_STANDARD_REQUIRED ON
             OUTPUT_VARIABLE COMPILE_OUTPUT)
 
 if (NOT CXX14_LIBRARY_OKAY)
