@@ -297,20 +297,21 @@ struct SplineAdoptorReader: public BsplineReaderBase
     {
       if(band_group_comm.isGroupLeader())
       {
-        int ti=cur_bands[iorb].TwistIndex;
-        std::string s=psi_g_path(ti,spin,cur_bands[iorb].BandIndex);
+        int iorb_h5=bspline->BandIndexMap[iorb];
+        int ti=cur_bands[iorb_h5].TwistIndex;
+        std::string s=psi_g_path(ti,spin,cur_bands[iorb_h5].BandIndex);
         if(!h5f.read(cG,s)) APP_ABORT("SplineAdoptorReader Failed to read band(s) from h5!\n");
         double total_norm = compute_norm(cG);
         if((checkNorm)&&(std::abs(total_norm-1.0)>PW_COEFF_NORM_TOLERANCE))
         {
-          std::cerr << "The orbital " << iorb << " has a wrong norm " << total_norm
+          std::cerr << "The orbital " << iorb_h5 << " has a wrong norm " << total_norm
                     << ", computed from plane wave coefficients!" << std::endl
                     << "This may indicate a problem with the HDF5 library versions used "
                     << "during wavefunction conversion or read." << std::endl;
           APP_ABORT("SplineAdoptorReader Wrong orbital norm!");
         }
         fft_spline(cG,ti);
-        bspline->set_spline(spline_r,spline_i,cur_bands[iorb].TwistIndex,iorb,0);
+        bspline->set_spline(spline_r,spline_i,cur_bands[iorb_h5].TwistIndex,iorb,0);
       }
       this->create_atomic_centers_Gspace(cG, band_group_comm, iorb);
     }

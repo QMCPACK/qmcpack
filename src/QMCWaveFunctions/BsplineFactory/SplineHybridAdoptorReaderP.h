@@ -512,9 +512,8 @@ struct SplineHybridAdoptorReader: public SplineAdoptorReader<SA>
             for(size_t ip=0; ip<spline_npoints; ip++)
               splineData_i[ip]=all_vals[idx][ip][lm+lm_tot];
             atomic_spline_i=einspline::create(atomic_spline_i, 0.0, spline_radius, spline_npoints, splineData_i.data(), ((lm==0)||(lm>3)));
-            int iband=bspline->BandIndexMap.size()>0?bspline->BandIndexMap[iorb]:iorb;
-            mycenter.set_spline(atomic_spline_r,lm,iband*2);
-            mycenter.set_spline(atomic_spline_i,lm,iband*2+1);
+            mycenter.set_spline(atomic_spline_r,lm,iorb*2);
+            mycenter.set_spline(atomic_spline_i,lm,iorb*2+1);
             einspline::destroy(atomic_spline_r);
             einspline::destroy(atomic_spline_i);
           }
