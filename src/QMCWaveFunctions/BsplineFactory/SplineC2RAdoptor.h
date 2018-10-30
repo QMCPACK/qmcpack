@@ -155,7 +155,7 @@ struct SplineC2RSoA: public SplineAdoptorBase<ST,3>
   inline void resize_kpoints()
   {
 #ifndef QMC_CUDA
-    // GPU code needs the old ordering.
+    // GPU CUDA code doesn't allow a change of the ordering
     nComplexBands=this->remap_kpoints();
 #endif
     int nk=kPoints.size();
