@@ -9,8 +9,6 @@
 //
 // File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 /** @file QMCCorrelatedSamplingLinearOptimize.h
@@ -35,13 +33,16 @@ namespace qmcplusplus
  * generated from VMC.
  */
 
-class QMCCorrelatedSamplingLinearOptimize: public QMCLinearOptimize, private NRCOptimization<QMCTraits::RealType>
+class QMCCorrelatedSamplingLinearOptimize : public QMCLinearOptimize, private NRCOptimization<QMCTraits::RealType>
 {
 public:
-
   ///Constructor.
-  QMCCorrelatedSamplingLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                                      QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool, Communicate* comm);
+  QMCCorrelatedSamplingLinearOptimize(MCWalkerConfiguration& w,
+                                      TrialWaveFunction& psi,
+                                      QMCHamiltonian& h,
+                                      HamiltonianPool& hpool,
+                                      WaveFunctionPool& ppool,
+                                      Communicate* comm);
 
   ///Destructor
   ~QMCCorrelatedSamplingLinearOptimize();
@@ -56,7 +57,9 @@ private:
   inline bool ValidCostFunction(bool valid)
   {
     if (!valid)
-      app_log()<<" Cost Function is Invalid. If this frequently, try reducing the step size of the line minimization or reduce the number of cycles. " << std::endl;
+      app_log() << " Cost Function is Invalid. If this frequently, try reducing the step size of the line minimization "
+                   "or reduce the number of cycles. "
+                << std::endl;
     return valid;
   }
 
@@ -76,7 +79,7 @@ private:
   /// number of previous steps to orthogonalize to.
   int eigCG;
   /// total number of cg steps per iterations
-  int  TotalCGSteps;
+  int TotalCGSteps;
 };
-}
+} // namespace qmcplusplus
 #endif

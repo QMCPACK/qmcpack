@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_COSTFUNCTIONOMP_H
@@ -23,20 +21,17 @@
 
 namespace qmcplusplus
 {
-
 /** @ingroup QMCDrivers
  * @brief Implements wave-function optimization
  *
  * Optimization by correlated sampling method with configurations
  * generated from VMC running on a single thread.
  */
-class QMCCostFunctionOMP: public QMCCostFunctionBase, public CloneManager
+class QMCCostFunctionOMP : public QMCCostFunctionBase, public CloneManager
 {
 public:
-
   ///Constructor.
-  QMCCostFunctionOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                     QMCHamiltonian& h, Communicate* comm);
+  QMCCostFunctionOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm);
 
   ///Destructor
   ~QMCCostFunctionOMP();
@@ -44,10 +39,10 @@ public:
   void getConfigurations(const std::string& aroot);
   void checkConfigurations();
 #ifdef HAVE_LMY_ENGINE
-  void engine_checkConfigurations(cqmc::engine::LMYEngine * EngineObj);
+  void engine_checkConfigurations(cqmc::engine::LMYEngine* EngineObj);
 #endif
-  void resetPsi(bool final_reset=false);
-  void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff=0);
+  void resetPsi(bool final_reset = false);
+  void GradCost(std::vector<Return_t>& PGradient, const std::vector<Return_t>& PM, Return_t FiniteDiff = 0);
   Return_t fillOverlapHamiltonianMatrices(Matrix<Return_t>& Left, Matrix<Return_t>& Right);
 
 protected:
@@ -56,17 +51,16 @@ protected:
 
   /** Temp derivative properties and Hderivative properties of all the walkers
   */
-  std::vector<Matrix<Return_t>* > DerivRecords;
-  std::vector<Matrix<Return_t>* > HDerivRecords;
+  std::vector<Matrix<Return_t>*> DerivRecords;
+  std::vector<Matrix<Return_t>*> HDerivRecords;
   Return_t CSWeight;
 
-  Return_t correlatedSampling(bool needGrad=true);
+  Return_t correlatedSampling(bool needGrad = true);
 
-  #ifdef HAVE_LMY_ENGINE
+#ifdef HAVE_LMY_ENGINE
   int total_samples();
-  Return_t LMYEngineCost_detail(cqmc::engine::LMYEngine * EngineObj);
-  #endif
-
+  Return_t LMYEngineCost_detail(cqmc::engine::LMYEngine* EngineObj);
+#endif
 };
-}
+} // namespace qmcplusplus
 #endif

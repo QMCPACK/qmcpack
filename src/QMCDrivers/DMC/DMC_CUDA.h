@@ -11,8 +11,6 @@
 //
 // File created by: Ken Esler, kpesler@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_DMC_CUDA_H
@@ -24,18 +22,20 @@
 
 namespace qmcplusplus
 {
-
 class QMCUpdateBase;
 
 /** @ingroup QMCDrivers  PbyP
  *@brief Implements the DMC algorithm using particle-by-particle move.
  */
-class DMCcuda: public QMCDriver
+class DMCcuda : public QMCDriver
 {
 public:
   /// Constructor.
-  GPU_XRAY_TRACE DMCcuda(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-			 QMCHamiltonian& h,WaveFunctionPool& ppool, Communicate* comm);
+  GPU_XRAY_TRACE DMCcuda(MCWalkerConfiguration& w,
+                         TrialWaveFunction& psi,
+                         QMCHamiltonian& h,
+                         WaveFunctionPool& ppool,
+                         Communicate* comm);
   GPU_XRAY_TRACE bool run();
   GPU_XRAY_TRACE bool put(xmlNodePtr cur);
   GPU_XRAY_TRACE void resetUpdateEngine();
@@ -54,12 +54,12 @@ private:
   ///update engine
   QMCUpdateBase* Mover;
   /// Copy Constructor (disabled)
-  DMCcuda(const DMCcuda &) = delete;
+  DMCcuda(const DMCcuda&) = delete;
   /// Copy operator (disabled).
-  DMCcuda & operator=(const DMCcuda &) = delete;
+  DMCcuda& operator=(const DMCcuda&) = delete;
 
-  bool checkBounds (const PosType &newpos);
-  void checkBounds (std::vector<PosType> &newpos, std::vector<bool> &valid);
+  bool checkBounds(const PosType& newpos);
+  void checkBounds(std::vector<PosType>& newpos, std::vector<bool>& valid);
 
   ///hide initialization from the main function
   GPU_XRAY_TRACE void resetRun();
@@ -69,6 +69,6 @@ private:
 
   NewTimer ResizeTimer, DriftDiffuseTimer, BranchTimer, HTimer;
 };
-}
+} // namespace qmcplusplus
 
 #endif

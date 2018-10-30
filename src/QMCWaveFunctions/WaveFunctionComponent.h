@@ -13,8 +13,8 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
 #ifndef QMCPLUSPLUS_ORBITALBASE_H
 #define QMCPLUSPLUS_ORBITALBASE_H
 #include "Configuration.h"
@@ -36,16 +36,13 @@
  */
 namespace qmcplusplus
 {
-
 #ifdef QMC_CUDA
 struct NLjob
 {
   int walker;
   int elec;
   int numQuadPoints;
-  NLjob(int w, int e, int n) :
-    walker(w), elec(e), numQuadPoints(n)
-  { }
+  NLjob(int w, int e, int n) : walker(w), elec(e), numQuadPoints(n) {}
 };
 #endif
 
@@ -55,11 +52,11 @@ class WaveFunctionComponent;
 class DiffWaveFunctionComponent;
 
 #if defined(ENABLE_SMARTPOINTER)
-typedef boost::shared_ptr<WaveFunctionComponent>     WaveFunctionComponentPtr;
+typedef boost::shared_ptr<WaveFunctionComponent> WaveFunctionComponentPtr;
 typedef boost::shared_ptr<DiffWaveFunctionComponent> DiffWaveFunctionComponentPtr;
 #else
-typedef WaveFunctionComponent*                       WaveFunctionComponentPtr;
-typedef DiffWaveFunctionComponent*                   DiffWaveFunctionComponentPtr;
+typedef WaveFunctionComponent* WaveFunctionComponentPtr;
+typedef DiffWaveFunctionComponent* DiffWaveFunctionComponentPtr;
 #endif
 
 /**@defgroup WaveFunctionComponent group
@@ -75,14 +72,15 @@ typedef DiffWaveFunctionComponent*                   DiffWaveFunctionComponentPt
 /** @ingroup WaveFunctionComponent
  * @brief An abstract class for a component of a many-body trial wave function
  */
-struct WaveFunctionComponent: public QMCTraits
+struct WaveFunctionComponent : public QMCTraits
 {
-
   ///recasting enum of DistanceTableData to maintain consistency
-  enum {SourceIndex  = DistanceTableData::SourceIndex,
-        VisitorIndex = DistanceTableData::VisitorIndex,
-        WalkerIndex  = DistanceTableData::WalkerIndex
-       };
+  enum
+  {
+    SourceIndex  = DistanceTableData::SourceIndex,
+    VisitorIndex = DistanceTableData::VisitorIndex,
+    WalkerIndex  = DistanceTableData::WalkerIndex
+  };
 
   /** enum for a update mode */
   enum
@@ -90,20 +88,20 @@ struct WaveFunctionComponent: public QMCTraits
     ORB_PBYP_RATIO,   /*!< particle-by-particle ratio only */
     ORB_PBYP_ALL,     /*!< particle-by-particle, update Value-Gradient-Laplacian */
     ORB_PBYP_PARTIAL, /*!< particle-by-particle, update Value and Grdient */
-    ORB_WALKER,    /*!< walker update */
-    ORB_ALLWALKER  /*!< all walkers update */
+    ORB_WALKER,       /*!< walker update */
+    ORB_ALLWALKER     /*!< all walkers update */
   };
 
   typedef ParticleAttrib<ValueType> ValueVectorType;
-  typedef ParticleAttrib<GradType>  GradVectorType;
-  typedef ParticleSet::Walker_t     Walker_t;
-  typedef Walker_t::WFBuffer_t      WFBufferType;
-  typedef Walker_t::Buffer_t        BufferType;
-  typedef OrbitalSetTraits<RealType>::ValueMatrix_t       RealMatrix_t;
-  typedef OrbitalSetTraits<ValueType>::ValueMatrix_t      ValueMatrix_t;
-  typedef OrbitalSetTraits<ValueType>::GradMatrix_t       GradMatrix_t;
-  typedef OrbitalSetTraits<ValueType>::HessType           HessType;
-  typedef OrbitalSetTraits<ValueType>::HessVector_t       HessVector_t;
+  typedef ParticleAttrib<GradType> GradVectorType;
+  typedef ParticleSet::Walker_t Walker_t;
+  typedef Walker_t::WFBuffer_t WFBufferType;
+  typedef Walker_t::Buffer_t BufferType;
+  typedef OrbitalSetTraits<RealType>::ValueMatrix_t RealMatrix_t;
+  typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
+  typedef OrbitalSetTraits<ValueType>::GradMatrix_t GradMatrix_t;
+  typedef OrbitalSetTraits<ValueType>::HessType HessType;
+  typedef OrbitalSetTraits<ValueType>::HessVector_t HessVector_t;
 
   /** flag to set the optimization mode */
   bool IsOptimizing;
@@ -157,17 +155,11 @@ struct WaveFunctionComponent: public QMCTraits
   //WaveFunctionComponent(const WaveFunctionComponent& old);
 
   ///default destructor
-  virtual ~WaveFunctionComponent() { }
+  virtual ~WaveFunctionComponent() {}
 
-  inline void setOptimizable(bool optimizeit)
-  {
-    Optimizable = optimizeit;
-  }
+  inline void setOptimizable(bool optimizeit) { Optimizable = optimizeit; }
 
-  inline void setIonDerivs(bool calcionderiv)
-  {
-    ionDerivs=calcionderiv;
-  }
+  inline void setIonDerivs(bool calcionderiv) { ionDerivs = calcionderiv; }
 
   virtual void resetPhaseDiff() {}
 
@@ -179,7 +171,7 @@ struct WaveFunctionComponent: public QMCTraits
   {
 #if defined(QMC_COMPLEX)
     RealType ratioMag = std::exp(LogValue);
-    return ValueType(std::cos(PhaseValue)*ratioMag,std::sin(PhaseValue)*ratioMag);
+    return ValueType(std::cos(PhaseValue) * ratioMag, std::sin(PhaseValue) * ratioMag);
 #else
     return std::exp(LogValue);
 #endif
@@ -190,25 +182,25 @@ struct WaveFunctionComponent: public QMCTraits
    *
    * Add the paramemters this orbital manage to active.
    */
-  virtual void checkInVariables(opt_variables_type& active)=0;
+  virtual void checkInVariables(opt_variables_type& active) = 0;
 
   /** check out optimizable variables
    *
    * Update myVars index map
    */
-  virtual void checkOutVariables(const opt_variables_type& active)=0;
+  virtual void checkOutVariables(const opt_variables_type& active) = 0;
 
   /** reset the parameters during optimizations
    */
-  virtual void resetParameters(const opt_variables_type& active)=0;
+  virtual void resetParameters(const opt_variables_type& active) = 0;
 
   /** print the state, e.g., optimizables */
-  virtual void reportStatus(std::ostream& os)=0;
+  virtual void reportStatus(std::ostream& os) = 0;
 
   /** reset properties, e.g., distance tables, for a new target ParticleSet
    * @param P ParticleSet
    */
-  virtual void resetTargetParticleSet(ParticleSet& P)=0;
+  virtual void resetTargetParticleSet(ParticleSet& P) = 0;
 
   /** evaluate the value of the orbital for a configuration P.R
    * @param P  active ParticleSet
@@ -219,23 +211,23 @@ struct WaveFunctionComponent: public QMCTraits
    *Mainly for walker-by-walker move. The initial stage of particle-by-particle
    *move also uses this.
    */
-  virtual RealType
-  evaluateLog(ParticleSet& P,
-              ParticleSet::ParticleGradient_t& G, ParticleSet::ParticleLaplacian_t& L) = 0;
+  virtual RealType evaluateLog(ParticleSet& P,
+                               ParticleSet::ParticleGradient_t& G,
+                               ParticleSet::ParticleLaplacian_t& L) = 0;
 
   /** recompute the value of the orbitals which require critical accuracy.
    * needed for Slater Determinants but not needed for most types of orbitals
    */
-  virtual void recompute(ParticleSet& P) {};
+  virtual void recompute(ParticleSet& P){};
 
- // virtual void evaluateHessian(ParticleSet& P, IndexType iat, HessType& grad_grad_psi)
- // {
- //   APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented");  
- // }
-  
+  // virtual void evaluateHessian(ParticleSet& P, IndexType iat, HessType& grad_grad_psi)
+  // {
+  //   APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented");
+  // }
+
   virtual void evaluateHessian(ParticleSet& P, HessVector_t& grad_grad_psi_all)
   {
-    APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in "+ClassName+" class.");
+    APP_ABORT("WaveFunctionComponent::evaluateHessian is not implemented in " + ClassName + " class.");
   }
 
   /** return the current gradient for the iat-th particle
@@ -245,7 +237,7 @@ struct WaveFunctionComponent: public QMCTraits
    */
   virtual GradType evalGrad(ParticleSet& P, int iat)
   {
-    APP_ABORT("WaveFunctionComponent::evalGradient is not implemented in "+ClassName+" class.");
+    APP_ABORT("WaveFunctionComponent::evalGradient is not implemented in " + ClassName + " class.");
     return GradType();
   }
 
@@ -255,9 +247,7 @@ struct WaveFunctionComponent: public QMCTraits
    * @param iat particle index
    * @return the gradient of the iat-th particle
    */
-  virtual GradType evalGradSource(ParticleSet& P,
-                                  ParticleSet& source,
-                                  int iat)
+  virtual GradType evalGradSource(ParticleSet& P, ParticleSet& source, int iat)
   {
     // APP_ABORT("WaveFunctionComponent::evalGradSource is not implemented");
     return GradType();
@@ -273,14 +263,14 @@ struct WaveFunctionComponent: public QMCTraits
    * @param the ion gradient of the elctron laplacian.
    * @return the log gradient of psi w.r.t. the source particle iat
    */
-  virtual GradType evalGradSource
-  (ParticleSet& P, ParticleSet& source, int iat,
-   TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM> &grad_grad,
-   TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad)
+  virtual GradType evalGradSource(ParticleSet& P,
+                                  ParticleSet& source,
+                                  int iat,
+                                  TinyVector<ParticleSet::ParticleGradient_t, OHMMS_DIM>& grad_grad,
+                                  TinyVector<ParticleSet::ParticleLaplacian_t, OHMMS_DIM>& lapl_grad)
   {
     return GradType();
   }
-
 
 
   /** evaluate the ratio of the new to old orbital value
@@ -290,7 +280,7 @@ struct WaveFunctionComponent: public QMCTraits
    */
   virtual ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
-    APP_ABORT("WaveFunctionComponent::ratioGrad is not implemented in "+ClassName+" class.");
+    APP_ABORT("WaveFunctionComponent::ratioGrad is not implemented in " + ClassName + " class.");
     return ValueType();
   }
 
@@ -298,7 +288,7 @@ struct WaveFunctionComponent: public QMCTraits
    * @param P target ParticleSet
    * @param iat index of the particle whose new position was proposed
    */
-  virtual void acceptMove(ParticleSet& P, int iat) =0;
+  virtual void acceptMove(ParticleSet& P, int iat) = 0;
 
   /** a move for iat-th particle is reject. Restore to the content.
    * @param iat index of the particle whose new position was proposed
@@ -312,14 +302,14 @@ struct WaveFunctionComponent: public QMCTraits
    *
    *Specialized for particle-by-particle move.
    */
-  virtual ValueType ratio(ParticleSet& P, int iat) =0;
+  virtual ValueType ratio(ParticleSet& P, int iat) = 0;
 
   /** For particle-by-particle move. Requests space in the buffer
    *  based on the data type sizes of the objects in this class.
    * @param P particle set
    * @param buf Anonymous storage
    */
-  virtual void registerData(ParticleSet& P, WFBufferType& buf) =0;
+  virtual void registerData(ParticleSet& P, WFBufferType& buf) = 0;
 
   /** For particle-by-particle move. Put the objects of this class
    *  in the walker buffer or forward the memory cursor.
@@ -329,7 +319,7 @@ struct WaveFunctionComponent: public QMCTraits
    *        pieces of wavefunction from scratch
    * @return log value of the wavefunction.
    */
-  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch=false) =0;
+  virtual RealType updateBuffer(ParticleSet& P, WFBufferType& buf, bool fromscratch = false) = 0;
 
   /** For particle-by-particle move. Copy data or attach memory
    *  from a walker buffer to the objects of this class.
@@ -338,7 +328,7 @@ struct WaveFunctionComponent: public QMCTraits
    * @param P particle set
    * @param buf Anonymous storage
    */
-  virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf)=0;
+  virtual void copyFromBuffer(ParticleSet& P, WFBufferType& buf) = 0;
 
   /** make clone
    * @param tqp target Quantum ParticleSet
@@ -355,13 +345,13 @@ struct WaveFunctionComponent: public QMCTraits
   virtual void evaluateDerivatives(ParticleSet& P,
                                    const opt_variables_type& optvars,
                                    std::vector<RealType>& dlogpsi,
-                                   std::vector<RealType>& dhpsioverpsi) ;
+                                   std::vector<RealType>& dhpsioverpsi);
   virtual void multiplyDerivsByOrbR(std::vector<RealType>& dlogpsi)
   {
-    RealType myrat = std::exp(LogValue)*std::cos(PhaseValue);
-    for(int j=0; j<myVars.size(); j++)
+    RealType myrat = std::exp(LogValue) * std::cos(PhaseValue);
+    for (int j = 0; j < myVars.size(); j++)
     {
-      int loc=myVars.where(j);
+      int loc = myVars.where(j);
       dlogpsi[loc] *= myrat;
     }
   };
@@ -371,13 +361,14 @@ struct WaveFunctionComponent: public QMCTraits
       performed with the passed-in G_in gradient vector. This object is then
       returned as dgradlogpsi.
    */
-  virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in,
-                                       std::vector<RealType>& dgradlogpsi) {
-    app_error() << "Need specialization of WaveFunctionComponent::evaluateGradDerivatives in "+ClassName+" class.\n";
+  virtual void evaluateGradDerivatives(const ParticleSet::ParticleGradient_t& G_in, std::vector<RealType>& dgradlogpsi)
+  {
+    app_error() << "Need specialization of WaveFunctionComponent::evaluateGradDerivatives in " + ClassName +
+            " class.\n";
     abort();
   }
 
-  virtual void finalizeOptimization() { }
+  virtual void finalizeOptimization() {}
 
   /** evaluate the ratios of one virtual move with respect to all the particles
    * @param P reference particleset
@@ -396,34 +387,30 @@ struct WaveFunctionComponent: public QMCTraits
    * @param ratios ratios with new positions VP.R[k] the VP.refPtcl
    * @param dratios \f$\partial_{\alpha}(\ln \Psi ({\bf R}^{\prime}) - \ln \Psi ({\bf R})) \f$
    */
-  virtual void evaluateDerivRatios(VirtualParticleSet& VP, const opt_variables_type& optvars,
-      std::vector<ValueType>& ratios, Matrix<ValueType>& dratios);
+  virtual void evaluateDerivRatios(VirtualParticleSet& VP,
+                                   const opt_variables_type& optvars,
+                                   std::vector<ValueType>& ratios,
+                                   Matrix<ValueType>& dratios);
 
   /////////////////////////////////////////////////////
   // Functions for vectorized evaluation and updates //
   /////////////////////////////////////////////////////
 #ifdef QMC_CUDA
   using CTS = CUDAGlobalTypes;
-  
-  virtual void freeGPUmem()
-  { }
 
-  virtual void recompute(MCWalkerConfiguration &W, bool firstTime)
-  { }
+  virtual void freeGPUmem() {}
 
-  virtual void reserve (PointerPool<gpu::device_vector<CTS::ValueType> > &pool)
-  { }
+  virtual void recompute(MCWalkerConfiguration& W, bool firstTime) {}
+
+  virtual void reserve(PointerPool<gpu::device_vector<CTS::ValueType>>& pool) {}
 
   /** Evaluate the log of the WF for all walkers
    *  @param walkers   vector of all walkers
    *  @param logPsi    output vector of log(psi)
    */
-  virtual void
-  addLog (MCWalkerConfiguration &W,
-          std::vector<RealType> &logPsi)
+  virtual void addLog(MCWalkerConfiguration& W, std::vector<RealType>& logPsi)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::addLog for "
-                << ClassName << ".\n";
+    app_error() << "Need specialization of WaveFunctionComponent::addLog for " << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
@@ -434,160 +421,138 @@ struct WaveFunctionComponent: public QMCTraits
    *  @param iat         particle which is moving
    *  @param psi_ratios  output vector with psi_new/psi_old
    */
-  virtual void
-  ratio (MCWalkerConfiguration &W, int iat,
-         std::vector<ValueType> &psi_ratios)
+  virtual void ratio(MCWalkerConfiguration& W, int iat, std::vector<ValueType>& psi_ratios)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::ratio for "
-                << ClassName << ".\n";
+    app_error() << "Need specialization of WaveFunctionComponent::ratio for " << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
   // Returns the WF ratio and gradient w.r.t. iat for each walker
   // in the respective vectors
-  virtual void
-  ratio (MCWalkerConfiguration &W, int iat,
-         std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad)
+  virtual void ratio(MCWalkerConfiguration& W, int iat, std::vector<ValueType>& psi_ratios, std::vector<GradType>& grad)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::ratio for "
-                << ClassName << ".\n";
+    app_error() << "Need specialization of WaveFunctionComponent::ratio for " << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
-  virtual void
-  ratio (MCWalkerConfiguration &W, int iat,
-         std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-         std::vector<ValueType> &lapl)
+  virtual void ratio(MCWalkerConfiguration& W,
+                     int iat,
+                     std::vector<ValueType>& psi_ratios,
+                     std::vector<GradType>& grad,
+                     std::vector<ValueType>& lapl)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::ratio for "
-                << ClassName << ".\n";
+    app_error() << "Need specialization of WaveFunctionComponent::ratio for " << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
-  virtual void
-  calcRatio (MCWalkerConfiguration &W, int iat,
-             std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-             std::vector<ValueType> &lapl)
+  virtual void calcRatio(MCWalkerConfiguration& W,
+                         int iat,
+                         std::vector<ValueType>& psi_ratios,
+                         std::vector<GradType>& grad,
+                         std::vector<ValueType>& lapl)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::calcRatio for "
-                << ClassName << ".\n";
+    app_error() << "Need specialization of WaveFunctionComponent::calcRatio for " << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
-  virtual void
-  addRatio (MCWalkerConfiguration &W, int iat,
-            std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-            std::vector<ValueType> &lapl)
+  virtual void addRatio(MCWalkerConfiguration& W,
+                        int iat,
+                        std::vector<ValueType>& psi_ratios,
+                        std::vector<GradType>& grad,
+                        std::vector<ValueType>& lapl)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::addRatio for "
-                << ClassName << ".\n";
+    app_error() << "Need specialization of WaveFunctionComponent::addRatio for " << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
-  virtual void
-  ratio (std::vector<Walker_t*> &walkers, std::vector<int> &iatList,
-         std::vector<PosType> &rNew,  std::vector<ValueType> &psi_ratios,
-         std::vector<GradType>  &grad,  std::vector<ValueType> &lapl)
+  virtual void ratio(std::vector<Walker_t*>& walkers,
+                     std::vector<int>& iatList,
+                     std::vector<PosType>& rNew,
+                     std::vector<ValueType>& psi_ratios,
+                     std::vector<GradType>& grad,
+                     std::vector<ValueType>& lapl)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::ratio for "
-                << ClassName << ".\n";
-    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
-    abort();
-  }
-
-
-  virtual void
-  addGradient(MCWalkerConfiguration &W, int iat,
-              std::vector<GradType> &grad)
-  {
-    app_error() << "Need specialization of WaveFunctionComponent::addGradient for "
-                << ClassName << ".\n";
-    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
-    abort();
-  }
-
-  virtual void
-  calcGradient(MCWalkerConfiguration &W, int iat,
-               std::vector<GradType> &grad)
-  {
-    app_error() << "Need specialization of WaveFunctionComponent::calcGradient for "
-                << ClassName << ".\n";
-    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
-    abort();
-  }
-
-  virtual void
-  gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
-            ValueMatrix_t &lapl)
-  {
-    app_error() << "Need specialization of WaveFunctionComponent::gradLapl for "
-                << ClassName << ".\n";
+    app_error() << "Need specialization of WaveFunctionComponent::ratio for " << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
 
-  virtual void
-  update (std::vector<Walker_t*> &walkers, int iat)
+  virtual void addGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::update for "
-                << ClassName << ".\n";
+    app_error() << "Need specialization of WaveFunctionComponent::addGradient for " << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
-  virtual void
-  update (const std::vector<Walker_t*> &walkers,
-          const std::vector<int> &iatList)
+  virtual void calcGradient(MCWalkerConfiguration& W, int iat, std::vector<GradType>& grad)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::update for "
-                << ClassName << ".\n";
+    app_error() << "Need specialization of WaveFunctionComponent::calcGradient for " << ClassName << ".\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
+    abort();
+  }
+
+  virtual void gradLapl(MCWalkerConfiguration& W, GradMatrix_t& grads, ValueMatrix_t& lapl)
+  {
+    app_error() << "Need specialization of WaveFunctionComponent::gradLapl for " << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
 
-  virtual void
-  NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
-            std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios)
+  virtual void update(std::vector<Walker_t*>& walkers, int iat)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::NLRatios for "
-                << ClassName << ".\n";
+    app_error() << "Need specialization of WaveFunctionComponent::update for " << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
-  virtual void
-  NLratios (MCWalkerConfiguration &W,  gpu::device_vector<CUDA_PRECISION*> &Rlist,
-            gpu::device_vector<int*> &ElecList, gpu::device_vector<int>             &NumCoreElecs,
-            gpu::device_vector<CUDA_PRECISION*> &QuadPosList,
-            gpu::device_vector<CUDA_PRECISION*> &RatioList,
-            int numQuadPoints)
+  virtual void update(const std::vector<Walker_t*>& walkers, const std::vector<int>& iatList)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::NLRatios for "
-                << ClassName << ".\n";
+    app_error() << "Need specialization of WaveFunctionComponent::update for " << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 
-  virtual void
-  evaluateDerivatives (MCWalkerConfiguration &W,
-                       const opt_variables_type& optvars,
-                       RealMatrix_t &dgrad_logpsi,
-                       RealMatrix_t &dhpsi_over_psi)
+
+  virtual void NLratios(MCWalkerConfiguration& W,
+                        std::vector<NLjob>& jobList,
+                        std::vector<PosType>& quadPoints,
+                        std::vector<ValueType>& psi_ratios)
   {
-    app_error() << "Need specialization of WaveFunctionComponent::evaluateDerivatives for "
-                << ClassName << ".\n";
+    app_error() << "Need specialization of WaveFunctionComponent::NLRatios for " << ClassName << ".\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
+    abort();
+  }
+
+  virtual void NLratios(MCWalkerConfiguration& W,
+                        gpu::device_vector<CUDA_PRECISION*>& Rlist,
+                        gpu::device_vector<int*>& ElecList,
+                        gpu::device_vector<int>& NumCoreElecs,
+                        gpu::device_vector<CUDA_PRECISION*>& QuadPosList,
+                        gpu::device_vector<CUDA_PRECISION*>& RatioList,
+                        int numQuadPoints)
+  {
+    app_error() << "Need specialization of WaveFunctionComponent::NLRatios for " << ClassName << ".\n";
+    app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
+    abort();
+  }
+
+  virtual void evaluateDerivatives(MCWalkerConfiguration& W,
+                                   const opt_variables_type& optvars,
+                                   RealMatrix_t& dgrad_logpsi,
+                                   RealMatrix_t& dhpsi_over_psi)
+  {
+    app_error() << "Need specialization of WaveFunctionComponent::evaluateDerivatives for " << ClassName << ".\n";
     app_error() << "Required CUDA functionality not implemented. Contact developers.\n";
     abort();
   }
 #endif
 };
-}
+} // namespace qmcplusplus
 #endif
-

@@ -11,8 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 /** @file DMCOMP.h
@@ -24,19 +22,20 @@
 #include "QMCDrivers/CloneManager.h"
 namespace qmcplusplus
 {
-
 /** @ingroup QMCDrivers
  * @brief DMC driver using OpenMP paragra
  *
  * This is the main DMC driver with MPI/OpenMP loops over the walkers.
  */
-class DMCOMP: public QMCDriver, public CloneManager
+class DMCOMP : public QMCDriver, public CloneManager
 {
 public:
-
   /// Constructor.
-  DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-         WaveFunctionPool& ppool, Communicate* comm);
+  DMCOMP(MCWalkerConfiguration& w,
+         TrialWaveFunction& psi,
+         QMCHamiltonian& h,
+         WaveFunctionPool& ppool,
+         Communicate* comm);
 
   bool run();
   bool put(xmlNodePtr cur);
@@ -69,10 +68,10 @@ private:
   void resetUpdateEngines();
   void benchMark();
   /// Copy Constructor (disabled)
-  DMCOMP(const DMCOMP &) = delete;
+  DMCOMP(const DMCOMP&) = delete;
   /// Copy operator (disabled).
-  DMCOMP & operator=(const DMCOMP&) = delete;
+  DMCOMP& operator=(const DMCOMP&) = delete;
 };
-}
+} // namespace qmcplusplus
 
 #endif

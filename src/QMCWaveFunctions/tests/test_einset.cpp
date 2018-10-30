@@ -8,8 +8,7 @@
 //
 // File created by: Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
 
 #include "catch.hpp"
 
@@ -34,11 +33,9 @@ using std::string;
 
 namespace qmcplusplus
 {
-
 TEST_CASE("Einspline SPO from HDF", "[wavefunction]")
 {
-
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
@@ -65,7 +62,7 @@ TEST_CASE("Einspline SPO from HDF", "[wavefunction]")
   elec_.R[1][2] = 0.0;
 
   // monoO
- /*
+  /*
   elec_.Lattice.R(0,0) = 5.10509515;
   elec_.Lattice.R(0,1) = -3.23993545;
   elec_.Lattice.R(0,2) = 0.0;
@@ -78,27 +75,27 @@ TEST_CASE("Einspline SPO from HDF", "[wavefunction]")
  */
 
   // diamondC_1x1x1
-  elec_.Lattice.R(0,0) = 3.37316115;
-  elec_.Lattice.R(0,1) = 3.37316115;
-  elec_.Lattice.R(0,2) = 0.0;
-  elec_.Lattice.R(1,0) = 0.0;
-  elec_.Lattice.R(1,1) = 3.37316115;
-  elec_.Lattice.R(1,2) = 3.37316115;
-  elec_.Lattice.R(2,0) = 3.37316115;
-  elec_.Lattice.R(2,1) = 0.0;
-  elec_.Lattice.R(2,2) = 3.37316115;
+  elec_.Lattice.R(0, 0) = 3.37316115;
+  elec_.Lattice.R(0, 1) = 3.37316115;
+  elec_.Lattice.R(0, 2) = 0.0;
+  elec_.Lattice.R(1, 0) = 0.0;
+  elec_.Lattice.R(1, 1) = 3.37316115;
+  elec_.Lattice.R(1, 2) = 3.37316115;
+  elec_.Lattice.R(2, 0) = 3.37316115;
+  elec_.Lattice.R(2, 1) = 0.0;
+  elec_.Lattice.R(2, 2) = 3.37316115;
 
-  SpeciesSet &tspecies =  elec_.getSpeciesSet();
-  int upIdx = tspecies.addSpecies("u");
-  int downIdx = tspecies.addSpecies("d");
-  int chargeIdx = tspecies.addAttribute("charge");
-  tspecies(chargeIdx, upIdx) = -1;
+  SpeciesSet& tspecies         = elec_.getSpeciesSet();
+  int upIdx                    = tspecies.addSpecies("u");
+  int downIdx                  = tspecies.addSpecies("d");
+  int chargeIdx                = tspecies.addAttribute("charge");
+  tspecies(chargeIdx, upIdx)   = -1;
   tspecies(chargeIdx, downIdx) = -1;
 
 #ifdef ENABLE_SOA
-  elec_.addTable(ions_,DT_SOA);
+  elec_.addTable(ions_, DT_SOA);
 #else
-  elec_.addTable(ions_,DT_AOS);
+  elec_.addTable(ions_, DT_AOS);
 #endif
   elec_.resetGroups();
   elec_.update();
@@ -111,15 +108,14 @@ TEST_CASE("Einspline SPO from HDF", "[wavefunction]")
   ptcl.addParticleSet(&elec_);
   ptcl.addParticleSet(&ions_);
 
-//diamondC_1x1x1
-const char *particles = 
-"<tmp> \
+  //diamondC_1x1x1
+  const char* particles = "<tmp> \
 <determinantset type=\"einspline\" href=\"pwscf.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"4\"/> \
 </tmp> \
 ";
 
-// monoO
-//<determinantset type=\"einspline\" href=\"pwscf.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"6\"/> \
+  // monoO
+  //<determinantset type=\"einspline\" href=\"pwscf.pwscf.h5\" tilematrix=\"1 0 0 0 1 0 0 0 1\" twistnum=\"0\" source=\"ion\" meshfactor=\"1.0\" precision=\"float\" size=\"6\"/> \
 
   Libxml2Document doc;
   bool okay = doc.parseFromString(particles);
@@ -130,16 +126,16 @@ const char *particles =
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
   EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
-  SPOSet *spo = einSet.createSPOSetFromXML(ein1);
+  SPOSet* spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo != NULL);
 
 #if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
   // due to the different ordering of bands skip the tests on CUDA+Real builds
   // checking evaluations, reference values are not independently generated.
   // for vgl
-  SPOSet::ValueMatrix_t psiM(elec_.R.size(),spo->getOrbitalSetSize());
-  SPOSet::GradMatrix_t dpsiM(elec_.R.size(),spo->getOrbitalSetSize());
-  SPOSet::ValueMatrix_t d2psiM(elec_.R.size(),spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix_t psiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::GradMatrix_t dpsiM(elec_.R.size(), spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix_t d2psiM(elec_.R.size(), spo->getOrbitalSetSize());
   spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
 
   // value
@@ -157,23 +153,23 @@ const char *particles =
   REQUIRE(d2psiM[1][1] == ComplexApprox(-4.712583065).compare_real_only());
 
   // for vgh
-  SPOSet::ValueVector_t psiV(psiM[1],spo->getOrbitalSetSize());
-  SPOSet::GradVector_t dpsiV(dpsiM[1],spo->getOrbitalSetSize());
+  SPOSet::ValueVector_t psiV(psiM[1], spo->getOrbitalSetSize());
+  SPOSet::GradVector_t dpsiV(dpsiM[1], spo->getOrbitalSetSize());
   SPOSet::HessVector_t ddpsiV(spo->getOrbitalSetSize());
   spo->evaluate(elec_, 1, psiV, dpsiV, ddpsiV);
 
   // Catch default is 100*(float epsilson)
-  double eps = 2000*std::numeric_limits<float>::epsilon();
+  double eps = 2000 * std::numeric_limits<float>::epsilon();
   //hess
-  REQUIRE(ddpsiV[1](0,0) == ComplexApprox(-2.3160984034).compare_real_only());
-  REQUIRE(ddpsiV[1](0,1) == ComplexApprox(1.8089479397).compare_real_only());
-  REQUIRE(ddpsiV[1](0,2) == ComplexApprox(0.5608575749).compare_real_only());
-  REQUIRE(ddpsiV[1](1,0) == ComplexApprox(1.8089479397).compare_real_only());
-  REQUIRE(ddpsiV[1](1,1) == ComplexApprox(-0.07996207476).epsilon(eps).compare_real_only());
-  REQUIRE(ddpsiV[1](1,2) == ComplexApprox(0.5237969314).compare_real_only());
-  REQUIRE(ddpsiV[1](2,0) == ComplexApprox(0.5608575749).compare_real_only());
-  REQUIRE(ddpsiV[1](2,1) == ComplexApprox(0.5237969314).compare_real_only());
-  REQUIRE(ddpsiV[1](2,2) == ComplexApprox(-2.316497764).compare_real_only());
+  REQUIRE(ddpsiV[1](0, 0) == ComplexApprox(-2.3160984034).compare_real_only());
+  REQUIRE(ddpsiV[1](0, 1) == ComplexApprox(1.8089479397).compare_real_only());
+  REQUIRE(ddpsiV[1](0, 2) == ComplexApprox(0.5608575749).compare_real_only());
+  REQUIRE(ddpsiV[1](1, 0) == ComplexApprox(1.8089479397).compare_real_only());
+  REQUIRE(ddpsiV[1](1, 1) == ComplexApprox(-0.07996207476).epsilon(eps).compare_real_only());
+  REQUIRE(ddpsiV[1](1, 2) == ComplexApprox(0.5237969314).compare_real_only());
+  REQUIRE(ddpsiV[1](2, 0) == ComplexApprox(0.5608575749).compare_real_only());
+  REQUIRE(ddpsiV[1](2, 1) == ComplexApprox(0.5237969314).compare_real_only());
+  REQUIRE(ddpsiV[1](2, 2) == ComplexApprox(-2.316497764).compare_real_only());
 #endif
 
 #if 0
@@ -205,17 +201,15 @@ const char *particles =
   }
   fclose(fspo);
 #endif
-
 }
 
 TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
 {
-
-  Communicate *c;
+  Communicate* c;
   OHMMS::Controller->initialize(0, NULL);
   c = OHMMS::Controller;
 
-  ParticleSet *elec = new ParticleSet;
+  ParticleSet* elec = new ParticleSet;
 
   elec->setName("elec");
   std::vector<int> agroup(2);
@@ -229,10 +223,10 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
   elec->R[1][1] = 1.0;
   elec->R[1][2] = 0.0;
 
-  elec->Lattice.R = 0.0;
-  elec->Lattice.R(0,0) = 1.0;
-  elec->Lattice.R(1,1) = 1.0;
-  elec->Lattice.R(2,2) = 1.0;
+  elec->Lattice.R       = 0.0;
+  elec->Lattice.R(0, 0) = 1.0;
+  elec->Lattice.R(1, 1) = 1.0;
+  elec->Lattice.R(2, 2) = 1.0;
 
   EinsplineSetBuilder::PtclPoolType ptcl_map;
   ptcl_map["e"] = elec;
@@ -240,15 +234,14 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
   xmlNodePtr cur = NULL;
   EinsplineSetBuilder esb(*elec, ptcl_map, c, cur);
 
-  esb.SuperLattice = 0.0;
-  esb.SuperLattice(0,0) = 1.0;
-  esb.SuperLattice(1,1) = 1.0;
-  esb.SuperLattice(2,2) = 1.0;
+  esb.SuperLattice       = 0.0;
+  esb.SuperLattice(0, 0) = 1.0;
+  esb.SuperLattice(1, 1) = 1.0;
+  esb.SuperLattice(2, 2) = 1.0;
 
   REQUIRE(esb.CheckLattice());
 
-  esb.SuperLattice(0,0) = 1.1;
+  esb.SuperLattice(0, 0) = 1.1;
   REQUIRE_FALSE(esb.CheckLattice());
 }
-}
-
+} // namespace qmcplusplus

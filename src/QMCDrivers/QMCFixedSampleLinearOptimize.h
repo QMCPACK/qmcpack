@@ -9,8 +9,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 /** @file QMCFixedSampleLinearOptimize.h
@@ -35,13 +33,16 @@ namespace qmcplusplus
  * generated from VMC.
  */
 
-class QMCFixedSampleLinearOptimize: public QMCLinearOptimize, private NRCOptimization<QMCTraits::RealType>
+class QMCFixedSampleLinearOptimize : public QMCLinearOptimize, private NRCOptimization<QMCTraits::RealType>
 {
 public:
-
   ///Constructor.
-  QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w, TrialWaveFunction& psi,
-                               QMCHamiltonian& h, HamiltonianPool& hpool, WaveFunctionPool& ppool, Communicate* comm);
+  QMCFixedSampleLinearOptimize(MCWalkerConfiguration& w,
+                               TrialWaveFunction& psi,
+                               QMCHamiltonian& h,
+                               HamiltonianPool& hpool,
+                               WaveFunctionPool& ppool,
+                               Communicate* comm);
 
   ///Destructor
   ~QMCFixedSampleLinearOptimize();
@@ -56,12 +57,14 @@ private:
   inline bool ValidCostFunction(bool valid)
   {
     if (!valid)
-      app_log()<<" Cost Function is Invalid. If this frequently, try reducing the step size of the line minimization or reduce the number of cycles. " << std::endl;
+      app_log() << " Cost Function is Invalid. If this frequently, try reducing the step size of the line minimization "
+                   "or reduce the number of cycles. "
+                << std::endl;
     return valid;
   }
 
   // check if the proposed new cost function value is the best available
-  bool is_best_cost(const int ii, const std::vector<RealType> & cv, const RealType ic) const;
+  bool is_best_cost(const int ii, const std::vector<RealType>& cv, const RealType ic) const;
 
   // perform the adaptive three-shift update
   bool adaptive_three_shift_run();
@@ -69,25 +72,31 @@ private:
   // perform the single-shift update, no sample regeneration
   bool one_shift_run();
 
-  void solveShiftsWithoutLMYEngine(const std::vector<double> & shifts_i,
-                                   const std::vector<double> & shiffts_s,
-                                   std::vector<std::vector<RealType> > & parameterDirections);
+  void solveShiftsWithoutLMYEngine(const std::vector<double>& shifts_i,
+                                   const std::vector<double>& shiffts_s,
+                                   std::vector<std::vector<RealType>>& parameterDirections);
 
-  #ifdef HAVE_LMY_ENGINE
+#ifdef HAVE_LMY_ENGINE
   formic::VarDeps vdeps;
-  cqmc::engine::LMYEngine * EngineObj;
-  #endif
+  cqmc::engine::LMYEngine* EngineObj;
+#endif
 
   // prepare a vector of shifts to try
   std::vector<double> prepare_shifts(const double central_shift) const;
 
   // previous update
 #ifdef HAVE_LMY_ENGINE
-  std::vector<formic::ColVec<double> > previous_update;
+  std::vector<formic::ColVec<double>> previous_update;
 #endif
 
   void print_cost_summary_header();
-  void print_cost_summary(const double si, const double ss, const RealType mc, const RealType cv, const int ind, const int bi, const bool gu);
+  void print_cost_summary(const double si,
+                          const double ss,
+                          const RealType mc,
+                          const RealType cv,
+                          const int ind,
+                          const int bi,
+                          const bool gu);
 
   int NumOfVMCWalkers;
   ///Number of iterations maximum before generating new configurations.
@@ -99,7 +108,7 @@ private:
   /// number of previous steps to orthogonalize to.
   int eigCG;
   /// total number of cg steps per iterations
-  int  TotalCGSteps;
+  int TotalCGSteps;
   /// whether to use the adaptive three-shift scheme
   bool doAdaptiveThreeShift;
   /// whether to use the single-shift scheme
@@ -135,7 +144,7 @@ private:
   ///number of directions kept
   int nkept;
   ///number of samples to do in correlated sampling part
-  int nsamp_comp; 
+  int nsamp_comp;
   ///the shift to use when targeting an excited state
   RealType omega_shift;
   ///whether to do the first part of block lm
@@ -145,5 +154,5 @@ private:
   ///whethe to do the third part of blocl lm
   bool block_third;
 };
-}
+} // namespace qmcplusplus
 #endif

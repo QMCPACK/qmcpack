@@ -10,8 +10,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #ifndef QMCPLUSPLUS_VMCSINGLE_OMP_H
@@ -20,16 +18,18 @@
 #include "QMCDrivers/CloneManager.h"
 namespace qmcplusplus
 {
-
 /** @ingroup QMCDrivers  ParticleByParticle
  * @brief Implements a VMC using particle-by-particle move. Threaded execution.
  */
-class VMCSingleOMP: public QMCDriver, public CloneManager
+class VMCSingleOMP : public QMCDriver, public CloneManager
 {
 public:
   /// Constructor.
-  VMCSingleOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-               WaveFunctionPool& ppool, Communicate* comm);
+  VMCSingleOMP(MCWalkerConfiguration& w,
+               TrialWaveFunction& psi,
+               QMCHamiltonian& h,
+               WaveFunctionPool& ppool,
+               Communicate* comm);
   bool run();
   bool put(xmlNodePtr cur);
   //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
@@ -38,16 +38,16 @@ private:
   int prevStepsBetweenSamples;
 
   ///Ways to set rn constant
-  RealType logoffset,logepsilon;
+  RealType logoffset, logepsilon;
   ///option to enable/disable drift equation or RN for VMC
   std::string UseDrift;
   ///check the run-time environments
   void resetRun();
   ///copy constructor
-  VMCSingleOMP(const VMCSingleOMP &) = delete;
+  VMCSingleOMP(const VMCSingleOMP&) = delete;
   /// Copy operator (disabled).
-  VMCSingleOMP & operator=(const VMCSingleOMP &) = delete;
+  VMCSingleOMP& operator=(const VMCSingleOMP&) = delete;
 };
-}
+} // namespace qmcplusplus
 
 #endif

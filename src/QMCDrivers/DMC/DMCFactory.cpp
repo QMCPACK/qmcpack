@@ -11,8 +11,6 @@
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
 
 
 #include "QMCDrivers/DMC/DMCFactory.h"
@@ -26,17 +24,20 @@
 //#define PETA_DMC_TEST
 namespace qmcplusplus
 {
-
-QMCDriver* DMCFactory::create(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h,
-                              HamiltonianPool& hpool,WaveFunctionPool& ppool, Communicate* comm)
+QMCDriver* DMCFactory::create(MCWalkerConfiguration& w,
+                              TrialWaveFunction& psi,
+                              QMCHamiltonian& h,
+                              HamiltonianPool& hpool,
+                              WaveFunctionPool& ppool,
+                              Communicate* comm)
 {
 #ifdef QMC_CUDA
   if (GPU)
-    return new DMCcuda (w, psi, h, ppool, comm);
+    return new DMCcuda(w, psi, h, ppool, comm);
 #endif
   app_log() << "Creating DMCMP for the qmc driver" << std::endl;
-  QMCDriver*  qmc = new DMCOMP(w, psi, h, ppool, comm);
+  QMCDriver* qmc = new DMCOMP(w, psi, h, ppool, comm);
   qmc->setUpdateMode(PbyPUpdate);
   return qmc;
 }
-}
+} // namespace qmcplusplus
