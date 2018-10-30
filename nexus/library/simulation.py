@@ -909,8 +909,13 @@ class Simulation(NexusCore):
     #end def load_analyzer_image
 
 
+    def attempt_files(self):
+        return (self.infile,self.outfile,self.errfile)
+    #end def attempt_files
+
+
     def save_attempt(self):
-        local = [self.infile,self.outfile,self.errfile]
+        local = self.attempt_files()
         filepaths = []
         for file in local:
             filepath = os.path.join(self.locdir,file)
@@ -938,7 +943,6 @@ class Simulation(NexusCore):
             #os.system('ls '+attempt_dir)
             #exit()
         #end if
-        #self.error('save_attempt')
     #end def save_attempt
 
 
@@ -1011,7 +1015,7 @@ class Simulation(NexusCore):
             if found_file:
                 self.copy_file(local,remote)
             else:
-                self.error('file {0} not found\n  locations checked: {1}'.format(file,file_locations))
+                self.error('file {0} not found\nlocations checked: {1}'.format(file,file_locations))
             #end if
         #end for
         self.sent_files = True
@@ -1703,14 +1707,19 @@ except:
     Dot,Node,Edge = unavailable('pydot','Dot','Node','Edge')
 #end try
 try:
-    import Image
+    from matplotlib.image import imread
+    from matplotlib.pyplot import imshow,show,xticks,yticks
 except:
-    Image = unavailable('Image')
+    imread = unavailable('matplotlib.image','imread')
+    imshow,show,xticks,yticks = unavailable('matplotlib.pyplot','imshow','show','xticks','yticks')
 #end try
 import tempfile
 exit_call = sys.exit
-def graph_sims(sims,useid=False,exit=True,quants=True):
-    graph = Dot(graph_type='digraph')
+def graph_sims(sims=None,savefile=None,useid=False,exit=True,quants=True):
+    if sims is None:
+        sims = Simulation.all_sims
+    #end if
+    graph = Dot(graph_type='digraph',dpi=300)
     graph.set_label('simulation workflows')
     graph.set_labelloc('t')
     nodes = obj()
@@ -1747,12 +1756,21 @@ def graph_sims(sims,useid=False,exit=True,quants=True):
         #end for
     #end for
 
-    fout = tempfile.NamedTemporaryFile(suffix='png')
-    savefile = fout.name
-    graph.write(savefile,format='png',prog='dot')
+    if savefile is None:
+        fout = tempfile.NamedTemporaryFile(suffix='.png')
+        savefile = fout.name
+        #savefile = './sims.png'
+    #end if
+    fmt = savefile.rsplit('.',1)[1]
+    graph.write(savefile,format=fmt,prog='dot')
 
-    image = Image.open(savefile)
-    image.show()
+    # display the image
+    if fmt=='png':
+        imshow(imread(savefile))
+        xticks([])
+        yticks([])
+        show()
+    #end if
 
     if exit:
         exit_call()

@@ -44,7 +44,9 @@
 #else
 typedef int TraceManager;
 #endif
-
+#ifdef QMC_CUDA
+#include "type_traits/CUDATypes.h"
+#endif
 
 namespace qmcplusplus
 {
@@ -120,12 +122,13 @@ QMCDriver::QMCDriver(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamilt
   m_param.add(MaxCPUSecs,"maxcpusecs","real");
   // by default call recompute at the end of each block in the mixed precision case.
 #ifdef QMC_CUDA
-  if (typeid(CudaRealType) == typeid(float))
+  using CTS = CUDAGlobalTypes;
+  if (typeid(CTS::RealType) == typeid(float))
   {
     // gpu mixed precision
     nBlocksBetweenRecompute = 1;
   }
-  else if (typeid(CudaRealType) == typeid(double))
+  else if (typeid(CTS::RealType) == typeid(double))
   {
     // gpu double precision
     nBlocksBetweenRecompute = 0;

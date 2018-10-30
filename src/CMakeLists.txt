@@ -308,7 +308,6 @@ ENDIF()
 
   ADD_LIBRARY(adios_config ${ADIOS})
 
-
   SUBDIRS(QMCWaveFunctions)
   SUBDIRS(QMCHamiltonians)
   SUBDIRS(QMCDrivers)
@@ -328,11 +327,6 @@ ENDIF()
   #ENDIF(BUILD_QMCTOOLS)
 
   if (BUILD_UNIT_TESTS) #{
-    SET(HAS_TARGET_COMPILE_DEFINITIONS 1)
-    IF (CMAKE_VERSION VERSION_LESS "2.8.11")
-      MESSAGE("CMake version 2.8.10 - some unit tests will not be built")
-      SET(HAS_TARGET_COMPILE_DEFINITIONS 0)
-    ENDIF()
     #Unit test directories
     INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external_codes/catch)
     INCLUDE(${PROJECT_SOURCE_DIR}/CMake/unit_test.cmake)
@@ -348,12 +342,12 @@ ENDIF()
     SUBDIRS(ParticleIO/tests)
     SUBDIRS(QMCWaveFunctions/tests)
     SUBDIRS(QMCHamiltonians/tests)
-    IF (HAS_TARGET_COMPILE_DEFINITIONS)
-      SUBDIRS(ParticleBase/tests)
-      SUBDIRS(Estimators/tests)
-      SUBDIRS(QMCDrivers/tests)
-      SUBDIRS(QMCApp/tests)
-    ENDIF()
+    SUBDIRS(type_traits/tests)
+  
+    SUBDIRS(ParticleBase/tests)
+    SUBDIRS(Estimators/tests)
+    SUBDIRS(QMCDrivers/tests)
+    SUBDIRS(QMCApp/tests)
   endif() #}
 
 endif() #}}}

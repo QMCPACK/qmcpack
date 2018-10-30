@@ -28,6 +28,9 @@
 #if !defined(ENABLE_SOA)
 #include "Message/CommOperators.h"
 #endif
+#ifdef QMC_CUDA
+#include "type_traits/CUDATypes.h"
+#endif
 
 #if defined(ENABLE_SMARTPOINTER)
 #include <boost/shared_ptr.hpp>
@@ -275,32 +278,32 @@ public:
   virtual void rotate_B(const std::vector<RealType> &rot_mat) { };
 
 #ifdef QMC_CUDA
-
+  using CTS = CUDAGlobalTypes;
   virtual void initGPU() {  }
 
   //////////////////////////////////////////
   // Walker-parallel vectorized functions //
   //////////////////////////////////////////
   virtual void
-  reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool) { }
+  reserve (PointerPool<gpu::device_vector<CTS::ValueType> > &pool) { }
 
   virtual void
-  evaluate (std::vector<Walker_t*> &walkers, int iat, gpu::device_vector<CudaValueType*> &phi);
+  evaluate (std::vector<Walker_t*> &walkers, int iat, gpu::device_vector<CTS::ValueType*> &phi);
 
   virtual void evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &new_pos
-                         , gpu::device_vector<CudaValueType*> &phi);
+                         , gpu::device_vector<CTS::ValueType*> &phi);
 
   virtual void
   evaluate (std::vector<Walker_t*> &walkers,
             std::vector<PosType> &new_pos,
-            gpu::device_vector<CudaValueType*> &phi,
-            gpu::device_vector<CudaValueType*> &grad_lapl_list,
+            gpu::device_vector<CTS::ValueType*> &phi,
+            gpu::device_vector<CTS::ValueType*> &grad_lapl_list,
             int row_stride);
 
   virtual void
-  evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi);
+  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::RealType*> &phi);
   virtual void
-  evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi);
+  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::ComplexType*> &phi);
 #endif
 
 #if !defined(ENABLE_SOA)
