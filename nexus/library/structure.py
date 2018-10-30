@@ -716,7 +716,7 @@ class Structure(Sobj):
         if elem is None:
             elem = []
         #end if
-        if posu!=None:
+        if posu is not None:
             pos = posu
         #end if
         if pos is None:
@@ -747,10 +747,10 @@ class Structure(Sobj):
         else:
             self.kaxes=2*pi*inv(self.axes).T
         #end if
-        if posu!=None:
+        if posu is not None:
             self.pos_to_cartesian()
         #end if
-        if frozen!=None:
+        if frozen is not None:
             self.frozen = array(frozen,dtype=bool)
             if self.frozen.shape!=self.pos.shape:
                 self.error('frozen directions must have the same shape as positions\n  positions shape: {0}\n  frozen directions shape: {1}'.format(self.pos.shape,self.frozen.shape))
@@ -775,10 +775,10 @@ class Structure(Sobj):
         else:
             self.scale = scale
         #end if
-        if permute!=None:
+        if permute is not None:
             self.permute(permute)
         #end if
-        if operations!=None:
+        if operations is not None:
             self.operate(operations)
         #end if
     #end def __init__
@@ -3970,27 +3970,46 @@ class Structure(Sobj):
         elem = []
         pos  = []
         if os.path.exists(filepath):
-            lines = open(filepath,'r').read().splitlines()
+            lines = open(filepath,'r').read().strip().splitlines()
         else:
-            lines = filepath.splitlines() # "filepath" is file contents
+            lines = filepath.strip().splitlines() # "filepath" is file contents
         #end if
-        ntot = 1000000
-        natoms = 0
-        for l in lines:
-            ls = l.strip()
-            if ls.isdigit():
-                ntot = int(ls)
-            #end if
-            tokens = ls.split()
-            if len(tokens)==4:
-                elem.append(tokens[0])
-                pos.append(array(tokens[1:],float))
-                natoms+=1
-                if natoms==ntot:
-                    break
+        if len(lines)>1:
+            ntot = int(lines[0].strip())
+            natoms = 0
+            e = None
+            p = None
+            try:
+                tokens = lines[1].split()
+                if len(tokens)==4:
+                    e = tokens[0]
+                    p = array(tokens[1:],float)
                 #end if
+            except:
+                None
+            #end try
+            if p is not None:
+                elem.append(e)
+                pos.append(p)
+                natoms+=1
             #end if
-        #end for
+            if len(lines)>2:
+                for l in lines[2:]:
+                    tokens = l.split()
+                    if len(tokens)==4:
+                        elem.append(tokens[0])
+                        pos.append(array(tokens[1:],float))
+                        natoms+=1
+                        if natoms==ntot:
+                            break
+                        #end if
+                    #end if
+                #end for
+            #end if
+            if natoms!=ntot:
+                self.error('xyz file read failed\nattempted to read file: {0}\nnumber of atoms expected: {1}\nnumber of atoms found: {2}'.format(filepath,ntot,natoms))
+            #end if
+        #end if
         self.dim   = 3
         self.set_elem(elem)
         self.pos   = array(pos)

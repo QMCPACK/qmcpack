@@ -299,111 +299,19 @@ public:
   ValueType *LastAddressOfdV;
 
 #ifdef QMC_CUDA
-  /////////////////////////////////////////////////////
-  // Functions for vectorized evaluation and updates //
-  /////////////////////////////////////////////////////
-  virtual void recompute(MCWalkerConfiguration &W, bool firstTime)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::recompute.\n";
-    abort();
-  }
-
-  virtual void
-  reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::reserve.\n";
-    abort();
-  }
-
-  virtual void
-  addLog (MCWalkerConfiguration &W, std::vector<RealType> &logPsi)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::addLog.\n";
-    abort();
-  }
-
-  virtual void
-  ratio (MCWalkerConfiguration &W, int iat,
-         std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-         std::vector<ValueType> &lapl)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::ratio.\n";
-    abort();
-  }
-  virtual void
-  addRatio (MCWalkerConfiguration &W, int iat,
-            std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-            std::vector<ValueType> &lapl)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::addRatio.\n";
-    abort();
-  }
-  virtual void
-  calcRatio (MCWalkerConfiguration &W, int iat,
-             std::vector<ValueType> &psi_ratios,	std::vector<GradType>  &grad,
-             std::vector<ValueType> &lapl)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::calcRatio.\n";
-    abort();
-  }
-
-
-
-  virtual void
-  ratio (std::vector<Walker_t*> &walkers,    std::vector<int> &iatList,
-         std::vector<PosType> &rNew, std::vector<ValueType> &psi_ratios,
-         std::vector<GradType>  &grad, std::vector<ValueType> &lapl)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::ratio.\n";
-    abort();
-  }
-
-  virtual void
-  addGradient(MCWalkerConfiguration &W, int iat,
-              std::vector<GradType> &grad)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::addGradient.\n";
-    abort();
-  }
-  virtual void
-  calcGradient(MCWalkerConfiguration &W, int iat,
-               std::vector<GradType> &grad)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::calcGradient.\n";
-    abort();
-  }
-
-
-  virtual void update (std::vector<Walker_t*> &walkers, int iat)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::update.\n";
-    abort();
-  }
-
-  virtual void
-  update (const std::vector<Walker_t*> &walkers,
-          const std::vector<int> &iatList)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::update.\n";
-    abort();
-  }
-
-  void
-  gradLapl (MCWalkerConfiguration &W, GradMatrix_t &grads,
-            ValueMatrix_t &lapl)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::gradLapl.\n";
-    abort();
-  }
-
-  virtual void
-  NLratios (MCWalkerConfiguration &W,  std::vector<NLjob> &jobList,
-            std::vector<PosType> &quadPoints, std::vector<ValueType> &psi_ratios)
-  {
-    std::cerr << "Need specialization of DiracDetermiantBase::NLratios.\n";
-    abort();
-  }
+  using WaveFunctionComponent::recompute;
+  using WaveFunctionComponent::reserve;
+  using WaveFunctionComponent::addLog;
+  using WaveFunctionComponent::ratio;
+  using WaveFunctionComponent::addRatio;
+  using WaveFunctionComponent::calcRatio;
+  using WaveFunctionComponent::addGradient;
+  using WaveFunctionComponent::calcGradient;
+  using WaveFunctionComponent::update;
+  using WaveFunctionComponent::gradLapl;
+  using WaveFunctionComponent::NLratios;
 #endif
+
 };
 
 
