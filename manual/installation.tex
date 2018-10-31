@@ -126,7 +126,7 @@ Depending on setup and installation, some of these compilers may not default to 
 The symptom of having header files that do not support the C++ 14 standard is usually
 compile errors involving standard include header files.
 Look for the GCC library version, which should be present in the path to the include file in the error message, and ensure that it is 5.0 or greater.
-To avoid these errors occurring at compile time, QMCPACK tests for a C++ 14
+To avoid these errors occurring at compile time, QMCPACK tests for a C++ 14 standard
 library during configuration, and will halt with an error if one is not found.
 
 At sites that use modules, running \texttt{module load gcc} is often sufficient to
@@ -694,7 +694,7 @@ export CRAYPE_LINK_TYPE=dynamic
 module load cmake/3.11.4
 module unload cray-libsci
 module load cray-hdf5-parallel
-module load gcc   # Make C++ 14 library available to the Intel compiler
+module load gcc   # Make C++ 14 standard library available to the Intel compiler
 export BOOST_ROOT=/soft/libraries/boost/1.64.0/intel
 cmake ..
 make -j 24
@@ -772,7 +772,7 @@ module load cmake3/3.6.1   # Or newer
 module load fftw
 export FFTW_HOME=$FFTW_DIR/..
 module load boost
-module swap gcc gcc/6.3.0  # Make C++ 14 library available to the Intel compiler
+module swap gcc gcc/6.3.0  # Make C++ 14 standard library available to the Intel compiler
 mkdir build_eos
 cd build_eos
 cmake ..
@@ -825,7 +825,7 @@ module load boost
 module load cmake/3.11.4
 module load libxml2
 module load cray-hdf5-parallel
-module load gcc   # Make C++ 14 library available to the Intel compiler
+module load gcc   # Make C++ 14 standard library available to the Intel compiler
 cmake ..
 make -j 8
 ls -l bin/qmcpack
@@ -863,7 +863,7 @@ module unload cray-libsci
 module load boost
 module load cray-hdf5-parallel
 module load cmake/3.11.4
-module load gcc   # Make C++ 14 library available to the Intel compiler
+module load gcc   # Make C++ 14 standard library available to the Intel compiler
 mkdir build_cori_hsw
 cd build_cori_hsw
 cmake ..
@@ -907,7 +907,7 @@ module unload cray-libsci
 module load boost
 module load cray-hdf5-parallel
 module load cmake/3.11.4
-module load gcc   # Make C++ 14 library available to the Intel compiler
+module load gcc   # Make C++ 14 standard library available to the Intel compiler
 mkdir build_cori_knl
 cd build_cori_knl
 cmake ..
