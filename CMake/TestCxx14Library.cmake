@@ -1,11 +1,20 @@
 
-# Test the compiler is configured with a C++14 library
+# Test that the compiler is configured with a C++14 library
 
-try_compile(CXX14_LIBRARY_OKAY ${CMAKE_BINARY_DIR}
-            ${CMAKE_SOURCE_DIR}/CMake/try_cxx14_library.cpp
-            CXX_STANDARD 14
-            CXX_STANDARD_REQUIRED ON
-            OUTPUT_VARIABLE COMPILE_OUTPUT)
+# CMake versions prior to 3.8 did not support the CXX_STANDARD options to try_compile
+if (${CMAKE_VERSION} VERSION_LESS 3.8.0)
+  try_compile(CXX14_LIBRARY_OKAY ${CMAKE_BINARY_DIR}
+              ${CMAKE_SOURCE_DIR}/CMake/try_cxx14_library.cpp
+              COMPILE_DEFINITIONS ${CMAKE_CXX14_STANDARD_COMPILE_OPTION}
+              OUTPUT_VARIABLE COMPILE_OUTPUT)
+else()
+  try_compile(CXX14_LIBRARY_OKAY ${CMAKE_BINARY_DIR}
+              ${CMAKE_SOURCE_DIR}/CMake/try_cxx14_library.cpp
+              CXX_STANDARD 14
+              CXX_STANDARD_REQUIRED ON
+              OUTPUT_VARIABLE COMPILE_OUTPUT)
+endif()
+
 
 if (NOT CXX14_LIBRARY_OKAY)
   set(COMPILE_FAIL_OUTPUT cpp14_compile_fail.txt)
