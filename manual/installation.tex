@@ -89,7 +89,7 @@ Section \ref{sec:buildperformance} for performance suggestions.
 
 \begin{itemize}
 \item C/C++ compilers such as GNU, Clang, Intel, IBM XL. C++ compilers
-  are required to support C++11 standard. Use of recent (``current
+  are required to support C++ 14 standard. Use of recent (``current
   year version'') compilers is strongly encouraged.
 \item MPI library such as OpenMPI \url{http://open-mpi.org} or vendor
   optimized MPI.
@@ -118,13 +118,27 @@ inside. The standalone version should \emph{not} be on any standard
 search paths because conflicts between the old and new include files
 can result.
 
+\section{C++ 14 Standard Library}
+The C++ standard consists of language features, which are implemented in the compiler, and library features, which are implemented in the standard library.
+GCC includes its own standard library and headers, but many compilers do not and instead reuse those from an existing GCC install.
+Depending on setup and installation, some of these compilers may not default to using a GCC with C++ 14 headers (e.g. GCC 4.8 is common as a base system compiler, but its standard library only supports C++ 11).
+
+The symptom of having header files that do not support the C++ 14 standard is usually
+compile errors involving standard include header files.
+Look for the GCC library version, which should be present in the path to the include file in the error message, and ensure that it is 5.0 or greater.
+To avoid these errors occurring at compile time, QMCPACK tests for a C++ 14
+library during configuration, and will halt with an error if one is not found.
+
+At sites that use modules, running \texttt{module load gcc} is often sufficient to
+load a newer GCC and that will resolve the issue.
+
 \section{Building with CMake}
 \label{sec:cmake}
 The build system for QMCPACK is based on CMake.  It will autoconfigure
 based on the detected compilers and libraries. The most recent
 version of CMake has the best detection for the greatest variety of
 systems.  The minimum required version of CMake is 3.6.  That is the
-oldest version to support correct application of C++11 flags for the Intel compiler.
+oldest version to support correct application of C++ 14 flags for the Intel compiler.
 Most computer installations have a sufficiently recent CMake, though it may not be
 the default.
 
@@ -659,7 +673,7 @@ Due to the fact that the login nodes and the compute nodes have different proces
 cross-compiling is required on this platform. See details about using Blue Gene/Q at \url{http://www.alcf.anl.gov/user-guides/compiling-linking}.
 On Mira, compilers are loaded via softenv and users need to add +mpiwrapper-bgclang and +cmake-3.8.1 in \$HOME/.soft.
 In order to build QMCPACK, a toolchain file is provided for setting up CMake.
-\textbf{BGClang is required for C++11 support. IBM XL C/C++ compiler should not be used.}
+\textbf{BGClang is required for C++ 14 support. IBM XL C/C++ compiler should not be used.}
 
 \verbatimfont{\footnotesize}%
 \begin{verbatim}
@@ -680,6 +694,7 @@ export CRAYPE_LINK_TYPE=dynamic
 module load cmake/3.11.4
 module unload cray-libsci
 module load cray-hdf5-parallel
+module load gcc   # Make C++ 14 library available to the Intel compiler
 export BOOST_ROOT=/soft/libraries/boost/1.64.0/intel
 cmake ..
 make -j 24
@@ -757,6 +772,7 @@ module load cmake3/3.6.1   # Or newer
 module load fftw
 export FFTW_HOME=$FFTW_DIR/..
 module load boost
+module swap gcc gcc/6.3.0  # Make C++ 14 library available to the Intel compiler
 mkdir build_eos
 cd build_eos
 cmake ..
@@ -799,7 +815,7 @@ ls -l bin/qmcpack
 \subsection{Installing on NERSC Edison Cray XC30}
 
 Edison is a Cray XC30 with dual 12-core Intel "Ivy Bridge" nodes
-installed at NERSC. The build settings are identical to eos.
+installed at NERSC. The build settings are identical to Eos.
 
 \verbatimfont{\footnotesize}
 \begin{verbatim}
@@ -809,11 +825,12 @@ module load boost
 module load cmake/3.11.4
 module load libxml2
 module load cray-hdf5-parallel
+module load gcc   # Make C++ 14 library available to the Intel compiler
 cmake ..
 make -j 8
 ls -l bin/qmcpack
 \end{verbatim}
-When the above was tested on 24 October 2018, the following module and
+When the above was tested on 30 October 2018, the following module and
 software versions were present:
 \verbatimfont{\footnotesize}
 \begin{verbatim}
@@ -831,7 +848,7 @@ Currently Loaded Modulefiles:
  10) gni-headers/5.0.12.0-6.0.7.0_24.1__g3b1768f.ari  23) cmake/3.11.4
  11) xpmem/2.2.15-6.0.7.1_5.8__g7549d06.ari           24) libxml2/2.9.4
  12) job/2.2.3-6.0.7.0_44.1__g6c4e934.ari             25) cray-hdf5-parallel/1.10.1.1
- 13) dvs/2.7_2.2.112-6.0.7.1_6.4__ge96a422
+ 13) dvs/2.7_2.2.112-6.0.7.1_6.4__ge96a422            26) gcc/7.3.0
 
 \end{verbatim}
 
@@ -846,6 +863,7 @@ module unload cray-libsci
 module load boost
 module load cray-hdf5-parallel
 module load cmake/3.11.4
+module load gcc   # Make C++ 14 library available to the Intel compiler
 mkdir build_cori_hsw
 cd build_cori_hsw
 cmake ..
@@ -853,25 +871,27 @@ make -j 16
 ls -l bin/qmcpack
 \end{verbatim}
 
-When the above was tested on 24 October 2018, the following module and
+When the above was tested on 30 October 2018, the following module and
 software versions were present:
 
 \verbatimfont{\footnotesize}
 \begin{verbatim}
 build_cori_hsw> module list
 Currently Loaded Modulefiles:
-  1) modules/3.2.10.6                                 13) dvs/2.7_2.2.113-6.0.7.1_7.1__g1bbc03e
-  2) nsg/1.2.0                                        14) alps/6.6.43-6.0.7.0_26.4__ga796da3.ari
-  3) intel/18.0.1.163                                 15) rca/2.2.18-6.0.7.0_33.3__g2aa4f39.ari
-  4) craype-network-aries                             16) atp/2.1.1
-  5) craype/2.5.14                                    17) PrgEnv-intel/6.0.4
-  6) udreg/2.3.2-6.0.7.0_33.18__g5196236.ari          18) craype-haswell
-  7) ugni/6.0.14.0-6.0.7.0_23.1__gea11d3d.ari         19) cray-mpich/7.7.0
-  8) pmi/5.0.13                                       20) altd/2.0
-  9) dmapp/7.1.1-6.0.7.0_34.3__g5a674e0.ari           21) darshan/3.1.4
- 10) gni-headers/5.0.12.0-6.0.7.0_24.1__g3b1768f.ari  22) boost/1.63
- 11) xpmem/2.2.15-6.0.7.1_5.8__g7549d06.ari           23) cray-hdf5-parallel/1.10.1.1
- 12) job/2.2.3-6.0.7.0_44.1__g6c4e934.ari             24) cmake/3.11.4
+  1) modules/3.2.10.6                                 14) alps/6.6.43-6.0.7.0_26.4__ga796da3.ari
+  2) nsg/1.2.0                                        15) rca/2.2.18-6.0.7.0_33.3__g2aa4f39.ari
+  3) intel/18.0.1.163                                 16) atp/2.1.1
+  4) craype-network-aries                             17) PrgEnv-intel/6.0.4
+  5) craype/2.5.14                                    18) craype-haswell
+  6) udreg/2.3.2-6.0.7.0_33.18__g5196236.ari          19) cray-mpich/7.7.0
+  7) ugni/6.0.14.0-6.0.7.0_23.1__gea11d3d.ari         20) altd/2.0
+  8) pmi/5.0.13                                       21) darshan/3.1.4
+  9) dmapp/7.1.1-6.0.7.0_34.3__g5a674e0.ari           22) boost/1.63
+ 10) gni-headers/5.0.12.0-6.0.7.0_24.1__g3b1768f.ari  23) cray-hdf5-parallel/1.10.1.1
+ 11) xpmem/2.2.15-6.0.7.1_5.8__g7549d06.ari           24) cmake/3.11.4
+ 12) job/2.2.3-6.0.7.0_44.1__g6c4e934.ari             25) gcc/7.3.0
+ 13) dvs/2.7_2.2.113-6.0.7.1_7.1__g1bbc03e
+
 \end{verbatim}
 
 \subsection{Installing on NERSC Cori, Xeon Phi KNL partition, Cray XC40}
@@ -887,6 +907,7 @@ module unload cray-libsci
 module load boost
 module load cray-hdf5-parallel
 module load cmake/3.11.4
+module load gcc   # Make C++ 14 library available to the Intel compiler
 mkdir build_cori_knl
 cd build_cori_knl
 cmake ..
@@ -894,25 +915,26 @@ make -j 16
 ls -l bin/qmcpack
 \end{verbatim}
 
-When the above was tested on 24 October 2018, the following module and
+When the above was tested on 30 October 2018, the following module and
 software versions were present:
 
 \verbatimfont{\footnotesize}
 \begin{verbatim}
 build_cori_knl> module list
 Currently Loaded Modulefiles:
-  1) modules/3.2.10.6                                 13) dvs/2.7_2.2.113-6.0.7.1_7.1__g1bbc03e
-  2) nsg/1.2.0                                        14) alps/6.6.43-6.0.7.0_26.4__ga796da3.ari
-  3) intel/18.0.1.163                                 15) rca/2.2.18-6.0.7.0_33.3__g2aa4f39.ari
-  4) craype-network-aries                             16) atp/2.1.1
-  5) craype/2.5.14                                    17) PrgEnv-intel/6.0.4
-  6) udreg/2.3.2-6.0.7.0_33.18__g5196236.ari          18) craype-mic-knl
-  7) ugni/6.0.14.0-6.0.7.0_23.1__gea11d3d.ari         19) cray-mpich/7.7.0
-  8) pmi/5.0.13                                       20) altd/2.0
-  9) dmapp/7.1.1-6.0.7.0_34.3__g5a674e0.ari           21) darshan/3.1.4
- 10) gni-headers/5.0.12.0-6.0.7.0_24.1__g3b1768f.ari  22) boost/1.63
- 11) xpmem/2.2.15-6.0.7.1_5.8__g7549d06.ari           23) cray-hdf5-parallel/1.10.1.1
- 12) job/2.2.3-6.0.7.0_44.1__g6c4e934.ari             24) cmake/3.11.4
+  1) modules/3.2.10.6                                 14) alps/6.6.43-6.0.7.0_26.4__ga796da3.ari
+  2) nsg/1.2.0                                        15) rca/2.2.18-6.0.7.0_33.3__g2aa4f39.ari
+  3) intel/18.0.1.163                                 16) atp/2.1.1
+  4) craype-network-aries                             17) PrgEnv-intel/6.0.4
+  5) craype/2.5.14                                    18) craype-mic-knl
+  6) udreg/2.3.2-6.0.7.0_33.18__g5196236.ari          19) cray-mpich/7.7.0
+  7) ugni/6.0.14.0-6.0.7.0_23.1__gea11d3d.ari         20) altd/2.0
+  8) pmi/5.0.13                                       21) darshan/3.1.4
+  9) dmapp/7.1.1-6.0.7.0_34.3__g5a674e0.ari           22) boost/1.63
+ 10) gni-headers/5.0.12.0-6.0.7.0_24.1__g3b1768f.ari  23) cray-hdf5-parallel/1.10.1.1
+ 11) xpmem/2.2.15-6.0.7.1_5.8__g7549d06.ari           24) cmake/3.11.4
+ 12) job/2.2.3-6.0.7.0_44.1__g6c4e934.ari             25) gcc/7.3.0
+ 13) dvs/2.7_2.2.113-6.0.7.1_7.1__g1bbc03e
 
 \end{verbatim}
 
