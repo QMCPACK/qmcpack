@@ -16,7 +16,7 @@
 #ifndef QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
 #define QMCPLUSPLUS_MULTISLATERDETERMINANT_ORBITAL_H
 #include <Configuration.h>
-#include <QMCWaveFunctions/Fermion/DiracDeterminantBase.h>
+#include <QMCWaveFunctions/Fermion/DiracDeterminant.h>
 #include <QMCWaveFunctions/Fermion/SPOSetProxyForMSD.h>
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"

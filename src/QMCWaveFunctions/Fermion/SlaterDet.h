@@ -20,7 +20,7 @@
 #ifdef QMC_CUDA
 #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
 #else
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #endif
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include <map>

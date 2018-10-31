@@ -15,8 +15,8 @@
     
     
 
-#include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h"
-//#include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase_help.h"
+#include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
+//#include "QMCWaveFunctions/Fermion/MultiDiracDeterminant_help.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"

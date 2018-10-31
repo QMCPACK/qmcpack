@@ -21,7 +21,7 @@
 #ifndef QMCPLUSPLUS_DIRAC_DETERMINANT_CUDA_H
 #define QMCPLUSPLUS_DIRAC_DETERMINANT_CUDA_H
 #include <typeinfo>
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/determinant_update.h"
 #include "Numerics/CUDA/cuda_inverse.h"

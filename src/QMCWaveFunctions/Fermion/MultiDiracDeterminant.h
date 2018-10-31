@@ -17,13 +17,13 @@
 /**@file DiracDeterminantBaseBase.h
  * @brief Declaration of DiracDeterminantBase with a S(ingle)P(article)O(rbital)SetBase
  */
-#ifndef QMCPLUSPLUS_MULTIDIRACDETERMINANTWITHBASE_H
-#define QMCPLUSPLUS_MULTIDIRACDETERMINANTWITHBASE_H
+#ifndef QMCPLUSPLUS_MULTIDIRACDETERMINANT_H
+#define QMCPLUSPLUS_MULTIDIRACDETERMINANT_H
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase_help.h"
+#include "QMCWaveFunctions/Fermion/MultiDiracDeterminant_help.h"
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
 //#include "Numerics/OhmmsBlas.h"
@@ -385,7 +385,7 @@ public:
 
 };
 
-//  #include "MultiDiracDeterminantBase_help.h"
+//  #include "MultiDiracDeterminant_help.h"
 
 }
 #endif

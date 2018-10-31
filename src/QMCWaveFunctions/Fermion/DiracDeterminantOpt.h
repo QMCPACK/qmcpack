@@ -16,7 +16,7 @@
 #ifndef DIRAC_DETERMINANT_OPT_H
 #define DIRAC_DETERMINANT_OPT_H
 
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 
 namespace qmcplusplus
 {

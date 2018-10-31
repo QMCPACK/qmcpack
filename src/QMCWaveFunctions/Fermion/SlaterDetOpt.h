@@ -13,7 +13,7 @@
 #ifndef QMCPLUSPLUS_SLATERDETOPT_H
 #define QMCPLUSPLUS_SLATERDETOPT_H
 
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include <QMCWaveFunctions/SPOSet.h>
 
 namespace qmcplusplus {

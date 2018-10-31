@@ -14,7 +14,7 @@
     
     
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
-#include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
 namespace qmcplusplus

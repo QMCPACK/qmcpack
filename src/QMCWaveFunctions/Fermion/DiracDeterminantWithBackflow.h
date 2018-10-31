@@ -21,7 +21,7 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "OhmmsPETE/OhmmsArray.h"
 
 namespace qmcplusplus

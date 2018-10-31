@@ -19,8 +19,8 @@
 /**@file DiracDeterminantBaseBase.h
  * @brief Declaration of DiracDeterminantBase with a S(ingle)P(article)O(rbital)SetBase
  */
-#ifndef QMCPLUSPLUS_DIRACDETERMINANTWITHBASE_H
-#define QMCPLUSPLUS_DIRACDETERMINANTWITHBASE_H
+#ifndef QMCPLUSPLUS_DIRACDETERMINANT_H
+#define QMCPLUSPLUS_DIRACDETERMINANT_H
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/NewTimer.h"

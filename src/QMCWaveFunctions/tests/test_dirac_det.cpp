@@ -18,7 +18,7 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "Numerics/OhmmsBlas.h"
 #include "QMCWaveFunctions/SPOSet.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "simd/simd.hpp"
 
 
