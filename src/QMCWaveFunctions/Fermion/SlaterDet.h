@@ -37,7 +37,7 @@ namespace qmcplusplus
 class SlaterDet : public WaveFunctionComponent
 {
 public:
-  typedef DiracDeterminantBase Determinant_t;
+  typedef DiracDeterminant Determinant_t;
   ///container for the DiracDeterminants
   std::vector<Determinant_t*> Dets;
   ///the last particle of each group

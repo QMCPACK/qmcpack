@@ -28,7 +28,7 @@
 namespace qmcplusplus
 {
 DiracDeterminantCUDA::DiracDeterminantCUDA(SPOSetPtr const &spos, int first) :
-  DiracDeterminantBase(spos, first),
+  DiracDeterminant(spos, first),
   UpdateJobList_d("DiracDeterminantBase::UpdateJobList_d"),
   srcList_d("DiracDeterminantBase::srcList_d"),
   destList_d("DiracDeterminantBase::destList_d"),

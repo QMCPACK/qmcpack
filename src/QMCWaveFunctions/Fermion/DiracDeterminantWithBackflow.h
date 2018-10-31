@@ -29,7 +29,7 @@ namespace qmcplusplus
 
 /** class to handle determinants with backflow
  */
-class DiracDeterminantWithBackflow: public DiracDeterminantBase
+class DiracDeterminantWithBackflow: public DiracDeterminant
 {
 public:
 

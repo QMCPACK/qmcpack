@@ -37,12 +37,12 @@ namespace qmcplusplus
  *@param first index of first particle
  *@param nel number of particles in the determinant
  */
-void MultiDiracDeterminantBase::set(int first, int nel)
+void MultiDiracDeterminant::set(int first, int nel)
 {
   APP_ABORT("MultiDiracDeterminantBase::set(int first, int nel) is disabled. \n");
 }
 
-void MultiDiracDeterminantBase::set(int first, int nel,int norb)
+void MultiDiracDeterminant::set(int first, int nel,int norb)
 {
   FirstIndex = first;
   DetCalculator.resize(nel);
@@ -51,7 +51,7 @@ void MultiDiracDeterminantBase::set(int first, int nel,int norb)
 //    testDets();
 }
 
-void MultiDiracDeterminantBase::createDetData(ci_configuration2& ref, std::vector<int>& data,
+void MultiDiracDeterminant::createDetData(ci_configuration2& ref, std::vector<int>& data,
     std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign)
 {
   const auto& confgList=*ciConfigList;
@@ -103,7 +103,7 @@ void out1(int n, std::string str="NULL") {}
 //{ std::cout <<"MDD: " <<str <<"  " <<n << std::endl; std::cout.flush(); }
 
 
-void MultiDiracDeterminantBase::evaluateForWalkerMove(ParticleSet& P, bool fromScratch)
+void MultiDiracDeterminant::evaluateForWalkerMove(ParticleSet& P, bool fromScratch)
 {
   evalWTimer.start();
   if(fromScratch)
@@ -205,7 +205,7 @@ void MultiDiracDeterminantBase::evaluateForWalkerMove(ParticleSet& P, bool fromS
 }
 
 
-MultiDiracDeterminantBase::RealType MultiDiracDeterminantBase::updateBuffer(ParticleSet& P,
+MultiDiracDeterminant::RealType MultiDiracDeterminant::updateBuffer(ParticleSet& P,
     WFBufferType& buf, bool fromscratch)
 {
   evaluateForWalkerMove(P,(fromscratch || UpdateMode == ORB_PBYP_RATIO) );
@@ -219,7 +219,7 @@ MultiDiracDeterminantBase::RealType MultiDiracDeterminantBase::updateBuffer(Part
   return 1.0;
 }
 
-void MultiDiracDeterminantBase::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
+void MultiDiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   buf.get(psiM.first_address(),psiM.last_address());
   buf.get(FirstAddressOfdpsiM,LastAddressOfdpsiM);
@@ -242,7 +242,7 @@ void MultiDiracDeterminantBase::copyFromBuffer(ParticleSet& P, WFBufferType& buf
 
 /** move was accepted, update the real container
 */
-void MultiDiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
+void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat)
 {
   WorkingIndex = iat-FirstIndex;
   switch(UpdateMode)
@@ -282,7 +282,7 @@ void MultiDiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
 
 /** move was rejected. copy the real container to the temporary to move on
 */
-void MultiDiracDeterminantBase::restore(int iat)
+void MultiDiracDeterminant::restore(int iat)
 {
   WorkingIndex = iat-FirstIndex;
   psiMinv_temp = psiMinv;
@@ -308,7 +308,7 @@ void MultiDiracDeterminantBase::restore(int iat)
 }
 
 // this has been fixed
-MultiDiracDeterminantBase::MultiDiracDeterminantBase(const MultiDiracDeterminantBase& s):
+MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s):
   WaveFunctionComponent(s), NP(0), FirstIndex(s.FirstIndex),ciConfigList(nullptr),
   UpdateTimer("MultiDiracDeterminantBase::update"),
   RatioTimer("MultiDiracDeterminantBase::ratio"),
@@ -337,12 +337,12 @@ MultiDiracDeterminantBase::MultiDiracDeterminantBase(const MultiDiracDeterminant
   this->DetCalculator.resize(s.NumPtcls);
 }
 
-SPOSetPtr  MultiDiracDeterminantBase::clonePhi() const
+SPOSetPtr  MultiDiracDeterminant::clonePhi() const
 {
   return Phi->makeClone();
 }
 
-WaveFunctionComponentPtr MultiDiracDeterminantBase::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr MultiDiracDeterminant::makeClone(ParticleSet& tqp) const
 {
   APP_ABORT(" Illegal action. Cannot use MultiDiracDeterminantBase::makeClone");
   return 0;
@@ -352,7 +352,7 @@ WaveFunctionComponentPtr MultiDiracDeterminantBase::makeClone(ParticleSet& tqp) 
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-MultiDiracDeterminantBase::MultiDiracDeterminantBase(SPOSetPtr const &spos, int first):
+MultiDiracDeterminant::MultiDiracDeterminant(SPOSetPtr const &spos, int first):
   NP(0),Phi(spos),FirstIndex(first),ReferenceDeterminant(0), ciConfigList(nullptr),
   UpdateTimer("MultiDiracDeterminantBase::update"),
   RatioTimer("MultiDiracDeterminantBase::ratio"),
@@ -380,9 +380,9 @@ MultiDiracDeterminantBase::MultiDiracDeterminantBase(SPOSetPtr const &spos, int 
 }
 
 ///default destructor
-MultiDiracDeterminantBase::~MultiDiracDeterminantBase() {}
+MultiDiracDeterminant::~MultiDiracDeterminant() {}
 
-MultiDiracDeterminantBase& MultiDiracDeterminantBase::operator=(const MultiDiracDeterminantBase& s)
+MultiDiracDeterminant& MultiDiracDeterminant::operator=(const MultiDiracDeterminant& s)
 {
   if(this == & s) return *this;
 
@@ -404,7 +404,7 @@ MultiDiracDeterminantBase& MultiDiracDeterminantBase::operator=(const MultiDirac
 }
 
 void
-MultiDiracDeterminantBase::registerData(ParticleSet& P, WFBufferType& buf)
+MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if(NP == 0)
     //first time, allocate once
@@ -428,7 +428,7 @@ MultiDiracDeterminantBase::registerData(ParticleSet& P, WFBufferType& buf)
 }
 
 
-void MultiDiracDeterminantBase::setDetInfo(int ref, std::vector<ci_configuration2>* list)
+void MultiDiracDeterminant::setDetInfo(int ref, std::vector<ci_configuration2>* list)
 {
   ReferenceDeterminant = ref;
   ciConfigList=list;
@@ -437,7 +437,7 @@ void MultiDiracDeterminantBase::setDetInfo(int ref, std::vector<ci_configuration
 
 ///reset the size: with the number of particles and number of orbtials
 /// morb is the total number of orbitals, including virtual
-void MultiDiracDeterminantBase::resize(int nel, int morb)
+void MultiDiracDeterminant::resize(int nel, int morb)
 {
   if(nel <= 0 || morb <= 0)
   {
@@ -486,7 +486,7 @@ void MultiDiracDeterminantBase::resize(int nel, int morb)
     createDetData((*ciConfigList)[ReferenceDeterminant], *detData,*uniquePairs,*DetSigns);
 }
 
-void MultiDiracDeterminantBase::registerTimers()
+void MultiDiracDeterminant::registerTimers()
 {
   UpdateTimer.reset();
   RatioTimer.reset();

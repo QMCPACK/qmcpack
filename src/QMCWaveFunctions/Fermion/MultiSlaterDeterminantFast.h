@@ -59,7 +59,7 @@ public:
   NewTimer RatioTimer,RatioGradTimer,RatioAllTimer,UpdateTimer,EvaluateTimer;
   NewTimer Ratio1Timer,Ratio1GradTimer,Ratio1AllTimer, AccRejTimer;
 
-  typedef MultiDiracDeterminantBase*    DiracDeterminantPtr;
+  typedef MultiDiracDeterminant*    DiracDeterminantPtr;
   typedef SPOSet*                   SPOSetPtr;
   typedef SPOSetProxyForMSD*            SPOSetProxyPtr;
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
@@ -75,7 +75,7 @@ public:
 
 
   ///constructor
-  MultiSlaterDeterminantFast(ParticleSet& targetPtcl,MultiDiracDeterminantBase* up, MultiDiracDeterminantBase* dn);
+  MultiSlaterDeterminantFast(ParticleSet& targetPtcl,MultiDiracDeterminant* up, MultiDiracDeterminant* dn);
 
   ///destructor
   ~MultiSlaterDeterminantFast();
@@ -153,7 +153,7 @@ public:
   ValueType psiCurrent;
 
   // assume Dets[0]: up, Dets[1]:down
-  std::vector<MultiDiracDeterminantBase*> Dets;
+  std::vector<MultiDiracDeterminant*> Dets;
   std::map<std::string,size_t> SPOSetID;
 
   // map determinant in linear combination to unique det list

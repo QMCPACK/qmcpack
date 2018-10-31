@@ -30,7 +30,7 @@
 namespace qmcplusplus
 {
 
-class DiracDeterminantBase: public WaveFunctionComponent
+class DiracDeterminant: public WaveFunctionComponent
 {
 protected:
   ParticleSet *targetPtcl;
@@ -63,10 +63,10 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  DiracDeterminantBase(SPOSetPtr const &spos, int first=0);
+  DiracDeterminant(SPOSetPtr const &spos, int first=0);
 
   ///default destructor
-  virtual ~DiracDeterminantBase();
+  virtual ~DiracDeterminant();
 
   /**copy constructor
    * @param s existing DiracDeterminantBase
@@ -74,9 +74,9 @@ public:
    * This constructor makes a shallow copy of Phi.
    * Other data members are allocated properly.
    */
-  DiracDeterminantBase(const DiracDeterminantBase& s);
+  DiracDeterminant(const DiracDeterminant& s);
 
-  DiracDeterminantBase& operator=(const DiracDeterminantBase& s);
+  DiracDeterminant& operator=(const DiracDeterminant& s);
 
   ///** return a clone of Phi
   // */
@@ -226,7 +226,7 @@ public:
    * This interface is exposed only to SlaterDet and its derived classes
    * can overwrite to clone itself correctly.
    */
-  virtual DiracDeterminantBase* makeCopy(SPOSet* spo) const;
+  virtual DiracDeterminant* makeCopy(SPOSet* spo) const;
 //       virtual DiracDeterminantBase* makeCopy(ParticleSet& tqp, SPOSet* spo) const {return makeCopy(spo); };
 
   virtual void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);

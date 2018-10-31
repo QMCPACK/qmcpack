@@ -56,7 +56,7 @@ public:
   NewTimer RatioTimer,RatioGradTimer,RatioAllTimer,UpdateTimer,EvaluateTimer;
   NewTimer Ratio1Timer,Ratio1GradTimer,Ratio1AllTimer,AccRejTimer,evalOrbTimer;
 
-  typedef DiracDeterminantBase*    DiracDeterminantPtr;
+  typedef DiracDeterminant*    DiracDeterminantPtr;
   typedef SPOSet*              SPOSetPtr;
   typedef SPOSetProxyForMSD*             SPOSetProxyPtr;
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;

@@ -31,7 +31,7 @@
 namespace qmcplusplus
 {
 
-class MultiDiracDeterminantBase: public WaveFunctionComponent
+class MultiDiracDeterminant: public WaveFunctionComponent
 {
 
 public:
@@ -54,10 +54,10 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  MultiDiracDeterminantBase(SPOSetPtr const &spos, int first=0);
+  MultiDiracDeterminant(SPOSetPtr const &spos, int first=0);
 
   ///default destructor
-  ~MultiDiracDeterminantBase();
+  ~MultiDiracDeterminant();
 
   /**copy constructor
    * @param s existing DiracDeterminantBase
@@ -65,9 +65,9 @@ public:
    * This constructor makes a shallow copy of Phi.
    * Other data members are allocated properly.
    */
-  MultiDiracDeterminantBase(const MultiDiracDeterminantBase& s);
+  MultiDiracDeterminant(const MultiDiracDeterminant& s);
 
-  MultiDiracDeterminantBase& operator=(const MultiDiracDeterminantBase& s);
+  MultiDiracDeterminant& operator=(const MultiDiracDeterminant& s);
 
   /** return a clone of Phi
    */

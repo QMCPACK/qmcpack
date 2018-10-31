@@ -29,7 +29,7 @@
 
 namespace qmcplusplus
 {
-class DiracDeterminantCUDA: public DiracDeterminantBase
+class DiracDeterminantCUDA: public DiracDeterminant
 {
 public:
   typedef SPOSet::IndexVector_t IndexVector_t;
@@ -143,7 +143,7 @@ protected:
 public:
   ValueType ratio(ParticleSet& P, int iat)
   {
-    return DiracDeterminantBase::ratio (P, iat);
+    return DiracDeterminant::ratio (P, iat);
   }
 
   void update (std::vector<Walker_t*> &walkers, int iat);
