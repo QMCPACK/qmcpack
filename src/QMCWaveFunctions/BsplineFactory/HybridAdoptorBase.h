@@ -90,10 +90,9 @@ struct AtomicOrbitalSoA
     chunked_bcast(comm, MultiSpline);
   }
 
-  void gather_tables(Communicate* comm, std::vector<int> &offset_cplx, std::vector<int> &offset_real)
+  void gather_tables(Communicate* comm, std::vector<int> &offset)
   {
-    if(offset_cplx.size()) gatherv(comm, MultiSpline, Npad, offset_cplx);
-    if(offset_real.size()) gatherv(comm, MultiSpline, Npad, offset_real);
+    gatherv(comm, MultiSpline, Npad, offset);
   }
 
   template<typename PT, typename VT>
@@ -445,10 +444,11 @@ struct HybridAdoptorBase
       AtomicCenters[ic].bcast_tables(comm);
   }
 
-  void gather_atomic_tables(Communicate* comm, std::vector<int> &offset_cplx, std::vector<int> &offset_real)
+  void gather_atomic_tables(Communicate* comm, std::vector<int> &offset)
   {
+    if(comm->size()==1) return;
     for(int ic=0; ic<AtomicCenters.size(); ic++)
-      AtomicCenters[ic].gather_tables(comm, offset_cplx, offset_real);
+      AtomicCenters[ic].gather_tables(comm, offset);
   }
 
   inline void flush_zero()

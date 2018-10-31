@@ -75,10 +75,10 @@ struct SplineAdoptorBase
   std::vector<bool>               MakeTwoCopies;
   ///kpoints for each unique orbitals
   std::vector<TinyVector<ST,D> >  kPoints;
-  ///remap band
+  ///remap splines to orbitals
   aligned_vector<int> BandIndexMap;
-  /// band offsets
-  std::vector<int> offset_real, offset_cplx;
+  /// band offsets used for communication
+  std::vector<int> offset;
   ///name of the adoptor
   std::string AdoptorName;
   ///keyword used to match hdf5
@@ -99,6 +99,9 @@ struct SplineAdoptorBase
     GGt=dot(transpose(PrimLattice.G),PrimLattice.G);
     kPoints.resize(n);
     MakeTwoCopies.resize(n);
+    BandIndexMap.resize(n);
+    for(int i=0; i<n; i++)
+      BandIndexMap[i]=i;
   }
 
   ///remap kpoints to group general kpoints & special kpoints
@@ -106,7 +109,6 @@ struct SplineAdoptorBase
   {
     std::vector<TinyVector<ST,D> >  k_copy(kPoints);
     const int nk=kPoints.size();
-    BandIndexMap.resize(nk);
     int nCB=0;
     //two pass
     for(int i=0; i<nk; ++i)
@@ -114,7 +116,7 @@ struct SplineAdoptorBase
       if(MakeTwoCopies[i]) 
       {
         kPoints[nCB]=k_copy[i];
-        BandIndexMap[i]=nCB++;
+        BandIndexMap[nCB++]=i;
       }
     }
     int nRealBands=nCB;
@@ -123,7 +125,7 @@ struct SplineAdoptorBase
       if(!MakeTwoCopies[i]) 
       {
         kPoints[nRealBands]=k_copy[i];
-        BandIndexMap[i]=nRealBands++;
+        BandIndexMap[nRealBands++]=i;
       }
     }
     return nCB; //return the number of complex bands
