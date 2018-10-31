@@ -2134,6 +2134,10 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, in
 {
 //      APP_ABORT(" EinsplineSetExtended<StorageType>::evaluate_notranspose not implemented for grad_grad_grad_logdet yet. \n");
 //    VGLMatTimer.start();
+    app_log()<<" ============= evaluate_notranspose ============\n";
+    app_log()<<"  BEFORE____\n";
+    app_log()<<" grad_grad_grad_phi = \n"<<grad_grad_grad_logdet<<std::endl;
+    app_log()<<" -----------------------------------------------\n";
   for(int iat=first,i=0; iat<last; iat++,i++)
   {
     const PosType &r(P.activeR(iat));
@@ -2197,6 +2201,20 @@ EinsplineSetExtended<StorageType>::evaluate_notranspose(const ParticleSet& P, in
       convert(StorageGradHessVector[j],grad_grad_grad_logdet(i,j));
     }
   }
+    app_log()<<" AFTER________\n";
+    app_log()<<" grad_grad_grad_logdet = \n";
+    app_log()<<grad_grad_grad_logdet<<std::endl;
+    app_log()<<" xxx = "<<grad_grad_grad_logdet(0,0)[0][0]<<std::endl;
+    app_log()<<" xxy = "<<grad_grad_grad_logdet(0,0)[0][1]<<std::endl;
+    app_log()<<" xxz = "<<grad_grad_grad_logdet(0,0)[0][2]<<std::endl;
+    app_log()<<" xyy = "<<grad_grad_grad_logdet(0,0)[0][4]<<std::endl;
+    app_log()<<" xyz = "<<grad_grad_grad_logdet(0,0)[0][5]<<std::endl;
+    app_log()<<" xzz = "<<grad_grad_grad_logdet(0,0)[0][8]<<std::endl;
+    app_log()<<" yyy = "<<grad_grad_grad_logdet(0,0)[1][4]<<std::endl;
+    app_log()<<" yyz = "<<grad_grad_grad_logdet(0,0)[1][5]<<std::endl;
+    app_log()<<" yzz = "<<grad_grad_grad_logdet(0,0)[1][8]<<std::endl;
+    app_log()<<" zzz = "<<grad_grad_grad_logdet(0,0)[2][8]<<std::endl;
+    app_log()<<" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
 }
 
 

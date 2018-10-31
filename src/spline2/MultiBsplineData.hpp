@@ -82,6 +82,33 @@ struct MultiBsplineData
     d2a[2] = ((d2A44[8] * tx + d2A44[9]) * tx + d2A44[10]) * tx + d2A44[11];
     d2a[3] = ((d2A44[12] * tx + d2A44[13]) * tx + d2A44[14]) * tx + d2A44[15];
   }
+
+  /** compute interpolation prefactors up to the third order
+   * @param tx fractional coordinate with respect to the grid length in range [0,1)
+   * @param a[4] prefactor for the four consecutive grid points
+   * @param da[4] first order prefactor for the four consecutive grid points
+   * @param d2a[4] second order prefactor for the four consecutive grid points
+   * @param d3a[4] third order prefactor for the four consecutive grid points
+   */
+  inline static void compute_prefactors(T a[4], T da[4], T d2a[4], T d3a[4], T tx)
+  {
+    a[0]   = ((A44[0] * tx + A44[1]) * tx + A44[2]) * tx + A44[3];
+    a[1]   = ((A44[4] * tx + A44[5]) * tx + A44[6]) * tx + A44[7];
+    a[2]   = ((A44[8] * tx + A44[9]) * tx + A44[10]) * tx + A44[11];
+    a[3]   = ((A44[12] * tx + A44[13]) * tx + A44[14]) * tx + A44[15];
+    da[0]  = ((dA44[0] * tx + dA44[1]) * tx + dA44[2]) * tx + dA44[3];
+    da[1]  = ((dA44[4] * tx + dA44[5]) * tx + dA44[6]) * tx + dA44[7];
+    da[2]  = ((dA44[8] * tx + dA44[9]) * tx + dA44[10]) * tx + dA44[11];
+    da[3]  = ((dA44[12] * tx + dA44[13]) * tx + dA44[14]) * tx + dA44[15];
+    d2a[0] = ((d2A44[0] * tx + d2A44[1]) * tx + d2A44[2]) * tx + d2A44[3];
+    d2a[1] = ((d2A44[4] * tx + d2A44[5]) * tx + d2A44[6]) * tx + d2A44[7];
+    d2a[2] = ((d2A44[8] * tx + d2A44[9]) * tx + d2A44[10]) * tx + d2A44[11];
+    d2a[3] = ((d2A44[12] * tx + d2A44[13]) * tx + d2A44[14]) * tx + d2A44[15];
+    d3a[0] = d3A44[ 3]*tx;
+    d3a[1] = d3A44[ 7]*tx;
+    d3a[2] = d3A44[11]*tx;
+    d3a[3] = d3A44[15]*tx;
+  }
 };
 
 } // namespace spline2
