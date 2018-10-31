@@ -136,6 +136,7 @@ void CrystalAsciiParser::getCell(std::istream & is)
     Y.resize(3);
     Z.resize(3);
 
+    is.clear();
     is.seekg(pivot_begin);
     std::string aline;
     search(is,"DIRECT LATTICE VECTORS COMPON. (A.U.)",aline);
@@ -160,6 +161,7 @@ void CrystalAsciiParser::getCell(std::istream & is)
 
 void CrystalAsciiParser::getKpts(std::istream& is)
 {
+    is.clear();
     is.seekg(pivot_begin);
     std::string aline;
     search(is,"NUMBER OF K POINTS IN THE IBZ",aline);
@@ -197,6 +199,7 @@ void CrystalAsciiParser::getGeometry(std::istream & is)
 
     const double ang_to_bohr = 1.0/0.529177e0;
     tags.clear();
+    is.clear();
     is.seekg(pivot_begin);
     std::string aline;
     search(is,"NUMBER OF IRREDUCIBLE ATOMS IN THE CONVENTIONAL CELL",aline);
@@ -233,6 +236,7 @@ void CrystalAsciiParser::getGeometry(std::istream & is)
 	ECP=false;
     }
 
+    is.clear();
     is.seekg(pivot_begin);
     std::vector<int> atomic_number;
     std::vector<int> idx(NumberOfAtoms);
