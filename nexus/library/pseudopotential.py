@@ -1339,7 +1339,7 @@ class GaussianPP(SemilocalPP):
     #end def evaluate_rV
 
 
-    def ppconvert(self,outfile,ref,options=None):
+    def ppconvert(self,outfile,ref,extra=None):
         of = outfile.lower()
         if of.endswith('.xml'):
             opts = '--xml'
@@ -1350,8 +1350,8 @@ class GaussianPP(SemilocalPP):
         #end if
         tmpfile = 'tmp.gamess'
         self.write(tmpfile,'gamess')
-	if options is not None:
-	    command = 'ppconvert --gamess_pot {0} --s_ref "{1}" --p_ref "{1}" --d_ref "{1}" {2} {3} {4}'.format(tmpfile,ref,options,opts,outfile)
+	if extra is not None:
+	    command = 'ppconvert --gamess_pot {0} --s_ref "{1}" --p_ref "{1}" --d_ref "{1}" {2} {3} {4}'.format(tmpfile,ref,extra,opts,outfile)
 	else:
 	    command = 'ppconvert --gamess_pot {0} --s_ref "{1}" --p_ref "{1}" --d_ref "{1}" {2} {3}'.format(tmpfile,ref,opts,outfile)
         execute(command,verbose=True)
