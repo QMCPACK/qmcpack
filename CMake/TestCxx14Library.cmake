@@ -1,5 +1,5 @@
 
-# Test that the compiler is configured with a C++14 library
+# Test that the compiler is configured with a C++ 14 standard library
 
 set(TEST_CXX14_SOURCE ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/try_cxx14_library.cpp)
 file(WRITE ${TEST_CXX14_SOURCE}
