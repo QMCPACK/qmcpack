@@ -87,10 +87,16 @@ void CrystalAsciiParser::parse(const std::string &fname)
     {
 	SpinRestricted=false;
 	fin.seekg(pivot_begin);
-	search(fin,"ALPHA-BETA ELECTRONS LOCKED TO",aline);
-	parsewords(aline.c_str(),currentWords);
-	int diff = atoi(currentWords[4].c_str()); //2S
-	SpinMultiplicity = diff+1; //2S+1
+	if(lookFor(fin,"ALPHA-BETA ELECTRONS LOCKED TO",aline))
+	{
+	    parsewords(aline.c_str(),currentWords);
+	    int diff = atoi(currentWords[4].c_str()); //2S
+	    SpinMultiplicity = diff+1; //2S+1
+	}
+	else
+	{
+	    SpinMultiplicity = 1;
+	}
     }
     NumberOfAlpha = NumberOfEls/2+(SpinMultiplicity-1);
     NumberOfBeta = NumberOfEls-NumberOfAlpha;
