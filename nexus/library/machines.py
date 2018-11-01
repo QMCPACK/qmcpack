@@ -195,6 +195,7 @@ class Job(NexusCore):
                  machine      = None,
                  account      = None,
                  queue        = None,
+		 group_list   = None,
                  qos	      = None,
 		 bundled_jobs = None,
                  relative     = False,
@@ -240,6 +241,7 @@ class Job(NexusCore):
         self.type        = type
         self.queue       = queue
 	self.qos         = qos
+        self.group_list  = group_list
         self.bundled_jobs= bundled_jobs
         self.relative    = relative
         self.cores       = cores
@@ -2989,10 +2991,10 @@ class Cades(Supercomputer):
     name = 'cades'
     requires_account = True
     batch_capable    = True
-
     def process_job_extra(self,job):
-        if job.threads>1:
-            job.run_options.add(npersocket='--npersocket 1')
+        if job.threads>1 and job.processes_per_node > 1:
+            processes_per_socket = int(floor(job.processes_per_node/2))
+            job.run_options.add(npersocket='--npersocket {0}'.format(processes_per_socket))
         #end if
     #end def process_job_extra
 
@@ -3003,9 +3005,12 @@ class Cades(Supercomputer):
         if job.qos is None:
             job.qos = 'std'
         #end if
+	if job.group_list is None:
+	    job.group_list = 'cades-qmc'
+	#end if
         c= '#!/bin/bash\n'
         c+='#PBS -A {0}\n'.format(job.account)
-        c+='#PBS -W group_list=cades-qmc\n' 
+        c+='#PBS -W group_list={0}\n'.format(job.group_list) 
         c+='#PBS -q {0}\n'.format(job.queue)
         c+='#PBS -N {0}\n'.format(job.name)
         c+='#PBS -o {0}\n'.format(job.outfile)
