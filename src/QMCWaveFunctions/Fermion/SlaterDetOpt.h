@@ -24,7 +24,7 @@ class TrialWaveFunction;
 /// \brief  A class for a Slater determinant with optimizable orbitals.
 ///
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-class SlaterDetOpt : public DiracDeterminantBase {
+class SlaterDetOpt : public DiracDeterminant {
 
   // private data members
   private:
@@ -187,7 +187,7 @@ class SlaterDetOpt : public DiracDeterminantBase {
 
     WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const;
 
-    DiracDeterminantBase* makeCopy(SPOSet* spo) const;
+    DiracDeterminant* makeCopy(SPOSet* spo) const;
 
     void add_derivatives(const int nl,
                          const int np,
