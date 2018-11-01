@@ -57,7 +57,7 @@ ENDIF( INTEL_FTZ)
 IF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
 
 SET(X_OPTION "^-x| -x")
-SET(A_XOPTION "^-ax| -ax")
+SET(AX_OPTION "^-ax| -ax")
 #check if the user has already specified -x option for cross-compiling.
 if(CMAKE_CXX_FLAGS MATCHES ${X_OPTION} OR CMAKE_C_FLAGS MATCHES ${X_OPTION} OR
     CMAKE_CXX_FLAGS MATCHES ${AX_OPTION} OR CMAKE_C_FLAGS MATCHES ${AX_OPTION})
