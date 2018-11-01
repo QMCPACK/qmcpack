@@ -383,9 +383,12 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     MESSAGE(WARNING "No default file for compiler (${COMPILER})")
   ENDIF()
 
-  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD 14)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
   set(CMAKE_CXX_EXTENSIONS OFF)
+
+  # Check that a C++ 14 standard library is configured
+  include(CMake/TestCxx14Library.cmake)
 
   #-------------------------------------------------------------------
   #  check MPI installation
