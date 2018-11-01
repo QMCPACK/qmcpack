@@ -69,6 +69,10 @@ namespace afqmc
       MixedDensityMatrix_for_E(wset,G,ov_,nd);
       ma::axpy(std::conj(ci[nd]),ov_,Ov);
       HamOp.energy(eloc2,G,nd,TG.TG_local().root());  
+std::cout<<" E nomsd: " <<nd <<" " 
+<<eloc2[0][0] <<" " 
+<<eloc2[0][1] <<" " 
+<<eloc2[0][2] <<std::endl; 
       //TG.TG_local().all_reduce_in_place_n(eloc2.origin(),3*nwalk,std::plus<>());
       for(int i=0; i<nwalk; ++i) 
         for(int k=0; k<3; ++k) 
@@ -1192,7 +1196,7 @@ namespace afqmc
         }
       }  
       TG.Global().all_reduce_in_place_n(G1D.origin(),G1D.num_elements(),std::plus<>());  
-      ComplexType ov_ = TG.Global().all_reduce_value(ov,std::plus<>());  
+      ComplexType ov_ = ( TG.Global() += ov );
       ma::scal(ComplexType(1.0,0.0)/ov_,G1D);
       HamOp.vbias(G1D[indices[range_t(0,Gdims.first*Gdims.second)]],
                   std::forward<Vec>(v));

@@ -22,6 +22,7 @@
 #include "boost/variant.hpp"
 
 #include "AFQMC/HamiltonianOperations/SparseTensor.hpp"
+#include "AFQMC/HamiltonianOperations/KP3IndexFactorization.hpp"
 #include "AFQMC/HamiltonianOperations/THCOps.hpp"
 
 namespace qmcplusplus
@@ -41,33 +42,39 @@ class dummy_HOps
   public:
   dummy_HOps() {};
 
-  boost::multi_array<ComplexType,2> getOneBodyPropagatorMatrix(TaskGroup_& TG, 
-                                                               boost::multi_array<ComplexType,1> const& vMF)
+  template<class... Args>
+  boost::multi_array<ComplexType,2> getOneBodyPropagatorMatrix(Args&&... args)
   {
     throw std::runtime_error("calling visitor on dummy_HOps object");
     return boost::multi_array<ComplexType,2>{};
   }
 
-  template<class Mat, class MatB>
-  void energy(Mat&& E, const MatB& Gc, int k, bool addH1=true, bool addEJ=true, bool addEXX=true, bool getKl=false, MatB* Kl=nullptr, bool getKr=false, MatB* Kr=nullptr)
+  template<class... Args>
+  void energy(Args&&... args)
   {
     throw std::runtime_error("calling visitor on dummy_HOps object");
-  }
-  
-  template<class Mat, class MatB, class MatC, class MatD>
-  void energy(Mat&& E, const MatB& Gc, int k, MatC* Kl, MatD* Kr, bool addH1=true, bool addEJ=true, bool addEXX=true) 
+  }  
+
+  template<class... Args>
+  void fast_energy(Args&&... args)
   {
     throw std::runtime_error("calling visitor on dummy_HOps object");
-  }
+  }  
+
+  bool fast_ph_energy() const
+  {
+    throw std::runtime_error("calling visitor on dummy_HOps object");
+    return false;
+  }  
  
-  template<class MatA, class MatB>
-  void vHS(const MatA& X, MatB&& v, double a=1., double c=0.) 
+  template<class... Args>
+  void vHS(Args&&... args)
   {
     throw std::runtime_error("calling visitor on dummy_HOps object");
   }
 
-  template<class MatA, class MatB>
-  void vbias(const MatA& G, MatB&& v, double a=1., double c=0.) 
+  template<class... Args>
+  void vbias(Args&&... args)
   {
     throw std::runtime_error("calling visitor on dummy_HOps object");
   }
@@ -76,6 +83,12 @@ class dummy_HOps
   void write2hdf(Args&&... args)
   {
     throw std::runtime_error("calling visitor on dummy_HOps object");
+  }
+
+  int number_of_ke_vectors() const 
+  {
+    throw std::runtime_error("calling visitor on dummy_HOps object");
+    return 0;
   }
 
   int local_number_of_cholesky_vectors() const
@@ -121,7 +134,7 @@ class dummy_HOps
 
 #ifdef QMC_COMPLEX
 class HamiltonianOperations: 
-        public boost::variant<dummy::dummy_HOps,THCOps<ValueType>,SparseTensor<ComplexType,ComplexType>>
+        public boost::variant<dummy::dummy_HOps,THCOps<ValueType>,SparseTensor<ComplexType,ComplexType>,KP3IndexFactorization>
 #else
 class HamiltonianOperations: 
         public boost::variant<dummy::dummy_HOps,THCOps<ValueType>,
@@ -149,6 +162,7 @@ class HamiltonianOperations:
 #endif
     explicit HamiltonianOperations(STCC&& other) : variant(std::move(other)) {}
     explicit HamiltonianOperations(THCOps<ValueType>&& other) : variant(std::move(other)) {}
+    explicit HamiltonianOperations(KP3IndexFactorization&& other) : variant(std::move(other)) {}
 
 #ifndef QMC_COMPLEX
     explicit HamiltonianOperations(STRR const& other) = delete;
@@ -157,6 +171,7 @@ class HamiltonianOperations:
 #endif
     explicit HamiltonianOperations(STCC const& other) = delete;
     explicit HamiltonianOperations(THCOps<ValueType> const& other) = delete;
+    explicit HamiltonianOperations(KP3IndexFactorization const& other) = delete;
 
     HamiltonianOperations(HamiltonianOperations const& other) = delete;
     HamiltonianOperations(HamiltonianOperations&& other) = default;
@@ -189,6 +204,14 @@ class HamiltonianOperations:
     }
 
     template<class... Args>
+    void fast_energy(Args&&... args) {
+        boost::apply_visitor(
+            [&](auto&& a){a.fast_energy(std::forward<Args>(args)...);},
+            *this
+        );
+    }
+
+    template<class... Args>
     void vHS(Args&&... args) {
         boost::apply_visitor(
             [&](auto&& s){s.vHS(std::forward<Args>(args)...);},
@@ -207,6 +230,13 @@ class HamiltonianOperations:
     int local_number_of_cholesky_vectors() const{
         return boost::apply_visitor(
             [&](auto&& a){return a.local_number_of_cholesky_vectors();},
+            *this
+        );
+    }
+
+    int number_of_ke_vectors() const{
+        return boost::apply_visitor(
+            [&](auto&& a){return a.number_of_ke_vectors();},
             *this
         );
     }
@@ -246,6 +276,14 @@ class HamiltonianOperations:
             *this
         );
     }
+
+    bool fast_ph_energy() const {
+        return boost::apply_visitor(
+            [&](auto&& a){return a.fast_ph_energy();},
+            *this
+        );
+    }
+
 }; 
 
 }

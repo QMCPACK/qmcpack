@@ -628,8 +628,109 @@ inline Tp OverlapForWoodbury(const MatA& hermA, const MatB& B, MatC&& QQ0, integ
 
   // QQ0 = TMN * inv(TNN) 
   ma::product(TMN[indices[range_t(M0,Mn)][range_t()]],TNN,
-              QQ0[indices[range_t(M0,Mn)][range_t()]]); 
+              QQ0({M0,Mn},QQ0.extension(1))); //[indices[range_t(M0,Mn)][range_t()]]); 
+              //QQ0[indices[range_t(M0,Mn)][range_t()]]); 
   comm.barrier();
+  return ovlp;
+}
+
+template< class Tp,
+          class integer,
+          class MatA,
+          class MatB,
+          class MatC,
+          class MatD,
+          class Mat1,
+          class Mat2,
+          class Mat3,
+          class IBuffer,
+          class TBuffer,
+          class communicator 
+        >
+inline Tp MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&& C, MatD&& QQ0, integer *ref, Mat1&& TNN, Mat2&& TAB, Mat3&& TNM, IBuffer& IWORK, TBuffer& WORK, communicator& comm, bool compact=true)
+{
+  // check dimensions are consistent
+  int NEL = B.shape()[1];
+  assert( hermA.shape()[1] == B.shape()[0] );
+  assert( hermA.shape()[0] == TAB.shape()[0] );
+  assert( B.shape()[1] == TAB.shape()[1] );
+  assert( B.shape()[1] == TNN.shape()[0] );
+  assert( B.shape()[1] == TNN.shape()[1] );
+  assert( hermA.shape()[0] == QQ0.shape()[0] );
+  assert( B.shape()[1] == QQ0.shape()[1] );
+  if(compact) {
+    assert( C.shape()[0] == TNN.shape()[1] );
+    assert( C.shape()[1] == B.shape()[0] );
+  } else {
+    assert( TNM.shape()[1] == B.shape()[0] );
+    assert( TNM.shape()[0] == TNN.shape()[1] );
+    assert( C.shape()[0] == hermA.shape()[1] );
+    assert( C.shape()[1] == TNM.shape()[1] );
+  }
+
+  using ma::T;
+
+  int N0,Nn;
+  std::tie(N0,Nn) = FairDivideBoundary(comm.rank(),NEL,comm.size());
+
+  // TAB = herm(A)*B
+  if(N0!=Nn) {
+    ma::product(hermA,
+              B[indices[range_t()][range_t(N0,Nn)]],
+              TAB[indices[range_t()][range_t(N0,Nn)]]);  
+
+    // TNN = TAB[ref,:] 
+    for(int i=0; i<NEL; i++)
+      std::copy_n(std::addressof(*TAB[*(ref+i)].origin())+N0,Nn-N0,std::addressof(*TNN[i].origin())+N0);
+  }
+
+  comm.barrier();
+
+  // TNN = TNN^(-1)
+  Tp ovlp=Tp(0.);
+  if(comm.rank()==0)
+    ovlp = static_cast<Tp>(ma::invert(std::forward<Mat1>(TNN),IWORK,WORK));
+  comm.broadcast_n(&ovlp,1,0);
+  if(ovlp == Tp(0.0)) return Tp(0.0); // don't bother calculating further
+
+  int P0,Pn;
+  std::tie(P0,Pn) = FairDivideBoundary(comm.rank(),int(TAB.shape()[0]),comm.size());
+
+  // QQ0 = TAB * inv(TNN) 
+  if(P0!=Pn)  
+    ma::product(TAB[indices[range_t(P0,Pn)][range_t()]],
+              TNN,
+              QQ0({P0,Pn},QQ0.extension(1)));  
+              //QQ0[indices[range_t(P0,Pn)][range_t()]]);
+  if(compact) {
+
+    // C = T(TNN) * T(B)
+    if(N0!=Nn)
+      ma::product(T(TNN[indices[range_t()][range_t(N0,Nn)]]),
+                  T(B),
+                  C({N0,Nn},C.extension(1))); 
+
+  } else {
+
+    // TNM = T(TNN) * T(B)
+    if(N0!=Nn)    
+      ma::product(T(TNN[indices[range_t()][range_t(N0,Nn)]]),
+                  T(B),
+                  TNM[indices[range_t(N0,Nn)][range_t()]]); 
+
+    int sz=TNM.shape()[1];
+    std::tie(N0,Nn) = FairDivideBoundary(comm.rank(),sz,comm.size());   
+    comm.barrier();
+
+    // C = conj(A) * TNM
+    ma::product(T(hermA),
+                TNM[indices[range_t()][range_t(N0,Nn)]],
+                C(C.extension(0), {N0,Nn})); 
+
+  }
+
+  comm.barrier();
+
   return ovlp;
 }
 

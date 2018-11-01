@@ -34,12 +34,12 @@ template<class MultiArray1Dx,
 auto 
 dot(MultiArray1Dx&& x, MultiArray1Dy&& y){
         assert(x.size() == y.size());
-        return BLAS::dot(x.size(), x.origin(), x.strides()[0], y.origin(), y.strides()[0]);
+        return BLAS::dot(x.size(), std::addressof(*x.origin()), x.strides()[0], std::addressof(*y.origin()), y.strides()[0]);
 }
 
 template<class T, class MultiArray1D, typename = typename std::enable_if<std::decay<MultiArray1D>::type::dimensionality == 1>::type >
 MultiArray1D scal(T a, MultiArray1D&& x){
-	BLAS::scal(x.size(), a, x.origin(), x.strides()[0]);
+	BLAS::scal(x.size(), a, std::addressof(*x.origin()), x.strides()[0]);
 	return std::forward<MultiArray1D>(x);
 }
 
@@ -53,7 +53,7 @@ template<class T, class MultiArray1DA, class MultiArray1DB,
 >
 MultiArray1DB axpy(T x, MultiArray1DA const& a, MultiArray1DB&& b){
 	assert( a.shape()[0] == b.shape()[0] );
-	BLAS::axpy(a.shape()[0], x, a.origin(), a.strides()[0], b.origin(), b.strides()[0]);
+	BLAS::axpy(a.shape()[0], x, std::addressof(*a.origin()), a.strides()[0], std::addressof(*b.origin()), b.strides()[0]);
 	return std::forward<MultiArray1DB>(b);
 }
 

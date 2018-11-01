@@ -169,6 +169,7 @@ template<class WalkerSet,
         >
 bool restartFromHDF5(WalkerSet& wset, int nW_per_tg, hdf_archive& read, bool set_to_target)
 {
+  APP_ABORT(" Error: restartFromHDF5 not yet finished.\n");
 
   TaskGroup_& TG = wset.getTG();
 
@@ -456,6 +457,7 @@ template<class WalkerSet,
         >
 bool dumpToHDF5(WalkerSet& wset, hdf_archive& dump)
 {
+  APP_ABORT(" Error: dumpToHDF5 not yet finished.\n");
   TaskGroup_& TG = wset.getTG();
 
   if(TG.TG_local().root()) { 

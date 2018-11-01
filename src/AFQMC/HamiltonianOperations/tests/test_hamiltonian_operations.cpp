@@ -65,6 +65,7 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
 {
   OHMMS::Controller->initialize(0, NULL);
   boost::mpi3::communicator world{MPI_COMM_WORLD};
+  auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
@@ -136,9 +137,9 @@ TEST_CASE("ham_ops_basic_serial", "[hamiltonian_operations]")
     boost::multi_array<ComplexType,2> Eloc(extents[1][3]);
     boost::multi_array_ref<ComplexType,2> Gw(Gbuff.data(),extents[NEL*NMO][1]);
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
-    Eloc[0][0] = TG.Node().all_reduce_value(Eloc[0][0],std::plus<>());
-    Eloc[0][1] = TG.Node().all_reduce_value(Eloc[0][1],std::plus<>());
-    Eloc[0][2] = TG.Node().all_reduce_value(Eloc[0][2],std::plus<>());
+    Eloc[0][0] = ( TG.Node() += Eloc[0][0] );
+    Eloc[0][1] = ( TG.Node() += Eloc[0][1] );
+    Eloc[0][2] = ( TG.Node() += Eloc[0][2] );
     if(std::abs(file_data.E0+file_data.E1)>1e-8) {
       REQUIRE( real(Eloc[0][0]) == Approx(real(file_data.E0+file_data.E1)) );
       REQUIRE( imag(Eloc[0][0]) == Approx(imag(file_data.E0+file_data.E1)) );
@@ -195,6 +196,7 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
 {
   OHMMS::Controller->initialize(0, NULL);
   boost::mpi3::communicator world{MPI_COMM_WORLD};
+  auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
@@ -266,9 +268,9 @@ TEST_CASE("ham_ops_collinear_distributed", "[hamiltonian_operations]")
     boost::multi_array<ComplexType,2> Eloc(extents[1][3]);
     boost::multi_array_ref<ComplexType,2> Gw(Gbuff.data(),extents[NEL*NMO][1]);
     HOps.energy(Eloc,Gw,0,TG.getCoreID()==0);
-    Eloc[0][0] = TG.Node().all_reduce_value(Eloc[0][0],std::plus<>());
-    Eloc[0][1] = TG.Node().all_reduce_value(Eloc[0][1],std::plus<>());
-    Eloc[0][2] = TG.Node().all_reduce_value(Eloc[0][2],std::plus<>());
+    Eloc[0][0] = ( TG.Node() += Eloc[0][0] );
+    Eloc[0][1] = ( TG.Node() += Eloc[0][1] );
+    Eloc[0][2] = ( TG.Node() += Eloc[0][2] );
     if(std::abs(file_data.E0+file_data.E1)>1e-8) {
       REQUIRE( real(Eloc[0][0]) == Approx(real(file_data.E0+file_data.E1)) );
       REQUIRE( imag(Eloc[0][0]) == Approx(imag(file_data.E0+file_data.E1)) );
@@ -325,6 +327,7 @@ TEST_CASE("test_thc_simple_serial", "[hamiltonian_operations]")
 {
   OHMMS::Controller->initialize(0, NULL);
   boost::mpi3::communicator world{MPI_COMM_WORLD};
+  auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./thc.h5") ||
      not file_exists("./wfn_thc.dat") ) {
@@ -468,6 +471,7 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
 {
   OHMMS::Controller->initialize(0, NULL);
   boost::mpi3::communicator world{MPI_COMM_WORLD};
+  auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./thc.h5") ||
      not file_exists("./wfn_thc.dat") ) {
@@ -545,9 +549,9 @@ TEST_CASE("test_thc_simple_shared", "[hamiltonian_operations]")
     TG.local_barrier();
     Timer.stop("Generic");
     app_log()<<" Time in energy: " <<Timer.total("Generic") <<std::endl;
-    Eloc[0][0] = TG.Node().all_reduce_value(Eloc[0][0],std::plus<>());
-    Eloc[0][1] = TG.Node().all_reduce_value(Eloc[0][1],std::plus<>());
-    Eloc[0][2] = TG.Node().all_reduce_value(Eloc[0][2],std::plus<>());
+    Eloc[0][0] = ( TG.Node() += Eloc[0][0] );
+    Eloc[0][1] = ( TG.Node() += Eloc[0][1] );
+    Eloc[0][2] = ( TG.Node() += Eloc[0][2] );
     if(std::abs(file_data.E0+file_data.E1)>1e-8) {
       REQUIRE( real(Eloc[0][0]) == Approx(real(file_data.E0+file_data.E1)) );
       REQUIRE( imag(Eloc[0][0]) == Approx(imag(file_data.E0+file_data.E1)) );
@@ -615,6 +619,7 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
 {
   OHMMS::Controller->initialize(0, NULL);
   boost::mpi3::communicator world{MPI_COMM_WORLD};
+  auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./thc.h5") ||
      not file_exists("./wfn_thc.dat") ) {
@@ -696,9 +701,9 @@ TEST_CASE("test_thc_shared_testLuv", "[hamiltonian_operations]")
     TG.local_barrier();
     Timer.stop("Generic");
     app_log()<<" Time in energy: " <<Timer.total("Generic") <<std::endl;
-    Eloc[0][0] = TG.Node().all_reduce_value(Eloc[0][0],std::plus<>());
-    Eloc[0][1] = TG.Node().all_reduce_value(Eloc[0][1],std::plus<>());
-    Eloc[0][2] = TG.Node().all_reduce_value(Eloc[0][2],std::plus<>());
+    Eloc[0][0] = ( TG.Node() += Eloc[0][0] );
+    Eloc[0][1] = ( TG.Node() += Eloc[0][1] );
+    Eloc[0][2] = ( TG.Node() += Eloc[0][2] );
     if(std::abs(file_data.E0+file_data.E1)>1e-8) {
       REQUIRE( real(Eloc[0][0]) == Approx(real(file_data.E0+file_data.E1)) );
       REQUIRE( imag(Eloc[0][0]) == Approx(imag(file_data.E0+file_data.E1)) );

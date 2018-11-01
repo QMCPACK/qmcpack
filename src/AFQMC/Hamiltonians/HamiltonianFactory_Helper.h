@@ -82,7 +82,9 @@ namespace afqmc
   }
 
   inline HamiltonianTypes peekHamType(hdf_archive& dump) {
+    if(dump.is_group( std::string("/Hamiltonian/KPTHC") )) return KPTHC;    
     if(dump.is_group( std::string("/Hamiltonian/THC") )) return THC;    
+    if(dump.is_group( std::string("/Hamiltonian/KPFactorized") )) return KPFactorized;    
     if(dump.is_group( std::string("/Hamiltonian/Factorized") )) return Factorized;    
     if(dump.is_group( std::string("/Hamiltonian/SymmetricFactorized") )) return SymmetricFactorized;    
     if(dump.is_group( std::string("/Hamiltonian/Integrals") )) return s4DInts;    
@@ -110,7 +112,6 @@ namespace afqmc
 
    FactorizedSparseHamiltonian::shm_csr_matrix read_V2fact(hdf_archive& dump, TaskGroup_& TG, int nread, int NMO, int nvecs, double cutoff1bar, int int_blocks); 
   SMDenseVector<s4D<ValueType> > read_V2(hdf_archive& dump, TaskGroup_& TG, int nread, int NMO, int& min_i, int& max_i, double cutoff1bar, int int_blocks);
-  void read_THC(hdf_archive&); 
 
   void ascii_write(std::string); 
   void hdf_write(std::string); 

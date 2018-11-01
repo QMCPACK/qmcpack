@@ -68,6 +68,7 @@ TEST_CASE("propg_fac_shared", "[propagator_factory]")
 {
   OHMMS::Controller->initialize(0, NULL);
   boost::mpi3::communicator world{MPI_COMM_WORLD};
+  auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {
@@ -217,6 +218,7 @@ TEST_CASE("propg_fac_distributed", "[propagator_factory]")
 {
   OHMMS::Controller->initialize(0, NULL);
   boost::mpi3::communicator world{MPI_COMM_WORLD};
+  auto world = boost::mpi3::environment::get_world_instance();
 
   if(not file_exists("./afqmc.h5") ||
      not file_exists("./wfn.dat") ) {

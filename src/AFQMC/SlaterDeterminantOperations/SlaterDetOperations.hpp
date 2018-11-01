@@ -142,6 +142,27 @@ class SlaterDetOperations
       return SlaterDeterminantOperations::base::MixedDensityMatrixForWoodbury<T>(hermA,B,std::forward<MatC>(C),std::forward<MatQ>(QQ0),ref,TNN,TAB,TNM,IWORK,WORK,compact);
     }
 
+    template<class integer, class MatA, class MatB, class MatC, class MatQ>
+    T MixedDensityMatrixForWoodbury(const MatA& hermA, const MatB& B, MatC&& C,
+                                    integer* ref, MatQ&& QQ0, communicator& comm, bool compact=false) {
+      int Nact = hermA.shape()[0];
+      int NEL = B.shape()[1];
+      int NMO = B.shape()[0];
+      assert(hermA.shape()[1]==B.shape()[0]);
+      assert(QQ0.shape()[0]==Nact);
+      assert(QQ0.shape()[1]==NEL);
+
+      set_shm_buffer(comm,NEL*(NEL+Nact+NMO));
+      assert(SM_TMats->size() >= NEL*(NEL+Nact+NMO));
+      size_t cnt=0;
+      boost::multi_array_ref<T,2> TNN(SM_TMats->data(), extents[NEL][NEL]);
+      cnt+=TNN.num_elements();
+      boost::multi_array_ref<T,2> TAB(SM_TMats->data()+cnt, extents[Nact][NEL]);
+      cnt+=TAB.num_elements();
+      boost::multi_array_ref<T,2> TNM(SM_TMats->data()+cnt, extents[NEL][NMO]);
+      return SlaterDeterminantOperations::shm::MixedDensityMatrixForWoodbury<T>(hermA,B,std::forward<MatC>(C),std::forward<MatQ>(QQ0),ref,TNN,TAB,TNM,IWORK,WORK,comm,compact);
+    }
+
     template<class integer, class MatA, class MatB, class MatC>
     T MixedDensityMatrixFromConfiguration(const MatA& hermA, const MatB& B, MatC&& C,
                                     integer* ref, bool compact=false) {

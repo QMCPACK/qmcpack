@@ -32,6 +32,7 @@
 #include "AFQMC/Hamiltonians/THCHamiltonian.h"
 #include "AFQMC/Hamiltonians/SymmetricFactorizedSparseHamiltonian.h"
 #include "AFQMC/Hamiltonians/FactorizedSparseHamiltonian.h"
+#include "AFQMC/Hamiltonians/KPFactorizedHamiltonian.h"
 #include "AFQMC/Hamiltonians/SparseHamiltonian_s4D.h"
 //#include "AFQMC/Hamiltonians/FactorizedSparseHamiltonian_old.h"
 //#include "AFQMC/Hamiltonians/SparseHamiltonian_s4D_old.h"
@@ -458,7 +459,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       htype = HamiltonianTypes(htype_);
     }
 
-    int int_blocks,nvecs;
+    int int_blocks,nvecs,nkpts=-1;
     std::vector<int> Idata(8);
     if(head) 
       if(!dump.read(Idata,"dims")) {
@@ -473,24 +474,26 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       APP_ABORT(" Error: NMO differs from value in integral file. \n");
     }
     if(Idata[4] != NAEA) {
-      app_error()<<" ERROR: NAEA differs from value in integral file. \n"; 
-      APP_ABORT(" ");
+      app_log()<<" WARNING: NAEA differs from value in integral file. \n"; 
+//      APP_ABORT(" ");
     }
     if(Idata[5] != NAEB) {
-      app_error()<<" ERROR: NAEA differs from value in integral file. \n"; 
-      APP_ABORT(" ");
+      app_log()<<" WARNING: NAEB differs from value in integral file. \n"; 
+//      APP_ABORT(" ");
     }
     nvecs = Idata[7];
+    if(htype == KPFactorized || htype == KPTHC) nkpts=Idata[2];
 
     // 1 body hamiltonian
     std::vector<s2D<ValueType> > H1;
 
-    std::vector<IndexType> occup_alpha(NAEA);
-    std::vector<IndexType> occup_beta(NAEB);
+//    std::vector<IndexType> occup_alpha(NAEA);
+//    std::vector<IndexType> occup_beta(NAEB);
     ValueType NuclearCoulombEnergy(0);
     ValueType FrozenCoreEnergy(0); 
 
     if(head) { 
+/*
       std::vector<int> occups(NAEA+NAEB);
       if(!dump.read(occups,"occups")) { 
         app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading occups dataset. \n"; 
@@ -498,7 +501,7 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       }
       for(int i=0; i<NAEA; i++) occup_alpha[i] = occups[i];
       for(int i=NAEA, j=0; i<NAEA+NAEB; i++, j++) occup_beta[j] = occups[i];
-
+*/
       std::vector<ValueType> Rdata(2);
       if(!dump.read(Rdata,"Energies")) { 
         app_error()<<" Error in HamiltonianFactory::fromHDF5(): Problems reading  dataset. \n"; 
@@ -510,10 +513,11 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
         FrozenCoreEnergy = Rdata[1];
     }
     
-    TG.Global().broadcast(occup_alpha.begin(),occup_alpha.end());
-    TG.Global().broadcast(occup_beta.begin(),occup_beta.end());
+//    TG.Global().broadcast(occup_alpha.begin(),occup_alpha.end());
+//    TG.Global().broadcast(occup_beta.begin(),occup_beta.end());
     TG.Global().broadcast_n(&NuclearCoulombEnergy,1,0);
     TG.Global().broadcast_n(&FrozenCoreEnergy,1,0);
+
 
     if(head) { 
 
@@ -521,7 +525,9 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
       using std::imag;
       bool foundH1=false;
       boost::multi_array<ValueType,2> hcore(extents[NMO][NMO]);
-      if(dump.read(hcore,"hcore")) {
+      if(nkpts > 0) {
+        // nothing to do, H1 is read during construction of HamiltonianOperations object.
+      } else if(dump.read(hcore,"hcore")) {
         foundH1 = true;
 
         int nnz = 0;
@@ -594,16 +600,35 @@ Hamiltonian HamiltonianFactory::fromHDF5(GlobalTaskGroup& gTG, xmlNodePtr cur)
 
       int sz = H1.size();
       MPI_Bcast(&sz,1,MPI_INT,0,&TG.Global());
-      MPI_Bcast(H1.data(),H1.size()*sizeof(s2D<ValueType>),MPI_CHAR,0,&TG.Global());
+      if(sz>0) MPI_Bcast(H1.data(),H1.size()*sizeof(s2D<ValueType>),MPI_CHAR,0,&TG.Global());
     } else {
       int sz;
       MPI_Bcast(&sz,1,MPI_INT,0,&TG.Global());
       H1.resize(sz);  
-      MPI_Bcast(H1.data(),H1.size()*sizeof(s2D<ValueType>),MPI_CHAR,0,&TG.Global());
+      if(sz>0) MPI_Bcast(H1.data(),H1.size()*sizeof(s2D<ValueType>),MPI_CHAR,0,&TG.Global());
     } 
 
     // now read the integrals
-    if(htype == THC) {
+    if(htype == KPTHC) {
+
+    } else if(htype == KPFactorized) {
+
+      if(coreid < nread && !dump.push("KPFactorized",false)) {
+        app_error()<<" Error in HamiltonianFactory::fromHDF5(): Group not KPFactorized found. \n";
+        APP_ABORT("");
+      }
+      if( coreid < nread ) {
+        dump.pop();
+        dump.pop();
+        dump.close();
+      }
+      TG.global_barrier();
+      // KPFactorizedHamiltonian matrices are read by THCHamiltonian object when needed, 
+      // since their ownership is passed to the HamOps object.
+      return Hamiltonian(KPFactorizedHamiltonian(AFinfo,cur,std::move(H1),TG,
+                                        NuclearCoulombEnergy,FrozenCoreEnergy));
+
+    } else if(htype == THC) {
 
       if(coreid < nread && !dump.push("THC",false)) {
         app_error()<<" Error in HamiltonianFactory::fromHDF5(): Group not THC found. \n";

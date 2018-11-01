@@ -38,7 +38,7 @@ namespace qmcplusplus
 template<typename Type, typename IndxType, typename IntType, class Alloc, class is_root>
 void test_csr_matrix_shm_allocator(Alloc A, bool serial)
 {
-        boost::mpi3::communicator world{MPI_COMM_WORLD};
+        auto world = boost::mpi3::environment::get_world_instance();
         mpi3::shared_communicator node(world.split_shared());
 
         using ucsr_matrix = ma::sparse::ucsr_matrix<Type,IndxType,IntType,Alloc,is_root>;
@@ -458,7 +458,7 @@ TEST_CASE("csr_matrix_serial", "[csr]")
 TEST_CASE("csr_matrix_shm", "[csr]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  boost::mpi3::communicator world{MPI_COMM_WORLD};
+  auto world = boost::mpi3::environment::get_world_instance();
   mpi3::shared_communicator node(world.split_shared());
 
   {
@@ -485,7 +485,7 @@ TEST_CASE("csr_matrix_shm", "[csr]")
 TEST_CASE("csr_matrix_shm_large_memory", "[csr]")
 {
   OHMMS::Controller->initialize(0, NULL);
-  boost::mpi3::communicator world{MPI_COMM_WORLD};
+  auto world = boost::mpi3::environment::get_world_instance();
   mpi3::shared_communicator node(world.split_shared());
 
   using Type = std::complex<double>;

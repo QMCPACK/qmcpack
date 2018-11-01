@@ -245,10 +245,11 @@ namespace HamHelper
       TG.Node().all_reduce_n(sz_local.begin(),sz_local.size(),sz_node.begin(),std::plus<>());
       std::size_t tot_sz_node = std::accumulate(sz_node.begin(),sz_node.end(),std::size_t(0));
 
-      std::size_t sz_node_min= TG.Global().all_reduce_value(tot_sz_node,boost::mpi3::min<>());
-      std::size_t sz_node_max= TG.Global().all_reduce_value(tot_sz_node,boost::mpi3::max<>());
-      std::size_t sz_local_min= TG.Global().all_reduce_value(tot_sz_local,boost::mpi3::min<>());
-      std::size_t sz_local_max= TG.Global().all_reduce_value(tot_sz_local,boost::mpi3::max<>());
+      std::size_t sz_node_min, sz_node_max, sz_local_min, sz_local_max;
+      TG.Global().all_reduce_n(&tot_sz_node,1,&sz_node_min,boost::mpi3::min<>());
+      TG.Global().all_reduce_n(&tot_sz_node,1,&sz_node_max,boost::mpi3::max<>());
+      TG.Global().all_reduce_n(&tot_sz_local,1,&sz_local_min,boost::mpi3::min<>());
+      TG.Global().all_reduce_n(&tot_sz_local,1,&sz_local_max,boost::mpi3::max<>());
 
       app_log()<<"  Number of terms in Vijkl (generateHijkl): \n"
            <<"    Local: (min/max)"

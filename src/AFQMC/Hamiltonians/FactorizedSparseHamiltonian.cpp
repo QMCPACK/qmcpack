@@ -298,8 +298,6 @@ SpVType_shm_csr_matrix FactorizedSparseHamiltonian::calculateHSPotentials(double
           writeSparseTensor(dump,type,NMO,NAEA,NAEB,TGprop,TGwfn,H1,
                             V2,Spvn,vn0,E0,global_ncvecs,22);
 
-std::cout<<" -- after writeSparseTensor " <<std::endl;
-
         return HamiltonianOperations(sparse_ham(type,std::move(H1),std::move(hij),std::move(V2),
             std::move(V2view),std::move(Spvn),std::move(Spvnview),
             std::move(vn0),std::move(SpvnT),std::move(SpvnTview),E0,global_ncvecs));

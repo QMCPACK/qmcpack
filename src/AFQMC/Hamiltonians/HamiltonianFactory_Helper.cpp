@@ -740,10 +740,6 @@ namespace afqmc
 
   }
 
-  void read_THC(hdf_archive&) {
-    APP_ABORT(" Not implemented. \n\n\n");
-  }
-
   void ascii_write(std::string ascii_write_file) {
 
 /*

@@ -133,7 +133,7 @@ namespace qmcplusplus
   typedef SMSparseMatrix<ComplexType>   ComplexSMSpMat;
   typedef SMSparseMatrix<SPComplexType>   SPComplexSMSpMat;
 
-  enum HamiltonianTypes {Factorized,SymmetricFactorized,s4DInts,THC};
+  enum HamiltonianTypes {Factorized,SymmetricFactorized,s4DInts,THC,KPTHC,KPFactorized};
 
   extern TimerList_t AFQMCTimers;
   enum AFQMCTimerIDs {    

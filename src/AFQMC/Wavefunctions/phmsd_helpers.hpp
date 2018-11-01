@@ -118,7 +118,7 @@ inline void calculate_R(int rank, int ngrp, int spin, PH_EXCT const& abij, index
   std::vector<int> orbs(NEL);
   ComplexType ov_a;
   // add reference contribution!!!
-  {
+  if(rank==0){
     ComplexType w(0.0);
     auto it = std::addressof(*couplings.values()) + (*couplings.pointers_begin(0));
     auto ite = std::addressof(*couplings.values()) + (*couplings.pointers_end(0));
@@ -186,6 +186,102 @@ inline void calculate_R(int rank, int ngrp, int spin, PH_EXCT const& abij, index
     }
   }
 }
+
+template<class MatE, class MatO, class MatQ, class MatB,
+         class MatT, class MatP, 
+         class index_aos>
+void calculate_ph_energies_v1(int spin, int rank, int size, 
+                     MatE&& E, MatO&& Ov, MatQ const& QQ0, MatB&& Qwork,
+                     MatT const& Scu, MatT const& Jcb, MatT const& Xcb,
+                     MatP const& cPua,
+                     MatT const& G0, MatT&& Guv, MatT const& Muv,
+                     MatT&& T1, MatT&& T2, MatT&& T3, MatT&& xn, 
+                     ph_excitations<int,ComplexType> const& abij,
+                     std::array<index_aos,2> const& det_couplings) 
+{
+  using std::conj;
+  using std::get;
+/*
+  std::vector<int> IWORK(abij.maximum_excitation_number()[spin]);
+  std::vector<ComplexType> WORK(abij.maximum_excitation_number()[spin]*abij.maximum_excitation_number()[spin]);
+  auto confgs = abij.configurations_begin();
+  auto refc = abij.reference_configuration(spin);
+  for(int i=0; i<R.shape()[0]; i++)
+    std::fill_n(R[i].origin(),R.shape()[1],ComplexType(0));
+  int NEL = T.shape()[1];
+  std::vector<int> orbs(NEL);
+  ComplexType ov_a;
+  // add reference contribution!!!
+  if(rank==0){
+    ComplexType w(0.0);
+    auto it = std::addressof(*couplings.values()) + (*couplings.pointers_begin(0));
+    auto ite = std::addressof(*couplings.values()) + (*couplings.pointers_end(0));
+    if(spin==0)
+      for(; it<ite; ++it)
+        w += conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
+    else
+      for(; it<ite; ++it)
+        w += conj(get<2>(*(confgs+(*it)))) * ov[get<0>(*(confgs+(*it)))];
+    w *= ov0;
+// Wrong if NAEB < NAEA!!! FIX FIX FIX
+    for(int i=0; i<NEL; ++i)
+      R[i][refc[i]] += w;
+  }
+  for(int nex = 1, nd=1 ; nex<abij.maximum_excitation_number()[spin]; nex++) {
+    boost::multi_array_ref<ComplexType,2> Q(Qwork.origin(),extents[nex][nex]);
+    for(auto it = abij.unique_begin(nex)[spin]; it<abij.unique_end(nex)[spin]; ++it, ++nd) {
+      if(nd%ngrp==rank) {
+        auto e = *it;
+        abij.get_configuration(spin,nd,orbs);
+        if(nex==1) {
+          ov_a = T[*((*it)+1)][*(*it)];
+          Q[0][0] = 1.0/ov_a;
+        } else if(nex==2) {
+          ov_a = ma::I2x2( T[e[2]][e[0]], T[e[2]][e[1]],
+                           T[e[3]][e[0]], T[e[3]][e[1]], Q);
+        } else if(nex==3) {
+          ov_a = ma::I3x3( T[e[3]][e[0]], T[e[3]][e[1]],T[e[3]][e[2]],
+                           T[e[4]][e[0]], T[e[4]][e[1]],T[e[4]][e[2]],
+                           T[e[5]][e[0]], T[e[5]][e[1]],T[e[5]][e[2]],
+                          Q);
+        } else {
+          for(int p=0; p<nex; p++)
+            for(int q=0; q<nex; q++)
+              Q[p][q] = T[e[p+nex]][e[q]];
+          ov_a = ma::invert(Q,IWORK,WORK);
+        }
+        ComplexType w(0.0);
+        auto it = std::addressof(*couplings.values()) + (*couplings.pointers_begin(nd));
+        auto ite = std::addressof(*couplings.values()) + (*couplings.pointers_end(nd));
+        if(spin==0)
+          for(; it<ite; ++it)
+            w += conj(get<2>(*(confgs+(*it)))) * ov[get<1>(*(confgs+(*it)))];
+        else
+          for(; it<ite; ++it)
+            w += conj(get<2>(*(confgs+(*it)))) * ov[get<0>(*(confgs+(*it)))];
+        w *= ov_a*ov0;
+        if(std::abs(w) > 1e-10) {
+          // add term coming from identity
+          for(int i=0; i<NEL; ++i)
+            R[i][orbs[i]] += w;
+          for(int p=0; p<nex; ++p) {
+            auto Rp = R[e[p]];
+            auto Ip = Q[p];
+            for(int q=0; q<nex; ++q) {
+              auto Ipq = Ip[q];
+              auto Tq = T[e[q+nex]];
+              for(int i=0; i<NEL; ++i)
+               Rp[orbs[i]] -= w*Ipq*Tq[i];
+              Rp[orbs[e[q]]] += w*Ipq;
+            }
+          }
+        }
+      }
+    }
+  }
+*/
+}
+
 
 }
 }

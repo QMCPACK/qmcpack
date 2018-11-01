@@ -25,6 +25,9 @@
 #include "AFQMC/Hamiltonians/FactorizedSparseHamiltonian.h"
 #include "AFQMC/Hamiltonians/THCHamiltonian.h"
 #include "AFQMC/Hamiltonians/SparseHamiltonian_s4D.h"
+#ifdef QMC_COMPLEX
+#include "AFQMC/Hamiltonians/KPFactorizedHamiltonian.h"
+#endif
 //#include "AFQMC/Hamiltonians/FactorizedSparseHamiltonian_old.h"
 //#include "AFQMC/Hamiltonians/SparseHamiltonian_s4D_old.h"
 #include "AFQMC/HamiltonianOperations/HamiltonianOperations.hpp"
@@ -110,7 +113,11 @@ class dummy_Hamiltonian
 };
 }
 
-class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,FactorizedSparseHamiltonian,SymmetricFactorizedSparseHamiltonian,SparseHamiltonian_s4D,THCHamiltonian> //,FactorizedSparseHamiltonian_old,SparseHamiltonian_s4D_old>
+#ifdef QMC_COMPLEX
+class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,FactorizedSparseHamiltonian,SymmetricFactorizedSparseHamiltonian,SparseHamiltonian_s4D,THCHamiltonian,KPFactorizedHamiltonian> 
+#else
+class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,FactorizedSparseHamiltonian,SymmetricFactorizedSparseHamiltonian,SparseHamiltonian_s4D,THCHamiltonian> 
+#endif
 {
     using shm_csr_matrix = FactorizedSparseHamiltonian::shm_csr_matrix; 
     using csr_matrix_vew = FactorizedSparseHamiltonian::csr_matrix_view; 
@@ -124,15 +131,17 @@ class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,FactorizedSpar
     explicit Hamiltonian(FactorizedSparseHamiltonian&& other) : variant(std::move(other)) {}
     explicit Hamiltonian(SymmetricFactorizedSparseHamiltonian&& other) : variant(std::move(other)) {}
     explicit Hamiltonian(SparseHamiltonian_s4D&& other) : variant(std::move(other)) {}
-//    explicit Hamiltonian(FactorizedSparseHamiltonian_old&& other) : variant(std::move(other)) {}
-//    explicit Hamiltonian(SparseHamiltonian_s4D_old&& other) : variant(std::move(other)) {}
+#ifdef QMC_COMPLEX
+    explicit Hamiltonian(KPFactorizedHamiltonian&& other) : variant(std::move(other)) {}
+#endif
 
     explicit Hamiltonian(THCHamiltonian const& other) = delete;
     explicit Hamiltonian(FactorizedSparseHamiltonian const& other) = delete;
     explicit Hamiltonian(SymmetricFactorizedSparseHamiltonian const& other) = delete;
     explicit Hamiltonian(SparseHamiltonian_s4D const& other) = delete; 
-//    explicit Hamiltonian(FactorizedSparseHamiltonian_old const& other) = delete;
-//    explicit Hamiltonian(SparseHamiltonian_s4D_old const& other) = delete; 
+#ifdef QMC_COMPLEX
+    explicit Hamiltonian(KPFactorizedHamiltonian const& other) = delete; 
+#endif
 
     Hamiltonian(Hamiltonian const& other) = delete; 
     Hamiltonian(Hamiltonian&& other) = default; 

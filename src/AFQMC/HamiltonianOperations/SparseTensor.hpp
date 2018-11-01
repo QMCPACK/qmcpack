@@ -115,6 +115,15 @@ class SparseTensor
 	assert((haj.size() == SpvnT_view.size()) || (SpvnT_view.size()==1));
 	if((haj.size() > 1) && (SpvnT.size()==1)) // NOMSD with more than 1 determinant
           separateEJ = false;	
+/*
+for(int i=0; i<haj[0].shape()[0]; i++)
+  std::cout<<i <<" " <<haj[0][i]  <<"\n";
+std::cout<<"H1:\n";
+for(int i=0; i<hij.shape()[0]; i++) 
+  for(int j=0; j<hij.shape()[1]; j++)
+    std::cout<<i <<" " <<j <<" " <<hij[i][j]  <<"\n";
+std::cout<<"\n";
+*/
     }
 
     ~SparseTensor() {}
@@ -238,6 +247,12 @@ class SparseTensor
 
     }
 
+    template<class... Args>
+    void fast_energy(Args&&... args)
+    {
+      APP_ABORT(" Error: fast_energy not implemented in SparseTensor. \n"); 
+    }
+
     template<class MatA, class MatB,
              typename = typename std::enable_if_t<(std::decay<MatA>::type::dimensionality==1)>,
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==1)>,
@@ -307,6 +322,7 @@ class SparseTensor
     }
 
     bool distribution_over_cholesky_vectors() const{ return true; }
+    int number_of_ke_vectors() const{ return Spvn.shape()[1]; }
     int local_number_of_cholesky_vectors() const{ return Spvn.shape()[1]; }
     int global_number_of_cholesky_vectors() const{ return global_nCV; }
 
@@ -315,6 +331,8 @@ class SparseTensor
     bool transposed_G_for_E() const{return false;} 
     // transpose=true means vHS[nwalk][ik], false means vHS[ik][nwalk]
     bool transposed_vHS() const{return false;} 
+
+    bool fast_ph_energy() const { return false; }
 
   private:
 

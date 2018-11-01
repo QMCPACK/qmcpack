@@ -157,7 +157,7 @@ bool QMCMain::execute()
     //initialize the random number generator
     xmlNodePtr rptr = myRandomControl.initialize(m_context);
 
-    boost::mpi3::communicator world{MPI_COMM_WORLD};
+    auto world = boost::mpi3::environment::get_world_instance();
     afqmc::AFQMCFactory afqmc_fac(world);
     if(!afqmc_fac.parse(cur)) {
       app_log()<<" Error in AFQMCFactory::parse() ." <<std::endl;

@@ -88,6 +88,7 @@ void test_basic_walker_features(bool serial)
 {
   OHMMS::Controller->initialize(0, NULL);
   boost::mpi3::communicator world{MPI_COMM_WORLD}; 
+  auto world = boost::mpi3::environment::get_world_instance();
 
   using Type = std::complex<double>;
 
@@ -221,6 +222,7 @@ void test_hyperslab()
 {
   OHMMS::Controller->initialize(0, NULL);
   boost::mpi3::communicator world{MPI_COMM_WORLD};
+  auto world = boost::mpi3::environment::get_world_instance();
 
   using Type = std::complex<double>;
   using Matrix = boost::multi_array<Type,2>;
@@ -236,7 +238,7 @@ void test_hyperslab()
    for(int j=0; j<nprop; j++)
     Data[i][j] = i*10+rank*100+j;
 
-  int nwtot = world.all_reduce_value(nwalk,std::plus<>());
+  int nwtot = ( world += nwalk );
   
   hdf_archive dump(world,true);
   if(!dump.create("dummy_walkers.h5",H5F_ACC_EXCL)) {
@@ -283,6 +285,7 @@ void test_double_hyperslab()
 {
   OHMMS::Controller->initialize(0, NULL);
   boost::mpi3::communicator world{MPI_COMM_WORLD};
+  auto world = boost::mpi3::environment::get_world_instance();
 
   using Type = std::complex<double>;
   using Matrix = boost::multi_array<Type,2>;
@@ -298,7 +301,7 @@ void test_double_hyperslab()
    for(int j=0; j<nprop; j++)
     Data[i][j] = i*10+rank*100+j;
 
-  int nwtot = world.all_reduce_value(nwalk,std::plus<>());
+  int nwtot = ( world += nwalk ); 
   
   hdf_archive dump(world,true);
   if(!dump.create("dummy_walkers.h5",H5F_ACC_EXCL)) {
@@ -362,6 +365,7 @@ void test_walker_io()
 {
   OHMMS::Controller->initialize(0, NULL);
   boost::mpi3::communicator world{MPI_COMM_WORLD};
+  auto world = boost::mpi3::environment::get_world_instance();
 
   using Type = std::complex<double>;
 
@@ -457,11 +461,13 @@ TEST_CASE("swset_test_serial", "[shared_wset]")
   test_basic_walker_features(true);
   test_basic_walker_features(false);
 }
+/*
 TEST_CASE("hyperslab_tests", "[shared_wset]")
 {
  // test_hyperslab();
   test_double_hyperslab();
 }
+*/
 TEST_CASE("walker_io", "[shared_wset]")
 {
   test_walker_io();
