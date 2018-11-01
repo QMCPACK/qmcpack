@@ -478,7 +478,7 @@ try:
     full  = not qmc_mixed
     mixed = qmc_mixed
 except:
-    error()
+    error("command line args: " + str(sys.argv))
 #end try
 
 
