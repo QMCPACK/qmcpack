@@ -16,8 +16,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/**@file DiracDeterminantBaseBase.h
- * @brief Declaration of DiracDeterminantBase with a S(ingle)P(article)O(rbital)SetBase
+/**@file DiracDeterminant.h
+ * @brief Declaration of DiracDeterminant with a S(ingle)P(article)O(rbital)SetBase
  */
 #ifndef QMCPLUSPLUS_DIRACDETERMINANT_H
 #define QMCPLUSPLUS_DIRACDETERMINANT_H
@@ -69,7 +69,7 @@ public:
   virtual ~DiracDeterminant();
 
   /**copy constructor
-   * @param s existing DiracDeterminantBase
+   * @param s existing DiracDeterminant
    *
    * This constructor makes a shallow copy of Phi.
    * Other data members are allocated properly.
@@ -227,7 +227,7 @@ public:
    * can overwrite to clone itself correctly.
    */
   virtual DiracDeterminant* makeCopy(SPOSet* spo) const;
-//       virtual DiracDeterminantBase* makeCopy(ParticleSet& tqp, SPOSet* spo) const {return makeCopy(spo); };
+//       virtual DiracDeterminant* makeCopy(ParticleSet& tqp, SPOSet* spo) const {return makeCopy(spo); };
 
   virtual void evaluateRatiosAlltoOne(ParticleSet& P, std::vector<ValueType>& ratios);
   ///total number of particles

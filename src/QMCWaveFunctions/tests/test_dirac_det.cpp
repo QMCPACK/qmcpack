@@ -192,7 +192,7 @@ FakeSPO::evaluate_notranspose(const ParticleSet& P, int first, int last
   }
 }
 
-TEST_CASE("DiracDeterminantBase_first", "[wavefunction][fermion]")
+TEST_CASE("DiracDeterminant_first", "[wavefunction][fermion]")
 {
   FakeSPO *spo = new FakeSPO();
   spo->setOrbitalSetSize(3);
@@ -251,7 +251,7 @@ TEST_CASE("DiracDeterminantBase_first", "[wavefunction][fermion]")
 
 //#define DUMP_INFO
 
-TEST_CASE("DiracDeterminantBase_second", "[wavefunction][fermion]")
+TEST_CASE("DiracDeterminant_second", "[wavefunction][fermion]")
 {
   FakeSPO *spo = new FakeSPO();
   spo->setOrbitalSetSize(4);

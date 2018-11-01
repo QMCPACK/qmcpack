@@ -32,17 +32,17 @@ namespace qmcplusplus
  */
 DiracDeterminant::DiracDeterminant(SPOSetPtr const &spos, int first):
   NP(0), Phi(spos), FirstIndex(first)
-  ,UpdateTimer("DiracDeterminantBase::update",timer_level_fine)
-  ,RatioTimer("DiracDeterminantBase::ratio",timer_level_fine)
-  ,InverseTimer("DiracDeterminantBase::inverse",timer_level_fine)
-  ,BufferTimer("DiracDeterminantBase::buffer",timer_level_fine)
-  ,SPOVTimer("DiracDeterminantBase::spoval",timer_level_fine)
-  ,SPOVGLTimer("DiracDeterminantBase::spovgl",timer_level_fine)
+  ,UpdateTimer("DiracDeterminant::update",timer_level_fine)
+  ,RatioTimer("DiracDeterminant::ratio",timer_level_fine)
+  ,InverseTimer("DiracDeterminant::inverse",timer_level_fine)
+  ,BufferTimer("DiracDeterminant::buffer",timer_level_fine)
+  ,SPOVTimer("DiracDeterminant::spoval",timer_level_fine)
+  ,SPOVGLTimer("DiracDeterminant::spovgl",timer_level_fine)
 {
   Optimizable=false;
   if(Phi->Optimizable)
     Optimizable=true;
-  ClassName="DiracDeterminantBase";
+  ClassName="DiracDeterminant";
   registerTimers();
 }
 
@@ -50,7 +50,7 @@ DiracDeterminant::DiracDeterminant(SPOSetPtr const &spos, int first):
 DiracDeterminant::~DiracDeterminant() {}
 
 #if 0
-DiracDeterminantBase& DiracDeterminantBase::operator=(const DiracDeterminantBase& s)
+DiracDeterminant& DiracDeterminant::operator=(const DiracDeterminant& s)
 {
   Bytes_in_WFBuffer=s.Bytes_in_WFBuffer;
   NP=0;
@@ -622,7 +622,7 @@ DiracDeterminant::evaluateDerivatives(ParticleSet& P,
 
 WaveFunctionComponentPtr DiracDeterminant::makeClone(ParticleSet& tqp) const
 {
-  APP_ABORT(" Illegal action. Cannot use DiracDeterminantBase::makeClone");
+  APP_ABORT(" Illegal action. Cannot use DiracDeterminant::makeClone");
   return 0;
 }
 
@@ -646,7 +646,7 @@ DiracDeterminant::DiracDeterminant(const DiracDeterminant& s)
   this->resize(s.NumPtcls,s.NumOrbitals);
 }
 
-//SPOSetPtr  DiracDeterminantBase::clonePhi() const
+//SPOSetPtr  DiracDeterminant::clonePhi() const
 //{
 //  return Phi->makeClone();
 //}

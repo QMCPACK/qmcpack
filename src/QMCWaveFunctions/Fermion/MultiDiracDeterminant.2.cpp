@@ -14,7 +14,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/**@file DiracDeterminantBaseBase.build.cpp
+/**@file DiracDeterminant.build.cpp
  * @brief Implement build functions: Function bodies are too big to be in a header file
  */
 #include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"

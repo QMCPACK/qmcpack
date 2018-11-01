@@ -693,7 +693,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
            spo->occup(i,nq++) = k;
          }
        }
-       DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetPtr) spo,0);
+       DiracDeterminant* adet = new DiracDeterminant((SPOSetPtr) spo,0);
        adet->set(multiSD->FirstIndex_up,multiSD->nels_up);
        multiSD->dets_up.push_back(adet);
      }
@@ -708,7 +708,7 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
            spo->occup(i,nq++) = k;
          }
        }
-       DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetPtr) spo,0);
+       DiracDeterminant* adet = new DiracDeterminant((SPOSetPtr) spo,0);
        adet->set(multiSD->FirstIndex_dn,multiSD->nels_dn);
        multiSD->dets_dn.push_back(adet);
      }

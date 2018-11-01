@@ -36,7 +36,7 @@ protected:
   int NumOrbitals, NumBasis;
 //     SPOSetPtr ExcitedStates;
 
-  // Inverse of Aopt -- not transposed as in DiracDeterminantBase
+  // Inverse of Aopt -- not transposed as in DiracDeterminant
   ValueMatrix_t AoptInv;
   // Basis functions evaluated at all of my electron positions
   // First index is electron, second index is basis index

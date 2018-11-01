@@ -29,35 +29,35 @@ namespace qmcplusplus
 {
 DiracDeterminantCUDA::DiracDeterminantCUDA(SPOSetPtr const &spos, int first) :
   DiracDeterminant(spos, first),
-  UpdateJobList_d("DiracDeterminantBase::UpdateJobList_d"),
-  srcList_d("DiracDeterminantBase::srcList_d"),
-  destList_d("DiracDeterminantBase::destList_d"),
-  AList_d("DiracDeterminantBase::AList_d"),
-  AinvList_d("DiracDeterminantBase::AinvList_d"),
-  newRowList_d("DiracDeterminantBase::newRowList_d"),
-  AinvDeltaList_d("DiracDeterminantBase::AinvDeltaList_d"),
-  AinvColkList_d("DiracDeterminantBase::AinvColkList_d"),
-  gradLaplList_d("DiracDeterminantBase::gradLaplList_d"),
-  newGradLaplList_d("DiracDeterminantBase::newGradLaplList_d"),
-  AWorkList_d("DiracDeterminantBase::AWorkList_d"),
-  AinvWorkList_d("DiracDeterminantBase::AinvWorkList_d"),
-  PivotArray_d("DiracDeterminantBase::PivotArray_d"),
-  infoArray_d("DiracDeterminantBase::infoArray_d"),
-  GLList_d("DiracDeterminantBase::GLList_d"),
-  ratio_d("DiracDeterminantBase::ratio_d"),
-  gradLapl_d("DiracDeterminantBase::gradLapl_d"),
-  iatList_d("DiracDeterminantBase::iatList_d"),
-  NLrowBuffer_d("DiracDeterminantBase::NLrowBuffer_d"),
-  SplineRowList_d("DiracDeterminantBase::SplineRowList_d"),
-  RatioRowList_d("DiracDeterminantBase::RatioRowList_d"),
-  NLposBuffer_d("DiracDeterminantBase::NLposBuffer_d"),
-  NLAinvList_d("DiracDeterminantBase::NLAinvList_d"),
-  NLnumRatioList_d("DiracDeterminantBase::NLnumRatioList_d"),
-  NLelecList_d("DiracDeterminantBase::NLelecList_d"),
-  NLratioList_d("DiracDeterminantBase::NLratioList_d")
+  UpdateJobList_d("DiracDeterminant::UpdateJobList_d"),
+  srcList_d("DiracDeterminant::srcList_d"),
+  destList_d("DiracDeterminant::destList_d"),
+  AList_d("DiracDeterminant::AList_d"),
+  AinvList_d("DiracDeterminant::AinvList_d"),
+  newRowList_d("DiracDeterminant::newRowList_d"),
+  AinvDeltaList_d("DiracDeterminant::AinvDeltaList_d"),
+  AinvColkList_d("DiracDeterminant::AinvColkList_d"),
+  gradLaplList_d("DiracDeterminant::gradLaplList_d"),
+  newGradLaplList_d("DiracDeterminant::newGradLaplList_d"),
+  AWorkList_d("DiracDeterminant::AWorkList_d"),
+  AinvWorkList_d("DiracDeterminant::AinvWorkList_d"),
+  PivotArray_d("DiracDeterminant::PivotArray_d"),
+  infoArray_d("DiracDeterminant::infoArray_d"),
+  GLList_d("DiracDeterminant::GLList_d"),
+  ratio_d("DiracDeterminant::ratio_d"),
+  gradLapl_d("DiracDeterminant::gradLapl_d"),
+  iatList_d("DiracDeterminant::iatList_d"),
+  NLrowBuffer_d("DiracDeterminant::NLrowBuffer_d"),
+  SplineRowList_d("DiracDeterminant::SplineRowList_d"),
+  RatioRowList_d("DiracDeterminant::RatioRowList_d"),
+  NLposBuffer_d("DiracDeterminant::NLposBuffer_d"),
+  NLAinvList_d("DiracDeterminant::NLAinvList_d"),
+  NLnumRatioList_d("DiracDeterminant::NLnumRatioList_d"),
+  NLelecList_d("DiracDeterminant::NLelecList_d"),
+  NLratioList_d("DiracDeterminant::NLratioList_d")
 {
   for(int i = 0; i < 2; ++i)
-    NLratios_d[i] = gpu::device_vector<CTS::ValueType>("DiracDeterminantBase::NLratios_d");
+    NLratios_d[i] = gpu::device_vector<CTS::ValueType>("DiracDeterminant::NLratios_d");
   ClassName="DiracDeterminantCUDA";
 }
 

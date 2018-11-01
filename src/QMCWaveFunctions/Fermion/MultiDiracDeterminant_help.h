@@ -14,8 +14,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/**@file DiracDeterminantBaseBase.h
- * @brief Declaration of DiracDeterminantBase with a S(ingle)P(article)O(rbital)SetBase
+/**@file DiracDeterminant.h
+ * @brief Declaration of DiracDeterminant with a S(ingle)P(article)O(rbital)SetBase
  */
 #ifndef QMCPLUSPLUS_MULTIDIRACDETERMINANT_HELP_H
 #define QMCPLUSPLUS_MULTIDIRACDETERMINANT_HELP_H

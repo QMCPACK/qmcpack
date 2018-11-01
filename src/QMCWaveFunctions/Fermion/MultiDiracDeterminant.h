@@ -14,8 +14,8 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/**@file DiracDeterminantBaseBase.h
- * @brief Declaration of DiracDeterminantBase with a S(ingle)P(article)O(rbital)SetBase
+/**@file DiracDeterminant.h
+ * @brief Declaration of DiracDeterminant with a S(ingle)P(article)O(rbital)SetBase
  */
 #ifndef QMCPLUSPLUS_MULTIDIRACDETERMINANT_H
 #define QMCPLUSPLUS_MULTIDIRACDETERMINANT_H
@@ -60,7 +60,7 @@ public:
   ~MultiDiracDeterminant();
 
   /**copy constructor
-   * @param s existing DiracDeterminantBase
+   * @param s existing DiracDeterminant
    *
    * This constructor makes a shallow copy of Phi.
    * Other data members are allocated properly.
@@ -148,19 +148,19 @@ public:
 
   ValueType ratio(ParticleSet& P, int iat)
   {
-    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
+    APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return ValueType();
   }
 
   GradType evalGrad(ParticleSet& P, int iat)
   {
-    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
+    APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return GradType();
   }
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
-    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
+    APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return ValueType();
   }
 
@@ -168,7 +168,7 @@ public:
                        ParticleSet::ParticleGradient_t& G,
                        ParticleSet::ParticleLaplacian_t& L)
   {
-    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
+    APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return 0.0;
   }
 
@@ -176,7 +176,7 @@ public:
                      ParticleSet::ParticleGradient_t& G,
                      ParticleSet::ParticleLaplacian_t& L)
   {
-    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
+    APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return ValueType();
   }
 
