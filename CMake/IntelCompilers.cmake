@@ -57,12 +57,12 @@ ENDIF( INTEL_FTZ)
 IF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
 
 #check if the user has already specified -x option for cross-compiling.
-if(CMAKE_CXX_FLAGS MATCHES "-x" OR CMAKE_C_FLAGS MATCHES "-x" OR
-    CMAKE_CXX_FLAGS MATCHES "-ax" OR CMAKE_C_FLAGS MATCHES "-ax")
+if(CMAKE_CXX_FLAGS MATCHES " -x" OR CMAKE_C_FLAGS MATCHES " -x" OR
+    CMAKE_CXX_FLAGS MATCHES " -ax" OR CMAKE_C_FLAGS MATCHES " -ax")
   # make sure that the user specifies -x for both CMAKE_CXX_FLAGS and CMAKE_C_FLAGS.
-  if(CMAKE_CXX_FLAGS MATCHES "-x" AND CMAKE_C_FLAGS MATCHES "-x")
+  if(CMAKE_CXX_FLAGS MATCHES " -x" AND CMAKE_C_FLAGS MATCHES " -x")
   else() #(CMAKE_CXX_FLAGS MATCHES "-x" AND CMAKE_C_FLAGS MATCHES "-x")
-    if(CMAKE_CXX_FLAGS MATCHES "-ax" AND CMAKE_C_FLAGS MATCHES "-ax")
+    if(CMAKE_CXX_FLAGS MATCHES " -ax" AND CMAKE_C_FLAGS MATCHES " -ax")
     else()
       MESSAGE(FATAL_ERROR "if -xcode or -axcode is specified by the user, it should be added in both CMAKE_CXX_FLAGS and CMAKE_C_FLAGS!")
     endif()
