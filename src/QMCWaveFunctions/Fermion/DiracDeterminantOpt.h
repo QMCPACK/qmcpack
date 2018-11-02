@@ -16,12 +16,12 @@
 #ifndef DIRAC_DETERMINANT_OPT_H
 #define DIRAC_DETERMINANT_OPT_H
 
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 
 namespace qmcplusplus
 {
 
-class DiracDeterminantOpt : public DiracDeterminantBase
+class DiracDeterminantOpt : public DiracDeterminant
 {
 protected:
   typedef optimize::VariableSet opt_variables_type;
@@ -36,7 +36,7 @@ protected:
   int NumOrbitals, NumBasis;
 //     SPOSetPtr ExcitedStates;
 
-  // Inverse of Aopt -- not transposed as in DiracDeterminantBase
+  // Inverse of Aopt -- not transposed as in DiracDeterminant
   ValueMatrix_t AoptInv;
   // Basis functions evaluated at all of my electron positions
   // First index is electron, second index is basis index
@@ -55,7 +55,7 @@ protected:
   std::vector<PosType> MyG;
 
 public:
-  DiracDeterminantBase* makeCopy(SPOSet* spo) const;
+  DiracDeterminant* makeCopy(SPOSet* spo) const;
 
   DiracDeterminantOpt(ParticleSet &ptcl, SPOSetPtr const &gs_spos, int first=0);
   // This stores new orbital coefficients and updates the

@@ -14,16 +14,16 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/**@file DiracDeterminantBaseBase.build.cpp
+/**@file DiracDeterminant.build.cpp
  * @brief Implement build functions: Function bodies are too big to be in a header file
  */
-#include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "Numerics/MatrixOperators.h"
 
 namespace qmcplusplus
 {
   /** shared function used by BuildDotProductsAndCalculateRatios */
-  void MultiDiracDeterminantBase::BuildDotProductsAndCalculateRatios_impl(int ref, ValueType det0,
+  void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios_impl(int ref, ValueType det0,
       ValueType* restrict ratios, const ValueMatrix_t &psiinv, const ValueMatrix_t &psi, ValueMatrix_t& dotProducts, 
       const std::vector<int>& data, const std::vector<std::pair<int,int> >& pairs, const std::vector<RealType>& sign)
   {
@@ -55,7 +55,7 @@ namespace qmcplusplus
     readMatTimer.stop();
   }
 
-  void MultiDiracDeterminantBase::BuildDotProductsAndCalculateRatios(int ref, int iat, 
+  void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(int ref, int iat, 
       ValueVector_t& ratios, const ValueMatrix_t &psiinv, const ValueMatrix_t &psi, ValueMatrix_t& dotProducts, 
       const std::vector<int>& data, const std::vector<std::pair<int,int> >& pairs, const std::vector<RealType>& sign)
   {
@@ -89,7 +89,7 @@ namespace qmcplusplus
 #endif
   }
 
-  void MultiDiracDeterminantBase::BuildDotProductsAndCalculateRatios(int ref, int iat, 
+  void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(int ref, int iat, 
       GradMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi,
       ValueMatrix_t& dotProducts, std::vector<int>& data,
       std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign, int dx)
@@ -129,7 +129,7 @@ namespace qmcplusplus
 #endif
   }
 
-  void MultiDiracDeterminantBase::BuildDotProductsAndCalculateRatios(int ref, int iat, 
+  void MultiDiracDeterminant::BuildDotProductsAndCalculateRatios(int ref, int iat, 
       ValueMatrix_t& ratios, ValueMatrix_t& psiinv, ValueMatrix_t& psi, ValueMatrix_t& dotProducts, 
       std::vector<int>& data,
       std::vector<std::pair<int,int> >& pairs, 
@@ -167,7 +167,7 @@ namespace qmcplusplus
 #endif
   }
 
-  void MultiDiracDeterminantBase::evaluateDetsForPtclMove(ParticleSet& P, int iat)
+  void MultiDiracDeterminant::evaluateDetsForPtclMove(ParticleSet& P, int iat)
   {
     UpdateMode=ORB_PBYP_RATIO;
     RatioTimer.start();
@@ -216,7 +216,7 @@ namespace qmcplusplus
     RatioTimer.stop();
   }
 
-  void MultiDiracDeterminantBase::evaluateDetsAndGradsForPtclMove(ParticleSet& P, int iat)
+  void MultiDiracDeterminant::evaluateDetsAndGradsForPtclMove(ParticleSet& P, int iat)
   {
     UpdateMode=ORB_PBYP_PARTIAL;
     evalOrb1Timer.start();
@@ -292,7 +292,7 @@ namespace qmcplusplus
     }
   }
 
-  void MultiDiracDeterminantBase::evaluateGrads(ParticleSet& P, int iat)
+  void MultiDiracDeterminant::evaluateGrads(ParticleSet& P, int iat)
   {
     WorkingIndex = iat-FirstIndex;
 
@@ -337,7 +337,7 @@ namespace qmcplusplus
     }
   }
 
-  void MultiDiracDeterminantBase::evaluateAllForPtclMove(ParticleSet& P, int iat)
+  void MultiDiracDeterminant::evaluateAllForPtclMove(ParticleSet& P, int iat)
   {
     UpdateMode=ORB_PBYP_ALL;
     Phi->evaluate(P,iat,psiV,dpsiV,d2psiV);
