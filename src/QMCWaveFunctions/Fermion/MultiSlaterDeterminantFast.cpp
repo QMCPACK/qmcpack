@@ -14,13 +14,13 @@
     
     
 #include "QMCWaveFunctions/Fermion/MultiSlaterDeterminantFast.h"
-#include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
 #include "ParticleBase/ParticleAttribOps.h"
 
 namespace qmcplusplus
 {
 
-MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl, MultiDiracDeterminantBase* up, MultiDiracDeterminantBase* dn):
+MultiSlaterDeterminantFast::MultiSlaterDeterminantFast(ParticleSet& targetPtcl, MultiDiracDeterminant* up, MultiDiracDeterminant* dn):
   C2node_up(nullptr),C2node_dn(nullptr),C(nullptr),
   CSFcoeff(nullptr),DetsPerCSF(nullptr),CSFexpansion(nullptr),
   IsCloned(false),
@@ -73,8 +73,8 @@ void MultiSlaterDeterminantFast::initialize()
 
 WaveFunctionComponentPtr MultiSlaterDeterminantFast::makeClone(ParticleSet& tqp) const
 {
-  MultiDiracDeterminantBase* up_clone = new MultiDiracDeterminantBase(*Dets[0]);
-  MultiDiracDeterminantBase* dn_clone = new MultiDiracDeterminantBase(*Dets[1]);
+  MultiDiracDeterminant* up_clone = new MultiDiracDeterminant(*Dets[0]);
+  MultiDiracDeterminant* dn_clone = new MultiDiracDeterminant(*Dets[1]);
   MultiSlaterDeterminantFast* clone = new MultiSlaterDeterminantFast(tqp,up_clone,dn_clone);
   if(usingBF)
   {
