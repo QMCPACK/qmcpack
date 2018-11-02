@@ -1171,8 +1171,8 @@ void MultiSlaterDeterminantFast::table_method_eval(const ParticleSet::ParticleLa
                                                    const int parameters_size ,
                                                    const std::vector<std::pair<int,int>>* const m_act_rot_inds,
                                                    const int active_spin,
-                                                   const SPOSetBase::ValueMatrix_t& Tr,
-                                                   const SPOSetBase::ValueMatrix_t& Ar)
+                                                   const ValueMatrix_t& Tr,
+                                                   const ValueMatrix_t& Ar)
 /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 GUIDE TO THE MATICES BEING BUILT
 ----------------------------------------------
@@ -1296,11 +1296,11 @@ $
   const size_t* restrict upC            (active_spin==0 ? C2node_up->data() : C2node_dn->data() );
   const size_t* restrict dnC            (active_spin==0 ? C2node_dn->data() : C2node_up->data() );
   //B_grad holds the gardient operator
-  const SPOSetBase::GradMatrix_t& B_grad     (active_spin==0 ? Dets[0]->dpsiM : Dets[1]->dpsiM );
+  const GradMatrix_t& B_grad     (active_spin==0 ? Dets[0]->dpsiM : Dets[1]->dpsiM );
   //B_til holds the laplacian operator
-  const SPOSetBase::ValueMatrix_t& B_til     (active_spin==0 ? Dets[0]->d2psiM : Dets[1]->d2psiM );
+  const ValueMatrix_t& B_til     (active_spin==0 ? Dets[0]->d2psiM : Dets[1]->d2psiM );
   //B_bar will hold our special O operator
-  SPOSetBase::ValueMatrix_t Bbar;
+  ValueMatrix_t Bbar;
   Bbar.resize(nel,nmo);
 
   const size_t N1  = Dets[0]->FirstIndex;
@@ -1343,13 +1343,13 @@ $
   }
 
 
-  SPOSetBase::ValueMatrix_t Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y11,Y23,Y24,Y25,Y26;
+  ValueMatrix_t Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y11,Y23,Y24,Y25,Y26;
   Y1.resize(nel,nel);
   Y2.resize(nel,nmo);
   Y3.resize(nel,nmo);
   Y4.resize(nel,nmo);
 
-  SPOSetBase::ValueMatrix_t pK1,K1T,TK1T, pK2,K2AiB,TK2AiB,K2XA,TK2XA,K2T,TK2T,MK2T, pK3,K3T,TK3T, pK4,K4T,TK4T, pK5,K5T,TK5T;
+  ValueMatrix_t pK1,K1T,TK1T, pK2,K2AiB,TK2AiB,K2XA,TK2XA,K2T,TK2T,MK2T, pK3,K3T,TK3T, pK4,K4T,TK4T, pK5,K5T,TK5T;
   pK1.resize(nmo,nel);
   K1T.resize(nmo,nmo);
   TK1T.resize(nel,nmo);

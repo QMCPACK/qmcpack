@@ -60,7 +60,7 @@ public:
   bool CIopt;  
 
   // The initial coefficents at the start of the simulation
-  SPOSetBase::ValueMatrix_t m_init_B_up;
+  ValueMatrix_t m_init_B_up;
 
   //vector containing lookup tables mapping the unique up/dn determinants to their element position in C2_node_up/dn vectors
   std::vector<std::vector< std::vector<int> > > lookup_tbls;
@@ -82,8 +82,8 @@ public:
 
   //$T = M_{\sigma 0}^{-1}  \widetilde{M}_{\sigma 0}$ the tilde represents an expanded rectangular matrix
   // T stand for the "table" that is referred to in the the papers that describe the "table method". It will be used to calculate the result of an operator applied to a kth excited determinant. Note that Miguel does not calculate the full Table T in the calculations of determinants, gradients and laplacians in his BuildDotProducts functions but instead only calculates the submatrix neccessary. I think it is worth computing the entire table and storing it as every entry will be computed by performting just single excitations anyway.
-  SPOSetBase::ValueMatrix_t T_up;
-  SPOSetBase::ValueMatrix_t T_dn;
+  ValueMatrix_t T_up;
+  ValueMatrix_t T_dn;
 
 
   //vector that contains active orbital rotation parameter indices 
@@ -120,8 +120,8 @@ public:
                          const int parameters_size,
                          const std::vector<std::pair<int,int>>* const m_act_rot_inds,
                          const int active_spin,
-                         const SPOSetBase::ValueMatrix_t& Tr,
-                         const SPOSetBase::ValueMatrix_t& Ar);
+                         const ValueMatrix_t& Tr,
+                         const ValueMatrix_t& Ar);
 
   void registerTimers();
   NewTimer RatioTimer,RatioGradTimer,RatioAllTimer,UpdateTimer,EvaluateTimer;

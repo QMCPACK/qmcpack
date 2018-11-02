@@ -276,7 +276,10 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
       std::string spo_alpha;
       std::string spo_beta;
       std::string fastAlg("yes");
+      std::string orbopt("no");
+      bool OrbOpt(false);
       OhmmsAttributeSet spoAttrib;
+      spoAttrib.add (orbopt,"OrbOpt");
       spoAttrib.add (spo_alpha, "spo_up");
       spoAttrib.add (spo_beta, "spo_dn");
       spoAttrib.add (fastAlg, "Fast");
@@ -306,23 +309,43 @@ bool SlaterDetBuilder::put(xmlNodePtr cur)
         app_log() <<"Using Bryan's algorithm for MultiSlaterDeterminant expansion. \n";
         MultiDiracDeterminant* up_det=0;
         MultiDiracDeterminant* dn_det=0;
+        if(orbopt=="yes") {OrbOpt=true;}
+        app_log() <<"Multi-Slater Jastrow Orbital Optimization is set to "<< (OrbOpt ? "True" : "False") <<"\n";
         app_log() <<"Creating base determinant (up) for MSD expansion. \n";
         up_det = new MultiDiracDeterminant((SPOSetPtr) spomap.find(spo_alpha)->second,0);
         app_log() <<"Creating base determinant (down) for MSD expansion. \n";
         dn_det = new MultiDiracDeterminant((SPOSetPtr) spomap.find(spo_beta)->second,1);
         multislaterdetfast_0 = new MultiSlaterDeterminantFast(targetPtcl,up_det,dn_det);
-        //          up_det->usingBF = UseBackflow;
-        //          dn_det->usingBF = UseBackflow;
-        //          multislaterdetfast_0->usingBF = UseBackflow;
+        (OrbOpt) ? (multislaterdetfast_0->Orbopt=true): (multislaterdetfast_0->Orbopt=false);
         success = createMSDFast(multislaterdetfast_0,cur);
-        // debug, erase later
-        //          SPOSetProxyForMSD* spo_up;
-        //          SPOSetProxyForMSD* spo_dn;
-        //          spo_up=new SPOSetProxyForMSD(spomap.find(spo_alpha)->second,targetPtcl.first(0),targetPtcl.last(0));
-        //          spo_dn=new SPOSetProxyForMSD(spomap.find(spo_beta)->second,targetPtcl.first(1),targetPtcl.last(1));
-        //
-        //          multislaterdetfast_0->msd = new MultiSlaterDeterminant(targetPtcl,spo_up,spo_dn);
-        //          success = createMSD(multislaterdetfast_0->msd,cur);
+      // read in orbital rotation coefficients to apply a unitary roation before beginning calculation...
+      if (multislaterdetfast_0->CIopt || multislaterdetfast_0->Orbopt)
+        multislaterdetfast_0->Optimizable=true;
+      std::vector<RealType> params_a, params_b;
+      std::string subdet_name;
+      bool params_supplied_a = false;
+      bool params_supplied_b = false;
+
+      for (xmlNodePtr subcur = cur->children; subcur != NULL; subcur = subcur->next) 
+      {
+        std::string opt_vars;
+        getNodeName(subdet_name,subcur);
+        if (subdet_name == "opt_vars_up")
+        {
+          params_supplied_a = true;
+          putContent(params_a, subcur);
+        }
+        if (subdet_name == "opt_vars_dn")
+        {
+          params_supplied_b = true;
+          putContent(params_b, subcur);
+        }
+      }
+
+        // The primary purupose of this function is to create all the optimizable orbital rotation parameters.
+        // But if orbital rotation parameters were supplied by the user it will also apply a unitary transformation
+        //and then remove the orbital rotation parameters
+      multislaterdetfast_0->buildOptVariables(params_a,params_supplied_a,params_b,params_supplied_b);
       }
       else
       {
@@ -661,11 +684,13 @@ bool SlaterDetBuilder::createMSDFast(MultiSlaterDeterminantFast* multiSD, xmlNod
         multiSD->myVars->insert(CItags[i],(*(multiSD->C))[i],true,optimize::LINEAR_P);
       }
     }
+    multiSD->CIopt=true;
   }
   else
   {
     app_log() <<"CI coefficients are not optimizable. \n";
     multiSD->Optimizable=false;
+    multiSD->CIopt=false;
   }
   return success;
 }
