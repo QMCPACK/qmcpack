@@ -140,33 +140,38 @@ NonLocalECPotential::evaluate(ParticleSet& P, bool Tmove)
   for(int ipp=0; ipp<PPset.size(); ipp++)
     if(PPset[ipp]) PPset[ipp]->randomize_grid(*myRNG);
   //loop over all the ions
+  const auto myTable = P.DistTables[myTableIndex];
+  
   if (ComputeForces)
   {
-    for(int iat=0; iat<NumIons; iat++)
-      if(PP[iat])
+    forces=0;
+    if(myTable->DTType == DT_SOA)
+    {
+      for(int jel=0; jel<P.getTotalNum(); jel++)
       {
-        if(Tmove)
-          Value += PP[iat]->evaluate(P,Psi,iat, Txy, forces[iat]);
-        else
-          Value += PP[iat]->evaluate(P,IonConfig,iat,Psi, forces[iat], PulayTerm[iat]);
+        const auto &dist  = myTable->Distances[jel];
+        const auto &displ = myTable->Displacements[jel];
+        for(int iat=0; iat<NumIons; iat++)
+          if(PP[iat]!=nullptr && dist[iat]<PP[iat]->Rmax)
+            Value += PP[iat]->evaluateOneWithForces(P,iat,Psi,jel,dist[iat],RealType(-1)*displ[iat],forces[iat],Tmove,Txy);
       }
+    }
+    else
+    {
+      APP_ABORT("NonLocalECPotential::evaluate():  Forces not imlpemented for AoS build\n");
+    }
   }
   else
   {
-    const DistanceTableData* myTable = P.DistTables[myTableIndex];
     if(myTable->DTType == DT_SOA)
     {
-      for(int iat=0; iat<NumIons; iat++)
+      for(int jel=0; jel<P.getTotalNum(); jel++)
       {
-        if(PP[iat]==nullptr) continue;
-        const int* restrict J=myTable->J2[iat];
-        const RealType* restrict dist=myTable->r_m2[iat];
-        const PosType* restrict displ=myTable->dr_m2[iat];
-        for(size_t nj=0; nj<myTable->M[iat]; ++nj)
-        {
-          if(dist[nj]<PP[iat]->Rmax)
-            Value += PP[iat]->evaluateOne(P,iat,Psi,J[nj],dist[nj],displ[nj],Tmove,Txy);
-        }
+        const auto &dist  = myTable->Distances[jel];
+        const auto &displ = myTable->Displacements[jel];
+        for(int iat=0; iat<NumIons; iat++)
+          if(PP[iat]!=nullptr && dist[iat]<PP[iat]->Rmax)
+            Value += PP[iat]->evaluateOne(P,iat,Psi,jel,dist[iat],RealType(-1)*displ[iat],Tmove,Txy);
       }
     }
     else
@@ -212,21 +217,14 @@ void
 NonLocalECPotential::computeOneElectronTxy(ParticleSet& P, const int ref_elec)
 {
   std::vector<NonLocalData>& Txy(nonLocalOps.Txy);
-  const DistanceTableData* myTable = P.DistTables[myTableIndex];
+  const auto myTable = P.DistTables[myTableIndex];
   if(myTable->DTType == DT_SOA)
   {
+    const auto &dist  = myTable->Distances[ref_elec];
+    const auto &displ = myTable->Displacements[ref_elec];
     for(int iat=0; iat<NumIons; iat++)
-    {
-      if(PP[iat]==nullptr) continue;
-      const int* restrict J=myTable->J2[iat];
-      const RealType* restrict dist=myTable->r_m2[iat];
-      const PosType* restrict displ=myTable->dr_m2[iat];
-      for(size_t nj=0; nj<myTable->M[iat]; ++nj)
-      {
-        if(dist[nj]<PP[iat]->Rmax && J[nj]==ref_elec)
-          PP[iat]->evaluateOne(P,iat,Psi,J[nj],dist[nj],displ[nj],true,Txy);
-      }
-    }
+      if(PP[iat]!=nullptr && dist[iat]<PP[iat]->Rmax)
+        PP[iat]->evaluateOne(P,iat,Psi,ref_elec,dist[iat],RealType(-1)*displ[iat],true,Txy);
   }
   else
   {
@@ -369,8 +367,8 @@ void NonLocalECPotential::addObservables(PropertySetType& plist
         std::ostringstream obsName1, obsName2;
         obsName1 << "FNL" << "_" << iat << "_" << x;
         plist.add(obsName1.str());
-        obsName2 << "FNL_Pulay" << "_" << iat << "_" << x;
-        plist.add(obsName2.str());
+//        obsName2 << "FNL_Pulay" << "_" << iat << "_" << x;
+//        plist.add(obsName2.str());
       }
     }
   }
@@ -390,10 +388,10 @@ NonLocalECPotential::registerObservables(std::vector<observable_helper*>& h5list
     h5o1->set_dimensions(ndim,FirstForceIndex);
     h5o1->open(gid);
     h5list.push_back(h5o1);
-    observable_helper* h5o2 = new observable_helper("FNL_Pulay");
-    h5o2->set_dimensions(ndim,FirstForceIndex+Nnuc*OHMMS_DIM);
-    h5o2->open(gid);
-    h5list.push_back(h5o2);
+//    observable_helper* h5o2 = new observable_helper("FNL_Pulay");
+//    h5o2->set_dimensions(ndim,FirstForceIndex+Nnuc*OHMMS_DIM);
+//    h5o2->open(gid);
+//    h5list.push_back(h5o2);
   }
 }
 
@@ -409,7 +407,7 @@ NonLocalECPotential::setObservables(QMCTraits::PropertySetType& plist)
       for(int x=0; x<OHMMS_DIM; x++)
       {
         plist[index++] = forces[iat][x];
-        plist[index++] = PulayTerm[iat][x];
+    //    plist[index++] = PulayTerm[iat][x];
       }
     }
   }

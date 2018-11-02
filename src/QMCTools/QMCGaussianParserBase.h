@@ -93,6 +93,7 @@ struct QMCGaussianParserBase
   std::string angular_type;
   std::string h5file;
   std::string WFS_name;
+  std::string CodeName;
   ParticleSet IonSystem;
 
 
@@ -119,6 +120,7 @@ struct QMCGaussianParserBase
 
   int ci_size,ci_nca,ci_ncb,ci_nea,ci_neb,ci_nstates;
   double ci_threshold;
+  bool optDetCoeffs;
   bool usingCSF;
   bool VSVB;
 
@@ -160,7 +162,6 @@ struct QMCGaussianParserBase
 
   int numberOfExcitationsCSF( std::string&);
 
-  void map2GridFunctors(xmlNodePtr cur);
   virtual void parse(const std::string& fname) = 0;
 
   virtual void dumpPBC(const std::string& psi_tag,

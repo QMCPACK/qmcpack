@@ -95,7 +95,7 @@ namespace qmcplusplus
       // Set the number of periodic image for the evaluation of the orbitals. 
       void setPBCImages(const TinyVector<int,3>& pbc_images) { PBCImages = pbc_images; }
 
-      /** implement a BasisSetBase virutal function
+      /** implement a BasisSetBase virtual function
        *
        * Set Rmax and BasisSetSize
        * @todo Should be able to overwrite Rmax to be much smaller than the maximum grid
@@ -123,7 +123,14 @@ namespace qmcplusplus
       inline void setCenter(int c, int offset)
       { }
 
-      
+      /// Sets a boolean vector for S-type orbitals.  Used for cusp correction.
+      void queryOrbitalsForSType(std::vector<bool> &s_orbitals) const {
+        for (int i = 0; i < BasisSetSize; i++) {
+          s_orbitals[i] = (RnlID[NL[i]][1] == 0);
+        }
+      }
+
+
 
  template<typename LAT, typename T, typename PosType, typename VGL>
         inline void

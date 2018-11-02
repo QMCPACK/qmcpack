@@ -27,7 +27,7 @@
 #if OHMMS_DIM ==3
 #include "ParticleIO/ESHDFParticleParser.h"
 #endif
-#include "QMCWaveFunctions/OrbitalBuilderBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponentBuilder.h"
 #include "Utilities/ProgressReportEngine.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/Libxml2Doc.h"

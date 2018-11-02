@@ -28,6 +28,7 @@
 #include "Utilities/PooledData.h"
 #include "Utilities/PooledMemory.h"
 #ifdef QMC_CUDA
+#include "type_traits/CUDATypes.h"
 #include "Utilities/PointerPool.h"
 #include "CUDA/gpu_vector.h"
 #endif
@@ -77,16 +78,9 @@ struct Walker
   /** typedef for value data type. */
   typedef typename t_traits::ValueType ValueType;
 #ifdef QMC_CUDA
-  /** typedef for CUDA real data type */
-  typedef typename t_traits::CudaRealType CudaRealType;
-  /** typedef for CUDA value data type. */
-  typedef typename t_traits::CudaValueType CudaValueType;
-  /** array of particles */
-  typedef typename t_traits::CudaPosType CudaPosType;
-  /** array of gradients */
-  typedef typename t_traits::CudaGradType CudaGradType;
+  using CTS = CUDAGlobalTypes;
   /** array of laplacians */
-  typedef typename t_traits::CudaValueType CudaLapType;
+  typedef typename CTS::ValueType CudaLapType;
 #endif
   /** array of particles */
   typedef typename p_traits::ParticlePos_t ParticlePos_t;
@@ -95,7 +89,7 @@ struct Walker
   /** array of laplacians */
   typedef typename p_traits::ParticleLaplacian_t ParticleLaplacian_t;
   /** typedef for value data type. */
-  typedef typename p_traits::ParticleValue_t ParticleValue_t;
+  typedef typename p_traits::SingleParticleValue_t SingleParticleValue_t;
 
   ///typedef for the property container, fixed size
   typedef Matrix<EstimatorRealType>           PropertyContainer_t;
@@ -147,12 +141,12 @@ struct Walker
   /// Data for GPU-vectorized versions
 #ifdef QMC_CUDA
   static int cuda_DataSize;
-  typedef gpu::device_vector<CudaValueType> cuda_Buffer_t;
+  typedef gpu::device_vector<CTS::ValueType> cuda_Buffer_t;
   cuda_Buffer_t cuda_DataSet;
   // Note that R_GPU has size N+1.  The last element contains the
   // proposed position for single-particle moves.
-  gpu::device_vector<CudaPosType> R_GPU;
-  gpu::device_vector<CudaGradType> Grad_GPU;
+  gpu::device_vector<CTS::PosType> R_GPU;
+  gpu::device_vector<CTS::GradType> Grad_GPU;
   gpu::device_vector<CudaLapType> Lap_GPU;
   gpu::device_vector<CUDA_PRECISION_FULL> Rhok_GPU;
   int k_species_stride;
@@ -168,15 +162,15 @@ struct Walker
     k_species_stride = ((2*num_k + 15)/16) * 16;
     if (num_k)
       Rhok_GPU.resize (num_species * k_species_stride);
-  }
+  } GPU_XRAY_TRACE
   inline CUDA_PRECISION_FULL* get_rhok_ptr ()
   {
     return Rhok_GPU.data();
-  }
+  } GPU_XRAY_TRACE
   inline CUDA_PRECISION_FULL* get_rhok_ptr (int isp)
   {
     return Rhok_GPU.data() + k_species_stride * isp;
-  }
+  } GPU_XRAY_TRACE
 
 #endif
 
@@ -200,7 +194,7 @@ struct Walker
     if(nptcl>0)
       resize(nptcl);
     Properties=0.0;
-  }
+  } GPU_XRAY_TRACE
 
   inline int addPropertyHistory(int leng)
   {
@@ -279,7 +273,7 @@ struct Walker
     Lap_GPU.resize(nptcl);
 #endif
     //Drift.resize(nptcl);
-  }
+  } GPU_XRAY_TRACE
 
   ///copy the content of a walker
   inline void makeCopy(const Walker& a)
@@ -313,7 +307,7 @@ struct Walker
     Grad_GPU = a.Grad_GPU;
     Lap_GPU = a.Lap_GPU;
 #endif
-  }
+  } GPU_XRAY_TRACE 
 
   //return the address of the values of Hamiltonian terms
   inline EstimatorRealType* restrict getPropertyBase()
@@ -463,7 +457,7 @@ struct Walker
 #endif
     block_end = DataSet.current();
     scalar_end = DataSet.current_scalar();
-  }
+  } GPU_XRAY_TRACE
 
   void copyFromBuffer()
   {
@@ -481,10 +475,10 @@ struct Walker
     DataSet.get(PHindex.data(), PHindex.data()+PHindex.size());
 #ifdef QMC_CUDA
     // Unpack GPU data
-    std::vector<CudaValueType> host_data;
+    std::vector<CTS::ValueType> host_data;
     std::vector<CUDA_PRECISION_FULL> host_rhok;
-    std::vector<CudaPosType> R_host;
-    std::vector<CudaGradType> Grad_host;
+    std::vector<CTS::PosType> R_host;
+    std::vector<CTS::GradType> Grad_host;
     std::vector<CudaLapType>  host_lapl;
 
     TinyVector<size_t, 3> dim;
@@ -510,9 +504,11 @@ struct Walker
 #endif
     assert(block_end == DataSet.current());
     assert(scalar_end == DataSet.current_scalar());
-  }
+  } GPU_XRAY_TRACE
 
-  void updateBuffer()
+  // In Clang 4.0.1 it is unclear why but attibute list cannot go at the end
+  // when a template declaration follows
+  GPU_XRAY_TRACE void updateBuffer()
   {
     DataSet.rewind();
     DataSet << ID << ParentID << Generation << Age << ReleasedNodeAge << ReleasedNodeWeight;
@@ -528,10 +524,10 @@ struct Walker
     DataSet.put(PHindex.data(), PHindex.data()+PHindex.size());
 #ifdef QMC_CUDA
     // Pack GPU data
-    std::vector<CudaValueType> host_data;
+    std::vector<CTS::ValueType> host_data;
     std::vector<CUDA_PRECISION_FULL> host_rhok;
-    std::vector<CudaPosType> R_host;
-    std::vector<CudaGradType> Grad_host;
+    std::vector<CTS::PosType> R_host;
+    std::vector<CTS::GradType> Grad_host;
     std::vector<CudaLapType>  host_lapl;
 
     cuda_DataSet.copyFromGPU(host_data);
@@ -553,7 +549,7 @@ struct Walker
     assert(block_end == DataSet.current());
     assert(scalar_end == DataSet.current_scalar());
   }
-
+  
   template<class Msg>
   inline Msg& putMessage(Msg& m)
   {

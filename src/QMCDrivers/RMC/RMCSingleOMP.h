@@ -29,11 +29,11 @@ namespace qmcplusplus
   {
   public:
     /// Constructor.
-    typedef PtclAttribTraits::ParticlePos_t ParticlePos_t;
+    typedef ParticleSet::ParticlePos_t ParticlePos_t;
     typedef Reptile::ReptileConfig_t ReptileConfig_t;
 
-      RMCSingleOMP (MCWalkerConfiguration & w, TrialWaveFunction & psi,
-		    QMCHamiltonian & h, WaveFunctionPool & ppool);
+    RMCSingleOMP(MCWalkerConfiguration & w, TrialWaveFunction & psi,
+                QMCHamiltonian & h, WaveFunctionPool & ppool, Communicate* comm);
     bool run ();
     bool put (xmlNodePtr cur);
     //inline std::vector<RandomGenerator_t*>& getRng() { return Rng;}
@@ -75,16 +75,10 @@ namespace qmcplusplus
     //For # of walker samples, create that many reptiles with nbeads each.  Initialize each reptile to have the value of the walker "seed".
     void resetReptiles (std::vector< ParticlePos_t > &walker_samps, int nbeads,
 			RealType tau);
-    ///copy constructor
-      RMCSingleOMP (const RMCSingleOMP & a):QMCDriver (a), CloneManager (a)
-    {
-    }
+    ///copy constructor (disabled)
+    RMCSingleOMP(const RMCSingleOMP &) = delete;
     /// Copy operator (disabled).
-    RMCSingleOMP & operator= (const RMCSingleOMP &)
-    {
-      return *this;
-    }
-
+    RMCSingleOMP & operator=(const RMCSingleOMP &) = delete;
 
   };
 }

@@ -21,12 +21,12 @@ namespace qmcplusplus
 {
 
 OptimizableSPOBuilder::OptimizableSPOBuilder
-(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur) :
-  targetPtcl (&p)
+(ParticleSet& p, PtclPoolType& psets, Communicate *comm, xmlNodePtr cur) :
+  SPOSetBuilder(comm), targetPtcl (&p)
 {
 }
 
-SPOSetBase*
+SPOSet*
 OptimizableSPOBuilder::createSPOSetFromXML(xmlNodePtr cur)
 {
   OptimizableSPOSet *spo =  new OptimizableSPOSet();

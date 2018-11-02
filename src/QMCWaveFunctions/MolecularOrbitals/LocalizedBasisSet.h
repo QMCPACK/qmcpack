@@ -16,7 +16,7 @@
 /** @file LocalizedBasisSet.h
  * @brief A derived class from BasisSetBase
  *
- * This is intended as a replacement for MolecularOrbitalBase and
+ * This is intended as a replacement for MolecularWaveFunctionComponent and
  * any other localized basis set.
  */
 #ifndef QMCPLUSPLUS_LOCALIZEDBASISSET_H

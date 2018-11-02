@@ -1178,7 +1178,7 @@ class UnitConverter:
     hartree       = Unit('Hartree'      ,'Ha'    ,'energy',Ha)
     kJ_mole       = Unit('kJ_mole'      ,'kJ_mol','energy',kJ_mol)
     kelvin        = Unit('Kelvin'       ,'K'     ,'energy',K)
-    celcius       = Unit('Celcius'      ,'degC'  ,'energy',degC,degC_shift)
+    celsius       = Unit('Celsius'      ,'degC'  ,'energy',degC,degC_shift)
     fahrenheit    = Unit('Fahrenheit'   ,'degF'  ,'energy',degF,degF_shift)
 
     coulomb         = Unit('Coulomb'        ,'C','charge',C)
@@ -1220,7 +1220,7 @@ class UnitConverter:
                           ('Ha',hartree),\
                           ('kJ_mol',kJ_mole),\
                           ('K',kelvin),\
-                          ('degC',celcius),\
+                          ('degC',celsius),\
                           ('degF',fahrenheit),\
                           ])
 
@@ -1266,7 +1266,7 @@ class UnitConverter:
                           ('Ha',hartree),\
                           ('kJ_mol',kJ_mole),\
                           ('K',kelvin),\
-                          ('degC',celcius),\
+                          ('degC',celsius),\
                           ('degF',fahrenheit),\
                           ('C',coulomb),\
                           ('e',electron_charge),\
@@ -2029,6 +2029,7 @@ class DatAnalyzer(QBase):
                         line = self.stat_line(qname,prec='16.0f')
                     else:
                         line = self.stat_line(qname)
+                    #end if
                     if qname=='CorrectedEnergy':
                         self.log(len(line)*'-',n=1)
                     #end if
@@ -2036,13 +2037,16 @@ class DatAnalyzer(QBase):
                 #end if
             #end for
         #end if
-#AcceptRatio           =          0.492020 +/-         0.000025
     #end def write_stats
 
     
     def stat_line(self,qname,compress=False,prec='auto'):
+        opt = self.options
         q = self.stats[qname]
-        if prec=='auto':
+        if opt.precision is not None:
+            prec = opt.precision
+            line = '{0:<22}=  {1: '+prec+'} +/- {2: '+prec+'}'
+        elif prec=='auto':
             if (q.mean !=0.0 and abs(q.error/q.mean) > 1e-8):
                 d = int(max(2,1-floor(log(q.error)/log(10.))))
             else:
@@ -2357,6 +2361,10 @@ QMCA examples:
                                 'first, current particle number second (default=%default)'
                                )
                          )
+        parser.add_option('--fp',dest='precision',
+                          default=None,
+                          help='Sets the floating point precision of displayed statistical results.  Must be a floating point format string such as 16.8f, 8.6e, or similar (default=%default).'
+                          )
 
         unsupported = set('histogram image reblock report'.split())
 
@@ -2475,6 +2483,13 @@ QMCA examples:
             #end if
         #end for
         opt.quantities = list(set(quants)-set(remove))
+        if opt.precision is not None:
+            try:
+                fp = ('{0: '+opt.precision+'}').format(1.234567)
+            except:
+                self.error('floating point format is not a proper format\nformat provided via --fp: {0}\nplease use a standard floating point format statement like 16.8f, 8.6e, or similar'.format(opt.precision))
+            #end try
+        #end if
         if opt.show_options or self.verbose:
             self.log('options provided:',n=1)
             self.log(str(self.options),n=1)

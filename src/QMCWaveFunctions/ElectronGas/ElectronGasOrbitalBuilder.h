@@ -17,8 +17,8 @@
 #ifndef QMCPLUSPLUS_ELECTRONGAS_ORBITALS_H
 #define QMCPLUSPLUS_ELECTRONGAS_ORBITALS_H
 
-#include <QMCWaveFunctions/OrbitalBuilderBase.h>
-#include <QMCWaveFunctions/SPOSetBase.h>
+#include <QMCWaveFunctions/WaveFunctionComponentBuilder.h>
+#include <QMCWaveFunctions/SPOSet.h>
 #include <config/stdlib/math.h>
 
 #include "QMCWaveFunctions/SPOSetBuilder.h"
@@ -33,7 +33,7 @@ namespace qmcplusplus
 //forward declaration
 class  BackflowTransformation;
 
-struct RealEGOSet: public SPOSetBase
+struct RealEGOSet: public SPOSet
 {
 
   int KptMax;
@@ -47,7 +47,7 @@ struct RealEGOSet: public SPOSetBase
   inline void resetTargetParticleSet(ParticleSet& P) { }
   void setOrbitalSetSize(int norbs) { }
 
-  SPOSetBase* makeClone() const
+  SPOSet* makeClone() const
   {
     return new RealEGOSet(*this);
   }
@@ -303,7 +303,7 @@ struct RealEGOSet: public SPOSetBase
 
 /** OrbitalBuilder for Slater determinants of electron-gas
 */
-class ElectronGasOrbitalBuilder: public OrbitalBuilderBase
+class ElectronGasOrbitalBuilder: public WaveFunctionComponentBuilder
 {
 public:
 
@@ -326,12 +326,12 @@ protected:
   xmlNodePtr spo_node;
 public:
   ///constructor
-  ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur);
+  ElectronGasSPOBuilder(ParticleSet& p, Communicate *comm, xmlNodePtr cur);
 
   /** initialize the Antisymmetric wave function for electrons
   *@param cur the current xml node
   */
-  SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
+  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
 };
 
 }

@@ -16,11 +16,11 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${QMCPACK_UNIT_TEST_DIR})
 
 SET(SRC_DIR hamiltonian)
 SET(UTEST_EXE test_${SRC_DIR})
-SET(UTEST_NAME unit_test_${SRC_DIR})
+SET(UTEST_NAME deterministic-unit_test_${SRC_DIR})
 SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/hamiltonians)
 
-SET(SRCS test_bare_kinetic.cpp test_coulomb_pbcAB.cpp test_coulomb_pbcAA.cpp
-         test_force.cpp test_ecp.cpp test_hamiltonian_factory.cpp)
+SET(SRCS test_bare_kinetic.cpp test_coulomb_pbcAB.cpp test_coulomb_pbcAB_ewald.cpp test_coulomb_pbcAA.cpp
+         test_coulomb_pbcAA_ewald.cpp test_force.cpp test_force_ewald.cpp test_ecp.cpp test_hamiltonian_factory.cpp)
 IF(HAVE_CUDA)
   SET(SRCS ${SRCS}
       test_coulomb_CUDA.cpp 
@@ -37,5 +37,5 @@ TARGET_LINK_LIBRARIES(${UTEST_EXE} qmc qmcham qmcwfs qmcbase qmcutil ${QMC_UTIL_
 
 #ADD_TEST(NAME ${UTEST_NAME} COMMAND "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
 ADD_UNIT_TEST(${UTEST_NAME} "${QMCPACK_UNIT_TEST_DIR}/${UTEST_EXE}")
-SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES LABELS "unit" WORKING_DIRECTORY ${UTEST_DIR})
+SET_TESTS_PROPERTIES(${UTEST_NAME} PROPERTIES WORKING_DIRECTORY ${UTEST_DIR})
 

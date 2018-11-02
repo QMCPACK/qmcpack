@@ -29,10 +29,10 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetBasePtr const &spos, BackflowTransformation * BF, int first): DiracDeterminantBase(spos,first)
+DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetPtr const &spos, BackflowTransformation * BF, int first): DiracDeterminant(spos,first)
 {
   Optimizable=true;
-  OrbitalName="DiracDeterminantWithBackflow";
+  ClassName="DiracDeterminantWithBackflow";
   registerTimers();
   BFTrans=BF;
   NumParticles = ptcl.getTotalNum();
@@ -89,7 +89,7 @@ void DiracDeterminantWithBackflow::resize(int nel, int morb)
   */
 }
 
-/** replace of SPOSetBase::evaluate function with the removal of t_logpsi */
+/** replace of SPOSet::evaluate function with the removal of t_logpsi */
 void DiracDeterminantWithBackflow::evaluate_SPO(ValueMatrix_t& logdet, GradMatrix_t& dlogdet, HessMatrix_t& grad_grad_logdet)
 {
   Phi->evaluate_notranspose(BFTrans->QP, FirstIndex, LastIndex, psiM_temp, dlogdet, grad_grad_logdet);
@@ -757,10 +757,10 @@ DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     int kk = BFTrans->optIndexMap[pa];
 #if defined(QMC_COMPLEX)
     dlogpsi[kk]+=real(dpsia);
-    dhpsioverpsi[kk] -= real(0.5*static_cast<ParticleSet::ParticleValue_t>(dLa)+Dot(P.G,Gtemp));
+    dhpsioverpsi[kk] -= real(0.5*static_cast<ParticleSet::SingleParticleValue_t>(dLa)+Dot(P.G,Gtemp));
 #else
     dlogpsi[kk]+=dpsia;
-    dhpsioverpsi[kk] -= (0.5*static_cast<ParticleSet::ParticleValue_t>(dLa)+Dot(P.G,Gtemp));
+    dhpsioverpsi[kk] -= (0.5*static_cast<ParticleSet::SingleParticleValue_t>(dLa)+Dot(P.G,Gtemp));
 #endif
   }
 }
@@ -899,7 +899,7 @@ DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
 #endif
     // \sum_i (\nabla_pa  \nabla2_i D) / D
     for(int k=0; k<num; k++)
-      dG(offset,pa,k) = Gtemp[k] + myG[k]*static_cast<ParticleSet::ParticleValue_t>(dpsia);  // (\nabla_pa \nabla_i D) / D
+      dG(offset,pa,k) = Gtemp[k] + myG[k]*static_cast<ParticleSet::SingleParticleValue_t>(dpsia);  // (\nabla_pa \nabla_i D) / D
   }
 }
 
@@ -1013,23 +1013,23 @@ void DiracDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
     int kk = pa; //BFTrans->optIndexMap[pa];
 #if defined(QMC_COMPLEX)
     dlogpsi[kk]+=real(dpsia);
-    dhpsioverpsi[kk] -= real(0.5*static_cast<ParticleSet::ParticleValue_t>(La1+La2+La3)+Dot(P.G,Gtemp));
+    dhpsioverpsi[kk] -= real(0.5*static_cast<ParticleSet::SingleParticleValue_t>(La1+La2+La3)+Dot(P.G,Gtemp));
 #else
     dlogpsi[kk]+=dpsia;
-    dhpsioverpsi[kk] -= (0.5*static_cast<ParticleSet::ParticleValue_t>(La1+La2+La3)+Dot(P.G,Gtemp));
+    dhpsioverpsi[kk] -= (0.5*static_cast<ParticleSet::SingleParticleValue_t>(La1+La2+La3)+Dot(P.G,Gtemp));
 #endif
     *G0 += Gtemp;
     (*L0)[0] += La1+La2+La3;
   }
 }
 
-OrbitalBasePtr DiracDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr DiracDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
 {
   APP_ABORT(" Illegal action. Cannot use DiracDeterminantWithBackflow::makeClone");
   return 0;
 }
 
-DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetBasePtr spo) const
+DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetPtr spo) const
 {
 //    BackflowTransformation *BF = BFTrans->makeClone();
   // mmorales: particle set is only needed to get number of particles, so using QP set here
@@ -1041,14 +1041,14 @@ DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetBaseP
 }
 
 DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s):
-  DiracDeterminantBase(s),BFTrans(s.BFTrans)
+  DiracDeterminant(s),BFTrans(s.BFTrans)
 
 {
   registerTimers();
   this->resize(s.NumPtcls,s.NumOrbitals);
 }
 
-//SPOSetBasePtr  DiracDeterminantWithBackflow::clonePhi() const
+//SPOSetPtr  DiracDeterminantWithBackflow::clonePhi() const
 //{
 //  return Phi->makelone();
 //}

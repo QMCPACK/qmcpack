@@ -604,7 +604,7 @@ void cqmc::engine::EOM::eom_print(std::ostream & fout)
 //    V.conservativeResize(_n_pm, _n_pm_nonzero);
 //    sin_vals.conservativeResize(_n_pm_nonzero);
 //
-//    // transfrom singular value vector to diagonal matrix 
+//    // transform singular value vector to diagonal matrix 
 //    Eigen::MatrixXd sin_val_matrix = sin_vals.asDiagonal();
 //
 //    // compute S^(-1/2)

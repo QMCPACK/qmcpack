@@ -26,7 +26,7 @@
 #include "QMCTools/VSVBParser.h"
 #include "QMCTools/QPParser.h"
 #include "QMCTools/GamesFMOParser.h"
-#include "QMCTools/PyscfParser.h"
+#include "QMCTools/LCAOH5Parser.h"
 #include "QMCTools/BParser.h"
 #include "Message/Communicate.h"
 #include "OhmmsData/FileUtility.h"
@@ -41,7 +41,7 @@ int main(int argc, char **argv)
     std::cout << "Usage: convert [-gaussian|-casino|-gamesxml|-gamess|-gamessFMO|-VSVB|-QP|-pyscf|-orbitals] filename " << std::endl;
     std::cout << "[-nojastrow -hdf5 -prefix title -addCusp -production -NbImages NimageX NimageY NimageZ]" << std::endl;
     std::cout << "[-psi_tag psi0 -ion_tag ion0 -gridtype log|log0|linear -first ri -last rf]" << std::endl;
-    std::cout << "[-size npts -multidet multidet.h5 -ci file.out -threshold cimin -TargetState state_number -NaturalOrbitals NumToRead]" << std::endl;
+    std::cout << "[-size npts -multidet multidet.h5 -ci file.out -threshold cimin -TargetState state_number -NaturalOrbitals NumToRead -optDetCoeffs]" << std::endl;
     std::cout << "Defaults : -gridtype log -first 1e-6 -last 100 -size 1001 -ci required -threshold 0.01 -TargetState 0 -prefix sample" << std::endl;
     std::cout << "When the input format is missing, the  extension of filename is used to determine the format " << std::endl;
     std::cout << " *.Fchk -> gaussian; *.out -> gamess; *.data -> casino; *.xml -> gamesxml" << std::endl;
@@ -75,7 +75,7 @@ int main(int argc, char **argv)
   bool useprefix=false;
   bool debug = false;
   bool prod=false;
-  bool ci=false,zeroCI=false,orderByExcitation=false,VSVB=false, fmo=false,addCusp=false,multidet=false;
+  bool ci=false,zeroCI=false,orderByExcitation=false,VSVB=false, fmo=false,addCusp=false,multidet=false,optDetCoeffs=false;
   double thres=0.01;
   int readNO=0; // if > 0, read Natural Orbitals from gamess output
   int readGuess=0; // if > 0, read Initial Guess from gamess output
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
     }
     else if(a == "-pyscf" || a=="-orbitals")
     {
-      parser = new PyscfParser(argc,argv);
+      parser = new LCAOParser(argc,argv);
       in_file =argv[++iargc];
       allH5=true;
     }
@@ -184,6 +184,10 @@ int main(int argc, char **argv)
     else if(a == "-threshold" )
     {
       thres = atof(argv[++iargc]);
+    }
+    else if(a == "-optDetCoeffs" )
+    {
+      optDetCoeffs = true;
     }
     else if(a == "-TargetState" )
     {
@@ -312,6 +316,7 @@ int main(int argc, char **argv)
       parser->multideterminant=multidet;
     parser->production=prod;
     parser->ci_threshold=thres;
+    parser->optDetCoeffs=optDetCoeffs;
     parser->target_state=TargetState;
     parser->readNO=readNO;
     parser->orderByExcitation=orderByExcitation;

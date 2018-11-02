@@ -25,7 +25,7 @@ IonOrbital::IonOrbital (ParticleSet &centers, ParticleSet &ptcls) :
   CenterRef(centers)
 {
   Optimizable=false;
-  OrbitalName="IonOrbital";
+  ClassName="IonOrbital";
   NumTargetPtcls = ptcls.getTotalNum();
   NumCenters     = centers.getTotalNum();
   myTableID=ptcls.addTable(CenterRef,DT_AOS);
@@ -221,7 +221,7 @@ IonOrbital::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   buf.get(FirstAddressOfdU,LastAddressOfdU);
 }
 
-OrbitalBasePtr
+WaveFunctionComponentPtr
 IonOrbital::makeClone(ParticleSet& tqp) const
 {
   IonOrbital* j1copy=new IonOrbital(CenterRef,tqp);

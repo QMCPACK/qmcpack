@@ -278,7 +278,7 @@ public:
    *
    * Ensure that the distance for this-this is always created first.
    */
-  int  addTable(const ParticleSet& psrc, int dt_type);
+  int addTable(const ParticleSet& psrc, int dt_type);
 
   /** returns index of a distance table, -1 if not present
    * @param psrc source particle set
@@ -350,7 +350,7 @@ public:
    */
   void setActive(int iat);
 
-  /** return the position of the active partice
+  /** return the position of the active particle
    *
    * activePtcl=-1 is used to flag non-physical moves
    */
@@ -453,15 +453,12 @@ public:
    */
   void saveWalker(Walker_t& awalker);
 
-  /** update neighbor list, structure factor and unmark activePtcl
+  /** update structure factor and unmark activePtcl
    *
-   * Currently the trial wave function depends only on distances and
-   * doesn't use any neightbor lists from ParticleSet. However, the
-   * evaluation of non-local pseudopotential relies on the neighbor
-   * list of electron-ion and the Coulomb interaction needs the
-   * structure factor. For these reason, donePbyP after the loop of
-   * single electron moves before evaluating the Hamiltonian.
-   * unmark activePtcl is more of a safety measure probably not needed.
+   * The Coulomb interaction evaluation needs the structure factor.
+   * For these reason, call donePbyP after the loop of single
+   * electron moves before evaluating the Hamiltonian. Unmark
+   * activePtcl is more of a safety measure probably not needed.
    */
   void donePbyP();
 

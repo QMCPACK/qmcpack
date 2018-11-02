@@ -335,7 +335,7 @@ void CSUpdateBase::updateCSWalkers(WalkerIter_t it, WalkerIter_t it_end)
     //evalaute the wavefunction and hamiltonian
     for(int ipsi=0; ipsi< nPsi; ipsi++)
     {
-      //Need to modify the return value of OrbitalBase::registerData
+      //Need to modify the return value of WaveFunctionComponent::registerData
       logpsi[ipsi]=Psi1[ipsi]->updateBuffer(W,(*it)->DataSet);
       Psi1[ipsi]->G=W.G;
       thisWalker.Properties(ipsi,LOGPSI)=logpsi[ipsi];

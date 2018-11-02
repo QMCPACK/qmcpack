@@ -20,7 +20,6 @@
 
 
 enum class Verbosity {LOW, HIGH, DEBUG};
-enum class LogType {SUMMARY, APP, ERROR, DEBUG};
 
 extern InfoStream infoSummary;
 extern InfoStream infoLog;
@@ -48,19 +47,6 @@ public:
     return isActive(Verbosity::HIGH);
   }
 
-  std::ostream& getStream(LogType log) {
-    switch (log) {
-    case LogType::SUMMARY:
-      return infoSummary.getStream();
-    case LogType::APP:
-      return infoLog.getStream();
-    case LogType::ERROR:
-      return infoError.getStream();
-    case LogType::DEBUG:
-      return infoDebug.getStream();
-    }
-  }
-
   /// Pause the summary and log streams
   void pause();
 
@@ -77,29 +63,27 @@ namespace qmcplusplus {
 
 inline std::ostream& app_summary()
 {
-  return outputManager.getStream(LogType::SUMMARY);
+  return infoSummary.getStream();
 }
 
 inline std::ostream& app_log()
 {
-  return outputManager.getStream(LogType::APP);
+  return infoLog.getStream();
 }
 
 inline std::ostream& app_error()
 {
-  outputManager.getStream(LogType::ERROR) << "ERROR ";
-  return outputManager.getStream(LogType::ERROR);
+  return infoError.getStream() << "ERROR ";
 }
 
 inline std::ostream& app_warning()
 {
-  outputManager.getStream(LogType::ERROR) << "WARNING ";
-  return outputManager.getStream(LogType::ERROR);
+  return infoError.getStream() << "WARNING ";
 }
 
 inline std::ostream& app_debug_stream()
 {
-  return outputManager.getStream(LogType::DEBUG);
+  return infoDebug.getStream();
 }
 
 // From https://stackoverflow.com/questions/11826554/standard-no-op-output-stream

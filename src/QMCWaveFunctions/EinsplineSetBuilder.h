@@ -153,11 +153,11 @@ public:
   ////static std::map<H5OrbSet,multi_UBspline_3d_d*,H5OrbSet> ExtendedMap_d;
   ////static std::map<H5OrbSet,multi_UBspline_3d_z*,H5OrbSet> ExtendedMap_z;
   ////static std::map<H5OrbSet,EinsplineSetExtended<double>*,H5OrbSet> ExtendedSetMap_d;
-  //static std::map<H5OrbSet,SPOSetBase*,H5OrbSet> SPOSetMap;
-  std::map<H5OrbSet,SPOSetBase*,H5OrbSet> SPOSetMap;
+  //static std::map<H5OrbSet,SPOSet*,H5OrbSet> SPOSetMap;
+  std::map<H5OrbSet,SPOSet*,H5OrbSet> SPOSetMap;
 
   ///constructor
-  EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, xmlNodePtr cur);
+  EinsplineSetBuilder(ParticleSet& p, PtclPoolType& psets, Communicate *comm, xmlNodePtr cur);
 
   ///destructor
   ~EinsplineSetBuilder();
@@ -165,7 +165,7 @@ public:
   /** initialize the Antisymmetric wave function for electrons
    * @param cur the current xml node
    */
-  SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
+  SPOSet* createSPOSetFromXML(xmlNodePtr cur);
 
   /** a specific but clean code path in createSPOSetFromXML, for PBC, double, ESHDF
    * @param cur the current xml node
@@ -173,7 +173,7 @@ public:
   void set_metadata(int numOrbs, int TwistNum_inp);
 
   /** initialize with the existing SPOSet */
-  SPOSetBase* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info);
+  SPOSet* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input_info);
 
   //////////////////////////////////////
   // HDF5-related data  and functions //
@@ -219,7 +219,6 @@ public:
   int NumBands, NumElectrons, NumSpins, NumTwists, NumCoreStates;
   int MaxNumGvecs;
   double MeshFactor;
-  RealType BufferLayer;
   RealType MatchingTol;
   TinyVector<int,3> MeshSize;
   std::vector<std::vector<TinyVector<int,3> > > Gvecs;
@@ -326,7 +325,6 @@ public:
   int LastSpinSet, NumOrbitalsRead;
 
   std::string occ_format;
-  RealType qafm;
   int particle_hole_pairs;
   bool makeRotations;
 #if 0

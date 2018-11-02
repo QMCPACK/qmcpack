@@ -27,7 +27,7 @@
 #include "LongRange/StructFact.h"
 #include "OhmmsData/AttributeSet.h"
 #include "OhmmsData/ParameterSet.h"
-#include "QMCWaveFunctions/SPOSetBase.h"
+#include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/SlaterDet.h"
 #include "QMCWaveFunctions/OrbitalSetTraits.h"
 #include "Numerics/DeterminantOperators.h"
@@ -42,8 +42,10 @@ namespace qmcplusplus
 WaveFunctionTester::WaveFunctionTester(MCWalkerConfiguration& w,
                                        TrialWaveFunction& psi,
                                        QMCHamiltonian& h,
-                                       ParticleSetPool &ptclPool, WaveFunctionPool& ppool):
-  QMCDriver(w,psi,h,ppool),checkRatio("no"),checkClone("no"), checkHamPbyP("no"),
+                                       ParticleSetPool &ptclPool,
+                                       WaveFunctionPool& ppool,
+                                       Communicate* comm):
+  QMCDriver(w,psi,h,ppool,comm),checkRatio("no"),checkClone("no"), checkHamPbyP("no"),
   PtclPool(ptclPool), wftricks("no"),checkEloc("no"), checkBasic("yes"), checkRatioV("no"),
   deltaParam(0.0), toleranceParam(0.0), outputDeltaVsError(false), checkSlaterDet(true)
 {
@@ -759,7 +761,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
   for (int iorb = 0; iorb < Psi.getOrbitals().size(); iorb++)
   {
-    OrbitalBase *orb = Psi.getOrbitals()[iorb];
+    WaveFunctionComponent *orb = Psi.getOrbitals()[iorb];
 
     ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
     ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
@@ -767,7 +769,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 
     RealType logpsi1 = orb->evaluateLog(W, G, L);
 
-    fail_log << "Orbital " << iorb << " " << orb->OrbitalName << " log psi = " << logpsi1 << std::endl;
+    fail_log << "WaveFunctionComponent " << iorb << " " << orb->ClassName << " log psi = " << logpsi1 << std::endl;
 
     FiniteDifference::ValueVector logpsi_vals;
     FiniteDifference::PosChangeVector::iterator it;
@@ -794,7 +796,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
     }
     fd.computeFiniteDiff(delta, positions, logpsi_vals, G1, L1);
 
-    fout << "  Orbital " << iorb << " " << orb->OrbitalName << std::endl;
+    fout << "  WaveFunctionComponent " << iorb << " " << orb->ClassName << std::endl;
 
     if (!checkGradients(0, nat, G, L, G1, L1, fail_log, 1))
     {
@@ -810,7 +812,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
       {
         ParticleSet::ParticleGradient_t G(nat), tmpG(nat), G1(nat);
         ParticleSet::ParticleLaplacian_t L(nat), tmpL(nat), L1(nat);
-        DiracDeterminantBase *det = sd->Dets[isd];
+        DiracDeterminant *det = sd->Dets[isd];
         RealType logpsi2 = det->evaluateLog(W, G, L); // this won't work with backflow
         fail_log << "  Slater Determiant " << isd << " (for particles " << det->FirstIndex << " to " << det->LastIndex << ") log psi = " << logpsi2 << std::endl;
         // Should really check the condition number on the matrix determinant.
@@ -849,10 +851,10 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
 #if 0
         // Testing single particle orbitals doesn't work yet - probably something
         // with setup after setting the position.
-        std::map<std::string, SPOSetBasePtr>::iterator spo_it = sd->mySPOSet.begin();
+        std::map<std::string, SPOSetPtr>::iterator spo_it = sd->mySPOSet.begin();
         for (; spo_it != sd->mySPOSet.end(); spo_it++)
         {
-          SPOSetBasePtr spo = spo_it->second;
+          SPOSetPtr spo = spo_it->second;
           fail_log << "      SPO set = " << spo_it->first <<  " name = " << spo->className;
           fail_log << " orbital set size = " << spo->size();
           fail_log << " basis set size = " << spo->getBasisSetSize() << std::endl;
@@ -870,7 +872,7 @@ bool WaveFunctionTester::checkGradientAtConfiguration(MCWalkerConfiguration::Wal
             ParticleSet::SingleParticlePos_t zeroR;
             W.makeMove(it->index,zeroR);
 
-            SPOSetBase::ValueVector_t psi(spo->size());
+            SPOSet::ValueVector_t psi(spo->size());
 
             spo->evaluate(W, it->index, psi);
             ValueType logpsi = psi[0];
@@ -1296,7 +1298,7 @@ void WaveFunctionTester::runRatioTest2()
       RealType ratio_accum(1.0);
       for (int iat=0; iat<nat; iat++)
       {
-        TinyVector<ParticleSet::ParticleValue_t,OHMMS_DIM> grad_now=Psi.evalGrad(W,iat);
+        TinyVector<ParticleSet::SingleParticleValue_t,OHMMS_DIM> grad_now=Psi.evalGrad(W,iat);
         GradType grad_new;
         for(int sds=0; sds<3; sds++)
           fout<< realGrad[iat][sds]-grad_now[sds]<<" ";
@@ -1968,13 +1970,13 @@ void WaveFunctionTester::runDerivCloneTest()
 }
 void WaveFunctionTester::runwftricks()
 {
-  std::vector<OrbitalBase*>& Orbitals=Psi.getOrbitals();
+  std::vector<WaveFunctionComponent*>& Orbitals=Psi.getOrbitals();
   app_log()<<" Total of "<<Orbitals.size()<<" orbitals."<< std::endl;
   int SDindex(0);
   for (int i=0; i<Orbitals.size(); i++)
-    if ("SlaterDet"==Orbitals[i]->OrbitalName)
+    if ("SlaterDet"==Orbitals[i]->ClassName)
       SDindex=i;
-  SPOSetBasePtr Phi= dynamic_cast<SlaterDet *>(Orbitals[SDindex])->getPhi();
+  SPOSetPtr Phi= dynamic_cast<SlaterDet *>(Orbitals[SDindex])->getPhi();
   int NumOrbitals=Phi->getBasisSetSize();
   app_log()<<"Basis set size: "<<NumOrbitals<< std::endl;
   std::vector<int> SPONumbers(0,0);

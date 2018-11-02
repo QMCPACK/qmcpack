@@ -25,7 +25,7 @@
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "QMCApp/WaveFunctionPool.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/ConstantOrbital.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
@@ -112,7 +112,7 @@ TEST_CASE("VMCSingleOMP", "[drivers][vmc]")
   //EstimatorManagerBase emb(c);
 
 
-  VMCSingleOMP vmc_omp(elec, psi, h, wpool);
+  VMCSingleOMP vmc_omp(elec, psi, h, wpool, c);
 
   const char *vmc_input= \
   "<qmc method=\"vmc\" move=\"pbyp\"> \

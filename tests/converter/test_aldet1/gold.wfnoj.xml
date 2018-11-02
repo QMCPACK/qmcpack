@@ -5,11 +5,6 @@
       <basisset name="LCAOBSet">
         <atomicBasisSet name="Gaussian" angular="cartesian" type="Gaussian" elementType="H" normalized="no">
           <grid type="log" ri="1.e-6" rf="1.e2" npts="1001"/>
-          <!-- Possible substitution H00 by a Slater-type orbital
-  <basisGroup rid="H00" n="0" l="0" type="Slater">
-    <radfunc exponent="1.2942" contraction="1.0"/>
-  </basisGroup>
--->
           <basisGroup rid="H00" n="0" l="0" type="Gaussian">
             <radfunc exponent="1.301000000000e+01" contraction="3.349872639000e-02"/>
             <radfunc exponent="1.962000000000e+00" contraction="2.348008011740e-01"/>
@@ -83,7 +78,7 @@
  -5.05840000000000e-02  0.00000000000000e+00  0.00000000000000e+00  2.02675400000000e+00
 </coefficient>
       </sposet>
-      <multideterminant optimize="yes" spo_up="spo-up" spo_dn="spo-dn">
+      <multideterminant optimize="no" spo_up="spo-up" spo_dn="spo-dn">
         <detlist size="1" type="DETS" nca="0" ncb="0" nea="1" neb="1" nstates="1" cutoff="0.01">
           <ci id="CIcoeff_0" coeff="1" qc_coeff="1" alpha="1" beta="1"/>
         </detlist>

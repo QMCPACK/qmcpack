@@ -86,7 +86,7 @@ struct OptimizableFunctorBase
    */
   virtual real_type f(real_type r)=0;
 
-  /** evaluate the first derivate
+  /** evaluate the first derivative
    * @param r distance
    *
    * virtual function necessary for a transformation to a numerical functor

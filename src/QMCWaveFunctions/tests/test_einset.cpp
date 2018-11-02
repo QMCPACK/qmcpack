@@ -21,13 +21,14 @@
 #include "Particle/DistanceTable.h"
 #include "Particle/SymmetricDistanceTableData.h"
 #include "QMCApp/ParticleSetPool.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/EinsplineSetBuilder.h"
 
 
 #include <stdio.h>
 #include <string>
+#include <limits>
 
 using std::string;
 
@@ -128,9 +129,52 @@ const char *particles =
 
   xmlNodePtr ein1 = xmlFirstElementChild(root);
 
-  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), ein1);
-  SPOSetBase *spo = einSet.createSPOSetFromXML(ein1);
+  EinsplineSetBuilder einSet(elec_, ptcl.getPool(), c, ein1);
+  SPOSet *spo = einSet.createSPOSetFromXML(ein1);
   REQUIRE(spo != NULL);
+
+#if !defined(QMC_CUDA) || defined(QMC_COMPLEX)
+  // due to the different ordering of bands skip the tests on CUDA+Real builds
+  // checking evaluations, reference values are not independently generated.
+  // for vgl
+  SPOSet::ValueMatrix_t psiM(elec_.R.size(),spo->getOrbitalSetSize());
+  SPOSet::GradMatrix_t dpsiM(elec_.R.size(),spo->getOrbitalSetSize());
+  SPOSet::ValueMatrix_t d2psiM(elec_.R.size(),spo->getOrbitalSetSize());
+  spo->evaluate_notranspose(elec_, 0, elec_.R.size(), psiM, dpsiM, d2psiM);
+
+  // value
+  REQUIRE(psiM[1][0] == ComplexApprox(-0.8886948824).compare_real_only());
+  REQUIRE(psiM[1][1] == ComplexApprox(1.4194120169).compare_real_only());
+  // grad
+  REQUIRE(dpsiM[1][0][0] == ComplexApprox(-0.0000183403).compare_real_only());
+  REQUIRE(dpsiM[1][0][1] == ComplexApprox(0.1655139178).compare_real_only());
+  REQUIRE(dpsiM[1][0][2] == ComplexApprox(-0.0000193077).compare_real_only());
+  REQUIRE(dpsiM[1][1][0] == ComplexApprox(-1.3131694794).compare_real_only());
+  REQUIRE(dpsiM[1][1][1] == ComplexApprox(-1.1174004078).compare_real_only());
+  REQUIRE(dpsiM[1][1][2] == ComplexApprox(-0.8462534547).compare_real_only());
+  // lapl
+  REQUIRE(d2psiM[1][0] == ComplexApprox(1.3313053846).compare_real_only());
+  REQUIRE(d2psiM[1][1] == ComplexApprox(-4.712583065).compare_real_only());
+
+  // for vgh
+  SPOSet::ValueVector_t psiV(psiM[1],spo->getOrbitalSetSize());
+  SPOSet::GradVector_t dpsiV(dpsiM[1],spo->getOrbitalSetSize());
+  SPOSet::HessVector_t ddpsiV(spo->getOrbitalSetSize());
+  spo->evaluate(elec_, 1, psiV, dpsiV, ddpsiV);
+
+  // Catch default is 100*(float epsilson)
+  double eps = 2000*std::numeric_limits<float>::epsilon();
+  //hess
+  REQUIRE(ddpsiV[1](0,0) == ComplexApprox(-2.3160984034).compare_real_only());
+  REQUIRE(ddpsiV[1](0,1) == ComplexApprox(1.8089479397).compare_real_only());
+  REQUIRE(ddpsiV[1](0,2) == ComplexApprox(0.5608575749).compare_real_only());
+  REQUIRE(ddpsiV[1](1,0) == ComplexApprox(1.8089479397).compare_real_only());
+  REQUIRE(ddpsiV[1](1,1) == ComplexApprox(-0.07996207476).epsilon(eps).compare_real_only());
+  REQUIRE(ddpsiV[1](1,2) == ComplexApprox(0.5237969314).compare_real_only());
+  REQUIRE(ddpsiV[1](2,0) == ComplexApprox(0.5608575749).compare_real_only());
+  REQUIRE(ddpsiV[1](2,1) == ComplexApprox(0.5237969314).compare_real_only());
+  REQUIRE(ddpsiV[1](2,2) == ComplexApprox(-2.316497764).compare_real_only());
+#endif
 
 #if 0
   // Dump values of the orbitals
@@ -149,7 +193,7 @@ const char *particles =
         elec_.R[0][1] = y;
         elec_.R[0][2] = z;
         elec_.update();
-        SPOSetBase::ValueVector_t orbs(orbSize);
+        SPOSet::ValueVector_t orbs(orbSize);
         spo->evaluate(elec_, 0, orbs);
         fprintf(fspo, "%g %g %g",x,y,z);
         for (int j = 0; j < orbSize; j++) {
@@ -194,7 +238,7 @@ TEST_CASE("EinsplineSetBuilder CheckLattice", "[wavefunction]")
   ptcl_map["e"] = elec;
 
   xmlNodePtr cur = NULL;
-  EinsplineSetBuilder esb(*elec, ptcl_map, cur);
+  EinsplineSetBuilder esb(*elec, ptcl_map, c, cur);
 
   esb.SuperLattice = 0.0;
   esb.SuperLattice(0,0) = 1.0;

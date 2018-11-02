@@ -30,6 +30,10 @@
 #include "Utilities/IteratorUtility.h"
 //#include "Particle/Reptile.h"
 
+#ifdef QMC_CUDA
+#include "type_traits/CUDATypes.h"
+#endif
+
 namespace qmcplusplus
 {
 
@@ -91,38 +95,38 @@ public:
   // laplacians for each walker.  These vectors .data() is often
   // passed to GPU kernels.
 #ifdef QMC_CUDA
-
-  gpu::device_vector<CudaRealType*>  RList_GPU;
-  gpu::device_vector<CudaValueType*> GradList_GPU, LapList_GPU;
+  using CTS = CUDAGlobalTypes;
+  gpu::device_vector<CTS::RealType*>  RList_GPU;
+  gpu::device_vector<CTS::ValueType*> GradList_GPU, LapList_GPU;
   // First index is the species.  The second index is the walker
   std::vector<gpu::device_vector<CUDA_PRECISION_FULL*> > RhokLists_GPU;
-  gpu::device_vector<CudaValueType*>  DataList_GPU;
-  gpu::device_vector<CudaPosType>    Rnew_GPU;
-  gpu::host_vector<CudaPosType>      Rnew_host;
+  gpu::device_vector<CTS::ValueType*>  DataList_GPU;
+  gpu::device_vector<CTS::PosType>    Rnew_GPU;
+  gpu::host_vector<CTS::PosType>      Rnew_host;
   std::vector<PosType>                    Rnew;
-  gpu::device_vector<CudaRealType*>  NLlist_GPU;
-  gpu::host_vector<CudaRealType*>    NLlist_host;
-  gpu::host_vector<CudaRealType*>    hostlist;
-  gpu::host_vector<CudaValueType*>   hostlist_valueType;
+  gpu::device_vector<CTS::RealType*>  NLlist_GPU;
+  gpu::host_vector<CTS::RealType*>    NLlist_host;
+  gpu::host_vector<CTS::RealType*>    hostlist;
+  gpu::host_vector<CTS::ValueType*>   hostlist_valueType;
   gpu::host_vector<CUDA_PRECISION_FULL*> hostlist_AA; 
-  gpu::host_vector<CudaPosType>      R_host;
-  gpu::host_vector<CudaGradType>     Grad_host;
+  gpu::host_vector<CTS::PosType>      R_host;
+  gpu::host_vector<CTS::GradType>     Grad_host;
   gpu::device_vector<int> iatList_GPU;
   gpu::host_vector<int> iatList_host;
   gpu::device_vector<int> AcceptList_GPU;
   gpu::host_vector<int> AcceptList_host;
 
-  void allocateGPU(size_t buffersize);
-  void copyWalkersToGPU(bool copyGrad=false);
-  void copyWalkerGradToGPU();
-  void updateLists_GPU();
+  GPU_XRAY_TRACE void allocateGPU(size_t buffersize);
+  GPU_XRAY_TRACE void copyWalkersToGPU(bool copyGrad=false);
+  GPU_XRAY_TRACE void copyWalkerGradToGPU();
+  GPU_XRAY_TRACE void updateLists_GPU();
   int CurrentParticle;
-  void proposeMove_GPU
+  GPU_XRAY_TRACE void proposeMove_GPU
   (std::vector<PosType> &newPos, int iat);
-  void acceptMove_GPU(std::vector<bool> &toAccept);
-  void NLMove_GPU (std::vector<Walker_t*> &walkers,
-                   std::vector<PosType> &Rnew,
-                   std::vector<int> &iat);
+  GPU_XRAY_TRACE void acceptMove_GPU(std::vector<bool> &toAccept);
+  GPU_XRAY_TRACE void NLMove_GPU (std::vector<Walker_t*> &walkers,
+				  std::vector<PosType> &Rnew,
+				  std::vector<int> &iat);
 #endif
 
   ///default constructor
@@ -138,12 +142,12 @@ public:
    *
    * Append Walkers to WalkerList.
    */
-  void createWalkers(int numWalkers);
+  GPU_XRAY_TRACE void createWalkers(int numWalkers);
   /** create walkers
    * @param first walker iterator
    * @param last walker iterator
    */
-  void createWalkers(iterator first, iterator last);
+  GPU_XRAY_TRACE void createWalkers(iterator first, iterator last);
   /** copy walkers
    * @param first input walker iterator
    * @param last input walker iterator
@@ -151,7 +155,7 @@ public:
    *
    * No memory allocation is allowed.
    */
-  void copyWalkers(iterator first, iterator last, iterator start);
+  GPU_XRAY_TRACE void copyWalkers(iterator first, iterator last, iterator start);
 
   /** destroy Walkers from itstart to itend
    *@param first starting iterator of the walkers
@@ -172,15 +176,15 @@ public:
    * Clear the current WalkerList and add two walkers, head and tail.
    * OwnWalkers are set to false.
    */
-  void copyWalkerRefs(Walker_t* head, Walker_t* tail);
+  GPU_XRAY_TRACE void copyWalkerRefs(Walker_t* head, Walker_t* tail);
 
   ///clean up the walker list and make a new list
-  void resize(int numWalkers, int numPtcls);
+  GPU_XRAY_TRACE void resize(int numWalkers, int numPtcls);
 
   ///make random moves for all the walkers
   //void sample(iterator first, iterator last, value_type tauinv);
   ///make a random move for a walker
-  void sample(iterator it, RealType tauinv);
+  GPU_XRAY_TRACE void sample(iterator it, RealType tauinv);
 
   ///return the number of active walkers
   inline int getActiveWalkers() const
@@ -334,25 +338,25 @@ public:
   ///set the number of max samples
   void setNumSamples(int n);
   ///save the position of current walkers to SampleStack
-  void saveEnsemble();
+  GPU_XRAY_TRACE void saveEnsemble();
   ///save the position of current walkers
-  void saveEnsemble(iterator first, iterator last);
+  GPU_XRAY_TRACE void saveEnsemble(iterator first, iterator last);
   /// load a single sample from SampleStack
-  void loadSample(ParticleSet::ParticlePos_t &Pos, size_t iw) const;
+  GPU_XRAY_TRACE void loadSample(ParticleSet::ParticlePos_t &Pos, size_t iw) const;
   /** load SampleStack data to current walkers
    */
-  void loadEnsemble();
+  GPU_XRAY_TRACE void loadEnsemble();
   //void loadEnsemble(const Walker_t& wcopy);
   /** load SampleStack from others
     */
-  void loadEnsemble(std::vector<MCWalkerConfiguration*>& others, bool doclean=true);
+  GPU_XRAY_TRACE void loadEnsemble(std::vector<MCWalkerConfiguration*>& others, bool doclean=true);
   /** dump Samples to a file
    * @param others MCWalkerConfigurations whose samples will be collected
    * @param out engine to write the samples to state_0/walkers
    * @param np number of processors
    * @return true with non-zero samples
    */
-  bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock);
+  GPU_XRAY_TRACE bool dumpEnsemble(std::vector<MCWalkerConfiguration*>& others, HDFWalkerOutput* out, int np, int nBlock);
   ///clear the ensemble
   void clearEnsemble();
   //@}

@@ -901,40 +901,41 @@ class Poscar(VFormattedFile):
         VFile.__init__(self,filepath)
     #end def __init__
 
+
     def change_specifier(self,specifier,vasp_input_class):
         axes=vasp_input_class.poscar.axes
         scale=vasp_input_class.poscar.scale
         unitcellvec=axes*scale
 
-      #units are in angstroms.  
+        #units are in angstroms.  
         pos=self.pos
         spec=self.coord  #the current specifier
         
         if spec==specifier:
-            #do nothing
+            return
+        #end if
+        if spec=="cartesian":
             pass
+        elif spec=="direct":
+            pos=dot(pos,unitcellvec)
         else:
-        
-            if spec=="cartesian":
-                pass
-            elif spec=="direct":
-                pos=dot(pos,unitcellvec)
-            else:
-                raise Exception("Poscar.change_specifier():  %s is not a valid coordinate specifier"%(spec))
-                 
-            spec=specifier  #the new specifier
+            self.error("Poscar.change_specifier():  %s is not a valid coordinate specifier"%(spec))
+        #end if
+        spec=specifier  #the new specifier
 
-            if spec=="cartesian":
-                pass # already in cartesian coordinates.   
-            elif spec=="direct":
-                pos=dot(pos,inv(axes))
-            else:
-                raise Exception("Poscar.change_specifier():  %s is not a valid coordinate specifier"%(spec))
+        if spec=="cartesian":
+            pass # already in cartesian coordinates.
+        elif spec=="direct":
+            pos=dot(pos,inv(axes))
+        else:
+            self.error("Poscar.change_specifier():  %s is not a valid coordinate specifier"%(spec))
+        #end if
 
-            self.coord=spec
-            self.pos=pos
-      
-        
+        self.coord=spec
+        self.pos=pos
+    #end def change_specifier
+
+
     def read_text(self,text,filepath=''):
         lines = self.read_lines(text,remove_empty=False)
         nlines = len(lines)
@@ -1368,7 +1369,9 @@ class VaspInput(SimulationInput,Vobj):
 
         return species
     #end def incorporate_system
-    def return_system(self,**valency):
+
+
+    def return_system(self,structure_only=False,**valency):
         axes=self.poscar.axes
         scale=self.poscar.scale
         axes=scale*axes
@@ -1418,6 +1421,10 @@ class VaspInput(SimulationInput,Vobj):
          
         structure.zero_corner()
         structure.recenter()
+
+        if structure_only:
+            return structure
+        #end if
 
         ion_charge = 0
         atoms   = list(elem)

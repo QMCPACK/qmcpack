@@ -41,7 +41,7 @@ namespace qmcplusplus
     SPOSetInfoSimple<SHOState> basis_states;
 
     //construction/destruction
-    SHOSetBuilder(ParticleSet& P);
+    SHOSetBuilder(ParticleSet& P, Communicate *comm);
 
     ~SHOSetBuilder();
 
@@ -49,9 +49,9 @@ namespace qmcplusplus
     void reset();
 
     //SPOSetBuilder interface
-    SPOSetBase* createSPOSetFromXML(xmlNodePtr cur);
+    SPOSet* createSPOSetFromXML(xmlNodePtr cur);
 
-    SPOSetBase* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input);
+    SPOSet* createSPOSet(xmlNodePtr cur,SPOSetInputInfo& input);
     
     //local functions
     void update_basis_states(int smax);

@@ -48,6 +48,8 @@ struct AtomicOrbitalSoA
   SoaSphericalTensor<ST> Ylm;
   vContainer_type l_vals;
   vContainer_type r_power_minus_l;
+  ///expose the pointer to reuse the reader and only assigned with create_spline
+  ///also used as identifier of shallow copy
   AtomicSplineType* MultiSpline;
   MultiBspline1D<ST>* SplineInst;
 
@@ -88,15 +90,9 @@ struct AtomicOrbitalSoA
     chunked_bcast(comm, MultiSpline);
   }
 
-  void reduce_tables(Communicate* comm)
+  void gather_tables(Communicate* comm, std::vector<int> &offset)
   {
-    chunked_reduce(comm, MultiSpline);
-  }
-
-  void gather_tables(Communicate* comm, std::vector<int> &offset_cplx, std::vector<int> &offset_real)
-  {
-    if(offset_cplx.size()) gatherv(comm, MultiSpline, Npad, offset_cplx);
-    if(offset_real.size()) gatherv(comm, MultiSpline, Npad, offset_real);
+    gatherv(comm, MultiSpline, Npad, offset);
   }
 
   template<typename PT, typename VT>
@@ -448,16 +444,11 @@ struct HybridAdoptorBase
       AtomicCenters[ic].bcast_tables(comm);
   }
 
-  void reduce_atomic_tables(Communicate* comm)
+  void gather_atomic_tables(Communicate* comm, std::vector<int> &offset)
   {
+    if(comm->size()==1) return;
     for(int ic=0; ic<AtomicCenters.size(); ic++)
-      AtomicCenters[ic].reduce_tables(comm);
-  }
-
-  void gather_atomic_tables(Communicate* comm, std::vector<int> &offset_cplx, std::vector<int> &offset_real)
-  {
-    for(int ic=0; ic<AtomicCenters.size(); ic++)
-      AtomicCenters[ic].gather_tables(comm, offset_cplx, offset_real);
+      AtomicCenters[ic].gather_tables(comm, offset);
   }
 
   inline void flush_zero()

@@ -19,7 +19,7 @@
 #ifndef QMCPLUSPLUS_GENERIC_ONEBODYJASTROW_H
 #define QMCPLUSPLUS_GENERIC_ONEBODYJASTROW_H
 #include "Configuration.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
 #include "Particle/DistanceTableData.h"
 #include "Particle/DistanceTable.h"
@@ -27,7 +27,7 @@
 namespace qmcplusplus
 {
 
-/** @ingroup OrbitalComponent
+/** @ingroup WaveFunctionComponent
  * @brief generic implementation of one-body Jastrow function.
  *
  *The One-Body Jastrow has the form
@@ -75,7 +75,7 @@ namespace qmcplusplus
  *by MC methods.
  */
 template<class FT>
-class OneBodyJastrowOrbital: public OrbitalBase
+class OneBodyJastrowOrbital: public WaveFunctionComponent
 {
 protected:
   int myTableIndex;
@@ -105,7 +105,7 @@ public:
     //allocate vector of proper size  and set them to 0
     Funique.resize(CenterRef.getSpeciesSet().getTotalNum(),nullptr);
     Fs.resize(CenterRef.getTotalNum(),nullptr);
-    OrbitalName = "OneBodyJastrow";
+    ClassName = "OneBodyJastrow";
   }
 
   ~OneBodyJastrowOrbital() { }
@@ -490,7 +490,7 @@ public:
     DEBUG_PSIBUFFER(" OneBodyJastrow::copyFromBuffer ",buf.current());
   }
 
-  OrbitalBasePtr makeClone(ParticleSet& tqp) const
+  WaveFunctionComponentPtr makeClone(ParticleSet& tqp) const
   {
     OneBodyJastrowOrbital<FT>* j1copy=new OneBodyJastrowOrbital<FT>(CenterRef,tqp);
     j1copy->Optimizable=Optimizable;
@@ -499,7 +499,7 @@ public:
       if (Funique[i])
         j1copy->addFunc(i,new FT(*Funique[i]));
     }
-    //j1copy->OrbitalName=OrbitalName+"_clone";
+    //j1copy->ClassName=ClassName+"_clone";
     if (dPsi)
     {
       j1copy->dPsi =  dPsi->makeClone(tqp);
@@ -507,10 +507,6 @@ public:
     return j1copy;
   }
 
-  void copyFrom(const OrbitalBase& old)
-  {
-    //nothing to do
-  }
 };
 
 }

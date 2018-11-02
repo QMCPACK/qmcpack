@@ -1,6 +1,6 @@
 
 IF (NOT MIXED_PRECISION)
-  SIMPLE_RUN_AND_CHECK(short-bccH_2x2x2_ae-grad-lap
+  SIMPLE_RUN_AND_CHECK(short-bccH_2x2x2_ae-grad_lap
     "${CMAKE_SOURCE_DIR}/tests/solids/bccH_2x2x2_ae"
     grad_lap.xml
     1 1

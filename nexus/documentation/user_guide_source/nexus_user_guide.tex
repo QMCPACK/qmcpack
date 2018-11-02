@@ -604,7 +604,7 @@ dmc = generate_qmcpack(
 \end{minted}
 
 \noindent
-As suggested at the beginning of this section, workflow composition logically breaks into two parts: simulation generation and workflow dependency specification.  This type of breakup can also be performed explicity within a Nexus user script, if desired:
+As suggested at the beginning of this section, workflow composition logically breaks into two parts: simulation generation and workflow dependency specification.  This type of breakup can also be performed explicitly within a Nexus user script, if desired:
 \begin{minted}{python}
 # simulation generation
 relax = generate_pwscf(...)
@@ -2835,7 +2835,7 @@ by hand in post-processing the data.
 In Nexus, the supercell size is controlled through the 
 \texttt{tiling} parameter in the \texttt{generate\_physical\_system}, 
 \texttt{generate\_structure}, \texttt{Structure}, or \texttt{Crystal} 
-convenience functions.  Supercells can also be constructed by tiling exising 
+convenience functions.  Supercells can also be constructed by tiling existing 
 structures through the \texttt{tile} member function of \texttt{Structure} or 
 \texttt{PhysicalSystem} objects.  The k-point grid is controlled through the 
 \texttt{kgrid} parameter in the 
@@ -2875,7 +2875,7 @@ extrapolate to the zero time limit.
 
 The DMC timestep is made available in Nexus through the 
 \texttt{timestep} parameter of the \texttt{dmc} convenience function 
-(which is often used in conjuction with the \texttt{standard\_qmc},  
+(which is often used in conjunction with the \texttt{standard\_qmc},  
 \texttt{basic\_qmc}, \texttt{generate\_qmcpack}, or \texttt{Qmcpack} 
 functions). 
 
@@ -2980,7 +2980,7 @@ Many current calculations also use the OPIUM package (see
 port them directly to QMC.
 
 Whatever the source of pseudopotentials (but perhaps especially so for those 
-derived from DFT), testing and validation remains an important step preceeding 
+derived from DFT), testing and validation remains an important step preceding 
 production calculations.  One option is to perform parallel pseudopotential 
 and all-electron DMC calculations of atoms with varying electron count 
 (\emph{i.e.} ionization potential/electron affinity calculations).  As with 

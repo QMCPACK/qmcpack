@@ -25,7 +25,7 @@
 #include "QMCApp/ParticleSetPool.h"
 #include "QMCApp/HamiltonianPool.h"
 #include "QMCApp/WaveFunctionPool.h"
-#include "QMCWaveFunctions/OrbitalBase.h"
+#include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/TrialWaveFunction.h"
 #include "QMCWaveFunctions/ConstantOrbital.h"
 #include "QMCHamiltonians/BareKineticEnergy.h"
@@ -112,7 +112,7 @@ TEST_CASE("DMCOMP", "[drivers][dmc]")
   //EstimatorManagerBase emb(c);
 
 
-  DMCOMP dmc_omp(elec, psi, h, wpool);
+  DMCOMP dmc_omp(elec, psi, h, wpool, c);
 
   const char *dmc_input= \
   "<qmc method=\"dmc\"> \

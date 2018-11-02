@@ -138,7 +138,7 @@ class UnitConverter(DevBase):
     kJ_mole          = Unit('energy'    ,'kJ_mole'         ,'kJ_mol'  ,kJ_mol         )
     kcal_mole        = Unit('energy'    ,'kcal_mole'       ,'kcal_mol',kcal_mol       )
     kelvin           = Unit('energy'    ,'Kelvin'          ,'K'       ,K              )
-    celcius          = Unit('energy'    ,'Celcius'         ,'degC'    ,degC,degC_shift)
+    celsius          = Unit('energy'    ,'Celsius'         ,'degC'    ,degC,degC_shift)
     fahrenheit       = Unit('energy'    ,'Fahrenheit'      ,'degF'    ,degF,degF_shift)
                                                            
     coulomb          = Unit('charge'    ,'Coulomb'         ,'C'       ,C              )

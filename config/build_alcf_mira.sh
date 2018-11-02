@@ -1,6 +1,6 @@
 #!/bin/bash
 
-Compiler=Clang++11
+Compiler=Clang
 
 for name in real_SoA real_SoA_MP cplx_SoA cplx_SoA_MP \
             real real_MP cplx cplx_MP
@@ -28,7 +28,6 @@ echo "**********************************"
 mkdir $folder
 cd $folder
 if [ ! -f CMakeCache.txt ] ; then
-cmake $CMAKE_FLAGS ..
 cmake $CMAKE_FLAGS ..
 fi
 make -j24

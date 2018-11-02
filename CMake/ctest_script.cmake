@@ -2,7 +2,11 @@
 # Usage:  ctest -s script,build
 #   build = debug / optimized / valgrind / coverage
 # Note: this test will use use the number of processors defined in the variable N_PROCS,
-#   the enviornmental variable N_PROCS, or the number of processors availible (if not specified)
+#   the environment variables
+#   N_PROCS, or the number of processors available (if not specified)
+#   N_PROCS_BUILD, or N_PROCS (if not specified)
+#   N_CONCURRENT_TESTS, or N_PROCS (if not specified)
+#   TEST_SITE_NAME, or HOSTNAME (if not specified)
 
 # Set platform specific variables
 SITE_NAME( HOSTNAME )
@@ -54,12 +58,6 @@ ELSEIF( ${HOSTNAME} MATCHES "titan" )
     SET( CTEST_CMAKE_GENERATOR "Unix Makefiles")
     SET( CTEST_SITE "titan.ccs.ornl.gov" )
     SET( N_PROCS_BUILD 8 )
-ELSEIF( ${HOSTNAME} MATCHES "cetus" )
-# Setup for cetus.alcf.anl.gov BlueGene/Q
-    SET( CTEST_CMAKE_GENERATOR "Unix Makefiles")
-    SET( CTEST_SITE "cetus.alcf.anl.gov" )
-    SET( N_PROCS 24)
-    SET( TEST_PARALLEL_LEVEL 1 ) 
 ELSEIF( ${HOSTNAME} MATCHES "billmp1" )
 # Setup for billmp1.ornl.gov Mac
     SET( CC /opt/mpich/install/mpich-3.2/bin/mpicc )
@@ -76,12 +74,6 @@ ELSEIF( ${HOSTNAME} MATCHES "billmp1" )
     ELSE()
         SET( CTEST_BUILD_NAME Clang-Release-Mac )
     ENDIF()
-ELSEIF( ${HOSTNAME} MATCHES "ryzen-box" )
-    SET( CC mpicc )
-    SET( CXX mpicxx )
-    SET( CTEST_CMAKE_GENERATOR "Unix Makefiles")
-    SET( QMC_OPTIONS "${QMC_OPTIONS};-DCMAKE_PREFIX_PATH=/opt/OpenBLAS" )
-    SET( N_PROCS 16)
 ELSE()
     MESSAGE( MESSAGE "Unknown host: ${HOSTNAME}. Using generic setting." )
     SET( CTEST_CMAKE_GENERATOR "Unix Makefiles")
@@ -159,11 +151,11 @@ IF( NOT DEFINED N_PROCS )
     ENDIF()
 ENDIF()
 
+MESSAGE("Testing with ${N_PROCS} processors")
+
 # Set the number of processors
 IF( NOT DEFINED N_PROCS_BUILD )
-     IF ( DEFINED $ENV{N_PROCS_BUILD} )
-        SET( N_PROCS_BUILD $ENV{N_PROCS_BUILD} )
-     ENDIF()
+    SET( N_PROCS_BUILD $ENV{N_PROCS_BUILD} )
 ENDIF()	
 
 # Set basic variables
@@ -183,12 +175,11 @@ IF ( BUILD_SERIAL )
     SET( CTEST_BUILD_COMMAND "${MAKE_CMD} -i" )
 ELSEIF ( DEFINED N_PROCS_BUILD )
     SET( CTEST_BUILD_COMMAND "${MAKE_CMD} -i -j ${N_PROCS_BUILD}" )
+    MESSAGE("Building with ${N_PROCS_BUILD} processors")
 ELSE()
     SET( CTEST_BUILD_COMMAND "${MAKE_CMD} -i -j ${N_PROCS}" )
+    MESSAGE("Building with ${N_PROCS} processors")
 ENDIF()
-
-MESSAGE("Building with ${N_PROCS_BUILD} processors")
-MESSAGE("Testing with ${N_PROCS} processors")
 
 # Set valgrind options
 SET( VALGRIND_COMMAND_OPTIONS  "--tool=memcheck --leak-check=yes --track-fds=yes --num-callers=50 --show-reachable=yes --suppressions=${QMC_SOURCE_DIR}/src/ValgrindSuppresionFile" )
@@ -212,13 +203,28 @@ IF ( NOT DEFINED CMAKE_TOOLCHAIN_FILE )
   SET( CTEST_OPTIONS )
   SET( CTEST_OPTIONS "-DCMAKE_C_COMPILER=${CC};-DCMAKE_CXX_COMPILER=${CXX}" )
   SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DCMAKE_C_FLAGS='${C_FLAGS}';-DCMAKE_CXX_FLAGS='${CXX_FLAGS}'" )
-  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DENABLE_GCOV:BOOL=${ENABLE_GCOV}" )
-  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}" )
-  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DQMC_DATA='${QMC_DATA}'" )
-  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DQMC_CUDA='${QMC_CUDA}'" )
-  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DQE_BIN='${QE_BIN}'" )
 ELSE()
   SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DCMAKE_TOOLCHAIN_FILE='${CMAKE_TOOLCHAIN_FILE}'" )
+ENDIF()
+
+IF (ENABLE_GCOV)
+  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DENABLE_GCOV:BOOL=${ENABLE_GCOV}" )
+ENDIF()
+
+IF ( CMAKE_BUILD_TYPE )
+  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}" )
+ENDIF()
+
+IF (QMC_DATA)
+  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DQMC_DATA='${QMC_DATA}'" )
+ENDIF()
+
+IF (QE_BIN)
+  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DQE_BIN='${QE_BIN}'" )
+ENDIF()
+
+IF (QMC_CUDA)
+  SET( CTEST_OPTIONS "${CTEST_OPTIONS};-DQMC_CUDA='${QMC_CUDA}'" )
 ENDIF()
 
 IF ( QMC_COMPLEX )
@@ -272,11 +278,14 @@ ENDIF()
 MESSAGE("Configure options:")
 MESSAGE("   ${CTEST_OPTIONS}")
 
+IF ( NOT DEFINED CTEST_SITE )
+    SET( CTEST_SITE $ENV{TEST_SITE_NAME} )
+ENDIF()
+IF ( NOT DEFINED CTEST_SITE )
+    SET( CTEST_SITE ${HOSTNAME} )
+ENDIF()
 
 # Configure and run the tests
-IF ( NOT DEFINED CTEST_SITE )
-     SET( CTEST_SITE ${HOSTNAME} )
-ENDIF()
 CTEST_START("${CTEST_DASHBOARD}")
 CTEST_UPDATE()
 CTEST_CONFIGURE(
@@ -286,15 +295,6 @@ CTEST_CONFIGURE(
 )
 
 
-IF ( DEFINED CMAKE_TOOLCHAIN_FILE )
-#need to trigger the cmake configuration twice
-CTEST_CONFIGURE(
-    BUILD   ${CTEST_BINARY_DIRECTORY}
-    SOURCE  ${CTEST_SOURCE_DIRECTORY}
-    OPTIONS "${CTEST_OPTIONS}"
-)
-ENDIF()
-
 # Run the configure, build and tests
 CTEST_BUILD()
 IF ( USE_VALGRIND )
@@ -303,7 +303,7 @@ ELSEIF (CTEST_COVERAGE_COMMAND)
   # Skip the normal tests when doing coverage
 ELSE()
 #    CTEST_TEST( INCLUDE short PARALLEL_LEVEL ${N_PROCS} )
-    IF( DEFINED TEST_PARALLEL_LEVEL )
+    IF( DEFINED ENV{N_CONCURRENT_TESTS} )
          CTEST_TEST( PARALLEL_LEVEL ${TEST_PARALLEL_LEVEL} )
     ELSE()
          CTEST_TEST( PARALLEL_LEVEL ${N_PROCS} )

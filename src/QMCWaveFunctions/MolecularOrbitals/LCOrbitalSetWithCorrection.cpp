@@ -196,7 +196,7 @@ LCOrbitalSet<BS,false>* LCOrbitalSetWithCorrection<BS,false>::clone2LCOrbitalSet
 }
 
 template<class BS>
-bool LCOrbitalSetWithCorrection<BS,false>::readCuspInfo(Matrix<TinyVector<RealType,9> > &info)
+bool LCOrbitalSetWithCorrection<BS,false>::readCuspInfo(Matrix<CuspCorrectionParameters > &info)
 {
   bool success=true;
   std::string cname;
@@ -262,7 +262,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::readCuspInfo(Matrix<TinyVector<RealTy
         {
           int orb=-1;
           OhmmsAttributeSet orbAttrib;
-          RealType a1,a2,a3,a4,a5,a6,a7,a8,a9;
+          RealType a1(0.0),a2,a3,a4,a5,a6,a7,a8,a9;
           orbAttrib.add (orb,"num");
           orbAttrib.add (a1, "redo");
           orbAttrib.add (a2, "C");
@@ -276,15 +276,15 @@ bool LCOrbitalSetWithCorrection<BS,false>::readCuspInfo(Matrix<TinyVector<RealTy
           orbAttrib.put(ctr);
           if(orb < OrbitalSetSize)
           {
-            info(num,orb)[0] = a1;
-            info(num,orb)[1] = a2;
-            info(num,orb)[2] = a3;
-            info(num,orb)[3] = a4;
-            info(num,orb)[4] = a5;
-            info(num,orb)[5] = a6;
-            info(num,orb)[6] = a7;
-            info(num,orb)[7] = a8;
-            info(num,orb)[8] = a9;
+            info(num,orb).redo = a1;
+            info(num,orb).C = a2;
+            info(num,orb).sg = a3;
+            info(num,orb).Rc = a4;
+            info(num,orb).alpha[0] = a5;
+            info(num,orb).alpha[1] = a6;
+            info(num,orb).alpha[2] = a7;
+            info(num,orb).alpha[3] = a8;
+            info(num,orb).alpha[4] = a9;
           }
           /*
           std::cout <<" Found: num,orb:" <<num <<"  " <<orb << std::endl
@@ -367,9 +367,8 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
   (*dummyLO2->C) = *C;
   dummyLO2->Occ.resize(Occ.size());
   dummyLO2->Occ = Occ;
-  Matrix<TinyVector<RealType,9> > info;
+  Matrix<CuspCorrectionParameters > info;
   info.resize(numCentr,OrbitalSetSize);
-  info=0;
   bool readCuspCoeff=false;
   if(cuspInfoFile != "")
     readCuspCoeff = readCuspInfo(info);
@@ -428,7 +427,7 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
       {
         if(readCuspCoeff)
         {
-          RealType redo = info(i,k)[0];
+          RealType redo = info(i,k).redo;
           if(redo < -1)
             // no correction to this orbital
           {
@@ -438,25 +437,25 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
             if(redo > 10)
               // recompute with rc loop
             {
-              myCorr.executeWithRCLoop(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,fileprefix,Rcut,info(i,k).data());
+              myCorr.executeWithRCLoop(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,fileprefix,Rcut,info(i,k));
             }
             else
               if(redo > 1)
                 // no rc loop, read rc from file
               {
-                RealType rc = info(i,k)[3];
-                myCorr.execute(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,fileprefix,rc,info(i,k).data());
+                RealType rc = info(i,k).Rc;
+                myCorr.execute(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,fileprefix,rc,info(i,k));
               }
               else
                 // read from file
               {
-                myCorr.fillRadFunWithPhiBar(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,info(i,k).data());
+                myCorr.fillRadFunWithPhiBar(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,info(i,k));
               }
         }
         else
         {
-          myCorr.executeWithRCLoop(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,fileprefix,Rcut,info(i,k).data());
-          info(i,k)[0]=0;
+          myCorr.executeWithRCLoop(k,i,Z[i],dummyLO1,dummyLO2,xgrid,rad_orb,fileprefix,Rcut,info(i,k));
+          info(i,k).redo=0;
         }
       }
       else
@@ -466,28 +465,28 @@ bool LCOrbitalSetWithCorrection<BS,false>::transformSPOSet()
       }
       C.setf(std::ios::scientific, std::ios::floatfield);
       C.precision(14);
-      C<<info(i,k)[1];
+      C<<info(i,k).C;
       sg.setf(std::ios::scientific, std::ios::floatfield);
       sg.precision(14);
-      sg<<info(i,k)[2];
+      sg<<info(i,k).sg;
       rc.setf(std::ios::scientific, std::ios::floatfield);
       rc.precision(14);
-      rc<<info(i,k)[3];
+      rc<<info(i,k).Rc;
       a1.setf(std::ios::scientific, std::ios::floatfield);
       a1.precision(14);
-      a1<<info(i,k)[4];
+      a1<<info(i,k).alpha[0];
       a2.setf(std::ios::scientific, std::ios::floatfield);
       a2.precision(14);
-      a2<<info(i,k)[5];
+      a2<<info(i,k).alpha[1];
       a3.setf(std::ios::scientific, std::ios::floatfield);
       a3.precision(14);
-      a3<<info(i,k)[6];
+      a3<<info(i,k).alpha[2];
       a4.setf(std::ios::scientific, std::ios::floatfield);
       a4.precision(14);
-      a4<<info(i,k)[7];
+      a4<<info(i,k).alpha[3];
       a5.setf(std::ios::scientific, std::ios::floatfield);
       a5.precision(14);
-      a5<<info(i,k)[8];
+      a5<<info(i,k).alpha[4];
       xmlNewProp(orb,(const xmlChar*)"C",(const xmlChar*)C.str().c_str());
       xmlNewProp(orb,(const xmlChar*)"sg",(const xmlChar*)sg.str().c_str());
       xmlNewProp(orb,(const xmlChar*)"rc",(const xmlChar*)rc.str().c_str());

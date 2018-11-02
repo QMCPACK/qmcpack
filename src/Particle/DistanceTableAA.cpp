@@ -86,7 +86,6 @@ DistanceTableData* createDistanceTable(ParticleSet& s, int dt_type)
           dt = new  SymmetricDTD<RealType,DIM,PPPS>(s,s);
         }
       }
-      o << "    Setting Rmax = " << s.Lattice.SimulationCellRadius << std::endl;
     }
   }
   else if(sc == SUPERCELL_SLAB)
