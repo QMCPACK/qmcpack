@@ -20,7 +20,7 @@
 #ifdef QMC_CUDA
 #include "QMCWaveFunctions/Fermion/DiracDeterminantCUDA.h"
 #else
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #endif
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
 #include <map>
@@ -37,7 +37,7 @@ namespace qmcplusplus
 class SlaterDet : public WaveFunctionComponent
 {
 public:
-  typedef DiracDeterminantBase Determinant_t;
+  typedef DiracDeterminant Determinant_t;
   ///container for the DiracDeterminants
   std::vector<Determinant_t*> Dets;
   ///the last particle of each group

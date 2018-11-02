@@ -41,7 +41,7 @@ namespace qmcplusplus
 
 /** base class for Single-particle orbital sets
  *
- * SPOSet stands for S(ingle)P(article)O(rbital)SetBase which contains
+ * SPOSet stands for S(ingle)P(article)O(rbital)Set which contains
  * a number of single-particle orbitals with capabilities of evaluating \f$ \psi_j({\bf r}_i)\f$
  */
 class SPOSet: public QMCTraits
