@@ -13,7 +13,7 @@
     
     
 /**@file DiracDeterminantWithBackflowBase.h
- * @brief Declaration of DiracDeterminantWithBackflow with a S(ingle)P(article)O(rbital)SetBase
+ * @brief Declaration of DiracDeterminantWithBackflow with a S(ingle)P(article)O(rbital)Set
  */
 #ifndef QMCPLUSPLUS_DIRACDETERMINANTWITHBACKFLOW_H
 #define QMCPLUSPLUS_DIRACDETERMINANTWITHBACKFLOW_H

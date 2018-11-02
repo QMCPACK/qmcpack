@@ -15,7 +15,7 @@
     
     
 /**@file DiracDeterminantCUDA.h
- * @brief Declaration of DiracDeterminantCUDA with a S(ingle)P(article)O(rbital)SetBase
+ * @brief Declaration of DiracDeterminantCUDA with a S(ingle)P(article)O(rbital)Set
  */
 
 #include "DiracDeterminantCUDA.h"
