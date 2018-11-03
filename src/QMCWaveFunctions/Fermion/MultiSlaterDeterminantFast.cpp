@@ -211,7 +211,7 @@ WaveFunctionComponent::ValueType MultiSlaterDeterminantFast::evaluate_vgl_impl(P
   const size_t N2 = Dets[1]->FirstIndex;
   const size_t NP1 = Dets[0]->NumPtcls;
   const size_t NP2 = Dets[1]->NumPtcls;
-  CONSTEXPR ValueType czero(0);
+  const ValueType czero(0);
   ValueType psi=czero;
   g_tmp=czero;
   l_tmp=czero;
