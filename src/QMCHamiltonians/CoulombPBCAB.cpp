@@ -379,7 +379,7 @@ CoulombPBCAB::evalConsts(bool report)
 CoulombPBCAB::Return_t
 CoulombPBCAB::evalSR(ParticleSet& P)
 {
-  CONSTEXPR mRealType czero(0);
+  constexpr mRealType czero(0);
   const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
   mRealType res=czero;
   if(d_ab.DTType == DT_SOA)
@@ -759,7 +759,7 @@ CoulombPBCAB::evalLRwithForces(ParticleSet& P)
 CoulombPBCAB::Return_t
 CoulombPBCAB::evalSRwithForces(ParticleSet& P)
 {
-  CONSTEXPR mRealType czero(0);
+  constexpr mRealType czero(0);
   const DistanceTableData &d_ab(*P.DistTables[myTableIndex]);
   mRealType res=czero;
   //Temporary variables for computing energy and forces.
