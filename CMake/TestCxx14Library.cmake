@@ -12,7 +12,8 @@ int main(int argc, char **argv)
     // Accessing a tuple member by type is a C++14 feature
     int j = std::get<int>(t);
     return 0;
-}")
+}
+")
 
 
 # CMake versions prior to 3.8 did not support the CXX_STANDARD options to try_compile
