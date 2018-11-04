@@ -31,13 +31,14 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 DiracDeterminant::DiracDeterminant(SPOSetPtr const &spos, int first):
-  NP(0), Phi(spos), FirstIndex(first), ndelay(0)
-  ,UpdateTimer("DiracDeterminant::update",timer_level_fine)
-  ,RatioTimer("DiracDeterminant::ratio",timer_level_fine)
-  ,InverseTimer("DiracDeterminant::inverse",timer_level_fine)
-  ,BufferTimer("DiracDeterminant::buffer",timer_level_fine)
-  ,SPOVTimer("DiracDeterminant::spoval",timer_level_fine)
-  ,SPOVGLTimer("DiracDeterminant::spovgl",timer_level_fine)
+  NP(0), Phi(spos), FirstIndex(first),
+  ndelay(0), Ainv_row_ptr(nullptr),
+  UpdateTimer("DiracDeterminant::update",timer_level_fine),
+  RatioTimer("DiracDeterminant::ratio",timer_level_fine),
+  InverseTimer("DiracDeterminant::inverse",timer_level_fine),
+  BufferTimer("DiracDeterminant::buffer",timer_level_fine),
+  SPOVTimer("DiracDeterminant::spoval",timer_level_fine),
+  SPOVGLTimer("DiracDeterminant::spovgl",timer_level_fine)
 {
   Optimizable=false;
   if(Phi->Optimizable)
@@ -98,11 +99,7 @@ void DiracDeterminant::resize(int nel, int morb)
   int norb=morb;
   if(norb <= 0)
     norb = nel; // for morb == -1 (default)
-  if(ndelay)
-  {
-    delayedEng.resize(norb,ndelay);
-    Ainv_row.resize(norb);
-  }
+  if(ndelay) delayedEng.resize(norb,ndelay);
   psiM.resize(nel,norb);
   dpsiM.resize(nel,norb);
   d2psiM.resize(nel,norb);
@@ -142,15 +139,8 @@ DiracDeterminant::evalGrad(ParticleSet& P, int iat)
   WorkingIndex = iat-FirstIndex;
   RatioTimer.start();
   DiracDeterminant::GradType g;
-  if (ndelay && delayedEng.delay_count)
-  {
-    delayedEng.getInvRow(psiM, WorkingIndex, Ainv_row.data());
-    g = simd::dot(Ainv_row.data(),dpsiM[WorkingIndex],NumOrbitals);
-  }
-  else
-  {
-    g = simd::dot(psiM[WorkingIndex],dpsiM[WorkingIndex],NumOrbitals);
-  }
+  delayedEng.getInvRow(psiM, WorkingIndex, Ainv_row_ptr);
+  g = simd::dot(Ainv_row_ptr,dpsiM[WorkingIndex],NumOrbitals);
   RatioTimer.stop();
   return g;
 }
@@ -165,16 +155,11 @@ DiracDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   WorkingIndex = iat-FirstIndex;
   UpdateMode=ORB_PBYP_PARTIAL;
   GradType rv;
-  if (ndelay && delayedEng.delay_count)
-  {
-    curRatio=simd::dot(Ainv_row.data(),psiV.data(),NumOrbitals);
-    rv=simd::dot(Ainv_row.data(),dpsiV.data(),NumOrbitals);
-  }
-  else
-  {
-    curRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
-    rv=simd::dot(psiM[WorkingIndex],dpsiV.data(),NumOrbitals);
-  }
+  // define Ainv_row_ptr if no delay, otherwise defined by evalGrad
+  if ( ndelay == 0 || delayedEng.delay_count == 0 )
+    Ainv_row_ptr = psiM[WorkingIndex];
+  curRatio=simd::dot(Ainv_row_ptr,psiV.data(),NumOrbitals);
+  rv=simd::dot(Ainv_row_ptr,dpsiV.data(),NumOrbitals);
   grad_iat += ((RealType)1.0/curRatio) * rv;
   RatioTimer.stop();
   return curRatio;
@@ -319,15 +304,8 @@ DiracDeterminant::ValueType DiracDeterminant::ratio(ParticleSet& P, int iat)
   Phi->evaluate(P, iat, psiV);
   SPOVTimer.stop();
   RatioTimer.start();
-  if (ndelay && delayedEng.delay_count)
-  {
-    delayedEng.getInvRow(psiM, WorkingIndex, Ainv_row.data());
-    curRatio=simd::dot(Ainv_row.data(),psiV.data(),NumOrbitals);
-  }
-  else
-  {
-    curRatio=simd::dot(psiM[WorkingIndex],psiV.data(),NumOrbitals);
-  }
+  delayedEng.getInvRow(psiM, WorkingIndex, Ainv_row_ptr);
+  curRatio=simd::dot(Ainv_row_ptr,psiV.data(),NumOrbitals);
   //curRatio = DetRatioByRow(psiM, psiV,WorkingIndex);
   RatioTimer.stop();
   return curRatio;

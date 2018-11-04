@@ -279,7 +279,7 @@ public:
   ValueVector_t workV1, workV2;
   GradVector_t workG;
   // up-to-date Ainv row
-  ValueVector_t Ainv_row;
+  const ValueType *Ainv_row_ptr;
 
 #ifdef MIXED_PRECISION
   /// temporal matrix and workspace in higher precision for the accurate inversion.

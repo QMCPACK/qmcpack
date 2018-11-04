@@ -197,11 +197,11 @@ namespace qmcplusplus {
         delay_list.resize(delay);
       }
 
-      inline void getInvRow(const Matrix<T>& Ainv, int rowchanged, T* new_AinvRow)
+      inline void getInvRow(const Matrix<T>& Ainv, int rowchanged, const T* & new_AinvRow)
       {
         if ( delay_count == 0 )
         {
-          simd::copy_n(Ainv[rowchanged],Ainv.rows(),new_AinvRow);
+          new_AinvRow = Ainv[rowchanged];
           return;
         }
         CONSTEXPR T cone(1);
@@ -211,11 +211,12 @@ namespace qmcplusplus {
         const int lda_Binv=Binv.cols();
         T temp[lda_Binv];
         // save AinvRow to new_AinvRow
-        simd::copy_n(AinvRow, norb, new_AinvRow);
+        simd::copy_n(AinvRow, norb, V[delay_count]);
         // multiply V (NxK) Binv(KxK) U(KxN) AinvRow right to the left
         BLAS::gemv('T', norb, delay_count, cone, U.data(), norb, AinvRow, 1, czero, B[delay_count], 1);
         BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, B[delay_count], 1, czero, temp, 1);
-        BLAS::gemv('N', norb, delay_count, -cone, V.data(), norb, temp, 1, cone, new_AinvRow, 1);
+        BLAS::gemv('N', norb, delay_count, -cone, V.data(), norb, temp, 1, cone, V[delay_count], 1);
+        new_AinvRow=V[delay_count];
       }
 
       inline void acceptRow(Matrix<T>& Ainv, T* arow, int rowchanged)
