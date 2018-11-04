@@ -16,12 +16,12 @@
     
     
 /**@file DiracDeterminantCUDA.h
- * @brief Declaration of DiracDeterminantCUDA with a S(ingle)P(article)O(rbital)SetBase
+ * @brief Declaration of DiracDeterminantCUDA with a S(ingle)P(article)O(rbital)Set
  */
 #ifndef QMCPLUSPLUS_DIRAC_DETERMINANT_CUDA_H
 #define QMCPLUSPLUS_DIRAC_DETERMINANT_CUDA_H
 #include <typeinfo>
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/determinant_update.h"
 #include "Numerics/CUDA/cuda_inverse.h"
@@ -29,7 +29,7 @@
 
 namespace qmcplusplus
 {
-class DiracDeterminantCUDA: public DiracDeterminantBase
+class DiracDeterminantCUDA: public DiracDeterminant
 {
 public:
   typedef SPOSet::IndexVector_t IndexVector_t;
@@ -143,7 +143,7 @@ protected:
 public:
   ValueType ratio(ParticleSet& P, int iat)
   {
-    return DiracDeterminantBase::ratio (P, iat);
+    return DiracDeterminant::ratio (P, iat);
   }
 
   void update (std::vector<Walker_t*> &walkers, int iat);

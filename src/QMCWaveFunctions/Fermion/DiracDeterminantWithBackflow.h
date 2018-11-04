@@ -13,7 +13,7 @@
     
     
 /**@file DiracDeterminantWithBackflowBase.h
- * @brief Declaration of DiracDeterminantWithBackflow with a S(ingle)P(article)O(rbital)SetBase
+ * @brief Declaration of DiracDeterminantWithBackflow with a S(ingle)P(article)O(rbital)Set
  */
 #ifndef QMCPLUSPLUS_DIRACDETERMINANTWITHBACKFLOW_H
 #define QMCPLUSPLUS_DIRACDETERMINANTWITHBACKFLOW_H
@@ -21,7 +21,7 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "Utilities/NewTimer.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#include "QMCWaveFunctions/Fermion/DiracDeterminantBase.h"
+#include "QMCWaveFunctions/Fermion/DiracDeterminant.h"
 #include "OhmmsPETE/OhmmsArray.h"
 
 namespace qmcplusplus
@@ -29,7 +29,7 @@ namespace qmcplusplus
 
 /** class to handle determinants with backflow
  */
-class DiracDeterminantWithBackflow: public DiracDeterminantBase
+class DiracDeterminantWithBackflow: public DiracDeterminant
 {
 public:
 

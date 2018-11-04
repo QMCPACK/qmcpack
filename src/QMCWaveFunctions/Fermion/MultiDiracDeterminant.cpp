@@ -15,8 +15,8 @@
     
     
 
-#include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase.h"
-//#include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase_help.h"
+#include "QMCWaveFunctions/Fermion/MultiDiracDeterminant.h"
+//#include "QMCWaveFunctions/Fermion/MultiDiracDeterminant_help.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
@@ -37,12 +37,12 @@ namespace qmcplusplus
  *@param first index of first particle
  *@param nel number of particles in the determinant
  */
-void MultiDiracDeterminantBase::set(int first, int nel)
+void MultiDiracDeterminant::set(int first, int nel)
 {
-  APP_ABORT("MultiDiracDeterminantBase::set(int first, int nel) is disabled. \n");
+  APP_ABORT("MultiDiracDeterminant::set(int first, int nel) is disabled. \n");
 }
 
-void MultiDiracDeterminantBase::set(int first, int nel,int norb)
+void MultiDiracDeterminant::set(int first, int nel,int norb)
 {
   FirstIndex = first;
   DetCalculator.resize(nel);
@@ -51,7 +51,7 @@ void MultiDiracDeterminantBase::set(int first, int nel,int norb)
 //    testDets();
 }
 
-void MultiDiracDeterminantBase::createDetData(ci_configuration2& ref, std::vector<int>& data,
+void MultiDiracDeterminant::createDetData(ci_configuration2& ref, std::vector<int>& data,
     std::vector<std::pair<int,int> >& pairs, std::vector<RealType>& sign)
 {
   const auto& confgList=*ciConfigList;
@@ -103,14 +103,14 @@ void out1(int n, std::string str="NULL") {}
 //{ std::cout <<"MDD: " <<str <<"  " <<n << std::endl; std::cout.flush(); }
 
 
-void MultiDiracDeterminantBase::evaluateForWalkerMove(ParticleSet& P, bool fromScratch)
+void MultiDiracDeterminant::evaluateForWalkerMove(ParticleSet& P, bool fromScratch)
 {
   evalWTimer.start();
   if(fromScratch)
     Phi->evaluate_notranspose(P,FirstIndex,LastIndex,psiM,dpsiM,d2psiM);
   if(NumPtcls==1)
   {
-    //APP_ABORT("Evaluate Log with 1 particle in MultiDiracDeterminantBase is potentially dangerous. Fix later");
+    //APP_ABORT("Evaluate Log with 1 particle in MultiDiracDeterminant is potentially dangerous. Fix later");
     std::vector<ci_configuration2>::const_iterator it(ciConfigList->begin());
     std::vector<ci_configuration2>::const_iterator last(ciConfigList->end());
     ValueVector_t::iterator det(detValues.begin());
@@ -179,7 +179,7 @@ void MultiDiracDeterminantBase::evaluateForWalkerMove(ParticleSet& P, bool fromS
         for(size_t i=0; i<NumPtcls; i++)
           psiV_temp[i] = dpsiM(iat,*(it++))[idim];
         InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,iat,gradRatio[idim]);
-        //MultiDiracDeterminantBase::InverseUpdateByColumn_GRAD(dpsiMinv,dpsiV,workV1,workV2,iat,gradRatio[idim],idim);
+        //MultiDiracDeterminant::InverseUpdateByColumn_GRAD(dpsiMinv,dpsiV,workV1,workV2,iat,gradRatio[idim],idim);
         for(size_t i=0; i<NumOrbitals; i++)
           TpsiM(i,iat) = dpsiM(iat,i)[idim];
         BuildDotProductsAndCalculateRatios(ReferenceDeterminant,iat,
@@ -190,7 +190,7 @@ void MultiDiracDeterminantBase::evaluateForWalkerMove(ParticleSet& P, bool fromS
       for(size_t i=0; i<NumPtcls; i++)
         psiV_temp[i] = d2psiM(iat,*(it++));
       InverseUpdateByColumn(dpsiMinv,psiV_temp,workV1,workV2,iat,ratioLapl);
-      //MultiDiracDeterminantBase::InverseUpdateByColumn(dpsiMinv,d2psiM,workV1,workV2,iat,ratioLapl,confgList[ReferenceDeterminant].occup.begin());
+      //MultiDiracDeterminant::InverseUpdateByColumn(dpsiMinv,d2psiM,workV1,workV2,iat,ratioLapl,confgList[ReferenceDeterminant].occup.begin());
       for(size_t i=0; i<NumOrbitals; i++)
         TpsiM(i,iat) = d2psiM(iat,i);
       BuildDotProductsAndCalculateRatios(ReferenceDeterminant,iat,
@@ -205,7 +205,7 @@ void MultiDiracDeterminantBase::evaluateForWalkerMove(ParticleSet& P, bool fromS
 }
 
 
-MultiDiracDeterminantBase::RealType MultiDiracDeterminantBase::updateBuffer(ParticleSet& P,
+MultiDiracDeterminant::RealType MultiDiracDeterminant::updateBuffer(ParticleSet& P,
     WFBufferType& buf, bool fromscratch)
 {
   evaluateForWalkerMove(P,(fromscratch || UpdateMode == ORB_PBYP_RATIO) );
@@ -219,7 +219,7 @@ MultiDiracDeterminantBase::RealType MultiDiracDeterminantBase::updateBuffer(Part
   return 1.0;
 }
 
-void MultiDiracDeterminantBase::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
+void MultiDiracDeterminant::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
 {
   buf.get(psiM.first_address(),psiM.last_address());
   buf.get(FirstAddressOfdpsiM,LastAddressOfdpsiM);
@@ -242,7 +242,7 @@ void MultiDiracDeterminantBase::copyFromBuffer(ParticleSet& P, WFBufferType& buf
 
 /** move was accepted, update the real container
 */
-void MultiDiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
+void MultiDiracDeterminant::acceptMove(ParticleSet& P, int iat)
 {
   WorkingIndex = iat-FirstIndex;
   switch(UpdateMode)
@@ -282,7 +282,7 @@ void MultiDiracDeterminantBase::acceptMove(ParticleSet& P, int iat)
 
 /** move was rejected. copy the real container to the temporary to move on
 */
-void MultiDiracDeterminantBase::restore(int iat)
+void MultiDiracDeterminant::restore(int iat)
 {
   WorkingIndex = iat-FirstIndex;
   psiMinv_temp = psiMinv;
@@ -308,19 +308,19 @@ void MultiDiracDeterminantBase::restore(int iat)
 }
 
 // this has been fixed
-MultiDiracDeterminantBase::MultiDiracDeterminantBase(const MultiDiracDeterminantBase& s):
+MultiDiracDeterminant::MultiDiracDeterminant(const MultiDiracDeterminant& s):
   WaveFunctionComponent(s), NP(0), FirstIndex(s.FirstIndex),ciConfigList(nullptr),
-  UpdateTimer("MultiDiracDeterminantBase::update"),
-  RatioTimer("MultiDiracDeterminantBase::ratio"),
-  InverseTimer("MultiDiracDeterminantBase::inverse"),
-  buildTableTimer("MultiDiracDeterminantBase::buildTable"),
-  evalWTimer("MultiDiracDeterminantBase::evalW"),
-  evalOrbTimer("MultiDiracDeterminantBase::evalOrb"),
-  evalOrb1Timer("MultiDiracDeterminantBase::evalOrbGrad"),
-  readMatTimer("MultiDiracDeterminantBase::readMat"),
-  readMatGradTimer("MultiDiracDeterminantBase::readMatGrad"),
-  buildTableGradTimer("MultiDiracDeterminantBase::buildTableGrad"),
-  ExtraStuffTimer("MultiDiracDeterminantBase::ExtraStuff")
+  UpdateTimer("MultiDiracDeterminant::update"),
+  RatioTimer("MultiDiracDeterminant::ratio"),
+  InverseTimer("MultiDiracDeterminant::inverse"),
+  buildTableTimer("MultiDiracDeterminant::buildTable"),
+  evalWTimer("MultiDiracDeterminant::evalW"),
+  evalOrbTimer("MultiDiracDeterminant::evalOrb"),
+  evalOrb1Timer("MultiDiracDeterminant::evalOrbGrad"),
+  readMatTimer("MultiDiracDeterminant::readMat"),
+  readMatGradTimer("MultiDiracDeterminant::readMatGrad"),
+  buildTableGradTimer("MultiDiracDeterminant::buildTableGrad"),
+  ExtraStuffTimer("MultiDiracDeterminant::ExtraStuff")
 {
   IsCloned=true;
 
@@ -337,14 +337,14 @@ MultiDiracDeterminantBase::MultiDiracDeterminantBase(const MultiDiracDeterminant
   this->DetCalculator.resize(s.NumPtcls);
 }
 
-SPOSetPtr  MultiDiracDeterminantBase::clonePhi() const
+SPOSetPtr  MultiDiracDeterminant::clonePhi() const
 {
   return Phi->makeClone();
 }
 
-WaveFunctionComponentPtr MultiDiracDeterminantBase::makeClone(ParticleSet& tqp) const
+WaveFunctionComponentPtr MultiDiracDeterminant::makeClone(ParticleSet& tqp) const
 {
-  APP_ABORT(" Illegal action. Cannot use MultiDiracDeterminantBase::makeClone");
+  APP_ABORT(" Illegal action. Cannot use MultiDiracDeterminant::makeClone");
   return 0;
 }
 
@@ -352,22 +352,22 @@ WaveFunctionComponentPtr MultiDiracDeterminantBase::makeClone(ParticleSet& tqp) 
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-MultiDiracDeterminantBase::MultiDiracDeterminantBase(SPOSetPtr const &spos, int first):
+MultiDiracDeterminant::MultiDiracDeterminant(SPOSetPtr const &spos, int first):
   NP(0),Phi(spos),FirstIndex(first),ReferenceDeterminant(0), ciConfigList(nullptr),
-  UpdateTimer("MultiDiracDeterminantBase::update"),
-  RatioTimer("MultiDiracDeterminantBase::ratio"),
-  InverseTimer("MultiDiracDeterminantBase::inverse"),
-  buildTableTimer("MultiDiracDeterminantBase::buildTable"),
-  evalWTimer("MultiDiracDeterminantBase::evalW"),
-  evalOrbTimer("MultiDiracDeterminantBase::evalOrb"),
-  evalOrb1Timer("MultiDiracDeterminantBase::evalOrbGrad"),
-  readMatTimer("MultiDiracDeterminantBase::readMat"),
-  readMatGradTimer("MultiDiracDeterminantBase::readMatGrad"),
-  buildTableGradTimer("MultiDiracDeterminantBase::buildTableGrad"),
-  ExtraStuffTimer("MultiDiracDeterminantBase::ExtraStuff")
+  UpdateTimer("MultiDiracDeterminant::update"),
+  RatioTimer("MultiDiracDeterminant::ratio"),
+  InverseTimer("MultiDiracDeterminant::inverse"),
+  buildTableTimer("MultiDiracDeterminant::buildTable"),
+  evalWTimer("MultiDiracDeterminant::evalW"),
+  evalOrbTimer("MultiDiracDeterminant::evalOrb"),
+  evalOrb1Timer("MultiDiracDeterminant::evalOrbGrad"),
+  readMatTimer("MultiDiracDeterminant::readMat"),
+  readMatGradTimer("MultiDiracDeterminant::readMatGrad"),
+  buildTableGradTimer("MultiDiracDeterminant::buildTableGrad"),
+  ExtraStuffTimer("MultiDiracDeterminant::ExtraStuff")
 {
   Optimizable=true;
-  ClassName="MultiDiracDeterminantBase";
+  ClassName="MultiDiracDeterminant";
 
   IsCloned=false;
 
@@ -380,9 +380,9 @@ MultiDiracDeterminantBase::MultiDiracDeterminantBase(SPOSetPtr const &spos, int 
 }
 
 ///default destructor
-MultiDiracDeterminantBase::~MultiDiracDeterminantBase() {}
+MultiDiracDeterminant::~MultiDiracDeterminant() {}
 
-MultiDiracDeterminantBase& MultiDiracDeterminantBase::operator=(const MultiDiracDeterminantBase& s)
+MultiDiracDeterminant& MultiDiracDeterminant::operator=(const MultiDiracDeterminant& s)
 {
   if(this == & s) return *this;
 
@@ -404,7 +404,7 @@ MultiDiracDeterminantBase& MultiDiracDeterminantBase::operator=(const MultiDirac
 }
 
 void
-MultiDiracDeterminantBase::registerData(ParticleSet& P, WFBufferType& buf)
+MultiDiracDeterminant::registerData(ParticleSet& P, WFBufferType& buf)
 {
   if(NP == 0)
     //first time, allocate once
@@ -428,7 +428,7 @@ MultiDiracDeterminantBase::registerData(ParticleSet& P, WFBufferType& buf)
 }
 
 
-void MultiDiracDeterminantBase::setDetInfo(int ref, std::vector<ci_configuration2>* list)
+void MultiDiracDeterminant::setDetInfo(int ref, std::vector<ci_configuration2>* list)
 {
   ReferenceDeterminant = ref;
   ciConfigList=list;
@@ -437,15 +437,15 @@ void MultiDiracDeterminantBase::setDetInfo(int ref, std::vector<ci_configuration
 
 ///reset the size: with the number of particles and number of orbtials
 /// morb is the total number of orbitals, including virtual
-void MultiDiracDeterminantBase::resize(int nel, int morb)
+void MultiDiracDeterminant::resize(int nel, int morb)
 {
   if(nel <= 0 || morb <= 0)
   {
-    APP_ABORT(" ERROR: MultiDiracDeterminantBase::resize arguments equal to zero. \n");
+    APP_ABORT(" ERROR: MultiDiracDeterminant::resize arguments equal to zero. \n");
   }
   if(NumDets == 0 || NumDets != ciConfigList->size())
   {
-    APP_ABORT(" ERROR: MultiDiracDeterminantBase::resize problems with NumDets. \n");
+    APP_ABORT(" ERROR: MultiDiracDeterminant::resize problems with NumDets. \n");
   }
 
   NumPtcls=nel;
@@ -486,7 +486,7 @@ void MultiDiracDeterminantBase::resize(int nel, int morb)
     createDetData((*ciConfigList)[ReferenceDeterminant], *detData,*uniquePairs,*DetSigns);
 }
 
-void MultiDiracDeterminantBase::registerTimers()
+void MultiDiracDeterminant::registerTimers()
 {
   UpdateTimer.reset();
   RatioTimer.reset();

@@ -14,16 +14,16 @@
 //////////////////////////////////////////////////////////////////////////////////////
     
     
-/**@file DiracDeterminantBaseBase.h
- * @brief Declaration of DiracDeterminantBase with a S(ingle)P(article)O(rbital)SetBase
+/**@file DiracDeterminant.h
+ * @brief Declaration of DiracDeterminant with a S(ingle)P(article)O(rbital)Set
  */
-#ifndef QMCPLUSPLUS_MULTIDIRACDETERMINANTWITHBASE_H
-#define QMCPLUSPLUS_MULTIDIRACDETERMINANTWITHBASE_H
+#ifndef QMCPLUSPLUS_MULTIDIRACDETERMINANT_H
+#define QMCPLUSPLUS_MULTIDIRACDETERMINANT_H
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/Fermion/ci_configuration2.h"
 #include "QMCWaveFunctions/Fermion/BackflowTransformation.h"
-#include "QMCWaveFunctions/Fermion/MultiDiracDeterminantBase_help.h"
+#include "QMCWaveFunctions/Fermion/MultiDiracDeterminant_help.h"
 #include "Message/Communicate.h"
 #include "Numerics/DeterminantOperators.h"
 //#include "Numerics/OhmmsBlas.h"
@@ -31,7 +31,7 @@
 namespace qmcplusplus
 {
 
-class MultiDiracDeterminantBase: public WaveFunctionComponent
+class MultiDiracDeterminant: public WaveFunctionComponent
 {
 
 public:
@@ -54,20 +54,20 @@ public:
    *@param spos the single-particle orbital set
    *@param first index of the first particle
    */
-  MultiDiracDeterminantBase(SPOSetPtr const &spos, int first=0);
+  MultiDiracDeterminant(SPOSetPtr const &spos, int first=0);
 
   ///default destructor
-  ~MultiDiracDeterminantBase();
+  ~MultiDiracDeterminant();
 
   /**copy constructor
-   * @param s existing DiracDeterminantBase
+   * @param s existing DiracDeterminant
    *
    * This constructor makes a shallow copy of Phi.
    * Other data members are allocated properly.
    */
-  MultiDiracDeterminantBase(const MultiDiracDeterminantBase& s);
+  MultiDiracDeterminant(const MultiDiracDeterminant& s);
 
-  MultiDiracDeterminantBase& operator=(const MultiDiracDeterminantBase& s);
+  MultiDiracDeterminant& operator=(const MultiDiracDeterminant& s);
 
   /** return a clone of Phi
    */
@@ -148,19 +148,19 @@ public:
 
   ValueType ratio(ParticleSet& P, int iat)
   {
-    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
+    APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return ValueType();
   }
 
   GradType evalGrad(ParticleSet& P, int iat)
   {
-    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
+    APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return GradType();
   }
 
   ValueType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   {
-    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
+    APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return ValueType();
   }
 
@@ -168,7 +168,7 @@ public:
                        ParticleSet::ParticleGradient_t& G,
                        ParticleSet::ParticleLaplacian_t& L)
   {
-    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
+    APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return 0.0;
   }
 
@@ -176,7 +176,7 @@ public:
                      ParticleSet::ParticleGradient_t& G,
                      ParticleSet::ParticleLaplacian_t& L)
   {
-    APP_ABORT("  MultiDiracDeterminantBase: This should not be called. \n");
+    APP_ABORT("  MultiDiracDeterminant: This should not be called. \n");
     return ValueType();
   }
 
@@ -385,7 +385,7 @@ public:
 
 };
 
-//  #include "MultiDiracDeterminantBase_help.h"
+//  #include "MultiDiracDeterminant_help.h"
 
 }
 #endif
