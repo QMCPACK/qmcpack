@@ -52,12 +52,8 @@ public:
   typedef SPOSet::HessVector_t  HessVector_t;
   typedef SPOSet::HessType      HessType;
 
-#ifdef MIXED_PRECISION
   typedef ParticleSet::SingleParticleValue_t mValueType;
   typedef OrbitalSetTraits<mValueType>::ValueMatrix_t ValueMatrix_hp_t;
-#else
-  typedef ValueType mValueType;
-#endif
   typedef TinyVector<mValueType,DIM> mGradType;
 
   /** constructor
@@ -281,11 +277,9 @@ public:
   // up-to-date Ainv row
   const ValueType *Ainv_row_ptr;
 
-#ifdef MIXED_PRECISION
-  /// temporal matrix and workspace in higher precision for the accurate inversion.
+  /// temporal matrix in higher precision for the accurate inversion.
   ValueMatrix_hp_t psiM_hp;
   DiracMatrix<mValueType> detEng_hp;
-#endif
   DiracMatrix<ValueType> detEng;
   DelayedUpdate<ValueType, mValueType> delayedEng;
 
