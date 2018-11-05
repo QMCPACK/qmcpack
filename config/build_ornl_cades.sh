@@ -13,8 +13,7 @@
 
 source $MODULESHOME/init/bash
 module purge
-module load PE-intel
-module load intel/18.0.0
+module load PE-intel
 module load xalt/0.7.6
 module load openmpi/3.0.0
 module load hdf5-parallel/1.8.17
