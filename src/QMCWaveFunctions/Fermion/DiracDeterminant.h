@@ -272,8 +272,6 @@ public:
   ValueVector_t psiV;
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
-  ValueVector_t workV1, workV2;
-  GradVector_t workG;
   // up-to-date Ainv row
   const ValueType *Ainv_row_ptr;
 
