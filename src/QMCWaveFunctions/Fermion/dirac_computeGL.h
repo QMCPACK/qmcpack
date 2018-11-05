@@ -26,8 +26,8 @@ namespace qmcplusplus
   template<typename T, typename T2>
   inline void computeGL(T* row, VectorSoaContainer<T,4>& gl_v, TinyVector<T2,3>& grad, T2& lap)
   {
-    CONSTEXPR T czero(0);
-    CONSTEXPR T cone(1);
+    constexpr T czero(0);
+    constexpr T cone(1);
     int four=4;
     int na=gl_v.size();
     int lda=gl_v.capacity();
@@ -52,8 +52,8 @@ namespace qmcplusplus
   template<typename T>
   inline void computeGL(T* row, VectorSoaContainer<T,5>& gl_v, TinyVector<T,3>& grad, T& lap)
   {
-    CONSTEXPR T czero(0);
-    CONSTEXPR T cone(1);
+    constexpr T czero(0);
+    constexpr T cone(1);
     int four=4;
     int na=gl_v.size();
     int lda=gl_v.capacity();

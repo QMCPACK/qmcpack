@@ -172,7 +172,7 @@ struct AtomicOrbitalSoA
       Ylm.evaluateV(0,0,1);
     const ST* restrict Ylm_v=Ylm[0];
 
-    CONSTEXPR ST czero(0);
+    constexpr ST czero(0);
     ST* restrict val=myV.data();
     ST* restrict local_val=localV.data();
     std::fill(myV.begin(),myV.end(),czero);
@@ -196,7 +196,7 @@ struct AtomicOrbitalSoA
     const ST* restrict Ylm_v=Ylm[0];
 
     const size_t m=multi_myV.cols();
-    CONSTEXPR ST czero(0);
+    constexpr ST czero(0);
     std::fill(multi_myV.begin(),multi_myV.end(),czero);
     SplineInst->evaluate(r,localV);
 
@@ -250,7 +250,7 @@ struct AtomicOrbitalSoA
     ST* restrict g0=myG.data(0);
     ST* restrict g1=myG.data(1);
     ST* restrict g2=myG.data(2);
-    CONSTEXPR ST czero(0), cone(1), chalf(0.5);
+    constexpr ST czero(0), cone(1), chalf(0.5);
     std::fill(myV.begin(),myV.end(),czero);
     std::fill(g0,g0+Npad,czero);
     std::fill(g1,g1+Npad,czero);
