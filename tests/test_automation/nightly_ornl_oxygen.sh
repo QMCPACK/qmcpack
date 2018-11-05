@@ -62,6 +62,11 @@ export CUDAVER=10.0
 export PATH=/opt/local/bin:/opt/local/sbin:/usr/local/cuda-${CUDAVER}/bin/:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 export LD_LIBRARY_PATH=/usr/local/cuda-${CUDAVER}/lib64
 
+export PGI=/opt/pgi
+export MANPATH=$MANPATH:$PGI/linux86-64/2018/man
+export LM_LICENSE_FILE=$PGI/license.dat
+export PATH=$PGI/linux86-64/2018/bin:$PATH
+
 module() { eval `/usr/bin/modulecmd bash $*`; }
 
 export SPACK_ROOT=$HOME/apps/spack
