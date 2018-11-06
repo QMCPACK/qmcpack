@@ -105,7 +105,7 @@ struct SoaDistanceTableBA: public DTD_BConds<T,D,SC>, public DistanceTableData
 
   size_t get_neighbors(int iat, RealType rcut, int* restrict jid, RealType* restrict dist, PosType* restrict displ) const
   {
-    CONSTEXPR T cminus(-1);
+    constexpr T cminus(-1);
     size_t nn=0;
     for(int jat=0; jat<Ntargets; ++jat)
     {

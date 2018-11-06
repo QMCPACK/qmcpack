@@ -110,7 +110,7 @@ namespace qmcplusplus {
         //slightly smaller error with the following
         //        logdet+=2.0*std::log(std::abs(x[ii]);
       }
-      CONSTEXPR T one_over_2pi=T(1)/TWOPI;
+      constexpr T one_over_2pi=T(1)/TWOPI;
       phase -= std::floor(phase*one_over_2pi)*TWOPI;
       return 0.5*logdet;
     }
@@ -160,8 +160,8 @@ namespace qmcplusplus {
       {
         const int m=a.rows();
         const int lda=a.cols();
-        CONSTEXPR T cone(1);
-        CONSTEXPR T czero(0);
+        const T cone(1);
+        const T czero(0);
         T temp[lda], rcopy[lda];
         T c_ratio=cone/c_ratio_in;
         BLAS::gemv('T', m, m, c_ratio, a.data(), lda, arow, 1, czero, temp, 1);

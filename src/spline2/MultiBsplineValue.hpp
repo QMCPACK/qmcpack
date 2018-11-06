@@ -40,7 +40,7 @@ namespace spline2
       const intptr_t ys = spline_m->y_stride;
       const intptr_t zs = spline_m->z_stride;
 
-      CONSTEXPR T zero(0);
+      constexpr T zero(0);
       const int num_splines=last-first;
       std::fill(vals,vals+num_splines,zero);
 

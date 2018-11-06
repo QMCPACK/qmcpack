@@ -49,7 +49,7 @@ namespace qmcplusplus
 
       inline value_type rmax() const
       {
-        CONSTEXPR value_type r0(100);
+        constexpr value_type r0(100);
         return r0;
       }
 
