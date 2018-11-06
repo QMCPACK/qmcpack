@@ -388,7 +388,7 @@ double cqmc::engine::ETCompute::target_fn_serr(std::ostream & fout, const bool p
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// \brief funciton that calculates average energy and target function value
+// \brief function that calculates average energy and target function value
 //
 //
 //

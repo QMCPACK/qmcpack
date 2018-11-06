@@ -1481,6 +1481,8 @@ class QIxmlFactory(Names):
                 type = kw[self.typekey2]
             elif self.default!=None:
                 type = self.default
+            elif self.typeindex==-1:
+                self.error('QMCPACK input file is misformatted\ncannot identify type for <{0}/> element\nwith contents:\n{1}\nplease find the XML element matching this description in the input file to identify the problem\nmost likely, it is missing attributes "{2}" or "{3}"'.format(self.name,str(v).rstrip(),self.typekey,self.typekey2))
             else:
                 type = a[self.typeindex]
             #end if
@@ -1527,7 +1529,7 @@ class Param(Names):
 
     def __call__(self,*args,**kwargs):
         if len(args)==0:
-            self.error('no arguments provided, should have recieved one XMLelement')
+            self.error('no arguments provided, should have received one XMLelement')
         elif not isinstance(args[0],XMLelement):
             return args[0]
             #self.error('first argument is not an XMLelement')

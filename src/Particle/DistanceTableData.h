@@ -70,7 +70,7 @@ enum DistTableType {DT_AOS=0,  DT_SOA, DT_AOS_PREFERRED, DT_SOA_PREFERRED};
  */
 struct DistanceTableData 
 {
-  CONSTEXPR static unsigned DIM=OHMMS_DIM;
+  constexpr static unsigned DIM=OHMMS_DIM;
 
   /**enum for index ordering and storage.
    *@brief Equivalent to using three-dimensional array with (i,j,k)

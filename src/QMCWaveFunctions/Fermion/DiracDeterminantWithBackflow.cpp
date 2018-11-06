@@ -29,10 +29,10 @@ namespace qmcplusplus
  *@param spos the single-particle orbital set
  *@param first index of the first particle
  */
-DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetPtr const &spos, BackflowTransformation * BF, int first): DiracDeterminantBase(spos,first)
+DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(ParticleSet &ptcl, SPOSetPtr const &spos, BackflowTransformation * BF, int first): DiracDeterminant(spos,first)
 {
   Optimizable=true;
-  OrbitalName="DiracDeterminantWithBackflow";
+  ClassName="DiracDeterminantWithBackflow";
   registerTimers();
   BFTrans=BF;
   NumParticles = ptcl.getTotalNum();
@@ -1041,7 +1041,7 @@ DiracDeterminantWithBackflow* DiracDeterminantWithBackflow::makeCopy(SPOSetPtr s
 }
 
 DiracDeterminantWithBackflow::DiracDeterminantWithBackflow(const DiracDeterminantWithBackflow& s):
-  DiracDeterminantBase(s),BFTrans(s.BFTrans)
+  DiracDeterminant(s),BFTrans(s.BFTrans)
 
 {
   registerTimers();

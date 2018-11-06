@@ -44,7 +44,7 @@ namespace qmcplusplus {
     //  Optimizable = false;
     Optimizable = true;
 
-    OrbitalName = "FDLR";
+    ClassName = "FDLR";
 
     // Copy variables "x", which are currently encoded in the m_wfn_xmd wave
     // function, to the x_vars object, and similarly for "d" variables,
@@ -246,7 +246,7 @@ namespace qmcplusplus {
 
     // If singlet/triplet symmetry, then the variables are only stored once
     // (for both up- and down-electron determinants, which both have the
-    // same paramaters with singlet symmetry) in the driver objects, whereas
+    // same parameters with singlet symmetry) in the driver objects, whereas
     // for the x_vars and d_vars objects, they are stored twice, repeated,
     // because of the need for both the up and down determinants to have
     // access to the variables, without modifying those classes to deal with

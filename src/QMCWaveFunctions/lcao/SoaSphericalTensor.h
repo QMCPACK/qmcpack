@@ -130,8 +130,8 @@ struct SoaSphericalTensor
 template<typename T>
 inline SoaSphericalTensor<T>::SoaSphericalTensor(const int l_max, bool addsign) : Lmax(l_max)
 {
-  CONSTEXPR T czero(0);
-  CONSTEXPR T cone(1);
+  constexpr T czero(0);
+  constexpr T cone(1);
   const T pi = 4.0*std::atan(1.0);
   const int ntot = (Lmax+1)*(Lmax+1);
   cYlm.resize(ntot);
@@ -181,12 +181,12 @@ inline SoaSphericalTensor<T>::SoaSphericalTensor(const int l_max, bool addsign) 
 template<typename T>
 inline void SoaSphericalTensor<T>::evaluate_bare(T x, T y, T z, T* restrict Ylm) const
 {
-  CONSTEXPR T czero(0);
-  CONSTEXPR T cone(1);
+  constexpr T czero(0);
+  constexpr T cone(1);
   const T pi = 4.0*std::atan(1.0);
   const T omega = 1.0/std::sqrt(4.0*pi);
   const T sqrt2 = std::sqrt(2.0);
-  CONSTEXPR T eps2 = std::numeric_limits<T>::epsilon()*std::numeric_limits<T>::epsilon();
+  constexpr T eps2 = std::numeric_limits<T>::epsilon()*std::numeric_limits<T>::epsilon();
 
   /*  Calculate r, cos(theta), sin(theta), cos(phi), sin(phi) from input
       coordinates. Check here the coordinate singularity at cos(theta) = +-1.
@@ -278,8 +278,8 @@ inline void SoaSphericalTensor<T>::evaluateVGL(T x, T y, T z)
   T* restrict Ylm=cYlm.data(0);
   evaluate_bare(x,y,z,Ylm);
 
-  CONSTEXPR T czero(0);
-  CONSTEXPR T ahalf(0.5);
+  constexpr T czero(0);
+  constexpr T ahalf(0.5);
   T* restrict gYlmX=cYlm.data(1);
   T* restrict gYlmY=cYlm.data(2);
   T* restrict gYlmZ=cYlm.data(3);

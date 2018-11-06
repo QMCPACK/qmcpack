@@ -27,7 +27,8 @@ def execute(command,verbose=False,skip=False):
         if verbose:
             print 'Executing:\n  '+command
         #end if
-        out,err = Popen(command,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True).communicate()
+        process = Popen(command,shell=True,stdout=PIPE,stderr=PIPE,close_fds=True)
+        out,err = process.communicate()
     #end if
-    return out,err
+    return out,err,process.returncode
 #end def execute

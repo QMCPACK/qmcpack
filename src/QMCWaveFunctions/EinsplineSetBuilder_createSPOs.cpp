@@ -51,7 +51,7 @@ void EinsplineSetBuilder::set_metadata(int numOrbs, int TwistNum_inp)
   // 1. set a lot of internal parameters in the EinsplineSetBuilder class
   //  e.g. TileMatrix, UseRealOrbitals, DistinctTwists, MakeTwoCopies.
   // 2. this is also where metadata for the orbitals are read from the wavefunction hdf5 file
-  //  and broacasted to MPI groups. Variables broadcasted are listed in 
+  //  and broadcast to MPI groups. Variables broadcasted are listed in 
   //  EinsplineSetBuilderCommon.cpp EinsplineSetBuilder::BroadcastOrbitalInfo()
   //   
 
@@ -308,7 +308,7 @@ EinsplineSetBuilder::createSPOSetFromXML(xmlNodePtr cur)
   bool use_single= (spo_prec == "single" || spo_prec == "float");
 
   // safeguard for a removed feature
-  if(truncate=="yes") APP_ABORT("The 'truncate' feature of spline SPO has been removed. Please use hybrid orbtial representation.");
+  if(truncate=="yes") APP_ABORT("The 'truncate' feature of spline SPO has been removed. Please use hybrid orbital representation.");
 
 #if !defined(QMC_COMPLEX)
   if (UseRealOrbitals)

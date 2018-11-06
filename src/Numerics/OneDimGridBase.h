@@ -283,7 +283,7 @@ struct OneDimGridBase
   /** evaluate the index of r
    * @param r current position
    *
-   * The grid index satifies \f$ X[Loc] \ge r < X[Loc+1]\f$.
+   * The grid index satisfies \f$ X[Loc] \ge r < X[Loc+1]\f$.
    */
   virtual void locate(T r)=0;
 

@@ -9,7 +9,7 @@
 #include<vector>
 #include<assert.h>
 #include"AFQMC/config.0.h"
-#include"Utilities/UtilityFunctions.h"
+#include"Utilities/FairDivide.h"
 #include<mpi.h>
 #include <sys/time.h>
 #include <ctime>
