@@ -708,10 +708,10 @@ EinsplineSetExtended<double>::evaluate
   eval_multi_multi_UBspline_3d_vgl_cuda
   (CudaMultiSpline, (CTS::RealType*)cudapos.data(), cudaSign.data(),
    Linv_cuda.data(), phi.data(), grad_lapl.data(), N, row_stride);
-  //gpu::host_vector<CudaRealType*> pointers;
+  //gpu::host_vector<CTS::RealType*> pointers;
   //pointers = phi;
-  //CudaRealType data[N];
-  //cudaMemcpy (data, pointers[0], N*sizeof(CudaRealType), cudaMemcpyDeviceToHost);
+  //CTS::RealType data[N];
+  //cudaMemcpy (data, pointers[0], N*sizeof(CTS::RealType), cudaMemcpyDeviceToHost);
   //for (int i=0; i<N; i++)
   //  fprintf (stderr, "%1.12e\n", data[i]);
 }
@@ -735,9 +735,9 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     cudapos2.resize(N);
     if(split_splines)
     {
-      cudaMemAdvise(cudapos.data(),N*sizeof(CudaPosType),cudaMemAdviseSetReadMostly,0);
+      cudaMemAdvise(cudapos.data(),N*sizeof(CTS::PosType),cudaMemAdviseSetReadMostly,0);
       for(unsigned int i=0; i<gpu::device_group_size; i++)
-        cudaMemAdvise(cudapos.data(),N*sizeof(CudaPosType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+        cudaMemAdvise(cudapos.data(),N*sizeof(CTS::PosType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
     }
   }
   for (int iw=0; iw < N; iw++)
@@ -777,8 +777,8 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   //  // 				  cpuSpline);
   //  gpu::host_vector<CudaStorageType*> pointers;
   //  pointers = CudaGradLaplPointers;
-  //  std::complex<CudaRealType> gpuSpline[4*M];
-  //  cudaMemcpy(gpuSpline, pointers[10], 4*M * sizeof(std::complex<CudaRealType>), cudaMemcpyDeviceToHost);
+  //  std::complex<CTS::RealType> gpuSpline[4*M];
+  //  cudaMemcpy(gpuSpline, pointers[10], 4*M * sizeof(std::complex<CTS::RealType>), cudaMemcpyDeviceToHost);
   //  for (int i=0; i<M; i++)
   //    fprintf (stderr, "real: %10.6e %10.6e %10.6e , imag: %10.6e %10.6e %10.6e .\n",
   //             trace(hess[i],GGt).real(), gpuSpline[3*M+i].real(), trace(hess[i],GGt).real() - gpuSpline[3*M+i].real(),
@@ -883,9 +883,9 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     cudapos2.resize(N);
     if(split_splines)
     {
-      cudaMemAdvise(cudapos.data(),N*sizeof(CudaPosType),cudaMemAdviseSetReadMostly,0);
+      cudaMemAdvise(cudapos.data(),N*sizeof(CTS::PosType),cudaMemAdviseSetReadMostly,0);
       for(unsigned int i=0; i<gpu::device_group_size; i++)
-        cudaMemAdvise(cudapos.data(),N*sizeof(CudaPosType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+        cudaMemAdvise(cudapos.data(),N*sizeof(CTS::PosType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
     }
   }
   for (int iw=0; iw < N; iw++)
@@ -958,16 +958,16 @@ EinsplineSetExtended<std::complex<double> >::evaluate
 // AT debug:
 /*  if((gpu::rank==1) && (abort_counter%768==0))
   {
-    gpu::host_vector<CudaValueType*> pointers;
+    gpu::host_vector<CTS::ValueType*> pointers;
     pointers = CudaGradLaplPointers;
-    CudaValueType data[4*N*M], data_new[4*N*M], phi_orig[N*M], phi_new[N*M];
-    cudaMemcpy (data, pointers[0], 4*N*M*sizeof(CudaValueType), cudaMemcpyDeviceToHost);
+    CTS::ValueType data[4*N*M], data_new[4*N*M], phi_orig[N*M], phi_new[N*M];
+    cudaMemcpy (data, pointers[0], 4*N*M*sizeof(CTS::ValueType), cudaMemcpyDeviceToHost);
     pointers = grad_lapl;
-    cudaMemcpy (data_new, pointers[0], 4*N*M*sizeof(CudaValueType), cudaMemcpyDeviceToHost);
+    cudaMemcpy (data_new, pointers[0], 4*N*M*sizeof(CTS::ValueType), cudaMemcpyDeviceToHost);
     pointers = CudaValuePointers;
-    cudaMemcpy (phi_orig, pointers[0], N*M*sizeof(CudaValueType), cudaMemcpyDeviceToHost);
+    cudaMemcpy (phi_orig, pointers[0], N*M*sizeof(CTS::ValueType), cudaMemcpyDeviceToHost);
     pointers = phi;
-    cudaMemcpy (phi_new, pointers[0], N*M*sizeof(CudaValueType), cudaMemcpyDeviceToHost);
+    cudaMemcpy (phi_new, pointers[0], N*M*sizeof(CTS::ValueType), cudaMemcpyDeviceToHost);
     std::cerr << "CudaGradLaplPointers -> grad_lapl (# splines: " << M << "):\n";
     for (int iw=0; iw<N; iw++)
       for(unsigned int g=0; g<gpu::device_group_size; g++)
@@ -1063,9 +1063,9 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     cudapos2.resize(N);
     if(split_splines)
     {
-      cudaMemAdvise(cudapos.data(),N*sizeof(CudaPosType),cudaMemAdviseSetReadMostly,0);
+      cudaMemAdvise(cudapos.data(),N*sizeof(CTS::PosType),cudaMemAdviseSetReadMostly,0);
       for(unsigned int i=0; i<gpu::device_group_size; i++)
-        cudaMemAdvise(cudapos.data(),N*sizeof(CudaPosType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+        cudaMemAdvise(cudapos.data(),N*sizeof(CTS::PosType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
     }
   }
   for (int iw=0; iw < N; iw++)
@@ -2209,13 +2209,13 @@ EinsplineSetExtended<double>::initGPU()
   Linv_cuda = Linv_host;
   if(split_splines)
   {
-    cudaMemAdvise(L_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetReadMostly,0);
-    cudaMemAdvise(Linv_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetReadMostly,0);
+    cudaMemAdvise(L_cuda.data(),9*sizeof(CTS::RealType),cudaMemAdviseSetReadMostly,0);
+    cudaMemAdvise(Linv_cuda.data(),9*sizeof(CTS::RealType),cudaMemAdviseSetReadMostly,0);
     for(unsigned int i=0; i<gpu::device_group_size; i++)
     {
-      cudaMemAdvise(L_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
-      cudaMemAdvise(Linv_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
-      cudaMemPrefetchAsync(Linv_cuda.data(),9*sizeof(CudaRealType),gpu::device_group_numbers[i]);
+      cudaMemAdvise(L_cuda.data(),9*sizeof(CTS::RealType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+      cudaMemAdvise(Linv_cuda.data(),9*sizeof(CTS::RealType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+      cudaMemPrefetchAsync(Linv_cuda.data(),9*sizeof(CTS::RealType),gpu::device_group_numbers[i]);
     }
   }
 }
@@ -2245,13 +2245,13 @@ EinsplineSetExtended<std::complex<double> >::initGPU()
   Linv_cuda = Linv_host;
   if(split_splines)
   {
-    cudaMemAdvise(L_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetReadMostly,0);
-    cudaMemAdvise(Linv_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetReadMostly,0);
+    cudaMemAdvise(L_cuda.data(),9*sizeof(CTS::RealType),cudaMemAdviseSetReadMostly,0);
+    cudaMemAdvise(Linv_cuda.data(),9*sizeof(CTS::RealType),cudaMemAdviseSetReadMostly,0);
     for(unsigned int i=0; i<gpu::device_group_size; i++)
     {
-      cudaMemAdvise(L_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
-      cudaMemAdvise(Linv_cuda.data(),9*sizeof(CudaRealType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
-      cudaMemPrefetchAsync(Linv_cuda.data(),9*sizeof(CudaRealType),gpu::device_group_numbers[i]);
+      cudaMemAdvise(L_cuda.data(),9*sizeof(CTS::RealType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+      cudaMemAdvise(Linv_cuda.data(),9*sizeof(CTS::RealType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+      cudaMemPrefetchAsync(Linv_cuda.data(),9*sizeof(CTS::RealType),gpu::device_group_numbers[i]);
     }
   }
 }
