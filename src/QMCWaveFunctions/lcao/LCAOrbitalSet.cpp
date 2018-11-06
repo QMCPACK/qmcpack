@@ -12,6 +12,8 @@
     
 #include "QMCWaveFunctions/lcao/LCAOrbitalSet.h"
 #include <Numerics/MatrixOperators.h>
+#include <boost/format.hpp>
+#include <formic/utils/lapack_interface.h>
 
 namespace qmcplusplus
 {
@@ -274,4 +276,204 @@ namespace qmcplusplus
     }
 #endif
   }
+
+  void LCAOrbitalSet::buildOptVariables(std::vector<RealType>& input_params, bool params_supplied, std::vector<int> * data, const size_t& nel, std::vector<size_t>& C2node, const int& spin)
+  {
+    const size_t& nmo = OrbitalSetSize;
+    const size_t& nb = BasisSetSize;
+    m_init_B = C;
+    //a vector in which the element's index value correspond to Molecular Orbitals.
+    //The element value at an index indicates how many times an electron is excited from or to that orbital in the Multi-Slater expansion i.e the indices with non-zero elements are active space orbitals
+    std::vector<int> occupancy_vector (nmo,0);
+
+    // Function to fill occupancy_vectors and also return number of unique determinants 
+    const int unique_dets =  this->build_occ_vec(data, nel, nmo, &occupancy_vector);
+
+    // When calculating the parameter derivative of the Multi-Slater component of the wavefunction, each unique deterimant can contribute multiple times. 
+    // The lookup_tbls are used so that a parameter derivative of a unique determinant is only done once and then scaled according to how many times it appears in the Multi-Slater expansion 
+    lookup_tbl.resize(unique_dets);
+    //construct lookup table 
+    for (int i(0); i < C2node.size(); i++)
+    {
+      lookup_tbl[C2node[i]].push_back(i);
+    } 
+
+    // create active rotations
+    m_act_rot_inds.clear(); 
+
+
+  for(int i=0;i<nmo;i++)
+    for(int j=i+1;j<nmo;j++)
+     { 
+      bool core_i(!occupancy_vector[i] and i <= nel-1); // true if orbital i is a 'core' orbital
+      bool core_j(!occupancy_vector[j] and j <= nel-1); // true if orbital j is a 'core' orbital
+      bool virt_i(!occupancy_vector[i] and i >  nel-1); // true if orbital i is a 'virtual' orbital
+      bool virt_j(!occupancy_vector[j] and j >  nel-1); // true if orbital j is a 'virtual' orbital
+        if( !( 
+              ( core_i and core_j  ) 
+                        or
+              ( virt_i and virt_j ) 
+             )    
+          )
+        {
+          m_act_rot_inds.push_back(std::pair<int,int>(i,j)); // orbital rotation parameter accepted as long as rotation isn't core-core or virtual-virtual
+        }
+     }
+   
+      // This will add the orbital rotation parameters to myVars 
+      // and will also read in initial parameter values supplied in input file     
+      int p, q; 
+      int nparams_active = m_act_rot_inds.size();
+
+      for (int i=0; i< nparams_active; i++)
+      {
+        p = m_act_rot_inds[i].first;
+        q = m_act_rot_inds[i].second;
+        std::stringstream sstr;
+        sstr << "SPO_" << (spin==0 ? "UP":"DN") 
+                << "_orb_rot_"
+                << ( p <   10 ? "0": "")
+                << ( p <  100 ? "0": "")
+                << ( p < 1000 ? "0": "")
+                << p
+                << "_"
+                << ( q <   10 ? "0": "")
+                << ( q <  100 ? "0": "")
+                << ( q < 1000 ? "0": "")
+                << q;
+
+        // If the user input parameteres, use those. Otherwise, initialize the parameters to zero
+        if (params_supplied) {
+          myVars.insert(sstr.str(), input_params[i]);
+        } else {
+          myVars.insert(sstr.str(), 0.0);
+        }
+      }
+
+      //Printing the parameters
+      if(true){
+        app_log() << std::string(16,' ') << "Parameter name" << std::string(15,' ') << "Value\n";
+        myVars.print(app_log());
+      }
+   
+      //the below code is very similar to  "Reset parameters function"
+      // reading out the parameters that define the rotation into an antisymmetric matrix
+      std::vector<RealType> rot_mat(nmo*nmo, 0.0);
+      for (int i = 0; i < m_act_rot_inds.size(); i++) 
+      {
+        const int p = m_act_rot_inds[i].first;
+        const int q = m_act_rot_inds[i].second;
+
+        rot_mat[p+q*nmo] =  myVars[i]; 
+        rot_mat[q+p*nmo] = -myVars[i]; 
+
+      }
+      //exponentiate matrices and do BLAS command to perform rotation on m_b
+
+      // exponentiate antisymmetric matrix to get the unitary rotation
+      this->exponentiate_antisym_matrix(nmo, &rot_mat[0]);
+
+      BLAS::gemm('N','T', nb, nmo, nmo, RealType(1.0), m_init_B->data(), nb, &rot_mat[0], nmo, RealType(0.0), C->data(), nb);
+      if(Optimizable)
+      {
+        T.resize(nel,nmo);
+        app_log()<< "VARIABLES HAVE NOT BE DELETED SDP\n";
+      }
+      else
+      {
+        //THIS ALLOWS FOR ORBITAL PARAMETERS TO BE READ IN EVEN WHEN THOSE PARAMETERS ARE NOT BEING OPTIMIZED
+        //this assumes there are only CI coefficients ahead of the M_orb_coefficients 
+        myVars.Index.erase(myVars.Index.begin(),myVars.Index.end());
+        myVars.NameAndValue.erase(myVars.NameAndValue.begin(),myVars.NameAndValue.end());
+        myVars.ParameterType.erase(myVars.ParameterType.begin(),myVars.ParameterType.end());
+        myVars.Recompute.erase(myVars.Recompute.begin(),myVars.Recompute.end());
+      }
+  }
+
+  int LCAOrbitalSet::build_occ_vec(std::vector<int> * data,
+                                                const size_t& nel,                                          
+                                                const size_t& nmo,                                          
+                                                std::vector<int>* occ_vec)                                  
+  {                                                                                                         
+    std::vector<int>::iterator it = (*data).begin();                                                        
+    int count = 0; //number of determinants                                                                 
+    while(it != (*data).end())                                                                              
+    {                                                                                                       
+      int k = *it; // number of excitations with respect to the reference matrix                            
+      if(count == 0)                                                                                        
+      {                                                                                                     
+        it += 3*k+1;                                                                                        
+        count ++;                                                                                           
+      }                                                                                                     
+      else                                                                                                  
+      {                                                                                                     
+        for (int i = 0; i<k; i++)
+        {
+        //for determining active orbitals
+          (*occ_vec)[*(it+1+i)]++;
+          (*occ_vec)[*(it+1+k+i)]++;
+        }
+        it += 3*k+1;
+        count ++;
+      }
+    }
+    return count;
+  }
+
+
+  // compute exponential of a real, antisymmetric matrix by diagonalizing and exponentiating eigenvalues
+  void LCAOrbitalSet::exponentiate_antisym_matrix(const int n, RealType * const mat)
+  {
+    std::vector<std::complex<double> > mat_h(n*n, 0);
+    std::vector<double> eval(n, 0);
+    std::vector<std::complex<double> > work(2*n, 0);
+    std::vector<double> rwork(3*n, 0);
+    std::vector<std::complex<double> > mat_d(n*n, 0);
+    std::vector<std::complex<double> > mat_t(n*n, 0);
+    int info = 0;
+    // exponentiating e^X = e^iY (Y hermitian)
+    // i(-iX) = X, so -iX is hermitian
+    // diagonalize -iX = UDU^T, exponentiate e^iD, and return U e^iD U^T
+    // construct hermitian analogue of mat by multiplying by -i
+    for(int i = 0; i < n; ++i)
+    {
+      for(int j = i; j < n; ++j)
+      {
+        mat_h[i+n*j] = std::complex<double>(0,-1.0*mat[i+n*j]);
+        mat_h[j+n*i] = std::complex<double>(0,1.0*mat[i+n*j]);
+      }
+    }
+    // diagonalize the matrix 
+    formic::zheev('V', 'U', n, &mat_h.at(0), n, &eval.at(0), &work.at(0), 2*n, &rwork.at(0), info);
+    if(info != 0)
+    {
+      std::ostringstream msg;
+      msg << "zheev failed with info = " << info << " in MultiSlaterDeterminantFast::exponentiate_antisym_matrix";
+      app_log() << msg.str() << std::endl;
+      APP_ABORT(msg.str());
+    }
+    // iterate through diagonal matrix, exponentiate terms
+    for(int i = 0; i < n; ++i)
+    {
+      for(int j = 0; j < n; ++j)
+      {
+        mat_d[i + j*n] = (i==j) ? std::exp( std::complex<double>(0.0,eval[i])) : std::complex<double>(0.0,0.0);
+      }
+    }
+    // perform matrix multiplication 
+    // assume row major
+    formic::xgemm('N','C', n, n, n, std::complex<double>(1.0,0), &mat_d.at(0), n, &mat_h.at(0), n, std::complex<double>(0.0, 0.0), &mat_t.at(0), n);
+    formic::xgemm('N','N', n, n, n, std::complex<double>(1.0,0), &mat_h.at(0), n, &mat_t.at(0), n, std::complex<double>(0.0, 0.0), &mat_d.at(0), n);
+    for(int i = 0; i < n; ++i)
+      for(int j = 0; j < n; ++j)
+      {
+        if(mat_d[i+n*j].imag() > 1e-12)
+        {
+          app_log() << "warning: large imaginary value in orbital rotation matrix: (i,j) = (" << i << "," << j << "), im = " << mat_d[i+n*j].imag() << std::endl;
+        }
+        mat[i+n*j] = mat_d[i+n*j].real();
+      }
+  }
+
+
 }

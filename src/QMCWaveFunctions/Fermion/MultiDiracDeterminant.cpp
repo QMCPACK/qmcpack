@@ -513,7 +513,10 @@ void MultiDiracDeterminant::registerTimers()
 
 }
 
-
+void MultiDiracDeterminant::buildOptVariables(std::vector<RealType>& input_params, bool params_supplied, std::vector<size_t>& C2node, const int& spin)
+{
+  Phi->buildOptVariables(input_params, params_supplied, detData, NumPtcls, C2node, spin);
+}
 
 
 }

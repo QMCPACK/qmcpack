@@ -54,75 +54,8 @@ class MultiSlaterDeterminantFast: public WaveFunctionComponent
 {
 
 public:
-  //Boolean which determnies whether to run orbital optimization
-  bool Orbopt;
-  //Boolean which determines wheter to run CI optimization
-  bool CIopt;  
 
-  // The initial coefficents at the start of the simulation
-  ValueMatrix_t m_init_B_up;
-
-  //vector containing lookup tables mapping the unique up/dn determinants to their element position in C2_node_up/dn vectors
-  std::vector<std::vector< std::vector<int> > > lookup_tbls;
-
-  // number of unique up and dn determinants in Multi-Slater expansion 
-  size_t unique_ups;
-  size_t unique_dns;
-
-  //total number of basis functions
-  size_t m_nb_up;
-  size_t m_nb_dn;
-
-  //total number of molecular orbitals
-  size_t m_nmo_up;
-  size_t m_nmo_dn;
-
-  //index of first Orbital Rotation Parameter in myVars
-  size_t m_first_var_pos;
-
-  //$T = M_{\sigma 0}^{-1}  \widetilde{M}_{\sigma 0}$ the tilde represents an expanded rectangular matrix
-  // T stand for the "table" that is referred to in the the papers that describe the "table method". It will be used to calculate the result of an operator applied to a kth excited determinant. Note that Miguel does not calculate the full Table T in the calculations of determinants, gradients and laplacians in his BuildDotProducts functions but instead only calculates the submatrix neccessary. I think it is worth computing the entire table and storing it as every entry will be computed by performting just single excitations anyway.
-  ValueMatrix_t T_up;
-  ValueMatrix_t T_dn;
-
-
-  //vector that contains active orbital rotation parameter indices 
-  std::vector<std::pair<int,int> > m_act_rot_inds_up;
-  std::vector<std::pair<int,int> > m_act_rot_inds_dn;
-
-
-  // creates parameters that will be optimized. Also reads in orbital rotation parameters if they are present in the input file and applies a unitary transformation 
-  void buildOptVariables(std::vector<RealType>& input_params_up, 
-                         bool params_supplied_up,
-                         std::vector<RealType>& input_params_dn,
-                         bool params_supplied_dn);
-
-  //function to fill occupancy vectors and return the number of unique determinants of a given spin
-  int build_occ_vec(std::vector<int> * data,
-                    const size_t& nel,
-                    const size_t& nmo,
-                    std::vector<int>* occ_vec);
-
-  // function that approximates matrix exponential
-  void exponentiate_matrix(const int n, RealType* const mat);
-
-  //evaluate orbital rotation parameter derivative using tablemethod
-  void table_method_eval(const ParticleSet::ParticleLaplacian_t& myL_J,
-                         const ParticleSet::ParticleGradient_t& myG_J,
-                         const size_t nel,
-                         const size_t nmo,
-                         double* T,
-                         double* A,
-                         double* Ainv,
-                         std::vector<RealType>& dlogpsi,
-                         std::vector<RealType>& dhpsioverpsi,
-                         const int parameter_start_index,
-                         const int parameters_size,
-                         const std::vector<std::pair<int,int>>* const m_act_rot_inds,
-                         const int active_spin,
-                         const ValueMatrix_t& Tr,
-                         const ValueMatrix_t& Ar);
-
+  bool Optimize;
   void registerTimers();
   NewTimer RatioTimer,RatioGradTimer,RatioAllTimer,UpdateTimer,EvaluateTimer;
   NewTimer Ratio1Timer,Ratio1GradTimer,Ratio1AllTimer, AccRejTimer;
@@ -229,8 +162,8 @@ public:
   std::vector<size_t>* C2node_dn;
   std::vector<RealType>* C;
 
-  ParticleSet::ParticleGradient_t myG,myG_temp,myG_J;
-  ParticleSet::ParticleLaplacian_t myL,myL_temp,myL_J;
+  ParticleSet::ParticleGradient_t myG,myG_temp;
+  ParticleSet::ParticleLaplacian_t myL,myL_temp;
   ValueVector_t laplSum_up;
   ValueVector_t laplSum_dn;
 
