@@ -135,9 +135,6 @@ void VMCcuda::advanceWalkers()
       W.acceptMove_GPU(acc);
       if (accepted.size())
         Psi.update(accepted,iat);
-#ifdef SPLIT_SPLINE_DEBUG
-      _exit(0);
-#endif
     }
   }
 }
@@ -192,7 +189,7 @@ bool VMCcuda::run()
       W.resetCollectables();
 #ifdef SPLIT_SPLINE_DEBUG
       if (gpu::rank==1)
-        std::cerr << "Before advanceWalkers(), step " << step << "\n";
+        std::cerr << "Before advanceWalkers() loop, step " << step << "\n";
 #endif
       advanceWalkers();
       Psi.gradLapl(W, grad, lapl);
@@ -207,9 +204,6 @@ bool VMCcuda::run()
       Estimators->accumulate(W);
     }
     while(step<nSteps);
-#ifdef SPLIT_SPLINE_DEBUG
-    _exit(0);
-#endif
     if ( nBlocksBetweenRecompute && (1+block)%nBlocksBetweenRecompute == 0 ) Psi.recompute(W);
     if(forOpt)
     {
@@ -283,6 +277,9 @@ bool VMCcuda::run()
     std::cerr << "At the end of VMC" << std::endl;
     gpu::cuda_memory_manager.report();
   }
+#ifdef SPLIT_SPLINE_DEBUG
+    _exit(0);
+#endif
 #ifdef USE_NVTX_API
   nvtxRangePop();
 #endif

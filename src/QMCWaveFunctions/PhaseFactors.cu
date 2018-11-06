@@ -624,16 +624,12 @@ void apply_phase_factors(double kPoints[], int makeTwoCopies[], int TwoCopiesInd
 template<typename T, typename T2, int BS> __global__
 void phase_factor_kernel (T *kPoints,
                           T *pos, T2 **phi_in, T2 **phi_out,
-                          int num_splines)
+                          int num_splines, int num_walkers, int num_split_splines)
 {
   __shared__ T pos_s[3];
   __shared__ T2 *phi_in_ptr, *phi_out_ptr;
 
   int tid = threadIdx.x;
-
-  // Copy electron position into shared memory
-  if (tid < 3)
-    pos_s[tid] = pos[3*blockIdx.x+tid];
 
   // Set pointers to point to the address (of the 1st element) where phi for that walker is stored
   if (tid == 0)
@@ -642,27 +638,39 @@ void phase_factor_kernel (T *kPoints,
     phi_out_ptr = phi_out[blockIdx.x];
   }
 
+  // Copy electron position into shared memory
+  if (tid < 3)
+    pos_s[tid] = pos[3*blockIdx.x+tid];
   // BS>warpSize sync needed 
-  //__syncthreads();
+  __syncthreads();
 
   // "ib" is NOT the thread block! This is just a "block" of BS splines that the BS threads
   // process together at one time, so it has to repeat NB times to take care of all the splines
   int NB = (num_splines+BS-1)/BS;
   for (int ib=0; ib<NB; ib++)
   {
+    T kPoints_s[3];
     int off = ib*BS + tid;
     if (off < num_splines)
     {
+      int in_off = off % num_split_splines;
+      int spline_offset = num_walkers*num_split_splines*(off/num_split_splines);
+      // Load kpoints
+      kPoints_s[0] = kPoints[off*3  ];
+      kPoints_s[1] = kPoints[off*3+1];
+      kPoints_s[2] = kPoints[off*3+2];
       // Now compute phase factors
-      T phase = -(kPoints[off*3  ]*pos_s[0] +
-                  kPoints[off*3+1]*pos_s[1] +
-                  kPoints[off*3+2]*pos_s[2]);
+      T phase = -(kPoints_s[0]*pos_s[0] +
+                  kPoints_s[1]*pos_s[1] +
+                  kPoints_s[2]*pos_s[2]);
       T s, c;
       sincos (phase, &s, &c);
       T2 e_mikr = T2(c,s);
+      int my_off=in_off+spline_offset;
+      T2 u = phi_in_ptr[my_off];
 
       // Write back to global memory directly
-      phi_out_ptr[ib*BS+tid] = phi_in_ptr[ib*BS+tid]*e_mikr;
+      phi_out_ptr[off] = u*e_mikr;
     }
   }
 }
@@ -764,8 +772,16 @@ void apply_phase_factors(float kPoints[], float pos[],
   dim3 dimBlock(BS);
   dim3 dimGrid (num_walkers);
 
+  int Nsplit=num_splines;
+  if (gpu::device_group_size>1)
+  {
+    Nsplit /= gpu::device_group_size;
+    if (Nsplit % gpu::device_group_size)
+      Nsplit += 1;
+  }
+
   phase_factor_kernel<float,thrust::complex<float>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
-  (kPoints, pos, (thrust::complex<float>**)phi_in, (thrust::complex<float>**)phi_out, num_splines);
+  (kPoints, pos, (thrust::complex<float>**)phi_in, (thrust::complex<float>**)phi_out, num_splines, num_walkers, Nsplit);
 }
 
 void apply_phase_factors(double kPoints[], double pos[],
@@ -776,8 +792,16 @@ void apply_phase_factors(double kPoints[], double pos[],
   dim3 dimBlock(BS);
   dim3 dimGrid (num_walkers);
 
+  int Nsplit=num_splines;
+  if (gpu::device_group_size>1)
+  {
+    Nsplit /= gpu::device_group_size;
+    if (Nsplit % gpu::device_group_size)
+      Nsplit += 1;
+  }
+
   phase_factor_kernel<double,thrust::complex<double>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
-  (kPoints, pos, (thrust::complex<double>**)phi_in, (thrust::complex<double>**)phi_out, num_splines);
+  (kPoints, pos, (thrust::complex<double>**)phi_in, (thrust::complex<double>**)phi_out, num_splines, num_walkers, Nsplit);
 }
 
 void apply_phase_factors(float kPoints[], float pos[],
@@ -799,7 +823,7 @@ void apply_phase_factors(float kPoints[], float pos[],
   }
 
   phase_factor_kernel<float,thrust::complex<float>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
-  (kPoints, pos, (thrust::complex<float>**)phi_in, (thrust::complex<float>**)phi_out, (thrust::complex<float>**)GL_in, (thrust::complex<float>**)GL_out, 
+  (kPoints, pos, (thrust::complex<float>**)phi_in, (thrust::complex<float>**)phi_out, (thrust::complex<float>**)GL_in, (thrust::complex<float>**)GL_out,
   num_splines, num_walkers, row_stride, Nsplit);
 }
 
@@ -822,7 +846,7 @@ void apply_phase_factors(double kPoints[], double pos[],
   }
 
   phase_factor_kernel<double,thrust::complex<double>,BS><<<dimGrid,dimBlock, 0, gpu::kernelStream>>>
-  (kPoints, pos, (thrust::complex<double>**)phi_in, (thrust::complex<double>**)phi_out, (thrust::complex<double>**)GL_in, (thrust::complex<double>**)GL_out, 
+  (kPoints, pos, (thrust::complex<double>**)phi_in, (thrust::complex<double>**)phi_out, (thrust::complex<double>**)GL_in, (thrust::complex<double>**)GL_out,
   num_splines, num_walkers, row_stride, Nsplit);
 }
 

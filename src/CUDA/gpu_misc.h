@@ -47,8 +47,8 @@ extern size_t MaxGPUSpineSizeMB;
 extern int rank;
 extern int relative_rank;
 extern int device_group_size;
-extern int* device_group_numbers;
-extern int* device_rank_numbers;
+extern std::vector<int> device_group_numbers;
+extern std::vector<int> device_rank_numbers;
 
 void initCUDAStreams();
 void initCUDAEvents();

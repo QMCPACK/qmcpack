@@ -374,7 +374,8 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (split_splines)
   {
     eval_multi_multi_UBspline_3d_cuda
-    (CudaMultiSpline, (CudaRealType*)cudapos.data(), CudaValuePointers.data(), N, spline_rank_pointers.data(), spline_events.data(), spline_streams.data());
+    (CudaMultiSpline, (CudaRealType*)cudapos.data(), CudaValuePointers.data(), N,
+     spline_rank_pointers.data(), spline_events.data(), spline_streams.data());
   } else
   {
     eval_multi_multi_UBspline_3d_cuda
@@ -524,7 +525,7 @@ EinsplineSetExtended<T>::get_split_spline_pointers()
 template<typename T> void
 EinsplineSetExtended<T>::resize_cuda(int numWalkers)
 {
-  CudaValuePointers.resize(numWalkers,1.0,split_splines); // use managed memory
+  CudaValuePointers.resize(numWalkers,1.0,split_splines); // use managed memory with split splines
   CudaGradLaplPointers.resize(numWalkers,1.0,split_splines);
   int N = CudaMultiSpline->num_splines;
   int Nsplit = CudaMultiSpline->num_split_splines;
@@ -625,7 +626,8 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (split_splines)
   {
     eval_multi_multi_UBspline_3d_cuda
-    (CudaMultiSpline, (CudaRealType*)cudapos.data(), CudaValuePointers.data(), N, spline_rank_pointers.data(), spline_events.data(), spline_streams.data());
+    (CudaMultiSpline, (CudaRealType*)cudapos.data(), CudaValuePointers.data(), N,
+     spline_rank_pointers.data(), spline_events.data(), spline_streams.data());
   } else
   {
     eval_multi_multi_UBspline_3d_cuda
@@ -729,7 +731,7 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (cudapos.size() < N)
   {
     hostPos.resize(N);
-    cudapos.resize(N,1.0,split_splines); // use managed memory here
+    cudapos.resize(N,1.0,split_splines); // use managed memory here for split splines
     cudapos2.resize(N);
     if(split_splines)
     {
@@ -803,13 +805,17 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     } else
       cudaDeviceSynchronize();
     for(unsigned int iw=0; iw<N; iw++)
-      for(unsigned int j=0; j<M; j++)
-        fprintf(stderr,"walker %i, orbital %i: %f+%fi, (%f+%fi, %f+%fi, %f+%fi) | %f+%fi\n",iw,j,
-                      CudaValuePointers[iw][j].real(),CudaValuePointers[iw][j].imag(),
-                      CudaGradLaplPointers[iw][0*M+j].real(),CudaGradLaplPointers[iw][0*M+j].imag(),
-                      CudaGradLaplPointers[iw][1*M+j].real(),CudaGradLaplPointers[iw][1*M+j].imag(),
-                      CudaGradLaplPointers[iw][2*M+j].real(),CudaGradLaplPointers[iw][2*M+j].imag(),
-                      CudaGradLaplPointers[iw][3*M+j].real(),CudaGradLaplPointers[iw][3*M+j].imag());
+      for(unsigned int g=0; g<gpu::device_group_size; g++)
+      {
+        int off = g*CudaMultiSpline->num_split_splines*N;
+        for(unsigned int j=0; j<CudaMultiSpline->num_split_splines; j++)
+          fprintf(stderr,"walker %i, orbital %i: %f+%fi, (%f+%fi, %f+%fi, %f+%fi) | %f+%fi\n",iw,j+g*CudaMultiSpline->num_split_splines,
+                        CudaValuePointers[iw][j+off].real(),CudaValuePointers[iw][j+off].imag(),
+                        CudaGradLaplPointers[iw][0*CudaMultiSpline->num_split_splines+j+4*off].real(),CudaGradLaplPointers[iw][0*CudaMultiSpline->num_split_splines+j+4*off].imag(),
+                        CudaGradLaplPointers[iw][1*CudaMultiSpline->num_split_splines+j+4*off].real(),CudaGradLaplPointers[iw][1*CudaMultiSpline->num_split_splines+j+4*off].imag(),
+                        CudaGradLaplPointers[iw][2*CudaMultiSpline->num_split_splines+j+4*off].real(),CudaGradLaplPointers[iw][2*CudaMultiSpline->num_split_splines+j+4*off].imag(),
+                        CudaGradLaplPointers[iw][3*CudaMultiSpline->num_split_splines+j+4*off].real(),CudaGradLaplPointers[iw][3*CudaMultiSpline->num_split_splines+j+4*off].imag());
+     }
   }
 #endif
 
@@ -873,7 +879,14 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (cudapos.size() < N)
   {
     hostPos.resize(N);
-    cudapos.resize(N);
+    cudapos.resize(N,1.0,split_splines);
+    cudapos2.resize(N);
+    if(split_splines)
+    {
+      cudaMemAdvise(cudapos.data(),N*sizeof(CudaPosType),cudaMemAdviseSetReadMostly,0);
+      for(unsigned int i=0; i<gpu::device_group_size; i++)
+        cudaMemAdvise(cudapos.data(),N*sizeof(CudaPosType),cudaMemAdviseSetAccessedBy,gpu::device_group_numbers[i]);
+    }
   }
   for (int iw=0; iw < N; iw++)
   {
@@ -888,25 +901,100 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (split_splines)
   {
     eval_multi_multi_UBspline_3d_vgl_cuda
-    (CudaMultiSpline, (CudaRealType*)cudapos.data(),  Linv_cuda.data(), CudaValuePointers.data(),
-     CudaGradLaplPointers.data(), N, CudaMultiSpline->num_splines, spline_rank_pointers.data(), spline_events.data(), spline_streams.data());
+    (CudaMultiSpline, (CudaRealType*)cudapos.data(),  Linv_cuda.data(),
+     CudaValuePointers.data(), CudaGradLaplPointers.data(),
+     N, CudaMultiSpline->num_split_splines,
+     spline_rank_pointers.data(), spline_events.data(), spline_streams.data());
   } else
   {
     eval_multi_multi_UBspline_3d_vgl_cuda
     (CudaMultiSpline, (CudaRealType*)cudapos.data(),  Linv_cuda.data(), CudaValuePointers.data(),
      CudaGradLaplPointers.data(), N, CudaMultiSpline->num_splines);
   }
+// AT debug:
+#ifdef SPLIT_SPLINE_DEBUG
+  if(gpu::rank==1)
+  {
+    if(split_splines)
+    {
+      int mygpu = gpu::device_group_numbers[gpu::relative_rank%gpu::device_group_size];
+      int curr_gpu;
+      int devicenr=0;
+      for (unsigned int i=0; i<gpu::device_group_size; i++)
+      {
+        devicenr=(i+gpu::relative_rank)%gpu::device_group_size;
+        curr_gpu=gpu::device_group_numbers[devicenr];
+        cudaSetDevice(curr_gpu);
+        cudaDeviceSynchronize();
+      }
+      cudaSetDevice(mygpu); // set device back to original GPU for this rank
+    } else
+      cudaDeviceSynchronize();
+    for(unsigned int iw=0; iw<N; iw++)
+      for(unsigned int g=0; g<gpu::device_group_size; g++)
+      {
+        int off = g*CudaMultiSpline->num_split_splines*N;
+        for(unsigned int j=0; j<CudaMultiSpline->num_split_splines; j++)
+          fprintf(stderr,"walker %i, orbital %i: %f+%fi, (%f+%fi, %f+%fi, %f+%fi) | %f+%fi\n",iw,j+g*CudaMultiSpline->num_split_splines,
+                        CudaValuePointers[iw][j+off].real(),CudaValuePointers[iw][j+off].imag(),
+                        CudaGradLaplPointers[iw][0*CudaMultiSpline->num_split_splines+j+4*off].real(),CudaGradLaplPointers[iw][0*CudaMultiSpline->num_split_splines+j+4*off].imag(),
+                        CudaGradLaplPointers[iw][1*CudaMultiSpline->num_split_splines+j+4*off].real(),CudaGradLaplPointers[iw][1*CudaMultiSpline->num_split_splines+j+4*off].imag(),
+                        CudaGradLaplPointers[iw][2*CudaMultiSpline->num_split_splines+j+4*off].real(),CudaGradLaplPointers[iw][2*CudaMultiSpline->num_split_splines+j+4*off].imag(),
+                        CudaGradLaplPointers[iw][3*CudaMultiSpline->num_split_splines+j+4*off].real(),CudaGradLaplPointers[iw][3*CudaMultiSpline->num_split_splines+j+4*off].imag());
+     }
+  }
+#endif
   // Now, add on phases
   for (int iw=0; iw < N; iw++)
     hostPos[iw] = newpos[iw];
-  cudapos = hostPos;
+  cudapos2 = hostPos;
   apply_phase_factors ((CudaRealType*) CudakPoints.data(),
-                       (CudaRealType*) cudapos.data(),
+                       (CudaRealType*) cudapos2.data(),
                        (CudaValueType**) CudaValuePointers.data(),
                        (CudaValueType**) phi.data(),
                        (CudaValueType**) CudaGradLaplPointers.data(),
                        (CudaValueType**) grad_lapl.data(),
                        CudaMultiSpline->num_splines, walkers.size(), row_stride);
+// AT debug:
+/*  if((gpu::rank==1) && (abort_counter%768==0))
+  {
+    gpu::host_vector<CudaValueType*> pointers;
+    pointers = CudaGradLaplPointers;
+    CudaValueType data[4*N*M], data_new[4*N*M], phi_orig[N*M], phi_new[N*M];
+    cudaMemcpy (data, pointers[0], 4*N*M*sizeof(CudaValueType), cudaMemcpyDeviceToHost);
+    pointers = grad_lapl;
+    cudaMemcpy (data_new, pointers[0], 4*N*M*sizeof(CudaValueType), cudaMemcpyDeviceToHost);
+    pointers = CudaValuePointers;
+    cudaMemcpy (phi_orig, pointers[0], N*M*sizeof(CudaValueType), cudaMemcpyDeviceToHost);
+    pointers = phi;
+    cudaMemcpy (phi_new, pointers[0], N*M*sizeof(CudaValueType), cudaMemcpyDeviceToHost);
+    std::cerr << "CudaGradLaplPointers -> grad_lapl (# splines: " << M << "):\n";
+    for (int iw=0; iw<N; iw++)
+      for(unsigned int g=0; g<gpu::device_group_size; g++)
+      {
+        int off = g*CudaMultiSpline->num_split_splines*N;
+        for(unsigned int j=0; j<CudaMultiSpline->num_split_splines; j++)
+          fprintf(stderr,"walker %i, orbital %i: %f+%fi -> %f+%fi (%f+%fi, %f+%fi, %f+%fi) | %f+%fi -> (%f+%fi, %f+%fi, %f+%fi) | %f+%fi\n",iw,j+g*CudaMultiSpline->num_split_splines,
+                        phi_orig[iw*CudaMultiSpline->num_split_splines+off+j].real(),phi_orig[iw*CudaMultiSpline->num_split_splines+off+j].imag(),
+                        phi_new[g*CudaMultiSpline->num_split_splines+j].real(),phi_new[g*CudaMultiSpline->num_split_splines+j].imag(),
+                        data[iw*4*CudaMultiSpline->num_split_splines+0*CudaMultiSpline->num_split_splines+j+4*off].real(),data[iw*4*CudaMultiSpline->num_split_splines+0*CudaMultiSpline->num_split_splines+j+4*off].imag(),
+                        data[iw*4*CudaMultiSpline->num_split_splines+1*CudaMultiSpline->num_split_splines+j+4*off].real(),data[iw*4*CudaMultiSpline->num_split_splines+1*CudaMultiSpline->num_split_splines+j+4*off].imag(),
+                        data[iw*4*CudaMultiSpline->num_split_splines+2*CudaMultiSpline->num_split_splines+j+4*off].real(),data[iw*4*CudaMultiSpline->num_split_splines+2*CudaMultiSpline->num_split_splines+j+4*off].imag(),
+                        data[iw*4*CudaMultiSpline->num_split_splines+3*CudaMultiSpline->num_split_splines+j+4*off].real(),data[iw*4*CudaMultiSpline->num_split_splines+3*CudaMultiSpline->num_split_splines+j+4*off].imag(),
+                        data_new[iw*4*M+0*M+j+g*CudaMultiSpline->num_split_splines].real(),data_new[iw*4*M+0*M+j+g*CudaMultiSpline->num_split_splines].imag(),
+                        data_new[iw*4*M+1*M+j+g*CudaMultiSpline->num_split_splines].real(),data_new[iw*4*M+1*M+j+g*CudaMultiSpline->num_split_splines].imag(),
+                        data_new[iw*4*M+2*M+j+g*CudaMultiSpline->num_split_splines].real(),data_new[iw*4*M+2*M+j+g*CudaMultiSpline->num_split_splines].imag(),
+                        data_new[iw*4*M+3*M+j+g*CudaMultiSpline->num_split_splines].real(),data_new[iw*4*M+3*M+j+g*CudaMultiSpline->num_split_splines].imag());
+      }
+  }
+  abort_counter++;*/
+#ifdef SPLIT_SPLINE_DEBUG
+  if(abort_counter>=3)
+  {
+    _exit(0);
+  } else
+    abort_counter++;
+#endif
 }
 #endif
 
@@ -994,7 +1082,8 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   {
     eval_multi_multi_UBspline_3d_cuda
     (CudaMultiSpline, (CudaRealType*) cudapos.data(),
-     CudaValuePointers.data(), N, spline_rank_pointers.data(), spline_events.data(), spline_streams.data());
+     CudaValuePointers.data(), N,
+     spline_rank_pointers.data(), spline_events.data(), spline_streams.data());
   } else
   {
     eval_multi_multi_UBspline_3d_cuda
@@ -1023,7 +1112,8 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   if (cudapos.size() < N)
   {
     hostPos.resize(N);
-    cudapos.resize(N);
+    cudapos.resize(N,1.0,split_splines);
+    cudapos2.resize(N);
   }
   for (int iw=0; iw < N; iw++)
   {
@@ -1034,12 +1124,11 @@ EinsplineSetExtended<std::complex<double> >::evaluate
     hostPos[iw] = ru;
   }
   cudapos = hostPos;
-// AT debug:
-//  std::cout << "# splines: " << CudaMultiSpline->num_splines << "\n";
   if (split_splines)
   {
     eval_multi_multi_UBspline_3d_cuda
-    (CudaMultiSpline, (CudaRealType*)cudapos.data(), CudaValuePointers.data(), N, spline_rank_pointers.data(), spline_events.data(), spline_streams.data());
+    (CudaMultiSpline, (CudaRealType*)cudapos.data(), CudaValuePointers.data(), N,
+     spline_rank_pointers.data(), spline_events.data(), spline_streams.data());
   } else
   {
     eval_multi_multi_UBspline_3d_cuda
@@ -1048,23 +1137,33 @@ EinsplineSetExtended<std::complex<double> >::evaluate
   // Now, add on phases
   for (int iw=0; iw < N; iw++)
     hostPos[iw] = pos[iw];
-  cudapos = hostPos;
+  cudapos2 = hostPos;
   apply_phase_factors((CudaRealType*) CudakPoints.data(),
-                      (CudaRealType*) cudapos.data(),
+                      (CudaRealType*) cudapos2.data(),
                       CudaValuePointers.data(),
                       phi.data(),
                       CudaMultiSpline->num_splines, N);
 // AT debug:
-/*  gpu::host_vector<CudaValueType*> pointers;
-  pointers = CudaValuePointers;
-  CudaValueType data[N], data_new[N];
-  cudaMemcpy (data, pointers[0], N*sizeof(CudaValueType), cudaMemcpyDeviceToHost);
-  pointers = phi;
-  cudaMemcpy (data_new, pointers[0], N*sizeof(CudaValueType), cudaMemcpyDeviceToHost);
-  std::cout << "CudaValuePointers -> phi (# splines: " << CudaMultiSpline->num_splines << "):\n";
-  for (int i=0; i<N; i++)
-    std::cout << i << ": " << data[i].real() << " + " << data[i].imag() << "i -> " << data_new[i].real() << " + " << data_new[i].imag() << "i\n";
-  std::cout.flush();
+/*  if(gpu::rank==1)
+  {
+    int M = CudaMultiSpline->num_splines;
+    CudaValueType phi_orig[N*M], phi_new[N*M];
+    gpu::host_vector<CudaValueType*> pointers;
+    pointers = CudaValuePointers;
+    cudaMemcpy (phi_orig, pointers[0], N*M*sizeof(CudaValueType), cudaMemcpyDeviceToHost);
+    pointers = phi;
+    cudaMemcpy (phi_new, pointers[0], N*M*sizeof(CudaValueType), cudaMemcpyDeviceToHost);
+    std::cerr << "CudaValues -> phi (# splines: " << M << "):\n";
+    for (int iw=0; iw<N; iw++)
+      for(unsigned int g=0; g<gpu::device_group_size; g++)
+      {
+        int off = g*CudaMultiSpline->num_split_splines*N;
+        for(unsigned int j=0; j<CudaMultiSpline->num_split_splines; j++)
+          fprintf(stderr,"walker %i, orbital %i: %f+%fi -> %f+%fi\n",iw,j+g*CudaMultiSpline->num_split_splines,
+                        phi_orig[iw*CudaMultiSpline->num_split_splines+off+j].real(),phi_orig[iw*CudaMultiSpline->num_split_splines+off+j].imag(),
+                        phi_new[g*CudaMultiSpline->num_split_splines+j].real(),phi_new[g*CudaMultiSpline->num_split_splines+j].imag());
+      }
+  }
   abort();*/
 #else
   app_error() << "EinsplineSetExtended<std::complex<double> >::evaluate at " 
