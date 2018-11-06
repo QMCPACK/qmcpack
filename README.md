@@ -21,12 +21,13 @@
  extensive use of toolchains, but the system has since been updated to
  eliminate the use of toolchain files for most cases.  The build
  system works with GNU, Intel, and IBM XLC compilers.  Specific compile options
- can be specified either through specific environmental or CMake
+ can be specified either through specific environment or CMake
  variables.  When the libraries are installed in standard locations,
- e.g., /usr, /usr/local, there is no need to set environmental or cmake
+ e.g., /usr, /usr/local, there is no need to set environment or cmake
  variables for the packages.
 
- See the manual in manual/qmcpack_manual.pdf for build examples on Linux, Mac OS X etc.
+ See the manuals linked at https://www.qmcpack.org/documentation or buildable via
+ manual/build_manual.sh for build examples on Linux, Mac OS X etc.
 
 ## Quick build
 
@@ -65,9 +66,9 @@ make -j 8
 
 ## Set the environment
 
- A number of enviornmental variables affect the build.  In particular
+ A number of environment variables affect the build.  In particular
  they can control the default paths for libraries, the default
- compilers, etc.  The list of enviornmental variables is given below:
+ compilers, etc.  The list of environment variables is given below:
 
 | Environment variable | Description |
 |----------------------|-------------|
@@ -81,10 +82,10 @@ make -j 8
 
 ## CMake options
 
- In addition to reading the enviornmental variables, CMake provides a
+ In addition to reading the environment variables, CMake provides a
  number of optional variables that can be set to control the build and
  configure steps.  When passed to CMake, these variables will take
- precident over the enviornmental and default variables.  To set them
+ precident over the environment and default variables.  To set them
  add -D FLAG=VALUE to the configure line between the cmake command and
  the path to the source directory.
 
@@ -176,7 +177,7 @@ make -j 8
 
 It is recommended to create a helper script that contains the
 configure line for CMake.  This is particularly useful when using
-environmental variables, packages are installed in custom locations,
+environment variables, packages are installed in custom locations,
 or the configure line may be long or complex.  In this case it is
 recommended to add "rm -rf CMake*" before the configure line to remove
 existing CMake configure files to ensure a fresh configure each time

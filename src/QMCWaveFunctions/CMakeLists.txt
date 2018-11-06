@@ -90,7 +90,7 @@ IF(OHMMS_DIM MATCHES 3)
 
   IF(NOT QMC_COMPLEX AND ENABLE_SOA)
     #lcao is deigned for localized orbitals in bulk and complex
-    SET(FERMION_SRCS ${FERMION_SRCS}  lcao/LCAOrbitalSet.cpp lcao/LCAOrbitalBuilder.cpp)
+    SET(FERMION_SRCS ${FERMION_SRCS}  lcao/LCAOrbitalSet.cpp lcao/LCAOrbitalBuilder.cpp lcao/CuspCorrection.cpp lcao/LCAOrbitalSetWithCorrection.cpp)
   ENDIF(NOT QMC_COMPLEX AND ENABLE_SOA)
 
   IF(QMC_CUDA)
@@ -180,15 +180,14 @@ IF(OHMMS_DIM MATCHES 3)
 ENDIF(OHMMS_DIM MATCHES 3)
 
 SET(FERMION_SRCS ${FERMION_SRCS}
-  Fermion/DiracDeterminantBase.cpp
-  Fermion/DiracDeterminantSoA.cpp
+  Fermion/DiracDeterminant.cpp
   Fermion/DiracDeterminantOpt.cpp
   Fermion/SlaterDet.cpp
   Fermion/SlaterDetBuilder.cpp
   Fermion/MultiSlaterDeterminant.cpp
   Fermion/MultiSlaterDeterminantFast.cpp
-  Fermion/MultiDiracDeterminantBase.cpp
-  Fermion/MultiDiracDeterminantBase.2.cpp
+  Fermion/MultiDiracDeterminant.cpp
+  Fermion/MultiDiracDeterminant.2.cpp
   Fermion/BackflowBuilder.cpp 
   Fermion/DiracDeterminantWithBackflow.cpp
   Fermion/SlaterDetWithBackflow.cpp

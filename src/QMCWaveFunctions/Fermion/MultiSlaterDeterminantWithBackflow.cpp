@@ -22,7 +22,7 @@ namespace qmcplusplus
 MultiSlaterDeterminantWithBackflow::MultiSlaterDeterminantWithBackflow(ParticleSet& targetPtcl, SPOSetProxyPtr upspo, SPOSetProxyPtr dnspo, BackflowTransformation *BF):MultiSlaterDeterminant(targetPtcl,upspo,dnspo),BFTrans(BF)
 {
   Optimizable=false;
-  OrbitalName="MultiSlaterDeterminantWithBackflow";
+  ClassName="MultiSlaterDeterminantWithBackflow";
 }
 
 WaveFunctionComponentPtr MultiSlaterDeterminantWithBackflow::makeClone(ParticleSet& tqp) const
@@ -872,6 +872,9 @@ void MultiSlaterDeterminantWithBackflow::evaluateDerivatives(ParticleSet& P,
             ValueType dpsi2=dpsia_dn(dnC,pa);
             ParticleSet::ParticleGradient_t& g1 = grads_up[upC];
             ParticleSet::ParticleGradient_t& g2 = grads_dn[dnC];
+#if ( ( __INTEL_COMPILER == 1900 ) && ( __INTEL_COMPILER_UPDATE == 0 ) )
+            #pragma omp simd reduction(+:dot1)
+#endif
             for(int k=0; k<n; k++)
               dot1 += dot((g2[k]-gmP[k]),dGa_up(upC,pa,k))
                       + dot((g1[k]-gmP[k]),dGa_dn(dnC,pa,k))

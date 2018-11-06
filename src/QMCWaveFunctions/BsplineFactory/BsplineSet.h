@@ -67,23 +67,14 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
     SplineAdoptor::set_spline(spline_r,spline_i,twist,ispline,level);
   }
 
-  inline ValueType RATIO(const ParticleSet& P, int iat, const ValueType* restrict arow)
-  {
-    //this is just an example how to resuse t_logpsi
-    int ip=omp_get_thread_num()*2;
-    // YYYY: need to fix
-    //return SplineAdoptor::evaluate_dot(P,iat,arow,reinterpret_cast<DataType*>(t_logpsi[ip]));
-    return ValueType();
-  }
-
   inline void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)
   {
     SplineAdoptor::evaluate_v(P,iat,psi);
   }
 
-  inline void evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM)
+  inline void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem)
   {
-    SplineAdoptor::evaluateValues(VP, psiM);
+    SplineAdoptor::evaluateValues(VP, psiM, SPOMem);
   }
 
   inline size_t estimateMemory(const int nP)
@@ -95,30 +86,6 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
                        ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi)
   {
     SplineAdoptor::evaluate_vgl(P,iat,psi,dpsi,d2psi);
-
-#if 0
-    //debug GL combo
-    CONSTEXPR double eps=std::numeric_limits<float>::epsilon();
-    ValueVector_t psi_copy(psi);
-    GLVector_t gl(psi.size());
-    SplineAdoptor::evaluate_vgl_combo(P,iat,psi_copy,gl);
-    auto gradX=gl.data(0);
-    auto gradY=gl.data(1);
-    auto gradZ=gl.data(2);
-    auto lap=gl.data(3);
-    double v_err=0, g_err=0, l_err=0;
-    for(size_t i=0; i<psi.size(); ++i)
-    {
-      v_err+=std::abs(psi[i]-psi_copy[i]);
-      double dx=std::abs(dpsi[i][0]-gradX[i]);
-      double dy=std::abs(dpsi[i][1]-gradY[i]);
-      double dz=std::abs(dpsi[i][2]-gradZ[i]);
-      g_err+=std::sqrt(dx*dx+dy*dy+dz*dz);
-      l_err+=std::abs(d2psi[i]-lap[i]);
-    }
-    if(v_err>eps || g_err > eps || l_err>eps)
-      std::cout << "ERROR " << v_err << " " << g_err << " " << l_err << std::endl;
-#endif
   }
 
   inline void evaluate(const ParticleSet& P, int iat,
@@ -167,12 +134,6 @@ struct BsplineSet: public SPOSet, public SplineAdoptor
       HessVector_t  h(grad_grad_logdet[i],OrbitalSetSize);
       SplineAdoptor::evaluate_vgh(P,iat,v,g,h);
     }
-  }
-
-  /** einspline does not need any other state data */
-  void evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bool newp)
-  {
-    SplineAdoptor::evaluate_vgl_combo(P,iat,vgl);
   }
 
 };

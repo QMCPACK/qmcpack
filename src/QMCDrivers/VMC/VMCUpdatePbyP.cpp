@@ -56,7 +56,7 @@ void VMCUpdatePbyP::advanceWalker(Walker_t& thisWalker, bool recompute)
   // start PbyP moves
   myTimers[1]->start();
   bool moved = false;
-  CONSTEXPR RealType mhalf(-0.5);
+  constexpr RealType mhalf(-0.5);
   for (int iter=0; iter<nSubSteps; ++iter)
   {
     //create a 3N-Dimensional Gaussian with variance=1

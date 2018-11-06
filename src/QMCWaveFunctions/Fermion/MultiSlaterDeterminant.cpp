@@ -34,7 +34,7 @@ MultiSlaterDeterminant::MultiSlaterDeterminant(ParticleSet& targetPtcl, SPOSetPr
   registerTimers();
   //Optimizable=true;
   Optimizable=false;
-  OrbitalName="MultiSlaterDeterminant";
+  ClassName="MultiSlaterDeterminant";
   usingCSF=false;
   FirstIndex_up = targetPtcl.first(0);
   LastIndex_up = targetPtcl.last(0);
@@ -77,7 +77,7 @@ WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) con
 //           spo->occup(i,nq++) = k;
 //         }
 //       }
-    DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetPtr) clone->spo_up,0);
+    DiracDeterminant* adet = new DiracDeterminant((SPOSetPtr) clone->spo_up,0);
     adet->set(clone->FirstIndex_up,clone->nels_up);
     adet->resetTargetParticleSet(tqp);
     clone->dets_up.push_back(adet);
@@ -93,7 +93,7 @@ WaveFunctionComponentPtr MultiSlaterDeterminant::makeClone(ParticleSet& tqp) con
 //           spo->occup(i,nq++) = k;
 //         }
 //       }
-    DiracDeterminantBase* adet = new DiracDeterminantBase((SPOSetPtr) clone->spo_dn,0);
+    DiracDeterminant* adet = new DiracDeterminant((SPOSetPtr) clone->spo_dn,0);
     adet->set(clone->FirstIndex_dn,clone->nels_dn);
     adet->resetTargetParticleSet(tqp);
     clone->dets_dn.push_back(adet);

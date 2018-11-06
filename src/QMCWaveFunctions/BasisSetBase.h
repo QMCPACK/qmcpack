@@ -157,6 +157,10 @@ struct RealBasisSetBase
   virtual void setBasisSetSize(int nbs)=0;
   virtual void evaluateVGL(const ParticleSet& P, int iat, vgl_type& vgl)=0;
   virtual void evaluateV(const ParticleSet& P, int iat, value_type* restrict vals)=0;
+  virtual bool is_S_orbital(int mo_idx, int ao_idx) { return false;}
+
+  /// Determine which orbitals are S-type.  Used for cusp correction.
+  virtual void queryOrbitalsForSType(const std::vector<bool> &corrCenter, std::vector<bool> &is_s_orbital) const {}
 };
 
 }

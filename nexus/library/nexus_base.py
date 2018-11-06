@@ -99,6 +99,7 @@ nexus_core_defaults = obj(
     status            = status_modes.none, # used by: ProjectManager
     emulate           = False,             # unused
     progress_tty      = False,             # used by: ProjectManager
+    graph_sims        = False,             # used by: ProjectManager
     command_line      = True,              # used by: Settings
     **nexus_core_noncore_defaults
     )

@@ -60,7 +60,7 @@ struct SphericalBasisSet
   IndexType CurrentOffset;
   ///reference to a DistanceTableData (ion-electron)
   const DistanceTableData* myTable;
-  ///bool to chosse Spehrical/Cartesian should be templated
+  ///bool to chosse Spherical/Cartesian should be templated
   bool useCartesian;
   ///spherical tensor unique to this set of SphericalOrbitals
   //AngularFunction_t* Ylm;
@@ -124,7 +124,7 @@ struct SphericalBasisSet
   }//=NL.size(); }
 
 
-  /** implement a BasisSetBase virutal function
+  /** implement a BasisSetBase virtual function
    *
    * Use the size of LM to set BasisSetSize
    */

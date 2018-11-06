@@ -77,7 +77,6 @@ qmc_calcs = [
     ]
 
 # create opt & DMC sim's for each bond length
-sims = []
 scale = 1.00
 directory = 'scale_'+str(scale)
 
@@ -107,7 +106,6 @@ scf = generate_pwscf(
     nosym        = True,
     wf_collect   = True,
     )
-sims.append(scf)
 
 # describe orbital conversion
 p2q = generate_pw2qmcpack(
@@ -117,7 +115,6 @@ p2q = generate_pw2qmcpack(
     write_psir   = False,
     dependencies = (scf,'orbitals'),
     )
-sims.append(p2q)
     
 # describe optimization run
 opt = generate_qmcpack(
@@ -133,7 +130,6 @@ opt = generate_qmcpack(
     calculations = opt_calcs,
     dependencies = (p2q,'orbitals'),
     )
-sims.append(opt)
 
 # describe DMC run
 qmc = generate_qmcpack(
@@ -149,7 +145,6 @@ qmc = generate_qmcpack(
     dependencies = [(p2q,'orbitals'),
                     (opt,'jastrow')],
     )
-sims.append(qmc)
 
 # execute all simulations
-run_project(sims) 
+run_project()

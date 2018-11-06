@@ -68,7 +68,7 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   void gather_tables(Communicate* comm)
   {
     BaseAdoptor::gather_tables(comm);
-    HybridBase::gather_atomic_tables(comm, this->offset_cplx, this->offset_real);
+    HybridBase::gather_atomic_tables(comm, BaseAdoptor::offset);
   }
 
   bool read_splines(hdf_archive& h5f)
@@ -113,13 +113,13 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
   }
 
 
-  template<typename VM>
-  inline void evaluateValues(VirtualParticleSet& VP, VM& psiM)
+  template<typename VM, typename VAV>
+  inline void evaluateValues(const VirtualParticleSet& VP, VM& psiM, VAV& SPOMem)
   {
     const size_t m=psiM.cols();
     if(VP.isOnSphere())
     {
-      Matrix<ST,aligned_allocator<ST> > multi_myV((ST*)VP.SPOMem.data(),VP.getTotalNum(),myV.size());
+      Matrix<ST,aligned_allocator<ST> > multi_myV((ST*)SPOMem.data(),VP.getTotalNum(),myV.size());
       const RealType smooth_factor=HybridBase::evaluateValuesC2X(VP,multi_myV);
       const RealType cone(1);
       if(smooth_factor<0)
@@ -170,16 +170,6 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
     return BaseAdoptor::estimateMemory(nP)+myV.size()*sizeof(ST)/sizeof(ValueType)*nP;
   }
 
-  template<typename TT>
-  inline TT evaluate_dot(const ParticleSet& P, int iat, const TT* restrict arow, ST* scratch)
-  {
-    Vector<ST> vtmp(scratch,myV.size());
-    if(HybridBase::evaluate_v(P,iat,vtmp))
-      return BaseAdoptor::evaluate_dot(P,iat,arow,scratch,false);
-    else
-      return BaseAdoptor::evaluate_dot(P,iat,arow,scratch,true);
-  }
-
   template<typename VV, typename GV>
   inline void evaluate_vgl(const ParticleSet& P, const int iat, VV& psi, GV& dpsi, VV& d2psi)
   {
@@ -214,24 +204,6 @@ struct HybridCplxSoA: public BaseAdoptor, public HybridAdoptorBase<typename Base
           psi[i] =   psi_AO[i]*smooth_factor +   psi[i]*(cone-smooth_factor);
       }
     }
-  }
-
-  /** evaluate VGL using VectorSoaContainer
-   * @param r position
-   * @param psi value container
-   * @param dpsi gradient-laplacian container
-   */
-  template<typename VGL>
-  inline void evaluate_vgl_combo(const ParticleSet& P, const int iat, VGL& vgl)
-  {
-    APP_ABORT("HybridCplxSoA::evaluate_vgl_combo not implemented!");
-    if(HybridBase::evaluate_vgh(P,iat,myV,myG,myH))
-    {
-      const PointType& r=P.activeR(iat);
-      BaseAdoptor::assign_vgl_soa(r,vgl);
-    }
-    else
-      BaseAdoptor::evaluate_vgl_combo(P,iat,vgl);
   }
 
   template<typename VV, typename GV, typename GGV>

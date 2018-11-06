@@ -27,6 +27,10 @@
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
 #include "QMCWaveFunctions/DiffWaveFunctionComponent.h"
 #include "Utilities/NewTimer.h"
+#ifdef QMC_CUDA
+#include "type_traits/CUDATypes.h"
+#endif
+
 /**@defgroup MBWfs Many-body wave function group
  * @brief Classes to handle many-body trial wave functions
  */
@@ -110,9 +114,7 @@ public:
   typedef WaveFunctionComponent::HessType           HessType;
   typedef WaveFunctionComponent::HessVector_t       HessVector_t;
 #ifdef QMC_CUDA
-  typedef WaveFunctionComponent::CudaValueType   CudaValueType;
-  typedef WaveFunctionComponent::CudaGradType    CudaGradType;
-  typedef WaveFunctionComponent::CudaRealType    CudaRealType;
+  using CTS = CUDAGlobalTypes;
   typedef WaveFunctionComponent::RealMatrix_t    RealMatrix_t;
   typedef WaveFunctionComponent::ValueMatrix_t   ValueMatrix_t;
   typedef WaveFunctionComponent::GradMatrix_t    GradMatrix_t;
@@ -143,30 +145,6 @@ public:
   }
   void getLogs(std::vector<RealType>& lvals);
   void getPhases(std::vector<RealType>& pvals);
-
-  inline RealType getAlternatePhaseDiff()
-  {
-    RealType apd=0.0;
-    for (int i=0; i<Z.size(); i++)
-    {
-      apd += Z[i]->getAlternatePhaseDiff();
-    }
-    return apd;
-  }
-  inline RealType getAlternatePhaseDiff(int iat)
-  {
-    RealType apd=0.0;
-    for (int i=0; i<Z.size(); i++)
-    {
-      apd += Z[i]->getAlternatePhaseDiff(iat);
-    }
-    return apd;
-  }
-  inline void alternateGrad(ParticleSet::ParticleGradient_t& G)
-  {
-    for (int i=0; i<Z.size(); i++)
-      Z[i]->alternateGrad(G);
-  }
 
   inline RealType getPhaseDiff() const
   {
@@ -236,10 +214,6 @@ public:
 
   /** functions to handle particle-by-particle update */
   RealType ratio(ParticleSet& P, int iat);
-  /** evaluate ratios for EE */
-  RealType ratioVector(ParticleSet& P, int iat, std::vector<RealType>& ratios);
-  /** evaluate ratio for RMC */
-  RealType alternateRatio(ParticleSet& P);
   ValueType full_ratio(ParticleSet& P, int iat);
 
   /** compulte multiple ratios to handle non-local moves and other virtual moves
@@ -264,10 +238,8 @@ public:
    TinyVector<ParticleSet::ParticleLaplacian_t,OHMMS_DIM> &lapl_grad);
 
   RealType ratioGrad(ParticleSet& P, int iat, GradType& grad_iat);
-  RealType alternateRatioGrad(ParticleSet& P, int iat, GradType& grad_iat);
 
   GradType evalGrad(ParticleSet& P, int iat);
-  GradType alternateEvalGrad(ParticleSet& P, int iat);
 
   void rejectMove(int iat);
   void acceptMove(ParticleSet& P, int iat);
@@ -372,8 +344,6 @@ private:
   ///fake particleset
   ParticleSet* tempP;
 
-  TrialWaveFunction();
-
   std::vector<NewTimer*> myTimers;
   std::vector<RealType> myTwist;
 
@@ -382,16 +352,16 @@ private:
   ///////////////////////////////////////////
 #ifdef QMC_CUDA
 private:
-  gpu::device_host_vector<CudaValueType>   GPUratios;
-  gpu::device_host_vector<CudaGradType>    GPUgrads;
-  gpu::device_host_vector<CudaValueType>   GPUlapls;
+  gpu::device_host_vector<CTS::ValueType>   GPUratios;
+  gpu::device_host_vector<CTS::GradType>    GPUgrads;
+  gpu::device_host_vector<CTS::ValueType>   GPUlapls;
 
 public:
   void freeGPUmem GPU_XRAY_TRACE ();
 
   void recompute GPU_XRAY_TRACE (MCWalkerConfiguration &W, bool firstTime=true);
 
-  void reserve GPU_XRAY_TRACE (PointerPool<gpu::device_vector<CudaValueType> > &pool,
+  void reserve GPU_XRAY_TRACE (PointerPool<gpu::device_vector<CTS::ValueType> > &pool,
                 bool onlyOptimizable=false);
   void getGradient GPU_XRAY_TRACE (MCWalkerConfiguration &W, int iat,
                     std::vector<GradType> &grad);

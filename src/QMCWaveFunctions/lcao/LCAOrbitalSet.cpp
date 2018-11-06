@@ -4,7 +4,7 @@
 //
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
-// File developed by: 
+// File developed by: Mark Dewing, mdewing@anl.gov, Argonne National Laboratory
 //
 // File created by: Jeongnim Kim, jeongnim.kim@intel.com, Intel Corp.
 //////////////////////////////////////////////////////////////////////////////////////
@@ -15,7 +15,7 @@
 
 namespace qmcplusplus
 {
-  LCAOrbitalSet::LCAOrbitalSet(basis_type* bs,int rl): 
+  LCAOrbitalSet::LCAOrbitalSet(basis_type* bs,int rl):
     myBasisSet(nullptr), C(nullptr), ReportLevel(rl),
     BasisSetSize(0), Identity(true), IsCloned(false)
   {
@@ -81,10 +81,10 @@ namespace qmcplusplus
   template<typename T,unsigned D>
     inline void Product_ABt(const VectorSoaContainer<T,D>& A, const Matrix<T>& B, VectorSoaContainer<T,D>& C)
     {
-      CONSTEXPR char transa = 't';
-      CONSTEXPR char transb = 'n';
-      CONSTEXPR T zone(1);
-      CONSTEXPR T zero(0);
+      constexpr char transa = 't';
+      constexpr char transb = 'n';
+      constexpr T zone(1);
+      constexpr T zero(0);
       BLAS::gemm(transa, transb, B.rows(), D, B.cols(),
           zone, B.data(), B.cols(), A.data(), A.capacity(),
           zero, C.data(), C.capacity());
@@ -120,22 +120,10 @@ namespace qmcplusplus
       }
     }
 
-  void LCAOrbitalSet::evaluateVGL(const ParticleSet& P, int iat, 
-      VGLVector_t vgl)
-  {
-    if(Identity)
-      myBasisSet->evaluateVGL(P,iat,vgl);
-    else
-    {
-      myBasisSet->evaluateVGL(P,iat,Temp);
-      Product_ABt(Temp,*C,vgl);
-    }
-  }
-
-  void LCAOrbitalSet::evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM)
+  void LCAOrbitalSet::evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem)
   {
     const int nVP = VP.getTotalNum();
-    Matrix<RealType> basisM(VP.SPOMem.data(), nVP, BasisSetSize);
+    Matrix<ValueType> basisM(SPOMem.data(), nVP, BasisSetSize);
     for(size_t j=0; j<nVP; j++)
     {
       Vector<RealType> vTemp(basisM[j],BasisSetSize);

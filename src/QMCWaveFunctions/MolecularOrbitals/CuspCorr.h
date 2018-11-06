@@ -10,8 +10,11 @@
 //
 // File created by: Miguel Morales, moralessilva2@llnl.gov, Lawrence Livermore National Laboratory
 //////////////////////////////////////////////////////////////////////////////////////
-    
-    
+
+
+/** @file CuspCorr.h
+  * @brief Corrections to electron-nucleus cusp for all-electron molecular calculations.
+  */
 
 #ifndef _CUSPCORR_
 #define _CUSPCORR_
@@ -33,6 +36,40 @@
 
 namespace qmcplusplus
 {
+
+/**
+  * @brief Cusp correction parameters
+  *
+  * From "Scheme for adding electron-nuclear cusps to Gaussian orbitals"  Ma, Towler, Drummond, and Needs
+  *  JCP 122, 224322 (2005)
+  *
+  * Equations 7 and 8 in the paper define the correction.  These are the parameters in those equations.
+  */
+
+struct CuspCorrectionParameters
+{
+  typedef QMCTraits::ValueType ValueType;
+  typedef QMCTraits::RealType RealType;
+
+  /// The cutoff radius
+  RealType Rc;
+
+  /// A shift to keep correction to a single sign
+  RealType C;
+
+  /// The sign of the wavefunction at the nucleus
+  RealType sg;
+
+  /// The coefficients of the polynomial \f$p(r)\f$ in Eq 8
+  TinyVector<ValueType, 5> alpha;
+
+  /// Flag to indicate the correction should be recalculated
+  int redo;
+
+  CuspCorrectionParameters(): Rc(0.0), C(0.0), sg(0.0), redo(0), alpha(0.0) {
+  }
+};
+
 
 template<class BS>
 class CuspCorr : public QMCTraits

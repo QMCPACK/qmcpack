@@ -14,7 +14,7 @@
 #include <memory>
 #include <mpi.h>
 #include<AFQMC/config.0.h>
-#include <Utilities/UtilityFunctions.h>
+#include <Utilities/FairDivide.h>
 
 namespace qmcplusplus
 {

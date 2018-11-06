@@ -27,8 +27,8 @@ namespace qmcplusplus
 
 QMCCostFunctionCUDA::QMCCostFunctionCUDA
 ( MCWalkerConfiguration& w, TrialWaveFunction& psi,
-  QMCHamiltonian& h):
-  QMCCostFunctionBase(w,psi,h)
+  QMCHamiltonian& h, Communicate* comm):
+  QMCCostFunctionBase(w,psi,h,comm)
 {
 }
 
@@ -42,7 +42,7 @@ QMCCostFunctionCUDA::~QMCCostFunctionCUDA()
 }
 
 
-/**  Perform the correlated sampling algorthim.
+/**  Perform the correlated sampling algorithm.
  */
 QMCCostFunctionCUDA::Return_t QMCCostFunctionCUDA::correlatedSampling(bool needDerivs)
 {
@@ -214,7 +214,7 @@ QMCCostFunctionCUDA::getConfigurations(const std::string& aroot)
     Psi.reserve (pool, false);
   else
     Psi.reserve (pool, true);
-  app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CudaRealType)
+  app_log() << "Each walker requires " << pool.getTotalSize() * sizeof(CTS::RealType)
             << " bytes in GPU memory.\n";
   // for (int iw=0; iw<W.WalkerList.size(); iw++) {
   //   Walker_t &walker = *(W.WalkerList[iw]);

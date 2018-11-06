@@ -73,7 +73,7 @@ public:
   OneBodySpinJastrowOrbital(const ParticleSet& centers, ParticleSet& els)
     : Spin(false), CenterRef(centers), FirstAddressOfdU(0), LastAddressOfdU(0)
   {
-    OrbitalName = "OneBodySpinJastrow";
+    ClassName = "OneBodySpinJastrow";
     U.resize(els.getTotalNum());
     myTableIndex=els.addTable(CenterRef,DT_AOS);
     //allocate vector of proper size  and set them to 0
@@ -485,10 +485,6 @@ public:
     return j1copy;
   }
 
-  void copyFrom(const WaveFunctionComponent& old)
-  {
-    //nothing to do
-  }
 };
 
 }

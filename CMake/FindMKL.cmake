@@ -1,9 +1,9 @@
-# Simple file to find MKL (if availible)
+# Simple file to find MKL (if available)
 # This needs a lot of work to make it robust
 INCLUDE( CheckCXXSourceCompiles )
 
 # Extremely Basic Support of common mkl module environment variables
-# or -DMKLROOT/-DMKL_HOME instead of prefered -DMKL_ROOT
+# or -DMKLROOT/-DMKL_HOME instead of preferred -DMKL_ROOT
 if (NOT MKL_ROOT)
   find_path(MKL_ROOT "mkl.h"
     HINTS ${MKLROOT} ${MKL_HOME} $ENV{MKLROOT} $ENV{MKL_ROOT} $ENV{MKL_HOME}

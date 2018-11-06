@@ -16,6 +16,7 @@
 #include "QMCWaveFunctions/SPOSet.h"
 #include "QMCWaveFunctions/BasisSetBase.h"
 
+
 namespace qmcplusplus
 {
   /** class to handle linear combinations of basis orbitals used to evaluate the Dirac determinants.
@@ -56,7 +57,7 @@ namespace qmcplusplus
 
     LCAOrbitalSet(const LCAOrbitalSet& in)=default;
 
-    ~LCAOrbitalSet();
+    virtual ~LCAOrbitalSet();
 
     SPOSet* makeClone() const;
 
@@ -74,7 +75,7 @@ namespace qmcplusplus
 
     /** set the OrbitalSetSize
     */
-    void setOrbitalSetSize(int norbs)
+    virtual void setOrbitalSetSize(int norbs)
     {
       OrbitalSetSize=norbs;
       Tempv.resize(OrbitalSetSize);
@@ -103,9 +104,7 @@ namespace qmcplusplus
 
     void evaluate(const ParticleSet& P, int iat, ValueVector_t& psi, GradVector_t& dpsi, ValueVector_t& d2psi);
 
-    void evaluateVGL(const ParticleSet& P, int iat, VGLVector_t vgl);
-
-    void evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM);
+    void evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem);
 
     size_t estimateMemory(const int nP);
 

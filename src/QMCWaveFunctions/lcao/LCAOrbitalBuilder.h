@@ -38,7 +38,7 @@ namespace qmcplusplus
      * \param els reference to the electrons
      * \param ions reference to the ions
      */
-    LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, xmlNodePtr cur);
+    LCAOrbitalBuilder(ParticleSet& els, ParticleSet& ions, Communicate *comm, xmlNodePtr cur);
     ~LCAOrbitalBuilder();
     void loadBasisSetFromXML(xmlNodePtr cur);
     SPOSet* createSPOSetFromXML(xmlNodePtr cur);
@@ -59,6 +59,9 @@ namespace qmcplusplus
     std::string h5_path;
     ///Number of periodic Images for Orbital evaluation
     TinyVector<int,3> PBCImages;
+
+    /// Enable cusp correction
+    bool doCuspCorrection;
 
     ///load basis set from hdf5 file
     void loadBasisSetFromH5();

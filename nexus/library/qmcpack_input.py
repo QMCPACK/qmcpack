@@ -1481,6 +1481,8 @@ class QIxmlFactory(Names):
                 type = kw[self.typekey2]
             elif self.default!=None:
                 type = self.default
+            elif self.typeindex==-1:
+                self.error('QMCPACK input file is misformatted\ncannot identify type for <{0}/> element\nwith contents:\n{1}\nplease find the XML element matching this description in the input file to identify the problem\nmost likely, it is missing attributes "{2}" or "{3}"'.format(self.name,str(v).rstrip(),self.typekey,self.typekey2))
             else:
                 type = a[self.typeindex]
             #end if
@@ -1527,7 +1529,7 @@ class Param(Names):
 
     def __call__(self,*args,**kwargs):
         if len(args)==0:
-            self.error('no arguments provided, should have recieved one XMLelement')
+            self.error('no arguments provided, should have received one XMLelement')
         elif not isinstance(args[0],XMLelement):
             return args[0]
             #self.error('first argument is not an XMLelement')
@@ -1892,6 +1894,7 @@ class determinant(QIxml):
 
 class occupation(QIxml):
     attributes = ['mode','spindataset','size','pairs','format']
+    text       = 'contents'
 #end class occupation
 
 class multideterminant(QIxml):
@@ -4461,6 +4464,7 @@ def generate_determinantset_old(type           = 'bspline',
                                 spin_polarized = False,
                                 source         = 'ion0',
                                 href           = 'MISSING.h5',
+                                excitation     = None,
                                 system         = None
                                 ):
     if system is None:
@@ -4505,6 +4509,39 @@ def generate_determinantset_old(type           = 'bspline',
         dset.twistnum = 0
     else:
         dset.twistnum = None
+    #end if
+    if excitation is not None:
+        format_failed = False
+        if not isinstance(excitation,(tuple,list)):
+            QmcpackInput.class_error('excitation must be a tuple or list\nyou provided type: {0}\nwith value: {1}'.format(excitation.__class__.__name__,excitation))
+        elif len(excitation)!=2 or excitation[0] not in ('up','down') or not isinstance(excitation[1],str):
+            format_failed = True
+        else:
+            try:
+                tmp = array(excitation[1].split(),dtype=int)
+            except:
+                format_failed = True
+            #end try
+        #end if
+        if format_failed:
+            QmcpackInput.class_error('excitation must be a tuple or list with with two elements\nthe first element must be either "up" or "down"\nand the second element must be integers separated by spaces, e.g. "-216 +217"\nyou provided: {0}'.format(excitation))
+        #end if
+        spin_channel,excitation = excitation
+        if spin_channel=='up':
+            det = dset.get('updet')
+        elif spin_channel=='down':
+            det = dset.get('downdet')
+        #end if
+        occ = det.occupation
+        occ.mode     = 'excited'
+        occ.contents = '\n'+excitation+'\n'
+        if '-' in excitation or '+' in excitation:
+            # assume excitation of form '-216 +217'
+            occ.format = 'energy'
+        else:
+            # assume excitation of form '6 36 6 37'
+            occ.format   = 'band'
+        #end if
     #end if
     return dset
 #end def generate_determinantset_old
@@ -5421,6 +5458,7 @@ def generate_basic_input(id             = 'qmc',
                          hybrid_rcut    = None,
                          hybrid_lmax    = None,
                          orbitals_h5    = 'MISSING.h5',
+                         excitation     = None,
                          system         = 'missing',
                          pseudos        = None,
                          jastrows       = 'generateJ12',
@@ -5509,6 +5547,9 @@ def generate_basic_input(id             = 'qmc',
 
 
     if det_format=='new':
+        if excitation is not None:
+            QmcpackInput.class_error('user provided "excitation" input argument with new style determinant format\nplease add det_format="old" and try again')
+        #end if
         if system!=None and isinstance(system.structure,Jellium):
             ssb = generate_sposet_builder(
                 type           = 'heg',
@@ -5560,7 +5601,8 @@ def generate_basic_input(id             = 'qmc',
             precision      = precision,
             href           = orbitals_h5,
             spin_polarized = spin_polarized,
-            system         = system
+            excitation     = excitation,
+            system         = system,
             )
     else:
         QmcpackInput.class_error('generate_basic_input argument det_format is invalid\n  received: {0}\n  valid options are: new,old'.format(det_format))

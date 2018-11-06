@@ -2,15 +2,24 @@ PROJECT(qmcpack)
 
 
 #####################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.10)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.6.0)
 IF(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
-  IF(CMAKE_VERSION VERSION_GREATER 3.1.3 AND NOT $ENV{CRAYPE_VERSION} MATCHES ".")
+  IF (COMPILING_ON_BGQ)
+    # On BG/Q, the HDF libraries variable includes some supporting shared libraries
+    # such as libm.so.  With the old behavior of CMP0060, these were converted
+    # to -lm for the linker, which then correctly selects the static version.
+    # With the new behavior of CMP0060, the form of the libraries are left alone
+    # on the link line (eg. /usr/lib64/libm.so), and this causes a linker error
+    # because shared libraries are not allowed with static linking.
+    cmake_policy(SET CMP0060 OLD)
+  ENDIF()
+  IF(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
     cmake_policy(SET CMP0056 NEW)
     # This policy insures that the CMAKE_EXE_LINKER_FLAGS of the calling project
     # are used in try_compile test cmake projects.
     # CHECK_CXX_SOURCE_COMPILES and others depend on try_compile
-  endif(CMAKE_VERSION VERSION_GREATER 3.1.3 AND NOT $ENV{CRAYPE_VERSION} MATCHES ".")
+  endif(NOT $ENV{CRAYPE_VERSION} MATCHES ".")
   IF(CMAKE_GENERATOR MATCHES "Ninja")
     cmake_policy(SET CMP0058 NEW)
   ENDIF(CMAKE_GENERATOR MATCHES "Ninja")
@@ -131,6 +140,7 @@ SET(QMC_OMP 1 CACHE BOOL "Enable/disable OpenMP")
 SET(QMC_COMPLEX 0 CACHE INTEGER "Build for complex binary")
 SET(PRINT_DEBUG 0 CACHE BOOL "Enable/disable debug printing")
 SET(QMC_CUDA 0 CACHE BOOL "Build with GPU support through CUDA")
+SET(ENABLE_SOA 0 CACHE BOOL "Enable/disable SoA optimization")
 
 ######################################################################
 # set debug printout
@@ -178,11 +188,11 @@ SET(BUILD_UNIT_TESTS 1 CACHE BOOL "Build unit tests")
 SET(BUILD_SANDBOX 1 CACHE BOOL "Build sandbox tests and miniapps")
 SET(BUILD_LMYENGINE_INTERFACE 1 CACHE BOOL "Build LMY engine")
 IF (QMC_CUDA AND BUILD_LMYENGINE_INTERFACE)
-  MESSAGE(STATUS "LMY engine is not compatiable with CUDA build! Disabling LMY engine")
+  MESSAGE(STATUS "LMY engine is not compatible with CUDA build! Disabling LMY engine")
   SET(BUILD_LMYENGINE_INTERFACE 0)
 ENDIF()
 IF(MIXED_PRECISION AND BUILD_LMYENGINE_INTERFACE)
-  MESSAGE(STATUS "LMY engine is not compatiable with CPU mixed precision build! Disabling LMY engine")
+  MESSAGE(STATUS "LMY engine is not compatible with CPU mixed precision build! Disabling LMY engine")
   SET(BUILD_LMYENGINE_INTERFACE 0)
 ENDIF()
 SET(BUILD_AFQMC 0 CACHE BOOL "Build with AFQMC")
@@ -193,15 +203,6 @@ SET(BUILD_FCIQMC 0 CACHE BOOL "Build with FCIQMC")
 #SET(MPIP_PROFILE 0)
 SET(QMC_BUILD_STATIC 0 CACHE BOOL "Link to static libraries")
 SET(ENABLE_TIMERS 0 CACHE BOOL "Enable internal timers")
-
-######################################################################
-# Performance-related macros
-# QMC_SK_USE_RECURSIVE enable/disable recursive evalaution of SK
-######################################################################
-SET(QMC_SK_USE_RECURSIVE 0 CACHE BOOL "Use recursive evalaution of SK")
-IF(QMC_SK_USE_RECURSIVE)
-  MESSAGE(STATUS "SK structure factor uses a recursive algorithm.")
-ENDIF(QMC_SK_USE_RECURSIVE)
 
 ######################################################################
 # FIXED PARAMETERS for test and legacy reasons
@@ -378,37 +379,18 @@ ELSE(CMAKE_TOOLCHAIN_FILE)
     INCLUDE(${PROJECT_CMAKE}/GNUCompilers.cmake)
   ELSEIF( ${COMPILER} MATCHES "Clang" )
     INCLUDE(${PROJECT_CMAKE}/ClangCompilers.cmake)
+  ELSEIF( ${COMPILER} MATCHES "PGI" )
+    INCLUDE(${PROJECT_CMAKE}/PGICompilers.cmake)
   ELSE()
     MESSAGE(WARNING "No default file for compiler (${COMPILER})")
   ENDIF()
 
-  # Check for the compiler C++11 flag, if we go to requiring >= cmake 3.1.3 we could drop this
-  # and just write
-  # set(CMAKE_CXX_STANDARD_REQUIRED 11 CACHE INTEGER "C++ stangard must be at least 11")
-  SET(CXX11_FLAG "-std=c++11")
-  #check if the CXX compiler supports -std=c++11 option
-  include(CheckCXXCompilerFlag) # works with clean load paths and non system compilers with CMP0056
-  CHECK_CXX_COMPILER_FLAG(${CXX11_FLAG} CXX_COMPILER_SUPPORT_CXX11)
+  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
 
-  # Force the flag on Cray with Intel compiler, because the Cray wrapper
-  #  prints an warning that interferes with the flag detection code
-  #  with older versions of CMake.
-  IF($ENV{CRAYPE_VERSION} MATCHES ".")
-    IF( ${COMPILER} MATCHES "Intel" AND NOT CXX_COMPILER_SUPPORT_CXX11)
-      SET(CXX_COMPILER_SUPPORT_CXX11 TRUE)
-      MESSAGE(STATUS "Forcing C++11 support on Cray with Intel")
-    ENDIF()
-  ENDIF()
-
-  IF (CXX_COMPILER_SUPPORT_CXX11)
-    # avoid repeated -std=c++11 flag
-    STRING(REPLACE "++" "\\+\\+" CXX11_FLAG_MATCH ${CXX11_FLAG})
-    IF(NOT CMAKE_CXX_FLAGS MATCHES ${CXX11_FLAG_MATCH})
-      SET (CMAKE_CXX_FLAGS "${CXX11_FLAG} ${CMAKE_CXX_FLAGS}")
-    ENDIF()
-  ELSE()
-    MESSAGE(FATAL_ERROR "A compiler supporting C++11 is required. Use a newer C++ compiler.")
-  ENDIF()
+  # Check that a C++ 14 standard library is configured
+  include(CMake/TestCxx14Library.cmake)
 
   #-------------------------------------------------------------------
   #  check MPI installation

@@ -52,8 +52,6 @@ H2O_molecule = generate_physical_system(
     H               = 1,
     )
 
-sims = []
-
 # DFT SCF To Generate Converged Density
 scf = generate_pwscf(
     identifier      = 'scf',
@@ -69,7 +67,6 @@ scf = generate_pwscf(
     mixing_mode     = 'local-TF',
     degauss         = 0.001,
     )
-sims.append(scf)
 
 # Convert DFT Wavefunction Into HDF5 File For QMCPACK
 p2q = generate_pw2qmcpack(
@@ -79,7 +76,6 @@ p2q = generate_pw2qmcpack(
     write_psir      = False,
     dependencies    = (scf,'orbitals'),
     )
-sims.append(p2q)
 
 # QMC Optimization Parameters - Coarse Sampling Set
 linopt1 = linear(
@@ -127,7 +123,6 @@ opt = generate_qmcpack(
                        loop(max=4,qmc=linopt2)],
     dependencies    = (p2q,'orbitals'),
     )
-sims.append(opt)
 
 # QMC VMC/DMC With Optimized Jastrow Parameters
 qmc = generate_qmcpack(
@@ -162,6 +157,5 @@ qmc = generate_qmcpack(
         ],
     dependencies   = [(p2q,'orbitals'),(opt,'jastrow')],
     )
-sims.append(qmc)
 
-run_project(sims)
+run_project()

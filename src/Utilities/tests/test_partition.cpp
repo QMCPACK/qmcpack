@@ -13,7 +13,7 @@
 #include "catch.hpp"
 
 #include <iostream>
-#include "Utilities/UtilityFunctions.h"
+#include "Utilities/FairDivide.h"
 #include <stdio.h>
 #include <string>
 #include <vector>
@@ -84,6 +84,23 @@ TEST_CASE("FairDivideLow_four", "[utilities]")
   REQUIRE(out[0] == 0);
   REQUIRE(out[1] == 2);
   REQUIRE(out[2] == 4);
+}
+
+TEST_CASE("FairDivideAligned", "[utilities]")
+{
+  int first, last;
+
+  FairDivideAligned(37,6,5,2,first,last);
+  REQUIRE(first == 24);
+  REQUIRE(last  == 36);
+
+  FairDivideAligned(37,6,5,4,first,last);
+  REQUIRE(first == 37);
+  REQUIRE(last  == 37);
+
+  FairDivideAligned(37,6,1,0,first,last);
+  REQUIRE(first == 0);
+  REQUIRE(last  == 37);
 }
 
 }

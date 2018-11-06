@@ -79,7 +79,7 @@ public:
     PtclRef = &p;
     init(p);
     FirstTime = true;
-    OrbitalName = "TwoBodyJastrow";
+    ClassName = "TwoBodyJastrow";
     p.addTable(p,DT_AOS);
   }
 
@@ -542,11 +542,6 @@ public:
       }
     j2copy->Optimizable = Optimizable;
     return j2copy;
-  }
-
-  void copyFrom(const WaveFunctionComponent& old)
-  {
-    //nothing to do
   }
 
   RealType ChiesaKEcorrection()

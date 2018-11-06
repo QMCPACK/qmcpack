@@ -41,7 +41,7 @@ public:
   Grid *grid;
   /// The values of the derivative of the represented function on the
   /// boundary.  If each value is greater that 1e30, we compute
-  /// bondary conditions assuming that the second derivative is zero at
+  /// boundary conditions assuming that the second derivative is zero at
   /// that boundary.
   double StartDeriv, EndDeriv;
 

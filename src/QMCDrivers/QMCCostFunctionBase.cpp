@@ -30,8 +30,8 @@
 namespace qmcplusplus
 {
 
-QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h):
-  MPIObjectBase(0),
+QMCCostFunctionBase::QMCCostFunctionBase(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, Communicate* comm):
+  MPIObjectBase(comm),
   W(w),H(h),Psi(psi),  Write2OneXml(true),
   PowerE(2), NumCostCalls(0), NumSamples(0), MaxWeight(1e6),
   w_en(0.9), w_var(0.1), w_abs(0.0), w_w(0.0), w_beta(0.0), GEVType("mixed"),

@@ -64,7 +64,7 @@ bool ElectronGasComplexOrbitalBuilder::put(xmlNodePtr cur)
   aAttrib.put(cur);
   //typedef DiracDeterminant<EGOSet>  Det_t;
   //typedef SlaterDeterminant<EGOSet> SlaterDeterminant_t;
-  typedef DiracDeterminantBase  Det_t;
+  typedef DiracDeterminant  Det_t;
   typedef SlaterDet SlaterDeterminant_t;
   int nat=targetPtcl.getTotalNum();
   int nup=nat/2;
@@ -94,8 +94,8 @@ bool ElectronGasComplexOrbitalBuilder::put(xmlNodePtr cur)
   return true;
 }
 
-ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, xmlNodePtr cur)
-  :egGrid(p.Lattice),unique_twist(-1.0),has_twist(false)
+ElectronGasSPOBuilder::ElectronGasSPOBuilder(ParticleSet& p, Communicate *comm, xmlNodePtr cur)
+  : SPOSetBuilder(comm), egGrid(p.Lattice),unique_twist(-1.0),has_twist(false)
 {
 }
 

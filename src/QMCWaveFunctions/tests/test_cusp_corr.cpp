@@ -25,6 +25,7 @@
 #include "QMCWaveFunctions/MolecularOrbitals/SphericalBasisSet.h"
 #include "QMCWaveFunctions/MolecularOrbitals/NGOBuilder.h"
 #include "QMCWaveFunctions/MolecularOrbitals/CuspCorr.h"
+#include "QMCWaveFunctions/MolecularOrbitals/LCOrbitalSetWithCorrection.h"
 
 #include "QMCWaveFunctions/SPOSetBuilderFactory.h"
 
@@ -219,7 +220,7 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
   REQUIRE(chi2 == Approx(25854.2846426019));
 
 
-  double data[9];
+  CuspCorrectionParameters data;
   Vector<double> xgrid;
   Vector<double> rad_orb;
   xgrid.resize(1);
@@ -229,6 +230,48 @@ TEST_CASE("CuspCorrection He", "[wavefunction]")
   cusp.execute(0, 0, 2.0, &bs_phi, &bs_eta, xgrid, rad_orb, "none", rc, data);
 
   SPOSetBuilderFactory::clear();
+
+}
+
+TEST_CASE("readCuspInfo", "[wavefunction]")
+{
+  OHMMS::Controller->initialize(0, NULL);
+  Communicate *c = OHMMS::Controller;
+
+  typedef OneDimGridBase<double> GridType;
+  typedef LCOrbitalSetWithCorrection<LocalizedBasisSet<SphericalBasisSet<NGOrbital, GridType>>, false> OrbType;
+
+  OrbType orb;
+
+  Matrix<CuspCorrectionParameters> info;
+  int num_center = 3;
+  int orbital_set_size = 7;
+  info.resize(num_center, orbital_set_size);
+  orb.cuspInfoFile = "hcn_downdet.cuspInfo.xml";
+  orb.objectName = "downdet";
+  orb.setOrbitalSetSize(orbital_set_size);
+  bool okay = orb.readCuspInfo(info);
+  REQUIRE(okay);
+
+  // N
+  REQUIRE(info(0,0).redo == Approx(0.0));
+  REQUIRE(info(0,0).C == Approx(0.0));
+  REQUIRE(info(0,0).sg == Approx(1.0));
+  REQUIRE(info(0,0).Rc == Approx(0.0769130700800000));
+  REQUIRE(info(0,0).alpha[0] == Approx(2.29508580995773));
+  REQUIRE(info(0,0).alpha[1] == Approx(-7.00028778782666));
+  REQUIRE(info(0,0).alpha[2] == Approx(0.834942828252775));
+  REQUIRE(info(0,0).alpha[3] == Approx(-4.61597420905980));
+  REQUIRE(info(0,0).alpha[4] == Approx(31.6558091872316));
+
+
+  // Spot check a few values from these centers
+  // C
+  REQUIRE(info(0,6).C == Approx(0.0));
+  REQUIRE(info(0,6).alpha[4] == Approx(0.0));
+
+  // H
+  REQUIRE(info(2,4).alpha[4] == Approx(-404.733151049101));
 
 }
 

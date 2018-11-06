@@ -1,12 +1,11 @@
-<?xml version="1.0"?>
 <simulation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mcc.uiuc.edu/qmc/schema/molecu.xsd">
   <project id="NiO-fcc-S2-dmc" series="1">
-    <application name="qmcapp" role="molecu" class="serial" version="0.2">
+    <application class="serial" name="qmcapp" role="molecu" version="0.2">
       DMC for NiO-fcc-S2-tw0
     </application>
   </project>
 
-  <random seed="49154"/>
+  <random seed="49154" />
   <qmcsystem>
   <simulationcell>
     <parameter name="lattice">
@@ -29,7 +28,7 @@
       <parameter name="valence">18</parameter>
       <parameter name="atomicnumber">28</parameter>
     </group>
-    <attrib name="position" datatype="posArray" condition="1">
+    <attrib condition="1" datatype="posArray" name="position">
     0.75   0.25   0
     0.75   0.75   0.5
     0.25   0.75   0
@@ -39,7 +38,7 @@
     0.5   0.5   0
     0.5   0   0.5
     </attrib>
-    <attrib name="ionid" datatype="stringArray">
+    <attrib datatype="stringArray" name="ionid">
       O  O  O  O  Ni  Ni  Ni  Ni  
     </attrib>
   </particleset>
@@ -52,48 +51,48 @@
     </group>
   </particleset>
   <wavefunction name="psi0" target="e">
-    <determinantset type="einspline" href="../NiO-fcc-supertwist111-supershift000-S2.h5" source="i" tilematrix="1 0 0 0 1 1 0 1 -1" twistnum="-1" gpu="yes" meshfactor="0.9" precision="single" twist="0  0  0">
+    <determinantset gpu="yes" href="../NiO-fcc-supertwist111-supershift000-S2.h5" meshfactor="0.9" precision="single" source="i" tilematrix="1 0 0 0 1 1 0 1 -1" twist="0  0  0" twistnum="-1" type="einspline">
       <slaterdeterminant>
-        <determinant id="updet" size="48" ref="updet">
+        <determinant id="updet" ref="updet" size="48">
           <occupation mode="ground" spindataset="0">
           </occupation>
         </determinant>
-        <determinant id="downdet" size="48" ref="downdet">
+        <determinant id="downdet" ref="downdet" size="48">
           <occupation mode="ground" spindataset="1">
           </occupation>
         </determinant>
       </slaterdeterminant>
     </determinantset>
-    <jastrow name="J2" type="Two-Body" function="Bspline" print="yes">
-      <correlation speciesA="u" speciesB="u" size="10" rcut="2.786390">
+    <jastrow function="Bspline" name="J2" print="yes" type="Two-Body">
+      <correlation rcut="2.786390" size="10" speciesA="u" speciesB="u">
         <coefficients id="uu" type="Array"> 0.234640575 0.1846886226 0.1427586205 0.1083119352 0.08052638206 0.05790688309 0.03928040756 0.02432600964 0.01247779878 0.005246890101</coefficients>
       </correlation>
-      <correlation speciesA="u" speciesB="d" size="10" rcut="2.786390">
+      <correlation rcut="2.786390" size="10" speciesA="u" speciesB="d">
         <coefficients id="ud" type="Array"> 0.3381086127 0.2399379018 0.1751276672 0.1304162353 0.09632425901 0.06883277705 0.04615358993 0.02801161206 0.01404870185 0.005837695667</coefficients>
       </correlation>
     </jastrow>
-    <jastrow name="J1" type="One-Body" function="Bspline" print="yes" source="i">
-      <correlation elementType="O" cusp="0.0" size="10" rcut="2.786390">
+    <jastrow function="Bspline" name="J1" print="yes" source="i" type="One-Body">
+      <correlation cusp="0.0" elementType="O" rcut="2.786390" size="10">
         <coefficients id="O" type="Array"> -0.3785218769 -0.3571030158 -0.3234071008 -0.2781890613 -0.2285312881 -0.1826024623 -0.1440669387 -0.1027059364 -0.06271019941 -0.0317928424</coefficients>
       </correlation>
-      <correlation elementType="Ni" cusp="0.0" size="10" rcut="2.786390">
+      <correlation cusp="0.0" elementType="Ni" rcut="2.786390" size="10">
         <coefficients id="Ni" type="Array"> -1.698251511 -1.625904789 -1.463043662 -1.224936521 -0.9638532833 -0.7144734009 -0.4946076005 -0.3106998983 -0.1656202083 -0.07465271393</coefficients>
       </correlation>
     </jastrow>
   </wavefunction>
-  <hamiltonian name="h0" type="generic" target="e">
-    <pairpot type="pseudo" name="PseudoPot" source="i" wavefunction="psi0" format="xml">
-      <pseudo elementType="Ni" href="../Ni.opt.xml"/>
-      <pseudo elementType="O" href="../O.xml"/>
+  <hamiltonian name="h0" target="e" type="generic">
+    <pairpot format="xml" name="PseudoPot" source="i" type="pseudo" wavefunction="psi0">
+      <pseudo elementType="Ni" href="../Ni.opt.xml" />
+      <pseudo elementType="O" href="../O.xml" />
     </pairpot>
-    <constant name="IonIon" type="coulomb" source="i" target="i"/>
-    <pairpot name="ElecElec" type="coulomb" source="e" target="e" physical="true"/>
+    <constant name="IonIon" source="i" target="i" type="coulomb" />
+    <pairpot name="ElecElec" physical="true" source="e" target="e" type="coulomb" />
   </hamiltonian>
 
 
-  <qmc method="vmc" move="pbyp" gpu="yes">
-    <estimator name="LocalEnergy" hdf5="no" />
-    <parameter name="walkers">               32 </parameter>
+  <qmc gpu="yes" method="vmc" move="pbyp">
+    <estimator hdf5="no" name="LocalEnergy" />
+    <parameter name="walkers">32</parameter>
     <parameter name="stepsbetweensamples">    1 </parameter>
     <parameter name="warmupSteps">            5 </parameter>
     <parameter name="substeps">               5 </parameter>
@@ -102,9 +101,9 @@
     <parameter name="timestep">             1.0 </parameter>
     <parameter name="usedrift">              no </parameter>
   </qmc>
-  <qmc method="vmc" move="pbyp" gpu="yes">
-    <estimator name="LocalEnergy" hdf5="no" />
-    <parameter name="walkers">               32 </parameter>
+  <qmc gpu="yes" method="vmc" move="pbyp">
+    <estimator hdf5="no" name="LocalEnergy" />
+    <parameter name="walkers">32</parameter>
     <parameter name="stepsbetweensamples">    1 </parameter>
     <parameter name="warmupSteps">            5 </parameter>
     <parameter name="substeps">               5 </parameter>
@@ -113,9 +112,9 @@
     <parameter name="timestep">             1.0 </parameter>
     <parameter name="usedrift">             yes </parameter>
   </qmc>
-  <qmc method="dmc" move="pbyp" checkpoint="-1" gpu="yes">
-    <estimator name="LocalEnergy" hdf5="no" />
-    <parameter name="walkers">               32 </parameter>
+  <qmc checkpoint="-1" gpu="yes" method="dmc" move="pbyp">
+    <estimator hdf5="no" name="LocalEnergy" />
+    <parameter name="walkers">32</parameter>
     <!--parameter name="targetwalkers">  32000 </parameter-->
     <!--parameter name="max_walkers">   0    </parameter-->
     <parameter name="reconfiguration">      yes </parameter>

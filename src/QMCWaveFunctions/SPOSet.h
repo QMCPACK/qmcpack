@@ -28,6 +28,9 @@
 #if !defined(ENABLE_SOA)
 #include "Message/CommOperators.h"
 #endif
+#ifdef QMC_CUDA
+#include "type_traits/CUDATypes.h"
+#endif
 
 #if defined(ENABLE_SMARTPOINTER)
 #include <boost/shared_ptr.hpp>
@@ -38,7 +41,7 @@ namespace qmcplusplus
 
 /** base class for Single-particle orbital sets
  *
- * SPOSet stands for S(ingle)P(article)O(rbital)SetBase which contains
+ * SPOSet stands for S(ingle)P(article)O(rbital)Set which contains
  * a number of single-particle orbitals with capabilities of evaluating \f$ \psi_j({\bf r}_i)\f$
  */
 class SPOSet: public QMCTraits
@@ -46,6 +49,7 @@ class SPOSet: public QMCTraits
 public:
   typedef OrbitalSetTraits<ValueType>::IndexVector_t IndexVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueVector_t ValueVector_t;
+  typedef OrbitalSetTraits<ValueType>::ValueAlignedVector_t ValueAlignedVector_t;
   typedef OrbitalSetTraits<ValueType>::ValueMatrix_t ValueMatrix_t;
   typedef OrbitalSetTraits<ValueType>::GradVector_t  GradVector_t;
   typedef OrbitalSetTraits<ValueType>::GradMatrix_t  GradMatrix_t;
@@ -66,8 +70,6 @@ public:
   bool Optimizable;
   ///flag to calculate ionic derivatives
   bool ionDerivs;
-  ///if true, can use GL type, default=false
-  bool CanUseGLCombo;
   ///number of Single-particle orbitals
   IndexType OrbitalSetSize;
   /// Optimizable variables
@@ -186,23 +188,13 @@ public:
   virtual void
   evaluate(const ParticleSet& P, int iat, ValueVector_t& psi)=0;
 
-  /** compute dot_product of new row and old row */
-  virtual ValueType RATIO(const ParticleSet& P, int iat, const ValueType*
-      restrict arow);
-
-  /** evaluate VGL using SoA container for gl
-   *
-   * If newp is true, use particle set data for the proposed move
-   */
-  virtual void
-    evaluateVGL(const ParticleSet& P, int iat, VGLVector_t& vgl, bool newp);
-
   /** evaluate values for the virtual moves, e.g., sphere move for nonlocalPP
    * @param VP virtual particle set
    * @param psiM single-particle orbitals psiM(i,j) for the i-th particle and the j-th orbital
+   * @param SPOMem scratch space for SPO value evaluation, alignment is required.
    */
   virtual void
-  evaluateValues(VirtualParticleSet& VP, ValueMatrix_t& psiM);
+  evaluateValues(const VirtualParticleSet& VP, ValueMatrix_t& psiM, ValueAlignedVector_t& SPOMem);
 
   /** estimate the memory needs for evaluating SPOs of particles in the size of ValueType
    * @param nP, number of particles.
@@ -263,17 +255,6 @@ public:
                                    , const ParticleSet &source, int iat_src
                                    , GradMatrix_t &grad_phi, HessMatrix_t &grad_grad_phi, GradMatrix_t &grad_lapl_phi);
 
-  virtual void evaluateBasis (const ParticleSet &P, int first, int last
-                              , ValueMatrix_t &basis_val,  GradMatrix_t  &basis_grad, ValueMatrix_t &basis_lapl);
-
-  virtual void evaluateForDeriv (const ParticleSet &P, int first, int last
-                                 , ValueMatrix_t &basis_val,  GradMatrix_t  &basis_grad, ValueMatrix_t &basis_lapl);
-
-  virtual inline void setpm(int x) {};
-
-  virtual void copyParamsFromMatrix (const opt_variables_type& active
-                                     , const ValueMatrix_t &mat, std::vector<RealType> &destVec);
-
   virtual PosType get_k(int orb)
   {
     return PosType();
@@ -297,40 +278,32 @@ public:
   virtual void rotate_B(const std::vector<RealType> &rot_mat) { };
 
 #ifdef QMC_CUDA
-
-  /** evaluate the values of this single-particle orbital set
-   * @param P current ParticleSet
-   * @param r is the position of the particle
-   * @param psi values of the SPO
-   */
-  virtual void
-  evaluate (const ParticleSet& P, const PosType& r, std::vector<RealType> &psi);
-
+  using CTS = CUDAGlobalTypes;
   virtual void initGPU() {  }
 
   //////////////////////////////////////////
   // Walker-parallel vectorized functions //
   //////////////////////////////////////////
   virtual void
-  reserve (PointerPool<gpu::device_vector<CudaValueType> > &pool) { }
+  reserve (PointerPool<gpu::device_vector<CTS::ValueType> > &pool) { }
 
   virtual void
-  evaluate (std::vector<Walker_t*> &walkers, int iat, gpu::device_vector<CudaValueType*> &phi);
+  evaluate (std::vector<Walker_t*> &walkers, int iat, gpu::device_vector<CTS::ValueType*> &phi);
 
   virtual void evaluate (std::vector<Walker_t*> &walkers, std::vector<PosType> &new_pos
-                         , gpu::device_vector<CudaValueType*> &phi);
+                         , gpu::device_vector<CTS::ValueType*> &phi);
 
   virtual void
   evaluate (std::vector<Walker_t*> &walkers,
             std::vector<PosType> &new_pos,
-            gpu::device_vector<CudaValueType*> &phi,
-            gpu::device_vector<CudaValueType*> &grad_lapl_list,
+            gpu::device_vector<CTS::ValueType*> &phi,
+            gpu::device_vector<CTS::ValueType*> &grad_lapl_list,
             int row_stride);
 
   virtual void
-  evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaRealType*> &phi);
+  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::RealType*> &phi);
   virtual void
-  evaluate (std::vector<PosType> &pos, gpu::device_vector<CudaComplexType*> &phi);
+  evaluate (std::vector<PosType> &pos, gpu::device_vector<CTS::ComplexType*> &phi);
 #endif
 
 #if !defined(ENABLE_SOA)

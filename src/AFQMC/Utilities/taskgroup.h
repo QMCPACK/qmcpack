@@ -43,7 +43,7 @@ class TaskGroup: public MPIObjectBase, public AFQMCInfo {
 
   void setBuffer(SPComplexSMVector* buf) { commBuff = buf; }
 
-  // right now using std::vector and std::string to make the initial implementatino
+  // right now using std::vector and std::string to make the initial implementations
   //   easier, but this is not efficient and can lead to memory fragmentation for large 
   //   processor counts (e.g. > 10k)
   bool setup(int ncore, int nnode, bool print=false) { 

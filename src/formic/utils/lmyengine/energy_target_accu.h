@@ -181,7 +181,7 @@ class ETCompute {
     
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////
-    // \brief funciton that calculates average energy and target function value
+    // \brief function that calculates average energy and target function value
     //
     //
     //
