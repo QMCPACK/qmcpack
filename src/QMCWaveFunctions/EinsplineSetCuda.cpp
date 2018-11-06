@@ -480,7 +480,8 @@ EinsplineSetExtended<T>::get_split_spline_pointers()
     }
     if(spline_rank_handles.size()<size)
       spline_rank_handles.resize(size);
-    OHMMS::Controller->allgather(reinterpret_cast<char*>(rank_handle.data()),reinterpret_cast<char*>(spline_rank_handles.data()),sizeof(cudaIpcMemHandle_t));
+
+    MPI_Allgather(&rank_handle[0], sizeof(cudaIpcMemHandle_t), MPI_CHAR, &spline_rank_handles[0], sizeof(cudaIpcMemHandle_t), MPI_CHAR, OHMMS::Controller->getMPI());
 
     if((spline_rank_pointers.size()<gpu::device_group_size) || (spline_events.size()<gpu::device_group_size) || (spline_streams.size()<gpu::device_group_size))
     {
