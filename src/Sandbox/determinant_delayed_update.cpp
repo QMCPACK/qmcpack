@@ -121,6 +121,7 @@ int main(int argc, char** argv)
     Vector<ValueType> psiV(nels), Ainv_row(nels);
 
     DiracMatrix<ValueType> detEng;
+    DelayedUpdate<ValueType, mValueType> FahyEng;
     DelayedUpdate<ValueType, mValueType> delayedEng;
 
     delayedEng.resize(nels,delay);
@@ -141,16 +142,14 @@ int main(int argc, char** argv)
       {
         clock_mc.restart();
         generate(random_th, psiV.data(), nels);
-        ratio_0=simd::dot(psiM0[iel],psiV.data(),nels);
-
-        delayedEng.getInvRow(psiM_inv,iel,Ainv_row.data());
-        ratio_1=simd::dot(Ainv_row.data(),psiV.data(),nels);
+        ratio_0=FahyEng.ratio(psiM0,iel, psiV);
+        ratio_1=delayedEng.ratio(psiM_inv,iel, psiV);
 
         err += std::abs(ratio_1-ratio_0);
         if(std::abs(ratio_0)>0.5*random_th())
         {
-          detEng.updateRow(psiM0,psiV.data(),iel,ratio_0);
-          delayedEng.acceptRow(psiM_inv,psiV.data(),iel);
+          FahyEng.updateRow(psiM0,iel,psiV);
+          delayedEng.acceptRow(psiM_inv,iel,psiV);
         }
       }
       delayedEng.updateInvMat(psiM_inv);
@@ -167,15 +166,14 @@ int main(int argc, char** argv)
         {
           generate(random_th, psiV.data(), nels);
           clock_mc.restart();
-          delayedEng.getInvRow(psiM_inv,iel,Ainv_row.data());
-          ratio=simd::dot(Ainv_row.data(),psiV.data(),nels);
+          ratio=delayedEng.ratio(psiM_inv, iel, psiV);
           t_ratio_loc+=clock_mc.elapsed();
 
           if(std::abs(ratio)>0.5*random_th())
           {
             naccepted_loc++;
             clock_mc.restart();
-            delayedEng.acceptRow(psiM_inv,psiV.data(),iel);
+            delayedEng.acceptRow(psiM_inv, iel, psiV);
             t_accept_loc+=clock_mc.elapsed();
           }
         }
@@ -196,13 +194,13 @@ int main(int argc, char** argv)
         {
           generate(random_th, psiV.data(), nels);
           clock_mc.restart();
-          ratio=simd::dot(psiM_inv[iel],psiV.data(),nels);
+          ratio=FahyEng.ratio(psiM_inv, iel, psiV);
           t_ratio_loc+=clock_mc.elapsed();
           if(std::abs(ratio)>0.5*random_th())
           {
             naccepted_loc++;
             clock_mc.restart();
-            detEng.updateRow(psiM_inv,psiV.data(),iel,ratio);
+            FahyEng.updateRow(psiM_inv, iel, psiV);
             t_accept_loc+=clock_mc.elapsed();
           }
         }
