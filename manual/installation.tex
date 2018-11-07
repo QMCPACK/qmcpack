@@ -938,6 +938,34 @@ Currently Loaded Modulefiles:
 
 \end{verbatim}
 
+\subsection{Installing on systems with ARMv8 based processors}
+The following build recipe was verified using the `Arm Compiler for HPC' on the ANL JLSE Comanche system with Cavium ThunderX2 processors on 6 November 2018.
+\begin{verbatim}
+# load armclang compiler
+module load Generic-AArch64/RHEL/7/arm-hpc-compiler/18.4
+# load Arm performance libraries
+module load ThunderX2CN99/RHEL/7/arm-hpc-compiler-18.4/armpl/18.4.0
+# define path to pre-installed packages
+export HDF5_ROOT=</path/to/hdf5/install/>
+export BOOST_ROOT=</path/to/boost/install> # header-only, no need to build
+\end{verbatim}
+Then using the following command
+\begin{verbatim}
+mkdir build_armclang
+cd build_armclang
+cmake -DCMAKE_C_COMPILER=armclang -DCMAKE_CXX_COMPILER=armclang++ -DQMC_MPI=0 \
+      -DCMAKE_C_COMPILER_ID=Clang -DCMAKE_CXX_COMPILER_ID=Clang \
+      -DCMAKE_CXX_COMPILER_VERSION=5.0 -DCMAKE_CXX_STANDARD_COMPUTED_DEFAULT=98 \
+      -DCMAKE_C_FLAGS="-march=armv8-a" -DCMAKE_CXX_FLAGS="-march=armv8-a" \
+      -DLAPACK_LIBRARIES="-L$ARMPL_DIR/lib -larmpl_mp" \
+      -DFFTW_INCLUDE_DIR="$ARMPL_DIR/include" \
+      -DFFTW_LIBRARIES="$ARMPL_DIR/lib/libarmpl_mp.a" \
+      ..
+make -j 56
+\end{verbatim}
+Note that armclang is recognized as an `unknown' compiler by cmake (v3.12.4) and we need to force it as clang to apply necessary flags.
+This workaround will not be necessary in the near future.
+
 \subsection{Installing on Windows}
 Install the Windows Subsystem for Linux and Bash on Windows.
 Open a bash shell and follow the install directions for Ubuntu in Section \ref{sec:buildubuntu}.
