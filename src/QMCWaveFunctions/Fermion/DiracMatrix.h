@@ -153,20 +153,6 @@ namespace qmcplusplus {
         Lwork=static_cast<int>(lw);
         m_work.resize(Lwork); 
       }
-
-      inline void updateRow(Matrix<T>& a, T* arow, int rowchanged, T c_ratio_in)
-      {
-        const int m=a.rows();
-        const int lda=a.cols();
-        CONSTEXPR T cone(1);
-        CONSTEXPR T czero(0);
-        T temp[lda], rcopy[lda];
-        T c_ratio=cone/c_ratio_in;
-        BLAS::gemv('T', m, m, c_ratio, a.data(), lda, arow, 1, czero, temp, 1);
-        temp[rowchanged]=cone-c_ratio;
-        simd::copy_n(a[rowchanged],m,rcopy);
-        BLAS::ger(m,m,-cone,rcopy,1,temp,1,a.data(),lda);
-      }
     };
 
   template<typename T, typename T_hp>
@@ -178,7 +164,10 @@ namespace qmcplusplus {
       std::vector<int> delay_list;
       int delay_count;
 
-      DelayedUpdate(): delay_count(0) {}
+      const T* Ainv_row_ptr;
+      T curRatio;
+
+      DelayedUpdate(): delay_count(0), Ainv_row_ptr(nullptr) {}
 
       inline void resize(int norb, int delay)
       {
@@ -197,18 +186,18 @@ namespace qmcplusplus {
         delay_list.resize(delay);
       }
 
-      inline void getInvRow(const Matrix<T>& Ainv, int rowchanged, const T* & new_AinvRow)
+      inline void getInvRow(const Matrix<T>& Ainv, int rowchanged)
       {
         if ( delay_count == 0 )
         {
-          new_AinvRow = Ainv[rowchanged];
+          Ainv_row_ptr = Ainv[rowchanged];
           return;
         }
         CONSTEXPR T cone(1);
         CONSTEXPR T czero(0);
-        const T* AinvRow=Ainv[rowchanged];
-        const int norb=Ainv.rows();
-        const int lda_Binv=Binv.cols();
+        const T* AinvRow = Ainv[rowchanged];
+        const int norb = Ainv.rows();
+        const int lda_Binv = Binv.cols();
         T temp[lda_Binv];
         // save AinvRow to new_AinvRow
         simd::copy_n(AinvRow, norb, V[delay_count]);
@@ -216,21 +205,79 @@ namespace qmcplusplus {
         BLAS::gemv('T', norb, delay_count, cone, U.data(), norb, AinvRow, 1, czero, B[delay_count], 1);
         BLAS::gemv('N', delay_count, delay_count, cone, Binv.data(), lda_Binv, B[delay_count], 1, czero, temp, 1);
         BLAS::gemv('N', norb, delay_count, -cone, V.data(), norb, temp, 1, cone, V[delay_count], 1);
-        new_AinvRow=V[delay_count];
+        Ainv_row_ptr = V[delay_count];
       }
 
-      inline void acceptRow(Matrix<T>& Ainv, T* arow, int rowchanged)
+      template<typename VVT>
+      inline T ratio(const Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
       {
+        getInvRow(Ainv, rowchanged);
+        return curRatio = simd::dot(Ainv_row_ptr,psiV.data(),Ainv.cols());
+      }
+
+      template<typename GT>
+      inline GT evalGrad(const Matrix<T>& Ainv, int rowchanged, const GT* dpsiV)
+      {
+        getInvRow(Ainv, rowchanged);
+        return simd::dot(Ainv_row_ptr,dpsiV,Ainv.cols());
+      }
+
+      template<typename VVT, typename GGT, typename GT>
+      inline T ratioGrad(const Matrix<T>& Ainv, int rowchanged, const VVT& psiV, const GGT& dpsiV, GT& g)
+      {
+        if( delay_count == 0 )
+        {
+          g = simd::dot(Ainv[rowchanged],dpsiV.data(),Ainv.cols());
+          return curRatio = simd::dot(Ainv[rowchanged],psiV.data(),Ainv.cols());
+        }
+        else if( Ainv_row_ptr )
+        {
+          g = simd::dot(Ainv_row_ptr,dpsiV.data(),Ainv.cols());
+          return curRatio = simd::dot(Ainv_row_ptr,psiV.data(),Ainv.cols());
+        }
+        else
+        {
+          throw std::runtime_error("DelayedUpdate : this should never happen!");
+          return T(0);
+        }
+      }
+
+      // SM-1 Fahy immediate update
+      template<typename VVT>
+      inline void updateRow(Matrix<T>& a, int rowchanged, const VVT& psiV)
+      {
+        // safe mechanism
+        Ainv_row_ptr = nullptr;
+
+        const int m = a.rows();
+        const int lda = a.cols();
         CONSTEXPR T cone(1);
         CONSTEXPR T czero(0);
-        const int norb=Ainv.rows();
-        const int lda_Binv=Binv.cols();
+        T temp[lda], rcopy[lda];
+        T c_ratio = cone / curRatio;
+        BLAS::gemv('T', m, m, c_ratio, a.data(), lda, psiV.data(), 1, czero, temp, 1);
+        temp[rowchanged] = cone-c_ratio;
+        simd::copy_n(a[rowchanged],m,rcopy);
+        BLAS::ger(m,m,-cone,rcopy,1,temp,1,a.data(),lda);
+      }
+
+      // accept with the update delayed
+      template<typename VVT>
+      inline void acceptRow(Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
+      {
+        // safe mechanism
+        Ainv_row_ptr = nullptr;
+
+        CONSTEXPR T cone(1);
+        CONSTEXPR T czero(0);
+        const int norb = Ainv.rows();
+        const int lda_Binv = Binv.cols();
         simd::copy_n(Ainv[rowchanged], norb, V[delay_count]);
-        simd::copy_n(arow, norb, U[delay_count]);
+        simd::copy_n(psiV.data(), norb, U[delay_count]);
         delay_list[delay_count] = rowchanged;
         delay_count++;
         // the new row in B has been computed, now compute the new column
-        BLAS::gemv('T', norb, delay_count, cone, V.data(), norb, arow, 1, czero, B.data()+delay_count-1, lda_Binv);
+        BLAS::gemv('T', norb, delay_count, cone, V.data(), norb, psiV.data(), 1, czero, B.data()+delay_count-1, lda_Binv);
         if(delay_count==1)
         {
           Binv[0][0]=1.0/T_hp(B[0][0]);

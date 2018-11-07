@@ -272,8 +272,6 @@ public:
   ValueVector_t psiV;
   GradVector_t dpsiV;
   ValueVector_t d2psiV;
-  // up-to-date Ainv row
-  const ValueType *Ainv_row_ptr;
 
   /// temporal matrix in higher precision for the accurate inversion.
   ValueMatrix_hp_t psiM_hp;

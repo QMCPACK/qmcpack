@@ -31,8 +31,7 @@ namespace qmcplusplus
  *@param first index of the first particle
  */
 DiracDeterminant::DiracDeterminant(SPOSetPtr const &spos, int first):
-  NP(0), Phi(spos), FirstIndex(first),
-  ndelay(0), Ainv_row_ptr(nullptr),
+  NP(0), Phi(spos), FirstIndex(first), ndelay(0),
   UpdateTimer("DiracDeterminant::update",timer_level_fine),
   RatioTimer("DiracDeterminant::ratio",timer_level_fine),
   InverseTimer("DiracDeterminant::inverse",timer_level_fine),
@@ -140,9 +139,7 @@ DiracDeterminant::evalGrad(ParticleSet& P, int iat)
 {
   WorkingIndex = iat-FirstIndex;
   RatioTimer.start();
-  DiracDeterminant::GradType g;
-  delayedEng.getInvRow(psiM, WorkingIndex, Ainv_row_ptr);
-  g = simd::dot(Ainv_row_ptr,dpsiM[WorkingIndex],NumOrbitals);
+  GradType g = delayedEng.evalGrad(psiM, WorkingIndex, dpsiM[WorkingIndex]);
   RatioTimer.stop();
   return g;
 }
@@ -157,11 +154,7 @@ DiracDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   WorkingIndex = iat-FirstIndex;
   UpdateMode=ORB_PBYP_PARTIAL;
   GradType rv;
-  // define Ainv_row_ptr if no delay, otherwise defined by evalGrad
-  if ( ndelay == 0 || delayedEng.delay_count == 0 )
-    Ainv_row_ptr = psiM[WorkingIndex];
-  curRatio=simd::dot(Ainv_row_ptr,psiV.data(),NumOrbitals);
-  rv=simd::dot(Ainv_row_ptr,dpsiV.data(),NumOrbitals);
+  curRatio = delayedEng.ratioGrad(psiM, WorkingIndex, psiV, dpsiV, rv);
   grad_iat += ((RealType)1.0/curRatio) * rv;
   RatioTimer.stop();
   return curRatio;
@@ -175,9 +168,9 @@ void DiracDeterminant::acceptMove(ParticleSet& P, int iat)
   LogValue +=std::log(std::abs(curRatio));
   UpdateTimer.start();
   if (ndelay)
-    delayedEng.acceptRow(psiM,psiV.data(),WorkingIndex);
+    delayedEng.acceptRow(psiM,WorkingIndex,psiV);
   else
-    detEng.updateRow(psiM,psiV.data(),WorkingIndex,curRatio);
+    delayedEng.updateRow(psiM,WorkingIndex,psiV);
   if(UpdateMode == ORB_PBYP_PARTIAL)
   {
     simd::copy(dpsiM[WorkingIndex],  dpsiV.data(),  NumOrbitals);
@@ -306,9 +299,7 @@ DiracDeterminant::ValueType DiracDeterminant::ratio(ParticleSet& P, int iat)
   Phi->evaluate(P, iat, psiV);
   SPOVTimer.stop();
   RatioTimer.start();
-  delayedEng.getInvRow(psiM, WorkingIndex, Ainv_row_ptr);
-  curRatio=simd::dot(Ainv_row_ptr,psiV.data(),NumOrbitals);
-  //curRatio = DetRatioByRow(psiM, psiV,WorkingIndex);
+  curRatio = delayedEng.ratio(psiM, WorkingIndex, psiV);
   RatioTimer.stop();
   return curRatio;
 }
