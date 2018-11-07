@@ -253,13 +253,13 @@ class PHMSD: public AFQMCInfo
      * v: [NMO^2][nW]
      */
     template<class MatX, class MatA>
-    void vHS(const MatX& X, MatA&& v, double a=1.0) {
+    void vHS(MatX&& X, MatA&& v, double a=1.0) {
       assert( X.shape()[0] == HamOp.local_number_of_cholesky_vectors() );
       if(transposed_G_for_vbias_)
         assert( X.shape()[1] == v.shape()[0] );
       else    
         assert( X.shape()[1] == v.shape()[1] );
-      HamOp.vHS(X,std::forward<MatA>(v),a);
+      HamOp.vHS(std::forward<MatX>(X),std::forward<MatA>(v),a);
       TG.local_barrier();    
     }
 

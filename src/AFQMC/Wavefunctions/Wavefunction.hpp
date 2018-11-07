@@ -94,7 +94,7 @@ class dummy_wavefunction
   }
 
   template<class MatX, class MatA>
-  void vHS(const MatX& X, MatA&& v, double a=1.0) {
+  void vHS(MatX&& X, MatA&& v, double a=1.0) {
     throw std::runtime_error("calling visitor on dummy_wavefunction object");  
   }
 

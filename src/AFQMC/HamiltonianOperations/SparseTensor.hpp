@@ -258,7 +258,7 @@ std::cout<<"\n";
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==1)>,
              typename = void
             >
-    void vHS(const MatA& X, MatB&& v, double a=1., double c=0.) {
+    void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
       assert( Spvn.shape()[1] == X.shape()[0] );
       assert( Spvn.shape()[0] == v.shape()[0] );
       using Type = typename std::decay<MatB>::type::element;
@@ -273,7 +273,7 @@ std::cout<<"\n";
              typename = typename std::enable_if_t<(std::decay<MatA>::type::dimensionality==2)>,
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
             >
-    void vHS(const MatA& X, MatB&& v, double a=1., double c=0.) {
+    void vHS(MatA& X, MatB&& v, double a=1., double c=0.) {
       assert( Spvn.shape()[1] == X.shape()[0] );
       assert( Spvn.shape()[0] == v.shape()[0] );
       assert( X.shape()[1] == v.shape()[1] );

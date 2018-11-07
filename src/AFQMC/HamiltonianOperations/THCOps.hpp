@@ -549,7 +549,7 @@ std::cout<<"\n";
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==1)>,
              typename = void
             >
-    void vHS(MatA const& X, MatB&& v, double a=1., double c=0.) {
+    void vHS(MatA & X, MatB&& v, double a=1., double c=0.) {
         boost::const_multi_array_ref<ComplexType,2> X_(X.origin(),extents[X.shape()[0]][1]);
         boost::multi_array_ref<ComplexType,2> v_(v.origin(),extents[1][v.shape()[0]]);
         vHS(X_,v_,a,c);
@@ -559,7 +559,7 @@ std::cout<<"\n";
              typename = typename std::enable_if_t<(std::decay<MatA>::type::dimensionality==2)>,
              typename = typename std::enable_if_t<(std::decay<MatB>::type::dimensionality==2)>
             >
-    void vHS(MatA const& X, MatB&& v, double a=1., double c=0.) {
+    void vHS(MatA & X, MatB&& v, double a=1., double c=0.) {
 //Timer.reset("T0");
 //Timer.reset("T1");
 //Timer.reset("T2");

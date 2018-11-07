@@ -318,6 +318,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
                 ma::transpose(buff({0,Lkn.shape()[0]},{0,Lkn.shape()[1]}),Lnk);      
               }  
               // doing this "by-hand" now
+              Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[nd],QKtok2[Q][K]);
               boost::multi::array_ref<SPComplexType,3> Llbn(std::addressof(*LQKlnb[Q][K].origin()),
                                                            {nmo_per_kp[K],nocc_per_kp[nd][QKtok2[Q][K]],nchol_per_kp[Q]});
               for(int l=0; l<nmo_per_kp[K]; ++l) {
@@ -359,6 +360,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
                 ma::transpose(buff({0,Lkn.shape()[0]},{0,Lkn.shape()[1]}),Lnk);
               }
               // doing this "by-hand" now
+              Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[nd],QKtok2[Q][nkpts+K]);
               boost::multi::array_ref<SPComplexType,3> Llbn(std::addressof(*LQKlnb[Q][K].origin()),
                                                            {nmo_per_kp[K],nocc_per_kp[nd][QKtok2[Q][nkpts+K]],nchol_per_kp[Q]});
               for(int l=0; l<nmo_per_kp[K]; ++l) {
@@ -396,11 +398,20 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
                                                          {nmo_per_kp[QKtok2[Q][K]],nchol_per_kp[Q]});
               boost::multi::array_ref<SPComplexType,2> Lnk(Lakn[a].origin(),
                                                          {nchol_per_kp[Q],nmo_per_kp[QKtok2[Q][K]]});
+/*
               //buff({0,Lkn.shape()[0]},{0,Lkn.shape()[1]}) = Lkn;
               auto b_(buff({0,Lkn.shape()[0]},{0,Lkn.shape()[1]}));
               b_ = Lkn;
               ma::transpose(buff({0,Lkn.shape()[0]},{0,Lkn.shape()[1]}),Lnk);
+*/
+              for(int k=0; k<nmo_per_kp[QKtok2[Q][K]]; k++)
+                for(int n=0; n<nchol_per_kp[Q]; n++)
+                  buff[k][n] = Lkn[k][n];
+              for(int k=0; k<nmo_per_kp[QKtok2[Q][K]]; k++)
+                for(int n=0; n<nchol_per_kp[Q]; n++)
+                  Lnk[n][k] = buff[k][n];
             }
+            Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[nd],QKtok2[Q][K]);
             // doing this "by-hand" now
             boost::multi::array_ref<SPComplexType,3> Llbn(std::addressof(*LQKlnb[Q][K].origin()),
                            {nmo_per_kp[K],nocc_per_kp[nd][QKtok2[Q][K]],nchol_per_kp[Q]});
@@ -420,8 +431,16 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
                         {nocc_per_kp[nd][QKtok2[Q][K]],nchol_per_kp[Q]});
               boost::multi::array_ref<SPComplexType,2> Lnb(Llbn[l].origin(),
                         {nchol_per_kp[Q],nocc_per_kp[nd][QKtok2[Q][K]]});
+/*
               buff({0,Lbn.shape()[0]},{0,Lbn.shape()[1]}) = Lbn;
               ma::transpose(buff({0,Lbn.shape()[0]},{0,Lbn.shape()[1]}),Lnb);
+*/
+              for(int b=0; b<nocc_per_kp[nd][QKtok2[Q][K]]; b++)
+                for(int n=0; n<nchol_per_kp[Q]; n++)
+                  buff[b][n] = Lbn[b][n];
+              for(int b=0; b<nocc_per_kp[nd][QKtok2[Q][K]]; b++)
+                for(int n=0; n<nchol_per_kp[Q]; n++)
+                  Lnb[n][b] = buff[b][n];
             }
           }
         }
@@ -463,17 +482,126 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
 
   int global_ncvecs = std::accumulate(nchol_per_kp.begin(),nchol_per_kp.end(),0);
 
+/*
   ComplexType E_(0.0);
+  boost::multi::array<ComplexType,3> G({nkpts,nmo_per_kp[0],nmo_per_kp[0]});
   for(int K=0; K<nkpts; K++) {
     auto Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[0],K);
-    boost::multi::array<ComplexType,2> G({nmo_per_kp[K],nmo_per_kp[K]});
-    ma::product(ma::H(Psi),Psi,G);
-    ma::transpose(G);
+    ma::product(ma::H(Psi),Psi,G[K]); 
+    ma::transpose(G[K]);
+  }
+  boost::multi::array<ComplexType,3> Gc({nkpts,nocc_per_kp[0][0],nmo_per_kp[0]});
+  for(int K=0; K<nkpts; K++) {
+    auto Psi = get_PsiK<boost::multi::array<SPComplexType,2>>(nmo_per_kp,PsiT[0],K);
+    for(int a=0; a<nocc_per_kp[0][K]; a++)
+      for(int j=0; j<nmo_per_kp[K]; j++)
+        Gc[K][a][j] = std::conj(Psi[a][j]);
+  }
+  for(int K=0; K<nkpts; K++) {
+    auto&& G_=G[K];
     for(int i=0; i<nmo_per_kp[K]; i++) 
       for(int j=0; j<nmo_per_kp[K]; j++) 
-        E_ += H1[K][i][j]*G[i][j];
+        E_ += H1[K][i][j]*G_[i][j];
   }
-  std::cout<<" E1+E0: " <<std::setprecision(12) <<E0+2*E_ <<std::endl;
+  std::cout<<" E1+E0: " <<std::setprecision(12) <<E0+2*E_ <<"  ";
+  E_=0.0; 
+  for(int K=0; K<nkpts; K++) {
+    auto&& G_=Gc[K];
+    for(int a=0, aj=0; a<nocc_per_kp[0][K]; a++)
+      for(int j=0; j<nmo_per_kp[K]; j++, ++aj)
+        E_ += haj[K][aj]*G_[a][j];
+  }
+  std::cout<<E0+E_ <<std::endl;
+
+  boost::multi::array<int,2> KK2Q({nkpts,nkpts});
+  for(int KI=0; KI<nkpts; KI++)
+  for(int KK=0; KK<nkpts; KK++) {
+    KK2Q[KI][KK]=-1;
+    for(int Q=0; Q<nkpts; Q++) 
+      if(QKtok2[Q][KI]==KK) {
+        KK2Q[KI][KK]=Q;
+        break;
+      }  
+    assert(KK2Q[KI][KK]>=0);  
+  }
+
+  boost::multi::array<ComplexType,2> IJKL({nmo_max*nmo_max,nmo_max*nmo_max});
+  boost::multi::array_ref<ComplexType,4> IJKL4D(IJKL.origin(),{nmo_max,nmo_max,nmo_max,nmo_max});
+  ComplexType EX(0.0);
+  ComplexType EJ(0.0);
+  for(int KI=0; KI<nkpts; KI++)
+  for(int KL=0; KL<nkpts; KL++) { 
+    for(int KK=0; KK<nkpts; KK++) 
+    {
+      int Q = KK2Q[KI][KK];
+      int KJ = QKtok2[Q][KL];
+      boost::multi::array_ref<ComplexType,2> LKI(std::addressof(*LQKikn[Q][KI].origin()),{nmo_max*nmo_max,nchol_per_kp[Q]}); 
+      boost::multi::array_ref<ComplexType,2> LKL(std::addressof(*LQKikn[Q][KL].origin()),{nmo_max*nmo_max,nchol_per_kp[Q]}); 
+      ma::product(LKI,ma::H(LKL),IJKL);
+      if(KI==KK && KL == KJ) { // EJ
+        for(int i=0; i<nmo_per_kp[0]; i++)
+        for(int k=0; k<nmo_per_kp[0]; k++)
+        for(int l=0; l<nmo_per_kp[0]; l++) 
+        for(int j=0; j<nmo_per_kp[0]; j++) {
+          EJ += 0.5*IJKL4D[i][k][l][j] * G[KI][i][k] * G[KJ][j][l]; 
+        }
+      } 
+      if(KI==KL && KJ == KK) { // EX
+        for(int i=0; i<nmo_per_kp[0]; i++)
+        for(int k=0; k<nmo_per_kp[0]; k++)
+        for(int l=0; l<nmo_per_kp[0]; l++)  
+        for(int j=0; j<nmo_per_kp[0]; j++) {
+          EX += 0.5*IJKL4D[i][k][l][j] * G[KI][i][l] * G[KJ][j][k];                 
+        }
+      }
+    }
+  }
+  std::cout<<" EX: " <<std::setprecision(12) <<EX*2 <<std::endl;
+  std::cout<<" EJ: " <<std::setprecision(12) <<EJ*4 <<std::endl;
+
+  boost::multi::array<ComplexType,2> ABKL({nocc_max*nmo_max,nocc_max*nmo_max});
+  boost::multi::array_ref<ComplexType,4> ABKL4D(ABKL.origin(),{nocc_max,nmo_max,nmo_max,nocc_max});
+  EX = EJ = ComplexType(0.0);
+  for(int KI=0; KI<nkpts; KI++)
+  for(int KL=0; KL<nkpts; KL++) {
+    for(int KK=0; KK<nkpts; KK++)
+    {
+      int Q = KK2Q[KI][KK];
+      assert(QKtok2[Q][KI]==KK);
+      int KJ = QKtok2[Q][KL];
+      boost::multi::array_ref<ComplexType,3> LKI(std::addressof(*LQKank[Q][KI].origin()),{nocc_max,nchol_per_kp[Q],nmo_max});
+      boost::multi::array_ref<ComplexType,3> LKL(std::addressof(*LQKlnb[Q][KL].origin()),{nmo_max,nchol_per_kp[Q],nocc_max});
+      if((KI==KK && KL == KJ) || (KI==KL && KJ == KK)) { 
+        for(int a=0; a<nocc_per_kp[0][0]; a++)
+        for(int k=0; k<nmo_per_kp[0]; k++)
+        for(int l=0; l<nmo_per_kp[0]; l++)
+        for(int b=0; b<nocc_per_kp[0][0]; b++) {
+          ABKL4D[a][k][l][b] = ComplexType(0.0); 
+          for(int n=0; n<nchol_per_kp[Q]; n++) 
+            ABKL4D[a][k][l][b] += LKI[a][n][k] * LKL[l][n][b];
+        }
+      }  
+      if(KI==KK && KL == KJ) { // EJ
+        for(int a=0; a<nocc_per_kp[0][0]; a++)
+        for(int k=0; k<nmo_per_kp[0]; k++)
+        for(int l=0; l<nmo_per_kp[0]; l++)
+        for(int b=0; b<nocc_per_kp[0][0]; b++) {
+          EJ += 0.5*ABKL4D[a][k][l][b] * Gc[KI][a][k] * Gc[KJ][b][l];
+        }
+      }
+      if(KI==KL && KJ == KK) { // EX
+        for(int a=0; a<nocc_per_kp[0][0]; a++)
+        for(int k=0; k<nmo_per_kp[0]; k++)
+        for(int l=0; l<nmo_per_kp[0]; l++)
+        for(int b=0; b<nocc_per_kp[0][0]; b++) {
+          EX += 0.5*ABKL4D[a][k][l][b] * Gc[KI][a][l] * Gc[KJ][b][k];
+        }
+      }
+    }
+  }
+  std::cout<<" EX: " <<std::setprecision(12) <<EX*2 <<std::endl;
+  std::cout<<" EJ: " <<std::setprecision(12) <<EJ*4 <<std::endl;
+*/
 
   return HamiltonianOperations(KP3IndexFactorization(TGwfn.TG_local(), type,std::move(nmo_per_kp),
             std::move(nchol_per_kp),std::move(nocc_per_kp),

@@ -105,7 +105,7 @@ TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
 
 
     auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
-    int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
+    int nwalk = 1; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
 
 const char *wlk_xml_block_closed =
@@ -169,7 +169,12 @@ const char *wlk_xml_block_noncol =
     using shm_Alloc = boost::mpi3::intranode::allocator<ComplexType>;
     using SHM_Buffer = mpi3_SHMBuffer<ComplexType>;
 
+    qmcplusplus::Timer Time;
+    double t1;
+    Time.restart();
     wfn.Energy(wset);
+    TG.local_barrier();
+    t1=Time.elapsed();
     if(std::abs(file_data.E0+file_data.E1+file_data.E2)>1e-8) {
       for(auto it = wset.begin(); it!=wset.end(); ++it) {
         REQUIRE( real(it->E1()) == Approx(real(file_data.E0+file_data.E1)));
@@ -177,7 +182,7 @@ const char *wlk_xml_block_noncol =
         REQUIRE( imag(it->energy()) == Approx(imag(file_data.E0+file_data.E1+file_data.E2)));
       }
     } else {
-      app_log()<<" E: " <<setprecision(12) <<wset[0].energy() <<std::endl; 
+      app_log()<<" E: " <<setprecision(12) <<wset[0].energy() <<" Time: " <<t1 <<std::endl; 
       app_log()<<" E0+E1: " <<setprecision(12) <<wset[0].E1() <<std::endl; 
       app_log()<<" EJ: " <<setprecision(12) <<wset[0].EJ() <<std::endl; 
       app_log()<<" EXX: " <<setprecision(12) <<wset[0].EXX() <<std::endl; 
@@ -194,7 +199,10 @@ const char *wlk_xml_block_noncol =
     auto nCV = wfn.local_number_of_cholesky_vectors();
     SHM_Buffer Xbuff(TG.TG_local(),nCV*nwalk);
     boost::multi_array_ref<ComplexType,2> X(Xbuff.data(),extents[nCV][nwalk]);
+    Time.restart();
     wfn.vbias(G,X,sqrtdt);
+    TG.local_barrier();
+    t1=Time.elapsed();
     ComplexType Xsum=0;
     if(std::abs(file_data.Xsum)>1e-8) { 
       for(int n=0; n<nwalk; n++) {
@@ -206,17 +214,23 @@ const char *wlk_xml_block_noncol =
       }
     } else {
       Xsum=0;
-      for(int i=0; i<X.shape()[0]; i++)
+      ComplexType Xsum2=0;
+      for(int i=0; i<X.shape()[0]; i++) {
         Xsum += X[i][0];
-      app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<std::endl;
+        Xsum2 += 0.5*X[i][0]*X[i][0];
+      }  
+      app_log()<<" Xsum: " <<setprecision(12) <<Xsum <<" Time: " <<t1 <<std::endl;
+      app_log()<<" Xsum2 (EJ): " <<setprecision(12) <<Xsum2/sqrtdt/sqrtdt <<std::endl;
     }    
 
     SHM_Buffer vHSbuff(TG.TG_local(),NMO*NMO*nwalk);
     int vdim1 = (wfn.transposed_vHS()?nwalk:NMO*NMO);
     int vdim2 = (wfn.transposed_vHS()?NMO*NMO:nwalk);
     boost::multi_array_ref<ComplexType,2> vHS(vHSbuff.data(),extents[vdim1][vdim2]);
+    Time.restart();
     wfn.vHS(X,vHS,sqrtdt);
     TG.local_barrier();
+    t1=Time.elapsed();
     ComplexType Vsum=0;
     if(std::abs(file_data.Vsum)>1e-8) { 
       for(int n=0; n<nwalk; n++) {
@@ -228,9 +242,16 @@ const char *wlk_xml_block_noncol =
       }
     } else {
       Vsum=0;
-      for(int i=0; i<vHS.shape()[0]; i++)
-        Vsum += vHS[i][0];
-      app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<std::endl;
+      if(wfn.transposed_vHS()) {
+        for(int i=0; i<vHS.shape()[1]; i++)
+          Vsum += vHS[0][i];
+      } else {
+        for(int i=0; i<vHS.shape()[0]; i++)
+          Vsum += vHS[i][0];
+      }  
+      app_log()<<" Vsum: " <<setprecision(12) <<Vsum <<" Time: " <<t1 <<std::endl;
+//for(int i=0; i<vHS.shape()[0]; i++)
+//std::cout<<i <<" " <<vHS[i][0] <<"\n";
     }
 
   // Restarting Wavefunction from file

@@ -57,6 +57,22 @@ MultiArray1DB axpy(T x, MultiArray1DA const& a, MultiArray1DB&& b){
 	return std::forward<MultiArray1DB>(b);
 }
 
+template<class T, class MultiArray2DA, class MultiArray2DB,
+        typename = typename std::enable_if<std::decay<MultiArray2DA>::type::dimensionality == 2 and std::decay<MultiArray2DB>::type::dimensionality == 2>::type,
+        typename = void // TODO change to use dispatch 
+>
+MultiArray2DB axpy(T x, MultiArray2DA const& a, MultiArray2DB&& b){
+        assert( a.num_elements() == b.num_elements() );
+        assert( a.strides()[0] == a.shape()[1] ); // only on contiguous arrays 
+        assert( a.strides()[1] == 1 );            // only on contiguous arrays 
+        assert( b.strides()[0] == b.shape()[1] ); // only on contiguous arrays 
+        assert( b.strides()[1] == 1 );            // only on contiguous arrays 
+        //using BLAS_CPU::axpy;
+        //using BLAS_GPU::axpy;
+        BLAS::axpy(a.num_elements(), x, a.origin(), 1, b.origin(), 1);
+        return std::forward<MultiArray2DB>(b);
+}
+
 template<char IN, class T, class MultiArray2DA, class MultiArray1DX, class MultiArray1DY,
 	typename = typename std::enable_if< MultiArray2DA::dimensionality == 2 and MultiArray1DX::dimensionality == 1 and std::decay<MultiArray1DY>::type::dimensionality == 1>::type
 >
