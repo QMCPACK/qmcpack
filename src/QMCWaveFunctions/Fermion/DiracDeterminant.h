@@ -275,8 +275,7 @@ public:
 
   /// temporal matrix in higher precision for the accurate inversion.
   ValueMatrix_hp_t psiM_hp;
-  DiracMatrix<mValueType> detEng_hp;
-  DiracMatrix<ValueType> detEng;
+  DiracMatrix<mValueType> detEng;
   DelayedUpdate<ValueType, mValueType> delayedEng;
 
   Vector<ValueType> WorkSpace;

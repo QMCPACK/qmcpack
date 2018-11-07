@@ -73,23 +73,20 @@ void DiracDeterminant::set(int first, int nel, int delay)
 void DiracDeterminant::invertPsiM(const ValueMatrix_t& logdetT, ValueMatrix_t& invMat)
 {
   InverseTimer.start();
-  if( typeid(ValueType) != typeid(mValueType) )
-  {
-    simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(),
-                    psiM_hp.data(), NumOrbitals, psiM_hp.cols());
-    detEng_hp.invert(psiM_hp,true);
-    LogValue = static_cast<RealType>(detEng_hp.LogDet);
-    PhaseValue = static_cast<RealType>(detEng_hp.Phase);
-    invMat = psiM_hp;
-  }
-  else
-  {
-    simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(),
-                    invMat.data(), NumOrbitals, invMat.cols());
-    detEng.invert(invMat,true);
-    LogValue = detEng.LogDet;
-    PhaseValue = detEng.Phase;
-  }
+#ifdef MIXED_PRECISION
+  simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(),
+                  psiM_hp.data(), NumOrbitals, psiM_hp.cols());
+  detEng.invert(psiM_hp,true);
+  LogValue = static_cast<RealType>(detEng.LogDet);
+  PhaseValue = static_cast<RealType>(detEng.Phase);
+  invMat = psiM_hp;
+#else
+  simd::transpose(logdetT.data(), NumOrbitals, logdetT.cols(),
+                  invMat.data(), NumOrbitals, invMat.cols());
+  detEng.invert(invMat,true);
+  LogValue = detEng.LogDet;
+  PhaseValue = detEng.Phase;
+#endif
   InverseTimer.stop();
 }
 
