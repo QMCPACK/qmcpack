@@ -98,7 +98,7 @@ void DiracDeterminant::resize(int nel, int morb)
   int norb=morb;
   if(norb <= 0)
     norb = nel; // for morb == -1 (default)
-  if(ndelay) delayedEng.resize(norb,ndelay);
+  if(ndelay) updateEng.resize(norb,ndelay);
   psiM.resize(nel,norb);
   dpsiM.resize(nel,norb);
   d2psiM.resize(nel,norb);
@@ -136,7 +136,7 @@ DiracDeterminant::evalGrad(ParticleSet& P, int iat)
 {
   WorkingIndex = iat-FirstIndex;
   RatioTimer.start();
-  GradType g = delayedEng.evalGrad(psiM, WorkingIndex, dpsiM[WorkingIndex]);
+  GradType g = updateEng.evalGrad(psiM, WorkingIndex, dpsiM[WorkingIndex]);
   RatioTimer.stop();
   return g;
 }
@@ -151,7 +151,7 @@ DiracDeterminant::ratioGrad(ParticleSet& P, int iat, GradType& grad_iat)
   WorkingIndex = iat-FirstIndex;
   UpdateMode=ORB_PBYP_PARTIAL;
   GradType rv;
-  curRatio = delayedEng.ratioGrad(psiM, WorkingIndex, psiV, dpsiV, rv);
+  curRatio = updateEng.ratioGrad(psiM, WorkingIndex, psiV, dpsiV, rv);
   grad_iat += ((RealType)1.0/curRatio) * rv;
   RatioTimer.stop();
   return curRatio;
@@ -165,9 +165,9 @@ void DiracDeterminant::acceptMove(ParticleSet& P, int iat)
   LogValue +=std::log(std::abs(curRatio));
   UpdateTimer.start();
   if (ndelay)
-    delayedEng.acceptRow(psiM,WorkingIndex,psiV);
+    updateEng.acceptRow(psiM,WorkingIndex,psiV);
   else
-    delayedEng.updateRow(psiM,WorkingIndex,psiV);
+    updateEng.updateRow(psiM,WorkingIndex,psiV);
   if(UpdateMode == ORB_PBYP_PARTIAL)
   {
     simd::copy(dpsiM[WorkingIndex],  dpsiV.data(),  NumOrbitals);
@@ -189,7 +189,7 @@ void DiracDeterminant::completeUpdates(ParticleSet& P)
   if (ndelay)
   {
     UpdateTimer.start();
-    delayedEng.updateInvMat(psiM);
+    updateEng.updateInvMat(psiM);
     UpdateTimer.stop();
   }
 }
@@ -296,7 +296,7 @@ DiracDeterminant::ValueType DiracDeterminant::ratio(ParticleSet& P, int iat)
   Phi->evaluate(P, iat, psiV);
   SPOVTimer.stop();
   RatioTimer.start();
-  curRatio = delayedEng.ratio(psiM, WorkingIndex, psiV);
+  curRatio = updateEng.ratio(psiM, WorkingIndex, psiV);
   RatioTimer.stop();
   return curRatio;
 }
