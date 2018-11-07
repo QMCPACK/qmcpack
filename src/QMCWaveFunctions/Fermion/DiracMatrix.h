@@ -277,13 +277,14 @@ namespace qmcplusplus {
         delay_list[delay_count] = rowchanged;
         delay_count++;
         // the new row in B has been computed, now compute the new column
-        BLAS::gemv('T', norb, delay_count, cone, V.data(), norb, psiV.data(), 1, czero, B.data()+delay_count-1, lda_Binv);
         if(delay_count==1)
         {
-          Binv[0][0]=1.0/T_hp(B[0][0]);
+          B[0][0] = curRatio;
+          Binv[0][0] = T_hp(1.0) / static_cast<T_hp>(B[0][0]);
         }
         else
         {
+          BLAS::gemv('T', norb, delay_count, cone, V.data(), norb, psiV.data(), 1, czero, B.data()+delay_count-1, lda_Binv);
 #ifdef MIXED_PRECISION
           for(int i=0; i<delay_count; i++)
             for(int j=0; j<delay_count; j++)
