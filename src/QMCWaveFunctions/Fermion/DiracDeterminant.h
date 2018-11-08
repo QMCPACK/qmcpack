@@ -278,9 +278,6 @@ public:
   DiracMatrix<mValueType> detEng;
   DelayedUpdate<ValueType, mValueType> updateEng;
 
-  Vector<ValueType> WorkSpace;
-  Vector<IndexType> Pivot;
-
   ValueType curRatio,cumRatio;
   ParticleSet::SingleParticleValue_t *FirstAddressOfG;
   ParticleSet::SingleParticleValue_t *LastAddressOfG;
