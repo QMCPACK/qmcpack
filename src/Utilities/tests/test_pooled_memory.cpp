@@ -37,7 +37,7 @@ namespace qmcplusplus {
 TEST_CASE("pack scalar", "[utilities]")
 {
 #ifdef QMC_CUDA_NEXT
-  PooledMemory<double, 4096, CUDAManagedAllocator<char, 4096>> p;
+  PooledMemory<double, CUDAManagedAllocator<char>> p;
 #else
   PooledMemory<double> p;
 #endif

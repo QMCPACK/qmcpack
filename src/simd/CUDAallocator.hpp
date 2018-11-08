@@ -20,7 +20,7 @@
 
 namespace qmcplusplus
 {
-  template<typename T, size_t Align>
+  template<typename T>
   struct CUDAManagedAllocator
   {
     typedef T         value_type;
@@ -29,16 +29,16 @@ namespace qmcplusplus
     typedef const T*  const_pointer;
 
     CUDAManagedAllocator() = default;
-    template <class U> CUDAManagedAllocator(const CUDAManagedAllocator<U,Align>&) {}
+    template <class U> CUDAManagedAllocator(const CUDAManagedAllocator<U>&) {}
 
-    template <class U> struct rebind { typedef CUDAManagedAllocator<U, Align> other; };
+    template <class U> struct rebind { typedef CUDAManagedAllocator<U> other; };
 
     T* allocate(std::size_t n)
     {
       void* pt;
       cudaError_t error = cudaMallocManaged(&pt, n*sizeof(T));
       if(error!=cudaSuccess) throw std::runtime_error("Allocation failed in CUDAManagedAllocator");
-      if( (size_t(pt))&(Align-1) ) throw std::runtime_error("Unaligned memory allocated in CUDAManagedAllocator");
+      if( (size_t(pt))&(QMC_CLINE-1) ) throw std::runtime_error("Unaligned memory allocated in CUDAManagedAllocator");
       return static_cast<T*>(pt);
     }
     void deallocate(T* p, std::size_t)
@@ -48,10 +48,10 @@ namespace qmcplusplus
     }
   };
 
-  template <class T1, size_t Align1, class T2, size_t Align2>
-  bool operator==(const CUDAManagedAllocator<T1,Align1>&, const CUDAManagedAllocator<T2,Align2>&) { return Align1==Align2; }
-  template <class T1, size_t Align1, class T2, size_t Align2>
-  bool operator!=(const CUDAManagedAllocator<T1,Align1>&, const CUDAManagedAllocator<T2,Align2>&) { return Align1!=Align2; }
+  template <class T1, class T2>
+  bool operator==(const CUDAManagedAllocator<T1>&, const CUDAManagedAllocator<T2>&) { return true; }
+  template <class T1, class T2>
+  bool operator!=(const CUDAManagedAllocator<T1>&, const CUDAManagedAllocator<T2>&) { return false; }
 
   template<typename T>
   struct CUDAAllocator

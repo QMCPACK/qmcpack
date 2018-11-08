@@ -18,6 +18,7 @@
 #include <cstring>
 #include "simd/allocator.hpp"
 #include "OhmmsPETE/OhmmsVector.h"
+#include <stdexcept>
 
 namespace qmcplusplus
 {
@@ -31,8 +32,7 @@ namespace qmcplusplus
  * The scalar part works as PooledData, all the values are static_cast to T_scalar.
  */
 template<typename T_scalar=OHMMS_PRECISION_FULL,
-         size_t PageSize=4096,
-         typename Alloc=Mallocator<char, PageSize> >
+         typename Alloc=Mallocator<char, 4096> >
 struct PooledMemory
 {
   typedef char T;
@@ -117,6 +117,7 @@ struct PooledMemory
   inline void allocate()
   {
     myData.resize(Current+Current_scalar*scalar_multiplier);
+    if( (size_t(myData.data()))&(QMC_CLINE-1) ) throw std::runtime_error("Unaligned memory allocated in PooledMemory");
     Scalar_ptr = reinterpret_cast<T_scalar*>(myData.data()+Current);
   }
 
