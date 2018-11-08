@@ -21,7 +21,7 @@ SET(UTEST_DIR ${qmcpack_BINARY_DIR}/tests/hamiltonians)
 
 SET(SRCS test_bare_kinetic.cpp test_coulomb_pbcAB.cpp test_coulomb_pbcAB_ewald.cpp test_coulomb_pbcAA.cpp
          test_coulomb_pbcAA_ewald.cpp test_force.cpp test_force_ewald.cpp test_ecp.cpp test_hamiltonian_factory.cpp)
-IF(HAVE_CUDA)
+IF(QMC_CUDA)
   SET(SRCS ${SRCS}
       test_coulomb_CUDA.cpp 
 )

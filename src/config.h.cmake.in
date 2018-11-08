@@ -165,6 +165,9 @@
 /* Using CUDA for GPU execution */
 #cmakedefine QMC_CUDA @QMC_CUDA@
 
+/* Using CUDA for GPU execution, next generation */
+#cmakedefine QMC_CUDA_NEXT @QMC_CUDA_NEXT@
+
 /* Setting base precision for CUDA kernels */
 #cmakedefine CUDA_PRECISION @CUDA_PRECISION@
 
