@@ -16,9 +16,8 @@
 #include "OhmmsData/Libxml2Doc.h"
 #include "OhmmsPETE/OhmmsMatrix.h"
 #include "QMCWaveFunctions/WaveFunctionComponent.h"
-#include "Numerics/OhmmsBlas.h"
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
-#include "simd/simd.hpp"
+#include "QMCWaveFunctions/Fermion/DelayedUpdate.h"
 
 #include <stdio.h>
 #include <string>

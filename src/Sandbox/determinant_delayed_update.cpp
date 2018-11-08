@@ -25,6 +25,7 @@ using namespace std;
 #include <simd/simd.hpp>
 #include <simd/algorithm.hpp>
 #include <QMCWaveFunctions/Fermion/DiracMatrix.h>
+#include <QMCWaveFunctions/Fermion/DelayedUpdate.h>
 using namespace qmcplusplus;
 
 template<typename RNG, typename T>
