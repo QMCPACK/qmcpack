@@ -13,6 +13,7 @@
 #define QMCPLUSPLUS_DELAYED_UPDATE_H
 
 #include "Numerics/Blasf.h"
+#include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include <simd/simd.hpp>
@@ -23,6 +24,7 @@ namespace qmcplusplus {
     struct DelayedUpdate
     {
       Matrix<T> U, V, B, Binv, tempMat;
+      Vector<T> temp, rcopy;
       Matrix<T_hp> Binv_hp;
       DiracMatrix<T_hp> deteng;
       std::vector<int> delay_list;
@@ -117,12 +119,13 @@ namespace qmcplusplus {
         const int lda = a.cols();
         CONSTEXPR T cone(1);
         CONSTEXPR T czero(0);
-        T temp[lda], rcopy[lda];
+        temp.resize(lda);
+        rcopy.resize(lda);
         T c_ratio = cone / curRatio;
-        BLAS::gemv('T', m, m, c_ratio, a.data(), lda, psiV.data(), 1, czero, temp, 1);
+        BLAS::gemv('T', m, m, c_ratio, a.data(), lda, psiV.data(), 1, czero, temp.data(), 1);
         temp[rowchanged] = cone-c_ratio;
-        simd::copy_n(a[rowchanged],m,rcopy);
-        BLAS::ger(m,m,-cone,rcopy,1,temp,1,a.data(),lda);
+        simd::copy_n(a[rowchanged],m,rcopy.data());
+        BLAS::ger(m,m,-cone,rcopy.data(),1,temp.data(),1,a.data(),lda);
       }
 
       // accept with the update delayed
@@ -176,10 +179,11 @@ namespace qmcplusplus {
         const int norb=Ainv.rows();
         if(delay_count==1)
         {
+          temp.resize(norb);
           // Only use the first norb elements of tempMat as a temporal array
-          BLAS::gemv('T', norb, norb, cone, Ainv.data(), norb, U[0], 1, czero, tempMat[0], 1);
-          tempMat(0,delay_list[0]) -= cone;
-          BLAS::ger(norb,norb,-Binv[0][0],V[0],1,tempMat[0],1,Ainv.data(),norb);
+          BLAS::gemv('T', norb, norb, cone, Ainv.data(), norb, U[0], 1, czero, temp.data(), 1);
+          temp[delay_list[0]] -= cone;
+          BLAS::ger(norb,norb,-Binv[0][0],V[0],1,temp.data(),1,Ainv.data(),norb);
         }
         else
         {

@@ -13,6 +13,7 @@
 #define QMCPLUSPLUS_DELAYED_UPDATE_CUDA_H
 
 #include "Numerics/Blasf.h"
+#include <OhmmsPETE/OhmmsVector.h>
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include <simd/simd.hpp>
@@ -22,7 +23,9 @@ namespace qmcplusplus {
   template<typename T, typename T_hp>
     struct DelayedUpdateCUDA
     {
-      Matrix<T> U, V, B, Binv, tempMat;
+      Matrix<T> U, V, B, Binv;
+      Matrix<T, CUDAAllocator<T>> U_gpu, V_gpu, Binv_gpu, temp_gpu;
+      Vector<T> temp, rcopy;
       Matrix<T_hp> Binv_hp;
       DiracMatrix<T_hp> deteng;
       std::vector<int> delay_list;
@@ -35,9 +38,12 @@ namespace qmcplusplus {
 
       inline void resize(int norb, int delay)
       {
+        U_gpu.resize(delay, norb);
+        V_gpu.resize(delay, norb);
+        temp_gpu.resize(norb, delay);
+        Binv_gpu.resize(delay, delay);
         V.resize(delay, norb);
         U.resize(delay, norb);
-        tempMat.resize(norb, delay);
         B.resize(delay, delay);
         Binv.resize(delay, delay);
 #ifdef MIXED_PRECISION
@@ -117,12 +123,13 @@ namespace qmcplusplus {
         const int lda = a.cols();
         CONSTEXPR T cone(1);
         CONSTEXPR T czero(0);
-        T temp[lda], rcopy[lda];
+        temp.resize(lda);
+        rcopy.resize(lda);
         T c_ratio = cone / curRatio;
-        BLAS::gemv('T', m, m, c_ratio, a.data(), lda, psiV.data(), 1, czero, temp, 1);
+        BLAS::gemv('T', m, m, c_ratio, a.data(), lda, psiV.data(), 1, czero, temp.data(), 1);
         temp[rowchanged] = cone-c_ratio;
-        simd::copy_n(a[rowchanged],m,rcopy);
-        BLAS::ger(m,m,-cone,rcopy,1,temp,1,a.data(),lda);
+        simd::copy_n(a[rowchanged],m,rcopy.data());
+        BLAS::ger(m,m,-cone,rcopy.data(),1,temp.data(),1,a.data(),lda);
       }
 
       // accept with the update delayed
@@ -176,18 +183,18 @@ namespace qmcplusplus {
         const int norb=Ainv.rows();
         if(delay_count==1)
         {
-          // Only use the first norb elements of tempMat as a temporal array
-          BLAS::gemv('T', norb, norb, cone, Ainv.data(), norb, U[0], 1, czero, tempMat[0], 1);
-          tempMat(0,delay_list[0]) -= cone;
-          BLAS::ger(norb,norb,-Binv[0][0],V[0],1,tempMat[0],1,Ainv.data(),norb);
+          // Only use the first norb elements of temp_gpu as a temporal array
+          BLAS::gemv('T', norb, norb, cone, Ainv.data(), norb, U[0], 1, czero, temp.data(), 1);
+          temp[delay_list[0]] -= cone;
+          BLAS::ger(norb,norb,-Binv[0][0],V[0],1,temp_gpu[0],1,Ainv.data(),norb);
         }
         else
         {
           const int lda_Binv=Binv.cols();
-          BLAS::gemm('T', 'N', delay_count, norb, norb, cone, U.data(), norb, Ainv.data(), norb, czero, tempMat.data(), lda_Binv);
-          for(int i=0; i<delay_count; i++) tempMat(delay_list[i], i) -= cone;
+          BLAS::gemm('T', 'N', delay_count, norb, norb, cone, U.data(), norb, Ainv.data(), norb, czero, temp_gpu.data(), lda_Binv);
+          for(int i=0; i<delay_count; i++) temp_gpu(delay_list[i], i) -= cone;
           BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, V.data(), norb, Binv.data(), lda_Binv, czero, U.data(), norb);
-          BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U.data(), norb, tempMat.data(), lda_Binv, cone, Ainv.data(), norb);
+          BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U.data(), norb, temp_gpu.data(), lda_Binv, cone, Ainv.data(), norb);
         }
         delay_count = 0;
       }
