@@ -28,7 +28,7 @@
 
 Additional information:
 \begin{itemize}
-\item \texttt{walkers}. The initial default number of walkers is 1 per OpenMP thread or per MPI task if threading is disabled.
+\item \texttt{walkers}. The initial default number of walkers is one per OpenMP thread or per MPI task if threading is disabled, with a minimum of one per thread. One walker per thread will be created in the event fewer walkers than threads are requested. 
 
 \item \texttt{blocks}. This parameter is universal for all the QMC
   methods. The Monte Carlo processes are divided into a number of
