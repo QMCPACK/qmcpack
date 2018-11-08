@@ -281,13 +281,13 @@ namespace qmcplusplus
   {
     const size_t& nmo = OrbitalSetSize;
     const size_t& nb = BasisSetSize;
-    m_init_B = C;
+    m_init_B = new ValueMatrix_t(*C);
     //a vector in which the element's index value correspond to Molecular Orbitals.
     //The element value at an index indicates how many times an electron is excited from or to that orbital in the Multi-Slater expansion i.e the indices with non-zero elements are active space orbitals
     std::vector<int> occupancy_vector (nmo,0);
 
     // Function to fill occupancy_vectors and also return number of unique determinants 
-    const int unique_dets =  this->build_occ_vec(data, nel, nmo, &occupancy_vector);
+    const size_t unique_dets =  this->build_occ_vec(data, nel, nmo, &occupancy_vector);
 
     // When calculating the parameter derivative of the Multi-Slater component of the wavefunction, each unique deterimant can contribute multiple times. 
     // The lookup_tbls are used so that a parameter derivative of a unique determinant is only done once and then scaled according to how many times it appears in the Multi-Slater expansion 
@@ -351,7 +351,7 @@ namespace qmcplusplus
       }
 
       //Printing the parameters
-      if(true){
+      if(false){
         app_log() << std::string(16,' ') << "Parameter name" << std::string(15,' ') << "Value\n";
         myVars.print(app_log());
       }
@@ -376,8 +376,7 @@ namespace qmcplusplus
       BLAS::gemm('N','T', nb, nmo, nmo, RealType(1.0), m_init_B->data(), nb, &rot_mat[0], nmo, RealType(0.0), C->data(), nb);
       if(Optimizable)
       {
-        T.resize(nel,nmo);
-        app_log()<< "VARIABLES HAVE NOT BE DELETED SDP\n";
+        Table.resize(nel,nmo);
       }
       else
       {
@@ -388,6 +387,148 @@ namespace qmcplusplus
         myVars.ParameterType.erase(myVars.ParameterType.begin(),myVars.ParameterType.end());
         myVars.Recompute.erase(myVars.Recompute.begin(),myVars.Recompute.end());
       }
+  }
+
+  void LCAOrbitalSet::evaluateDerivatives (ParticleSet& P,
+                             const opt_variables_type& optvars,
+                             std::vector<RealType>& dlogpsi, 
+                             std::vector<RealType>& dhpsioverpsi,
+                             const ValueType& psiCurrent,
+                             std::vector<RealType> const * const Coeff,
+                             std::vector<size_t> const * const C2node_up,
+                             std::vector<size_t> const * const C2node_dn,
+                             const ValueVector_t& detValues_up, 
+                             const ValueVector_t& detValues_dn, 
+                             const GradMatrix_t& grads_up, 
+                             const GradMatrix_t& grads_dn, 
+                             const ValueMatrix_t& lapls_up, 
+                             const ValueMatrix_t& lapls_dn,
+                             const ValueMatrix_t& M_up,
+                             const ValueMatrix_t& M_dn,
+                             const ValueMatrix_t& Minv_up,
+                             const ValueMatrix_t& Minv_dn,
+                             const GradMatrix_t& B_grad,
+                             const ValueMatrix_t& B_lapl,
+                             std::vector<int> const * const detData_up,
+                             const size_t& N1,
+                             const size_t& N2,
+                             const size_t& NP1,
+                             const size_t& NP2) 
+  {
+//    app_log() << "EVALUATE DERIVATIVE CALLED IN LCAO CLASS SDP\n";
+    bool recalculate(false);
+    for (int k=0; k<myVars.size(); ++k)
+    {
+      int kk=myVars.where(k);
+      if (kk<0)
+        continue;
+      if (optvars.recompute(kk))
+        recalculate=true;
+    }
+    if(recalculate)
+    {
+//      psiCurrent=0.0;
+      const int NP = P.getTotalNum();
+      myG_temp.resize(NP); myG_temp=0.0;
+      myL_temp.resize(NP); myL_temp=0.0;
+      myG_J.resize(NP); myG_J=0.0;
+      myL_J.resize(NP); myL_J=0.0;
+      const size_t& nmo = OrbitalSetSize;
+      const size_t& nb = BasisSetSize;
+      const size_t& nel = P.last(0)-P.first(0); 
+
+      const RealType *restrict C_p=Coeff->data();
+      for(int i=0; i<Coeff->size(); i++)
+      {
+          const size_t upC = (*C2node_up)[i];
+          const size_t dnC = (*C2node_dn)[i];
+          const ValueType tmp1 = C_p[i]*detValues_dn[dnC];
+          const ValueType tmp2 = C_p[i]*detValues_up[upC];
+//          psiCurrent+= (C[i]*detValues_up[upC]*detValues_dn[dnC]);
+          for(size_t k=0,j=N1; k<NP1; k++,j++)
+          {
+            myG_temp[j] += tmp1*grads_up(upC,k);
+            myL_temp[j] += tmp1*lapls_up(upC,k);
+          }
+          for(size_t k=0,j=N2; k<NP2; k++,j++)
+          {
+            myG_temp[j] += tmp2*grads_dn(dnC,k);
+            myL_temp[j] += tmp2*lapls_dn(dnC,k);
+          }
+      }
+
+      myG_temp *= (1/psiCurrent);
+      myL_temp *= (1/psiCurrent);
+
+      // calculation of myG_J which will be used to represent \frac{\nabla\psi_{J}}{\psi_{J}} 
+      // calculation of myL_J will be used to represent \frac{\nabla^2\psi_{J}}{\psi_{J}}
+      // IMPORTANT NOTE:  The value of P.L holds \nabla^2 ln[\psi] but we need  \frac{\nabla^2 \psi}{\psi} and this is what myL_J will hold 
+      for(int iat=0; iat<(myL_temp.size()); iat++)
+      {
+        myG_J[iat] = (P.G[iat] - myG_temp[iat]);
+        myL_J[iat] = (P.L[iat] + dot(P.G[iat],P.G[iat]) - myL_temp[iat]);
+      }
+
+
+      table_method_eval(dlogpsi,
+                        dhpsioverpsi,
+                        myL_J,
+                        myG_J,
+                        nel,
+                        nmo,
+                        psiCurrent,
+                        Coeff,
+                        C2node_up,
+                        C2node_dn,
+                        detValues_up,
+                        detValues_dn,
+                        grads_up,
+                        grads_dn,
+                        lapls_up,
+                        lapls_dn,
+                        M_up,
+                        M_dn,
+                        Minv_up,
+                        Minv_dn,
+                        B_grad,
+                        B_lapl,
+                        detData_up,
+                        N1,
+                        N2,
+                        NP1,
+                        NP2);
+
+////      table_method_eval(myL_J,
+////                        myG_J,
+////                        nels_up,
+////                        m_nmo_up,
+////                        T_up.data(),
+////                        Dets[0]->psiM.data(),
+////                        Dets[0]->psiMinv.data(),
+////                        dlogpsi,
+////                        dhpsioverpsi,
+////                        m_first_var_pos,
+////                        m_act_rot_inds_up.size(),
+////                        &m_act_rot_inds_up,
+////                        0,
+////                        T_up,
+////                        Dets[0]->psiM);
+////
+////      if (false)
+////      {
+////        for (int i=0; i<m_act_rot_inds_up.size(); i++){
+////         int kk= i+m_first_var_pos;
+////             const int p = m_act_rot_inds_up[i].first;
+////             const int q = m_act_rot_inds_up[i].second;
+////             std::vector<char> buff(1000, ' ');
+////             const int len = std::sprintf(&buff[0], " p = %4i   q = %4i     dlogpsi = %20.12f     dhpsioverpsi = %20.12f   kk = %4i", p, q,dlogpsi[kk], dhpsioverpsi[kk], kk);
+////             for (int k = 0; k < len; k++)
+////               app_log() << buff[k];
+////             app_log() << std::endl;
+////        }
+////      }
+//
+    }
   }
 
   int LCAOrbitalSet::build_occ_vec(std::vector<int> * data,
@@ -474,6 +615,375 @@ namespace qmcplusplus
         mat[i+n*j] = mat_d[i+n*j].real();
       }
   }
+
+void LCAOrbitalSet::table_method_eval(std::vector<RealType>& dlogpsi,
+                                      std::vector<RealType>& dhpsioverpsi,
+                                      const ParticleSet::ParticleLaplacian_t& myL_J,
+                                      const ParticleSet::ParticleGradient_t& myG_J,
+                                      const size_t& nel,
+                                      const size_t& nmo,
+                                      const ValueType& psiCurrent,
+                                      std::vector<RealType> const * const Coeff,
+                                      std::vector<size_t> const * const C2node_up,
+                                      std::vector<size_t> const * const C2node_dn,
+                                      const ValueVector_t& detValues_up, 
+                                      const ValueVector_t& detValues_dn, 
+                                      const GradMatrix_t& grads_up, 
+                                      const GradMatrix_t& grads_dn, 
+                                      const ValueMatrix_t& lapls_up, 
+                                      const ValueMatrix_t& lapls_dn,
+                                      const ValueMatrix_t& M_up,
+                                      const ValueMatrix_t& M_dn,
+                                      const ValueMatrix_t& Minv_up,
+                                      const ValueMatrix_t& Minv_dn,
+                                      const GradMatrix_t& B_grad,
+                                      const ValueMatrix_t& B_lapl,
+                                      std::vector<int> const * const detData_up,
+                                      const size_t& N1,
+                                      const size_t& N2,
+                                      const size_t& NP1,
+                                      const size_t& NP2)
+{
+  const int parameters_size(m_act_rot_inds.size());
+  const int parameter_start_index(0);  
+ 
+  const size_t num_unique_up_dets (detValues_up.size()); 
+  const size_t num_unique_dn_dets (detValues_dn.size()); 
+
+  const RealType* restrict cptr = Coeff->data();
+  const size_t nc = Coeff->size();
+  const size_t* restrict upC (C2node_up->data());
+  const size_t* restrict dnC (C2node_dn->data());
+  //B_grad holds the gardient operator
+  //B_lapl holds the laplacian operator
+  //B_bar will hold our special O operator
+  ValueMatrix_t Bbar;
+  Bbar.resize(nel,nmo);
+
+
+  const int offset1  (N1);
+  const int offset2  (N2);   
+  const int NPother  (NP2);
+
+// possibly replace wit BLAS calls 
+  for(int i=0; i<nel; i++)
+    for(int j=0; j<nmo; j++)
+      Bbar(i,j) = B_lapl(i,j) + 2*dot(myG_J[i+offset1], B_grad(i,j)) + myL_J[i+offset1]*M_up(i,j);
+
+  const double* restrict B(Bbar.data());
+  const double* restrict A(M_up.data());
+  const double* restrict Ainv(Minv_up.data());
+  double* T(Table.data());
+  //Need to create the constants: (Oi, const0, const1, const2)to take advantage of minimal BLAS commands; 
+  //Oi is the special operator applied to the slater matrix "A subscript i" from the total CI expansion
+  //\hat{O_{i}} = \hat{O}D_{i} with D_{i}=det(A_{i}) and Multi-Slater component defined as \sum_{i=0} C_{i} D_{i\uparrow}D_{i\downarrow}
+  std::vector<RealType> Oi(num_unique_dn_dets); 
+
+  for (int index=0; index < num_unique_dn_dets; index++)
+    for (int iat=0; iat < NPother; iat++)
+      Oi[index]+= lapls_dn(index,iat) + 2*dot(grads_dn(index,iat),myG_J[offset2 + iat]) + myL_J[offset2 + iat]*detValues_dn[index];
+
+  //const0 = C_{0}*det(A_{0\downarrow})+\sum_{i=1} C_{i}*det(A_{i\downarrow})* det(\alpha_{i\uparrow})
+  //const1 = C_{0}*\hat{O} det(A_{0\downarrow})+\sum_{i=1} C_{i}*\hat{O}det(A_{i\downarrow})* det(\alpha_{i\uparrow})
+  //const2 = \sum_{i=1} C_{i}*det(A_{i\downarrow})* Tr[\alpha_{i}^{-1}M_{i}]*det(\alpha_{i})
+  RealType const0(0.0),const1(0.0), const2(0.0);
+  for(size_t i=0; i<nc; ++i)
+  {
+    const RealType c=cptr[i];
+    const size_t up=upC[i];
+    const size_t down=dnC[i];
+
+    const0 += c * detValues_dn[down] * (detValues_up[up] / detValues_up[0]);
+    const1 += c * Oi[down] * (detValues_up[up] / detValues_up[0]);
+  }
+
+
+  ValueMatrix_t Y1,Y2,Y3,Y4,Y5,Y6,Y7,Y11,Y23,Y24,Y25,Y26;
+  Y1.resize(nel,nel);
+  Y2.resize(nel,nmo);
+  Y3.resize(nel,nmo);
+  Y4.resize(nel,nmo);
+
+  ValueMatrix_t pK1,K1T,TK1T, pK2,K2AiB,TK2AiB,K2XA,TK2XA,K2T,TK2T,MK2T, pK3,K3T,TK3T, pK4,K4T,TK4T, pK5,K5T,TK5T;
+  pK1.resize(nmo,nel);
+  K1T.resize(nmo,nmo);
+  TK1T.resize(nel,nmo);
+
+  pK2.resize(nmo,nel);
+  K2AiB.resize(nmo,nmo);
+  TK2AiB.resize(nel,nmo);
+  K2XA.resize(nmo,nmo);
+  TK2XA.resize(nel,nmo);
+  K2T.resize(nmo,nmo);
+  TK2T.resize(nel,nmo);
+  MK2T.resize(nel,nmo);
+
+  pK3.resize(nmo,nel);
+  K3T.resize(nmo,nmo);
+  TK3T.resize(nel,nmo);
+
+  pK4.resize(nmo,nel);
+  K4T.resize(nmo,nmo);
+  TK4T.resize(nel,nmo);
+
+  pK5.resize(nmo,nel);
+  K5T.resize(nmo,nmo);
+  TK5T.resize(nel,nmo);
+
+  //IMPORTANT NOTE: THE Dets[0]->psiMinv OBJECT DOES NOT HOLD THE INVERSE IF THE MULTIDIRACDETERMINANTBASE ONLY CONTAINES ONE ELECTRON. NEED A FIX FOR THIS CASE
+  // The T matrix should be calculated and stored for use      
+  // T = A^{-1} \widetilde A
+  //REMINDER: that the ValueMatrix_t "matrix" stores data in a row major order and that BLAS commands assume column major
+  BLAS::gemm('N','N', nmo, nel, nel, RealType(1.0),    A, nmo,       Ainv, nel, RealType(0.0),          T, nmo);
+
+
+  BLAS::gemm('N','N', nel, nel, nel, RealType(1.0),    B, nmo,       Ainv, nel, RealType(0.0),  Y1.data(), nel);
+  BLAS::gemm('N','N', nmo, nel, nel, RealType(1.0),    T, nmo,  Y1.data(), nel, RealType(0.0),  Y2.data(), nmo);
+  BLAS::gemm('N','N', nmo, nel, nel, RealType(1.0),    B, nmo,       Ainv, nel, RealType(0.0),  Y3.data(), nmo);
+
+  //possibly replace with BLAS call
+  Y4 = Y3 - Y2;
+
+//  app_log() << "printing Bbar \n" << Bbar << std::endl;
+//  app_log() << "printing Ainv \n" << Minv_up << std::endl;
+
+//  app_log() << "printing Y1 \n" << Y1 << std::endl;
+//  app_log() << "printing Y2 \n" << Y2 << std::endl;
+//  app_log() << "printing Y3 \n" << Y3 << std::endl;
+//  app_log() << "printing Y4 \n" << Y4 << std::endl;
+
+  //Now we are going to loop through all unique determinants.
+  //The few lines above are for the reference matrix contribution.
+  //Although I start the loop below from index 0, the loop only performs actions when the index is => 1
+  //the detData object contains all the information about the P^T and Q matrices (projection matrices) needed in the table method
+  const int* restrict data_it = detData_up->data();
+//  std::vector<int>::iterator data_it = Dets[active_spin]->detData->begin();
+  for(int index=0, datum=0; index < num_unique_up_dets; index++)
+  {
+//    const int  k = *data_it;
+    const int  k = data_it[datum];
+
+    if (k==0)
+    {
+//      data_it += 3*k+1;
+      datum += 3*k+1;
+    }
+
+    else
+    {
+      //Number of rows and cols of P^T
+      const int prows=k;
+      const int pcols=nel;
+      //Number of rows and cols of Q
+      const int qrows=nmo;
+      const int qcols=k;
+      
+      Y5.resize(nel,k);
+      Y6.resize(k,k);
+
+      //Any matrix multiplication of P^T or Q is simply a projection
+      //Explicit matrix multiplication can be avoided; instead column or row copying can be done
+      //BlAS::copy(size of col/row being copied,
+      //           Matrix pointer + place to begin copying,
+      //           storage spacing (number of elements btw next row/col element),
+      //           Pointer to resultant matrix + place to begin pasting,
+      //           storage spacing of resultant matrix)
+      //For example the next 4 lines is the matrix multiplication of T*Q = Y5      
+      std::fill(Y5.begin(),Y5.end(),0.0);
+      for ( int i=0; i<k; i++)
+      {
+//        BLAS::copy(nel, T + *(data_it+1+k+i), nmo, Y5.data()+i, k);   
+        BLAS::copy(nel, T + data_it[datum+1+k+i], nmo, Y5.data()+i, k);   
+      }
+
+      std::fill(Y6.begin(),Y6.end(),0.0);
+      for ( int i=0; i<k; i++)
+      { 
+//        BLAS::copy(k, Y5.data() + (*(data_it+1+i))*k, 1, (Y6.data() + i*k), 1);   
+        BLAS::copy(k, Y5.data() + (data_it[datum+1+i])*k, 1, (Y6.data() + i*k), 1);   
+      }
+
+//      app_log() << "priting Y5 \n " << Y5 << std::endl;
+//      app_log() << "priting Y6 \n " << Y6 << std::endl;
+
+      Vector<ValueType> WS;
+      Vector<IndexType> Piv;
+      WS.resize(k);
+      Piv.resize(k);
+      // not sure if i need the following 2 lines
+  //     std::fill(WS.begin(),WS.end(),0.0);
+  //     std::fill(Piv.begin(),Piv.end(),0);
+      RealType PhaseR=0.0;
+      InvertWithLog(Y6.data(),k,k,WS.data(),Piv.data(),PhaseR);
+//      app_log() << "priting inv Y6 \n " << Y6 << std::endl;
+
+      Y11.resize(nel,  k);  
+      Y23.resize(  k,  k);    
+      Y24.resize(  k,  k);    
+      Y25.resize(  k,  k);
+      Y26.resize(  k,nel);
+
+      std::fill(Y11.begin(),Y11.end(),0.0);
+      for ( int i=0; i<k; i++)
+      {
+//        BLAS::copy(nel, Y4.data() + *(data_it+1+k+i), nmo, Y11.data()+i, k);   
+        BLAS::copy(nel, Y4.data() + (data_it[datum+1+k+i]), nmo, Y11.data()+i, k);   
+      }
+//      app_log() << "priting Y11 \n " << Y11 << std::endl;
+
+      std::fill(Y23.begin(),Y23.end(),0.0);
+      for ( int i=0; i<k; i++)
+      { 
+//        BLAS::copy(k, Y11.data() + (*(data_it+1+i))*k, 1, (Y23.data() + i*k), 1);   
+        BLAS::copy(k, Y11.data() + (data_it[datum+1+i])*k, 1, (Y23.data() + i*k), 1);   
+      }
+//      app_log() << "priting Y23 \n " << Y23 << std::endl;
+
+      BLAS::gemm('N','N',   k,   k,   k, RealType(1.0), Y23.data(),   k,  Y6.data(),   k, RealType(0.0), Y24.data(),   k);
+      BLAS::gemm('N','N',   k,   k,   k, RealType(1.0),  Y6.data(),   k, Y24.data(),   k, RealType(0.0), Y25.data(),   k);
+
+
+      Y26.resize(  k,nel);
+
+      std::fill(Y26.begin(),Y26.end(),0.0);
+      for ( int i=0; i<k; i++)
+      {
+//        BLAS::copy(k, Y25.data() + i, k, Y26.data() + *(data_it+1+i), nel);   
+        BLAS::copy(k, Y25.data() + i, k, Y26.data() + (data_it[datum+1+i]), nel);   
+      }
+
+
+      Y7.resize(  k,nel);
+
+      std::fill(Y7.begin(),Y7.end(),0.0);
+      for ( int i=0; i<k; i++)
+      {
+//        BLAS::copy(k, Y6.data() + i, k, Y7.data() + *(data_it+1+i), nel);   
+        BLAS::copy(k, Y6.data() + i, k, Y7.data() + (data_it[datum+1+i]), nel);   
+      }
+
+//      app_log() << "priting Y7 \n " << Y7 << std::endl;
+      
+      // c_Tr_AlphaI_MI is a constant contributing to constant const2
+      // c_Tr_AlphaI_MI = Tr[\alpha_{I}^{-1}(P^{T}\widetilde{M} Q)]
+      RealType c_Tr_AlphaI_MI = 0.0;
+      for(int i=0; i<k;i++){
+        c_Tr_AlphaI_MI+=Y24(i,i); }  
+
+      for(int p=0; p<lookup_tbl[index].size(); p++)
+      {
+        //el_p is the element position that contains information about the CI coefficient, and det up/dn values associated with the current unique determinant
+        const int el_p (lookup_tbl[index][p]);
+        const RealType c=cptr[el_p];
+        const size_t up=upC[el_p];
+        const size_t down=dnC[el_p];
+
+        const RealType alpha_1  (  c * detValues_dn[ down ] * detValues_up[ up ]/detValues_up[0] * c_Tr_AlphaI_MI  ); 
+        const RealType alpha_2  (  c * detValues_dn[ down ] * detValues_up[ up ]/detValues_up[0]                   );
+        const RealType alpha_3  (  c * Oi[ down ]           * detValues_up[ up ]/detValues_up[0]                   );
+        const RealType alpha_4  (  c * detValues_dn[ down ] * detValues_up[ up ]                 * (1/psiCurrent)  );
+
+        const2 += alpha_1;
+
+        for ( int i=0; i<k; i++)
+        {
+//          BLAS::axpy(nel, alpha_1, Y7.data() + i*nel,1, pK1.data() + (*(data_it+1+k+i))*nel,1);   
+//          BLAS::axpy(nel, alpha_2, Y7.data() + i*nel,1, pK2.data() + (*(data_it+1+k+i))*nel,1);   
+//          BLAS::axpy(nel, alpha_3, Y7.data() + i*nel,1, pK3.data() + (*(data_it+1+k+i))*nel,1);   
+//          BLAS::axpy(nel, alpha_4, Y7.data() + i*nel,1, pK4.data() + (*(data_it+1+k+i))*nel,1);   
+//          BLAS::axpy(nel, alpha_2,Y26.data() + i*nel,1, pK5.data() + (*(data_it+1+k+i))*nel,1);   
+          BLAS::axpy(nel, alpha_1, Y7.data() + i*nel,1, pK1.data() + (data_it[datum+1+k+i])*nel,1);   
+          BLAS::axpy(nel, alpha_2, Y7.data() + i*nel,1, pK2.data() + (data_it[datum+1+k+i])*nel,1);   
+          BLAS::axpy(nel, alpha_3, Y7.data() + i*nel,1, pK3.data() + (data_it[datum+1+k+i])*nel,1);   
+          BLAS::axpy(nel, alpha_4, Y7.data() + i*nel,1, pK4.data() + (data_it[datum+1+k+i])*nel,1);   
+          BLAS::axpy(nel, alpha_2,Y26.data() + i*nel,1, pK5.data() + (data_it[datum+1+k+i])*nel,1);   
+        }
+      }
+//      data_it += 3*k+1;
+      datum += 3*k+1;
+    }
+
+  }
+
+
+  BLAS::gemm('N','N', nmo, nmo, nel, 1.0/const0               , T           , nmo, pK1.data(), nel, RealType(0.0), K1T.data()   ,  nmo);
+  BLAS::gemm('N','N', nmo, nel, nmo, RealType(1.0)            , K1T.data()  , nmo, T         , nmo, RealType(0.0), TK1T.data()  ,  nmo);
+
+  BLAS::gemm('N','N', nmo, nmo, nel, 1.0/const0               , Y3.data()   , nmo, pK2.data(), nel, RealType(0.0), K2AiB.data() ,  nmo);
+  BLAS::gemm('N','N', nmo, nel, nmo, RealType(1.0)            , K2AiB.data(), nmo, T         , nmo, RealType(0.0), TK2AiB.data(),  nmo);
+  BLAS::gemm('N','N', nmo, nmo, nel, 1.0/const0               , Y2.data()   , nmo, pK2.data(), nel, RealType(0.0), K2XA.data()  ,  nmo);
+  BLAS::gemm('N','N', nmo, nel, nmo, RealType(1.0)            , K2XA.data() , nmo, T         , nmo, RealType(0.0), TK2XA.data() ,  nmo);
+
+  BLAS::gemm('N','N', nmo, nmo, nel, const1/(const0*const0)   , T           , nmo, pK2.data(), nel, RealType(0.0), K2T.data()   ,  nmo);
+  BLAS::gemm('N','N', nmo, nel, nmo, RealType(1.0)            , K2T.data()  , nmo, T         , nmo, RealType(0.0), TK2T.data()  ,  nmo);
+  BLAS::gemm('N','N', nmo, nel, nmo, const0/const1            , K2T.data()  , nmo, Y4.data() , nmo, RealType(0.0), MK2T.data()  ,  nmo);
+ 
+  BLAS::gemm('N','N', nmo, nmo, nel, 1.0/const0               , T           , nmo, pK3.data(), nel, RealType(0.0), K3T.data()   ,  nmo);
+  BLAS::gemm('N','N', nmo, nel, nmo, RealType(1.0)            , K3T.data()  , nmo, T         , nmo, RealType(0.0), TK3T.data()  ,  nmo);
+
+  BLAS::gemm('N','N', nmo, nmo, nel, RealType(1.0)            , T           , nmo, pK4.data(), nel, RealType(0.0), K4T.data()   ,  nmo);
+  BLAS::gemm('N','N', nmo, nel, nmo, RealType(1.0)            , K4T.data()  , nmo, T         , nmo, RealType(0.0), TK4T.data()  ,  nmo);
+
+  BLAS::gemm('N','N', nmo, nmo, nel, 1.0/const0               , T           , nmo, pK5.data(), nel, RealType(0.0), K5T.data()   ,  nmo);
+  BLAS::gemm('N','N', nmo, nel, nmo, RealType(1.0)            , K5T.data()  , nmo, T         , nmo, RealType(0.0), TK5T.data()  ,  nmo);
+
+ 
+
+  for (int mu=0, k=parameter_start_index; k < (parameter_start_index + parameters_size) ; k++, mu++)
+  {
+    int kk = myVars.where(k);
+    const int i(m_act_rot_inds[mu].first), j(m_act_rot_inds[mu].second);
+    if (i<=nel-1 && j>nel-1)
+      { dlogpsi[kk] += detValues_up[0]*( Table(i,j) )*const0*(1/psiCurrent)\
+                       + ( K4T(i,j)-K4T(j,i)-TK4T(i,j)) ;
+
+        dhpsioverpsi[kk] += -0.5 * Y4(i,j)\
+                            -0.5*( -   K5T(i,j) +   K5T(j,i)    +   TK5T(i,j)  \
+                                   + K2AiB(i,j) - K2AiB(j,i)    - TK2AiB(i,j)  \
+                                   -  K2XA(i,j) +  K2XA(j,i)    +  TK2XA(i,j)  \
+                                                                -   MK2T(i,j)  \
+                                   +   K1T(i,j) -   K1T(j,i)    -   TK1T(i,j)  \
+                                   -  const2/const1 * K2T(i,j) +  const2/const1 * K2T(j,i)    +   const2/const1 * TK2T(i,j)  \
+                                   +   K3T(i,j) -   K3T(j,i)    -   TK3T(i,j)  \
+                                   -   K2T(i,j) +     K2T(j,i)    +   TK2T(i,j) \
+                                 );
+      }
+    else if (i<=nel-1 && j<=nel-1)
+      { dlogpsi[kk] += detValues_up[0]* ( Table(i,j) - Table(j,i) )*const0*(1/psiCurrent)\
+                       + (K4T(i,j)-TK4T(i,j)-K4T(j,i)+TK4T(j,i) );
+
+        dhpsioverpsi[kk] += -0.5 *( Y4(i,j)-Y4(j,i) )\
+                            -0.5*( -   K5T(i,j) +   K5T(j,i)    +   TK5T(i,j) -    TK5T(j,i) \
+                                   + K2AiB(i,j) - K2AiB(j,i)    - TK2AiB(i,j) +  TK2AiB(j,i) \
+                                   -  K2XA(i,j) +  K2XA(j,i)    +  TK2XA(i,j) -   TK2XA(j,i) \
+                                                                -   MK2T(i,j) +    MK2T(j,i) \
+                                   +   K1T(i,j) -   K1T(j,i)    -   TK1T(i,j) +    TK1T(j,i) \
+                                   -   const2/const1 * K2T(i,j) +   const2/const1 * K2T(j,i)    +   const2/const1 * TK2T(i,j) -    const2/const1 * TK2T(j,i) \
+                                   +   K3T(i,j) -   K3T(j,i)    -   TK3T(i,j) +    TK3T(j,i) \
+                                   -   K2T(i,j) +   K2T(j,i)    +   TK2T(i,j) -    TK2T(j,i) \
+                                 );
+
+
+      }
+    else  
+      { dlogpsi[kk] +=  ( K4T(i,j)-K4T(j,i) );
+
+        dhpsioverpsi[kk] += \
+                            -0.5*( -   K5T(i,j) +   K5T(j,i)    \
+                                   + K2AiB(i,j) - K2AiB(j,i)    \
+                                   -  K2XA(i,j) +  K2XA(j,i)    \
+                                                                \
+                                   +   K1T(i,j) -   K1T(j,i)    \
+                                   -   const2/const1 * K2T(i,j) +   const2/const1 * K2T(j,i)    \
+                                   +   K3T(i,j) -   K3T(j,i)    \
+                                   -   K2T(i,j) +   K2T(j,i)  \
+                                 );
+
+      }
+  }
+
+}
+
 
 
 }

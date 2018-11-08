@@ -17,7 +17,7 @@
 #include "QMCWaveFunctions/BasisSetBase.h"
 
 #include <Numerics/MatrixOperators.h>
-
+#include "Numerics/DeterminantOperators.h"
 
 namespace qmcplusplus
 {
@@ -43,7 +43,10 @@ namespace qmcplusplus
      */
     ValueMatrix_t* C;
     ValueMatrix_t* m_init_B;
-    ValueMatrix_t  T;
+    ValueMatrix_t  Table;
+
+    ParticleSet::ParticleGradient_t myG_temp, myG_J;
+    ParticleSet::ParticleLaplacian_t myL_temp, myL_J;
     ///true if C is an identity matrix
     bool Identity;
     ///if true, do not clean up
@@ -77,7 +80,79 @@ namespace qmcplusplus
 
     ///helper function to buildOptVariables
     int build_occ_vec(std::vector<int> * data, const size_t& nel, const size_t& nmo, std::vector<int>* occ_vec);
+  
+    void evaluateDerivatives (ParticleSet& P,
+                             const opt_variables_type& optvars,
+                             std::vector<RealType>& dlogpsi, 
+                             std::vector<RealType>& dhpsioverpsi,
+                             const ValueType& psiCurrent,
+                             std::vector<RealType> const * const Coeff,
+                             std::vector<size_t> const * const C2node_up,
+                             std::vector<size_t> const * const C2node_dn,
+                             const ValueVector_t& detValues_up, 
+                             const ValueVector_t& detValues_dn, 
+                             const GradMatrix_t& grads_up, 
+                             const GradMatrix_t& grads_dn, 
+                             const ValueMatrix_t& lapls_up, 
+                             const ValueMatrix_t& lapls_dn,
+                             const ValueMatrix_t& M_up,
+                             const ValueMatrix_t& M_dn,
+                             const ValueMatrix_t& Minv_up,
+                             const ValueMatrix_t& Minv_dn,
+                             const GradMatrix_t& B_grad,
+                             const ValueMatrix_t& B_lapl,
+                             std::vector<int> const * const detData_up, 
+                             const size_t& N1,
+                             const size_t& N2,
+                             const size_t& NP1,
+                             const size_t& NP2);
 
+  //helper function to evaluatederivative; evaluate orbital rotation parameter derivative using table method
+  void table_method_eval(std::vector<RealType>& dlogpsi,
+                         std::vector<RealType>& dhpsioverpsi,
+                         const ParticleSet::ParticleLaplacian_t& myL_J,
+                         const ParticleSet::ParticleGradient_t& myG_J,
+                         const size_t& nel,
+                         const size_t& nmo,
+                         const ValueType& psiCurrent,
+                         std::vector<RealType> const * const Coeff,
+                         std::vector<size_t> const * const C2node_up,
+                         std::vector<size_t> const * const C2node_dn,
+                         const ValueVector_t& detValues_up, 
+                         const ValueVector_t& detValues_dn, 
+                         const GradMatrix_t& grads_up, 
+                         const GradMatrix_t& grads_dn, 
+                         const ValueMatrix_t& lapls_up, 
+                         const ValueMatrix_t& lapls_dn,
+                         const ValueMatrix_t& M_up,
+                         const ValueMatrix_t& M_dn,
+                         const ValueMatrix_t& Minv_up,
+                         const ValueMatrix_t& Minv_dn,
+                         const GradMatrix_t& B_grad,
+                         const ValueMatrix_t& B_lapl,
+                         std::vector<int> const * const detData_up,
+                         const size_t& N1,
+                         const size_t& N2,
+                         const size_t& NP1,
+                         const size_t& NP2); 
+
+//  void table_method_eval(const ParticleSet::ParticleLaplacian_t& myL_J,
+//                         const ParticleSet::ParticleGradient_t& myG_J,
+//                         const size_t& nel,
+//                         const size_t& nmo,
+//                         double const * T,
+//                         double const * A,
+//                         double const * Ainv,
+//                         std::vector<RealType>& dlogpsi,
+//                         std::vector<RealType>& dhpsioverpsi,
+//                         const int parameter_start_index,
+//                         const int parameters_size,
+//                         const std::vector<std::pair<int,int>>* const m_act_rot_inds,
+//                         const int active_spin,
+//                         const ValueMatrix_t& Tr,
+//                         const ValueMatrix_t& Ar);
+
+    
     void checkInVariables(opt_variables_type& active)
     {
       if(Optimizable && !IsCloned)
@@ -99,7 +174,6 @@ namespace qmcplusplus
     ///reset
     void resetParameters(const opt_variables_type& active)
     {
-      app_log() << "RESET PARAMETERS CALLED SDP\n";
       //myBasisSet->resetParameters(active);
       if (Optimizable)
       {

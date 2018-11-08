@@ -165,9 +165,31 @@ public:
 
   // Evaluate the derivative of the optimized orbitals with
   // respect to the parameters
-  virtual void evaluateDerivatives
-  (ParticleSet& P, int iat, const opt_variables_type& active,
-   ValueMatrix_t& d_phi, ValueMatrix_t& d_lapl_phi) {}
+  virtual void evaluateDerivatives (ParticleSet& P, 
+                                   const opt_variables_type& optvars,
+                                   std::vector<RealType>& dlogpsi, 
+                                   std::vector<RealType>& dhpsioverpsi,
+                                   const ValueType& psiCurrent,
+                                   std::vector<RealType> const * const Coeff,
+                                   std::vector<size_t> const * const C2node_up,
+                                   std::vector<size_t> const * const C2node_dn,
+                                   const ValueVector_t& detValues_up, 
+                                   const ValueVector_t& detValues_dn, 
+                                   const GradMatrix_t& grads_up, 
+                                   const GradMatrix_t& grads_dn, 
+                                   const ValueMatrix_t& lapls_up, 
+                                   const ValueMatrix_t& lapls_dn,
+                                   const ValueMatrix_t& M_up,
+                                   const ValueMatrix_t& M_dn,
+                                   const ValueMatrix_t& Minv_up,
+                                   const ValueMatrix_t& Minv_dn, 
+                                   const GradMatrix_t& B_grad,
+                                   const ValueMatrix_t& B_lapl,
+                                   std::vector<int> const * const detData_up,
+                                   const size_t& N1,
+                                   const size_t& N2,
+                                   const size_t& NP1,
+                                   const size_t& NP2){}
 
 
   ///reset the target particleset

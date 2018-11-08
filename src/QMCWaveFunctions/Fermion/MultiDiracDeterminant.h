@@ -124,8 +124,53 @@ public:
 
   void resetParameters(const opt_variables_type& active)
   {
-    //Phi->resetParameters(active);
+    Phi->resetParameters(active);
   }
+
+  void evaluateDerivatives(ParticleSet& P,
+                           const opt_variables_type& optvars,
+                           std::vector<RealType>& dlogpsi,
+                           std::vector<RealType>& dhpsioverpsi,
+                           MultiDiracDeterminant const * const pseudo_dn,
+                           const ValueType& psiCurrent,
+                           std::vector<RealType> const * const Coeff,
+                           std::vector<size_t> const * const C2node_up,
+                           std::vector<size_t> const * const C2node_dn)
+  {
+    const ValueVector_t&  detValues_up = detValues;
+    const ValueVector_t&  detValues_dn = pseudo_dn->detValues;
+    const GradMatrix_t&   grads_up     = grads;
+    const GradMatrix_t&   grads_dn     = pseudo_dn->grads;
+    const ValueMatrix_t&  lapls_up     = lapls;
+    const ValueMatrix_t&  lapls_dn     = pseudo_dn->lapls;
+    const ValueMatrix_t&  M_up         = psiM;
+    const ValueMatrix_t&  M_dn         = pseudo_dn->psiM;
+    const ValueMatrix_t&  Minv_up      = psiMinv;
+    const ValueMatrix_t&  Minv_dn      = pseudo_dn->psiMinv;
+    const GradMatrix_t&   B_grad       = dpsiM;
+    const ValueMatrix_t&  B_lapl       = d2psiM; 
+
+    std::vector<int> const * const detData_up = detData;
+
+    const size_t& N1  = FirstIndex;
+    const size_t& N2  = pseudo_dn->FirstIndex;
+    const size_t& NP1 = NumPtcls;
+    const size_t& NP2 = pseudo_dn->NumPtcls;
+    
+    Phi->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, psiCurrent,
+                                                                Coeff,
+                                                                C2node_up, C2node_dn, 
+                                                                detValues_up, detValues_dn,
+                                                                grads_up, grads_dn,
+                                                                lapls_up, lapls_dn,
+                                                                M_up, M_dn,
+                                                                Minv_up, Minv_dn,
+                                                                B_grad, B_lapl,
+                                                                detData_up,
+                                                                N1, N2,
+                                                                NP1, NP2); 
+  }
+
 
   inline void reportStatus(std::ostream& os)
   {

@@ -753,6 +753,11 @@ void MultiSlaterDeterminantFast::evaluateDerivatives(ParticleSet& P,
       }
     } 
   }
+  if(Dets[0]->Optimizable && Dets[1]->Optimizable)
+  {
+    Dets[0]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, Dets[1], psiCurrent, C, C2node_up, C2node_dn);
+    Dets[1]->evaluateDerivatives(P, optvars, dlogpsi, dhpsioverpsi, Dets[0], psiCurrent, C, C2node_dn, C2node_up);
+  }  
 }
 
 void MultiSlaterDeterminantFast::registerTimers()
