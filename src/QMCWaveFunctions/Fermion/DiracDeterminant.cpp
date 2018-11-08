@@ -49,16 +49,6 @@ DiracDeterminant::DiracDeterminant(SPOSetPtr const &spos, int first):
 ///default destructor
 DiracDeterminant::~DiracDeterminant() {}
 
-#if 0
-DiracDeterminant& DiracDeterminant::operator=(const DiracDeterminant& s)
-{
-  Bytes_in_WFBuffer=s.Bytes_in_WFBuffer;
-  NP=0;
-  resize(s.NumPtcls, s.NumOrbitals);
-  return *this;
-}
-#endif
-
 /** set the index of the first particle in the determinant and reset the size of the determinant
  *@param first index of first particle
  *@param nel number of particles in the determinant
