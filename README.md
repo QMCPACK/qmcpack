@@ -205,12 +205,6 @@ cmake                                               \
 
 ##  Additional examples:
 
-QMCPACK includes validation tests to ensure the correctness of the
-code, compilers, tools, and runtime. The tests should ideally be run
-each compilation, and certainly before any research use. The tests
-check the output against known mean-field, quantum chemistry, and
-other QMC results.
-
 Set compile flags manually:
 ```
    cmake                                                \
@@ -234,40 +228,57 @@ Add extra include directories:
 
 # Testing and validation of QMCPACK
 
-For more informaton, consult QMCPACK pages at http://www.qmcpack.org and the manual.
+Before using QMCPACK we highly encourage tests to be run.
+QMCPACK includes extensive validation tests to ensure the correctness of the
+code, compilers, tools, and runtime. The tests should ideally be run
+each compilation, and certainly before any research use. The tests include
+checks of the output against known mean-field, quantum chemistry, and
+other QMC results.
+
+While some tests are fully deterministic, due to QMCPACK's stochastic
+nature some tests are statistical and can occasionally fail. We employ
+a range of test names and labeling to differentiate between these, as
+well as developmental tests that are known to fail. In particular,
+"deterministic" tests include this in their ctest test name, while
+tests known to be unstable (stochastically or otherwise) are labeled
+unstable using ctest labels.
+
+For more informaton, consult http://www.qmcpack.org and the manual.
 The tests currently use up to 16 cores in various combinations of MPI
-tasks and OpenMP threads.
+tasks and OpenMP threads. Current status for many systems can be
+checked at https://cdash.qmcpack.org
 
 Note that due to the small electron and walker counts used in the
 tests, they should not be used for any performance measurements. These
 should be made on problem sizes that are representative of actual
-research calculations.
+research calculations. As described in the manual, performance tests
+are provided to aid in monitoring performance.
 
+## Run the deterministic tests
+
+From the build directory, invoke ctest specifying only tests
+that are deterministic and known to be reliable.
+```
+ctest -R deterministic -LE unstable
+```
+
+These tests currently take a few seconds to run, and include all the
+ unit tests. All tests should pass. Failing tests likely indicate a
+ significant problem that should be solved before using QMCPACK
+ further. This ctest invocation can be used as part of an automated
+ installation verification process.
+ 
 ## Run the short (quick) tests
 
  From the build directory, invoke ctest specifying only tests
- including "short" should be run
+ including "short" to run that are known to be stable.
 ```
-ctest -R short
-```
-
- These tests currently take several minutes to run. All tests should pass.
-
-## Run the long verification tests
-
-For greater surety, the long verification tests use a far greater
-number of statistical samples than the "short" tests. These take
-several hours each to run.
-
-From the build directory, invoke ctest with an increased test timeout
-```
-ctest --timeout 36000
+ctest -R short -LE unstable
 ```
 
-This will run all the defined tests, "short" and "long" as well as the
-unit and other tests. If you are running on a system such as a large
-shared supercomputer you will likely have to run these tests from
-inside a submitted job to avoid run length limits.
+ These tests currently take up to around one hour. On average, all
+ tests should pass at a three sigma level of reliability. Any
+ initially failing test should pass when rerun.
 
 ## Run individual tests
 
