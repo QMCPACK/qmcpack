@@ -45,14 +45,12 @@ namespace qmcplusplus
 /// Constructor.
 DMCOMP::DMCOMP(MCWalkerConfiguration& w, TrialWaveFunction& psi, QMCHamiltonian& h, WaveFunctionPool& ppool, Communicate* comm)
   : QMCDriver(w,psi,h,ppool,comm)
-  , KillNodeCrossing(0) ,Reconfiguration("no"), BenchMarkRun("no")
-  , BranchInterval(-1),mover_MaxAge(-1)
+  , KillNodeCrossing(0), Reconfiguration("no"), BranchInterval(-1), mover_MaxAge(-1)
 {
   RootName = "dmc";
   QMCType ="DMCOMP";
   QMCDriverMode.set(QMC_UPDATE_MODE,1);
   m_param.add(KillWalker,"killnode","string");
-  m_param.add(BenchMarkRun,"benchmark","string");
   m_param.add(Reconfiguration,"reconfiguration","string");
   //m_param.add(BranchInterval,"branchInterval","string");
   m_param.add(NonLocalMove,"nonlocalmove","string");
@@ -349,34 +347,6 @@ bool DMCOMP::run()
   return finalize(nBlocks);
 }
 
-
-void DMCOMP::benchMark()
-{
-  //set the collection mode for the estimator
-  Estimators->setCollectionMode(true);
-  IndexType PopIndex = Estimators->addProperty("Population");
-  IndexType EtrialIndex = Estimators->addProperty("Etrial");
-  //Estimators->reportHeader(AppendRun);
-  //Estimators->reset();
-  IndexType block = 0;
-  RealType Eest = branchEngine->getEref();
-  //resetRun();
-  for(int ip=0; ip<NumThreads; ip++)
-  {
-    char fname[16];
-    sprintf(fname,"test.%i",ip);
-    std::ofstream fout(fname);
-  }
-  for(int istep=0; istep<nSteps; istep++)
-  {
-    FairDivideLow(W.getActiveWalkers(),NumThreads,wPerNode);
-    #pragma omp parallel
-    {
-      int ip = omp_get_thread_num();
-      Movers[ip]->benchMark(W.begin()+wPerNode[ip],W.begin()+wPerNode[ip+1],ip);
-    }
-  }
-}
 
 bool
 DMCOMP::put(xmlNodePtr q)
