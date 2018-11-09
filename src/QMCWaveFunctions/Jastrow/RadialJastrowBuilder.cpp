@@ -11,251 +11,128 @@
 
 #include "RadialJastrowBuilder.h"
 
-#include "Utilities/IteratorUtility.h"
-#include "Utilities/ProgressReportEngine.h"
-#include "OhmmsData/AttributeSet.h"
-#include "OhmmsData/ParameterSet.h"
-
-#include "Particle/DistanceTableData.h"
-#include "Particle/DistanceTable.h"
-
-
-
-#include "QMCWaveFunctions/Jastrow/DiffOneBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/DiffOneBodySpinJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/DiffTwoBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowSpinOrbital.h"
-
-#if defined(QMC_CUDA)
-#if defined(ENABLE_SOA)
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBspline.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBspline.h"
-#else
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbitalBsplineAoS.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbitalBsplineAoS.h"
-#endif
-#else // defined(QMC_CUDA)
-#if defined(ENABLE_SOA)
-#include "QMCWaveFunctions/Jastrow/J1OrbitalSoA.h"
-#include "QMCWaveFunctions/Jastrow/J2OrbitalSoA.h"
-#else
-#include "QMCWaveFunctions/Jastrow/OneBodyJastrowOrbital.h"
-#include "QMCWaveFunctions/Jastrow/TwoBodyJastrowOrbital.h"
-#endif
-#endif
-
-
 namespace qmcplusplus
 {
 
-RadialJastrowBuilder::RadialJastrowBuilder(PartcleSet& target, TrialWaveFunction& psi,
-					   PtclPoolType& psets):
-  WaveFunctionComponentBuilder(target, psi),ptclPool(psets)
+RadialJastrowBuilder::RadialJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi,
+					   ParticleSet& source):
+  WaveFunctionComponentBuilder(target, psi),SourcePtcl(source)
 {
   ClassName="RadialJastrowBuilder";
+  NameOpt="0";
+  typeOpt="unknown";
+  Jastfunction="unknown";
+  SourceOpt=targetPtcl.getName();
+  SpinOpt="no";
 }
 
-// helper class to simplify and localize ugly ifdef stuff for types
-template<typename precision, template<class> class RadFuncType>
-class JastrowTypeHelper 
+RadialJastrowBuilder::RadialJastrowBuilder(ParticleSet& target, TrialWaveFunction& psi):
+  WaveFunctionComponentBuilder(target, psi),SourcePtcl(NULL)
 {
- private:
- public:
-  typedef RadFuncType<precision> rft;
-#if defined(ENABLE_SOA)
-  typedef J1OrbitalSoA<rft> J1OrbitalType;
-  typedef J1OrbitalSoA<rft> J1OrbitalTypeSpin;
-  typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
-  typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
-  typedef J2OrbitalSoA<rft> J2OrbitalType;
-  typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
-#else
-  typedef OneBodyJastrowOrbital<rft> J1OrbitalType;
-  typedef OneBodyJastrowOrbital<rft> J1OrbitalTypeSpin;
-  typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
-  typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
-  typedef TwoBodyJastrowOrbital<rft> J2OrbitalType;
-  typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
-#endif
-};
-
-
-// specialization for bspline (does this need to be so complicated?)
-// note that this supports CUDA whereas the general case does not
-template<typename precision>
-class JastrowTypeHelper<precision, BsplineFunctor>
-{
- private:
- public:
-  typedef BsplineFunctor<precision> rft;
-#if defined(QMC_CUDA) and defined(ENABLE_SOA)
-  typedef OneBodyJastrowOrbitalBspline<rft> J1OrbitalType;
-  typedef OneBodyJastrowOrbitalBspline<rft> J1OrbitalTypeSpin;
-  typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalType;
-  typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
-  typedef TwoBodyJastrowOrbitalBspline<rft> J2OrbitalType;
-  typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
-#if defined(QMC_CUDA) and !defined(ENABLE_SOA)
-  typedef OneBodyJastrowOrbitalBsplineAoS J1OrbitalType;
-  typedef OneBodyJastrowOrbitalBsplineAoS J1OrbitalTypeSpin;
-  typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalType;
-  typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
-  typedef TwoBodyJastrowOrbitalBsplineAoS J2OrbitalType;
-  typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
-#if !defined(QMC_CUDA) and defined(ENABLE_SOA)
-  typedef J1OrbitalSoA<rft> J1OrbitalType;
-  typedef OneBodySpinJastrowOrbital<rft> J1OrbitalTypeSpin;
-  typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
-  typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
-  typedef J2OrbitalSoA<rft> J2OrbitalType;
-  typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
-#if !defined(QMC_CUDA) and !defined(ENABLE_SOA)
-  typedef OneBodyJastrowOrbital<rft> J1OrbitalType;
-  typedef OneBodySpinJastrowOrbital<rft> J1OrbitalTypeSpin;
-  typedef DiffOneBodyJastrowOrbital<rft> DiffJ1OrbitalType;
-  typedef DiffOneBodySpinJastrowOrbital<rft> DiffJ1OrbitalTypeSpin;
-  typedef TwoBodyJastrowOrbital<rft> J2OrbitalType;
-  typedef DiffTwoBodyJastrowOrbital<rft> DiffJ2OrbitalType;
-};
-
-
+  ClassName="RadialJastrowBuilder";
+  NameOpt="0";
+  typeOpt="unknown";
+  Jastfunction="unknown";
+  SourceOpt=targetPtcl.getName();
+  SpinOpt="no";
 }
 
+// helper method for dealing with functor incompatible with Open Boundaries
+void RadialJastrowBuilder::guardAgainstOBC()
+{
+  if (targetPtcl.Lattice.SuperCellEnum == SUPERCELL_OPEN) 
+  {
+    app_error() << Jastfunction << " relies on the total density for its form\n";
+    app_error() << "but open boundary conditions are requested.  Please choose other forms of Jastrow\n";
+  }
+}
+ 
+// helper method for dealing with functor incompatible with PBC
+void RadialJastrowBuilder::guardAgainstPBC()
+{
+  if (targetPtcl.Lattice.SuperCellEnum != SUPERCELL_OPEN)
+  {
+    app_error() << Jastfunction << " does not support a cutoff, but is requested with\n";
+    app_error() << "periodic boundary conditions, please choose other forms of Jastrow\n";
+  }
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// quick template helper to allow use of RPA
+template <typename> 
+class RPAFunctor { };
 
 
 
 
 bool RadialJastrowBuilder::put(xmlNodePtr cur)
 {
-  // not sure if this can hande spin dependence yet
-  // also not sure whether I should be using ptclPool
   ReportEngine PRE(ClassName,"put(xmlNodePtr)");
-  std::string jastfunction("unknown");
-  std::string sourceOpt=targetPtcl.getName();
-  std::string spin="yes";
-  std::string id_b="jee_b";
   OhmmsAttributeSet aAttrib;
-  aAttrib.add(jastfunction,"function");
-  aAttrib.add(spin, "spin");
-  aAttrib.add(sourceOpt, "source");
+  aAttrib.add(NameOpt,"name");
+  aAttrib.add(TypeOpt,"type");
+  aAttrib.add(Jastfunction,"function");
+  aAttrib.add(SourceOpt, "source");
+  aAttrib.add(SpinOpt, "spin");
   aAttrib.put(cur);
+  tolower(NameOpt);
+  tolower(TypeOpt);
+  tolower(Jastfunction);
+  tolower(SourceOpt);
+  tolower(SpinOpt);
+
   bool success=false;
 
   SpeciesSet& species(targetPtcl.getSpeciesSet());
-  int chargeInd=species.addAttribute("charge");
-  
-  if (sourceOpt == targetPtcl.getName())
-  {
-    // it's a two body jastrow factor
-    int taskid=(targetPsi.is_manager())?targetPsi.getGroupID():-1;
+  int chargeInd=species.addAttribute("charge");  
 
-    cur= cur->xmlChildrenNode;
-    while(cur!=NULL)
-    {
-      std::string cname((const char*)cur->name);
-      if (cname == "correlation")
-      {
-        OhmmsAttributeSet rAttrib;
-        RealType cusp=-1e10;
-        std::string spA(species.speciesName[0]);
-        std::string spB(species.speciesName[0]);
-        rAttrib.add(spA,"speciesA");
-        rAttrib.add(spB,"speciesB");
-        rAttrib.add(cusp,"cusp");
-        rAttrib.put(cur);
-        int ia = species.findSpecies(spA);
-        int ib = species.findSpecies(spB);
-        if(ia==species.size() || ib == species.size())
-        {
-          PRE.error("Failed. Species are incorrect.",true);
-        }
-        if(cusp<-1e6)
-        {
-          RealType qq=species(chargeInd,ia)*species(chargeInd,ib);
-          cusp = (ia==ib)? -0.25*qq:-0.5*qq;
-        }
-        std::ostringstream o;
-        o<<"j2"<<ia<<ib;
-	// now have a series of if's to pick up various available functors (pade1, pade2, casino, bspline?)
-	// and then call createJ2 with that functor type
-	// we should have some logic to deal with species dependence (also need to have guards a-la bspline
-	// for the case where there is only a single (or zero) electron of a given species
-      }
-
-  } 
-  else    
+  if (typeOpt.find("one") < typeOpt.size())
   {
     // it's a one body jastrow factor
-  }
-}
-
-template<typename RadFuncType>
-bool RadialJastrowBuilder::createJ2(xmlNodePtr cur, const std::string& jname) 
-{
-  SpeciesSet& species(targetPtcl.getSpeciesSet());
-  int taskid=(targetPsi.is_manager())?targetPsi.getGroupID():-1;
-#if defined(ENABLE_SOA)
-  typedef J2OrbitalSoA<RadFuncType> J2Type;
-#else
-  typedef TwoBodyJastrowOrbital<RadFuncType> J2Type;
-#endif
-  typedef DiffTwoBodyJastrowOrbital<RadFuncType> dJ2Type;
-  int taskid=(targetPsi.is_manager())?targetPsi.getGroupID():-1;
-  J2Type *J2 = new J2Type(targetPtcl,taskid);
-  dJ2Type *dJ2 = new dJ2Type(targetPtcl);
-  cur= cur->xmlChildrenNode;
-  while(cur!=NULL)
-  {
-    std::string cname((const char*)cur->name);
-    if (cname == "correlation")
+    if (Jastfunction == "bspline") 
     {
-      OhmmsAttributeSet rAttrib;
-      RealType cusp=-1e10;
-      std::string spA(species.speciesName[0]);
-      std::string spB(species.speciesName[0]);
-      rAttrib.add(spA,"speciesA");
-      rAttrib.add(spB,"speciesB");
-      rAttrib.add(cusp,"cusp");
-      rAttrib.put(cur);
-      int ia = species.findSpecies(spA);
-      int ib = species.findSpecies(spB);
-      if(ia==species.size() || ib == species.size())
-      {
-	PRE.error("Failed. Species are incorrect.",true);
-      }
-      if(cusp<-1e6)
-      {
-	RealType qq=species(chargeInd,ia)*species(chargeInd,ib);
-	cusp = (ia==ib)? -0.25*qq:-0.5*qq;
-      }
-      std::ostringstream o;
-      o<<"j2"<<ia<<ib;
-      RadFuncType *functor = new RadFuncType(cusp,o.str());
-      functor->put(cur);
-      J2->addFunc(ia,ib,functor);
-      dJ2->addFunc(ia,ib,functor);
-      }
-    cur=cur->next;
+      success = createJ1<BsplineFunctor>(cur);
+    }
+    else if (Jastfunction == "pade") 
+    {
+      guardAgainstPBC();
+      success = createJ1<PadeFunctor>(cur);
+    }
+    else if (Jastfunction == "rpa") 
+    {
+#if !(OHMMS_DIM == 3)
+      app_error() << "RPA for one-body jastrow is only available for 3D\n";
+#endif
+      guardAgainstOBC();
+      success = createJ1<RPAFunctor>(cur);
+    }
+    else
+    {
+      app_error() << "Unknown one jastrow body function: " << Jastfunction << ".\n";
+    }
   }
-  J2->dPsi=dJ2;
-  std::string j2name="J2_"+jname;
-  targetPsi.addOrbital(J2,j2name);
-  J2->setOptimizable(true);
-  return true;
-}
+  else if (typeOpt.find("two") < typeOpt.size())
+  {
+    // it's a two body jastrow factor
+    if (Jastfunction == "bspline") 
+    {
+      success = createJ2<BsplineFunctor>(cur);
+    }
+    else if (Jastfunction == "pade") 
+    {
+      guardAgainstPBC();
+      success = createJ2<PadeFunctor>(cur);
+    }
+    else if (Jastfunction == "rpa") 
+    {
+#if !(OHMMS_DIM == 3)
+      app_error() << "RPA for one-body jastrow is only available for 3D\n";
+#endif
+      guardAgainstOBC();
+      success = createJ2<RPAFunctor>(cur);
+    }
+    else
+    {
+      app_error() << "Unknown two body jastrow function: " << Jastfunction << ".\n";
+    }
+    }
+}      
