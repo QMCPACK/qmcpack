@@ -2,7 +2,7 @@
 // This file is distributed under the University of Illinois/NCSA Open Source License.
 // See LICENSE file in top directory for details.
 //
-// Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
+// Copyright (c) 2018 QMCPACK developers.
 //
 // File developed by: Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //
@@ -17,6 +17,7 @@
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include <simd/simd.hpp>
+#include <cublas_v2.h>
 
 namespace qmcplusplus {
 
@@ -34,7 +35,22 @@ namespace qmcplusplus {
       const T* Ainv_row_ptr;
       T curRatio;
 
-      DelayedUpdateCUDA(): delay_count(0), Ainv_row_ptr(nullptr) {}
+      // CUDA specific variables
+      cublasHandle_t handle;
+      cudaStream_t hstream;
+
+      DelayedUpdateCUDA(): delay_count(0), Ainv_row_ptr(nullptr)
+      {
+        cublasCreate(&handle);
+        cudaStreamCreate(&hstream);
+        cublasSetStream(handle,hstream);
+      }
+
+      ~DelayedUpdateCUDA()
+      {
+        cublasDestroy(handle);
+        cudaStreamDestroy(hstream);
+      }
 
       inline void resize(int norb, int delay)
       {
@@ -191,10 +207,14 @@ namespace qmcplusplus {
         else
         {
           const int lda_Binv=Binv.cols();
-          BLAS::gemm('T', 'N', delay_count, norb, norb, cone, U.data(), norb, Ainv.data(), norb, czero, temp_gpu.data(), lda_Binv);
+          const T cminusone(-1);
+          //BLAS::gemm('T', 'N', delay_count, norb, norb, cone, U_gpu.data(), norb, Ainv.data(), norb, czero, temp_gpu.data(), lda_Binv);
+          cublasDgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, &cone, U_gpu.data(), norb, Ainv.data(), norb, &czero, temp_gpu.data(), lda_Binv);
           for(int i=0; i<delay_count; i++) temp_gpu(delay_list[i], i) -= cone;
-          BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, V.data(), norb, Binv.data(), lda_Binv, czero, U.data(), norb);
-          BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U.data(), norb, temp_gpu.data(), lda_Binv, cone, Ainv.data(), norb);
+          //BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, V_gpu.data(), norb, Binv_gpu.data(), lda_Binv, czero, U_gpu.data(), norb);
+          cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, norb, delay_count, delay_count, &cone, V_gpu.data(), norb, Binv_gpu.data(), lda_Binv, &czero, U_gpu.data(), norb);
+          //BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U_gpu.data(), norb, temp_gpu.data(), lda_Binv, cone, Ainv.data(), norb);
+          cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone, U_gpu.data(), norb, temp_gpu.data(), lda_Binv, &cone, Ainv.data(), norb);
         }
         delay_count = 0;
       }
