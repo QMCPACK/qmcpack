@@ -42,8 +42,10 @@ namespace qmcplusplus {
       // CUDA specific variables
       cublasHandle_t handle;
       cudaStream_t hstream;
+      bool async_Ainv_update_in_progress;
 
-      DelayedUpdateCUDA(): delay_count(0), Ainv_row_ptr(nullptr)
+      DelayedUpdateCUDA(): delay_count(0), Ainv_row_ptr(nullptr),
+                           async_Ainv_update_in_progress(false)
       {
         cublasCreate(&handle);
         cudaStreamCreate(&hstream);
@@ -83,6 +85,7 @@ namespace qmcplusplus {
       inline void transferAinvH2D(const Matrix<T>& Ainv)
       {
         cudaMemcpyAsync(Ainv_gpu.data(), Ainv.data(), Ainv.size()*sizeof(T), cudaMemcpyHostToDevice, hstream);
+        async_Ainv_update_in_progress = true;
       }
 
       inline void getInvRow(const Matrix<T>& Ainv, int rowchanged)
@@ -110,6 +113,7 @@ namespace qmcplusplus {
       template<typename VVT>
       inline T ratio(const Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
       {
+        waitAinv();
         getInvRow(Ainv, rowchanged);
         return curRatio = simd::dot(Ainv_row_ptr,psiV.data(),Ainv.cols());
       }
@@ -117,6 +121,7 @@ namespace qmcplusplus {
       template<typename GT>
       inline GT evalGrad(const Matrix<T>& Ainv, int rowchanged, const GT* dpsiV)
       {
+        waitAinv();
         getInvRow(Ainv, rowchanged);
         return simd::dot(Ainv_row_ptr,dpsiV,Ainv.cols());
       }
@@ -124,6 +129,7 @@ namespace qmcplusplus {
       template<typename VVT, typename GGT, typename GT>
       inline T ratioGrad(const Matrix<T>& Ainv, int rowchanged, const VVT& psiV, const GGT& dpsiV, GT& g)
       {
+        waitAinv();
         if( delay_count == 0 )
         {
           g = simd::dot(Ainv[rowchanged],dpsiV.data(),Ainv.cols());
@@ -200,20 +206,11 @@ namespace qmcplusplus {
           deteng.invert(Binv,false,delay_count);
 #endif
         }
-        if(delay_count==lda_Binv) updateInvMat(Ainv);
+        if(delay_count==lda_Binv) updateInvMat(Ainv,false);
       }
 
       inline void updateInvMat(Matrix<T>& Ainv, bool wait_async = true)
       {
-        //if(delay_count==1)
-        //{
-        //  temp.resize(norb);
-        //  // Only use the first norb elements of temp_gpu as a temporal array
-        //  BLAS::gemv('T', norb, norb, cone, Ainv.data(), norb, U[0], 1, czero, temp.data(), 1);
-        //  temp[delay_list[0]] -= cone;
-        //  BLAS::ger(norb,norb,-Binv[0][0],V[0],1,temp.data(),1,Ainv.data(),norb);
-        //}
-        //else
         // update the inverse matrix
         if( delay_count>0 )
         {
@@ -253,17 +250,22 @@ namespace qmcplusplus {
           //BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U.data(), norb, tempMat.data(), lda_Binv, cone, Ainv.data(), norb);
           cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone, U_gpu.data(), norb, temp_gpu.data(), lda_Binv, &cone, Ainv_gpu.data(), norb);
           error = cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), norb*norb*sizeof(T), cudaMemcpyDeviceToHost, hstream);
+          async_Ainv_update_in_progress = true;
         }
         delay_count = 0;
 
         // block incomplete stream execution
-        if(wait_async) waitStream();
+        if(wait_async) waitAinv();
       }
 
-      inline void waitStream()
+      inline void waitAinv()
       {
-        cudaError_t error = cudaStreamSynchronize(hstream);
-        if( error!=cudaSuccess ) throw std::runtime_error("DelayedUpdateCUDA : cudaStreamSynchronize failed!\n");
+        if(async_Ainv_update_in_progress)
+        {
+          cudaError_t error = cudaStreamSynchronize(hstream);
+          if( error!=cudaSuccess ) throw std::runtime_error("DelayedUpdateCUDA : cudaStreamSynchronize failed!\n");
+          async_Ainv_update_in_progress = false;
+        }
       }
     };
 }
