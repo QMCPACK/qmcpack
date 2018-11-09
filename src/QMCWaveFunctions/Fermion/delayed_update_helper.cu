@@ -32,6 +32,18 @@ __global__ void applyW_stageV_kernel(const int *delay_list_gpu, const int delay_
   if( col<delay_count ) temp_gpu[ndelay*delay_list_gpu[col] + col] += T(-1);
 }
 
+void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
+                        float* temp_gpu, const int numorbs, const int ndelay,
+                        float* V_gpu, const float* Ainv,
+                        cudaStream_t& hstream)
+{
+  const int BS = 128;
+  const int NB = (numorbs+BS-1)/BS;
+  dim3 dimBlock(BS);
+  dim3 dimGrid(NB);
+  applyW_stageV_kernel<float, BS><<<dimGrid, dimBlock, 0, hstream>>>
+  (delay_list_gpu, delay_count, temp_gpu, numorbs, ndelay, V_gpu, Ainv);
+}
 
 void applyW_stageV_cuda(const int *delay_list_gpu, const int delay_count,
                         double* temp_gpu, const int numorbs, const int ndelay,
