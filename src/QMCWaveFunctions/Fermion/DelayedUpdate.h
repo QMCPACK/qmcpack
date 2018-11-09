@@ -103,7 +103,7 @@ namespace qmcplusplus {
         }
         else
         {
-          throw std::runtime_error("DelayedUpdate : this should never happen!");
+          throw std::runtime_error("DelayedUpdate : this should never happen!\n");
           return T(0);
         }
       }

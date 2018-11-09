@@ -77,6 +77,7 @@ void DiracDeterminantCUDANext::invertPsiM(const ValueMatrix_t& logdetT, ValueMat
   LogValue = detEng.LogDet;
   PhaseValue = detEng.Phase;
 #endif
+  updateEng.transferAinvH2D(invMat);
   InverseTimer.stop();
 }
 

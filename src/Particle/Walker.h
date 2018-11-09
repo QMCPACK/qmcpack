@@ -32,9 +32,6 @@
 #include "Utilities/PointerPool.h"
 #include "CUDA/gpu_vector.h"
 #endif
-#ifdef QMC_CUDA_NEXT
-#include "simd/CUDAallocator.hpp"
-#endif
 #include <assert.h>
 #include <deque>
 namespace qmcplusplus
@@ -96,11 +93,7 @@ struct Walker
 
   ///typedef for the property container, fixed size
   typedef Matrix<EstimatorRealType>           PropertyContainer_t;
-#ifdef QMC_CUDA_NEXT
-  typedef PooledMemory<OHMMS_PRECISION_FULL, CUDAManagedAllocator<char>>  WFBuffer_t;
-#else
   typedef PooledMemory<OHMMS_PRECISION_FULL>  WFBuffer_t;
-#endif
   typedef PooledData<RealType>                Buffer_t;
 
   ///id reserved for forward walking

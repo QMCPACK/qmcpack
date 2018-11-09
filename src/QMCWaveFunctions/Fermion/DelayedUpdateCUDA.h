@@ -17,6 +17,7 @@
 #include <OhmmsPETE/OhmmsMatrix.h>
 #include "QMCWaveFunctions/Fermion/DiracMatrix.h"
 #include <simd/simd.hpp>
+#include "simd/CUDAallocator.hpp"
 #include <cublas_v2.h>
 #include "QMCWaveFunctions/Fermion/delayed_update_helper.h"
 
@@ -26,8 +27,8 @@ namespace qmcplusplus {
     struct DelayedUpdateCUDA
     {
       Matrix<T> U, V, B, Binv;
-      Matrix<T> tempMat; //debugging
-      Matrix<T, CUDAAllocator<T>, false> U_gpu, V_gpu, Binv_gpu, temp_gpu;
+      //Matrix<T> tempMat; // for debugging only
+      Matrix<T, CUDAAllocator<T>, false> U_gpu, V_gpu, Binv_gpu, temp_gpu, Ainv_gpu;
       Vector<T> temp, rcopy;
       Matrix<T_hp> Binv_hp;
       DiracMatrix<T_hp> deteng;
@@ -57,11 +58,7 @@ namespace qmcplusplus {
 
       inline void resize(int norb, int delay)
       {
-        U_gpu.resize(delay, norb);
-        V_gpu.resize(delay, norb);
-        tempMat.resize(norb, delay);
-        temp_gpu.resize(norb, delay);
-        Binv_gpu.resize(delay, delay);
+        //tempMat.resize(norb, delay);
         V.resize(delay, norb);
         U.resize(delay, norb);
         B.resize(delay, delay);
@@ -73,8 +70,19 @@ namespace qmcplusplus {
         deteng.reset(Binv, delay);
 #endif
         delay_count = 0;
+
+        temp_gpu.resize(norb, delay);
         delay_list.resize(delay);
+        U_gpu.resize(delay, norb);
+        V_gpu.resize(delay, norb);
+        Binv_gpu.resize(delay, delay);
+        Ainv_gpu.resize(norb, norb);
         delay_list_gpu.resize(delay);
+      }
+
+      inline void transferAinvH2D(const Matrix<T>& Ainv)
+      {
+        cudaMemcpyAsync(Ainv_gpu.data(), Ainv.data(), Ainv.size()*sizeof(T), cudaMemcpyHostToDevice, hstream);
       }
 
       inline void getInvRow(const Matrix<T>& Ainv, int rowchanged)
@@ -128,7 +136,7 @@ namespace qmcplusplus {
         }
         else
         {
-          throw std::runtime_error("DelayedUpdateCUDA : this should never happen!");
+          throw std::runtime_error("DelayedUpdateCUDA : this should never happen!\n");
           return T(0);
         }
       }
@@ -157,7 +165,6 @@ namespace qmcplusplus {
       template<typename VVT>
       inline void acceptRow(Matrix<T>& Ainv, int rowchanged, const VVT& psiV)
       {
-        std::cout << "debug id " << rowchanged << " curRatio " << curRatio << std::endl; 
         // safe mechanism
         Ainv_row_ptr = nullptr;
 
@@ -196,13 +203,8 @@ namespace qmcplusplus {
         if(delay_count==lda_Binv) updateInvMat(Ainv);
       }
 
-      inline void updateInvMat(Matrix<T>& Ainv)
+      inline void updateInvMat(Matrix<T>& Ainv, bool wait_async = true)
       {
-        if(delay_count==0) return;
-        // update the inverse matrix
-        CONSTEXPR T cone(1);
-        CONSTEXPR T czero(0);
-        const int norb=Ainv.rows();
         //if(delay_count==1)
         //{
         //  temp.resize(norb);
@@ -212,7 +214,12 @@ namespace qmcplusplus {
         //  BLAS::ger(norb,norb,-Binv[0][0],V[0],1,temp.data(),1,Ainv.data(),norb);
         //}
         //else
+        // update the inverse matrix
+        if( delay_count>0 )
         {
+          CONSTEXPR T cone(1);
+          CONSTEXPR T czero(0);
+          const int norb=Ainv.rows();
           const int lda_Binv=Binv.cols();
           const T cminusone(-1);
               cudaError_t error(cudaSuccess);
@@ -224,32 +231,39 @@ namespace qmcplusplus {
               if( error!=cudaSuccess ) std::cout <<"debug error 1 code " << error << std::endl;
           //BLAS::gemm('T', 'N', delay_count, norb, norb, cone, U.data(), norb, Ainv.data(), norb, czero, tempMat.data(), lda_Binv);
           //    cudaMemPrefetchAsync(Ainv.data(), Ainv.size()*sizeof(T), 0, hstream);
-          cublas_error = cublasDgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, &cone, U_gpu.data(), norb, Ainv.data(), norb, &czero, temp_gpu.data(), lda_Binv);
+          cublas_error = cublasDgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, delay_count, norb, norb, &cone, U_gpu.data(), norb, Ainv_gpu.data(), norb, &czero, temp_gpu.data(), lda_Binv);
               if( cublas_error!=CUBLAS_STATUS_SUCCESS ) std::cout <<"debug cublas error 1 code " << cublas_error << std::endl;
           error = cudaMemcpyAsync(delay_list_gpu.data(), delay_list.data(), delay_count*sizeof(int), cudaMemcpyHostToDevice, hstream);
-              if( error!=cudaSuccess ) std::cout <<"debug error 4 code " << error << std::endl;
-          //for(int i=0; i<delay_count; i++) tempMat(delay_list[i], i) -= cone;
-          applyW_stageV_cuda(delay_list_gpu.data(), delay_count, temp_gpu.data(), norb, temp_gpu.cols(), V_gpu.data(), Ainv.data(), hstream);
-          error = cudaMemcpyAsync(tempMat.data(), temp_gpu.data(), tempMat.size()*sizeof(T), cudaMemcpyDeviceToHost, hstream);
               if( error!=cudaSuccess ) std::cout <<"debug error 2 code " << error << std::endl;
-          error = cudaStreamSynchronize(hstream);
-              if( error!=cudaSuccess ) std::cout <<"debug error 3 code " << error << std::endl;
+          //for(int i=0; i<delay_count; i++) tempMat(delay_list[i], i) -= cone;
+          applyW_stageV_cuda(delay_list_gpu.data(), delay_count, temp_gpu.data(), norb, temp_gpu.cols(), V_gpu.data(), Ainv_gpu.data(), hstream);
+          //error = cudaMemcpyAsync(tempMat.data(), temp_gpu.data(), tempMat.size()*sizeof(T), cudaMemcpyDeviceToHost, hstream);
+          //    if( error!=cudaSuccess ) std::cout <<"debug error 3 code " << error << std::endl;
+          //error = cudaStreamSynchronize(hstream);
+          //    if( error!=cudaSuccess ) std::cout <<"debug error 4 code " << error << std::endl;
               //std::cout << "debug tempMat " << tempMat << std::endl;
           cudaMemcpyAsync(Binv_gpu.data(), Binv.data(), lda_Binv*delay_count*sizeof(T), cudaMemcpyHostToDevice, hstream);
           //BLAS::gemm('N', 'N', norb, delay_count, delay_count, cone, V.data(), norb, Binv.data(), lda_Binv, czero, U.data(), norb);
           cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, norb, delay_count, delay_count, &cone, V_gpu.data(), norb, Binv_gpu.data(), lda_Binv, &czero, U_gpu.data(), norb);
-          error = cudaMemcpyAsync(U.data(), U_gpu.data(), norb*delay_count*sizeof(T), cudaMemcpyDeviceToHost, hstream);
-              if( error!=cudaSuccess ) std::cout <<"debug error 2 code " << error << std::endl;
-          error = cudaStreamSynchronize(hstream);
-              if( error!=cudaSuccess ) std::cout <<"debug error 3 code " << error << std::endl;
+          //error = cudaMemcpyAsync(U.data(), U_gpu.data(), norb*delay_count*sizeof(T), cudaMemcpyDeviceToHost, hstream);
+          //    if( error!=cudaSuccess ) std::cout <<"debug error 5 code " << error << std::endl;
+          //error = cudaStreamSynchronize(hstream);
+          //    if( error!=cudaSuccess ) std::cout <<"debug error 6 code " << error << std::endl;
               //std::cout << "debug U " << U << std::endl;
           //BLAS::gemm('N', 'N', norb, norb, delay_count, -cone, U.data(), norb, tempMat.data(), lda_Binv, cone, Ainv.data(), norb);
-          cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone, U_gpu.data(), norb, temp_gpu.data(), lda_Binv, &cone, Ainv.data(), norb);
-          cudaMemPrefetchAsync(Ainv.data(), Ainv.size()*sizeof(T), cudaCpuDeviceId, hstream);
-          error = cudaStreamSynchronize(hstream);
-              if( error!=cudaSuccess ) std::cout <<"debug error 3 code " << error << std::endl;
+          cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, norb, norb, delay_count, &cminusone, U_gpu.data(), norb, temp_gpu.data(), lda_Binv, &cone, Ainv_gpu.data(), norb);
+          error = cudaMemcpyAsync(Ainv.data(), Ainv_gpu.data(), norb*norb*sizeof(T), cudaMemcpyDeviceToHost, hstream);
         }
         delay_count = 0;
+
+        // block incomplete stream execution
+        if(wait_async) waitStream();
+      }
+
+      inline void waitStream()
+      {
+        cudaError_t error = cudaStreamSynchronize(hstream);
+        if( error!=cudaSuccess ) throw std::runtime_error("DelayedUpdateCUDA : cudaStreamSynchronize failed!\n");
       }
     };
 }

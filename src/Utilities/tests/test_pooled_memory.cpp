@@ -22,10 +22,6 @@
 #include <random>
 #include <complex>
 
-#ifdef QMC_CUDA_NEXT
-#include "simd/CUDAallocator.hpp"
-#endif
-
 
 //#define CHECK_ALLOCATION_PERF
 
@@ -36,11 +32,7 @@ namespace qmcplusplus {
 
 TEST_CASE("pack scalar", "[utilities]")
 {
-#ifdef QMC_CUDA_NEXT
-  PooledMemory<double, CUDAManagedAllocator<char>> p;
-#else
   PooledMemory<double> p;
-#endif
   int i0 = 1;
   long i1 = (1L << 31) - 1;
   float i2 = 0.33;
