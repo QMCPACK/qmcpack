@@ -27,6 +27,7 @@
 #include "AFQMC/Hamiltonians/SparseHamiltonian_s4D.h"
 #ifdef QMC_COMPLEX
 #include "AFQMC/Hamiltonians/KPFactorizedHamiltonian.h"
+#include "AFQMC/Hamiltonians/KPTHCHamiltonian.h"
 #endif
 //#include "AFQMC/Hamiltonians/FactorizedSparseHamiltonian_old.h"
 //#include "AFQMC/Hamiltonians/SparseHamiltonian_s4D_old.h"
@@ -114,7 +115,7 @@ class dummy_Hamiltonian
 }
 
 #ifdef QMC_COMPLEX
-class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,FactorizedSparseHamiltonian,SymmetricFactorizedSparseHamiltonian,SparseHamiltonian_s4D,THCHamiltonian,KPFactorizedHamiltonian> 
+class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,FactorizedSparseHamiltonian,SymmetricFactorizedSparseHamiltonian,SparseHamiltonian_s4D,THCHamiltonian,KPFactorizedHamiltonian,KPTHCHamiltonian> 
 #else
 class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,FactorizedSparseHamiltonian,SymmetricFactorizedSparseHamiltonian,SparseHamiltonian_s4D,THCHamiltonian> 
 #endif
@@ -133,6 +134,7 @@ class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,FactorizedSpar
     explicit Hamiltonian(SparseHamiltonian_s4D&& other) : variant(std::move(other)) {}
 #ifdef QMC_COMPLEX
     explicit Hamiltonian(KPFactorizedHamiltonian&& other) : variant(std::move(other)) {}
+    explicit Hamiltonian(KPTHCHamiltonian&& other) : variant(std::move(other)) {}
 #endif
 
     explicit Hamiltonian(THCHamiltonian const& other) = delete;
@@ -141,6 +143,7 @@ class Hamiltonian: public boost::variant<dummy::dummy_Hamiltonian,FactorizedSpar
     explicit Hamiltonian(SparseHamiltonian_s4D const& other) = delete; 
 #ifdef QMC_COMPLEX
     explicit Hamiltonian(KPFactorizedHamiltonian const& other) = delete; 
+    explicit Hamiltonian(KPTHCHamiltonian const& other) = delete; 
 #endif
 
     Hamiltonian(Hamiltonian const& other) = delete; 

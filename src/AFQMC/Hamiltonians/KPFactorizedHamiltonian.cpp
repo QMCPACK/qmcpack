@@ -139,7 +139,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
   std::vector<shmSpMatrix> LQKikn;
   LQKikn.reserve(nkpts);   
   for(int Q=0; Q<nkpts; Q++) 
-    LQKikn.emplace_back( shmCMatrix({nkpts,nmo_max*nmo_max*nchol_per_kp[Q]},
+    LQKikn.emplace_back( shmSpMatrix({nkpts,nmo_max*nmo_max*nchol_per_kp[Q]},
                                    shared_allocator<SPComplexType>{TG.Node()}) );
 
   if( TG.Node().root() ) {
@@ -237,6 +237,7 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
   }
 */
   shmCMatrix haj({ndet*nkpts,(type==COLLINEAR?2:1)*nocc_max*nmo_max},shared_allocator<ComplexType>{TG.Node()});
+  if(TG.Node().root()) std::fill_n(haj.origin(),haj.num_elements(),ComplexType(0.0));
   int ank_max = nocc_max*nchol_max*nmo_max;
   for(int nd=0; nd<ndet; nd++) {
     for(int Q=0; Q<nkpts; Q++) {
@@ -449,6 +450,8 @@ HamiltonianOperations KPFactorizedHamiltonian::getHamiltonianOperations(bool pur
   }
   TG.Global().barrier();
   if(TG.Node().root()) {
+    TG.Cores().all_reduce_in_place_n(std::addressof(*haj.origin()),
+                                     haj.num_elements(),std::plus<>());
     for(int Q=0; Q<LQKank.size(); Q++) {
       TG.Cores().all_reduce_in_place_n(std::addressof(*LQKank[Q].origin()),
                                        LQKank[Q].num_elements(),std::plus<>());

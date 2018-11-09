@@ -104,8 +104,9 @@ TEST_CASE("wfn_fac_sdet", "[wavefunction_factory]")
     Hamiltonian& ham = HamFac.getHamiltonian(gTG,ham_name);
 
 
+//    auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,1);
     auto TG = TaskGroup_(gTG,std::string("WfnTG"),1,gTG.getTotalCores());
-    int nwalk = 1; // choose prime number to force non-trivial splits in shared routines
+    int nwalk = 11; // choose prime number to force non-trivial splits in shared routines
     RandomGenerator_t rng;
 
 const char *wlk_xml_block_closed =

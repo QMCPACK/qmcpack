@@ -69,10 +69,12 @@ namespace afqmc
       MixedDensityMatrix_for_E(wset,G,ov_,nd);
       ma::axpy(std::conj(ci[nd]),ov_,Ov);
       HamOp.energy(eloc2,G,nd,TG.TG_local().root());  
+/*
 std::cout<<" E nomsd: " <<nd <<" " 
 <<eloc2[0][0] <<" " 
 <<eloc2[0][1] <<" " 
 <<eloc2[0][2] <<std::endl; 
+*/
       //TG.TG_local().all_reduce_in_place_n(eloc2.origin(),3*nwalk,std::plus<>());
       for(int i=0; i<nwalk; ++i) 
         for(int k=0; k<3; ++k) 

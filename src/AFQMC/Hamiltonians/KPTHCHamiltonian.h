@@ -1,6 +1,6 @@
 
-#ifndef QMCPLUSPLUS_AFQMC_KPFACTORIZEDHAMILTONIAN_H
-#define QMCPLUSPLUS_AFQMC_KPFACTORIZEDHAMILTONIAN_H
+#ifndef QMCPLUSPLUS_AFQMC_KPTHCHAMILTONIAN_H
+#define QMCPLUSPLUS_AFQMC_KPTHCHAMILTONIAN_H
 
 #include<iostream>
 #include<vector> 
@@ -24,7 +24,7 @@ namespace qmcplusplus
 namespace afqmc
 {
 
-class KPFactorizedHamiltonian: public OneBodyHamiltonian 
+class KPTHCHamiltonian: public OneBodyHamiltonian 
 {
 
   public:
@@ -32,7 +32,7 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
   using shmSpMatrix = boost::multi::array<SPComplexType,2,shared_allocator<SPComplexType>>;
   using CMatrix = boost::multi::array<ComplexType,2>;
  
-  KPFactorizedHamiltonian(AFQMCInfo const& info, xmlNodePtr cur, 
+  KPTHCHamiltonian(AFQMCInfo const& info, xmlNodePtr cur, 
                           std::vector<s2D<ValueType> >&& h, 
                           TaskGroup_& tg_, ValueType nucE=0, ValueType fzcE=0):
                                     OneBodyHamiltonian(info,std::move(h),nucE,fzcE),
@@ -40,7 +40,7 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
   {
 
     if( TG.getNumberOfTGs() > 1 ) 
-        APP_ABORT(" Error: Distributed KPFactorizedHamiltonian not yet implemented.\n");
+        APP_ABORT(" Error: Distributed KPTHCHamiltonian not yet implemented.\n");
     
     std::string str("yes");
     ParameterSet m_param;
@@ -50,12 +50,12 @@ class KPFactorizedHamiltonian: public OneBodyHamiltonian
 
   }
 
-  ~KPFactorizedHamiltonian() {}
+  ~KPTHCHamiltonian() {}
 
-  KPFactorizedHamiltonian(KPFactorizedHamiltonian const& other) = delete;
-  KPFactorizedHamiltonian(KPFactorizedHamiltonian && other) = default;
-  KPFactorizedHamiltonian& operator=(KPFactorizedHamiltonian const& other) = delete;
-  KPFactorizedHamiltonian& operator=(KPFactorizedHamiltonian && other) = default;
+  KPTHCHamiltonian(KPTHCHamiltonian const& other) = delete;
+  KPTHCHamiltonian(KPTHCHamiltonian && other) = default;
+  KPTHCHamiltonian& operator=(KPTHCHamiltonian const& other) = delete;
+  KPTHCHamiltonian& operator=(KPTHCHamiltonian && other) = default;
 
   ValueType getNuclearCoulombEnergy() const { return OneBodyHamiltonian::NuclearCoulombEnergy; }
 

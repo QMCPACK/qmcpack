@@ -83,7 +83,7 @@ class KP3IndexFactorization
         walker_type(type),
         global_nCV(gncv),
         E0(e0_),
-        H1_Qij(std::move(hij_)),
+        H1(std::move(hij_)),
         haj(std::move(h1)),
         nopk(std::move(nopk_)),
         ncholpQ(std::move(ncholpQ_)),
@@ -92,7 +92,7 @@ class KP3IndexFactorization
         LQKikn(std::move(vik)),
         LQKank(std::move(vak)),
         LQKlnb(std::move(vlb)),
-        vn0_Qij(std::move(vn0_)),
+        vn0(std::move(vn0_)),
         SM_TMats({1,1},shared_allocator<SPComplexType>{c_}),
         TMats({1,1}),
         mutex(0)
@@ -112,42 +112,45 @@ class KP3IndexFactorization
 
     boost::multi_array<ComplexType,2> getOneBodyPropagatorMatrix(TaskGroup_& TG, boost::multi_array<ComplexType,1> const& vMF) {
 
-/*
-    // switch to H1_Qij
-      int NMO = hij.shape()[0];  
+      int nkpts = nopk.size(); 
+      int NMO = std::accumulate(nopk.begin(),nopk.end(),0);
       // in non-collinear case with SO, keep SO matrix here and add it
       // for now, stay collinear
-      boost::multi_array<ComplexType,2> H1(extents[NMO][NMO]);
+      boost::multi_array<ComplexType,2> P1(extents[NMO][NMO]);
 
-      // add sum_n vMF*Spvn, vMF has local contribution only!
-      boost::multi::array_ref<ComplexType,1> H1D(std::addressof(*H1.origin()),{NMO*NMO});
-      std::fill_n(H1D.origin(),H1D.num_elements(),ComplexType(0));
-      vHS(vMF, H1D);  
-      TG.TG().all_reduce_in_place_n(H1D.origin(),H1D.num_elements(),std::plus<>());
+      // making a copy of vMF since it will be modified
+      set_shm_buffer(vMF.shape()[0]);
+      boost::multi_array_ref<ComplexType,1> vMF_(std::addressof(*SM_TMats.origin()),extents[vMF.shape()[0]]);  
 
-      // add hij + vn0 and symmetrize
+      boost::multi::array_ref<ComplexType,1> P1D(std::addressof(*P1.origin()),{NMO*NMO});
+      std::fill_n(P1D.origin(),P1D.num_elements(),ComplexType(0));
+      vHS(vMF_, P1D);  
+      TG.TG().all_reduce_in_place_n(P1D.origin(),P1D.num_elements(),std::plus<>());
+
+      // add H1 + vn0 and symmetrize
       using std::conj;
 
-      for(int i=0; i<NMO; i++) {
-        H1[i][i] += hij[i][i] + vn0[i][i];
-        for(int j=i+1; j<NMO; j++) {
-          H1[i][j] += hij[i][j] + vn0[i][j];
-          H1[j][i] += hij[j][i] + vn0[j][i];
-          // This is really cutoff dependent!!!  
-          if( std::abs( H1[i][j] - conj(H1[j][i]) ) > 1e-6 ) {
-            app_error()<<" WARNING in getOneBodyPropagatorMatrix. H1 is not hermitian. \n";
-            app_error()<<i <<" " <<j <<" " <<H1[i][j] <<" " <<H1[j][i] <<" " 
-                       <<hij[i][j] <<" " <<hij[j][i] <<" "
-                       <<vn0[i][j] <<" " <<vn0[j][i] <<std::endl;  
-            //APP_ABORT("Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n"); 
+      for(int K=0, nk0=0; K<nkpts; ++K) {
+        for(int i=0, I=nk0; i<nopk[K]; i++, I++) {
+          P1[I][I] += H1[K][i][i] + vn0[K][i][i];
+          for(int j=i+1, J=I+1; j<nopk[K]; j++, J++) {
+            P1[I][J] += H1[K][i][j] + vn0[K][i][j];
+            P1[J][I] += H1[K][j][i] + vn0[K][j][i];
+            // This is really cutoff dependent!!!  
+            if( std::abs( P1[I][J] - conj(P1[J][I]) ) > 1e-6 ) {
+              app_error()<<" WARNING in getOneBodyPropagatorMatrix. H1 is not hermitian. \n";
+              app_error()<<I <<" " <<J <<" " <<P1[I][J] <<" " <<P1[j][i] <<" "
+                         <<H1[K][i][j] <<" " <<H1[K][j][i] <<" "
+                         <<vn0[K][i][j] <<" " <<vn0[K][j][i] <<std::endl;
+              //APP_ABORT("Error in getOneBodyPropagatorMatrix. H1 is not hermitian. \n"); 
+            }
+            P1[I][J] = 0.5*(P1[I][J]+conj(P1[J][I]));
+            P1[J][I] = conj(P1[I][J]);
           }
-          H1[i][j] = 0.5*(H1[i][j]+conj(H1[j][i]));
-          H1[j][i] = conj(H1[i][j]);
-        }
+        }   
+        nk0 += nopk[K];
       }
-      return H1;  
-*/
-      return boost::multi_array<ComplexType,2>(extents[1][1]);
+      return P1;  
     }
 
     template<class Mat, class MatB>
@@ -212,11 +215,14 @@ Timer.reset("T3");
         } else {
           Klptr = std::addressof(*SM_TMats.origin())+mem_needs; 
         }
+        if(comm->root()) std::fill_n(Krptr,Knr*Knc,SPComplexType(0.0));
+        if(comm->root()) std::fill_n(Klptr,Knr*Knc,SPComplexType(0.0));
       } else if(getKr or getKl) {
         APP_ABORT(" Error: Kr and/or Kl can only be calculated with addEJ=true.\n");
       }   
       SpMatrix_ref Kl(Klptr,{Knr,Knc});
       SpMatrix_ref Kr(Krptr,{Knr,Knc});
+      comm->barrier();
 
       for(int n=0; n<nwalk; n++) 
         std::fill_n(E[n].origin(),3,ComplexType(0.));
@@ -413,11 +419,12 @@ Timer.start("T0");
       }
 Timer.stop("T0"); 
 t3 = Timer.total("T0");          
+/*
 std::cout<<" Time in energy - " 
 <<"E1: " <<t1 <<"  " 
 <<"EX: " <<t2 <<"  (" <<Timer.total("T1") <<"," <<Timer.total("T2") <<"," <<Timer.total("T3") <<")  "
 <<"EJ: " <<t3 <<"\n"; 
-
+*/
     }
 
     template<class... Args>
@@ -704,7 +711,7 @@ std::cout<<" Time in energy - "
     ValueType E0;
 
     // bare one body hamiltonian
-    shmC3Tensor H1_Qij;
+    shmC3Tensor H1;
 
     // (potentially half rotated) one body hamiltonian
     shmCMatrix haj;
@@ -733,7 +740,7 @@ std::cout<<" Time in energy - "
     std::vector<shmSpMatrix> LQKlnb;
 
     // one-body piece of Hamiltonian factorization
-    shmC3Tensor vn0_Qij;
+    shmC3Tensor vn0;
 
     // shared buffer space
     // using matrix since there are issues with vectors

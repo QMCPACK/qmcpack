@@ -22,8 +22,11 @@
 #include "boost/variant.hpp"
 
 #include "AFQMC/HamiltonianOperations/SparseTensor.hpp"
-#include "AFQMC/HamiltonianOperations/KP3IndexFactorization.hpp"
 #include "AFQMC/HamiltonianOperations/THCOps.hpp"
+#ifdef QMC_COMPLEX
+#include "AFQMC/HamiltonianOperations/KP3IndexFactorization.hpp"
+#include "AFQMC/HamiltonianOperations/KPTHCOps.hpp"
+#endif
 
 namespace qmcplusplus
 {
@@ -134,7 +137,7 @@ class dummy_HOps
 
 #ifdef QMC_COMPLEX
 class HamiltonianOperations: 
-        public boost::variant<dummy::dummy_HOps,THCOps<ValueType>,SparseTensor<ComplexType,ComplexType>,KP3IndexFactorization>
+        public boost::variant<dummy::dummy_HOps,THCOps<ValueType>,SparseTensor<ComplexType,ComplexType>,KP3IndexFactorization,KPTHCOps>
 #else
 class HamiltonianOperations: 
         public boost::variant<dummy::dummy_HOps,THCOps<ValueType>,
@@ -159,19 +162,23 @@ class HamiltonianOperations:
     explicit HamiltonianOperations(STRR&& other) : variant(std::move(other)) {}
     explicit HamiltonianOperations(STRC&& other) : variant(std::move(other)) {}
     explicit HamiltonianOperations(STCR&& other) : variant(std::move(other)) {}
+#else
+    explicit HamiltonianOperations(KP3IndexFactorization&& other) : variant(std::move(other)) {}
+    explicit HamiltonianOperations(KPTHCOps&& other) : variant(std::move(other)) {}
 #endif
     explicit HamiltonianOperations(STCC&& other) : variant(std::move(other)) {}
     explicit HamiltonianOperations(THCOps<ValueType>&& other) : variant(std::move(other)) {}
-    explicit HamiltonianOperations(KP3IndexFactorization&& other) : variant(std::move(other)) {}
 
 #ifndef QMC_COMPLEX
     explicit HamiltonianOperations(STRR const& other) = delete;
     explicit HamiltonianOperations(STRC const& other) = delete;
     explicit HamiltonianOperations(STCR const& other) = delete;
+#else
+    explicit HamiltonianOperations(KP3IndexFactorization const& other) = delete;
+    explicit HamiltonianOperations(KPTHCOps const& other) = delete;
 #endif
     explicit HamiltonianOperations(STCC const& other) = delete;
     explicit HamiltonianOperations(THCOps<ValueType> const& other) = delete;
-    explicit HamiltonianOperations(KP3IndexFactorization const& other) = delete;
 
     HamiltonianOperations(HamiltonianOperations const& other) = delete;
     HamiltonianOperations(HamiltonianOperations&& other) = default;
