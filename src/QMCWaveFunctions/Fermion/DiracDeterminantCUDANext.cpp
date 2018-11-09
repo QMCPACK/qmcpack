@@ -272,6 +272,7 @@ void DiracDeterminantCUDANext::copyFromBuffer(ParticleSet& P, WFBufferType& buf)
   d2psiM.attachReference(buf.lendReference<ValueType>(d2psiM.size()));
   buf.get(LogValue);
   buf.get(PhaseValue);
+  updateEng.transferAinvH2D(psiM);
   BufferTimer.stop();
 }
 
